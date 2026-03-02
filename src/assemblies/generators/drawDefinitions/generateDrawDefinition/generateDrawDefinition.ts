@@ -1,9 +1,11 @@
 import { addVoluntaryConsolationStructure } from '@Mutate/drawDefinitions/addVoluntaryConsolationStructure';
+import { addPlayoffStructures } from '@Mutate/drawDefinitions/addPlayoffStructures';
 import { getDrawFormat } from '@Generators/drawDefinitions/getDrawFormat';
 import { getParticipants } from '@Query/participants/getParticipants';
 import { decorateResult } from '@Functions/global/decorateResult';
 import { generateOrGetExisting } from './generateOrGetExisting';
 import { qualifyingGeneration } from './qualifyingGeneration';
+import { hydrateRoundNames } from './hydrateRoundNames';
 import { constantToString } from '@Tools/strings';
 import {
   getFilteredEntries,
@@ -11,12 +13,12 @@ import {
 } from '@Generators/drawDefinitions/validateAndDeriveDrawValues';
 
 // constants and types
+import { GenerateDrawDefinitionArgs, ResultType, WithPlayoffsArgs } from '@Types/factoryTypes';
 import { ErrorType, INVALID_VALUES } from '@Constants/errorConditionConstants';
-import { GenerateDrawDefinitionArgs, ResultType } from '@Types/factoryTypes';
 import { POLICY_TYPE_ROUND_NAMING } from '@Constants/policyConstants';
+import { LOSER } from '@Constants/drawDefinitionConstants';
 import { DrawDefinition } from '@Types/tournamentTypes';
 import { SUCCESS } from '@Constants/resultConstants';
-import { hydrateRoundNames } from './hydrateRoundNames';
 
 export function generateDrawDefinition(params: GenerateDrawDefinitionArgs): ResultType & {
   existingDrawDefinition?: boolean;
@@ -28,7 +30,7 @@ export function generateDrawDefinition(params: GenerateDrawDefinitionArgs): Resu
   error?: ErrorType;
   conflicts?: any[];
 } {
-  const { voluntaryConsolation, tournamentRecord, event } = params;
+  const { voluntaryConsolation, withPlayoffs, tournamentRecord, event } = params;
   const stack = 'generateDrawDefinition';
 
   // get participants both for entry validation and for automated placement
@@ -107,6 +109,19 @@ export function generateDrawDefinition(params: GenerateDrawDefinitionArgs): Resu
     });
   }
 
+  if (withPlayoffs && structureId) {
+    const playoffResult = applyPlayoffsRecursive({
+      withPlayoffs,
+      tournamentRecord,
+      drawDefinition,
+      structureId,
+      event,
+      idPrefix: params.idPrefix,
+      isMock: params.isMock,
+    });
+    if (playoffResult?.error) return decorateResult({ result: playoffResult, stack });
+  }
+
   if (params.hydrateRoundNames) {
     const roundNamingPolicy = appliedPolicies?.[POLICY_TYPE_ROUND_NAMING];
     if (roundNamingPolicy) hydrateRoundNames({ drawDefinition, appliedPolicies });
@@ -121,4 +136,59 @@ export function generateDrawDefinition(params: GenerateDrawDefinitionArgs): Resu
     ...SUCCESS,
     conflicts,
   };
+}
+
+function applyPlayoffsRecursive({
+  withPlayoffs,
+  drawDefinition,
+  structureId,
+  ...rest
+}: {
+  withPlayoffs: WithPlayoffsArgs;
+  drawDefinition: DrawDefinition;
+  structureId: string;
+  [key: string]: any;
+}) {
+  const { roundPlayoffs, ...playoffParams } = withPlayoffs;
+
+  // Track which LOSER links exist BEFORE this call
+  const linksBefore = new Set(
+    drawDefinition.links
+      ?.filter((l) => l.linkType === LOSER && l.source?.structureId === structureId)
+      .map((l) => l.source?.roundNumber) ?? [],
+  );
+
+  // Add playoff structures for the current level
+  const result = addPlayoffStructures({
+    ...playoffParams,
+    drawDefinition,
+    structureId,
+    ...rest,
+  });
+  if (result?.error) return result;
+
+  // Process recursive child playoffs
+  if (roundPlayoffs) {
+    // Find newly created LOSER links from this structureId
+    const newLinks =
+      drawDefinition.links?.filter(
+        (l) => l.linkType === LOSER && l.source?.structureId === structureId && !linksBefore.has(l.source?.roundNumber),
+      ) ?? [];
+
+    for (const [roundStr, childPlayoffs] of Object.entries(roundPlayoffs)) {
+      const roundNumber = Number(roundStr);
+      const link = newLinks.find((l) => l.source?.roundNumber === roundNumber);
+      if (link) {
+        const childResult = applyPlayoffsRecursive({
+          withPlayoffs: childPlayoffs,
+          structureId: link.target?.structureId,
+          drawDefinition,
+          ...rest,
+        });
+        if (childResult?.error) return childResult;
+      }
+    }
+  }
+
+  return result;
 }

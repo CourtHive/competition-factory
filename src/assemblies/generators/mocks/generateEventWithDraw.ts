@@ -3,7 +3,6 @@ import { automatedPlayoffPositioning } from '@Mutate/drawDefinitions/automatedPl
 import { setParticipantScaleItem } from '@Mutate/participants/scaleItems/addScaleItems';
 import { checkRequiredParameters } from '@Helpers/parameters/checkRequiredParameters';
 import { completeDrawMatchUps, completeDrawMatchUp } from './completeDrawMatchUps';
-import { addPlayoffStructures } from '@Mutate/drawDefinitions/addPlayoffStructures';
 import { isMatchUpEventType } from '@Helpers/matchUpEventTypes/isMatchUpEventType';
 import { addDrawDefinition } from '@Mutate/drawDefinitions/addDrawDefinition';
 import { addParticipants } from '@Mutate/participants/addParticipants';
@@ -85,7 +84,6 @@ export function generateEventWithDraw(params) {
     timeItems,
     drawName,
     category,
-    idPrefix,
     publish,
     gender,
     stage,
@@ -416,20 +414,6 @@ export function generateEventWithDraw(params) {
 
   if (generate) {
     addDrawDefinition({ drawDefinition, event, suppressNotifications: true });
-
-    if (drawProfile.withPlayoffs) {
-      const structureId = drawDefinition.structures?.[0].structureId;
-      const result = addPlayoffStructures({
-        ...drawProfile.withPlayoffs,
-        tournamentRecord,
-        drawDefinition,
-        structureId,
-        idPrefix,
-        isMock,
-        event,
-      });
-      if (result?.error) return result;
-    }
 
     const manual = drawProfile.automated === false;
     if (isMock && !manual) {
