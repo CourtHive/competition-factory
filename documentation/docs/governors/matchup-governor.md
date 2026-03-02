@@ -229,7 +229,7 @@ When `usePublishState: true`, this method also enforces [embargo](../concepts/pu
 - **Draw embargo**: filters out matchUps from embargoed draws
 - **Stage embargo**: filters out matchUps from embargoed stages
 - **Structure embargo**: filters out matchUps from embargoed structures
-- **Round-level filtering**: `roundLimit` on a structure caps which rounds appear in the schedule. `scheduledRounds` provides per-round publish/embargo control within the ceiling set by `roundLimit`. See [Scheduled Rounds](../concepts/publishing/publishing-embargo#scheduled-rounds).
+- **Round-level filtering**: `roundLimit` on a structure caps which rounds appear in the schedule. `scheduledRounds` is an override map for per-round control within the ceiling — unlisted rounds pass through normally; `{ published: false }` hides the round; embargoed rounds are returned **without schedule data** (schedule stripped) until the embargo passes. See [Scheduled Rounds](../concepts/publishing/publishing-embargo#scheduled-rounds).
 
 **See**: [Embargo](../concepts/publishing/publishing-embargo) for details on how embargo timestamps work.
 

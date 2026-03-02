@@ -301,7 +301,7 @@ const { publishState } = engine.getPublishState();
 
 ### Per-Round Schedule Control
 
-Use `scheduledRounds` within `structureDetails` for granular control:
+Use `scheduledRounds` within `structureDetails` for granular overrides. `scheduledRounds` is an **override map** — rounds **not listed** pass through normally; only rounds with an explicit entry are affected:
 
 ```js
 engine.publishEvent({
@@ -313,9 +313,9 @@ engine.publishEvent({
           published: true,
           roundLimit: 3, // schedule ceiling: rounds 1-3
           scheduledRounds: {
-            1: { published: true }, // round 1 visible in schedule
             2: { published: true, embargo: '2024-06-16T08:00:00Z' }, // round 2 embargoed
-            // round 3 not listed → hidden from schedule
+            3: { published: false }, // round 3 explicitly hidden
+            // round 1 not listed → passes through normally
           },
         },
       },
@@ -327,15 +327,24 @@ engine.publishEvent({
 ### Interaction Rules
 
 1. **`roundLimit` is always the ceiling** — rounds above `roundLimit` never appear in the schedule, regardless of `scheduledRounds`
-2. **`scheduledRounds` gates within the ceiling** — within the rounds allowed by `roundLimit`, only rounds listed in `scheduledRounds` with `{ published: true }` (and past embargo) appear
-3. **When `scheduledRounds` is absent** — all rounds up to `roundLimit` appear in the schedule (backward compatible)
-4. **Embargo on individual rounds** — each entry in `scheduledRounds` supports the standard `embargo` field for time-based release
+2. **`scheduledRounds` is an override map** — only rounds with an explicit entry are affected; unlisted rounds pass through normally
+3. **`{ published: false }`** — explicitly hides the round (matchUps removed from results)
+4. **`{ published: true, embargo: ... }`** — embargoed rounds are **returned without schedule data** (the matchUp remains in results but `schedule` is stripped) until the embargo passes, then returned normally with full schedule
+5. **When `scheduledRounds` is absent** — all rounds up to `roundLimit` appear in the schedule (backward compatible)
+
+### Schedule Stripping for Embargoed Rounds
+
+When a round is embargoed via `scheduledRounds`, the matchUps for that round are **not hidden** — they remain in `dateMatchUps` but with their `schedule` property set to `undefined`. This means:
+
+- The matchUp is visible (participants, round number, etc. are accessible)
+- Schedule details (court assignment, scheduled time, etc.) are withheld until the embargo passes
+- Once the embargo passes, full schedule data is included automatically
 
 ### Scheduled Rounds Workflow
 
 ```js
 // Step 1: Create 3 AD_HOC rounds, schedule all matchUps
-// Step 2: Publish bracket with roundLimit 2, schedule only round 1
+// Step 2: Publish bracket with roundLimit 2, round 2 explicitly hidden for now
 engine.publishEvent({
   eventId,
   drawDetails: {
@@ -344,14 +353,15 @@ engine.publishEvent({
         [structureId]: {
           published: true,
           roundLimit: 2,
-          scheduledRounds: { 1: { published: true } },
+          scheduledRounds: { 2: { published: false } },
+          // round 1 unlisted → passes through normally
         },
       },
     },
   },
 });
 
-// Step 3: Add round 2 to schedule with embargo
+// Step 3: Change round 2 to embargoed (matchUp visible, schedule stripped until embargo)
 engine.publishEvent({
   eventId,
   removePriorValues: true,
@@ -362,14 +372,14 @@ engine.publishEvent({
           published: true,
           roundLimit: 2,
           scheduledRounds: {
-            1: { published: true },
             2: { published: true, embargo: '2024-06-16T08:00:00Z' },
           },
+          // round 1 unlisted → passes through normally
         },
       },
     },
   },
 });
 
-// Step 4: Embargo passes → round 2 automatically visible in schedule
+// Step 4: Embargo passes → round 2 automatically includes full schedule data
 ```

@@ -46,21 +46,21 @@ type PublishingDetail = {
 
 ### Inline filters
 
-| File                                                | Location                     | Description                                                                                                    |
-| --------------------------------------------------- | ---------------------------- | -------------------------------------------------------------------------------------------------------------- |
-| `src/query/event/getEventData.ts`                   | `stageFilter`                | `stageDetails[stage]?.published` → `isVisiblyPublished(stageDetails[stage])`                                   |
-| `src/query/event/getEventData.ts`                   | `structureFilter`            | `structureDetails[structureId]?.published` → `isVisiblyPublished(structureDetails[structureId])`               |
-| `src/query/event/getEventData.ts`                   | `roundLimitMapper`           | Now AD_HOC-only: early-returns if `drawType !== AD_HOC`. Non-AD_HOC brackets always show all rounds.           |
-| `src/query/drawDefinition/getDrawData.ts`           | line 254 filter              | `structureDetails?.published` → `isVisiblyPublished(structureDetails)`                                         |
-| `src/query/matchUps/competitionScheduleMatchUps.ts` | orderOfPlay check            | `tournamentPublishStatus?.orderOfPlay?.published` → `isVisiblyPublished(tournamentPublishStatus?.orderOfPlay)` |
-| `src/query/matchUps/competitionScheduleMatchUps.ts` | draw/stage/structure filters | All six `.published` checks → `isVisiblyPublished(...)`                                                        |
-| `src/query/matchUps/competitionScheduleMatchUps.ts` | round-level filter           | New block after stage/structure filter: enforces `roundLimit` ceiling, then `scheduledRounds` per-round publish/embargo via `isVisiblyPublished` |
+| File                                                | Location                     | Description                                                                                                                                                                                                                                               |
+| --------------------------------------------------- | ---------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `src/query/event/getEventData.ts`                   | `stageFilter`                | `stageDetails[stage]?.published` → `isVisiblyPublished(stageDetails[stage])`                                                                                                                                                                              |
+| `src/query/event/getEventData.ts`                   | `structureFilter`            | `structureDetails[structureId]?.published` → `isVisiblyPublished(structureDetails[structureId])`                                                                                                                                                          |
+| `src/query/event/getEventData.ts`                   | `roundLimitMapper`           | Now AD_HOC-only: early-returns if `drawType !== AD_HOC`. Non-AD_HOC brackets always show all rounds.                                                                                                                                                      |
+| `src/query/drawDefinition/getDrawData.ts`           | line 254 filter              | `structureDetails?.published` → `isVisiblyPublished(structureDetails)`                                                                                                                                                                                    |
+| `src/query/matchUps/competitionScheduleMatchUps.ts` | orderOfPlay check            | `tournamentPublishStatus?.orderOfPlay?.published` → `isVisiblyPublished(tournamentPublishStatus?.orderOfPlay)`                                                                                                                                            |
+| `src/query/matchUps/competitionScheduleMatchUps.ts` | draw/stage/structure filters | All six `.published` checks → `isVisiblyPublished(...)`                                                                                                                                                                                                   |
+| `src/query/matchUps/competitionScheduleMatchUps.ts` | round-level filter           | New block after stage/structure filter: enforces `roundLimit` ceiling, then `scheduledRounds` override map — unlisted rounds pass through; `published: false` hides; embargoed rounds have `schedule` stripped (set to `undefined`) but remain in results |
 
 ### Reporting (NOT filtered)
 
-| File                                      | Function       | Change                                                                                                                                                                                                            |
-| ----------------------------------------- | -------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `src/query/publishing/getPublishState.ts` | `getPubStatus` | Passes `{ ignoreEmbargo: true }` to `getDrawPublishStatus` — embargoed draws still reported as published for admin UIs.                                                                                           |
+| File                                      | Function       | Change                                                                                                                                                                                                                                                     |
+| ----------------------------------------- | -------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `src/query/publishing/getPublishState.ts` | `getPubStatus` | Passes `{ ignoreEmbargo: true }` to `getDrawPublishStatus` — embargoed draws still reported as published for admin UIs.                                                                                                                                    |
 | `src/query/publishing/getPublishState.ts` | main function  | Collects `embargoes` summary array from all drawDetails (publishingDetail, stageDetails, structureDetails, scheduledRounds within structureDetails) and tournament-level (orderOfPlay, participants). Attached as `publishState.embargoes` when non-empty. |
 
 ### Mutation points (accept embargo param)
@@ -119,7 +119,7 @@ This split is enforced in:
 
 ### scheduledRounds
 
-`scheduledRounds` is a per-round publish/embargo map within `structureDetails`:
+`scheduledRounds` is a per-round **override map** within `structureDetails`:
 
 ```ts
 type ScheduledRoundDetail = {
@@ -131,14 +131,21 @@ type ScheduledRoundDetail = {
 scheduledRounds?: { [roundNumber: number]: ScheduledRoundDetail };
 ```
 
+**Semantics:** `scheduledRounds` is an override map, not an allowlist. Rounds **not listed** pass through normally. Only rounds with an explicit entry are affected:
+
+- **Unlisted round** → passes through (included in results with full schedule)
+- **`{ published: false }`** → hidden (matchUp removed from results)
+- **`{ published: true }` (no embargo or expired)** → passes through normally
+- **`{ published: true, embargo: FUTURE }`** → matchUp included in results but `schedule` set to `undefined` (schedule data stripped until embargo passes)
+
 **Enforcement points:**
 
-| File                                                | What it does                                                                               |
-| --------------------------------------------------- | ------------------------------------------------------------------------------------------ |
-| `src/query/matchUps/competitionScheduleMatchUps.ts` | Filters schedule matchUps by `roundLimit` ceiling + `scheduledRounds` per-round visibility |
-| `src/query/publishing/getPublishState.ts`           | Collects `type: 'scheduledRound'` entries in the `embargoes` array                         |
+| File                                                | What it does                                                                                                              |
+| --------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------- |
+| `src/query/matchUps/competitionScheduleMatchUps.ts` | Filters schedule matchUps by `roundLimit` ceiling + `scheduledRounds` override map; strips `schedule` on embargoed rounds |
+| `src/query/publishing/getPublishState.ts`           | Collects `type: 'scheduledRound'` entries in the `embargoes` array                                                        |
 
-**Interaction:** `roundLimit` is the ceiling. `scheduledRounds` gates within the ceiling. When `scheduledRounds` is absent, all rounds up to `roundLimit` appear.
+**Interaction:** `roundLimit` is the ceiling. `scheduledRounds` provides overrides within the ceiling. When `scheduledRounds` is absent, all rounds up to `roundLimit` appear.
 
 ### Tests
 
@@ -149,12 +156,13 @@ Uses `vi.useFakeTimers()` for deterministic time control. Test cases:
 1. roundLimit on non-AD_HOC does NOT filter bracket
 2. roundLimit on AD_HOC still filters bracket (regression)
 3. roundLimit filters schedule for all draw types
-4. scheduledRounds basic — only specified rounds in schedule
-5. scheduledRounds with embargo — hidden until embargo passes
-6. scheduledRounds + roundLimit interaction
+4. scheduledRounds basic — explicitly unpublished rounds hidden, unlisted pass through
+5. scheduledRounds with embargo — embargoed round returned without schedule, unlisted rounds pass through
+6. scheduledRounds + roundLimit interaction — roundLimit caps, scheduledRounds overrides within
 7. No scheduledRounds falls back to roundLimit
 8. getPublishState exposes scheduledRound embargoes
-9. Full AD_HOC workflow — progressive schedule publishing with embargo
+9. Full AD_HOC workflow — progressive schedule publishing with embargo and schedule stripping
+10. Embargoed round has schedule stripped but matchUp is returned
 
 ## Documentation
 
