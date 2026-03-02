@@ -252,6 +252,79 @@ describe('getScore() situation', () => {
     expect(sit.isBreakPoint).toBe(true);
   });
 
+  it('SET3-S:6/TB7-G:TN3D — third deuce is golden point', () => {
+    const engine = new ScoringEngine({ matchUpFormat: 'SET3-S:6/TB7-G:TN3D' });
+
+    // Get to deuce #1 (40-40, internal points 3-3)
+    engine.addPoint({ winner: 0 }); // 15-0
+    engine.addPoint({ winner: 0 }); // 30-0
+    engine.addPoint({ winner: 0 }); // 40-0
+    engine.addPoint({ winner: 1 }); // 40-15
+    engine.addPoint({ winner: 1 }); // 40-30
+    engine.addPoint({ winner: 1 }); // 40-40 — deuce #1
+
+    // At deuce #1 it should NOT be golden point
+    let sit = engine.getScore().situation!;
+    expect(sit.isGoldenPoint).toBe(false);
+
+    // Advantage side 0, then back to deuce #2 (internal 4-4)
+    engine.addPoint({ winner: 0 }); // A-40
+    engine.addPoint({ winner: 1 }); // 40-40 — deuce #2
+
+    sit = engine.getScore().situation!;
+    expect(sit.isGoldenPoint).toBe(false);
+
+    // Advantage side 1, then back to deuce #3 (internal 5-5)
+    engine.addPoint({ winner: 1 }); // 40-A
+    engine.addPoint({ winner: 0 }); // 40-40 — deuce #3
+
+    // At deuce #3 it IS golden point (deuceAfter: 3)
+    sit = engine.getScore().situation!;
+    expect(sit.isGoldenPoint).toBe(true);
+    expect(sit.isGamePoint).toBe(true);
+
+    // The next point should win the game
+    const scoreBefore = engine.getScore();
+    const gamesBefore = scoreBefore.games;
+    expect(gamesBefore).toEqual([0, 0]);
+
+    engine.addPoint({ winner: 0 }); // side 0 wins at 6-5
+
+    const scoreAfter = engine.getScore();
+    expect(scoreAfter.games).toEqual([1, 0]); // Game was won
+  });
+
+  it('SET3-S:6/TB7-G:TN3D — advantage still works before deuce cap', () => {
+    const engine = new ScoringEngine({ matchUpFormat: 'SET3-S:6/TB7-G:TN3D' });
+
+    // Get to deuce #1
+    for (let i = 0; i < 3; i++) engine.addPoint({ winner: 0 });
+    for (let i = 0; i < 3; i++) engine.addPoint({ winner: 1 });
+
+    // Side 0 gets advantage and wins — normal advantage rules apply before deuce cap
+    engine.addPoint({ winner: 0 }); // A-40
+    engine.addPoint({ winner: 0 }); // Game — side 0 wins with 2-point lead (5-3)
+
+    const score = engine.getScore();
+    expect(score.games).toEqual([1, 0]);
+  });
+
+  it('SET3-S:6/TB7-G:TN1D — deuceAfter:1 is equivalent to NoAD', () => {
+    const engine = new ScoringEngine({ matchUpFormat: 'SET3-S:6/TB7-G:TN1D' });
+
+    // Get to deuce #1 (40-40)
+    for (let i = 0; i < 3; i++) engine.addPoint({ winner: 0 });
+    for (let i = 0; i < 3; i++) engine.addPoint({ winner: 1 });
+
+    // At 40-40 with deuceAfter:1, it's already golden point
+    const sit = engine.getScore().situation!;
+    expect(sit.isGoldenPoint).toBe(true);
+
+    // Next point wins
+    engine.addPoint({ winner: 1 });
+    expect(engine.getScore().games).toEqual([0, 1]);
+  });
+
   it('detects set point when leading 5-0 at 40-0', () => {
     const engine = new ScoringEngine({ matchUpFormat: 'SET3-S:6/TB7' });
     // Win 5 games for side 0

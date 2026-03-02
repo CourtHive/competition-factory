@@ -197,8 +197,11 @@ function computeSituation(matchUp: MatchUp): PointSituation | undefined {
       ))
   );
 
-  // isGoldenPoint: NoAD and both sides at deuce (both need 1 point to win)
-  const isGoldenPoint = isNoAD && pointsToGame[0] === 1 && pointsToGame[1] === 1;
+  // isGoldenPoint: both sides need exactly 1 point to win the game
+  // Triggers for NoAD (every deuce) or deuceAfter (at the Nth deuce)
+  const deuceAfter = formatStructure.gameFormat?.deuceAfter;
+  const isGoldenPoint =
+    pointsToGame[0] === 1 && pointsToGame[1] === 1 && (isNoAD || (!!deuceAfter && !isTiebreak));
 
   // isGamePoint: server is 1 point from winning the game
   const isGamePoint = server === undefined ? false : pointsToGame[server] === 1;

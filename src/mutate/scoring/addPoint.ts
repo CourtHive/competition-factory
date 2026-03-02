@@ -282,7 +282,7 @@ function handleStandardSet(
   if (isConsecutive && !isTiebreak) {
     gameWon = currentSet.currentStreak!.count >= consecutiveCount ? currentSet.currentStreak!.side : undefined;
   } else {
-    gameWon = checkStandardGameWon(side1Points, side2Points, activeSetFormat, isTiebreak);
+    gameWon = checkStandardGameWon(side1Points, side2Points, activeSetFormat, isTiebreak, formatStructure);
   }
 
   // Calculate game score display
@@ -604,6 +604,7 @@ function checkStandardGameWon(
   side2Points: number,
   setFormat: SetFormatStructure,
   isTiebreak: boolean,
+  formatStructure?: FormatStructure,
 ): number | undefined {
   const isNoAd = setFormat.gameFormat?.NoAD || setFormat.NoAD || false;
 
@@ -619,6 +620,17 @@ function checkStandardGameWon(
   // No-AD scoring (golden point at deuce)
   if (isNoAd) {
     if (side1Points >= pointsTo || side2Points >= pointsTo) {
+      return side1Points > side2Points ? 0 : 1;
+    }
+    return undefined;
+  }
+
+  // deuceAfter: after N deuces, the next point decides (golden point)
+  // Deuce #1 is at 3-3, deuce #N is at (2+N)-(2+N)
+  const deuceAfter = formatStructure?.gameFormat?.deuceAfter;
+  if (deuceAfter && side1Points >= 2 + deuceAfter && side2Points >= 2 + deuceAfter) {
+    // Past the deuce cap — next point wins (like NoAD)
+    if (side1Points !== side2Points) {
       return side1Points > side2Points ? 0 : 1;
     }
     return undefined;
