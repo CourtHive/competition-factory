@@ -23,7 +23,6 @@ import {
   ROUND_ROBIN,
   ROUND_ROBIN_WITH_PLAYOFF,
   LUCKY_DRAW,
-  CUSTOM,
   QUALIFYING,
   WINNER,
   POSITION,
@@ -175,7 +174,6 @@ export function generateDrawStructuresAndLinks(params: GenerateDrawStructuresAnd
   // check that drawSize is a valid value
   const invalidDrawSize =
     drawType !== AD_HOC &&
-    drawType !== CUSTOM &&
     (!drawSize ||
       drawSize < 2 ||
       (!staggeredEntry &&

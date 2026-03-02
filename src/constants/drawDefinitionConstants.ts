@@ -85,7 +85,6 @@ export const MFIC = 'MODIFIED_FEED_IN_CHAMPIONSHIP';
 export const MODIFIED_FEED_IN_CHAMPIONSHIP = 'MODIFIED_FEED_IN_CHAMPIONSHIP';
 export const FEED_IN_CHAMPIONSHIP = 'FEED_IN_CHAMPIONSHIP';
 export const PLAYOFF = 'PLAYOFF';
-export const CUSTOM = 'CUSTOM';
 
 export const DOUBLE_ROUND_ROBIN = 'DOUBLE_ROUND_ROBIN';
 export const ROUND_ROBIN = 'ROUND_ROBIN';
@@ -153,7 +152,6 @@ export const generatedDrawTypes = [
   ROUND_ROBIN,
   ROUND_ROBIN_WITH_PLAYOFF,
   SINGLE_ELIMINATION,
-  CUSTOM,
 ];
 
 export const drawDefinitionConstants = {
@@ -194,7 +192,6 @@ export const drawDefinitionConstants = {
   FEED_IN_CHAMPIONSHIP_TO_SF,
   FEED_IN_CHAMPIONSHIP,
   LUCKY_DRAW,
-  CUSTOM,
 
   ROUND_ROBIN_WITH_PLAYOFF,
   ROUND_ROBIN,
