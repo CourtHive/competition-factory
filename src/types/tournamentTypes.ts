@@ -90,7 +90,6 @@ export interface Event {
 export const DrawTypeEnum = {
   AD_HOC: 'AD_HOC',
   COMPASS: 'COMPASS',
-  CUSTOM: 'CUSTOM',
   CURTIS_cONSOLATION: 'CURTIS_CONSOLATION',
   DOUBLE_eLIMINATION: 'DOUBLE_ELIMINATION',
   FEED_IN: 'FEED_IN',

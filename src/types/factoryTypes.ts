@@ -382,6 +382,22 @@ export type PlayoffAttributes = {
   [key: string | number]: { name: string; abbreviation: string };
 };
 
+export type WithPlayoffsArgs = {
+  roundProfiles?: { [key: number]: number }[];
+  playoffAttributes?: PlayoffAttributes;
+  playoffStructureNameBase?: string;
+  addNameBaseToAttributeName?: boolean;
+  finishingPositionNaming?: any;
+  finishingPositionLimit?: number;
+  playoffPositions?: number[];
+  roundOffsetLimit?: number;
+  exitProfileLimit?: boolean;
+  roundNumbers?: number[];
+  roundPlayoffs?: {
+    [roundNumber: number]: WithPlayoffsArgs;
+  };
+};
+
 export type LineUp = TeamCompetitor[];
 
 export type StructureProfile = {
@@ -488,6 +504,7 @@ export type GenerateDrawDefinitionArgs = {
   structureName?: string;
   tieFormatName?: string;
   tieFormat?: TieFormat;
+  withPlayoffs?: WithPlayoffsArgs;
   drawEntries?: Entry[];
   roundsCount?: number;
   seedsCount?: number;

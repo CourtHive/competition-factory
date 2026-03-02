@@ -371,8 +371,7 @@
         "ROUND_ROBIN",
         "ROUND_ROBIN_WITH_PLAYOFF",
         "FIRST_ROUND_LOSER_CONSOLATION",
-        "AD_HOC",
-        "CUSTOM"
+        "AD_HOC"
       ]
     },
     "Category": {

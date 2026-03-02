@@ -168,20 +168,35 @@ function calcPointsToGame(
   }
 
   // Regular game within standard set
-  return calcStandardGamePointsTo(side1Points, side2Points, activeSetFormat);
+  return calcStandardGamePointsTo(side1Points, side2Points, activeSetFormat, formatStructure);
 }
 
 /**
  * Standard game: 4 points, win by 2 (or NoAD: win by 1 at deuce)
  */
-function calcStandardGamePointsTo(p1: number, p2: number, setFormat: SetFormatStructure): [number, number] {
+function calcStandardGamePointsTo(
+  p1: number,
+  p2: number,
+  setFormat: SetFormatStructure,
+  formatStructure?: FormatStructure,
+): [number, number] {
   const isNoAD = setFormat.gameFormat?.NoAD || setFormat.NoAD || false;
+  const deuceAfter = formatStructure?.gameFormat?.deuceAfter;
   const pointsTo = 4;
 
-  return [calcSidePointsToGame(p1, p2, pointsTo, isNoAD), calcSidePointsToGame(p2, p1, pointsTo, isNoAD)];
+  return [
+    calcSidePointsToGame(p1, p2, pointsTo, isNoAD, deuceAfter),
+    calcSidePointsToGame(p2, p1, pointsTo, isNoAD, deuceAfter),
+  ];
 }
 
-function calcSidePointsToGame(myPoints: number, oppPoints: number, pointsTo: number, isNoAD: boolean): number {
+function calcSidePointsToGame(
+  myPoints: number,
+  oppPoints: number,
+  pointsTo: number,
+  isNoAD: boolean,
+  deuceAfter?: number,
+): number {
   if (myPoints >= pointsTo - 1 && oppPoints >= pointsTo - 1) {
     // Deuce/advantage territory
     if (isNoAD) {
@@ -190,6 +205,14 @@ function calcSidePointsToGame(myPoints: number, oppPoints: number, pointsTo: num
       if (myPoints === oppPoints) return 1;
       return 2;
     }
+
+    // deuceAfter: once both sides reach (2 + deuceAfter), it's golden point
+    if (deuceAfter && myPoints >= 2 + deuceAfter && oppPoints >= 2 + deuceAfter) {
+      if (myPoints > oppPoints) return 0;
+      if (myPoints === oppPoints) return 1;
+      return 2;
+    }
+
     // Standard deuce: need 2-point lead
     const diff = myPoints - oppPoints;
     if (diff >= 2) return 0; // Already won
