@@ -8,6 +8,7 @@ import { SINGLES_EVENT } from '@Constants/eventConstants';
 
 const NOW = new Date('2025-06-15T12:00:00Z').getTime();
 const FUTURE_EMBARGO = '2025-06-20T12:00:00Z';
+const AFTER_EMBARGO = '2025-06-21T00:00:00Z';
 const START_DATE = '2025-06-15';
 
 describe('scheduledRounds publishing', () => {
@@ -268,7 +269,7 @@ describe('scheduledRounds publishing', () => {
     round3MatchUps.forEach((m) => expect(m.schedule).toBeDefined());
 
     // Advance time past the embargo
-    vi.setSystemTime(new Date('2025-06-21T00:00:00Z').getTime());
+    vi.setSystemTime(new Date(AFTER_EMBARGO).getTime());
 
     // After embargo passes: all 3 rounds visible, all have schedule
     result = tournamentEngine.competitionScheduleMatchUps({
@@ -534,7 +535,7 @@ describe('scheduledRounds publishing', () => {
     round1.forEach((m) => expect(m.schedule).toBeDefined());
 
     // Step 3: Advance past embargo
-    vi.setSystemTime(new Date('2025-06-21T00:00:00Z').getTime());
+    vi.setSystemTime(new Date(AFTER_EMBARGO).getTime());
 
     // Schedule now shows rounds 1 and 2, both with schedule data
     result = tournamentEngine.competitionScheduleMatchUps({
@@ -614,7 +615,7 @@ describe('scheduledRounds publishing', () => {
       .forEach((m) => expect(m.schedule).toBeDefined());
 
     // Advance time past the embargo
-    vi.setSystemTime(new Date('2025-06-21T00:00:00Z').getTime());
+    vi.setSystemTime(new Date(AFTER_EMBARGO).getTime());
 
     // After embargo: all 3 rounds in results; all have schedule
     result = tournamentEngine.competitionScheduleMatchUps({
@@ -626,5 +627,318 @@ describe('scheduledRounds publishing', () => {
 
     // All matchUps now have schedule
     result.dateMatchUps.forEach((m) => expect(m.schedule).toBeDefined());
+  });
+
+  // ============================================================
+  // getEventData tests — verify the same embargo behavior through
+  // the getEventData({ usePublishState: true }) code path, which
+  // is the path used by courthive-public.
+  // ============================================================
+
+  it('getEventData: scheduledRounds embargo strips schedule from matchUps', () => {
+    const {
+      tournamentRecord,
+      eventIds: [eventId],
+      drawIds: [drawId],
+    } = mocksEngine.generateTournamentRecord({
+      drawProfiles: [
+        {
+          eventType: SINGLES_EVENT,
+          drawType: AD_HOC,
+          automated: true,
+          roundsCount: 3,
+          drawSize: 20,
+        },
+      ],
+      venueProfiles: [{ courtsCount: 10 }],
+      startDate: START_DATE,
+    });
+
+    tournamentEngine.setState(tournamentRecord);
+
+    // Schedule all matchUps
+    const { upcomingMatchUps, pendingMatchUps } = tournamentEngine.getCompetitionMatchUps();
+    const allMatchUps = [...(upcomingMatchUps ?? []), ...(pendingMatchUps ?? [])];
+    const matchUpIds = getMatchUpIds(allMatchUps);
+    tournamentEngine.scheduleMatchUps({ scheduleDate: START_DATE, matchUpIds });
+
+    const structureId = tournamentRecord.events[0].drawDefinitions[0].structures[0].structureId;
+
+    // Publish with round 2 schedule embargoed
+    tournamentEngine.publishEvent({
+      removePriorValues: true,
+      drawDetails: {
+        [drawId]: {
+          structureDetails: {
+            [structureId]: {
+              published: true,
+              scheduledRounds: {
+                1: { published: true },
+                2: { published: true, embargo: FUTURE_EMBARGO },
+              },
+            },
+          },
+        },
+      },
+      eventId,
+    });
+
+    // Retrieve via getEventData (the courthive-public path)
+    const { eventData } = tournamentEngine.getEventData({ eventId, usePublishState: true });
+    const structure = eventData.drawsData[0].structures[0];
+    const roundMatchUps = structure.roundMatchUps;
+
+    // Round 1 matchUps should have schedule
+    const round1 = roundMatchUps[1] || [];
+    expect(round1.length).toBeGreaterThan(0);
+    round1.forEach((m) => expect(m.schedule).toBeDefined());
+
+    // Round 2 matchUps should have schedule STRIPPED
+    const round2 = roundMatchUps[2] || [];
+    expect(round2.length).toBeGreaterThan(0);
+    round2.forEach((m) => expect(m.schedule).toBeUndefined());
+
+    // Round 3 (unlisted in scheduledRounds) should still have schedule
+    const round3 = roundMatchUps[3] || [];
+    expect(round3.length).toBeGreaterThan(0);
+    round3.forEach((m) => expect(m.schedule).toBeDefined());
+  });
+
+  it('getEventData: embargo expiry restores schedule', () => {
+    const {
+      tournamentRecord,
+      eventIds: [eventId],
+      drawIds: [drawId],
+    } = mocksEngine.generateTournamentRecord({
+      drawProfiles: [
+        {
+          eventType: SINGLES_EVENT,
+          drawType: AD_HOC,
+          automated: true,
+          roundsCount: 2,
+          drawSize: 8,
+        },
+      ],
+      venueProfiles: [{ courtsCount: 4 }],
+      startDate: START_DATE,
+    });
+
+    tournamentEngine.setState(tournamentRecord);
+
+    const { upcomingMatchUps, pendingMatchUps } = tournamentEngine.getCompetitionMatchUps();
+    const allMatchUps = [...(upcomingMatchUps ?? []), ...(pendingMatchUps ?? [])];
+    const matchUpIds = getMatchUpIds(allMatchUps);
+    tournamentEngine.scheduleMatchUps({ scheduleDate: START_DATE, matchUpIds });
+
+    const structureId = tournamentRecord.events[0].drawDefinitions[0].structures[0].structureId;
+
+    tournamentEngine.publishEvent({
+      removePriorValues: true,
+      drawDetails: {
+        [drawId]: {
+          structureDetails: {
+            [structureId]: {
+              published: true,
+              scheduledRounds: {
+                2: { published: true, embargo: FUTURE_EMBARGO },
+              },
+            },
+          },
+        },
+      },
+      eventId,
+    });
+
+    // Before embargo expires: round 2 schedule stripped
+    let { eventData } = tournamentEngine.getEventData({ eventId, usePublishState: true });
+    let round2 = eventData.drawsData[0].structures[0].roundMatchUps[2] || [];
+    expect(round2.length).toBeGreaterThan(0);
+    round2.forEach((m) => expect(m.schedule).toBeUndefined());
+
+    // Advance time past the embargo
+    vi.setSystemTime(new Date(AFTER_EMBARGO).getTime());
+
+    // After embargo expires: round 2 schedule restored
+    ({ eventData } = tournamentEngine.getEventData({ eventId, usePublishState: true }));
+    round2 = eventData.drawsData[0].structures[0].roundMatchUps[2] || [];
+    expect(round2.length).toBeGreaterThan(0);
+    round2.forEach((m) => expect(m.schedule).toBeDefined());
+  });
+
+  it('getEventData: elimination draw with scheduledRounds embargo strips schedule', () => {
+    const {
+      tournamentRecord,
+      eventIds: [eventId],
+      drawIds: [drawId],
+    } = mocksEngine.generateTournamentRecord({
+      drawProfiles: [{ drawSize: 8, drawType: SINGLE_ELIMINATION }],
+      venueProfiles: [{ courtsCount: 4 }],
+      startDate: START_DATE,
+    });
+
+    tournamentEngine.setState(tournamentRecord);
+
+    const { upcomingMatchUps, pendingMatchUps } = tournamentEngine.getCompetitionMatchUps();
+    const allMatchUps = [...(upcomingMatchUps ?? []), ...(pendingMatchUps ?? [])];
+    const matchUpIds = getMatchUpIds(allMatchUps);
+    tournamentEngine.scheduleMatchUps({ scheduleDate: START_DATE, matchUpIds });
+
+    const event = tournamentEngine.getEvent({ drawId }).event;
+    const structureId = event.drawDefinitions[0].structures[0].structureId;
+
+    // Embargo round 1 schedule in an elimination draw
+    tournamentEngine.publishEvent({
+      removePriorValues: true,
+      drawDetails: {
+        [drawId]: {
+          publishingDetail: { published: true },
+          structureDetails: {
+            [structureId]: {
+              published: true,
+              scheduledRounds: {
+                1: { published: true, embargo: FUTURE_EMBARGO },
+              },
+            },
+          },
+        },
+      },
+      eventId,
+    });
+
+    const { eventData } = tournamentEngine.getEventData({ eventId, usePublishState: true });
+    const structure = eventData.drawsData[0].structures[0];
+    const roundMatchUps = structure.roundMatchUps;
+
+    // Round 1: schedule stripped (embargoed)
+    const round1 = roundMatchUps[1] || [];
+    expect(round1.length).toBeGreaterThan(0);
+    round1.forEach((m) => expect(m.schedule).toBeUndefined());
+
+    // Round 2: not embargoed, so schedule should NOT be stripped
+    const round2 = roundMatchUps[2] || [];
+    if (round2.length) {
+      const round2Scheduled = round2.filter((m) => m.schedule);
+      expect(round2Scheduled.length).toEqual(round2.length);
+    }
+  });
+
+  it('getEventData: without usePublishState returns schedule regardless of embargo', () => {
+    const {
+      tournamentRecord,
+      eventIds: [eventId],
+      drawIds: [drawId],
+    } = mocksEngine.generateTournamentRecord({
+      drawProfiles: [
+        {
+          eventType: SINGLES_EVENT,
+          drawType: AD_HOC,
+          automated: true,
+          roundsCount: 2,
+          drawSize: 8,
+        },
+      ],
+      venueProfiles: [{ courtsCount: 4 }],
+      startDate: START_DATE,
+    });
+
+    tournamentEngine.setState(tournamentRecord);
+
+    const { upcomingMatchUps, pendingMatchUps } = tournamentEngine.getCompetitionMatchUps();
+    const allMatchUps = [...(upcomingMatchUps ?? []), ...(pendingMatchUps ?? [])];
+    const matchUpIds = getMatchUpIds(allMatchUps);
+    tournamentEngine.scheduleMatchUps({ scheduleDate: START_DATE, matchUpIds });
+
+    const structureId = tournamentRecord.events[0].drawDefinitions[0].structures[0].structureId;
+
+    tournamentEngine.publishEvent({
+      removePriorValues: true,
+      drawDetails: {
+        [drawId]: {
+          structureDetails: {
+            [structureId]: {
+              published: true,
+              scheduledRounds: {
+                2: { published: true, embargo: FUTURE_EMBARGO },
+              },
+            },
+          },
+        },
+      },
+      eventId,
+    });
+
+    // Without usePublishState: schedule is NOT stripped even for embargoed rounds
+    const { eventData } = tournamentEngine.getEventData({ eventId });
+    const round2 = eventData.drawsData[0].structures[0].roundMatchUps[2] || [];
+    expect(round2.length).toBeGreaterThan(0);
+    round2.forEach((m) => expect(m.schedule).toBeDefined());
+  });
+
+  it('getEventData + competitionScheduleMatchUps: consistent embargo behavior', () => {
+    const {
+      tournamentRecord,
+      eventIds: [eventId],
+      drawIds: [drawId],
+    } = mocksEngine.generateTournamentRecord({
+      drawProfiles: [
+        {
+          eventType: SINGLES_EVENT,
+          drawType: AD_HOC,
+          automated: true,
+          roundsCount: 3,
+          drawSize: 20,
+        },
+      ],
+      venueProfiles: [{ courtsCount: 10 }],
+      startDate: START_DATE,
+    });
+
+    tournamentEngine.setState(tournamentRecord);
+
+    const { upcomingMatchUps, pendingMatchUps } = tournamentEngine.getCompetitionMatchUps();
+    const allMatchUps = [...(upcomingMatchUps ?? []), ...(pendingMatchUps ?? [])];
+    const matchUpIds = getMatchUpIds(allMatchUps);
+    tournamentEngine.scheduleMatchUps({ scheduleDate: START_DATE, matchUpIds });
+
+    const structureId = tournamentRecord.events[0].drawDefinitions[0].structures[0].structureId;
+
+    // Embargo round 2
+    tournamentEngine.publishEvent({
+      removePriorValues: true,
+      drawDetails: {
+        [drawId]: {
+          structureDetails: {
+            [structureId]: {
+              published: true,
+              scheduledRounds: {
+                2: { published: true, embargo: FUTURE_EMBARGO },
+              },
+            },
+          },
+        },
+      },
+      eventId,
+    });
+    tournamentEngine.publishOrderOfPlay();
+
+    // getEventData path
+    const { eventData } = tournamentEngine.getEventData({ eventId, usePublishState: true });
+    const edRound2 = eventData.drawsData[0].structures[0].roundMatchUps[2] || [];
+    const edRound1 = eventData.drawsData[0].structures[0].roundMatchUps[1] || [];
+
+    // competitionScheduleMatchUps path
+    const result = tournamentEngine.competitionScheduleMatchUps({
+      matchUpFilters: { scheduledDate: START_DATE },
+      usePublishState: true,
+    });
+    const csmRound2 = result.dateMatchUps.filter((m) => m.roundNumber === 2);
+    const csmRound1 = result.dateMatchUps.filter((m) => m.roundNumber === 1);
+
+    // Both paths should agree: round 2 schedule stripped, round 1 schedule intact
+    edRound2.forEach((m) => expect(m.schedule).toBeUndefined());
+    csmRound2.forEach((m) => expect(m.schedule).toBeUndefined());
+
+    edRound1.forEach((m) => expect(m.schedule).toBeDefined());
+    csmRound1.forEach((m) => expect(m.schedule).toBeDefined());
   });
 });
