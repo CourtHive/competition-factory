@@ -144,7 +144,7 @@ describe('scheduledRounds publishing', () => {
     expect(roundNumbers.some((r) => r === 2)).toEqual(true);
   });
 
-  it('scheduledRounds basic: only specified rounds appear in schedule', () => {
+  it('scheduledRounds basic: explicitly unpublished rounds are hidden, unlisted pass through', () => {
     const {
       tournamentRecord,
       eventIds: [eventId],
@@ -172,7 +172,8 @@ describe('scheduledRounds publishing', () => {
 
     const structureId = tournamentRecord.events[0].drawDefinitions[0].structures[0].structureId;
 
-    // Publish with scheduledRounds: only round 1 published
+    // Publish with scheduledRounds: rounds 2 and 3 explicitly unpublished
+    // Round 1 is unlisted → passes through normally
     tournamentEngine.publishEvent({
       removePriorValues: true,
       drawDetails: {
@@ -180,7 +181,7 @@ describe('scheduledRounds publishing', () => {
           structureDetails: {
             [structureId]: {
               published: true,
-              scheduledRounds: { 1: { published: true } },
+              scheduledRounds: { 2: { published: false }, 3: { published: false } },
             },
           },
         },
@@ -198,7 +199,7 @@ describe('scheduledRounds publishing', () => {
     expect(roundNumbers).toEqual([1]);
   });
 
-  it('scheduledRounds with embargo: round hidden until embargo passes', () => {
+  it('scheduledRounds with embargo: round returned without schedule until embargo passes', () => {
     const {
       tournamentRecord,
       eventIds: [eventId],
@@ -227,6 +228,7 @@ describe('scheduledRounds publishing', () => {
     const structureId = tournamentRecord.events[0].drawDefinitions[0].structures[0].structureId;
 
     // Publish with scheduledRounds: round 1 published, round 2 embargoed
+    // Round 3 is unlisted → passes through normally
     tournamentEngine.publishEvent({
       removePriorValues: true,
       drawDetails: {
@@ -246,27 +248,42 @@ describe('scheduledRounds publishing', () => {
     });
     tournamentEngine.publishOrderOfPlay();
 
-    // Before embargo passes: only round 1 visible
+    // Before embargo passes: all 3 rounds visible, round 2 has schedule stripped
     let result = tournamentEngine.competitionScheduleMatchUps({
       matchUpFilters: { scheduledDate: START_DATE },
       usePublishState: true,
     });
-    let roundNumbers = [...new Set(result.dateMatchUps.map((m) => m.roundNumber))];
-    expect(roundNumbers).toEqual([1]);
+    let roundNumbers = [...new Set(result.dateMatchUps.map((m) => m.roundNumber))].sort();
+    expect(roundNumbers).toEqual([1, 2, 3]);
+
+    // Round 2 matchUps have no schedule
+    const round2MatchUps = result.dateMatchUps.filter((m) => m.roundNumber === 2);
+    expect(round2MatchUps.length).toBeGreaterThan(0);
+    round2MatchUps.forEach((m) => expect(m.schedule).toBeUndefined());
+
+    // Rounds 1 and 3 matchUps still have schedule
+    const round1MatchUps = result.dateMatchUps.filter((m) => m.roundNumber === 1);
+    round1MatchUps.forEach((m) => expect(m.schedule).toBeDefined());
+    const round3MatchUps = result.dateMatchUps.filter((m) => m.roundNumber === 3);
+    round3MatchUps.forEach((m) => expect(m.schedule).toBeDefined());
 
     // Advance time past the embargo
     vi.setSystemTime(new Date('2025-06-21T00:00:00Z').getTime());
 
-    // After embargo passes: rounds 1 and 2 visible
+    // After embargo passes: all 3 rounds visible, all have schedule
     result = tournamentEngine.competitionScheduleMatchUps({
       matchUpFilters: { scheduledDate: START_DATE },
       usePublishState: true,
     });
     roundNumbers = [...new Set(result.dateMatchUps.map((m) => m.roundNumber))].sort();
-    expect(roundNumbers).toEqual([1, 2]);
+    expect(roundNumbers).toEqual([1, 2, 3]);
+
+    // Round 2 now has schedule
+    const round2After = result.dateMatchUps.filter((m) => m.roundNumber === 2);
+    round2After.forEach((m) => expect(m.schedule).toBeDefined());
   });
 
-  it('scheduledRounds + roundLimit interaction: scheduledRounds gates within ceiling', () => {
+  it('scheduledRounds + roundLimit interaction: roundLimit caps, scheduledRounds overrides within', () => {
     const {
       tournamentRecord,
       eventIds: [eventId],
@@ -294,7 +311,8 @@ describe('scheduledRounds publishing', () => {
 
     const structureId = tournamentRecord.events[0].drawDefinitions[0].structures[0].structureId;
 
-    // roundLimit: 3, but scheduledRounds only publishes round 1
+    // roundLimit: 2 caps at round 2; scheduledRounds explicitly unpublishes round 2
+    // Only round 1 should appear (round 3 blocked by roundLimit, round 2 explicitly unpublished)
     tournamentEngine.publishEvent({
       removePriorValues: true,
       drawDetails: {
@@ -302,8 +320,8 @@ describe('scheduledRounds publishing', () => {
           structureDetails: {
             [structureId]: {
               published: true,
-              roundLimit: 3,
-              scheduledRounds: { 1: { published: true } },
+              roundLimit: 2,
+              scheduledRounds: { 2: { published: false } },
             },
           },
         },
@@ -443,7 +461,8 @@ describe('scheduledRounds publishing', () => {
 
     const structureId = tournamentRecord.events[0].drawDefinitions[0].structures[0].structureId;
 
-    // Step 1: Publish with roundLimit: 2 (bracket shows rounds 1-2 for AD_HOC)
+    // Step 1: Publish with roundLimit: 2 and round 2 explicitly unpublished
+    // Round 1 is unlisted → passes through; round 2 is explicitly hidden; round 3 blocked by roundLimit
     let result = tournamentEngine.publishEvent({
       removePriorValues: true,
       returnEventData: true,
@@ -454,7 +473,7 @@ describe('scheduledRounds publishing', () => {
               published: true,
               roundLimit: 2,
               scheduledRounds: {
-                1: { published: true },
+                2: { published: false },
               },
             },
           },
@@ -471,7 +490,7 @@ describe('scheduledRounds publishing', () => {
     // Publish order of play
     tournamentEngine.publishOrderOfPlay();
 
-    // Schedule shows only round 1
+    // Schedule shows only round 1 (round 2 explicitly unpublished, round 3 capped by roundLimit)
     result = tournamentEngine.competitionScheduleMatchUps({
       matchUpFilters: { scheduledDate: START_DATE },
       usePublishState: true,
@@ -489,7 +508,6 @@ describe('scheduledRounds publishing', () => {
               published: true,
               roundLimit: 2,
               scheduledRounds: {
-                1: { published: true },
                 2: { published: true, embargo: FUTURE_EMBARGO },
               },
             },
@@ -499,23 +517,114 @@ describe('scheduledRounds publishing', () => {
       eventId,
     });
 
-    // Schedule still shows only round 1 (round 2 embargoed)
-    result = tournamentEngine.competitionScheduleMatchUps({
-      matchUpFilters: { scheduledDate: START_DATE },
-      usePublishState: true,
-    });
-    scheduleRounds = [...new Set(result.dateMatchUps.map((m) => m.roundNumber))];
-    expect(scheduleRounds).toEqual([1]);
-
-    // Step 3: Advance past embargo
-    vi.setSystemTime(new Date('2025-06-21T00:00:00Z').getTime());
-
-    // Schedule now shows rounds 1 and 2
+    // Schedule shows rounds 1 and 2 (round 2 embargoed → schedule stripped)
     result = tournamentEngine.competitionScheduleMatchUps({
       matchUpFilters: { scheduledDate: START_DATE },
       usePublishState: true,
     });
     scheduleRounds = [...new Set(result.dateMatchUps.map((m) => m.roundNumber))].sort();
     expect(scheduleRounds).toEqual([1, 2]);
+
+    // Round 2 matchUps have schedule stripped
+    const round2Embargoed = result.dateMatchUps.filter((m) => m.roundNumber === 2);
+    round2Embargoed.forEach((m) => expect(m.schedule).toBeUndefined());
+
+    // Round 1 matchUps still have schedule
+    const round1 = result.dateMatchUps.filter((m) => m.roundNumber === 1);
+    round1.forEach((m) => expect(m.schedule).toBeDefined());
+
+    // Step 3: Advance past embargo
+    vi.setSystemTime(new Date('2025-06-21T00:00:00Z').getTime());
+
+    // Schedule now shows rounds 1 and 2, both with schedule data
+    result = tournamentEngine.competitionScheduleMatchUps({
+      matchUpFilters: { scheduledDate: START_DATE },
+      usePublishState: true,
+    });
+    scheduleRounds = [...new Set(result.dateMatchUps.map((m) => m.roundNumber))].sort();
+    expect(scheduleRounds).toEqual([1, 2]);
+
+    // Round 2 now has schedule
+    const round2After = result.dateMatchUps.filter((m) => m.roundNumber === 2);
+    round2After.forEach((m) => expect(m.schedule).toBeDefined());
+  });
+
+  it('embargoed round has schedule stripped but matchUp is returned', () => {
+    const {
+      tournamentRecord,
+      eventIds: [eventId],
+      drawIds: [drawId],
+    } = mocksEngine.generateTournamentRecord({
+      drawProfiles: [
+        {
+          eventType: SINGLES_EVENT,
+          drawType: AD_HOC,
+          automated: true,
+          roundsCount: 3,
+          drawSize: 20,
+        },
+      ],
+      venueProfiles: [{ courtsCount: 10 }],
+      startDate: START_DATE,
+    });
+
+    tournamentEngine.setState(tournamentRecord);
+
+    // Schedule all matchUps
+    const { upcomingMatchUps, pendingMatchUps } = tournamentEngine.getCompetitionMatchUps();
+    const allMatchUps = [...(upcomingMatchUps ?? []), ...(pendingMatchUps ?? [])];
+    const matchUpIds = getMatchUpIds(allMatchUps);
+    tournamentEngine.scheduleMatchUps({ scheduleDate: START_DATE, matchUpIds });
+
+    const structureId = tournamentRecord.events[0].drawDefinitions[0].structures[0].structureId;
+
+    // Only round 3 has an override (embargoed); rounds 1-2 are unlisted → pass through
+    tournamentEngine.publishEvent({
+      removePriorValues: true,
+      drawDetails: {
+        [drawId]: {
+          structureDetails: {
+            [structureId]: {
+              published: true,
+              scheduledRounds: { 3: { published: true, embargo: FUTURE_EMBARGO } },
+            },
+          },
+        },
+      },
+      eventId,
+    });
+    tournamentEngine.publishOrderOfPlay();
+
+    // Before embargo: all 3 rounds in results; round 3 has schedule stripped
+    let result = tournamentEngine.competitionScheduleMatchUps({
+      matchUpFilters: { scheduledDate: START_DATE },
+      usePublishState: true,
+    });
+    let roundNumbers = [...new Set(result.dateMatchUps.map((m) => m.roundNumber))].sort();
+    expect(roundNumbers).toEqual([1, 2, 3]);
+
+    // Round 3 matchUps have no schedule
+    const round3Before = result.dateMatchUps.filter((m) => m.roundNumber === 3);
+    expect(round3Before.length).toBeGreaterThan(0);
+    round3Before.forEach((m) => expect(m.schedule).toBeUndefined());
+
+    // Rounds 1 and 2 have schedule intact
+    result.dateMatchUps
+      .filter((m) => m.roundNumber === 1 || m.roundNumber === 2)
+      .forEach((m) => expect(m.schedule).toBeDefined());
+
+    // Advance time past the embargo
+    vi.setSystemTime(new Date('2025-06-21T00:00:00Z').getTime());
+
+    // After embargo: all 3 rounds in results; all have schedule
+    result = tournamentEngine.competitionScheduleMatchUps({
+      matchUpFilters: { scheduledDate: START_DATE },
+      usePublishState: true,
+    });
+    roundNumbers = [...new Set(result.dateMatchUps.map((m) => m.roundNumber))].sort();
+    expect(roundNumbers).toEqual([1, 2, 3]);
+
+    // All matchUps now have schedule
+    result.dateMatchUps.forEach((m) => expect(m.schedule).toBeDefined());
   });
 });

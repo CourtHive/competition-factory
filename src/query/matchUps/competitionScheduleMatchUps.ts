@@ -1,11 +1,11 @@
 import { getTournamentPublishStatus } from '@Query/tournaments/getTournamentPublishStatus';
 import { getCompetitionPublishedDrawDetails } from './getCompetitionPublishedDrawDetails';
 import { scheduledSortedMatchUps } from '@Functions/sorters/scheduledSortedMatchUps';
+import { isEmbargoed, isVisiblyPublished } from '@Query/publishing/isEmbargoed';
 import { courtGridRows } from '@Assemblies/generators/scheduling/courtGridRows';
 import { getSchedulingProfile } from '@Mutate/tournaments/schedulingProfile';
 import { getVenuesAndCourts } from '../venues/venuesAndCourtsGetter';
 import { getCompetitionMatchUps } from './getCompetitionMatchUps';
-import { isVisiblyPublished } from '@Query/publishing/isEmbargoed';
 import { isConvertableInteger } from '@Tools/math';
 import { getTournamentId } from '@Global/state/globalState';
 
@@ -170,7 +170,9 @@ export function competitionScheduleMatchUps(params: CompetitionScheduleMatchUpsA
 
       const stageKeys = Object.keys(detailsMap[drawId].stageDetails ?? {});
       if (stageKeys.length) {
-        const unpublishedStages = stageKeys.filter((stage) => !isVisiblyPublished(detailsMap[drawId].stageDetails[stage]));
+        const unpublishedStages = stageKeys.filter(
+          (stage) => !isVisiblyPublished(detailsMap[drawId].stageDetails[stage]),
+        );
         const publishedStages = stageKeys.filter((stage) => isVisiblyPublished(detailsMap[drawId].stageDetails[stage]));
         if (unpublishedStages.length && unpublishedStages.includes(stage)) return false;
         if (publishedStages.length && publishedStages.includes(stage)) return true;
@@ -182,8 +184,8 @@ export function competitionScheduleMatchUps(params: CompetitionScheduleMatchUpsA
         const unpublishedStructureIds = structureIdKeys.filter(
           (structureId) => !isVisiblyPublished(detailsMap[drawId].structureDetails[structureId]),
         );
-        const publishedStructureIds = structureIdKeys.filter(
-          (structureId) => isVisiblyPublished(detailsMap[drawId].structureDetails[structureId]),
+        const publishedStructureIds = structureIdKeys.filter((structureId) =>
+          isVisiblyPublished(detailsMap[drawId].structureDetails[structureId]),
         );
         if (unpublishedStructureIds.length && unpublishedStructureIds.includes(structureId)) return false;
         if (publishedStructureIds.length && publishedStructureIds.includes(structureId)) return true;
@@ -211,11 +213,17 @@ export function competitionScheduleMatchUps(params: CompetitionScheduleMatchUpsA
       // roundLimit is always the ceiling
       if (isConvertableInteger(roundLimit) && roundNumber! > roundLimit) return false;
 
-      // scheduledRounds provides per-round control within the ceiling
+      // scheduledRounds provides per-round overrides within the ceiling
       if (scheduledRounds) {
         const roundDetail = scheduledRounds[roundNumber!];
-        if (!roundDetail) return false; // round not in scheduledRounds → hidden
-        return isVisiblyPublished(roundDetail);
+        if (!roundDetail) return true; // unlisted → pass through normally
+
+        if (!roundDetail.published) return false; // explicitly unpublished → hide
+
+        if (isEmbargoed(roundDetail)) {
+          matchUp.schedule = undefined; // strip schedule for embargoed rounds
+          return true; // keep matchUp in results
+        }
       }
 
       return true;
@@ -258,7 +266,7 @@ export function competitionScheduleMatchUps(params: CompetitionScheduleMatchUpsA
   return { ...result, ...SUCCESS };
 
   function getCourtMatchUps({ courtId }) {
-    const matchUpsToConsider = courtCompletedMatchUps 
+    const matchUpsToConsider = courtCompletedMatchUps
       ? dateMatchUps.concat(completedMatchUps ?? [], abandonedMatchUps ?? [])
       : dateMatchUps;
     const courtMatchUps = matchUpsToConsider.filter(
