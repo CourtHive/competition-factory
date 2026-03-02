@@ -68,12 +68,12 @@ publishState.embargoes?.forEach(({ type, id, embargo, embargoActive }) => {
 
 Each entry in the `embargoes` array:
 
-| Field | Type | Description |
-|---|---|---|
-| `type` | string | `'draw'`, `'stage'`, `'structure'`, `'scheduledRound'`, `'orderOfPlay'`, or `'participants'` |
-| `id` | string? | Identifier for the element. Absent for tournament-level types (`orderOfPlay`, `participants`). |
-| `embargo` | string | ISO 8601 timestamp |
-| `embargoActive` | boolean | `true` if the embargo is still in the future |
+| Field           | Type    | Description                                                                                    |
+| --------------- | ------- | ---------------------------------------------------------------------------------------------- |
+| `type`          | string  | `'draw'`, `'stage'`, `'structure'`, `'scheduledRound'`, `'orderOfPlay'`, or `'participants'`   |
+| `id`            | string? | Identifier for the element. Absent for tournament-level types (`orderOfPlay`, `participants`). |
+| `embargo`       | string  | ISO 8601 timestamp                                                                             |
+| `embargoActive` | boolean | `true` if the embargo is still in the future                                                   |
 
 :::note
 `getPublishState` intentionally **ignores** embargo timestamps when determining publish status. This is for admin/reporting use — embargoed elements appear as "published" so admin UIs can display their configuration correctly. See [Embargo: Admin vs Public Behavior](../concepts/publishing/publishing-embargo#admin-vs-public-behavior) for details.
@@ -533,7 +533,7 @@ engine.publishEvent({
 Use `scheduledRounds` within `structureDetails` for fine-grained control over which rounds' matchUps appear in the schedule. This is separate from `roundLimit` bracket filtering (which only applies to AD_HOC draws).
 
 ```js
-// Publish round 1 schedule immediately, embargo round 2
+// Embargo round 2 schedule, explicitly hide round 3; round 1 unlisted → passes through
 engine.publishEvent({
   eventId,
   drawDetails: {
@@ -541,10 +541,11 @@ engine.publishEvent({
       structureDetails: {
         [structureId]: {
           published: true,
-          roundLimit: 2, // bracket ceiling (AD_HOC only)
+          roundLimit: 3, // bracket ceiling (AD_HOC only)
           scheduledRounds: {
-            1: { published: true },
             2: { published: true, embargo: '2024-06-16T08:00:00Z' },
+            3: { published: false },
+            // round 1 not listed → passes through normally
           },
         },
       },
@@ -554,10 +555,12 @@ engine.publishEvent({
 ```
 
 **Behavior:**
+
 - `roundLimit` always acts as a ceiling for the schedule (all draw types)
-- `scheduledRounds` provides per-round publish/embargo control within that ceiling
+- `scheduledRounds` is an **override map** — only rounds with an explicit entry are affected; unlisted rounds pass through normally
+- `{ published: false }` explicitly hides the round (matchUps removed from results)
+- `{ published: true, embargo: FUTURE }` returns the matchUp **without schedule data** (schedule stripped) until the embargo passes
 - When `scheduledRounds` is absent, all rounds up to `roundLimit` appear in the schedule
-- When `scheduledRounds` is present, only rounds listed with `{ published: true }` (and not embargoed) appear
 
 **Note:** `roundLimit` only filters the bracket (draw data) for AD_HOC draw types. For elimination draws, the bracket always shows all rounds.
 
