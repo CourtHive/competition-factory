@@ -1,7 +1,6 @@
 /**
- * Exploratory test: Can we reproduce a COMPASS-like draw using
- * generateDrawDefinition({ withPlayoffs }) + chained addPlayoffStructures
- * instead of drawType: COMPASS?
+ * Tests for reproducing COMPASS-like draws using withPlayoffs (including
+ * recursive roundPlayoffs) instead of the built-in drawType: COMPASS.
  *
  * COMPASS topology (32 draw):
  *   East (MAIN, 32) ──R1 losers──▶ West (16) ──R1 losers──▶ South (8) ──R1 losers──▶ Southeast (4)
@@ -16,7 +15,7 @@ import mocksEngine from '@Assemblies/engines/mock';
 import { expect, it, describe } from 'vitest';
 
 // constants
-import { SINGLE_ELIMINATION, COMPASS, PLAY_OFF, LOSER } from '@Constants/drawDefinitionConstants';
+import { SINGLE_ELIMINATION, COMPASS, PLAY_OFF, LOSER, MAIN } from '@Constants/drawDefinitionConstants';
 
 describe('COMPASS via withPlayoffs — exploration', () => {
   it('reference: native COMPASS produces 8 structures, 7 links, 72 matchUps', () => {
@@ -351,5 +350,109 @@ describe('COMPASS via withPlayoffs — exploration', () => {
     // Total: 31 + 15 + 7 + 3 + 7 + 3 = 66
     const totalMatchUps = drawDefinition.structures.reduce((sum, s) => sum + (s.matchUps?.length || 0), 0);
     expect(totalMatchUps).toEqual(66);
+  });
+});
+
+describe('mocksEngine drawProfiles with recursive withPlayoffs', () => {
+  const compassWithPlayoffs = {
+    roundProfiles: [{ 1: 1 }, { 2: 1 }, { 3: 1 }],
+    playoffAttributes: {
+      '0-1': { name: 'West', abbreviation: 'W' },
+      '0-2': { name: 'North', abbreviation: 'N' },
+      '0-3': { name: 'Northeast', abbreviation: 'NE' },
+    },
+    roundPlayoffs: {
+      1: {
+        roundProfiles: [{ 1: 1 }, { 2: 1 }],
+        playoffAttributes: {
+          '0-1': { name: 'South', abbreviation: 'S' },
+          '0-2': { name: 'Southwest', abbreviation: 'SW' },
+        },
+        roundPlayoffs: {
+          1: {
+            roundProfiles: [{ 1: 1 }],
+            playoffAttributes: { '0-1': { name: 'Southeast', abbreviation: 'SE' } },
+          },
+        },
+      },
+      2: {
+        roundProfiles: [{ 1: 1 }],
+        playoffAttributes: { '0-1': { name: 'Northwest', abbreviation: 'NW' } },
+      },
+    },
+  };
+
+  it('recursive withPlayoffs works via top-level drawProfiles', () => {
+    const result = mocksEngine.generateTournamentRecord({
+      drawProfiles: [
+        {
+          drawType: SINGLE_ELIMINATION,
+          drawSize: 32,
+          withPlayoffs: compassWithPlayoffs,
+        },
+      ],
+    });
+    expect(result.success).toEqual(true);
+
+    const { tournamentRecord } = result;
+    tournamentEngine.setState(tournamentRecord);
+
+    const { drawDefinition } = tournamentEngine.getEvent({ drawId: result.drawIds[0] });
+
+    // 8 structures, 7 LOSER links, 72 matchUps
+    expect(drawDefinition.structures.length).toEqual(8);
+    expect(drawDefinition.links.filter((l) => l.linkType === LOSER).length).toEqual(7);
+
+    const totalMatchUps = drawDefinition.structures.reduce((sum, s) => sum + (s.matchUps?.length || 0), 0);
+    expect(totalMatchUps).toEqual(72);
+
+    const structureNames = drawDefinition.structures.map((s) => s.structureName).sort();
+    expect(structureNames).toEqual([
+      'Main',
+      'North',
+      'Northeast',
+      'Northwest',
+      'South',
+      'Southeast',
+      'Southwest',
+      'West',
+    ]);
+  });
+
+  it('recursive withPlayoffs works via eventProfiles drawProfiles', () => {
+    const result = mocksEngine.generateTournamentRecord({
+      eventProfiles: [
+        {
+          eventName: 'Compass Event',
+          participantsProfile: { participantsCount: 32 },
+          drawProfiles: [
+            {
+              drawType: SINGLE_ELIMINATION,
+              drawSize: 32,
+              withPlayoffs: compassWithPlayoffs,
+            },
+          ],
+        },
+      ],
+    });
+    expect(result.success).toEqual(true);
+
+    const { tournamentRecord } = result;
+    tournamentEngine.setState(tournamentRecord);
+
+    const event = tournamentRecord.events[0];
+    const drawDefinition = event.drawDefinitions[0];
+
+    expect(drawDefinition.structures.length).toEqual(8);
+    expect(drawDefinition.links.filter((l) => l.linkType === LOSER).length).toEqual(7);
+
+    const totalMatchUps = drawDefinition.structures.reduce((sum, s) => sum + (s.matchUps?.length || 0), 0);
+    expect(totalMatchUps).toEqual(72);
+
+    // Verify playoff structures are in PLAY_OFF stage
+    const playoffStructures = drawDefinition.structures.filter((s) => s.stage === PLAY_OFF);
+    expect(playoffStructures.length).toEqual(7);
+    const mainStructures = drawDefinition.structures.filter((s) => s.stage === MAIN);
+    expect(mainStructures.length).toEqual(1);
   });
 });

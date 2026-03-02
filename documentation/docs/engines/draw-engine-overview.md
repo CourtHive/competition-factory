@@ -46,3 +46,5 @@ If the effects of a change to a `matchUpStatus` are limited to a single structur
 ## Multi-structure effects
 
 When there are multiple structures in a draw, such as COMPASS or DOUBLE ELIMINATION draws, then losers (and sometimes winners) can move across structures. For instance a first round loser in an East structure will move into the first round of the West structure. When this happens the `positionAssignments` for the target structure must be updated to map the `participantId` to the `drawPosition` where they have been assigned.
+
+Multi-structure draws can be generated as pre-defined draw types (e.g., `COMPASS`, `CURTIS`) or built as custom topologies using `withPlayoffs` on `generateDrawDefinition`. The `withPlayoffs.roundPlayoffs` field supports recursive nesting, enabling arbitrary COMPASS-like trees where PLAY_OFF structures themselves feed losers into sub-PLAY_OFF structures. See [Custom Playoff Topologies](/docs/concepts/draw-types#custom-playoff-topologies) and the [withPlayoffs API reference](/docs/governors/generation-governor#withplayoffs).

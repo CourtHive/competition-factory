@@ -87,7 +87,7 @@ engine.adHocPositionSwap({
 
 ## addPlayoffStructures
 
-Adds playoff structures to an existing drawDefinition.
+Adds playoff structures to an existing drawDefinition. This method creates PLAY_OFF structures linked via LOSER links from the specified source structure.
 
 ```js
 engine.addPlayoffStructures({
@@ -106,6 +106,10 @@ const playoffAttributes = {
   '0-2': { name: 'BRONZE', abbreviation: 'B' },
 };
 ```
+
+:::tip
+For multi-level playoff trees (e.g., COMPASS topologies), use the [`withPlayoffs`](/docs/governors/generation-governor#withplayoffs) parameter on `generateDrawDefinition` instead of chaining multiple `addPlayoffStructures` calls. The `withPlayoffs.roundPlayoffs` field supports recursive nesting, building the entire tree in a single call. See [Custom Playoff Topologies](/docs/concepts/draw-types#custom-playoff-topologies).
+:::
 
 ---
 

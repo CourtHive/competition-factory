@@ -165,6 +165,69 @@ test('generates playoffs for positions', () => {
 });
 ```
 
+### Recursive Playoff Structures (COMPASS-like Topologies)
+
+The `withPlayoffs` parameter supports recursive nesting via `roundPlayoffs`. This enables building multi-level playoff trees — such as a full COMPASS draw — in a single `generateTournamentRecord` call:
+
+```js
+test('generates full COMPASS topology via recursive withPlayoffs', () => {
+  const { tournamentRecord } = mocksEngine.generateTournamentRecord({
+    drawProfiles: [
+      {
+        drawSize: 32,
+        drawName: 'East',
+        withPlayoffs: {
+          roundProfiles: [{ 1: 1 }, { 2: 1 }, { 3: 1 }],
+          playoffAttributes: {
+            '0-1': { name: 'West', abbreviation: 'W' },
+            '0-2': { name: 'North', abbreviation: 'N' },
+            '0-3': { name: 'Northeast', abbreviation: 'NE' },
+          },
+          roundPlayoffs: {
+            1: {
+              // Sub-playoffs from West's losers
+              roundProfiles: [{ 1: 1 }, { 2: 1 }],
+              playoffAttributes: {
+                '0-1': { name: 'South', abbreviation: 'S' },
+                '0-2': { name: 'Southwest', abbreviation: 'SW' },
+              },
+              roundPlayoffs: {
+                1: {
+                  // Sub-playoffs from South's losers
+                  roundProfiles: [{ 1: 1 }],
+                  playoffAttributes: {
+                    '0-1': { name: 'Southeast', abbreviation: 'SE' },
+                  },
+                },
+              },
+            },
+            2: {
+              // Sub-playoffs from North's losers
+              roundProfiles: [{ 1: 1 }],
+              playoffAttributes: {
+                '0-1': { name: 'Northwest', abbreviation: 'NW' },
+              },
+            },
+          },
+        },
+      },
+    ],
+  });
+
+  tournamentEngine.setState(tournamentRecord);
+  const { drawDefinition } = tournamentEngine.getEvent();
+
+  // Full COMPASS: 8 structures, 7 LOSER links, 72 matchUps
+  expect(drawDefinition.structures.length).toBe(8);
+  expect(drawDefinition.links.length).toBe(7);
+
+  const { matchUps } = tournamentEngine.allTournamentMatchUps();
+  expect(matchUps.length).toBe(72);
+});
+```
+
+The `roundPlayoffs` field maps a source round number to a child `WithPlayoffsArgs` object. Each child can itself contain `roundPlayoffs`, enabling arbitrarily deep trees. See [Custom Playoff Topologies](/docs/concepts/draw-types#custom-playoff-topologies) and the [withPlayoffs API reference](/docs/governors/generation-governor#withplayoffs) for the full type definition and more examples.
+
 ## Testing Scheduling Scenarios
 
 ### Auto-Scheduling with Conflict Detection
