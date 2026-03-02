@@ -148,6 +148,8 @@ const drawDefinitionValues = {
     ],
   },
 
+  withPlayoffs, // optional - add playoff structures from the MAIN structure; supports recursive nesting (see below)
+
   staggeredEntry, // optional - accepts non-base-2 drawSizes and generates feed arms for "extra" drawPositions
   policyDefinitions, // optional - seeding or avoidance policies to be used when placing participants
   qualifyingPositions, // optional - number of positions in draw structure to be filled by qualifiers
@@ -164,6 +166,135 @@ const drawDefinitionValues = {
 
 const { drawDefinition } = engine.generateDrawDefinition(drawDefinitionValues);
 ```
+
+### withPlayoffs — Recursive Playoff Generation {#withplayoffs}
+
+The `withPlayoffs` parameter adds PLAY_OFF structures linked to the MAIN structure via LOSER links.
+It supports arbitrary nesting through the `roundPlayoffs` field, enabling custom topologies like COMPASS draws
+to be built in a single `generateDrawDefinition()` call.
+
+**Type: `WithPlayoffsArgs`**
+
+```ts
+type WithPlayoffsArgs = {
+  roundProfiles?: { [key: number]: number }[]; // source round → depth, e.g. [{ 1: 1 }, { 2: 1 }]
+  playoffAttributes?: PlayoffAttributes; // naming for generated structures
+  playoffStructureNameBase?: string;
+  addNameBaseToAttributeName?: boolean;
+  finishingPositionNaming?: any;
+  finishingPositionLimit?: number;
+  playoffPositions?: number[];
+  roundOffsetLimit?: number;
+  exitProfileLimit?: boolean;
+  roundNumbers?: number[];
+
+  // Recursive child playoffs keyed by source round number.
+  // Each entry defines sub-playoffs for the structure created
+  // from that round's losers at the current level.
+  roundPlayoffs?: {
+    [roundNumber: number]: WithPlayoffsArgs;
+  };
+};
+```
+
+**Simple example** — 3rd/4th place playoff from semifinal losers:
+
+```js
+const { drawDefinition } = engine.generateDrawDefinition({
+  drawSize: 16,
+  withPlayoffs: {
+    roundProfiles: [{ 4: 1 }],
+    playoffAttributes: {
+      '0-4': { name: 'Bronze Medal Match', abbreviation: 'BM' },
+    },
+  },
+});
+```
+
+**Recursive example** — full COMPASS topology (8 structures, 7 LOSER links) in one call:
+
+```js
+const { drawDefinition } = engine.generateDrawDefinition({
+  drawSize: 32,
+  drawType: 'SINGLE_ELIMINATION',
+  drawName: 'East',
+  withPlayoffs: {
+    roundProfiles: [{ 1: 1 }, { 2: 1 }, { 3: 1 }],
+    playoffAttributes: {
+      '0-1': { name: 'West', abbreviation: 'W' },
+      '0-2': { name: 'North', abbreviation: 'N' },
+      '0-3': { name: 'Northeast', abbreviation: 'NE' },
+    },
+    roundPlayoffs: {
+      1: {
+        // West's children
+        roundProfiles: [{ 1: 1 }, { 2: 1 }],
+        playoffAttributes: {
+          '0-1': { name: 'South', abbreviation: 'S' },
+          '0-2': { name: 'Southwest', abbreviation: 'SW' },
+        },
+        roundPlayoffs: {
+          1: {
+            // South's children
+            roundProfiles: [{ 1: 1 }],
+            playoffAttributes: {
+              '0-1': { name: 'Southeast', abbreviation: 'SE' },
+            },
+          },
+        },
+      },
+      2: {
+        // North's children
+        roundProfiles: [{ 1: 1 }],
+        playoffAttributes: {
+          '0-1': { name: 'Northwest', abbreviation: 'NW' },
+        },
+      },
+    },
+  },
+});
+
+// Result: 8 structures (East, West, North, South, NE, NW, SE, SW)
+//         7 LOSER links connecting them
+//         72 total matchUps for a 32-draw COMPASS
+```
+
+**How it works internally:**
+
+1. `addPlayoffStructures()` is called for the top-level `withPlayoffs` against the MAIN structure
+2. The algorithm snapshots existing LOSER links from the source structure before the call
+3. After `addPlayoffStructures()` returns, the newly created LOSER links are identified by diffing
+4. For each entry in `roundPlayoffs`, the matching new link's target `structureId` is found
+5. The process recurses into the child `WithPlayoffsArgs` using that target structureId
+
+This approach works because `addPlayoffStructures()` mutates `drawDefinition.links` in place
+(via `attachPlayoffStructures`), so each recursive level can discover what was just created.
+
+Custom topologies are also supported — you don't need to build a full COMPASS. For example,
+a 6-structure partial COMPASS (no Southwest or Southeast) is simply a tree without those branches:
+
+```js
+withPlayoffs: {
+  roundProfiles: [{ 1: 1 }, { 2: 1 }, { 3: 1 }],
+  playoffAttributes: {
+    '0-1': { name: 'West', abbreviation: 'W' },
+    '0-2': { name: 'North', abbreviation: 'N' },
+    '0-3': { name: 'Northeast', abbreviation: 'NE' },
+  },
+  roundPlayoffs: {
+    1: {
+      roundProfiles: [{ 1: 1 }],
+      playoffAttributes: { '0-1': { name: 'South', abbreviation: 'S' } },
+    },
+    2: {
+      roundProfiles: [{ 1: 1 }],
+      playoffAttributes: { '0-1': { name: 'Northwest', abbreviation: 'NW' } },
+    },
+  },
+}
+```
+
+See also: [Custom Playoff Topologies](../concepts/draw-types.md#custom-playoff-topologies), [addPlayoffStructures](/docs/governors/draws-governor#addplayoffstructures)
 
 ---
 

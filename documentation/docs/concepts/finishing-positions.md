@@ -9,19 +9,19 @@ Every matchUp in a draw carries a **`finishingPositionRange`** — a pair of num
 ```ts
 type MatchUpFinishingPositionRange = {
   winner: number[]; // [minPosition, maxPosition]
-  loser: number[];  // [minPosition, maxPosition]
+  loser: number[]; // [minPosition, maxPosition]
 };
 ```
 
 For example, in a 32-draw single elimination:
 
-| Round | Winner Range | Loser Range | Meaning |
-|---|---|---|---|
-| Final | `[1, 1]` | `[2, 2]` | Champion vs. runner-up |
-| Semifinal | `[1, 2]` | `[3, 4]` | Winner goes to final; loser finishes 3rd-4th |
-| Quarterfinal | `[1, 4]` | `[5, 8]` | Winner advances; loser finishes 5th-8th |
-| Round of 16 | `[1, 8]` | `[9, 16]` | Winner advances; loser finishes 9th-16th |
-| Round of 32 | `[1, 16]` | `[17, 32]` | Winner advances; loser finishes 17th-32nd |
+| Round        | Winner Range | Loser Range | Meaning                                      |
+| ------------ | ------------ | ----------- | -------------------------------------------- |
+| Final        | `[1, 1]`     | `[2, 2]`    | Champion vs. runner-up                       |
+| Semifinal    | `[1, 2]`     | `[3, 4]`    | Winner goes to final; loser finishes 3rd-4th |
+| Quarterfinal | `[1, 4]`     | `[5, 8]`    | Winner advances; loser finishes 5th-8th      |
+| Round of 16  | `[1, 8]`     | `[9, 16]`   | Winner advances; loser finishes 9th-16th     |
+| Round of 32  | `[1, 16]`    | `[17, 32]`  | Winner advances; loser finishes 17th-32nd    |
 
 The winner range narrows as the participant advances through the draw — a champion's final `finishingPositionRange` is `[1, 1]`, meaning they definitively finished 1st.
 
@@ -35,11 +35,11 @@ Finishing positions are computed during draw generation by the `addFinishingRoun
 
 The key inputs are:
 
-| Parameter | Purpose |
-|---|---|
+| Parameter                 | Purpose                                                               |
+| ------------------------- | --------------------------------------------------------------------- |
 | `finishingPositionOffset` | Shifts all positions by this amount (used for consolation structures) |
-| `positionsFed` | Number of positions fed into the structure from a linked structure |
-| `roundsCount` | Total number of rounds in the structure |
+| `positionsFed`            | Number of positions fed into the structure from a linked structure    |
+| `roundsCount`             | Total number of rounds in the structure                               |
 
 ## Draw Type Variations
 
@@ -47,7 +47,7 @@ The key inputs are:
 
 The simplest case. Each round produces a clear loser range:
 
-```
+```text
 32-draw:
   R1 losers:  [17, 32]  →  accessor 32
   R2 losers:  [9, 16]   →  accessor 16
@@ -65,7 +65,7 @@ Without a 3rd-place playoff, both semifinal losers get `finishingPositionRange: 
 
 FIC draws have a main structure and a consolation structure. The consolation structure receives `finishingPositionOffset = baseDrawSize` so its positions don't overlap with the main draw:
 
-```
+```text
 32-draw FIC (16-player base main):
   Main draw positions:        1–16
   Consolation positions:      17–32 (offset by 16)
@@ -84,7 +84,7 @@ Because each consolation tier receives a distinct `finishingPositionOffset`, all
 
 In Round Robin structures, `finishingPositionRange` is less meaningful because all participants in a group play each other. Both `winner` and `loser` have identical ranges spanning the full group:
 
-```
+```text
 4-player group: winner=[1,4], loser=[1,4]
 ```
 
@@ -94,9 +94,12 @@ Final standings in Round Robin are determined by [tally results](/docs/policies/
 
 Each direction (East, West, South, North, etc.) is an independent elimination structure with its own `finishingPositionRange`. Positions are local to each quadrant.
 
+Compass draws can be generated as a pre-defined `COMPASS` draw type or built as custom topologies using [`withPlayoffs.roundPlayoffs`](/docs/governors/generation-governor#withplayoffs) for full control over which branches exist and their naming. See [Custom Playoff Topologies](/docs/concepts/draw-types#custom-playoff-topologies).
+
 ### Qualifying Structures
 
 Qualifying structures use `finishingPositionRange` with special handling:
+
 - Qualifying winners don't receive position `1` (reserved for the main draw champion)
 - Instead, their minimum position is set to the qualifying round count
 - This prevents qualifying match wins from mapping to main draw finishing positions
@@ -129,7 +132,7 @@ The `Math.max()` convention means the accessor always corresponds to the **worst
 
 For draws with multiple structures (FIC, Curtis Consolation, Compass), a participant may have `structureParticipation` entries in more than one structure (e.g., eliminated in main draw R2, then played consolation through to the consolation SF). The ranking points pipeline iterates all entries and takes the **maximum position points** across structures:
 
-```
+```text
 Main draw R2 loss:       accessor 24  →  75 pts
 Consolation SF finish:   accessor 12  →  150 pts
 Final position points:   150 pts (consolation finish is better)

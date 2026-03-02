@@ -338,12 +338,14 @@ function smartComplete(params) {
     event,
   } = params;
 
-  if (scoreString || matchUpStatus) return completeDrawMatchUp(params);
+  const resolvedFormat = targetMatchUp?.matchUpFormat || matchUpFormat;
+
+  if (scoreString || matchUpStatus) return completeDrawMatchUp({ ...params, matchUpFormat: resolvedFormat });
 
   const { matchUpId } = targetMatchUp || {};
   const { outcome } = generateOutcome({
     matchUpStatusProfile,
-    matchUpFormat,
+    matchUpFormat: resolvedFormat,
     winningSide,
   });
 
@@ -351,7 +353,7 @@ function smartComplete(params) {
     policyDefinitions,
     tournamentRecord,
     drawDefinition,
-    matchUpFormat,
+    matchUpFormat: resolvedFormat,
     matchUpId,
     outcome,
     event,

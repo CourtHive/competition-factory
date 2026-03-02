@@ -382,6 +382,33 @@ export type PlayoffAttributes = {
   [key: string | number]: { name: string; abbreviation: string };
 };
 
+/**
+ * Arguments for playoff structure generation within generateDrawDefinition().
+ *
+ * All fields except `roundPlayoffs` are passed directly to addPlayoffStructures().
+ *
+ * `roundPlayoffs` enables recursive nesting: each key is a source round number
+ * from the current level, and its value is a WithPlayoffsArgs that defines
+ * sub-playoff structures attached to the structure created from that round's losers.
+ *
+ * Example — full COMPASS (8 structures) in one call:
+ * ```
+ * withPlayoffs: {
+ *   roundProfiles: [{ 1: 1 }, { 2: 1 }, { 3: 1 }],
+ *   playoffAttributes: { '0-1': { name: 'West', abbreviation: 'W' }, ... },
+ *   roundPlayoffs: {
+ *     1: {  // children of West
+ *       roundProfiles: [{ 1: 1 }, { 2: 1 }],
+ *       playoffAttributes: { '0-1': { name: 'South', abbreviation: 'S' }, ... },
+ *       roundPlayoffs: {
+ *         1: { roundProfiles: [{ 1: 1 }], playoffAttributes: { '0-1': { name: 'Southeast', abbreviation: 'SE' } } },
+ *       },
+ *     },
+ *     2: { roundProfiles: [{ 1: 1 }], playoffAttributes: { '0-1': { name: 'Northwest', abbreviation: 'NW' } } },
+ *   },
+ * }
+ * ```
+ */
 export type WithPlayoffsArgs = {
   roundProfiles?: { [key: number]: number }[];
   playoffAttributes?: PlayoffAttributes;
@@ -393,6 +420,7 @@ export type WithPlayoffsArgs = {
   roundOffsetLimit?: number;
   exitProfileLimit?: boolean;
   roundNumbers?: number[];
+  /** Recursive child playoffs keyed by source round number from this level's structure. */
   roundPlayoffs?: {
     [roundNumber: number]: WithPlayoffsArgs;
   };

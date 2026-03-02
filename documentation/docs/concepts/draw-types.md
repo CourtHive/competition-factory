@@ -19,7 +19,7 @@ Traditional tournament software often treats draws as monolithic entities. CODES
 
 ### Basic Example: Feed-In Championship
 
-```
+```text
 Main Draw (Structure 1)
   ├─ Round 1 losers → Consolation Round 1 (Structure 2)
   ├─ Round 2 losers → Consolation Round 2 (Structure 2)
@@ -28,7 +28,7 @@ Main Draw (Structure 1)
 
 ### Complex Example: Multi-Stage Qualifying
 
-```
+```text
 Qualifying Stage:
   ├─ Qualifying Structure A (16 players → 4 qualifiers)
   │   └─ Feeds into Main Draw Round 1, positions 1-4
@@ -135,7 +135,7 @@ const { drawDefinition } = tournamentEngine.generateDrawDefinition({
 
 The same main draw structure can receive qualifiers at different rounds, with each round's qualifiers coming from different qualifying structures:
 
-```
+```text
 
 **API Reference:** [generateDrawDefinition](/docs/governors/generation-governor#generatedrawdefinition)
 
@@ -306,14 +306,14 @@ const drawDefinition = {
 
 ### Traditional View (Incorrect in CODES)
 
-```
+```text
 Main Draw (separate entity)
 Qualifying Draw (separate entity)
 ```
 
 ### CODES View (Correct)
 
-```
+```text
 Draw:
   ├─ QUALIFYING Stage
   │   ├─ Qualifying Structure A
@@ -387,6 +387,120 @@ const { drawDefinition } = tournamentEngine.generateDrawDefinition({
 // - 32-player lucky loser qualifying for 4 spots in Main Round 2
 ```
 
+## Custom Playoff Topologies with `withPlayoffs` {#custom-playoff-topologies}
+
+The `withPlayoffs` parameter on [`generateDrawDefinition`](/docs/governors/generation-governor#generatedrawdefinition) supports recursive nesting via its `roundPlayoffs` field. This enables building arbitrary COMPASS-like topologies — or any custom tree of playoff structures — in a single call, without manually chaining `addPlayoffStructures`.
+
+### How Recursive Playoffs Work
+
+Each level of `withPlayoffs` creates PLAY_OFF structures from the specified source rounds via LOSER links. The `roundPlayoffs` field maps a source round number to a child `WithPlayoffsArgs`, creating sub-playoffs from that child structure's losers.
+
+```text
+withPlayoffs tree:                        Resulting structures:
+
+East (MAIN)                               East (MAIN, drawSize 32)
+├── R1 losers → West                      ├── West (PLAY_OFF, 16)
+│   ├── R1 losers → South                 │   ├── South (PLAY_OFF, 8)
+│   │   └── R1 losers → Southeast         │   │   └── Southeast (PLAY_OFF, 4)
+│   └── R2 losers → Southwest             │   └── Southwest (PLAY_OFF, 4)
+├── R2 losers → North                     ├── North (PLAY_OFF, 8)
+│   └── R1 losers → Northwest             │   └── Northwest (PLAY_OFF, 4)
+└── R3 losers → Northeast                 └── Northeast (PLAY_OFF, 4)
+```
+
+### Full COMPASS Example
+
+```js
+const { drawDefinition } = engine.generateDrawDefinition({
+  drawSize: 32,
+  drawName: 'East',
+  withPlayoffs: {
+    roundProfiles: [{ 1: 1 }, { 2: 1 }, { 3: 1 }],
+    playoffAttributes: {
+      '0-1': { name: 'West', abbreviation: 'W' },
+      '0-2': { name: 'North', abbreviation: 'N' },
+      '0-3': { name: 'Northeast', abbreviation: 'NE' },
+    },
+    roundPlayoffs: {
+      1: {
+        roundProfiles: [{ 1: 1 }, { 2: 1 }],
+        playoffAttributes: {
+          '0-1': { name: 'South', abbreviation: 'S' },
+          '0-2': { name: 'Southwest', abbreviation: 'SW' },
+        },
+        roundPlayoffs: {
+          1: {
+            roundProfiles: [{ 1: 1 }],
+            playoffAttributes: {
+              '0-1': { name: 'Southeast', abbreviation: 'SE' },
+            },
+          },
+        },
+      },
+      2: {
+        roundProfiles: [{ 1: 1 }],
+        playoffAttributes: {
+          '0-1': { name: 'Northwest', abbreviation: 'NW' },
+        },
+      },
+    },
+  },
+});
+```
+
+This produces the same 8-structure, 7-link, 72-matchUp topology as the built-in `COMPASS` draw type, but with full control over structure naming, depth, and which branches exist.
+
+### Partial Topologies
+
+You can omit branches to create partial COMPASS draws. For example, a 6-structure variant (no Southwest or Southeast) simply omits those `roundPlayoffs` entries:
+
+```js
+withPlayoffs: {
+  roundProfiles: [{ 1: 1 }, { 2: 1 }, { 3: 1 }],
+  roundPlayoffs: {
+    1: { roundProfiles: [{ 1: 1 }] },      // West → South only
+    2: { roundProfiles: [{ 1: 1 }] },      // North → Northwest only
+  },
+}
+```
+
+### Using with mocksEngine
+
+Recursive `withPlayoffs` works directly in `drawProfiles` for both `mocksEngine.generateTournamentRecord()` patterns:
+
+```js
+// Via top-level drawProfiles
+const { tournamentRecord } = mocksEngine.generateTournamentRecord({
+  drawProfiles: [
+    {
+      drawSize: 32,
+      drawName: 'East',
+      withPlayoffs: {
+        /* nested roundPlayoffs tree */
+      },
+    },
+  ],
+});
+
+// Via eventProfiles
+const { tournamentRecord } = mocksEngine.generateTournamentRecord({
+  eventProfiles: [
+    {
+      drawProfiles: [
+        {
+          drawSize: 32,
+          withPlayoffs: {
+            /* nested roundPlayoffs tree */
+          },
+        },
+      ],
+    },
+  ],
+});
+```
+
+See [withPlayoffs API reference](/docs/governors/generation-governor#withplayoffs) for the full `WithPlayoffsArgs` type and more examples.
+
 ## Related Policies and Methods
 
 :::note
@@ -406,6 +520,7 @@ const { drawDefinition } = tournamentEngine.generateDrawDefinition({
 
 - [Feed-In Policy](/docs/policies/feedInPolicy) - Configure consolation feed patterns
 - [Progression Policy](/docs/policies/progressionPolicy) - Control automatic qualifier placement
+
   :::
 
 ## Related Documentation

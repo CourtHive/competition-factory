@@ -1,7 +1,6 @@
 import { generateDrawDefinition } from '../drawDefinitions/generateDrawDefinition/generateDrawDefinition';
 import { automatedPlayoffPositioning } from '@Mutate/drawDefinitions/automatedPlayoffPositioning';
 import { setParticipantScaleItem } from '@Mutate/participants/scaleItems/addScaleItems';
-import { addPlayoffStructures } from '@Mutate/drawDefinitions/addPlayoffStructures';
 import { addDrawDefinition } from '@Mutate/drawDefinitions/addDrawDefinition';
 import { isValidExtension } from '@Validators/isValidExtension';
 import { getFlightProfile } from '@Query/event/getFlightProfile';
@@ -104,19 +103,9 @@ export function generateFlightDrawDefinitions({
         });
         if (result.error) return { error: result.error, drawIds: [] };
 
-        if (drawProfile?.withPlayoffs) {
-          const structureId = drawDefinition.structures?.[0].structureId;
-          const result = addPlayoffStructures({
-            idPrefix: drawProfile.idPrefix,
-            ...drawProfile.withPlayoffs,
-            tournamentRecord,
-            drawDefinition,
-            structureId,
-            isMock,
-            event,
-          });
-          if (result?.error) return result;
-        }
+        // withPlayoffs is already processed inside generateDrawDefinition()
+        // (including recursive roundPlayoffs via applyPlayoffsRecursive),
+        // so no additional addPlayoffStructures call is needed here.
 
         const completionGoal = drawProfile?.completionGoal;
         const manual = drawProfile?.automated === false;

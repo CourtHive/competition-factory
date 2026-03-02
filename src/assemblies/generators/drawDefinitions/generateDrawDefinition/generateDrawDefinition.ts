@@ -109,6 +109,11 @@ export function generateDrawDefinition(params: GenerateDrawDefinitionArgs): Resu
     });
   }
 
+  // Recursive playoff generation:
+  // withPlayoffs.roundPlayoffs allows arbitrary nesting of playoff structures.
+  // Each level calls addPlayoffStructures on a source structure, then inspects
+  // newly created LOSER links to discover target structureIds for the next level.
+  // A flat withPlayoffs (no roundPlayoffs) still works as before — single level only.
   if (withPlayoffs && structureId) {
     const playoffResult = applyPlayoffsRecursive({
       withPlayoffs,
@@ -138,6 +143,33 @@ export function generateDrawDefinition(params: GenerateDrawDefinitionArgs): Resu
   };
 }
 
+/**
+ * Recursively create playoff structures from a WithPlayoffsArgs tree.
+ *
+ * At each level:
+ * 1. Snapshot existing LOSER links from the source structureId.
+ * 2. Call addPlayoffStructures() which mutates drawDefinition.links in place
+ *    (via attachPlayoffStructures) to add new structures and LOSER links.
+ * 3. Diff links before/after to discover newly created LOSER links and their
+ *    target structureIds.
+ * 4. For each entry in roundPlayoffs, match the key (a source round number)
+ *    to the corresponding new link's target structureId and recurse.
+ *
+ * This enables COMPASS-like topologies in a single generateDrawDefinition() call:
+ *
+ *   withPlayoffs: {
+ *     roundProfiles: [{ 1: 1 }, { 2: 1 }],         // East → West (R1), North (R2)
+ *     roundPlayoffs: {
+ *       1: {                                         // West's children:
+ *         roundProfiles: [{ 1: 1 }],                 //   West → South (R1)
+ *         roundPlayoffs: {
+ *           1: { roundProfiles: [{ 1: 1 }] },        //   South → Southeast (R1)
+ *         },
+ *       },
+ *       2: { roundProfiles: [{ 1: 1 }] },            // North → Northwest (R1)
+ *     },
+ *   }
+ */
 function applyPlayoffsRecursive({
   withPlayoffs,
   drawDefinition,
@@ -151,7 +183,7 @@ function applyPlayoffsRecursive({
 }) {
   const { roundPlayoffs, ...playoffParams } = withPlayoffs;
 
-  // Track which LOSER links exist BEFORE this call
+  // Track which LOSER links exist BEFORE this call so we can diff after
   const linksBefore = new Set(
     drawDefinition.links
       ?.filter((l) => l.linkType === LOSER && l.source?.structureId === structureId)
@@ -167,7 +199,7 @@ function applyPlayoffsRecursive({
   });
   if (result?.error) return result;
 
-  // Process recursive child playoffs
+  // Process recursive child playoffs keyed by source round number
   if (roundPlayoffs) {
     // Find newly created LOSER links from this structureId
     const newLinks =
