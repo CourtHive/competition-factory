@@ -294,7 +294,7 @@ withPlayoffs: {
 }
 ```
 
-See also: [Custom Playoff Topologies](../concepts/draw-types.md#custom-playoff-topologies), [addPlayoffStructures](/docs/governors/draws-governor#addplayoffstructures)
+See also: [Custom Playoff Topologies](../concepts/draw-links.mdx#custom-playoff-topologies), [addPlayoffStructures](/docs/governors/draws-governor#addplayoffstructures)
 
 ---
 

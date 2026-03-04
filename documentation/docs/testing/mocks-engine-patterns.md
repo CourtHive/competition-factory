@@ -226,7 +226,7 @@ test('generates full COMPASS topology via recursive withPlayoffs', () => {
 });
 ```
 
-The `roundPlayoffs` field maps a source round number to a child `WithPlayoffsArgs` object. Each child can itself contain `roundPlayoffs`, enabling arbitrarily deep trees. See [Custom Playoff Topologies](/docs/concepts/draw-types#custom-playoff-topologies) and the [withPlayoffs API reference](/docs/governors/generation-governor#withplayoffs) for the full type definition and more examples.
+The `roundPlayoffs` field maps a source round number to a child `WithPlayoffsArgs` object. Each child can itself contain `roundPlayoffs`, enabling arbitrarily deep trees. See [Custom Playoff Topologies](/docs/concepts/draw-links#custom-playoff-topologies) and the [withPlayoffs API reference](/docs/governors/generation-governor#withplayoffs) for the full type definition and more examples.
 
 ## Testing Scheduling Scenarios
 
