@@ -334,6 +334,10 @@ getTournamentDays(): DayId[]
 
 Returns an array of `'YYYY-MM-DD'` strings from the tournament's `startDate` to `endDate`.
 
+:::note DST-safe
+This method handles Daylight Saving Time boundaries correctly. Dates are parsed as local midnight and formatted using local date components, avoiding the UTC-vs-local mismatch that can produce duplicate or missing days when clocks spring forward or fall back.
+:::
+
 ```js
 const days = engine.getTournamentDays();
 // ['2026-06-15', '2026-06-16', '2026-06-17', ...]
@@ -404,6 +408,39 @@ getVisibleTimeRange(day: DayId, courtRefs?: CourtRef[]): {
 ```
 
 Returns the union (earliest start, latest end) of court availability across given courts, or all courts if none specified. Useful for configuring timeline viewport bounds.
+
+### getCourtSchedulingSummary
+
+```ts
+getCourtSchedulingSummary(court: CourtRef): CourtSchedulingSummary
+```
+
+Returns a scheduling summary for a court across all tournament days. Iterates every rail segment in the court's availability window and classifies time into three buckets: scheduled, available, or blocked.
+
+```js
+const summary = engine.getCourtSchedulingSummary(courtRef);
+console.log(`Scheduled: ${summary.scheduledMinutes} min`);
+console.log(`Available: ${summary.availableMinutes} min`);
+console.log(`Blocked:   ${summary.blockedMinutes} min`);
+```
+
+**Classification rules:**
+
+| Segment status | Bucket |
+|----------------|--------|
+| `SCHEDULED`, `LOCKED` | `scheduledMinutes` |
+| `AVAILABLE` | `availableMinutes` |
+| All others (`MAINTENANCE`, `PRACTICE`, `BLOCKED`, `CLOSED`, `SOFT_BLOCK`, `HARD_BLOCK`, `RESERVED`) | `blockedMinutes` |
+
+**`CourtSchedulingSummary`:**
+
+```ts
+interface CourtSchedulingSummary {
+  scheduledMinutes: number;   // SCHEDULED + LOCKED segments
+  availableMinutes: number;   // AVAILABLE segments (unblocked, unscheduled)
+  blockedMinutes: number;     // All other block types
+}
+```
 
 ### getDayBlocks
 

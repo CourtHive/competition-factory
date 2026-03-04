@@ -273,7 +273,131 @@ describe('Venue API methods', () => {
 });
 
 // ============================================================================
-// 5. Snapshot preservation
+// 5. clearCourtAvailabilityForVenue / getCourtAvailabilityKeys
+// ============================================================================
+
+describe('clearCourtAvailabilityForVenue', () => {
+  it('removes all court-level entries for the venue', () => {
+    const engine = new TemporalEngine();
+    engine.init(makeBasicRecord(), { tournamentId: TOURNAMENT_ID });
+
+    const court1 = makeCourtRef(COURT_1);
+    const court2 = makeCourtRef(COURT_2);
+
+    // Set per-court availability
+    engine.setCourtAvailabilityAllDays(court1, { startTime: '09:00', endTime: '17:00' });
+    engine.setCourtAvailability(court1, '2026-06-15', { startTime: '10:00', endTime: '16:00' });
+    engine.setCourtAvailabilityAllDays(court2, { startTime: '08:00', endTime: '18:00' });
+
+    // Verify they exist
+    expect(engine.getCourtAvailabilityKeys(court1)).toHaveLength(2); // DEFAULT + day
+    expect(engine.getCourtAvailabilityKeys(court2)).toHaveLength(1); // DEFAULT
+
+    // Clear all court entries for the venue
+    engine.clearCourtAvailabilityForVenue(TOURNAMENT_ID, VENUE_ID);
+
+    // All court-level entries should be gone
+    expect(engine.getCourtAvailabilityKeys(court1)).toHaveLength(0);
+    expect(engine.getCourtAvailabilityKeys(court2)).toHaveLength(0);
+  });
+
+  it('does not affect venue-level availability', () => {
+    const engine = new TemporalEngine();
+    engine.init(makeBasicRecord(), { tournamentId: TOURNAMENT_ID });
+
+    engine.setVenueDefaultAvailability(TOURNAMENT_ID, VENUE_ID, { startTime: '08:00', endTime: '20:00' });
+    engine.setCourtAvailabilityAllDays(makeCourtRef(), { startTime: '09:00', endTime: '17:00' });
+
+    engine.clearCourtAvailabilityForVenue(TOURNAMENT_ID, VENUE_ID);
+
+    // Venue availability should still be there
+    expect(engine.getVenueAvailability(TOURNAMENT_ID, VENUE_ID)).toEqual({ startTime: '08:00', endTime: '20:00' });
+    // Court should now inherit from venue
+    expect(engine.getCourtAvailability(makeCourtRef(), '2026-06-15')).toEqual({ startTime: '08:00', endTime: '20:00' });
+  });
+
+  it('does not affect courts in other venues', () => {
+    const record = makeBasicRecord();
+    record.venues.push({
+      venueId: 'venue-2',
+      courts: [{ courtId: 'court-3', courtName: 'Court 3' }],
+    });
+
+    const engine = new TemporalEngine();
+    engine.init(record, { tournamentId: TOURNAMENT_ID });
+
+    const courtInVenue2 = { tournamentId: TOURNAMENT_ID, venueId: 'venue-2', courtId: 'court-3' };
+    engine.setCourtAvailabilityAllDays(makeCourtRef(), { startTime: '09:00', endTime: '17:00' });
+    engine.setCourtAvailabilityAllDays(courtInVenue2, { startTime: '10:00', endTime: '16:00' });
+
+    engine.clearCourtAvailabilityForVenue(TOURNAMENT_ID, VENUE_ID);
+
+    // Venue 1 court cleared
+    expect(engine.getCourtAvailabilityKeys(makeCourtRef())).toHaveLength(0);
+    // Venue 2 court untouched
+    expect(engine.getCourtAvailabilityKeys(courtInVenue2)).toEqual(['DEFAULT']);
+  });
+
+  it('emits AVAILABILITY_CHANGED event', () => {
+    const engine = new TemporalEngine();
+    engine.init(makeBasicRecord(), { tournamentId: TOURNAMENT_ID });
+
+    const events: any[] = [];
+    engine.subscribe((e) => events.push(e));
+
+    engine.clearCourtAvailabilityForVenue(TOURNAMENT_ID, VENUE_ID);
+
+    const evt = events.find((e) => e.type === 'AVAILABILITY_CHANGED' && e.payload.scope === 'clear-venue-courts');
+    expect(evt).toBeTruthy();
+    expect(evt.payload.venueId).toBe(VENUE_ID);
+  });
+});
+
+describe('getCourtAvailabilityKeys', () => {
+  it('returns empty array when no court-level entries exist', () => {
+    const engine = new TemporalEngine();
+    engine.init(makeBasicRecord(), { tournamentId: TOURNAMENT_ID });
+
+    expect(engine.getCourtAvailabilityKeys(makeCourtRef())).toEqual([]);
+  });
+
+  it('returns DEFAULT when court has all-days availability', () => {
+    const engine = new TemporalEngine();
+    engine.init(makeBasicRecord(), { tournamentId: TOURNAMENT_ID });
+
+    engine.setCourtAvailabilityAllDays(makeCourtRef(), { startTime: '09:00', endTime: '17:00' });
+    expect(engine.getCourtAvailabilityKeys(makeCourtRef())).toEqual(['DEFAULT']);
+  });
+
+  it('returns day strings for day-specific entries', () => {
+    const engine = new TemporalEngine();
+    engine.init(makeBasicRecord(), { tournamentId: TOURNAMENT_ID });
+
+    engine.setCourtAvailability(makeCourtRef(), '2026-06-15', { startTime: '09:00', endTime: '17:00' });
+    engine.setCourtAvailability(makeCourtRef(), '2026-06-16', { startTime: '10:00', endTime: '18:00' });
+
+    const keys = engine.getCourtAvailabilityKeys(makeCourtRef());
+    expect(keys).toHaveLength(2);
+    expect(keys).toContain('2026-06-15');
+    expect(keys).toContain('2026-06-16');
+  });
+
+  it('returns mixed DEFAULT and day keys', () => {
+    const engine = new TemporalEngine();
+    engine.init(makeBasicRecord(), { tournamentId: TOURNAMENT_ID });
+
+    engine.setCourtAvailabilityAllDays(makeCourtRef(), { startTime: '09:00', endTime: '17:00' });
+    engine.setCourtAvailability(makeCourtRef(), '2026-06-15', { startTime: '10:00', endTime: '16:00' });
+
+    const keys = engine.getCourtAvailabilityKeys(makeCourtRef());
+    expect(keys).toHaveLength(2);
+    expect(keys).toContain('DEFAULT');
+    expect(keys).toContain('2026-06-15');
+  });
+});
+
+// ============================================================================
+// 6. Snapshot preservation
 // ============================================================================
 
 describe('Snapshot preservation', () => {
@@ -310,5 +434,95 @@ describe('Snapshot preservation', () => {
     // Last segment should end at 17:00 (from venue)
     const lastSeg = rail!.segments[rail!.segments.length - 1];
     expect(lastSeg.end).toBe('2026-06-15T17:00:00');
+  });
+});
+
+// ============================================================================
+// 7. Court Scheduling Summary
+// ============================================================================
+
+describe('getCourtSchedulingSummary', () => {
+  it('court with no blocks → all time is available', () => {
+    const engine = new TemporalEngine();
+    // 3-day tournament, venue open 08:00-20:00 → 12 hours × 3 days = 2160 minutes
+    const record = makeBasicRecord();
+    engine.init(record, { tournamentId: TOURNAMENT_ID });
+    engine.setVenueDefaultAvailability(TOURNAMENT_ID, VENUE_ID, { startTime: '08:00', endTime: '20:00' });
+
+    const summary = engine.getCourtSchedulingSummary(makeCourtRef());
+    expect(summary.scheduledMinutes).toBe(0);
+    expect(summary.blockedMinutes).toBe(0);
+    expect(summary.availableMinutes).toBe(3 * 12 * 60); // 2160
+  });
+
+  it('court with SCHEDULED block → scheduledMinutes reflects it', () => {
+    const engine = new TemporalEngine();
+    const record = makeBasicRecord();
+    engine.init(record, { tournamentId: TOURNAMENT_ID });
+    engine.setVenueDefaultAvailability(TOURNAMENT_ID, VENUE_ID, { startTime: '08:00', endTime: '20:00' });
+
+    // Add a 90-minute scheduled block on day 1
+    engine.applyBlock({
+      courts: [makeCourtRef()],
+      timeRange: { start: '2026-06-15T10:00:00', end: '2026-06-15T11:30:00' },
+      type: BLOCK_TYPES.SCHEDULED as any,
+    });
+
+    const summary = engine.getCourtSchedulingSummary(makeCourtRef());
+    expect(summary.scheduledMinutes).toBe(90);
+    expect(summary.availableMinutes).toBe(3 * 12 * 60 - 90); // 2070
+    expect(summary.blockedMinutes).toBe(0);
+  });
+
+  it('court with MAINTENANCE block → blockedMinutes reflects it', () => {
+    const engine = new TemporalEngine();
+    const record = makeBasicRecord();
+    engine.init(record, { tournamentId: TOURNAMENT_ID });
+    engine.setVenueDefaultAvailability(TOURNAMENT_ID, VENUE_ID, { startTime: '08:00', endTime: '20:00' });
+
+    // Add a 60-minute maintenance block on day 2
+    engine.applyBlock({
+      courts: [makeCourtRef()],
+      timeRange: { start: '2026-06-16T12:00:00', end: '2026-06-16T13:00:00' },
+      type: BLOCK_TYPES.MAINTENANCE as any,
+    });
+
+    const summary = engine.getCourtSchedulingSummary(makeCourtRef());
+    expect(summary.scheduledMinutes).toBe(0);
+    expect(summary.blockedMinutes).toBe(60);
+    expect(summary.availableMinutes).toBe(3 * 12 * 60 - 60); // 2100
+  });
+
+  it('court with both SCHEDULED and BLOCKED → all three fields populated', () => {
+    const engine = new TemporalEngine();
+    const record = makeBasicRecord();
+    engine.init(record, { tournamentId: TOURNAMENT_ID });
+    engine.setVenueDefaultAvailability(TOURNAMENT_ID, VENUE_ID, { startTime: '08:00', endTime: '20:00' });
+
+    // 90 min scheduled
+    engine.applyBlock({
+      courts: [makeCourtRef()],
+      timeRange: { start: '2026-06-15T10:00:00', end: '2026-06-15T11:30:00' },
+      type: BLOCK_TYPES.SCHEDULED as any,
+    });
+
+    // 60 min maintenance
+    engine.applyBlock({
+      courts: [makeCourtRef()],
+      timeRange: { start: '2026-06-16T12:00:00', end: '2026-06-16T13:00:00' },
+      type: BLOCK_TYPES.MAINTENANCE as any,
+    });
+
+    // 30 min practice
+    engine.applyBlock({
+      courts: [makeCourtRef()],
+      timeRange: { start: '2026-06-17T08:00:00', end: '2026-06-17T08:30:00' },
+      type: BLOCK_TYPES.PRACTICE as any,
+    });
+
+    const summary = engine.getCourtSchedulingSummary(makeCourtRef());
+    expect(summary.scheduledMinutes).toBe(90);
+    expect(summary.blockedMinutes).toBe(60 + 30); // maintenance + practice
+    expect(summary.availableMinutes).toBe(3 * 12 * 60 - 90 - 90); // 1980
   });
 });

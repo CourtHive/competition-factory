@@ -24,6 +24,22 @@
   --ifm-code-font-size: 95%;
 }
 
+/* Dark mode: override Bulma's hardcoded body color (#4a4a4a) */
+[data-theme='dark'] {
+  --ifm-font-color-base: #f5f6f7;
+  --ifm-heading-color: #ffffff;
+  --ifm-color-content: #f5f6f7;
+}
+
+[data-theme='dark'] body,
+[data-theme='dark'] .markdown,
+[data-theme='dark'] .markdown p,
+[data-theme='dark'] .markdown li,
+[data-theme='dark'] .markdown td,
+[data-theme='dark'] .markdown strong {
+  color: #f5f6f7;
+}
+
 .docusaurus-highlight-code-line {
   background-color: rgb(72, 77, 91);
   display: block;

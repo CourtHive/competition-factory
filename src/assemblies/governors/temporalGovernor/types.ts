@@ -127,6 +127,16 @@ export interface VenueDayTimeline {
 }
 
 // ============================================================================
+// Court Scheduling Summary
+// ============================================================================
+
+export interface CourtSchedulingSummary {
+  scheduledMinutes: number; // SCHEDULED + LOCKED segments
+  availableMinutes: number; // AVAILABLE segments (unblocked, unscheduled)
+  blockedMinutes: number; // MAINTENANCE + PRACTICE + BLOCKED + CLOSED + SOFT_BLOCK + HARD_BLOCK + RESERVED
+}
+
+// ============================================================================
 // Capacity Curves
 // ============================================================================
 

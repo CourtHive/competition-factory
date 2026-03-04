@@ -27,6 +27,7 @@ import {
   type CourtMeta,
   type CourtRef,
   type CourtRail,
+  type CourtSchedulingSummary,
   type DayId,
   type EngineConfig,
   type EngineContext,
@@ -116,7 +117,9 @@ export class TemporalEngine {
       typePrecedence: config?.typePrecedence || [
         BLOCK_TYPES.HARD_BLOCK,
         BLOCK_TYPES.LOCKED,
+        BLOCK_TYPES.SCHEDULED,
         BLOCK_TYPES.MAINTENANCE,
+        BLOCK_TYPES.CLOSED,
         BLOCK_TYPES.BLOCKED,
         BLOCK_TYPES.PRACTICE,
         BLOCK_TYPES.RESERVED,
@@ -256,6 +259,41 @@ export class TemporalEngine {
     });
   }
 
+  /**
+   * Clear all court-level availability entries (both DEFAULT and day-specific)
+   * for every court in the given venue. After clearing, courts inherit from
+   * venue defaults via the resolution chain.
+   */
+  clearCourtAvailabilityForVenue(tournamentId: TournamentId, venueId: VenueId): void {
+    const prefix = `${tournamentId}|${venueId}|`;
+    for (const key of [...this.courtDayAvailability.keys()]) {
+      if (key.startsWith(prefix)) {
+        this.courtDayAvailability.delete(key);
+      }
+    }
+    this.emit({
+      type: 'AVAILABILITY_CHANGED',
+      payload: { tournamentId, venueId, scope: 'clear-venue-courts' },
+    });
+  }
+
+  /**
+   * Returns the day/DEFAULT suffixes for all courtDayAvailability entries
+   * for a given court. E.g. ['DEFAULT'] or ['2026-06-15', '2026-06-16'] or [].
+   * Caller checks .length > 0 to detect whether the court has overrides.
+   */
+  getCourtAvailabilityKeys(court: CourtRef): string[] {
+    const ck = courtKey(court);
+    const prefix = `${ck}|`;
+    const keys: string[] = [];
+    for (const key of this.courtDayAvailability.keys()) {
+      if (key.startsWith(prefix)) {
+        keys.push(key.slice(prefix.length));
+      }
+    }
+    return keys;
+  }
+
   // ============================================================================
   // Venue Availability
   // ============================================================================
@@ -288,12 +326,7 @@ export class TemporalEngine {
   /**
    * Set venue-level availability for a specific day.
    */
-  setVenueDayAvailability(
-    tournamentId: TournamentId,
-    venueId: VenueId,
-    day: DayId,
-    avail: CourtDayAvailability,
-  ): void {
+  setVenueDayAvailability(tournamentId: TournamentId, venueId: VenueId, day: DayId, avail: CourtDayAvailability): void {
     const vk = venueKey(tournamentId, venueId);
     this.venueDayAvailability.set(`${vk}|${day}`, avail);
     this.emit({
@@ -327,7 +360,13 @@ export class TemporalEngine {
   }
 
   /**
-   * Get array of tournament days from startDate to endDate
+   * Get array of tournament days from startDate to endDate.
+   *
+   * Handles DST / time-change boundaries correctly. Date-only strings
+   * (e.g. "2026-03-08") are parsed as local midnight, and each day is
+   * formatted using local date components — avoiding the UTC-vs-local
+   * mismatch that can produce duplicate or missing days when clocks
+   * spring forward or fall back. See DST_DATE_HANDLING.md for details.
    */
   getTournamentDays(): DayId[] {
     if (!this.tournamentRecord?.startDate) return [];
@@ -335,15 +374,34 @@ export class TemporalEngine {
     const endDate = this.tournamentRecord.endDate || startDate;
 
     const days: DayId[] = [];
-    const current = new Date(startDate);
-    const end = new Date(endDate);
+    // 'T00:00:00' suffix forces local-time parsing (ISO 8601 §5.4.2.1).
+    // Without it, date-only strings are parsed as UTC midnight per spec,
+    // which drifts when mixed with local-time setDate()/getDate().
+    const current = new Date(startDate + 'T00:00:00');
+    const end = new Date(endDate + 'T00:00:00');
 
     while (current <= end) {
-      days.push(current.toISOString().slice(0, 10));
+      const y = current.getFullYear();
+      const m = String(current.getMonth() + 1).padStart(2, '0');
+      const d = String(current.getDate()).padStart(2, '0');
+      days.push(`${y}-${m}-${d}`);
       current.setDate(current.getDate() + 1);
     }
 
     return days;
+  }
+
+  /**
+   * Get only the active tournament days. If activeDates is set on the
+   * tournament record, returns only those dates (sorted). Otherwise
+   * falls back to the full startDate–endDate range.
+   */
+  getActiveDays(): DayId[] {
+    const activeDates = this.tournamentRecord?.activeDates;
+    if (Array.isArray(activeDates) && activeDates.length > 0) {
+      return activeDates.map((d: Date | string) => (typeof d === 'string' ? d : extractDate(d.toISOString()))).sort();
+    }
+    return this.getTournamentDays();
   }
 
   // ============================================================================
@@ -414,6 +472,37 @@ export class TemporalEngine {
       court,
       segments,
     };
+  }
+
+  /**
+   * Get scheduling summary for a court across all tournament days.
+   * Classifies every minute of the availability window as scheduled, available, or blocked.
+   */
+  getCourtSchedulingSummary(court: CourtRef): CourtSchedulingSummary {
+    let scheduledMinutes = 0;
+    let availableMinutes = 0;
+    let blockedMinutes = 0;
+
+    for (const day of this.getTournamentDays()) {
+      const rail = this.getCourtRail(day, court);
+      if (!rail) continue;
+
+      for (const segment of rail.segments) {
+        const startMs = new Date(segment.start).getTime();
+        const endMs = new Date(segment.end).getTime();
+        const duration = (endMs - startMs) / 60000;
+
+        if (segment.status === BLOCK_TYPES.SCHEDULED || segment.status === BLOCK_TYPES.LOCKED) {
+          scheduledMinutes += duration;
+        } else if (segment.status === BLOCK_TYPES.AVAILABLE) {
+          availableMinutes += duration;
+        } else {
+          blockedMinutes += duration;
+        }
+      }
+    }
+
+    return { scheduledMinutes, availableMinutes, blockedMinutes };
   }
 
   /**
@@ -755,6 +844,23 @@ export class TemporalEngine {
     }
 
     // TODO: Expand template operations into block mutations
+    /*
+                                                                                                                                                                                                                                      
+    A TemplateOperation specifies:                                                                                                                                                                                                  
+    - target scope: TOURNAMENT / VENUE / COURT_GROUP / COURT (with optional venueIds/courtIds filters)                                                                                                                              
+    - days: which days to apply to                                                                                                                                                                                                  
+    - time: either absoluteTime (ISO range) or relativeTime (offset in minutes — presumably from availability start)
+    - block details: blockType, reason, hardSoft
+
+    ApplyTemplateOptions adds an optional scope override (narrow to specific venues/courts/days at call time).
+
+    The implementation is essentially: for each TemplateOperation, resolve the target courts, resolve the days, resolve the time range, and call the existing applyBlock() for each. The plumbing (applyBlock → applyMutations →
+    conflict evaluation → index updates → events) is all built.
+
+    However — nobody calls it. There are zero callers in factory, courthive-components, or TMX. There's no UI to create/register templates, no tests, and no code that populates the templates Map. So it would be building an
+    engine feature with no consumer.
+
+    */
     return {
       applied: [],
       rejected: [],
@@ -1126,14 +1232,12 @@ export class TemporalEngine {
                 endTime: va.endTime,
               });
             }
-          } else {
+          } else if (va.startTime && va.endTime) {
             // Dateless entry -> venue DEFAULT (overrides defaultStartTime/defaultEndTime)
-            if (va.startTime && va.endTime) {
-              this.venueDayAvailability.set(`${vk}|DEFAULT`, {
-                startTime: va.startTime,
-                endTime: va.endTime,
-              });
-            }
+            this.venueDayAvailability.set(`${vk}|DEFAULT`, {
+              startTime: va.startTime,
+              endTime: va.endTime,
+            });
           }
 
           // Venue-level bookings -> create blocks for ALL courts in the venue

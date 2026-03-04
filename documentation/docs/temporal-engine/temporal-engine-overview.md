@@ -28,6 +28,8 @@ The **TemporalEngine** is a pure JavaScript state machine that models court avai
 - **Multi-phase validation pipeline** — PRECHECK → INTEGRITY → ORDERING → CAPACITY pipeline validates plan state
 - **What-if simulation** — Preview mutations on a disposable snapshot without affecting real state
 - **[CODES](/docs/data-standards#codes) bridge** — Bidirectional translation between engine blocks/rails and CODES tournament record structures
+- **Court scheduling summaries** — Query scheduled, available, and blocked minutes per court across the full tournament
+- **DST-safe date iteration** — Tournament day generation handles Daylight Saving Time boundaries correctly, avoiding duplicate or missing days when clocks change
 - **Availability hierarchy** — Court-day → court-default → venue-day → venue-default → global-default → engine config fallback
 - **Standalone class** — Instantiate directly with `new TemporalEngine()`, no factory integration required
 
