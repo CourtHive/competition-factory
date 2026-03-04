@@ -17,6 +17,7 @@ import { getSide } from './getSide';
 
 // constants and types
 import { POLICY_TYPE_PARTICIPANT } from '@Constants/policyConstants';
+import { isEmbargoed } from '@Query/publishing/isEmbargoed';
 import { QUALIFYING } from '@Constants/drawDefinitionConstants';
 import { BYE } from '@Constants/matchUpStatusConstants';
 import { MIXED } from '@Constants/genderConstants';
@@ -135,7 +136,7 @@ export function addMatchUpContext({
     (!isMatchUpEventType(TEAM)(event?.eventType) && event?.eventType);
 
   const matchUpStatus = isCollectionBye ? BYE : matchUp.matchUpStatus;
-  const { schedule, endDate } = getMatchUpScheduleDetails({
+  let { schedule, endDate } = getMatchUpScheduleDetails({
     scheduleVisibilityFilters,
     afterRecoveryTimes,
     tournamentRecord,
@@ -148,6 +149,22 @@ export function addMatchUpContext({
     matchUp,
     event,
   });
+
+  // Strip schedule for rounds with active embargo (mirrors competitionScheduleMatchUps)
+  if (usePublishState && schedule && publishStatus && drawDefinition?.drawId && structure?.structureId) {
+    const structDetail =
+      publishStatus?.drawDetails?.[drawDefinition.drawId]?.structureDetails?.[structure.structureId];
+    if (structDetail) {
+      const rn = matchUp.roundNumber;
+      if (isConvertableInteger(rn)) {
+        const roundDetail = structDetail.scheduledRounds?.[rn!];
+        if (roundDetail && isEmbargoed(roundDetail)) {
+          schedule = undefined;
+        }
+      }
+    }
+  }
+
   const drawPositions: number[] = tieDrawPositions ?? matchUp.drawPositions ?? [];
   const { collectionPosition, collectionId, roundPosition } = matchUp;
   const roundNumber = matchUp.roundNumber ?? additionalContext.roundNumber;

@@ -8,9 +8,9 @@ This page demonstrates how to build real-world UIs on top of the TemporalEngine,
 
 All UI integrations follow the same data flow:
 
-```
+```text
 Tournament Record → TemporalEngine → View Projections → UI Layer
-                         ↑                                  │
+                         ↑                                   │
                          └──── Controller (events/mutations) ┘
 ```
 
@@ -28,16 +28,16 @@ The temporal grid is an interactive calendar-style editor that uses [vis-timelin
 
 ### Engine Methods Used
 
-| User Action | Engine Method | Event Emitted |
-| --- | --- | --- |
-| Paint a block (drag on empty space) | `applyBlock()` | `BLOCKS_CHANGED` |
-| Move a block (drag existing) | `moveBlock()` | `BLOCKS_CHANGED` |
-| Resize a block (drag edge) | `resizeBlock()` | `BLOCKS_CHANGED` |
-| Delete a block | `removeBlock()` | `BLOCKS_CHANGED` |
-| Change day | `getDayTimeline()`, `getVisibleTimeRange()` | _(read-only)_ |
-| View capacity chart | `getCapacityCurve()` | _(read-only)_ |
-| Change court hours | `setCourtAvailability()` | `AVAILABILITY_CHANGED` |
-| Import scheduled matches | `importScheduledMatchUps()` | `BLOCKS_CHANGED` |
+| User Action                         | Engine Method                               | Event Emitted          |
+| ----------------------------------- | ------------------------------------------- | ---------------------- |
+| Paint a block (drag on empty space) | `applyBlock()`                              | `BLOCKS_CHANGED`       |
+| Move a block (drag existing)        | `moveBlock()`                               | `BLOCKS_CHANGED`       |
+| Resize a block (drag edge)          | `resizeBlock()`                             | `BLOCKS_CHANGED`       |
+| Delete a block                      | `removeBlock()`                             | `BLOCKS_CHANGED`       |
+| Change day                          | `getDayTimeline()`, `getVisibleTimeRange()` | _(read-only)_          |
+| View capacity chart                 | `getCapacityCurve()`                        | _(read-only)_          |
+| Change court hours                  | `setCourtAvailability()`                    | `AVAILABILITY_CHANGED` |
+| Import scheduled matches            | `importScheduledMatchUps()`                 | `BLOCKS_CHANGED`       |
 
 ### Initialization Pattern
 
@@ -94,13 +94,13 @@ function renderTimeline() {
 
 **Key projection functions:**
 
-| Function | Input | Output |
-| --- | --- | --- |
-| `buildResourcesFromTimelines` | `VenueDayTimeline[]`, `CourtMeta[]` | `TimelineGroup[]` (one per court) |
-| `buildEventsFromTimelines` | `VenueDayTimeline[]` | `TimelineItem[]` (background segments) |
-| `buildBlockEvents` | `Block[]` | `TimelineItem[]` (draggable range items) |
-| `buildConflictEvents` | `EngineConflict[]` | `TimelineItem[]` (overlay items) |
-| `buildCapacityVisualization` | `CapacityPoint[]` | `{ time, value, label }[]` |
+| Function                      | Input                               | Output                                   |
+| ----------------------------- | ----------------------------------- | ---------------------------------------- |
+| `buildResourcesFromTimelines` | `VenueDayTimeline[]`, `CourtMeta[]` | `TimelineGroup[]` (one per court)        |
+| `buildEventsFromTimelines`    | `VenueDayTimeline[]`                | `TimelineItem[]` (background segments)   |
+| `buildBlockEvents`            | `Block[]`                           | `TimelineItem[]` (draggable range items) |
+| `buildConflictEvents`         | `EngineConflict[]`                  | `TimelineItem[]` (overlay items)         |
+| `buildCapacityVisualization`  | `CapacityPoint[]`                   | `{ time, value, label }[]`               |
 
 ### Paint Mode — Drag-to-Create
 
@@ -109,8 +109,7 @@ In paint mode, the user drags across empty space on a court to create a new bloc
 ```js
 function handlePaintDrag(courtRef, anchorTime, cursorTime) {
   // 1. Get existing blocks on this court
-  const existingBlocks = engine.getDayBlocks(day)
-    .filter((b) => courtRefEquals(b.court, courtRef));
+  const existingBlocks = engine.getDayBlocks(day).filter((b) => courtRefEquals(b.court, courtRef));
 
   // 2. Clamp drag to avoid overlapping existing blocks
   const clamped = clampDragToCollisions(anchorTime, cursorTime, existingBlocks);
@@ -124,7 +123,7 @@ function handlePaintDrag(courtRef, anchorTime, cursorTime) {
   const result = engine.applyBlock({
     courts: [courtRef],
     timeRange: { start: toIso(day, start), end: toIso(day, end) },
-    type: currentPaintType,  // e.g., 'MAINTENANCE', 'PRACTICE'
+    type: currentPaintType, // e.g., 'MAINTENANCE', 'PRACTICE'
     source: 'USER',
   });
 
@@ -218,9 +217,7 @@ function createTemporalAdapter(engine) {
       }
       const curve = engine.getCapacityCurve(date);
       const hasCapacity = curve.points.some((p) => p.courtsAvailable > 0);
-      return hasCapacity
-        ? { ok: true }
-        : { ok: false, reason: 'No court capacity on this day' };
+      return hasCapacity ? { ok: true } : { ok: false, reason: 'No court capacity on this day' };
     },
     getDayCapacityMinutes: (date) => {
       const curve = engine.getCapacityCurve(date);
@@ -271,10 +268,7 @@ for (const item of dayPlan.items) {
 When the user is done building the plan, convert it to a factory scheduling profile:
 
 ```js
-import {
-  buildSchedulingProfileFromUISelections,
-  validateSchedulingProfileFormat,
-} from 'tods-competition-factory';
+import { buildSchedulingProfileFromUISelections, validateSchedulingProfileFormat } from 'tods-competition-factory';
 
 // Convert plan items to scheduling selections
 const allPlans = engine.getAllPlans();
@@ -282,12 +276,14 @@ const selections = allPlans.flatMap((plan) =>
   plan.items.map((item) => ({
     scheduleDate: item.day,
     venueIds: [item.venueId],
-    rounds: [{
-      eventId: item.eventId,
-      drawId: item.drawId,
-      roundNumber: item.roundNumber,
-      matchUpType: item.matchUpType,
-    }],
+    rounds: [
+      {
+        eventId: item.eventId,
+        drawId: item.drawId,
+        roundNumber: item.roundNumber,
+        matchUpType: item.matchUpType,
+      },
+    ],
   })),
 );
 
@@ -310,16 +306,18 @@ Preview mutations before committing using `simulateBlocks()`:
 ```js
 // User hovers over a potential block placement
 const preview = engine.simulateBlocks(
-  [{
-    kind: 'ADD_BLOCK',
-    block: {
-      id: 'preview-1',
-      court: courtRef,
-      type: 'MAINTENANCE',
-      start: '2026-06-15T12:00:00',
-      end: '2026-06-15T13:00:00',
+  [
+    {
+      kind: 'ADD_BLOCK',
+      block: {
+        id: 'preview-1',
+        court: courtRef,
+        type: 'MAINTENANCE',
+        start: '2026-06-15T12:00:00',
+        end: '2026-06-15T13:00:00',
+      },
     },
-  }],
+  ],
   '2026-06-15',
 );
 

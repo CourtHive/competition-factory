@@ -1,5 +1,7 @@
-import { tournamentEngine, mocksEngine, tools } from 'tods-competition-factory';
+import { tournamentEngine, mocksEngine, tools, factoryConstants } from 'tods-competition-factory';
 import React, { useEffect, useState } from 'react';
+
+const { AD_HOC } = factoryConstants.drawDefinitionConstants;
 
 const DrawType = ({ drawType, drawSize = 8 }) => {
   const [courthiveComponents, setCourthiveComponents] = useState(null);
@@ -21,7 +23,7 @@ const DrawType = ({ drawType, drawSize = 8 }) => {
     drawType,
     drawSize,
   };
-  if (drawType === 'AD_HOC') Object.assign(drawProfile, { automated: true, roundsCount: 3 });
+  if (drawType === AD_HOC) Object.assign(drawProfile, { automated: true, roundsCount: 3 });
 
   const result = mocksEngine.generateTournamentRecord({
     drawProfiles: [drawProfile],
@@ -44,7 +46,10 @@ const DrawType = ({ drawType, drawSize = 8 }) => {
   const roundMatchUps = structure?.roundMatchUps;
   const matchUps = roundMatchUps ? Object.values(roundMatchUps)?.flat() : [];
 
-  const compositionName = tools.randomMember(['Australian', 'Wimbledon', 'National', 'US Open', 'French', 'ITF']);
+  const isDark = document.documentElement.dataset.theme === 'dark';
+  const compositionName = isDark
+    ? 'French'
+    : tools.randomMember(['Australian', 'Wimbledon', 'National', 'US Open', 'French', 'ITF']);
 
   const newNode = renderStructure({
     composition: compositions[compositionName],
