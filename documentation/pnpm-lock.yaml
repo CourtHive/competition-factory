@@ -27,8 +27,8 @@ importers:
         specifier: 2.1.1
         version: 2.1.1
       courthive-components:
-        specifier: ^0.9.26
-        version: 0.9.27(@egjs/hammerjs@2.0.17)(component-emitter@1.3.1)(keycharm@0.4.0)(moment@2.30.1)(propagating-hammerjs@3.0.0(@egjs/hammerjs@2.0.17))(uuid@8.3.2)(vis-util@6.0.0(@egjs/hammerjs@2.0.17)(component-emitter@1.3.1))(xss@1.0.15)
+        specifier: 0.9.28-beta.15
+        version: 0.9.28-beta.15(@egjs/hammerjs@2.0.17)(component-emitter@1.3.1)(keycharm@0.4.0)(moment@2.30.1)(propagating-hammerjs@3.0.0(@egjs/hammerjs@2.0.17))(uuid@8.3.2)(vis-util@6.0.0(@egjs/hammerjs@2.0.17)(component-emitter@1.3.1))(xss@1.0.15)
       react:
         specifier: ^18.2.0
         version: 18.3.1
@@ -1544,9 +1544,6 @@ packages:
   '@slorber/remark-comment@1.0.0':
     resolution: {integrity: sha512-RCE24n7jsOj1M0UPvIQCHTe7fI0sFL4S2nwKVWwHyVr/wI/H8GosgsJGyhnsZoGFnD/P2hLf1mSbrrgSLN93NA==}
 
-  '@stitches/core@1.2.8':
-    resolution: {integrity: sha512-Gfkvwk9o9kE9r9XNBmJRfV8zONvXThnm1tcuojL04Uy5uRyqg93DC83lDebl0rocZCfKSjUv+fWYtMQmEDJldg==}
-
   '@svgr/babel-plugin-add-jsx-attribute@8.0.0':
     resolution: {integrity: sha512-b9MIk7yhdS1pMCZM8VeNfUlSKVRhsHZNMl5O9SfaX0l0t5wjdgu4IDzGB8bpnGBBOjGST3rRFVsaaEtI4W6f7g==}
     engines: {node: '>=14'}
@@ -2051,12 +2048,6 @@ packages:
   buffer-from@1.1.2:
     resolution: {integrity: sha512-E+XQCRwSbaaiChtv6k6Dwgc+bx+Bs6vuKJHHl5kox/BaKbhiXzqQOwK4cO22yElGp2OCmjwVhT3HmxgyPGnJfQ==}
 
-  bulma-switch@2.0.4:
-    resolution: {integrity: sha512-kMu4H0Pr0VjvfsnT6viRDCgptUq0Rvy7y7PX6q+IHg1xUynsjszPjhAdal5ysAlCG5HNO+5YXxeiu92qYGQolw==}
-
-  bulma@1.0.4:
-    resolution: {integrity: sha512-Ffb6YGXDiZYX3cqvSbHWqQ8+LkX6tVoTcZuVB3lm93sbAVXlO0D6QlOTMnV6g18gILpAXqkG2z9hf9z4hCjz2g==}
-
   bundle-name@4.1.0:
     resolution: {integrity: sha512-tjwM5exMg6BGRI+kNmTntNsvdZS1X8BFYS6tnJ2hdH0kVxM6/eVZ2xy+FqStSWvYmtfFMDLIxurorHwDKfDz5Q==}
     engines: {node: '>=18'}
@@ -2317,8 +2308,8 @@ packages:
       typescript:
         optional: true
 
-  courthive-components@0.9.27:
-    resolution: {integrity: sha512-jxGzbffbmqY04ODGwfdtz0eYacMlqSQS3gEGIurlH4K1KiGKGk4f2NvHBVzbfvDkRw1QtB2AbgPc0XdM4ZDHpg==}
+  courthive-components@0.9.28-beta.15:
+    resolution: {integrity: sha512-ve5FmBGx9mcF6Xtp79tpLPagEvdncpLtnWlWo+uGQeczBLjqgfjzF+syFRZbFsSm/4z9BgnRItg+LYDFHu4T8w==}
     engines: {node: '>=20.19.0 < 25'}
 
   cross-spawn@7.0.6:
@@ -5063,12 +5054,12 @@ packages:
     resolution: {integrity: sha512-65P7iz6X5yEr1cwcgvQxbbIw7Uk3gOy5dIdtZ4rDveLqhrdJP+Li/Hx6tyK0NEb+2GCyneCMJiGqrADCSNk8sQ==}
     engines: {node: '>=8.0'}
 
-  tods-competition-factory@2.4.3:
-    resolution: {integrity: sha512-/kUDFLCkhQjVFaC3JJmGeybdJqbWiY7lr6LvqrCNuhXmBpGM/VCdQgMZXDekk1NrIODp7mPrbEIwSqfPepSj4g==}
-    engines: {node: '>=20'}
-
   tods-competition-factory@2.4.5:
     resolution: {integrity: sha512-S+fswvRT0Nj/BZGAxD58McZuUVOwaGmPtXS4sRbHtAqHfICvyrCh9pv34jMYxkYOykZFLltyPzJybfeAVw538g==}
+    engines: {node: '>=20'}
+
+  tods-competition-factory@2.4.6-beta.16:
+    resolution: {integrity: sha512-gGKpdjDdukc0AYQYgtDyFoAvWXrAvDHEEblebEA0kscFIfqy7jorqoIY6ql+KsTNmhm3NwxcYm8wBDe6CfA4zg==}
     engines: {node: '>=20'}
 
   toidentifier@1.0.1:
@@ -7867,8 +7858,6 @@ snapshots:
       micromark-util-character: 1.2.0
       micromark-util-symbol: 1.1.0
 
-  '@stitches/core@1.2.8': {}
-
   '@svgr/babel-plugin-add-jsx-attribute@8.0.0(@babel/core@7.29.0)':
     dependencies:
       '@babel/core': 7.29.0
@@ -8492,10 +8481,6 @@ snapshots:
 
   buffer-from@1.1.2: {}
 
-  bulma-switch@2.0.4: {}
-
-  bulma@1.0.4: {}
-
   bundle-name@4.1.0:
     dependencies:
       run-applescript: 7.1.0
@@ -8757,12 +8742,9 @@ snapshots:
       parse-json: 5.2.0
       path-type: 4.0.0
 
-  courthive-components@0.9.27(@egjs/hammerjs@2.0.17)(component-emitter@1.3.1)(keycharm@0.4.0)(moment@2.30.1)(propagating-hammerjs@3.0.0(@egjs/hammerjs@2.0.17))(uuid@8.3.2)(vis-util@6.0.0(@egjs/hammerjs@2.0.17)(component-emitter@1.3.1))(xss@1.0.15):
+  courthive-components@0.9.28-beta.15(@egjs/hammerjs@2.0.17)(component-emitter@1.3.1)(keycharm@0.4.0)(moment@2.30.1)(propagating-hammerjs@3.0.0(@egjs/hammerjs@2.0.17))(uuid@8.3.2)(vis-util@6.0.0(@egjs/hammerjs@2.0.17)(component-emitter@1.3.1))(xss@1.0.15):
     dependencies:
-      '@stitches/core': 1.2.8
       awesomplete: 1.1.7
-      bulma: 1.0.4
-      bulma-switch: 2.0.4
       class-variance-authority: 0.7.1
       classnames: 2.5.1
       d3: 7.9.0
@@ -8770,7 +8752,7 @@ snapshots:
       focus-trap: 8.0.0
       timepicker-ui: 4.1.6
       tippy.js: 6.3.7
-      tods-competition-factory: 2.4.3
+      tods-competition-factory: 2.4.6-beta.16
       vanillajs-datepicker: 1.3.4
       vis-data: 8.0.3(uuid@8.3.2)(vis-util@6.0.0(@egjs/hammerjs@2.0.17)(component-emitter@1.3.1))
       vis-timeline: 8.5.0(@egjs/hammerjs@2.0.17)(component-emitter@1.3.1)(keycharm@0.4.0)(moment@2.30.1)(propagating-hammerjs@3.0.0(@egjs/hammerjs@2.0.17))(uuid@8.3.2)(vis-data@8.0.3(uuid@8.3.2)(vis-util@6.0.0(@egjs/hammerjs@2.0.17)(component-emitter@1.3.1)))(vis-util@6.0.0(@egjs/hammerjs@2.0.17)(component-emitter@1.3.1))(xss@1.0.15)
@@ -12059,9 +12041,9 @@ snapshots:
     dependencies:
       is-number: 7.0.0
 
-  tods-competition-factory@2.4.3: {}
-
   tods-competition-factory@2.4.5: {}
+
+  tods-competition-factory@2.4.6-beta.16: {}
 
   toidentifier@1.0.1: {}
 

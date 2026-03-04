@@ -108,7 +108,7 @@ const playoffAttributes = {
 ```
 
 :::tip
-For multi-level playoff trees (e.g., COMPASS topologies), use the [`withPlayoffs`](/docs/governors/generation-governor#withplayoffs) parameter on `generateDrawDefinition` instead of chaining multiple `addPlayoffStructures` calls. The `withPlayoffs.roundPlayoffs` field supports recursive nesting, building the entire tree in a single call. See [Custom Playoff Topologies](/docs/concepts/draw-types#custom-playoff-topologies).
+For multi-level playoff trees (e.g., COMPASS topologies), use the [`withPlayoffs`](/docs/governors/generation-governor#withplayoffs) parameter on `generateDrawDefinition` instead of chaining multiple `addPlayoffStructures` calls. The `withPlayoffs.roundPlayoffs` field supports recursive nesting, building the entire tree in a single call. See [Custom Playoff Topologies](/docs/concepts/draw-links#custom-playoff-topologies).
 :::
 
 ---

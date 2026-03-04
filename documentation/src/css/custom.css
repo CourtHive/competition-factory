@@ -5,13 +5,6 @@
  * work well for content-centric websites.
  */
 
-/* Import Bulma CSS and extensions for courthive-components */
-@import url('https://cdn.jsdelivr.net/npm/bulma@0.9.4/css/bulma.min.css');
-@import url('https://cdn.jsdelivr.net/npm/bulma-checkradio@1.1.1/dist/css/bulma-checkradio.min.css');
-@import url('https://cdn.jsdelivr.net/npm/bulma-switch@2.0.4/dist/css/bulma-switch.min.css');
-@import url('https://cdn.jsdelivr.net/npm/vanillajs-datepicker@1.3.4/dist/css/datepicker-bulma.min.css');
-@import url('https://cdn.jsdelivr.net/npm/awesomplete@1.1.7/awesomplete.css');
-
 /* You can override the default Infima variables here. */
 :root {
   --ifm-color-primary: #193bfa;
@@ -24,20 +17,10 @@
   --ifm-code-font-size: 95%;
 }
 
-/* Dark mode: override Bulma's hardcoded body color (#4a4a4a) */
 [data-theme='dark'] {
   --ifm-font-color-base: #f5f6f7;
   --ifm-heading-color: #ffffff;
   --ifm-color-content: #f5f6f7;
-}
-
-[data-theme='dark'] body,
-[data-theme='dark'] .markdown,
-[data-theme='dark'] .markdown p,
-[data-theme='dark'] .markdown li,
-[data-theme='dark'] .markdown td,
-[data-theme='dark'] .markdown strong {
-  color: #f5f6f7;
 }
 
 .docusaurus-highlight-code-line {
@@ -45,103 +28,4 @@
   display: block;
   margin: 0 calc(-1 * var(--ifm-pre-padding));
   padding: 0 var(--ifm-pre-padding);
-}
-
-/* Scope Bulma styles to only affect courthive-components modals and forms */
-/* This prevents conflicts with Docusaurus's Infima CSS framework */
-
-/* Fix Prism syntax highlighting - prevent Bulma from affecting code blocks */
-code[class*="language-"] .token.number,
-pre[class*="language-"] .token.number {
-  display: inline !important;
-  background-color: transparent !important;
-  border-radius: 0 !important;
-  padding: 0 !important;
-  margin: 0 !important;
-  width: auto !important;
-  height: auto !important;
-  min-width: 0 !important;
-  text-align: left !important;
-  vertical-align: baseline !important;
-  border: none !important;
-}
-
-/* Prevent Bulma from styling any Prism tokens */
-code[class*="language-"] .token,
-pre[class*="language-"] .token {
-  background-color: transparent !important;
-  border: none !important;
-  box-shadow: none !important;
-  display: inline !important;
-  padding: 0 !important;
-  margin: 0 !important;
-}
-
-/* Modal backdrop and container styles */
-.modal-backdrop {
-  position: fixed;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  background-color: rgba(0, 0, 0, 0.5);
-  z-index: 9998;
-}
-
-/* Ensure Bulma buttons inside modals have proper styling */
-.modal button.button,
-.modal a.button {
-  cursor: pointer;
-  text-decoration: none;
-}
-
-/* Fix any conflicts between Bulma and Infima */
-.modal .button:not(.is-text) {
-  background-color: var(--ifm-button-background-color, #fff);
-  border-color: var(--ifm-button-border-color, #dbdbdb);
-}
-
-.modal .button.is-primary {
-  background-color: var(--ifm-color-primary);
-  border-color: transparent;
-  color: #fff;
-}
-
-.modal .button.is-success {
-  background-color: #48c78e;
-  border-color: transparent;
-  color: #fff;
-}
-
-.modal .button.is-info {
-  background-color: #3e8ed0;
-  border-color: transparent;
-  color: #fff;
-}
-
-.modal .button.is-warning {
-  background-color: #ffe08a;
-  border-color: transparent;
-  color: rgba(0, 0, 0, 0.7);
-}
-
-/* Ensure proper spacing and styling for form elements in modals */
-.modal .field:not(:last-child) {
-  margin-bottom: 0.75rem;
-}
-
-.modal .label {
-  display: block;
-  font-weight: 600;
-  margin-bottom: 0.5em;
-}
-
-.modal .input,
-.modal .select select {
-  background-color: white;
-  border: 1px solid #dbdbdb;
-  border-radius: 4px;
-  color: #363636;
-  padding: 0.5em 0.75em;
-  width: 100%;
 }

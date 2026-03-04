@@ -88,13 +88,13 @@ In Round Robin structures, `finishingPositionRange` is less meaningful because a
 4-player group: winner=[1,4], loser=[1,4]
 ```
 
-Final standings in Round Robin are determined by [tally results](/docs/policies/roundRobinTallyPolicy) rather than `finishingPositionRange`. When Round Robin groups feed into playoff structures via [POSITION links](./draw-types#how-links-work), the playoff structure computes its own `finishingPositionRange` independently.
+Final standings in Round Robin are determined by [tally results](/docs/policies/roundRobinTallyPolicy) rather than `finishingPositionRange`. When Round Robin groups feed into playoff structures via [POSITION links](./draw-links), the playoff structure computes its own `finishingPositionRange` independently.
 
 ### Compass Draw
 
 Each direction (East, West, South, North, etc.) is an independent elimination structure with its own `finishingPositionRange`. Positions are local to each quadrant.
 
-Compass draws can be generated as a pre-defined `COMPASS` draw type or built as custom topologies using [`withPlayoffs.roundPlayoffs`](/docs/governors/generation-governor#withplayoffs) for full control over which branches exist and their naming. See [Custom Playoff Topologies](/docs/concepts/draw-types#custom-playoff-topologies).
+Compass draws can be generated as a pre-defined `COMPASS` draw type or built as custom topologies using [`withPlayoffs.roundPlayoffs`](/docs/governors/generation-governor#withplayoffs) for full control over which branches exist and their naming. See [Custom Playoff Topologies](/docs/concepts/draw-links#custom-playoff-topologies).
 
 ### Qualifying Structures
 
@@ -196,7 +196,7 @@ Draw structures are connected via **links** that control participant flow. The `
 }
 ```
 
-See [How Links Work](./draw-types#how-links-work) for full details on link types (WINNER, LOSER, POSITION).
+See [How Links Work](./draw-links) for full details on link types (WINNER, LOSER, POSITION).
 
 ## Related Documentation
 
