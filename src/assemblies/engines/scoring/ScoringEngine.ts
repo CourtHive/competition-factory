@@ -1244,8 +1244,9 @@ export class ScoringEngine {
 
     if (isAggregate) {
       const totalSets = exactly || bestOf;
-      const completedSets = this.state.score.sets.filter((s) => s.winningSide !== undefined).length;
-      if (completedSets >= totalSets) {
+      // For aggregate formats, all sets count (tied sets are valid — e.g., outs-based innings)
+      const playedSets = this.state.score.sets.length;
+      if (playedSets >= totalSets) {
         const totals = this.state.score.sets.reduce(
           (acc, set) => {
             if (set.side1TiebreakScore === undefined) {

@@ -149,23 +149,39 @@ export function generateOutcome(params) {
     // Aggregate scoring: winner determined by total points across all sets
     let side1Total = sets.reduce((sum, s) => sum + (s.side1Score ?? 0), 0);
     let side2Total = sets.reduce((sum, s) => sum + (s.side2Score ?? 0), 0);
-    // Resolve ties or enforce winningSide override
     const adjustSet = randomInt(0, sets.length - 1);
+    const maxSetScore = parsedFormat?.setFormat?.outs ? parsedFormat.setFormat.outs * 3 : undefined;
+
     if (winningSide) {
-      // Ensure the forced winningSide has more total points
-      if (
+      const needsAdjustment =
         (winningSide === 1 && side1Total <= side2Total) ||
-        (winningSide === 2 && side2Total <= side1Total)
-      ) {
-        const diff = Math.abs(side1Total - side2Total) + randomInt(1, 3);
-        if (winningSide === 1) sets[adjustSet].side1Score += diff;
-        else sets[adjustSet].side2Score += diff;
+        (winningSide === 2 && side2Total <= side1Total);
+
+      if (needsAdjustment) {
+        if (maxSetScore) {
+          // Bounded format: swap scores if wrong side leads (preserves bounds)
+          if (side1Total !== side2Total) {
+            for (const s of sets) {
+              [s.side1Score, s.side2Score] = [s.side2Score, s.side1Score];
+              if (s.winningSide) s.winningSide = s.winningSide === 1 ? 2 : 1;
+            }
+          }
+          // Break any remaining tie within bounds
+          side1Total = sets.reduce((sum, s) => sum + (s.side1Score ?? 0), 0);
+          side2Total = sets.reduce((sum, s) => sum + (s.side2Score ?? 0), 0);
+          if (side1Total === side2Total) {
+            adjustAggregateBounded(sets, winningSide, 1, maxSetScore, adjustSet);
+          }
+        } else {
+          const diff = Math.abs(side1Total - side2Total) + randomInt(1, 3);
+          if (winningSide === 1) sets[adjustSet].side1Score += diff;
+          else sets[adjustSet].side2Score += diff;
+        }
       }
       matchUpWinningSide = winningSide;
     } else if (side1Total === side2Total) {
       const side = randomInt(1, 2);
-      if (side === 1) sets[adjustSet].side1Score += 1;
-      else sets[adjustSet].side2Score += 1;
+      adjustAggregateBounded(sets, side, 1, maxSetScore, adjustSet);
       matchUpWinningSide = side;
     } else {
       matchUpWinningSide = side1Total > side2Total ? 1 : 2;
@@ -200,7 +216,7 @@ export function generateOutcome(params) {
  */
 function generateSet({ weightedRange = [0, 1], pointsPerMinute, matchUpStatus, incomplete, setFormat, setNumber }) {
   const set: any = { setNumber };
-  const { setTo, tiebreakFormat, tiebreakAt, tiebreakSet, timed, minutes } = setFormat;
+  const { setTo, tiebreakFormat, tiebreakAt, tiebreakSet, timed, minutes, outs } = setFormat;
 
   // will tend to be more likely to either reverse or not revderse all sets
   // preserves randomness of winningSide while reducing deciding set outcomes
@@ -243,6 +259,31 @@ function generateSet({ weightedRange = [0, 1], pointsPerMinute, matchUpStatus, i
       side2Score,
       winningSide: winningSideNumber,
     });
+
+    return { set };
+  } else if (outs) {
+    // Outs-based scoring (e.g., wiffle ball innings with 3 outs)
+    // Generates single-digit scores (0 to outs * 3)
+    const maxScore = outs * 3;
+    const scores = [randomInt(0, maxScore), randomInt(0, maxScore)];
+
+    winningSideNumber = weightedRange[weightIndex] + 1;
+    if (reverseScores) scores.reverse();
+
+    if (incomplete) {
+      const [side1Score, side2Score] = scores;
+      Object.assign(set, { side1Score, side2Score });
+      if (completedMatchUpStatuses.includes(matchUpStatus)) {
+        return { set, incomplete, winningSideNumber };
+      }
+      return { set, incomplete };
+    }
+
+    const [side1Score, side2Score] = scores;
+    Object.assign(set, { side1Score, side2Score });
+    if (side1Score !== side2Score) {
+      set.winningSide = side1Score > side2Score ? 1 : 2;
+    }
 
     return { set };
   } else if (incomplete) {
@@ -322,4 +363,40 @@ function generateSet({ weightedRange = [0, 1], pointsPerMinute, matchUpStatus, i
     set.winningSide = setAnalysis.winningSide || setAnalysis.leadingSide || specifiedWinningSide || tiebreakWinningSide;
   }
   return { set };
+}
+
+/**
+ * Adjusts aggregate scores by `diff` favoring `side`, keeping all scores within bounds.
+ * For unbounded formats (maxSetScore undefined), falls back to simple increment.
+ */
+function adjustAggregateBounded(sets, side, diff, maxSetScore, adjustSet) {
+  const winKey = side === 1 ? 'side1Score' : 'side2Score';
+  const loseKey = side === 1 ? 'side2Score' : 'side1Score';
+
+  if (!maxSetScore) {
+    sets[adjustSet][winKey] += diff;
+    return;
+  }
+
+  let remaining = diff;
+  // Prefer decrementing the losing side to stay within score bounds
+  for (let i = 0; remaining > 0 && i < sets.length; i++) {
+    const idx = (adjustSet + i) % sets.length;
+    const available = sets[idx][loseKey] ?? 0;
+    if (available > 0) {
+      const sub = Math.min(remaining, available);
+      sets[idx][loseKey] -= sub;
+      remaining -= sub;
+    }
+  }
+  // If still needed, increment the winning side
+  for (let i = 0; remaining > 0 && i < sets.length; i++) {
+    const idx = (adjustSet + i) % sets.length;
+    const headroom = maxSetScore - (sets[idx][winKey] ?? 0);
+    if (headroom > 0) {
+      const add = Math.min(remaining, headroom);
+      sets[idx][winKey] += add;
+      remaining -= add;
+    }
+  }
 }
