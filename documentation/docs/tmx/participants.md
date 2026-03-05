@@ -267,23 +267,12 @@ const checkedIn = participants.filter((p) => p.timeItems?.some((t) => t.itemType
 
 ### Data Quality
 
-- Validate input before calling factory methods
-- Use standardized name formats (standardGivenName, standardFamilyName)
-- Include nationality codes for international tournaments
-- Add contact information for communication
+- Use factory methods to validate before invoking remote execution
 
 ### Performance
 
-- Use bulk operations (addParticipants) for multiple participants
-- Query once and filter in UI rather than multiple queries
-- Cache participant lists and update incrementally
-
-### User Experience
-
-- Provide duplicate detection feedback
-- Show validation errors clearly
-- Allow editing before final submission
-- Confirm bulk operations before execution
+- Use bulk operations for multiple participants
+- Understand factory based filtering capbilities
 
 ## Related Documentation
 
