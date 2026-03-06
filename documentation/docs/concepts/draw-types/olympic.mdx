@@ -2,6 +2,9 @@
 title: Olympic Draw
 ---
 
+import BrowserOnly from '@docusaurus/BrowserOnly';
+import TopologyViewer from '../../components/TopologyViewer';
+
 ## Overview
 
 An **Olympic** draw guarantees every participant a minimum of two matchUps. It is a smaller variant of the compass draw, consisting of up to four linked structures named after compass directions: East, West, North, and South.
@@ -25,6 +28,23 @@ East (Main)
 West
   R1 losers --> South
 ```
+
+<BrowserOnly>{() => (
+  <TopologyViewer height={400} initialState={{
+    drawName: 'Olympic',
+    nodes: [
+      { id: 'east', structureName: 'East', stage: 'MAIN', structureType: 'SINGLE_ELIMINATION', drawSize: 16, position: { x: 40, y: 40 } },
+      { id: 'west', structureName: 'West', stage: 'CONSOLATION', structureType: 'SINGLE_ELIMINATION', drawSize: 8, position: { x: 360, y: 40 } },
+      { id: 'north', structureName: 'North', stage: 'CONSOLATION', structureType: 'SINGLE_ELIMINATION', drawSize: 4, position: { x: 360, y: 210 } },
+      { id: 'south', structureName: 'South', stage: 'CONSOLATION', structureType: 'SINGLE_ELIMINATION', drawSize: 4, position: { x: 640, y: 40 } },
+    ],
+    edges: [
+      { id: 'e1', sourceNodeId: 'east', targetNodeId: 'west', linkType: 'LOSER', sourceRoundNumber: 1, targetRoundNumber: 1, label: 'R1 losers → R1' },
+      { id: 'e2', sourceNodeId: 'east', targetNodeId: 'north', linkType: 'LOSER', sourceRoundNumber: 2, targetRoundNumber: 1, label: 'R2 losers → R1' },
+      { id: 'e3', sourceNodeId: 'west', targetNodeId: 'south', linkType: 'LOSER', sourceRoundNumber: 1, targetRoundNumber: 1, label: 'R1 losers → R1' },
+    ],
+  }} />
+)}</BrowserOnly>
 
 The factory defines the structure attributes in the `OLYMPIC_ATTRIBUTES` constant:
 

@@ -2,6 +2,9 @@
 title: Consolation Draws
 ---
 
+import BrowserOnly from '@docusaurus/BrowserOnly';
+import TopologyViewer from '../../components/TopologyViewer';
+
 ## Overview
 
 Consolation draws provide eliminated participants with additional competition opportunities. The factory supports a range of consolation draw formats, each differing in which main draw losers are fed into the consolation bracket and at which rounds.
@@ -21,6 +24,19 @@ Main Draw:
 ```
 
 This is the simplest consolation format. The consolation bracket is a standard single elimination structure containing only first-round losers.
+
+<BrowserOnly>{() => (
+  <TopologyViewer height={350} initialState={{
+    drawName: 'First Round Loser Consolation',
+    nodes: [
+      { id: 'main', structureName: 'Main Draw', stage: 'MAIN', structureType: 'SINGLE_ELIMINATION', drawSize: 32, position: { x: 40, y: 40 } },
+      { id: 'cons', structureName: 'Consolation', stage: 'CONSOLATION', structureType: 'SINGLE_ELIMINATION', drawSize: 16, position: { x: 400, y: 40 } },
+    ],
+    edges: [
+      { id: 'e1', sourceNodeId: 'main', targetNodeId: 'cons', linkType: 'LOSER', sourceRoundNumber: 1, targetRoundNumber: 1, label: 'R1 losers → R1' },
+    ],
+  }} />
+)}</BrowserOnly>
 
 ### FIRST_MATCH_LOSER_CONSOLATION
 
@@ -61,6 +77,23 @@ Main Draw:
 
 Consolation rounds alternate between "play-in" rounds (where fed-in losers face consolation survivors) and standard elimination rounds.
 
+<BrowserOnly>{() => (
+  <TopologyViewer height={350} initialState={{
+    drawName: 'Feed-In Championship',
+    nodes: [
+      { id: 'main', structureName: 'Main Draw', stage: 'MAIN', structureType: 'SINGLE_ELIMINATION', drawSize: 32, position: { x: 40, y: 40 } },
+      { id: 'cons', structureName: 'Consolation', stage: 'CONSOLATION', structureType: 'FEED_IN', drawSize: 31, position: { x: 460, y: 40 } },
+    ],
+    edges: [
+      { id: 'e1', sourceNodeId: 'main', targetNodeId: 'cons', linkType: 'LOSER', sourceRoundNumber: 1, targetRoundNumber: 1, label: 'R1 losers → R1' },
+      { id: 'e2', sourceNodeId: 'main', targetNodeId: 'cons', linkType: 'LOSER', sourceRoundNumber: 2, targetRoundNumber: 2, label: 'R2 losers → R2' },
+      { id: 'e3', sourceNodeId: 'main', targetNodeId: 'cons', linkType: 'LOSER', sourceRoundNumber: 3, targetRoundNumber: 4, label: 'R3 losers → R4' },
+      { id: 'e4', sourceNodeId: 'main', targetNodeId: 'cons', linkType: 'LOSER', sourceRoundNumber: 4, targetRoundNumber: 6, label: 'R4 losers → R6' },
+      { id: 'e5', sourceNodeId: 'main', targetNodeId: 'cons', linkType: 'LOSER', sourceRoundNumber: 5, targetRoundNumber: 8, label: 'R5 losers → R8' },
+    ],
+  }} />
+)}</BrowserOnly>
+
 ### FEED_IN_CHAMPIONSHIP_TO_SF (FICSF)
 
 Main draw losers feed into the consolation structure through the Semifinals. Losers from rounds after the semifinals are eliminated outright.
@@ -85,6 +118,24 @@ Main Draw:
   Round 4 losers --> Consolation B, Round 2
   + 3-4 Playoff
 ```
+
+<BrowserOnly>{() => (
+  <TopologyViewer height={400} initialState={{
+    drawName: 'Curtis Consolation',
+    nodes: [
+      { id: 'main', structureName: 'Main Draw', stage: 'MAIN', structureType: 'SINGLE_ELIMINATION', drawSize: 32, position: { x: 40, y: 40 } },
+      { id: 'cons-a', structureName: 'Consolation A', stage: 'CONSOLATION', structureType: 'FEED_IN', drawSize: 24, position: { x: 400, y: 40 } },
+      { id: 'cons-b', structureName: 'Consolation B', stage: 'CONSOLATION', structureType: 'FEED_IN', drawSize: 6, position: { x: 400, y: 220 } },
+      { id: 'playoff', structureName: '3-4 Playoff', stage: 'PLAY_OFF', structureType: 'SINGLE_ELIMINATION', drawSize: 2, position: { x: 720, y: 130 } },
+    ],
+    edges: [
+      { id: 'e1', sourceNodeId: 'main', targetNodeId: 'cons-a', linkType: 'LOSER', sourceRoundNumber: 1, targetRoundNumber: 1, label: 'R1 losers → R1' },
+      { id: 'e2', sourceNodeId: 'main', targetNodeId: 'cons-a', linkType: 'LOSER', sourceRoundNumber: 2, targetRoundNumber: 2, label: 'R2 losers → R2' },
+      { id: 'e3', sourceNodeId: 'main', targetNodeId: 'cons-b', linkType: 'LOSER', sourceRoundNumber: 3, targetRoundNumber: 1, label: 'R3 losers → R1' },
+      { id: 'e4', sourceNodeId: 'main', targetNodeId: 'cons-b', linkType: 'LOSER', sourceRoundNumber: 4, targetRoundNumber: 2, label: 'R4 losers → R2' },
+    ],
+  }} />
+)}</BrowserOnly>
 
 ## Constants and Aliases
 

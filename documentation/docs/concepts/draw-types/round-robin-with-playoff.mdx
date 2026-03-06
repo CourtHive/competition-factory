@@ -2,6 +2,9 @@
 title: Round Robin with Playoff
 ---
 
+import BrowserOnly from '@docusaurus/BrowserOnly';
+import TopologyViewer from '../../components/TopologyViewer';
+
 ## Overview
 
 A **Round Robin with Playoff** draw combines group play with subsequent knockout playoff structures. Participants first compete in round robin groups, then advance to playoff brackets based on their finishing positions within their groups.
@@ -22,6 +25,21 @@ Group Stage:
 Playoff (Gold):   Group winners --> Semifinal bracket
 Playoff (Silver): Group 2nd place --> Consolation bracket
 ```
+
+<BrowserOnly>{() => (
+  <TopologyViewer height={400} initialState={{
+    drawName: 'Round Robin + Playoff',
+    nodes: [
+      { id: 'rr', structureName: 'Group Stage', stage: 'MAIN', structureType: 'ROUND_ROBIN', drawSize: 16, structureOptions: { groupSize: 4 }, position: { x: 40, y: 40 } },
+      { id: 'gold', structureName: 'Gold Flight', stage: 'PLAY_OFF', structureType: 'SINGLE_ELIMINATION', drawSize: 8, position: { x: 400, y: 40 } },
+      { id: 'silver', structureName: 'Silver Flight', stage: 'PLAY_OFF', structureType: 'SINGLE_ELIMINATION', drawSize: 8, position: { x: 400, y: 220 } },
+    ],
+    edges: [
+      { id: 'e1', sourceNodeId: 'rr', targetNodeId: 'gold', linkType: 'POSITION', finishingPositions: [1, 2], label: 'positions 1,2' },
+      { id: 'e2', sourceNodeId: 'rr', targetNodeId: 'silver', linkType: 'POSITION', finishingPositions: [3, 4], label: 'positions 3,4' },
+    ],
+  }} />
+)}</BrowserOnly>
 
 ## Playoff Configuration
 

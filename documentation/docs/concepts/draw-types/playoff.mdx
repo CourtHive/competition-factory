@@ -2,6 +2,9 @@
 title: Playoff
 ---
 
+import BrowserOnly from '@docusaurus/BrowserOnly';
+import TopologyViewer from '../../components/TopologyViewer';
+
 ## Overview
 
 A **Playoff** draw generates structures to play off all positions, ensuring that every finishing position in the draw is uniquely determined through actual matchUps rather than inferred from bracket placement.
@@ -29,6 +32,23 @@ Main Draw (determines 1st and 2nd)
 ```
 
 Each playoff structure is a mini-elimination bracket that resolves the finishing positions of its participants.
+
+<BrowserOnly>{() => (
+  <TopologyViewer height={450} initialState={{
+    drawName: 'Playoff',
+    nodes: [
+      { id: 'main', structureName: 'Main Draw', stage: 'MAIN', structureType: 'SINGLE_ELIMINATION', drawSize: 16, position: { x: 40, y: 40 } },
+      { id: 'po34', structureName: '3-4 Playoff', stage: 'PLAY_OFF', structureType: 'SINGLE_ELIMINATION', drawSize: 2, position: { x: 400, y: 40 } },
+      { id: 'po58', structureName: '5-8 Playoff', stage: 'PLAY_OFF', structureType: 'SINGLE_ELIMINATION', drawSize: 4, position: { x: 400, y: 180 } },
+      { id: 'po916', structureName: '9-16 Playoff', stage: 'PLAY_OFF', structureType: 'SINGLE_ELIMINATION', drawSize: 8, position: { x: 400, y: 320 } },
+    ],
+    edges: [
+      { id: 'e1', sourceNodeId: 'main', targetNodeId: 'po34', linkType: 'LOSER', sourceRoundNumber: 4, targetRoundNumber: 1, label: 'SF losers → R1' },
+      { id: 'e2', sourceNodeId: 'main', targetNodeId: 'po58', linkType: 'LOSER', sourceRoundNumber: 3, targetRoundNumber: 1, label: 'QF losers → R1' },
+      { id: 'e3', sourceNodeId: 'main', targetNodeId: 'po916', linkType: 'LOSER', sourceRoundNumber: 2, targetRoundNumber: 1, label: 'R2 losers → R1' },
+    ],
+  }} />
+)}</BrowserOnly>
 
 ## Use Cases
 

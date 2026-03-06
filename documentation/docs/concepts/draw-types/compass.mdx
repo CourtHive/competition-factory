@@ -2,6 +2,9 @@
 title: Compass Draw
 ---
 
+import BrowserOnly from '@docusaurus/BrowserOnly';
+import TopologyViewer from '../../components/TopologyViewer';
+
 ## Overview
 
 A **Compass** draw guarantees every participant a minimum of three matchUps. It consists of up to eight linked structures, named after compass directions: East, West, North, South, Northeast, Northwest, Southeast, and Southwest.
@@ -39,6 +42,31 @@ North
 South
   R1 losers --> Southwest
 ```
+
+<BrowserOnly>{() => (
+  <TopologyViewer height={560} initialState={{
+    drawName: 'Compass',
+    nodes: [
+      { id: 'east', structureName: 'East', stage: 'MAIN', structureType: 'SINGLE_ELIMINATION', drawSize: 32, position: { x: 40, y: 40 } },
+      { id: 'west', structureName: 'West', stage: 'CONSOLATION', structureType: 'SINGLE_ELIMINATION', drawSize: 16, position: { x: 400, y: 40 } },
+      { id: 'north', structureName: 'North', stage: 'CONSOLATION', structureType: 'SINGLE_ELIMINATION', drawSize: 8, position: { x: 400, y: 210 } },
+      { id: 'ne', structureName: 'Northeast', stage: 'CONSOLATION', structureType: 'SINGLE_ELIMINATION', drawSize: 4, position: { x: 400, y: 380 } },
+      { id: 'south', structureName: 'South', stage: 'CONSOLATION', structureType: 'SINGLE_ELIMINATION', drawSize: 8, position: { x: 680, y: 40 } },
+      { id: 'sw', structureName: 'Southwest', stage: 'CONSOLATION', structureType: 'SINGLE_ELIMINATION', drawSize: 4, position: { x: 680, y: 210 } },
+      { id: 'nw', structureName: 'Northwest', stage: 'CONSOLATION', structureType: 'SINGLE_ELIMINATION', drawSize: 4, position: { x: 680, y: 380 } },
+      { id: 'se', structureName: 'Southeast', stage: 'CONSOLATION', structureType: 'SINGLE_ELIMINATION', drawSize: 4, position: { x: 960, y: 40 } },
+    ],
+    edges: [
+      { id: 'e1', sourceNodeId: 'east', targetNodeId: 'west', linkType: 'LOSER', sourceRoundNumber: 1, targetRoundNumber: 1, label: 'R1 losers → R1' },
+      { id: 'e2', sourceNodeId: 'east', targetNodeId: 'north', linkType: 'LOSER', sourceRoundNumber: 2, targetRoundNumber: 1, label: 'R2 losers → R1' },
+      { id: 'e3', sourceNodeId: 'east', targetNodeId: 'ne', linkType: 'LOSER', sourceRoundNumber: 3, targetRoundNumber: 1, label: 'R3 losers → R1' },
+      { id: 'e4', sourceNodeId: 'west', targetNodeId: 'south', linkType: 'LOSER', sourceRoundNumber: 1, targetRoundNumber: 1, label: 'R1 losers → R1' },
+      { id: 'e5', sourceNodeId: 'west', targetNodeId: 'se', linkType: 'LOSER', sourceRoundNumber: 2, targetRoundNumber: 1, label: 'R2 losers → R1' },
+      { id: 'e6', sourceNodeId: 'north', targetNodeId: 'nw', linkType: 'LOSER', sourceRoundNumber: 1, targetRoundNumber: 1, label: 'R1 losers → R1' },
+      { id: 'e7', sourceNodeId: 'south', targetNodeId: 'sw', linkType: 'LOSER', sourceRoundNumber: 1, targetRoundNumber: 1, label: 'R1 losers → R1' },
+    ],
+  }} />
+)}</BrowserOnly>
 
 The number of structures generated depends on the draw size. Smaller draws may produce fewer than eight structures because some directions would have too few participants to form a meaningful bracket.
 
