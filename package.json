@@ -134,7 +134,7 @@
     "@nestjs/swagger": "11.2.6",
     "@nestjs/testing": "11.1.16",
     "@rollup/plugin-babel": "7.0.0",
-    "@rollup/plugin-commonjs": "29.0.1",
+    "@rollup/plugin-commonjs": "29.0.2",
     "@rollup/plugin-json": "6.1.0",
     "@rollup/plugin-node-resolve": "16.0.3",
     "@rollup/plugin-terser": "1.0.0",
