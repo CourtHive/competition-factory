@@ -50,6 +50,7 @@ export const methodScopeMap: Record<string, MutationLockScope> = {
   withdrawParticipantAtDrawPosition: 'DRAWS',
   addVoluntaryConsolationStructure: 'DRAWS',
   luckyLoserDrawPositionAssignment: 'DRAWS',
+  luckyDrawAdvancement: 'DRAWS',
   shiftAdHocRounds: 'DRAWS',
   setPositionAssignments: 'DRAWS',
   swapAdHocRounds: 'DRAWS',

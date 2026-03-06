@@ -1,0 +1,61 @@
+---
+title: Round Robin with Playoff
+---
+
+## Overview
+
+A **Round Robin with Playoff** draw combines group play with subsequent knockout playoff structures. Participants first compete in round robin groups, then advance to playoff brackets based on their finishing positions within their groups.
+
+In the factory, this draw type is represented by the constant `ROUND_ROBIN_WITH_PLAYOFF`.
+
+## Structure
+
+- **Group stage**: A `CONTAINER` structure holding multiple round robin `ITEM` groups (identical to a standard `ROUND_ROBIN`).
+- **Playoff structures**: One or more single elimination structures that receive participants based on their finishing positions in the group stage.
+- **Links**: Position-based links connect group finishing positions to playoff draw positions.
+
+```text
+Group Stage:
+  Group A: P1, P2, P3, P4  -->  1st, 2nd, 3rd, 4th
+  Group B: P5, P6, P7, P8  -->  1st, 2nd, 3rd, 4th
+
+Playoff (Gold):   Group winners --> Semifinal bracket
+Playoff (Silver): Group 2nd place --> Consolation bracket
+```
+
+## Playoff Configuration
+
+The `playoffAttributes` parameter controls how many playoff structures are generated and which finishing positions feed into each:
+
+```js
+const { drawDefinition } = engine.generateDrawDefinition({
+  drawSize: 16,
+  drawType: 'ROUND_ROBIN_WITH_PLAYOFF',
+  structureOptions: {
+    groupSize: 4,
+    playoffGroups: [
+      { finishingPositions: [1, 2], structureName: 'Gold' },
+      { finishingPositions: [3, 4], structureName: 'Silver' },
+    ],
+  },
+});
+```
+
+This creates:
+
+- 4 round robin groups of 4 participants each.
+- A "Gold" playoff bracket receiving the top 2 from each group (8 participants).
+- A "Silver" playoff bracket receiving positions 3-4 from each group (8 participants).
+
+## Use Cases
+
+- Tournament formats that combine the fairness of round robin play with the excitement of knockout rounds.
+- World Cup-style formats where group winners and runners-up advance to a bracket.
+- Events that need to determine finishing positions for all participants, not just the winner.
+
+## Related
+
+- [Round Robin](./round-robin) -- Group play without playoffs
+- [Finishing Positions](../finishing-positions) -- How finishing positions propagate through linked structures
+- [Draw Links](../draw-links) -- How position-based links connect groups to playoffs
+- [Draw Types Overview](../draw-types) -- List of all pre-defined draw types

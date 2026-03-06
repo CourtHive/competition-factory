@@ -1,0 +1,53 @@
+---
+title: Playoff
+---
+
+## Overview
+
+A **Playoff** draw generates structures to play off all positions, ensuring that every finishing position in the draw is uniquely determined through actual matchUps rather than inferred from bracket placement.
+
+In the factory, this draw type is represented by the constant `PLAYOFF` (no underscore).
+
+:::caution PLAYOFF vs PLAY_OFF
+`PLAYOFF` (no underscore) is a **draw type** -- it defines the kind of draw being generated.
+`PLAY_OFF` (with underscore) is a **stage type** -- it is applied to structures within a draw to identify them as playoff structures.
+
+These are distinct concepts. A `ROUND_ROBIN_WITH_PLAYOFF` draw, for example, contains structures with stage type `PLAY_OFF`, but the draw type itself is `ROUND_ROBIN_WITH_PLAYOFF`, not `PLAYOFF`.
+:::
+
+## Structure
+
+In a standard single elimination bracket, only the winner and runner-up have definitively determined finishing positions. The two semifinal losers share 3rd-4th place, the four quarterfinal losers share 5th-8th place, and so on.
+
+A `PLAYOFF` draw adds additional structures to resolve every tied finishing position:
+
+```text
+Main Draw (determines 1st and 2nd)
+  SF losers --> 3rd-4th Playoff (determines 3rd and 4th)
+  QF losers --> 5th-8th Playoff (determines 5th, 6th, 7th, 8th)
+  R1 losers --> 9th-16th Playoff (determines 9th through 16th)
+```
+
+Each playoff structure is a mini-elimination bracket that resolves the finishing positions of its participants.
+
+## Use Cases
+
+- National championships or selection events where every ranking position matters.
+- Olympic-format events where bronze medals are awarded (3rd-4th playoff).
+- Team selection processes where final standings determine squad composition.
+- Any event requiring unique finishing positions for all participants.
+
+## Generation
+
+```js
+const { drawDefinition } = engine.generateDrawDefinition({
+  drawSize: 8,
+  drawType: 'PLAYOFF',
+});
+```
+
+## Related
+
+- [Round Robin with Playoff](./round-robin-with-playoff) -- Round robin groups feeding into playoff brackets
+- [Finishing Positions](../finishing-positions) -- How finishing positions are determined across structures
+- [Draw Types Overview](../draw-types) -- List of all pre-defined draw types

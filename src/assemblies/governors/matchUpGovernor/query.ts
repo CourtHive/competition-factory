@@ -19,6 +19,7 @@ export { getCompetitionMatchUps } from '@Query/matchUps/getCompetitionMatchUps';
 export { getMatchUpDailyLimits } from '@Query/extensions/getMatchUpDailyLimits';
 export { checkMatchUpIsComplete } from '@Query/matchUp/checkMatchUpIsComplete';
 export { getPredictiveAccuracy } from '@Query/matchUps/getPredictiveAccuracy';
+export { calculateMatchUpMargin } from '@Query/matchUp/calculateMatchUpMargin';
 export { calculateWinCriteria } from '@Query/matchUp/calculateWinCriteria';
 export { getHomeParticipantId } from '@Query/matchUp/getHomeParticipantId';
 export { tournamentMatchUps } from '@Query/matchUps/getTournamentMatchUps';

@@ -5,9 +5,10 @@ export { getValidGroupSizes } from '@Assemblies/generators/drawDefinitions/drawT
 export { allPlayoffPositionsFilled, isCompletedStructure } from '@Query/drawDefinition/structureActions';
 export { getAvailablePlayoffProfiles } from '@Query/drawDefinition/getAvailablePlayoffProfiles';
 export { getParticipantIdFinishingPositions } from '@Query/drawDefinition/finishingPositions';
-export { publicFindDrawDefinition as findDrawDefinition } from '@Acquire/findDrawDefinition';
 export { getAssignedParticipantIds } from '@Query/drawDefinition/getAssignedParticipantIds';
 export { getStructureSeedAssignments } from '@Query/structure/getStructureSeedAssignments';
+export { publicFindDrawDefinition as findDrawDefinition } from '@Acquire/findDrawDefinition';
+export { getLuckyDrawRoundStatus } from '@Query/drawDefinition/getLuckyDrawRoundStatus';
 export { positionActions } from '@Query/drawDefinition/positionActions/positionActions';
 export { getDrawTypeCoercion } from '@Generators/drawDefinitions/getDrawTypeCoercion';
 export { getRandomQualifierList } from '@Query/drawDefinition/getRandomQualifierList';

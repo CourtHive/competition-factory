@@ -24,6 +24,7 @@ export { swapDrawPositionAssignments } from '@Mutate/matchUps/drawPositions/posi
 export { removeSeededParticipant } from '@Mutate/drawDefinitions/removeSeededParticipant';
 export { addQualifyingStructure } from '@Mutate/drawDefinitions/addQualifyingStructure';
 export { adHocPositionSwap } from '@Mutate/matchUps/drawPositions/adHocPositionSwap';
+export { luckyDrawAdvancement } from '@Mutate/drawDefinitions/luckyDrawAdvancement';
 export { addPlayoffStructures } from '@Mutate/drawDefinitions/addPlayoffStructures';
 export { automatedPositioning } from '@Mutate/drawDefinitions/automatedPositioning';
 export { modifyDrawDefinition } from '@Mutate/drawDefinitions/modifyDrawDefinition';
