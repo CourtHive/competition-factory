@@ -1,0 +1,28 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="-178.21 -105 356.42 210">
+  <style>
+    .logo-stroke { stroke: #000000; fill: none; }
+    @media (prefers-color-scheme: dark) {
+      .logo-stroke { stroke: #ffffff; }
+    }
+  </style>
+  <g>
+    <!-- Left hex outline (open path) -->
+    <path class="logo-stroke" d="M 0,-50 L -86.60,-100 L -173.21,-50 L -173.21,50 L -86.60,100 L 0,50"
+      stroke-width="5" stroke-linejoin="miter" stroke-linecap="round"/>
+    <!-- Right hex outline (open path) -->
+    <path class="logo-stroke" d="M 0,-50 L 86.60,-100 L 173.21,-50 L 173.21,50 L 86.60,100 L 0,50"
+      stroke-width="5" stroke-linejoin="miter" stroke-linecap="round"/>
+    <!-- Net line (shared center edge) -->
+    <line class="logo-stroke" x1="0" y1="-50" x2="0" y2="50" stroke-width="5"/>
+    <!-- Left service line -->
+    <line class="logo-stroke" x1="-112.58" y1="-85" x2="-112.58" y2="85" stroke-width="5"/>
+    <!-- Right service line -->
+    <line class="logo-stroke" x1="112.58" y1="-85" x2="112.58" y2="85" stroke-width="5"/>
+    <!-- Center horizontal line -->
+    <line class="logo-stroke" x1="-112.58" y1="0" x2="112.58" y2="0" stroke-width="5"/>
+    <!-- Left center mark -->
+    <line class="logo-stroke" x1="-173.21" y1="0" x2="-161.21" y2="0" stroke-width="5"/>
+    <!-- Right center mark -->
+    <line class="logo-stroke" x1="161.21" y1="0" x2="173.21" y2="0" stroke-width="5"/>
+  </g>
+</svg>

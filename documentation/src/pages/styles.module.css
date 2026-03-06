@@ -1,37 +1,304 @@
-/* stylelint-disable docusaurus/copyright-header */
-
-/**
- * CSS files with the .module.css suffix will be treated as CSS modules
- * and scoped locally.
- */
-
+/* ── Hero ─────────────────────────────────────────────── */
 .heroBanner {
-  padding: 4rem 0;
-  text-align: center;
   position: relative;
+  padding: 6rem 2rem;
+  text-align: center;
   overflow: hidden;
+  background: linear-gradient(135deg, #f8f9ff 0%, #eef0ff 40%, #f0eaff 70%, #f8f9ff 100%);
 }
 
-@media screen and (max-width: 966px) {
-  .heroBanner {
-    padding: 2rem;
-  }
+[data-theme='dark'] .heroBanner {
+  background: linear-gradient(135deg, #0a0a1a 0%, #1a1a3e 40%, #2d1b4e 70%, #0a0a1a 100%);
+}
+
+.heroContent {
+  position: relative;
+  z-index: 2;
+  max-width: 720px;
+  margin: 0 auto;
+}
+
+.heroLogo {
+  width: 80px;
+  height: auto;
+  margin-bottom: 1.5rem;
+  opacity: 0.15;
+}
+
+.heroLogoLight {
+  display: block;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+.heroLogoDark {
+  display: none;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+[data-theme='dark'] .heroLogoLight {
+  display: none;
+}
+
+[data-theme='dark'] .heroLogoDark {
+  display: block;
+}
+
+.heroTitle {
+  font-size: clamp(2.5rem, 6vw, 4rem);
+  font-weight: 700;
+  letter-spacing: -0.03em;
+  color: #1a1a2e;
+  margin-bottom: 0.75rem;
+  line-height: 1.1;
+}
+
+[data-theme='dark'] .heroTitle {
+  background: linear-gradient(135deg, #ffffff 0%, #a0a0ff 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.heroTagline {
+  font-size: clamp(1.1rem, 2.5vw, 1.4rem);
+  font-weight: 300;
+  color: #555;
+  margin-bottom: 2rem;
+  line-height: 1.5;
+}
+
+[data-theme='dark'] .heroTagline {
+  color: rgba(255, 255, 255, 0.65);
+}
+
+/* ── CTA Button ──────────────────────────────────────── */
+.ctaButton {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.75rem 2rem;
+  border-radius: 8px;
+  font-size: 1rem;
+  font-weight: 600;
+  letter-spacing: 0.01em;
+  text-decoration: none;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  background: #4a5fd9;
+  color: #ffffff;
+  border: none;
+}
+
+.ctaButton:hover {
+  background: #3a4fc9;
+  color: #ffffff;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 16px rgba(74, 95, 217, 0.35);
+  text-decoration: none;
+}
+
+[data-theme='dark'] .ctaButton {
+  background: #667eea;
+}
+
+[data-theme='dark'] .ctaButton:hover {
+  background: #7e93ef;
+  box-shadow: 0 4px 24px rgba(102, 126, 234, 0.4);
+}
+
+.ctaSecondary {
+  background: transparent;
+  color: #4a5fd9;
+  border: 1.5px solid #4a5fd9;
+  margin-left: 1rem;
+}
+
+.ctaSecondary:hover {
+  background: rgba(74, 95, 217, 0.08);
+  color: #3a4fc9;
+  box-shadow: none;
+  transform: translateY(-1px);
+}
+
+[data-theme='dark'] .ctaSecondary {
+  color: #667eea;
+  border-color: rgba(102, 126, 234, 0.5);
+}
+
+[data-theme='dark'] .ctaSecondary:hover {
+  background: rgba(102, 126, 234, 0.12);
+  color: #7e93ef;
+  box-shadow: none;
 }
 
 .buttons {
   display: flex;
   align-items: center;
   justify-content: center;
+  flex-wrap: wrap;
+  gap: 0.5rem;
 }
 
+/* ── Features ────────────────────────────────────────── */
 .features {
-  display: flex;
-  align-items: center;
-  padding: 2rem 0;
-  width: 100%;
+  padding: 4rem 0;
+  background: #ffffff;
 }
 
-.featureImage {
-  height: 200px;
-  width: 200px;
+[data-theme='dark'] .features {
+  background: #0a0a1a;
+}
+
+.featureGrid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 2rem;
+  max-width: 1100px;
+  margin: 0 auto;
+  padding: 0 1.5rem;
+}
+
+.featureCard {
+  padding: 2rem;
+  border-radius: 12px;
+  border: 1px solid rgba(0, 0, 0, 0.06);
+  background: #fafbff;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.featureCard:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.08);
+}
+
+[data-theme='dark'] .featureCard {
+  background: rgba(255, 255, 255, 0.04);
+  border-color: rgba(255, 255, 255, 0.08);
+}
+
+[data-theme='dark'] .featureCard:hover {
+  background: rgba(255, 255, 255, 0.06);
+  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.3);
+}
+
+.featureIcon {
+  width: 48px;
+  height: 48px;
+  margin-bottom: 1.25rem;
+}
+
+.featureTitle {
+  font-size: 1.15rem;
+  font-weight: 600;
+  margin-bottom: 0.5rem;
+  color: #1a1a2e;
+}
+
+[data-theme='dark'] .featureTitle {
+  color: #ffffff;
+}
+
+.featureDescription {
+  font-size: 0.925rem;
+  line-height: 1.6;
+  color: #555;
+  margin: 0;
+}
+
+[data-theme='dark'] .featureDescription {
+  color: rgba(255, 255, 255, 0.6);
+}
+
+.featureLink {
+  display: inline-block;
+  margin-top: 0.75rem;
+  font-size: 0.85rem;
+  font-weight: 500;
+  color: #4a5fd9;
+  text-decoration: none;
+}
+
+.featureLink:hover {
+  text-decoration: underline;
+  color: #3a4fc9;
+}
+
+[data-theme='dark'] .featureLink {
+  color: #667eea;
+}
+
+[data-theme='dark'] .featureLink:hover {
+  color: #7e93ef;
+}
+
+/* ── Stats strip ─────────────────────────────────────── */
+.stats {
+  padding: 3rem 0;
+  background: #f5f6ff;
+  border-top: 1px solid rgba(0, 0, 0, 0.04);
+}
+
+[data-theme='dark'] .stats {
+  background: #0d0d20;
+  border-top-color: rgba(255, 255, 255, 0.04);
+}
+
+.statsGrid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 2rem;
+  max-width: 900px;
+  margin: 0 auto;
+  padding: 0 1.5rem;
+  text-align: center;
+}
+
+.statNumber {
+  font-size: clamp(1.75rem, 3vw, 2.25rem);
+  font-weight: 700;
+  color: #4a5fd9;
+  line-height: 1;
+  margin-bottom: 0.25rem;
+}
+
+[data-theme='dark'] .statNumber {
+  color: #667eea;
+}
+
+.statLabel {
+  font-size: 0.8rem;
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: #888;
+}
+
+[data-theme='dark'] .statLabel {
+  color: rgba(255, 255, 255, 0.45);
+}
+
+/* ── Responsive ──────────────────────────────────────── */
+@media screen and (max-width: 768px) {
+  .heroBanner {
+    padding: 4rem 1.5rem;
+  }
+
+  .featureGrid {
+    grid-template-columns: 1fr;
+    gap: 1.25rem;
+  }
+
+  .statsGrid {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 1.5rem;
+  }
+
+  .buttons {
+    flex-direction: column;
+  }
+
+  .ctaSecondary {
+    margin-left: 0;
+  }
 }
