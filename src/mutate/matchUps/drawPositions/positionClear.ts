@@ -195,8 +195,7 @@ export function drawPositionRemovals({
       const isTransitiveBye =
         pairedDrawPositionIsBye &&
         pairedDrawPositionInNextRound &&
-        nextRoundProfile &&
-        nextRoundProfile.drawPositions?.includes(pairedDrawPosition);
+        nextRoundProfile?.drawPositions?.includes(pairedDrawPosition);
       const pairedDrawPositionByeAdvancedPair = !isTransitiveBye && pairedDrawPositionInNextRound;
 
       const result = relevantPair && {

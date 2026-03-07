@@ -1,4 +1,13 @@
-import { addParticipantExtension, removeParticipantExtension } from '@Mutate/extensions/addRemoveExtensions';
+import {
+  addDrawDefinitionExtension,
+  addEventExtension,
+  addParticipantExtension,
+  addTournamentExtension,
+  removeDrawDefinitionExtension,
+  removeEventExtension,
+  removeParticipantExtension,
+  removeTournamentExtension,
+} from '@Mutate/extensions/addRemoveExtensions';
 import { generateTournamentRecord } from '@Assemblies/generators/mocks/generateTournamentRecord';
 import { removeExtension } from '@Mutate/extensions/removeExtension';
 import { addNotes, removeNotes } from '@Mutate/base/addRemoveNotes';
@@ -8,9 +17,11 @@ import { expect, it, test } from 'vitest';
 
 // constants
 import {
+  DRAW_DEFINITION_NOT_FOUND,
   EVENT_NOT_FOUND,
   INVALID_VALUES,
   MISSING_PARTICIPANT_ID,
+  MISSING_TOURNAMENT_RECORD,
   MISSING_VALUE,
   NOT_FOUND,
   PARTICIPANT_NOT_FOUND,
@@ -218,12 +229,30 @@ test('add and remove primitives throw appropriate errors', () => {
   result = addParticipantExtension({ participantId: 'bogus' });
   expect(result.error).toEqual(PARTICIPANT_NOT_FOUND);
 
+  // Test success path: add extension to a real participant
+  const { tournamentRecord: trForParticipant } = generateTournamentRecord({ drawProfiles: [{ drawSize: 4 }] });
+  const participant = trForParticipant.participants[0];
+  result = addParticipantExtension({
+    tournamentRecord: trForParticipant,
+    participantId: participant.participantId,
+    extension: { name: 'testExt', value: 'testVal' },
+  });
+  expect(result.success).toEqual(true);
+
   result = removeParticipantExtension();
   expect(result.error).toEqual(MISSING_VALUE);
   result = removeParticipantExtension({});
   expect(result.error).toEqual(MISSING_PARTICIPANT_ID);
   result = removeParticipantExtension({ participantId: 'bogus' });
   expect(result.error).toEqual(PARTICIPANT_NOT_FOUND);
+
+  // Test success path: remove extension from a real participant
+  result = removeParticipantExtension({
+    tournamentRecord: trForParticipant,
+    participantId: participant.participantId,
+    name: 'testExt',
+  });
+  expect(result.success).toEqual(true);
 
   result = addNotes();
   expect(result.error).toEqual(MISSING_VALUE);
@@ -239,5 +268,89 @@ test('add and remove primitives throw appropriate errors', () => {
   result = removeNotes({});
   expect(result.error).toEqual(INVALID_VALUES);
   result = removeNotes({ element: {} });
+  expect(result.success).toEqual(true);
+});
+
+test('addTournamentExtension direct function coverage', () => {
+  let result = addTournamentExtension(undefined as any);
+  expect(result.error).toEqual(MISSING_VALUE);
+  result = addTournamentExtension('not-object' as any);
+  expect(result.error).toEqual(MISSING_VALUE);
+  result = addTournamentExtension({} as any);
+  expect(result.error).toEqual(MISSING_TOURNAMENT_RECORD);
+  result = addTournamentExtension({
+    tournamentRecord: { tournamentId: 'test' } as any,
+    extension: { name: 'test', value: 'value' },
+  });
+  expect(result.success).toEqual(true);
+});
+
+test('addDrawDefinitionExtension direct function coverage', () => {
+  let result = addDrawDefinitionExtension(undefined as any);
+  expect(result.error).toEqual(MISSING_VALUE);
+  result = addDrawDefinitionExtension('not-object' as any);
+  expect(result.error).toEqual(MISSING_VALUE);
+  result = addDrawDefinitionExtension({} as any);
+  expect(result.error).toEqual(DRAW_DEFINITION_NOT_FOUND);
+  result = addDrawDefinitionExtension({
+    drawDefinition: { drawId: 'test' } as any,
+    extension: { name: 'test', value: 'value' },
+  });
+  expect(result.success).toEqual(true);
+});
+
+test('addEventExtension direct function coverage', () => {
+  let result = addEventExtension(undefined as any);
+  expect(result.error).toEqual(MISSING_VALUE);
+  result = addEventExtension('not-object' as any);
+  expect(result.error).toEqual(MISSING_VALUE);
+  result = addEventExtension({} as any);
+  expect(result.error).toEqual(EVENT_NOT_FOUND);
+  result = addEventExtension({
+    event: { eventId: 'test' } as any,
+    extension: { name: 'test', value: 'value' },
+  });
+  expect(result.success).toEqual(true);
+});
+
+test('removeTournamentExtension direct function coverage', () => {
+  let result = removeTournamentExtension(undefined as any);
+  expect(result.error).toEqual(MISSING_VALUE);
+  result = removeTournamentExtension('not-object' as any);
+  expect(result.error).toEqual(MISSING_VALUE);
+  result = removeTournamentExtension({} as any);
+  expect(result.error).toEqual(MISSING_TOURNAMENT_RECORD);
+  result = removeTournamentExtension({
+    tournamentRecord: { tournamentId: 'test', extensions: [{ name: 'test', value: 'val' }] } as any,
+    name: 'test',
+  });
+  expect(result.success).toEqual(true);
+});
+
+test('removeDrawDefinitionExtension direct function coverage', () => {
+  let result = removeDrawDefinitionExtension(undefined as any);
+  expect(result.error).toEqual(MISSING_VALUE);
+  result = removeDrawDefinitionExtension('not-object' as any);
+  expect(result.error).toEqual(MISSING_VALUE);
+  result = removeDrawDefinitionExtension({});
+  expect(result.error).toEqual(DRAW_DEFINITION_NOT_FOUND);
+  result = removeDrawDefinitionExtension({
+    drawDefinition: { drawId: 'test', extensions: [] },
+    name: 'test',
+  });
+  expect(result.success).toEqual(true);
+});
+
+test('removeEventExtension direct function coverage', () => {
+  let result = removeEventExtension(undefined as any);
+  expect(result.error).toEqual(MISSING_VALUE);
+  result = removeEventExtension('not-object' as any);
+  expect(result.error).toEqual(MISSING_VALUE);
+  result = removeEventExtension({});
+  expect(result.error).toEqual(EVENT_NOT_FOUND);
+  result = removeEventExtension({
+    event: { eventId: 'test', extensions: [] },
+    name: 'test',
+  });
   expect(result.success).toEqual(true);
 });

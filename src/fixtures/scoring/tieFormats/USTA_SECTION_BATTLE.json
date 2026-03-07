@@ -41,7 +41,7 @@
       "processCodes": ["RANKING.IGNORE"]
     }
   ],
-  "tieFormatName": "USTA_SECTION_BATTLE",
+  "tieFormatName": "USTA Section Battle",
   "winCriteria": {
     "valueGoal": 9
   }

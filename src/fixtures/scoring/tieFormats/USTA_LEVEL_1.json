@@ -29,7 +29,7 @@
       "matchUpValue": 1
     }
   ],
-  "tieFormatName": "USTA_LEVEL_1",
+  "tieFormatName": "USTA Level 1",
   "winCriteria": {
     "valueGoal": 10
   }

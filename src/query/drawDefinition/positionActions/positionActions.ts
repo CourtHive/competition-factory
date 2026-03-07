@@ -27,7 +27,7 @@ import {
 
 // constants and types
 import { INVALID_DRAW_POSITION, MISSING_DRAW_POSITION, STRUCTURE_NOT_FOUND } from '@Constants/errorConditionConstants';
-import { CONSOLATION, MAIN, POSITION, QUALIFYING, WIN_RATIO } from '@Constants/drawDefinitionConstants';
+import { CONSOLATION, LUCKY_DRAW, MAIN, POSITION, QUALIFYING, WIN_RATIO } from '@Constants/drawDefinitionConstants';
 import { DrawDefinition, Event, Participant, Tournament } from '@Types/tournamentTypes';
 import { PolicyDefinitions, MatchUpsMap, ResultType } from '@Types/factoryTypes';
 import { DIRECT_ENTRY_STATUSES } from '@Constants/entryStatusConstants';
@@ -161,6 +161,7 @@ function addQualifyingActions({
 }
 
 function addRemoveAssignmentActions({
+  isLuckyDrawAdvancedPosition,
   validActions,
   policyActions,
   isActiveDrawPosition,
@@ -178,7 +179,7 @@ function addRemoveAssignmentActions({
       willDisableLinks: possiblyDisablingAction,
     });
 
-    if (!isByePosition) {
+    if (!isByePosition && !isLuckyDrawAdvancedPosition) {
       validActions.push({
         type: WITHDRAW_PARTICIPANT,
         method: WITHDRAW_PARTICIPANT_METHOD,
@@ -187,7 +188,7 @@ function addRemoveAssignmentActions({
       });
     }
 
-    if (isAvailableAction({ policyActions, action: ASSIGN_BYE }) && !isByePosition) {
+    if (isAvailableAction({ policyActions, action: ASSIGN_BYE }) && !isByePosition && !isLuckyDrawAdvancedPosition) {
       validActions.push({
         type: ASSIGN_BYE,
         method: REMOVE_ASSIGNMENT_METHOD,
@@ -614,6 +615,11 @@ function positionActionsInternal(params: PositionActionsArgs): ResultType & {
   const isByePosition = byeDrawPositions.includes(drawPosition);
   const isActiveDrawPosition = activeDrawPositions.includes(drawPosition);
 
+  // In lucky draws, positions beyond round 1 are virtual (created by advancement).
+  // Restrict actions: no withdraw, bye assignment, or seeding for these positions.
+  const isLuckyDrawAdvancedPosition =
+    drawDefinition.drawType === LUCKY_DRAW && drawPositionInitialRounds?.[drawPosition] > 1;
+
   if (actionsDisabled)
     return {
       info: 'Actions Disabled for structure',
@@ -668,6 +674,7 @@ function positionActionsInternal(params: PositionActionsArgs): ResultType & {
 
   if (positionAssignment) {
     addRemoveAssignmentActions({
+      isLuckyDrawAdvancedPosition,
       validActions,
       policyActions,
       isActiveDrawPosition,
@@ -678,21 +685,23 @@ function positionActionsInternal(params: PositionActionsArgs): ResultType & {
       isByePosition,
     });
 
-    addSeedActions({
-      validActions,
-      policyActions,
-      activePositionsCheck,
-      activePositionOverrides,
-      activeDrawPositions,
-      drawDefinition,
-      structureId,
-      drawPosition,
-      structure,
-      isByePosition,
-      participantId,
-      participant,
-      drawId,
-    });
+    if (!isLuckyDrawAdvancedPosition) {
+      addSeedActions({
+        validActions,
+        policyActions,
+        activePositionsCheck,
+        activePositionOverrides,
+        activeDrawPositions,
+        drawDefinition,
+        structureId,
+        drawPosition,
+        structure,
+        isByePosition,
+        participantId,
+        participant,
+        drawId,
+      });
+    }
 
     addPenaltyAndNicknameActions({
       validActions,

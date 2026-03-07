@@ -15,7 +15,7 @@
       "matchUpValue": 1
     }
   ],
-  "tieFormatName": "COLLEGE_DEFAULT",
+  "tieFormatName": "College Default",
   "winCriteria": {
     "valueGoal": 5
   }

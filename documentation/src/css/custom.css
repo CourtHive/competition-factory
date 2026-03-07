@@ -1,31 +1,91 @@
-/* stylelint-disable docusaurus/copyright-header */
-/**
- * Any CSS included here will be global. The classic template
- * bundles Infima by default. Infima is a CSS framework designed to
- * work well for content-centric websites.
- */
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
 
-/* You can override the default Infima variables here. */
+/* ── Light mode ───────────────────────────────────────── */
 :root {
-  --ifm-color-primary: #193bfa;
-  --ifm-color-primary-dark: rgb(33, 175, 144);
-  --ifm-color-primary-darker: rgb(31, 165, 136);
-  --ifm-color-primary-darkest: rgb(26, 136, 112);
-  --ifm-color-primary-light: rgb(70, 203, 174);
-  --ifm-color-primary-lighter: rgb(102, 212, 189);
-  --ifm-color-primary-lightest: rgb(146, 224, 208);
+  --ifm-color-primary: #4a5fd9;
+  --ifm-color-primary-dark: #3a4fc9;
+  --ifm-color-primary-darker: #3347bf;
+  --ifm-color-primary-darkest: #2a3a9e;
+  --ifm-color-primary-light: #5c6fe3;
+  --ifm-color-primary-lighter: #6d7ee8;
+  --ifm-color-primary-lightest: #8d9aef;
+
+  --ifm-font-family-base: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
   --ifm-code-font-size: 95%;
+  --ifm-heading-font-weight: 600;
+
+  --ifm-navbar-background-color: rgba(255, 255, 255, 0.85);
+  --ifm-navbar-shadow: 0 1px 2px rgba(0, 0, 0, 0.06);
+
+  --ifm-footer-background-color: #1a1a2e;
+  --ifm-footer-color: rgba(255, 255, 255, 0.7);
 }
 
+/* ── Dark mode ────────────────────────────────────────── */
 [data-theme='dark'] {
-  --ifm-font-color-base: #f5f6f7;
+  --ifm-color-primary: #667eea;
+  --ifm-color-primary-dark: #4e69e5;
+  --ifm-color-primary-darker: #425de3;
+  --ifm-color-primary-darkest: #2742d4;
+  --ifm-color-primary-light: #7e93ef;
+  --ifm-color-primary-lighter: #8a9df1;
+  --ifm-color-primary-lightest: #b1bef7;
+
+  --ifm-background-color: #0a0a1a;
+  --ifm-background-surface-color: #12122a;
+  --ifm-font-color-base: #e0e0e0;
   --ifm-heading-color: #ffffff;
-  --ifm-color-content: #f5f6f7;
+  --ifm-color-content: #e0e0e0;
+
+  --ifm-navbar-background-color: rgba(10, 10, 26, 0.85);
+  --ifm-navbar-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
+
+  --ifm-footer-background-color: #06060f;
 }
 
+/* ── Navbar ───────────────────────────────────────────── */
+.navbar {
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+}
+
+.navbar__title {
+  font-weight: 600;
+  letter-spacing: -0.01em;
+}
+
+.navbar__logo img {
+  height: 28px;
+}
+
+
+/* ── Footer ───────────────────────────────────────────── */
+.footer--dark {
+  background: linear-gradient(180deg, #1a1a2e 0%, #0a0a1a 100%);
+}
+
+.footer--dark .footer__copyright {
+  color: rgba(255, 255, 255, 0.5);
+  font-size: 0.85rem;
+}
+
+/* ── Code highlight ───────────────────────────────────── */
 .docusaurus-highlight-code-line {
-  background-color: rgb(72, 77, 91);
+  background-color: rgba(102, 126, 234, 0.15);
   display: block;
   margin: 0 calc(-1 * var(--ifm-pre-padding));
   padding: 0 var(--ifm-pre-padding);
+}
+
+[data-theme='dark'] .docusaurus-highlight-code-line {
+  background-color: rgba(102, 126, 234, 0.2);
+}
+
+/* ── Sidebar & docs ──────────────────────────────────── */
+.menu__link--active:not(.menu__link--sublist) {
+  background-color: rgba(74, 95, 217, 0.08);
+}
+
+[data-theme='dark'] .menu__link--active:not(.menu__link--sublist) {
+  background-color: rgba(102, 126, 234, 0.12);
 }

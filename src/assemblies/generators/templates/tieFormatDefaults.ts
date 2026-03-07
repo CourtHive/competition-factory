@@ -7,9 +7,7 @@ import TEAM_AGGREGATION_TIE_FORMAT from '../../../fixtures/scoring/tieFormats/TE
 import USTA_SOUTHERN_LEVEL_5_TIE_FORMAT from '../../../fixtures/scoring/tieFormats/USTA_SOUTHERN_LEVEL_5.json';
 import USTA_SECTION_BATTLE_TIE_FORMAT from '../../../fixtures/scoring/tieFormats/USTA_SECTION_BATTLE.json';
 import USTA_INTERSECTIONAL_TIE_FORMAT from '../../../fixtures/scoring/tieFormats/USTA_INTERSECTIONAL.json';
-import TIME_TENNIS_PRO_TIE_FORMAT from '../../../fixtures/scoring/tieFormats/TIME_TENNIS_PRO_CIRCUIT.json';
 import DOMINANT_DUO_MIXED_TIE_FORMAT from '../../../fixtures/scoring/tieFormats/DOMINANT_DUO_MIXED.json';
-import TIME_TENNIS_DUAL_TIE_FORMAT from '../../../fixtures/scoring/tieFormats/TIME_TENNIS_DUAL.json';
 import USTA_BREWER_CUP_TIE_FORMAT from '../../../fixtures/scoring/tieFormats/USTA_BREWER_CUP.json';
 import USTA_OZAKI_CUP_TIE_FORMAT from '../../../fixtures/scoring/tieFormats/USTA_OZAKI_CUP.json';
 import { FORMAT_ATP_DOUBLES, FORMAT_STANDARD } from '../../../fixtures/scoring/matchUpFormats';
@@ -41,8 +39,6 @@ import {
   USTA_SECTION_BATTLE,
   USTA_SOUTHERN_LEVEL_5,
   USTA_ZONAL,
-  TIME_TENNIS_DUAL,
-  TIME_TENNIS_PRO_CIRCUIT,
 } from '@Constants/tieFormatConstants';
 
 const STANDARD = 'STANDARD';
@@ -103,8 +99,6 @@ const namedFormats = {
   [DOMINANT_DUO]: DOMINANT_DUO_TIE_FORMAT,
   [DOMINANT_DUO_MIXED]: DOMINANT_DUO_MIXED_TIE_FORMAT,
   [TEAM_DOUBLES_3_AGGREGATION]: TEAM_AGGREGATION_TIE_FORMAT,
-  [TIME_TENNIS_DUAL]: TIME_TENNIS_DUAL_TIE_FORMAT,
-  [TIME_TENNIS_PRO_CIRCUIT]: TIME_TENNIS_PRO_TIE_FORMAT,
   [USTA_BREWER_CUP]: USTA_BREWER_CUP_TIE_FORMAT,
   [USTA_OZAKI_CUP]: USTA_OZAKI_CUP_TIE_FORMAT,
   [USTA_COLLEGE]: USTA_COLLEGE_TIE_FORMAT,
@@ -141,12 +135,7 @@ export const tieFormatDefaults = (params?: TieFormatDefaultArgs) => {
     const eventId = params?.event?.eventId;
     return uuids.pop() ?? `${eventId}-COL-${index + 1}`;
   };
-  if (!template.hydrate) {
-    template.collectionDefinitions.forEach(
-      (collectionDefinition, i) => (collectionDefinition.collectionId = getCollectionId(i)),
-    );
-    tieFormat = template;
-  } else {
+  if (template.hydrate) {
     tieFormat = {
       winCriteria: {
         valueGoal: template.valueGoal,
@@ -170,6 +159,11 @@ export const tieFormatDefaults = (params?: TieFormatDefaultArgs) => {
     };
 
     if (template.tieFormatName) tieFormat.tieFormatName = template.tieFormatName;
+  } else {
+    template.collectionDefinitions.forEach(
+      (collectionDefinition, i) => (collectionDefinition.collectionId = getCollectionId(i)),
+    );
+    tieFormat = template;
   }
 
   if (params?.hydrateCollections) {

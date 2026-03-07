@@ -1,6 +1,6 @@
 {
   "winCriteria": { "valueGoal": 23 },
-  "tieFormatName": "USTA_OZAKI_CUP",
+  "tieFormatName": "USTA Ozaki Cup",
   "collectionDefinitions": [
     {
       "category": { "ageCategoryCode": "18U" },

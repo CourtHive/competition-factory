@@ -62,6 +62,7 @@ The convenience method `engine.generateDrawDefinition()` generates the following
 - **FEED_IN** - Also known as "staggered entry", participants feed into the main structure at specified rounds.
 - **FIRST_MATCH_LOSER_CONSOLATION** - Losers feed into consolation whenever their first loss occurs.
 - **FIRST_ROUND_LOSER_CONSOLATION** - Only first round losers feed into consolation structure.
+- **LUCKY_DRAW** - Supports any participant count (not just power-of-2). Rounds with an odd number of matchUps produce a "lucky loser" who advances to balance the next round. See [Lucky Draw details](./draw-types/lucky-draw).
 - **MODIFIED_FEED_IN_CHAMPIONSHIP** - First and Second round losers are fed into consolation structure.
 - **OLYMPIC** - Includes up to 4 structures; ensures participants a minimum of 2 matchUps.
 - **PLAYOFF** - All positions are played off; structures are added to ensure unique finishing positions. Note: `PLAY_OFF` (with underscore) is a stage type applied to structures. `PLAYOFF` (no underscore) is a draw type that generates structures to play off all positions.

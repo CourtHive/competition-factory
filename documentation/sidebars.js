@@ -60,7 +60,32 @@ module.exports = {
           ],
         },
         {
-          Draws: ['concepts/draws-overview', 'concepts/draw-types', 'concepts/draw-links', 'concepts/exit-profiles', 'concepts/finishing-positions', 'concepts/actions'],
+          Draws: [
+            'concepts/draws-overview',
+            'concepts/draw-types',
+            {
+              type: 'category',
+              label: 'Draw Type Details',
+              collapsed: true,
+              items: [
+                'concepts/draw-types/single-elimination',
+                'concepts/draw-types/double-elimination',
+                'concepts/draw-types/round-robin',
+                'concepts/draw-types/round-robin-with-playoff',
+                'concepts/draw-types/compass',
+                'concepts/draw-types/olympic',
+                'concepts/draw-types/feed-in',
+                'concepts/draw-types/consolation-draws',
+                'concepts/draw-types/ad-hoc',
+                'concepts/draw-types/playoff',
+                'concepts/draw-types/lucky-draw',
+              ],
+            },
+            'concepts/draw-links',
+            'concepts/exit-profiles',
+            'concepts/finishing-positions',
+            'concepts/actions',
+          ],
         },
         {
           matchUps: [

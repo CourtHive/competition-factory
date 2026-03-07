@@ -1,7 +1,7 @@
 /** @type {import('@docusaurus/types').DocusaurusConfig} */
 module.exports = {
   title: 'Competition Factory',
-  tagline: 'Competition Management Tools',
+  tagline: 'Open-source engine for tournament management — draws, scheduling, scoring, and more.',
   url: 'https://courthive.github.com',
   baseUrl: '/competition-factory/',
   onBrokenLinks: 'throw',
@@ -13,11 +13,16 @@ module.exports = {
     mermaid: true,
   },
   themeConfig: {
+    colorMode: {
+      defaultMode: 'dark',
+      respectPrefersColorScheme: true,
+    },
     navbar: {
       title: 'Competition Factory',
       logo: {
         alt: 'CourtHive Logo',
-        src: 'img/CourtHive.png',
+        src: 'img/CourtHive.svg',
+        srcDark: 'img/CourtHive-dark.svg',
       },
       items: [
         {
@@ -54,16 +59,8 @@ module.exports = {
   ],
   plugins: [
     [
-      // require.resolve('docusaurus-plugin-search-local'), // typescript fork
       require.resolve('@cmfcmf/docusaurus-search-local'),
       {
-        // docusaurus-plugin-search-local (typscript fork)
-        // highlightSearchTermsOnTargetPage: false,
-        // docsRouteBasePath: '/docs',
-        // docsDir: 'docs',
-        // hashed: false,
-
-        // @cmfcmf/docusaurus-search-local (original project)
         maxSearchResults: 8,
         indexBlog: false,
         style: undefined,

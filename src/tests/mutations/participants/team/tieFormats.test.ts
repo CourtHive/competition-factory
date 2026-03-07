@@ -47,8 +47,6 @@ it.each(tieKeys)('can generate all exported tieFormatConstants', (tieKey) => {
 
   if (tieFormatName) {
     expect(tieFormat.tieFormatName).toEqual(tieFormatName);
-  } else {
-    expect(tieFormat.tieFormatName).toEqual(key);
   }
   expect(tieFormat.collectionDefinitions.length).toEqual(collectionsCount);
 
@@ -79,8 +77,6 @@ it.each(tieKeys)('can generate all exported tieFormatConstants', (tieKey) => {
   });
   if (tieFormatName) {
     expect(foundTieFormat.tieFormatName).toEqual(tieFormatName);
-  } else {
-    expect(foundTieFormat.tieFormatName).toEqual(key);
   }
 });
 

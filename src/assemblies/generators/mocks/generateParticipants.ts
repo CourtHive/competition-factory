@@ -56,12 +56,16 @@ export function generateParticipants(params): {
     personData,
     sex,
 
+    participantRole: paramRole,
+
     inContext,
     withISO2,
     withIOC,
 
     scaleAllParticipants, // optional boolean
   } = params;
+
+  const participantRole = paramRole || COMPETITOR;
 
   const doubles = participantType === PAIR || matchUpType === DOUBLES_MATCHUP;
   const team = participantType === TEAM || matchUpType === TEAM;
@@ -209,7 +213,7 @@ export function generateParticipants(params): {
         uuids,
       }),
       participantName: doubles ? pairName : teamNames[i],
-      participantRole: COMPETITOR,
+      participantRole,
       individualParticipantIds,
       participantType,
     };
@@ -261,7 +265,7 @@ export function generateParticipants(params): {
       }),
       extensions: participantExtensions,
       timeItems: participantTimeItems,
-      participantRole: COMPETITOR,
+      participantRole,
       participantType: INDIVIDUAL,
       participantName,
       person: {
