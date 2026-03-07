@@ -62,7 +62,7 @@ const namedFormats = {
       matchUpCount: 6,
       matchUpValue: 1,
     },
-    tieFormatName: COLLEGE_D3,
+    tieFormatName: 'College D3',
     valueGoal: 5,
   },
   [COLLEGE_DEFAULT]: {
@@ -77,7 +77,7 @@ const namedFormats = {
       matchUpCount: 6,
       matchUpValue: 1,
     },
-    tieFormatName: COLLEGE_DEFAULT,
+    tieFormatName: 'College Default',
     valueGoal: 4,
   },
   [COLLEGE_JUCO]: {
@@ -92,7 +92,7 @@ const namedFormats = {
       matchUpCount: 6,
       matchUpValue: 1,
     },
-    tieFormatName: COLLEGE_JUCO,
+    tieFormatName: 'College JUCO',
     valueGoal: 5,
   },
   [LAVER_CUP]: LAVER_CUP_TIE_FORMAT,

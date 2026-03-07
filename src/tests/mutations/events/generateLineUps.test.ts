@@ -235,7 +235,7 @@ it('can generate lineUps for TEAM events', () => {
 
   const { event } = tournamentEngine.getEvent({ eventId });
   // the previous tieFormat should still be attached to the event
-  expect(event.tieFormat.tieFormatName).toEqual(USTA_GOLD_TEAM_CHALLENGE);
+  expect(event.tieFormat.tieFormatName).toEqual('USTA Gold Team Challenge');
 
   result = tournamentEngine.deleteParticipants({
     participantIds: pairParticipantIds,

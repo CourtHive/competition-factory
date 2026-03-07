@@ -86,9 +86,7 @@ export function luckyDrawAdvancement({
     // Place the lucky loser in the opposite half of the next round from
     // the winner who defeated them, so they cannot meet until the final.
     const luckyLoserInfo = roundStatus.eligibleLosers?.find((l) => l.participantId === participantId);
-    const defeatingWinnerIdx = luckyLoserInfo
-      ? winners.findIndex((w) => w.matchUpId === luckyLoserInfo.matchUpId)
-      : -1;
+    const defeatingWinnerIdx = luckyLoserInfo ? winners.findIndex((w) => w.matchUpId === luckyLoserInfo.matchUpId) : -1;
 
     const numMatchUps = nextRoundMatchUps.length;
     const halfSplit = Math.ceil(numMatchUps / 2);
@@ -154,7 +152,6 @@ export function luckyDrawAdvancement({
     for (const dp of nextRoundDrawPositions) {
       const entries = positionAssignments.filter((a) => a.drawPosition === dp);
       const hasEmpty = entries.some((a) => !a.participantId);
-      const hasFilled = entries.some((a) => !!a.participantId);
       if (entries.length > 1 || hasEmpty) {
         stalePositions.push(dp);
       }

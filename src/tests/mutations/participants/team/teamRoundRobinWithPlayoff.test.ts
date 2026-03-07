@@ -75,7 +75,7 @@ test('changing scores after playoffs generated in team round robin with playoffs
   });
 
   const mainStructureId = mainStageMatchUps[0].structureId;
-  expect(mainStageMatchUps[0].tieFormat.tieFormatName).toEqual(DOMINANT_DUO);
+  expect(mainStageMatchUps[0].tieFormat.tieFormatName).toEqual('Dominant Duo');
 
   let result = tournamentEngine.automatedPlayoffPositioning({
     structureId: mainStructureId,
