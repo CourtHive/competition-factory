@@ -268,7 +268,20 @@ export function luckyDrawAdvancement({
 
     matchUp.drawPositions = [pos1, pos2];
 
-    positionAssignments.push({ drawPosition: pos1, participantId: pid1 }, { drawPosition: pos2, participantId: pid2 });
+    const assignment1: any = { drawPosition: pos1, participantId: pid1 };
+    const assignment2: any = { drawPosition: pos2, participantId: pid2 };
+
+    // Mark the lucky loser's position assignment so addMatchUpContext can distinguish
+    // lucky advancement from qualifying lucky losers
+    if (roundStatus.isPreFeedRound && participantId) {
+      if (pid1 === participantId) {
+        assignment1.extensions = [{ name: 'luckyAdvancement', value: { fromRoundNumber: roundNumber } }];
+      } else if (pid2 === participantId) {
+        assignment2.extensions = [{ name: 'luckyAdvancement', value: { fromRoundNumber: roundNumber } }];
+      }
+    }
+
+    positionAssignments.push(assignment1, assignment2);
 
     modifyMatchUpNotice({
       context: stack,

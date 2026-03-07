@@ -383,10 +383,22 @@ export function addMatchUpContext({
             }
           }
 
+          // Check if participant's position assignment has a luckyAdvancement extension
+          // This distinguishes lucky draw advancement (re-entered after losing) from
+          // qualifying lucky losers who entered the draw with LUCKY_LOSER status
+          let luckyAdvancement: boolean | undefined;
+          if (side.drawPosition && positionAssignments) {
+            const assignment = positionAssignments.find((a) => a.drawPosition === side.drawPosition);
+            if (assignment?.extensions?.some((ext) => ext.name === 'luckyAdvancement')) {
+              luckyAdvancement = true;
+              participant.luckyAdvancement = true;
+            }
+          }
+
           if (hydrateParticipants === false) {
             // when hydrateParticipants is false, only add entryStatus and entryStage to side.participant, because unique to this context
             // it is expected that receiving client will have access to participant data and can hydrate as needed
-            Object.assign(side, { participant: { entryStage, entryStatus } });
+            Object.assign(side, { participant: { entryStage, entryStatus, luckyAdvancement } });
           } else {
             Object.assign(side, { participant });
           }
