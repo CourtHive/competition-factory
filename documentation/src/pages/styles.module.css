@@ -122,13 +122,13 @@
 }
 
 [data-theme='dark'] .ctaSecondary {
-  color: #667eea;
-  border-color: rgba(102, 126, 234, 0.5);
+  color: #ffffff;
+  border-color: rgba(102, 126, 234, 0.6);
 }
 
 [data-theme='dark'] .ctaSecondary:hover {
   background: rgba(102, 126, 234, 0.12);
-  color: #7e93ef;
+  color: #ffffff;
   box-shadow: none;
 }
 
