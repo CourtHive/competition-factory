@@ -56,12 +56,6 @@ export function luckyDrawAdvancement({
 
   const roundStatus = statusResult.rounds?.find((r) => r.roundNumber === roundNumber);
   if (!roundStatus?.isComplete) {
-    console.log(`[${stack}] Round ${roundNumber} not complete`, {
-      roundStatus: roundStatus
-        ? { completedCount: roundStatus.completedCount, matchUpsCount: roundStatus.matchUpsCount }
-        : 'not found',
-      availableRounds: statusResult.rounds?.map((r) => r.roundNumber),
-    });
     return decorateResult({ result: { error: INVALID_VALUES }, info: 'Round is not complete' });
   }
 
@@ -71,10 +65,6 @@ export function luckyDrawAdvancement({
 
     const eligible = roundStatus.eligibleLosers?.find((l) => l.participantId === participantId);
     if (!eligible) {
-      console.log(`[${stack}] Participant not eligible`, {
-        participantId,
-        eligibleLosers: roundStatus.eligibleLosers?.map((l) => l.participantId),
-      });
       return decorateResult({
         result: { error: INVALID_VALUES },
         info: 'Participant is not an eligible loser from this round',
@@ -138,22 +128,11 @@ export function luckyDrawAdvancement({
   }
 
   if (!nextRoundMatchUps.length) {
-    console.log(`[${stack}] No matchUps in round ${nextRoundNumber}`, {
-      allRounds: [...new Set((structure.matchUps || []).map((m) => m.roundNumber))].sort(),
-    });
     return decorateResult({ result: { error: INVALID_VALUES }, info: 'No matchUps found in next round' });
   }
 
   const expectedCount = nextRoundMatchUps.length * 2;
   if (advancingParticipantIds.length !== expectedCount) {
-    console.log(`[${stack}] Participant count mismatch`, {
-      expected: expectedCount,
-      got: advancingParticipantIds.length,
-      nextRoundMatchUpsCount: nextRoundMatchUps.length,
-      advancingParticipantIds,
-      isPreFeedRound: roundStatus.isPreFeedRound,
-      winnersCount: winners.length,
-    });
     return decorateResult({
       result: { error: INVALID_VALUES },
       info: `Expected ${expectedCount} advancing participants, got ${advancingParticipantIds.length}`,
@@ -178,20 +157,11 @@ export function luckyDrawAdvancement({
       const hasFilled = entries.some((a) => !!a.participantId);
       if (entries.length > 1 || hasEmpty) {
         stalePositions.push(dp);
-        if (hasFilled && hasEmpty) {
-          console.log(`[${stack}] Duplicate positionAssignment entries for drawPosition ${dp}`, {
-            entries,
-          });
-        }
       }
     }
 
     if (stalePositions.length) {
       const staleSet = new Set(stalePositions);
-      console.log(`[${stack}] Removing stale positionAssignment entries for drawPositions`, {
-        stalePositions,
-        beforeCount: positionAssignments.length,
-      });
       positionAssignments = positionAssignments.filter((a) => !staleSet.has(a.drawPosition));
       structure.positionAssignments = positionAssignments;
     }
@@ -210,13 +180,6 @@ export function luckyDrawAdvancement({
     });
 
     if (assignedPositions.length) {
-      console.log(`[${stack}] Next round matchUp already assigned`, {
-        matchUpId: matchUp.matchUpId,
-        roundPosition: matchUp.roundPosition,
-        drawPositions: dps,
-        assignedPositions,
-        assignments: dps.map((dp) => positionAssignments.find((a) => a.drawPosition === dp)),
-      });
       return decorateResult({
         result: { error: INVALID_VALUES },
         info: 'Next round already has participants assigned',
@@ -225,9 +188,6 @@ export function luckyDrawAdvancement({
 
     // Clear stale drawPositions so new positions are computed cleanly
     if (dps.some(Boolean)) {
-      console.log(`[${stack}] Clearing stale drawPositions on matchUp ${matchUp.matchUpId}`, {
-        stalePositions: dps,
-      });
       matchUp.drawPositions = [];
     }
   }
@@ -243,18 +203,6 @@ export function luckyDrawAdvancement({
   const allLivePositions = [...assignedDrawPositions, ...liveMatchUpPositions];
   const maxPosition = allLivePositions.length ? Math.max(...allLivePositions) : 0;
   let nextPosition = maxPosition + 1;
-
-  console.log(`[${stack}] Advancing round ${roundNumber} → ${nextRoundNumber}`, {
-    advancingParticipantIds,
-    nextRoundMatchUps: nextRoundMatchUps.map((m) => ({
-      matchUpId: m.matchUpId,
-      roundPosition: m.roundPosition,
-      drawPositions: m.drawPositions,
-    })),
-    maxPosition,
-    nextPosition,
-    positionAssignmentCount: positionAssignments.length,
-  });
 
   // Assign drawPositions to next-round matchUps and create positionAssignments
   const tournamentId = tournamentRecord?.tournamentId;
