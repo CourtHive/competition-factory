@@ -83,18 +83,18 @@ it('can aggregate tieFormats found in drawDefinitions to event.tieFormats', () =
   expect(inContextTeamMatchUps.length).toEqual(12);
   expect(inContextTeamMatchUps.every((m) => m.tieFormatId)).toBeTruthy();
   expect(inContextTeamMatchUps.map((m) => m.tieFormat.tieFormatName)).toEqual([
-    'USTA_BREWER_CUP',
-    'USTA_BREWER_CUP',
-    'USTA_BREWER_CUP',
-    'USTA_TOC',
-    'USTA_TOC',
-    'USTA_TOC',
-    'USTA_COLLEGE',
-    'USTA_COLLEGE',
-    'USTA_COLLEGE',
-    'COLLEGE_JUCO',
-    'COLLEGE_JUCO',
-    'COLLEGE_JUCO',
+    'Brewer Cup',
+    'Brewer Cup',
+    'Brewer Cup',
+    'USTA Tennis on Campus',
+    'USTA Tennis on Campus',
+    'USTA Tennis on Campus',
+    'USTA Collegiate',
+    'USTA Collegiate',
+    'USTA Collegiate',
+    'College JUCO',
+    'College JUCO',
+    'College JUCO',
   ]);
   const noContextTeamMatchUps = tournamentEngine.allTournamentMatchUps({
     matchUpFilters: { matchUpTypes: [TEAM_MATCHUP] },

@@ -604,7 +604,7 @@ it('can validate collectionDefinition.category when adding collectionDefinitions
   tournamentEngine.setState(tournamentRecord);
 
   let event = tournamentEngine.getEvent({ drawId }).event;
-  expect(event.drawDefinitions[0].tieFormat.tieFormatName).toEqual(COLLEGE_D3);
+  expect(event.drawDefinitions[0].tieFormat.tieFormatName).toEqual('College D3');
   expect(event.category.ageCategoryCode).toEqual(ageCategoryCode);
 
   const tieFormatName = 'New tieFormatName';
@@ -624,7 +624,7 @@ it('can validate collectionDefinition.category when adding collectionDefinitions
   let result = tournamentEngine.addCollectionDefinition(params);
   expect(result.error).toEqual(INVALID_CATEGORY);
   event = tournamentEngine.getEvent({ drawId }).event;
-  expect(event.drawDefinitions[0].tieFormat.tieFormatName).toEqual(COLLEGE_D3);
+  expect(event.drawDefinitions[0].tieFormat.tieFormatName).toEqual('College D3');
 
   params.collectionDefinition.category.ageCategoryCode = 'U16';
   result = tournamentEngine.addCollectionDefinition(params);
