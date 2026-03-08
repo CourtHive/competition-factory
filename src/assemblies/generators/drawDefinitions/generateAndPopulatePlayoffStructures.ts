@@ -20,7 +20,7 @@ import { ensureInt } from '@Tools/ensureInt';
 // constants and types
 import { INVALID_VALUES, MISSING_DRAW_DEFINITION, STRUCTURE_NOT_FOUND } from '@Constants/errorConditionConstants';
 import { DrawDefinition, DrawLink, Event, Structure, Tournament } from '@Types/tournamentTypes';
-import { CONTAINER, LOSER, PLAY_OFF, TOP_DOWN } from '@Constants/drawDefinitionConstants';
+import { CONTAINER, LOSER, LUCKY_DRAW, PLAY_OFF, TOP_DOWN } from '@Constants/drawDefinitionConstants';
 import { RoundProfile, ResultType } from '@Types/factoryTypes';
 import { BYE } from '@Constants/matchUpStatusConstants';
 import { SUCCESS } from '@Constants/resultConstants';
@@ -165,6 +165,11 @@ export function generateAndPopulatePlayoffStructures(params: GenerateAndPopulate
   const newStructures: Structure[] = [];
   const newLinks: DrawLink[] = [];
 
+  // For LUCKY_DRAW pre-feed rounds, the playoff drawSize must be computed from
+  // the actual matchUp count (discarded losers = matchUpsInRound - 1), not from
+  // finishing positions which don't account for the lucky loser selection.
+  const isLuckyDraw = drawDefinition.drawType === LUCKY_DRAW;
+
   for (const roundNumber of sourceRounds ?? []) {
     const roundInfo = roundsRanges?.find((roundInfo) => roundInfo.roundNumber === roundNumber);
     if (!roundInfo)
@@ -173,8 +178,25 @@ export function generateAndPopulatePlayoffStructures(params: GenerateAndPopulate
         context: { roundNumber },
         stack,
       });
-    const drawSize = roundInfo.finishingPositions.length;
+    let drawSize = roundInfo.finishingPositions.length;
     const finishingPositionOffset = Math.min(...roundInfo.finishingPositions) - 1;
+
+    // Lucky draw override: pre-feed rounds have odd matchUp count; discarded losers = count - 1
+    if (isLuckyDraw && structure) {
+      const roundMatchUps = (structure.matchUps || []).filter((m) => m.roundNumber === roundNumber);
+      const matchUpsInRound = roundMatchUps.length;
+      const isFinal = matchUpsInRound === 1;
+      if (!isFinal && matchUpsInRound % 2 !== 0) {
+        // Pre-feed round: all losers minus the lucky selection
+        const discardedCount = matchUpsInRound - 1;
+        // If odd, round up for a single BYE
+        const adjusted = discardedCount % 2 !== 0 ? discardedCount + 1 : discardedCount;
+        // Round up to next power of 2 for standard elimination bracket
+        let p = 1;
+        while (p < adjusted) p *= 2;
+        drawSize = p;
+      }
+    }
 
     const stageSequence = 2;
     const sequenceLimit = roundNumber && roundProfile?.[roundNumber] && stageSequence + roundProfile[roundNumber] - 1;
@@ -259,6 +281,8 @@ export function generateAndPopulatePlayoffStructures(params: GenerateAndPopulate
   }
 
   // now advance any players from completed matchUps into the newly added structures
+  // Note: for lucky draw pre-feed rounds, directParticipants itself skips loser
+  // direction — luckyDrawAdvancement handles placement after the lucky loser selection
   const completedMatchUps = inContextDrawMatchUps?.filter(
     (matchUp) => checkMatchUpIsComplete({ matchUp }) && matchUp.structureId === sourceStructureId,
   );

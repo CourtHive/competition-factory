@@ -6,7 +6,7 @@ import { findStructure } from '@Acquire/findStructure';
 import { ErrorType, INVALID_VALUES, MISSING_DRAW_DEFINITION } from '@Constants/errorConditionConstants';
 import { completedMatchUpStatuses } from '@Constants/matchUpStatusConstants';
 import { DrawDefinition, Tournament } from '@Types/tournamentTypes';
-import { LUCKY_DRAW } from '@Constants/drawDefinitionConstants';
+import { LOSER, LUCKY_DRAW } from '@Constants/drawDefinitionConstants';
 import { SUCCESS } from '@Constants/resultConstants';
 
 type LuckyParticipantInfo = {
@@ -22,6 +22,13 @@ type LuckyParticipantInfo = {
   setsWonByLoser?: number;
 };
 
+type ConsolidationLinkInfo = {
+  targetStructureId: string;
+  targetRoundNumber: number;
+  feedProfile?: string;
+  losersPlaced: boolean;
+};
+
 type LuckyRoundInfo = {
   roundNumber: number;
   matchUpsCount: number;
@@ -32,6 +39,7 @@ type LuckyRoundInfo = {
   nextRoundHasOpenPosition: boolean;
   advancingWinners?: LuckyParticipantInfo[];
   eligibleLosers?: LuckyParticipantInfo[];
+  consolidationLinks?: ConsolidationLinkInfo[];
 };
 
 type GetLuckyDrawRoundStatusArgs = {
@@ -103,19 +111,47 @@ export function getLuckyDrawRoundStatus({
 
     const nextRoundNumber = roundNumber + 1;
     const nextRoundMatchUps = matchUps.filter((m) => m.roundNumber === nextRoundNumber);
-    const nextRoundHasOpenPosition =
-      nextRoundMatchUps.length > 0 &&
-      nextRoundMatchUps.some((m) => {
-        if (!m.drawPositions || m.drawPositions.filter(Boolean).length < 2) return true;
-        // drawPositions exist but check if they actually have participants assigned
-        return m.drawPositions.some((dp: number) => {
-          if (!dp) return true;
-          const assignment = positionAssignments.find((a) => a.drawPosition === dp);
-          return !assignment?.participantId && !assignment?.bye;
-        });
+    const nextRoundHasOpenPosition = nextRoundMatchUps.some((m) => {
+      if (!m.drawPositions || m.drawPositions.filter(Boolean).length < 2) return true;
+      // drawPositions exist but check if they actually have participants assigned
+      return m.drawPositions.some((dp: number) => {
+        if (!dp) return true;
+        const assignment = positionAssignments.find((a) => a.drawPosition === dp);
+        return !assignment?.participantId && !assignment?.bye;
       });
+    });
 
     const needsLuckySelection = isPreFeedRound && isComplete && nextRoundHasOpenPosition;
+
+    // Check for LOSER links from this round to consolidation/playoff structures
+    const loserLinks = (drawDefinition.links || []).filter(
+      (link) =>
+        link.linkType === LOSER &&
+        link.source.structureId === structureId &&
+        (link.source.roundNumber || 1) === roundNumber,
+    );
+
+    const consolidationLinks: ConsolidationLinkInfo[] = loserLinks.map((link) => {
+      const targetStructureId = link.target.structureId;
+      const targetRoundNumber = link.target.roundNumber;
+
+      // Check if losers have already been placed in the target structure
+      const { structure: targetStructure } = findStructure({ drawDefinition, structureId: targetStructureId });
+      const targetAssignments = targetStructure?.positionAssignments || [];
+      const targetMatchUps = (targetStructure?.matchUps || []).filter((m) => m.roundNumber === targetRoundNumber);
+      const targetDrawPositions = new Set(targetMatchUps.flatMap((m) => (m.drawPositions || []).filter(Boolean)));
+
+      const losersPlaced =
+        targetDrawPositions.size > 0 &&
+        [...targetDrawPositions].some((dp) => targetAssignments.some((a) => a.drawPosition === dp && a.participantId));
+
+      return {
+        targetStructureId,
+        targetRoundNumber,
+        feedProfile: link.target.feedProfile,
+        losersPlaced,
+      };
+    });
 
     const roundInfo: LuckyRoundInfo = {
       roundNumber,
@@ -125,6 +161,7 @@ export function getLuckyDrawRoundStatus({
       isPreFeedRound,
       needsLuckySelection,
       nextRoundHasOpenPosition,
+      ...(consolidationLinks.length && { consolidationLinks }),
     };
 
     if (isPreFeedRound) {

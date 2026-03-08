@@ -32,7 +32,7 @@ A matchUpFormat code has the structure:
 | `{count}` | Number of segments                       | `3`, `5`, `7`, `12`                                           |
 | `X`       | Exactly this many segments (not best-of) | `SET7X` = exactly 7 sets                                      |
 | `A`       | Aggregate scoring across segments        | `HAL2A` = 2 halves, aggregate                                 |
-| `-S:`     | Segment (set) format specification       | `-S:6/TB7`, `-S:T10P`, `-S:TB11`, `-S:O3`                    |
+| `-S:`     | Segment (set) format specification       | `-S:6/TB7`, `-S:T10P`, `-S:TB11`, `-S:O3`                     |
 | `-G:`     | Game-level format within segments        | `-G:3C`, `-G:TN3D`                                            |
 | `-F:`     | Final segment format (when different)    | `-F:TB10`, `-F:6/TB7@12`                                      |
 | `-M:`     | Match-level constraint                   | `-M:T50` (50-minute match time cap)                           |
@@ -49,17 +49,17 @@ Examples: `T20` (20-minute timed), `T10P` (10-minute points-based).
 
 ### Match Root Types
 
-| Root  | Sport / Concept                                                                              | Example        |
-| ----- | -------------------------------------------------------------------------------------------- | -------------- |
-| `SET` | Tennis, padel, pickleball, volleyball, table tennis, badminton, squash, racquetball, fencing | `SET3-S:6/TB7` |
-| `HAL` | Soccer, handball, NCAA basketball                                                            | `HAL2A-S:T45`  |
-| `QTR` | Basketball (NBA/FIBA), water polo, lacrosse                                                  | `QTR4A-S:T12`  |
-| `PER` | Ice hockey, wrestling                                                                        | `PER3A-S:T20`  |
-| `RND` | Boxing, MMA                                                                                  | `RND12A-S:T3`  |
-| `FRM` | Table tennis (best-of-7+), badminton                                                         | `FRM7-S:TB11`  |
-| `MAP` | Esports (CS2, Valorant)                                                                      | `MAP3-S:TB13`  |
-| `MAT` | Multi-match formats                                                                          | reserved       |
-| `INN` | Innings-based sports (baseball, wiffle ball)                                                  | `INN4XA-S:O3-M:T50` |
+| Root  | Sport / Concept                                                                              | Example             |
+| ----- | -------------------------------------------------------------------------------------------- | ------------------- |
+| `SET` | Tennis, padel, pickleball, volleyball, table tennis, badminton, squash, racquetball, fencing | `SET3-S:6/TB7`      |
+| `HAL` | Soccer, handball, NCAA basketball                                                            | `HAL2A-S:T45`       |
+| `QTR` | Basketball (NBA/FIBA), water polo, lacrosse                                                  | `QTR4A-S:T12`       |
+| `PER` | Ice hockey, wrestling                                                                        | `PER3A-S:T20`       |
+| `RND` | Boxing, MMA                                                                                  | `RND12A-S:T3`       |
+| `FRM` | Table tennis (best-of-7+), badminton                                                         | `FRM7-S:TB11`       |
+| `MAP` | Esports (CS2, Valorant)                                                                      | `MAP3-S:TB13`       |
+| `MAT` | Multi-match formats                                                                          | reserved            |
+| `INN` | Innings-based sports (baseball, wiffle ball)                                                 | `INN4XA-S:O3-M:T50` |
 
 :::tip Backward Compatibility
 When the root is `SET` (the default), it is omitted from the parsed object. Non-`SET` roots are included as `matchRoot` in the parsed result. This ensures all existing tennis/pickleball/padel format code consumers continue to work unchanged.
@@ -69,18 +69,18 @@ When the root is `SET` (the default), it is omitted from the parsed object. Non-
 
 The `-S:` section describes how each segment is scored:
 
-| Pattern                   | Description                       | Example                           |
-| ------------------------- | --------------------------------- | --------------------------------- |
-| `{games}`                 | Games to win set                  | `-S:6` (first to 6, no tiebreak)  |
-| `{games}/TB{points}`      | Games with tiebreak               | `-S:6/TB7` (tiebreak to 7 at 6-6) |
-| `{games}/TB{points}@{at}` | Tiebreak at specific count        | `-S:4/TB5@3` (TB at 3-3)          |
-| `{games}NOAD`             | No-advantage games                | `-S:6NOAD` (no deuce)             |
-| `TB{points}`              | Tiebreak-only set                 | `-S:TB11` (first to 11, win by 2) |
-| `TB{points}NOAD`          | No-deuce tiebreak set             | `-S:TB15NOAD`                     |
-| `TB{points}@{modifier}`   | Tiebreak with modifier            | `-S:TB21@RALLY`                   |
-| `T{minutes}`              | Timed set (games-based)           | `-S:T20`                          |
-| `T{minutes}P`             | Timed set (points-based)          | `-S:T10P`                         |
-| `T{minutes}G`             | Timed set (games-based, explicit) | `-S:T10G` (same as `-S:T10`)      |
+| Pattern                   | Description                               | Example                              |
+| ------------------------- | ----------------------------------------- | ------------------------------------ |
+| `{games}`                 | Games to win set                          | `-S:6` (first to 6, no tiebreak)     |
+| `{games}/TB{points}`      | Games with tiebreak                       | `-S:6/TB7` (tiebreak to 7 at 6-6)    |
+| `{games}/TB{points}@{at}` | Tiebreak at specific count                | `-S:4/TB5@3` (TB at 3-3)             |
+| `{games}NOAD`             | No-advantage games                        | `-S:6NOAD` (no deuce)                |
+| `TB{points}`              | Tiebreak-only set                         | `-S:TB11` (first to 11, win by 2)    |
+| `TB{points}NOAD`          | No-deuce tiebreak set                     | `-S:TB15NOAD`                        |
+| `TB{points}@{modifier}`   | Tiebreak with modifier                    | `-S:TB21@RALLY`                      |
+| `T{minutes}`              | Timed set (games-based)                   | `-S:T20`                             |
+| `T{minutes}P`             | Timed set (points-based)                  | `-S:T10P`                            |
+| `T{minutes}G`             | Timed set (games-based, explicit)         | `-S:T10G` (same as `-S:T10`)         |
 | `O{outs}`                 | Outs-based segment (baseball/wiffle ball) | `-S:O3` (3 outs per team per inning) |
 
 ### Game Format Specification (`-G:`)
@@ -108,9 +108,9 @@ The `{n}D` suffix caps the number of deuce cycles before a decisive point:
 
 The `-M:` section describes match-level constraints that apply across all segments:
 
-| Pattern      | Description                        | Example                                     |
-| ------------ | ---------------------------------- | -------------------------------------------- |
-| `T{minutes}` | Match time cap (total game clock)  | `-M:T50` (50-minute match time cap)          |
+| Pattern      | Description                       | Example                             |
+| ------------ | --------------------------------- | ----------------------------------- |
+| `T{minutes}` | Match time cap (total game clock) | `-M:T50` (50-minute match time cap) |
 
 Unlike segment-level timed formats (`-S:T45`) where each segment is independently timed, a match constraint applies a single clock across the entire match. For example, `INN4XA-S:O3-M:T50` means the game ends when either all 4 innings are complete or 50 minutes elapse, whichever comes first.
 
@@ -231,7 +231,7 @@ engine.setMatchUpStatus({
 | Standard INTENNSE | `SET7XA-S:T10P` | Exactly 7 timed sets, aggregate, points-based |
 | Shortened         | `SET5XA-S:T10P` | Exactly 5 timed sets, aggregate               |
 
-#### TYPTI (Timed Yielding Points in Tennis Intervals)
+#### TYPTI
 
 | Format        | Code                | Notes                                             |
 | ------------- | ------------------- | ------------------------------------------------- |
@@ -353,12 +353,12 @@ engine.setMatchUpStatus({
 
 #### Wiffle Ball / Baseball
 
-| Format                   | Code                | Notes                                          |
-| ------------------------ | ------------------- | ---------------------------------------------- |
-| BLW standard             | `INN4XA-S:O3-M:T50` | 4 innings, 3 outs, aggregate, 50-min match cap |
-| BLW (no time cap)        | `INN4XA-S:O3`        | 4 innings, 3 outs, aggregate                   |
-| World Wiffle Ball        | `INN6XA-S:O3`        | 6 innings, 3 outs, aggregate                   |
-| Timed innings (approx.)  | `INN4XA-S:T12`       | Timed approximation (~12 min/inning)           |
+| Format                  | Code                | Notes                                          |
+| ----------------------- | ------------------- | ---------------------------------------------- |
+| BLW standard            | `INN4XA-S:O3-M:T50` | 4 innings, 3 outs, aggregate, 50-min match cap |
+| BLW (no time cap)       | `INN4XA-S:O3`       | 4 innings, 3 outs, aggregate                   |
+| World Wiffle Ball       | `INN6XA-S:O3`       | 6 innings, 3 outs, aggregate                   |
+| Timed innings (approx.) | `INN4XA-S:T12`      | Timed approximation (~12 min/inning)           |
 
 #### Other Sports
 
