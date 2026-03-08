@@ -44,13 +44,17 @@ for (const [personId, awards] of Object.entries(result.personPoints)) {
 
 **Parameters:**
 
-| Parameter | Type | Description |
-| --- | --- | --- |
-| `policyDefinitions` | `PolicyDefinitions` | Ranking policy. Falls back to tournament-attached policy if not provided |
-| `participantFilters` | `ParticipantFilters` | Filter which participants to process |
-| `level` | `number` | Tournament level (used for level-keyed point values) |
+| Parameter            | Type                 | Description                                                                                                                                                                  |
+| -------------------- | -------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `policyDefinitions`  | `PolicyDefinitions`  | Ranking policy. Falls back to tournament-attached policy if not provided                                                                                                     |
+| `participantFilters` | `ParticipantFilters` | Filter which participants to process                                                                                                                                         |
+| `level`              | `number`             | Tournament level (used for level-keyed point values). Required for policies that use level-keyed profiles (ATP, WTA, ITF WTT, USTA Junior). Not needed for the Basic policy. |
 
 **Returns:** `personPoints` keyed by `personId`, `pairPoints` keyed by pair `participantId`, `teamPoints` keyed by team `participantId`. Each value is an array of `PointAward` objects.
+
+:::note
+For qualifying stages, the pipeline automatically normalizes finishing positions to a standard convention (1=qualifier, 2=final round loser, etc.) regardless of qualifying draw size. See [Qualifying Position Normalization](/docs/scale-engine/ranking-points-pipeline#qualifying-position-normalization).
+:::
 
 See [Ranking Points Pipeline](/docs/scale-engine/ranking-points-pipeline) for how points are computed.
 
@@ -83,21 +87,27 @@ const result = scaleEngine.getEventRankingPoints({
 });
 
 for (const award of result.eventAwards) {
-  console.log(`${award.participantName}: ${award.points}pts (pos: ${award.positionPoints}, wins: ${award.perWinPoints}, bonus: ${award.bonusPoints})`);
+  console.log(
+    `${award.participantName}: ${award.points}pts (pos: ${award.positionPoints}, wins: ${award.perWinPoints}, bonus: ${award.bonusPoints})`,
+  );
 }
 ```
 
 **Parameters:**
 
-| Parameter | Type | Description |
-| --- | --- | --- |
-| `policyDefinitions` | `PolicyDefinitions` | Ranking policy (must include `POLICY_TYPE_RANKING_POINTS`) |
-| `eventId` | `string` | Event to scope results to |
-| `level` | `number` | Tournament level for level-keyed point values |
+| Parameter           | Type                | Description                                                                                    |
+| ------------------- | ------------------- | ---------------------------------------------------------------------------------------------- |
+| `policyDefinitions` | `PolicyDefinitions` | Ranking policy (must include `POLICY_TYPE_RANKING_POINTS`)                                     |
+| `eventId`           | `string`            | Event to scope results to                                                                      |
+| `level`             | `number`            | Tournament level for level-keyed point values. Omit for level-independent policies like Basic. |
 
 **Returns:** `eventAwards` is a flat array sorted by points descending, then by participant name. Each award includes `participantId`, `participantName`, `personId`, `points`, `positionPoints`, `perWinPoints`, `bonusPoints`, `winCount`, `rangeAccessor`, `drawId`, `drawType`, and `eventType`. The response also includes `eventName`, `eventType`, and `isDoubles` for display purposes.
 
 **Difference from `getTournamentPoints`:** While `getTournamentPoints` returns points keyed by `personId`/`participantId` across the entire tournament, `getEventRankingPoints` filters to a single event and returns a display-ready flat array with resolved participant names.
+
+:::tip
+Qualifying-only policies (like ITF WTT) will return zero awards for events that have no qualifying draw structure. This is expected — see [Tournament Level](/docs/policies/rankingPolicy#tournament-level) for details.
+:::
 
 ---
 
@@ -145,13 +155,13 @@ const { scaleItem } = scaleEngine.getParticipantScaleItem({
 
 **Parameters:**
 
-| Parameter | Type | Description |
-| --- | --- | --- |
-| `policyDefinitions` | `PolicyDefinitions` | Ranking policy |
-| `participantFilters` | `ParticipantFilters` | Filter which participants to process |
-| `scaleName` | `string` | Name for the scale item (default: `'RANKING_POINTS'`) |
-| `level` | `number` | Tournament level |
-| `removePriorValues` | `boolean` | Remove existing scale items with the same scaleName before writing |
+| Parameter            | Type                 | Description                                                        |
+| -------------------- | -------------------- | ------------------------------------------------------------------ |
+| `policyDefinitions`  | `PolicyDefinitions`  | Ranking policy                                                     |
+| `participantFilters` | `ParticipantFilters` | Filter which participants to process                               |
+| `scaleName`          | `string`             | Name for the scale item (default: `'RANKING_POINTS'`)              |
+| `level`              | `number`             | Tournament level                                                   |
+| `removePriorValues`  | `boolean`            | Remove existing scale items with the same scaleName before writing |
 
 **Scale item structure:** Each participant receives one scale item per `eventType`, with `scaleValue: { points, awards }` where `points` is the total and `awards` is the full `PointAward[]` breakdown.
 
@@ -218,8 +228,18 @@ const rankingList = generateRankingList({
   pointAwards: allAwards, // collected from multiple getTournamentPoints calls
   aggregationRules: {
     countingBuckets: [
-      { bucketName: 'Singles', eventTypes: ['SINGLES'], pointComponents: ['positionPoints', 'perWinPoints', 'bonusPoints'], bestOfCount: 6 },
-      { bucketName: 'Doubles', eventTypes: ['DOUBLES'], pointComponents: ['positionPoints', 'perWinPoints', 'bonusPoints'], bestOfCount: 2 },
+      {
+        bucketName: 'Singles',
+        eventTypes: ['SINGLES'],
+        pointComponents: ['positionPoints', 'perWinPoints', 'bonusPoints'],
+        bestOfCount: 6,
+      },
+      {
+        bucketName: 'Doubles',
+        eventTypes: ['DOUBLES'],
+        pointComponents: ['positionPoints', 'perWinPoints', 'bonusPoints'],
+        bestOfCount: 2,
+      },
       { bucketName: 'Quality Wins', pointComponents: ['qualityWinPoints'], bestOfCount: 0 },
     ],
     rollingPeriodDays: 365,
@@ -261,13 +281,20 @@ const { buckets, totalPoints } = getParticipantPoints({
   personId: 'player-abc',
   aggregationRules: {
     countingBuckets: [
-      { bucketName: 'Singles', eventTypes: ['SINGLES'], pointComponents: ['positionPoints', 'perWinPoints'], bestOfCount: 6 },
+      {
+        bucketName: 'Singles',
+        eventTypes: ['SINGLES'],
+        pointComponents: ['positionPoints', 'perWinPoints'],
+        bestOfCount: 6,
+      },
     ],
   },
 });
 
 for (const bucket of buckets) {
-  console.log(`${bucket.bucketName}: ${bucket.bucketTotal}pts (${bucket.countingResults.length} counting, ${bucket.droppedResults.length} dropped)`);
+  console.log(
+    `${bucket.bucketName}: ${bucket.bucketTotal}pts (${bucket.countingResults.length} counting, ${bucket.droppedResults.length} dropped)`,
+  );
 }
 ```
 
