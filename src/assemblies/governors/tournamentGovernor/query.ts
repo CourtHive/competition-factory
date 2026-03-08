@@ -9,6 +9,7 @@ export { getAggregateTeamResults } from '@Query/scales/getAggregateTeamResults';
 export { getTournamentStructures } from '@Query/structure/structureGetter';
 export { analyzeTournament } from '@Query/tournaments/analyzeTournament';
 export { getTournamentInfo } from '@Query/tournaments/getTournamentInfo';
+export { getEventRankingPoints } from '@Query/scales/getEventRankingPoints';
 export { getTournamentPoints } from '@Query/scales/getTournamentPoints';
 export { getMutationLocks } from '@Query/tournaments/getMutationLocks';
 export { analyzeDraws } from '@Query/tournaments/analyzeDraws';

@@ -11,7 +11,7 @@ export const SCHEDULED_DATE = 'SCHEDULE.DATE';
 export const COMPLETED_DATE = 'COMPLETED.DATE'; // considering adding this timeItem on completed score entry provided date is between tournament startDate/endDate
 
 export const HOME_PARTICIPANT_ID = 'HOME_PARTICIPANT_ID';
-export const ASSIGN_OFFICIAL = 'SCHEDULE.ASSIGN.OFFICIAL';
+export const ASSIGN_OFFICIAL = 'SCHEDULE.ASSIGNMENT.OFFICIAL';
 export const SCHEDULED_TIME = 'SCHEDULE.TIME.SCHEDULED';
 export const START_TIME = 'SCHEDULE.TIME.START';
 export const STOP_TIME = 'SCHEDULE.TIME.STOP';

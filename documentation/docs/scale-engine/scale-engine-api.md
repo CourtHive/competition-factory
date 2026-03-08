@@ -56,6 +56,51 @@ See [Ranking Points Pipeline](/docs/scale-engine/ranking-points-pipeline) for ho
 
 ---
 
+### getEventRankingPoints
+
+```ts
+getEventRankingPoints(params: {
+  policyDefinitions?: PolicyDefinitions;
+  eventId: string;
+  level?: number;
+}): {
+  success: boolean;
+  eventAwards: EventAward[];
+  eventName: string;
+  eventType: string;
+  isDoubles: boolean;
+}
+```
+
+Returns ranking points scoped to a single event as a flat, sorted array of participant awards. This is a convenience method that wraps `getTournamentPoints` for event-level display.
+
+```js
+scaleEngine.setState(tournamentRecord);
+const result = scaleEngine.getEventRankingPoints({
+  policyDefinitions: rankingPolicy,
+  eventId: 'event-abc',
+  level: 3,
+});
+
+for (const award of result.eventAwards) {
+  console.log(`${award.participantName}: ${award.points}pts (pos: ${award.positionPoints}, wins: ${award.perWinPoints}, bonus: ${award.bonusPoints})`);
+}
+```
+
+**Parameters:**
+
+| Parameter | Type | Description |
+| --- | --- | --- |
+| `policyDefinitions` | `PolicyDefinitions` | Ranking policy (must include `POLICY_TYPE_RANKING_POINTS`) |
+| `eventId` | `string` | Event to scope results to |
+| `level` | `number` | Tournament level for level-keyed point values |
+
+**Returns:** `eventAwards` is a flat array sorted by points descending, then by participant name. Each award includes `participantId`, `participantName`, `personId`, `points`, `positionPoints`, `perWinPoints`, `bonusPoints`, `winCount`, `rangeAccessor`, `drawId`, `drawType`, and `eventType`. The response also includes `eventName`, `eventType`, and `isDoubles` for display purposes.
+
+**Difference from `getTournamentPoints`:** While `getTournamentPoints` returns points keyed by `personId`/`participantId` across the entire tournament, `getEventRankingPoints` filters to a single event and returns a display-ready flat array with resolved participant names.
+
+---
+
 ### applyTournamentRankingPoints
 
 ```ts

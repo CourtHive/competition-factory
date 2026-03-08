@@ -38,6 +38,46 @@ See [Ranking Points Pipeline](/docs/scale-engine/ranking-points-pipeline) for de
 
 ---
 
+### getEventRankingPoints
+
+Returns ranking points scoped to a single event as a flat array of participant awards, sorted by points descending.
+
+```js
+const result = rankingGovernor.getEventRankingPoints({
+  tournamentRecord,
+  policyDefinitions: rankingPolicy,
+  eventId: 'event-abc',
+  level: 3,
+});
+
+// result.eventAwards: sorted array of enriched PointAward objects
+// result.eventName: string
+// result.eventType: 'SINGLES' | 'DOUBLES' | 'TEAM'
+// result.isDoubles: boolean
+```
+
+**Purpose:** Convenience wrapper around `getTournamentPoints` oriented toward event-level display. Filters awards to only those from draws in the specified event, enriches each award with `participantId` and `participantName`, and returns a flat sorted array ready for table rendering. Handles SINGLES person points, DOUBLES pair points (with attribution), and TEAM points.
+
+| Parameter           | Type                | Description                                                |
+| ------------------- | ------------------- | ---------------------------------------------------------- |
+| `tournamentRecord`  | `Tournament`        | Tournament record                                          |
+| `policyDefinitions` | `PolicyDefinitions` | Ranking policy (must include `POLICY_TYPE_RANKING_POINTS`) |
+| `eventId`           | `string`            | Event to scope results to                                  |
+| `level`             | `number`            | Optional tournament level for level-keyed point values     |
+
+**Returns:**
+
+| Property      | Type           | Description                                                                                                                                                                                           |
+| ------------- | -------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `eventAwards` | `EventAward[]` | Sorted array of awards with `participantId`, `participantName`, `personId`, `points`, `positionPoints`, `perWinPoints`, `bonusPoints`, `winCount`, `rangeAccessor`, `drawId`, `drawType`, `eventType` |
+| `eventName`   | `string`       | Name of the event                                                                                                                                                                                     |
+| `eventType`   | `string`       | Event type (`SINGLES`, `DOUBLES`, `TEAM`)                                                                                                                                                             |
+| `isDoubles`   | `boolean`      | Whether event is doubles                                                                                                                                                                              |
+
+Also available on `tournamentEngine` and `scaleEngine`.
+
+---
+
 ### getAwardProfile
 
 Selects the best-matching award profile for a participation using specificity scoring.
@@ -108,7 +148,12 @@ const rankingList = rankingGovernor.generateRankingList({
   pointAwards: allAwards,
   aggregationRules: {
     countingBuckets: [
-      { bucketName: 'Singles', eventTypes: ['SINGLES'], pointComponents: ['positionPoints', 'perWinPoints'], bestOfCount: 6 },
+      {
+        bucketName: 'Singles',
+        eventTypes: ['SINGLES'],
+        pointComponents: ['positionPoints', 'perWinPoints'],
+        bestOfCount: 6,
+      },
     ],
     rollingPeriodDays: 365,
     tiebreakCriteria: ['highestSingleResult'],
@@ -161,13 +206,13 @@ const result = rankingGovernor.applyTournamentRankingPoints({
 
 **Purpose:** Write-back mutation. Calls `getTournamentPoints`, then writes one scale item per participant per eventType. Enables multi-tournament workflows and quality win lookups in subsequent tournaments.
 
-| Parameter | Type | Description |
-| --- | --- | --- |
-| `tournamentRecord` | `Tournament` | Tournament to compute and persist points for |
-| `policyDefinitions` | `PolicyDefinitions` | Ranking policy |
-| `scaleName` | `string` | Scale item name (default: `'RANKING_POINTS'`) |
-| `level` | `number` | Tournament level |
-| `removePriorValues` | `boolean` | Remove existing items with same scaleName before writing |
+| Parameter           | Type                | Description                                              |
+| ------------------- | ------------------- | -------------------------------------------------------- |
+| `tournamentRecord`  | `Tournament`        | Tournament to compute and persist points for             |
+| `policyDefinitions` | `PolicyDefinitions` | Ranking policy                                           |
+| `scaleName`         | `string`            | Scale item name (default: `'RANKING_POINTS'`)            |
+| `level`             | `number`            | Tournament level                                         |
+| `removePriorValues` | `boolean`           | Remove existing items with same scaleName before writing |
 
 ---
 
@@ -175,7 +220,7 @@ const result = rankingGovernor.applyTournamentRankingPoints({
 
 The rankingGovernor is one of two governors composed into the [Scale Engine](/docs/scale-engine/scale-engine-overview):
 
-```
+```text
 ScaleEngine = rankingGovernor + ratingsGovernor
 ```
 

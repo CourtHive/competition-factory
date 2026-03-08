@@ -1,3 +1,4 @@
+export { getEventRankingPoints } from '@Query/scales/getEventRankingPoints';
 export { getTournamentPoints } from '@Query/scales/getTournamentPoints';
 export { generateRankingList } from '@Query/scales/generateRankingList';
 export { getParticipantPoints } from '@Query/scales/getParticipantPoints';
