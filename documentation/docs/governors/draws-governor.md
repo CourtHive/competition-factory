@@ -299,7 +299,7 @@ const { valid, errors } = engine.checkValidEntries({
 
 ## drawMatic
 
-Automated draw positioning system that intelligently assigns participants to draw positions based on seeding, geographic distribution, and conflict avoidance policies.
+Automated draw positioning system that intelligently assigns participants to draw positions. See [DrawMatic](/docs/concepts/draw-types/drawmatic) for full documentation.
 
 ```js
 const result = engine.drawMatic({
@@ -385,7 +385,7 @@ const { drawDefinition } = engine.generateDrawDefinition({
 
 ## generateDrawMaticRound
 
-Generates positioning for a specific round using drawMatic algorithm.
+Generates positioning for a specific round using the [drawMatic](/docs/concepts/draw-types/drawmatic) algorithm.
 
 ```js
 engine.generateDrawMaticRound({

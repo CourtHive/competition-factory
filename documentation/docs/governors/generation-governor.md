@@ -8,7 +8,7 @@ import { generationGovernor } from 'tods-competition-factory';
 
 ## drawMatic
 
-**drawMatic** is a dynamic round generator for AD_HOC draws which produces participant pairings with previous opponent and team member avoidance.
+**[drawMatic](/docs/concepts/draw-types/drawmatic)** is a dynamic round generator for AD_HOC draws which produces participant pairings with previous opponent and team member avoidance.
 When `{ scaleName, scaleAccessor }` values are present, participants will be paired for level-based play.
 
 The number of rounds (`roundsCount`) that can be generated is limited to **# participants - 1**, which is the normal size of a Round Robin, unless `{ enableDoubleRobin: true }`, in which case the upper limit is **(# participants - 1) \* 2**.
@@ -47,7 +47,7 @@ const { matchUps, participantIdPairings, iterations, candidatesCount, modifiedSc
 
 ## generateAdHocMatchUps
 
-Draws with `{ drawType: AD_HOC }` allow `matchUps` to be dynamically added. In this type of draw there is no automatic participant progression between rounds. Participant assignment to `matchUps` is done manually, or via **drawMatic**. The only restriction is that a participant may appear once per round.
+Draws with `{ drawType: AD_HOC }` allow `matchUps` to be dynamically added. In this type of draw there is no automatic participant progression between rounds. Participant assignment to `matchUps` is done manually, or via **[drawMatic](/docs/concepts/draw-types/drawmatic)**. The only restriction is that a participant may appear once per round.
 
 ```js
 const { matchUps } = engine.generateAdHocMatchUps({
@@ -300,7 +300,7 @@ See also: [Custom Playoff Topologies](../concepts/draw-links.mdx#custom-playoff-
 
 ## generateDrawMaticRound
 
-Typically not called directly. `engine.drawMatic` is a higher level wrapper which automates derivation of `adHocRatings`.
+Typically not called directly. [`engine.drawMatic`](/docs/concepts/draw-types/drawmatic) is a higher level wrapper which automates derivation of `adHocRatings`.
 
 ```js
 const {
