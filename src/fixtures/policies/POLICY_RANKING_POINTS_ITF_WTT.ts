@@ -45,6 +45,7 @@ import { POLICY_TYPE_RANKING_POINTS } from '@Constants/policyConstants';
 //   $15,000    (L4): Q=2, FRQ=1
 const qualifyingSingles = {
   profileName: 'ITF WTT Qualifying Singles',
+  levels: [1, 2, 3, 4],
   drawTypes: [SINGLE_ELIMINATION],
   eventTypes: [SINGLES],
   stages: [QUALIFYING],
@@ -60,6 +61,7 @@ const qualifyingSingles = {
 // In the 2020 qualifying-only system, doubles qualifying follows the same structure.
 const qualifyingDoubles = {
   profileName: 'ITF WTT Qualifying Doubles',
+  levels: [1, 2, 3, 4],
   drawTypes: [SINGLE_ELIMINATION],
   eventTypes: [DOUBLES],
   stages: [QUALIFYING],

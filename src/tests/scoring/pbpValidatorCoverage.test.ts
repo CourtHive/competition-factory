@@ -13,9 +13,17 @@
  */
 
 import { pbpValidator } from '@Validators/scoring/pbpValidator';
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 
 describe('pbpValidator - Coverage Improvements', () => {
+  beforeEach(() => {
+    vi.spyOn(console, 'log').mockImplementation(() => {});
+    vi.spyOn(console, 'error').mockImplementation(() => {});
+  });
+  afterEach(() => {
+    vi.restoreAllMocks();
+  });
+
   // ==========================================================================
   // Default format when no format and no expected score
   // ==========================================================================

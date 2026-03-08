@@ -156,7 +156,23 @@ export function getTournamentPoints({
               }
             }
 
-            const accessor = Array.isArray(finishingPositionRange) && Math.max(...finishingPositionRange);
+            let accessor = Array.isArray(finishingPositionRange) && Math.max(...finishingPositionRange);
+
+            // For QUALIFYING stages, normalize the accessor so that policies can use
+            // position 1 = qualifier (won through), 2 = final round loser, 4 = 2nd round loser, etc.
+            // The factory's raw finishingPositionRange is relative to the qualifying draw size
+            // (e.g. [4,4] for a qualifier in a 8→4 qualifying draw), but policies model
+            // qualifying positions as 1=Q, 2=FRQ, 4=Q2, etc.
+            if (rankingStage === QUALIFYING && accessor && participation.finishingRound) {
+              // finishingRound counts from the final: 1 = last round, 2 = penultimate, etc.
+              // Normalize: round 1 losers → position 2, round 2 losers → position 4, winners → position 1
+              if (participantWon) {
+                accessor = 1;
+              } else {
+                accessor = Math.pow(2, participation.finishingRound);
+              }
+            }
+
             const dashRange = unique(finishingPositionRange || []).join('-');
 
             const firstRound = accessor && rankingStage !== QUALIFYING && finishingPositionRange?.includes(drawSize);
@@ -224,7 +240,9 @@ export function getTournamentPoints({
 
             // cap wins for per-win calculations
             const effectiveWinCount =
-              maxCountable !== undefined ? Math.min(winCount || 0, Math.max(0, maxCountable - countedWins)) : winCount;
+              maxCountable !== undefined && maxCountable > 0
+                ? Math.min(winCount || 0, Math.max(0, maxCountable - countedWins))
+                : winCount;
 
             if (!awardPoints && pointsPerWin && effectiveWinCount) {
               perWinPoints += effectiveWinCount * pointsPerWin;
@@ -386,7 +404,7 @@ export function getTournamentPoints({
           if (drawMatchUps.length) {
             const wonMatchUpIds = drawMatchUps.map((m: any) => m.matchUpId);
             const participantSideMap: Record<string, number> = {};
-            for (const m of drawMatchUps as any[]) {
+            for (const m of drawMatchUps) {
               participantSideMap[m.matchUpId] = m.sideNumber;
             }
 

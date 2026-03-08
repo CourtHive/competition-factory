@@ -1,7 +1,7 @@
 /* eslint-disable sonarjs/no-duplicate-string */
 import { BLOCK_TYPES, type CourtRef } from '@Assemblies/governors/temporalGovernor/types';
 import { TemporalEngine } from '@Assemblies/engines/temporal/TemporalEngine';
-import { describe, it, expect, beforeEach } from 'vitest';
+import { describe, it, expect, beforeEach, vi } from 'vitest';
 
 const TEST_TOURNAMENT = 'test-tournament';
 const TEST_VENUE = 'venue-1';
@@ -630,6 +630,8 @@ describe('TemporalEngine plan state', () => {
 
 describe('TemporalEngine conflict evaluator error handling', () => {
   it('catches evaluator errors and continues', () => {
+    vi.spyOn(console, 'error').mockImplementation(() => {});
+
     const engine = new TemporalEngine();
     engine.init(makeBasicRecord(), {
       tournamentId: TEST_TOURNAMENT,
@@ -651,5 +653,7 @@ describe('TemporalEngine conflict evaluator error handling', () => {
     });
     // Block should still be applied despite evaluator error
     expect(result.applied).toHaveLength(1);
+
+    vi.restoreAllMocks();
   });
 });

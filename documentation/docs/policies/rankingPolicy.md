@@ -52,7 +52,7 @@ awardProfiles: [
       8: { value: 25 },
     },
   },
-]
+];
 ```
 
 ### Full Profile
@@ -179,7 +179,9 @@ Per-win points are awarded for each match won, typically as an alternative to po
 ### Flat Value
 
 ```js
-{ pointsPerWin: 60 }
+{
+  pointsPerWin: 60;
+}
 ```
 
 ### Level-Keyed
@@ -197,9 +199,9 @@ Per-win points are awarded for each match won, typically as an alternative to po
 ```js
 {
   perWinPoints: [
-    { participationOrders: [1], level: { 1: 300, 2: 225 } },  // main draw
-    { participationOrders: [2], level: { 1: 100, 2: 75 } },   // consolation
-  ]
+    { participationOrders: [1], level: { 1: 300, 2: 225 } }, // main draw
+    { participationOrders: [2], level: { 1: 100, 2: 75 } }, // consolation
+  ];
 }
 ```
 
@@ -237,7 +239,7 @@ qualityWinProfiles: [
       { rankRange: [26, 50], value: 169 },
     ],
   },
-]
+];
 ```
 
 See [Quality Win Points](/docs/scale-engine/quality-win-points) for detailed documentation.
@@ -247,8 +249,12 @@ See [Quality Win Points](/docs/scale-engine/quality-win-points) for detailed doc
 Controls how pair points flow to individual participant records:
 
 ```js
-{ doublesAttribution: 'fullToEach' }  // each individual gets 100%
-{ doublesAttribution: 'splitEven' }   // each individual gets 50%
+{
+  doublesAttribution: 'fullToEach';
+} // each individual gets 100%
+{
+  doublesAttribution: 'splitEven';
+} // each individual gets 50%
 ```
 
 When not specified, points remain only on the pair record.
@@ -263,9 +269,8 @@ awardProfiles: [
   { finishingPositionRanges: { 1: { value: 100 } } },
 
   // Score 3: drawTypes + levels + maxDrawSize
-  { drawTypes: ['ROUND_ROBIN'], levels: [3, 4, 5], maxDrawSize: 16,
-    perWinPoints: { level: { 3: 225 } } },
-]
+  { drawTypes: ['ROUND_ROBIN'], levels: [3, 4, 5], maxDrawSize: 16, perWinPoints: { level: { 3: 225 } } },
+];
 ```
 
 The Round Robin profile (score 3) wins over the catch-all (score 0) for RR draws at levels 3-5.
@@ -398,6 +403,83 @@ aggregationRules: {
 ```
 
 See [Multi-Tournament Aggregation](/docs/scale-engine/aggregation) for detailed documentation.
+
+## Qualifying Profiles
+
+Qualifying stages use a normalized position convention that differs from main draw positions. See [Qualifying Position Normalization](/docs/scale-engine/ranking-points-pipeline#qualifying-position-normalization) for how the pipeline transforms raw qualifying positions.
+
+When writing qualifying profiles, use the `stages: ['QUALIFYING']` scope and define `finishingPositionRanges` with normalized keys:
+
+```js
+{
+  profileName: 'Qualifying Singles',
+  stages: ['QUALIFYING'],
+  eventTypes: ['SINGLES'],
+  levels: [1, 2, 3, 4],
+  finishingPositionRanges: {
+    1: { level: { 1: 4, 2: 3, 3: 3, 4: 2 } },  // Qualifier (won through)
+    2: 1,                                          // Final round loser
+  },
+}
+```
+
+:::info
+Qualifying profiles only produce points when the tournament has a qualifying draw structure. A main-draw-only tournament (even with a level set) will produce zero qualifying awards. This is expected behavior — see the ITF WTT policy for an example of a qualifying-only ranking system.
+:::
+
+## Tournament Level
+
+The `level` parameter is a numeric tier (1, 2, 3, ...) that selects point values from level-keyed profiles. Higher-tier tournaments (lower level numbers) typically award more points.
+
+Level is **not** the same as `tournamentLevel` in the TODS schema (which describes geographic scope: CLUB, NATIONAL, INTERNATIONAL, etc.). The ranking policy `level` is a tier within a specific ranking system:
+
+| System      | Level examples                                            |
+| ----------- | --------------------------------------------------------- |
+| ATP         | 1 = Grand Slam, 2 = ATP Finals, 8 = ATP 250, 15 = ITF M15 |
+| WTA         | 1 = Grand Slam, 2 = WTA Finals, 5 = WTA 250, 11 = ITF W15 |
+| ITF WTT     | 1 = $25K+H, 2 = $25K, 3 = $15K+H, 4 = $15K                |
+| USTA Junior | 1 = National Championships, 7 = Intermediate              |
+
+Policies that require a level will produce **no awards** when called without one (all profiles specify `levels` or `maxLevel`, so no profile matches). The Basic policy has no level-keyed values and produces points regardless of whether a level is passed.
+
+## Built-in Policy Fixtures
+
+The factory ships with five ranking policy fixtures covering major professional, junior, and basic systems. Import them from `fixtures.policies`:
+
+```js
+import { fixtures } from 'tods-competition-factory';
+
+const {
+  POLICY_RANKING_POINTS_BASIC,
+  POLICY_RANKING_POINTS_ATP,
+  POLICY_RANKING_POINTS_WTA,
+  POLICY_RANKING_POINTS_ITF_WTT,
+  POLICY_RANKING_POINTS_USTA_JUNIOR,
+} = fixtures.policies;
+
+// Basic policy — no level needed
+const basic = scaleEngine.getEventRankingPoints({
+  policyDefinitions: POLICY_RANKING_POINTS_BASIC,
+  eventId: 'event-abc',
+});
+
+// Level-requiring policies
+const atp = scaleEngine.getEventRankingPoints({
+  policyDefinitions: POLICY_RANKING_POINTS_ATP,
+  eventId: 'event-abc',
+  level: 1,
+});
+```
+
+| Fixture                             | Levels                       | Period   | Best-of                  | Notes                                                   |
+| ----------------------------------- | ---------------------------- | -------- | ------------------------ | ------------------------------------------------------- |
+| `POLICY_RANKING_POINTS_BASIC`       | None (level-independent)     | —        | —                        | Simple position-based points, no level required         |
+| `POLICY_RANKING_POINTS_ATP`         | 15 (Grand Slam → ITF M15)    | 52 weeks | Singles: 19, Doubles: 18 | Mandatory counting rules, qualifying points             |
+| `POLICY_RANKING_POINTS_WTA`         | 11 (Grand Slam → ITF W15)    | 52 weeks | Singles: 18, Doubles: 12 | Draw size threshold arrays                              |
+| `POLICY_RANKING_POINTS_ITF_WTT`     | 4 ($25K+H → $15K)            | 52 weeks | 14                       | Qualifying-only system (post-2020, no main draw points) |
+| `POLICY_RANKING_POINTS_USTA_JUNIOR` | 7 (Nationals → Intermediate) | —        | —                        | 8 age categories, per-win with maxCountableMatches      |
+
+These fixtures can be used as-is for preview/backoffice ranking point calculations, or as starting points for custom policies.
 
 ## Related Documentation
 

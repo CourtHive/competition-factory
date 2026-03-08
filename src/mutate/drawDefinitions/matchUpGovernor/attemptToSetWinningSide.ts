@@ -31,7 +31,6 @@ export function attemptToSetWinningSide(params) {
       matchUp,
     });
     if (connectedStructureIds.length) {
-      console.log({ connectedStructureIds });
       connectedStructures = true;
     }
 

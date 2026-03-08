@@ -1,6 +1,6 @@
 import { mcpValidator, validateMCPMatch, exportMatchUpJSON } from '@Validators/scoring/mcpValidator';
 import type { MCPMatch, MCPPoint } from '@Validators/scoring/mcpParser';
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 
 // Helper to create a minimal MCPPoint with no Set values (avoids bad format deduction)
 function makeMCPPoint(overrides: Partial<MCPPoint> = {}): MCPPoint {
@@ -49,6 +49,14 @@ function makeMCPMatch(overrides: Partial<MCPMatch> = {}): MCPMatch {
 }
 
 describe('mcpValidator - Branch Coverage', () => {
+  beforeEach(() => {
+    vi.spyOn(console, 'log').mockImplementation(() => {});
+    vi.spyOn(console, 'error').mockImplementation(() => {});
+  });
+  afterEach(() => {
+    vi.restoreAllMocks();
+  });
+
   // ========================================================================
   // parseMatchId branches
   // ========================================================================

@@ -6,7 +6,7 @@ The ranking points pipeline transforms tournament results into granular point aw
 
 ## Pipeline Overview
 
-```
+```text
 Tournament Record
        |
        v
@@ -39,21 +39,21 @@ Profiles are scored by counting their populated scope fields. A profile that spe
 
 **Scored fields** (1 point each):
 
-| Field | Matches Against |
-| --- | --- |
-| `eventTypes` | `event.eventType` |
-| `drawTypes` | `drawDefinition.drawType` |
-| `drawSizes` | `drawDefinition.drawSize` |
-| `maxDrawSize` | `drawDefinition.drawSize <= maxDrawSize` |
-| `stages` | `structureParticipation.rankingStage` |
-| `stageSequences` | `structureParticipation.stageSequence` |
-| `levels` | `level` parameter |
-| `maxLevel` | `level <= maxLevel` |
-| `flights` | `structureParticipation.flightNumber` |
-| `maxFlightNumber` | `flightNumber <= maxFlightNumber` |
+| Field                | Matches Against                             |
+| -------------------- | ------------------------------------------- |
+| `eventTypes`         | `event.eventType`                           |
+| `drawTypes`          | `drawDefinition.drawType`                   |
+| `drawSizes`          | `drawDefinition.drawSize`                   |
+| `maxDrawSize`        | `drawDefinition.drawSize <= maxDrawSize`    |
+| `stages`             | `structureParticipation.rankingStage`       |
+| `stageSequences`     | `structureParticipation.stageSequence`      |
+| `levels`             | `level` parameter                           |
+| `maxLevel`           | `level <= maxLevel`                         |
+| `flights`            | `structureParticipation.flightNumber`       |
+| `maxFlightNumber`    | `flightNumber <= maxFlightNumber`           |
 | `participationOrder` | `structureParticipation.participationOrder` |
-| `dateRanges` | `startDate`/`endDate` within range |
-| `category.*` | Each populated CategoryScope field |
+| `dateRanges`         | `startDate`/`endDate` within range          |
+| `category.*`         | Each populated CategoryScope field          |
 
 **Priority override:** If any matching profile has an explicit `priority` number, the highest priority wins regardless of specificity score.
 
@@ -82,23 +82,54 @@ Position points are determined by the participant's [`finishingPositionRange`](/
 
 ### The Accessor
 
+For **main draw** and **consolation** stages:
+
 ```js
 const accessor = Math.max(...finishingPositionRange);
 ```
 
 The accessor is used to look up points in the profile's `finishingPositionRanges`:
 
-| Finish | finishingPositionRange | accessor | Policy key |
-| --- | --- | --- | --- |
-| Champion | `[1, 1]` | `1` | `1` |
-| Runner-up | `[2, 2]` | `2` | `2` |
-| SF losers (no 3-4 playoff) | `[3, 4]` | `4` | `4` |
-| 3rd place (with playoff) | `[3, 3]` | `3` | `3` |
-| QF losers | `[5, 8]` | `8` | `8` |
-| R16 losers | `[9, 16]` | `16` | `16` |
+| Finish                     | finishingPositionRange | accessor | Policy key |
+| -------------------------- | ---------------------- | -------- | ---------- |
+| Champion                   | `[1, 1]`               | `1`      | `1`        |
+| Runner-up                  | `[2, 2]`               | `2`      | `2`        |
+| SF losers (no 3-4 playoff) | `[3, 4]`               | `4`      | `4`        |
+| 3rd place (with playoff)   | `[3, 3]`               | `3`      | `3`        |
+| QF losers                  | `[5, 8]`               | `8`      | `8`        |
+| R16 losers                 | `[9, 16]`              | `16`     | `16`       |
 
 :::tip
 In draws without a 3rd-place playoff (standard single elimination), both semifinal losers get `finishingPositionRange: [3, 4]` and accessor `4`. Set the key `4` value to your intended "semifinal loser" points.
+:::
+
+### Qualifying Position Normalization
+
+For **QUALIFYING** stages, the raw `finishingPositionRange` from the factory is relative to the qualifying draw size (e.g., `[4, 4]` for a qualifier in an 8→4 qualifying draw). However, ranking policies use a normalized convention where positions map to qualifying outcomes rather than draw positions:
+
+| Qualifying outcome                   | Normalized accessor | Policy key |
+| ------------------------------------ | ------------------- | ---------- |
+| Qualifier (won through to main draw) | `1`                 | `1`        |
+| Final round loser (FRQ)              | `2`                 | `2`        |
+| 2nd round loser                      | `4`                 | `4`        |
+| 1st round loser                      | `8`                 | `8`        |
+
+The pipeline automatically normalizes qualifying accessors using the participant's `finishingRound`:
+
+```js
+if (rankingStage === QUALIFYING) {
+  if (participantWon) {
+    accessor = 1; // Qualifier
+  } else {
+    accessor = Math.pow(2, finishingRound); // 1→2, 2→4, 3→8, etc.
+  }
+}
+```
+
+This means qualifying profiles only need to define keys `1`, `2`, `4`, `8`, etc. — regardless of the actual qualifying draw size.
+
+:::tip
+All built-in policies (ATP, WTA, ITF WTT) use this normalized convention. When writing custom qualifying profiles, use position `1` for qualifiers, `2` for final-round losers, etc.
 :::
 
 ### Position Value Resolution
@@ -114,7 +145,7 @@ The value at each policy key can be:
 
 For draws with multiple structures (FIC, Curtis Consolation, Compass), participants may have `structureParticipation` entries in multiple structures. The pipeline iterates all entries and takes the **maximum position points** across structures (see [Multi-Structure Draws](/docs/concepts/finishing-positions#multi-structure-draws)):
 
-```
+```text
 Main draw R2 loser:      accessor 24 -> 75 pts
 Consolation SF finisher:  accessor 12 -> 150 pts
 Final position points:    150 pts (consolation finish is better)
@@ -183,11 +214,11 @@ rankingPolicy: {
 }
 ```
 
-| Mode | Effect |
-| --- | --- |
-| `'fullToEach'` | Each individual receives 100% of pair points |
-| `'splitEven'` | Each individual receives 50% of pair points (rounded) |
-| Not set | Points only on pair record, not distributed to individuals |
+| Mode           | Effect                                                     |
+| -------------- | ---------------------------------------------------------- |
+| `'fullToEach'` | Each individual receives 100% of pair points               |
+| `'splitEven'`  | Each individual receives 50% of pair points (rounded)      |
+| Not set        | Points only on pair record, not distributed to individuals |
 
 ## PointAward Output
 
