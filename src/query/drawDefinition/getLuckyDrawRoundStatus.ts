@@ -4,9 +4,9 @@ import { findStructure } from '@Acquire/findStructure';
 
 // constants
 import { ErrorType, INVALID_VALUES, MISSING_DRAW_DEFINITION } from '@Constants/errorConditionConstants';
-import { completedMatchUpStatuses } from '@Constants/matchUpStatusConstants';
-import { DrawDefinition, Tournament } from '@Types/tournamentTypes';
+import { BYE, completedMatchUpStatuses } from '@Constants/matchUpStatusConstants';
 import { LOSER, LUCKY_DRAW } from '@Constants/drawDefinitionConstants';
+import { DrawDefinition, Tournament } from '@Types/tournamentTypes';
 import { SUCCESS } from '@Constants/resultConstants';
 
 type LuckyParticipantInfo = {
@@ -103,7 +103,7 @@ export function getLuckyDrawRoundStatus({
     const profile = roundProfile[roundNumber];
     const roundMatchUps = matchUps.filter((m) => m.roundNumber === roundNumber);
     const completedCount = roundMatchUps.filter(
-      (m) => completedMatchUpStatuses.includes(m.matchUpStatus) || m.winningSide,
+      (m) => completedMatchUpStatuses.includes(m.matchUpStatus) || m.winningSide || m.matchUpStatus === BYE,
     ).length;
     const isComplete = completedCount === profile.matchUpsCount;
     const isFinalRound = profile.matchUpsCount === 1;
@@ -164,51 +164,76 @@ export function getLuckyDrawRoundStatus({
       ...(consolidationLinks.length && { consolidationLinks }),
     };
 
+    // Resolve participantId for a given side of a matchUp.
+    // Hydrated matchUps have sides[]; raw structure matchUps only have drawPositions[].
+    const resolveParticipantId = (m: any, sideNumber: number): string | undefined => {
+      // Try hydrated sides first
+      const side = m.sides?.find((s: any) => s.sideNumber === sideNumber);
+      if (side) return side.participantId || side.participant?.participantId;
+      // Fall back to drawPositions → positionAssignments
+      const drawPosition = m.drawPositions?.[sideNumber - 1];
+      return drawPosition ? positionToParticipantId[drawPosition] : undefined;
+    };
+
+    const resolveParticipantName = (m: any, sideNumber: number, participantId: string): string | undefined => {
+      const side = m.sides?.find((s: any) => s.sideNumber === sideNumber);
+      return side?.participant?.participantName || participantMap[participantId];
+    };
+
+    const getParticipantInfo = (m: any, sideNumber: number): LuckyParticipantInfo | undefined => {
+      const participantId = resolveParticipantId(m, sideNumber);
+      if (!participantId) return undefined;
+
+      const participantName = resolveParticipantName(m, sideNumber, participantId);
+      const result = calculateMatchUpMargin({ matchUp: m });
+      return {
+        participantId,
+        participantName,
+        matchUpId: m.matchUpId,
+        scoreString: m.score?.scoreStringSide1,
+        margin: result.margin ?? 0,
+        gameRatio: Number.isFinite(result.gameRatio) ? result.gameRatio : undefined,
+        pointRatio: Number.isFinite(result.pointRatio) ? result.pointRatio : undefined,
+        setRatio: Number.isFinite(result.setRatio) ? result.setRatio : undefined,
+        gameDifferential: result.gameDifferential ?? 0,
+        setsWonByLoser: result.setsWonByLoser ?? 0,
+      };
+    };
+
+    // Advancing winners from scored matchUps
+    const completedMatchUps = roundMatchUps.filter((m) => m.winningSide);
+    const scoredWinners = completedMatchUps
+      .map((m) => getParticipantInfo(m, m.winningSide!))
+      .filter((w): w is LuckyParticipantInfo => !!w);
+
+    // BYE-advanced participants: the non-BYE participant in BYE matchUps
+    const byeMatchUps = roundMatchUps.filter((m) => m.matchUpStatus === BYE);
+    const byeAdvancers = byeMatchUps
+      .map((m) => {
+        const dps = m.drawPositions || [];
+        for (const dp of dps) {
+          if (!dp) continue;
+          const assignment = positionAssignments.find((a) => a.drawPosition === dp);
+          if (assignment?.participantId && !assignment.bye) {
+            const participantId = assignment.participantId;
+            return {
+              participantId,
+              participantName: participantMap[participantId],
+              matchUpId: m.matchUpId,
+              margin: 0,
+              gameDifferential: 0,
+              setsWonByLoser: 0,
+            } as LuckyParticipantInfo;
+          }
+        }
+        return undefined;
+      })
+      .filter((w): w is LuckyParticipantInfo => !!w);
+
+    roundInfo.advancingWinners = [...scoredWinners, ...byeAdvancers];
+
     if (isPreFeedRound) {
-      const completedMatchUps = roundMatchUps.filter((m) => m.winningSide);
-
-      // Resolve participantId for a given side of a matchUp.
-      // Hydrated matchUps have sides[]; raw structure matchUps only have drawPositions[].
-      const resolveParticipantId = (m: any, sideNumber: number): string | undefined => {
-        // Try hydrated sides first
-        const side = m.sides?.find((s: any) => s.sideNumber === sideNumber);
-        if (side) return side.participantId || side.participant?.participantId;
-        // Fall back to drawPositions → positionAssignments
-        const drawPosition = m.drawPositions?.[sideNumber - 1];
-        return drawPosition ? positionToParticipantId[drawPosition] : undefined;
-      };
-
-      const resolveParticipantName = (m: any, sideNumber: number, participantId: string): string | undefined => {
-        const side = m.sides?.find((s: any) => s.sideNumber === sideNumber);
-        return side?.participant?.participantName || participantMap[participantId];
-      };
-
-      const getParticipantInfo = (m: any, sideNumber: number): LuckyParticipantInfo | undefined => {
-        const participantId = resolveParticipantId(m, sideNumber);
-        if (!participantId) return undefined;
-
-        const participantName = resolveParticipantName(m, sideNumber, participantId);
-        const result = calculateMatchUpMargin({ matchUp: m });
-        return {
-          participantId,
-          participantName,
-          matchUpId: m.matchUpId,
-          scoreString: m.score?.scoreStringSide1,
-          margin: result.margin ?? 0,
-          gameRatio: Number.isFinite(result.gameRatio) ? result.gameRatio : undefined,
-          pointRatio: Number.isFinite(result.pointRatio) ? result.pointRatio : undefined,
-          setRatio: Number.isFinite(result.setRatio) ? result.setRatio : undefined,
-          gameDifferential: result.gameDifferential ?? 0,
-          setsWonByLoser: result.setsWonByLoser ?? 0,
-        };
-      };
-
-      // Advancing winners
-      roundInfo.advancingWinners = completedMatchUps
-        .map((m) => getParticipantInfo(m, m.winningSide!))
-        .filter((w): w is LuckyParticipantInfo => !!w);
-
-      // Eligible losers sorted by narrowest margin
+      // Eligible losers sorted by narrowest margin (only scored matchUps have losers)
       const losers = completedMatchUps
         .map((m) => {
           const losingSideNumber = m.winningSide === 1 ? 2 : 1;

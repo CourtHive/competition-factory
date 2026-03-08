@@ -259,6 +259,10 @@ export const INVALID_MATCHUP_STATUS_BYE = {
   message: 'Cannot Assign BYE status if no assignment: { bye: true }',
   code: 'ERR_UNCHANGED_CANNOT_ASSIGN_BYE',
 };
+export const LUCKY_DRAW_BYE_LIMIT = {
+  message: 'Lucky draw first round allows at most one BYE',
+  code: 'ERR_LUCKY_DRAW_BYE_LIMIT',
+};
 export const UNRECOGNIZED_MATCHUP_STATUS = {
   message: 'Unrecognized matchUpStatus',
   code: 'ERR_UNRECOGNIZED_MATCHUP_STATUS',
@@ -928,6 +932,7 @@ export const errorConditionConstants = {
   INVALID_TOURNAMENT_RECORD,
   INVALID_VALUES,
   INVALID_WINNING_SIDE,
+  LUCKY_DRAW_BYE_LIMIT,
   MATCHUP_NOT_FOUND,
   METHOD_NOT_FOUND,
   MUTATION_LOCKED,

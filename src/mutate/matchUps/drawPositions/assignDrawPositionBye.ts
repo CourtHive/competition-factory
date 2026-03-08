@@ -18,8 +18,8 @@ import { isExit } from '@Validators/isExit';
 
 // constants and types
 import { DrawDefinition, Event, MatchUp, Structure, Tournament } from '@Types/tournamentTypes';
+import { CONTAINER, LUCKY_DRAW } from '@Constants/drawDefinitionConstants';
 import { BYE, TO_BE_PLAYED } from '@Constants/matchUpStatusConstants';
-import { CONTAINER } from '@Constants/drawDefinitionConstants';
 import { SUCCESS } from '@Constants/resultConstants';
 import { HydratedMatchUp } from '@Types/hydrated';
 import { MatchUpsMap } from '@Types/factoryTypes';
@@ -27,6 +27,7 @@ import {
   DRAW_POSITION_ACTIVE,
   INVALID_DRAW_POSITION,
   DRAW_POSITION_ASSIGNED,
+  LUCKY_DRAW_BYE_LIMIT,
   MISSING_DRAW_DEFINITION,
   STRUCTURE_NOT_FOUND,
 } from '@Constants/errorConditionConstants';
@@ -108,6 +109,14 @@ export function assignDrawPositionBye({
 
   if (currentAssignment?.bye) {
     return { ...SUCCESS };
+  }
+
+  // Lucky draw: at most one BYE allowed in the first round
+  if (drawDefinition.drawType === LUCKY_DRAW) {
+    const existingByes = positionAssignments?.filter((a) => a.bye && a.drawPosition !== drawPosition);
+    if (existingByes?.length) {
+      return decorateResult({ result: { error: LUCKY_DRAW_BYE_LIMIT }, stack });
+    }
   }
 
   //
