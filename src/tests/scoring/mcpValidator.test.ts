@@ -1,6 +1,6 @@
 import { mcpValidator, validateMCPMatch, exportMatchUpJSON } from '@Validators/scoring/mcpValidator';
 import { groupByMatch, parseCSV } from '@Validators/scoring/mcpParser';
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, vi } from 'vitest';
 import { readFileSync } from 'fs-extra';
 import { resolve } from 'path';
 
@@ -283,6 +283,9 @@ describe('mcpValidator - Match Validation', () => {
 
   describe('Debug Mode', () => {
     it('should provide debug output when enabled', () => {
+      vi.spyOn(console, 'log').mockImplementation(() => {});
+      vi.spyOn(console, 'error').mockImplementation(() => {});
+
       const csvData = readFileSync(testDataPath, 'utf-8');
       const points = parseCSV(csvData);
       const matches = groupByMatch(points);
@@ -291,6 +294,8 @@ describe('mcpValidator - Match Validation', () => {
       const result = validateMCPMatch(matches[0], { debug: true });
       expect(result).toBeDefined();
       expect(result.valid).toBe(true);
+
+      vi.restoreAllMocks();
     });
   });
 });
