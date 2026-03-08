@@ -40,7 +40,12 @@ const { drawDefinition } = engine.generateDrawDefinition({
 
 MatchUps can be added to the draw after generation using the appropriate engine methods.
 
+## Automated Pairing with DrawMatic
+
+For events where participants should be paired by skill level with dynamic ratings, Ad Hoc draws support automated pairing via **[DrawMatic](./drawmatic)** — a probabilistic algorithm that generates fair, balanced matchups each round while avoiding repeat opponents and same-team pairings.
+
 ## Related
 
+- [DrawMatic](./drawmatic) -- Automated pairing algorithm for Ad Hoc draws
 - [Draw Types Overview](../draw-types) -- List of all pre-defined draw types
 - [Generation Governor](/docs/governors/generation-governor) -- API reference for draw generation

@@ -77,6 +77,7 @@ module.exports = {
                 'concepts/draw-types/feed-in',
                 'concepts/draw-types/consolation-draws',
                 'concepts/draw-types/ad-hoc',
+                'concepts/draw-types/drawmatic',
                 'concepts/draw-types/playoff',
                 'concepts/draw-types/lucky-draw',
               ],
