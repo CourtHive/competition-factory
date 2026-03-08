@@ -4,6 +4,8 @@ import tournamentEngine from '@Engines/syncEngine';
 import mocksEngine from '@Assemblies/engines/mock';
 import { expect, test, describe } from 'vitest';
 
+// constants
+import { INVALID_DRAW_SIZE } from '@Constants/errorConditionConstants';
 import { LUCKY_DRAW } from '@Constants/drawDefinitionConstants';
 import {
   ASSIGN_BYE,
@@ -1238,11 +1240,13 @@ describe('lucky draw integration — various matchUpFormats', () => {
 
 describe('consolidation structure — via withPlayoffs', () => {
   test('withPlayoffs generates playoff structure with LOSER link for lucky draw', () => {
-    const drawProfiles = [{
-      drawSize: 10,
-      drawType: LUCKY_DRAW,
-      withPlayoffs: { roundProfiles: [{ 1: 1 }] },
-    }];
+    const drawProfiles = [
+      {
+        drawSize: 10,
+        drawType: LUCKY_DRAW,
+        withPlayoffs: { roundProfiles: [{ 1: 1 }] },
+      },
+    ];
     const {
       tournamentRecord,
       drawIds: [drawId],
@@ -1265,11 +1269,13 @@ describe('consolidation structure — via withPlayoffs', () => {
   });
 
   test('getLuckyDrawRoundStatus returns consolidationLinks from withPlayoffs structure', () => {
-    const drawProfiles = [{
-      drawSize: 10,
-      drawType: LUCKY_DRAW,
-      withPlayoffs: { roundProfiles: [{ 1: 1 }] },
-    }];
+    const drawProfiles = [
+      {
+        drawSize: 10,
+        drawType: LUCKY_DRAW,
+        withPlayoffs: { roundProfiles: [{ 1: 1 }] },
+      },
+    ];
     const {
       tournamentRecord,
       drawIds: [drawId],
@@ -1295,11 +1301,13 @@ describe('consolidation structure — via withPlayoffs', () => {
   });
 
   test('luckyDrawAdvancement places discarded losers into withPlayoffs structure', () => {
-    const drawProfiles = [{
-      drawSize: 10,
-      drawType: LUCKY_DRAW,
-      withPlayoffs: { roundProfiles: [{ 1: 1 }] },
-    }];
+    const drawProfiles = [
+      {
+        drawSize: 10,
+        drawType: LUCKY_DRAW,
+        withPlayoffs: { roundProfiles: [{ 1: 1 }] },
+      },
+    ];
     const {
       tournamentRecord,
       drawIds: [drawId],
@@ -1346,11 +1354,13 @@ describe('consolidation structure — via withPlayoffs', () => {
   });
 
   test('losersPlaced is true after advancement', () => {
-    const drawProfiles = [{
-      drawSize: 10,
-      drawType: LUCKY_DRAW,
-      withPlayoffs: { roundProfiles: [{ 1: 1 }] },
-    }];
+    const drawProfiles = [
+      {
+        drawSize: 10,
+        drawType: LUCKY_DRAW,
+        withPlayoffs: { roundProfiles: [{ 1: 1 }] },
+      },
+    ];
     const {
       tournamentRecord,
       drawIds: [drawId],
@@ -1383,11 +1393,13 @@ describe('consolidation structure — via withPlayoffs', () => {
   });
 
   test('non-pre-feed rounds do not have consolidationLinks', () => {
-    const drawProfiles = [{
-      drawSize: 10,
-      drawType: LUCKY_DRAW,
-      withPlayoffs: { roundProfiles: [{ 1: 1 }] },
-    }];
+    const drawProfiles = [
+      {
+        drawSize: 10,
+        drawType: LUCKY_DRAW,
+        withPlayoffs: { roundProfiles: [{ 1: 1 }] },
+      },
+    ];
     const {
       tournamentRecord,
       drawIds: [drawId],
@@ -1593,5 +1605,292 @@ describe('positionActions — lucky draw advanced positions', () => {
     expect(actionTypes).not.toContain(ASSIGN_BYE);
     expect(actionTypes).not.toContain(SEED_VALUE);
     expect(actionTypes).not.toContain(REMOVE_SEED);
+  });
+});
+
+// ──────────────────────────────────────────────────────────────────────────────
+// BYE handling in lucky draws with odd participant count
+// ──────────────────────────────────────────────────────────────────────────────
+
+describe('lucky draw BYE handling — odd participant count', () => {
+  test('drawSize 9 places exactly one BYE in first round', () => {
+    const drawProfiles = [{ drawSize: 9, drawType: LUCKY_DRAW }];
+    const { tournamentRecord } = mocksEngine.generateTournamentRecord({ drawProfiles });
+
+    tournamentEngine.setState(tournamentRecord);
+
+    const { matchUps } = tournamentEngine.allTournamentMatchUps();
+    const round1ByeMatchUps = matchUps.filter((m: any) => m.roundNumber === 1 && m.matchUpStatus === 'BYE');
+    expect(round1ByeMatchUps.length).toBe(1);
+  });
+
+  test('BYE matchUp counts as completed for round status', () => {
+    const drawProfiles = [{ drawSize: 9, drawType: LUCKY_DRAW }];
+    const {
+      tournamentRecord,
+      drawIds: [drawId],
+    } = mocksEngine.generateTournamentRecord({
+      completeAllMatchUps: true,
+      drawProfiles,
+    });
+
+    tournamentEngine.setState(tournamentRecord);
+
+    const status = tournamentEngine.getLuckyDrawRoundStatus({ drawId });
+    const round1 = status.rounds.find((r: any) => r.roundNumber === 1);
+
+    // Round 1 has 5 matchUps (4 scored + 1 BYE) — should be complete
+    expect(round1!.matchUpsCount).toBe(5);
+    expect(round1!.isComplete).toBe(true);
+    expect(round1!.completedCount).toBe(5);
+    expect(round1!.isPreFeedRound).toBe(true);
+    expect(round1!.needsLuckySelection).toBe(true);
+  });
+
+  test('BYE-advanced participant is included in advancingWinners', () => {
+    const drawProfiles = [{ drawSize: 9, drawType: LUCKY_DRAW }];
+    const {
+      tournamentRecord,
+      drawIds: [drawId],
+    } = mocksEngine.generateTournamentRecord({
+      completeAllMatchUps: true,
+      drawProfiles,
+    });
+
+    tournamentEngine.setState(tournamentRecord);
+
+    const status = tournamentEngine.getLuckyDrawRoundStatus({ drawId });
+    const round1 = status.rounds.find((r: any) => r.roundNumber === 1);
+
+    // 4 scored winners + 1 BYE-advanced = 5 advancing winners
+    expect(round1!.advancingWinners!.length).toBe(5);
+
+    // 4 scored matchUp losers (BYE matchUp has no loser)
+    expect(round1!.eligibleLosers!.length).toBe(4);
+  });
+
+  test('advancement works with drawSize 9 (BYE + 4 scored matchUps)', () => {
+    const drawProfiles = [{ drawSize: 9, drawType: LUCKY_DRAW }];
+    const {
+      tournamentRecord,
+      drawIds: [drawId],
+    } = mocksEngine.generateTournamentRecord({
+      completeAllMatchUps: true,
+      drawProfiles,
+    });
+
+    tournamentEngine.setState(tournamentRecord);
+
+    const status = tournamentEngine.getLuckyDrawRoundStatus({ drawId });
+    const round1 = status.rounds.find((r: any) => r.roundNumber === 1);
+    expect(round1!.needsLuckySelection).toBe(true);
+
+    const { drawDefinition } = tournamentEngine.getEvent({ drawId });
+    const structureId = drawDefinition.structures[0].structureId;
+
+    // Select the first eligible loser
+    const selectedLoser = round1!.eligibleLosers![0];
+
+    const result = tournamentEngine.luckyDrawAdvancement({
+      participantId: selectedLoser.participantId,
+      roundNumber: 1,
+      structureId,
+      drawId,
+    });
+    expect(result.success).toBe(true);
+
+    // Verify round 2 has correct matchUps
+    const { drawDefinition: updatedDraw } = tournamentEngine.getEvent({ drawId });
+    const structure = updatedDraw.structures[0];
+    const round2MatchUps = structure.matchUps.filter((m: any) => m.roundNumber === 2);
+    expect(round2MatchUps.length).toBe(3);
+
+    // Each round 2 matchUp should have 2 drawPositions
+    for (const matchUp of round2MatchUps) {
+      expect(matchUp.drawPositions.length).toBe(2);
+      expect(matchUp.drawPositions.every(Boolean)).toBe(true);
+    }
+
+    // 5 winners + 1 lucky loser = 6 participants in round 2
+    const round2Assignments = structure.positionAssignments.filter((a: any) =>
+      round2MatchUps.some((m: any) => m.drawPositions.includes(a.drawPosition)),
+    );
+    expect(round2Assignments.length).toBe(6);
+  });
+
+  test('cannot add a second BYE to lucky draw first round', () => {
+    const drawProfiles = [{ drawSize: 9, drawType: LUCKY_DRAW }];
+    const {
+      tournamentRecord,
+      drawIds: [drawId],
+    } = mocksEngine.generateTournamentRecord({ drawProfiles });
+
+    tournamentEngine.setState(tournamentRecord);
+
+    const { drawDefinition } = tournamentEngine.getEvent({ drawId });
+    const structureId = drawDefinition.structures[0].structureId;
+
+    // Find a non-BYE position in round 1
+    const positionAssignments = drawDefinition.structures[0].positionAssignments;
+    const nonByeAssignment = positionAssignments.find((a: any) => a.participantId && !a.bye);
+
+    // Attempt to assign a second BYE — should fail
+    const result = tournamentEngine.assignDrawPositionBye({
+      drawPosition: nonByeAssignment.drawPosition,
+      structureId,
+      drawId,
+    });
+    expect(result.error).toBeDefined();
+    expect(result.error.code).toBe('ERR_LUCKY_DRAW_BYE_LIMIT');
+  });
+
+  // All odd drawSizes should place exactly one BYE in round 1
+  test.each([5, 7, 11, 13, 15])('drawSize %i places exactly one BYE in first round', (drawSize) => {
+    const drawProfiles = [{ drawSize, drawType: LUCKY_DRAW }];
+    const {
+      tournamentRecord,
+      drawIds: [drawId],
+    } = mocksEngine.generateTournamentRecord({
+      completeAllMatchUps: true,
+      drawProfiles,
+    });
+
+    tournamentEngine.setState(tournamentRecord);
+
+    const { matchUps } = tournamentEngine.allTournamentMatchUps();
+    const round1ByeMatchUps = matchUps.filter((m: any) => m.roundNumber === 1 && m.matchUpStatus === 'BYE');
+    expect(round1ByeMatchUps.length).toBe(1);
+
+    // Round status should show round 1 complete
+    const status = tournamentEngine.getLuckyDrawRoundStatus({ drawId });
+    const round1 = status.rounds.find((r: any) => r.roundNumber === 1);
+    expect(round1!.isComplete).toBe(true);
+    expect(round1!.completedCount).toBe(round1!.matchUpsCount);
+
+    // advancingWinners includes the BYE-advanced participant
+    expect(round1!.advancingWinners!.length).toBe(round1!.matchUpsCount);
+  });
+
+  // Only drawSizes where round 1 is a pre-feed round have eligible losers and need advancement
+  // Padded drawSizes 6, 10, 14 (from 5, 9, 13) have ceil(n/2) odd → pre-feed round 1
+  // Padded drawSizes 8, 12, 16 (from 7, 11, 15) have ceil(n/2) even → no pre-feed round 1
+  test.each([5, 9, 13])('drawSize %i has pre-feed round 1 with eligible losers and advancement', (drawSize) => {
+    const drawProfiles = [{ drawSize, drawType: LUCKY_DRAW }];
+    const {
+      tournamentRecord,
+      drawIds: [drawId],
+    } = mocksEngine.generateTournamentRecord({
+      completeAllMatchUps: true,
+      drawProfiles,
+    });
+
+    tournamentEngine.setState(tournamentRecord);
+
+    const { matchUps } = tournamentEngine.allTournamentMatchUps();
+    const round1MatchUps = matchUps.filter((m: any) => m.roundNumber === 1);
+    const scoredMatchUps = round1MatchUps.filter((m: any) => m.winningSide);
+
+    const status = tournamentEngine.getLuckyDrawRoundStatus({ drawId });
+    const round1 = status.rounds.find((r: any) => r.roundNumber === 1);
+    expect(round1!.isPreFeedRound).toBe(true);
+    expect(round1!.needsLuckySelection).toBe(true);
+    expect(round1!.eligibleLosers!.length).toBe(scoredMatchUps.length);
+
+    const { drawDefinition } = tournamentEngine.getEvent({ drawId });
+    const structureId = drawDefinition.structures[0].structureId;
+
+    const selectedLoser = round1!.eligibleLosers![0];
+    const result = tournamentEngine.luckyDrawAdvancement({
+      participantId: selectedLoser.participantId,
+      roundNumber: 1,
+      structureId,
+      drawId,
+    });
+    expect(result.success).toBe(true);
+
+    // Verify round 2 matchUps have draw positions assigned
+    const { drawDefinition: updatedDraw } = tournamentEngine.getEvent({ drawId });
+    const structure = updatedDraw.structures[0];
+    const round2MatchUps = structure.matchUps.filter((m: any) => m.roundNumber === 2);
+    expect(round2MatchUps.length).toBeGreaterThan(0);
+    for (const matchUp of round2MatchUps) {
+      expect(matchUp.drawPositions.length).toBe(2);
+      expect(matchUp.drawPositions.every(Boolean)).toBe(true);
+    }
+  });
+
+  // DrawSizes 7, 11, 15 pad to power-of-2-like structures where round 1 is NOT a pre-feed round
+  test.each([7, 15])('drawSize %i has no pre-feed round 1 (standard elimination with BYE)', (drawSize) => {
+    const drawProfiles = [{ drawSize, drawType: LUCKY_DRAW }];
+    const {
+      tournamentRecord,
+      drawIds: [drawId],
+    } = mocksEngine.generateTournamentRecord({
+      completeAllMatchUps: true,
+      drawProfiles,
+    });
+
+    tournamentEngine.setState(tournamentRecord);
+
+    const status = tournamentEngine.getLuckyDrawRoundStatus({ drawId });
+    const round1 = status.rounds.find((r: any) => r.roundNumber === 1);
+    expect(round1!.isPreFeedRound).toBe(false);
+    expect(round1!.isComplete).toBe(true);
+  });
+
+  // DrawSize 11 pads to 12: round 1 is NOT pre-feed, but round 2 IS
+  test('drawSize 11 has pre-feed round in round 2', () => {
+    const drawProfiles = [{ drawSize: 11, drawType: LUCKY_DRAW }];
+    const {
+      tournamentRecord,
+      drawIds: [drawId],
+    } = mocksEngine.generateTournamentRecord({
+      completeAllMatchUps: true,
+      drawProfiles,
+    });
+
+    tournamentEngine.setState(tournamentRecord);
+
+    const status = tournamentEngine.getLuckyDrawRoundStatus({ drawId });
+    const round1 = status.rounds.find((r: any) => r.roundNumber === 1);
+    const round2 = status.rounds.find((r: any) => r.roundNumber === 2);
+
+    expect(round1!.isPreFeedRound).toBe(false);
+    expect(round1!.isComplete).toBe(true);
+    expect(round2!.isPreFeedRound).toBe(true);
+  });
+});
+
+// ──────────────────────────────────────────────────────────────────────────────
+// Invalid drawSize validation for LUCKY_DRAW
+// ──────────────────────────────────────────────────────────────────────────────
+
+describe('lucky draw — invalid drawSize rejection', () => {
+  test('drawSize 3 is rejected for LUCKY_DRAW', () => {
+    const drawProfiles = [{ drawSize: 3, drawType: LUCKY_DRAW }];
+    const result = mocksEngine.generateTournamentRecord({ drawProfiles });
+    expect(result.error).toBeDefined();
+    expect(result.error.code).toBe(INVALID_DRAW_SIZE.code);
+  });
+
+  test('drawSize 2 is valid for LUCKY_DRAW (power of 2)', () => {
+    const drawProfiles = [{ drawSize: 2, drawType: LUCKY_DRAW }];
+    const result = mocksEngine.generateTournamentRecord({ drawProfiles });
+    expect(result.error).toBeUndefined();
+    expect(result.tournamentRecord).toBeDefined();
+  });
+
+  test('drawSize 4 is valid for LUCKY_DRAW (power of 2)', () => {
+    const drawProfiles = [{ drawSize: 4, drawType: LUCKY_DRAW }];
+    const result = mocksEngine.generateTournamentRecord({ drawProfiles });
+    expect(result.error).toBeUndefined();
+    expect(result.tournamentRecord).toBeDefined();
+  });
+
+  test('drawSize 5 is valid for LUCKY_DRAW (minimum non-power-of-2)', () => {
+    const drawProfiles = [{ drawSize: 5, drawType: LUCKY_DRAW }];
+    const result = mocksEngine.generateTournamentRecord({ drawProfiles });
+    expect(result.error).toBeUndefined();
+    expect(result.tournamentRecord).toBeDefined();
   });
 });

@@ -176,6 +176,9 @@ export function generateDrawStructuresAndLinks(params: GenerateDrawStructuresAnd
     drawType !== AD_HOC &&
     (!drawSize ||
       drawSize < 2 ||
+      // LUCKY_DRAW requires drawSize >= 5 for non-power-of-2 sizes
+      // (drawSize < 5 has at most 1 loser, making lucky selection meaningless)
+      (drawType === LUCKY_DRAW && !isPowerOf2(drawSize) && drawSize < 5) ||
       (!staggeredEntry &&
         ![FEED_IN, LUCKY_DRAW].includes(drawType) &&
         (([ROUND_ROBIN_WITH_PLAYOFF, ROUND_ROBIN].includes(drawType) && drawSize < 3) ||

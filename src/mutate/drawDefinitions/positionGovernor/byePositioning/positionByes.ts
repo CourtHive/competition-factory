@@ -7,9 +7,9 @@ import { findStructure } from '@Acquire/findStructure';
 import { shuffleArray } from '@Tools/arrays';
 
 // constants and types
+import { CONTAINER, ITEM, LUCKY_DRAW, QUALIFYING } from '@Constants/drawDefinitionConstants';
 import { DrawDefinition, Event, Structure, Tournament } from '@Types/tournamentTypes';
 import { PolicyDefinitions, SeedingProfile, MatchUpsMap } from '@Types/factoryTypes';
-import { CONTAINER, ITEM, QUALIFYING } from '@Constants/drawDefinitionConstants';
 import { SUCCESS } from '@Constants/resultConstants';
 
 type PositionByesArgs = {
@@ -55,6 +55,31 @@ export function positionByes({
   const byesToPlace = byesCount - (placedByes || 0);
   if (byesToPlace <= 0) return { ...SUCCESS };
 
+  // LUCKY_DRAW: BYE positions are simply the unfilled first-round draw positions
+  if (drawDefinition.drawType === LUCKY_DRAW) {
+    const firstRoundPositions = (relevantMatchUps || []).flatMap((m) => m.drawPositions || []).filter(Boolean);
+    const filledPositions = new Set(
+      structure?.positionAssignments?.filter((a) => a.participantId).map((a) => a.drawPosition) || [],
+    );
+    const byeDrawPositions = firstRoundPositions.filter((dp) => !filledPositions.has(dp)).slice(0, byesToPlace);
+
+    for (const drawPosition of byeDrawPositions) {
+      const result = assignDrawPositionBye({
+        provisionalPositioning,
+        tournamentRecord,
+        drawDefinition,
+        drawPosition,
+        matchUpsMap,
+        structureId,
+        structure,
+        event,
+      });
+      if (result?.error) return result;
+    }
+
+    return { ...SUCCESS, byeDrawPositions };
+  }
+
   const { strictSeedOrderByePositions, blockSeedOrderByePositions, isLuckyStructure, isFeedIn } =
     getSeedOrderByePositions({
       provisionalPositioning,
@@ -95,7 +120,7 @@ export function positionByes({
   // derived from theoretical seeding of firstRoundParticipants
   // HOWEVER, if separated and evenly distributed drawPositions result
   // in a BYE/BYE pairing, prioritize remaining unpaired positions
-  let byePositions: number[] = [].concat(...seedOrderByePositions);
+  let byePositions: number[] = seedOrderByePositions.flat();
 
   if (!seedsOnly) {
     while (unseededByePositions.length) {
