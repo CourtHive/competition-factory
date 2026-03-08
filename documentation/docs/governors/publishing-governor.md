@@ -438,19 +438,23 @@ Publishes event draws and structures with fine-grained control over visibility. 
 
 ```js
 const { eventData } = engine.publishEvent({
-  eventId, // required - event to publish
+  eventId, // required — event to publish (resolved by engine)
 
   // Draw selection (choose one approach)
-  drawIdsToAdd, // array - publish specific draws
-  drawIdsToRemove, // array - unpublish specific draws
-  drawDetails, // object - granular control (see below)
+  drawIdsToAdd, // optional array — publish specific draws
+  drawIdsToRemove, // optional array — unpublish specific draws
+  drawIds, // optional array — publish only these draws (alternative to add/remove)
+  drawDetails, // optional object — granular per-draw control (see below)
 
   // Data preparation
-  eventDataParams, // optional - params for getEventData (not persisted)
-  policyDefinitions, // optional - privacy policies to apply
+  includePositionAssignments, // optional boolean — include positionAssignments in eventData
+  eventDataParams, // optional object — params for getEventData (not persisted in publish state)
+  policyDefinitions, // optional — privacy policies to apply
+  returnEventData, // optional boolean — return eventData even without PUBLISH_EVENT subscription
 
   // State management
-  removePriorValues, // optional boolean - clear previous timeItems
+  removePriorValues, // optional boolean — clear previous timeItems
+  status, // optional string — publish status key, defaults to 'PUBLIC'
 });
 ```
 

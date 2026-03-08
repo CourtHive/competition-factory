@@ -57,7 +57,7 @@ export function resetAdHocMatchUps(params: ResetAdHocMatchUps) {
           drawDefinition,
           matchUpId,
         });
-        if (resetLineUpResult.error) return result;
+        if (resetLineUpResult.error) return resetLineUpResult;
       }
     }
 

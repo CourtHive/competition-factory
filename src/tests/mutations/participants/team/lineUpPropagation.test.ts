@@ -1,4 +1,5 @@
 import { generateTeamTournament } from './generateTestTeamTournament';
+import { resetLineUps } from '@Mutate/matchUps/lineUps/resetLineUps';
 import { setSubscriptions } from '@Global/state/globalState';
 import { findExtension } from '@Acquire/findExtension';
 import tournamentEngine from '@Engines/syncEngine';
@@ -7,11 +8,13 @@ import { intersection } from '@Tools/arrays';
 import { expect, it } from 'vitest';
 
 // constants
+import { MISSING_DRAW_DEFINITION } from '@Constants/errorConditionConstants';
 import { COMPASS, ROUND_ROBIN } from '@Constants/drawDefinitionConstants';
 import { MODIFY_DRAW_DEFINITION } from '@Constants/topicConstants';
+import { SINGLES, TEAM_MATCHUP } from '@Constants/matchUpTypes';
 import { LINEUPS } from '@Constants/extensionConstants';
 import { TEAM } from '@Constants/participantConstants';
-import { SINGLES } from '@Constants/matchUpTypes';
+import { SUCCESS } from '@Constants/resultConstants';
 
 const scenario = {
   drawType: COMPASS,
@@ -33,12 +36,16 @@ it('can propagate and remove lineUps', () => {
   const winningSide = 1;
   const losingSide = 2;
 
-  const losingParticipantIds = teamMatchUps
-    .filter(({ readyToScore }) => readyToScore)
-    .flatMap(({ sides }) => sides.find(({ sideNumber }) => sideNumber === losingSide)?.participantId);
-  const winningParticipantIds = teamMatchUps
-    .filter(({ readyToScore }) => readyToScore)
-    .flatMap(({ sides }) => sides.find(({ sideNumber }) => sideNumber === winningSide)?.participantId);
+  const losingParticipantIds = new Set(
+    teamMatchUps
+      .filter(({ readyToScore }) => readyToScore)
+      .flatMap(({ sides }) => sides.find(({ sideNumber }) => sideNumber === losingSide)?.participantId),
+  );
+  const winningParticipantIds = new Set(
+    teamMatchUps
+      .filter(({ readyToScore }) => readyToScore)
+      .flatMap(({ sides }) => sides.find(({ sideNumber }) => sideNumber === winningSide)?.participantId),
+  );
 
   // assign individual participants to all first round East matchUps
   teamMatchUps
@@ -81,8 +88,8 @@ it('can propagate and remove lineUps', () => {
   teamMatchUps
     .filter(({ structureName, roundNumber }) => structureName === 'West' && roundNumber === 1)
     .forEach(({ sides }) => {
-      expect(losingParticipantIds.includes(sides[0].participantId)).toEqual(true);
-      expect(losingParticipantIds.includes(sides[1].participantId)).toEqual(true);
+      expect(losingParticipantIds.has(sides[0].participantId)).toEqual(true);
+      expect(losingParticipantIds.has(sides[1].participantId)).toEqual(true);
       expect(sides[0].lineUp).toBeDefined();
       expect(sides[1].lineUp).toBeDefined();
       expect(sides[0].lineUp).not.toEqual(sides[1].lineUp);
@@ -143,8 +150,8 @@ it('can propagate and remove lineUps', () => {
 
   // teams which have advanced to East roundNumber: 2
   eastRound2MatchUps.forEach(({ matchUpId, sides }) => {
-    expect(winningParticipantIds.includes(sides[0].participantId)).toEqual(true);
-    expect(winningParticipantIds.includes(sides[1].participantId)).toEqual(true);
+    expect(winningParticipantIds.has(sides[0].participantId)).toEqual(true);
+    expect(winningParticipantIds.has(sides[1].participantId)).toEqual(true);
     expect(sides[0].lineUp).toBeDefined();
     expect(sides[1].lineUp).toBeDefined();
     expect(sides[0].lineUp).not.toEqual(sides[1].lineUp);
@@ -180,8 +187,8 @@ it('can propagate and remove lineUps', () => {
   );
 
   eastRound2MatchUps.forEach(({ sides }) => {
-    expect(winningParticipantIds.includes(sides[0].participantId)).toEqual(true);
-    expect(winningParticipantIds.includes(sides[1].participantId)).toEqual(true);
+    expect(winningParticipantIds.has(sides[0].participantId)).toEqual(true);
+    expect(winningParticipantIds.has(sides[1].participantId)).toEqual(true);
 
     expect(sides[0].lineUp).not.toBeDefined();
     expect(sides[1].lineUp).not.toBeDefined();
@@ -196,14 +203,14 @@ it('can propagate and remove lineUps', () => {
     expect(sides[1].lineUp).toBeDefined();
   });
 
-  const westRound1MatchUpIds = westRound1MatchUps.map(xa('matchUpId'));
+  const westRound1MatchUpIds = new Set(westRound1MatchUps.map(xa('matchUpId')));
 
   noContextTeamMatchUps = tournamentEngine.devContext(true).allTournamentMatchUps({
     matchUpFilters: { matchUpTypes: [TEAM] },
     inContext: false,
   }).matchUps;
 
-  westRound1MatchUps = noContextTeamMatchUps.filter(({ matchUpId }) => westRound1MatchUpIds.includes(matchUpId));
+  westRound1MatchUps = noContextTeamMatchUps.filter(({ matchUpId }) => westRound1MatchUpIds.has(matchUpId));
 
   // in this case { inheritance: true } causes lineUps to be removed from no context matchUps
   // but inherited lineUps are retained
@@ -224,7 +231,7 @@ it('can propagate and remove lineUps', () => {
     inContext: false,
   }).matchUps;
 
-  westRound1MatchUps = noContextTeamMatchUps.filter(({ matchUpId }) => westRound1MatchUpIds.includes(matchUpId));
+  westRound1MatchUps = noContextTeamMatchUps.filter(({ matchUpId }) => westRound1MatchUpIds.has(matchUpId));
 
   westRound1MatchUps.forEach(({ sides }) => {
     expect(sides[0].lineUp).not.toBeDefined();
@@ -469,6 +476,239 @@ function assignParticipants({ dualMatchUp, sidesCount = 2 }) {
     });
   });
 }
+
+it('resetLineUps returns error when drawDefinition is missing', () => {
+  const result = resetLineUps({
+    drawDefinition: undefined as any,
+    structure: {} as any,
+  });
+  expect(result.error).toEqual(MISSING_DRAW_DEFINITION);
+});
+
+it('resetLineUps skips non-TEAM matchUps in targetMatchUps', () => {
+  // Build minimal structure to exercise the TEAM_MATCHUP guard (line 45)
+  const matchUpId = 'mu-1';
+  const structure = { structureId: 's1' } as any;
+  const drawDefinition = { drawId: 'd1' } as any;
+
+  // inContextMatchUp has a non-TEAM matchUpType — should be skipped
+  const inContextDrawMatchUps = [
+    {
+      matchUpId,
+      matchUpType: SINGLES, // NOT TEAM_MATCHUP
+      structureId: 's1',
+      drawPositions: [1],
+      sides: [{ drawPosition: 1, participantId: 'p1' }],
+    },
+  ] as any;
+
+  const matchUpsMap = {
+    drawMatchUps: [{ matchUpId, sides: [{ lineUp: [{ participantId: 'ind1' }] }] }],
+  } as any;
+
+  const result = resetLineUps({
+    inContextDrawMatchUps,
+    drawDefinition,
+    matchUpsMap,
+    assignments: [{ drawPosition: 1 }],
+    structure,
+  });
+
+  expect(result).toEqual({ ...SUCCESS });
+  // lineUp should still be present since the matchUp was skipped
+  expect(matchUpsMap.drawMatchUps[0].sides[0].lineUp).toBeDefined();
+});
+
+it('resetLineUps skips sides whose drawPosition is not in target drawPositions', () => {
+  const matchUpId = 'mu-2';
+  const structure = { structureId: 's1' } as any;
+  const drawDefinition = { drawId: 'd1' } as any;
+
+  const inContextDrawMatchUps = [
+    {
+      matchUpId,
+      matchUpType: TEAM_MATCHUP,
+      structureId: 's1',
+      drawPositions: [1, 2],
+      sides: [
+        { drawPosition: 1, participantId: 'p1' },
+        { drawPosition: 2, participantId: 'p2' },
+      ],
+    },
+  ] as any;
+
+  const matchUpsMap = {
+    drawMatchUps: [
+      {
+        matchUpId,
+        sides: [{ lineUp: [{ participantId: 'ind1' }] }, { lineUp: [{ participantId: 'ind2' }] }],
+      },
+    ],
+  } as any;
+
+  // Only drawPosition 1 is in the assignments, so side at index 1 (drawPosition 2) should be skipped
+  const result = resetLineUps({
+    inContextDrawMatchUps,
+    drawDefinition,
+    matchUpsMap,
+    assignments: [{ drawPosition: 1 }],
+    structure,
+  });
+
+  expect(result).toEqual({ ...SUCCESS });
+  // lineUp for drawPosition 1 should be removed
+  expect(matchUpsMap.drawMatchUps[0].sides[0].lineUp).toBeUndefined();
+  // lineUp for drawPosition 2 should still be present
+  expect(matchUpsMap.drawMatchUps[0].sides[1].lineUp).toBeDefined();
+});
+
+it('resetLineUps handles inContextMatchUp with undefined sides', () => {
+  const matchUpId = 'mu-3';
+  const structure = { structureId: 's1' } as any;
+  const drawDefinition = { drawId: 'd1' } as any;
+
+  // sides is undefined — exercises the `?? []` fallback on line 47
+  const inContextDrawMatchUps = [
+    {
+      matchUpId,
+      matchUpType: TEAM_MATCHUP,
+      structureId: 's1',
+      drawPositions: [1],
+      sides: undefined,
+    },
+  ] as any;
+
+  const matchUpsMap = { drawMatchUps: [] } as any;
+
+  const result = resetLineUps({
+    inContextDrawMatchUps,
+    drawDefinition,
+    matchUpsMap,
+    assignments: [{ drawPosition: 1 }],
+    structure,
+  });
+
+  expect(result).toEqual({ ...SUCCESS });
+});
+
+it('resetLineUps skips when matchUp sides entry is missing at sideIndex', () => {
+  const matchUpId = 'mu-4';
+  const structure = { structureId: 's1' } as any;
+  const drawDefinition = { drawId: 'd1' } as any;
+
+  const inContextDrawMatchUps = [
+    {
+      matchUpId,
+      matchUpType: TEAM_MATCHUP,
+      structureId: 's1',
+      drawPositions: [1, 2],
+      sides: [
+        { drawPosition: 1, participantId: 'p1' },
+        { drawPosition: 2, participantId: 'p2' },
+      ],
+    },
+  ] as any;
+
+  // matchUp.sides only has one entry — sideIndex 1 will be falsy
+  const matchUpsMap = {
+    drawMatchUps: [
+      {
+        matchUpId,
+        sides: [{ lineUp: [{ participantId: 'ind1' }] }],
+      },
+    ],
+  } as any;
+
+  const result = resetLineUps({
+    inContextDrawMatchUps,
+    drawDefinition,
+    matchUpsMap,
+    assignments: [{ drawPosition: 1 }, { drawPosition: 2 }],
+    structure,
+  });
+
+  expect(result).toEqual({ ...SUCCESS });
+  // side at index 0 should have lineUp deleted
+  expect(matchUpsMap.drawMatchUps[0].sides[0].lineUp).toBeUndefined();
+});
+
+it('resetLineUps with inheritance=false skips updateTeamLineUp when tieFormat or participantId is missing', () => {
+  const matchUpId = 'mu-5';
+  const structure = { structureId: 's1' } as any;
+  const drawDefinition = { drawId: 'd1', extensions: [] } as any;
+
+  // Side has drawPosition but no participantId — should skip updateTeamLineUp
+  const inContextDrawMatchUps = [
+    {
+      matchUpId,
+      matchUpType: TEAM_MATCHUP,
+      structureId: 's1',
+      drawPositions: [1],
+      sides: [{ drawPosition: 1 }], // no participantId
+      tieFormat: { winCriteria: { valueGoal: 2 }, collectionDefinitions: [] },
+    },
+  ] as any;
+
+  const matchUpsMap = {
+    drawMatchUps: [
+      {
+        matchUpId,
+        sides: [{ lineUp: [{ participantId: 'ind1' }] }],
+      },
+    ],
+  } as any;
+
+  const result = resetLineUps({
+    inContextDrawMatchUps,
+    drawDefinition,
+    matchUpsMap,
+    assignments: [{ drawPosition: 1 }],
+    inheritance: false,
+    structure,
+  });
+
+  expect(result).toEqual({ ...SUCCESS });
+  // lineUp should still be deleted from the matchUp side
+  expect(matchUpsMap.drawMatchUps[0].sides[0].lineUp).toBeUndefined();
+});
+
+it('resetLineUps handles side with no drawPosition', () => {
+  const matchUpId = 'mu-6';
+  const structure = { structureId: 's1' } as any;
+  const drawDefinition = { drawId: 'd1' } as any;
+
+  // Side has no drawPosition — should be skipped by the drawPosition check
+  const inContextDrawMatchUps = [
+    {
+      matchUpId,
+      matchUpType: TEAM_MATCHUP,
+      structureId: 's1',
+      drawPositions: [1],
+      sides: [{ participantId: 'p1' }], // no drawPosition
+    },
+  ] as any;
+
+  const matchUpsMap = {
+    drawMatchUps: [
+      {
+        matchUpId,
+        sides: [{ lineUp: [{ participantId: 'ind1' }] }],
+      },
+    ],
+  } as any;
+
+  const result = resetLineUps({
+    inContextDrawMatchUps,
+    drawDefinition,
+    matchUpsMap,
+    assignments: [{ drawPosition: 1 }],
+    structure,
+  });
+
+  expect(result).toEqual({ ...SUCCESS });
+  // lineUp should NOT be deleted because side has no drawPosition
+  expect(matchUpsMap.drawMatchUps[0].sides[0].lineUp).toBeDefined();
+});
 
 function getLineUpsCount(matchUp) {
   const lineUps = matchUp.sides?.flatMap((side) => side.lineUp).filter(Boolean) ?? [];

@@ -298,14 +298,23 @@ const { matchUps } = engine.filterMatchUps({
 
 ## findMatchUp
 
+Finds a matchUp by `matchUpId`. If `drawId` is not provided, performs a brute-force search across all tournament matchUps.
+
 ```js
 const {
-  matchUp,
-  structure, // returned for convenience
+  matchUp,            // HydratedMatchUp — the found matchUp
+  structure,          // Structure — containing structure (convenience)
+  drawDefinition,     // DrawDefinition — containing draw (convenience)
 } = engine.findMatchUp({
-  inContext, // optional - boolean - returns matchUp with additional attributes
-  matchUpId,
-  drawId,
+  matchUpId,                // required — matchUp to find
+  drawId,                   // optional — narrows search scope; auto-resolved if omitted
+  eventId,                  // optional — narrows search scope
+  inContext,                // optional boolean — hydrate matchUp with context (drawId, structureId, participants, etc.)
+  nextMatchUps,             // optional boolean — include winnerTo and loserTo matchUp details
+  afterRecoveryTimes,       // optional boolean — include recovery time calculations
+  participantsProfile,      // optional — control participant hydration (see getParticipants())
+  contextProfile,           // optional — control which context attributes are included
+  contextContent,           // optional — pre-computed context content (optimization)
 });
 ```
 
@@ -609,13 +618,25 @@ const { valid } = engine.isValidMatchUpFormat({
 
 ## matchUpActions
 
-Returns available actions for a matchUp.
+Returns available actions for a matchUp. The returned `validActions` array contains action objects with `type`, `method`, and `payload` that can be dispatched. Action types include `SCORE`, `STATUS`, `SCHEDULE`, `REFEREE`, `ADD_PENALTY`, `START`, and `END`.
 
 ```js
-const { validActions } = engine.matchUpActions({
-  matchUpId, // required
-  drawId, // required
-  policyDefinitions, // optional
+const {
+  validActions,          // array of action objects
+  structureIsComplete,   // boolean — all matchUps in the structure are complete
+  isDoubleExit,          // boolean — matchUp has DOUBLE_WALKOVER or DOUBLE_DEFAULT
+  isByeMatchUp,          // boolean — matchUp involves a BYE
+} = engine.matchUpActions({
+  matchUpId,                          // required — target matchUp
+  drawId,                             // optional — resolved by engine; auto-resolved via brute force if omitted
+  policyDefinitions,                  // optional — override matchUp action policies
+  sideNumber,                         // optional — restrict actions to a specific side (1 or 2)
+  participantId,                      // optional — scope actions to a specific participant
+  enforceGender,                      // optional boolean — enforce gender restrictions for tie matchUp assignments
+  restrictAdHocRoundParticipants,     // optional boolean — defaults to true; prevent same participant in same round
+  tournamentParticipants,             // optional — pre-fetched participants (optimization)
+  inContextDrawMatchUps,              // optional — pre-fetched inContext matchUps (optimization)
+  matchUpsMap,                        // optional — pre-fetched matchUps map (optimization)
 });
 ```
 
@@ -746,14 +767,16 @@ export function resetAdHocMatchUps(params: ResetAdHocMatchUps) {
 
 ## resetScorecard
 
-Removes all scores from `tieMatchUps` within a TEAM `matchUp`; preserves `lineUps`.
+Removes all scores from `tieMatchUps` within a TEAM `matchUp`; preserves `lineUps`. If `tiebreakReset` is true, checks whether a "Tiebreaker" collectionDefinition was added to the matchUp's tieFormat and resets it back to the inherited tieFormat if so.
+
+Validates that the matchUp is `{ matchUpType: TEAM }` and that there are no active downstream matchUps (returns `CANNOT_CHANGE_WINNING_SIDE` error if downstream is active).
 
 ```js
 engine.resetScorecard({
-  tiebreakReset, // optional boolean - check for tiebreak scenarios and reset tieFormat
-  tournamentId, // required
-  matchUpId, // required - must be a TEAM matchUp
-  drawId, // required
+  matchUpId,       // required — must be a TEAM matchUp
+  drawId,          // required — resolved to drawDefinition by engine
+  tiebreakReset,   // optional boolean — check for added tiebreak collectionDefinition and reset tieFormat
+  matchUpStatus,   // optional — set a specific matchUpStatus after reset
 });
 ```
 
@@ -840,36 +863,43 @@ engine.setMatchUpState({
 
 ## setMatchUpStatus
 
-Sets either matchUpStatus or score and winningSide; values to be set are passed in outcome object. Handles any winner/loser participant movements within or across structures. See examples: [Setting Scores](../concepts/matchup-overview.md#setting-scores), [MatchUp Operations](../engines/engine-middleware.md#matchup-operations), [Real-World Example: Live Scoring Updates](../engines/mutation-engines.md#real-world-example-live-scoring-updates).
+Sets either matchUpStatus or score and winningSide; values to be set are passed in outcome object. Handles any winner/loser participant movements within or across structures, including multi-level consolation propagation (e.g., COMPASS draws). See examples: [Setting Scores](../concepts/matchup-overview.md#setting-scores), [MatchUp Operations](../engines/engine-middleware.md#matchup-operations), [Real-World Example: Live Scoring Updates](../engines/mutation-engines.md#real-world-example-live-scoring-updates).
 
 ```js
 const outcome = {
-  matchUpStatus, // optional
-  winningSide, // optional
-  score, // optional
+  matchUpStatus,       // optional — e.g. COMPLETED, RETIRED, WALKOVER, DEFAULTED, DOUBLE_WALKOVER
+  matchUpStatusCodes,  // optional — array of status code strings
+  winningSide,         // optional — 1 or 2
+  score,               // optional — { sets, scoreStringSide1, scoreStringSide2 }
+  matchUpFormat,       // optional — override matchUpFormat for this matchUp
 };
 
 engine.setMatchUpStatus({
-  disableScoreValidation, // optional boolean
-  allowChangePropagation, // optional boolean - allow winner/loser to be swapped and propgate change throughout draw structures
-  disableAutoCalc, // optional - applies only to { matchUpType: TEAM }
-  enableAutoCalc, // optional - applies only to { matchUpType: TEAM }
-  tournamentId,
-  matchUpTieId, // optional - if part of a TIE matchUp
-  matchUpId,
-  outcome, // optional
-  drawId,
-  schedule: {
-    // optional - set schedule items
-    courtIds, // optional - applies only to TEAM matchUps => creates .allocatedCourts
-    courtId, // requires scheduledDate
-    venueId,
-    scheduledDate,
-    scheduledTime,
-    startTime,
-    endTime,
+  matchUpId,                    // required
+  drawId,                       // required — resolved to drawDefinition by engine
+  outcome,                      // optional — score/status/winningSide object
+
+  matchUpFormat,                // optional — set matchUpFormat before applying score (validated against)
+  disableScoreValidation,       // optional boolean — skip score validation
+  allowChangePropagation,       // optional boolean — allow winner/loser swap to propagate through structures
+  propagateExitStatus,          // optional boolean — propagate exit status (WALKOVER, etc.) to consolation matchUps
+  disableAutoCalc,              // optional boolean — applies only to TEAM matchUps
+  enableAutoCalc,               // optional boolean — applies only to TEAM matchUps
+  setTBlast,                    // optional boolean — when true, tiebreak score appears last in set score string
+  policyDefinitions,            // optional — scoring policies
+  tournamentId,                 // optional — for multi-tournament operations
+  eventId,                      // optional — helps resolve drawDefinition
+  notes,                        // optional — add note (string) to matchUp object
+
+  schedule: {                   // optional — set schedule items alongside status
+    courtIds,                   // optional — applies only to TEAM matchUps => creates .allocatedCourts
+    courtId,                    // optional — requires scheduledDate
+    venueId,                    // optional
+    scheduledDate,              // optional
+    scheduledTime,              // optional
+    startTime,                  // optional
+    endTime,                    // optional
   },
-  notes, // optional - add note (string) to matchUp object
 });
 ```
 

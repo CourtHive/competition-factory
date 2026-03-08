@@ -52,11 +52,11 @@ export function findVenue({ tournamentRecords, tournamentRecord, venueId }: Find
     }
   }
 
-  if (!venue) {
-    return { error: VENUE_NOT_FOUND };
-  } else {
+  if (venue) {
     return { ...SUCCESS, venue };
   }
+
+  return { error: VENUE_NOT_FOUND };
 }
 
 export function publicFindVenue({ convertExtensions, ...params }) {

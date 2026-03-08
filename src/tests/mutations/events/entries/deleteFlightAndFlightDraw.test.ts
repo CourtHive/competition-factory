@@ -2,8 +2,9 @@ import mocksEngine from '@Assemblies/engines/mock';
 import tournamentEngine from '@Engines/syncEngine';
 import { expect, it, test } from 'vitest';
 
-import { INDIVIDUAL } from '@Constants/participantConstants';
+// constants
 import { MISSING_DRAW_ID, MISSING_EVENT } from '@Constants/errorConditionConstants';
+import { INDIVIDUAL } from '@Constants/participantConstants';
 
 it('can delete flight and flightDrawDefinition', () => {
   const { tournamentRecord } = mocksEngine.generateTournamentRecord();
@@ -116,4 +117,80 @@ test('deleted flights will trigger refresh of drawOrder', () => {
   ({ flightProfile } = tournamentEngine.getFlightProfile({ eventId }));
   const flightNumbers = flightProfile.flights.map(({ flightNumber }) => flightNumber);
   expect(flightNumbers).toEqual([1, 2]);
+});
+
+it('deleteFlightAndFlightDraw succeeds when drawId does not match any flight in flightProfile', () => {
+  const { tournamentRecord } = mocksEngine.generateTournamentRecord();
+  const eventName = 'Test Event';
+  const event = { eventName };
+  let result = tournamentEngine.setState(tournamentRecord).addEvent({ event });
+  const { event: eventResult } = result;
+  const { eventId } = eventResult;
+  expect(result.success).toEqual(true);
+
+  const { participants } = tournamentEngine.getParticipants({
+    participantFilters: { participantTypes: [INDIVIDUAL] },
+  });
+  const participantIds = participants.map((p) => p.participantId);
+  result = tournamentEngine.addEventEntries({ eventId, participantIds });
+  expect(result.success).toEqual(true);
+
+  // attach a flight profile but don't generate draw definitions
+  const { flightProfile } = tournamentEngine.generateFlightProfile({
+    attachFlightProfile: true,
+    flightsCount: 2,
+    eventId,
+  });
+  expect(flightProfile.flights.length).toEqual(2);
+
+  // use a bogus drawId that does not match any flight
+  // the flight won't be found so the flightProfile won't be modified,
+  // and the draw wasn't generated so drawWasGenerated is falsy — still succeeds
+  result = tournamentEngine.deleteFlightAndFlightDraw({
+    drawId: 'nonExistentDrawId',
+    eventId,
+  });
+  expect(result.success).toEqual(true);
+
+  // confirm flightProfile is unchanged
+  const { flightProfile: updatedProfile } = tournamentEngine.getFlightProfile({ eventId });
+  expect(updatedProfile.flights.length).toEqual(2);
+});
+
+it('deleteFlightAndFlightDraw handles flight profile with no generated draws', () => {
+  const { tournamentRecord } = mocksEngine.generateTournamentRecord();
+  const eventName = 'Test Event';
+  const event = { eventName };
+  let result = tournamentEngine.setState(tournamentRecord).addEvent({ event });
+  const { event: eventResult } = result;
+  const { eventId } = eventResult;
+  expect(result.success).toEqual(true);
+
+  const { participants } = tournamentEngine.getParticipants({
+    participantFilters: { participantTypes: [INDIVIDUAL] },
+  });
+  const participantIds = participants.map((p) => p.participantId);
+  result = tournamentEngine.addEventEntries({ eventId, participantIds });
+  expect(result.success).toEqual(true);
+
+  // attach a flight profile
+  const { flightProfile } = tournamentEngine.generateFlightProfile({
+    attachFlightProfile: true,
+    flightsCount: 2,
+    eventId,
+  });
+  expect(flightProfile.flights.length).toEqual(2);
+
+  const drawId = flightProfile.flights[0].drawId;
+
+  // delete the flight WITHOUT having generated a drawDefinition
+  // this exercises the path where flight is found and removed from flightProfile
+  // but drawWasGenerated is falsy (no drawDefinitions on the event)
+  result = tournamentEngine.deleteFlightAndFlightDraw({ eventId, drawId });
+  expect(result.success).toEqual(true);
+
+  // confirm the flight was removed from the profile
+  const { flightProfile: updatedProfile } = tournamentEngine.getFlightProfile({ eventId });
+  expect(updatedProfile.flights.length).toEqual(1);
+  expect(updatedProfile.flights[0].drawId).not.toEqual(drawId);
 });

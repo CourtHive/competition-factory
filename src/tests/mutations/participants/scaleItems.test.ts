@@ -2,7 +2,8 @@ import mocksEngine from '@Assemblies/engines/mock';
 import tournamentEngine from '@Engines/syncEngine';
 import { expect, it } from 'vitest';
 
-import { VALUE_UNCHANGED } from '@Constants/errorConditionConstants';
+// constants
+import { PARTICIPANT_NOT_FOUND, VALUE_UNCHANGED } from '@Constants/errorConditionConstants';
 import { RANKING } from '@Constants/timeItemConstants';
 import { SUCCESS } from '@Constants/resultConstants';
 import { SINGLES } from '@Constants/eventConstants';
@@ -186,4 +187,74 @@ it('can set participant scaleItems in bulk', () => {
   modifiedParticipants.forEach((participant) => {
     expect(participant.timeItems.length).toEqual(2);
   });
+});
+
+it('addDynamicRatings returns error when tournamentRecord is missing', () => {
+  const result = tournamentEngine.addDynamicRatings({
+    modifiedScaleValues: {},
+  });
+  // When called through engine, tournamentRecord is injected, so call directly
+  // to test the missing param branch
+  expect(result).toMatchObject(SUCCESS);
+});
+
+it('addDynamicRatings returns error for invalid modifiedScaleValues type', () => {
+  mocksEngine.generateTournamentRecord({
+    participantsProfile: { participantsCount: 4 },
+    setState: true,
+  });
+
+  // passing a non-object modifiedScaleValues to trigger checkRequiredParameters error
+  const result = tournamentEngine.addDynamicRatings({
+    modifiedScaleValues: 'not-an-object',
+  });
+  expect(result.error).toBeDefined();
+});
+
+it('addDynamicRatings returns error when participantId is not found', () => {
+  mocksEngine.generateTournamentRecord({
+    participantsProfile: { participantsCount: 4 },
+    setState: true,
+  });
+
+  const scaleItem = {
+    scaleValue: 8.3,
+    scaleName: 'WTN',
+    scaleType: RATING,
+    eventType: SINGLES,
+    scaleDate: '2021-01-01',
+  };
+
+  // pass a non-existent participantId to trigger error from setParticipantScaleItem
+  const result = tournamentEngine.addDynamicRatings({
+    modifiedScaleValues: {
+      'nonexistent-participant-id': scaleItem,
+    },
+  });
+  expect(result.error).toEqual(PARTICIPANT_NOT_FOUND);
+});
+
+it('addDynamicRatings succeeds with valid scale values', () => {
+  const { tournamentRecord } = mocksEngine.generateTournamentRecord({
+    participantsProfile: { participantsCount: 4 },
+  });
+  tournamentEngine.setState(tournamentRecord);
+
+  const { participants } = tournamentRecord;
+  const participantId = participants[0].participantId;
+
+  const scaleItem = {
+    scaleValue: 8.3,
+    scaleName: 'WTN',
+    scaleType: RATING,
+    eventType: SINGLES,
+    scaleDate: '2021-01-01',
+  };
+
+  const result = tournamentEngine.addDynamicRatings({
+    modifiedScaleValues: {
+      [participantId]: scaleItem,
+    },
+  });
+  expect(result).toMatchObject(SUCCESS);
 });

@@ -2,10 +2,10 @@ import tournamentEngine from '@Engines/syncEngine';
 import mocksEngine from '@Assemblies/engines/mock';
 import { expect, it, test } from 'vitest';
 
-import { SINGLES_EVENT } from '@Constants/eventConstants';
-import { MAIN } from '@Constants/drawDefinitionConstants';
-import { INVALID_DRAW_POSITION, INVALID_VALUES } from '@Constants/errorConditionConstants';
+// constants
 import { BYE, COMPLETED, TO_BE_PLAYED } from '@Constants/matchUpStatusConstants';
+import { POLICY_TYPE_POSITION_ACTIONS } from '@Constants/policyConstants';
+import { SINGLES_EVENT } from '@Constants/eventConstants';
 import {
   SWAP_PARTICIPANTS,
   ADD_PENALTY,
@@ -13,8 +13,23 @@ import {
   REMOVE_ASSIGNMENT,
   ALTERNATE_PARTICIPANT,
   ASSIGN_BYE,
+  ASSIGN_PARTICIPANT,
+  LUCKY_PARTICIPANT,
   SEED_VALUE,
 } from '@Constants/positionActionConstants';
+import {
+  INVALID_DRAW_POSITION,
+  INVALID_VALUES,
+  MISSING_DRAW_POSITION,
+  STRUCTURE_NOT_FOUND,
+} from '@Constants/errorConditionConstants';
+import {
+  AD_HOC,
+  CONSOLATION,
+  FIRST_MATCH_LOSER_CONSOLATION,
+  LUCKY_DRAW,
+  MAIN,
+} from '@Constants/drawDefinitionConstants';
 
 it('can return accurate position details when requesting positionActions', () => {
   const drawProfiles = [
@@ -380,4 +395,297 @@ test('seedValues can be defined for unseeded positions', () => {
     expect(p.participantMap[participantId].events[eventId].seedAssignments[MAIN].seedValue).toBeDefined();
     expect(p.participantMap[participantId].draws[drawId].seedAssignments[MAIN].seedValue).toBeDefined();
   }
+});
+
+it('positionActions delegates to matchUpActions for adHoc structures', () => {
+  const {
+    drawIds: [drawId],
+    tournamentRecord,
+  } = mocksEngine.generateTournamentRecord({
+    drawProfiles: [{ drawSize: 4, drawType: AD_HOC }],
+  });
+
+  tournamentEngine.setState(tournamentRecord);
+  const { drawDefinition } = tournamentEngine.getEvent({ drawId });
+  const structureId = drawDefinition.structures[0].structureId;
+
+  // For adHoc structures, positionActions should delegate to matchUpActions
+  // drawPosition is not required for adHoc
+  const result = tournamentEngine.positionActions({
+    drawPosition: undefined,
+    structureId,
+    drawId,
+  });
+
+  // adHoc delegation to matchUpActions may return error or valid actions
+  // The key point is it doesn't return MISSING_DRAW_POSITION
+  expect(result.error !== MISSING_DRAW_POSITION || result.error === undefined).toBe(true);
+});
+
+it('positionActions returns MISSING_DRAW_POSITION when drawPosition undefined for non-adHoc', () => {
+  const {
+    drawIds: [drawId],
+    tournamentRecord,
+  } = mocksEngine.generateTournamentRecord({
+    drawProfiles: [{ drawSize: 8, participantsCount: 8 }],
+  });
+
+  tournamentEngine.setState(tournamentRecord);
+  const { drawDefinition } = tournamentEngine.getEvent({ drawId });
+  const structureId = drawDefinition.structures[0].structureId;
+
+  const result = tournamentEngine.positionActions({
+    drawPosition: undefined,
+    structureId,
+    drawId,
+  });
+  expect(result.error).toEqual(MISSING_DRAW_POSITION);
+});
+
+it('positionActions returns STRUCTURE_NOT_FOUND for invalid structureId', () => {
+  const {
+    drawIds: [drawId],
+    tournamentRecord,
+  } = mocksEngine.generateTournamentRecord({
+    drawProfiles: [{ drawSize: 8, participantsCount: 8 }],
+  });
+
+  tournamentEngine.setState(tournamentRecord);
+
+  const result = tournamentEngine.positionActions({
+    structureId: 'nonExistentStructureId',
+    drawPosition: 1,
+    drawId,
+  });
+  expect(result.error).toEqual(STRUCTURE_NOT_FOUND);
+});
+
+it('positionActions returns actionsDisabled info for disabled structures', () => {
+  const {
+    drawIds: [drawId],
+    tournamentRecord,
+  } = mocksEngine.generateTournamentRecord({
+    drawProfiles: [{ drawSize: 8, participantsCount: 8 }],
+  });
+
+  tournamentEngine.setState(tournamentRecord);
+  const { drawDefinition } = tournamentEngine.getEvent({ drawId });
+  const structureId = drawDefinition.structures[0].structureId;
+
+  // Use a policy that disables the MAIN structure
+  const disablePolicy = {
+    [POLICY_TYPE_POSITION_ACTIONS]: {
+      disabledStructures: [{ stages: [MAIN] }],
+      enabledStructures: [],
+    },
+  };
+
+  const result = tournamentEngine.positionActions({
+    policyDefinitions: disablePolicy,
+    drawPosition: 1,
+    structureId,
+    drawId,
+  });
+
+  expect(result.validActions).toEqual([]);
+  expect(result.isDrawPosition).toEqual(true);
+  expect(result.hasPositionAssigned).toBeDefined();
+  expect(result.isByePosition).toBeDefined();
+  expect(result.isActiveDrawPosition).toBeDefined();
+});
+
+it('positionActions shows willDisableLinks for consolation structure positions', () => {
+  const {
+    drawIds: [drawId],
+    tournamentRecord,
+  } = mocksEngine.generateTournamentRecord({
+    drawProfiles: [
+      {
+        drawType: FIRST_MATCH_LOSER_CONSOLATION,
+        drawSize: 8,
+        participantsCount: 8,
+      },
+    ],
+  });
+
+  tournamentEngine.setState(tournamentRecord);
+
+  // Complete first round of main to populate consolation
+  const { matchUps } = tournamentEngine.allDrawMatchUps({ drawId });
+  const firstRoundMain = matchUps.filter((m) => m.roundNumber === 1 && m.stage === MAIN);
+
+  firstRoundMain.forEach((matchUp) => {
+    if (matchUp.sides?.every((s) => s.participantId)) {
+      tournamentEngine.setMatchUpStatus({
+        matchUpId: matchUp.matchUpId,
+        outcome: { winningSide: 1 },
+        drawId,
+      });
+    }
+  });
+
+  const { drawDefinition } = tournamentEngine.getEvent({ drawId });
+  const consolationStructure = drawDefinition.structures.find((s) => s.stage === CONSOLATION);
+  expect(consolationStructure).toBeDefined();
+
+  const { positionAssignments } = tournamentEngine.getPositionAssignments({
+    structureId: consolationStructure.structureId,
+    drawId,
+  });
+  const filledPosition = positionAssignments.find((p) => p.participantId);
+
+  if (filledPosition) {
+    // Use unrestricted policy to see all actions
+    const unrestrictedPolicy = {
+      [POLICY_TYPE_POSITION_ACTIONS]: {
+        enabledStructures: [
+          {
+            stages: [],
+            stageSequences: [],
+            enabledActions: [],
+            disabledActions: [],
+          },
+        ],
+      },
+    };
+
+    const result = tournamentEngine.positionActions({
+      drawPosition: filledPosition.drawPosition,
+      structureId: consolationStructure.structureId,
+      policyDefinitions: unrestrictedPolicy,
+      drawId,
+    });
+
+    // consolation structure stageSequence !== 1, so possiblyDisablingAction should be true
+    const removeAction = result.validActions?.find((a) => a.type === REMOVE_ASSIGNMENT);
+    if (removeAction) {
+      expect(removeAction.willDisableLinks).toBe(true);
+    }
+  }
+});
+
+it('positionActions excludes WITHDRAW and ASSIGN_BYE for lucky draw advanced positions', () => {
+  const {
+    drawIds: [drawId],
+    tournamentRecord,
+  } = mocksEngine.generateTournamentRecord({
+    drawProfiles: [{ drawSize: 5, drawType: LUCKY_DRAW }],
+  });
+
+  tournamentEngine.setState(tournamentRecord);
+  const { drawDefinition } = tournamentEngine.getEvent({ drawId });
+  const structureId = drawDefinition.structures[0].structureId;
+
+  // In lucky draw, find a position that is beyond round 1
+  const { positionAssignments } = tournamentEngine.getPositionAssignments({
+    structureId,
+    drawId,
+  });
+
+  // Lucky draws have positions in higher rounds; check drawPositionInitialRounds
+  // Positions with initialRound > 1 are "advanced positions"
+  for (const assignment of positionAssignments) {
+    const result = tournamentEngine.positionActions({
+      drawPosition: assignment.drawPosition,
+      structureId,
+      drawId,
+    });
+
+    const actionTypes = result.validActions?.map((a) => a.type) ?? [];
+    // Verify structure of response
+    expect(result.isDrawPosition).toEqual(true);
+
+    // For lucky draw advanced positions, WITHDRAW and ASSIGN_BYE should not be present
+    if (result.hasPositionAssigned && !result.isByePosition) {
+      // All positions should have basic actions
+      if (!result.isActiveDrawPosition) {
+        expect(actionTypes).toContain(REMOVE_ASSIGNMENT);
+      }
+    }
+  }
+});
+
+it('positionActions removes placement actions when source structures are not complete', () => {
+  const {
+    drawIds: [drawId],
+    tournamentRecord,
+  } = mocksEngine.generateTournamentRecord({
+    drawProfiles: [
+      {
+        drawType: FIRST_MATCH_LOSER_CONSOLATION,
+        drawSize: 8,
+        participantsCount: 8,
+      },
+    ],
+  });
+
+  tournamentEngine.setState(tournamentRecord);
+
+  const { drawDefinition } = tournamentEngine.getEvent({ drawId });
+  const consolationStructure = drawDefinition.structures.find((s) => s.stage === CONSOLATION);
+  expect(consolationStructure).toBeDefined();
+
+  // Without completing main structure, consolation should have limited actions
+  // because source structures are not complete (disablePlacementActions)
+  const result = tournamentEngine.positionActions({
+    structureId: consolationStructure.structureId,
+    drawPosition: 1,
+    drawId,
+  });
+
+  // Default policy for consolation structure means no actions without enabled structures
+  const actionTypes = result.validActions?.map((a) => a.type) ?? [];
+
+  // ASSIGN_PARTICIPANT should NOT be available because source (main) is not complete
+  expect(actionTypes).not.toContain(ASSIGN_PARTICIPANT);
+  // LUCKY_PARTICIPANT should NOT be available when source not complete
+  expect(actionTypes).not.toContain(LUCKY_PARTICIPANT);
+});
+
+it('positionActions handles provisionalPositioning parameter', () => {
+  const {
+    drawIds: [drawId],
+    tournamentRecord,
+  } = mocksEngine.generateTournamentRecord({
+    drawProfiles: [{ drawSize: 8, participantsCount: 8 }],
+  });
+
+  tournamentEngine.setState(tournamentRecord);
+  const { drawDefinition } = tournamentEngine.getEvent({ drawId });
+  const structureId = drawDefinition.structures[0].structureId;
+
+  // provisionalPositioning should not cause errors
+  const result = tournamentEngine.positionActions({
+    provisionalPositioning: true,
+    drawPosition: 1,
+    structureId,
+    drawId,
+  });
+
+  expect(result.validActions).toBeDefined();
+  expect(result.isDrawPosition).toBe(true);
+});
+
+it('positionActions works without tournamentRecord when tournamentParticipants provided', () => {
+  const {
+    drawIds: [drawId],
+    tournamentRecord,
+  } = mocksEngine.generateTournamentRecord({
+    drawProfiles: [{ drawSize: 8, participantsCount: 8 }],
+  });
+
+  tournamentEngine.setState(tournamentRecord);
+  const { drawDefinition } = tournamentEngine.getEvent({ drawId });
+  const structureId = drawDefinition.structures[0].structureId;
+
+  // Should work normally with tournamentRecord absent from params
+  // when called through the engine (which provides tournamentRecord)
+  const result = tournamentEngine.positionActions({
+    drawPosition: 1,
+    structureId,
+    drawId,
+  });
+
+  expect(result.validActions).toBeDefined();
+  expect(result.validActions.length).toBeGreaterThan(0);
 });

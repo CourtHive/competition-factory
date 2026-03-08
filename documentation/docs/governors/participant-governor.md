@@ -336,20 +336,47 @@ const { timeItem } = engine.getParticipantTimeItem({
 
 ## getParticipants
 
-Returns participants with optional hydration and filtering.
+Returns participants with optional hydration and filtering. This is the primary method for retrieving participants with rich context including matchUps, events, draws, rankings, and schedule information.
 
 ```js
-const { participants, participantMap } = engine.getParticipants({
-  tournamentRecord, // required
-  participantFilters, // optional - filter criteria
-  withMatchUps, // optional boolean
-  withDraws, // optional boolean
-  withEvents, // optional boolean
-  withScaleValues, // optional boolean
-  withSeeding, // optional boolean
-  withSignInStatus, // optional boolean
-  policyDefinitions, // optional
-  internalUse, // optional boolean
+const {
+  participants,                 // HydratedParticipant[]
+  participantMap,               // { [participantId]: participantData }
+  matchUps,                     // HydratedMatchUp[] (when withMatchUps)
+  mappedMatchUps,               // matchUps indexed by matchUpId
+  participantIdsWithConflicts,  // participantIds with schedule conflicts
+  eventsPublishStatuses,        // publish statuses keyed by eventId
+  derivedEventInfo,             // derived event metadata
+  derivedDrawInfo,              // derived draw metadata
+  missingParticipantIds,        // participantIds referenced but not found
+} = engine.getParticipants({
+  participantFilters,              // optional — filter criteria object
+  policyDefinitions,               // optional — privacy/display policies
+  scheduleAnalysis,                // optional — schedule conflict detection parameters
+  contextProfile,                  // optional — control context attributes on matchUps
+  contextFilters,                  // optional — filters based on context attributes
+  matchUpFilters,                  // optional — filters for matchUps
+
+  withIndividualParticipants,      // optional boolean or object template — hydrate individualParticipants
+  withPotentialMatchUps,           // optional boolean — include potential upcoming matchUps
+  withRankingProfile,              // optional boolean — include ranking profile (implies withMatchUps/Events/Draws)
+  withScheduleItems,               // optional boolean — include schedule items
+  withSignInStatus,                // optional boolean — include sign-in status
+  withTeamMatchUps,                // optional boolean — include TEAM matchUps
+  withScaleValues,                 // optional boolean — include ratings/rankings
+  usePublishState,                 // optional boolean — filter by publish state
+  withStatistics,                  // optional boolean — include statistical data
+  withOpponents,                   // optional boolean — include opponent data
+  withMatchUps,                    // optional boolean — include matchUp data
+  convertExtensions,               // optional boolean — convert extensions to flat properties
+  withSeeding,                     // optional boolean — include seeding data
+  withEvents,                      // optional boolean — include event entries
+  withDraws,                       // optional boolean — include draw entries
+  withISO2,                        // optional boolean — include ISO2 country codes
+  withIOC,                         // optional boolean — include IOC country codes
+  returnParticipantMap,            // optional boolean — defaults to true
+  returnMatchUps,                  // optional boolean — defaults to true
+  internalUse,                     // optional boolean
 });
 ```
 
@@ -720,6 +747,62 @@ engine.setParticipantScaleItems({
 const { valid, error, errors } = engine.validateLineUp({
   tieFormat, // required to validate collectionIds in lineUp
   lineUp,
+});
+```
+
+---
+
+## removeIndividualParticipantIds
+
+Removes `individualParticipantIds` from a grouping participant (`TEAM` or `GROUP`). Handles integrity checks including lineUp cleanup for draws where the team is entered, and optionally adds removed individuals as `UNGROUPED` entries to events.
+
+```js
+engine.removeIndividualParticipantIds({
+  groupingParticipantId,                // required — participantId of the TEAM or GROUP
+  individualParticipantIds,             // required — array of participantIds to remove
+  addIndividualParticipantsToEvents,    // optional boolean — add removed participants as UNGROUPED event entries
+  suppressErrors,                       // optional boolean — continue on errors (e.g. participant not found in group)
+});
+```
+
+See also: [modifyIndividualParticipantIds](#modifyindividualparticipantids), [addIndividualParticipantIds](#addindividualparticipantids).
+
+---
+
+## addParticipantTimeItem
+
+Adds a timeItem to a specific participant. TimeItems store time-based metadata such as rankings, ratings, and sign-in status.
+
+```js
+engine.addParticipantTimeItem({
+  participantId,          // required
+  timeItem,               // required — { itemType, itemValue, ... } time item object
+  removePriorValues,      // optional boolean — remove prior timeItems of the same itemType
+  duplicateValues,        // optional boolean — allow duplicate values
+});
+```
+
+---
+
+## generateDynamicRatings
+
+Generates dynamic ELO-style ratings from completed matchUp results. Processes specified matchUps and calculates new rating values for all participants involved.
+
+```js
+const {
+  modifiedScaleValues,   // { [participantId]: newRating }
+  processedMatchUpIds,   // matchUpIds that were processed
+  outputScaleName,       // the scaleName used for output
+  ratingType,            // the rating type used (e.g. 'ELO')
+} = engine.generateDynamicRatings({
+  matchUpIds,                    // required — array of matchUpIds to process
+  ratingType,                    // optional — defaults to 'ELO'; must be a key in ratingsParameters
+  updateParticipantRatings,      // optional boolean — modify tournament participants with new scaleItems
+  removePriorValues,             // optional boolean — defaults to true; remove prior scaleItems for same scaleName
+  refreshDynamic,                // optional boolean — ignore previously calculated dynamic values
+  considerGames,                 // optional boolean — use games instead of sets for calculation
+  asDynamic,                     // optional boolean — use DYNAMIC scaleName prefix
+  drawDefinition,                // optional — scope to a specific draw (used with refreshDynamic)
 });
 ```
 

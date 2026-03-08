@@ -1051,3 +1051,215 @@ describe('luckyDrawAdvancement — with tournamentRecord', () => {
     expect(result.success).toBe(true);
   });
 });
+
+// ──────────────────────────────────────────────────────────────────────────────
+// Non-pre-feed round advancement (even number of matchUps)
+// ──────────────────────────────────────────────────────────────────────────────
+
+describe('luckyDrawAdvancement — non-pre-feed round (even matchUp count)', () => {
+  test('advances winners without lucky loser selection for non-pre-feed round', () => {
+    // Build a drawSize 10 draw, advance round 1 first, then advance round 2
+    // Round 2 has 3 matchUps (odd) but we need an even round.
+    // For a non-pre-feed scenario: drawSize 8, round 1 has 4 matchUps (even).
+    // 4 matchUps → 4 winners, round 2 has 2 matchUps needing 4 participants.
+    const completedScore = {
+      sets: [
+        { side1Score: 6, side2Score: 3, winningSide: 1, setNumber: 1 },
+        { side1Score: 6, side2Score: 4, winningSide: 1, setNumber: 2 },
+      ],
+    };
+
+    const round1MatchUps = [1, 2, 3, 4].map((rp) => ({
+      drawPositions: [rp * 2 - 1, rp * 2],
+      matchUpStatus: 'COMPLETED',
+      matchUpId: `r1-m${rp}`,
+      roundPosition: rp,
+      roundNumber: 1,
+      score: completedScore,
+      winningSide: 1,
+    }));
+
+    const round2MatchUps = [1, 2].map((rp) => ({
+      drawPositions: [] as number[],
+      matchUpId: `r2-m${rp}`,
+      roundPosition: rp,
+      roundNumber: 2,
+      matchUpStatus: 'TO_BE_PLAYED',
+    }));
+
+    const pids = Array.from({ length: 8 }, (_, i) => `pid-${i + 1}`);
+    const assignments = pids.map((pid, i) => ({
+      drawPosition: i + 1,
+      participantId: pid,
+    }));
+
+    const drawDefinition: any = {
+      drawType: LUCKY_DRAW,
+      drawId: 'even-draw',
+      structures: [
+        {
+          structureId: 'even-struct',
+          stage: 'MAIN',
+          stageSequence: 1,
+          matchUps: [...round1MatchUps, ...round2MatchUps],
+          positionAssignments: [...assignments],
+        },
+      ],
+    };
+
+    // Even matchUp count = non-pre-feed, no participantId needed
+    const result = luckyDrawAdvancement({
+      drawDefinition,
+      roundNumber: 1,
+    });
+    expect(result.success).toBe(true);
+
+    // Verify 4 new assignments (2 matchUps × 2 positions) — only winners
+    const struct = drawDefinition.structures[0];
+    const newAssignments = struct.positionAssignments.filter((a: any) => a.drawPosition > 8);
+    expect(newAssignments.length).toBe(4);
+
+    // Only winners (side 1 = odd pids: pid-1, pid-3, pid-5, pid-7) should advance
+    const advancedIds = newAssignments.map((a: any) => a.participantId);
+    expect(advancedIds).toContain('pid-1');
+    expect(advancedIds).toContain('pid-3');
+    expect(advancedIds).toContain('pid-5');
+    expect(advancedIds).toContain('pid-7');
+
+    // No extensions should be set (not a pre-feed round)
+    for (const a of newAssignments) {
+      expect(a.extensions).toBeUndefined();
+    }
+  });
+});
+
+// ──────────────────────────────────────────────────────────────────────────────
+// Stale cleanup: duplicate positionAssignment entries (entries.length > 1)
+// ──────────────────────────────────────────────────────────────────────────────
+
+describe('luckyDrawAdvancement — stale cleanup with duplicate entries', () => {
+  test('removes stale entries when drawPosition has multiple positionAssignment entries', () => {
+    const { drawDefinition } = buildCompletedRound1Draw();
+    const struct = drawDefinition.structures[0];
+
+    // Set round 2 matchUp with drawPositions and DUPLICATE positionAssignment entries
+    const r2m1 = struct.matchUps.find((m: any) => m.matchUpId === 'r2-m1');
+    r2m1.drawPositions = [11, 12];
+
+    // Duplicate entries for dp 11: one with participantId, one without
+    struct.positionAssignments.push(
+      { drawPosition: 11, participantId: 'stale-pid' },
+      { drawPosition: 11 }, // empty duplicate
+    );
+
+    const result = luckyDrawAdvancement({
+      drawDefinition,
+      participantId: 'pid-1',
+      roundNumber: 1,
+    });
+    expect(result.success).toBe(true);
+
+    // Verify the stale entries were cleaned and new ones placed
+    const dp11Entries = struct.positionAssignments.filter((a: any) => a.drawPosition === 11);
+    // Should have no stale entries; only freshly assigned
+    expect(dp11Entries.length).toBeLessThanOrEqual(1);
+  });
+});
+
+// ──────────────────────────────────────────────────────────────────────────────
+// placeDiscardedLosers: target matchUps with positions but all filled
+// ──────────────────────────────────────────────────────────────────────────────
+
+describe('luckyDrawAdvancement — placeDiscardedLosers with already-filled positions', () => {
+  test('places losers into virtual positions when existing positions are all filled', () => {
+    const { drawDefinition } = buildCompletedRound1Draw();
+
+    // Add a playoff structure where all existing positions are filled
+    const playoffFilled: any = {
+      structureId: 'playoff-filled',
+      stage: 'PLAY_OFF',
+      stageSequence: 2,
+      matchUps: [
+        {
+          drawPositions: [401, 402],
+          matchUpId: 'pf-m1',
+          roundPosition: 1,
+          roundNumber: 1,
+          matchUpStatus: 'TO_BE_PLAYED',
+        },
+      ],
+      positionAssignments: [
+        { drawPosition: 401, participantId: 'already-1' },
+        { drawPosition: 402, participantId: 'already-2' },
+      ],
+    };
+
+    drawDefinition.structures.push(playoffFilled);
+    drawDefinition.links = [
+      {
+        linkType: LOSER,
+        source: { structureId: 'test-structure', roundNumber: 1 },
+        target: { structureId: 'playoff-filled', roundNumber: 1, feedProfile: 'TOP_DOWN' },
+      },
+    ];
+
+    // Should succeed — placeDiscardedLosers finds no unfilled positions,
+    // then creates virtual drawPositions for the existing matchUps
+    const result = luckyDrawAdvancement({
+      drawDefinition,
+      participantId: 'pid-1',
+      roundNumber: 1,
+    });
+    expect(result.success).toBe(true);
+  });
+
+  test('places losers when target structure matchUps have no drawPositions property', () => {
+    const { drawDefinition } = buildCompletedRound1Draw();
+
+    // Add a playoff structure where matchUps lack drawPositions entirely
+    const playoffNoDps: any = {
+      structureId: 'playoff-no-dps',
+      stage: 'PLAY_OFF',
+      stageSequence: 2,
+      matchUps: [
+        {
+          matchUpId: 'pnd-m1',
+          roundPosition: 1,
+          roundNumber: 1,
+          matchUpStatus: 'TO_BE_PLAYED',
+          // drawPositions intentionally omitted
+        },
+        {
+          matchUpId: 'pnd-m2',
+          roundPosition: 2,
+          roundNumber: 1,
+          matchUpStatus: 'TO_BE_PLAYED',
+        },
+      ],
+      positionAssignments: [],
+    };
+
+    drawDefinition.structures.push(playoffNoDps);
+    drawDefinition.links = [
+      {
+        linkType: LOSER,
+        source: { structureId: 'test-structure', roundNumber: 1 },
+        target: { structureId: 'playoff-no-dps', roundNumber: 1, feedProfile: 'TOP_DOWN' },
+      },
+    ];
+
+    const result = luckyDrawAdvancement({
+      drawDefinition,
+      participantId: 'pid-1',
+      roundNumber: 1,
+    });
+    expect(result.success).toBe(true);
+
+    // Verify virtual drawPositions were created
+    const playoff = drawDefinition.structures.find((s: any) => s.structureId === 'playoff-no-dps');
+    for (const m of playoff.matchUps) {
+      expect(m.drawPositions).toBeDefined();
+      expect(m.drawPositions.length).toBe(2);
+    }
+  });
+});

@@ -122,6 +122,7 @@ export function findMatchUp({
     const { matchUp, structure } = findDrawMatchUp({
       context: inContext ? additionalContext : undefined,
       tournamentParticipants,
+      participantsProfile,
       afterRecoveryTimes,
       contextContent,
       drawDefinition,

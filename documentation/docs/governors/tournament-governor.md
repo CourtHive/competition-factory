@@ -343,16 +343,17 @@ const { timeItem } = engine.getTournamentTimeItem({
 
 Currently only accepts the directive `hydrateRoundNames: true`. Use of `eventProfiles` is optional and allows granularity in application of round naming policy at the event level. If `eventProfiles` is used the top level `directives` and `policyDefinitions` are not necessary.
 
-````js
+```js
 engine.hydrateTournamentRecord({
   policyDefinitions: POLICY_ROUND_NAMING_DEFAULT,
   directives: { hydrateRoundNames: true },
   eventProfiles: [{
-    directives: { hydrateRoundNames: true }
+    directives: { hydrateRoundNames: true },
     policyDefinitions: {},
     eventId: 'eventId',
   }]
 })
+```
 
 ---
 
@@ -481,4 +482,63 @@ engine.setTournamentStatus({ status: CANCELLED });
 ```
 
 ---
-````
+
+## setTournamentDates
+
+Sets the start date, end date, active dates, and/or weekdays for a tournament. Validates that dates are proper `'YYYY-MM-DD'` strings and that `activeDates` fall within the start/end range. If the date range shrinks, matchUps scheduled outside the new range are automatically unscheduled. Event dates are coerced to fit within the new tournament dates.
+
+```js
+const {
+  unscheduledMatchUpIds, // matchUpIds that were unscheduled due to date range change
+  datesRemoved,          // dates no longer in the tournament range
+  datesAdded,            // dates newly in the tournament range
+} = engine.setTournamentDates({
+  startDate,    // optional — 'YYYY-MM-DD'
+  endDate,      // optional — 'YYYY-MM-DD'
+  activeDates,  // optional — string[] of 'YYYY-MM-DD' dates within start/end range
+  weekdays,     // optional — array of weekday constants [MON, TUE, ...]
+});
+```
+
+---
+
+## addTournamentTimeItem
+
+Adds a timeItem to the tournament record. TimeItems are used to store time-based metadata such as rankings, ratings, publish state, and scheduling data.
+
+```js
+engine.addTournamentTimeItem({
+  timeItem,               // required — { itemType, itemValue, ... } time item object
+  removePriorValues,      // optional boolean — remove prior timeItems of the same itemType
+  duplicateValues,        // optional boolean — allow duplicate values
+});
+```
+
+---
+
+## getTournament
+
+Returns the current tournament record from the engine state. This is an alias for accessing the tournament record via `getState()` / `getTournamentRecord()`.
+
+```js
+const { tournamentRecord } = engine.getTournament();
+```
+
+---
+
+## newTournamentRecord
+
+Creates and sets a new tournament record on the engine. This is an alias/convenience wrapper around [createTournamentRecord](#createtournamentrecord) that also loads the record into the engine state.
+
+See [createTournamentRecord](#createtournamentrecord) for the full parameter signature.
+
+```js
+engine.newTournamentRecord({
+  tournamentName, // optional
+  startDate,      // optional — 'YYYY-MM-DD'
+  endDate,        // optional — 'YYYY-MM-DD'
+  tournamentId,   // optional — provide specific ID
+});
+```
+
+---

@@ -301,6 +301,105 @@ describe('proConflicts - input validation and uncovered branches', () => {
     });
   });
 
+  it('detects participant warnings between adjacent rows', () => {
+    const { tournamentRecord } = mocksEngine.generateTournamentRecord({
+      venueProfiles: [{ venueName: 'Venue', venueAbbreviation: 'V', idPrefix: 'court', courtsCount: 8 }],
+      drawProfiles: [{ eventType: SINGLES, idPrefix: 'singles', drawSize: 8 }],
+      startDate,
+      endDate,
+    });
+
+    let result = tournamentEngine.setState(tournamentRecord);
+    expect(result.success).toEqual(true);
+
+    let { matchUps } = tournamentEngine.allCompetitionMatchUps({ nextMatchUps: true, inContext: true });
+    result = tournamentEngine.proAutoSchedule({ scheduledDate: startDate, matchUps });
+    expect(result.success).toEqual(true);
+
+    ({ matchUps } = tournamentEngine.allCompetitionMatchUps({
+      matchUpFilters: { scheduledDate: startDate },
+      nextMatchUps: true,
+      inContext: true,
+    }));
+
+    // Find two matchUps sharing a participant on adjacent rows
+    // This is naturally detected by proConflicts
+    const conflictsResult = tournamentEngine.proConflicts({ matchUps });
+    expect(conflictsResult.courtIssues).toBeDefined();
+    expect(conflictsResult.rowIssues).toBeDefined();
+
+    // Verify the structure of rowIssues - should be an array of arrays
+    for (const issues of Object.values(conflictsResult.rowIssues) as any[]) {
+      expect(Array.isArray(issues)).toEqual(true);
+    }
+  });
+
+  it('detects deep dependency conflicts with useDeepDependencies', () => {
+    const { tournamentRecord } = mocksEngine.generateTournamentRecord({
+      venueProfiles: [{ venueName: 'Venue', venueAbbreviation: 'V', idPrefix: 'court', courtsCount: 4 }],
+      drawProfiles: [{ eventType: SINGLES, idPrefix: 'singles', drawSize: 16 }],
+      startDate,
+      endDate,
+    });
+
+    let result = tournamentEngine.setState(tournamentRecord);
+    expect(result.success).toEqual(true);
+
+    let { matchUps } = tournamentEngine.allCompetitionMatchUps({ nextMatchUps: true, inContext: true });
+    result = tournamentEngine.proAutoSchedule({ scheduledDate: startDate, matchUps });
+    expect(result.success).toEqual(true);
+
+    ({ matchUps } = tournamentEngine.allCompetitionMatchUps({
+      matchUpFilters: { scheduledDate: startDate },
+      nextMatchUps: true,
+      inContext: true,
+    }));
+
+    // Test with useDeepDependencies enabled to cover Passes A, B, C, D
+    const conflictsResult = tournamentEngine.proConflicts({
+      matchUps,
+      useDeepDependencies: true,
+    });
+    expect(conflictsResult.courtIssues).toBeDefined();
+    expect(conflictsResult.rowIssues).toBeDefined();
+  });
+
+  it('detects warnings on connected matchUps on different courts', () => {
+    const { tournamentRecord } = mocksEngine.generateTournamentRecord({
+      venueProfiles: [{ venueName: 'Venue', venueAbbreviation: 'V', idPrefix: 'court', courtsCount: 4 }],
+      drawProfiles: [{ eventType: SINGLES, idPrefix: 'singles', drawSize: 16 }],
+      startDate,
+      endDate,
+    });
+
+    let result = tournamentEngine.setState(tournamentRecord);
+    expect(result.success).toEqual(true);
+
+    let { matchUps } = tournamentEngine.allCompetitionMatchUps({ nextMatchUps: true, inContext: true });
+    result = tournamentEngine.proAutoSchedule({ scheduledDate: startDate, matchUps });
+    expect(result.success).toEqual(true);
+
+    ({ matchUps } = tournamentEngine.allCompetitionMatchUps({
+      matchUpFilters: { scheduledDate: startDate },
+      nextMatchUps: true,
+      inContext: true,
+    }));
+
+    // Find a round-1 matchUp and its winner matchUp, put winner on different court
+    const round1Match = matchUps.find(
+      (m) => m.roundNumber === 1 && m.winnerMatchUpId && m.schedule?.courtOrder,
+    );
+
+    if (round1Match) {
+      const winnerMatch = matchUps.find((m) => m.matchUpId === round1Match.winnerMatchUpId);
+      if (winnerMatch?.schedule?.courtOrder && winnerMatch.schedule.courtId !== round1Match.schedule.courtId) {
+        // They're on different courts - this can generate a warning
+        const conflictsResult = tournamentEngine.proConflicts({ matchUps });
+        expect(conflictsResult.courtIssues).toBeDefined();
+      }
+    }
+  });
+
   it('handles matchUps with no courtOrder gracefully', () => {
     const { tournamentRecord } = mocksEngine.generateTournamentRecord({
       venueProfiles: [{ venueName: 'Venue', venueAbbreviation: 'V', idPrefix: 'court', courtsCount: 4 }],

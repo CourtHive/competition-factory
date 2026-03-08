@@ -200,37 +200,42 @@ export function getLuckyDrawRoundStatus({
       };
     };
 
-    // Advancing winners from scored matchUps
+    // Build advancingWinners in roundPosition order so placement logic
+    // can correctly determine which half of the next round each participant
+    // feeds into. Scored winners and BYE-advanced participants are interleaved
+    // by their matchUp's roundPosition rather than appended separately.
     const completedMatchUps = roundMatchUps.filter((m) => m.winningSide);
-    const scoredWinners = completedMatchUps
-      .map((m) => getParticipantInfo(m, m.winningSide!))
-      .filter((w): w is LuckyParticipantInfo => !!w);
+    const sortedRoundMatchUps = [...roundMatchUps].sort(
+      (a, b) => (a.roundPosition || 0) - (b.roundPosition || 0),
+    );
 
-    // BYE-advanced participants: the non-BYE participant in BYE matchUps
-    const byeMatchUps = roundMatchUps.filter((m) => m.matchUpStatus === BYE);
-    const byeAdvancers = byeMatchUps
-      .map((m) => {
+    const advancingWinners: LuckyParticipantInfo[] = [];
+    for (const m of sortedRoundMatchUps) {
+      if (m.winningSide) {
+        const info = getParticipantInfo(m, m.winningSide);
+        if (info) advancingWinners.push(info);
+      } else if (m.matchUpStatus === BYE) {
+        // BYE-advanced: find the non-BYE participant
         const dps = m.drawPositions || [];
         for (const dp of dps) {
           if (!dp) continue;
           const assignment = positionAssignments.find((a) => a.drawPosition === dp);
           if (assignment?.participantId && !assignment.bye) {
-            const participantId = assignment.participantId;
-            return {
-              participantId,
-              participantName: participantMap[participantId],
+            advancingWinners.push({
+              participantId: assignment.participantId,
+              participantName: participantMap[assignment.participantId],
               matchUpId: m.matchUpId,
               margin: 0,
               gameDifferential: 0,
               setsWonByLoser: 0,
-            } as LuckyParticipantInfo;
+            } as LuckyParticipantInfo);
+            break;
           }
         }
-        return undefined;
-      })
-      .filter((w): w is LuckyParticipantInfo => !!w);
+      }
+    }
 
-    roundInfo.advancingWinners = [...scoredWinners, ...byeAdvancers];
+    roundInfo.advancingWinners = advancingWinners;
 
     if (isPreFeedRound) {
       // Eligible losers sorted by narrowest margin (only scored matchUps have losers)

@@ -1637,6 +1637,35 @@ const { tieFormat, structureDefaultTieFormat, drawDefaultTieFormat, eventDefault
 
 ---
 
+## compareTieFormats
+
+Compares two tie format definitions and returns details about their differences, including added/removed/modified collections and value changes.
+
+```js
+const {
+  different,       // boolean — whether the formats differ
+  invalid,         // boolean — whether comparison could not be performed
+  modifications,   // array of modification descriptions
+} = queryGovernor.compareTieFormats({
+  ancestor,        // required — the original tieFormat object
+  descendant,      // required — the modified tieFormat object
+});
+```
+
+---
+
+## getTournament
+
+Returns the current tournament record from the engine state. This is a convenience alias — equivalent to accessing the tournament record via `getState()`.
+
+```js
+const { tournamentRecord } = engine.getTournament();
+```
+
+See also: [Tournament Governor - getTournament](/docs/governors/tournament-governor#gettournament).
+
+---
+
 ## getTournamentInfo
 
 Returns tournament attributes. Used to attach details to publishing payload by `getEventData`.
