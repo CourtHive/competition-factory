@@ -5,12 +5,14 @@ module.exports = {
   url: 'https://courthive.github.com',
   baseUrl: '/competition-factory/',
   onBrokenLinks: 'throw',
-  onBrokenMarkdownLinks: 'warn',
   favicon: 'img/favicon.ico',
   organizationName: 'CourtHive',
   projectName: 'competition-factory',
   markdown: {
     mermaid: true,
+    hooks: {
+      onBrokenMarkdownLinks: 'warn',
+    },
   },
   themeConfig: {
     colorMode: {
