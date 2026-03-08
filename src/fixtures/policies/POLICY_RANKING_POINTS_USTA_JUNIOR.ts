@@ -173,6 +173,7 @@ const rrWithPlayoffL6to7 = {
 // Points per win by line position. Max 5 matches at L3-5, max 4 at L6-7.
 const teamTournaments = {
   profileName: 'Team Tournaments',
+  levels: [1, 2, 3, 4, 5, 6, 7],
   eventTypes: [TEAM_EVENT],
   perWinPoints: {
     level: {
