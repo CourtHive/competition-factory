@@ -18,6 +18,7 @@ module.exports = {
             'tmx/venues-scheduling',
             'tmx/browser-console',
             'tmx/factory-server',
+            'tmx/tmx-api-surface',
           ],
         },
         'installation',

@@ -285,6 +285,99 @@ describe('competitionScheduleMatchUps - uncovered branches', () => {
     expect(result.courtPrefix).toBeDefined();
   });
 
+  test('contextFilters.drawIds intersection with published drawIds', () => {
+    const venueProfiles = [{ courtsCount: 4 }];
+    const drawProfiles = [{ drawSize: 8 }];
+
+    mocksEngine.generateTournamentRecord({
+      drawProfiles,
+      venueProfiles,
+      startDate,
+      setState: true,
+    });
+
+    const events = tournamentEngine.getEvents().events;
+    const eventId = events[0]?.eventId;
+    if (eventId) {
+      tournamentEngine.publishEvent({ eventId });
+      tournamentEngine.publishOrderOfPlay({ scheduledDates: [startDate] });
+
+      const { drawDefinitions } = tournamentEngine.getEvent({ eventId });
+      const drawId = drawDefinitions?.[0]?.drawId;
+
+      // Pass contextFilters.drawIds that intersects with published drawIds
+      const result = tournamentEngine.competitionScheduleMatchUps({
+        matchUpFilters: { scheduledDate: startDate },
+        contextFilters: { drawIds: [drawId, 'nonexistent-draw'] },
+        usePublishState: true,
+      });
+
+      expect(result.success).toEqual(true);
+      expect(result.dateMatchUps).toBeDefined();
+    }
+  });
+
+  test('matchUpFilters.eventIds intersection with published eventIds', () => {
+    const venueProfiles = [{ courtsCount: 4 }];
+    const drawProfiles = [{ drawSize: 8 }];
+
+    mocksEngine.generateTournamentRecord({
+      drawProfiles,
+      venueProfiles,
+      startDate,
+      setState: true,
+    });
+
+    const events = tournamentEngine.getEvents().events;
+    const eventId = events[0]?.eventId;
+    if (eventId) {
+      tournamentEngine.publishEvent({ eventId });
+      tournamentEngine.publishOrderOfPlay({
+        scheduledDates: [startDate],
+        eventIds: [eventId],
+      });
+
+      // Pass matchUpFilters.eventIds (empty array to trigger the .length check)
+      const result = tournamentEngine.competitionScheduleMatchUps({
+        matchUpFilters: { scheduledDate: startDate, eventIds: [] },
+        usePublishState: true,
+      });
+
+      expect(result.success).toEqual(true);
+      expect(result.dateMatchUps).toBeDefined();
+    }
+  });
+
+  test('matchUpFilters.scheduledDates intersection with published scheduledDates', () => {
+    const venueProfiles = [{ courtsCount: 4 }];
+    const drawProfiles = [{ drawSize: 8 }];
+
+    mocksEngine.generateTournamentRecord({
+      drawProfiles,
+      venueProfiles,
+      startDate,
+      setState: true,
+    });
+
+    const events = tournamentEngine.getEvents().events;
+    const eventId = events[0]?.eventId;
+    if (eventId) {
+      tournamentEngine.publishEvent({ eventId });
+      tournamentEngine.publishOrderOfPlay({
+        scheduledDates: [startDate],
+      });
+
+      // Pass matchUpFilters.scheduledDates with empty array
+      const result = tournamentEngine.competitionScheduleMatchUps({
+        matchUpFilters: { scheduledDate: startDate, scheduledDates: [] },
+        usePublishState: true,
+      });
+
+      expect(result.success).toEqual(true);
+      expect(result.dateMatchUps).toBeDefined();
+    }
+  });
+
   test('activeTournamentId selects specific tournament', () => {
     const venueProfiles = [{ courtsCount: 4 }];
     const drawProfiles = [{ drawSize: 8 }];

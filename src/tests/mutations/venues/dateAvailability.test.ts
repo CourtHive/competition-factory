@@ -4,11 +4,14 @@ import mocksEngine from '@Assemblies/engines/mock';
 import tournamentEngine from '@Engines/syncEngine';
 import { expect, it, test } from 'vitest';
 
+// constants
 import {
+  COURT_NOT_FOUND,
   INVALID_BOOKINGS,
   INVALID_DATE,
   INVALID_DATE_AVAILABILITY,
   INVALID_TIME,
+  MISSING_COURT_ID,
 } from '@Constants/errorConditionConstants';
 
 const invalidTime = 'Invalid Time';
@@ -260,4 +263,238 @@ it('can add events, venues, and modify court availbility', () => {
     '14:00',
     '15:30',
   ]);
+});
+
+it('returns MISSING_COURT_ID when courtId is missing', () => {
+  mocksEngine.generateTournamentRecord({
+    venueProfiles: [{ courtsCount: 1 }],
+    setState: true,
+  });
+
+  const result = tournamentEngine.modifyCourtAvailability({
+    dateAvailability: [{ date: d210102, startTime: '09:00', endTime: '17:00' }],
+  });
+  expect(result.error).toEqual(MISSING_COURT_ID);
+});
+
+it('returns error for invalid dateAvailability', () => {
+  mocksEngine.generateTournamentRecord({
+    venueProfiles: [{ courtsCount: 1 }],
+    setState: true,
+  });
+  const { courts } = tournamentEngine.getCourts();
+  const courtId = courts[0].courtId;
+
+  const result = tournamentEngine.modifyCourtAvailability({
+    dateAvailability: [{ date: 'bad-date', startTime: '09:00', endTime: '17:00' }],
+    courtId,
+  });
+  expect(result.error).toEqual(INVALID_DATE);
+});
+
+it('returns COURT_NOT_FOUND for non-existent courtId', () => {
+  mocksEngine.generateTournamentRecord({
+    venueProfiles: [{ courtsCount: 1 }],
+    setState: true,
+  });
+
+  const result = tournamentEngine.modifyCourtAvailability({
+    dateAvailability: [{ date: d210102, startTime: '09:00', endTime: '17:00' }],
+    courtId: 'non-existent-court-id',
+  });
+  expect(result.error).toEqual(COURT_NOT_FOUND);
+});
+
+it('supports disableNotice to suppress MODIFY_VENUE notice', () => {
+  mocksEngine.generateTournamentRecord({
+    venueProfiles: [{ courtsCount: 1 }],
+    setState: true,
+  });
+  const { courts } = tournamentEngine.getCourts();
+  const courtId = courts[0].courtId;
+
+  const result = tournamentEngine.modifyCourtAvailability({
+    dateAvailability: [{ date: d210102, startTime: '09:00', endTime: '17:00' }],
+    disableNotice: true,
+    courtId,
+  });
+  expect(result.success).toEqual(true);
+});
+
+it('merges overlapping availability with bookings', () => {
+  mocksEngine.generateTournamentRecord({
+    venueProfiles: [{ courtsCount: 1 }],
+    setState: true,
+  });
+  const { courts } = tournamentEngine.getCourts();
+  const courtId = courts[0].courtId;
+
+  // Two overlapping entries on the same date, both with bookings
+  const result = tournamentEngine.modifyCourtAvailability({
+    dateAvailability: [
+      {
+        date: d210102,
+        startTime: '08:00',
+        endTime: '12:00',
+        bookings: [{ startTime: '08:00', endTime: '09:00', bookingType: 'PRACTICE' }],
+      },
+      {
+        date: d210102,
+        startTime: '10:00',
+        endTime: '17:00',
+        bookings: [{ startTime: '14:00', endTime: '15:00', bookingType: 'MAINTENANCE' }],
+      },
+    ],
+    courtId,
+  });
+  expect(result.success).toEqual(true);
+  expect(result.totalMergeCount).toEqual(1);
+
+  const updatedCourts = tournamentEngine.getCourts().courts;
+  const court = updatedCourts.find((c) => c.courtId === courtId);
+  // Should be merged into one availability block
+  expect(court.dateAvailability.length).toEqual(1);
+  expect(court.dateAvailability[0].startTime).toEqual('08:00');
+  expect(court.dateAvailability[0].endTime).toEqual('17:00');
+  // Bookings should be combined
+  expect(court.dateAvailability[0].bookings).toBeDefined();
+});
+
+it('merges overlapping availability where only the second entry has bookings', () => {
+  mocksEngine.generateTournamentRecord({
+    venueProfiles: [{ courtsCount: 1 }],
+    setState: true,
+  });
+  const { courts } = tournamentEngine.getCourts();
+  const courtId = courts[0].courtId;
+
+  // First entry has no bookings, second entry has bookings — tests the else branch (lastBookings is falsy)
+  const result = tournamentEngine.modifyCourtAvailability({
+    dateAvailability: [
+      {
+        date: d210102,
+        startTime: '08:00',
+        endTime: '12:00',
+      },
+      {
+        date: d210102,
+        startTime: '10:00',
+        endTime: '17:00',
+        bookings: [{ startTime: '14:00', endTime: '15:00', bookingType: 'MAINTENANCE' }],
+      },
+    ],
+    courtId,
+  });
+  expect(result.success).toEqual(true);
+  expect(result.totalMergeCount).toEqual(1);
+
+  const updatedCourts = tournamentEngine.getCourts().courts;
+  const court = updatedCourts.find((c) => c.courtId === courtId);
+  expect(court.dateAvailability.length).toEqual(1);
+  expect(court.dateAvailability[0].startTime).toEqual('08:00');
+  expect(court.dateAvailability[0].endTime).toEqual('17:00');
+  expect(court.dateAvailability[0].bookings).toBeDefined();
+});
+
+it('does not merge non-overlapping availability and preserves bookings on each', () => {
+  mocksEngine.generateTournamentRecord({
+    venueProfiles: [{ courtsCount: 1 }],
+    setState: true,
+  });
+  const { courts } = tournamentEngine.getCourts();
+  const courtId = courts[0].courtId;
+
+  // Two non-overlapping entries with bookings on the first — tests the gap branch with lastBookings
+  const result = tournamentEngine.modifyCourtAvailability({
+    dateAvailability: [
+      {
+        date: d210102,
+        startTime: '08:00',
+        endTime: '10:00',
+        bookings: [{ startTime: '08:00', endTime: '09:00', bookingType: 'PRACTICE' }],
+      },
+      {
+        date: d210102,
+        startTime: '12:00',
+        endTime: '17:00',
+      },
+    ],
+    courtId,
+  });
+  expect(result.success).toEqual(true);
+  expect(result.totalMergeCount).toEqual(0);
+
+  const updatedCourts = tournamentEngine.getCourts().courts;
+  const court = updatedCourts.find((c) => c.courtId === courtId);
+  expect(court.dateAvailability.length).toEqual(2);
+  expect(court.dateAvailability[0].bookings.length).toEqual(1);
+});
+
+it('handles merging when overlapping entries have no bookings', () => {
+  mocksEngine.generateTournamentRecord({
+    venueProfiles: [{ courtsCount: 1 }],
+    setState: true,
+  });
+  const { courts } = tournamentEngine.getCourts();
+  const courtId = courts[0].courtId;
+
+  // Two overlapping entries, neither with bookings — tests the !bookings path in merge
+  const result = tournamentEngine.modifyCourtAvailability({
+    dateAvailability: [
+      { date: d210102, startTime: '08:00', endTime: '12:00' },
+      { date: d210102, startTime: '10:00', endTime: '17:00' },
+    ],
+    courtId,
+  });
+  expect(result.success).toEqual(true);
+  expect(result.totalMergeCount).toEqual(1);
+
+  const updatedCourts = tournamentEngine.getCourts().courts;
+  const court = updatedCourts.find((c) => c.courtId === courtId);
+  expect(court.dateAvailability.length).toEqual(1);
+  expect(court.dateAvailability[0].startTime).toEqual('08:00');
+  expect(court.dateAvailability[0].endTime).toEqual('17:00');
+  expect(court.dateAvailability[0].bookings).toBeUndefined();
+});
+
+it('handles force flag with scheduled court matchUps', () => {
+  const startDate = '2023-01-01';
+  const endDate = '2023-01-06';
+
+  const venueProfiles = [
+    {
+      dateAvailability: [{ date: startDate, startTime: '07:00', endTime: '19:00' }],
+      venueName: 'venue 1',
+      courtsCount: 3,
+      venueId: 'v1',
+    },
+  ];
+  mocksEngine.generateTournamentRecord({
+    drawProfiles: [{ drawSize: 8 }],
+    setState: true,
+    venueProfiles,
+    startDate,
+    endDate,
+  });
+
+  // Schedule some matchUps
+  const { rounds } = tournamentEngine.getRounds();
+  const schedulingProfile = [{ scheduleDate: startDate, venues: [{ venueId: 'v1', rounds }] }];
+  tournamentEngine.setSchedulingProfile({ schedulingProfile });
+  tournamentEngine.scheduleProfileRounds({ periodLength: 30 });
+
+  const { courts } = tournamentEngine.getCourts();
+  const courtId = courts[0].courtId;
+
+  // Now modify the court availability with force flag — should succeed even with scheduled matchUps
+  const result = tournamentEngine.modifyCourtAvailability({
+    dateAvailability: [{ date: startDate, startTime: '10:00', endTime: '15:00' }],
+    force: true,
+    courtId,
+  });
+  expect(result.success).toEqual(true);
+
+  const updatedCourts = tournamentEngine.getCourts().courts;
+  const court = updatedCourts.find((c) => c.courtId === courtId);
+  expect(court.dateAvailability).toEqual([{ date: startDate, startTime: '10:00', endTime: '15:00' }]);
 });

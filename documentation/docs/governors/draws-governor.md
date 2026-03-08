@@ -848,14 +848,28 @@ engine.modifyDrawName({
 
 ## positionActions
 
-Returns available positioning actions for a draw position.
+Returns available positioning actions for a draw position. The returned `validActions` array contains action objects with `type`, `method`, and `payload` properties that can be dispatched to perform the action.
 
 ```js
-const { validActions } = engine.positionActions({
-  drawId, // required
-  structureId, // required
-  drawPosition, // required
-  policyDefinitions, // optional
+const {
+  validActions,         // array of action objects
+  isActiveDrawPosition, // boolean — position has active (scored) matchUps
+  hasPositionAssigned,  // boolean — position has a participant or bye assigned
+  isDrawPosition,       // boolean — position exists in the structure
+  isByePosition,        // boolean — position is assigned a bye
+} = engine.positionActions({
+  drawPosition,                       // required — the draw position number
+  structureId,                        // required — target structure
+  drawId,                             // required — resolved to drawDefinition by engine
+  policyDefinitions,                  // optional — override position action policies
+  provisionalPositioning,             // optional boolean — honor provisional order from tallies
+  returnParticipants,                 // optional boolean — defaults to true; include participant objects in actions
+  restrictAdHocRoundParticipants,     // optional boolean — defaults to true; disallow same participant in same round
+  tournamentParticipants,             // optional — pre-fetched participants array (optimization)
+  inContextDrawMatchUps,              // optional — pre-fetched inContext matchUps (optimization)
+  matchUpsMap,                        // optional — pre-fetched matchUps map (optimization)
+  matchUpId,                          // optional — for AD_HOC structures, the target matchUp
+  event,                              // optional — resolved by engine
 });
 ```
 
@@ -874,6 +888,18 @@ engine.pruneDrawDefinition({
 ```
 
 **Purpose:** Clean up draw by removing unused structures.
+
+---
+
+## findDrawDefinition
+
+Finds a draw definition by `drawId` within the current tournament record.
+
+```js
+const { drawDefinition, event } = engine.findDrawDefinition({
+  drawId, // required — the drawId to find
+});
+```
 
 ---
 
@@ -1015,8 +1041,13 @@ engine.renameStructures({
 
 ## resetDrawDefinition
 
+Resets a drawDefinition to its initial state. For all matchUps: removes scores, extensions, and notes; restores drawPositions for rounds beyond round 1 (removes progressed positions). For structures that are not QUALIFYING or MAIN stageSequence 1: clears participant positionAssignments (preserving byes) and seed assignments. Optionally removes scheduling timeItems.
+
 ```js
-engine.resetDrawDefinition({ drawId });
+engine.resetDrawDefinition({
+  drawId,              // required — resolved to drawDefinition by engine
+  removeScheduling,    // optional boolean — also remove scheduling timeItems (date, time, court, venue)
+});
 ```
 
 ---
@@ -1186,6 +1217,52 @@ engine.withdrawParticipantAtDrawPosition({
   drawPosition,
   structureId,
   destroyPair, // optional - decompose PAIR participant into UNPAIRED participants
+});
+```
+
+---
+
+## luckyDrawAdvancement
+
+Advances participants from a completed round into the next round of a LUCKY_DRAW. For pre-feed rounds, advances all winners plus the selected lucky loser. For non-pre-feed rounds, advances all winners without loser selection.
+
+Works by assigning virtual drawPositions to next-round matchUps and creating corresponding positionAssignment entries, enabling the standard scoring flow for those matchUps.
+
+```js
+engine.luckyDrawAdvancement({
+  roundNumber,    // required — round number that has just completed
+  drawId,         // required — resolved to drawDefinition by engine
+  structureId,    // optional — target structure within the draw
+  participantId,  // optional — the selected lucky loser (required for pre-feed rounds)
+});
+```
+
+---
+
+## getLuckyDrawRoundStatus
+
+Returns detailed status for each round of a LUCKY_DRAW, including completion state, advancing winners, eligible losers with margin data, and whether the round needs a lucky loser selection.
+
+```js
+const { rounds, consolidationLinks } = engine.getLuckyDrawRoundStatus({
+  drawId,        // required
+  structureId,   // optional — defaults to first LUCKY_DRAW structure
+});
+```
+
+**Returns:** `rounds` is an array of round info objects containing `roundNumber`, `isComplete`, `isPreFeedRound`, `needsLuckySelection`, `advancingWinners`, and `eligibleLosers` (with margin/ratio data for ranking losers). `consolidationLinks` describes any LOSER links from the structure.
+
+---
+
+## addDrawDefinitionExtension
+
+Adds an extension (custom metadata) to a drawDefinition.
+
+```js
+engine.addDrawDefinitionExtension({
+  extension,     // required — { name, value } extension object
+  drawId,        // resolved via engine context
+  creationTime,  // optional boolean — stamp creation time on extension
 });
 ```
 

@@ -1,3 +1,4 @@
+import { calculateWinCriteria } from '@Query/matchUp/calculateWinCriteria';
 import { aggregateTieFormats } from '@Mutate/tieFormat/aggregateTieFormats';
 import tournamentEngine from '@Engines/syncEngine';
 import mocksEngine from '@Assemblies/engines/mock';
@@ -153,5 +154,161 @@ describe('aggregateTieFormats additional branch coverage', () => {
     for (const matchUp of matchUps) {
       expect(matchUp.tieFormatId).toBeDefined();
     }
+  });
+});
+
+describe('calculateWinCriteria — branch coverage', () => {
+  it('returns aggregateValue when no collectionDefinitions are provided', () => {
+    const result = calculateWinCriteria({});
+    expect(result.success).toEqual(true);
+    expect(result.aggregateValue).toEqual(true);
+    expect(result.valueGoal).toBeUndefined();
+  });
+
+  it('returns aggregateValue when collectionDefinitions is empty', () => {
+    const result = calculateWinCriteria({ collectionDefinitions: [], collectionGroups: [] });
+    expect(result.success).toEqual(true);
+    expect(result.aggregateValue).toEqual(true);
+  });
+
+  it('calculates valueGoal from collectionValue', () => {
+    const result = calculateWinCriteria({
+      collectionDefinitions: [
+        { collectionId: 'c1', collectionName: 'Singles', matchUpCount: 3, collectionValue: 3, matchUpType: 'SINGLES' },
+        { collectionId: 'c2', collectionName: 'Doubles', matchUpCount: 2, collectionValue: 2, matchUpType: 'DOUBLES' },
+      ],
+    });
+    expect(result.success).toEqual(true);
+    // Total value = 3 + 2 = 5, valueGoal = floor(5/2) + 1 = 3
+    expect(result.valueGoal).toEqual(3);
+    expect(result.aggregateValue).toBeUndefined();
+  });
+
+  it('calculates valueGoal from matchUpValue * matchUpCount', () => {
+    const result = calculateWinCriteria({
+      collectionDefinitions: [
+        { collectionId: 'c1', collectionName: 'Singles', matchUpCount: 5, matchUpValue: 1, matchUpType: 'SINGLES' },
+      ],
+    });
+    expect(result.success).toEqual(true);
+    // Total = 5 * 1 = 5, valueGoal = floor(5/2) + 1 = 3
+    expect(result.valueGoal).toEqual(3);
+  });
+
+  it('calculates valueGoal from collectionValueProfiles', () => {
+    const result = calculateWinCriteria({
+      collectionDefinitions: [
+        {
+          collectionId: 'c1',
+          collectionName: 'Singles',
+          matchUpCount: 3,
+          matchUpType: 'SINGLES',
+          collectionValueProfiles: [
+            { matchUpValue: 2, collectionPosition: 1 },
+            { matchUpValue: 1, collectionPosition: 2 },
+            { matchUpValue: 1, collectionPosition: 3 },
+          ],
+        },
+      ],
+    });
+    expect(result.success).toEqual(true);
+    // Total = 2 + 1 + 1 = 4, valueGoal = floor(4/2) + 1 = 3
+    expect(result.valueGoal).toEqual(3);
+  });
+
+  it('returns aggregateValue when setValue is present (unpredictable scoring)', () => {
+    const result = calculateWinCriteria({
+      collectionDefinitions: [
+        {
+          collectionId: 'c1',
+          collectionName: 'Singles',
+          matchUpCount: 3,
+          collectionValue: 3,
+          setValue: 1,
+          matchUpType: 'SINGLES',
+        },
+      ],
+    });
+    expect(result.success).toEqual(true);
+    expect(result.aggregateValue).toEqual(true);
+  });
+
+  it('returns aggregateValue when scoreValue is present', () => {
+    const result = calculateWinCriteria({
+      collectionDefinitions: [
+        {
+          collectionId: 'c1',
+          collectionName: 'Singles',
+          matchUpCount: 3,
+          collectionValue: 3,
+          scoreValue: 1,
+          matchUpType: 'SINGLES',
+        },
+      ],
+    });
+    expect(result.success).toEqual(true);
+    expect(result.aggregateValue).toEqual(true);
+  });
+
+  it('skips collectionDefinitions belonging to value groups', () => {
+    const result = calculateWinCriteria({
+      collectionDefinitions: [
+        {
+          collectionId: 'c1',
+          collectionName: 'Singles',
+          matchUpCount: 3,
+          collectionValue: 3,
+          collectionGroupNumber: 1,
+          matchUpType: 'SINGLES',
+        },
+        {
+          collectionId: 'c2',
+          collectionName: 'Doubles',
+          matchUpCount: 2,
+          collectionValue: 2,
+          matchUpType: 'DOUBLES',
+        },
+      ],
+      collectionGroups: [{ groupNumber: 1, groupValue: 5 }],
+    });
+    expect(result.success).toEqual(true);
+    // Singles (groupNumber 1) is skipped, only Doubles (2) + group value (5) = 7
+    // valueGoal = floor(7/2) + 1 = 4
+    expect(result.valueGoal).toEqual(4);
+  });
+
+  it('adds groupValue from collectionGroups to valueTotal', () => {
+    const result = calculateWinCriteria({
+      collectionDefinitions: [
+        { collectionId: 'c1', collectionName: 'Singles', matchUpCount: 3, matchUpValue: 1, matchUpType: 'SINGLES' },
+      ],
+      collectionGroups: [{ groupValue: 2, groupNumber: 1 }],
+    });
+    expect(result.success).toEqual(true);
+    // Total = 3*1 + 2 = 5, valueGoal = floor(5/2) + 1 = 3
+    expect(result.valueGoal).toEqual(3);
+  });
+
+  it('handles matchUpCount of 0 with matchUpValue', () => {
+    const result = calculateWinCriteria({
+      collectionDefinitions: [
+        { collectionId: 'c1', collectionName: 'Empty', matchUpCount: 0, matchUpValue: 5, matchUpType: 'SINGLES' },
+        { collectionId: 'c2', collectionName: 'Singles', matchUpCount: 3, matchUpValue: 1, matchUpType: 'SINGLES' },
+      ],
+    });
+    expect(result.success).toEqual(true);
+    // Total = 0*5 + 3*1 = 3, valueGoal = floor(3/2) + 1 = 2
+    expect(result.valueGoal).toEqual(2);
+  });
+
+  it('handles undefined matchUpCount gracefully (uses 0 fallback)', () => {
+    const result = calculateWinCriteria({
+      collectionDefinitions: [
+        { collectionId: 'c1', collectionName: 'NoCount', matchUpValue: 2, matchUpType: 'SINGLES' } as any,
+      ],
+    });
+    expect(result.success).toEqual(true);
+    // matchUpCount is undefined → 0 * 2 = 0, valueTotal = 0 → aggregateValue
+    expect(result.aggregateValue).toEqual(true);
   });
 });

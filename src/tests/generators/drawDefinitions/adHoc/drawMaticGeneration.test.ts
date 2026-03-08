@@ -6,7 +6,7 @@ import mocksEngine from '@Assemblies/engines/mock';
 import { expect, it, test } from 'vitest';
 
 // constants
-import { EXISTING_MATCHUP_ID, INVALID_VALUES, MISSING_PARTICIPANT_IDS } from '@Constants/errorConditionConstants';
+import { EXISTING_MATCHUP_ID, INVALID_DRAW_DEFINITION, INVALID_VALUES, MISSING_PARTICIPANT_IDS } from '@Constants/errorConditionConstants';
 import { INDIVIDUAL, PAIR } from '@Constants/participantConstants';
 import { DOUBLES, SINGLES } from '@Constants/eventConstants';
 import { AD_HOC } from '@Constants/drawDefinitionConstants';
@@ -241,6 +241,57 @@ test.each(drawMaticScenarios)('drawMatic can generate multiple rounds', (scenari
   } else if (scenario.expectation.error) {
     expect(result.error).toEqual(scenario.expectation.error);
   }
+});
+
+it('returns INVALID_VALUES when roundsCount is a string', () => {
+  const drawId = 'drawId';
+
+  mocksEngine.generateTournamentRecord({
+    drawProfiles: [{ drawId, drawType: AD_HOC, drawSize: 4 }],
+    setState: true,
+  });
+
+  const result = tournamentEngine.drawMatic({ drawId, roundsCount: 'two' as any });
+  expect(result.error).toEqual(INVALID_VALUES);
+});
+
+it('returns INVALID_DRAW_DEFINITION for non-AD_HOC drawType', () => {
+  const drawId = 'drawId';
+
+  mocksEngine.generateTournamentRecord({
+    drawProfiles: [{ drawId, drawSize: 4 }],
+    setState: true,
+  });
+
+  // The draw has SINGLE_ELIMINATION type, not AD_HOC
+  const result = tournamentEngine.drawMatic({ drawId });
+  expect(result.error).toEqual(INVALID_DRAW_DEFINITION);
+});
+
+it('handles restrictRoundsCount !== false for large roundsCount', () => {
+  // Test the boundary where roundsCount equals participantIds.length - 1
+  const drawId = 'drawId2';
+
+  mocksEngine.generateTournamentRecord({
+    drawProfiles: [{ drawId, drawType: AD_HOC, drawSize: 4 }],
+    setState: true,
+  });
+
+  // roundsCount = 3 = participantIds.length - 1 = 4 - 1 = 3 → exactly at limit, should succeed
+  const result = tournamentEngine.drawMatic({ drawId, roundsCount: 3 });
+  expect(result.success).toEqual(true);
+});
+
+it('handles roundsCount > 31 restriction', () => {
+  const drawId = 'drawId';
+
+  mocksEngine.generateTournamentRecord({
+    drawProfiles: [{ drawId, drawType: AD_HOC, drawSize: 40 }],
+    setState: true,
+  });
+
+  const result = tournamentEngine.drawMatic({ drawId, roundsCount: 32 });
+  expect(result.error).toEqual(INVALID_VALUES);
 });
 
 it('can generate { automated: false } AD_HOC with arbitrary roundsCount', () => {

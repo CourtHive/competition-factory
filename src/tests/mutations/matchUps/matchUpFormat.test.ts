@@ -10,7 +10,6 @@ import {
   INVALID_VALUES,
   MISSING_DRAW_DEFINITION,
   MISSING_DRAW_ID,
-  MISSING_MATCHUP_FORMAT,
   NO_MODIFICATIONS_APPLIED,
   UNRECOGNIZED_MATCHUP_FORMAT,
 } from '@Constants/errorConditionConstants';
@@ -264,4 +263,142 @@ it('can set and return matchUpFormat codes', () => {
     drawId,
   });
   expect(result.info).toEqual(NO_MODIFICATIONS_APPLIED);
+});
+
+it('setMatchUpFormat applies format to specific drawIds', () => {
+  const matchUpFormat = FORMAT_STANDARD;
+  const {
+    drawIds: [drawId],
+    eventIds: [eventId],
+    tournamentRecord,
+  } = mocksEngine.generateTournamentRecord({
+    drawProfiles: [{ drawSize: 8, matchUpFormat }],
+  });
+
+  tournamentEngine.setState(tournamentRecord);
+
+  // Set format on specific drawId
+  const result = tournamentEngine.setMatchUpFormat({
+    matchUpFormat: FORMAT_SHORT_SETS,
+    drawIds: [drawId],
+    stages: ['MAIN'],
+    eventId,
+  });
+  expect(result.success).toEqual(true);
+});
+
+it('setMatchUpFormat applies format to specific eventIds', () => {
+  const matchUpFormat = FORMAT_STANDARD;
+  const {
+    eventIds: [eventId],
+    tournamentRecord,
+  } = mocksEngine.generateTournamentRecord({
+    drawProfiles: [{ drawSize: 8, matchUpFormat }],
+  });
+
+  tournamentEngine.setState(tournamentRecord);
+
+  // Set format filtering by eventIds
+  const result = tournamentEngine.setMatchUpFormat({
+    matchUpFormat: FORMAT_SHORT_SETS,
+    eventIds: [eventId],
+  });
+  expect(result.success).toEqual(true);
+});
+
+it('setMatchUpFormat with structureIds but no drawDefinition returns MISSING_DRAW_DEFINITION', () => {
+  const {
+    drawIds: [drawId],
+    tournamentRecord,
+  } = mocksEngine.generateTournamentRecord({
+    drawProfiles: [{ drawSize: 8 }],
+  });
+
+  tournamentEngine.setState(tournamentRecord);
+
+  const { drawDefinition } = tournamentEngine.getEvent({ drawId });
+  const structureId = drawDefinition.structures[0].structureId;
+
+  // Pass structureIds without drawDefinition — should fail
+  const result = tournamentEngine.setMatchUpFormat({
+    matchUpFormat: FORMAT_SHORT_SETS,
+    structureIds: [structureId],
+  });
+  expect(result.error).toEqual(MISSING_DRAW_DEFINITION);
+});
+
+it('setMatchUpFormat with SINGLES eventType filters events', () => {
+  mocksEngine.generateTournamentRecord({
+    drawProfiles: [{ drawSize: 8 }],
+    setState: true,
+  });
+
+  const result = tournamentEngine.setMatchUpFormat({
+    matchUpFormat: FORMAT_SHORT_SETS,
+    eventType: 'SINGLES',
+  });
+  expect(result.success).toEqual(true);
+});
+
+it('setMatchUpFormat with scheduledDates applies format to specific dates', () => {
+  const startDate = '2024-06-01';
+  const {
+    drawIds: [drawId],
+    tournamentRecord,
+  } = mocksEngine.generateTournamentRecord({
+    drawProfiles: [{ drawSize: 8 }],
+    startDate,
+  });
+
+  tournamentEngine.setState(tournamentRecord);
+
+  const { drawDefinition } = tournamentEngine.getEvent({ drawId });
+  const structureId = drawDefinition.structures[0].structureId;
+
+  // Schedule a matchUp to a specific date
+  const { matchUps } = tournamentEngine.allDrawMatchUps({ drawId });
+  const tbpMatchUp = matchUps.find((m) => m.matchUpStatus === 'TO_BE_PLAYED');
+  if (tbpMatchUp) {
+    tournamentEngine.addMatchUpScheduleItems({
+      matchUpId: tbpMatchUp.matchUpId,
+      drawId,
+      schedule: { scheduledDate: startDate },
+    });
+
+    const result = tournamentEngine.setMatchUpFormat({
+      scheduledDates: [startDate],
+      matchUpFormat: FORMAT_SHORT_SETS,
+      structureId,
+      drawId,
+    });
+    expect(result.success).toEqual(true);
+  }
+});
+
+it('setMatchUpFormat does not modify draw format when structure is modified', () => {
+  const matchUpFormat = FORMAT_STANDARD;
+  const {
+    drawIds: [drawId],
+    tournamentRecord,
+  } = mocksEngine.generateTournamentRecord({
+    drawProfiles: [{ drawSize: 8, matchUpFormat }],
+  });
+
+  tournamentEngine.setState(tournamentRecord);
+
+  const { drawDefinition } = tournamentEngine.getEvent({ drawId });
+  const structureId = drawDefinition.structures[0].structureId;
+
+  // Set format at structure level (different from draw level)
+  let result = tournamentEngine.setMatchUpFormat({
+    matchUpFormat: FORMAT_FAST4,
+    structureIds: [structureId],
+    drawId,
+  });
+  expect(result.success).toEqual(true);
+
+  // drawDefinition.matchUpFormat should remain as original
+  const { drawDefinition: updated } = tournamentEngine.getEvent({ drawId });
+  expect(updated.matchUpFormat).toEqual(matchUpFormat);
+  expect(updated.structures[0].matchUpFormat).toEqual(FORMAT_FAST4);
 });

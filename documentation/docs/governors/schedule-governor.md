@@ -1102,6 +1102,37 @@ const { valid, errors } = engine.validateSchedulingProfile({
 
 ---
 
+## addMatchUpScheduleItems
+
+Adds multiple schedule attributes to a matchUp in a single call. This is the method used internally by `setMatchUpStatus` when a `schedule` object is provided, and is the most efficient way to set date, time, court, and venue together.
+
+```js
+engine.addMatchUpScheduleItems({
+  matchUpId,                // required — target matchUp
+  drawId,                   // required — resolved to drawDefinition by engine
+  schedule: {               // required — schedule attributes to set
+    scheduledDate,          // optional — 'YYYY-MM-DD'
+    scheduledTime,          // optional — 'HH:mm' or ISO datetime
+    startTime,              // optional — actual start time
+    endTime,                // optional — actual end time
+    resumeTime,             // optional — resume after suspension
+    stopTime,               // optional — suspension time
+    courtId,                // optional — assigned court
+    venueId,                // optional — assigned venue
+    courtOrder,             // optional — order on court
+    homeParticipantId,      // optional — home team participant
+    courtIds,               // optional — for TEAM matchUps, allocate courts
+  },
+  removePriorValues,        // optional boolean — clear existing schedule timeItems first
+  checkChronology,          // optional boolean — defaults to true; validate time ordering
+  errorOnAnachronism,       // optional boolean — return error on chronological violations
+  proConflictDetection,     // optional boolean — detect pro scheduling conflicts
+  disableNotice,            // optional boolean — suppress modification notices
+});
+```
+
+---
+
 ## Related Documentation
 
 - **[Scheduling Overview](../concepts/scheduling-overview)** - Core scheduling concepts

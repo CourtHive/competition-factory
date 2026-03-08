@@ -1,8 +1,11 @@
+import { unPublishOrderOfPlay } from '@Mutate/timeItems/unPublishOrderOfPlay';
 import mocksEngine from '@Assemblies/engines/mock';
 import competitionEngine from '@Engines/syncEngine';
 import { expect, it } from 'vitest';
 
+// constants
 import POLICY_SCHEDULING_NO_DAILY_LIMITS from '@Fixtures/policies/POLICY_SCHEDULING_NO_DAILY_LIMITS';
+import { MISSING_TOURNAMENT_RECORDS } from '@Constants/errorConditionConstants';
 import { Tournament } from '@Types/tournamentTypes';
 import { PUBLIC } from '@Constants/timeItemConstants';
 
@@ -125,5 +128,44 @@ it('can publish order of play for specified days', () => {
 
   publishState = competitionEngine.getPublishState().publishState;
   expect(publishState.tournament.status.published).toEqual(false);
+  expect(publishState.tournament.orderOfPlay).toBeUndefined();
+});
+
+it('returns error when no tournament records are provided', () => {
+  const result = unPublishOrderOfPlay({});
+  expect(result.error).toEqual(MISSING_TOURNAMENT_RECORDS);
+});
+
+it('handles unPublishOrderOfPlay with non-existent status key', () => {
+  mocksEngine.generateTournamentRecord({
+    drawProfiles: [{ drawSize: 4 }],
+    setState: true,
+  });
+
+  // publish OOP first so there is a timeItem
+  let result = competitionEngine.publishOrderOfPlay();
+  expect(result.success).toEqual(true);
+
+  // unpublish with a custom status that does not exist in itemValue
+  // this exercises the `if (itemValue[status])` false branch
+  result = competitionEngine.unPublishOrderOfPlay({ status: 'NONEXISTENT' });
+  expect(result.success).toEqual(true);
+
+  // the PUBLIC orderOfPlay should still be published since we only unpublished a non-existent status
+  const publishState = competitionEngine.getPublishState().publishState;
+  expect(publishState.tournament.orderOfPlay.published).toEqual(true);
+});
+
+it('handles unPublishOrderOfPlay when no prior publish exists', () => {
+  mocksEngine.generateTournamentRecord({
+    drawProfiles: [{ drawSize: 4 }],
+    setState: true,
+  });
+
+  // unpublish without publishing first — exercises the fallback `{ [status]: {} }` branch
+  const result = competitionEngine.unPublishOrderOfPlay();
+  expect(result.success).toEqual(true);
+
+  const publishState = competitionEngine.getPublishState().publishState;
   expect(publishState.tournament.orderOfPlay).toBeUndefined();
 });

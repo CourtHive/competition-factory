@@ -32,8 +32,25 @@ if (!error) {
 Add an event object to a tournamentRecord. See examples in [Creating Events](../concepts/events/events-overview.mdx#creating-events), [Age Validation Examples](../concepts/events/entries.mdx#age-validation-examples), [Complete Example](../concepts/events/flights.mdx#complete-example), [Using Categories in Events](../concepts/events/categories.mdx#using-categories-in-events), [newTournamentRecord](../engines/engine-methods.md#newtournamentrecord), and 1 more.
 
 ```js
-engine.addEvent({ event });
+engine.addEvent({
+  event,                    // required — event object (eventId auto-generated if absent)
+  suppressNotifications,    // optional boolean — suppress event/matchUp notices
+});
 ```
+
+The `event` object may include:
+
+- `eventId` — optional, auto-generated UUID if not provided
+- `eventName` — display name
+- `eventType` — defaults to `SINGLES_EVENT`; use `TEAM_EVENT` for team competitions
+- `tieFormat` — required for TEAM events (validated), or use `tieFormatName` to select a preset
+- `tieFormatName` — optional — selects a built-in tieFormat by name (e.g. `'COLLEGE_DEFAULT'`)
+- `startDate`, `endDate` — optional, default to tournament dates
+- `category`, `gender`, `matchUpFormat` — optional event metadata
+
+:::note
+When called via the public engine API (not `internalUse`), `event.entries` and `event.drawDefinitions` must be empty or absent — they are rejected with `INVALID_VALUES`. Use `addEventEntries` and `addDrawDefinition` separately.
+:::
 
 ---
 
@@ -595,4 +612,33 @@ engine.updateDrawIdsOrder({
 
 ```js
 engine.validateCategory({ category });
+```
+
+---
+
+## getEventData
+
+Returns comprehensive event data including all draws, participants, and matchUps, formatted for public display. This method is documented in full on the Publishing Governor page.
+
+See [Publishing Governor](/docs/governors/publishing-governor#geteventdata) for full documentation.
+
+```js
+const { eventData, participants } = engine.getEventData({
+  eventId,         // required
+  usePublishState, // optional boolean
+});
+```
+
+---
+
+## addEventExtension
+
+Adds an extension to an event. Extensions are custom metadata objects attached to tournament elements.
+
+```js
+engine.addEventExtension({
+  extension,     // required — { name, value } extension object
+  eventId,       // resolved via engine context
+  creationTime,  // optional boolean — stamp creation time on extension
+});
 ```

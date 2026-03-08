@@ -6,9 +6,9 @@ import { makeDeepCopy } from '@Tools/makeDeepCopy';
 import { getDrawStructures } from './findStructure';
 
 // constants and types
+import { ContextContent, ContextProfile, MatchUpsMap, ParticipantsProfile } from '@Types/factoryTypes';
 import { DrawDefinition, Event, Participant, Structure } from '@Types/tournamentTypes';
 import { ErrorType, MATCHUP_NOT_FOUND } from '@Constants/errorConditionConstants';
-import { ContextContent, ContextProfile, MatchUpsMap } from '@Types/factoryTypes';
 import { DRAW_DEFINITION, MATCHUP_ID } from '@Constants/attributeConstants';
 import { HydratedMatchUp } from '@Types/hydrated';
 
@@ -24,6 +24,7 @@ export function publicFindDrawMatchUp(params) {
 
 type FindDrawMatchUpArgs = {
   tournamentParticipants?: Participant[];
+  participantsProfile?: ParticipantsProfile;
   context?: { [key: string]: any };
   contextContent?: ContextContent;
   contextProfile?: ContextProfile;
@@ -45,6 +46,7 @@ export function findDrawMatchUp(params: FindDrawMatchUpArgs): {
 
   const {
     tournamentParticipants,
+    participantsProfile,
     afterRecoveryTimes,
     contextProfile,
     drawDefinition,
@@ -63,6 +65,7 @@ export function findDrawMatchUp(params: FindDrawMatchUpArgs): {
   for (const structure of structures) {
     const { matchUps } = getAllStructureMatchUps({
       tournamentParticipants,
+      participantsProfile,
       afterRecoveryTimes,
       contextContent,
       drawDefinition,

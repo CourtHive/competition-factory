@@ -1718,6 +1718,75 @@ describe('lucky draw BYE handling — odd participant count', () => {
     expect(round2Assignments.length).toBe(6);
   });
 
+  test('lucky loser is placed in opposite half from defeating winner', () => {
+    const drawProfiles = [{ drawSize: 9, drawType: LUCKY_DRAW }];
+    const {
+      tournamentRecord,
+      drawIds: [drawId],
+    } = mocksEngine.generateTournamentRecord({
+      completeAllMatchUps: true,
+      drawProfiles,
+    });
+
+    tournamentEngine.setState(tournamentRecord);
+
+    const status = tournamentEngine.getLuckyDrawRoundStatus({ drawId });
+    const round1 = status.rounds.find((r: any) => r.roundNumber === 1);
+
+    const { drawDefinition } = tournamentEngine.getEvent({ drawId });
+    const structureId = drawDefinition.structures[0].structureId;
+
+    // advancingWinners should be in roundPosition order
+    const winners = round1!.advancingWinners!;
+    expect(winners.length).toBe(5);
+
+    // Pick a loser and find who defeated them
+    const selectedLoser = round1!.eligibleLosers![0];
+    const defeatingMatchUpId = selectedLoser.matchUpId;
+    const defeatingWinnerIdx = winners.findIndex((w: any) => w.matchUpId === defeatingMatchUpId);
+    expect(defeatingWinnerIdx).toBeGreaterThanOrEqual(0);
+
+    const result = tournamentEngine.luckyDrawAdvancement({
+      participantId: selectedLoser.participantId,
+      roundNumber: 1,
+      structureId,
+      drawId,
+    });
+    expect(result.success).toBe(true);
+
+    // Find which round 2 matchUp the LL and defeating winner ended up in
+    const { drawDefinition: updatedDraw } = tournamentEngine.getEvent({ drawId });
+    const structure = updatedDraw.structures[0];
+    const round2MatchUps = structure.matchUps
+      .filter((m: any) => m.roundNumber === 2)
+      .sort((a: any, b: any) => (a.roundPosition || 0) - (b.roundPosition || 0));
+
+    const halfSplit = Math.ceil(round2MatchUps.length / 2);
+
+    // Find the defeating winner's participantId
+    const defeatingWinner = winners[defeatingWinnerIdx];
+
+    let llMatchUpIdx = -1;
+    let winnerMatchUpIdx = -1;
+
+    for (let i = 0; i < round2MatchUps.length; i++) {
+      const dps = round2MatchUps[i].drawPositions || [];
+      const pids = new Set(
+        dps.map((dp: number) => structure.positionAssignments.find((a: any) => a.drawPosition === dp)?.participantId),
+      );
+      if (pids.has(selectedLoser.participantId)) llMatchUpIdx = i;
+      if (pids.has(defeatingWinner.participantId)) winnerMatchUpIdx = i;
+    }
+
+    expect(llMatchUpIdx).toBeGreaterThanOrEqual(0);
+    expect(winnerMatchUpIdx).toBeGreaterThanOrEqual(0);
+
+    // They should be in opposite halves (can't meet until the final)
+    const llInTopHalf = llMatchUpIdx < halfSplit;
+    const winnerInTopHalf = winnerMatchUpIdx < halfSplit;
+    expect(llInTopHalf).not.toBe(winnerInTopHalf);
+  });
+
   test('cannot add a second BYE to lucky draw first round', () => {
     const drawProfiles = [{ drawSize: 9, drawType: LUCKY_DRAW }];
     const {
