@@ -434,7 +434,7 @@ it('RR Format Standard tally test', () => {
   expect(dp2.gamesLost).toEqual(12);
   expect(dp2.matchUpsWon).toEqual(0);
   expect(dp2.matchUpsLost).toEqual(1);
-  expect(dp2.ties).toBeUndefined();
+  expect(dp2.ties).toEqual(2);
   expect(dp2.result).toEqual('0/1');
 
   const dp3 = getDrawPositionTally({

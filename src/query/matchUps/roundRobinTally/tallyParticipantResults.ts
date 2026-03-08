@@ -127,11 +127,13 @@ export function tallyParticipantResults({
 
     if (provisionalOrder) {
       provisionalOrder.forEach((finishingPosition) => {
-        const { participantId, groupOrder, GEMscore } = finishingPosition;
+        const { participantId, groupOrder, subOrder, ties, GEMscore } = finishingPosition;
         const participantResult = participantResults[participantId];
         Object.assign(participantResult, {
           provisionalOrder: groupOrder,
           GEMscore,
+          subOrder,
+          ties,
         });
       });
     }

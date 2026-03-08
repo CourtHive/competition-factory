@@ -1232,6 +1232,292 @@ describe('lucky draw integration — various matchUpFormats', () => {
 // positionActions — lucky draw restrictions for advanced positions
 // ──────────────────────────────────────────────────────────────────────────────
 
+// ──────────────────────────────────────────────────────────────────────────────
+// Consolidation / playoff structure integration
+// ──────────────────────────────────────────────────────────────────────────────
+
+describe('consolidation structure — via withPlayoffs', () => {
+  test('withPlayoffs generates playoff structure with LOSER link for lucky draw', () => {
+    const drawProfiles = [{
+      drawSize: 10,
+      drawType: LUCKY_DRAW,
+      withPlayoffs: { roundProfiles: [{ 1: 1 }] },
+    }];
+    const {
+      tournamentRecord,
+      drawIds: [drawId],
+    } = mocksEngine.generateTournamentRecord({
+      completeAllMatchUps: true,
+      drawProfiles,
+    });
+
+    tournamentEngine.setState(tournamentRecord);
+
+    const { drawDefinition } = tournamentEngine.getEvent({ drawId });
+    expect(drawDefinition.structures.length).toBe(2);
+    expect(drawDefinition.links.length).toBe(1);
+
+    const link = drawDefinition.links[0];
+    expect(link.linkType).toBe('LOSER');
+    expect(link.source.roundNumber).toBe(1);
+    expect(link.target.roundNumber).toBe(1);
+    expect(link.target.feedProfile).toBe('TOP_DOWN');
+  });
+
+  test('getLuckyDrawRoundStatus returns consolidationLinks from withPlayoffs structure', () => {
+    const drawProfiles = [{
+      drawSize: 10,
+      drawType: LUCKY_DRAW,
+      withPlayoffs: { roundProfiles: [{ 1: 1 }] },
+    }];
+    const {
+      tournamentRecord,
+      drawIds: [drawId],
+    } = mocksEngine.generateTournamentRecord({
+      completeAllMatchUps: true,
+      drawProfiles,
+    });
+
+    tournamentEngine.setState(tournamentRecord);
+
+    const status = tournamentEngine.getLuckyDrawRoundStatus({ drawId });
+    const round1 = status.rounds.find((r: any) => r.roundNumber === 1);
+
+    expect(round1!.isPreFeedRound).toBe(true);
+    expect(round1!.needsLuckySelection).toBe(true);
+    expect(round1!.consolidationLinks).toBeDefined();
+    expect(round1!.consolidationLinks!.length).toBe(1);
+
+    const consolidationLink = round1!.consolidationLinks![0];
+    expect(consolidationLink.targetRoundNumber).toBe(1);
+    expect(consolidationLink.feedProfile).toBe('TOP_DOWN');
+    expect(consolidationLink.losersPlaced).toBe(false);
+  });
+
+  test('luckyDrawAdvancement places discarded losers into withPlayoffs structure', () => {
+    const drawProfiles = [{
+      drawSize: 10,
+      drawType: LUCKY_DRAW,
+      withPlayoffs: { roundProfiles: [{ 1: 1 }] },
+    }];
+    const {
+      tournamentRecord,
+      drawIds: [drawId],
+    } = mocksEngine.generateTournamentRecord({
+      completeAllMatchUps: true,
+      drawProfiles,
+    });
+
+    tournamentEngine.setState(tournamentRecord);
+
+    const { drawDefinition } = tournamentEngine.getEvent({ drawId });
+    const structureId = drawDefinition.structures[0].structureId;
+    const playoffStructureId = drawDefinition.structures[1].structureId;
+
+    const status = tournamentEngine.getLuckyDrawRoundStatus({ drawId });
+    const round1 = status.rounds.find((r: any) => r.roundNumber === 1);
+    const eligibleLosers = round1!.eligibleLosers!;
+    const selectedLoser = eligibleLosers[0];
+    const discardedLoserIds = eligibleLosers
+      .filter((l: any) => l.participantId !== selectedLoser.participantId)
+      .map((l: any) => l.participantId);
+
+    const result = tournamentEngine.luckyDrawAdvancement({
+      participantId: selectedLoser.participantId,
+      roundNumber: 1,
+      structureId,
+      drawId,
+    });
+    expect(result.success).toBe(true);
+
+    // Verify discarded losers were placed in the playoff structure
+    const { drawDefinition: updatedDraw } = tournamentEngine.getEvent({ drawId });
+    const playoff = updatedDraw.structures.find((s: any) => s.structureId === playoffStructureId);
+    expect(playoff).toBeDefined();
+
+    const placedAssignments = playoff!.positionAssignments.filter((a: any) => a.participantId);
+    expect(placedAssignments.length).toBe(discardedLoserIds.length);
+
+    const placedIds = placedAssignments.map((a: any) => a.participantId);
+    for (const loserId of discardedLoserIds) {
+      expect(placedIds).toContain(loserId);
+    }
+    expect(placedIds).not.toContain(selectedLoser.participantId);
+  });
+
+  test('losersPlaced is true after advancement', () => {
+    const drawProfiles = [{
+      drawSize: 10,
+      drawType: LUCKY_DRAW,
+      withPlayoffs: { roundProfiles: [{ 1: 1 }] },
+    }];
+    const {
+      tournamentRecord,
+      drawIds: [drawId],
+    } = mocksEngine.generateTournamentRecord({
+      completeAllMatchUps: true,
+      drawProfiles,
+    });
+
+    tournamentEngine.setState(tournamentRecord);
+
+    const { drawDefinition } = tournamentEngine.getEvent({ drawId });
+    const structureId = drawDefinition.structures[0].structureId;
+
+    const status = tournamentEngine.getLuckyDrawRoundStatus({ drawId });
+    const round1 = status.rounds.find((r: any) => r.roundNumber === 1);
+    const selectedLoser = round1!.eligibleLosers![0];
+
+    const result = tournamentEngine.luckyDrawAdvancement({
+      participantId: selectedLoser.participantId,
+      roundNumber: 1,
+      structureId,
+      drawId,
+    });
+    expect(result.success).toBe(true);
+
+    const updatedStatus = tournamentEngine.getLuckyDrawRoundStatus({ drawId });
+    const updatedRound1 = updatedStatus.rounds.find((r: any) => r.roundNumber === 1);
+    expect(updatedRound1!.consolidationLinks).toBeDefined();
+    expect(updatedRound1!.consolidationLinks![0].losersPlaced).toBe(true);
+  });
+
+  test('non-pre-feed rounds do not have consolidationLinks', () => {
+    const drawProfiles = [{
+      drawSize: 10,
+      drawType: LUCKY_DRAW,
+      withPlayoffs: { roundProfiles: [{ 1: 1 }] },
+    }];
+    const {
+      tournamentRecord,
+      drawIds: [drawId],
+    } = mocksEngine.generateTournamentRecord({
+      completeAllMatchUps: true,
+      drawProfiles,
+    });
+
+    tournamentEngine.setState(tournamentRecord);
+
+    const status = tournamentEngine.getLuckyDrawRoundStatus({ drawId });
+    const otherRounds = status.rounds.filter((r: any) => r.roundNumber !== 1);
+    for (const round of otherRounds) {
+      expect(round.consolidationLinks).toBeUndefined();
+    }
+  });
+});
+
+describe('consolidation structure — via addPlayoffStructures', () => {
+  test('addPlayoffStructures creates LOSER link and discarded losers are placed on advancement', () => {
+    const drawProfiles = [{ drawSize: 10, drawType: LUCKY_DRAW }];
+    const {
+      tournamentRecord,
+      drawIds: [drawId],
+    } = mocksEngine.generateTournamentRecord({
+      completeAllMatchUps: true,
+      drawProfiles,
+    });
+
+    tournamentEngine.setState(tournamentRecord);
+
+    const { drawDefinition } = tournamentEngine.getEvent({ drawId });
+    const structureId = drawDefinition.structures[0].structureId;
+
+    // Use factory pathway to get available playoff profiles
+    const profiles = tournamentEngine.getAvailablePlayoffProfiles({ drawId, structureId });
+    expect(profiles.playoffRounds).toContain(1);
+
+    // Add playoff structure for round 1 losers via factory
+    const addResult = tournamentEngine.addPlayoffStructures({
+      roundNumbers: [1],
+      structureId,
+      drawId,
+    });
+    expect(addResult.success).toBe(true);
+
+    // Verify link was created
+    const { drawDefinition: withPlayoff } = tournamentEngine.getEvent({ drawId });
+    expect(withPlayoff.structures.length).toBeGreaterThanOrEqual(2);
+
+    // Find the LOSER link from main structure R1 to the playoff structure
+    const mainLoserLink = withPlayoff.links.find(
+      (l: any) => l.linkType === 'LOSER' && l.source.structureId === structureId && l.source.roundNumber === 1,
+    );
+    expect(mainLoserLink).toBeDefined();
+
+    const playoffStructureId = mainLoserLink.target.structureId;
+
+    // Verify consolidationLinks appear in round status
+    const status = tournamentEngine.getLuckyDrawRoundStatus({ drawId });
+    const round1 = status.rounds.find((r: any) => r.roundNumber === 1);
+    expect(round1!.consolidationLinks).toBeDefined();
+    expect(round1!.consolidationLinks![0].losersPlaced).toBe(false);
+
+    const eligibleLosers = round1!.eligibleLosers!;
+    const selectedLoser = eligibleLosers[0];
+    const discardedLoserIds = eligibleLosers
+      .filter((l: any) => l.participantId !== selectedLoser.participantId)
+      .map((l: any) => l.participantId);
+
+    // Advance
+    const advResult = tournamentEngine.luckyDrawAdvancement({
+      participantId: selectedLoser.participantId,
+      roundNumber: 1,
+      structureId,
+      drawId,
+    });
+    expect(advResult.success).toBe(true);
+
+    // Verify discarded losers placed in playoff structure
+    const { drawDefinition: afterAdv } = tournamentEngine.getEvent({ drawId });
+    const playoff = afterAdv.structures.find((s: any) => s.structureId === playoffStructureId);
+    const placedAssignments = playoff!.positionAssignments.filter((a: any) => a.participantId);
+    expect(placedAssignments.length).toBe(discardedLoserIds.length);
+
+    const placedIds = placedAssignments.map((a: any) => a.participantId);
+    for (const loserId of discardedLoserIds) {
+      expect(placedIds).toContain(loserId);
+    }
+    expect(placedIds).not.toContain(selectedLoser.participantId);
+
+    // Verify losersPlaced is now true
+    const updatedStatus = tournamentEngine.getLuckyDrawRoundStatus({ drawId });
+    const updatedR1 = updatedStatus.rounds.find((r: any) => r.roundNumber === 1);
+    expect(updatedR1!.consolidationLinks![0].losersPlaced).toBe(true);
+  });
+
+  test('advancement succeeds without playoff structure (no side effects)', () => {
+    const drawProfiles = [{ drawSize: 10, drawType: LUCKY_DRAW }];
+    const {
+      tournamentRecord,
+      drawIds: [drawId],
+    } = mocksEngine.generateTournamentRecord({
+      completeAllMatchUps: true,
+      drawProfiles,
+    });
+
+    tournamentEngine.setState(tournamentRecord);
+
+    const status = tournamentEngine.getLuckyDrawRoundStatus({ drawId });
+    const round1 = status.rounds.find((r: any) => r.roundNumber === 1);
+    expect(round1!.consolidationLinks).toBeUndefined();
+
+    const { drawDefinition } = tournamentEngine.getEvent({ drawId });
+    const structureId = drawDefinition.structures[0].structureId;
+    const selectedLoser = round1!.eligibleLosers![0];
+
+    const result = tournamentEngine.luckyDrawAdvancement({
+      participantId: selectedLoser.participantId,
+      roundNumber: 1,
+      structureId,
+      drawId,
+    });
+    expect(result.success).toBe(true);
+
+    const { drawDefinition: updatedDraw } = tournamentEngine.getEvent({ drawId });
+    expect(updatedDraw.structures.length).toBe(1);
+  });
+});
+
 describe('positionActions — lucky draw advanced positions', () => {
   test('round 1 positions have full actions (withdraw, bye, seed, swap, remove)', () => {
     const drawProfiles = [{ drawSize: 10, drawType: LUCKY_DRAW }];
