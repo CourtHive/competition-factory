@@ -4,8 +4,8 @@
 <meta charset="UTF-8">
 <meta name="generator" content="Docusaurus v3.9.2">
 <title data-rh="true">Draw Types | Competition Factory</title><meta data-rh="true" name="viewport" content="width=device-width,initial-scale=1"><meta data-rh="true" name="twitter:card" content="summary_large_image"><meta data-rh="true" property="og:url" content="https://courthive.github.com/competition-factory/docs/concepts/draw-types"><meta data-rh="true" property="og:locale" content="en"><meta data-rh="true" name="docusaurus_locale" content="en"><meta data-rh="true" name="docsearch:language" content="en"><meta data-rh="true" name="docusaurus_version" content="current"><meta data-rh="true" name="docusaurus_tag" content="docs-default-current"><meta data-rh="true" name="docsearch:version" content="current"><meta data-rh="true" name="docsearch:docusaurus_tag" content="docs-default-current"><meta data-rh="true" property="og:title" content="Draw Types | Competition Factory"><meta data-rh="true" name="description" content="Overview"><meta data-rh="true" property="og:description" content="Overview"><link data-rh="true" rel="icon" href="/competition-factory/img/favicon.ico"><link data-rh="true" rel="canonical" href="https://courthive.github.com/competition-factory/docs/concepts/draw-types"><link data-rh="true" rel="alternate" href="https://courthive.github.com/competition-factory/docs/concepts/draw-types" hreflang="en"><link data-rh="true" rel="alternate" href="https://courthive.github.com/competition-factory/docs/concepts/draw-types" hreflang="x-default"><script data-rh="true" type="application/ld+json">{"@context":"https://schema.org","@type":"BreadcrumbList","itemListElement":[{"@type":"ListItem","position":1,"name":"Draw Types","item":"https://courthive.github.com/competition-factory/docs/concepts/draw-types"}]}</script><link rel="stylesheet" href="/competition-factory/assets/css/styles.2d407b01.css">
-<script src="/competition-factory/assets/js/runtime~main.a9ad320b.js" defer="defer"></script>
-<script src="/competition-factory/assets/js/main.a1c39f1a.js" defer="defer"></script>
+<script src="/competition-factory/assets/js/runtime~main.a20a7ff4.js" defer="defer"></script>
+<script src="/competition-factory/assets/js/main.04d179b1.js" defer="defer"></script>
 </head>
 <body class="navigation-with-keyboard">
 <svg style="display: none;"><defs>
@@ -27,24 +27,24 @@
 <h2 class="anchor anchorTargetStickyNavbar_h3qY" id="pre-defined-draw-types">Pre-Defined Draw Types<a href="#pre-defined-draw-types" class="hash-link" aria-label="Direct link to Pre-Defined Draw Types" title="Direct link to Pre-Defined Draw Types" translate="no">​</a></h2>
 <p>The convenience method <code>engine.generateDrawDefinition()</code> generates the following draw types:</p>
 <ul>
-<li class=""><strong>AD_HOC</strong> - An arbitrary number of matchUps may be added to an arbitrary number of rounds.</li>
-<li class=""><strong>COMPASS</strong> - Includes up to 8 structures; ensures participants a minimum of 3 matchUps.</li>
+<li class=""><strong><a class="" href="/competition-factory/docs/concepts/draw-types/ad-hoc">AD_HOC</a></strong> - An arbitrary number of matchUps may be added to an arbitrary number of rounds. Supports automated pairing via <a class="" href="/competition-factory/docs/concepts/draw-types/drawmatic">DrawMatic</a>.</li>
+<li class=""><strong><a class="" href="/competition-factory/docs/concepts/draw-types/compass">COMPASS</a></strong> - Includes up to 8 structures; ensures participants a minimum of 3 matchUps.</li>
 <li class=""><strong>CURTIS</strong> - Includes 2 consolation structures, each fed by 2 main structure rounds, and a 3-4 playoff.</li>
-<li class=""><strong>DOUBLE_ELIMINATION</strong> - Main structure losers feed into consolation; consolation winner plays main structure winner.</li>
-<li class=""><strong>FEED_IN_CHAMPIONSHIP_TO_QF</strong> - Main structure losers feed into consolation through the Quarterfinals.</li>
-<li class=""><strong>FEED_IN_CHAMPIONSHIP_TO_R16</strong> - Main structure losers feed into consolation through the Round of 16.</li>
-<li class=""><strong>FEED_IN_CHAMPIONSHIP_TO_SF</strong> - Main structure losers feed into consolation through the Semifinals.</li>
-<li class=""><strong>FEED_IN_CHAMPIONSHIP</strong> - Main structure losers in every round feed into consolation.</li>
-<li class=""><strong>FEED_IN</strong> - Also known as &quot;staggered entry&quot;, participants feed into the main structure at specified rounds.</li>
-<li class=""><strong>FIRST_MATCH_LOSER_CONSOLATION</strong> - Losers feed into consolation whenever their first loss occurs.</li>
-<li class=""><strong>FIRST_ROUND_LOSER_CONSOLATION</strong> - Only first round losers feed into consolation structure.</li>
-<li class=""><strong>LUCKY_DRAW</strong> - Supports any participant count (not just power-of-2). Rounds with an odd number of matchUps produce a &quot;lucky loser&quot; who advances to balance the next round. See <a class="" href="/competition-factory/docs/concepts/draw-types/lucky-draw">Lucky Draw details</a>.</li>
-<li class=""><strong>MODIFIED_FEED_IN_CHAMPIONSHIP</strong> - First and Second round losers are fed into consolation structure.</li>
-<li class=""><strong>OLYMPIC</strong> - Includes up to 4 structures; ensures participants a minimum of 2 matchUps.</li>
-<li class=""><strong>PLAYOFF</strong> - All positions are played off; structures are added to ensure unique finishing positions. Note: <code>PLAY_OFF</code> (with underscore) is a stage type applied to structures. <code>PLAYOFF</code> (no underscore) is a draw type that generates structures to play off all positions.</li>
-<li class=""><strong>ROUND_ROBIN</strong> - Participants divided into specified group sizes.</li>
-<li class=""><strong>ROUND_ROBIN_WITH_PLAYOFF</strong> - Includes automated generation of specified playoff structures.</li>
-<li class=""><strong>SINGLE_ELIMINATION</strong> - Standard knockout draw structure.</li>
+<li class=""><strong><a class="" href="/competition-factory/docs/concepts/draw-types/double-elimination">DOUBLE_ELIMINATION</a></strong> - Main structure losers feed into consolation; consolation winner plays main structure winner.</li>
+<li class=""><strong><a class="" href="/competition-factory/docs/concepts/draw-types/consolation-draws">FEED_IN_CHAMPIONSHIP_TO_QF</a></strong> - Main structure losers feed into consolation through the Quarterfinals.</li>
+<li class=""><strong><a class="" href="/competition-factory/docs/concepts/draw-types/consolation-draws">FEED_IN_CHAMPIONSHIP_TO_R16</a></strong> - Main structure losers feed into consolation through the Round of 16.</li>
+<li class=""><strong><a class="" href="/competition-factory/docs/concepts/draw-types/consolation-draws">FEED_IN_CHAMPIONSHIP_TO_SF</a></strong> - Main structure losers feed into consolation through the Semifinals.</li>
+<li class=""><strong><a class="" href="/competition-factory/docs/concepts/draw-types/consolation-draws">FEED_IN_CHAMPIONSHIP</a></strong> - Main structure losers in every round feed into consolation.</li>
+<li class=""><strong><a class="" href="/competition-factory/docs/concepts/draw-types/feed-in">FEED_IN</a></strong> - Also known as &quot;staggered entry&quot;, participants feed into the main structure at specified rounds.</li>
+<li class=""><strong><a class="" href="/competition-factory/docs/concepts/draw-types/consolation-draws">FIRST_MATCH_LOSER_CONSOLATION</a></strong> - Losers feed into consolation whenever their first loss occurs.</li>
+<li class=""><strong><a class="" href="/competition-factory/docs/concepts/draw-types/consolation-draws">FIRST_ROUND_LOSER_CONSOLATION</a></strong> - Only first round losers feed into consolation structure.</li>
+<li class=""><strong><a class="" href="/competition-factory/docs/concepts/draw-types/lucky-draw">LUCKY_DRAW</a></strong> - Supports any participant count (not just power-of-2). Rounds with an odd number of matchUps produce a &quot;lucky loser&quot; who advances to balance the next round.</li>
+<li class=""><strong><a class="" href="/competition-factory/docs/concepts/draw-types/consolation-draws">MODIFIED_FEED_IN_CHAMPIONSHIP</a></strong> - First and Second round losers are fed into consolation structure.</li>
+<li class=""><strong><a class="" href="/competition-factory/docs/concepts/draw-types/olympic">OLYMPIC</a></strong> - Includes up to 4 structures; ensures participants a minimum of 2 matchUps.</li>
+<li class=""><strong><a class="" href="/competition-factory/docs/concepts/draw-types/playoff">PLAYOFF</a></strong> - All positions are played off; structures are added to ensure unique finishing positions. Note: <code>PLAY_OFF</code> (with underscore) is a stage type applied to structures. <code>PLAYOFF</code> (no underscore) is a draw type that generates structures to play off all positions.</li>
+<li class=""><strong><a class="" href="/competition-factory/docs/concepts/draw-types/round-robin">ROUND_ROBIN</a></strong> - Participants divided into specified group sizes.</li>
+<li class=""><strong><a class="" href="/competition-factory/docs/concepts/draw-types/round-robin-with-playoff">ROUND_ROBIN_WITH_PLAYOFF</a></strong> - Includes automated generation of specified playoff structures.</li>
+<li class=""><strong><a class="" href="/competition-factory/docs/concepts/draw-types/single-elimination">SINGLE_ELIMINATION</a></strong> - Standard knockout draw structure.</li>
 </ul>
 <h2 class="anchor anchorTargetStickyNavbar_h3qY" id="stages-organizing-structures">Stages: Organizing Structures<a href="#stages-organizing-structures" class="hash-link" aria-label="Direct link to Stages: Organizing Structures" title="Direct link to Stages: Organizing Structures" translate="no">​</a></h2>
 <p>In CODES, <strong>qualifying is conceptualized as a STAGE of a draw</strong>, not a separate draw. This is a fundamental difference from traditional systems.</p>
