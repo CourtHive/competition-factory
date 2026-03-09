@@ -6,6 +6,7 @@ export const ASSIGN_VENUE = 'SCHEDULE.ASSIGNMENT.VENUE';
 export const ALLOCATE_COURTS = 'SCHEDULE.ALLOCATION.COURTS';
 export const ASSIGN_COURT = 'SCHEDULE.ASSIGNMENT.COURT';
 export const COURT_ORDER = 'SCHEDULE.COURT.ORDER';
+export const COURT_ANNOTATION = 'SCHEDULE.COURT.ANNOTATION';
 
 export const SCHEDULED_DATE = 'SCHEDULE.DATE';
 export const COMPLETED_DATE = 'COMPLETED.DATE'; // considering adding this timeItem on completed score entry provided date is between tournament startDate/endDate
@@ -57,6 +58,7 @@ export const timeItemConstants = {
   CHECK_IN,
   CHECK_OUT,
   COMPLETED_DATE,
+  COURT_ANNOTATION,
   COURT_ORDER,
   ELIGIBILITY,
   END_TIME,
