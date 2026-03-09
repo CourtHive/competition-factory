@@ -51,13 +51,14 @@ export function resetDrawDefinition({ tournamentRecord, removeScheduling, remove
           .flatMap((m: any) => m.drawPositions || [])
           .filter(Boolean),
       );
-      structure.positionAssignments = positionAssignments.filter(
-        (a) => initialDrawPositions.has(a.drawPosition) && !a.bye,
-      );
+      structure.positionAssignments = positionAssignments
+        .filter((a) => initialDrawPositions.has(a.drawPosition))
+        .map((a) => {
+          delete a.bye;
+          if (removeAssignments) delete a.participantId;
+          return a;
+        });
       if (removeAssignments) {
-        for (const a of structure.positionAssignments) {
-          if (!a.bye) delete a.participantId;
-        }
         structure.seedAssignments = [];
       }
     }
