@@ -4,7 +4,7 @@ import { getMatchUpsMap } from '@Query/matchUps/getMatchUpsMap';
 
 // constants and types
 import { MISSING_DRAW_DEFINITION } from '@Constants/errorConditionConstants';
-import { MAIN, QUALIFYING } from '@Constants/drawDefinitionConstants';
+import { LUCKY_DRAW, MAIN, QUALIFYING } from '@Constants/drawDefinitionConstants';
 import { toBePlayed } from '@Fixtures/scoring/outcomes/toBePlayed';
 import { POSITION_ACTIONS } from '@Constants/extensionConstants';
 import { BYE } from '@Constants/matchUpStatusConstants';
@@ -20,7 +20,7 @@ import {
   ALLOCATE_COURTS,
 } from '@Constants/timeItemConstants';
 
-export function resetDrawDefinition({ tournamentRecord, removeScheduling, drawDefinition }) {
+export function resetDrawDefinition({ tournamentRecord, removeScheduling, removeAssignments, drawDefinition }) {
   if (!drawDefinition) return { error: MISSING_DRAW_DEFINITION };
 
   // for matchups in all structures:
@@ -30,7 +30,9 @@ export function resetDrawDefinition({ tournamentRecord, removeScheduling, drawDe
 
   // for all structures which are NOT QUALIFYING or MAIN { stageSequence: 1 }
   // remove all positionAssignments that are not BYE
+  // if removeAssignments, also remove assignments from MAIN/QUALIFYING stageSequence 1
 
+  const isLuckyDraw = drawDefinition.drawType === LUCKY_DRAW;
   const matchUpsMap = getMatchUpsMap({ drawDefinition });
 
   const getRawMatchUp = (matchUpId) => matchUpsMap?.drawMatchUps?.find((matchUp) => matchUp.matchUpId === matchUpId);
@@ -38,8 +40,29 @@ export function resetDrawDefinition({ tournamentRecord, removeScheduling, drawDe
   for (const structure of drawDefinition.structures || []) {
     const { positionAssignments, stage, stageSequence } = structure;
 
-    // reset positionAssignments and seedAssignments where appropriate
-    if (positionAssignments && (stageSequence !== 1 || ![QUALIFYING, MAIN].includes(stage))) {
+    const isMainOrQualifyingFirst = stageSequence === 1 && [QUALIFYING, MAIN].includes(stage);
+
+    // Lucky draws: always remove virtual positions created by luckyDrawAdvancement
+    // regardless of isMainOrQualifyingFirst, since they're not part of the initial draw.
+    if (isLuckyDraw && positionAssignments) {
+      const initialDrawPositions = new Set(
+        (structure.matchUps || [])
+          .filter((m: any) => m.roundNumber === 1)
+          .flatMap((m: any) => m.drawPositions || [])
+          .filter(Boolean),
+      );
+      structure.positionAssignments = positionAssignments.filter(
+        (a) => initialDrawPositions.has(a.drawPosition) && !a.bye,
+      );
+      if (removeAssignments) {
+        for (const a of structure.positionAssignments) {
+          if (!a.bye) delete a.participantId;
+        }
+        structure.seedAssignments = [];
+      }
+    }
+    // Standard draws: reset positionAssignments where appropriate
+    else if (positionAssignments && (!isMainOrQualifyingFirst || removeAssignments)) {
       structure.positionAssignments = positionAssignments.map((assignment) => {
         delete assignment.participantId;
         return assignment;
@@ -63,15 +86,25 @@ export function resetDrawDefinition({ tournamentRecord, removeScheduling, drawDe
         delete matchUp.extensions;
         delete matchUp.notes;
 
-        if (matchUp.matchUpStatus !== BYE) Object.assign(matchUp, toBePlayed);
-        if (roundNumber && roundNumber > 1 && matchUp.drawPositions?.length && !isRoundRobin) {
-          const fedDrawPositions = sides
-            ?.map(({ drawPosition, participantFed }) => !participantFed && drawPosition)
-            .filter(Boolean);
-          const drawPositions = matchUp.drawPositions.map((drawPosition) =>
-            !fedDrawPositions.includes(drawPosition) ? drawPosition : undefined,
-          ) as number[];
-          matchUp.drawPositions = drawPositions;
+        if (isLuckyDraw) {
+          // Lucky draws: reset ALL matchUps (including R1 BYE — the BYE positionAssignment
+          // is removed, so the matchUp must also be reset to TO_BE_PLAYED).
+          // R2+ matchUps lose all drawPositions (they're virtual from luckyDrawAdvancement).
+          Object.assign(matchUp, toBePlayed);
+          if (roundNumber && roundNumber > 1) {
+            matchUp.drawPositions = [];
+          }
+        } else {
+          if (matchUp.matchUpStatus !== BYE) Object.assign(matchUp, toBePlayed);
+          if (roundNumber && roundNumber > 1 && matchUp.drawPositions?.length && !isRoundRobin) {
+            const fedDrawPositions = sides
+              ?.map(({ drawPosition, participantFed }) => !participantFed && drawPosition)
+              .filter(Boolean);
+            const drawPositions = matchUp.drawPositions.map((drawPosition) =>
+              fedDrawPositions.includes(drawPosition) ? undefined : drawPosition,
+            ) as number[];
+            matchUp.drawPositions = drawPositions;
+          }
         }
 
         if (removeScheduling) {

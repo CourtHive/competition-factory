@@ -9,8 +9,8 @@ import { directLoser } from './directLoser';
 
 // constants
 import { MISSING_DRAW_POSITIONS } from '@Constants/errorConditionConstants';
-import { COMPLETED } from '@Constants/matchUpStatusConstants';
 import { LUCKY_DRAW } from '@Constants/drawDefinitionConstants';
+import { COMPLETED } from '@Constants/matchUpStatusConstants';
 import { SUCCESS } from '@Constants/resultConstants';
 import { ResultType } from '@Types/factoryTypes';
 
@@ -89,7 +89,11 @@ export function directParticipants(params): ResultType {
       },
     } = targetData;
 
-    if (winnerMatchUp) {
+    // In lucky draws, all round-to-round advancement is handled by
+    // luckyDrawAdvancement — suppress both winner and loser propagation
+    const isLuckyDraw = drawDefinition?.drawType === LUCKY_DRAW;
+
+    if (winnerMatchUp && !isLuckyDraw) {
       const result = directWinner({
         sourceMatchUpStatus: (matchUpStatusIsValid && matchUpStatus) || COMPLETED,
         winnerMatchUpDrawPositionIndex,
@@ -107,19 +111,8 @@ export function directParticipants(params): ResultType {
       });
       if (result.error) return decorateResult({ result, stack });
     }
-    // Skip loser direction for lucky draw pre-feed rounds — losers must wait
-    // for luckyDrawAdvancement to determine which loser is the lucky selection
-    const isLuckyPreFeedRound =
-      drawDefinition?.drawType === LUCKY_DRAW &&
-      matchUp?.roundNumber &&
-      structure?.matchUps &&
-      (() => {
-        const roundMatchUps = structure.matchUps.filter((m) => m.roundNumber === matchUp.roundNumber);
-        const count = roundMatchUps.length;
-        return count > 1 && count % 2 !== 0;
-      })();
 
-    if (loserMatchUp && !isLuckyPreFeedRound) {
+    if (loserMatchUp && !isLuckyDraw) {
       const result = directLoser({
         sourceMatchUpStatus: (matchUpStatusIsValid && matchUpStatus) || COMPLETED,
         sourceMatchUpStatusCodes: matchUpStatusCodes || [],

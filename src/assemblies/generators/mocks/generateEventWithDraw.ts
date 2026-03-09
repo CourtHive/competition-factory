@@ -4,8 +4,10 @@ import { setParticipantScaleItem } from '@Mutate/participants/scaleItems/addScal
 import { checkRequiredParameters } from '@Helpers/parameters/checkRequiredParameters';
 import { completeDrawMatchUps, completeDrawMatchUp } from './completeDrawMatchUps';
 import { isMatchUpEventType } from '@Helpers/matchUpEventTypes/isMatchUpEventType';
+import { drawMatic } from '../drawDefinitions/drawTypes/adHoc/drawMatic/drawMatic';
 import { addDrawDefinition } from '@Mutate/drawDefinitions/addDrawDefinition';
 import { addParticipants } from '@Mutate/participants/addParticipants';
+import { addAdHocMatchUps } from '@Mutate/structures/addAdHocMatchUps';
 import { allDrawMatchUps } from '@Query/matchUps/getAllDrawMatchUps';
 import { addEventEntries } from '@Mutate/entries/addEventEntries';
 import { addEventTimeItem } from '@Mutate/timeItems/addTimeItem';
@@ -28,7 +30,13 @@ import { coerceEven } from '@Tools/math';
 import { UUID } from '@Tools/UUID';
 
 // constants and types
-import { MAIN, QUALIFYING, ROUND_ROBIN_WITH_PLAYOFF, SINGLE_ELIMINATION } from '@Constants/drawDefinitionConstants';
+import {
+  AD_HOC,
+  MAIN,
+  QUALIFYING,
+  ROUND_ROBIN_WITH_PLAYOFF,
+  SINGLE_ELIMINATION,
+} from '@Constants/drawDefinitionConstants';
 import { DRAW_DEFINITION_NOT_FOUND, STRUCTURE_NOT_FOUND } from '@Constants/errorConditionConstants';
 import { INDIVIDUAL, PAIR, TEAM } from '@Constants/participantConstants';
 import { FORMAT_STANDARD } from '@Fixtures/scoring/matchUpFormats';
@@ -390,8 +398,20 @@ export function generateEventWithDraw(params) {
     });
   }
 
+  // For AD_HOC + completeAllMatchUps + roundsCount > 1: generate only round 1 initially,
+  // then iterate round-by-round with completion + dynamic ratings between each round
+  const iterativeAdHoc =
+    drawType === AD_HOC &&
+    completeAllMatchUps &&
+    drawProfile.automated !== false &&
+    (drawProfileCopy.roundsCount ?? 1) > 1;
+
+  const drawProfileForGeneration = iterativeAdHoc
+    ? { ...makeDeepCopy(drawProfile, false, true), roundsCount: 1 }
+    : makeDeepCopy(drawProfile, false, true);
+
   const result = generateDrawDefinition({
-    ...makeDeepCopy(drawProfile, false, true),
+    ...drawProfileForGeneration,
     tournamentRecord,
     seedingScaleName,
     matchUpFormat,
@@ -537,6 +557,44 @@ export function generateEventWithDraw(params) {
 
       // NOTE: do this last => complete any matchUps which have not already been completed
       if (completeAllMatchUps) goComplete({ completeAllMatchUps });
+
+      // For iterative AD_HOC: generate remaining rounds with dynamic ratings between each
+      if (iterativeAdHoc) {
+        const totalRounds = drawProfileCopy.roundsCount;
+        const scaleName = drawProfile.drawMatic?.scaleName ?? drawProfile.scaleName ?? category?.ratingType;
+
+        for (let i = 2; i <= totalRounds; i++) {
+          // Generate next round using drawMatic with dynamic ratings
+          const drawMaticResult = drawMatic({
+            eventType: drawProfile.drawMatic?.eventType ?? drawProfile.matchUpType,
+            updateParticipantRatings: !!scaleName,
+            dynamicRatings: !!scaleName,
+            generateMatchUps: true,
+            tournamentRecord,
+            drawDefinition,
+            roundsCount: 1,
+            scaleName,
+            isMock,
+            event,
+          });
+          if (drawMaticResult.error) return drawMaticResult;
+
+          if (drawMaticResult.matchUps?.length) {
+            const addResult = addAdHocMatchUps({
+              matchUps: drawMaticResult.matchUps,
+              suppressNotifications: true,
+              tournamentRecord,
+              drawDefinition,
+              event,
+            });
+            if (addResult.error) return addResult;
+          }
+
+          // Complete this round's matchUps
+          const completeResult = goComplete({ completeAllMatchUps });
+          if (completeResult?.error) return completeResult;
+        }
+      }
     }
 
     if (publish) {

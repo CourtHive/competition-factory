@@ -1,5 +1,5 @@
 import tournamentEngine from '@Engines/syncEngine';
-import { mocksEngine } from '../../..';
+import mocksEngine from '@Assemblies/engines/mock';
 import { expect, it, test } from 'vitest';
 
 // constants
@@ -9,6 +9,7 @@ import {
   AD_HOC,
   COMPASS,
   FEED_IN_CHAMPIONSHIP,
+  LUCKY_DRAW,
   MAIN,
   QUALIFYING,
   ROUND_ROBIN,
@@ -228,6 +229,42 @@ it('filters positionActions extension from draw definition on reset', () => {
   expect(extensionNames).toContain('otherExtension');
 });
 
+it('removes all position assignments when removeAssignments is true', () => {
+  const {
+    drawIds: [drawId],
+    tournamentRecord,
+  } = mocksEngine.generateTournamentRecord({
+    drawProfiles: [{ drawSize: 8 }],
+    completeAllMatchUps: true,
+  });
+  tournamentEngine.setState(tournamentRecord);
+
+  // Before reset: MAIN stageSequence 1 should have participantIds
+  let { drawDefinition } = tournamentEngine.getEvent({ drawId });
+  const mainStructure = drawDefinition.structures.find((s) => s.stage === MAIN && s.stageSequence === 1);
+  const assignedBefore = mainStructure.positionAssignments.filter((a) => a.participantId);
+  expect(assignedBefore.length).toBeGreaterThan(0);
+
+  // Reset WITHOUT removeAssignments — should preserve main draw assignments
+  let result = tournamentEngine.resetDrawDefinition({ drawId });
+  expect(result.success).toEqual(true);
+
+  ({ drawDefinition } = tournamentEngine.getEvent({ drawId }));
+  const mainAfterNormal = drawDefinition.structures.find((s) => s.stage === MAIN && s.stageSequence === 1);
+  const assignedAfterNormal = mainAfterNormal.positionAssignments.filter((a) => a.participantId);
+  expect(assignedAfterNormal.length).toEqual(assignedBefore.length);
+
+  // Reset WITH removeAssignments — should clear all participantIds
+  result = tournamentEngine.resetDrawDefinition({ drawId, removeAssignments: true });
+  expect(result.success).toEqual(true);
+
+  ({ drawDefinition } = tournamentEngine.getEvent({ drawId }));
+  const mainAfterRemove = drawDefinition.structures.find((s) => s.stage === MAIN && s.stageSequence === 1);
+  const assignedAfterRemove = mainAfterRemove.positionAssignments.filter((a) => a.participantId);
+  expect(assignedAfterRemove.length).toEqual(0);
+  expect(mainAfterRemove.seedAssignments).toEqual([]);
+});
+
 it('clears matchUp extensions and notes on reset', () => {
   const {
     drawIds: [drawId],
@@ -254,4 +291,73 @@ it('clears matchUp extensions and notes on reset', () => {
   const resetRawMatchUp = resetDraw.structures[0].matchUps.find((m) => m.matchUpId === matchUpId);
   expect(resetRawMatchUp.extensions).toBeUndefined();
   expect(resetRawMatchUp.notes).toBeUndefined();
+});
+
+it('resets lucky draw: removes virtual positions, clears R2+ matchUps, keeps R1 BYE', () => {
+  const {
+    drawIds: [drawId],
+    tournamentRecord,
+  } = mocksEngine.generateTournamentRecord({
+    drawProfiles: [{ drawSize: 9, drawType: LUCKY_DRAW }],
+    completeAllMatchUps: true,
+  });
+  tournamentEngine.setState(tournamentRecord);
+
+  // Advance round 1 (creates virtual positions for R2)
+  const { drawDefinition } = tournamentEngine.getEvent({ drawId });
+  const structureId = drawDefinition.structures[0].structureId;
+  const status = tournamentEngine.getLuckyDrawRoundStatus({ drawId });
+  const round1 = status.rounds.find((r) => r.roundNumber === 1);
+  const loser = round1.eligibleLosers[0];
+  let result = tournamentEngine.luckyDrawAdvancement({
+    participantId: loser.participantId,
+    roundNumber: 1,
+    structureId,
+    drawId,
+  });
+  expect(result.success).toBe(true);
+
+  // Verify R2 has positions before reset
+  const { drawDefinition: beforeReset } = tournamentEngine.getEvent({ drawId });
+  const r2Before = beforeReset.structures[0].matchUps.filter((m) => m.roundNumber === 2);
+  expect(r2Before.some((m) => m.drawPositions?.filter(Boolean).length === 2)).toBe(true);
+
+  // Reset
+  result = tournamentEngine.resetDrawDefinition({ drawId });
+  expect(result.success).toBe(true);
+
+  // Verify: R2+ matchUps have no drawPositions
+  const { drawDefinition: afterReset } = tournamentEngine.getEvent({ drawId });
+  const structure = afterReset.structures[0];
+  const r2After = structure.matchUps.filter((m) => m.roundNumber === 2);
+  for (const m of r2After) {
+    const filledPositions = (m.drawPositions || []).filter(Boolean);
+    expect(filledPositions.length).toBe(0);
+    expect(m.matchUpStatus).not.toBe(BYE);
+  }
+
+  // Verify: R1 BYE matchUp is reset (BYE positionAssignment removed, so no BYE matchUps)
+  const r1Byes = structure.matchUps.filter((m) => m.roundNumber === 1 && m.matchUpStatus === BYE);
+  expect(r1Byes.length).toBe(0);
+
+  // Verify: no BYE positionAssignments remain
+  const byeAssignments = structure.positionAssignments.filter((a: any) => a.bye);
+  expect(byeAssignments.length).toBe(0);
+
+  // Verify: no orphaned positionAssignments (only initial R1 participant positions remain)
+  const r1Positions = new Set(
+    structure.matchUps
+      .filter((m) => m.roundNumber === 1)
+      .flatMap((m) => m.drawPositions || [])
+      .filter(Boolean),
+  );
+  for (const a of structure.positionAssignments) {
+    expect(r1Positions.has(a.drawPosition)).toBe(true);
+  }
+
+  // Verify: R1 scored matchUps are reset to TO_BE_PLAYED
+  const r1Scored = structure.matchUps.filter((m) => m.roundNumber === 1 && m.matchUpStatus !== BYE);
+  for (const m of r1Scored) {
+    expect(m.winningSide).toBeUndefined();
+  }
 });

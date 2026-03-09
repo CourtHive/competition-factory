@@ -377,8 +377,11 @@ export function advanceDrawPosition({
     matchUpId,
   });
 
+  // In lucky draws, all round-to-round advancement is handled by luckyDrawAdvancement
+  const isLuckyDraw = drawDefinition?.drawType === LUCKY_DRAW;
+
   // only handling situation where winningMatchUp is in same structure
-  if (winnerMatchUp && winnerMatchUp.structureId === structure?.structureId) {
+  if (winnerMatchUp && winnerMatchUp.structureId === structure?.structureId && !isLuckyDraw) {
     // NOTE: error conditions are ignored
     advanceWinner({
       drawPositionToAdvance,

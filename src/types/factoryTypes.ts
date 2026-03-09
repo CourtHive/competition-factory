@@ -557,6 +557,7 @@ export type DrawMaticArgs = {
   eventType?: EventTypeUnion;
   salted?: number | boolean;
   participantIds?: string[];
+  updateParticipantRatings?: boolean;
   dynamicRatings?: boolean;
   refreshDynamic?: boolean;
   encounterValue?: number;
