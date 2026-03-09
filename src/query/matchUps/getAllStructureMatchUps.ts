@@ -188,13 +188,17 @@ export function getAllStructureMatchUps(params: GetAllStructureMatchUps) {
   roundMatchUps = result?.roundMatchUps ?? [];
 
   // must make a pass before hydration and addition of tieMatchUps
+  // preserve matchUps with tieMatchUps so their children can be extracted and filtered independently
   if (matchUpFilters) {
+    const tieMatchUpIds = new Set(
+      matchUps.filter((m) => Array.isArray(m.tieMatchUps)).map((m) => m.matchUpId),
+    );
     matchUps = filterMatchUps({
-      matchUps,
+      matchUps: tieMatchUpIds.size ? matchUps.filter((m) => !tieMatchUpIds.has(m.matchUpId)) : matchUps,
       ...matchUpFilters,
       filterMatchUpTypes: false,
       filterMatchUpIds: false,
-    });
+    }).concat(tieMatchUpIds.size ? matchUps.filter((m) => tieMatchUpIds.has(m.matchUpId)) : []);
   }
 
   if (inContext) {

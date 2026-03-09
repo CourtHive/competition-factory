@@ -141,8 +141,8 @@ describe('scheduledRounds publishing', () => {
     // Only rounds 1-2 should appear in schedule
     const roundNumbers = result.dateMatchUps.map((m) => m.roundNumber);
     expect(roundNumbers.every((r) => r <= 2)).toEqual(true);
-    expect(roundNumbers.some((r) => r === 1)).toEqual(true);
-    expect(roundNumbers.some((r) => r === 2)).toEqual(true);
+    expect(roundNumbers.includes(1)).toEqual(true);
+    expect(roundNumbers.includes(2)).toEqual(true);
   });
 
   it('scheduledRounds basic: explicitly unpublished rounds are hidden, unlisted pass through', () => {
