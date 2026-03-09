@@ -3,10 +3,10 @@ import { getAllStructureMatchUps } from '@Query/matchUps/getAllStructureMatchUps
 import { getMatchUpsMap } from '@Query/matchUps/getMatchUpsMap';
 
 // constants and types
-import { MISSING_DRAW_DEFINITION } from '@Constants/errorConditionConstants';
 import { LUCKY_DRAW, MAIN, QUALIFYING } from '@Constants/drawDefinitionConstants';
+import { MISSING_DRAW_DEFINITION } from '@Constants/errorConditionConstants';
 import { toBePlayed } from '@Fixtures/scoring/outcomes/toBePlayed';
-import { POSITION_ACTIONS } from '@Constants/extensionConstants';
+import { DRAFT_STATE, POSITION_ACTIONS } from '@Constants/extensionConstants';
 import { BYE } from '@Constants/matchUpStatusConstants';
 import { SUCCESS } from '@Constants/resultConstants';
 import { TimeItem } from '@Types/tournamentTypes';
@@ -15,6 +15,7 @@ import {
   ASSIGN_COURT,
   ASSIGN_VENUE,
   ASSIGN_OFFICIAL,
+  COURT_ANNOTATION,
   SCHEDULED_DATE,
   SCHEDULED_TIME,
   ALLOCATE_COURTS,
@@ -114,9 +115,15 @@ export function resetDrawDefinition({ tournamentRecord, removeScheduling, remove
           matchUp.timeItems = matchUp.timeItems.filter(
             (timeItem: TimeItem) =>
               timeItem.itemType &&
-              ![ALLOCATE_COURTS, ASSIGN_COURT, ASSIGN_VENUE, ASSIGN_OFFICIAL, SCHEDULED_DATE, SCHEDULED_TIME].includes(
-                timeItem.itemType,
-              ),
+              ![
+                ALLOCATE_COURTS,
+                ASSIGN_COURT,
+                ASSIGN_VENUE,
+                ASSIGN_OFFICIAL,
+                COURT_ANNOTATION,
+                SCHEDULED_DATE,
+                SCHEDULED_TIME,
+              ].includes(timeItem.itemType),
           );
         }
 
@@ -130,7 +137,9 @@ export function resetDrawDefinition({ tournamentRecord, removeScheduling, remove
     }
   }
 
-  drawDefinition.extensions = drawDefinition.extensions.filter((extension) => extension.name !== POSITION_ACTIONS);
+  drawDefinition.extensions = drawDefinition.extensions.filter(
+    (extension) => extension.name !== POSITION_ACTIONS && extension.name !== DRAFT_STATE,
+  );
 
   const structureIds = (drawDefinition.structures || []).map(({ structureId }) => structureId);
 

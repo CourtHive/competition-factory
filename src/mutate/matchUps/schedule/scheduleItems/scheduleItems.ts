@@ -21,7 +21,7 @@ import { ensureInt } from '@Tools/ensureInt';
 import { isString } from '@Tools/objects';
 
 // constants and types
-import { START_TIME, STOP_TIME, RESUME_TIME, END_TIME, COURT_ORDER } from '@Constants/timeItemConstants';
+import { START_TIME, STOP_TIME, RESUME_TIME, END_TIME, COURT_ORDER, COURT_ANNOTATION } from '@Constants/timeItemConstants';
 import { DrawDefinition, Event, TimeItem } from '@Types/tournamentTypes';
 import { OBJECT, OF_TYPE } from '@Constants/attributeConstants';
 import { AddScheduleAttributeArgs } from '@Types/factoryTypes';
@@ -117,6 +117,7 @@ export function addMatchUpScheduleItems(params: AddMatchUpScheduleItemsArgs): {
     endTime,
     courtId,
     courtIds,
+    courtAnnotation,
     courtOrder,
     resumeTime,
     homeParticipantId,
@@ -317,6 +318,18 @@ export function addMatchUpScheduleItems(params: AddMatchUpScheduleItemsArgs): {
     if (result?.error) return decorateResult({ result, stack, context: { courtOrder } });
   }
 
+  if (courtAnnotation !== undefined) {
+    const result = addMatchUpCourtAnnotation({
+      disableNotice: true,
+      removePriorValues,
+      tournamentRecord,
+      drawDefinition,
+      courtAnnotation,
+      matchUpId,
+    });
+    if (result?.error) return decorateResult({ result, stack, context: { courtAnnotation } });
+  }
+
   if (timeModifiers !== undefined) {
     const result = addMatchUpTimeModifiers({
       disableNotice: true,
@@ -370,6 +383,34 @@ export function addMatchUpCourtOrder({
   const itemValue = courtOrder && ensureInt(courtOrder);
   const timeItem = {
     itemType: COURT_ORDER,
+    itemValue,
+  };
+
+  return addMatchUpTimeItem({
+    duplicateValues: false,
+    removePriorValues,
+    tournamentRecord,
+    drawDefinition,
+    disableNotice,
+    matchUpId,
+    timeItem,
+  });
+}
+
+export function addMatchUpCourtAnnotation({
+  removePriorValues,
+  tournamentRecord,
+  drawDefinition,
+  courtAnnotation,
+  disableNotice,
+  matchUpId,
+}: AddScheduleAttributeArgs & { courtAnnotation?: string }) {
+  if (!matchUpId) return { error: MISSING_MATCHUP_ID };
+
+  // undefined or empty string clears the annotation
+  const itemValue = courtAnnotation || undefined;
+  const timeItem = {
+    itemType: COURT_ANNOTATION,
     itemValue,
   };
 

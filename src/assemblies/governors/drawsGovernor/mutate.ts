@@ -6,6 +6,7 @@ export { luckyLoserDrawPositionAssignment } from '@Mutate/drawDefinitions/luckyL
 export { shiftAdHocRounds } from '@Mutate/drawDefinitions/structureGovernor/adHocRounds/shiftAdHocRounds';
 export { setPositionAssignments } from '@Mutate/drawDefinitions/positionGovernor/setPositionAssignments';
 export { swapAdHocRounds } from '@Mutate/drawDefinitions/structureGovernor/adHocRounds/swapAdHocRounds';
+export { setDrawPositionPreferences } from '@Mutate/drawDefinitions/draft/setDrawPositionPreferences';
 export { alternateDrawPositionAssignment } from '@Mutate/matchUps/drawPositions/positionAlternate';
 export { removeDrawPositionAssignment } from '@Mutate/drawDefinitions/removeDrawPositionAssignment';
 export { automatedPlayoffPositioning } from '@Mutate/drawDefinitions/automatedPlayoffPositioning';
@@ -17,9 +18,10 @@ export { attachQualifyingStructure } from '@Mutate/drawDefinitions/attachQualify
 export { renameStructures } from '@Mutate/drawDefinitions/structureGovernor/renameStructures';
 export { assignDrawPositionBye } from '@Mutate/matchUps/drawPositions/assignDrawPositionBye';
 export { addDrawDefinitionTimeItem } from '@Mutate/drawDefinitions/addDrawDefinitionTimeItem';
-export { removeStructure } from '@Mutate/drawDefinitions/structureGovernor/removeStructure';
+export { resolveDraftPositions } from '@Mutate/drawDefinitions/draft/resolveDraftPositions';
 export { addVoluntaryConsolationStage } from '@Mutate/events/addVoluntaryConsolationStage';
 export { resetQualifyingStructure } from '@Mutate/drawDefinitions/resetQualifyingStructure';
+export { removeStructure } from '@Mutate/drawDefinitions/structureGovernor/removeStructure';
 export { swapDrawPositionAssignments } from '@Mutate/matchUps/drawPositions/positionSwap';
 export { removeSeededParticipant } from '@Mutate/drawDefinitions/removeSeededParticipant';
 export { addQualifyingStructure } from '@Mutate/drawDefinitions/addQualifyingStructure';
@@ -31,6 +33,7 @@ export { modifyDrawDefinition } from '@Mutate/drawDefinitions/modifyDrawDefiniti
 export { resetDrawDefinition } from '@Mutate/drawDefinitions/resetDrawDefinition';
 export { pruneDrawDefinition } from '@Mutate/drawDefinitions/pruneDrawDefinition';
 export { assignDrawPosition } from '@Mutate/drawDefinitions/assignDrawPosition';
+export { initializeDraft } from '@Mutate/drawDefinitions/draft/initializeDraft';
 export { deleteAdHocMatchUps } from '@Mutate/structures/deleteAdHocMatchUps';
 export { removeRoundMatchUps } from '@Mutate/structures/removeRoundMatchUps';
 export { updateTeamLineUp } from '@Mutate/drawDefinitions/updateTeamLineUp';
