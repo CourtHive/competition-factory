@@ -39,8 +39,11 @@ describe('Basic Ranking Points — no level required', () => {
       eventId,
     });
     expect(result.success).toBe(true);
-    expect(result.eventAwards.length).toEqual(32);
+    // With requireWinForPoints, first-round losers (16 participants) get no award
+    expect(result.eventAwards.length).toEqual(16);
     expect(result.eventAwards[0].positionPoints).toEqual(100);
+    // All awarded participants should have at least one win
+    expect(result.eventAwards.every((a: any) => a.winCount > 0)).toBe(true);
   });
 });
 
