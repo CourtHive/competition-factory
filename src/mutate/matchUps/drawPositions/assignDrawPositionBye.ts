@@ -25,7 +25,6 @@ import { HydratedMatchUp } from '@Types/hydrated';
 import { MatchUpsMap } from '@Types/factoryTypes';
 import {
   DRAW_POSITION_ACTIVE,
-  INVALID_DRAW_POSITION,
   DRAW_POSITION_ASSIGNED,
   LUCKY_DRAW_BYE_LIMIT,
   MISSING_DRAW_DEFINITION,
@@ -130,8 +129,12 @@ export function assignDrawPositionBye({
     return { error: DRAW_POSITION_ACTIVE };
   }
 
-  const positionAssignment = positionAssignments?.find((assignment) => assignment.drawPosition === drawPosition);
-  if (!positionAssignment) return { error: INVALID_DRAW_POSITION };
+  let positionAssignment = positionAssignments?.find((assignment) => assignment.drawPosition === drawPosition);
+  if (!positionAssignment) {
+    // Position exists in matchUps but has no positionAssignment entry — add one
+    positionAssignment = { drawPosition };
+    positionAssignments?.push(positionAssignment);
+  }
 
   const { filled, containsBye, containsParticipant: assignedParticipantId } = drawPositionFilled(positionAssignment);
   if (containsBye) return { ...SUCCESS }; // nothing to be done
@@ -377,8 +380,11 @@ export function advanceDrawPosition({
     matchUpId,
   });
 
+  // In lucky draws, all round-to-round advancement is handled by luckyDrawAdvancement
+  const isLuckyDraw = drawDefinition?.drawType === LUCKY_DRAW;
+
   // only handling situation where winningMatchUp is in same structure
-  if (winnerMatchUp && winnerMatchUp.structureId === structure?.structureId) {
+  if (winnerMatchUp && winnerMatchUp.structureId === structure?.structureId && !isLuckyDraw) {
     // NOTE: error conditions are ignored
     advanceWinner({
       drawPositionToAdvance,

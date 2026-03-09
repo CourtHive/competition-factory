@@ -586,7 +586,12 @@ function positionActionsInternal(params: PositionActionsArgs): ResultType & {
 
   const drawPositions = positionAssignments?.map((assignment) => assignment.drawPosition);
 
-  if (!drawPositions?.includes(drawPosition)) return { error: INVALID_DRAW_POSITION };
+  // If drawPosition has no positionAssignment entry but is a valid matchUp drawPosition,
+  // treat it as an unassigned position rather than invalid
+  if (!drawPositions?.includes(drawPosition)) {
+    const allMatchUpDrawPositions = structure.matchUps?.flatMap((m) => m.drawPositions || []) ?? [];
+    if (!allMatchUpDrawPositions.includes(drawPosition)) return { error: INVALID_DRAW_POSITION };
+  }
 
   const { stage, stageSequence } = structure;
 

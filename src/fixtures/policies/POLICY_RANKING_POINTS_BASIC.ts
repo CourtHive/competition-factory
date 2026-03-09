@@ -44,6 +44,7 @@ export const POLICY_RANKING_POINTS_BASIC = {
 
     awardProfiles,
 
+    requireWinForPoints: true,
     doublesAttribution: 'fullToEach' as const,
   },
 };

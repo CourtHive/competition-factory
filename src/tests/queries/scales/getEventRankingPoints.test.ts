@@ -1,10 +1,10 @@
-import { POLICY_RANKING_POINTS_BASIC } from '@Fixtures/policies/POLICY_RANKING_POINTS_BASIC';
+import mocksEngine from '@Assemblies/engines/mock';
 import tournamentEngine from '@Engines/syncEngine';
-import { mocksEngine } from '../../..';
 import { expect, it, describe } from 'vitest';
 
+// constants
 import { MISSING_EVENT, MISSING_POLICY_DEFINITION } from '@Constants/errorConditionConstants';
-import { POLICY_TYPE_RANKING_POINTS } from '@Constants/policyConstants';
+import { POLICY_RANKING_POINTS_BASIC } from '@Fixtures/policies/POLICY_RANKING_POINTS_BASIC';
 import { SINGLE_ELIMINATION } from '@Constants/drawDefinitionConstants';
 import { DOUBLES, SINGLES } from '@Constants/eventConstants';
 
@@ -122,15 +122,69 @@ describe('getEventRankingPoints', () => {
     const result = tournamentEngine.getEventRankingPoints({ eventId, policyDefinitions });
     expect(result.success).toBe(true);
 
-    // Collect unique point values from the basic policy for a 32-draw:
-    // 100 (1st), 70 (2nd), 50 (3-4), 30 (5-8), 15 (9-16), 8 (17-32)
+    // With requireWinForPoints, first-round losers (17-32, worth 8 pts) get no award.
+    // Remaining positions: 100 (1st), 70 (2nd), 50 (3-4), 30 (5-8), 15 (9-16)
     const pointValues = new Set(result.eventAwards.map((a: any) => a.positionPoints));
     expect(pointValues.has(100)).toBe(true);
     expect(pointValues.has(70)).toBe(true);
     expect(pointValues.has(50)).toBe(true);
     expect(pointValues.has(30)).toBe(true);
     expect(pointValues.has(15)).toBe(true);
-    expect(pointValues.has(8)).toBe(true);
+
+    // First-round losers should NOT receive points (requireWinForPoints)
+    expect(result.eventAwards.every((a: any) => a.winCount > 0)).toBe(true);
+  });
+
+  it('awards no points when no matchUps have been completed', () => {
+    const {
+      tournamentRecord,
+      eventIds: [eventId],
+    } = mocksEngine.generateTournamentRecord({
+      drawProfiles: [{ drawSize: 8, drawType: SINGLE_ELIMINATION }],
+      // no completeAllMatchUps — draw is generated but no results
+    });
+    tournamentEngine.setState(tournamentRecord);
+
+    const result = tournamentEngine.getEventRankingPoints({ eventId, policyDefinitions });
+    expect(result.success).toBe(true);
+    expect(result.eventAwards).toBeDefined();
+    expect(Array.isArray(result.eventAwards)).toBe(true);
+
+    // No matchUps played means no participant should receive points
+    expect(result.eventAwards.length).toBe(0);
+  });
+
+  it('awards points only to participants who have played matchUps', () => {
+    const {
+      tournamentRecord,
+      eventIds: [eventId],
+      drawIds: [drawId],
+    } = mocksEngine.generateTournamentRecord({
+      drawProfiles: [{ drawSize: 8, drawType: SINGLE_ELIMINATION }],
+    });
+    tournamentEngine.setState(tournamentRecord);
+
+    // Complete only the first matchUp in round 1
+    const { matchUps } = tournamentEngine.allTournamentMatchUps();
+    const round1MatchUps = matchUps.filter((m: any) => m.roundNumber === 1);
+    expect(round1MatchUps.length).toBe(4);
+
+    const firstMatchUp = round1MatchUps[0];
+    tournamentEngine.setMatchUpStatus({
+      matchUpId: firstMatchUp.matchUpId,
+      outcome: { winningSide: 1 },
+      drawId,
+    });
+
+    const result = tournamentEngine.getEventRankingPoints({ eventId, policyDefinitions });
+    expect(result.success).toBe(true);
+
+    // With requireWinForPoints in the basic policy, only the winner gets an award
+    expect(result.eventAwards.length).toBe(1);
+
+    const winner = result.eventAwards[0];
+    expect(winner.winCount).toBe(1);
+    expect(winner.points).toBeGreaterThan(0);
   });
 
   it('works for doubles events with basic policy', () => {

@@ -164,3 +164,48 @@ it.each(scenarios)('will update adHocRatings and use DYNAMIC ratings for subsequ
 it('will accept adHocRatings at generation time', () => {
   expect(true).toEqual(true);
 });
+
+it('iterative AD_HOC completes each round before generating the next with dynamic ratings', () => {
+  const drawId = 'drawId';
+  const drawSize = 16;
+  const roundsCount = 4;
+  const ratingType = WTN;
+
+  mocksEngine.generateTournamentRecord({
+    participantsProfile: { idPrefix: 'P', scaleAllParticipants: true },
+    completeAllMatchUps: true,
+    drawProfiles: [
+      {
+        category: { ratingType, ratingMin: 10, ratingMax: 14 },
+        scaleName: ratingType,
+        drawType: AD_HOC,
+        automated: true,
+        roundsCount,
+        drawSize,
+        drawId,
+      },
+    ],
+    setState: true,
+  });
+
+  // All matchUps should be completed
+  const { completedMatchUps } = tournamentEngine.tournamentMatchUps();
+  const totalExpected = Math.floor(drawSize / 2) * roundsCount;
+  expect(completedMatchUps.length).toEqual(totalExpected);
+
+  // Verify all rounds are present
+  const roundNumbers = [...new Set(completedMatchUps.map((m) => m.roundNumber))];
+  expect(roundNumbers.toSorted((a: any, b: any) => a - b)).toEqual([1, 2, 3, 4]);
+
+  // Verify pairings avoid repeated opponents (drawMatic should prevent re-matches)
+  const pairings = completedMatchUps.map(({ sides }) =>
+    sides
+      .map((s) => s.participantId)
+      .sort()
+      .join('|'),
+  );
+  const uniquePairings = [...new Set(pairings)];
+  // With 16 participants and 4 rounds, each participant has 15 possible opponents,
+  // so all pairings should be unique
+  expect(pairings.length).toEqual(uniquePairings.length);
+});

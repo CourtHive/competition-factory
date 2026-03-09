@@ -19,12 +19,14 @@ type ProAutoScheduleArgs = {
   matchUps: HydratedMatchUp[];
   minCourtGridRows?: number;
   scheduledDate: string;
+  courtIds?: string[];
 };
 export function proAutoSchedule({
   scheduleCompletedMatchUps,
   minCourtGridRows = 10,
   tournamentRecords,
   scheduledDate,
+  courtIds,
   matchUps,
 }: ProAutoScheduleArgs) {
   if (!validMatchUps(matchUps)) return { error: INVALID_VALUES };
@@ -72,7 +74,11 @@ export function proAutoSchedule({
       }
     });
     const availableCourts = Object.values(row).filter(
-      (c: any) => isObject(c) && !c.matchUpId && !c.isBlocked, // Skip blocked cells
+      (c: any) =>
+        isObject(c) &&
+        !c.matchUpId &&
+        !c.isBlocked &&
+        (!courtIds?.length || courtIds.includes(c.schedule?.courtId)),
     );
     return gridRows.concat({
       matchUpIds,

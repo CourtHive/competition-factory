@@ -16,7 +16,7 @@ import { overlap } from '@Tools/arrays';
 // constants and types
 import { DRAW_POSITION_ASSIGNED, STRUCTURE_NOT_FOUND } from '@Constants/errorConditionConstants';
 import { DrawDefinition, Event, Tournament } from '@Types/tournamentTypes';
-import { FIRST_MATCHUP } from '@Constants/drawDefinitionConstants';
+import { FIRST_MATCHUP, LUCKY_DRAW } from '@Constants/drawDefinitionConstants';
 import { SUCCESS } from '@Constants/resultConstants';
 import { HydratedMatchUp } from '@Types/hydrated';
 import { MatchUpsMap } from '@Types/factoryTypes';
@@ -56,9 +56,7 @@ export function assignMatchUpDrawPosition({
 }: AssignMatchUpDrawPositionArgs) {
   const stack = 'assignMatchUpDrawPosition';
 
-  if (!matchUpsMap) {
-    matchUpsMap = getMatchUpsMap({ drawDefinition });
-  }
+  matchUpsMap ??= getMatchUpsMap({ drawDefinition });
 
   if (!inContextDrawMatchUps) {
     inContextDrawMatchUps =
@@ -170,7 +168,10 @@ export function assignMatchUpDrawPosition({
     matchUpsMap,
   });
 
-  if (positionAssigned && isByeMatchUp) {
+  // In lucky draws, all round-to-round advancement is handled by luckyDrawAdvancement
+  const isLuckyDraw = drawDefinition?.drawType === LUCKY_DRAW;
+
+  if (positionAssigned && isByeMatchUp && !isLuckyDraw) {
     if (winnerMatchUp) {
       if ([BYE, DOUBLE_WALKOVER, DOUBLE_DEFAULT].includes(matchUpStatus)) {
         const result = assignMatchUpDrawPosition({

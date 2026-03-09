@@ -117,7 +117,7 @@ export function processSides(params) {
         };
       }
 
-      if (withRankingProfile) {
+      if (withRankingProfile && winningSide) {
         addStructureParticipation({
           finishingPositionRange,
           collectionPosition,
