@@ -472,6 +472,68 @@ describe('Draft Positioning - Full Lifecycle', () => {
     }
   });
 
+  it('resolves tiers individually with tierIndex parameter', () => {
+    const { drawId } = setupSeedsOnlyDraw({ participantsCount: 16, seedsCount: 4 });
+
+    const initResult = tournamentEngine.initializeDraft({ drawId, tierCount: 3, preferencesCount: 3 });
+    expect(initResult.tiers.length).toBe(3);
+    const availablePositions = initResult.unassignedDrawPositions;
+
+    // submit preferences for tier 0 only
+    for (const participantId of initResult.tiers[0].participantIds) {
+      const shuffled = [...availablePositions].sort(() => Math.random() - 0.5);
+      tournamentEngine.setDrawPositionPreferences({ drawId, participantId, preferences: shuffled.slice(0, 3) });
+    }
+
+    // can't resolve tier 1 before tier 0
+    const skipResult = tournamentEngine.resolveDraftPositions({ drawId, tierIndex: 1 });
+    expect(skipResult.error).toEqual(INVALID_VALUES);
+
+    // resolve tier 0
+    const tier0Result = tournamentEngine.resolveDraftPositions({ drawId, tierIndex: 0 });
+    expect(tier0Result.success).toBe(true);
+
+    // draft should NOT be complete yet
+    const { draftState: afterTier0 } = tournamentEngine.getDraftState({ drawId });
+    expect(afterTier0.status).not.toBe('COMPLETE');
+    expect(afterTier0.tiers[0].resolved).toBe(true);
+    expect(afterTier0.tiers[1].resolved).toBe(false);
+
+    // available positions should be reduced
+    expect(afterTier0.unassignedDrawPositions.length).toBeLessThan(availablePositions.length);
+
+    // can't re-resolve tier 0
+    const reResolve = tournamentEngine.resolveDraftPositions({ drawId, tierIndex: 0 });
+    expect(reResolve.error).toEqual(INVALID_VALUES);
+
+    // submit preferences for tier 1 — now they see reduced positions
+    for (const participantId of initResult.tiers[1].participantIds) {
+      const shuffled = [...afterTier0.unassignedDrawPositions].sort(() => Math.random() - 0.5);
+      tournamentEngine.setDrawPositionPreferences({ drawId, participantId, preferences: shuffled.slice(0, 3) });
+    }
+
+    // resolve tier 1
+    const tier1Result = tournamentEngine.resolveDraftPositions({ drawId, tierIndex: 1 });
+    expect(tier1Result.success).toBe(true);
+
+    const { draftState: afterTier1 } = tournamentEngine.getDraftState({ drawId });
+    expect(afterTier1.tiers[1].resolved).toBe(true);
+    expect(afterTier1.status).not.toBe('COMPLETE');
+
+    // submit and resolve tier 2 — should mark draft COMPLETE
+    for (const participantId of initResult.tiers[2].participantIds) {
+      const shuffled = [...afterTier1.unassignedDrawPositions].sort(() => Math.random() - 0.5);
+      tournamentEngine.setDrawPositionPreferences({ drawId, participantId, preferences: shuffled.slice(0, 3) });
+    }
+
+    const tier2Result = tournamentEngine.resolveDraftPositions({ drawId, tierIndex: 2 });
+    expect(tier2Result.success).toBe(true);
+
+    const { draftState: final } = tournamentEngine.getDraftState({ drawId });
+    expect(final.status).toBe('COMPLETE');
+    expect(final.tiers.every((t: any) => t.resolved)).toBe(true);
+  });
+
   it('can update preferences before resolution', () => {
     const { drawId } = setupSeedsOnlyDraw({ participantsCount: 16, seedsCount: 4 });
 

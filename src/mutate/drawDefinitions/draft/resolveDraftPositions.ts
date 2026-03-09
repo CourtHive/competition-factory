@@ -15,6 +15,7 @@ type ResolveDraftPositionsArgs = {
   tournamentRecord?: Tournament;
   drawDefinition?: DrawDefinition;
   applyResults?: boolean;
+  tierIndex?: number;
   event?: Event;
 };
 
@@ -22,6 +23,7 @@ export function resolveDraftPositions({
   tournamentRecord,
   drawDefinition,
   applyResults = true,
+  tierIndex: targetTierIndex,
   event,
 }: ResolveDraftPositionsArgs) {
   if (!drawDefinition) return { error: MISSING_DRAW_DEFINITION };
@@ -46,9 +48,26 @@ export function resolveDraftPositions({
   // deep copy so working mutations don't affect the actual draw structure
   const workingAssignments = positionAssignments.map((a: any) => ({ ...a }));
 
+  // validate targetTierIndex if provided
+  if (targetTierIndex !== undefined) {
+    if (targetTierIndex < 0 || targetTierIndex >= draftState.tiers.length) {
+      return { error: INVALID_VALUES, info: 'Invalid tier index' };
+    }
+    if (draftState.tiers[targetTierIndex].resolved) {
+      return { error: INVALID_VALUES, info: 'Tier already resolved' };
+    }
+    // ensure all earlier tiers are resolved
+    for (let i = 0; i < targetTierIndex; i++) {
+      if (!draftState.tiers[i].resolved) {
+        return { error: INVALID_VALUES, info: `Tier ${i + 1} must be resolved first` };
+      }
+    }
+  }
+
   for (let tierIndex = 0; tierIndex < draftState.tiers.length; tierIndex++) {
     const tier = draftState.tiers[tierIndex];
     if (tier.resolved) continue;
+    if (targetTierIndex !== undefined && tierIndex !== targetTierIndex) continue;
 
     // compute currently unassigned positions from working copy
     const currentlyUnassigned = new Set(
@@ -135,10 +154,19 @@ export function resolveDraftPositions({
       }
     }
 
-    // update draft state to COMPLETE
-    draftState.status = 'COMPLETE';
-    draftState.resolvedAt = new Date().toISOString();
-    draftState.transparencyReport = transparencyReport;
+    // update unassigned positions to reflect placements
+    const resolvedPositions = new Set(Object.keys(allResolutions).map(Number));
+    draftState.unassignedDrawPositions = (draftState.unassignedDrawPositions || []).filter(
+      (p: number) => !resolvedPositions.has(p),
+    );
+
+    // mark COMPLETE only when all tiers are resolved
+    const allResolved = draftState.tiers.every((t: any) => t.resolved);
+    if (allResolved) {
+      draftState.status = 'COMPLETE';
+      draftState.resolvedAt = new Date().toISOString();
+      draftState.transparencyReport = transparencyReport;
+    }
 
     addExtension({
       element: drawDefinition,
