@@ -203,7 +203,7 @@ export function getParticipants(params: GetParticipantsArgs): {
     for (const participant of filteredParticipants) {
       for (const individualParticipantId of participant.individualParticipantIds ?? []) {
         participant.individualParticipants ??= [];
-        const source = ppMap.get(individualParticipantId);
+        const source = ppMap.get(String(individualParticipantId));
         const individualParticipant = template ? attributeFilter({ template, source }) : source;
         participant.individualParticipants.push(individualParticipant);
       }

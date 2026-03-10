@@ -646,6 +646,10 @@ export const BOOKING_NOT_FOUND = {
   message: 'Booking not found',
   code: 'ERR_NOT_FOUND_BOOKING',
 };
+export const EXISTING_DRAFT = {
+  message: 'An active draft already exists for this draw',
+  code: 'ERR_EXISTING_DRAFT',
+};
 export const EXISTING_MATCHUPS = {
   message: 'Existing matchUps conflict with booking',
   code: 'ERR_EXISTING_MATCHUPS',
@@ -856,6 +860,7 @@ export const errorConditionConstants = {
   CATEGORY_MISMATCH,
   COURT_EXISTS,
   COURT_NOT_FOUND,
+  EXISTING_DRAFT,
   EXISTING_MATCHUPS,
   DRAW_DEFINITION_NOT_FOUND,
   DRAW_ID_EXISTS,

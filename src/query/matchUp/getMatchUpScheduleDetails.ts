@@ -22,6 +22,7 @@ import {
   ASSIGN_COURT,
   ASSIGN_OFFICIAL,
   ASSIGN_VENUE,
+  COURT_ANNOTATION,
   COURT_ORDER,
   HOME_PARTICIPANT_ID,
   SCHEDULED_DATE,
@@ -105,6 +106,7 @@ export function getMatchUpScheduleDetails(params: GetMatchUpScheduleDetailsArgs)
       timeItemMap.set(timeItem.itemType, timeItem.itemValue);
     }
     const homeParticipantId = timeItemMap.get(HOME_PARTICIPANT_ID);
+    const courtAnnotation = timeItemMap.get(COURT_ANNOTATION);
     const allocatedCourts = timeItemMap.get(ALLOCATE_COURTS);
     const scheduledTime = timeItemMap.get(SCHEDULED_TIME);
     const timeModifiers = timeItemMap.get(TIME_MODIFIERS);
@@ -178,6 +180,7 @@ export function getMatchUpScheduleDetails(params: GetMatchUpScheduleDetailsArgs)
       isoDateString,
 
       homeParticipantId,
+      courtAnnotation,
       venueAbbreviation,
       allocatedCourts,
       timeModifiers,

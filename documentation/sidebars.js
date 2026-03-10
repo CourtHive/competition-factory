@@ -84,6 +84,7 @@ module.exports = {
               ],
             },
             'concepts/draw-links',
+            'concepts/draft-draws',
             'concepts/exit-profiles',
             'concepts/finishing-positions',
             'concepts/actions',

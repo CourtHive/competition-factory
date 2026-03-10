@@ -21,6 +21,7 @@ import {
   ALLOCATE_COURTS,
   ASSIGN_COURT,
   ASSIGN_VENUE,
+  COURT_ANNOTATION,
   COURT_ORDER,
   SCHEDULED_DATE,
   SCHEDULED_TIME,
@@ -120,7 +121,7 @@ function clearSchedules({
       matchUp.timeItems = (matchUp.timeItems ?? []).filter((timeItem) => {
         const preserve =
           timeItem?.itemType &&
-          ![ALLOCATE_COURTS, ASSIGN_COURT, ASSIGN_VENUE, COURT_ORDER, SCHEDULED_DATE, SCHEDULED_TIME].includes(
+          ![ALLOCATE_COURTS, ASSIGN_COURT, ASSIGN_VENUE, COURT_ANNOTATION, COURT_ORDER, SCHEDULED_DATE, SCHEDULED_TIME].includes(
             timeItem?.itemType,
           );
         if (!preserve) modified = true;
