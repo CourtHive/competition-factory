@@ -105,7 +105,7 @@ export function addEventEntryPairs(params: AddEventEntryPairsArgs) {
   const newParticipants = allowDuplicateParticipantIdPairs
     ? provisionalParticipants
     : provisionalParticipants.filter((participant) => {
-        return !existingParticipantIdPairs.find(
+        return !existingParticipantIdPairs.some(
           (existing) => intersection(existing, participant.individualParticipantIds).length === 2,
         );
       });
