@@ -148,10 +148,7 @@ export function addParticipant(params: AddParticipantType) {
       return { error: MISSING_PERSON_DETAILS };
 
     if (!participant.participantName) {
-      const participantName = `${participant.person.standardFamilyName.toUpperCase()}, ${
-        participant.person.standardGivenName
-      }`;
-      participant.participantName = participantName;
+      participant.participantName = `${participant.person.standardGivenName} ${participant.person.standardFamilyName}`;
     }
   } else if (participantType && [TEAM, GROUP].includes(participantType)) {
     if (!individualParticipantIds) participant.individualParticipantIds = [];
