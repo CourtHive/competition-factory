@@ -290,8 +290,8 @@ export function luckyDrawAdvancement({
           participantIds: discardedLosers,
           event,
         });
-        if (result?.error) {
-          if (getDevContext()) console.warn('Failed to place discarded losers in consolidation structure:', result.error);
+        if (result?.error && getDevContext()) {
+          console.warn('Failed to place discarded losers in consolidation structure:', result.error);
         }
       }
     }
