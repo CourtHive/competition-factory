@@ -160,6 +160,27 @@ export function resolveDraftPositions({
       (p: number) => !resolvedPositions.has(p),
     );
 
+    // store per-tier resolution details on each resolved tier
+    const participantPositions: Record<string, number> = {};
+    for (const [dp, pid] of Object.entries(allResolutions)) {
+      participantPositions[pid] = Number(dp);
+    }
+    for (const tier of draftState.tiers) {
+      if (!tier.resolved || tier.resolutions) continue;
+      const tierResolutions: Record<string, { assignedPosition: number; preferenceMatch: number | null }> = {};
+      for (const participantId of tier.participantIds) {
+        const assignedPosition = participantPositions[participantId];
+        if (assignedPosition === undefined) continue;
+        const preferences = draftState.preferences[participantId] ?? [];
+        const prefIdx = preferences.indexOf(assignedPosition);
+        tierResolutions[participantId] = {
+          assignedPosition,
+          preferenceMatch: prefIdx >= 0 ? prefIdx + 1 : null,
+        };
+      }
+      tier.resolutions = tierResolutions;
+    }
+
     // mark COMPLETE only when all tiers are resolved
     const allResolved = draftState.tiers.every((t: any) => t.resolved);
     if (allResolved) {

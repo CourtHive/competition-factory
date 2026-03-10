@@ -499,6 +499,17 @@ describe('Draft Positioning - Full Lifecycle', () => {
     expect(afterTier0.tiers[0].resolved).toBe(true);
     expect(afterTier0.tiers[1].resolved).toBe(false);
 
+    // tier 0 should have per-participant resolution details
+    const tier0Resolutions = afterTier0.tiers[0].resolutions;
+    expect(tier0Resolutions).toBeDefined();
+    for (const pid of initResult.tiers[0].participantIds) {
+      expect(tier0Resolutions[pid]).toBeDefined();
+      expect(tier0Resolutions[pid].assignedPosition).toBeGreaterThan(0);
+      // preferenceMatch is either a number (1-indexed) or null
+      const match = tier0Resolutions[pid].preferenceMatch;
+      expect(match === null || (typeof match === 'number' && match >= 1)).toBe(true);
+    }
+
     // available positions should be reduced
     expect(afterTier0.unassignedDrawPositions.length).toBeLessThan(availablePositions.length);
 
@@ -561,21 +572,21 @@ describe('Draft Positioning - Full Lifecycle', () => {
   });
 });
 
-describe('Draft Positioning - Edge Cases', () => {
-  function setupSmallDraw({ participantsCount, seedsCount }: { participantsCount: number; seedsCount: number }) {
-    const drawSize = nextPowerOf2(participantsCount);
-    const drawProfiles = [{ drawSize, participantsCount, seedsCount, automated: { seedsOnly: true } }];
-    const {
-      tournamentRecord,
-      drawIds: [drawId],
-    } = mocksEngine.generateTournamentRecord({
-      participantsProfile: { participantsCount },
-      drawProfiles,
-    });
-    tournamentEngine.setState(tournamentRecord);
-    return { drawId };
-  }
+function setupSmallDraw({ participantsCount, seedsCount }: { participantsCount: number; seedsCount: number }) {
+  const drawSize = nextPowerOf2(participantsCount);
+  const drawProfiles = [{ drawSize, participantsCount, seedsCount, automated: { seedsOnly: true } }];
+  const {
+    tournamentRecord,
+    drawIds: [drawId],
+  } = mocksEngine.generateTournamentRecord({
+    participantsProfile: { participantsCount },
+    drawProfiles,
+  });
+  tournamentEngine.setState(tournamentRecord);
+  return { drawId };
+}
 
+describe('Draft Positioning - Edge Cases', () => {
   it('handles tierCount larger than participant count', () => {
     const { drawId } = setupSmallDraw({ participantsCount: 5, seedsCount: 2 });
 
