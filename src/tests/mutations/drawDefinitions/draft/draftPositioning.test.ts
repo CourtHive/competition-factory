@@ -1,6 +1,7 @@
 import tournamentEngine from '@Engines/syncEngine';
 import mocksEngine from '@Assemblies/engines/mock';
 import { expect, it, describe } from 'vitest';
+import { defaultTierCount } from '@Mutate/drawDefinitions/draft/initializeDraft';
 import { nextPowerOf2 } from '@Tools/math';
 import { unique } from '@Tools/arrays';
 
@@ -864,5 +865,195 @@ describe('Draft Positioning - Tier Methods', () => {
     expect(reInit.success).toBe(true);
     expect(reInit.draftState.tierMethod).toBe('RATING');
     expect(reInit.draftState.scaleAttributes).toEqual({ scaleType: RATING, scaleName: 'WTN' });
+  });
+
+  it('ascending=true puts lower values in tier 1', () => {
+    const participantsCount = 12;
+    const seedsCount = 2;
+    const drawSize = nextPowerOf2(participantsCount);
+    const drawProfiles = [{ drawSize, participantsCount, seedsCount, automated: { seedsOnly: true } }];
+    const {
+      tournamentRecord,
+      drawIds: [drawId],
+    } = mocksEngine.generateTournamentRecord({
+      participantsProfile: { participantsCount },
+      drawProfiles,
+    });
+    tournamentEngine.setState(tournamentRecord);
+
+    const { drawDefinition } = tournamentEngine.getEvent({ drawId });
+    const seedAssignments = drawDefinition.structures[0].seedAssignments ?? [];
+    const seededIds = new Set(seedAssignments.map((s: any) => s.participantId).filter(Boolean));
+    const assignedIds =
+      drawDefinition.structures[0].positionAssignments
+        ?.filter((a: any) => a.participantId)
+        .map((a: any) => a.participantId) ?? [];
+    const draftEntries =
+      drawDefinition.entries?.filter(
+        (e: any) => !seededIds.has(e.participantId) && !assignedIds.includes(e.participantId),
+      ) ?? [];
+    const draftParticipantIds = draftEntries.map((e: any) => e.participantId);
+
+    const scaleName = 'WTN';
+    draftParticipantIds.forEach((participantId: string, index: number) => {
+      tournamentEngine.setParticipantScaleItem({
+        participantId,
+        scaleItem: { eventType: SINGLES, scaleType: RATING, scaleName, scaleValue: 10 + index },
+      });
+    });
+
+    // ascending=true: lower WTN = better = tier 1
+    const result = tournamentEngine.initializeDraft({
+      drawId,
+      tierCount: 3,
+      tierMethod: 'RATING',
+      ascending: true,
+      scaleAttributes: { scaleType: RATING, scaleName, eventType: SINGLES },
+    });
+    expect(result.success).toBe(true);
+    expect(result.draftState.ascending).toBe(true);
+
+    const getRating = (pid: string) => {
+      const { scaleItem } = tournamentEngine.getParticipantScaleItem({
+        participantId: pid,
+        scaleAttributes: { scaleType: RATING, scaleName, eventType: SINGLES },
+      });
+      return scaleItem?.scaleValue ?? 999;
+    };
+
+    const tier1Max = Math.max(...result.tiers[0].participantIds.map(getRating));
+    const lastTierMin = Math.min(...result.tiers[result.tiers.length - 1].participantIds.map(getRating));
+    // Tier 1 should have the lowest values
+    expect(tier1Max).toBeLessThan(lastTierMin);
+  });
+
+  it('ascending=false puts higher values in tier 1 (default for RATING)', () => {
+    const participantsCount = 12;
+    const seedsCount = 2;
+    const drawSize = nextPowerOf2(participantsCount);
+    const drawProfiles = [{ drawSize, participantsCount, seedsCount, automated: { seedsOnly: true } }];
+    const {
+      tournamentRecord,
+      drawIds: [drawId],
+    } = mocksEngine.generateTournamentRecord({
+      participantsProfile: { participantsCount },
+      drawProfiles,
+    });
+    tournamentEngine.setState(tournamentRecord);
+
+    const { drawDefinition } = tournamentEngine.getEvent({ drawId });
+    const seedAssignments = drawDefinition.structures[0].seedAssignments ?? [];
+    const seededIds = new Set(seedAssignments.map((s: any) => s.participantId).filter(Boolean));
+    const assignedIds =
+      drawDefinition.structures[0].positionAssignments
+        ?.filter((a: any) => a.participantId)
+        .map((a: any) => a.participantId) ?? [];
+    const draftEntries =
+      drawDefinition.entries?.filter(
+        (e: any) => !seededIds.has(e.participantId) && !assignedIds.includes(e.participantId),
+      ) ?? [];
+    const draftParticipantIds = draftEntries.map((e: any) => e.participantId);
+
+    const scaleName = 'DUPR';
+    draftParticipantIds.forEach((participantId: string, index: number) => {
+      tournamentEngine.setParticipantScaleItem({
+        participantId,
+        scaleItem: { eventType: SINGLES, scaleType: RATING, scaleName, scaleValue: 3 + index * 0.1 },
+      });
+    });
+
+    // ascending=false (explicit): higher DUPR = better = tier 1
+    const result = tournamentEngine.initializeDraft({
+      drawId,
+      tierCount: 3,
+      tierMethod: 'RATING',
+      ascending: false,
+      scaleAttributes: { scaleType: RATING, scaleName, eventType: SINGLES },
+    });
+    expect(result.success).toBe(true);
+    expect(result.draftState.ascending).toBe(false);
+
+    const getRating = (pid: string) => {
+      const { scaleItem } = tournamentEngine.getParticipantScaleItem({
+        participantId: pid,
+        scaleAttributes: { scaleType: RATING, scaleName, eventType: SINGLES },
+      });
+      return scaleItem?.scaleValue ?? 0;
+    };
+
+    const tier1Min = Math.min(...result.tiers[0].participantIds.map(getRating));
+    const lastTierMax = Math.max(...result.tiers[result.tiers.length - 1].participantIds.map(getRating));
+    // Tier 1 should have the highest values
+    expect(tier1Min).toBeGreaterThan(lastTierMax);
+  });
+
+  it('default ascending for RATING is false, for RANKING is true', () => {
+    const { drawId } = setupSeedsOnlyDraw();
+
+    const ratingResult = tournamentEngine.initializeDraft({
+      drawId,
+      tierCount: 3,
+      tierMethod: 'RATING',
+    });
+    expect(ratingResult.draftState.ascending).toBe(false);
+
+    const rankingResult = tournamentEngine.initializeDraft({
+      drawId,
+      tierCount: 3,
+      tierMethod: 'RANKING',
+      force: true,
+    });
+    expect(rankingResult.draftState.ascending).toBe(true);
+  });
+});
+
+describe('defaultTierCount', () => {
+  it('returns 1 tier when fewer than 4 participants', () => {
+    // defaultTierCount imported at top of file
+    expect(defaultTierCount(1, 0)).toBe(1);
+    expect(defaultTierCount(3, 0)).toBe(1);
+    expect(defaultTierCount(3, 4)).toBe(1);
+  });
+
+  it('returns 3 tiers with seeds and >= 24 unseeded (32-draw territory)', () => {
+    // defaultTierCount imported at top of file
+    expect(defaultTierCount(24, 8)).toBe(3);
+    expect(defaultTierCount(28, 4)).toBe(3);
+    expect(defaultTierCount(56, 8)).toBe(3);
+  });
+
+  it('returns 2 tiers with seeds but < 24 unseeded (16-draw territory)', () => {
+    // defaultTierCount imported at top of file
+    expect(defaultTierCount(12, 4)).toBe(2);
+    expect(defaultTierCount(20, 4)).toBe(2);
+  });
+
+  it('returns 2 tiers when no seeds regardless of count', () => {
+    // defaultTierCount imported at top of file
+    expect(defaultTierCount(32, 0)).toBe(2);
+    expect(defaultTierCount(24, 0)).toBe(2);
+    expect(defaultTierCount(8, 0)).toBe(2);
+  });
+
+  it('uses smart default when tierCount is not provided to initializeDraft', () => {
+    // 32-draw with 8 seeds → 24 unseeded → should default to 3 tiers
+    const { drawId } = setupSeedsOnlyDraw({ participantsCount: 32, seedsCount: 8 });
+    const result = tournamentEngine.initializeDraft({ drawId });
+    expect(result.success).toBe(true);
+    expect(result.tiers.length).toBe(3);
+  });
+
+  it('defaults to 2 tiers for 16-draw with 4 seeds', () => {
+    const { drawId } = setupSeedsOnlyDraw({ participantsCount: 16, seedsCount: 4 });
+    const result = tournamentEngine.initializeDraft({ drawId });
+    expect(result.success).toBe(true);
+    expect(result.tiers.length).toBe(2);
+  });
+
+  it('defaults to 2 tiers for 16-draw with no seeds', () => {
+    const { drawId } = setupSeedsOnlyDraw({ participantsCount: 16, seedsCount: 0 });
+    const result = tournamentEngine.initializeDraft({ drawId });
+    expect(result.success).toBe(true);
+    expect(result.tiers.length).toBe(2);
   });
 });
