@@ -1,6 +1,7 @@
 import { modifyPositionAssignmentsNotice, modifyMatchUpNotice } from '@Mutate/notifications/drawNotifications';
 import { getLuckyDrawRoundStatus } from '@Query/drawDefinition/getLuckyDrawRoundStatus';
 import { decorateResult } from '@Functions/global/decorateResult';
+import { getDevContext } from '@Global/state/globalState';
 import { findStructure } from '@Acquire/findStructure';
 
 // constants
@@ -290,7 +291,7 @@ export function luckyDrawAdvancement({
           event,
         });
         if (result?.error) {
-          console.warn('Failed to place discarded losers in consolidation structure:', result.error);
+          if (getDevContext()) console.warn('Failed to place discarded losers in consolidation structure:', result.error);
         }
       }
     }

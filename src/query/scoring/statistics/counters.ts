@@ -5,6 +5,7 @@
  * Builds the counters structure that matches v3 API format.
  */
 
+import { getDevContext } from '@Global/state/globalState';
 import { PointWithMetadata, StatCounters, StatisticsOptions } from './types';
 import { categorizePoint } from './pointParser';
 
@@ -48,7 +49,7 @@ export function buildCounters(points: PointWithMetadata[], options?: StatisticsO
   filteredPoints.forEach((point, index) => {
     // Skip points without winner (shouldn't happen with new logger)
     if (point.winner === undefined) {
-      console.warn('Point missing winner:', point);
+      if (getDevContext()) console.warn('Point missing winner:', point);
       return;
     }
 
