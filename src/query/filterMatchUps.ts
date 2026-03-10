@@ -77,7 +77,7 @@ export function filterMatchUps(params: FilterMatchUpsArgs) {
     (typeof matchUpFormat === 'string' && [matchUpFormat]) ||
     [];
   const targetScheduledDates =
-    (Array.isArray(scheduledDates) && scheduledDates.filter(Boolean)) ||
+    (Array.isArray(scheduledDates) && scheduledDates.filter(Boolean).length && scheduledDates.filter(Boolean)) ||
     (typeof scheduledDate === 'string' && scheduledDate.length && [scheduledDate]) ||
     [];
 

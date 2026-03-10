@@ -6,8 +6,8 @@ import { courtGridRows } from '@Assemblies/generators/scheduling/courtGridRows';
 import { getSchedulingProfile } from '@Mutate/tournaments/schedulingProfile';
 import { getVenuesAndCourts } from '../venues/venuesAndCourtsGetter';
 import { getCompetitionMatchUps } from './getCompetitionMatchUps';
-import { isConvertableInteger } from '@Tools/math';
 import { getTournamentId } from '@Global/state/globalState';
+import { isConvertableInteger } from '@Tools/math';
 
 // constants and types
 import { ErrorType, MISSING_TOURNAMENT_RECORDS } from '@Constants/errorConditionConstants';
@@ -127,6 +127,15 @@ export function competitionScheduleMatchUps(params: CompetitionScheduleMatchUpsA
 
   if (publishedOrderOfPlay?.scheduledDates?.length) {
     params.matchUpFilters ??= {};
+
+    // Normalize singular scheduledDate into scheduledDates array so it participates in the intersection
+    if (params.matchUpFilters.scheduledDate && !params.matchUpFilters.scheduledDates) {
+      params.matchUpFilters.scheduledDates = [params.matchUpFilters.scheduledDate];
+    }
+
+    const hadCallerDates =
+      params.matchUpFilters.scheduledDates && params.matchUpFilters.scheduledDates.length > 0;
+
     if (params.matchUpFilters.scheduledDates) {
       if (params.matchUpFilters.scheduledDates.length) {
         params.matchUpFilters.scheduledDates = params.matchUpFilters.scheduledDates.filter((scheduledDate) =>
@@ -138,6 +147,22 @@ export function competitionScheduleMatchUps(params: CompetitionScheduleMatchUpsA
     } else {
       params.matchUpFilters.scheduledDates = publishedOrderOfPlay.scheduledDates;
     }
+
+    // If the caller specified dates but none survived the intersection with published dates,
+    // no matchUps can match — return early with empty results
+    if (hadCallerDates && !params.matchUpFilters.scheduledDates?.length) {
+      return {
+        completedMatchUps: alwaysReturnCompleted ? allCompletedMatchUps : [],
+        dateMatchUps: [],
+        courtsData: [],
+        venues,
+        ...SUCCESS,
+      };
+    }
+
+    // Clear singular scheduledDate so filterMatchUps uses the intersected scheduledDates array
+    // (prevents fallback to a date that was excluded by the intersection)
+    delete params.matchUpFilters.scheduledDate;
   }
 
   // optimization: if all completed matchUps have already been retrieved, skip the hydration process
