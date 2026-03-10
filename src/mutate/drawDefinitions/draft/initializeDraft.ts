@@ -1,13 +1,16 @@
+import { getParticipantScaleItem } from '@Query/participant/getParticipantScaleItem';
 import { getPositionAssignments } from '@Query/drawDefinition/positionsGetter';
 import { addExtension } from '@Mutate/extensions/addExtension';
 import { findExtension } from '@Acquire/findExtension';
 import { findStructure } from '@Acquire/findStructure';
 
 // constants and types
-import { DrawDefinition, Tournament } from '@Types/tournamentTypes';
+import { DrawDefinition, Event, Tournament } from '@Types/tournamentTypes';
 import { DRAFT_STATE } from '@Constants/extensionConstants';
+import { RANKING, RATING } from '@Constants/scaleConstants';
 import { MAIN } from '@Constants/drawDefinitionConstants';
 import { SUCCESS } from '@Constants/resultConstants';
+import { ScaleAttributes } from '@Types/factoryTypes';
 import {
   EXISTING_DRAFT,
   INVALID_VALUES,
@@ -16,20 +19,29 @@ import {
   NO_VALID_ATTRIBUTES,
 } from '@Constants/errorConditionConstants';
 
+export type TierMethod = 'ENTRY_ORDER' | 'RANKING' | 'RATING';
+
 type InitializeDraftArgs = {
   tournamentRecord?: Tournament;
   drawDefinition?: DrawDefinition;
+  scaleAttributes?: ScaleAttributes;
   preferencesCount?: number;
+  tierMethod?: TierMethod;
   structureId?: string;
   tierCount?: number;
+  event?: Event;
   force?: boolean;
 };
 
 export function initializeDraft({
+  tournamentRecord,
   drawDefinition,
+  scaleAttributes,
   preferencesCount = 3,
+  tierMethod,
   structureId,
   tierCount = 3,
+  event,
   force,
 }: InitializeDraftArgs) {
   if (!drawDefinition) return { error: MISSING_DRAW_DEFINITION };
@@ -76,14 +88,27 @@ export function initializeDraft({
 
   const unseededParticipantIds = entries?.map((e: any) => e.participantId) ?? [];
 
+  // sort participants by tier method before distributing into tiers
+  const effectiveTierMethod: TierMethod = tierMethod ?? 'ENTRY_ORDER';
+  const effectiveScaleAttributes = scaleAttributes ?? deriveScaleAttributes(effectiveTierMethod, event);
+
+  const sortedParticipantIds = sortByTierMethod({
+    participantIds: unseededParticipantIds,
+    tierMethod: effectiveTierMethod,
+    scaleAttributes: effectiveScaleAttributes,
+    tournamentRecord,
+  });
+
   // calculate tier sizes — distribute as evenly as possible
-  const effectiveTierCount = Math.min(tierCount, unseededParticipantIds.length);
-  const tiers = buildTiers(unseededParticipantIds, effectiveTierCount);
+  const effectiveTierCount = Math.min(tierCount, sortedParticipantIds.length);
+  const tiers = buildTiers(sortedParticipantIds, effectiveTierCount);
 
   const draftState = {
     status: 'SEEDS_PLACED' as const,
     structureId,
     preferencesCount,
+    tierMethod: effectiveTierMethod,
+    scaleAttributes: effectiveScaleAttributes,
     tiers,
     preferences: {} as Record<string, number[]>,
     unassignedDrawPositions: unassignedPositions,
@@ -100,6 +125,60 @@ export function initializeDraft({
     unassignedDrawPositions: unassignedPositions,
     tiers,
   };
+}
+
+function deriveScaleAttributes(tierMethod: TierMethod, event?: Event): ScaleAttributes | undefined {
+  if (tierMethod === 'RANKING') {
+    return { scaleType: RANKING };
+  }
+  if (tierMethod === 'RATING') {
+    const ratingType = (event as any)?.category?.ratingType;
+    if (ratingType) return { scaleType: RATING, scaleName: ratingType };
+    return undefined;
+  }
+  return undefined;
+}
+
+function sortByTierMethod({
+  participantIds,
+  tierMethod,
+  scaleAttributes,
+  tournamentRecord,
+}: {
+  participantIds: string[];
+  tierMethod: TierMethod;
+  scaleAttributes?: ScaleAttributes;
+  tournamentRecord?: Tournament;
+}): string[] {
+  if (tierMethod === 'ENTRY_ORDER' || !scaleAttributes || !tournamentRecord) {
+    return participantIds;
+  }
+
+  // Get scale values for each participant
+  const withScale: { participantId: string; scaleValue: number }[] = [];
+  const withoutScale: string[] = [];
+
+  for (const participantId of participantIds) {
+    const { scaleItem } = getParticipantScaleItem({
+      tournamentRecord,
+      scaleAttributes,
+      participantId,
+    });
+    const raw = scaleItem?.scaleValue;
+    const numeric = typeof raw === 'number' ? raw : Number.parseFloat(raw);
+    if (!Number.isNaN(numeric) && raw != null) {
+      withScale.push({ participantId, scaleValue: numeric });
+    } else {
+      withoutScale.push(participantId);
+    }
+  }
+
+  // Rankings: lower is better (ascending). Ratings: higher is better (descending).
+  const ascending = tierMethod === 'RANKING';
+  withScale.sort((a, b) => (ascending ? a.scaleValue - b.scaleValue : b.scaleValue - a.scaleValue));
+
+  // Participants with scale values first (sorted), then those without
+  return [...withScale.map((e) => e.participantId), ...withoutScale];
 }
 
 function buildTiers(participantIds: string[], tierCount: number): { participantIds: string[]; resolved: boolean }[] {
