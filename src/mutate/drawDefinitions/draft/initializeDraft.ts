@@ -27,6 +27,7 @@ type InitializeDraftArgs = {
   scaleAttributes?: ScaleAttributes;
   preferencesCount?: number;
   tierMethod?: TierMethod;
+  ascending?: boolean; // true = lower values in tier 1; false = higher values in tier 1
   structureId?: string;
   tierCount?: number;
   event?: Event;
@@ -39,13 +40,15 @@ export function initializeDraft({
   scaleAttributes,
   preferencesCount = 3,
   tierMethod,
+  ascending,
   structureId,
-  tierCount = 3,
+  tierCount,
   event,
   force,
 }: InitializeDraftArgs) {
   if (!drawDefinition) return { error: MISSING_DRAW_DEFINITION };
-  if (tierCount < 1 || preferencesCount < 1) return { error: INVALID_VALUES };
+  if (tierCount !== undefined && tierCount < 1) return { error: INVALID_VALUES };
+  if (preferencesCount < 1) return { error: INVALID_VALUES };
 
   // resolve structureId if not provided — default to MAIN stage single structure
   if (!structureId) {
@@ -92,15 +95,22 @@ export function initializeDraft({
   const effectiveTierMethod: TierMethod = tierMethod ?? 'ENTRY_ORDER';
   const effectiveScaleAttributes = scaleAttributes ?? deriveScaleAttributes(effectiveTierMethod, event);
 
+  // Resolve sort direction: explicit > default per tier method
+  // Rankings: ascending (lower rank number = better = tier 1)
+  // Ratings: caller should specify based on the rating system
+  const effectiveAscending = ascending ?? (effectiveTierMethod === 'RANKING');
+
   const sortedParticipantIds = sortByTierMethod({
     participantIds: unseededParticipantIds,
     tierMethod: effectiveTierMethod,
     scaleAttributes: effectiveScaleAttributes,
+    ascending: effectiveAscending,
     tournamentRecord,
   });
 
   // calculate tier sizes — distribute as evenly as possible
-  const effectiveTierCount = Math.min(tierCount, sortedParticipantIds.length);
+  const resolvedTierCount = tierCount ?? defaultTierCount(sortedParticipantIds.length, seededParticipantIds.size);
+  const effectiveTierCount = Math.min(resolvedTierCount, sortedParticipantIds.length);
   const tiers = buildTiers(sortedParticipantIds, effectiveTierCount);
 
   const draftState = {
@@ -109,6 +119,7 @@ export function initializeDraft({
     preferencesCount,
     tierMethod: effectiveTierMethod,
     scaleAttributes: effectiveScaleAttributes,
+    ascending: effectiveAscending,
     tiers,
     preferences: {} as Record<string, number[]>,
     unassignedDrawPositions: unassignedPositions,
@@ -143,11 +154,13 @@ function sortByTierMethod({
   participantIds,
   tierMethod,
   scaleAttributes,
+  ascending,
   tournamentRecord,
 }: {
   participantIds: string[];
   tierMethod: TierMethod;
   scaleAttributes?: ScaleAttributes;
+  ascending: boolean;
   tournamentRecord?: Tournament;
 }): string[] {
   if (tierMethod === 'ENTRY_ORDER' || !scaleAttributes || !tournamentRecord) {
@@ -173,12 +186,27 @@ function sortByTierMethod({
     }
   }
 
-  // Rankings: lower is better (ascending). Ratings: higher is better (descending).
-  const ascending = tierMethod === 'RANKING';
+  // ascending = true: lower values in tier 1 (e.g. WTN, rankings)
+  // ascending = false: higher values in tier 1 (e.g. DUPR, UTR, ELO)
   withScale.sort((a, b) => (ascending ? a.scaleValue - b.scaleValue : b.scaleValue - a.scaleValue));
 
   // Participants with scale values first (sorted), then those without
   return [...withScale.map((e) => e.participantId), ...withoutScale];
+}
+
+/**
+ * Compute a sensible default tier count based on the number of unseeded
+ * participants and the number of seeds.
+ *
+ * Rubric:
+ * - With seeds and >= 24 unseeded: 3 tiers (remaining quarters of a 32-draw)
+ * - No seeds or < 24 unseeded: 2 tiers (halves)
+ * - Fewer than 4 participants: 1 tier
+ */
+export function defaultTierCount(unseededCount: number, seedCount: number): number {
+  if (unseededCount < 4) return 1;
+  if (seedCount > 0 && unseededCount >= 24) return 3;
+  return 2;
 }
 
 function buildTiers(participantIds: string[], tierCount: number): { participantIds: string[]; resolved: boolean }[] {
