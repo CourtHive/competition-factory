@@ -70,6 +70,14 @@ Both approaches are driven by **[scheduling policies](./policies/scheduling)** t
 
 The **[Temporal Engine](./temporal-engine/temporal-engine-overview)** extends this further by modelling court availability as continuous capacity streams, enabling "what-if" scenario simulation — tournament directors can test scheduling changes, visualize capacity, and detect conflicts before committing to the tournament record.
 
+### Publishing and Embargo
+
+The **Competition Factory** gives tournament directors precise control over what information is publicly visible and when. Publishing operates at every level of granularity — **tournament**, **event**, **draw**, **stage**, **structure**, and individual **rounds** — so an organizer can, for example, publish qualifying draws immediately while holding the main draw under embargo until 3 AM the following morning.
+
+**[Embargo](./concepts/publishing/publishing-embargo)** extends this with time-based visibility gates. An embargoed element is marked as published but remains hidden from public-facing queries until the embargo timestamp passes — no cron jobs, no second mutation. This enables workflows like finalizing the [order of play](./concepts/publishing/publishing-order-of-play) in the evening and setting it to go live automatically at a specific hour, or coordinating draw releases with media partners. Embargoes can be applied independently at any level: a draw, a stage within a draw, a structure, or even a single round's schedule data.
+
+All embargo timestamps require explicit timezone context (UTC or offset), ensuring consistent behavior regardless of where the client or server is running. Admin queries always see the full publish state including active embargoes, while public queries respect embargo gates transparently.
+
 ### Ranking Points and Scale Engine
 
 The **[Scale Engine](./scale-engine/scale-engine-overview)** computes ranking points in real time from tournament results using configurable **[ranking policies](./policies/rankingPolicy)**. Points are calculated from finishing positions, per-win bonuses, champion/finalist awards, and [quality win bonuses](./scale-engine/quality-win-points) for defeating ranked opponents — all scoped by event type, draw size, tournament level, category, and stage.
@@ -85,5 +93,6 @@ For ranking list generation pipelines, the Scale Engine supports **[multi-tourna
 - **[State Engines](/docs/engines/state-engines)** - Managing tournament state and subscriptions
 - **[Automated Scheduling](./concepts/automated-scheduling)** - Garman algorithm and scheduling profiles
 - **[Pro Scheduling](./concepts/pro-scheduling)** - Grid-based scheduling with conflict detection
+- **[Publishing](./concepts/publishing/publishing-overview)** - Granular visibility control with time-based embargoes
 - **[Scale Engine](./scale-engine/scale-engine-overview)** - Ranking points, ratings, and multi-tournament aggregation
 - **[Acknowledgements](./acknowledgements)** - Contributors and interactive examples
