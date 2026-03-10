@@ -27,8 +27,8 @@ importers:
         specifier: 2.1.1
         version: 2.1.1
       courthive-components:
-        specifier: 0.9.28-beta.16
-        version: 0.9.28-beta.16
+        specifier: 0.9.28-beta.17
+        version: 0.9.28-beta.17
       react:
         specifier: ^18.2.0
         version: 18.3.1
@@ -2298,8 +2298,8 @@ packages:
       typescript:
         optional: true
 
-  courthive-components@0.9.28-beta.16:
-    resolution: {integrity: sha512-BrmsSv3+2a0yHydIj4m8wh8KxmvAjn5E6JOM2WNLEk/8wGTS0ce1St86mGJ8VgX5GJkzFPLln3P9QJj+Xd1L4A==}
+  courthive-components@0.9.28-beta.17:
+    resolution: {integrity: sha512-o7Zlo9NAPdmU6BSvz3FXoQWMEZIIFUj8/UdJLHmGxqdJIKlkV2dWSymi7oQZjFccH62wYSDUkJiJeSlMSYBing==}
     engines: {node: '>=20.19.0 < 25'}
 
   cross-spawn@7.0.6:
@@ -5034,8 +5034,8 @@ packages:
     resolution: {integrity: sha512-S+fswvRT0Nj/BZGAxD58McZuUVOwaGmPtXS4sRbHtAqHfICvyrCh9pv34jMYxkYOykZFLltyPzJybfeAVw538g==}
     engines: {node: '>=20'}
 
-  tods-competition-factory@2.4.6-beta.20:
-    resolution: {integrity: sha512-CpQNDZ7Q0x/J2GSIxiw4AARrCvahJYR/s678of8jXllufuQ3NmC+je2oghP3BKNH1BcNVQ8qKw4iCwNkBbqp8w==}
+  tods-competition-factory@2.4.6-beta.21:
+    resolution: {integrity: sha512-Kf7I7R2DyFydzixLH/RG7PH38LxOghZMdDM0GdJbUdlWyNeP9tNtQ6SCCdpOw4x2Zd19yRya+HacXng6GonUtQ==}
     engines: {node: '>=20'}
 
   toidentifier@1.0.1:
@@ -8679,7 +8679,7 @@ snapshots:
       parse-json: 5.2.0
       path-type: 4.0.0
 
-  courthive-components@0.9.28-beta.16:
+  courthive-components@0.9.28-beta.17:
     dependencies:
       awesomplete: 1.1.7
       class-variance-authority: 0.7.1
@@ -8689,7 +8689,7 @@ snapshots:
       focus-trap: 8.0.0
       timepicker-ui: 4.1.6
       tippy.js: 6.3.7
-      tods-competition-factory: 2.4.6-beta.20
+      tods-competition-factory: 2.4.6-beta.21
       vanillajs-datepicker: 1.3.4
 
   cross-spawn@7.0.6:
@@ -11959,7 +11959,7 @@ snapshots:
 
   tods-competition-factory@2.4.5: {}
 
-  tods-competition-factory@2.4.6-beta.20: {}
+  tods-competition-factory@2.4.6-beta.21: {}
 
   toidentifier@1.0.1: {}
 
