@@ -545,6 +545,64 @@ describe('Draft Positioning - Full Lifecycle', () => {
     expect(final.tiers.every((t: any) => t.resolved)).toBe(true);
   });
 
+  it('verifies all tiers are actually placed in draw after per-tier resolution', () => {
+    const { drawId } = setupSeedsOnlyDraw({ participantsCount: 16, seedsCount: 4 });
+
+    const initResult = tournamentEngine.initializeDraft({ drawId, tierCount: 3, preferencesCount: 3 });
+    const availablePositions = initResult.unassignedDrawPositions;
+    const allTierParticipants = initResult.tiers.flatMap((t: any) => t.participantIds);
+
+    // submit and resolve tier 0
+    for (const participantId of initResult.tiers[0].participantIds) {
+      const shuffled = [...availablePositions].sort(() => Math.random() - 0.5);
+      tournamentEngine.setDrawPositionPreferences({ drawId, participantId, preferences: shuffled.slice(0, 3) });
+    }
+    const t0 = tournamentEngine.resolveDraftPositions({ drawId, tierIndex: 0 });
+    expect(t0.success).toBe(true);
+
+    // verify tier 0 participants are in the draw
+    const { drawDefinition: dd0 } = tournamentEngine.getEvent({ drawId });
+    const assignments0 = dd0.structures[0].positionAssignments;
+    const placed0 = assignments0.filter((a: any) => a.participantId && !a.bye).map((a: any) => a.participantId);
+    for (const pid of initResult.tiers[0].participantIds) {
+      expect(placed0).toContain(pid);
+    }
+
+    // submit and resolve tier 1
+    const { draftState: ds1 } = tournamentEngine.getDraftState({ drawId });
+    for (const participantId of initResult.tiers[1].participantIds) {
+      const shuffled = [...ds1.unassignedDrawPositions].sort(() => Math.random() - 0.5);
+      tournamentEngine.setDrawPositionPreferences({ drawId, participantId, preferences: shuffled.slice(0, 3) });
+    }
+    const t1 = tournamentEngine.resolveDraftPositions({ drawId, tierIndex: 1 });
+    expect(t1.success).toBe(true);
+
+    // verify tier 1 participants are ALSO in the draw
+    const { drawDefinition: dd1 } = tournamentEngine.getEvent({ drawId });
+    const assignments1 = dd1.structures[0].positionAssignments;
+    const placed1 = assignments1.filter((a: any) => a.participantId && !a.bye).map((a: any) => a.participantId);
+    for (const pid of initResult.tiers[1].participantIds) {
+      expect(placed1).toContain(pid);
+    }
+
+    // submit and resolve tier 2
+    const { draftState: ds2 } = tournamentEngine.getDraftState({ drawId });
+    for (const participantId of initResult.tiers[2].participantIds) {
+      const shuffled = [...ds2.unassignedDrawPositions].sort(() => Math.random() - 0.5);
+      tournamentEngine.setDrawPositionPreferences({ drawId, participantId, preferences: shuffled.slice(0, 3) });
+    }
+    const t2 = tournamentEngine.resolveDraftPositions({ drawId, tierIndex: 2 });
+    expect(t2.success).toBe(true);
+
+    // verify ALL participants are in the draw
+    const { drawDefinition: ddFinal } = tournamentEngine.getEvent({ drawId });
+    const finalAssignments = ddFinal.structures[0].positionAssignments;
+    const allPlaced = finalAssignments.filter((a: any) => a.participantId && !a.bye).map((a: any) => a.participantId);
+    for (const pid of allTierParticipants) {
+      expect(allPlaced).toContain(pid);
+    }
+  });
+
   it('can update preferences before resolution', () => {
     const { drawId } = setupSeedsOnlyDraw({ participantsCount: 16, seedsCount: 4 });
 
