@@ -62,9 +62,28 @@ Beyond draw type extensibility, the factory introduces formats never before poss
 - **[Lucky Draw](./concepts/draw-types/lucky-draw)** — Supports any participant count without requiring power-of-2 draw sizes, automatically handling odd-count rounds through "lucky loser" advancement
 - **[Draft Draws](./concepts/draft-draws)** — Gives participants agency over their draw positioning through a tiered preference system, where unseeded participants nominate preferred positions after seeds are placed and preferences are resolved with full transparency
 
+### Scheduling
+
+The **Competition Factory** provides two complementary scheduling approaches. **[Garman scheduling](./concepts/automated-scheduling)** is a fully automated algorithm that assigns match times across courts while respecting participant recovery periods, daily match limits, and court availability windows — ideal for multi-day tournaments where hundreds of matches need to be distributed efficiently. **[Pro scheduling](./concepts/pro-scheduling)** offers grid-based control with fixed time slots and follow-on support, comprehensive conflict detection (court double-bookings, participant timing clashes, match ordering violations), and fine-grained court order assignments — the model used by professional tour events.
+
+Both approaches are driven by **[scheduling policies](./policies/scheduling)** that define match duration estimates, recovery times, and daily limits per format and category, and by **[scheduling profiles](./concepts/scheduling-profile)** — declarative, persistent configurations that map specific rounds to dates and venues across the entire tournament. Profiles can be built incrementally, validated before execution, and adjusted as conditions change.
+
+The **[Temporal Engine](./temporal-engine/temporal-engine-overview)** extends this further by modelling court availability as continuous capacity streams, enabling "what-if" scenario simulation — tournament directors can test scheduling changes, visualize capacity, and detect conflicts before committing to the tournament record.
+
+### Ranking Points and Scale Engine
+
+The **[Scale Engine](./scale-engine/scale-engine-overview)** computes ranking points in real time from tournament results using configurable **[ranking policies](./policies/rankingPolicy)**. Points are calculated from finishing positions, per-win bonuses, champion/finalist awards, and [quality win bonuses](./scale-engine/quality-win-points) for defeating ranked opponents — all scoped by event type, draw size, tournament level, category, and stage.
+
+Built-in policies cover ATP, WTA, ITF, and national federation systems, but any custom point table can be defined as a JSON policy. The engine handles complex draw topologies (feed-in consolation, compass draws, qualifying stages) by normalizing finishing positions across structures and selecting the maximum award.
+
+For ranking list generation pipelines, the Scale Engine supports **[multi-tournament aggregation](./scale-engine/aggregation)** with counting buckets, rolling period windows, and configurable tiebreak criteria. `applyTournamentRankingPoints()` persists computed awards as scale items on participant records, enabling bulk processing workflows where tournaments are fed through the pipeline sequentially to produce cumulative ranking lists.
+
 ## Learn More
 
 - **[Data Standards](./data-standards)** - Understanding CODES and the importance of standardized tournament data
 - **[Time Capsule](./time-capsule)** - How CODES documents preserve complete tournament history
 - **[State Engines](/docs/engines/state-engines)** - Managing tournament state and subscriptions
+- **[Automated Scheduling](./concepts/automated-scheduling)** - Garman algorithm and scheduling profiles
+- **[Pro Scheduling](./concepts/pro-scheduling)** - Grid-based scheduling with conflict detection
+- **[Scale Engine](./scale-engine/scale-engine-overview)** - Ranking points, ratings, and multi-tournament aggregation
 - **[Acknowledgements](./acknowledgements)** - Contributors and interactive examples
