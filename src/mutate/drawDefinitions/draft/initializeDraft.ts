@@ -98,7 +98,7 @@ export function initializeDraft({
   // Resolve sort direction: explicit > default per tier method
   // Rankings: ascending (lower rank number = better = tier 1)
   // Ratings: caller should specify based on the rating system
-  const effectiveAscending = ascending ?? (effectiveTierMethod === 'RANKING');
+  const effectiveAscending = ascending ?? effectiveTierMethod === 'RANKING';
 
   const sortedParticipantIds = sortByTierMethod({
     participantIds: unseededParticipantIds,
@@ -178,11 +178,11 @@ function sortByTierMethod({
       participantId,
     });
     const raw = scaleItem?.scaleValue;
-    const numeric = typeof raw === 'number' ? raw : Number.parseFloat(raw);
-    if (!Number.isNaN(numeric) && raw != null) {
-      withScale.push({ participantId, scaleValue: numeric });
-    } else {
+    const numeric = resolveNumericScale(raw);
+    if (numeric === undefined) {
       withoutScale.push(participantId);
+    } else {
+      withScale.push({ participantId, scaleValue: numeric });
     }
   }
 
@@ -192,6 +192,33 @@ function sortByTierMethod({
 
   // Participants with scale values first (sorted), then those without
   return [...withScale.map((e) => e.participantId), ...withoutScale];
+}
+
+/**
+ * Extract a numeric value from a scaleValue that may be a primitive or an object.
+ * For object values (e.g. DUPR: { duprRating: 4.5, reliabilityScore: 80 }),
+ * the accessor-resolved value is already in scaleValue when scaleAttributes.accessor
+ * is provided. If not, we try to find the first numeric property.
+ */
+function resolveNumericScale(raw: any): number | undefined {
+  if (raw == null) return undefined;
+  if (typeof raw === 'number') return raw;
+  if (typeof raw === 'string') {
+    const n = Number.parseFloat(raw);
+    return Number.isNaN(n) ? undefined : n;
+  }
+  if (typeof raw === 'object') {
+    // Accessor was already applied by participantScaleItem if available.
+    // Fallback: find the first numeric property value.
+    for (const val of Object.values(raw)) {
+      if (typeof val === 'number') return val;
+      if (typeof val === 'string') {
+        const n = Number.parseFloat(val);
+        if (!Number.isNaN(n)) return n;
+      }
+    }
+  }
+  return undefined;
 }
 
 /**
