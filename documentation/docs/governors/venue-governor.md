@@ -93,6 +93,19 @@ engine.deleteCourt({
 
 ---
 
+## deleteCourts
+
+Bulk delete multiple courts. If any court has scheduled matchUps, deletion will fail unless `force: true`, in which case all relevant matchUps will be unscheduled.
+
+```js
+engine.deleteCourts({
+  courtIds: ['court-uuid-1', 'court-uuid-2'],
+  force, // override warnings about matchUps scheduled on specified courts
+});
+```
+
+---
+
 ## deleteVenue
 
 If a venue has scheduled matchUps then it will not be deleted unless `{ force: true }` in which case all relevant matchUps will be unscheduled.

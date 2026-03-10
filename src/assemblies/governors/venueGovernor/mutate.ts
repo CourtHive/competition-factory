@@ -1,11 +1,11 @@
 export { modifyCourtAvailability } from '@Mutate/venues/courtAvailability';
+export { deleteCourt, deleteCourts } from '@Mutate/venues/deleteCourt';
 export { deleteVenue, deleteVenues } from '@Mutate/venues/deleteVenue';
 export { addCourt, addCourts } from '@Mutate/venues/addCourt';
 export { disableCourts } from '@Mutate/venues/disableCourts';
 export { disableVenues } from '@Mutate/venues/disableVenues';
 export { enableCourts } from '@Mutate/venues/enableCourts';
 export { enableVenues } from '@Mutate/venues/enableVenues';
-export { deleteCourt } from '@Mutate/venues/deleteCourt';
 export { modifyCourt } from '@Mutate/venues/modifyCourt';
 export { modifyVenue } from '@Mutate/venues/modifyVenue';
 export { addVenue } from '@Mutate/venues/addVenue';
