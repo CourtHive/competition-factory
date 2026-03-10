@@ -7,13 +7,19 @@ import { getAppliedPolicies } from '@Query/extensions/getAppliedPolicies';
 import { addNotice } from '@Global/state/globalState';
 import { findCourt } from '../../query/venues/findCourt';
 
+// constants
 import { COURT_ID, TOURNAMENT_RECORDS } from '@Constants/attributeConstants';
-import { COURT_NOT_FOUND } from '@Constants/errorConditionConstants';
 import { POLICY_TYPE_SCHEDULING } from '@Constants/policyConstants';
 import { MODIFY_VENUE } from '@Constants/topicConstants';
 import { TournamentRecords } from '@Types/factoryTypes';
 import { SUCCESS } from '@Constants/resultConstants';
 import { Tournament } from '@Types/tournamentTypes';
+import {
+  COURT_NOT_FOUND,
+  ErrorType,
+  INVALID_VALUES,
+  MISSING_TOURNAMENT_RECORD,
+} from '@Constants/errorConditionConstants';
 
 type DeleteCourtArgs = {
   tournamentRecords?: TournamentRecords;
@@ -40,7 +46,14 @@ export function deleteCourt(params: DeleteCourtArgs) {
   return courtDeleted ? { ...SUCCESS } : result;
 }
 
-export function courtDeletion({ tournamentRecord, disableNotice, courtId, force }) {
+type CourtDeletionArgs = {
+  tournamentRecord: Tournament;
+  disableNotice?: boolean;
+  courtId: string;
+  force?: boolean;
+};
+
+export function courtDeletion({ tournamentRecord, disableNotice, courtId, force }: CourtDeletionArgs) {
   const result = findCourt({ tournamentRecord, courtId });
   if (result.error) return result;
   const venue = result.venue;
@@ -80,6 +93,28 @@ export function courtDeletion({ tournamentRecord, disableNotice, courtId, force 
     }
   } else {
     return deletionMessage({ matchUpsCount: matchUps.length });
+  }
+
+  return { ...SUCCESS };
+}
+
+type DeleteCourtsArgs = {
+  tournamentRecord?: Tournament;
+  courtIds: string[];
+  force?: boolean;
+};
+
+export function deleteCourts(params: DeleteCourtsArgs): {
+  success?: boolean;
+  error?: ErrorType;
+} {
+  const { tournamentRecord, courtIds, force } = params;
+  if (!tournamentRecord) return { error: MISSING_TOURNAMENT_RECORD };
+  if (!Array.isArray(courtIds)) return { error: INVALID_VALUES };
+
+  for (const courtId of courtIds) {
+    const result = courtDeletion({ tournamentRecord, courtId, force });
+    if (result.error) return result;
   }
 
   return { ...SUCCESS };

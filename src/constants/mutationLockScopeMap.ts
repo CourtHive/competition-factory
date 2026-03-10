@@ -217,6 +217,7 @@ export const methodScopeMap: Record<string, MutationLockScope> = {
   enableCourts: 'VENUES',
   enableVenues: 'VENUES',
   deleteCourt: 'VENUES',
+  deleteCourts: 'VENUES',
   modifyCourt: 'VENUES',
   modifyVenue: 'VENUES',
   addVenue: 'VENUES',
