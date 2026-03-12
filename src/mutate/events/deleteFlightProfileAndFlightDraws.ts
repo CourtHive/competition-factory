@@ -2,9 +2,10 @@ import { removeEventExtension } from '../extensions/addRemoveExtensions';
 import { getFlightProfile } from '@Query/event/getFlightProfile';
 import { deleteDrawDefinitions } from './deleteDrawDefinitions';
 
+// constants
+import { MISSING_EVENT, MISSING_TOURNAMENT_RECORD } from '@Constants/errorConditionConstants';
 import { FLIGHT_PROFILE } from '@Constants/extensionConstants';
 import { SUCCESS } from '@Constants/resultConstants';
-import { MISSING_EVENT, MISSING_TOURNAMENT_RECORD } from '@Constants/errorConditionConstants';
 
 export function deleteFlightProfileAndFlightDraws({ autoPublish = true, tournamentRecord, auditData, event, force }) {
   if (!tournamentRecord) return { error: MISSING_TOURNAMENT_RECORD };

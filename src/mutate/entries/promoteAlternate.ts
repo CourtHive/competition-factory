@@ -1,6 +1,8 @@
 import { decorateResult } from '@Functions/global/decorateResult';
 import { ensureInt } from '@Tools/ensureInt';
 
+// constants
+import { ALTERNATE, DIRECT_ACCEPTANCE } from '@Constants/entryStatusConstants';
 import { MAIN } from '@Constants/drawDefinitionConstants';
 import { SUCCESS } from '@Constants/resultConstants';
 import {
@@ -12,7 +14,6 @@ import {
   PARTICIPANT_NOT_ENTERED_IN_STAGE,
   INVALID_VALUES,
 } from '@Constants/errorConditionConstants';
-import { ALTERNATE, DIRECT_ACCEPTANCE } from '@Constants/entryStatusConstants';
 
 export function promoteAlternate(params) {
   const { participantId } = params;
@@ -85,7 +86,7 @@ function promoteWithinElement({ participantIds, stageSequence, element, stage })
   const alternateEntry = alternates.reduce((participantEntry, entry) => {
     const { entryPosition } = entry;
     return (
-      (isNaN(entryPosition) && participantEntry) ||
+      (Number.isNaN(Number(entryPosition)) && participantEntry) ||
       ((!participantEntry || entryPosition < participantEntry.entryPosition) && entry) ||
       participantEntry
     );
@@ -112,7 +113,7 @@ function promoteWithinElement({ participantIds, stageSequence, element, stage })
     // cleanUp
     const entryPosition = participantEntry?.entryPosition;
 
-    if (!isNaN(entryPosition)) {
+    if (!Number.isNaN(Number(entryPosition))) {
       // if promoted participant has an entryPosition, adjust all other alternates with an entryPosition higher than promoted participant
       element.entries.forEach((entry) => {
         if (entry.entryStatus === ALTERNATE && entry.entryPosition > entryPosition) {
@@ -123,7 +124,7 @@ function promoteWithinElement({ participantIds, stageSequence, element, stage })
 
     const maxEntryPosition = Math.max(
       ...element.entries
-        .filter((entry) => entry.entryStatus === DIRECT_ACCEPTANCE && !isNaN(entry.entryPosition))
+        .filter((entry) => entry.entryStatus === DIRECT_ACCEPTANCE && !Number.isNaN(Number(entry.entryPosition)))
         .map(({ entryPosition }) => ensureInt(entryPosition || 0)),
       0,
     );

@@ -62,11 +62,11 @@ export function deleteEvents(params) {
   });
 
   if (removePairParticipants) {
-    const particiapntIdsToRemove = pairParticipantIds.filter(
-      (participantId) => !activePairParticipantIds.includes(participantId),
+    const particiapntIdsToRemove = new Set(
+      pairParticipantIds.filter((participantId) => !activePairParticipantIds.includes(participantId)),
     );
     tournamentRecord.participants = tournamentRecord.participants.filter(
-      ({ participantId }) => !particiapntIdsToRemove.includes(participantId),
+      ({ participantId }) => !particiapntIdsToRemove.has(participantId),
     );
   }
 

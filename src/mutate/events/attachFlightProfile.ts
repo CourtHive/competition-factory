@@ -3,6 +3,7 @@ import { decorateResult } from '@Functions/global/decorateResult';
 import { getFlightProfile } from '@Query/event/getFlightProfile';
 import { makeDeepCopy } from '@Tools/makeDeepCopy';
 
+// constants
 import { FLIGHT_PROFILE } from '@Constants/extensionConstants';
 import { SUCCESS } from '@Constants/resultConstants';
 import {

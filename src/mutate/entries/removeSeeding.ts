@@ -1,7 +1,8 @@
 import { removeScaleValues } from './removeScaleValues';
 
-import { SEEDING } from '@Constants/scaleConstants';
+// constants
 import { MISSING_EVENT, MISSING_TOURNAMENT_RECORD } from '@Constants/errorConditionConstants';
+import { SEEDING } from '@Constants/scaleConstants';
 
 export function removeSeeding({ tournamentRecord, drawDefinition, entryStatuses, scaleName, drawId, event, stage }) {
   if (!tournamentRecord) return { error: MISSING_TOURNAMENT_RECORD };

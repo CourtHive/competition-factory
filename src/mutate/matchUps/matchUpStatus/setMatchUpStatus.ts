@@ -135,7 +135,13 @@ export function setMatchUpStatus(params: SetMatchUpStatusArgs) {
     // DECISION: Filter out empty sets (no scores recorded)
     // WHY: Prevents invalid/incomplete sets from being saved
     outcome.score.sets = outcome.score.sets.filter(
-      (set) => set.side1Score || set.side2Score || set.side1TiebreakScore || set.side2TiebreakScore,
+      (set) =>
+        set.side1Score ||
+        set.side2Score ||
+        set.side1TiebreakScore ||
+        set.side2TiebreakScore ||
+        set.side1PointScore ||
+        set.side2PointScore,
     );
   }
 

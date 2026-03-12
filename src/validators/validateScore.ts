@@ -52,13 +52,19 @@ export function validateScore({
       const numericValuePairs = [
         [side1Score, side2Score],
         [side1TiebreakScore, side2TiebreakScore],
-        [side1PointScore, side2PointScore],
       ]
         .filter((pair) => pair.some((value: any) => ![undefined, null].includes(value)))
         .every((pair) => pair.every((numericValue) => isConvertableInteger(numericValue)));
 
       if (!numericValuePairs) {
         return { error: INVALID_VALUES, info: 'non-numeric values' };
+      }
+
+      // point scores can be numeric (points-based formats) or string (tennis game scores: "AD", "40")
+      const pointScorePair = [side1PointScore, side2PointScore];
+      const hasPointScore = pointScorePair.some((v: any) => v !== undefined && v !== null);
+      if (hasPointScore && !pointScorePair.every((v: any) => v !== undefined && v !== null)) {
+        return { error: INVALID_VALUES, info: 'both sides must have point scores if one does' };
       }
 
       const numericValues = [setNumber, winningSide]

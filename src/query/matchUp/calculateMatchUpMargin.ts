@@ -78,11 +78,11 @@ export function calculateMatchUpMargin({ matchUp }: CalculateMatchUpMarginArgs):
     const wp = winningSide === 1 ? s.side1PointScore : s.side2PointScore;
     const lp = winningSide === 1 ? s.side2PointScore : s.side1PointScore;
     if (wp != null) {
-      winnerPoints += wp;
+      winnerPoints += Number(wp);
       hasPoints = true;
     }
     if (lp != null) {
-      loserPoints += lp;
+      loserPoints += Number(lp);
       hasPoints = true;
     }
   }

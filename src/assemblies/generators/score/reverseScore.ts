@@ -13,11 +13,22 @@ export function reverseScore(params?): {
   if (!params?.score) return { error: MISSING_VALUE };
   const { sets } = params.score;
   const reversedSets = sets.map((set) => {
-    const { side1TiebreakScore, side2TiebreakScore, winningSide, side1Score, side2Score, setNumber } = set;
+    const {
+      side1TiebreakScore,
+      side2TiebreakScore,
+      side1PointScore,
+      side2PointScore,
+      winningSide,
+      side1Score,
+      side2Score,
+      setNumber,
+    } = set;
     return definedAttributes({
       winningSide: winningSide ? 3 - winningSide : undefined,
       side1TiebreakScore: side2TiebreakScore,
       side2TiebreakScore: side1TiebreakScore,
+      side1PointScore: side2PointScore,
+      side2PointScore: side1PointScore,
       side1Score: side2Score,
       side2Score: side1Score,
       setNumber,

@@ -14,16 +14,14 @@ export function refreshEntryPositions(params) {
     return stages;
   }, {});
 
-  const validEntryPosition = (entryPosition) => (!isNaN(entryPosition) ? entryPosition : Infinity);
+  const validEntryPosition = (entryPosition) => (Number.isNaN(Number(entryPosition)) ? Infinity : entryPosition);
 
-  return Object.keys(stagedEntries)
-    .map((entryHash) => {
-      return stagedEntries[entryHash]
-        .sort((a, b) => validEntryPosition(a.entryPosition) - validEntryPosition(b.entryPosition))
-        .map((entry, index) => {
-          const entryPosition = index + 1;
-          return { ...entry, entryPosition };
-        });
-    })
-    .flat();
+  return Object.keys(stagedEntries).flatMap((entryHash) => {
+    return stagedEntries[entryHash]
+      .sort((a, b) => validEntryPosition(a.entryPosition) - validEntryPosition(b.entryPosition))
+      .map((entry, index) => {
+        const entryPosition = index + 1;
+        return { ...entry, entryPosition };
+      });
+  });
 }

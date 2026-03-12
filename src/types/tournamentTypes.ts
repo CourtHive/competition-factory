@@ -394,10 +394,10 @@ export interface Set {
   setDuration?: string;
   setFormat?: string;
   setNumber?: number;
-  side1PointScore?: number;
+  side1PointScore?: number | string;
   side1Score?: number;
   side1TiebreakScore?: number;
-  side2PointScore?: number;
+  side2PointScore?: number | string;
   side2Score?: number;
   side2TiebreakScore?: number;
   timeItems?: TimeItem[];
