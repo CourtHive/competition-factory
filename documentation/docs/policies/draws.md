@@ -7,6 +7,7 @@ The **Draws Policy** (`POLICY_TYPE_DRAWS`) controls draw type coercion rules, in
 **Policy Type:** `draws`
 
 **When to Use:**
+
 - Setting minimum participants for Round Robin with Playoffs
 - Preventing automatic draw type coercion
 - Enforcing draw type requirements per federation rules
@@ -20,7 +21,7 @@ The **Draws Policy** (`POLICY_TYPE_DRAWS`) controls draw type coercion rules, in
 {
   draws: {
     policyName?: string;                    // Optional policy identifier
-    
+
     // Draw type coercion rules
     drawTypeCoercion?: boolean | {
       [drawType: string]: number;           // Minimum participants for each draw type
@@ -64,12 +65,12 @@ import { POLICY_TYPE_DRAWS } from 'tods-competition-factory';
 const noCoercionPolicy = {
   [POLICY_TYPE_DRAWS]: {
     policyName: 'No Coercion',
-    drawTypeCoercion: false  // No automatic adjustments
-  }
+    drawTypeCoercion: false, // No automatic adjustments
+  },
 };
 
 tournamentEngine.attachPolicies({
-  policyDefinitions: noCoercionPolicy
+  policyDefinitions: noCoercionPolicy,
 });
 
 // Draw type will be exactly as specified, even if inappropriate
@@ -83,20 +84,20 @@ const roundRobinMinimumPolicy = {
   [POLICY_TYPE_DRAWS]: {
     policyName: 'Round Robin Minimum',
     drawTypeCoercion: {
-      ROUND_ROBIN_WITH_PLAYOFF: 5  // Min 5 participants
-    }
-  }
+      ROUND_ROBIN_WITH_PLAYOFF: 5, // Min 5 participants
+    },
+  },
 };
 
 tournamentEngine.attachPolicies({
-  policyDefinitions: roundRobinMinimumPolicy
+  policyDefinitions: roundRobinMinimumPolicy,
 });
 
 // Attempt to create ROUND_ROBIN_WITH_PLAYOFF with 4 participants
 const result = tournamentEngine.generateDrawDefinition({
   drawType: 'ROUND_ROBIN_WITH_PLAYOFF',
-  drawSize: 4,  // Below minimum
-  eventId: 'event-1'
+  drawSize: 4, // Below minimum
+  eventId: 'event-1',
 });
 
 // Result: Draw type may be coerced to simpler Round Robin
@@ -113,15 +114,15 @@ const customDrawMinimumsPolicy = {
   [POLICY_TYPE_DRAWS]: {
     policyName: 'Custom Draw Minimums',
     drawTypeCoercion: {
-      ROUND_ROBIN_WITH_PLAYOFF: 5,    // Min 5 for RR with playoff
-      COMPASS: 8,                      // Min 8 for compass draw
-      MODIFIED_FEED_IN_CHAMPIONSHIP: 8 // Min 8 for modified feed-in
-    }
-  }
+      ROUND_ROBIN_WITH_PLAYOFF: 5, // Min 5 for RR with playoff
+      COMPASS: 8, // Min 8 for compass draw
+      MODIFIED_FEED_IN_CHAMPIONSHIP: 8, // Min 8 for modified feed-in
+    },
+  },
 };
 
 tournamentEngine.attachPolicies({
-  policyDefinitions: customDrawMinimumsPolicy
+  policyDefinitions: customDrawMinimumsPolicy,
 });
 
 // Below-minimum requests will be coerced to simpler draw types
@@ -135,9 +136,9 @@ const itfDrawPolicy = {
   [POLICY_TYPE_DRAWS]: {
     policyName: 'ITF Draw Policy',
     drawTypeCoercion: {
-      ROUND_ROBIN_WITH_PLAYOFF: 4  // Allow RR+playoff with as few as 4
-    }
-  }
+      ROUND_ROBIN_WITH_PLAYOFF: 4, // Allow RR+playoff with as few as 4
+    },
+  },
 };
 
 // USTA: Require more participants for complex draws
@@ -145,10 +146,10 @@ const ustaDrawPolicy = {
   [POLICY_TYPE_DRAWS]: {
     policyName: 'USTA Draw Policy',
     drawTypeCoercion: {
-      ROUND_ROBIN_WITH_PLAYOFF: 6,  // Minimum 6 participants
-      COMPASS: 16                    // Full compass draw only
-    }
-  }
+      ROUND_ROBIN_WITH_PLAYOFF: 6, // Minimum 6 participants
+      COMPASS: 16, // Full compass draw only
+    },
+  },
 };
 ```
 
@@ -164,9 +165,9 @@ const clubDrawPolicy = {
   [POLICY_TYPE_DRAWS]: {
     policyName: 'Club Flexibility',
     drawTypeCoercion: {
-      ROUND_ROBIN_WITH_PLAYOFF: 3  // Allow very small RR+playoff
-    }
-  }
+      ROUND_ROBIN_WITH_PLAYOFF: 3, // Allow very small RR+playoff
+    },
+  },
 };
 ```
 
@@ -178,11 +179,11 @@ const professionalDrawPolicy = {
   [POLICY_TYPE_DRAWS]: {
     policyName: 'Professional Standards',
     drawTypeCoercion: {
-      ROUND_ROBIN_WITH_PLAYOFF: 8,     // Full groups required
-      COMPASS: 16,                      // Full compass only
-      MODIFIED_FEED_IN_CHAMPIONSHIP: 16 // Full feed-in only
-    }
-  }
+      ROUND_ROBIN_WITH_PLAYOFF: 8, // Full groups required
+      COMPASS: 16, // Full compass only
+      MODIFIED_FEED_IN_CHAMPIONSHIP: 16, // Full feed-in only
+    },
+  },
 };
 ```
 
@@ -193,8 +194,8 @@ const professionalDrawPolicy = {
 const testingDrawPolicy = {
   [POLICY_TYPE_DRAWS]: {
     policyName: 'Testing Policy',
-    drawTypeCoercion: false  // No restrictions
-  }
+    drawTypeCoercion: false, // No restrictions
+  },
 };
 
 // Useful for:
@@ -209,16 +210,16 @@ const testingDrawPolicy = {
 
 Based on draw structure requirements:
 
-| Draw Type | Recommended Minimum | Notes |
-|-----------|-------------------|-------|
-| SINGLE_ELIMINATION | 2 | Any number works |
-| DOUBLE_ELIMINATION | 4 | 2 players not meaningful |
-| ROUND_ROBIN | 2 | Any number works |
-| ROUND_ROBIN_WITH_PLAYOFF | 4-6 | Need enough for groups + playoff |
-| COMPASS | 8 | Requires proper bracket structure |
-| FEED_IN | 4 | Need losers to feed |
-| MODIFIED_FEED_IN_CHAMPIONSHIP | 8 | Complex structure |
-| CURTIS_CONSOLATION | 8 | Proper consolation brackets |
+| Draw Type                     | Recommended Minimum | Notes                             |
+| ----------------------------- | ------------------- | --------------------------------- |
+| SINGLE_ELIMINATION            | 2                   | Any number works                  |
+| DOUBLE_ELIMINATION            | 4                   | 2 players not meaningful          |
+| ROUND_ROBIN                   | 2                   | Any number works                  |
+| ROUND_ROBIN_WITH_PLAYOFF      | 4-6                 | Need enough for groups + playoff  |
+| COMPASS                       | 8                   | Requires proper bracket structure |
+| FEED_IN                       | 4                   | Need losers to feed               |
+| MODIFIED_FEED_IN_CHAMPIONSHIP | 8                   | Complex structure                 |
+| CURTIS_CONSOLATION            | 8                   | Proper consolation brackets       |
 
 ---
 
@@ -227,7 +228,7 @@ Based on draw structure requirements:
 ### When Coercion is Disabled (false)
 
 ```js
-drawTypeCoercion: false
+drawTypeCoercion: false;
 
 // Behavior:
 // - System uses exact draw type specified
@@ -239,8 +240,10 @@ drawTypeCoercion: false
 ### When Coercion is Enabled (true or object)
 
 ```js
-drawTypeCoercion: true  // OR
-drawTypeCoercion: { ROUND_ROBIN_WITH_PLAYOFF: 5 }
+drawTypeCoercion: true; // OR
+drawTypeCoercion: {
+  ROUND_ROBIN_WITH_PLAYOFF: 5;
+}
 
 // Behavior:
 // - System checks participant count
@@ -257,13 +260,15 @@ drawTypeCoercion: { ROUND_ROBIN_WITH_PLAYOFF: 5 }
 
 ```js
 // Policy requires minimum 5 for RR+playoff
-drawTypeCoercion: { ROUND_ROBIN_WITH_PLAYOFF: 5 }
+drawTypeCoercion: {
+  ROUND_ROBIN_WITH_PLAYOFF: 5;
+}
 
 // Request: ROUND_ROBIN_WITH_PLAYOFF with 4 participants
 tournamentEngine.generateDrawDefinition({
   drawType: 'ROUND_ROBIN_WITH_PLAYOFF',
   drawSize: 4,
-  eventId: 'event-1'
+  eventId: 'event-1',
 });
 
 // Result: Coerced to ROUND_ROBIN (simpler)
@@ -274,13 +279,15 @@ tournamentEngine.generateDrawDefinition({
 
 ```js
 // Policy requires minimum 5
-drawTypeCoercion: { ROUND_ROBIN_WITH_PLAYOFF: 5 }
+drawTypeCoercion: {
+  ROUND_ROBIN_WITH_PLAYOFF: 5;
+}
 
 // Request: ROUND_ROBIN_WITH_PLAYOFF with 5 participants
 tournamentEngine.generateDrawDefinition({
   drawType: 'ROUND_ROBIN_WITH_PLAYOFF',
   drawSize: 5,
-  eventId: 'event-1'
+  eventId: 'event-1',
 });
 
 // Result: ROUND_ROBIN_WITH_PLAYOFF as requested
@@ -291,13 +298,13 @@ tournamentEngine.generateDrawDefinition({
 
 ```js
 // No coercion
-drawTypeCoercion: false
+drawTypeCoercion: false;
 
 // Request: ROUND_ROBIN_WITH_PLAYOFF with 2 participants
 tournamentEngine.generateDrawDefinition({
   drawType: 'ROUND_ROBIN_WITH_PLAYOFF',
   drawSize: 2,
-  eventId: 'event-1'
+  eventId: 'event-1',
 });
 
 // Result: ROUND_ROBIN_WITH_PLAYOFF as requested (even though impractical)
@@ -314,10 +321,10 @@ tournamentEngine.attachPolicies({
   policyDefinitions: {
     [POLICY_TYPE_DRAWS]: {
       drawTypeCoercion: {
-        ROUND_ROBIN_WITH_PLAYOFF: 8
-      }
-    }
-  }
+        ROUND_ROBIN_WITH_PLAYOFF: 8,
+      },
+    },
+  },
 });
 
 // Consolation event: Be flexible
@@ -325,11 +332,11 @@ tournamentEngine.attachPolicies({
   policyDefinitions: {
     [POLICY_TYPE_DRAWS]: {
       drawTypeCoercion: {
-        ROUND_ROBIN_WITH_PLAYOFF: 4  // Smaller groups OK
-      }
-    }
+        ROUND_ROBIN_WITH_PLAYOFF: 4, // Smaller groups OK
+      },
+    },
   },
-  eventId: 'consolation-event-id'
+  eventId: 'consolation-event-id',
 });
 ```
 
@@ -370,7 +377,7 @@ import {
   COMPASS,
   FEED_IN,
   MODIFIED_FEED_IN_CHAMPIONSHIP,
-  CURTIS_CONSOLATION
+  CURTIS_CONSOLATION,
 } from 'tods-competition-factory';
 
 // Use constants in policy configuration
@@ -378,8 +385,8 @@ const policy = {
   [POLICY_TYPE_DRAWS]: {
     drawTypeCoercion: {
       [ROUND_ROBIN_WITH_PLAYOFF]: 5,
-      [COMPASS]: 8
-    }
-  }
+      [COMPASS]: 8,
+    },
+  },
 };
 ```

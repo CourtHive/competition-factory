@@ -707,7 +707,7 @@ engine.publishEventSeeding({
 });
 ```
 
-### Examples
+### publishEventSeeding Examples
 
 #### Publish All Seeding
 
@@ -767,7 +767,7 @@ engine.publishOrderOfPlay({
 });
 ```
 
-### Examples
+### publishOrderOfPlay Examples
 
 #### Publish All Scheduled MatchUps
 
@@ -803,7 +803,7 @@ engine.publishOrderOfPlay({
 });
 ```
 
-#### Publish with Embargo
+#### publishOrderOfPlay with Embargo
 
 ```js
 // Schedule becomes visible after 6pm the evening before
@@ -857,7 +857,7 @@ engine.publishParticipants({
 });
 ```
 
-### Examples
+### publishParticipants Examples
 
 #### Publish Participants
 
@@ -865,7 +865,7 @@ engine.publishParticipants({
 engine.publishParticipants();
 ```
 
-#### Publish with Embargo
+#### publishParticipants with Embargo
 
 ```js
 // Participant list visible after 9am on June 10th
@@ -913,7 +913,7 @@ engine.unPublishEvent({
 });
 ```
 
-### Examples
+### unPublishEvent Examples
 
 ```js
 // Unpublish event (removes timeItems)
@@ -947,7 +947,7 @@ engine.unPublishEventSeeding({
 });
 ```
 
-### Examples
+### unPublishEventSeeding Examples
 
 #### Unpublish All Seeding
 
@@ -982,7 +982,7 @@ engine.unPublishOrderOfPlay({
 });
 ```
 
-### Examples
+### unPublishOrderOfPlay Examples
 
 ```js
 // Unpublish all schedules
@@ -1013,7 +1013,7 @@ engine.unPublishParticipants({
 });
 ```
 
-### Examples
+### unPublishParticipants Examples
 
 ```js
 // Unpublish participants

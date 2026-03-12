@@ -7,6 +7,7 @@ The **Voluntary Consolation Policy** (`POLICY_TYPE_VOLUNTARY_CONSOLATION`) contr
 **Policy Type:** `voluntaryConsolation`
 
 **When to Use:**
+
 - Limiting consolation entry to early-round losers
 - Preventing strong players from dominating consolation
 - Setting maximum wins before consolation ineligibility  

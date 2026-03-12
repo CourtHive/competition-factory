@@ -8,14 +8,14 @@ The **Mocks Governor** provides methods for anonymizing and modifying tournament
 
 Replace personal information in a tournament record with generated mock data while preserving tournament structure.
 
-### Purpose
+### Anonymization Purpose
 
 - **Privacy compliance** - Remove PII before sharing tournament data
 - **Test data creation** - Create realistic test data from production tournaments
 - **Public examples** - Share tournament structures without exposing participant identities
 - **Debugging** - Anonymize production data for support investigations
 
-### Basic Usage
+### Anonymization Basic Usage
 
 ```js
 const anonymizedRecord = mocksGovernor.anonymizeTournamentRecord({
@@ -23,7 +23,7 @@ const anonymizedRecord = mocksGovernor.anonymizeTournamentRecord({
 });
 ```
 
-### Complete Options
+### Anonymization Complete Options
 
 ```js
 const anonymizedRecord = mocksGovernor.anonymizeTournamentRecord({
@@ -145,7 +145,7 @@ const anonymized = mocksGovernor.anonymizeTournamentRecord({
 // Useful for testing while maintaining recognizable names
 ```
 
-### Notes
+### Anonymization Notes
 
 - **Deterministic generation:** Using the same `personIds` array produces the same mock names
 - **Referential integrity:** All participantIds and personIds are updated consistently throughout the tournament
@@ -277,7 +277,7 @@ Add events and draws to an existing tournament record. This is useful for:
 - **Testing dynamic** tournament modifications
 - **Simulating** real-world tournament expansion
 
-### Purpose
+### Modification Purpose
 
 Unlike `generateTournamentRecord()` which creates a complete tournament from scratch, `modifyTournamentRecord()` adds to an existing tournament while:
 
@@ -286,7 +286,7 @@ Unlike `generateTournamentRecord()` which creates a complete tournament from scr
 - Preserving existing events and draws
 - Updating tournament structure incrementally
 
-### Basic Usage
+### Modification Basic Usage
 
 ```js
 // Start with existing tournament
@@ -303,7 +303,7 @@ mocksGovernor.modifyTournamentRecord({
 // Tournament now has both singles and doubles events
 ```
 
-### Complete Options
+### Modification Complete Options
 
 ```js
 mocksGovernor.modifyTournamentRecord({
@@ -473,7 +473,7 @@ mocksGovernor.modifyTournamentRecord({
 // Weekend tournament complete with progressive additions
 ```
 
-### Notes
+### Modification Notes
 
 - **In-place modification:** The supplied `tournamentRecord` is directly modified (not copied)
 - **Participant reuse:** Existing participants are used when possible

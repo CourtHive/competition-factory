@@ -228,7 +228,7 @@ These ~51 methods are called directly on `tournamentEngine` for read-only operat
 | [getParticipantStats](/docs/governors/query-governor#getparticipantstats)       | Query       | Get statistics for a participant         |
 | [getPredictiveAccuracy](/docs/governors/matchup-governor#getpredictiveaccuracy) | MatchUp     | Get predictive accuracy metrics          |
 
-### Draw Generation
+### Query Draw Generation
 
 | Method                                                                                         | Governor   | Context                                          |
 | ---------------------------------------------------------------------------------------------- | ---------- | ------------------------------------------------ |
@@ -239,7 +239,7 @@ These ~51 methods are called directly on `tournamentEngine` for read-only operat
 | [generateSeedingScaleItems](/docs/governors/generation-governor#generateseedingscaleitems)     | Generation | Generate seeding scale items                     |
 | [drawMatic](/docs/governors/generation-governor#drawmatic)                                     | Generation | DrawMatic draw generation                        |
 
-### Positioning
+### Query Positioning
 
 | Method                                                                              | Governor | Context                          |
 | ----------------------------------------------------------------------------------- | -------- | -------------------------------- |
@@ -248,7 +248,7 @@ These ~51 methods are called directly on `tournamentEngine` for read-only operat
 | [getSeedsCount](/docs/governors/draws-governor#getseedscount)                       | Draws    | Get the number of seeds          |
 | [getLuckyDrawRoundStatus](/docs/governors/draws-governor)                           | Draws    | Get status of lucky draw rounds  |
 
-### Scheduling
+### Query Scheduling
 
 | Method                                                                                 | Governor   | Context                    |
 | -------------------------------------------------------------------------------------- | ---------- | -------------------------- |
@@ -274,13 +274,13 @@ These ~51 methods are called directly on `tournamentEngine` for read-only operat
 | [getPolicyDefinitions](/docs/governors/policy-governor#getpolicydefinitions) | Policy   | Get all policy definitions |
 | [findExtension](/docs/governors/query-governor#findextension)                | Query    | Find an extension by name  |
 
-### Publishing
+### Query Publishing
 
 | Method                                                                 | Governor   | Context                   |
 | ---------------------------------------------------------------------- | ---------- | ------------------------- |
 | [getPublishState](/docs/governors/publishing-governor#getpublishstate) | Publishing | Get current publish state |
 
-### Scoring
+### Query Scoring
 
 | Method                                                                | Governor | Context                                               |
 | --------------------------------------------------------------------- | -------- | ----------------------------------------------------- |
@@ -415,7 +415,7 @@ The server uses a focused subset of factory methods for mutation execution and q
 | [generateTournamentRecord](/docs/governors/mocks-governor#generatetournamentrecord) | Mocks                                     | Generate mock tournaments for testing |
 | reportGovernor methods                                                              | [Report](/docs/governors/report-governor) | Merged into query engine              |
 
-### globalState
+### Server globalState
 
 | Method                                                | Documentation | Context                                |
 | ----------------------------------------------------- | ------------- | -------------------------------------- |
@@ -424,7 +424,7 @@ The server uses a focused subset of factory methods for mutation execution and q
 | [setGlobalSubscriptions](/docs/engines/subscriptions) | Subscriptions | Register global subscriptions          |
 | [setSubscriptions](/docs/engines/subscriptions)       | Subscriptions | Register topic subscriptions           |
 
-### tools
+### Server tools
 
 | Method                          | Documentation | Context            |
 | ------------------------------- | ------------- | ------------------ |

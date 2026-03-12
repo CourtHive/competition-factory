@@ -86,7 +86,7 @@ Same reason. `getPublishState` reports what the publish configuration IS, not wh
 
 There is no background process or cron job. `isEmbargoed()` compares against `Date.now()` at query time. This means visibility changes automatically when the clock passes the embargo timestamp.
 
-## Tests
+## Embargo Tests
 
 **File:** `src/tests/mutations/publishing/embargoEnforcement.test.ts`
 
@@ -147,7 +147,7 @@ scheduledRounds?: { [roundNumber: number]: ScheduledRoundDetail };
 
 **Interaction:** `roundLimit` is the ceiling. `scheduledRounds` provides overrides within the ceiling. When `scheduledRounds` is absent, all rounds up to `roundLimit` appear.
 
-### Tests
+### Scheduled Rounds Tests
 
 **File:** `src/tests/mutations/publishing/scheduledRoundsPublishing.test.ts`
 

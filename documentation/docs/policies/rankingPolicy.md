@@ -138,7 +138,7 @@ Values in `finishingPositionRanges` can be expressed in several forms:
 { 1: 1000 }
 ```
 
-### Level-Keyed
+### Position Level-Keyed
 
 ```js
 { 1: { level: { 1: 3000, 2: 1650, 3: 990 } } }
@@ -184,7 +184,7 @@ Per-win points are awarded for each match won, typically as an alternative to po
 }
 ```
 
-### Level-Keyed
+### Per-Win Level-Keyed
 
 ```js
 {

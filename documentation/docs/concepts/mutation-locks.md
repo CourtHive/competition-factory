@@ -120,22 +120,22 @@ engine.addMutationLock({
 
 Each lock targets a specific mutation domain. Only mutations mapped to that domain are affected — query methods are never blocked.
 
-| Scope | Governor | Blocked Operations |
-|-------|----------|--------------------|
-| `SCHEDULING` | scheduleGovernor | scheduleMatchUps, assignMatchUpCourt, clearScheduledMatchUps, ... |
-| `SCORING` | matchUpGovernor, scoreGovernor | setMatchUpStatus, setMatchUpState, resetScorecard, addPoint, ... |
-| `DRAWS` | drawsGovernor | setPositionAssignments, resetDrawDefinition, assignDrawPosition, generateDrawDefinition, ... |
-| `MATCHUPS` | matchUpGovernor | assignMatchUpSideParticipant, substituteParticipant, setMatchUpFormat, ... |
-| `PARTICIPANTS` | participantGovernor | addParticipants, modifyParticipant, deleteParticipants, ... |
-| `ENTRIES` | entriesGovernor | modifyEventEntries, addEventEntries, promoteAlternate, ... |
-| `EVENTS` | eventGovernor | addEvent, deleteEvents, deleteDrawDefinitions, modifyEvent, ... |
-| `VENUES` | venueGovernor | addVenue, deleteVenue, addCourt, modifyCourt, ... |
-| `PUBLISHING` | publishingGovernor | publishEvent, unPublishEvent, publishOrderOfPlay, ... |
-| `TOURNAMENT` | tournamentGovernor | setTournamentName, setTournamentDates, addTournamentExtension, ... |
-| `TIE_FORMAT` | tieFormatGovernor | modifyTieFormat, addCollectionDefinition, ... |
-| `POLICY` | policyGovernor | attachPolicies, removePolicy |
-| `COMPETITION` | competitionGovernor | linkTournaments, unlinkTournament, ... |
-| `RANKING` | rankingGovernor | applyTournamentRankingPoints |
+| Scope          | Governor                       | Blocked Operations                                                                           |
+| -------------- | ------------------------------ | -------------------------------------------------------------------------------------------- |
+| `SCHEDULING`   | scheduleGovernor               | scheduleMatchUps, assignMatchUpCourt, clearScheduledMatchUps, ...                            |
+| `SCORING`      | matchUpGovernor, scoreGovernor | setMatchUpStatus, setMatchUpState, resetScorecard, addPoint, ...                             |
+| `DRAWS`        | drawsGovernor                  | setPositionAssignments, resetDrawDefinition, assignDrawPosition, generateDrawDefinition, ... |
+| `MATCHUPS`     | matchUpGovernor                | assignMatchUpSideParticipant, substituteParticipant, setMatchUpFormat, ...                   |
+| `PARTICIPANTS` | participantGovernor            | addParticipants, modifyParticipant, deleteParticipants, ...                                  |
+| `ENTRIES`      | entriesGovernor                | modifyEventEntries, addEventEntries, promoteAlternate, ...                                   |
+| `EVENTS`       | eventGovernor                  | addEvent, deleteEvents, deleteDrawDefinitions, modifyEvent, ...                              |
+| `VENUES`       | venueGovernor                  | addVenue, deleteVenue, addCourt, modifyCourt, ...                                            |
+| `PUBLISHING`   | publishingGovernor             | publishEvent, unPublishEvent, publishOrderOfPlay, ...                                        |
+| `TOURNAMENT`   | tournamentGovernor             | setTournamentName, setTournamentDates, addTournamentExtension, ...                           |
+| `TIE_FORMAT`   | tieFormatGovernor              | modifyTieFormat, addCollectionDefinition, ...                                                |
+| `POLICY`       | policyGovernor                 | attachPolicies, removePolicy                                                                 |
+| `COMPETITION`  | competitionGovernor            | linkTournaments, unlinkTournament, ...                                                       |
+| `RANKING`      | rankingGovernor                | applyTournamentRankingPoints                                                                 |
 
 Methods not in the scope map (queries, lock management methods) are **never blocked**.
 
@@ -217,13 +217,13 @@ Acquires a mutation lock on a tournament element. Automatically enables the muta
 
 ```js
 const { success, lockId } = engine.addMutationLock({
-  scope,      // required - MutationLockScope (e.g. 'SCHEDULING', 'SCORING')
-  lockToken,  // required - opaque string token
-  expiresAt,  // optional - ISO 8601 UTC string or null for permanent (default: null)
-  methods,    // optional - string[] to restrict lock to specific methods within scope
-  drawId,     // optional - lock on specific draw
-  eventId,    // optional - lock on specific event
-  venueId,    // optional - lock on specific venue
+  scope, // required - MutationLockScope (e.g. 'SCHEDULING', 'SCORING')
+  lockToken, // required - opaque string token
+  expiresAt, // optional - ISO 8601 UTC string or null for permanent (default: null)
+  methods, // optional - string[] to restrict lock to specific methods within scope
+  drawId, // optional - lock on specific draw
+  eventId, // optional - lock on specific event
+  venueId, // optional - lock on specific venue
   // no drawId/eventId/venueId = tournament-level lock
 });
 ```
@@ -238,13 +238,13 @@ Releases a mutation lock. Requires the matching `lockToken` unless `forceRelease
 
 ```js
 const { success } = engine.removeMutationLock({
-  lockId,       // optional - identify lock by ID
-  scope,        // optional - identify lock by scope (alternative to lockId)
-  lockToken,    // required unless forceRelease
+  lockId, // optional - identify lock by ID
+  scope, // optional - identify lock by scope (alternative to lockId)
+  lockToken, // required unless forceRelease
   forceRelease, // optional - bypass token check (for admin override)
-  drawId,       // optional - target element
-  eventId,      // optional - target element
-  venueId,      // optional - target element
+  drawId, // optional - target element
+  eventId, // optional - target element
+  venueId, // optional - target element
 });
 ```
 
@@ -329,12 +329,12 @@ The `mutationLocks` extension is classified as an internal extension and is excl
 
 ## Error Constants
 
-| Constant | Code | When |
-|----------|------|------|
-| `MUTATION_LOCKED` | `ERR_MUTATION_LOCKED` | Mutation blocked by an active lock (no token or wrong token) |
-| `MUTATION_LOCK_EXISTS` | `ERR_EXISTING_MUTATION_LOCK` | Attempting to add a lock on a scope that already has one with a different token |
-| `MUTATION_LOCK_NOT_FOUND` | `ERR_NOT_FOUND_MUTATION_LOCK` | Attempting to remove a lock that doesn't exist |
-| `UNAUTHORIZED_LOCK_OPERATION` | `ERR_UNAUTHORIZED_LOCK_OPERATION` | Attempting to remove a lock with the wrong token |
+| Constant                      | Code                              | When                                                                            |
+| ----------------------------- | --------------------------------- | ------------------------------------------------------------------------------- |
+| `MUTATION_LOCKED`             | `ERR_MUTATION_LOCKED`             | Mutation blocked by an active lock (no token or wrong token)                    |
+| `MUTATION_LOCK_EXISTS`        | `ERR_EXISTING_MUTATION_LOCK`      | Attempting to add a lock on a scope that already has one with a different token |
+| `MUTATION_LOCK_NOT_FOUND`     | `ERR_NOT_FOUND_MUTATION_LOCK`     | Attempting to remove a lock that doesn't exist                                  |
+| `UNAUTHORIZED_LOCK_OPERATION` | `ERR_UNAUTHORIZED_LOCK_OPERATION` | Attempting to remove a lock with the wrong token                                |
 
 ---
 

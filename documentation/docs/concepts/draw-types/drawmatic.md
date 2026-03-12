@@ -33,6 +33,7 @@ For each round, DrawMatic:
 When `dynamicRatings: true`, DrawMatic calculates new ratings after each round based on match results. Ratings are stored as `{scaleName}.DYNAMIC` scale values (e.g., `WTN.DYNAMIC`).
 
 The dynamic rating system:
+
 - Processes completed matchups from the previous round
 - Applies an ELO-style calculation via `calculateNewRatings()`
 - Returns `modifiedScaleValues` mapping participantId to new rating
@@ -95,17 +96,17 @@ const result = engine.drawMatic({
 
 ### Related Methods
 
-| Method | Purpose |
-|--------|---------|
+| Method                   | Purpose                                                    |
+| ------------------------ | ---------------------------------------------------------- |
 | `generateDrawMaticRound` | Generate a single round (called internally by `drawMatic`) |
-| `addAdHocMatchUps` | Persist generated matchups to draw structure |
-| `deleteAdHocMatchUps` | Remove matchups from structure |
-| `generateAdHocMatchUps` | Create empty matchup shells (manual pairing) |
-| `generateAdHocRounds` | Create empty rounds without DrawMatic |
-| `shiftAdHocRounds` | Reorder rounds |
-| `swapAdHocRounds` | Swap round matchups |
-| `adHocPositionSwap` | Swap participants within a matchup |
-| `addDynamicRatings` | Persist dynamic rating updates |
+| `addAdHocMatchUps`       | Persist generated matchups to draw structure               |
+| `deleteAdHocMatchUps`    | Remove matchups from structure                             |
+| `generateAdHocMatchUps`  | Create empty matchup shells (manual pairing)               |
+| `generateAdHocRounds`    | Create empty rounds without DrawMatic                      |
+| `shiftAdHocRounds`       | Reorder rounds                                             |
+| `swapAdHocRounds`        | Swap round matchups                                        |
+| `adHocPositionSwap`      | Swap participants within a matchup                         |
+| `addDynamicRatings`      | Persist dynamic rating updates                             |
 
 ## Draw Creation
 

@@ -63,7 +63,7 @@ const standardFeedIn = {
 
 **Visual Comparison:**
 
-```
+```text
 FEED_IN_CHAMPIONSHIP:
 Main Draw                    Consolation Draw
 Round 1 losers ───────────→  Consolation Round 1
@@ -71,7 +71,6 @@ Round 2 losers ───────────→  Consolation Round 2
 Round 3 losers ───────────→  Consolation Round 3
 Semifinal losers ─────────→  Consolation Round 4
 Final loser      (2nd place, no consolation)
-
 
 FIRST_MATCH_LOSER_CONSOLATION (FMLC):
 Main Draw                    Consolation Draw
@@ -86,7 +85,6 @@ CRITICAL: If player had BYE in R1, their first MATCH is R2
          If player played in R1 and wins, then loses R2
          → R2 loss is NOT first match → eliminated, no consolation
 
-
 FIRST_ROUND_LOSER_CONSOLATION (FRLC):
 Main Draw                    Consolation Draw
 Round 1 losers ──────────→   Consolation
@@ -94,7 +92,6 @@ Round 2+ losers              (Eliminated, no consolation)
 
 CRITICAL: ONLY round 1 losers go to consolation
          Even if player had R1 BYE, they don't feed until they actually LOSE
-
 
 16-Player FMLC with 2 BYEs:
 Round 1: 7 matches (14 players) → 7 losers to consolation
@@ -105,12 +102,10 @@ Round 2: BYE holders play their FIRST MATCH
 Round 2: R1 winners play their SECOND MATCH
          → If they lose: eliminated (NOT first match loser)
 
-
 4-Player Draw with feedFromMainFinal: false (skipRounds = 1):
 Players A, B, C, D
 ├─ MAIN: Only final (A vs B)
 └─ CONSOLATION: C and D (didn't play round 1)
-
 
 4-Player Draw with feedFromMainFinal: true (skipRounds = 0):
 Players A, B, C, D
@@ -366,7 +361,7 @@ const conservativeFeed = {
 
 **Visual Explanation:**
 
-```
+```text
 Consolation Positions: 1, 2, 3, 4, 5, 6, 7, 8
 
 TOP_DOWN feeding:
@@ -990,7 +985,7 @@ const { drawId } = tournamentEngine.generateDrawDefinition({
 
 **TOP_DOWN vs BOTTOM_UP** affects matchup spacing:
 
-```
+```text
 Consolation Bracket (8 positions):
 
 TOP_DOWN:                  BOTTOM_UP:

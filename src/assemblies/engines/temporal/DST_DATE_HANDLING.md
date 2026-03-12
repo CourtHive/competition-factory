@@ -19,7 +19,7 @@ But `getDate()`, `setDate()`, and other accessors operate in **local time**.
 When DST Spring Forward occurs (e.g. US clocks jump ahead on 2026-03-08), this
 mismatch causes a bug:
 
-```
+```text
 Iteration step:
   internal UTC value = 2026-03-08T00:00:00Z
   local time         = 2026-03-07T19:00:00-05:00  (EST, before spring forward)

@@ -1213,7 +1213,7 @@ const { scaledEntries } = engine.getScaledEntries({
 });
 ```
 
-### Parameters
+### getScaledEntries Parameters
 
 **eventId** - _string_ (optional)
 
@@ -1255,7 +1255,7 @@ const { scaledEntries } = engine.getScaledEntries({
 - Default is `false` (ascending order)
 - Only applies to default sorting (not `scaleSortMethod`)
 
-### Return Value
+### getScaledEntries Return Value
 
 ```js
 {

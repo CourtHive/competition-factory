@@ -84,7 +84,7 @@ flowchart TD
 
 5. **Merge** — Adjacent segments with the same status are merged into a single segment, reducing the total segment count.
 
-### Key Interfaces
+### Rail Derivation Interfaces
 
 ```ts
 interface RailSegment extends TimeRange {
@@ -124,7 +124,7 @@ Derived Rail Segments:
 
 After merge: segments at `[09:00–10:00]` and `[10:00–11:00]` both have status `MAINTENANCE`, so they merge into `[09:00–11:00] MAINTENANCE`.
 
-### Key Functions
+### Rail Derivation Functions
 
 ```ts
 // Core derivation — called by TemporalEngine.getCourtRail()
@@ -142,7 +142,7 @@ mergeAdjacentSegments(segments: RailSegment[]): RailSegment[]
 
 Capacity curves aggregate rail data across all courts to show total availability over time — how many courts are available, soft-blocked, or hard-blocked at each time point.
 
-### Key Interfaces
+### Capacity Curve Interfaces
 
 ```ts
 interface CapacityPoint {
@@ -210,7 +210,7 @@ compareCapacityCurves(baseline: CapacityCurve, modified: CapacityCurve): Capacit
 
 Collision detection prevents blocks from overlapping during interactive drag-and-drop operations. The engine uses **half-open intervals** `[start, end)` — a block occupying `[09:00, 10:00)` does NOT overlap with a block at `[10:00, 11:00)`. Adjacency is not overlap.
 
-### Key Functions
+### Collision Detection Functions
 
 ```ts
 // Check if two time ranges overlap (half-open interval semantics)
@@ -254,7 +254,7 @@ const result = clampDragToCollisions(540, 660, existingBlocks);
 
 All times in the engine snap to a configurable granularity (default 15 minutes). The `timeGranularity` module provides utilities for snapping and iterating.
 
-### Key Functions
+### Time Granularity Functions
 
 ```ts
 // Convert 'HH:MM' to minutes since midnight

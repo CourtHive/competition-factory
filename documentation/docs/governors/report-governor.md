@@ -17,6 +17,7 @@ Generates comprehensive statistics for team participants, including match outcom
 **Purpose:** Analyze team performance with detailed win/loss statistics and competitive metrics. Particularly useful for team events to understand performance patterns and competitive balance.
 
 **When to Use:**
+
 - Building team statistics dashboards
 - Analyzing team performance across tournaments
 - Comparing head-to-head team records
@@ -24,6 +25,7 @@ Generates comprehensive statistics for team participants, including match outcom
 - Evaluating competitive balance in team competitions
 
 **Parameters:**
+
 ```ts
 {
   tournamentRecord: Tournament;           // Required tournament record
@@ -38,6 +40,7 @@ Generates comprehensive statistics for team participants, including match outcom
 ```
 
 **Returns:**
+
 ```ts
 {
   success: boolean;
@@ -91,6 +94,7 @@ type StatCounters = {
 ```
 
 **Examples:**
+
 ```js
 import { tournamentEngine } from 'tods-competition-factory';
 
@@ -147,6 +151,7 @@ const result = tournamentEngine.getParticipantStats({
 ```
 
 **Notes:**
+
 - Primarily designed for team events (TEAM_MATCHUP types)
 - Automatically filters to TEAM_PARTICIPANT types if no specific IDs provided
 - Competitive profiles categorize matches as decisive, routine, or competitive based on score patterns
@@ -165,6 +170,7 @@ Generates detailed reports about participant entry statuses across all events an
 **Purpose:** Track participant entries, withdrawals, and seeding across all tournament events and draws. Essential for tournament administration and entry list management.
 
 **When to Use:**
+
 - Generating entry list reports for tournament staff
 - Tracking wildcards, qualifiers, and direct acceptances
 - Monitoring withdrawals and their impact
@@ -173,6 +179,7 @@ Generates detailed reports about participant entry statuses across all events an
 - Reporting on WTN/UTR ratings at entry time
 
 **Parameters:**
+
 ```ts
 {
   tournamentRecord: Tournament;  // Required tournament record
@@ -180,6 +187,7 @@ Generates detailed reports about participant entry statuses across all events an
 ```
 
 **Returns:**
+
 ```ts
 {
   eventReports: {
@@ -237,6 +245,7 @@ Generates detailed reports about participant entry statuses across all events an
 ```
 
 **Examples:**
+
 ```js
 import { tournamentEngine } from 'tods-competition-factory';
 
@@ -294,6 +303,7 @@ console.log(`Total withdrawals across tournament: ${reports.withdrewCount}`);
 ```
 
 **Notes:**
+
 - Only includes participants who were actually placed in draws (non-team events)
 - Entry statuses include: DIRECT_ACCEPTANCE, QUALIFIER, WILDCARD, LUCKY_LOSER, ALTERNATE, WITHDRAWN, etc.
 - WTN (World Tennis Number) values included if available on participants
@@ -312,6 +322,7 @@ Generates comprehensive reports about draw structures including size, format, pa
 **Purpose:** Analyze draw structures for tournament reporting, auditing, and administration. Provides detailed breakdowns of each draw structure including participant composition, seeding, and any manual interventions.
 
 **When to Use:**
+
 - Generating tournament summary reports
 - Auditing draw integrity and manipulations
 - Analyzing seeding basis and methodology
@@ -321,6 +332,7 @@ Generates comprehensive reports about draw structures including size, format, pa
 - Monitoring draw deletions and regenerations
 
 **Parameters:**
+
 ```ts
 {
   tournamentRecord: Tournament;           // Required tournament record
@@ -335,6 +347,7 @@ Generates comprehensive reports about draw structures including size, format, pa
 ```
 
 **Returns:**
+
 ```ts
 {
   eventStructureReports: {
@@ -433,6 +446,7 @@ Generates comprehensive reports about draw structures including size, format, pa
 ```
 
 **Examples:**
+
 ```js
 import { tournamentEngine } from 'tods-competition-factory';
 
@@ -511,6 +525,7 @@ reports.flightReports.forEach(flight => {
 ```
 
 **Notes:**
+
 - `firstStageSequenceOnly: true` (default) excludes consolation and playoff structures
 - Flight numbers extracted from FLIGHT_PROFILE extension if present
 - Seeding basis tracked from ADD_SCALE_ITEMS timeItems
@@ -531,6 +546,7 @@ Generates utilization reports for venues showing court availability, scheduled m
 **Purpose:** Analyze venue and court utilization to optimize scheduling, identify capacity issues, and report on facility usage across tournament dates.
 
 **When to Use:**
+
 - Monitoring real-time venue utilization during scheduling
 - Generating post-tournament facility usage reports
 - Identifying over/under-utilized venues and dates
@@ -539,6 +555,7 @@ Generates utilization reports for venues showing court availability, scheduled m
 - Reporting to venue management on court usage
 
 **Parameters:**
+
 ```ts
 {
   tournamentRecords: TournamentRecords;   // Required - can be multiple tournaments
@@ -550,6 +567,7 @@ Generates utilization reports for venues showing court availability, scheduled m
 ```
 
 **Returns:**
+
 ```ts
 {
   venuesReport: Array<{
@@ -569,6 +587,7 @@ Generates utilization reports for venues showing court availability, scheduled m
 ```
 
 **Examples:**
+
 ```js
 import { competitionEngine } from 'tods-competition-factory';
 
@@ -652,6 +671,7 @@ result.venuesReport.forEach(venue => {
 ```
 
 **Notes:**
+
 - Utilization percentage can exceed 100% if matchUps overlap or run past available time slots
 - Available minutes calculated from court dateAvailability timeSlots
 - Scheduled minutes calculated using averageMinutes from matchUp schedules

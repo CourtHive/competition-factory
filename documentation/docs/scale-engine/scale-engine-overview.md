@@ -83,7 +83,7 @@ const rankingList = generateRankingList({
 
 The ScaleEngine follows the Competition Factory pattern where **governors** provide pure functions and **engines** provide stateful facades:
 
-```
+```text
 +------------------------------+
 |         ScaleEngine           |  Stateful facade (setState, methods)
 |  (rankings + ratings)         |

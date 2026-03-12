@@ -500,7 +500,7 @@ const duration =
 
 ## Best Practices
 
-### Score Entry
+### Score Entry Best Practices
 
 - Validate format before entry
 - Check for tiebreak requirements

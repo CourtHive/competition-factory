@@ -113,7 +113,9 @@ The highest level auto-scheduling method is `engine.scheduleProfileRounds`.
 7. Ensure `rounds` specified for `scheduleDate` are sorted as specified
 8. Generate ordered array of `matchUpIds` derived from specified `rounds`
 9. Build up a mapping of `matchUpIds` to `recoveryMinutes` so that `matchUps` with equivalent `averageMatchUpMinutes`
+
    can be block scheduled while still considering varying `recoveryMinutes`
+
 10. Group ordered `matchUpIds` by **averageMatchUpMinutes|periodLength**
 11. Loop through groups of `matchUpIds` ...
 12. Calculate available scheduleTimes, considering court availability, already scheduled matchUps, and `remainingScheduleTimes` from previous iteration

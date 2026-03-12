@@ -192,7 +192,7 @@ Smaller period lengths provide more precise start times but may reduce court uti
 
 **See**: [Automated Scheduling - Period Length](../concepts/automated-scheduling#period-length-scheduling-block-size) for detailed explanation.
 
-#### Examples
+#### scheduleMatchUps Examples
 
 **Basic Scheduling**:
 
@@ -272,7 +272,7 @@ engine.scheduleProfileRounds({
 }
 ```
 
-#### Examples
+#### scheduleProfileRounds Examples
 
 **Schedule All Profile Dates**:
 
@@ -372,7 +372,7 @@ engine.bulkScheduleTournamentMatchUps({
 });
 ```
 
-#### Examples
+#### bulkScheduleTournamentMatchUps Examples
 
 **Same Schedule for All**:
 
@@ -452,7 +452,7 @@ const {
 });
 ```
 
-#### Examples
+#### bulkRescheduleMatchUps Examples
 
 **Delay by One Day**:
 
@@ -552,7 +552,7 @@ engine.clearMatchUpSchedule({
 });
 ```
 
-#### Examples
+#### clearMatchUpSchedule Examples
 
 **Clear All Schedule Attributes**:
 
@@ -589,7 +589,7 @@ engine.clearScheduledMatchUps({
 });
 ```
 
-#### Examples
+#### clearScheduledMatchUps Examples
 
 **Clear Specific Date**:
 

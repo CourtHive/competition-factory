@@ -14,6 +14,7 @@ The `dev` object is primarily intended for developers, tournament directors with
 ## Overview
 
 The browser console interface provides:
+
 - **Direct Engine Access** - Call any factory method directly
 - **Tournament Record Access** - Inspect and modify the current tournament
 - **Method Logging** - Monitor all factory calls and returns
@@ -93,6 +94,7 @@ dev.disableLogging();
 ```
 
 This is incredibly useful for:
+
 - **Learning** - See exactly how TMX uses the factory
 - **Debugging** - Understand what's happening under the hood
 - **Documentation** - Find real-world usage examples
@@ -372,24 +374,28 @@ setupTournament();
 ## Best Practices
 
 ### Safety
+
 - Test on non-production tournaments
 - Make backups before experiments
 - Understand method effects before calling
 - Use result validation
 
 ### Learning
+
 - Enable logging when learning
 - Compare TMX actions to factory calls
 - Try variations of methods
 - Read method documentation
 
 ### Debugging
+
 - Enable logging to trace issues
 - Check method parameters carefully
 - Verify return values
 - Test isolated scenarios
 
 ### Performance
+
 - Disable logging in production
 - Use efficient queries
 - Batch operations when possible

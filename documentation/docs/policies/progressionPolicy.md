@@ -7,6 +7,7 @@ The **Progression Policy** (`POLICY_TYPE_PROGRESSION`) controls automated behavi
 **Policy Type:** `progression`
 
 **When to Use:**
+
 - Automatically placing qualifiers into main draws
 - Controlling BYE propagation in double-exit scenarios
 - Managing qualifier replacement when matchUp outcomes change
@@ -96,6 +97,7 @@ tournamentEngine.attachPolicies({
 ```
 
 **Use Cases:**
+
 - ITF events where first-round walkovers don't award ranking points
 - Tournaments wanting consistent BYE handling
 - Federations with specific walkover policies
@@ -142,6 +144,7 @@ tournamentEngine.attachPolicies({
 ```
 
 **Use Cases:**
+
 - Streamlined tournament operations
 - Events with many qualifiers
 - Automated tournament management systems
