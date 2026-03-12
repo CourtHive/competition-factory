@@ -155,7 +155,7 @@
     "body-parser": "2.2.2",
     "c8": "11.0.0",
     "chalk": "5.6.2",
-    "esbuild": "0.27.3",
+    "esbuild": "0.27.4",
     "eslint": "10.0.3",
     "eslint-plugin-sonarjs": "4.0.2",
     "esm": "3.2.25",
