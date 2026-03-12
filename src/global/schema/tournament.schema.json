@@ -1160,7 +1160,7 @@
           "type": "number"
         },
         "side1PointScore": {
-          "type": "number"
+          "type": ["number", "string"]
         },
         "side2Score": {
           "type": "number"
@@ -1169,7 +1169,7 @@
           "type": "number"
         },
         "side2PointScore": {
-          "type": "number"
+          "type": ["number", "string"]
         },
         "winningSide": {
           "type": "number"

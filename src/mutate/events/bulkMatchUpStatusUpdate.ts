@@ -19,7 +19,7 @@ export function bulkMatchUpStatusUpdate(params) {
 
   const tournamentIds = outcomes.reduce(
     (tournamentIds, outcome) =>
-      !tournamentIds.includes(outcome.tournamentId) ? tournamentIds.concat(outcome.tournamentId) : tournamentIds,
+      tournamentIds.includes(outcome.tournamentId) ? tournamentIds : tournamentIds.concat(outcome.tournamentId),
     [],
   );
 

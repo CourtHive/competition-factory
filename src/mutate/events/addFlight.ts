@@ -1,11 +1,12 @@
-import { decorateResult } from '@Functions/global/decorateResult';
 import { addEventExtension } from '../extensions/addRemoveExtensions';
+import { decorateResult } from '@Functions/global/decorateResult';
 import { getParticipantId } from '@Functions/global/extractors';
 import { getFlightProfile } from '@Query/event/getFlightProfile';
 import { intersection } from '@Tools/arrays';
 import { ensureInt } from '@Tools/ensureInt';
 import { UUID } from '@Tools/UUID';
 
+// constants
 import { EXISTING_FLIGHT, INVALID_VALUES, MISSING_EVENT, MISSING_VALUE } from '@Constants/errorConditionConstants';
 import { FLIGHT_PROFILE } from '@Constants/extensionConstants';
 import { Entry, Event } from '@Types/tournamentTypes';
@@ -43,7 +44,7 @@ export function addFlight({
 
   const flightNumbers =
     flightProfile?.flights
-      ?.map(({ flightNumber }) => !isNaN(flightNumber) && ensureInt(flightNumber))
+      ?.map(({ flightNumber }) => !Number.isNaN(Number(flightNumber)) && ensureInt(flightNumber))
       ?.filter(Boolean) || [];
 
   const flightNumber = Math.max(0, ...flightNumbers) + 1;
@@ -67,7 +68,7 @@ export function addFlight({
   const extension = {
     name: FLIGHT_PROFILE,
     value: {
-      ...(flightProfile || {}),
+      ...flightProfile,
       flights,
     },
   };

@@ -38,11 +38,11 @@ export function submitScoreChange(params?) {
   if (!isValidSet) return { result: false, error: INVALID_SET_NUMBER };
 
   if (winnerChanged) {
-    if (!analysis.isLastSetWithValues) {
+    if (analysis.isLastSetWithValues) {
+      console.log('valid set modification', { modifiedSet });
+    } else {
       console.log('is NOT last set with values');
       console.log('winner changed: all subsequent sets must be removed');
-    } else {
-      console.log('valid set modification', { modifiedSet });
     }
   }
 

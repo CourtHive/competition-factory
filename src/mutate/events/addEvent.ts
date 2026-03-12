@@ -34,7 +34,7 @@ export function addEvent({ suppressNotifications, tournamentRecord, internalUse,
   info?: any;
 } {
   if (!tournamentRecord) return { error: MISSING_TOURNAMENT_RECORD };
-  if (!tournamentRecord.events) tournamentRecord.events = [];
+  tournamentRecord.events ??= [];
   if (!event) return { error: MISSING_EVENT };
 
   // set default startDate, endDate based on tournamentRecord
@@ -88,32 +88,32 @@ export function addEvent({ suppressNotifications, tournamentRecord, internalUse,
     return exists || event.eventId === eventRecord.eventId;
   }, undefined);
 
-  if (!eventExists) {
-    const newEvent = eventRecord as Event;
-    tournamentRecord.events.push(newEvent);
-
-    if (!suppressNotifications) {
-      const { topics } = getTopics();
-      if (topics.includes(ADD_MATCHUPS)) {
-        const matchUps = allEventMatchUps({ event }).matchUps ?? [];
-        addMatchUpsNotice({
-          tournamentId: tournamentRecord?.tournamentId,
-          eventId: event.eventId,
-          matchUps,
-        });
-      }
-
-      const { drawDefinitions, ...rest } = event;
-
-      for (const drawDefinition of drawDefinitions || []) {
-        addDrawNotice({ drawDefinition });
-      }
-
-      addEventNotice({ tournamentId: tournamentRecord?.tournamentId, event: rest });
-    }
-
-    return { ...SUCCESS, event: eventRecord };
-  } else {
+  if (eventExists) {
     return { error: EVENT_EXISTS };
   }
+
+  const newEvent = eventRecord as Event;
+  tournamentRecord.events.push(newEvent);
+
+  if (!suppressNotifications) {
+    const { topics } = getTopics();
+    if (topics.includes(ADD_MATCHUPS)) {
+      const matchUps = allEventMatchUps({ event }).matchUps ?? [];
+      addMatchUpsNotice({
+        tournamentId: tournamentRecord?.tournamentId,
+        eventId: event.eventId,
+        matchUps,
+      });
+    }
+
+    const { drawDefinitions, ...rest } = event;
+
+    for (const drawDefinition of drawDefinitions || []) {
+      addDrawNotice({ drawDefinition });
+    }
+
+    addEventNotice({ tournamentId: tournamentRecord?.tournamentId, event: rest });
+  }
+
+  return { ...SUCCESS, event: eventRecord };
 }
