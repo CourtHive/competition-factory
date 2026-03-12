@@ -42,5 +42,5 @@ The `mocksEngine` generates complete tournament objects, or tournamentRecords, a
 ## Installation
 
 ```bash
-$ pnpm i tods-competition-factory
+pnpm i tods-competition-factory
 ```

@@ -18,7 +18,7 @@ The `maxParticipants` attribute in round robin tally directives implements a uni
 }
 ```
 
-**Behavior:** 
+**Behavior:**
 
 - Rule applies when: `tiedParticipants.length <= maxParticipants`
 - Rule is skipped when: `tiedParticipants.length > maxParticipants`
@@ -77,7 +77,7 @@ This pattern appears universally across sports, with explicit threshold-based ru
 2. If still tied, performance in all group games
 3. Coin toss
 
-**Critical rule:** *"At no time will teams using this formula go back to the two-team tiebreaker."*
+**Critical rule:** _"At no time will teams using this formula go back to the two-team tiebreaker."_
 
 **Source:** [printyourbrackets.com](https://www.printyourbrackets.com/tiebreaker-in-round-robin-tournaments.html)
 
@@ -104,7 +104,7 @@ This pattern appears universally across sports, with explicit threshold-based ru
     { attribute: 'matchUpsPct', idsFilter: true, maxParticipants: 2 },
     { attribute: 'pointsLost', idsFilter: false, reversed: true },
     { attribute: 'pointsDifferential', idsFilter: false },
-  ]
+  ];
 }
 ```
 
@@ -231,10 +231,10 @@ export const POLICY_ROUND_ROBIN_TALLY_TOC = {
     groupOrderKey: 'matchUpsPct',
     tallyDirectives: [
       // Head-to-head ONLY if 2 teams tied
-      { 
-        attribute: 'matchUpsPct', 
-        idsFilter: true, 
-        maxParticipants: 2 
+      {
+        attribute: 'matchUpsPct',
+        idsFilter: true,
+        maxParticipants: 2,
       },
       // Games percentage (all ties)
       { attribute: 'gamesPct', idsFilter: false },
@@ -263,26 +263,26 @@ const hockeyTournamentPolicy = {
     groupOrderKey: 'matchUpsWon',
     tallyDirectives: [
       // Two teams tied: head-to-head
-      { 
-        attribute: 'matchUpsPct', 
-        idsFilter: true, 
-        maxParticipants: 2 
+      {
+        attribute: 'matchUpsPct',
+        idsFilter: true,
+        maxParticipants: 2,
       },
       // Three+ teams tied: goal average among tied teams
-      { 
+      {
         attribute: 'goalAverage', // Custom attribute
-        idsFilter: true  // Among tied teams only
+        idsFilter: true, // Among tied teams only
       },
       // Still tied: overall goal average
-      { 
-        attribute: 'goalAverage', 
-        idsFilter: false 
+      {
+        attribute: 'goalAverage',
+        idsFilter: false,
       },
       // Still tied: fewest penalty minutes
-      { 
-        attribute: 'penaltyMinutes', 
-        idsFilter: false, 
-        reversed: true 
+      {
+        attribute: 'penaltyMinutes',
+        idsFilter: false,
+        reversed: true,
       },
     ],
   },
@@ -300,27 +300,27 @@ const baseballTournamentPolicy = {
     groupOrderKey: 'matchUpsWon',
     tallyDirectives: [
       // Two teams: direct head-to-head
-      { 
-        attribute: 'matchUpsPct', 
-        idsFilter: true, 
-        maxParticipants: 2 
+      {
+        attribute: 'matchUpsPct',
+        idsFilter: true,
+        maxParticipants: 2,
       },
       // Three+: fewest runs allowed among tied teams
-      { 
-        attribute: 'pointsLost', 
-        idsFilter: true, 
-        reversed: true 
+      {
+        attribute: 'pointsLost',
+        idsFilter: true,
+        reversed: true,
       },
       // Run differential (capped) among tied teams
-      { 
-        attribute: 'pointsDifferential', 
-        idsFilter: true 
+      {
+        attribute: 'pointsDifferential',
+        idsFilter: true,
       },
       // Overall runs allowed
-      { 
-        attribute: 'pointsLost', 
-        idsFilter: false, 
-        reversed: true 
+      {
+        attribute: 'pointsLost',
+        idsFilter: false,
+        reversed: true,
       },
     ],
   },
@@ -336,8 +336,8 @@ const baseballTournamentPolicy = {
 **1. Head-to-head rules (idsFilter: true)**
 
 ```javascript
-{ 
-  attribute: 'matchUpsPct', 
+{
+  attribute: 'matchUpsPct',
   idsFilter: true,     // Compare only tied teams
   maxParticipants: 2   // Only when exactly 2 tied
 }
@@ -348,10 +348,10 @@ const baseballTournamentPolicy = {
 **2. Direct comparison attributes**
 
 ```javascript
-{ 
-  attribute: 'matchUpsWon', 
-  idsFilter: true, 
-  maxParticipants: 2 
+{
+  attribute: 'matchUpsWon',
+  idsFilter: true,
+  maxParticipants: 2
 }
 ```
 
@@ -364,9 +364,9 @@ const baseballTournamentPolicy = {
 **1. Percentage-based rules**
 
 ```javascript
-{ 
-  attribute: 'gamesPct', 
-  idsFilter: false 
+{
+  attribute: 'gamesPct',
+  idsFilter: false
   // No maxParticipants needed
 }
 ```
@@ -376,9 +376,9 @@ const baseballTournamentPolicy = {
 **2. Absolute count rules**
 
 ```javascript
-{ 
-  attribute: 'gamesWon', 
-  idsFilter: false 
+{
+  attribute: 'gamesWon',
+  idsFilter: false
   // No maxParticipants needed
 }
 ```
@@ -388,10 +388,10 @@ const baseballTournamentPolicy = {
 **3. Reversed (fewest) rules**
 
 ```javascript
-{ 
-  attribute: 'gamesLost', 
-  idsFilter: false, 
-  reversed: true 
+{
+  attribute: 'gamesLost',
+  idsFilter: false,
+  reversed: true
   // No maxParticipants needed
 }
 ```
@@ -420,9 +420,7 @@ Standings:
 **Without maxParticipants:**
 
 ```javascript
-tallyDirectives: [
-  { attribute: 'matchUpsPct', idsFilter: true }
-]
+tallyDirectives: [{ attribute: 'matchUpsPct', idsFilter: true }];
 
 // All teams: 50% head-to-head (1-1)
 // Cannot break tie → stuck or requires additional logic
@@ -433,15 +431,15 @@ tallyDirectives: [
 ```javascript
 tallyDirectives: [
   { attribute: 'matchUpsPct', idsFilter: true, maxParticipants: 2 },
-  { attribute: 'gamesPct', idsFilter: false }
-]
+  { attribute: 'gamesPct', idsFilter: false },
+];
 
 // 3 teams tied → skip head-to-head
 // Use games percentage:
 // - Team A: 6-2 + 4-6 = 10-8 (55.6%)
 // - Team B: 2-6 + 6-3 = 8-9 (47.1%)
 // - Team C: 3-6 + 6-4 = 9-10 (47.4%)
-// 
+//
 // Result: A (1st), C (2nd), B (3rd) ✓
 ```
 
@@ -521,10 +519,7 @@ it('maxParticipants changes outcomes in circular ties', () => {
 
 ```javascript
 // Line 286-287
-const keepDirective = !(
-  isNumeric(directive.maxParticipants) && 
-  participantIds?.length > directive.maxParticipants
-);
+const keepDirective = !(isNumeric(directive.maxParticipants) && participantIds?.length > directive.maxParticipants);
 ```
 
 **Behavior:**
@@ -547,24 +542,24 @@ const keepDirective = !(
 {
   tallyDirectives: [
     // Stage 1: Direct head-to-head (2 teams only)
-    { 
-      attribute: 'matchUpsPct', 
-      idsFilter: true, 
-      maxParticipants: 2 
+    {
+      attribute: 'matchUpsPct',
+      idsFilter: true,
+      maxParticipants: 2,
     },
-    
+
     // Stage 2: Head-to-head among all tied (3+ teams)
-    { 
-      attribute: 'matchUpsPct', 
-      idsFilter: true 
+    {
+      attribute: 'matchUpsPct',
+      idsFilter: true,
     },
-    
+
     // Stage 3: Overall group performance
-    { 
-      attribute: 'matchUpsPct', 
-      idsFilter: false 
+    {
+      attribute: 'matchUpsPct',
+      idsFilter: false,
     },
-  ]
+  ];
 }
 ```
 
@@ -578,18 +573,18 @@ const keepDirective = !(
 {
   tallyDirectives: [
     // Only use head-to-head if 2-3 teams
-    { 
-      attribute: 'matchUpsPct', 
-      idsFilter: true, 
-      maxParticipants: 3 
+    {
+      attribute: 'matchUpsPct',
+      idsFilter: true,
+      maxParticipants: 3,
     },
-    
+
     // 4+ teams: use games percentage
-    { 
-      attribute: 'gamesPct', 
-      idsFilter: false 
+    {
+      attribute: 'gamesPct',
+      idsFilter: false,
     },
-  ]
+  ];
 }
 ```
 
@@ -603,25 +598,25 @@ const keepDirective = !(
 {
   tallyDirectives: [
     // 2 teams: simple head-to-head
-    { 
-      attribute: 'matchUpsPct', 
-      idsFilter: true, 
-      maxParticipants: 2 
+    {
+      attribute: 'matchUpsPct',
+      idsFilter: true,
+      maxParticipants: 2,
     },
-    
+
     // 3-4 teams: games among tied teams
-    { 
-      attribute: 'gamesPct', 
-      idsFilter: true, 
-      maxParticipants: 4 
+    {
+      attribute: 'gamesPct',
+      idsFilter: true,
+      maxParticipants: 4,
     },
-    
+
     // 5+ teams: overall games
-    { 
-      attribute: 'gamesPct', 
-      idsFilter: false 
+    {
+      attribute: 'gamesPct',
+      idsFilter: false,
     },
-  ]
+  ];
 }
 ```
 
@@ -639,7 +634,7 @@ const keepDirective = !(
   tallyDirectives: [
     { attribute: 'matchUpsPct', idsFilter: true, maxParticipants: 2 },
     { attribute: 'gamesPct', idsFilter: false }, // Fallback
-  ]
+  ];
 }
 
 // ✗ BAD: No fallback if 3+ teams tied
@@ -647,7 +642,7 @@ const keepDirective = !(
   tallyDirectives: [
     { attribute: 'matchUpsPct', idsFilter: true, maxParticipants: 2 },
     // No other rules! What happens with 3+ teams?
-  ]
+  ];
 }
 ```
 
@@ -660,7 +655,7 @@ const myTournamentPolicy = {
   [POLICY_TYPE_ROUND_ROBIN_TALLY]: {
     policyName: 'Spring Championship 2024',
     // Document why maxParticipants is used
-    // "Per tournament rules section 5.2: Head-to-head only applies 
+    // "Per tournament rules section 5.2: Head-to-head only applies
     //  when exactly two teams are tied"
     tallyDirectives: [
       { attribute: 'matchUpsPct', idsFilter: true, maxParticipants: 2 },

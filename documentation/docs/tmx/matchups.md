@@ -145,7 +145,7 @@ tournamentEngine.setMatchUpFormat({
 });
 ```
 
-## Match Formats
+## Match Format Codes
 
 TMX supports flexible match format codes:
 
