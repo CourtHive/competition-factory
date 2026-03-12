@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="generator" content="Docusaurus v3.9.2">
 <title data-rh="true">Automated Scheduling | Competition Factory</title><meta data-rh="true" name="viewport" content="width=device-width,initial-scale=1"><meta data-rh="true" name="twitter:card" content="summary_large_image"><meta data-rh="true" property="og:url" content="https://courthive.github.com/competition-factory/docs/concepts/automated-scheduling"><meta data-rh="true" property="og:locale" content="en"><meta data-rh="true" name="docusaurus_locale" content="en"><meta data-rh="true" name="docsearch:language" content="en"><meta data-rh="true" name="docusaurus_version" content="current"><meta data-rh="true" name="docusaurus_tag" content="docs-default-current"><meta data-rh="true" name="docsearch:version" content="current"><meta data-rh="true" name="docsearch:docusaurus_tag" content="docs-default-current"><meta data-rh="true" property="og:title" content="Automated Scheduling | Competition Factory"><meta data-rh="true" name="description" content="Overview"><meta data-rh="true" property="og:description" content="Overview"><link data-rh="true" rel="icon" href="/competition-factory/img/favicon.ico"><link data-rh="true" rel="canonical" href="https://courthive.github.com/competition-factory/docs/concepts/automated-scheduling"><link data-rh="true" rel="alternate" href="https://courthive.github.com/competition-factory/docs/concepts/automated-scheduling" hreflang="en"><link data-rh="true" rel="alternate" href="https://courthive.github.com/competition-factory/docs/concepts/automated-scheduling" hreflang="x-default"><script data-rh="true" type="application/ld+json">{"@context":"https://schema.org","@type":"BreadcrumbList","itemListElement":[{"@type":"ListItem","position":1,"name":"Automated Scheduling","item":"https://courthive.github.com/competition-factory/docs/concepts/automated-scheduling"}]}</script><link rel="stylesheet" href="/competition-factory/assets/css/styles.683eccaa.css">
-<script src="/competition-factory/assets/js/runtime~main.7f2053da.js" defer="defer"></script>
+<script src="/competition-factory/assets/js/runtime~main.96bc763a.js" defer="defer"></script>
 <script src="/competition-factory/assets/js/main.c46dd1a1.js" defer="defer"></script>
 </head>
 <body class="navigation-with-keyboard">
@@ -73,30 +73,65 @@
 <h3 class="anchor anchorTargetStickyNavbar_h3qY" id="pseudocode">Pseudocode<a href="#pseudocode" class="hash-link" aria-label="Direct link to Pseudocode" title="Direct link to Pseudocode" translate="no">​</a></h3>
 <p>The highest level auto-scheduling method is <code>engine.scheduleProfileRounds</code>.</p>
 <ol>
-<li class="">Validate and filter <code>schedulingProfile</code> dates by specified <code>scheduleDates</code></li>
-<li class="">Construct <a class="" href="/competition-factory/docs/governors/query-governor#getmatchupdependencies"><code>matchUpDependencies</code></a> to ensure matchUps are scheduled before their dependents</li>
-<li class="">Get an array of <strong>inContext</strong> <code>matchUps</code> for all relevant <code>tournamentRecords</code></li>
-<li class="">Retrieve <code>matchUpDailyLimits</code> and <code>personRequests</code></li>
-<li class="">Sort <code>scheduleDates</code> and for each iterate through all venues</li>
-<li class="">Construct hash tables of <code>matchUpNotBeforeTimes</code> and <code>matchUpPotentialParticipantIds</code></li>
-<li class="">Ensure <code>rounds</code> specified for <code>scheduleDate</code> are sorted as specified</li>
-<li class="">Generate ordered array of <code>matchUpIds</code> derived from specified <code>rounds</code></li>
-<li class="">Build up a mapping of <code>matchUpIds</code> to <code>recoveryMinutes</code> so that <code>matchUps</code> with equivalent <code>averageMatchUpMinutes</code>
-can be block scheduled while still considering varying <code>recoveryMinutes</code></li>
-<li class="">Group ordered <code>matchUpIds</code> by <strong>averageMatchUpMinutes|periodLength</strong></li>
-<li class="">Loop through groups of <code>matchUpIds</code> ...</li>
-<li class="">Calculate available scheduleTimes, considering court availability, already scheduled matchUps, and <code>remainingScheduleTimes</code> from previous iteration</li>
-<li class="">Construct per-participant hash tables of <code>matchUps</code> played and <code>timeAfterRecovery</code></li>
-<li class="">Filter out <code>matchUps</code> which are not appropriate for scheduling</li>
-<li class="">Filter out <code>matchUps</code> which include participants who have reached daily limits</li>
-<li class="">Loop through available <code>scheduleTimes</code> and build up mapping of <code>matchUpIds</code> to <code>scheduleTimes</code>
+<li class="">
+<p>Validate and filter <code>schedulingProfile</code> dates by specified <code>scheduleDates</code></p>
+</li>
+<li class="">
+<p>Construct <a class="" href="/competition-factory/docs/governors/query-governor#getmatchupdependencies"><code>matchUpDependencies</code></a> to ensure matchUps are scheduled before their dependents</p>
+</li>
+<li class="">
+<p>Get an array of <strong>inContext</strong> <code>matchUps</code> for all relevant <code>tournamentRecords</code></p>
+</li>
+<li class="">
+<p>Retrieve <code>matchUpDailyLimits</code> and <code>personRequests</code></p>
+</li>
+<li class="">
+<p>Sort <code>scheduleDates</code> and for each iterate through all venues</p>
+</li>
+<li class="">
+<p>Construct hash tables of <code>matchUpNotBeforeTimes</code> and <code>matchUpPotentialParticipantIds</code></p>
+</li>
+<li class="">
+<p>Ensure <code>rounds</code> specified for <code>scheduleDate</code> are sorted as specified</p>
+</li>
+<li class="">
+<p>Generate ordered array of <code>matchUpIds</code> derived from specified <code>rounds</code></p>
+</li>
+<li class="">
+<p>Build up a mapping of <code>matchUpIds</code> to <code>recoveryMinutes</code> so that <code>matchUps</code> with equivalent <code>averageMatchUpMinutes</code></p>
+<p>can be block scheduled while still considering varying <code>recoveryMinutes</code></p>
+</li>
+<li class="">
+<p>Group ordered <code>matchUpIds</code> by <strong>averageMatchUpMinutes|periodLength</strong></p>
+</li>
+<li class="">
+<p>Loop through groups of <code>matchUpIds</code> ...</p>
+</li>
+<li class="">
+<p>Calculate available scheduleTimes, considering court availability, already scheduled matchUps, and <code>remainingScheduleTimes</code> from previous iteration</p>
+</li>
+<li class="">
+<p>Construct per-participant hash tables of <code>matchUps</code> played and <code>timeAfterRecovery</code></p>
+</li>
+<li class="">
+<p>Filter out <code>matchUps</code> which are not appropriate for scheduling</p>
+</li>
+<li class="">
+<p>Filter out <code>matchUps</code> which include participants who have reached daily limits</p>
+</li>
+<li class="">
+<p>Loop through available <code>scheduleTimes</code> and build up mapping of <code>matchUpIds</code> to <code>scheduleTimes</code></p>
 <ul>
 <li class="">Defer scheduling of matchUps where <code>timeAfterRecovery</code> has not been reached</li>
 <li class="">Defer scheduling of matchUps where <code>personRequests</code> include <code>{ requestType: DO_NOT_SCHEDULE }</code> conflicts</li>
 </ul>
 </li>
-<li class="">Group <code>matchUpIds</code> by <strong>eventId|drawId|structureId</strong> and assign <code>scheduleTimes</code> to <code>matchUps</code></li>
-<li class="">Return array of <code>remainingScheduleTimes</code> from current iteration to seed next iteration of virtualCourtBookings</li>
+<li class="">
+<p>Group <code>matchUpIds</code> by <strong>eventId|drawId|structureId</strong> and assign <code>scheduleTimes</code> to <code>matchUps</code></p>
+</li>
+<li class="">
+<p>Return array of <code>remainingScheduleTimes</code> from current iteration to seed next iteration of virtualCourtBookings</p>
+</li>
 </ol></div></article><nav class="docusaurus-mt-lg pagination-nav" aria-label="Docs pages"><a class="pagination-nav__link pagination-nav__link--prev" href="/competition-factory/docs/concepts/scheduling-profile"><div class="pagination-nav__sublabel">Previous</div><div class="pagination-nav__label">Scheduling Profile</div></a><a class="pagination-nav__link pagination-nav__link--next" href="/competition-factory/docs/concepts/pro-scheduling"><div class="pagination-nav__sublabel">Next</div><div class="pagination-nav__label">Pro Scheduling</div></a></nav></div></div><div class="col col--3"><div class="tableOfContents_okOB thin-scrollbar theme-doc-toc-desktop"><ul class="table-of-contents table-of-contents__left-border"><li><a href="#overview" class="table-of-contents__link toc-highlight">Overview</a></li><li><a href="#basic-usage" class="table-of-contents__link toc-highlight">Basic Usage</a></li><li><a href="#period-length-scheduling-block-size" class="table-of-contents__link toc-highlight">Period Length: Scheduling Block Size</a><ul><li><a href="#what-period-length-does" class="table-of-contents__link toc-highlight">What Period Length Does</a></li><li><a href="#choosing-the-right-period-length" class="table-of-contents__link toc-highlight">Choosing the Right Period Length</a></li><li><a href="#examples" class="table-of-contents__link toc-highlight">Examples</a></li><li><a href="#impact-on-scheduling-results" class="table-of-contents__link toc-highlight">Impact on Scheduling Results</a></li><li><a href="#pseudocode" class="table-of-contents__link toc-highlight">Pseudocode</a></li></ul></li></ul></div></div></div></div></main></div></div></div><footer class="theme-layout-footer footer footer--dark"><div class="container container-fluid"><div class="footer__bottom text--center"><div class="footer__copyright">Copyright © 2026 CourtHive</div></div></div></footer></div>
 </body>
 </html>
