@@ -516,14 +516,14 @@ tallyDirectives: [
 
 **When false (default):**
 
-```
+```text
 gamesPct = gamesWon / (gamesWon + gamesLost)
 // Sum of all gamesPct can be > 1.0
 ```
 
 **When true:**
 
-```
+```text
 gamesPct = gamesWon / (total games played by all participants)
 // Sum of all gamesPct = 1.0
 ```
@@ -606,7 +606,7 @@ tallyDirectives: [
 
 **Example scenario:**
 
-```
+```text
 4 participants in round robin (6 total matches):
 - Participant A: 12 games won, 6 games lost
 - Participant B: 10 games won, 8 games lost

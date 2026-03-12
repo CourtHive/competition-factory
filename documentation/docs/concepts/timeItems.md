@@ -448,7 +448,6 @@ Calculate match duration including interruptions:
 
 ```js
 
-
 **API Reference:** [setParticipantScaleItem](/docs/governors/participant-governor#setparticipantscaleitem)
 
 **API Reference:** [getTimeItem](/docs/governors/query-governor#gettimeitem)

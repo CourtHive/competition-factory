@@ -1071,7 +1071,7 @@ engine.resetVoluntaryConsolationStructure({
 
 ---
 
-## resetQualifyingStructure
+## resetQualifyingStructure (with options)
 
 ```js
 engine.resetQualifyingStructure({

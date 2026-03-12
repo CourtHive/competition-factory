@@ -110,7 +110,6 @@ A **court** represents an individual playing surface within a venue. Courts have
 
 ```ts
 
-
 **API Reference:** [modifyVenue](/docs/governors/venue-governor#modifyvenue)
 
 **API Reference:** [deleteVenues](/docs/governors/venue-governor#deletevenues)
@@ -666,7 +665,6 @@ tournamentEngine.addCourts({
 ### Scheduling Across Venues
 
 ```js
-
 
 **API Reference:** [addVenue](/docs/governors/venue-governor#addvenue)
 

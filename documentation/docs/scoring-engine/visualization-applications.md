@@ -124,7 +124,7 @@ The ScoringEngine's combination of state management, undo/redo, and event handle
 
 A typical live scoring app architecture:
 
-```
+```text
 ┌─────────────────────────────┐
 │   Input UI (point buttons)  │
 ├─────────────────────────────┤

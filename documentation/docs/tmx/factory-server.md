@@ -28,7 +28,7 @@ The factory server provides:
 
 ### Local-First Design
 
-```
+```text
 ┌─────────────────────────────────────────────────────┐
 │  TMX Client (Browser)                               │
 │  ┌────────────────────┐   ┌────────────────────┐    │
@@ -165,7 +165,7 @@ tournamentEngine.setMatchUpStatus({ matchUpId, outcome });
 
 #### Master Mode (Default)
 
-```
+```text
 Client is authoritative
 ├─ Makes changes locally first (optimistic)
 ├─ Sends execution queue to server
@@ -175,7 +175,7 @@ Client is authoritative
 
 #### Slave Mode
 
-```
+```text
 Server is authoritative
 ├─ Client requests changes
 ├─ Server validates and applies

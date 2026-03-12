@@ -9,6 +9,7 @@ The `maxParticipants` attribute in round robin tally directives implements a uni
 **Purpose:** Apply a tally directive ONLY when the number of tied participants does not exceed a specified threshold.
 
 **Common usage:**
+
 ```javascript
 {
   attribute: 'matchUpsPct',
@@ -17,7 +18,8 @@ The `maxParticipants` attribute in round robin tally directives implements a uni
 }
 ```
 
-**Behavior:** 
+**Behavior:**
+
 - Rule applies when: `tiedParticipants.length <= maxParticipants`
 - Rule is skipped when: `tiedParticipants.length > maxParticipants`
 
@@ -28,13 +30,15 @@ The `maxParticipants` attribute in round robin tally directives implements a uni
 ### Mathematical Reality: Circular Ties
 
 **With 2 teams tied:**
-```
+
+```text
 Team A beat Team B
 → Clear winner: Team A places higher
 ```
 
 **With 3+ teams tied (circular tie possible):**
-```
+
+```text
 Team A beat Team B (1-0 head-to-head)
 Team B beat Team C (1-0 head-to-head)
 Team C beat Team A (1-0 head-to-head)
@@ -60,6 +64,7 @@ This pattern appears universally across sports, with explicit threshold-based ru
 **Explicitly separate sections:**
 
 **"Two Teams Tied":**
+
 1. Head-to-head result
 2. Most wins
 3. Goal average (goals for divided by goals against)
@@ -67,11 +72,12 @@ This pattern appears universally across sports, with explicit threshold-based ru
 5. Coin toss
 
 **"Three or More Teams Tied":**
+
 1. Performance among tied teams only (wins, goal average)
 2. If still tied, performance in all group games
 3. Coin toss
 
-**Critical rule:** *"At no time will teams using this formula go back to the two-team tiebreaker."*
+**Critical rule:** _"At no time will teams using this formula go back to the two-team tiebreaker."_
 
 **Source:** [printyourbrackets.com](https://www.printyourbrackets.com/tiebreaker-in-round-robin-tournaments.html)
 
@@ -84,19 +90,21 @@ This pattern appears universally across sports, with explicit threshold-based ru
 > "Head-to-head (only when two (2) teams are tied, and only when they have played each other). Once three (3) teams are tied in a pool, then we go to the next tie breakers."
 
 **Tiebreaker sequence:**
+
 1. Head-to-head record (**only when 2 teams tied**)
 2. Runs allowed
 3. Run differential (capped)
 4. Coin flip
 
 **Implementation as policy:**
+
 ```javascript
 {
   tallyDirectives: [
     { attribute: 'matchUpsPct', idsFilter: true, maxParticipants: 2 },
     { attribute: 'pointsLost', idsFilter: false, reversed: true },
     { attribute: 'pointsDifferential', idsFilter: false },
-  ]
+  ];
 }
 ```
 
@@ -109,12 +117,14 @@ This pattern appears universally across sports, with explicit threshold-based ru
 **Separate sections with different procedures:**
 
 **"2 Team Tie Breaker":**
+
 1. Head to head
 2. Fewest runs allowed
 3. Run differential (capped at 7 per game)
 4. Coin flip
 
 **"3 or more Team Tie Breaker":**
+
 1. Head to head among all tied teams
 2. Fewest runs allowed among tied teams
 3. Run differential among tied teams (capped)
@@ -132,9 +142,11 @@ This pattern appears universally across sports, with explicit threshold-based ru
 **Different procedures based on tie size:**
 
 **Two teams tied:**
+
 - Direct head-to-head result determines placement
 
 **Three or more teams tied:**
+
 - Results among tied teams evaluated first
 - Then game/point differentials among tied teams
 - Then overall group performance
@@ -148,12 +160,14 @@ This pattern appears universally across sports, with explicit threshold-based ru
 **Head-to-head conditioned on tie size:**
 
 **Two teams tied:**
+
 1. Head-to-head result
 2. Goal differential
 3. Goals scored
 4. Coin toss
 
 **Three or more teams tied:**
+
 1. Performance among tied teams
 2. Goal differential among tied teams
 3. Overall group statistics
@@ -166,9 +180,11 @@ This pattern appears universally across sports, with explicit threshold-based ru
 **Explicit participant threshold:**
 
 **Two teams tied:**
+
 - Winner of head-to-head match places higher
 
 **Three or more teams tied:**
+
 - Set ratio among tied teams
 - Point ratio among tied teams
 - Overall group performance
@@ -178,22 +194,27 @@ This pattern appears universally across sports, with explicit threshold-based ru
 ### 7. Major Sports Organizations
 
 **FIFA World Cup:**
+
 - 2 teams: Direct head-to-head
 - 3+ teams: Mini-table among tied teams
 
 **UEFA Champions League:**
+
 - 2 teams: Head-to-head points/goal difference
 - 3+ teams: Mini-league calculation
 
 **NFL:**
+
 - 2 teams: Head-to-head record
 - 3+ teams: "Head-to-head sweep" (only if one team beat ALL others)
 
 **USTA Team Tennis:**
+
 - 2 teams: Head-to-head result
 - 3+ teams: Match/set/game percentages among tied teams
 
 **ITF Davis Cup:**
+
 - 2 teams: Direct tie breaker
 - 3+ teams: Results within tied subgroup
 
@@ -210,10 +231,10 @@ export const POLICY_ROUND_ROBIN_TALLY_TOC = {
     groupOrderKey: 'matchUpsPct',
     tallyDirectives: [
       // Head-to-head ONLY if 2 teams tied
-      { 
-        attribute: 'matchUpsPct', 
-        idsFilter: true, 
-        maxParticipants: 2 
+      {
+        attribute: 'matchUpsPct',
+        idsFilter: true,
+        maxParticipants: 2,
       },
       // Games percentage (all ties)
       { attribute: 'gamesPct', idsFilter: false },
@@ -227,6 +248,7 @@ export const POLICY_ROUND_ROBIN_TALLY_TOC = {
 ```
 
 **Behavior:**
+
 - **2 teams tied:** Uses head-to-head record
 - **3+ teams tied:** Skips head-to-head, uses games percentage immediately
 
@@ -241,26 +263,26 @@ const hockeyTournamentPolicy = {
     groupOrderKey: 'matchUpsWon',
     tallyDirectives: [
       // Two teams tied: head-to-head
-      { 
-        attribute: 'matchUpsPct', 
-        idsFilter: true, 
-        maxParticipants: 2 
+      {
+        attribute: 'matchUpsPct',
+        idsFilter: true,
+        maxParticipants: 2,
       },
       // Three+ teams tied: goal average among tied teams
-      { 
+      {
         attribute: 'goalAverage', // Custom attribute
-        idsFilter: true  // Among tied teams only
+        idsFilter: true, // Among tied teams only
       },
       // Still tied: overall goal average
-      { 
-        attribute: 'goalAverage', 
-        idsFilter: false 
+      {
+        attribute: 'goalAverage',
+        idsFilter: false,
       },
       // Still tied: fewest penalty minutes
-      { 
-        attribute: 'penaltyMinutes', 
-        idsFilter: false, 
-        reversed: true 
+      {
+        attribute: 'penaltyMinutes',
+        idsFilter: false,
+        reversed: true,
       },
     ],
   },
@@ -278,27 +300,27 @@ const baseballTournamentPolicy = {
     groupOrderKey: 'matchUpsWon',
     tallyDirectives: [
       // Two teams: direct head-to-head
-      { 
-        attribute: 'matchUpsPct', 
-        idsFilter: true, 
-        maxParticipants: 2 
+      {
+        attribute: 'matchUpsPct',
+        idsFilter: true,
+        maxParticipants: 2,
       },
       // Three+: fewest runs allowed among tied teams
-      { 
-        attribute: 'pointsLost', 
-        idsFilter: true, 
-        reversed: true 
+      {
+        attribute: 'pointsLost',
+        idsFilter: true,
+        reversed: true,
       },
       // Run differential (capped) among tied teams
-      { 
-        attribute: 'pointsDifferential', 
-        idsFilter: true 
+      {
+        attribute: 'pointsDifferential',
+        idsFilter: true,
       },
       // Overall runs allowed
-      { 
-        attribute: 'pointsLost', 
-        idsFilter: false, 
-        reversed: true 
+      {
+        attribute: 'pointsLost',
+        idsFilter: false,
+        reversed: true,
       },
     ],
   },
@@ -312,9 +334,10 @@ const baseballTournamentPolicy = {
 ### ✅ **Use maxParticipants for:**
 
 **1. Head-to-head rules (idsFilter: true)**
+
 ```javascript
-{ 
-  attribute: 'matchUpsPct', 
+{
+  attribute: 'matchUpsPct',
   idsFilter: true,     // Compare only tied teams
   maxParticipants: 2   // Only when exactly 2 tied
 }
@@ -323,11 +346,12 @@ const baseballTournamentPolicy = {
 **Why:** Head-to-head comparison is only meaningful when one team clearly beat the other. With 3+, circular ties are possible.
 
 **2. Direct comparison attributes**
+
 ```javascript
-{ 
-  attribute: 'matchUpsWon', 
-  idsFilter: true, 
-  maxParticipants: 2 
+{
+  attribute: 'matchUpsWon',
+  idsFilter: true,
+  maxParticipants: 2
 }
 ```
 
@@ -338,10 +362,11 @@ const baseballTournamentPolicy = {
 ### ❌ **Don't use maxParticipants for:**
 
 **1. Percentage-based rules**
+
 ```javascript
-{ 
-  attribute: 'gamesPct', 
-  idsFilter: false 
+{
+  attribute: 'gamesPct',
+  idsFilter: false
   // No maxParticipants needed
 }
 ```
@@ -349,10 +374,11 @@ const baseballTournamentPolicy = {
 **Why:** Percentages work equally well with 2 or 200 teams.
 
 **2. Absolute count rules**
+
 ```javascript
-{ 
-  attribute: 'gamesWon', 
-  idsFilter: false 
+{
+  attribute: 'gamesWon',
+  idsFilter: false
   // No maxParticipants needed
 }
 ```
@@ -360,11 +386,12 @@ const baseballTournamentPolicy = {
 **Why:** Total games won is comparable regardless of number of tied teams.
 
 **3. Reversed (fewest) rules**
+
 ```javascript
-{ 
-  attribute: 'gamesLost', 
-  idsFilter: false, 
-  reversed: true 
+{
+  attribute: 'gamesLost',
+  idsFilter: false,
+  reversed: true
   // No maxParticipants needed
 }
 ```
@@ -378,7 +405,8 @@ const baseballTournamentPolicy = {
 ### Example 1: 3-Team Circular Tie
 
 **Round robin results:**
-```
+
+```text
 Match 1: Team A 6-2 Team B  (A wins)
 Match 2: Team B 6-3 Team C  (B wins)
 Match 3: Team C 6-4 Team A  (C wins)
@@ -390,28 +418,28 @@ Standings:
 ```
 
 **Without maxParticipants:**
+
 ```javascript
-tallyDirectives: [
-  { attribute: 'matchUpsPct', idsFilter: true }
-]
+tallyDirectives: [{ attribute: 'matchUpsPct', idsFilter: true }];
 
 // All teams: 50% head-to-head (1-1)
 // Cannot break tie → stuck or requires additional logic
 ```
 
 **With maxParticipants:**
+
 ```javascript
 tallyDirectives: [
   { attribute: 'matchUpsPct', idsFilter: true, maxParticipants: 2 },
-  { attribute: 'gamesPct', idsFilter: false }
-]
+  { attribute: 'gamesPct', idsFilter: false },
+];
 
 // 3 teams tied → skip head-to-head
 // Use games percentage:
 // - Team A: 6-2 + 4-6 = 10-8 (55.6%)
 // - Team B: 2-6 + 6-3 = 8-9 (47.1%)
 // - Team C: 3-6 + 6-4 = 9-10 (47.4%)
-// 
+//
 // Result: A (1st), C (2nd), B (3rd) ✓
 ```
 
@@ -420,7 +448,8 @@ tallyDirectives: [
 ### Example 2: 4-Team Partial Circular Tie
 
 **Round robin results (6 total matches):**
-```
+
+```text
 Team A: 3-0 (beat B, C, D)
 Team B: 1-2 (beat C, lost to A and D)
 Team C: 1-2 (beat D, lost to A and B)
@@ -435,12 +464,14 @@ Head-to-head among tied teams:
 ```
 
 **With maxParticipants: 2**
+
 ```javascript
 // 3 teams tied → skip head-to-head
 // Proceed to games percentage among B, C, D
 ```
 
 **Without maxParticipants:**
+
 ```javascript
 // Would try head-to-head: B, C, D all 1-1
 // Stuck in circular tie
@@ -485,19 +516,19 @@ it('maxParticipants changes outcomes in circular ties', () => {
 ### Source Code
 
 **From `getGroupOrder.ts`:**
+
 ```javascript
 // Line 286-287
-const keepDirective = !(
-  isNumeric(directive.maxParticipants) && 
-  participantIds?.length > directive.maxParticipants
-);
+const keepDirective = !(isNumeric(directive.maxParticipants) && participantIds?.length > directive.maxParticipants);
 ```
 
 **Behavior:**
+
 - `keepDirective = true`: Apply this directive
 - `keepDirective = false`: Skip this directive, try next one
 
 **When does it skip?**
+
 - When `maxParticipants` is defined (numeric)
 - AND number of tied participants exceeds `maxParticipants`
 
@@ -511,24 +542,24 @@ const keepDirective = !(
 {
   tallyDirectives: [
     // Stage 1: Direct head-to-head (2 teams only)
-    { 
-      attribute: 'matchUpsPct', 
-      idsFilter: true, 
-      maxParticipants: 2 
+    {
+      attribute: 'matchUpsPct',
+      idsFilter: true,
+      maxParticipants: 2,
     },
-    
+
     // Stage 2: Head-to-head among all tied (3+ teams)
-    { 
-      attribute: 'matchUpsPct', 
-      idsFilter: true 
+    {
+      attribute: 'matchUpsPct',
+      idsFilter: true,
     },
-    
+
     // Stage 3: Overall group performance
-    { 
-      attribute: 'matchUpsPct', 
-      idsFilter: false 
+    {
+      attribute: 'matchUpsPct',
+      idsFilter: false,
     },
-  ]
+  ];
 }
 ```
 
@@ -542,18 +573,18 @@ const keepDirective = !(
 {
   tallyDirectives: [
     // Only use head-to-head if 2-3 teams
-    { 
-      attribute: 'matchUpsPct', 
-      idsFilter: true, 
-      maxParticipants: 3 
+    {
+      attribute: 'matchUpsPct',
+      idsFilter: true,
+      maxParticipants: 3,
     },
-    
+
     // 4+ teams: use games percentage
-    { 
-      attribute: 'gamesPct', 
-      idsFilter: false 
+    {
+      attribute: 'gamesPct',
+      idsFilter: false,
     },
-  ]
+  ];
 }
 ```
 
@@ -567,25 +598,25 @@ const keepDirective = !(
 {
   tallyDirectives: [
     // 2 teams: simple head-to-head
-    { 
-      attribute: 'matchUpsPct', 
-      idsFilter: true, 
-      maxParticipants: 2 
+    {
+      attribute: 'matchUpsPct',
+      idsFilter: true,
+      maxParticipants: 2,
     },
-    
+
     // 3-4 teams: games among tied teams
-    { 
-      attribute: 'gamesPct', 
-      idsFilter: true, 
-      maxParticipants: 4 
+    {
+      attribute: 'gamesPct',
+      idsFilter: true,
+      maxParticipants: 4,
     },
-    
+
     // 5+ teams: overall games
-    { 
-      attribute: 'gamesPct', 
-      idsFilter: false 
+    {
+      attribute: 'gamesPct',
+      idsFilter: false,
     },
-  ]
+  ];
 }
 ```
 
@@ -603,7 +634,7 @@ const keepDirective = !(
   tallyDirectives: [
     { attribute: 'matchUpsPct', idsFilter: true, maxParticipants: 2 },
     { attribute: 'gamesPct', idsFilter: false }, // Fallback
-  ]
+  ];
 }
 
 // ✗ BAD: No fallback if 3+ teams tied
@@ -611,7 +642,7 @@ const keepDirective = !(
   tallyDirectives: [
     { attribute: 'matchUpsPct', idsFilter: true, maxParticipants: 2 },
     // No other rules! What happens with 3+ teams?
-  ]
+  ];
 }
 ```
 
@@ -624,7 +655,7 @@ const myTournamentPolicy = {
   [POLICY_TYPE_ROUND_ROBIN_TALLY]: {
     policyName: 'Spring Championship 2024',
     // Document why maxParticipants is used
-    // "Per tournament rules section 5.2: Head-to-head only applies 
+    // "Per tournament rules section 5.2: Head-to-head only applies
     //  when exactly two teams are tied"
     tallyDirectives: [
       { attribute: 'matchUpsPct', idsFilter: true, maxParticipants: 2 },
@@ -639,10 +670,12 @@ const myTournamentPolicy = {
 ### 3. Consider Circular Tie Probability
 
 **Small groups (4 teams):**
+
 - Circular ties less common
 - `maxParticipants: 2` usually sufficient
 
 **Large groups (8+ teams):**
+
 - Circular ties more likely
 - Consider `maxParticipants: 3` or removing head-to-head entirely
 
@@ -653,6 +686,7 @@ const myTournamentPolicy = {
 The `maxParticipants` attribute implements a **universal sports rule pattern**: different tie-breaking procedures apply based on how many teams are tied. This is not arbitrary - it reflects the mathematical reality that head-to-head comparisons work for 2 teams but can produce circular ties with 3+ teams.
 
 **Key takeaways:**
+
 1. ✅ Use `maxParticipants: 2` for head-to-head rules
 2. ✅ Always provide fallback directives
 3. ✅ Matches real-world sports tournament rules

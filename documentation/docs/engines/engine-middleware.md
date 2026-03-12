@@ -38,8 +38,6 @@ tournamentEngine.getEvent({ drawId }); // ✅ Event automatically resolved
 
 ```js
 
-
-
 **API Reference:** [getEvent](/docs/governors/query-governor#getevent)
 
 **API Reference:** [deleteDrawDefinitions](/docs/governors/event-governor#deletedrawdefinitions)
@@ -98,7 +96,6 @@ When only one tournament is in state, middleware automatically uses it:
 
 ```js
 
-
 **API Reference:** [getParticipants](/docs/governors/query-governor#getparticipants)
 
 **API Reference:** [getEvents](/docs/governors/query-governor#getevents)
@@ -120,7 +117,6 @@ const { events } = tournamentEngine.getEvents();
 ### Event Operations
 
 ```js
-
 
 **API Reference:** [getParticipants](/docs/governors/query-governor#getparticipants)
 

@@ -403,7 +403,7 @@ tournamentEngine.newTournamentRecord();
 tournamentEngine.addParticipants({ participants });
 ```
 
-## Team Participants
+## Team Participants Generation
 
 ### From Individual Participant Attributes
 

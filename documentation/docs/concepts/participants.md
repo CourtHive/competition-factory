@@ -459,8 +459,6 @@ Use Participant Policies to control which participant data is exposed:
 
 ```js
 
-
-
 **API Reference:** [checkInParticipant](/docs/governors/matchup-governor#checkinparticipant)
 
 **API Reference:** [checkOutParticipant](/docs/governors/matchup-governor#checkoutparticipant)

@@ -5,6 +5,7 @@ title: Custom Engines
 Factory engines are lightweight, method-free containers until you import the specific functionality you need. This architecture enables **tree-shaking** and **code splitting**, allowing you to create custom engines with only the methods required for your use case.
 
 **Benefits:**
+
 - Reduced bundle size for client-side applications
 - Faster load times by including only needed functionality
 - Clear separation between query and mutation operations
@@ -17,8 +18,9 @@ The `tournamentEngine` and `competitionEngine` exports are pre-configured custom
 
 :::warning Engine Singleton Behavior
 `syncEngine` is a singleton - importing it in multiple files returns the same instance. Methods imported into syncEngine are available everywhere it's imported. For truly independent engines in the same application, use different engine types:
+
 - `syncEngine` for one configuration
-- `askEngine` for read-only operations  
+- `askEngine` for read-only operations
 - `matchUpEngine` for matchUp-specific operations
 
 Do not import methods into `syncEngine` in multiple places, as they will accumulate. Configure your custom engine once at application startup.
@@ -43,6 +45,7 @@ export { syncEngine as queryEngine };
 ```
 
 **Usage:**
+
 ```js
 import { queryEngine } from './queryEngine';
 
@@ -64,7 +67,7 @@ Do not import `syncEngine` in other files and add more methods - they will be ad
 
 ---
 
-### Minimal Mutation Engine  
+### Minimal Mutation Engine
 
 Create a write-only engine for specific operations. Use `askEngine` for an independent instance:
 
@@ -82,6 +85,7 @@ export { askEngine as scoringEngine };
 ```
 
 **Usage:**
+
 ```js
 import { scoringEngine } from './scoringEngine';
 
@@ -90,7 +94,7 @@ scoringEngine.setState(tournamentRecord);
 // Only scoring methods available
 scoringEngine.setMatchUpStatus({
   matchUpId: 'match-1',
-  outcome: { score: { sets: [{ side1Score: 6, side2Score: 4 }] } }
+  outcome: { score: { sets: [{ side1Score: 6, side2Score: 4 }] } },
 }); // ✅ Works
 
 scoringEngine.generateDrawDefinition({ drawSize: 32 }); // ❌ Not available
@@ -113,6 +117,7 @@ export { syncEngine as fullEngine };
 ```
 
 **Traversal Parameters:**
+
 - `traverse: false` - Only import methods at the current level
 - `traverse: true, maxDepth: 1` - Import from nested objects (1 level deep)
 - `traverse: true, maxDepth: 2` - Import from deeply nested objects
@@ -134,14 +139,14 @@ syncEngine.importMethods({
   // State management
   setState: governors.queryGovernor.setState,
   getState: governors.queryGovernor.getState,
-  
+
   // Queries for display
   allTournamentMatchUps: governors.queryGovernor.allTournamentMatchUps,
   getMatchUp: governors.queryGovernor.getMatchUp,
-  
+
   // Score entry
   setMatchUpStatus: governors.matchUpGovernor.setMatchUpStatus,
-  
+
   // Score validation
   validateSetScore: governors.scoreGovernor.validateSetScore,
   validateMatchUpScore: governors.scoreGovernor.validateMatchUpScore,
@@ -166,7 +171,7 @@ import { governors, syncEngine } from 'tods-competition-factory';
 syncEngine.importMethods(governors, true, 1);
 
 // Add custom admin-only methods
-syncEngine.getAdminStats = function() {
+syncEngine.getAdminStats = function () {
   const { participants } = this.getParticipants();
   const { events } = this.getEvents();
   const { venues } = this.getVenues();
@@ -193,11 +198,11 @@ import { governors, syncEngine } from 'tods-competition-factory';
 syncEngine.importMethods({
   // State
   setState: governors.queryGovernor.setState,
-  
+
   // Queries
   allTournamentMatchUps: governors.queryGovernor.allTournamentMatchUps,
   getVenuesAndCourts: governors.queryGovernor.getVenuesAndCourts,
-  
+
   // Scheduling mutations
   bulkScheduleTournamentMatchUps: governors.scheduleGovernor.bulkScheduleTournamentMatchUps,
   scheduleMatchUps: governors.scheduleGovernor.scheduleMatchUps,
@@ -208,7 +213,7 @@ export { syncEngine as schedulingEngine };
 ```
 
 ```js
-// draw-generation-service/engine.ts - Only draw generation  
+// draw-generation-service/engine.ts - Only draw generation
 // Use syncEngine singleton configured once at startup
 import { governors, syncEngine } from 'tods-competition-factory';
 
@@ -239,11 +244,13 @@ syncEngine.importMethods({
 ```
 
 **Pros:**
+
 - Smallest bundle size
 - Clear dependencies
 - Easy to audit what's included
 
 **Cons:**
+
 - More verbose
 - Must update when adding features
 
@@ -260,11 +267,13 @@ syncEngine.importMethods(governors.eventGovernor);
 ```
 
 **Pros:**
+
 - Balanced bundle size
 - Related methods grouped
 - Less maintenance
 
 **Cons:**
+
 - May include unused methods from governor
 
 ### Full Import
@@ -276,11 +285,13 @@ syncEngine.importMethods(governors, true, 1);
 ```
 
 **Pros:**
+
 - All functionality available
 - No method missing errors
 - Fastest development
 
 **Cons:**
+
 - Largest bundle size
 - Includes unused code
 
@@ -310,13 +321,13 @@ queryEngine.addEvent({}); // ❌ TypeScript error: method not imported
 
 Bundle sizes for different import strategies (gzipped):
 
-| Engine Configuration | Bundle Size | Use Case |
-|---------------------|-------------|----------|
-| Selective (5 methods) | ~15 KB | Minimal client app |
-| Query Governor | ~45 KB | Read-only display |
-| Mutation Governor | ~60 KB | Specific mutations |
-| Full Engine | ~180 KB | Complete functionality |
-| Pre-built tournamentEngine | ~180 KB | Backward compatibility |
+| Engine Configuration       | Bundle Size | Use Case               |
+| -------------------------- | ----------- | ---------------------- |
+| Selective (5 methods)      | ~15 KB      | Minimal client app     |
+| Query Governor             | ~45 KB      | Read-only display      |
+| Mutation Governor          | ~60 KB      | Specific mutations     |
+| Full Engine                | ~180 KB     | Complete functionality |
+| Pre-built tournamentEngine | ~180 KB     | Backward compatibility |
 
 **Recommendation:** Start with selective imports and add methods as needed.
 

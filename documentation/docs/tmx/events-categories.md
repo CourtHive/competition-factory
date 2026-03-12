@@ -394,7 +394,7 @@ tournamentEngine.setEventPublishingDetail({
 - Consider ball type for age categories
 - Use gender filtering appropriately
 
-### Entry Management
+### Entry Management Best Practices
 
 - Validate participant eligibility before assignment
 - Use appropriate entry status

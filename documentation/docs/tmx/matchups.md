@@ -145,7 +145,7 @@ tournamentEngine.setMatchUpFormat({
 });
 ```
 
-## Match Formats
+## Match Format Codes
 
 TMX supports flexible match format codes:
 
@@ -500,7 +500,7 @@ const duration =
 
 ## Best Practices
 
-### Score Entry
+### Score Entry Best Practices
 
 - Validate format before entry
 - Check for tiebreak requirements

@@ -468,7 +468,6 @@ For simpler cases where standard sorting by a scale value is sufficient, use `ge
 
 ```js
 
-
 **API Reference:** [generateSeedingScaleItems](/docs/governors/generation-governor#generateseedingscaleitems)
 
 **API Reference:** [setParticipantScaleItems](/docs/governors/participant-governor#setparticipantscaleitems)
@@ -520,9 +519,6 @@ scaleItemsWithParticipantIds.forEach(({ participantId, scaleItems }) => {
 For fully automated seeding generation and assignment:
 
 ```js
-
-
-
 
 **API Reference:** [getScaledEntries](/docs/governors/query-governor#getscaledentries)
 
@@ -673,7 +669,6 @@ tournamentEngine.setParticipantScaleItem({
 
 ```js
 
-
 **API Reference:** [addParticipants](/docs/governors/participant-governor#addparticipants)
 
 **API Reference:** [setParticipantScaleItem](/docs/governors/participant-governor#setparticipantscaleitem)
@@ -719,7 +714,6 @@ tournamentEngine.autoSeeding({
 Maintain ratings in different systems:
 
 ```js
-
 
 **API Reference:** [setParticipantScaleItem](/docs/governors/participant-governor#setparticipantscaleitem)
 
@@ -779,7 +773,6 @@ const { scaleItem: utr } = tournamentEngine.getParticipantScaleItem({
 Participants can have different ratings for each event type:
 
 ```js
-
 
 **API Reference:** [setParticipantScaleItems](/docs/governors/participant-governor#setparticipantscaleitems)
 

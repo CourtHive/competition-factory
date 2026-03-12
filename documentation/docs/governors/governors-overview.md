@@ -207,9 +207,7 @@ The Competition Factory includes 16 governors organized into functional areas:
 
 ## Common Use Cases by Governor
 
-### I want to...
-
-#### Create a Tournament
+### Create a Tournament
 
 **Use**: [Tournament Governor](./tournament-governor) + [Generation Governor](./generation-governor)
 
@@ -505,7 +503,7 @@ myEngine.scheduleMatchUps({ ... });
 | [Schedule Governor](./schedule-governor) | Scheduling operations | `scheduleMatchUps`, `scheduleProfileRounds`, `bulkScheduleTournamentMatchUps` |
 | [Venue Governor](./venue-governor)       | Venue management      | `addVenue`, `addCourt`, `modifyCourt`                                         |
 
-### Publishing & Queries
+### Publishing & Query Reference
 
 | Governor                                     | Purpose        | Key Methods                                                            |
 | -------------------------------------------- | -------------- | ---------------------------------------------------------------------- |
@@ -513,7 +511,7 @@ myEngine.scheduleMatchUps({ ... });
 | [Query Governor](./query-governor)           | Data retrieval | `getEventData`, `competitionScheduleMatchUps`, `allTournamentMatchUps` |
 | [Report Governor](./report-governor)         | Reporting      | `participationReport`, `drawReport`, `scheduleReport`                  |
 
-### Configuration
+### Configuration Reference
 
 | Governor                             | Purpose           | Key Methods                                          |
 | ------------------------------------ | ----------------- | ---------------------------------------------------- |

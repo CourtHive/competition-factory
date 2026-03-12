@@ -5,6 +5,7 @@ title: Mutation Engines
 Mutation engines provide state-modifying operations with built-in change tracking, notifications, and error handling. They can operate **synchronously** or **asynchronously** depending on the execution context.
 
 **Key Features:**
+
 - Automatic mutation logging and audit trails
 - Subscription-based notification system
 - Rollback on error capabilities
@@ -16,6 +17,7 @@ Mutation engines provide state-modifying operations with built-in change trackin
 ## Synchronous vs Asynchronous Engines
 
 ### Synchronous Engines
+
 Use `syncEngine` for single-threaded, single-client applications:
 
 ```js
@@ -26,12 +28,14 @@ tournamentEngine.addEvent({ event: { eventName: 'Singles', eventType: 'SINGLES' 
 ```
 
 **When to Use:**
+
 - Single-user desktop applications
 - Command-line tools
 - Test suites
 - Simple server endpoints with isolated state per request
 
 ### Asynchronous Engines
+
 Use `asyncEngine` for multi-client server applications:
 
 ```js
@@ -57,6 +61,7 @@ app.post('/api/tournament/:id/event', async (req, res) => {
 ```
 
 **When to Use:**
+
 - Multi-user web servers
 - REST APIs serving multiple clients
 - WebSocket servers with concurrent connections
@@ -202,12 +207,14 @@ try {
 ### When to Use Rollback
 
 **Use `rollbackOnError: true` when:**
+
 - Operating on production data
 - Complex multi-step operations
 - User-initiated actions that must be atomic
 - Data integrity is critical
 
 **Skip rollback when:**
+
 - In test suites (let failures be visible)
 - Debugging (you want to see the failed state)
 - Bulk operations where partial success is acceptable
@@ -222,7 +229,6 @@ try {
 Synchronous engines maintain state in memory without special configuration:
 
 ```js
-
 
 **API Reference:** [addEvent](/docs/governors/event-governor#addevent)
 
@@ -317,6 +323,7 @@ tournamentEngine.generateDrawDefinition({ drawSize: 32 });
 ```
 
 **Dev Context Options:**
+
 - `errors: true` - Log all errors
 - `params: true | ['methodName']` - Log parameters for all or specific methods
 - `result: true | ['methodName']` - Log results for all or specific methods  

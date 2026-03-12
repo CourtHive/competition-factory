@@ -88,12 +88,12 @@ if (result.conflicts.length > 0) {
 
 ```ts
 interface ApplyBlockOptions {
-  courts: CourtRef[];          // Target courts
-  timeRange: TimeRange;        // { start: string, end: string } — ISO 8601
-  type: BlockType;             // Block type (e.g., 'MAINTENANCE', 'PRACTICE')
-  reason?: string;             // Human-readable reason
-  hardSoft?: BlockHardness;    // 'HARD' | 'SOFT'
-  source?: BlockSource;        // 'USER' | 'TEMPLATE' | 'RULE' | 'SYSTEM'
+  courts: CourtRef[]; // Target courts
+  timeRange: TimeRange; // { start: string, end: string } — ISO 8601
+  type: BlockType; // Block type (e.g., 'MAINTENANCE', 'PRACTICE')
+  reason?: string; // Human-readable reason
+  hardSoft?: BlockHardness; // 'HARD' | 'SOFT'
+  source?: BlockSource; // 'USER' | 'TEMPLATE' | 'RULE' | 'SYSTEM'
 }
 ```
 
@@ -119,7 +119,7 @@ const result = engine.moveBlock({
 interface MoveBlockOptions {
   blockId: BlockId;
   newTimeRange: TimeRange;
-  newCourt?: CourtRef;        // If omitted, stays on current court
+  newCourt?: CourtRef; // If omitted, stays on current court
 }
 ```
 
@@ -215,10 +215,10 @@ engine.importScheduledMatchUps(scheduled);
 
 ```ts
 interface MutationResult {
-  applied: BlockMutation[];      // Mutations that were applied
-  rejected: BlockMutation[];     // Mutations rejected by conflict evaluators
-  warnings: EngineWarning[];     // Non-blocking warnings
-  conflicts: EngineConflict[];   // Detected conflicts (may include WARN/INFO severity)
+  applied: BlockMutation[]; // Mutations that were applied
+  rejected: BlockMutation[]; // Mutations rejected by conflict evaluators
+  warnings: EngineWarning[]; // Non-blocking warnings
+  conflicts: EngineConflict[]; // Detected conflicts (may include WARN/INFO severity)
 }
 ```
 
@@ -234,7 +234,7 @@ getCourtAvailability(court: CourtRef, day: DayId): CourtDayAvailability
 
 Resolve the effective availability window for a court on a day. Uses a layered cascade:
 
-```
+```text
 court + day  →  court DEFAULT  →  (intersect with)  venue + day  →  venue DEFAULT  →  GLOBAL DEFAULT  →  engine config
 ```
 
@@ -317,8 +317,8 @@ Set venue-level availability for a specific day. Emits `AVAILABILITY_CHANGED`.
 
 ```ts
 interface CourtDayAvailability {
-  startTime: string;   // 'HH:MM'
-  endTime: string;     // 'HH:MM'
+  startTime: string; // 'HH:MM'
+  endTime: string; // 'HH:MM'
 }
 ```
 
@@ -426,19 +426,19 @@ console.log(`Blocked:   ${summary.blockedMinutes} min`);
 
 **Classification rules:**
 
-| Segment status | Bucket |
-|----------------|--------|
-| `SCHEDULED`, `LOCKED` | `scheduledMinutes` |
-| `AVAILABLE` | `availableMinutes` |
-| All others (`MAINTENANCE`, `PRACTICE`, `BLOCKED`, `CLOSED`, `SOFT_BLOCK`, `HARD_BLOCK`, `RESERVED`) | `blockedMinutes` |
+| Segment status                                                                                      | Bucket             |
+| --------------------------------------------------------------------------------------------------- | ------------------ |
+| `SCHEDULED`, `LOCKED`                                                                               | `scheduledMinutes` |
+| `AVAILABLE`                                                                                         | `availableMinutes` |
+| All others (`MAINTENANCE`, `PRACTICE`, `BLOCKED`, `CLOSED`, `SOFT_BLOCK`, `HARD_BLOCK`, `RESERVED`) | `blockedMinutes`   |
 
 **`CourtSchedulingSummary`:**
 
 ```ts
 interface CourtSchedulingSummary {
-  scheduledMinutes: number;   // SCHEDULED + LOCKED segments
-  availableMinutes: number;   // AVAILABLE segments (unblocked, unscheduled)
-  blockedMinutes: number;     // All other block types
+  scheduledMinutes: number; // SCHEDULED + LOCKED segments
+  availableMinutes: number; // AVAILABLE segments (unblocked, unscheduled)
+  blockedMinutes: number; // All other block types
 }
 ```
 
@@ -540,7 +540,7 @@ Returns all plans across all days.
 
 ```ts
 interface PlanItem {
-  planItemId: string;          // Computed: day|venueId|eventId[|drawId]|R{roundNumber}
+  planItemId: string; // Computed: day|venueId|eventId[|drawId]|R{roundNumber}
   day: DayId;
   venueId: VenueId;
   eventId: string;
@@ -549,7 +549,7 @@ interface PlanItem {
   roundNumber: number;
   roundSegment?: { segmentNumber: number; segmentsCount: number };
   matchUpType?: string;
-  notBeforeTime?: string;      // 'HH:MM'
+  notBeforeTime?: string; // 'HH:MM'
   estimatedDurationMinutes?: number;
 }
 ```
@@ -637,9 +637,9 @@ console.log('Would cause conflicts:', preview.conflicts);
 
 ```ts
 interface SimulationResult {
-  previewRails: VenueDayTimeline[];   // Full derived timeline with mutations applied
-  capacityImpact?: CapacityCurve;     // Capacity curve reflecting simulated state
-  conflicts: EngineConflict[];        // Conflicts the mutations would cause
+  previewRails: VenueDayTimeline[]; // Full derived timeline with mutations applied
+  capacityImpact?: CapacityCurve; // Capacity curve reflecting simulated state
+  conflicts: EngineConflict[]; // Conflicts the mutations would cause
 }
 ```
 
