@@ -1,4 +1,5 @@
 import { modifyEntryProfile } from '@Mutate/drawDefinitions/entryGovernor/modifyEntryProfile';
+import { getBestFinishers } from '@Query/drawDefinition/getBestFinishers';
 import { findExtension } from '@Acquire/findExtension';
 import { findStructure } from '@Acquire/findStructure';
 import { getEntryProfile } from './getEntryProfile';
@@ -130,7 +131,7 @@ function getPlayoffEntries({ provisionalPositioning, drawDefinition, structureId
   if (inboundLink) {
     // links from round robins include an array of finishing positions
     // which qualify participants to travel across a link to a playoff structure
-    const { finishingPositions, structureId } = inboundLink.source;
+    const { finishingPositions, structureId, bestOf, rankBy } = inboundLink.source;
 
     const { structure: sourceStructure } = findStructure({
       drawDefinition,
@@ -140,64 +141,102 @@ function getPlayoffEntries({ provisionalPositioning, drawDefinition, structureId
     // for group participant results to be tallied,
     // the source structure must be a container of other structures
     if (sourceStructure?.structureType === CONTAINER) {
-      const playoffStructures = sourceStructure.structures ?? [];
-      playoffStructures.forEach((structure) => {
+      const rrGroupStructures = sourceStructure.structures ?? [];
+
+      // Build results for each RR group
+      const allGroupResults = rrGroupStructures.map((structure) => {
         const positionAssignments = structure.positionAssignments ?? [];
-        const { structureId: playoffStructureId } = structure;
-        const groupingValue = playoffStructureId;
+        const { structureId: groupStructureId } = structure;
 
         const results = Object.assign(
           {},
           ...positionAssignments
             .map((assignment) => {
               const { participantId } = assignment;
-              const results = findExtension({
+              const tallied = findExtension({
                 element: assignment,
                 name: TALLY,
               }).extension?.value;
 
-              return results && participantId ? { [participantId]: results } : undefined;
+              return tallied && participantId ? { [participantId]: tallied } : undefined;
             })
             .filter(Boolean),
         );
 
-        const uniqueFinishingPositions = Object.keys(results).reduce((unique: any, key) => {
-          const result = results[key];
-          const finishingPosition = result.groupOrder || (provisionalPositioning && result.provisionalOrder);
-          if (!unique.includes(finishingPosition)) {
-            unique.push(finishingPosition);
-          }
-          return unique;
-        }, []);
+        return { structureId: groupStructureId, results };
+      });
 
-        const finishingPositionsAreUnique = uniqueFinishingPositions.length === Object.keys(results).length;
-
-        const participantIds = Object.keys(results).filter((key) => {
-          const result = results[key];
-          const finishingPosition = result.groupOrder || (provisionalPositioning && result.provisionalOrder);
-          return finishingPositions?.includes(finishingPosition);
+      if (bestOf !== undefined && finishingPositions) {
+        // bestOf mode: use cross-group ranking to select participants
+        const { selectedParticipants } = getBestFinishers({
+          groupResults: allGroupResults,
+          provisionalPositioning,
+          finishingPositions,
+          bestOf,
+          rankBy,
         });
 
-        if (!provisionalPositioning || finishingPositionsAreUnique) {
-          participantIds.forEach((participantId) => {
-            const participantResult = results[participantId];
-            const { groupOrder, provisionalOrder, GEMscore } = participantResult;
-            const finishingPosition = groupOrder || (provisionalPositioning && provisionalOrder);
+        selectedParticipants.forEach((selected) => {
+          // Placement group: guaranteed finishers get group based on their finishing position;
+          // best finishers get a higher placement group number
+          const isGuaranteed = finishingPositions.includes(selected.finishingPosition);
+          const placementGroup = isGuaranteed
+            ? [...finishingPositions].sort(numericSort).indexOf(selected.finishingPosition) + 1
+            : [...finishingPositions].sort(numericSort).length + 1;
 
-            // spread to avoid immutable client data
-            const placementGroup = [...(finishingPositions ?? [])].sort(numericSort).indexOf(finishingPosition) + 1;
-
-            playoffEntries.push({
-              entryStage: PLAY_OFF,
-              entryStatus: FEED_IN,
-              placementGroup,
-              groupingValue,
-              participantId,
-              GEMscore,
-            });
+          playoffEntries.push({
+            isBestFinisher: selected.isBestFinisher,
+            groupingValue: selected.groupingValue,
+            participantId: selected.participantId,
+            GEMscore: selected.GEMscore,
+            entryStatus: FEED_IN,
+            entryStage: PLAY_OFF,
+            placementGroup,
           });
-        }
-      });
+        });
+      } else {
+        // Standard mode: collect all participants at specified finishing positions
+        allGroupResults.forEach(({ structureId: groupStructureId, results }) => {
+          const groupingValue = groupStructureId;
+
+          const uniqueFinishingPositions = Object.keys(results).reduce((unique: any, key) => {
+            const result = results[key];
+            const finishingPosition = result.groupOrder || (provisionalPositioning && result.provisionalOrder);
+            if (!unique.includes(finishingPosition)) {
+              unique.push(finishingPosition);
+            }
+            return unique;
+          }, []);
+
+          const finishingPositionsAreUnique = uniqueFinishingPositions.length === Object.keys(results).length;
+
+          const participantIds = Object.keys(results).filter((key) => {
+            const result = results[key];
+            const finishingPosition = result.groupOrder || (provisionalPositioning && result.provisionalOrder);
+            return finishingPositions?.includes(finishingPosition);
+          });
+
+          if (!provisionalPositioning || finishingPositionsAreUnique) {
+            participantIds.forEach((participantId) => {
+              const participantResult = results[participantId];
+              const { groupOrder, provisionalOrder, GEMscore } = participantResult;
+              const finishingPosition = groupOrder || (provisionalPositioning && provisionalOrder);
+
+              // spread to avoid immutable client data
+              const placementGroup = [...(finishingPositions ?? [])].sort(numericSort).indexOf(finishingPosition) + 1;
+
+              playoffEntries.push({
+                entryStage: PLAY_OFF,
+                entryStatus: FEED_IN,
+                placementGroup,
+                groupingValue,
+                participantId,
+                GEMscore,
+              });
+            });
+          }
+        });
+      }
     }
   }
 

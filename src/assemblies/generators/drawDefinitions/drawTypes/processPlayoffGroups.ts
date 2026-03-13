@@ -1,4 +1,5 @@
 import { generatePlayoffStructures } from '@Generators/drawDefinitions/drawTypes/playoffStructures';
+import { validatePlayoffGroups } from '@Validators/validatePlayoffGroups';
 import { getPositionRangeMap } from '@Query/drawDefinition/getPositionRangeMap';
 import { firstRoundLoserConsolation } from './firstRoundLoserConsolation';
 import structureTemplate from '@Generators/templates/structureTemplate';
@@ -12,7 +13,7 @@ import { numericSort } from '@Tools/sorting';
 import { nextPowerOf2 } from '@Tools/math';
 
 // constants and types
-import { INVALID_VALUES } from '@Constants/errorConditionConstants';
+import { INVALID_CONFIGURATION, INVALID_VALUES } from '@Constants/errorConditionConstants';
 import { POLICY_TYPE_FEED_IN } from '@Constants/policyConstants';
 import { DrawLink, Structure } from '@Types/tournamentTypes';
 import { WIN_RATIO } from '@Constants/statsConstants';
@@ -51,6 +52,7 @@ export function processPlayoffGroups({
   matchUpType,
   feedPolicy,
   groupCount,
+  groupSize,
   idPrefix,
   isMock,
   uuids,
@@ -67,6 +69,19 @@ export function processPlayoffGroups({
   const finishingPositionTargets: any[] = [];
   const structures: any[] = [];
   const links: any[] = [];
+
+  // Validate bestOf configurations if any playoff group uses bestOf
+  const hasBestOf = playoffGroups?.some((pg) => pg.bestOf !== undefined);
+  if (hasBestOf && groupSize) {
+    const validation = validatePlayoffGroups({ playoffGroups, groupCount, groupSize });
+    if (!validation.valid) {
+      return decorateResult({
+        result: { error: validation.error || INVALID_CONFIGURATION },
+        context: { info: validation.info },
+        stack,
+      });
+    }
+  }
 
   const { error, positionRangeMap } = getPositionRangeMap({
     structureId: sourceStructureId,
@@ -99,11 +114,13 @@ export function processPlayoffGroups({
   }
 
   for (const playoffGroup of playoffGroups) {
-    const finishingPositions = playoffGroup.finishingPositions;
+    const { bestOf, rankBy, finishingPositions } = playoffGroup;
     const positionsPlayedOff =
       positionRangeMap && finishingPositions.flatMap((p: number) => positionRangeMap[p]?.finishingPositions ?? []);
 
-    const participantsInDraw = groupCount * finishingPositions.length;
+    // When bestOf is specified, the playoff draw size is based on bestOf count
+    // rather than the standard groupCount × finishingPositions.length
+    const participantsInDraw = bestOf ?? groupCount * finishingPositions.length;
     const drawSize = nextPowerOf2(participantsInDraw);
 
     const playoffDrawType = (drawSize === 2 && SINGLE_ELIMINATION) || playoffGroup.drawType || SINGLE_ELIMINATION;
@@ -151,6 +168,8 @@ export function processPlayoffGroups({
         playoffStructureId: playoffStructure.structureId,
         finishingPositions,
         sourceStructureId,
+        bestOf,
+        rankBy,
       });
 
       links.push(playoffLink, ...playoffLinks);
@@ -188,6 +207,8 @@ export function processPlayoffGroups({
         playoffStructureId: playoffStructure.structureId,
         finishingPositions,
         sourceStructureId,
+        bestOf,
+        rankBy,
       });
       links.push(playoffLink);
 
@@ -239,6 +260,8 @@ export function processPlayoffGroups({
           playoffStructureId: result.structureId,
           finishingPositions,
           sourceStructureId,
+          bestOf,
+          rankBy,
         });
         links.push(playoffLink);
         finishingPositionTargets.push({
@@ -290,6 +313,8 @@ export function processPlayoffGroups({
         playoffStructureId: playoffStructure.structureId,
         finishingPositions,
         sourceStructureId,
+        bestOf,
+        rankBy,
       });
 
       links.push(playoffLink, ...feedInLinks);
@@ -331,13 +356,22 @@ export function processPlayoffGroups({
   return { finishingPositionTargets, positionRangeMap, structures, links };
 }
 
-function generatePlayoffLink({ playoffStructureId, finishingPositions, sourceStructureId }) {
+function generatePlayoffLink({ playoffStructureId, finishingPositions, sourceStructureId, bestOf, rankBy }: any) {
+  const source: any = {
+    structureId: sourceStructureId,
+    finishingPositions,
+  };
+
+  // Include bestOf and rankBy on the link source so the positioning engine
+  // knows to select participants via cross-group ranking
+  if (bestOf !== undefined) {
+    source.bestOf = bestOf;
+    source.rankBy = rankBy || 'GEMscore';
+  }
+
   return {
     linkType: POSITION,
-    source: {
-      structureId: sourceStructureId,
-      finishingPositions,
-    },
+    source,
     target: {
       structureId: playoffStructureId,
       feedProfile: DRAW,

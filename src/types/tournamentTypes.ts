@@ -258,12 +258,14 @@ export enum LinkTypeEnum {
 export type LinkTypeUnion = keyof typeof LinkTypeEnum;
 
 export interface DrawLinkSource {
+  bestOf?: number;
   createdAt?: Date | string;
   drawId?: string;
   extensions?: Extension[];
   finishingPositions?: number[];
   isMock?: boolean;
   notes?: string;
+  rankBy?: string;
   roundNumber?: number;
   structureId: string;
   timeItems?: TimeItem[];

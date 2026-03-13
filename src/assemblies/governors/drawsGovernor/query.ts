@@ -16,6 +16,7 @@ export { getPositionsPlayedOff } from '@Query/drawDefinition/getPositionsPlayedO
 export { isValidForQualifying } from '@Query/drawDefinition/isValidForQualifying';
 export { getPositionAssignments } from '@Query/structure/getPositionAssignments';
 export { getSeedingThresholds } from '@Query/drawDefinition/getSeedBlocks';
+export { validatePlayoffGroups } from '@Validators/validatePlayoffGroups';
 export { getDraftState } from '@Query/drawDefinition/draft/getDraftState';
 export { getTeamLineUp } from '@Query/drawDefinition/getTeamLineUp';
 export { getSeedsCount } from '@Query/drawDefinition/getSeedsCount';
