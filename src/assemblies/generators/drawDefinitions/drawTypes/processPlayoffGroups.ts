@@ -1,6 +1,6 @@
 import { generatePlayoffStructures } from '@Generators/drawDefinitions/drawTypes/playoffStructures';
-import { validatePlayoffGroups } from '@Validators/validatePlayoffGroups';
 import { getPositionRangeMap } from '@Query/drawDefinition/getPositionRangeMap';
+import { validatePlayoffGroups } from '@Validators/validatePlayoffGroups';
 import { firstRoundLoserConsolation } from './firstRoundLoserConsolation';
 import structureTemplate from '@Generators/templates/structureTemplate';
 import { decorateResult } from '@Functions/global/decorateResult';
@@ -70,9 +70,9 @@ export function processPlayoffGroups({
   const structures: any[] = [];
   const links: any[] = [];
 
-  // Validate bestOf configurations if any playoff group uses bestOf
-  const hasBestOf = playoffGroups?.some((pg) => pg.bestOf !== undefined);
-  if (hasBestOf && groupSize) {
+  // Validate bestOf/remainder configurations if any playoff group uses them
+  const hasBestOfOrRemainder = playoffGroups?.some((pg) => pg.bestOf !== undefined || pg.remainder);
+  if (hasBestOfOrRemainder && groupSize) {
     const validation = validatePlayoffGroups({ playoffGroups, groupCount, groupSize });
     if (!validation.valid) {
       return decorateResult({
@@ -83,17 +83,20 @@ export function processPlayoffGroups({
     }
   }
 
+  // Filter out remainder groups for positionRangeMap validation (they have no finishingPositions)
+  const nonRemainderGroups = playoffGroups?.filter((pg) => !pg.remainder);
+
   const { error, positionRangeMap } = getPositionRangeMap({
     structureId: sourceStructureId,
+    playoffGroups: nonRemainderGroups,
     drawDefinition,
-    playoffGroups,
   });
 
   if (error) return decorateResult({ result: { error }, stack });
 
   const validFinishingPositions =
     !positionRangeMap ||
-    playoffGroups?.every((profile) => {
+    nonRemainderGroups?.every((profile) => {
       const { finishingPositions = [] } = profile;
       if (!finishingPositions.length) return false;
 
@@ -113,14 +116,66 @@ export function processPlayoffGroups({
     });
   }
 
+  let totalClaimed = 0;
+
   for (const playoffGroup of playoffGroups) {
-    const { bestOf, rankBy, finishingPositions } = playoffGroup;
+    const { bestOf, rankBy, remainder } = playoffGroup;
+
+    // Handle remainder groups: size = totalParticipants - totalClaimed
+    if (remainder) {
+      const totalParticipants = groupCount * groupSize;
+      const remainderCount = totalParticipants - totalClaimed;
+      const drawSize = nextPowerOf2(remainderCount);
+      const allPositions = Array.from({ length: groupSize }, (_, i) => i + 1);
+
+      const structureName = playoffGroup.structureName || 'Remainder Playoff';
+
+      const { matchUps } = treeMatchUps({
+        finishingPositionLimit: finishingPositionOffset + remainderCount,
+        idPrefix: idPrefix && `${idPrefix}-po`,
+        finishingPositionOffset,
+        matchUpType,
+        drawSize,
+        isMock,
+        uuids,
+      });
+
+      const playoffStructure = structureTemplate({
+        structureId: playoffGroup.structureId ?? uuids?.pop(),
+        matchUpFormat: playoffMatchUpFormat,
+        stage: PLAY_OFF,
+        structureName,
+        stageSequence,
+        matchUps,
+      });
+      structures.push(playoffStructure);
+
+      const playoffLink = generatePlayoffLink({
+        playoffStructureId: playoffStructure.structureId,
+        finishingPositions: allPositions,
+        sourceStructureId,
+        remainder: true,
+      });
+      links.push(playoffLink);
+
+      finishingPositionOffset += remainderCount;
+      totalClaimed += remainderCount;
+
+      finishingPositionTargets.push({
+        structureId: playoffStructure.structureId,
+        finishingPositions: allPositions,
+      });
+      continue;
+    }
+
+    const finishingPositions = playoffGroup.finishingPositions ?? [];
     const positionsPlayedOff =
       positionRangeMap && finishingPositions.flatMap((p: number) => positionRangeMap[p]?.finishingPositions ?? []);
 
     // When bestOf is specified, the playoff draw size is based on bestOf count
     // rather than the standard groupCount × finishingPositions.length
     const participantsInDraw = bestOf ?? groupCount * finishingPositions.length;
+    totalClaimed += participantsInDraw;
     const drawSize = nextPowerOf2(participantsInDraw);
 
     const playoffDrawType = (drawSize === 2 && SINGLE_ELIMINATION) || playoffGroup.drawType || SINGLE_ELIMINATION;
@@ -356,7 +411,14 @@ export function processPlayoffGroups({
   return { finishingPositionTargets, positionRangeMap, structures, links };
 }
 
-function generatePlayoffLink({ playoffStructureId, finishingPositions, sourceStructureId, bestOf, rankBy }: any) {
+function generatePlayoffLink({
+  playoffStructureId,
+  finishingPositions,
+  sourceStructureId,
+  remainder,
+  bestOf,
+  rankBy,
+}: any) {
   const source: any = {
     structureId: sourceStructureId,
     finishingPositions,
@@ -367,6 +429,11 @@ function generatePlayoffLink({ playoffStructureId, finishingPositions, sourceStr
   if (bestOf !== undefined) {
     source.bestOf = bestOf;
     source.rankBy = rankBy || 'GEMscore';
+  }
+
+  // Remainder flag indicates this playoff takes all participants not claimed by prior bestOf groups
+  if (remainder) {
+    source.remainder = true;
   }
 
   return {

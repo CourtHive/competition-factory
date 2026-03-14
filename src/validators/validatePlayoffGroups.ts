@@ -10,12 +10,13 @@ export type PlayoffGroupConfig = {
   playoffStructureNameBase?: string;
   finishingPositionLimit?: number;
   finishingPositionNaming?: any;
-  finishingPositions: number[];
+  finishingPositions?: number[];
   playoffAttributes?: any;
   structureNameMap?: any;
   sequenceLimit?: number;
   structureName?: string;
   structureId?: string;
+  remainder?: boolean;
   drawType?: string;
   bestOf?: number;
   rankBy?: string;
@@ -72,8 +73,32 @@ export function validatePlayoffGroups({
   const totalAvailable = groupCount * groupSize;
   let totalClaimed = 0;
 
+  let hasBestOf = false;
+
   for (const playoffGroup of playoffGroups) {
-    const { finishingPositions, bestOf, rankBy } = playoffGroup;
+    const { finishingPositions, bestOf, rankBy, remainder } = playoffGroup;
+
+    // Handle remainder groups
+    if (remainder) {
+      if (!hasBestOf) {
+        return {
+          error: INVALID_CONFIGURATION,
+          valid: false,
+          info: 'A remainder group must appear after at least one bestOf group',
+        };
+      }
+      // Remainder group claims all unclaimed participants
+      const remainderCount = totalAvailable - totalClaimed;
+      if (remainderCount < 2) {
+        return {
+          error: INVALID_CONFIGURATION,
+          valid: false,
+          info: `Remainder group would have insufficient participants (${remainderCount}), minimum 2 required`,
+        };
+      }
+      totalClaimed += remainderCount;
+      continue;
+    }
 
     // Basic validation
     if (!Array.isArray(finishingPositions) || !finishingPositions.length) {
@@ -127,6 +152,8 @@ export function validatePlayoffGroups({
           valid: false,
         };
       }
+
+      hasBestOf = true;
 
       // rankBy validation
       if (rankBy !== undefined && rankBy !== 'GEMscore') {

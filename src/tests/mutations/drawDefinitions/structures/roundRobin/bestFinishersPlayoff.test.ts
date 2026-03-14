@@ -640,3 +640,171 @@ describe('bestFinishers with mocksEngine — full tournament lifecycle', () => {
     groupWinnerIds.forEach((id) => expect(playoffParticipantIds).toContain(id));
   });
 });
+
+// =========================================================================
+// Part 3: remainder playoff group tests
+// =========================================================================
+
+describe('bestFinishers with remainder playoff group', () => {
+  it('validates remainder group must follow a bestOf group', () => {
+    const result = validatePlayoffGroups({
+      playoffGroups: [{ remainder: true, structureName: 'Remainder' }],
+      groupCount: 3,
+      groupSize: 4,
+    });
+    expect(result.valid).toBe(false);
+    expect(result.info).toContain('remainder group must appear after');
+  });
+
+  it('validates remainder group after bestOf group', () => {
+    const result = validatePlayoffGroups({
+      playoffGroups: [
+        { finishingPositions: [1], bestOf: 4, rankBy: 'GEMscore' },
+        { remainder: true, structureName: 'Remainder' },
+      ],
+      groupCount: 3,
+      groupSize: 4,
+    });
+    // bestOf claims 4, remainder gets 12-4=8, which is >= 2
+    expect(result.valid).toBe(true);
+  });
+
+  it('rejects remainder when insufficient participants remain', () => {
+    const result = validatePlayoffGroups({
+      playoffGroups: [
+        { finishingPositions: [1], bestOf: 11, rankBy: 'GEMscore' },
+        { remainder: true, structureName: 'Remainder' },
+      ],
+      groupCount: 3,
+      groupSize: 4,
+    });
+    // bestOf claims 11 of 12, remainder = 1 < 2
+    expect(result.valid).toBe(false);
+    expect(result.info).toContain('insufficient participants');
+  });
+
+  it('generates bestOf championship + remainder consolation structures', () => {
+    const drawDefinition: DrawDefinition = newDrawDefinition();
+    const drawSize = 12;
+    setStageDrawSize({ drawDefinition, stage: MAIN, drawSize });
+
+    const structureOptions = {
+      playoffGroups: [
+        {
+          finishingPositions: [1],
+          bestOf: 4,
+          rankBy: 'GEMscore',
+          structureName: 'Championship',
+        },
+        {
+          remainder: true,
+          structureName: 'Consolation',
+        },
+      ],
+    };
+
+    const result = generateDrawTypeAndModifyDrawDefinition({
+      drawType: ROUND_ROBIN_WITH_PLAYOFF,
+      structureOptions,
+      drawDefinition,
+    });
+
+    const { structures: allStructures, links } = result;
+    const mainStructure = allStructures?.find((s) => s.stage === MAIN);
+    const playoffStructures = allStructures?.filter((s) => s.stage === PLAY_OFF) ?? [];
+
+    expect(mainStructure?.structures?.length).toEqual(3);
+    expect(playoffStructures.length).toEqual(2);
+
+    const championship = playoffStructures.find((s) => s.structureName === 'Championship');
+    const consolation = playoffStructures.find((s) => s.structureName === 'Consolation');
+    expect(championship).toBeDefined();
+    expect(consolation).toBeDefined();
+
+    // Championship: bestOf 4 → nextPowerOf2(4) = 4 → 3 matchUps
+    expect(championship?.matchUps?.length).toEqual(3);
+
+    // Consolation: remainder = 12-4 = 8 → nextPowerOf2(8) = 8 → 7 matchUps
+    expect(consolation?.matchUps?.length).toEqual(7);
+
+    // Links
+    expect(links?.length).toEqual(2);
+    const champLink = links?.find((l) => l.target.structureId === championship?.structureId);
+    const consolLink = links?.find((l) => l.target.structureId === consolation?.structureId);
+
+    expect(champLink?.source.bestOf).toEqual(4);
+    expect(champLink?.source.rankBy).toEqual('GEMscore');
+    expect(champLink?.source.remainder).toBeUndefined();
+
+    expect(consolLink?.source.remainder).toBe(true);
+    expect(consolLink?.source.bestOf).toBeUndefined();
+  });
+
+  it('full lifecycle: bestOf + remainder with mocksEngine', () => {
+    const drawSize = 12;
+    const structureOptions = {
+      playoffGroups: [
+        {
+          finishingPositions: [1],
+          bestOf: 4,
+          rankBy: 'GEMscore',
+          structureName: 'Championship',
+        },
+        {
+          remainder: true,
+          structureName: 'Consolation',
+        },
+      ],
+    };
+
+    const {
+      drawIds: [drawId],
+      tournamentRecord,
+    } = mocksEngine.generateTournamentRecord({
+      completeAllMatchUps: true,
+      drawProfiles: [
+        {
+          drawType: ROUND_ROBIN_WITH_PLAYOFF,
+          matchUpFormat: FORMAT_STANDARD,
+          participantsCount: drawSize,
+          eventType: SINGLES,
+          structureOptions,
+          drawSize,
+        },
+      ],
+    });
+
+    const { drawDefinition } = tournamentEngine.setState(tournamentRecord).getEvent({ drawId });
+
+    const playoffStructures = drawDefinition.structures.filter((s) => s.stage === PLAY_OFF);
+    expect(playoffStructures.length).toEqual(2);
+
+    const championship = playoffStructures.find((s) => s.structureName === 'Championship');
+    const consolation = playoffStructures.find((s) => s.structureName === 'Consolation');
+
+    // Championship should have 4 participants
+    const champAssignments = getPositionAssignments({
+      structureId: championship!.structureId,
+      drawDefinition,
+    }).positionAssignments;
+    const champParticipants = champAssignments?.filter((pa) => pa.participantId) ?? [];
+    expect(champParticipants.length).toEqual(4);
+
+    // Consolation should have 8 participants
+    const consolAssignments = getPositionAssignments({
+      structureId: consolation!.structureId,
+      drawDefinition,
+    }).positionAssignments;
+    const consolParticipants = consolAssignments?.filter((pa) => pa.participantId) ?? [];
+    expect(consolParticipants.length).toEqual(8);
+
+    // No participant should appear in both
+    const champIds = new Set(champParticipants.map((pa) => pa.participantId));
+    const consolIds = consolParticipants.map((pa) => pa.participantId);
+    const overlap = consolIds.filter((id) => champIds.has(id));
+    expect(overlap.length).toEqual(0);
+
+    // Total participants = 12
+    expect(champParticipants.length + consolParticipants.length).toEqual(12);
+  });
+});

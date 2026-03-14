@@ -266,6 +266,7 @@ export interface DrawLinkSource {
   isMock?: boolean;
   notes?: string;
   rankBy?: string;
+  remainder?: boolean;
   roundNumber?: number;
   structureId: string;
   timeItems?: TimeItem[];
