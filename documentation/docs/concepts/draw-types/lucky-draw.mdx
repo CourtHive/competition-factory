@@ -62,19 +62,15 @@ A **pre-feed round** is a round with an odd number of matchUps (and thus an odd 
 
 ### Selection Criteria
 
-The lucky loser is selected based on **margin of defeat** -- the participant who lost by the narrowest margin has the highest priority for advancement. The system ranks eligible losers but does **not** auto-select; the tournament director makes the final selection.
+The system presents the tournament director with margin-of-defeat data at multiple levels of granularity. The tournament director uses whichever level provides sufficient differentiation:
 
-Margin calculation uses the most granular available score data, prioritized as:
+- **Set ratio** -- often enough to distinguish losers (e.g., a 3-set loss vs a straight-set loss).
+- **Game ratio** -- useful when set ratios are tied. Computed from `side1Score`/`side2Score`.
+- **Point ratio** -- the most granular level, from `side1PointScore`/`side2PointScore`. Only needed when higher-level ratios don't differentiate.
 
-1. **Point ratio** -- from `side1PointScore`/`side2PointScore` (timed or points-based formats)
-2. **Game ratio** -- from `side1Score`/`side2Score` (standard game-based sets)
-3. **Set ratio** -- from set win counts (fallback when neither games nor points are available)
+When no statistical differentiation exists at any level, the tournament director makes the selection at their discretion (e.g., by coin flip).
 
-The margin value ranges from 0 to 1:
-
-- Values approaching **1** indicate the most competitive match (narrowest loss).
-- Values approaching **0** indicate a one-sided match.
-- **NaN** is returned for walkovers and defaults, making those participants ineligible for lucky selection.
+The system ranks eligible losers by margin but does **not** auto-select; the tournament director always makes the final decision. Participants who lost by walkover or default have no meaningful margin and are excluded from the ranked list.
 
 ### Per-Round vs Cumulative Margin
 
@@ -124,7 +120,7 @@ Each entry in `eligibleLosers` contains:
 | `participantName`  | `string` | The losing participant's name                                             |
 | `matchUpId`        | `string` | The matchUp in which they lost                                            |
 | `scoreString`      | `string` | The score of the matchUp                                                  |
-| `margin`           | `number` | Margin of defeat (0-1, higher = closer match; NaN for walkovers/defaults) |
+| `margin`           | `number` | Margin of defeat (0-1, higher = closer match; excluded for walkovers/defaults) |
 | `gameDifferential` | `number` | Difference in games won between winner and loser                          |
 | `setsWonByLoser`   | `number` | Number of sets won by the losing participant                              |
 
@@ -155,10 +151,10 @@ The `calculateMatchUpMargin` method returns detailed margin data for any matchUp
 
 ```js
 const {
-  margin, // Unified 0-1 value (points > games > sets priority)
-  pointRatio, // Loser points / total points (NaN if no point data)
-  gameRatio, // Loser games / total games (NaN if no game data)
+  margin, // Combined 0-1 value (undefined for walkovers/defaults)
   setRatio, // Loser sets / total sets decided
+  gameRatio, // Loser games / total games (undefined if no game data)
+  pointRatio, // Loser points / total points (undefined if no point data)
   gameDifferential, // Winner games - loser games
   setsWonByLoser,
   setsWonByWinner,
