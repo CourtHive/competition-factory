@@ -1,11 +1,12 @@
 import { generateDrawTypeAndModifyDrawDefinition } from '@Generators/drawDefinitions/generateDrawTypeAndModifyDrawDefinition';
 import { addDrawEntry } from '@Mutate/drawDefinitions/entryGovernor/addDrawEntries';
+import { isLuckyBasedDraw } from '@Query/drawDefinition/isLuckyBasedDraw';
 import { generateAdHoc } from './generateAdHoc';
 import { prepareStage } from './prepareStage';
 import { ensureInt } from '@Tools/ensureInt';
 
 // constants and types
-import { AD_HOC, LUCKY_DRAW, MAIN } from '@Constants/drawDefinitionConstants';
+import { AD_HOC, MAIN } from '@Constants/drawDefinitionConstants';
 import { DrawDefinition } from '@Types/tournamentTypes';
 import { ResultType } from '@Types/factoryTypes';
 
@@ -50,7 +51,7 @@ export function generateNewDrawDefinition(params): ResultType & {
   if (addResult.error) return addResult;
 
   // temporary until seeding is supported in LUCKY_DRAW
-  const seedsCount = drawType === LUCKY_DRAW ? 0 : ensureInt(params.seedsCount ?? 0);
+  const seedsCount = isLuckyBasedDraw(drawType) ? 0 : ensureInt(params.seedsCount ?? 0);
 
   const structureResult = prepareStage({
     ...params,

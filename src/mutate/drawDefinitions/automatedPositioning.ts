@@ -8,6 +8,7 @@ import { getPositionAssignments } from '@Query/drawDefinition/positionsGetter';
 import { getQualifiersCount } from '@Query/drawDefinition/getQualifiersCount';
 import { getAppliedPolicies } from '@Query/extensions/getAppliedPolicies';
 import { modifyDrawNotice } from '@Mutate/notifications/drawNotifications';
+import { isLuckyBasedDraw } from '@Query/drawDefinition/isLuckyBasedDraw';
 import { getParticipants } from '@Query/participants/getParticipants';
 import { getStageEntries } from '@Query/drawDefinition/stageGetter';
 import { getAllDrawMatchUps } from '@Query/matchUps/drawMatchUps';
@@ -19,10 +20,10 @@ import { makeDeepCopy } from '@Tools/makeDeepCopy';
 // constants and types
 import { PolicyDefinitions, SeedingProfile, MatchUpsMap, ResultType } from '@Types/factoryTypes';
 import { DrawDefinition, Event, PositionAssignment, Tournament } from '@Types/tournamentTypes';
-import { LUCKY_DRAW, WATERFALL } from '@Constants/drawDefinitionConstants';
 import { STRUCTURE_NOT_FOUND } from '@Constants/errorConditionConstants';
 import { DIRECT_ENTRY_STATUSES } from '@Constants/entryStatusConstants';
 import { HydratedMatchUp, HydratedParticipant } from '@Types/hydrated';
+import { WATERFALL } from '@Constants/drawDefinitionConstants';
 import { SUCCESS } from '@Constants/resultConstants';
 
 type AutomatedPositioningArgs = {
@@ -157,7 +158,6 @@ function handleWaterfall({
 
 function handleNonWaterfall({
   drawType,
-  LUCKY_DRAW,
   structureSeedingProfile,
   seedingProfile,
   provisionalPositioning,
@@ -177,7 +177,7 @@ function handleNonWaterfall({
   positioningReport,
 }) {
   let unseededByePositions;
-  if (drawType !== LUCKY_DRAW) {
+  if (!isLuckyBasedDraw(drawType)) {
     const profileSeeding = structureSeedingProfile ? { positioning: structureSeedingProfile } : seedingProfile;
     const result: any = positionSeedBlocks({
       seedingProfile: profileSeeding,
@@ -395,7 +395,6 @@ export function automatedPositioning(params: AutomatedPositioningArgs): ResultTy
   } else {
     const nonWaterfallResult = handleNonWaterfall({
       drawType,
-      LUCKY_DRAW,
       structureSeedingProfile: structure.seedingProfile,
       seedingProfile,
       provisionalPositioning,

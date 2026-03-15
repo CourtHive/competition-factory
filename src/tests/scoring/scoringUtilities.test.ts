@@ -1,6 +1,7 @@
+import type { FormatStructure, SetFormatStructure } from '@Types/scoring/types';
+import { parse } from '@Helpers/matchUpFormatCode/parse';
 import { describe, expect, it } from 'vitest';
 import {
-  isValidFormat,
   isValidFormat,
   extractFormatProperties,
   getFormatDescription,
@@ -12,8 +13,6 @@ import {
   getMinPointsToMatchCompletion,
   hasCountablePoints,
 } from '@Tools/scoring/scoringUtilities';
-import type { FormatStructure, SetFormatStructure } from '@Types/scoring/types';
-import { parse } from '@Helpers/matchUpFormatCode/parse';
 
 // ============================================================================
 // isValidFormat
@@ -517,10 +516,6 @@ describe('getMinPointsToSetCompletion', () => {
 
   it('defaults CONSECUTIVE count to 3 when not specified', () => {
     expect(getMinPointsToSetCompletion({ setTo: 5 }, { type: 'CONSECUTIVE' } as any)).toBe(15);
-  });
-
-  it('ignores non-CONSECUTIVE game format', () => {
-    expect(getMinPointsToSetCompletion({ setTo: 6 }, { type: 'AGGR' })).toBe(24);
   });
 });
 

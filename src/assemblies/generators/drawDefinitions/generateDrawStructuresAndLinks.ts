@@ -23,6 +23,7 @@ import {
   ROUND_ROBIN,
   ROUND_ROBIN_WITH_PLAYOFF,
   LUCKY_DRAW,
+  ADAPTIVE,
   QUALIFYING,
   WINNER,
   POSITION,
@@ -178,9 +179,9 @@ export function generateDrawStructuresAndLinks(params: GenerateDrawStructuresAnd
       drawSize < 2 ||
       // LUCKY_DRAW requires drawSize >= 5 for non-power-of-2 sizes
       // (drawSize < 5 has at most 1 loser, making lucky selection meaningless)
-      (drawType === LUCKY_DRAW && !isPowerOf2(drawSize) && drawSize < 5) ||
+      ([LUCKY_DRAW, ADAPTIVE].includes(drawType) && !isPowerOf2(drawSize) && drawSize < 5) ||
       (!staggeredEntry &&
-        ![FEED_IN, LUCKY_DRAW].includes(drawType) &&
+        ![FEED_IN, LUCKY_DRAW, ADAPTIVE].includes(drawType) &&
         (([ROUND_ROBIN_WITH_PLAYOFF, ROUND_ROBIN].includes(drawType) && drawSize < 3) ||
           (![ROUND_ROBIN, ROUND_ROBIN_WITH_PLAYOFF].includes(drawType) && !isPowerOf2(drawSize)))));
 

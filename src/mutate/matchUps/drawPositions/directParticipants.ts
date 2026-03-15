@@ -2,6 +2,7 @@ import { attemptToModifyScore } from '@Mutate/drawDefinitions/matchUpGovernor/at
 import { assignDrawPositionBye } from '@Mutate/matchUps/drawPositions/assignDrawPositionBye';
 import { updateTieMatchUpScore } from '@Mutate/matchUps/score/updateTieMatchUpScore';
 import { isDirectingMatchUpStatus } from '@Query/matchUp/checkStatusType';
+import { isLuckyBasedDraw } from '@Query/drawDefinition/isLuckyBasedDraw';
 import { decorateResult } from '@Functions/global/decorateResult';
 import { isAdHoc } from '@Query/drawDefinition/isAdHoc';
 import { directWinner } from './directWinner';
@@ -9,7 +10,6 @@ import { directLoser } from './directLoser';
 
 // constants
 import { MISSING_DRAW_POSITIONS } from '@Constants/errorConditionConstants';
-import { LUCKY_DRAW } from '@Constants/drawDefinitionConstants';
 import { COMPLETED } from '@Constants/matchUpStatusConstants';
 import { SUCCESS } from '@Constants/resultConstants';
 import { ResultType } from '@Types/factoryTypes';
@@ -91,7 +91,7 @@ export function directParticipants(params): ResultType {
 
     // In lucky draws, all round-to-round advancement is handled by
     // luckyDrawAdvancement — suppress both winner and loser propagation
-    const isLuckyDraw = drawDefinition?.drawType === LUCKY_DRAW;
+    const isLuckyDraw = isLuckyBasedDraw(drawDefinition?.drawType);
 
     if (winnerMatchUp && !isLuckyDraw) {
       const result = directWinner({

@@ -91,7 +91,7 @@ export function luckyDraw(params) {
   return { matchUps, roundsCount, roundLimit };
 }
 
-function luckyRoundProfiles(drawSize) {
+export function luckyRoundProfiles(drawSize) {
   const intDrawSize = ensureInt(drawSize);
   let participantsCount = intDrawSize % 2 ? intDrawSize + 1 : intDrawSize;
   const preFeedRound = !!(Math.ceil(participantsCount / 2) % 2);

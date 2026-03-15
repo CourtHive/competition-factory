@@ -1,8 +1,8 @@
+import { isLuckyBasedDraw } from '@Query/drawDefinition/isLuckyBasedDraw';
 import { getRoundMatchUps } from '../matchUps/getRoundMatchUps';
 
 // constants and types
 import { DrawDefinition, Structure } from '@Types/tournamentTypes';
-import { LUCKY_DRAW } from '@Constants/drawDefinitionConstants';
 import { HydratedMatchUp } from '@Types/hydrated';
 
 type IsLuckyArgs = {
@@ -22,7 +22,7 @@ export function isLucky({ roundsNotPowerOf2, drawDefinition, structure, matchUps
     !!matchUps?.find(({ drawPositions }) => drawPositions?.length);
 
   return (
-    (!drawDefinition?.drawType || drawDefinition.drawType !== LUCKY_DRAW) &&
+    (!drawDefinition?.drawType || !isLuckyBasedDraw(drawDefinition.drawType)) &&
     !structure?.structures &&
     roundsNotPowerOf2 &&
     hasDrawPositions

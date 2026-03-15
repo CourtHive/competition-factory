@@ -1,12 +1,13 @@
 import { calculateMatchUpMargin } from '@Query/matchUp/calculateMatchUpMargin';
+import { isLuckyBasedDraw } from '@Query/drawDefinition/isLuckyBasedDraw';
 import { getRoundMatchUps } from '@Query/matchUps/getRoundMatchUps';
 import { findStructure } from '@Acquire/findStructure';
 
 // constants
 import { ErrorType, INVALID_VALUES, MISSING_DRAW_DEFINITION } from '@Constants/errorConditionConstants';
 import { BYE, completedMatchUpStatuses } from '@Constants/matchUpStatusConstants';
-import { LOSER, LUCKY_DRAW } from '@Constants/drawDefinitionConstants';
 import { DrawDefinition, Tournament } from '@Types/tournamentTypes';
+import { LOSER } from '@Constants/drawDefinitionConstants';
 import { SUCCESS } from '@Constants/resultConstants';
 
 type LuckyParticipantInfo = {
@@ -68,7 +69,7 @@ export function getLuckyDrawRoundStatus({
 }: GetLuckyDrawRoundStatusArgs): GetLuckyDrawRoundStatusResult {
   if (!drawDefinition) return { error: MISSING_DRAW_DEFINITION };
 
-  const isLuckyDraw = drawDefinition.drawType === LUCKY_DRAW;
+  const isLuckyDraw = isLuckyBasedDraw(drawDefinition.drawType);
   if (!isLuckyDraw) return { ...SUCCESS, isLuckyDraw: false, rounds: [] };
 
   structureId = structureId || drawDefinition.structures?.[0]?.structureId;
@@ -205,9 +206,7 @@ export function getLuckyDrawRoundStatus({
     // feeds into. Scored winners and BYE-advanced participants are interleaved
     // by their matchUp's roundPosition rather than appended separately.
     const completedMatchUps = roundMatchUps.filter((m) => m.winningSide);
-    const sortedRoundMatchUps = [...roundMatchUps].sort(
-      (a, b) => (a.roundPosition || 0) - (b.roundPosition || 0),
-    );
+    const sortedRoundMatchUps = [...roundMatchUps].sort((a, b) => (a.roundPosition || 0) - (b.roundPosition || 0));
 
     const advancingWinners: LuckyParticipantInfo[] = [];
     for (const m of sortedRoundMatchUps) {

@@ -1,0 +1,122 @@
+---
+title: Adaptive Draw
+---
+
+import BrowserOnly from '@docusaurus/BrowserOnly';
+import TopologyViewer from '../../components/TopologyViewer';
+
+## Overview
+
+An **Adaptive** draw combines the multi-structure topology of a [Compass](./compass) draw with the flexible sizing of a [Lucky Draw](./lucky-draw). Where Compass requires power-of-2 draw sizes, Adaptive supports any participant count (e.g., 11, 18, 22) across a full direction cascade.
+
+In the factory, this draw type is represented by the constant `ADAPTIVE`.
+
+## How It Works
+
+Each structure in an Adaptive draw uses **lucky draw** logic internally. This means:
+
+- Non-power-of-2 structures have "pre-feed rounds" where one loser is retained as a lucky loser for the next round
+- The remaining losers from each round flow to child structures via LOSER links
+- Child structure sizes are computed from actual round profiles, not simple halving
+
+## Structure
+
+Like Compass, Adaptive generates up to eight structures named after compass directions:
+
+| Structure | Abbreviation | Receives losers from           |
+| --------- | ------------ | ------------------------------ |
+| East      | E            | Main draw (starting structure) |
+| West      | W            | East Round 1 losers            |
+| North     | N            | East Round 2 losers            |
+| South     | S            | West Round 1 losers            |
+| Northeast | NE           | East Round 3 losers            |
+| Northwest | NW           | North Round 1 losers           |
+| Southwest | SW           | West Round 1 losers            |
+| Southeast | SE           | South Round 1 losers           |
+
+### Child Size Computation
+
+For a non-power-of-2 draw size, child sizes depend on the round profile:
+
+- **Pre-feed round** (odd matchUp count): `childSize = matchUpsCount - 1` (one loser stays as lucky loser)
+- **Non-pre-feed round**: `childSize = matchUpsCount` (all losers exit)
+- Child structures with fewer than 2 participants are suppressed
+
+**Example -- drawSize 11:**
+
+The lucky draw round profiles for 11 participants produce rounds with 6, 3, 2, 1 matchUps:
+
+- Round 1 (6 matchUps, pre-feed): child drawSize = 5 -> West
+- Round 2 (3 matchUps, pre-feed): child drawSize = 2 -> North
+- Round 3 (2 matchUps): child drawSize = 2 -> Northeast
+- Round 4 (final): no child
+
+West (drawSize 5) recursively generates its own children (South, etc.).
+
+## Configurable Depth
+
+The `roundOffsetLimit` parameter controls how many levels of child structures are generated:
+
+| roundOffsetLimit | Structures | Equivalent to |
+| ---------------- | ---------- | ------------- |
+| 1                | 2          | --            |
+| 2                | up to 4    | OLYMPIC-like  |
+| 3 (default)      | up to 8    | COMPASS-like  |
+
+## Adaptive Attributes
+
+The factory defines adaptive structure attributes in the `ADAPTIVE_ATTRIBUTES` constant, identical to `COMPASS_ATTRIBUTES`:
+
+```js
+ADAPTIVE_ATTRIBUTES = {
+  0: { name: 'East', abbreviation: 'E' },
+  '0-1': { name: 'West', abbreviation: 'W' },
+  '0-2': { name: 'North', abbreviation: 'N' },
+  '0-3': { name: 'Northeast', abbreviation: 'NE' },
+  '0-1-1': { name: 'South', abbreviation: 'S' },
+  '0-1-2': { name: 'Southwest', abbreviation: 'SW' },
+  '0-2-1': { name: 'Northwest', abbreviation: 'NW' },
+  '0-1-1-1': { name: 'Southeast', abbreviation: 'SE' },
+};
+```
+
+Custom naming can be provided via `playoffAttributes`.
+
+## Differences from Compass
+
+| Feature                | Compass              | Adaptive                      |
+| ---------------------- | -------------------- | ----------------------------- |
+| Draw size              | Power-of-2 only      | Any size >= 5 (or power-of-2) |
+| Structure internals    | Standard elimination | Lucky draw elimination        |
+| Child size computation | `drawSize / 2^N`     | From round profiles           |
+| Lucky loser mechanism  | None                 | Pre-feed rounds retain 1      |
+
+## Generation
+
+```js
+const { drawDefinition } = engine.generateDrawDefinition({
+  drawType: 'ADAPTIVE',
+  drawSize: 11,
+});
+
+// With custom depth (OLYMPIC-like, 4 structures max)
+const { drawDefinition } = engine.generateDrawDefinition({
+  drawType: 'ADAPTIVE',
+  roundOffsetLimit: 2,
+  drawSize: 11,
+});
+```
+
+## Use Cases
+
+- Tournaments with non-standard participant counts that want compass-style guaranteed matchUps
+- Any scenario where compass topology is desired but participant count is not a power of 2
+- Flexible club and junior tournaments where exact bracket sizes vary
+
+## Related
+
+- [Compass Draw](./compass) -- Power-of-2 variant with standard elimination
+- [Lucky Draw](./lucky-draw) -- Single-structure lucky draw logic
+- [Olympic Draw](./olympic) -- Smaller variant guaranteeing 2 matchUps
+- [Draw Links](../draw-links) -- How losers flow between structures
+- [Draw Types Overview](../draw-types) -- List of all pre-defined draw types

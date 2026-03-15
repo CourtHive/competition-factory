@@ -8,6 +8,7 @@ import { checkRequiredParameters } from '@Helpers/parameters/checkRequiredParame
 import { matchUpActions } from '@Query/drawDefinition/matchUpActions/matchUpActions';
 import { isCompletedStructure } from '@Query/drawDefinition/structureActions';
 import { getAppliedPolicies } from '@Query/extensions/getAppliedPolicies';
+import { isLuckyBasedDraw } from '@Query/drawDefinition/isLuckyBasedDraw';
 import { getValidLuckyLosersAction } from './getValidLuckyLoserAction';
 import { getValidAlternatesAction } from './getValidAlternatesAction';
 import { isValidSeedPosition } from '@Query/drawDefinition/seedGetter';
@@ -27,7 +28,7 @@ import {
 
 // constants and types
 import { INVALID_DRAW_POSITION, MISSING_DRAW_POSITION, STRUCTURE_NOT_FOUND } from '@Constants/errorConditionConstants';
-import { CONSOLATION, LUCKY_DRAW, MAIN, POSITION, QUALIFYING, WIN_RATIO } from '@Constants/drawDefinitionConstants';
+import { CONSOLATION, MAIN, POSITION, QUALIFYING, WIN_RATIO } from '@Constants/drawDefinitionConstants';
 import { DrawDefinition, Event, Participant, Tournament } from '@Types/tournamentTypes';
 import { PolicyDefinitions, MatchUpsMap, ResultType } from '@Types/factoryTypes';
 import { DIRECT_ENTRY_STATUSES } from '@Constants/entryStatusConstants';
@@ -623,7 +624,7 @@ function positionActionsInternal(params: PositionActionsArgs): ResultType & {
   // In lucky draws, positions beyond round 1 are virtual (created by advancement).
   // Restrict actions: no withdraw, bye assignment, or seeding for these positions.
   const isLuckyDrawAdvancedPosition =
-    drawDefinition.drawType === LUCKY_DRAW && drawPositionInitialRounds?.[drawPosition] > 1;
+    isLuckyBasedDraw(drawDefinition.drawType) && drawPositionInitialRounds?.[drawPosition] > 1;
 
   if (actionsDisabled)
     return {
