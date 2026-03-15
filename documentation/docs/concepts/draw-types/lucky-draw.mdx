@@ -2,6 +2,9 @@
 title: Lucky Draw
 ---
 
+import BrowserOnly from '@docusaurus/BrowserOnly';
+import TopologyViewer from '../../components/TopologyViewer';
+
 ## Overview
 
 A **Lucky Draw** is an elimination-style draw that supports any participant count, not just powers of 2. Unlike standard elimination draws that use byes to pad to a power-of-2 draw size, lucky draws create rounds with non-power-of-2 matchUp counts and use a "lucky loser" mechanism to balance rounds when an odd number of winners is produced.
@@ -28,6 +31,30 @@ Key structural differences from standard elimination:
 - **No connecting lines between rounds.** Unlike elimination draws where specific matchUp winners feed into specific next-round matchUps, lucky draws do not have fixed advancement paths between rounds.
 - **Non-power-of-2 matchUp counts.** Rounds can have odd numbers of matchUps (e.g., 3, 5, 7).
 - **Pre-feed rounds.** When a round has an odd number of matchUps, it produces an odd number of winners. This is one too many for a standard halving to work, so one loser from that round is selected to advance -- the "lucky loser."
+
+### Example: drawSize 25
+
+The schematic below shows a 25-participant lucky draw structure. Pre-feed rounds (where a lucky loser is selected) are highlighted — these are rounds with an odd number of matchUps where the tournament director must select one loser to advance.
+
+<BrowserOnly>{() => (
+  <TopologyViewer height={280} initialState={{
+    drawName: 'Lucky Draw (drawSize 25)',
+    nodes: [
+      { id: 'main', structureName: 'Main Draw', stage: 'MAIN', structureType: 'LUCKY_DRAW', drawSize: 25, position: { x: 40, y: 40 } },
+    ],
+    edges: [],
+  }} />
+)}</BrowserOnly>
+
+<div style={{ marginTop: '2rem' }} />
+
+| Round   | Participants | MatchUps | Pre-feed? | Lucky loser advances? |
+| ------- | ------------ | -------- | --------- | --------------------- |
+| Round 1 | 26 (25 + 1 BYE) | 13   | Yes       | Yes -- 1 of 13 losers |
+| Round 2 | 14           | 7        | Yes       | Yes -- 1 of 7 losers  |
+| Round 3 | 8            | 4        | No        | No                    |
+| Round 4 | 4            | 2        | No        | No                    |
+| Final   | 2            | 1        | --        | --                    |
 
 ## Pre-Feed Rounds and Lucky Loser Selection
 
@@ -172,6 +199,7 @@ if (preFeedRound) {
 
 ## Related
 
+- [Adaptive Draw](./adaptive) -- Multi-structure variant using lucky draw logic for any participant count
 - [Draw Types Overview](../draw-types) -- List of all pre-defined draw types
 - [Single Elimination](./single-elimination) -- Standard power-of-2 knockout draw
 - [Draw Links](../draw-links) -- How structures connect in multi-structure draws
