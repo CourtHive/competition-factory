@@ -36,8 +36,8 @@ importers:
         specifier: ^18.2.0
         version: 18.3.1(react@18.3.1)
       tods-competition-factory:
-        specifier: 2.4.6-beta.24
-        version: 2.4.6-beta.24
+        specifier: 2.4.6-beta.25
+        version: 2.4.6-beta.25
 
 packages:
 
@@ -5034,8 +5034,8 @@ packages:
     resolution: {integrity: sha512-p7oISSpEjOgEv9K6cQenA00zcFlbntRlxj81VliUfJAnoIEMPmf4qic2HJRYgLIfNffHyVr/TcLEnyqoVhI4XQ==}
     engines: {node: '>=20'}
 
-  tods-competition-factory@2.4.6-beta.24:
-    resolution: {integrity: sha512-Cr5Du5Si5/j3n1+TCUbxqniQSIoPG71Xp+OUDIN2JI6lucRK22yf7MmwZ+IRc32lVID9sKsu+MbgNEmPsFePWw==}
+  tods-competition-factory@2.4.6-beta.25:
+    resolution: {integrity: sha512-jY+HIx4wmXi49BlCLOp0Wz0hOKPb9pO6JEegyqKfdX4wJ/zhpysHzfT/avJHdRdsn8cnvpEdc8yiFB50jQFu+w==}
     engines: {node: '>=20'}
 
   toidentifier@1.0.1:
@@ -11959,7 +11959,7 @@ snapshots:
 
   tods-competition-factory@2.4.6-beta.23: {}
 
-  tods-competition-factory@2.4.6-beta.24: {}
+  tods-competition-factory@2.4.6-beta.25: {}
 
   toidentifier@1.0.1: {}
 
