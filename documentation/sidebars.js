@@ -81,6 +81,7 @@ module.exports = {
                 'concepts/draw-types/drawmatic',
                 'concepts/draw-types/playoff',
                 'concepts/draw-types/lucky-draw',
+                'concepts/draw-types/adaptive',
               ],
             },
             'concepts/draw-links',

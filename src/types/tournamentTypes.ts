@@ -89,6 +89,7 @@ export interface Event {
 
 export const DrawTypeEnum = {
   AD_HOC: 'AD_HOC',
+  ADAPTIVE: 'ADAPTIVE',
   COMPASS: 'COMPASS',
   CURTIS_cONSOLATION: 'CURTIS_CONSOLATION',
   DOUBLE_eLIMINATION: 'DOUBLE_ELIMINATION',
@@ -258,12 +259,15 @@ export enum LinkTypeEnum {
 export type LinkTypeUnion = keyof typeof LinkTypeEnum;
 
 export interface DrawLinkSource {
+  bestOf?: number;
   createdAt?: Date | string;
   drawId?: string;
   extensions?: Extension[];
   finishingPositions?: number[];
   isMock?: boolean;
   notes?: string;
+  rankBy?: string;
+  remainder?: boolean;
   roundNumber?: number;
   structureId: string;
   timeItems?: TimeItem[];

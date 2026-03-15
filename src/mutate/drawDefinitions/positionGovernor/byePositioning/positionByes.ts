@@ -1,4 +1,5 @@
 import { assignDrawPositionBye } from '@Mutate/matchUps/drawPositions/assignDrawPositionBye';
+import { isLuckyBasedDraw } from '@Query/drawDefinition/isLuckyBasedDraw';
 import { getSeedOrderByePositions } from './getSeedOrderedByePositions';
 import { getUnseededByePositions } from './getUnseededByePositions';
 import { getByesData } from '@Query/drawDefinition/getByesData';
@@ -7,7 +8,7 @@ import { findStructure } from '@Acquire/findStructure';
 import { shuffleArray } from '@Tools/arrays';
 
 // constants and types
-import { CONTAINER, ITEM, LUCKY_DRAW, QUALIFYING } from '@Constants/drawDefinitionConstants';
+import { CONTAINER, ITEM, QUALIFYING } from '@Constants/drawDefinitionConstants';
 import { DrawDefinition, Event, Structure, Tournament } from '@Types/tournamentTypes';
 import { PolicyDefinitions, SeedingProfile, MatchUpsMap } from '@Types/factoryTypes';
 import { SUCCESS } from '@Constants/resultConstants';
@@ -56,7 +57,7 @@ export function positionByes({
   if (byesToPlace <= 0) return { ...SUCCESS };
 
   // LUCKY_DRAW: BYE positions are simply the unfilled first-round draw positions
-  if (drawDefinition.drawType === LUCKY_DRAW) {
+  if (isLuckyBasedDraw(drawDefinition.drawType)) {
     const firstRoundPositions = (relevantMatchUps || []).flatMap((m) => m.drawPositions || []).filter(Boolean);
     const filledPositions = new Set(
       structure?.positionAssignments?.filter((a) => a.participantId).map((a) => a.drawPosition) || [],

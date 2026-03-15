@@ -72,6 +72,7 @@ export const FIRST_MATCH_LOSER_CONSOLATION = 'FIRST_MATCH_LOSER_CONSOLATION';
 export const FIRST_ROUND_LOSER_CONSOLATION = 'FIRST_ROUND_LOSER_CONSOLATION';
 
 export const LUCKY_DRAW = 'LUCKY_DRAW';
+export const ADAPTIVE = 'ADAPTIVE';
 export const CURTIS = 'CURTIS_CONSOLATION';
 export const CURTIS_CONSOLATION = 'CURTIS_CONSOLATION';
 
@@ -109,12 +110,23 @@ export const OLYMPIC_ATTRIBUTES = {
   '0-2': { name: 'North', abbreviation: 'N' },
   '0-1-1': { name: 'South', abbreviation: 'S' },
 };
+export const ADAPTIVE_ATTRIBUTES = {
+  0: { name: 'East', abbreviation: 'E' },
+  '0-1': { name: 'West', abbreviation: 'W' },
+  '0-2': { name: 'North', abbreviation: 'N' },
+  '0-3': { name: 'Northeast', abbreviation: 'NE' },
+  '0-1-1': { name: 'South', abbreviation: 'S' },
+  '0-1-2': { name: 'Southwest', abbreviation: 'SW' },
+  '0-2-1': { name: 'Northwest', abbreviation: 'NW' },
+  '0-1-1-1': { name: 'Southeast', abbreviation: 'SE' },
+};
 
 // finishingPosition determination
 export const WIN_RATIO = 'WIN_RATIO';
 export const ROUND_OUTCOME = 'ROUND_OUTCOME';
 
 export const MULTI_STRUCTURE_DRAWS = [
+  ADAPTIVE,
   COMPASS,
   CURTIS,
   FEED_IN_CHAMPIONSHIP_TO_QF,
@@ -135,6 +147,7 @@ export const MULTI_STRUCTURE_DRAWS = [
 
 export const generatedDrawTypes = [
   AD_HOC,
+  ADAPTIVE,
   COMPASS,
   CURTIS,
   DOUBLE_ELIMINATION,
@@ -192,6 +205,7 @@ export const drawDefinitionConstants = {
   FEED_IN_CHAMPIONSHIP_TO_SF,
   FEED_IN_CHAMPIONSHIP,
   LUCKY_DRAW,
+  ADAPTIVE,
 
   ROUND_ROBIN_WITH_PLAYOFF,
   ROUND_ROBIN,
@@ -200,6 +214,7 @@ export const drawDefinitionConstants = {
   BACKDRAW,
   COMPASS_ATTRIBUTES,
   OLYMPIC_ATTRIBUTES,
+  ADAPTIVE_ATTRIBUTES,
 
   DRAW,
   RANDOM,

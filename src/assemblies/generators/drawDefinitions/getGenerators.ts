@@ -5,6 +5,7 @@ import { generateCurtisConsolation } from './drawTypes/curtisConsolation';
 import { generatePlayoffStructures } from './drawTypes/playoffStructures';
 import { getAppliedPolicies } from '@Query/extensions/getAppliedPolicies';
 import { generateRoundRobin } from './drawTypes/roundRobin/roundRobin';
+import { generateAdaptiveStructures } from './drawTypes/adaptiveDraw';
 import structureTemplate from '../templates/structureTemplate';
 import { feedInChampionship } from './drawTypes/feedInChamp';
 import { treeMatchUps } from './drawTypes/eliminationTree';
@@ -20,7 +21,7 @@ import { SUCCESS } from '@Constants/resultConstants';
 import {
   MAIN, PLAY_OFF, FICQF, FICSF, MFIC, AD_HOC, CURTIS, FICR16, COMPASS,
   PLAYOFF, OLYMPIC, FEED_IN, ROUND_ROBIN,
-  COMPASS_ATTRIBUTES, OLYMPIC_ATTRIBUTES,
+  COMPASS_ATTRIBUTES, OLYMPIC_ATTRIBUTES, ADAPTIVE_ATTRIBUTES, ADAPTIVE,
   SINGLE_ELIMINATION, DOUBLE_ELIMINATION,
   FIRST_MATCH_LOSER_CONSOLATION,
   FIRST_ROUND_LOSER_CONSOLATION,
@@ -105,6 +106,13 @@ export function getGenerators(params): { generators?: any; error?: ErrorType } {
         childStage: PLAY_OFF,
         roundOffsetLimit: 2,
         playoffAttributes: playoffAttributes ?? OLYMPIC_ATTRIBUTES,
+      }),
+    [ADAPTIVE]: () =>
+      generateAdaptiveStructures({
+        ...params,
+        childStage: PLAY_OFF,
+        roundOffsetLimit: params.roundOffsetLimit ?? 3,
+        playoffAttributes: playoffAttributes ?? ADAPTIVE_ATTRIBUTES,
       }),
     [PLAYOFF]: () => {
       return generatePlayoffStructures({ ...params, childStage: PLAY_OFF });

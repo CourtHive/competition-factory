@@ -65,11 +65,93 @@ This creates:
 - A "Gold" playoff bracket receiving the top 2 from each group (8 participants).
 - A "Silver" playoff bracket receiving positions 3-4 from each group (8 participants).
 
+## Best Finishers (Cross-Group Advancement)
+
+When you need to advance a number of participants that isn't evenly divisible by the number of groups, use the `bestOf` option. This selects all participants from the specified `finishingPositions`, then fills remaining slots with the best-ranked participants from subsequent finishing positions using cross-group comparison via `GEMscore`.
+
+This follows the same pattern used by major tournaments such as the FIFA World Cup (best third-placed teams), UEFA Euro (best third-place), and the NBA Cup (wild cards).
+
+```js
+const { drawDefinition } = engine.generateDrawDefinition({
+  drawSize: 12,
+  drawType: 'ROUND_ROBIN_WITH_PLAYOFF',
+  structureOptions: {
+    groupSize: 4,
+    playoffGroups: [
+      {
+        finishingPositions: [1],
+        bestOf: 4,
+        rankBy: 'GEMscore',
+        structureName: 'Championship',
+      },
+    ],
+  },
+});
+```
+
+With 3 groups, this advances:
+- All 3 group winners (guaranteed by `finishingPositions: [1]`)
+- The 1 best second-place finisher across all groups, ranked by `GEMscore`
+
+The `bestOf` value must be:
+- Greater than or equal to `groupCount × finishingPositions.length` (the guaranteed count)
+- Less than or equal to `groupCount × groupSize` (total participants)
+
+### Mixed configurations
+
+`bestOf` playoff groups can coexist with standard playoff groups:
+
+```js
+playoffGroups: [
+  { finishingPositions: [1], bestOf: 4, rankBy: 'GEMscore', structureName: 'Championship' },
+  { finishingPositions: [3, 4], structureName: 'Consolation' },
+]
+```
+
+The system tracks participant consumption across groups: if `bestOf` consumes some second-place finishers, subsequent groups targeting those positions will have fewer participants available.
+
+### Validation
+
+Use `validatePlayoffGroups()` to check a configuration before generating:
+
+```js
+const { valid, info } = engine.validatePlayoffGroups({
+  playoffGroups,
+  groupCount,
+  groupSize,
+});
+```
+
+This validates:
+- `bestOf` bounds and `rankBy` values
+- Cross-group consumption (no standard group ends up with fewer than 2 participants)
+- Total claimed participants don't exceed available
+
+### POSITION link metadata
+
+When `bestOf` is specified, the generated `POSITION` link includes the additional fields on `source`:
+
+```js
+{
+  linkType: 'POSITION',
+  source: {
+    structureId: '...',
+    finishingPositions: [1],
+    bestOf: 4,
+    rankBy: 'GEMscore',
+  },
+  target: { ... }
+}
+```
+
+The positioning engine reads these fields to select participants via cross-group ranking rather than strict finishing-position matching.
+
 ## Use Cases
 
 - Tournament formats that combine the fairness of round robin play with the excitement of knockout rounds.
 - World Cup-style formats where group winners and runners-up advance to a bracket.
 - Events that need to determine finishing positions for all participants, not just the winner.
+- Formats where the number of advancing participants is not evenly divisible by the number of groups (e.g., 4 from 3 groups).
 
 ## Related
 

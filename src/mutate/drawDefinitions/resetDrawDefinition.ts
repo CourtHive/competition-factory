@@ -1,12 +1,13 @@
 import { modifyDrawNotice, modifyMatchUpNotice } from '@Mutate/notifications/drawNotifications';
 import { getAllStructureMatchUps } from '@Query/matchUps/getAllStructureMatchUps';
+import { isLuckyBasedDraw } from '@Query/drawDefinition/isLuckyBasedDraw';
 import { getMatchUpsMap } from '@Query/matchUps/getMatchUpsMap';
 
 // constants and types
-import { LUCKY_DRAW, MAIN, QUALIFYING } from '@Constants/drawDefinitionConstants';
 import { MISSING_DRAW_DEFINITION } from '@Constants/errorConditionConstants';
-import { toBePlayed } from '@Fixtures/scoring/outcomes/toBePlayed';
 import { DRAFT_STATE, POSITION_ACTIONS } from '@Constants/extensionConstants';
+import { MAIN, QUALIFYING } from '@Constants/drawDefinitionConstants';
+import { toBePlayed } from '@Fixtures/scoring/outcomes/toBePlayed';
 import { BYE } from '@Constants/matchUpStatusConstants';
 import { SUCCESS } from '@Constants/resultConstants';
 import { TimeItem } from '@Types/tournamentTypes';
@@ -33,7 +34,7 @@ export function resetDrawDefinition({ tournamentRecord, removeScheduling, remove
   // remove all positionAssignments that are not BYE
   // if removeAssignments, also remove assignments from MAIN/QUALIFYING stageSequence 1
 
-  const isLuckyDraw = drawDefinition.drawType === LUCKY_DRAW;
+  const isLuckyDraw = isLuckyBasedDraw(drawDefinition.drawType);
   const matchUpsMap = getMatchUpsMap({ drawDefinition });
 
   const getRawMatchUp = (matchUpId) => matchUpsMap?.drawMatchUps?.find((matchUp) => matchUp.matchUpId === matchUpId);

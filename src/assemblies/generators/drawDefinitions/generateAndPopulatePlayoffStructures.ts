@@ -6,6 +6,7 @@ import { directParticipants } from '@Mutate/matchUps/drawPositions/directPartici
 import { resolveTieFormat } from '@Query/hierarchical/tieFormats/resolveTieFormat';
 import { getAllStructureMatchUps } from '@Query/matchUps/getAllStructureMatchUps';
 import { checkMatchUpIsComplete } from '@Query/matchUp/checkMatchUpIsComplete';
+import { isLuckyBasedDraw } from '@Query/drawDefinition/isLuckyBasedDraw';
 import { getSourceRounds } from '@Query/drawDefinition/getSourceRounds';
 import { getAllDrawMatchUps } from '@Query/matchUps/drawMatchUps';
 import { decorateResult } from '@Functions/global/decorateResult';
@@ -20,7 +21,7 @@ import { ensureInt } from '@Tools/ensureInt';
 // constants and types
 import { INVALID_VALUES, MISSING_DRAW_DEFINITION, STRUCTURE_NOT_FOUND } from '@Constants/errorConditionConstants';
 import { DrawDefinition, DrawLink, Event, Structure, Tournament } from '@Types/tournamentTypes';
-import { CONTAINER, LOSER, LUCKY_DRAW, PLAY_OFF, TOP_DOWN } from '@Constants/drawDefinitionConstants';
+import { CONTAINER, LOSER, PLAY_OFF, TOP_DOWN } from '@Constants/drawDefinitionConstants';
 import { RoundProfile, ResultType } from '@Types/factoryTypes';
 import { BYE } from '@Constants/matchUpStatusConstants';
 import { SUCCESS } from '@Constants/resultConstants';
@@ -168,7 +169,7 @@ export function generateAndPopulatePlayoffStructures(params: GenerateAndPopulate
   // For LUCKY_DRAW pre-feed rounds, the playoff drawSize must be computed from
   // the actual matchUp count (discarded losers = matchUpsInRound - 1), not from
   // finishing positions which don't account for the lucky loser selection.
-  const isLuckyDraw = drawDefinition.drawType === LUCKY_DRAW;
+  const isLuckyDraw = isLuckyBasedDraw(drawDefinition.drawType);
 
   for (const roundNumber of sourceRounds ?? []) {
     const roundInfo = roundsRanges?.find((roundInfo) => roundInfo.roundNumber === roundNumber);

@@ -1,5 +1,6 @@
 import { modifyPositionAssignmentsNotice, modifyMatchUpNotice } from '@Mutate/notifications/drawNotifications';
 import { getLuckyDrawRoundStatus } from '@Query/drawDefinition/getLuckyDrawRoundStatus';
+import { isLuckyBasedDraw } from '@Query/drawDefinition/isLuckyBasedDraw';
 import { decorateResult } from '@Functions/global/decorateResult';
 import { getDevContext } from '@Global/state/globalState';
 import { findStructure } from '@Acquire/findStructure';
@@ -7,7 +8,7 @@ import { findStructure } from '@Acquire/findStructure';
 // constants
 import { INVALID_VALUES, MISSING_DRAW_DEFINITION, MISSING_PARTICIPANT_ID } from '@Constants/errorConditionConstants';
 import { DrawDefinition, Event, Tournament } from '@Types/tournamentTypes';
-import { LOSER, LUCKY_DRAW } from '@Constants/drawDefinitionConstants';
+import { LOSER } from '@Constants/drawDefinitionConstants';
 import { SUCCESS } from '@Constants/resultConstants';
 import { ResultType } from '@Types/factoryTypes';
 
@@ -41,7 +42,7 @@ export function luckyDrawAdvancement({
   event,
 }: LuckyDrawAdvancementArgs): ResultType {
   if (!drawDefinition) return { error: MISSING_DRAW_DEFINITION };
-  if (drawDefinition.drawType !== LUCKY_DRAW) {
+  if (!isLuckyBasedDraw(drawDefinition.drawType)) {
     return decorateResult({ result: { error: INVALID_VALUES }, info: 'Not a lucky draw' });
   }
 
@@ -213,9 +214,7 @@ export function luckyDrawAdvancement({
   // Include ALL positions (participants AND byes) to avoid collisions.
   const allAssignedPositions = new Set(positionAssignments.map((a) => a.drawPosition));
 
-  const allMatchUpPositions = (structure.matchUps || [])
-    .flatMap((m) => m.drawPositions || [])
-    .filter(Boolean);
+  const allMatchUpPositions = (structure.matchUps || []).flatMap((m) => m.drawPositions || []).filter(Boolean);
 
   const allPositions = [...allAssignedPositions, ...allMatchUpPositions];
   const maxPosition = allPositions.length ? Math.max(...allPositions) : 0;

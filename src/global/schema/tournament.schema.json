@@ -353,6 +353,7 @@
     "DrawTypeEnum": {
       "type": "string",
       "enum": [
+        "ADAPTIVE",
         "COMPASS",
         "CURTIS_CONSOLATION",
         "DOUBLE_ELIMINATION",
