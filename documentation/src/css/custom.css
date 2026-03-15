@@ -44,7 +44,10 @@
 }
 
 /* ── Navbar ───────────────────────────────────────────── */
-.navbar {
+/* Apply backdrop-filter to the inner wrapper only, NOT .navbar itself.
+   backdrop-filter on .navbar creates a containing block that traps the
+   position:fixed navbar-sidebar inside the navbar bar, breaking mobile nav. */
+.navbar__inner {
   backdrop-filter: blur(16px);
   -webkit-backdrop-filter: blur(16px);
 }
