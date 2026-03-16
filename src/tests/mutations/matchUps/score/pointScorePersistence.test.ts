@@ -257,6 +257,10 @@ describe('setMatchUpStatus persists IN_PROGRESS partial scores', () => {
     expect(matchUp).toBeDefined();
     expect(matchUp.matchUpStatus).toBe('IN_PROGRESS');
 
+    // Score strings must be generated from sets
+    expect(matchUp.score.scoreStringSide1).toBe('2-1');
+    expect(matchUp.score.scoreStringSide2).toBe('1-2');
+
     // Score must persist — not empty
     expect(matchUp.score.sets).toBeDefined();
     expect(matchUp.score.sets.length).toBe(1);
@@ -266,6 +270,49 @@ describe('setMatchUpStatus persists IN_PROGRESS partial scores', () => {
     expect(set1.side2Score).toBe(1);
     expect(set1.side1PointScore).toBe('15');
     expect(set1.side2PointScore).toBe('30');
+  });
+
+  test('point scores survive through getEventData round trip', () => {
+    const drawId = 'drawId';
+    const eventId = 'eventId';
+    mocksEngine.generateTournamentRecord({
+      drawProfiles: [{ drawId, drawSize: 4, idPrefix: 'm', eventId }],
+      setState: true,
+    });
+
+    const outcome = {
+      score: {
+        sets: [
+          {
+            setNumber: 1,
+            side1Score: 2,
+            side2Score: 1,
+            side1PointScore: '15',
+            side2PointScore: '30',
+          },
+        ],
+      },
+      matchUpFormat: 'SET3-S:6/TB7',
+      matchUpStatus: 'IN_PROGRESS',
+    };
+
+    const result = tournamentEngine.setMatchUpStatus({
+      matchUpId: 'm-1-1',
+      drawId,
+      outcome,
+    });
+    expect(result.success).toBe(true);
+
+    // Verify point scores survive through getEventData (the TMX render path)
+    const { eventData } = tournamentEngine.getEventData({ eventId });
+    const structures = eventData?.drawsData?.[0]?.structures || [];
+    const allMatchUps = structures.flatMap((s: any) => Object.values(s.roundMatchUps || {}).flat());
+    const matchUp = allMatchUps.find((m: any) => m.matchUpId === 'm-1-1');
+
+    expect(matchUp).toBeDefined();
+    expect(matchUp.score.sets.length).toBe(1);
+    expect(matchUp.score.sets[0].side1PointScore).toBe('15');
+    expect(matchUp.score.sets[0].side2PointScore).toBe('30');
   });
 
   test('partial score without point scores persists through setMatchUpStatus', () => {
