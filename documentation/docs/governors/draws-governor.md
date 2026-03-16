@@ -85,6 +85,34 @@ engine.adHocPositionSwap({
 
 ---
 
+## addLinkedConsolationStructure
+
+Generates a consolation structure of any draw type and attaches it to an existing draw with LOSER links from specified source rounds. The consolation structure is created using the factory's standard generator pipeline, so it supports all draw types (AD_HOC, SINGLE_ELIMINATION, LUCKY_DRAW, ROUND_ROBIN, FEED_IN, etc.).
+
+```js
+engine.addLinkedConsolationStructure({
+  drawId,
+  structureId, // optional - main structure to link from; auto-resolved if omitted
+  structureType, // optional - defaults to AD_HOC; any valid draw type (SINGLE_ELIMINATION, LUCKY_DRAW, ROUND_ROBIN, etc.)
+  structureName, // optional - defaults to 'Consolation'
+  drawSize, // optional - defaults to 2
+  matchUpFormat, // optional - scoring format for consolation matchUps
+  matchUpType, // optional - SINGLES, DOUBLES, TEAM; defaults to draw's matchUpType
+  links: [
+    // required - LOSER link definitions from main to consolation
+    { sourceRoundNumber: 1, targetRoundNumber: 1 },
+    { sourceRoundNumber: 2, targetRoundNumber: 1 },
+    { sourceRoundNumber: 3, targetRoundNumber: 1 },
+  ],
+});
+```
+
+:::tip
+Use `generateConsolationStructure` to generate the consolation structure without attaching it. This is useful in client/server architectures where the structure must be generated locally and attached via an execution queue.
+:::
+
+---
+
 ## addPlayoffStructures
 
 Adds playoff structures to an existing drawDefinition. This method creates PLAY_OFF structures linked via LOSER links from the specified source structure.

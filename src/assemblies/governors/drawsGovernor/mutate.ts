@@ -6,6 +6,7 @@ export { luckyLoserDrawPositionAssignment } from '@Mutate/drawDefinitions/luckyL
 export { shiftAdHocRounds } from '@Mutate/drawDefinitions/structureGovernor/adHocRounds/shiftAdHocRounds';
 export { setPositionAssignments } from '@Mutate/drawDefinitions/positionGovernor/setPositionAssignments';
 export { swapAdHocRounds } from '@Mutate/drawDefinitions/structureGovernor/adHocRounds/swapAdHocRounds';
+export { addLinkedConsolationStructure } from '@Mutate/drawDefinitions/addLinkedConsolationStructure';
 export { setDrawPositionPreferences } from '@Mutate/drawDefinitions/draft/setDrawPositionPreferences';
 export { alternateDrawPositionAssignment } from '@Mutate/matchUps/drawPositions/positionAlternate';
 export { removeDrawPositionAssignment } from '@Mutate/drawDefinitions/removeDrawPositionAssignment';
