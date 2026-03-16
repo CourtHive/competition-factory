@@ -280,4 +280,58 @@ describe('lucky draw with playoff structure — end-to-end', () => {
     }
     expect(playoffParticipantIds).not.toContain(selectedLoser.participantId);
   });
+
+  test('drawSize 11: add 8-12 playoff generates matchUps', () => {
+    // drawSize 11 LUCKY_DRAW has rounds [6, 3, 2, 1]
+    // Round 1 losers have finishingPositions 8-12
+    const drawProfiles = [{ drawSize: 11, drawType: LUCKY_DRAW }];
+    const {
+      tournamentRecord,
+      drawIds: [drawId],
+    } = mocksEngine.generateTournamentRecord({ drawProfiles });
+
+    tournamentEngine.setState(tournamentRecord);
+
+    const { drawDefinition } = tournamentEngine.getEvent({ drawId });
+    const mainStructure = drawDefinition.structures.find((s: any) => s.stage === 'MAIN');
+    const mainStructureId = mainStructure.structureId;
+
+    // Verify available playoff profiles include round 1
+    const { playoffRoundsRanges } = tournamentEngine.getAvailablePlayoffProfiles({
+      structureId: mainStructureId,
+      drawId,
+    });
+    expect(playoffRoundsRanges).toBeDefined();
+    const round1Range = playoffRoundsRanges.find((r: any) => r.roundNumber === 1);
+    expect(round1Range).toBeDefined();
+    expect(round1Range.finishingPositions).toEqual([8, 9, 10, 11, 12]);
+
+    // Add playoff structure for round 1 losers (positions 8-12)
+    const addResult = tournamentEngine.addPlayoffStructures({
+      playoffStructureNameBase: 'Playoff 8-12',
+      structureId: mainStructureId,
+      roundNumbers: [1],
+      drawId,
+    });
+    expect(addResult.success).toBe(true);
+
+    // Verify playoff structure was created with matchUps
+    const { drawDefinition: updatedDraw } = tournamentEngine.getEvent({ drawId });
+    const playoffStructures = updatedDraw.structures.filter((s: any) => s.stage === PLAY_OFF);
+    expect(playoffStructures.length).toBeGreaterThan(0);
+
+    const playoffStructure = playoffStructures[0];
+    expect(playoffStructure.matchUps).toBeDefined();
+    expect(playoffStructure.matchUps.length).toBeGreaterThan(0);
+
+    // Verify a LOSER link was created
+    const loserLink = updatedDraw.links.find(
+      (link: any) =>
+        link.linkType === 'LOSER' &&
+        link.source.structureId === mainStructureId &&
+        link.source.roundNumber === 1 &&
+        link.target.structureId === playoffStructure.structureId,
+    );
+    expect(loserLink).toBeDefined();
+  });
 });

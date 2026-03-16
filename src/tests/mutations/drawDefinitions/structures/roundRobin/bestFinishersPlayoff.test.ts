@@ -13,6 +13,7 @@ import { DRAW, MAIN, PLAY_OFF, POSITION, ROUND_ROBIN_WITH_PLAYOFF } from '@Const
 import { FORMAT_STANDARD } from '@Fixtures/scoring/matchUpFormats';
 import { COMPLETED } from '@Constants/matchUpStatusConstants';
 import { DrawDefinition } from '@Types/tournamentTypes';
+import { GEM_SCORE } from '@Constants/tallyConstants';
 import { TALLY } from '@Constants/extensionConstants';
 import { SINGLES } from '@Constants/eventConstants';
 
@@ -23,7 +24,7 @@ import { SINGLES } from '@Constants/eventConstants';
 describe('bestFinishers playoff validation', () => {
   it('validates bestOf must be >= guaranteed count', () => {
     const result = validatePlayoffGroups({
-      playoffGroups: [{ finishingPositions: [1], bestOf: 2, rankBy: 'GEMscore' }],
+      playoffGroups: [{ finishingPositions: [1], bestOf: 2, rankBy: GEM_SCORE }],
       groupCount: 3,
       groupSize: 4,
     });
@@ -33,7 +34,7 @@ describe('bestFinishers playoff validation', () => {
 
   it('validates bestOf must not exceed total available', () => {
     const result = validatePlayoffGroups({
-      playoffGroups: [{ finishingPositions: [1], bestOf: 15, rankBy: 'GEMscore' }],
+      playoffGroups: [{ finishingPositions: [1], bestOf: 15, rankBy: GEM_SCORE }],
       groupCount: 3,
       groupSize: 4,
     });
@@ -43,7 +44,7 @@ describe('bestFinishers playoff validation', () => {
 
   it('validates valid bestOf configuration', () => {
     const result = validatePlayoffGroups({
-      playoffGroups: [{ finishingPositions: [1], bestOf: 4, rankBy: 'GEMscore' }],
+      playoffGroups: [{ finishingPositions: [1], bestOf: 4, rankBy: GEM_SCORE }],
       groupCount: 3,
       groupSize: 4,
     });
@@ -53,7 +54,7 @@ describe('bestFinishers playoff validation', () => {
 
   it('validates bestOf with multiple finishing positions', () => {
     const result = validatePlayoffGroups({
-      playoffGroups: [{ finishingPositions: [1, 2], bestOf: 8, rankBy: 'GEMscore' }],
+      playoffGroups: [{ finishingPositions: [1, 2], bestOf: 8, rankBy: GEM_SCORE }],
       groupCount: 3,
       groupSize: 4,
     });
@@ -63,7 +64,7 @@ describe('bestFinishers playoff validation', () => {
 
   it('validates cross-group consumption with multiple playoff groups', () => {
     const result = validatePlayoffGroups({
-      playoffGroups: [{ finishingPositions: [1], bestOf: 4, rankBy: 'GEMscore' }, { finishingPositions: [2] }],
+      playoffGroups: [{ finishingPositions: [1], bestOf: 4, rankBy: GEM_SCORE }, { finishingPositions: [2] }],
       groupCount: 3,
       groupSize: 4,
     });
@@ -75,7 +76,7 @@ describe('bestFinishers playoff validation', () => {
 
   it('rejects when consumption leaves insufficient participants', () => {
     const result = validatePlayoffGroups({
-      playoffGroups: [{ finishingPositions: [1], bestOf: 5, rankBy: 'GEMscore' }, { finishingPositions: [2] }],
+      playoffGroups: [{ finishingPositions: [1], bestOf: 5, rankBy: GEM_SCORE }, { finishingPositions: [2] }],
       groupCount: 3,
       groupSize: 4,
     });
@@ -95,7 +96,7 @@ describe('bestFinishers playoff validation', () => {
 
   it('validates bestOf equal to guaranteed count (no extras needed)', () => {
     const result = validatePlayoffGroups({
-      playoffGroups: [{ finishingPositions: [1], bestOf: 3, rankBy: 'GEMscore' }],
+      playoffGroups: [{ finishingPositions: [1], bestOf: 3, rankBy: GEM_SCORE }],
       groupCount: 3,
       groupSize: 4,
     });
@@ -105,7 +106,7 @@ describe('bestFinishers playoff validation', () => {
 
   it('validates bestOf spanning multiple extra positions', () => {
     const result = validatePlayoffGroups({
-      playoffGroups: [{ finishingPositions: [1], bestOf: 8, rankBy: 'GEMscore' }],
+      playoffGroups: [{ finishingPositions: [1], bestOf: 8, rankBy: GEM_SCORE }],
       groupCount: 3,
       groupSize: 4,
     });
@@ -125,7 +126,7 @@ describe('bestFinishers draw generation', () => {
         {
           finishingPositions: [1],
           bestOf: 4,
-          rankBy: 'GEMscore',
+          rankBy: GEM_SCORE,
           structureName: 'Championship',
         },
       ],
@@ -154,7 +155,7 @@ describe('bestFinishers draw generation', () => {
     expect(links?.[0].linkType).toEqual(POSITION);
     expect(links?.[0].source.finishingPositions).toMatchObject([1]);
     expect(links?.[0].source.bestOf).toEqual(4);
-    expect(links?.[0].source.rankBy).toEqual('GEMscore');
+    expect(links?.[0].source.rankBy).toEqual(GEM_SCORE);
     expect(links?.[0].target.feedProfile).toEqual(DRAW);
   });
 
@@ -167,7 +168,7 @@ describe('bestFinishers draw generation', () => {
         {
           finishingPositions: [1],
           bestOf: 5,
-          rankBy: 'GEMscore',
+          rankBy: GEM_SCORE,
           structureName: 'Championship',
         },
       ],
@@ -229,7 +230,7 @@ describe('bestFinishers with mocksEngine — full tournament lifecycle', () => {
         {
           finishingPositions: [1],
           bestOf: 4,
-          rankBy: 'GEMscore',
+          rankBy: GEM_SCORE,
           structureName: 'Championship',
         },
       ],
@@ -269,7 +270,7 @@ describe('bestFinishers with mocksEngine — full tournament lifecycle', () => {
     // Verify link carries bestOf
     const positionLink = drawDefinition.links.find((l) => l.linkType === POSITION);
     expect(positionLink?.source.bestOf).toEqual(4);
-    expect(positionLink?.source.rankBy).toEqual('GEMscore');
+    expect(positionLink?.source.rankBy).toEqual(GEM_SCORE);
 
     // Verify playoff has exactly 4 participants positioned
     const { positionAssignments } = getPositionAssignments({
@@ -319,7 +320,7 @@ describe('bestFinishers with mocksEngine — full tournament lifecycle', () => {
         {
           finishingPositions: [1],
           bestOf: 6,
-          rankBy: 'GEMscore',
+          rankBy: GEM_SCORE,
           structureName: 'Championship',
         },
       ],
@@ -391,7 +392,7 @@ describe('bestFinishers with mocksEngine — full tournament lifecycle', () => {
         {
           finishingPositions: [1],
           bestOf: 4,
-          rankBy: 'GEMscore',
+          rankBy: GEM_SCORE,
           structureName: 'Championship',
         },
       ],
@@ -458,7 +459,7 @@ describe('bestFinishers with mocksEngine — full tournament lifecycle', () => {
         {
           finishingPositions: [1],
           bestOf: 4,
-          rankBy: 'GEMscore',
+          rankBy: GEM_SCORE,
           structureName: 'Championship',
         },
         {
@@ -525,7 +526,7 @@ describe('bestFinishers with mocksEngine — full tournament lifecycle', () => {
         {
           finishingPositions: [1],
           bestOf: 4,
-          rankBy: 'GEMscore',
+          rankBy: GEM_SCORE,
           structureName: 'Championship',
         },
       ],
@@ -589,7 +590,7 @@ describe('bestFinishers with mocksEngine — full tournament lifecycle', () => {
         {
           finishingPositions: [1],
           bestOf: 3, // exactly groupCount × finishingPositions.length
-          rankBy: 'GEMscore',
+          rankBy: GEM_SCORE,
           structureName: 'Championship',
         },
       ],
@@ -659,7 +660,7 @@ describe('bestFinishers with remainder playoff group', () => {
   it('validates remainder group after bestOf group', () => {
     const result = validatePlayoffGroups({
       playoffGroups: [
-        { finishingPositions: [1], bestOf: 4, rankBy: 'GEMscore' },
+        { finishingPositions: [1], bestOf: 4, rankBy: GEM_SCORE },
         { remainder: true, structureName: 'Remainder' },
       ],
       groupCount: 3,
@@ -672,7 +673,7 @@ describe('bestFinishers with remainder playoff group', () => {
   it('rejects remainder when insufficient participants remain', () => {
     const result = validatePlayoffGroups({
       playoffGroups: [
-        { finishingPositions: [1], bestOf: 11, rankBy: 'GEMscore' },
+        { finishingPositions: [1], bestOf: 11, rankBy: GEM_SCORE },
         { remainder: true, structureName: 'Remainder' },
       ],
       groupCount: 3,
@@ -693,7 +694,7 @@ describe('bestFinishers with remainder playoff group', () => {
         {
           finishingPositions: [1],
           bestOf: 4,
-          rankBy: 'GEMscore',
+          rankBy: GEM_SCORE,
           structureName: 'Championship',
         },
         {
@@ -733,7 +734,7 @@ describe('bestFinishers with remainder playoff group', () => {
     const consolLink = links?.find((l) => l.target.structureId === consolation?.structureId);
 
     expect(champLink?.source.bestOf).toEqual(4);
-    expect(champLink?.source.rankBy).toEqual('GEMscore');
+    expect(champLink?.source.rankBy).toEqual(GEM_SCORE);
     expect(champLink?.source.remainder).toBeUndefined();
 
     expect(consolLink?.source.remainder).toBe(true);
@@ -747,7 +748,7 @@ describe('bestFinishers with remainder playoff group', () => {
         {
           finishingPositions: [1],
           bestOf: 4,
-          rankBy: 'GEMscore',
+          rankBy: GEM_SCORE,
           structureName: 'Championship',
         },
         {

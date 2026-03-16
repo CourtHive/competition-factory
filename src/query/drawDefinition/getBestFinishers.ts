@@ -1,3 +1,4 @@
+import { GEM_SCORE } from '@Constants/tallyConstants';
 import { numericSort } from '@Tools/sorting';
 
 /**
@@ -13,7 +14,7 @@ import { numericSort } from '@Tools/sorting';
  *   organized by RR group structureId
  * @param finishingPositions - The guaranteed finishing positions (e.g., [1])
  * @param bestOf - Total number of participants desired
- * @param rankBy - Ranking method for cross-group comparison (default: 'GEMscore')
+ * @param rankBy - Ranking method for cross-group comparison (default: GEM_SCORE)
  * @param groupCount - Number of RR groups
  * @param provisionalPositioning - Whether to use provisional ordering
  *
@@ -49,7 +50,7 @@ type SelectedParticipant = {
 
 export function getBestFinishers({
   provisionalPositioning,
-  rankBy = 'GEMscore',
+  rankBy = GEM_SCORE,
   finishingPositions,
   groupResults,
   bestOf,
@@ -98,7 +99,7 @@ export function getBestFinishers({
         return a.finishingPosition - b.finishingPosition;
       }
       // Higher GEMscore is better
-      if (rankBy === 'GEMscore') {
+      if (rankBy === GEM_SCORE) {
         return (b.GEMscore ?? 0) - (a.GEMscore ?? 0);
       }
       return 0;

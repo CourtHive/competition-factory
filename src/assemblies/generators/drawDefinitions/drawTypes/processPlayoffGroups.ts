@@ -16,6 +16,7 @@ import { nextPowerOf2 } from '@Tools/math';
 import { INVALID_CONFIGURATION, INVALID_VALUES } from '@Constants/errorConditionConstants';
 import { POLICY_TYPE_FEED_IN } from '@Constants/policyConstants';
 import { DrawLink, Structure } from '@Types/tournamentTypes';
+import { GEM_SCORE } from '@Constants/tallyConstants';
 import { WIN_RATIO } from '@Constants/statsConstants';
 import { ResultType } from '@Types/factoryTypes';
 import {
@@ -428,7 +429,7 @@ function generatePlayoffLink({
   // knows to select participants via cross-group ranking
   if (bestOf !== undefined) {
     source.bestOf = bestOf;
-    source.rankBy = rankBy || 'GEMscore';
+    source.rankBy = rankBy || GEM_SCORE;
   }
 
   // Remainder flag indicates this playoff takes all participants not claimed by prior bestOf groups

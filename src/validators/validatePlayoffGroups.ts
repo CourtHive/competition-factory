@@ -2,6 +2,7 @@ import { numericSort } from '@Tools/sorting';
 
 // constants
 import { INVALID_VALUES, INVALID_CONFIGURATION } from '@Constants/errorConditionConstants';
+import { GEM_SCORE } from '@Constants/tallyConstants';
 import { ResultType } from '@Types/factoryTypes';
 
 export type PlayoffGroupConfig = {
@@ -156,9 +157,9 @@ export function validatePlayoffGroups({
       hasBestOf = true;
 
       // rankBy validation
-      if (rankBy !== undefined && rankBy !== 'GEMscore') {
+      if (rankBy !== undefined && rankBy !== GEM_SCORE) {
         return {
-          info: `Unsupported rankBy value: '${rankBy}'. Currently only 'GEMscore' is supported.`,
+          info: `Unsupported rankBy value: '${rankBy}'. Currently only '${GEM_SCORE}' is supported.`,
           error: INVALID_VALUES,
           valid: false,
         };
