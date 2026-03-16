@@ -83,6 +83,51 @@ const { matchUps } = engine.generateAdHocRounds({
 
 ---
 
+## generateConsolationStructure
+
+Generates a consolation structure with matchUps using the factory's standard generator pipeline, without modifying any draw definition. The resulting structure can then be attached to a draw via `attachConsolationStructures`.
+
+This separation is important for client/server architectures where the structure must be generated locally (pure computation) and attached via the execution queue (server-first mutation).
+
+```js
+const { structures } = engine.generateConsolationStructure({
+  structureType, // optional - defaults to AD_HOC; any valid draw type
+  structureName, // optional - defaults to 'Consolation'
+  drawSize, // optional - defaults to 2
+  matchUpFormat, // optional - scoring format
+  matchUpType, // optional - SINGLES, DOUBLES, TEAM
+});
+
+// The returned structure has stage: CONSOLATION and a generated structureId.
+// For AD_HOC, matchUps is empty (added dynamically).
+// For elimination types, matchUps contains the full bracket.
+
+// Attach to a draw with LOSER links:
+engine.attachConsolationStructures({
+  drawId,
+  structures,
+  links: [
+    {
+      linkType: 'LOSER',
+      source: { roundNumber: 1, structureId: mainStructureId },
+      target: { roundNumber: 1, feedProfile: 'TOP_DOWN', structureId: structures[0].structureId },
+    },
+  ],
+});
+```
+
+**Returns:**
+
+```ts
+{
+  structures?: Structure[];  // Generated consolation structure(s)
+  success?: boolean;
+  error?: ErrorType;
+}
+```
+
+---
+
 ## generateAndPopulatePlayoffStructures
 
 Generates values but does not attach them to the `drawDefinition`. Used in conjunction with `attachPlayoffStructures`.

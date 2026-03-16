@@ -13,16 +13,17 @@ import { removeQualifier } from './removeQualifier';
 import { isExit } from '@Validators/isExit';
 
 // constants
+import { POLICY_TYPE_PROGRESSION } from '@Constants/policyConstants';
+import { SUCCESS } from '@Constants/resultConstants';
 import {
   ABANDONED,
   CANCELLED,
   DOUBLE_DEFAULT,
   DOUBLE_WALKOVER,
   INCOMPLETE,
+  IN_PROGRESS,
   TO_BE_PLAYED,
 } from '@Constants/matchUpStatusConstants';
-import { POLICY_TYPE_PROGRESSION } from '@Constants/policyConstants';
-import { SUCCESS } from '@Constants/resultConstants';
 
 export function noDownstreamDependencies(params) {
   const { matchUp, matchUpStatus, score, winningSide } = params;
@@ -40,6 +41,7 @@ export function noDownstreamDependencies(params) {
   const scoreWithNoWinningSide =
     checkScoreHasValue({ score }) &&
     !doubleWalkover &&
+    matchUpStatus !== IN_PROGRESS &&
     ((params.isCollectionMatchUp && !params.projectedWinningSide) || !winningSide);
 
   const timedTieMatchUp = params?.inContextMatchUp?.collectionId && lastSetFormatIsTimed(params.inContextMatchUp);

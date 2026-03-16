@@ -2,7 +2,7 @@ export { ScoringEngine } from './ScoringEngine';
 export type {
   ScoringEngineOptions,
   ScoringEngineSupplementaryState,
-  competitionFormat,
+  CompetitionFormat,
   TimerProfile,
   TimeoutRules,
   SubstitutionRules,

@@ -16,6 +16,7 @@ import { addGoesTo } from '@Query/matchUps/addGoesTo';
 import { findStructure } from '@Acquire/findStructure';
 import { generateTieMatchUps } from './tieMatchUps';
 import { makeDeepCopy } from '@Tools/makeDeepCopy';
+import { nextPowerOf2 } from '@Tools/math';
 import { ensureInt } from '@Tools/ensureInt';
 
 // constants and types
@@ -122,10 +123,11 @@ export function generateAndPopulatePlayoffStructures(params: GenerateAndPopulate
   const roundProfile = roundProfiles?.length && Object.assign({}, ...roundProfiles);
 
   const targetRoundNumbers =
-    roundNumbers || (typeof roundProfiles === 'object' && roundProfiles.map((p) => Object.keys(p)).flat());
+    roundNumbers || (typeof roundProfiles === 'object' && roundProfiles.flatMap((p) => Object.keys(p)));
 
   const validRoundNumbers =
-    Array.isArray(targetRoundNumbers) && targetRoundNumbers.map((p) => !isNaN(p) && ensureInt(p)).filter(Boolean);
+    Array.isArray(targetRoundNumbers) &&
+    targetRoundNumbers.map((p) => !Number.isNaN(Number(p)) && ensureInt(p)).filter(Boolean);
 
   if (validRoundNumbers) {
     if (!Array.isArray(validRoundNumbers))
@@ -191,11 +193,16 @@ export function generateAndPopulatePlayoffStructures(params: GenerateAndPopulate
         // Pre-feed round: all losers minus the lucky selection
         const discardedCount = matchUpsInRound - 1;
         // If odd, round up for a single BYE
-        const adjusted = discardedCount % 2 !== 0 ? discardedCount + 1 : discardedCount;
+        const adjusted = discardedCount % 2 === 0 ? discardedCount : discardedCount + 1;
         // Round up to next power of 2 for standard elimination bracket
         let p = 1;
         while (p < adjusted) p *= 2;
         drawSize = p;
+      } else {
+        // For rounds with even matchUp count (e.g. drawSize 11 has 6 matchUps in round 1
+        // including a BYE), the loser count may still not be a power of 2.
+        // Round up to next power of 2 for a valid elimination bracket.
+        drawSize = nextPowerOf2(drawSize);
       }
     }
 
@@ -263,9 +270,9 @@ export function generateAndPopulatePlayoffStructures(params: GenerateAndPopulate
     drawDefinition,
   });
 
-  const newStructureIds = newStructures.map(({ structureId }) => structureId);
+  const newStructureIds = new Set(newStructures.map(({ structureId }) => structureId));
   const addedMatchUpIds = inContextDrawMatchUps
-    ?.filter(({ structureId }) => newStructureIds.includes(structureId))
+    ?.filter(({ structureId }) => newStructureIds.has(structureId))
     .map(getMatchUpId);
 
   const addedMatchUps = matchUpsMap?.drawMatchUps?.filter(({ matchUpId }) => addedMatchUpIds?.includes(matchUpId));

@@ -15,6 +15,21 @@
  *   const matchUp = engine.getState();
  */
 
+import { resolveSetType, isAggregateFormat } from '@Tools/scoring/scoringUtilities';
+import { calculateMatchStatistics } from '@Query/scoring/statistics/standalone';
+import { toStatObjects } from '@Query/scoring/statistics/toStatObjects';
+import { addPoint, deriveServer } from '@Mutate/scoring/addPoint';
+import { createMatchUp } from '@Mutate/scoring/createMatchUp';
+import { getScoreboard } from '@Query/scoring/getScoreboard';
+import { getEpisodes } from '@Query/scoring/getEpisodes';
+import { parse } from '@Helpers/matchUpFormatCode/parse';
+import { isComplete } from '@Query/scoring/isComplete';
+import { getWinner } from '@Query/scoring/getWinner';
+import { getScore } from '@Query/scoring/getScore';
+
+// constants and types
+import type { MatchStatistics, StatisticsOptions, StatObject } from '@Query/scoring/statistics/types';
+import type { PointMultiplier } from '@Mutate/scoring/resolvePointValue';
 import type {
   MatchUp,
   AddPointOptions,
@@ -29,19 +44,6 @@ import type {
   FormatStructure,
   Episode,
 } from '@Types/scoring/types';
-import { createMatchUp } from '@Mutate/scoring/createMatchUp';
-import { addPoint, deriveServer } from '@Mutate/scoring/addPoint';
-import { getScore } from '@Query/scoring/getScore';
-import { getScoreboard } from '@Query/scoring/getScoreboard';
-import { getWinner } from '@Query/scoring/getWinner';
-import { isComplete } from '@Query/scoring/isComplete';
-import { getEpisodes } from '@Query/scoring/getEpisodes';
-import { resolveSetType, isAggregateFormat } from '@Tools/scoring/scoringUtilities';
-import { parse } from '@Helpers/matchUpFormatCode/parse';
-import { calculateMatchStatistics } from '@Query/scoring/statistics/standalone';
-import { toStatObjects } from '@Query/scoring/statistics/toStatObjects';
-import type { MatchStatistics, StatisticsOptions, StatObject } from '@Query/scoring/statistics/types';
-import type { PointMultiplier } from '@Mutate/scoring/resolvePointValue';
 
 // competitionFormat types (mirrored from factory for standalone use)
 export interface TimerProfile {
@@ -82,7 +84,7 @@ export interface PointProfile {
 
 export type ServerRule = 'ALTERNATE_GAMES' | 'WINNER_SERVES';
 
-export interface competitionFormat {
+export interface CompetitionFormat {
   competitionFormatId?: string;
   competitionFormatName?: string;
   matchUpFormat?: string;
@@ -133,17 +135,17 @@ export interface ScoringEventHandlers {
 }
 
 export interface ScoringEngineOptions {
-  matchUpFormat?: string;
-  matchUpId?: string;
-  isDoubles?: boolean;
-  competitionFormat?: competitionFormat;
+  competitionFormat?: CompetitionFormat;
   pointMultipliers?: PointMultiplier[];
   eventHandlers?: ScoringEventHandlers;
+  matchUpFormat?: string;
+  isDoubles?: boolean;
+  matchUpId?: string;
 }
 
 export interface ScoringEngineSupplementaryState {
-  redoStack?: ScoreEntry[];
   initialLineUps?: Record<string, TeamCompetitor[]>;
+  redoStack?: ScoreEntry[];
 }
 
 /**
@@ -154,17 +156,17 @@ export interface ScoringEngineSupplementaryState {
  * Supports competitionFormat consumption for gameplay rules.
  */
 export class ScoringEngine {
-  private state!: MatchUp; // Definite assignment - initialized in constructor
+  private readonly competitionFormat?: CompetitionFormat;
+  private initialLineUps?: Record<number, TeamCompetitor[]>;
+  private pointMultipliers: PointMultiplier[] = [];
+  private cachedFormatStructure?: FormatStructure;
+  private eventHandlers?: ScoringEventHandlers;
+  private initialScore?: InitialScoreOptions; // For late arrival
   private redoStack: ScoreEntry[] = [];
   private matchUpFormat: string;
   private matchUpId?: string;
   private isDoubles: boolean;
-  private initialScore?: InitialScoreOptions; // For late arrival
-  private pointMultipliers: PointMultiplier[] = [];
-  private readonly competitionFormat?: competitionFormat;
-  private initialLineUps?: Record<number, TeamCompetitor[]>;
-  private cachedFormatStructure?: FormatStructure;
-  private eventHandlers?: ScoringEventHandlers;
+  private state!: MatchUp; // Definite assignment - initialized in constructor
 
   /**
    * Create new ScoringEngine
@@ -1429,12 +1431,19 @@ export class ScoringEngine {
         set.side2TiebreakScore = setData.side2TiebreakScore;
       }
 
-      if (setData.winningSide !== undefined) {
+      if (setData.winningSide === undefined) {
+        // Auto-infer winningSide only for completed sets (format-aware).
+        // A 1-2 set in SET3-S:6/TB7 is incomplete — don't mark side 2 as winner.
+        const fs = this.cachedFormatStructure;
+        const setFormat =
+          fs?.finalSetFormat && i === (fs.bestOf ?? fs.exactly ?? 3) - 1 ? fs.finalSetFormat : fs?.setFormat;
+        const setTo = setFormat?.setTo;
+        if (setTo && (setData.side1Score >= setTo || setData.side2Score >= setTo)) {
+          if (setData.side1Score > setData.side2Score) set.winningSide = 1;
+          else if (setData.side2Score > setData.side1Score) set.winningSide = 2;
+        }
+      } else {
         set.winningSide = setData.winningSide;
-      } else if (setData.side1Score > setData.side2Score) {
-        set.winningSide = 1;
-      } else if (setData.side2Score > setData.side1Score) {
-        set.winningSide = 2;
       }
 
       matchUp.score.sets.push(set);
