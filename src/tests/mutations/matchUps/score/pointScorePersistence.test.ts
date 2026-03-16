@@ -315,6 +315,55 @@ describe('setMatchUpStatus persists IN_PROGRESS partial scores', () => {
     expect(matchUp.score.sets[0].side2PointScore).toBe('30');
   });
 
+  test('SUSPENDED status with score persists through setMatchUpStatus', () => {
+    const drawId = 'drawId';
+    mocksEngine.generateTournamentRecord({
+      drawProfiles: [{ drawId, drawSize: 4, idPrefix: 'm' }],
+      setState: true,
+    });
+
+    const outcome = {
+      score: {
+        sets: [{ setNumber: 1, side1Score: 3, side2Score: 2 }],
+      },
+      matchUpFormat: 'SET3-S:6/TB7',
+      matchUpStatus: 'SUSPENDED',
+    };
+
+    const result = tournamentEngine.setMatchUpStatus({
+      matchUpId: 'm-1-1',
+      drawId,
+      outcome,
+    });
+    expect(result.success).toBe(true);
+
+    const { matchUps } = tournamentEngine.allTournamentMatchUps();
+    const matchUp = matchUps.find((m: any) => m.matchUpId === 'm-1-1');
+    expect(matchUp.matchUpStatus).toBe('SUSPENDED');
+    expect(matchUp.score.sets.length).toBe(1);
+    expect(matchUp.score.sets[0].side1Score).toBe(3);
+    expect(matchUp.score.sets[0].side2Score).toBe(2);
+  });
+
+  test('SUSPENDED status without score persists through setMatchUpStatus', () => {
+    const drawId = 'drawId';
+    mocksEngine.generateTournamentRecord({
+      drawProfiles: [{ drawId, drawSize: 4, idPrefix: 'm' }],
+      setState: true,
+    });
+
+    const result = tournamentEngine.setMatchUpStatus({
+      matchUpId: 'm-1-1',
+      drawId,
+      outcome: { matchUpStatus: 'SUSPENDED' },
+    });
+    expect(result.success).toBe(true);
+
+    const { matchUps } = tournamentEngine.allTournamentMatchUps();
+    const matchUp = matchUps.find((m: any) => m.matchUpId === 'm-1-1');
+    expect(matchUp.matchUpStatus).toBe('SUSPENDED');
+  });
+
   test('partial score without point scores persists through setMatchUpStatus', () => {
     const drawId = 'drawId';
     mocksEngine.generateTournamentRecord({

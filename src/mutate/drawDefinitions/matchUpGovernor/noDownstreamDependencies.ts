@@ -1,13 +1,13 @@
-import { decorateResult } from '@Functions/global/decorateResult';
 import { removeDirectedParticipants } from '@Mutate/matchUps/drawPositions/removeDirectedParticipants';
-import { modifyMatchUpScore } from '@Mutate/matchUps/score/modifyMatchUpScore';
 import { updateTieMatchUpScore } from '@Mutate/matchUps/score/updateTieMatchUpScore';
-import { checkScoreHasValue } from '@Query/matchUp/checkScoreHasValue';
+import { modifyMatchUpScore } from '@Mutate/matchUps/score/modifyMatchUpScore';
 import { lastSetFormatIsTimed } from '@Query/matchUp/lastSetFormatisTimed';
-import { attemptToModifyScore } from './attemptToModifyScore';
 import { attemptToSetMatchUpStatus } from './attemptToSetMatchUpStatus';
-import { attemptToSetWinningSide } from './attemptToSetWinningSide';
+import { checkScoreHasValue } from '@Query/matchUp/checkScoreHasValue';
 import { checkConnectedStructures } from './checkConnectedStructures';
+import { attemptToSetWinningSide } from './attemptToSetWinningSide';
+import { decorateResult } from '@Functions/global/decorateResult';
+import { attemptToModifyScore } from './attemptToModifyScore';
 import { removeDoubleExit } from './removeDoubleExit';
 import { removeQualifier } from './removeQualifier';
 import { isExit } from '@Validators/isExit';
@@ -22,6 +22,7 @@ import {
   DOUBLE_WALKOVER,
   INCOMPLETE,
   IN_PROGRESS,
+  SUSPENDED,
   TO_BE_PLAYED,
 } from '@Constants/matchUpStatusConstants';
 
@@ -38,10 +39,12 @@ export function noDownstreamDependencies(params) {
   }
 
   const doubleWalkover = matchUpStatus === DOUBLE_WALKOVER;
+  // Non-directing statuses that should preserve their score (not treat as "remove winner")
+  const preserveScoreStatuses = [IN_PROGRESS, SUSPENDED, CANCELLED, ABANDONED, INCOMPLETE];
   const scoreWithNoWinningSide =
     checkScoreHasValue({ score }) &&
     !doubleWalkover &&
-    matchUpStatus !== IN_PROGRESS &&
+    !preserveScoreStatuses.includes(matchUpStatus) &&
     ((params.isCollectionMatchUp && !params.projectedWinningSide) || !winningSide);
 
   const timedTieMatchUp = params?.inContextMatchUp?.collectionId && lastSetFormatIsTimed(params.inContextMatchUp);
