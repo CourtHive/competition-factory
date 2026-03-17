@@ -16,7 +16,7 @@ jobs:
           node-version: 24
           registry-url: https://registry.npmjs.org
 
-      - run: npm install --legacy-peer-deps
+      - run: npm install --legacy-peer-deps --ignore-scripts
 
       - run: npm run lint
 
