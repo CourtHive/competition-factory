@@ -88,10 +88,14 @@ function checkParams(params) {
     return { error: INVALID_VALUES, info: 'roundsCount must be a number' };
   }
 
-  if (
-    typeof params.drawDefinition !== 'object' ||
-    (params.drawDefinition.drawType && params.drawDefinition.drawType !== AD_HOC)
-  ) {
+  if (typeof params.drawDefinition !== 'object') {
+    return { error: INVALID_DRAW_DEFINITION };
+  }
+
+  // When structureId is provided, skip drawType check — the target structure
+  // will be validated as ad-hoc later. This supports AD_HOC voluntary consolation
+  // structures within non-AD_HOC draws (e.g., ROUND_ROBIN main + AD_HOC consolation).
+  if (!params.structureId && params.drawDefinition.drawType && params.drawDefinition.drawType !== AD_HOC) {
     return { error: INVALID_DRAW_DEFINITION };
   }
 
