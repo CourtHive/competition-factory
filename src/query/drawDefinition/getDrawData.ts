@@ -195,6 +195,7 @@ export function getDrawData(params): {
               stageSequence: structure.stageSequence,
               structureName: structure.structureName,
               structureType: structure.structureType,
+              finishingPosition: structure.finishingPosition,
               matchUpFormat: structure.matchUpFormat,
               stage: structure.stage,
             }

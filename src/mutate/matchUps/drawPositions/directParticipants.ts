@@ -89,11 +89,19 @@ export function directParticipants(params): ResultType {
       },
     } = targetData;
 
-    // In lucky draws, all round-to-round advancement is handled by
-    // luckyDrawAdvancement — suppress both winner and loser propagation
+    // In lucky draws, pre-feed rounds (odd matchUp count) defer advancement
+    // to luckyDrawAdvancement for manual loser selection. Normal power-of-2 rounds
+    // advance winners immediately as each matchUp completes, same as a regular draw.
     const isLuckyDraw = isLuckyBasedDraw(drawDefinition?.drawType);
+    const isPreFeedRound = (() => {
+      if (!isLuckyDraw || !matchUp.roundNumber || !structure?.matchUps) return false;
+      const roundMatchUpCount = structure.matchUps.filter(
+        (m) => m.roundNumber === matchUp.roundNumber,
+      ).length;
+      return roundMatchUpCount % 2 !== 0;
+    })();
 
-    if (winnerMatchUp && !isLuckyDraw) {
+    if (winnerMatchUp && (!isLuckyDraw || !isPreFeedRound)) {
       const result = directWinner({
         sourceMatchUpStatus: (matchUpStatusIsValid && matchUpStatus) || COMPLETED,
         winnerMatchUpDrawPositionIndex,

@@ -22,7 +22,7 @@
     "seeding",
     "tennis"
   ],
-  "version": "2.4.6-beta.26",
+  "version": "2.4.6-beta.27",
   "license": "MIT",
   "private": false,
   "homepage": "https://courthive.github.io/competition-factory/",
@@ -116,7 +116,7 @@
     "@babel/core": "7.29.0",
     "@babel/plugin-transform-nullish-coalescing-operator": "7.28.6",
     "@babel/plugin-transform-optional-chaining": "7.28.6",
-    "@babel/preset-env": "7.29.0",
+    "@babel/preset-env": "7.29.2",
     "@babel/preset-typescript": "7.28.5",
     "@commitlint/cli": "20.5.0",
     "@commitlint/config-conventional": "20.5.0",
@@ -145,8 +145,8 @@
     "@types/jest": "30.0.0",
     "@types/node": "24.12.0",
     "@types/supertest": "7.2.0",
-    "@typescript-eslint/eslint-plugin": "8.57.0",
-    "@typescript-eslint/parser": "8.57.0",
+    "@typescript-eslint/eslint-plugin": "8.57.1",
+    "@typescript-eslint/parser": "8.57.1",
     "@vitest/coverage-v8": "4.1.0",
     "@vitest/ui": "4.1.0",
     "agadoo": "^3.0.0",
@@ -184,7 +184,6 @@
     "typescript": "5.9.3",
     "variable-diff": "2.0.2",
     "vite": "8.0.0",
-    "vite-tsconfig-paths": "6.1.1",
     "vitest": "4.1.0"
   },
   "lint-staged": {

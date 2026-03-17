@@ -381,11 +381,19 @@ export function advanceDrawPosition({
     matchUpId,
   });
 
-  // In lucky draws, all round-to-round advancement is handled by luckyDrawAdvancement
+  // In lucky draws, pre-feed rounds (odd matchUp count) defer advancement to
+  // luckyDrawAdvancement. Normal power-of-2 rounds advance immediately.
   const isLuckyDraw = isLuckyBasedDraw(drawDefinition?.drawType);
+  const isPreFeedRound = (() => {
+    if (!isLuckyDraw || !matchUp?.roundNumber || !structure?.matchUps) return false;
+    const roundMatchUpCount = structure.matchUps.filter(
+      (m: any) => m.roundNumber === matchUp.roundNumber,
+    ).length;
+    return roundMatchUpCount % 2 !== 0;
+  })();
 
   // only handling situation where winningMatchUp is in same structure
-  if (winnerMatchUp && winnerMatchUp.structureId === structure?.structureId && !isLuckyDraw) {
+  if (winnerMatchUp && winnerMatchUp.structureId === structure?.structureId && (!isLuckyDraw || !isPreFeedRound)) {
     // NOTE: error conditions are ignored
     advanceWinner({
       drawPositionToAdvance,

@@ -100,13 +100,8 @@ describe('lucky draw BYE in later rounds', () => {
     expect(round3!.isPreFeedRound).toBe(false); // 2 matchUps = even
     expect(round3!.advancingWinners!.length).toBe(2);
 
-    // Advance round 3 (non-pre-feed, no lucky loser needed)
-    result = tournamentEngine.luckyDrawAdvancement({
-      roundNumber: 3,
-      structureId,
-      drawId,
-    });
-    expect(result.success).toBe(true);
+    // Round 3 is non-pre-feed (even matchUp count), so winners auto-advance
+    // when matchUps are completed — no explicit luckyDrawAdvancement needed.
 
     // ── Round 4 (Final) ──
     completeRound(drawId, 4);
@@ -183,33 +178,27 @@ describe('lucky draw BYE in later rounds', () => {
     });
     tournamentEngine.setState(tournamentRecord);
 
-    const { drawDefinition } = tournamentEngine.getEvent({ drawId });
-    const structureId = drawDefinition.structures[0].structureId;
-
-    // Round 1: even matchUp count, not pre-feed
+    // Round 1: even matchUp count, not pre-feed — winners auto-advance
     let status = tournamentEngine.getLuckyDrawRoundStatus({ drawId });
     const round1 = status.rounds.find((r) => r.roundNumber === 1);
     expect(round1!.matchUpsCount).toBe(6);
     expect(round1!.isComplete).toBe(true);
     expect(round1!.isPreFeedRound).toBe(false);
 
-    // Advance round 1 (no lucky loser selection needed)
-    let result = tournamentEngine.luckyDrawAdvancement({
-      roundNumber: 1,
-      structureId,
-      drawId,
-    });
-    expect(result.success).toBe(true);
-
-    // Complete and check round 2
-    completeRound(drawId, 2);
-
+    // Round 1 is non-pre-feed (even matchUp count), so winners auto-advance
+    // when matchUps are completed — no explicit luckyDrawAdvancement needed.
+    // completeAllMatchUps also auto-completed the round 2 matchUps that had both
+    // participants. Round 2 (pre-feed, 3 matchUps) has one open position needing
+    // lucky selection.
     status = tournamentEngine.getLuckyDrawRoundStatus({ drawId });
     const round2 = status.rounds.find((r) => r.roundNumber === 2);
 
     expect(round2!.matchUpsCount).toBe(3);
-    expect(round2!.isComplete).toBe(true);
     expect(round2!.isPreFeedRound).toBe(true);
+    // With BYE auto-advancement in non-pre-feed R1, all R1 winners advance.
+    // completeAllMatchUps then completes all R2 matchUps since all have participants.
+    // R2 (pre-feed) is now complete and needs lucky selection for R3.
+    expect(round2!.isComplete).toBe(true);
     expect(round2!.needsLuckySelection).toBe(true);
     expect(round2!.eligibleLosers!.length).toBe(3);
   });

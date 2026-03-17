@@ -1,12 +1,11 @@
 /**
- * NOTE: Vitest requires tsconfigPaths for source files and aliases for test files
+ * NOTE: Vite natively resolves tsconfig paths via resolve.tsconfigPaths.
+ * Aliases are still needed for test files.
  */
 
 import { configDefaults, defineConfig } from 'vitest/config';
-import tsconfigPaths from 'vite-tsconfig-paths'; // necessary for vite to resolve tsconfig paths in factory source files
 
 export default defineConfig({
-  plugins: [tsconfigPaths()],
   test: {
     testTimeout: 30000, // 30 seconds for slow tests
     onConsoleLog: () => {},
@@ -46,6 +45,7 @@ export default defineConfig({
     },
   },
   resolve: {
+    tsconfigPaths: true, // native Vite tsconfig paths resolution for source files
     // necessary for vitest to resolve tsconfig paths in test.ts files
     alias: {
       '@Generators': new URL('./src/assemblies/generators', import.meta.url).pathname,

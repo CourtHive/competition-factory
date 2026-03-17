@@ -5,6 +5,7 @@ import { addMatchUpScheduleItems } from '@Mutate/matchUps/schedule/scheduleItems
 import { hasPropagatedExitDownstream } from '@Query/drawDefinition/hasPropagatedExitDownstream';
 import { getProjectedDualWinningSide } from '@Query/matchUp/getProjectedDualWinningSide';
 import { updateTieMatchUpScore } from '@Mutate/matchUps/score/updateTieMatchUpScore';
+
 import { isMatchUpEventType } from '@Helpers/matchUpEventTypes/isMatchUpEventType';
 import { resolveTieFormat } from '@Query/hierarchical/tieFormats/resolveTieFormat';
 import { swapWinnerLoser } from '@Mutate/matchUps/drawPositions/swapWinnerLoser';
@@ -522,12 +523,12 @@ function checkParticipants({
 
   const participantsCount = inContextMatchUp?.sides?.map((side) => side.participantId).filter(Boolean).length;
 
-  const positionAssignments = !matchUp?.sides
-    ? getPositionAssignments({
+  const positionAssignments = matchUp?.sides
+    ? []
+    : getPositionAssignments({
         structureId: structure?.structureId,
         drawDefinition,
-      }).positionAssignments
-    : [];
+      }).positionAssignments;
 
   const requiredParticipants =
     (participantsCount && participantsCount === 2) ||

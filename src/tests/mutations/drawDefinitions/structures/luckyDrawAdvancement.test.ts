@@ -514,6 +514,61 @@ describe('luckyDrawAdvancement', () => {
     });
     expect(scoreResult.success).toBe(true);
   });
+
+  test('auto-advances winners in non-pre-feed rounds (drawSize 12, even matchUp count)', () => {
+    // drawSize 12: round 1 has 6 matchUps (even count = NOT a pre-feed round)
+    // After completing all round 1 matchUps, winners should auto-advance
+    // to round 2 without needing luckyDrawAdvancement.
+    const drawProfiles = [{ drawSize: 12, drawType: LUCKY_DRAW }];
+    const {
+      tournamentRecord,
+      drawIds: [drawId],
+    } = mocksEngine.generateTournamentRecord({ drawProfiles });
+
+    tournamentEngine.setState(tournamentRecord);
+
+    // Verify round structure: round 1 should have 6 matchUps (even)
+    const status = tournamentEngine.getLuckyDrawRoundStatus({ drawId });
+    expect(status.success).toBe(true);
+    const round1 = status.rounds.find((r: any) => r.roundNumber === 1);
+    expect(round1).toBeDefined();
+    expect(round1!.matchUpsCount).toBe(6);
+    expect(round1!.isPreFeedRound).toBe(false); // even count = not pre-feed
+
+    // Get all matchUps and complete round 1
+    const { matchUps: allMatchUps } = tournamentEngine.allTournamentMatchUps();
+    const round1MatchUps = allMatchUps
+      .filter((m: any) => m.roundNumber === 1 && m.drawId === drawId)
+      .filter((m: any) => !m.winningSide && m.matchUpStatus !== 'BYE');
+
+    for (const matchUp of round1MatchUps) {
+      const { outcome } = mocksEngine.generateOutcomeFromScoreString({
+        matchUpStatus: 'COMPLETED',
+        scoreString: '6-3 6-4',
+        winningSide: 1,
+      });
+
+      const result = tournamentEngine.setMatchUpStatus({
+        matchUpId: matchUp.matchUpId,
+        outcome,
+        drawId,
+      });
+      expect(result.success).toBe(true);
+    }
+
+    // After completing all round 1 matchUps, round 2 matchUps should
+    // already have participants auto-advanced (no luckyDrawAdvancement needed)
+    const { matchUps: updatedMatchUps } = tournamentEngine.allTournamentMatchUps();
+    const round2MatchUps = updatedMatchUps.filter((m: any) => m.roundNumber === 2 && m.drawId === drawId);
+    expect(round2MatchUps.length).toBe(3);
+
+    // Each round 2 matchUp should have at least one side with a participant
+    // (winners auto-advanced into their next-round positions)
+    for (const matchUp of round2MatchUps) {
+      const sidesWithParticipants = (matchUp.sides || []).filter((s: any) => s.participantId);
+      expect(sidesWithParticipants.length).toBeGreaterThan(0);
+    }
+  });
 });
 
 // ──────────────────────────────────────────────────────────────────────────────

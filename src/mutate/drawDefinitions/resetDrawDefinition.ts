@@ -56,8 +56,10 @@ export function resetDrawDefinition({ tournamentRecord, removeScheduling, remove
       structure.positionAssignments = positionAssignments
         .filter((a) => initialDrawPositions.has(a.drawPosition))
         .map((a) => {
-          delete a.bye;
-          if (removeAssignments) delete a.participantId;
+          if (removeAssignments) {
+            delete a.bye;
+            delete a.participantId;
+          }
           return a;
         });
       if (removeAssignments) {
@@ -90,10 +92,14 @@ export function resetDrawDefinition({ tournamentRecord, removeScheduling, remove
         delete matchUp.notes;
 
         if (isLuckyDraw) {
-          // Lucky draws: reset ALL matchUps (including R1 BYE — the BYE positionAssignment
-          // is removed, so the matchUp must also be reset to TO_BE_PLAYED).
+          // Lucky draws: reset matchUps to initial state.
           // R2+ matchUps lose all drawPositions (they're virtual from luckyDrawAdvancement).
-          Object.assign(matchUp, toBePlayed);
+          // Preserve R1 BYE matchUps when assignments are kept (removeAssignments=false).
+          if (!removeAssignments && matchUp.matchUpStatus === BYE) {
+            // BYE matchUp stays as-is when preserving assignments
+          } else {
+            Object.assign(matchUp, toBePlayed);
+          }
           if (roundNumber && roundNumber > 1) {
             matchUp.drawPositions = [];
           }

@@ -3,10 +3,8 @@
  */
 
 import { configDefaults, defineConfig } from 'vitest/config';
-import tsconfigPaths from 'vite-tsconfig-paths'; // necessary for vite to resolve tsconfig paths in factory source files
 
 export default defineConfig({
-  plugins: [tsconfigPaths()],
   test: {
     testTimeout: 30000, // 30 seconds for slow tests
     onConsoleLog: (log) => {
@@ -43,6 +41,7 @@ export default defineConfig({
     },
   },
   resolve: {
+    tsconfigPaths: true,
     // necessary for vitest to resolve tsconfig paths in test.ts files
     alias: {
       '@Generators': new URL('../../src/assemblies/generators', import.meta.url).pathname,

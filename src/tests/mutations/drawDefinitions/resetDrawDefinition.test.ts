@@ -336,13 +336,13 @@ it('resets lucky draw: removes virtual positions, clears R2+ matchUps, keeps R1 
     expect(m.matchUpStatus).not.toBe(BYE);
   }
 
-  // Verify: R1 BYE matchUp is reset (BYE positionAssignment removed, so no BYE matchUps)
+  // Verify: R1 BYE matchUp is preserved (removeAssignments not set → BYEs kept)
   const r1Byes = structure.matchUps.filter((m) => m.roundNumber === 1 && m.matchUpStatus === BYE);
-  expect(r1Byes.length).toBe(0);
+  expect(r1Byes.length).toBeGreaterThan(0);
 
-  // Verify: no BYE positionAssignments remain
+  // Verify: BYE positionAssignments are preserved
   const byeAssignments = structure.positionAssignments.filter((a: any) => a.bye);
-  expect(byeAssignments.length).toBe(0);
+  expect(byeAssignments.length).toBeGreaterThan(0);
 
   // Verify: no orphaned positionAssignments (only initial R1 participant positions remain)
   const r1Positions = new Set(
@@ -360,4 +360,80 @@ it('resets lucky draw: removes virtual positions, clears R2+ matchUps, keeps R1 
   for (const m of r1Scored) {
     expect(m.winningSide).toBeUndefined();
   }
+});
+
+it('lucky draw reset preserves BYE assignments when removeAssignments is false', () => {
+  const {
+    drawIds: [drawId],
+    tournamentRecord,
+  } = mocksEngine.generateTournamentRecord({
+    drawProfiles: [{ drawSize: 11, drawType: LUCKY_DRAW, completionGoal: 50 }],
+  });
+  tournamentEngine.setState(tournamentRecord);
+
+  const drawDefinition = tournamentEngine.getEvent({ drawId }).drawDefinition;
+  const structure = drawDefinition.structures.find((s: any) => s.stage === MAIN);
+  const assignmentsBefore = structure.positionAssignments;
+
+  // Verify BYE exists before reset
+  const byesBefore = assignmentsBefore.filter((a: any) => a.bye);
+  expect(byesBefore.length).toBeGreaterThan(0);
+
+  // Verify some matchUps have BYE status before reset
+  const byeMatchUpsBefore = structure.matchUps.filter((m: any) => m.matchUpStatus === BYE);
+  expect(byeMatchUpsBefore.length).toBeGreaterThan(0);
+
+  // Reset WITHOUT removing assignments
+  const result = tournamentEngine.resetDrawDefinition({ drawId, removeAssignments: false });
+  expect(result.success).toBe(true);
+
+  // Re-fetch
+  const resetDrawDef = tournamentEngine.getEvent({ drawId }).drawDefinition;
+  const resetStructure = resetDrawDef.structures.find((s: any) => s.stage === MAIN);
+
+  // BYE position assignments should be preserved
+  const byesAfter = resetStructure.positionAssignments.filter((a: any) => a.bye);
+  expect(byesAfter.length).toBe(byesBefore.length);
+
+  // BYE matchUps should be preserved
+  const byeMatchUpsAfter = resetStructure.matchUps.filter((m: any) => m.matchUpStatus === BYE);
+  expect(byeMatchUpsAfter.length).toBe(byeMatchUpsBefore.length);
+
+  // Participant assignments should be preserved
+  const participantsAfter = resetStructure.positionAssignments.filter((a: any) => a.participantId);
+  const participantsBefore = assignmentsBefore.filter((a: any) => a.participantId);
+  expect(participantsAfter.length).toBe(participantsBefore.length);
+
+  // Scored matchUps should be reset
+  const scoredMatchUps = resetStructure.matchUps.filter((m: any) => m.winningSide);
+  expect(scoredMatchUps.length).toBe(0);
+});
+
+it('lucky draw reset removes BYE assignments when removeAssignments is true', () => {
+  const {
+    drawIds: [drawId],
+    tournamentRecord,
+  } = mocksEngine.generateTournamentRecord({
+    drawProfiles: [{ drawSize: 11, drawType: LUCKY_DRAW }],
+  });
+  tournamentEngine.setState(tournamentRecord);
+
+  // Reset WITH removing assignments
+  const result = tournamentEngine.resetDrawDefinition({ drawId, removeAssignments: true });
+  expect(result.success).toBe(true);
+
+  const drawDefinition = tournamentEngine.getEvent({ drawId }).drawDefinition;
+  const structure = drawDefinition.structures.find((s: any) => s.stage === MAIN);
+
+  // BYE assignments should be removed
+  const byes = structure.positionAssignments.filter((a: any) => a.bye);
+  expect(byes.length).toBe(0);
+
+  // Participant assignments should be removed
+  const participants = structure.positionAssignments.filter((a: any) => a.participantId);
+  expect(participants.length).toBe(0);
+
+  // All matchUps should be TO_BE_PLAYED
+  const byeMatchUps = structure.matchUps.filter((m: any) => m.matchUpStatus === BYE);
+  expect(byeMatchUps.length).toBe(0);
 });
