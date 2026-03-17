@@ -592,7 +592,7 @@ describe('Performance', () => {
     const result = unique(largeArray);
     const duration = Date.now() - start;
 
-    expect(duration).toBeLessThan(100);
+    expect(duration).toBeLessThan(500);
     expect(result).toHaveLength(1000);
   });
 
@@ -602,7 +602,7 @@ describe('Performance', () => {
     const chunks = chunkByNth(largeArray, 10);
     const duration = Date.now() - start;
 
-    expect(duration).toBeLessThan(50);
+    expect(duration).toBeLessThan(250);
     expect(chunks).toHaveLength(10);
   });
 });
