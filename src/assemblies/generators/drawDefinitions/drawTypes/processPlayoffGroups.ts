@@ -394,9 +394,13 @@ export function processPlayoffGroups({
       const { structures: playoffStructures, links: playoffLinks } = generateCurtisConsolation(params);
       updateStructureAndLinks({ playoffStructures, playoffLinks });
     } else if ([AD_HOC].includes(playoffDrawType)) {
+      // For AD_HOC playoff, default finishingPositions to all group positions if not specified
+      if (!finishingPositions.length && groupSize) {
+        finishingPositions.push(...Array.from({ length: groupSize }, (_, i) => i + 1));
+      }
       const structure = structureTemplate({
         structureId: playoffGroup.structureId ?? uuids?.pop(),
-        structureName: playoffGroup.structureName,
+        structureName: playoffGroup.structureName || structureName || 'Playoff',
         finishingPosition: WIN_RATIO,
         stage: PLAY_OFF,
         stageSequence,
