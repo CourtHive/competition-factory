@@ -8,7 +8,7 @@ import dts from 'rollup-plugin-dts';
 import fs from 'fs-extra';
 import path from 'path';
 
-const tsConfig = JSON.parse(await fs.readFile(new URL('./tsConfig.base.json', import.meta.url)));
+const tsConfig = JSON.parse(await fs.readFile(new URL('./tsconfig.base.json', import.meta.url)));
 const srcIndex = 'src/index.ts';
 
 const basePath = fs.realpathSync(process.cwd());
