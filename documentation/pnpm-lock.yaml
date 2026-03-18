@@ -27,8 +27,8 @@ importers:
         specifier: 2.1.1
         version: 2.1.1
       courthive-components:
-        specifier: 0.9.28-beta.21
-        version: 0.9.28-beta.21
+        specifier: 0.9.28-beta.22
+        version: 0.9.28-beta.22
       react:
         specifier: ^18.2.0
         version: 18.3.1
@@ -2298,8 +2298,8 @@ packages:
       typescript:
         optional: true
 
-  courthive-components@0.9.28-beta.21:
-    resolution: {integrity: sha512-hY5QQLhuH7vxp2DTJ3SE/tMTcEmAzEWBtJSelMpn87hW+Mm1O2vqeCT7yqmhd4+SpMDHFMB8Qb+hge+L6Pfskg==}
+  courthive-components@0.9.28-beta.22:
+    resolution: {integrity: sha512-Us/KIe2llHp34xiCKdOnzVso7mNkc0+Ncyh44RQJzRuR3LUrf03h2J65ux+vX7vyCKLwY5zDzzmXSjoGLjVZSw==}
     engines: {node: '>=20.19.0 < 25'}
 
   cross-spawn@7.0.6:
@@ -5029,10 +5029,6 @@ packages:
   to-regex-range@5.0.1:
     resolution: {integrity: sha512-65P7iz6X5yEr1cwcgvQxbbIw7Uk3gOy5dIdtZ4rDveLqhrdJP+Li/Hx6tyK0NEb+2GCyneCMJiGqrADCSNk8sQ==}
     engines: {node: '>=8.0'}
-
-  tods-competition-factory@2.4.6-beta.26:
-    resolution: {integrity: sha512-lr6tqheroQCLkQO8ZreYDd1TRRqU0ScSRhqRUbPJyS6dLx7iR5dnjiAAtxMQDVTaSKaEmJYn2LUVSRaWvXEyrQ==}
-    engines: {node: '>=20'}
 
   tods-competition-factory@2.4.6-beta.28:
     resolution: {integrity: sha512-zs41PEOtrFPWVWw4m1waNfPDJ9elKT6IC0ZiNEO2EC01shGKR1n8hcuocisRvXoSmGb9HghiUyCQ53aO6KFAhQ==}
@@ -8679,7 +8675,7 @@ snapshots:
       parse-json: 5.2.0
       path-type: 4.0.0
 
-  courthive-components@0.9.28-beta.21:
+  courthive-components@0.9.28-beta.22:
     dependencies:
       awesomplete: 1.1.7
       class-variance-authority: 0.7.1
@@ -8689,7 +8685,7 @@ snapshots:
       focus-trap: 8.0.0
       timepicker-ui: 4.1.6
       tippy.js: 6.3.7
-      tods-competition-factory: 2.4.6-beta.26
+      tods-competition-factory: 2.4.6-beta.28
       vanillajs-datepicker: 1.3.4
 
   cross-spawn@7.0.6:
@@ -11956,8 +11952,6 @@ snapshots:
   to-regex-range@5.0.1:
     dependencies:
       is-number: 7.0.0
-
-  tods-competition-factory@2.4.6-beta.26: {}
 
   tods-competition-factory@2.4.6-beta.28: {}
 
