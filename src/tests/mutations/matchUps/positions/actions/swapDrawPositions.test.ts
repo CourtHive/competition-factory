@@ -379,10 +379,6 @@ it('can SWAP assigned participantIds in a ROUND_ROBIN', () => {
   result = tournamentEngine[option.method](payload);
   expect(result.success).toEqual(true);
 
-  ({
-    drawDefinition: { structures },
-  } = tournamentEngine.getEvent({ drawId }));
-
   const { positionAssignments: modifiedPositionAssignments } = tournamentEngine.getPositionAssignments({
     drawId: drawIds[0],
     structureId,
@@ -438,7 +434,7 @@ it('can swap Qualifier assignments with BYE assignments', () => {
   const byeDrawPosition = positionAssignments.find(({ bye }) => bye).drawPosition;
 
   // get the last qualifier position, of 4
-  const qualifierDrawPosition = positionAssignments.filter(({ qualifier }) => qualifier).pop().drawPosition;
+  const qualifierDrawPosition = positionAssignments.findLast(({ qualifier }) => qualifier).drawPosition;
 
   const { validActions } = tournamentEngine.positionActions({
     drawPosition: byeDrawPosition,

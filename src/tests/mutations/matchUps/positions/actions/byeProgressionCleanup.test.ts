@@ -68,7 +68,6 @@ it('will remove BYEs fed into CONSOLATION', () => {
   expect(result.success).toEqual(true);
 
   expect(matchUpModifyNotices.length).toEqual(4);
-  // expect(assignmentNotifications.length).toEqual(1);
 
   ({
     drawDefinition: {
@@ -87,7 +86,7 @@ it('will remove BYEs fed into CONSOLATION', () => {
 
   expect(assignmentNotifications.flat().length).toEqual(2);
   // assign a participant to the original drawPosition
-  result = assignDrawPosition({
+  assignDrawPosition({
     structureId: mainStructure.structureId,
     drawPosition,
     drawId,
@@ -103,4 +102,5 @@ it('will remove BYEs fed into CONSOLATION', () => {
 
   const targetMatchUp = consolationStructure.matchUps.find(({ matchUpId }) => matchUpId === targetMatchUpId);
   expect(targetMatchUp.matchUpStatus).toEqual(TO_BE_PLAYED);
+  expect(mainStructure).toBeDefined();
 });
