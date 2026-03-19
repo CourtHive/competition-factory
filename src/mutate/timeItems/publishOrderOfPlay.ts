@@ -28,11 +28,11 @@ export function publishOrderOfPlay(params) {
 }
 
 function publishOOP({
-  scheduledDates = [],
+  scheduledDates,
   removePriorValues,
   tournamentRecord,
   status = PUBLIC,
-  eventIds = [],
+  eventIds,
   embargo,
   language,
 }) {
@@ -41,7 +41,11 @@ function publishOOP({
   const itemType = `${PUBLISH}.${STATUS}`;
   const { timeItem } = getTimeItem({ element: tournamentRecord, itemType });
   const itemValue = timeItem?.itemValue || { [status]: {} };
-  const orderOfPlay: any = { published: true, scheduledDates, eventIds };
+  const orderOfPlay: any = { published: true };
+  // Only set scheduledDates/eventIds when explicitly provided;
+  // omitting them means "all dates/events" (no filtering).
+  if (scheduledDates !== undefined) orderOfPlay.scheduledDates = scheduledDates;
+  if (eventIds !== undefined) orderOfPlay.eventIds = eventIds;
   if (embargo && !isValidEmbargoDate(embargo)) return { error: INVALID_EMBARGO };
   if (embargo) orderOfPlay.embargo = embargo;
   itemValue[status].orderOfPlay = orderOfPlay;
