@@ -101,7 +101,30 @@ export function setTournamentDates(params: SetTournamentDatesArgs): ResultType &
     tournamentRecord.startDate = endDate;
   }
 
-  if (activeDates) tournamentRecord.activeDates = activeDates;
+  // If activeDates is being set, check that no removed date has scheduled matchUps
+  if (activeDates) {
+    const previousActiveDates: string[] = (tournamentRecord.activeDates as string[]) ?? [];
+    const activeDatesSet = new Set(activeDates);
+    const removedDates = previousActiveDates.filter((d) => !activeDatesSet.has(d));
+
+    if (removedDates.length) {
+      const matchUps = allTournamentMatchUps({ tournamentRecord }).matchUps ?? [];
+      const removedSet = new Set(removedDates);
+      const conflicting = matchUps.filter((m) => m.schedule?.scheduledDate && removedSet.has(m.schedule.scheduledDate));
+      if (conflicting.length) {
+        const dates = [...new Set(conflicting.map((m) => m.schedule!.scheduledDate))].sort();
+        return {
+          error: {
+            ...INVALID_VALUES,
+            message: `Cannot remove active dates with scheduled matchUps: ${dates.join(', ')}`,
+          },
+          info: `${conflicting.length} matchUp(s) scheduled on dates being removed`,
+        } as any;
+      }
+    }
+
+    tournamentRecord.activeDates = activeDates;
+  }
   if (weekdays) tournamentRecord.weekdays = weekdays;
 
   const unscheduledMatchUpIds = checkScheduling && removeInvalidScheduling({ tournamentRecord })?.unscheduledMatchUpIds;
