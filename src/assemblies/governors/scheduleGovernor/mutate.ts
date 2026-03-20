@@ -19,6 +19,7 @@ export { clearScheduledMatchUps } from '@Mutate/matchUps/schedule/clearScheduled
 export { matchUpScheduleChange } from '@Mutate/matchUps/schedule/matchUpScheduleChange';
 export { bulkScheduleMatchUps } from '@Mutate/matchUps/schedule/bulkScheduleMatchUps';
 export { scheduleProfileRounds } from '@Mutate/matchUps/schedule/scheduleProfileRounds';
+export { scheduleProfileGrid } from '@Mutate/matchUps/schedule/scheduleProfileGrid';
 export { clearMatchUpSchedule } from '@Mutate/matchUps/schedule/clearMatchUpSchedule';
 export { addMatchUpScheduledTime } from '@Mutate/matchUps/schedule/scheduledTime';
 export { setMatchUpDailyLimits } from '@Mutate/tournaments/setMatchUpDailyLimits';
