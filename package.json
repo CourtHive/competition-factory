@@ -165,7 +165,7 @@
     "istanbul-badges-readme": "^1.9.0",
     "jest": "30.3.0",
     "lint-staged": "16.4.0",
-    "markdownlint-cli2": "^0.21.0",
+    "markdownlint-cli2": "^0.22.0",
     "pinst": "3.0.0",
     "prettier": "3.8.1",
     "reflect-metadata": "0.2.2",
