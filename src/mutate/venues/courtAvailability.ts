@@ -11,7 +11,12 @@ import { POLICY_TYPE_SCHEDULING } from '@Constants/policyConstants';
 import { MODIFY_VENUE } from '@Constants/topicConstants';
 import { SUCCESS } from '@Constants/resultConstants';
 import { HydratedMatchUp } from '@Types/hydrated';
-import { ErrorType, MISSING_COURT_ID, MISSING_TOURNAMENT_RECORD } from '@Constants/errorConditionConstants';
+import {
+  ErrorType,
+  MISSING_COURT_ID,
+  MISSING_TOURNAMENT_RECORD,
+  SCHEDULE_CONFLICT_COURT_UNAVAILABLE,
+} from '@Constants/errorConditionConstants';
 
 type ModifyCourtAvailabilityArgs = {
   venueMatchUps?: HydratedMatchUp[];
@@ -32,6 +37,8 @@ export function modifyCourtAvailability({
   error?: ErrorType;
   success?: boolean;
   totalMergeCount?: number;
+  matchUpIds?: string[];
+  info?: string;
 } {
   if (!tournamentRecord) return { error: MISSING_TOURNAMENT_RECORD };
   if (!courtId) return { error: MISSING_COURT_ID };
@@ -62,16 +69,33 @@ export function modifyCourtAvailability({
     const allowModificationWhenMatchUpsScheduled =
       force ?? appliedPolicies?.[POLICY_TYPE_SCHEDULING]?.allowDeletionWithScoresPresent?.courts;
 
-    // Iterate through courtMatchUps and check that scheduledTime/scheduledDate still avilable
-    const matchUpsWithInvalidScheduling = [];
+    // Check each scheduled matchUp against the new availability windows
+    const matchUpsWithInvalidScheduling = courtMatchUps.filter((matchUp) => {
+      const { scheduledDate, scheduledTime } = matchUp.schedule ?? {};
+      if (!scheduledDate || !scheduledTime) return false;
 
-    if (matchUpsWithInvalidScheduling.length) {
-      if (allowModificationWhenMatchUpsScheduled) {
-        // go ahead and remove scheduling
-      } else {
-        console.log('throw error: scheduled court matchUps', matchUpsWithInvalidScheduling.length);
-      }
+      // Find availability windows for this date
+      const dateWindows = dateAvailability.filter((a) => a.date === scheduledDate);
+      if (!dateWindows.length) return true; // no availability for this date
+
+      // Check if the scheduled time falls within any availability window
+      const matchUpTime = timeToDate(scheduledTime);
+      return !dateWindows.some((window) => {
+        const windowStart = timeToDate(window.startTime);
+        const windowEnd = timeToDate(window.endTime);
+        return minutesDifference(windowStart, matchUpTime, false) <= 0 && minutesDifference(matchUpTime, windowEnd, false) <= 0;
+      });
+    });
+
+    if (matchUpsWithInvalidScheduling.length && !allowModificationWhenMatchUpsScheduled) {
+      return {
+        error: SCHEDULE_CONFLICT_COURT_UNAVAILABLE,
+        info: `${matchUpsWithInvalidScheduling.length} matchUp(s) scheduled outside new availability`,
+        matchUpIds: matchUpsWithInvalidScheduling.map((m) => m.matchUpId),
+      };
     }
+    // when allowModificationWhenMatchUpsScheduled is true, proceed — availability will be updated below
+    // and affected matchUps will need to be rescheduled by the caller
   }
 
   if (court) {

@@ -78,6 +78,10 @@ export const SCHEDULE_CONFLICT_DOUBLE_BOOKING = {
   message: 'Schedule conflict: court slot already occupied',
   code: 'ERR_SCHEDULE_CONFLICT_DOUBLE_BOOKING',
 };
+export const SCHEDULE_CONFLICT_COURT_UNAVAILABLE = {
+  message: 'Schedule conflict: matchUps scheduled outside court availability',
+  code: 'ERR_SCHEDULE_CONFLICT_COURT_UNAVAILABLE',
+};
 export const DRAW_POSITION_NOT_CLEARED = {
   message: 'drawPosition not cleared',
   code: 'ERR_FAILURE_POSITION_NOT_CLEARED',
@@ -1022,6 +1026,7 @@ export const errorConditionConstants = {
   POLICY_NOT_FOUND,
   SCHEDULE_NOT_CLEARED,
   SCHEDULE_CONFLICT_DOUBLE_BOOKING,
+  SCHEDULE_CONFLICT_COURT_UNAVAILABLE,
   SCHEDULED_MATCHUPS,
   SCORES_PRESENT,
   SEEDSCOUNT_GREATER_THAN_DRAW_SIZE,

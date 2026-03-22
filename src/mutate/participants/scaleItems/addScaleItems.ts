@@ -3,6 +3,7 @@ import { addEventTimeItem, addTournamentTimeItem } from '@Mutate/timeItems/addTi
 import { participantScaleItem } from '@Query/participant/participantScaleItem';
 import { decorateResult } from '@Functions/global/decorateResult';
 import { addNotice, getTopics } from '@Global/state/globalState';
+import { isValidDateString } from '@Tools/dateTime';
 import { definedAttributes } from '@Tools/definedAttributes';
 import { findEvent } from '@Acquire/findEvent';
 
@@ -15,6 +16,7 @@ import { TEAM_EVENT } from '@Constants/eventConstants';
 import { SUCCESS } from '@Constants/resultConstants';
 import { SCALE } from '@Constants/scaleConstants';
 import {
+  INVALID_DATE,
   INVALID_SCALE_ITEM,
   MISSING_PARTICIPANT,
   MISSING_PARTICIPANTS,
@@ -223,6 +225,11 @@ export function addParticipantScaleItem({ removePriorValues, participant, scaleI
     JSON.stringify(existingScaleItem?.scaleValue) !== JSON.stringify(scaleItem.scaleValue);
 
   if (valueChanged) {
+    // Validate scaleDate format if provided
+    if (scaleItem.scaleDate && typeof scaleItem.scaleDate === 'string' && !isValidDateString(scaleItem.scaleDate)) {
+      return { error: INVALID_DATE };
+    }
+
     const { scaleType, eventType, scaleName } = scaleItem;
     const itemType = [SCALE, scaleType, eventType, scaleName].join('.');
 

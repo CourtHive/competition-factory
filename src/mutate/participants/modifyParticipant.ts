@@ -19,6 +19,7 @@ import { SUCCESS } from '@Constants/resultConstants';
 import { TEAM } from '@Constants/matchUpTypes';
 import {
   CANNOT_MODIFY_PARTICIPANT_TYPE,
+  INVALID_DATE,
   MISSING_PARTICIPANT,
   MISSING_TOURNAMENT_RECORD,
 } from '@Constants/errorConditionConstants';
@@ -104,12 +105,13 @@ export function modifyParticipant(params) {
     newValues.participantRoleResponsibilties = participantRoleResponsibilties;
 
   if (existingParticipant.participantType === participantTypes.INDIVIDUAL && person) {
-    updatePerson({
+    const personResult = updatePerson({
       updateParticipantName,
       existingParticipant,
       newValues,
       person,
     });
+    if (personResult?.error) return personResult;
   }
 
   Object.assign(existingParticipant, definedAttributes(newValues));
@@ -181,7 +183,12 @@ function updatePerson({ updateParticipantName, existingParticipant, newValues, p
     newValues.participantName = participantName;
   }
 
-  if (birthdate && isValidDateString(birthdate)) {
+  if (birthdate) {
+    if (!isValidDateString(birthdate)) return { error: INVALID_DATE };
+    const birthYear = new Date(birthdate).getFullYear();
+    if (new Date(birthdate) > new Date() || birthYear < 1900) {
+      return { error: INVALID_DATE, info: 'birthdate must be a past date' };
+    }
     newPersonValues.birthdate = birthdate;
   }
 
@@ -190,6 +197,7 @@ function updatePerson({ updateParticipantName, existingParticipant, newValues, p
   }
 
   Object.assign(existingParticipant.person, newPersonValues);
+  return undefined;
 }
 
 export function validNationalityCode(code) {

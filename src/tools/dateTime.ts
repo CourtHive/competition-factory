@@ -32,6 +32,10 @@ export function isValidDateString(scheduleDate) {
   return isISODateString(scheduleDate) || validDateString.test(scheduleDate);
 }
 
+export function isDateInPast(dateString: string): boolean {
+  return new Date(dateString) < new Date();
+}
+
 export function DateHHMM(date): string {
   const dt = new Date(date);
   const secs = dt.getSeconds() + 60 * dt.getMinutes() + 60 * 60 * dt.getHours();

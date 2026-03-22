@@ -2,6 +2,7 @@ import { findTournamentParticipant } from '@Acquire/findTournamentParticipant';
 import { deriveElement } from '@Query/base/deriveElement';
 import { getTimeItemValues } from './getTimeItemValues';
 import { addNotice } from '@Global/state/globalState';
+import { isValidDateString } from '@Tools/dateTime';
 import { isObject, isString } from '@Tools/objects';
 import { getTimeItem } from '@Query/base/timeItems';
 
@@ -11,6 +12,7 @@ import { MODIFY_TOURNAMENT_DETAIL } from '@Constants/topicConstants';
 import { SUCCESS } from '@Constants/resultConstants';
 import {
   EVENT_NOT_FOUND,
+  INVALID_DATE,
   INVALID_TIME_ITEM,
   MISSING_PARTICIPANT_ID,
   MISSING_TIME_ITEM,
@@ -40,6 +42,11 @@ export function addTimeItem(params: AddTimeItemArgs) {
   const validTimeItem =
     isObject(timeItem) && isString(timeItem.itemType) && Object.keys(timeItem).includes('itemValue');
   if (!validTimeItem) return { error: INVALID_TIME_ITEM };
+
+  // Validate itemDate format if provided as a string
+  if (timeItem.itemDate && typeof timeItem.itemDate === 'string' && !isValidDateString(timeItem.itemDate)) {
+    return { error: INVALID_DATE };
+  }
 
   if (!element.timeItems) {
     element.timeItems = [];
