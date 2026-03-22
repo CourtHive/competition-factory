@@ -891,6 +891,52 @@ describe('Category Validation in addEventEntries', () => {
     });
   });
 
+  describe('Age Eligibility Scenarios', () => {
+    it('rejects a 25-year-old entering a U14 event', () => {
+      const { tournamentRecord } = mocksEngine.generateTournamentRecord({
+        startDate: '2024-08-01',
+        endDate: '2024-08-15',
+      });
+
+      const participant = {
+        participantId: 'p-adult-in-u14',
+        participantType: INDIVIDUAL,
+        person: {
+          birthDate: '1999-03-15', // Age 25 during event
+          standardGivenName: 'Adult',
+          standardFamilyName: 'Player',
+          sex: 'MALE',
+        },
+      };
+
+      tournamentRecord.participants = [participant];
+      tournamentEngine.setState(tournamentRecord);
+
+      const event = {
+        eventName: 'U14 Singles',
+        eventType: SINGLES,
+        category: {
+          ageCategoryCode: 'U14',
+        },
+      };
+
+      let result: any = tournamentEngine.addEvent({ event });
+      const { eventId } = result.event;
+
+      result = tournamentEngine.addEventEntries({
+        participantIds: [participant.participantId],
+        enforceCategory: true,
+        eventId,
+      });
+
+      expect(result.error).toEqual(INVALID_PARTICIPANT_IDS);
+      expect(result.context.categoryRejections.length).toEqual(1);
+      expect(result.context.categoryRejections[0].participantId).toEqual(participant.participantId);
+      expect(result.context.categoryRejections[0].rejectionReasons[0].type).toEqual('age');
+      expect(result.context.categoryRejections[0].rejectionReasons[0].details.requiredMax).toEqual(13);
+    });
+  });
+
   describe('Enforcement Parameter', () => {
     it('does not validate when enforceCategory is false', () => {
       const { tournamentRecord } = mocksEngine.generateTournamentRecord({

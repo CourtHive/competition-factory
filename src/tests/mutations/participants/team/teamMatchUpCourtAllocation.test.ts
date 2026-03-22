@@ -13,6 +13,8 @@ test('it can allocate courts to a TEAM matchUp', () => {
   const { tournamentRecord } = mocksEngine.generateTournamentRecord({
     drawProfiles: [{ eventType: TEAM_EVENT, drawSize: 8 }],
     venueProfiles: [{ courtsCount: 6 }],
+    startDate: '2023-03-15',
+    endDate: '2023-03-22',
   });
 
   tournamentEngine.setState(tournamentRecord);

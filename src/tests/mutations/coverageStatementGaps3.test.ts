@@ -1154,6 +1154,8 @@ describe('scheduleItems additional paths', () => {
   it('exercises scheduledTime assignment', () => {
     const { tournamentRecord, drawIds } = mocksEngine.generateTournamentRecord({
       drawProfiles: [{ drawSize: 4 }],
+      startDate: '2024-01-01',
+      endDate: '2024-01-07',
     });
     tournamentEngine.setState(tournamentRecord);
     const drawId = drawIds[0];

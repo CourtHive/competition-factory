@@ -11,6 +11,8 @@ test('hasParticipantsCount value filters matchUps', () => {
   mocksEngine.generateTournamentRecord({
     venueProfiles: [{ venueId, courtsCount: 3 }],
     drawProfiles: [{ drawId, drawSize: 16 }],
+    startDate: '2023-06-16',
+    endDate: '2023-06-22',
     setState: true,
   });
 

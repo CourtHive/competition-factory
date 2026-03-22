@@ -275,6 +275,8 @@ describe('scheduleItems: courtOrder, courtAnnotation, and time series', () => {
       drawIds: [drawId],
     } = mocksEngine.generateTournamentRecord({
       drawProfiles: [{ drawSize: 4 }],
+      startDate: '2025-01-01',
+      endDate: '2025-01-07',
     });
     tournamentEngine.setState(tournamentRecord);
 
@@ -304,6 +306,8 @@ describe('scheduleItems: courtOrder, courtAnnotation, and time series', () => {
       drawIds: [drawId],
     } = mocksEngine.generateTournamentRecord({
       drawProfiles: [{ drawSize: 4 }],
+      startDate: '2025-01-01',
+      endDate: '2025-01-07',
     });
     tournamentEngine.setState(tournamentRecord);
 
@@ -330,6 +334,8 @@ describe('scheduleItems: courtOrder, courtAnnotation, and time series', () => {
       drawIds: [drawId],
     } = mocksEngine.generateTournamentRecord({
       drawProfiles: [{ drawSize: 4 }],
+      startDate: '2025-01-01',
+      endDate: '2025-01-07',
     });
     tournamentEngine.setState(tournamentRecord);
 

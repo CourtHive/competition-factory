@@ -12,8 +12,8 @@ const { SINGLES } = eventConstants;
 
 it('can clear matchUp schedules', () => {
   const { tournamentRecord } = mocksEngine.generateTournamentRecord({
-    startDate: '2020-01-01',
-    endDate: '2020-01-06',
+    startDate: '2021-01-01',
+    endDate: '2021-01-07',
   });
   const { participants } = tournamentRecord;
 

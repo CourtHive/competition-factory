@@ -18,7 +18,10 @@ import {
 } from '@Constants/errorConditionConstants';
 
 it('can bulk schedule matchUps', () => {
-  const { tournamentRecord } = mocksEngine.generateTournamentRecord();
+  const { tournamentRecord } = mocksEngine.generateTournamentRecord({
+    startDate: '2021-01-01',
+    endDate: '2021-01-07',
+  });
   const { participants } = tournamentRecord;
 
   tournamentEngine.setState(tournamentRecord);
@@ -156,7 +159,7 @@ test('recognizes scheduling conflicts', () => {
   let { matchUps } = tournamentEngine.allCompetitionMatchUps();
   let roundMatchUps: any = getRoundMatchUps({ matchUps })?.roundMatchUps;
 
-  const scheduledDate = '2021-01-01';
+  const scheduledDate = '2022-01-01';
   let schedule = {
     scheduledTime: '08:00',
     scheduledDate,

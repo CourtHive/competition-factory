@@ -28,6 +28,8 @@ it('will not scheduled earlier rounds after later rounds', () => {
       },
     ],
     drawProfiles: [{ drawId, drawSize: 32, idPrefix: 'matchUp' }],
+    startDate: '2023-06-16',
+    endDate: '2023-06-22',
     tournamentId,
   });
 
@@ -112,6 +114,8 @@ it('will not save overlapping timeModifiers', () => {
       },
     ],
     drawProfiles: [{ drawId, drawSize: 32, idPrefix: 'matchUp' }],
+    startDate: '2023-06-16',
+    endDate: '2023-06-22',
     tournamentId,
   });
 
@@ -262,6 +266,8 @@ it.each([
       },
     ],
     drawProfiles: [{ drawId, drawSize: 64, drawType: COMPASS, idPrefix: 'matchUp' }],
+    startDate: '2023-06-16',
+    endDate: '2023-06-22',
     tournamentId,
     setState: true,
   });

@@ -1,4 +1,5 @@
 import { addMatchUpTimeItem } from '@Mutate/timeItems/matchUps/matchUpTimeItems';
+import { decorateResult } from '@Functions/global/decorateResult';
 import { dateValidation } from '@Validators/regex';
 import { extractDate } from '@Tools/dateTime';
 
@@ -15,14 +16,26 @@ export function addMatchUpScheduledDate({
   disableNotice,
   matchUpId,
 }: AddScheduleAttributeArgs & { scheduledDate?: string }): ResultType {
+  const stack = 'addMatchUpScheduledDate';
   if (!matchUpId) return { error: MISSING_MATCHUP_ID };
-
-  // this must be done in tournamentEngine wrapper
 
   const validDate = dateToSchedule && dateValidation.test(dateToSchedule);
   if (dateToSchedule && !validDate) return { error: INVALID_DATE };
 
   const scheduledDate = extractDate(dateToSchedule);
+
+  // validate scheduledDate falls within tournament date range
+  if (scheduledDate && tournamentRecord?.startDate && tournamentRecord?.endDate) {
+    const scheduleTime = new Date(scheduledDate).getTime();
+    const startTime = new Date(extractDate(tournamentRecord.startDate)).getTime();
+    const endTime = new Date(extractDate(tournamentRecord.endDate)).getTime();
+    if (scheduleTime < startTime || scheduleTime > endTime)
+      return decorateResult({
+        result: { error: INVALID_DATE },
+        info: 'scheduledDate must be within tournament start and end dates',
+        stack,
+      });
+  }
 
   const timeItem = {
     itemValue: scheduledDate,

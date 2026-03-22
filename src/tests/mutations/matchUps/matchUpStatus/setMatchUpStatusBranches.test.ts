@@ -337,6 +337,8 @@ describe('setMatchUpStatus branch coverage', () => {
     const drawId = 'drawId';
     mocksEngine.generateTournamentRecord({
       drawProfiles: [{ drawId, drawSize: 4, idPrefix: 'm' }],
+      startDate: '2024-01-14',
+      endDate: '2024-01-21',
       setState: true,
     });
 

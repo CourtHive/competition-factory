@@ -6,7 +6,12 @@ import { addGoesTo } from '../../query/matchUps/addGoesTo';
 import { xa } from '@Tools/extractAttributes';
 
 // constants and types
-import { EXISTING_STRUCTURE, INVALID_VALUES, MISSING_DRAW_DEFINITION } from '@Constants/errorConditionConstants';
+import {
+  EXISTING_STRUCTURE,
+  INVALID_STRUCTURE,
+  INVALID_VALUES,
+  MISSING_DRAW_DEFINITION,
+} from '@Constants/errorConditionConstants';
 import { DrawDefinition, DrawLink, Event, Structure, Tournament } from '@Types/tournamentTypes';
 import { SUCCESS } from '@Constants/resultConstants';
 import { ResultType } from '@Types/factoryTypes';
@@ -67,15 +72,37 @@ export function attachStructures({
       stack,
     });
 
+  // validate that all link structureIds reference valid structures
+  if (links.length) {
+    const allStructureIds = new Set([
+      ...(drawDefinition.structures?.map(({ structureId }) => structureId) ?? []),
+      ...structures.map(({ structureId }) => structureId),
+    ]);
+
+    const invalidLinks = links.filter(
+      (link) => !allStructureIds.has(link.source.structureId) || !allStructureIds.has(link.target.structureId),
+    );
+
+    if (invalidLinks.length)
+      return decorateResult({
+        result: { error: INVALID_STRUCTURE },
+        info: 'links reference non-existent structures',
+        context: {
+          invalidLinks: invalidLinks.map((l) => ({ source: l.source.structureId, target: l.target.structureId })),
+        },
+        stack,
+      });
+  }
+
   if (links.length) drawDefinition.links?.push(...links);
 
-  const generatedStructureIds = structures.map(({ structureId }) => structureId);
+  const generatedStructureIds = new Set(structures.map(({ structureId }) => structureId));
   const existingStructureIds = drawDefinition.structures?.map(({ structureId }) => structureId);
 
   // replace any existing structures with newly generated structures
   // this is done because it is possible that a structure exists without matchUps
   drawDefinition.structures = (drawDefinition.structures ?? []).map((structure) => {
-    return generatedStructureIds.includes(structure.structureId)
+    return generatedStructureIds.has(structure.structureId)
       ? structures.find(({ structureId }) => structureId === structure.structureId)
       : structure;
   }) as Structure[];

@@ -75,6 +75,8 @@ it('removes scheduling timeItems when removeScheduling is true', () => {
     tournamentRecord,
   } = mocksEngine.generateTournamentRecord({
     drawProfiles: [{ drawSize: 4 }],
+    startDate: '2020-01-01',
+    endDate: '2020-01-07',
   });
   tournamentEngine.setState(tournamentRecord);
 
@@ -111,6 +113,8 @@ it('filters scheduling timeItems but keeps non-scheduling timeItems when removeS
     tournamentRecord,
   } = mocksEngine.generateTournamentRecord({
     drawProfiles: [{ drawSize: 4 }],
+    startDate: '2020-01-01',
+    endDate: '2020-01-07',
   });
   tournamentEngine.setState(tournamentRecord);
 
