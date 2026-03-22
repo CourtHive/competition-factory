@@ -11,6 +11,7 @@ export const ASSIGN_PARTICIPANT_METHOD = 'assignDrawPosition';
 export const REMOVE_SEED_METHOD = 'removeSeededParticipant';
 export const ASSIGN_BYE_METHOD = 'assignDrawPositionBye';
 export const SEED_VALUE_METHOD = 'modifySeedAssignment';
+export const SEED_CASCADE_METHOD = 'seedWithdrawalCascade';
 export const ADD_PENALTY_METHOD = 'addPenalty';
 
 export const MODIFY_PAIR_ASSIGNMENT = 'MODIFY_PAIR';
@@ -25,6 +26,7 @@ export const SWAP_PARTICIPANTS = 'SWAP';
 export const ADD_NICKNAME = 'NICKNAME';
 export const SEED_VALUE = 'SEED_VALUE';
 export const ADD_PENALTY = 'PENALTY';
+export const SEED_CASCADE = 'SEED_CASCADE';
 export const ASSIGN_BYE = 'BYE';
 
 export const positionActionConstants = {
@@ -40,6 +42,7 @@ export const positionActionConstants = {
   REMOVE_SEED,
   ADD_PENALTY,
   ASSIGN_BYE,
+  SEED_CASCADE,
   SEED_VALUE,
 };
 

@@ -9,6 +9,7 @@ import { matchUpActions } from '@Query/drawDefinition/matchUpActions/matchUpActi
 import { isCompletedStructure } from '@Query/drawDefinition/structureActions';
 import { getAppliedPolicies } from '@Query/extensions/getAppliedPolicies';
 import { isLuckyBasedDraw } from '@Query/drawDefinition/isLuckyBasedDraw';
+import { getValidSeedCascadeAction } from './getValidSeedCascadeAction';
 import { getValidLuckyLosersAction } from './getValidLuckyLoserAction';
 import { getValidAlternatesAction } from './getValidAlternatesAction';
 import { isValidSeedPosition } from '@Query/drawDefinition/seedGetter';
@@ -707,6 +708,22 @@ function positionActionsInternal(params: PositionActionsArgs): ResultType & {
         participant,
         drawId,
       });
+    }
+
+    // Seed withdrawal cascade: available when a seeded participant can be
+    // withdrawn and seeds from lower blocks can cascade up
+    if (!isLuckyDrawAdvancedPosition && !isByePosition) {
+      const { validSeedCascadeAction } = getValidSeedCascadeAction({
+        positionAssignments,
+        activeDrawPositions,
+        drawDefinition,
+        isByePosition,
+        structure,
+        drawPosition,
+        structureId,
+        drawId,
+      });
+      if (validSeedCascadeAction) validActions.push(validSeedCascadeAction);
     }
 
     addPenaltyAndNicknameActions({

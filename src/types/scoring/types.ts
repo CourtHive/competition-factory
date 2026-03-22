@@ -29,6 +29,11 @@ export interface MatchUp {
   createdAt?: string;
   updatedAt?: string;
 
+  // Optional: When true, flip the base server derivation. When false, don't flip.
+  // When undefined, fall back to first-point inference.
+  // Set via ScoringEngine.setServer() to correct server tracking mid-match.
+  serverFlip?: boolean;
+
   // Optional: History for undo functionality
   history?: MatchUpHistory;
 }
@@ -153,7 +158,7 @@ export interface MatchUpHistory {
  * alongside point-level entries in history
  */
 export interface ScoreEntry {
-  type: 'point' | 'game' | 'set' | 'endSegment' | 'setInitialScore' | 'substitution';
+  type: 'point' | 'game' | 'set' | 'endSegment' | 'setInitialScore' | 'substitution' | 'setServer';
   data: any;
   timestamp: string;
   pointIndex?: number;

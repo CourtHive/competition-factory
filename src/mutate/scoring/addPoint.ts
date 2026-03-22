@@ -116,7 +116,7 @@ export function addPoint(matchUp: MatchUp, options: AddPointOptions, config?: Ad
     winner,
     winningSide: (winner + 1) as 1 | 2,
     server,
-    serverSideNumber: server !== undefined ? ((server + 1) as 1 | 2) : undefined,
+    serverSideNumber: server === undefined ? undefined : ((server + 1) as 1 | 2),
     serverParticipantId: options.serverParticipantId,
     timestamp: timestamp || new Date().toISOString(),
   };
@@ -164,35 +164,17 @@ export function addPoint(matchUp: MatchUp, options: AddPointOptions, config?: Ad
   // Dispatch to set-type-specific scoring logic
   switch (setType) {
     case 'tiebreakOnly':
-      handleTiebreakOnlySet(
-        newMatchUp,
-        point,
-        winner,
-        formatStructure,
-        activeSetFormat!,
-        setsWon,
-        setsToWin,
-        scoreIncrement,
-      );
+      handleTiebreakOnlySet(newMatchUp, point, winner, formatStructure, activeSetFormat!, setsToWin, scoreIncrement);
       break;
     case 'matchTiebreak':
-      handleMatchTiebreak(newMatchUp, point, winner, formatStructure, setsWon, setsToWin, scoreIncrement);
+      handleMatchTiebreak(newMatchUp, point, winner, formatStructure, setsToWin, scoreIncrement);
       break;
     case 'timed':
       handleTimedSet(newMatchUp, point, winner, activeSetFormat!, scoreIncrement);
       break;
     case 'standard':
     default:
-      handleStandardSet(
-        newMatchUp,
-        point,
-        winner,
-        formatStructure,
-        activeSetFormat!,
-        setsWon,
-        setsToWin,
-        isDecidingSet,
-      );
+      handleStandardSet(newMatchUp, point, winner, formatStructure, activeSetFormat!, setsToWin, isDecidingSet);
       break;
   }
 
@@ -212,7 +194,6 @@ function handleStandardSet(
   winner: 0 | 1,
   formatStructure: FormatStructure,
   activeSetFormat: SetFormatStructure,
-  _setsWon: [number, number],
   setsToWin: number,
   isDecidingSet: boolean,
 ): void {
@@ -238,7 +219,7 @@ function handleStandardSet(
   // V3-compatible point metadata
   // gameOffset accounts for games added via addGame() that have no gameScores entries
   const pointBasedGames = Math.max(side1GameScores.length, side2GameScores.length) - 1;
-  const gameOffset = (side1Games + side2Games) - pointBasedGames;
+  const gameOffset = side1Games + side2Games - pointBasedGames;
   (point as any).set = currentSetIndex;
   (point as any).game = gameOffset + currentGameIndex;
   (point as any).number = side1Points + side2Points;
@@ -267,7 +248,7 @@ function handleStandardSet(
   // Track streak for CONSECUTIVE games
   if (isConsecutive) {
     const streak = currentSet.currentStreak;
-    if (streak && streak.side === winner) {
+    if (streak?.side === winner) {
       currentSet.currentStreak = { side: winner, count: streak.count + 1 };
     } else {
       currentSet.currentStreak = { side: winner, count: 1 };
@@ -338,7 +319,6 @@ function handleTiebreakOnlySet(
   winner: 0 | 1,
   formatStructure: FormatStructure,
   activeSetFormat: SetFormatStructure,
-  _setsWon: [number, number],
   setsToWin: number,
   scoreIncrement: number = 1,
 ): void {
@@ -404,7 +384,6 @@ function handleMatchTiebreak(
   point: Point,
   winner: 0 | 1,
   formatStructure: FormatStructure,
-  _setsWon: [number, number],
   setsToWin: number,
   scoreIncrement: number = 1,
 ): void {
@@ -693,17 +672,40 @@ function checkStandardSetWon(
 export function deriveServer(matchUp: MatchUp, formatStructure: FormatStructure, setType: SetType): 0 | 1 {
   const baseServer = deriveServerBase(matchUp, formatStructure, setType);
 
-  // Respect initial server choice: if the first recorded point was explicitly
-  // served by side 1, all format-based derivations (which assume side 0 starts)
-  // must be flipped to maintain correct alternation.
-  const firstPointServer = matchUp.history?.points?.[0]?.server;
-  if (firstPointServer === 1) {
-    return (1 - baseServer) as 0 | 1;
+  // Priority 1: Explicit serverFlip (set via ScoringEngine.setServer()).
+  // When defined, it takes full control — true flips the base, false keeps it.
+  // This replaces first-point inference for the current position onward.
+  // During rebuild, serverFlip is only set when the setServer timeline entry
+  // is replayed, so points before it use first-point inference naturally.
+  if (matchUp.serverFlip !== undefined) {
+    return matchUp.serverFlip ? ((1 - baseServer) as 0 | 1) : baseServer;
+  }
+
+  // Priority 2: Infer from the first recorded point's explicit server.
+  // If it disagrees with the base derivation at that point's position, flip all
+  // subsequent derivations. This handles both starting from scratch (where
+  // side 1 starts) and mid-match entry (where the first recorded point may
+  // be in set 2+ after addSet calls).
+  const firstPoint = matchUp.history?.points?.[0];
+  if (firstPoint?.server !== undefined) {
+    const firstPointSetIndex = (firstPoint as any).set ?? 0;
+    const firstPointGameIndex = (firstPoint as any).game ?? 0;
+    let gamesBeforeFirstPoint = 0;
+    for (let i = 0; i < firstPointSetIndex; i++) {
+      const s = matchUp.score.sets[i];
+      gamesBeforeFirstPoint += (s.side1Score || 0) + (s.side2Score || 0);
+    }
+    gamesBeforeFirstPoint += firstPointGameIndex;
+    const baseAtFirstPoint = (gamesBeforeFirstPoint % 2) as 0 | 1;
+
+    if (firstPoint.server !== baseAtFirstPoint) {
+      return (1 - baseServer) as 0 | 1;
+    }
   }
   return baseServer;
 }
 
-function deriveServerBase(matchUp: MatchUp, formatStructure: FormatStructure, setType: SetType): 0 | 1 {
+export function deriveServerBase(matchUp: MatchUp, formatStructure: FormatStructure, setType: SetType): 0 | 1 {
   const currentSetIndex = matchUp.score.sets.length - 1;
   const currentSet = currentSetIndex >= 0 ? matchUp.score.sets[currentSetIndex] : undefined;
 
@@ -735,6 +737,13 @@ function deriveServerBase(matchUp: MatchUp, formatStructure: FormatStructure, se
   const side1Games = currentSet?.side1Score || 0;
   const side2Games = currentSet?.side2Score || 0;
 
+  // Count total games from all previous sets to maintain correct server alternation
+  let totalPreviousGames = 0;
+  for (let i = 0; i < matchUp.score.sets.length - 1; i++) {
+    const s = matchUp.score.sets[i];
+    totalPreviousGames += (s.side1Score || 0) + (s.side2Score || 0);
+  }
+
   const setTo = formatStructure.setFormat?.setTo || 6;
   const tiebreakAt =
     (typeof formatStructure.setFormat?.tiebreakAt === 'number' ? formatStructure.setFormat.tiebreakAt : undefined) ??
@@ -748,14 +757,14 @@ function deriveServerBase(matchUp: MatchUp, formatStructure: FormatStructure, se
     const side2GameScores = currentSet?.side2GameScores || [];
     const tiebreakPoints = (side1GameScores.at(-1) || 0) + (side2GameScores.at(-1) || 0);
 
-    const totalGames = side1Games + side2Games;
+    const totalGames = totalPreviousGames + side1Games + side2Games;
     const tiebreakInitialServer = totalGames % 2;
     const serverOffset = Math.floor(tiebreakPoints / 2) % 2;
     return ((tiebreakInitialServer + serverOffset) % 2) as 0 | 1;
   }
 
   // Regular game: server alternates each game
-  const totalGames = side1Games + side2Games;
+  const totalGames = totalPreviousGames + side1Games + side2Games;
   return (totalGames % 2) as 0 | 1;
 }
 
