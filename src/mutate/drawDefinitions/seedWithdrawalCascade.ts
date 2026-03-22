@@ -85,9 +85,7 @@ export function seedWithdrawalCascade({
   // getValidSeedBlocks returns SeedBlock { seedNumbers: number[], drawPositions: number[] }
   // Find which block the withdrawn seed belongs to
   const withdrawnSeedNumber = withdrawnSeed.seedNumber;
-  const withdrawnBlockIndex = validSeedBlocks.findIndex((block) =>
-    block.seedNumbers.includes(withdrawnSeedNumber),
-  );
+  const withdrawnBlockIndex = validSeedBlocks.findIndex((block) => block.seedNumbers.includes(withdrawnSeedNumber));
   if (withdrawnBlockIndex < 0) return { error: INVALID_VALUES };
 
   // Build the cascade chain: one replacement from each lower block
@@ -114,12 +112,12 @@ export function seedWithdrawalCascade({
     if (!blockSeeds.length) break; // No more seeds to cascade
 
     const replacement = blockSeeds[0];
-    if (!replacement.participantId) break;
-    const replacementPosition = positionAssignments.find((a) => a.participantId === replacement.participantId);
+    const replacementPid = replacement.participantId as string; // guaranteed by filter above
+    const replacementPosition = positionAssignments.find((a) => a.participantId === replacementPid);
     if (!replacementPosition) break;
 
     cascadeChain.push({
-      replacementParticipantId: replacement.participantId,
+      replacementParticipantId: replacementPid,
       replacementSeedNumber: replacement.seedNumber,
       targetSeedNumber: currentTargetSeedNumber,
       sourceDrawPosition: replacementPosition.drawPosition,
@@ -146,9 +144,7 @@ export function seedWithdrawalCascade({
   }
 
   // Determine the vacated draw position (where the last moved participant came from)
-  const vacatedDrawPosition = cascadeChain.length
-    ? cascadeChain[cascadeChain.length - 1].sourceDrawPosition
-    : drawPosition;
+  const vacatedDrawPosition = cascadeChain.length ? cascadeChain.at(-1)?.sourceDrawPosition : drawPosition;
 
   // Clear the vacated position
   const vacatedPos = positionAssignments.find((a) => a.drawPosition === vacatedDrawPosition);
@@ -161,8 +157,8 @@ export function seedWithdrawalCascade({
     withdrawnSeed.participantId = undefined;
   } else {
     // The last seed slot in the chain needs to be cleared
-    const lastStep = cascadeChain[cascadeChain.length - 1];
-    const lastSeed = seedAssignments.find((s) => s.seedNumber === lastStep.replacementSeedNumber);
+    const lastStep = cascadeChain.at(-1);
+    const lastSeed = seedAssignments.find((s) => s.seedNumber === lastStep?.replacementSeedNumber);
     if (lastSeed) {
       lastSeed.participantId = undefined;
     }
