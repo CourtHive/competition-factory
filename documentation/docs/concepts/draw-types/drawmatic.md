@@ -199,9 +199,9 @@ Maximum number of candidate solutions to evaluate. Higher values may find better
 
 After rounds are played, **pressure scores** provide a per-participant measure of quality of performance that accounts for opponent strength. In TMX, these appear as the **PS#** column in the Stats table.
 
-Pressure scores are calculated when `pressureRating: true` is passed to `getEventData` or `tallyParticipantResults`. They complement the standard win/loss tally by answering: *how well did each participant perform relative to the strength of their opponents?*
+Pressure scores are calculated when `pressureRating: true` is passed to `getEventData` or `tallyParticipantResults`. They complement the standard win/loss tally by answering: _how well did each participant perform relative to the strength of their opponents?_
 
-### How It Works
+### How Pressure Score Works
 
 For each completed SINGLES matchUp where both participants have ratings:
 
@@ -261,7 +261,7 @@ const { accuracy } = tournamentEngine.getPredictiveAccuracy({
 });
 ```
 
-Where pressure scores evaluate *individual performance quality*, predictive accuracy evaluates *rating system quality* — together they give a complete picture of how well the DrawMatic pairing algorithm is working.
+Where pressure scores evaluate _individual performance quality_, predictive accuracy evaluates _rating system quality_ — together they give a complete picture of how well the DrawMatic pairing algorithm is working.
 
 ## Related
 
