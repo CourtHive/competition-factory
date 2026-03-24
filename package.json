@@ -203,6 +203,7 @@
     "ignoredBuiltDependencies": [
       "@dep-tree/cli",
       "@nestjs/core",
+      "@scarf/scarf",
       "esbuild",
       "rollup",
       "unrs-resolver"
