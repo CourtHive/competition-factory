@@ -1,6 +1,7 @@
 export { destroyPairEntries, destroyPairEntry } from '@Mutate/entries/destroyPairEntry';
 export { setEntryPosition, setEntryPositions } from '@Mutate/entries/setEntryPositions';
 export { promoteAlternate, promoteAlternates } from '@Mutate/entries/promoteAlternate';
+export { removeStageEntries } from '@Mutate/drawDefinitions/removeStageEntries';
 export { removeDrawEntries } from '@Mutate/drawDefinitions/removeDrawEntries';
 export { modifyEntriesStatus } from '@Mutate/entries/modifyEntriesStatus';
 export { addEventEntryPairs } from '@Mutate/entries/addEventEntryPairs';
