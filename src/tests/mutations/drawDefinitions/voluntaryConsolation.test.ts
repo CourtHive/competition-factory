@@ -54,6 +54,8 @@ it('can generate a draw with voluntary consolation stage', () => {
   expect(result.links.length).toEqual(0);
   expect(result.structures.length).toEqual(1);
 
+  tournamentEngine.attachConsolationStructures({ structures: result.structures, links: result.links, drawId });
+
   const { matchUps } = tournamentEngine.allTournamentMatchUps({
     contextFilters: { stages: [VOLUNTARY_CONSOLATION] },
   });
@@ -136,6 +138,8 @@ it('can generate a DOUBLES draw with voluntary consolation stage', () => {
   expect(result.success).toEqual(true);
   expect(result.links.length).toEqual(0);
   expect(result.structures.length).toEqual(1);
+
+  tournamentEngine.attachConsolationStructures({ structures: result.structures, links: result.links, drawId });
 
   const { matchUps } = tournamentEngine.allTournamentMatchUps({
     contextFilters: { stages: [VOLUNTARY_CONSOLATION] },
@@ -224,7 +228,6 @@ it('can generate a draw with voluntary consolation stage and delay attachment', 
   expect(vcstageEntries.length).toEqual(32);
 
   result = tournamentEngine.generateVoluntaryConsolation({
-    attachConsolation: false,
     automated: true,
     drawId,
   });
@@ -306,6 +309,8 @@ it('can generate a draw with voluntary consolation stage with 5 entries', () => 
   expect(result.success).toEqual(true);
   expect(result.links.length).toEqual(0);
   expect(result.structures.length).toEqual(1);
+
+  tournamentEngine.attachConsolationStructures({ structures: result.structures, links: result.links, drawId });
 
   result = tournamentEngine.generateVoluntaryConsolation({
     automated: true,

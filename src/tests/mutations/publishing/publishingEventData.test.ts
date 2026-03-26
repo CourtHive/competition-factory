@@ -663,6 +663,8 @@ it('can add or remove stages from a published draw', () => {
   });
   expect(result.success).toEqual(true);
 
+  tournamentEngine.attachConsolationStructures({ structures: result.structures, links: result.links, drawId });
+
   let event = tournamentEngine.getEvent({ drawId }).event;
   const eventId = event.eventId;
 

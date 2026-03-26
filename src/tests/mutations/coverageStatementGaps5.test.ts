@@ -639,7 +639,7 @@ describe('generateVoluntaryConsolation uncovered paths', () => {
     expect(result.structures?.length).toBeGreaterThan(0);
   });
 
-  it('succeeds with attachConsolation=false', () => {
+  it('succeeds and returns structures without mutating drawDefinition', () => {
     const {
       tournamentRecord,
       drawIds: [drawId],
@@ -656,13 +656,14 @@ describe('generateVoluntaryConsolation uncovered paths', () => {
       drawId,
     });
 
+    const structureCountBefore = drawDefinition.structures.length;
     const result = generateVoluntaryConsolation({
       drawDefinition,
       tournamentRecord,
-      attachConsolation: false,
       event,
     });
     expect(result.success).toBe(true);
+    expect(drawDefinition.structures.length).toBe(structureCountBefore);
   });
 });
 

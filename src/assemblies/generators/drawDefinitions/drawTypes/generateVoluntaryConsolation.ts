@@ -4,7 +4,6 @@ import { automatedPositioning } from '@Mutate/drawDefinitions/automatedPositioni
 import { resolveTieFormat } from '@Query/hierarchical/tieFormats/resolveTieFormat';
 import { getAllStructureMatchUps } from '@Query/matchUps/getAllStructureMatchUps';
 import { copyTieFormat } from '@Query/hierarchical/tieFormats/copyTieFormat';
-import { modifyDrawNotice } from '@Mutate/notifications/drawNotifications';
 import { getStageEntries } from '@Query/drawDefinition/stageGetter';
 import { validateTieFormat } from '@Validators/validateTieFormat';
 import { definedAttributes } from '@Tools/definedAttributes';
@@ -27,6 +26,7 @@ import {
 import {
   DOUBLE_ELIMINATION,
   FEED_IN,
+  LUCKY_DRAW,
   ROUND_ROBIN,
   ROUND_ROBIN_WITH_PLAYOFF,
   SINGLE_ELIMINATION,
@@ -48,10 +48,11 @@ type GenerateVoluntaryConsolationArgs = {
   seedingProfile?: SeedingProfile;
   drawDefinition: DrawDefinition;
   matchUpType?: EventTypeUnion;
-  attachConsolation?: boolean;
   applyPositioning?: boolean;
   staggeredEntry?: boolean;
+  structureOptions?: { groupSize?: number };
   structureName?: string;
+  matchUpFormat?: string;
   tieFormat?: TieFormat;
   automated?: boolean;
   placeByes?: boolean;
@@ -59,6 +60,16 @@ type GenerateVoluntaryConsolationArgs = {
   isMock?: boolean;
   event?: Event;
 };
+
+/**
+ * Generates voluntary consolation structures and links without mutating the drawDefinition.
+ * Returns { structures, links } for the caller to attach via attachConsolationStructures.
+ *
+ * This is a generator (not a mutation). In client/server scenarios, the caller should:
+ * 1. Call this method to generate structures/links
+ * 2. Send the result through attachConsolationStructures via mutationRequest
+ * This ensures both client and server receive identical structure/matchUp UUIDs.
+ */
 export function generateVoluntaryConsolation(params: GenerateVoluntaryConsolationArgs): {
   structures?: Structure[];
   links?: DrawLink[];
@@ -67,7 +78,6 @@ export function generateVoluntaryConsolation(params: GenerateVoluntaryConsolatio
 } {
   const {
     drawType = SINGLE_ELIMINATION,
-    attachConsolation = true,
     applyPositioning = true,
     tournamentRecord,
     staggeredEntry, // optional - specifies main structure FEED_IN for drawTypes CURTIS_CONSOLATION, FEED_IN_CHAMPIONSHIPS, FMLC
@@ -87,9 +97,8 @@ export function generateVoluntaryConsolation(params: GenerateVoluntaryConsolatio
     drawDefinition,
     stage,
   });
-  const drawSize = ![ROUND_ROBIN, DOUBLE_ELIMINATION, ROUND_ROBIN_WITH_PLAYOFF].includes(drawType)
-    ? nextPowerOf2(entries.length)
-    : entries.length;
+  const NON_POWER_OF_2_TYPES = [ROUND_ROBIN, DOUBLE_ELIMINATION, ROUND_ROBIN_WITH_PLAYOFF, LUCKY_DRAW];
+  const drawSize = NON_POWER_OF_2_TYPES.includes(drawType) ? entries.length : nextPowerOf2(entries.length);
 
   if (
     (!staggeredEntry && drawType === FEED_IN && entries.length < 2) ||
@@ -152,41 +161,44 @@ export function generateVoluntaryConsolation(params: GenerateVoluntaryConsolatio
     });
   }
 
-  if (!applyPositioning || !attachConsolation) {
-    drawDefinition = makeDeepCopy(drawDefinition, false, true);
-  }
+  // Work on a deep copy so the original drawDefinition is never mutated.
+  // The caller is responsible for attaching via attachConsolationStructures.
+  const workingDD = makeDeepCopy(drawDefinition, false, true);
 
-  drawDefinition.links ??= [];
-  if (links.length) drawDefinition.links.push(...links);
+  workingDD.links ??= [];
+  if (links.length) workingDD.links.push(...links);
   const generatedStructureIds = new Set(structures.map(({ structureId }) => structureId));
-  drawDefinition.structures ??= [];
-  const existingStructureIds = new Set(drawDefinition.structures.map(({ structureId }) => structureId));
+  workingDD.structures ??= [];
+  const existingStructureIds = new Set(workingDD.structures.map(({ structureId }) => structureId));
 
   // replace any existing structures with newly generated structures
   // this is done because it is possible that a consolation structure exists without matchUps
-  drawDefinition.structures = drawDefinition.structures.map((structure) => {
+  workingDD.structures = workingDD.structures.map((structure) => {
     return generatedStructureIds.has(structure.structureId)
       ? structures.find(({ structureId }) => structureId === structure.structureId)
       : structure;
   });
 
   const newStructures = structures.filter(({ structureId }) => !existingStructureIds.has(structureId));
-  if (newStructures.length) drawDefinition.structures.push(...newStructures);
+  if (newStructures.length) workingDD.structures.push(...newStructures);
 
-  if (automated) {
+  if (automated && applyPositioning) {
+    const primaryStructure = structures[0];
+    const multipleStructures = (primaryStructure?.structures?.length || 0) > 1;
+
     automatedPositioning({
+      structureId: structureId || primaryStructure?.structureId,
       seedingProfile: params.seedingProfile,
+      drawDefinition: workingDD,
+      multipleStructures,
       applyPositioning,
       tournamentRecord,
-      drawDefinition,
-      structureId,
       placeByes,
-      drawSize,
       event,
     });
   }
 
-  if (attachConsolation) modifyDrawNotice({ drawDefinition });
-
-  return { links, structures, ...SUCCESS };
+  // Return the structures from the working drawDefinition (includes positioning results)
+  const returnStructures = workingDD.structures.filter(({ structureId: sid }) => generatedStructureIds.has(sid));
+  return { links, structures: returnStructures, ...SUCCESS };
 }

@@ -171,7 +171,6 @@ test('DOUBLE_WALKOVER produceds participants eligible for voluntary consolation 
   tournamentEngine.setState(tournamentRecord);
 
   let result = tournamentEngine.generateVoluntaryConsolation({
-    attachConsolation: false,
     automated: true,
     drawId,
   });
