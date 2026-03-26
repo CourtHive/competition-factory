@@ -120,7 +120,7 @@ export function directParticipants(params): ResultType {
       if (result.error) return decorateResult({ result, stack });
     }
 
-    if (loserMatchUp && !isLuckyDraw) {
+    if (loserMatchUp && (!isLuckyDraw || !isPreFeedRound)) {
       const result = directLoser({
         sourceMatchUpStatus: (matchUpStatusIsValid && matchUpStatus) || COMPLETED,
         sourceMatchUpStatusCodes: matchUpStatusCodes || [],
