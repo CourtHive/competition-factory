@@ -1,4 +1,4 @@
-import { VOLUNTARY_CONSOLATION, WIN_RATIO } from '@Constants/drawDefinitionConstants';
+import { ITEM, VOLUNTARY_CONSOLATION, WIN_RATIO } from '@Constants/drawDefinitionConstants';
 
 type IsAdHocArgs = {
   structure?: any; // in this case support hydrated structures as well
@@ -12,7 +12,9 @@ export function isAdHoc({ structure }: IsAdHocArgs): boolean {
   const hasDrawPosition = !!matchUps?.find((matchUp) => matchUp?.drawPositions?.length);
 
   // Voluntary consolation structures with finishingPosition=WIN_RATIO are AD_HOC
+  // BUT RR child group structures (ITEM type) with drawPositions are NOT AD_HOC
   if (structure?.stage === VOLUNTARY_CONSOLATION) {
+    if (structure?.structureType === ITEM && hasDrawPosition) return false;
     return structure?.finishingPosition === WIN_RATIO;
   }
 
