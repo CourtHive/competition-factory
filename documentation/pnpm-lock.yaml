@@ -27,8 +27,8 @@ importers:
         specifier: 2.1.1
         version: 2.1.1
       courthive-components:
-        specifier: 0.9.28-beta.29
-        version: 0.9.28-beta.29
+        specifier: 0.9.28-beta.30
+        version: 0.9.28-beta.30
       react:
         specifier: ^18.2.0
         version: 18.3.1
@@ -2302,8 +2302,8 @@ packages:
       typescript:
         optional: true
 
-  courthive-components@0.9.28-beta.29:
-    resolution: {integrity: sha512-4W6m5By/d9RZvj4d3SohLortsnouJW8FtnbAzERzBe4dW5M+yYKsaLu6zHmab8dGBo5X87WIpqKTjyVNs1ZxlA==}
+  courthive-components@0.9.28-beta.30:
+    resolution: {integrity: sha512-G4ngItoDnDUP5lELkqKE8NtHPACb2MJZ1cJ9eRi2oyEnObOk91NrDPcXd4E2QSwNM/RUiYEBtiLcti9HyN6Vww==}
     engines: {node: '>=20.19.0 < 25'}
 
   cross-spawn@7.0.6:
@@ -8681,7 +8681,7 @@ snapshots:
       parse-json: 5.2.0
       path-type: 4.0.0
 
-  courthive-components@0.9.28-beta.29:
+  courthive-components@0.9.28-beta.30:
     dependencies:
       awesomplete: 1.1.7
       class-variance-authority: 0.7.1
@@ -9629,7 +9629,7 @@ snapshots:
 
   history@4.10.1:
     dependencies:
-      '@babel/runtime': 7.28.6
+      '@babel/runtime': 7.29.2
       loose-envify: 1.4.0
       resolve-pathname: 3.0.0
       tiny-invariant: 1.3.3
