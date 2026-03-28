@@ -1,0 +1,544 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$ref": "#/definitions/RankingPolicy",
+  "definitions": {
+    "RankingPolicy": {
+      "type": "object",
+      "description": "Top-level ranking policy attached via POLICY_TYPE_RANKING_POINTS. Defines how tournament results are converted to ranking points.",
+      "required": ["awardProfiles"],
+      "properties": {
+        "policyName": {
+          "type": "string",
+          "description": "Human-readable name for the policy"
+        },
+        "policyVersion": {
+          "type": "string",
+          "description": "Version identifier for historical recalculation"
+        },
+        "validDateRange": {
+          "$ref": "#/definitions/DateRange",
+          "description": "Date range during which this entire policy is valid"
+        },
+        "awardProfiles": {
+          "type": "array",
+          "items": { "$ref": "#/definitions/AwardProfile" },
+          "description": "Ordered list of award profiles. Profile selection uses specificity scoring; when tied, array order is the tiebreaker."
+        },
+        "qualityWinProfiles": {
+          "type": "array",
+          "items": { "$ref": "#/definitions/QualityWinProfile" },
+          "description": "Bonus point profiles for wins against ranked opponents"
+        },
+        "aggregationRules": {
+          "$ref": "#/definitions/AggregationRules",
+          "description": "Controls how per-tournament PointAwards are aggregated into a ranking list"
+        },
+        "requireWinForPoints": {
+          "type": "boolean",
+          "description": "Global default: participant must have at least one win to earn points. Overridable per-profile."
+        },
+        "requireWinFirstRound": {
+          "type": "boolean",
+          "description": "Global default: participant must win their first-round match to earn points. Overridable per-profile."
+        },
+        "doublesAttribution": {
+          "$ref": "#/definitions/DoublesAttribution",
+          "description": "How to attribute doubles/pair points to individual rankings"
+        },
+        "categoryResolution": {
+          "type": "string",
+          "enum": ["eventCategory", "participantPrimary"],
+          "description": "How to resolve category when matching profiles. 'eventCategory' (default) uses event.category + event.gender. 'participantPrimary' uses participant's primary category scale."
+        }
+      },
+      "additionalProperties": false
+    },
+
+    "AwardProfile": {
+      "type": "object",
+      "description": "Defines how points are awarded for a specific scope (event type, draw type, level, category, etc.). Extends AwardProfileScope with point definitions.",
+      "properties": {
+        "profileName": {
+          "type": "string",
+          "description": "Human-readable label for auditing/debugging"
+        },
+        "finishingPositionRanges": {
+          "type": "object",
+          "description": "Points by finishing position. Key = max finishingPositionRange value (1=champion, 2=finalist, 4=semifinalist, etc.). Value is a PositionValue.",
+          "additionalProperties": { "$ref": "#/definitions/PositionValue" }
+        },
+        "finishingRound": {
+          "type": "object",
+          "description": "Alternative to finishingPositionRanges: awards based on round number with separate won/lost values.",
+          "additionalProperties": {
+            "type": "object",
+            "properties": {
+              "won": { "$ref": "#/definitions/PositionValue" },
+              "lost": { "$ref": "#/definitions/PositionValue" }
+            }
+          }
+        },
+        "perWinPoints": {
+          "description": "Points per match won. Single definition or array for multiple participationOrder scopes.",
+          "oneOf": [
+            { "$ref": "#/definitions/PerWinPointsDef" },
+            { "type": "array", "items": { "$ref": "#/definitions/PerWinPointsDef" } }
+          ]
+        },
+        "pointsPerWin": {
+          "description": "Simple points-per-win shorthand. Flat number or level-keyed.",
+          "oneOf": [
+            { "type": "number" },
+            { "$ref": "#/definitions/LevelKeyed" }
+          ]
+        },
+        "finishingPositionPoints": {
+          "type": "object",
+          "description": "Restrict finishing-position points to specific participationOrders",
+          "properties": {
+            "participationOrders": {
+              "type": "array",
+              "items": { "type": "number" }
+            }
+          }
+        },
+        "maxCountableMatches": {
+          "description": "Cap on matches that earn per-win points. Per participant per draw. Flat number or level-keyed.",
+          "oneOf": [
+            { "type": "number" },
+            { "$ref": "#/definitions/LevelKeyed" }
+          ]
+        },
+        "bonusPoints": {
+          "type": "array",
+          "items": { "$ref": "#/definitions/BonusPointDef" },
+          "description": "Bonus points for specific finishing positions (e.g., champion/finalist bonuses)"
+        },
+        "requireWinForPoints": {
+          "type": "boolean",
+          "description": "Override global requireWinForPoints at profile level"
+        },
+        "requireWinFirstRound": {
+          "type": "boolean",
+          "description": "Override global requireWinFirstRound at profile level"
+        },
+        "dateRanges": {
+          "type": "array",
+          "items": { "$ref": "#/definitions/DateRange" }
+        },
+        "eventTypes": {
+          "type": "array",
+          "items": { "$ref": "#/definitions/EventType" }
+        },
+        "drawTypes": {
+          "type": "array",
+          "items": { "type": "string" }
+        },
+        "drawSizes": {
+          "type": "array",
+          "items": { "type": "number" }
+        },
+        "maxDrawSize": {
+          "type": "number"
+        },
+        "stages": {
+          "type": "array",
+          "items": { "type": "string" },
+          "description": "Draw stages: MAIN, QUALIFYING, CONSOLATION, etc."
+        },
+        "stageSequences": {
+          "type": "array",
+          "items": { "type": "number" }
+        },
+        "levels": {
+          "type": "array",
+          "items": { "type": "number" },
+          "description": "Tournament levels (e.g., 1=Grand Slam, 2=Masters, etc.)"
+        },
+        "maxLevel": {
+          "type": "number"
+        },
+        "flights": {
+          "$ref": "#/definitions/FlightConfig"
+        },
+        "maxFlightNumber": {
+          "type": "number"
+        },
+        "participationOrder": {
+          "type": "number",
+          "description": "1 = primary participation, 2 = secondary (e.g., second doubles event)"
+        },
+        "category": {
+          "$ref": "#/definitions/CategoryScope"
+        },
+        "priority": {
+          "type": "number",
+          "description": "Explicit priority for deterministic profile selection. Higher values win. When omitted, specificity scoring determines precedence."
+        }
+      },
+      "additionalProperties": false
+    },
+
+    "PositionValue": {
+      "description": "Polymorphic point value. Resolves to a number through getAwardPoints. Simplest: a flat number. Complex: level-keyed, flight-keyed, draw-size-conditional, or array of conditionals.",
+      "oneOf": [
+        { "type": "number" },
+        { "$ref": "#/definitions/PositionValueObject" },
+        { "type": "array", "items": { "$ref": "#/definitions/PositionValueObject" } }
+      ]
+    },
+
+    "PositionValueObject": {
+      "type": "object",
+      "description": "Complex point value with conditional resolution. Array form: evaluated in order, first match wins.",
+      "properties": {
+        "value": { "type": "number", "description": "Flat value" },
+        "level": {
+          "description": "Level-keyed lookup. Record<level, value|FlightValues> or array indexed by level-1.",
+          "oneOf": [
+            { "type": "object", "additionalProperties": {} },
+            { "type": "array" }
+          ]
+        },
+        "flights": {
+          "type": "array",
+          "items": { "type": "number" },
+          "description": "Flight-keyed lookup. Array indexed by flightNumber-1."
+        },
+        "f": {
+          "type": "array",
+          "items": { "type": "number" },
+          "description": "Short form for flights"
+        },
+        "drawSize": { "type": "number", "description": "Specific drawSize this entry applies to" },
+        "drawSizes": { "type": "array", "items": { "type": "number" }, "description": "Array of drawSizes this entry applies to" },
+        "threshold": { "type": "boolean", "description": "When true, applies to drawSizes >= drawSize" },
+        "requireWin": { "type": "boolean", "description": "Require a win to earn these points" },
+        "won": { "$ref": "#/definitions/PositionValue", "description": "Points for winning at this finishing round" },
+        "lost": { "$ref": "#/definitions/PositionValue", "description": "Points for losing at this finishing round" }
+      },
+      "additionalProperties": false
+    },
+
+    "PerWinPointsDef": {
+      "type": "object",
+      "description": "Points awarded per match won. Can be scoped to specific participationOrders and levels.",
+      "properties": {
+        "participationOrders": { "type": "array", "items": { "type": "number" } },
+        "value": { "type": "number", "description": "Flat per-win value" },
+        "level": {
+          "description": "Level-keyed value. Record<level, value|LineValues> or array indexed by level-1.",
+          "oneOf": [
+            { "type": "object", "additionalProperties": {} },
+            { "type": "array" }
+          ]
+        },
+        "line": {
+          "type": "array",
+          "items": { "type": "number" },
+          "description": "Team line-position values (array indexed by line position)"
+        },
+        "limit": { "type": "number", "description": "Max line positions that earn points" }
+      },
+      "additionalProperties": false
+    },
+
+    "BonusPointDef": {
+      "type": "object",
+      "description": "Bonus points for specific finishing positions (e.g., [1] for champion bonus)",
+      "required": ["finishingPositions", "value"],
+      "properties": {
+        "finishingPositions": {
+          "type": "array",
+          "items": { "type": "number" },
+          "description": "Which finishing positions earn the bonus (e.g., [1] for champion, [1,2] for champion + finalist)"
+        },
+        "value": {
+          "description": "Bonus value. Flat number or level-keyed.",
+          "oneOf": [
+            { "type": "number" },
+            { "$ref": "#/definitions/LevelKeyed" }
+          ]
+        }
+      },
+      "additionalProperties": false
+    },
+
+    "QualityWinProfile": {
+      "type": "object",
+      "description": "Defines bonus points for wins against ranked opponents. Opponent ranking is looked up from their scaleItems.",
+      "required": ["rankingRanges", "rankingScaleName"],
+      "properties": {
+        "rankingRanges": {
+          "type": "array",
+          "items": { "$ref": "#/definitions/QualityWinRange" },
+          "description": "Ranking ranges and their corresponding bonus point values"
+        },
+        "rankingScaleName": { "type": "string", "description": "Which ranking scale to use for opponent ranking lookup" },
+        "rankingEventType": { "type": "string", "description": "Event type for the ranking scale lookup (defaults to matchUp's eventType)" },
+        "rankingSnapshot": {
+          "type": "string",
+          "enum": ["tournamentStart", "matchDate", "latestAvailable"],
+          "description": "When to snapshot opponent ranking. 'tournamentStart' (default), 'matchDate', or 'latestAvailable'."
+        },
+        "unrankedOpponentBehavior": {
+          "type": "string",
+          "enum": ["noBonus", "useDefaultRank"],
+          "description": "Fallback when opponent has no ranking"
+        },
+        "defaultRank": { "type": "number", "description": "Default rank to use when unrankedOpponentBehavior is 'useDefaultRank'" },
+        "levels": { "type": "array", "items": { "type": "number" } },
+        "eventTypes": { "type": "array", "items": { "$ref": "#/definitions/EventType" } },
+        "drawTypes": { "type": "array", "items": { "type": "string" } },
+        "stages": { "type": "array", "items": { "type": "string" } },
+        "dateRanges": { "type": "array", "items": { "$ref": "#/definitions/DateRange" } },
+        "category": { "$ref": "#/definitions/CategoryScope" },
+        "maxBonusPerTournament": { "type": "number", "description": "Maximum total quality-win bonus per tournament per participant" },
+        "includeWalkovers": { "type": "boolean", "description": "Whether walkovers/defaults count as quality wins" }
+      },
+      "additionalProperties": false
+    },
+
+    "QualityWinRange": {
+      "type": "object",
+      "description": "Maps an opponent ranking range to a bonus point value",
+      "required": ["rankRange", "value"],
+      "properties": {
+        "rankRange": {
+          "type": "array",
+          "items": { "type": "number" },
+          "minItems": 2,
+          "maxItems": 2,
+          "description": "Inclusive ranking range [low, high]"
+        },
+        "value": { "type": "number", "description": "Bonus points for a win against opponent in this range" }
+      },
+      "additionalProperties": false
+    },
+
+    "AggregationRules": {
+      "type": "object",
+      "description": "Controls how per-tournament PointAwards are aggregated into a ranking list. Real-world systems count best N results from separate buckets.",
+      "properties": {
+        "countingBuckets": {
+          "type": "array",
+          "items": { "$ref": "#/definitions/CountingBucket" },
+          "description": "Separate counting buckets (e.g., Singles, Doubles). If omitted, all results summed directly."
+        },
+        "bestOfCount": { "type": "number", "description": "Global best-of-N across all results. 0 or undefined = count all." },
+        "rollingPeriodDays": { "type": "number", "description": "Rolling period in days (e.g., 365 for 52-week ranking)" },
+        "decayFunction": {
+          "type": "string",
+          "enum": ["none", "linear", "stepped"],
+          "description": "Point decay function over time"
+        },
+        "decaySteps": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": ["afterDays", "multiplier"],
+            "properties": {
+              "afterDays": { "type": "number" },
+              "multiplier": { "type": "number" }
+            }
+          }
+        },
+        "separateByGender": { "type": "boolean", "description": "Separate ranking lists by gender (default: true)" },
+        "perCategory": { "type": "boolean", "description": "Generate per-category ranking lists (default: true)" },
+        "minCountableResults": { "type": "number", "description": "Minimum counting results (across all buckets) to receive a ranking" },
+        "maxResultsPerLevel": {
+          "type": "object",
+          "additionalProperties": { "type": "number" },
+          "description": "Max results counted from a single tournament level (e.g., {7: 2} = max 2 from L7)"
+        },
+        "doublesAttribution": { "$ref": "#/definitions/DoublesAttribution" },
+        "tiebreakCriteria": {
+          "type": "array",
+          "items": { "$ref": "#/definitions/TiebreakCriterion" },
+          "description": "Tiebreaker criteria, applied in order"
+        }
+      },
+      "additionalProperties": false
+    },
+
+    "CountingBucket": {
+      "type": "object",
+      "description": "A bucket of results that are counted separately toward the ranking total",
+      "properties": {
+        "bucketName": { "type": "string", "description": "Human-readable label (e.g., 'Singles', 'Doubles')" },
+        "eventTypes": { "type": "array", "items": { "$ref": "#/definitions/EventType" }, "description": "Which eventTypes feed into this bucket (undefined = all)" },
+        "pointComponents": {
+          "type": "array",
+          "items": { "$ref": "#/definitions/PointComponent" },
+          "description": "Which PointAward components to sum. If omitted, sums total points."
+        },
+        "bestOfCount": { "type": "number", "description": "How many best results to count (0 or undefined = all)" },
+        "maxResultsPerLevel": { "type": "object", "additionalProperties": { "type": "number" } },
+        "minResults": { "type": "number", "description": "Minimum results in this bucket required" },
+        "levels": { "type": "array", "items": { "type": "number" }, "description": "Level filter — only include results from these levels" },
+        "mandatoryRules": {
+          "type": "array",
+          "items": { "$ref": "#/definitions/MandatoryRule" },
+          "description": "Mandatory level results always count, even if worse than optional results"
+        }
+      },
+      "additionalProperties": false
+    },
+
+    "MandatoryRule": {
+      "type": "object",
+      "description": "Tournament levels whose results must always count toward ranking",
+      "required": ["levels"],
+      "properties": {
+        "ruleName": { "type": "string", "description": "Human-readable label (e.g., 'Grand Slams')" },
+        "levels": { "type": "array", "items": { "type": "number" }, "description": "Tournament levels that are mandatory" },
+        "bestOfCount": { "type": "number", "description": "If set, only best N from mandatory levels count; otherwise all count" }
+      },
+      "additionalProperties": false
+    },
+
+    "CategoryScope": {
+      "type": "object",
+      "description": "Category matching criteria. All populated fields are AND'd. Values within array fields are OR'd.",
+      "properties": {
+        "ageCategoryCodes": { "type": "array", "items": { "type": "string" }, "description": "Match event.category.ageCategoryCode" },
+        "genders": { "type": "array", "items": { "type": "string" }, "description": "Match event.gender (MALE, FEMALE, MIXED, ANY)" },
+        "categoryNames": { "type": "array", "items": { "type": "string" }, "description": "Match event.category.categoryName" },
+        "categoryTypes": { "type": "array", "items": { "type": "string" }, "description": "Match event.category.type (AGE, BOTH, LEVEL)" },
+        "ratingTypes": { "type": "array", "items": { "type": "string" }, "description": "Match event.category.ratingType" },
+        "ballTypes": { "type": "array", "items": { "type": "string" }, "description": "Match event.category.ballType" },
+        "wheelchairClasses": { "type": "array", "items": { "type": "string" }, "description": "Match event.wheelchairClass" },
+        "subTypes": { "type": "array", "items": { "type": "string" }, "description": "Match event.category.subType" }
+      },
+      "additionalProperties": false
+    },
+
+    "PointAward": {
+      "type": "object",
+      "description": "Granular point breakdown for a single participant in a single draw. Output of getTournamentPoints.",
+      "required": ["participantId", "drawId", "eventType", "points", "positionPoints", "perWinPoints", "qualityWinPoints", "bonusPoints", "winCount", "rangeAccessor"],
+      "properties": {
+        "participantId": { "type": "string" },
+        "personId": { "type": "string" },
+        "tournamentId": { "type": "string" },
+        "eventId": { "type": "string" },
+        "drawId": { "type": "string" },
+        "structureId": { "type": "string" },
+        "eventType": { "type": "string" },
+        "drawType": { "type": "string" },
+        "stage": { "type": "string" },
+        "stageSequence": { "type": "number" },
+        "category": {
+          "type": "object",
+          "properties": {
+            "ageCategoryCode": { "type": "string" },
+            "categoryName": { "type": "string" },
+            "ratingType": { "type": "string" },
+            "gender": { "type": "string" }
+          }
+        },
+        "points": { "type": "number", "description": "Total points (sum of all components)" },
+        "positionPoints": { "type": "number", "description": "Points from finishing position" },
+        "perWinPoints": { "type": "number", "description": "Points from per-win accumulation" },
+        "qualityWinPoints": { "type": "number", "description": "Bonus points from wins against ranked opponents" },
+        "bonusPoints": { "type": "number", "description": "Champion/finalist bonus points" },
+        "linePoints": { "type": "number", "description": "Team event line-position points" },
+        "collectionPosition": { "type": "number", "description": "Team event collection position" },
+        "winCount": { "type": "number" },
+        "rangeAccessor": { "description": "Finishing position range accessor used for lookup" },
+        "startDate": { "type": "string", "format": "date" },
+        "endDate": { "type": "string", "format": "date" },
+        "level": { "type": "number", "description": "Tournament level for cross-tournament comparison" },
+        "profileName": { "type": "string", "description": "Which AwardProfile was selected" }
+      },
+      "additionalProperties": false
+    },
+
+    "RankingListEntry": {
+      "type": "object",
+      "description": "A single entry in a generated ranking list. Output of generateRankingList.",
+      "required": ["rank", "participantId", "totalPoints", "countingResults", "tournamentResults", "meetsMinimum"],
+      "properties": {
+        "rank": { "type": "number" },
+        "participantId": { "type": "string" },
+        "personId": { "type": "string" },
+        "totalPoints": { "type": "number" },
+        "countingResults": { "type": "number" },
+        "bucketTotals": {
+          "type": "object",
+          "additionalProperties": { "type": "number" },
+          "description": "Per-bucket point breakdown"
+        },
+        "tournamentResults": {
+          "type": "array",
+          "items": { "$ref": "#/definitions/PointAward" }
+        },
+        "tiebreakValues": {
+          "type": "object",
+          "additionalProperties": { "type": "number" },
+          "description": "Tiebreaker metadata for deterministic ordering"
+        },
+        "meetsMinimum": { "type": "boolean", "description": "Whether entry meets minimum counting result requirements" }
+      },
+      "additionalProperties": false
+    },
+
+    "DateRange": {
+      "type": "object",
+      "properties": {
+        "startDate": { "type": "string", "format": "date" },
+        "endDate": { "type": "string", "format": "date" }
+      },
+      "additionalProperties": false
+    },
+
+    "FlightConfig": {
+      "type": "object",
+      "properties": {
+        "flightNumbers": { "type": "array", "items": { "type": "number" } },
+        "pct": {
+          "type": "object",
+          "additionalProperties": { "type": "number" },
+          "description": "Percentage multipliers by flight number"
+        }
+      },
+      "additionalProperties": false
+    },
+
+    "LevelKeyed": {
+      "type": "object",
+      "description": "Level-keyed value: Record<level, T> or T[] indexed by level-1. Prefer Record form.",
+      "properties": {
+        "level": {
+          "oneOf": [
+            { "type": "object", "additionalProperties": {} },
+            { "type": "array" }
+          ]
+        }
+      },
+      "required": ["level"],
+      "additionalProperties": false
+    },
+
+    "EventType": {
+      "type": "string",
+      "enum": ["SINGLES", "DOUBLES", "TEAM"]
+    },
+
+    "DoublesAttribution": {
+      "type": "string",
+      "enum": ["fullToEach", "splitEven", "teamOnly"],
+      "description": "How doubles points are attributed to individuals. 'fullToEach': 100% each. 'splitEven': 50% each. 'teamOnly': pair only."
+    },
+
+    "PointComponent": {
+      "type": "string",
+      "enum": ["positionPoints", "perWinPoints", "bonusPoints", "qualityWinPoints"]
+    },
+
+    "TiebreakCriterion": {
+      "type": "string",
+      "enum": ["headToHead", "mostWins", "highestSingleResult", "mostCountingResults", "rating"]
+    }
+  }
+}
