@@ -42,6 +42,7 @@ import {
   waiveComplianceItem,
   flagComplianceIssues,
   closeApplication,
+  checkComplianceDeadlines,
 } from '@Mutate/sanctioning/compliance';
 
 // constants
@@ -234,6 +235,11 @@ export const sanctioningEngine = (() => {
     closeApplication: (params: any) => {
       const sanctioningRecord = params.sanctioningRecord ?? resolveRecord(params.sanctioningId);
       return closeApplication({ ...params, sanctioningRecord });
+    },
+
+    checkComplianceDeadlines: (params: any) => {
+      const sanctioningRecord = params.sanctioningRecord ?? resolveRecord(params.sanctioningId);
+      return checkComplianceDeadlines({ ...params, sanctioningRecord });
     },
 
     // -----------------------------------------------------------------------

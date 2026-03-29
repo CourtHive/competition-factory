@@ -14,7 +14,7 @@ import { POLICY_SANCTIONING_USTA } from '@Fixtures/policies/POLICY_SANCTIONING_U
 import { POLICY_SANCTIONING_GENERIC } from '@Fixtures/policies/POLICY_SANCTIONING_GENERIC';
 
 // Types
-import type { Applicant, TournamentProposal } from '@Types/sanctioningTypes';
+import type { Applicant, TournamentProposal, SanctioningPolicy } from '@Types/sanctioningTypes';
 
 // ---------------------------------------------------------------------------
 // Shared fixtures
@@ -900,5 +900,134 @@ describe('Scenario: Execution Queue Rollback Integrity', () => {
     let recordResult: any = sanctioningEngine.getSanctioningRecord({ sanctioningId: 'rollback-integrity' });
     let record = recordResult.sanctioningRecord;
     expect(record.proposal.tournamentName).toEqual('Rollback Test');
+  });
+});
+
+// ---------------------------------------------------------------------------
+// Scenario 11: Transition guards — policy-driven preconditions
+// ---------------------------------------------------------------------------
+describe('Scenario: Policy Transition Guards', () => {
+  beforeEach(() => sanctioningEngine.reset());
+
+  const guardedPolicy: SanctioningPolicy = {
+    ...POLICY_SANCTIONING_GENERIC,
+    requireEndorsement: false,
+    transitionGuards: [
+      {
+        from: 'UNDER_REVIEW',
+        to: 'APPROVED',
+        guard: 'PROPOSAL_VALID',
+        message: 'Proposal must be complete before approval',
+      },
+      {
+        from: 'CONDITIONALLY_APPROVED',
+        to: 'APPROVED',
+        guard: 'ALL_CONDITIONS_MET',
+        message: 'All conditions must be met before full approval',
+      },
+      {
+        from: 'POST_EVENT',
+        to: 'CLOSED',
+        guard: 'COMPLIANCE_COMPLETE',
+        message: 'All required compliance items must be verified before closing',
+      },
+    ],
+  };
+
+  it('blocks approval when PROPOSAL_VALID guard fails', () => {
+    sanctioningEngine.createSanctioningRecord({
+      governingBodyId: 'gov-001',
+      applicant: ustaApplicant,
+      proposal: {
+        tournamentName: 'Will Be Cleared',
+        proposedStartDate: '2028-06-01',
+        proposedEndDate: '2028-06-07',
+        events: [{ eventName: 'Singles', eventType: 'SINGLES' }],
+      },
+    });
+
+    // Manually corrupt the proposal and set to UNDER_REVIEW for test
+    let recordResult: any = sanctioningEngine.getSanctioningRecord();
+    let record = recordResult.sanctioningRecord;
+    record.status = 'UNDER_REVIEW';
+    record.proposal.tournamentName = '';
+    record.policySnapshot = guardedPolicy;
+    sanctioningEngine.setSanctioningRecord(record);
+
+    let result: any = sanctioningEngine.approveApplication({});
+    expect(result.error).toBeDefined();
+    expect(result.context?.guard).toEqual('PROPOSAL_VALID');
+  });
+
+  it('blocks close when COMPLIANCE_COMPLETE guard fails', () => {
+    sanctioningEngine.executionQueue([
+      {
+        method: 'createSanctioningRecord',
+        params: {
+          governingBodyId: 'gov-001',
+          applicant: ustaApplicant,
+          proposal: {
+            tournamentName: 'Guard Test',
+            proposedStartDate: '2027-01-01',
+            proposedEndDate: '2027-01-07',
+            events: [{ eventName: 'Singles', eventType: 'SINGLES' }],
+          },
+          sanctioningLevel: 'Level 2',
+        },
+      },
+      { method: 'submitApplication', params: { sanctioningPolicy: guardedPolicy } },
+      { method: 'reviewApplication', params: {} },
+      { method: 'approveApplication', params: {} },
+      { method: 'activateFromSanctioning', params: { sanctioningPolicy: guardedPolicy } },
+      { method: 'transitionToPostEvent', params: {} },
+    ]);
+
+    // Try to close without completing compliance — guard should block
+    let result: any = sanctioningEngine.closeApplication({});
+    expect(result.error).toBeDefined();
+    expect(result.context?.guard).toEqual('COMPLIANCE_COMPLETE');
+
+    // Now complete compliance
+    let recordResult: any = sanctioningEngine.getSanctioningRecord();
+    let record = recordResult.sanctioningRecord;
+    for (const item of record.compliance.items.filter((i: any) => i.required)) {
+      sanctioningEngine.submitComplianceItem({ itemId: item.itemId });
+      sanctioningEngine.verifyComplianceItem({ itemId: item.itemId });
+    }
+
+    // Should now close successfully
+    result = sanctioningEngine.closeApplication({});
+    expect(result.success).toBe(true);
+  });
+
+  it('allows approval when ALL_CONDITIONS_MET guard passes', () => {
+    sanctioningEngine.createSanctioningRecord({
+      governingBodyId: 'gov-001',
+      applicant: ustaApplicant,
+      proposal: {
+        tournamentName: 'Condition Guard Test',
+        proposedStartDate: '2028-06-01',
+        proposedEndDate: '2028-06-07',
+        events: [{ eventName: 'Singles', eventType: 'SINGLES' }],
+      },
+    });
+
+    sanctioningEngine.submitApplication({ sanctioningPolicy: guardedPolicy });
+    sanctioningEngine.reviewApplication({});
+    sanctioningEngine.conditionallyApprove({ conditions: [{ description: 'Submit insurance' }] });
+
+    // Try to approve without meeting conditions
+    let result: any = sanctioningEngine.approveApplication({});
+    expect(result.error).toBeDefined();
+    expect(result.context?.guard).toEqual('ALL_CONDITIONS_MET');
+
+    // Meet the condition
+    let recordResult: any = sanctioningEngine.getSanctioningRecord();
+    let record = recordResult.sanctioningRecord;
+    sanctioningEngine.meetCondition({ conditionId: record.conditions[0].conditionId });
+
+    // Should now approve
+    result = sanctioningEngine.approveApplication({});
+    expect(result.success).toBe(true);
   });
 });

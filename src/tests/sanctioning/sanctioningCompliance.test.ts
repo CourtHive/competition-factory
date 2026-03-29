@@ -219,6 +219,55 @@ describe('Post-Event Compliance — Lifecycle', () => {
   });
 });
 
+describe('Automatic OVERDUE Detection', () => {
+  beforeEach(() => sanctioningEngine.reset());
+
+  it('marks PENDING items as OVERDUE when deadline has passed', () => {
+    createActivatedRecord();
+    sanctioningEngine.transitionToPostEvent({});
+
+    // Check deadlines as of a date far in the future (all deadlines passed)
+    let result: any = sanctioningEngine.checkComplianceDeadlines({
+      asOfDate: '2028-12-31',
+    });
+    expect(result.success).toBe(true);
+    expect(result.overdueCount).toBeGreaterThan(0);
+
+    let record: any = sanctioningEngine.getSanctioningRecord().sanctioningRecord;
+    const overdueItems = record.compliance.items.filter((i: any) => i.status === 'OVERDUE');
+    expect(overdueItems.length).toBeGreaterThan(0);
+    expect(record.compliance.status).toEqual('ISSUES_FLAGGED');
+  });
+
+  it('does not mark items as overdue when deadline has not passed', () => {
+    createActivatedRecord();
+    sanctioningEngine.transitionToPostEvent({});
+
+    // Check deadlines as of the event end date — no deadlines passed yet
+    let result: any = sanctioningEngine.checkComplianceDeadlines({
+      asOfDate: '2027-06-07',
+    });
+    expect(result.success).toBe(true);
+    expect(result.overdueCount).toEqual(0);
+  });
+
+  it('does not change already-submitted items', () => {
+    createActivatedRecord();
+    sanctioningEngine.transitionToPostEvent({});
+
+    let record: any = sanctioningEngine.getSanctioningRecord().sanctioningRecord;
+    const firstItem = record.compliance.items[0];
+    sanctioningEngine.submitComplianceItem({ itemId: firstItem.itemId });
+
+    // Check deadlines far in the future — should not override SUBMITTED status
+    sanctioningEngine.checkComplianceDeadlines({ asOfDate: '2028-12-31' });
+
+    record = sanctioningEngine.getSanctioningRecord().sanctioningRecord;
+    const item = record.compliance.items.find((i: any) => i.itemId === firstItem.itemId);
+    expect(item.status).toEqual('SUBMITTED');
+  });
+});
+
 describe('Full Lifecycle — DRAFT to CLOSED', () => {
   beforeEach(() => {
     sanctioningEngine.reset();

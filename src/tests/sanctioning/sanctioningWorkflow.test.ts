@@ -332,6 +332,86 @@ describe('Sanctioning Workflow — Endorsement', () => {
   });
 });
 
+describe('Sanctioning Workflow — Multi-Level Endorsement', () => {
+  beforeEach(() => sanctioningEngine.reset());
+
+  const multiEndorsementPolicy: SanctioningPolicy = {
+    ...testPolicy,
+    requireEndorsement: true,
+    requiredEndorsementCount: 2,
+  };
+
+  it('requires multiple endorsements before submission when policy specifies count', () => {
+    createAndGetRecord();
+
+    // Request two endorsements
+    sanctioningEngine.requestEndorsement({
+      endorserId: 'section-5',
+      endorserName: 'USTA Section 5',
+      endorsementLevel: 1,
+    });
+    sanctioningEngine.requestEndorsement({
+      endorserId: 'national',
+      endorserName: 'USTA National',
+      endorsementLevel: 2,
+      prerequisiteEndorserId: 'section-5',
+    });
+
+    // Only endorse the first — should NOT be enough
+    sanctioningEngine.endorseApplication({ endorserId: 'section-5' });
+
+    let result: any = sanctioningEngine.submitApplication({ sanctioningPolicy: multiEndorsementPolicy });
+    expect(result.error).toBeDefined();
+    expect(result.error.code).toEqual('ERR_ENDORSEMENT_REQUIRED');
+
+    // Now endorse the second
+    sanctioningEngine.endorseApplication({ endorserId: 'national' });
+
+    result = sanctioningEngine.submitApplication({ sanctioningPolicy: multiEndorsementPolicy });
+    expect(result.success).toBe(true);
+  });
+
+  it('tracks endorsements array and syncs convenience field', () => {
+    createAndGetRecord();
+
+    sanctioningEngine.requestEndorsement({ endorserId: 'fed-a', endorserName: 'Federation A' });
+    sanctioningEngine.requestEndorsement({ endorserId: 'fed-b', endorserName: 'Federation B' });
+
+    let record: any = sanctioningEngine.getSanctioningRecord().sanctioningRecord;
+    expect(record.endorsements).toHaveLength(2);
+    // Convenience field should be the first endorsement
+    expect(record.endorsement?.endorserId).toEqual('fed-a');
+  });
+
+  it('replaces endorsement for same endorserId on re-request', () => {
+    createAndGetRecord();
+
+    sanctioningEngine.requestEndorsement({ endorserId: 'fed-a', endorserName: 'Old Name' });
+    sanctioningEngine.requestEndorsement({ endorserId: 'fed-a', endorserName: 'New Name' });
+
+    let record: any = sanctioningEngine.getSanctioningRecord().sanctioningRecord;
+    expect(record.endorsements).toHaveLength(1);
+    expect(record.endorsements[0].endorserName).toEqual('New Name');
+  });
+
+  it('declines a specific endorser by ID', () => {
+    createAndGetRecord();
+
+    sanctioningEngine.requestEndorsement({ endorserId: 'fed-a' });
+    sanctioningEngine.requestEndorsement({ endorserId: 'fed-b' });
+
+    sanctioningEngine.declineEndorsement({ endorserId: 'fed-b', declineReason: 'Venue issue' });
+
+    let record: any = sanctioningEngine.getSanctioningRecord().sanctioningRecord;
+    const fedB = record.endorsements.find((e: any) => e.endorserId === 'fed-b');
+    expect(fedB.status).toEqual('DECLINED');
+
+    // fed-a should still be PENDING
+    const fedA = record.endorsements.find((e: any) => e.endorserId === 'fed-a');
+    expect(fedA.status).toEqual('PENDING');
+  });
+});
+
 describe('Sanctioning Workflow — Review Notes', () => {
   beforeEach(() => {
     sanctioningEngine.reset();
@@ -364,6 +444,57 @@ describe('Sanctioning Workflow — Review Notes', () => {
     createAndGetRecord();
     let result: any = sanctioningEngine.addReviewNote({ note: '' });
     expect(result.error).toBeDefined();
+  });
+});
+
+describe('Sanctioning Workflow — Prior Compliance Gate', () => {
+  beforeEach(() => sanctioningEngine.reset());
+
+  it('blocks submission when prior record has outstanding compliance', () => {
+    createAndGetRecord();
+
+    // Simulate a prior record with OVERDUE compliance
+    const priorRecord: any = {
+      sanctioningId: 'prior-001',
+      compliance: {
+        status: 'ISSUES_FLAGGED',
+        items: [{ itemId: 'x', itemType: 'RESULTS_SUBMISSION', required: true, status: 'OVERDUE' }],
+      },
+    };
+
+    let result: any = sanctioningEngine.submitApplication({
+      sanctioningPolicy: testPolicy,
+      priorSanctioningRecords: [priorRecord],
+    });
+    expect(result.error).toBeDefined();
+    expect(result.error.code).toEqual('ERR_OUTSTANDING_COMPLIANCE');
+  });
+
+  it('allows submission when prior records are all compliant', () => {
+    createAndGetRecord();
+
+    const priorRecord: any = {
+      sanctioningId: 'prior-002',
+      compliance: {
+        status: 'COMPLIANT',
+        items: [{ itemId: 'x', itemType: 'RESULTS_SUBMISSION', required: true, status: 'VERIFIED' }],
+      },
+    };
+
+    let result: any = sanctioningEngine.submitApplication({
+      sanctioningPolicy: testPolicy,
+      priorSanctioningRecords: [priorRecord],
+    });
+    expect(result.success).toBe(true);
+  });
+
+  it('allows submission when no prior records provided', () => {
+    createAndGetRecord();
+
+    let result: any = sanctioningEngine.submitApplication({
+      sanctioningPolicy: testPolicy,
+    });
+    expect(result.success).toBe(true);
   });
 });
 

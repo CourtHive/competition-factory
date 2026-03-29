@@ -110,7 +110,8 @@ export interface SanctioningRecord {
 
   // Who
   applicant: Applicant;
-  endorsement?: Endorsement;
+  endorsement?: Endorsement;        // convenience accessor — first endorsement (backward compat)
+  endorsements?: Endorsement[];     // full multi-level endorsement chain
   reviewer?: Reviewer;
 
   // What
@@ -180,6 +181,8 @@ export interface Endorsement {
   endorserNotes?: string;
   endorserContact?: PersonReference;
   conditions?: string[];
+  endorsementLevel?: number;            // 1 = first required, 2 = second, etc.
+  prerequisiteEndorserId?: string;      // must be endorsed before this one can proceed
   extensions?: Extension[];
 }
 
@@ -431,8 +434,10 @@ export interface SanctioningPolicy {
   personnelRules?: PersonnelRules;
   amendmentRules?: AmendmentRules;
   postEventRequirements?: PostEventRequirement[];
+  transitionGuards?: TransitionGuard[];
 
   requireEndorsement?: boolean;
+  requiredEndorsementCount?: number;     // default 1 when requireEndorsement is true
   requireInsurance?: boolean;
   requireSafetyPlan?: boolean;
   requireMedicalPlan?: boolean;
@@ -548,6 +553,22 @@ export interface PostEventRequirement {
   required: boolean;
   deadlineDays: number;
   tiers?: string[];
+}
+
+export type TransitionGuardType =
+  | 'ENDORSEMENT_REQUIRED'
+  | 'PROPOSAL_VALID'
+  | 'ALL_CONDITIONS_MET'
+  | 'COMPLIANCE_COMPLETE'
+  | 'CUSTOM';
+
+export interface TransitionGuard {
+  from: SanctioningStatus;
+  to: SanctioningStatus;
+  guard: TransitionGuardType;
+  customGuardField?: string;         // dot-path field that must be truthy (for CUSTOM guard)
+  message?: string;                  // error message when guard fails
+  tiers?: string[];                  // only apply to specific tiers
 }
 
 // ---------------------------------------------------------------------------

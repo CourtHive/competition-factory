@@ -3,7 +3,13 @@ import { MISSING_SANCTIONING_POLICY, MISSING_PROPOSAL } from '@Constants/sanctio
 import { SUCCESS } from '@Constants/resultConstants';
 
 // Types
-import type { TournamentProposal, SanctioningPolicy, SanctioningTier } from '@Types/sanctioningTypes';
+import type {
+  TournamentProposal,
+  SanctioningPolicy,
+  SanctioningTier,
+  PersonnelRole,
+  PersonReference,
+} from '@Types/sanctioningTypes';
 
 export type ValidationIssue = {
   field: string;
@@ -69,11 +75,17 @@ export function validateProposal({ proposal, sanctioningPolicy, sanctioningTier 
   if (sanctioningPolicy.personnelRules) {
     for (const role of sanctioningPolicy.personnelRules.roles) {
       if (!role.required) continue;
-      const hasRole = findPersonnelForRole(proposal, role.roleName);
-      if (!hasRole) {
+      const personnelCheck = checkPersonnel(proposal, role);
+      if (!personnelCheck.found) {
         issues.push({
           field: `personnel.${role.roleName}`,
           message: `Required role not filled: ${role.roleName}`,
+          severity: 'error',
+        });
+      } else if (personnelCheck.certificationIssue) {
+        issues.push({
+          field: `personnel.${role.roleName}.certification`,
+          message: personnelCheck.certificationIssue,
           severity: 'error',
         });
       }
@@ -198,9 +210,66 @@ function validateTierConstraints({
   }
 }
 
-function findPersonnelForRole(proposal: TournamentProposal, roleName: string): boolean {
-  const lowerRole = roleName.toLowerCase();
-  if (lowerRole.includes('director') && proposal.tournamentDirector?.personName) return true;
-  if (lowerRole.includes('referee') && proposal.referee?.personName) return true;
-  return proposal.officials?.some((o) => o.role.toLowerCase().includes(lowerRole)) ?? false;
+// Default certification hierarchy — higher index = higher level.
+// Policies can override this via a certificationHierarchy field in the future.
+const DEFAULT_CERTIFICATION_HIERARCHY = [
+  'White Badge',
+  'Bronze Badge',
+  'Silver Badge',
+  'Gold Badge',
+  'Sectional',
+  'National',
+  'International',
+];
+
+function certificationMeetsRequirement(actual?: string, required?: string): boolean {
+  if (!required) return true;
+  if (!actual) return false;
+  const hierarchy = DEFAULT_CERTIFICATION_HIERARCHY;
+  const actualIdx = hierarchy.findIndex((h) => h.toLowerCase() === actual.toLowerCase());
+  const requiredIdx = hierarchy.findIndex((h) => h.toLowerCase() === required.toLowerCase());
+  // If either is not in the hierarchy, fall back to exact match
+  if (actualIdx < 0 || requiredIdx < 0) return actual.toLowerCase() === required.toLowerCase();
+  return actualIdx >= requiredIdx;
+}
+
+function findPerson(proposal: TournamentProposal, lowerRole: string): PersonReference | undefined {
+  if (lowerRole.includes('director') && proposal.tournamentDirector?.personName) {
+    return proposal.tournamentDirector;
+  }
+  if (lowerRole.includes('referee') && proposal.referee?.personName) {
+    return proposal.referee;
+  }
+  const official = proposal.officials?.find((o) => o.role.toLowerCase().includes(lowerRole));
+  if (official) {
+    return { personName: official.personName, certificationLevel: official.certificationLevel };
+  }
+  return undefined;
+}
+
+function checkPersonnel(
+  proposal: TournamentProposal,
+  role: PersonnelRole,
+): { found: boolean; certificationIssue?: string } {
+  const lowerRole = role.roleName.toLowerCase();
+  const person = findPerson(proposal, lowerRole);
+
+  if (!person?.personName?.trim()) return { found: false };
+
+  if (role.certificationRequired) {
+    if (!person.certificationLevel) {
+      return {
+        found: true,
+        certificationIssue: `${role.roleName} requires '${role.certificationRequired}' certification but none specified`,
+      };
+    }
+    if (!certificationMeetsRequirement(person.certificationLevel, role.certificationRequired)) {
+      return {
+        found: true,
+        certificationIssue: `${role.roleName} has '${person.certificationLevel}' but '${role.certificationRequired}' or higher is required`,
+      };
+    }
+  }
+
+  return { found: true };
 }

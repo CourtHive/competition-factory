@@ -79,7 +79,7 @@ describe('Policy Fixtures — Engine Integration', () => {
       totalPrizeMoney: [{ amount: 50000, currencyCode: 'USD' }],
       venues: [{ venueName: 'Cary Tennis Park', numberOfCourts: 12 }],
       tournamentDirector: { personName: 'Alice', role: 'Tournament Director' },
-      referee: { personName: 'Bob', role: 'Referee' },
+      referee: { personName: 'Bob', role: 'Referee', certificationLevel: 'Bronze Badge' },
       officials: [
         { role: 'Chair Umpire', personName: 'Carol Umpire', certificationLevel: 'White Badge' },
         { role: 'Chair Umpire', personName: 'Dave Umpire', certificationLevel: 'White Badge' },

@@ -26,7 +26,8 @@ export function getCalendarConflicts({ sanctioningRecord, calendarContext }: Get
   if (!sanctioningRecord) return { error: MISSING_SANCTIONING_RECORD };
   if (!calendarContext) return { error: INVALID_VALUES, context: { message: 'Missing calendarContext' } };
 
-  const { existingEvents, calendarRules } = calendarContext;
+  const { existingEvents } = calendarContext;
+  const calendarRules = calendarContext.calendarRules ?? sanctioningRecord.policySnapshot?.calendarRules ?? {};
   const { proposal } = sanctioningRecord;
   const conflicts: CalendarConflict[] = [];
 

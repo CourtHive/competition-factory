@@ -183,6 +183,41 @@ export function closeApplication({ sanctioningRecord, closedBy, reason }: CloseA
 }
 
 // ---------------------------------------------------------------------------
+// Check Compliance Deadlines
+// ---------------------------------------------------------------------------
+
+type CheckComplianceDeadlinesArgs = {
+  sanctioningRecord: SanctioningRecord;
+  asOfDate?: string; // ISO date string; defaults to now
+};
+
+export function checkComplianceDeadlines({ sanctioningRecord, asOfDate }: CheckComplianceDeadlinesArgs) {
+  if (!sanctioningRecord) return { error: MISSING_SANCTIONING_RECORD };
+  if (!sanctioningRecord.compliance) return { error: COMPLIANCE_NOT_APPLICABLE };
+
+  const now = asOfDate ? new Date(asOfDate) : new Date();
+  let overdueCount = 0;
+
+  for (const item of sanctioningRecord.compliance.items) {
+    if (item.status === 'PENDING' && item.deadline) {
+      const deadline = new Date(item.deadline);
+      if (deadline < now) {
+        item.status = 'OVERDUE';
+        overdueCount++;
+      }
+    }
+  }
+
+  if (overdueCount > 0) {
+    updateComplianceStatus(sanctioningRecord);
+    sanctioningRecord.updatedAt = new Date().toISOString();
+    sanctioningRecord.version += 1;
+  }
+
+  return { ...SUCCESS, overdueCount };
+}
+
+// ---------------------------------------------------------------------------
 // Helpers
 // ---------------------------------------------------------------------------
 

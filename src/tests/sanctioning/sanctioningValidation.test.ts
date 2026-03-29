@@ -164,6 +164,68 @@ describe('Policy Validation — validateProposal', () => {
     expect(refereeIssue).toBeDefined();
   });
 
+  it('flags insufficient certification level', () => {
+    createTestRecord({
+      referee: { personName: 'Low Cert Ref', role: 'Referee', certificationLevel: 'White Badge' },
+    });
+    // ITF W50 requires Bronze Badge for referee
+    let result: any = sanctioningEngine.validateProposal({
+      sanctioningPolicy: {
+        ...POLICY_SANCTIONING_GENERIC,
+        personnelRules: {
+          roles: [
+            { roleName: 'Referee', required: true, minimumCount: 1, certificationRequired: 'Bronze Badge' },
+            { roleName: 'Tournament Director', required: true, minimumCount: 1 },
+          ],
+        },
+      },
+    });
+    const certIssue = result.errors.find((i: any) => i.field.includes('certification'));
+    expect(certIssue).toBeDefined();
+    expect(certIssue.message).toContain('White Badge');
+    expect(certIssue.message).toContain('Bronze Badge');
+  });
+
+  it('accepts sufficient certification level', () => {
+    createTestRecord({
+      referee: { personName: 'Good Ref', role: 'Referee', certificationLevel: 'Gold Badge' },
+      insuranceCertificate: { documentType: 'insurance', verified: true },
+    });
+    let result: any = sanctioningEngine.validateProposal({
+      sanctioningPolicy: {
+        ...POLICY_SANCTIONING_GENERIC,
+        personnelRules: {
+          roles: [
+            { roleName: 'Referee', required: true, minimumCount: 1, certificationRequired: 'Bronze Badge' },
+            { roleName: 'Tournament Director', required: true, minimumCount: 1 },
+          ],
+        },
+      },
+    });
+    const certIssues = result.errors.filter((i: any) => i.field.includes('certification'));
+    expect(certIssues).toHaveLength(0);
+  });
+
+  it('flags missing certification when required', () => {
+    createTestRecord({
+      referee: { personName: 'No Cert Ref', role: 'Referee' },
+    });
+    let result: any = sanctioningEngine.validateProposal({
+      sanctioningPolicy: {
+        ...POLICY_SANCTIONING_GENERIC,
+        personnelRules: {
+          roles: [
+            { roleName: 'Referee', required: true, minimumCount: 1, certificationRequired: 'White Badge' },
+            { roleName: 'Tournament Director', required: true, minimumCount: 1 },
+          ],
+        },
+      },
+    });
+    const certIssue = result.errors.find((i: any) => i.field.includes('certification'));
+    expect(certIssue).toBeDefined();
+    expect(certIssue.message).toContain('none specified');
+  });
+
   it('validates without tier (global rules only)', () => {
     createTestRecord({
       insuranceCertificate: { documentType: 'insurance', verified: true },

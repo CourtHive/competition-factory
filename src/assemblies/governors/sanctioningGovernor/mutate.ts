@@ -22,4 +22,5 @@ export {
   waiveComplianceItem,
   flagComplianceIssues,
   closeApplication,
+  checkComplianceDeadlines,
 } from '@Mutate/sanctioning/compliance';

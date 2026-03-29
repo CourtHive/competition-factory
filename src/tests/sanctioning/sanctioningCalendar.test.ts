@@ -240,4 +240,49 @@ describe('Calendar Conflict Detection', () => {
     let result: any = sanctioningEngine.getCalendarConflicts({});
     expect(result.error).toBeDefined();
   });
+
+  it('auto-loads calendarRules from policy snapshot when not provided in context', () => {
+    // Create, submit (snapshots policy), then approve + get back to queryable state
+    sanctioningEngine.createSanctioningRecord({
+      governingBodyId: 'gov-001',
+      applicant: testApplicant,
+      sanctioningLevel: 'Level 2',
+      proposal: {
+        tournamentName: 'Policy Rules Test',
+        proposedStartDate: '2027-06-01',
+        proposedEndDate: '2027-06-07',
+        calendarSection: 'Southeast',
+        events: [{ eventName: 'Singles', eventType: 'SINGLES' }],
+      },
+    });
+
+    // Submit with a policy that has calendarRules
+    sanctioningEngine.submitApplication({
+      sanctioningPolicy: {
+        policyName: 'Test',
+        policyVersion: '1.0',
+        effectiveDate: '2026-01-01',
+        governingBodyId: 'gov-001',
+        tiers: [],
+        calendarRules: { proximityWeeks: 2 },
+      },
+    });
+
+    // Provide calendarContext WITHOUT calendarRules — should fall back to snapshot
+    let result: any = sanctioningEngine.getCalendarConflicts({
+      calendarContext: {
+        existingEvents: [
+          {
+            startDate: '2027-06-01',
+            endDate: '2027-06-07',
+            sanctioningTier: 'Level 2',
+            calendarSection: 'Southeast',
+          },
+        ],
+      } as any,
+    });
+
+    expect(result.hasConflicts).toBe(true);
+    expect(result.errors.some((c: any) => c.type === 'SAME_WEEK')).toBe(true);
+  });
 });
