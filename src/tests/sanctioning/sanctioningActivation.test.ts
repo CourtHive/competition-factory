@@ -131,7 +131,8 @@ describe('Activation — Tournament Generation', () => {
     createApprovedRecord();
     sanctioningEngine.activateFromSanctioning({ sanctioningPolicy: testPolicy });
 
-    let record: any = sanctioningEngine.getSanctioningRecord().sanctioningRecord;
+    let result: any = sanctioningEngine.getSanctioningRecord();
+    let record = result.sanctioningRecord;
     expect(record.status).toEqual('ACTIVE');
   });
 
@@ -139,7 +140,8 @@ describe('Activation — Tournament Generation', () => {
     createApprovedRecord();
     sanctioningEngine.activateFromSanctioning({ sanctioningPolicy: testPolicy });
 
-    let record: any = sanctioningEngine.getSanctioningRecord().sanctioningRecord;
+    let result: any = sanctioningEngine.getSanctioningRecord();
+    let record = result.sanctioningRecord;
     expect(record.compliance).toBeDefined();
     expect(record.compliance.status).toEqual('PENDING');
     expect(record.compliance.items.length).toBeGreaterThan(0);
@@ -224,7 +226,8 @@ describe('Full Lifecycle — End-to-End', () => {
     expect(activationResult.tournamentRecord.tournamentName).toEqual('Test Open 2027');
 
     // Sanctioning record should be ACTIVE with compliance
-    let record: any = sanctioningEngine.getSanctioningRecord().sanctioningRecord;
+    let recordResult: any = sanctioningEngine.getSanctioningRecord();
+    let record = recordResult.sanctioningRecord;
     expect(record.status).toEqual('ACTIVE');
     expect(record.compliance).toBeDefined();
 

@@ -55,7 +55,8 @@ describe('Post-Event Compliance — Lifecycle', () => {
     let result: any = sanctioningEngine.transitionToPostEvent({});
     expect(result.success).toBe(true);
 
-    let record: any = sanctioningEngine.getSanctioningRecord().sanctioningRecord;
+    let recordResult: any = sanctioningEngine.getSanctioningRecord();
+    let record = recordResult.sanctioningRecord;
     expect(record.status).toEqual('POST_EVENT');
   });
 
@@ -63,7 +64,8 @@ describe('Post-Event Compliance — Lifecycle', () => {
     createActivatedRecord();
     sanctioningEngine.transitionToPostEvent({});
 
-    let record: any = sanctioningEngine.getSanctioningRecord().sanctioningRecord;
+    let recordResult: any = sanctioningEngine.getSanctioningRecord();
+    let record = recordResult.sanctioningRecord;
     const resultsItem = record.compliance.items.find((i: any) => i.itemType === 'RESULTS_SUBMISSION');
 
     let result: any = sanctioningEngine.submitComplianceItem({
@@ -72,7 +74,8 @@ describe('Post-Event Compliance — Lifecycle', () => {
     });
     expect(result.success).toBe(true);
 
-    record = sanctioningEngine.getSanctioningRecord().sanctioningRecord;
+    recordResult = sanctioningEngine.getSanctioningRecord();
+    record = recordResult.sanctioningRecord;
     const updated = record.compliance.items.find((i: any) => i.itemId === resultsItem.itemId);
     expect(updated.status).toEqual('SUBMITTED');
     expect(updated.submittedAt).toBeDefined();
@@ -84,14 +87,16 @@ describe('Post-Event Compliance — Lifecycle', () => {
     createActivatedRecord();
     sanctioningEngine.transitionToPostEvent({});
 
-    let record: any = sanctioningEngine.getSanctioningRecord().sanctioningRecord;
+    let recordResult: any = sanctioningEngine.getSanctioningRecord();
+    let record = recordResult.sanctioningRecord;
     const resultsItem = record.compliance.items.find((i: any) => i.itemType === 'RESULTS_SUBMISSION');
 
     sanctioningEngine.submitComplianceItem({ itemId: resultsItem.itemId });
     let result: any = sanctioningEngine.verifyComplianceItem({ itemId: resultsItem.itemId });
     expect(result.success).toBe(true);
 
-    record = sanctioningEngine.getSanctioningRecord().sanctioningRecord;
+    recordResult = sanctioningEngine.getSanctioningRecord();
+    record = recordResult.sanctioningRecord;
     const updated = record.compliance.items.find((i: any) => i.itemId === resultsItem.itemId);
     expect(updated.status).toEqual('VERIFIED');
     expect(updated.verifiedAt).toBeDefined();
@@ -101,7 +106,8 @@ describe('Post-Event Compliance — Lifecycle', () => {
     createActivatedRecord();
     sanctioningEngine.transitionToPostEvent({});
 
-    let record: any = sanctioningEngine.getSanctioningRecord().sanctioningRecord;
+    let recordResult: any = sanctioningEngine.getSanctioningRecord();
+    let record = recordResult.sanctioningRecord;
     const financialItem = record.compliance.items.find((i: any) => i.itemType === 'FINANCIAL_RECONCILIATION');
 
     let result: any = sanctioningEngine.waiveComplianceItem({
@@ -110,7 +116,8 @@ describe('Post-Event Compliance — Lifecycle', () => {
     });
     expect(result.success).toBe(true);
 
-    record = sanctioningEngine.getSanctioningRecord().sanctioningRecord;
+    recordResult = sanctioningEngine.getSanctioningRecord();
+    record = recordResult.sanctioningRecord;
     const updated = record.compliance.items.find((i: any) => i.itemId === financialItem.itemId);
     expect(updated.status).toEqual('WAIVED');
     const waiveExt = updated.extensions?.find((e: any) => e.name === 'waiveReason');
@@ -121,7 +128,8 @@ describe('Post-Event Compliance — Lifecycle', () => {
     createActivatedRecord();
     sanctioningEngine.transitionToPostEvent({});
 
-    let record: any = sanctioningEngine.getSanctioningRecord().sanctioningRecord;
+    let result: any = sanctioningEngine.getSanctioningRecord();
+    let record = result.sanctioningRecord;
     const requiredItems = record.compliance.items.filter((i: any) => i.required);
 
     // Verify all required items
@@ -130,7 +138,8 @@ describe('Post-Event Compliance — Lifecycle', () => {
       sanctioningEngine.verifyComplianceItem({ itemId: item.itemId });
     }
 
-    record = sanctioningEngine.getSanctioningRecord().sanctioningRecord;
+    result = sanctioningEngine.getSanctioningRecord();
+    record = result.sanctioningRecord;
     expect(record.compliance.status).toEqual('COMPLIANT');
   });
 
@@ -138,7 +147,8 @@ describe('Post-Event Compliance — Lifecycle', () => {
     createActivatedRecord();
     sanctioningEngine.transitionToPostEvent({});
 
-    let record: any = sanctioningEngine.getSanctioningRecord().sanctioningRecord;
+    let recordResult: any = sanctioningEngine.getSanctioningRecord();
+    let record = recordResult.sanctioningRecord;
     const requiredItems = record.compliance.items.filter((i: any) => i.required);
     for (const item of requiredItems) {
       sanctioningEngine.submitComplianceItem({ itemId: item.itemId });
@@ -148,7 +158,8 @@ describe('Post-Event Compliance — Lifecycle', () => {
     let result: any = sanctioningEngine.closeApplication({ closedBy: 'Admin' });
     expect(result.success).toBe(true);
 
-    record = sanctioningEngine.getSanctioningRecord().sanctioningRecord;
+    recordResult = sanctioningEngine.getSanctioningRecord();
+    record = recordResult.sanctioningRecord;
     expect(record.status).toEqual('CLOSED');
     expect(record.compliance.completedAt).toBeDefined();
 
@@ -166,13 +177,15 @@ describe('Post-Event Compliance — Lifecycle', () => {
     });
     expect(result.success).toBe(true);
 
-    let record: any = sanctioningEngine.getSanctioningRecord().sanctioningRecord;
+    let recordResult: any = sanctioningEngine.getSanctioningRecord();
+    let record = recordResult.sanctioningRecord;
     expect(record.status).toEqual('ISSUES_FLAGGED');
 
     // Can still close from ISSUES_FLAGGED
     result = sanctioningEngine.closeApplication({ reason: 'Issues resolved' });
     expect(result.success).toBe(true);
-    expect(sanctioningEngine.getSanctioningRecord().sanctioningRecord.status).toEqual('CLOSED');
+    recordResult = sanctioningEngine.getSanctioningRecord();
+    expect(recordResult.sanctioningRecord.status).toEqual('CLOSED');
   });
 
   it('returns error when submitting to non-existent item', () => {
@@ -195,7 +208,8 @@ describe('Post-Event Compliance — Lifecycle', () => {
     sanctioningEngine.approveApplication({});
 
     // Activate without policy — no compliance items
-    const record: any = sanctioningEngine.getSanctioningRecord().sanctioningRecord;
+    const recordResult: any = sanctioningEngine.getSanctioningRecord();
+    const record = recordResult.sanctioningRecord;
     record.status = 'ACTIVE'; // manual for test
     record.compliance = undefined;
     sanctioningEngine.setSanctioningRecord(record);
@@ -229,7 +243,8 @@ describe('Full Lifecycle — DRAFT to CLOSED', () => {
     ]);
     expect(result.success).toBe(true);
 
-    let record: any = sanctioningEngine.getSanctioningRecord().sanctioningRecord;
+    let recordResult: any = sanctioningEngine.getSanctioningRecord();
+    let record = recordResult.sanctioningRecord;
     expect(record.status).toEqual('POST_EVENT');
 
     // Submit and verify all compliance items
@@ -240,7 +255,8 @@ describe('Full Lifecycle — DRAFT to CLOSED', () => {
     }
 
     sanctioningEngine.closeApplication({});
-    record = sanctioningEngine.getSanctioningRecord().sanctioningRecord;
+    recordResult = sanctioningEngine.getSanctioningRecord();
+    record = recordResult.sanctioningRecord;
     expect(record.status).toEqual('CLOSED');
 
     let history: any = sanctioningEngine.getStatusHistory();

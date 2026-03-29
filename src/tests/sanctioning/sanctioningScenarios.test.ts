@@ -118,7 +118,8 @@ describe('Scenario: ITF W50 Full Lifecycle (Brazil)', () => {
     expect(result.success).toBe(true);
 
     // Verify policy snapshot
-    let record: any = sanctioningEngine.getSanctioningRecord().sanctioningRecord;
+    let recordResult: any = sanctioningEngine.getSanctioningRecord();
+    let record = recordResult.sanctioningRecord;
     expect(record.policySnapshot.policyName).toContain('ITF');
 
     // 7. Review
@@ -147,7 +148,8 @@ describe('Scenario: ITF W50 Full Lifecycle (Brazil)', () => {
     expect(result.success).toBe(true);
 
     // 12. Submit compliance items
-    record = sanctioningEngine.getSanctioningRecord().sanctioningRecord;
+    recordResult = sanctioningEngine.getSanctioningRecord();
+    record = recordResult.sanctioningRecord;
     const complianceItems = record.compliance.items.filter((i: any) => i.required);
     expect(complianceItems.length).toBeGreaterThan(0);
 
@@ -222,7 +224,8 @@ describe('Scenario: USTA Level 3 with Modification Request', () => {
     expect(result.success).toBe(true);
 
     // Verify proposal is editable again
-    let record: any = sanctioningEngine.getSanctioningRecord().sanctioningRecord;
+    let recordResult: any = sanctioningEngine.getSanctioningRecord();
+    let record = recordResult.sanctioningRecord;
     expect(record.status).toEqual('MODIFICATION_REQUESTED');
 
     // Applicant modifies draw size
@@ -248,7 +251,8 @@ describe('Scenario: USTA Level 3 with Modification Request', () => {
     expect(result.success).toBe(true);
 
     // Verify version incremented through cycle
-    record = sanctioningEngine.getSanctioningRecord().sanctioningRecord;
+    recordResult = sanctioningEngine.getSanctioningRecord();
+    record = recordResult.sanctioningRecord;
     expect(record.version).toBeGreaterThan(5);
   });
 });
@@ -297,7 +301,8 @@ describe('Scenario: Conditional Approval — BWF Prize Money Confirmation', () =
     });
     expect(result.success).toBe(true);
 
-    let record: any = sanctioningEngine.getSanctioningRecord().sanctioningRecord;
+    let recordResult: any = sanctioningEngine.getSanctioningRecord();
+    let record = recordResult.sanctioningRecord;
     expect(record.conditions).toHaveLength(3);
 
     // Meet conditions one at a time
@@ -351,7 +356,8 @@ describe('Scenario: Application Rejection — Terminal State', () => {
     sanctioningEngine.reviewApplication({});
     sanctioningEngine.rejectApplication({ reason: 'Venue does not meet safety standards' });
 
-    let record: any = sanctioningEngine.getSanctioningRecord().sanctioningRecord;
+    let recordResult: any = sanctioningEngine.getSanctioningRecord();
+    let record = recordResult.sanctioningRecord;
     expect(record.status).toEqual('REJECTED');
 
     // All transitions should fail
@@ -410,7 +416,8 @@ describe('Scenario: Amendment Security & Edge Cases', () => {
     // because statusHistory is not in the AMENDABLE_FIELD_PREFIXES whitelist
     expect(result.success).toBe(true);
 
-    let record: any = sanctioningEngine.getSanctioningRecord().sanctioningRecord;
+    let recordResult: any = sanctioningEngine.getSanctioningRecord();
+    let record = recordResult.sanctioningRecord;
     // statusHistory should be untouched
     expect(record.statusHistory[0].fromStatus).toEqual('DRAFT');
   });
@@ -421,7 +428,8 @@ describe('Scenario: Amendment Security & Edge Cases', () => {
       sanctioningPolicy: POLICY_SANCTIONING_GENERIC,
     });
 
-    let record: any = sanctioningEngine.getSanctioningRecord().sanctioningRecord;
+    let result: any = sanctioningEngine.getSanctioningRecord();
+    let record = result.sanctioningRecord;
     // Should NOT create sparse array
     expect(record.proposal.events).toHaveLength(1);
     expect(record.proposal.events[0].drawSize).toEqual(32);
@@ -458,7 +466,8 @@ describe('Scenario: Amendment Security & Edge Cases', () => {
     expect(result.severity).toEqual('MINOR');
     expect(result.autoApproved).toBe(true);
 
-    let record: any = sanctioningEngine.getSanctioningRecord().sanctioningRecord;
+    let recordResult: any = sanctioningEngine.getSanctioningRecord();
+    let record = recordResult.sanctioningRecord;
     expect(record.proposal.tournamentName).toEqual('Amendment Test Championship');
   });
 
@@ -482,7 +491,8 @@ describe('Scenario: Amendment Security & Edge Cases', () => {
       sanctioningPolicy: POLICY_SANCTIONING_GENERIC,
     });
 
-    let record: any = sanctioningEngine.getSanctioningRecord().sanctioningRecord;
+    let result: any = sanctioningEngine.getSanctioningRecord();
+    let record = result.sanctioningRecord;
     expect(record.amendments).toHaveLength(2);
     expect(record.amendments[0].severity).toEqual('MINOR');
     expect(record.amendments[0].status).toEqual('APPROVED');
@@ -658,7 +668,8 @@ describe('Scenario: Post-Event Compliance Issues (USATF pattern)', () => {
       { method: 'transitionToPostEvent', params: {} },
     ]);
 
-    let record: any = sanctioningEngine.getSanctioningRecord().sanctioningRecord;
+    let recordResult: any = sanctioningEngine.getSanctioningRecord();
+    let record = recordResult.sanctioningRecord;
     expect(record.compliance.items.length).toBeGreaterThan(0);
 
     // Submit only one item, leave others pending
@@ -672,7 +683,8 @@ describe('Scenario: Post-Event Compliance Issues (USATF pattern)', () => {
     });
     expect(result.success).toBe(true);
 
-    record = sanctioningEngine.getSanctioningRecord().sanctioningRecord;
+    recordResult = sanctioningEngine.getSanctioningRecord();
+    record = recordResult.sanctioningRecord;
     expect(record.status).toEqual('ISSUES_FLAGGED');
 
     // Can still close from ISSUES_FLAGGED
@@ -703,7 +715,8 @@ describe('Scenario: Post-Event Compliance Issues (USATF pattern)', () => {
       { method: 'transitionToPostEvent', params: {} },
     ]);
 
-    let record: any = sanctioningEngine.getSanctioningRecord().sanctioningRecord;
+    let recordResult: any = sanctioningEngine.getSanctioningRecord();
+    let record = recordResult.sanctioningRecord;
     const item = record.compliance.items[0];
 
     sanctioningEngine.submitComplianceItem({ itemId: item.itemId });
@@ -813,7 +826,8 @@ describe('Scenario: Endorsement Declined and Re-requested', () => {
     });
     expect(result.success).toBe(true);
 
-    let record: any = sanctioningEngine.getSanctioningRecord().sanctioningRecord;
+    let recordResult: any = sanctioningEngine.getSanctioningRecord();
+    let record = recordResult.sanctioningRecord;
     expect(record.endorsement.status).toEqual('DECLINED');
 
     // Applicant finds a better venue
@@ -827,12 +841,14 @@ describe('Scenario: Endorsement Declined and Re-requested', () => {
     result = sanctioningEngine.requestEndorsement({ endorserId: 'cbt', endorserName: 'CBT' });
     expect(result.success).toBe(true);
 
-    record = sanctioningEngine.getSanctioningRecord().sanctioningRecord;
+    recordResult = sanctioningEngine.getSanctioningRecord();
+    record = recordResult.sanctioningRecord;
     expect(record.endorsement.status).toEqual('PENDING');
 
     // Now endorsed
     sanctioningEngine.endorseApplication({ endorserNotes: 'New venue approved' });
-    record = sanctioningEngine.getSanctioningRecord().sanctioningRecord;
+    recordResult = sanctioningEngine.getSanctioningRecord();
+    record = recordResult.sanctioningRecord;
     expect(record.endorsement.status).toEqual('ENDORSED');
 
     // Can now submit
@@ -881,7 +897,8 @@ describe('Scenario: Execution Queue Rollback Integrity', () => {
     expect(result.rolledBack).toBe(true);
 
     // Verify name was NOT changed (rolled back)
-    let record: any = sanctioningEngine.getSanctioningRecord({ sanctioningId: 'rollback-integrity' }).sanctioningRecord;
+    let recordResult: any = sanctioningEngine.getSanctioningRecord({ sanctioningId: 'rollback-integrity' });
+    let record = recordResult.sanctioningRecord;
     expect(record.proposal.tournamentName).toEqual('Rollback Test');
   });
 });

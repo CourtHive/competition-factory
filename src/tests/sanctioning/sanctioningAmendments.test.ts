@@ -69,7 +69,8 @@ describe('Amendment Workflow — Propose', () => {
     expect(result.autoApproved).toBe(true);
 
     // Proposal should be updated
-    let record: any = sanctioningEngine.getSanctioningRecord().sanctioningRecord;
+    let recordResult: any = sanctioningEngine.getSanctioningRecord();
+    let record = recordResult.sanctioningRecord;
     expect(record.proposal.tournamentName).toEqual('Test Open 2028');
     expect(record.amendments).toHaveLength(1);
     expect(record.amendments[0].status).toEqual('APPROVED');
@@ -95,7 +96,8 @@ describe('Amendment Workflow — Propose', () => {
     expect(result.severity).toEqual('SUBSTANTIAL');
     expect(result.autoApproved).toBe(false);
 
-    let record: any = sanctioningEngine.getSanctioningRecord().sanctioningRecord;
+    let recordResult: any = sanctioningEngine.getSanctioningRecord();
+    let record = recordResult.sanctioningRecord;
     // Date should NOT be changed yet
     expect(record.proposal.proposedStartDate).toEqual('2028-06-01');
     expect(record.amendments[0].status).toEqual('PROPOSED');
@@ -162,7 +164,8 @@ describe('Amendment Workflow — Review', () => {
       sanctioningPolicy: testPolicy,
     });
 
-    let record: any = sanctioningEngine.getSanctioningRecord().sanctioningRecord;
+    let recordResult: any = sanctioningEngine.getSanctioningRecord();
+    let record = recordResult.sanctioningRecord;
     const amendmentId = record.amendments[0].amendmentId;
 
     let result: any = sanctioningEngine.reviewAmendment({
@@ -173,7 +176,8 @@ describe('Amendment Workflow — Review', () => {
     expect(result.success).toBe(true);
     expect(result.approved).toBe(true);
 
-    record = sanctioningEngine.getSanctioningRecord().sanctioningRecord;
+    recordResult = sanctioningEngine.getSanctioningRecord();
+    record = recordResult.sanctioningRecord;
     expect(record.proposal.proposedStartDate).toEqual('2028-07-01');
     expect(record.amendments[0].status).toEqual('APPROVED');
     expect(record.amendments[0].reviewerNotes).toEqual('Date change approved');
@@ -194,7 +198,8 @@ describe('Amendment Workflow — Review', () => {
       sanctioningPolicy: testPolicy,
     });
 
-    let record: any = sanctioningEngine.getSanctioningRecord().sanctioningRecord;
+    let recordResult: any = sanctioningEngine.getSanctioningRecord();
+    let record = recordResult.sanctioningRecord;
     const amendmentId = record.amendments[0].amendmentId;
 
     let result: any = sanctioningEngine.reviewAmendment({
@@ -205,7 +210,8 @@ describe('Amendment Workflow — Review', () => {
     expect(result.success).toBe(true);
     expect(result.approved).toBe(false);
 
-    record = sanctioningEngine.getSanctioningRecord().sanctioningRecord;
+    recordResult = sanctioningEngine.getSanctioningRecord();
+    record = recordResult.sanctioningRecord;
     expect(record.proposal.proposedEndDate).toEqual('2028-06-07'); // unchanged
     expect(record.amendments[0].status).toEqual('REJECTED');
   });
@@ -228,7 +234,8 @@ describe('Amendment Workflow — Review', () => {
       sanctioningPolicy: testPolicy,
     });
 
-    let record: any = sanctioningEngine.getSanctioningRecord().sanctioningRecord;
+    let recordResult: any = sanctioningEngine.getSanctioningRecord();
+    let record = recordResult.sanctioningRecord;
     const amendmentId = record.amendments[0].amendmentId;
 
     let result: any = sanctioningEngine.reviewAmendment({ amendmentId, approved: true });
@@ -270,7 +277,8 @@ describe('Amendment Workflow — Multiple Amendments', () => {
       sanctioningPolicy: testPolicy,
     });
 
-    let record: any = sanctioningEngine.getSanctioningRecord().sanctioningRecord;
+    let result: any = sanctioningEngine.getSanctioningRecord();
+    let record = result.sanctioningRecord;
     expect(record.amendments).toHaveLength(2);
     expect(record.amendments[0].status).toEqual('APPROVED');
     expect(record.amendments[1].status).toEqual('PROPOSED');

@@ -3,8 +3,8 @@ import { beforeEach, describe, expect, it } from 'vitest';
 
 // Fixtures
 import { POLICY_SANCTIONING_GENERIC } from '@Fixtures/policies/POLICY_SANCTIONING_GENERIC';
-import { POLICY_SANCTIONING_ITF } from '@Fixtures/policies/POLICY_SANCTIONING_ITF';
 import { POLICY_SANCTIONING_USTA } from '@Fixtures/policies/POLICY_SANCTIONING_USTA';
+import { POLICY_SANCTIONING_ITF } from '@Fixtures/policies/POLICY_SANCTIONING_ITF';
 
 // Types
 import type { Applicant, TournamentProposal } from '@Types/sanctioningTypes';
@@ -187,7 +187,8 @@ describe('Policy Fixtures — Engine Integration', () => {
     sanctioningEngine.endorseApplication({});
     sanctioningEngine.submitApplication({ sanctioningPolicy: POLICY_SANCTIONING_ITF });
 
-    let record: any = sanctioningEngine.getSanctioningRecord().sanctioningRecord;
+    let result: any = sanctioningEngine.getSanctioningRecord();
+    let record = result.sanctioningRecord;
     expect(record.policyVersion).toEqual('2026.1');
     expect(record.policySnapshot).toBeDefined();
     expect(record.policySnapshot.policyName).toContain('ITF');

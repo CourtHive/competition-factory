@@ -1003,7 +1003,7 @@ export enum CountryCodeEnum {
   Zmb = 'ZMB',
   Zwe = 'ZWE',
 }
-export type CountryCodeUnion = keyof typeof CountryCodeEnum;
+export type CountryCodeUnion = `${CountryCodeEnum}`;
 
 export interface OnlineResource {
   createdAt?: Date | string;

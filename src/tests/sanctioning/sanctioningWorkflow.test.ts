@@ -45,7 +45,8 @@ function createAndGetRecord() {
     applicant: testApplicant,
     proposal: testProposal,
   });
-  return sanctioningEngine.getSanctioningRecord().sanctioningRecord;
+  let result: any = sanctioningEngine.getSanctioningRecord();
+  return result.sanctioningRecord;
 }
 
 describe('Sanctioning Workflow — Submit → Review → Approve', () => {
@@ -59,7 +60,8 @@ describe('Sanctioning Workflow — Submit → Review → Approve', () => {
     let result: any = sanctioningEngine.submitApplication({ sanctioningPolicy: testPolicy });
     expect(result.success).toBe(true);
 
-    let record: any = sanctioningEngine.getSanctioningRecord().sanctioningRecord;
+    let recordResult: any = sanctioningEngine.getSanctioningRecord();
+    let record = recordResult.sanctioningRecord;
     expect(record.status).toEqual('SUBMITTED');
     expect(record.submittedAt).toBeDefined();
     expect(record.policyVersion).toEqual('2026.1');
@@ -71,14 +73,16 @@ describe('Sanctioning Workflow — Submit → Review → Approve', () => {
     });
     expect(result.success).toBe(true);
 
-    record = sanctioningEngine.getSanctioningRecord().sanctioningRecord;
+    recordResult = sanctioningEngine.getSanctioningRecord();
+    record = recordResult.sanctioningRecord;
     expect(record.status).toEqual('UNDER_REVIEW');
     expect(record.reviewer?.reviewerName).toEqual('John Reviewer');
 
     result = sanctioningEngine.approveApplication({ approvedBy: 'John Reviewer' });
     expect(result.success).toBe(true);
 
-    record = sanctioningEngine.getSanctioningRecord().sanctioningRecord;
+    recordResult = sanctioningEngine.getSanctioningRecord();
+    record = recordResult.sanctioningRecord;
     expect(record.status).toEqual('APPROVED');
     expect(record.approvedAt).toBeDefined();
   });
@@ -110,7 +114,8 @@ describe('Sanctioning Workflow — Rejection', () => {
     let result: any = sanctioningEngine.rejectApplication({ reason: 'Insufficient facilities' });
     expect(result.success).toBe(true);
 
-    let record: any = sanctioningEngine.getSanctioningRecord().sanctioningRecord;
+    let recordResult: any = sanctioningEngine.getSanctioningRecord();
+    let record = recordResult.sanctioningRecord;
     expect(record.status).toEqual('REJECTED');
 
     // No further transitions from REJECTED
@@ -129,7 +134,8 @@ describe('Sanctioning Workflow — Withdrawal', () => {
     let result: any = sanctioningEngine.withdrawApplication({ reason: 'Changed plans' });
     expect(result.success).toBe(true);
 
-    let record: any = sanctioningEngine.getSanctioningRecord().sanctioningRecord;
+    let recordResult: any = sanctioningEngine.getSanctioningRecord();
+    let record = recordResult.sanctioningRecord;
     expect(record.status).toEqual('WITHDRAWN');
   });
 
@@ -168,7 +174,8 @@ describe('Sanctioning Workflow — Modification Request', () => {
     });
     expect(result.success).toBe(true);
 
-    let record: any = sanctioningEngine.getSanctioningRecord().sanctioningRecord;
+    let recordResult: any = sanctioningEngine.getSanctioningRecord();
+    let record = recordResult.sanctioningRecord;
     expect(record.status).toEqual('MODIFICATION_REQUESTED');
     expect(record.reviewNotes).toHaveLength(1);
     expect(record.reviewNotes[0].note).toEqual('Please increase draw size to 64');
@@ -177,13 +184,15 @@ describe('Sanctioning Workflow — Modification Request', () => {
     sanctioningEngine.updateProposal({ updates: { tournamentName: 'Updated Open' } });
     sanctioningEngine.submitApplication({ sanctioningPolicy: testPolicy });
 
-    record = sanctioningEngine.getSanctioningRecord().sanctioningRecord;
+    recordResult = sanctioningEngine.getSanctioningRecord();
+    record = recordResult.sanctioningRecord;
     expect(record.status).toEqual('SUBMITTED');
 
     sanctioningEngine.reviewApplication({});
     sanctioningEngine.approveApplication({});
 
-    record = sanctioningEngine.getSanctioningRecord().sanctioningRecord;
+    recordResult = sanctioningEngine.getSanctioningRecord();
+    record = recordResult.sanctioningRecord;
     expect(record.status).toEqual('APPROVED');
   });
 });
@@ -203,7 +212,8 @@ describe('Sanctioning Workflow — Conditional Approval', () => {
     });
     expect(result.success).toBe(true);
 
-    let record: any = sanctioningEngine.getSanctioningRecord().sanctioningRecord;
+    let recordResult: any = sanctioningEngine.getSanctioningRecord();
+    let record = recordResult.sanctioningRecord;
     expect(record.status).toEqual('CONDITIONALLY_APPROVED');
     expect(record.conditions).toHaveLength(2);
 
@@ -224,7 +234,8 @@ describe('Sanctioning Workflow — Conditional Approval', () => {
     result = sanctioningEngine.approveApplication({});
     expect(result.success).toBe(true);
 
-    record = sanctioningEngine.getSanctioningRecord().sanctioningRecord;
+    recordResult = sanctioningEngine.getSanctioningRecord();
+    record = recordResult.sanctioningRecord;
     expect(record.status).toEqual('APPROVED');
   });
 
@@ -263,7 +274,8 @@ describe('Sanctioning Workflow — Endorsement', () => {
     });
     expect(result.success).toBe(true);
 
-    let record: any = sanctioningEngine.getSanctioningRecord().sanctioningRecord;
+    let recordResult: any = sanctioningEngine.getSanctioningRecord();
+    let record = recordResult.sanctioningRecord;
     expect(record.endorsement.status).toEqual('PENDING');
 
     result = sanctioningEngine.endorseApplication({
@@ -272,7 +284,8 @@ describe('Sanctioning Workflow — Endorsement', () => {
     });
     expect(result.success).toBe(true);
 
-    record = sanctioningEngine.getSanctioningRecord().sanctioningRecord;
+    recordResult = sanctioningEngine.getSanctioningRecord();
+    record = recordResult.sanctioningRecord;
     expect(record.endorsement.status).toEqual('ENDORSED');
     expect(record.endorsement.endorsedAt).toBeDefined();
     expect(record.endorsement.conditions).toHaveLength(1);
@@ -304,7 +317,8 @@ describe('Sanctioning Workflow — Endorsement', () => {
     let result: any = sanctioningEngine.declineEndorsement({ declineReason: 'Inadequate venue' });
     expect(result.success).toBe(true);
 
-    let record: any = sanctioningEngine.getSanctioningRecord().sanctioningRecord;
+    let recordResult: any = sanctioningEngine.getSanctioningRecord();
+    let record = recordResult.sanctioningRecord;
     expect(record.endorsement.status).toEqual('DECLINED');
     expect(record.endorsement.declineReason).toEqual('Inadequate venue');
   });
@@ -341,7 +355,8 @@ describe('Sanctioning Workflow — Review Notes', () => {
     });
     expect(result.success).toBe(true);
 
-    let record: any = sanctioningEngine.getSanctioningRecord().sanctioningRecord;
+    let recordResult: any = sanctioningEngine.getSanctioningRecord();
+    let record = recordResult.sanctioningRecord;
     expect(record.reviewNotes).toHaveLength(2);
   });
 
@@ -417,7 +432,8 @@ describe('Sanctioning Workflow — executionQueue full workflow', () => {
     expect(result.success).toBe(true);
     expect(result.results).toHaveLength(4);
 
-    let record: any = sanctioningEngine.getSanctioningRecord().sanctioningRecord;
+    let recordResult: any = sanctioningEngine.getSanctioningRecord();
+    let record = recordResult.sanctioningRecord;
     expect(record.status).toEqual('APPROVED');
   });
 });
