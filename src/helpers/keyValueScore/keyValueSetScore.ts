@@ -7,7 +7,7 @@ export function keyValueSetScore({ analysis, lowSide, scoreString, value }) {
   const needsTiebreak = value === parseInt(tiebreakAt || setTo);
 
   if (tiebreakAt && tiebreakAt < setTo && value > tiebreakAt) return { scoreString };
-  if ((NoAD && value === setTo) || value > setTo) return { scoreString };
+  if ((NoAD && value === setTo && !needsTiebreak) || value > setTo) return { scoreString };
 
   const highValue = getHighSetValue();
   const setScores = [value, highValue];

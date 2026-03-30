@@ -4,7 +4,7 @@
       "collectionGroupNumber": 1,
       "matchUpType": "DOUBLES",
       "matchUpCount": 1,
-      "matchUpFormat": "SET3-S:6/TB7-F:TB10",
+      "matchUpFormat": "SET3-S:6NOAD/TB7-F:TB10",
       "matchUpValue": 1
     },
     {
@@ -18,7 +18,7 @@
       "collectionGroupNumber": 2,
       "matchUpType": "DOUBLES",
       "matchUpCount": 1,
-      "matchUpFormat": "SET3-S:6/TB7-F:TB10",
+      "matchUpFormat": "SET3-S:6NOAD/TB7-F:TB10",
       "matchUpValue": 2
     },
     {
@@ -32,7 +32,7 @@
       "collectionGroupNumber": 3,
       "matchUpType": "DOUBLES",
       "matchUpCount": 1,
-      "matchUpFormat": "SET3-S:6/TB7-F:TB10",
+      "matchUpFormat": "SET3-S:6NOAD/TB7-F:TB10",
       "matchUpValue": 3
     },
     {
