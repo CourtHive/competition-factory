@@ -4,3 +4,4 @@ export * from './hydrated';
 export * from './rankingTypes';
 export * from './tournamentTypes';
 export * from './sanctioningTypes';
+export * from './officiatingTypes';

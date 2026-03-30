@@ -30,6 +30,7 @@ export { tieFormatConstants } from './tieFormatConstants';
 export { timeItemConstants } from './timeItemConstants';
 export { topicConstants } from './topicConstants';
 export { tournamentConstants } from './tournamentConstants';
+export { officiatingConstants } from './officiatingConstants';
 export { sanctioningConstants } from './sanctioningConstants';
 export { venueConstants } from './venueConstants';
 export { weekdayConstants } from './weekdayConstants';

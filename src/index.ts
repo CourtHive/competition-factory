@@ -32,6 +32,9 @@ export { scaleEngine } from './assemblies/engines/scale';
 // ENGINES - Sanctioning engine -----------------------------------------
 export { sanctioningEngine } from './assemblies/engines/sanctioning';
 
+// ENGINES - Officiating engine -----------------------------------------
+export { officiatingEngine } from './assemblies/engines/officiating';
+
 // ENGINES - For backwards compatibility ---------------------------------
 export { competitionEngine } from './tests/engines/syncEngine';
 export { tournamentEngine } from './tests/engines/syncEngine';
