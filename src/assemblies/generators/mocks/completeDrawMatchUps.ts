@@ -227,7 +227,7 @@ export function completeDrawMatchUps(params): {
   const sortedStructures = drawDefinition.structures.slice().sort(structureSort);
   const completedCount = { value: 0 };
 
-  const { matchUps: firstRoundDualMatchUps, matchUpsMap } = getAllDrawMatchUps({
+  const { matchUps: firstRoundDualMatchUps } = getAllDrawMatchUps({
     matchUpFilters: { matchUpTypes: [TEAM], roundNumbers: [1] },
     contextFilters: { stages: [MAIN, QUALIFYING] },
     inContext: true,
@@ -257,36 +257,57 @@ export function completeDrawMatchUps(params): {
 
   const structureIds = sortedStructures.map(({ structureId }) => structureId);
 
-  for (const structureId of structureIds) {
-    if (completedCount.value >= completionGoal) break;
-    const structure = drawDefinition.structures.find((structure) => structure.structureId === structureId);
+  // Multi-pass loop: after each pass, cross-structure advancement (via directParticipants)
+  // may populate positions in downstream structures, making new matchUps ready to complete.
+  // This is necessary for DOUBLE_ELIMINATION where the main final and decider depend on
+  // participants advancing from the consolation/backdraw structure.
+  // The matchUpsMap must be refreshed each pass to reflect updated draw positions.
+  const maxPasses = 10;
+  let passCount = 0;
+  let previousCompleted = -1;
+  while (completedCount.value > previousCompleted && (completionGoal === undefined || completedCount.value < completionGoal) && passCount < maxPasses) {
+    passCount++;
+    previousCompleted = completedCount.value;
 
-    if (stage && structure.stage !== stage) continue;
-    if (stageSequence && structure.stageSequence !== stageSequence) continue;
-
-    const result = completeStructureMatchUps({
-      structure,
-      matchUpsMap,
+    // Refresh matchUpsMap to reflect cross-structure position assignments from prior pass
+    const { matchUpsMap: refreshedMap } = getAllDrawMatchUps({
+      matchUpFilters: { matchUpTypes: [TEAM], roundNumbers: [1] },
+      contextFilters: { stages: [MAIN, QUALIFYING] },
+      inContext: true,
       drawDefinition,
-      tournamentRecord,
-      event,
-      matchUpStatusProfile,
-      matchUpFormat,
-      matchUpStatus,
-      scoreString,
-      randomWinningSide,
-      completionGoal,
-      completedCount,
-      roundNumber,
     });
-    if (result?.error) return result;
 
-    if (isRoundRobinWithPlayoff && structure.finishingPosition === WIN_RATIO && params.completeRoundRobinPlayoffs) {
-      automatedPlayoffPositioning({
-        structureId: structure.structureId,
-        applyPositioning: true,
+    for (const structureId of structureIds) {
+      if (completedCount.value >= completionGoal) break;
+      const structure = drawDefinition.structures.find((structure) => structure.structureId === structureId);
+
+      if (stage && structure.stage !== stage) continue;
+      if (stageSequence && structure.stageSequence !== stageSequence) continue;
+
+      const result = completeStructureMatchUps({
+        structure,
+        matchUpsMap: refreshedMap,
         drawDefinition,
+        tournamentRecord,
+        event,
+        matchUpStatusProfile,
+        matchUpFormat,
+        matchUpStatus,
+        scoreString,
+        randomWinningSide,
+        completionGoal,
+        completedCount,
+        roundNumber,
       });
+      if (result?.error) return result;
+
+      if (isRoundRobinWithPlayoff && structure.finishingPosition === WIN_RATIO && params.completeRoundRobinPlayoffs) {
+        automatedPlayoffPositioning({
+          structureId: structure.structureId,
+          applyPositioning: true,
+          drawDefinition,
+        });
+      }
     }
   }
 

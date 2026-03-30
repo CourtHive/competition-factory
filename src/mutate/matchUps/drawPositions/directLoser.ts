@@ -131,8 +131,10 @@ export function directLoser(params): ResultType {
     const result = asssignLoserDrawPosition();
     if (result.context) Object.assign(context, result.context);
     if (result.error) return decorateResult({ result, stack });
-  } else if (loserParticipantId && isFeedRound) {
-    // if target.roundNumber > 1 then it is a feed round and should always take the lower drawPosition
+  } else if (loserParticipantId && (isFeedRound || unfilledTargetMatchUpDrawPositions?.length)) {
+    // take the lowest unfilled draw position in the target matchUp;
+    // applies to feed rounds (roundNumber > 1) and also when both winner and loser
+    // feed into the same target matchUp (e.g., double elimination decider)
     unfilledTargetMatchUpDrawPositions.sort(numericSort);
     const fedDrawPosition = unfilledTargetMatchUpDrawPositions[0];
     const result = assignDrawPosition({
