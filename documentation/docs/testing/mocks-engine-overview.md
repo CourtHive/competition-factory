@@ -28,6 +28,8 @@ Creating this data manually for each test is time-consuming and error-prone. The
 
 ## Key Capabilities
 
+- **Deterministic Generation** — Use `nonRandom` seed for reproducible tournaments (same participants, draw positions, and scores every time)
+
 ### 1. Tournament Generation
 
 Generate complete tournament records with events, draws, participants, and venues:

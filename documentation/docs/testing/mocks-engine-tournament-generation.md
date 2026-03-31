@@ -59,6 +59,9 @@ interface GenerateTournamentRecordOptions {
   // IDs
   uuids?: array; // Pre-defined UUIDs for entities
 
+  // Deterministic generation
+  nonRandom?: number; // Seed for deterministic PRNG (replaces Math.random)
+
   // Policies
   policyDefinitions?: object; // Attach policy definitions
 }
@@ -941,6 +944,82 @@ const { tournamentRecord } = mocksEngine.generateTournamentRecord({
 ```
 
 `teamGenders` acts as a **floor** — it only increases gender counts, never decreases them. If `processTieFormat` already computes a higher value for a gender, that value is preserved. The `teamSize` is also adjusted upward if the overridden gender totals exceed it.
+
+## Deterministic Generation
+
+The `nonRandom` parameter seeds a deterministic PRNG that replaces `Math.random` throughout the entire generation chain. This makes every random decision — participant names, IDs, nationalities, ratings, draw position assignments, and match outcomes — fully reproducible.
+
+### Same Seed = Same Results
+
+```js
+const result1 = mocksEngine.generateTournamentRecord({
+  nonRandom: 42,
+  drawProfiles: [{ drawSize: 16, seedsCount: 4 }],
+});
+
+const result2 = mocksEngine.generateTournamentRecord({
+  nonRandom: 42,
+  drawProfiles: [{ drawSize: 16, seedsCount: 4 }],
+});
+
+// Identical participants, draw positions, seedings
+expect(result1.tournamentRecord.participants.map((p) => p.participantName)).toEqual(
+  result2.tournamentRecord.participants.map((p) => p.participantName),
+);
+```
+
+### Different Seeds = Different Results
+
+```js
+const result1 = mocksEngine.generateTournamentRecord({
+  nonRandom: 42,
+  drawProfiles: [{ drawSize: 16 }],
+});
+
+const result2 = mocksEngine.generateTournamentRecord({
+  nonRandom: 99,
+  drawProfiles: [{ drawSize: 16 }],
+});
+
+// Different participants and draw positions
+expect(result1.tournamentRecord.participants[0].participantName).not.toEqual(
+  result2.tournamentRecord.participants[0].participantName,
+);
+```
+
+### Deterministic Scores
+
+When combined with `completeAllMatchUps`, scores are also deterministic:
+
+```js
+const result1 = mocksEngine.generateTournamentRecord({
+  nonRandom: 42,
+  drawProfiles: [{ drawSize: 8 }],
+  completeAllMatchUps: true,
+});
+
+const result2 = mocksEngine.generateTournamentRecord({
+  nonRandom: 42,
+  drawProfiles: [{ drawSize: 8 }],
+  completeAllMatchUps: true,
+});
+
+tournamentEngine.setState(result1.tournamentRecord);
+const { matchUps: matchUps1 } = tournamentEngine.allTournamentMatchUps();
+
+tournamentEngine.setState(result2.tournamentRecord);
+const { matchUps: matchUps2 } = tournamentEngine.allTournamentMatchUps();
+
+// Same scores, same winners
+matchUps1.forEach((m, i) => {
+  expect(m.score?.scoreStringSide1).toEqual(matchUps2[i].score?.scoreStringSide1);
+  expect(m.winningSide).toEqual(matchUps2[i].winningSide);
+});
+```
+
+:::tip Use nonRandom for snapshot and regression testing
+`nonRandom` is ideal for snapshot tests where you need stable output, regression tests where you want to detect behavioral changes, and debugging where you need to reproduce exact tournament state.
+:::
 
 ## Tips and Best Practices
 

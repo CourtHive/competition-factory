@@ -862,6 +862,87 @@ test('complete tournament lifecycle', () => {
 });
 ```
 
+## Deterministic Snapshot Testing
+
+The `nonRandom` parameter enables fully reproducible tournament generation, which is valuable for several testing patterns.
+
+### Snapshot / Regression Testing
+
+Generate the same tournament every time to detect unintended changes:
+
+```js
+test('tournament structure matches snapshot', () => {
+  const { tournamentRecord } = mocksEngine.generateTournamentRecord({
+    nonRandom: 42,
+    drawProfiles: [{ drawSize: 16, seedsCount: 4 }],
+    completeAllMatchUps: true,
+  });
+
+  tournamentEngine.setState(tournamentRecord);
+  const { matchUps } = tournamentEngine.allTournamentMatchUps();
+
+  const summary = matchUps.map((m) => ({
+    roundNumber: m.roundNumber,
+    winningSide: m.winningSide,
+    score: m.score?.scoreStringSide1,
+  }));
+
+  expect(summary).toMatchSnapshot();
+});
+```
+
+### Reproducing Bugs
+
+When a test fails intermittently, pin the seed to reproduce the exact state:
+
+```js
+test('reproduce specific draw configuration', () => {
+  // Seed discovered from failing CI run
+  const { tournamentRecord } = mocksEngine.generateTournamentRecord({
+    nonRandom: 8675309,
+    drawProfiles: [{ drawSize: 32, drawType: 'ROUND_ROBIN' }],
+  });
+
+  tournamentEngine.setState(tournamentRecord);
+  // Debug the exact participant arrangement and draw positions
+  const { matchUps } = tournamentEngine.allTournamentMatchUps();
+  // ...
+});
+```
+
+### Comparing Algorithm Changes
+
+Use the same seed to compare output before and after a code change:
+
+```js
+test('new seeding algorithm preserves draw fairness', () => {
+  const seed = 42;
+
+  // Generate with both old and new policy
+  const { tournamentRecord: oldResult } = mocksEngine.generateTournamentRecord({
+    nonRandom: seed,
+    drawProfiles: [{ drawSize: 32, seedsCount: 8 }],
+    policyDefinitions: POLICY_SEEDING_USTA,
+  });
+
+  const { tournamentRecord: newResult } = mocksEngine.generateTournamentRecord({
+    nonRandom: seed,
+    drawProfiles: [{ drawSize: 32, seedsCount: 8 }],
+    policyDefinitions: POLICY_SEEDING_ITF,
+  });
+
+  // Same participants, different seeding placement
+  expect(oldResult.participants.map((p) => p.participantId)).toEqual(
+    newResult.participants.map((p) => p.participantId),
+  );
+  // Compare draw position assignments...
+});
+```
+
+:::note
+Without `nonRandom`, each call to `generateTournamentRecord` uses `Math.random` and produces different results. Adding `nonRandom` does not change the shape of the output — only makes it repeatable.
+:::
+
 ## Best Practices Summary
 
 1. **Use setState: true**: Auto-load tournaments into engine for convenience

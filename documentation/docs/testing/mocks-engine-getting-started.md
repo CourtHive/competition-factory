@@ -420,6 +420,25 @@ const { tournamentRecord } = mocksEngine.generateTournamentRecord({
 });
 ```
 
+## Deterministic Generation with nonRandom
+
+Pass a numeric `nonRandom` value to seed a deterministic PRNG that replaces all random decisions during generation. The same seed always produces identical results; different seeds produce different but equally reproducible results.
+
+```js
+// Same seed always produces identical tournament
+const result1 = mocksEngine.generateTournamentRecord({
+  nonRandom: 42,
+  drawProfiles: [{ drawSize: 16 }],
+});
+const result2 = mocksEngine.generateTournamentRecord({
+  nonRandom: 42,
+  drawProfiles: [{ drawSize: 16 }],
+});
+// result1 and result2 have identical participants, draw positions, and structure
+```
+
+This is especially useful for snapshot testing and debugging — see [Deterministic Generation](./mocks-engine-tournament-generation.md#deterministic-generation) for full details.
+
 ## Next Steps
 
 - **[Tournament Generation](./mocks-engine-tournament-generation.md)** - Learn about all tournament generation options
