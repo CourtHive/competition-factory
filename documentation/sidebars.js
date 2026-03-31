@@ -50,6 +50,7 @@ module.exports = {
             'policies/progressionPolicy',
             'policies/consolationPolicy',
             'policies/competitiveBands',
+            'policies/sanctioningPolicy',
           ],
         },
         {
@@ -189,6 +190,11 @@ module.exports = {
             'temporal-engine/ui-integration-scenarios',
           ],
         },
+        {
+          type: 'category',
+          label: 'Sanctioning Engine',
+          items: ['engines/sanctioning-engine'],
+        },
       ],
     },
     {
@@ -226,6 +232,7 @@ module.exports = {
         'governors/schedule-governor',
         'governors/score-governor',
         'governors/tie-format-governor',
+        'governors/sanctioning-governor',
         'governors/tournament-governor',
         'governors/venue-governor',
       ],

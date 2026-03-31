@@ -53,10 +53,10 @@ export function getRounds({
   }
 
   if (tournamentRecord && !tournamentRecords) {
-    if (typeof tournamentRecord !== 'object') {
-      return { error: INVALID_TOURNAMENT_RECORD };
-    } else {
+    if (typeof tournamentRecord === 'object') {
       tournamentRecords = { [tournamentRecord.tournamentId]: tournamentRecord };
+    } else {
+      return { error: INVALID_TOURNAMENT_RECORD };
     }
   }
 
@@ -78,16 +78,14 @@ export function getRounds({
     })),
   );
 
-  const events = Object.values(tournamentRecords ?? {})
-    .map(({ events = [], tournamentId, startDate, endDate }) =>
-      events.map((event) => ({
-        ...event,
-        validVenueIds: tournamentVenueIds[tournamentId],
-        startDate: event.startDate ?? startDate,
-        endDate: event.endDate ?? endDate,
-      })),
-    )
-    .flat();
+  const events = Object.values(tournamentRecords ?? {}).flatMap(({ events = [], tournamentId, startDate, endDate }) =>
+    events.map((event) => ({
+      ...event,
+      validVenueIds: tournamentVenueIds[tournamentId],
+      startDate: event.startDate ?? startDate,
+      endDate: event.endDate ?? endDate,
+    })),
+  );
 
   const { segmentedRounds, profileRounds } =
     (tournamentRecords &&
@@ -152,7 +150,7 @@ export function getRounds({
           };
         }, {}),
       )
-        .map((round: any) => {
+        .flatMap((round: any) => {
           const { minFinishingSum, winnerFinishingPositionRange } = getFinishingPositionDetails(round.matchUps);
           const segmentsCount = round.segmentsCount;
 
@@ -213,7 +211,6 @@ export function getRounds({
             byeCount,
           });
         })
-        .flat()
         .filter((round) => {
           if (excludeScheduleDateProfileRounds) {
             const scheduleDate = extractDate(excludeScheduleDateProfileRounds);
