@@ -30,6 +30,7 @@ type GenerateOrGetExisting = {
   qualifyingOnly?: boolean;
   drawType?: DrawTypeUnion;
   processCodes?: string[];
+  random?: () => number;
   seedingProfile?: string;
   matchUpFormat?: string;
   eventEntries?: Entry[];

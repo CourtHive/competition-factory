@@ -11,25 +11,26 @@ import { generateRange } from './arrays';
  *
  * @param {number} count - number of UUIDs to generate
  */
-export function UUIDS(count = 1, pre?) {
-  return generateRange(0, count).map(() => UUID(pre));
+export function UUIDS(count = 1, pre?, random?: () => number) {
+  return generateRange(0, count).map(() => UUID(pre, random));
 }
 
-export function UUID(pre?) {
+export function UUID(pre?, random?: () => number) {
+  const rng = random ?? Math.random;
   const lut: string[] = [];
 
   for (let i = 0; i < 256; i++) {
     lut[i] = (i < 16 ? '0' : '') + i.toString(16);
   }
 
-   
-  const d0 = Math.trunc(Math.random() * 0xffffffff);
-   
-  const d1 = Math.trunc(Math.random() * 0xffffffff);
-   
-  const d2 = Math.trunc(Math.random() * 0xffffffff);
-   
-  const d3 = Math.trunc(Math.random() * 0xffffffff);
+
+  const d0 = Math.trunc(rng() * 0xffffffff);
+
+  const d1 = Math.trunc(rng() * 0xffffffff);
+
+  const d2 = Math.trunc(rng() * 0xffffffff);
+
+  const d3 = Math.trunc(rng() * 0xffffffff);
 
   const uuid =
     lut[d0 & 0xff] +

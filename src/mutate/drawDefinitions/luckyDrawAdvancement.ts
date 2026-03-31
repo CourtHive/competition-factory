@@ -19,6 +19,7 @@ type LuckyDrawAdvancementArgs = {
   drawDefinition: DrawDefinition;
   participantId?: string;
   structureId?: string;
+  random?: () => number;
   roundNumber: number;
   event?: Event;
 };
@@ -41,6 +42,7 @@ export function luckyDrawAdvancement({
   participantId,
   structureId,
   roundNumber,
+  random,
   event,
 }: LuckyDrawAdvancementArgs): ResultType {
   if (!drawDefinition) return { error: MISSING_DRAW_DEFINITION };
@@ -118,7 +120,7 @@ export function luckyDrawAdvancement({
       }
 
       if (validPositions.length) {
-        const randomIdx = Math.floor(Math.random() * validPositions.length);
+        const randomIdx = Math.floor((random ?? Math.random)() * validPositions.length);
         advancingParticipantIds.splice(validPositions[randomIdx], 0, participantId);
       } else {
         // Fallback: no valid opposite-half position found (e.g., 1 matchUp)

@@ -541,6 +541,7 @@ export type GenerateDrawDefinitionArgs = {
   drawSize?: number;
   idPrefix?: string;
   isMock?: boolean;
+  random?: () => number;
   targetMatchUpIds?: TargetMatchUpId[];
   uuids?: string[];
   drawId?: string;
@@ -580,6 +581,7 @@ export type DrawMaticArgs = {
   structure?: Structure;
   roundsCount?: number;
   structureId?: string;
+  random?: () => number;
   scaleName?: string; // can be custom rating name to seed dynamic ratings
   idPrefix?: string;
   isMock?: boolean;

@@ -6,6 +6,7 @@ type GetNextParticipantId = {
   useSpecifiedGroupKey?: boolean;
   largestFirst?: boolean;
   groupKey: string;
+  random?: () => number;
 };
 
 export function getNextParticipantId({
@@ -14,6 +15,7 @@ export function getNextParticipantId({
   largestFirst = true,
   allGroups,
   groupKey,
+  random,
 }: GetNextParticipantId): { participantId: string; groupKey: string } {
   const groupings = Object.assign(
     {},
@@ -29,11 +31,11 @@ export function getNextParticipantId({
   );
   const largestSizedGroupings = Object.keys(groupings).filter((key) => groupings[key].length === largestGroupSize);
 
-  const randomGroupKey = largestFirst ? randomMember(largestSizedGroupings) : randomMember(Object.keys(groupings));
+  const randomGroupKey = largestFirst ? randomMember(largestSizedGroupings, random) : randomMember(Object.keys(groupings), random);
 
   groupKey = useSpecifiedGroupKey && groupings[groupKey]?.length ? groupKey : randomGroupKey;
 
   const participantId =
-    groupKey && groupings[groupKey] ? randomMember(groupings[groupKey]) : randomMember(targetParticipantIds);
+    groupKey && groupings[groupKey] ? randomMember(groupings[groupKey], random) : randomMember(targetParticipantIds, random);
   return { participantId, groupKey };
 }

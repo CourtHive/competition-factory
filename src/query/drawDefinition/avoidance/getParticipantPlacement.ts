@@ -17,6 +17,7 @@ type GetParticipantPlacementArgs = {
   drawPositionChunks?: number[][]; // drawPositions grouped by round starting with the final round
   pairedPriority?: boolean; // flag whether to prioritize positions which already have one opponent placed
   groupKey: string;
+  random?: () => number;
 };
 
 export function getParticipantPlacement({
@@ -28,6 +29,7 @@ export function getParticipantPlacement({
   pairedPriority,
   allGroups,
   groupKey,
+  random,
 }: GetParticipantPlacementArgs) {
   const largestGroupSize = drawPositionGroups.reduce((largest, group) => {
     return group.length > largest ? group.length : largest;
@@ -49,6 +51,7 @@ export function getParticipantPlacement({
     useSpecifiedGroupKey,
     allGroups,
     groupKey,
+    random,
   });
 
   const selectedParticipantGroups = getParticipantGroups({
@@ -76,11 +79,11 @@ export function getParticipantPlacement({
 
   let targetDrawPosition;
   if (prioritizedOptions?.length) {
-    const section = randomPop(prioritizedOptions);
-    targetDrawPosition = randomPop(section);
+    const section = randomPop(prioritizedOptions, random);
+    targetDrawPosition = randomPop(section, random);
   } else {
-    const section = randomPop(unassigned[0]);
-    targetDrawPosition = randomPop(section);
+    const section = randomPop(unassigned[0], random);
+    targetDrawPosition = randomPop(section, random);
   }
 
   return { newGroupKey, selectedParticipantId, targetDrawPosition };

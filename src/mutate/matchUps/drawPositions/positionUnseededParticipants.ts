@@ -31,6 +31,7 @@ export function positionUnseededParticipants({
   structure,
   drawSize,
   event,
+  random,
 }) {
   const stack = 'positionUnseededParticipants';
 
@@ -95,7 +96,7 @@ export function positionUnseededParticipants({
       return groupings;
     }, {});
     if (Object.keys(groupings).length) {
-      if (!avoidance) avoidance = { policyName: 'Playoff Avoidance' };
+      avoidance ??= { policyName: 'Playoff Avoidance' };
       if (!avoidance.policyAttributes) avoidance.policyAttributes = [];
       avoidance.policyAttributes.push({ groupings });
     }
@@ -116,6 +117,7 @@ export function positionUnseededParticipants({
       avoidance,
       drawSize,
       entries,
+      random,
     });
   } else {
     return randomUnseededDistribution({
@@ -131,6 +133,7 @@ export function positionUnseededParticipants({
       matchUpsMap,
       drawSize,
       event,
+      random,
     });
   }
 }
@@ -148,9 +151,11 @@ function randomUnseededDistribution({
   structureId,
   drawSize,
   event,
+  random,
 }) {
   // when { drawSize: 2 } reverse the order so that popping results in equivalent order
-  const shuffledDrawPositions = drawSize > 2 ? shuffleArray(unfilledDrawPositions) : unfilledDrawPositions.reverse();
+  const shuffledDrawPositions =
+    drawSize > 2 ? shuffleArray(unfilledDrawPositions, random) : unfilledDrawPositions.reverse();
 
   for (const participantId of unseededParticipantIds) {
     const drawPosition = shuffledDrawPositions.pop();

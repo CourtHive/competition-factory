@@ -5,6 +5,7 @@ type GenerateCandidateArgs = {
   valueSortedPairings: { [key: string]: number }[];
   deltaObjects: { [key: string]: number };
   valueObjects: { [key: string]: number };
+  random?: () => number;
   maxIterations: number;
   pairingValues: any;
 };
@@ -15,7 +16,9 @@ export function generateCandidate({
   pairingValues,
   valueObjects,
   deltaObjects,
+  random,
 }: GenerateCandidateArgs) {
+  const rng = random ?? Math.random;
   const pairingValueMap = Object.assign({}, ...valueSortedPairings.map((rm) => ({ [rm.pairing]: rm.value })));
 
   const actors = Object.keys(pairingValues);
@@ -28,6 +31,7 @@ export function generateCandidate({
     pairingValueMap,
     deltaObjects,
     valueObjects,
+    random,
   });
 
   const candidateHashes: any[] = [candidateHash(initialProposal)];
@@ -69,6 +73,7 @@ export function generateCandidate({
           pairingValueMap,
           deltaObjects,
           valueObjects,
+          random,
         });
 
         // ensure no duplicate candidates are considered
@@ -83,7 +88,7 @@ export function generateCandidate({
           if (
             value < lowCandidateValue ||
              
-            (value === lowCandidateValue && Math.round(Math.random())) // randomize if equivalent values
+            (value === lowCandidateValue && Math.round(rng())) // randomize if equivalent values
           ) {
             lowCandidateValue = value;
           }
@@ -97,7 +102,7 @@ export function generateCandidate({
   });
 
   proposedCandidates.sort((a, b) => a.maxDiff - b.maxDiff);
-  const candidate = randomPop(proposedCandidates);
+  const candidate = randomPop(proposedCandidates, random);
 
   return {
     candidatesCount,
@@ -118,6 +123,7 @@ function candidateHash(candidate) {
 type RoundCandiateArgs = {
   pairingValueMap: any;
   valueSortedPairings: any;
+  random?: () => number;
   actorsCount: number;
   stipulated?: any[];
   deltaObjects: any;
@@ -131,7 +137,9 @@ function roundCandidate({
   deltaObjects,
   valueObjects,
   actorsCount,
+  random,
 }: RoundCandiateArgs) {
+  const rng = random ?? Math.random;
   // roundPlayers starts with the stipulated pairing
   const roundPlayers: any[] = stipulated.flat();
 
@@ -154,10 +162,10 @@ function roundCandidate({
   // valueSortedPairings is an array sorted from lowest value to highest value
   // introduce random shuffling of chunks of valueSortedPairings
   const consideredPairings = chunkArray(valueSortedPairings, actorsCount).flatMap((pairings) =>
-    shuffleArray(pairings).map((pairing) => ({
+    shuffleArray(pairings, random).map((pairing) => ({
       ...pairing,
-       
-      value: pairing.value + Math.random() * Math.round(Math.random()),
+
+      value: pairing.value + rng() * Math.round(rng()),
     })),
   );
 

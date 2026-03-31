@@ -2,6 +2,7 @@ import { deleteNotices, setDevContext, setDeepCopy, getDevContext } from '@Globa
 import { notifySubscribers } from '@Global/state/notifySubscribers';
 import * as mocksGovernor from '@Assemblies/governors/mocksGovernor';
 import { factoryVersion } from '@Functions/global/factoryVersion';
+import { createSeededRandom } from '@Tools/prng';
 
 import { setState } from '@Assemblies/engines/parts/stateMethods';
 import { FactoryEngine } from '@Types/factoryTypes';
@@ -51,6 +52,9 @@ export const mocksEngine = (() => {
 
   function createEngineMethod(governor, method) {
     return (params) => {
+      if (typeof params?.nonRandom === 'number') {
+        params = { ...params, random: createSeededRandom(params.nonRandom) };
+      }
       if (getDevContext()) {
         const invocationResult = engineInvoke(governor[method], params);
         if (!invocationResult?.error && params?.setState && invocationResult?.tournamentRecord) {

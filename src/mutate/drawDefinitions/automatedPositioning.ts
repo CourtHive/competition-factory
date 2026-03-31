@@ -38,6 +38,7 @@ type AutomatedPositioningArgs = {
   applyPositioning?: boolean;
   matchUpsMap?: MatchUpsMap;
   placementGroup?: number;
+  random?: () => number;
   placeByes?: boolean;
   structureId: string;
   seedsOnly?: boolean;
@@ -110,6 +111,7 @@ function handleWaterfall({
   inContextDrawMatchUps,
   participants,
   positioningReport,
+  random,
 }) {
   let result: any = placeByes
     ? positionByes({
@@ -122,6 +124,7 @@ function handleWaterfall({
         structure,
         seedLimit,
         seedsOnly,
+        random,
         event,
       })
     : undefined;
@@ -144,6 +147,7 @@ function handleWaterfall({
     participants,
     matchUpsMap,
     structure,
+    random,
     event,
   });
   if (result.error) return { error: result.error };
@@ -175,6 +179,7 @@ function handleNonWaterfall({
   seedLimit,
   seedsOnly,
   positioningReport,
+  random,
 }) {
   let unseededByePositions;
   if (!isLuckyBasedDraw(drawType)) {
@@ -191,6 +196,7 @@ function handleNonWaterfall({
       participants,
       matchUpsMap,
       structure,
+      random,
       event,
     });
 
@@ -213,6 +219,7 @@ function handleNonWaterfall({
         structure,
         seedLimit,
         seedsOnly,
+        random,
         event,
       })
     : undefined;
@@ -251,6 +258,7 @@ function handleQualifiersAndUnseeded({
   event,
   positioningReport,
   conflicts,
+  random,
 }) {
   if (seedsOnly) return {};
   let result: any = positionQualifiers({
@@ -263,6 +271,7 @@ function handleQualifiersAndUnseeded({
     participants,
     matchUpsMap,
     structure,
+    random,
   });
   if (result.error) {
     return { error: result.error };
@@ -286,6 +295,7 @@ function handleQualifiersAndUnseeded({
     structureId,
     structure,
     drawSize,
+    random,
     event,
   });
 
@@ -317,6 +327,7 @@ export function automatedPositioning(params: AutomatedPositioningArgs): ResultTy
     seedsOnly,
     drawType,
     drawSize,
+    random,
     event,
   } = params;
 
@@ -354,6 +365,7 @@ export function automatedPositioning(params: AutomatedPositioningArgs): ResultTy
     drawDefinition,
     seedingProfile,
     structure,
+    random,
   });
   if (seedBlockInfo.error) return handleErrorCondition(seedBlockInfo, applyPositioning);
   const { validSeedBlocks } = seedBlockInfo;
@@ -389,6 +401,7 @@ export function automatedPositioning(params: AutomatedPositioningArgs): ResultTy
       inContextDrawMatchUps,
       participants,
       positioningReport,
+      random,
     });
     if (waterfallResult?.error) return handleErrorCondition(waterfallResult.error, applyPositioning);
     unseededByePositions = waterfallResult.unseededByePositions;
@@ -412,6 +425,7 @@ export function automatedPositioning(params: AutomatedPositioningArgs): ResultTy
       seedLimit,
       seedsOnly,
       positioningReport,
+      random,
     });
     if (nonWaterfallResult?.error) return handleErrorCondition(nonWaterfallResult.error, applyPositioning);
     unseededByePositions = nonWaterfallResult.unseededByePositions;
@@ -440,6 +454,7 @@ export function automatedPositioning(params: AutomatedPositioningArgs): ResultTy
     event,
     positioningReport,
     conflicts,
+    random,
   });
   if (qualifiersResult?.error) return handleErrorCondition(qualifiersResult.error, applyPositioning);
 

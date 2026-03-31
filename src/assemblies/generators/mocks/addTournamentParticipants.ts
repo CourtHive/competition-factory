@@ -16,6 +16,7 @@ import { SUCCESS } from '@Constants/resultConstants';
 type AddTournamentParticipantsArgs = {
   participantsProfile?: ParticipantsProfile;
   tournamentRecord: Tournament;
+  random?: () => number;
   eventProfiles?: any[];
   drawProfiles?: any[];
   startDate?: string;
@@ -27,6 +28,7 @@ export function addTournamentParticipants({
   eventProfiles,
   drawProfiles,
   startDate,
+  random,
   uuids,
 }: AddTournamentParticipantsArgs) {
   if (participantsProfile?.participantsCount === 0) return { addedCount: 0, ...SUCCESS };
@@ -45,6 +47,7 @@ export function addTournamentParticipants({
     participantsCount,
     participantType,
     gendersCount,
+    random,
     uuids,
   }).participants as Participant[];
 
@@ -75,6 +78,7 @@ export function addTournamentParticipants({
       index: teamIndex,
       participantType,
       idPrefix,
+      random,
       uuids,
     });
 

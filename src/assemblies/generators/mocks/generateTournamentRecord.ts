@@ -43,6 +43,7 @@ type GenerateTournamentRecordArgs = {
   ratingsParameters?: any;
   tournamentName?: string;
   schedulingProfile?: any;
+  random?: () => number;
   autoSchedule?: boolean;
   leagueProfiles?: any[];
   eventProfiles?: any[];
@@ -57,7 +58,7 @@ type GenerateTournamentRecordArgs = {
 export function generateTournamentRecord(params: GenerateTournamentRecordArgs) {
   let { startDate, endDate } = params ?? {};
   const {
-    tournamentName = randomPop(mockTournamentNames),
+    tournamentName = randomPop(mockTournamentNames, params?.random),
     ratingsParameters = defaultRatingsParameters,
     tournamentExtensions,
     policyDefinitions,
@@ -89,7 +90,7 @@ export function generateTournamentRecord(params: GenerateTournamentRecordArgs) {
   }
 
   const tournamentRecord = createTournamentRecord({
-    ...(params.tournamentAttributes ?? {}),
+    ...params.tournamentAttributes,
     tournamentName,
     startDate,
     endDate,

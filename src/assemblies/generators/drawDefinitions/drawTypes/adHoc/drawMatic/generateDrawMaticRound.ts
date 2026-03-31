@@ -47,6 +47,7 @@ type GenerateDrawMaticRoundArgs = {
   maxIterations?: number;
   matchUpIds?: string[];
   structure?: Structure;
+  random?: () => number;
   roundNumber?: number;
   structureId?: string;
   scaleName?: string;
@@ -168,6 +169,7 @@ export function generateDrawMaticRound(params: GenerateDrawMaticRoundArgs): Resu
     adHocRatings,
     deltaObjects,
     valueObjects,
+    random: params.random,
     eventType,
     scaleName,
     structure,

@@ -30,7 +30,8 @@ export function getPairings(params) {
 
     const salting = (typeof salted === 'number' && salted) || 0.5;
      
-    const salt = (salted && (Math.round(Math.random()) ? salting : salting * -1)) || 0;
+    const rng = params.random ?? Math.random;
+    const salt = (salted && (Math.round(rng()) ? salting : salting * -1)) || 0;
     const ratingsDifference = Math.abs(ratings[0] - ratings[1]) + salt;
     const pairingDelta = Math.abs(ratings[0] - ratings[1]);
     deltaObjects[pairing] = pairingDelta;
@@ -58,6 +59,7 @@ export function getPairings(params) {
   });
 
   const { candidate, candidatesCount, deltaCandidate, iterations } = generateCandidate({
+    random: params.random,
     valueSortedPairings,
     maxIterations,
     pairingValues,

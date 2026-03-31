@@ -22,7 +22,7 @@ import { COMPETITOR } from '@Constants/participantRoles';
 import { TEAM } from '@Constants/participantConstants';
 
 export function processLeagueProfiles(params): any {
-  const { tournamentRecord, leagueProfiles, eventIds, venueIds, drawIds, allUniqueParticipantIds, uuids } = params;
+  const { tournamentRecord, leagueProfiles, eventIds, venueIds, drawIds, allUniqueParticipantIds, random, uuids } = params;
 
   let leaguesCount = 0;
   for (const leagueProfile of leagueProfiles) {
@@ -38,7 +38,7 @@ export function processLeagueProfiles(params): any {
     } = leagueProfile;
 
     const eventName = leagueProfile.leagueName ?? leagueProfile.eventName ?? `League ${leaguesCount + 1}`;
-    const eventId = leagueProfile.leagueId ?? leagueProfile.eventId ?? uuids?.pop() ?? UUID();
+    const eventId = leagueProfile.leagueId ?? leagueProfile.eventId ?? uuids?.pop() ?? UUID(undefined, random);
     eventIds.push(eventId);
 
     // use tieFormat or tieFormatName to generate determine number of individualParticipants per team
@@ -55,14 +55,14 @@ export function processLeagueProfiles(params): any {
 
     const drawSize = Math.max(teamsCount, teamProfiles.length);
     const teamsRange = generateRange(0, drawSize);
-    const { genders, teamSize } = processTieFormat({ tieFormat, drawSize });
+    const { genders, teamSize } = processTieFormat({ tieFormat, drawSize, random });
 
     const gendersCount = { [FEMALE]: 0, [MIXED]: 0, [OTHER]: 0, [MALE]: 0, [ANY]: 0 };
     Object.keys(genders).forEach((key) => (gendersCount[key] += genders[key]));
 
     for (const index of teamsRange) {
       const teamName = teamProfiles?.[index]?.teamName ?? `Team ${index + 1}`;
-      const teamId = teamProfiles?.[index]?.teamId || uuids?.pop() || UUID();
+      const teamId = teamProfiles?.[index]?.teamId || uuids?.pop() || UUID(undefined, random);
 
       const consideredDate = leagueProfile.startDate ?? params.startDate;
       const participants = generateParticipants({
@@ -72,6 +72,7 @@ export function processLeagueProfiles(params): any {
         gendersCount,
         category,
         gender,
+        random,
         uuids,
       }).participants as Participant[];
 
@@ -83,6 +84,7 @@ export function processLeagueProfiles(params): any {
         genParticipantId({
           participantType,
           idPrefix,
+          random,
           index,
           uuids,
         });

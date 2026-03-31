@@ -52,6 +52,7 @@ type GenerateVoluntaryConsolationArgs = {
   applyPositioning?: boolean;
   staggeredEntry?: boolean;
   structureOptions?: { groupSize?: number };
+  random?: () => number;
   structureName?: string;
   matchUpFormat?: string;
   tieFormat?: TieFormat;
@@ -192,6 +193,7 @@ export function generateVoluntaryConsolation(params: GenerateVoluntaryConsolatio
       structureId: structureId || primaryStructure?.structureId,
       seedingProfile: params.seedingProfile,
       drawDefinition: workingDD,
+      random: params.random,
       multipleStructures,
       applyPositioning,
       tournamentRecord,

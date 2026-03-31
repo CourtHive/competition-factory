@@ -14,7 +14,8 @@ import { countries } from '@Fixtures/countryData';
 
 export function generatePersons(params?) {
   let count = params?.count || 1;
-  const { personExtensions, consideredDate, isMock = true, gendersCount, personData, category, sex } = params || {};
+  const { personExtensions, consideredDate, isMock = true, gendersCount, personData, random, category, sex } =
+    params || {};
   if (Number.isNaN(Number(count))) return { error: INVALID_VALUES };
 
   const maleCount = gendersCount?.[MALE] || (isMale(sex) && count) || 0;
@@ -27,6 +28,7 @@ export function generatePersons(params?) {
       generatePersonData({
         count: maleCount,
         sex: MALE,
+        random,
       }).personData) ||
     [];
 
@@ -35,6 +37,7 @@ export function generatePersons(params?) {
       generatePersonData({
         count: femaleCount,
         sex: FEMALE,
+        random,
       }).personData) ||
     [];
 
@@ -44,6 +47,7 @@ export function generatePersons(params?) {
     ...((defaultCount &&
       generatePersonData({
         count: defaultCount,
+        random,
       }).personData) ||
       []),
   ];
@@ -77,7 +81,7 @@ export function generatePersons(params?) {
     }
   }
 
-  const shuffledPersons = personData ? validPersonData : shuffleArray(validPersonData);
+  const shuffledPersons = personData ? validPersonData : shuffleArray(validPersonData, random);
 
   if (shuffledPersons.length < count) {
     const { maleFirstNames, maleLastNames, femaleFirstNames, femaleLastNames, nationalityCodes } =
@@ -104,10 +108,10 @@ export function generatePersons(params?) {
       );
 
     generateRange(0, count - shuffledPersons.length).forEach(() => {
-      const personSex = sex || randomMember([MALE, FEMALE]);
-      const nationalityCode = randomMember(nationalityCodes);
-      const firstName = personSex === MALE ? randomMember(maleFirstNames) : randomMember(femaleFirstNames);
-      const lastName = personSex === MALE ? randomMember(maleLastNames) : randomMember(femaleLastNames);
+      const personSex = sex || randomMember([MALE, FEMALE], random);
+      const nationalityCode = randomMember(nationalityCodes, random);
+      const firstName = personSex === MALE ? randomMember(maleFirstNames, random) : randomMember(femaleFirstNames, random);
+      const lastName = personSex === MALE ? randomMember(maleLastNames, random) : randomMember(femaleLastNames, random);
       const person = {
         firstName,
         lastName,
@@ -131,8 +135,8 @@ export function generatePersons(params?) {
 
   const persons = shuffledPersons.slice(0, count).map((person, i) => {
     const [start, end] = yearRange || [];
-    const birthYear = yearRange && randomPop(generateRange(start, end));
-    const birthDay = randomPop(generateRange(0, 365));
+    const birthYear = yearRange && randomPop(generateRange(start, end), random);
+    const birthDay = randomPop(generateRange(0, 365), random);
     const birthDate = birthYear && dateFromDay(birthYear, birthDay);
 
     return Object.assign(

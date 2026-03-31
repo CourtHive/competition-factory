@@ -22,8 +22,18 @@ export function generateFlightDrawDefinitions({
   randomWinningSide,
   tournamentRecord,
   drawProfiles,
+  random,
   isMock,
   event,
+}: {
+  random?: () => number;
+  matchUpStatusProfile?: any;
+  completeAllMatchUps?: boolean;
+  randomWinningSide?: boolean;
+  tournamentRecord: any;
+  drawProfiles: any[];
+  isMock?: boolean;
+  event: any;
 }): {
   drawIds?: string[];
   success?: boolean;
@@ -81,6 +91,7 @@ export function generateFlightDrawDefinitions({
           drawName,
           drawId,
           isMock,
+          random,
           event,
           stage,
         });
@@ -121,6 +132,7 @@ export function generateFlightDrawDefinitions({
             completionGoal,
             drawDefinition,
             matchUpFormat,
+            random,
             event,
           });
           if (result.error) return { error: result.error, drawIds: [] };
@@ -147,6 +159,7 @@ export function generateFlightDrawDefinitions({
               tournamentRecord,
               drawDefinition,
               matchUpFormat,
+              random,
               event,
             });
             if (result.error) return { error: result.error, drawIds: [] };

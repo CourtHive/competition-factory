@@ -1,10 +1,11 @@
 import { structureAssignedDrawPositions } from '@Query/drawDefinition/positionsGetter';
 import { getSeedPattern, getValidSeedBlocks } from '@Query/drawDefinition/seedGetter';
 import { getAllStructureMatchUps } from '@Query/matchUps/getAllStructureMatchUps';
+import { getSeedBlocks } from '@Query/drawDefinition/getSeedBlocks';
 import { chunkArray, shuffleArray, unique } from '@Tools/arrays';
 import { numericSort } from '@Tools/sorting';
-import { getSeedBlocks } from '../../../../query/drawDefinition/getSeedBlocks';
 
+// Constants
 import { ADJACENT, CLUSTER, CONTAINER, QUALIFYING } from '@Constants/drawDefinitionConstants';
 
 export function getUnseededByePositions({
@@ -16,6 +17,7 @@ export function getUnseededByePositions({
   seedLimit,
   structure,
   isFeedIn,
+  random,
 }) {
   const seedingProfile = appliedPolicies?.seeding?.seedingProfile;
   const isQualifying = structure.stage === QUALIFYING;
@@ -35,7 +37,7 @@ export function getUnseededByePositions({
 
   // firstRoundMatchUps don't work for CONTAINER / ROUND_ROBIN structures
   const relevantMatchUps = structure.structureType === CONTAINER ? matchUps : firstRoundMatchUps;
-  const relevantDrawPositions = unique([].concat(...relevantMatchUps.map((matchUp) => matchUp.drawPositions)));
+  const relevantDrawPositions = unique(relevantMatchUps.flatMap((matchUp) => matchUp.drawPositions));
   const drawPositionOffset = Math.min(...relevantDrawPositions) - 1;
 
   const filledRelevantDrawPositions = filledDrawPositions?.filter((drawPosition) =>
@@ -45,12 +47,12 @@ export function getUnseededByePositions({
   const getHalves = (chunk) => {
     const halfLength = Math.ceil(chunk.length / 2);
     const halves = [chunk.slice(0, halfLength), chunk.slice(halfLength)];
-    const halfLengths = halves.map((half) => [].concat(...half.flat(Infinity)).length);
+    const halfLengths = halves.map((half) => half.flat(Infinity).flat().length);
     const shortLength = Math.min(...halfLengths.flat(Infinity));
     const longLength = Math.max(...halfLengths.flat(Infinity));
     const longIndex = halfLengths.indexOf(longLength);
     const unequalHalves = shortLength !== longLength;
-    const shuffledHalves = shuffleArray(halves);
+    const shuffledHalves = shuffleArray(halves, random);
     const [greaterHalf, lesserHalf] =
       !shortLength || unequalHalves
         ? [halves[longIndex], halves[1 - longIndex]]
@@ -60,7 +62,7 @@ export function getUnseededByePositions({
   const getNextDrawPosition = (chunks) => {
     const { greaterHalf, lesserHalf } = getHalves(chunks);
     const { greaterHalf: greaterQuarter, lesserHalf: lesserQuarter } = getHalves(greaterHalf);
-    const shuffledQuarter = shuffleArray(greaterQuarter.flat(Infinity));
+    const shuffledQuarter = shuffleArray(greaterQuarter.flat(Infinity), random);
     const drawPosition = shuffledQuarter.pop();
     const diminishedQuarter = greaterQuarter.flat().filter((position) => position !== drawPosition);
     const newlyFilteredChunks = [...lesserHalf, ...lesserQuarter, diminishedQuarter];
@@ -71,7 +73,7 @@ export function getUnseededByePositions({
   const quarterSeparateBlock = (block) => {
     const sortedChunked = chunkArray(block.sort(numericSort), Math.ceil(block.length / 4));
     let filteredChunks = sortedChunked.map((chunk) => chunk.filter(unfilledDrawPosition));
-    const drawPositionCount = [].concat(...filteredChunks.flat(Infinity)).length;
+    const drawPositionCount = filteredChunks.flat(Infinity).flat().length;
     const orderedDrawPositions: number[] = [];
     for (let i = 0; i < drawPositionCount; i++) {
       const { newlyFilteredChunks, drawPosition } = getNextDrawPosition(filteredChunks);
@@ -129,7 +131,7 @@ export function getUnseededByePositions({
   const findDrawPositionPair = (drawPosition) => {
     return matchUpPairedDrawPositions.reduce((pair, candidate) => {
       return candidate.includes(drawPosition)
-        ? candidate.reduce((p, c) => (c !== drawPosition ? c : p), undefined)
+        ? candidate.reduce((p, c) => (c === drawPosition ? p : c), undefined)
         : pair;
     }, undefined);
   };
@@ -148,9 +150,9 @@ export function getUnseededByePositions({
     const seedingOverhang = seedLimit % 4;
     const overhangDrawPositions = unseededByePositions.slice(0, seedingOverhang);
     const qualifierBlocksCount = roundMatchUps[structure.roundLimit]?.length;
-    const shuffledRemainder = chunkArray(unseededByePositions.slice(seedingOverhang), qualifierBlocksCount)
-      .map(shuffleArray)
-      .flat();
+    const shuffledRemainder = chunkArray(unseededByePositions.slice(seedingOverhang), qualifierBlocksCount).flatMap(
+      (chunk) => shuffleArray(chunk, random),
+    );
     unseededByePositions = overhangDrawPositions.concat(shuffledRemainder);
   }
 

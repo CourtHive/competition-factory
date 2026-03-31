@@ -69,6 +69,7 @@ export function generateEventWithDraw(params) {
     drawProfile,
     startDate,
     drawIndex,
+    random,
     uuids,
   } = params;
 
@@ -99,7 +100,7 @@ export function generateEventWithDraw(params) {
 
   const drawSize = drawProfileCopy.drawSize || (drawProfileCopy.ignoreDefaults ? undefined : 32);
 
-  const eventId = drawProfileCopy.eventId || UUID();
+  const eventId = drawProfileCopy.eventId || UUID(undefined, random);
   const eventType = drawProfile.eventType || drawProfile.matchUpType || SINGLES;
   const isHybrid = eventType === HYBRID;
   const participantType = eventType === DOUBLES ? PAIR : INDIVIDUAL;
@@ -185,6 +186,7 @@ export function generateEventWithDraw(params) {
         tieFormatName,
         tieFormat,
         drawSize,
+        random,
       }));
 
       // Apply teamGenders override from drawProfile (floor, not ceiling)
@@ -224,6 +226,7 @@ export function generateEventWithDraw(params) {
       gendersCount,
       idPrefix,
       category,
+      random,
     });
     const unique = result.participants as Participant[];
 
@@ -261,7 +264,10 @@ export function generateEventWithDraw(params) {
             !femaleIndividualParticipantIds.includes(participantId),
         );
 
-      const teamNames = [...(drawProfileCopy.teamNames ?? []), ...nameMocks({ count: drawParticipantsCount }).names];
+      const teamNames = [
+        ...(drawProfileCopy.teamNames ?? []),
+        ...nameMocks({ count: drawParticipantsCount, random }).names,
+      ];
       const mixedCount = teamSize - (genders[MALE] + genders[FEMALE]);
       // use indices to keep track of positions within pId arrays
       let fIndex = 0,
@@ -279,10 +285,10 @@ export function generateEventWithDraw(params) {
         return {
           participantName: teamNames[teamIndex] || `Team ${teamIndex + 1}`,
           participantOtherName: `TM${teamIndex + 1}`,
+          participantId: UUID(undefined, random),
           participantRole: COMPETITOR,
           individualParticipantIds,
           participantType: TEAM,
-          participantId: UUID(),
         };
       });
       const result = addParticipants({
@@ -308,7 +314,7 @@ export function generateEventWithDraw(params) {
           individualParticipantIds: [m1.participantId, m2.participantId],
           participantRole: COMPETITOR,
           participantType: PAIR,
-          participantId: UUID(),
+          participantId: UUID(undefined, random),
         });
       }
 
@@ -463,6 +469,7 @@ export function generateEventWithDraw(params) {
     matchUpFormat,
     eventId,
     isMock,
+    random,
     event,
   });
 
@@ -495,6 +502,7 @@ export function generateEventWithDraw(params) {
           tournamentRecord,
           drawDefinition,
           matchUpFormat,
+          random,
           event,
         });
         if (result.error) return result;
@@ -521,6 +529,7 @@ export function generateEventWithDraw(params) {
             tournamentRecord,
             drawDefinition,
             matchUpFormat,
+            random,
             event,
           });
           if (result.error) return result;

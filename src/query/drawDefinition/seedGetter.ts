@@ -32,6 +32,7 @@ type GetValidSeedBlocksArgs = {
   returnAllProxies?: boolean;
   allPositions?: boolean;
   structure: Structure;
+  random?: () => number;
 };
 
 export function getValidSeedBlocks({
@@ -42,6 +43,7 @@ export function getValidSeedBlocks({
   drawDefinition,
   allPositions,
   structure,
+  random,
 }: GetValidSeedBlocksArgs) {
   let validSeedBlocks: SeedBlock[] = [];
 
@@ -133,6 +135,7 @@ export function getValidSeedBlocks({
         nonRandom: seedingProfile?.nonRandom,
         positioning,
         seedGroups,
+        random,
       }));
     }
   } else if (isContainer) {
@@ -140,6 +143,7 @@ export function getValidSeedBlocks({
       nonRandom: seedingProfile?.nonRandom,
       seedingProfile,
       structure,
+      random,
     });
     ({ validSeedBlocks } = result);
   } else if (isFeedIn) {
@@ -190,7 +194,7 @@ export function getValidSeedBlocks({
   };
 }
 
-export function getContainerBlocks({ seedingProfile, structure, nonRandom }) {
+export function getContainerBlocks({ seedingProfile, structure, nonRandom, random }) {
   const containedStructures = structure.structures || [];
   const roundRobinGroupsCount = containedStructures.length;
   const positionAssignments = getPositionAssignments({
@@ -214,6 +218,7 @@ export function getContainerBlocks({ seedingProfile, structure, nonRandom }) {
     positioning,
     seedGroups,
     nonRandom,
+    random,
   });
 }
 
@@ -222,6 +227,7 @@ type GetSeedBlockPatternArgs = {
   seedGroups: number[][];
   positioning?: string;
   nonRandom?: boolean;
+  random?: () => number;
 };
 
 export function getSeedBlockPattern({
@@ -229,6 +235,7 @@ export function getSeedBlockPattern({
   positioning,
   seedGroups,
   nonRandom,
+  random,
 }: GetSeedBlockPatternArgs) {
   const validSeedBlocks: SeedBlock[] = [];
 
@@ -250,7 +257,7 @@ export function getSeedBlockPattern({
         (drawPosition, i) => relativePositions.includes(i + 1) && drawPosition,
       );
       if (positioning !== WATERFALL) {
-        consideredDrawPositions = nonRandom ? consideredDrawPositions : shuffleArray(consideredDrawPositions);
+        consideredDrawPositions = nonRandom ? consideredDrawPositions : shuffleArray(consideredDrawPositions, random);
       } else if (i % 2) {
         consideredDrawPositions.reverse();
       }
@@ -353,7 +360,7 @@ export function isValidSeedPosition({
 }
 
 export function getNextSeedBlock(params) {
-  const { provisionalPositioning, drawDefinition, seedingProfile, seedBlockInfo, structureId, randomize } = params;
+  const { provisionalPositioning, drawDefinition, seedingProfile, seedBlockInfo, structureId, randomize, random } = params;
 
   const { structure } = findStructure({ drawDefinition, structureId });
   const { seedAssignments } = getStructureSeedAssignments({
@@ -412,7 +419,7 @@ export function getNextSeedBlock(params) {
     (seedsLeftToAssign &&
       nextSeedBlock?.drawPositions.filter((drawPosition) => !assignedDrawPositions?.includes(drawPosition))) ||
     [];
-  const unfilledPositions = randomize ? shuffleArray(unfilled) : unfilled;
+  const unfilledPositions = randomize ? shuffleArray(unfilled, random) : unfilled;
   const selectedParticipantIds: string[] = [];
   const randomlySelectedUnplacedSeedValueIds = unfilledPositions
     .map(() => {
@@ -461,7 +468,7 @@ export function getNextSeedBlock(params) {
     const assignmentsWithLowestSeedValue = filteredAssignments.filter(
       (assignment) => getNumericSeedValue(assignment.seedValue) === lowestSeedValue,
     );
-    const randomizedAssignments = shuffleArray(assignmentsWithLowestSeedValue);
+    const randomizedAssignments = shuffleArray(assignmentsWithLowestSeedValue, random);
     return randomizedAssignments.pop();
   }
 }

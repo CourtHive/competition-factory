@@ -42,7 +42,7 @@ export function processTieFormat(params) {
     }
 
     // ensure every collectionDefinition has a collectionId
-    if (!collectionId) collectionDefinition.collectionId = UUID();
+    if (!collectionId) collectionDefinition.collectionId = UUID(undefined, params.random);
 
     if (isMatchUpEventType(DOUBLES)(matchUpType)) {
       const doublesCount = matchUpCount;

@@ -11,9 +11,10 @@ import { MAIN } from '@Constants/drawDefinitionConstants';
 
 interface GetRandomQualifierListParams {
   drawDefinition: DrawDefinition;
+  random?: () => number;
 }
 
-export const getRandomQualifierList = ({ drawDefinition }: GetRandomQualifierListParams) => {
+export const getRandomQualifierList = ({ drawDefinition, random }: GetRandomQualifierListParams) => {
   const paramsCheck = checkRequiredParameters({ drawDefinition }, [{ [DRAW_DEFINITION]: true }]);
 
   if (paramsCheck.error) return paramsCheck;
@@ -31,5 +32,6 @@ export const getRandomQualifierList = ({ drawDefinition }: GetRandomQualifierLis
   } = structureAssignedDrawPositions({ structure: mainStructure });
 
    
-  return generateRange(0, qualifierPositions.length).sort(() => Math.random() - 0.5);
+  const rng = random ?? Math.random;
+  return generateRange(0, qualifierPositions.length).sort(() => rng() - 0.5);
 };

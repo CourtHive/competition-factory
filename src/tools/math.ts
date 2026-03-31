@@ -54,11 +54,11 @@ export function nextPowerOf2(n?) {
   return n;
 }
 
-export function randomInt(min, max) {
+export function randomInt(min, max, random?: () => number) {
   min = Math.ceil(min);
   max = Math.floor(max);
 
-  return Math.floor(Math.random() * (max - min + 1)) + min;
+  return Math.floor((random ?? Math.random)() * (max - min + 1)) + min;
 }
 
 // does accept e.e. '1.0'
@@ -68,10 +68,11 @@ export function isConvertableInteger(n) {
 }
 
 // produces an approximated normal distribution between 0 and max
-export function weightedRandom(max = 1, weight = 3, round = true) {
+export function weightedRandom(max = 1, weight = 3, round = true, random?: () => number) {
+  const rng = random ?? Math.random;
   let num = 0;
   for (let i = 0; i < weight; i++) {
-    num += Math.random() * (max / weight);
+    num += rng() * (max / weight);
   }
   return round && max > 1 ? Math.round(num) : num;
 }
@@ -83,16 +84,17 @@ function stepRound(value, step) {
   return Math.round(value * inv) / inv;
 }
 
-export function skewedDistribution(min: number, max: number, skew: number, step?, significantDecimals = 2) {
-  const u = 1 - Math.random();
+export function skewedDistribution(min: number, max: number, skew: number, step?, significantDecimals = 2, random?: () => number) {
+  const rng = random ?? Math.random;
+  const u = 1 - rng();
 
-  const v = 1 - Math.random();
+  const v = 1 - rng();
   let num = Math.sqrt(-2 * Math.log(u)) * Math.cos(2 * Math.PI * v);
 
   num = num / 10 + 0.5;
 
   if (num > 1 || num < 0) {
-    num = skewedDistribution(min, max, skew);
+    num = skewedDistribution(min, max, skew, undefined, 2, random);
   } else {
     num = Math.pow(num, skew);
     num *= max - min;

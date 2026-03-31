@@ -51,6 +51,7 @@ export function generateOutcome(params) {
     matchUpFormat = FORMAT_STANDARD,
     pointsPerMinute = 2.5,
     sideWeight = 4,
+    random,
   } = params;
 
   if (!isValidMatchUpFormat({ matchUpFormat })) return { error: INVALID_MATCHUP_FORMAT };
@@ -78,7 +79,7 @@ export function generateOutcome(params) {
     { pointer: 0, valueMap: [] },
   );
 
-  const outcomePointer = randomInt(1, 100);
+  const outcomePointer = randomInt(1, 100, random);
   const matchUpStatus: string = (matchUpStatusMap.valueMap.find((item) => outcomePointer <= item[0]) ?? [
     100,
     COMPLETED,
@@ -86,14 +87,14 @@ export function generateOutcome(params) {
 
   const noScore = { sets: [], scoreStringSide1: '', side2ScoreString: '' };
   if (isExit(matchUpStatus)) {
-    winningSide = winningSide || randomInt(1, 2);
+    winningSide = winningSide || randomInt(1, 2, random);
     const outcome = {
       score: noScore,
       matchUpStatus,
       winningSide,
     };
 
-    const scoreDefaulted = matchUpStatus === DEFAULTED && randomInt(1, 100) > 100 - defaultWithScorePercent;
+    const scoreDefaulted = matchUpStatus === DEFAULTED && randomInt(1, 100, random) > 100 - defaultWithScorePercent;
     if (!scoreDefaulted) return { outcome };
   } else if ([DOUBLE_WALKOVER, DOUBLE_DEFAULT].includes(matchUpStatus)) {
     return { outcome: { score: noScore, matchUpStatus } };
@@ -104,7 +105,7 @@ export function generateOutcome(params) {
   const { bestOf = 1, exactly, setFormat, finalSetFormat } = parsedFormat ?? {};
 
   const sets: any[] = [];
-  const weightedSide = randomInt(0, 1);
+  const weightedSide = randomInt(0, 1, random);
   const weightedRange = winningSide
     ? [winningSide - 1]
     : [...generateRange(0, sideWeight).map(() => weightedSide), 1 - weightedSide];
@@ -114,7 +115,7 @@ export function generateOutcome(params) {
   // if there is to be an incomplete set randomize which set is incomplete
   // for 3 sets this will always be setNumber 1 or setNumber 2
   // because it is not known in advance whether 3 sets will be generated
-  const incompleteAt = incompleteSet && (randomPop(generateRange(1, exactly || bestOf)) || 1);
+  const incompleteAt = incompleteSet && (randomPop(generateRange(1, exactly || bestOf), random) || 1);
 
   // used to capture winner by RETIREMENT or DEFAULT
   let weightedWinningSide;
@@ -129,6 +130,7 @@ export function generateOutcome(params) {
       matchUpStatus,
       weightedRange,
       setNumber,
+      random,
     });
     sets.push(set);
 
@@ -149,7 +151,7 @@ export function generateOutcome(params) {
     // Aggregate scoring: winner determined by total points across all sets
     let side1Total = sets.reduce((sum, s) => sum + (s.side1Score ?? 0), 0);
     let side2Total = sets.reduce((sum, s) => sum + (s.side2Score ?? 0), 0);
-    const adjustSet = randomInt(0, sets.length - 1);
+    const adjustSet = randomInt(0, sets.length - 1, random);
     const maxSetScore = parsedFormat?.setFormat?.outs ? parsedFormat.setFormat.outs * 3 : undefined;
 
     if (winningSide) {
@@ -173,14 +175,14 @@ export function generateOutcome(params) {
             adjustAggregateBounded(sets, winningSide, 1, maxSetScore, adjustSet);
           }
         } else {
-          const diff = Math.abs(side1Total - side2Total) + randomInt(1, 3);
+          const diff = Math.abs(side1Total - side2Total) + randomInt(1, 3, random);
           if (winningSide === 1) sets[adjustSet].side1Score += diff;
           else sets[adjustSet].side2Score += diff;
         }
       }
       matchUpWinningSide = winningSide;
     } else if (side1Total === side2Total) {
-      const side = randomInt(1, 2);
+      const side = randomInt(1, 2, random);
       adjustAggregateBounded(sets, side, 1, maxSetScore, adjustSet);
       matchUpWinningSide = side;
     } else {
@@ -214,23 +216,23 @@ export function generateOutcome(params) {
  * @param {integer[]} weightedRange - weights one side to reduce the number of "deciding sets", e.g. 3 set matchUps
  * @returns
  */
-function generateSet({ weightedRange = [0, 1], pointsPerMinute, matchUpStatus, incomplete, setFormat, setNumber }) {
+function generateSet({ weightedRange = [0, 1], pointsPerMinute, matchUpStatus, incomplete, setFormat, setNumber, random }) {
   const set: any = { setNumber };
   const { setTo, tiebreakFormat, tiebreakAt, tiebreakSet, timed, minutes, outs } = setFormat;
 
   // will tend to be more likely to either reverse or not revderse all sets
   // preserves randomness of winningSide while reducing deciding set outcomes
-  const weightIndex = randomInt(0, weightedRange.length - 1);
+  const weightIndex = randomInt(0, weightedRange.length - 1, random);
   const reverseScores = weightedRange[weightIndex];
   let winningSideNumber;
 
   if (timed) {
     const calcPoints = minutes * pointsPerMinute;
     const pointsVariation = Math.round(calcPoints * 0.2);
-    const totalPoints = calcPoints + randomPop([1, -1]) * pointsVariation;
+    const totalPoints = calcPoints + randomPop([1, -1], random) * pointsVariation;
     // the use of weightedRandom applies a bell curve distribution to the difference in side scores
     // the larger the second value, the more pronounced the bell curve will be
-    const sidePoints = weightedRandom(totalPoints, 2);
+    const sidePoints = weightedRandom(totalPoints, 2, undefined, random);
     const scores = [sidePoints, totalPoints - sidePoints];
 
     if (reverseScores) scores.reverse();
@@ -249,7 +251,7 @@ function generateSet({ weightedRange = [0, 1], pointsPerMinute, matchUpStatus, i
       return { set, incomplete };
     }
 
-    if (!highSide) scores[randomInt(0, 1)] += 1;
+    if (!highSide) scores[randomInt(0, 1, random)] += 1;
     highSide = scores[0] > scores[1] ? 1 : 2; // sides are not tied
     if (highSide !== winningSideNumber) scores.reverse();
 
@@ -265,7 +267,7 @@ function generateSet({ weightedRange = [0, 1], pointsPerMinute, matchUpStatus, i
     // Outs-based scoring (e.g., wiffle ball innings with 3 outs)
     // Generates single-digit scores (0 to outs * 3)
     const maxScore = outs * 3;
-    const scores = [randomInt(0, maxScore), randomInt(0, maxScore)];
+    const scores = [randomInt(0, maxScore, random), randomInt(0, maxScore, random)];
 
     winningSideNumber = weightedRange[weightIndex] + 1;
     if (reverseScores) scores.reverse();
@@ -287,8 +289,8 @@ function generateSet({ weightedRange = [0, 1], pointsPerMinute, matchUpStatus, i
 
     return { set };
   } else if (incomplete) {
-    set.side1Score = randomInt(0, tiebreakAt);
-    set.side2Score = randomInt(0, tiebreakAt);
+    set.side1Score = randomInt(0, tiebreakAt, random);
+    set.side2Score = randomInt(0, tiebreakAt, random);
 
     if (completedMatchUpStatuses.includes(matchUpStatus)) {
       winningSideNumber = weightedRange[weightIndex] + 1;
@@ -298,7 +300,7 @@ function generateSet({ weightedRange = [0, 1], pointsPerMinute, matchUpStatus, i
   } else {
     // weight the range of possible low scores such that tiebreak sets are less likely
     const range = generateRange(1, setTo + 1).flatMap((value) => generateRange(0, setTo + 2 - value).map(() => value));
-    const lowValue = range[randomInt(0, range.length - 1)];
+    const lowValue = range[randomInt(0, range.length - 1, random)];
 
     const scores =
       setTo &&
@@ -334,7 +336,7 @@ function generateSet({ weightedRange = [0, 1], pointsPerMinute, matchUpStatus, i
       const range = generateRange(1, tiebreakTo + 1).flatMap((value) =>
         generateRange(0, tiebreakTo + 2 - value).map(() => value),
       );
-      const lowValue = range[randomInt(0, range.length - 1)];
+      const lowValue = range[randomInt(0, range.length - 1, random)];
       const scores = getTiebreakComplement({
         isSide1: true,
         tiebreakNoAd,

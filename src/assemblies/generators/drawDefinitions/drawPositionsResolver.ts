@@ -1,8 +1,9 @@
+import { chunkArray, generateRange, overlap, randomPop, shuffleArray } from '@Tools/arrays';
 import { getDrawPosition } from '@Functions/global/extractors';
 import { makeDeepCopy } from '@Tools/makeDeepCopy';
 import { ensureInt } from '@Tools/ensureInt';
-import { chunkArray, generateRange, overlap, randomPop, shuffleArray } from '@Tools/arrays';
 
+// Constants
 import { MISSING_VALUE } from '@Constants/errorConditionConstants';
 
 /**
@@ -25,7 +26,15 @@ import { MISSING_VALUE } from '@Constants/errorConditionConstants';
  * ACKNOWLEDGEMENT: Inspired by commentary from Shannon Wrege relating to the ITA Kickoff Weekend draft
  */
 
-export function resolveDrawPositions({ positionAssignments, participantFactors }) {
+export function resolveDrawPositions({
+  positionAssignments,
+  participantFactors,
+  random,
+}: {
+  positionAssignments: any;
+  participantFactors: any;
+  random?: () => number;
+}) {
   if (!participantFactors || !positionAssignments) return { error: MISSING_VALUE };
   // make a copy so that the original can be referenced
   let participantPreferences = makeDeepCopy(participantFactors, false, true);
@@ -43,6 +52,7 @@ export function resolveDrawPositions({ positionAssignments, participantFactors }
     ({ drawPositionResolutions, remainingPreferences, participantPreferences } = resolvePreferences({
       participantPreferences,
       drawPositionResolutions,
+      random,
     }));
   }
 
@@ -73,19 +83,19 @@ export function resolveDrawPositions({ positionAssignments, participantFactors }
         }
       });
     });
-    const chunkSignatures = shuffleArray(Object.keys(chunkMap));
+    const chunkSignatures = shuffleArray(Object.keys(chunkMap), random);
     chunkSignatures.forEach((chunkSignature) => {
       const candidates = chunkMap[chunkSignature].filter((participantId) =>
         unresolvedParticipantIds.includes(participantId),
       );
       while (candidates.length) {
-        const participantId = randomPop(candidates);
+        const participantId = randomPop(candidates, random);
         const drawPositions = chunkSignature
           .split('|')
           .map((dp) => ensureInt(dp))
           .filter((drawPosition) => remainingDrawPositions.includes(ensureInt(drawPosition)));
         if (drawPositions.length) {
-          const drawPosition = randomPop(drawPositions);
+          const drawPosition = randomPop(drawPositions, random);
           remainingDrawPositions = remainingDrawPositions.filter((dp) => dp !== drawPosition);
           unresolvedParticipantIds = unresolvedParticipantIds.filter((id) => id !== participantId);
           drawPositionResolutions[drawPosition] = participantId;
@@ -105,7 +115,7 @@ export function resolveDrawPositions({ positionAssignments, participantFactors }
   // finally, if not all participantIds are resolved, assign at random
   if (unresolvedParticipantIds.length) {
     unresolvedParticipantIds.forEach((participantId) => {
-      const drawPosition = randomPop(remainingDrawPositions);
+      const drawPosition = randomPop(remainingDrawPositions, random);
       if (drawPosition) drawPositionResolutions[drawPosition] = participantId;
     });
     report.randomAssignment = unresolvedParticipantIds.length;
@@ -114,7 +124,7 @@ export function resolveDrawPositions({ positionAssignments, participantFactors }
   return { drawPositionResolutions, report };
 }
 
-function resolvePreferences({ participantPreferences, drawPositionResolutions = {} }) {
+function resolvePreferences({ participantPreferences, drawPositionResolutions = {}, random }) {
   // for all participantPreferences create a map of drawPositions to arrays of participantIds which have the drawPosition as first preference
   const drawPositionsMap = Object.keys(participantPreferences).reduce((dpm, participantId) => {
     const pp = participantPreferences[participantId];
@@ -144,7 +154,7 @@ function resolvePreferences({ participantPreferences, drawPositionResolutions = 
   // award selected drawPositions to one of the contenders at random
   minimumContentionPositions.forEach((position) => {
     const candidates = drawPositionsMap[position];
-    const selectedParticipantId = randomPop(candidates);
+    const selectedParticipantId = randomPop(candidates, random);
     drawPositionResolutions[position] = selectedParticipantId;
     // remove resolved participantIds from preferences
     delete participantPreferences[selectedParticipantId];

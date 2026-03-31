@@ -25,6 +25,7 @@ type GeneratePositioningCandidateArgs = {
   idCollections: IdCollections;
   pairedPriority?: boolean; // flag whether to prioritize positions which already have one opponent placed
   drawSize?: number;
+  random?: () => number;
 };
 
 export function generatePositioningCandidate(params: GeneratePositioningCandidateArgs) {
@@ -37,6 +38,7 @@ export function generatePositioningCandidate(params: GeneratePositioningCandidat
     policyAttributes,
     idCollections,
     allGroups,
+    random,
   } = params;
 
   const errors: any[] = [];
@@ -99,6 +101,7 @@ export function generatePositioningCandidate(params: GeneratePositioningCandidat
       const result = swapAssignedPositions({
         candidatePositionAssignments,
         swapOptions,
+        random,
       });
       if (result.error) console.log({ result });
 
@@ -139,12 +142,20 @@ export function generatePositioningCandidate(params: GeneratePositioningCandidat
   };
 }
 
-export function swapAssignedPositions({ candidatePositionAssignments, swapOptions }) {
-  const swapOption = randomPop(swapOptions);
+export function swapAssignedPositions({
+  candidatePositionAssignments,
+  swapOptions,
+  random,
+}: {
+  candidatePositionAssignments: any;
+  swapOptions: any;
+  random?: () => number;
+}) {
+  const swapOption = randomPop(swapOptions, random);
   if (!swapOption) return { error: { message: 'No swap options' } };
 
   const firstPosition = swapOption.drawPosition;
-  const secondPosition = randomPop(swapOption.possibleDrawPositions);
+  const secondPosition = randomPop(swapOption.possibleDrawPositions, random);
   const firstAssignment = candidatePositionAssignments.find((assignment) => assignment.drawPosition === firstPosition);
   const secondAssignment =
     candidatePositionAssignments.find((assignment) => assignment.drawPosition === secondPosition) ?? {};

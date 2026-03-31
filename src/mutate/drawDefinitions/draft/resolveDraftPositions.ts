@@ -14,6 +14,7 @@ import { SUCCESS } from '@Constants/resultConstants';
 type ResolveDraftPositionsArgs = {
   tournamentRecord?: Tournament;
   drawDefinition?: DrawDefinition;
+  random?: () => number;
   applyResults?: boolean;
   tierIndex?: number;
   event?: Event;
@@ -24,6 +25,7 @@ export function resolveDraftPositions({
   drawDefinition,
   applyResults = true,
   tierIndex: targetTierIndex,
+  random,
   event,
 }: ResolveDraftPositionsArgs) {
   if (!drawDefinition) return { error: MISSING_DRAW_DEFINITION };
@@ -116,7 +118,8 @@ export function resolveDraftPositions({
         .map((a) => a.drawPosition);
 
       // simple random assignment for no-preference participants
-      const shuffled = [...unassigned].sort(() => Math.random() - 0.5);
+      const rng = random ?? Math.random;
+      const shuffled = [...unassigned].sort(() => rng() - 0.5);
       for (let i = 0; i < participantsWithoutPreferences.length && i < shuffled.length; i++) {
         const dp = shuffled[i];
         const pid = participantsWithoutPreferences[i];

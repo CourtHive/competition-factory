@@ -7,11 +7,13 @@ import { generateRange, randomPop } from '@Tools/arrays';
 import { findStructure } from '@Acquire/findStructure';
 import { ensureInt } from '@Tools/ensureInt';
 
+// Constants
+import { INVALID_STAGE, NO_DRAW_POSITIONS_AVAILABLE_FOR_QUALIFIERS } from '@Constants/errorConditionConstants';
 import { CONSOLATION } from '@Constants/drawDefinitionConstants';
 import { SUCCESS } from '@Constants/resultConstants';
-import { INVALID_STAGE, NO_DRAW_POSITIONS_AVAILABLE_FOR_QUALIFIERS } from '@Constants/errorConditionConstants';
 
 export function positionQualifiers(params) {
+  const { random } = params;
   const structure = params.structure ?? findStructure(params).structure;
 
   const stack = 'positionQualifiers';
@@ -43,7 +45,7 @@ export function positionQualifiers(params) {
       });
 
     generateRange(0, unplacedRoundQualifierCounts[roundNumber]).forEach(() => {
-      const drawPosition = randomPop(unfilledDrawPositions);
+      const drawPosition = randomPop(unfilledDrawPositions, random);
       qualifierDrawPositions.push(drawPosition);
       positionAssignments?.forEach((assignment) => {
         if (assignment.drawPosition === drawPosition) {

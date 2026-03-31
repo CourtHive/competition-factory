@@ -11,12 +11,13 @@ export function noNulls(arr) {
   return arr?.map((item) => (item === null ? undefined : item));
 }
 
-export function shuffleArray(arr) {
+export function shuffleArray(arr, random?: () => number) {
   if (!Array.isArray(arr)) return [];
+  const rng = random ?? Math.random;
   return (
     arr
-       
-      .map((a) => [Math.random(), a])
+
+      .map((a) => [rng(), a])
       .sort((a, b) => a[0] - b[0])
       .map((a) => a[1])
   );
@@ -63,15 +64,15 @@ function onlyUnique(value, index, self) {
 export function uniqueValues(arr) {
   return arr.filter(onlyUnique);
 }
-export function randomPop(array) {
+export function randomPop(array, random?: () => number) {
   return Array.isArray(array) && array.length
-    ?  
-      array.splice(Math.floor(Math.random() * array.length), 1)[0]
+    ?
+      array.splice(Math.floor((random ?? Math.random)() * array.length), 1)[0]
     : undefined;
 }
-export function randomMember(arr) {
-   
-  const index = Math.floor(Math.random() * arr.length);
+export function randomMember(arr, random?: () => number) {
+
+  const index = Math.floor((random ?? Math.random)() * arr.length);
   return arr[index];
 }
 

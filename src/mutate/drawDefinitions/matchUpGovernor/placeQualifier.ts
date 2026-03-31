@@ -14,7 +14,7 @@ import { ResultType } from '@Types/factoryTypes';
 
 export function placeQualifier(params): ResultType & { qualifierPlaced?: boolean } {
   let qualifierPlaced;
-  const { inContextDrawMatchUps, inContextMatchUp, drawDefinition, winningSide } = params;
+  const { inContextDrawMatchUps, inContextMatchUp, drawDefinition, winningSide, random } = params;
 
   const winnerTargetLink = params.targetData.targetLinks?.winnerTargetLink;
 
@@ -29,7 +29,7 @@ export function placeQualifier(params): ResultType & { qualifierPlaced?: boolean
         m.roundNumber === winnerTargetLink.target.roundNumber &&
         m.sides.some(({ participantId, qualifier }) => qualifier && !participantId),
     );
-    const mainDrawTargetMatchUp = randomMember(mainDrawQualifierMatchUps);
+    const mainDrawTargetMatchUp = randomMember(mainDrawQualifierMatchUps, random);
     if (mainDrawTargetMatchUp?.matchUpStatus === TO_BE_PLAYED) {
       const targetData = positionTargets({
         matchUpId: mainDrawTargetMatchUp.matchUpId,

@@ -20,6 +20,7 @@ type GenerateFlightProfileArgs = {
   tournamentRecord: Tournament;
   deleteExisting?: boolean;
   sortDescending?: boolean;
+  random?: () => number;
   drawNameRoot?: string;
   scaleSortMethod?: any;
   stage?: StageTypeUnion;
@@ -49,6 +50,7 @@ export function generateFlightProfile(params: GenerateFlightProfileArgs): {
     flightsCount,
     splitMethod,
     uuids = [],
+    random,
     event,
     stage,
   } = params;
@@ -81,6 +83,7 @@ export function generateFlightProfile(params: GenerateFlightProfileArgs): {
           (!entry.entryStatus || // absence of entryStatus is equivalent to DIRECT_ACCEPTANCE
             DIRECT_ENTRY_STATUSES.includes(entry.entryStatus)),
       ),
+    random,
   );
 
   const flightEntries = scaledEntries.concat(...unscaledEntries);
@@ -116,7 +119,7 @@ export function generateFlightProfile(params: GenerateFlightProfileArgs): {
     const flightNumber = index + 1;
     return {
       flightNumber,
-      drawId: uuids?.pop() ?? UUID(),
+      drawId: uuids?.pop() ?? UUID(undefined, random),
       drawEntries: getDrawEntries(splitEntries[index]),
       drawName: (drawNames?.length && drawNames[index]) || `${drawNameRoot} ${flightNumber}`,
     };

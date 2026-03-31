@@ -8,9 +8,9 @@ import { findStructure } from '@Acquire/findStructure';
 import { shuffleArray } from '@Tools/arrays';
 
 // constants and types
-import { CONTAINER, ITEM, QUALIFYING } from '@Constants/drawDefinitionConstants';
 import { DrawDefinition, Event, Structure, Tournament } from '@Types/tournamentTypes';
 import { PolicyDefinitions, SeedingProfile, MatchUpsMap } from '@Types/factoryTypes';
+import { CONTAINER, ITEM, QUALIFYING } from '@Constants/drawDefinitionConstants';
 import { SUCCESS } from '@Constants/resultConstants';
 
 type PositionByesArgs = {
@@ -26,6 +26,7 @@ type PositionByesArgs = {
   seedsOnly?: boolean;
   seedLimit?: number;
   event?: Event;
+  random?: () => number;
 };
 export function positionByes({
   provisionalPositioning,
@@ -40,6 +41,7 @@ export function positionByes({
   seedLimit,
   seedsOnly,
   event,
+  random,
 }: PositionByesArgs) {
   if (!structure) ({ structure } = findStructure({ drawDefinition, structureId }));
   if (!structureId) structureId = structure?.structureId;
@@ -110,6 +112,7 @@ export function positionByes({
     seedLimit,
     structure,
     isFeedIn,
+    random,
   });
 
   const isOdd = (x) => x % 2;
@@ -137,7 +140,7 @@ export function positionByes({
   }
 
   if (ignoreSeededByes) {
-    byePositions = shuffleArray(byePositions);
+    byePositions = shuffleArray(byePositions, random);
     if (getDevContext({ ignoreSeededByes })) console.log({ byePositions });
   }
 

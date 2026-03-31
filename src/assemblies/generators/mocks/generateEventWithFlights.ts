@@ -33,6 +33,7 @@ export function generateEventWithFlights(params) {
     eventProfile,
     eventIndex,
     publish,
+    random,
     isMock,
     uuids,
   } = params;
@@ -54,7 +55,7 @@ export function generateEventWithFlights(params) {
     category,
   } = eventProfile;
 
-  const eventId = eventProfile.eventId || UUID();
+  const eventId = eventProfile.eventId || UUID(undefined, random);
   const tieFormat =
     eventProfile.tieFormat ||
     (eventType === TEAM
@@ -178,6 +179,7 @@ export function generateEventWithFlights(params) {
       randomWinningSide,
       tournamentRecord,
       drawProfiles,
+      random,
       isMock,
       event,
     });

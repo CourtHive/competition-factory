@@ -23,6 +23,7 @@ type PositionSeedBlocksArgs = {
   seedingProfile?: SeedingProfile;
   drawDefinition: DrawDefinition;
   matchUpsMap?: MatchUpsMap;
+  random?: () => number;
   structure?: Structure;
   groupsCount?: number;
   structureId?: string;
@@ -43,6 +44,7 @@ export function positionSeedBlocks({
   structureId,
   matchUpsMap,
   structure,
+  random,
   event,
 }: PositionSeedBlocksArgs) {
   const seedPositions: number[] = [];
@@ -62,6 +64,7 @@ export function positionSeedBlocks({
         drawDefinition,
         seedingProfile,
         structure,
+        random,
       });
     if (result?.error) errors.push(result.error);
     validSeedBlocks = result?.validSeedBlocks;
@@ -81,6 +84,7 @@ export function positionSeedBlocks({
         participants,
         structureId,
         matchUpsMap,
+        random,
         event,
       });
       if (result?.success) {
@@ -107,6 +111,7 @@ function positionSeedBlock({
   participants,
   structureId,
   matchUpsMap,
+  random,
   event,
 }): { success?: boolean; error?: ErrorType; seedPositions?: number[] } {
   const { unplacedSeedParticipantIds, unfilledPositions } = getNextSeedBlock({
@@ -116,6 +121,7 @@ function positionSeedBlock({
     seedingProfile,
     seedBlockInfo,
     structureId,
+    random,
     event,
   });
 

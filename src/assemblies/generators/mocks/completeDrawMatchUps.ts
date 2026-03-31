@@ -145,6 +145,7 @@ function completeStructureMatchUps({
   completionGoal,
   completedCount,
   roundNumber: roundNumberFilter,
+  random,
 }) {
   const matchUps = getAllStructureMatchUps({
     contextFilters: { matchUpTypes: [DOUBLES, SINGLES] },
@@ -191,6 +192,7 @@ function completeStructureMatchUps({
         matchUpStatus,
         scoreString,
         winningSide,
+        random,
         event,
       });
 
@@ -217,6 +219,7 @@ export function completeDrawMatchUps(params): {
     drawDefinition,
     roundNumber,
     stageSequence,
+    random,
     stage,
     event,
   } = params;
@@ -298,6 +301,7 @@ export function completeDrawMatchUps(params): {
         completionGoal,
         completedCount,
         roundNumber,
+        random,
       });
       if (result?.error) return result;
 
@@ -364,6 +368,7 @@ function smartComplete(params) {
     targetMatchUp,
     scoreString,
     winningSide,
+    random,
     event,
   } = params;
 
@@ -376,6 +381,7 @@ function smartComplete(params) {
     matchUpStatusProfile,
     matchUpFormat: resolvedFormat,
     winningSide,
+    random,
   });
 
   return setMatchUpStatus({

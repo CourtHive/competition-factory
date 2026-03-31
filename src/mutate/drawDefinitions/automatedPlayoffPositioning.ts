@@ -20,6 +20,7 @@ type AutomatedPlayoffPositioningArgs = {
   tournamentRecord?: Tournament;
   drawDefinition: DrawDefinition;
   applyPositioning?: boolean;
+  random?: () => number;
   structureId: string;
   placeByes?: boolean;
   seedsOnly?: boolean;
@@ -40,6 +41,7 @@ export function automatedPlayoffPositioning(params: AutomatedPlayoffPositioningA
     structureId,
     placeByes,
     seedsOnly,
+    random,
   } = params;
 
   if (!drawDefinition) return { error: DRAW_DEFINITION_NOT_FOUND };
@@ -72,6 +74,7 @@ export function automatedPlayoffPositioning(params: AutomatedPlayoffPositioningA
         seedingProfile,
         placeByes,
         seedsOnly,
+        random,
       });
 
       if (result.error) return result;
