@@ -272,40 +272,68 @@ function handleStandardSet(
   (point as any).score = gameScore;
 
   if (gameWon !== undefined) {
-    // Reset streak on game completion
-    if (isConsecutive) {
-      currentSet.currentStreak = undefined;
-    }
-    // Increment game score
-    if (gameWon === 0) {
-      currentSet.side1Score = side1Games + 1;
-    } else {
-      currentSet.side2Score = side2Games + 1;
-    }
-
-    // Record tiebreak scores
-    if (isTiebreak) {
-      currentSet.side1TiebreakScore = side1Points;
-      currentSet.side2TiebreakScore = side2Points;
-    }
-
-    // Check if set is won
-    const setWon = checkStandardSetWon(
-      currentSet.side1Score || 0,
-      currentSet.side2Score || 0,
+    handleGameCompletion(
+      currentSet,
+      gameWon,
+      side1Games,
+      side2Games,
+      side1Points,
+      side2Points,
+      isTiebreak,
+      isConsecutive,
+      matchUp,
+      formatStructure,
       activeSetFormat,
       isDecidingSet,
-      formatStructure.finalSetFormat,
+      setsToWin,
     );
+  }
+}
 
-    if (typeof setWon === 'number') {
-      currentSet.winningSide = setWon + 1;
-      checkAndFinalizeMatch(matchUp, formatStructure, setsToWin);
-    } else {
-      // Start new game
-      currentSet.side1GameScores.push(0);
-      currentSet.side2GameScores.push(0);
-    }
+function handleGameCompletion(
+  currentSet: SetScore,
+  gameWon: number,
+  side1Games: number,
+  side2Games: number,
+  side1Points: number,
+  side2Points: number,
+  isTiebreak: boolean,
+  isConsecutive: boolean,
+  matchUp: MatchUp,
+  formatStructure: FormatStructure,
+  activeSetFormat: SetFormatStructure,
+  isDecidingSet: boolean,
+  setsToWin: number,
+): void {
+  if (isConsecutive) {
+    currentSet.currentStreak = undefined;
+  }
+
+  if (gameWon === 0) {
+    currentSet.side1Score = side1Games + 1;
+  } else {
+    currentSet.side2Score = side2Games + 1;
+  }
+
+  if (isTiebreak) {
+    currentSet.side1TiebreakScore = side1Points;
+    currentSet.side2TiebreakScore = side2Points;
+  }
+
+  const setWon = checkStandardSetWon(
+    currentSet.side1Score || 0,
+    currentSet.side2Score || 0,
+    activeSetFormat,
+    isDecidingSet,
+    formatStructure.finalSetFormat,
+  );
+
+  if (typeof setWon === 'number') {
+    currentSet.winningSide = setWon + 1;
+    checkAndFinalizeMatch(matchUp, formatStructure, setsToWin);
+  } else {
+    currentSet.side1GameScores!.push(0);
+    currentSet.side2GameScores!.push(0);
   }
 }
 
@@ -500,7 +528,7 @@ function getOrCreateSet(matchUp: MatchUp, isTiebreakOnly: boolean, isTimed: bool
 /**
  * Check match completion and finalize if complete
  */
-function checkAndFinalizeMatch(matchUp: MatchUp, formatStructure: FormatStructure, setsToWin: number): void {
+export function checkAndFinalizeMatch(matchUp: MatchUp, formatStructure: FormatStructure, setsToWin: number): void {
   const setsWon: [number, number] = [0, 0];
   matchUp.score.sets.forEach((set) => {
     if (set.winningSide === 1) setsWon[0]++;
@@ -512,9 +540,10 @@ function checkAndFinalizeMatch(matchUp: MatchUp, formatStructure: FormatStructur
 
   if (isAggregate) {
     // Aggregate: all sets must be played, winner by total score
+    // Use sets.length (not winningSide filter) because tied sets are valid in aggregate formats
     const totalSets = exactly || formatStructure.bestOf || 3;
-    const completedSets = matchUp.score.sets.filter((s) => s.winningSide !== undefined).length;
-    if (completedSets < totalSets) return;
+    const playedSets = matchUp.score.sets.length;
+    if (playedSets < totalSets) return;
 
     // Sum scores
     const totals = matchUp.score.sets.reduce(
@@ -626,7 +655,7 @@ function checkStandardGameWon(
 /**
  * Check if a standard set is won
  */
-function checkStandardSetWon(
+export function checkStandardSetWon(
   side1Games: number,
   side2Games: number,
   setFormat: SetFormatStructure,
@@ -709,35 +738,18 @@ export function deriveServerBase(matchUp: MatchUp, formatStructure: FormatStruct
   const currentSetIndex = matchUp.score.sets.length - 1;
   const currentSet = currentSetIndex >= 0 ? matchUp.score.sets[currentSetIndex] : undefined;
 
-  // For tiebreak-only sets and match tiebreaks, alternate every 2 points
   if (setType === 'tiebreakOnly' || setType === 'matchTiebreak') {
-    const side1GameScores = currentSet?.side1GameScores || [];
-    const side2GameScores = currentSet?.side2GameScores || [];
-    const pointsPlayed = (side1GameScores[0] || 0) + (side2GameScores[0] || 0);
-
-    // Count total games from all previous sets to determine initial tiebreak server
-    let totalPreviousGames = 0;
-    for (let i = 0; i < matchUp.score.sets.length - 1; i++) {
-      const s = matchUp.score.sets[i];
-      totalPreviousGames += (s.side1Score || 0) + (s.side2Score || 0);
-    }
-
-    const tiebreakInitialServer = totalPreviousGames % 2;
-    const serverOffset = Math.floor(pointsPlayed / 2) % 2;
-    return ((tiebreakInitialServer + serverOffset) % 2) as 0 | 1;
+    return deriveTiebreakServer(matchUp, currentSet);
   }
 
-  // For timed sets, use simple alternation by scoring events
   if (setType === 'timed') {
-    const totalEvents = (currentSet?.side1Score || 0) + (currentSet?.side2Score || 0);
-    return (totalEvents % 2) as 0 | 1;
+    return deriveTimedServer(currentSet);
   }
 
   // Standard sets
   const side1Games = currentSet?.side1Score || 0;
   const side2Games = currentSet?.side2Score || 0;
 
-  // Count total games from all previous sets to maintain correct server alternation
   let totalPreviousGames = 0;
   for (let i = 0; i < matchUp.score.sets.length - 1; i++) {
     const s = matchUp.score.sets[i];
@@ -763,9 +775,29 @@ export function deriveServerBase(matchUp: MatchUp, formatStructure: FormatStruct
     return ((tiebreakInitialServer + serverOffset) % 2) as 0 | 1;
   }
 
-  // Regular game: server alternates each game
   const totalGames = totalPreviousGames + side1Games + side2Games;
   return (totalGames % 2) as 0 | 1;
+}
+
+function deriveTiebreakServer(matchUp: MatchUp, currentSet: SetScore | undefined): 0 | 1 {
+  const side1GameScores = currentSet?.side1GameScores || [];
+  const side2GameScores = currentSet?.side2GameScores || [];
+  const pointsPlayed = (side1GameScores[0] || 0) + (side2GameScores[0] || 0);
+
+  let totalPreviousGames = 0;
+  for (let i = 0; i < matchUp.score.sets.length - 1; i++) {
+    const s = matchUp.score.sets[i];
+    totalPreviousGames += (s.side1Score || 0) + (s.side2Score || 0);
+  }
+
+  const tiebreakInitialServer = totalPreviousGames % 2;
+  const serverOffset = Math.floor(pointsPlayed / 2) % 2;
+  return ((tiebreakInitialServer + serverOffset) % 2) as 0 | 1;
+}
+
+function deriveTimedServer(currentSet: SetScore | undefined): 0 | 1 {
+  const totalEvents = (currentSet?.side1Score || 0) + (currentSet?.side2Score || 0);
+  return (totalEvents % 2) as 0 | 1;
 }
 
 /**

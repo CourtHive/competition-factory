@@ -110,72 +110,16 @@ export function competitionScheduleMatchUps(params: CompetitionScheduleMatchUpsA
 
   const publishedOrderOfPlay = tournamentPublishStatus?.orderOfPlay;
 
-  if (publishedOrderOfPlay?.eventIds?.length) {
-    params.matchUpFilters ??= {};
-    if (params.matchUpFilters?.eventIds) {
-      if (params.matchUpFilters.eventIds.length) {
-        params.matchUpFilters.eventIds = params.matchUpFilters.eventIds.filter((eventId) =>
-          publishedOrderOfPlay.eventIds.includes(eventId),
-        );
-      } else {
-        params.matchUpFilters.eventIds = publishedOrderOfPlay.eventIds;
-      }
-    } else {
-      params.matchUpFilters.eventIds = publishedOrderOfPlay.eventIds;
-    }
-  }
+  applyPublishedEventIdFilter(params, publishedOrderOfPlay);
 
-  if (publishedOrderOfPlay?.scheduledDates?.length) {
-    params.matchUpFilters ??= {};
+  const earlyReturn = applyPublishedScheduledDatesFilter(params, publishedOrderOfPlay, {
+    allCompletedMatchUps,
+    alwaysReturnCompleted,
+    venues,
+  });
+  if (earlyReturn) return earlyReturn;
 
-    // Normalize singular scheduledDate into scheduledDates array so it participates in the intersection
-    if (params.matchUpFilters.scheduledDate && !params.matchUpFilters.scheduledDates) {
-      params.matchUpFilters.scheduledDates = [params.matchUpFilters.scheduledDate];
-    }
-
-    const hadCallerDates =
-      params.matchUpFilters.scheduledDates && params.matchUpFilters.scheduledDates.length > 0;
-
-    if (params.matchUpFilters.scheduledDates) {
-      if (params.matchUpFilters.scheduledDates.length) {
-        params.matchUpFilters.scheduledDates = params.matchUpFilters.scheduledDates.filter((scheduledDate) =>
-          publishedOrderOfPlay.scheduledDates.includes(scheduledDate),
-        );
-      } else {
-        params.matchUpFilters.scheduledDates = publishedOrderOfPlay.scheduledDates;
-      }
-    } else {
-      params.matchUpFilters.scheduledDates = publishedOrderOfPlay.scheduledDates;
-    }
-
-    // If the caller specified dates but none survived the intersection with published dates,
-    // no matchUps can match — return early with empty results
-    if (hadCallerDates && !params.matchUpFilters.scheduledDates?.length) {
-      return {
-        completedMatchUps: alwaysReturnCompleted ? allCompletedMatchUps : [],
-        dateMatchUps: [],
-        courtsData: [],
-        venues,
-        ...SUCCESS,
-      };
-    }
-
-    // Clear singular scheduledDate so filterMatchUps uses the intersected scheduledDates array
-    // (prevents fallback to a date that was excluded by the intersection)
-    delete params.matchUpFilters.scheduledDate;
-  }
-
-  // optimization: if all completed matchUps have already been retrieved, skip the hydration process
-  if (alwaysReturnCompleted) {
-    params.matchUpFilters ??= {};
-    if (params.matchUpFilters?.excludeMatchUpStatuses?.length) {
-      if (!params.matchUpFilters.excludeMatchUpStatuses.includes(COMPLETED)) {
-        params.matchUpFilters.excludeMatchUpStatuses.push(COMPLETED);
-      }
-    } else {
-      params.matchUpFilters.excludeMatchUpStatuses = [COMPLETED];
-    }
-  }
+  applyCompletedExclusion(params, alwaysReturnCompleted);
 
   const { completedMatchUps, upcomingMatchUps, pendingMatchUps, abandonedMatchUps, groupInfo, mappedParticipants } =
     getCompetitionMatchUps({
@@ -186,73 +130,12 @@ export function competitionScheduleMatchUps(params: CompetitionScheduleMatchUpsA
 
   let relevantMatchUps = [...(upcomingMatchUps ?? []), ...(pendingMatchUps ?? [])];
 
-  // add any stage or structure filtering
-  // publishedDrawIds provides support for legacy timeItems
   if (detailsMap && (!publishedDrawIds?.length || Object.keys(detailsMap).length)) {
-    relevantMatchUps = relevantMatchUps.filter((matchUp) => {
-      const { drawId, structureId, stage } = matchUp;
-      if (!isVisiblyPublished(detailsMap?.[drawId]?.publishingDetail)) return false;
-
-      const stageKeys = Object.keys(detailsMap[drawId].stageDetails ?? {});
-      if (stageKeys.length) {
-        const unpublishedStages = stageKeys.filter(
-          (stage) => !isVisiblyPublished(detailsMap[drawId].stageDetails[stage]),
-        );
-        const publishedStages = stageKeys.filter((stage) => isVisiblyPublished(detailsMap[drawId].stageDetails[stage]));
-        if (unpublishedStages.length && unpublishedStages.includes(stage)) return false;
-        if (publishedStages.length && publishedStages.includes(stage)) return true;
-        return unpublishedStages.length && !unpublishedStages.includes(stage) && !publishedStages.length;
-      }
-
-      const structureIdKeys = Object.keys(detailsMap[drawId].structureDetails ?? {});
-      if (structureIdKeys.length) {
-        const unpublishedStructureIds = structureIdKeys.filter(
-          (structureId) => !isVisiblyPublished(detailsMap[drawId].structureDetails[structureId]),
-        );
-        const publishedStructureIds = structureIdKeys.filter((structureId) =>
-          isVisiblyPublished(detailsMap[drawId].structureDetails[structureId]),
-        );
-        if (unpublishedStructureIds.length && unpublishedStructureIds.includes(structureId)) return false;
-        if (publishedStructureIds.length && publishedStructureIds.includes(structureId)) return true;
-        return (
-          unpublishedStructureIds.length &&
-          !unpublishedStructureIds.includes(structureId) &&
-          !publishedStructureIds.length
-        );
-      }
-
-      return true;
-    });
+    relevantMatchUps = relevantMatchUps.filter((matchUp) => filterByPublishState(matchUp, detailsMap));
   }
 
   if (detailsMap && usePublishState) {
-    relevantMatchUps = relevantMatchUps.filter((matchUp) => {
-      const { drawId, structureId, roundNumber } = matchUp;
-      if (!isConvertableInteger(roundNumber)) return true;
-
-      const structureDetail = detailsMap[drawId]?.structureDetails?.[structureId];
-      if (!structureDetail) return true;
-
-      const { scheduledRounds, roundLimit } = structureDetail;
-
-      // roundLimit is always the ceiling
-      if (isConvertableInteger(roundLimit) && roundNumber! > roundLimit) return false;
-
-      // scheduledRounds provides per-round overrides within the ceiling
-      if (scheduledRounds) {
-        const roundDetail = scheduledRounds[roundNumber!];
-        if (!roundDetail) return true; // unlisted → pass through normally
-
-        if (!roundDetail.published) return false; // explicitly unpublished → hide
-
-        if (isEmbargoed(roundDetail)) {
-          matchUp.schedule = undefined; // strip schedule for embargoed rounds
-          return true; // keep matchUp in results
-        }
-      }
-
-      return true;
-    });
+    relevantMatchUps = relevantMatchUps.filter((matchUp) => filterByRoundVisibility(matchUp, detailsMap));
   }
 
   const dateMatchUps = sortDateMatchUps
@@ -307,4 +190,133 @@ export function competitionScheduleMatchUps(params: CompetitionScheduleMatchUpsA
         })
       : courtMatchUps;
   }
+}
+
+function applyPublishedEventIdFilter(params, publishedOrderOfPlay) {
+  if (!publishedOrderOfPlay?.eventIds?.length) return;
+
+  params.matchUpFilters ??= {};
+  if (params.matchUpFilters?.eventIds) {
+    if (params.matchUpFilters.eventIds.length) {
+      params.matchUpFilters.eventIds = params.matchUpFilters.eventIds.filter((eventId) =>
+        publishedOrderOfPlay.eventIds.includes(eventId),
+      );
+    } else {
+      params.matchUpFilters.eventIds = publishedOrderOfPlay.eventIds;
+    }
+  } else {
+    params.matchUpFilters.eventIds = publishedOrderOfPlay.eventIds;
+  }
+}
+
+function applyPublishedScheduledDatesFilter(params, publishedOrderOfPlay, { allCompletedMatchUps, alwaysReturnCompleted, venues }) {
+  if (!publishedOrderOfPlay?.scheduledDates?.length) return undefined;
+
+  params.matchUpFilters ??= {};
+
+  if (params.matchUpFilters.scheduledDate && !params.matchUpFilters.scheduledDates) {
+    params.matchUpFilters.scheduledDates = [params.matchUpFilters.scheduledDate];
+  }
+
+  const hadCallerDates =
+    params.matchUpFilters.scheduledDates && params.matchUpFilters.scheduledDates.length > 0;
+
+  if (params.matchUpFilters.scheduledDates) {
+    if (params.matchUpFilters.scheduledDates.length) {
+      params.matchUpFilters.scheduledDates = params.matchUpFilters.scheduledDates.filter((scheduledDate) =>
+        publishedOrderOfPlay.scheduledDates.includes(scheduledDate),
+      );
+    } else {
+      params.matchUpFilters.scheduledDates = publishedOrderOfPlay.scheduledDates;
+    }
+  } else {
+    params.matchUpFilters.scheduledDates = publishedOrderOfPlay.scheduledDates;
+  }
+
+  if (hadCallerDates && !params.matchUpFilters.scheduledDates?.length) {
+    return {
+      completedMatchUps: alwaysReturnCompleted ? allCompletedMatchUps : [],
+      dateMatchUps: [],
+      courtsData: [],
+      venues,
+      ...SUCCESS,
+    };
+  }
+
+  delete params.matchUpFilters.scheduledDate;
+  return undefined;
+}
+
+function applyCompletedExclusion(params, alwaysReturnCompleted) {
+  if (!alwaysReturnCompleted) return;
+
+  params.matchUpFilters ??= {};
+  if (params.matchUpFilters?.excludeMatchUpStatuses?.length) {
+    if (!params.matchUpFilters.excludeMatchUpStatuses.includes(COMPLETED)) {
+      params.matchUpFilters.excludeMatchUpStatuses.push(COMPLETED);
+    }
+  } else {
+    params.matchUpFilters.excludeMatchUpStatuses = [COMPLETED];
+  }
+}
+
+function filterByPublishState(matchUp, detailsMap) {
+  const { drawId, structureId, stage } = matchUp;
+  if (!isVisiblyPublished(detailsMap?.[drawId]?.publishingDetail)) return false;
+
+  const stageKeys = Object.keys(detailsMap[drawId].stageDetails ?? {});
+  if (stageKeys.length) {
+    const unpublishedStages = stageKeys.filter(
+      (stage) => !isVisiblyPublished(detailsMap[drawId].stageDetails[stage]),
+    );
+    const publishedStages = stageKeys.filter((stage) => isVisiblyPublished(detailsMap[drawId].stageDetails[stage]));
+    if (unpublishedStages.length && unpublishedStages.includes(stage)) return false;
+    if (publishedStages.length && publishedStages.includes(stage)) return true;
+    return unpublishedStages.length && !unpublishedStages.includes(stage) && !publishedStages.length;
+  }
+
+  const structureIdKeys = Object.keys(detailsMap[drawId].structureDetails ?? {});
+  if (structureIdKeys.length) {
+    const unpublishedStructureIds = structureIdKeys.filter(
+      (structureId) => !isVisiblyPublished(detailsMap[drawId].structureDetails[structureId]),
+    );
+    const publishedStructureIds = structureIdKeys.filter((structureId) =>
+      isVisiblyPublished(detailsMap[drawId].structureDetails[structureId]),
+    );
+    if (unpublishedStructureIds.length && unpublishedStructureIds.includes(structureId)) return false;
+    if (publishedStructureIds.length && publishedStructureIds.includes(structureId)) return true;
+    return (
+      unpublishedStructureIds.length &&
+      !unpublishedStructureIds.includes(structureId) &&
+      !publishedStructureIds.length
+    );
+  }
+
+  return true;
+}
+
+function filterByRoundVisibility(matchUp, detailsMap) {
+  const { drawId, structureId, roundNumber } = matchUp;
+  if (!isConvertableInteger(roundNumber)) return true;
+
+  const structureDetail = detailsMap[drawId]?.structureDetails?.[structureId];
+  if (!structureDetail) return true;
+
+  const { scheduledRounds, roundLimit } = structureDetail;
+
+  if (isConvertableInteger(roundLimit) && roundNumber! > roundLimit) return false;
+
+  if (scheduledRounds) {
+    const roundDetail = scheduledRounds[roundNumber!];
+    if (!roundDetail) return true;
+
+    if (!roundDetail.published) return false;
+
+    if (isEmbargoed(roundDetail)) {
+      matchUp.schedule = undefined;
+      return true;
+    }
+  }
+
+  return true;
 }

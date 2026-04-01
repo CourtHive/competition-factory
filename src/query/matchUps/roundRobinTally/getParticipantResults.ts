@@ -34,17 +34,80 @@ export function getParticipantResults({
 
   const excludeMatchUpStatuses = tallyPolicy?.excludeMatchUpStatuses || [];
 
-  const filteredMatchUps = matchUps?.filter((matchUp) => {
+  const filteredMatchUps = filterMatchUps({ matchUps, excludeMatchUpStatuses, participantIds });
+
+  const { totalSets, totalGames } = computeTotals({ filteredMatchUps, excludeMatchUpStatuses });
+
+  for (const matchUp of filteredMatchUps ?? []) {
+    const { matchUpStatus, tieMatchUps, tieFormat, score, winningSide, sides } = matchUp;
+
+    const manualGamesOverride =
+      tieFormat && matchUp._disableAutoCalc && tieFormat.collectionDefinitions.every(({ scoreValue }) => scoreValue);
+
+    const winningParticipantId = winningSide && getWinningSideId(matchUp);
+    const losingParticipantId = winningSide && getLosingSideId(matchUp);
+
+    if (!winningParticipantId && !losingParticipantId) {
+      perPlayer = processNoWinnerMatchUp({
+        participantResults,
+        manualGamesOverride,
+        matchUpStatus,
+        tieMatchUps,
+        perPlayer,
+        score,
+        sides,
+      });
+    } else {
+      checkInitializeParticipant(participantResults, winningParticipantId);
+      checkInitializeParticipant(participantResults, losingParticipantId);
+
+      perPlayer = processDecidedMatchUp({
+        winningParticipantId,
+        losingParticipantId,
+        manualGamesOverride,
+        participantResults,
+        pressureRating,
+        matchUpFormat,
+        matchUpStatus,
+        tieMatchUps,
+        tallyPolicy,
+        winningSide,
+        perPlayer,
+        matchUp,
+        score,
+        sides,
+      });
+    }
+
+    if (manualGamesOverride) {
+      applyManualGamesOverride({ participantResults, score, sides });
+    }
+  }
+
+  calculatePercentages({
+    participantResults,
+    groupingTotal,
+    matchUpFormat,
+    tallyPolicy,
+    totalGames,
+    perPlayer,
+    totalSets,
+  });
+
+  return { participantResults };
+}
+
+function filterMatchUps({ matchUps, excludeMatchUpStatuses, participantIds }) {
+  return matchUps?.filter((matchUp) => {
     return (
-      // Do not filter out team matchUps based on matchUpStatus
       (matchUp.tieMatchUps || !excludeMatchUpStatuses.includes(matchUp.matchUpStatus)) &&
-      // include if no participantIds (idsFilter active) have been specified
-      // if idsFilter is active then exclude matchUps which are not between specified participantIds
       (!participantIds?.length ||
         intersection(participantIds, [getSideId(matchUp, 0), getSideId(matchUp, 1)]).length === 2)
     );
   });
+}
 
+function computeTotals({ filteredMatchUps, excludeMatchUpStatuses }) {
   const allSetsCount = filteredMatchUps?.flatMap(({ score, tieMatchUps }) =>
     tieMatchUps
       ? tieMatchUps
@@ -65,188 +128,205 @@ export function getParticipantResults({
   );
   const totalGames = allGamesCount?.reduce((a, b) => a + b, 0);
 
-  for (const matchUp of filteredMatchUps ?? []) {
-    const { matchUpStatus, tieMatchUps, tieFormat, score, winningSide, sides } = matchUp;
+  return { totalSets, totalGames };
+}
 
-    const manualGamesOverride =
-      tieFormat && matchUp._disableAutoCalc && tieFormat.collectionDefinitions.every(({ scoreValue }) => scoreValue);
+function processNoWinnerMatchUp({ participantResults, manualGamesOverride, matchUpStatus, tieMatchUps, perPlayer, score, sides }) {
+  if (matchUpStatus && completedMatchUpStatuses.includes(matchUpStatus)) {
+    const participantIdSide1 = getSideId({ sides }, 0);
+    const participantIdSide2 = getSideId({ sides }, 1);
+    if (participantIdSide1) {
+      checkInitializeParticipant(participantResults, participantIdSide1);
+      participantResults[participantIdSide1].matchUpsCancelled += 1;
+    }
+    if (participantIdSide2) {
+      checkInitializeParticipant(participantResults, participantIdSide2);
+      participantResults[participantIdSide2].matchUpsCancelled += 1;
+    }
+  } else if (tieMatchUps?.length) {
+    perPlayer = 0;
 
-    const winningParticipantId = winningSide && getWinningSideId(matchUp);
-    const losingParticipantId = winningSide && getLosingSideId(matchUp);
+    for (const tieMatchUp of tieMatchUps) {
+      if (tieMatchUp.winningSide) {
+        tallyTieMatchUpNoWinner({ participantResults, tieMatchUp, sides });
+      }
 
-    if (!winningParticipantId && !losingParticipantId) {
-      if (matchUpStatus && completedMatchUpStatuses.includes(matchUpStatus)) {
-        const participantIdSide1 = getSideId(matchUp, 0);
-        const participantIdSide2 = getSideId(matchUp, 1);
-        if (participantIdSide1) {
-          checkInitializeParticipant(participantResults, participantIdSide1);
-          participantResults[participantIdSide1].matchUpsCancelled += 1;
-        }
-        if (participantIdSide2) {
-          checkInitializeParticipant(participantResults, participantIdSide2);
-          participantResults[participantIdSide2].matchUpsCancelled += 1;
-        }
-      } else if (tieMatchUps?.length) {
-        perPlayer = 0; // if any matchUps are matchUpType: TEAM don't calculate perPlayer
+      processScore({
+        score: tieMatchUp.score,
+        manualGamesOverride,
+        participantResults,
+        sides,
+      });
+    }
+  } else {
+    processScore({
+      manualGamesOverride,
+      participantResults,
+      score,
+      sides,
+    });
+  }
 
-        for (const tieMatchUp of tieMatchUps) {
-          if (tieMatchUp.winningSide) {
-            const tieWinningParticipantId = sides?.find(
-              ({ sideNumber }) => sideNumber === tieMatchUp.winningSide,
-            )?.participantId;
-            const tieLosingParticipantId = sides?.find(
-              ({ sideNumber }) => sideNumber === tieMatchUp.winningSide,
-            )?.participantId;
-            if (tieWinningParticipantId && tieLosingParticipantId) {
-              checkInitializeParticipant(participantResults, tieWinningParticipantId);
-              checkInitializeParticipant(participantResults, tieLosingParticipantId);
-              participantResults[tieWinningParticipantId].tieMatchUpsWon += 1;
-              participantResults[tieLosingParticipantId].tieMatchUpsLost += 1;
+  return perPlayer;
+}
 
-              if (isMatchUpEventType(SINGLES)(tieMatchUp.matchUpType)) {
-                participantResults[tieWinningParticipantId].tieSinglesWon += 1;
-                participantResults[tieLosingParticipantId].tieSinglesLost += 1;
-              } else if (isMatchUpEventType(DOUBLES)(tieMatchUp.matchUpType)) {
-                participantResults[tieWinningParticipantId].tieDoublesWon += 1;
-                participantResults[tieLosingParticipantId].tieDoublesLost += 1;
-              }
-            }
-          }
+function tallyTieMatchUpNoWinner({ participantResults, tieMatchUp, sides }) {
+  const tieWinningParticipantId = sides?.find(
+    ({ sideNumber }) => sideNumber === tieMatchUp.winningSide,
+  )?.participantId;
+  const tieLosingParticipantId = sides?.find(
+    ({ sideNumber }) => sideNumber === tieMatchUp.winningSide,
+  )?.participantId;
+  if (tieWinningParticipantId && tieLosingParticipantId) {
+    checkInitializeParticipant(participantResults, tieWinningParticipantId);
+    checkInitializeParticipant(participantResults, tieLosingParticipantId);
+    participantResults[tieWinningParticipantId].tieMatchUpsWon += 1;
+    participantResults[tieLosingParticipantId].tieMatchUpsLost += 1;
 
-          processScore({
-            score: tieMatchUp.score,
-            manualGamesOverride,
-            participantResults,
-            sides, // use sides from the TEAM matchUp
-          });
-        }
-      } else {
-        processScore({
-          manualGamesOverride,
+    if (isMatchUpEventType(SINGLES)(tieMatchUp.matchUpType)) {
+      participantResults[tieWinningParticipantId].tieSinglesWon += 1;
+      participantResults[tieLosingParticipantId].tieSinglesLost += 1;
+    } else if (isMatchUpEventType(DOUBLES)(tieMatchUp.matchUpType)) {
+      participantResults[tieWinningParticipantId].tieDoublesWon += 1;
+      participantResults[tieLosingParticipantId].tieDoublesLost += 1;
+    }
+  }
+}
+
+function processDecidedMatchUp({
+  winningParticipantId,
+  losingParticipantId,
+  manualGamesOverride,
+  participantResults,
+  pressureRating,
+  matchUpFormat,
+  matchUpStatus,
+  tieMatchUps,
+  tallyPolicy,
+  winningSide,
+  perPlayer,
+  matchUp,
+  score,
+  sides,
+}) {
+  if (tieMatchUps?.length) {
+    perPlayer = 0;
+
+    for (const tieMatchUp of tieMatchUps) {
+      if (tieMatchUp.winningSide) {
+        tallyTieMatchUpWithWinner({
+          winningParticipantId,
+          losingParticipantId,
           participantResults,
-          score,
-          sides,
+          tieMatchUp,
+          winningSide,
         });
       }
-    } else {
-      checkInitializeParticipant(participantResults, winningParticipantId);
-      checkInitializeParticipant(participantResults, losingParticipantId);
 
-      if (tieMatchUps?.length) {
-        perPlayer = 0; // if any matchUps are matchUpType: TEAM don't calculate perPlayer
+      processMatchUp({
+        matchUpFormat: tieMatchUp.matchUpFormat,
+        matchUpStatus: tieMatchUp.matchUpStatus,
+        matchUpType: tieMatchUp.matchUpType,
+        score: tieMatchUp.score,
+        sides: tieMatchUp.sides,
+        winningParticipantId,
+        losingParticipantId,
+        manualGamesOverride,
+        participantResults,
+        isTieMatchUp: true,
+        pressureRating,
+        tallyPolicy,
+        winningSide,
+      });
+    }
+    processOutcome({
+      winningParticipantId,
+      losingParticipantId,
+      participantResults,
+      matchUpStatus,
+    });
+  } else {
+    processMatchUp({
+      matchUpFormat: matchUp.matchUpFormat ?? matchUpFormat,
+      matchUpType: matchUp.matchUpType,
+      isTieMatchUp: undefined,
+      winningParticipantId,
+      manualGamesOverride,
+      losingParticipantId,
+      participantResults,
+      pressureRating,
+      matchUpStatus,
+      tallyPolicy,
+      winningSide,
+      score,
+      sides,
+    });
+  }
 
-        for (const tieMatchUp of tieMatchUps) {
-          const { matchUpType } = tieMatchUp;
-          const isDoubles = isMatchUpEventType(DOUBLES)(matchUpType);
-          const isSingles = isMatchUpEventType(SINGLES)(matchUpType);
+  return perPlayer;
+}
 
-          if (tieMatchUp.winningSide) {
-            // logic ensures that losing TEAM participant gets credit for tieMatchUps won & etc.
-            if (tieMatchUp.winningSide === winningSide) {
-              if (winningParticipantId) {
-                participantResults[winningParticipantId].tieMatchUpsWon += 1;
-                if (isSingles) participantResults[winningParticipantId].tieSinglesWon += 1;
-                if (isDoubles) participantResults[winningParticipantId].tieDoublesWon += 1;
-              }
-              if (losingParticipantId) {
-                participantResults[losingParticipantId].tieMatchUpsLost += 1;
-                if (isSingles) participantResults[losingParticipantId].tieSinglesLost += 1;
-                if (isDoubles) {
-                  participantResults[losingParticipantId].tieDoublesLost += 1;
-                }
-              }
-            } else if (tieMatchUp.winningSide !== winningSide) {
-              if (losingParticipantId) {
-                participantResults[losingParticipantId].tieMatchUpsWon += 1;
-                if (isSingles) participantResults[losingParticipantId].tieSinglesWon += 1;
-                if (isDoubles) {
-                  participantResults[losingParticipantId].tieDoublesWon += 1;
-                }
-              }
-              if (winningParticipantId) {
-                participantResults[winningParticipantId].tieMatchUpsLost += 1;
-                if (isSingles) participantResults[winningParticipantId].tieSinglesLost += 1;
-                if (isDoubles) {
-                  participantResults[winningParticipantId].tieDoublesLost += 1;
-                }
-              }
-            }
-          }
+function tallyTieMatchUpWithWinner({
+  winningParticipantId,
+  losingParticipantId,
+  participantResults,
+  tieMatchUp,
+  winningSide,
+}) {
+  const { matchUpType } = tieMatchUp;
+  const isDoubles = isMatchUpEventType(DOUBLES)(matchUpType);
+  const isSingles = isMatchUpEventType(SINGLES)(matchUpType);
 
-          processMatchUp({
-            matchUpFormat: tieMatchUp.matchUpFormat,
-            matchUpStatus: tieMatchUp.matchUpStatus,
-            matchUpType: tieMatchUp.matchUpType,
-            score: tieMatchUp.score,
-            sides: tieMatchUp.sides,
-            winningParticipantId,
-            losingParticipantId,
-            manualGamesOverride,
-            participantResults,
-            isTieMatchUp: true,
-            pressureRating,
-            tallyPolicy,
-            winningSide,
-          });
-        }
-        processOutcome({
-          winningParticipantId,
-          losingParticipantId,
-          participantResults,
-          matchUpStatus,
-        });
-      } else {
-        processMatchUp({
-          matchUpFormat: matchUp.matchUpFormat ?? matchUpFormat,
-          matchUpType: matchUp.matchUpType,
-          isTieMatchUp: undefined,
-          winningParticipantId,
-          manualGamesOverride,
-          losingParticipantId,
-          participantResults,
-          pressureRating,
-          matchUpStatus,
-          tallyPolicy,
-          winningSide,
-          score,
-          sides,
-        });
+  if (tieMatchUp.winningSide === winningSide) {
+    if (winningParticipantId) {
+      participantResults[winningParticipantId].tieMatchUpsWon += 1;
+      if (isSingles) participantResults[winningParticipantId].tieSinglesWon += 1;
+      if (isDoubles) participantResults[winningParticipantId].tieDoublesWon += 1;
+    }
+    if (losingParticipantId) {
+      participantResults[losingParticipantId].tieMatchUpsLost += 1;
+      if (isSingles) participantResults[losingParticipantId].tieSinglesLost += 1;
+      if (isDoubles) {
+        participantResults[losingParticipantId].tieDoublesLost += 1;
       }
     }
-
-    if (manualGamesOverride) {
-      const gamesWonSide1 = score?.sets?.reduce((total, set) => total + (set?.side1Score ?? 0), 0);
-      const gamesWonSide2 = score?.sets?.reduce((total, set) => total + (set.side2Score ?? 0), 0);
-
-      const side1participantId = sides?.find(({ sideNumber }) => sideNumber === 1)?.participantId;
-      const side2participantId = sides?.find(({ sideNumber }) => sideNumber === 2)?.participantId;
-
-      checkInitializeParticipant(participantResults, side1participantId);
-      checkInitializeParticipant(participantResults, side2participantId);
-
-      if (side1participantId) {
-        participantResults[side1participantId].gamesWon += gamesWonSide1;
-        participantResults[side1participantId].gamesLost += gamesWonSide2;
+  } else if (tieMatchUp.winningSide !== winningSide) {
+    if (losingParticipantId) {
+      participantResults[losingParticipantId].tieMatchUpsWon += 1;
+      if (isSingles) participantResults[losingParticipantId].tieSinglesWon += 1;
+      if (isDoubles) {
+        participantResults[losingParticipantId].tieDoublesWon += 1;
       }
-
-      if (side2participantId) {
-        participantResults[side2participantId].gamesWon += gamesWonSide2;
-        participantResults[side2participantId].gamesLost += gamesWonSide1;
+    }
+    if (winningParticipantId) {
+      participantResults[winningParticipantId].tieMatchUpsLost += 1;
+      if (isSingles) participantResults[winningParticipantId].tieSinglesLost += 1;
+      if (isDoubles) {
+        participantResults[winningParticipantId].tieDoublesLost += 1;
       }
     }
   }
+}
 
-  calculatePercentages({
-    participantResults,
-    groupingTotal,
-    matchUpFormat,
-    tallyPolicy,
-    totalGames,
-    perPlayer,
-    totalSets,
-  });
+function applyManualGamesOverride({ participantResults, score, sides }) {
+  const gamesWonSide1 = score?.sets?.reduce((total, set) => total + (set?.side1Score ?? 0), 0);
+  const gamesWonSide2 = score?.sets?.reduce((total, set) => total + (set.side2Score ?? 0), 0);
 
-  return { participantResults };
+  const side1participantId = sides?.find(({ sideNumber }) => sideNumber === 1)?.participantId;
+  const side2participantId = sides?.find(({ sideNumber }) => sideNumber === 2)?.participantId;
+
+  checkInitializeParticipant(participantResults, side1participantId);
+  checkInitializeParticipant(participantResults, side2participantId);
+
+  if (side1participantId) {
+    participantResults[side1participantId].gamesWon += gamesWonSide1;
+    participantResults[side1participantId].gamesLost += gamesWonSide2;
+  }
+
+  if (side2participantId) {
+    participantResults[side2participantId].gamesWon += gamesWonSide2;
+    participantResults[side2participantId].gamesLost += gamesWonSide1;
+  }
 }
 
 function getWinningSideId(matchUp) {

@@ -168,64 +168,9 @@ export function drawPositionRemovals({
   const profileKeys = roundProfile && Object.keys(roundProfile);
   const roundNumbers = profileKeys?.map((roundNumber) => ensureInt(roundNumber));
 
-  let targetDrawPosition: any = drawPosition;
-  const pairingDetails = roundNumbers
-    ?.map((roundNumber) => {
-      // find the pair of drawPositions which includes the targetDrawPosition
-      const profile = roundProfile?.[roundNumber];
-      const relevantPair = profile?.pairedDrawPositions?.find((drawPositions) =>
-        drawPositions.includes(targetDrawPosition),
-      );
-      // find the drawPosition which is paired with the targetDrawPosition
-      const pairedDrawPosition: any = relevantPair?.find(
-        (currentDrawPosition) => currentDrawPosition !== targetDrawPosition,
-      );
-      // find the assignment for the paired drawPosition
-      const pairedDrawPositionAssignment = positionAssignments.find(
-        (assignment) => assignment.drawPosition === pairedDrawPosition,
-      );
-      const nextRoundProfile = roundProfile?.[roundNumber + 1];
-      // whether or not the pairedDrawPosition is a BYE
-      const pairedDrawPositionIsBye = pairedDrawPositionAssignment?.bye;
-      // whether or not the pairedDrawPosition is present in the next round
-      const pairedDrawPositionInNextRound = nextRoundProfile?.pairedDrawPositions?.find((pairedPositions: any) =>
-        pairedPositions.includes(pairedDrawPosition),
-      );
-      // pairedDrawPosition is a transitiveBye if it is a BYE and if it is present in next round
-      const isTransitiveBye =
-        pairedDrawPositionIsBye &&
-        pairedDrawPositionInNextRound &&
-        nextRoundProfile?.drawPositions?.includes(pairedDrawPosition);
-      const pairedDrawPositionByeAdvancedPair = !isTransitiveBye && pairedDrawPositionInNextRound;
+  const pairingDetails = buildPairingDetails({ roundNumbers, roundProfile, positionAssignments, drawPosition });
 
-      const result = relevantPair && {
-        pairedDrawPositionByeAdvancedPair,
-        pairedDrawPosition,
-        targetDrawPosition,
-        relevantPair,
-        roundNumber,
-      };
-
-      // if the pairedDrawPosition is a BYE, continue search with pairedDrawPoaition as targetDrawPosition
-      if (isTransitiveBye) targetDrawPosition = pairedDrawPosition;
-
-      return result;
-    })
-    .filter((f) => f?.targetDrawPosition);
-
-  const tasks: any = pairingDetails?.reduce((tasks, pairingDetail: any) => {
-    const { roundNumber, relevantPair, targetDrawPosition, pairedDrawPosition, pairedDrawPositionByeAdvancedPair } =
-      pairingDetail;
-    const roundRemoval = { roundNumber, targetDrawPosition, relevantPair };
-    const byeAdvancedRemoval = pairedDrawPositionByeAdvancedPair && {
-      roundNumber: roundNumber + 1,
-      targetDrawPosition: pairedDrawPosition,
-      relevantPair: pairedDrawPositionByeAdvancedPair,
-      subsequentRoundRemoval: true,
-    };
-    const newTasks = [roundRemoval, byeAdvancedRemoval].filter(Boolean);
-    return tasks.concat(...newTasks);
-  }, []);
+  const tasks: any = buildRemovalTasks(pairingDetails);
 
   tasks?.forEach(({ roundNumber, targetDrawPosition, relevantPair }) => {
     const targetMatchUp = roundMatchUps?.[roundNumber].find((matchUp) =>
@@ -353,28 +298,15 @@ function removeDrawPosition({
     targetMatchUp.drawPositions = drawPositions as number[];
   }
 
-  if (targetMatchUp.matchUpType === TEAM) {
-    const inContextTargetMatchUp = inContextDrawMatchUps?.find(
-      (matchUp) => matchUp.matchUpId === targetMatchUp.matchUpId,
-    );
-    const sides: any[] = inContextTargetMatchUp?.sides ?? [];
-    const drawPositionSideIndex = sides.reduce(
-      (index, side, i) => (side.drawPosition === drawPosition ? i : index),
-      undefined,
-    );
-
-    if (drawPositionSideIndex !== undefined && targetMatchUp.sides?.[drawPositionSideIndex]?.lineUp) {
-      delete targetMatchUp.sides?.[drawPositionSideIndex].lineUp;
-
-      modifyMatchUpNotice({
-        tournamentId: tournamentRecord?.tournamentId,
-        context: `${stack}-TEAM`,
-        eventId: event?.eventId,
-        matchUp: targetMatchUp,
-        drawDefinition,
-      });
-    }
-  }
+  handleTeamPositionRemoval({
+    inContextDrawMatchUps,
+    tournamentRecord,
+    drawDefinition,
+    targetMatchUp,
+    drawPosition,
+    event,
+    stack,
+  });
 
   const targetData = positionTargets({
     matchUpId: targetMatchUp.matchUpId,
@@ -392,6 +324,164 @@ function removeDrawPosition({
     },
   } = targetData;
 
+  const matchUpContainsBye = updateMatchUpStatusAfterRemoval({
+    initialDrawPositions,
+    initialMatchUpStatus,
+    initialWinningSide,
+    positionAssignments,
+    tournamentRecord,
+    drawDefinition,
+    targetMatchUp,
+    drawPosition,
+    event,
+    stack,
+  });
+
+  if (loserMatchUp && loserMatchUp.structureId !== targetData.matchUp.structureId && !matchUpContainsBye) {
+    const result = handleLoserMatchUpRemoval({
+      loserMatchUpDrawPositionIndex,
+      inContextDrawMatchUps,
+      tournamentRecord,
+      drawDefinition,
+      loserMatchUp,
+      matchUpsMap,
+      event,
+      stack,
+    });
+    if (result?.error) return result;
+  }
+
+  if (
+    winnerMatchUp &&
+    winnerMatchUp.structureId !== targetData.matchUp.structureId &&
+    // does not apply to traversals that are based on QUALIFYING
+    winnerTargetLink.target.feedProfile !== DRAW
+  ) {
+    /*
+    const { structure } = findStructure({
+      structureId: targetData.matchUp.structureId,
+      drawDefinition,
+    });
+
+    if (/* is not a qualifying structure *?)
+      console.log('linked structure winnerMatchUp removal', {
+        winnerMatchUpDrawPositionIndex,
+        winnerTargetLink,
+      });
+      */
+  }
+
+  return { ...SUCCESS };
+}
+
+function buildPairingDetails({ roundNumbers, roundProfile, positionAssignments, drawPosition }) {
+  let targetDrawPosition: any = drawPosition;
+  return roundNumbers
+    ?.map((roundNumber) => {
+      // find the pair of drawPositions which includes the targetDrawPosition
+      const profile = roundProfile?.[roundNumber];
+      const relevantPair = profile?.pairedDrawPositions?.find((drawPositions) =>
+        drawPositions.includes(targetDrawPosition),
+      );
+      // find the drawPosition which is paired with the targetDrawPosition
+      const pairedDrawPosition: any = relevantPair?.find(
+        (currentDrawPosition) => currentDrawPosition !== targetDrawPosition,
+      );
+      // find the assignment for the paired drawPosition
+      const pairedDrawPositionAssignment = positionAssignments.find(
+        (assignment) => assignment.drawPosition === pairedDrawPosition,
+      );
+      const nextRoundProfile = roundProfile?.[roundNumber + 1];
+      // whether or not the pairedDrawPosition is a BYE
+      const pairedDrawPositionIsBye = pairedDrawPositionAssignment?.bye;
+      // whether or not the pairedDrawPosition is present in the next round
+      const pairedDrawPositionInNextRound = nextRoundProfile?.pairedDrawPositions?.find((pairedPositions: any) =>
+        pairedPositions.includes(pairedDrawPosition),
+      );
+      // pairedDrawPosition is a transitiveBye if it is a BYE and if it is present in next round
+      const isTransitiveBye =
+        pairedDrawPositionIsBye &&
+        pairedDrawPositionInNextRound &&
+        nextRoundProfile?.drawPositions?.includes(pairedDrawPosition);
+      const pairedDrawPositionByeAdvancedPair = !isTransitiveBye && pairedDrawPositionInNextRound;
+
+      const result = relevantPair && {
+        pairedDrawPositionByeAdvancedPair,
+        pairedDrawPosition,
+        targetDrawPosition,
+        relevantPair,
+        roundNumber,
+      };
+
+      // if the pairedDrawPosition is a BYE, continue search with pairedDrawPoaition as targetDrawPosition
+      if (isTransitiveBye) targetDrawPosition = pairedDrawPosition;
+
+      return result;
+    })
+    .filter((f) => f?.targetDrawPosition);
+}
+
+function buildRemovalTasks(pairingDetails) {
+  return pairingDetails?.reduce((tasks, pairingDetail: any) => {
+    const { roundNumber, relevantPair, targetDrawPosition, pairedDrawPosition, pairedDrawPositionByeAdvancedPair } =
+      pairingDetail;
+    const roundRemoval = { roundNumber, targetDrawPosition, relevantPair };
+    const byeAdvancedRemoval = pairedDrawPositionByeAdvancedPair && {
+      roundNumber: roundNumber + 1,
+      targetDrawPosition: pairedDrawPosition,
+      relevantPair: pairedDrawPositionByeAdvancedPair,
+      subsequentRoundRemoval: true,
+    };
+    const newTasks = [roundRemoval, byeAdvancedRemoval].filter(Boolean);
+    return tasks.concat(...newTasks);
+  }, []);
+}
+
+function handleTeamPositionRemoval({
+  inContextDrawMatchUps,
+  tournamentRecord,
+  drawDefinition,
+  targetMatchUp,
+  drawPosition,
+  event,
+  stack,
+}) {
+  if (targetMatchUp.matchUpType !== TEAM) return;
+
+  const inContextTargetMatchUp = inContextDrawMatchUps?.find(
+    (matchUp) => matchUp.matchUpId === targetMatchUp.matchUpId,
+  );
+  const sides: any[] = inContextTargetMatchUp?.sides ?? [];
+  const drawPositionSideIndex = sides.reduce(
+    (index, side, i) => (side.drawPosition === drawPosition ? i : index),
+    undefined,
+  );
+
+  if (drawPositionSideIndex !== undefined && targetMatchUp.sides?.[drawPositionSideIndex]?.lineUp) {
+    delete targetMatchUp.sides?.[drawPositionSideIndex].lineUp;
+
+    modifyMatchUpNotice({
+      tournamentId: tournamentRecord?.tournamentId,
+      context: `${stack}-TEAM`,
+      eventId: event?.eventId,
+      matchUp: targetMatchUp,
+      drawDefinition,
+    });
+  }
+}
+
+function updateMatchUpStatusAfterRemoval({
+  initialDrawPositions,
+  initialMatchUpStatus,
+  initialWinningSide,
+  positionAssignments,
+  tournamentRecord,
+  drawDefinition,
+  targetMatchUp,
+  drawPosition,
+  event,
+  stack,
+}) {
   const matchUpAssignments = positionAssignments.filter(({ drawPosition }) =>
     targetMatchUp.drawPositions?.includes(drawPosition),
   );
@@ -435,85 +525,76 @@ function removeDrawPosition({
     });
   }
 
-  if (loserMatchUp && loserMatchUp.structureId !== targetData.matchUp.structureId && !matchUpContainsBye) {
-    const { drawPositions, roundNumber } = loserMatchUp;
+  return matchUpContainsBye;
+}
 
-    if (roundNumber === 1) {
-      const loserMatchUpDrawPosition = drawPositions[loserMatchUpDrawPositionIndex];
+function handleLoserMatchUpRemoval({
+  loserMatchUpDrawPositionIndex,
+  inContextDrawMatchUps,
+  tournamentRecord,
+  drawDefinition,
+  loserMatchUp,
+  matchUpsMap,
+  event,
+  stack,
+}): ResultType | void {
+  const { drawPositions, roundNumber } = loserMatchUp;
 
-      drawPositionRemovals({
-        structureId: loserMatchUp.structureId,
-        drawPosition: loserMatchUpDrawPosition,
-        inContextDrawMatchUps,
-        tournamentRecord,
-        drawDefinition,
-        matchUpsMap,
-      });
-    } else {
-      // for fed rounds the loserMatchUpDrawPosiiton is always the fed drawPosition
-      // which is always the lowest numerical drawPosition
-      const loserMatchUpDrawPosition = Math.min(...drawPositions.filter(Boolean));
+  if (roundNumber === 1) {
+    const loserMatchUpDrawPosition = drawPositions[loserMatchUpDrawPositionIndex];
 
-      const result = consolationCleanup({
-        loserMatchUpDrawPosition,
-        inContextDrawMatchUps,
-        tournamentRecord,
-        drawDefinition,
-        loserMatchUp,
-        matchUpsMap,
-        event,
-      });
-      if (result.error) return decorateResult({ result, stack });
-
-      const mappedMatchUps = matchUpsMap?.mappedMatchUps || {};
-      const loserStructureMatchUps = mappedMatchUps[loserMatchUp.structureId].matchUps;
-
-      const { initialRoundNumber } = getInitialRoundNumber({
-        drawPosition: loserMatchUpDrawPosition,
-        matchUps: loserStructureMatchUps,
-      });
-
-      // if clearing a drawPosition from a feed round the initialRoundNumber for the drawPosition must be { roundNumber: 1 }
-      if (initialRoundNumber === 1) {
-        pushGlobalLog({
-          method: stack,
-          color: 'brightyellow',
-          loserMatchUpDrawPosition,
-        });
-
-        drawPositionRemovals({
-          structureId: loserMatchUp.structureId,
-          drawPosition: loserMatchUpDrawPosition,
-          inContextDrawMatchUps,
-          tournamentRecord,
-          drawDefinition,
-          matchUpsMap,
-        });
-      }
-    }
-  }
-
-  if (
-    winnerMatchUp &&
-    winnerMatchUp.structureId !== targetData.matchUp.structureId &&
-    // does not apply to traversals that are based on QUALIFYING
-    winnerTargetLink.target.feedProfile !== DRAW
-  ) {
-    /*
-    const { structure } = findStructure({
-      structureId: targetData.matchUp.structureId,
+    drawPositionRemovals({
+      structureId: loserMatchUp.structureId,
+      drawPosition: loserMatchUpDrawPosition,
+      inContextDrawMatchUps,
+      tournamentRecord,
       drawDefinition,
+      matchUpsMap,
     });
 
-    if (/* is not a qualifying structure *?)
-      console.log('linked structure winnerMatchUp removal', {
-        winnerMatchUpDrawPositionIndex,
-        winnerTargetLink,
-      });
-      */
+    return;
   }
 
-  return { ...SUCCESS };
+  // for fed rounds the loserMatchUpDrawPosiiton is always the fed drawPosition
+  // which is always the lowest numerical drawPosition
+  const loserMatchUpDrawPosition = Math.min(...drawPositions.filter(Boolean));
+
+  const result = consolationCleanup({
+    loserMatchUpDrawPosition,
+    inContextDrawMatchUps,
+    tournamentRecord,
+    drawDefinition,
+    loserMatchUp,
+    matchUpsMap,
+    event,
+  });
+  if (result.error) return decorateResult({ result, stack });
+
+  const mappedMatchUps = matchUpsMap?.mappedMatchUps || {};
+  const loserStructureMatchUps = mappedMatchUps[loserMatchUp.structureId].matchUps;
+
+  const { initialRoundNumber } = getInitialRoundNumber({
+    drawPosition: loserMatchUpDrawPosition,
+    matchUps: loserStructureMatchUps,
+  });
+
+  // if clearing a drawPosition from a feed round the initialRoundNumber for the drawPosition must be { roundNumber: 1 }
+  if (initialRoundNumber === 1) {
+    pushGlobalLog({
+      method: stack,
+      color: 'brightyellow',
+      loserMatchUpDrawPosition,
+    });
+
+    drawPositionRemovals({
+      structureId: loserMatchUp.structureId,
+      drawPosition: loserMatchUpDrawPosition,
+      inContextDrawMatchUps,
+      tournamentRecord,
+      drawDefinition,
+      matchUpsMap,
+    });
+  }
 }
 
 function consolationCleanup({

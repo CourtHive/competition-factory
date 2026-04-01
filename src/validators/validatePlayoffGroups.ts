@@ -81,23 +81,9 @@ export function validatePlayoffGroups({
 
     // Handle remainder groups
     if (remainder) {
-      if (!hasBestOf) {
-        return {
-          error: INVALID_CONFIGURATION,
-          valid: false,
-          info: 'A remainder group must appear after at least one bestOf group',
-        };
-      }
-      // Remainder group claims all unclaimed participants
-      const remainderCount = totalAvailable - totalClaimed;
-      if (remainderCount < 2) {
-        return {
-          error: INVALID_CONFIGURATION,
-          valid: false,
-          info: `Remainder group would have insufficient participants (${remainderCount}), minimum 2 required`,
-        };
-      }
-      totalClaimed += remainderCount;
+      const result = validateRemainderGroup({ hasBestOf, totalAvailable, totalClaimed });
+      if (result.error) return result;
+      totalClaimed += totalAvailable - totalClaimed;
       continue;
     }
 
@@ -120,81 +106,22 @@ export function validatePlayoffGroups({
     const guaranteedCount = groupCount * finishingPositions.length;
 
     if (bestOf === undefined) {
-      // Standard playoff group: consumes all participants at specified positions
-      for (const pos of finishingPositions) {
-        const available = groupCount - consumptionMap[pos];
-        if (available < 2) {
-          return {
-            error: INVALID_CONFIGURATION,
-            valid: false,
-            info: `finishingPosition ${pos} has insufficient remaining participants (${available}) for a standard playoff group (minimum 2 required)`,
-          };
-        }
-        consumptionMap[pos] += available; // consumes all remaining at this position
-      }
-
+      const result = validateStandardGroup({ finishingPositions, groupCount, consumptionMap });
+      if (result?.error) return result;
       totalClaimed += guaranteedCount;
     } else {
-      // bestOf-specific validation
-      if (typeof bestOf !== 'number' || bestOf < 1) {
-        return { error: INVALID_VALUES, valid: false, info: 'bestOf must be a positive number' };
-      }
-      if (bestOf < guaranteedCount) {
-        return {
-          info: `bestOf (${bestOf}) cannot be less than guaranteed count (${guaranteedCount}) for finishingPositions [${finishingPositions}] with ${groupCount} groups`,
-          error: INVALID_CONFIGURATION,
-          valid: false,
-        };
-      }
-      if (bestOf > totalAvailable) {
-        return {
-          info: `bestOf (${bestOf}) exceeds total available participants (${totalAvailable})`,
-          error: INVALID_CONFIGURATION,
-          valid: false,
-        };
-      }
-
+      const result = validateBestOfGroup({
+        finishingPositions,
+        guaranteedCount,
+        consumptionMap,
+        totalAvailable,
+        groupCount,
+        groupSize,
+        bestOf,
+        rankBy,
+      });
+      if (result?.error) return result;
       hasBestOf = true;
-
-      // rankBy validation
-      if (rankBy !== undefined && rankBy !== GEM_SCORE) {
-        return {
-          info: `Unsupported rankBy value: '${rankBy}'. Currently only '${GEM_SCORE}' is supported.`,
-          error: INVALID_VALUES,
-          valid: false,
-        };
-      }
-
-      // Calculate consumption: guaranteed positions are fully consumed,
-      // then additional positions are partially consumed
-      for (const pos of finishingPositions) {
-        consumptionMap[pos] += groupCount; // fully consumed
-      }
-
-      const remainder = bestOf - guaranteedCount;
-      if (remainder > 0) {
-        // Fill from next finishing positions in order
-        let remaining = remainder;
-        const sortedPositions = [...finishingPositions].sort(numericSort);
-        let nextPos = Math.max(...sortedPositions) + 1;
-
-        while (remaining > 0 && nextPos <= groupSize) {
-          const available = groupCount - consumptionMap[nextPos];
-          const take = Math.min(remaining, available);
-          consumptionMap[nextPos] += take;
-          remaining -= take;
-          nextPos++;
-        }
-
-        if (remaining > 0) {
-          return {
-            info: `bestOf (${bestOf}) requires more participants than available from remaining finishing positions`,
-            error: INVALID_CONFIGURATION,
-            valid: false,
-          };
-        }
-      }
-
       totalClaimed += bestOf;
     }
   }
@@ -208,4 +135,115 @@ export function validatePlayoffGroups({
   }
 
   return { valid: true, consumptionMap };
+}
+
+function validateRemainderGroup({ hasBestOf, totalAvailable, totalClaimed }) {
+  if (!hasBestOf) {
+    return {
+      error: INVALID_CONFIGURATION,
+      valid: false,
+      info: 'A remainder group must appear after at least one bestOf group',
+    };
+  }
+  const remainderCount = totalAvailable - totalClaimed;
+  if (remainderCount < 2) {
+    return {
+      error: INVALID_CONFIGURATION,
+      valid: false,
+      info: `Remainder group would have insufficient participants (${remainderCount}), minimum 2 required`,
+    };
+  }
+  return {};
+}
+
+function validateStandardGroup({ finishingPositions, groupCount, consumptionMap }) {
+  for (const pos of finishingPositions) {
+    const available = groupCount - consumptionMap[pos];
+    if (available < 2) {
+      return {
+        error: INVALID_CONFIGURATION,
+        valid: false,
+        info: `finishingPosition ${pos} has insufficient remaining participants (${available}) for a standard playoff group (minimum 2 required)`,
+      };
+    }
+    consumptionMap[pos] += available; // consumes all remaining at this position
+  }
+  return {};
+}
+
+function validateBestOfGroup({
+  finishingPositions,
+  guaranteedCount,
+  consumptionMap,
+  totalAvailable,
+  groupCount,
+  groupSize,
+  bestOf,
+  rankBy,
+}) {
+  if (typeof bestOf !== 'number' || bestOf < 1) {
+    return { error: INVALID_VALUES, valid: false, info: 'bestOf must be a positive number' };
+  }
+  if (bestOf < guaranteedCount) {
+    return {
+      info: `bestOf (${bestOf}) cannot be less than guaranteed count (${guaranteedCount}) for finishingPositions [${finishingPositions}] with ${groupCount} groups`,
+      error: INVALID_CONFIGURATION,
+      valid: false,
+    };
+  }
+  if (bestOf > totalAvailable) {
+    return {
+      info: `bestOf (${bestOf}) exceeds total available participants (${totalAvailable})`,
+      error: INVALID_CONFIGURATION,
+      valid: false,
+    };
+  }
+
+  // rankBy validation
+  if (rankBy !== undefined && rankBy !== GEM_SCORE) {
+    return {
+      info: `Unsupported rankBy value: '${rankBy}'. Currently only '${GEM_SCORE}' is supported.`,
+      error: INVALID_VALUES,
+      valid: false,
+    };
+  }
+
+  // Calculate consumption: guaranteed positions are fully consumed,
+  // then additional positions are partially consumed
+  for (const pos of finishingPositions) {
+    consumptionMap[pos] += groupCount; // fully consumed
+  }
+
+  const remainder = bestOf - guaranteedCount;
+  if (remainder > 0) {
+    const result = consumeRemainder({ remainder, finishingPositions, groupCount, groupSize, consumptionMap, bestOf });
+    if (result?.error) return result;
+  }
+
+  return {};
+}
+
+function consumeRemainder({ remainder, finishingPositions, groupCount, groupSize, consumptionMap, bestOf }) {
+  // Fill from next finishing positions in order
+  let remaining = remainder;
+  const sortedPositions = [...finishingPositions].sort(numericSort);
+  let nextPos = Math.max(...sortedPositions) + 1;
+
+  while (remaining > 0 && nextPos <= groupSize) {
+    const available = groupCount - consumptionMap[nextPos];
+    const take = Math.min(remaining, available);
+    consumptionMap[nextPos] += take;
+    remaining -= take;
+    nextPos++;
+  }
+
+  if (remaining > 0) {
+    return {
+      info: `bestOf (${bestOf}) requires more participants than available from remaining finishing positions`,
+      error: INVALID_CONFIGURATION,
+      valid: false,
+    };
+  }
+
+  return {};
 }

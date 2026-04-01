@@ -474,16 +474,9 @@ export function positionActions(params: PositionActionsArgs): ResultType & {
   return positionActionsInternal(params);
 }
 
-// Extracted main logic to reduce cognitive complexity
-function positionActionsInternal(params: PositionActionsArgs): ResultType & {
-  isActiveDrawPosition?: boolean;
-  hasPositionAssigned?: boolean;
-  isDrawPosition?: boolean;
-  isByePosition?: boolean;
-  validActions?: any[];
-} {
+function resolvePositionContext(params: PositionActionsArgs) {
   const paramsCheck = checkRequiredParameters(params, [{ event: true, drawDefinition: true, structureId: true }]);
-  if (paramsCheck.error) return paramsCheck;
+  if (paramsCheck.error) return { earlyReturn: paramsCheck };
 
   const {
     policyDefinitions: specifiedPolicyDefinitions,
@@ -508,10 +501,10 @@ function positionActionsInternal(params: PositionActionsArgs): ResultType & {
     structureId: params.structureId,
     drawDefinition,
   });
-  if (result.error) return result;
+  if (result.error) return { earlyReturn: result };
 
   const structure = result.containingStructure || result.structure;
-  if (!structure) return { error: STRUCTURE_NOT_FOUND };
+  if (!structure) return { earlyReturn: { error: STRUCTURE_NOT_FOUND } };
 
   const structureId = structure.structureId;
 
@@ -521,11 +514,11 @@ function positionActionsInternal(params: PositionActionsArgs): ResultType & {
   });
 
   if (drawPosition === undefined && !result.isAdHoc) {
-    return { error: MISSING_DRAW_POSITION };
+    return { earlyReturn: { error: MISSING_DRAW_POSITION } };
   }
 
-  if (result.isAdHoc) return matchUpActions(params);
-  if (result.error) return result;
+  if (result.isAdHoc) return { earlyReturn: matchUpActions(params) };
+  if (result.error) return { earlyReturn: result };
 
   const { drawPositionInitialRounds, inactiveDrawPositions, activeDrawPositions, byeDrawPositions } = result;
 
@@ -580,7 +573,6 @@ function positionActionsInternal(params: PositionActionsArgs): ResultType & {
   const possiblyDisablingAction = ![QUALIFYING, MAIN].includes(structure.stage) || structure.stageSequence !== 1;
 
   const { drawId } = drawDefinition;
-  const validActions: any[] = [];
 
   const { assignedPositions, positionAssignments } = structureAssignedDrawPositions({ structure });
   const positionAssignment = assignedPositions?.find((assignment) => assignment.drawPosition === drawPosition);
@@ -592,7 +584,7 @@ function positionActionsInternal(params: PositionActionsArgs): ResultType & {
   // treat it as an unassigned position rather than invalid
   if (!drawPositions?.includes(drawPosition)) {
     const allMatchUpDrawPositions = structure.matchUps?.flatMap((m) => m.drawPositions || []) ?? [];
-    if (!allMatchUpDrawPositions.includes(drawPosition)) return { error: INVALID_DRAW_POSITION };
+    if (!allMatchUpDrawPositions.includes(drawPosition)) return { earlyReturn: { error: INVALID_DRAW_POSITION } };
   }
 
   const { stage, stageSequence } = structure;
@@ -627,15 +619,91 @@ function positionActionsInternal(params: PositionActionsArgs): ResultType & {
   const isLuckyDrawAdvancedPosition =
     isLuckyBasedDraw(drawDefinition.drawType) && drawPositionInitialRounds?.[drawPosition] > 1;
 
-  if (actionsDisabled)
+  if (actionsDisabled) {
     return {
-      info: 'Actions Disabled for structure',
-      isActiveDrawPosition,
-      isDrawPosition: true,
-      hasPositionAssigned,
-      validActions: [],
-      isByePosition,
+      earlyReturn: {
+        info: 'Actions Disabled for structure',
+        isActiveDrawPosition,
+        isDrawPosition: true,
+        hasPositionAssigned,
+        validActions: [],
+        isByePosition,
+      },
     };
+  }
+
+  return {
+    positionSourceStructureIds,
+    isLuckyDrawAdvancedPosition,
+    drawPositionInitialRounds,
+    unassignedParticipantIds,
+    sourceStructuresComplete,
+    activePositionOverrides,
+    tournamentParticipants,
+    disablePlacementActions,
+    possiblyDisablingAction,
+    isWinRatioFedStructure,
+    inactiveDrawPositions,
+    isActiveDrawPosition,
+    positionAssignments,
+    hasPositionAssigned,
+    positionAssignment,
+    activeDrawPositions,
+    returnParticipants,
+    byeDrawPositions,
+    appliedPolicies,
+    drawDefinition,
+    policyActions,
+    isByePosition,
+    drawPosition,
+    structureId,
+    structure,
+    drawId,
+    event,
+  };
+}
+
+function positionActionsInternal(params: PositionActionsArgs): ResultType & {
+  isActiveDrawPosition?: boolean;
+  hasPositionAssigned?: boolean;
+  isDrawPosition?: boolean;
+  isByePosition?: boolean;
+  validActions?: any[];
+} {
+  const context = resolvePositionContext(params);
+  if ('earlyReturn' in context) return context.earlyReturn;
+
+  const {
+    positionSourceStructureIds,
+    isLuckyDrawAdvancedPosition,
+    drawPositionInitialRounds,
+    unassignedParticipantIds,
+    sourceStructuresComplete,
+    activePositionOverrides,
+    tournamentParticipants,
+    disablePlacementActions,
+    possiblyDisablingAction,
+    isWinRatioFedStructure,
+    inactiveDrawPositions,
+    isActiveDrawPosition,
+    positionAssignments,
+    hasPositionAssigned,
+    positionAssignment,
+    activeDrawPositions,
+    returnParticipants,
+    byeDrawPositions,
+    appliedPolicies,
+    drawDefinition,
+    policyActions,
+    isByePosition,
+    drawPosition,
+    structureId,
+    structure,
+    drawId,
+    event,
+  } = context;
+
+  const validActions: any[] = [];
 
   addAssignmentActions({
     validActions,

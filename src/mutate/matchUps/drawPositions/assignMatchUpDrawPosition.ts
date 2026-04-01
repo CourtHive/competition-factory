@@ -59,16 +59,16 @@ export function assignMatchUpDrawPosition({
 
   matchUpsMap ??= getMatchUpsMap({ drawDefinition });
 
-  if (!inContextDrawMatchUps) {
-    inContextDrawMatchUps =
-      getAllDrawMatchUps({
-        inContext: true,
-        drawDefinition,
-        matchUpsMap,
-      }).matchUps ?? [];
-  }
+  const resolvedInContextDrawMatchUps =
+    inContextDrawMatchUps ??
+    getAllDrawMatchUps({
+      inContext: true,
+      drawDefinition,
+      matchUpsMap,
+    }).matchUps ??
+    [];
 
-  const inContextMatchUp = inContextDrawMatchUps.find((m) => m.matchUpId === matchUpId);
+  const inContextMatchUp = resolvedInContextDrawMatchUps.find((m) => m.matchUpId === matchUpId);
   const structureId = inContextMatchUp?.structureId;
   const structure = drawDefinition?.structures?.find((structure) => structure.structureId === structureId);
 
@@ -94,67 +94,32 @@ export function assignMatchUpDrawPosition({
   const isDoubleExitExit =
     matchUp?.matchUpStatus && isExit(matchUp.matchUpStatus) && updatedDrawPositions.filter(Boolean).length < 2;
 
-  matchUpStatus =
-    (isByeMatchUp && BYE) ||
-    matchUpStatus ||
-    (isDoubleExitExit && matchUp.matchUpStatus) ||
-    (matchUp?.matchUpStatus &&
-      [DOUBLE_WALKOVER, DOUBLE_DEFAULT].includes(matchUp.matchUpStatus) &&
-      matchUp.matchUpStatus) ||
-    TO_BE_PLAYED;
+  matchUpStatus = resolveMatchUpStatus({ isByeMatchUp, matchUpStatus, isDoubleExitExit, matchUp });
 
   //are we going to a match already marked as a WO becuase it was propagated from the main draw?
   const isPropagatedExit = !!(isExit(matchUp?.matchUpStatus) && matchUp?.winningSide);
 
   if (matchUp && positionAdded) {
-    // necessary to update inContextDrawMatchUps
-    inContextDrawMatchUps =
-      getAllDrawMatchUps({
-        inContext: true,
-        drawDefinition,
-        matchUpsMap,
-      }).matchUps ?? [];
-    const exitWinningSide =
-      (isDoubleExitExit &&
-        getExitWinningSide({
-          inContextDrawMatchUps,
-          drawPosition,
-          matchUpId,
-        })) ||
-      //if the match is already marked as a WO with a winning side
-      //we keep the winning side
-      (isPropagatedExit && matchUp.winningSide) ||
-      undefined;
-
-    if (matchUp?.matchUpStatusCodes) {
-      updateMatchUpStatusCodes({
-        inContextDrawMatchUps,
-        sourceMatchUpStatus,
-        sourceMatchUpId,
-        matchUpsMap,
-        matchUp,
-      });
-    }
-
-    // only in the case of "Double Exit" produced "Exit" can a winningSide be assigned at the same time as a position
-    Object.assign(matchUp, {
-      drawPositions: updatedDrawPositions,
-      winningSide: exitWinningSide,
-      //we keep the current status if it is already marked as WO
-      matchUpStatus: isPropagatedExit ? matchUp?.matchUpStatus : matchUpStatus,
-    });
-
-    modifyMatchUpNotice({
-      tournamentId: tournamentRecord?.tournamentId,
-      eventId: inContextMatchUp?.eventId,
-      context: stack,
+    applyPositionToMatchUp({
+      updatedDrawPositions,
+      sourceMatchUpStatus,
+      isPropagatedExit,
+      isDoubleExitExit,
+      tournamentRecord,
+      inContextMatchUp,
+      sourceMatchUpId,
       drawDefinition,
+      matchUpStatus,
+      drawPosition,
+      matchUpsMap,
+      matchUpId,
       matchUp,
+      stack,
     });
   }
 
   const targetData = positionTargets({
-    inContextDrawMatchUps,
+    inContextDrawMatchUps: resolvedInContextDrawMatchUps,
     inContextMatchUp,
     drawDefinition,
     matchUpId,
@@ -164,14 +129,155 @@ export function assignMatchUpDrawPosition({
     targetLinks: { loserTargetLink },
   } = targetData;
 
-  const structureMatchUps = getMappedStructureMatchUps({
-    structureId: structure.structureId,
-    matchUpsMap,
-  });
-
   // In lucky draws, all round-to-round advancement is handled by luckyDrawAdvancement
   const isLuckyDraw = isLuckyBasedDraw(drawDefinition?.drawType);
 
+  const advanceResult = advanceDrawPosition({
+    inContextDrawMatchUps: resolvedInContextDrawMatchUps,
+    positionAssigned,
+    isPropagatedExit,
+    tournamentRecord,
+    inContextMatchUp,
+    drawDefinition,
+    matchUpStatus,
+    winnerMatchUp,
+    drawPosition,
+    isByeMatchUp,
+    isLuckyDraw,
+    matchUpsMap,
+    matchUp,
+    structure,
+  });
+  if (advanceResult?.error) return advanceResult;
+
+  // if { matchUpType: TEAM } then also assign the default lineUp to the appopriate side
+  if (matchUp?.matchUpType === TEAM) {
+    assignTeamLineUp({
+      inContextDrawMatchUps: resolvedInContextDrawMatchUps,
+      positionAssignments,
+      tournamentRecord,
+      drawDefinition,
+      drawPosition,
+      matchUp,
+    });
+  }
+
+  // if FIRST_MATCH_LOSER_CONSOLATION, check whether a BYE should be placed in consolation feed
+  const byeResult = propagateConsolationBye({
+    updatedDrawPositions,
+    loserTargetDrawPosition,
+    tournamentRecord,
+    loserTargetLink,
+    drawDefinition,
+    structureId: structure.structureId,
+    isByeMatchUp,
+    loserMatchUp,
+    matchUpsMap,
+    event,
+  });
+  if (byeResult?.error) return byeResult;
+
+  if (positionAssigned) {
+    return { ...SUCCESS };
+  } else {
+    return decorateResult({
+      result: { error: DRAW_POSITION_ASSIGNED },
+      context: { drawPosition },
+      stack,
+    });
+  }
+}
+
+function resolveMatchUpStatus({ isByeMatchUp, matchUpStatus, isDoubleExitExit, matchUp }) {
+  return (
+    (isByeMatchUp && BYE) ||
+    matchUpStatus ||
+    (isDoubleExitExit && matchUp.matchUpStatus) ||
+    (matchUp?.matchUpStatus &&
+      [DOUBLE_WALKOVER, DOUBLE_DEFAULT].includes(matchUp.matchUpStatus) &&
+      matchUp.matchUpStatus) ||
+    TO_BE_PLAYED
+  );
+}
+
+function applyPositionToMatchUp({
+  updatedDrawPositions,
+  sourceMatchUpStatus,
+  isPropagatedExit,
+  isDoubleExitExit,
+  tournamentRecord,
+  inContextMatchUp,
+  sourceMatchUpId,
+  drawDefinition,
+  matchUpStatus,
+  drawPosition,
+  matchUpsMap,
+  matchUpId,
+  matchUp,
+  stack,
+}) {
+  // necessary to refresh inContextDrawMatchUps after mutation
+  const refreshedMatchUps =
+    getAllDrawMatchUps({
+      inContext: true,
+      drawDefinition,
+      matchUpsMap,
+    }).matchUps ?? [];
+  const exitWinningSide =
+    (isDoubleExitExit &&
+      getExitWinningSide({
+        inContextDrawMatchUps: refreshedMatchUps,
+        drawPosition,
+        matchUpId,
+      })) ||
+    //if the match is already marked as a WO with a winning side
+    //we keep the winning side
+    (isPropagatedExit && matchUp.winningSide) ||
+    undefined;
+
+  if (matchUp?.matchUpStatusCodes) {
+    updateMatchUpStatusCodes({
+      inContextDrawMatchUps: refreshedMatchUps,
+      sourceMatchUpStatus,
+      sourceMatchUpId,
+      matchUpsMap,
+      matchUp,
+    });
+  }
+
+  // only in the case of "Double Exit" produced "Exit" can a winningSide be assigned at the same time as a position
+  Object.assign(matchUp, {
+    drawPositions: updatedDrawPositions,
+    winningSide: exitWinningSide,
+    //we keep the current status if it is already marked as WO
+    matchUpStatus: isPropagatedExit ? matchUp?.matchUpStatus : matchUpStatus,
+  });
+
+  modifyMatchUpNotice({
+    tournamentId: tournamentRecord?.tournamentId,
+    eventId: inContextMatchUp?.eventId,
+    context: stack,
+    drawDefinition,
+    matchUp,
+  });
+}
+
+function advanceDrawPosition({
+  inContextDrawMatchUps,
+  positionAssigned,
+  isPropagatedExit,
+  tournamentRecord,
+  inContextMatchUp,
+  drawDefinition,
+  matchUpStatus,
+  winnerMatchUp,
+  drawPosition,
+  isByeMatchUp,
+  isLuckyDraw,
+  matchUpsMap,
+  matchUp,
+  structure,
+}) {
   if (positionAssigned && isByeMatchUp && !isLuckyDraw) {
     if (winnerMatchUp) {
       if ([BYE, DOUBLE_WALKOVER, DOUBLE_DEFAULT].includes(matchUpStatus)) {
@@ -191,9 +297,7 @@ export function assignMatchUpDrawPosition({
         }
       }
     }
-  }
-  //we want to automatically progress the winner if the match was already marked as a walkover
-  else if (positionAssigned && isPropagatedExit) {
+  } else if (positionAssigned && isPropagatedExit) {
     if (winnerMatchUp) {
       const result = assignMatchUpDrawPosition({
         matchUpId: winnerMatchUp.matchUpId,
@@ -226,64 +330,83 @@ export function assignMatchUpDrawPosition({
     }
   }
 
-  // if { matchUpType: TEAM } then also assign the default lineUp to the appopriate side
-  if (matchUp?.matchUpType === TEAM) {
-    const inContextTargetMatchUp = inContextDrawMatchUps?.find(({ matchUpId }) => matchUpId === matchUp.matchUpId);
-    const sides: any[] = inContextTargetMatchUp?.sides ?? [];
-    const drawPositionSideIndex = sides.reduce(
-      (index, side, i) => (side.drawPosition === drawPosition ? i : index),
-      undefined,
-    );
-    const teamParticipantId = positionAssignments?.find(
-      (assignment) => assignment.drawPosition === drawPosition,
-    )?.participantId;
+  return undefined;
+}
 
-    if (teamParticipantId && drawPositionSideIndex !== undefined) {
-      updateSideLineUp({
-        inContextTargetMatchUp,
-        drawPositionSideIndex,
-        teamParticipantId,
-        tournamentRecord,
-        drawDefinition,
-        matchUp,
-      });
-    }
-  }
+function assignTeamLineUp({
+  inContextDrawMatchUps,
+  positionAssignments,
+  tournamentRecord,
+  drawDefinition,
+  drawPosition,
+  matchUp,
+}) {
+  const inContextTargetMatchUp = inContextDrawMatchUps?.find(({ matchUpId }) => matchUpId === matchUp.matchUpId);
+  const sides: any[] = inContextTargetMatchUp?.sides ?? [];
+  const drawPositionSideIndex = sides.reduce(
+    (index, side, i) => (side.drawPosition === drawPosition ? i : index),
+    undefined,
+  );
+  const teamParticipantId = positionAssignments?.find(
+    (assignment) => assignment.drawPosition === drawPosition,
+  )?.participantId;
 
-  // if FIRST_MATCH_LOSER_CONSOLATION, check whether a BYE should be placed in consolation feed
-  if (
-    loserTargetLink?.linkCondition === FIRST_MATCHUP &&
-    updatedDrawPositions.filter(Boolean).length === 2 &&
-    !isByeMatchUp
-  ) {
-    const firstRoundMatchUps = structureMatchUps.filter(
-      ({ drawPositions, roundNumber }) => roundNumber === 1 && overlap(drawPositions, updatedDrawPositions),
-    );
-    const byePropagation = firstRoundMatchUps.every(({ matchUpStatus }) =>
-      [COMPLETED, RETIRED].includes(matchUpStatus),
-    );
-    if (byePropagation && loserMatchUp) {
-      const { structureId } = loserMatchUp;
-      const result = assignDrawPositionBye({
-        drawPosition: loserTargetDrawPosition,
-        tournamentRecord,
-        drawDefinition,
-        structureId,
-        matchUpsMap,
-        event,
-      });
-
-      if (result.error) return result;
-    }
-  }
-
-  if (positionAssigned) {
-    return { ...SUCCESS };
-  } else {
-    return decorateResult({
-      result: { error: DRAW_POSITION_ASSIGNED },
-      context: { drawPosition },
-      stack,
+  if (teamParticipantId && drawPositionSideIndex !== undefined) {
+    updateSideLineUp({
+      inContextTargetMatchUp,
+      drawPositionSideIndex,
+      teamParticipantId,
+      tournamentRecord,
+      drawDefinition,
+      matchUp,
     });
   }
+}
+
+function propagateConsolationBye({
+  updatedDrawPositions,
+  loserTargetDrawPosition,
+  tournamentRecord,
+  loserTargetLink,
+  drawDefinition,
+  structureId,
+  isByeMatchUp,
+  loserMatchUp,
+  matchUpsMap,
+  event,
+}) {
+  if (
+    loserTargetLink?.linkCondition !== FIRST_MATCHUP ||
+    updatedDrawPositions.filter(Boolean).length !== 2 ||
+    isByeMatchUp
+  ) {
+    return undefined;
+  }
+
+  const structureMatchUps = getMappedStructureMatchUps({
+    structureId,
+    matchUpsMap,
+  });
+
+  const firstRoundMatchUps = structureMatchUps.filter(
+    ({ drawPositions, roundNumber }) => roundNumber === 1 && overlap(drawPositions, updatedDrawPositions),
+  );
+  const byePropagation = firstRoundMatchUps.every(({ matchUpStatus }) =>
+    [COMPLETED, RETIRED].includes(matchUpStatus),
+  );
+  if (byePropagation && loserMatchUp) {
+    const { structureId } = loserMatchUp;
+    const result = assignDrawPositionBye({
+      drawPosition: loserTargetDrawPosition,
+      tournamentRecord,
+      drawDefinition,
+      structureId,
+      matchUpsMap,
+      event,
+    });
+
+    if (result.error) return result;
+  }
+
+  return undefined;
 }

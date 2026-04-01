@@ -82,62 +82,23 @@ export function generateDrawStructuresAndLinks(params: GenerateDrawStructuresAnd
 
   const matchUpType = params?.matchUpType ?? SINGLES;
 
-  const existingQualifyingStructures = drawDefinition?.structures?.filter(({ stage }) => stage === QUALIFYING);
-  if (existingQualifyingStructures) {
-    structures.push(...existingQualifyingStructures);
-  }
-  const existingQualifyingStructureIds = existingQualifyingStructures?.map(({ structureId }) => structureId);
-  const existingMainStructure = drawDefinition?.structures?.find(
-    ({ stage, stageSequence }) => stage === MAIN && stageSequence === 1,
-  );
-  const existingQualifyingLinks = drawDefinition?.links?.filter(
-    (link) =>
-      link.target.structureId === existingMainStructure?.structureId &&
-      existingQualifyingStructureIds?.includes(link.source.structureId),
-  );
-  const getQualifiersCount = (link, structure) => {
-    if (link.linkType === POSITION && structure?.structures) {
-      const finishingPositions = link.source.finishingPositions || [];
-      return structure.structures.length * finishingPositions.length;
-    } else if (link.linkType === WINNER && structure?.matchUps?.length) {
-      const qualifyingRoundNumber = link.source.roundNumber;
-      const matchUps = structure.matchUps.filter(({ roundNumber }) => roundNumber === qualifyingRoundNumber);
-      return matchUps.length;
-    }
-  };
+  const {
+    existingQualifyingDrawPositionsCount,
+    mainStructureIsPlaceholder,
+    existingQualifyingLinks,
+    existingMainStructure,
+    existingQualifiersCount,
+  } = analyzeExistingQualifying({ drawDefinition, structures });
 
-  const existingQualifyingDrawPositionsCount = existingQualifyingStructures
-    ?.map((structure) => {
-      const relevantLink = existingQualifyingLinks?.find((link) => link.target.structureId === structure.structureId);
-      const drawPositionsCount = getPositionAssignments({ structure })?.positionAssignments?.length ?? 0;
-      if (!relevantLink) return drawPositionsCount;
-
-      const sourceStructureId = relevantLink?.source.structureId;
-      const sourceStructure = drawDefinition.structures?.find(
-        (structure) => structure.structureId === sourceStructureId,
-      );
-      const sourceQualifiersCount = getQualifiersCount(relevantLink, sourceStructure) || 0;
-      return drawPositionsCount - sourceQualifiersCount;
-    })
-    .filter(Boolean)
-    .reduce((a, b) => a + b, 0);
-  const existingQualifiersCount = existingQualifyingLinks
-    ?.map((link) => {
-      const qualifyingStructureId = link.source.structureId;
-      const structure = existingQualifyingStructures?.find(
-        (structure) => structure.structureId === qualifyingStructureId,
-      );
-      return getQualifiersCount(link, structure);
-    })
-    .filter(Boolean)
-    .reduce((a, b) => a + b, 0);
-  const mainStructureIsPlaceholder = !!(existingMainStructure && !existingMainStructure?.matchUps?.length);
-
-  if (existingQualifyingStructures?.length && !mainStructureIsPlaceholder) {
+  if (
+    drawDefinition?.structures?.filter(({ stage }) => stage === QUALIFYING)?.length &&
+    !mainStructureIsPlaceholder
+  ) {
     return { error: EXISTING_STAGE };
   }
 
-  const qualifyingProfiles = !existingQualifyingStructures?.length && params.qualifyingProfiles;
+  const qualifyingProfiles =
+    !drawDefinition?.structures?.filter(({ stage }) => stage === QUALIFYING)?.length && params.qualifyingProfiles;
 
   // first generate any qualifying structures and links
   const qualifyingResult =
@@ -172,18 +133,7 @@ export function generateDrawStructuresAndLinks(params: GenerateDrawStructuresAnd
 
   Object.assign(params, definedAttributes({ drawSize, matchUpType, tieFormat }));
 
-  // check that drawSize is a valid value
-  const invalidDrawSize =
-    drawType !== AD_HOC &&
-    (!drawSize ||
-      drawSize < 2 ||
-      // LUCKY_DRAW requires drawSize >= 5 for non-power-of-2 sizes
-      // (drawSize < 5 has at most 1 loser, making lucky selection meaningless)
-      ([LUCKY_DRAW, ADAPTIVE].includes(drawType) && !isPowerOf2(drawSize) && drawSize < 5) ||
-      (!staggeredEntry &&
-        ![FEED_IN, LUCKY_DRAW, ADAPTIVE].includes(drawType) &&
-        (([ROUND_ROBIN_WITH_PLAYOFF, ROUND_ROBIN].includes(drawType) && drawSize < 3) ||
-          (![ROUND_ROBIN, ROUND_ROBIN_WITH_PLAYOFF].includes(drawType) && !isPowerOf2(drawSize)))));
+  const invalidDrawSize = isInvalidDrawSize({ drawType, drawSize, staggeredEntry });
 
   if (invalidDrawSize && !qualifyingDrawPositionsCount) {
     return decorateResult({
@@ -205,30 +155,15 @@ export function generateDrawStructuresAndLinks(params: GenerateDrawStructuresAnd
   const { structures: generatedStructures, links: generatedLinks } = generatorResult;
 
   if (generatedStructures?.length) {
-    const generatedMainStructure = generatedStructures.find(
-      ({ stage, stageSequence }) => stage === MAIN && stageSequence === 1,
-    );
-
-    if (existingMainStructure && generatedMainStructure) {
-      if (mainStructureIsPlaceholder) {
-        const generatedMainStructureId = generatedMainStructure.structureId;
-        generatedMainStructure.structureId = existingMainStructure.structureId;
-        if (generatedLinks?.length) {
-          for (const link of generatedLinks) {
-            if (link.source.structureId === generatedMainStructureId) {
-              link.source.structureId = existingMainStructure.structureId;
-            }
-            if (link.target.structureId === generatedMainStructureId) {
-              link.target.structureId = existingMainStructure.structureId;
-            }
-          }
-        }
-      } else if (!overwriteExisting) {
-        return { error: EXISTING_STAGE };
-      }
-    }
-
-    structures.push(...generatedStructures);
+    const reconcileResult = reconcileMainStructureIds({
+      mainStructureIsPlaceholder,
+      existingMainStructure,
+      generatedStructures,
+      overwriteExisting,
+      generatedLinks,
+      structures,
+    });
+    if (reconcileResult?.error) return reconcileResult;
   }
   structures.sort(structureSort);
 
@@ -277,4 +212,115 @@ export function generateDrawStructuresAndLinks(params: GenerateDrawStructuresAnd
     structures,
     links,
   };
+}
+
+function getQualifiersCount(link, structure) {
+  if (link.linkType === POSITION && structure?.structures) {
+    const finishingPositions = link.source.finishingPositions || [];
+    return structure.structures.length * finishingPositions.length;
+  } else if (link.linkType === WINNER && structure?.matchUps?.length) {
+    const qualifyingRoundNumber = link.source.roundNumber;
+    const matchUps = structure.matchUps.filter(({ roundNumber }) => roundNumber === qualifyingRoundNumber);
+    return matchUps.length;
+  }
+}
+
+function analyzeExistingQualifying({ drawDefinition, structures }) {
+  const existingQualifyingStructures = drawDefinition?.structures?.filter(({ stage }) => stage === QUALIFYING);
+  if (existingQualifyingStructures) {
+    structures.push(...existingQualifyingStructures);
+  }
+  const existingQualifyingStructureIds = existingQualifyingStructures?.map(({ structureId }) => structureId);
+  const existingMainStructure = drawDefinition?.structures?.find(
+    ({ stage, stageSequence }) => stage === MAIN && stageSequence === 1,
+  );
+  const existingQualifyingLinks = drawDefinition?.links?.filter(
+    (link) =>
+      link.target.structureId === existingMainStructure?.structureId &&
+      existingQualifyingStructureIds?.includes(link.source.structureId),
+  );
+
+  const existingQualifyingDrawPositionsCount = existingQualifyingStructures
+    ?.map((structure) => {
+      const relevantLink = existingQualifyingLinks?.find((link) => link.target.structureId === structure.structureId);
+      const drawPositionsCount = getPositionAssignments({ structure })?.positionAssignments?.length ?? 0;
+      if (!relevantLink) return drawPositionsCount;
+
+      const sourceStructureId = relevantLink?.source.structureId;
+      const sourceStructure = drawDefinition.structures?.find(
+        (structure) => structure.structureId === sourceStructureId,
+      );
+      const sourceQualifiersCount = getQualifiersCount(relevantLink, sourceStructure) || 0;
+      return drawPositionsCount - sourceQualifiersCount;
+    })
+    .filter(Boolean)
+    .reduce((a, b) => a + b, 0);
+
+  const existingQualifiersCount = existingQualifyingLinks
+    ?.map((link) => {
+      const qualifyingStructureId = link.source.structureId;
+      const structure = existingQualifyingStructures?.find(
+        (structure) => structure.structureId === qualifyingStructureId,
+      );
+      return getQualifiersCount(link, structure);
+    })
+    .filter(Boolean)
+    .reduce((a, b) => a + b, 0);
+
+  const mainStructureIsPlaceholder = !!(existingMainStructure && !existingMainStructure?.matchUps?.length);
+
+  return {
+    existingQualifyingDrawPositionsCount,
+    mainStructureIsPlaceholder,
+    existingQualifyingLinks,
+    existingMainStructure,
+    existingQualifiersCount,
+  };
+}
+
+function isInvalidDrawSize({ drawType, drawSize, staggeredEntry }): boolean {
+  return !!(
+    drawType !== AD_HOC &&
+    (!drawSize ||
+      drawSize < 2 ||
+      ([LUCKY_DRAW, ADAPTIVE].includes(drawType) && !isPowerOf2(drawSize) && drawSize < 5) ||
+      (!staggeredEntry &&
+        ![FEED_IN, LUCKY_DRAW, ADAPTIVE].includes(drawType) &&
+        (([ROUND_ROBIN_WITH_PLAYOFF, ROUND_ROBIN].includes(drawType) && drawSize < 3) ||
+          (![ROUND_ROBIN, ROUND_ROBIN_WITH_PLAYOFF].includes(drawType) && !isPowerOf2(drawSize)))))
+  );
+}
+
+function reconcileMainStructureIds({
+  mainStructureIsPlaceholder,
+  existingMainStructure,
+  generatedStructures,
+  overwriteExisting,
+  generatedLinks,
+  structures,
+}): { error?: any } | undefined {
+  const generatedMainStructure = generatedStructures.find(
+    ({ stage, stageSequence }) => stage === MAIN && stageSequence === 1,
+  );
+
+  if (existingMainStructure && generatedMainStructure) {
+    if (mainStructureIsPlaceholder) {
+      remapStructureId(generatedMainStructure, existingMainStructure.structureId, generatedLinks);
+    } else if (!overwriteExisting) {
+      return { error: EXISTING_STAGE };
+    }
+  }
+
+  structures.push(...generatedStructures);
+  return undefined;
+}
+
+function remapStructureId(generatedMainStructure, targetStructureId, generatedLinks) {
+  const originalId = generatedMainStructure.structureId;
+  generatedMainStructure.structureId = targetStructureId;
+
+  for (const link of generatedLinks || []) {
+    if (link.source.structureId === originalId) link.source.structureId = targetStructureId;
+    if (link.target.structureId === originalId) link.target.structureId = targetStructureId;
+  }
 }

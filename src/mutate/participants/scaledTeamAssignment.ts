@@ -50,21 +50,15 @@ type ScaledTeamAssignmentArgs = {
   eventId?: string;
   event?: Event;
 };
-export function scaledTeamAssignment({
-  clearExistingAssignments = true, // by default remove all existing individualParticipantIds from targeted teams
-  individualParticipantIds, // if scaledParticipants are provided, individualParticipants is ignored
-  reverseAssignmentOrder, // optional - reverses team order; useful for sequential assignment of participant groupings to ensure balanced distribution
-  initialTeamIndex = 0, // optional - allows assignment to begin at a specified array index; useful for sequential assignment of groups of scaledParticipants
-  scaledParticipants = [], // optional - either scaledParticipants or (individualParticipantIds and scaleName) must be provided
-  teamParticipantIds, // optional, IF teamsCount is provided then teams will be created
-  tournamentRecord, // supplied automatically by tournamentEngine
-  scaleAttributes, // ignored if scaledParticipants are provided; { scaleName, scaleType, sortOrder, eventType }
-  teamNameBase, // optional - defaults to '[categoryName] TEAM #', where categoryName is derived from eventId (if supplied)
-  teamsCount, // optional - derived from teamParticipantIds (if provided) - create # of teams if teamParticipantIds provided are insufficient
-  eventId, // optional - source teamParticipantIds from DIRECT_ACCEPTANCE participants in a TEAM event
-  event, // supplied automatically by tournamentEngine
-}: ScaledTeamAssignmentArgs) {
-  if (!tournamentRecord) return { error: MISSING_TOURNAMENT_RECORD };
+function validateScaledTeamArgs({
+  teamParticipantIds,
+  teamsCount,
+  eventId,
+  initialTeamIndex,
+  scaledParticipants,
+  scaleAttributes,
+  individualParticipantIds,
+}) {
   if (
     (!Array.isArray(teamParticipantIds) && !isConvertableInteger(teamsCount) && !eventId) ||
     !isConvertableInteger(initialTeamIndex) ||
@@ -79,41 +73,33 @@ export function scaledTeamAssignment({
   ) {
     return { error: MISSING_VALUE, info: 'Missing scaling details' };
   }
+  return undefined;
+}
 
+function resolveTeamParticipantIds({ eventId, event, teamParticipantIds }) {
   if (eventId && !teamParticipantIds) {
     if (event?.eventType !== TEAM_EVENT) return { error: INVALID_EVENT_TYPE };
-    teamParticipantIds = event?.entries
-      ?.filter(({ entryStatus }) => entryStatus === DIRECT_ACCEPTANCE)
-      .map(getParticipantId);
-  }
-
-  if (!teamParticipantIds?.length && !teamsCount) {
     return {
-      info: 'Missing teamParticipantIds or teamsCount',
-      error: MISSING_VALUE,
+      teamParticipantIds: event?.entries
+        ?.filter(({ entryStatus }) => entryStatus === DIRECT_ACCEPTANCE)
+        .map(getParticipantId),
     };
   }
+  return { teamParticipantIds };
+}
 
-  let participantIdsToAssign = individualParticipantIds ?? scaledParticipants.map(({ participantId }) => participantId);
-
-  if (reverseAssignmentOrder) {
-    teamParticipantIds?.reverse();
-    initialTeamIndex += 1; // ensures that the targeted team remains the first team to receive an assignment
-  }
-  if (initialTeamIndex > (teamParticipantIds?.length || 0) - 1) initialTeamIndex = 0;
-
-  const orderedTeamParticipantIds =
-    teamParticipantIds?.slice(initialTeamIndex).concat(...teamParticipantIds.slice(0, initialTeamIndex)) ?? [];
-
+function collectRelevantTeams({ tournamentRecord, orderedTeamParticipantIds }) {
   const relevantTeams: any[] = [];
-  // build up an array of targeted TEAM participants
   for (const participant of tournamentRecord.participants ?? []) {
     const { participantId, participantType } = participant;
     if (!orderedTeamParticipantIds.includes(participantId)) continue;
     if (participantType !== TEAM_PARTICIPANT) return { error: INVALID_PARTICIPANT_TYPE, participant };
     relevantTeams.push(participant);
   }
+  return { relevantTeams };
+}
 
+function ensureTeamsCount({ teamsCount, relevantTeams, teamNameBase, tournamentRecord }) {
   if (teamsCount && relevantTeams.length < teamsCount) {
     const addCount = teamsCount - (relevantTeams?.length || 0);
     const nameBase = teamNameBase ?? 'Team';
@@ -128,68 +114,36 @@ export function scaledTeamAssignment({
       returnParticipants: true,
       tournamentRecord,
     });
-    const addedParticipantIds = participants.map(getParticipantId);
+    const addedParticipantIds = new Set(participants.map(getParticipantId));
     const addedParticipants =
-      tournamentRecord.participants?.filter(({ participantId }) => addedParticipantIds.includes(participantId)) ?? [];
+      tournamentRecord.participants?.filter(({ participantId }) => addedParticipantIds.has(participantId)) ?? [];
     relevantTeams.push(...addedParticipants);
   }
+}
 
-  if (!relevantTeams.length) return { error: TEAM_NOT_FOUND };
+function buildScaledParticipants({ tournamentRecord, participantIdsToAssign, scaleAttributes, scaledParticipants }) {
+  for (const participant of tournamentRecord.participants ?? []) {
+    const { participantId, participantType } = participant;
+    if (!participantIdsToAssign.includes(participantId)) continue;
+    if (participantType !== INDIVIDUAL) return { error: INVALID_PARTICIPANT_TYPE, participant };
 
-  if (clearExistingAssignments) {
-    // clear pre-existing individualParticipantIds
-    for (const relevantTeam of relevantTeams) {
-      relevantTeam.individualParticipantIds = [];
-    }
-  } else {
-    const preAssignedParticipantIds = relevantTeams.map((individualParticipantIds) => individualParticipantIds).flat();
+    const scaleItem = participantScaleItem({
+      scaleAttributes,
+      participant,
+    })?.scaleItem;
 
-    if (individualParticipantIds?.length) {
-      participantIdsToAssign = participantIdsToAssign.filter(
-        (participantId) => !preAssignedParticipantIds.includes(participantId),
-      );
-    } else {
-      scaledParticipants = scaledParticipants?.filter(
-        ({ participantId }) => !preAssignedParticipantIds.includes(participantId),
-      );
-    }
+    const scaleValue = scaleAttributes?.accessor
+      ? scaleItem?.scaleValue?.[scaleAttributes?.accessor]
+      : scaleItem?.scaleValue;
+
+    scaledParticipants.push({ participantId, scaleValue });
   }
 
-  if (!individualParticipantIds?.length && !scaledParticipants?.length) {
-    return { error: NO_CANDIDATES, info: 'Nothing to be done' };
-  }
+  if (!scaledParticipants.length) return { error: PARTICIPANT_NOT_FOUND };
+  return undefined;
+}
 
-  if (!scaledParticipants.length) {
-    for (const participant of tournamentRecord.participants ?? []) {
-      const { participantId, participantType } = participant;
-      if (!participantIdsToAssign.includes(participantId)) continue;
-      if (participantType !== INDIVIDUAL) return { error: INVALID_PARTICIPANT_TYPE, participant };
-
-      const scaleItem = participantScaleItem({
-        scaleAttributes,
-        participant,
-      })?.scaleItem;
-
-      const scaleValue = scaleAttributes?.accessor
-        ? scaleItem?.scaleValue?.[scaleAttributes?.accessor]
-        : scaleItem?.scaleValue;
-
-      const scaledParticipant = { participantId, scaleValue };
-      scaledParticipants.push(scaledParticipant);
-    }
-
-    if (!scaledParticipants.length) return { error: PARTICIPANT_NOT_FOUND };
-  }
-  scaledParticipants.sort((a, b) =>
-    scaleAttributes?.sortOrder
-      ? (b?.scaleValue || 0) - (a?.scaleValue || 0)
-      : (a?.scaleValue || Infinity) - (b?.scaleValue || Infinity),
-  );
-
-  for (const scaledParticipant of scaledParticipants) {
-    if (!scaledParticipant.participantId) return { error: INVALID_VALUES, scaledParticipant };
-  }
-
+function distributeParticipantsToTeams({ scaledParticipants, relevantTeams }) {
   let index = 0;
   while (index < scaledParticipants.length) {
     for (const relevantTeam of relevantTeams) {
@@ -200,30 +154,26 @@ export function scaledTeamAssignment({
     }
     relevantTeams.reverse();
   }
+}
 
-  const relevantTeamParticipantIds = relevantTeams.map(getParticipantId);
-  // for all events, check if any relevant teams are present
-  // if a relevant team is present, remove any UNGROUPED participants that are part of that team
+function removeAssignedFromEvents({ tournamentRecord, relevantTeams }) {
+  const relevantTeamParticipantIds = new Set(relevantTeams.map(getParticipantId));
   for (const event of tournamentRecord.events ?? []) {
     if (event.eventType !== TEAM_EVENT) continue;
     const relevantTeamEntries = (event.entries ?? []).filter((entry) =>
-      relevantTeamParticipantIds.includes(entry.participantId),
+      relevantTeamParticipantIds.has(entry.participantId),
     );
     for (const relevantEntry of relevantTeamEntries) {
-      const relevantTeamParticipantId = relevantEntry.participantId;
       const relevantTeam = relevantTeams.find(
-        (teamParticipant) => teamParticipant.participantId === relevantTeamParticipantId,
+        (teamParticipant) => teamParticipant.participantId === relevantEntry.participantId,
       );
       const individualParticipantIds = relevantTeam?.individualParticipantIds;
-      // remove any relevant individualParticipant entries from event.entries
       event.entries = (event.entries ?? []).filter((entry) => !individualParticipantIds.includes(entry.participantId));
-      // also remove any relevant individualParticipant entries from drawDefinition.entries
       (event.drawDefinitions ?? []).forEach((drawDefinition) => {
         drawDefinition.entries = (drawDefinition.entries ?? []).filter(
           (entry) => !individualParticipantIds.includes(entry.participantId),
         );
       });
-      // also remove any relevant individualParticipant any flight.drawEntries
       const { flightProfile } = getFlightProfile({ event });
       (flightProfile?.flights || []).forEach((flight) => {
         flight.drawEntries = (flight.drawEntries || []).filter(
@@ -232,6 +182,110 @@ export function scaledTeamAssignment({
       });
     }
   }
+}
+
+export function scaledTeamAssignment({
+  clearExistingAssignments = true,
+  individualParticipantIds,
+  reverseAssignmentOrder,
+  initialTeamIndex = 0,
+  scaledParticipants = [],
+  teamParticipantIds,
+  tournamentRecord,
+  scaleAttributes,
+  teamNameBase,
+  teamsCount,
+  eventId,
+  event,
+}: ScaledTeamAssignmentArgs) {
+  if (!tournamentRecord) return { error: MISSING_TOURNAMENT_RECORD };
+
+  const validationError = validateScaledTeamArgs({
+    teamParticipantIds,
+    teamsCount,
+    eventId,
+    initialTeamIndex,
+    scaledParticipants,
+    scaleAttributes,
+    individualParticipantIds,
+  });
+  if (validationError) return validationError;
+
+  const resolved = resolveTeamParticipantIds({ eventId, event, teamParticipantIds });
+  if (resolved.error) return resolved;
+  teamParticipantIds = resolved.teamParticipantIds;
+
+  if (!teamParticipantIds?.length && !teamsCount) {
+    return {
+      info: 'Missing teamParticipantIds or teamsCount',
+      error: MISSING_VALUE,
+    };
+  }
+
+  let participantIdsToAssign = individualParticipantIds ?? scaledParticipants.map(({ participantId }) => participantId);
+
+  if (reverseAssignmentOrder) {
+    teamParticipantIds?.reverse();
+    initialTeamIndex += 1;
+  }
+  if (initialTeamIndex > (teamParticipantIds?.length || 0) - 1) initialTeamIndex = 0;
+
+  const orderedTeamParticipantIds =
+    teamParticipantIds?.slice(initialTeamIndex).concat(...teamParticipantIds.slice(0, initialTeamIndex)) ?? [];
+
+  const collected = collectRelevantTeams({ tournamentRecord, orderedTeamParticipantIds });
+  if (collected.error) return collected;
+  const { relevantTeams } = collected;
+
+  ensureTeamsCount({ teamsCount, relevantTeams, teamNameBase, tournamentRecord });
+
+  if (!relevantTeams.length) return { error: TEAM_NOT_FOUND };
+
+  if (clearExistingAssignments) {
+    for (const relevantTeam of relevantTeams) {
+      relevantTeam.individualParticipantIds = [];
+    }
+  } else {
+    const preAssignedParticipantIds = new Set(relevantTeams.flat());
+
+    if (individualParticipantIds?.length) {
+      participantIdsToAssign = participantIdsToAssign.filter(
+        (participantId) => !preAssignedParticipantIds.has(participantId),
+      );
+    } else {
+      scaledParticipants = scaledParticipants?.filter(
+        ({ participantId }) => !preAssignedParticipantIds.has(participantId),
+      );
+    }
+  }
+
+  if (!individualParticipantIds?.length && !scaledParticipants?.length) {
+    return { error: NO_CANDIDATES, info: 'Nothing to be done' };
+  }
+
+  if (!scaledParticipants.length) {
+    const buildError = buildScaledParticipants({
+      tournamentRecord,
+      participantIdsToAssign,
+      scaleAttributes,
+      scaledParticipants,
+    });
+    if (buildError) return buildError;
+  }
+
+  scaledParticipants.sort((a, b) =>
+    scaleAttributes?.sortOrder
+      ? (b?.scaleValue || 0) - (a?.scaleValue || 0)
+      : (a?.scaleValue || Infinity) - (b?.scaleValue || Infinity),
+  );
+
+  for (const scaledParticipant of scaledParticipants) {
+    if (!scaledParticipant.participantId) return { error: INVALID_VALUES, scaledParticipant };
+  }
+
+  distributeParticipantsToTeams({ scaledParticipants, relevantTeams });
+
+  removeAssignedFromEvents({ tournamentRecord, relevantTeams });
 
   return { ...SUCCESS, scaledParticipants };
 }

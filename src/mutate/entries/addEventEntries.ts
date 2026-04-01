@@ -160,15 +160,8 @@ function getTypedParticipantIdsHelper({
       ?.filter((participant) => {
         if (!participantIds.includes(participant.participantId)) return false;
 
-        if (
-          isValidSinglesParticipant(participant, event, entryStatus) &&
-          (!event.gender ||
-            !genderEnforced ||
-            isMixed(event.gender) ||
-            isAny(event.gender) ||
-            coercedGender(event.gender) === coercedGender(participant.person?.sex))
-        ) {
-          return true;
+        if (isValidSinglesParticipant(participant, event, entryStatus)) {
+          return isValidSinglesGender(participant, event, genderEnforced, mismatchedGender);
         }
 
         if (isValidDoublesParticipant(participant, event, entryStatus)) {
@@ -181,13 +174,6 @@ function getTypedParticipantIdsHelper({
 
         if (isValidHybridParticipant(participant, event, entryStatus)) {
           return true;
-        }
-
-        if (
-          isValidSinglesParticipant(participant, event, entryStatus) &&
-          !isValidSinglesGender(participant, event, genderEnforced, mismatchedGender)
-        ) {
-          return false;
         }
 
         return isValidTeamParticipant(participant, event, entryStatus);

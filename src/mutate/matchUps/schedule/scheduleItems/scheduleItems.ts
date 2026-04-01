@@ -53,6 +53,214 @@ function timeDate(value, scheduledDate) {
   return new Date(`${date}T${time}`).getTime();
 }
 
+function applyScheduleTiming({
+  removePriorValues,
+  tournamentRecord,
+  drawDefinition,
+  scheduledDate,
+  scheduledTime,
+  startTime,
+  stopTime,
+  resumeTime,
+  endTime,
+  matchUpId,
+  matchUp,
+  event,
+  stack,
+}) {
+  if (scheduledDate !== undefined) {
+    const result = addMatchUpScheduledDate({
+      disableNotice: true,
+      removePriorValues,
+      tournamentRecord,
+      drawDefinition,
+      scheduledDate,
+      matchUpId,
+    });
+    if (result?.error) return decorateResult({ result, stack, context: { scheduledDate } });
+  }
+  if (scheduledTime !== undefined) {
+    const result = addMatchUpScheduledTime({
+      disableNotice: true,
+      removePriorValues,
+      tournamentRecord,
+      drawDefinition,
+      scheduledTime,
+      matchUpId,
+      matchUp,
+    });
+    if (result?.error) return decorateResult({ result, stack, context: { scheduledTime } });
+  }
+  if (startTime !== undefined) {
+    const result = addMatchUpStartTime({
+      disableNotice: true,
+      removePriorValues,
+      tournamentRecord,
+      drawDefinition,
+      matchUpId,
+      startTime,
+      event,
+    });
+    if (result?.error) return decorateResult({ result, stack, context: { startTime } });
+  }
+  if (stopTime !== undefined) {
+    const result = addMatchUpStopTime({
+      disableNotice: true,
+      removePriorValues,
+      tournamentRecord,
+      drawDefinition,
+      matchUpId,
+      stopTime,
+      event,
+    });
+    if (result?.error) return decorateResult({ result, stack, context: { stopTime } });
+  }
+  if (resumeTime !== undefined) {
+    const result = addMatchUpResumeTime({
+      disableNotice: true,
+      removePriorValues,
+      tournamentRecord,
+      drawDefinition,
+      resumeTime,
+      matchUpId,
+      event,
+    });
+    if (result?.error) return decorateResult({ result, stack, context: { resumeTime } });
+  }
+  if (endTime !== undefined) {
+    const result = addMatchUpEndTime({
+      disableNotice: true,
+      removePriorValues,
+      tournamentRecord,
+      drawDefinition,
+      matchUpId,
+      endTime,
+      event,
+    });
+    if (result?.error) return decorateResult({ result, stack, context: { endTime } });
+  }
+  return undefined;
+}
+
+function applyScheduleAssignments({
+  proConflictDetection,
+  removePriorValues,
+  tournamentRecords,
+  tournamentRecord,
+  drawDefinition,
+  homeParticipantId,
+  timeModifiers,
+  courtAnnotation,
+  scheduledDate,
+  courtOrder,
+  courtIds,
+  courtId,
+  venueId,
+  matchUpId,
+  matchUp,
+  stack,
+}) {
+  if (courtIds !== undefined) {
+    const result = allocateTeamMatchUpCourts({
+      disableNotice: true,
+      removePriorValues,
+      tournamentRecord,
+      drawDefinition,
+      matchUpId,
+      courtIds,
+    });
+    if (result?.error) return decorateResult({ result, stack, context: { courtIds } });
+  }
+
+  const conflictResult = checkScheduleConflicts({
+    proConflictDetection,
+    tournamentRecord,
+    scheduledDate,
+    courtOrder,
+    matchUpId,
+    courtId,
+    stack,
+  });
+  if (conflictResult) return conflictResult;
+
+  if (courtId !== undefined && scheduledDate !== undefined) {
+    const result = assignMatchUpCourt({
+      courtDayDate: scheduledDate,
+      disableNotice: true,
+      removePriorValues,
+      tournamentRecords,
+      tournamentRecord,
+      drawDefinition,
+      matchUpId,
+      courtId,
+    });
+    if (result?.error) return decorateResult({ result, stack, context: { courtId } });
+  }
+
+  if (venueId !== undefined) {
+    const result = assignMatchUpVenue({
+      disableNotice: true,
+      removePriorValues,
+      tournamentRecords,
+      tournamentRecord,
+      drawDefinition,
+      matchUpId,
+      venueId,
+    });
+    if (result?.error) return decorateResult({ result, stack, context: { venueId } });
+  }
+
+  if (courtOrder !== undefined && isConvertableInteger(courtOrder)) {
+    const result = addMatchUpCourtOrder({
+      disableNotice: true,
+      removePriorValues,
+      tournamentRecord,
+      drawDefinition,
+      courtOrder,
+      matchUpId,
+    });
+    if (result?.error) return decorateResult({ result, stack, context: { courtOrder } });
+  }
+
+  if (courtAnnotation !== undefined) {
+    const result = addMatchUpCourtAnnotation({
+      disableNotice: true,
+      removePriorValues,
+      tournamentRecord,
+      drawDefinition,
+      courtAnnotation,
+      matchUpId,
+    });
+    if (result?.error) return decorateResult({ result, stack, context: { courtAnnotation } });
+  }
+
+  if (timeModifiers !== undefined) {
+    const result = addMatchUpTimeModifiers({
+      disableNotice: true,
+      removePriorValues,
+      tournamentRecord,
+      drawDefinition,
+      timeModifiers,
+      matchUpId,
+      matchUp,
+    });
+    if (result?.error) return decorateResult({ result, stack, context: { timeModifiers } });
+  }
+
+  if (isString(homeParticipantId)) {
+    setMatchUpHomeParticipantId({
+      disableNotice: true,
+      homeParticipantId,
+      removePriorValues,
+      tournamentRecord,
+      drawDefinition,
+      matchUpId,
+    });
+  }
+
+  return undefined;
+}
+
 type AddMatchUpScheduleItemsArgs = {
   inContextMatchUps?: HydratedMatchUp[];
   drawMatchUps?: HydratedMatchUp[];
@@ -162,197 +370,42 @@ export function addMatchUpScheduleItems(params: AddMatchUpScheduleItemsArgs): {
     }
   }
 
-  if (scheduledDate !== undefined) {
-    const result = addMatchUpScheduledDate({
-      disableNotice: true,
-      removePriorValues,
-      tournamentRecord,
-      drawDefinition,
-      scheduledDate,
-      matchUpId,
-    });
-    if (result?.error) return decorateResult({ result, stack, context: { scheduledDate } });
-  }
-  if (scheduledTime !== undefined) {
-    const result = addMatchUpScheduledTime({
-      disableNotice: true,
-      removePriorValues,
-      tournamentRecord,
-      drawDefinition,
-      scheduledTime,
-      matchUpId,
-      matchUp,
-    });
-    if (result?.error) return decorateResult({ result, stack, context: { scheduledTime } });
-  }
-  if (startTime !== undefined) {
-    const result = addMatchUpStartTime({
-      disableNotice: true,
-      removePriorValues,
-      tournamentRecord,
-      drawDefinition,
-      matchUpId,
-      startTime,
-      event,
-    });
-    if (result?.error) return decorateResult({ result, stack, context: { startTime } });
-  }
-  if (stopTime !== undefined) {
-    const result = addMatchUpStopTime({
-      disableNotice: true,
-      removePriorValues,
-      tournamentRecord,
-      drawDefinition,
-      matchUpId,
-      stopTime,
-      event,
-    });
-    if (result?.error) return decorateResult({ result, stack, context: { stopTime } });
-  }
-  if (resumeTime !== undefined) {
-    const result = addMatchUpResumeTime({
-      disableNotice: true,
-      removePriorValues,
-      tournamentRecord,
-      drawDefinition,
-      resumeTime,
-      matchUpId,
-      event,
-    });
-    if (result?.error) return decorateResult({ result, stack, context: { resumeTime } });
-  }
-  if (endTime !== undefined) {
-    const result = addMatchUpEndTime({
-      disableNotice: true,
-      removePriorValues,
-      tournamentRecord,
-      drawDefinition,
-      matchUpId,
-      endTime,
-      event,
-    });
-    if (result?.error) return decorateResult({ result, stack, context: { endTime } });
-  }
-  if (courtIds !== undefined) {
-    const result = allocateTeamMatchUpCourts({
-      disableNotice: true,
-      removePriorValues,
-      tournamentRecord,
-      drawDefinition,
-      matchUpId,
-      courtIds,
-    });
-    if (result?.error) return decorateResult({ result, stack, context: { courtIds } });
-  }
+  const timingResult = applyScheduleTiming({
+    removePriorValues,
+    tournamentRecord,
+    drawDefinition,
+    scheduledDate,
+    scheduledTime,
+    startTime,
+    stopTime,
+    resumeTime,
+    endTime,
+    matchUpId,
+    matchUp,
+    event,
+    stack,
+  });
+  if (timingResult?.error) return timingResult;
 
-  // Check for schedule conflict before assigning court
-  if (
-    proConflictDetection &&
-    courtId !== undefined &&
-    scheduledDate !== undefined &&
-    courtOrder !== undefined &&
-    isConvertableInteger(courtOrder)
-  ) {
-    const targetCourtOrder = ensureInt(courtOrder);
-    const allMatchUps = allTournamentMatchUps({ tournamentRecord })?.matchUps ?? [];
-
-    // Check if any other matchUp already occupies this court slot
-    const conflictingMatchUp = allMatchUps.find((m) => {
-      if (m.matchUpId === matchUpId) return false; // Skip current matchUp
-      const matchUpCourtOrder = m.schedule?.courtOrder ? ensureInt(m.schedule.courtOrder) : undefined;
-      return (
-        m.schedule?.courtId === courtId &&
-        matchUpCourtOrder === targetCourtOrder &&
-        m.schedule?.scheduledDate === scheduledDate
-      );
-    });
-
-    if (conflictingMatchUp) {
-      return decorateResult({
-        result: {
-          error: SCHEDULE_CONFLICT_DOUBLE_BOOKING,
-          info: `Court slot already occupied by matchUp ${conflictingMatchUp.matchUpId}`,
-        },
-        stack,
-        context: { courtId, courtOrder, scheduledDate },
-      });
-    }
-  }
-
-  if (courtId !== undefined && scheduledDate !== undefined) {
-    const result = assignMatchUpCourt({
-      courtDayDate: scheduledDate,
-      disableNotice: true,
-      removePriorValues,
-      tournamentRecords,
-      tournamentRecord,
-      drawDefinition,
-      matchUpId,
-      courtId,
-    });
-    if (result?.error) return decorateResult({ result, stack, context: { courtId } });
-  }
-
-  if (venueId !== undefined) {
-    const result = assignMatchUpVenue({
-      disableNotice: true,
-      removePriorValues,
-      tournamentRecords,
-      tournamentRecord,
-      drawDefinition,
-      matchUpId,
-      venueId,
-    });
-    if (result?.error) return decorateResult({ result, stack, context: { venueId } });
-  }
-
-  if (courtOrder !== undefined && isConvertableInteger(courtOrder)) {
-    const result = addMatchUpCourtOrder({
-      disableNotice: true,
-      removePriorValues,
-      tournamentRecord,
-      drawDefinition,
-      courtOrder,
-      matchUpId,
-    });
-    if (result?.error) return decorateResult({ result, stack, context: { courtOrder } });
-  }
-
-  if (courtAnnotation !== undefined) {
-    const result = addMatchUpCourtAnnotation({
-      disableNotice: true,
-      removePriorValues,
-      tournamentRecord,
-      drawDefinition,
-      courtAnnotation,
-      matchUpId,
-    });
-    if (result?.error) return decorateResult({ result, stack, context: { courtAnnotation } });
-  }
-
-  if (timeModifiers !== undefined) {
-    const result = addMatchUpTimeModifiers({
-      disableNotice: true,
-      removePriorValues,
-      tournamentRecord,
-      drawDefinition,
-      timeModifiers,
-      matchUpId,
-      matchUp,
-    });
-    if (result?.error) return decorateResult({ result, stack, context: { timeModifiers } });
-  }
-
-  if (isString(homeParticipantId)) {
-    setMatchUpHomeParticipantId({
-      disableNotice: true,
-      homeParticipantId,
-      removePriorValues,
-      tournamentRecord,
-      drawDefinition,
-      matchUpId,
-    });
-  }
+  const assignmentResult = applyScheduleAssignments({
+    proConflictDetection,
+    removePriorValues,
+    tournamentRecords,
+    tournamentRecord,
+    drawDefinition,
+    homeParticipantId,
+    timeModifiers,
+    courtAnnotation,
+    scheduledDate,
+    courtOrder,
+    courtIds,
+    courtId,
+    venueId,
+    matchUpId,
+    matchUp,
+    stack,
+  });
+  if (assignmentResult?.error) return assignmentResult;
 
   if (!disableNotice) {
     modifyMatchUpNotice({
@@ -365,6 +418,60 @@ export function addMatchUpScheduleItems(params: AddMatchUpScheduleItemsArgs): {
   }
 
   return warning ? { ...SUCCESS, warnings: [warning] } : { ...SUCCESS };
+}
+
+function checkScheduleConflicts({
+  proConflictDetection,
+  tournamentRecord,
+  scheduledDate,
+  courtOrder,
+  matchUpId,
+  courtId,
+  stack,
+}: {
+  proConflictDetection: boolean;
+  tournamentRecord: any;
+  scheduledDate?: string;
+  courtOrder?: number;
+  matchUpId: string;
+  courtId?: string;
+  stack: string;
+}) {
+  if (
+    !proConflictDetection ||
+    courtId === undefined ||
+    scheduledDate === undefined ||
+    courtOrder === undefined ||
+    !isConvertableInteger(courtOrder)
+  ) {
+    return undefined;
+  }
+
+  const targetCourtOrder = ensureInt(courtOrder);
+  const allMatchUps = allTournamentMatchUps({ tournamentRecord })?.matchUps ?? [];
+
+  const conflictingMatchUp = allMatchUps.find((m) => {
+    if (m.matchUpId === matchUpId) return false;
+    const matchUpCourtOrder = m.schedule?.courtOrder ? ensureInt(m.schedule.courtOrder) : undefined;
+    return (
+      m.schedule?.courtId === courtId &&
+      matchUpCourtOrder === targetCourtOrder &&
+      m.schedule?.scheduledDate === scheduledDate
+    );
+  });
+
+  if (conflictingMatchUp) {
+    return decorateResult({
+      result: {
+        error: SCHEDULE_CONFLICT_DOUBLE_BOOKING,
+        info: `Court slot already occupied by matchUp ${conflictingMatchUp.matchUpId}`,
+      },
+      stack,
+      context: { courtId, courtOrder, scheduledDate },
+    });
+  }
+
+  return undefined;
 }
 
 export function addMatchUpCourtOrder({
@@ -571,26 +678,27 @@ export function addMatchUpEndTime({
   }
 }
 
-export function addMatchUpStopTime({
+function addChronologicalTimeItem({
   removePriorValues,
   tournamentRecord,
   drawDefinition,
   disableNotice,
+  invalidError,
   matchUpId,
-  stopTime,
+  itemType,
+  timeValue,
   event,
 }: AddScheduleAttributeArgs & {
-  stopTime?: string;
+  invalidError: ErrorType;
+  timeValue?: string;
+  itemType: string;
 }) {
   if (!matchUpId) return { error: MISSING_MATCHUP_ID };
-  if (!validTimeValue(stopTime)) return { error: INVALID_TIME };
+  if (!validTimeValue(timeValue)) return { error: INVALID_TIME };
 
   const { matchUp } = findDrawMatchUp({ drawDefinition, event, matchUpId });
   const { scheduledDate } = scheduledMatchUpDate({ matchUp });
   const timeItems = matchUp?.timeItems ?? [];
-
-  // can't add a STOP_TIME if the matchUp is not STARTED or RESUMED, or has START_TIME
-  // if latest relevaant timeItem is a STOP_TIME then overwrite
 
   const hasEndTime = timeItems.reduce((hasEndTime: any, timeItem) => {
     return timeItem.itemType === END_TIME || hasEndTime;
@@ -603,24 +711,23 @@ export function addMatchUpStopTime({
     .sort((a, b) => timeDate(a.itemValue, scheduledDate) - timeDate(b.itemValue, scheduledDate));
 
   const lastRelevantTimeItem = relevantTimeItems.at(-1);
-  const lastRelevantTimeItemIsStop = lastRelevantTimeItem?.itemType === STOP_TIME;
+  const lastRelevantTimeItemIsTarget = lastRelevantTimeItem?.itemType === itemType;
 
   const latestRelevantTimeValue = relevantTimeItems
-    .filter((timeItem) => !lastRelevantTimeItemIsStop || timeItem.createdAt !== lastRelevantTimeItem.createdAt)
+    .filter((timeItem) => !lastRelevantTimeItemIsTarget || timeItem.createdAt !== lastRelevantTimeItem.createdAt)
     .map((timeItem) => timeDate(timeItem.itemValue, scheduledDate))
     .reduce((latest: any, timeValue) => (!latest || timeValue > latest ? timeValue : latest), undefined);
 
-  if (timeDate(stopTime, scheduledDate) > latestRelevantTimeValue) {
-    if (matchUp?.timeItems && lastRelevantTimeItemIsStop) {
+  if (timeDate(timeValue, scheduledDate) > latestRelevantTimeValue) {
+    if (matchUp?.timeItems && lastRelevantTimeItemIsTarget) {
       const targetTimeStamp = lastRelevantTimeItem.createdAt;
       matchUp.timeItems = matchUp.timeItems.filter((timeItem) => timeItem.createdAt !== targetTimeStamp);
     }
 
-    // All times stored as military time
-    const militaryTime = convertTime(stopTime, true, true);
+    const militaryTime = convertTime(timeValue, true, true);
     const timeItem = {
       itemValue: militaryTime,
-      itemType: STOP_TIME,
+      itemType,
     };
 
     return addMatchUpTimeItem({
@@ -633,8 +740,32 @@ export function addMatchUpStopTime({
       timeItem,
     });
   } else {
-    return { error: INVALID_STOP_TIME };
+    return { error: invalidError };
   }
+}
+
+export function addMatchUpStopTime({
+  removePriorValues,
+  tournamentRecord,
+  drawDefinition,
+  disableNotice,
+  matchUpId,
+  stopTime,
+  event,
+}: AddScheduleAttributeArgs & {
+  stopTime?: string;
+}) {
+  return addChronologicalTimeItem({
+    invalidError: INVALID_STOP_TIME,
+    timeValue: stopTime,
+    itemType: STOP_TIME,
+    removePriorValues,
+    tournamentRecord,
+    drawDefinition,
+    disableNotice,
+    matchUpId,
+    event,
+  });
 }
 
 export function addMatchUpResumeTime({
@@ -648,57 +779,15 @@ export function addMatchUpResumeTime({
 }: AddScheduleAttributeArgs & {
   resumeTime?: string;
 }) {
-  if (!matchUpId) return { error: MISSING_MATCHUP_ID };
-  if (!validTimeValue(resumeTime)) return { error: INVALID_TIME };
-
-  const { matchUp } = findDrawMatchUp({ drawDefinition, event, matchUpId });
-  const { scheduledDate } = scheduledMatchUpDate({ matchUp });
-  const timeItems = matchUp?.timeItems ?? [];
-
-  // can't add a RESUME_TIME if the matchUp is not STOPPED, or if it has ENDED
-  // if latest relevaant timeItem is a RESUME_TIME then overwrite
-
-  const hasEndTime = timeItems.reduce((hasEndTime: any, timeItem) => {
-    return timeItem.itemType === END_TIME || hasEndTime;
-  }, undefined);
-
-  if (hasEndTime) return { error: EXISTING_END_TIME };
-
-  const relevantTimeItems = timeItems
-    .filter((timeItem: any) => [START_TIME, RESUME_TIME, STOP_TIME].includes(timeItem?.itemType))
-    .sort((a, b) => timeDate(a.itemValue, scheduledDate) - timeDate(b.itemValue, scheduledDate));
-
-  const lastRelevantTimeItem = relevantTimeItems.at(-1);
-  const lastRelevantTimeItemIsResume = lastRelevantTimeItem?.itemType === RESUME_TIME;
-
-  const latestRelevantTimeValue = relevantTimeItems
-    .filter((timeItem) => !lastRelevantTimeItemIsResume || timeItem.createdAt !== lastRelevantTimeItem.createdAt)
-    .map((timeItem) => timeDate(timeItem.itemValue, scheduledDate))
-    .reduce((latest: any, timeValue) => (!latest || timeValue > latest ? timeValue : latest), undefined);
-
-  if (timeDate(resumeTime, scheduledDate) > latestRelevantTimeValue) {
-    if (matchUp?.timeItems && lastRelevantTimeItemIsResume) {
-      const targetTimeStamp = lastRelevantTimeItem.createdAt;
-      matchUp.timeItems = matchUp.timeItems.filter((timeItem) => timeItem.createdAt !== targetTimeStamp);
-    }
-
-    // All times stored as military time
-    const militaryTime = convertTime(resumeTime, true, true);
-    const timeItem = {
-      itemValue: militaryTime,
-      itemType: RESUME_TIME,
-    };
-
-    return addMatchUpTimeItem({
-      duplicateValues: true,
-      removePriorValues,
-      tournamentRecord,
-      drawDefinition,
-      disableNotice,
-      matchUpId,
-      timeItem,
-    });
-  } else {
-    return { error: INVALID_RESUME_TIME };
-  }
+  return addChronologicalTimeItem({
+    invalidError: INVALID_RESUME_TIME,
+    timeValue: resumeTime,
+    itemType: RESUME_TIME,
+    removePriorValues,
+    tournamentRecord,
+    drawDefinition,
+    disableNotice,
+    matchUpId,
+    event,
+  });
 }

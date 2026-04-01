@@ -48,6 +48,127 @@ type GetEventsArgs = {
   context?: any;
 };
 
+function sumValues(values) {
+  return values.reduce((total, value) => total + Number.parseFloat(value), 0);
+}
+
+function computeRatingsStats(ratings) {
+  const stats = {};
+  for (const scaleName of Object.keys(ratings)) {
+    const scaleRating = ratings[scaleName];
+    if (!scaleRating.length) continue;
+    const med = median(scaleRating)?.toFixed(2);
+    stats[scaleName] = {
+      avg: Number.parseFloat((sumValues(scaleRating) / scaleRating.length).toFixed(2)),
+      median: med ? Number.parseFloat(med) : undefined,
+      max: Math.max(...scaleRating),
+      min: Math.min(...scaleRating),
+    };
+  }
+  return stats;
+}
+
+function accumulateRatings(participant, eventType, target) {
+  if (participant?.ratings?.[eventType]) {
+    for (const rating of participant?.ratings?.[eventType] ?? []) {
+      const scaleName = rating.scaleName;
+      if (!target.ratings[scaleName]) target.ratings[scaleName] = [];
+      const accessor = ratingsParameters[scaleName]?.accessor;
+      if (accessor) {
+        const value = Number.parseFloat(rating.scaleValue?.[accessor]);
+        if (value) target.ratings[scaleName].push(value);
+      }
+    }
+  }
+  if (participant?.rankings?.[eventType]) {
+    for (const ranking of participant?.rankings?.[eventType] ?? []) {
+      const scaleName = ranking.scaleName;
+      if (!target.ranking[scaleName]) target.ranking[scaleName] = [];
+      if (ranking.scaleValue) target.ranking[scaleName].push(ranking.scaleValue);
+    }
+  }
+}
+
+function processParticipantScales(participantIds, participantMap, eventType, target) {
+  for (const participantId of participantIds.filter(Boolean)) {
+    const participant = participantMap?.[participantId]?.participant;
+    if (participant?.participantType === INDIVIDUAL) {
+      accumulateRatings(participant, eventType, target);
+    } else {
+      for (const individualParticipantId of participant?.individualParticipantIds ?? []) {
+        const individualParticipant = participantMap?.[individualParticipantId]?.participant;
+        accumulateRatings(individualParticipant, eventType, target);
+      }
+    }
+  }
+}
+
+function buildEventScaleValues({ eventCopies, scaleEventType, tournamentRecord, drawIds }) {
+  const eventsMap = {};
+  const participantMap = getParticipants({
+    withScaleValues: true,
+    tournamentRecord,
+  }).participantMap;
+
+  for (const event of eventCopies) {
+    const eventType = scaleEventType ?? event.eventType;
+    const eventId = event.eventId;
+
+    if (!eventsMap[eventId])
+      eventsMap[eventId] = {
+        ratingsStats: {},
+        ratings: {},
+        ranking: {},
+        draws: {},
+      };
+
+    const selectedEntries = (event.entries ?? []).filter(({ entryStatus }) =>
+      STRUCTURE_SELECTED_STATUSES.includes(entryStatus),
+    );
+    const participantIds = selectedEntries.map(getParticipantId);
+
+    processParticipantScales(participantIds, participantMap, eventType, eventsMap[eventId]);
+
+    eventsMap[eventId].ratingsStats = computeRatingsStats(eventsMap[eventId].ratings);
+
+    const processedDrawIds: string[] = [];
+    const ignoreDrawId = (drawId) =>
+      (drawIds?.length && drawIds.includes(drawId)) || processedDrawIds.includes(drawId);
+
+    for (const drawDefinition of event.drawDefinitions ?? []) {
+      const drawId: string = drawDefinition.drawId;
+      if (ignoreDrawId(drawId)) continue;
+
+      const assignedIds =
+        getAssignedParticipantIds({
+          drawDefinition,
+        }).assignedParticipantIds ?? [];
+      if (!eventsMap[eventId].draws[drawId])
+        eventsMap[eventId].draws[drawId] = {
+          ratingsStats: {},
+          ratings: {},
+          ranking: {},
+        };
+      processedDrawIds.push(drawId);
+      processParticipantScales(assignedIds, participantMap, eventType, eventsMap[eventId].draws[drawId]);
+    }
+
+    const flightProfile = getFlightProfile({ event }).flightProfile;
+    for (const flight of flightProfile?.flights ?? []) {
+      const drawId = flight.drawId;
+      if (ignoreDrawId(drawId)) continue;
+      const flightParticipantIds = flight.drawEntries.map(getParticipantId);
+      processParticipantScales(flightParticipantIds, participantMap, eventType, eventsMap[eventId].draws[drawId]);
+    }
+
+    for (const drawId of processedDrawIds) {
+      eventsMap[eventId].draws[drawId].ratingsStats = computeRatingsStats(eventsMap[eventId].draws[drawId].ratings);
+    }
+  }
+
+  return eventsMap;
+}
+
 export function getEvents({
   tournamentRecord,
   withScaleValues,
@@ -75,166 +196,9 @@ export function getEvents({
     })
     .filter(Boolean);
 
-  const eventsMap = {};
-
-  if (withScaleValues) {
-    const participantMap = getParticipants({
-      withScaleValues: true,
-      tournamentRecord,
-    }).participantMap;
-
-    const sum = (values) => values.reduce((total, value) => total + Number.parseFloat(value), 0);
-
-    for (const event of eventCopies) {
-      const eventType = scaleEventType ?? event.eventType;
-      const eventId = event.eventId;
-
-      if (!eventsMap[eventId])
-        eventsMap[eventId] = {
-          ratingsStats: {},
-          ratings: {},
-          ranking: {},
-          draws: {},
-        };
-
-      const selectedEntries = (event.entries ?? []).filter(({ entryStatus }) =>
-        STRUCTURE_SELECTED_STATUSES.includes(entryStatus),
-      );
-      const participantIds = selectedEntries.map(getParticipantId);
-
-      const processParticipant = (participant) => {
-        if (participant?.ratings?.[eventType]) {
-          for (const rating of participant?.ratings?.[eventType] ?? []) {
-            const scaleName = rating.scaleName;
-            if (!eventsMap[eventId].ratings[scaleName]) eventsMap[eventId].ratings[scaleName] = [];
-            const accessor = ratingsParameters[scaleName]?.accessor;
-            if (accessor) {
-              const value = Number.parseFloat(rating.scaleValue?.[accessor]);
-              if (value) eventsMap[eventId].ratings[scaleName].push(value);
-            }
-          }
-        }
-        if (participant?.rankings?.[eventType]) {
-          for (const ranking of participant?.rankings?.[eventType] ?? []) {
-            const scaleName = ranking.scaleName;
-            if (!eventsMap[eventId].ranking[scaleName]) eventsMap[eventId].ranking[scaleName] = [];
-            if (ranking.scaleValue) eventsMap[eventId].ranking[scaleName].push(ranking.scaleValue);
-          }
-        }
-      };
-
-      for (const participantId of participantIds) {
-        const participant = participantMap?.[participantId]?.participant;
-        if (participant?.participantType === INDIVIDUAL) {
-          processParticipant(participant);
-        } else {
-          for (const individualParticipantId of participant?.individualParticipantIds ?? []) {
-            const individualParticipant = participantMap?.[individualParticipantId]?.participant;
-            processParticipant(individualParticipant);
-          }
-        }
-      }
-
-      // add stats for all event-level entries ratings
-      const ratings = eventsMap[eventId].ratings;
-      for (const scaleName of Object.keys(ratings)) {
-        const scaleRating = ratings[scaleName];
-        if (!scaleRating.length) continue;
-        const med = median(scaleRating)?.toFixed(2);
-        eventsMap[eventId].ratingsStats[scaleName] = {
-          avg: Number.parseFloat((sum(scaleRating) / scaleRating.length).toFixed(2)),
-          median: med ? Number.parseFloat(med) : undefined,
-          max: Math.max(...scaleRating),
-          min: Math.min(...scaleRating),
-        };
-      }
-
-      const processFlight = (drawId, participantIds) => {
-        const processParticipant = (participant) => {
-          if (eventsMap[eventId].draws?.[drawId] && participant?.ratings?.[eventType]) {
-            for (const rating of participant?.ratings?.[eventType] ?? []) {
-              const scaleName = rating.scaleName;
-              if (!eventsMap[eventId].draws[drawId]?.ratings[scaleName])
-                eventsMap[eventId].draws[drawId].ratings[scaleName] = [];
-              const accessor = ratingsParameters[scaleName]?.accessor;
-              if (accessor) {
-                const value = Number.parseFloat(rating.scaleValue?.[accessor]);
-                if (value) {
-                  eventsMap[eventId].draws[drawId].ratings[scaleName].push(value);
-                }
-              }
-            }
-          }
-          if (eventsMap[eventId].draws?.[drawId] && participant?.rankings?.[eventType]) {
-            for (const ranking of participant?.rankings?.[eventType] ?? []) {
-              const scaleName = ranking.scaleName;
-              if (!eventsMap[eventId].draws[drawId]?.ranking[scaleName])
-                eventsMap[eventId].draws[drawId].ranking[scaleName] = [];
-              const value = ranking.scaleValue;
-              if (value) {
-                eventsMap[eventId].draws[drawId].ranking[scaleName].push(value);
-              }
-            }
-          }
-        };
-        for (const participantId of participantIds.filter(Boolean)) {
-          const participant = participantMap?.[participantId]?.participant;
-          if (participant?.participantType === INDIVIDUAL) {
-            processParticipant(participant);
-          } else {
-            for (const individualParticipantId of participant?.individualParticipantIds ?? []) {
-              const individualParticipant = participantMap?.[individualParticipantId]?.participant;
-              processParticipant(individualParticipant);
-            }
-          }
-        }
-      };
-
-      const processedDrawIds: string[] = [];
-      const ignoreDrawId = (drawId) =>
-        (drawIds?.length && drawIds.includes(drawId)) || processedDrawIds.includes(drawId);
-      for (const drawDefinition of event.drawDefinitions ?? []) {
-        const drawId: string = drawDefinition.drawId;
-        if (ignoreDrawId(drawId)) continue;
-
-        const participantIds =
-          getAssignedParticipantIds({
-            drawDefinition,
-          }).assignedParticipantIds ?? [];
-        if (!eventsMap[eventId].draws[drawId])
-          eventsMap[eventId].draws[drawId] = {
-            ratingsStats: {},
-            ratings: {},
-            ranking: {},
-          };
-        processedDrawIds.push(drawId);
-        processFlight(drawId, participantIds);
-      }
-
-      const flightProfile = getFlightProfile({ event }).flightProfile;
-      for (const flight of flightProfile?.flights ?? []) {
-        const drawId = flight.drawId;
-        if (ignoreDrawId(drawId)) continue;
-        const participantIds = flight.drawEntries.map(getParticipantId);
-        processFlight(drawId, participantIds);
-      }
-
-      for (const drawId of processedDrawIds) {
-        const ratings = eventsMap[eventId].draws[drawId].ratings;
-        for (const scaleName of Object.keys(ratings)) {
-          const scaleRating = ratings[scaleName];
-          if (!scaleRating.length) continue;
-          const med = median(scaleRating)?.toFixed(2);
-          eventsMap[eventId].draws[drawId].ratingsStats[scaleName] = {
-            avg: Number.parseFloat((sum(scaleRating) / scaleRating.length).toFixed(2)),
-            median: med ? Number.parseFloat(med) : undefined,
-            max: Math.max(...scaleRating),
-            min: Math.min(...scaleRating),
-          };
-        }
-      }
-    }
-  }
+  const eventsMap = withScaleValues
+    ? buildEventScaleValues({ eventCopies, scaleEventType, tournamentRecord, drawIds })
+    : {};
 
   return definedAttributes({
     eventScaleValues: eventsMap,

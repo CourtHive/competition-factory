@@ -1,7 +1,7 @@
 import { generateRange, intersection, overlap, unique } from '@Tools/arrays';
 
 // constants and types
-import { DrawDefinition } from '@Types/tournamentTypes';
+import { DrawDefinition, Structure } from '@Types/tournamentTypes';
 import { StructureProfile } from '@Types/factoryTypes';
 import {
   BOTTOM_UP,
@@ -53,75 +53,11 @@ export function getStructureGroups({ drawDefinition }: { drawDefinition: DrawDef
 
   const sourceStructureIds = {};
   const hasDrawFeedProfile = {};
-  let linkedStructureIds = links.map((link) => {
-    const sourceId = link.source.structureId;
-    const targetId = link.target.structureId;
+  let linkedStructureIds = processLinks({ links, initStructureProfile, sourceStructureIds, hasDrawFeedProfile });
 
-    const sourceProfile = initStructureProfile(sourceId);
-    const targetProfile = initStructureProfile(targetId);
-    if ([BOTTOM_UP, TOP_DOWN, RANDOM, WATERFALL].includes(link.target.feedProfile)) {
-      sourceProfile?.targets.push(targetId);
-      targetProfile?.sources.push(sourceId);
-    } else if (link.target.feedProfile === DRAW) {
-      targetProfile?.drawSources.push(sourceId);
-      sourceProfile?.drawTargets.push(targetId);
-    }
+  enrichProfilesWithRootStageAndProgeny(structureProfiles);
 
-    hasDrawFeedProfile[targetId] = hasDrawFeedProfile[targetId] || link.target.feedProfile === DRAW;
-    sourceStructureIds[targetId] = unique([...(sourceStructureIds[targetId] || []), sourceId]).filter(Boolean);
-
-    return [link.source.structureId, link.target.structureId];
-  });
-
-  for (const structureId of structureProfiles.keys()) {
-    const profile = structureProfiles.get(structureId);
-    if (profile) {
-      const sourceIds = profile.targets ?? [];
-      while (sourceIds.length) {
-        const sourceId = sourceIds.pop();
-        const sourceProfile = sourceId && structureProfiles[sourceId];
-        if (sourceProfile?.targets?.length) {
-          sourceIds.push(...sourceProfile.targets);
-        } else if (sourceProfile) {
-          profile.rootStage = sourceProfile.stage;
-        }
-      }
-      if (!profile.rootStage) profile.rootStage = profile.stage;
-
-      if (!profile.targets?.length) {
-        const targetIds = profile.sources ?? [];
-        while (targetIds.length) {
-          const targetId = targetIds.pop();
-          const targetProfile = targetId && structureProfiles[targetId];
-          if (targetProfile?.sources?.length) {
-            for (const id of targetProfile.sources) {
-              if (!profile.progeny?.includes(id)) profile.progeny?.push(id);
-            }
-            targetIds.push(...targetProfile.sources);
-          }
-        }
-      }
-    }
-  }
-
-  let maxQualifyingDepth = 0;
-  for (const structureId of structureProfiles.keys()) {
-    const profile = structureProfiles.get(structureId);
-    if (profile && profile.rootStage === QUALIFYING) {
-      const drawTargets = [profile.drawTargets?.[0]];
-      let distanceFromMain = 0;
-      while (drawTargets.length) {
-        distanceFromMain += 1;
-        const drawTarget = drawTargets.pop();
-        const targetProfile = drawTarget ? structureProfiles.get(drawTarget) : undefined;
-        if (targetProfile?.drawTargets?.length) {
-          drawTargets.push(targetProfile.drawTargets[0]);
-        }
-      }
-      profile.distanceFromMain = distanceFromMain;
-      if (distanceFromMain > maxQualifyingDepth) maxQualifyingDepth = distanceFromMain;
-    }
-  }
+  const maxQualifyingDepth = calculateMaxQualifyingDepth(structureProfiles);
 
   // iterate through all groups of structureIds to flatten tree of links between structures
   const iterations = linkedStructureIds.length;
@@ -157,16 +93,7 @@ export function getStructureGroups({ drawDefinition }: { drawDefinition: DrawDef
   const linkCheck: string[][] = [groupedStructureIds].filter(Boolean);
 
   // iterate through all structures to add missing structureIds
-  structures.forEach((structure) => {
-    const { structureId, stage } = structure;
-    const existingGroup = structureGroups.find((group) => {
-      return group.includes(structureId);
-    });
-    if (!existingGroup) {
-      structureGroups.push([structureId]);
-      if (stage !== VOLUNTARY_CONSOLATION) linkCheck.push([structureId]);
-    }
-  });
+  addMissingStructures({ structures, structureGroups, linkCheck });
 
   const allStructuresLinked = allLinkStructuresLinked && linkCheck.length === 1;
 
@@ -182,4 +109,102 @@ export function getStructureGroups({ drawDefinition }: { drawDefinition: DrawDef
     hasDrawFeedProfile,
     structureGroups,
   };
+}
+
+function processLinks({ links, initStructureProfile, sourceStructureIds, hasDrawFeedProfile }) {
+  return links.map((link) => {
+    const sourceId = link.source.structureId;
+    const targetId = link.target.structureId;
+
+    const sourceProfile = initStructureProfile(sourceId);
+    const targetProfile = initStructureProfile(targetId);
+    if ([BOTTOM_UP, TOP_DOWN, RANDOM, WATERFALL].includes(link.target.feedProfile)) {
+      sourceProfile?.targets.push(targetId);
+      targetProfile?.sources.push(sourceId);
+    } else if (link.target.feedProfile === DRAW) {
+      targetProfile?.drawSources.push(sourceId);
+      sourceProfile?.drawTargets.push(targetId);
+    }
+
+    hasDrawFeedProfile[targetId] = hasDrawFeedProfile[targetId] || link.target.feedProfile === DRAW;
+    sourceStructureIds[targetId] = unique([...(sourceStructureIds[targetId] || []), sourceId]).filter(Boolean);
+
+    return [link.source.structureId, link.target.structureId];
+  });
+}
+
+function enrichProfilesWithRootStageAndProgeny(structureProfiles: Map<string, StructureProfile>) {
+  for (const structureId of structureProfiles.keys()) {
+    const profile = structureProfiles.get(structureId);
+    if (!profile) continue;
+
+    const sourceIds = profile.targets ?? [];
+    while (sourceIds.length) {
+      const sourceId = sourceIds.pop();
+      const sourceProfile = sourceId && structureProfiles[sourceId];
+      if (sourceProfile?.targets?.length) {
+        sourceIds.push(...sourceProfile.targets);
+      } else if (sourceProfile) {
+        profile.rootStage = sourceProfile.stage;
+      }
+    }
+    if (!profile.rootStage) profile.rootStage = profile.stage;
+
+    if (!profile.targets?.length) {
+      const targetIds = profile.sources ?? [];
+      while (targetIds.length) {
+        const targetId = targetIds.pop();
+        const targetProfile = targetId && structureProfiles[targetId];
+        if (targetProfile?.sources?.length) {
+          for (const id of targetProfile.sources) {
+            if (!profile.progeny?.includes(id)) profile.progeny?.push(id);
+          }
+          targetIds.push(...targetProfile.sources);
+        }
+      }
+    }
+  }
+}
+
+function calculateMaxQualifyingDepth(structureProfiles: Map<string, StructureProfile>): number {
+  let maxQualifyingDepth = 0;
+  for (const structureId of structureProfiles.keys()) {
+    const profile = structureProfiles.get(structureId);
+    if (profile?.rootStage !== QUALIFYING) continue;
+
+    const drawTargets = [profile.drawTargets?.[0]];
+    let distanceFromMain = 0;
+    while (drawTargets.length) {
+      distanceFromMain += 1;
+      const drawTarget = drawTargets.pop();
+      const targetProfile = drawTarget ? structureProfiles.get(drawTarget) : undefined;
+      if (targetProfile?.drawTargets?.length) {
+        drawTargets.push(targetProfile.drawTargets[0]);
+      }
+    }
+    profile.distanceFromMain = distanceFromMain;
+    if (distanceFromMain > maxQualifyingDepth) maxQualifyingDepth = distanceFromMain;
+  }
+  return maxQualifyingDepth;
+}
+
+function addMissingStructures({
+  structures,
+  structureGroups,
+  linkCheck,
+}: {
+  structures: Structure[];
+  structureGroups: string[][];
+  linkCheck: string[][];
+}) {
+  structures.forEach((structure) => {
+    const { structureId, stage } = structure;
+    const existingGroup = structureGroups.find((group) => {
+      return group.includes(structureId);
+    });
+    if (!existingGroup) {
+      structureGroups.push([structureId]);
+      if (stage !== VOLUNTARY_CONSOLATION) linkCheck.push([structureId]);
+    }
+  });
 }

@@ -75,9 +75,34 @@ export function getPublishState(params: GetPublishStateArgs): ResultType & { pub
     return { ...SUCCESS, publishState };
   }
 
+  const publishState: any = {};
+  const { publishedEventIds, tournamentPublished: eventsPublished } = buildEventPublishState({
+    publishState,
+    tournamentRecord,
+  });
+
+  const embargoes: any[] = [];
+
+  if (tournamentRecord) {
+    buildTournamentPublishState({
+      tournamentPublished: eventsPublished,
+      publishedEventIds,
+      tournamentRecord,
+      publishState,
+      embargoes,
+    });
+  }
+
+  collectEventEmbargoes({ tournamentRecord, embargoes });
+
+  if (embargoes.length) publishState.embargoes = embargoes;
+
+  return { ...SUCCESS, publishState };
+}
+
+function buildEventPublishState({ publishState, tournamentRecord }) {
   const publishedEventIds: string[] = [];
   let tournamentPublished = false;
-  const publishState: any = {};
 
   for (const event of tournamentRecord?.events ?? []) {
     const pubStatus: any = getPubStatus({ event });
@@ -92,83 +117,88 @@ export function getPublishState(params: GetPublishStateArgs): ResultType & { pub
     }
   }
 
-  const embargoes: any[] = [];
+  return { publishedEventIds, tournamentPublished };
+}
 
-  if (tournamentRecord) {
-    const pubStatus: any = getTournamentPublishStatus({ tournamentRecord });
-    publishState.tournament = pubStatus ?? {};
-    if (pubStatus?.orderOfPlay?.published || pubStatus?.participants?.published) tournamentPublished = true;
-    publishState.tournament.status = { published: tournamentPublished, publishedEventIds };
+function buildTournamentPublishState({ publishState, tournamentRecord, tournamentPublished, publishedEventIds, embargoes }) {
+  const pubStatus: any = getTournamentPublishStatus({ tournamentRecord });
+  publishState.tournament = pubStatus ?? {};
+  if (pubStatus?.orderOfPlay?.published || pubStatus?.participants?.published) tournamentPublished = true;
+  publishState.tournament.status = { published: tournamentPublished, publishedEventIds };
 
-    if (pubStatus?.orderOfPlay?.embargo) {
-      embargoes.push({
-        type: 'orderOfPlay',
-        embargo: pubStatus.orderOfPlay.embargo,
-        embargoActive: isEmbargoed(pubStatus.orderOfPlay),
-      });
-    }
-    if (pubStatus?.participants?.embargo) {
-      embargoes.push({
-        type: 'participants',
-        embargo: pubStatus.participants.embargo,
-        embargoActive: isEmbargoed(pubStatus.participants),
-      });
-    }
+  if (pubStatus?.orderOfPlay?.embargo) {
+    embargoes.push({
+      type: 'orderOfPlay',
+      embargo: pubStatus.orderOfPlay.embargo,
+      embargoActive: isEmbargoed(pubStatus.orderOfPlay),
+    });
+  }
+  if (pubStatus?.participants?.embargo) {
+    embargoes.push({
+      type: 'participants',
+      embargo: pubStatus.participants.embargo,
+      embargoActive: isEmbargoed(pubStatus.participants),
+    });
   }
 
+  return tournamentPublished;
+}
+
+function collectEventEmbargoes({ tournamentRecord, embargoes }) {
   for (const event of tournamentRecord?.events ?? []) {
     const eventPubStatus = getEventPublishStatus({ event });
     const drawDetails = eventPubStatus?.drawDetails ?? {};
     for (const [drawId, detail] of Object.entries(drawDetails) as [string, any][]) {
-      if (detail?.publishingDetail?.embargo) {
-        embargoes.push({
-          type: 'draw',
-          id: drawId,
-          embargo: detail.publishingDetail.embargo,
-          embargoActive: isEmbargoed(detail.publishingDetail),
-        });
-      }
-      for (const [stage, stageDetail] of Object.entries(detail?.stageDetails ?? {}) as [string, any][]) {
-        if (stageDetail?.embargo) {
-          embargoes.push({
-            type: 'stage',
-            id: `${drawId}:${stage}`,
-            embargo: stageDetail.embargo,
-            embargoActive: isEmbargoed(stageDetail),
-          });
-        }
-      }
-      for (const [structureId, structureDetail] of Object.entries(detail?.structureDetails ?? {}) as [
-        string,
-        any,
-      ][]) {
-        if (structureDetail?.embargo) {
-          embargoes.push({
-            type: 'structure',
-            id: structureId,
-            embargo: structureDetail.embargo,
-            embargoActive: isEmbargoed(structureDetail),
-          });
-        }
-        if (structureDetail?.scheduledRounds) {
-          for (const [roundNumber, roundDetail] of Object.entries(structureDetail.scheduledRounds) as [string, any][]) {
-            if (roundDetail?.embargo) {
-              embargoes.push({
-                type: 'scheduledRound',
-                id: `${structureId}:round${roundNumber}`,
-                embargo: roundDetail.embargo,
-                embargoActive: isEmbargoed(roundDetail),
-              });
-            }
-          }
-        }
-      }
+      collectDrawEmbargoes({ drawId, detail, embargoes });
     }
   }
+}
 
-  if (embargoes.length) publishState.embargoes = embargoes;
+function collectDrawEmbargoes({ drawId, detail, embargoes }) {
+  if (detail?.publishingDetail?.embargo) {
+    embargoes.push({
+      type: 'draw',
+      id: drawId,
+      embargo: detail.publishingDetail.embargo,
+      embargoActive: isEmbargoed(detail.publishingDetail),
+    });
+  }
+  for (const [stage, stageDetail] of Object.entries(detail?.stageDetails ?? {}) as [string, any][]) {
+    if (stageDetail?.embargo) {
+      embargoes.push({
+        type: 'stage',
+        id: `${drawId}:${stage}`,
+        embargo: stageDetail.embargo,
+        embargoActive: isEmbargoed(stageDetail),
+      });
+    }
+  }
+  for (const [structureId, structureDetail] of Object.entries(detail?.structureDetails ?? {}) as [string, any][]) {
+    if (structureDetail?.embargo) {
+      embargoes.push({
+        type: 'structure',
+        id: structureId,
+        embargo: structureDetail.embargo,
+        embargoActive: isEmbargoed(structureDetail),
+      });
+    }
+    collectScheduledRoundEmbargoes({ structureId, structureDetail, embargoes });
+  }
+}
 
-  return { ...SUCCESS, publishState };
+function collectScheduledRoundEmbargoes({ structureId, structureDetail, embargoes }) {
+  if (!structureDetail?.scheduledRounds) return;
+
+  for (const [roundNumber, roundDetail] of Object.entries(structureDetail.scheduledRounds) as [string, any][]) {
+    if (roundDetail?.embargo) {
+      embargoes.push({
+        type: 'scheduledRound',
+        id: `${structureId}:round${roundNumber}`,
+        embargo: roundDetail.embargo,
+        embargoActive: isEmbargoed(roundDetail),
+      });
+    }
+  }
 }
 
 function getPubStatus({ event }): any {

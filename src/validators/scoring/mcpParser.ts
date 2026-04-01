@@ -372,33 +372,41 @@ export function shotParser(shotSequence: string, whichServe: 1 | 2): ShotParseRe
 
   // No rally - check for ace/serve winner/fault
   if (!parsedShots.rally.length) {
-    if (parsedShots.terminator === '*') {
-      parsedShots.result = 'Ace';
-      parsedShots.winner = 'S';
-    } else if (parsedShots.terminator === '#') {
-      parsedShots.result = 'Serve Winner';
-      parsedShots.winner = 'S';
-    } else {
-      const firstServeFault = shotFault(parsedShots.serves[0]);
-      if (firstServeFault) {
-        parsedShots.error = ERRORS[firstServeFault];
-        if (whichServe === 2) {
-          parsedShots.result = 'Double Fault';
-          parsedShots.winner = 'R';
-        }
-      } else {
-        parsedShots.parse_notes = 'treated as a fault';
-        if (whichServe === 2) {
-          parsedShots.result = 'Double Fault';
-          parsedShots.winner = 'R';
-        }
-      }
-    }
-    return parsedShots;
+    return resolveServeOnlyResult(parsedShots, whichServe);
   }
 
-  // Rally exists (1 or more shots after serve)
-  // Check for special case: serve + immediate error on return (serve winner)
+  // Rally exists - resolve from terminator and shot context
+  return resolveRallyResult(parsedShots, lastPlayer, finalShot);
+}
+
+function resolveServeOnlyResult(parsedShots: ShotParseResult, whichServe: 1 | 2): ShotParseResult {
+  if (parsedShots.terminator === '*') {
+    parsedShots.result = 'Ace';
+    parsedShots.winner = 'S';
+  } else if (parsedShots.terminator === '#') {
+    parsedShots.result = 'Serve Winner';
+    parsedShots.winner = 'S';
+  } else {
+    const firstServeFault = shotFault(parsedShots.serves[0]);
+    if (firstServeFault) {
+      parsedShots.error = ERRORS[firstServeFault];
+      if (whichServe === 2) {
+        parsedShots.result = 'Double Fault';
+        parsedShots.winner = 'R';
+      }
+    } else {
+      parsedShots.parse_notes = 'treated as a fault';
+      if (whichServe === 2) {
+        parsedShots.result = 'Double Fault';
+        parsedShots.winner = 'R';
+      }
+    }
+  }
+  return parsedShots;
+}
+
+function resolveRallyResult(parsedShots: ShotParseResult, lastPlayer: 'S' | 'R', finalShot: string): ShotParseResult {
+  // Special case: serve + immediate error on return (serve winner)
   if (parsedShots.rally.length === 1 && finalShot.includes('#')) {
     parsedShots.result = 'Serve Winner';
     parsedShots.winner = 'S';
@@ -411,7 +419,6 @@ export function shotParser(shotSequence: string, whichServe: 1 | 2): ShotParseRe
   if (finalShot.includes('#')) {
     parsedShots.result = 'Forced Error';
     parsedShots.error = ERRORS[shotFault(finalShot)!];
-    // Opposite player wins (error means you lose)
     parsedShots.winner = lastPlayer === 'R' ? 'S' : 'R';
   } else if (finalShot.includes('*')) {
     parsedShots.result = 'Winner';
@@ -419,7 +426,6 @@ export function shotParser(shotSequence: string, whichServe: 1 | 2): ShotParseRe
   } else if (finalShot.includes('@')) {
     parsedShots.result = 'Unforced Error';
     parsedShots.error = ERRORS[shotFault(finalShot)!];
-    // Opposite player wins (error means you lose)
     parsedShots.winner = lastPlayer === 'R' ? 'S' : 'R';
   } else if (!shotFault(parsedShots.serves[0])) {
     if (parsedShots.serves.length && parsedShots.rally.length) {

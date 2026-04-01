@@ -18,6 +18,10 @@ import { BYE, DEFAULTED, DOUBLE_DEFAULT, DOUBLE_WALKOVER, WALKOVER } from '@Cons
 import { CONTAINER } from '@Constants/drawDefinitionConstants';
 import { SUCCESS } from '@Constants/resultConstants';
 
+function logAdvancement(method, details) {
+  pushGlobalLog({ method, ...details });
+}
+
 export function doubleExitAdvancement(params) {
   const { tournamentRecord, appliedPolicies, drawDefinition, matchUpsMap, targetData, structure, event } = params;
   const stack = 'doubleExitAdvancement';
@@ -35,8 +39,7 @@ export function doubleExitAdvancement(params) {
 
   const loserMatchUpIsDoubleExit = loserMatchUp?.matchUpStatus === DOUBLE_WALKOVER;
 
-  pushGlobalLog({
-    method: stack,
+  logAdvancement(stack, {
     newline: true,
     color: 'brightyellow',
     keyColors: { sourceMatchUpId: 'brightcyan', loserMatchUpId: 'brightmagenta', winnerMatchUpId: 'brightgreen' },
@@ -49,7 +52,9 @@ export function doubleExitAdvancement(params) {
     loserTargetDP: loserTargetDrawPosition,
     loserIsEmptyExit: loserMatchUpIsEmptyExit,
     loserIsDoubleExit: loserMatchUpIsDoubleExit,
-    loserSides: JSON.stringify(loserMatchUp?.sides?.map((s) => ({ sn: s.sideNumber, pid: s.participantId?.slice(0, 8), fed: s.participantFed }))),
+    loserSides: JSON.stringify(
+      loserMatchUp?.sides?.map((s) => ({ sn: s.sideNumber, pid: s.participantId?.slice(0, 8), fed: s.participantFed })),
+    ),
     winnerMatchUpId: winnerMatchUp?.matchUpId,
     winnerStatus: winnerMatchUp?.matchUpStatus,
     winnerDP: JSON.stringify(winnerMatchUp?.drawPositions),
@@ -61,8 +66,7 @@ export function doubleExitAdvancement(params) {
     const targetFedIn = loserMatchUp.feedRound && loserMatchUp.sides?.[0]?.participantFed;
 
     if (propagateBye || targetFedIn) {
-      pushGlobalLog({
-        method: stack,
+      logAdvancement(stack, {
         color: 'cyan',
         decision: 'advanceByeToLoserMatchUp',
         propagateBye,
@@ -89,8 +93,7 @@ export function doubleExitAdvancement(params) {
         (matchUp) => matchUp.matchUpId === loserMatchUp.matchUpId,
       );
 
-      pushGlobalLog({
-        method: stack,
+      logAdvancement(stack, {
         color: 'brightred',
         decision: 'EMPTY_EXIT_converting_to_DOUBLE_EXIT',
         loserMatchUpId: loserMatchUp.matchUpId,
@@ -116,14 +119,19 @@ export function doubleExitAdvancement(params) {
         });
         if (result.error) return decorateResult({ result, stack });
       }
-    } else if (!loserMatchUpIsDoubleExit) {
+    } else if (loserMatchUpIsDoubleExit) {
+      logAdvancement(stack, {
+        color: 'brightyellow',
+        decision: 'SKIP_loserMatchUp_already_doubleExit',
+        loserMatchUpId: loserMatchUp.matchUpId,
+      });
+    } else {
       // only attempt to advance the loserMatchUp if it is not an 'empty' exit present
       const { feedRound, drawPositions, matchUpId } = loserMatchUp;
       const walkoverWinningSide: number | undefined = feedRound
         ? 2
         : 2 - drawPositions.indexOf(loserTargetDrawPosition);
-      pushGlobalLog({
-        method: stack,
+      logAdvancement(stack, {
         color: 'cyan',
         decision: 'conditionallyAdvanceLoser',
         feedRound,
@@ -139,18 +147,10 @@ export function doubleExitAdvancement(params) {
         matchUpId,
       });
       if (result.error) return decorateResult({ result, stack });
-    } else {
-      pushGlobalLog({
-        method: stack,
-        color: 'brightyellow',
-        decision: 'SKIP_loserMatchUp_already_doubleExit',
-        loserMatchUpId: loserMatchUp.matchUpId,
-      });
     }
   }
   if (winnerMatchUp) {
-    pushGlobalLog({
-      method: stack,
+    logAdvancement(stack, {
       color: 'cyan',
       decision: 'conditionallyAdvanceWinner',
       winnerMatchUpId: winnerMatchUp.matchUpId,
@@ -190,8 +190,7 @@ function conditionallyAdvanceDrawPosition(params) {
 
   const sameStructure = sourceMatchUp?.structureId === targetMatchUp.structureId;
 
-  pushGlobalLog({
-    method: stack,
+  logAdvancement(stack, {
     newline: true,
     color: 'magenta',
     keyColors: { targetMatchUpId: 'brightcyan', sourceMatchUpId: 'brightyellow' },
@@ -228,12 +227,13 @@ function conditionallyAdvanceDrawPosition(params) {
     structure, // use locally-computed structure (from targetMatchUp.structureId)
   });
 
-  pushGlobalLog({
-    method: stack,
+  logAdvancement(stack, {
     color: 'magenta',
     keyColors: { pairedMatchUpId: 'brightcyan' },
     pairedMatchUpId: pairedPreviousMatchUp?.matchUpId,
-    pairedRound: pairedPreviousMatchUp ? [pairedPreviousMatchUp.roundNumber, pairedPreviousMatchUp.roundPosition] : undefined,
+    pairedRound: pairedPreviousMatchUp
+      ? [pairedPreviousMatchUp.roundNumber, pairedPreviousMatchUp.roundPosition]
+      : undefined,
     pairedStatus: pairedPreviousMatchUp?.matchUpStatus,
     pairedStructureId: pairedPreviousMatchUp?.structureId?.slice(0, 8),
     pairedIsDoubleExit: pairedPreviousMatchUpIsDoubleExit,
@@ -284,8 +284,7 @@ function conditionallyAdvanceDrawPosition(params) {
 
   const matchUpStatus = existingExit ? DOUBLE_EXIT : EXIT;
 
-  pushGlobalLog({
-    method: stack,
+  logAdvancement(stack, {
     color: 'brightyellow',
     keyColors: { matchUpStatus: 'brightgreen', existingExit: 'brightred' },
     existingExit,
@@ -299,44 +298,109 @@ function conditionallyAdvanceDrawPosition(params) {
   const inContextPairedPreviousMatchUp = inContextDrawMatchUps.find(
     (candidate) => candidate.matchUpId === pairedPreviousMatchUp.matchUpId,
   );
-  let matchUpStatusCodes: any[] = [];
-  let sourceSideNumber;
 
-  if (sourceMatchUp) {
-    if (sourceMatchUp?.structureId === inContextPairedPreviousMatchUp?.structureId) {
-      // if structureIds are equivalent then sideNumber is inferred from roundPositions
-      if (sourceMatchUp.roundPosition < pairedPreviousMatchUp?.roundPosition) {
-        sourceSideNumber = 1;
-      } else {
-        sourceSideNumber = 2;
-      }
-    } else if (targetMatchUp.feedRound) {
-      // if different structureIds then structureId that is not equivalent to noContextTargetMatchUp.structureId is fed
-      // ... and fed positions are always sideNumber 1
-      if (sourceMatchUp.structureId === targetMatchUp.structureId) {
-        sourceSideNumber = 2;
-      } else {
-        sourceSideNumber = 1;
-      }
-    } else if (walkoverWinningSide) sourceSideNumber = 3 - walkoverWinningSide;
-
-    pushGlobalLog({
-      method: stack,
-      color: 'cyan',
-      keyColors: { sourceSideNumber: 'brightgreen' },
-      sourceSideNumber,
-      sourceStructureId: sourceMatchUp.structureId?.slice(0, 8),
-      pairedStructureId: inContextPairedPreviousMatchUp?.structureId?.slice(0, 8),
-      targetStructureId: targetMatchUp.structureId?.slice(0, 8),
-      sameStructureAsPaired: sourceMatchUp?.structureId === inContextPairedPreviousMatchUp?.structureId,
-      targetFeedRound: targetMatchUp.feedRound,
-      sourceRP: sourceMatchUp.roundPosition,
-      pairedRP: pairedPreviousMatchUp?.roundPosition,
-    });
-  }
+  const sourceSideNumber = inferSourceSideNumber({
+    inContextPairedPreviousMatchUp,
+    pairedPreviousMatchUp,
+    walkoverWinningSide,
+    sourceMatchUp,
+    targetMatchUp,
+    stack,
+  });
 
   const sourceMatchUpStatus = params.matchUpStatus;
   const pairedMatchUpStatus = pairedPreviousMatchUp?.matchUpStatus;
+
+  const matchUpStatusCodes = buildMatchUpStatusCodes({
+    sourceMatchUpStatus,
+    pairedMatchUpStatus,
+    sourceSideNumber,
+  });
+
+  logAdvancement(stack, {
+    color: 'brightgreen',
+    keyColors: { matchUpStatus: 'brightcyan', winningSide: 'brightyellow' },
+    action: 'modifyMatchUpScore',
+    targetMatchUpId: noContextTargetMatchUp.matchUpId,
+    matchUpStatus,
+    winningSide: walkoverWinningSide,
+    matchUpStatusCodes: JSON.stringify(matchUpStatusCodes),
+    sourceStatus: sourceMatchUpStatus,
+    pairedStatus: pairedMatchUpStatus,
+  });
+
+  const result = modifyMatchUpScore({
+    ...params,
+    winningSide: walkoverWinningSide,
+    matchUp: noContextTargetMatchUp,
+    matchUpStatusCodes,
+    context: stack,
+    matchUpStatus,
+  });
+  if (result.error) return decorateResult({ result, stack });
+
+  return advanceFromTarget({
+    pairedPreviousMatchUpIsDoubleExit,
+    targetMatchUpDrawPositions,
+    noContextTargetMatchUp,
+    inContextDrawMatchUps,
+    walkoverWinningSide,
+    nextWinnerMatchUp,
+    drawDefinition,
+    existingExit,
+    matchUpStatus,
+    targetMatchUp,
+    matchUpsMap,
+    targetData,
+    DOUBLE_EXIT,
+    structure,
+    params,
+    stack,
+    EXIT,
+  });
+}
+
+function inferSourceSideNumber({
+  inContextPairedPreviousMatchUp,
+  pairedPreviousMatchUp,
+  walkoverWinningSide,
+  sourceMatchUp,
+  targetMatchUp,
+  stack,
+}) {
+  if (!sourceMatchUp) return undefined;
+
+  let sourceSideNumber;
+
+  if (sourceMatchUp?.structureId === inContextPairedPreviousMatchUp?.structureId) {
+    // if structureIds are equivalent then sideNumber is inferred from roundPositions
+    sourceSideNumber = sourceMatchUp.roundPosition < pairedPreviousMatchUp?.roundPosition ? 1 : 2;
+  } else if (targetMatchUp.feedRound) {
+    // if different structureIds then structureId that is not equivalent to noContextTargetMatchUp.structureId is fed
+    // ... and fed positions are always sideNumber 1
+    sourceSideNumber = sourceMatchUp.structureId === targetMatchUp.structureId ? 2 : 1;
+  } else if (walkoverWinningSide) {
+    sourceSideNumber = 3 - walkoverWinningSide;
+  }
+
+  logAdvancement(stack, {
+    color: 'cyan',
+    keyColors: { sourceSideNumber: 'brightgreen' },
+    sourceSideNumber,
+    sourceStructureId: sourceMatchUp.structureId?.slice(0, 8),
+    pairedStructureId: inContextPairedPreviousMatchUp?.structureId?.slice(0, 8),
+    targetStructureId: targetMatchUp.structureId?.slice(0, 8),
+    sameStructureAsPaired: sourceMatchUp?.structureId === inContextPairedPreviousMatchUp?.structureId,
+    targetFeedRound: targetMatchUp.feedRound,
+    sourceRP: sourceMatchUp.roundPosition,
+    pairedRP: pairedPreviousMatchUp?.roundPosition,
+  });
+
+  return sourceSideNumber;
+}
+
+function buildMatchUpStatusCodes({ sourceMatchUpStatus, pairedMatchUpStatus, sourceSideNumber }) {
+  let matchUpStatusCodes: any[] = [];
 
   if (sourceSideNumber === 1) {
     matchUpStatusCodes = [
@@ -368,34 +432,32 @@ function conditionallyAdvanceDrawPosition(params) {
 
   if (matchUpStatusCodes.length) matchUpStatusCodes = matchUpStatusCodes.map((code) => definedAttributes(code));
 
-  pushGlobalLog({
-    method: stack,
-    color: 'brightgreen',
-    keyColors: { matchUpStatus: 'brightcyan', winningSide: 'brightyellow' },
-    action: 'modifyMatchUpScore',
-    targetMatchUpId: noContextTargetMatchUp.matchUpId,
-    matchUpStatus,
-    winningSide: walkoverWinningSide,
-    matchUpStatusCodes: JSON.stringify(matchUpStatusCodes),
-    sourceStatus: sourceMatchUpStatus,
-    pairedStatus: pairedMatchUpStatus,
-  });
+  return matchUpStatusCodes;
+}
 
-  const result = modifyMatchUpScore({
-    ...params,
-    winningSide: walkoverWinningSide,
-    matchUp: noContextTargetMatchUp,
-    matchUpStatusCodes,
-    context: stack,
-    matchUpStatus,
-  });
-  if (result.error) return decorateResult({ result, stack });
-
+function advanceFromTarget({
+  pairedPreviousMatchUpIsDoubleExit,
+  targetMatchUpDrawPositions,
+  noContextTargetMatchUp,
+  inContextDrawMatchUps,
+  walkoverWinningSide,
+  nextWinnerMatchUp,
+  drawDefinition,
+  existingExit,
+  matchUpStatus,
+  targetMatchUp,
+  matchUpsMap,
+  targetData,
+  DOUBLE_EXIT,
+  structure,
+  params,
+  stack,
+  EXIT,
+}) {
   // when there is an existing 'Double Exit", the created "Exit" is replaced
   // with a "Double Exit" and move on to advancing from this position
   if (existingExit) {
-    pushGlobalLog({
-      method: stack,
+    logAdvancement(stack, {
       color: 'brightred',
       decision: 'EXISTING_EXIT_triggers_recursive_doubleExitAdvancement',
       targetMatchUpId: noContextTargetMatchUp.matchUpId,
@@ -417,7 +479,7 @@ function conditionallyAdvanceDrawPosition(params) {
       : targetMatchUpDrawPositions[0];
 
   const { positionAssignments } = getPositionAssignments({ structure });
-  const assignment = positionAssignments?.find((assignment) => assignment.drawPosition === drawPositionToAdvance);
+  const assignment = positionAssignments?.find((a) => a.drawPosition === drawPositionToAdvance);
 
   const noContextNextWinnerMatchUp = matchUpsMap.drawMatchUps.find(
     (matchUp) => matchUp.matchUpId === nextWinnerMatchUp.matchUpId,
@@ -427,55 +489,19 @@ function conditionallyAdvanceDrawPosition(params) {
 
   if (drawPositionToAdvance) {
     if (assignment?.bye) {
-      // WO/WO advanced by BYE
-      const targetData = positionTargets({
-        matchUpId: noContextNextWinnerMatchUp.matchUpId,
+      return advanceByeAdvancedDrawPosition({
+        nextWinnerMatchUpDrawPositions,
+        nextWinnerMatchUpHasDrawPosition,
+        noContextNextWinnerMatchUp,
         inContextDrawMatchUps,
+        nextWinnerMatchUp,
         drawDefinition,
+        matchUpStatus,
+        matchUpsMap,
+        params,
+        stack,
+        EXIT,
       });
-
-      if (nextWinnerMatchUpHasDrawPosition) {
-        const nextDrawPositionToAdvance = nextWinnerMatchUpDrawPositions.filter(Boolean)[0];
-
-        // if the next targetMatchUp already has a drawPosition
-        const winningSide = getExitWinningSide({
-          drawPosition: nextDrawPositionToAdvance,
-          matchUpId: noContextNextWinnerMatchUp.matchUpId,
-          inContextDrawMatchUps,
-        });
-
-        const result = modifyMatchUpScore({
-          appliedPolicies: params.appliedPolicies,
-          matchUpId: noContextNextWinnerMatchUp.matchUpId,
-          matchUp: noContextNextWinnerMatchUp,
-          matchUpStatus: EXIT,
-          matchUpStatusCodes: [],
-          removeScore: true,
-          context: stack,
-          drawDefinition,
-          winningSide,
-        });
-        if (result.error) return decorateResult({ result, stack });
-
-        return advanceDrawPosition({
-          drawPositionToAdvance: nextDrawPositionToAdvance,
-          matchUpId: noContextNextWinnerMatchUp.matchUpId,
-          inContextDrawMatchUps,
-          drawDefinition,
-          matchUpsMap,
-        });
-      } else if (isExit(nextWinnerMatchUp.matchUpStatus)) {
-        // if the next targetMatchUp is a double walkover or double default
-        const result = doubleExitAdvancement({
-          ...params,
-          matchUpId: noContextNextWinnerMatchUp.matchUpId,
-          matchUpStatus,
-          targetData,
-        });
-        if (result.error) return decorateResult({ result, stack });
-      }
-
-      return decorateResult({ result: { ...SUCCESS }, stack });
     }
 
     return assignMatchUpDrawPosition({
@@ -489,40 +515,109 @@ function conditionallyAdvanceDrawPosition(params) {
 
     if (nextWinnerMatchUpHasDrawPosition) {
       const drawPosition = nextWinnerMatchUpDrawPositions[0];
-      const walkoverWinningSide = getExitWinningSide({
+      const woWinningSide = getExitWinningSide({
         matchUpId: targetMatchUp.matchUpId,
         inContextDrawMatchUps,
         drawPosition,
       });
       console.log('existing drawPosition is winningSide', {
-        walkoverWinningSide,
+        walkoverWinningSide: woWinningSide,
       });
     }
 
-    const matchUpStatus = isExit(noContextNextWinnerMatchUp.matchUpStatus) ? EXIT : DOUBLE_EXIT;
+    const nextMatchUpStatus = isExit(noContextNextWinnerMatchUp.matchUpStatus) ? EXIT : DOUBLE_EXIT;
 
     const result = modifyMatchUpScore({
       matchUpId: noContextNextWinnerMatchUp.matchUpId,
       appliedPolicies: params.appliedPolicies,
       matchUp: noContextNextWinnerMatchUp,
+      matchUpStatus: nextMatchUpStatus,
       matchUpStatusCodes: [],
       removeScore: true,
       context: stack,
       drawDefinition,
-      matchUpStatus,
     });
 
     if (result.error) return decorateResult({ result, stack });
 
-    if (matchUpStatus === DOUBLE_EXIT) {
+    if (nextMatchUpStatus === DOUBLE_EXIT) {
+      const targetData = positionTargets({
+        matchUpId: targetMatchUp.matchUpId,
+        inContextDrawMatchUps,
+        drawDefinition,
+      });
       const advancementResult = doubleExitAdvancement({
         ...params,
         matchUpId: targetMatchUp.matchUpId,
-        matchUpStatus,
+        matchUpStatus: nextMatchUpStatus,
         targetData,
       });
       if (advancementResult.error) return advancementResult;
     }
+  }
+
+  return decorateResult({ result: { ...SUCCESS }, stack });
+}
+
+function advanceByeAdvancedDrawPosition({
+  nextWinnerMatchUpDrawPositions,
+  nextWinnerMatchUpHasDrawPosition,
+  noContextNextWinnerMatchUp,
+  inContextDrawMatchUps,
+  nextWinnerMatchUp,
+  drawDefinition,
+  matchUpStatus,
+  matchUpsMap,
+  params,
+  stack,
+  EXIT,
+}) {
+  // WO/WO advanced by BYE
+  const nextTargetData = positionTargets({
+    matchUpId: noContextNextWinnerMatchUp.matchUpId,
+    inContextDrawMatchUps,
+    drawDefinition,
+  });
+
+  if (nextWinnerMatchUpHasDrawPosition) {
+    const nextDrawPositionToAdvance = nextWinnerMatchUpDrawPositions.filter(Boolean)[0];
+
+    // if the next targetMatchUp already has a drawPosition
+    const winningSide = getExitWinningSide({
+      drawPosition: nextDrawPositionToAdvance,
+      matchUpId: noContextNextWinnerMatchUp.matchUpId,
+      inContextDrawMatchUps,
+    });
+
+    const result = modifyMatchUpScore({
+      appliedPolicies: params.appliedPolicies,
+      matchUpId: noContextNextWinnerMatchUp.matchUpId,
+      matchUp: noContextNextWinnerMatchUp,
+      matchUpStatus: EXIT,
+      matchUpStatusCodes: [],
+      removeScore: true,
+      context: stack,
+      drawDefinition,
+      winningSide,
+    });
+    if (result.error) return decorateResult({ result, stack });
+
+    return advanceDrawPosition({
+      drawPositionToAdvance: nextDrawPositionToAdvance,
+      matchUpId: noContextNextWinnerMatchUp.matchUpId,
+      inContextDrawMatchUps,
+      drawDefinition,
+      matchUpsMap,
+    });
+  } else if (isExit(nextWinnerMatchUp.matchUpStatus)) {
+    // if the next targetMatchUp is a double walkover or double default
+    const result = doubleExitAdvancement({
+      ...params,
+      matchUpId: noContextNextWinnerMatchUp.matchUpId,
+      matchUpStatus,
+      targetData: nextTargetData,
+    });
+    if (result.error) return decorateResult({ result, stack });
   }
 
   return decorateResult({ result: { ...SUCCESS }, stack });

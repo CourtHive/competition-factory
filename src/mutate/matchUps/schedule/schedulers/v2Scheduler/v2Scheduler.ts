@@ -25,6 +25,525 @@ import { TOTAL } from '@Constants/scheduleConstants';
 
 // NOTE: non-Garman scheduling
 
+function evaluateCourt({
+  recoveryTimeDeferredMatchUpIds,
+  checkPotentialRequestConflicts,
+  matchUpPotentialParticipantIds,
+  individualParticipantProfiles,
+  matchUpNotBeforeTimes,
+  venueEarliestCourtTime,
+  schedulingConflicts,
+  matchUpScheduleTimes,
+  matchUpDependencies,
+  relevantParticipantIds,
+  requestConflicts,
+  personRequests,
+  scheduleDate,
+  bumpLimits,
+  matchUpType,
+  matchUpId,
+  courtTime,
+  matchUp,
+  details,
+  court,
+}) {
+  const { earliestCourtTime: scheduleTime } = getEarliestCourtTime({
+    averageMinutes: details.greatestAverageMinutes,
+    startTime: venueEarliestCourtTime,
+    date: scheduleDate,
+    court,
+  });
+
+  if (courtTime.scheduleTime && timeStringMinutes(scheduleTime) >= timeStringMinutes(courtTime.scheduleTime)) {
+    return courtTime;
+  }
+
+  const { scheduledDependent } = checkDependendantTiming({
+    matchUpScheduleTimes,
+    matchUpDependencies,
+    scheduleTime,
+    matchUpId,
+    details,
+  });
+  if (scheduledDependent) return courtTime;
+
+  const { enoughTime } = checkRecoveryTime({
+    individualParticipantProfiles,
+    matchUpNotBeforeTimes,
+    matchUpDependencies,
+    scheduleTime,
+    details,
+    matchUp,
+  });
+
+  if (!enoughTime) {
+    if (!recoveryTimeDeferredMatchUpIds[scheduleDate][matchUpId])
+      recoveryTimeDeferredMatchUpIds[scheduleDate][matchUpId] = [];
+    if (!recoveryTimeDeferredMatchUpIds[scheduleDate][matchUpId].includes(scheduleTime)) {
+      recoveryTimeDeferredMatchUpIds[scheduleDate][matchUpId].push(scheduleTime);
+    }
+    return courtTime;
+  }
+
+  const averageMatchUpMinutes = details.minutesMap?.[matchUpId]?.averageMinutes || details.greatestAverageMinutes;
+
+  const { conflicts } = checkRequestConflicts({
+    potentials: checkPotentialRequestConflicts,
+    averageMatchUpMinutes,
+    requestConflicts,
+    personRequests,
+    scheduleTime,
+    scheduleDate,
+    matchUp,
+  });
+
+  if (conflicts?.length) {
+    schedulingConflicts.push(...conflicts);
+    return false;
+  }
+
+  bumpLimits(relevantParticipantIds, matchUpType);
+
+  const recoveryMinutes = details.minutesMap?.[matchUpId]?.recoveryMinutes;
+
+  updateTimeAfterRecovery({
+    matchUpPotentialParticipantIds,
+    individualParticipantProfiles,
+    matchUpNotBeforeTimes,
+    averageMatchUpMinutes,
+    matchUpDependencies,
+    recoveryMinutes,
+    scheduleTime,
+    matchUp,
+  });
+
+  if (!courtTime.scheduleTime || timeStringMinutes(scheduleTime) < timeStringMinutes(courtTime.scheduleTime)) {
+    courtTime.averageMatchUpMinutes = averageMatchUpMinutes;
+    courtTime.recoveryMinutes = recoveryMinutes;
+    courtTime.scheduleTime = scheduleTime;
+    courtTime.courtName = court.courtName;
+    courtTime.courtId = court.courtId;
+  }
+
+  return courtTime;
+}
+
+function findBestCourtTime({
+  recoveryTimeDeferredMatchUpIds,
+  checkPotentialRequestConflicts,
+  matchUpPotentialParticipantIds,
+  individualParticipantProfiles,
+  matchUpNotBeforeTimes,
+  venueEarliestCourtTime,
+  schedulingConflicts,
+  matchUpScheduleTimes,
+  matchUpDependencies,
+  relevantParticipantIds,
+  courtIdsScheduled,
+  requestConflicts,
+  personRequests,
+  scheduleDate,
+  bumpLimits,
+  matchUpType,
+  dateCourts,
+  matchUpId,
+  matchUp,
+  details,
+}) {
+  return dateCourts?.reduce((courtTime, court) => {
+    if (courtIdsScheduled.includes(court.courtId)) return courtTime;
+
+    return evaluateCourt({
+      recoveryTimeDeferredMatchUpIds,
+      checkPotentialRequestConflicts,
+      matchUpPotentialParticipantIds,
+      individualParticipantProfiles,
+      matchUpNotBeforeTimes,
+      venueEarliestCourtTime,
+      schedulingConflicts,
+      matchUpScheduleTimes,
+      matchUpDependencies,
+      relevantParticipantIds,
+      requestConflicts,
+      personRequests,
+      scheduleDate,
+      bumpLimits,
+      matchUpType,
+      matchUpId,
+      courtTime,
+      matchUp,
+      details,
+      court,
+    });
+  }, {});
+}
+
+function tryScheduleMatchUp({
+  recoveryTimeDeferredMatchUpIds,
+  checkPotentialRequestConflicts,
+  dependencyDeferredMatchUpIds,
+  matchUpPotentialParticipantIds,
+  individualParticipantProfiles,
+  scheduleDateRequestConflicts,
+  matchUpNotBeforeTimes,
+  venueEarliestCourtTime,
+  matchUpScheduleCourtIds,
+  overLimitMatchUpIds,
+  matchUpScheduleTimes,
+  matchUpDependencies,
+  matchUpDailyLimits,
+  courtIdsScheduled,
+  requestConflicts,
+  allDateMatchUpIds,
+  personRequests,
+  periodLength,
+  scheduleDate,
+  bumpLimits,
+  dateCourts,
+  matchUp,
+  details,
+  venueId,
+}) {
+  const { matchUpId, matchUpType } = matchUp;
+
+  const { participantIdsAtLimit, relevantParticipantIds } = checkDailyLimits({
+    matchUpPotentialParticipantIds,
+    individualParticipantProfiles,
+    matchUpDailyLimits,
+    matchUp,
+  });
+
+  if (participantIdsAtLimit.length) {
+    if (!overLimitMatchUpIds[scheduleDate].includes(matchUpId)) overLimitMatchUpIds[scheduleDate].push(matchUpId);
+    return { skipped: 'overLimit' };
+  }
+
+  const { dependenciesScheduled, remainingDependencies } = checkDependenciesScheduled({
+    matchUpScheduleTimes,
+    matchUpDependencies,
+    allDateMatchUpIds,
+    matchUp,
+  });
+
+  if (!dependenciesScheduled) {
+    if (!dependencyDeferredMatchUpIds[scheduleDate][matchUpId])
+      dependencyDeferredMatchUpIds[scheduleDate][matchUpId] = [];
+    dependencyDeferredMatchUpIds[scheduleDate][matchUpId].push({
+      remainingDependencies,
+    });
+    return { skipped: 'dependencyDeferred' };
+  }
+
+  const schedulingConflicts: any[] = [];
+  const courtTime = findBestCourtTime({
+    recoveryTimeDeferredMatchUpIds,
+    checkPotentialRequestConflicts,
+    matchUpPotentialParticipantIds,
+    individualParticipantProfiles,
+    matchUpNotBeforeTimes,
+    venueEarliestCourtTime,
+    schedulingConflicts,
+    matchUpScheduleTimes,
+    matchUpDependencies,
+    relevantParticipantIds,
+    courtIdsScheduled,
+    requestConflicts,
+    personRequests,
+    scheduleDate,
+    bumpLimits,
+    matchUpType,
+    dateCourts,
+    matchUpId,
+    matchUp,
+    details,
+  });
+
+  if (courtTime.scheduleTime) {
+    const { averageMatchUpMinutes, recoveryMinutes, scheduleTime, courtId } = courtTime;
+    matchUpScheduleTimes[matchUpId] = scheduleTime;
+    matchUpScheduleCourtIds[matchUpId] = courtId;
+
+    const startTime = scheduleTime;
+    const endTime = addMinutesToTimeString(startTime, averageMatchUpMinutes);
+    const booking = {
+      averageMatchUpMinutes,
+      recoveryMinutes,
+      periodLength,
+      matchUpId,
+      startTime,
+      courtId,
+      endTime,
+      venueId,
+    };
+
+    return { scheduled: true, matchUpId, courtId, booking };
+  } else if (schedulingConflicts?.length) {
+    if (!scheduleDateRequestConflicts[scheduleDate]) scheduleDateRequestConflicts[scheduleDate] = [];
+    scheduleDateRequestConflicts[scheduleDate].push(...schedulingConflicts);
+  }
+
+  return { scheduled: false };
+}
+
+function applyScheduleResults({
+  venueScheduledRoundDetails,
+  matchUpScheduleCourtIds,
+  scheduledMatchUpIds,
+  matchUpScheduleTimes,
+  noTimeMatchUpIds,
+  tournamentRecords,
+  scheduleDate,
+  venues,
+  dryRun,
+}) {
+  // assign scheduledTime, venueId and courtId to each matchUp
+  // because this is done in an optimized fashion from hash of assignments
+  // scheduledMatchUpIds[scheduleDate] will not be in the order that scheduleTimes were assigned
+  for (const { venueId } of venues) {
+    const matchUpMap = venueScheduledRoundDetails[venueId].matchUpMap;
+
+    Object.keys(matchUpMap).forEach((tournamentId) => {
+      const tournamentRecord = tournamentRecords[tournamentId];
+      if (tournamentRecord) {
+        Object.keys(matchUpMap[tournamentId]).forEach((drawId) => {
+          const { drawDefinition } = findDrawDefinition({
+            tournamentRecord,
+            drawId,
+          });
+          if (drawDefinition) {
+            const drawMatchUps = matchUpMap[tournamentId][drawId];
+
+            drawMatchUps.forEach(({ matchUpId }) => {
+              const scheduleTime = matchUpScheduleTimes[matchUpId];
+              const courtId = matchUpScheduleCourtIds[matchUpId];
+              if (scheduleTime) {
+                // must include scheduleDate being scheduled to generate proper ISO string
+                const formatTime = scheduleTime.split(':').map(zeroPad).join(':');
+                const scheduledTime = `${extractDate(scheduleDate)}T${formatTime}`;
+
+                if (dryRun) {
+                  scheduledMatchUpIds[scheduleDate].push(matchUpId);
+                } else {
+                  addMatchUpScheduledTime({
+                    drawDefinition,
+                    scheduledTime,
+                    matchUpId,
+                  });
+                  assignMatchUpCourt({
+                    courtDayDate: scheduleDate,
+                    tournamentRecords,
+                    tournamentRecord,
+                    drawDefinition,
+                    matchUpId,
+                    courtId,
+                  });
+                  scheduledMatchUpIds[scheduleDate].push(matchUpId);
+                }
+              }
+            });
+          }
+        });
+      }
+    });
+
+    noTimeMatchUpIds[scheduleDate] = venueScheduledRoundDetails[venueId].matchUpsToSchedule.map(getMatchUpId);
+  }
+}
+
+function scheduleVenuePass({
+  recoveryTimeDeferredMatchUpIds,
+  checkPotentialRequestConflicts,
+  dependencyDeferredMatchUpIds,
+  matchUpPotentialParticipantIds,
+  individualParticipantProfiles,
+  scheduleDateRequestConflicts,
+  matchUpNotBeforeTimes,
+  venueEarliestCourtTime,
+  matchUpScheduleCourtIds,
+  addDateCourtBooking,
+  overLimitMatchUpIds,
+  matchUpScheduleTimes,
+  matchUpDependencies,
+  matchUpDailyLimits,
+  requestConflicts,
+  allDateMatchUpIds,
+  personRequests,
+  periodLength,
+  scheduleDate,
+  bumpLimits,
+  dateCourts,
+  details,
+  venueId,
+}) {
+  const venuePassFailSafe = details.matchUpsToSchedule.length;
+  const matchUpIdsScheduled: string[] = [];
+  const courtIdsScheduled: string[] = [];
+  let venuePassComplete;
+  let passIterations = 0;
+
+  while (!venuePassComplete) {
+    for (const matchUp of details.matchUpsToSchedule) {
+      if (courtIdsScheduled.length === details.courtsCount || matchUpIdsScheduled.length === details.courtsCount) {
+        venuePassComplete = true;
+        break;
+      }
+
+      const result = tryScheduleMatchUp({
+        recoveryTimeDeferredMatchUpIds,
+        checkPotentialRequestConflicts,
+        dependencyDeferredMatchUpIds,
+        matchUpPotentialParticipantIds,
+        individualParticipantProfiles,
+        scheduleDateRequestConflicts,
+        matchUpNotBeforeTimes,
+        venueEarliestCourtTime,
+        matchUpScheduleCourtIds,
+        overLimitMatchUpIds,
+        matchUpScheduleTimes,
+        matchUpDependencies,
+        matchUpDailyLimits,
+        courtIdsScheduled,
+        requestConflicts,
+        allDateMatchUpIds,
+        personRequests,
+        periodLength,
+        scheduleDate,
+        bumpLimits,
+        dateCourts,
+        matchUp,
+        details,
+        venueId,
+      });
+
+      if (result.skipped) continue;
+
+      if (result.scheduled) {
+        const { matchUpId, courtId, booking } = result;
+        matchUpIdsScheduled.push(matchUpId);
+        courtIdsScheduled.push(courtId);
+
+        addDateCourtBooking({ courtId, booking });
+
+        details.matchUpsToSchedule = details.matchUpsToSchedule.filter((matchUp) => matchUp.matchUpId !== matchUpId);
+      }
+    }
+
+    if (
+      courtIdsScheduled.length === details.courtsCount ||
+      matchUpIdsScheduled.length === details.courtsCount ||
+      !details.matchUpsToSchedule.length
+    ) {
+      venuePassComplete = true;
+    }
+
+    // this is necessary for scenarios where there are more courts than matches which can be scheduled at the same time
+    passIterations += 1;
+    if (!venuePassComplete && passIterations >= venuePassFailSafe) {
+      venuePassComplete = true;
+    }
+  }
+
+  return { matchUpIdsScheduled };
+}
+
+function scheduleVenueRounds({
+  recoveryTimeDeferredMatchUpIds,
+  checkPotentialRequestConflicts,
+  dependencyDeferredMatchUpIds,
+  matchUpPotentialParticipantIds,
+  individualParticipantProfiles,
+  scheduleDateRequestConflicts,
+  venueScheduledRoundDetails,
+  matchUpNotBeforeTimes,
+  venueEarliestCourtTime,
+  matchUpScheduleCourtIds,
+  addDateCourtBooking,
+  overLimitMatchUpIds,
+  matchUpScheduleTimes,
+  matchUpDependencies,
+  matchUpDailyLimits,
+  venueTimeBoundaries,
+  requestConflicts,
+  allDateMatchUpIds,
+  personRequests,
+  periodLength,
+  scheduleDate,
+  bumpLimits,
+  dateCourts,
+  venues,
+}) {
+  const failSafe = 10;
+  let schedulingIterations = 0;
+  let schedulingComplete;
+
+  while (!schedulingComplete) {
+    for (const { venueId } of venues) {
+      const details = venueScheduledRoundDetails[venueId];
+
+      const { matchUpIdsScheduled } = scheduleVenuePass({
+        recoveryTimeDeferredMatchUpIds,
+        checkPotentialRequestConflicts,
+        dependencyDeferredMatchUpIds,
+        matchUpPotentialParticipantIds,
+        individualParticipantProfiles,
+        scheduleDateRequestConflicts,
+        matchUpNotBeforeTimes,
+        venueEarliestCourtTime,
+        matchUpScheduleCourtIds,
+        addDateCourtBooking,
+        overLimitMatchUpIds,
+        matchUpScheduleTimes,
+        matchUpDependencies,
+        matchUpDailyLimits,
+        requestConflicts,
+        allDateMatchUpIds,
+        personRequests,
+        periodLength,
+        scheduleDate,
+        bumpLimits,
+        dateCourts,
+        details,
+        venueId,
+      });
+
+      if (details.matchUpsToSchedule.length && matchUpIdsScheduled < details.courtsCount) {
+        if (timeToDate(venueEarliestCourtTime) < timeToDate(venueTimeBoundaries.endTime)) {
+          venueEarliestCourtTime = addMinutesToTimeString(venueEarliestCourtTime, periodLength);
+        } else {
+          details.complete = true;
+        }
+      }
+
+      if (!details.matchUpsToSchedule?.length) details.complete = true;
+    }
+
+    schedulingIterations += 1;
+    schedulingComplete =
+      venues.every(({ venueId }) => venueScheduledRoundDetails[venueId].complete) || schedulingIterations === failSafe;
+  }
+
+  return venueEarliestCourtTime;
+}
+
+function computeRoundSchedulingStats({ dateSchedulingProfile, scheduledMatchUpIds, scheduleDate }) {
+  for (const venue of dateSchedulingProfile.venues) {
+    for (const round of venue.rounds) {
+      const matchUpIds = (round.matchUps ?? []).map(({ matchUpId }) => matchUpId);
+      const canScheduleMatchUpIds = matchUpIds?.filter((matchUpId) =>
+        scheduledMatchUpIds[scheduleDate].includes(matchUpId),
+      );
+      round.canScheduledMatchUpIds = canScheduleMatchUpIds;
+      let possibleToSchedulePct: any =
+        Math.round(((canScheduleMatchUpIds?.length || 0) / round.matchUpsCount) * 10000) / 100;
+      if (possibleToSchedulePct === Infinity || isNaN(possibleToSchedulePct)) possibleToSchedulePct = undefined;
+      round.possibleToSchedulePct = possibleToSchedulePct;
+      if (round.matchUpsCount === canScheduleMatchUpIds?.length) {
+        round.possibleToSchedule = true;
+      }
+    }
+  }
+}
+
 type V2Scheduler = {
   matchUpDependencies: { [key: string]: any };
   checkPotentialRequestConflicts?: boolean;
@@ -168,272 +687,44 @@ export function v2Scheduler({
     const addDateCourtBooking = ({ courtId, booking }) =>
       dateCourts?.find((court) => court.courtId === courtId)?.dateAvailability[0].bookings.push(booking);
 
-    const failSafe = 10;
-    let schedulingIterations = 0;
-    let schedulingComplete;
+    scheduleVenueRounds({
+      recoveryTimeDeferredMatchUpIds,
+      checkPotentialRequestConflicts,
+      dependencyDeferredMatchUpIds,
+      matchUpPotentialParticipantIds,
+      individualParticipantProfiles,
+      scheduleDateRequestConflicts,
+      venueScheduledRoundDetails,
+      matchUpNotBeforeTimes,
+      venueEarliestCourtTime,
+      matchUpScheduleCourtIds,
+      addDateCourtBooking,
+      overLimitMatchUpIds,
+      matchUpScheduleTimes,
+      matchUpDependencies,
+      matchUpDailyLimits,
+      venueTimeBoundaries,
+      requestConflicts,
+      allDateMatchUpIds,
+      personRequests,
+      periodLength,
+      scheduleDate,
+      bumpLimits,
+      dateCourts,
+      venues,
+    });
 
-    while (!schedulingComplete) {
-      // for each venue schedule a round
-      for (const { venueId } of venues) {
-        const details = venueScheduledRoundDetails[venueId];
-
-        // on each pass attempt to schedule one matchUp per court
-        // when a matchUp is scheduled, add it to details.dateScheduledMatchUps
-
-        const venuePassFailSafe = details.matchUpsToSchedule.length;
-        const matchUpIdsScheduled: string[] = [];
-        const courtIdsScheduled: string[] = [];
-        let venuePassComplete;
-        let passIterations = 0;
-
-        while (!venuePassComplete) {
-          for (const matchUp of details.matchUpsToSchedule) {
-            if (
-              courtIdsScheduled.length === details.courtsCount ||
-              matchUpIdsScheduled.length === details.courtsCount
-            ) {
-              venuePassComplete = true;
-              break;
-            }
-
-            const { matchUpId, matchUpType } = matchUp;
-
-            const { participantIdsAtLimit, relevantParticipantIds } = checkDailyLimits({
-              matchUpPotentialParticipantIds,
-              individualParticipantProfiles,
-              matchUpDailyLimits,
-              matchUp,
-            });
-
-            if (participantIdsAtLimit.length) {
-              if (!overLimitMatchUpIds[scheduleDate].includes(matchUpId))
-                overLimitMatchUpIds[scheduleDate].push(matchUpId);
-              continue;
-            }
-
-            const { dependenciesScheduled, remainingDependencies } = checkDependenciesScheduled({
-              matchUpScheduleTimes,
-              matchUpDependencies,
-              allDateMatchUpIds,
-              matchUp,
-            });
-
-            if (!dependenciesScheduled) {
-              if (!dependencyDeferredMatchUpIds[scheduleDate][matchUpId])
-                dependencyDeferredMatchUpIds[scheduleDate][matchUpId] = [];
-              dependencyDeferredMatchUpIds[scheduleDate][matchUpId].push({
-                remainingDependencies,
-              });
-              continue;
-            }
-
-            const schedulingConflicts: any[] = [];
-            const courtTime = dateCourts?.reduce((courtTime, court) => {
-              if (courtIdsScheduled.includes(court.courtId)) return courtTime;
-
-              const { earliestCourtTime: scheduleTime } = getEarliestCourtTime({
-                averageMinutes: details.greatestAverageMinutes,
-                startTime: venueEarliestCourtTime,
-                date: scheduleDate,
-                court,
-              });
-
-              if (
-                courtTime.scheduleTime &&
-                timeStringMinutes(scheduleTime) >= timeStringMinutes(courtTime.scheduleTime)
-              ) {
-                return courtTime;
-              }
-
-              const { scheduledDependent } = checkDependendantTiming({
-                matchUpScheduleTimes,
-                matchUpDependencies,
-                scheduleTime,
-                matchUpId,
-                details,
-              });
-              if (scheduledDependent) return courtTime;
-
-              const { enoughTime } = checkRecoveryTime({
-                individualParticipantProfiles,
-                matchUpNotBeforeTimes,
-                matchUpDependencies,
-                scheduleTime,
-                details,
-                matchUp,
-              });
-
-              if (!enoughTime) {
-                if (!recoveryTimeDeferredMatchUpIds[scheduleDate][matchUpId])
-                  recoveryTimeDeferredMatchUpIds[scheduleDate][matchUpId] = [];
-                if (!recoveryTimeDeferredMatchUpIds[scheduleDate][matchUpId].includes(scheduleTime)) {
-                  recoveryTimeDeferredMatchUpIds[scheduleDate][matchUpId].push(scheduleTime);
-                }
-                return courtTime;
-              }
-
-              const averageMatchUpMinutes =
-                details.minutesMap?.[matchUpId]?.averageMinutes || details.greatestAverageMinutes;
-
-              const { conflicts } = checkRequestConflicts({
-                potentials: checkPotentialRequestConflicts,
-                averageMatchUpMinutes,
-                requestConflicts,
-                personRequests,
-                scheduleTime,
-                scheduleDate,
-                matchUp,
-              });
-
-              if (conflicts?.length) {
-                schedulingConflicts.push(...conflicts);
-                return false;
-              }
-
-              bumpLimits(relevantParticipantIds, matchUpType);
-
-              const recoveryMinutes = details.minutesMap?.[matchUpId]?.recoveryMinutes;
-
-              updateTimeAfterRecovery({
-                matchUpPotentialParticipantIds,
-                individualParticipantProfiles,
-                matchUpNotBeforeTimes,
-                averageMatchUpMinutes,
-                matchUpDependencies,
-                recoveryMinutes,
-                scheduleTime,
-                matchUp,
-              });
-
-              if (
-                !courtTime.scheduleTime ||
-                timeStringMinutes(scheduleTime) < timeStringMinutes(courtTime.scheduleTime)
-              ) {
-                courtTime.averageMatchUpMinutes = averageMatchUpMinutes;
-                courtTime.recoveryMinutes = recoveryMinutes;
-                courtTime.scheduleTime = scheduleTime;
-                courtTime.courtName = court.courtName;
-                courtTime.courtId = court.courtId;
-              }
-
-              return courtTime;
-            }, {});
-
-            if (courtTime.scheduleTime) {
-              const { averageMatchUpMinutes, recoveryMinutes, scheduleTime, courtId } = courtTime;
-              matchUpScheduleTimes[matchUpId] = scheduleTime;
-              matchUpScheduleCourtIds[matchUpId] = courtId;
-              matchUpIdsScheduled.push(matchUpId);
-              courtIdsScheduled.push(courtId);
-
-              const startTime = scheduleTime;
-              const endTime = addMinutesToTimeString(startTime, averageMatchUpMinutes);
-              const booking = {
-                averageMatchUpMinutes,
-                recoveryMinutes,
-                periodLength,
-                matchUpId,
-                startTime,
-                courtId,
-                endTime,
-                venueId,
-              };
-
-              addDateCourtBooking({ courtId, booking });
-
-              details.matchUpsToSchedule = details.matchUpsToSchedule.filter(
-                (matchUp) => matchUp.matchUpId !== matchUpId,
-              );
-            } else if (schedulingConflicts?.length) {
-              if (!scheduleDateRequestConflicts[scheduleDate]) scheduleDateRequestConflicts[scheduleDate] = [];
-              scheduleDateRequestConflicts[scheduleDate].push(...schedulingConflicts);
-            }
-          }
-
-          if (
-            courtIdsScheduled.length === details.courtsCount ||
-            matchUpIdsScheduled.length === details.courtsCount ||
-            !details.matchUpsToSchedule.length
-          ) {
-            venuePassComplete = true;
-          }
-          if (details.matchUpsToSchedule.length && matchUpIdsScheduled < details.courtsCount) {
-            if (timeToDate(venueEarliestCourtTime) < timeToDate(venueTimeBoundaries.endTime)) {
-              venueEarliestCourtTime = addMinutesToTimeString(venueEarliestCourtTime, periodLength);
-            } else {
-              venuePassComplete = true;
-              details.complete = true;
-            }
-          }
-
-          // this is necessary for scenarios where there are more courts than matches which can be scheduled at the same time
-          passIterations += 1;
-          if (!venuePassComplete && passIterations >= venuePassFailSafe) {
-            venuePassComplete = true;
-          }
-        }
-
-        if (!details.matchUpsToSchedule?.length) details.complete = true;
-      }
-
-      schedulingIterations += 1;
-      schedulingComplete =
-        venues.every(({ venueId }) => venueScheduledRoundDetails[venueId].complete) ||
-        schedulingIterations === failSafe;
-    }
-
-    // assign scheduledTime, venueId and courtId to each matchUp
-    // because this is done in an optimized fashion from hash of assignments
-    // scheduledMatchUpIds[scheduleDate] will not be in the order that scheduleTimes were assigned
-    for (const { venueId } of venues) {
-      const matchUpMap = venueScheduledRoundDetails[venueId].matchUpMap;
-
-      Object.keys(matchUpMap).forEach((tournamentId) => {
-        const tournamentRecord = tournamentRecords[tournamentId];
-        if (tournamentRecord) {
-          Object.keys(matchUpMap[tournamentId]).forEach((drawId) => {
-            const { drawDefinition } = findDrawDefinition({
-              tournamentRecord,
-              drawId,
-            });
-            if (drawDefinition) {
-              const drawMatchUps = matchUpMap[tournamentId][drawId];
-
-              drawMatchUps.forEach(({ matchUpId }) => {
-                const scheduleTime = matchUpScheduleTimes[matchUpId];
-                const courtId = matchUpScheduleCourtIds[matchUpId];
-                if (scheduleTime) {
-                  // must include scheduleDate being scheduled to generate proper ISO string
-                  const formatTime = scheduleTime.split(':').map(zeroPad).join(':');
-                  const scheduledTime = `${extractDate(scheduleDate)}T${formatTime}`;
-
-                  if (dryRun) {
-                    scheduledMatchUpIds[scheduleDate].push(matchUpId);
-                  } else {
-                    addMatchUpScheduledTime({
-                      drawDefinition,
-                      scheduledTime,
-                      matchUpId,
-                    });
-                    assignMatchUpCourt({
-                      courtDayDate: scheduleDate,
-                      tournamentRecords,
-                      tournamentRecord,
-                      drawDefinition,
-                      matchUpId,
-                      courtId,
-                    });
-                    scheduledMatchUpIds[scheduleDate].push(matchUpId);
-                  }
-                }
-              });
-            }
-          });
-        }
-      });
-
-      noTimeMatchUpIds[scheduleDate] = venueScheduledRoundDetails[venueId].matchUpsToSchedule.map(getMatchUpId);
-    }
+    applyScheduleResults({
+      venueScheduledRoundDetails,
+      matchUpScheduleCourtIds,
+      scheduledMatchUpIds,
+      matchUpScheduleTimes,
+      noTimeMatchUpIds,
+      tournamentRecords,
+      scheduleDate,
+      venues,
+      dryRun,
+    });
 
     if (!dryRun && allDateScheduledByeMatchUpDetails?.length) {
       // remove scheduling information for BYE matchUps from any rounds that were scheduled
@@ -452,22 +743,7 @@ export function v2Scheduler({
       });
     }
 
-    for (const venue of dateSchedulingProfile.venues) {
-      for (const round of venue.rounds) {
-        const matchUpIds = (round.matchUps ?? []).map(({ matchUpId }) => matchUpId);
-        const canScheduleMatchUpIds = matchUpIds?.filter((matchUpId) =>
-          scheduledMatchUpIds[scheduleDate].includes(matchUpId),
-        );
-        round.canScheduledMatchUpIds = canScheduleMatchUpIds;
-        let possibleToSchedulePct: any =
-          Math.round(((canScheduleMatchUpIds?.length || 0) / round.matchUpsCount) * 10000) / 100;
-        if (possibleToSchedulePct === Infinity || isNaN(possibleToSchedulePct)) possibleToSchedulePct = undefined;
-        round.possibleToSchedulePct = possibleToSchedulePct;
-        if (round.matchUpsCount === canScheduleMatchUpIds?.length) {
-          round.possibleToSchedule = true;
-        }
-      }
-    }
+    computeRoundSchedulingStats({ dateSchedulingProfile, scheduledMatchUpIds, scheduleDate });
   }
 
   // returns the original form of the dateStrings, before extractDate()

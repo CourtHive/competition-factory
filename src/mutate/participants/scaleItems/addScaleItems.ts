@@ -98,44 +98,15 @@ export function setParticipantScaleItems(params: SetParticipantScaleItemsArgs) {
   if (!tournamentRecord) return { error: MISSING_TOURNAMENT_RECORD };
   if (!tournamentRecord.participants) return { error: MISSING_PARTICIPANTS };
 
-  let modificationsApplied = 0;
-  const participantScaleItemsMap = {};
+  const participantScaleItemsMap: any = buildScaleItemsMap(scaleItemsWithParticipantIds);
+  if (participantScaleItemsMap.error) return participantScaleItemsMap;
 
-  const modifiedParticipants: Participant[] = [];
-
-  for (const item of scaleItemsWithParticipantIds) {
-    const participantId = item?.participantId;
-    if (Array.isArray(item?.scaleItems)) {
-      for (const scaleItem of item.scaleItems) {
-        if (isValidScaleItem({ scaleItem })) {
-          if (!Array.isArray(participantScaleItemsMap[participantId])) {
-            participantScaleItemsMap[participantId] = [];
-          }
-          participantScaleItemsMap[participantId].push(scaleItem);
-        } else {
-          return { error: INVALID_SCALE_ITEM };
-        }
-      }
-    }
-  }
-
-  for (const participant of tournamentRecord.participants) {
-    const { participantId } = participant || {};
-    if (Array.isArray(participantScaleItemsMap[participantId])) {
-      for (const scaleItem of participantScaleItemsMap[participantId]) {
-        if (participant.participantType === TEAM_PARTICIPANT && scaleItem?.eventType !== TEAM_EVENT) {
-          return decorateResult({
-            context: { participantId, scaleItem, participantType: participant.participantType },
-            info: 'Invalid participantType for eventType',
-            result: { error: INVALID_SCALE_ITEM },
-          });
-        }
-        addParticipantScaleItem({ participant, scaleItem, removePriorValues });
-        modifiedParticipants.push(participant);
-        modificationsApplied++;
-      }
-    }
-  }
+  const { modificationsApplied, modifiedParticipants, error } = applyScaleItemsToParticipants({
+    participants: tournamentRecord.participants,
+    participantScaleItemsMap,
+    removePriorValues,
+  });
+  if (error) return error;
 
   const info = modificationsApplied ? undefined : NO_MODIFICATIONS_APPLIED;
   const { topics } = getTopics();
@@ -149,34 +120,7 @@ export function setParticipantScaleItems(params: SetParticipantScaleItemsArgs) {
     });
   }
 
-  if (context) {
-    const { eventId, drawId, ...itemValue } = context;
-    const itemSubTypes = itemValue.scaleAttributes?.scaleType && [itemValue.scaleAttributes.scaleType];
-    if (Object.keys(itemValue).length) {
-      const timeItem: any = {
-        itemType: ADD_SCALE_ITEMS,
-        itemValue,
-      };
-      if (itemSubTypes) timeItem.itemSubTypes = itemSubTypes;
-
-      if (drawId || eventId) {
-        const { drawDefinition, event } = findEvent({
-          tournamentRecord,
-          eventId,
-          drawId,
-        });
-
-        if (drawId) {
-          addDrawDefinitionTimeItem({ drawDefinition, timeItem });
-        }
-        if (eventId) {
-          addEventTimeItem({ event, timeItem });
-        }
-      } else {
-        addTournamentTimeItem({ tournamentRecord, timeItem });
-      }
-    }
-  }
+  addContextTimeItem({ context, tournamentRecord });
 
   if (auditData && topics.includes(AUDIT)) {
     addNotice({ topic: AUDIT, payload: auditData });
@@ -253,4 +197,84 @@ export function addParticipantScaleItem({ removePriorValues, participant, scaleI
   }
 
   return { ...SUCCESS, valueChanged, newValue: scaleItem.scaleValue };
+}
+
+function buildScaleItemsMap(scaleItemsWithParticipantIds) {
+  const participantScaleItemsMap = {};
+  for (const item of scaleItemsWithParticipantIds) {
+    const participantId = item?.participantId;
+    if (Array.isArray(item?.scaleItems)) {
+      for (const scaleItem of item.scaleItems) {
+        if (isValidScaleItem({ scaleItem })) {
+          if (!Array.isArray(participantScaleItemsMap[participantId])) {
+            participantScaleItemsMap[participantId] = [];
+          }
+          participantScaleItemsMap[participantId].push(scaleItem);
+        } else {
+          return { error: INVALID_SCALE_ITEM };
+        }
+      }
+    }
+  }
+  return participantScaleItemsMap;
+}
+
+function applyScaleItemsToParticipants({ participants, participantScaleItemsMap, removePriorValues }) {
+  let modificationsApplied = 0;
+  const modifiedParticipants: Participant[] = [];
+
+  for (const participant of participants) {
+    const { participantId } = participant || {};
+    if (Array.isArray(participantScaleItemsMap[participantId])) {
+      for (const scaleItem of participantScaleItemsMap[participantId]) {
+        if (participant.participantType === TEAM_PARTICIPANT && scaleItem?.eventType !== TEAM_EVENT) {
+          return {
+            error: decorateResult({
+              context: { participantId, scaleItem, participantType: participant.participantType },
+              info: 'Invalid participantType for eventType',
+              result: { error: INVALID_SCALE_ITEM },
+            }),
+            modificationsApplied,
+            modifiedParticipants,
+          };
+        }
+        addParticipantScaleItem({ participant, scaleItem, removePriorValues });
+        modifiedParticipants.push(participant);
+        modificationsApplied++;
+      }
+    }
+  }
+
+  return { modificationsApplied, modifiedParticipants, error: undefined };
+}
+
+function addContextTimeItem({ context, tournamentRecord }) {
+  if (!context) return;
+
+  const { eventId, drawId, ...itemValue } = context;
+  const itemSubTypes = itemValue.scaleAttributes?.scaleType && [itemValue.scaleAttributes.scaleType];
+  if (!Object.keys(itemValue).length) return;
+
+  const timeItem: any = {
+    itemType: ADD_SCALE_ITEMS,
+    itemValue,
+  };
+  if (itemSubTypes) timeItem.itemSubTypes = itemSubTypes;
+
+  if (drawId || eventId) {
+    const { drawDefinition, event } = findEvent({
+      tournamentRecord,
+      eventId,
+      drawId,
+    });
+
+    if (drawId) {
+      addDrawDefinitionTimeItem({ drawDefinition, timeItem });
+    }
+    if (eventId) {
+      addEventTimeItem({ event, timeItem });
+    }
+  } else {
+    addTournamentTimeItem({ tournamentRecord, timeItem });
+  }
 }

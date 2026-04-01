@@ -68,6 +68,161 @@ export function keyValueMatchUpScore(params) {
   };
 }
 
+function handleOutcomeKey({ analysis, lowSide, sets, scoreString, matchUpStatus, winningSide, value }) {
+  let info, updated;
+  if (analysis.finalSetIsComplete || winningSide) {
+    info = 'final set is already complete';
+  } else if (!analysis.isTiebreakEntry && !analysis.isIncompleteSetScore) {
+    ({ sets, scoreString, matchUpStatus, winningSide, updated } = processOutcome({
+      lowSide,
+      sets,
+      scoreString,
+      matchUpStatus,
+      winningSide,
+      value,
+    }));
+  } else if (analysis.isTiebreakEntry || analysis.isIncompleteSetScore) {
+    info = 'incomplete set scoreString or tiebreak entry';
+  } else {
+    console.log('handle case', { value });
+  }
+  return { info, sets, scoreString, matchUpStatus, winningSide, updated };
+}
+
+function handleBackspace({ analysis, scoreString, sets, lowSide }) {
+  ({ scoreString, sets } = removeFromScore({
+    analysis,
+    scoreString,
+    sets,
+    lowSide,
+  }));
+  if (!scoreString) sets = [];
+  return { scoreString, sets, updated: true, matchUpStatus: undefined, winningSide: undefined };
+}
+
+function handleScoreJoiner({ analysis, scoreString, sets, lowSide }) {
+  let updated, matchUpStatus;
+  if (!analysis.isSetTiebreakEntry || (analysis.isSetTiebreakEntry && !analysis.isNumericEnding)) {
+    updated = true;
+    ({ scoreString, sets } = removeFromScore({
+      analysis,
+      scoreString,
+      sets,
+      lowSide,
+    }));
+    matchUpStatus = undefined;
+  }
+  return { scoreString, sets, updated, matchUpStatus };
+}
+
+function handleMatchTiebreakJoiner({ analysis, scoreString }) {
+  let info, updated;
+  if (analysis.matchTiebreakHasJoiner) {
+    info = 'existing joiner';
+  } else if (analysis.isNumericEnding) {
+    updated = true;
+    scoreString += MATCH_TIEBREAK_JOINER;
+  }
+  return { info, scoreString, updated };
+}
+
+function handleTiebreakCloser({ analysis, scoreString, sets }) {
+  const brackets = analysis.isSetTiebreakEntry ? SET_TIEBREAK_BRACKETS : MATCH_TIEBREAK_BRACKETS;
+  const close = brackets.split('').reverse()[0];
+  const open = brackets.split('')[0];
+  const set = sets[sets.length - 1];
+
+  const { tiebreakFormat } = analysis.setFormat;
+  const { tiebreakTo, NoAD } = tiebreakFormat || {};
+  const leadingSide = getLeadingSide({ set });
+
+  if (!analysis.isTiebreakSet) {
+    const lowTiebreakScore = Number.parseInt(scoreString.split(open).reverse()[0]);
+    const highTiebreakScore = getHighTiebreakValue({
+      lowValue: lowTiebreakScore,
+      tiebreakTo,
+      NoAD,
+    });
+    if (leadingSide === 1) {
+      set.side1TiebreakScore = highTiebreakScore;
+      set.side2TiebreakScore = lowTiebreakScore;
+    } else {
+      set.side1TiebreakScore = lowTiebreakScore;
+      set.side2TiebreakScore = highTiebreakScore;
+    }
+  }
+
+  scoreString = (scoreString || '') + close;
+  if (!analysis.isDecidingSet) scoreString += SPACE_CHARACTER;
+
+  const closerWinningSide = getWinningSide({ analysis, set });
+  set.winningSide = closerWinningSide || undefined;
+
+  return { scoreString, sets, updated: true };
+}
+
+function handleSetTiebreakEntry({ analysis, scoreString, value }) {
+  let info, updated;
+  const [open] = SET_TIEBREAK_BRACKETS.split('');
+  const lastOpenBracketIndex = Math.max(...arrayIndices(open, scoreString.split('')));
+  const tiebreakValue = scoreString.slice(lastOpenBracketIndex + 1);
+  const hasZeroStart = tiebreakValue && ensureInt(tiebreakValue) === ZERO;
+  const newTiebreakValue = ensureInt(tiebreakValue ? tiebreakValue + value : value);
+
+  const { tiebreakFormat } = analysis.setFormat;
+  const { tiebreakTo, NoAD } = tiebreakFormat || {};
+
+  if (!hasZeroStart && tiebreakValue.length < 2) {
+    if (NoAD && newTiebreakValue > tiebreakTo - 1) {
+      info = 'invalid low value for NoAD tiebreak';
+    } else {
+      updated = true;
+      scoreString = (scoreString || '') + value;
+    }
+  } else {
+    info = hasZeroStart ? 'tiebreak begins with zero' : 'tiebreak digit limit';
+  }
+  return { info, scoreString, updated };
+}
+
+function handleNewSet({ analysis, lowSide, scoreString, sets, value }) {
+  const { scoreString: newScore, set } = keyValueSetScore({
+    analysis,
+    lowSide,
+    scoreString,
+    value: ensureInt(value),
+  });
+  if (set) set.setNumber = sets?.length + 1 || 1;
+  sets = sets?.concat(set).filter(Boolean) || [set];
+  scoreString = newScore || undefined;
+  return { scoreString, sets, updated: true };
+}
+
+function finalizeUpdatedScore({ sets, winningSide, matchUpStatus, matchUpFormat, scoreString, info }) {
+  sets = sets?.filter(Boolean);
+  const { matchUpWinningSide } = getMatchUpWinner({
+    sets,
+    winningSide,
+    matchUpStatus,
+    matchUpFormat,
+  });
+  winningSide = matchUpWinningSide;
+  if (matchUpWinningSide && (!matchUpStatus || [TO_BE_PLAYED, INCOMPLETE].includes(matchUpStatus))) {
+    matchUpStatus = OUTCOME_COMPLETE;
+    sets = sets.filter((set) => {
+      const { side1Score, side2Score, side1TiebreakScore, side2TiebreakScore } = set;
+      return side1Score || side2Score || side1TiebreakScore || side2TiebreakScore;
+    });
+  } else if (
+    scoreString &&
+    !winningSide &&
+    ![STATUS_SUSPENDED, STATUS_ABANDONED, STATUS_INTERRUPTED].includes(matchUpStatus)
+  ) {
+    matchUpStatus = undefined;
+  }
+  return { updated: true, scoreString, sets, winningSide, matchUpStatus, info };
+}
+
 /* shiftFirst indicates that SHIFT key refers to first opponent, rather than second */
 export function keyValueScore(params) {
   let { lowSide = 1, value } = params;
@@ -136,53 +291,33 @@ export function keyValueScore(params) {
       value,
     }));
   } else if (OUTCOMEKEYS.includes(value)) {
-    if (analysis.finalSetIsComplete || winningSide) {
-      info = 'final set is already complete';
-    } else if (!analysis.isTiebreakEntry && !analysis.isIncompleteSetScore) {
-      ({ sets, scoreString, matchUpStatus, winningSide, updated } = processOutcome({
-        lowSide,
-        sets,
-        scoreString,
-        matchUpStatus,
-        winningSide,
-        value,
-      }));
-    } else if (analysis.isTiebreakEntry || analysis.isIncompleteSetScore) {
-      info = 'incomplete set scoreString or tiebreak entry';
-    } else {
-      console.log('handle case', { value });
-    }
+    ({ info, sets, scoreString, matchUpStatus, winningSide, updated } = handleOutcomeKey({
+      analysis,
+      lowSide,
+      sets,
+      scoreString,
+      matchUpStatus,
+      winningSide,
+      value,
+    }));
   } else if (value === BACKSPACE) {
-    updated = true;
-    ({ scoreString, sets } = removeFromScore({
+    ({ scoreString, sets, updated, matchUpStatus, winningSide } = handleBackspace({
       analysis,
       scoreString,
       sets,
       lowSide,
     }));
-    if (!scoreString) sets = [];
-    matchUpStatus = undefined;
-    winningSide = undefined;
   } else if (analysis.hasOutcome) {
     info = 'has outcome';
   } else if (value === SCORE_JOINER && !analysis.isMatchTiebreakEntry) {
-    if (!analysis.isSetTiebreakEntry || (analysis.isSetTiebreakEntry && !analysis.isNumericEnding)) {
-      updated = true;
-      ({ scoreString, sets } = removeFromScore({
-        analysis,
-        scoreString,
-        sets,
-        lowSide,
-      }));
-      matchUpStatus = undefined;
-    }
+    ({ scoreString, sets, updated, matchUpStatus } = handleScoreJoiner({
+      analysis,
+      scoreString,
+      sets,
+      lowSide,
+    }));
   } else if (value === MATCH_TIEBREAK_JOINER && analysis.isMatchTiebreakEntry && !analysis.isSetTiebreakEntry) {
-    if (analysis.matchTiebreakHasJoiner) {
-      info = 'existing joiner';
-    } else if (analysis.isNumericEnding) {
-      updated = true;
-      scoreString += MATCH_TIEBREAK_JOINER;
-    }
+    ({ info, scoreString, updated } = handleMatchTiebreakJoiner({ analysis, scoreString }));
   } else if ([SCORE_JOINER, MATCH_TIEBREAK_JOINER].includes(value)) {
     info = 'invalid location for joiner';
   } else if (winningSide) {
@@ -201,38 +336,7 @@ export function keyValueScore(params) {
   } else if (analysis.isInvalidSetTiebreakValue) {
     info = 'invalid set tiebreak character';
   } else if (analysis.isTiebreakCloser) {
-    const brackets = analysis.isSetTiebreakEntry ? SET_TIEBREAK_BRACKETS : MATCH_TIEBREAK_BRACKETS;
-    const close = brackets.split('').reverse()[0];
-    const open = brackets.split('')[0];
-    const set = sets[sets.length - 1];
-
-    const { tiebreakFormat } = analysis.setFormat;
-    const { tiebreakTo, NoAD } = tiebreakFormat || {};
-    const leadingSide = getLeadingSide({ set });
-
-    if (!analysis.isTiebreakSet) {
-      const lowTiebreakScore = Number.parseInt(scoreString.split(open).reverse()[0]);
-      const highTiebreakScore = getHighTiebreakValue({
-        lowValue: lowTiebreakScore,
-        tiebreakTo,
-        NoAD,
-      });
-      if (leadingSide === 1) {
-        set.side1TiebreakScore = highTiebreakScore;
-        set.side2TiebreakScore = lowTiebreakScore;
-      } else {
-        set.side1TiebreakScore = lowTiebreakScore;
-        set.side2TiebreakScore = highTiebreakScore;
-      }
-    }
-
-    scoreString = (scoreString || '') + close;
-    if (!analysis.isDecidingSet) scoreString += SPACE_CHARACTER;
-
-    const winningSide = getWinningSide({ analysis, set });
-    set.winningSide = winningSide || undefined;
-
-    updated = true;
+    ({ scoreString, sets, updated } = handleTiebreakCloser({ analysis, scoreString, sets }));
   } else if (analysis.isTiebreakSetValue) {
     ({ info, scoreString, sets, updated } = processTiebreakSet({
       analysis,
@@ -243,67 +347,19 @@ export function keyValueScore(params) {
       value,
     }));
   } else if (analysis.isSetTiebreakEntry) {
-    const [open] = SET_TIEBREAK_BRACKETS.split('');
-    const lastOpenBracketIndex = Math.max(...arrayIndices(open, scoreString.split('')));
-    const tiebreakValue = scoreString.slice(lastOpenBracketIndex + 1);
-    const hasZeroStart = tiebreakValue && ensureInt(tiebreakValue) === ZERO;
-    const newTiebreakValue = ensureInt(tiebreakValue ? tiebreakValue + value : value);
-
-    const { tiebreakFormat } = analysis.setFormat;
-    const { tiebreakTo, NoAD } = tiebreakFormat || {};
-
-    if (!hasZeroStart && tiebreakValue.length < 2) {
-      if (NoAD && newTiebreakValue > tiebreakTo - 1) {
-        info = 'invalid low value for NoAD tiebreak';
-      } else {
-        updated = true;
-        scoreString = (scoreString || '') + value;
-      }
-    } else {
-      info = hasZeroStart ? 'tiebreak begins with zero' : 'tiebreak digit limit';
-    }
+    ({ info, scoreString, updated } = handleSetTiebreakEntry({ analysis, scoreString, value }));
   } else if (analysis.isCloser) {
     info = `invalid key: ${value}`;
   } else if (analysis.isGameScoreEntry) {
     info = 'game scoreString entry';
   } else if (analysis.lastSetIsComplete || !sets.length) {
-    updated = true;
-    const { scoreString: newScore, set } = keyValueSetScore({
-      analysis,
-      lowSide,
-      scoreString,
-      value: ensureInt(value),
-    });
-    if (set) set.setNumber = sets?.length + 1 || 1;
-    sets = sets?.concat(set).filter(Boolean) || [set];
-    scoreString = newScore || undefined;
+    ({ scoreString, sets, updated } = handleNewSet({ analysis, lowSide, scoreString, sets, value }));
   } else {
     console.log('error: unknown outcome');
   }
 
   if (updated) {
-    sets = sets?.filter(Boolean);
-    const { matchUpWinningSide } = getMatchUpWinner({
-      sets,
-      winningSide,
-      matchUpStatus,
-      matchUpFormat,
-    });
-    winningSide = matchUpWinningSide;
-    if (matchUpWinningSide && (!matchUpStatus || [TO_BE_PLAYED, INCOMPLETE].includes(matchUpStatus))) {
-      matchUpStatus = OUTCOME_COMPLETE;
-      sets = sets.filter((set) => {
-        const { side1Score, side2Score, side1TiebreakScore, side2TiebreakScore } = set;
-        return side1Score || side2Score || side1TiebreakScore || side2TiebreakScore;
-      });
-    } else if (
-      scoreString &&
-      !winningSide &&
-      ![STATUS_SUSPENDED, STATUS_ABANDONED, STATUS_INTERRUPTED].includes(matchUpStatus)
-    ) {
-      matchUpStatus = undefined;
-    }
-    return { updated, scoreString, sets, winningSide, matchUpStatus, info };
+    return finalizeUpdatedScore({ sets, winningSide, matchUpStatus, matchUpFormat, scoreString, info });
   }
 
   return { updated, scoreString, sets, winningSide, matchUpStatus, info };

@@ -266,7 +266,7 @@ export class TemporalEngine {
    */
   clearCourtAvailabilityForVenue(tournamentId: TournamentId, venueId: VenueId): void {
     const prefix = `${tournamentId}|${venueId}|`;
-    for (const key of [...this.courtDayAvailability.keys()]) {
+    for (const key of this.courtDayAvailability.keys()) {
       if (key.startsWith(prefix)) {
         this.courtDayAvailability.delete(key);
       }
@@ -1212,117 +1212,104 @@ export class TemporalEngine {
       const vid = resolveVenueId(venue);
       const vk = venueKey(this.config.tournamentId, vid);
 
-      // --- Venue-level availability ---
-      // 1. defaultStartTime / defaultEndTime -> venueKey|DEFAULT
-      if (venue.defaultStartTime && venue.defaultEndTime) {
+      this.loadVenueAvailability(venue, vid, vk);
+      this.loadCourtAvailability(venue, vid);
+    }
+  }
+
+  private loadVenueAvailability(venue: any, vid: string, vk: string): void {
+    // 1. defaultStartTime / defaultEndTime -> venueKey|DEFAULT
+    if (venue.defaultStartTime && venue.defaultEndTime) {
+      this.venueDayAvailability.set(`${vk}|DEFAULT`, {
+        startTime: venue.defaultStartTime,
+        endTime: venue.defaultEndTime,
+      });
+    }
+
+    // 2. venue.dateAvailability[]
+    if (!venue.dateAvailability?.length) return;
+
+    for (const va of venue.dateAvailability) {
+      if (va.date) {
+        if (va.startTime && va.endTime) {
+          this.venueDayAvailability.set(`${vk}|${va.date}`, {
+            startTime: va.startTime,
+            endTime: va.endTime,
+          });
+        }
+      } else if (va.startTime && va.endTime) {
         this.venueDayAvailability.set(`${vk}|DEFAULT`, {
-          startTime: venue.defaultStartTime,
-          endTime: venue.defaultEndTime,
+          startTime: va.startTime,
+          endTime: va.endTime,
         });
       }
 
-      // 2. venue.dateAvailability[]
-      if (venue.dateAvailability?.length) {
-        for (const va of venue.dateAvailability) {
-          if (va.date) {
-            // Date-specific venue availability
-            if (va.startTime && va.endTime) {
-              this.venueDayAvailability.set(`${vk}|${va.date}`, {
-                startTime: va.startTime,
-                endTime: va.endTime,
-              });
-            }
-          } else if (va.startTime && va.endTime) {
-            // Dateless entry -> venue DEFAULT (overrides defaultStartTime/defaultEndTime)
-            this.venueDayAvailability.set(`${vk}|DEFAULT`, {
-              startTime: va.startTime,
-              endTime: va.endTime,
-            });
-          }
-
-          // Venue-level bookings -> create blocks for ALL courts in the venue
-          if (va.bookings?.length && venue.courts?.length) {
-            const bookingDay = va.date || this.tournamentRecord.startDate;
-            for (const booking of va.bookings) {
-              if (!booking.startTime || !booking.endTime) continue;
-              const st = booking.startTime.length === 5 ? `${booking.startTime}:00` : booking.startTime;
-              const et = booking.endTime.length === 5 ? `${booking.endTime}:00` : booking.endTime;
-              const blockType: BlockType =
-                TemporalEngine.BOOKING_TYPE_MAP[(booking.bookingType || '').toUpperCase()] || BLOCK_TYPES.RESERVED;
-
-              for (const court of venue.courts) {
-                const courtRef: CourtRef = {
-                  tournamentId: this.config.tournamentId,
-                  venueId: vid,
-                  courtId: resolveCourtId(court),
-                };
-                const blockId = this.generateBlockId();
-                const block: Block = {
-                  id: blockId,
-                  court: courtRef,
-                  start: `${bookingDay}T${st}`,
-                  end: `${bookingDay}T${et}`,
-                  type: blockType,
-                  reason: booking.bookingType || 'Booking',
-                  source: 'SYSTEM',
-                };
-                this.blocksById.set(blockId, block);
-                this.indexBlock(block);
-              }
-            }
-          }
-        }
-      }
-
-      // --- Court-level availability and bookings ---
-      for (const court of venue.courts || []) {
-        if (!court.dateAvailability?.length) continue;
-
-        const courtRef: CourtRef = {
-          tournamentId: this.config.tournamentId,
-          venueId: vid,
-          courtId: resolveCourtId(court),
-        };
-
-        for (const avail of court.dateAvailability) {
-          const day = avail.date || this.tournamentRecord.startDate;
-
-          // Read startTime/endTime from dateAvailability for court availability
-          if (avail.startTime && avail.endTime) {
-            const ck = courtKey(courtRef);
-            this.courtDayAvailability.set(`${ck}|${day}`, {
-              startTime: avail.startTime,
-              endTime: avail.endTime,
-            });
-          }
-
-          if (!avail.bookings?.length) continue;
-
-          for (const booking of avail.bookings) {
-            if (!booking.startTime || !booking.endTime) continue;
-            const st = booking.startTime.length === 5 ? `${booking.startTime}:00` : booking.startTime;
-            const et = booking.endTime.length === 5 ? `${booking.endTime}:00` : booking.endTime;
-
-            const blockType: BlockType =
-              TemporalEngine.BOOKING_TYPE_MAP[(booking.bookingType || '').toUpperCase()] || BLOCK_TYPES.RESERVED;
-
-            // Directly create and index blocks (bypass applyMutations to avoid emitting during init)
-            const blockId = this.generateBlockId();
-            const block: Block = {
-              id: blockId,
-              court: courtRef,
-              start: `${day}T${st}`,
-              end: `${day}T${et}`,
-              type: blockType,
-              reason: booking.bookingType || 'Booking',
-              source: 'SYSTEM',
+      // Venue-level bookings -> create blocks for ALL courts in the venue
+      if (va.bookings?.length && venue.courts?.length) {
+        const bookingDay = va.date || this.tournamentRecord.startDate;
+        for (const booking of va.bookings) {
+          for (const court of venue.courts) {
+            const courtRef: CourtRef = {
+              tournamentId: this.config.tournamentId,
+              venueId: vid,
+              courtId: resolveCourtId(court),
             };
-            this.blocksById.set(blockId, block);
-            this.indexBlock(block);
+            this.createBlockFromBooking(booking, courtRef, bookingDay);
           }
         }
       }
     }
+  }
+
+  private loadCourtAvailability(venue: any, vid: string): void {
+    for (const court of venue.courts || []) {
+      if (!court.dateAvailability?.length) continue;
+
+      const courtRef: CourtRef = {
+        tournamentId: this.config.tournamentId,
+        venueId: vid,
+        courtId: resolveCourtId(court),
+      };
+
+      for (const avail of court.dateAvailability) {
+        const day = avail.date || this.tournamentRecord.startDate;
+
+        if (avail.startTime && avail.endTime) {
+          const ck = courtKey(courtRef);
+          this.courtDayAvailability.set(`${ck}|${day}`, {
+            startTime: avail.startTime,
+            endTime: avail.endTime,
+          });
+        }
+
+        if (!avail.bookings?.length) continue;
+
+        for (const booking of avail.bookings) {
+          this.createBlockFromBooking(booking, courtRef, day);
+        }
+      }
+    }
+  }
+
+  private createBlockFromBooking(booking: any, courtRef: CourtRef, day: string): void {
+    if (!booking.startTime || !booking.endTime) return;
+    const st = booking.startTime.length === 5 ? `${booking.startTime}:00` : booking.startTime;
+    const et = booking.endTime.length === 5 ? `${booking.endTime}:00` : booking.endTime;
+    const blockType: BlockType =
+      TemporalEngine.BOOKING_TYPE_MAP[(booking.bookingType || '').toUpperCase()] || BLOCK_TYPES.RESERVED;
+
+    const blockId = this.generateBlockId();
+    const block: Block = {
+      id: blockId,
+      court: courtRef,
+      start: `${day}T${st}`,
+      end: `${day}T${et}`,
+      type: blockType,
+      reason: booking.bookingType || 'Booking',
+      source: 'SYSTEM',
+    };
+    this.blocksById.set(blockId, block);
+    this.indexBlock(block);
   }
 
   /**

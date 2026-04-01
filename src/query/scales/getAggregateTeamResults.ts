@@ -71,6 +71,20 @@ export function getAggregateTeamResults(params: GetAggregateTeamResultsArgs) {
     results[key] += value;
   };
 
+  const { individualResults, teamResults } = tallyMatchUpResults({
+    getTeamParticipant,
+    initializeResults,
+    increment,
+    matchUps,
+  });
+
+  applyBonusPoints({ teamBonusPointHashes, teamResults });
+  computeIndividualPointsPct(individualResults);
+
+  return { ...SUCCESS, individualResults, teamResults };
+}
+
+function tallyMatchUpResults({ getTeamParticipant, initializeResults, increment, matchUps }) {
   const individualResults = {};
   const teamResults = {};
 
@@ -78,58 +92,65 @@ export function getAggregateTeamResults(params: GetAggregateTeamResultsArgs) {
     const { sides, matchUpFormat } = matchUp;
     const parsedMatchUpFormat: any = matchUpFormat && parse(matchUpFormat);
 
-    // both sides must be present and must be a timed format
     if (
       sides?.length === 2 &&
       parsedMatchUpFormat.setFormat?.timed &&
       (!parsedMatchUpFormat.finalSetFormat || parsedMatchUpFormat.finalSetFormat?.timed)
     ) {
       for (const side of sides) {
-        const teamParticipant = getTeamParticipant(side.participant);
-        const teamParticipantId = teamParticipant?.participantId;
-        const participantId = side.participant?.participantId;
-        const teamName = teamParticipant?.participantName;
-        const sideNumber = side.sideNumber;
-        const individualParticipantIds =
-          side.participant?.individualParticipantIds || (participantId && [participantId]) || [];
-
-        individualParticipantIds.forEach((individualParticipantId) => {
-          if (individualParticipantId && !individualResults[individualParticipantId]) {
-            individualResults[individualParticipantId] = initializeResults(teamName);
-          }
-        });
-
-        if (teamParticipantId && sideNumber) {
-          if (!teamResults[teamParticipantId]) teamResults[teamParticipantId] = initializeResults(teamName);
-
-          const resultObjects = [
-            ...individualParticipantIds.map((id) => individualResults[id]),
-            teamResults[teamParticipantId],
-          ];
-
-          if (matchUp.winningSide) {
-            if (sideNumber === matchUp.winningSide) {
-              resultObjects.forEach((resultObject) => increment(resultObject, 'win', 1));
-            } else {
-              resultObjects.forEach((resultObject) => increment(resultObject, 'loss', 1));
-            }
-          }
-
-          const sets = matchUp.score?.sets || [];
-          for (const set of sets) {
-            const opponentPoints = set?.[`side${3 - sideNumber}Score`] || 0;
-            const points = set?.[`side${sideNumber}Score`] || 0;
-            const diff = points - opponentPoints;
-
-            resultObjects.forEach((resultObject) => increment(resultObject, 'pointsPlayed', points + opponentPoints));
-            resultObjects.forEach((resultObject) => increment(resultObject, 'points', points));
-            resultObjects.forEach((resultObject) => increment(resultObject, 'diff', diff));
-          }
-        }
+        tallySide({ side, matchUp, getTeamParticipant, initializeResults, increment, individualResults, teamResults });
       }
     }
   }
 
+  return { individualResults, teamResults };
+}
+
+function tallySide({ side, matchUp, getTeamParticipant, initializeResults, increment, individualResults, teamResults }) {
+  const teamParticipant = getTeamParticipant(side.participant);
+  const teamParticipantId = teamParticipant?.participantId;
+  const participantId = side.participant?.participantId;
+  const teamName = teamParticipant?.participantName;
+  const sideNumber = side.sideNumber;
+  const individualParticipantIds =
+    side.participant?.individualParticipantIds || (participantId && [participantId]) || [];
+
+  individualParticipantIds.forEach((individualParticipantId) => {
+    if (individualParticipantId && !individualResults[individualParticipantId]) {
+      individualResults[individualParticipantId] = initializeResults(teamName);
+    }
+  });
+
+  if (teamParticipantId && sideNumber) {
+    if (!teamResults[teamParticipantId]) teamResults[teamParticipantId] = initializeResults(teamName);
+
+    const resultObjects = [
+      ...individualParticipantIds.map((id) => individualResults[id]),
+      teamResults[teamParticipantId],
+    ];
+
+    if (matchUp.winningSide) {
+      if (sideNumber === matchUp.winningSide) {
+        resultObjects.forEach((resultObject) => increment(resultObject, 'win', 1));
+      } else {
+        resultObjects.forEach((resultObject) => increment(resultObject, 'loss', 1));
+      }
+    }
+
+    const sets = matchUp.score?.sets || [];
+    for (const set of sets) {
+      const opponentPoints = set?.[`side${3 - sideNumber}Score`] || 0;
+      const points = set?.[`side${sideNumber}Score`] || 0;
+      const diff = points - opponentPoints;
+
+      resultObjects.forEach((resultObject) => increment(resultObject, 'pointsPlayed', points + opponentPoints));
+      resultObjects.forEach((resultObject) => increment(resultObject, 'points', points));
+      resultObjects.forEach((resultObject) => increment(resultObject, 'diff', diff));
+    }
+  }
+}
+
+function applyBonusPoints({ teamBonusPointHashes, teamResults }) {
   for (const hash of Object.keys(teamBonusPointHashes)) {
     const [teamParticipantId] = hash.split('|');
     if (teamResults[teamParticipantId]) {
@@ -141,7 +162,9 @@ export function getAggregateTeamResults(params: GetAggregateTeamResultsArgs) {
         teamResults[teamParticipantId].win + teamResults[teamParticipantId].bonus;
     }
   }
+}
 
+function computeIndividualPointsPct(individualResults) {
   for (const individualParticipantId of Object.keys(individualResults)) {
     individualResults[individualParticipantId].pointsPct = parseFloat(
       (
@@ -149,6 +172,4 @@ export function getAggregateTeamResults(params: GetAggregateTeamResultsArgs) {
       ).toFixed(2),
     );
   }
-
-  return { ...SUCCESS, individualResults, teamResults };
 }

@@ -102,9 +102,9 @@ function parseMatchId(matchId: string): {
   }
 
   const date = parts[0];
-  const tournament = parts[2]?.replace(/_/g, ' ');
-  const player1 = parts[4]?.replace(/_/g, ' ') || 'Player 1';
-  const player2 = parts[5]?.replace(/_/g, ' ') || 'Player 2';
+  const tournament = parts[2]?.replaceAll('_', ' ');
+  const player1 = parts[4]?.replaceAll('_', ' ') || 'Player 1';
+  const player2 = parts[5]?.replaceAll('_', ' ') || 'Player 2';
 
   return {
     player1,
@@ -215,78 +215,134 @@ export function validateMCPMatch(
     };
   }
 
-  // Stats counters
-  let aces = 0;
-  let doubleFaults = 0;
-  let winners = 0;
-  let unforcedErrors = 0;
-  let forcedErrors = 0;
+  // Process points
+  const processed = processValidationPoints(mcpMatch.points, matchUp, { errors, debug });
+  matchUp = processed.matchUp;
 
-  // Track server
-  let currentServer: 0 | 1;
-  let pointsProcessed = 0;
+  // Validate final score
+  const validated = validateFinalScore(matchUp, expectedScore, { errors, warnings, validateScore, debug });
 
-  // Process each point
-  for (let i = 0; i < mcpMatch.points?.length; i++) {
-    const mcpPoint = mcpMatch.points[i];
-    if (!mcpPoint) continue;
+  return {
+    valid: errors.length === 0,
+    errors,
+    warnings,
+    matchUp,
+    pointsProcessed: processed.pointsProcessed,
+    expectedScore,
+    actualScore: validated.actualScore,
+    scoreMatches: validated.scoreMatches,
+    formatDeduced,
+    aces: processed.aces,
+    doubleFaults: processed.doubleFaults,
+    winners: processed.winners,
+    unforcedErrors: processed.unforcedErrors,
+    forcedErrors: processed.forcedErrors,
+  };
+}
 
-    // Determine server from MCP data
-    // Svr is "1" or "2" in the CSV
-    currentServer = mcpPoint.Svr === '1' ? 0 : 1;
-
-    try {
-      // Parse MCP point with decorations
-      const parsedPoint = parseMCPPoint(mcpPoint, currentServer);
-
-      // Build addPoint options
-      const pointOptions: AddPointOptions = {
-        winner: parsedPoint.winner,
-        server: parsedPoint.server,
-      };
-
-      // Add point to matchUp
-      matchUp = addPoint(matchUp, pointOptions);
-
-      // Now enrich the point in history with MCP decorations
-      if (matchUp.history?.points && matchUp.history.points.length > 0) {
-        const lastPoint = matchUp.history.points[matchUp.history.points.length - 1];
-        if (lastPoint) {
-          // Add MCP decorations
-          if (parsedPoint.result) lastPoint.result = parsedPoint.result;
-          if (parsedPoint.stroke) lastPoint.stroke = parsedPoint.stroke;
-          if (parsedPoint.hand) lastPoint.hand = parsedPoint.hand;
-          if (parsedPoint.serve) lastPoint.serve = parsedPoint.serve;
-          if (parsedPoint.serveLocation) lastPoint.serveLocation = parsedPoint.serveLocation;
-          if (parsedPoint.rally) lastPoint.rally = parsedPoint.rally;
-          if (parsedPoint.rallyLength) lastPoint.rallyLength = parsedPoint.rallyLength;
-          if (parsedPoint.code) lastPoint.code = parsedPoint.code;
-        }
-      }
-
-      pointsProcessed++;
-
-      // Update stats
-      if (parsedPoint.result === 'Ace') aces++;
-      if (parsedPoint.result === 'Double Fault') doubleFaults++;
-      if (parsedPoint.result === 'Winner') winners++;
-      if (parsedPoint.result === 'Unforced Error') unforcedErrors++;
-      if (parsedPoint.result === 'Forced Error') forcedErrors++;
-
-      if (debug && (i < 5 || i === mcpMatch.points.length - 1)) {
-        const score = getScore(matchUp);
-        console.log(`Point ${i + 1}: ${parsedPoint.result || 'Rally'} → ${score.scoreString}`);
-      }
-    } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : String(error);
-      errors.push(`Point ${i + 1}: ${errorMessage}`);
-      if (debug) {
-        console.error(`Point ${i + 1} failed:`, errorMessage);
-      }
+function decorateLastPoint(matchUp: MatchUp, parsedPoint: any) {
+  if (matchUp.history?.points && matchUp.history.points.length > 0) {
+    const lastPoint = matchUp.history.points.at(-1);
+    if (lastPoint) {
+      if (parsedPoint.result) lastPoint.result = parsedPoint.result;
+      if (parsedPoint.stroke) lastPoint.stroke = parsedPoint.stroke;
+      if (parsedPoint.hand) lastPoint.hand = parsedPoint.hand;
+      if (parsedPoint.serve) lastPoint.serve = parsedPoint.serve;
+      if (parsedPoint.serveLocation) lastPoint.serveLocation = parsedPoint.serveLocation;
+      if (parsedPoint.rally) lastPoint.rally = parsedPoint.rally;
+      if (parsedPoint.rallyLength) lastPoint.rallyLength = parsedPoint.rallyLength;
+      if (parsedPoint.code) lastPoint.code = parsedPoint.code;
     }
   }
+}
 
-  // Validate final result
+function countResult(
+  result: string | undefined,
+  stats: { aces: number; doubleFaults: number; winners: number; unforcedErrors: number; forcedErrors: number },
+) {
+  if (result === 'Ace') stats.aces++;
+  if (result === 'Double Fault') stats.doubleFaults++;
+  if (result === 'Winner') stats.winners++;
+  if (result === 'Unforced Error') stats.unforcedErrors++;
+  if (result === 'Forced Error') stats.forcedErrors++;
+}
+
+function processSinglePoint(
+  mcpPoint: MCPPoint,
+  matchUp: MatchUp,
+  index: number,
+  totalPoints: number,
+  debug: boolean,
+  errors: string[],
+  stats: { aces: number; doubleFaults: number; winners: number; unforcedErrors: number; forcedErrors: number },
+): { matchUp: MatchUp; processed: boolean } {
+  const currentServer: 0 | 1 = mcpPoint.Svr === '1' ? 0 : 1;
+
+  try {
+    const parsedPoint = parseMCPPoint(mcpPoint, currentServer);
+
+    const pointOptions: AddPointOptions = {
+      winner: parsedPoint.winner,
+      server: parsedPoint.server,
+    };
+
+    matchUp = addPoint(matchUp, pointOptions);
+    decorateLastPoint(matchUp, parsedPoint);
+    countResult(parsedPoint.result, stats);
+
+    if (debug && (index < 5 || index === totalPoints - 1)) {
+      const score = getScore(matchUp);
+      console.log(`Point ${index + 1}: ${parsedPoint.result || 'Rally'} → ${score.scoreString}`);
+    }
+
+    return { matchUp, processed: true };
+  } catch (error) {
+    const errorMessage = error instanceof Error ? error.message : String(error);
+    errors.push(`Point ${index + 1}: ${errorMessage}`);
+    if (debug) {
+      console.error(`Point ${index + 1} failed:`, errorMessage);
+    }
+    return { matchUp, processed: false };
+  }
+}
+
+function processValidationPoints(
+  points: MCPPoint[],
+  inputMatchUp: MatchUp,
+  options: { errors: string[]; debug: boolean },
+): {
+  matchUp: MatchUp;
+  pointsProcessed: number;
+  aces: number;
+  doubleFaults: number;
+  winners: number;
+  unforcedErrors: number;
+  forcedErrors: number;
+} {
+  const { errors, debug } = options;
+  let matchUp = inputMatchUp;
+  let pointsProcessed = 0;
+  const stats = { aces: 0, doubleFaults: 0, winners: 0, unforcedErrors: 0, forcedErrors: 0 };
+
+  for (let i = 0; i < points?.length; i++) {
+    const mcpPoint = points[i];
+    if (!mcpPoint) continue;
+
+    const result = processSinglePoint(mcpPoint, matchUp, i, points.length, debug, errors, stats);
+    matchUp = result.matchUp;
+    if (result.processed) pointsProcessed++;
+  }
+
+  return { matchUp, pointsProcessed, ...stats };
+}
+
+function validateFinalScore(
+  matchUp: MatchUp,
+  expectedScore: string | undefined,
+  options: { errors: string[]; warnings: string[]; validateScore: boolean; debug: boolean },
+): { actualScore: string; scoreMatches?: boolean } {
+  const { errors, warnings, validateScore, debug } = options;
+
   const finalScore = getScore(matchUp);
   const actualScore = finalScore.scoreString;
   const isComplete = matchUp.matchUpStatus === 'COMPLETED';
@@ -295,7 +351,6 @@ export function validateMCPMatch(
     warnings.push(`Match not complete. Final score: ${actualScore}`);
   }
 
-  // Validate score if expected score is available
   let scoreMatches: boolean | undefined;
   if (validateScore && expectedScore) {
     const normalizedExpected = normalizeScoreString(expectedScore);
@@ -317,27 +372,10 @@ export function validateMCPMatch(
   if (debug) {
     console.log(`Final score: ${actualScore}`);
     console.log(`Match complete: ${isComplete}`);
-    console.log(
-      `Stats: ${aces} aces, ${doubleFaults} DFs, ${winners} winners, ${unforcedErrors} UEs, ${forcedErrors} FEs`,
-    );
+    console.log(`Stats logged in processValidationPoints`);
   }
 
-  return {
-    valid: errors.length === 0,
-    errors,
-    warnings,
-    matchUp,
-    pointsProcessed,
-    expectedScore,
-    actualScore,
-    scoreMatches,
-    formatDeduced,
-    aces,
-    doubleFaults,
-    winners,
-    unforcedErrors,
-    forcedErrors,
-  };
+  return { actualScore, scoreMatches };
 }
 
 /**
@@ -346,8 +384,8 @@ export function validateMCPMatch(
  */
 function normalizeScoreString(score: string): string {
   return score
-    .replace(/\s+/g, '') // Remove all whitespace
-    .replace(/,/g, ', ') // Standardize comma spacing
+    .replaceAll(/\s+/g, '') // Remove all whitespace
+    .replaceAll(',', ', ') // Standardize comma spacing
     .toLowerCase();
 }
 

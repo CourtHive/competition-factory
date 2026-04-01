@@ -201,62 +201,22 @@ export function setMatchUpState(params: SetMatchUpStateArgs): any {
 
   let dualWinningSideChange;
   if (isTeam) {
-    if (disableAutoCalc) {
-      addExtension({
-        extension: { name: DISABLE_AUTO_CALC, value: true },
-        element: matchUp,
-      });
-    } else if (enableAutoCalc) {
-      const existingDualMatchUpWinningSide = matchUp.winningSide;
-
-      const {
-        winningSide: projectedWinningSide,
-        scoreStringSide1,
-        scoreStringSide2,
-        set,
-      } = generateTieMatchUpScore({
-        drawDefinition,
-        matchUpsMap,
-        structure,
-        matchUp,
-        event,
-      });
-
-      const score = {
-        scoreStringSide1,
-        scoreStringSide2,
-        sets: set ? [set] : [],
-      };
-
-      dualWinningSideChange = projectedWinningSide !== existingDualMatchUpWinningSide;
-
-      // if activeDownStream and dualWinningSideChange then disallow removal of autoCalc
-      if (activeDownstream && dualWinningSideChange) {
-        return decorateResult({
-          stack: 'winningSideWithDownstreamDependencies',
-          result: { error: CANNOT_CHANGE_WINNING_SIDE },
-          context: { winningSide, matchUp },
-        });
-      }
-
-      removeExtension({ name: DISABLE_AUTO_CALC, element: matchUp });
-
-      // setting these parameters will enable noDownStreamDependencies to attemptToSetWinningSide
-      Object.assign(params, {
-        winningSide: projectedWinningSide,
-        dualWinningSideChange,
-        projectedWinningSide,
-        score,
-      });
-    }
-
-    ensureSideLineUps({
-      tournamentId: tournamentRecord?.tournamentId,
-      inContextDualMatchUp: inContextMatchUp,
-      eventId: event?.eventId,
-      dualMatchUp: matchUp,
+    const teamResult: any = handleTeamAutoCalc({
+      tournamentRecord,
+      inContextMatchUp,
+      activeDownstream,
+      disableAutoCalc,
+      enableAutoCalc,
       drawDefinition,
+      winningSide,
+      matchUpsMap,
+      structure,
+      matchUp,
+      params,
+      event,
     });
+    if (teamResult?.error) return teamResult;
+    if (teamResult?.dualWinningSideChange !== undefined) dualWinningSideChange = teamResult.dualWinningSideChange;
   }
 
   if (
@@ -312,22 +272,12 @@ export function setMatchUpState(params: SetMatchUpStateArgs): any {
   });
   if (participantCheck?.error) return participantCheck;
 
-  const qualifyingMatch = inContextMatchUp?.stage === QUALIFYING && inContextMatchUp.finishingRound === 1;
-  const qualifierAdvancing = qualifyingMatch && winningSide;
-  const removingQualifier =
-    qualifyingMatch && // oop
-    matchUp.winningSide &&
-    !winningSide && // function calls last
-    (!params.matchUpStatus ||
-      (params.matchUpStatus &&
-        isNonDirectingMatchUpStatus({
-          matchUpStatus: params.matchUpStatus,
-        }))) &&
-    (!params.outcome || !checkScoreHasValue({ outcome: params.outcome }));
-  const qualifierChanging =
-    qualifierAdvancing && // oop
-    winningSide !== matchUp.winningSide &&
-    matchUp.winningSide;
+  const { qualifierAdvancing, qualifierChanging, removingQualifier } = resolveQualifyingContext({
+    inContextMatchUp,
+    winningSide,
+    matchUp,
+    params,
+  });
 
   Object.assign(params, {
     qualifierAdvancing,
@@ -337,47 +287,20 @@ export function setMatchUpState(params: SetMatchUpStateArgs): any {
   });
 
   if (matchUpTieId) {
-    const { matchUp: dualMatchUp } = findDrawMatchUp({
-      matchUpId: matchUpTieId,
-      inContext: true,
+    const tieContext = resolveTieMatchUpContext({
       drawDefinition,
+      matchUpStatus,
+      matchUpTieId,
       matchUpsMap,
+      winningSide,
+      structure,
+      matchUp,
       event,
+      score,
     });
-    if (dualMatchUp) {
-      const tieFormat = resolveTieFormat({
-        matchUp: dualMatchUp,
-        drawDefinition,
-        structure,
-        event,
-      })?.tieFormat;
-
-      const { projectedWinningSide } = getProjectedDualWinningSide({
-        drawDefinition,
-        matchUpStatus,
-        dualMatchUp,
-        matchUpsMap,
-        winningSide,
-        tieFormat,
-        structure,
-        matchUp,
-        event,
-        score,
-      });
-
-      const existingDualMatchUpWinningSide = dualMatchUp.winningSide;
-      dualWinningSideChange = projectedWinningSide !== existingDualMatchUpWinningSide;
-      const autoCalcDisabled = dualMatchUp._disableAutoCalc;
-
-      Object.assign(params, {
-        isCollectionMatchUp: true,
-        dualWinningSideChange,
-        projectedWinningSide,
-        autoCalcDisabled,
-        matchUpTieId,
-        dualMatchUp,
-        tieFormat,
-      });
+    if (tieContext) {
+      dualWinningSideChange = tieContext.dualWinningSideChange;
+      Object.assign(params, tieContext);
     }
   }
 
@@ -443,15 +366,170 @@ export function setMatchUpState(params: SetMatchUpStateArgs): any {
     winningSide,
   });
 
-  // when autoCalcDisabled for TEAM matchUps then noDownstreamDependencies can change collectionMatchUp status
-  // const result = ((!activeDownstream || params.autoCalcDisabled) && noDownstreamDependencies(params)) ||
-  const result = (!activeDownstream && noDownstreamDependencies(params)) ||
-    (matchUpWinner && winningSideWithDownstreamDependencies(params)) ||
-    ((directingMatchUpStatus || params.autoCalcDisabled) && applyMatchUpValues(params)) || {
-      error: NO_VALID_ACTIONS,
-    };
+  let result;
+  if (!activeDownstream) {
+    result = noDownstreamDependencies(params);
+  } else if (matchUpWinner) {
+    result = winningSideWithDownstreamDependencies(params);
+  } else if (directingMatchUpStatus || params.autoCalcDisabled) {
+    result = applyMatchUpValues(params);
+  } else {
+    result = { error: NO_VALID_ACTIONS };
+  }
 
   return decorateResult({ result, stack });
+}
+
+function handleTeamAutoCalc({
+  tournamentRecord,
+  inContextMatchUp,
+  activeDownstream,
+  disableAutoCalc,
+  enableAutoCalc,
+  drawDefinition,
+  winningSide,
+  matchUpsMap,
+  structure,
+  matchUp,
+  params,
+  event,
+}) {
+  let dualWinningSideChange;
+
+  if (disableAutoCalc) {
+    addExtension({
+      extension: { name: DISABLE_AUTO_CALC, value: true },
+      element: matchUp,
+    });
+  } else if (enableAutoCalc) {
+    const existingDualMatchUpWinningSide = matchUp.winningSide;
+
+    const {
+      winningSide: projectedWinningSide,
+      scoreStringSide1,
+      scoreStringSide2,
+      set,
+    } = generateTieMatchUpScore({
+      drawDefinition,
+      matchUpsMap,
+      structure,
+      matchUp,
+      event,
+    });
+
+    const score = {
+      scoreStringSide1,
+      scoreStringSide2,
+      sets: set ? [set] : [],
+    };
+
+    dualWinningSideChange = projectedWinningSide !== existingDualMatchUpWinningSide;
+
+    // if activeDownStream and dualWinningSideChange then disallow removal of autoCalc
+    if (activeDownstream && dualWinningSideChange) {
+      return decorateResult({
+        stack: 'winningSideWithDownstreamDependencies',
+        result: { error: CANNOT_CHANGE_WINNING_SIDE },
+        context: { winningSide, matchUp },
+      });
+    }
+
+    removeExtension({ name: DISABLE_AUTO_CALC, element: matchUp });
+
+    // setting these parameters will enable noDownStreamDependencies to attemptToSetWinningSide
+    Object.assign(params, {
+      winningSide: projectedWinningSide,
+      dualWinningSideChange,
+      projectedWinningSide,
+      score,
+    });
+  }
+
+  ensureSideLineUps({
+    tournamentId: tournamentRecord?.tournamentId,
+    inContextDualMatchUp: inContextMatchUp,
+    eventId: event?.eventId,
+    dualMatchUp: matchUp,
+    drawDefinition,
+  });
+
+  return { dualWinningSideChange };
+}
+
+function resolveQualifyingContext({ inContextMatchUp, winningSide, matchUp, params }) {
+  const qualifyingMatch = inContextMatchUp?.stage === QUALIFYING && inContextMatchUp.finishingRound === 1;
+  const qualifierAdvancing = qualifyingMatch && winningSide;
+  const removingQualifier =
+    qualifyingMatch && // oop
+    matchUp.winningSide &&
+    !winningSide && // function calls last
+    (!params.matchUpStatus ||
+      (params.matchUpStatus &&
+        isNonDirectingMatchUpStatus({
+          matchUpStatus: params.matchUpStatus,
+        }))) &&
+    (!params.outcome || !checkScoreHasValue({ outcome: params.outcome }));
+  const qualifierChanging =
+    qualifierAdvancing && // oop
+    winningSide !== matchUp.winningSide &&
+    matchUp.winningSide;
+
+  return { qualifierAdvancing, qualifierChanging, removingQualifier };
+}
+
+function resolveTieMatchUpContext({
+  drawDefinition,
+  matchUpStatus,
+  matchUpTieId,
+  matchUpsMap,
+  winningSide,
+  structure,
+  matchUp,
+  event,
+  score,
+}) {
+  const { matchUp: dualMatchUp } = findDrawMatchUp({
+    matchUpId: matchUpTieId,
+    inContext: true,
+    drawDefinition,
+    matchUpsMap,
+    event,
+  });
+  if (!dualMatchUp) return undefined;
+
+  const tieFormat = resolveTieFormat({
+    matchUp: dualMatchUp,
+    drawDefinition,
+    structure,
+    event,
+  })?.tieFormat;
+
+  const { projectedWinningSide } = getProjectedDualWinningSide({
+    drawDefinition,
+    matchUpStatus,
+    dualMatchUp,
+    matchUpsMap,
+    winningSide,
+    tieFormat,
+    structure,
+    matchUp,
+    event,
+    score,
+  });
+
+  const existingDualMatchUpWinningSide = dualMatchUp.winningSide;
+  const dualWinningSideChange = projectedWinningSide !== existingDualMatchUpWinningSide;
+  const autoCalcDisabled = dualMatchUp._disableAutoCalc;
+
+  return {
+    isCollectionMatchUp: true,
+    dualWinningSideChange,
+    projectedWinningSide,
+    autoCalcDisabled,
+    matchUpTieId,
+    dualMatchUp,
+    tieFormat,
+  };
 }
 
 function winningSideWithDownstreamDependencies(params) {

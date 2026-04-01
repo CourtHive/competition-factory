@@ -73,7 +73,6 @@ export function publishEvent(params: PublishEventType): ResultType & { eventData
     drawIdsToAdd,
   } = params;
 
-  // publishing will draw on scoring policy, round naming policy and participant (privacy) policy
   const { appliedPolicies } = getAppliedPolicies({ tournamentRecord, event });
   const policyDefinitions = {
     ...appliedPolicies,
@@ -90,149 +89,23 @@ export function publishEvent(params: PublishEventType): ResultType & { eventData
     ...(specifiedDrawIds ?? []),
     ...keyedDrawIds,
   );
-  const invalidDrawIds = drawIdsToValidate.filter((drawId) => !eventDrawIds.includes(drawId));
-  if (invalidDrawIds.length) {
-    return decorateResult({
-      result: { error: DRAW_DEFINITION_NOT_FOUND },
-      context: { invalidDrawIds },
-    });
-  }
 
-  // Validate all embargo values in incoming drawDetails before processing
-  if (params.drawDetails) {
-    for (const drawId of Object.keys(params.drawDetails)) {
-      const detail = params.drawDetails[drawId];
-      if (detail.publishingDetail?.embargo && !isValidEmbargoDate(detail.publishingDetail.embargo)) {
-        return { error: INVALID_EMBARGO };
-      }
-      if (detail.stageDetails) {
-        for (const stage of Object.keys(detail.stageDetails)) {
-          if (detail.stageDetails[stage].embargo && !isValidEmbargoDate(detail.stageDetails[stage].embargo)) {
-            return { error: INVALID_EMBARGO };
-          }
-        }
-      }
-      if (detail.structureDetails) {
-        for (const id of Object.keys(detail.structureDetails)) {
-          const sd = detail.structureDetails[id];
-          if (sd.embargo && !isValidEmbargoDate(sd.embargo)) {
-            return { error: INVALID_EMBARGO };
-          }
-          if (sd.scheduledRounds) {
-            for (const round of Object.keys(sd.scheduledRounds)) {
-              if (sd.scheduledRounds[round].embargo && !isValidEmbargoDate(sd.scheduledRounds[round].embargo)) {
-                return { error: INVALID_EMBARGO };
-              }
-            }
-          }
-        }
-      }
-    }
-  }
+  const drawIdValidation = validateDrawIds({ drawIdsToValidate, eventDrawIds });
+  if (drawIdValidation?.error) return drawIdValidation;
+
+  const embargoValidation = validateEmbargoValues(params.drawDetails);
+  if (embargoValidation?.error) return embargoValidation;
 
   const pubStatus = getEventPublishStatus({ event, status });
 
-  // filter out any drawIds that do not have corresponding drawDefinitions not in the event
-  const drawDetails = Object.keys(pubStatus?.drawDetails || {})
-    .filter((drawId) => eventDrawIds.includes(drawId))
-    .reduce((details: any, drawId) => {
-      details[drawId] = pubStatus.drawDetails[drawId];
-      return details;
-    }, {});
+  const drawDetails = buildExistingDrawDetails({ pubStatus, eventDrawIds });
+
+  applyDrawIdPublishState({ drawDetails, eventDrawIds, drawIdsToValidate, drawIdsToRemove, drawIdsToAdd, specifiedDrawIds });
 
   for (const drawId of eventDrawIds) {
-    if (!drawIdsToValidate.length || drawIdsToValidate.includes(drawId)) {
-      if (drawIdsToRemove?.includes(drawId) || (specifiedDrawIds?.length && !specifiedDrawIds.includes(drawId))) {
-        drawDetails[drawId] = {
-          ...drawDetails[drawId],
-          publishingDetail: { published: false },
-        };
-      } else if (drawIdsToAdd?.includes(drawId) || specifiedDrawIds?.includes(drawId) || !specifiedDrawIds?.length) {
-        drawDetails[drawId] = {
-          ...drawDetails[drawId],
-          publishingDetail: { published: true },
-        };
-      }
-    }
-
     if (params.drawDetails?.[drawId]) {
-      const newDetail = params.drawDetails[drawId];
-      let structureDetails = newDetail.structureDetails ?? drawDetails[drawId].structureDetails;
-      const stageDetails = newDetail.stageDetails ?? drawDetails[drawId].stageDetails ?? {};
-
-      const {
-        structureIdsToRemove = [],
-        structureIdsToAdd = [],
-        publishingDetail = {},
-        stagesToRemove = [],
-        stagesToAdd = [],
-      } = newDetail;
-
-      if (structureIdsToAdd || stagesToAdd) publishingDetail.published = true;
-
-      drawDetails[drawId] = {
-        publishingDetail,
-        structureDetails,
-        stageDetails,
-      };
-
-      if (structureIdsToAdd.length || structureIdsToRemove.length) {
-        const drawStructureIds = (
-          event?.drawDefinitions?.find((drawDefinition) => drawDefinition.drawId === drawId)?.structures ?? []
-        ).map(({ structureId }) => structureId);
-        const structureIdsToValidate = (structureIdsToAdd ?? []).concat(structureIdsToRemove ?? []);
-        const invalidStructureIds = structureIdsToValidate.filter(
-          (structureId) => !drawStructureIds.includes(structureId),
-        );
-        if (invalidStructureIds.length) {
-          return decorateResult({
-            result: { error: STRUCTURE_NOT_FOUND },
-            context: { invalidStructureIds },
-          });
-        }
-
-        structureDetails = structureDetails ?? {};
-        for (const structureId of drawStructureIds) {
-          if (structureIdsToRemove.includes(structureId)) {
-            structureDetails[structureId] = { published: false };
-          } else {
-            structureDetails[structureId] = { published: true };
-          }
-        }
-
-        drawDetails[drawId].structureDetails = structureDetails;
-      }
-
-      const drawStages = (
-        event?.drawDefinitions?.find((drawDefinition) => drawDefinition.drawId === drawId)?.structures ?? []
-      ).map(({ stage }) => stage as string);
-
-      if (stagesToAdd.length) {
-        for (const stage of stagesToAdd) {
-          stageDetails[stage] = { published: true };
-        }
-
-        for (const stage of drawStages) {
-          if (!stageDetails[stage]) {
-            stageDetails[stage] = { published: false };
-          }
-        }
-      }
-      if (stagesToAdd.length || stagesToRemove.length) {
-        for (const stage of stagesToRemove) {
-          stageDetails[stage] = { published: false };
-        }
-
-        for (const stage of drawStages) {
-          if (!stageDetails[stage]) {
-            stageDetails[stage] = { published: true };
-          }
-        }
-      }
-
-      if (stagesToAdd.length || stagesToRemove.length) {
-        drawDetails[drawId].stageDetails = stageDetails;
-      }
+      const result = mergeDrawDetail({ drawDetails, drawId, newDetail: params.drawDetails[drawId], event });
+      if (result?.error) return result;
     }
   }
 
@@ -265,4 +138,167 @@ export function publishEvent(params: PublishEventType): ResultType & { eventData
     });
 
   return { ...SUCCESS, eventData };
+}
+
+function validateDrawIds({ drawIdsToValidate, eventDrawIds }) {
+  const invalidDrawIds = drawIdsToValidate.filter((drawId) => !eventDrawIds.includes(drawId));
+  if (invalidDrawIds.length) {
+    return decorateResult({
+      result: { error: DRAW_DEFINITION_NOT_FOUND },
+      context: { invalidDrawIds },
+    });
+  }
+  return undefined;
+}
+
+function validateEmbargoValues(drawDetailsParam) {
+  if (!drawDetailsParam) return;
+
+  for (const drawId of Object.keys(drawDetailsParam)) {
+    const detail = drawDetailsParam[drawId];
+    if (detail.publishingDetail?.embargo && !isValidEmbargoDate(detail.publishingDetail.embargo)) {
+      return { error: INVALID_EMBARGO };
+    }
+    if (detail.stageDetails) {
+      for (const stage of Object.keys(detail.stageDetails)) {
+        if (detail.stageDetails[stage].embargo && !isValidEmbargoDate(detail.stageDetails[stage].embargo)) {
+          return { error: INVALID_EMBARGO };
+        }
+      }
+    }
+    if (detail.structureDetails) {
+      for (const id of Object.keys(detail.structureDetails)) {
+        const sd = detail.structureDetails[id];
+        if (sd.embargo && !isValidEmbargoDate(sd.embargo)) {
+          return { error: INVALID_EMBARGO };
+        }
+        if (sd.scheduledRounds) {
+          for (const round of Object.keys(sd.scheduledRounds)) {
+            if (sd.scheduledRounds[round].embargo && !isValidEmbargoDate(sd.scheduledRounds[round].embargo)) {
+              return { error: INVALID_EMBARGO };
+            }
+          }
+        }
+      }
+    }
+  }
+  return undefined;
+}
+
+function buildExistingDrawDetails({ pubStatus, eventDrawIds }) {
+  return Object.keys(pubStatus?.drawDetails || {})
+    .filter((drawId) => eventDrawIds.includes(drawId))
+    .reduce((details: any, drawId) => {
+      details[drawId] = pubStatus.drawDetails[drawId];
+      return details;
+    }, {});
+}
+
+function applyDrawIdPublishState({ drawDetails, eventDrawIds, drawIdsToValidate, drawIdsToRemove, drawIdsToAdd, specifiedDrawIds }) {
+  for (const drawId of eventDrawIds) {
+    if (!drawIdsToValidate.length || drawIdsToValidate.includes(drawId)) {
+      if (drawIdsToRemove?.includes(drawId) || (specifiedDrawIds?.length && !specifiedDrawIds.includes(drawId))) {
+        drawDetails[drawId] = {
+          ...drawDetails[drawId],
+          publishingDetail: { published: false },
+        };
+      } else if (drawIdsToAdd?.includes(drawId) || specifiedDrawIds?.includes(drawId) || !specifiedDrawIds?.length) {
+        drawDetails[drawId] = {
+          ...drawDetails[drawId],
+          publishingDetail: { published: true },
+        };
+      }
+    }
+  }
+}
+
+function mergeDrawDetail({ drawDetails, drawId, newDetail, event }) {
+  let structureDetails = newDetail.structureDetails ?? drawDetails[drawId].structureDetails;
+  const stageDetails = newDetail.stageDetails ?? drawDetails[drawId].stageDetails ?? {};
+
+  const {
+    structureIdsToRemove = [],
+    structureIdsToAdd = [],
+    publishingDetail = {},
+    stagesToRemove = [],
+    stagesToAdd = [],
+  } = newDetail;
+
+  if (structureIdsToAdd || stagesToAdd) publishingDetail.published = true;
+
+  drawDetails[drawId] = {
+    publishingDetail,
+    structureDetails,
+    stageDetails,
+  };
+
+  if (structureIdsToAdd.length || structureIdsToRemove.length) {
+    const result = applyStructureChanges({ drawDetails, drawId, structureIdsToAdd, structureIdsToRemove, structureDetails, event });
+    if (result?.error) return result;
+  }
+
+  const drawStages = (
+    event?.drawDefinitions?.find((drawDefinition) => drawDefinition.drawId === drawId)?.structures ?? []
+  ).map(({ stage }) => stage as string);
+
+  applyStageChanges({ stageDetails, stagesToAdd, stagesToRemove, drawStages });
+
+  if (stagesToAdd.length || stagesToRemove.length) {
+    drawDetails[drawId].stageDetails = stageDetails;
+  }
+
+  return undefined;
+}
+
+function applyStructureChanges({ drawDetails, drawId, structureIdsToAdd, structureIdsToRemove, structureDetails, event }) {
+  const drawStructureIds = (
+    event?.drawDefinitions?.find((drawDefinition) => drawDefinition.drawId === drawId)?.structures ?? []
+  ).map(({ structureId }) => structureId);
+  const structureIdsToValidate = (structureIdsToAdd ?? []).concat(structureIdsToRemove ?? []);
+  const invalidStructureIds = structureIdsToValidate.filter(
+    (structureId) => !drawStructureIds.includes(structureId),
+  );
+  if (invalidStructureIds.length) {
+    return decorateResult({
+      result: { error: STRUCTURE_NOT_FOUND },
+      context: { invalidStructureIds },
+    });
+  }
+
+  structureDetails = structureDetails ?? {};
+  for (const structureId of drawStructureIds) {
+    if (structureIdsToRemove.includes(structureId)) {
+      structureDetails[structureId] = { published: false };
+    } else {
+      structureDetails[structureId] = { published: true };
+    }
+  }
+
+  drawDetails[drawId].structureDetails = structureDetails;
+  return undefined;
+}
+
+function applyStageChanges({ stageDetails, stagesToAdd, stagesToRemove, drawStages }) {
+  if (stagesToAdd.length) {
+    for (const stage of stagesToAdd) {
+      stageDetails[stage] = { published: true };
+    }
+
+    for (const stage of drawStages) {
+      if (!stageDetails[stage]) {
+        stageDetails[stage] = { published: false };
+      }
+    }
+  }
+  if (stagesToAdd.length || stagesToRemove.length) {
+    for (const stage of stagesToRemove) {
+      stageDetails[stage] = { published: false };
+    }
+
+    for (const stage of drawStages) {
+      if (!stageDetails[stage]) {
+        stageDetails[stage] = { published: true };
+      }
+    }
+  }
 }

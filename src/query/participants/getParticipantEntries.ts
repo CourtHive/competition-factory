@@ -179,191 +179,25 @@ export function getParticipantEntries(params) {
     const eventPublishedSeeding = eventsPublishStatuses?.[eventId]?.publishedSeeding;
 
     if (withDraws || withRankingProfile || withSeeding) {
-      const getSeedingMap = (assignments) =>
-        assignments
-          ? Object.assign(
-              {},
-              ...assignments.map(({ participantId, seedValue, seedNumber }) => ({
-                [participantId]: { seedValue, seedNumber },
-              })),
-            )
-          : undefined;
-
       const drawIds = unique([...drawDefinitions.map(getDrawId), ...flights.map(getDrawId)]);
 
       for (const drawId of drawIds) {
-        const drawDefinition = drawDefinitions.find((drawDefinition) => drawDefinition.drawId === drawId);
-        const scaleNames = [category?.categoryName, category?.ageCategoryCode].filter(Boolean);
-        const { structures = [], drawOrder, drawName, drawType } = drawDefinition ?? {};
-        const flight = flights?.find((flight) => flight.drawId === drawId);
-        const entries = drawDefinition?.entries || flight?.drawEntries;
-        const flightNumber = flight?.flightNumber;
-
-        // used in rankings pipeline.
-        // the structures in which a particpant particpates are ordered
-        // to enable differentiation for Points-per-round and points-per-win
-        const orderedStructureIds = (drawDefinition?.structures || [])
-          .sort((a, b) => structureSort(a, b))
-          .map(({ structureId, structures }) => {
-            return [structureId, ...(structures || []).map(({ structureId }) => structureId)];
-          })
-          .flat(Infinity);
-
-        let qualifyingPositionAssignments,
-          qualifyingSeedAssignments,
-          mainPositionAssignments,
-          mainSeedAssignments,
-          drawSize = 0;
-
-        // build up assignedParticipantIds Set
-        // to ensure that only assignedParticipants are included
-        const assignedParticipantIds = new Set(
-          structures
-            .filter(({ stage, stageSequence }) => (stage === MAIN && stageSequence === 1) || stage === QUALIFYING)
-            .flatMap((structure) => {
-              const { positionAssignments } = getPositionAssignments({ structure });
-              const { seedAssignments, stageSequence, stage } = structure;
-
-              if (stage === MAIN) {
-                drawSize = positionAssignments?.length ?? 0;
-                mainPositionAssignments = positionAssignments;
-                mainSeedAssignments = seedAssignments;
-              } else if (stageSequence === 1) {
-                qualifyingPositionAssignments = positionAssignments;
-                qualifyingSeedAssignments = seedAssignments;
-              }
-              return positionAssignments;
-            })
-            .map(({ participantId }) => participantId)
-            .filter(Boolean),
-        );
-
-        const mainSeedingMap = getSeedingMap(mainSeedAssignments);
-        const qualifyingSeedingMap = getSeedingMap(qualifyingSeedAssignments);
-
-        const relevantEntries = drawDefinition
-          ? entries.filter(({ participantId }) => assignedParticipantIds.has(participantId))
-          : entries;
-
-        const seedingPublished =
-          !usePublishState ||
-          (eventPublishedSeeding?.published &&
-            (eventPublishedSeeding?.drawIds?.length === 0 || eventPublishedSeeding?.drawIds?.includes(drawId)));
-
-        for (const entry of relevantEntries) {
-          if (!participantMap[entry.participantId]) continue; // handle bad data
-          const { entryStatus, entryStage, entryPosition, participantId } = entry;
-
-          // get event ranking
-          const ranking = getRanking({
-            participantId,
-            scaleNames,
-            eventType,
-          });
-
-          // IMPORTANT NOTE!
-          // id is the pair, team or individual participant currently being processed
-          // whereas participantId is the id of the entry into the draw
-          const addParticipantDrawEntry = (id) => {
-            if (!participantMap[id] || participantMap[id].draws?.[drawId]) return;
-
-            const includeSeeding = withSeeding && seedingPublished;
-
-            const seedAssignments = includeSeeding ? {} : undefined;
-            const mainSeeding = includeSeeding
-              ? mainSeedingMap?.[participantId]?.seedValue || mainSeedingMap?.[participantId]?.seedNumber
-              : undefined;
-            const mainSeedingAssignments = mainSeeding ? mainSeedingMap?.[participantId] : undefined;
-            const qualifyingSeeding = includeSeeding
-              ? qualifyingSeedingMap?.[participantId]?.seedValue || qualifyingSeedingMap?.[participantId]?.seedNumber
-              : undefined;
-            const qualifyingSeedingAssignments = qualifyingSeeding ? qualifyingSeedingMap?.[participantId] : undefined;
-
-            if (seedAssignments && mainSeeding) seedAssignments[MAIN] = mainSeedingAssignments;
-            if (seedAssignments && qualifyingSeeding) seedAssignments[QUALIFYING] = qualifyingSeedingAssignments;
-
-            const seedValue = mainSeeding || qualifyingSeeding;
-            if (seedValue) {
-              if (!participantMap[id].participant.seedings[eventType])
-                participantMap[id].participant.seedings[eventType] = [];
-
-              if (mainSeedingAssignments) {
-                participantMap[id].participant.seedings[eventType].push({
-                  ...mainSeedingAssignments,
-                  scaleName: drawId,
-                });
-              }
-              if (qualifyingSeedingAssignments) {
-                participantMap[id].participant.seedings[eventType].push({
-                  ...qualifyingSeedingAssignments,
-                  scaleName: drawId,
-                });
-              }
-
-              if (seedAssignments) {
-                if (!participantMap[id].events[eventId].seedAssignments)
-                  participantMap[id].events[eventId].seedAssignments = {};
-
-                Object.keys(seedAssignments).forEach(
-                  (stage) => (participantMap[id].events[eventId].seedAssignments[stage] = seedAssignments[stage]),
-                );
-              }
-            }
-
-            if (withDraws || withRankingProfile) {
-              participantMap[id].draws[drawId] = definedAttributes(
-                {
-                  seedAssignments,
-                  entryPosition,
-                  entryStatus,
-                  entryStage,
-                  seedValue,
-                  eventId,
-                  ranking,
-                  drawId,
-                },
-                false,
-                false,
-                true,
-              );
-            }
-          };
-
-          if (![UNGROUPED, UNPAIRED].includes(entryStatus)) {
-            addParticipantDrawEntry(participantId);
-
-            const individualParticipantIds = participantMap[participantId].participant.individualParticipantIds || [];
-
-            // add for individualParticipantIds when participantType is TEAM/PAIR
-            individualParticipantIds?.forEach(addParticipantDrawEntry);
-          }
-        }
-
-        const stages = (drawDefinition?.structures ?? []).reduce((stages, structure) => {
-          if (!stages.includes(structure.stage)) stages.push(structure.stage);
-          return stages;
-        }, []);
-
-        const linksCount = (drawDefinition?.links ?? []).length;
-
-        derivedDrawInfo[drawId] = {
-          qualifyingPositionAssignments,
-          qualifyingSeedAssignments,
-          mainPositionAssignments,
-          qualifyingSeedingMap,
-          mainSeedAssignments,
-          orderedStructureIds,
-          mainSeedingMap,
-          flightNumber,
-          linksCount,
-          drawOrder,
-          drawName,
-          drawType,
-          drawSize,
+        processDrawEntries({
+          drawDefinitions,
+          participantMap,
+          derivedDrawInfo,
+          eventPublishedSeeding,
+          usePublishState,
+          withRankingProfile,
+          withSeeding,
+          withDraws,
+          eventType,
+          category,
+          eventId,
+          flights,
           drawId,
-          stages,
-          // qualifyingDrawSize,
-        };
+          getRanking,
+        });
       }
     }
 
@@ -392,346 +226,39 @@ export function getParticipantEntries(params) {
         })?.matchUps ?? [];
 
       for (const matchUp of eventMatchUps) {
-        const {
-          finishingPositionRange,
-          potentialParticipants,
-          tieMatchUps = [],
-          sides = [],
-          winningSide,
-          matchUpType,
-          matchUpId,
-          eventId,
-          drawId,
-          collectionId,
-          containerStructureId,
-          stageSequence,
-          finishingRound,
-          matchUpStatus,
-          roundPosition,
-          roundNumber,
-          structureId,
-          schedule,
-          score,
-          stage,
-        } = matchUp;
-
-        mappedMatchUps[matchUpId] = matchUp;
-
-        // Collect RR group matchUps for tally-based finishing positions
-        if (withRankingProfile && containerStructureId && structureId && drawId) {
-          if (!rrGroupMatchUps[structureId]) rrGroupMatchUps[structureId] = [];
-          rrGroupMatchUps[structureId].push(matchUp);
-          if (!rrContainerInfo[containerStructureId]) {
-            const drawDef = drawDefinitions.find((dd) => dd.drawId === drawId);
-            if (drawDef) rrContainerInfo[containerStructureId] = { drawDefinition: drawDef, drawId };
-          }
-        }
-
-        const baseAttrs = {
-          finishingPositionRange,
-          containerStructureId,
-          finishingRound,
-          stageSequence,
-          roundPosition,
-          collectionId,
-          roundNumber,
-          structureId,
-          schedule,
-          eventId,
-          drawId,
-          score,
-          stage,
-        };
-
-        processSides({
+        processEventMatchUp({
+          getRelevantParticipantIds,
+          withScheduleItems,
           tournamentRecord,
           drawDefinitions,
-          ...baseAttrs,
-          ...withOpts,
-          matchUpStatus,
-          winningSide,
-          matchUpType,
-          matchUpId,
-          sides,
+          scheduleAnalysis,
+          withRankingProfile,
+          rrContainerInfo,
+          rrGroupMatchUps,
+          mappedMatchUps,
+          participantMap,
+          nextMatchUps,
+          withOpts,
+          matchUp,
         });
-
-        for (const tieMatchUp of tieMatchUps) {
-          const {
-            winningSide: tieMatchUpWinningSide,
-            sides: tieMatchUpSides = [],
-            matchUpId: tieMatchUpId,
-            collectionPosition,
-            collectionId: tieCollectionId,
-            matchUpStatus,
-            matchUpType,
-          } = tieMatchUp;
-          processSides({
-            ...baseAttrs,
-            ...withOpts,
-            winningSide: tieMatchUpWinningSide,
-            tieWinningSide: winningSide,
-            matchUpTieId: matchUpId,
-            matchUpId: tieMatchUpId,
-            sides: tieMatchUpSides,
-            collectionId: tieCollectionId,
-            collectionPosition,
-            matchUpSides: sides,
-            matchUpStatus,
-            matchUpType,
-          });
-        }
-
-        if (Array.isArray(potentialParticipants) && (nextMatchUps || !!scheduleAnalysis || withScheduleItems)) {
-          const potentialParticipantIds = potentialParticipants.flat().map(getParticipantId).filter(Boolean);
-          potentialParticipantIds?.forEach((participantId) => {
-            const relevantParticipantIds = getRelevantParticipantIds(participantId);
-
-            relevantParticipantIds?.forEach((relevantParticipantId) => {
-              if (!participantMap[relevantParticipantId]) {
-                return;
-              }
-              participantMap[relevantParticipantId].potentialMatchUps[matchUpId] = definedAttributes({
-                tournamentId: tournamentRecord?.tournamentId,
-                matchUpId,
-                eventId,
-                drawId,
-              });
-            });
-
-            if (!!scheduleAnalysis || withScheduleItems) {
-              addScheduleItem({
-                potential: true,
-                participantMap,
-                participantId,
-                matchUpStatus,
-                roundPosition,
-                structureId,
-                matchUpType,
-                roundNumber,
-                matchUpId,
-                schedule,
-                drawId,
-                score,
-              });
-            }
-          });
-        }
       }
 
       matchUps.push(...eventMatchUps);
     }
   }
 
-  // Compute RR tally-based finishing positions
-  const rrFinishingPositions: { [drawId: string]: { [participantId: string]: number[] } } = {};
-
-  if (withRankingProfile) {
-    for (const [containerStructureId, containerInfo] of Object.entries(rrContainerInfo)) {
-      const { drawDefinition, drawId } = containerInfo;
-      const mainStructure = drawDefinition.structures?.find(
-        (s) => s.structureType === CONTAINER && s.stage === MAIN && s.stageSequence === 1,
-      );
-      if (!mainStructure?.structures) continue;
-
-      const containedStructures = mainStructure.structures;
-      const bracketsCount = containedStructures.length;
-      const drawPositionsCount = containedStructures.reduce((sum, s) => sum + (s.positionAssignments?.length || 0), 0);
-      const playoffStructure = drawDefinition.structures?.find((s) => s.stage === PLAY_OFF);
-
-      if (!rrFinishingPositions[drawId]) rrFinishingPositions[drawId] = {};
-
-      for (const containedStructure of containedStructures) {
-        const childStructureId = containedStructure.structureId;
-        const groupMatchUps = rrGroupMatchUps[childStructureId];
-        if (!groupMatchUps?.length) continue;
-
-        const bracketSize = containedStructure.positionAssignments?.length;
-        const { subOrderMap } = createSubOrderMap({
-          positionAssignments: containedStructure.positionAssignments,
-        });
-
-        const tallyResult = tallyParticipantResults({ matchUps: groupMatchUps, subOrderMap });
-        if (!tallyResult?.participantResults) continue;
-
-        for (const [participantId, result] of Object.entries(tallyResult.participantResults) as any) {
-          const { groupOrder, provisionalOrder } = result;
-          const order = groupOrder || provisionalOrder;
-          if (!order) continue;
-
-          let range;
-          if (drawPositionsCount === bracketSize && order) {
-            // Single bracket: order is the exact finishing position (groupOrder if complete, provisionalOrder if not)
-            range = [order, order];
-          } else if (bracketsCount > 1 && order && !playoffStructure) {
-            // Multiple brackets, no playoff: position within groupOrder rank across all brackets
-            range = [1, bracketsCount];
-          } else if (bracketsCount > 1 && order && playoffStructure) {
-            // Multiple brackets with playoff: range based on advancing positions from links
-            const advancingPositions = drawDefinition.links?.find(
-              (link) => link.source.structureId === containerStructureId,
-            )?.source?.finishingPositions;
-            if (advancingPositions) {
-              const totalAdvancing = advancingPositions.length * bracketsCount;
-              if (advancingPositions.includes(order)) {
-                range = [1, totalAdvancing];
-              } else {
-                const finishingOffset = (bracketSize - order) * bracketsCount;
-                range = [totalAdvancing + 1, drawPositionsCount - finishingOffset];
-              }
-            }
-          }
-
-          if (range) rrFinishingPositions[drawId][participantId] = range;
-        }
-      }
-    }
-  }
+  const rrFinishingPositions = computeRRFinishingPositions(rrGroupMatchUps, rrContainerInfo, withRankingProfile);
 
   if (withStatistics || withRankingProfile || !!scheduleAnalysis) {
-    const aggregators: any[] = Object.values(participantMap);
-    for (const participantAggregator of aggregators) {
-      const {
-        wins,
-        losses,
-        [SINGLES]: { wins: singlesWins, losses: singlesLosses },
-        [DOUBLES]: { wins: doublesWins, losses: doublesLosses },
-      } = participantAggregator.counters;
-
-      const addStatValue = (statCode, wins, losses) => {
-        const denominator = wins + losses;
-        const numerator = wins;
-
-        const statValue = denominator && numerator / denominator;
-
-        participantAggregator.statistics[statCode] = {
-          denominator,
-          numerator,
-          statValue,
-          statCode,
-        };
-      };
-
-      if (withStatistics) {
-        addStatValue(WIN_RATIO, wins, losses);
-        addStatValue(`${WIN_RATIO}.${SINGLES}`, singlesWins, singlesLosses);
-        addStatValue(`${WIN_RATIO}.${DOUBLES}`, doublesWins, doublesLosses);
-      }
-
-      if (withRankingProfile) {
-        const diff = (range = []) => Math.abs(range[0] - range[1]);
-        for (const drawId of Object.keys(participantAggregator.draws)) {
-          const { orderedStructureIds = [], flightNumber } = derivedDrawInfo[drawId] || {};
-          if (participantAggregator.structureParticipation && orderedStructureIds.length) {
-            let finishingPositionRange;
-            let nonQualifyingOrder = 0;
-
-            // structures in which a participant participants/exits
-            const orderedParticipation = orderedStructureIds
-              .map((structureId) => {
-                const participation = participantAggregator.structureParticipation[structureId];
-                if (!participation) return undefined;
-
-                if (!finishingPositionRange) finishingPositionRange = participation?.finishingPositionRange;
-                if (diff(finishingPositionRange) > diff(participation?.finishingPositionRange))
-                  finishingPositionRange = participation?.finishingPositionRange;
-
-                const notQualifying = participation.stage !== QUALIFYING;
-                if (notQualifying) nonQualifyingOrder += 1;
-
-                const participationOrder = notQualifying ? nonQualifyingOrder : undefined;
-
-                return definedAttributes({
-                  ...participation,
-                  participationOrder,
-                  flightNumber,
-                });
-              })
-              .filter(Boolean);
-
-            if (participantAggregator.draws[drawId]) {
-              // Override with tally-derived finishing position for RR draws
-              const participantId = participantAggregator.participant.participantId;
-              const rrRange = rrFinishingPositions[drawId]?.[participantId];
-              if (rrRange) finishingPositionRange = rrRange;
-
-              participantAggregator.draws[drawId].finishingPositionRange = finishingPositionRange;
-              participantAggregator.draws[drawId].structureParticipation = orderedParticipation;
-            }
-          }
-        }
-      }
-
-      if (scheduleAnalysis) {
-        const scheduledMinutesDifference = isObject(scheduleAnalysis) ? scheduleAnalysis.scheduledMinutesDifference : 0;
-
-        // iterate through participantAggregator.scheduleItems
-        const scheduleItems = participantAggregator.scheduleItems || [];
-        const potentialMatchUps = participantAggregator.potentialMatchUps || {};
-        const dateItems = scheduleItems.reduce((dateItems, scheduleItem) => {
-          const { scheduledDate, scheduledTime } = scheduleItem;
-          if (!dateItems[scheduledDate]) dateItems[scheduledDate] = [];
-          if (scheduledTime) dateItems[scheduledDate].push(scheduleItem);
-
-          return dateItems;
-        }, {});
-
-        // sort scheduleItems for each date
-        Object.values(dateItems).forEach((items: any) => items.sort(timeSort));
-
-        for (const scheduleItem of scheduleItems) {
-          const { typeChangeTimeAfterRecovery, timeAfterRecovery, scheduledDate, scheduledTime } = scheduleItem;
-
-          const scheduleItemsToConsider = dateItems[scheduledDate];
-          const scheduledMinutes = timeStringMinutes(scheduledTime);
-
-          for (const consideredItem of scheduleItemsToConsider) {
-            const ignoreItem =
-              consideredItem.matchUpId === scheduleItem.matchUpId ||
-              (isExit(consideredItem.matchUpStatus) && !consideredItem.checkScoreHasValue);
-            if (ignoreItem) continue;
-
-            // if there is a matchType change (SINGLES => DOUBLES or vice versa) then there is potentially a different timeAfterRecovery
-            const typeChange = scheduleItem.matchUpType !== consideredItem.matchUpType;
-
-            const notBeforeTime = typeChange ? typeChangeTimeAfterRecovery || timeAfterRecovery : timeAfterRecovery;
-
-            // if two matchUps are both potentials and both part of the same draw they cannot be considered in conflict
-            const sameDraw = scheduleItem.drawId === consideredItem.drawId;
-
-            const bothPotential =
-              potentialMatchUps[scheduleItem.matchUpId] && potentialMatchUps[consideredItem.matchUpId];
-
-            const consideredMinutes = timeStringMinutes(consideredItem.scheduledTime);
-            const minutesDifference = Math.abs(consideredMinutes - scheduledMinutes);
-            const itemIsPrior = consideredMinutes >= scheduledMinutes;
-
-            // Conflicts can be determined in two ways:
-            // 1. scheduledMinutesDifference - the minutes difference between two scheduledTimes
-            // 2. A scheduledTime occurring before a prior matchUps notBeforeTime (timeAfterRecovery)
-            const timeOverlap =
-              scheduledMinutesDifference && !Number.isNaN(scheduledMinutesDifference)
-                ? minutesDifference <= scheduledMinutesDifference
-                : itemIsPrior && timeStringMinutes(consideredItem.scheduledTime) < timeStringMinutes(notBeforeTime);
-
-            // if there is a time overlap capture both the prior matchUpId and the conflicted matchUpId
-            if (timeOverlap && !(bothPotential && sameDraw) && itemIsPrior) {
-              const key = [scheduleItem.matchUpId, consideredItem.matchUpId].sort(stringSort).join('|');
-              participantAggregator.scheduleConflicts[key] = {
-                priorScheduledMatchUpId: scheduleItem.matchUpId,
-                matchUpIdWithConflict: consideredItem.matchUpId,
-              };
-            }
-          }
-        }
-
-        const pid = participantAggregator.participant.participantId;
-        if (Object.keys(participantAggregator.scheduleConflicts).length) {
-          participantIdsWithConflicts.push(pid);
-        }
-
-        participantMap[pid].scheduleConflicts = participantAggregator.scheduleConflicts;
-      }
-    }
+    const conflicts = computeStatisticsAndRankingProfile({
+      rrFinishingPositions,
+      withRankingProfile,
+      scheduleAnalysis,
+      withStatistics,
+      derivedDrawInfo,
+      participantMap,
+    });
+    participantIdsWithConflicts.push(...conflicts);
   }
 
   return {
@@ -743,4 +270,624 @@ export function getParticipantEntries(params) {
     participantMap,
     matchUps,
   };
+}
+
+function getSeedingMap(assignments) {
+  return assignments
+    ? Object.assign(
+        {},
+        ...assignments.map(({ participantId, seedValue, seedNumber }) => ({
+          [participantId]: { seedValue, seedNumber },
+        })),
+      )
+    : undefined;
+}
+
+function addParticipantDrawEntrySeedings({
+  participantMap,
+  id,
+  participantId,
+  eventId,
+  eventType,
+  drawId,
+  mainSeedingMap,
+  qualifyingSeedingMap,
+  seedingPublished,
+  withSeeding,
+}) {
+  const includeSeeding = withSeeding && seedingPublished;
+
+  const seedAssignments = includeSeeding ? {} : undefined;
+  const mainSeeding = includeSeeding
+    ? mainSeedingMap?.[participantId]?.seedValue || mainSeedingMap?.[participantId]?.seedNumber
+    : undefined;
+  const mainSeedingAssignments = mainSeeding ? mainSeedingMap?.[participantId] : undefined;
+  const qualifyingSeeding = includeSeeding
+    ? qualifyingSeedingMap?.[participantId]?.seedValue || qualifyingSeedingMap?.[participantId]?.seedNumber
+    : undefined;
+  const qualifyingSeedingAssignments = qualifyingSeeding ? qualifyingSeedingMap?.[participantId] : undefined;
+
+  if (seedAssignments && mainSeeding) seedAssignments[MAIN] = mainSeedingAssignments;
+  if (seedAssignments && qualifyingSeeding) seedAssignments[QUALIFYING] = qualifyingSeedingAssignments;
+
+  const seedValue = mainSeeding || qualifyingSeeding;
+  if (seedValue) {
+    if (!participantMap[id].participant.seedings[eventType])
+      participantMap[id].participant.seedings[eventType] = [];
+
+    if (mainSeedingAssignments) {
+      participantMap[id].participant.seedings[eventType].push({
+        ...mainSeedingAssignments,
+        scaleName: drawId,
+      });
+    }
+    if (qualifyingSeedingAssignments) {
+      participantMap[id].participant.seedings[eventType].push({
+        ...qualifyingSeedingAssignments,
+        scaleName: drawId,
+      });
+    }
+
+    if (seedAssignments) {
+      if (!participantMap[id].events[eventId].seedAssignments)
+        participantMap[id].events[eventId].seedAssignments = {};
+
+      Object.keys(seedAssignments).forEach(
+        (stage) => (participantMap[id].events[eventId].seedAssignments[stage] = seedAssignments[stage]),
+      );
+    }
+  }
+
+  return { seedAssignments, seedValue };
+}
+
+function processDrawEntries({
+  drawDefinitions,
+  participantMap,
+  derivedDrawInfo,
+  eventPublishedSeeding,
+  usePublishState,
+  withRankingProfile,
+  withSeeding,
+  withDraws,
+  eventType,
+  category,
+  eventId,
+  flights,
+  drawId,
+  getRanking,
+}) {
+  const drawDefinition = drawDefinitions.find((drawDefinition) => drawDefinition.drawId === drawId);
+  const scaleNames = [category?.categoryName, category?.ageCategoryCode].filter(Boolean);
+  const { structures = [], drawOrder, drawName, drawType } = drawDefinition ?? {};
+  const flight = flights?.find((flight) => flight.drawId === drawId);
+  const entries = drawDefinition?.entries || flight?.drawEntries;
+  const flightNumber = flight?.flightNumber;
+
+  const orderedStructureIds = (drawDefinition?.structures || [])
+    .sort((a, b) => structureSort(a, b))
+    .map(({ structureId, structures }) => {
+      return [structureId, ...(structures || []).map(({ structureId }) => structureId)];
+    })
+    .flat(Infinity);
+
+  let qualifyingPositionAssignments,
+    qualifyingSeedAssignments,
+    mainPositionAssignments,
+    mainSeedAssignments,
+    drawSize = 0;
+
+  const assignedParticipantIds = new Set(
+    structures
+      .filter(({ stage, stageSequence }) => (stage === MAIN && stageSequence === 1) || stage === QUALIFYING)
+      .flatMap((structure) => {
+        const { positionAssignments } = getPositionAssignments({ structure });
+        const { seedAssignments, stageSequence, stage } = structure;
+
+        if (stage === MAIN) {
+          drawSize = positionAssignments?.length ?? 0;
+          mainPositionAssignments = positionAssignments;
+          mainSeedAssignments = seedAssignments;
+        } else if (stageSequence === 1) {
+          qualifyingPositionAssignments = positionAssignments;
+          qualifyingSeedAssignments = seedAssignments;
+        }
+        return positionAssignments;
+      })
+      .map(({ participantId }) => participantId)
+      .filter(Boolean),
+  );
+
+  const mainSeedingMap = getSeedingMap(mainSeedAssignments);
+  const qualifyingSeedingMap = getSeedingMap(qualifyingSeedAssignments);
+
+  const relevantEntries = drawDefinition
+    ? entries.filter(({ participantId }) => assignedParticipantIds.has(participantId))
+    : entries;
+
+  const seedingPublished =
+    !usePublishState ||
+    (eventPublishedSeeding?.published &&
+      (eventPublishedSeeding?.drawIds?.length === 0 || eventPublishedSeeding?.drawIds?.includes(drawId)));
+
+  for (const entry of relevantEntries) {
+    if (!participantMap[entry.participantId]) continue;
+    const { entryStatus, entryStage, entryPosition, participantId } = entry;
+
+    const ranking = getRanking({
+      participantId,
+      scaleNames,
+      eventType,
+    });
+
+    const addParticipantDrawEntry = (id) => {
+      if (!participantMap[id] || participantMap[id].draws?.[drawId]) return;
+
+      const { seedAssignments, seedValue } = addParticipantDrawEntrySeedings({
+        participantMap,
+        id,
+        participantId,
+        eventId,
+        eventType,
+        drawId,
+        mainSeedingMap,
+        qualifyingSeedingMap,
+        seedingPublished,
+        withSeeding,
+      });
+
+      if (withDraws || withRankingProfile) {
+        participantMap[id].draws[drawId] = definedAttributes(
+          {
+            seedAssignments,
+            entryPosition,
+            entryStatus,
+            entryStage,
+            seedValue,
+            eventId,
+            ranking,
+            drawId,
+          },
+          false,
+          false,
+          true,
+        );
+      }
+    };
+
+    if (![UNGROUPED, UNPAIRED].includes(entryStatus)) {
+      addParticipantDrawEntry(participantId);
+
+      const individualParticipantIds = participantMap[participantId].participant.individualParticipantIds || [];
+      individualParticipantIds?.forEach(addParticipantDrawEntry);
+    }
+  }
+
+  const stages = (drawDefinition?.structures ?? []).reduce((stages, structure) => {
+    if (!stages.includes(structure.stage)) stages.push(structure.stage);
+    return stages;
+  }, []);
+
+  const linksCount = (drawDefinition?.links ?? []).length;
+
+  derivedDrawInfo[drawId] = {
+    qualifyingPositionAssignments,
+    qualifyingSeedAssignments,
+    mainPositionAssignments,
+    qualifyingSeedingMap,
+    mainSeedAssignments,
+    orderedStructureIds,
+    mainSeedingMap,
+    flightNumber,
+    linksCount,
+    drawOrder,
+    drawName,
+    drawType,
+    drawSize,
+    drawId,
+    stages,
+  };
+}
+
+function processEventMatchUp({
+  getRelevantParticipantIds,
+  withScheduleItems,
+  tournamentRecord,
+  drawDefinitions,
+  scheduleAnalysis,
+  withRankingProfile,
+  rrContainerInfo,
+  rrGroupMatchUps,
+  mappedMatchUps,
+  participantMap,
+  nextMatchUps,
+  withOpts,
+  matchUp,
+}) {
+  const {
+    finishingPositionRange,
+    potentialParticipants,
+    tieMatchUps = [],
+    sides = [],
+    winningSide,
+    matchUpType,
+    matchUpId,
+    eventId,
+    drawId,
+    collectionId,
+    containerStructureId,
+    stageSequence,
+    finishingRound,
+    matchUpStatus,
+    roundPosition,
+    roundNumber,
+    structureId,
+    schedule,
+    score,
+    stage,
+  } = matchUp;
+
+  mappedMatchUps[matchUpId] = matchUp;
+
+  if (withRankingProfile && containerStructureId && structureId && drawId) {
+    if (!rrGroupMatchUps[structureId]) rrGroupMatchUps[structureId] = [];
+    rrGroupMatchUps[structureId].push(matchUp);
+    if (!rrContainerInfo[containerStructureId]) {
+      const drawDef = drawDefinitions.find((dd) => dd.drawId === drawId);
+      if (drawDef) rrContainerInfo[containerStructureId] = { drawDefinition: drawDef, drawId };
+    }
+  }
+
+  const baseAttrs = {
+    finishingPositionRange,
+    containerStructureId,
+    finishingRound,
+    stageSequence,
+    roundPosition,
+    collectionId,
+    roundNumber,
+    structureId,
+    schedule,
+    eventId,
+    drawId,
+    score,
+    stage,
+  };
+
+  processSides({
+    tournamentRecord,
+    drawDefinitions,
+    ...baseAttrs,
+    ...withOpts,
+    matchUpStatus,
+    winningSide,
+    matchUpType,
+    matchUpId,
+    sides,
+  });
+
+  for (const tieMatchUp of tieMatchUps) {
+    const {
+      winningSide: tieMatchUpWinningSide,
+      sides: tieMatchUpSides = [],
+      matchUpId: tieMatchUpId,
+      collectionPosition,
+      collectionId: tieCollectionId,
+      matchUpStatus,
+      matchUpType,
+    } = tieMatchUp;
+    processSides({
+      ...baseAttrs,
+      ...withOpts,
+      winningSide: tieMatchUpWinningSide,
+      tieWinningSide: winningSide,
+      matchUpTieId: matchUpId,
+      matchUpId: tieMatchUpId,
+      sides: tieMatchUpSides,
+      collectionId: tieCollectionId,
+      collectionPosition,
+      matchUpSides: sides,
+      matchUpStatus,
+      matchUpType,
+    });
+  }
+
+  if (Array.isArray(potentialParticipants) && (nextMatchUps || !!scheduleAnalysis || withScheduleItems)) {
+    processPotentialParticipants({
+      getRelevantParticipantIds,
+      potentialParticipants,
+      withScheduleItems,
+      tournamentRecord,
+      scheduleAnalysis,
+      participantMap,
+      matchUpStatus,
+      roundPosition,
+      structureId,
+      matchUpType,
+      roundNumber,
+      matchUpId,
+      schedule,
+      eventId,
+      drawId,
+      score,
+    });
+  }
+}
+
+function processPotentialParticipants({
+  getRelevantParticipantIds,
+  potentialParticipants,
+  withScheduleItems,
+  tournamentRecord,
+  scheduleAnalysis,
+  participantMap,
+  matchUpStatus,
+  roundPosition,
+  structureId,
+  matchUpType,
+  roundNumber,
+  matchUpId,
+  schedule,
+  eventId,
+  drawId,
+  score,
+}) {
+  const potentialParticipantIds = potentialParticipants.flat().map(getParticipantId).filter(Boolean);
+  potentialParticipantIds?.forEach((participantId) => {
+    const relevantParticipantIds = getRelevantParticipantIds(participantId);
+
+    relevantParticipantIds?.forEach((relevantParticipantId) => {
+      if (!participantMap[relevantParticipantId]) {
+        return;
+      }
+      participantMap[relevantParticipantId].potentialMatchUps[matchUpId] = definedAttributes({
+        tournamentId: tournamentRecord?.tournamentId,
+        matchUpId,
+        eventId,
+        drawId,
+      });
+    });
+
+    if (!!scheduleAnalysis || withScheduleItems) {
+      addScheduleItem({
+        potential: true,
+        participantMap,
+        participantId,
+        matchUpStatus,
+        roundPosition,
+        structureId,
+        matchUpType,
+        roundNumber,
+        matchUpId,
+        schedule,
+        drawId,
+        score,
+      });
+    }
+  });
+}
+
+function computeRRFinishingPositions(rrGroupMatchUps, rrContainerInfo, withRankingProfile) {
+  const rrFinishingPositions: { [drawId: string]: { [participantId: string]: number[] } } = {};
+
+  if (!withRankingProfile) return rrFinishingPositions;
+
+  for (const [containerStructureId, containerInfo] of Object.entries(rrContainerInfo) as any) {
+    const { drawDefinition, drawId } = containerInfo;
+    const mainStructure = drawDefinition.structures?.find(
+      (s) => s.structureType === CONTAINER && s.stage === MAIN && s.stageSequence === 1,
+    );
+    if (!mainStructure?.structures) continue;
+
+    const containedStructures = mainStructure.structures;
+    const bracketsCount = containedStructures.length;
+    const drawPositionsCount = containedStructures.reduce((sum, s) => sum + (s.positionAssignments?.length || 0), 0);
+    const playoffStructure = drawDefinition.structures?.find((s) => s.stage === PLAY_OFF);
+
+    if (!rrFinishingPositions[drawId]) rrFinishingPositions[drawId] = {};
+
+    for (const containedStructure of containedStructures) {
+      const childStructureId = containedStructure.structureId;
+      const groupMatchUps = rrGroupMatchUps[childStructureId];
+      if (!groupMatchUps?.length) continue;
+
+      const bracketSize = containedStructure.positionAssignments?.length;
+      const { subOrderMap } = createSubOrderMap({
+        positionAssignments: containedStructure.positionAssignments,
+      });
+
+      const tallyResult = tallyParticipantResults({ matchUps: groupMatchUps, subOrderMap });
+      if (!tallyResult?.participantResults) continue;
+
+      for (const [participantId, result] of Object.entries(tallyResult.participantResults) as any) {
+        const { groupOrder, provisionalOrder } = result;
+        const order = groupOrder || provisionalOrder;
+        if (!order) continue;
+
+        let range;
+        if (drawPositionsCount === bracketSize && order) {
+          range = [order, order];
+        } else if (bracketsCount > 1 && order && !playoffStructure) {
+          range = [1, bracketsCount];
+        } else if (bracketsCount > 1 && order && playoffStructure) {
+          const advancingPositions = drawDefinition.links?.find(
+            (link) => link.source.structureId === containerStructureId,
+          )?.source?.finishingPositions;
+          if (advancingPositions) {
+            const totalAdvancing = advancingPositions.length * bracketsCount;
+            if (advancingPositions.includes(order)) {
+              range = [1, totalAdvancing];
+            } else {
+              const finishingOffset = (bracketSize - order) * bracketsCount;
+              range = [totalAdvancing + 1, drawPositionsCount - finishingOffset];
+            }
+          }
+        }
+
+        if (range) rrFinishingPositions[drawId][participantId] = range;
+      }
+    }
+  }
+
+  return rrFinishingPositions;
+}
+
+function detectScheduleConflicts({ scheduleItems, potentialMatchUps, scheduleAnalysis }) {
+  const scheduledMinutesDifference = isObject(scheduleAnalysis) ? scheduleAnalysis.scheduledMinutesDifference : 0;
+  const scheduleConflicts: { [key: string]: any } = {};
+
+  const dateItems = scheduleItems.reduce((dateItems, scheduleItem) => {
+    const { scheduledDate, scheduledTime } = scheduleItem;
+    if (!dateItems[scheduledDate]) dateItems[scheduledDate] = [];
+    if (scheduledTime) dateItems[scheduledDate].push(scheduleItem);
+
+    return dateItems;
+  }, {});
+
+  Object.values(dateItems).forEach((items: any) => items.sort(timeSort));
+
+  for (const scheduleItem of scheduleItems) {
+    const { typeChangeTimeAfterRecovery, timeAfterRecovery, scheduledDate, scheduledTime } = scheduleItem;
+
+    const scheduleItemsToConsider = dateItems[scheduledDate];
+    const scheduledMinutes = timeStringMinutes(scheduledTime);
+
+    for (const consideredItem of scheduleItemsToConsider) {
+      const ignoreItem =
+        consideredItem.matchUpId === scheduleItem.matchUpId ||
+        (isExit(consideredItem.matchUpStatus) && !consideredItem.checkScoreHasValue);
+      if (ignoreItem) continue;
+
+      const typeChange = scheduleItem.matchUpType !== consideredItem.matchUpType;
+
+      const notBeforeTime = typeChange ? typeChangeTimeAfterRecovery || timeAfterRecovery : timeAfterRecovery;
+
+      const sameDraw = scheduleItem.drawId === consideredItem.drawId;
+
+      const bothPotential =
+        potentialMatchUps[scheduleItem.matchUpId] && potentialMatchUps[consideredItem.matchUpId];
+
+      const consideredMinutes = timeStringMinutes(consideredItem.scheduledTime);
+      const minutesDifference = Math.abs(consideredMinutes - scheduledMinutes);
+      const itemIsPrior = consideredMinutes >= scheduledMinutes;
+
+      const timeOverlap =
+        scheduledMinutesDifference && !Number.isNaN(scheduledMinutesDifference)
+          ? minutesDifference <= scheduledMinutesDifference
+          : itemIsPrior && timeStringMinutes(consideredItem.scheduledTime) < timeStringMinutes(notBeforeTime);
+
+      if (timeOverlap && !(bothPotential && sameDraw) && itemIsPrior) {
+        const key = [scheduleItem.matchUpId, consideredItem.matchUpId].sort(stringSort).join('|');
+        scheduleConflicts[key] = {
+          priorScheduledMatchUpId: scheduleItem.matchUpId,
+          matchUpIdWithConflict: consideredItem.matchUpId,
+        };
+      }
+    }
+  }
+
+  return scheduleConflicts;
+}
+
+function computeStatisticsAndRankingProfile({
+  rrFinishingPositions,
+  withRankingProfile,
+  scheduleAnalysis,
+  withStatistics,
+  derivedDrawInfo,
+  participantMap,
+}) {
+  const participantIdsWithConflicts: string[] = [];
+  const aggregators: any[] = Object.values(participantMap);
+
+  for (const participantAggregator of aggregators) {
+    const {
+      wins,
+      losses,
+      [SINGLES]: { wins: singlesWins, losses: singlesLosses },
+      [DOUBLES]: { wins: doublesWins, losses: doublesLosses },
+    } = participantAggregator.counters;
+
+    const addStatValue = (statCode, wins, losses) => {
+      const denominator = wins + losses;
+      const numerator = wins;
+
+      const statValue = denominator && numerator / denominator;
+
+      participantAggregator.statistics[statCode] = {
+        denominator,
+        numerator,
+        statValue,
+        statCode,
+      };
+    };
+
+    if (withStatistics) {
+      addStatValue(WIN_RATIO, wins, losses);
+      addStatValue(`${WIN_RATIO}.${SINGLES}`, singlesWins, singlesLosses);
+      addStatValue(`${WIN_RATIO}.${DOUBLES}`, doublesWins, doublesLosses);
+    }
+
+    if (withRankingProfile) {
+      const diff = (range = []) => Math.abs(range[0] - range[1]);
+      for (const drawId of Object.keys(participantAggregator.draws)) {
+        const { orderedStructureIds = [], flightNumber } = derivedDrawInfo[drawId] || {};
+        if (participantAggregator.structureParticipation && orderedStructureIds.length) {
+          let finishingPositionRange;
+          let nonQualifyingOrder = 0;
+
+          const orderedParticipation = orderedStructureIds
+            .map((structureId) => {
+              const participation = participantAggregator.structureParticipation[structureId];
+              if (!participation) return undefined;
+
+              if (!finishingPositionRange) finishingPositionRange = participation?.finishingPositionRange;
+              if (diff(finishingPositionRange) > diff(participation?.finishingPositionRange))
+                finishingPositionRange = participation?.finishingPositionRange;
+
+              const notQualifying = participation.stage !== QUALIFYING;
+              if (notQualifying) nonQualifyingOrder += 1;
+
+              const participationOrder = notQualifying ? nonQualifyingOrder : undefined;
+
+              return definedAttributes({
+                ...participation,
+                participationOrder,
+                flightNumber,
+              });
+            })
+            .filter(Boolean);
+
+          if (participantAggregator.draws[drawId]) {
+            const participantId = participantAggregator.participant.participantId;
+            const rrRange = rrFinishingPositions[drawId]?.[participantId];
+            if (rrRange) finishingPositionRange = rrRange;
+
+            participantAggregator.draws[drawId].finishingPositionRange = finishingPositionRange;
+            participantAggregator.draws[drawId].structureParticipation = orderedParticipation;
+          }
+        }
+      }
+    }
+
+    if (scheduleAnalysis) {
+      const scheduleItems = participantAggregator.scheduleItems || [];
+      const potentialMatchUps = participantAggregator.potentialMatchUps || {};
+
+      participantAggregator.scheduleConflicts = detectScheduleConflicts({
+        scheduleAnalysis,
+        scheduleItems,
+        potentialMatchUps,
+      });
+
+      const pid = participantAggregator.participant.participantId;
+      if (Object.keys(participantAggregator.scheduleConflicts).length) {
+        participantIdsWithConflicts.push(pid);
+      }
+
+      participantMap[pid].scheduleConflicts = participantAggregator.scheduleConflicts;
+    }
+  }
+
+  return participantIdsWithConflicts;
 }

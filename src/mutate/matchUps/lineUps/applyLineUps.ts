@@ -68,101 +68,31 @@ export function applyLineUps(params: ApplyLineUps) {
     event,
   })?.tieFormat;
 
-  // verify integrity of lineUps...
-  // 1. all participantIds must be valid individualParticipantIds
-  // 2. there should be at most one participantId for a given collectionPosition in singles
-  // 3. there should be at most two participantIds for a given collectionPosition in doubles
-
   const sideAssignments: { [key: string]: any } = {};
 
   for (const lineUp of lineUps) {
     if (!Array.isArray(lineUp)) return { error: INVALID_VALUES, lineUp };
 
-    // maintain mapping of collectionId|collectionPosition to the participantIds assigned
-    const collectionParticipantIds = {};
-    const sideNumbers: number[] = [];
+    const validationResult = validateLineUpAssignments({
+      tournamentParticipants,
+      inContextMatchUp,
+      tieFormat,
+      lineUp,
+    });
+    if (validationResult.error) return validationResult;
 
-    for (const lineUpAssignment of lineUp) {
-      if (typeof lineUpAssignment !== 'object') return { error: INVALID_VALUES, lineUpAssignment };
+    const { collectionParticipantIds, sideNumbers } = validationResult;
 
-      const { participantId, collectionAssignments = [] } = lineUpAssignment;
-      if (!Array.isArray(collectionAssignments)) return { error: INVALID_VALUES, collectionAssignments };
+    const pairResult = ensureDoublesPairParticipants({
+      collectionParticipantIds,
+      tournamentParticipants,
+      tournamentRecord,
+    });
+    if (pairResult?.error) return pairResult;
 
-      const participant = tournamentParticipants.find((participant) => participant.participantId === participantId);
-      if (!participant) return { error: PARTICIPANT_NOT_FOUND };
-      if (participant.participantType !== INDIVIDUAL) return { error: INVALID_PARTICIPANT_TYPE };
+    const sideNumber = determineSideNumber(sideNumbers);
 
-      const sideNumber = inContextMatchUp.sides?.find((side: any) =>
-        side.participant?.individualParticipantIds?.includes(participantId),
-      )?.sideNumber;
-      if (sideNumber) sideNumbers.push(sideNumber);
-
-      for (const collectionAssignment of collectionAssignments) {
-        if (typeof collectionAssignment !== 'object') return { error: INVALID_VALUES, collectionAssignment };
-
-        const { collectionId, collectionPosition } = collectionAssignment;
-
-        const collectionDefinition = tieFormat?.collectionDefinitions?.find(
-          (collectionDefinition) => collectionDefinition.collectionId === collectionId,
-        );
-        // all collectionIds in the lineUp must be present in the tieFormat collectionDefinitions
-        if (!collectionDefinition) return { error: INVALID_VALUES, collectionId };
-
-        const aggregator = `${collectionId}-${collectionPosition}`;
-        if (!collectionParticipantIds[aggregator]) {
-          collectionParticipantIds[aggregator] = [];
-        }
-
-        const participantsCount = collectionParticipantIds[aggregator].length;
-
-        if (
-          (isMatchUpEventType(SINGLES)(collectionDefinition.matchUpType) && participantsCount) ||
-          (collectionDefinition.matchUpType === DOUBLES && participantsCount > 1)
-        ) {
-          // cannot have more than one assignment for singles or two for doubles
-          return {
-            info: 'Excessive collectionPosition assignments',
-            error: INVALID_VALUES,
-          };
-        }
-
-        collectionParticipantIds[aggregator].push(participantId);
-      }
-    }
-
-    // ensure that doubles pair participants exist, otherwise create
-    const collectionParticipantIdPairs: string[][] = Object.values(collectionParticipantIds);
-    for (const participantIds of collectionParticipantIdPairs) {
-      if (participantIds.length === 2) {
-        const { participant: pairedParticipant } = getPairedParticipant({
-          tournamentParticipants,
-          participantIds,
-        });
-        if (!pairedParticipant) {
-          // create pair participant
-          const newPairParticipant = {
-            participantType: PAIR,
-            participantRole: COMPETITOR,
-            individualParticipantIds: participantIds,
-          };
-          const result = addParticipant({
-            participant: newPairParticipant,
-            pairOverride: true,
-            tournamentRecord,
-          });
-          if (result.error) return result;
-        }
-      }
-    }
-
-    // determine sideNumber based on instances of participants appearing in team participants assigned to sides
-    // allows for some team members to be "borrowed"
-    const instances = instanceCount(sideNumbers);
-    const sideNumber =
-      ((instances[1] || 0) > (instances[2] || 0) && 1) || ((instances[2] || 0) > (instances[1] || 0) && 2) || undefined;
-
-    // if side not previously assigned, map sideNumber to lineUp
-    const sideAssignmentKeys = Object.keys(sideAssignments).map((key) => parseInt(key));
+    const sideAssignmentKeys = Object.keys(sideAssignments).map((key) => Number.parseInt(key));
     if (sideNumber && !sideAssignmentKeys.includes(sideNumber)) {
       sideAssignments[sideNumber] = lineUp;
     }
@@ -197,4 +127,89 @@ export function applyLineUps(params: ApplyLineUps) {
   });
 
   return { ...SUCCESS };
+}
+
+function validateLineUpAssignments({ tournamentParticipants, inContextMatchUp, tieFormat, lineUp }) {
+  const collectionParticipantIds = {};
+  const sideNumbers: number[] = [];
+
+  for (const lineUpAssignment of lineUp) {
+    if (typeof lineUpAssignment !== 'object') return { error: INVALID_VALUES, lineUpAssignment };
+
+    const { participantId, collectionAssignments = [] } = lineUpAssignment;
+    if (!Array.isArray(collectionAssignments)) return { error: INVALID_VALUES, collectionAssignments };
+
+    const participant = tournamentParticipants.find((participant) => participant.participantId === participantId);
+    if (!participant) return { error: PARTICIPANT_NOT_FOUND };
+    if (participant.participantType !== INDIVIDUAL) return { error: INVALID_PARTICIPANT_TYPE };
+
+    const sideNumber = inContextMatchUp.sides?.find((side: any) =>
+      side.participant?.individualParticipantIds?.includes(participantId),
+    )?.sideNumber;
+    if (sideNumber) sideNumbers.push(sideNumber);
+
+    for (const collectionAssignment of collectionAssignments) {
+      if (typeof collectionAssignment !== 'object') return { error: INVALID_VALUES, collectionAssignment };
+
+      const { collectionId, collectionPosition } = collectionAssignment;
+
+      const collectionDefinition = tieFormat?.collectionDefinitions?.find(
+        (collectionDefinition) => collectionDefinition.collectionId === collectionId,
+      );
+      if (!collectionDefinition) return { error: INVALID_VALUES, collectionId };
+
+      const aggregator = `${collectionId}-${collectionPosition}`;
+      if (!collectionParticipantIds[aggregator]) {
+        collectionParticipantIds[aggregator] = [];
+      }
+
+      const participantsCount = collectionParticipantIds[aggregator].length;
+
+      if (
+        (isMatchUpEventType(SINGLES)(collectionDefinition.matchUpType) && participantsCount) ||
+        (collectionDefinition.matchUpType === DOUBLES && participantsCount > 1)
+      ) {
+        return {
+          info: 'Excessive collectionPosition assignments',
+          error: INVALID_VALUES,
+        };
+      }
+
+      collectionParticipantIds[aggregator].push(participantId);
+    }
+  }
+
+  return { collectionParticipantIds, sideNumbers };
+}
+
+function ensureDoublesPairParticipants({ collectionParticipantIds, tournamentParticipants, tournamentRecord }) {
+  const collectionParticipantIdPairs: string[][] = Object.values(collectionParticipantIds);
+  for (const participantIds of collectionParticipantIdPairs) {
+    if (participantIds.length === 2) {
+      const { participant: pairedParticipant } = getPairedParticipant({
+        tournamentParticipants,
+        participantIds,
+      });
+      if (!pairedParticipant) {
+        const newPairParticipant = {
+          participantType: PAIR,
+          participantRole: COMPETITOR,
+          individualParticipantIds: participantIds,
+        };
+        const result = addParticipant({
+          participant: newPairParticipant,
+          pairOverride: true,
+          tournamentRecord,
+        });
+        if (result.error) return result;
+      }
+    }
+  }
+}
+
+function determineSideNumber(sideNumbers: number[]): number | undefined {
+  const instances = instanceCount(sideNumbers);
+  return (
+    ((instances[1] || 0) > (instances[2] || 0) && 1) || ((instances[2] || 0) > (instances[1] || 0) && 2) || undefined
+  );
 }

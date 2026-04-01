@@ -277,87 +277,20 @@ export function getParticipantStats({
       score,
     });
 
-    sideParticipantIds.forEach((ids, index) => {
-      for (const id of ids) {
-        const participantName = participantDetails.get(id)?.participantName;
-        const stats = initStats(id, participantName);
-        if (stats) {
-          const teamSumTally = (stat: string, tally: number[]) => tally.forEach((t, i) => (stats[stat][i] += t));
-          const tiebreaks = index ? [...tiebreaksTally].reverse() : tiebreaksTally;
-          const points = index ? [...pointsTally].reverse() : pointsTally;
-          const games = index ? [...gamesTally].reverse() : gamesTally;
-          const sets = index ? [...setsTally].reverse() : setsTally;
-          teamSumTally('tiebreaks', tiebreaks);
-          teamSumTally('points', points);
-          teamSumTally('games', games);
-          teamSumTally('sets', sets);
-          if (winningSide) {
-            const tallyIndex = winningSide - 1 === index ? 0 : 1;
-            stats.matchUps[tallyIndex] += 1;
-          }
-          if (competitiveness) {
-            const attr = competitiveness.toLowerCase();
-            if (!stats.competitiveness[attr]) stats.competitiveness[attr] = [0, 0];
-            stats.competitiveness[attr][index] += 1;
-          }
-          if (matchUpStatus) {
-            const attr = matchUpStatus.toLowerCase();
-            if (!stats.matchUpStatuses[attr]) stats.matchUpStatuses[attr] = 0;
-            stats.matchUpStatuses[attr] += 1;
-          }
-        }
-      }
+    accumulateTallies({
+      tallies: { setsTally, gamesTally, pointsTally, tiebreaksTally },
+      sideParticipantIds,
+      participantDetails,
+      competitiveness,
+      matchUpStatus,
+      winningSide,
+      initStats,
     });
   }
-  const statsattributes = ['tiebreaks', 'matchUps', 'points', 'games', 'sets'];
-  const competitivenessAttributes = ['competitive', 'routine', 'decisive'];
-  const ratio = new Map<string, number[]>();
-
-  const add = (a, b) => (a ?? 0) + (b ?? 0);
-  for (const [participantId, stats] of participantStats.entries()) {
-    for (const attr of statsattributes) {
-      const total = stats[attr].reduce(add);
-      if (total) {
-        const value = stats[attr][0] / total;
-        const accessor = `${attr}Ratio`;
-
-        const fixedValue = parseFloat(value.toFixed(2));
-        stats[accessor] = fixedValue;
-
-        participating.set(participantId, true);
-
-        if (!ratio.has(accessor)) ratio.set(accessor, []);
-        ratio.get(accessor)?.push(fixedValue);
-      }
-    }
-    for (const attr of competitivenessAttributes) {
-      const total = stats.competitiveness?.[attr]?.reduce(add);
-      if (total) {
-        const value = stats.competitiveness[attr][0] / total;
-        const accessor = `${attr}Ratio`;
-
-        const fixedValue = parseFloat(value.toFixed(2));
-        stats[accessor] = fixedValue;
-      }
-    }
-  }
+  const ratio = computeRatios(participantStats, participating);
 
   if (!teamParticipantId) {
-    const highLowSort = (a, b) => b - a;
-    for (const stats of participantStats.values()) {
-      for (const attr of statsattributes) {
-        // now rank each team by their ratio on each attribute
-        const accessor = `${attr}Ratio`;
-        if (typeof stats[accessor] === 'number') {
-          const index = ratio.get(accessor)?.sort(highLowSort).indexOf(stats[accessor]);
-
-          if (typeof index === 'number' && index >= 0) {
-            const rankAccessor = `${attr}Rank`;
-            stats[rankAccessor] = index + 1;
-          }
-        }
-      }
-    }
+    computeRanks(participantStats, ratio);
   }
 
   const result: TeamStatsResults = { relevantMatchUps, ...SUCCESS };
@@ -370,4 +303,90 @@ export function getParticipantStats({
   result.allParticipantStats = [...participantStats.values()];
 
   return result;
+}
+
+const STATS_ATTRIBUTES = ['tiebreaks', 'matchUps', 'points', 'games', 'sets'];
+const COMPETITIVENESS_ATTRIBUTES = ['competitive', 'routine', 'decisive'];
+
+function accumulateTallies({ tallies, sideParticipantIds, participantDetails, competitiveness, matchUpStatus, winningSide, initStats }) {
+  const { setsTally, gamesTally, pointsTally, tiebreaksTally } = tallies;
+
+  sideParticipantIds.forEach((ids, index) => {
+    for (const id of ids) {
+      const participantName = participantDetails.get(id)?.participantName;
+      const stats = initStats(id, participantName);
+      if (stats) {
+        const teamSumTally = (stat: string, tally: number[]) => tally.forEach((t, i) => (stats[stat][i] += t));
+        const tiebreaks = index ? [...tiebreaksTally].reverse() : tiebreaksTally;
+        const points = index ? [...pointsTally].reverse() : pointsTally;
+        const games = index ? [...gamesTally].reverse() : gamesTally;
+        const sets = index ? [...setsTally].reverse() : setsTally;
+        teamSumTally('tiebreaks', tiebreaks);
+        teamSumTally('points', points);
+        teamSumTally('games', games);
+        teamSumTally('sets', sets);
+        if (winningSide) {
+          const tallyIndex = winningSide - 1 === index ? 0 : 1;
+          stats.matchUps[tallyIndex] += 1;
+        }
+        if (competitiveness) {
+          const attr = competitiveness.toLowerCase();
+          if (!stats.competitiveness[attr]) stats.competitiveness[attr] = [0, 0];
+          stats.competitiveness[attr][index] += 1;
+        }
+        if (matchUpStatus) {
+          const attr = matchUpStatus.toLowerCase();
+          if (!stats.matchUpStatuses[attr]) stats.matchUpStatuses[attr] = 0;
+          stats.matchUpStatuses[attr] += 1;
+        }
+      }
+    }
+  });
+}
+
+function computeRatios(participantStats: Map<string, StatCounters>, participating: Map<string, boolean>) {
+  const ratio = new Map<string, number[]>();
+  const add = (a, b) => (a ?? 0) + (b ?? 0);
+
+  for (const [participantId, stats] of participantStats.entries()) {
+    for (const attr of STATS_ATTRIBUTES) {
+      const total = stats[attr].reduce(add);
+      if (total) {
+        const value = stats[attr][0] / total;
+        const accessor = `${attr}Ratio`;
+        const fixedValue = parseFloat(value.toFixed(2));
+        stats[accessor] = fixedValue;
+        participating.set(participantId, true);
+        if (!ratio.has(accessor)) ratio.set(accessor, []);
+        ratio.get(accessor)?.push(fixedValue);
+      }
+    }
+    for (const attr of COMPETITIVENESS_ATTRIBUTES) {
+      const total = stats.competitiveness?.[attr]?.reduce(add);
+      if (total) {
+        const value = stats.competitiveness[attr][0] / total;
+        const accessor = `${attr}Ratio`;
+        const fixedValue = parseFloat(value.toFixed(2));
+        stats[accessor] = fixedValue;
+      }
+    }
+  }
+
+  return ratio;
+}
+
+function computeRanks(participantStats: Map<string, StatCounters>, ratio: Map<string, number[]>) {
+  const highLowSort = (a, b) => b - a;
+  for (const stats of participantStats.values()) {
+    for (const attr of STATS_ATTRIBUTES) {
+      const accessor = `${attr}Ratio`;
+      if (typeof stats[accessor] === 'number') {
+        const index = ratio.get(accessor)?.sort(highLowSort).indexOf(stats[accessor]);
+        if (typeof index === 'number' && index >= 0) {
+          const rankAccessor = `${attr}Rank`;
+          stats[rankAccessor] = index + 1;
+        }
+      }
+    }
+  }
 }

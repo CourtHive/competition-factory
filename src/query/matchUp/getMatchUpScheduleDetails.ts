@@ -94,119 +94,24 @@ export function getMatchUpScheduleDetails(params: GetMatchUpScheduleDetailsArgs)
   const { startTime } = matchUpStartTime({ matchUp });
   const { endTime } = matchUpEndTime({ matchUp });
 
-  let schedule;
   const { eventIds, drawIds } = scheduleVisibilityFilters ?? {};
+  const isVisible =
+    (!eventIds || eventIds.includes(matchUp.eventId)) && (!drawIds || drawIds.includes(matchUp.drawId));
 
-  if ((!eventIds || eventIds.includes(matchUp.eventId)) && (!drawIds || drawIds.includes(matchUp.drawId))) {
-    const getTimeStamp = (item) => (item.createdAt ? new Date(item.createdAt).getTime() : 0);
-
-    const timeItemMap = new Map();
-    const sortedTimeItems = matchUp.timeItems?.toSorted((a, b) => getTimeStamp(a) - getTimeStamp(b)) ?? [];
-    for (const timeItem of sortedTimeItems) {
-      timeItemMap.set(timeItem.itemType, timeItem.itemValue);
-    }
-    const homeParticipantId = timeItemMap.get(HOME_PARTICIPANT_ID);
-    const courtAnnotation = timeItemMap.get(COURT_ANNOTATION);
-    const allocatedCourts = timeItemMap.get(ALLOCATE_COURTS);
-    const scheduledTime = timeItemMap.get(SCHEDULED_TIME);
-    const timeModifiers = timeItemMap.get(TIME_MODIFIERS);
-    let scheduledDate = timeItemMap.get(SCHEDULED_DATE);
-    const official = timeItemMap.get(ASSIGN_OFFICIAL);
-    const courtOrder = timeItemMap.get(COURT_ORDER);
-    const venueId = timeItemMap.get(ASSIGN_VENUE);
-    const courtId = timeItemMap.get(ASSIGN_COURT);
-
-    let timeAfterRecovery, averageMinutes, recoveryMinutes, typeChangeRecoveryMinutes, typeChangeTimeAfterRecovery;
-
-    const eventType = matchUp.matchUpType ?? matchUpType;
-    if (scheduleTiming && scheduledTime && afterRecoveryTimes && eventType) {
-      const timingDetails = {
-        matchUpFormat: matchUp.matchUpFormat ?? matchUpFormat,
-        ...scheduleTiming,
-      };
-      ({
-        averageMinutes = 0,
-        recoveryMinutes = 0,
-        typeChangeRecoveryMinutes = 0,
-      } = matchUpFormatTimes({
-        timingDetails,
-        eventType,
-      }));
-
-      if (averageMinutes || recoveryMinutes) {
-        timeAfterRecovery = endTime
-          ? addMinutesToTimeString(extractTime(endTime), recoveryMinutes)
-          : addMinutesToTimeString(scheduledTime, averageMinutes + recoveryMinutes);
-      }
-      if (typeChangeRecoveryMinutes) {
-        typeChangeTimeAfterRecovery = endTime
-          ? addMinutesToTimeString(extractTime(endTime), typeChangeRecoveryMinutes)
-          : addMinutesToTimeString(scheduledTime, averageMinutes + typeChangeRecoveryMinutes);
-      }
-    }
-
-    if (!scheduledDate && scheduledTime) scheduledDate = extractDate(scheduledTime);
-
-    const isoDateString = getIsoDateString({ scheduledDate, scheduledTime });
-
-    const venueDataMap = {};
-    const venueData = (tournamentRecord && venueId && getVenueData({ tournamentRecord, venueId }))?.venueData || {};
-
-    if (venueId) venueDataMap[venueId] = venueData;
-    const { venueName, venueAbbreviation, courtsInfo } = venueData;
-
-    const courtInfo = courtId && courtsInfo?.find((courtInfo) => courtInfo.courtId === courtId);
-    const courtName = courtInfo?.courtName;
-
-    for (const allocatedCourt of allocatedCourts || []) {
-      if (!tournamentRecord) break;
-      if (allocatedCourt.venueId && !venueDataMap[allocatedCourt.venueid]) {
-        venueDataMap[allocatedCourt.venueId] = getVenueData({
-          venueId: allocatedCourt.venueId,
-          tournamentRecord,
-        })?.venueData;
-      }
-      const vData = venueDataMap[allocatedCourt.venueId];
-      allocatedCourt.venueName = vData?.venueName;
-      const courtInfo = vData?.courtsInfo?.find((courtInfo) => courtInfo.courtId === allocatedCourt.courtId);
-      allocatedCourt.courtName = courtInfo?.courtName;
-    }
-
-    schedule = definedAttributes({
-      typeChangeTimeAfterRecovery,
-      timeAfterRecovery,
-      scheduledDate,
-      scheduledTime,
-      isoDateString,
-
-      homeParticipantId,
-      courtAnnotation,
-      venueAbbreviation,
-      allocatedCourts,
-      timeModifiers,
-      venueName,
-      venueId,
-      courtOrder,
-      courtName,
-      courtId,
-      official,
-
-      typeChangeRecoveryMinutes,
-      recoveryMinutes,
-      averageMinutes,
-      milliseconds,
-      startTime,
-      endTime,
-      time,
-    });
-  } else {
-    schedule = definedAttributes({
-      milliseconds,
-      startTime,
-      endTime,
-      time,
-    });
-  }
+  let schedule = isVisible
+    ? buildFullSchedule({
+        tournamentRecord,
+        scheduleTiming,
+        afterRecoveryTimes,
+        matchUpFormat,
+        matchUpType,
+        matchUp,
+        endTime,
+        startTime,
+        milliseconds,
+        time,
+      })
+    : definedAttributes({ milliseconds, startTime, endTime, time });
 
   const { scheduledDate } = scheduledMatchUpDate({ matchUp });
   const { scheduledTime } = scheduledMatchUpTime({ matchUp });
@@ -243,4 +148,131 @@ export function getMatchUpScheduleDetails(params: GetMatchUpScheduleDetailsArgs)
     undefined;
 
   return { schedule, endDate };
+}
+
+function buildFullSchedule({ tournamentRecord, scheduleTiming, afterRecoveryTimes, matchUpFormat, matchUpType, matchUp, endTime, startTime, milliseconds, time }) {
+  const getTimeStamp = (item) => (item.createdAt ? new Date(item.createdAt).getTime() : 0);
+
+  const timeItemMap = new Map();
+  const sortedTimeItems = matchUp.timeItems?.toSorted((a, b) => getTimeStamp(a) - getTimeStamp(b)) ?? [];
+  for (const timeItem of sortedTimeItems) {
+    timeItemMap.set(timeItem.itemType, timeItem.itemValue);
+  }
+  const homeParticipantId = timeItemMap.get(HOME_PARTICIPANT_ID);
+  const courtAnnotation = timeItemMap.get(COURT_ANNOTATION);
+  const allocatedCourts = timeItemMap.get(ALLOCATE_COURTS);
+  const scheduledTime = timeItemMap.get(SCHEDULED_TIME);
+  const timeModifiers = timeItemMap.get(TIME_MODIFIERS);
+  let scheduledDate = timeItemMap.get(SCHEDULED_DATE);
+  const official = timeItemMap.get(ASSIGN_OFFICIAL);
+  const courtOrder = timeItemMap.get(COURT_ORDER);
+  const venueId = timeItemMap.get(ASSIGN_VENUE);
+  const courtId = timeItemMap.get(ASSIGN_COURT);
+
+  const recoveryTimes = computeRecoveryTimes({
+    scheduleTiming,
+    afterRecoveryTimes,
+    matchUpFormat,
+    matchUpType,
+    matchUp,
+    endTime,
+    scheduledTime,
+  });
+
+  if (!scheduledDate && scheduledTime) scheduledDate = extractDate(scheduledTime);
+
+  const isoDateString = getIsoDateString({ scheduledDate, scheduledTime });
+
+  const { venueName, venueAbbreviation, courtName } = resolveVenueAndCourt({
+    tournamentRecord,
+    allocatedCourts,
+    venueId,
+    courtId,
+  });
+
+  return definedAttributes({
+    typeChangeTimeAfterRecovery: recoveryTimes.typeChangeTimeAfterRecovery,
+    typeChangeRecoveryMinutes: recoveryTimes.typeChangeRecoveryMinutes,
+    timeAfterRecovery: recoveryTimes.timeAfterRecovery,
+    recoveryMinutes: recoveryTimes.recoveryMinutes,
+    averageMinutes: recoveryTimes.averageMinutes,
+    homeParticipantId,
+    courtAnnotation,
+    venueAbbreviation,
+    allocatedCourts,
+    scheduledDate,
+    scheduledTime,
+    isoDateString,
+    timeModifiers,
+    venueName,
+    venueId,
+    courtOrder,
+    courtName,
+    courtId,
+    official,
+    milliseconds,
+    startTime,
+    endTime,
+    time,
+  });
+}
+
+function computeRecoveryTimes({ scheduleTiming, afterRecoveryTimes, matchUpFormat, matchUpType, matchUp, endTime, scheduledTime }) {
+  let timeAfterRecovery, averageMinutes, recoveryMinutes, typeChangeRecoveryMinutes, typeChangeTimeAfterRecovery;
+
+  const eventType = matchUp.matchUpType ?? matchUpType;
+  if (scheduleTiming && scheduledTime && afterRecoveryTimes && eventType) {
+    const timingDetails = {
+      matchUpFormat: matchUp.matchUpFormat ?? matchUpFormat,
+      ...scheduleTiming,
+    };
+    ({
+      averageMinutes = 0,
+      recoveryMinutes = 0,
+      typeChangeRecoveryMinutes = 0,
+    } = matchUpFormatTimes({
+      timingDetails,
+      eventType,
+    }));
+
+    if (averageMinutes || recoveryMinutes) {
+      timeAfterRecovery = endTime
+        ? addMinutesToTimeString(extractTime(endTime), recoveryMinutes)
+        : addMinutesToTimeString(scheduledTime, averageMinutes + recoveryMinutes);
+    }
+    if (typeChangeRecoveryMinutes) {
+      typeChangeTimeAfterRecovery = endTime
+        ? addMinutesToTimeString(extractTime(endTime), typeChangeRecoveryMinutes)
+        : addMinutesToTimeString(scheduledTime, averageMinutes + typeChangeRecoveryMinutes);
+    }
+  }
+
+  return { timeAfterRecovery, averageMinutes, recoveryMinutes, typeChangeRecoveryMinutes, typeChangeTimeAfterRecovery };
+}
+
+function resolveVenueAndCourt({ tournamentRecord, allocatedCourts, venueId, courtId }) {
+  const venueDataMap = {};
+  const venueData = (tournamentRecord && venueId && getVenueData({ tournamentRecord, venueId }))?.venueData || {};
+
+  if (venueId) venueDataMap[venueId] = venueData;
+  const { venueName, venueAbbreviation, courtsInfo } = venueData;
+
+  const courtInfo = courtId && courtsInfo?.find((courtInfo) => courtInfo.courtId === courtId);
+  const courtName = courtInfo?.courtName;
+
+  for (const allocatedCourt of allocatedCourts || []) {
+    if (!tournamentRecord) break;
+    if (allocatedCourt.venueId && !venueDataMap[allocatedCourt.venueid]) {
+      venueDataMap[allocatedCourt.venueId] = getVenueData({
+        venueId: allocatedCourt.venueId,
+        tournamentRecord,
+      })?.venueData;
+    }
+    const vData = venueDataMap[allocatedCourt.venueId];
+    allocatedCourt.venueName = vData?.venueName;
+    const cInfo = vData?.courtsInfo?.find((ci) => ci.courtId === allocatedCourt.courtId);
+    allocatedCourt.courtName = cInfo?.courtName;
+  }
+
+  return { venueName, venueAbbreviation, courtName };
 }

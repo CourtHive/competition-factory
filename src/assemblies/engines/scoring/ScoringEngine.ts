@@ -15,10 +15,9 @@
  *   const matchUp = engine.getState();
  */
 
-import { resolveSetType, isAggregateFormat } from '@Tools/scoring/scoringUtilities';
 import { calculateMatchStatistics } from '@Query/scoring/statistics/standalone';
 import { toStatObjects } from '@Query/scoring/statistics/toStatObjects';
-import { addPoint, deriveServer, deriveServerBase } from '@Mutate/scoring/addPoint';
+import { resolveSetType } from '@Tools/scoring/scoringUtilities';
 import { createMatchUp } from '@Mutate/scoring/createMatchUp';
 import { getScoreboard } from '@Query/scoring/getScoreboard';
 import { getEpisodes } from '@Query/scoring/getEpisodes';
@@ -26,6 +25,13 @@ import { parse } from '@Helpers/matchUpFormatCode/parse';
 import { isComplete } from '@Query/scoring/isComplete';
 import { getWinner } from '@Query/scoring/getWinner';
 import { getScore } from '@Query/scoring/getScore';
+import {
+  addPoint,
+  deriveServer,
+  deriveServerBase,
+  checkStandardSetWon,
+  checkAndFinalizeMatch,
+} from '@Mutate/scoring/addPoint';
 
 // constants and types
 import type { MatchStatistics, StatisticsOptions, StatObject } from '@Query/scoring/statistics/types';
@@ -1248,7 +1254,6 @@ export class ScoringEngine {
     const bestOf = formatStructure.exactly || formatStructure.bestOf || 3;
     const setsToWin = Math.ceil(bestOf / 2);
 
-    // Determine active set format
     const setsWon: [number, number] = [0, 0];
     this.state.score.sets.forEach((set) => {
       if (set.winningSide === 1) setsWon[0]++;
@@ -1263,7 +1268,6 @@ export class ScoringEngine {
     const s1 = currentSet.side1Score || 0;
     const s2 = currentSet.side2Score || 0;
 
-    // Tiebreak-only set
     if (activeSetFormat.tiebreakSet) {
       const tbTo = activeSetFormat.tiebreakSet.tiebreakTo || 11;
       const isNoAD = activeSetFormat.tiebreakSet.NoAD || false;
@@ -1271,23 +1275,10 @@ export class ScoringEngine {
       if ((s1 >= tbTo || s2 >= tbTo) && Math.abs(s1 - s2) >= minWin) {
         currentSet.winningSide = s1 > s2 ? 1 : 2;
       }
-    }
-    // Standard set (not timed)
-    else if (!activeSetFormat.timed) {
-      const setTo = activeSetFormat.setTo || 6;
-      const tiebreakAt =
-        (typeof activeSetFormat.tiebreakAt === 'number' ? activeSetFormat.tiebreakAt : undefined) ?? setTo;
-      const noTiebreak = activeSetFormat.noTiebreak || false;
-      const winBy = activeSetFormat.winBy || 2;
-
-      // Tiebreak was just played or regular win
-      if (
-        (!noTiebreak &&
-          currentSet.side1TiebreakScore !== undefined &&
-          (s1 === tiebreakAt + 1 || s2 === tiebreakAt + 1)) ||
-        ((s1 >= setTo || s2 >= setTo) && Math.abs(s1 - s2) >= winBy)
-      ) {
-        currentSet.winningSide = s1 > s2 ? 1 : 2;
+    } else if (!activeSetFormat.timed) {
+      const setWon = checkStandardSetWon(s1, s2, activeSetFormat, isDecidingSet, formatStructure.finalSetFormat);
+      if (typeof setWon === 'number') {
+        currentSet.winningSide = setWon + 1;
       }
     }
   }
@@ -1300,51 +1291,7 @@ export class ScoringEngine {
     if (!formatStructure) return;
     const bestOf = formatStructure.exactly || formatStructure.bestOf || 3;
     const setsToWin = Math.ceil(bestOf / 2);
-    const isAggregate = isAggregateFormat(formatStructure);
-    const exactly = formatStructure.exactly;
-
-    if (isAggregate) {
-      const totalSets = exactly || bestOf;
-      // For aggregate formats, all sets count (tied sets are valid — e.g., outs-based innings)
-      const playedSets = this.state.score.sets.length;
-      if (playedSets >= totalSets) {
-        const totals = this.state.score.sets.reduce(
-          (acc, set) => {
-            if (set.side1TiebreakScore === undefined) {
-              acc[0] += set.side1Score ?? 0;
-              acc[1] += set.side2Score ?? 0;
-            } else {
-              acc[0] += set.side1TiebreakScore;
-              acc[1] += set.side2TiebreakScore ?? 0;
-            }
-            return acc;
-          },
-          [0, 0],
-        );
-        if (totals[0] !== totals[1]) {
-          this.state.matchUpStatus = 'COMPLETED';
-          this.state.winningSide = totals[0] > totals[1] ? 1 : 2;
-          this.state.endTime = new Date().toISOString();
-        }
-      }
-    } else {
-      const setsWon: [number, number] = [0, 0];
-      this.state.score.sets.forEach((set) => {
-        if (set.winningSide === 1) setsWon[0]++;
-        if (set.winningSide === 2) setsWon[1]++;
-      });
-
-      const hasWinner = setsWon[0] >= setsToWin || setsWon[1] >= setsToWin;
-      if (
-        hasWinner &&
-        (!exactly || this.state.score.sets.filter((s) => s.winningSide !== undefined).length >= exactly)
-      ) {
-        const matchWinner = setsWon[0] >= setsToWin ? 0 : 1;
-        this.state.matchUpStatus = 'COMPLETED';
-        this.state.winningSide = matchWinner + 1;
-        this.state.endTime = new Date().toISOString();
-      }
-    }
+    checkAndFinalizeMatch(this.state, formatStructure, setsToWin);
   }
 
   // ===========================================================================
@@ -1361,49 +1308,19 @@ export class ScoringEngine {
   private rebuildFromEntries(): void {
     const entries = this.state.history?.entries || [];
 
-    // Capture initial lineUps before rebuild (set via setLineUp, before any subs)
-    // We need the original lineUp; substitution entries in the timeline will replay the changes
-    const savedLineUps = this.getInitialLineUps();
+    const newState = this.prepareRebuildState(entries);
 
-    // Create fresh state
-    let newState = createMatchUp({
-      matchUpFormat: this.matchUpFormat,
-      matchUpId: this.matchUpId,
-      isDoubles: this.isDoubles,
-    });
-
-    // Restore initial lineUps on fresh state
-    if (savedLineUps) {
-      for (const side of newState.sides) {
-        if (savedLineUps[side.sideNumber]) {
-          side.lineUp = savedLineUps[side.sideNumber].map((tc) => ({ ...tc }));
-        }
-      }
-    }
-
-    // Apply initial score if present
-    if (this.initialScore) {
-      this.applyInitialScore(newState, this.initialScore);
-      if (newState.matchUpStatus === 'TO_BE_PLAYED') {
-        newState.matchUpStatus = 'IN_PROGRESS';
-      }
-    }
-
-    // Preserve entries (they represent the timeline, not derived state)
-    newState.history = { points: [], entries: [...entries] };
-
-    // Swap state temporarily so apply methods work on newState
+    // Swap state so apply methods work on newState
     this.state = newState;
 
     for (const entry of entries) {
       switch (entry.type) {
         case 'point':
-          // Replay through the pure addPoint function with multipliers
           this.state = addPoint(this.state, entry.data, {
             pointMultipliers: this.pointMultipliers,
           });
           // Restore entries (addPoint may reset them since it mutates)
-          this.state.history!.entries = newState.history.entries;
+          this.state.history!.entries = newState.history!.entries;
           break;
         case 'set':
           this.applyAddSet(entry.data);
@@ -1418,27 +1335,56 @@ export class ScoringEngine {
           this.applySubstitution(entry.data);
           break;
         case 'setInitialScore':
-          // Already applied above via this.initialScore
           break;
-        case 'setServer': {
-          // Recompute the flip at this position during rebuild.
-          // The entry stores the desired side; we compare against the
-          // base derivation at the current (replayed) state to determine
-          // whether a flip is needed from this point forward.
-          const setsWon: [number, number] = [0, 0];
-          this.state.score.sets.forEach((set) => {
-            if (set.winningSide === 1) setsWon[0]++;
-            if (set.winningSide === 2) setsWon[1]++;
-          });
-          const setType = resolveSetType(this.cachedFormatStructure!, setsWon);
-          const baseServer = deriveServerBase(this.state, this.cachedFormatStructure!, setType);
-          this.state.serverFlip = entry.data.side !== baseServer;
+        case 'setServer':
+          this.replaySetServerEntry(entry.data);
           break;
+      }
+    }
+  }
+
+  private prepareRebuildState(entries: any[]): MatchUp {
+    const savedLineUps = this.getInitialLineUps();
+
+    const newState = createMatchUp({
+      matchUpFormat: this.matchUpFormat,
+      matchUpId: this.matchUpId,
+      isDoubles: this.isDoubles,
+    });
+
+    if (savedLineUps) {
+      for (const side of newState.sides) {
+        if (savedLineUps[side.sideNumber]) {
+          side.lineUp = savedLineUps[side.sideNumber].map((tc) => ({ ...tc }));
         }
       }
     }
 
-    // State is now rebuilt; no need to restore savedState
+    if (this.initialScore) {
+      this.applyInitialScore(newState, this.initialScore);
+      if (newState.matchUpStatus === 'TO_BE_PLAYED') {
+        newState.matchUpStatus = 'IN_PROGRESS';
+      }
+    }
+
+    newState.history = { points: [], entries: [...entries] };
+
+    return newState;
+  }
+
+  private replaySetServerEntry(data: { side: number }): void {
+    // Recompute the flip at this position during rebuild.
+    // The entry stores the desired side; we compare against the
+    // base derivation at the current (replayed) state to determine
+    // whether a flip is needed from this point forward.
+    const setsWon: [number, number] = [0, 0];
+    this.state.score.sets.forEach((set) => {
+      if (set.winningSide === 1) setsWon[0]++;
+      if (set.winningSide === 2) setsWon[1]++;
+    });
+    const setType = resolveSetType(this.cachedFormatStructure!, setsWon);
+    const baseServer = deriveServerBase(this.state, this.cachedFormatStructure!, setType);
+    this.state.serverFlip = data.side !== baseServer;
   }
 
   /**
