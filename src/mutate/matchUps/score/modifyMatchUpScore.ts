@@ -80,52 +80,40 @@ export function modifyMatchUpScore(params: ModifyMatchUpScoreArgs) {
     score,
   } = params;
 
-  const hasPolicies = params.appliedPolicies && Object.keys(params.appliedPolicies).length;
-
-  const appliedPolicies = hasPolicies
-    ? params.appliedPolicies
-    : getAppliedPolicies({
-        policyTypes: [POLICY_TYPE_SCORING],
-        tournamentRecord,
-        drawDefinition,
-        structure,
-        event,
-      })?.appliedPolicies;
+  const appliedPolicies = resolveAppliedPolicies({
+    appliedPolicies: params.appliedPolicies,
+    tournamentRecord,
+    drawDefinition,
+    structure,
+    event,
+  });
 
   const isDualMatchUp = matchUp.matchUpType === TEAM;
 
-  if (isDualMatchUp && drawDefinition) {
-    if (matchUpId && matchUp.matchUpId !== matchUpId) {
-      // the modification is to be applied to a tieMatchUp
-      const findResult = findDrawMatchUp({
-        drawDefinition,
-        matchUpId,
-        event,
-      });
-      if (!findResult.matchUp) return { error: MATCHUP_NOT_FOUND };
-      ({ matchUp, structure } = findResult);
-    } else {
-      // the modification is to be applied to the TEAM matchUp
-    }
-  } else if (matchUp.matchUpId !== matchUpId) {
-    console.log('!!!!!');
-  }
-
-  if ((matchUpStatus && [WALKOVER, DOUBLE_WALKOVER].includes(matchUpStatus)) || removeScore) {
-    Object.assign(matchUp, { ...toBePlayed });
-  } else if (score) {
-    matchUp.score = score;
+  const resolvedTarget = resolveDualMatchUpTarget({
+    isDualMatchUp,
+    drawDefinition,
+    matchUpId,
+    matchUp,
+    event,
+  });
+  if (resolvedTarget?.error) return resolvedTarget;
+  if (resolvedTarget) {
+    ({ matchUp, structure } = resolvedTarget);
   }
 
   const wasDefaulted = matchUpStatus && matchUp?.matchUpStatus === DEFAULTED && matchUpStatus !== DEFAULTED;
 
-  if (matchUpStatus) matchUp.matchUpStatus = matchUpStatus;
-  if (matchUpFormat) matchUp.matchUpFormat = matchUpFormat;
-  if (matchUpStatusCodes) matchUp.matchUpStatusCodes = matchUpStatusCodes;
-  if (winningSide) matchUp.winningSide = winningSide;
-
-  // removeWinningSide directive calculated upstream
-  if (params.removeWinningSide) matchUp.winningSide = undefined;
+  applyScoreAndStatus({
+    matchUpStatusCodes,
+    removeWinningSide: params.removeWinningSide,
+    matchUpStatus,
+    matchUpFormat,
+    removeScore,
+    winningSide,
+    matchUp,
+    score,
+  });
 
   if (!structure && drawDefinition) {
     ({ structure } = findDrawMatchUp({
@@ -135,72 +123,24 @@ export function modifyMatchUpScore(params: ModifyMatchUpScoreArgs) {
     }));
   }
 
-  if (
-    matchUpStatus &&
-    !matchUp.winningSide &&
-    checkScoreHasValue(matchUp) &&
-    !completedMatchUpStatuses.includes(matchUpStatus) &&
-    ![AWAITING_RESULT, SUSPENDED, INCOMPLETE].includes(matchUpStatus)
-  ) {
-    matchUp.matchUpStatus = IN_PROGRESS;
-  }
+  applyInProgressStatus({ matchUpStatus, matchUp });
 
   let defaultedProcessCodes;
   if ((wasDefaulted && matchUp?.processCodes?.length) || matchUpStatus === DEFAULTED) {
     defaultedProcessCodes = appliedPolicies?.[POLICY_TYPE_SCORING]?.processCodes?.incompleteAssignmentsOnDefault;
   }
 
-  if (!matchUp.collectionId) {
-    const isRoundRobin = structure?.structureType === CONTAINER;
-    const isAdHocStructure = isAdHoc({ structure });
-    if (isLucky({ drawDefinition, structure }) || isAdHocStructure || isRoundRobin) {
-      const updateTally = (structure) => {
-        // matchUpFormat set here is only used in updateAssignmentParticipantResults
-        matchUpFormat = isDualMatchUp
-          ? 'SET1-S:T100'
-          : (matchUpFormat ??
-            matchUp.matchUpFormat ??
-            structure?.matchUpFormat ??
-            drawDefinition?.matchUpFormat ??
-            event?.matchUpFormat);
-
-        const matchUpFilters = isDualMatchUp ? { matchUpTypes: [TEAM] } : undefined;
-        const { matchUps } = getAllStructureMatchUps({
-          afterRecoveryTimes: false,
-          tournamentRecord,
-          inContext: true,
-          matchUpFilters,
-          drawDefinition,
-          structure,
-          event,
-        });
-
-        if (isAdHocStructure) {
-          structure.positionAssignments = unique(
-            matchUps.flatMap((matchUp) => (matchUp.sides ?? []).map((side) => side.participantId)).filter(Boolean),
-          ).map((participantId) => ({ participantId }));
-        }
-
-        return updateAssignmentParticipantResults({
-          positionAssignments: structure.positionAssignments,
-          tournamentRecord,
-          drawDefinition,
-          matchUpFormat,
-          matchUps,
-          event,
-        });
-      };
-
-      const itemStructure =
-        isRoundRobin &&
-        structure.structures.find((itemStructure) => {
-          return itemStructure?.matchUps.find((matchUp) => matchUp.matchUpId === matchUpId);
-        });
-
-      const result = updateTally(itemStructure || structure);
-      if (result.error) return decorateResult({ result, stack });
-    }
-  }
+  const tallyResult: any = updateTallyIfNeeded({
+    isDualMatchUp,
+    tournamentRecord,
+    drawDefinition,
+    matchUpFormat,
+    matchUpId,
+    structure,
+    matchUp,
+    event,
+  });
+  if (tallyResult?.error) return decorateResult({ result: tallyResult, stack });
 
   if (notes) {
     const result = addNotes({ element: matchUp, notes });
@@ -208,41 +148,26 @@ export function modifyMatchUpScore(params: ModifyMatchUpScoreArgs) {
   }
 
   const tournamentId = tournamentRecord?.tournamentId;
-  const sendInContext = getTopics().topics.includes(UPDATE_INCONTEXT_MATCHUP);
-  const matchUpsMap = (sendInContext || defaultedProcessCodes) && getMatchUpsMap({ drawDefinition });
-  const inContextMatchUp =
-    matchUpsMap &&
-    getAllDrawMatchUps({
-      // client will not normally be receiving participants for the first time...
-      // ... and should therefore already have groupings / ratings / rankings for participants
-      // participantsProfile: { withGroupings: true },
-      matchUpFilters: { matchUpIds: [matchUpId] },
-      nextMatchUps: true,
-      tournamentRecord, // required to hydrate participants
-      inContext: true,
-      drawDefinition,
-      matchUpsMap,
-    }).matchUps?.[0];
+  const inContextMatchUp = getInContextMatchUp({
+    defaultedProcessCodes,
+    tournamentRecord,
+    drawDefinition,
+    matchUpId,
+  });
 
-  if (sendInContext && inContextMatchUp) {
-    updateInContextMatchUp({ tournamentId, inContextMatchUp });
-  }
-
-  if (
-    Array.isArray(defaultedProcessCodes) &&
-    inContextMatchUp &&
-    !inContextMatchUp.sides?.every(({ participantId }) => participantId)
-  ) {
-    if (matchUpStatus === DEFAULTED) {
-      matchUp.processCodes = unique([...(matchUp.processCodes ?? []), ...defaultedProcessCodes]);
-    } else {
-      for (const processCode of defaultedProcessCodes || []) {
-        const codeIndex = processCode && matchUp?.processCodes?.lastIndexOf(processCode);
-        // remove only one instance of processCode
-        matchUp?.processCodes?.splice(codeIndex, 1);
-      }
+  if (inContextMatchUp) {
+    const sendInContext = getTopics().topics.includes(UPDATE_INCONTEXT_MATCHUP);
+    if (sendInContext) {
+      updateInContextMatchUp({ tournamentId, inContextMatchUp });
     }
   }
+
+  applyDefaultedProcessCodes({
+    defaultedProcessCodes,
+    inContextMatchUp,
+    matchUpStatus,
+    matchUp,
+  });
 
   modifyMatchUpNotice({
     eventId: event?.eventId,
@@ -253,4 +178,166 @@ export function modifyMatchUpScore(params: ModifyMatchUpScoreArgs) {
   });
 
   return { ...SUCCESS };
+}
+
+function resolveAppliedPolicies({ appliedPolicies, tournamentRecord, drawDefinition, structure, event }) {
+  const hasPolicies = appliedPolicies && Object.keys(appliedPolicies).length;
+  if (hasPolicies) return appliedPolicies;
+
+  return getAppliedPolicies({
+    policyTypes: [POLICY_TYPE_SCORING],
+    tournamentRecord,
+    drawDefinition,
+    structure,
+    event,
+  })?.appliedPolicies;
+}
+
+function resolveDualMatchUpTarget({ isDualMatchUp, drawDefinition, matchUpId, matchUp, event }) {
+  if (isDualMatchUp && drawDefinition) {
+    if (matchUpId && matchUp.matchUpId !== matchUpId) {
+      const findResult = findDrawMatchUp({
+        drawDefinition,
+        matchUpId,
+        event,
+      });
+      if (!findResult.matchUp) return { error: MATCHUP_NOT_FOUND };
+      return { matchUp: findResult.matchUp, structure: findResult.structure };
+    }
+    return undefined;
+  }
+
+  if (matchUp.matchUpId !== matchUpId) {
+    console.log('!!!!!');
+  }
+  return undefined;
+}
+
+function applyScoreAndStatus({
+  matchUpStatusCodes,
+  removeWinningSide,
+  matchUpStatus,
+  matchUpFormat,
+  removeScore,
+  winningSide,
+  matchUp,
+  score,
+}) {
+  const walkoverStatuses = new Set([WALKOVER, DOUBLE_WALKOVER]);
+  if ((matchUpStatus && walkoverStatuses.has(matchUpStatus)) || removeScore) {
+    Object.assign(matchUp, { ...toBePlayed });
+  } else if (score) {
+    matchUp.score = score;
+  }
+
+  if (matchUpStatus) matchUp.matchUpStatus = matchUpStatus;
+  if (matchUpFormat) matchUp.matchUpFormat = matchUpFormat;
+  if (matchUpStatusCodes) matchUp.matchUpStatusCodes = matchUpStatusCodes;
+  if (winningSide) matchUp.winningSide = winningSide;
+  if (removeWinningSide) matchUp.winningSide = undefined;
+}
+
+function applyInProgressStatus({ matchUpStatus, matchUp }) {
+  const nonProgressStatuses = new Set([AWAITING_RESULT, SUSPENDED, INCOMPLETE]);
+  if (
+    matchUpStatus &&
+    !matchUp.winningSide &&
+    checkScoreHasValue(matchUp) &&
+    !completedMatchUpStatuses.includes(matchUpStatus) &&
+    !nonProgressStatuses.has(matchUpStatus)
+  ) {
+    matchUp.matchUpStatus = IN_PROGRESS;
+  }
+}
+
+function updateTallyIfNeeded({
+  isDualMatchUp,
+  tournamentRecord,
+  drawDefinition,
+  matchUpFormat,
+  matchUpId,
+  structure,
+  matchUp,
+  event,
+}) {
+  if (matchUp.collectionId) return undefined;
+
+  const isRoundRobin = structure?.structureType === CONTAINER;
+  const isAdHocStructure = isAdHoc({ structure });
+
+  if (!isLucky({ drawDefinition, structure }) && !isAdHocStructure && !isRoundRobin) return undefined;
+
+  const resolvedFormat = isDualMatchUp
+    ? 'SET1-S:T100'
+    : (matchUpFormat ??
+      matchUp.matchUpFormat ??
+      structure?.matchUpFormat ??
+      drawDefinition?.matchUpFormat ??
+      event?.matchUpFormat);
+
+  const matchUpFilters = isDualMatchUp ? { matchUpTypes: [TEAM] } : undefined;
+  const tallyStructure = isRoundRobin
+    ? structure.structures.find((itemStructure) => {
+        return itemStructure?.matchUps.find((m) => m.matchUpId === matchUpId);
+      }) || structure
+    : structure;
+
+  const { matchUps } = getAllStructureMatchUps({
+    structure: tallyStructure,
+    afterRecoveryTimes: false,
+    tournamentRecord,
+    inContext: true,
+    matchUpFilters,
+    drawDefinition,
+    event,
+  });
+
+  if (isAdHocStructure) {
+    tallyStructure.positionAssignments = unique(
+      matchUps.flatMap((m) => (m.sides ?? []).map((side) => side.participantId)).filter(Boolean),
+    ).map((participantId) => ({ participantId }));
+  }
+
+  const result = updateAssignmentParticipantResults({
+    positionAssignments: tallyStructure.positionAssignments,
+    matchUpFormat: resolvedFormat,
+    tournamentRecord,
+    drawDefinition,
+    matchUps,
+    event,
+  });
+
+  if (result.error) return result;
+  return { matchUpFormat: resolvedFormat };
+}
+
+function getInContextMatchUp({ defaultedProcessCodes, tournamentRecord, drawDefinition, matchUpId }) {
+  const sendInContext = getTopics().topics.includes(UPDATE_INCONTEXT_MATCHUP);
+  if (!sendInContext && !defaultedProcessCodes) return undefined;
+
+  const matchUpsMap = getMatchUpsMap({ drawDefinition });
+  if (!matchUpsMap) return undefined;
+
+  return getAllDrawMatchUps({
+    matchUpFilters: { matchUpIds: [matchUpId] },
+    nextMatchUps: true,
+    tournamentRecord,
+    inContext: true,
+    drawDefinition,
+    matchUpsMap,
+  }).matchUps?.[0];
+}
+
+function applyDefaultedProcessCodes({ defaultedProcessCodes, inContextMatchUp, matchUpStatus, matchUp }) {
+  if (!Array.isArray(defaultedProcessCodes) || !inContextMatchUp) return;
+  if (inContextMatchUp.sides?.every(({ participantId }) => participantId)) return;
+
+  if (matchUpStatus === DEFAULTED) {
+    matchUp.processCodes = unique([...(matchUp.processCodes ?? []), ...defaultedProcessCodes]);
+  } else {
+    for (const processCode of defaultedProcessCodes || []) {
+      const codeIndex = processCode && matchUp?.processCodes?.lastIndexOf(processCode);
+      matchUp?.processCodes?.splice(codeIndex, 1);
+    }
+  }
 }

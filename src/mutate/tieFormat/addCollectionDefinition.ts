@@ -86,15 +86,15 @@ export function addCollectionDefinition({
       event,
     }).appliedPolicies ?? {};
 
-  const matchUpActionsPolicy =
-    policyDefinitions?.[POLICY_TYPE_MATCHUP_ACTIONS] ?? appliedPolicies?.[POLICY_TYPE_MATCHUP_ACTIONS];
-
-  enforceCategory = enforceCategory ?? matchUpActionsPolicy?.participants?.enforceCategory;
-
-  const genderEnforced = (enforceGender ?? matchUpActionsPolicy?.participants?.enforceGender) !== false;
-
-  const checkCategory = !!((referenceCategory ?? event?.category) && enforceCategory !== false);
-  const checkGender = !!((referenceGender ?? event?.gender) && genderEnforced);
+  const { checkCategory, checkGender } = resolveEnforcementFlags({
+    policyDefinitions,
+    appliedPolicies,
+    enforceCategory,
+    enforceGender,
+    referenceCategory,
+    referenceGender,
+    event,
+  });
 
   const validationResult = validateCollectionDefinition({
     referenceCategory: referenceCategory ?? event?.category,
@@ -172,23 +172,100 @@ export function addCollectionDefinition({
     return decorateResult({ result: { error: result.error }, stack });
   }
 
+  const scopeResult = applyTieFormatToScope({
+    updateInProgressMatchUps,
+    collectionDefinition,
+    modifiedStructureIds,
+    prunedTieFormat,
+    tournamentRecord,
+    drawDefinition,
+    targetMatchUps,
+    addedMatchUps,
+    structureId,
+    structure,
+    matchUpId,
+    matchUp,
+    eventId,
+    event,
+    uuids,
+    stack,
+  });
+  if (scopeResult?.error) return scopeResult;
+  targetMatchUps = (scopeResult as any)?.targetMatchUps ?? targetMatchUps;
+
+  const auditData = definedAttributes({
+    drawId: drawDefinition?.drawId,
+    collectionDefinition,
+    action: stack,
+    structureId,
+    matchUpId,
+    eventId,
+  });
+  tieFormatTelemetry({ appliedPolicies, drawDefinition, auditData });
+
+  return {
+    tieFormat: prunedTieFormat,
+    targetMatchUps,
+    addedMatchUps,
+    ...SUCCESS,
+  };
+}
+
+function resolveEnforcementFlags({
+  policyDefinitions,
+  appliedPolicies,
+  enforceCategory,
+  enforceGender,
+  referenceCategory,
+  referenceGender,
+  event,
+}) {
+  const matchUpActionsPolicy =
+    policyDefinitions?.[POLICY_TYPE_MATCHUP_ACTIONS] ?? appliedPolicies?.[POLICY_TYPE_MATCHUP_ACTIONS];
+
+  const resolvedEnforceCategory = enforceCategory ?? matchUpActionsPolicy?.participants?.enforceCategory;
+  const genderEnforced = (enforceGender ?? matchUpActionsPolicy?.participants?.enforceGender) !== false;
+
+  const checkCategory = !!((referenceCategory ?? event?.category) && resolvedEnforceCategory !== false);
+  const checkGender = !!((referenceGender ?? event?.gender) && genderEnforced);
+
+  return { checkCategory, checkGender };
+}
+
+function applyTieFormatToScope({
+  updateInProgressMatchUps,
+  collectionDefinition,
+  modifiedStructureIds,
+  prunedTieFormat,
+  tournamentRecord,
+  drawDefinition,
+  targetMatchUps,
+  addedMatchUps,
+  structureId,
+  structure,
+  matchUpId,
+  matchUp,
+  eventId,
+  event,
+  uuids,
+  stack,
+}) {
   if (eventId && event) {
     writeTieFormat({ target: event, tieFormat: prunedTieFormat, event });
 
-    // all team matchUps in the event which do not have tieFormats and where draws/strucures do not have tieFormats should have matchUps added
-    for (const drawDefinition of event.drawDefinitions ?? []) {
-      if (drawDefinition.tieFormat || drawDefinition.tieFormatId) continue;
-      for (const structure of drawDefinition.structures ?? []) {
-        if (structure.tieFormat || structure.tieFormatId) continue;
+    for (const dd of event.drawDefinitions ?? []) {
+      if (dd.tieFormat || dd.tieFormatId) continue;
+      for (const s of dd.structures ?? []) {
+        if (s.tieFormat || s.tieFormatId) continue;
         const result = updateStructureMatchUps({
           updateInProgressMatchUps,
           collectionDefinition,
-          structure,
+          structure: s,
           uuids,
         });
         addedMatchUps.push(...result.newMatchUps);
         targetMatchUps.push(...result.targetMatchUps);
-        modifiedStructureIds.push(structure.structureId);
+        modifiedStructureIds.push(s.structureId);
       }
     }
 
@@ -201,7 +278,10 @@ export function addCollectionDefinition({
       addedMatchUps,
       stack,
     });
-  } else if (structureId && structure) {
+    return { targetMatchUps };
+  }
+
+  if (structureId && structure) {
     writeTieFormat({ target: structure, tieFormat: prunedTieFormat, event });
     const result = updateStructureMatchUps({
       updateInProgressMatchUps,
@@ -210,10 +290,10 @@ export function addCollectionDefinition({
       uuids,
     });
     addedMatchUps.push(...result.newMatchUps);
-    targetMatchUps = result.targetMatchUps;
+    const updatedTargetMatchUps = result.targetMatchUps;
 
     queueNoficiations({
-      modifiedMatchUps: targetMatchUps,
+      modifiedMatchUps: updatedTargetMatchUps,
       eventId: event?.eventId,
       modifiedStructureIds,
       tournamentRecord,
@@ -221,12 +301,16 @@ export function addCollectionDefinition({
       addedMatchUps,
       stack,
     });
-  } else if (matchUpId && matchUp) {
-    if (!validUpdate({ matchUp, updateInProgressMatchUps }))
+    return { targetMatchUps: updatedTargetMatchUps };
+  }
+
+  if (matchUpId && matchUp) {
+    if (!validUpdate({ matchUp, updateInProgressMatchUps })) {
       return decorateResult({
         result: { error: CANNOT_MODIFY_TIEFORMAT },
         stack,
       });
+    }
 
     writeTieFormat({ target: matchUp, tieFormat: prunedTieFormat, event });
     const newMatchUps: MatchUp[] = generateCollectionMatchUps({
@@ -248,18 +332,20 @@ export function addCollectionDefinition({
       addedMatchUps,
       stack,
     });
-  } else if (drawDefinition) {
-    // all team matchUps in the drawDefinition which do not have tieFormats and where strucures do not have tieFormats should have matchUps added
+    return { targetMatchUps };
+  }
+
+  if (drawDefinition) {
     writeTieFormat({ target: drawDefinition, tieFormat: prunedTieFormat, event });
 
-    for (const structure of drawDefinition.structures ?? []) {
+    for (const s of drawDefinition.structures ?? []) {
       const result = updateStructureMatchUps({
         updateInProgressMatchUps,
         collectionDefinition,
-        structure,
+        structure: s,
         uuids,
       });
-      modifiedStructureIds.push(structure.structureId);
+      modifiedStructureIds.push(s.structureId);
       addedMatchUps.push(...result.newMatchUps);
       targetMatchUps.push(...result.targetMatchUps);
     }
@@ -272,26 +358,10 @@ export function addCollectionDefinition({
       addedMatchUps,
       stack,
     });
-  } else {
-    return { error: MISSING_DRAW_DEFINITION };
+    return { targetMatchUps };
   }
 
-  const auditData = definedAttributes({
-    drawId: drawDefinition?.drawId,
-    collectionDefinition,
-    action: stack,
-    structureId,
-    matchUpId,
-    eventId,
-  });
-  tieFormatTelemetry({ appliedPolicies, drawDefinition, auditData });
-
-  return {
-    tieFormat: prunedTieFormat,
-    targetMatchUps,
-    addedMatchUps,
-    ...SUCCESS,
-  };
+  return { error: MISSING_DRAW_DEFINITION };
 }
 
 function updateStructureMatchUps({ updateInProgressMatchUps, collectionDefinition, structure, uuids }) {

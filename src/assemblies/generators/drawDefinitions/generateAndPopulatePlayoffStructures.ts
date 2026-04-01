@@ -85,9 +85,6 @@ export function generateAndPopulatePlayoffStructures(params: GenerateAndPopulate
     uuids,
   } = params;
 
-  // The goal here is to return { structures, links } and not modify existing drawDefinition
-  // However, a copy of the drawDefinition needs to have the structures attached in order to
-  // populate the newly created structures with participants which should advance into them
   const drawDefinition = makeDeepCopy(params.drawDefinition, false, true);
 
   const { structure } = findStructure({
@@ -168,9 +165,6 @@ export function generateAndPopulatePlayoffStructures(params: GenerateAndPopulate
   const newStructures: Structure[] = [];
   const newLinks: DrawLink[] = [];
 
-  // For LUCKY_DRAW pre-feed rounds, the playoff drawSize must be computed from
-  // the actual matchUp count (discarded losers = matchUpsInRound - 1), not from
-  // finishing positions which don't account for the lucky loser selection.
   const isLuckyDraw = isLuckyBasedDraw(drawDefinition.drawType);
 
   for (const roundNumber of sourceRounds ?? []) {
@@ -181,30 +175,13 @@ export function generateAndPopulatePlayoffStructures(params: GenerateAndPopulate
         context: { roundNumber },
         stack,
       });
-    let drawSize = roundInfo.finishingPositions.length;
+    const drawSize = computePlayoffDrawSize({
+      finishingPositionsCount: roundInfo.finishingPositions.length,
+      isLuckyDraw,
+      roundNumber,
+      structure,
+    });
     const finishingPositionOffset = Math.min(...roundInfo.finishingPositions) - 1;
-
-    // Lucky draw override: pre-feed rounds have odd matchUp count; discarded losers = count - 1
-    if (isLuckyDraw && structure) {
-      const roundMatchUps = (structure.matchUps || []).filter((m) => m.roundNumber === roundNumber);
-      const matchUpsInRound = roundMatchUps.length;
-      const isFinal = matchUpsInRound === 1;
-      if (!isFinal && matchUpsInRound % 2 !== 0) {
-        // Pre-feed round: all losers minus the lucky selection
-        const discardedCount = matchUpsInRound - 1;
-        // If odd, round up for a single BYE
-        const adjusted = discardedCount % 2 === 0 ? discardedCount : discardedCount + 1;
-        // Round up to next power of 2 for standard elimination bracket
-        let p = 1;
-        while (p < adjusted) p *= 2;
-        drawSize = p;
-      } else {
-        // For rounds with even matchUp count (e.g. drawSize 11 has 6 matchUps in round 1
-        // including a BYE), the loser count may still not be a power of 2.
-        // Round up to next power of 2 for a valid elimination bracket.
-        drawSize = nextPowerOf2(drawSize);
-      }
-    }
 
     const stageSequence = 2;
     const sequenceLimit = roundNumber && roundProfile?.[roundNumber] && stageSequence + roundProfile[roundNumber] - 1;
@@ -288,9 +265,73 @@ export function generateAndPopulatePlayoffStructures(params: GenerateAndPopulate
     }
   }
 
-  // now advance any players from completed matchUps into the newly added structures
-  // Note: for lucky draw pre-feed rounds, directParticipants itself skips loser
-  // direction — luckyDrawAdvancement handles placement after the lucky loser selection
+  advanceCompletedMatchUps({
+    inContextDrawMatchUps,
+    sourceStructureId,
+    tournamentRecord,
+    drawDefinition,
+    matchUpsMap,
+    structure,
+    event,
+  });
+
+  advanceByeMatchUps({
+    inContextDrawMatchUps,
+    sourceStructureId,
+    tournamentRecord,
+    drawDefinition,
+    event,
+  });
+
+  const matchUpModifications = buildMatchUpModifications({
+    inContextDrawMatchUps,
+    sourceStructureId,
+    tournamentRecord,
+    drawDefinition,
+    matchUpsMap,
+    params,
+    stack,
+  });
+
+  return {
+    structures: newStructures,
+    matchUpModifications,
+    links: newLinks,
+    drawDefinition,
+    ...SUCCESS,
+  };
+}
+
+function computePlayoffDrawSize({ finishingPositionsCount, isLuckyDraw, roundNumber, structure }) {
+  let drawSize = finishingPositionsCount;
+
+  if (isLuckyDraw && structure) {
+    const roundMatchUps = (structure.matchUps || []).filter((m) => m.roundNumber === roundNumber);
+    const matchUpsInRound = roundMatchUps.length;
+    const isFinal = matchUpsInRound === 1;
+    if (!isFinal && matchUpsInRound % 2 !== 0) {
+      const discardedCount = matchUpsInRound - 1;
+      const adjusted = discardedCount % 2 === 0 ? discardedCount : discardedCount + 1;
+      let p = 1;
+      while (p < adjusted) p *= 2;
+      drawSize = p;
+    } else {
+      drawSize = nextPowerOf2(drawSize);
+    }
+  }
+
+  return drawSize;
+}
+
+function advanceCompletedMatchUps({
+  inContextDrawMatchUps,
+  sourceStructureId,
+  tournamentRecord,
+  drawDefinition,
+  matchUpsMap,
+  structure,
+  event,
+}) {
   const completedMatchUps = inContextDrawMatchUps?.filter(
     (matchUp) => checkMatchUpIsComplete({ matchUp }) && matchUp.structureId === sourceStructureId,
   );
@@ -317,7 +358,9 @@ export function generateAndPopulatePlayoffStructures(params: GenerateAndPopulate
     });
     if (result.error) console.log(result.error);
   });
+}
 
+function advanceByeMatchUps({ inContextDrawMatchUps, sourceStructureId, tournamentRecord, drawDefinition, event }) {
   const byeMatchUps = inContextDrawMatchUps?.filter(
     (matchUp) => matchUp.matchUpStatus === BYE && matchUp.structureId === sourceStructureId,
   );
@@ -332,7 +375,7 @@ export function generateAndPopulatePlayoffStructures(params: GenerateAndPopulate
     const {
       targetLinks: { loserTargetLink },
       targetMatchUps: {
-        loserMatchUpDrawPositionIndex, // only present when positionTargets found without loserMatchUpId
+        loserMatchUpDrawPositionIndex,
         loserMatchUp,
       },
     } = targetData;
@@ -351,8 +394,17 @@ export function generateAndPopulatePlayoffStructures(params: GenerateAndPopulate
       if (result.error) console.log(result.error);
     }
   });
+}
 
-  // the matchUps in the source structure must have goesTo details added
+function buildMatchUpModifications({
+  inContextDrawMatchUps,
+  sourceStructureId,
+  tournamentRecord,
+  drawDefinition,
+  matchUpsMap,
+  params,
+  stack,
+}) {
   const matchUpModifications: any[] = [];
   const goesToMap = addGoesTo({
     inContextDrawMatchUps,
@@ -394,11 +446,5 @@ export function generateAndPopulatePlayoffStructures(params: GenerateAndPopulate
     }
   });
 
-  return {
-    structures: newStructures,
-    matchUpModifications,
-    links: newLinks,
-    drawDefinition,
-    ...SUCCESS,
-  };
+  return matchUpModifications;
 }

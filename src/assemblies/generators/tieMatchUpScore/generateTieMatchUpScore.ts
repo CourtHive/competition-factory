@@ -62,6 +62,37 @@ export function generateTieMatchUpScore(params: GenerateTieMatchUpScoreArgs): Ti
   const result = validateTieFormat({ tieFormat });
   if (result.error) return result;
 
+  const sideTieValues = calculateSideTieValues(tieFormat, matchUp);
+
+  const sideScores = sideTieValues.map((sideTieValue, i) => (sideTieValue || 0) + sideAdjustments[i]);
+
+  const set = {
+    side1Score: sideScores[0],
+    side2Score: sideScores[1],
+    winningSide: undefined,
+  };
+  const scoreStringSide1 = sideScores.join(separator);
+  const scoreStringSide2 = sideScores.slice().reverse().join(separator);
+
+  const winningSide = determineWinningSide({
+    drawDefinition,
+    matchUpsMap,
+    sideScores,
+    tieFormat,
+    matchUp,
+  });
+
+  if (winningSide) set.winningSide = winningSide;
+
+  return {
+    scoreStringSide1,
+    scoreStringSide2,
+    winningSide,
+    set,
+  };
+}
+
+function calculateSideTieValues(tieFormat, matchUp) {
   const collectionDefinitions = tieFormat?.collectionDefinitions || [];
   const tieMatchUps = matchUp?.tieMatchUps ?? [];
   const sideTieValues = [0, 0];
@@ -78,94 +109,104 @@ export function generateTieMatchUpScore(params: GenerateTieMatchUpScoreArgs): Ti
     });
   }
 
-  // process each relevant group for groupValue
   for (const groupNumber of groupValueNumbers) {
-    const group = groupValueGroups[groupNumber];
-    const { allGroupMatchUpsCompleted, matchUpCount, winCriteria, groupValue, sideWins, values } = group;
-
-    let groupWinningSide;
-
-    if (winCriteria?.aggregateValue) {
-      if (allGroupMatchUpsCompleted && values[0] !== values[1]) {
-        groupWinningSide = values[0] > values[1] ? 1 : 2;
-      }
-    } else if (winCriteria?.valueGoal) {
-      groupWinningSide = values.reduce((winningSide, side, i) => {
-        return side >= winCriteria.valueGoal ? i + 1 : winningSide;
-      }, undefined);
-    } else {
-      const winGoal = Math.floor(matchUpCount / 2) + 1;
-      groupWinningSide = sideWins.reduce((winningSide, side, i) => {
-        return side >= winGoal ? i + 1 : winningSide;
-      }, undefined);
-    }
-
+    const groupWinningSide = resolveGroupWinningSide(groupValueGroups[groupNumber]);
     if (groupWinningSide) {
-      sideTieValues[groupWinningSide - 1] += groupValue || 0;
+      sideTieValues[groupWinningSide - 1] += groupValueGroups[groupNumber].groupValue || 0;
     }
   }
 
-  const sideScores = sideTieValues.map((sideTieValue, i) => (sideTieValue || 0) + sideAdjustments[i]);
+  return sideTieValues;
+}
 
-  const set = {
-    side1Score: sideScores[0],
-    side2Score: sideScores[1],
-    winningSide: undefined,
-  };
-  const scoreStringSide1 = sideScores.join(separator);
-  const scoreStringSide2 = sideScores.slice().reverse().join(separator);
+function resolveGroupWinningSide(group) {
+  const { allGroupMatchUpsCompleted, matchUpCount, winCriteria, sideWins, values } = group;
 
-  // now calculate if there is a winningSide
+  if (winCriteria?.aggregateValue) {
+    if (allGroupMatchUpsCompleted && values[0] !== values[1]) {
+      return values[0] > values[1] ? 1 : 2;
+    }
+    return undefined;
+  }
+
+  if (winCriteria?.valueGoal) {
+    return values.reduce((winningSide, side, i) => {
+      return side >= winCriteria.valueGoal ? i + 1 : winningSide;
+    }, undefined);
+  }
+
+  const winGoal = Math.floor(matchUpCount / 2) + 1;
+  return sideWins.reduce((winningSide, side, i) => {
+    return side >= winGoal ? i + 1 : winningSide;
+  }, undefined);
+}
+
+function determineWinningSide({ drawDefinition, matchUpsMap, sideScores, tieFormat, matchUp }) {
+  if (!tieFormat?.winCriteria) return undefined;
+
+  const { valueGoal, aggregateValue, tallyDirectives } = tieFormat.winCriteria;
+  const tieMatchUps = matchUp?.tieMatchUps ?? [];
+
   let winningSide;
-  if (tieFormat?.winCriteria) {
-    const { valueGoal, aggregateValue, tallyDirectives } = tieFormat.winCriteria;
-    if (valueGoal) {
-      const sideThatWon = sideScores
-        .map((points, sideIndex) => ({ sideNumber: sideIndex + 1, points }))
-        .find(({ points }) => points >= valueGoal);
-      winningSide = sideThatWon?.sideNumber;
-    } else if (aggregateValue) {
-      const allTieMatchUpsCompleted = tieMatchUps.every(
-        (matchUp) =>
-          (matchUp.matchUpStatus && completedMatchUpStatuses.includes(matchUp.matchUpStatus)) || matchUp.winningSide,
-      );
-      if (allTieMatchUpsCompleted && sideScores[0] !== sideScores[1]) {
-        winningSide = sideScores[0] > sideScores[1] ? 1 : 2;
-      }
-    }
 
-    if (!winningSide && tallyDirectives) {
-      const matchUpId = matchUp.matchUpId;
-      const inContextMatchUp = matchUp.hasContext
-        ? matchUp
-        : matchUpsMap?.drawMatchUps?.[matchUpId] ||
-          (drawDefinition &&
-            findDrawMatchUp({
-              inContext: true,
-              drawDefinition,
-              matchUpId,
-            })?.matchUp);
-
-      if (inContextMatchUp) {
-        const { completedTieMatchUps, order } = tallyParticipantResults({
-          matchUps: [inContextMatchUp],
-        });
-        if (completedTieMatchUps && order?.length) {
-          const winningParticipantId = order[0].participantId;
-          winningSide = inContextMatchUp.sides.find(
-            ({ participantId }) => participantId === winningParticipantId,
-          )?.sideNumber;
-        }
-      }
-    }
+  if (valueGoal) {
+    winningSide = resolveValueGoalWinner(sideScores, valueGoal);
+  } else if (aggregateValue) {
+    winningSide = resolveAggregateWinner(tieMatchUps, sideScores);
   }
 
-  if (winningSide) set.winningSide = winningSide;
+  if (!winningSide && tallyDirectives) {
+    winningSide = resolveTallyWinner({
+      drawDefinition,
+      matchUpsMap,
+      matchUp,
+    });
+  }
 
-  return {
-    scoreStringSide1,
-    scoreStringSide2,
-    winningSide,
-    set,
-  };
+  return winningSide;
+}
+
+function resolveValueGoalWinner(sideScores, valueGoal) {
+  const sideThatWon = sideScores
+    .map((points, sideIndex) => ({
+      sideNumber: sideIndex + 1,
+      points,
+    }))
+    .find(({ points }) => points >= valueGoal);
+  return sideThatWon?.sideNumber;
+}
+
+function resolveAggregateWinner(tieMatchUps, sideScores) {
+  const allTieMatchUpsCompleted = tieMatchUps.every(
+    (matchUp) =>
+      (matchUp.matchUpStatus && completedMatchUpStatuses.includes(matchUp.matchUpStatus)) || matchUp.winningSide,
+  );
+  if (allTieMatchUpsCompleted && sideScores[0] !== sideScores[1]) {
+    return sideScores[0] > sideScores[1] ? 1 : 2;
+  }
+  return undefined;
+}
+
+function resolveTallyWinner({ drawDefinition, matchUpsMap, matchUp }) {
+  const matchUpId = matchUp.matchUpId;
+  const inContextMatchUp = matchUp.hasContext
+    ? matchUp
+    : matchUpsMap?.drawMatchUps?.[matchUpId] ||
+      (drawDefinition &&
+        findDrawMatchUp({
+          inContext: true,
+          drawDefinition,
+          matchUpId,
+        })?.matchUp);
+
+  if (!inContextMatchUp) return undefined;
+
+  const { completedTieMatchUps, order } = tallyParticipantResults({
+    matchUps: [inContextMatchUp],
+  });
+
+  if (!completedTieMatchUps || !order?.length) return undefined;
+
+  const winningParticipantId = order[0].participantId;
+  return inContextMatchUp.sides.find(({ participantId }) => participantId === winningParticipantId)?.sideNumber;
 }

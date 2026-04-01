@@ -132,52 +132,14 @@ export function removeCollectionDefinition({
     }
   }
 
-  // check all scoped lineUps in the drawDefinition to identify collectionAssignments
-  let matchUps: MatchUp[] = [];
+  const matchUps = getScopedMatchUps({ matchUpId, matchUp, structureId, structure, drawDefinition, event });
 
-  if (matchUpId && matchUp) {
-    matchUps = [matchUp];
-  } else if (structureId && structure) {
-    matchUps =
-      getAllStructureMatchUps({
-        matchUpFilters: { matchUpTypes: [TEAM] },
-        structure,
-      })?.matchUps ?? [];
-  } else if (drawDefinition) {
-    matchUps =
-      allDrawMatchUps({
-        matchUpFilters: { matchUpTypes: [TEAM] },
-        drawDefinition,
-      })?.matchUps ?? [];
-  } else if (event) {
-    matchUps =
-      allEventMatchUps({
-        matchUpFilters: { matchUpTypes: [TEAM] },
-        drawDefinition,
-      })?.matchUps ?? [];
-  }
-
-  // all team matchUps in scope which are completed or which have a score should not be modified
-  // UNLESS all collectionMatchUps have no score
-  const targetMatchUps = (matchUps || []).filter((matchUp) => {
-    const collectionMatchUps = matchUp.tieMatchUps?.filter((tieMatchUp) => tieMatchUp.collectionId === collectionId);
-    const collectionScore = collectionMatchUps?.some(checkScoreHasValue);
-
-    const tieFormatDifference =
-      tieFormatComparison && matchUp.tieFormat
-        ? compareTieFormats({
-            descendant: matchUp.tieFormat,
-            ancestor: tieFormat,
-          })?.different
-        : false;
-
-    return (
-      (updateInProgressMatchUps && !collectionScore) ||
-      (!matchUp.winningSide &&
-        matchUp.matchUpStatus !== COMPLETED &&
-        (updateInProgressMatchUps ||
-          (matchUp.matchUpStatus !== IN_PROGRESS && !checkScoreHasValue(matchUp) && !tieFormatDifference)))
-    );
+  const targetMatchUps = filterTargetMatchUps({
+    updateInProgressMatchUps,
+    tieFormatComparison,
+    collectionId,
+    tieFormat,
+    matchUps,
   });
 
   if (!targetMatchUps.length) {
@@ -300,4 +262,66 @@ export function removeCollectionDefinition({
     targetMatchUps,
     ...SUCCESS,
   };
+}
+
+function getScopedMatchUps({ matchUpId, matchUp, structureId, structure, drawDefinition, event }): MatchUp[] {
+  if (matchUpId && matchUp) return [matchUp];
+
+  if (structureId && structure) {
+    return (
+      getAllStructureMatchUps({
+        matchUpFilters: { matchUpTypes: [TEAM] },
+        structure,
+      })?.matchUps ?? []
+    );
+  }
+
+  if (drawDefinition) {
+    return (
+      allDrawMatchUps({
+        matchUpFilters: { matchUpTypes: [TEAM] },
+        drawDefinition,
+      })?.matchUps ?? []
+    );
+  }
+
+  if (event) {
+    return (
+      allEventMatchUps({
+        matchUpFilters: { matchUpTypes: [TEAM] },
+        drawDefinition,
+      })?.matchUps ?? []
+    );
+  }
+
+  return [];
+}
+
+function filterTargetMatchUps({
+  updateInProgressMatchUps,
+  tieFormatComparison,
+  collectionId,
+  tieFormat,
+  matchUps,
+}): MatchUp[] {
+  return (matchUps || []).filter((matchUp) => {
+    const collectionMatchUps = matchUp.tieMatchUps?.filter((tieMatchUp) => tieMatchUp.collectionId === collectionId);
+    const collectionScore = collectionMatchUps?.some(checkScoreHasValue);
+
+    if (updateInProgressMatchUps && !collectionScore) return true;
+    if (matchUp.winningSide || matchUp.matchUpStatus === COMPLETED) return false;
+
+    const tieFormatDifference =
+      tieFormatComparison && matchUp.tieFormat
+        ? compareTieFormats({
+            descendant: matchUp.tieFormat,
+            ancestor: tieFormat,
+          })?.different
+        : false;
+
+    return (
+      updateInProgressMatchUps ||
+      (matchUp.matchUpStatus !== IN_PROGRESS && !checkScoreHasValue(matchUp) && !tieFormatDifference)
+    );
+  });
 }

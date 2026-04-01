@@ -62,7 +62,7 @@ export function addCourt({ tournamentRecord, disableNotice, venueId, courtId, co
     for (const attribute of attributes) {
       if (court?.[attribute]) {
         if (attribute === 'dateAvailability') {
-          const result = validDateAvailability({ dateAvailability });
+          const result: any = validDateAvailability({ dateAvailability });
           if (!result.valid && result.error) return result;
           courtRecord.dateAvailability = dateAvailability;
         } else {

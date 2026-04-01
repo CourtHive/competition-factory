@@ -85,35 +85,6 @@ export function modifyCollectionDefinition({
 } {
   const stack = 'modifyCollectionDefinition';
 
-  if (matchUpFormat && !isValidMatchUpFormat({ matchUpFormat })) {
-    return decorateResult({
-      result: { error: INVALID_VALUES },
-      context: { matchUpFormat },
-      stack,
-    });
-  }
-  if (collectionName && typeof collectionName !== 'string') {
-    return decorateResult({
-      result: { error: INVALID_VALUES },
-      context: { collectionName },
-      stack,
-    });
-  }
-  if (gender && !Object.values(genderConstants).includes(gender)) {
-    return decorateResult({
-      result: { error: INVALID_VALUES },
-      context: { gender },
-      stack,
-    });
-  }
-  if (category && typeof category !== 'object') {
-    return decorateResult({
-      result: { error: INVALID_VALUES },
-      context: { category },
-      stack,
-    });
-  }
-
   const valueAssignments = {
     collectionValueProfiles,
     collectionValue,
@@ -122,22 +93,18 @@ export function modifyCollectionDefinition({
     setValue,
   };
 
-  if (
-    !Object.values(valueAssignments).filter(Boolean).length &&
-    !collectionOrder &&
-    !collectionName &&
-    !matchUpFormat &&
-    !matchUpCount &&
-    !matchUpType
-  )
-    return decorateResult({ result: { error: MISSING_VALUE }, stack });
-
-  if (Object.values(valueAssignments).filter(Boolean).length > 1)
-    return decorateResult({
-      info: 'Only one value assignment allowed per collectionDefinition',
-      result: { error: INVALID_VALUES },
-      stack,
-    });
+  const inputValidation = validateModificationInputs({
+    collectionName,
+    matchUpFormat,
+    matchUpCount,
+    matchUpType,
+    collectionOrder,
+    valueAssignments,
+    category,
+    gender,
+    stack,
+  });
+  if (inputValidation) return inputValidation;
 
   let result = getTieFormat({
     drawDefinition,
@@ -168,54 +135,35 @@ export function modifyCollectionDefinition({
       stack,
     });
 
-  const value = collectionValue ?? matchUpValue ?? scoreValue ?? setValue;
-  if (collectionValueProfiles?.length) {
-    const result = validateCollectionValueProfiles({
-      matchUpCount: matchUpCount ?? sourceCollectionDefinition?.matchUpCount ?? 0,
-      collectionValueProfiles,
-    });
-    if (result.errors) {
-      return decorateResult({
-        result: { error: INVALID_VALUES },
-        info: result.errors,
-        stack,
-      });
-    }
-  } else if (value && !isConvertableInteger(value)) {
-    return decorateResult({
-      result: { error: INVALID_VALUES },
-      info: 'value is not an integer',
-      context: { value },
-      stack,
-    });
-  }
-
-  const equivalentValueProfiles = (a, b) =>
-    intersection(Object.keys(a), Object.keys(b)).length === Object.keys(a).length &&
-    intersection(Object.values(a), Object.values(b)).length === Object.values(a).length;
-
-  const valueProfileModified =
-    collectionValueProfiles &&
-    (!sourceCollectionDefinition.collectionValueProfiles ||
-      !equivalentValueProfiles(sourceCollectionDefinition.collectionValueProfiles, collectionValueProfiles));
-
-  const valueModified =
-    (isConvertableInteger(collectionValue) && sourceCollectionDefinition.collectionValue !== collectionValue) ||
-    (isConvertableInteger(matchUpValue) && sourceCollectionDefinition.matchUpValue !== matchUpValue) ||
-    (isConvertableInteger(scoreValue) && sourceCollectionDefinition.scoreValue !== scoreValue) ||
-    (isConvertableInteger(setValue) && sourceCollectionDefinition.setValue !== setValue) ||
-    valueProfileModified;
+  const valueValidation = validateValueAssignment({
+    collectionValueProfiles,
+    sourceCollectionDefinition,
+    collectionValue,
+    matchUpValue,
+    matchUpCount,
+    scoreValue,
+    setValue,
+    stack,
+  });
+  if (valueValidation?.error) return valueValidation;
 
   const modifications: any[] = [];
+  const valueModified = isValueModified({
+    collectionValueProfiles,
+    sourceCollectionDefinition,
+    collectionValue,
+    matchUpValue,
+    scoreValue,
+    setValue,
+  });
+
   if (valueModified) {
-    // cleanup any previously existing value assignment
     targetCollectionDefinition.collectionValueProfiles = undefined;
     targetCollectionDefinition.collectionValue = undefined;
     targetCollectionDefinition.matchUpValue = undefined;
     targetCollectionDefinition.scoreValue = undefined;
     targetCollectionDefinition.setValue = undefined;
 
-    // add new value assignment
     Object.assign(targetCollectionDefinition, valueAssignments);
     modifications.push({
       collectionId,
@@ -258,37 +206,21 @@ export function modifyCollectionDefinition({
     modifications.push({ collectionId, winCriteria });
   }
 
-  if (isConvertableInteger(collectionOrder) && sourceCollectionDefinition.collectionOrder !== collectionOrder) {
-    targetCollectionDefinition.collectionOrder = collectionOrder;
-    modifications.push({ collectionId, collectionOrder });
-  }
-  if (collectionName && sourceCollectionDefinition.collectionName !== collectionName) {
-    targetCollectionDefinition.collectionName = collectionName;
-    modifications.push({ collectionId, collectionName });
-  }
-  if (matchUpFormat && sourceCollectionDefinition.matchUpFormat !== matchUpFormat) {
-    targetCollectionDefinition.matchUpFormat = matchUpFormat;
-    modifications.push({ collectionId, matchUpFormat });
-  }
-  if (isConvertableInteger(matchUpCount) && sourceCollectionDefinition.matchUpCount !== matchUpCount) {
-    targetCollectionDefinition.matchUpCount = matchUpCount;
-    modifications.push({ collectionId, matchUpCount });
-  }
-  if (matchUpType && sourceCollectionDefinition.matchUpType !== matchUpType) {
-    return decorateResult({
-      result: { error: NOT_IMPLEMENTED },
-      context: { matchUpType },
-      stack,
-    });
-  }
-  if (category && sourceCollectionDefinition.category !== category) {
-    targetCollectionDefinition.category = category;
-    modifications.push({ collectionId, category });
-  }
-  if (gender && sourceCollectionDefinition.gender !== gender) {
-    targetCollectionDefinition.gender = gender;
-    modifications.push({ collectionId, gender });
-  }
+  const fieldResult = applyFieldModifications({
+    targetCollectionDefinition,
+    sourceCollectionDefinition,
+    collectionOrder,
+    collectionName,
+    matchUpFormat,
+    matchUpCount,
+    matchUpType,
+    collectionId,
+    modifications,
+    category,
+    gender,
+    stack,
+  });
+  if (fieldResult?.error) return fieldResult;
 
   const modifiedTieFormat = definedAttributes(tieFormat);
   result = validateTieFormat({ tieFormat: modifiedTieFormat });
@@ -337,4 +269,177 @@ export function modifyCollectionDefinition({
   }
 
   return decorateResult({ result: { ...result, modifications }, stack });
+}
+
+function validateModificationInputs({
+  collectionName,
+  matchUpFormat,
+  matchUpCount,
+  matchUpType,
+  collectionOrder,
+  valueAssignments,
+  category,
+  gender,
+  stack,
+}) {
+  if (matchUpFormat && !isValidMatchUpFormat({ matchUpFormat })) {
+    return decorateResult({
+      result: { error: INVALID_VALUES },
+      context: { matchUpFormat },
+      stack,
+    });
+  }
+  if (collectionName && typeof collectionName !== 'string') {
+    return decorateResult({
+      result: { error: INVALID_VALUES },
+      context: { collectionName },
+      stack,
+    });
+  }
+  if (gender && !Object.values(genderConstants).includes(gender)) {
+    return decorateResult({
+      result: { error: INVALID_VALUES },
+      context: { gender },
+      stack,
+    });
+  }
+  if (category && typeof category !== 'object') {
+    return decorateResult({
+      result: { error: INVALID_VALUES },
+      context: { category },
+      stack,
+    });
+  }
+
+  const valueCount = Object.values(valueAssignments).filter(Boolean).length;
+  if (
+    !valueCount &&
+    !collectionOrder &&
+    !collectionName &&
+    !matchUpFormat &&
+    !matchUpCount &&
+    !matchUpType
+  ) {
+    return decorateResult({ result: { error: MISSING_VALUE }, stack });
+  }
+
+  if (valueCount > 1) {
+    return decorateResult({
+      info: 'Only one value assignment allowed per collectionDefinition',
+      result: { error: INVALID_VALUES },
+      stack,
+    });
+  }
+
+  return undefined;
+}
+
+function validateValueAssignment({
+  collectionValueProfiles,
+  sourceCollectionDefinition,
+  collectionValue,
+  matchUpValue,
+  matchUpCount,
+  scoreValue,
+  setValue,
+  stack,
+}) {
+  const value = collectionValue ?? matchUpValue ?? scoreValue ?? setValue;
+  if (collectionValueProfiles?.length) {
+    const result = validateCollectionValueProfiles({
+      matchUpCount: matchUpCount ?? sourceCollectionDefinition?.matchUpCount ?? 0,
+      collectionValueProfiles,
+    });
+    if (result.errors) {
+      return decorateResult({
+        result: { error: INVALID_VALUES },
+        info: result.errors,
+        stack,
+      });
+    }
+  } else if (value && !isConvertableInteger(value)) {
+    return decorateResult({
+      result: { error: INVALID_VALUES },
+      info: 'value is not an integer',
+      context: { value },
+      stack,
+    });
+  }
+
+  return undefined;
+}
+
+function isValueModified({
+  collectionValueProfiles,
+  sourceCollectionDefinition,
+  collectionValue,
+  matchUpValue,
+  scoreValue,
+  setValue,
+}) {
+  const equivalentValueProfiles = (a, b) =>
+    intersection(Object.keys(a), Object.keys(b)).length === Object.keys(a).length &&
+    intersection(Object.values(a), Object.values(b)).length === Object.values(a).length;
+
+  const valueProfileModified =
+    collectionValueProfiles &&
+    (!sourceCollectionDefinition.collectionValueProfiles ||
+      !equivalentValueProfiles(sourceCollectionDefinition.collectionValueProfiles, collectionValueProfiles));
+
+  return (
+    (isConvertableInteger(collectionValue) && sourceCollectionDefinition.collectionValue !== collectionValue) ||
+    (isConvertableInteger(matchUpValue) && sourceCollectionDefinition.matchUpValue !== matchUpValue) ||
+    (isConvertableInteger(scoreValue) && sourceCollectionDefinition.scoreValue !== scoreValue) ||
+    (isConvertableInteger(setValue) && sourceCollectionDefinition.setValue !== setValue) ||
+    valueProfileModified
+  );
+}
+
+function applyFieldModifications({
+  targetCollectionDefinition,
+  sourceCollectionDefinition,
+  collectionOrder,
+  collectionName,
+  matchUpFormat,
+  matchUpCount,
+  matchUpType,
+  collectionId,
+  modifications,
+  category,
+  gender,
+  stack,
+}) {
+  if (isConvertableInteger(collectionOrder) && sourceCollectionDefinition.collectionOrder !== collectionOrder) {
+    targetCollectionDefinition.collectionOrder = collectionOrder;
+    modifications.push({ collectionId, collectionOrder });
+  }
+  if (collectionName && sourceCollectionDefinition.collectionName !== collectionName) {
+    targetCollectionDefinition.collectionName = collectionName;
+    modifications.push({ collectionId, collectionName });
+  }
+  if (matchUpFormat && sourceCollectionDefinition.matchUpFormat !== matchUpFormat) {
+    targetCollectionDefinition.matchUpFormat = matchUpFormat;
+    modifications.push({ collectionId, matchUpFormat });
+  }
+  if (isConvertableInteger(matchUpCount) && sourceCollectionDefinition.matchUpCount !== matchUpCount) {
+    targetCollectionDefinition.matchUpCount = matchUpCount;
+    modifications.push({ collectionId, matchUpCount });
+  }
+  if (matchUpType && sourceCollectionDefinition.matchUpType !== matchUpType) {
+    return decorateResult({
+      result: { error: NOT_IMPLEMENTED },
+      context: { matchUpType },
+      stack,
+    });
+  }
+  if (category && sourceCollectionDefinition.category !== category) {
+    targetCollectionDefinition.category = category;
+    modifications.push({ collectionId, category });
+  }
+  if (gender && sourceCollectionDefinition.gender !== gender) {
+    targetCollectionDefinition.gender = gender;
+    modifications.push({ collectionId, gender });
+  }
+
+  return undefined;
 }

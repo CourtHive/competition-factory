@@ -151,35 +151,48 @@ function validateDrawIds({ drawIdsToValidate, eventDrawIds }) {
   return undefined;
 }
 
+function hasInvalidEmbargo(embargo?: string): boolean {
+  return !!embargo && !isValidEmbargoDate(embargo);
+}
+
 function validateEmbargoValues(drawDetailsParam) {
-  if (!drawDetailsParam) return;
+  if (!drawDetailsParam) return undefined;
 
   for (const drawId of Object.keys(drawDetailsParam)) {
     const detail = drawDetailsParam[drawId];
-    if (detail.publishingDetail?.embargo && !isValidEmbargoDate(detail.publishingDetail.embargo)) {
+    if (hasInvalidEmbargo(detail.publishingDetail?.embargo)) {
       return { error: INVALID_EMBARGO };
     }
-    if (detail.stageDetails) {
-      for (const stage of Object.keys(detail.stageDetails)) {
-        if (detail.stageDetails[stage].embargo && !isValidEmbargoDate(detail.stageDetails[stage].embargo)) {
-          return { error: INVALID_EMBARGO };
-        }
-      }
+
+    const stageError = validateDetailEmbargoes(detail.stageDetails);
+    if (stageError) return stageError;
+
+    const structureError = validateStructureDetailEmbargoes(detail.structureDetails);
+    if (structureError) return structureError;
+  }
+  return undefined;
+}
+
+function validateDetailEmbargoes(details) {
+  if (!details) return undefined;
+  for (const key of Object.keys(details)) {
+    if (hasInvalidEmbargo(details[key].embargo)) {
+      return { error: INVALID_EMBARGO };
     }
-    if (detail.structureDetails) {
-      for (const id of Object.keys(detail.structureDetails)) {
-        const sd = detail.structureDetails[id];
-        if (sd.embargo && !isValidEmbargoDate(sd.embargo)) {
-          return { error: INVALID_EMBARGO };
-        }
-        if (sd.scheduledRounds) {
-          for (const round of Object.keys(sd.scheduledRounds)) {
-            if (sd.scheduledRounds[round].embargo && !isValidEmbargoDate(sd.scheduledRounds[round].embargo)) {
-              return { error: INVALID_EMBARGO };
-            }
-          }
-        }
-      }
+  }
+  return undefined;
+}
+
+function validateStructureDetailEmbargoes(structureDetails) {
+  if (!structureDetails) return undefined;
+  for (const id of Object.keys(structureDetails)) {
+    const sd = structureDetails[id];
+    if (hasInvalidEmbargo(sd.embargo)) {
+      return { error: INVALID_EMBARGO };
+    }
+    if (sd.scheduledRounds) {
+      const roundError = validateDetailEmbargoes(sd.scheduledRounds);
+      if (roundError) return roundError;
     }
   }
   return undefined;

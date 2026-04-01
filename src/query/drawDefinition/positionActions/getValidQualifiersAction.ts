@@ -14,10 +14,6 @@ import { TALLY } from '@Constants/extensionConstants';
 import { HydratedParticipant } from '@Types/hydrated';
 
 export function getValidQualifiersAction({
-  /*
-  activeDrawPositions,
-  isQualifierPosition, // restrict based on policyDefinition
-  */
   drawPositionInitialRounds,
   tournamentParticipants,
   positionAssignments,
@@ -39,30 +35,80 @@ export function getValidQualifiersAction({
 
   const policy = appliedPolicies?.[POLICY_TYPE_POSITION_ACTIONS];
 
-  // get the round number in which the drawPosition initially occurs
   const targetRoundNumber = !policy?.disableRoundRestrictions && drawPositionInitialRounds[drawPosition];
 
-  // disallow placing qualifiers until source structure is completed
   const requireCompletedStructures = policy?.requireCompletedStructures;
 
-  const { sourceStructureIds: eliminationSoureStructureIds, relevantLinks: eliminationSourceLinks } =
+  const { sourceStructureIds: eliminationSourceStructureIds, relevantLinks: eliminationSourceLinks } =
     getSourceStructureIdsAndRelevantLinks({
-      targetRoundNumber, // look for soure structrues targeting roundNumber
-      linkType: WINNER, // WINNER of qualifying structures will traverse link
+      targetRoundNumber,
+      linkType: WINNER,
       drawDefinition,
       structureId,
     }) || {};
-  if (eliminationSoureStructureIds?.length) sourceStructureIds.push(...eliminationSoureStructureIds);
+  if (eliminationSourceStructureIds?.length) sourceStructureIds.push(...eliminationSourceStructureIds);
 
   const { sourceStructureIds: roundRobinSourceStructureIds, relevantLinks: roundRobinSourceLinks } =
     getSourceStructureIdsAndRelevantLinks({
-      targetRoundNumber, // look for soure structrues targeting roundNumber
-      linkType: POSITION, // link will define how many finishingPositions traverse the link
+      targetRoundNumber,
+      linkType: POSITION,
       drawDefinition,
       structureId,
     }) || {};
   if (roundRobinSourceStructureIds?.length) sourceStructureIds.push(...roundRobinSourceStructureIds);
 
+  collectEliminationQualifiers({
+    requireCompletedStructures,
+    tournamentParticipants,
+    assignedParticipantIds,
+    eliminationSourceLinks,
+    qualifyingParticipantIds,
+    qualifyingParticipants,
+    returnParticipants,
+    drawDefinition,
+  });
+
+  collectRoundRobinQualifiers({
+    requireCompletedStructures,
+    tournamentParticipants,
+    assignedParticipantIds,
+    qualifyingParticipantIds,
+    qualifyingParticipants,
+    roundRobinSourceLinks,
+    returnParticipants,
+    drawDefinition,
+  });
+
+  if (qualifyingParticipantIds.length) {
+    validAssignmentActions.push(
+      definedAttributes({
+        qualifyingParticipants: returnParticipants ? qualifyingParticipants : undefined,
+        method: QUALIFYING_PARTICIPANT_METHOD,
+        type: QUALIFYING_PARTICIPANT,
+        qualifyingParticipantIds,
+        payload: {
+          qualifyingParticipantId: undefined,
+          drawPosition,
+          structureId,
+          drawId,
+        },
+      }),
+    );
+  }
+
+  return { validAssignmentActions, sourceStructureIds };
+}
+
+function collectEliminationQualifiers({
+  requireCompletedStructures,
+  tournamentParticipants,
+  assignedParticipantIds,
+  eliminationSourceLinks,
+  qualifyingParticipantIds,
+  qualifyingParticipants,
+  returnParticipants,
+  drawDefinition,
+}) {
   for (const sourceLink of eliminationSourceLinks) {
     const structure = drawDefinition.structures?.find(
       (structure) => structure.structureId === sourceLink.source.structureId,
@@ -74,35 +120,46 @@ export function getValidQualifiersAction({
       drawDefinition,
     });
 
-    if (!requireCompletedStructures || structureCompleted) {
-      const qualifyingRoundNumber = structure.qualifyingRoundNumber;
-      const { matchUps } = getAllStructureMatchUps({
-        matchUpFilters: {
-          roundNumbers: [qualifyingRoundNumber],
-          isCollectionMatchUp: false,
-          hasWinningSide: true,
-        },
-        afterRecoveryTimes: false,
-        tournamentParticipants,
-        inContext: true,
-        structure,
-      });
+    if (requireCompletedStructures && !structureCompleted) continue;
 
-      for (const matchUp of matchUps) {
-        const winningSide = matchUp.sides.find((side) => side?.sideNumber === matchUp.winningSide);
-        const relevantSide = matchUp.matchUpStatus === BYE && matchUp.sides?.find(({ participantId }) => participantId);
+    const qualifyingRoundNumber = structure.qualifyingRoundNumber;
+    const { matchUps } = getAllStructureMatchUps({
+      matchUpFilters: {
+        roundNumbers: [qualifyingRoundNumber],
+        isCollectionMatchUp: false,
+        hasWinningSide: true,
+      },
+      afterRecoveryTimes: false,
+      tournamentParticipants,
+      inContext: true,
+      structure,
+    });
 
-        if (winningSide || relevantSide) {
-          const { participantId, participant } = winningSide || relevantSide || {};
-          if (participantId && !assignedParticipantIds.has(participantId)) {
-            if (participant && returnParticipants) qualifyingParticipants.push(participant);
-            qualifyingParticipantIds.push(participantId);
-          }
+    for (const matchUp of matchUps) {
+      const winningSide = matchUp.sides.find((side) => side?.sideNumber === matchUp.winningSide);
+      const relevantSide = matchUp.matchUpStatus === BYE && matchUp.sides?.find(({ participantId }) => participantId);
+
+      if (winningSide || relevantSide) {
+        const { participantId, participant } = winningSide || relevantSide || {};
+        if (participantId && !assignedParticipantIds.has(participantId)) {
+          if (participant && returnParticipants) qualifyingParticipants.push(participant);
+          qualifyingParticipantIds.push(participantId);
         }
       }
     }
   }
+}
 
+function collectRoundRobinQualifiers({
+  requireCompletedStructures,
+  tournamentParticipants,
+  assignedParticipantIds,
+  qualifyingParticipantIds,
+  qualifyingParticipants,
+  roundRobinSourceLinks,
+  returnParticipants,
+  drawDefinition,
+}) {
   for (const sourceLink of roundRobinSourceLinks) {
     const structure = drawDefinition.structures?.find(
       (structure) => structure.structureId === sourceLink.source.structureId,
@@ -114,49 +171,31 @@ export function getValidQualifiersAction({
       drawDefinition,
     });
 
-    if (!requireCompletedStructures || structureCompleted) {
-      const { positionAssignments } = getPositionAssignments({ structure });
-      const relevantParticipantIds: any =
-        positionAssignments
-          ?.map((assignment) => {
-            const participantId = assignment.participantId;
-            const results = findExtension({
-              element: assignment,
-              name: TALLY,
-            }).extension?.value;
+    if (requireCompletedStructures && !structureCompleted) continue;
 
-            return results ? { participantId, groupOrder: results?.groupOrder } : {};
-          })
-          .filter(({ groupOrder, participantId }) => groupOrder === 1 && !assignedParticipantIds.has(participantId))
-          .map(({ participantId }) => participantId) ?? [];
+    const { positionAssignments } = getPositionAssignments({ structure });
+    const relevantParticipantIds: any =
+      positionAssignments
+        ?.map((assignment) => {
+          const participantId = assignment.participantId;
+          const results = findExtension({
+            element: assignment,
+            name: TALLY,
+          }).extension?.value;
 
-      if (relevantParticipantIds) qualifyingParticipantIds.push(...relevantParticipantIds);
+          return results ? { participantId, groupOrder: results?.groupOrder } : {};
+        })
+        .filter(({ groupOrder, participantId }) => groupOrder === 1 && !assignedParticipantIds.has(participantId))
+        .map(({ participantId }) => participantId) ?? [];
 
-      if (returnParticipants) {
-        const relevantParticipants = tournamentParticipants.filter(({ participantId }) =>
-          relevantParticipantIds.includes(participantId),
-        );
-        qualifyingParticipants.push(...relevantParticipants);
-      }
+    if (relevantParticipantIds) qualifyingParticipantIds.push(...relevantParticipantIds);
+
+    if (returnParticipants) {
+      const relevantParticipantIdSet = new Set(relevantParticipantIds);
+      const relevantParticipants = tournamentParticipants.filter(({ participantId }) =>
+        relevantParticipantIdSet.has(participantId),
+      );
+      qualifyingParticipants.push(...relevantParticipants);
     }
   }
-
-  if (qualifyingParticipantIds.length) {
-    validAssignmentActions.push(
-      definedAttributes({
-        qualifyingParticipants: returnParticipants ? qualifyingParticipants : undefined,
-        method: QUALIFYING_PARTICIPANT_METHOD,
-        type: QUALIFYING_PARTICIPANT,
-        qualifyingParticipantIds,
-        payload: {
-          qualifyingParticipantId: undefined, // to be provided by client
-          drawPosition,
-          structureId,
-          drawId,
-        },
-      }),
-    );
-  }
-
-  return { validAssignmentActions, sourceStructureIds };
 }
