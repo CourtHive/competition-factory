@@ -4,8 +4,7 @@ import scaleEngine from '@Engines/scaleEngine';
 import { mocksEngine } from '../../..';
 import { describe, expect, it, afterEach } from 'vitest';
 
-import { POLICY_TYPE_RANKING_POINTS } from '@Constants/policyConstants';
-import { SINGLES, DOUBLES } from '@Constants/eventConstants';
+import { SINGLES } from '@Constants/eventConstants';
 import { COMPASS, ROUND_ROBIN, SINGLE_ELIMINATION } from '@Constants/drawDefinitionConstants';
 import { FEMALE, MALE } from '@Constants/genderConstants';
 

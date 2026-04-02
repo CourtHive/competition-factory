@@ -109,7 +109,7 @@ it('can define and modify a venue', () => {
       },
     ],
   };
-  result = tournamentEngine.modifyVenue({ venueId, modifications });
+  tournamentEngine.modifyVenue({ venueId, modifications });
   let { venue } = tournamentEngine.findVenue({ venueId });
   expect(venue.venueName).toEqual(venueName);
   expect(venue.venueAbbreviation).toEqual(venueAbbreviation);
@@ -135,7 +135,7 @@ it('can define and modify a venue', () => {
     ],
   };
 
-  result = tournamentEngine.modifyVenue({
+  tournamentEngine.modifyVenue({
     modifications,
     venueId,
   });
@@ -168,7 +168,7 @@ it('can define and modify a venue', () => {
     ],
   };
 
-  result = tournamentEngine.modifyVenue({
+  tournamentEngine.modifyVenue({
     venueId,
     modifications,
   });
@@ -201,7 +201,7 @@ it('can define and modify a venue', () => {
     ],
   };
 
-  result = tournamentEngine.modifyVenue({
+  tournamentEngine.modifyVenue({
     modifications,
     venueId,
   });
@@ -209,7 +209,7 @@ it('can define and modify a venue', () => {
   expect(venue.courts.length).toEqual(1);
   expect(venue.courts[0].dateAvailability.length).toEqual(3);
 
-  result = tournamentEngine.modifyVenue({
+  tournamentEngine.modifyVenue({
     modifications,
     force: true,
     venueId,
@@ -255,7 +255,7 @@ it('can define and modify a venue', () => {
       },
     ],
   };
-  result = tournamentEngine.modifyVenue({ venueId, modifications });
+  tournamentEngine.modifyVenue({ venueId, modifications });
   ({ venue } = tournamentEngine.findVenue({ venueId }));
   expect(venue.venueName).toEqual(venueName);
   expect(venue.venueAbbreviation).toEqual(venueAbbreviation);

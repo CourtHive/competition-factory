@@ -596,11 +596,9 @@ it('positionActions excludes WITHDRAW and ASSIGN_BYE for lucky draw advanced pos
     expect(result.isDrawPosition).toEqual(true);
 
     // For lucky draw advanced positions, WITHDRAW and ASSIGN_BYE should not be present
-    if (result.hasPositionAssigned && !result.isByePosition) {
+    if (result.hasPositionAssigned && !result.isByePosition && !result.isActiveDrawPosition) {
       // All positions should have basic actions
-      if (!result.isActiveDrawPosition) {
-        expect(actionTypes).toContain(REMOVE_ASSIGNMENT);
-      }
+      expect(actionTypes).toContain(REMOVE_ASSIGNMENT);
     }
   }
 });

@@ -13,7 +13,7 @@
 
 import { describe, it, expect, beforeEach } from 'vitest';
 import { TemporalEngine } from '@Assemblies/engines/temporal/TemporalEngine';
-import { computePlanItemId, type PlanItem, type DayPlan } from '@Assemblies/governors/temporalGovernor/planState';
+import { computePlanItemId, type PlanItem } from '@Assemblies/governors/temporalGovernor/planState';
 import type { EngineEvent } from '@Assemblies/governors/temporalGovernor/types';
 
 // ============================================================================

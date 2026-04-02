@@ -114,9 +114,7 @@ describe('competitionScheduleMatchUps with blocked cells', () => {
       court: { courtName: 'Court 1' },
     });
 
-    const {
-      court: { courtId: court2Id },
-    } = tournamentEngine.addCourt({
+    tournamentEngine.addCourt({
       venueId,
       court: { courtName: 'Court 2' },
     });

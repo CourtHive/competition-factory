@@ -89,7 +89,7 @@ function generateMatchPoints(): PointWithMetadata[] {
     }),
   );
   points.push(
-    makePoint({ winner: 0, server: 1, index: idx++, set: 0, game: 3, result: 'Forced Error', serve: 1 }),
+    makePoint({ winner: 0, server: 1, index: idx, set: 0, game: 3, result: 'Forced Error', serve: 1 }),
   );
 
   return points;
@@ -204,7 +204,7 @@ describe('pointParser', () => {
 
   describe('categorizePoint', () => {
     it('categorizes ace as winner aces + winners', () => {
-      const { winner, loser } = categorizePoint(makePoint({ result: 'Ace', server: 0, winner: 0 }));
+      const { winner } = categorizePoint(makePoint({ result: 'Ace', server: 0, winner: 0 }));
       expect(winner).toContain('aces');
       expect(winner).toContain('winners');
       expect(winner).toContain('pointsWon');
@@ -634,7 +634,7 @@ describe('calculator', () => {
       for (let p = 0; p < 4; p++) {
         points.push(makePoint({ winner: 1, index: idx++, game: 3, server: 1 }));
       }
-      points.push(makePoint({ winner: 1, index: idx++, game: 4, server: 0 })); // boundary
+      points.push(makePoint({ winner: 1, index: idx, game: 4, server: 0 })); // boundary
 
       const counters = buildCounters(points);
       const stats = calculateStats(counters);

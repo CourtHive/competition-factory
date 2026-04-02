@@ -84,7 +84,7 @@ it('can modify flightNames when no drawDefinitions generated', () => {
   const drawId = flightProfile.flights[0].drawId;
 
   const newDrawName = NEW_DRAW_NAME;
-  result = tournamentEngine.modifyDrawName({
+  tournamentEngine.modifyDrawName({
     drawName: newDrawName,
     eventId,
     drawId,

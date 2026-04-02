@@ -166,8 +166,7 @@ test('calling getPublishState directly', () => {
   expect(result.error).toEqual(EVENT_NOT_FOUND);
 
   // just for test coverage
-  result = getPublishState({ tournamentRecord: { tournamentId: 'tid' } });
-  // expect(result.publishState.tournament).toBeUndefined();
+  getPublishState({ tournamentRecord: { tournamentId: 'tid' } });
 
   const tournamentRecord: any = {
     events: [{ eventId: 'e6' }],

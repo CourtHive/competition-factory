@@ -120,7 +120,6 @@ describe('setMatchUpStatus preserves point scores', () => {
     const drawId = 'drawId';
     const {
       tournamentRecord,
-      drawIds: [generatedDrawId],
     } = mocksEngine.generateTournamentRecord({
       drawProfiles: [{ drawId, drawSize: 4, idPrefix: 'm' }],
     });

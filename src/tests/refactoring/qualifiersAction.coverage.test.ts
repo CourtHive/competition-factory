@@ -85,7 +85,7 @@ describe('getValidQualifiersAction branch coverage', () => {
     );
 
     for (const matchUp of qualifyingMatchUps) {
-      let result: any = tournamentEngine.setMatchUpStatus({
+      tournamentEngine.setMatchUpStatus({
         matchUpId: matchUp.matchUpId,
         outcome: {
           winningSide: 1,
@@ -201,7 +201,7 @@ describe('getValidQualifiersAction branch coverage', () => {
     );
 
     for (const matchUp of qualifyingMatchUps) {
-      let result: any = tournamentEngine.setMatchUpStatus({
+      tournamentEngine.setMatchUpStatus({
         matchUpId: matchUp.matchUpId,
         outcome: {
           winningSide: 1,

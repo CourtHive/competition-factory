@@ -408,7 +408,6 @@ it('can add events, venues, and schedule matchUps and modify drawDefinition.upda
 
   ({ drawDefinition } = tournamentEngine.getEvent({ drawId }));
   expect(new Date(lastUpdatedAt).getTime()).toBeLessThan(new Date(drawDefinition.updatedAt).getTime());
-  lastUpdatedAt = drawDefinition.updatedAt;
 
   ({
     matchUp: { schedule },

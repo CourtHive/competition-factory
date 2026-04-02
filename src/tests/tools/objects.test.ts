@@ -98,7 +98,7 @@ describe('isString', () => {
 
   describe('Edge Cases', () => {
     test('should return false for String objects', () => {
-      // eslint-disable-next-line no-new-wrappers
+       
       expect(isString(String('hello'))).toBe(true);
     });
 

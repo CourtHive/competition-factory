@@ -11,7 +11,7 @@ import { expect, it } from 'vitest';
 import { POLICY_TYPE_RANKING_POINTS } from '@Constants/policyConstants';
 import { MISSING_POLICY_DEFINITION } from '@Constants/errorConditionConstants';
 import { SINGLES } from '@Constants/eventConstants';
-import { CURTIS_CONSOLATION, ROUND_ROBIN, SINGLE_ELIMINATION } from '@Constants/drawDefinitionConstants';
+import { CURTIS_CONSOLATION } from '@Constants/drawDefinitionConstants';
 
 const basicAwardProfiles = [
   {
@@ -38,7 +38,7 @@ const basicPolicy = {
 // ─── Scenario 1: Fails without policy ─────────────────────────────────────
 it('getTournamentPoints: fails without ranking points policy', () => {
   const drawProfiles = [{ drawSize: 8 }];
-  const { tournamentRecord } = mocksEngine.generateTournamentRecord({
+  mocksEngine.generateTournamentRecord({
     setState: true,
     completeAllMatchUps: true,
     drawProfiles,
@@ -51,7 +51,7 @@ it('getTournamentPoints: fails without ranking points policy', () => {
 // ─── Scenario 2: Position points for single elimination ───────────────────
 it('getTournamentPoints: position points for SE draw', () => {
   const drawProfiles = [{ drawSize: 8 }];
-  const { tournamentRecord } = mocksEngine.generateTournamentRecord({
+  mocksEngine.generateTournamentRecord({
     setState: true,
     completeAllMatchUps: true,
     drawProfiles,
@@ -90,7 +90,7 @@ it('getTournamentPoints: per-win points accumulated correctly', () => {
   };
 
   const drawProfiles = [{ drawSize: 8 }];
-  const { tournamentRecord } = mocksEngine.generateTournamentRecord({
+  mocksEngine.generateTournamentRecord({
     setState: true,
     completeAllMatchUps: true,
     drawProfiles,
@@ -108,7 +108,7 @@ it('getTournamentPoints: per-win points accumulated correctly', () => {
 // ─── Scenario 4: Return shape stability ───────────────────────────────────
 it('getTournamentPoints: return shape includes all expected keys', () => {
   const drawProfiles = [{ drawSize: 8 }];
-  const { tournamentRecord } = mocksEngine.generateTournamentRecord({
+  mocksEngine.generateTournamentRecord({
     setState: true,
     completeAllMatchUps: true,
     drawProfiles,
@@ -144,7 +144,7 @@ it('getTournamentPoints: award profiles match specific draw types', () => {
 
   // SE draw — should not match Curtis consolation profile
   const drawProfiles = [{ drawSize: 8 }];
-  const { tournamentRecord } = mocksEngine.generateTournamentRecord({
+  mocksEngine.generateTournamentRecord({
     setState: true,
     completeAllMatchUps: true,
     drawProfiles,

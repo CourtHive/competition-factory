@@ -18,10 +18,7 @@ it('v2Scheduler: basic scheduling assigns times to matchUps', () => {
   const drawProfiles = [{ drawSize: 16 }];
   const venueProfiles = [{ courtsCount: 4, startTime: '08:00', endTime: '18:00' }];
 
-  const {
-    tournamentRecord,
-    drawIds: [drawId],
-  } = mocksEngine.generateTournamentRecord({
+  mocksEngine.generateTournamentRecord({
     setState: true,
     drawProfiles,
     venueProfiles,
@@ -33,7 +30,7 @@ it('v2Scheduler: basic scheduling assigns times to matchUps', () => {
     policyDefinitions: POLICY_SCHEDULING_NO_DAILY_LIMITS,
   });
 
-  let result: any = tournamentEngine.scheduleProfileRounds();
+  tournamentEngine.scheduleProfileRounds();
   // The scheduling may or may not succeed depending on profile setup
   // What matters is the function returns without error and produces valid output
 
@@ -41,7 +38,7 @@ it('v2Scheduler: basic scheduling assigns times to matchUps', () => {
   expect(matchUps.length).toBeGreaterThan(0);
 
   // Some matchUps may have been scheduled
-  const scheduled = matchUps.filter(hasSchedule);
+  matchUps.filter(hasSchedule);
   // In basic setups without explicit schedulingProfile, scheduling may not assign
   // but the function should still complete without error
 });
@@ -53,7 +50,7 @@ it('v2Scheduler: scheduling with auto-generated profile', () => {
   const drawProfiles = [{ drawSize: 8 }];
   const venueProfiles = [{ courtsCount: 2, startTime: '09:00', endTime: '17:00' }];
 
-  const { tournamentRecord } = mocksEngine.generateTournamentRecord({
+  mocksEngine.generateTournamentRecord({
     setState: true,
     drawProfiles,
     venueProfiles,
@@ -66,7 +63,7 @@ it('v2Scheduler: scheduling with auto-generated profile', () => {
   });
 
   // Use autoSchedule which exercises v2Scheduler internally
-  let result: any = tournamentEngine.scheduleProfileRounds({
+  tournamentEngine.scheduleProfileRounds({
     scheduleDates: [startDate],
   });
 
@@ -81,7 +78,7 @@ it('v2Scheduler: return includes expected tracking structures', () => {
   const drawProfiles = [{ drawSize: 8 }];
   const venueProfiles = [{ courtsCount: 2, startTime: '09:00', endTime: '17:00' }];
 
-  const { tournamentRecord } = mocksEngine.generateTournamentRecord({
+  mocksEngine.generateTournamentRecord({
     setState: true,
     drawProfiles,
     venueProfiles,

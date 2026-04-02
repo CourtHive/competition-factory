@@ -16,6 +16,14 @@ import {
   NOT_FOUND,
 } from '@Constants/errorConditionConstants';
 
+function getRatingForParticipant(pid: string, scaleName: string) {
+  const { scaleItem } = tournamentEngine.getParticipantScaleItem({
+    participantId: pid,
+    scaleAttributes: { scaleType: RATING, scaleName, eventType: SINGLES },
+  });
+  return scaleItem?.scaleValue ?? 0;
+}
+
 function setupSeedsOnlyDraw({ participantsCount = 32, seedsCount = 8 } = {}) {
   const drawSize = nextPowerOf2(participantsCount);
   const drawProfiles = [{ drawSize, participantsCount, seedsCount, automated: { seedsOnly: true } }];
@@ -760,13 +768,7 @@ describe('Draft Positioning - Tier Methods', () => {
     const tier3Ids = result.tiers[result.tiers.length - 1].participantIds;
 
     // Get ratings for tier 1 and last tier
-    const getRating = (pid: string) => {
-      const { scaleItem } = tournamentEngine.getParticipantScaleItem({
-        participantId: pid,
-        scaleAttributes: { scaleType: RATING, scaleName, eventType: SINGLES },
-      });
-      return scaleItem?.scaleValue ?? 0;
-    };
+    const getRating = (pid: string) => getRatingForParticipant(pid, scaleName);
 
     const tier1MinRating = Math.min(...tier1Ids.map(getRating));
     const tier3MaxRating = Math.max(...tier3Ids.map(getRating));
@@ -973,13 +975,7 @@ describe('Draft Positioning - Tier Methods', () => {
     expect(result.success).toBe(true);
     expect(result.draftState.ascending).toBe(false);
 
-    const getRating = (pid: string) => {
-      const { scaleItem } = tournamentEngine.getParticipantScaleItem({
-        participantId: pid,
-        scaleAttributes: { scaleType: RATING, scaleName, eventType: SINGLES },
-      });
-      return scaleItem?.scaleValue ?? 0;
-    };
+    const getRating = (pid: string) => getRatingForParticipant(pid, scaleName);
 
     const tier1Min = Math.min(...result.tiers[0].participantIds.map(getRating));
     const lastTierMax = Math.max(...result.tiers[result.tiers.length - 1].participantIds.map(getRating));

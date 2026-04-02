@@ -417,7 +417,7 @@ it('can change a FMLC first round matchUp winner and update consolation', () => 
     roundNumber: 1,
     drawDefinition,
   }));
-  ({ matchUpStatus, sides, score } = matchUp);
+  ({ matchUpStatus, score } = matchUp);
   expect(matchUpStatus).toEqual(COMPLETED);
   expect(matchUp.drawPositions).toEqual([3, 4]);
   const sets = parseScoreString({ scoreString: '6-1 6-2' });

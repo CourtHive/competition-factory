@@ -199,7 +199,7 @@ it.each(scenarios)('can generate and seed a qualifying structure', (scenario) =>
     .filter(({ events }) => events[0].seedAssignments);
   expect(tP.length).toEqual(16);
 
-  result = tournamentEngine.publishEventSeeding({
+  tournamentEngine.publishEventSeeding({
     stageSeedingScaleNames: {
       [QUALIFYING]: qualifyingSeedingScaleName,
       [MAIN]: mainSeedingScaleName,
@@ -319,7 +319,7 @@ it.each(scenarios)('can generate and seed a qualifying structure', (scenario) =>
   });
   expect(result.success).toEqual(true);
 
-  result = tournamentEngine.publishEventSeeding({
+  tournamentEngine.publishEventSeeding({
     // seedingScaleNames: [qualifyingSeedingScaleName, mainSeedingScaleName],
     stageSeedingScaleNames: {
       [QUALIFYING]: qualifyingSeedingScaleName,

@@ -479,7 +479,7 @@ test('removing collectionDefinition will not recalculate score or remove advance
   result = tournamentEngine.removeCollectionDefinition(params);
   expect(result.success).toEqual(true);
 
-  result = tournamentEngine.allTournamentMatchUps({
+  tournamentEngine.allTournamentMatchUps({
     matchUpFilters: { matchUpIds: [matchUpId] },
   });
   result = tournamentEngine.findMatchUp({ matchUpId, drawId });

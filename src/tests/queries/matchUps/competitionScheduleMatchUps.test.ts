@@ -418,9 +418,6 @@ test.each([tournamentEngine])(
     expect(eventData.drawsData[0].structures.length).toEqual(2);
 
     eventData = tournamentEngine.getEventData({ eventId: event.eventId, usePublishState: true }).eventData;
-    publishState = eventData.eventInfo.publishState;
-    drawDetails = publishState.status.drawDetails[drawDefinition.drawId];
-    structureDetails = drawDetails.structureDetails;
 
     // since usePublishState is false, only published structures are returned
     expect(eventData.drawsData[0].structures.length).toEqual(1);

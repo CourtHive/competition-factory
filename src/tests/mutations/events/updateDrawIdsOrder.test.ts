@@ -74,7 +74,7 @@ it('can modify the drawOrder of flightProfile.flights and drawDefniitions within
   result = tournamentEngine.updateDrawIdsOrder({ eventId, orderedDrawIdsMap });
   expect(result.error).toEqual(INVALID_VALUES);
 
-  orderedDrawIdsMap = Object.assign({}, ...drawIds.map((_, i) => ({ ['bogusId']: newOrder[i] })));
+  Object.assign({}, ...drawIds.map((_, i) => ({ ['bogusId']: newOrder[i] })));
   expect(result.error).toEqual(INVALID_VALUES);
 });
 

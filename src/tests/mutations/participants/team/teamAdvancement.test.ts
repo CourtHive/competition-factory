@@ -276,8 +276,9 @@ test('participants for other teams cannot be assigned without teamParticipantId'
           drawId,
         });
         if (result.error) errors.push(result.error);
-        return result.success;
       });
+      // intentionally returns false: participantIndex never increments, so assignments fail
+      return false;
     });
     expect(success).toEqual(false);
   });

@@ -7,7 +7,7 @@ import { FORMAT_STANDARD, FORMAT_ATP_DOUBLES } from '@Fixtures/scoring/matchUpFo
 function scoreMatchUp(params) {
   const { lowSide, value } = params;
   let matchUp = params.matchUp;
-  let info = '';
+  let info;
   ({ matchUp, info } = keyValueMatchUpScore({ lowSide, value, matchUp }));
   return { matchUp, info };
 }

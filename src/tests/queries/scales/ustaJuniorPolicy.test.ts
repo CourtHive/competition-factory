@@ -1,12 +1,11 @@
 import { POLICY_RANKING_POINTS_USTA_JUNIOR } from '@Fixtures/policies/POLICY_RANKING_POINTS_USTA_JUNIOR';
 import { getAwardProfile } from '@Query/scales/getAwardProfile';
-import tournamentEngine from '@Engines/syncEngine';
 import scaleEngine from '@Engines/scaleEngine';
 import { mocksEngine } from '../../..';
 import { describe, expect, it } from 'vitest';
 
 import { POLICY_TYPE_RANKING_POINTS } from '@Constants/policyConstants';
-import { SINGLES, DOUBLES, TEAM_EVENT } from '@Constants/eventConstants';
+import { SINGLES, TEAM_EVENT } from '@Constants/eventConstants';
 import {
   COMPASS,
   CURTIS_CONSOLATION,
@@ -15,7 +14,6 @@ import {
   MAIN,
   MODIFIED_FEED_IN_CHAMPIONSHIP,
   ROUND_ROBIN,
-  ROUND_ROBIN_WITH_PLAYOFF,
   SINGLE_ELIMINATION,
 } from '@Constants/drawDefinitionConstants';
 

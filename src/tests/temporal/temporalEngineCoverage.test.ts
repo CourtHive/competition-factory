@@ -1,4 +1,3 @@
-/* eslint-disable sonarjs/no-duplicate-string */
 import { BLOCK_TYPES, type CourtRef } from '@Assemblies/governors/temporalGovernor/types';
 import { TemporalEngine } from '@Assemblies/engines/temporal/TemporalEngine';
 import { describe, it, expect, beforeEach, vi } from 'vitest';

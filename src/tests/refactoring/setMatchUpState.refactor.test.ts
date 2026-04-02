@@ -8,15 +8,13 @@ import mocksEngine from '@Assemblies/engines/mock';
 import tournamentEngine from '@Engines/syncEngine';
 import { expect, it } from 'vitest';
 
-import { COMPLETED, TO_BE_PLAYED, WALKOVER, DOUBLE_WALKOVER } from '@Constants/matchUpStatusConstants';
-import { TEAM_EVENT, SINGLES } from '@Constants/eventConstants';
+import { COMPLETED, TO_BE_PLAYED, WALKOVER } from '@Constants/matchUpStatusConstants';
 import { FIRST_MATCH_LOSER_CONSOLATION } from '@Constants/drawDefinitionConstants';
 
 // ─── Scenario 1: Basic score setting with winningSide ─────────────────────
 it('setMatchUpState: basic score and winningSide', () => {
   const drawProfiles = [{ drawSize: 8 }];
   const {
-    tournamentRecord,
     drawIds: [drawId],
   } = mocksEngine.generateTournamentRecord({
     setState: true,
@@ -65,7 +63,6 @@ it('setMatchUpState: basic score and winningSide', () => {
 it('setMatchUpState: walkover clears score', () => {
   const drawProfiles = [{ drawSize: 8 }];
   const {
-    tournamentRecord,
     drawIds: [drawId],
   } = mocksEngine.generateTournamentRecord({
     setState: true,
@@ -95,7 +92,6 @@ it('setMatchUpState: walkover clears score', () => {
 it('setMatchUpState: FMLC consolation structure receives losers', () => {
   const drawProfiles = [{ drawSize: 8, drawType: FIRST_MATCH_LOSER_CONSOLATION }];
   const {
-    tournamentRecord,
     drawIds: [drawId],
   } = mocksEngine.generateTournamentRecord({
     setState: true,
@@ -137,7 +133,6 @@ it('setMatchUpState: FMLC consolation structure receives losers', () => {
 it('setMatchUpState: invalid score is rejected', () => {
   const drawProfiles = [{ drawSize: 8 }];
   const {
-    tournamentRecord,
     drawIds: [drawId],
   } = mocksEngine.generateTournamentRecord({
     setState: true,
@@ -171,7 +166,6 @@ it('setMatchUpState: invalid score is rejected', () => {
 it('setMatchUpState: incompatible status and winningSide rejected', () => {
   const drawProfiles = [{ drawSize: 8 }];
   const {
-    tournamentRecord,
     drawIds: [drawId],
   } = mocksEngine.generateTournamentRecord({
     setState: true,

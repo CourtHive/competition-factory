@@ -101,7 +101,7 @@ test('postionAction for replacing participant within PAIR', () => {
   const drawPositionAssignment = positionAssignments.find((assignment) => assignment.drawPosition === drawPosition);
   expect(drawPositionAssignment.participantId).toEqual(result.newPairParticipantId);
 
-  ({ event, drawDefinition } = tournamentEngine.getEvent({ drawId }));
+  ({ event } = tournamentEngine.getEvent({ drawId }));
 
   const pairParticipantId = event.entries.find(({ entryStatus }) => entryStatus === DIRECT_ACCEPTANCE).participantId;
   const pairParticipant = tournamentEngine.getParticipants({
@@ -261,7 +261,7 @@ test('ROUND_ROBIN postionAction for replacing participant within PAIR', () => {
   const drawPositionAssignment = positionAssignments.find((assignment) => assignment.drawPosition === drawPosition);
   expect(drawPositionAssignment.participantId).toEqual(result.newPairParticipantId);
 
-  ({ event, drawDefinition } = tournamentEngine.getEvent({ drawId }));
+  ({ event } = tournamentEngine.getEvent({ drawId }));
 
   const pairParticipantId = event.entries.find(({ entryStatus }) => entryStatus === DIRECT_ACCEPTANCE).participantId;
   const pairParticipant = tournamentEngine.getParticipants({

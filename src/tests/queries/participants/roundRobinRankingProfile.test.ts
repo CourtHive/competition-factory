@@ -253,31 +253,8 @@ function generateRRWithPlayoffAndDoubleExits() {
         outcome: { matchUpStatus: DOUBLE_WALKOVER },
         drawId,
       });
-    } else if (dp1 === 1 && dp2 === 3) {
-      tournamentEngine.setMatchUpStatus({
-        matchUpId: matchUp.matchUpId,
-        outcome: { winningSide: 1 },
-        drawId,
-      });
-    } else if (dp1 === 1 && dp2 === 4) {
-      tournamentEngine.setMatchUpStatus({
-        matchUpId: matchUp.matchUpId,
-        outcome: { winningSide: 1 },
-        drawId,
-      });
-    } else if (dp1 === 2 && dp2 === 3) {
-      tournamentEngine.setMatchUpStatus({
-        matchUpId: matchUp.matchUpId,
-        outcome: { winningSide: 1 },
-        drawId,
-      });
-    } else if (dp1 === 2 && dp2 === 4) {
-      tournamentEngine.setMatchUpStatus({
-        matchUpId: matchUp.matchUpId,
-        outcome: { winningSide: 1 },
-        drawId,
-      });
-    } else if (dp1 === 3 && dp2 === 4) {
+    } else {
+      // All other pairings: winningSide 1
       tournamentEngine.setMatchUpStatus({
         matchUpId: matchUp.matchUpId,
         outcome: { winningSide: 1 },
@@ -301,31 +278,8 @@ function generateRRWithPlayoffAndDoubleExits() {
         outcome: { matchUpStatus: DOUBLE_DEFAULT },
         drawId,
       });
-    } else if (dp1 === 5 && dp2 === 7) {
-      tournamentEngine.setMatchUpStatus({
-        matchUpId: matchUp.matchUpId,
-        outcome: { winningSide: 1 },
-        drawId,
-      });
-    } else if (dp1 === 5 && dp2 === 8) {
-      tournamentEngine.setMatchUpStatus({
-        matchUpId: matchUp.matchUpId,
-        outcome: { winningSide: 1 },
-        drawId,
-      });
-    } else if (dp1 === 6 && dp2 === 7) {
-      tournamentEngine.setMatchUpStatus({
-        matchUpId: matchUp.matchUpId,
-        outcome: { winningSide: 1 },
-        drawId,
-      });
-    } else if (dp1 === 6 && dp2 === 8) {
-      tournamentEngine.setMatchUpStatus({
-        matchUpId: matchUp.matchUpId,
-        outcome: { winningSide: 1 },
-        drawId,
-      });
-    } else if (dp1 === 7 && dp2 === 8) {
+    } else {
+      // All other pairings: winningSide 1
       tournamentEngine.setMatchUpStatus({
         matchUpId: matchUp.matchUpId,
         outcome: { winningSide: 1 },
@@ -438,7 +392,7 @@ test('RR_WITH_PLAYOFF drawSize 32 with ties resolved by subOrder', () => {
   expect(tiedDrawPositions.length).toBeGreaterThanOrEqual(2);
 
   // Get finishing positions BEFORE subOrder
-  const { participantMap: beforeMap } = tournamentEngine.getParticipants({
+  tournamentEngine.getParticipants({
     withRankingProfile: true,
   });
 

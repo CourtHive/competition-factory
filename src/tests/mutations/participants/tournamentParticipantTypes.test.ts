@@ -100,13 +100,14 @@ it('can generate TEAM events', () => {
   });
   expect(teamTournamentParticipants.length).toEqual(10);
 
-  let { participants: inContextIdividualParticipants, mappedMatchUps } = tournamentEngine.getParticipants({
+  let { participants: inContextIdividualParticipants } = tournamentEngine.getParticipants({
     participantFilters: { participantTypes: [INDIVIDUAL] },
     inContext: true,
   });
 
   expect(inContextIdividualParticipants[0].person.extensions).toEqual(personExtensions);
 
+  let mappedMatchUps;
   ({ participants: inContextIdividualParticipants, mappedMatchUps } = tournamentEngine.getParticipants({
     participantFilters: { participantTypes: [INDIVIDUAL] },
     withIndividualParticipants: true,

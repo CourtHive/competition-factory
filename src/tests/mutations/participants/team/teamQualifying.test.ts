@@ -145,7 +145,7 @@ it('Modifying tieFormats supported for TEAM QUALIFYING events', () => {
   expect(matchUps.length).toEqual(60);
 
   const thirdCollectionId = UUID();
-  result = tournamentEngine.addCollectionDefinition({
+  tournamentEngine.addCollectionDefinition({
     collectionDefinition: {
       collectionName: 'Test',
       collectionOrder: 3,

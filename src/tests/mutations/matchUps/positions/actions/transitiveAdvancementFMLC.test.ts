@@ -56,7 +56,7 @@ it('can advance participants when double BYEs are created removing 3-4', () => {
 
   let {
     drawDefinition: {
-      structures: [mainStructure, consolationStructure],
+      structures: [mainStructure],
     },
   } = tournamentEngine.getEvent({ drawId });
 
@@ -97,6 +97,7 @@ it('can advance participants when double BYEs are created removing 3-4', () => {
     [8], // drawPosition 8 is BYE-advanced
   ]);
 
+  let consolationStructure;
   ({
     drawDefinition: {
       structures: [mainStructure, consolationStructure],
@@ -169,7 +170,7 @@ it('can advance participants when double BYEs are created removing 5-6', () => {
 
   let {
     drawDefinition: {
-      structures: [mainStructure, consolationStructure],
+      structures: [mainStructure],
     },
   } = tournamentEngine.getEvent({ drawId });
 
@@ -210,6 +211,7 @@ it('can advance participants when double BYEs are created removing 5-6', () => {
     [6, 8], // drawPositions 6, 8 are BYE-advanced
   ]);
 
+  let consolationStructure;
   ({
     drawDefinition: {
       structures: [mainStructure, consolationStructure],

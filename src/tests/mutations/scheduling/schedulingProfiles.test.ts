@@ -147,7 +147,7 @@ test.each([tournamentEngine])('it can set scheulingProfile', async (competitionE
   });
   expect(result.error).toEqual(INVALID_VALUES);
 
-  let { schedulingProfile, modifications, issues } = competitionEngine.getSchedulingProfile();
+  let { schedulingProfile } = competitionEngine.getSchedulingProfile();
   expect(schedulingProfile).toEqual([]);
 
   result = competitionEngine.addSchedulingProfileRound({
@@ -157,6 +157,7 @@ test.each([tournamentEngine])('it can set scheulingProfile', async (competitionE
   });
   expect(result.error).toEqual(INVALID_VALUES);
 
+  let modifications, issues;
   ({ schedulingProfile, modifications, issues } = competitionEngine.getSchedulingProfile());
 
   expect(schedulingProfile).toEqual([]);
@@ -184,7 +185,7 @@ test.each([tournamentEngine])('it can set scheulingProfile', async (competitionE
   });
   expect(result.success).toEqual(true);
 
-  ({ schedulingProfile, modifications, issues } = competitionEngine.getSchedulingProfile());
+  ({ schedulingProfile } = competitionEngine.getSchedulingProfile());
 
   result = competitionEngine.validateSchedulingProfile({ schedulingProfile });
   expect(result.valid).toEqual(true);

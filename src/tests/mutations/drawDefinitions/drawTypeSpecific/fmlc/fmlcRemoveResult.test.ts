@@ -58,9 +58,7 @@ it('can direct winners and losers', () => {
     drawDefinition,
   });
 
-  let {
-    structures: [consolationStructure],
-  } = getDrawStructures({
+  getDrawStructures({
     drawDefinition,
     stage: CONSOLATION,
     stageSequence: 1,
@@ -97,13 +95,13 @@ it('can direct winners and losers', () => {
   } = getDrawStructures({ drawDefinition, stage: MAIN, stageSequence: 1 });
   const { structureId: verifyMainStructureId } = mainStructure;
 
-  ({
+  const {
     structures: [consolationStructure],
   } = getDrawStructures({
     drawDefinition,
     stage: CONSOLATION,
     stageSequence: 1,
-  }));
+  });
   const { structureId: verifyConsolationStructureId } = consolationStructure;
 
   expect(consolationStructure.positionAssignments?.[1].participantId).toBeUndefined();

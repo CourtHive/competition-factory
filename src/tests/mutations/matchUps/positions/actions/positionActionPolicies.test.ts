@@ -195,7 +195,7 @@ it('can disable actions for a specified structure', () => {
 
   let {
     drawDefinition: {
-      structures: [mainStructure, consolationStructure],
+      structures: [mainStructure],
     },
   } = tournamentEngine.getEvent({ drawId });
 
@@ -210,6 +210,7 @@ it('can disable actions for a specified structure', () => {
   });
   expect(result.success).toEqual(true);
 
+  let consolationStructure;
   ({
     drawDefinition: {
       structures: [mainStructure, consolationStructure],

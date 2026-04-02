@@ -4,8 +4,8 @@ import tournamentEngine from '@Engines/syncEngine';
 import mocksEngine from '@Assemblies/engines/mock';
 import { expect, it, describe } from 'vitest';
 
-import { COLLEGE_D3, USTA_BREWER_CUP, USTA_TOC } from '@Constants/tieFormatConstants';
-import { DUPLICATE_VALUE, INVALID_VALUES, NOT_FOUND } from '@Constants/errorConditionConstants';
+import { COLLEGE_D3, USTA_BREWER_CUP } from '@Constants/tieFormatConstants';
+import { DUPLICATE_VALUE, NOT_FOUND } from '@Constants/errorConditionConstants';
 import { POLICY_TYPE_SCORING } from '@Constants/policyConstants';
 import { DELETED_MATCHUP_IDS } from '@Constants/topicConstants';
 import { TEAM } from '@Constants/eventConstants';

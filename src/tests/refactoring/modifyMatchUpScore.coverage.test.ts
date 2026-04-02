@@ -8,9 +8,7 @@ import mocksEngine from '@Assemblies/engines/mock';
 import tournamentEngine from '@Engines/syncEngine';
 import { expect, it, describe } from 'vitest';
 
-import { COMPLETED, DEFAULTED, DOUBLE_WALKOVER, IN_PROGRESS, SUSPENDED, TO_BE_PLAYED, WALKOVER } from '@Constants/matchUpStatusConstants';
-import { POLICY_TYPE_SCORING } from '@Constants/policyConstants';
-import { SINGLES_MATCHUP } from '@Constants/matchUpTypes';
+import { DEFAULTED, DOUBLE_WALKOVER, IN_PROGRESS, SUSPENDED, TO_BE_PLAYED, WALKOVER } from '@Constants/matchUpStatusConstants';
 import { TEAM_EVENT } from '@Constants/eventConstants';
 
 describe('modifyMatchUpScore coverage', () => {
@@ -178,7 +176,7 @@ describe('modifyMatchUpScore coverage', () => {
     const drawProfiles = [{ drawSize: 4, drawType: 'ROUND_ROBIN' }];
     const eventProfiles = [{ eventType: TEAM_EVENT, drawProfiles }];
 
-    const { tournamentRecord } = mocksEngine.generateTournamentRecord({
+    mocksEngine.generateTournamentRecord({
       eventProfiles,
       setState: true,
     });

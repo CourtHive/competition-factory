@@ -91,7 +91,7 @@ describe('addPoint', () => {
       }
     }
     
-    const score = getScore(matchUp);
+    getScore(matchUp);
     expect(matchUp.score.sets).toHaveLength(1);
     expect(matchUp.score.sets[0].winningSide).toBe(1); // Side 1 won
     expect(matchUp.score.sets[0].side1Score).toBe(6);

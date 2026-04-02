@@ -6,7 +6,7 @@ import globals from 'globals';
 
 export default [
   {
-    ignores: ['node_modules/**', 'dist/**', 'coverage/**', '**/scratch/**', 'server/**', '**/*.test.ts'],
+    ignores: ['node_modules/**', 'dist/**', 'coverage/**', '**/scratch/**', 'server/**'],
   },
   js.configs.recommended,
   {
@@ -73,6 +73,13 @@ export default [
       'sonarjs/todo-tag': 'off',
       complexity: ['off', 25],
       eqeqeq: ['warn', 'smart'],
+    },
+  },
+  {
+    files: ['**/*.test.ts'],
+    rules: {
+      'sonarjs/no-duplicate-string': 'off',
+      '@typescript-eslint/no-empty-function': 'off',
     },
   },
 ];

@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { getMatchUpFormat } from '@Query/hierarchical/getMatchUpFormat';
 import mocksEngine from '@Assemblies/engines/mock';
 import tournamentEngine from '@Engines/syncEngine';
-import { MISSING_DRAW_ID, MISSING_VALUE } from '@Constants/errorConditionConstants';
+import { MISSING_DRAW_ID } from '@Constants/errorConditionConstants';
 
 describe('getMatchUpFormat', () => {
   it('returns matchUpFormat from matchUp', () => {

@@ -81,7 +81,7 @@ it('can return accurate position details when requesting positionActions', () =>
     drawId,
   });
   const { method, payload } = result.validActions.find(({ type }) => type === ASSIGN_BYE);
-  result = tournamentEngine[method](payload);
+  tournamentEngine[method](payload);
   const m = tournamentEngine.allTournamentMatchUps().matchUps.filter((x) => x.drawPositions.includes(6));
   expect(
     m

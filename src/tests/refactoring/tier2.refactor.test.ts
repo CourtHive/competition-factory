@@ -6,14 +6,13 @@
  * - luckyDrawAdvancement.ts
  * - positionActions.ts
  */
-import { luckyDrawAdvancement } from '@Mutate/drawDefinitions/luckyDrawAdvancement';
 import mocksEngine from '@Assemblies/engines/mock';
 import tournamentEngine from '@Engines/syncEngine';
 import { expect, it } from 'vitest';
 
 import { FIRST_MATCH_LOSER_CONSOLATION, LUCKY_DRAW, MAIN, ROUND_ROBIN_WITH_PLAYOFF } from '@Constants/drawDefinitionConstants';
-import { DOUBLE_WALKOVER, TO_BE_PLAYED, WALKOVER } from '@Constants/matchUpStatusConstants';
-import { DOUBLES, SINGLES, TEAM_EVENT } from '@Constants/eventConstants';
+import { DOUBLE_WALKOVER, TO_BE_PLAYED } from '@Constants/matchUpStatusConstants';
+import { DOUBLES } from '@Constants/eventConstants';
 
 // ═══════════════════════════════════════════════════════════════════════════
 // generateEventWithDraw
@@ -21,7 +20,7 @@ import { DOUBLES, SINGLES, TEAM_EVENT } from '@Constants/eventConstants';
 
 it('generateEventWithDraw: basic SE draw generation', () => {
   const drawProfiles = [{ drawSize: 16 }];
-  const { tournamentRecord, drawIds } = mocksEngine.generateTournamentRecord({
+  const { drawIds } = mocksEngine.generateTournamentRecord({
     setState: true,
     drawProfiles,
   });
@@ -33,7 +32,7 @@ it('generateEventWithDraw: basic SE draw generation', () => {
 
 it('generateEventWithDraw: completeAllMatchUps produces completed draw', () => {
   const drawProfiles = [{ drawSize: 8 }];
-  const { tournamentRecord } = mocksEngine.generateTournamentRecord({
+  mocksEngine.generateTournamentRecord({
     setState: true,
     completeAllMatchUps: true,
     drawProfiles,
@@ -46,7 +45,7 @@ it('generateEventWithDraw: completeAllMatchUps produces completed draw', () => {
 
 it('generateEventWithDraw: doubles event generates pair participants', () => {
   const drawProfiles = [{ drawSize: 8, eventType: DOUBLES }];
-  const { tournamentRecord } = mocksEngine.generateTournamentRecord({
+  mocksEngine.generateTournamentRecord({
     setState: true,
     drawProfiles,
   });
@@ -60,7 +59,7 @@ it('generateEventWithDraw: doubles event generates pair participants', () => {
 
 it('generateEventWithDraw: RR with playoff generates structures', () => {
   const drawProfiles = [{ drawSize: 8, drawType: ROUND_ROBIN_WITH_PLAYOFF }];
-  const { tournamentRecord, drawIds: [drawId] } = mocksEngine.generateTournamentRecord({
+  const { drawIds: [drawId] } = mocksEngine.generateTournamentRecord({
     setState: true,
     drawProfiles,
   });
@@ -72,7 +71,7 @@ it('generateEventWithDraw: RR with playoff generates structures', () => {
 
 it('generateEventWithDraw: seeding is applied', () => {
   const drawProfiles = [{ drawSize: 16, seedsCount: 4 }];
-  const { tournamentRecord, drawIds: [drawId] } = mocksEngine.generateTournamentRecord({
+  const { drawIds: [drawId] } = mocksEngine.generateTournamentRecord({
     setState: true,
     drawProfiles,
   });
@@ -87,7 +86,7 @@ it('generateEventWithDraw: qualifying profiles', () => {
     drawSize: 8,
     qualifyingProfiles: [{ roundTarget: 1, structureProfiles: [{ qualifyingPositions: 2, drawSize: 4 }] }],
   }];
-  const { tournamentRecord } = mocksEngine.generateTournamentRecord({
+  mocksEngine.generateTournamentRecord({
     setState: true,
     drawProfiles,
   });
@@ -104,7 +103,6 @@ it('generateEventWithDraw: qualifying profiles', () => {
 it('doubleExitAdvancement: double walkover propagates to consolation', () => {
   const drawProfiles = [{ drawSize: 8, drawType: FIRST_MATCH_LOSER_CONSOLATION }];
   const {
-    tournamentRecord,
     drawIds: [drawId],
   } = mocksEngine.generateTournamentRecord({
     setState: true,
@@ -156,7 +154,6 @@ it('doubleExitAdvancement: double walkover propagates to consolation', () => {
 it('positionClear: can clear a draw position', () => {
   const drawProfiles = [{ drawSize: 8 }];
   const {
-    tournamentRecord,
     drawIds: [drawId],
   } = mocksEngine.generateTournamentRecord({
     setState: true,
@@ -188,7 +185,6 @@ it('positionClear: can clear a draw position', () => {
 it('positionClear: clearing position removes from subsequent rounds', () => {
   const drawProfiles = [{ drawSize: 8 }];
   const {
-    tournamentRecord,
     drawIds: [drawId],
   } = mocksEngine.generateTournamentRecord({
     setState: true,
@@ -244,7 +240,6 @@ it('luckyDrawAdvancement: lucky draw round completion advances participants', ()
   // drawSize 11 (non-power-of-2) to get pre-feed rounds with eligible losers
   const drawProfiles = [{ drawSize: 11, drawType: LUCKY_DRAW }];
   const {
-    tournamentRecord,
     drawIds: [drawId],
   } = mocksEngine.generateTournamentRecord({
     setState: true,
@@ -280,7 +275,6 @@ it('luckyDrawAdvancement: lucky draw round completion advances participants', ()
 it('positionActions: returns valid actions for an assigned position', () => {
   const drawProfiles = [{ drawSize: 8 }];
   const {
-    tournamentRecord,
     drawIds: [drawId],
   } = mocksEngine.generateTournamentRecord({
     setState: true,
@@ -306,7 +300,6 @@ it('positionActions: returns valid actions for an assigned position', () => {
 it('positionActions: returns valid actions for a bye position', () => {
   const drawProfiles = [{ drawSize: 8, participantsCount: 6 }];
   const {
-    tournamentRecord,
     drawIds: [drawId],
   } = mocksEngine.generateTournamentRecord({
     setState: true,
@@ -333,7 +326,6 @@ it('positionActions: returns valid actions for a bye position', () => {
 it('positionActions: returns valid actions for unassigned position', () => {
   const drawProfiles = [{ drawSize: 8, participantsCount: 6 }];
   const {
-    tournamentRecord,
     drawIds: [drawId],
   } = mocksEngine.generateTournamentRecord({
     setState: true,

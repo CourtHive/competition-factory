@@ -335,7 +335,6 @@ describe('Phase 2: FMLC cross-structure exit status clearing', () => {
   test('2.1 Clear DOUBLE_WALKOVER in Main R1 — consolation WALKOVER removed', () => {
     const {
       tournamentRecord,
-      drawIds: [drawId],
     } = mocksEngine.generateTournamentRecord({
       drawProfiles: [
         {

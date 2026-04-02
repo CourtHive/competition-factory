@@ -131,7 +131,7 @@ describe('scheduleProfileGrid', () => {
     expect(result.scheduled.length).toEqual(1);
 
     // Now set profile and apply grid
-    result = tournamentEngine.setSchedulingProfile({
+    tournamentEngine.setSchedulingProfile({
       schedulingProfile: [
         {
           scheduleDate: startDate,
@@ -167,7 +167,7 @@ describe('scheduleProfileGrid', () => {
     const { matchUps } = tournamentEngine.allCompetitionMatchUps({ inContext: true });
     const { tournamentId, eventId, drawId, structureId } = matchUps[0];
 
-    result = tournamentEngine.setSchedulingProfile({
+    tournamentEngine.setSchedulingProfile({
       schedulingProfile: [
         {
           scheduleDate: startDate,

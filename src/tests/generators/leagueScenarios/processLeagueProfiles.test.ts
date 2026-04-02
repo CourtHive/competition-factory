@@ -421,7 +421,7 @@ describe('processLeagueProfiles tieFormat resolution', () => {
 
 describe('processLeagueProfiles via mocksEngine integration', () => {
   it('generates complete league tournament through mocksEngine', () => {
-    const { tournamentRecord } = mocksEngine.generateTournamentRecord({
+    mocksEngine.generateTournamentRecord({
       setState: true,
       startDate: '2024-01-01',
       endDate: '2024-06-30',

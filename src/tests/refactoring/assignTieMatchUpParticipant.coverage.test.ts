@@ -7,10 +7,9 @@ import mocksEngine from '@Assemblies/engines/mock';
 import tournamentEngine from '@Engines/syncEngine';
 import { expect, it, describe } from 'vitest';
 
-import { INVALID_PARTICIPANT, INVALID_SIDE_NUMBER, MISSING_PARTICIPANT_ID, PARTICIPANT_NOT_FOUND, TEAM_NOT_FOUND } from '@Constants/errorConditionConstants';
+import { INVALID_SIDE_NUMBER, MISSING_PARTICIPANT_ID, PARTICIPANT_NOT_FOUND } from '@Constants/errorConditionConstants';
 import { DOUBLES, SINGLES_MATCHUP } from '@Constants/matchUpTypes';
 import { TEAM_EVENT } from '@Constants/eventConstants';
-import { COMPLETED, TO_BE_PLAYED } from '@Constants/matchUpStatusConstants';
 
 describe('assignTieMatchUpParticipant coverage', () => {
   function generateTeamTournament() {

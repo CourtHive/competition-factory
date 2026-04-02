@@ -10,12 +10,12 @@ import tournamentEngine from '@Engines/syncEngine';
 import { expect, it } from 'vitest';
 
 import { ROUND_ROBIN_WITH_PLAYOFF } from '@Constants/drawDefinitionConstants';
-import { DOUBLES, SINGLES, TEAM } from '@Constants/eventConstants';
+import { DOUBLES, SINGLES } from '@Constants/eventConstants';
 
 // ─── Scenario 1: Basic event/draw entries with statistics ─────────────────
 it('getParticipantEntries: event entries, draw entries, and statistics', () => {
   const drawProfiles = [{ drawSize: 16 }];
-  const { tournamentRecord } = mocksEngine.generateTournamentRecord({
+  mocksEngine.generateTournamentRecord({
     setState: true,
     completeAllMatchUps: true,
     drawProfiles,
@@ -63,7 +63,7 @@ it('getParticipantEntries: event entries, draw entries, and statistics', () => {
 // ─── Scenario 2: Seeding through getParticipantEntries ────────────────────
 it('getParticipantEntries: seeding information flows through', () => {
   const drawProfiles = [{ drawSize: 16, seedsCount: 4 }];
-  const { tournamentRecord } = mocksEngine.generateTournamentRecord({
+  mocksEngine.generateTournamentRecord({
     setState: true,
     drawProfiles,
   });
@@ -81,7 +81,7 @@ it('getParticipantEntries: seeding information flows through', () => {
 // ─── Scenario 3: Round Robin with finishing positions (RR tally path) ─────
 it('getParticipantEntries: RR tally-based finishing positions', () => {
   const drawProfiles = [{ drawSize: 8, drawType: ROUND_ROBIN_WITH_PLAYOFF }];
-  const { tournamentRecord } = mocksEngine.generateTournamentRecord({
+  mocksEngine.generateTournamentRecord({
     setState: true,
     completeAllMatchUps: true,
     drawProfiles,
@@ -128,7 +128,7 @@ it('getParticipantEntries: schedule analysis detects conflicts', () => {
   ];
   const venueProfiles = [{ courtsCount: 4, startTime: '08:00', endTime: '18:00' }];
 
-  const { tournamentRecord } = mocksEngine.generateTournamentRecord({
+  mocksEngine.generateTournamentRecord({
     setState: true,
     drawProfiles,
     venueProfiles,
@@ -137,7 +137,7 @@ it('getParticipantEntries: schedule analysis detects conflicts', () => {
   });
 
   // Schedule some matchUps first
-  let result: any = tournamentEngine.scheduleProfileRounds();
+  tournamentEngine.scheduleProfileRounds();
   // Even without full scheduling, the getParticipants call should work
   const { participants } = tournamentEngine.getParticipants({
     scheduleAnalysis: { scheduledMinutesDifference: 60 },
@@ -161,7 +161,7 @@ it('getParticipantEntries: schedule analysis detects conflicts', () => {
 // ─── Scenario 5: Opponents through getParticipantEntries ──────────────────
 it('getParticipantEntries: withOpponents populates opponent info', () => {
   const drawProfiles = [{ drawSize: 8 }];
-  const { tournamentRecord } = mocksEngine.generateTournamentRecord({
+  mocksEngine.generateTournamentRecord({
     setState: true,
     completeAllMatchUps: true,
     drawProfiles,
@@ -180,7 +180,7 @@ it('getParticipantEntries: withOpponents populates opponent info', () => {
 // ─── Scenario 6: DOUBLES event entries ────────────────────────────────────
 it('getParticipantEntries: doubles event entries include individual participants', () => {
   const drawProfiles = [{ drawSize: 8, eventType: DOUBLES }];
-  const { tournamentRecord } = mocksEngine.generateTournamentRecord({
+  mocksEngine.generateTournamentRecord({
     setState: true,
     completeAllMatchUps: true,
     drawProfiles,
@@ -200,7 +200,7 @@ it('getParticipantEntries: doubles event entries include individual participants
 // ─── Scenario 7: Return shape stability ───────────────────────────────────
 it('getParticipantEntries: return shape includes all expected keys', () => {
   const drawProfiles = [{ drawSize: 8 }];
-  const { tournamentRecord } = mocksEngine.generateTournamentRecord({
+  mocksEngine.generateTournamentRecord({
     setState: true,
     completeAllMatchUps: true,
     drawProfiles,

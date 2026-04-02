@@ -11,7 +11,7 @@ import { COMPASS } from '@Constants/drawDefinitionConstants';
 
 const drawDefinitionsCount = 10;
 const drawSize = 32;
-let reportTime;
+const reportTime = false;
 
 it('can generate H2H reports with Competitors In Common', () => {
   timeKeeper('start');
@@ -54,13 +54,13 @@ it('can generate H2H reports with Competitors In Common', () => {
   const mappedMatchUps = participantsResult.mappedMatchUps;
   const twoParticipants = participants.slice(0, 2);
 
-  let h2h = participantHeadToHead({
+  participantHeadToHead({
     // @ts-expect-error invalid values
     participants: [],
     mappedMatchUps,
-  }).h2h;
+  });
 
-  h2h = participantHeadToHead({
+  let h2h = participantHeadToHead({
     participants: twoParticipants,
     mappedMatchUps,
   }).h2h;

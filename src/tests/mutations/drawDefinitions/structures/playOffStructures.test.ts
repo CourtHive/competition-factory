@@ -11,13 +11,13 @@ import { DrawDefinition } from '@Types/tournamentTypes';
 import { ERROR } from '@Constants/resultConstants';
 
 it('can generate compass draws', () => {
-  let { result, drawDefinition } = playoffDraw({
+  let result: any = playoffDraw({
     drawType: COMPASS,
     drawSize: 3,
-  });
+  }).result;
   expect(result).toHaveProperty(ERROR);
 
-  drawDefinition =
+  let drawDefinition =
     playoffDraw({
       drawType: COMPASS,
       drawSize: 4,

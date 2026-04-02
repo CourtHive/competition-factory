@@ -1,4 +1,3 @@
-/* eslint-disable sonarjs/no-duplicate-string */
 /**
  * Coverage-focused tests for ScoringEngine, addPoint, and pointsToCalculator
  *

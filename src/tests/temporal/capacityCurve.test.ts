@@ -37,7 +37,7 @@ const TEST_DAY = '2026-06-15';
 
 const mockCourt1: CourtRef = { tournamentId: TEST_TOURNAMENT, venueId: TEST_VENUE, courtId: 'court-1' };
 const mockCourt2: CourtRef = { tournamentId: TEST_TOURNAMENT, venueId: TEST_VENUE, courtId: 'court-2' };
-const mockCourt3: CourtRef = { tournamentId: TEST_TOURNAMENT, venueId: TEST_VENUE, courtId: 'court-3' };
+// court-3 reserved for future multi-court tests
 
 function createSegment(start: string, end: string, status: BlockType): RailSegment {
   return { start, end, status, contributingBlocks: [] };
@@ -75,9 +75,7 @@ const T11 = '2026-06-15T11:00:00';
 const T12 = '2026-06-15T12:00:00';
 const T13 = '2026-06-15T13:00:00';
 const T14 = '2026-06-15T14:00:00';
-const T15 = '2026-06-15T15:00:00';
 const T16 = '2026-06-15T16:00:00';
-const T17 = '2026-06-15T17:00:00';
 const T18 = '2026-06-15T18:00:00';
 
 // ============================================================================

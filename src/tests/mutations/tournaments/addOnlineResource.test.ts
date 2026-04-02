@@ -47,7 +47,7 @@ it('supports adding onlineResources', () => {
   let tournament = tournamentEngine.getTournament().tournamentRecord;
   expect(tournament.onlineResources.length).toEqual(1);
 
-  result = tournamentEngine.removeOnlineResource({ onlineResource });
+  tournamentEngine.removeOnlineResource({ onlineResource });
   tournament = tournamentEngine.getTournament().tournamentRecord;
   expect(tournament.onlineResources.length).toEqual(0);
 

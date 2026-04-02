@@ -43,9 +43,15 @@ it.each([
   const assignedParticipantIds = positionAssignments.filter(({ participantId }) => participantId).map(getParticipantId);
   const seedsOnly = typeof automated === 'object' && automated.seedsOnly;
   const assignedByes = positionAssignments.filter(({ bye }) => bye);
-  expect(assignedByes.length).toEqual(seedsOnly ? Math.min(expectedByes, seedsCount) : automated ? expectedByes : 0);
+  let expectedByeCount = 0;
+  if (seedsOnly) expectedByeCount = Math.min(expectedByes, seedsCount);
+  else if (automated) expectedByeCount = expectedByes;
+  expect(assignedByes.length).toEqual(expectedByeCount);
 
-  expect(assignedParticipantIds.length).toEqual(seedsOnly ? seedsCount : automated ? participantsCount : 0);
+  let expectedAssigned = 0;
+  if (seedsOnly) expectedAssigned = seedsCount;
+  else if (automated) expectedAssigned = participantsCount;
+  expect(assignedParticipantIds.length).toEqual(expectedAssigned);
   const assignedSeedParticipantIds = seedAssignments.map(({ participantId }) => participantId);
   expect(assignedSeedParticipantIds.length).toEqual(seedsCount);
 

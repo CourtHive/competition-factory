@@ -132,9 +132,9 @@ it('can sort entries by scaleAttributes when generatingflighProfiles', () => {
     expect(result.error).toEqual(MISSING_DRAW_SIZE);
   });
 
-  tournamentParticipants = tournamentEngine.getParticipants({
+  tournamentEngine.getParticipants({
     withDraws: true,
-  }).participants;
+  });
 
   for (const drawDefinition of drawDefinitions) {
     result = tournamentEngine.addDrawDefinition({ eventId, drawDefinition });

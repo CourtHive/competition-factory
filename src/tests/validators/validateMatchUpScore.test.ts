@@ -14,7 +14,7 @@
  * - Historical Grand Slam formats (Wimbledon 2018, 2019; Australian Open 2019)
  */
 
-/* eslint-disable sonarjs/assertions-in-tests */
+ 
 import { describe, it, expect } from 'vitest';
 import { validateSetScore, validateMatchUpScore } from '@Validators/validateMatchUpScore';
 

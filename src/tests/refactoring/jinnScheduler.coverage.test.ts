@@ -47,7 +47,7 @@ describe('jinnScheduler coverage', () => {
       policyDefinitions: POLICY_SCHEDULING_NO_DAILY_LIMITS,
     });
 
-    let result: any = tournamentEngine.scheduleProfileRounds({
+    tournamentEngine.scheduleProfileRounds({
       scheduleDates: [startDate],
       dryRun: true,
     });

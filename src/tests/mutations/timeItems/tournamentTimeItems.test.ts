@@ -86,9 +86,8 @@ it('can prevent duplicates when equialent to existing itemValue', () => {
 
   tournamentEngine.setState(tournamentRecord);
 
-  let timeItem: any = undefined;
   let itemValue = timeStamp1;
-  timeItem = {
+  let timeItem: any = {
     itemType: MODIFICATION_CONTENT,
     itemValue,
   };

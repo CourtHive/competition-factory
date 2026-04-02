@@ -8,13 +8,12 @@
  * - addEventEntries.getTypedParticipantIdsHelper
  */
 import { ScoringEngine } from '@Assemblies/engines/scoring/ScoringEngine';
-import { shotParser, parseMCPPoint } from '@Validators/scoring/mcpParser';
+import { shotParser } from '@Validators/scoring/mcpParser';
 import mocksEngine from '@Assemblies/engines/mock';
 import tournamentEngine from '@Engines/syncEngine';
 import { expect, it } from 'vitest';
 
-import POLICY_SCHEDULING_NO_DAILY_LIMITS from '@Fixtures/policies/POLICY_SCHEDULING_NO_DAILY_LIMITS';
-import { DOUBLES, SINGLES } from '@Constants/eventConstants';
+import { DOUBLES } from '@Constants/eventConstants';
 import { TO_BE_PLAYED } from '@Constants/matchUpStatusConstants';
 import { INDIVIDUAL } from '@Constants/participantConstants';
 
@@ -87,10 +86,7 @@ it('TemporalEngine: loads venue and court availability from tournament record', 
   const venueProfiles = [{ courtsCount: 2, startTime: '09:00', endTime: '17:00' }];
   const drawProfiles = [{ drawSize: 8 }];
 
-  const {
-    tournamentRecord,
-    venueIds: [venueId],
-  } = mocksEngine.generateTournamentRecord({
+  mocksEngine.generateTournamentRecord({
     setState: true,
     venueProfiles,
     drawProfiles,
@@ -147,7 +143,6 @@ it('scheduleItems: can schedule matchUp via setMatchUpStatus with schedule', () 
   const drawProfiles = [{ drawSize: 8 }];
 
   const {
-    tournamentRecord,
     drawIds: [drawId],
     venueIds: [venueId],
   } = mocksEngine.generateTournamentRecord({
@@ -190,8 +185,6 @@ it('scheduleItems: can schedule matchUp via setMatchUpStatus with schedule', () 
 it('addEventEntries: can add entries to an event', () => {
   const drawProfiles = [{ drawSize: 8, participantsCount: 6 }];
   const {
-    tournamentRecord,
-    drawIds: [drawId],
     eventIds: [eventId],
   } = mocksEngine.generateTournamentRecord({
     setState: true,
@@ -219,7 +212,6 @@ it('addEventEntries: can add entries to an event', () => {
 it('addEventEntries: doubles event accepts pair participants', () => {
   const drawProfiles = [{ drawSize: 8, eventType: DOUBLES }];
   const {
-    tournamentRecord,
     eventIds: [eventId],
   } = mocksEngine.generateTournamentRecord({
     setState: true,

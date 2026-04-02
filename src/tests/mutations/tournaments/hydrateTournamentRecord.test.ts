@@ -168,7 +168,7 @@ describe('hydrateTournamentRecord', () => {
     const result = tournamentEngine.setState(tournamentRecord);
     expect(result.success).toEqual(true);
 
-    const hydrateResult = tournamentEngine.hydrateTournamentRecord({
+    tournamentEngine.hydrateTournamentRecord({
       eventProfiles: [
         {
           eventId,

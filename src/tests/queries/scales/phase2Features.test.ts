@@ -4,7 +4,7 @@ import { mocksEngine } from '../../..';
 import { describe, expect, it } from 'vitest';
 
 import { POLICY_TYPE_RANKING_POINTS } from '@Constants/policyConstants';
-import { DOUBLES, SINGLES, TEAM_EVENT } from '@Constants/eventConstants';
+import { DOUBLES } from '@Constants/eventConstants';
 import {
   COMPASS,
   ROUND_ROBIN,

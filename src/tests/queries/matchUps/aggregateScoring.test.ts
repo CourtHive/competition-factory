@@ -385,7 +385,9 @@ it('INTENNSE SET7XA-S:T10P — determines winningSide correctly for all 7 sets',
       });
     }
     // 7th set with the deciding score
-    const ws7 = seventhSet.s1 > seventhSet.s2 ? 1 : seventhSet.s2 > seventhSet.s1 ? 2 : undefined;
+    let ws7: number | undefined;
+    if (seventhSet.s1 > seventhSet.s2) ws7 = 1;
+    else if (seventhSet.s2 > seventhSet.s1) ws7 = 2;
     sets.push({
       side1Score: seventhSet.s1,
       side2Score: seventhSet.s2,

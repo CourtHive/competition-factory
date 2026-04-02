@@ -16,13 +16,11 @@ import {
 } from '@Constants/errorConditionConstants';
 
 test('matchUpActions returns expected error messages', () => {
-  // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-  // @ts-ignore
+  // @ts-expect-error test
   let result = matchUpActions();
   expect(result.error).toEqual(INVALID_VALUES);
 
-  // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-  // @ts-ignore
+  // @ts-expect-error test
   result = matchUpActions({
     matchUpId: 'matchUpId',
     eventId: 'eventId',
@@ -30,8 +28,7 @@ test('matchUpActions returns expected error messages', () => {
   });
   expect(result.error).toEqual(MISSING_TOURNAMENT_RECORD);
 
-  // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-  // @ts-ignore
+  // @ts-expect-error test
   result = matchUpActions({
     tournamentId: 'tournamentId',
     tournamentRecords: {},
@@ -42,8 +39,7 @@ test('matchUpActions returns expected error messages', () => {
   expect(result.error).toEqual(MISSING_TOURNAMENT_RECORD);
 
   result = matchUpActions({
-    // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-    // @ts-ignore
+    // @ts-expect-error test
     tournamentRecords: { tournamentId: {} },
     tournamentId: 'tournamentId',
     matchUpId: 'matchUpId',
@@ -54,9 +50,9 @@ test('matchUpActions returns expected error messages', () => {
 });
 
 test('matchUpActions returns MISSING_MATCHUP_ID when matchUpId is missing or not a string', () => {
-  // @ts-ignore - matchUpId missing
+  // @ts-expect-error test - matchUpId missing
   let result = matchUpActions({
-    // @ts-ignore
+    // @ts-expect-error test
     tournamentRecords: { tid: { tournamentId: 'tid' } },
     tournamentId: 'tid',
     drawDefinition: { drawId: 'd1' },
@@ -66,11 +62,11 @@ test('matchUpActions returns MISSING_MATCHUP_ID when matchUpId is missing or not
 
   // matchUpId is a number (not a string)
   result = matchUpActions({
-    // @ts-ignore
+    // @ts-expect-error test
     tournamentRecords: { tid: { tournamentId: 'tid' } },
     tournamentId: 'tid',
     drawDefinition: { drawId: 'd1' },
-    // @ts-ignore
+    // @ts-expect-error test
     matchUpId: 123,
     drawId: 'd1',
   });
