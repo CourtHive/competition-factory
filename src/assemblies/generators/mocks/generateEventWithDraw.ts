@@ -302,7 +302,6 @@ function processOutcomes({
       completeAllMatchUps: p.completeAllMatchUps,
       completionGoal: p.completionGoal,
       matchUpStatusProfile,
-      // qualifyingProfiles,
       randomWinningSide,
       tournamentRecord,
       drawDefinition,
@@ -311,33 +310,21 @@ function processOutcomes({
       event,
     });
     if (result.error) return result;
-    const completedCount = result.completedCount;
 
     if (drawType === ROUND_ROBIN_WITH_PLAYOFF) {
-      const mainStructure = drawDefinition.structures?.find((structure) => structure.stage === MAIN);
-      if (!mainStructure) return { error: STRUCTURE_NOT_FOUND };
-
-      automatedPlayoffPositioning({
-        structureId: mainStructure.structureId,
-        tournamentRecord,
-        drawDefinition,
-        event,
-      });
-      // ignore when positioning cannot occur because of incomplete source structure
-
-      const playoffCompletionGoal = completionGoal ? completionGoal - (completedCount ?? 0) : undefined;
-      const result = completeDrawMatchUps({
-        completionGoal: completionGoal ? playoffCompletionGoal : undefined,
+      const rrResult = completeRoundRobinPlayoff({
+        completedCount: result.completedCount,
         matchUpStatusProfile,
         completeAllMatchUps,
         randomWinningSide,
         tournamentRecord,
         drawDefinition,
+        completionGoal,
         matchUpFormat,
         random,
         event,
       });
-      if (result.error) return result;
+      if (rrResult?.error) return rrResult;
     }
     return undefined;
   };
@@ -347,78 +334,140 @@ function processOutcomes({
   if (completionGoal) goComplete({ completionGoal });
 
   if (drawProfile.outcomes) {
-    const { matchUps } = allDrawMatchUps({
-      inContext: true,
+    const outcomesResult = applyDefinedOutcomes({
+      outcomes: drawProfile.outcomes,
+      tournamentRecord,
       drawDefinition,
       event,
     });
-    for (const outcomeDef of drawProfile.outcomes) {
-      const {
-        matchUpStatus = COMPLETED,
-        matchUpStatusCodes,
-        stageSequence = 1,
-        matchUpIndex = 0,
-        structureOrder, // like a group number; for RR = the order of the structureType: ITEM within structureType: CONTAINER
-        matchUpFormat,
-        drawPositions,
-        roundPosition,
-        stage = MAIN,
-        roundNumber,
-        winningSide,
-        scoreString,
-      } = outcomeDef;
-
-      const structureMatchUpIds =
-        matchUps?.reduce((sm, matchUp) => {
-          const { structureId, matchUpId } = matchUp;
-          if (sm[structureId]) {
-            sm[structureId].push(matchUpId);
-          } else {
-            sm[structureId] = [matchUpId];
-          }
-          return sm;
-        }, {}) ?? [];
-
-      const orderedStructures = Object.assign(
-        {},
-        ...Object.keys(structureMatchUpIds).map((structureId, index) => ({
-          [structureId]: index + 1,
-        })),
-      );
-
-      const targetMatchUps = matchUps?.filter((matchUp) => {
-        return (
-          (!stage || matchUp.stage === stage) &&
-          (!stageSequence || matchUp.stageSequence === stageSequence) &&
-          (!roundNumber || matchUp.roundNumber === roundNumber) &&
-          (!roundPosition || matchUp.roundPosition === roundPosition) &&
-          (!structureOrder || orderedStructures[matchUp.structureId] === structureOrder) &&
-          (!drawPositions || intersection(drawPositions, matchUp.drawPositions).length === 2)
-        );
-      });
-
-      // targeting only one matchUp, specified by the index in the array of returned matchUps
-      const targetMatchUp = targetMatchUps?.[matchUpIndex];
-
-      const result = completeDrawMatchUp({
-        matchUpStatusCodes,
-        tournamentRecord,
-        drawDefinition,
-        targetMatchUp,
-        matchUpFormat,
-        matchUpStatus,
-        scoreString,
-        winningSide,
-      });
-      // will not throw errors for BYE matchUps
-      if (result?.error) return result;
-    }
+    if (outcomesResult?.error) return outcomesResult;
   }
 
   // NOTE: do this last => complete any matchUps which have not already been completed
   if (completeAllMatchUps) goComplete({ completeAllMatchUps });
 
   return { goComplete };
+}
+
+function completeRoundRobinPlayoff({
+  matchUpStatusProfile,
+  completeAllMatchUps,
+  randomWinningSide,
+  tournamentRecord,
+  drawDefinition,
+  completedCount,
+  completionGoal,
+  matchUpFormat,
+  random,
+  event,
+}) {
+  const mainStructure = drawDefinition.structures?.find((structure) => structure.stage === MAIN);
+  if (!mainStructure) return { error: STRUCTURE_NOT_FOUND };
+
+  automatedPlayoffPositioning({
+    structureId: mainStructure.structureId,
+    tournamentRecord,
+    drawDefinition,
+    event,
+  });
+  // ignore when positioning cannot occur because of incomplete source structure
+
+  const playoffCompletionGoal = completionGoal ? completionGoal - (completedCount ?? 0) : undefined;
+  const result = completeDrawMatchUps({
+    completionGoal: completionGoal ? playoffCompletionGoal : undefined,
+    matchUpStatusProfile,
+    completeAllMatchUps,
+    randomWinningSide,
+    tournamentRecord,
+    drawDefinition,
+    matchUpFormat,
+    random,
+    event,
+  });
+  if (result.error) return result;
+
+  return undefined;
+}
+
+function applyDefinedOutcomes({
+  tournamentRecord,
+  drawDefinition,
+  outcomes,
+  event,
+}) {
+  const { matchUps } = allDrawMatchUps({
+    inContext: true,
+    drawDefinition,
+    event,
+  });
+
+  const orderedStructures = buildOrderedStructures(matchUps);
+
+  for (const outcomeDef of outcomes) {
+    const {
+      matchUpStatus = COMPLETED,
+      matchUpStatusCodes,
+      stageSequence = 1,
+      matchUpIndex = 0,
+      structureOrder, // like a group number; for RR = the order of the structureType: ITEM within structureType: CONTAINER
+      matchUpFormat,
+      drawPositions,
+      roundPosition,
+      stage = MAIN,
+      roundNumber,
+      winningSide,
+      scoreString,
+    } = outcomeDef;
+
+    const targetMatchUps = matchUps?.filter((matchUp) => {
+      return (
+        (!stage || matchUp.stage === stage) &&
+        (!stageSequence || matchUp.stageSequence === stageSequence) &&
+        (!roundNumber || matchUp.roundNumber === roundNumber) &&
+        (!roundPosition || matchUp.roundPosition === roundPosition) &&
+        (!structureOrder || orderedStructures[matchUp.structureId] === structureOrder) &&
+        (!drawPositions || intersection(drawPositions, matchUp.drawPositions).length === 2)
+      );
+    });
+
+    // targeting only one matchUp, specified by the index in the array of returned matchUps
+    const targetMatchUp = targetMatchUps?.[matchUpIndex];
+
+    const result = completeDrawMatchUp({
+      matchUpStatusCodes,
+      tournamentRecord,
+      drawDefinition,
+      targetMatchUp,
+      matchUpFormat,
+      matchUpStatus,
+      scoreString,
+      winningSide,
+    });
+    // will not throw errors for BYE matchUps
+    if (result?.error) return result;
+  }
+
+  return undefined;
+}
+
+function buildOrderedStructures(matchUps) {
+  const structureMatchUpIds =
+    matchUps?.reduce((sm, matchUp) => {
+      const { structureId, matchUpId } = matchUp;
+      if (sm[structureId]) {
+        sm[structureId].push(matchUpId);
+      } else {
+        sm[structureId] = [matchUpId];
+      }
+      return sm;
+    }, {}) ?? [];
+
+  return Object.assign(
+    {},
+    ...Object.keys(structureMatchUpIds).map((structureId, index) => ({
+      [structureId]: index + 1,
+    })),
+  );
 }
 
 function processIterativeAdHoc({
@@ -467,6 +516,204 @@ function processIterativeAdHoc({
   }
 
   return undefined;
+}
+
+function addMockEntries({
+  qualifyingParticipantsCount,
+  consideredParticipants,
+  isEventParticipantType,
+  excessParticipantAlternates,
+  tournamentAlternates,
+  autoEntryPositions,
+  qualifyingProfiles,
+  participantsCount,
+  alternatesCount,
+  tournamentRecord,
+  participantIds,
+  isEventGender,
+  drawSize,
+  isMock,
+  event,
+  stage,
+}) {
+  if (isMock && participantIds?.length) {
+    const result = addEventEntries({
+      autoEntryPositions,
+      entryStage: stage,
+      tournamentRecord,
+      participantIds,
+      event,
+    });
+    if (result.error) return result;
+  }
+
+  const qualifyingParticipantIds = qualifyingParticipantsCount
+    ? consideredParticipants
+        .slice(participantsCount, participantsCount + qualifyingParticipantsCount)
+        .map((p) => p.participantId)
+    : 0;
+
+  if (isMock && qualifyingParticipantIds?.length) {
+    const qResult = addQualifyingEntries({
+      qualifyingParticipantIds,
+      autoEntryPositions,
+      qualifyingProfiles,
+      tournamentRecord,
+      event,
+    });
+    if (qResult?.error) return qResult;
+  }
+
+  const participantIdSet = new Set(participantIds);
+  const alternatesParticipantIds =
+    excessParticipantAlternates &&
+    tournamentRecord?.participants
+      ?.filter(({ participantId }) => !participantIdSet.has(participantId))
+      .filter(isEventParticipantType)
+      .filter(isEventGender)
+      .slice(0, alternatesCount || drawSize - participantsCount || tournamentAlternates)
+      .map((p) => p.participantId);
+
+  if (isMock && alternatesParticipantIds?.length) {
+    const result = addEventEntries({
+      participantIds: alternatesParticipantIds,
+      autoEntryPositions: false,
+      entryStatus: ALTERNATE,
+      tournamentRecord,
+      event,
+    });
+    if (result.error) return result.error;
+  }
+
+  return undefined;
+}
+
+function applySeedingScales({
+  tournamentRecord,
+  participantIds,
+  seedingScaleName,
+  seedsCount,
+  startDate,
+  eventType,
+}) {
+  if (tournamentRecord && seedsCount && seedsCount <= participantIds.length) {
+    const scaleValues = generateRange(1, seedsCount + 1);
+    scaleValues.forEach((scaleValue, index) => {
+      const scaleItem = {
+        scaleName: seedingScaleName,
+        scaleDate: startDate,
+        scaleType: SEEDING,
+        scaleValue,
+        eventType,
+      };
+      const participantId = participantIds[index];
+      setParticipantScaleItem({ tournamentRecord, participantId, scaleItem });
+    });
+  }
+}
+
+function generateAndAttachDraw({
+  matchUpStatusProfile,
+  completeAllMatchUps,
+  randomWinningSide,
+  tournamentRecord,
+  drawProfileCopy,
+  seedingScaleName,
+  drawExtensions,
+  iterativeAdHoc,
+  completionGoal,
+  matchUpFormat,
+  drawProfile,
+  drawType,
+  category,
+  generate,
+  drawName,
+  isMock,
+  random,
+  eventId,
+  publish,
+  event,
+  qualifyingPositions,
+  stage,
+}) {
+  const drawProfileForGeneration = iterativeAdHoc
+    ? { ...makeDeepCopy(drawProfile, false, true), roundsCount: 1 }
+    : makeDeepCopy(drawProfile, false, true);
+
+  const result = generateDrawDefinition({
+    ...drawProfileForGeneration,
+    tournamentRecord,
+    seedingScaleName,
+    matchUpFormat,
+    eventId,
+    isMock,
+    random,
+    event,
+  });
+
+  if (result.error) return result;
+  if (!result.drawDefinition) return { error: DRAW_DEFINITION_NOT_FOUND };
+
+  const { drawDefinition } = result;
+  const drawId = drawDefinition.drawId;
+
+  if (Array.isArray(drawExtensions)) {
+    drawExtensions
+      .filter(isValidExtension)
+      .forEach((extension) => addExtension({ element: drawDefinition, extension }));
+  }
+
+  if (generate) {
+    addDrawDefinition({ drawDefinition, event, suppressNotifications: true });
+
+    const manual = drawProfile.automated === false;
+    if (isMock && !manual) {
+      const outcomesResult: any = processOutcomes({
+        matchUpStatusProfile,
+        completeAllMatchUps,
+        randomWinningSide,
+        tournamentRecord,
+        drawDefinition,
+        completionGoal,
+        matchUpFormat,
+        drawProfile,
+        drawType,
+        random,
+        event,
+      });
+      if (outcomesResult?.error) return outcomesResult;
+
+      if (iterativeAdHoc) {
+        const adHocResult = processIterativeAdHoc({
+          goComplete: outcomesResult.goComplete,
+          tournamentRecord,
+          drawDefinition,
+          drawProfileCopy,
+          drawProfile,
+          category,
+          isMock,
+          event,
+        });
+        if (adHocResult?.error) return adHocResult;
+      }
+    }
+
+    if (publish) {
+      publishEvent({ tournamentRecord, event });
+    }
+  } else {
+    const flightResult = addFlight({
+      drawEntries: drawDefinition.entries,
+      drawName: drawName || drawType,
+      qualifyingPositions,
+      drawId,
+      event,
+      stage,
+    });
+    if (flightResult.error) return flightResult;
+  }
+
+  return { drawDefinition, drawId };
 }
 
 export function generateEventWithDraw(params) {
@@ -632,177 +879,83 @@ export function generateEventWithDraw(params) {
     });
   };
 
+  const allUniqueSet = new Set(allUniqueParticipantIds);
   const consideredParticipants = targetParticipants
     .filter(isEventParticipantType)
     .filter(isEventGender)
-    .filter(({ participantId }) => !allUniqueParticipantIds.includes(participantId));
+    .filter(({ participantId }) => !allUniqueSet.has(participantId));
 
   const participantIds = consideredParticipants.slice(0, participantsCount).map((p) => p.participantId);
 
-  if (isMock && participantIds?.length) {
-    const result = addEventEntries({
-      autoEntryPositions,
-      entryStage: stage,
-      tournamentRecord,
-      participantIds,
-      event,
-    });
-    if (result.error) return result;
-  }
+  const entriesResult: any = addMockEntries({
+    qualifyingParticipantsCount,
+    consideredParticipants,
+    isEventParticipantType,
+    excessParticipantAlternates,
+    tournamentAlternates,
+    autoEntryPositions,
+    qualifyingProfiles,
+    participantsCount,
+    alternatesCount,
+    tournamentRecord,
+    participantIds,
+    isEventGender,
+    drawSize,
+    isMock,
+    event,
+    stage,
+  });
+  if (entriesResult?.error) return entriesResult;
 
-  const qualifyingParticipantIds = qualifyingParticipantsCount
-    ? consideredParticipants
-        .slice(participantsCount, participantsCount + qualifyingParticipantsCount)
-        .map((p) => p.participantId)
-    : 0;
-
-  if (isMock && qualifyingParticipantIds?.length) {
-    const qResult = addQualifyingEntries({
-      qualifyingParticipantIds,
-      autoEntryPositions,
-      qualifyingProfiles,
-      tournamentRecord,
-      event,
-    });
-    if (qResult?.error) return qResult;
-  }
-
-  // alternates can still be taken from existing participants
-  // when unique participants are used for DIRECT_ACCEPTANCE entries
-  const alternatesParticipantIds =
-    excessParticipantAlternates &&
-    tournamentRecord?.participants
-      ?.filter(({ participantId }) => !participantIds.includes(participantId))
-      .filter(isEventParticipantType)
-      .filter(isEventGender)
-      .slice(0, alternatesCount || drawSize - participantsCount || tournamentAlternates)
-      .map((p) => p.participantId);
-
-  if (isMock && alternatesParticipantIds?.length) {
-    const result = addEventEntries({
-      participantIds: alternatesParticipantIds,
-      autoEntryPositions: false,
-      entryStatus: ALTERNATE,
-      tournamentRecord,
-      event,
-    });
-    if (result.error) return result.error;
-  }
-
-  // now add seeding information for seedsCount participants
   const seedingScaleName = categoryName || eventName;
-  if (tournamentRecord && seedsCount && seedsCount <= participantIds.length) {
-    const scaleValues = generateRange(1, seedsCount + 1);
-    scaleValues.forEach((scaleValue, index) => {
-      const scaleItem = {
-        scaleName: seedingScaleName,
-        scaleDate: startDate,
-        scaleType: SEEDING,
-        scaleValue,
-        eventType,
-      };
-      const participantId = participantIds[index];
-      setParticipantScaleItem({ tournamentRecord, participantId, scaleItem });
-    });
-  }
+  applySeedingScales({
+    tournamentRecord,
+    participantIds,
+    seedingScaleName,
+    seedsCount,
+    startDate,
+    eventType,
+  });
 
-  // For AD_HOC + completeAllMatchUps + roundsCount > 1: generate only round 1 initially,
-  // then iterate round-by-round with completion + dynamic ratings between each round
   const iterativeAdHoc =
     drawType === AD_HOC &&
     completeAllMatchUps &&
     drawProfile.automated !== false &&
     (drawProfileCopy.roundsCount ?? 1) > 1;
 
-  const drawProfileForGeneration = iterativeAdHoc
-    ? { ...makeDeepCopy(drawProfile, false, true), roundsCount: 1 }
-    : makeDeepCopy(drawProfile, false, true);
-
-  const result = generateDrawDefinition({
-    ...drawProfileForGeneration,
+  const genResult: any = generateAndAttachDraw({
+    matchUpStatusProfile,
+    completeAllMatchUps,
+    randomWinningSide,
     tournamentRecord,
+    drawProfileCopy,
     seedingScaleName,
+    drawExtensions,
+    iterativeAdHoc,
+    completionGoal,
     matchUpFormat,
-    eventId,
+    drawProfile,
+    drawType,
+    category,
+    generate,
+    drawName,
     isMock,
     random,
+    eventId,
+    publish,
     event,
+    qualifyingPositions,
+    stage,
   });
-
-  if (result.error) return result;
-  if (!result.drawDefinition) return { error: DRAW_DEFINITION_NOT_FOUND };
-
-  const { drawDefinition } = result;
-  const drawId = drawDefinition.drawId;
-
-  if (Array.isArray(drawExtensions)) {
-    drawExtensions
-      .filter(isValidExtension)
-      .forEach((extension) => addExtension({ element: drawDefinition, extension }));
-  }
-
-  if (generate) {
-    addDrawDefinition({ drawDefinition, event, suppressNotifications: true });
-
-    const manual = drawProfile.automated === false;
-    if (isMock && !manual) {
-      // NOTE: completionGoal needs to come before outcomes array because setMatchUpStatus has integrity checks
-      // ... which may require positionAssignments and/or drawPositions to have been propagated
-      const outcomesResult: any = processOutcomes({
-        matchUpStatusProfile,
-        completeAllMatchUps,
-        randomWinningSide,
-        tournamentRecord,
-        drawDefinition,
-        completionGoal,
-        matchUpFormat,
-        drawProfile,
-        drawType,
-        random,
-        event,
-      });
-      if (outcomesResult?.error) return outcomesResult;
-
-      // For iterative AD_HOC: generate remaining rounds with dynamic ratings between each
-      if (iterativeAdHoc) {
-        const adHocResult = processIterativeAdHoc({
-          goComplete: outcomesResult.goComplete,
-          tournamentRecord,
-          drawDefinition,
-          drawProfileCopy,
-          drawProfile,
-          category,
-          isMock,
-          event,
-        });
-        if (adHocResult?.error) return adHocResult;
-      }
-    }
-
-    if (publish) {
-      publishEvent({ tournamentRecord, event });
-    }
-  } else {
-    const result = addFlight({
-      drawEntries: drawDefinition.entries,
-      drawName: drawName || drawType,
-      qualifyingPositions,
-      drawId,
-      event,
-      stage,
-    });
-    if (result.error) {
-      return result;
-    }
-  }
+  if (genResult.error) return genResult;
 
   return {
     ...SUCCESS,
     event: definedAttributes(event),
+    drawDefinition: genResult.drawDefinition,
     uniqueParticipantIds,
     targetParticipants,
-    drawDefinition,
     eventId,
-    drawId,
+    drawId: genResult.drawId,
   };
 }

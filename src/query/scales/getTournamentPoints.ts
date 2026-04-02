@@ -37,6 +37,49 @@ function calculateBonusPoints(primaryAwardProfile, bestFinishingPosition, level)
   return bonusPoints;
 }
 
+function resolveLineValue(levelValue, collectionPosition) {
+  if (typeof levelValue === 'object' && levelValue.line) {
+    if (levelValue.limit && collectionPosition > levelValue.limit) return undefined;
+    return levelValue.line[collectionPosition - 1];
+  }
+  if (typeof levelValue === 'number') return levelValue;
+  return undefined;
+}
+
+function awardLinePointsToWinningSide({
+  tieMatchUp,
+  lineValue,
+  participantIndividualIdsMap,
+  participantPersonMap,
+  personPoints,
+  eventType,
+  drawId,
+}) {
+  const { collectionPosition } = tieMatchUp;
+  for (const side of tieMatchUp.sides || []) {
+    if (side.sideNumber !== tieMatchUp.winningSide) continue;
+
+    const sideParticipantId = side.participantId;
+    if (!sideParticipantId) continue;
+
+    const individualIds = participantIndividualIdsMap[sideParticipantId];
+    const targetIds = individualIds || [sideParticipantId];
+
+    for (const targetId of targetIds) {
+      const personId = participantPersonMap[targetId];
+      if (!personId) continue;
+
+      if (!personPoints[personId]) personPoints[personId] = [];
+      personPoints[personId].push({
+        linePoints: lineValue,
+        collectionPosition,
+        eventType,
+        drawId,
+      });
+    }
+  }
+}
+
 function calculateTeamLinePoints({
   participantType,
   participantId,
@@ -65,40 +108,18 @@ function calculateTeamLinePoints({
     for (const tieMatchUp of matchUp.tieMatchUps || []) {
       if (!tieMatchUp.winningSide) continue;
 
-      const { collectionPosition } = tieMatchUp;
-
-      let lineValue;
-      if (typeof levelValue === 'object' && levelValue.line) {
-        if (levelValue.limit && collectionPosition > levelValue.limit) continue;
-        lineValue = levelValue.line[collectionPosition - 1];
-      } else if (typeof levelValue === 'number') {
-        lineValue = levelValue;
-      }
-
+      const lineValue = resolveLineValue(levelValue, tieMatchUp.collectionPosition);
       if (!lineValue) continue;
 
-      for (const side of tieMatchUp.sides || []) {
-        if (side.sideNumber !== tieMatchUp.winningSide) continue;
-
-        const sideParticipantId = side.participantId;
-        if (!sideParticipantId) continue;
-
-        const individualIds = participantIndividualIdsMap[sideParticipantId];
-        const targetIds = individualIds || [sideParticipantId];
-
-        for (const targetId of targetIds) {
-          const personId = participantPersonMap[targetId];
-          if (!personId) continue;
-
-          if (!personPoints[personId]) personPoints[personId] = [];
-          personPoints[personId].push({
-            linePoints: lineValue,
-            collectionPosition,
-            eventType,
-            drawId,
-          });
-        }
-      }
+      awardLinePointsToWinningSide({
+        tieMatchUp,
+        lineValue,
+        participantIndividualIdsMap,
+        participantPersonMap,
+        personPoints,
+        eventType,
+        drawId,
+      });
     }
   }
 }
@@ -425,86 +446,48 @@ function calculateDrawPoints({
   let points;
 
   if (awardProfiles) {
-    const accum = {
-      requireWinFirstRound: initialRequireWinFirstRound,
-      requireWin: requireWinForPoints,
-      bestFinishingPosition: undefined as number | undefined,
-      primaryAwardProfile: undefined as any,
-      maxCountable: undefined as number | undefined,
-      rangeAccessor: undefined as any,
-      profileName: undefined as any,
-      totalWinsCount: 0,
-      positionPoints: 0,
-      perWinPoints: 0,
-      countedWins: 0,
-    };
+    const accum = buildAccumulator({ initialRequireWinFirstRound, requireWinForPoints });
 
-    for (const participation of structureParticipation) {
-      const { awardProfile, skip } = processParticipation({
-        participation,
-        awardProfiles,
-        wheelchairClass,
-        eventType,
-        startDate,
-        category,
-        drawInfo,
-        drawType,
-        endDate,
-        gender,
-        level,
-        accum,
-      });
-
-      if (skip) continue;
-
-      if (participantType === TEAM_PARTICIPANT && awardProfile) {
-        const ppw = Array.isArray(awardProfile.perWinPoints)
-          ? awardProfile.perWinPoints?.find((pwp) => pwp.participationOrders?.includes(participation.participationOrder))
-          : awardProfile.perWinPoints;
-        const levelValue = ppw && getTargetElement(level, ppw.level);
-
-        calculateTeamLinePoints({
-          participantType,
-          participantId,
-          awardProfile,
-          participant,
-          participation,
-          mappedMatchUps,
-          levelValue,
-          participantIndividualIdsMap,
-          participantPersonMap,
-          personPoints,
-          eventType,
-          drawId,
-        });
-      }
-    }
+    processAllParticipations({
+      structureParticipation,
+      awardProfiles,
+      wheelchairClass,
+      participantType,
+      participantId,
+      participant,
+      eventType,
+      startDate,
+      category,
+      drawInfo,
+      drawType,
+      endDate,
+      gender,
+      level,
+      accum,
+      mappedMatchUps,
+      participantIndividualIdsMap,
+      participantPersonMap,
+      personPoints,
+      drawId,
+    });
 
     const bonusPoints = calculateBonusPoints(accum.primaryAwardProfile, accum.bestFinishingPosition, level);
 
     points = accum.positionPoints + accum.perWinPoints + bonusPoints;
 
     if (accum.perWinPoints || accum.positionPoints || bonusPoints) {
-      const award: Record<string, any> = {
-        winCount: accum.totalWinsCount,
-        positionPoints: accum.positionPoints,
-        rangeAccessor: accum.rangeAccessor,
-        perWinPoints: accum.perWinPoints,
+      buildAndDistributeAward({
+        accum,
         bonusPoints,
+        points,
         eventType,
         drawId,
-        points,
         category,
         drawType,
         startDate,
         endDate,
         level,
-      };
-
-      if (devContext && accum.profileName) award.profileName = accum.profileName;
-
-      distributeAward({
-        award,
+        devContext,
         participantType,
         participantId,
         person,
@@ -530,6 +513,140 @@ function calculateDrawPoints({
       eventType,
     });
   }
+}
+
+function buildAccumulator({ initialRequireWinFirstRound, requireWinForPoints }) {
+  return {
+    requireWinFirstRound: initialRequireWinFirstRound,
+    requireWin: requireWinForPoints,
+    bestFinishingPosition: undefined as number | undefined,
+    primaryAwardProfile: undefined as any,
+    maxCountable: undefined as number | undefined,
+    rangeAccessor: undefined as any,
+    profileName: undefined as any,
+    totalWinsCount: 0,
+    positionPoints: 0,
+    perWinPoints: 0,
+    countedWins: 0,
+  };
+}
+
+function processAllParticipations({
+  structureParticipation,
+  awardProfiles,
+  wheelchairClass,
+  participantType,
+  participantId,
+  participant,
+  eventType,
+  startDate,
+  category,
+  drawInfo,
+  drawType,
+  endDate,
+  gender,
+  level,
+  accum,
+  mappedMatchUps,
+  participantIndividualIdsMap,
+  participantPersonMap,
+  personPoints,
+  drawId,
+}) {
+  for (const participation of structureParticipation) {
+    const { awardProfile, skip } = processParticipation({
+      participation,
+      awardProfiles,
+      wheelchairClass,
+      eventType,
+      startDate,
+      category,
+      drawInfo,
+      drawType,
+      endDate,
+      gender,
+      level,
+      accum,
+    });
+
+    if (skip) continue;
+
+    if (participantType === TEAM_PARTICIPANT && awardProfile) {
+      const ppw = Array.isArray(awardProfile.perWinPoints)
+        ? awardProfile.perWinPoints?.find((pwp) => pwp.participationOrders?.includes(participation.participationOrder))
+        : awardProfile.perWinPoints;
+      const levelValue = ppw && getTargetElement(level, ppw.level);
+
+      calculateTeamLinePoints({
+        participantType,
+        participantId,
+        awardProfile,
+        participant,
+        participation,
+        mappedMatchUps,
+        levelValue,
+        participantIndividualIdsMap,
+        participantPersonMap,
+        personPoints,
+        eventType,
+        drawId,
+      });
+    }
+  }
+}
+
+function buildAndDistributeAward({
+  accum,
+  bonusPoints,
+  points,
+  eventType,
+  drawId,
+  category,
+  drawType,
+  startDate,
+  endDate,
+  level,
+  devContext,
+  participantType,
+  participantId,
+  person,
+  personPoints,
+  pairPoints,
+  teamPoints,
+  doublesAttribution,
+  participantIndividualIdsMap,
+  participantPersonMap,
+}) {
+  const award: Record<string, any> = {
+    winCount: accum.totalWinsCount,
+    positionPoints: accum.positionPoints,
+    rangeAccessor: accum.rangeAccessor,
+    perWinPoints: accum.perWinPoints,
+    bonusPoints,
+    eventType,
+    drawId,
+    points,
+    category,
+    drawType,
+    startDate,
+    endDate,
+    level,
+  };
+
+  if (devContext && accum.profileName) award.profileName = accum.profileName;
+
+  distributeAward({
+    award,
+    participantType,
+    participantId,
+    person,
+    personPoints,
+    pairPoints,
+    teamPoints,
+    doublesAttribution,
+    participantIndividualIdsMap,
+    participantPersonMap,
+  });
 }
 
 type GetTournamentPointsArgs = {

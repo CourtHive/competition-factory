@@ -90,46 +90,14 @@ export function luckyDrawAdvancement({
   const advancingParticipantIds = winners.map((w) => w.participantId);
 
   if (roundStatus.isPreFeedRound && participantId) {
-    // Place the lucky loser in the opposite half of the next round from
-    // the winner who defeated them, so they cannot meet until the final.
-    const luckyLoserInfo = roundStatus.eligibleLosers?.find((l) => l.participantId === participantId);
-    const defeatingWinnerIdx = luckyLoserInfo ? winners.findIndex((w) => w.matchUpId === luckyLoserInfo.matchUpId) : -1;
-
-    const numMatchUps = nextRoundMatchUps.length;
-    const halfSplit = Math.ceil(numMatchUps / 2);
-
-    if (defeatingWinnerIdx >= 0 && numMatchUps > 1) {
-      // Find insertion positions that place the lucky loser in the opposite
-      // half from the defeating winner. When inserting at position p, the
-      // lucky loser lands in matchUp floor(p/2) and the defeating winner
-      // (originally at index d) shifts right by 1 if p <= d.
-      const totalSlots = numMatchUps * 2;
-      const validPositions: number[] = [];
-
-      for (let p = 0; p < totalSlots; p++) {
-        const luckyMatchUp = Math.floor(p / 2);
-        const shiftedIdx = defeatingWinnerIdx + (p <= defeatingWinnerIdx ? 1 : 0);
-        const winnerMatchUp = Math.floor(shiftedIdx / 2);
-
-        const luckyInTopHalf = luckyMatchUp < halfSplit;
-        const winnerInTopHalf = winnerMatchUp < halfSplit;
-
-        if (luckyInTopHalf !== winnerInTopHalf) {
-          validPositions.push(p);
-        }
-      }
-
-      if (validPositions.length) {
-        const randomIdx = Math.floor((random ?? Math.random)() * validPositions.length);
-        advancingParticipantIds.splice(validPositions[randomIdx], 0, participantId);
-      } else {
-        // Fallback: no valid opposite-half position found (e.g., 1 matchUp)
-        advancingParticipantIds.push(participantId);
-      }
-    } else {
-      // No defeating winner info or only 1 matchUp — append as before
-      advancingParticipantIds.push(participantId);
-    }
+    insertLuckyLoser({
+      advancingParticipantIds,
+      nextRoundMatchUps,
+      roundStatus,
+      participantId,
+      winners,
+      random,
+    });
   }
 
   if (!nextRoundMatchUps.length) {
@@ -153,34 +121,8 @@ export function luckyDrawAdvancement({
   });
   structure.positionAssignments = positionAssignments;
 
-  // Check that next-round matchUps don't already have participants assigned.
-  for (const matchUp of nextRoundMatchUps) {
-    const dps = matchUp.drawPositions;
-    if (!dps?.length) continue;
-
-    const assignedPositions = dps.filter((dp) => {
-      if (!dp) return false;
-      return positionAssignments.some((a) => a.drawPosition === dp && a.participantId);
-    });
-
-    if (assignedPositions.length) {
-      return decorateResult({
-        result: { error: INVALID_VALUES },
-        info: 'Next round already has participants assigned',
-      });
-    }
-
-    // Clear stale drawPositions and matchUp state so positions are computed cleanly
-    if (dps.some(Boolean)) {
-      matchUp.drawPositions = [];
-    }
-    // Reset any stale matchUpStatus (e.g. BYE from old auto-propagation)
-    if (matchUp.matchUpStatus && matchUp.matchUpStatus !== 'TO_BE_PLAYED') {
-      matchUp.matchUpStatus = undefined;
-      matchUp.winningSide = undefined;
-      matchUp.score = undefined;
-    }
-  }
+  const prepError = prepareNextRoundMatchUps({ nextRoundMatchUps, positionAssignments });
+  if (prepError) return prepError;
 
   const tournamentId = tournamentRecord?.tournamentId;
 
@@ -204,35 +146,16 @@ export function luckyDrawAdvancement({
     event,
   });
 
-  // Place discarded losers into linked consolidation/playoff structures
   if (roundStatus.isPreFeedRound && participantId) {
-    const discardedLosers = (roundStatus.eligibleLosers || [])
-      .filter((l) => l.participantId !== participantId)
-      .map((l) => l.participantId);
-
-    if (discardedLosers.length) {
-      const loserLinks = (drawDefinition.links || []).filter(
-        (link) =>
-          link.linkType === LOSER &&
-          link.source.structureId === structureId &&
-          (link.source.roundNumber || 1) === roundNumber,
-      );
-
-      for (const link of loserLinks) {
-        const result = placeDiscardedLosers({
-          drawDefinition,
-          tournamentRecord,
-          targetStructureId: link.target.structureId,
-          targetRoundNumber: link.target.roundNumber,
-          feedProfile: link.target.feedProfile,
-          participantIds: discardedLosers,
-          event,
-        });
-        if (result?.error && getDevContext()) {
-          console.warn('Failed to place discarded losers in consolidation structure:', result.error);
-        }
-      }
-    }
+    handleDiscardedLosers({
+      drawDefinition,
+      tournamentRecord,
+      roundStatus,
+      participantId,
+      structureId,
+      roundNumber,
+      event,
+    });
   }
 
   return { ...SUCCESS };
@@ -345,6 +268,110 @@ function placeDiscardedLosers({
   });
 
   return { ...SUCCESS };
+}
+
+function handleDiscardedLosers({
+  drawDefinition,
+  tournamentRecord,
+  roundStatus,
+  participantId,
+  structureId,
+  roundNumber,
+  event,
+}) {
+  const discardedLosers = (roundStatus.eligibleLosers || [])
+    .filter((l) => l.participantId !== participantId)
+    .map((l) => l.participantId);
+
+  if (!discardedLosers.length) return;
+
+  const loserLinks = (drawDefinition.links || []).filter(
+    (link) =>
+      link.linkType === LOSER &&
+      link.source.structureId === structureId &&
+      (link.source.roundNumber || 1) === roundNumber,
+  );
+
+  for (const link of loserLinks) {
+    const result = placeDiscardedLosers({
+      drawDefinition,
+      tournamentRecord,
+      targetStructureId: link.target.structureId,
+      targetRoundNumber: link.target.roundNumber,
+      feedProfile: link.target.feedProfile,
+      participantIds: discardedLosers,
+      event,
+    });
+    if (result?.error && getDevContext()) {
+      console.warn('Failed to place discarded losers in consolidation structure:', result.error);
+    }
+  }
+}
+
+function prepareNextRoundMatchUps({ nextRoundMatchUps, positionAssignments }): ResultType | undefined {
+  for (const matchUp of nextRoundMatchUps) {
+    const dps = matchUp.drawPositions;
+    if (!dps?.length) continue;
+
+    const assignedPositions = dps.filter((dp) => {
+      if (!dp) return false;
+      return positionAssignments.some((a) => a.drawPosition === dp && a.participantId);
+    });
+
+    if (assignedPositions.length) {
+      return decorateResult({
+        result: { error: INVALID_VALUES },
+        info: 'Next round already has participants assigned',
+      });
+    }
+
+    if (dps.some(Boolean)) {
+      matchUp.drawPositions = [];
+    }
+    if (matchUp.matchUpStatus && matchUp.matchUpStatus !== 'TO_BE_PLAYED') {
+      matchUp.matchUpStatus = undefined;
+      matchUp.winningSide = undefined;
+      matchUp.score = undefined;
+    }
+  }
+
+  return undefined;
+}
+
+function insertLuckyLoser({ advancingParticipantIds, nextRoundMatchUps, roundStatus, participantId, winners, random }) {
+  const luckyLoserInfo = roundStatus.eligibleLosers?.find((l) => l.participantId === participantId);
+  const defeatingWinnerIdx = luckyLoserInfo ? winners.findIndex((w) => w.matchUpId === luckyLoserInfo.matchUpId) : -1;
+
+  const numMatchUps = nextRoundMatchUps.length;
+  const halfSplit = Math.ceil(numMatchUps / 2);
+
+  if (defeatingWinnerIdx < 0 || numMatchUps <= 1) {
+    advancingParticipantIds.push(participantId);
+    return;
+  }
+
+  const totalSlots = numMatchUps * 2;
+  const validPositions: number[] = [];
+
+  for (let p = 0; p < totalSlots; p++) {
+    const luckyMatchUp = Math.floor(p / 2);
+    const shiftedIdx = defeatingWinnerIdx + (p <= defeatingWinnerIdx ? 1 : 0);
+    const winnerMatchUp = Math.floor(shiftedIdx / 2);
+
+    const luckyInTopHalf = luckyMatchUp < halfSplit;
+    const winnerInTopHalf = winnerMatchUp < halfSplit;
+
+    if (luckyInTopHalf !== winnerInTopHalf) {
+      validPositions.push(p);
+    }
+  }
+
+  if (validPositions.length) {
+    const randomIdx = Math.floor((random ?? Math.random)() * validPositions.length);
+    advancingParticipantIds.splice(validPositions[randomIdx], 0, participantId);
+  } else {
+    advancingParticipantIds.push(participantId);
+  }
 }
 
 function cleanupStalePositionAssignments({ positionAssignments, nextRoundMatchUps, structure, roundNumber }) {

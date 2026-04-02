@@ -16,7 +16,7 @@ import { isGendered } from '@Validators/isGendered';
 import { coercedGender } from '@Helpers/coercedGender';
 
 export function anonymizeTournamentRecord({
-  keepExtensions = [], // e.g. ['level']
+  keepExtensions = [],
   anonymizeParticipantNames = true,
   tournamentRecord,
   tournamentName,
@@ -25,8 +25,6 @@ export function anonymizeTournamentRecord({
 }) {
   if (!tournamentRecord) return { error: MISSING_TOURNAMENT_RECORD };
 
-  // if keepExtensions is boolean true then keep all extensions
-  // otherwise, keep any specified extensions along with internal extensions
   const extensionsToKeep = Array.isArray(keepExtensions)
     ? internalExtensions.concat(...keepExtensions)
     : internalExtensions;
@@ -39,10 +37,26 @@ export function anonymizeTournamentRecord({
     }
   };
 
-  // create mapping from original element IDs to newly generated UUIDs
   const idMap = {};
 
-  // change the tournamentId and name
+  anonymizeTournamentHeader({ tournamentRecord, filterExtensions, idMap, tournamentId, tournamentName });
+  anonymizeParticipantIds({ tournamentRecord, filterExtensions, idMap });
+  anonymizeVenues({ tournamentRecord, filterExtensions, idMap });
+  anonymizeEvents({ tournamentRecord, filterExtensions, idMap });
+  anonymizeIndividualPersons({
+    anonymizeParticipantNames,
+    tournamentRecord,
+    filterExtensions,
+    personIds,
+    idMap,
+  });
+  anonymizeGroupedParticipants({ tournamentRecord });
+  anonymizeExtensionIds({ tournamentRecord, idMap });
+
+  return { ...SUCCESS };
+}
+
+function anonymizeTournamentHeader({ tournamentRecord, filterExtensions, idMap, tournamentId, tournamentName }) {
   tournamentRecord.extensions = filterExtensions(tournamentRecord);
 
   const newTournamentId = tournamentId || UUID();
@@ -54,7 +68,9 @@ export function anonymizeTournamentRecord({
   tournamentRecord.isMock = true;
 
   delete tournamentRecord.parentOrganisation;
+}
 
+function anonymizeParticipantIds({ tournamentRecord, filterExtensions, idMap }) {
   for (const participant of tournamentRecord.participants || []) {
     participant.extensions = filterExtensions(participant);
     participant.onlineResources = [];
@@ -64,7 +80,6 @@ export function anonymizeTournamentRecord({
     participant.participantId = newParticipantId;
   }
 
-  // update all PAIR, GROUP and TEAM participant individualParticipantIds
   for (const participant of tournamentRecord.participants || []) {
     if (Array.isArray(participant.individualParticipantIds)) {
       participant.individualParticipantIds = participant.individualParticipantIds.map(
@@ -72,7 +87,9 @@ export function anonymizeTournamentRecord({
       );
     }
   }
+}
 
+function anonymizeVenues({ tournamentRecord, filterExtensions, idMap }) {
   let venueIndex = 0;
   for (const venue of tournamentRecord.venues || []) {
     venue.venueAbbreviation = `V${venueIndex}`;
@@ -87,7 +104,6 @@ export function anonymizeTournamentRecord({
 
     venue.isMock = true;
     venueIndex += 1;
-    // venue.eventId = UUID(); eventIds can't be anonymized without updating schedulingProfiles
 
     let courtIndex = 0;
     for (const court of venue.courts || []) {
@@ -98,7 +114,65 @@ export function anonymizeTournamentRecord({
       courtIndex += 1;
     }
   }
+}
 
+function anonymizeDrawDefinition({ drawDefinition, filterExtensions, idMap }) {
+  drawDefinition.extensions = filterExtensions(drawDefinition);
+  const newDrawId = UUID();
+  idMap[drawDefinition.drawId] = newDrawId;
+  drawDefinition.drawId = newDrawId;
+  drawDefinition.isMock = true;
+
+  if (Array.isArray(drawDefinition.entries)) {
+    for (const entry of drawDefinition.entries) {
+      entry.participantId = idMap[entry.participantId];
+    }
+  }
+
+  const updateStructure = (structure) => {
+    structure.extensions = filterExtensions(structure);
+    const newStructureId = UUID();
+    idMap[structure.structureId] = newStructureId;
+    structure.structureId = newStructureId;
+
+    for (const assignment of structure.positionAssignments || []) {
+      if (assignment.participantId) assignment.participantId = idMap[assignment.participantId];
+    }
+
+    for (const assignment of structure.seedAssignments || []) {
+      if (assignment.participantId) assignment.participantId = idMap[assignment.participantId];
+    }
+
+    for (const matchUp of structure.matchUps || []) {
+      matchUp.isMock = true;
+
+      for (const side of matchUp.sides || []) {
+        if (!side.lineUp) continue;
+        side.lineUp = side.lineUp.map(({ participantId, collectionAssignments }) => ({
+          participantId: idMap[participantId],
+          collectionAssignments,
+        }));
+      }
+    }
+  };
+
+  for (const structure of drawDefinition.structures || []) {
+    updateStructure(structure);
+
+    if (Array.isArray(structure.structures)) {
+      for (const childStructure of structure.structures) {
+        updateStructure(childStructure);
+      }
+    }
+  }
+
+  for (const link of drawDefinition.links || []) {
+    link.source.structureId = idMap[link.source.structureId];
+    link.target.structureId = idMap[link.target.structureId];
+  }
+}
+
+function anonymizeEvents({ tournamentRecord, filterExtensions, idMap }) {
   let eventCount = 1;
   for (const event of tournamentRecord.events || []) {
     event.extensions = filterExtensions(event);
@@ -112,7 +186,6 @@ export function anonymizeTournamentRecord({
       event.category?.categoryName || event.category?.ageCategoryCode || event.category?.ratingType || event.gender;
     event.eventName = `Event ${eventCount} ${categoryName}`;
 
-    // update all event entries
     if (Array.isArray(event.entries)) {
       for (const entry of event.entries) {
         entry.participantId = idMap[entry.participantId];
@@ -120,65 +193,7 @@ export function anonymizeTournamentRecord({
     }
 
     for (const drawDefinition of event.drawDefinitions || []) {
-      drawDefinition.extensions = filterExtensions(drawDefinition);
-      const newDrawId = UUID();
-      idMap[drawDefinition.drawId] = newDrawId;
-      drawDefinition.drawId = newDrawId;
-      drawDefinition.isMock = true;
-
-      // update all drawDefinition entries
-      if (Array.isArray(drawDefinition.entries)) {
-        for (const entry of drawDefinition.entries) {
-          entry.participantId = idMap[entry.participantId];
-        }
-      }
-
-      const updateStructure = (structure) => {
-        structure.extensions = filterExtensions(structure);
-        const newStructureId = UUID();
-        idMap[structure.structureId] = newStructureId;
-        structure.structureId = newStructureId;
-
-        // update positionAssignments for all structures
-        for (const assignment of structure.positionAssignments || []) {
-          if (assignment.participantId) assignment.participantId = idMap[assignment.participantId];
-        }
-
-        // update seedAssignments for all structures
-        for (const assignment of structure.seedAssignments || []) {
-          if (assignment.participantId) assignment.participantId = idMap[assignment.participantId];
-        }
-
-        // update lineUps in each matchUp
-        for (const matchUp of structure.matchUps || []) {
-          matchUp.isMock = true;
-
-          for (const side of matchUp.sides || []) {
-            if (!side.lineUp) continue;
-            side.lineUp = side.lineUp.map(({ participantId, collectionAssignments }) => ({
-              participantId: idMap[participantId],
-              collectionAssignments,
-            }));
-          }
-        }
-      };
-
-      for (const structure of drawDefinition.structures || []) {
-        updateStructure(structure);
-
-        // account for structureType CONTAINER
-        if (Array.isArray(structure.structures)) {
-          for (const childStructure of structure.structures) {
-            updateStructure(childStructure);
-          }
-        }
-      }
-
-      // use idMap to update all link IDs
-      for (const link of drawDefinition.links || []) {
-        link.source.structureId = idMap[link.source.structureId];
-        link.target.structureId = idMap[link.target.structureId];
-      }
+      anonymizeDrawDefinition({ drawDefinition, filterExtensions, idMap });
     }
 
     const { extension: flightProfile } = findExtension({
@@ -186,7 +201,6 @@ export function anonymizeTournamentRecord({
       element: event,
     });
 
-    // use idMap to update all IDs in flightProfiles
     if (Array.isArray(flightProfile?.value?.flights)) {
       flightProfile?.value.flights?.forEach((flight) => {
         flight.drawId = idMap[flight.drawId];
@@ -200,7 +214,15 @@ export function anonymizeTournamentRecord({
 
     eventCount += 1;
   }
+}
 
+function anonymizeIndividualPersons({
+  anonymizeParticipantNames,
+  tournamentRecord,
+  filterExtensions,
+  personIds,
+  idMap,
+}) {
   const consideredDate = tournamentRecord.startDate || formatDate(new Date());
 
   const individualParticipants = (tournamentRecord.participants || []).filter(
@@ -226,7 +248,7 @@ export function anonymizeTournamentRecord({
     ...Object.keys(gendersCount).map((gender) => ({
       [gender]:
         generatePersons({
-          category: { ageCategoryCode: 'O18' }, // ageCategoryCode is unimportant since birthYear will be replaced
+          category: { ageCategoryCode: 'O18' },
           count: gendersCount[gender],
           addressProps: { citiesCount: 10 },
           personExtensions: [],
@@ -239,7 +261,24 @@ export function anonymizeTournamentRecord({
   const genderedIndices = { [MALE]: 0, [FEMALE]: 0, [OTHER]: 0 };
 
   const individualParticipantsCount = individualParticipants.length;
+  const addressValues = buildAddressValues(individualParticipants, individualParticipantsCount);
 
+  individualParticipants.forEach((individualParticipant, participantIndex) => {
+    anonymizeIndividualPerson({
+      anonymizeParticipantNames,
+      individualParticipant,
+      filterExtensions,
+      participantIndex,
+      genderedPersons,
+      genderedIndices,
+      addressValues,
+      personIds,
+      idMap,
+    });
+  });
+}
+
+function buildAddressValues(individualParticipants, individualParticipantsCount) {
   const addressComponents = individualParticipants.reduce(
     (components, participant) => {
       const address = participant.person?.addresses?.[0] || {};
@@ -268,51 +307,68 @@ export function anonymizeTournamentRecord({
     count: postalCodesCount || individualParticipantsCount,
     participantsCount: individualParticipantsCount,
   });
-  const addressValues = { cities, states, postalCodes };
 
-  individualParticipants.forEach((individualParticipant, participantIndex) => {
-    const person = individualParticipant?.person;
-    const gender = person?.sex || OTHER;
-    const birthYear = extractDate(person?.birthDate)?.split('-')[0];
+  return { cities, states, postalCodes };
+}
 
-    const genderedIndex = genderedIndices[gender];
-    const generatedPerson = genderedPersons[gender][genderedIndex];
-    genderedIndices[gender] += 1;
+function anonymizeIndividualPerson({
+  anonymizeParticipantNames,
+  individualParticipant,
+  filterExtensions,
+  participantIndex,
+  genderedPersons,
+  genderedIndices,
+  addressValues,
+  personIds,
+  idMap,
+}) {
+  const person = individualParticipant?.person;
+  const gender = person?.sex || OTHER;
+  const birthYear = extractDate(person?.birthDate)?.split('-')[0];
 
-    if (birthYear) {
-      const [, month, day] = generatedPerson?.birthDate?.split('-') || [];
-      const birthDate = [birthYear, month, day].join('-');
-      generatedPerson.birthDate = birthDate;
-    }
+  const genderedIndex = genderedIndices[gender];
+  const generatedPerson = genderedPersons[gender][genderedIndex];
+  genderedIndices[gender] += 1;
 
-    if (person?.addresses) {
-      const address = generateAddress({
-        ...addressValues,
-        participantIndex,
-        nationalityCode: generatedPerson.nationalityCode,
-      });
+  if (birthYear) {
+    const [, month, day] = generatedPerson?.birthDate?.split('-') || [];
+    const birthDate = [birthYear, month, day].join('-');
+    generatedPerson.birthDate = birthDate;
+  }
 
-      generatedPerson.addresses = [address];
-    }
+  if (person?.addresses) {
+    const address = generateAddress({
+      ...addressValues,
+      participantIndex,
+      nationalityCode: generatedPerson.nationalityCode,
+    });
 
-    generatedPerson.personId = personIds?.[participantIndex] || UUID();
+    generatedPerson.addresses = [address];
+  }
 
-    if (anonymizeParticipantNames) {
-      generatedPerson.standardFamilyName = generatedPerson.lastName;
-      generatedPerson.standardGivenName = generatedPerson.firstName;
-      individualParticipant.participantName = `${generatedPerson.standardGivenName} ${generatedPerson.standardFamilyName}`;
-    } else {
-      generatedPerson.standardFamilyName = person?.standardFamilyName;
-      generatedPerson.standardGivenName = person?.standardGivenName;
-    }
+  generatedPerson.personId = personIds?.[participantIndex] || UUID();
 
-    delete generatedPerson.firstName;
-    delete generatedPerson.lastName;
+  if (anonymizeParticipantNames) {
+    generatedPerson.standardFamilyName = generatedPerson.lastName;
+    generatedPerson.standardGivenName = generatedPerson.firstName;
+    individualParticipant.participantName = `${generatedPerson.standardGivenName} ${generatedPerson.standardFamilyName}`;
+  } else {
+    generatedPerson.standardFamilyName = person?.standardFamilyName;
+    generatedPerson.standardGivenName = person?.standardGivenName;
+  }
 
-    generatedPerson.extensions = filterExtensions(person);
-    individualParticipant.person = generatedPerson;
-    idMap[person?.personId] = generatedPerson.personId;
-  });
+  delete generatedPerson.firstName;
+  delete generatedPerson.lastName;
+
+  generatedPerson.extensions = filterExtensions(person);
+  individualParticipant.person = generatedPerson;
+  idMap[person?.personId] = generatedPerson.personId;
+}
+
+function anonymizeGroupedParticipants({ tournamentRecord }) {
+  const individualParticipants = (tournamentRecord.participants || []).filter(
+    ({ participantType }) => participantType === INDIVIDUAL,
+  );
 
   const pairParticipants = (tournamentRecord.participants || []).filter(
     ({ participantType }) => participantType === PAIR,
@@ -329,8 +385,7 @@ export function anonymizeTournamentRecord({
   const teamParticipants = (tournamentRecord.participants || []).filter(
     ({ participantType }) => participantType === TEAM,
   );
-  const teamParticipantsCount = teamParticipants.length;
-  const teamNames = nameMocks({ count: teamParticipantsCount }).names;
+  const teamNames = nameMocks({ count: teamParticipants.length }).names;
   teamParticipants.forEach((teamParticipant, i) => {
     teamParticipant.participantName = teamNames[i];
   });
@@ -338,21 +393,21 @@ export function anonymizeTournamentRecord({
   const groupParticipants = (tournamentRecord.participants || []).filter(
     ({ participantType }) => participantType === GROUP,
   );
-  const groupParticipantsCount = groupParticipants.length;
   const groupNames = nameMocks({
-    count: groupParticipantsCount,
+    count: groupParticipants.length,
     nameRoot: 'Group',
   }).names;
   groupParticipants.forEach((teamParticipant, i) => {
     teamParticipant.participantName = groupNames[i];
   });
+}
 
+function anonymizeExtensionIds({ tournamentRecord, idMap }) {
   const { extension: schedulingProfile } = findExtension({
     element: tournamentRecord,
     name: SCHEDULING_PROFILE,
   });
 
-  // use idMap to update all IDs in schedulingProfile
   if (Array.isArray(schedulingProfile?.value)) {
     schedulingProfile?.value.forEach((round) => {
       round.tournamentId = idMap[round.tournamentId];
@@ -367,14 +422,11 @@ export function anonymizeTournamentRecord({
     name: PERSON_REQUESTS,
   });
 
-  // use idMap to update all IDs in personRequests
   if (Array.isArray(personRequests?.value)) {
     personRequests?.value.forEach((request) => {
       request.personId = idMap[request.personId];
     });
   }
-
-  return { ...SUCCESS };
 }
 
 function generatePairParticipantName({ individualParticipantIds, individualParticipants }) {

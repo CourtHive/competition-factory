@@ -47,69 +47,28 @@ export function getQualityWinPoints({
       includeWalkovers = false,
       rankingRanges = [],
       maxBonusPerTournament,
-      unrankedOpponentBehavior = 'noBonus',
     } = profile;
 
     let profilePoints = 0;
 
     for (const matchUpId of wonMatchUpIds) {
-      const matchUp = mappedMatchUps[matchUpId];
-      if (!matchUp) continue;
-
-      const { matchUpStatus, sides = [], winningSide } = matchUp;
-
-      // skip walkovers and defaults unless explicitly included
-      if (!includeWalkovers && (matchUpStatus === WALKOVER || matchUpStatus === DEFAULTED)) continue;
-
-      // find the participant's side number and opponent
-      const mySideNumber = participantSideMap[matchUpId];
-      if (!mySideNumber || winningSide !== mySideNumber) continue;
-
-      const opponentSide = sides.find((s) => s.sideNumber !== mySideNumber);
-      const opponentParticipantId = opponentSide?.participantId;
-      if (!opponentParticipantId) continue;
-
-      const opponent = participantById[opponentParticipantId];
-      if (!opponent) continue;
-
-      // look up opponent's ranking
-      const opponentRank = resolveRanking({
-        participant: opponent,
+      const result = evaluateMatchUpForQualityWin({
+        matchUpId,
+        mappedMatchUps,
+        participantSideMap,
+        participantById,
+        includeWalkovers,
         rankingScaleName,
         rankingSnapshot,
         tournamentStartDate,
+        rankingRanges,
+        level,
       });
 
-      if (!opponentRank) {
-        if (unrankedOpponentBehavior === 'noBonus') continue;
-        // future: handle 'useDefaultRank' with a default rank value
-        continue;
-      }
+      if (!result) continue;
 
-      // find matching rank range
-      const matchingRange = rankingRanges.find(
-        (r) => opponentRank >= r.rankRange[0] && opponentRank <= r.rankRange[1],
-      );
-
-      if (matchingRange) {
-        let value: number | undefined;
-        if (typeof matchingRange.value === 'number') {
-          value = matchingRange.value;
-        } else if (typeof matchingRange.value === 'object') {
-          const resolved = getTargetElement(level, matchingRange.value.level ?? matchingRange.value);
-          if (typeof resolved === 'number') value = resolved;
-        }
-
-        if (value) {
-          profilePoints += value;
-          qualityWins.push({
-            opponentParticipantId,
-            opponentRank,
-            points: value,
-            matchUpId,
-          });
-        }
-      }
+      profilePoints += result.points;
+      qualityWins.push(result);
     }
 
     // apply per-tournament cap
@@ -164,8 +123,70 @@ function resolveRanking({
     (a, b) => (a.createdAt ? new Date(a.createdAt).getTime() : 0) - (b.createdAt ? new Date(b.createdAt).getTime() : 0),
   );
 
-  const mostRecent = filteredItems[filteredItems.length - 1];
+  const mostRecent = filteredItems.at(-1);
   const value = mostRecent?.itemValue;
 
   return typeof value === 'number' ? value : undefined;
+}
+
+function evaluateMatchUpForQualityWin({
+  matchUpId,
+  mappedMatchUps,
+  participantSideMap,
+  participantById,
+  includeWalkovers,
+  rankingScaleName,
+  rankingSnapshot,
+  tournamentStartDate,
+  rankingRanges,
+  level,
+}): QualityWin | undefined {
+  const matchUp = mappedMatchUps[matchUpId];
+  if (!matchUp) return undefined;
+
+  const { matchUpStatus, sides = [], winningSide } = matchUp;
+
+  if (!includeWalkovers && (matchUpStatus === WALKOVER || matchUpStatus === DEFAULTED)) return undefined;
+
+  const mySideNumber = participantSideMap[matchUpId];
+  if (!mySideNumber || winningSide !== mySideNumber) return undefined;
+
+  const opponentSide = sides.find((s) => s.sideNumber !== mySideNumber);
+  const opponentParticipantId = opponentSide?.participantId;
+  if (!opponentParticipantId) return undefined;
+
+  const opponent = participantById[opponentParticipantId];
+  if (!opponent) return undefined;
+
+  const opponentRank = resolveRanking({
+    participant: opponent,
+    rankingScaleName,
+    rankingSnapshot,
+    tournamentStartDate,
+  });
+
+  if (!opponentRank) return undefined;
+
+  const matchingRange = rankingRanges.find(
+    (r) => opponentRank >= r.rankRange[0] && opponentRank <= r.rankRange[1],
+  );
+
+  if (!matchingRange) return undefined;
+
+  let value: number | undefined;
+  if (typeof matchingRange.value === 'number') {
+    value = matchingRange.value;
+  } else if (typeof matchingRange.value === 'object') {
+    const resolved = getTargetElement(level, matchingRange.value.level ?? matchingRange.value);
+    if (typeof resolved === 'number') value = resolved;
+  }
+
+  if (!value) return undefined;
+
+  return {
+    opponentParticipantId,
+    opponentRank,
+    points: value,
+    matchUpId,
+  };
 }

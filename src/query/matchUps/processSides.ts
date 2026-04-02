@@ -180,94 +180,164 @@ export function processSides(params) {
       const individualParticipantIds = participantMap[participantId]?.participant.individualParticipantIds || [];
 
       if (matchUpTieId) {
-        if (withTeamMatchUps) {
-          const addTeamMatchUp = (participantId) =>
-            (participantMap[participantId].matchUps[matchUpTieId] = {
-              participantWon: tieWinningSide === sideNumber,
-              matchUpId: matchUpTieId,
-              matchUpType: TEAM,
-              sideNumber,
-            });
-          addTeamMatchUp(participantId);
-          individualParticipantIds.forEach(addTeamMatchUp);
-        }
-
-        if (withDraws && !participantMap[participantId].draws[drawId]) {
-          const teamParticipantId = matchUpSides.find((s) => s.sideNumber === sideNumber)?.participant?.participantId;
-          const teamEntryStatus = participantMap[teamParticipantId]?.draws?.[drawId]?.entryStatus;
-
-          const addDrawData = (participantId) =>
-            (participantMap[participantId].draws[drawId] = {
-              entryStatus: teamEntryStatus,
-              // add positions played in lineUp collections
-              eventId,
-              drawId,
-            });
-          addDrawData(participantId);
-          individualParticipantIds.forEach(addDrawData);
-        }
+        processTieMatchUpData({
+          individualParticipantIds,
+          tieWinningSide,
+          withTeamMatchUps,
+          participantMap,
+          matchUpSides,
+          matchUpTieId,
+          sideNumber,
+          participantId,
+          withDraws,
+          eventId,
+          drawId,
+        });
       }
 
       if (isPair) {
-        individualParticipantIds.forEach(
-          (participantId) => participantMap[participantId] && addMatchUp(participantId, opponentParticipantId),
-        );
-        individualParticipantIds.forEach((participantId, i) => {
-          const partnerParticipantId = individualParticipantIds[1 - i];
-          const participant = participantMap[participantId];
-          if (participant) addPartner({ participant, partnerParticipantId });
+        processPairParticipants({
+          individualParticipantIds,
+          opponentParticipantId,
+          participantMap,
+          matchUpSides,
+          participantId,
+          sideNumber,
+          withEvents,
+          addMatchUp,
+          addPartner,
+          eventId,
         });
-
-        // in TEAM events PAIR participants do not appear in entries
-        if (withEvents && matchUpSides) {
-          const teamParticipantId = matchUpSides.find((s) => s.sideNumber === sideNumber)?.participant?.participantId;
-          if (teamParticipantId) {
-            const teamEntry = participantMap[teamParticipantId]?.events[eventId];
-
-            if (teamEntry) {
-              participantMap[participantId].events[eventId] = { ...teamEntry };
-              individualParticipantIds.forEach(
-                (individualParticiapntId) =>
-                  (participantMap[individualParticiapntId].events[eventId] = {
-                    ...teamEntry,
-                  }),
-              );
-            } else {
-              console.log('Missing teamEntry', { eventId, teamParticipantId });
-            }
-          }
-        }
       }
 
       if (winningSide) {
-        const processParticipantId = (id) => {
-          if (participantWon) {
-            participantMap[id].counters[matchUpType].wins += 1;
-            participantMap[id].counters.wins += 1;
-            if (matchUpStatus === WALKOVER) {
-              participantMap[id].counters[matchUpType].walkoverWins += 1;
-              participantMap[id].counters.walkoverWins += 1;
-            }
-            if (matchUpStatus === DEFAULTED) {
-              participantMap[id].counters[matchUpType].defaultWins += 1;
-              participantMap[id].counters.defaultWins += 1;
-            }
-          } else {
-            participantMap[id].counters[matchUpType].losses += 1;
-            participantMap[id].counters.losses += 1;
-            if (matchUpStatus === WALKOVER) {
-              participantMap[id].counters[matchUpType].walkovers += 1;
-              participantMap[id].counters.walkovers += 1;
-            }
-            if (matchUpStatus === DEFAULTED) {
-              participantMap[id].counters[matchUpType].defaults += 1;
-              participantMap[id].counters.defaults += 1;
-            }
-          }
-        };
-        processParticipantId(participantId);
-        individualParticipantIds.forEach(processParticipantId);
+        updateWinLossCounters({
+          individualParticipantIds,
+          participantMap,
+          participantWon,
+          matchUpStatus,
+          participantId,
+          matchUpType,
+        });
       }
     }
   }
+}
+
+function processTieMatchUpData({
+  individualParticipantIds,
+  tieWinningSide,
+  withTeamMatchUps,
+  participantMap,
+  matchUpSides,
+  matchUpTieId,
+  sideNumber,
+  participantId,
+  withDraws,
+  eventId,
+  drawId,
+}) {
+  if (withTeamMatchUps) {
+    const addTeamMatchUp = (id) =>
+      (participantMap[id].matchUps[matchUpTieId] = {
+        participantWon: tieWinningSide === sideNumber,
+        matchUpId: matchUpTieId,
+        matchUpType: TEAM,
+        sideNumber,
+      });
+    addTeamMatchUp(participantId);
+    individualParticipantIds.forEach(addTeamMatchUp);
+  }
+
+  if (withDraws && !participantMap[participantId].draws[drawId]) {
+    const teamParticipantId = matchUpSides.find((s) => s.sideNumber === sideNumber)?.participant?.participantId;
+    const teamEntryStatus = participantMap[teamParticipantId]?.draws?.[drawId]?.entryStatus;
+
+    const addDrawData = (id) =>
+      (participantMap[id].draws[drawId] = {
+        entryStatus: teamEntryStatus,
+        eventId,
+        drawId,
+      });
+    addDrawData(participantId);
+    individualParticipantIds.forEach(addDrawData);
+  }
+}
+
+function processPairParticipants({
+  individualParticipantIds,
+  opponentParticipantId,
+  participantMap,
+  matchUpSides,
+  participantId,
+  sideNumber,
+  withEvents,
+  addMatchUp,
+  addPartner,
+  eventId,
+}) {
+  individualParticipantIds.forEach(
+    (id) => participantMap[id] && addMatchUp(id, opponentParticipantId),
+  );
+  individualParticipantIds.forEach((id, i) => {
+    const partnerParticipantId = individualParticipantIds[1 - i];
+    const participant = participantMap[id];
+    if (participant) addPartner({ participant, partnerParticipantId });
+  });
+
+  if (withEvents && matchUpSides) {
+    const teamParticipantId = matchUpSides.find((s) => s.sideNumber === sideNumber)?.participant?.participantId;
+    if (teamParticipantId) {
+      const teamEntry = participantMap[teamParticipantId]?.events[eventId];
+
+      if (teamEntry) {
+        participantMap[participantId].events[eventId] = { ...teamEntry };
+        individualParticipantIds.forEach(
+          (individualParticiapntId) =>
+            (participantMap[individualParticiapntId].events[eventId] = {
+              ...teamEntry,
+            }),
+        );
+      } else {
+        console.log('Missing teamEntry', { eventId, teamParticipantId });
+      }
+    }
+  }
+}
+
+function updateWinLossCounters({
+  individualParticipantIds,
+  participantMap,
+  participantWon,
+  matchUpStatus,
+  participantId,
+  matchUpType,
+}) {
+  const processParticipantId = (id) => {
+    if (participantWon) {
+      participantMap[id].counters[matchUpType].wins += 1;
+      participantMap[id].counters.wins += 1;
+      if (matchUpStatus === WALKOVER) {
+        participantMap[id].counters[matchUpType].walkoverWins += 1;
+        participantMap[id].counters.walkoverWins += 1;
+      }
+      if (matchUpStatus === DEFAULTED) {
+        participantMap[id].counters[matchUpType].defaultWins += 1;
+        participantMap[id].counters.defaultWins += 1;
+      }
+    } else {
+      participantMap[id].counters[matchUpType].losses += 1;
+      participantMap[id].counters.losses += 1;
+      if (matchUpStatus === WALKOVER) {
+        participantMap[id].counters[matchUpType].walkovers += 1;
+        participantMap[id].counters.walkovers += 1;
+      }
+      if (matchUpStatus === DEFAULTED) {
+        participantMap[id].counters[matchUpType].defaults += 1;
+        participantMap[id].counters.defaults += 1;
+      }
+    }
+  };
+  processParticipantId(participantId);
+  individualParticipantIds.forEach(processParticipantId);
 }

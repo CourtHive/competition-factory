@@ -98,14 +98,9 @@ export function setMatchUpState(params: SetMatchUpStateArgs): any {
   // always clear score if DOUBLE_WALKOVER or WALKOVER
   if (params.matchUpStatus && [WALKOVER, DOUBLE_WALKOVER].includes(params.matchUpStatus)) params.score = undefined;
 
-  // matchUpStatus in params is the new status
-  // winningSide in params is new winningSide
-
   const {
-    allowChangePropagation,
     disableScoreValidation,
     propagateExitStatus,
-    tournamentRecords,
     tournamentRecord,
     disableAutoCalc,
     enableAutoCalc,
@@ -117,59 +112,16 @@ export function setMatchUpState(params: SetMatchUpStateArgs): any {
     score,
   } = params;
 
-  // Check for missing parameters ---------------------------------------------
-  if (!drawDefinition) return { error: MISSING_DRAW_DEFINITION };
+  const validationError = validateMatchUpStateInputs({ drawDefinition, matchUpStatus, winningSide });
+  if (validationError) return validationError;
 
-  // Check matchUpStatus, matchUpStatus/winningSide validity ------------------
-  if (matchUpStatus && [CANCELLED, INCOMPLETE, ABANDONED, TO_BE_PLAYED].includes(matchUpStatus) && winningSide)
-    return { error: INVALID_VALUES, winningSide, matchUpStatus };
+  const resolved = resolveMatchUpAndContext({ tournamentRecord, drawDefinition, matchUpId, event, matchUpStatus, winningSide });
+  if (resolved.error) return resolved;
 
-  if (![undefined, ...validMatchUpStatuses].includes(matchUpStatus)) {
-    return decorateResult({
-      result: { error: INVALID_MATCHUP_STATUS },
-      info: 'matchUpStatus does not exist',
-      stack: 'setMatchUpStatus',
-    });
-  }
+  const { matchUp, inContextMatchUp, inContextDrawMatchUps, matchUpsMap, structure, isTeam, assignedDrawPositions, matchUpTieId } = resolved;
 
-  // Get map of all drawMatchUps and inContextDrawMatchUps ---------------------
-  const matchUpsMap = getMatchUpsMap({ drawDefinition });
-  const { matchUps: inContextDrawMatchUps } = getAllDrawMatchUps({
-    nextMatchUps: true,
-    tournamentRecord,
-    inContext: true,
-    drawDefinition,
-    matchUpsMap,
-    event,
-  });
-
-  // Find target matchUp ------------------------------------------------------
-  const matchUp = matchUpsMap.drawMatchUps.find((matchUp) => matchUp.matchUpId === matchUpId);
-
-  const inContextMatchUp = inContextDrawMatchUps?.find((matchUp) => matchUp.matchUpId === matchUpId);
-
-  if (!matchUp || !inContextDrawMatchUps) return { error: MATCHUP_NOT_FOUND };
-
-  if ((matchUp.winningSide || winningSide) && matchUpStatus === BYE) {
-    return {
-      context: 'Cannot have Bye with winningSide',
-      error: INCOMPATIBLE_MATCHUP_STATUS,
-      matchUpStatus,
-    };
-  }
-
-  const structureId = inContextMatchUp?.structureId;
-  const { structure } = findStructure({ drawDefinition, structureId });
-  const isTeam = isMatchUpEventType(TEAM)(matchUp.matchUpType);
-
-  // Check validity of matchUpStatus considering assigned drawPositions -------
-  const assignedDrawPositions = inContextMatchUp?.drawPositions?.filter(Boolean);
-
-  const matchUpTieId = inContextMatchUp?.matchUpTieId;
-
-  // Get winner/loser position targets ----------------------------------------
   const targetData = positionTargets({
-    matchUpId: matchUpTieId || matchUpId, // get targets for TEAM matchUp if tieMatchUp
+    matchUpId: matchUpTieId || matchUpId,
     inContextDrawMatchUps,
     drawDefinition,
   });
@@ -184,19 +136,15 @@ export function setMatchUpState(params: SetMatchUpStateArgs): any {
     matchUp,
   });
 
-  //we want to figure out if the command is for clearing the score as this
-  //can have downstream effects.
   const isClearScore =
     matchUpStatus === TO_BE_PLAYED && score?.scoreStringSide1 === '' && score?.scoreStringSide2 === '' && !winningSide;
 
   const propagatedExitDownStream = hasPropagatedExitDownstream(params);
 
-  //if we try to clear a score but there are downstream propagated statuses
-  //we error
   if (propagatedExitDownStream && isClearScore) {
     return { error: PROPAGATED_EXITS_DOWNSTREAM };
   }
-  // with propagating winningSide changes, activeDownstream does not apply to collection matchUps
+
   const activeDownstream = isActiveDownstream(params);
 
   let dualWinningSideChange;
@@ -219,17 +167,7 @@ export function setMatchUpState(params: SetMatchUpStateArgs): any {
     if (teamResult?.dualWinningSideChange !== undefined) dualWinningSideChange = teamResult.dualWinningSideChange;
   }
 
-  if (
-    isTeam &&
-    matchUpStatus &&
-    [
-      AWAITING_RESULT,
-      // for the following statuses should all tieMatchUp results be removed?
-      // CANCELLED,
-      // DOUBLE_WALKOVER,
-      // WALKOVER,
-    ].includes(matchUpStatus)
-  ) {
+  if (isTeam && matchUpStatus && [AWAITING_RESULT].includes(matchUpStatus)) {
     return {
       info: 'Not supported for matchUpType: TEAM',
       error: INVALID_VALUES,
@@ -304,6 +242,78 @@ export function setMatchUpState(params: SetMatchUpStateArgs): any {
     }
   }
 
+  const downstreamError = checkDownstreamCompatibility({
+    matchUpTieId,
+    activeDownstream,
+    matchUpStatus,
+    winningSide,
+    matchUp,
+  });
+  if (downstreamError) return downstreamError;
+
+  return resolveAndApplyOutcome({ params, isTeam, dualWinningSideChange, activeDownstream, stack });
+}
+
+function validateMatchUpStateInputs({ drawDefinition, matchUpStatus, winningSide }) {
+  if (!drawDefinition) return { error: MISSING_DRAW_DEFINITION };
+
+  if (matchUpStatus && [CANCELLED, INCOMPLETE, ABANDONED, TO_BE_PLAYED].includes(matchUpStatus) && winningSide)
+    return { error: INVALID_VALUES, winningSide, matchUpStatus };
+
+  if (![undefined, ...validMatchUpStatuses].includes(matchUpStatus)) {
+    return decorateResult({
+      result: { error: INVALID_MATCHUP_STATUS },
+      info: 'matchUpStatus does not exist',
+      stack: 'setMatchUpStatus',
+    });
+  }
+
+  return undefined;
+}
+
+function resolveMatchUpAndContext({ tournamentRecord, drawDefinition, matchUpId, event, matchUpStatus, winningSide }) {
+  const matchUpsMap = getMatchUpsMap({ drawDefinition });
+  const { matchUps: inContextDrawMatchUps } = getAllDrawMatchUps({
+    nextMatchUps: true,
+    tournamentRecord,
+    inContext: true,
+    drawDefinition,
+    matchUpsMap,
+    event,
+  });
+
+  const matchUp = matchUpsMap.drawMatchUps.find((matchUp) => matchUp.matchUpId === matchUpId);
+  const inContextMatchUp = inContextDrawMatchUps?.find((matchUp) => matchUp.matchUpId === matchUpId);
+
+  if (!matchUp || !inContextDrawMatchUps) return { error: MATCHUP_NOT_FOUND };
+
+  if ((matchUp.winningSide || winningSide) && matchUpStatus === BYE) {
+    return {
+      context: 'Cannot have Bye with winningSide',
+      error: INCOMPATIBLE_MATCHUP_STATUS,
+      matchUpStatus,
+    };
+  }
+
+  const structureId = inContextMatchUp?.structureId;
+  const { structure } = findStructure({ drawDefinition, structureId });
+  const isTeam = isMatchUpEventType(TEAM)(matchUp.matchUpType);
+  const assignedDrawPositions = inContextMatchUp?.drawPositions?.filter(Boolean);
+  const matchUpTieId = inContextMatchUp?.matchUpTieId;
+
+  return {
+    inContextDrawMatchUps,
+    assignedDrawPositions,
+    inContextMatchUp,
+    matchUpTieId,
+    matchUpsMap,
+    structure,
+    matchUp,
+    isTeam,
+  };
+}
+
+function checkDownstreamCompatibility({ matchUpTieId, activeDownstream, matchUpStatus, winningSide, matchUp }) {
   const directingMatchUpStatus = isDirectingMatchUpStatus({ matchUpStatus });
 
   if (!matchUpTieId) {
@@ -330,7 +340,12 @@ export function setMatchUpState(params: SetMatchUpStateArgs): any {
     }
   }
 
-  // Add scheduling information to matchUp ------------------------------------
+  return undefined;
+}
+
+function resolveAndApplyOutcome({ params, isTeam, dualWinningSideChange, activeDownstream, stack }) {
+  const { allowChangePropagation, tournamentRecords, tournamentRecord, drawDefinition, winningSide, matchUpId, matchUpTieId, matchUp } = params;
+
   const { schedule } = params;
   if (schedule) {
     const result = addMatchUpScheduleItems({
@@ -352,12 +367,13 @@ export function setMatchUpState(params: SetMatchUpStateArgs): any {
   if (
     allowChangePropagation &&
     validWinningSideSwap &&
-    matchUp.roundPosition // not round robin if matchUp.roundPosition
+    matchUp.roundPosition
   ) {
     return swapWinnerLoser(params);
   }
 
   const matchUpWinner = (winningSide && !matchUpTieId) || params.projectedWinningSide;
+  const directingMatchUpStatus = isDirectingMatchUpStatus({ matchUpStatus: params.matchUpStatus });
 
   pushGlobalLog({
     activeDownstream,

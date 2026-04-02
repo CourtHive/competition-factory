@@ -171,44 +171,76 @@ function parseMatchFormat(formatstring: string): ParsedFormat | undefined {
   let gCount = 0;
   let mCount = 0;
 
+  const sectionState = { setFormat, finalSetFormat, gameFormat, matchUpConstraint, sCount, fCount, gCount, mCount };
+
   for (let i = 1; i < parts.length; i++) {
-    const colonIdx = parts[i].indexOf(':');
-    if (colonIdx < 0) return undefined; // invalid section without key
-
-    const key = parts[i].slice(0, colonIdx);
-    const value = parts[i].slice(colonIdx + 1);
-
-    if (!(key in sectionTypes)) return undefined; // unknown section key
-
-    if (key === 'S') {
-      sCount++;
-      if (sCount > 1) return undefined; // duplicate
-      setFormat = parseSetFormatString(parts[i], value);
-    } else if (key === 'F') {
-      fCount++;
-      if (fCount > 1) return undefined; // duplicate
-      finalSetFormat = parseSetFormatString(parts[i], value);
-    } else if (key === 'G') {
-      gCount++;
-      if (gCount > 1) return undefined; // duplicate -G: section
-      gameFormat = parseGameFormat(value);
-      if (!gameFormat) return undefined; // invalid game format value
-    } else if (key === 'M') {
-      mCount++;
-      if (mCount > 1) return undefined; // duplicate -M: section
-      matchUpConstraint = parseMatchUpConstraint(value);
-      if (!matchUpConstraint) return undefined; // invalid match constraint value
-    }
+    const parsed = parseSectionPart(parts[i], sectionState);
+    if (!parsed) return undefined;
   }
 
+  ({ setFormat, finalSetFormat, gameFormat, matchUpConstraint } = sectionState);
+
+  return buildParsedFormat({
+    setFormat,
+    finalSetFormat,
+    gameFormat,
+    matchUpConstraint,
+    matchRoot,
+    aggregate,
+    matchMods,
+    bestOf,
+    exactly,
+  });
+}
+
+function parseSectionPart(part: string, state): boolean {
+  const colonIdx = part.indexOf(':');
+  if (colonIdx < 0) return false;
+
+  const key = part.slice(0, colonIdx);
+  const value = part.slice(colonIdx + 1);
+
+  if (!(key in sectionTypes)) return false;
+
+  if (key === 'S') {
+    state.sCount++;
+    if (state.sCount > 1) return false;
+    state.setFormat = parseSetFormatString(part, value);
+  } else if (key === 'F') {
+    state.fCount++;
+    if (state.fCount > 1) return false;
+    state.finalSetFormat = parseSetFormatString(part, value);
+  } else if (key === 'G') {
+    state.gCount++;
+    if (state.gCount > 1) return false;
+    state.gameFormat = parseGameFormat(value);
+    if (!state.gameFormat) return false;
+  } else if (key === 'M') {
+    state.mCount++;
+    if (state.mCount > 1) return false;
+    state.matchUpConstraint = parseMatchUpConstraint(value);
+    if (!state.matchUpConstraint) return false;
+  }
+
+  return true;
+}
+
+function buildParsedFormat({
+  setFormat,
+  finalSetFormat,
+  gameFormat,
+  matchUpConstraint,
+  matchRoot,
+  aggregate,
+  matchMods,
+  bestOf,
+  exactly,
+}): ParsedFormat | undefined {
   const timed = (setFormat && setFormat.timed) || (finalSetFormat && finalSetFormat.timed);
 
-  // Validation: for SET root, apply strict bestOf/exactly rules
   if (matchRoot === SET) {
     const validSetsCount = (bestOf && bestOf < 6) || (timed && exactly);
     if (!validSetsCount) return undefined;
-  } else {
-    // For non-SET roots: just require count > 0 (already checked in parseMatchSpec)
   }
 
   const validFinalSet = !finalSetFormat || finalSetFormat;
@@ -222,15 +254,9 @@ function parseMatchFormat(formatstring: string): ParsedFormat | undefined {
     bestOf,
   });
 
-  // Only include matchRoot when NOT 'SET' (backward compat)
   if (matchRoot !== SET) result.matchRoot = matchRoot;
-
-  // Only include aggregate when true
   if (aggregate) result.aggregate = true;
-
-  // Only include matchMods when non-empty
   if (matchMods.length > 0) result.matchMods = matchMods;
-
   if (finalSetFormat) result.finalSetFormat = finalSetFormat;
   if (gameFormat) result.gameFormat = gameFormat;
   if (matchUpConstraint) result.matchUpConstraint = matchUpConstraint;

@@ -377,12 +377,13 @@ function smartComplete(params) {
   if (scoreString || matchUpStatus) return completeDrawMatchUp({ ...params, matchUpFormat: resolvedFormat });
 
   const { matchUpId } = targetMatchUp || {};
-  const { outcome } = generateOutcome({
+  const generatedResult: any = generateOutcome({
     matchUpStatusProfile,
     matchUpFormat: resolvedFormat,
     winningSide,
     random,
   });
+  const { outcome } = generatedResult;
 
   return setMatchUpStatus({
     policyDefinitions,

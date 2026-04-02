@@ -667,6 +667,77 @@ function processPotentialParticipants({
   });
 }
 
+function calculateRRRange({
+  drawPositionsCount,
+  containerStructureId,
+  bracketsCount,
+  playoffStructure,
+  drawDefinition,
+  bracketSize,
+  order,
+}) {
+  if (drawPositionsCount === bracketSize && order) {
+    return [order, order];
+  }
+  if (bracketsCount > 1 && order && !playoffStructure) {
+    return [1, bracketsCount];
+  }
+  if (bracketsCount > 1 && order && playoffStructure) {
+    const advancingPositions = drawDefinition.links?.find(
+      (link) => link.source.structureId === containerStructureId,
+    )?.source?.finishingPositions;
+    if (advancingPositions) {
+      const totalAdvancing = advancingPositions.length * bracketsCount;
+      if (advancingPositions.includes(order)) {
+        return [1, totalAdvancing];
+      }
+      const finishingOffset = (bracketSize - order) * bracketsCount;
+      return [totalAdvancing + 1, drawPositionsCount - finishingOffset];
+    }
+  }
+  return undefined;
+}
+
+function processRRBracket({
+  containedStructure,
+  rrGroupMatchUps,
+  drawPositionsCount,
+  containerStructureId,
+  bracketsCount,
+  playoffStructure,
+  drawDefinition,
+  drawPositions,
+}) {
+  const childStructureId = containedStructure.structureId;
+  const groupMatchUps = rrGroupMatchUps[childStructureId];
+  if (!groupMatchUps?.length) return;
+
+  const bracketSize = containedStructure.positionAssignments?.length;
+  const { subOrderMap } = createSubOrderMap({
+    positionAssignments: containedStructure.positionAssignments,
+  });
+
+  const tallyResult = tallyParticipantResults({ matchUps: groupMatchUps, subOrderMap });
+  if (!tallyResult?.participantResults) return;
+
+  for (const [participantId, result] of Object.entries(tallyResult.participantResults) as any) {
+    const order = result.groupOrder || result.provisionalOrder;
+    if (!order) continue;
+
+    const range = calculateRRRange({
+      drawPositionsCount,
+      containerStructureId,
+      bracketsCount,
+      playoffStructure,
+      drawDefinition,
+      bracketSize,
+      order,
+    });
+
+    if (range) drawPositions[participantId] = range;
+  }
+}
+
 function computeRRFinishingPositions(rrGroupMatchUps, rrContainerInfo, withRankingProfile) {
   const rrFinishingPositions: { [drawId: string]: { [participantId: string]: number[] } } = {};
 
@@ -687,45 +758,16 @@ function computeRRFinishingPositions(rrGroupMatchUps, rrContainerInfo, withRanki
     if (!rrFinishingPositions[drawId]) rrFinishingPositions[drawId] = {};
 
     for (const containedStructure of containedStructures) {
-      const childStructureId = containedStructure.structureId;
-      const groupMatchUps = rrGroupMatchUps[childStructureId];
-      if (!groupMatchUps?.length) continue;
-
-      const bracketSize = containedStructure.positionAssignments?.length;
-      const { subOrderMap } = createSubOrderMap({
-        positionAssignments: containedStructure.positionAssignments,
+      processRRBracket({
+        containedStructure,
+        rrGroupMatchUps,
+        drawPositionsCount,
+        containerStructureId,
+        bracketsCount,
+        playoffStructure,
+        drawDefinition,
+        drawPositions: rrFinishingPositions[drawId],
       });
-
-      const tallyResult = tallyParticipantResults({ matchUps: groupMatchUps, subOrderMap });
-      if (!tallyResult?.participantResults) continue;
-
-      for (const [participantId, result] of Object.entries(tallyResult.participantResults) as any) {
-        const { groupOrder, provisionalOrder } = result;
-        const order = groupOrder || provisionalOrder;
-        if (!order) continue;
-
-        let range;
-        if (drawPositionsCount === bracketSize && order) {
-          range = [order, order];
-        } else if (bracketsCount > 1 && order && !playoffStructure) {
-          range = [1, bracketsCount];
-        } else if (bracketsCount > 1 && order && playoffStructure) {
-          const advancingPositions = drawDefinition.links?.find(
-            (link) => link.source.structureId === containerStructureId,
-          )?.source?.finishingPositions;
-          if (advancingPositions) {
-            const totalAdvancing = advancingPositions.length * bracketsCount;
-            if (advancingPositions.includes(order)) {
-              range = [1, totalAdvancing];
-            } else {
-              const finishingOffset = (bracketSize - order) * bracketsCount;
-              range = [totalAdvancing + 1, drawPositionsCount - finishingOffset];
-            }
-          }
-        }
-
-        if (range) rrFinishingPositions[drawId][participantId] = range;
-      }
     }
   }
 
@@ -829,65 +871,88 @@ function computeStatisticsAndRankingProfile({
     }
 
     if (withRankingProfile) {
-      const diff = (range = []) => Math.abs(range[0] - range[1]);
-      for (const drawId of Object.keys(participantAggregator.draws)) {
-        const { orderedStructureIds = [], flightNumber } = derivedDrawInfo[drawId] || {};
-        if (participantAggregator.structureParticipation && orderedStructureIds.length) {
-          let finishingPositionRange;
-          let nonQualifyingOrder = 0;
-
-          const orderedParticipation = orderedStructureIds
-            .map((structureId) => {
-              const participation = participantAggregator.structureParticipation[structureId];
-              if (!participation) return undefined;
-
-              if (!finishingPositionRange) finishingPositionRange = participation?.finishingPositionRange;
-              if (diff(finishingPositionRange) > diff(participation?.finishingPositionRange))
-                finishingPositionRange = participation?.finishingPositionRange;
-
-              const notQualifying = participation.stage !== QUALIFYING;
-              if (notQualifying) nonQualifyingOrder += 1;
-
-              const participationOrder = notQualifying ? nonQualifyingOrder : undefined;
-
-              return definedAttributes({
-                ...participation,
-                participationOrder,
-                flightNumber,
-              });
-            })
-            .filter(Boolean);
-
-          if (participantAggregator.draws[drawId]) {
-            const participantId = participantAggregator.participant.participantId;
-            const rrRange = rrFinishingPositions[drawId]?.[participantId];
-            if (rrRange) finishingPositionRange = rrRange;
-
-            participantAggregator.draws[drawId].finishingPositionRange = finishingPositionRange;
-            participantAggregator.draws[drawId].structureParticipation = orderedParticipation;
-          }
-        }
-      }
+      computeRankingProfileForParticipant({
+        participantAggregator,
+        derivedDrawInfo,
+        rrFinishingPositions,
+      });
     }
 
     if (scheduleAnalysis) {
-      const scheduleItems = participantAggregator.scheduleItems || [];
-      const potentialMatchUps = participantAggregator.potentialMatchUps || {};
-
-      participantAggregator.scheduleConflicts = detectScheduleConflicts({
+      computeScheduleConflictsForParticipant({
+        participantAggregator,
         scheduleAnalysis,
-        scheduleItems,
-        potentialMatchUps,
+        participantMap,
+        participantIdsWithConflicts,
       });
-
-      const pid = participantAggregator.participant.participantId;
-      if (Object.keys(participantAggregator.scheduleConflicts).length) {
-        participantIdsWithConflicts.push(pid);
-      }
-
-      participantMap[pid].scheduleConflicts = participantAggregator.scheduleConflicts;
     }
   }
 
   return participantIdsWithConflicts;
+}
+
+function computeRankingProfileForParticipant({ participantAggregator, derivedDrawInfo, rrFinishingPositions }) {
+  const diff = (range = []) => Math.abs(range[0] - range[1]);
+
+  for (const drawId of Object.keys(participantAggregator.draws)) {
+    const { orderedStructureIds = [], flightNumber } = derivedDrawInfo[drawId] || {};
+    if (!participantAggregator.structureParticipation || !orderedStructureIds.length) continue;
+
+    let finishingPositionRange;
+    let nonQualifyingOrder = 0;
+
+    const orderedParticipation = orderedStructureIds
+      .map((structureId) => {
+        const participation = participantAggregator.structureParticipation[structureId];
+        if (!participation) return undefined;
+
+        if (!finishingPositionRange) finishingPositionRange = participation?.finishingPositionRange;
+        if (diff(finishingPositionRange) > diff(participation?.finishingPositionRange))
+          finishingPositionRange = participation?.finishingPositionRange;
+
+        const notQualifying = participation.stage !== QUALIFYING;
+        if (notQualifying) nonQualifyingOrder += 1;
+
+        const participationOrder = notQualifying ? nonQualifyingOrder : undefined;
+
+        return definedAttributes({
+          ...participation,
+          participationOrder,
+          flightNumber,
+        });
+      })
+      .filter(Boolean);
+
+    if (participantAggregator.draws[drawId]) {
+      const participantId = participantAggregator.participant.participantId;
+      const rrRange = rrFinishingPositions[drawId]?.[participantId];
+      if (rrRange) finishingPositionRange = rrRange;
+
+      participantAggregator.draws[drawId].finishingPositionRange = finishingPositionRange;
+      participantAggregator.draws[drawId].structureParticipation = orderedParticipation;
+    }
+  }
+}
+
+function computeScheduleConflictsForParticipant({
+  participantAggregator,
+  scheduleAnalysis,
+  participantMap,
+  participantIdsWithConflicts,
+}) {
+  const scheduleItems = participantAggregator.scheduleItems || [];
+  const potentialMatchUps = participantAggregator.potentialMatchUps || {};
+
+  participantAggregator.scheduleConflicts = detectScheduleConflicts({
+    scheduleAnalysis,
+    scheduleItems,
+    potentialMatchUps,
+  });
+
+  const pid = participantAggregator.participant.participantId;
+  if (Object.keys(participantAggregator.scheduleConflicts).length) {
+    participantIdsWithConflicts.push(pid);
+  }
+
+  participantMap[pid].scheduleConflicts = participantAggregator.scheduleConflicts;
 }

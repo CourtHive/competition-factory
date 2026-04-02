@@ -123,118 +123,77 @@ export function directLoser(params): ResultType {
   const isFeedRound = loserTargetLink.target.roundNumber > 1 && unfilledTargetMatchUpDrawPositions?.length;
   const isFirstRoundValidDrawPosition = loserTargetLink.target.roundNumber === 1 && targetDrawPositionIsUnfilled;
 
-  if (fedDrawPositionFMLC) {
-    const result = loserLinkFedFMLC();
-    if (result.context) Object.assign(context, result.context);
-    if (result.error) return decorateResult({ result, stack });
-  } else if (isFirstRoundValidDrawPosition) {
-    const result = asssignLoserDrawPosition();
-    if (result.context) Object.assign(context, result.context);
-    if (result.error) return decorateResult({ result, stack });
-  } else if (loserParticipantId && (isFeedRound || unfilledTargetMatchUpDrawPositions?.length)) {
-    // take the lowest unfilled draw position in the target matchUp;
-    // applies to feed rounds (roundNumber > 1) and also when both winner and loser
-    // feed into the same target matchUp (e.g., double elimination decider)
-    unfilledTargetMatchUpDrawPositions.sort(numericSort);
-    const fedDrawPosition = unfilledTargetMatchUpDrawPositions[0];
-    const result = assignDrawPosition({
-      participantId: loserParticipantId,
-      structureId: targetStructureId,
-      drawPosition: fedDrawPosition,
-      inContextDrawMatchUps,
-      sourceMatchUpStatus,
-      tournamentRecord,
-      drawDefinition,
-      matchUpsMap,
-      event,
-    });
-    if (result.error) return decorateResult({ result, stack });
-    // if validExitToPropagate is true get the matchUpId of the targetMatchUp and set its status to the sourceMatchUpStatus
-    if (!result.error && validExitToPropagate && propagateExitStatus) {
-      return { stack, context: { progressExitStatus: true, loserParticipantId } };
-    }
-  } else {
-    const error = !targetDrawPositionIsUnfilled ? DRAW_POSITION_OCCUPIED : INVALID_DRAW_POSITION;
-    return decorateResult({
-      context: { loserDrawPosition, loserTargetLink, targetDrawPositionIsUnfilled },
-      result: { error },
-      stack,
-    });
-  }
+  const placementResult: any = placeLoser({
+    fedDrawPositionFMLC,
+    isFirstRoundValidDrawPosition,
+    loserParticipantId,
+    isFeedRound,
+    unfilledTargetMatchUpDrawPositions,
+    targetDrawPositionIsUnfilled,
+    validForConsolation,
+    targetMatchUpDrawPosition,
+    loserBackdrawPosition,
+    targetStructureId,
+    inContextDrawMatchUps,
+    sourceMatchUpStatus,
+    validExitToPropagate,
+    propagateExitStatus,
+    loserDrawPosition,
+    loserTargetLink,
+    tournamentRecord,
+    drawDefinition,
+    matchUpsMap,
+    event,
+  });
+  if (placementResult.context) Object.assign(context, placementResult.context);
+  if (placementResult.error) return decorateResult({ result: placementResult, stack });
+  if (placementResult.earlyReturn) return placementResult.earlyReturn;
 
-  if (structure?.seedAssignments && structure.structureId !== targetStructureId) {
-    const seedAssignment = structure.seedAssignments.find(({ participantId }) => participantId === loserParticipantId);
-    const participantId = seedAssignment?.participantId;
-    if (seedAssignment && participantId) {
-      assignSeed({
-        eventId: loserMatchUp?.eventId,
-        structureId: targetStructureId,
-        ...seedAssignment,
-        tournamentRecord,
-        drawDefinition,
-        participantId,
-      });
-    }
-  }
+  propagateLoserSeed({
+    loserParticipantId,
+    targetStructureId,
+    tournamentRecord,
+    drawDefinition,
+    loserMatchUp,
+    structure,
+  });
 
-  if (dualMatchUp && projectedWinningSide) {
-    // propagated lineUp
-    const side = dualMatchUp.sides?.find((side) => side.sideNumber === 3 - projectedWinningSide);
-    if (side?.lineUp) {
-      const { roundNumber, eventId } = loserMatchUp;
-      const { roundPosition } = dualMatchUp;
-      // for matchUps fed to different structures, sideNumber is always 1 when roundNumber > 1 (fed position)
-      // when roundNumber === 1 then it is even/odd calculated as remainder of roundPositon % 2 + 1
-      const targetSideNumber = roundNumber === 1 ? 2 - (roundPosition % 2) : 1;
-
-      const targetMatchUp = matchUpsMap?.drawMatchUps?.find(({ matchUpId }) => matchUpId === loserMatchUp.matchUpId);
-
-      const updatedSides = [1, 2].map((sideNumber) => {
-        const existingSide = targetMatchUp.sides?.find((side) => side.sideNumber === sideNumber) || {};
-        return { ...existingSide, sideNumber };
-      });
-
-      targetMatchUp.sides = updatedSides;
-      const targetSide = targetMatchUp.sides.find((side) => side.sideNumber === targetSideNumber);
-
-      // attach to appropriate side of winnerMatchUp
-      if (targetSide) {
-        targetSide.lineUp = removeLineUpSubstitutions({ lineUp: side.lineUp });
-
-        modifyMatchUpNotice({
-          tournamentId: tournamentRecord?.tournamentId,
-          matchUp: targetMatchUp,
-          context: stack,
-          drawDefinition,
-          eventId,
-        });
-      }
-    }
-  }
+  propagateLoserLineUp({
+    projectedWinningSide,
+    tournamentRecord,
+    drawDefinition,
+    loserMatchUp,
+    dualMatchUp,
+    matchUpsMap,
+    stack,
+  });
 
   return decorateResult({ result: { ...SUCCESS }, stack, context });
+}
 
-  function loserLinkFedFMLC() {
-    const stack = 'loserLinkFedFMLC';
-    if (validForConsolation) {
-      return decorateResult({ result: asssignLoserDrawPosition(), stack });
-    } else {
-      return decorateResult({ result: assignLoserPositionBye(), stack });
-    }
-  }
-
-  function assignLoserPositionBye() {
-    const result = assignDrawPositionBye({
-      drawPosition: loserBackdrawPosition,
-      structureId: targetStructureId,
-      tournamentRecord,
-      drawDefinition,
-      event,
-    });
-    return decorateResult({ result, stack: 'assignLoserPositionBye' });
-  }
-
-  function asssignLoserDrawPosition() {
+function placeLoser({
+  fedDrawPositionFMLC,
+  isFirstRoundValidDrawPosition,
+  loserParticipantId,
+  isFeedRound,
+  unfilledTargetMatchUpDrawPositions,
+  targetDrawPositionIsUnfilled,
+  validForConsolation,
+  targetMatchUpDrawPosition,
+  loserBackdrawPosition,
+  targetStructureId,
+  inContextDrawMatchUps,
+  sourceMatchUpStatus,
+  validExitToPropagate,
+  propagateExitStatus,
+  loserDrawPosition,
+  loserTargetLink,
+  tournamentRecord,
+  drawDefinition,
+  matchUpsMap,
+  event,
+}) {
+  const assignLoserToTarget = () => {
     const result = loserParticipantId
       ? assignDrawPosition({
           drawPosition: targetMatchUpDrawPosition,
@@ -249,11 +208,121 @@ export function directLoser(params): ResultType {
         })
       : { error: MISSING_PARTICIPANT_ID };
 
-    // if propagateExitStatus is true get the matchUpId of the targetMatchUp and set its status to the sourceMatchUpStatus
     if (!result.error && validExitToPropagate && propagateExitStatus) {
-      return { stack, context: { progressExitStatus: true } };
+      return { context: { progressExitStatus: true } };
     }
 
     return decorateResult({ result, stack: 'assignLoserDrawPosition' });
+  };
+
+  if (fedDrawPositionFMLC) {
+    const innerStack = 'loserLinkFedFMLC';
+    if (validForConsolation) {
+      return decorateResult({ result: assignLoserToTarget(), stack: innerStack });
+    }
+    const byeResult = assignDrawPositionBye({
+      drawPosition: loserBackdrawPosition,
+      structureId: targetStructureId,
+      tournamentRecord,
+      drawDefinition,
+      event,
+    });
+    return decorateResult({ result: decorateResult({ result: byeResult, stack: 'assignLoserPositionBye' }), stack: innerStack });
+  }
+
+  if (isFirstRoundValidDrawPosition) {
+    return assignLoserToTarget();
+  }
+
+  if (loserParticipantId && (isFeedRound || unfilledTargetMatchUpDrawPositions?.length)) {
+    unfilledTargetMatchUpDrawPositions.sort(numericSort);
+    const fedDrawPosition = unfilledTargetMatchUpDrawPositions[0];
+    const result = assignDrawPosition({
+      participantId: loserParticipantId,
+      structureId: targetStructureId,
+      drawPosition: fedDrawPosition,
+      inContextDrawMatchUps,
+      sourceMatchUpStatus,
+      tournamentRecord,
+      drawDefinition,
+      matchUpsMap,
+      event,
+    });
+    if (result.error) return result;
+    if (validExitToPropagate && propagateExitStatus) {
+      return { earlyReturn: { stack: 'directLoser', context: { progressExitStatus: true, loserParticipantId } } };
+    }
+    return { ...SUCCESS };
+  }
+
+  const error = !targetDrawPositionIsUnfilled ? DRAW_POSITION_OCCUPIED : INVALID_DRAW_POSITION;
+  return {
+    context: { loserDrawPosition, loserTargetLink, targetDrawPositionIsUnfilled },
+    error,
+  };
+}
+
+function propagateLoserSeed({
+  loserParticipantId,
+  targetStructureId,
+  tournamentRecord,
+  drawDefinition,
+  loserMatchUp,
+  structure,
+}) {
+  if (!structure?.seedAssignments || structure.structureId === targetStructureId) return;
+
+  const seedAssignment = structure.seedAssignments.find(({ participantId }) => participantId === loserParticipantId);
+  const participantId = seedAssignment?.participantId;
+  if (seedAssignment && participantId) {
+    assignSeed({
+      eventId: loserMatchUp?.eventId,
+      structureId: targetStructureId,
+      ...seedAssignment,
+      tournamentRecord,
+      drawDefinition,
+      participantId,
+    });
+  }
+}
+
+function propagateLoserLineUp({
+  projectedWinningSide,
+  tournamentRecord,
+  drawDefinition,
+  loserMatchUp,
+  dualMatchUp,
+  matchUpsMap,
+  stack,
+}) {
+  if (!dualMatchUp || !projectedWinningSide) return;
+
+  const side = dualMatchUp.sides?.find((side) => side.sideNumber === 3 - projectedWinningSide);
+  if (!side?.lineUp) return;
+
+  const { roundNumber, eventId } = loserMatchUp;
+  const { roundPosition } = dualMatchUp;
+  const targetSideNumber = roundNumber === 1 ? 2 - (roundPosition % 2) : 1;
+
+  const targetMatchUp = matchUpsMap?.drawMatchUps?.find(({ matchUpId }) => matchUpId === loserMatchUp.matchUpId);
+
+  const updatedSides = [1, 2].map((sideNumber) => {
+    const existingSide = targetMatchUp.sides?.find((s) => s.sideNumber === sideNumber) || {};
+    return { ...existingSide, sideNumber };
+  });
+
+  targetMatchUp.sides = updatedSides;
+  const targetSide = targetMatchUp.sides.find((s) => s.sideNumber === targetSideNumber);
+
+  if (targetSide) {
+    targetSide.lineUp = removeLineUpSubstitutions({ lineUp: side.lineUp });
+
+    modifyMatchUpNotice({
+      tournamentId: tournamentRecord?.tournamentId,
+      matchUp: targetMatchUp,
+      context: stack,
+      drawDefinition,
+      eventId,
+    });
   }
 }

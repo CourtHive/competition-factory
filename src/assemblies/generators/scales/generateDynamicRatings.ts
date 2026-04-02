@@ -119,75 +119,24 @@ export function generateDynamicRatings(params): ResultType & {
       {},
       ...Object.values(sideParticipantIds)
         .flat()
-        .map((participantId) => {
-          const existingModifiedScaleValue = modifiedScaleValues[participantId];
-          const useDynamic = !refreshDynamic || existingModifiedScaleValue;
-
-          // Check for existing dynamic value (ELO.DYNAMIC when convertToELO)
-          let dynamicScaleItem = useDynamic
-            ? getParticipantScaleItem({
-                scaleAttributes: dynamicScaleAttributes,
-                tournamentRecord,
-                participantId,
-              }).scaleItem
-            : undefined;
-
-          // When convertToELO, also check for source-scale dynamic values (backward compat)
-          if (!dynamicScaleItem && sourceDynamicScaleAttributes && useDynamic) {
-            const sourceItem = getParticipantScaleItem({
-              scaleAttributes: sourceDynamicScaleAttributes,
-              tournamentRecord,
-              participantId,
-            }).scaleItem;
-            if (sourceItem) {
-              // Convert the source dynamic value to ELO
-              const sv = sourceItem.scaleValue;
-              const sourceRating = sourceAccessor && typeof sv === 'object' ? sv[sourceAccessor] : sv;
-              if (sourceRating != null) {
-                dynamicScaleItem = {
-                  ...sourceItem,
-                  scaleName: outputScaleName,
-                  scaleValue: getRatingConvertedToELO({ sourceRatingType: ratingType, sourceRating }),
-                };
-              }
-            }
-          }
-
-          const scaleItem = getParticipantScaleItem({
-            tournamentRecord,
-            scaleAttributes,
+        .map((participantId) =>
+          resolveParticipantScaleItem({
             participantId,
-          }).scaleItem;
-
-          // Convert initial source rating to ELO when no dynamic value exists
-          let resolvedScaleItem = dynamicScaleItem ?? scaleItem;
-          if (!dynamicScaleItem && scaleItem && isEloNative) {
-            const sv = scaleItem.scaleValue;
-            const sourceRating = sourceAccessor && typeof sv === 'object' ? sv[sourceAccessor] : sv;
-            if (sourceRating != null) {
-              resolvedScaleItem = {
-                ...scaleItem,
-                scaleName: outputScaleName,
-                scaleValue: getRatingConvertedToELO({ sourceRatingType: ratingType, sourceRating }),
-              };
-            }
-          }
-
-          // Fallback for the case of no pre-existing scaleItem
-          const defaultScaleValue = accessor ? { [accessor]: undefined } : undefined;
-
-          return (
-            participantId && {
-              [participantId]: resolvedScaleItem ?? {
-                scaleName: outputScaleName,
-                eventType: matchUpType,
-                scaleDate: endDate,
-                scaleType: RATING,
-                scaleValue: defaultScaleValue,
-              },
-            }
-          );
-        }),
+            modifiedScaleValues,
+            refreshDynamic,
+            dynamicScaleAttributes,
+            sourceDynamicScaleAttributes,
+            scaleAttributes,
+            tournamentRecord,
+            sourceAccessor,
+            outputScaleName,
+            ratingType,
+            isEloNative,
+            accessor,
+            matchUpType,
+            endDate,
+          }),
+        ),
     );
 
     const parsedFormat: any = matchUpFormat ? parse(matchUpFormat) : {};
@@ -198,46 +147,16 @@ export function generateDynamicRatings(params): ResultType & {
 
     const countables = (score?.sets && aggregateSets(score.sets)) || (winningSide === 1 && [1, 0]) || [0, 1];
 
-    const winningSideParticipantIds = winningSide ? sideParticipantIds[winningSide] : [];
-    const losingSideParticipantIds = winningSide ? sideParticipantIds[3 - winningSide] : [];
-    for (const winnerParticipantId of winningSideParticipantIds) {
-      const winnerScaleValue = scaleItemMap[winnerParticipantId]?.scaleValue;
-      const winnerRating = typeof winnerScaleValue === 'object' ? winnerScaleValue[accessor] : winnerScaleValue;
-
-      for (const loserParticipantId of losingSideParticipantIds) {
-        const loserScaleValue = scaleItemMap[loserParticipantId]?.scaleValue;
-        const loserRating = typeof loserScaleValue === 'object' ? loserScaleValue[accessor] : loserScaleValue;
-
-        const winnerCountables = winningSide ? countables[winningSide] : [0, 0];
-        const loserCountables = winningSide ? countables[3 - winningSide] : [0, 0];
-
-        const { newWinnerRating, newLoserRating } = calculateNewRatings({
-          ratingType: computeRatingType,
-          winnerCountables,
-          loserCountables,
-          maxCountables,
-          winnerRating,
-          loserRating,
-        });
-
-        const newWinnerScaleValue = accessor
-          ? {
-              ...winnerScaleValue,
-              [accessor]: newWinnerRating,
-            }
-          : newWinnerRating;
-        const newLoserScaleValue = accessor
-          ? {
-              ...loserScaleValue,
-              [accessor]: newLoserRating,
-            }
-          : newLoserRating;
-        scaleItemMap[winnerParticipantId].scaleValue = newWinnerScaleValue;
-        scaleItemMap[loserParticipantId].scaleValue = newLoserScaleValue;
-        scaleItemMap[winnerParticipantId].scaleName = outputScaleName;
-        scaleItemMap[loserParticipantId].scaleName = outputScaleName;
-      }
-    }
+    updateRatingsForMatchUp({
+      sideParticipantIds,
+      computeRatingType,
+      outputScaleName,
+      scaleItemMap,
+      winningSide,
+      countables,
+      maxCountables,
+      accessor,
+    });
 
     Object.assign(modifiedScaleValues, scaleItemMap);
 
@@ -255,4 +174,148 @@ export function generateDynamicRatings(params): ResultType & {
     processedMatchUpIds,
     ...(isEloNative && { sourceRatingType: ratingType }),
   };
+}
+
+function resolveParticipantScaleItem({
+  participantId,
+  modifiedScaleValues,
+  refreshDynamic,
+  dynamicScaleAttributes,
+  sourceDynamicScaleAttributes,
+  scaleAttributes,
+  tournamentRecord,
+  sourceAccessor,
+  outputScaleName,
+  ratingType,
+  isEloNative,
+  accessor,
+  matchUpType,
+  endDate,
+}) {
+  const existingModifiedScaleValue = modifiedScaleValues[participantId];
+  const useDynamic = !refreshDynamic || existingModifiedScaleValue;
+
+  let dynamicScaleItem = useDynamic
+    ? getParticipantScaleItem({
+        scaleAttributes: dynamicScaleAttributes,
+        tournamentRecord,
+        participantId,
+      }).scaleItem
+    : undefined;
+
+  if (!dynamicScaleItem && sourceDynamicScaleAttributes && useDynamic) {
+    dynamicScaleItem = resolveSourceDynamicItem({
+      sourceDynamicScaleAttributes,
+      tournamentRecord,
+      participantId,
+      sourceAccessor,
+      outputScaleName,
+      ratingType,
+    });
+  }
+
+  const scaleItem = getParticipantScaleItem({
+    tournamentRecord,
+    scaleAttributes,
+    participantId,
+  }).scaleItem;
+
+  let resolvedScaleItem = dynamicScaleItem ?? scaleItem;
+  if (!dynamicScaleItem && scaleItem && isEloNative) {
+    const sv = scaleItem.scaleValue;
+    const sourceRating = sourceAccessor && typeof sv === 'object' ? sv[sourceAccessor] : sv;
+    if (sourceRating != null) {
+      resolvedScaleItem = {
+        ...scaleItem,
+        scaleName: outputScaleName,
+        scaleValue: getRatingConvertedToELO({ sourceRatingType: ratingType, sourceRating }),
+      };
+    }
+  }
+
+  const defaultScaleValue = accessor ? { [accessor]: undefined } : undefined;
+
+  return (
+    participantId && {
+      [participantId]: resolvedScaleItem ?? {
+        scaleName: outputScaleName,
+        eventType: matchUpType,
+        scaleDate: endDate,
+        scaleType: RATING,
+        scaleValue: defaultScaleValue,
+      },
+    }
+  );
+}
+
+function resolveSourceDynamicItem({
+  sourceDynamicScaleAttributes,
+  tournamentRecord,
+  participantId,
+  sourceAccessor,
+  outputScaleName,
+  ratingType,
+}) {
+  const sourceItem = getParticipantScaleItem({
+    scaleAttributes: sourceDynamicScaleAttributes,
+    tournamentRecord,
+    participantId,
+  }).scaleItem;
+
+  if (!sourceItem) return undefined;
+
+  const sv = sourceItem.scaleValue;
+  const sourceRating = sourceAccessor && typeof sv === 'object' ? sv[sourceAccessor] : sv;
+  if (sourceRating != null) {
+    return {
+      ...sourceItem,
+      scaleName: outputScaleName,
+      scaleValue: getRatingConvertedToELO({ sourceRatingType: ratingType, sourceRating }),
+    };
+  }
+
+  return undefined;
+}
+
+function updateRatingsForMatchUp({
+  sideParticipantIds,
+  computeRatingType,
+  outputScaleName,
+  scaleItemMap,
+  winningSide,
+  countables,
+  maxCountables,
+  accessor,
+}) {
+  const winningSideParticipantIds = winningSide ? sideParticipantIds[winningSide] : [];
+  const losingSideParticipantIds = winningSide ? sideParticipantIds[3 - winningSide] : [];
+
+  for (const winnerParticipantId of winningSideParticipantIds) {
+    const winnerScaleValue = scaleItemMap[winnerParticipantId]?.scaleValue;
+    const winnerRating = typeof winnerScaleValue === 'object' ? winnerScaleValue[accessor] : winnerScaleValue;
+
+    for (const loserParticipantId of losingSideParticipantIds) {
+      const loserScaleValue = scaleItemMap[loserParticipantId]?.scaleValue;
+      const loserRating = typeof loserScaleValue === 'object' ? loserScaleValue[accessor] : loserScaleValue;
+
+      const winnerCountables = winningSide ? countables[winningSide] : [0, 0];
+      const loserCountables = winningSide ? countables[3 - winningSide] : [0, 0];
+
+      const { newWinnerRating, newLoserRating } = calculateNewRatings({
+        ratingType: computeRatingType,
+        winnerCountables,
+        loserCountables,
+        maxCountables,
+        winnerRating,
+        loserRating,
+      });
+
+      const newWinnerScaleValue = accessor ? { ...winnerScaleValue, [accessor]: newWinnerRating } : newWinnerRating;
+      const newLoserScaleValue = accessor ? { ...loserScaleValue, [accessor]: newLoserRating } : newLoserRating;
+      scaleItemMap[winnerParticipantId].scaleValue = newWinnerScaleValue;
+      scaleItemMap[loserParticipantId].scaleValue = newLoserScaleValue;
+      scaleItemMap[winnerParticipantId].scaleName = outputScaleName;
+      scaleItemMap[loserParticipantId].scaleName = outputScaleName;
+    }
+  }
 }
