@@ -42,37 +42,7 @@ export function getPublishState(params: GetPublishStateArgs): ResultType & { pub
   }
 
   if (event) {
-    const pubStatus: any = getPubStatus({ event });
-    let publishState: any = {};
-
-    if (drawId) {
-      if (!drawDefinition) return { error: DRAW_DEFINITION_NOT_FOUND };
-      return {
-        publishState: {
-          status: {
-            published: !!pubStatus.status.publishedDrawIds?.includes(drawId),
-            drawDetail: pubStatus.status.drawDetails?.[drawId],
-          },
-          ...SUCCESS,
-        },
-      };
-    } else if (Array.isArray(drawIds) && drawIds?.length) {
-      const eventDrawIds = event.drawDefinitions?.map(getDrawId) ?? [];
-      for (const drawId of drawIds) {
-        if (!isString(drawId)) return { error: INVALID_VALUES };
-        if (!eventDrawIds.includes(drawId)) return { error: DRAW_DEFINITION_NOT_FOUND };
-        publishState[drawId] = {
-          status: {
-            published: !!pubStatus.status.publishedDrawIds.includes(drawId),
-            drawDetail: pubStatus.status.drawDetails?.[drawId],
-          },
-        };
-      }
-    } else {
-      publishState = pubStatus;
-    }
-
-    return { ...SUCCESS, publishState };
+    return getEventPublishState({ event, drawId, drawIds, drawDefinition });
   }
 
   const publishState: any = {};
@@ -96,6 +66,42 @@ export function getPublishState(params: GetPublishStateArgs): ResultType & { pub
   collectEventEmbargoes({ tournamentRecord, embargoes });
 
   if (embargoes.length) publishState.embargoes = embargoes;
+
+  return { ...SUCCESS, publishState };
+}
+
+function getEventPublishState({ event, drawId, drawIds, drawDefinition }) {
+  const pubStatus: any = getPubStatus({ event });
+  let publishState: any = {};
+
+  if (drawId) {
+    if (!drawDefinition) return { error: DRAW_DEFINITION_NOT_FOUND };
+    return {
+      publishState: {
+        status: {
+          published: !!pubStatus.status.publishedDrawIds?.includes(drawId),
+          drawDetail: pubStatus.status.drawDetails?.[drawId],
+        },
+        ...SUCCESS,
+      },
+    };
+  }
+
+  if (Array.isArray(drawIds) && drawIds?.length) {
+    const eventDrawIds = event.drawDefinitions?.map(getDrawId) ?? [];
+    for (const id of drawIds) {
+      if (!isString(id)) return { error: INVALID_VALUES };
+      if (!eventDrawIds.includes(id)) return { error: DRAW_DEFINITION_NOT_FOUND };
+      publishState[id] = {
+        status: {
+          published: !!pubStatus.status.publishedDrawIds.includes(id),
+          drawDetail: pubStatus.status.drawDetails?.[id],
+        },
+      };
+    }
+  } else {
+    publishState = pubStatus;
+  }
 
   return { ...SUCCESS, publishState };
 }

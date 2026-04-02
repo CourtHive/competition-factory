@@ -167,52 +167,13 @@ function getPlayoffEntries({ provisionalPositioning, drawDefinition, structureId
       });
 
       if (inboundLink.source.remainder) {
-        // Remainder mode: collect all participants NOT already claimed by prior bestOf groups
-        const priorPlayoffParticipantIds = new Set<string>();
-
-        // Find all other POSITION links from the same source structure that have bestOf
-        const otherBestOfLinks = (drawDefinition.links ?? []).filter(
-          (link) =>
-            link.linkType === POSITION &&
-            link.source.structureId === structureId &&
-            link.target.structureId !== inboundLink.target.structureId &&
-            link.source.bestOf !== undefined,
-        );
-
-        // Collect participants already positioned in those playoff structures
-        for (const otherLink of otherBestOfLinks) {
-          const { structure: otherPlayoffStructure } = findStructure({
-            structureId: otherLink.target.structureId,
-            drawDefinition,
-          });
-          if (otherPlayoffStructure) {
-            const otherAssignments = otherPlayoffStructure.positionAssignments ?? [];
-            for (const assignment of otherAssignments) {
-              if (assignment.participantId) {
-                priorPlayoffParticipantIds.add(assignment.participantId);
-              }
-            }
-          }
-        }
-
-        // Collect all participants from all groups, excluding those already claimed
-        allGroupResults.forEach(({ structureId: groupStructureId, results }) => {
-          Object.keys(results).forEach((participantId) => {
-            if (!priorPlayoffParticipantIds.has(participantId)) {
-              const participantResult = results[participantId];
-              const { groupOrder, provisionalOrder, GEMscore } = participantResult;
-              const finishingPosition = groupOrder || (provisionalPositioning && provisionalOrder);
-
-              playoffEntries.push({
-                groupingValue: groupStructureId,
-                entryStage: PLAY_OFF,
-                entryStatus: FEED_IN,
-                placementGroup: finishingPosition || 1,
-                participantId,
-                GEMscore,
-              });
-            }
-          });
+        collectRemainderEntries({
+          provisionalPositioning,
+          allGroupResults,
+          drawDefinition,
+          playoffEntries,
+          inboundLink,
+          structureId,
         });
       } else if (bestOf !== undefined && finishingPositions) {
         // bestOf mode: use cross-group ranking to select participants
@@ -243,52 +204,111 @@ function getPlayoffEntries({ provisionalPositioning, drawDefinition, structureId
           });
         });
       } else {
-        // Standard mode: collect all participants at specified finishing positions
-        allGroupResults.forEach(({ structureId: groupStructureId, results }) => {
-          const groupingValue = groupStructureId;
-
-          const uniqueFinishingPositions = Object.keys(results).reduce((unique: any, key) => {
-            const result = results[key];
-            const finishingPosition = result.groupOrder || (provisionalPositioning && result.provisionalOrder);
-            if (!unique.includes(finishingPosition)) {
-              unique.push(finishingPosition);
-            }
-            return unique;
-          }, []);
-
-          const finishingPositionsAreUnique = uniqueFinishingPositions.length === Object.keys(results).length;
-
-          const participantIds = Object.keys(results).filter((key) => {
-            const result = results[key];
-            const finishingPosition = result.groupOrder || (provisionalPositioning && result.provisionalOrder);
-            return finishingPositions?.includes(finishingPosition);
-          });
-
-          if (!provisionalPositioning || finishingPositionsAreUnique) {
-            participantIds.forEach((participantId) => {
-              const participantResult = results[participantId];
-              const { groupOrder, provisionalOrder, GEMscore } = participantResult;
-              const finishingPosition = groupOrder || (provisionalPositioning && provisionalOrder);
-
-              // spread to avoid immutable client data
-              const placementGroup = [...(finishingPositions ?? [])].sort(numericSort).indexOf(finishingPosition) + 1;
-
-              playoffEntries.push({
-                entryStage: PLAY_OFF,
-                entryStatus: FEED_IN,
-                placementGroup,
-                groupingValue,
-                participantId,
-                GEMscore,
-              });
-            });
-          }
+        collectStandardEntries({
+          provisionalPositioning,
+          finishingPositions,
+          allGroupResults,
+          playoffEntries,
         });
       }
     }
   }
 
   return { playoffEntries };
+}
+
+function collectRemainderEntries({
+  provisionalPositioning,
+  allGroupResults,
+  drawDefinition,
+  playoffEntries,
+  inboundLink,
+  structureId,
+}) {
+  const priorPlayoffParticipantIds = new Set<string>();
+
+  const otherBestOfLinks = (drawDefinition.links ?? []).filter(
+    (link) =>
+      link.linkType === POSITION &&
+      link.source.structureId === structureId &&
+      link.target.structureId !== inboundLink.target.structureId &&
+      link.source.bestOf !== undefined,
+  );
+
+  for (const otherLink of otherBestOfLinks) {
+    const { structure: otherPlayoffStructure } = findStructure({
+      structureId: otherLink.target.structureId,
+      drawDefinition,
+    });
+    if (otherPlayoffStructure) {
+      for (const assignment of otherPlayoffStructure.positionAssignments ?? []) {
+        if (assignment.participantId) {
+          priorPlayoffParticipantIds.add(assignment.participantId);
+        }
+      }
+    }
+  }
+
+  allGroupResults.forEach(({ structureId: groupStructureId, results }) => {
+    Object.keys(results).forEach((participantId) => {
+      if (!priorPlayoffParticipantIds.has(participantId)) {
+        const participantResult = results[participantId];
+        const { groupOrder, provisionalOrder, GEMscore } = participantResult;
+        const finishingPosition = groupOrder || (provisionalPositioning && provisionalOrder);
+
+        playoffEntries.push({
+          groupingValue: groupStructureId,
+          entryStage: PLAY_OFF,
+          entryStatus: FEED_IN,
+          placementGroup: finishingPosition || 1,
+          participantId,
+          GEMscore,
+        });
+      }
+    });
+  });
+}
+
+function collectStandardEntries({ provisionalPositioning, finishingPositions, allGroupResults, playoffEntries }) {
+  allGroupResults.forEach(({ structureId: groupStructureId, results }) => {
+    const groupingValue = groupStructureId;
+
+    const uniqueFinishingPositions = Object.keys(results).reduce((unique: any, key) => {
+      const result = results[key];
+      const finishingPosition = result.groupOrder || (provisionalPositioning && result.provisionalOrder);
+      if (!unique.includes(finishingPosition)) {
+        unique.push(finishingPosition);
+      }
+      return unique;
+    }, []);
+
+    const finishingPositionsAreUnique = uniqueFinishingPositions.length === Object.keys(results).length;
+
+    const participantIds = Object.keys(results).filter((key) => {
+      const result = results[key];
+      const finishingPosition = result.groupOrder || (provisionalPositioning && result.provisionalOrder);
+      return finishingPositions?.includes(finishingPosition);
+    });
+
+    if (!provisionalPositioning || finishingPositionsAreUnique) {
+      participantIds.forEach((participantId) => {
+        const participantResult = results[participantId];
+        const { groupOrder, provisionalOrder, GEMscore } = participantResult;
+        const finishingPosition = groupOrder || (provisionalPositioning && provisionalOrder);
+
+        const placementGroup = [...(finishingPositions ?? [])].sort(numericSort).indexOf(finishingPosition) + 1;
+
+        playoffEntries.push({
+          entryStage: PLAY_OFF,
+          entryStatus: FEED_IN,
+          placementGroup,
+          groupingValue,
+          participantId,
+          GEMscore,
+        });
+      });
+    }
+  });
 }
 
 export function getStageDirectEntriesCount({ stage, drawDefinition }) {

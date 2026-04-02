@@ -96,70 +96,20 @@ export function qualifierProgression({
       drawDefinition,
     }) || {};
 
-  for (const sourceLink of eliminationSourceLinks) {
-    const structure = drawDefinition.structures?.find(
-      (structure) => structure.structureId === sourceLink.source.structureId,
-    );
-    if (structure?.stage !== QUALIFYING) continue;
+  collectEliminationQualifiers({
+    eliminationSourceLinks,
+    requireCompletedStructures,
+    assignedParticipantIds,
+    qualifyingParticipantIds,
+    drawDefinition,
+  });
 
-    const structureCompleted = isCompletedStructure({ structureId: sourceLink.source.structureId, drawDefinition });
-
-    if (!requireCompletedStructures || structureCompleted) {
-      const qualifyingRoundNumber = structure.qualifyingRoundNumber;
-      const { matchUps } = getAllStructureMatchUps({
-        matchUpFilters: {
-          ...(qualifyingRoundNumber && { roundNumbers: [qualifyingRoundNumber] }),
-          isCollectionMatchUp: false,
-          hasWinningSide: true,
-        },
-        afterRecoveryTimes: false,
-        inContext: true,
-        structure,
-      });
-
-      for (const matchUp of matchUps) {
-        const relevantSide = matchUp.matchUpStatus === BYE && matchUp.sides?.find(({ participantId }) => participantId);
-        const winningSide = matchUp.sides.find((side) => side?.sideNumber === matchUp.winningSide);
-
-        if (winningSide || relevantSide) {
-          const { participantId } = winningSide || relevantSide || {};
-          if (participantId && !assignedParticipantIds.includes(participantId)) {
-            qualifyingParticipantIds.push(participantId);
-          }
-        }
-      }
-    }
-  }
-
-  for (const sourceLink of roundRobinSourceLinks) {
-    const structure = drawDefinition?.structures?.find(
-      (structure) => structure.structureId === sourceLink.source.structureId,
-    );
-    if (structure?.stage !== QUALIFYING) continue;
-
-    const structureCompleted = isCompletedStructure({
-      structureId: sourceLink.source.structureId,
-      drawDefinition,
-    });
-
-    if (structureCompleted) {
-      const { positionAssignments } = getPositionAssignments({ structure });
-      const relevantParticipantIds: any =
-        positionAssignments
-          ?.map((assignment) => {
-            const participantId = assignment.participantId;
-            const results = findExtension({ element: assignment, name: TALLY }).extension?.value;
-
-            return results ? { participantId, groupOrder: results?.groupOrder } : {};
-          })
-          .filter(
-            ({ groupOrder, participantId }) => groupOrder === 1 && !assignedParticipantIds.includes(participantId),
-          )
-          .map(({ participantId }) => participantId) ?? [];
-
-      if (relevantParticipantIds) qualifyingParticipantIds.push(...relevantParticipantIds);
-    }
-  }
+  collectRoundRobinQualifiers({
+    roundRobinSourceLinks,
+    assignedParticipantIds,
+    qualifyingParticipantIds,
+    drawDefinition,
+  });
 
   if (!qualifyingParticipantIds.length) return decorateResult({ result: { error: MISSING_QUALIFIED_PARTICIPANTS } });
 
@@ -183,4 +133,81 @@ export function qualifierProgression({
   return decorateResult({
     result: definedAttributes({ ...SUCCESS, assignedParticipants }),
   });
+}
+
+function collectEliminationQualifiers({
+  eliminationSourceLinks,
+  requireCompletedStructures,
+  assignedParticipantIds,
+  qualifyingParticipantIds,
+  drawDefinition,
+}) {
+  for (const sourceLink of eliminationSourceLinks) {
+    const structure = drawDefinition.structures?.find(
+      (structure) => structure.structureId === sourceLink.source.structureId,
+    );
+    if (structure?.stage !== QUALIFYING) continue;
+
+    const structureCompleted = isCompletedStructure({ structureId: sourceLink.source.structureId, drawDefinition });
+    if (requireCompletedStructures && !structureCompleted) continue;
+
+    const qualifyingRoundNumber = structure.qualifyingRoundNumber;
+    const { matchUps } = getAllStructureMatchUps({
+      matchUpFilters: {
+        ...(qualifyingRoundNumber && { roundNumbers: [qualifyingRoundNumber] }),
+        isCollectionMatchUp: false,
+        hasWinningSide: true,
+      },
+      afterRecoveryTimes: false,
+      inContext: true,
+      structure,
+    });
+
+    for (const matchUp of matchUps) {
+      const relevantSide = matchUp.matchUpStatus === BYE && matchUp.sides?.find(({ participantId }) => participantId);
+      const winningSide = matchUp.sides.find((side) => side?.sideNumber === matchUp.winningSide);
+
+      if (winningSide || relevantSide) {
+        const { participantId } = winningSide || relevantSide || {};
+        if (participantId && !assignedParticipantIds.includes(participantId)) {
+          qualifyingParticipantIds.push(participantId);
+        }
+      }
+    }
+  }
+}
+
+function collectRoundRobinQualifiers({
+  roundRobinSourceLinks,
+  assignedParticipantIds,
+  qualifyingParticipantIds,
+  drawDefinition,
+}) {
+  for (const sourceLink of roundRobinSourceLinks) {
+    const structure = drawDefinition?.structures?.find(
+      (structure) => structure.structureId === sourceLink.source.structureId,
+    );
+    if (structure?.stage !== QUALIFYING) continue;
+
+    const structureCompleted = isCompletedStructure({
+      structureId: sourceLink.source.structureId,
+      drawDefinition,
+    });
+    if (!structureCompleted) continue;
+
+    const { positionAssignments } = getPositionAssignments({ structure });
+    const relevantParticipantIds: any =
+      positionAssignments
+        ?.map((assignment) => {
+          const participantId = assignment.participantId;
+          const results = findExtension({ element: assignment, name: TALLY }).extension?.value;
+          return results ? { participantId, groupOrder: results?.groupOrder } : {};
+        })
+        .filter(
+          ({ groupOrder, participantId }) => groupOrder === 1 && !assignedParticipantIds.includes(participantId),
+        )
+        .map(({ participantId }) => participantId) ?? [];
+
+    if (relevantParticipantIds) qualifyingParticipantIds.push(...relevantParticipantIds);
+  }
 }

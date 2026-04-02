@@ -277,35 +277,19 @@ function tallyTieMatchUpWithWinner({
   const isDoubles = isMatchUpEventType(DOUBLES)(matchUpType);
   const isSingles = isMatchUpEventType(SINGLES)(matchUpType);
 
-  if (tieMatchUp.winningSide === winningSide) {
-    if (winningParticipantId) {
-      participantResults[winningParticipantId].tieMatchUpsWon += 1;
-      if (isSingles) participantResults[winningParticipantId].tieSinglesWon += 1;
-      if (isDoubles) participantResults[winningParticipantId].tieDoublesWon += 1;
-    }
-    if (losingParticipantId) {
-      participantResults[losingParticipantId].tieMatchUpsLost += 1;
-      if (isSingles) participantResults[losingParticipantId].tieSinglesLost += 1;
-      if (isDoubles) {
-        participantResults[losingParticipantId].tieDoublesLost += 1;
-      }
-    }
-  } else if (tieMatchUp.winningSide !== winningSide) {
-    if (losingParticipantId) {
-      participantResults[losingParticipantId].tieMatchUpsWon += 1;
-      if (isSingles) participantResults[losingParticipantId].tieSinglesWon += 1;
-      if (isDoubles) {
-        participantResults[losingParticipantId].tieDoublesWon += 1;
-      }
-    }
-    if (winningParticipantId) {
-      participantResults[winningParticipantId].tieMatchUpsLost += 1;
-      if (isSingles) participantResults[winningParticipantId].tieSinglesLost += 1;
-      if (isDoubles) {
-        participantResults[winningParticipantId].tieDoublesLost += 1;
-      }
-    }
-  }
+  const tieWonBySameTeam = tieMatchUp.winningSide === winningSide;
+  const tieWinnerId = tieWonBySameTeam ? winningParticipantId : losingParticipantId;
+  const tieLoserId = tieWonBySameTeam ? losingParticipantId : winningParticipantId;
+
+  applyTieResult(participantResults, tieWinnerId, 'Won', isSingles, isDoubles);
+  applyTieResult(participantResults, tieLoserId, 'Lost', isSingles, isDoubles);
+}
+
+function applyTieResult(participantResults, participantId, suffix: 'Won' | 'Lost', isSingles, isDoubles) {
+  if (!participantId) return;
+  participantResults[participantId][`tieMatchUps${suffix}`] += 1;
+  if (isSingles) participantResults[participantId][`tieSingles${suffix}`] += 1;
+  if (isDoubles) participantResults[participantId][`tieDoubles${suffix}`] += 1;
 }
 
 function applyManualGamesOverride({ participantResults, score, sides }) {

@@ -47,109 +47,21 @@ export function buildCounters(points: PointWithMetadata[], options?: StatisticsO
   let lastPoint: PointWithMetadata | undefined;
 
   filteredPoints.forEach((point, index) => {
-    // Skip points without winner (shouldn't happen with new logger)
     if (point.winner === undefined) {
       if (getDevContext()) console.warn('Point missing winner:', point);
       return;
     }
 
-    // Get categories for this point, split by attribution
     const { winner: winnerCategories, loser: loserCategories } = categorizePoint(point);
     const winner = point.winner;
     const loser = (1 - winner) as 0 | 1;
 
-    // Winner-attributed categories (aces, winners, serve/return wins, pointsWon)
-    winnerCategories.forEach((category) => {
-      if (!counters.teams[winner][category]) {
-        counters.teams[winner][category] = [];
-      }
-      counters.teams[winner][category].push(point);
-
-      if (!counters.players[winner][category]) {
-        counters.players[winner][category] = [];
-      }
-      counters.players[winner][category].push(point);
-    });
-
-    // Loser-attributed categories (doubleFaults, unforcedErrors, forcedErrors)
-    loserCategories.forEach((category) => {
-      if (!counters.teams[loser][category]) {
-        counters.teams[loser][category] = [];
-      }
-      counters.teams[loser][category].push(point);
-
-      if (!counters.players[loser][category]) {
-        counters.players[loser][category] = [];
-      }
-      counters.players[loser][category].push(point);
-    });
-
-    // Track serve stats for the SERVER (regardless of who won)
-    if (point.server !== undefined) {
-      const server = point.server;
-      if (!counters.teams[server].pointsServed) {
-        counters.teams[server].pointsServed = [];
-      }
-      counters.teams[server].pointsServed.push(point);
-
-      if (point.serve === 1) {
-        if (!counters.teams[server].serves1stIn) {
-          counters.teams[server].serves1stIn = [];
-        }
-        counters.teams[server].serves1stIn.push(point);
-      } else if (point.serve === 2) {
-        if (!counters.teams[server].serves2ndIn) {
-          counters.teams[server].serves2ndIn = [];
-        }
-        counters.teams[server].serves2ndIn.push(point);
-      }
-    }
-
-    // Track stroke/hand breakdown (v3 compatibility)
-    if (point.hand) {
-      const handCategory = point.hand; // 'Forehand' or 'Backhand'
-      if (!counters.teams[winner][handCategory]) {
-        counters.teams[winner][handCategory] = [];
-      }
-      counters.teams[winner][handCategory].push({ point, index });
-    } else if (index < 3) {
-      // console.log(`[UMO-V4] Point ${index} has NO hand field:`, point);
-    }
-
-    // Track game completions for gamesWon stat
-    // When game number changes, the PREVIOUS point was the game-ending point,
-    // so credit the previous point's winner (not the current point's winner).
-    if (isGameComplete(point, lastPoint) && lastPoint?.winner !== undefined) {
-      const gameWinner = lastPoint.winner;
-      if (!counters.teams[gameWinner].gamesWon) {
-        counters.teams[gameWinner].gamesWon = [];
-      }
-      counters.teams[gameWinner].gamesWon.push(lastPoint);
-
-      if (!counters.players[gameWinner].gamesWon) {
-        counters.players[gameWinner].gamesWon = [];
-      }
-      counters.players[gameWinner].gamesWon.push(lastPoint);
-    }
-
-    // Track breakpoints
-    if (point.breakpoint) {
-      const server = point.server!;
-
-      // Server faced a breakpoint
-      if (!counters.teams[server].breakpointsFaced) {
-        counters.teams[server].breakpointsFaced = [];
-      }
-      counters.teams[server].breakpointsFaced.push(point);
-
-      // If server won, they saved it
-      if (winner === server) {
-        if (!counters.teams[server].breakpointsSaved) {
-          counters.teams[server].breakpointsSaved = [];
-        }
-        counters.teams[server].breakpointsSaved.push(point);
-      }
-    }
+    applyCategories(counters, winner, winnerCategories, point);
+    applyCategories(counters, loser, loserCategories, point);
+    trackServeStats(counters, point);
+    trackHandBreakdown(counters, point, winner, index);
+    trackGameCompletion(counters, point, lastPoint);
+    trackBreakpoints(counters, point, winner);
 
     lastPoint = point;
   });
@@ -157,16 +69,56 @@ export function buildCounters(points: PointWithMetadata[], options?: StatisticsO
   return counters;
 }
 
-/**
- * Check if a game boundary occurred between two points.
- *
- * When this returns true, lastPoint was the game-ending point
- * and currentPoint is the first point of the new game.
- *
- * @param currentPoint - Current point (first of new game)
- * @param lastPoint - Previous point (last of completed game)
- * @returns True if a game completed between the two points
- */
+function pushToCategory(container, side: number, category: string, item) {
+  if (!container[side][category]) container[side][category] = [];
+  container[side][category].push(item);
+}
+
+function applyCategories(counters: StatCounters, side: number, categories: string[], point: PointWithMetadata) {
+  categories.forEach((category) => {
+    pushToCategory(counters.teams, side, category, point);
+    pushToCategory(counters.players, side, category, point);
+  });
+}
+
+function trackServeStats(counters: StatCounters, point: PointWithMetadata) {
+  if (point.server === undefined) return;
+  const server = point.server;
+  pushToCategory(counters.teams, server, 'pointsServed', point);
+
+  if (point.serve === 1) {
+    pushToCategory(counters.teams, server, 'serves1stIn', point);
+  } else if (point.serve === 2) {
+    pushToCategory(counters.teams, server, 'serves2ndIn', point);
+  }
+}
+
+function trackHandBreakdown(counters: StatCounters, point: PointWithMetadata, winner: number, index: number) {
+  if (point.hand) {
+    pushToCategory(counters.teams, winner, point.hand, { point, index });
+  }
+}
+
+function trackGameCompletion(
+  counters: StatCounters,
+  point: PointWithMetadata,
+  lastPoint: PointWithMetadata | undefined,
+) {
+  if (!isGameComplete(point, lastPoint) || lastPoint?.winner === undefined) return;
+  const gameWinner = lastPoint.winner;
+  pushToCategory(counters.teams, gameWinner, 'gamesWon', lastPoint);
+  pushToCategory(counters.players, gameWinner, 'gamesWon', lastPoint);
+}
+
+function trackBreakpoints(counters: StatCounters, point: PointWithMetadata, winner: number) {
+  if (!point.breakpoint) return;
+  const server = point.server!;
+  pushToCategory(counters.teams, server, 'breakpointsFaced', point);
+  if (winner === server) {
+    pushToCategory(counters.teams, server, 'breakpointsSaved', point);
+  }
+}
+
 function isGameComplete(currentPoint: PointWithMetadata, lastPoint: PointWithMetadata | undefined): boolean {
   if (!lastPoint) return false;
 

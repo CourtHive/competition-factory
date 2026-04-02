@@ -78,52 +78,12 @@ export function setTournamentDates(params: SetTournamentDatesArgs): ResultType &
   const datesRemoved = initialDateRange.filter((date) => !resultingDateRange.includes(date));
   const datesAdded = resultingDateRange.filter((date) => !initialDateRange.includes(date));
 
-  for (const event of tournamentRecord.events ?? []) {
-    // if event startDate is earlier than tournament startDate, coerce event startDate to tournament startDate
-    if (startDate && event.startDate && new Date(event.startDate) < new Date(startDate)) event.startDate = startDate;
-    // if event startDate is later than tournament endDate, coerce event startDate to tournament startDate or endDate
-    if (endDate && event.startDate && new Date(event.startDate) > new Date(endDate))
-      event.startDate = startDate ?? endDate;
-    // if event endDate is greater than tournament endDate, coerce event endDate to tournament endDate
-    if (endDate && event.endDate && new Date(event.endDate) > new Date(endDate)) event.endDate = endDate;
-    // if tournament startDate is greater than event endDate, coerce event endDate to tournament endDate or startDate
-    if (startDate && event.endDate && new Date(event.endDate) < new Date(startDate))
-      event.endDate = endDate ?? startDate;
-  }
+  coerceEventDates({ tournamentRecord, startDate, endDate });
+  normalizeTournamentDateBounds({ tournamentRecord, startDate, endDate });
 
-  // if there is a startDate specified after current endDate, endDate must be set to startDate
-  if (startDate && tournamentRecord.endDate && new Date(startDate) > new Date(tournamentRecord.endDate)) {
-    tournamentRecord.endDate = startDate;
-  }
-
-  // if there is a endDate specified before current startDate, startDate must be set to endDate
-  if (endDate && tournamentRecord.startDate && new Date(endDate) < new Date(tournamentRecord.startDate)) {
-    tournamentRecord.startDate = endDate;
-  }
-
-  // If activeDates is being set, check that no removed date has scheduled matchUps
   if (activeDates) {
-    const previousActiveDates: string[] = (tournamentRecord.activeDates as string[]) ?? [];
-    const activeDatesSet = new Set(activeDates);
-    const removedDates = previousActiveDates.filter((d) => !activeDatesSet.has(d));
-
-    if (removedDates.length) {
-      const matchUps = allTournamentMatchUps({ tournamentRecord }).matchUps ?? [];
-      const removedSet = new Set(removedDates);
-      const conflicting = matchUps.filter((m) => m.schedule?.scheduledDate && removedSet.has(m.schedule.scheduledDate));
-      if (conflicting.length) {
-        const dates = [...new Set(conflicting.map((m) => m.schedule!.scheduledDate))].sort();
-        return {
-          error: {
-            ...INVALID_VALUES,
-            message: `Cannot remove active dates with scheduled matchUps: ${dates.join(', ')}`,
-          },
-          info: `${conflicting.length} matchUp(s) scheduled on dates being removed`,
-        } as any;
-      }
-    }
-
-    tournamentRecord.activeDates = activeDates;
+    const activeDatesError = validateAndApplyActiveDates({ tournamentRecord, activeDates });
+    if (activeDatesError) return activeDatesError;
   }
   if (weekdays) tournamentRecord.weekdays = weekdays;
 
@@ -143,6 +103,51 @@ export function setTournamentDates(params: SetTournamentDatesArgs): ResultType &
   });
 
   return { ...SUCCESS, unscheduledMatchUpIds, datesAdded, datesRemoved };
+}
+
+function coerceEventDates({ tournamentRecord, startDate, endDate }) {
+  for (const event of tournamentRecord.events ?? []) {
+    if (startDate && event.startDate && new Date(event.startDate) < new Date(startDate)) event.startDate = startDate;
+    if (endDate && event.startDate && new Date(event.startDate) > new Date(endDate))
+      event.startDate = startDate ?? endDate;
+    if (endDate && event.endDate && new Date(event.endDate) > new Date(endDate)) event.endDate = endDate;
+    if (startDate && event.endDate && new Date(event.endDate) < new Date(startDate))
+      event.endDate = endDate ?? startDate;
+  }
+}
+
+function normalizeTournamentDateBounds({ tournamentRecord, startDate, endDate }) {
+  if (startDate && tournamentRecord.endDate && new Date(startDate) > new Date(tournamentRecord.endDate)) {
+    tournamentRecord.endDate = startDate;
+  }
+  if (endDate && tournamentRecord.startDate && new Date(endDate) < new Date(tournamentRecord.startDate)) {
+    tournamentRecord.startDate = endDate;
+  }
+}
+
+function validateAndApplyActiveDates({ tournamentRecord, activeDates }) {
+  const previousActiveDates: string[] = (tournamentRecord.activeDates as string[]) ?? [];
+  const activeDatesSet = new Set(activeDates);
+  const removedDates = previousActiveDates.filter((d) => !activeDatesSet.has(d));
+
+  if (removedDates.length) {
+    const matchUps = allTournamentMatchUps({ tournamentRecord }).matchUps ?? [];
+    const removedSet = new Set(removedDates);
+    const conflicting = matchUps.filter((m) => m.schedule?.scheduledDate && removedSet.has(m.schedule.scheduledDate));
+    if (conflicting.length) {
+      const dates = [...new Set(conflicting.map((m) => m.schedule!.scheduledDate))].sort();
+      return {
+        error: {
+          ...INVALID_VALUES,
+          message: `Cannot remove active dates with scheduled matchUps: ${dates.join(', ')}`,
+        },
+        info: `${conflicting.length} matchUp(s) scheduled on dates being removed`,
+      } as any;
+    }
+  }
+
+  tournamentRecord.activeDates = activeDates;
+  return undefined;
 }
 
 export function setTournamentStartDate({ tournamentRecord, startDate }) {

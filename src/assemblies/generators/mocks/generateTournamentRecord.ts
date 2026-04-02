@@ -72,22 +72,9 @@ export function generateTournamentRecord(params: GenerateTournamentRecordArgs) {
   if ((startDate && !isValidDateString(startDate)) || (endDate && !isValidDateString(endDate)))
     return { error: INVALID_DATE };
 
-  if (
-    (params.leagueProfiles && !Array.isArray(params.leagueProfiles)) ||
-    (params.eventProfiles && !Array.isArray(params.eventProfiles)) ||
-    (params.drawProfiles && !Array.isArray(params.drawProfiles))
-  )
-    return { error: INVALID_VALUES };
+  if (!areValidProfiles(params)) return { error: INVALID_VALUES };
 
-  if (!startDate) {
-    const tournamentDate = new Date();
-    startDate = formatDate(endDate ?? tournamentDate);
-    endDate = formatDate(tournamentDate.setDate(tournamentDate.getDate() + 7));
-  }
-  if (!endDate) {
-    const tournamentDate = new Date(startDate);
-    endDate = formatDate(tournamentDate.setDate(tournamentDate.getDate() + 7));
-  }
+  ({ startDate, endDate } = resolveDates(startDate, endDate));
 
   const tournamentRecord = createTournamentRecord({
     ...params.tournamentAttributes,
@@ -115,18 +102,14 @@ export function generateTournamentRecord(params: GenerateTournamentRecordArgs) {
     }
   }
 
-  // if there are leagueProfiles but no other profiles, then skip adding participants
-  // leagueProfiles will generate participants and teams and events
-  if (
+  const needsParticipants =
     !params?.leagueProfiles?.length ||
     params.eventProfiles?.length ||
     params.drawProfiles?.length ||
-    params.participantsProfile
-  ) {
-    const result = addTournamentParticipants({
-      tournamentRecord,
-      ...params,
-    });
+    params.participantsProfile;
+
+  if (needsParticipants) {
+    const result = addTournamentParticipants({ tournamentRecord, ...params });
     if (!result.success) return result;
   }
 
@@ -134,41 +117,16 @@ export function generateTournamentRecord(params: GenerateTournamentRecordArgs) {
     eventIds: string[] = [],
     drawIds: string[] = [];
 
-  if (params.leagueProfiles) {
-    const result = processLeagueProfiles({
-      allUniqueParticipantIds,
-      tournamentRecord,
-      ...params,
-      eventIds,
-      venueIds,
-      drawIds,
-    });
-    if (result?.error) return result;
-  }
-
-  if (params.drawProfiles) {
-    const result = processDrawProfiles({
-      allUniqueParticipantIds,
-      ratingsParameters,
-      tournamentRecord,
-      ...params,
-      eventIds,
-      drawIds,
-    });
-    if (result?.error) return result;
-  }
-
-  if (params.eventProfiles) {
-    const result = processEventProfiles({
-      allUniqueParticipantIds,
-      ratingsParameters,
-      tournamentRecord,
-      ...params,
-      eventIds,
-      drawIds,
-    });
-    if (result?.error) return result;
-  }
+  const profilesResult = processAllProfiles({
+    allUniqueParticipantIds,
+    ratingsParameters,
+    tournamentRecord,
+    params,
+    eventIds,
+    venueIds,
+    drawIds,
+  });
+  if (profilesResult?.error) return profilesResult;
 
   const { scheduledRounds = undefined, schedulerResult = {} } = schedulingProfile
     ? scheduleRounds({ ...params, tournamentRecord })
@@ -264,4 +222,77 @@ function scheduleRounds(params): { scheduledRounds?: any; schedulerResult?: any 
   }
 
   return { scheduledRounds };
+}
+
+function areValidProfiles(params) {
+  return !(
+    (params.leagueProfiles && !Array.isArray(params.leagueProfiles)) ||
+    (params.eventProfiles && !Array.isArray(params.eventProfiles)) ||
+    (params.drawProfiles && !Array.isArray(params.drawProfiles))
+  );
+}
+
+function resolveDates(startDate, endDate) {
+  let resolvedStart = startDate;
+  let resolvedEnd = endDate;
+
+  if (!resolvedStart) {
+    const tournamentDate = new Date();
+    resolvedStart = formatDate(resolvedEnd ?? tournamentDate);
+    resolvedEnd = formatDate(tournamentDate.setDate(tournamentDate.getDate() + 7));
+  }
+  if (!resolvedEnd) {
+    const tournamentDate = new Date(resolvedStart);
+    resolvedEnd = formatDate(tournamentDate.setDate(tournamentDate.getDate() + 7));
+  }
+
+  return { startDate: resolvedStart, endDate: resolvedEnd };
+}
+
+function processAllProfiles({
+  allUniqueParticipantIds,
+  ratingsParameters,
+  tournamentRecord,
+  params,
+  eventIds,
+  venueIds,
+  drawIds,
+}) {
+  if (params.leagueProfiles) {
+    const result = processLeagueProfiles({
+      allUniqueParticipantIds,
+      tournamentRecord,
+      ...params,
+      eventIds,
+      venueIds,
+      drawIds,
+    });
+    if (result?.error) return result;
+  }
+
+  if (params.drawProfiles) {
+    const result = processDrawProfiles({
+      allUniqueParticipantIds,
+      ratingsParameters,
+      tournamentRecord,
+      ...params,
+      eventIds,
+      drawIds,
+    });
+    if (result?.error) return result;
+  }
+
+  if (params.eventProfiles) {
+    const result = processEventProfiles({
+      allUniqueParticipantIds,
+      ratingsParameters,
+      tournamentRecord,
+      ...params,
+      eventIds,
+      drawIds,
+    });
+    if (result?.error) return result;
+  }
+
+  return undefined;
 }

@@ -75,51 +75,9 @@ export function getEventRankingPoints({
 
   const eventAwards: any[] = [];
 
-  // Process person points (SINGLES and attributed DOUBLES)
-  for (const [personId, awards] of Object.entries(personPoints)) {
-    const participant = personToParticipant[personId];
-    if (!participant) continue;
-
-    for (const award of awards as any[]) {
-      if (!eventDrawIds.has(award.drawId)) continue;
-      eventAwards.push({
-        ...award,
-        participantId: participant.participantId,
-        participantName: participant.participantName,
-        personId,
-      });
-    }
-  }
-
-  // Process pair points (DOUBLES without individual attribution)
-  for (const [participantId, awards] of Object.entries(pairPoints)) {
-    const info = participantLookup[participantId];
-    if (!info) continue;
-
-    for (const award of awards as any[]) {
-      if (!eventDrawIds.has(award.drawId)) continue;
-      eventAwards.push({
-        ...award,
-        participantId,
-        participantName: info.participantName,
-      });
-    }
-  }
-
-  // Process team points
-  for (const [participantId, awards] of Object.entries(teamPoints)) {
-    const info = participantLookup[participantId];
-    if (!info) continue;
-
-    for (const award of awards as any[]) {
-      if (!eventDrawIds.has(award.drawId)) continue;
-      eventAwards.push({
-        ...award,
-        participantId,
-        participantName: info.participantName,
-      });
-    }
-  }
+  collectPersonAwards({ personPoints, personToParticipant, eventDrawIds, eventAwards });
+  collectLookupAwards({ points: pairPoints, participantLookup, eventDrawIds, eventAwards });
+  collectLookupAwards({ points: teamPoints, participantLookup, eventDrawIds, eventAwards });
 
   // Sort by points descending, then by participantName
   eventAwards.sort((a, b) => (b.points || 0) - (a.points || 0) || (a.participantName ?? '').localeCompare(b.participantName ?? ''));
@@ -134,4 +92,38 @@ export function getEventRankingPoints({
     isDoubles,
     ...SUCCESS,
   };
+}
+
+
+function collectPersonAwards({ personPoints, personToParticipant, eventDrawIds, eventAwards }) {
+  for (const [personId, awards] of Object.entries(personPoints)) {
+    const participant = personToParticipant[personId];
+    if (!participant) continue;
+
+    for (const award of awards as any[]) {
+      if (!eventDrawIds.has(award.drawId)) continue;
+      eventAwards.push({
+        ...award,
+        participantId: participant.participantId,
+        participantName: participant.participantName,
+        personId,
+      });
+    }
+  }
+}
+
+function collectLookupAwards({ points, participantLookup, eventDrawIds, eventAwards }) {
+  for (const [participantId, awards] of Object.entries(points)) {
+    const info = participantLookup[participantId];
+    if (!info) continue;
+
+    for (const award of awards as any[]) {
+      if (!eventDrawIds.has(award.drawId)) continue;
+      eventAwards.push({
+        ...award,
+        participantId,
+        participantName: info.participantName,
+      });
+    }
+  }
 }

@@ -71,31 +71,14 @@ export function getMatchUpDependencies(params: GetMatchUpDependenciesArgs): {
   let matchUps: HydratedMatchUp[] | undefined = targetMatchUps;
 
   if (positionLinks.length) {
-    matchUps = allCompetitionMatchUps({
-      nextMatchUps: true,
-      tournamentRecords,
-    }).matchUps;
+    matchUps = allCompetitionMatchUps({ nextMatchUps: true, tournamentRecords }).matchUps;
 
-    // sourceStructureIdMap returns the sourceStructureId for a given targetStructureId
-    const sourceStructureIds = positionLinks.reduce((structureIds: string[], link) => {
-      const sourceStructureId = link.source?.structureId;
-      const targetStructureId = link.target?.structureId;
-      if (sourceStructureId && targetStructureId) sourceStructureIdMap[targetStructureId] = sourceStructureId;
-      if (sourceStructureId && !structureIds.includes(sourceStructureId)) structureIds.push(sourceStructureId);
-      return structureIds;
-    }, []);
-
-    // positionDependencies map a sourceStructureId to the matchUpIds which it contains
-    for (const sourceStructureId of sourceStructureIds) {
-      positionDependencies[sourceStructureId] = [];
-    }
-    for (const matchUp of matchUps ?? []) {
-      // pertains to Round Robins and e.g. Swiss rounds; Round Robins require hoisting to containing structure
-      const sourceStructureId = matchUp.containerStructureId || matchUp.structureId;
-      if (sourceStructureIds.includes(sourceStructureId)) {
-        positionDependencies[sourceStructureId].push(matchUp.matchUpId);
-      }
-    }
+    buildPositionDependencies({
+      positionLinks,
+      sourceStructureIdMap,
+      positionDependencies,
+      matchUps,
+    });
   }
 
   const initializeMatchUpId = (matchUpId) => {
@@ -189,35 +172,16 @@ export function getMatchUpDependencies(params: GetMatchUpDependenciesArgs): {
     }
 
     if (!drawIds.length) {
-      const allDrawIds = allTournamentRecords?.length
-        ? allTournamentRecords
-            .map(({ events = [] }) =>
-              events.map(({ drawDefinitions = [] }) => drawDefinitions.map(({ drawId }) => drawId)),
-            )
-            .flat(Infinity)
-        : [];
-      if (allDrawIds) drawIds = allDrawIds as string[];
+      drawIds = gatherAllDrawIds(allTournamentRecords);
     }
 
     for (const drawId of drawIds) {
-      const drawMatchUps = matchUps
-        // first get all matchUps for the draw
-        ?.filter((matchUp) => matchUp.drawId === drawId)
-        // sort by stage/stageSequence/roundNumber/roundPosition
-        .sort(matchUpSort);
-
-      const isRoundRobin = drawMatchUps?.find(({ roundPosition }) => !roundPosition);
-      // skip this if Round Robin because there is no "Goes To"
-      if (!isRoundRobin) {
-        const hasTournamentId = drawMatchUps?.find(({ tournamentId }) => tournamentId);
-        const { drawDefinition } = findEvent({
-          tournamentRecord: tournamentRecords[hasTournamentId?.tournamentId],
-          drawId,
-        });
-        if (drawDefinition) addGoesTo({ drawDefinition });
-      }
-
-      processMatchUps(drawMatchUps);
+      processDrawMatchUps({
+        matchUps,
+        drawId,
+        tournamentRecords,
+        processMatchUps,
+      });
     }
   }
 
@@ -228,4 +192,50 @@ export function getMatchUpDependencies(params: GetMatchUpDependenciesArgs): {
     matchUps,
     ...SUCCESS,
   };
+}
+
+function buildPositionDependencies({ positionLinks, sourceStructureIdMap, positionDependencies, matchUps }) {
+  const sourceStructureIds = positionLinks.reduce((structureIds: string[], link) => {
+    const sourceStructureId = link.source?.structureId;
+    const targetStructureId = link.target?.structureId;
+    if (sourceStructureId && targetStructureId) sourceStructureIdMap[targetStructureId] = sourceStructureId;
+    if (sourceStructureId && !structureIds.includes(sourceStructureId)) structureIds.push(sourceStructureId);
+    return structureIds;
+  }, []);
+
+  for (const sourceStructureId of sourceStructureIds) {
+    positionDependencies[sourceStructureId] = [];
+  }
+  for (const matchUp of matchUps ?? []) {
+    const sourceStructureId = matchUp.containerStructureId || matchUp.structureId;
+    if (sourceStructureIds.includes(sourceStructureId)) {
+      positionDependencies[sourceStructureId].push(matchUp.matchUpId);
+    }
+  }
+}
+
+function gatherAllDrawIds(allTournamentRecords) {
+  return allTournamentRecords?.length
+    ? (allTournamentRecords
+        .map(({ events = [] }) =>
+          events.map(({ drawDefinitions = [] }) => drawDefinitions.map(({ drawId }) => drawId)),
+        )
+        .flat(Infinity) as string[])
+    : [];
+}
+
+function processDrawMatchUps({ matchUps, drawId, tournamentRecords, processMatchUps }) {
+  const drawMatchUps = matchUps?.filter((matchUp) => matchUp.drawId === drawId).sort(matchUpSort);
+
+  const isRoundRobin = drawMatchUps?.find(({ roundPosition }) => !roundPosition);
+  if (!isRoundRobin) {
+    const hasTournamentId = drawMatchUps?.find(({ tournamentId }) => tournamentId);
+    const { drawDefinition } = findEvent({
+      tournamentRecord: tournamentRecords[hasTournamentId?.tournamentId],
+      drawId,
+    });
+    if (drawDefinition) addGoesTo({ drawDefinition });
+  }
+
+  processMatchUps(drawMatchUps);
 }

@@ -10,7 +10,7 @@ import { isObject } from '@Tools/objects';
 // constants and types
 import { ParticipantTypeUnion, Tournament } from '@Types/tournamentTypes';
 import { TEAM_PARTICIPANT } from '@Constants/participantConstants';
-import { HydratedMatchUp, HydratedSide } from '@Types/hydrated';
+import { HydratedMatchUp } from '@Types/hydrated';
 import { ResultType, Tally } from '@Types/factoryTypes';
 import { BYE } from '@Constants/matchUpStatusConstants';
 import { TEAM_MATCHUP } from '@Constants/matchUpTypes';
@@ -149,100 +149,6 @@ export function getParticipantStats({
 
   const relevantMatchUps: HydratedMatchUp[] = [];
 
-  const getSideParticipantIds = (sides: HydratedSide[]) => {
-    const sideParticipantIds: [string[], string[]] = [[], []];
-
-    for (const side of sides) {
-      const participant = side.participant;
-      if (participant?.participantName) {
-        participantDetails.set(participant.participantId, {
-          participantName: participant.participantName,
-          ratings: participant.ratings,
-        });
-        const stats = participantStats.get(participant.participantId);
-        if (stats) stats.participantName = participant.participantName;
-      }
-    }
-
-    const getCompetitorIds = ({ side, individualParticipantIds }) => {
-      return (
-        (side.participantId &&
-          (!individualParticipantIds?.length || individualParticipantIds.includes(side.participantId)) && [
-            side.participantId,
-          ]) ||
-        (side.participant?.individualParticipantIds?.length &&
-          (!individualParticipantIds?.length ||
-            intersection(individualParticipantIds, side.participant?.individualParticipantIds).length ===
-              side.participant?.individualParticipantIds?.length) &&
-          side.participant.individualParticipantIds)
-      );
-    };
-
-    if (teamMap.size) {
-      const processSides = (thisTeamId, individualParticipantIds) => {
-        for (const side of sides) {
-          if (!side.participant) continue;
-          const competitorIds = getCompetitorIds({
-            individualParticipantIds,
-            side,
-          });
-          if (competitorIds?.length) {
-            const sideNumber = side.sideNumber;
-            if (!sideNumber) continue;
-            const ids = [thisTeamId];
-            if (withIndividualStats) ids.push(...competitorIds);
-            sideParticipantIds[sideNumber - 1] = ids;
-
-            const stats = participantStats.get(thisTeamId);
-            for (const id of competitorIds.filter(Boolean)) {
-              if (stats && !stats.competitorIds.includes(id)) stats.competitorIds.push(id);
-            }
-          }
-        }
-      };
-
-      if (teamParticipantId) {
-        const processForTeam =
-          !opponentParticipantId ||
-          sides.every((side) => {
-            return (
-              side.participant &&
-              (getCompetitorIds({
-                individualParticipantIds: teamMap.get(teamParticipantId),
-                side,
-              }) ||
-                getCompetitorIds({
-                  individualParticipantIds: teamMap.get(opponentParticipantId),
-                  side,
-                }))
-            );
-          });
-
-        if (processForTeam) {
-          processSides(teamParticipantId, teamMap.get(teamParticipantId));
-        }
-      } else {
-        for (const [thisTeamId, individualParticipantIds] of teamMap) {
-          processSides(thisTeamId, individualParticipantIds);
-        }
-      }
-    } else if (withIndividualStats) {
-      // no teams so process individuals
-      for (const side of sides) {
-        if (!side.participant) continue;
-        const competitorIds = getCompetitorIds({
-          individualParticipantIds: [],
-          side,
-        });
-        const sideNumber = side.sideNumber;
-        if (!sideNumber) continue;
-        sideParticipantIds[sideNumber - 1] = competitorIds;
-      }
-    }
-
-    return sideParticipantIds;
-  };
-
   for (const matchUp of matchUps) {
     if (!isObject(matchUp)) return { error: INVALID_MATCHUP };
 
@@ -250,7 +156,15 @@ export function getParticipantStats({
 
     if (!sides || !score || matchUpType === TEAM_MATCHUP || matchUpStatus === BYE) continue;
 
-    const sideParticipantIds = getSideParticipantIds(sides);
+    const sideParticipantIds = getSideParticipantIds({
+      sides,
+      participantDetails,
+      participantStats,
+      teamMap,
+      withIndividualStats,
+      teamParticipantId,
+      opponentParticipantId,
+    });
     if (!sideParticipantIds.filter(Boolean).length) continue;
 
     const competitiveness =
@@ -305,43 +219,163 @@ export function getParticipantStats({
   return result;
 }
 
+function getCompetitorIds({ side, individualParticipantIds }) {
+  return (
+    (side.participantId &&
+      (!individualParticipantIds?.length || individualParticipantIds.includes(side.participantId)) && [
+        side.participantId,
+      ]) ||
+    (side.participant?.individualParticipantIds?.length &&
+      (!individualParticipantIds?.length ||
+        intersection(individualParticipantIds, side.participant?.individualParticipantIds).length ===
+          side.participant?.individualParticipantIds?.length) &&
+      side.participant.individualParticipantIds)
+  );
+}
+
+function getSideParticipantIds({
+  sides,
+  participantDetails,
+  participantStats,
+  teamMap,
+  withIndividualStats,
+  teamParticipantId,
+  opponentParticipantId,
+}) {
+  const sideParticipantIds: [string[], string[]] = [[], []];
+
+  for (const side of sides) {
+    const participant = side.participant;
+    if (participant?.participantName) {
+      participantDetails.set(participant.participantId, {
+        participantName: participant.participantName,
+        ratings: participant.ratings,
+      });
+      const stats = participantStats.get(participant.participantId);
+      if (stats) stats.participantName = participant.participantName;
+    }
+  }
+
+  if (teamMap.size) {
+    populateTeamSides({
+      sides,
+      sideParticipantIds,
+      participantStats,
+      teamMap,
+      withIndividualStats,
+      teamParticipantId,
+      opponentParticipantId,
+    });
+  } else if (withIndividualStats) {
+    for (const side of sides) {
+      if (!side.participant) continue;
+      const competitorIds = getCompetitorIds({ individualParticipantIds: [], side });
+      const sideNumber = side.sideNumber;
+      if (!sideNumber) continue;
+      sideParticipantIds[sideNumber - 1] = competitorIds;
+    }
+  }
+
+  return sideParticipantIds;
+}
+
+function populateTeamSides({
+  sides,
+  sideParticipantIds,
+  participantStats,
+  teamMap,
+  withIndividualStats,
+  teamParticipantId,
+  opponentParticipantId,
+}) {
+  const processSides = (thisTeamId, individualParticipantIds) => {
+    for (const side of sides) {
+      if (!side.participant) continue;
+      const competitorIds = getCompetitorIds({ individualParticipantIds, side });
+      if (competitorIds?.length) {
+        const sideNumber = side.sideNumber;
+        if (!sideNumber) continue;
+        const ids = [thisTeamId];
+        if (withIndividualStats) ids.push(...competitorIds);
+        sideParticipantIds[sideNumber - 1] = ids;
+
+        const stats = participantStats.get(thisTeamId);
+        for (const id of competitorIds.filter(Boolean)) {
+          if (stats && !stats.competitorIds.includes(id)) stats.competitorIds.push(id);
+        }
+      }
+    }
+  };
+
+  if (teamParticipantId) {
+    const processForTeam =
+      !opponentParticipantId ||
+      sides.every((side) => {
+        return (
+          side.participant &&
+          (getCompetitorIds({ individualParticipantIds: teamMap.get(teamParticipantId), side }) ||
+            getCompetitorIds({ individualParticipantIds: teamMap.get(opponentParticipantId), side }))
+        );
+      });
+
+    if (processForTeam) {
+      processSides(teamParticipantId, teamMap.get(teamParticipantId));
+    }
+  } else {
+    for (const [thisTeamId, individualParticipantIds] of teamMap) {
+      processSides(thisTeamId, individualParticipantIds);
+    }
+  }
+}
+
 const STATS_ATTRIBUTES = ['tiebreaks', 'matchUps', 'points', 'games', 'sets'];
 const COMPETITIVENESS_ATTRIBUTES = ['competitive', 'routine', 'decisive'];
 
 function accumulateTallies({ tallies, sideParticipantIds, participantDetails, competitiveness, matchUpStatus, winningSide, initStats }) {
-  const { setsTally, gamesTally, pointsTally, tiebreaksTally } = tallies;
-
   sideParticipantIds.forEach((ids, index) => {
     for (const id of ids) {
       const participantName = participantDetails.get(id)?.participantName;
       const stats = initStats(id, participantName);
       if (stats) {
-        const teamSumTally = (stat: string, tally: number[]) => tally.forEach((t, i) => (stats[stat][i] += t));
-        const tiebreaks = index ? [...tiebreaksTally].reverse() : tiebreaksTally;
-        const points = index ? [...pointsTally].reverse() : pointsTally;
-        const games = index ? [...gamesTally].reverse() : gamesTally;
-        const sets = index ? [...setsTally].reverse() : setsTally;
-        teamSumTally('tiebreaks', tiebreaks);
-        teamSumTally('points', points);
-        teamSumTally('games', games);
-        teamSumTally('sets', sets);
-        if (winningSide) {
-          const tallyIndex = winningSide - 1 === index ? 0 : 1;
-          stats.matchUps[tallyIndex] += 1;
-        }
-        if (competitiveness) {
-          const attr = competitiveness.toLowerCase();
-          if (!stats.competitiveness[attr]) stats.competitiveness[attr] = [0, 0];
-          stats.competitiveness[attr][index] += 1;
-        }
-        if (matchUpStatus) {
-          const attr = matchUpStatus.toLowerCase();
-          if (!stats.matchUpStatuses[attr]) stats.matchUpStatuses[attr] = 0;
-          stats.matchUpStatuses[attr] += 1;
-        }
+        accumulateStatTallies({ stats, tallies, index });
+        accumulateMatchUpWin({ stats, winningSide, index });
+        accumulateCompetitiveness({ stats, competitiveness, index });
+        accumulateMatchUpStatus({ stats, matchUpStatus });
       }
     }
   });
+}
+
+function accumulateStatTallies({ stats, tallies, index }) {
+  const { setsTally, gamesTally, pointsTally, tiebreaksTally } = tallies;
+  const teamSumTally = (stat: string, tally: number[]) => tally.forEach((t, i) => (stats[stat][i] += t));
+  teamSumTally('tiebreaks', index ? [...tiebreaksTally].reverse() : tiebreaksTally);
+  teamSumTally('points', index ? [...pointsTally].reverse() : pointsTally);
+  teamSumTally('games', index ? [...gamesTally].reverse() : gamesTally);
+  teamSumTally('sets', index ? [...setsTally].reverse() : setsTally);
+}
+
+function accumulateMatchUpWin({ stats, winningSide, index }) {
+  if (winningSide) {
+    const tallyIndex = winningSide - 1 === index ? 0 : 1;
+    stats.matchUps[tallyIndex] += 1;
+  }
+}
+
+function accumulateCompetitiveness({ stats, competitiveness, index }) {
+  if (competitiveness) {
+    const attr = competitiveness.toLowerCase();
+    if (!stats.competitiveness[attr]) stats.competitiveness[attr] = [0, 0];
+    stats.competitiveness[attr][index] += 1;
+  }
+}
+
+function accumulateMatchUpStatus({ stats, matchUpStatus }) {
+  if (matchUpStatus) {
+    const attr = matchUpStatus.toLowerCase();
+    if (!stats.matchUpStatuses[attr]) stats.matchUpStatuses[attr] = 0;
+    stats.matchUpStatuses[attr] += 1;
+  }
 }
 
 function computeRatios(participantStats: Map<string, StatCounters>, participating: Map<string, boolean>) {

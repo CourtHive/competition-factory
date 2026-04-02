@@ -108,105 +108,83 @@ function validateTierConstraints({
   tier: SanctioningTier;
   issues: ValidationIssue[];
 }) {
-  // Prize money
-  if (tier.minimumPrizeMoney !== undefined && proposal.totalPrizeMoney?.length) {
-    const totalAmount = proposal.totalPrizeMoney.reduce((sum, pm) => sum + pm.amount, 0);
-    if (totalAmount < tier.minimumPrizeMoney) {
-      issues.push({
-        field: 'totalPrizeMoney',
-        message: `Minimum prize money for ${tier.tierName}: ${tier.minimumPrizeMoney}; proposed: ${totalAmount}`,
-        severity: 'error',
-      });
-    }
-  }
+  validatePrizeMoney(proposal, tier, issues);
+  validateCourts(proposal, tier, issues);
 
-  if (tier.maximumPrizeMoney !== undefined && proposal.totalPrizeMoney?.length) {
-    const totalAmount = proposal.totalPrizeMoney.reduce((sum, pm) => sum + pm.amount, 0);
-    if (totalAmount > tier.maximumPrizeMoney) {
-      issues.push({
-        field: 'totalPrizeMoney',
-        message: `Maximum prize money for ${tier.tierName}: ${tier.maximumPrizeMoney}; proposed: ${totalAmount}`,
-        severity: 'error',
-      });
-    }
-  }
-
-  // Courts
-  if (tier.minimumCourts !== undefined) {
-    const totalCourts = proposal.venues?.reduce((sum, v) => sum + (v.numberOfCourts ?? 0), 0) ?? 0;
-    if (totalCourts < tier.minimumCourts) {
-      issues.push({
-        field: 'venues',
-        message: `Minimum ${tier.minimumCourts} courts required; proposed: ${totalCourts}`,
-        severity: 'error',
-      });
-    }
-  }
-
-  // Event-level constraints
   for (let i = 0; i < proposal.events.length; i++) {
-    const event = proposal.events[i];
+    validateEventConstraints(proposal.events[i], i, tier, issues);
+  }
+}
 
-    if (tier.allowedEventTypes?.length && !tier.allowedEventTypes.includes(event.eventType)) {
-      issues.push({
-        field: `events[${i}].eventType`,
-        message: `Event type '${event.eventType}' not allowed for tier ${tier.tierName}`,
-        severity: 'error',
-      });
-    }
+function validatePrizeMoney(proposal: TournamentProposal, tier: SanctioningTier, issues: ValidationIssue[]) {
+  if (!proposal.totalPrizeMoney?.length) return;
+  const totalAmount = proposal.totalPrizeMoney.reduce((sum, pm) => sum + pm.amount, 0);
 
-    if (tier.allowedDrawTypes?.length && event.drawType && !tier.allowedDrawTypes.includes(event.drawType)) {
-      issues.push({
-        field: `events[${i}].drawType`,
-        message: `Draw type '${event.drawType}' not allowed for tier ${tier.tierName}`,
-        severity: 'error',
-      });
-    }
+  if (tier.minimumPrizeMoney !== undefined && totalAmount < tier.minimumPrizeMoney) {
+    issues.push({
+      field: 'totalPrizeMoney',
+      message: `Minimum prize money for ${tier.tierName}: ${tier.minimumPrizeMoney}; proposed: ${totalAmount}`,
+      severity: 'error',
+    });
+  }
+  if (tier.maximumPrizeMoney !== undefined && totalAmount > tier.maximumPrizeMoney) {
+    issues.push({
+      field: 'totalPrizeMoney',
+      message: `Maximum prize money for ${tier.tierName}: ${tier.maximumPrizeMoney}; proposed: ${totalAmount}`,
+      severity: 'error',
+    });
+  }
+}
 
-    if (tier.allowedDrawSizes?.length && event.drawSize && !tier.allowedDrawSizes.includes(event.drawSize)) {
-      issues.push({
-        field: `events[${i}].drawSize`,
-        message: `Draw size ${event.drawSize} not allowed for tier ${tier.tierName}; allowed: ${tier.allowedDrawSizes.join(', ')}`,
-        severity: 'error',
-      });
-    }
+function validateCourts(proposal: TournamentProposal, tier: SanctioningTier, issues: ValidationIssue[]) {
+  if (tier.minimumCourts === undefined) return;
+  const totalCourts = proposal.venues?.reduce((sum, v) => sum + (v.numberOfCourts ?? 0), 0) ?? 0;
+  if (totalCourts < tier.minimumCourts) {
+    issues.push({
+      field: 'venues',
+      message: `Minimum ${tier.minimumCourts} courts required; proposed: ${totalCourts}`,
+      severity: 'error',
+    });
+  }
+}
 
-    if (
-      tier.allowedMatchUpFormats?.length &&
-      event.matchUpFormat &&
-      !tier.allowedMatchUpFormats.includes(event.matchUpFormat)
-    ) {
-      issues.push({
-        field: `events[${i}].matchUpFormat`,
-        message: `Match format '${event.matchUpFormat}' not allowed for tier ${tier.tierName}`,
-        severity: 'error',
-      });
-    }
+function validateEventConstraints(event, index: number, tier: SanctioningTier, issues: ValidationIssue[]) {
+  const prefix = `events[${index}]`;
+  const tierName = tier.tierName;
 
-    if (tier.allowedGenders?.length && event.gender && !tier.allowedGenders.includes(event.gender)) {
-      issues.push({
-        field: `events[${i}].gender`,
-        message: `Gender '${event.gender}' not allowed for tier ${tier.tierName}`,
-        severity: 'error',
-      });
-    }
+  if (tier.allowedEventTypes?.length && !tier.allowedEventTypes.includes(event.eventType)) {
+    issues.push({ field: `${prefix}.eventType`, message: `Event type '${event.eventType}' not allowed for tier ${tierName}`, severity: 'error' });
+  }
+  if (tier.allowedDrawTypes?.length && event.drawType && !tier.allowedDrawTypes.includes(event.drawType)) {
+    issues.push({ field: `${prefix}.drawType`, message: `Draw type '${event.drawType}' not allowed for tier ${tierName}`, severity: 'error' });
+  }
+  if (tier.allowedDrawSizes?.length && event.drawSize && !tier.allowedDrawSizes.includes(event.drawSize)) {
+    issues.push({ field: `${prefix}.drawSize`, message: `Draw size ${event.drawSize} not allowed for tier ${tierName}; allowed: ${tier.allowedDrawSizes.join(', ')}`, severity: 'error' });
+  }
+  if (tier.allowedMatchUpFormats?.length && event.matchUpFormat && !tier.allowedMatchUpFormats.includes(event.matchUpFormat)) {
+    issues.push({ field: `${prefix}.matchUpFormat`, message: `Match format '${event.matchUpFormat}' not allowed for tier ${tierName}`, severity: 'error' });
+  }
+  if (tier.allowedGenders?.length && event.gender && !tier.allowedGenders.includes(event.gender)) {
+    issues.push({ field: `${prefix}.gender`, message: `Gender '${event.gender}' not allowed for tier ${tierName}`, severity: 'error' });
+  }
 
-    // Qualifying constraints
-    if (event.qualifyingDrawSize) {
-      if (tier.qualifyingAllowed === false) {
-        issues.push({
-          field: `events[${i}].qualifyingDrawSize`,
-          message: `Qualifying not allowed for tier ${tier.tierName}`,
-          severity: 'error',
-        });
-      } else if (tier.maxQualifyingDrawSize && event.qualifyingDrawSize > tier.maxQualifyingDrawSize) {
-        issues.push({
-          field: `events[${i}].qualifyingDrawSize`,
-          message: `Qualifying draw size ${event.qualifyingDrawSize} exceeds maximum ${tier.maxQualifyingDrawSize}`,
-          severity: 'error',
-        });
-      }
-    }
+  validateQualifyingConstraints(event, prefix, tier, issues);
+}
+
+function validateQualifyingConstraints(event, prefix: string, tier: SanctioningTier, issues: ValidationIssue[]) {
+  if (!event.qualifyingDrawSize) return;
+  if (tier.qualifyingAllowed === false) {
+    issues.push({
+      field: `${prefix}.qualifyingDrawSize`,
+      message: `Qualifying not allowed for tier ${tier.tierName}`,
+      severity: 'error',
+    });
+  } else if (tier.maxQualifyingDrawSize && event.qualifyingDrawSize > tier.maxQualifyingDrawSize) {
+    issues.push({
+      field: `${prefix}.qualifyingDrawSize`,
+      message: `Qualifying draw size ${event.qualifyingDrawSize} exceeds maximum ${tier.maxQualifyingDrawSize}`,
+      severity: 'error',
+    });
   }
 }
 

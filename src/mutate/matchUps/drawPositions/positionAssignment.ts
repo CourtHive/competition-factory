@@ -188,69 +188,28 @@ export function assignDrawPosition({
   positionAssignment.participantId = participantId;
   if (isQualifierPosition) positionAssignment.qualifier = true;
 
-  // seed positions should not be propagated in qualifying stages
-  const mainSeeding = structure.stage === MAIN && (!structure.stageSequence || structure.stageSequence > 1);
-
-  if (mainSeeding || (structure.stage && [CONSOLATION, PLAY_OFF].includes(structure.stage))) {
-    const targetStage = structure.stage === QUALIFYING ? QUALIFYING : MAIN;
-    const targetStructure = drawDefinition.structures?.find(
-      (structure) => structure?.stage === targetStage && structure?.stageSequence === 1,
-    );
-    const seedAssignments = targetStructure?.seedAssignments ?? [];
-    const assignment = seedAssignments.find((assignment) => assignment.participantId === participantId);
-
-    if (assignment?.participantId) {
-      const { participantId, seedNumber, seedValue } = assignment;
-      assignSeed({
-        eventId: event?.eventId,
-        provisionalPositioning,
-        tournamentRecord,
-        drawDefinition,
-        seedingProfile,
-        participantId,
-        seedNumber,
-        seedValue,
-        structureId,
-        event,
-      });
-    }
-  }
+  propagateSeedAssignment({
+    provisionalPositioning,
+    tournamentRecord,
+    drawDefinition,
+    seedingProfile,
+    participantId,
+    structureId,
+    structure,
+    event,
+  });
 
   if (structure.structureType === CONTAINER) {
-    modifyRoundRobinMatchUpsStatus({
+    handleContainerAssignment({
+      inContextDrawMatchUps,
       positionAssignments,
+      positionAssignment,
       tournamentRecord,
       drawDefinition,
+      participantId,
       matchUpsMap,
       structure,
     });
-
-    // for ROUND_ROBIN events with TEAM matchUps, attach default lineUp
-    const { drawPositions, matchUps, targetMatchUps } = getTargetMatchUps({
-      assignments: [positionAssignment],
-      inContextDrawMatchUps,
-      drawDefinition,
-      matchUpsMap,
-      structure,
-    });
-
-    // if a team participant is being assigned and there is a default lineUp, attach to side
-    if (drawPositions && matchUps?.length === 1 && matchUps[0].matchUpType === TEAM) {
-      const sides: any = targetMatchUps?.[0].sides ?? [];
-      const drawPositionSideIndex = sides.reduce(
-        (sideIndex, side, i: number) => (drawPositions?.includes(side.drawPosition) ? i : sideIndex),
-        undefined,
-      );
-
-      updateSideLineUp({
-        inContextTargetMatchUp: targetMatchUps[0],
-        teamParticipantId: participantId,
-        matchUp: matchUps[0],
-        drawPositionSideIndex,
-        tournamentRecord,
-        drawDefinition,
-      });
-    }
   } else {
     addDrawPositionToMatchUps({
       provisionalPositioning,
@@ -287,6 +246,86 @@ export function assignDrawPosition({
   });
 
   return { positionAssignments, ...SUCCESS };
+}
+
+function propagateSeedAssignment({
+  provisionalPositioning,
+  tournamentRecord,
+  drawDefinition,
+  seedingProfile,
+  participantId,
+  structureId,
+  structure,
+  event,
+}) {
+  const mainSeeding = structure.stage === MAIN && (!structure.stageSequence || structure.stageSequence > 1);
+  if (!mainSeeding && !(structure.stage && [CONSOLATION, PLAY_OFF].includes(structure.stage))) return;
+
+  const targetStage = structure.stage === QUALIFYING ? QUALIFYING : MAIN;
+  const targetStructure = drawDefinition.structures?.find(
+    (s) => s?.stage === targetStage && s?.stageSequence === 1,
+  );
+  const seedAssignments = targetStructure?.seedAssignments ?? [];
+  const assignment = seedAssignments.find((a) => a.participantId === participantId);
+
+  if (assignment?.participantId) {
+    assignSeed({
+      eventId: event?.eventId,
+      participantId: assignment.participantId,
+      seedNumber: assignment.seedNumber,
+      seedValue: assignment.seedValue,
+      provisionalPositioning,
+      tournamentRecord,
+      drawDefinition,
+      seedingProfile,
+      structureId,
+      event,
+    });
+  }
+}
+
+function handleContainerAssignment({
+  inContextDrawMatchUps,
+  positionAssignments,
+  positionAssignment,
+  tournamentRecord,
+  drawDefinition,
+  participantId,
+  matchUpsMap,
+  structure,
+}) {
+  modifyRoundRobinMatchUpsStatus({
+    positionAssignments,
+    tournamentRecord,
+    drawDefinition,
+    matchUpsMap,
+    structure,
+  });
+
+  const { drawPositions, matchUps, targetMatchUps } = getTargetMatchUps({
+    assignments: [positionAssignment],
+    inContextDrawMatchUps,
+    drawDefinition,
+    matchUpsMap,
+    structure,
+  });
+
+  if (drawPositions && matchUps?.length === 1 && matchUps[0].matchUpType === TEAM) {
+    const sides: any = targetMatchUps?.[0].sides ?? [];
+    const drawPositionSideIndex = sides.reduce(
+      (sideIndex, side, i: number) => (drawPositions?.includes(side.drawPosition) ? i : sideIndex),
+      undefined,
+    );
+
+    updateSideLineUp({
+      inContextTargetMatchUp: targetMatchUps[0],
+      teamParticipantId: participantId,
+      matchUp: matchUps[0],
+      drawPositionSideIndex,
+      tournamentRecord,
+      drawDefinition,
+    });
+  }
 }
 
 // used for matchUps which are NOT in a ROUND_ROBIN { structureType: CONTAINER }

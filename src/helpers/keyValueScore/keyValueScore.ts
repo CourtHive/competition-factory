@@ -229,106 +229,119 @@ export function keyValueScore(params) {
   let { scoreString, sets, winningSide, matchUpStatus } = params;
   const { matchUpFormat, shiftFirst, auto = true } = params;
 
-  let updated, info;
-  const isShifted = (shiftFirst && lowSide === 2) || (!shiftFirst && lowSide === 1);
-
   if (!VALID_VALUE_KEYS.includes(value)) {
     return { updated: false, info: 'invalid key' };
   }
 
   if (shiftFirst) lowSide = 3 - lowSide;
+  const isShifted = (shiftFirst && lowSide === 2) || (!shiftFirst && lowSide === 1);
 
-  const { matchUpWinningSide } = getMatchUpWinner({
-    sets,
-    winningSide,
-    matchUpStatus,
-    matchUpFormat,
-  });
+  const { matchUpWinningSide } = getMatchUpWinner({ sets, winningSide, matchUpStatus, matchUpFormat });
   winningSide = matchUpWinningSide;
 
-  const analysis = getScoreAnalysis({
-    value,
-    winningSide,
-    scoreString,
-    sets,
-    matchUpFormat,
+  const analysis = getScoreAnalysis({ value, winningSide, scoreString, sets, matchUpFormat });
+
+  ({ value, scoreString } = normalizeValueAndScore({ analysis, value, scoreString, isShifted }));
+
+  const branchResult: any = processBranch({
+    analysis, lowSide, sets, scoreString, matchUpStatus, winningSide, value, auto,
   });
 
-  if (ALTERNATE_JOINERS.includes(value)) value = SCORE_JOINER;
+  if (branchResult.earlyReturn) {
+    return { updated: branchResult.updated, info: branchResult.info };
+  }
+
+  ({ sets, scoreString, matchUpStatus, winningSide } = branchResult);
+  const { updated, info } = branchResult;
+
+  if (updated) {
+    return finalizeUpdatedScore({ sets, winningSide, matchUpStatus, matchUpFormat, scoreString, info });
+  }
+
+  return { updated, scoreString, sets, winningSide, matchUpStatus, info };
+}
+
+function normalizeValueAndScore({ analysis, value, scoreString, isShifted }) {
+  let normalizedValue = value;
+  let normalizedScore = scoreString;
+
+  if (ALTERNATE_JOINERS.includes(normalizedValue)) normalizedValue = SCORE_JOINER;
   if (
     analysis.hasOpener &&
     analysis.isTiebreakEntry &&
     !analysis.isTiebreakSet &&
     isShifted &&
-    ensureInt(value) === 0
+    ensureInt(normalizedValue) === 0
   ) {
     analysis.isTiebreakCloser = true;
   }
 
-  if (CLOSERS.includes(value) && analysis.hasOpener) {
-    value = '';
+  if (CLOSERS.includes(normalizedValue) && analysis.hasOpener) {
+    normalizedValue = '';
   }
-
-  if (CLOSERS.includes(value)) {
-    value = SPACE_KEY;
+  if (CLOSERS.includes(normalizedValue)) {
+    normalizedValue = SPACE_KEY;
   }
 
   if (analysis.lastSetIsComplete) {
-    const finalCharacter = scoreString?.length && scoreString[scoreString.length - 1];
-    if (scoreString && finalCharacter !== ' ') {
-      scoreString += ' ';
+    const finalCharacter = normalizedScore?.length && normalizedScore.at(-1);
+    if (normalizedScore && finalCharacter !== ' ') {
+      normalizedScore += ' ';
     }
   }
 
+  return { value: normalizedValue, scoreString: normalizedScore };
+}
+
+function processBranch({ analysis, lowSide, sets, scoreString, matchUpStatus, winningSide, value, auto }) {
+  let info, updated;
+  let resultSets = sets;
+  let resultScore = scoreString;
+  let resultStatus = matchUpStatus;
+  let resultWinner = winningSide;
+
   if (analysis.isTimedSet) {
-    ({ info, sets, scoreString, updated, matchUpStatus, winningSide } = keyValueTimedSetScore({
-      analysis,
-      lowSide,
-      scoreString,
-      sets,
-      matchUpStatus,
-      winningSide,
-      value,
+    ({ info, sets: resultSets, scoreString: resultScore, updated, matchUpStatus: resultStatus, winningSide: resultWinner } = keyValueTimedSetScore({
+      analysis, lowSide, scoreString, sets, matchUpStatus, winningSide, value,
     }));
   } else if (OUTCOMEKEYS.includes(value)) {
-    ({ info, sets, scoreString, matchUpStatus, winningSide, updated } = handleOutcomeKey({
-      analysis,
-      lowSide,
-      sets,
-      scoreString,
-      matchUpStatus,
-      winningSide,
-      value,
+    ({ info, sets: resultSets, scoreString: resultScore, matchUpStatus: resultStatus, winningSide: resultWinner, updated } = handleOutcomeKey({
+      analysis, lowSide, sets, scoreString, matchUpStatus, winningSide, value,
     }));
   } else if (value === BACKSPACE) {
-    ({ scoreString, sets, updated, matchUpStatus, winningSide } = handleBackspace({
-      analysis,
-      scoreString,
-      sets,
-      lowSide,
+    ({ scoreString: resultScore, sets: resultSets, updated, matchUpStatus: resultStatus, winningSide: resultWinner } = handleBackspace({
+      analysis, scoreString, sets, lowSide,
     }));
   } else if (analysis.hasOutcome) {
     info = 'has outcome';
   } else if (value === SCORE_JOINER && !analysis.isMatchTiebreakEntry) {
-    ({ scoreString, sets, updated, matchUpStatus } = handleScoreJoiner({
-      analysis,
-      scoreString,
-      sets,
-      lowSide,
+    ({ scoreString: resultScore, sets: resultSets, updated, matchUpStatus: resultStatus } = handleScoreJoiner({
+      analysis, scoreString, sets, lowSide,
     }));
   } else if (value === MATCH_TIEBREAK_JOINER && analysis.isMatchTiebreakEntry && !analysis.isSetTiebreakEntry) {
-    ({ info, scoreString, updated } = handleMatchTiebreakJoiner({ analysis, scoreString }));
+    ({ info, scoreString: resultScore, updated } = handleMatchTiebreakJoiner({ analysis, scoreString }));
   } else if ([SCORE_JOINER, MATCH_TIEBREAK_JOINER].includes(value)) {
     info = 'invalid location for joiner';
   } else if (winningSide) {
-    return { updated: false, info: 'matchUp is complete' };
-  } else if (analysis.isIncompleteSetScore) {
+    return { earlyReturn: true, updated: false, info: 'matchUp is complete' };
+  } else {
+    ({ info, updated, sets: resultSets, scoreString: resultScore } = processRemainingBranches({
+      analysis, auto, lowSide, scoreString, sets, value,
+    }));
+  }
+
+  return { info, updated, sets: resultSets, scoreString: resultScore, matchUpStatus: resultStatus, winningSide: resultWinner };
+}
+
+function processRemainingBranches({ analysis, auto, lowSide, scoreString, sets, value }) {
+  let info, updated;
+  let resultSets = sets;
+  let resultScore = scoreString;
+
+  if (analysis.isIncompleteSetScore) {
     if (analysis.isNumericValue) {
-      ({ sets, scoreString, updated } = processIncompleteSetScore({
-        analysis,
-        scoreString,
-        sets,
-        value,
+      ({ sets: resultSets, scoreString: resultScore, updated } = processIncompleteSetScore({
+        analysis, scoreString, sets, value,
       }));
     }
   } else if (analysis.isInvalidMatchTiebreakValue) {
@@ -336,31 +349,22 @@ export function keyValueScore(params) {
   } else if (analysis.isInvalidSetTiebreakValue) {
     info = 'invalid set tiebreak character';
   } else if (analysis.isTiebreakCloser) {
-    ({ scoreString, sets, updated } = handleTiebreakCloser({ analysis, scoreString, sets }));
+    ({ scoreString: resultScore, sets: resultSets, updated } = handleTiebreakCloser({ analysis, scoreString, sets }));
   } else if (analysis.isTiebreakSetValue) {
-    ({ info, scoreString, sets, updated } = processTiebreakSet({
-      analysis,
-      auto,
-      lowSide,
-      scoreString,
-      sets,
-      value,
+    ({ info, scoreString: resultScore, sets: resultSets, updated } = processTiebreakSet({
+      analysis, auto, lowSide, scoreString, sets, value,
     }));
   } else if (analysis.isSetTiebreakEntry) {
-    ({ info, scoreString, updated } = handleSetTiebreakEntry({ analysis, scoreString, value }));
+    ({ info, scoreString: resultScore, updated } = handleSetTiebreakEntry({ analysis, scoreString, value }));
   } else if (analysis.isCloser) {
     info = `invalid key: ${value}`;
   } else if (analysis.isGameScoreEntry) {
     info = 'game scoreString entry';
   } else if (analysis.lastSetIsComplete || !sets.length) {
-    ({ scoreString, sets, updated } = handleNewSet({ analysis, lowSide, scoreString, sets, value }));
+    ({ scoreString: resultScore, sets: resultSets, updated } = handleNewSet({ analysis, lowSide, scoreString, sets, value }));
   } else {
     console.log('error: unknown outcome');
   }
 
-  if (updated) {
-    return finalizeUpdatedScore({ sets, winningSide, matchUpStatus, matchUpFormat, scoreString, info });
-  }
-
-  return { updated, scoreString, sets, winningSide, matchUpStatus, info };
+  return { info, updated, sets: resultSets, scoreString: resultScore };
 }

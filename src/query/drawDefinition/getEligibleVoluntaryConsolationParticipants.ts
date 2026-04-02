@@ -116,17 +116,18 @@ export function getEligibleVoluntaryConsolationParticipants({
     event,
   });
 
+  const losingParticipantIdSet = new Set(losingParticipantIds);
+
   const eligibleParticipants = consideredParticipants
     .filter((participant: any) => {
-      const pid = participant.participantId;
-      const lossOk = resolvedPolicy.requireLoss ? losingParticipantIds.includes(pid) : true;
-      const playOk = resolvedPolicy.requirePlay ? (participantMatchUps[pid] || 0) >= 0 : true;
-      const winsOk = resolvedPolicy.winsLimit ? (participantWins[pid] || 0) <= resolvedPolicy.winsLimit : true;
-      const matchUpsOk = resolvedPolicy.matchUpsLimit
-        ? participantMatchUps[pid] <= resolvedPolicy.matchUpsLimit
-        : true;
-      const notSelected = !voluntaryConsolationEntryIds.has(pid);
-      return lossOk && playOk && winsOk && matchUpsOk && notSelected;
+      return isParticipantEligible({
+        voluntaryConsolationEntryIds,
+        losingParticipantIdSet,
+        participantMatchUps,
+        participantWins,
+        resolvedPolicy,
+        participant,
+      });
     })
     .map((participant: any) => {
       return {
@@ -138,6 +139,24 @@ export function getEligibleVoluntaryConsolationParticipants({
     });
 
   return { eligibleParticipants, losingParticipantIds, ...SUCCESS };
+}
+
+
+function isParticipantEligible({
+  voluntaryConsolationEntryIds,
+  losingParticipantIdSet,
+  participantMatchUps,
+  participantWins,
+  resolvedPolicy,
+  participant,
+}) {
+  const pid = participant.participantId;
+  const lossOk = resolvedPolicy.requireLoss ? losingParticipantIdSet.has(pid) : true;
+  const playOk = resolvedPolicy.requirePlay ? (participantMatchUps[pid] || 0) >= 0 : true;
+  const winsOk = resolvedPolicy.winsLimit ? (participantWins[pid] || 0) <= resolvedPolicy.winsLimit : true;
+  const matchUpsOk = resolvedPolicy.matchUpsLimit ? participantMatchUps[pid] <= resolvedPolicy.matchUpsLimit : true;
+  const notSelected = !voluntaryConsolationEntryIds.has(pid);
+  return lossOk && playOk && winsOk && matchUpsOk && notSelected;
 }
 
 function fetchMatchUps({ includeEventParticipants, tournamentRecord, drawDefinition, stages, event }) {
@@ -221,61 +240,83 @@ function buildParticipantMatchUpData({
   const matchUpParticipants = {};
   const participantWins = {};
 
+  const excludedSet = new Set(excludedMatchUpStatuses);
+
   for (const matchUp of matchUps) {
-    if (
-      requirePlay &&
-      matchUp.winningSide &&
-      ![1, 2].includes(matchUp.winningSide) &&
-      matchUp.matchUpStatus !== DOUBLE_WALKOVER
-    )
-      continue;
-    if (matchUp.finishingRound && finishingRoundLimit && matchUp.finishingRound >= finishingRoundLimit) continue;
-    if (matchUp.finishingRound && roundNumberLimit && matchUp.finishingRound <= roundNumberLimit) continue;
+    if (!isMatchUpRelevant({ matchUp, requirePlay, finishingRoundLimit, roundNumberLimit })) continue;
 
-    const losingSide = matchUp.sides?.find(
-      ({ sideNumber }) => matchUp.winningSide && sideNumber === 3 - matchUp.winningSide,
-    ) as HydratedSide;
-    const winningSide = matchUp.sides?.find(
-      ({ sideNumber }) => matchUp.winningSide && sideNumber === matchUp.winningSide,
-    ) as HydratedSide;
-
-    matchUp.sides?.forEach((side: HydratedSide) => {
-      const participantId = side?.participant?.participantId;
-      if (participantId) {
-        matchUpParticipants[participantId] = side.participant;
-        if (matchUp.matchUpStatus === DOUBLE_WALKOVER && !requirePlay) {
-          losingParticipants[participantId] = side.participant;
-          if (!participantMatchUps[participantId]) participantMatchUps[participantId] = 0;
-          if (!matchUp.matchUpStatus || !excludedMatchUpStatuses.includes(matchUp.matchUpStatus))
-            participantMatchUps[participantId] += 1;
-        }
-      }
+    processMatchUpSides({
+      matchUp,
+      requirePlay,
+      excludedSet,
+      participantMatchUps,
+      losingParticipants,
+      matchUpParticipants,
+      participantWins,
     });
-
-    if (losingSide?.participant) {
-      const participantId = losingSide.participant.participantId;
-      losingParticipants[participantId] = losingSide.participant;
-
-      if (!participantMatchUps[participantId]) participantMatchUps[participantId] = 0;
-
-      if (matchUp.matchUpStatus && !excludedMatchUpStatuses.includes(matchUp.matchUpStatus))
-        participantMatchUps[participantId] += 1;
-    }
-
-    if (winningSide?.participant) {
-      const participantId = winningSide.participant.participantId;
-
-      if (!participantWins[participantId]) participantWins[participantId] = 0;
-      participantWins[participantId] += 1;
-
-      if (!participantMatchUps[participantId]) participantMatchUps[participantId] = 0;
-
-      if (matchUp.matchUpStatus && !excludedMatchUpStatuses.includes(matchUp.matchUpStatus))
-        participantMatchUps[participantId] += 1;
-    }
   }
 
   return { participantMatchUps, losingParticipants, matchUpParticipants, participantWins };
+}
+
+function isMatchUpRelevant({ matchUp, requirePlay, finishingRoundLimit, roundNumberLimit }) {
+  if (
+    requirePlay &&
+    matchUp.winningSide &&
+    ![1, 2].includes(matchUp.winningSide) &&
+    matchUp.matchUpStatus !== DOUBLE_WALKOVER
+  )
+    return false;
+  if (matchUp.finishingRound && finishingRoundLimit && matchUp.finishingRound >= finishingRoundLimit) return false;
+  if (matchUp.finishingRound && roundNumberLimit && matchUp.finishingRound <= roundNumberLimit) return false;
+  return true;
+}
+
+function processMatchUpSides({
+  matchUp,
+  requirePlay,
+  excludedSet,
+  participantMatchUps,
+  losingParticipants,
+  matchUpParticipants,
+  participantWins,
+}) {
+  const losingSide = matchUp.sides?.find(
+    ({ sideNumber }) => matchUp.winningSide && sideNumber === 3 - matchUp.winningSide,
+  ) as HydratedSide;
+  const winningSide = matchUp.sides?.find(
+    ({ sideNumber }) => matchUp.winningSide && sideNumber === matchUp.winningSide,
+  ) as HydratedSide;
+
+  matchUp.sides?.forEach((side: HydratedSide) => {
+    const participantId = side?.participant?.participantId;
+    if (participantId) {
+      matchUpParticipants[participantId] = side.participant;
+      if (matchUp.matchUpStatus === DOUBLE_WALKOVER && !requirePlay) {
+        losingParticipants[participantId] = side.participant;
+        if (!participantMatchUps[participantId]) participantMatchUps[participantId] = 0;
+        if (!matchUp.matchUpStatus || !excludedSet.has(matchUp.matchUpStatus))
+          participantMatchUps[participantId] += 1;
+      }
+    }
+  });
+
+  if (losingSide?.participant) {
+    const participantId = losingSide.participant.participantId;
+    losingParticipants[participantId] = losingSide.participant;
+    if (!participantMatchUps[participantId]) participantMatchUps[participantId] = 0;
+    if (matchUp.matchUpStatus && !excludedSet.has(matchUp.matchUpStatus))
+      participantMatchUps[participantId] += 1;
+  }
+
+  if (winningSide?.participant) {
+    const participantId = winningSide.participant.participantId;
+    if (!participantWins[participantId]) participantWins[participantId] = 0;
+    participantWins[participantId] += 1;
+    if (!participantMatchUps[participantId]) participantMatchUps[participantId] = 0;
+    if (matchUp.matchUpStatus && !excludedSet.has(matchUp.matchUpStatus))
+      participantMatchUps[participantId] += 1;
+  }
 }
 
 function getConsideredParticipants({

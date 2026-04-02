@@ -168,13 +168,7 @@ export function processPlayoffGroups({
       finishingPositionOffset = Math.min(...positionsPlayedOff) - 1;
     }
 
-    const finishingPositionRange =
-      positionsPlayedOff && `${Math.min(...positionsPlayedOff)}-${Math.max(...positionsPlayedOff)}`;
-
-    const structureName =
-      playoffGroup.structureName ||
-      (finishingPositionRange && playoffGroup.playoffAttributes?.[finishingPositionRange]?.name) ||
-      playoffGroup.playoffAttributes?.['0']?.name;
+    const structureName = resolveStructureName({ positionsPlayedOff, playoffGroup });
 
     const playoffGroupParams = {
       addNameBaseToAttributeName: playoffGroup.addNameBaseToAttributeName,
@@ -562,6 +556,17 @@ function processFeedInPlayoff({
     structureId: playoffStructure.structureId,
     finishingPositions,
   });
+}
+
+
+function resolveStructureName({ positionsPlayedOff, playoffGroup }) {
+  const finishingPositionRange =
+    positionsPlayedOff && `${Math.min(...positionsPlayedOff)}-${Math.max(...positionsPlayedOff)}`;
+  return (
+    playoffGroup.structureName ||
+    (finishingPositionRange && playoffGroup.playoffAttributes?.[finishingPositionRange]?.name) ||
+    playoffGroup.playoffAttributes?.['0']?.name
+  );
 }
 
 function generatePlayoffLink({

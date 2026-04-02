@@ -36,54 +36,30 @@ export function generateEventsFromTieFormat(params: GenerateEventsFromTieFormatA
   const tieFormat = params.tieFormat || tieFormatDefaults({ namedFormat: params.tieFormatName });
   const uuids = params.uuids || [UUIDS(tieFormat.collectionDefinitions.length)];
 
-  const genderedParticipants = { [MALE]: [] as string[], [FEMALE]: [] as string[] };
-  if (params.addEntriesFromTeams) {
-    const teamParticipants = params.tournamentRecord.participants?.filter(
-      (p) => p.participantType === TEAM_PARTICIPANT,
-    );
-    const individualParticipantIds = teamParticipants?.flatMap(
-      (teamParticipant) => teamParticipant.individualParticipantIds ?? [],
-    );
-
-    for (const participant of params.tournamentRecord.participants ?? []) {
-      if (individualParticipantIds?.includes(participant.participantId)) {
-        const gender = participant.person?.sex;
-        if (gender && isGendered(gender)) {
-          const coerced = coercedGender(gender);
-          if (coerced) genderedParticipants[coerced].push(participant.participantId);
-        }
-      }
-    }
-  }
+  const genderedParticipants = params.addEntriesFromTeams
+    ? buildGenderedParticipants(params.tournamentRecord)
+    : { [MALE]: [] as string[], [FEMALE]: [] as string[] };
 
   const events: Event[] = [];
   for (const collectionDefinition of tieFormat.collectionDefinitions ?? []) {
     const eventId: string = uuids?.pop()?.toString() || UUID();
-    const eventType = collectionDefinition.matchUpType;
-    const eventGender = collectionDefinition.gender;
     const event: Event = {
       matchUpFormat: collectionDefinition.matchUpFormat,
       eventName: collectionDefinition.collectionName,
       category: collectionDefinition.category,
-      gender: eventGender,
-      eventType,
+      gender: collectionDefinition.gender,
+      eventType: collectionDefinition.matchUpType,
       eventId,
     };
 
     if (params.addEntriesFromTeams) {
-      const entryStatus = eventType === DOUBLES_EVENT ? UNGROUPED : params.entryStatus || DIRECT_ACCEPTANCE;
-      const participantIds = isMixed(eventGender)
-        ? [...genderedParticipants[MALE], ...genderedParticipants[FEMALE]]
-        : (genderedParticipants[coercedGender(eventGender) || OTHER] ?? []);
-
-      if (participantIds.length) {
-        const result = addEventEntries({
-          participantIds,
-          entryStatus,
-          event,
-        });
-        if (result.error) return result;
-      }
+      const result: any = addTeamEntriesToEvent({
+        genderedParticipants,
+        collectionDefinition,
+        entryStatus: params.entryStatus,
+        event,
+      });
+      if (result?.error) return result;
     }
 
     events.push(event);
@@ -95,4 +71,43 @@ export function generateEventsFromTieFormat(params: GenerateEventsFromTieFormatA
   }
 
   return { ...SUCCESS, events };
+}
+
+function buildGenderedParticipants(tournamentRecord) {
+  const genderedParticipants = { [MALE]: [] as string[], [FEMALE]: [] as string[] };
+  const teamParticipants = tournamentRecord.participants?.filter((p) => p.participantType === TEAM_PARTICIPANT);
+  const individualParticipantIdSet = new Set(
+    teamParticipants?.flatMap((teamParticipant) => teamParticipant.individualParticipantIds ?? []),
+  );
+
+  for (const participant of tournamentRecord.participants ?? []) {
+    if (individualParticipantIdSet.has(participant.participantId)) {
+      const gender = participant.person?.sex;
+      if (gender && isGendered(gender)) {
+        const coerced = coercedGender(gender);
+        if (coerced) genderedParticipants[coerced].push(participant.participantId);
+      }
+    }
+  }
+
+  return genderedParticipants;
+}
+
+function addTeamEntriesToEvent({ genderedParticipants, collectionDefinition, entryStatus, event }) {
+  const eventType = collectionDefinition.matchUpType;
+  const eventGender = collectionDefinition.gender;
+  const resolvedEntryStatus = eventType === DOUBLES_EVENT ? UNGROUPED : entryStatus || DIRECT_ACCEPTANCE;
+  const participantIds = isMixed(eventGender)
+    ? [...genderedParticipants[MALE], ...genderedParticipants[FEMALE]]
+    : (genderedParticipants[coercedGender(eventGender) || OTHER] ?? []);
+
+  if (participantIds.length) {
+    return addEventEntries({
+      participantIds,
+      entryStatus: resolvedEntryStatus,
+      event,
+    });
+  }
+
+  return undefined;
 }

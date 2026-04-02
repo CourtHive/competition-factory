@@ -5,9 +5,11 @@ import { makeDeepCopy } from '@Tools/makeDeepCopy';
 import { ensureInt } from '@Tools/ensureInt';
 import { UUID } from '@Tools/UUID';
 
+// Types
 import { includesMatchUpEventType } from '@Helpers/matchUpEventTypes/includesMatchUpEventType';
 import { isMatchUpEventType } from '@Helpers/matchUpEventTypes/isMatchUpEventType';
 
+// Constants
 import { MISSING_MATCHUPS } from '@Constants/errorConditionConstants';
 import { DOUBLES, SINGLES, TEAM } from '@Constants/matchUpTypes';
 import { BYE } from '@Constants/matchUpStatusConstants';

@@ -70,33 +70,15 @@ export function modifyParticipant(params) {
   if (participantName && isString(participantName)) newValues.participantName = participantName;
 
   if (Array.isArray(individualParticipantIds)) {
-    const { participants: individualParticipants } = getParticipants({
-      participantFilters: { participantTypes: [INDIVIDUAL] },
+    updateIndividualParticipantIds({
+      individualParticipantIds,
+      updateParticipantName,
+      existingParticipant,
+      participantType,
       tournamentRecord,
+      pairOverride,
+      newValues,
     });
-    const allIndividualParticipantIds = individualParticipants?.map(getParticipantId);
-
-    if (allIndividualParticipantIds) {
-      // check that all new individualParticipantIds exist and are { participantType: INDIVIDUAL }
-      const updatedIndividualParticipantIds = individualParticipantIds.filter(
-        (participantId) => isString(participantId) && allIndividualParticipantIds.includes(participantId),
-      );
-
-      if (
-        [GROUP, TEAM].includes(participantType || existingParticipant.participantType) ||
-        (participantType === PAIR && (updatedIndividualParticipantIds.length === 2 || pairOverride))
-      ) {
-        newValues.individualParticipantIds = updatedIndividualParticipantIds;
-      }
-
-      // check whether to update PAIR participantName
-      if (existingParticipant.participantType === participantTypes.PAIR && updateParticipantName) {
-        newValues.participantName = generatePairParticipantName({
-          individualParticipants,
-          newValues,
-        });
-      }
-    }
   }
   if (Object.keys(participantRoles).includes(participantRole)) newValues.participantRole = participantRole;
   if (Object.keys(participantTypes).includes(participantType)) newValues.participantType = participantType;
@@ -137,6 +119,43 @@ export function modifyParticipant(params) {
     participant: makeDeepCopy(existingParticipant),
     ...SUCCESS,
   };
+}
+
+
+function updateIndividualParticipantIds({
+  individualParticipantIds,
+  updateParticipantName,
+  existingParticipant,
+  participantType,
+  tournamentRecord,
+  pairOverride,
+  newValues,
+}) {
+  const { participants: individualParticipants } = getParticipants({
+    participantFilters: { participantTypes: [INDIVIDUAL] },
+    tournamentRecord,
+  });
+  const allIndividualParticipantIds = individualParticipants?.map(getParticipantId);
+
+  if (!allIndividualParticipantIds) return;
+
+  const updatedIndividualParticipantIds = individualParticipantIds.filter(
+    (participantId) => isString(participantId) && allIndividualParticipantIds.includes(participantId),
+  );
+
+  if (
+    [GROUP, TEAM].includes(participantType || existingParticipant.participantType) ||
+    (participantType === PAIR && (updatedIndividualParticipantIds.length === 2 || pairOverride))
+  ) {
+    newValues.individualParticipantIds = updatedIndividualParticipantIds;
+  }
+
+  if (existingParticipant.participantType === participantTypes.PAIR && updateParticipantName) {
+    newValues.participantName = generatePairParticipantName({
+      individualParticipants,
+      newValues,
+    });
+  }
 }
 
 function generatePairParticipantName({ individualParticipants, newValues }) {

@@ -80,49 +80,59 @@ export function getOfficialEligibility({
     );
 
     if (requirement) {
-      // Check minimum assignments
-      if (requirement.minimumAssignments !== undefined) {
-        const completedAssignments = officialRecord.assignments.filter((a) => a.status === 'COMPLETED');
-        if (completedAssignments.length < requirement.minimumAssignments) {
-          reasons.push(
-            `Insufficient completed assignments: ${completedAssignments.length}/${requirement.minimumAssignments}`,
-          );
-        }
-      }
-
-      // Check minimum evaluation score
-      if (requirement.minimumEvaluationScore !== undefined) {
-        const approvedEvals = officialRecord.evaluations.filter((e) => e.status === 'APPROVED');
-        if (approvedEvals.length === 0) {
-          reasons.push('No approved evaluations');
-        } else {
-          const avgRating = approvedEvals.reduce((sum, e) => sum + e.overallRating, 0) / approvedEvals.length;
-          if (avgRating < requirement.minimumEvaluationScore) {
-            reasons.push(
-              `Average evaluation score ${avgRating.toFixed(2)} below minimum ${requirement.minimumEvaluationScore}`,
-            );
-          }
-        }
-      }
-
-      // Check prerequisite levels
-      if (requirement.prerequisiteLevels?.length) {
-        const hasPrerequisite = requirement.prerequisiteLevels.some((prereqLevel) =>
-          officialRecord.certifications.some(
-            (c) =>
-              c.certificationFamily === certificationFamily &&
-              c.certificationLevel === prereqLevel &&
-              (c.status === 'ACTIVE' || c.status === 'EXPIRED'),
-          ),
-        );
-        if (!hasPrerequisite) {
-          reasons.push(`Missing prerequisite certification level: ${requirement.prerequisiteLevels.join(' or ')}`);
-        }
-      }
+      checkRequirementConstraints({
+        certificationFamily,
+        officialRecord,
+        requirement,
+        reasons,
+      });
     }
   }
 
   const eligible = reasons.length === 0;
 
   return { ...SUCCESS, eligible, reasons };
+}
+
+function checkRequirementConstraints({ certificationFamily, officialRecord, requirement, reasons }) {
+  if (requirement.minimumAssignments !== undefined) {
+    const completedAssignments = officialRecord.assignments.filter((a) => a.status === 'COMPLETED');
+    if (completedAssignments.length < requirement.minimumAssignments) {
+      reasons.push(
+        `Insufficient completed assignments: ${completedAssignments.length}/${requirement.minimumAssignments}`,
+      );
+    }
+  }
+
+  if (requirement.minimumEvaluationScore !== undefined) {
+    checkMinimumEvaluationScore({ officialRecord, requirement, reasons });
+  }
+
+  if (requirement.prerequisiteLevels?.length) {
+    const hasPrerequisite = requirement.prerequisiteLevels.some((prereqLevel) =>
+      officialRecord.certifications.some(
+        (c) =>
+          c.certificationFamily === certificationFamily &&
+          c.certificationLevel === prereqLevel &&
+          (c.status === 'ACTIVE' || c.status === 'EXPIRED'),
+      ),
+    );
+    if (!hasPrerequisite) {
+      reasons.push(`Missing prerequisite certification level: ${requirement.prerequisiteLevels.join(' or ')}`);
+    }
+  }
+}
+
+function checkMinimumEvaluationScore({ officialRecord, requirement, reasons }) {
+  const approvedEvals = officialRecord.evaluations.filter((e) => e.status === 'APPROVED');
+  if (approvedEvals.length === 0) {
+    reasons.push('No approved evaluations');
+    return;
+  }
+  const avgRating = approvedEvals.reduce((sum, e) => sum + e.overallRating, 0) / approvedEvals.length;
+  if (avgRating < requirement.minimumEvaluationScore) {
+    reasons.push(
+      `Average evaluation score ${avgRating.toFixed(2)} below minimum ${requirement.minimumEvaluationScore}`,
+    );
+  }
 }

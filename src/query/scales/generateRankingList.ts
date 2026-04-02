@@ -66,8 +66,36 @@ export function generateRankingList({
     bestOfCount,
   } = aggregationRules;
 
-  // Step 1: Filter by category/gender/eventType
+  const filtered = filterAwards(pointAwards, categoryFilter, rollingPeriodDays, asOfDate);
+  const byPerson = groupByPerson(filtered);
+
+  const entries: RankingListEntry[] = [];
+
+  for (const [personId, awards] of Object.entries(byPerson)) {
+    const entry = computePersonEntry({
+      countingBuckets,
+      minCountableResults,
+      maxResultsPerLevel,
+      bestOfCount,
+      personId,
+      awards,
+    });
+    entries.push(entry);
+  }
+
+  sortAndRankEntries(entries, tiebreakCriteria);
+
+  return entries;
+}
+
+function filterAwards(
+  pointAwards: PointAward[],
+  categoryFilter: CategoryFilter | undefined,
+  rollingPeriodDays: number | undefined,
+  asOfDate: string | undefined,
+): PointAward[] {
   let filtered = pointAwards;
+
   if (categoryFilter) {
     filtered = filtered.filter((award) => {
       if (categoryFilter.ageCategoryCodes?.length) {
@@ -78,23 +106,24 @@ export function generateRankingList({
         const gender = award.category?.gender || award.gender;
         if (!gender || !categoryFilter.genders.includes(gender)) return false;
       }
-      return !(categoryFilter.eventTypes?.length && (!award.eventType || !categoryFilter.eventTypes.includes(award.eventType)));
+      return !(
+        categoryFilter.eventTypes?.length &&
+        (!award.eventType || !categoryFilter.eventTypes.includes(award.eventType))
+      );
     });
   }
 
-  // Step 2: Filter by rolling period
   if (rollingPeriodDays && asOfDate) {
     const cutoff = new Date(asOfDate);
     cutoff.setDate(cutoff.getDate() - rollingPeriodDays);
     const cutoffTime = cutoff.getTime();
-
-    filtered = filtered.filter((award) => {
-      if (!award.endDate) return true; // no date → include
-      return new Date(award.endDate).getTime() >= cutoffTime;
-    });
+    filtered = filtered.filter((award) => !award.endDate || new Date(award.endDate).getTime() >= cutoffTime);
   }
 
-  // Step 3: Group by personId
+  return filtered;
+}
+
+function groupByPerson(filtered: PointAward[]): Record<string, PointAward[]> {
   const byPerson: Record<string, PointAward[]> = {};
   for (const award of filtered) {
     const key = award.personId;
@@ -102,87 +131,91 @@ export function generateRankingList({
     if (!byPerson[key]) byPerson[key] = [];
     byPerson[key].push(award);
   }
+  return byPerson;
+}
 
-  // Step 4: Compute points per participant
-  const entries: RankingListEntry[] = [];
+function computePersonEntry({
+  countingBuckets,
+  minCountableResults,
+  maxResultsPerLevel,
+  bestOfCount,
+  personId,
+  awards,
+}): RankingListEntry {
+  let totalPoints = 0;
+  let allCountingResults: PointAward[] = [];
+  let allDroppedResults: PointAward[] = [];
+  let bucketBreakdown;
 
-  for (const [personId, awards] of Object.entries(byPerson)) {
-    let totalPoints = 0;
-    let allCountingResults: PointAward[] = [];
-    let allDroppedResults: PointAward[] = [];
-    let bucketBreakdown;
+  if (countingBuckets?.length) {
+    bucketBreakdown = [];
 
-    if (countingBuckets?.length) {
-      // Bucket-based aggregation
-      bucketBreakdown = [];
+    for (const bucket of countingBuckets) {
+      const {
+        bucketName,
+        eventTypes,
+        pointComponents,
+        bestOfCount: bucketBestOf,
+        maxResultsPerLevel: bucketMaxPerLevel,
+        mandatoryRules,
+      } = bucket;
 
-      for (const bucket of countingBuckets) {
-        const { bucketName, eventTypes, pointComponents, bestOfCount: bucketBestOf, maxResultsPerLevel: bucketMaxPerLevel, mandatoryRules } = bucket;
-
-        // Filter awards into this bucket
-        let bucketAwards = awards;
-        if (eventTypes?.length) {
-          bucketAwards = bucketAwards.filter((a) => a.eventType && eventTypes.includes(a.eventType));
-        }
-
-        const { counting, dropped, bucketTotal } = processBucketResults({
-          awards: bucketAwards,
-          pointComponents,
-          bestOfCount: bucketBestOf,
-          maxResultsPerLevel: bucketMaxPerLevel,
-          mandatoryRules,
-        });
-
-        totalPoints += bucketTotal;
-
-        allCountingResults.push(...counting.map((sa) => sa.award));
-        allDroppedResults.push(...dropped.map((sa) => sa.award));
-
-        bucketBreakdown.push({
-          bucketName,
-          countingResults: counting.map((sa) => sa.award),
-          droppedResults: dropped.map((sa) => sa.award),
-          bucketTotal,
-        });
+      let bucketAwards = awards;
+      if (eventTypes?.length) {
+        bucketAwards = bucketAwards.filter((a) => a.eventType && eventTypes.includes(a.eventType));
       }
-    } else {
-      // No buckets — use global bestOfCount/maxResultsPerLevel
+
       const { counting, dropped, bucketTotal } = processBucketResults({
-        awards,
-        pointComponents: ['points', 'qualityWinPoints'],
-        bestOfCount: bestOfCount || 0,
-        maxResultsPerLevel,
+        awards: bucketAwards,
+        pointComponents,
+        bestOfCount: bucketBestOf,
+        maxResultsPerLevel: bucketMaxPerLevel,
+        mandatoryRules,
       });
 
-      totalPoints = bucketTotal;
-      allCountingResults = counting.map((sa) => sa.award);
-      allDroppedResults = dropped.map((sa) => sa.award);
+      totalPoints += bucketTotal;
+      allCountingResults.push(...counting.map((sa) => sa.award));
+      allDroppedResults.push(...dropped.map((sa) => sa.award));
+
+      bucketBreakdown.push({
+        bucketName,
+        countingResults: counting.map((sa) => sa.award),
+        droppedResults: dropped.map((sa) => sa.award),
+        bucketTotal,
+      });
     }
+  } else {
+    const { counting, dropped, bucketTotal } = processBucketResults({
+      awards,
+      pointComponents: ['points', 'qualityWinPoints'],
+      bestOfCount: bestOfCount || 0,
+      maxResultsPerLevel,
+    });
 
-    const meetsMinimum = allCountingResults.length >= minCountableResults;
-
-    const entry: RankingListEntry = {
-      personId,
-      totalPoints,
-      rank: 0, // assigned below
-      meetsMinimum,
-      countingResults: allCountingResults,
-      droppedResults: allDroppedResults,
-    };
-
-    if (bucketBreakdown) entry.bucketBreakdown = bucketBreakdown;
-
-    entries.push(entry);
+    totalPoints = bucketTotal;
+    allCountingResults = counting.map((sa) => sa.award);
+    allDroppedResults = dropped.map((sa) => sa.award);
   }
 
-  // Step 5: Sort by totalPoints descending
+  const entry: RankingListEntry = {
+    personId,
+    totalPoints,
+    rank: 0,
+    meetsMinimum: allCountingResults.length >= minCountableResults,
+    countingResults: allCountingResults,
+    droppedResults: allDroppedResults,
+  };
+
+  if (bucketBreakdown) entry.bucketBreakdown = bucketBreakdown;
+  return entry;
+}
+
+function sortAndRankEntries(entries: RankingListEntry[], tiebreakCriteria: string[]) {
   entries.sort((a, b) => b.totalPoints - a.totalPoints);
 
-  // Step 6: Apply tiebreakers for entries with same totalPoints
   if (tiebreakCriteria.length) {
     entries.sort((a, b) => {
       if (a.totalPoints !== b.totalPoints) return b.totalPoints - a.totalPoints;
-
       for (const criterion of tiebreakCriteria) {
         const result = applyTiebreaker(criterion, a, b);
         if (result !== 0) return result;
@@ -191,27 +224,19 @@ export function generateRankingList({
     });
   }
 
-  // Step 7: Assign ranks (1-based, tied ranks for equal positions)
   let currentRank = 1;
   for (let i = 0; i < entries.length; i++) {
     if (i > 0 && entries[i].totalPoints === entries[i - 1].totalPoints) {
-      // Check if tiebreaker resolved them differently
       const tieResolved =
         tiebreakCriteria.length > 0 &&
         tiebreakCriteria.some((c) => applyTiebreaker(c, entries[i - 1], entries[i]) !== 0);
 
-      if (!tieResolved) {
-        entries[i].rank = entries[i - 1].rank;
-      } else {
-        entries[i].rank = currentRank;
-      }
+      entries[i].rank = tieResolved ? currentRank : entries[i - 1].rank;
     } else {
       entries[i].rank = currentRank;
     }
-    currentRank = i + 2; // next potential rank
+    currentRank = i + 2;
   }
-
-  return entries;
 }
 
 function applyTiebreaker(criterion: string, a: RankingListEntry, b: RankingListEntry): number {

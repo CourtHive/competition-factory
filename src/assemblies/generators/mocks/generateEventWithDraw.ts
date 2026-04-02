@@ -149,92 +149,127 @@ function generateEventParticipants({
   let targetParticipants: any = unique;
 
   if (eventType === TEAM) {
-    const maleIndividualParticipantIds = genders[MALE]
-      ? unique
-          .filter(({ participantType, person }) => participantType === INDIVIDUAL && person?.sex === MALE)
-          .map(getParticipantId)
-      : [];
-    const femaleIndividualParticipantIds = genders[FEMALE]
-      ? unique
-          .filter(({ participantType, person }) => participantType === INDIVIDUAL && isFemale(person?.sex))
-          .map(getParticipantId)
-      : [];
-    const remainingParticipantIds = unique
-      .filter(({ participantType }) => participantType === INDIVIDUAL)
-      .map(getParticipantId)
-      .filter(
-        (participantId) =>
-          !maleIndividualParticipantIds.includes(participantId) &&
-          !femaleIndividualParticipantIds.includes(participantId),
-      );
-
-    const teamNames = [
-      ...(drawProfileCopy.teamNames ?? []),
-      ...nameMocks({ count: drawParticipantsCount, random }).names,
-    ];
-    const mixedCount = teamSize - (genders[MALE] + genders[FEMALE]);
-    // use indices to keep track of positions within pId arrays
-    let fIndex = 0,
-      mIndex = 0,
-      rIndex = 0;
-    const teamParticipants = generateRange(0, drawParticipantsCount).map((teamIndex) => {
-      const fPIDs = femaleIndividualParticipantIds.slice(fIndex, fIndex + genders[FEMALE]);
-      const mPIDs = maleIndividualParticipantIds.slice(mIndex, mIndex + genders[MALE]);
-      const rIDs = remainingParticipantIds.slice(rIndex, rIndex + mixedCount);
-      fIndex += genders[FEMALE];
-      mIndex += genders[MALE];
-      rIndex += mixedCount;
-
-      const individualParticipantIds = buildTeams !== false ? [...fPIDs, ...mPIDs, ...rIDs] : []; // NOSONAR
-      return {
-        participantName: teamNames[teamIndex] || `Team ${teamIndex + 1}`,
-        participantOtherName: `TM${teamIndex + 1}`,
-        participantId: UUID(undefined, random),
-        participantRole: COMPETITOR,
-        individualParticipantIds,
-        participantType: TEAM,
-      };
-    });
-    const result = addParticipants({
-      participants: teamParticipants as Participant[],
+    const teamResult: any = buildTeamParticipants({
+      drawParticipantsCount,
       tournamentRecord,
+      drawProfileCopy,
+      buildTeams,
+      genders,
+      teamSize,
+      unique,
+      random,
     });
-    if (!result.success) return result;
-    targetParticipants = teamParticipants;
+    if (teamResult.error) return teamResult;
+    targetParticipants = teamResult.teamParticipants;
   }
 
   if (isHybrid) {
-    // Build PAIR participants from the second half of generated individuals
-    const individuals = unique.filter(({ participantType: pt }) => pt === INDIVIDUAL);
-    const soloCount = drawParticipantsCount - Math.floor(drawParticipantsCount / 2);
-    const pairMemberIndividuals = individuals.slice(soloCount);
-    const pairParticipants: any[] = [];
-
-    for (let i = 0; i + 1 < pairMemberIndividuals.length; i += 2) {
-      const m1 = pairMemberIndividuals[i];
-      const m2 = pairMemberIndividuals[i + 1];
-      pairParticipants.push({
-        participantName: `${m1.person?.standardGivenName ?? 'A'} / ${m2.person?.standardGivenName ?? 'B'}`,
-        individualParticipantIds: [m1.participantId, m2.participantId],
-        participantRole: COMPETITOR,
-        participantType: PAIR,
-        participantId: UUID(undefined, random),
-      });
-    }
-
-    if (pairParticipants.length && tournamentRecord) {
-      const result = addParticipants({
-        participants: pairParticipants as Participant[],
-        tournamentRecord,
-      });
-      if (!result.success) return result;
-    }
-
-    // targetParticipants for entry: solo individuals + pair participants
-    targetParticipants = [...individuals.slice(0, soloCount), ...pairParticipants];
+    const hybridResult: any = buildHybridParticipants({
+      drawParticipantsCount,
+      tournamentRecord,
+      unique,
+      random,
+    });
+    if (hybridResult.error) return hybridResult;
+    targetParticipants = hybridResult.targetParticipants;
   }
 
   return { uniqueParticipantIds, targetParticipants };
+}
+
+function buildTeamParticipants({
+  drawParticipantsCount,
+  tournamentRecord,
+  drawProfileCopy,
+  buildTeams,
+  genders,
+  teamSize,
+  unique,
+  random,
+}) {
+  const maleIndividualParticipantIds = genders[MALE]
+    ? unique
+        .filter(({ participantType: pt, person }) => pt === INDIVIDUAL && person?.sex === MALE)
+        .map(getParticipantId)
+    : [];
+  const femaleIndividualParticipantIds = genders[FEMALE]
+    ? unique
+        .filter(({ participantType: pt, person }) => pt === INDIVIDUAL && isFemale(person?.sex))
+        .map(getParticipantId)
+    : [];
+  const maleSet = new Set(maleIndividualParticipantIds);
+  const femaleSet = new Set(femaleIndividualParticipantIds);
+  const remainingParticipantIds = unique
+    .filter(({ participantType: pt }) => pt === INDIVIDUAL)
+    .map(getParticipantId)
+    .filter((pid) => !maleSet.has(pid) && !femaleSet.has(pid));
+
+  const teamNames = [
+    ...(drawProfileCopy.teamNames ?? []),
+    ...nameMocks({ count: drawParticipantsCount, random }).names,
+  ];
+  const mixedCount = teamSize - (genders[MALE] + genders[FEMALE]);
+  let fIndex = 0,
+    mIndex = 0,
+    rIndex = 0;
+  const teamParticipants = generateRange(0, drawParticipantsCount).map((teamIndex) => {
+    const fPIDs = femaleIndividualParticipantIds.slice(fIndex, fIndex + genders[FEMALE]);
+    const mPIDs = maleIndividualParticipantIds.slice(mIndex, mIndex + genders[MALE]);
+    const rIDs = remainingParticipantIds.slice(rIndex, rIndex + mixedCount);
+    fIndex += genders[FEMALE];
+    mIndex += genders[MALE];
+    rIndex += mixedCount;
+
+    const individualParticipantIds = buildTeams !== false ? [...fPIDs, ...mPIDs, ...rIDs] : []; // NOSONAR
+    return {
+      participantName: teamNames[teamIndex] || `Team ${teamIndex + 1}`,
+      participantOtherName: `TM${teamIndex + 1}`,
+      participantId: UUID(undefined, random),
+      participantRole: COMPETITOR,
+      individualParticipantIds,
+      participantType: TEAM,
+    };
+  });
+  const result = addParticipants({
+    participants: teamParticipants as Participant[],
+    tournamentRecord,
+  });
+  if (!result.success) return result;
+  return { teamParticipants };
+}
+
+function buildHybridParticipants({
+  drawParticipantsCount,
+  tournamentRecord,
+  unique,
+  random,
+}) {
+  const individuals = unique.filter(({ participantType: pt }) => pt === INDIVIDUAL);
+  const soloCount = drawParticipantsCount - Math.floor(drawParticipantsCount / 2);
+  const pairMemberIndividuals = individuals.slice(soloCount);
+  const pairParticipants: any[] = [];
+
+  for (let i = 0; i + 1 < pairMemberIndividuals.length; i += 2) {
+    const m1 = pairMemberIndividuals[i];
+    const m2 = pairMemberIndividuals[i + 1];
+    pairParticipants.push({
+      participantName: `${m1.person?.standardGivenName ?? 'A'} / ${m2.person?.standardGivenName ?? 'B'}`,
+      individualParticipantIds: [m1.participantId, m2.participantId],
+      participantRole: COMPETITOR,
+      participantType: PAIR,
+      participantId: UUID(undefined, random),
+    });
+  }
+
+  if (pairParticipants.length && tournamentRecord) {
+    const result = addParticipants({
+      participants: pairParticipants as Participant[],
+      tournamentRecord,
+    });
+    if (!result.success) return result;
+  }
+
+  return { targetParticipants: [...individuals.slice(0, soloCount), ...pairParticipants] };
 }
 
 function addQualifyingEntries({
@@ -770,69 +805,53 @@ export function generateEventWithDraw(params) {
   const isHybrid = eventType === HYBRID;
   const participantType = eventType === DOUBLES ? PAIR : INDIVIDUAL;
 
-  const tieFormat =
-    (isObject(drawProfile.tieFormat) && drawProfile.tieFormat) ||
-    // look up tieFormatId in the event's tieFormats array if provided
-    (drawProfile.tieFormatId &&
-      tournamentRecord?.events
-        ?.find((e) => e.eventId === eventId)
-        ?.tieFormats?.find((tf) => tf.tieFormatId === drawProfile.tieFormatId)) ||
-    (eventType === TEAM &&
-      tieFormatDefaults({
-        event: { eventId, category, gender },
-        namedFormat: tieFormatName,
-        hydrateCollections,
-        isMock,
-      })) ||
-    undefined;
+  const tieFormat = resolveTieFormat({
+    drawProfile,
+    tournamentRecord,
+    eventId,
+    eventType,
+    category,
+    gender,
+    tieFormatName,
+    hydrateCollections,
+    isMock,
+  });
 
   const categoryName = category?.categoryName || category?.ageCategoryCode || category?.ratingType;
 
   const eventName = drawProfile.eventName || categoryName || `Generated ${eventType}`;
   let targetParticipants = tournamentRecord?.participants || [];
 
-  const qualifyingParticipantsCount =
-    (qualifyingProfiles
-      ?.flatMap((profile) => profile.structureProfiles || []) // in case each profile contains an array of stageSequences
-      .reduce((count, profile) => {
-        const qpc =
-          !profile.participantsCount || profile.participantsCount > profile.drawSize
-            ? profile.drawSize
-            : profile.participantsCount || 0;
-        return count + qpc;
-      }, 0) || 0) * (participantType === PAIR ? 2 : 1);
+  const qualifyingParticipantsCount = calcQualifyingParticipantsCount({ qualifyingProfiles, participantType });
 
   const participantsCount =
     (!drawProfile.participantsCount || drawProfile.participantsCount > drawSize
       ? drawSize
       : drawProfile.participantsCount) || 0;
 
-  const event = { eventName, eventType, tieFormat, category, eventId, gender };
-
-  if (Array.isArray(timeItems)) {
-    timeItems.forEach((timeItem) => addEventTimeItem({ event, timeItem }));
-  }
-
-  let { eventAttributes } = drawProfile;
-  if (typeof eventAttributes !== 'object') eventAttributes = {};
-  Object.assign(event, eventAttributes);
-
-  // attach any valid eventExtensions
-  if (eventExtensions?.length && Array.isArray(eventExtensions)) {
-    const extensions = eventExtensions.filter(isValidExtension);
-    if (extensions?.length) Object.assign(event, { extensions });
-  }
+  const event = buildMockEvent({
+    eventName,
+    eventType,
+    tieFormat,
+    category,
+    eventId,
+    gender,
+    timeItems,
+    drawProfile,
+    eventExtensions,
+  });
 
   const uniqueParticipantIds: string[] = [];
-  if (
+  const needsUniqueParticipants =
     participantsProfile?.participantsCount === 0 ||
     drawProfile.uniqueParticipants ||
     qualifyingParticipantsCount ||
     !tournamentRecord ||
     gender ||
     category ||
-    isHybrid
-  ) {
+    isHybrid;
+
+  if (needsUniqueParticipants) {
     const drawParticipantsCount = (participantsCount || 0) + alternatesCount + qualifyingParticipantsCount;
 
     const genResult = generateEventParticipants({
@@ -862,30 +881,14 @@ export function generateEventWithDraw(params) {
     targetParticipants = genResult.targetParticipants;
   }
 
-  const isEventParticipantType = (participant) => {
-    const { participantType } = participant;
-    if (isHybrid && (participantType === INDIVIDUAL || participantType === PAIR)) return true;
-    if (isMatchUpEventType(SINGLES)(eventType) && participantType === INDIVIDUAL) return true;
-    if (isMatchUpEventType(DOUBLES)(eventType) && participantType === PAIR) return true;
-    return eventType === TEAM && participantType === TEAM;
-  };
-
-  const isEventGender = (participant) => {
-    if (!drawProfile.gender) return true;
-    if (participant.person?.sex === drawProfile.gender) return true;
-    return participant.individualParticipantIds?.some((participantId) => {
-      const individualParticipant = targetParticipants.find((p) => p.participantId === participantId);
-      return individualParticipant && isEventGender(individualParticipant);
-    });
-  };
-
-  const allUniqueSet = new Set(allUniqueParticipantIds);
-  const consideredParticipants = targetParticipants
-    .filter(isEventParticipantType)
-    .filter(isEventGender)
-    .filter(({ participantId }) => !allUniqueSet.has(participantId));
-
-  const participantIds = consideredParticipants.slice(0, participantsCount).map((p) => p.participantId);
+  const { consideredParticipants, participantIds, isEventParticipantType, isEventGender } = filterConsideredParticipants({
+    allUniqueParticipantIds,
+    targetParticipants,
+    participantsCount,
+    drawProfile,
+    eventType,
+    isHybrid,
+  });
 
   const entriesResult: any = addMockEntries({
     qualifyingParticipantsCount,
@@ -958,4 +961,105 @@ export function generateEventWithDraw(params) {
     eventId,
     drawId: genResult.drawId,
   };
+}
+
+function calcQualifyingParticipantsCount({ qualifyingProfiles, participantType }) {
+  const rawCount =
+    qualifyingProfiles
+      ?.flatMap((profile) => profile.structureProfiles || [])
+      .reduce((count, profile) => {
+        const qpc =
+          !profile.participantsCount || profile.participantsCount > profile.drawSize
+            ? profile.drawSize
+            : profile.participantsCount || 0;
+        return count + qpc;
+      }, 0) || 0;
+  return rawCount * (participantType === PAIR ? 2 : 1);
+}
+
+function buildMockEvent({ eventName, eventType, tieFormat, category, eventId, gender, timeItems, drawProfile, eventExtensions }) {
+  const event = { eventName, eventType, tieFormat, category, eventId, gender };
+
+  if (Array.isArray(timeItems)) {
+    timeItems.forEach((timeItem) => addEventTimeItem({ event, timeItem }));
+  }
+
+  let { eventAttributes } = drawProfile;
+  if (typeof eventAttributes !== 'object') eventAttributes = {};
+  Object.assign(event, eventAttributes);
+
+  if (eventExtensions?.length && Array.isArray(eventExtensions)) {
+    const extensions = eventExtensions.filter(isValidExtension);
+    if (extensions?.length) Object.assign(event, { extensions });
+  }
+
+  return event;
+}
+
+function resolveTieFormat({
+  drawProfile,
+  tournamentRecord,
+  eventId,
+  eventType,
+  category,
+  gender,
+  tieFormatName,
+  hydrateCollections,
+  isMock,
+}) {
+  if (isObject(drawProfile.tieFormat)) return drawProfile.tieFormat;
+
+  if (drawProfile.tieFormatId) {
+    const found = tournamentRecord?.events
+      ?.find((e) => e.eventId === eventId)
+      ?.tieFormats?.find((tf) => tf.tieFormatId === drawProfile.tieFormatId);
+    if (found) return found;
+  }
+
+  if (eventType === TEAM) {
+    return tieFormatDefaults({
+      event: { eventId, category, gender },
+      namedFormat: tieFormatName,
+      hydrateCollections,
+      isMock,
+    });
+  }
+
+  return undefined;
+}
+
+function filterConsideredParticipants({
+  allUniqueParticipantIds,
+  targetParticipants,
+  participantsCount,
+  drawProfile,
+  eventType,
+  isHybrid,
+}) {
+  const isEventParticipantType = (participant) => {
+    const { participantType } = participant;
+    if (isHybrid && (participantType === INDIVIDUAL || participantType === PAIR)) return true;
+    if (isMatchUpEventType(SINGLES)(eventType) && participantType === INDIVIDUAL) return true;
+    if (isMatchUpEventType(DOUBLES)(eventType) && participantType === PAIR) return true;
+    return eventType === TEAM && participantType === TEAM;
+  };
+
+  const isEventGender = (participant) => {
+    if (!drawProfile.gender) return true;
+    if (participant.person?.sex === drawProfile.gender) return true;
+    return participant.individualParticipantIds?.some((participantId) => {
+      const individualParticipant = targetParticipants.find((p) => p.participantId === participantId);
+      return individualParticipant && isEventGender(individualParticipant);
+    });
+  };
+
+  const allUniqueSet = new Set(allUniqueParticipantIds);
+  const consideredParticipants = targetParticipants
+    .filter(isEventParticipantType)
+    .filter(isEventGender)
+    .filter(({ participantId }) => !allUniqueSet.has(participantId));
+
+  const participantIds = consideredParticipants.slice(0, participantsCount).map((p) => p.participantId);
+
+  return { consideredParticipants, participantIds, isEventParticipantType, isEventGender };
 }

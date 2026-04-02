@@ -138,30 +138,36 @@ function enrichProfilesWithRootStageAndProgeny(structureProfiles: Map<string, St
     const profile = structureProfiles.get(structureId);
     if (!profile) continue;
 
-    const sourceIds = profile.targets ?? [];
-    while (sourceIds.length) {
-      const sourceId = sourceIds.pop();
-      const sourceProfile = sourceId && structureProfiles[sourceId];
-      if (sourceProfile?.targets?.length) {
-        sourceIds.push(...sourceProfile.targets);
-      } else if (sourceProfile) {
-        profile.rootStage = sourceProfile.stage;
-      }
-    }
-    if (!profile.rootStage) profile.rootStage = profile.stage;
+    resolveRootStage(profile, structureProfiles);
+    resolveProgeny(profile, structureProfiles);
+  }
+}
 
-    if (!profile.targets?.length) {
-      const targetIds = profile.sources ?? [];
-      while (targetIds.length) {
-        const targetId = targetIds.pop();
-        const targetProfile = targetId && structureProfiles[targetId];
-        if (targetProfile?.sources?.length) {
-          for (const id of targetProfile.sources) {
-            if (!profile.progeny?.includes(id)) profile.progeny?.push(id);
-          }
-          targetIds.push(...targetProfile.sources);
-        }
+function resolveRootStage(profile: StructureProfile, structureProfiles: Map<string, StructureProfile>) {
+  const sourceIds = profile.targets ?? [];
+  while (sourceIds.length) {
+    const sourceId = sourceIds.pop();
+    const sourceProfile = sourceId && structureProfiles[sourceId];
+    if (sourceProfile?.targets?.length) {
+      sourceIds.push(...sourceProfile.targets);
+    } else if (sourceProfile) {
+      profile.rootStage = sourceProfile.stage;
+    }
+  }
+  if (!profile.rootStage) profile.rootStage = profile.stage;
+}
+
+function resolveProgeny(profile: StructureProfile, structureProfiles: Map<string, StructureProfile>) {
+  if (profile.targets?.length) return;
+  const targetIds = profile.sources ?? [];
+  while (targetIds.length) {
+    const targetId = targetIds.pop();
+    const targetProfile = targetId && structureProfiles[targetId];
+    if (targetProfile?.sources?.length) {
+      for (const id of targetProfile.sources) {
+        if (!profile.progeny?.includes(id)) profile.progeny?.push(id);
       }
+      targetIds.push(...targetProfile.sources);
     }
   }
 }

@@ -20,23 +20,23 @@ export function setState(value: MatchUpArg, deepCopyOption = true) {
   if (value.matchUpId) {
     matchUpId = value.matchUpId;
     keyedMatchUps[matchUpId] = deepCopyOption ? makeDeepCopy(value) : value;
-  } else if (Array.isArray(value)) {
-    for (const m of value.reverse()) {
-      if (m.matchUpId) {
-        keyedMatchUps[m.matchUpId] = deepCopyOption ? makeDeepCopy(m) : m;
-        if (!matchUpId) matchUpId = m.matchUpId;
-      }
-    }
   } else {
-    for (const m of Object.values(value) as Array<MatchUpArg>) {
-      if (m.matchUpId) {
-        keyedMatchUps[m.matchUpId] = deepCopyOption ? makeDeepCopy(m) : m;
-        if (!matchUpId) matchUpId = m.matchUpId;
-      }
-    }
+    const items: MatchUpArg[] = Array.isArray(value)
+      ? [...value].reverse()
+      : (Object.values(value) as MatchUpArg[]);
+    storeMatchUpItems(items, deepCopyOption);
   }
 
   return deepCopyOption ? makeDeepCopy(value) : value;
+}
+
+function storeMatchUpItems(items: MatchUpArg[], deepCopyOption: boolean) {
+  for (const m of items) {
+    if (m.matchUpId) {
+      keyedMatchUps[m.matchUpId] = deepCopyOption ? makeDeepCopy(m) : m;
+      if (!matchUpId) matchUpId = m.matchUpId;
+    }
+  }
 }
 
 export function getMatchUp() {

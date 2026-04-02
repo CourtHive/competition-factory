@@ -97,20 +97,18 @@ export function generateEventWithFlights(params) {
       })
     : {};
 
-  // Create event object -------------------------------------------------------
-  let { eventAttributes } = eventProfile;
-  if (typeof eventAttributes !== 'object') eventAttributes = {};
-
   const categoryName = category?.categoryName || category?.ageCategoryCode || category?.ratingType;
-
   eventName = eventName || categoryName || 'Generated Event';
 
-  const newEvent = {
-    ...eventAttributes,
+  const newEvent = buildEventObject({
+    eventProfile,
     surfaceCategory,
     processCodes,
     discipline,
     eventLevel,
+    eventExtensions,
+    policyDefinitions,
+    timeItems,
     eventName,
     eventType,
     tieFormat,
@@ -118,29 +116,8 @@ export function generateEventWithFlights(params) {
     category,
     eventId,
     gender,
-  };
-
-  // attach any valid eventExtensions
-  if (eventExtensions?.length && Array.isArray(eventExtensions)) {
-    const extensions = eventExtensions.filter(isValidExtension);
-    if (extensions?.length) Object.assign(newEvent, { extensions });
-  }
-
-  if (Array.isArray(timeItems)) {
-    timeItems.forEach((timeItem) => addEventTimeItem({ event, timeItem }));
-  }
-
-  if (typeof policyDefinitions === 'object') {
-    for (const policyType of Object.keys(policyDefinitions)) {
-      attachPolicies({
-        policyDefinitions: { [policyType]: policyDefinitions[policyType] },
-        event: newEvent,
-      });
-    }
-  }
-
-  // only update on event since category is used in participant generation
-  if (newEvent.category) newEvent.category.categoryName = categoryName;
+    categoryName,
+  });
 
   let drawIds;
   const eventResult: any = addEvent({
@@ -205,4 +182,63 @@ export function generateEventWithFlights(params) {
   }
 
   return { drawIds, eventId, uniqueParticipantIds };
+}
+
+function buildEventObject({
+  eventProfile,
+  surfaceCategory,
+  processCodes,
+  discipline,
+  eventLevel,
+  eventExtensions,
+  policyDefinitions,
+  timeItems,
+  eventName,
+  eventType,
+  tieFormat,
+  ballType,
+  category,
+  eventId,
+  gender,
+  categoryName,
+}) {
+  let { eventAttributes } = eventProfile;
+  if (typeof eventAttributes !== 'object') eventAttributes = {};
+
+  const newEvent = {
+    ...eventAttributes,
+    surfaceCategory,
+    processCodes,
+    discipline,
+    eventLevel,
+    eventName,
+    eventType,
+    tieFormat,
+    ballType,
+    category,
+    eventId,
+    gender,
+  };
+
+  if (eventExtensions?.length && Array.isArray(eventExtensions)) {
+    const extensions = eventExtensions.filter(isValidExtension);
+    if (extensions?.length) Object.assign(newEvent, { extensions });
+  }
+
+  if (Array.isArray(timeItems)) {
+    timeItems.forEach((timeItem) => addEventTimeItem({ event: newEvent, timeItem }));
+  }
+
+  if (typeof policyDefinitions === 'object') {
+    for (const policyType of Object.keys(policyDefinitions)) {
+      attachPolicies({
+        policyDefinitions: { [policyType]: policyDefinitions[policyType] },
+        event: newEvent,
+      });
+    }
+  }
+
+  if (newEvent.category) newEvent.category.categoryName = categoryName;
+
+  return newEvent;
 }

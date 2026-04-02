@@ -148,64 +148,34 @@ function removeParticipantIdsFromGroupingParticipant({
 
   const groupingParticipantEventIds = inContextGroupingParticipant?.events?.map(({ eventId }) => eventId);
 
+  const individualIdSet = new Set(individualParticipantIds);
+
   const updatedIndividualParticipantIds = (groupingParticipant.individualParticipantIds ?? []).filter(
     (participantId) => {
-      const targetParticipant = individualParticipantIds?.includes(participantId);
-      const scoredParticipantGroupingMatchUps =
-        targetParticipant &&
-        participants
-          ?.find((participant) => participant.participantId === participantId)
-          ?.matchUps.filter(({ eventId }) => groupingParticipantEventIds.includes(eventId))
-          .map(({ matchUpId }) => mappedMatchUps?.[matchUpId])
-          .filter(({ winningSide, score }) => winningSide || checkScoreHasValue({ score }));
-
-      const removeParticipant = targetParticipant && !scoredParticipantGroupingMatchUps?.length;
-
-      if (targetParticipant && !removeParticipant) {
-        cannotRemove.push(participantId);
-      }
-
-      if (removeParticipant) {
-        removed.push(participantId);
-
-        for (const event of tournamentRecord.events ?? []) {
-          for (const drawDefinition of event.drawDefinitions ?? []) {
-            const { extension } = findExtension({
-              element: drawDefinition,
-              name: LINEUPS,
-            });
-            const lineUp = extension?.value[groupingParticipant.participantId];
-            if (extension && lineUp) {
-              extension.value[groupingParticipant.participantId] = lineUp.filter(
-                (assignment) => assignment.participantId !== participantId,
-              );
-              addExtension({ element: drawDefinition, extension });
-              addDrawNotice({ drawDefinition });
-            }
-
-            const matchUps = allDrawMatchUps({ drawDefinition, inContext: false }).matchUps ?? [];
-
-            for (const matchUp of matchUps) {
-              const sides = matchUp.sides ?? [];
-              for (const side of sides) {
-                const lineUp = side.lineUp ?? [];
-                const containsParticipant = lineUp.find((assignment) => assignment.participantId === participantId);
-                if (containsParticipant) {
-                  side.lineUp = lineUp.filter((assignment) => assignment.participantId !== participantId);
-                  modifyMatchUpNotice({
-                    tournamentId: tournamentRecord?.tournamentId,
-                    drawDefinition,
-                    matchUp,
-                  });
-                }
-              }
-            }
-          }
-        }
-      } else {
+      if (!individualIdSet.has(participantId)) {
         notRemoved.push(participantId);
+        return true;
       }
-      return !removeParticipant;
+
+      const hasScoredMatchUps = participantHasScoredGroupingMatchUps({
+        groupingParticipantEventIds,
+        mappedMatchUps,
+        participantId,
+        participants,
+      });
+
+      if (hasScoredMatchUps) {
+        cannotRemove.push(participantId);
+        return true;
+      }
+
+      removed.push(participantId);
+      purgeParticipantFromLineUps({
+        groupingParticipantId: groupingParticipant.participantId,
+        tournamentRecord,
+        participantId,
+      });
+      return false;
     },
   );
 
@@ -227,6 +197,64 @@ function removeParticipantIdsFromGroupingParticipant({
       }) ||
     result
   );
+}
+
+
+function participantHasScoredGroupingMatchUps({
+  groupingParticipantEventIds,
+  mappedMatchUps,
+  participantId,
+  participants,
+}) {
+  const scoredMatchUps = participants
+    ?.find((participant) => participant.participantId === participantId)
+    ?.matchUps.filter(({ eventId }) => groupingParticipantEventIds.includes(eventId))
+    .map(({ matchUpId }) => mappedMatchUps?.[matchUpId])
+    .filter(({ winningSide, score }) => winningSide || checkScoreHasValue({ score }));
+  return scoredMatchUps?.length > 0;
+}
+
+function purgeParticipantFromLineUps({ groupingParticipantId, tournamentRecord, participantId }) {
+  for (const event of tournamentRecord.events ?? []) {
+    for (const drawDefinition of event.drawDefinitions ?? []) {
+      purgeFromDrawLineUp({ drawDefinition, groupingParticipantId, participantId });
+      purgeFromMatchUpLineUps({ drawDefinition, tournamentRecord, participantId });
+    }
+  }
+}
+
+function purgeFromDrawLineUp({ drawDefinition, groupingParticipantId, participantId }) {
+  const { extension } = findExtension({
+    element: drawDefinition,
+    name: LINEUPS,
+  });
+  const lineUp = extension?.value[groupingParticipantId];
+  if (extension && lineUp) {
+    extension.value[groupingParticipantId] = lineUp.filter(
+      (assignment) => assignment.participantId !== participantId,
+    );
+    addExtension({ element: drawDefinition, extension });
+    addDrawNotice({ drawDefinition });
+  }
+}
+
+function purgeFromMatchUpLineUps({ drawDefinition, tournamentRecord, participantId }) {
+  const matchUps = allDrawMatchUps({ drawDefinition, inContext: false }).matchUps ?? [];
+
+  for (const matchUp of matchUps) {
+    for (const side of matchUp.sides ?? []) {
+      const lineUp = side.lineUp ?? [];
+      const containsParticipant = lineUp.find((assignment) => assignment.participantId === participantId);
+      if (containsParticipant) {
+        side.lineUp = lineUp.filter((assignment) => assignment.participantId !== participantId);
+        modifyMatchUpNotice({
+          tournamentId: tournamentRecord?.tournamentId,
+          drawDefinition,
+          matchUp,
+        });
+      }
+    }
+  }
 }
 
 type RemoveParticipantIdsFromAllTeamsArgs = {

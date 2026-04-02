@@ -86,48 +86,18 @@ export function addDrawDefinition(
     });
   }
 
-  const drawEntriesPresentInFlight = drawEntries?.every(({ participantId, entryStatus }) => {
-    const flightEntry = relevantFlight?.drawEntries.find((entry) => entry.participantId === participantId);
-    return !entryStatus || flightEntry?.entryStatus === entryStatus;
+  const validationResult: any = validateDrawEntries({
+    drawEntries,
+    eventEntries,
+    relevantFlight,
+    checkEntryStatus,
   });
+  if (validationResult?.error) return validationResult;
 
-  // check that all drawEntries have equivalent entryStatus to event.entries
-  const matchingEventEntries =
-    !checkEntryStatus ||
-    (eventEntries &&
-      drawEntries?.every(({ participantId, entryStatus, entryStage }) => {
-        const eventEntry = eventEntries.find(
-          (eventEntry) =>
-            eventEntry.participantId === participantId &&
-            (!eventEntry.entryStage || eventEntry.entryStage === entryStage),
-        );
-        return eventEntry?.entryStatus === entryStatus;
-      }));
-
-  if (relevantFlight && !drawEntriesPresentInFlight) {
-    return decorateResult({
-      result: { error: INVALID_DRAW_DEFINITION },
-      context: {
-        drawEntriesPresentInFlight,
-        matchingEventEntries,
-        relevantFlight,
-      },
-      info: 'Draw entries are not present in flight or do not match entryStatuses',
-    });
-  }
+  const { matchingEventEntries } = validationResult;
 
   if (modifyEventEntries) {
-    drawEntries?.filter(Boolean).forEach((drawEntry) => {
-      if (drawEntry?.entryStatus && STRUCTURE_SELECTED_STATUSES.includes(drawEntry?.entryStatus)) {
-        const eventEntry = eventEntries
-          ?.filter(Boolean)
-          .find((eventEntry) => eventEntry.participantId === drawEntry.participantId);
-        if (eventEntry && drawEntry.entryStatus && eventEntry?.entryStatus !== drawEntry.entryStatus) {
-          eventEntry.entryStatus = drawEntry.entryStatus;
-          modifiedEventEntryStatusCount += 1;
-        }
-      }
-    });
+    modifiedEventEntryStatusCount = applyModifiedEventEntries({ drawEntries, eventEntries });
   }
 
   if (eventEntries && !matchingEventEntries)
@@ -192,61 +162,115 @@ export function addDrawDefinition(
   addEventExtension({ event, extension });
   Object.assign(drawDefinition, { drawOrder });
 
-  const existingDrawDefinition = event.drawDefinitions.find((drawDefinition) => drawDefinition.drawId === drawId);
+  const existingDrawDefinition = event.drawDefinitions.find((dd) => dd.drawId === drawId);
   const tournamentId = tournamentRecord?.tournamentId;
   const eventId: string = event.eventId;
 
   if (existingDrawDefinition) {
-    if (!allowReplacement) {
-      return { error: DRAW_ID_EXISTS };
-    }
-    // find matchUps added/removed
-    const existingMatchUps = allDrawMatchUps({
-      drawDefinition: existingDrawDefinition,
-    })?.matchUps;
-    const existingMatchUpIds: string[] = existingMatchUps?.map(getMatchUpId) ?? [];
-    const incomingMatchUps = allDrawMatchUps({
+    if (!allowReplacement) return { error: DRAW_ID_EXISTS };
+    replaceExistingDraw({
+      existingDrawDefinition,
+      suppressNotifications,
       drawDefinition,
-    })?.matchUps;
-
-    if (!suppressNotifications) {
-      // all existing are deleted and then re-added to handle back-end created Id issues
-      if (existingMatchUpIds?.length) {
-        deleteMatchUpsNotice({
-          matchUpIds: existingMatchUpIds,
-          action: 'modifyDrawDefinition',
-          tournamentId,
-          eventId,
-        });
-      }
-      if (incomingMatchUps?.length) {
-        addMatchUpsNotice({
-          matchUps: incomingMatchUps,
-          tournamentId,
-          eventId,
-        });
-      }
-
-      // replace the existing drawDefinition with the updated version
-      event.drawDefinitions = event.drawDefinitions.map((d) => (d.drawId === drawId ? drawDefinition : d));
-
-      const structureIds = drawDefinition.structures?.map(({ structureId }) => structureId);
-      modifyDrawNotice({ drawDefinition, tournamentId, structureIds, eventId });
-    }
+      tournamentId,
+      eventId,
+      event,
+      drawId,
+    });
   } else {
-    event.drawDefinitions.push(drawDefinition);
-
-    if (!suppressNotifications) {
-      const { matchUps } = allDrawMatchUps({ drawDefinition, event });
-      matchUps &&
-        addMatchUpsNotice({
-          tournamentId: tournamentRecord?.tournamentId,
-          matchUps,
-        });
-
-      addDrawNotice({ drawDefinition, tournamentId, eventId });
-    }
+    addNewDraw({ suppressNotifications, tournamentRecord, drawDefinition, tournamentId, eventId, event });
   }
 
   return { ...SUCCESS, modifiedEventEntryStatusCount };
+}
+
+function validateDrawEntries({ drawEntries, eventEntries, relevantFlight, checkEntryStatus }) {
+  const drawEntriesPresentInFlight = drawEntries?.every(({ participantId, entryStatus }) => {
+    const flightEntry = relevantFlight?.drawEntries.find((entry) => entry.participantId === participantId);
+    return !entryStatus || flightEntry?.entryStatus === entryStatus;
+  });
+
+  const matchingEventEntries =
+    !checkEntryStatus ||
+    (eventEntries &&
+      drawEntries?.every(({ participantId, entryStatus, entryStage }) => {
+        const eventEntry = eventEntries.find(
+          (ee) => ee.participantId === participantId && (!ee.entryStage || ee.entryStage === entryStage),
+        );
+        return eventEntry?.entryStatus === entryStatus;
+      }));
+
+  if (relevantFlight && !drawEntriesPresentInFlight) {
+    return decorateResult({
+      result: { error: INVALID_DRAW_DEFINITION },
+      context: { drawEntriesPresentInFlight, matchingEventEntries, relevantFlight },
+      info: 'Draw entries are not present in flight or do not match entryStatuses',
+    });
+  }
+
+  return { drawEntriesPresentInFlight, matchingEventEntries };
+}
+
+function applyModifiedEventEntries({ drawEntries, eventEntries }) {
+  let count = 0;
+  drawEntries?.filter(Boolean).forEach((drawEntry) => {
+    if (drawEntry?.entryStatus && STRUCTURE_SELECTED_STATUSES.includes(drawEntry?.entryStatus)) {
+      const eventEntry = eventEntries
+        ?.filter(Boolean)
+        .find((ee) => ee.participantId === drawEntry.participantId);
+      if (eventEntry && drawEntry.entryStatus && eventEntry?.entryStatus !== drawEntry.entryStatus) {
+        eventEntry.entryStatus = drawEntry.entryStatus;
+        count += 1;
+      }
+    }
+  });
+  return count;
+}
+
+function replaceExistingDraw({
+  existingDrawDefinition,
+  suppressNotifications,
+  drawDefinition,
+  tournamentId,
+  eventId,
+  event,
+  drawId,
+}) {
+  const existingMatchUps = allDrawMatchUps({ drawDefinition: existingDrawDefinition })?.matchUps;
+  const existingMatchUpIds: string[] = existingMatchUps?.map(getMatchUpId) ?? [];
+  const incomingMatchUps = allDrawMatchUps({ drawDefinition })?.matchUps;
+
+  if (!suppressNotifications) {
+    if (existingMatchUpIds?.length) {
+      deleteMatchUpsNotice({
+        matchUpIds: existingMatchUpIds,
+        action: 'modifyDrawDefinition',
+        tournamentId,
+        eventId,
+      });
+    }
+    if (incomingMatchUps?.length) {
+      addMatchUpsNotice({ matchUps: incomingMatchUps, tournamentId, eventId });
+    }
+
+    event.drawDefinitions = event.drawDefinitions.map((d) => (d.drawId === drawId ? drawDefinition : d));
+
+    const structureIds = drawDefinition.structures?.map(({ structureId }) => structureId);
+    modifyDrawNotice({ drawDefinition, tournamentId, structureIds, eventId });
+  }
+}
+
+function addNewDraw({ suppressNotifications, tournamentRecord, drawDefinition, tournamentId, eventId, event }) {
+  event.drawDefinitions.push(drawDefinition);
+
+  if (!suppressNotifications) {
+    const { matchUps } = allDrawMatchUps({ drawDefinition, event });
+    matchUps &&
+      addMatchUpsNotice({
+        tournamentId: tournamentRecord?.tournamentId,
+        matchUps,
+      });
+
+    addDrawNotice({ drawDefinition, tournamentId, eventId });
+  }
 }

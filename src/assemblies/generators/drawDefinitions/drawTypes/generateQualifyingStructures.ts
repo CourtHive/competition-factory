@@ -70,123 +70,41 @@ export function generateQualifyingStructures({
       linkType;
 
     for (const structureProfile of (structureProfiles || []).sort(sequenceSort)) {
-      let drawSize = coerceEven(structureProfile.drawSize || structureProfile.participantsCount);
-      const { qualifyingRoundNumber, structureOptions, matchUpFormat, structureName, structureId, drawType } =
-        structureProfile;
-      const matchUpType = structureProfile.matchUpType;
+      const profileResult: any = processStructureProfile({
+        structureProfile,
+        qualifyingProfiles,
+        structureProfiles,
+        hasExistingDrawDefinition,
+        appliedPolicies,
+        qualifyingOnly,
+        stageSequence,
+        roundTarget,
+        tieFormat,
+        idPrefix,
+        isMock,
+        uuids,
+        stack,
+        finalQualifyingStructureId,
+        finalQualifyingRoundNumber,
+        qualifyingDrawPositionsCount,
+        targetRoundQualifiersCount,
+        finishingPositions,
+        linkType,
+        links,
+        structures,
+      });
 
-      const qualifyingPositions =
-        structureProfile.qualifyingPositions || deriveQualifyingPositions({ drawSize, qualifyingRoundNumber });
+      if (profileResult.error) return profileResult;
 
-      let roundLimit, structure, matchUps;
-
-      if (!isConvertableInteger(drawSize)) {
-        return decorateResult({
-          result: { error: MISSING_DRAW_SIZE },
-          stack,
-        });
-      }
-      const roundTargetName = qualifyingProfiles.length > 1 ? `${roundTarget}-` : '';
-      const stageSequenceName = structureProfiles.length > 1 || roundTargetName ? stageSequence : '';
-
-      const qualifyingStructureName =
-        structureName ||
-        (roundTargetName || stageSequenceName
-          ? `${constantToString(QUALIFYING)} ${roundTargetName}${stageSequenceName}`
-          : constantToString(QUALIFYING));
-
-      if (drawType === ROUND_ROBIN) {
-        const { structures, groupCount, maxRoundNumber /*, groupSize*/ } = generateRoundRobin({
-          structureName: structureProfile.structureName || qualifyingStructureName,
-          structureId: structureId || uuids?.pop(),
-          // qualifyingPositions,
-          hasExistingDrawDefinition,
-          stage: QUALIFYING,
-          structureOptions,
-          appliedPolicies,
-          qualifyingOnly,
-          stageSequence,
-          matchUpType,
-          roundTarget,
-          tieFormat,
-          drawSize,
-          idPrefix,
-          isMock,
-          uuids,
-        });
-        targetRoundQualifiersCount = groupCount;
-        roundLimit = maxRoundNumber;
-        structure = structures[0];
-        finishingPositions = [1];
-      } else {
-        ({ drawSize, matchUps, roundLimit } = treeMatchUps({
-          qualifyingRoundNumber,
-          qualifyingPositions,
-          matchUpType,
-          drawSize,
-          idPrefix,
-          isMock,
-          uuids,
-        }));
-
-        structure = structureTemplate({
-          structureName: structureProfile.structureName || qualifyingStructureName,
-          structureId: structureId || uuids?.pop(),
-          qualifyingRoundNumber: roundLimit,
-          hasExistingDrawDefinition,
-          stage: QUALIFYING,
-          qualifyingOnly,
-          matchUpFormat,
-          stageSequence,
-          matchUpType,
-          roundLimit, // redundant
-          tieFormat,
-          matchUps,
-        });
-
-        if (roundTarget) {
-          addExtension({
-            extension: { name: ROUND_TARGET, value: roundTarget },
-            element: structure,
-          });
-        }
-
-        // always set to the final round of the last generated qualifying structure
-        targetRoundQualifiersCount = matchUps?.filter((matchUp) => matchUp.roundNumber === roundLimit)?.length || 0;
-      }
-
-      if (stageSequence > 1) {
-        const { link } = generateQualifyingLink({
-          sourceStructureId: finalQualifyingStructureId,
-          sourceRoundNumber: finalQualifyingRoundNumber,
-          targetStructureId: structure.structureId,
-          finishingPositions: linkType === POSITION ? [1] : undefined,
-          linkType,
-        });
-        links.push(link);
-        // if more than one qualifying stageSequence, remove last stageSequence qualifier positions from count
-        qualifyingDrawPositionsCount += (drawSize || 0) - targetRoundQualifiersCount;
-      } else {
-        qualifyingDrawPositionsCount += drawSize || 0;
-      }
-
-      // IMPORTANT: order of operations is important here!!
-      linkType = drawType === ROUND_ROBIN ? POSITION : WINNER;
-
-      // always set to the final round of the last generated qualifying structure
-      finalQualifyingStructureId = structure.structureId;
-      finalQualifyingRoundNumber = roundLimit;
-
-      if (tieFormat) {
-        matchUps = getAllStructureMatchUps({ structure })?.matchUps || [];
-        matchUps?.forEach((matchUp) => {
-          const { tieMatchUps } = generateTieMatchUps({ tieFormat, matchUp, isMock });
-          Object.assign(matchUp, { tieMatchUps, matchUpType });
-        });
-      }
-
-      structures.push(structure);
-      stageSequence += 1;
+      ({
+        qualifyingDrawPositionsCount,
+        targetRoundQualifiersCount,
+        finalQualifyingStructureId,
+        finalQualifyingRoundNumber,
+        finishingPositions,
+        linkType,
+        stageSequence,
+      } = profileResult);
     }
 
     totalQualifiersCount += targetRoundQualifiersCount;
@@ -209,6 +127,149 @@ export function generateQualifyingStructures({
     structures,
     ...SUCCESS,
     links,
+  };
+}
+
+function processStructureProfile({
+  structureProfile,
+  qualifyingProfiles,
+  structureProfiles,
+  hasExistingDrawDefinition,
+  appliedPolicies,
+  qualifyingOnly,
+  stageSequence,
+  roundTarget,
+  tieFormat,
+  idPrefix,
+  isMock,
+  uuids,
+  stack,
+  finalQualifyingStructureId,
+  finalQualifyingRoundNumber,
+  qualifyingDrawPositionsCount,
+  targetRoundQualifiersCount,
+  finishingPositions,
+  linkType,
+  links,
+  structures,
+}) {
+  let drawSize = coerceEven(structureProfile.drawSize || structureProfile.participantsCount);
+  const { qualifyingRoundNumber, structureOptions, matchUpFormat, structureName, structureId, drawType } =
+    structureProfile;
+  const matchUpType = structureProfile.matchUpType;
+
+  const qualifyingPositions =
+    structureProfile.qualifyingPositions || deriveQualifyingPositions({ drawSize, qualifyingRoundNumber });
+
+  if (!isConvertableInteger(drawSize)) {
+    return decorateResult({ result: { error: MISSING_DRAW_SIZE }, stack });
+  }
+
+  const roundTargetName = qualifyingProfiles.length > 1 ? `${roundTarget}-` : '';
+  const stageSequenceName = structureProfiles.length > 1 || roundTargetName ? stageSequence : '';
+  const qualifyingStructureName =
+    structureName ||
+    (roundTargetName || stageSequenceName
+      ? `${constantToString(QUALIFYING)} ${roundTargetName}${stageSequenceName}`
+      : constantToString(QUALIFYING));
+
+  let roundLimit, structure, matchUps;
+
+  if (drawType === ROUND_ROBIN) {
+    const rrResult = generateRoundRobin({
+      structureName: structureProfile.structureName || qualifyingStructureName,
+      structureId: structureId || uuids?.pop(),
+      hasExistingDrawDefinition,
+      stage: QUALIFYING,
+      structureOptions,
+      appliedPolicies,
+      qualifyingOnly,
+      stageSequence,
+      matchUpType,
+      roundTarget,
+      tieFormat,
+      drawSize,
+      idPrefix,
+      isMock,
+      uuids,
+    });
+    targetRoundQualifiersCount = rrResult.groupCount;
+    roundLimit = rrResult.maxRoundNumber;
+    structure = rrResult.structures[0];
+    finishingPositions = [1];
+  } else {
+    ({ drawSize, matchUps, roundLimit } = treeMatchUps({
+      qualifyingRoundNumber,
+      qualifyingPositions,
+      matchUpType,
+      drawSize,
+      idPrefix,
+      isMock,
+      uuids,
+    }));
+
+    structure = structureTemplate({
+      structureName: structureProfile.structureName || qualifyingStructureName,
+      structureId: structureId || uuids?.pop(),
+      qualifyingRoundNumber: roundLimit,
+      hasExistingDrawDefinition,
+      stage: QUALIFYING,
+      qualifyingOnly,
+      matchUpFormat,
+      stageSequence,
+      matchUpType,
+      roundLimit,
+      tieFormat,
+      matchUps,
+    });
+
+    if (roundTarget) {
+      addExtension({
+        extension: { name: ROUND_TARGET, value: roundTarget },
+        element: structure,
+      });
+    }
+
+    targetRoundQualifiersCount = matchUps?.filter((m) => m.roundNumber === roundLimit)?.length || 0;
+  }
+
+  if (stageSequence > 1) {
+    const { link } = generateQualifyingLink({
+      sourceStructureId: finalQualifyingStructureId,
+      sourceRoundNumber: finalQualifyingRoundNumber,
+      targetStructureId: structure.structureId,
+      finishingPositions: linkType === POSITION ? [1] : undefined,
+      linkType,
+    });
+    links.push(link);
+    qualifyingDrawPositionsCount += (drawSize || 0) - targetRoundQualifiersCount;
+  } else {
+    qualifyingDrawPositionsCount += drawSize || 0;
+  }
+
+  linkType = drawType === ROUND_ROBIN ? POSITION : WINNER;
+  finalQualifyingStructureId = structure.structureId;
+  finalQualifyingRoundNumber = roundLimit;
+
+  if (tieFormat) {
+    matchUps = getAllStructureMatchUps({ structure })?.matchUps || [];
+    matchUps?.forEach((m) => {
+      const { tieMatchUps } = generateTieMatchUps({ tieFormat, matchUp: m, isMock });
+      Object.assign(m, { tieMatchUps, matchUpType });
+    });
+  }
+
+  structures.push(structure);
+  stageSequence += 1;
+
+  return {
+    qualifyingDrawPositionsCount,
+    targetRoundQualifiersCount,
+    finalQualifyingStructureId,
+    finalQualifyingRoundNumber,
+    finishingPositions,
+    stageSequence,
+    linkType,
   };
 }
 

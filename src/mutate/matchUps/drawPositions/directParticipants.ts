@@ -69,10 +69,56 @@ export function directParticipants(params): ResultType {
     return decorateResult({ result: { ...SUCCESS, ...annotate }, stack });
   }
 
-  if (drawPositions) {
-    // if projectedWinningSide is present then a TEAM matchUp is being directed, not the tieMatchUp
-    const winningIndex = projectedWinningSide ? projectedWinningSide - 1 : winningSide - 1;
-    const losingIndex = 1 - winningIndex;
+  if (!drawPositions) {
+    return decorateResult({ result: { error: MISSING_DRAW_POSITIONS }, stack });
+  }
+
+  return processDrawPositionDirecting({
+    matchUpStatusIsValid,
+    inContextDrawMatchUps,
+    projectedWinningSide,
+    propagateExitStatus,
+    matchUpStatusCodes,
+    tournamentRecord,
+    drawDefinition,
+    drawPositions,
+    matchUpStatus,
+    dualMatchUp,
+    matchUpsMap,
+    winningSide,
+    targetData,
+    matchUpId,
+    structure,
+    annotate,
+    matchUp,
+    stack,
+    event,
+  });
+}
+
+function processDrawPositionDirecting({
+  matchUpStatusIsValid,
+  inContextDrawMatchUps,
+  projectedWinningSide,
+  propagateExitStatus,
+  matchUpStatusCodes,
+  tournamentRecord,
+  drawDefinition,
+  drawPositions,
+  matchUpStatus,
+  dualMatchUp,
+  matchUpsMap,
+  winningSide,
+  targetData,
+  matchUpId,
+  structure,
+  annotate,
+  matchUp,
+  stack,
+  event,
+}): ResultType {
+  const winningIndex = projectedWinningSide ? projectedWinningSide - 1 : winningSide - 1;
+  const losingIndex = 1 - winningIndex;
 
     const winningDrawPosition = drawPositions[winningIndex];
     const loserDrawPosition = drawPositions[losingIndex];
@@ -93,17 +139,13 @@ export function directParticipants(params): ResultType {
     // to luckyDrawAdvancement for manual loser selection. Normal power-of-2 rounds
     // advance winners immediately as each matchUp completes, same as a regular draw.
     const isLuckyDraw = isLuckyBasedDraw(drawDefinition?.drawType);
-    const isPreFeedRound = (() => {
-      if (!isLuckyDraw || !matchUp.roundNumber || !structure?.matchUps) return false;
-      const roundMatchUpCount = structure.matchUps.filter(
-        (m) => m.roundNumber === matchUp.roundNumber,
-      ).length;
-      return roundMatchUpCount % 2 !== 0;
-    })();
+    const isPreFeedRound = checkIsPreFeedRound(isLuckyDraw, matchUp, structure);
+    const shouldAdvance = !isLuckyDraw || !isPreFeedRound;
+    const sourceStatus = (matchUpStatusIsValid && matchUpStatus) || COMPLETED;
 
-    if (winnerMatchUp && (!isLuckyDraw || !isPreFeedRound)) {
+    if (winnerMatchUp && shouldAdvance) {
       const result = directWinner({
-        sourceMatchUpStatus: (matchUpStatusIsValid && matchUpStatus) || COMPLETED,
+        sourceMatchUpStatus: sourceStatus,
         winnerMatchUpDrawPositionIndex,
         sourceMatchUpId: matchUpId,
         inContextDrawMatchUps,
@@ -120,9 +162,9 @@ export function directParticipants(params): ResultType {
       if (result.error) return decorateResult({ result, stack });
     }
 
-    if (loserMatchUp && (!isLuckyDraw || !isPreFeedRound)) {
+    if (loserMatchUp && shouldAdvance) {
       const result = directLoser({
-        sourceMatchUpStatus: (matchUpStatusIsValid && matchUpStatus) || COMPLETED,
+        sourceMatchUpStatus: sourceStatus,
         sourceMatchUpStatusCodes: matchUpStatusCodes || [],
         sourceWinningSide: winningSide,
         loserMatchUpDrawPositionIndex,
@@ -142,7 +184,7 @@ export function directParticipants(params): ResultType {
       });
       if (result.context?.progressExitStatus) {
         Object.assign(context, result.context, {
-          sourceMatchUpStatus: (matchUpStatusIsValid && matchUpStatus) || COMPLETED,
+          sourceMatchUpStatus: sourceStatus,
           sourceMatchUpStatusCodes: matchUpStatusCodes || [],
           loserMatchUp,
           matchUpsMap,
@@ -165,7 +207,12 @@ export function directParticipants(params): ResultType {
       if (result.error) return decorateResult({ result, stack });
     }
     return decorateResult({ result: { ...SUCCESS, ...annotate }, stack, context });
-  } else {
-    return decorateResult({ result: { error: MISSING_DRAW_POSITIONS }, stack });
-  }
+}
+
+function checkIsPreFeedRound(isLuckyDraw, matchUp, structure): boolean {
+  if (!isLuckyDraw || !matchUp.roundNumber || !structure?.matchUps) return false;
+  const roundMatchUpCount = structure.matchUps.filter(
+    (m) => m.roundNumber === matchUp.roundNumber,
+  ).length;
+  return roundMatchUpCount % 2 !== 0;
 }
