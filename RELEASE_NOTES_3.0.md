@@ -470,15 +470,47 @@ Beyond the new ScoringEngine and matchUpFormat expansion (see their dedicated se
 
 ---
 
+## Code Quality and Cognitive Complexity
+
+### Systematic Complexity Reduction
+
+A comprehensive refactoring effort reduced cognitive complexity across the entire codebase. Every function in the factory now scores below 30 on the SonarQube cognitive complexity metric — down from a starting point where 93 functions exceeded that threshold, with some reaching 184.
+
+| Metric | Before | After | Reduction |
+| --- | ---: | ---: | --- |
+| Functions above complexity 50 | 36 | 0 | -100% |
+| Functions above complexity 40 | 62 | 0 | -100% |
+| Functions above complexity 30 | 93 | 0 | -100% |
+| Helper functions extracted | — | ~200 | — |
+| Source files refactored | — | ~60 | — |
+
+Monolithic functions were decomposed into focused, testable helpers — for example, `getParticipantEntries` (718 lines, one function) was split into 8 helpers across 4 refactoring passes. The same treatment was applied to scoring, scheduling, draw positioning, publishing, ranking, tie format management, and mock generation code.
+
+The `sonarjs/cognitive-complexity` ESLint rule is now enabled at threshold 30, enforcing the quality floor for all new code.
+
+### Test File Linting
+
+Test files (`*.test.ts`) are now included in the ESLint configuration. Previously ignored, 590 lint issues were identified and resolved:
+
+- 94 unused variable/import errors eliminated
+- 52 useless assignment warnings fixed
+- Duplicate branches, nested ternaries, stale directives, and missing callback returns cleaned up
+- Test-specific overrides for `no-duplicate-string` and `no-empty-function` (intentional patterns in test code)
+
+### TypeScript Modernization
+
+- Removed deprecated `baseUrl` and `downlevelIteration` tsconfig options (no-ops at ES2021 target, deprecated for TypeScript 7.0)
+- Fixed bare `src/` imports to use path aliases
+
 ## Test Coverage
 
 ### Summary
 
-| Metric        | v2.4.5 | v3.0  | Change         |
-| ------------- | ------ | ----- | -------------- |
-| Test files    | 659    | 828   | +169 (+26%)    |
-| Tests passing | ~6,500 | 8,139 | ~+1,600 (+25%) |
-| Tests skipped | —      | 5     | —              |
+| Metric | v2.4.5 | v3.0 | Change |
+| --- | --- | --- | --- |
+| Test files | 659 | 843 | +184 (+28%) |
+| Tests passing | ~6,500 | 8,284 | ~+1,800 (+27%) |
+| Tests skipped | — | 5 | — |
 
 ### New Test Suites by Area
 
@@ -505,6 +537,10 @@ Beyond the new ScoringEngine and matchUpFormat expansion (see their dedicated se
 **Officiating** (1 file): `officiatingEngine`
 
 **HYBRID** (1 file): `hybridEventType`
+
+**Refactoring Regression Tests** (14 files): Targeted tests created alongside cognitive complexity refactoring to guard against behavioral regressions — `getParticipantEntries.refactor`, `setMatchUpState.refactor`, `getTournamentPoints.refactor`, `v2Scheduler.refactor`, `addPoint.refactor`, `tier2.refactor`, `tier3-4.refactor`, plus coverage tests for `modifyMatchUpScore`, `jinnScheduler`, `analyzeSet`, `assignTieMatchUpParticipant`, `tieFormat`, `playoffStructures`, `qualifiersAction`
+
+**League Profiles** (1 file): `processLeagueProfiles` — 13 tests covering team generation, draw configuration, multiple leagues, naming, tie format resolution, and mocksEngine integration
 
 **Coverage Expansion** (40+ files): Extensive branch and statement coverage tests targeting existing governors and mutations — `coverageBranchBulk[1-6]`, `coverageStatementGaps[1-5]`, `coverageFinalPush[1-3]`, plus targeted coverage for scoring, scheduling, draw generation, and tournament operations.
 
