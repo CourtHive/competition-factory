@@ -104,10 +104,10 @@ function buildSetsForIncompleteScore({ lastSet, sets, analysis }) {
   }
   let newSets;
   if (analysis.isTimedSet) {
-    newSets = lastSet.side1Score ? sets : sets?.slice(0, -1) || [];
+    newSets = lastSet.side1Score ? sets : sets?.slice(0, -1) ?? [];
     newSets[sets.length - 1] = lastSet;
   } else {
-    newSets = sets?.slice(0, -1) || [];
+    newSets = sets?.slice(0, -1) ?? [];
   }
   return newSets;
 }
@@ -127,13 +127,13 @@ function buildSetsForRemainingNumbers({ lastSet, sets, analysis }) {
   let newSets;
   if (analysis.isTimedSet) {
     if (lastSet.side1Score) {
-      newSets = sets || [];
+      newSets = sets ?? [];
       newSets[sets.length - 1] = lastSet;
     } else {
-      newSets = sets?.slice(0, sets.length - 1) || [];
+      newSets = sets?.slice(0, sets.length - 1) ?? [];
     }
   } else {
-    newSets = sets || [];
+    newSets = sets ?? [];
     newSets[sets.length - 1] = lastSet;
   }
 
@@ -157,16 +157,16 @@ export function removeFromScore({ analysis, scoreString, sets, lowSide }: Remove
   scoreString = outcomeRemoved;
   if (removed) return { scoreString, sets, outcomeRemoved: true };
 
-  let lastSet = sets.at(-1) || {};
+  let lastSet = sets.at(-1) ?? {};
   // Looking for the last set which has some values defined
   // setValues Count determines if there are any values other than setNumber
   const setValuesCount = Object.values(lastSet).filter((f) => f !== undefined).length;
   if (lastSet.setNumber && setValuesCount === 1) {
     sets = sets.slice(0, -1);
-    lastSet = sets.at(-1) || {};
+    lastSet = sets.at(-1) ?? {};
   }
   const { tiebreakSet } = analysis.setFormat;
-  const { tiebreakTo, NoAD } = tiebreakSet || {};
+  const { tiebreakTo, NoAD } = tiebreakSet ?? {};
 
   const { isTiebreakEntry: isMatchTiebreak } = testTiebreakEntry({
     brackets: MATCH_TIEBREAK_BRACKETS,
@@ -207,15 +207,15 @@ export function removeFromScore({ analysis, scoreString, sets, lowSide }: Remove
     } else if (remainingNumbers) {
       newSets = buildSetsForRemainingNumbers({ lastSet, sets, analysis });
     } else if (openSetTiebreak) {
-      newSets = sets || [];
-      Object.assign(newSets[newSets.length - 1] || {}, {
+      newSets = sets ?? [];
+      Object.assign(newSets[newSets.length - 1] ?? {}, {
         winningSide: undefined,
         side1TiebreakScore: undefined,
         side2TiebreakScore: undefined,
       });
     } else {
       if (isMatchTiebreak && !openMatchTiebreak) {
-        newSets = sets?.slice(0, -1) || [];
+        newSets = sets?.slice(0, -1) ?? [];
       } else {
         newSets = sets;
         newSets[sets.length - 1] = lastSet;
@@ -265,7 +265,7 @@ export function lastNumericIndex(str) {
 }
 
 export function getHighTiebreakValue(params?) {
-  const { lowValue = 0, NoAD = false, tiebreakTo } = params || {};
+  const { lowValue = 0, NoAD = false, tiebreakTo } = params ?? {};
   const winBy = NoAD ? 1 : 2;
   if (lowValue + 1 >= tiebreakTo) {
     return lowValue + winBy;

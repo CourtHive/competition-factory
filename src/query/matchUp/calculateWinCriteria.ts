@@ -23,7 +23,7 @@ export function calculateWinCriteria({
 
   let aggregateValueImperative;
 
-  for (const collectionDefinition of collectionDefinitions || []) {
+  for (const collectionDefinition of collectionDefinitions ?? []) {
     const {
       collectionValueProfiles,
       collectionGroupNumber,

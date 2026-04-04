@@ -70,7 +70,7 @@ export function addIndividualParticipantIds({
       stack,
     });
 
-  if (!groupingParticipant.individualParticipantIds) groupingParticipant.individualParticipantIds = [];
+  groupingParticipant.individualParticipantIds ??= [];
   const existingIndividualParticipantIds = groupingParticipant.individualParticipantIds;
 
   const participantIdsToAdd = individualParticipantIds.filter((participantId) => {

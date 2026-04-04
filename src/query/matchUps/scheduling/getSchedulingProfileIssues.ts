@@ -42,7 +42,7 @@ export function getSchedulingProfileIssues(params?: GetSchedulingProfileIssuesAr
 
     // skip scheduleDates that are not specified; process all if none specified
     if (!scheduleDates?.length || scheduleDates.includes(scheduleDate)) {
-      for (const venue of venues || []) {
+      for (const venue of venues ?? []) {
         if (venue) {
           const { rounds } = venue;
           const schedulingErrors: any = [];
@@ -68,7 +68,7 @@ export function getSchedulingProfileIssues(params?: GetSchedulingProfileIssuesAr
 
           orderedMatchUpIds?.forEach((matchUpId, index) => {
             const followingMatchUpIds = orderedMatchUpIds.slice(index + 1);
-            const shouldBeAfter = intersection(followingMatchUpIds, matchUpDependencies?.[matchUpId]?.matchUpIds || []);
+            const shouldBeAfter = intersection(followingMatchUpIds, matchUpDependencies?.[matchUpId]?.matchUpIds ?? []);
             if (shouldBeAfter.length) schedulingErrors.push({ matchUpId, shouldBeAfter });
           });
           if (schedulingErrors.length) {

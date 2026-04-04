@@ -195,7 +195,7 @@ export function getValidSeedBlocks({
 }
 
 export function getContainerBlocks({ seedingProfile, structure, nonRandom, random }) {
-  const containedStructures = structure.structures || [];
+  const containedStructures = structure.structures ?? [];
   const roundRobinGroupsCount = containedStructures.length;
   const positionAssignments = getPositionAssignments({
     structure,
@@ -351,7 +351,7 @@ export function isValidSeedPosition({
   if (appliedPolicies?.seeding?.validSeedPositions?.ignore) return true;
   if (appliedPolicies?.seeding?.validSeedPositions?.strict) {
     const targetSeedBlock = validSeedBlocks.find((seedBlock) => seedBlock.seedNumbers.includes(seedNumber));
-    const validSeedPositions = targetSeedBlock?.drawPositions || [];
+    const validSeedPositions = targetSeedBlock?.drawPositions ?? [];
     return validSeedPositions.includes(drawPosition);
   }
 
@@ -387,7 +387,7 @@ export function getNextSeedBlock(params) {
         seedingProfile,
         structure,
       })?.validSeedBlocks);
-  const nextSeedBlock = (validSeedBlocks || []).find((seedBlock) => {
+  const nextSeedBlock = (validSeedBlocks ?? []).find((seedBlock) => {
     const unfilledPositions = seedBlock.drawPositions.filter(
       (drawPosition) => !assignedDrawPositions?.includes(drawPosition),
     );
@@ -433,7 +433,7 @@ export function getNextSeedBlock(params) {
   const placedSeedNumbers = seedAssignments
     ?.filter((assignment) => placedSeedParticipantIds?.includes(assignment.participantId))
     .map((assignment) => assignment.seedNumber);
-  const blockSeedNumbers = nextSeedBlock?.seedNumbers || [];
+  const blockSeedNumbers = nextSeedBlock?.seedNumbers ?? [];
 
   // unplacedSeedNumbers and unplacedSeedNumberIds will only be used
   // when policy specifies that seedNumbers/seedValues must be unique

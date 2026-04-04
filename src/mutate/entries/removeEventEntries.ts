@@ -107,7 +107,7 @@ export function removeEventEntries({
   // also remove entry from all flights and drawDefinitions
   const { flightProfile } = getFlightProfile({ event });
   flightProfile?.flights?.forEach((flight) => {
-    flight.drawEntries = (flight.drawEntries || []).filter((entry) => !participantIds.includes(entry.participantId));
+    flight.drawEntries = (flight.drawEntries ?? []).filter((entry) => !participantIds.includes(entry.participantId));
   });
 
   event.drawDefinitions?.forEach((drawDefinition) => {

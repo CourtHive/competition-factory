@@ -84,8 +84,8 @@ function inferAggregateSide(
 
   // Add current in-progress set points
   if (currentSet && currentSet.winningSide === undefined) {
-    const gs1 = currentSet.side1GameScores || [];
-    const gs2 = currentSet.side2GameScores || [];
+    const gs1 = currentSet.side1GameScores ?? [];
+    const gs2 = currentSet.side2GameScores ?? [];
     if (gs1.length > 0 || gs2.length > 0) {
       const gameIdx = Math.max(gs1.length, gs2.length) - 1;
       aggregateTotal += (gs1[gameIdx] ?? 0) + (gs2[gameIdx] ?? 0);
@@ -105,8 +105,8 @@ function inferAggregateSide(
 function inferTiebreakSide(currentSet: SetScore | undefined): 'deuce' | 'ad' {
   if (!currentSet) return 'deuce'; // Start of tiebreak
 
-  const gs1 = currentSet.side1GameScores || [];
-  const gs2 = currentSet.side2GameScores || [];
+  const gs1 = currentSet.side1GameScores ?? [];
+  const gs2 = currentSet.side2GameScores ?? [];
 
   if (gs1.length === 0 && gs2.length === 0) return 'deuce';
 
@@ -126,8 +126,8 @@ function inferStandardSide(
 ): 'deuce' | 'ad' {
   if (!currentSet) return 'deuce'; // Start of set
 
-  const gs1 = currentSet.side1GameScores || [];
-  const gs2 = currentSet.side2GameScores || [];
+  const gs1 = currentSet.side1GameScores ?? [];
+  const gs2 = currentSet.side2GameScores ?? [];
 
   if (gs1.length === 0 && gs2.length === 0) return 'deuce';
 

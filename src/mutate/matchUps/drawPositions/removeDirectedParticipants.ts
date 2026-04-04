@@ -44,7 +44,7 @@ export function removeDirectedParticipants(params): {
   const isAdHocMatchUp = isAdHoc({ structure });
 
   // targetData will have team matchUp when params.matchUp is a collectionMatchUp
-  const { drawPositions, winningSide } = targetData.matchUp || {};
+  const { drawPositions, winningSide } = targetData.matchUp ?? {};
   if (!isAdHocMatchUp && !drawPositions) {
     return { error: MISSING_DRAW_POSITIONS };
   }
@@ -101,7 +101,7 @@ export function removeDirectedParticipants(params): {
         return assignments;
       },
       { winnerParticipantId: undefined, loserParticipantId: undefined },
-    ) || {};
+    ) ?? {};
 
   const drawPositionMatchUps = sourceMatchUps.filter((matchUp) => matchUp.drawPositions?.includes(loserDrawPosition));
 

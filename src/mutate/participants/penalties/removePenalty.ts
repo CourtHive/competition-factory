@@ -1,15 +1,11 @@
+import { requireParams } from '@Helpers/parameters/requireParams';
 import { addNotice } from '@Global/state/globalState';
 
+import { PENALTY_NOT_FOUND, ErrorType, MISSING_TOURNAMENT_RECORDS } from '@Constants/errorConditionConstants';
+import { TOURNAMENT_RECORD, PENALTY_ID } from '@Constants/attributeConstants';
+import { Participant, Penalty, Tournament } from '@Types/tournamentTypes';
 import { MODIFY_PARTICIPANTS } from '@Constants/topicConstants';
 import { SUCCESS } from '@Constants/resultConstants';
-import {
-  PENALTY_NOT_FOUND,
-  MISSING_PENALTY_ID,
-  MISSING_TOURNAMENT_RECORD,
-  ErrorType,
-  MISSING_TOURNAMENT_RECORDS,
-} from '@Constants/errorConditionConstants';
-import { Participant, Penalty, Tournament } from '@Types/tournamentTypes';
 
 export function removePenalty(params) {
   const { tournamentRecords } = params;
@@ -33,8 +29,8 @@ function penaltyRemove({ tournamentRecord, penaltyId }: RemovePenaltyArgs): {
   success?: boolean;
   penalty?: Penalty;
 } {
-  if (!tournamentRecord) return { error: MISSING_TOURNAMENT_RECORD };
-  if (!penaltyId) return { error: MISSING_PENALTY_ID };
+  const paramsCheck = requireParams({ tournamentRecord, penaltyId }, [TOURNAMENT_RECORD, PENALTY_ID]);
+  if (paramsCheck.error) return paramsCheck;
 
   const participants = tournamentRecord?.participants ?? [];
   const modifiedParticipants: Participant[] = [];

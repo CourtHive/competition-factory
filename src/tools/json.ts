@@ -30,7 +30,7 @@ import { INVALID_VALUES } from '@Constants/errorConditionConstants';
 export function JSON2CSV(arrayOfJSON?, config?): any {
   if (config && typeof config !== 'object') return { error: INVALID_VALUES };
 
-  let { columnTransform = {} } = config || {};
+  let { columnTransform = {} } = config ?? {};
 
   const {
     includeTransformAccessors,
@@ -49,7 +49,7 @@ export function JSON2CSV(arrayOfJSON?, config?): any {
     columnJoiner = ',',
     rowJoiner = '\r\n',
     keyJoiner = '.',
-  } = config || {};
+  } = config ?? {};
 
   if (
     !Array.isArray(arrayOfJSON) ||

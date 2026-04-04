@@ -203,7 +203,7 @@ function calculatePercentage(
   team: number,
 ): StatTeamValue {
   const numerator = sumComponents(definition.numerators, teams, team);
-  const denominator = sumComponents(definition.denominators || [], teams, team);
+  const denominator = sumComponents(definition.denominators ?? [], teams, team);
 
   if (!denominator) {
     return { value: 0, display: '0', numerators: definition.numerators };
@@ -272,7 +272,7 @@ function calculateDifference(
   team: number,
 ): StatTeamValue {
   const numerator = sumComponents(definition.numerators, teams, team);
-  const denominator = sumComponents(definition.denominators || [], teams, team);
+  const denominator = sumComponents(definition.denominators ?? [], teams, team);
 
   if (!denominator) {
     return { value: 0, display: '0', numerators: definition.numerators };
@@ -296,7 +296,7 @@ function calculateAggressiveMargin(
   teams: Record<number, Record<string, any[]>>,
   team: number,
 ): StatTeamValue {
-  const positives = sumComponents(definition.denominators || [], teams, team);
+  const positives = sumComponents(definition.denominators ?? [], teams, team);
   const negatives = sumComponents(definition.numerators, teams, team);
   const margin = positives - negatives;
 

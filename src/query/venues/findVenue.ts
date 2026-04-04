@@ -1,17 +1,14 @@
 import { getLinkedTournamentIds } from '@Query/tournaments/getLinkedTournamentIds';
-import { makeDeepCopy } from '@Tools/makeDeepCopy';
+import { requireParams } from '@Helpers/parameters/requireParams';
 import { addVenue } from '../../mutate/venues/addVenue';
+import { makeDeepCopy } from '@Tools/makeDeepCopy';
 
 // constants and types
+import { ErrorType, VENUE_NOT_FOUND } from '@Constants/errorConditionConstants';
+import { TOURNAMENT_RECORD, VENUE_ID } from '@Constants/attributeConstants';
 import { Tournament, Venue } from '@Types/tournamentTypes';
 import { TournamentRecords } from '@Types/factoryTypes';
 import { SUCCESS } from '@Constants/resultConstants';
-import {
-  ErrorType,
-  MISSING_TOURNAMENT_RECORD,
-  MISSING_VENUE_ID,
-  VENUE_NOT_FOUND,
-} from '@Constants/errorConditionConstants';
 
 type FindVenueArgs = {
   tournamentRecords?: TournamentRecords;
@@ -24,10 +21,10 @@ export function findVenue({ tournamentRecords, tournamentRecord, venueId }: Find
   venue?: Venue;
   error?: ErrorType;
 } {
-  if (!tournamentRecord) return { error: MISSING_TOURNAMENT_RECORD };
-  if (!venueId) return { error: MISSING_VENUE_ID };
+  const paramsCheck = requireParams({ tournamentRecord, venueId }, [TOURNAMENT_RECORD, VENUE_ID]);
+  if (paramsCheck.error) return paramsCheck;
 
-  const venues = tournamentRecord.venues ?? [];
+  const venues = tournamentRecord!.venues ?? [];
   const venue = venues.reduce((venue: any, venueRecord) => {
     return venueRecord.venueId === venueId ? venueRecord : venue;
   }, undefined);
@@ -38,7 +35,7 @@ export function findVenue({ tournamentRecords, tournamentRecord, venueId }: Find
         tournamentRecords,
       }).linkedTournamentIds ?? [];
 
-    const relevantIds = linkedTournamentIds[tournamentRecord.tournamentId];
+    const relevantIds = linkedTournamentIds[tournamentRecord!.tournamentId];
 
     // if there are linked tournaments search for court in all linked tournaments
     for (const tournamentId of relevantIds) {

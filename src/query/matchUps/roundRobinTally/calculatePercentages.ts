@@ -9,7 +9,7 @@ export function calculatePercentages({
   perPlayer,
   totalSets,
 }) {
-  const parsedGroupMatchUpFormat = (matchUpFormat && parse(matchUpFormat)) || {};
+  const parsedGroupMatchUpFormat = (matchUpFormat && parse(matchUpFormat)) ?? {};
   const bestOfGames = parsedGroupMatchUpFormat.bestOf;
   const bracketSetsToWin = (bestOfGames && Math.ceil(bestOfGames / 2)) || 1;
   const bracketGamesForSet = parsedGroupMatchUpFormat.setFormat?.setTo;

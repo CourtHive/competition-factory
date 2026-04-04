@@ -20,9 +20,9 @@ export function getSourceStructureIdsAndRelevantLinks({
     getStructureLinks({
       drawDefinition,
       structureId,
-    }) || {};
+    }) ?? {};
 
-  const sourceLinks = (links?.target || [])
+  const sourceLinks = (links?.target ?? [])
     .filter(({ linkType: structureLinkType }) => structureLinkType === linkType)
     // if a target roundNumber is provided, only consider structures with link target matching roundNumber
     .filter(({ target }) => !targetRoundNumber || targetRoundNumber === target.roundNumber);

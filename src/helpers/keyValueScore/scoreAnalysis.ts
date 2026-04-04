@@ -19,7 +19,7 @@ export function getScoreAnalysis({ matchUpFormat, scoreString, winningSide, valu
 
   const matchUpScoringFormat: any = parse(matchUpFormat);
   const isDecidingSet = setNumber === matchUpScoringFormat?.bestOf;
-  const setFormat = (isDecidingSet && matchUpScoringFormat?.finalSetFormat) || matchUpScoringFormat?.setFormat || {};
+  const setFormat = (isDecidingSet && matchUpScoringFormat?.finalSetFormat) || (matchUpScoringFormat?.setFormat ?? {});
   const isTimedSet = setFormat?.timed;
 
   const finalSet = isDecidingSet && sets[matchUpScoringFormat?.bestOf - 1];

@@ -54,7 +54,7 @@ export function setPositionAssignments({
       matchUpsMap,
     });
 
-    for (const assignment of positionAssignments || []) {
+    for (const assignment of positionAssignments ?? []) {
       const { drawPosition, participantId, bye, qualifier } = assignment;
 
       if (bye) {

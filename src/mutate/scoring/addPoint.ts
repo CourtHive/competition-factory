@@ -147,7 +147,7 @@ export function addPoint(matchUp: MatchUp, options: AddPointOptions, config?: Ad
 
   // Resolve point multiplier for score increment
   // If scoreValue is explicitly set on options, use it directly (parser override)
-  const multipliers = config?.pointMultipliers || [];
+  const multipliers = config?.pointMultipliers ?? [];
   const scoreIncrement = options.scoreValue ?? resolvePointValue(point, multipliers);
   if (scoreIncrement !== 1) {
     point.scoreValue = scoreIncrement;
@@ -202,8 +202,8 @@ function handleStandardSet(
 
   const side1Games = currentSet.side1Score || 0;
   const side2Games = currentSet.side2Score || 0;
-  const side1GameScores = currentSet.side1GameScores || [];
-  const side2GameScores = currentSet.side2GameScores || [];
+  const side1GameScores = currentSet.side1GameScores ?? [];
+  const side2GameScores = currentSet.side2GameScores ?? [];
 
   // Initialize game if needed
   if (side1GameScores.length === 0 && side2GameScores.length === 0) {
@@ -357,8 +357,8 @@ function handleTiebreakOnlySet(
   const isNoAD = activeSetFormat.tiebreakSet!.NoAD || false;
 
   // Initialize game scores if needed
-  const side1GameScores = currentSet.side1GameScores || [];
-  const side2GameScores = currentSet.side2GameScores || [];
+  const side1GameScores = currentSet.side1GameScores ?? [];
+  const side2GameScores = currentSet.side2GameScores ?? [];
   if (side1GameScores.length === 0 && side2GameScores.length === 0) {
     side1GameScores.push(0);
     side2GameScores.push(0);
@@ -422,8 +422,8 @@ function handleMatchTiebreak(
   const currentSetIndex = matchUp.score.sets.indexOf(currentSet);
 
   // Initialize game scores if needed
-  const side1GameScores = currentSet.side1GameScores || [];
-  const side2GameScores = currentSet.side2GameScores || [];
+  const side1GameScores = currentSet.side1GameScores ?? [];
+  const side2GameScores = currentSet.side2GameScores ?? [];
   if (side1GameScores.length === 0 && side2GameScores.length === 0) {
     side1GameScores.push(0);
     side2GameScores.push(0);
@@ -765,8 +765,8 @@ export function deriveServerBase(matchUp: MatchUp, formatStructure: FormatStruct
   const inTiebreak = !finalSetNoTiebreak && side1Games === tiebreakAt && side2Games === tiebreakAt;
 
   if (inTiebreak) {
-    const side1GameScores = currentSet?.side1GameScores || [];
-    const side2GameScores = currentSet?.side2GameScores || [];
+    const side1GameScores = currentSet?.side1GameScores ?? [];
+    const side2GameScores = currentSet?.side2GameScores ?? [];
     const tiebreakPoints = (side1GameScores.at(-1) || 0) + (side2GameScores.at(-1) || 0);
 
     const totalGames = totalPreviousGames + side1Games + side2Games;
@@ -780,8 +780,8 @@ export function deriveServerBase(matchUp: MatchUp, formatStructure: FormatStruct
 }
 
 function deriveTiebreakServer(matchUp: MatchUp, currentSet: SetScore | undefined): 0 | 1 {
-  const side1GameScores = currentSet?.side1GameScores || [];
-  const side2GameScores = currentSet?.side2GameScores || [];
+  const side1GameScores = currentSet?.side1GameScores ?? [];
+  const side2GameScores = currentSet?.side2GameScores ?? [];
   const pointsPlayed = (side1GameScores[0] || 0) + (side2GameScores[0] || 0);
 
   let totalPreviousGames = 0;

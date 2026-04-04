@@ -618,7 +618,7 @@ export function parseCSV(csvContent: string): MCPPoint[] {
   const lines = csvContent.trim().split('\n');
   if (lines.length < 2) return [];
 
-  const headers = lines[0]?.split(',') || [];
+  const headers = lines[0]?.split(',') ?? [];
   const points: MCPPoint[] = [];
 
   for (let i = 1; i < lines.length; i++) {

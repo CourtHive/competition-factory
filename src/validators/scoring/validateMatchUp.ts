@@ -81,7 +81,7 @@ export function validateMatchUp(options: ValidateMatchUpOptions): ValidationDeta
   });
 
   // Get points to replay
-  const points = matchUp?.history?.points || [];
+  const points = matchUp?.history?.points ?? [];
 
   if (points.length === 0) {
     warnings.push('No points found to validate');

@@ -5,7 +5,7 @@ export function getExitProfiles({ drawDefinition }) {
   if (typeof drawDefinition !== 'object') return { error: INVALID_DRAW_DEFINITION };
 
   const exitProfiles = {};
-  const { structures = [], links = [] } = drawDefinition || {};
+  const { structures = [], links = [] } = drawDefinition ?? {};
 
   const stageStructures = structures.reduce((stageStructures, structure) => {
     const { stage } = structure;

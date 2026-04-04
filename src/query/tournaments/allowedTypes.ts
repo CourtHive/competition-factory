@@ -7,7 +7,7 @@ export function getAllowedMatchUpFormats({ tournamentRecord, categoryName, categ
   if (!tournamentRecord) return { error: MISSING_TOURNAMENT_RECORD };
   const { appliedPolicies } = getAppliedPolicies({ tournamentRecord });
   const scoringPolicy = appliedPolicies?.[POLICY_TYPE_SCORING];
-  const matchUpFormats = scoringPolicy?.matchUpFormats || [];
+  const matchUpFormats = scoringPolicy?.matchUpFormats ?? [];
   return matchUpFormats.filter(
     ({ categoryNames, categoryTypes }) =>
       (!categoryName && !categoryTypes) ||
@@ -20,7 +20,7 @@ export function getAllowedDrawTypes({ tournamentRecord, categoryName, categoryTy
   if (!tournamentRecord) return { error: MISSING_TOURNAMENT_RECORD };
   const { appliedPolicies } = getAppliedPolicies({ tournamentRecord });
   const drawTypesPolicy = appliedPolicies?.[POLICY_TYPE_DRAWS];
-  const drawTypes = drawTypesPolicy?.allowedDrawTypes || [];
+  const drawTypes = drawTypesPolicy?.allowedDrawTypes ?? [];
   return drawTypes.filter(
     ({ categoryNames, categoryTypes }) =>
       (!categoryName && !categoryTypes) ||

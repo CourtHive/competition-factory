@@ -33,7 +33,7 @@ export function getEnabledStructures({
   const relevantLinks = drawDefinition.links?.filter((link) => link?.target?.structureId === structure?.structureId);
   const targetFeedProfiles = relevantLinks?.map(({ target }) => target.feedProfile) ?? [];
 
-  const { enabledStructures, disabledStructures } = actionsPolicy || {};
+  const { enabledStructures, disabledStructures } = actionsPolicy ?? {};
   const actionsDisabled = disabledStructures?.find((structurePolicy) => {
     const { stages, stageSequences, structureTypes, feedProfiles } = structurePolicy;
     return (
@@ -60,13 +60,13 @@ export function getPolicyActions({ enabledStructures, drawDefinition, structure 
 
   if (!enabledStructures?.length) return { policyActions: { enabledActions: [], disabledActions: [] } };
 
-  const { stage, stageSequence, structureType } = structure || {};
+  const { stage, stageSequence, structureType } = structure ?? {};
 
   const relevantLinks = drawDefinition.links?.filter((link) => link?.target?.structureId === structure?.structureId);
-  const targetFeedProfiles = relevantLinks?.map(({ target }) => target.feedProfile) || [];
+  const targetFeedProfiles = relevantLinks?.map(({ target }) => target.feedProfile) ?? [];
 
   const policyActions = enabledStructures.find((structurePolicy) => {
-    const { stages, stageSequences, structureTypes, feedProfiles } = structurePolicy || {};
+    const { stages, stageSequences, structureTypes, feedProfiles } = structurePolicy ?? {};
 
     const matchesStage = !stages?.length || (Array.isArray(stages) && stages.includes(stage));
     const matchesStageSequence =

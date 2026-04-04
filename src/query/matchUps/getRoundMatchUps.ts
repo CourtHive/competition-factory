@@ -123,7 +123,7 @@ export function getRoundMatchUps({ matchUps = [], interpolate }: GetRoundMatchUp
     .filter((f) => !Number.isNaN(f));
   roundNumbers.forEach((roundNumber) => {
     const currentRoundMatchUps = roundMatchUps[roundNumber].sort((a, b) => a.roundPosition - b.roundPosition);
-    const currentRoundDrawPositions = currentRoundMatchUps.flatMap((matchUp) => matchUp?.drawPositions || []);
+    const currentRoundDrawPositions = currentRoundMatchUps.flatMap((matchUp) => matchUp?.drawPositions ?? []);
 
     roundProfile[roundNumber].roundNumber = roundNumber; // convenience
 
@@ -152,11 +152,11 @@ export function getRoundMatchUps({ matchUps = [], interpolate }: GetRoundMatchUp
       // ensures that drawPositions are returned in top to bottom order
       const roundDrawPositions = currentRoundMatchUps.map((matchUp) => {
         const { roundPosition } = matchUp;
-        const drawPositions = [...(matchUp.drawPositions || []), undefined, undefined].slice(0, 2); // accounts for empty array, should always have length 2
+        const drawPositions = [...(matchUp.drawPositions ?? []), undefined, undefined].slice(0, 2); // accounts for empty array, should always have length 2
 
         if (!roundPosition) return drawPositions;
 
-        const filteredDrawPositions = drawPositions?.filter(Boolean) || [];
+        const filteredDrawPositions = drawPositions?.filter(Boolean) ?? [];
         if (!filteredDrawPositions?.length) return [undefined, undefined];
 
         // { roundNumber: 2 } is the first possible feed round and the last time that a numeric sort is guaranteed to work

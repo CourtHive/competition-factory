@@ -78,7 +78,7 @@ export function resetTieFormat(params: ResetTieFormatArgs): ResultType & {
     const { matchUpCount, collectionId } = collectionDefinition;
     collectionIds.push(collectionId);
 
-    const existingCollectionMatchUps = (matchUp.tieMatchUps || []).filter(
+    const existingCollectionMatchUps = (matchUp.tieMatchUps ?? []).filter(
       (matchUp) => matchUp.collectionId === collectionId,
     );
 
@@ -105,7 +105,7 @@ export function resetTieFormat(params: ResetTieFormatArgs): ResultType & {
     }
   }
 
-  for (const tieMatchUp of matchUp?.tieMatchUps || []) {
+  for (const tieMatchUp of matchUp?.tieMatchUps ?? []) {
     if (tieMatchUp.collectionId && !collectionIds.includes(tieMatchUp.collectionId))
       deletedMatchUpIds.push(tieMatchUp.matchUpId);
   }

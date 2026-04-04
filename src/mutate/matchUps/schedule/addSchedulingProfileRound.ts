@@ -22,7 +22,7 @@ export function addSchedulingProfileRound({ tournamentRecords, scheduleDate, ven
     discover: true,
   });
 
-  const schedulingProfile = extension?.value || [];
+  const schedulingProfile = extension?.value ?? [];
   let dateProfile = schedulingProfile.find((dateProfile) => sameDay(scheduleDate, dateProfile.scheduleDate));
 
   if (!dateProfile) {

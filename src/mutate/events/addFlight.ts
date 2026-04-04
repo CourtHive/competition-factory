@@ -45,7 +45,7 @@ export function addFlight({
   const flightNumbers =
     flightProfile?.flights
       ?.map(({ flightNumber }) => !Number.isNaN(Number(flightNumber)) && ensureInt(flightNumber))
-      ?.filter(Boolean) || [];
+      ?.filter(Boolean) ?? [];
 
   const flightNumber = Math.max(0, ...flightNumbers) + 1;
 
@@ -60,10 +60,10 @@ export function addFlight({
   if (stage) flight.stage = stage;
   if (qualifyingPositions) flight.qualifyingPositions = qualifyingPositions;
 
-  const flightExists = (flightProfile?.flights || []).find(({ drawId }) => drawId === flight.drawId);
+  const flightExists = (flightProfile?.flights ?? []).find(({ drawId }) => drawId === flight.drawId);
   if (flightExists) return decorateResult({ result: { error: EXISTING_FLIGHT }, stack });
 
-  const flights = (flightProfile?.flights || []).concat(flight);
+  const flights = (flightProfile?.flights ?? []).concat(flight);
 
   const extension = {
     name: FLIGHT_PROFILE,

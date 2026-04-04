@@ -95,7 +95,7 @@ it('findVenue returns error when tournamentRecord is missing', () => {
 
 it('findVenue returns error when venueId is missing', () => {
   const tournamentRecord = { tournamentId: 't1', venues: [] } as any;
-  const result = findVenue({ tournamentRecord, venueId: '' });
+  const result = findVenue({ tournamentRecord, venueId: undefined as any });
   expect(result.error).toEqual(MISSING_VENUE_ID);
 });
 

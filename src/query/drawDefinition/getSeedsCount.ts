@@ -29,8 +29,8 @@ type GetSeedsCountArgs = {
 };
 
 export function getSeedsCount(params: GetSeedsCountArgs): ResultType & { seedsCount?: number } {
-  let { drawSizeProgression = false, policyDefinitions, drawSize } = params || {};
-  const { requireParticipantCount = true, tournamentRecord, drawDefinition, event } = params || {};
+  let { drawSizeProgression = false, policyDefinitions, drawSize } = params ?? {};
+  const { requireParticipantCount = true, tournamentRecord, drawDefinition, event } = params ?? {};
   const stack = 'getSeedsCount';
 
   const participantsCount = params?.participantsCount ?? params?.participantCount;

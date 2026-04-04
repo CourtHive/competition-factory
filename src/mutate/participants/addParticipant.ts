@@ -37,8 +37,8 @@ type AddParticipantType = {
 
 function validateBaseParticipant(participant, tournamentRecord) {
   if (!participant) return { error: MISSING_PARTICIPANT };
-  if (!participant.participantId) participant.participantId = UUID();
-  if (!tournamentRecord.participants) tournamentRecord.participants = [];
+  participant.participantId ??= UUID();
+  tournamentRecord.participants ??= [];
 
   const { participantId } = participant;
   const idExists = tournamentRecord.participants.reduce((p, c) => c.participantId === participantId || p, false);
@@ -143,7 +143,7 @@ function validatePairParticipant({
 function validateTeamGroupParticipant({ participant, tournamentIndividualParticipantIds }) {
   const stack = 'addParticipant';
 
-  if (!participant.individualParticipantIds) participant.individualParticipantIds = [];
+  participant.individualParticipantIds ??= [];
   if (participant.individualParticipantIds?.length) {
     for (const individualParticipantId of participant.individualParticipantIds) {
       if (typeof individualParticipantId !== 'string') {
@@ -185,7 +185,7 @@ export function addParticipant(params: AddParticipantType) {
   if (baseError) return decorateResult({ result: baseError, stack });
 
   const { participantType } = participant;
-  const tournamentParticipants = tournamentRecord.participants || [];
+  const tournamentParticipants = tournamentRecord.participants ?? [];
   const tournamentIndividualParticipantIds = tournamentParticipants
     .filter((tp) => tp.participantType === INDIVIDUAL)
     .map((tp) => tp.participantId);

@@ -57,12 +57,12 @@ export function getScoreboard(matchUp: MatchUp, options?: GetScoreboardOptions):
   // Get current game score if match in progress
   const currentSet = sets.at(-1);
   if (matchUp.matchUpStatus === 'IN_PROGRESS' && currentSet && !currentSet.winningSide) {
-    const gameScores = currentSet.side1GameScores || [];
+    const gameScores = currentSet.side1GameScores ?? [];
     const gameIndex = gameScores.length - 1;
 
     if (gameIndex >= 0 && gameScores.length > 0) {
       let p1 = gameScores[gameIndex] || 0;
-      let p2 = (currentSet.side2GameScores || [])[gameIndex] || 0;
+      let p2 = (currentSet.side2GameScores ?? [])[gameIndex] || 0;
 
       // Don't show game score if it's 0-0 at start of new game
       if (p1 === 0 && p2 === 0) {

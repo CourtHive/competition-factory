@@ -1,6 +1,6 @@
 export function checkDependenciesScheduled({ matchUpScheduleTimes, matchUpDependencies, allDateMatchUpIds, matchUp }) {
   // only those dependencies that are part of the date scheduling profile are important to consider
-  const matchUpIdDependencies = (matchUpDependencies?.[matchUp.matchUpId]?.matchUpIds || []).filter((matchUpId) =>
+  const matchUpIdDependencies = (matchUpDependencies?.[matchUp.matchUpId]?.matchUpIds ?? []).filter((matchUpId) =>
     allDateMatchUpIds.includes(matchUpId),
   );
 

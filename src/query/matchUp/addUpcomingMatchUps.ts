@@ -97,7 +97,7 @@ function addEliminationUpcomingInfo({
         matchUp: loserMatchUp,
         drawDefinition,
         inContextDrawMatchUps,
-      }) || {};
+      }) ?? {};
     loserTo = (nextMatchUp && getUpcomingInfo({ upcomingMatchUp: nextMatchUp })) || loserTo;
   }
 
@@ -158,7 +158,7 @@ function addPotentialParticipants({
       winnerMatchUp = inContextDrawMatchUps.find(({ matchUpId }) => matchUpId === winnerMatchUp.matchUpId);
     }
 
-    if (!winnerMatchUp.potentialParticipants) winnerMatchUp.potentialParticipants = [];
+    winnerMatchUp.potentialParticipants ??= [];
     winnerMatchUp.potentialParticipants.push(winnerPotentials);
   }
   if (loserPotentials?.length && loserMatchUp) {
@@ -181,12 +181,12 @@ function getMatchUpParticipants(matchUp) {
         ({ participant, participantId, qualifier }) =>
           participant || (participantId && { participantId }) || (qualifier && { qualifier }),
       )
-      .filter(Boolean) || []
+      .filter(Boolean) ?? []
   );
 }
 
 function getNextToBePlayedMatchUp({ matchUp, drawDefinition, inContextDrawMatchUps }) {
-  const { matchUpId, matchUpStatus, structureId } = matchUp || {};
+  const { matchUpId, matchUpStatus, structureId } = matchUp ?? {};
   if (!matchUp || !structureId || matchUp?.matchUpStatus === TO_BE_PLAYED) return { matchUp };
   if (matchUpStatus === BYE) {
     let winnerMatchUp;
@@ -199,7 +199,7 @@ function getNextToBePlayedMatchUp({ matchUp, drawDefinition, inContextDrawMatchU
         drawDefinition,
         matchUpId,
       });
-      ({ winnerMatchUp } = targetData?.targetMatchUps || {});
+      ({ winnerMatchUp } = targetData?.targetMatchUps ?? {});
     }
 
     return getNextToBePlayedMatchUp({

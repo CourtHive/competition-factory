@@ -9,7 +9,7 @@ export function getStageParticipantsCount({ drawProfiles, category, gender }) {
       uniqueParticipants,
       stage = MAIN,
       drawSize = 0,
-    } = drawProfile || {};
+    } = drawProfile ?? {};
 
     if (!Object.keys(stageParticipantsCount).includes(stage)) stageParticipantsCount[stage] = 0;
 

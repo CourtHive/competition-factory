@@ -17,7 +17,7 @@ export function getCompetitionParticipants(params): ResultType & {
   derivedDrawInfo?: any;
   success?: boolean;
 } {
-  const { tournamentRecords } = params || {};
+  const { tournamentRecords } = params ?? {};
   if (typeof tournamentRecords !== 'object' || !Object.keys(tournamentRecords).length) {
     return { error: MISSING_TOURNAMENT_RECORDS };
   }

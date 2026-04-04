@@ -29,7 +29,7 @@ export function generateSeedingScaleItems({
 
   const seededEntries = Object.assign(
     {},
-    ...(scaledEntries || []).slice(0, seedsCount).map(({ participantId }, index) => ({ [participantId]: index + 1 })),
+    ...(scaledEntries ?? []).slice(0, seedsCount).map(({ participantId }, index) => ({ [participantId]: index + 1 })),
   );
 
   scaleName = scaleName || scaleAttributes.scaleName;

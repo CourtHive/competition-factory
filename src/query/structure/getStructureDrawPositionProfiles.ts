@@ -27,7 +27,7 @@ export function getStructureDrawPositionProfiles(params: GetStructureDrawPositio
   let structure = params.structure;
 
   const { containedStructures } = getContainedStructures({ drawDefinition });
-  const containedStructureIds = structureId ? containedStructures[structureId] || [] : [];
+  const containedStructureIds = structureId ? containedStructures[structureId] ?? [] : [];
   const matchUpFilters = { isCollectionMatchUp: false };
 
   if (!structure) {
@@ -84,7 +84,7 @@ export function getStructureDrawPositionProfiles(params: GetStructureDrawPositio
       activeMatchUps.push(matchUp);
       activeDependentMatchUpIdsCollection.push(
         matchUp.matchUpId,
-        ...(matchUpDependencies?.[matchUp?.matchUpId]?.matchUpIds || []),
+        ...(matchUpDependencies?.[matchUp?.matchUpId]?.matchUpIds ?? []),
       );
     }
   }
@@ -117,7 +117,7 @@ export function getStructureDrawPositionProfiles(params: GetStructureDrawPositio
     .map((assignment) => assignment.drawPosition);
 
   const inactiveDrawPositions =
-    drawPositions?.filter((drawPosition) => !activeDrawPositions.includes(drawPosition)) || [];
+    drawPositions?.filter((drawPosition) => !activeDrawPositions.includes(drawPosition)) ?? [];
 
   return {
     allDrawPositions: drawPositions,

@@ -83,7 +83,7 @@ export function attachPolicies(params: AttachPoliciesArgs): ResultType & { appli
 
 function policyAttachement(params: any, element: any): ResultType & { applied?: string[] } {
   const appliedPolicies = getAppliedPolicies(params).appliedPolicies ?? {};
-  if (!element.extensions) element.extensions = [];
+  element.extensions ??= [];
   const applied: string[] = [];
 
   const policyTypes = Object.keys(params.policyDefinitions);

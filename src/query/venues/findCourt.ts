@@ -1,17 +1,14 @@
 import { getLinkedTournamentIds } from '@Query/tournaments/getLinkedTournamentIds';
+import { requireParams } from '@Helpers/parameters/requireParams';
 import { decorateResult } from '@Functions/global/decorateResult';
-import { makeDeepCopy } from '@Tools/makeDeepCopy';
 import { addVenue } from '../../mutate/venues/addVenue';
+import { makeDeepCopy } from '@Tools/makeDeepCopy';
 
 // constants and types
+import { COURT_NOT_FOUND, ErrorType } from '@Constants/errorConditionConstants';
+import { TOURNAMENT_RECORD, COURT_ID } from '@Constants/attributeConstants';
 import { Court, Tournament, Venue } from '@Types/tournamentTypes';
 import { SUCCESS } from '@Constants/resultConstants';
-import {
-  COURT_NOT_FOUND,
-  ErrorType,
-  MISSING_COURT_ID,
-  MISSING_TOURNAMENT_RECORD,
-} from '@Constants/errorConditionConstants';
 
 type FindCourtArgs = {
   tournamentRecords?: { [key: string]: Tournament };
@@ -24,14 +21,14 @@ export function findCourt({ tournamentRecords, tournamentRecord, courtId }: Find
   court?: Court;
   venue?: Venue;
 } {
-  if (!tournamentRecord) return { error: MISSING_TOURNAMENT_RECORD };
-  if (!courtId) return { error: MISSING_COURT_ID };
+  const paramsCheck = requireParams({ tournamentRecord, courtId }, [TOURNAMENT_RECORD, COURT_ID]);
+  if (paramsCheck.error) return paramsCheck;
 
   const stack = 'findCourt';
 
   let court, venue;
 
-  (tournamentRecord.venues ?? []).forEach((venueRecord) => {
+  (tournamentRecord!.venues ?? []).forEach((venueRecord) => {
     (venueRecord.courts ?? []).forEach((courtRecord) => {
       if (courtRecord.courtId === courtId) {
         court = courtRecord;
@@ -49,7 +46,7 @@ export function findCourt({ tournamentRecords, tournamentRecord, courtId }: Find
         tournamentRecords,
       }).linkedTournamentIds ?? [];
 
-    const relevantIds = linkedTournamentIds[tournamentRecord.tournamentId];
+    const relevantIds = linkedTournamentIds[tournamentRecord!.tournamentId];
 
     // if there are linked tournaments search for court in all linked tournaments
     for (const tournamentId of relevantIds) {

@@ -41,7 +41,7 @@ export function aggregateTieFormats({
         delete obj.tieFormat;
       } else {
         const newTieFormat = makeDeepCopy(obj.tieFormat, undefined, true);
-        if (!newTieFormat.tieFormatId) newTieFormat.tieFormatId = UUID();
+        newTieFormat.tieFormatId ??= UUID();
 
         obj.tieFormatId = newTieFormat.tieFormatId;
         delete obj.tieFormat;
@@ -74,7 +74,7 @@ export function aggregateTieFormats({
     };
     const addNewTieFormat = (inContextMatchUp) => {
       const newTieFormat = makeDeepCopy(inContextMatchUp.tieFormat, undefined, true);
-      if (!newTieFormat.tieFormatId) newTieFormat.tieFormatId = UUID();
+      newTieFormat.tieFormatId ??= UUID();
       tieFormats.push(newTieFormat);
       addedCount += 1;
 

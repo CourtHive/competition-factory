@@ -36,7 +36,7 @@ export function removeScaleValues({
     }
   }
 
-  const stageEntries = (entries || []).filter(
+  const stageEntries = (entries ?? []).filter(
     (entry) =>
       (!stage || !entry.entryStage || entry.entryStage === stage) &&
       (!entryStatuses || entryStatuses.includes(entry.entryStatus)),

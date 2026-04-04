@@ -147,7 +147,7 @@ export function getTournamentVenuesAndCourts({
     .filter(Boolean);
 
   const courts = venues.reduce((courts, venue) => {
-    const additionalCourts = (venue?.courts || [])
+    const additionalCourts = (venue?.courts ?? [])
       .filter((court) => {
         if (!ignoreDisabled && !dates?.length) return court;
         const { extension } = findExtension({

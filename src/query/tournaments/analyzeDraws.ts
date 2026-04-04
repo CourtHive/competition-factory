@@ -38,7 +38,7 @@ export function analyzeDraws({ tournamentRecord }): {
     ?.flatMap((event: any) => {
       const eventId = event.eventId;
       eventsMap[eventId] = event;
-      return (event?.drawDefinitions || []).map((drawDefinition: any) => ({
+      return (event?.drawDefinitions ?? []).map((drawDefinition: any) => ({
         drawDefinition,
         eventId,
       }));
@@ -52,7 +52,7 @@ export function analyzeDraws({ tournamentRecord }): {
     const { allStructuresLinked } = getStructureGroups({ drawDefinition });
 
     const event = eventsMap[eventId];
-    const structures = drawDefinition?.structures || [];
+    const structures = drawDefinition?.structures ?? [];
     const structuresData = structures.map((structure) => {
       const { stage, stageSequence, structureId } = structure;
       const orderNumber = stageOrder[stage];

@@ -4,7 +4,7 @@ import { MISSING_TOURNAMENT_RECORD } from '@Constants/errorConditionConstants';
 
 export function getTournamentPersons({ tournamentRecord, participantFilters }) {
   if (!tournamentRecord) return { error: MISSING_TOURNAMENT_RECORD };
-  let tournamentParticipants = tournamentRecord.participants || [];
+  let tournamentParticipants = tournamentRecord.participants ?? [];
 
   if (participantFilters)
     tournamentParticipants = filterParticipants({

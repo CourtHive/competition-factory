@@ -96,7 +96,7 @@ export function getTournamentInfo(params?: {
   if (imageUrl) tournamentInfo.imageUrl = imageUrl;
 
   const publishState = getPublishState({ tournamentRecord })?.publishState;
-  const publishedEventIds = publishState?.tournament?.status?.publishedEventIds || [];
+  const publishedEventIds = publishState?.tournament?.status?.publishedEventIds ?? [];
   const eventInfo: any[] = [];
 
   for (const event of tournamentRecord.events ?? []) {

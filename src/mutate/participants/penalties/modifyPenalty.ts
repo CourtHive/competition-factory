@@ -1,18 +1,18 @@
+import { requireParams } from '@Helpers/parameters/requireParams';
 import { addNotice } from '@Global/state/globalState';
 
 import penaltyTemplate from '@Assemblies/generators/templates/penaltyTemplate';
+import { TOURNAMENT_RECORD, PENALTY_ID } from '@Constants/attributeConstants';
+import { Participant, Penalty, Tournament } from '@Types/tournamentTypes';
 import { MODIFY_PARTICIPANTS } from '@Constants/topicConstants';
 import { SUCCESS } from '@Constants/resultConstants';
 import {
   PENALTY_NOT_FOUND,
-  MISSING_PENALTY_ID,
-  MISSING_TOURNAMENT_RECORD,
   NO_VALID_ATTRIBUTES,
   INVALID_VALUES,
   ErrorType,
   MISSING_TOURNAMENT_RECORDS,
 } from '@Constants/errorConditionConstants';
-import { Participant, Penalty, Tournament } from '@Types/tournamentTypes';
 
 export function modifyPenalty(params) {
   const { tournamentRecords } = params;
@@ -41,9 +41,9 @@ function penaltyModify({ tournamentRecord, modifications, penaltyId }: ModifyPen
   success?: boolean;
   penalty?: Penalty;
 } {
-  if (!tournamentRecord) return { error: MISSING_TOURNAMENT_RECORD };
+  const paramsCheck = requireParams({ tournamentRecord, penaltyId }, [TOURNAMENT_RECORD, PENALTY_ID]);
+  if (paramsCheck.error) return paramsCheck;
   if (!modifications) return { error: INVALID_VALUES, modifications };
-  if (!penaltyId) return { error: MISSING_PENALTY_ID };
 
   const participants = tournamentRecord?.participants ?? [];
 
@@ -66,7 +66,7 @@ function penaltyModify({ tournamentRecord, modifications, penaltyId }: ModifyPen
           Object.assign(penalty, { [attribute]: modifications[attribute] }),
         );
 
-        if (!updatedPenalty) updatedPenalty = penalty;
+        updatedPenalty ??= penalty;
       }
 
       return penalty;

@@ -40,7 +40,7 @@ export function applyTournamentRankingPoints({
 
   // Step 2: Build personId → participantId map
   const personToParticipantMap: Record<string, string> = {};
-  for (const participant of tournamentRecord.participants || []) {
+  for (const participant of tournamentRecord.participants ?? []) {
     if (participant.person?.personId) {
       personToParticipantMap[participant.person.personId] = participant.participantId;
     }

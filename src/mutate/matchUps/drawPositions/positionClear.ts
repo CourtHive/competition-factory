@@ -50,7 +50,7 @@ export function clearDrawPosition(params: ClearDrawPositionArgs): ResultType & {
     structureAssignedDrawPositions({
       drawDefinition,
       structure,
-    }).positionAssignments || [];
+    }).positionAssignments ?? [];
 
   const existingAssignment = positionAssignments.find(
     (assignment) =>
@@ -131,7 +131,7 @@ export function drawPositionRemovals({
     structureAssignedDrawPositions({
       drawDefinition,
       structure,
-    }).positionAssignments || [];
+    }).positionAssignments ?? [];
 
   const drawPositionCleared = positionAssignments.some((assignment) => {
     if (assignment.drawPosition === drawPosition) {
@@ -220,7 +220,7 @@ function removeSubsequentRoundsParticipant({
   if (structure.structureType === CONTAINER) return;
 
   matchUpsMap = matchUpsMap || getMatchUpsMap({ drawDefinition });
-  const mappedMatchUps = matchUpsMap?.mappedMatchUps || {};
+  const mappedMatchUps = matchUpsMap?.mappedMatchUps ?? {};
   const matchUps = mappedMatchUps[structureId].matchUps;
 
   const { initialRoundNumber } = getInitialRoundNumber({
@@ -570,7 +570,7 @@ function handleLoserMatchUpRemoval({
   });
   if (result.error) return decorateResult({ result, stack });
 
-  const mappedMatchUps = matchUpsMap?.mappedMatchUps || {};
+  const mappedMatchUps = matchUpsMap?.mappedMatchUps ?? {};
   const loserStructureMatchUps = mappedMatchUps[loserMatchUp.structureId].matchUps;
 
   const { initialRoundNumber } = getInitialRoundNumber({

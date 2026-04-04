@@ -40,9 +40,9 @@ export function getParticipantSchedules({ participantFilters = {}, tournamentRec
       sides
         ?.map((side: any) => {
           if (side.participant) {
-            return [side.participant].concat(...(side.participant.individualParticipants || []));
+            return [side.participant].concat(...(side.participant.individualParticipants ?? []));
           } else if (sourceMatchUpIds[matchUp.matchUpId] && !relevantSourceMatchUps) {
-            relevantSourceMatchUps = (sourceMatchUpIds[matchUp.matchUpId] || [])
+            relevantSourceMatchUps = (sourceMatchUpIds[matchUp.matchUpId] ?? [])
               .map((matchUpId) => matchUpsMap[matchUpId])
               .filter(({ winningSide, bye }) => !winningSide && !bye);
           }
@@ -68,9 +68,9 @@ export function getParticipantSchedules({ participantFilters = {}, tournamentRec
       relevantSourceMatchUps
         ?.map(({ sides }) => sides)
         .flat()
-        .map(({ participant }) => participant && [participant].concat(...(participant.individualParticipants || [])))
+        .map(({ participant }) => participant && [participant].concat(...(participant.individualParticipants ?? [])))
         .filter(Boolean)
-        .flat() || [];
+        .flat() ?? [];
 
     for (const participant of potentialParticipants) {
       const { participantId } = participant;

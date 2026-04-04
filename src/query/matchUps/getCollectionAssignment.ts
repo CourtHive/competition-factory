@@ -90,7 +90,7 @@ export function getCollectionAssignment({
 
           return getAssignment({ attribute: sideNumber, lineUp, teamParticipant });
         })
-        .filter(Boolean) || {};
+        .filter(Boolean) ?? {};
     return { sideNumberCollectionAssignment: Object.assign({}, ...sideNumberCollectionAssignment) };
   }
 
@@ -116,7 +116,7 @@ export function getCollectionAssignment({
           })?.lineUp;
         return getAssignment({ attribute: drawPosition, lineUp, teamParticipant });
       })
-      .filter(Boolean) || {};
+      .filter(Boolean) ?? {};
 
   return { drawPositionCollectionAssignment: Object.assign({}, ...drawPositionCollectionAssignment) };
 }

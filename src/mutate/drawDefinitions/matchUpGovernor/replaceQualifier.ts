@@ -44,7 +44,7 @@ export function replaceQualifier(params) {
         const positionAssignments = getPositionAssignments({
           structure,
         }).positionAssignments;
-        for (const positionAssignment of positionAssignments || []) {
+        for (const positionAssignment of positionAssignments ?? []) {
           if (positionAssignment.participantId === previousWinningParticipantId) {
             const newWinningParticipantId = inContextMatchUp.sides.find(
               ({ sideNumber }) => sideNumber === winningSide,
@@ -57,7 +57,7 @@ export function replaceQualifier(params) {
             } else if (structure?.structures) {
               const assignmentMap = Object.assign(
                 {},
-                ...(positionAssignments || []).map((assignment) => ({
+                ...(positionAssignments ?? []).map((assignment) => ({
                   [assignment.drawPosition]: assignment.participantId,
                 })),
               );

@@ -95,7 +95,7 @@ export function addCourtGridBooking(params: AddCourtGridBookingArgs): ResultType
 
   if (!courtDate) {
     // Create new dateAvailability entry for this date
-    if (!court.dateAvailability) court.dateAvailability = [];
+    court.dateAvailability ??= [];
     const newAvailability = {
       date: scheduledDate,
       bookings: [],
@@ -134,7 +134,7 @@ export function addCourtGridBooking(params: AddCourtGridBookingArgs): ResultType
     createdAt: new Date().toISOString(),
   };
 
-  if (!targetCourtDate.bookings) targetCourtDate.bookings = [];
+  targetCourtDate.bookings ??= [];
   targetCourtDate.bookings.push(booking);
 
   if (!disableNotice && venue) {

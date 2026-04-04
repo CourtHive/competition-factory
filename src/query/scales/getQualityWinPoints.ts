@@ -93,7 +93,7 @@ function resolveRanking({
   rankingSnapshot: string;
   tournamentStartDate?: string;
 }): number | undefined {
-  const timeItems = participant.timeItems || [];
+  const timeItems = participant.timeItems ?? [];
 
   // filter to ranking timeItems for the given scale name
   // timeItem.itemType format: "SCALE.RANKING.{eventType}.{scaleName}"

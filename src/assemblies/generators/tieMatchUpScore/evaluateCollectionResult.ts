@@ -216,7 +216,7 @@ function determineCollectionWinningSide({
 }
 
 function getCollectionPositionValue({ collectionDefinition, collectionPosition }) {
-  const collectionValueProfiles = collectionDefinition.collectionValueProfiles || [];
+  const collectionValueProfiles = collectionDefinition.collectionValueProfiles ?? [];
   const profile = collectionValueProfiles?.find((profile) => profile.collectionPosition === collectionPosition);
   return profile?.matchUpValue;
 }

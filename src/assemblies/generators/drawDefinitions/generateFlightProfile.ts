@@ -102,7 +102,7 @@ export function generateFlightProfile(params: GenerateFlightProfileArgs): {
   }
 
   function getDrawEntries(entriesChunk) {
-    return (entriesChunk || [])
+    return (entriesChunk ?? [])
       .map(({ participantId, scaleValue }) => {
         const entry = eventEntries.find((entry: Entry) => entry.participantId === participantId);
         if (entry?.scaleValue && scaleValue) entry.scaleValue = scaleValue;

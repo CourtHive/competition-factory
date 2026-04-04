@@ -364,7 +364,7 @@ function filterTargetMatchUps({
   tieFormat,
   matchUps,
 }): MatchUp[] {
-  return (matchUps || []).filter((matchUp) => {
+  return (matchUps ?? []).filter((matchUp) => {
     const collectionMatchUps = matchUp.tieMatchUps?.filter((tieMatchUp) => tieMatchUp.collectionId === collectionId);
     const collectionScore = collectionMatchUps?.some(checkScoreHasValue);
 

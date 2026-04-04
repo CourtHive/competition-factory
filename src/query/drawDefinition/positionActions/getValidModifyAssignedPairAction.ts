@@ -16,7 +16,7 @@ export function getValidModifyAssignedPairAction({
   const availableIndividualParticipantIds =
     event?.entries
       ?.filter(({ entryStatus }) => [UNGROUPED, UNPAIRED].includes(entryStatus))
-      .map(({ participantId }) => participantId) || [];
+      .map(({ participantId }) => participantId) ?? [];
 
   if (availableIndividualParticipantIds.length) {
     const existingIndividualParticipantIds = participant.individualParticipantIds;

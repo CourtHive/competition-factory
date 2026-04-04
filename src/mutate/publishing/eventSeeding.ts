@@ -1,10 +1,11 @@
-import { getEventPublishStatus } from '@Query/event/getEventPublishStatus';
 import { modifyEventPublishStatus } from '../events/modifyEventPublishStatus';
+import { getEventPublishStatus } from '@Query/event/getEventPublishStatus';
+import { requireParams } from '@Helpers/parameters/requireParams';
 import { definedAttributes } from '@Tools/definedAttributes';
 import { addNotice } from '@Global/state/globalState';
 
-import { MISSING_EVENT, MISSING_TOURNAMENT_RECORD } from '@Constants/errorConditionConstants';
 import { PUBLISH_EVENT_SEEDING, UNPUBLISH_EVENT_SEEDING } from '@Constants/topicConstants';
+import { TOURNAMENT_RECORD, EVENT } from '@Constants/attributeConstants';
 import { PUBLIC } from '@Constants/timeItemConstants';
 import { SUCCESS } from '@Constants/resultConstants';
 
@@ -17,8 +18,8 @@ export function publishEventSeeding({
   drawIds = [],
   event,
 }) {
-  if (!tournamentRecord) return { error: MISSING_TOURNAMENT_RECORD };
-  if (!event) return { error: MISSING_EVENT };
+  const paramsCheck = requireParams({ tournamentRecord, event }, [TOURNAMENT_RECORD, EVENT]);
+  if (paramsCheck.error) return paramsCheck;
 
   const eventPubStatus = getEventPublishStatus({ event, status });
 
@@ -67,8 +68,8 @@ export function unPublishEventSeeding({
   stages,
   event,
 }) {
-  if (!tournamentRecord) return { error: MISSING_TOURNAMENT_RECORD };
-  if (!event) return { error: MISSING_EVENT };
+  const paramsCheck = requireParams({ tournamentRecord, event }, [TOURNAMENT_RECORD, EVENT]);
+  if (paramsCheck.error) return paramsCheck;
 
   const eventPubStatus = getEventPublishStatus({ event });
 

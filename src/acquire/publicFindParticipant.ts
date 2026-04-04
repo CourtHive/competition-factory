@@ -37,7 +37,7 @@ export function publicFindParticipant(params: PublicFindParticipantArgs): {
   for (const tournamentRecord of Object.values(tournamentRecords)) {
     tournamentId = tournamentRecord.tournamentId;
 
-    const tournamentParticipants = tournamentRecord.participants || [];
+    const tournamentParticipants = tournamentRecord.participants ?? [];
     participant = findParticipant({
       tournamentParticipants,
       internalUse: true,

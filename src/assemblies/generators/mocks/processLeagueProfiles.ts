@@ -111,7 +111,7 @@ export function processLeagueProfiles(params): any {
 
     const eventType: EventTypeUnion = TEAM;
     const event = { eventName, entries, eventType, tieFormat, category, eventId, gender };
-    if (!tournamentRecord.events) tournamentRecord.events = [];
+    tournamentRecord.events ??= [];
     tournamentRecord.events.push(event);
 
     if (entries.length) {

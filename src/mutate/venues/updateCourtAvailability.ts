@@ -13,7 +13,7 @@ export function updateCourtAvailability({ tournamentRecord }) {
   const tournamentDates = generateDateRange(startDate, endDate);
 
   const courts: Court[] = [];
-  for (const venue of tournamentRecord.venues || []) {
+  for (const venue of tournamentRecord.venues ?? []) {
     if (venue?.courts?.length) courts.push(...venue.courts);
   }
 

@@ -100,7 +100,7 @@ export function getScheduledRoundsDetails(params: GetScheduledRoundsDetailsArgs)
       : [];
 
     // filter by roundSegment
-    const { segmentNumber, segmentsCount } = round.roundSegment || {};
+    const { segmentNumber, segmentsCount } = round.roundSegment ?? {};
 
     if (
       isConvertableInteger(segmentNumber) &&

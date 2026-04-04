@@ -1,16 +1,16 @@
-import { addEventExtension } from '@Mutate/extensions/addRemoveExtensions';
 import { deleteDrawDefinitions } from '@Mutate/events/deleteDrawDefinitions';
-import { refreshEventDrawOrder } from './refreshEventDrawOrder';
+import { addEventExtension } from '@Mutate/extensions/addRemoveExtensions';
+import { requireParams } from '@Helpers/parameters/requireParams';
 import { getFlightProfile } from '@Query/event/getFlightProfile';
+import { refreshEventDrawOrder } from './refreshEventDrawOrder';
 
 // constants
-import { MISSING_DRAW_ID, MISSING_EVENT, MISSING_TOURNAMENT_RECORD } from '@Constants/errorConditionConstants';
+import { TOURNAMENT_RECORD, DRAW_ID, EVENT } from '@Constants/attributeConstants';
 import { FLIGHT_PROFILE } from '@Constants/extensionConstants';
 
 export function deleteFlightAndFlightDraw({ autoPublish = true, tournamentRecord, auditData, drawId, event, force }) {
-  if (!tournamentRecord) return { error: MISSING_TOURNAMENT_RECORD };
-  if (!drawId) return { error: MISSING_DRAW_ID };
-  if (!event) return { error: MISSING_EVENT };
+  const paramsCheck = requireParams({ tournamentRecord, drawId, event }, [TOURNAMENT_RECORD, DRAW_ID, EVENT]);
+  if (paramsCheck.error) return paramsCheck;
 
   const { flightProfile } = getFlightProfile({ event });
 

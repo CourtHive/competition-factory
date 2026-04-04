@@ -46,7 +46,7 @@ export function applyLineUps(params: ApplyLineUps) {
   );
   if (paramsCheck.error) return paramsCheck;
 
-  const tournamentParticipants = tournamentRecord.participants || [];
+  const tournamentParticipants = tournamentRecord.participants ?? [];
   let result = findDrawMatchUp({
     tournamentParticipants,
     inContext: true,

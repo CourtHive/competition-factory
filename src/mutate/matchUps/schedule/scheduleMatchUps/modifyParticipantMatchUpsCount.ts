@@ -15,7 +15,7 @@ export function modifyParticipantMatchUpsCount({
   // individualParticipantIds represent those participants already present
   const { individualParticipantIds } = getIndividualParticipantIds(matchUp);
   // potentialParticipantIds are those who could progress to this matchUp
-  const potentialParticipantIds = matchUpPotentialParticipantIds[matchUp.matchUpId] || [];
+  const potentialParticipantIds = matchUpPotentialParticipantIds[matchUp.matchUpId] ?? [];
 
   // filteredPotentials exclude potentials if any of the participantIds
   // are present in individualParticipantIds which ensures that source match losers

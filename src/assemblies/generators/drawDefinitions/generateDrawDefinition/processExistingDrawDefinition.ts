@@ -108,7 +108,7 @@ function addEntries({ drawDefinition, drawEntries, event }) {
 }
 
 function processQualifyingDetails({ mainStructure, qualifyingDetails, drawDefinition }): ResultType {
-  for (const qualifyingDetail of qualifyingDetails || []) {
+  for (const qualifyingDetail of qualifyingDetails ?? []) {
     const {
       finalQualifyingRoundNumber: qualifyingRoundNumber,
       finalQualifyingStructureId: qualifyingStructureId,
@@ -130,7 +130,7 @@ function processQualifyingDetails({ mainStructure, qualifyingDetails, drawDefini
     if (link?.error) return link;
 
     if (link) {
-      if (!drawDefinition.links) drawDefinition.links = [];
+      drawDefinition.links ??= [];
       drawDefinition.links.push(link);
     }
   }

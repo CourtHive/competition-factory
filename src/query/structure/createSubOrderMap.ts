@@ -8,7 +8,7 @@ import { PARTICIPANT_ID } from '@Constants/attributeConstants';
 import { SUB_ORDER } from '@Constants/extensionConstants';
 
 export function createSubOrderMap({ positionAssignments }) {
-  const subOrderArray = (positionAssignments || [])
+  const subOrderArray = (positionAssignments ?? [])
     .filter(xa(PARTICIPANT_ID))
     .map((assignment) => {
       const { extension } = findExtension({

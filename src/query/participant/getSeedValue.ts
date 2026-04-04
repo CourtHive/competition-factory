@@ -5,7 +5,7 @@ import { SEEDING } from '@Constants/scaleConstants';
 export function getSeedValue({ participant, drawId, event }) {
   let seedValue;
 
-  const { categoryName, ageCategoryCode } = event?.category || {};
+  const { categoryName, ageCategoryCode } = event?.category ?? {};
 
   const potentialScaleNames = [drawId, categoryName || ageCategoryCode, event?.eventId].filter(Boolean);
 

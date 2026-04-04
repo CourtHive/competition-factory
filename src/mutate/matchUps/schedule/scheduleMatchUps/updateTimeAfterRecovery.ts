@@ -40,7 +40,7 @@ export function updateTimeAfterRecovery({
     (endTime
       ? addMinutesToTimeString(extractTime(endTime), typeChangeRecoveryMinutes)
       : addMinutesToTimeString(scheduleTime, ensureInt(averageMatchUpMinutes) + ensureInt(typeChangeRecoveryMinutes)));
-  const participantIdDependencies = matchUpDependencies?.[matchUp.matchUpId]?.participantIds || [];
+  const participantIdDependencies = matchUpDependencies?.[matchUp.matchUpId]?.participantIds ?? [];
 
   const potentialIndividualParticipantIds = (
     (matchUp.roundPosition && matchUpPotentialParticipantIds[matchUp.matchUpId]) ||

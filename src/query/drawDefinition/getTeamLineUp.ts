@@ -13,7 +13,7 @@ export function getTeamLineUp({ drawDefinition, participantId }) {
     name: LINEUPS,
   });
 
-  const lineUps = extension?.value || {};
+  const lineUps = extension?.value ?? {};
   const lineUp = lineUps[participantId];
 
   return { lineUp };

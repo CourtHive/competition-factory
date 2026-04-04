@@ -543,7 +543,7 @@ function resolvePositionContext(params: PositionActionsArgs) {
     structure,
   });
 
-  const activePositionOverrides = positionActionsPolicy?.activePositionOverrides || [];
+  const activePositionOverrides = positionActionsPolicy?.activePositionOverrides ?? [];
 
   const { sourceStructureIds: positionSourceStructureIds } =
     getSourceStructureIdsAndRelevantLinks({
@@ -552,7 +552,7 @@ function resolvePositionContext(params: PositionActionsArgs) {
       linkType: POSITION,
       drawDefinition,
       structureId,
-    }) || {};
+    }) ?? {};
 
   let sourceStructuresComplete;
   if (positionSourceStructureIds?.length) {
@@ -583,7 +583,7 @@ function resolvePositionContext(params: PositionActionsArgs) {
   // If drawPosition has no positionAssignment entry but is a valid matchUp drawPosition,
   // treat it as an unassigned position rather than invalid
   if (!drawPositions?.includes(drawPosition)) {
-    const allMatchUpDrawPositions = structure.matchUps?.flatMap((m) => m.drawPositions || []) ?? [];
+    const allMatchUpDrawPositions = structure.matchUps?.flatMap((m) => m.drawPositions ?? []) ?? [];
     if (!allMatchUpDrawPositions.includes(drawPosition)) return { earlyReturn: { error: INVALID_DRAW_POSITION } };
   }
 
@@ -743,7 +743,7 @@ function positionActionsInternal(params: PositionActionsArgs): ResultType & {
     drawId,
   });
 
-  const { participantId } = positionAssignment || {};
+  const { participantId } = positionAssignment ?? {};
   const participant =
     participantId && tournamentParticipants.find((participant) => participant.participantId === participantId);
 

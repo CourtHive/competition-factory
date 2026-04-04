@@ -13,11 +13,11 @@ export function getPlayoffStructures({ drawDefinition, structureId }: GetPlayoff
 
   const { structure } = findStructure({ drawDefinition, structureId });
 
-  const targetStructureIds = (drawDefinition?.links || [])
+  const targetStructureIds = (drawDefinition?.links ?? [])
     .filter((link) => link.source?.structureId === structureId)
     .map((link) => link.target?.structureId);
 
-  const playoffStructures = (drawDefinition?.structures || []).filter((structure) =>
+  const playoffStructures = (drawDefinition?.structures ?? []).filter((structure) =>
     targetStructureIds.includes(structure.structureId),
   );
 
@@ -37,7 +37,7 @@ export function getEventStructures({
   const stageStructures = {};
   const structures: Structure[] = [];
 
-  for (const drawDefinition of event.drawDefinitions || []) {
+  for (const drawDefinition of event.drawDefinitions ?? []) {
     const { structures: drawStructures, stageStructures: drawStageStructures } = getDrawStructures({
       withStageGrouping,
       stageSequences,
@@ -73,7 +73,7 @@ export function getTournamentStructures({
   const stageStructures = {};
   const structures: Structure[] = [];
 
-  for (const event of tournamentRecord.events || []) {
+  for (const event of tournamentRecord.events ?? []) {
     const { structures: eventStructures, stageStructures: eventStageStructures } = getEventStructures({
       withStageGrouping,
       stageSequences,

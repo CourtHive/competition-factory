@@ -81,9 +81,9 @@ export function setMatchUpFormat(params: SetMatchUpStatusArgs) {
     return decorateResult({ result: { error: INVALID_EVENT_TYPE }, stack });
 
   let modificationsCount = 0;
-  const structureIds: string[] = params.structureIds || (structureId && [structureId].filter(Boolean)) || [];
-  const eventIds = params.eventIds || (eventId && [eventId].filter(Boolean)) || [];
-  const drawIds = params.drawIds || (drawId && [drawId].filter(Boolean)) || [];
+  const structureIds: string[] = params.structureIds ?? (structureId ? [structureId] : []);
+  const eventIds = params.eventIds ?? (eventId ? [eventId] : []);
+  const drawIds = params.drawIds ?? (drawId ? [drawId] : []);
 
   if ((structureId || structureIds?.length) && !drawDefinition) {
     return decorateResult({
@@ -150,7 +150,7 @@ function applyFormatToEvents({
   stages,
 }) {
   let count = 0;
-  for (const evt of tournamentRecord?.events || []) {
+  for (const evt of tournamentRecord?.events ?? []) {
     if (
       (eventIds?.length && !eventIds.includes(evt.eventId)) ||
       (eventType && eventType !== evt.eventType) ||
@@ -160,7 +160,7 @@ function applyFormatToEvents({
     }
 
     if (Array.isArray(stageSequences) || Array.isArray(stages) || structureIds?.length || drawIds?.length) {
-      for (const dd of evt.drawDefinitions || []) {
+      for (const dd of evt.drawDefinitions ?? []) {
         if (Array.isArray(drawIds) && !drawIds.includes(dd.drawId)) continue;
         const result = processStructures(dd);
         count += result.modificationsCount;
@@ -189,7 +189,7 @@ function applyFormatToStructures({
   const modifiedStructureIds: string[] = [];
   let modificationsCount = 0;
 
-  for (const structure of drawDefinition.structures || []) {
+  for (const structure of drawDefinition.structures ?? []) {
     if (
       (Array.isArray(stages) && !stages.includes(structure.stage)) ||
       (Array.isArray(stageSequences) && !stageSequences.includes(structure.stageSequence)) ||

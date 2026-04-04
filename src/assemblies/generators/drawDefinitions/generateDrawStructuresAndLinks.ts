@@ -59,7 +59,7 @@ export function generateDrawStructuresAndLinks(params: GenerateDrawStructuresAnd
     tieFormat,
     isMock,
     uuids,
-  } = params || {};
+  } = params ?? {};
 
   const drawSize = ensureInt(params.drawSize);
 
@@ -175,7 +175,7 @@ export function generateDrawStructuresAndLinks(params: GenerateDrawStructuresAnd
     ({ stage, stageSequence }) => stage === MAIN && stageSequence === 1,
   );
 
-  for (const qualifyingDetail of qualifyingDetails || []) {
+  for (const qualifyingDetail of qualifyingDetails ?? []) {
     const {
       finalQualifyingRoundNumber: qualifyingRoundNumber,
       finalQualifyingStructureId: qualifyingStructureId,
@@ -216,7 +216,7 @@ export function generateDrawStructuresAndLinks(params: GenerateDrawStructuresAnd
 
 function getQualifiersCount(link, structure) {
   if (link.linkType === POSITION && structure?.structures) {
-    const finishingPositions = link.source.finishingPositions || [];
+    const finishingPositions = link.source.finishingPositions ?? [];
     return structure.structures.length * finishingPositions.length;
   } else if (link.linkType === WINNER && structure?.matchUps?.length) {
     const qualifyingRoundNumber = link.source.roundNumber;
@@ -319,7 +319,7 @@ function remapStructureId(generatedMainStructure, targetStructureId, generatedLi
   const originalId = generatedMainStructure.structureId;
   generatedMainStructure.structureId = targetStructureId;
 
-  for (const link of generatedLinks || []) {
+  for (const link of generatedLinks ?? []) {
     if (link.source.structureId === originalId) link.source.structureId = targetStructureId;
     if (link.target.structureId === originalId) link.target.structureId = targetStructureId;
   }

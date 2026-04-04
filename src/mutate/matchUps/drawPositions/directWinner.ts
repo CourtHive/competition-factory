@@ -87,7 +87,7 @@ function directWinnerViaLink({
   event,
   stack,
 }) {
-  const targetMatchUpDrawPositions = winnerMatchUp.drawPositions || [];
+  const targetMatchUpDrawPositions = winnerMatchUp.drawPositions ?? [];
   const targetMatchUpDrawPosition = targetMatchUpDrawPositions[winnerMatchUpDrawPositionIndex];
 
   const sourceStructureId = winnerTargetLink.source.structureId;
@@ -208,7 +208,7 @@ function propagateLineUp({
   const targetMatchUp = matchUpsMap?.drawMatchUps?.find(({ matchUpId }) => matchUpId === winnerMatchUp.matchUpId);
 
   const updatedSides = [1, 2].map((sideNumber) => {
-    const existingSide = targetMatchUp.sides?.find((s) => s.sideNumber === sideNumber) || {};
+    const existingSide = targetMatchUp.sides?.find((s) => s.sideNumber === sideNumber) ?? {};
     return { ...existingSide, sideNumber };
   });
 

@@ -73,7 +73,7 @@ export function getMappedStructureMatchUps({
 }: GetMappedStructureMatchUpsArgs) {
   mappedMatchUps = matchUpsMap?.mappedMatchUps ?? mappedMatchUps;
   const structureMatchUpsMap = mappedMatchUps[structureId];
-  const itemStructureMatchUps = (structureMatchUpsMap?.itemStructureIds || [])
+  const itemStructureMatchUps = (structureMatchUpsMap?.itemStructureIds ?? [])
     .map((itemStructureId) => {
       const { matchUps, structureName } = mappedMatchUps[itemStructureId];
       if (inContext) {
@@ -90,5 +90,5 @@ export function getMappedStructureMatchUps({
     })
     .flat();
 
-  return (structureMatchUpsMap?.matchUps || []).concat(...itemStructureMatchUps);
+  return (structureMatchUpsMap?.matchUps ?? []).concat(...itemStructureMatchUps);
 }

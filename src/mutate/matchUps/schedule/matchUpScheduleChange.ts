@@ -20,19 +20,19 @@ export function matchUpScheduleChange(params) {
   if (typeof tournamentRecords !== 'object' || !Object.keys(tournamentRecords).length)
     return { error: MISSING_TOURNAMENT_RECORDS };
 
-  const { sourceMatchUpContextIds, targetMatchUpContextIds, sourceCourtId, targetCourtId, courtDayDate } = params || {};
+  const { sourceMatchUpContextIds, targetMatchUpContextIds, sourceCourtId, targetCourtId, courtDayDate } = params ?? {};
 
   const {
     drawId: sourceDrawId,
     matchUpId: sourceMatchUpId,
     tournamentId: sourceTournamentId,
-  } = sourceMatchUpContextIds || {};
+  } = sourceMatchUpContextIds ?? {};
 
   const {
     drawId: targetDrawId,
     matchUpId: targetMatchUpId,
     tournamentId: targetTournamentId,
-  } = targetMatchUpContextIds || {};
+  } = targetMatchUpContextIds ?? {};
 
   if (!sourceMatchUpId && !targetMatchUpId) return decorateResult({ result: { error: MISSING_VALUE }, stack });
 

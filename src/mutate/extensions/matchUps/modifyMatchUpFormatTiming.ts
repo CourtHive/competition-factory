@@ -58,7 +58,7 @@ function modifyTiming({ tournamentRecord, recoveryTimes, matchUpFormat, averageT
 
   if (event) {
     const { extension } = findExtension({ element: event, name });
-    const eventScheduling = extension?.value || {};
+    const eventScheduling = extension?.value ?? {};
     const value = modifyScheduling({
       ...eventScheduling,
       matchUpFormat,
@@ -71,7 +71,7 @@ function modifyTiming({ tournamentRecord, recoveryTimes, matchUpFormat, averageT
       element: tournamentRecord,
       name,
     });
-    const tournamentScheduling = extension?.value || {};
+    const tournamentScheduling = extension?.value ?? {};
     const value = modifyScheduling({
       ...tournamentScheduling,
       matchUpFormat,
@@ -93,7 +93,7 @@ function modifyScheduling(params) {
   let { averageTimes: formatAverageTimes, recoveryTimes: formatRecoveryTimes } = params;
 
   // don't allow modification without categoryName
-  formatAverageTimes = (formatAverageTimes || []).filter(
+  formatAverageTimes = (formatAverageTimes ?? []).filter(
     (averageTime) => averageTime?.categoryNames?.length || averageTime?.categoryTypes?.length,
   );
   // if there are formatAverageTimes specified...
@@ -117,7 +117,7 @@ function modifyScheduling(params) {
       });
 
   // don't allow modification without categoryName
-  formatRecoveryTimes = (formatRecoveryTimes || []).filter(
+  formatRecoveryTimes = (formatRecoveryTimes ?? []).filter(
     (recoveryTime) => recoveryTime?.categoryNames?.length || recoveryTime?.categoryTypes?.length,
   );
   // if there are formatRecoveryTimes specified...

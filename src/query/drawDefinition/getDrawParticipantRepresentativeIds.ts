@@ -7,7 +7,7 @@ export function getDrawParticipantRepresentativeIds({ drawDefinition }) {
   });
   if (result.error) return result;
 
-  const representativeParticipantIds = result.extension?.value || [];
+  const representativeParticipantIds = result.extension?.value ?? [];
 
   return { representativeParticipantIds };
 }

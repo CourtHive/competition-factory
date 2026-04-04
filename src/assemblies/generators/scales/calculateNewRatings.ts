@@ -57,7 +57,7 @@ export function calculateNewRatings(params: CalculateNewRatings) {
     ratingType = ELO,
     maxCountables,
     countables,
-  } = params || {};
+  } = params ?? {};
   const ratingParameters = ratings?.[ratingType];
   if (!ratingParameters) return { error: MISSING_VALUE };
 

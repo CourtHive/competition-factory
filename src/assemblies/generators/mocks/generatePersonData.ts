@@ -12,7 +12,7 @@ export function generatePersonData(params?): {
   personData?: any[];
   error?: ErrorType;
 } {
-  const { count = 100, random, sex } = params || {};
+  const { count = 100, random, sex } = params ?? {};
   if (!count || (sex && !isGendered(sex))) return { personData: [], error: INVALID_VALUES };
 
   // generate 30% more than count to account for duplicated firstName/lastName

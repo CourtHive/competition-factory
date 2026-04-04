@@ -1,14 +1,15 @@
 import { participantScaleItem } from '../participant/participantScaleItem';
+import { requireParams } from '@Helpers/parameters/requireParams';
 
+import { TOURNAMENT_RECORD, EVENT } from '@Constants/attributeConstants';
 import { RANKING, RATING, SEEDING } from '@Constants/timeItemConstants';
-import { MISSING_EVENT, MISSING_TOURNAMENT_RECORD } from '@Constants/errorConditionConstants';
 
 export function getEventProperties({ tournamentRecord, event }) {
-  if (!tournamentRecord) return { error: MISSING_TOURNAMENT_RECORD };
-  if (!event) return { error: MISSING_EVENT };
+  const paramsCheck = requireParams({ tournamentRecord, event }, [TOURNAMENT_RECORD, EVENT]);
+  if (paramsCheck.error) return paramsCheck;
 
-  const eventEntries = event.entries || [];
-  const tournamentParticipants = tournamentRecord.participants || [];
+  const eventEntries = event.entries ?? [];
+  const tournamentParticipants = tournamentRecord.participants ?? [];
 
   const scaleName = event.category?.categoryName || event.category?.ageCategoryCode;
   const { eventType } = event;

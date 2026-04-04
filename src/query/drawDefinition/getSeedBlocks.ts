@@ -175,8 +175,8 @@ export function getSeedGroups({
     });
 
     let seedNumber = 0;
-    const seedGroups = (seedBlocks || []).map((seedBlock) =>
-      (seedBlock || []).map(() => {
+    const seedGroups = (seedBlocks ?? []).map((seedBlock) =>
+      (seedBlock ?? []).map(() => {
         seedNumber += 1;
         return seedNumber;
       }),
@@ -217,7 +217,7 @@ export function getSeedingThresholds({
     roundRobinGroupsCount,
   });
 
-  const seedingThresholds = seedGroups?.map((seedNumberBlock) => Math.min(...seedNumberBlock)) || [];
+  const seedingThresholds = seedGroups?.map((seedNumberBlock) => Math.min(...seedNumberBlock)) ?? [];
 
   return { ...SUCCESS, seedingThresholds };
 }

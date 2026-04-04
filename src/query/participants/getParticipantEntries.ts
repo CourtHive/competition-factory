@@ -93,7 +93,7 @@ export function getParticipantEntries(params) {
       scaleNames.includes(ranking.scaleName),
     )?.scaleValue;
 
-  for (const event of tournamentRecord?.events || []) {
+  for (const event of tournamentRecord?.events ?? []) {
     if (participantFilters?.eventIds && !participantFilters.eventIds.includes(event.eventId)) continue;
 
     processEvent({
@@ -197,7 +197,7 @@ function processEvent({
       };
 
       addEventEntry(participantId);
-      const individualParticipantIds = participantMap[participantId].participant.individualParticipantIds || [];
+      const individualParticipantIds = participantMap[participantId].participant.individualParticipantIds ?? [];
       individualParticipantIds.forEach(addEventEntry);
     }
   }
@@ -324,10 +324,10 @@ function processDrawEntries({
   const entries = drawDefinition?.entries || flight?.drawEntries;
   const flightNumber = flight?.flightNumber;
 
-  const orderedStructureIds = (drawDefinition?.structures || [])
+  const orderedStructureIds = (drawDefinition?.structures ?? [])
     .sort((a, b) => structureSort(a, b))
     .map(({ structureId, structures }) => {
-      return [structureId, ...(structures || []).map(({ structureId }) => structureId)];
+      return [structureId, ...(structures ?? []).map(({ structureId }) => structureId)];
     })
     .flat(Infinity);
 
@@ -418,7 +418,7 @@ function processDrawEntries({
     if (![UNGROUPED, UNPAIRED].includes(entryStatus)) {
       addParticipantDrawEntry(participantId);
 
-      const individualParticipantIds = participantMap[participantId].participant.individualParticipantIds || [];
+      const individualParticipantIds = participantMap[participantId].participant.individualParticipantIds ?? [];
       individualParticipantIds?.forEach(addParticipantDrawEntry);
     }
   }
@@ -855,7 +855,7 @@ function computeRankingProfileForParticipant({ participantAggregator, derivedDra
   const diff = (range = []) => Math.abs(range[0] - range[1]);
 
   for (const drawId of Object.keys(participantAggregator.draws)) {
-    const { orderedStructureIds = [], flightNumber } = derivedDrawInfo[drawId] || {};
+    const { orderedStructureIds = [], flightNumber } = derivedDrawInfo[drawId] ?? {};
     if (!participantAggregator.structureParticipation || !orderedStructureIds.length) continue;
 
     let finishingPositionRange;
@@ -900,8 +900,8 @@ function computeScheduleConflictsForParticipant({
   participantMap,
   participantIdsWithConflicts,
 }) {
-  const scheduleItems = participantAggregator.scheduleItems || [];
-  const potentialMatchUps = participantAggregator.potentialMatchUps || {};
+  const scheduleItems = participantAggregator.scheduleItems ?? [];
+  const potentialMatchUps = participantAggregator.potentialMatchUps ?? {};
 
   participantAggregator.scheduleConflicts = detectScheduleConflicts({
     scheduleAnalysis,

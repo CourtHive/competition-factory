@@ -41,8 +41,8 @@ export function generateVirtualCourts(params) {
 
   const inProcessCourts = courts.map((court, index) => {
     const { courtId, courtName } = court;
-    const bookingsThisCourt = courtBookings[courtId] || [];
-    const availability = getCourtDateAvailability({ date: scheduleDate, court }) || {};
+    const bookingsThisCourt = courtBookings[courtId] ?? [];
+    const availability = getCourtDateAvailability({ date: scheduleDate, court }) ?? {};
     const { bookings: existingBookings = [], startTime, endTime, date } = availability;
 
     const allocatedTimeBooking = remainingScheduleTimes[index] && {

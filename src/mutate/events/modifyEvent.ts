@@ -200,7 +200,7 @@ function getParticipantsProfile({ enteredParticipants }) {
   const enteredParticipantTypes = enteredParticipants.reduce((types: any[], participant) => {
     const genders = participant.person?.sex
       ? [participant.person.sex]
-      : participant.individualParticpants?.map((p) => p.person?.sex) || [];
+      : participant.individualParticpants?.map((p) => p.person?.sex) ?? [];
     genderAccumulator.push(...genders);
     return types.includes(participant.participantType) ? types : types.concat(participant.participantType);
   }, []);

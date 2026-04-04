@@ -32,7 +32,7 @@ export function getGridBookings({ court, date }: GetGridBookingsParams): GetGrid
   const gridBookings = new Map<number, Booking>();
   const timeBookings: Booking[] = [];
 
-  (courtDate?.bookings || []).forEach((booking: Booking) => {
+  (courtDate?.bookings ?? []).forEach((booking: Booking) => {
     if (typeof booking.courtOrder === 'number') {
       // Grid booking - add all blocked rows
       const rowCount = booking.rowCount || 1;

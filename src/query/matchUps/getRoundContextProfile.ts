@@ -56,10 +56,10 @@ export function getRoundContextProfile({
     ? roundNamingPolicy?.affixes?.preQualifying || defaultRoundNamingPolicy.affixes.preQualifying || ''
     : '';
 
-  const roundNamingMap = roundNamingPolicy?.roundNamingMap || defaultRoundNamingPolicy.roundNamingMap || {};
+  const roundNamingMap = roundNamingPolicy?.roundNamingMap || (defaultRoundNamingPolicy.roundNamingMap ?? {});
 
   const abbreviatedRoundNamingMap =
-    roundNamingPolicy?.abbreviatedRoundNamingMap || defaultRoundNamingPolicy.abbreviatedRoundNamingMap || {};
+    roundNamingPolicy?.abbreviatedRoundNamingMap || (defaultRoundNamingPolicy.abbreviatedRoundNamingMap ?? {});
 
   const preFeedAffix = roundNamingPolicy?.affixes?.preFeedRound || defaultRoundNamingPolicy.affixes.preFeedRound;
 
@@ -87,7 +87,7 @@ export function getRoundContextProfile({
     );
   } else {
     const qualifyingFinishgMap =
-      isQualifying && (roundNamingPolicy?.qualifyingFinishMap || defaultRoundNamingPolicy?.qualifyingFinishMap || {});
+      isQualifying && (roundNamingPolicy?.qualifyingFinishMap || (defaultRoundNamingPolicy?.qualifyingFinishMap ?? {}));
 
     Object.assign(
       roundNamingProfile,

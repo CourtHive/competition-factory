@@ -42,7 +42,7 @@ export function generateCourts(params: GenerateCourtsArgs): ResultType & Generat
   if (paramCheck.error) return paramCheck;
 
   const { startDate, endDate } = params.tournamentRecord ?? {};
-  const dates = params.dates || (startDate && endDate && generateDateRange(startDate, endDate)) || [];
+  const dates = params.dates ?? (startDate && endDate ? generateDateRange(startDate, endDate) : []);
 
   const courts: Court[] = generateRange(1, params.count + 1).map((courtNumber) =>
     definedAttributes({

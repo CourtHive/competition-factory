@@ -25,7 +25,7 @@ export function checkSetIsComplete({
   if (!set) return { error: MISSING_VALUE, info: 'missing set' };
   matchUpScoringFormat = matchUpScoringFormat || (matchUpFormat && parse(matchUpFormat));
 
-  const setFormat = (isDecidingSet && matchUpScoringFormat.finalSetFormat) || matchUpScoringFormat?.setFormat || {};
+  const setFormat = (isDecidingSet && matchUpScoringFormat.finalSetFormat) || (matchUpScoringFormat?.setFormat ?? {});
   const { side1Score, side2Score } = set;
   const { setTo, tiebreakAt } = setFormat;
   const hasScore = side1Score || side2Score;

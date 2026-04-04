@@ -32,7 +32,7 @@ export function scheduledSortedMatchUps({ schedulingProfile, matchUps = [] }: Sc
 
   // 1. Segregate matchUps by date (date can come from schedule.scheduledDate or schedule.scheduledTime)
   for (const matchUp of matchUps) {
-    const schedule = matchUp.schedule || {};
+    const schedule = matchUp.schedule ?? {};
     const scheduledDate =
       (schedule.scheduledDate && extractDate(schedule.scheduledDate)) ||
       (schedule.scheduledTime && extractDate(schedule.scheduledTime)) ||
@@ -52,7 +52,7 @@ export function scheduledSortedMatchUps({ schedulingProfile, matchUps = [] }: Sc
     const timeGroups = { noScheduledTime: [] };
 
     for (const matchUp of dateGroup) {
-      const schedule = matchUp.schedule || {};
+      const schedule = matchUp.schedule ?? {};
       const scheduledTime = (schedule.scheduledTime && extractTime(schedule.scheduledTime)) || 'noScheduledTime';
 
       if (!timeGroups[scheduledTime]) timeGroups[scheduledTime] = [];

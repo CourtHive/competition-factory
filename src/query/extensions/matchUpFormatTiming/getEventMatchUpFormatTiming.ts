@@ -66,8 +66,8 @@ export function getEventMatchUpFormatTiming({
       }
       matchUpFormatDefinitions = unique(
         [
-          ...(matchUpAverageTimes || []).map((at) => at.matchUpFormatCodes),
-          ...(matchUpRecoveryTimes || []).map((at) => at.matchUpFormatCodes),
+          ...(matchUpAverageTimes ?? []).map((at) => at.matchUpFormatCodes),
+          ...(matchUpRecoveryTimes ?? []).map((at) => at.matchUpFormatCodes),
         ].flat(),
       ).map((matchUpFormat) => ({ matchUpFormat }));
       info = 'default scheduling policy in use';

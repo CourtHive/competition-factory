@@ -15,7 +15,7 @@ export function auditAutoScheduling({ autoSchedulingAudit, tournamentRecords }) 
     return values.reduce((count, value) => count + value.length || 0, 0);
   };
 
-  const profileRoundsCount = (autoSchedulingAudit?.schedulingProfile || []).reduce(
+  const profileRoundsCount = (autoSchedulingAudit?.schedulingProfile ?? []).reduce(
     (count, dateProfile) => count + dateProfile.venues.reduce((vc, venue) => vc + venue.rounds.length, 0),
     0,
   );

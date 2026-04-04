@@ -188,7 +188,7 @@ function applyResolutions({
 
   // update unassigned positions to reflect placements
   const resolvedPositions = new Set(Object.keys(allResolutions).map(Number));
-  draftState.unassignedDrawPositions = (draftState.unassignedDrawPositions || []).filter(
+  draftState.unassignedDrawPositions = (draftState.unassignedDrawPositions ?? []).filter(
     (p: number) => !resolvedPositions.has(p),
   );
 

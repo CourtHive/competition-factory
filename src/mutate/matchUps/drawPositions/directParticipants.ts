@@ -165,7 +165,7 @@ function processDrawPositionDirecting({
     if (loserMatchUp && shouldAdvance) {
       const result = directLoser({
         sourceMatchUpStatus: sourceStatus,
-        sourceMatchUpStatusCodes: matchUpStatusCodes || [],
+        sourceMatchUpStatusCodes: matchUpStatusCodes ?? [],
         sourceWinningSide: winningSide,
         loserMatchUpDrawPositionIndex,
         sourceMatchUpId: matchUpId,
@@ -185,7 +185,7 @@ function processDrawPositionDirecting({
       if (result.context?.progressExitStatus) {
         Object.assign(context, result.context, {
           sourceMatchUpStatus: sourceStatus,
-          sourceMatchUpStatusCodes: matchUpStatusCodes || [],
+          sourceMatchUpStatusCodes: matchUpStatusCodes ?? [],
           loserMatchUp,
           matchUpsMap,
         });
@@ -194,7 +194,7 @@ function processDrawPositionDirecting({
     }
 
     if (byeMatchUp) {
-      const targetMatchUpDrawPositions = byeMatchUp.drawPositions || [];
+      const targetMatchUpDrawPositions = byeMatchUp.drawPositions ?? [];
       const backdrawPosition = Math.min(...targetMatchUpDrawPositions.filter(Boolean));
       const targetStructureId = byeTargetLink.target.structureId;
       const result = assignDrawPositionBye({

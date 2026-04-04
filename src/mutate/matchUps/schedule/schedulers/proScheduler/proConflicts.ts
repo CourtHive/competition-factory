@@ -100,7 +100,7 @@ export function proConflicts({
             ?.flat()
             .flatMap(({ individualParticipantIds, participantId }) => [individualParticipantIds, participantId])
             .flat()
-            .filter(Boolean) || [];
+            .filter(Boolean) ?? [];
 
         profile.participantIds.push(...potentialMatchUpParticipantIds, ...matchUpParticipantIds);
 

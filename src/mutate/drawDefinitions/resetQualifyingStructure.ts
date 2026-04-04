@@ -34,7 +34,7 @@ export function resetQualifyingStructure({
   );
   if (scoresPresent) return { error: SCORES_PRESENT };
 
-  const removedMatchUpIds = structure.matchUps?.map(({ matchUpId }) => matchUpId) || [];
+  const removedMatchUpIds = structure.matchUps?.map(({ matchUpId }) => matchUpId) ?? [];
 
   structure.positionAssignments = [];
   structure.seedAssignments = [];

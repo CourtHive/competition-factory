@@ -128,7 +128,7 @@ export function chunkArray(arr, chunksize) {
   if (!Array.isArray(arr)) return [];
   return arr.reduce((all, one, i) => {
     const ch = Math.floor(i / chunksize);
-    all[ch] = [].concat(all[ch] || [], one);
+    all[ch] = [].concat(all[ch] ?? [], one);
     return all;
   }, []);
 }

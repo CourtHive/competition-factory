@@ -7,6 +7,6 @@ export function getMatchUpContextIds({ matchUps, matchUpId }) {
 
   const matchUp = matchUps.find((matchUp) => matchUp.matchUpId === matchUpId);
 
-  const { drawId, eventId, structureId, tournamentId } = matchUp || {};
+  const { drawId, eventId, structureId, tournamentId } = matchUp ?? {};
   return { matchUpId, drawId, eventId, structureId, tournamentId };
 }

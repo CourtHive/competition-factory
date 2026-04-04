@@ -37,8 +37,8 @@ function courtsDisable({ tournamentRecord, courtIds, dates }) {
       element: court,
     });
 
-  for (const venue of tournamentRecord.venues || []) {
-    for (const court of venue.courts || []) {
+  for (const venue of tournamentRecord.venues ?? []) {
+    for (const court of venue.courts ?? []) {
       if (courtIds?.includes(court.courtId)) {
         const result = disableCourt(court);
         if (result.error) return result;

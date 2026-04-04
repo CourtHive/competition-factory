@@ -20,7 +20,7 @@ export function getStructurePositionedSeeds({
   });
   const seedMap = Object.assign(
     {},
-    ...(seedAssignments || [])
+    ...(seedAssignments ?? [])
       .filter((assignment) => assignment.participantId)
       .map((assignment: any) => ({
         // because we already know participantId is present!

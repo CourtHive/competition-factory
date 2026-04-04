@@ -252,7 +252,7 @@ function computeRecoveryTimes({ scheduleTiming, afterRecoveryTimes, matchUpForma
 
 function resolveVenueAndCourt({ tournamentRecord, allocatedCourts, venueId, courtId }) {
   const venueDataMap = {};
-  const venueData = (tournamentRecord && venueId && getVenueData({ tournamentRecord, venueId }))?.venueData || {};
+  const venueData = (tournamentRecord && venueId && getVenueData({ tournamentRecord, venueId }))?.venueData ?? {};
 
   if (venueId) venueDataMap[venueId] = venueData;
   const { venueName, venueAbbreviation, courtsInfo } = venueData;
@@ -260,7 +260,7 @@ function resolveVenueAndCourt({ tournamentRecord, allocatedCourts, venueId, cour
   const courtInfo = courtId && courtsInfo?.find((courtInfo) => courtInfo.courtId === courtId);
   const courtName = courtInfo?.courtName;
 
-  for (const allocatedCourt of allocatedCourts || []) {
+  for (const allocatedCourt of allocatedCourts ?? []) {
     if (!tournamentRecord) break;
     if (allocatedCourt.venueId && !venueDataMap[allocatedCourt.venueid]) {
       venueDataMap[allocatedCourt.venueId] = getVenueData({

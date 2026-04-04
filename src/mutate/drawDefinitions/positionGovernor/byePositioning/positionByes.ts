@@ -60,9 +60,9 @@ export function positionByes({
 
   // LUCKY_DRAW: BYE positions are simply the unfilled first-round draw positions
   if (isLuckyBasedDraw(drawDefinition.drawType)) {
-    const firstRoundPositions = (relevantMatchUps || []).flatMap((m) => m.drawPositions || []).filter(Boolean);
+    const firstRoundPositions = (relevantMatchUps ?? []).flatMap((m) => m.drawPositions ?? []).filter(Boolean);
     const filledPositions = new Set(
-      structure?.positionAssignments?.filter((a) => a.participantId).map((a) => a.drawPosition) || [],
+      structure?.positionAssignments?.filter((a) => a.participantId).map((a) => a.drawPosition) ?? [],
     );
     const byeDrawPositions = firstRoundPositions.filter((dp) => !filledPositions.has(dp)).slice(0, byesToPlace);
 
@@ -117,7 +117,7 @@ export function positionByes({
 
   const isOdd = (x) => x % 2;
   // method determines whether candidate c is paired to elements in an array
-  const isNotPaired = (arr, c) => (arr || []).every((a) => (isOdd(a) ? c !== a + 1 : c !== a - 1));
+  const isNotPaired = (arr, c) => (arr ?? []).every((a) => (isOdd(a) ? c !== a + 1 : c !== a - 1));
 
   // first add all drawPositions paired with sorted seeds drawPositions
   // then add quarter separated and evenly distributed drawPositions

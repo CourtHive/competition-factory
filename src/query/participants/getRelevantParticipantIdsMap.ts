@@ -23,7 +23,7 @@ export function getRelevantParticipantIdsMap({
   // this map includes the key participantId as a value of the array of relevantParticipantIds
   const allParticipants = tournamentRecords
     ? Object.values(tournamentRecords)
-        .map((tournamentRecord: any) => tournamentRecord?.participants || [])
+        .map((tournamentRecord: any) => tournamentRecord?.participants ?? [])
         .flat()
     : (tournamentRecord?.participants ?? []);
 
@@ -32,7 +32,7 @@ export function getRelevantParticipantIdsMap({
     ...allParticipants.map(({ participantId, participantType, individualParticipantIds }) => {
       isFunction(processParticipantId) && processParticipantId(participantId);
 
-      const individualParticipantIdObjects = (individualParticipantIds || []).map((relevantParticipantId) => ({
+      const individualParticipantIdObjects = (individualParticipantIds ?? []).map((relevantParticipantId) => ({
         participantType: INDIVIDUAL,
         relevantParticipantId,
       }));

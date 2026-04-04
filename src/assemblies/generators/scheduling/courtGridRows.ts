@@ -7,7 +7,7 @@ import { INVALID_VALUES } from '@Constants/errorConditionConstants';
 export function courtGridRows({ courtPrefix = 'C|', minRowsCount, courtsData, scheduledDate }) {
   if (!Array.isArray(courtsData)) return { error: INVALID_VALUES };
   const maxCourtOrder = courtsData?.reduce((order, court) => {
-    const matchUps = court.matchUps || [];
+    const matchUps = court.matchUps ?? [];
     const courtOrder = Math.max(0, ...matchUps.map((m) => m.schedule.courtOrder || 0));
     return Math.max(courtOrder, order);
   }, 1);

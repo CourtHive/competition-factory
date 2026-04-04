@@ -93,7 +93,7 @@ export function generateTieMatchUpScore(params: GenerateTieMatchUpScoreArgs): Ti
 }
 
 function calculateSideTieValues(tieFormat, matchUp) {
-  const collectionDefinitions = tieFormat?.collectionDefinitions || [];
+  const collectionDefinitions = tieFormat?.collectionDefinitions ?? [];
   const tieMatchUps = matchUp?.tieMatchUps ?? [];
   const sideTieValues = [0, 0];
 

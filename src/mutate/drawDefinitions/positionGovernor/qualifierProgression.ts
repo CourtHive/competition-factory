@@ -86,7 +86,7 @@ export function qualifierProgression({
       targetRoundNumber,
       linkType: WINNER, // WINNER of qualifying structures will traverse link
       drawDefinition,
-    }) || {};
+    }) ?? {};
 
   const { relevantLinks: roundRobinSourceLinks } =
     getSourceStructureIdsAndRelevantLinks({
@@ -94,7 +94,7 @@ export function qualifierProgression({
       targetRoundNumber,
       linkType: POSITION, // link will define how many finishingPositions traverse the link
       drawDefinition,
-    }) || {};
+    }) ?? {};
 
   collectEliminationQualifiers({
     eliminationSourceLinks,
@@ -168,7 +168,7 @@ function collectEliminationQualifiers({
       const winningSide = matchUp.sides.find((side) => side?.sideNumber === matchUp.winningSide);
 
       if (winningSide || relevantSide) {
-        const { participantId } = winningSide || relevantSide || {};
+        const { participantId } = winningSide || (relevantSide ?? {});
         if (participantId && !assignedParticipantIds.includes(participantId)) {
           qualifyingParticipantIds.push(participantId);
         }

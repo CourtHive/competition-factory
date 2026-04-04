@@ -32,7 +32,7 @@ export function swapWinnerLoser(params) {
     matchUp.drawPositions =
       matchUp.drawPositions?.map((drawPosition) =>
         drawPosition === existingWinnerDrawPosition ? existingLoserDrawPosition : drawPosition,
-      ) || [];
+      ) ?? [];
     modifyMatchUpNotice({
       tournamentId: tournamentRecord?.tournamentId,
       eventId: params.event?.eventId,

@@ -208,7 +208,7 @@ export function updateTieFormat({
   };
 
   function processDrawDefinition({ drawDefinition }) {
-    const structures = drawDefinition.structures || [];
+    const structures = drawDefinition.structures ?? [];
     const modifiedStructureIds: string[] = [];
 
     for (const structure of structures) {
@@ -246,7 +246,7 @@ export function updateTieFormat({
       getAllStructureMatchUps({
         matchUpFilters: { matchUpTypes: [TEAM] },
         structure,
-      })?.matchUps || [];
+      })?.matchUps ?? [];
 
     for (const matchUp of structureMatchUps) {
       const validToUpdate = validUpdate({ matchUp, updateInProgressMatchUps });

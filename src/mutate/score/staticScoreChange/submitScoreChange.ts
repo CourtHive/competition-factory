@@ -15,7 +15,7 @@ import {
  * Work in progress: utility for scoring dialogs to submit score change
  */
 export function submitScoreChange(params?) {
-  const { matchUp, sideNumber, setNumber, value } = params || {};
+  const { matchUp, sideNumber, setNumber, value } = params ?? {};
 
   if (!matchUp) {
     return { result: false, error: MISSING_MATCHUP };
@@ -50,8 +50,8 @@ export function submitScoreChange(params?) {
 }
 
 function getModifiedSet(params) {
-  const { matchUp, sideNumber, setNumber, isTiebreakValue, isGameValue, value } = params || {};
-  let { matchUpFormat } = params || {};
+  const { matchUp, sideNumber, setNumber, isTiebreakValue, isGameValue, value } = params ?? {};
+  let { matchUpFormat } = params ?? {};
   const analysis = analyzeMatchUp(params);
 
   const setObject = matchUp?.score?.sets.find((set) => set.setNumber === setNumber);

@@ -153,7 +153,7 @@ export function getCategoryAgeDetails(params: ParseArgs) {
   }
 
   function processCode(code: string) {
-    const matchResult = prePost.exec(code) || [];
+    const matchResult = prePost.exec(code) ?? [];
     const [pre, age, post] = matchResult.slice(1);
     const ageInt = Number.parseInt(age);
     if (pre === 'U') {

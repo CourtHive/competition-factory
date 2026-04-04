@@ -11,7 +11,7 @@ import { SUCCESS } from '@Constants/resultConstants';
 
 export function mergeParticipants({ participants: incomingParticipants = [], tournamentRecord, arraysToMerge }) {
   if (!tournamentRecord) return { error: MISSING_TOURNAMENT_RECORD };
-  if (!tournamentRecord.participants) tournamentRecord.participants = [];
+  tournamentRecord.participants ??= [];
 
   const mappedParticipants = incomingParticipants
     .filter(xa(PARTICIPANT_ID))
@@ -29,7 +29,7 @@ export function mergeParticipants({ participants: incomingParticipants = [], tou
     return participant;
   });
 
-  const existingParticipantIds = tournamentRecord.participants.map(xa(PARTICIPANT_ID)) || [];
+  const existingParticipantIds = tournamentRecord.participants.map(xa(PARTICIPANT_ID)) ?? [];
   const newParticipants = incomingParticipants.filter(
     ({ participantId }) => !existingParticipantIds.includes(participantId),
   );

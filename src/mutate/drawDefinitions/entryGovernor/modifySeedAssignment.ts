@@ -73,10 +73,10 @@ export function modifySeedAssignment({
         : (seedValue && seedValue > 0 && seedValue) || '';
     existingAssginment.seedValue = newValue;
   } else {
-    const seedNumber = Math.max(0, ...(seedNumbers || [])) + 1;
+    const seedNumber = Math.max(0, ...(seedNumbers ?? [])) + 1;
     const seedAssignment: any = { seedNumber, participantId };
     if (seedValue) seedAssignment.seedValue = seedValue;
-    if (!structure.seedAssignments) structure.seedAssignments = [];
+    structure.seedAssignments ??= [];
     structure.seedAssignments.push(seedAssignment);
   }
 

@@ -485,7 +485,7 @@ function advanceWinner({
   let drawPositionAssigned = isByeAdvancedBye;
   // always ensure there are two drawPositions to iterate over
   const twoDrawPositions = [
-    ...(noContextWinnerMatchUp.drawPositions || []).filter(Boolean),
+    ...(noContextWinnerMatchUp.drawPositions ?? []).filter(Boolean),
     undefined,
     undefined,
   ].slice(0, 2);
@@ -620,7 +620,7 @@ function assignFedDrawPositionBye({
   const stack = 'assignFedDrawPositionBye';
   pushGlobalLog({ method: stack, color: 'cyan', loserTargetDrawPosition });
 
-  const mappedMatchUps = matchUpsMap?.mappedMatchUps || {};
+  const mappedMatchUps = matchUpsMap?.mappedMatchUps ?? {};
   const loserStructureMatchUps = mappedMatchUps[loserMatchUp.structureId].matchUps;
   const { initialRoundNumber } = getInitialRoundNumber({
     drawPosition: loserTargetDrawPosition,

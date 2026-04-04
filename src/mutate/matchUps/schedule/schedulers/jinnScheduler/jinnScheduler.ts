@@ -50,7 +50,7 @@ export function jinnScheduler({
 
   for (const dateSchedulingProfile of dateSchedulingProfiles) {
     const scheduleDate = extractDate(dateSchedulingProfile?.scheduleDate);
-    const venues = dateSchedulingProfile?.venues || [];
+    const venues = dateSchedulingProfile?.venues ?? [];
     const matchUpPotentialParticipantIds = {};
     const individualParticipantProfiles = {};
 
@@ -524,7 +524,7 @@ function clearByeMatchUpScheduling({ allDateScheduledByeMatchUpDetails, tourname
 function computeRoundSchedulePcts({ scheduledMatchUpIds, dateSchedulingProfile, scheduleDate }) {
   for (const venue of dateSchedulingProfile.venues) {
     for (const round of venue.rounds) {
-      const matchUpIds = round.matchUps?.map(({ matchUpId }) => matchUpId) || [];
+      const matchUpIds = round.matchUps?.map(({ matchUpId }) => matchUpId) ?? [];
       const canScheduleMatchUpIds = matchUpIds.filter((matchUpId) =>
         scheduledMatchUpIds[scheduleDate].includes(matchUpId),
       );

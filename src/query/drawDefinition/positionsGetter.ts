@@ -13,7 +13,7 @@ export function getAllPositionedParticipantIds({ drawDefinition }): ResultType &
   if (!drawDefinition) return { error: MISSING_DRAW_DEFINITION };
   const stagePositionedParticipantIds = {};
 
-  const allPositionedParticipantIds = (drawDefinition.structures || [])
+  const allPositionedParticipantIds = (drawDefinition.structures ?? [])
     .map((structure) => {
       const stage = structure.stage;
       if (!stagePositionedParticipantIds[stage]) stagePositionedParticipantIds[stage] = [];
@@ -83,7 +83,7 @@ export function structureAssignedDrawPositions({
       drawDefinition,
       structureId,
       structure,
-    })?.positionAssignments || [];
+    })?.positionAssignments ?? [];
   const assignedPositions = positionAssignments?.filter((assignment) => {
     return assignment.participantId ?? assignment.bye ?? assignment.qualifier;
   });

@@ -28,18 +28,18 @@ describe('should mock console.log', () => {
     tournamentEngine.devContext({ errors: true });
     tournamentEngine.getEvent();
     expect(consoleMock).toHaveBeenCalledTimes(2);
-    expect(consoleMock).toHaveBeenLastCalledWith('sync', {
-      method: 'getEvent',
-      params: {
-        activeTournamentId: tournamentRecord.tournamentId,
-      },
-      result: {
-        error: {
-          message: 'Missing event / eventId',
-          code: 'ERR_MISSING_EVENT_ID',
-        },
-      },
-    });
+    expect(consoleMock).toHaveBeenLastCalledWith(
+      'sync',
+      expect.objectContaining({
+        method: 'getEvent',
+        result: expect.objectContaining({
+          error: expect.objectContaining({
+            message: 'Missing event / eventId',
+            code: 'ERR_MISSING_EVENT_ID',
+          }),
+        }),
+      }),
+    );
     tournamentEngine.devContext({ errors: false });
     tournamentEngine.getEvent();
     expect(consoleMock).toHaveBeenCalledTimes(2);

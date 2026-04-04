@@ -63,7 +63,7 @@ export function generateDrawTypeAndModifyDrawDefinition(params: GenerateDrawType
   links?: DrawLink[];
   success?: boolean;
 } {
-  const { modifyOriginal = true, stageSequence = 1, isMock } = params || {};
+  const { modifyOriginal = true, stageSequence = 1, isMock } = params ?? {};
 
   const stack = 'generateDrawTypeAndModifyDrawDefinition';
 

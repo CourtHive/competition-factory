@@ -213,7 +213,7 @@ function resolvePolicy({
   const policy = resolvedPolicyDefs?.[POLICY_TYPE_VOLUNTARY_CONSOLATION];
 
   const resolvedExcludedMatchUpStatuses =
-    (excludedMatchUpStatuses.length && excludedMatchUpStatuses) || policy?.excludedMatchUpStatuses || [];
+    (excludedMatchUpStatuses.length && excludedMatchUpStatuses) || (policy?.excludedMatchUpStatuses ?? []);
 
   return {
     includeEventParticipants: includeEventParticipants ?? policy?.includeEventParticipants,

@@ -20,7 +20,7 @@ export function checkRecoveryTime({
   matchUp,
   details,
 }: CheckRecoveryTimeArgs) {
-  const participantIdDependencies = (matchUpDependencies?.[matchUp.matchUpId]?.participantIds || []).flat();
+  const participantIdDependencies = (matchUpDependencies?.[matchUp.matchUpId]?.participantIds ?? []).flat();
 
   const averageMatchUpMinutes = details?.minutesMap?.[matchUp.matchUpId]?.averageMinutes || 0;
   const recoveryMinutes = details?.minutesMap?.[matchUp.matchUpId]?.recoveryMinutes || 0;

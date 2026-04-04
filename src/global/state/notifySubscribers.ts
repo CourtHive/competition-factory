@@ -31,7 +31,7 @@ type NotifySubscribersArgs = {
 };
 
 export function notifySubscribers(params?: NotifySubscribersArgs) {
-  const { mutationStatus, tournamentId, directives, timeStamp } = params || {};
+  const { mutationStatus, tournamentId, directives, timeStamp } = params ?? {};
 
   const { topics } = getTopics();
 
@@ -49,7 +49,7 @@ export function notifySubscribers(params?: NotifySubscribersArgs) {
 }
 
 export async function notifySubscribersAsync(params?: NotifySubscribersArgs) {
-  const { mutationStatus, tournamentId, directives, timeStamp } = params || {};
+  const { mutationStatus, tournamentId, directives, timeStamp } = params ?? {};
   const { topics } = getTopics();
 
   for (const topic of [...topics].sort(topicSort)) {

@@ -42,8 +42,8 @@ export function structureSort(a: Structure | undefined, b: Structure | undefined
 }
 
 export function getMinFinishingPositionRange(structure): number {
-  return (structure?.matchUps || []).reduce((rangeSum, matchUp) => {
-    const sum = (matchUp.finishingPositionRange?.winner || []).reduce((a, b) => a + b, 0);
+  return (structure?.matchUps ?? []).reduce((rangeSum, matchUp) => {
+    const sum = (matchUp.finishingPositionRange?.winner ?? []).reduce((a, b) => a + b, 0);
     return !rangeSum || sum < rangeSum ? sum : rangeSum;
   }, undefined);
 }

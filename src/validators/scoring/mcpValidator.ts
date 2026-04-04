@@ -92,7 +92,7 @@ function parseMatchId(matchId: string): {
 } {
   // Format: YYYYMMDD-Gender-Tournament-Round-Player1-Player2
   // Example: 20151122-M-Tour_Finals-F-Roger_Federer-Novak_Djokovic
-  const parts = matchId?.split('-') || [];
+  const parts = matchId?.split('-') ?? [];
 
   if (parts.length < 6) {
     return {

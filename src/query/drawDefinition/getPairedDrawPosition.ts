@@ -16,7 +16,7 @@ export function getPairedDrawPosition({ drawPosition, roundNumber, matchUps }: G
 } {
   if (!matchUps) return {};
 
-  const { roundProfile } = getRoundMatchUps({ matchUps }) || {};
+  const { roundProfile } = getRoundMatchUps({ matchUps }) ?? {};
   const { initialRoundNumber } = getInitialRoundNumber({
     drawPosition,
     matchUps,

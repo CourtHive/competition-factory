@@ -36,7 +36,7 @@ export function countSets({
     // in the case of WALKOVER or DEFAULT, matchUp winner gets full sets to win value
     setsTally[matchUpWinnerIndex] = setsToWin;
   } else {
-    for (const set of sets || []) {
+    for (const set of sets ?? []) {
       const { winningSide: setWinningSide } = set;
       if (setWinningSide) setsTally[setWinningSide - 1] += 1;
     }
@@ -65,7 +65,7 @@ export function countGames({
   score,
 }: CountGames) {
   // IMPORTANT: recognize finalSetFormat
-  const { sets } = score || {};
+  const { sets } = score ?? {};
   if (!sets) return [0, 0];
 
   const matchUpWinnerIndex = typeof matchUpWinningSide === 'number' && matchUpWinningSide - 1;

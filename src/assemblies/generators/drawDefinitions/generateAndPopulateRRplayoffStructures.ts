@@ -106,7 +106,7 @@ export function generateAndPopulateRRplayoffStructures(params) {
    *finishingPositionTargets.forEach((target) => {
    *  const { finishingPositions, structureId } = target;
    *  const participantIds = finishingPositions
-   *    .flatMap((position) => finishingPositionParticipantIds[position] || [])
+   *    .flatMap((position) => finishingPositionParticipantIds[position] ?? [])
    *    .sort();
    *  console.log({ structureId, participantIds });
    *  const stageEntries = getStageEntries({

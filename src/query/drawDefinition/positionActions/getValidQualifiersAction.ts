@@ -45,7 +45,7 @@ export function getValidQualifiersAction({
       linkType: WINNER,
       drawDefinition,
       structureId,
-    }) || {};
+    }) ?? {};
   if (eliminationSourceStructureIds?.length) sourceStructureIds.push(...eliminationSourceStructureIds);
 
   const { sourceStructureIds: roundRobinSourceStructureIds, relevantLinks: roundRobinSourceLinks } =
@@ -54,7 +54,7 @@ export function getValidQualifiersAction({
       linkType: POSITION,
       drawDefinition,
       structureId,
-    }) || {};
+    }) ?? {};
   if (roundRobinSourceStructureIds?.length) sourceStructureIds.push(...roundRobinSourceStructureIds);
 
   collectEliminationQualifiers({
@@ -140,7 +140,7 @@ function collectEliminationQualifiers({
       const relevantSide = matchUp.matchUpStatus === BYE && matchUp.sides?.find(({ participantId }) => participantId);
 
       if (winningSide || relevantSide) {
-        const { participantId, participant } = winningSide || relevantSide || {};
+        const { participantId, participant } = winningSide || (relevantSide ?? {});
         if (participantId && !assignedParticipantIds.has(participantId)) {
           if (participant && returnParticipants) qualifyingParticipants.push(participant);
           qualifyingParticipantIds.push(participantId);

@@ -20,7 +20,7 @@ export function renameStructures({ drawDefinition, structureDetails }: RenameStr
     ...structureDetails
       .map((detail) => {
         if (!isObject(detail)) return undefined;
-        const { structureId, structureName } = detail || {};
+        const { structureId, structureName } = detail ?? {};
         if (!structureId || !structureName) return undefined;
         return { [structureId]: structureName };
       })
@@ -31,7 +31,7 @@ export function renameStructures({ drawDefinition, structureDetails }: RenameStr
     return { error: MISSING_VALUE };
   }
 
-  for (const structure of drawDefinition.structures || []) {
+  for (const structure of drawDefinition.structures ?? []) {
     const structureName = detailMap[structure.structureId];
     if (structureName) structure.structureName = structureName;
     if (structure.structures) {

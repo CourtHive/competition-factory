@@ -59,7 +59,7 @@ export function addEventExtension(params: AddExtensionArgs) {
 export function addParticipantExtension(params?) {
   if (!params || typeof params !== 'object') return { error: MISSING_VALUE };
   if (!params.participantId) return { error: MISSING_PARTICIPANT_ID };
-  const tournamentParticipants = params.tournamentRecord?.participants || [];
+  const tournamentParticipants = params.tournamentRecord?.participants ?? [];
   const participant = findParticipant({
     participantId: params.participantId,
     tournamentParticipants,
@@ -100,7 +100,7 @@ export function removeEventExtension(params) {
 export function removeParticipantExtension(params?) {
   if (!params || typeof params !== 'object') return { error: MISSING_VALUE };
   if (!params.participantId) return { error: MISSING_PARTICIPANT_ID };
-  const tournamentParticipants = params.tournamentRecord?.participants || [];
+  const tournamentParticipants = params.tournamentRecord?.participants ?? [];
   const participant = findParticipant({
     participantId: params.participantId,
     tournamentParticipants,

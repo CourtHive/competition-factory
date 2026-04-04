@@ -7,7 +7,7 @@ import { ScheduledMatchUpArgs } from '@Types/factoryTypes';
 
 export function matchUpAllocatedCourts({ timeStamp, schedule, matchUp }: ScheduledMatchUpArgs) {
   const { itemValue: allocatedCourts, timeStamp: itemTimeStamp } = latestVisibleTimeItemValue({
-    timeItems: matchUp?.timeItems || [],
+    timeItems: matchUp?.timeItems ?? [],
     itemType: ALLOCATE_COURTS,
   });
 

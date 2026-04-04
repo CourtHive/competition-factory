@@ -335,7 +335,7 @@ function applyDefaultedProcessCodes({ defaultedProcessCodes, inContextMatchUp, m
   if (matchUpStatus === DEFAULTED) {
     matchUp.processCodes = unique([...(matchUp.processCodes ?? []), ...defaultedProcessCodes]);
   } else {
-    for (const processCode of defaultedProcessCodes || []) {
+    for (const processCode of defaultedProcessCodes ?? []) {
       const codeIndex = processCode && matchUp?.processCodes?.lastIndexOf(processCode);
       matchUp?.processCodes?.splice(codeIndex, 1);
     }

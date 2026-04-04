@@ -60,7 +60,7 @@ export function generateQualifyingStructures({
     roundTarget: number = 1;
 
   for (const roundTargetProfile of qualifyingProfiles.sort(roundTargetSort)) {
-    const structureProfiles = roundTargetProfile.structureProfiles || [];
+    const structureProfiles = roundTargetProfile.structureProfiles ?? [];
     roundTarget = roundTargetProfile.roundTarget || roundTarget;
 
     let stageSequence = 1,
@@ -69,7 +69,7 @@ export function generateQualifyingStructures({
       finalQualifyingStructureId,
       linkType;
 
-    for (const structureProfile of (structureProfiles || []).sort(sequenceSort)) {
+    for (const structureProfile of (structureProfiles ?? []).sort(sequenceSort)) {
       const profileResult: any = processStructureProfile({
         structureProfile,
         qualifyingProfiles,
@@ -252,7 +252,7 @@ function processStructureProfile({
   finalQualifyingRoundNumber = roundLimit;
 
   if (tieFormat) {
-    matchUps = getAllStructureMatchUps({ structure })?.matchUps || [];
+    matchUps = getAllStructureMatchUps({ structure })?.matchUps ?? [];
     matchUps?.forEach((m) => {
       const { tieMatchUps } = generateTieMatchUps({ tieFormat, matchUp: m, isMock });
       Object.assign(m, { tieMatchUps, matchUpType });

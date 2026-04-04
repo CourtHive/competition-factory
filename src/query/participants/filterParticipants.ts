@@ -57,7 +57,7 @@ export function filterParticipants({
     [true, false].includes(positionedParticipants) &&
     tournamentEvents.reduce((participantIds, event) => {
       return participantIds.concat(
-        ...(event.drawDefinitions || [])
+        ...(event.drawDefinitions ?? [])
           .map((drawDefinition) => getAllPositionedParticipantIds({ drawDefinition }).allPositionedParticipantIds)
           .filter(Boolean),
       );
@@ -142,7 +142,7 @@ export function filterParticipants({
       tournamentEvents
         .filter((event) => eventIds.includes(event.eventId))
         .flatMap((event) => {
-          const enteredParticipantIds = (event.entries || []).map((entry) => entry.participantId);
+          const enteredParticipantIds = (event.entries ?? []).map((entry) => entry.participantId);
           if (isMatchUpEventType(SINGLES)(event.eventType)) return enteredParticipantIds;
           const individualParticipantIds = (tournamentRecord?.participants ?? [])
             .filter((participant) => enteredParticipantIds.includes(participant.participantId))
@@ -170,12 +170,12 @@ function getDrawEntries({ drawEntryStatuses, tournamentEvents }) {
       const flightEntries =
         flightProfile?.flights?.flatMap(({ drawEntries }) =>
           Array.isArray(drawEntries) ? drawEntries.filter(statusFilter).map(getParticipantId) : [],
-        ) || [];
+        ) ?? [];
 
       const drawEnteredParticipantIds =
         event.drawDefinitions?.map(({ entries }) =>
           entries ? entries.filter(statusFilter).map(getParticipantId) : [],
-        ) || [];
+        ) ?? [];
 
       return entries.concat(...flightEntries, ...drawEnteredParticipantIds);
     }, []),
@@ -185,7 +185,7 @@ function getDrawEntries({ drawEntryStatuses, tournamentEvents }) {
 function getEventEntries({ eventEntryStatuses, tournamentEvents }) {
   return unique(
     tournamentEvents.reduce((entries, event) => {
-      const eventEntries = (event.entries || [])
+      const eventEntries = (event.entries ?? [])
         .filter(({ entryStatus }) =>
           Array.isArray(eventEntryStatuses) ? eventEntryStatuses.includes(entryStatus) : true,
         )

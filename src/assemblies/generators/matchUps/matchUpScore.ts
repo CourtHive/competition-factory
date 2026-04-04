@@ -4,7 +4,7 @@ export function matchUpScore(params) {
   const { matchUpFormat, matchUpStatus, winningSide, score, setTBlast } = params;
   if (!score) return { sets: [] };
 
-  const sets = score.sets || [];
+  const sets = score.sets ?? [];
 
   let scoreStringSide1 = generateScoreString({
     winnerFirst: false,

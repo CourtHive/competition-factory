@@ -23,7 +23,7 @@ export function generateFlights({
     // if a drawProfile has specified uniqueParticipants...
     const drawParticipants = requiresUniqueParticipants
       ? uniqueDrawParticipants.slice(uniqueParticipantsIndex, uniqueParticipantsIndex + entriesCount)
-      : stageParticipants[stage || MAIN] || [];
+      : stageParticipants[stage || MAIN] ?? [];
 
     if (requiresUniqueParticipants) uniqueParticipantsIndex += entriesCount;
 

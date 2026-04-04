@@ -183,11 +183,11 @@ export function getDrawMatchUps(params): GroupsMatchUpsResult {
     };
     const { abandoned, completed, upcoming, pending, bye } = nextFilter;
     const matchUps = [].concat(
-      ...((abandoned && allAbandonedMatchUps) || []),
-      ...((completed && allCompletedMatchUps) || []),
-      ...((upcoming && allUpcomingMatchUps) || []),
-      ...((pending && allPendingMatchUps) || []),
-      ...((bye && allByeMatchUps) || []),
+      ...((abandoned && allAbandonedMatchUps) ?? []),
+      ...((completed && allCompletedMatchUps) ?? []),
+      ...((upcoming && allUpcomingMatchUps) ?? []),
+      ...((pending && allPendingMatchUps) ?? []),
+      ...((bye && allByeMatchUps) ?? []),
     );
     addUpcomingMatchUps({
       inContextDrawMatchUps: matchUps,

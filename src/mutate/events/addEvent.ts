@@ -3,23 +3,19 @@ import tieFormatDefaults from '@Assemblies/generators/templates/tieFormatDefault
 import { addEventNotice } from '@Mutate/notifications/eventNotifications';
 import { allEventMatchUps } from '@Query/matchUps/getAllEventMatchUps';
 import { validateTieFormat } from '@Validators/validateTieFormat';
+import { requireParams } from '@Helpers/parameters/requireParams';
 import { definedAttributes } from '@Tools/definedAttributes';
 import { getTopics } from '@Global/state/globalState';
 import { UUID } from '@Tools/UUID';
 
 // Constants and types
+import { EVENT_EXISTS, ErrorType, INVALID_VALUES } from '@Constants/errorConditionConstants';
+import { TOURNAMENT_RECORD, EVENT as EVENT_ATTR } from '@Constants/attributeConstants';
 import { SINGLES_EVENT, TEAM_EVENT } from '@Constants/eventConstants';
 import { Event, Tournament } from '@Types/tournamentTypes';
-import { ADD_MATCHUPS } from '@Constants/topicConstants';
 import { tieFormats } from '@Fixtures/scoring/tieFormats';
+import { ADD_MATCHUPS } from '@Constants/topicConstants';
 import { SUCCESS } from '@Constants/resultConstants';
-import {
-  EVENT_EXISTS,
-  ErrorType,
-  INVALID_VALUES,
-  MISSING_EVENT,
-  MISSING_TOURNAMENT_RECORD,
-} from '@Constants/errorConditionConstants';
 
 type AddEventArgs = {
   suppressNotifications?: boolean;
@@ -33,9 +29,9 @@ export function addEvent({ suppressNotifications, tournamentRecord, internalUse,
   event?: Event;
   info?: any;
 } {
-  if (!tournamentRecord) return { error: MISSING_TOURNAMENT_RECORD };
+  const paramsCheck = requireParams({ tournamentRecord, event }, [TOURNAMENT_RECORD, EVENT_ATTR]);
+  if (paramsCheck.error) return paramsCheck;
   tournamentRecord.events ??= [];
-  if (!event) return { error: MISSING_EVENT };
 
   // set default startDate, endDate based on tournamentRecord
   const { startDate, endDate } = tournamentRecord;
@@ -82,7 +78,7 @@ export function addEvent({ suppressNotifications, tournamentRecord, internalUse,
     }
   }
 
-  if (!eventRecord.eventId) eventRecord.eventId = UUID();
+  eventRecord.eventId ??= UUID();
 
   const eventExists = tournamentRecord.events.reduce((exists: any, event) => {
     return exists || event.eventId === eventRecord.eventId;
@@ -108,7 +104,7 @@ export function addEvent({ suppressNotifications, tournamentRecord, internalUse,
 
     const { drawDefinitions, ...rest } = event;
 
-    for (const drawDefinition of drawDefinitions || []) {
+    for (const drawDefinition of drawDefinitions ?? []) {
       addDrawNotice({ drawDefinition });
     }
 

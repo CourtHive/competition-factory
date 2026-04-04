@@ -43,7 +43,7 @@ function deduceBestOf(setCount: number): number {
 
 function parseGameScores(setString: string): number[] {
   const gamesOnly = setString.replaceAll(/\([^)]*\)/g, '');
-  return gamesOnly.match(/(\d+)/g)?.map((n) => Number.parseInt(n, 10)) || [];
+  return gamesOnly.match(/(\d+)/g)?.map((n) => Number.parseInt(n, 10)) ?? [];
 }
 
 function detectMatchTiebreak(setStrings: string[], bestOf: number): string | undefined {

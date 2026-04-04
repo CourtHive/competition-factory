@@ -23,7 +23,7 @@ export function enableVenues(params: EnableVenuesArgs) {
 
   const { venueIds, enableAll } = params;
   for (const tournamentRecord of Object.values(tournamentRecords)) {
-    for (const venue of tournamentRecord.venues || []) {
+    for (const venue of tournamentRecord.venues ?? []) {
       if (enableAll || venueIds?.includes(venue.venueId)) removeExtension({ element: venue, name: DISABLED });
     }
   }

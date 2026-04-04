@@ -175,8 +175,8 @@ function removeAssignedFromEvents({ tournamentRecord, relevantTeams }) {
         );
       });
       const { flightProfile } = getFlightProfile({ event });
-      (flightProfile?.flights || []).forEach((flight) => {
-        flight.drawEntries = (flight.drawEntries || []).filter(
+      (flightProfile?.flights ?? []).forEach((flight) => {
+        flight.drawEntries = (flight.drawEntries ?? []).filter(
           (entry) => !individualParticipantIds.includes(entry.participantId),
         );
       });

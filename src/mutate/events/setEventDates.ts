@@ -1,25 +1,20 @@
 import { checkRequiredParameters } from '@Helpers/parameters/checkRequiredParameters';
 import { isValidWeekdaysValue } from '@Validators/isValidWeekdaysValue';
+import { requireParams } from '@Helpers/parameters/requireParams';
 import { decorateResult } from '@Functions/global/decorateResult';
 import { dateValidation } from '@Validators/regex';
 import { extractDate } from '@Tools/dateTime';
 
 // constants and types
+import { INVALID_DATE, INVALID_TOURNAMENT_DATES, INVALID_VALUES } from '@Constants/errorConditionConstants';
+import { TOURNAMENT_RECORD, EVENT, INVALID, VALIDATE } from '@Constants/attributeConstants';
 import { Event, Tournament, WeekdayUnion } from '@Types/tournamentTypes';
-import { INVALID, VALIDATE } from '@Constants/attributeConstants';
 import { SUCCESS } from '@Constants/resultConstants';
 import { ResultType } from '@Types/factoryTypes';
-import {
-  INVALID_DATE,
-  INVALID_TOURNAMENT_DATES,
-  INVALID_VALUES,
-  MISSING_EVENT,
-  MISSING_TOURNAMENT_RECORD,
-} from '@Constants/errorConditionConstants';
 
 export function setEventStartDate({ tournamentRecord, event, startDate }) {
-  if (!tournamentRecord) return { error: MISSING_TOURNAMENT_RECORD };
-  if (!event) return { error: MISSING_EVENT };
+  const paramsCheck = requireParams({ tournamentRecord, event }, [TOURNAMENT_RECORD, EVENT]);
+  if (paramsCheck.error) return paramsCheck;
   if (!dateValidation.test(startDate)) return { error: INVALID_DATE };
   const result = getTournamentDates(tournamentRecord);
   const stack = 'setEventStartDate';
@@ -54,8 +49,8 @@ export function setEventStartDate({ tournamentRecord, event, startDate }) {
 
 export function setEventEndDate(params) {
   const { tournamentRecord, event, endDate } = params;
-  if (!tournamentRecord) return { error: MISSING_TOURNAMENT_RECORD };
-  if (!event) return { error: MISSING_EVENT };
+  const paramsCheck = requireParams({ tournamentRecord, event }, [TOURNAMENT_RECORD, EVENT]);
+  if (paramsCheck.error) return paramsCheck;
   if (!dateValidation.test(endDate)) return { error: INVALID_DATE };
   const result = getTournamentDates(tournamentRecord);
   if (result.error) return result;

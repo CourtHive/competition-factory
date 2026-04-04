@@ -18,7 +18,7 @@ export function generateTimeSlots(params: GenerateTimeSlotsArgs): ResultType & {
   const timeSlots: any[] = [];
   let startTime = timeToDate(courtDate.startTime);
 
-  (courtDate.bookings || [])
+  (courtDate.bookings ?? [])
     .filter((booking) => !booking.bookingType || !includeBookingTypes.includes(booking.bookingType))
     .sort((a, b) => (tidyTime(a.startTime) || '').localeCompare(tidyTime(b.startTime) || ''))
     .forEach((booking) => {

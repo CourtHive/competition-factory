@@ -38,7 +38,7 @@ export function generateCollectionMatchUps({
   isMock,
   uuids,
 }: GenerateCollectionMatchUpsArgs): MatchUp[] {
-  const { matchUpCount, matchUpType, collectionId, processCodes } = collectionDefinition || {};
+  const { matchUpCount, matchUpType, collectionId, processCodes } = collectionDefinition ?? {};
 
   const numberToGenerate = matchUpsLimit ?? matchUpCount ?? 0;
 

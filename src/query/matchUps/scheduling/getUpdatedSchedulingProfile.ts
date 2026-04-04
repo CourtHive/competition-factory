@@ -10,7 +10,7 @@ export function getUpdatedSchedulingProfile({ schedulingProfile, venueIds, event
         return undefined;
       }
 
-      const venues = (dateSchedulingProfile?.venues || [])
+      const venues = (dateSchedulingProfile?.venues ?? [])
         .map((venue) => {
           const { rounds, venueId } = venue;
           const venueExists = venueIds?.includes(venueId);

@@ -23,11 +23,11 @@ export function feedInLinks({
 }: FeedInLinksArgs) {
   const consolationMatchUps = consolationStructure.matchUps;
   const roundsFed = consolationMatchUps.reduce((p, matchUp) => {
-    const drawPositions = (matchUp.drawPositions || []).filter(Boolean);
+    const drawPositions = (matchUp.drawPositions ?? []).filter(Boolean);
     return drawPositions.length && !p.includes(matchUp.roundNumber) ? p.concat(matchUp.roundNumber) : p;
   }, []);
 
-  const roundGroupedOrder = feedPolicy?.roundGroupedOrder || [];
+  const roundGroupedOrder = feedPolicy?.roundGroupedOrder ?? [];
   const roundFeedProfiles = feedPolicy?.roundFeedProfiles;
 
   // range excludes final round which is final matchUp

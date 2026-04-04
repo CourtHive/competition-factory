@@ -15,7 +15,7 @@ export function setStructureOrder({ drawDefinition, orderMap }): ResultType {
       context: { orderMap },
     });
 
-  if (!drawDefinition.structures) drawDefinition.structures = [];
+  drawDefinition.structures ??= [];
   drawDefinition.structures.forEach((structure) => {
     const structureOrder = orderMap[structure.structureId];
     if (structureOrder) structure.structureOrder = structureOrder;

@@ -41,7 +41,7 @@ function removeSubstitutionProcessCodes({
 }) {
   const otherSide: any = inContextTieMatchUp?.sides?.find((s) => s.sideNumber !== side.sideNumber);
   if (!otherSide?.substitutions?.length && tieMatchUp?.processCodes?.length) {
-    for (const substitutionProcessCode of substitutionProcessCodes || []) {
+    for (const substitutionProcessCode of substitutionProcessCodes ?? []) {
       const codeIndex = tieMatchUp.processCodes.lastIndexOf(substitutionProcessCode);
       tieMatchUp.processCodes.splice(codeIndex, 1);
     }

@@ -36,7 +36,7 @@ export function updateSideLineUp({
     name: LINEUPS,
   });
 
-  const lineUps = existingExtension?.value || {};
+  const lineUps = existingExtension?.value ?? {};
   const lineUp = makeDeepCopy(lineUps[teamParticipantId], false, true);
 
   if (sideExists) {

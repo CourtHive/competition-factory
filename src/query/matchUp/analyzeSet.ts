@@ -12,8 +12,8 @@ export function analyzeSet(params) {
   const { setObject, matchUpScoringFormat } = params;
   if (!setObject) return { error: MISSING_SET_OBJECT };
 
-  const { setNumber } = setObject || {};
-  const { bestOf, exactly } = matchUpScoringFormat || {};
+  const { setNumber } = setObject ?? {};
+  const { bestOf, exactly } = matchUpScoringFormat ?? {};
   const maxSetNumber = bestOf || exactly;
   const isDecidingSet = !!(setNumber && maxSetNumber && setNumber === maxSetNumber);
   const setFormat = (isDecidingSet && matchUpScoringFormat?.finalSetFormat) || matchUpScoringFormat?.setFormat;
@@ -32,7 +32,7 @@ export function analyzeSet(params) {
   const gameScoresCount = sideGameScores?.filter((s) => typeof s === 'number' && !Number.isNaN(s)).length;
   const tiebreakScoresCount = sideTiebreakScores?.filter((s) => typeof s === 'number' && !Number.isNaN(s)).length;
 
-  const { tiebreakAt } = setFormat || {};
+  const { tiebreakAt } = setFormat ?? {};
   const hasTiebreakCondition = tiebreakAt && sideGameScores.filter((gameScore) => gameScore >= tiebreakAt).length === 2;
 
   const leadingSide = determineLeadingSide(hasTiebreakCondition, sideGameScores);
@@ -175,7 +175,7 @@ function checkValidStandardSetOutcome({ setObject, setFormat, sideGameScores, si
   const validGameScores = sideGameScores?.filter((s) => typeof s === 'number' && !Number.isNaN(s)).length === 2;
   if (!validGameScores) return { result: false, error: INVALID_GAME_SCORES };
 
-  const { setTo, tiebreakAt, tiebreakFormat, NoAD } = setFormat || {};
+  const { setTo, tiebreakAt, tiebreakFormat, NoAD } = setFormat ?? {};
   const meetsSetTo = !!(setTo && sideGameScores?.find((gameScore) => gameScore >= setTo));
   if (!meetsSetTo) return { result: false, error: INVALID_GAME_SCORES };
 
@@ -339,8 +339,8 @@ function checkValidTiebreakSetOutcome({ setObject, setFormat, sideTiebreakScores
   const isValidWinningSide = validWinningSides.has(setObject?.winningSide);
   if (!setObject || !isValidWinningSide) return { result: false, error: INVALID_WINNING_SIDE };
 
-  const { tiebreakSet } = setFormat || {};
-  const { NoAD, tiebreakTo } = tiebreakSet || {};
+  const { tiebreakSet } = setFormat ?? {};
+  const { NoAD, tiebreakTo } = tiebreakSet ?? {};
 
   const validTiebreakScores = sideTiebreakScores?.filter((s) => typeof s === 'number' && !Number.isNaN(s)).length === 2;
   if (!validTiebreakScores) {

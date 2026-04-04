@@ -133,7 +133,7 @@ function handleTiebreakCloser({ analysis, scoreString, sets }) {
   const set = sets[sets.length - 1];
 
   const { tiebreakFormat } = analysis.setFormat;
-  const { tiebreakTo, NoAD } = tiebreakFormat || {};
+  const { tiebreakTo, NoAD } = tiebreakFormat ?? {};
   const leadingSide = getLeadingSide({ set });
 
   if (!analysis.isTiebreakSet) {
@@ -170,7 +170,7 @@ function handleSetTiebreakEntry({ analysis, scoreString, value }) {
   const newTiebreakValue = ensureInt(tiebreakValue ? tiebreakValue + value : value);
 
   const { tiebreakFormat } = analysis.setFormat;
-  const { tiebreakTo, NoAD } = tiebreakFormat || {};
+  const { tiebreakTo, NoAD } = tiebreakFormat ?? {};
 
   if (!hasZeroStart && tiebreakValue.length < 2) {
     if (NoAD && newTiebreakValue > tiebreakTo - 1) {

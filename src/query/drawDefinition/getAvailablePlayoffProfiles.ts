@@ -75,7 +75,7 @@ function availablePlayoffProfiles({ playoffPositions, drawDefinition, structure,
 
     const groupCount = structure.structures.length;
     const groupSize = (positionsCount ?? 0) / groupCount;
-    const finishingPositionsPlayedOff = links.source?.flatMap(({ source }) => source?.finishingPositions || []) || [];
+    const finishingPositionsPlayedOff = links.source?.flatMap(({ source }) => source?.finishingPositions ?? []) ?? [];
     const finishingPositionsAvailable = generateRange(1, groupSize + 1).filter(
       (n) => !finishingPositionsPlayedOff.includes(n),
     );
@@ -99,8 +99,8 @@ function availablePlayoffProfiles({ playoffPositions, drawDefinition, structure,
     const playoffFinishingPositionRanges = finishingPositionsAvailable.map((finishingPosition, i) => {
       const finishingPositions = positionChunks[i];
       const finishingPositionRange = [
-        Math.min(...(finishingPositions || [])),
-        Math.max(...(finishingPositions || [])),
+        Math.min(...(finishingPositions ?? [])),
+        Math.max(...(finishingPositions ?? [])),
       ].join('-');
       return {
         finishingPosition,
@@ -124,9 +124,9 @@ function availablePlayoffProfiles({ playoffPositions, drawDefinition, structure,
   }
 
   const linkSourceRoundNumbers =
-    links?.source?.filter((link) => link.linkCondition !== FIRST_MATCHUP).map((link) => link.source?.roundNumber) || [];
+    links?.source?.filter((link) => link.linkCondition !== FIRST_MATCHUP).map((link) => link.source?.roundNumber) ?? [];
   const potentialFirstMatchUpRounds =
-    links?.source?.filter((link) => link.linkCondition === FIRST_MATCHUP).map((link) => link.source?.roundNumber) || [];
+    links?.source?.filter((link) => link.linkCondition === FIRST_MATCHUP).map((link) => link.source?.roundNumber) ?? [];
 
   const sourceRoundsResult: any = getSourceRounds({
     excludeRoundNumbers: linkSourceRoundNumbers,
@@ -136,9 +136,9 @@ function availablePlayoffProfiles({ playoffPositions, drawDefinition, structure,
   });
 
   const playoffRounds = sourceRoundsResult?.playoffSourceRounds
-    ? [...(sourceRoundsResult?.playoffSourceRounds || [])]
+    ? [...(sourceRoundsResult?.playoffSourceRounds ?? [])]
     : undefined;
-  const playoffRoundsRanges = [...(sourceRoundsResult?.playoffRoundsRanges || [])];
+  const playoffRoundsRanges = [...(sourceRoundsResult?.playoffRoundsRanges ?? [])];
 
   const { roundProfile, error } = sourceRoundsResult;
   for (const roundNumber of potentialFirstMatchUpRounds) {

@@ -68,7 +68,7 @@ export function getStructureGroups({ drawDefinition }: { drawDefinition: DrawDef
         linkedStructureIds.reduce((biggest, ids) => {
           const hasOverlap = overlap(structureIds, ids);
           return hasOverlap ? biggest.concat(...ids) : biggest;
-        }, []) || [];
+        }, []) ?? [];
       return unique(structureIds.concat(...mergedWithOverlappingIds));
     });
   });
@@ -127,7 +127,7 @@ function processLinks({ links, initStructureProfile, sourceStructureIds, hasDraw
     }
 
     hasDrawFeedProfile[targetId] = hasDrawFeedProfile[targetId] || link.target.feedProfile === DRAW;
-    sourceStructureIds[targetId] = unique([...(sourceStructureIds[targetId] || []), sourceId]).filter(Boolean);
+    sourceStructureIds[targetId] = unique([...(sourceStructureIds[targetId] ?? []), sourceId]).filter(Boolean);
 
     return [link.source.structureId, link.target.structureId];
   });
@@ -154,7 +154,7 @@ function resolveRootStage(profile: StructureProfile, structureProfiles: Map<stri
       profile.rootStage = sourceProfile.stage;
     }
   }
-  if (!profile.rootStage) profile.rootStage = profile.stage;
+  profile.rootStage ??= profile.stage;
 }
 
 function resolveProgeny(profile: StructureProfile, structureProfiles: Map<string, StructureProfile>) {

@@ -16,7 +16,7 @@ export function addDrawDefinitionTimeItem({ drawDefinition, timeItem }) {
 
   if (!validTimeItem) return { error: INVALID_TIME_ITEM };
 
-  if (!drawDefinition.timeItems) drawDefinition.timeItems = [];
+  drawDefinition.timeItems ??= [];
   const createdAt = new Date().toISOString();
   Object.assign(timeItem, { createdAt });
   drawDefinition.timeItems.push(timeItem);

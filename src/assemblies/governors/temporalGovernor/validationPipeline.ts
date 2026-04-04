@@ -157,7 +157,7 @@ function validateOrdering(_engine: TemporalEngine, plans: DayPlan[]): RuleResult
   for (const plan of plans) {
     for (const item of plan.items) {
       const key = `${item.eventId}|${item.drawId || ''}`;
-      const list = eventRounds.get(key) || [];
+      const list = eventRounds.get(key) ?? [];
       list.push({ day: plan.day, roundNumber: item.roundNumber, planItemId: item.planItemId });
       eventRounds.set(key, list);
     }
@@ -303,7 +303,7 @@ export function runValidationPipeline(params: ValidationPipelineParams): Validat
   const issueIndex: IssueIndex = new Map();
   for (const result of results) {
     const key = result.context?.planItemId || '__global__';
-    const existing = issueIndex.get(key) || [];
+    const existing = issueIndex.get(key) ?? [];
     existing.push(result);
     issueIndex.set(key, existing);
   }

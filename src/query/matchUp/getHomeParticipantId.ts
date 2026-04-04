@@ -12,7 +12,7 @@ export function getHomeParticipantId(params: ScheduledMatchUpArgs) {
   if (paramsCheck.error) return paramsCheck;
 
   const { itemValue: homeParticipantId, timeStamp: itemTimeStamp } = latestVisibleTimeItemValue({
-    timeItems: matchUp?.timeItems || [],
+    timeItems: matchUp?.timeItems ?? [],
     itemType: HOME_PARTICIPANT_ID,
   });
 

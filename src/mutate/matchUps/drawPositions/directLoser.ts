@@ -43,7 +43,7 @@ export function directLoser(params): ResultType {
 
   const stack = 'directLoser';
   const loserLinkCondition = loserTargetLink.linkCondition;
-  const targetMatchUpDrawPositions = loserMatchUp.drawPositions || [];
+  const targetMatchUpDrawPositions = loserMatchUp.drawPositions ?? [];
 
   const fedDrawPositionFMLC =
     loserLinkCondition === FIRST_MATCHUP &&
@@ -307,7 +307,7 @@ function propagateLoserLineUp({
   const targetMatchUp = matchUpsMap?.drawMatchUps?.find(({ matchUpId }) => matchUpId === loserMatchUp.matchUpId);
 
   const updatedSides = [1, 2].map((sideNumber) => {
-    const existingSide = targetMatchUp.sides?.find((s) => s.sideNumber === sideNumber) || {};
+    const existingSide = targetMatchUp.sides?.find((s) => s.sideNumber === sideNumber) ?? {};
     return { ...existingSide, sideNumber };
   });
 

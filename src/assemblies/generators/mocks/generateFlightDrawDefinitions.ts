@@ -55,7 +55,7 @@ export function generateFlightDrawDefinitions({
     drawIds.push(flight.drawId);
 
     const drawProfile = drawProfiles[index];
-    const { seedsCount, generate = true } = drawProfile || {};
+    const { seedsCount, generate = true } = drawProfile ?? {};
 
     if (!generate) continue;
 

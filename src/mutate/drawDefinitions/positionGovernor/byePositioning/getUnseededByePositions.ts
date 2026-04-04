@@ -33,7 +33,7 @@ export function getUnseededByePositions({
     matchUpFilters,
     structure,
   });
-  const firstRoundMatchUps = roundMatchUps?.[1] || [];
+  const firstRoundMatchUps = roundMatchUps?.[1] ?? [];
 
   // firstRoundMatchUps don't work for CONTAINER / ROUND_ROBIN structures
   const relevantMatchUps = structure.structureType === CONTAINER ? matchUps : firstRoundMatchUps;

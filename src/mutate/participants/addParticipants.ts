@@ -24,13 +24,13 @@ export function addParticipants({
   participants = [],
 }: AddParticipantsType) {
   if (!tournamentRecord) return { error: MISSING_TOURNAMENT_RECORD };
-  if (!tournamentRecord.participants) tournamentRecord.participants = [];
+  tournamentRecord.participants ??= [];
   const tournamentParticipants = tournamentRecord.participants;
 
-  const existingParticipantIds = tournamentParticipants.map((p) => p.participantId) || [];
+  const existingParticipantIds = tournamentParticipants.map((p) => p.participantId) ?? [];
 
   participants.forEach((participant) => {
-    if (!participant.participantId) participant.participantId = UUID();
+    participant.participantId ??= UUID();
   });
 
   const newParticipants = participants.filter(

@@ -119,7 +119,7 @@ export function getTargetMatchUp({
     // ...when roundNumber > 1 matchUpDrawPositionIndex should always be 0
     // ...because fed drawPositions are always numerically smaller than advanced drawPositions
     matchUpDrawPositionIndex = 0;
-    targetDrawPosition = Math.min(...(matchUp.drawPositions || []).filter(Boolean));
+    targetDrawPosition = Math.min(...(matchUp.drawPositions ?? []).filter(Boolean));
   } else {
     // when not a feedRound targetDrawPosition can only be determined when both drawPositions present
     targetDrawPosition = matchUp?.drawPositions?.length === 2 && matchUp?.drawPositions[matchUpDrawPositionIndex];

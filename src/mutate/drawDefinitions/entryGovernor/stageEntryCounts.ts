@@ -62,7 +62,7 @@ export function setStageAlternatesCount({ alternatesCount, drawDefinition, stage
     drawDefinition.entries =
       drawDefinition.entries?.filter((entry) => {
         return entry.entryStatus !== ALTERNATE;
-      }) || [];
+      }) ?? [];
   }
 
   modifyDrawNotice({ drawDefinition });

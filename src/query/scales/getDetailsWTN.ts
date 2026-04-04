@@ -6,7 +6,7 @@ export function getDetailsWTN({ participant, eventType }) {
   const tennisId = participant?.person?.tennisId;
   const scaleItem = participant?.ratings?.[eventType]?.find(({ scaleName }) => scaleName === WTN);
   const personWTN = scaleItem?.scaleValue;
-  const { wtnRating, confidence } = personWTN || {};
+  const { wtnRating, confidence } = personWTN ?? {};
   return {
     timeStamp: scaleItem?.scaleDate,
     personOtherId,

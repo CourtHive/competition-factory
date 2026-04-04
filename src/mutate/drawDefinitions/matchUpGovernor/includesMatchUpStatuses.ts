@@ -23,9 +23,9 @@ export function includesMatchUpStatuses({
     .filter((matchUp) => matchUp?.drawPositions?.includes(loserDrawPosition))
     .map((matchUp) => matchUp.matchUpStatus);
 
-  const winnerHadMatchUpStatus = overlap(winnerMatchUpStatuses || [], matchUpStatuses);
+  const winnerHadMatchUpStatus = overlap(winnerMatchUpStatuses ?? [], matchUpStatuses);
 
-  const loserHadMatchUpStatus = overlap(loserMatchUpStatuses || [], matchUpStatuses);
+  const loserHadMatchUpStatus = overlap(loserMatchUpStatuses ?? [], matchUpStatuses);
 
   return {
     sourceMatchUp,

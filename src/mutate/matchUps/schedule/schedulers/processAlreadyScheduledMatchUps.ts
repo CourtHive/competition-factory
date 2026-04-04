@@ -42,7 +42,7 @@ export function processAlreadyScheduledMatchUps({
 
   if (!dateScheduledMatchUpIds) {
     dateScheduledMatchUps = matchUps?.filter((matchUp) => {
-      const schedule = matchUp.schedule || {};
+      const schedule = matchUp.schedule ?? {};
       const isByeMatchUp = matchUp.matchUpStatus === BYE;
       if (isByeMatchUp)
         byeScheduledMatchUpDetails.push({

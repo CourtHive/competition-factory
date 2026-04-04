@@ -1,13 +1,15 @@
+import { requireParams } from '@Helpers/parameters/requireParams';
 import { addNotes, removeNotes } from '../base/addRemoveNotes';
 import { addNotice } from '@Global/state/globalState';
 
 // constants
-import { MISSING_TOURNAMENT_RECORD } from '@Constants/errorConditionConstants';
 import { MODIFY_TOURNAMENT_DETAIL } from '@Constants/topicConstants';
+import { TOURNAMENT_RECORD } from '@Constants/attributeConstants';
 import { SUCCESS } from '@Constants/resultConstants';
 
 export function setTournamentName({ tournamentRecord, promotionalName, tournamentName, formalName }) {
-  if (!tournamentRecord) return { error: MISSING_TOURNAMENT_RECORD };
+  const paramsCheck = requireParams({ tournamentRecord }, [TOURNAMENT_RECORD]);
+  if (paramsCheck.error) return paramsCheck;
   const tournamentId = tournamentRecord.tournamentId;
 
   const detailUpdates: any = { tournamentId };
@@ -48,7 +50,8 @@ export function setTournamentName({ tournamentRecord, promotionalName, tournamen
 }
 
 export function setTournamentNotes({ tournamentRecord, notes }) {
-  if (!tournamentRecord) return { error: MISSING_TOURNAMENT_RECORD };
+  const paramsCheck = requireParams({ tournamentRecord }, [TOURNAMENT_RECORD]);
+  if (paramsCheck.error) return paramsCheck;
 
   const result = notes ? addNotes({ element: tournamentRecord, notes }) : removeNotes({ element: tournamentRecord });
   if (result.error) return result;
@@ -66,8 +69,9 @@ export function setTournamentNotes({ tournamentRecord, notes }) {
 }
 
 export function setTournamentCategories({ tournamentRecord, categories }) {
-  if (!tournamentRecord) return { error: MISSING_TOURNAMENT_RECORD };
-  categories = (categories || []).filter((category) => category.categoryName && category.type);
+  const paramsCheck = requireParams({ tournamentRecord }, [TOURNAMENT_RECORD]);
+  if (paramsCheck.error) return paramsCheck;
+  categories = (categories ?? []).filter((category) => category.categoryName && category.type);
   tournamentRecord.tournamentCategories = categories;
 
   addNotice({

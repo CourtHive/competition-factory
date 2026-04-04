@@ -31,8 +31,8 @@ export function getRoundId(obj) {
 
 export function getRoundTiming({ round, matchUps, events, tournamentRecords }) {
   const event = events.find((event) => event.eventId === round.eventId);
-  const { eventType, category, categoryType } = event || {};
-  const { categoryName, ageCategoryCode } = category || {};
+  const { eventType, category, categoryType } = event ?? {};
+  const { categoryName, ageCategoryCode } = category ?? {};
   const formatCounts = instanceCount(matchUps.map(({ matchUpFormat }) => matchUpFormat));
 
   let roundMinutes = 0;
@@ -57,10 +57,10 @@ export function getRoundTiming({ round, matchUps, events, tournamentRecords }) {
 }
 
 export function getFinishingPositionDetails(matchUps) {
-  return (matchUps || []).reduce(
+  return (matchUps ?? []).reduce(
     (foo, matchUp) => {
-      const sum = (matchUp.finishingPositionRange?.winner || []).reduce((a, b) => a + b, 0);
-      const winnerFinishingPositionRange = (matchUp.finishingPositionRange?.winner || []).join('-') || '';
+      const sum = (matchUp.finishingPositionRange?.winner ?? []).reduce((a, b) => a + b, 0);
+      const winnerFinishingPositionRange = (matchUp.finishingPositionRange?.winner ?? []).join('-') || '';
       return !foo.minFinishingSum || sum < foo.minFinishingSum
         ? { minFinishingSum: sum, winnerFinishingPositionRange }
         : foo;

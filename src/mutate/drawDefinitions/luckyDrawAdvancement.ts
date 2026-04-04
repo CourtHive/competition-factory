@@ -81,12 +81,12 @@ export function luckyDrawAdvancement({
 
   // Find next round matchUps sorted by roundPosition
   const nextRoundNumber = roundNumber + 1;
-  const nextRoundMatchUps = (structure.matchUps || [])
+  const nextRoundMatchUps = (structure.matchUps ?? [])
     .filter((m) => m.roundNumber === nextRoundNumber)
     .sort((a, b) => (a.roundPosition || 0) - (b.roundPosition || 0));
 
   // Collect advancing participant IDs: winners in roundPosition order + lucky loser
-  const winners = roundStatus.advancingWinners || [];
+  const winners = roundStatus.advancingWinners ?? [];
   const advancingParticipantIds = winners.map((w) => w.participantId);
 
   if (roundStatus.isPreFeedRound && participantId) {
@@ -112,7 +112,7 @@ export function luckyDrawAdvancement({
     });
   }
 
-  let positionAssignments = structure.positionAssignments || [];
+  let positionAssignments = structure.positionAssignments ?? [];
   positionAssignments = cleanupStalePositionAssignments({
     positionAssignments,
     nextRoundMatchUps,
@@ -192,11 +192,11 @@ function placeDiscardedLosers({
     return { ...SUCCESS };
   }
 
-  let targetMatchUps = (targetStructure.matchUps || [])
+  let targetMatchUps = (targetStructure.matchUps ?? [])
     .filter((m) => m.roundNumber === targetRoundNumber)
     .sort((a, b) => (a.roundPosition || 0) - (b.roundPosition || 0));
 
-  let targetPositionAssignments = targetStructure.positionAssignments || [];
+  let targetPositionAssignments = targetStructure.positionAssignments ?? [];
   const unfilledPositions: number[] = [];
 
   targetStructure.matchUps ??= [];
@@ -279,13 +279,13 @@ function handleDiscardedLosers({
   roundNumber,
   event,
 }) {
-  const discardedLosers = (roundStatus.eligibleLosers || [])
+  const discardedLosers = (roundStatus.eligibleLosers ?? [])
     .filter((l) => l.participantId !== participantId)
     .map((l) => l.participantId);
 
   if (!discardedLosers.length) return;
 
-  const loserLinks = (drawDefinition.links || []).filter(
+  const loserLinks = (drawDefinition.links ?? []).filter(
     (link) =>
       link.linkType === LOSER &&
       link.source.structureId === structureId &&
@@ -375,7 +375,7 @@ function insertLuckyLoser({ advancingParticipantIds, nextRoundMatchUps, roundSta
 }
 
 function cleanupStalePositionAssignments({ positionAssignments, nextRoundMatchUps, structure, roundNumber }) {
-  const nextRoundDrawPositions = new Set(nextRoundMatchUps.flatMap((m) => (m.drawPositions || []).filter(Boolean)));
+  const nextRoundDrawPositions = new Set(nextRoundMatchUps.flatMap((m) => (m.drawPositions ?? []).filter(Boolean)));
 
   if (nextRoundDrawPositions.size) {
     const stalePositions: number[] = [];
@@ -394,9 +394,9 @@ function cleanupStalePositionAssignments({ positionAssignments, nextRoundMatchUp
   }
 
   const completedRoundPositions = new Set(
-    (structure.matchUps || [])
+    (structure.matchUps ?? [])
       .filter((m) => m.roundNumber && m.roundNumber <= roundNumber)
-      .flatMap((m) => m.drawPositions || [])
+      .flatMap((m) => m.drawPositions ?? [])
       .filter(Boolean),
   );
   positionAssignments = positionAssignments.filter((a) => {
@@ -420,7 +420,7 @@ function assignNextRoundPositions({
   structure,
 }) {
   const allAssignedPositions = new Set(positionAssignments.map((a) => a.drawPosition));
-  const allMatchUpPositions = (structure.matchUps || []).flatMap((m) => m.drawPositions || []).filter(Boolean);
+  const allMatchUpPositions = (structure.matchUps ?? []).flatMap((m) => m.drawPositions ?? []).filter(Boolean);
   const allPositions = [...allAssignedPositions, ...allMatchUpPositions];
   const maxPosition = allPositions.length ? Math.max(...allPositions) : 0;
   let nextPosition = maxPosition + 1;
@@ -486,7 +486,7 @@ function createVirtualMatchUps({
 
 function findUnfilledPositions({ targetMatchUps, targetPositionAssignments, targetStructure, unfilledPositions }) {
   for (const matchUp of targetMatchUps) {
-    for (const dp of matchUp.drawPositions || []) {
+    for (const dp of matchUp.drawPositions ?? []) {
       if (!dp) continue;
       const assignment = targetPositionAssignments.find((a) => a.drawPosition === dp);
       if (!assignment?.participantId && !assignment?.bye) {
@@ -499,8 +499,8 @@ function findUnfilledPositions({ targetMatchUps, targetPositionAssignments, targ
     const assignedDrawPositions = new Set(
       targetPositionAssignments.filter((a) => a.participantId).map((a) => a.drawPosition),
     );
-    const livePositions = (targetStructure.matchUps || [])
-      .flatMap((m) => m.drawPositions || [])
+    const livePositions = (targetStructure.matchUps ?? [])
+      .flatMap((m) => m.drawPositions ?? [])
       .filter((dp) => dp && assignedDrawPositions.has(dp));
     const allLive = [...assignedDrawPositions, ...livePositions];
     let nextPosition = allLive.length ? Math.max(...allLive) + 1 : 1;

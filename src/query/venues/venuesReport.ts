@@ -25,7 +25,7 @@ export function getVenuesReport({
   if (!Array.isArray(venueIds)) return { error: INVALID_VALUES, venueIds };
 
   const tournamentIds =
-    (tournamentRecords && Object.keys(tournamentRecords).filter((id) => !tournamentId || id === tournamentId)) || [];
+    (tournamentRecords && Object.keys(tournamentRecords).filter((id) => !tournamentId || id === tournamentId)) ?? [];
   if (!tournamentIds.length) return { error: MISSING_TOURNAMENT_RECORDS };
 
   const validDates = dates.every(isValidDateString);

@@ -18,7 +18,7 @@ export function getByesData({ provisionalPositioning, drawDefinition, matchUpsMa
     structure,
     event,
   });
-  const firstRoundMatchUps = roundMatchUps?.[1] || [];
+  const firstRoundMatchUps = roundMatchUps?.[1] ?? [];
 
   // firstRoundMatchUps don't work for CONTAINER / ROUND_ROBIN structures
 

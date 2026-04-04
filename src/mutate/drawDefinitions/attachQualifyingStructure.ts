@@ -52,14 +52,14 @@ export function attachQualifying(params: AttachQualifyingArgs) {
       result,
     });
 
-  if (!drawDefinition.structures) drawDefinition.structures = [];
-  if (!drawDefinition.links) drawDefinition.links = [];
+  drawDefinition.structures ??= [];
+  drawDefinition.links ??= [];
   drawDefinition.structures.push(structure);
   drawDefinition.links.push(link);
 
   resequenceStructures({ drawDefinition });
 
-  const matchUps = getAllStructureMatchUps({ structure })?.matchUps || [];
+  const matchUps = getAllStructureMatchUps({ structure })?.matchUps ?? [];
 
   addMatchUpsNotice({
     drawDefinition,

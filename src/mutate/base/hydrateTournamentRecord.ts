@@ -8,7 +8,7 @@ export function hydrateTournamentRecord(params) {
   const { tournamentRecord, eventProfiles = [], directives, policyDefinitions } = params;
   if (!tournamentRecord) return { error: MISSING_TOURNAMENT_RECORD };
 
-  const events = tournamentRecord.events || [];
+  const events = tournamentRecord.events ?? [];
 
   events.forEach((event) => {
     const eventProfile = eventProfiles.find((ep) => ep.eventId && ep.eventId === event.eventId);

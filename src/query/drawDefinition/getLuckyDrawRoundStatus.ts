@@ -84,12 +84,12 @@ export function getLuckyDrawRoundStatus({
   const isLuckyDraw = isLuckyDrawType || isLucky({ drawDefinition, structure });
   if (!isLuckyDraw) return { ...SUCCESS, isLuckyDraw: false, rounds: [] };
 
-  const matchUps = structure.matchUps || [];
+  const matchUps = structure.matchUps ?? [];
   const { roundProfile, roundNumbers } = getRoundMatchUps({ matchUps });
   if (!roundProfile || !roundNumbers?.length) return { ...SUCCESS, isLuckyDraw: true, rounds: [] };
 
   // Build lookup maps for resolving participants from drawPositions
-  const positionAssignments = structure.positionAssignments || [];
+  const positionAssignments = structure.positionAssignments ?? [];
   const positionToParticipantId: Record<number, string> = {};
   for (const pa of positionAssignments) {
     if (pa.drawPosition && pa.participantId) {
@@ -131,7 +131,7 @@ export function getLuckyDrawRoundStatus({
     const needsLuckySelection = isPreFeedRound && isComplete && nextRoundHasOpenPosition;
 
     // Check for LOSER links from this round to consolidation/playoff structures
-    const loserLinks = (drawDefinition.links || []).filter(
+    const loserLinks = (drawDefinition.links ?? []).filter(
       (link) =>
         link.linkType === LOSER &&
         link.source.structureId === structureId &&
@@ -144,9 +144,9 @@ export function getLuckyDrawRoundStatus({
 
       // Check if losers have already been placed in the target structure
       const { structure: targetStructure } = findStructure({ drawDefinition, structureId: targetStructureId });
-      const targetAssignments = targetStructure?.positionAssignments || [];
-      const targetMatchUps = (targetStructure?.matchUps || []).filter((m) => m.roundNumber === targetRoundNumber);
-      const targetDrawPositions = new Set(targetMatchUps.flatMap((m) => (m.drawPositions || []).filter(Boolean)));
+      const targetAssignments = targetStructure?.positionAssignments ?? [];
+      const targetMatchUps = (targetStructure?.matchUps ?? []).filter((m) => m.roundNumber === targetRoundNumber);
+      const targetDrawPositions = new Set(targetMatchUps.flatMap((m) => (m.drawPositions ?? []).filter(Boolean)));
 
       const losersPlaced =
         targetDrawPositions.size > 0 &&
@@ -221,7 +221,7 @@ export function getLuckyDrawRoundStatus({
         if (info) advancingWinners.push(info);
       } else if (m.matchUpStatus === BYE) {
         // BYE-advanced: find the non-BYE participant
-        const dps = m.drawPositions || [];
+        const dps = m.drawPositions ?? [];
         for (const dp of dps) {
           if (!dp) continue;
           const assignment = positionAssignments.find((a) => a.drawPosition === dp);

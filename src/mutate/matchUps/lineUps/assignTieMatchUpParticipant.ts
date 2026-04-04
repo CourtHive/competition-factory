@@ -245,7 +245,7 @@ export function assignTieMatchUpParticipantId(
 
 function checkAlreadyAssigned(inContextTieMatchUp, participantId) {
   const allTieIndividualParticipantIds = inContextTieMatchUp?.sides?.flatMap(
-    (side: any) => side.participant?.individualParticipantIds || side.participant?.participantId || [],
+    (side: any) => side.participant?.individualParticipantIds || (side.participant?.participantId ?? []),
   );
   return allTieIndividualParticipantIds?.includes(participantId);
 }
@@ -390,7 +390,7 @@ function addParticipantId2Pair({ side, tournamentRecord, participantId }) {
     });
     if (result.error) return result;
   } else {
-    const individualParticipantIds = side.participant.individualParticipantIds || [];
+    const individualParticipantIds = side.participant.individualParticipantIds ?? [];
 
     const sideParticipantsCount = individualParticipantIds.filter(Boolean).length;
 

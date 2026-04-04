@@ -39,11 +39,11 @@ export function resetMatchUpLineUps({
 
   let modificationsCount = 0;
 
-  (matchUp?.sides || []).forEach((side) => {
+  (matchUp?.sides ?? []).forEach((side) => {
     if (side.lineUp) delete side.lineUp;
   });
 
-  (inContextMatchUp?.sides || []).forEach((side) => {
+  (inContextMatchUp?.sides ?? []).forEach((side) => {
     modificationsCount += 1;
 
     if (inheritance === false) {

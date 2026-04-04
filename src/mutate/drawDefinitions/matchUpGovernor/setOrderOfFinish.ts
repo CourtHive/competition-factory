@@ -105,7 +105,7 @@ export function setOrderOfFinish({ tournamentRecord, drawDefinition, finishingOr
 
   // throw an error if an existing matchUp has an invalid orderOfFinish value
   for (const matchUp of otherCohortMatchUps ?? []) {
-    const { orderOfFinish } = matchUp || {};
+    const { orderOfFinish } = matchUp ?? {};
     if (orderOfFinish) {
       if (!isConvertableInteger(orderOfFinish))
         return decorateResult({

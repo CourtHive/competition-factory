@@ -33,7 +33,7 @@ export function addCourt({ tournamentRecord, disableNotice, venueId, courtId, co
   const { venue } = findVenue({ tournamentRecord, venueId });
   if (!venue) return { error: VENUE_NOT_FOUND };
 
-  if (!venue.courts) venue.courts = [];
+  venue.courts ??= [];
 
   const courtRecord: any = { ...courtTemplate(), venueId, courtId };
   if (!courtRecord.courtId) {
@@ -46,7 +46,7 @@ export function addCourt({ tournamentRecord, disableNotice, venueId, courtId, co
     return { error: COURT_EXISTS };
   } else {
     // build new dateAvailability object with date/time extraction
-    const dateAvailability = (court?.dateAvailability || []).map((availabilty: any) => ({
+    const dateAvailability = (court?.dateAvailability ?? []).map((availabilty: any) => ({
       ...availabilty,
       date: extractDate(availabilty.date),
       startTime: extractTime(availabilty.startTime),

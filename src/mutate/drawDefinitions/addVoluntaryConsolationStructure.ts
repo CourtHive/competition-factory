@@ -34,7 +34,7 @@ export function addVoluntaryConsolationStructure({
     matchUpType,
   });
 
-  if (!drawDefinition.structures) drawDefinition.structures = [];
+  drawDefinition.structures ??= [];
   drawDefinition.structures.push(structure);
 
   modifyDrawNotice({ drawDefinition, structureIds: [structure.structureId] });

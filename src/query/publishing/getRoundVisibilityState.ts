@@ -28,7 +28,7 @@ export function getRoundVisibilityState(
   if (!structureDetail || !matchUps?.length) return undefined;
 
   const roundLimit = structureDetail.roundLimit;
-  const scheduledRounds = structureDetail.scheduledRounds || {};
+  const scheduledRounds = structureDetail.scheduledRounds ?? {};
   const maxRound = matchUps.reduce((max, m) => Math.max(max, m.roundNumber || 0), 0);
   if (maxRound === 0) return undefined;
 

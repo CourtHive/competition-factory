@@ -50,7 +50,7 @@ function processExistingEvent({ event, eventProfile, tournamentRecord, allUnique
     allUniqueParticipantIds.push(...uniqueParticipantIds);
 
     const { stageParticipants } = getStageParticipants({
-      targetParticipants: tournamentRecord.participants || [],
+      targetParticipants: tournamentRecord.participants ?? [],
       allUniqueParticipantIds,
       stageParticipantsCount,
       eventParticipantType,
@@ -179,8 +179,8 @@ function processEventProfiles({ eventProfiles, tournamentRecord, allUniquePartic
 }
 
 function processDrawProfiles({ drawProfiles, tournamentRecord, allUniqueParticipantIds, eventIds, drawIds, params }) {
-  let drawIndex = (tournamentRecord.events || [])
-    .flatMap((event) => event.drawDefinitions?.map(() => 1) || [])
+  let drawIndex = (tournamentRecord.events ?? [])
+    .flatMap((event) => event.drawDefinitions?.map(() => 1) ?? [])
     .reduce((a, b) => a + b, 0);
 
   for (const drawProfile of drawProfiles) {

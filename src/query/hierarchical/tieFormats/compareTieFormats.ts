@@ -41,13 +41,13 @@ export function compareTieFormats({ considerations = {}, descendant, ancestor }:
 
   const descendantCollectionDefinitions = Object.assign(
     {},
-    ...(descendant?.collectionDefinitions || []).map((collectionDefinition) => ({
+    ...(descendant?.collectionDefinitions ?? []).map((collectionDefinition) => ({
       [collectionDefinition.collectionId]: collectionDefinition,
     })),
   );
   const ancestorCollectionDefinitions = Object.assign(
     {},
-    ...(ancestor?.collectionDefinitions || []).map((collectionDefinition) => ({
+    ...(ancestor?.collectionDefinitions ?? []).map((collectionDefinition) => ({
       [collectionDefinition.collectionId]: collectionDefinition,
     })),
   );

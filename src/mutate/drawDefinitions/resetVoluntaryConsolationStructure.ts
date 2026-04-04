@@ -12,7 +12,7 @@ export function resetVoluntaryConsolationStructure({ tournamentRecord, drawDefin
 
   if (!structure) return { error: STRUCTURE_NOT_FOUND };
 
-  const removedMatchUpIds = structure.matchUps?.map(({ matchUpId }) => matchUpId) || [];
+  const removedMatchUpIds = structure.matchUps?.map(({ matchUpId }) => matchUpId) ?? [];
 
   structure.positionAssignments = [];
   structure.seedAssignments = [];

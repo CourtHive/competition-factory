@@ -9,8 +9,8 @@ import { isValidIANATimeZone } from '@Tools/timeZone';
 import { INVALID_DATE, INVALID_TIME_ZONE } from '@Constants/errorConditionConstants';
 
 export function createTournamentRecord(params): any {
-  const { tournamentRecord, tournamentRecords, activeTournamentId, ...attributes } = params || {};
-  if (!attributes.tournamentId) attributes.tournamentId = UUID();
+  const { tournamentRecord, tournamentRecords, activeTournamentId, ...attributes } = params ?? {};
+  attributes.tournamentId ??= UUID();
   if (attributes.startDate && !isISODateString(attributes.startDate) && !validDateString.test(attributes.startDate)) {
     return { error: INVALID_DATE };
   }
@@ -27,8 +27,8 @@ export function createTournamentRecord(params): any {
     if (activeDates.length) {
       // derive startDate/endDate from activeDates if not provided
       const sorted = [...activeDates].sort();
-      if (!attributes.startDate) attributes.startDate = sorted[0];
-      if (!attributes.endDate) attributes.endDate = sorted[sorted.length - 1];
+      attributes.startDate ??= sorted[0];
+      attributes.endDate ??= sorted[sorted.length - 1];
 
       const validStart = activeDates.every((d) => new Date(d) >= new Date(attributes.startDate));
       const validEnd = activeDates.every((d) => new Date(d) <= new Date(attributes.endDate));

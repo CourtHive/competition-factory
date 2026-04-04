@@ -11,7 +11,7 @@ export function getEventSeedAssignments({ publishedSeeding, usePublishState, wit
 
   const seedingScales = Object.assign(
     {},
-    ...(participant.timeItems || [])
+    ...(participant.timeItems ?? [])
       .filter(({ itemType }) => itemType.split('.')[1] === SEEDING)
       .map(({ itemType: seedingScaleName, itemValue: seedValue }) => ({
         [seedingScaleName]: seedValue,
@@ -62,7 +62,7 @@ export function getEventSeedAssignments({ publishedSeeding, usePublishState, wit
 
     eventSeedAssignments.seedAssignments = seedAssignments;
   } else {
-    const { categoryName, ageCategoryCode } = event.category || {};
+    const { categoryName, ageCategoryCode } = event.category ?? {};
 
     const scaleNames = [ageCategoryCode, event.eventId, categoryName].filter(Boolean);
 

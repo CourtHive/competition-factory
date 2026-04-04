@@ -81,7 +81,7 @@ function assignQualifierToPosition({
   const positionAssignments = getPositionAssignments({ structure }).positionAssignments;
   let qualifierPlaced;
 
-  for (const positionAssignment of positionAssignments || []) {
+  for (const positionAssignment of positionAssignments ?? []) {
     if (positionAssignment.drawPosition === targetDrawPosition && !positionAssignment.participantId) {
       positionAssignment.participantId = winningQualifierId;
       updateStructureAssignments(structure, positionAssignments);
@@ -105,7 +105,7 @@ function updateStructureAssignments(structure, positionAssignments) {
   } else if (structure.structures) {
     const assignmentMap = Object.assign(
       {},
-      ...(positionAssignments || []).map((assignment) => ({
+      ...(positionAssignments ?? []).map((assignment) => ({
         [assignment.drawPosition]: assignment.participantId,
       })),
     );

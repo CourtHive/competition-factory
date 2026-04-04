@@ -34,6 +34,11 @@ export const EVENT = 'event';
 export const PARAM = 'param';
 export const UUIDS = 'uuids';
 
+export const PENALTY_TYPE = 'penaltyType';
+export const PENALTY_ID = 'penaltyId';
+export const VENUE_ID = 'venueId';
+export const STAGE = 'stage';
+
 export const AVERAGE_MATCHUP_MINUTES = 'averageMatchUpMinutes';
 export const RECOVERY_MINUTES = 'recoveryMinutes';
 export const PERIOD_LENGTH = 'periodLength';

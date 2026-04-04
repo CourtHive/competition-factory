@@ -44,7 +44,7 @@ export function removeSubsequentRoundsParticipant({
   if (structure?.structureType === CONTAINER) return { ...SUCCESS };
 
   matchUpsMap = matchUpsMap ?? getMatchUpsMap({ drawDefinition });
-  const mappedMatchUps = matchUpsMap?.mappedMatchUps || {};
+  const mappedMatchUps = matchUpsMap?.mappedMatchUps ?? {};
   const matchUps = mappedMatchUps[structureId].matchUps;
 
   const { initialRoundNumber } = getInitialRoundNumber({
@@ -110,7 +110,7 @@ function removeDrawPosition({
     }
   }
 
-  matchUp.drawPositions = (matchUp.drawPositions || [])
+  matchUp.drawPositions = (matchUp.drawPositions ?? [])
     .map((drawPosition) => (drawPosition === targetDrawPosition ? undefined : drawPosition))
     .filter(Boolean);
   const matchUpAssignments = positionAssignments.filter(({ drawPosition }) =>

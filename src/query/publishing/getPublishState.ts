@@ -222,7 +222,7 @@ function getPubStatus({ event }): any {
   }
 
   const drawDetails = eventPubStatus.drawDetails ?? {};
-  for (const drawId of event.drawDefinitions?.map(getDrawId) || []) {
+  for (const drawId of event.drawDefinitions?.map(getDrawId) ?? []) {
     if (!drawDetails[drawId]) {
       drawDetails[drawId] = {
         publishingDetail: { published: false },

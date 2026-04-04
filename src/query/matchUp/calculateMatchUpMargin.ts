@@ -61,7 +61,7 @@ export function calculateMatchUpMargin({ matchUp }: CalculateMatchUpMarginArgs):
     };
   }
 
-  const sets: SetType[] = score.sets || [];
+  const sets: SetType[] = score.sets ?? [];
   const losingSide = winningSide === 1 ? 2 : 1;
 
   // --- Set ratio ---

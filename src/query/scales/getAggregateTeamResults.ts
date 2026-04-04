@@ -17,7 +17,7 @@ export function getAggregateTeamResults(params: GetAggregateTeamResultsArgs) {
   const paramsCheck = checkRequiredParameters(params, [{ [TOURNAMENT_RECORD]: true }]);
   if (paramsCheck.error) return paramsCheck;
 
-  const bonusPoints = params.finishingPositionRangeBounsPoints || {};
+  const bonusPoints = params.finishingPositionRangeBounsPoints ?? {};
   const teamBonusPointHashes = {};
 
   const getTeamParticipant = (participant) => {
@@ -113,7 +113,7 @@ function tallySide({ side, matchUp, getTeamParticipant, initializeResults, incre
   const teamName = teamParticipant?.participantName;
   const sideNumber = side.sideNumber;
   const individualParticipantIds =
-    side.participant?.individualParticipantIds || (participantId && [participantId]) || [];
+    side.participant?.individualParticipantIds || ((participantId && [participantId]) ?? []);
 
   individualParticipantIds.forEach((individualParticipantId) => {
     if (individualParticipantId && !individualResults[individualParticipantId]) {
@@ -137,7 +137,7 @@ function tallySide({ side, matchUp, getTeamParticipant, initializeResults, incre
       }
     }
 
-    const sets = matchUp.score?.sets || [];
+    const sets = matchUp.score?.sets ?? [];
     for (const set of sets) {
       const opponentPoints = set?.[`side${3 - sideNumber}Score`] || 0;
       const points = set?.[`side${sideNumber}Score`] || 0;

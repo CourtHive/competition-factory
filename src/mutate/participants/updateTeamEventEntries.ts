@@ -7,7 +7,7 @@ import { TEAM } from '@Constants/eventConstants';
  * function called internally to cleanup event entries when individuals have been added to team events
  */
 export function updateTeamEventEntries({ individualParticipantIds, groupingParticipantId, tournamentRecord }) {
-  const relevantEvents = (tournamentRecord.events || []).filter(
+  const relevantEvents = (tournamentRecord.events ?? []).filter(
     (event) =>
       event?.eventType === TEAM && event?.entries?.some((entry) => entry.participantId === groupingParticipantId),
   );
@@ -15,15 +15,15 @@ export function updateTeamEventEntries({ individualParticipantIds, groupingParti
   const filterEntry = (entry) => !individualParticipantIds.includes(entry.participantId);
 
   for (const event of relevantEvents) {
-    event.entries = (event.entries || []).filter(filterEntry);
+    event.entries = (event.entries ?? []).filter(filterEntry);
 
     const { flightProfile } = getFlightProfile({ event });
     flightProfile?.flights?.forEach((flight) => {
-      flight.drawEntries = (flight.drawEntries || []).filter(filterEntry);
+      flight.drawEntries = (flight.drawEntries ?? []).filter(filterEntry);
     });
 
     event?.drawDefinitions?.forEach((drawDefinition) => {
-      drawDefinition.entries = (drawDefinition.entries || []).filter(filterEntry);
+      drawDefinition.entries = (drawDefinition.entries ?? []).filter(filterEntry);
     });
   }
 

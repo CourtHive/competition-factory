@@ -60,9 +60,9 @@ export function qualifyingGeneration(params): ResultType & { qualifyingConflicts
       sourceRoundNumber: 0,
       linkType: POSITION,
     });
-    if (!drawDefinition.structures) drawDefinition.structures = [];
+    drawDefinition.structures ??= [];
     drawDefinition.structures.push(qualifyingStructure);
-    if (!drawDefinition.links) drawDefinition.links = [];
+    drawDefinition.links ??= [];
     drawDefinition.links.push(link);
   }
 
@@ -100,7 +100,7 @@ function processQualifyingProfiles({
       });
 
     roundTarget = roundTargetProfile.roundTarget || roundTarget;
-    const sortedStructureProfiles = roundTargetProfile.structureProfiles?.sort(sequenceSort) || [];
+    const sortedStructureProfiles = roundTargetProfile.structureProfiles?.sort(sequenceSort) ?? [];
 
     let sequence = 1;
     for (const structureProfile of sortedStructureProfiles) {

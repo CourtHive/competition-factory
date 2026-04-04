@@ -27,7 +27,7 @@ export function checkRequestConflicts({
 }) {
   const personIds = getIndividualParticipants(matchUp).map(({ person }) => person?.personId);
   if (potentials) {
-    const potentialPersonIds = (matchUp?.potentialParticipants || []).flat().map(({ person }) => person?.personId);
+    const potentialPersonIds = (matchUp?.potentialParticipants ?? []).flat().map(({ person }) => person?.personId);
     personIds.push(...potentialPersonIds);
   }
 

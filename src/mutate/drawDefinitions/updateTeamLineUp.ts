@@ -36,7 +36,7 @@ export function updateTeamLineUp({ drawDefinition, participantId, tieFormat, lin
     name: LINEUPS,
   });
 
-  const value = existingExtension?.value || {};
+  const value = existingExtension?.value ?? {};
   value[participantId] = removeLineUpSubstitutions({ lineUp });
 
   const extension = { name: LINEUPS, value };

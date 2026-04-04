@@ -13,7 +13,7 @@ export function modifyEntryProfile({ drawDefinition, attributes }: ModifyEntryPr
     element: drawDefinition,
     name: ENTRY_PROFILE,
   });
-  const entryProfile = extension?.value || {};
+  const entryProfile = extension?.value ?? {};
 
   attributes.forEach((attribute) => {
     Object.keys(attribute).forEach((key) => {

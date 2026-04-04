@@ -75,7 +75,7 @@ export function processSides(params) {
       ];
 
       if (participantType !== TEAM_PARTICIPANT) {
-        for (const participantId of opponent?.individualParticipantIds || []) {
+        for (const participantId of opponent?.individualParticipantIds ?? []) {
           const participant = participantMap[participantId]?.participant;
           info.push({
             participantType: participant?.participantType,
@@ -156,7 +156,7 @@ export function processSides(params) {
     const addPartner = ({ participant, partnerParticipantId }) => {
       const addPartnerParticiapntId = (element, partnerParticipantId) => {
         if (element) {
-          if (!element.partnerParticipantIds) element.partnerParticipantIds = [];
+          element.partnerParticipantIds ??= [];
           if (!element.partnerParticipantIds.includes(partnerParticipantId))
             element.partnerParticipantIds.push(partnerParticipantId);
         }
@@ -177,7 +177,7 @@ export function processSides(params) {
       addMatchUp(participantId, opponentParticipantId);
 
       const isPair = participantMap[participantId]?.participant.participantType === PAIR;
-      const individualParticipantIds = participantMap[participantId]?.participant.individualParticipantIds || [];
+      const individualParticipantIds = participantMap[participantId]?.participant.individualParticipantIds ?? [];
 
       if (matchUpTieId) {
         processTieMatchUpData({

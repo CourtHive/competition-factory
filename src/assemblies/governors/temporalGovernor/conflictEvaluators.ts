@@ -47,7 +47,7 @@ export const courtOverlapEvaluator = {
       const courtKey = `${block.court.tournamentId}|${block.court.venueId}|${block.court.courtId}|${day}`;
 
       // Get all blocks for this court on this day
-      const existingIds = ctx.blocksByCourtDay.get(courtKey) || [];
+      const existingIds = ctx.blocksByCourtDay.get(courtKey) ?? [];
 
       for (const existingId of existingIds) {
         // Skip if comparing to itself
@@ -121,7 +121,7 @@ export const matchWindowEvaluator = {
 
     // For each affected court/day, check if availability windows are too small
     for (const courtDayKey of affectedCourtDays) {
-      const blockIds = ctx.blocksByCourtDay.get(courtDayKey) || [];
+      const blockIds = ctx.blocksByCourtDay.get(courtDayKey) ?? [];
       const blocks = blockIds.map((id) => ctx.blocksById.get(id)!).filter(Boolean);
 
       // Sort blocks by start time
@@ -189,7 +189,7 @@ export const adjacentBlockEvaluator = {
       const day = extractDate(block.start);
       const courtKey = `${block.court.tournamentId}|${block.court.venueId}|${block.court.courtId}|${day}`;
 
-      const existingIds = ctx.blocksByCourtDay.get(courtKey) || [];
+      const existingIds = ctx.blocksByCourtDay.get(courtKey) ?? [];
 
       for (const existingId of existingIds) {
         if (existingId === block.id) continue;

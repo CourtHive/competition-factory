@@ -5,7 +5,7 @@ export function doubleEliminationLinks({ mainStructure, consolationStructure, de
 
   // roundsFed are those rounds which are generated with drawPositions (not undefined or undefined)
   const roundsFed = consolationMatchUps.reduce((rf, matchUp) => {
-    const drawPositions = (matchUp.drawPositions || []).filter(Boolean);
+    const drawPositions = (matchUp.drawPositions ?? []).filter(Boolean);
     return drawPositions.length && !rf.includes(matchUp.roundNumber) ? rf.concat(matchUp.roundNumber) : rf;
   }, []);
 

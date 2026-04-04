@@ -115,7 +115,7 @@ export function buildDrawHierarchy({ matchUps, matchUpType }: BuildDrawHierarchy
     const finishingPositionRange = makeDeepCopy(firstRoundMatchUps?.[0].finishingPositionRange, false, true);
 
     missingMatchUps = missingPairs.map((drawPositions, index) => {
-      const roundPosition = Math.max(...(drawPositions || [])) / 2;
+      const roundPosition = Math.max(...(drawPositions ?? [])) / 2;
       const sides = drawPositions?.map((drawPosition) => {
         return entrySides[drawPosition] || { bye: true, drawPosition };
       });
@@ -153,7 +153,7 @@ export function buildDrawHierarchy({ matchUps, matchUpType }: BuildDrawHierarchy
     const matchRound = roundMatchUps?.length === previousRound?.length / 2;
     if (roundNumber === 1) {
       roundMatchUps.forEach((matchUp) => {
-        const drawPositions = matchUp.drawPositions || [];
+        const drawPositions = matchUp.drawPositions ?? [];
         const { matchUpId, structureId } = matchUp;
         const children = [
           {
@@ -176,7 +176,7 @@ export function buildDrawHierarchy({ matchUps, matchUpType }: BuildDrawHierarchy
     if (feedRound) {
       feedRoundNumber++;
       roundMatchUps.forEach((matchUp, i) => {
-        const drawPositions = matchUp.drawPositions || [];
+        const drawPositions = matchUp.drawPositions ?? [];
         const { matchUpId, structureId } = matchUp;
         const fedDrawPosition = drawPositions
           .filter(Boolean) // first filter out undefined if no advanced participant

@@ -33,7 +33,7 @@ export function addDrawEntries({
   if (!event) return { error: EVENT_NOT_FOUND };
   if (!drawId) return { error: MISSING_DRAW_ID };
 
-  const eventEnteredParticipantIds = (event.entries || []).map(getParticipantId);
+  const eventEnteredParticipantIds = (event.entries ?? []).map(getParticipantId);
   const missingEventEntries = participantIds.filter(
     (participantId) => !eventEnteredParticipantIds.includes(participantId),
   );

@@ -31,7 +31,7 @@ export function isCompletedStructure(params: StructureQueryArgs) {
   const structureMatchUps = getStructureMatchUps(params);
 
   const includesTeamMatchUps = structureMatchUps?.includesTeamMatchUps;
-  let { completedMatchUps, pendingMatchUps, upcomingMatchUps } = structureMatchUps || {};
+  let { completedMatchUps, pendingMatchUps, upcomingMatchUps } = structureMatchUps ?? {};
 
   if (includesTeamMatchUps) {
     completedMatchUps = completedMatchUps?.filter(({ matchUpType }) => matchUpType === TEAM);
@@ -61,7 +61,7 @@ export function allPlayoffPositionsFilled(params: StructureActionsArgs) {
     )?.length ?? 0;
 
   let participantIdsCount = 0;
-  const allPositionsFilled = (playoffStructures || []).reduce((allFilled, structure) => {
+  const allPositionsFilled = (playoffStructures ?? []).reduce((allFilled, structure) => {
     const positionAssignments = getPositionAssignments({ structure }).positionAssignments ?? [];
     const structurePositionsFilled = positionAssignments?.filter((assignment) => {
       if (assignment.participantId) participantIdsCount++;

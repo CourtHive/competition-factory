@@ -56,7 +56,7 @@ function awardLinePointsToWinningSide({
   drawId,
 }) {
   const { collectionPosition } = tieMatchUp;
-  for (const side of tieMatchUp.sides || []) {
+  for (const side of tieMatchUp.sides ?? []) {
     if (side.sideNumber !== tieMatchUp.winningSide) continue;
 
     const sideParticipantId = side.participantId;
@@ -96,7 +96,7 @@ function calculateTeamLinePoints({
 }) {
   if (participantType !== TEAM_PARTICIPANT || !awardProfile || !levelValue) return;
 
-  const teamStructureMatchUps = (participant.matchUps || []).filter(
+  const teamStructureMatchUps = (participant.matchUps ?? []).filter(
     ({ structureId }) => structureId === participation.structureId,
   );
   for (const { matchUpId } of teamStructureMatchUps) {
@@ -105,7 +105,7 @@ function calculateTeamLinePoints({
 
     if (!sideNumber || matchUp.winningSide !== sideNumber) continue;
 
-    for (const tieMatchUp of matchUp.tieMatchUps || []) {
+    for (const tieMatchUp of matchUp.tieMatchUps ?? []) {
       if (!tieMatchUp.winningSide) continue;
 
       const lineValue = resolveLineValue(levelValue, tieMatchUp.collectionPosition);
@@ -156,7 +156,7 @@ function calculateQualityWinPoints({
     mappedMatchUps,
     participantId,
     participantSideMap,
-    tournamentParticipants: tournamentRecord.participants || [],
+    tournamentParticipants: tournamentRecord.participants ?? [],
     tournamentStartDate: tournamentRecord.startDate,
     level,
   });
@@ -247,7 +247,7 @@ function accumulatePerWinPoints({ awardProfile, participation, level, maxCountab
       ? Math.min(winCount || 0, Math.max(0, maxCountable - countedWins))
       : winCount;
 
-  const dashRange = unique(participation.finishingPositionRange || []).join('-');
+  const dashRange = unique(participation.finishingPositionRange ?? []).join('-');
 
   let perWin = 0;
   let counted = 0;
@@ -299,7 +299,7 @@ function distributeAward({
 
     if (doublesAttribution) {
       const multiplier = doublesAttribution === SPLIT_EVEN ? 0.5 : 1;
-      const individualIds = participantIndividualIdsMap[participantId] || [];
+      const individualIds = participantIndividualIdsMap[participantId] ?? [];
       for (const indId of individualIds) {
         const indPersonId = participantPersonMap[indId];
         if (!indPersonId) continue;
@@ -366,7 +366,7 @@ function processParticipation({
     if (!drawSize) return { awardProfile, skip: true };
 
     if (awardProfile.profileName) accum.profileName = awardProfile.profileName;
-    if (!accum.primaryAwardProfile) accum.primaryAwardProfile = awardProfile;
+    accum.primaryAwardProfile ??= awardProfile;
 
     accum.maxCountable = resolveMaxCountable(awardProfile, level, accum.maxCountable);
 
@@ -435,7 +435,7 @@ function calculateDrawPoints({
   const { drawId, structureParticipation } = draw;
   const drawType = drawInfo?.drawType;
 
-  const { category, eventType, gender, wheelchairClass } = eventInfo || {};
+  const { category, eventType, gender, wheelchairClass } = eventInfo ?? {};
   const startDate = draw.startDate || eventInfo.startDate || tournamentRecord.startDate;
   const endDate = draw.endDate || eventInfo.endDate || tournamentRecord.endDate;
 
@@ -691,7 +691,7 @@ export function getTournamentPoints({
   // build lookup maps for resolving individual participantId → personId
   const participantPersonMap: Record<string, string> = {};
   const participantIndividualIdsMap: Record<string, string[]> = {};
-  for (const p of tournamentRecord.participants || []) {
+  for (const p of tournamentRecord.participants ?? []) {
     if (p.person?.personId) {
       participantPersonMap[p.participantId] = p.person.personId;
     }

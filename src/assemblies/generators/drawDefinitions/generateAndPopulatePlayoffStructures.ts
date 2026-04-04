@@ -306,7 +306,7 @@ function computePlayoffDrawSize({ finishingPositionsCount, isLuckyDraw, roundNum
   let drawSize = finishingPositionsCount;
 
   if (isLuckyDraw && structure) {
-    const roundMatchUps = (structure.matchUps || []).filter((m) => m.roundNumber === roundNumber);
+    const roundMatchUps = (structure.matchUps ?? []).filter((m) => m.roundNumber === roundNumber);
     const matchUpsInRound = roundMatchUps.length;
     const isFinal = matchUpsInRound === 1;
     if (!isFinal && matchUpsInRound % 2 !== 0) {

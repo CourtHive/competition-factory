@@ -35,7 +35,7 @@ export function prepareStage(params): ResultType & {
     drawDefinition,
   });
 
-  const preparedStructureIds: string[] = params.preparedStructureIds || [];
+  const preparedStructureIds: string[] = params.preparedStructureIds ?? [];
   const structure = structures?.find(({ structureId }) => !preparedStructureIds.includes(structureId));
   if (!structure) return decorateResult({ result: { error: STRUCTURE_NOT_FOUND }, stack });
   const structureId = structure?.structureId;
@@ -167,7 +167,7 @@ function scaledEntriesSeeding(params) {
     event,
   } = params;
 
-  const { categoryName, ageCategoryCode } = event?.category || {};
+  const { categoryName, ageCategoryCode } = event?.category ?? {};
   const eventType = event?.eventType;
 
   const scaledEntries =
@@ -201,7 +201,7 @@ function scaledEntriesSeeding(params) {
 function getSeedingScaleEntries(params) {
   const { tournamentRecord, seedingScaleName, stageSequence, entries, stage, event } = params;
 
-  const { categoryName, ageCategoryCode } = event?.category || {};
+  const { categoryName, ageCategoryCode } = event?.category ?? {};
   const eventType = event?.eventType;
 
   const seedingScaleAttributes = {
@@ -221,7 +221,7 @@ function getSeedingScaleEntries(params) {
 
 function getRankingScaleEntries(params) {
   const { tournamentRecord, stageSequence, event, entries, stage } = params;
-  const { categoryName, ageCategoryCode } = event?.category || {};
+  const { categoryName, ageCategoryCode } = event?.category ?? {};
   const eventType = event?.eventType;
 
   const rankingScaleAttributes = {

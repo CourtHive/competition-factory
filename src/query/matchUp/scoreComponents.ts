@@ -13,7 +13,7 @@ export function getBand(spread: number | [number], bandProfiles: { [key: string]
 }
 
 export function getScoreComponents({ score }) {
-  const sets = score?.sets || [];
+  const sets = score?.sets ?? [];
 
   const games = sets.reduce(
     (p, c) => {

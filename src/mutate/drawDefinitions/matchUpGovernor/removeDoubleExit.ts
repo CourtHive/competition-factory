@@ -171,8 +171,8 @@ export function conditionallyRemoveDrawPosition(params) {
     );
   } else if (sourceMatchUp == null) {
     drawPositionToRemove = intersection(
-      targetMatchUp?.drawPositions || [],
-      nextWinnerMatchUp?.drawPositions || [],
+      targetMatchUp?.drawPositions ?? [],
+      nextWinnerMatchUp?.drawPositions ?? [],
     )?.[0];
   } else {
     pairedPreviousMatchUp = getPairedPreviousMatchUp({
@@ -183,14 +183,14 @@ export function conditionallyRemoveDrawPosition(params) {
 
     pairedPreviousDoubleExit = [DOUBLE_WALKOVER, DOUBLE_DEFAULT].includes(pairedPreviousMatchUp?.matchUpStatus);
 
-    let pairedPreviousDrawPositions = pairedPreviousMatchUp?.drawPositions?.filter(Boolean) || [];
+    let pairedPreviousDrawPositions = pairedPreviousMatchUp?.drawPositions?.filter(Boolean) ?? [];
 
     const pairedPreviousMatchUpComplete =
       [...completedMatchUpStatuses, BYE].includes(pairedPreviousMatchUp?.matchUpStatus) ||
       pairedPreviousMatchUp?.winningSide;
 
     if (pairedPreviousMatchUpComplete) {
-      const sourceDrawPositions = sourceMatchUp.drawPositions || [];
+      const sourceDrawPositions = sourceMatchUp.drawPositions ?? [];
       let targetDrawPositions = targetMatchUp.drawPositions?.filter(Boolean);
       if (overlap(sourceDrawPositions, targetDrawPositions)) {
         targetDrawPositions = targetDrawPositions?.filter(

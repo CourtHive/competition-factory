@@ -127,7 +127,7 @@ export class TemporalEngine {
         BLOCK_TYPES.AVAILABLE,
         BLOCK_TYPES.UNSPECIFIED,
       ],
-      conflictEvaluators: config?.conflictEvaluators || [],
+      conflictEvaluators: config?.conflictEvaluators ?? [],
     };
 
     // Resolve canonical granularity: explicit granularityMinutes -> slotMinutes fallback -> 15
@@ -417,7 +417,7 @@ export class TemporalEngine {
     // Group by venue
     const venuesMap = new Map<VenueId, CourtRef[]>();
     for (const court of courts) {
-      const existing = venuesMap.get(court.venueId) || [];
+      const existing = venuesMap.get(court.venueId) ?? [];
       existing.push(court);
       venuesMap.set(court.venueId, existing);
     }
@@ -463,7 +463,7 @@ export class TemporalEngine {
       end: `${day}T${avail.endTime}:00`,
     };
     const key = courtDayKey(court, day);
-    const blockIds = this.blocksByCourtDay.get(key) || [];
+    const blockIds = this.blocksByCourtDay.get(key) ?? [];
     const blocks = blockIds.map((id) => this.blocksById.get(id)).filter((b): b is Block => !!b);
 
     const segments = deriveRailSegments(blocks, dayRange, this.config);
@@ -1103,7 +1103,7 @@ export class TemporalEngine {
   private indexBlock(block: Block): void {
     const day = extractDay(block.start);
     const key = courtDayKey(block.court, day);
-    const existing = this.blocksByCourtDay.get(key) || [];
+    const existing = this.blocksByCourtDay.get(key) ?? [];
     if (!existing.includes(block.id)) {
       existing.push(block.id);
       this.blocksByCourtDay.set(key, existing);
@@ -1116,7 +1116,7 @@ export class TemporalEngine {
   private unindexBlock(block: Block): void {
     const day = extractDay(block.start);
     const key = courtDayKey(block.court, day);
-    const existing = this.blocksByCourtDay.get(key) || [];
+    const existing = this.blocksByCourtDay.get(key) ?? [];
     const filtered = existing.filter((id) => id !== block.id);
     if (filtered.length > 0) {
       this.blocksByCourtDay.set(key, filtered);
@@ -1136,7 +1136,7 @@ export class TemporalEngine {
     const ctx = this.createContext();
     const allConflicts: import('@Assemblies/governors/temporalGovernor/types').EngineConflict[] = [];
 
-    for (const evaluator of this.config.conflictEvaluators || []) {
+    for (const evaluator of this.config.conflictEvaluators ?? []) {
       try {
         const conflicts = evaluator.evaluate(ctx, mutations);
         allConflicts.push(...conflicts);
@@ -1262,7 +1262,7 @@ export class TemporalEngine {
   }
 
   private loadCourtAvailability(venue: any, vid: string): void {
-    for (const court of venue.courts || []) {
+    for (const court of venue.courts ?? []) {
       if (!court.dateAvailability?.length) continue;
 
       const courtRef: CourtRef = {
@@ -1396,7 +1396,7 @@ export class TemporalEngine {
       for (const venue of this.tournamentRecord.venues) {
         const venueId = resolveVenueId(venue);
         if (venueId !== ref.venueId) continue;
-        for (const court of venue.courts || []) {
+        for (const court of venue.courts ?? []) {
           const cId = resolveCourtId(court);
           if (cId !== ref.courtId) continue;
 

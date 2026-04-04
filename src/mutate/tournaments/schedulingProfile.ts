@@ -33,7 +33,7 @@ export function getSchedulingProfile({ tournamentRecords, tournamentRecord }: Ge
     discover: true,
   });
 
-  let schedulingProfile = extension?.value || [];
+  let schedulingProfile = extension?.value ?? [];
 
   if (schedulingProfile.length) {
     const { venueIds } = getCompetitionVenues({

@@ -57,7 +57,7 @@ export function setMatchUpStatus(params: SetMatchUpStatusArgs) {
   // This makes the API more flexible for different use cases
   if (!params.drawDefinition) {
     const tournamentRecord = params.tournamentRecord ?? (params.tournamentId && tournamentRecords[params.tournamentId]);
-    if (!params.tournamentRecord) params.tournamentRecord = tournamentRecord;
+    params.tournamentRecord ??= tournamentRecord;
 
     const result = findEvent({
       eventId: params.eventId,

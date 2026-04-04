@@ -162,7 +162,7 @@ export function getStructureReports(params: GetStructureReportsArgs) {
                   tennisId: winningPersonTennisId,
                   confidence: confidence1,
                   wtnRating: wtnRating1,
-                } = winningPersonWTN || {};
+                } = winningPersonWTN ?? {};
 
                 const winningPerson2WTN = getDetailsWTN({
                   participant: individualParticipants?.[1],
@@ -174,7 +174,7 @@ export function getStructureReports(params: GetStructureReportsArgs) {
                   tennisId: winningPerson2TennisId,
                   confidence: confidence2,
                   wtnRating: wtnRating2,
-                } = winningPerson2WTN || {};
+                } = winningPerson2WTN ?? {};
 
                 const { ageCategoryCode, categoryName, subType } = category ?? {};
                 const matchUpFormat = s.matchUpFormat ?? drawMatchUpFormat;

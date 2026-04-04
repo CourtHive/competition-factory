@@ -235,7 +235,7 @@ function aggregateAvailabilityByVenue(entries: TodsDateAvailability[]): TodsDate
     if (aggregated.has(key)) {
       const existing = aggregated.get(key)!;
       if (entry.courtIds) {
-        existing.courtIds = [...(existing.courtIds || []), ...entry.courtIds];
+        existing.courtIds = [...(existing.courtIds ?? []), ...entry.courtIds];
       }
     } else {
       aggregated.set(key, { ...entry });
@@ -275,7 +275,7 @@ export function applyTemporalAvailabilityToTournamentRecord(params: {
   // Group availability by venueId
   const byVenue = new Map<string, TodsDateAvailability[]>();
   for (const entry of dateAvailability) {
-    const existing = byVenue.get(entry.venueId) || [];
+    const existing = byVenue.get(entry.venueId) ?? [];
     existing.push(entry);
     byVenue.set(entry.venueId, existing);
   }
@@ -331,7 +331,7 @@ export function buildSchedulingProfileFromUISelections(selections: SchedulingSel
     profile.push({
       scheduleDate: selection.scheduleDate,
       venueIds: selection.venueIds,
-      rounds: selection.rounds || [],
+      rounds: selection.rounds ?? [],
     });
   }
 
@@ -522,7 +522,7 @@ export function mergeOverlappingAvailability(entries: TodsDateAvailability[]): T
   const groups = new Map<string, TodsDateAvailability[]>();
   for (const entry of entries) {
     const key = `${entry.venueId}|${entry.date}`;
-    const existing = groups.get(key) || [];
+    const existing = groups.get(key) ?? [];
     existing.push(entry);
     groups.set(key, existing);
   }

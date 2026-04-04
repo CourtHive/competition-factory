@@ -18,8 +18,8 @@ export function getAvoidanceConflicts({ isRoundRobin, groupedParticipants }) {
       );
       uniqueMatchUpGroupings.forEach((grouping) => {
         const avoidanceConflict = overlap(
-          drawPositionValuesMap[grouping[0]].values || [],
-          drawPositionValuesMap[grouping[1]].values || [],
+          drawPositionValuesMap[grouping[0]].values ?? [],
+          drawPositionValuesMap[grouping[1]].values ?? [],
         );
 
         if (avoidanceConflict) {
@@ -30,7 +30,7 @@ export function getAvoidanceConflicts({ isRoundRobin, groupedParticipants }) {
     });
   } else {
     groupedParticipants.forEach((matchUpPair) => {
-      const avoidanceConflict = overlap(matchUpPair[0]?.values || [], matchUpPair[1]?.values || []);
+      const avoidanceConflict = overlap(matchUpPair[0]?.values ?? [], matchUpPair[1]?.values ?? []);
 
       if (avoidanceConflict) {
         avoidanceConflicts.push(matchUpPair);

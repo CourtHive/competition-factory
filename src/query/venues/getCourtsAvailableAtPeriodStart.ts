@@ -42,7 +42,7 @@ export function getCourtsAvailableAtPeriodStart(params: GetCourtsAvailableAtPeri
       if (!Array.isArray(court.dateAvailability)) return false;
       const courtDate = getCourtDateAvailability({ date, court });
       return !!(courtDate && enoughTime(courtDate));
-    }) || [];
+    }) ?? [];
 
   return {
     availableToScheduleCount: availableCourts.length,

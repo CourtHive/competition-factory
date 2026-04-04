@@ -13,7 +13,7 @@ export function getTournamentPenalties({ tournamentRecord }: GetTournamentPenalt
   const allPenalties = participants.reduce((penalties, participant) => {
     const { participantId } = participant;
     (participant.penalties ?? []).forEach((penalty) => {
-      const { penaltyId } = penalty || {};
+      const { penaltyId } = penalty ?? {};
       if (penalties[penaltyId]) {
         penalties[penaltyId].participants.push(participantId);
       } else {

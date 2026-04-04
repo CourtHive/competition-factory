@@ -12,7 +12,7 @@ function getPositionProfiles({ participantIdGroups, positionAssignments, groupsT
       .filter((assignment) => assignment?.participantId)
       .map((assginment) => {
         const { drawPosition, participantId } = assginment;
-        const participantGroups = participantIdGroups ? participantIdGroups[participantId] || [] : [];
+        const participantGroups = participantIdGroups ? participantIdGroups[participantId] ?? [] : [];
 
         const includesGroupsToAvoid = !!groupsToAvoid.some((group) => participantGroups.includes(group));
         return { [drawPosition]: { participantGroups, includesGroupsToAvoid } };

@@ -26,7 +26,7 @@ export function deleteEvents(params) {
   const activePairParticipantIds: string[] = [];
   const pairParticipantIds: string[] = [];
 
-  tournamentRecord.events = (tournamentRecord.events || []).filter((event) => {
+  tournamentRecord.events = (tournamentRecord.events ?? []).filter((event) => {
     if (eventIds.includes(event.eventId)) {
       const auditData = {
         action: DELETE_EVENTS,
@@ -45,7 +45,7 @@ export function deleteEvents(params) {
 
     const enteredPairParticipantIds =
       event.eventType === DOUBLES
-        ? (event.entries || [])
+        ? (event.entries ?? [])
             .map(({ entryStatus, participantId }) => entryStatus !== UNGROUPED && participantId)
             .filter(Boolean)
         : [];

@@ -43,7 +43,7 @@ export function calculateMatchStatistics(
   options?: StatisticsOptions,
 ): MatchStatistics {
   // Build counters from points (guard against undefined/null)
-  const counters = buildCounters(points || [], options);
+  const counters = buildCounters(points ?? [], options);
 
   // Calculate statistics
   const calculated = calculateStats(counters);
@@ -132,7 +132,7 @@ export function getQuickStats(
   unforcedErrors: [number, number];
   totalPoints: [number, number];
 } {
-  const counters = buildCounters(points || [], options);
+  const counters = buildCounters(points ?? [], options);
 
   return {
     aces: [counters.teams[0].aces?.length || 0, counters.teams[1].aces?.length || 0],

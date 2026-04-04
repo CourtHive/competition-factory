@@ -35,7 +35,7 @@ export function ensureSideLineUps({
       name: LINEUPS,
     });
 
-    const lineUps = makeDeepCopy(extension?.value || {}, false, true);
+    const lineUps = makeDeepCopy(extension?.value ?? {}, false, true);
 
     const extractSideDetail = ({ displaySideNumber, drawPosition, sideNumber }) => ({
       drawPosition,

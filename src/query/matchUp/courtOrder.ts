@@ -6,7 +6,7 @@ import { COURT_ORDER } from '@Constants/timeItemConstants';
 
 export function matchUpCourtOrder({ timeStamp, schedule, matchUp }: ScheduledMatchUpArgs) {
   const { itemValue: courtOrder, timeStamp: itemTimeStamp } = latestVisibleTimeItemValue({
-    timeItems: matchUp?.timeItems || [],
+    timeItems: matchUp?.timeItems ?? [],
     itemType: COURT_ORDER,
   });
 

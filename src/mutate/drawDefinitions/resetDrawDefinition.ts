@@ -31,7 +31,7 @@ export function resetDrawDefinition({ tournamentRecord, removeScheduling, remove
 
   const getRawMatchUp = (matchUpId) => matchUpsMap?.drawMatchUps?.find((matchUp) => matchUp.matchUpId === matchUpId);
 
-  for (const structure of drawDefinition.structures || []) {
+  for (const structure of drawDefinition.structures ?? []) {
     const { stage } = structure;
 
     if (stage === VOLUNTARY_CONSOLATION) {
@@ -62,7 +62,7 @@ export function resetDrawDefinition({ tournamentRecord, removeScheduling, remove
     (extension) => extension.name !== POSITION_ACTIONS && extension.name !== DRAFT_STATE,
   );
 
-  const structureIds = (drawDefinition.structures || []).map(({ structureId }) => structureId);
+  const structureIds = (drawDefinition.structures ?? []).map(({ structureId }) => structureId);
 
   modifyDrawNotice({ drawDefinition, structureIds });
 
@@ -97,9 +97,9 @@ function resetStructureAssignments({ structure, isLuckyDraw, removeAssignments }
 
 function resetLuckyDrawAssignments({ structure, positionAssignments, isMainOrQualifyingFirst, removeAssignments }) {
   const initialDrawPositions = new Set(
-    (structure.matchUps || [])
+    (structure.matchUps ?? [])
       .filter((m: any) => m.roundNumber === 1)
-      .flatMap((m: any) => m.drawPositions || [])
+      .flatMap((m: any) => m.drawPositions ?? [])
       .filter(Boolean),
   );
 
@@ -143,7 +143,7 @@ function resetStructureMatchUps({
 
   for (const inContextMatchUp of inContextMatchUps) {
     const { matchUpId, roundNumber } = inContextMatchUp;
-    const sides: HydratedSide[] = inContextMatchUp.sides || [];
+    const sides: HydratedSide[] = inContextMatchUp.sides ?? [];
     const matchUp = getRawMatchUp(matchUpId);
     if (!matchUp) continue;
 

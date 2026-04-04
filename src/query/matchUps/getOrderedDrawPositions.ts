@@ -22,7 +22,7 @@ export function getOrderedDrawPositions({ drawPositions, roundProfile, roundNumb
   const targetRoundProfile = roundProfile?.[roundNumber];
   const pairedDrawPositions = targetRoundProfile?.pairedDrawPositions;
   const displayOrder =
-    pairedDrawPositions?.find((pair) => overlap(pair || [], drawPositions.filter(Boolean))) ?? unassignedDrawPositions;
+    pairedDrawPositions?.find((pair) => overlap(pair ?? [], drawPositions.filter(Boolean))) ?? unassignedDrawPositions;
 
   // ############# IMPORTANT DO NOT CHANGE #################
   // when both present, drawPositions are always sorted numerically

@@ -334,7 +334,7 @@ export function completeDrawMatchUp(params) {
   if (!targetMatchUp || targetMatchUp.matchUpStatus === BYE) {
     return;
   }
-  const { matchUpId } = targetMatchUp || {};
+  const { matchUpId } = targetMatchUp ?? {};
 
   const { outcome } = generateOutcomeFromScoreString({
     matchUpFormat,
@@ -376,7 +376,7 @@ function smartComplete(params) {
 
   if (scoreString || matchUpStatus) return completeDrawMatchUp({ ...params, matchUpFormat: resolvedFormat });
 
-  const { matchUpId } = targetMatchUp || {};
+  const { matchUpId } = targetMatchUp ?? {};
   const generatedResult: any = generateOutcome({
     matchUpStatusProfile,
     matchUpFormat: resolvedFormat,

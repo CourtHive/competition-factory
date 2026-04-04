@@ -67,7 +67,7 @@ export function keyValueTimedSetScore(params) {
 
 function handleOutcomeKey({ sets, info, scoreString, winningSide, matchUpStatus, analysis, lowSide, value }) {
   let updated;
-  const lastSet = sets.at(-1) || {};
+  const lastSet = sets.at(-1) ?? {};
   const { side1Score, side2Score } = lastSet;
   if (side1Score && !side2Score) {
     info = 'missing side2Score';
@@ -98,7 +98,7 @@ function handleBackspace({ sets, scoreString, outcomeRemoved }) {
   if (!updatedScoreString) updatedSets = [];
 
   if (outcomeRemoved) {
-    const lastSet = updatedSets.at(-1) || {};
+    const lastSet = updatedSets.at(-1) ?? {};
     const { side1Score, side2Score } = lastSet;
     if (side1Score && side2Score) {
       const setWinner = (side1Score > side2Score && 1) || (side2Score > side1Score && 2) || undefined;
@@ -121,7 +121,7 @@ function handleBackspace({ sets, scoreString, outcomeRemoved }) {
 function handleSpaceKey({ sets, scoreString, winningSide, analysis }) {
   let updated;
   let updatedScoreString = scoreString;
-  const lastSet = sets.at(-1) || {};
+  const lastSet = sets.at(-1) ?? {};
   const { side1Score, side2Score } = lastSet;
   const setWinningSide = (side1Score > side2Score && 1) || (side2Score > side1Score && 2) || undefined;
 
@@ -157,7 +157,7 @@ function handleNumericKey({ sets, setIndex, value, scoreString }) {
   }
 
   if (updated) {
-    const priorSetScores = (sets.slice(0, setIndex) || [])
+    const priorSetScores = (sets.slice(0, setIndex) ?? [])
       .filter((set) => set)
       .map((set) => [set.side1Score, set.side2Score].join('-'))
       .join(' ');

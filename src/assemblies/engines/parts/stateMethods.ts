@@ -52,7 +52,7 @@ export function removeUnlinkedTournamentRecords(): void {
     discover: true,
   });
 
-  const tournamentIds = extension?.value?.tournamentIds || [];
+  const tournamentIds = extension?.value?.tournamentIds ?? [];
   Object.keys(tournamentRecords).forEach((tournamentId) => {
     if (!tournamentIds.includes(tournamentId)) delete tournamentRecords[tournamentId];
   });

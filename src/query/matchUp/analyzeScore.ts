@@ -22,7 +22,7 @@ function validateTiebreak(
   isLastSet: boolean,
   irregularEnding: boolean,
 ): boolean {
-  const { tiebreakTo, NoAD } = tiebreakFormat || {};
+  const { tiebreakTo, NoAD } = tiebreakFormat ?? {};
   const maxTiebreakScore = Math.max(side1TiebreakScore ?? 0, side2TiebreakScore ?? 0);
 
   if (NoAD && maxTiebreakScore > tiebreakTo) return false;
@@ -117,7 +117,7 @@ export function analyzeScore({
   score,
 }: AnalyzeScoreArgs) {
   const sets = score?.sets ?? [];
-  const completedSets = sets?.filter((set) => set?.winningSide) || [];
+  const completedSets = sets?.filter((set) => set?.winningSide) ?? [];
   const setsWinCounts = completedSets.reduce(
     (counts, set) => {
       const { winningSide } = set;

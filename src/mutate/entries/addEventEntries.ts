@@ -323,8 +323,8 @@ function removeUngroupedParticipantIdsHelper({
   event: Event;
 }) {
   if (event.eventType && [DOUBLES_EVENT, TEAM_EVENT].includes(event.eventType)) {
-    const enteredParticipantIds = new Set((event.entries || []).map((entry) => entry.participantId));
-    const ungroupedIndividualParticipantIds = (event.entries || [])
+    const enteredParticipantIds = new Set((event.entries ?? []).map((entry) => entry.participantId));
+    const ungroupedIndividualParticipantIds = (event.entries ?? [])
       .filter((entry) => isUngrouped(entry.entryStatus))
       .map((entry) => entry.participantId);
     const tournamentParticipants = tournamentRecord?.participants ?? [];
@@ -541,7 +541,7 @@ export function addEventEntries(params: AddEventEntriesArgs): ResultType {
 
   if (autoEntryPositions) {
     event.entries = refreshEntryPositions({
-      entries: event.entries || [],
+      entries: event.entries ?? [],
     });
   }
 

@@ -32,7 +32,7 @@ export function getParticipantResults({
 }: GetParticipantResultsArgs) {
   const participantResults = {};
 
-  const excludeMatchUpStatuses = tallyPolicy?.excludeMatchUpStatuses || [];
+  const excludeMatchUpStatuses = tallyPolicy?.excludeMatchUpStatuses ?? [];
 
   const filteredMatchUps = filterMatchUps({ matchUps, excludeMatchUpStatuses, participantIds });
 
@@ -366,11 +366,11 @@ function checkInitializeParticipant(participantResults, participantId) {
 }
 
 function processScore({ manualGamesOverride, participantResults, score, sides }) {
-  const { sets } = score || {};
+  const { sets } = score ?? {};
   const gamesTally: number[][] = [[], []];
   const setsTally = [0, 0];
 
-  for (const set of sets || []) {
+  for (const set of sets ?? []) {
     const { winningSide: setWinningSide, side1Score, side2Score } = set;
     if (setWinningSide) setsTally[setWinningSide - 1] += 1;
     gamesTally[0].push(ensureInt(side1Score || 0));

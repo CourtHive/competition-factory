@@ -52,8 +52,8 @@ export function proAutoSchedule({
 
   const getMatchUpParticipantIds = (matchUp) =>
     [
-      (matchUp.sides || []).map((side) => [side.participantId, side.participant?.individualParticipantIds]),
-      (matchUp.potentialParticipants || []).flat().map((p) => [p.participantId, p.individualParticipantIds]),
+      (matchUp.sides ?? []).map((side) => [side.participantId, side.participant?.individualParticipantIds]),
+      (matchUp.potentialParticipants ?? []).flat().map((p) => [p.participantId, p.individualParticipantIds]),
     ]
       .flat(Infinity)
       .filter(Boolean);

@@ -97,7 +97,7 @@ export function positionUnseededParticipants({
     }, {});
     if (Object.keys(groupings).length) {
       avoidance ??= { policyName: 'Playoff Avoidance' };
-      if (!avoidance.policyAttributes) avoidance.policyAttributes = [];
+      avoidance.policyAttributes ??= [];
       avoidance.policyAttributes.push({ groupings });
     }
   }

@@ -94,7 +94,7 @@ export function deleteVenues({ tournamentRecord, venueIds, force }) {
   if (!tournamentRecord) return { error: MISSING_TOURNAMENT_RECORD };
   if (!Array.isArray(venueIds)) return { error: INVALID_VALUES };
 
-  for (const venue of tournamentRecord.venues || []) {
+  for (const venue of tournamentRecord.venues ?? []) {
     const { venueId } = venue;
     if (venueIds.includes(venueId)) {
       const { venueId } = venue;

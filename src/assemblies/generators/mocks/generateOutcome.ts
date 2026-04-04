@@ -514,7 +514,7 @@ function applyTiebreak({
   random,
   set,
 }) {
-  const { NoAD: tiebreakNoAd, tiebreakTo } = tiebreakFormat || tiebreakSet || {};
+  const { NoAD: tiebreakNoAd, tiebreakTo } = tiebreakFormat || (tiebreakSet ?? {});
   const range = generateRange(1, tiebreakTo + 1).flatMap((value) =>
     generateRange(0, tiebreakTo + 2 - value).map(() => value),
   );

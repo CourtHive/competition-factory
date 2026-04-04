@@ -26,7 +26,7 @@ export function updateDrawIdsOrder({ event, orderedDrawIdsMap }) {
     };
 
   if (event.drawDefinitions?.length) {
-    const drawIds = (event.drawDefinitions || []).map(({ drawId }) => drawId);
+    const drawIds = (event.drawDefinitions ?? []).map(({ drawId }) => drawId);
     const orderedDrawIds = Object.keys(orderedDrawIdsMap);
     if (orderedDrawIds?.length && intersection(drawIds, orderedDrawIds).length !== drawIds.length)
       return { error: INVALID_VALUES, info: 'Missing drawIds' };

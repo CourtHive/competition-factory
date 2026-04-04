@@ -1,21 +1,17 @@
 import { getParticipants } from '@Query/participants/getParticipants';
+import { requireParams } from '@Helpers/parameters/requireParams';
 import { getParticipantId } from '@Functions/global/extractors';
 import { addExtension } from '@Mutate/extensions/addExtension';
 import { addNotice } from '@Global/state/globalState';
 
 // constants and types
+import { MISSING_PARTICIPANT_ID, PARTICIPANT_NOT_FOUND, ErrorType } from '@Constants/errorConditionConstants';
 import { Extension, Penalty, PenaltyTypeUnion, Tournament } from '@Types/tournamentTypes';
+import { TOURNAMENT_RECORD, PENALTY_TYPE } from '@Constants/attributeConstants';
 import penaltyTemplate from '@Assemblies/generators/templates/penaltyTemplate';
 import { TournamentRecords, ResultType } from '@Types/factoryTypes';
 import { MODIFY_PARTICIPANTS } from '@Constants/topicConstants';
 import { SUCCESS } from '@Constants/resultConstants';
-import {
-  MISSING_PENALTY_TYPE,
-  PARTICIPANT_NOT_FOUND,
-  MISSING_PARTICIPANT_ID,
-  MISSING_TOURNAMENT_RECORD,
-  ErrorType,
-} from '@Constants/errorConditionConstants';
 
 type AddPenaltyArgs = {
   refereeParticipantId?: string;
@@ -81,9 +77,9 @@ function penaltyAdd({
   success?: boolean;
   error?: ErrorType;
 } {
-  if (!tournamentRecord) return { error: MISSING_TOURNAMENT_RECORD };
+  const paramsCheck = requireParams({ tournamentRecord, penaltyType }, [TOURNAMENT_RECORD, PENALTY_TYPE]);
+  if (paramsCheck.error) return paramsCheck;
   if (!participantIds) return { error: MISSING_PARTICIPANT_ID };
-  if (!penaltyType) return { error: MISSING_PENALTY_TYPE };
 
   const participants = tournamentRecord?.participants ?? [];
   const relevantParticipants = participants.filter((participant) => participantIds.includes(participant.participantId));
@@ -112,7 +108,7 @@ function penaltyAdd({
   addNotice({
     topic: MODIFY_PARTICIPANTS,
     payload: {
-      tournamentId: tournamentRecord.tournamentId,
+      tournamentId: tournamentRecord!.tournamentId,
       participants: relevantParticipants,
     },
   });

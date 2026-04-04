@@ -208,8 +208,8 @@ export function splitTime(value) {
   value = typeof value === 'string' ? value : '00:00';
   const o: any = {},
     time: any = {};
-  ({ 0: o.time, 1: o.ampm } = value.split(' ') || []);
-  ({ 0: time.hours, 1: time.minutes } = o.time.split(':') || []);
+  ({ 0: o.time, 1: o.ampm } = value.split(' ') ?? []);
+  ({ 0: time.hours, 1: time.minutes } = o.time.split(':') ?? []);
   time.ampm = o.ampm;
 
   if (

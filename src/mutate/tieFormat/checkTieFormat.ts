@@ -17,7 +17,7 @@ export function checkTieFormat({ tieFormat }: CheckTieFormatArgs): ResultType & 
   if (result.error) return result;
 
   for (const collectionDefinition of tieFormat.collectionDefinitions) {
-    if (!collectionDefinition.collectionId) collectionDefinition.collectionId = UUID();
+    collectionDefinition.collectionId ??= UUID();
   }
 
   return { tieFormat };

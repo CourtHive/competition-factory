@@ -42,7 +42,7 @@ export function getAffectedTargetStructureIds({ drawDefinition, structure, match
 
   const structureIds = links
     ?.filter((link) => {
-      return overlap(finishingPositions, link.source?.finishingPositions || []);
+      return overlap(finishingPositions, link.source?.finishingPositions ?? []);
     })
     .map((link) => link.source.structureId);
 

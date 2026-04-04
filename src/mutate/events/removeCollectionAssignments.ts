@@ -12,7 +12,7 @@ export function removeCollectionAssignments({
 }) {
   if (!collectionId || !collectionPosition || !Array.isArray(participantIds))
     return {
-      modifiedLineUp: dualMatchUpSide?.lineUp || [],
+      modifiedLineUp: dualMatchUpSide?.lineUp ?? [],
       error: INVALID_VALUES,
     };
 
@@ -53,7 +53,7 @@ export function removeCollectionAssignments({
           collectionAssignments,
         };
       })
-      .filter(Boolean) || [];
+      .filter(Boolean) ?? [];
 
   return { modifiedLineUp, assignmentsRemoved, previousParticipantIds };
 }

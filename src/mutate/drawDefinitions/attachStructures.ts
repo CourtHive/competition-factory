@@ -112,7 +112,7 @@ export function attachStructures({
 
   addGoesTo({ drawDefinition });
 
-  const matchUps = structures.map((structure) => getAllStructureMatchUps({ structure })?.matchUps || []).flat();
+  const matchUps = structures.map((structure) => getAllStructureMatchUps({ structure })?.matchUps ?? []).flat();
 
   addMatchUpsNotice({
     tournamentId: tournamentRecord?.tournamentId,

@@ -24,7 +24,7 @@ export function getLinkedTournamentIds({
         name: LINKED_TOURNAMENTS,
       });
 
-      const tournamentIds = (extension?.value?.tournamentIds || []).filter(
+      const tournamentIds = (extension?.value?.tournamentIds ?? []).filter(
         (currentTournamentId) => currentTournamentId !== touranmentId,
       );
 

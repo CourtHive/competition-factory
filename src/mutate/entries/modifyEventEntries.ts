@@ -1,12 +1,14 @@
 import { getPairedParticipant } from '@Query/participant/getPairedParticipant';
+import { requireParams } from '@Helpers/parameters/requireParams';
 import { addParticipants } from '../participants/addParticipants';
 import { intersection } from '@Tools/arrays';
 
+import { INVALID_PARTICIPANT_IDS } from '@Constants/errorConditionConstants';
+import { TOURNAMENT_RECORD, EVENT } from '@Constants/attributeConstants';
 import { INDIVIDUAL, PAIR } from '@Constants/participantConstants';
 import { MAIN } from '@Constants/drawDefinitionConstants';
 import { COMPETITOR } from '@Constants/participantRoles';
 import { SUCCESS } from '@Constants/resultConstants';
-import { MISSING_EVENT, MISSING_TOURNAMENT_RECORD, INVALID_PARTICIPANT_IDS } from '@Constants/errorConditionConstants';
 
 import { DIRECT_ACCEPTANCE, UNGROUPED } from '@Constants/entryStatusConstants';
 import { EntryStatusUnion, Event, Tournament } from '@Types/tournamentTypes';
@@ -29,8 +31,8 @@ export function modifyEventEntries({
   tournamentRecord,
   event,
 }: ModifyEventEntriesArgs) {
-  if (!tournamentRecord) return { error: MISSING_TOURNAMENT_RECORD };
-  if (!event) return { error: MISSING_EVENT };
+  const paramsCheck = requireParams({ tournamentRecord, event }, [TOURNAMENT_RECORD, EVENT]);
+  if (paramsCheck.error) return paramsCheck;
 
   const tournamentParticipants = tournamentRecord.participants ?? [];
   const individualParticipantIds = tournamentParticipants

@@ -260,7 +260,7 @@ export function generateQualifyingStructure(params: GenerateQualifyingStructureA
     })?.link;
 
   if (tieFormat) {
-    matchUps = getAllStructureMatchUps({ structure })?.matchUps || [];
+    matchUps = getAllStructureMatchUps({ structure })?.matchUps ?? [];
     matchUps?.forEach((matchUp: any) => {
       const { tieMatchUps } = generateTieMatchUps({ tieFormat, matchUp, isMock });
       Object.assign(matchUp, { tieMatchUps, matchUpType });

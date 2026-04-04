@@ -11,7 +11,7 @@ export function addNationalityCode({ participant, withISO2, withIOC }: AddNation
   const persons = [person, individualParticipants?.map(({ person }) => person)].flat().filter(Boolean);
 
   function annotatePerson(person) {
-    const { nationalityCode } = person || {};
+    const { nationalityCode } = person ?? {};
     if (nationalityCode) {
       const country = countries.find(({ iso }) => iso === nationalityCode);
       if (withIOC && country?.ioc && !person.iocNationalityCode) person.iocNationalityCode = country.ioc;

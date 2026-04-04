@@ -89,7 +89,7 @@ export function generateLineUps(params: GenerateLineUpsArgs): ResultType & {
   const formatScaleType = (type) => (type === RANKING ? 'rankings' : 'ratings');
 
   const defaultScaleName = event?.category?.categoryName ?? event?.category?.ageCategoryCode;
-  const { scaleName = defaultScaleName, scaleType = RANKING, sortOrder, accessor } = scaleAccessor || {};
+  const { scaleName = defaultScaleName, scaleType = RANKING, sortOrder, accessor } = scaleAccessor ?? {};
 
   const formattedScaleType = formatScaleType(scaleType);
   const getScaleValue = (individualParticipant, matchUpType) => {

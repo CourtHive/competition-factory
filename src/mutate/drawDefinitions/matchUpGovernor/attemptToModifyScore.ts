@@ -49,7 +49,7 @@ export function attemptToModifyScore(params) {
   const result = modifyMatchUpScore({
     ...params,
     winningSide: params.winningSide,
-    matchUpStatusCodes: (matchUpStatusIsValid && matchUpStatusCodes) || [],
+    matchUpStatusCodes: (matchUpStatusIsValid && matchUpStatusCodes) ?? [],
     matchUpStatus: updatedMatchUpStatus,
     context: stack,
     removeScore,

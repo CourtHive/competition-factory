@@ -6,7 +6,7 @@ import { ScheduledMatchUpArgs } from '@Types/factoryTypes';
 
 export function matchUpAssignedVenueId({ timeStamp, schedule, matchUp }: ScheduledMatchUpArgs) {
   const { itemValue: venueId, timeStamp: itemTimeStamp } = latestVisibleTimeItemValue({
-    timeItems: matchUp?.timeItems || [],
+    timeItems: matchUp?.timeItems ?? [],
     itemType: ASSIGN_VENUE,
   });
 

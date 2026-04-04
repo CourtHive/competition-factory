@@ -55,7 +55,7 @@ export function addDrawDefinition(
   if (!drawDefinition) return { error: MISSING_DRAW_DEFINITION };
   if (!event) return { error: MISSING_EVENT };
 
-  if (!event.drawDefinitions) event.drawDefinitions = [];
+  event.drawDefinitions ??= [];
   const { drawId, drawName, entries: drawEntries } = drawDefinition;
   const { entries: eventEntries } = event;
   let modifiedEventEntryStatusCount = 0;
@@ -70,7 +70,7 @@ export function addDrawDefinition(
   // if there is a source drawId specified, the source draw must exist
   const sourceDrawId = flightProfile?.links?.find((link) => link?.target?.drawId === drawId)?.source?.drawId;
   const sourceDrawIdError =
-    sourceDrawId && !event.drawDefinitions.find((drawDefinition) => drawDefinition.drawId === sourceDrawId);
+    sourceDrawId && !event.drawDefinitions.some((drawDefinition) => drawDefinition.drawId === sourceDrawId);
 
   if (sourceDrawIdError)
     return decorateResult({
@@ -111,8 +111,8 @@ export function addDrawDefinition(
 
   const flightNumbers =
     flightProfile?.flights
-      ?.map(({ flightNumber }) => !isNaN(flightNumber) && ensureInt(flightNumber))
-      ?.filter(Boolean) || [];
+      ?.map(({ flightNumber }) => !Number.isNaN(Number(flightNumber)) && ensureInt(flightNumber))
+      ?.filter(Boolean) ?? [];
 
   const drawOrders =
     (event.drawDefinitions.map(({ drawOrder }) => drawOrder && ensureInt(drawOrder))?.filter(Boolean) as number[]) ||
@@ -142,7 +142,7 @@ export function addDrawDefinition(
       flight.flightNumber = drawOrder;
     }
   } else {
-    const flights = flightProfile?.flights || [];
+    const flights = flightProfile?.flights ?? [];
     flights.push({
       manuallyAdded: true, // this drawDefinition was not part of automated split
       flightNumber: drawOrder,
@@ -153,7 +153,7 @@ export function addDrawDefinition(
     extension = {
       name: FLIGHT_PROFILE,
       value: {
-        ...(flightProfile || {}),
+        ...flightProfile,
         flights,
       },
     };
@@ -215,9 +215,7 @@ function applyModifiedEventEntries({ drawEntries, eventEntries }) {
   let count = 0;
   drawEntries?.filter(Boolean).forEach((drawEntry) => {
     if (drawEntry?.entryStatus && STRUCTURE_SELECTED_STATUSES.includes(drawEntry?.entryStatus)) {
-      const eventEntry = eventEntries
-        ?.filter(Boolean)
-        .find((ee) => ee.participantId === drawEntry.participantId);
+      const eventEntry = eventEntries?.filter(Boolean).find((ee) => ee.participantId === drawEntry.participantId);
       if (eventEntry && drawEntry.entryStatus && eventEntry?.entryStatus !== drawEntry.entryStatus) {
         eventEntry.entryStatus = drawEntry.entryStatus;
         count += 1;

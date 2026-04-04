@@ -156,7 +156,7 @@ export function getGroupOrder(params) {
   const positionsCount = instanceCount(positions);
 
   groupOrder.forEach((finishingPosition) => {
-    const { participantId, position } = finishingPosition || {};
+    const { participantId, position } = finishingPosition ?? {};
     const participantResult = participantResults[participantId];
     finishingPosition.GEMscore = getRatioHash(participantResult);
 

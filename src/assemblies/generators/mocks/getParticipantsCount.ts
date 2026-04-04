@@ -8,7 +8,7 @@ import { QUALIFYING } from '@Constants/drawDefinitionConstants';
 import { DOUBLES, TEAM } from '@Constants/eventConstants';
 
 export function getParticipantsCount({ participantsProfile, eventProfiles, drawProfiles }) {
-  let { participantsCount, participantType = INDIVIDUAL } = participantsProfile || {};
+  let { participantsCount, participantType = INDIVIDUAL } = participantsProfile ?? {};
   const specifiedParicipantsCount = participantsCount || 0; // capture this to ensure calculated participantsCount is not below
 
   const gendersCount = {

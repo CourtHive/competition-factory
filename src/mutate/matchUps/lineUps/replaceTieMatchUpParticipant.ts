@@ -126,7 +126,7 @@ export function replaceTieMatchUpParticipantId(params: ReplaceTieMatchUpParticip
   }
 
   const allTieIndividualParticipantIds = inContextTieMatchUp?.sides?.flatMap(
-    (side: any) => side.participant?.individualParticipantIds || side.participant?.participantId || [],
+    (side: any) => side.participant?.individualParticipantIds || (side.participant?.participantId ?? []),
   );
 
   if (allTieIndividualParticipantIds?.includes(newParticipantId)) {
@@ -302,7 +302,7 @@ function buildModifiedLineUp({
       }
 
       if (modifiedCompetitor.participantId === newParticipantId) {
-        if (!modifiedCompetitor.collectionAssignments) modifiedCompetitor.collectionAssignments = [];
+        modifiedCompetitor.collectionAssignments ??= [];
         const assignment: any = { collectionId, collectionPosition };
         if (substitution) {
           assignment.previousParticipantId = existingParticipantId;
@@ -391,7 +391,7 @@ function handleProcessCodes({
         tieMatchUp.processCodes = unique([...(tieMatchUp?.processCodes ?? []), ...substitutionProcessCodes]);
       }
     } else {
-      for (const substitutionProcessCode of substitutionProcessCodes || []) {
+      for (const substitutionProcessCode of substitutionProcessCodes ?? []) {
         const codeIndex = tieMatchUp?.processCodes?.lastIndexOf(substitutionProcessCode);
         if (codeIndex !== undefined) {
           tieMatchUp?.processCodes?.splice(codeIndex, 1);

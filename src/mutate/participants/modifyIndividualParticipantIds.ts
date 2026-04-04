@@ -30,7 +30,7 @@ export function modifyIndividualParticipantIds({ individualParticipantIds, group
   if (!groupingParticipantId || !individualParticipantIds)
     return decorateResult({ result: { error: MISSING_VALUE }, stack });
 
-  const tournamentParticipants = tournamentRecord.participants || [];
+  const tournamentParticipants = tournamentRecord.participants ?? [];
 
   const groupingParticipant = tournamentParticipants.find((participant) => {
     return participant.participantId === groupingParticipantId;
@@ -60,7 +60,7 @@ export function modifyIndividualParticipantIds({ individualParticipantIds, group
       stack,
     });
 
-  const existingIndividualParticipantIds = groupingParticipant.individualParticipantIds || [];
+  const existingIndividualParticipantIds = groupingParticipant.individualParticipantIds ?? [];
 
   const individualParticipantIdsToAdd = individualParticipantIds.filter((participantId) => {
     return !existingIndividualParticipantIds.includes(participantId);

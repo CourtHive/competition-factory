@@ -83,7 +83,7 @@ export function unlinkTournament({ tournamentRecords, tournamentId }: UnlinkTour
     // if there is no extension return { ...SUCCESS } because no links exist
     if (!extension) return true;
 
-    const linkedTournamentIds = extension?.value?.tournamentIds || [];
+    const linkedTournamentIds = extension?.value?.tournamentIds ?? [];
 
     // if there are no tournamentIds
     if (

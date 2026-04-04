@@ -55,7 +55,7 @@ export function addCollectionGroup({
     // either matchUpCount * matchUpValue or collectionValue or collectionValueProfiles total
   }
 
-  const maxGroupNumber = (tieFormat.collectionGroups || []).reduce(
+  const maxGroupNumber = (tieFormat.collectionGroups ?? []).reduce(
     (max, group) => (group.groupNumber > max ? group.groupNumber : max),
     0,
   );
@@ -71,7 +71,7 @@ export function addCollectionGroup({
     }
   });
 
-  tieFormat.collectionGroups = [...(tieFormat.collecitonGroups || []), groupDefinition];
+  tieFormat.collectionGroups = [...(tieFormat.collecitonGroups ?? []), groupDefinition];
 
   return collectionGroupUpdate({
     updateInProgressMatchUps,

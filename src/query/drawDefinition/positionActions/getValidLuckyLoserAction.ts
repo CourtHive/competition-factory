@@ -67,7 +67,7 @@ export function getValidLuckyLosersAction({
         return ids;
       },
       { sourceStructureIds: [], targetStructureIds: [] },
-    ) || {};
+    ) ?? {};
 
   const availableLuckyLoserParticipantIds: string[] = [];
 

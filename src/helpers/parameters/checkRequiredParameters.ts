@@ -30,10 +30,14 @@ import {
   MISSING_STRUCTURE,
   MISSING_STRUCTURES,
   MISSING_STRUCTURE_ID,
+  MISSING_PENALTY_ID,
+  MISSING_PENALTY_TYPE,
+  MISSING_STAGE,
   MISSING_TOURNAMENT_ID,
   MISSING_TOURNAMENT_RECORD,
   MISSING_TOURNAMENT_RECORDS,
   MISSING_VALUE,
+  MISSING_VENUE_ID,
 } from '@Constants/errorConditionConstants';
 
 import {
@@ -59,8 +63,11 @@ import {
   ONLINE_RESOURCE,
   PARTICIPANT,
   PARTICIPANT_ID,
+  PENALTY_ID,
+  PENALTY_TYPE,
   POLICY_DEFINITIONS,
   SCHEDULE_DATES,
+  STAGE,
   STRUCTURE,
   STRUCTURES,
   STRUCTURE_ID,
@@ -71,6 +78,7 @@ import {
   TOURNAMENT_RECORDS,
   UUIDS,
   VALIDATE,
+  VENUE_ID,
   VENUE_IDS,
 } from '@Constants/attributeConstants';
 
@@ -117,8 +125,12 @@ const errors = {
   [MATCHUP]: MISSING_MATCHUP,
   [COURT_IDS]: MISSING_VALUE,
   [VENUE_IDS]: MISSING_VALUE,
+  [PENALTY_TYPE]: MISSING_PENALTY_TYPE,
+  [PENALTY_ID]: MISSING_PENALTY_ID,
+  [VENUE_ID]: MISSING_VENUE_ID,
   [DRAW_ID]: MISSING_DRAW_ID,
   [EVENT]: MISSING_EVENT,
+  [STAGE]: MISSING_STAGE,
 };
 
 const paramTypes = {
@@ -158,7 +170,7 @@ export function checkRequiredParameters(
 
   const error =
     (paramError[VALIDATE] && (paramError[ERROR] || paramError[INVALID])) ||
-    (params?.[errorParam] === undefined &&
+    (params?.[errorParam] == null &&
       (paramError[ERROR] || paramError[INVALID] || errors[errorParam] || INVALID_VALUES)) ||
     INVALID_VALUES;
 
@@ -207,7 +219,7 @@ function findParamError(params, requiredParams) {
     const invalidParam = booleanParams.find((param) => {
       const invalidValidationFunction = _validate && !isFunction(_validate); // validate is specified but not a function
       const faliedTypeCheck = params[param] !== undefined && !_validate && invalidType(params, param, _ofType); // param is present, no validation function provided, and invalid type
-      const paramNotPresent = attrs[param] && [undefined, null].includes(params[param]); // attrs[param] boolean value is true and param is not present
+      const paramNotPresent = attrs[param] && params[param] == null; // attrs[param] boolean value is true and param is not present
       const invalid = invalidValidationFunction || faliedTypeCheck || paramNotPresent;
 
       const hasError =

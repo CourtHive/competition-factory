@@ -129,7 +129,7 @@ export function modifyEntriesStatus({
   }
 
   const generatedDrawIds = event?.drawDefinitions?.map(({ drawId: id }) => id) ?? [];
-  const flightsNoDraw = flightProfile?.flights?.filter((f) => !generatedDrawIds.includes(f.drawId)) || [];
+  const flightsNoDraw = flightProfile?.flights?.filter((f) => !generatedDrawIds.includes(f.drawId)) ?? [];
 
   for (const noDrawFlight of flightsNoDraw) {
     const result = noDrawFlight && updateDrawEntries({ flight: noDrawFlight, drawDefinition: undefined });
@@ -206,7 +206,7 @@ function isValidEntryStatusForParticipants({ participantIds, tournamentParticipa
 
 function buildUpdateEntryStatus({ assignedParticipantIds, ignoreAssignment, participantIds, entryStatus, entryStage, extension, stage }) {
   return (entries?) => {
-    const filteredEntries = (entries || [])
+    const filteredEntries = (entries ?? [])
       .filter((entry: Entry) => !stage || !entry.entryStage || stage === entry.entryStage)
       .filter(({ participantId }) => participantIds.includes(participantId));
 

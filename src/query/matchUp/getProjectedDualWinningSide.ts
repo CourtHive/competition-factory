@@ -34,7 +34,7 @@ export function getProjectedDualWinningSide({
   score,
 }: GetProjectedDualWinningSideArgs) {
   const projectedDualMatchUp = makeDeepCopy(dualMatchUp, undefined, true);
-  for (const tieMatchUp of projectedDualMatchUp?.tieMatchUps || []) {
+  for (const tieMatchUp of projectedDualMatchUp?.tieMatchUps ?? []) {
     if (tieMatchUp.matchUpId === matchUp.matchUpId) {
       tieMatchUp.winningSide = winningSide;
       tieMatchUp.score = score;

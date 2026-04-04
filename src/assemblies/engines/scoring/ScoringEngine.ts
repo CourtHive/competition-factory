@@ -189,10 +189,10 @@ export class ScoringEngine {
     if (options.competitionFormat) {
       this.competitionFormat = options.competitionFormat;
       this.matchUpFormat = options.matchUpFormat || options.competitionFormat.matchUpFormat || 'SET3-S:6/TB7';
-      this.pointMultipliers = options.pointMultipliers || options.competitionFormat.pointMultipliers || [];
+      this.pointMultipliers = options.pointMultipliers || (options.competitionFormat.pointMultipliers ?? []);
     } else {
       this.matchUpFormat = options.matchUpFormat || 'SET3-S:6/TB7';
-      this.pointMultipliers = options.pointMultipliers || [];
+      this.pointMultipliers = options.pointMultipliers ?? [];
     }
 
     this.matchUpId = options.matchUpId;
@@ -459,7 +459,7 @@ export class ScoringEngine {
     }
 
     // Legacy fallback: no entries, just points
-    const points = this.state.history?.points || [];
+    const points = this.state.history?.points ?? [];
     if (points.length === 0) return false;
 
     const pointsToUndo = Math.min(count, points.length);
@@ -602,7 +602,7 @@ export class ScoringEngine {
    * @returns Complete statistics package with counters, calculated stats, and summary
    */
   getStatistics(options?: StatisticsOptions): MatchStatistics {
-    const points = this.state.history?.points || [];
+    const points = this.state.history?.points ?? [];
     return calculateMatchStatistics(this.state, points as any[], options);
   }
 
@@ -776,7 +776,7 @@ export class ScoringEngine {
    *   'sets' if only set entries, 'mixed' if multiple types
    */
   getInputMode(): 'points' | 'games' | 'sets' | 'mixed' | 'none' {
-    const entries = this.state.history?.entries || [];
+    const entries = this.state.history?.entries ?? [];
     if (entries.length === 0) {
       // Legacy: check points array
       if ((this.state.history?.points.length || 0) > 0) return 'points';
@@ -870,8 +870,8 @@ export class ScoringEngine {
     const side2 = this.state.sides.find((s) => s.sideNumber === 2);
 
     return {
-      side1: side1?.lineUp?.map((tc) => tc.participantId) || [],
-      side2: side2?.lineUp?.map((tc) => tc.participantId) || [],
+      side1: side1?.lineUp?.map((tc) => tc.participantId) ?? [],
+      side2: side2?.lineUp?.map((tc) => tc.participantId) ?? [],
     };
   }
 
@@ -1179,8 +1179,8 @@ export class ScoringEngine {
     // Reset point-level tracking: close the current game's point scores
     // and start a fresh 0-0 game for subsequent addPoint() calls
     if (currentSet.side1GameScores?.length || currentSet.side2GameScores?.length) {
-      currentSet.side1GameScores = currentSet.side1GameScores || [];
-      currentSet.side2GameScores = currentSet.side2GameScores || [];
+      currentSet.side1GameScores = currentSet.side1GameScores ?? [];
+      currentSet.side2GameScores = currentSet.side2GameScores ?? [];
       // Start a new game at 0-0 (the completed game's points are discarded
       // since addGame provides the result without point detail)
       currentSet.side1GameScores.push(0);
@@ -1306,7 +1306,7 @@ export class ScoringEngine {
    * For set/game/segment entries, applies directly.
    */
   private rebuildFromEntries(): void {
-    const entries = this.state.history?.entries || [];
+    const entries = this.state.history?.entries ?? [];
 
     const newState = this.prepareRebuildState(entries);
 
@@ -1394,7 +1394,7 @@ export class ScoringEngine {
    * If an initial score was set (late arrival), applies it first.
    */
   private rebuildState(): void {
-    const currentPoints = this.state.history?.points || [];
+    const currentPoints = this.state.history?.points ?? [];
 
     // Create fresh matchUp
     let newState = createMatchUp({

@@ -54,7 +54,7 @@ export function addMatchUpScheduledTime(params: AddMatchUpScheduledTimeArgs) {
   const scheduledDate = scheduledMatchUpDate({ matchUp }).scheduledDate;
   const keepDate = timeDate && !scheduledDate;
 
-  const existingTimeModifiers = matchUpTimeModifiers({ matchUp }).timeModifiers || [];
+  const existingTimeModifiers = matchUpTimeModifiers({ matchUp }).timeModifiers ?? [];
 
   if (existingTimeModifiers?.length) {
     const result = addMatchUpTimeModifiers({
@@ -115,7 +115,7 @@ export function addMatchUpTimeModifiers({
     if (result.error) return decorateResult({ result, stack });
     matchUp = result.matchUp;
   }
-  let existingTimeModifiers = matchUpTimeModifiers({ matchUp }).timeModifiers || [];
+  let existingTimeModifiers = matchUpTimeModifiers({ matchUp }).timeModifiers ?? [];
   const toBeAdded = timeModifiers.filter((modifier) => !existingTimeModifiers.includes(modifier));
   if (timeModifiers.length && !toBeAdded.length) return { ...SUCCESS };
 

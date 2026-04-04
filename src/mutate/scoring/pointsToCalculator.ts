@@ -106,8 +106,8 @@ function getSetsWon(matchUp: MatchUp): [number, number] {
 function getCurrentGamePoints(currentSet: SetScore | undefined): { side1Points: number; side2Points: number } {
   if (!currentSet) return { side1Points: 0, side2Points: 0 };
 
-  const gs1 = currentSet.side1GameScores || [];
-  const gs2 = currentSet.side2GameScores || [];
+  const gs1 = currentSet.side1GameScores ?? [];
+  const gs2 = currentSet.side2GameScores ?? [];
 
   if (gs1.length === 0 && gs2.length === 0) {
     return { side1Points: 0, side2Points: 0 };

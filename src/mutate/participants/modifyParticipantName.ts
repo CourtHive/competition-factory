@@ -1,18 +1,15 @@
 import { findTournamentParticipant } from '@Acquire/findTournamentParticipant';
+import { requireParams } from '@Helpers/parameters/requireParams';
 import { addNotice, getTopics } from '@Global/state/globalState';
 
+import { MISSING_VALUE, PARTICIPANT_NOT_FOUND } from '@Constants/errorConditionConstants';
+import { TOURNAMENT_RECORD, PARTICIPANT_ID } from '@Constants/attributeConstants';
 import { MODIFY_PARTICIPANTS } from '@Constants/topicConstants';
 import { SUCCESS } from '@Constants/resultConstants';
-import {
-  MISSING_PARTICIPANT_ID,
-  MISSING_TOURNAMENT_RECORD,
-  MISSING_VALUE,
-  PARTICIPANT_NOT_FOUND,
-} from '@Constants/errorConditionConstants';
 
 export function modifyParticipantName({ tournamentRecord, participantName, participantId }) {
-  if (!tournamentRecord) return { error: MISSING_TOURNAMENT_RECORD };
-  if (!participantId) return { error: MISSING_PARTICIPANT_ID };
+  const paramsCheck = requireParams({ tournamentRecord, participantId }, [TOURNAMENT_RECORD, PARTICIPANT_ID]);
+  if (paramsCheck.error) return paramsCheck;
 
   if (!participantName) return { error: MISSING_VALUE, info: 'Missing participantName' };
 

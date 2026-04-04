@@ -14,7 +14,7 @@ export function checkDependendantTiming({
   const totalMinutes = (averageMatchUpMinutes || 0) + (recoveryMinutes || 0);
   const dependentNotBeforeTime = addMinutesToTimeString(scheduleTime, totalMinutes);
 
-  const matchUpIdDependents = matchUpDependencies?.[matchUpId]?.dependentMatchUpIds || [];
+  const matchUpIdDependents = matchUpDependencies?.[matchUpId]?.dependentMatchUpIds ?? [];
 
   if (matchUpIdDependents.length) {
     const earliestDependent = matchUpIdDependents.reduce((dependent, candidateId) => {

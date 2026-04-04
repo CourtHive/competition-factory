@@ -71,7 +71,7 @@ function anonymizeTournamentHeader({ tournamentRecord, filterExtensions, idMap, 
 }
 
 function anonymizeParticipantIds({ tournamentRecord, filterExtensions, idMap }) {
-  for (const participant of tournamentRecord.participants || []) {
+  for (const participant of tournamentRecord.participants ?? []) {
     participant.extensions = filterExtensions(participant);
     participant.onlineResources = [];
 
@@ -80,7 +80,7 @@ function anonymizeParticipantIds({ tournamentRecord, filterExtensions, idMap }) 
     participant.participantId = newParticipantId;
   }
 
-  for (const participant of tournamentRecord.participants || []) {
+  for (const participant of tournamentRecord.participants ?? []) {
     if (Array.isArray(participant.individualParticipantIds)) {
       participant.individualParticipantIds = participant.individualParticipantIds.map(
         (individualParticipantId) => idMap[individualParticipantId],
@@ -91,7 +91,7 @@ function anonymizeParticipantIds({ tournamentRecord, filterExtensions, idMap }) 
 
 function anonymizeVenues({ tournamentRecord, filterExtensions, idMap }) {
   let venueIndex = 0;
-  for (const venue of tournamentRecord.venues || []) {
+  for (const venue of tournamentRecord.venues ?? []) {
     venue.venueAbbreviation = `V${venueIndex}`;
     venue.extensions = filterExtensions(venue);
     venue.venueName = `Venue #${venueIndex}`;
@@ -106,7 +106,7 @@ function anonymizeVenues({ tournamentRecord, filterExtensions, idMap }) {
     venueIndex += 1;
 
     let courtIndex = 0;
-    for (const court of venue.courts || []) {
+    for (const court of venue.courts ?? []) {
       court.courtName = `V${venueIndex}C${courtIndex}`;
       court.extensions = filterExtensions(court);
       court.onlineResources = [];
@@ -135,18 +135,18 @@ function anonymizeDrawDefinition({ drawDefinition, filterExtensions, idMap }) {
     idMap[structure.structureId] = newStructureId;
     structure.structureId = newStructureId;
 
-    for (const assignment of structure.positionAssignments || []) {
+    for (const assignment of structure.positionAssignments ?? []) {
       if (assignment.participantId) assignment.participantId = idMap[assignment.participantId];
     }
 
-    for (const assignment of structure.seedAssignments || []) {
+    for (const assignment of structure.seedAssignments ?? []) {
       if (assignment.participantId) assignment.participantId = idMap[assignment.participantId];
     }
 
-    for (const matchUp of structure.matchUps || []) {
+    for (const matchUp of structure.matchUps ?? []) {
       matchUp.isMock = true;
 
-      for (const side of matchUp.sides || []) {
+      for (const side of matchUp.sides ?? []) {
         if (!side.lineUp) continue;
         side.lineUp = side.lineUp.map(({ participantId, collectionAssignments }) => ({
           participantId: idMap[participantId],
@@ -156,7 +156,7 @@ function anonymizeDrawDefinition({ drawDefinition, filterExtensions, idMap }) {
     }
   };
 
-  for (const structure of drawDefinition.structures || []) {
+  for (const structure of drawDefinition.structures ?? []) {
     updateStructure(structure);
 
     if (Array.isArray(structure.structures)) {
@@ -166,7 +166,7 @@ function anonymizeDrawDefinition({ drawDefinition, filterExtensions, idMap }) {
     }
   }
 
-  for (const link of drawDefinition.links || []) {
+  for (const link of drawDefinition.links ?? []) {
     link.source.structureId = idMap[link.source.structureId];
     link.target.structureId = idMap[link.target.structureId];
   }
@@ -174,7 +174,7 @@ function anonymizeDrawDefinition({ drawDefinition, filterExtensions, idMap }) {
 
 function anonymizeEvents({ tournamentRecord, filterExtensions, idMap }) {
   let eventCount = 1;
-  for (const event of tournamentRecord.events || []) {
+  for (const event of tournamentRecord.events ?? []) {
     event.extensions = filterExtensions(event);
     event.onlineResources = [];
     event.isMock = true;
@@ -192,7 +192,7 @@ function anonymizeEvents({ tournamentRecord, filterExtensions, idMap }) {
       }
     }
 
-    for (const drawDefinition of event.drawDefinitions || []) {
+    for (const drawDefinition of event.drawDefinitions ?? []) {
       anonymizeDrawDefinition({ drawDefinition, filterExtensions, idMap });
     }
 
@@ -225,7 +225,7 @@ function anonymizeIndividualPersons({
 }) {
   const consideredDate = tournamentRecord.startDate || formatDate(new Date());
 
-  const individualParticipants = (tournamentRecord.participants || []).filter(
+  const individualParticipants = (tournamentRecord.participants ?? []).filter(
     ({ participantType }) => participantType === INDIVIDUAL,
   );
 
@@ -254,7 +254,7 @@ function anonymizeIndividualPersons({
           personExtensions: [],
           consideredDate,
           sex: gender,
-        })?.persons || [],
+        })?.persons ?? [],
     })),
   );
 
@@ -281,7 +281,7 @@ function anonymizeIndividualPersons({
 function buildAddressValues(individualParticipants, individualParticipantsCount) {
   const addressComponents = individualParticipants.reduce(
     (components, participant) => {
-      const address = participant.person?.addresses?.[0] || {};
+      const address = participant.person?.addresses?.[0] ?? {};
       const { city, state, postalCode } = address;
       if (!components.cities.includes(city)) components.cities.push(city);
       if (!components.states.includes(state)) components.states.push(state);
@@ -331,7 +331,7 @@ function anonymizeIndividualPerson({
   genderedIndices[gender] += 1;
 
   if (birthYear) {
-    const [, month, day] = generatedPerson?.birthDate?.split('-') || [];
+    const [, month, day] = generatedPerson?.birthDate?.split('-') ?? [];
     const birthDate = [birthYear, month, day].join('-');
     generatedPerson.birthDate = birthDate;
   }
@@ -366,11 +366,11 @@ function anonymizeIndividualPerson({
 }
 
 function anonymizeGroupedParticipants({ tournamentRecord }) {
-  const individualParticipants = (tournamentRecord.participants || []).filter(
+  const individualParticipants = (tournamentRecord.participants ?? []).filter(
     ({ participantType }) => participantType === INDIVIDUAL,
   );
 
-  const pairParticipants = (tournamentRecord.participants || []).filter(
+  const pairParticipants = (tournamentRecord.participants ?? []).filter(
     ({ participantType }) => participantType === PAIR,
   );
 
@@ -382,7 +382,7 @@ function anonymizeGroupedParticipants({ tournamentRecord }) {
     });
   });
 
-  const teamParticipants = (tournamentRecord.participants || []).filter(
+  const teamParticipants = (tournamentRecord.participants ?? []).filter(
     ({ participantType }) => participantType === TEAM,
   );
   const teamNames = nameMocks({ count: teamParticipants.length }).names;
@@ -390,7 +390,7 @@ function anonymizeGroupedParticipants({ tournamentRecord }) {
     teamParticipant.participantName = teamNames[i];
   });
 
-  const groupParticipants = (tournamentRecord.participants || []).filter(
+  const groupParticipants = (tournamentRecord.participants ?? []).filter(
     ({ participantType }) => participantType === GROUP,
   );
   const groupNames = nameMocks({

@@ -48,7 +48,7 @@ export function validateSchedulingProfile({ tournamentRecords, schedulingProfile
         const validRound = rounds?.includes(roundNumber);
         if (!validRound) info = 'Invalid rounds';
 
-        const { segmentNumber, segmentsCount } = roundSegment || {};
+        const { segmentNumber, segmentsCount } = roundSegment ?? {};
         const validSegment =
           !roundSegment ||
           (isConvertableInteger(segmentNumber) && isPowerOf2(segmentsCount) && segmentNumber <= segmentsCount);
@@ -74,7 +74,7 @@ export function tournamentRelevantSchedulingIds(params) {
   const structureIds: string[] = [];
   const eventIds: string[] = [];
   const drawIds: string[] = [];
-  const venueIds: string[] = (tournamentRecord?.venues || []).map(
+  const venueIds: string[] = (tournamentRecord?.venues ?? []).map(
     ({ venueId, courts }) => (!requireCourts || courts?.length) && venueId,
   );
   const tournamentId = tournamentRecord?.tournamentId;
@@ -82,18 +82,18 @@ export function tournamentRelevantSchedulingIds(params) {
   if (tournamentId) {
     tournamentIds.push(tournamentId);
     tournamentMap[tournamentId] = {};
-    const events = tournamentRecord?.events || [];
+    const events = tournamentRecord?.events ?? [];
     for (const event of events) {
       const eventId = event.eventId;
       eventIds.push(eventId);
       tournamentMap[tournamentId][eventId] = {};
       const mapParsedInt = (roundNumber) => parseInt(roundNumber);
-      for (const drawDefinition of event.drawDefinitions || []) {
+      for (const drawDefinition of event.drawDefinitions ?? []) {
         const drawId = drawDefinition.drawId;
         drawIds.push(drawId);
         tournamentMap[tournamentId][eventId][drawId] = {};
         const { structures } = getDrawStructures({ drawDefinition });
-        for (const structure of structures || []) {
+        for (const structure of structures ?? []) {
           const structureId = structure.structureId;
           const { matchUps } = getAllStructureMatchUps({ structure });
           const { roundMatchUps } = getRoundMatchUps({ matchUps });
@@ -122,7 +122,7 @@ export function tournamentRelevantSchedulingIds(params) {
 }
 
 export function getAllRelevantSchedulingIds(params) {
-  const records: any = (params?.tournamentRecords && Object.values(params?.tournamentRecords)) || [];
+  const records: any = (params?.tournamentRecords && Object.values(params?.tournamentRecords)) ?? [];
   const tournamentsMap = {};
   const { venueIds, eventIds, drawIds, structureIds, tournamentIds } = records.reduce(
     (aggregator, tournamentRecord) => {

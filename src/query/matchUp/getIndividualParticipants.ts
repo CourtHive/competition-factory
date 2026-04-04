@@ -1,11 +1,11 @@
 import { DOUBLES } from '@Constants/matchUpTypes';
 
 export function getIndividualParticipants(matchUp) {
-  const { sides, matchUpType } = matchUp || {};
-  return (sides || [])
+  const { sides, matchUpType } = matchUp ?? {};
+  return (sides ?? [])
     .map((side) => {
       return (
-        (matchUpType === DOUBLES && (side?.participant?.individualParticipants || [])) ||
+        (matchUpType === DOUBLES && (side?.participant?.individualParticipants ?? [])) ||
         (side?.participant && [side.participant]) ||
         []
       );

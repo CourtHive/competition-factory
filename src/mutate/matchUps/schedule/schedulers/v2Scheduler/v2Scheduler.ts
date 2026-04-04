@@ -594,7 +594,7 @@ export function v2Scheduler({
   // Start SCHEDULING
   for (const dateSchedulingProfile of dateSchedulingProfiles ?? []) {
     const scheduleDate = extractDate(dateSchedulingProfile?.scheduleDate);
-    const venues = dateSchedulingProfile?.venues || [];
+    const venues = dateSchedulingProfile?.venues ?? [];
     const matchUpPotentialParticipantIds = {};
     const individualParticipantProfiles = {};
 

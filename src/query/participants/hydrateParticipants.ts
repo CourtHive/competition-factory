@@ -36,7 +36,7 @@ export function hydrateParticipants({
     });
   }
 
-  let participants: HydratedParticipant[] = makeDeepCopy(tournamentRecord.participants, false, true) || [];
+  let participants: HydratedParticipant[] = makeDeepCopy(tournamentRecord.participants, false, true) ?? [];
 
   if (participantsProfile?.withIOC || participantsProfile?.withISO2)
     participants.forEach((participant) => addNationalityCode({ participant, ...participantsProfile }));

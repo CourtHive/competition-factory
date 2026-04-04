@@ -98,7 +98,7 @@ export function getParticipantIdFinishingPositions({
           relevantMatchUps,
         },
       };
-    }) || [];
+    }) ?? [];
 
   return Object.assign({}, ...participantIdFinishingPositions);
 }
@@ -116,7 +116,7 @@ function containerFinishingPosition({
   const participantResult = drawDataStructures
     .find((structure) => structure.structureId === matchUp.containerStructureId)
     ?.participantResults?.find((result) => result.participantId === participantId)?.participantResult;
-  const { ties, groupOrder, provisionalOrder } = participantResult || {};
+  const { ties, groupOrder, provisionalOrder } = participantResult ?? {};
   const bracketsCount = containedStructures?.length;
 
   const playoffStructure = drawDefinition.structure?.find((structure) => structure.stage === PLAY_OFF);

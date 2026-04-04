@@ -332,7 +332,7 @@ export function validateParticipantCategory(
       rejection.rejectionReasons.push({
         type: 'age',
         reason: ageValidation.reason!,
-        details: ageValidation.details || {},
+        details: ageValidation.details ?? {},
       });
     }
 
@@ -340,7 +340,7 @@ export function validateParticipantCategory(
       rejection.rejectionReasons.push({
         type: 'rating',
         reason: ratingValidation.reason!,
-        details: ratingValidation.details || {},
+        details: ratingValidation.details ?? {},
       });
     }
 

@@ -538,7 +538,7 @@ function processFeedInPlayoff({
     [FEED_IN_CHAMPIONSHIP_TO_SF]: { feedsFromFinal: 1 },
   };
 
-  Object.assign(params, additionalAttributes[playoffDrawType] || {});
+  Object.assign(params, additionalAttributes[playoffDrawType] ?? {});
 
   const { structures: championshipStructures, links: feedInLinks } = feedInChampionship(params);
   const [playoffStructure] = championshipStructures;

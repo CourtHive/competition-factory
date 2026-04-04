@@ -1,21 +1,18 @@
 import { deleteMatchUpsNotice, modifyMatchUpNotice } from '@Mutate/notifications/drawNotifications';
 import { decorateResult } from '@Functions/global/decorateResult';
+import { requireParams } from '@Helpers/parameters/requireParams';
 import { getMatchUpId } from '@Functions/global/extractors';
 import { isAdHoc } from '@Query/drawDefinition/isAdHoc';
 import { findStructure } from '@Acquire/findStructure';
 import { numericSort } from '@Tools/sorting';
 
 // constants and types
+import { INVALID_STRUCTURE, MISSING_VALUE } from '@Constants/errorConditionConstants';
+import { TOURNAMENT_RECORD, DRAW_DEFINITION } from '@Constants/attributeConstants';
 import { completedMatchUpStatuses } from '@Constants/matchUpStatusConstants';
 import { DrawDefinition, Event, Tournament } from '@Types/tournamentTypes';
 import { SUCCESS } from '@Constants/resultConstants';
 import { ResultType } from '@Types/factoryTypes';
-import {
-  INVALID_STRUCTURE,
-  MISSING_DRAW_DEFINITION,
-  MISSING_TOURNAMENT_RECORD,
-  MISSING_VALUE,
-} from '@Constants/errorConditionConstants';
 
 type RemoveRoundMatchUpsArgs = {
   removeCompletedMatchUps?: boolean;
@@ -36,8 +33,8 @@ export function removeRoundMatchUps({
   deletedMatchUpsCount?: number;
   roundRemoved?: boolean;
 } {
-  if (!tournamentRecord) return { error: MISSING_TOURNAMENT_RECORD };
-  if (!drawDefinition) return { error: MISSING_DRAW_DEFINITION };
+  const paramsCheck = requireParams({ tournamentRecord, drawDefinition }, [TOURNAMENT_RECORD, DRAW_DEFINITION]);
+  if (paramsCheck.error) return paramsCheck;
   if (!roundNumber)
     return decorateResult({
       result: { error: MISSING_VALUE },

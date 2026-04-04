@@ -25,8 +25,8 @@ export function enableCourts(params) {
 }
 
 function courtsEnable({ tournamentRecord, courtIds, enableAll, dates }) {
-  for (const venue of tournamentRecord.venues || []) {
-    for (const court of venue.courts || []) {
+  for (const venue of tournamentRecord.venues ?? []) {
+    for (const court of venue.courts ?? []) {
       if (enableAll || courtIds?.includes(court.courtId))
         if (Array.isArray(dates)) {
           const { extension } = findExtension({

@@ -155,7 +155,7 @@ export function generateParticipants(params): {
   }
 
   const { postalCodesProfile, postalCodesCount, statesProfile, citiesProfile, citiesCount, statesCount } =
-    addressProps || {};
+    addressProps ?? {};
 
   const valuesFromProfile = (profile) =>
     Object.keys(profile).flatMap((key) => generateRange(0, statesProfile[key]).map(() => key));
@@ -243,7 +243,7 @@ export function generateParticipants(params): {
       lastName,
       personId,
       sex,
-    } = person || {};
+    } = person ?? {};
     const standardGivenName = firstName || 'GivenName';
     const standardFamilyName = lastName || 'FamilyName';
     const participantName = `${standardGivenName} ${standardFamilyName}`;
@@ -352,7 +352,7 @@ function addScaleItem({ scaleValue: itemValue, participant, eventType, scaleType
   const itemType = [SCALE, scaleType, eventType, scaleName].join('.');
   const timeItem = { itemValue, itemType };
   if (scaleName && itemValue) {
-    if (!participant.timeItems) participant.timeItems = [];
+    participant.timeItems ??= [];
     participant.timeItems.push(timeItem);
   }
 }
@@ -369,14 +369,14 @@ function genRatings(params) {
   const scaleName = category.categoryName || category.ratingType || category.ageCategoryCode;
 
   if ((categoryName || ageCategoryCode) && !ratingType) {
-    const [start, end] = rankingRange || [];
+    const [start, end] = rankingRange ?? [];
     singlesRankings[scaleName] = shuffleArray(generateRange(start, end), random).slice(
       0,
       scaledParticipantsCount || randomInt(20, 30, random),
     );
 
     if ([PAIR, TEAM].includes(participantType)) {
-      const [start, end] = rankingRange || [];
+      const [start, end] = rankingRange ?? [];
       doublesRankings[scaleName] = shuffleArray(generateRange(start, end), random).slice(
         0,
         scaledParticipantsCount || randomInt(20, 30, random),
@@ -390,7 +390,7 @@ function genRatings(params) {
 
     const ratingParameters = {
       ...ratingsParameters[ratingType],
-      ...(ratingAttributes || {}),
+      ...(ratingAttributes ?? {}),
     };
 
     const { attributes = {}, decimalsCount, accessors, range, step } = ratingParameters;
@@ -398,7 +398,7 @@ function genRatings(params) {
     const getAttributes = (attributes) => {
       const generatedAttributes = {};
 
-      const attributeKeys = Object.keys(attributes || {});
+      const attributeKeys = Object.keys(attributes ?? {});
       for (const attribute of attributeKeys) {
         const attributeValue = attributes[attribute];
 

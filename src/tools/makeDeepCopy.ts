@@ -14,7 +14,7 @@ export function makeDeepCopy(
 
   const deepCopy = deepCopyEnabled();
 
-  const { stringify, toJSON, ignore, modulate } = deepCopy || {};
+  const { stringify, toJSON, ignore, modulate } = deepCopy ?? {};
 
   if (
     (!deepCopy?.enabled && !internalUse) ||

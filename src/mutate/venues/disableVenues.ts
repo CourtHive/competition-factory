@@ -29,7 +29,7 @@ export function disableVenues(params: DisableVenuesArgs) {
 }
 
 function venuesDisable({ tournamentRecord, venueIds }) {
-  for (const venue of tournamentRecord.venues || []) {
+  for (const venue of tournamentRecord.venues ?? []) {
     if (venueIds?.includes(venue.venueId)) {
       const result = addExtension({
         creationTime: false,

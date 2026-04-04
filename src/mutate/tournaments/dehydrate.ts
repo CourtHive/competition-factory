@@ -26,15 +26,15 @@ export function dehydrateMatchUps({ tournamentRecord }): {
 export function getMatchUpFormatMap({ tournamentRecord }) {
   const matchUpFormatMap = {};
 
-  for (const event of tournamentRecord.events || []) {
+  for (const event of tournamentRecord.events ?? []) {
     if (event.matchUpFormat) matchUpFormatMap[event.eventId] = event.matchUpFormat;
 
-    for (const drawDefinition of event.drawDefinitions || []) {
+    for (const drawDefinition of event.drawDefinitions ?? []) {
       if (drawDefinition.matchUpFormat) matchUpFormatMap[drawDefinition.drawId] = drawDefinition.matchUpFormat;
 
-      for (const structure of drawDefinition.structures || []) {
+      for (const structure of drawDefinition.structures ?? []) {
         if (structure.matchUpFormat) matchUpFormatMap[structure.structureId] = structure.matchUpFormat;
-        for (const childStructure of structure.structures || []) {
+        for (const childStructure of structure.structures ?? []) {
           if (childStructure.matchUpFormat) matchUpFormatMap[childStructure.structureId] = childStructure.matchUpFormat;
         }
       }

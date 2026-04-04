@@ -10,7 +10,7 @@ import { MISSING_TOURNAMENT_RECORD } from '@Constants/errorConditionConstants';
 export function getCourts({ tournamentRecord, venueId, venueIds }) {
   if (!tournamentRecord) return { error: MISSING_TOURNAMENT_RECORD };
 
-  const courts = (tournamentRecord.venues || [])
+  const courts = (tournamentRecord.venues ?? [])
     .filter((venue) => {
       if (venueId) return venue.venueId === venueId;
       if (venueIds) return venueIds.includes(venue.venueId);
@@ -18,7 +18,7 @@ export function getCourts({ tournamentRecord, venueId, venueIds }) {
     })
     .map((venue) => {
       const { venueId } = venue;
-      const venueCourts = makeDeepCopy(venue.courts || []);
+      const venueCourts = makeDeepCopy(venue.courts ?? []);
       venueCourts.forEach((court) => Object.assign(court, { venueId }));
       return venueCourts;
     })

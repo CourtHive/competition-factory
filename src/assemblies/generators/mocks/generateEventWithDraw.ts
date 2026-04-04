@@ -820,7 +820,7 @@ export function generateEventWithDraw(params) {
   const categoryName = category?.categoryName || category?.ageCategoryCode || category?.ratingType;
 
   const eventName = drawProfile.eventName || categoryName || `Generated ${eventType}`;
-  let targetParticipants = tournamentRecord?.participants || [];
+  let targetParticipants = tournamentRecord?.participants ?? [];
 
   const qualifyingParticipantsCount = calcQualifyingParticipantsCount({ qualifyingProfiles, participantType });
 
@@ -966,7 +966,7 @@ export function generateEventWithDraw(params) {
 function calcQualifyingParticipantsCount({ qualifyingProfiles, participantType }) {
   const rawCount =
     qualifyingProfiles
-      ?.flatMap((profile) => profile.structureProfiles || [])
+      ?.flatMap((profile) => profile.structureProfiles ?? [])
       .reduce((count, profile) => {
         const qpc =
           !profile.participantsCount || profile.participantsCount > profile.drawSize

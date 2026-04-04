@@ -1,22 +1,19 @@
 import { getScheduledCourtMatchUps } from '@Query/venues/getScheduledCourtMatchUps';
 import { validDateAvailability } from '@Validators/validateDateAvailability';
 import { getAppliedPolicies } from '@Query/extensions/getAppliedPolicies';
+import { requireParams } from '@Helpers/parameters/requireParams';
 import { minutesDifference, timeToDate } from '@Tools/dateTime';
 import { findCourt } from '../../query/venues/findCourt';
 import { addNotice } from '@Global/state/globalState';
 import { startTimeSort } from '@Validators/time';
 
-import { Availability, Tournament } from '@Types/tournamentTypes';
+import { ErrorType, SCHEDULE_CONFLICT_COURT_UNAVAILABLE } from '@Constants/errorConditionConstants';
+import { TOURNAMENT_RECORD, COURT_ID } from '@Constants/attributeConstants';
 import { POLICY_TYPE_SCHEDULING } from '@Constants/policyConstants';
+import { Availability, Tournament } from '@Types/tournamentTypes';
 import { MODIFY_VENUE } from '@Constants/topicConstants';
 import { SUCCESS } from '@Constants/resultConstants';
 import { HydratedMatchUp } from '@Types/hydrated';
-import {
-  ErrorType,
-  MISSING_COURT_ID,
-  MISSING_TOURNAMENT_RECORD,
-  SCHEDULE_CONFLICT_COURT_UNAVAILABLE,
-} from '@Constants/errorConditionConstants';
 
 type ModifyCourtAvailabilityArgs = {
   venueMatchUps?: HydratedMatchUp[];
@@ -40,8 +37,8 @@ export function modifyCourtAvailability({
   matchUpIds?: string[];
   info?: string;
 } {
-  if (!tournamentRecord) return { error: MISSING_TOURNAMENT_RECORD };
-  if (!courtId) return { error: MISSING_COURT_ID };
+  const paramsCheck = requireParams({ tournamentRecord, courtId }, [TOURNAMENT_RECORD, COURT_ID]);
+  if (paramsCheck.error) return paramsCheck;
 
   const dateResult = validDateAvailability({ dateAvailability });
   if (dateResult.error) return dateResult;

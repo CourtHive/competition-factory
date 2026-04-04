@@ -222,7 +222,7 @@ function conditionallyAdvanceDrawPosition(params) {
   );
   if (!noContextTargetMatchUp) return { error: MISSING_MATCHUP };
 
-  const sourceDrawPositions = sourceMatchUp?.drawPositions || [];
+  const sourceDrawPositions = sourceMatchUp?.drawPositions ?? [];
   let targetMatchUpDrawPositions = noContextTargetMatchUp.drawPositions?.filter(Boolean);
 
   const sameStructure = sourceMatchUp?.structureId === targetMatchUp.structureId;
@@ -303,7 +303,7 @@ function conditionallyAdvanceDrawPosition(params) {
     if (result.error) return decorateResult({ result, stack });
   }
 
-  const drawPositions = noContextTargetMatchUp.drawPositions?.filter(Boolean) || [];
+  const drawPositions = noContextTargetMatchUp.drawPositions?.filter(Boolean) ?? [];
 
   const hasDrawPosition = drawPositions.length === 1;
   const walkoverWinningSide =

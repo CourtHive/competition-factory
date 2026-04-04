@@ -15,7 +15,7 @@ import { countries } from '@Fixtures/countryData';
 export function generatePersons(params?) {
   let count = params?.count || 1;
   const { personExtensions, consideredDate, isMock = true, gendersCount, personData, random, category, sex } =
-    params || {};
+    params ?? {};
   if (Number.isNaN(Number(count))) return { error: INVALID_VALUES };
 
   const maleCount = gendersCount?.[MALE] || (isMale(sex) && count) || 0;
@@ -134,7 +134,7 @@ export function generatePersons(params?) {
   const yearRange = (ageMinDate || ageMaxDate) && [rangeStart, rangeEnd];
 
   const persons = shuffledPersons.slice(0, count).map((person, i) => {
-    const [start, end] = yearRange || [];
+    const [start, end] = yearRange ?? [];
     const birthYear = yearRange && randomPop(generateRange(start, end), random);
     const birthDay = randomPop(generateRange(0, 365), random);
     const birthDate = birthYear && dateFromDay(birthYear, birthDay);

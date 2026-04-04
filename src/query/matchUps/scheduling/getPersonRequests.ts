@@ -31,10 +31,10 @@ export function getPersonRequests(params: GetPersonRequestsArgs): {
       name: PERSON_REQUESTS,
     });
 
-    const requestObjects = extension?.value || [];
+    const requestObjects = extension?.value ?? [];
 
     for (const requestObject of requestObjects) {
-      const { personId, requests } = requestObject || {};
+      const { personId, requests } = requestObject ?? {};
 
       if (!personRequests[personId]) personRequests[personId] = [];
       for (const request of requests) {

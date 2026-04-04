@@ -29,7 +29,7 @@ export function getAwardProfile(params) {
 
   const matchesCategory = (profileCategory: CategoryScope | undefined) => {
     if (!profileCategory) return true;
-    const c = category || {};
+    const c = category ?? {};
 
     // Each populated CategoryScope field must match (AND logic)
     // Within each array, any value suffices (OR logic)

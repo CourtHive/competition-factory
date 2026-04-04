@@ -130,7 +130,7 @@ export function assignDrawPosition({
   }
 
   const sadp = structureAssignedDrawPositions({ structure });
-  const positionAssignments: PositionAssignment[] = sadp.positionAssignments || [];
+  const positionAssignments: PositionAssignment[] = sadp.positionAssignments ?? [];
   const positionAssignment = positionAssignments?.find((assignment) => assignment.drawPosition === drawPosition);
   if (!positionAssignment)
     return decorateResult({

@@ -25,11 +25,11 @@ export function getTargetMatchUps({
     drawDefinition,
   })?.containedStructures;
 
-  const targetStructureIds = containedStructures?.[structure.structureId]?.map(({ structureId }) => structureId) || [];
+  const targetStructureIds = containedStructures?.[structure.structureId]?.map(({ structureId }) => structureId) ?? [];
 
   targetStructureIds.push(structure?.structureId);
 
-  const drawPositions = assignments?.map(({ drawPosition }) => drawPosition) || [];
+  const drawPositions = assignments?.map(({ drawPosition }) => drawPosition) ?? [];
 
   // find all matchUps in the specified structure which contain the target drawPositions
   const targetMatchUps =

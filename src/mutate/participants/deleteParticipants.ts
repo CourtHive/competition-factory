@@ -44,7 +44,7 @@ export function deleteParticipants(params: DeleteParticipantsArgs): {
   const participantsCount = tournamentRecord.participants?.length || 0;
   if (!participantsCount) return { ...SUCCESS };
 
-  const teamDrawIds = (tournamentRecord.events || [])
+  const teamDrawIds = (tournamentRecord.events ?? [])
     ?.filter(({ eventType }) => eventType === TEAM)
     .map((event) => event?.drawDefinitions?.map(({ drawId }) => drawId))
     .flat(Infinity);
@@ -65,7 +65,7 @@ export function deleteParticipants(params: DeleteParticipantsArgs): {
       }).matchUps ?? [];
 
     const placedPairParticipantIds = matchUps
-      .flatMap(({ sides }) => sides?.map(({ participantId }) => participantId || []))
+      .flatMap(({ sides }) => sides?.map(({ participantId }) => participantId ?? []))
       .filter(Boolean);
 
     return intersection(placedPairParticipantIds, participantIds);
@@ -89,7 +89,7 @@ export function deleteParticipants(params: DeleteParticipantsArgs): {
   const mappedIndividualParticipantIdsToAdd = {};
 
   // If not active in draws, remove participantIds from all entries
-  for (const event of tournamentRecord.events || []) {
+  for (const event of tournamentRecord.events ?? []) {
     const result = removeEventEntries({
       participantIds,
       event,
@@ -121,7 +121,7 @@ export function deleteParticipants(params: DeleteParticipantsArgs): {
       participant.participantType &&
       [PAIR, participantTeam].includes(participant.participantType)
     ) {
-      for (const individualParticipantId of participant.individualParticipantIds || []) {
+      for (const individualParticipantId of participant.individualParticipantIds ?? []) {
         if (!participantIds.includes(individualParticipantId)) {
           if (!mappedIndividualParticipantIdsToAdd[participant.participantId])
             mappedIndividualParticipantIdsToAdd[participant.participantId] = [];
@@ -140,10 +140,10 @@ export function deleteParticipants(params: DeleteParticipantsArgs): {
   });
 
   if (addIndividualParticipantsToEvents) {
-    for (const event of tournamentRecord.events || []) {
+    for (const event of tournamentRecord.events ?? []) {
       const groupParticipantIds = eventParticipantIdsRemoved[event.eventId];
       const individualParticipantIds = groupParticipantIds
-        .map((participantId) => mappedIndividualParticipantIdsToAdd[participantId] || [])
+        .map((participantId) => mappedIndividualParticipantIdsToAdd[participantId] ?? [])
         .flat();
       addEventEntries({
         participantIds: individualParticipantIds,

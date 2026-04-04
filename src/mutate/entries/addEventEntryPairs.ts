@@ -120,7 +120,7 @@ export function addEventEntryPairs(params: AddEventEntryPairsArgs) {
       tournamentRecord,
     });
     if (result.error) return result;
-    addedParticipants = result.participants || [];
+    addedParticipants = result.participants ?? [];
     info = result.info;
   }
 

@@ -66,7 +66,7 @@ export function bulkRescheduleMatchUps(params: BulkRescheduleMatchUpsArgs): Resu
 
     if (removeFromNotScheduledIds.length) {
       notRescheduled =
-        result?.notRescheduled?.filter(({ matchUpId }) => !removeFromNotScheduledIds.includes(matchUpId)) || [];
+        result?.notRescheduled?.filter(({ matchUpId }) => !removeFromNotScheduledIds.includes(matchUpId)) ?? [];
     }
   }
 

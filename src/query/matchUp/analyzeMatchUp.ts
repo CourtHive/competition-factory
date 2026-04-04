@@ -27,8 +27,8 @@ export function analyzeMatchUp(params?): ResultType & {
   isActiveSet?: boolean;
   winningSide?: number;
 } {
-  const { matchUp, sideNumber, setNumber, isTiebreakValue, isPointValue } = params || {};
-  let { matchUpFormat } = params || {};
+  const { matchUp, sideNumber, setNumber, isTiebreakValue, isPointValue } = params ?? {};
+  let { matchUpFormat } = params ?? {};
   if (!matchUp) return { error: MISSING_MATCHUP };
 
   matchUpFormat = matchUpFormat || matchUp?.matchUpFormat;
@@ -39,9 +39,9 @@ export function analyzeMatchUp(params?): ResultType & {
   const setsCount = sets?.length;
   const setIndex = setNumber && setNumber - 1;
   const isExistingSet = !!sets?.find((set, index) => set.setNumber === setNumber && index === setIndex);
-  const completedSets = sets?.filter((set) => set?.winningSide) || [];
+  const completedSets = sets?.filter((set) => set?.winningSide) ?? [];
   const completedSetsCount = completedSets?.length || 0;
-  const setsFollowingCurrent = (setNumber && sets?.slice(setNumber)) || [];
+  const setsFollowingCurrent = (setNumber && sets?.slice(setNumber)) ?? [];
   const isLastSetWithValues = !!(
     setsCount &&
     setNumber &&
@@ -68,7 +68,7 @@ export function analyzeMatchUp(params?): ResultType & {
     sideGameScores,
     // sidePointScores,
     sideTiebreakScores,
-  } = specifiedSetAnalysis || {};
+  } = specifiedSetAnalysis ?? {};
   const isActiveSet = !!(
     (setObject && !isCompletedSet && isLastSetWithValues) ||
     (setNumber && setNumber === setsCount + 1 && !isCompletedMatchUp)

@@ -1,5 +1,5 @@
 export function findMatchupFormatAverageTimes(params) {
-  const { matchUpAverageTimes, matchUpFormat } = params || {};
+  const { matchUpAverageTimes, matchUpFormat } = params ?? {};
   // first find all matchUpAverageTime definitions which include matchUpFormats...
   // ... that either exactly match or start with the target matchUpFormat.
   const codeMatches =
@@ -10,7 +10,7 @@ export function findMatchupFormatAverageTimes(params) {
       .flat()
       .filter(Boolean)
       // sort by length; shortest first; prioritize first match
-      .sort((a, b) => (a?.length || 0) - (b?.length || 0)) || [];
+      .sort((a, b) => (a?.length || 0) - (b?.length || 0)) ?? [];
 
   // determine if there is an exact match
   const exactCodeMatch = codeMatches.includes(matchUpFormat);
@@ -23,7 +23,7 @@ export function findMatchupFormatAverageTimes(params) {
 }
 
 export function findMatchupFormatRecoveryTimes(params) {
-  const { matchUpRecoveryTimes, averageMinutes, matchUpFormat } = params || {};
+  const { matchUpRecoveryTimes, averageMinutes, matchUpFormat } = params ?? {};
   return matchUpRecoveryTimes?.find(({ matchUpFormatCodes, averageTimes, recoveryTimes }) => {
     if (averageTimes && averageMinutes) {
       const { greaterThan = 0, lessThan = 360 } = averageTimes;

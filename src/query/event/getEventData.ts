@@ -130,7 +130,7 @@ export function getEventData(params: GetEventDataArgs): {
     return structure;
   };
 
-  const drawDefinitions = event.drawDefinitions || [];
+  const drawDefinitions = event.drawDefinitions ?? [];
   const drawsData =
     !usePublishState || eventPublished
       ? drawDefinitions

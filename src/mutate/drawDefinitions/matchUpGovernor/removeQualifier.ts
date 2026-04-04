@@ -56,7 +56,7 @@ export function removeQualifier(params: RemoveQualifierArgs): ResultType & { qua
           structure,
         }).positionAssignments;
 
-        for (const positionAssignment of positionAssignments || []) {
+        for (const positionAssignment of positionAssignments ?? []) {
           if (positionAssignment.participantId === previousWinningParticipantId) {
             positionAssignment.participantId = undefined;
 
@@ -66,12 +66,12 @@ export function removeQualifier(params: RemoveQualifierArgs): ResultType & { qua
             } else if (structure?.structures) {
               const assignmentMap = Object.assign(
                 {},
-                ...(positionAssignments || []).map((assignment) => ({
+                ...(positionAssignments ?? []).map((assignment) => ({
                   [assignment.drawPosition]: assignment.participantId,
                 })),
               );
 
-              for (const subStructure of structure?.structures || []) {
+              for (const subStructure of structure?.structures ?? []) {
                 subStructure.positionAssignments?.forEach(
                   (assignment) => (assignment.participantId = assignmentMap[assignment.drawPosition]),
                 );

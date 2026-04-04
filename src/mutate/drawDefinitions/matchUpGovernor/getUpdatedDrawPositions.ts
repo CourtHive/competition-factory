@@ -17,7 +17,7 @@ export function getUpdatedDrawPositions({ drawPosition, drawPositions }: GetUpda
   let positionAdded = false;
   let positionAssigned = !!drawPositions?.includes(drawPosition);
   const updated = positionAssigned
-    ? drawPositions || []
+    ? drawPositions ?? []
     : [...drawPositions, undefined, undefined]
         .slice(0, 2) // accounts for empty array, should always have length 2
         .map((position) => {

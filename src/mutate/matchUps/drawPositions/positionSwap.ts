@@ -106,7 +106,7 @@ export function swapDrawPositionAssignments({ tournamentRecord, drawDefinition, 
     }).matchUps;
 
     inContextTargetMatchUps.forEach((inContextTargetMatchUp) => {
-      (inContextTargetMatchUp.sides || []).forEach((inContextSide) => {
+      (inContextTargetMatchUp.sides ?? []).forEach((inContextSide) => {
         const drawPosition: number = inContextSide?.drawPosition;
         if (drawPositions.includes(drawPosition)) {
           const teamParticipantId = inContextSide.participantId;

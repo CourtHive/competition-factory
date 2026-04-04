@@ -47,12 +47,12 @@ export function modifyPairAssignment(params) {
   const availableIndividualParticipantIds =
     event?.entries
       ?.filter(({ entryStatus }) => [UNGROUPED, UNPAIRED].includes(entryStatus))
-      .map(({ participantId }) => participantId) || [];
+      .map(({ participantId }) => participantId) ?? [];
   if (!availableIndividualParticipantIds.includes(replacementIndividualParticipantId)) {
     return { error: INVALID_PARTICIPANT_ID };
   }
 
-  const participant = (tournamentRecord.participants || []).find(
+  const participant = (tournamentRecord.participants ?? []).find(
     (participant) => participant.participantId === participantId,
   );
 
@@ -105,7 +105,7 @@ export function modifyPairAssignment(params) {
     );
 
     // update positionAssignments for all structures within the drawDefinition
-    for (const structure of drawDefinition.structures || []) {
+    for (const structure of drawDefinition.structures ?? []) {
       if (structure.structures) {
         structure.positionAssignments = undefined;
         for (const subStructure of structure.structures) {

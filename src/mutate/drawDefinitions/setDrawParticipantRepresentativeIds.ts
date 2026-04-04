@@ -9,7 +9,7 @@ export function setDrawParticipantRepresentativeIds({ representativeParticipantI
   if (!drawDefinition) return { error: DRAW_DEFINITION_NOT_FOUND };
   if (!Array.isArray(representativeParticipantIds)) return { error: INVALID_VALUES };
 
-  const enteredParticipantIds = getParticipantIds(drawDefinition?.entries || []);
+  const enteredParticipantIds = getParticipantIds(drawDefinition?.entries ?? []);
 
   // An empty array is valid; if ids provided...
   // check that all representativeParticipantIds are enteredParticipantIds

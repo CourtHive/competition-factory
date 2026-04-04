@@ -11,8 +11,8 @@ import { MISSING_TOURNAMENT_RECORD } from '@Constants/errorConditionConstants';
 export function getAllEventData({ tournamentRecord, policyDefinitions }) {
   if (!tournamentRecord) return { error: MISSING_TOURNAMENT_RECORD };
 
-  const events = tournamentRecord.events || [];
-  const tournamentParticipants = tournamentRecord?.participants || [];
+  const events = tournamentRecord.events ?? [];
+  const tournamentParticipants = tournamentRecord?.participants ?? [];
 
   const { tournamentInfo } = getTournamentInfo({ tournamentRecord });
 
@@ -29,7 +29,7 @@ export function getAllEventData({ tournamentRecord, policyDefinitions }) {
       event,
     }).scheduleTiming;
 
-    const drawsData = (event.drawDefinitions || []).map((drawDefinition) => {
+    const drawsData = (event.drawDefinitions ?? []).map((drawDefinition) => {
       const { drawId, drawName, matchUpFormat, updatedAt } = drawDefinition;
       const drawInfo = { drawId, drawName, matchUpFormat, updatedAt };
 

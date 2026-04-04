@@ -199,7 +199,7 @@ function validateStructureDetailEmbargoes(structureDetails) {
 }
 
 function buildExistingDrawDetails({ pubStatus, eventDrawIds }) {
-  return Object.keys(pubStatus?.drawDetails || {})
+  return Object.keys(pubStatus?.drawDetails ?? {})
     .filter((drawId) => eventDrawIds.includes(drawId))
     .reduce((details: any, drawId) => {
       details[drawId] = pubStatus.drawDetails[drawId];

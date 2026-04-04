@@ -24,7 +24,7 @@ export function addPersons({ participantRole = COMPETITOR, tournamentRecord, per
   if (!Object.keys(participantRoles).includes(participantRole)) return { error: INVALID_PARTICIPANT_ROLE };
 
   const existingPersonIds = new Set(
-    (tournamentRecord.participants || []).map(({ person }) => person?.personId).filter(Boolean),
+    (tournamentRecord.participants ?? []).map(({ person }) => person?.personId).filter(Boolean),
   );
 
   const newPersonIds: string[] = [];
@@ -37,7 +37,7 @@ export function addPersons({ participantRole = COMPETITOR, tournamentRecord, per
         (!person.personId || !existingPersonIds.has(person.personId)),
     )
     .map((person) => {
-      if (!person.personId) person.personId = UUID();
+      person.personId ??= UUID();
       // keep track of all incoming personIds for doubles creation
       newPersonIds.push(person.personId);
       return person;

@@ -12,6 +12,6 @@ export function getEntryProfile({ drawDefinition }: GetEntryProfileArgs) {
     element: drawDefinition,
     name: ENTRY_PROFILE,
   });
-  const entryProfile = extension?.value || {};
+  const entryProfile = extension?.value ?? {};
   return { entryProfile };
 }
