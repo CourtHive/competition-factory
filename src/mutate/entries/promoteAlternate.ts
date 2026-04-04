@@ -1,14 +1,14 @@
+import { requireParams } from '@Helpers/parameters/requireParams';
 import { decorateResult } from '@Functions/global/decorateResult';
 import { ensureInt } from '@Tools/ensureInt';
 
 // constants
 import { ALTERNATE, DIRECT_ACCEPTANCE } from '@Constants/entryStatusConstants';
+import { TOURNAMENT_RECORD, EVENT } from '@Constants/attributeConstants';
 import { MAIN } from '@Constants/drawDefinitionConstants';
 import { SUCCESS } from '@Constants/resultConstants';
 import {
-  MISSING_EVENT,
   INVALID_ENTRY_STATUS,
-  MISSING_TOURNAMENT_RECORD,
   PARTICIPANT_ENTRY_NOT_FOUND,
   PARTICIPANT_NOT_FOUND_IN_STAGE,
   PARTICIPANT_NOT_ENTERED_IN_STAGE,
@@ -34,9 +34,9 @@ export function promoteAlternates({
   eventId,
   event,
 }) {
-  if (!tournamentRecord) return { error: MISSING_TOURNAMENT_RECORD };
+  const paramsCheck = requireParams({ tournamentRecord, event }, [TOURNAMENT_RECORD, EVENT]);
+  if (paramsCheck.error) return paramsCheck;
   if (!Array.isArray(participantIds)) return { error: INVALID_VALUES, participantIds };
-  if (!event) return { error: MISSING_EVENT };
   const stack = 'promoteAlternates';
 
   if (event) {
@@ -78,9 +78,9 @@ export function promoteAlternates({
 }
 
 function promoteWithinElement({ participantIds, stageSequence, element, stage }) {
-  const alternates = (element.entries || []).filter((entry) => entry.entryStatus === ALTERNATE);
+  const alternates = (element.entries ?? []).filter((entry) => entry.entryStatus === ALTERNATE);
 
-  const targetedEntries = (element.entries || []).filter((entry) => participantIds.includes(entry.participantId));
+  const targetedEntries = (element.entries ?? []).filter((entry) => participantIds.includes(entry.participantId));
 
   // if no participantId is provided, take the alternate with the lowest entryPosition
   const alternateEntry = alternates.reduce((participantEntry, entry) => {

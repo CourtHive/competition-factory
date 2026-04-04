@@ -1,8 +1,9 @@
+import { requireParams } from '@Helpers/parameters/requireParams';
 import { definedAttributes } from '@Tools/definedAttributes';
 import { makeDeepCopy } from '@Tools/makeDeepCopy';
 
 import { DrawDefinition, Event, Tournament } from '@Types/tournamentTypes';
-import { MISSING_EVENT, MISSING_TOURNAMENT_RECORD } from '@Constants/errorConditionConstants';
+import { TOURNAMENT_RECORD, EVENT } from '@Constants/attributeConstants';
 
 type GetEventArgs = {
   context: { [key: string]: any };
@@ -12,8 +13,8 @@ type GetEventArgs = {
 };
 
 export function getEvent({ tournamentRecord, drawDefinition, context, event }: GetEventArgs) {
-  if (!tournamentRecord) return { error: MISSING_TOURNAMENT_RECORD };
-  if (!event) return { error: MISSING_EVENT };
+  const paramsCheck = requireParams({ tournamentRecord, event }, [TOURNAMENT_RECORD, EVENT]);
+  if (paramsCheck.error) return paramsCheck;
 
   const eventCopy = makeDeepCopy(event);
   if (context) Object.assign(eventCopy, context);

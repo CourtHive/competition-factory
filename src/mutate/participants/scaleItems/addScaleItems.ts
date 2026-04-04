@@ -2,6 +2,7 @@ import { addDrawDefinitionTimeItem } from '@Mutate/drawDefinitions/addDrawDefini
 import { addEventTimeItem, addTournamentTimeItem } from '@Mutate/timeItems/addTimeItem';
 import { participantScaleItem } from '@Query/participant/participantScaleItem';
 import { decorateResult } from '@Functions/global/decorateResult';
+import { requireParams } from '@Helpers/parameters/requireParams';
 import { addNotice, getTopics } from '@Global/state/globalState';
 import { definedAttributes } from '@Tools/definedAttributes';
 import { isValidDateString } from '@Tools/dateTime';
@@ -10,6 +11,7 @@ import { findEvent } from '@Acquire/findEvent';
 // constants and types
 import { ADD_SCALE_ITEMS, AUDIT, MODIFY_PARTICIPANTS } from '@Constants/topicConstants';
 import { TEAM_PARTICIPANT } from '@Constants/participantConstants';
+import { TOURNAMENT_RECORD } from '@Constants/attributeConstants';
 import { Participant, Tournament } from '@Types/tournamentTypes';
 import { ScaleItem, ResultType } from '@Types/factoryTypes';
 import { TEAM_EVENT } from '@Constants/eventConstants';
@@ -20,7 +22,6 @@ import {
   INVALID_SCALE_ITEM,
   MISSING_PARTICIPANT,
   MISSING_PARTICIPANTS,
-  MISSING_TOURNAMENT_RECORD,
   NO_MODIFICATIONS_APPLIED,
   PARTICIPANT_NOT_FOUND,
   VALUE_UNCHANGED,
@@ -95,7 +96,8 @@ type SetParticipantScaleItemsArgs = {
 export function setParticipantScaleItems(params: SetParticipantScaleItemsArgs) {
   const { scaleItemsWithParticipantIds = [], removePriorValues, tournamentRecord, auditData, context } = params;
 
-  if (!tournamentRecord) return { error: MISSING_TOURNAMENT_RECORD };
+  const paramsCheck = requireParams({ tournamentRecord }, [TOURNAMENT_RECORD]);
+  if (paramsCheck.error) return paramsCheck;
   if (!tournamentRecord.participants) return { error: MISSING_PARTICIPANTS };
 
   const participantScaleItemsMap: any = buildScaleItemsMap(scaleItemsWithParticipantIds);
@@ -155,7 +157,7 @@ export function addParticipantScaleItem({ removePriorValues, participant, scaleI
   if (!validScaleItem) return { error: INVALID_SCALE_ITEM };
 
   const createdAt = new Date().toISOString();
-  if (!participant.timeItems) participant.timeItems = [];
+  participant.timeItems ??= [];
 
   const { scaleItem: existingScaleItem } = participantScaleItem({
     scaleAttributes: scaleItem,
@@ -224,7 +226,7 @@ function applyScaleItemsToParticipants({ participants, participantScaleItemsMap,
   const modifiedParticipants: Participant[] = [];
 
   for (const participant of participants) {
-    const { participantId } = participant || {};
+    const { participantId } = participant ?? {};
     if (Array.isArray(participantScaleItemsMap[participantId])) {
       for (const scaleItem of participantScaleItemsMap[participantId]) {
         if (participant.participantType === TEAM_PARTICIPANT && scaleItem?.eventType !== TEAM_EVENT) {

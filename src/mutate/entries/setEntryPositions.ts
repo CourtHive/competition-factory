@@ -1,8 +1,9 @@
+import { requireParams } from '@Helpers/parameters/requireParams';
 import { refreshEntryPositions } from './refreshEntryPositions';
-import { decorateResult } from '@Functions/global/decorateResult';
 
 // constants
-import { INVALID_VALUES, MISSING_PARTICIPANT_ID, MISSING_TOURNAMENT_RECORD } from '@Constants/errorConditionConstants';
+import { TOURNAMENT_RECORD, PARTICIPANT_ID } from '@Constants/attributeConstants';
+import { INVALID_VALUES } from '@Constants/errorConditionConstants';
 import { SUCCESS } from '@Constants/resultConstants';
 
 export function setEntryPosition({
@@ -13,21 +14,19 @@ export function setEntryPosition({
   skipRefresh,
   event,
 }) {
-  const stack = 'setEntryPositions';
-
-  if (!tournamentRecord) return { error: MISSING_TOURNAMENT_RECORD };
-  if (!participantId) return decorateResult({ result: { error: MISSING_PARTICIPANT_ID }, stack });
+  const paramsCheck = requireParams({ tournamentRecord, participantId }, [TOURNAMENT_RECORD, PARTICIPANT_ID]);
+  if (paramsCheck.error) return paramsCheck;
 
   if (entryPosition !== undefined && !Number.isSafeInteger(entryPosition))
     return { error: INVALID_VALUES, entryPosition };
 
-  (event?.entries || []).forEach((entry) => {
+  (event?.entries ?? []).forEach((entry) => {
     if (entry.participantId === participantId) {
       entry.entryPosition = entryPosition;
     }
   });
 
-  (drawDefinition?.entries || []).forEach((entry) => {
+  (drawDefinition?.entries ?? []).forEach((entry) => {
     if (entry.participantId === participantId) {
       entry.entryPosition = entryPosition;
     }
@@ -60,7 +59,8 @@ export function setEntryPosition({
 }
 
 export function setEntryPositions({ tournamentRecord, entryPositions, drawDefinition, event }) {
-  if (!tournamentRecord) return { error: MISSING_TOURNAMENT_RECORD };
+  const paramsCheck = requireParams({ tournamentRecord }, [TOURNAMENT_RECORD]);
+  if (paramsCheck.error) return paramsCheck;
   if (!Array.isArray(entryPositions)) return { error: INVALID_VALUES };
 
   for (const positioning of entryPositions) {

@@ -1,12 +1,14 @@
 import { deleteParticipants } from '../participants/deleteParticipants';
 import { getStageEntries } from '@Query/drawDefinition/getStageEntries';
 import { decorateResult } from '@Functions/global/decorateResult';
+import { requireParams } from '@Helpers/parameters/requireParams';
 import { getParticipantId } from '@Functions/global/extractors';
 import { removeEventEntries } from './removeEventEntries';
 import { addEventEntries } from './addEventEntries';
 import { arrayIndices } from '@Tools/arrays';
 
 // Constants and types
+import { TOURNAMENT_RECORD, PARTICIPANT_ID, EVENT } from '@Constants/attributeConstants';
 import { DrawDefinition, Tournament, Event } from '@Types/tournamentTypes';
 import { PAIR, TEAM_PARTICIPANT } from '@Constants/participantConstants';
 import { DOUBLES_EVENT, TEAM_EVENT } from '@Constants/eventConstants';
@@ -16,9 +18,6 @@ import {
   ErrorType,
   INVALID_EVENT_TYPE,
   INVALID_PARTICIPANT_TYPE,
-  MISSING_EVENT,
-  MISSING_PARTICIPANT_ID,
-  MISSING_TOURNAMENT_RECORD,
   PARTICIPANT_ENTRY_NOT_FOUND,
   PARTICIPANT_NOT_FOUND,
 } from '@Constants/errorConditionConstants';
@@ -51,9 +50,12 @@ export function destroyGroupEntry({
   participantRemoved?: boolean;
 } {
   const stack = 'destroyGroupEntry';
-  if (!tournamentRecord) return { error: MISSING_TOURNAMENT_RECORD };
-  if (!participantId) return decorateResult({ result: { error: MISSING_PARTICIPANT_ID }, stack });
-  if (!event) return { error: MISSING_EVENT };
+  const paramsCheck = requireParams({ tournamentRecord, participantId, event }, [
+    TOURNAMENT_RECORD,
+    PARTICIPANT_ID,
+    EVENT,
+  ]);
+  if (paramsCheck.error) return paramsCheck;
 
   if (!event.eventType || ![DOUBLES_EVENT, TEAM_EVENT].includes(event.eventType)) {
     return decorateResult({ result: { error: INVALID_EVENT_TYPE }, stack });

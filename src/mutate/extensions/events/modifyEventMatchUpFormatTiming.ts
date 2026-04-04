@@ -1,10 +1,12 @@
 import { getModifiedMatchUpFormatTiming } from '@Query/extensions/matchUpFormatTiming/getModifiedMatchUpTiming';
 import { modifyMatchUpFormatTiming } from '../matchUps/modifyMatchUpFormatTiming';
 import { isValidMatchUpFormat } from '@Validators/isValidMatchUpFormat';
+import { requireParams } from '@Helpers/parameters/requireParams';
 import { Event, Tournament } from '@Types/tournamentTypes';
 import { ensureInt } from '@Tools/ensureInt';
 
-import { INVALID_VALUES, MISSING_EVENT, MISSING_TOURNAMENT_RECORD } from '@Constants/errorConditionConstants';
+import { TOURNAMENT_RECORD, EVENT } from '@Constants/attributeConstants';
+import { INVALID_VALUES } from '@Constants/errorConditionConstants';
 import { SINGLES } from '@Constants/matchUpTypes';
 
 type ModifyEventMatchUpFormatTimingArgs = {
@@ -21,9 +23,12 @@ type ModifyEventMatchUpFormatTimingArgs = {
 export function modifyEventMatchUpFormatTiming(params: ModifyEventMatchUpFormatTimingArgs) {
   const { tournamentRecord, recoveryMinutes, averageMinutes, matchUpFormat, categoryType, eventId, event } = params;
 
-  if (!tournamentRecord) return { error: MISSING_TOURNAMENT_RECORD };
+  const paramsCheck = requireParams({ tournamentRecord }, [TOURNAMENT_RECORD]);
+  if (paramsCheck.error) return paramsCheck;
   if (!isValidMatchUpFormat({ matchUpFormat })) return { error: INVALID_VALUES };
-  if (!event) return { error: MISSING_EVENT };
+
+  const eventCheck = requireParams({ event }, [EVENT]);
+  if (eventCheck.error) return eventCheck;
 
   const { averageTimes = [], recoveryTimes = [] } = getModifiedMatchUpFormatTiming({
     tournamentRecord,

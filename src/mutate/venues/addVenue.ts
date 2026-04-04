@@ -1,5 +1,6 @@
-import { validDateAvailability } from '@Validators/validateDateAvailability';
 import { resolveTournamentRecords } from '@Helpers/parameters/resolveTournamentRecords';
+import { validDateAvailability } from '@Validators/validateDateAvailability';
+import { requireParams } from '@Helpers/parameters/requireParams';
 import { definedAttributes } from '@Tools/definedAttributes';
 import { addExtension } from '../extensions/addExtension';
 import { clearPrimaryVenue } from './clearPrimaryVenue';
@@ -9,23 +10,18 @@ import { validTimePeriod } from '@Validators/time';
 import { UUID } from '@Tools/UUID';
 
 // constants and types
+import { ErrorType, MISSING_VALUE, VENUE_EXISTS, INVALID_VALUES } from '@Constants/errorConditionConstants';
+import { TOURNAMENT_RECORD } from '@Constants/attributeConstants';
 import { CONTEXT } from '@Constants/extensionConstants';
 import { ADD_VENUE } from '@Constants/topicConstants';
 import { SUCCESS } from '@Constants/resultConstants';
 import { Venue } from '@Types/tournamentTypes';
-import {
-  ErrorType,
-  MISSING_TOURNAMENT_RECORD,
-  MISSING_VALUE,
-  VENUE_EXISTS,
-  INVALID_VALUES,
-} from '@Constants/errorConditionConstants';
 
 export function addVenue(params) {
   const { disableNotice, venue, context } = params;
   if (typeof venue !== 'object') return { error: INVALID_VALUES };
   const tournamentRecords = resolveTournamentRecords(params);
-  if (!venue.venueId) venue.venueId = UUID();
+  venue.venueId ??= UUID();
 
   let addedVenue;
 
@@ -60,11 +56,12 @@ function venueAdd({ tournamentRecord, disableNotice, context, venue }: AddVenueA
   venue?: Venue;
   info?: string;
 } {
-  if (!tournamentRecord) return { error: MISSING_TOURNAMENT_RECORD };
+  const paramsCheck = requireParams({ tournamentRecord }, [TOURNAMENT_RECORD]);
+  if (paramsCheck.error) return paramsCheck;
   if (!venue) return { error: MISSING_VALUE, info: 'missing venue' };
 
-  if (!tournamentRecord.venues) tournamentRecord.venues = [];
-  if (!venue.venueId) venue.venueId = UUID();
+  tournamentRecord.venues ??= [];
+  venue.venueId ??= UUID();
 
   const venueExists = tournamentRecord.venues.reduce((exists: any, existingVenue) => {
     return exists || existingVenue.venueId === venue.venueId;

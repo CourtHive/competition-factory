@@ -1,12 +1,14 @@
-import { removeExtension } from '../removeExtension';
+import { requireParams } from '@Helpers/parameters/requireParams';
 import { findDrawMatchUp } from '@Acquire/findDrawMatchUp';
+import { removeExtension } from '../removeExtension';
 
+import { DRAW_DEFINITION, MATCHUP_ID } from '@Constants/attributeConstants';
+import { MATCHUP_NOT_FOUND } from '@Constants/errorConditionConstants';
 import { DELEGATED_OUTCOME } from '@Constants/extensionConstants';
-import { MATCHUP_NOT_FOUND, MISSING_DRAW_DEFINITION, MISSING_MATCHUP_ID } from '@Constants/errorConditionConstants';
 
 export function removeDelegatedOutcome({ drawDefinition, event, matchUpId }) {
-  if (!drawDefinition) return { error: MISSING_DRAW_DEFINITION };
-  if (!matchUpId) return { error: MISSING_MATCHUP_ID };
+  const paramsCheck = requireParams({ drawDefinition, matchUpId }, [DRAW_DEFINITION, MATCHUP_ID]);
+  if (paramsCheck.error) return paramsCheck;
 
   const { matchUp } = findDrawMatchUp({ drawDefinition, event, matchUpId });
   if (!matchUp) return { error: MATCHUP_NOT_FOUND };

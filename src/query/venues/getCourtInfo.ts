@@ -1,9 +1,11 @@
-import { makeDeepCopy } from '@Tools/makeDeepCopy';
+import { requireParams } from '@Helpers/parameters/requireParams';
 import { findCourt } from '@Query/venues/findCourt';
+import { makeDeepCopy } from '@Tools/makeDeepCopy';
 
-import { Tournament } from '@Types/tournamentTypes';
+import { TOURNAMENT_RECORD, COURT_ID } from '@Constants/attributeConstants';
+import { ErrorType } from '@Constants/errorConditionConstants';
 import { SUCCESS } from '@Constants/resultConstants';
-import { ErrorType, MISSING_COURT_ID, MISSING_TOURNAMENT_RECORD } from '@Constants/errorConditionConstants';
+import { Tournament } from '@Types/tournamentTypes';
 
 type GetCourtInfoArgs = {
   tournamentRecord: Tournament;
@@ -15,8 +17,8 @@ export function getCourtInfo({ tournamentRecord, internalUse, courtId }: GetCour
   success?: boolean;
   courtInfo?: any;
 } {
-  if (!tournamentRecord) return { error: MISSING_TOURNAMENT_RECORD };
-  if (!courtId) return { error: MISSING_COURT_ID };
+  const paramsCheck = requireParams({ tournamentRecord, courtId }, [TOURNAMENT_RECORD, COURT_ID]);
+  if (paramsCheck.error) return paramsCheck;
 
   const result = findCourt({ tournamentRecord, courtId });
   if (result.error) return result;

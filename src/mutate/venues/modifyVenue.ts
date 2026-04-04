@@ -1,20 +1,22 @@
 import { getScheduledCourtMatchUps, getScheduledVenueMatchUps } from '@Query/venues/getScheduledCourtMatchUps';
 import { bulkScheduleTournamentMatchUps } from '../matchUps/schedule/bulkScheduleTournamentMatchUps';
-import { validDateAvailability } from '@Validators/validateDateAvailability';
 import { resolveTournamentRecords } from '@Helpers/parameters/resolveTournamentRecords';
-import { deletionMessage } from '@Assemblies/generators/matchUps/deletionMessage';
 import { checkAndUpdateSchedulingProfile } from '../tournaments/schedulingProfile';
+import { deletionMessage } from '@Assemblies/generators/matchUps/deletionMessage';
+import { validDateAvailability } from '@Validators/validateDateAvailability';
 import venueTemplate from '@Assemblies/generators/templates/venueTemplate';
 import { getAppliedPolicies } from '@Query/extensions/getAppliedPolicies';
+import { requireParams } from '@Helpers/parameters/requireParams';
 import { clearPrimaryVenue } from './clearPrimaryVenue';
-import { validTimePeriod } from '@Validators/time';
 import { addNotice } from '@Global/state/globalState';
-import { makeDeepCopy } from '@Tools/makeDeepCopy';
 import { findVenue } from '@Query/venues/findVenue';
+import { validTimePeriod } from '@Validators/time';
+import { makeDeepCopy } from '@Tools/makeDeepCopy';
 import { modifyCourt } from './modifyCourt';
 import { addCourt } from './addCourt';
 
 // constants and types
+import { TOURNAMENT_RECORD, VENUE_ID } from '@Constants/attributeConstants';
 import { POLICY_TYPE_SCHEDULING } from '@Constants/policyConstants';
 import { Venue, Tournament } from '@Types/tournamentTypes';
 import { MODIFY_VENUE } from '@Constants/topicConstants';
@@ -25,10 +27,9 @@ import {
   ErrorType,
   INVALID_OBJECT,
   INVALID_VALUES,
-  MISSING_TOURNAMENT_RECORD,
   MISSING_TOURNAMENT_RECORDS,
-  VENUE_NOT_FOUND,
   MISSING_VENUE_ID,
+  VENUE_NOT_FOUND,
   NO_VALID_ATTRIBUTES,
 } from '@Constants/errorConditionConstants';
 
@@ -81,7 +82,7 @@ function handleCourtDeletions({
   allowModificationWhenMatchUpsScheduled: boolean;
 }) {
   const existingCourtIds = venue?.courts?.map((court) => court.courtId) ?? [];
-  const courtIdsToModify = modifications.courts?.map((court) => court.courtId) || [];
+  const courtIdsToModify = modifications.courts?.map((court) => court.courtId) ?? [];
   const courtIdsToDelete = courtIdsToModify.length
     ? existingCourtIds.filter((courtId) => !courtIdsToModify.includes(courtId))
     : modifications?.courts && existingCourtIds;
@@ -138,7 +139,7 @@ function handleCourtModifications({
 }) {
   if (modifications.courts) {
     for (const court of modifications.courts) {
-      const { courtId } = court || {};
+      const { courtId } = court ?? {};
       let result = modifyCourt({
         modifications: court,
         disableNotice: true,
@@ -167,9 +168,9 @@ export function venueModify({ tournamentRecord, modifications, venueId, force }:
   venue?: Venue;
   info?: string;
 } {
-  if (!tournamentRecord) return { error: MISSING_TOURNAMENT_RECORD };
+  const paramsCheck = requireParams({ tournamentRecord, venueId }, [TOURNAMENT_RECORD, VENUE_ID]);
+  if (paramsCheck.error) return paramsCheck;
   if (!modifications || typeof modifications !== 'object') return { error: INVALID_OBJECT };
-  if (!venueId) return { error: MISSING_VENUE_ID };
 
   const appliedPolicies = getAppliedPolicies({
     tournamentRecord,

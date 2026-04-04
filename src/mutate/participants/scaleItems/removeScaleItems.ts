@@ -1,9 +1,13 @@
-import { MISSING_PARTICIPANT_IDS, MISSING_TOURNAMENT_RECORD, MISSING_VALUE } from '@Constants/errorConditionConstants';
+import { requireParams } from '@Helpers/parameters/requireParams';
+
+import { MISSING_PARTICIPANT_IDS, MISSING_VALUE } from '@Constants/errorConditionConstants';
+import { TOURNAMENT_RECORD } from '@Constants/attributeConstants';
 import { SUCCESS } from '@Constants/resultConstants';
 import { SCALE } from '@Constants/timeItemConstants';
 
 export function removeParticipantsScaleItems({ tournamentRecord, scaleAttributes, participantIds }) {
-  if (!tournamentRecord) return { error: MISSING_TOURNAMENT_RECORD };
+  const paramsCheck = requireParams({ tournamentRecord }, [TOURNAMENT_RECORD]);
+  if (paramsCheck.error) return paramsCheck;
   if (!participantIds) return { error: MISSING_PARTICIPANT_IDS };
   if (!scaleAttributes) return { error: MISSING_VALUE, info: 'scaleAttributes required' };
 

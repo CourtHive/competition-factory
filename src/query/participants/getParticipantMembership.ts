@@ -1,7 +1,8 @@
+import { requireParams } from '@Helpers/parameters/requireParams';
 import { getParticipants } from './getParticipants';
 
 // constants and types
-import { MISSING_PARTICIPANT_ID, MISSING_TOURNAMENT_RECORD } from '@Constants/errorConditionConstants';
+import { TOURNAMENT_RECORD, PARTICIPANT_ID } from '@Constants/attributeConstants';
 import { GROUP, PAIR, TEAM } from '@Constants/participantConstants';
 import { Tournament } from '@Types/tournamentTypes';
 import { ResultType } from '@Types/factoryTypes';
@@ -17,8 +18,8 @@ export function getParticipantMembership({
   tournamentRecord,
   participantId,
 }: GetMembershipArgs): ResultType | { [key: string]: string[] } {
-  if (!tournamentRecord) return { error: MISSING_TOURNAMENT_RECORD };
-  if (!participantId) return { error: MISSING_PARTICIPANT_ID };
+  const paramsCheck = requireParams({ tournamentRecord, participantId }, [TOURNAMENT_RECORD, PARTICIPANT_ID]);
+  if (paramsCheck.error) return paramsCheck;
 
   const { participants } = getParticipants({
     participantFilters: { participantTypes: [TEAM, PAIR, GROUP] },

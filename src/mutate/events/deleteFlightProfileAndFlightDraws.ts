@@ -1,15 +1,16 @@
 import { removeEventExtension } from '../extensions/addRemoveExtensions';
+import { requireParams } from '@Helpers/parameters/requireParams';
 import { getFlightProfile } from '@Query/event/getFlightProfile';
 import { deleteDrawDefinitions } from './deleteDrawDefinitions';
 
 // constants
-import { MISSING_EVENT, MISSING_TOURNAMENT_RECORD } from '@Constants/errorConditionConstants';
+import { TOURNAMENT_RECORD, EVENT } from '@Constants/attributeConstants';
 import { FLIGHT_PROFILE } from '@Constants/extensionConstants';
 import { SUCCESS } from '@Constants/resultConstants';
 
 export function deleteFlightProfileAndFlightDraws({ autoPublish = true, tournamentRecord, auditData, event, force }) {
-  if (!tournamentRecord) return { error: MISSING_TOURNAMENT_RECORD };
-  if (!event) return { error: MISSING_EVENT };
+  const paramsCheck = requireParams({ tournamentRecord, event }, [TOURNAMENT_RECORD, EVENT]);
+  if (paramsCheck.error) return paramsCheck;
 
   const { flightProfile } = getFlightProfile({ event });
 

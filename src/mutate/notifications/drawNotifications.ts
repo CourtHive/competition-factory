@@ -1,7 +1,10 @@
 import { getPositionAssignments } from '@Query/drawDefinition/positionsGetter';
 import { addNotice, deleteNotice } from '@Global/state/globalState';
+import { requireParams } from '@Helpers/parameters/requireParams';
 
 // Constants and types
+import { ErrorType, MISSING_DRAW_DEFINITION, MISSING_MATCHUP } from '@Constants/errorConditionConstants';
+import { DRAW_DEFINITION, STRUCTURE } from '@Constants/attributeConstants';
 import { DrawDefinition, MatchUp } from '@Types/tournamentTypes';
 import { SUCCESS } from '@Constants/resultConstants';
 import {
@@ -15,12 +18,6 @@ import {
   MODIFY_SEED_ASSIGNMENTS,
   UPDATE_INCONTEXT_MATCHUP,
 } from '@Constants/topicConstants';
-import {
-  ErrorType,
-  MISSING_DRAW_DEFINITION,
-  MISSING_MATCHUP,
-  MISSING_STRUCTURE,
-} from '@Constants/errorConditionConstants';
 
 function drawUpdatedAt(drawDefinition: DrawDefinition, structureIds?: string[]) {
   if (!drawDefinition) return { error: MISSING_DRAW_DEFINITION };
@@ -200,8 +197,8 @@ export function modifyDrawNotice({ drawDefinition, tournamentId, structureIds, e
 }
 
 export function modifySeedAssignmentsNotice({ drawDefinition, tournamentId, structure, eventId }) {
-  if (!drawDefinition) return { error: MISSING_DRAW_DEFINITION };
-  if (!structure) return { error: MISSING_STRUCTURE };
+  const paramsCheck = requireParams({ drawDefinition, structure }, [DRAW_DEFINITION, STRUCTURE]);
+  if (paramsCheck.error) return paramsCheck;
 
   const seedAssignments = structure.seedAssignments;
   const structureId = structure.structureId;
@@ -223,8 +220,8 @@ export function modifySeedAssignmentsNotice({ drawDefinition, tournamentId, stru
 }
 
 export function modifyPositionAssignmentsNotice({ drawDefinition, tournamentId, structure, event }) {
-  if (!drawDefinition) return { error: MISSING_DRAW_DEFINITION };
-  if (!structure) return { error: MISSING_STRUCTURE };
+  const paramsCheck = requireParams({ drawDefinition, structure }, [DRAW_DEFINITION, STRUCTURE]);
+  if (paramsCheck.error) return paramsCheck;
 
   const positionAssignments = getPositionAssignments({ structure });
   const structureId = structure.structureId;

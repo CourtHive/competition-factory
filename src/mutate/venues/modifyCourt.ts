@@ -1,23 +1,19 @@
 import { resolveTournamentRecords } from '@Helpers/parameters/resolveTournamentRecords';
 import courtTemplate from '@Assemblies/generators/templates/courtTemplate';
+import { requireParams } from '@Helpers/parameters/requireParams';
 import { modifyCourtAvailability } from './courtAvailability';
+import { findCourt } from '../../query/venues/findCourt';
 import { addNotice } from '@Global/state/globalState';
 import { makeDeepCopy } from '@Tools/makeDeepCopy';
-import { findCourt } from '../../query/venues/findCourt';
 
 // constants and types
+import { INVALID_OBJECT, MISSING_TOURNAMENT_RECORDS, NO_VALID_ATTRIBUTES } from '@Constants/errorConditionConstants';
+import { TOURNAMENT_RECORD, COURT_ID } from '@Constants/attributeConstants';
 import { TournamentRecords, ResultType } from '@Types/factoryTypes';
 import { HydratedMatchUp, HydratedCourt } from '@Types/hydrated';
 import { MODIFY_VENUE } from '@Constants/topicConstants';
 import { SUCCESS } from '@Constants/resultConstants';
 import { Tournament } from '@Types/tournamentTypes';
-import {
-  INVALID_OBJECT,
-  MISSING_COURT_ID,
-  MISSING_TOURNAMENT_RECORD,
-  MISSING_TOURNAMENT_RECORDS,
-  NO_VALID_ATTRIBUTES,
-} from '@Constants/errorConditionConstants';
 
 type ModifyCourtArgs = {
   tournamentRecords?: TournamentRecords;
@@ -60,8 +56,8 @@ export function courtModification({
   courtId,
   force,
 }: ModifyCourtArgs): ResultType & { court?: HydratedCourt } {
-  if (!tournamentRecord) return { error: MISSING_TOURNAMENT_RECORD };
-  if (!courtId) return { error: MISSING_COURT_ID };
+  const paramsCheck = requireParams({ tournamentRecord, courtId }, [TOURNAMENT_RECORD, COURT_ID]);
+  if (paramsCheck.error) return paramsCheck;
   if (!modifications || typeof modifications !== 'object') return { error: INVALID_OBJECT };
 
   const result = findCourt({ tournamentRecord, courtId });

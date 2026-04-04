@@ -1,8 +1,10 @@
+import { requireParams } from '@Helpers/parameters/requireParams';
 import { decorateResult } from '@Functions/global/decorateResult';
 import { overlap } from '@Tools/arrays';
 
 // constants
-import { MISSING_STRUCTURE_ID, MISSING_DRAW_DEFINITION, INVALID_VALUES } from '@Constants/errorConditionConstants';
+import { DRAW_DEFINITION, STRUCTURE_ID } from '@Constants/attributeConstants';
+import { INVALID_VALUES } from '@Constants/errorConditionConstants';
 import { LOSER, WINNER } from '@Constants/drawDefinitionConstants';
 
 type GetRoundLinksArgs = {
@@ -17,8 +19,8 @@ export function getRoundLinks({
   roundNumber, // optional - filter for only links that apply to roundNumber
   structureId, // structureId within which matchUp occurs
 }: GetRoundLinksArgs) {
-  if (!drawDefinition) return { error: MISSING_DRAW_DEFINITION };
-  if (!structureId) return { error: MISSING_STRUCTURE_ID };
+  const paramsCheck = requireParams({ drawDefinition, structureId }, [DRAW_DEFINITION, STRUCTURE_ID]);
+  if (paramsCheck.error) return paramsCheck;
 
   const { links } = getStructureLinks({ drawDefinition, structureId });
 
@@ -70,8 +72,8 @@ export function getStructureLinks({
   structureId, // id of structure for which links are desired
   roundNumber, // optional - filter for links to or from specific rounds
 }: GetStructureLinksArgs) {
-  if (!drawDefinition) return { error: MISSING_DRAW_DEFINITION };
-  if (!structureId) return { error: MISSING_STRUCTURE_ID };
+  const paramsCheck = requireParams({ drawDefinition, structureId }, [DRAW_DEFINITION, STRUCTURE_ID]);
+  if (paramsCheck.error) return paramsCheck;
   const links = drawDefinition.links || [];
   const structureLinks = links.filter(Boolean).reduce(
     (structureLinks, link) => {

@@ -1,11 +1,13 @@
 import { chunkArray, generateRange, groupConsecutiveNumbers, unique } from '@Tools/arrays';
+import { requireParams } from '@Helpers/parameters/requireParams';
 import { getMappedStructureMatchUps } from './getMatchUpsMap';
 import { getRoundMatchUps } from './getRoundMatchUps';
 import { getRangeString } from './getRangeString';
 import { numericSort } from '@Tools/sorting';
 
 // constants and types
-import { MISSING_DRAW_DEFINITION, MISSING_STRUCTURE_ID, MISSING_VALUE } from '@Constants/errorConditionConstants';
+import { DRAW_DEFINITION, STRUCTURE_ID } from '@Constants/attributeConstants';
+import { MISSING_VALUE } from '@Constants/errorConditionConstants';
 import { RoundProfile, MatchUpsMap } from '@Types/factoryTypes';
 import { DrawDefinition } from '@Types/tournamentTypes';
 
@@ -21,8 +23,8 @@ export function getDrawPositionsRanges({
   structureId,
   matchUpsMap,
 }: GetDrawPositionRangesArgs) {
-  if (!drawDefinition) return { error: MISSING_DRAW_DEFINITION };
-  if (!structureId) return { error: MISSING_STRUCTURE_ID };
+  const paramsCheck = requireParams({ drawDefinition, structureId }, [DRAW_DEFINITION, STRUCTURE_ID]);
+  if (paramsCheck.error) return paramsCheck;
 
   if (!roundProfile) {
     const structureMatchUps = getMappedStructureMatchUps({

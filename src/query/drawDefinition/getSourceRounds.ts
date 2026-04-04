@@ -1,19 +1,16 @@
 import { getFinishingPositionSourceRoundsMap } from '@Query/structure/structureUtils';
 import { getStructureRoundProfile } from '../structure/getStructureRoundProfile';
+import { requireParams } from '@Helpers/parameters/requireParams';
 import { getPositionsPlayedOff } from './getPositionsPlayedOff';
 import { generateRange } from '@Tools/arrays';
 import { numericSort } from '@Tools/sorting';
 import { ensureInt } from '@Tools/ensureInt';
 
 // constants and types
+import { DRAW_DEFINITION, STRUCTURE_ID } from '@Constants/attributeConstants';
+import { ErrorType, MISSING_VALUE } from '@Constants/errorConditionConstants';
 import { DrawDefinition } from '@Types/tournamentTypes';
 import { RoundProfile } from '@Types/factoryTypes';
-import {
-  ErrorType,
-  MISSING_DRAW_DEFINITION,
-  MISSING_STRUCTURE_ID,
-  MISSING_VALUE,
-} from '@Constants/errorConditionConstants';
 
 type GetSourceRoundsArgs = {
   excludeRoundNumbers?: number[];
@@ -39,8 +36,8 @@ export function getSourceRounds({
   drawDefinition,
   structureId,
 }: GetSourceRoundsArgs): SourceRoundsResult {
-  if (!drawDefinition) return { error: MISSING_DRAW_DEFINITION };
-  if (!structureId) return { error: MISSING_STRUCTURE_ID };
+  const paramsCheck = requireParams({ drawDefinition, structureId }, [DRAW_DEFINITION, STRUCTURE_ID]);
+  if (paramsCheck.error) return paramsCheck;
   if (!playoffPositions) return { error: MISSING_VALUE, info: 'missing playoffPositions' };
 
   // NOTE: in this instance do not pass in structureIds

@@ -1,9 +1,10 @@
 import { findTournamentParticipant } from '@Acquire/findTournamentParticipant';
 import { addIndividualParticipantIds } from './addIndividualParticipantIds';
 import { getParticipants } from '@Query/participants/getParticipants';
+import { requireParams } from '@Helpers/parameters/requireParams';
 import { getParticipantId } from '@Functions/global/extractors';
-import { definedAttributes } from '@Tools/definedAttributes';
 import { participantRoles } from '@Constants/participantRoles';
+import { definedAttributes } from '@Tools/definedAttributes';
 import { genderConstants } from '@Constants/genderConstants';
 import { addNotice } from '@Global/state/globalState';
 import { isValidDateString } from '@Tools/dateTime';
@@ -13,16 +14,12 @@ import { addParticipant } from './addParticipant';
 import { isString } from '@Tools/objects';
 
 // constants
+import { CANNOT_MODIFY_PARTICIPANT_TYPE, INVALID_DATE } from '@Constants/errorConditionConstants';
 import { GROUP, INDIVIDUAL, PAIR, participantTypes } from '@Constants/participantConstants';
+import { TOURNAMENT_RECORD, PARTICIPANT } from '@Constants/attributeConstants';
 import { MODIFY_PARTICIPANTS } from '@Constants/topicConstants';
 import { SUCCESS } from '@Constants/resultConstants';
 import { TEAM } from '@Constants/matchUpTypes';
-import {
-  CANNOT_MODIFY_PARTICIPANT_TYPE,
-  INVALID_DATE,
-  MISSING_PARTICIPANT,
-  MISSING_TOURNAMENT_RECORD,
-} from '@Constants/errorConditionConstants';
 
 export function modifyParticipant(params) {
   const {
@@ -33,8 +30,8 @@ export function modifyParticipant(params) {
     pairOverride,
     participant,
   } = params;
-  if (!tournamentRecord) return { error: MISSING_TOURNAMENT_RECORD };
-  if (!participant) return { error: MISSING_PARTICIPANT };
+  const paramsCheck = requireParams({ tournamentRecord, participant }, [TOURNAMENT_RECORD, PARTICIPANT]);
+  if (paramsCheck.error) return paramsCheck;
 
   if (!participant.participantId) return addParticipant({ tournamentRecord, participant });
 

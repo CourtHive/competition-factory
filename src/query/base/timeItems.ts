@@ -1,16 +1,17 @@
 import { findTournamentParticipant } from '@Acquire/findTournamentParticipant';
+import { requireParams } from '@Helpers/parameters/requireParams';
 import { makeDeepCopy } from '@Tools/makeDeepCopy';
 import { deriveElement } from './deriveElement';
 
 // constants and types
 import { DrawDefinition, Event, TimeItem, Tournament } from '@Types/tournamentTypes';
+import { TOURNAMENT_RECORD, PARTICIPANT_ID } from '@Constants/attributeConstants';
 import { SUCCESS } from '@Constants/resultConstants';
 import { ResultType } from '@Types/factoryTypes';
 import {
   INVALID_VALUES,
   MISSING_DRAW_ID,
   MISSING_EVENT,
-  MISSING_PARTICIPANT_ID,
   MISSING_TIME_ITEMS,
   MISSING_TOURNAMENT_RECORD,
   NOT_FOUND,
@@ -128,8 +129,8 @@ export function getParticipantTimeItem({
   itemSubTypes,
   itemType,
 }) {
-  if (!tournamentRecord) return { error: MISSING_TOURNAMENT_RECORD };
-  if (!participantId) return { error: MISSING_PARTICIPANT_ID };
+  const paramsCheck = requireParams({ tournamentRecord, participantId }, [TOURNAMENT_RECORD, PARTICIPANT_ID]);
+  if (paramsCheck.error) return paramsCheck;
 
   const result = findTournamentParticipant({ tournamentRecord, participantId });
   if (result.error) return result;

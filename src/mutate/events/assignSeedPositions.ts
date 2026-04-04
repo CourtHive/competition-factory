@@ -1,14 +1,14 @@
 import { getStructureSeedAssignments } from '@Query/structure/getStructureSeedAssignments';
 import { assignSeed } from '@Mutate/drawDefinitions/entryGovernor/seedAssignment';
+import { requireParams } from '@Helpers/parameters/requireParams';
 import { uniqueValues } from '@Tools/arrays';
 
 // constants and types
 import { DrawDefinition, SeedAssignment, Tournament } from '@Types/tournamentTypes';
+import { TOURNAMENT_RECORD, DRAW_ID } from '@Constants/attributeConstants';
 import { SeedingProfile, ResultType } from '@Types/factoryTypes';
 import { SUCCESS } from '@Constants/resultConstants';
 import {
-  MISSING_TOURNAMENT_RECORD,
-  MISSING_DRAW_ID,
   MISSING_ASSIGNMENTS,
   NO_MODIFICATIONS_APPLIED,
   INVALID_PARTICIPANT_SEEDING,
@@ -48,8 +48,8 @@ export function assignSeedPositions(
   let modifications = 0;
 
   if (!assignments?.length) return { error: MISSING_ASSIGNMENTS };
-  if (!tournamentRecord) return { error: MISSING_TOURNAMENT_RECORD };
-  if (!drawId) return { error: MISSING_DRAW_ID };
+  const paramsCheck = requireParams({ tournamentRecord, drawId }, [TOURNAMENT_RECORD, DRAW_ID]);
+  if (paramsCheck.error) return paramsCheck;
 
   const result = getStructureSeedAssignments({
     provisionalPositioning,

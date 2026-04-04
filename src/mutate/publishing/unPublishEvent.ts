@@ -1,17 +1,18 @@
 import { checkAndNotifyUnpublishTournament } from './checkAndNotifyUnpublishTournament';
 import { modifyEventPublishStatus } from '../events/modifyEventPublishStatus';
-import { getEventTimeItem } from '@Query/base/timeItems';
+import { requireParams } from '@Helpers/parameters/requireParams';
 import { addEventTimeItem } from '../timeItems/addTimeItem';
+import { getEventTimeItem } from '@Query/base/timeItems';
 import { addNotice } from '@Global/state/globalState';
 
-import { MISSING_EVENT, MISSING_TOURNAMENT_RECORD } from '@Constants/errorConditionConstants';
+import { TOURNAMENT_RECORD, EVENT } from '@Constants/attributeConstants';
 import { PUBLIC, PUBLISH, STATUS } from '@Constants/timeItemConstants';
 import { UNPUBLISH_EVENT } from '@Constants/topicConstants';
 import { SUCCESS } from '@Constants/resultConstants';
 
 export function unPublishEvent({ removePriorValues = true, tournamentRecord, status = PUBLIC, event }) {
-  if (!tournamentRecord) return { error: MISSING_TOURNAMENT_RECORD };
-  if (!event) return { error: MISSING_EVENT };
+  const paramsCheck = requireParams({ tournamentRecord, event }, [TOURNAMENT_RECORD, EVENT]);
+  if (paramsCheck.error) return paramsCheck;
 
   const itemType = `${PUBLISH}.${STATUS}`;
 
