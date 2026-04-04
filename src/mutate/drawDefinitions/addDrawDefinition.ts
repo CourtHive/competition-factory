@@ -111,7 +111,7 @@ export function addDrawDefinition(
 
   const flightNumbers =
     flightProfile?.flights
-      ?.map(({ flightNumber }) => !isNaN(flightNumber) && ensureInt(flightNumber))
+      ?.map(({ flightNumber }) => !Number.isNaN(Number(flightNumber)) && ensureInt(flightNumber))
       ?.filter(Boolean) ?? [];
 
   const drawOrders =
@@ -153,7 +153,7 @@ export function addDrawDefinition(
     extension = {
       name: FLIGHT_PROFILE,
       value: {
-        ...(flightProfile ?? {}),
+        ...flightProfile,
         flights,
       },
     };
