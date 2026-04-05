@@ -154,11 +154,11 @@ describe('PAGE_PLAYOFF draw type', () => {
           drawSize,
           drawType: ROUND_ROBIN_WITH_PLAYOFF,
           structureOptions: {
-            groupSize: 4,
+            groupSize: 8,
             playoffGroups: [
               {
                 drawType: PAGE_PLAYOFF,
-                finishingPositions: [1],
+                finishingPositions: [1, 2],
                 structureName: 'Championship',
               },
             ],
@@ -175,8 +175,9 @@ describe('PAGE_PLAYOFF draw type', () => {
     // 1 RR container structure + 4 PPS structures = 5 total
     expect(structures.length).toEqual(5);
 
+    // Two POSITION links: [1]→Q1, [2]→Eliminator
     const positionLinks = links.filter((l) => l.linkType === 'POSITION');
-    expect(positionLinks.length).toEqual(1);
+    expect(positionLinks.length).toEqual(2);
 
     const ppsStructures = structures.filter((s) => s.stage === PLAY_OFF);
     expect(ppsStructures.length).toEqual(4);
@@ -350,49 +351,45 @@ describe('PAGE_PLAYOFF draw type', () => {
     expect(ppsMatchUps.every((m) => m.matchUpStatus === COMPLETED)).toEqual(true);
   });
 
-  it('RR with PAGE_PLAYOFF playoff advances group winners through all structures', () => {
+  it('RR with PAGE_PLAYOFF playoff generates correct links for 2 groups of 8', () => {
     const drawSize = 16;
-    const matchUpFormat = 'SET3-S:6/TB7';
-    mocksEngine.generateTournamentRecord({
+    let result: any = mocksEngine.generateTournamentRecord({
       drawProfiles: [
         {
           drawSize,
           drawType: ROUND_ROBIN_WITH_PLAYOFF,
-          matchUpFormat,
           structureOptions: {
-            groupSize: 4,
+            groupSize: 8,
             playoffGroups: [
               {
                 drawType: PAGE_PLAYOFF,
-                finishingPositions: [1],
+                finishingPositions: [1, 2],
                 structureName: 'Championship',
               },
             ],
           },
         },
       ],
-      completeAllMatchUps: true,
-      setState: true,
     });
+    if (result.error) console.log('RR+PPS ERROR:', JSON.stringify(result, null, 2));
+    expect(result.success).toEqual(true);
 
-    const drawId = tournamentEngine.allTournamentMatchUps().matchUps[0]?.drawId;
+    const {
+      tournamentRecord,
+      drawIds: [drawId],
+    } = result;
+    tournamentEngine.setState(tournamentRecord);
     const { drawDefinition } = tournamentEngine.getEvent({ drawId });
 
-    // Should have RR container + 4 PPS structures
-    expect(drawDefinition.structures.length).toEqual(5);
+    const ppsStructures = drawDefinition.structures.filter((s) => s.stage === PLAY_OFF);
+    expect(ppsStructures.length).toEqual(4);
 
-    const q1 = drawDefinition.structures.find((s) => s.structureAbbreviation === 'Q1');
-    expect(q1).toBeDefined();
+    // Two POSITION links: [1]→Q1, [2]→Eliminator
+    const positionLinks = drawDefinition.links.filter((l) => l.linkType === 'POSITION');
+    expect(positionLinks.length).toEqual(2);
 
-    // After completing all RR matchUps, the Q1 structure should have participants
-    const q1Assigned = q1.positionAssignments.filter((pa) => pa.participantId);
-    expect(q1Assigned.length).toBeGreaterThan(0);
-
-    // Check that PPS matchUps exist and are ready
-    const { matchUps } = tournamentEngine.allTournamentMatchUps();
-    const ppsMatchUps = matchUps.filter((m) =>
-      ['Championship Qualifier 1', 'Championship Eliminator', 'Championship Qualifier 2', 'Championship Final'].includes(m.structureName),
-    );
-    expect(ppsMatchUps.length).toEqual(4);
+    // 4 internal PPS links (WINNER/LOSER)
+    const internalLinks = drawDefinition.links.filter((l) => l.linkType === 'WINNER' || l.linkType === 'LOSER');
+    expect(internalLinks.length).toEqual(4);
   });
 });

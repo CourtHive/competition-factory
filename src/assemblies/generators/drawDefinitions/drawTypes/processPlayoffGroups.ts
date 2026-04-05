@@ -599,32 +599,33 @@ function processPagePlayoff({
   const q1Structure = ppsStructures.find((s) => s.structureAbbreviation === 'Q1');
   const elimStructure = ppsStructures.find((s) => s.structureAbbreviation === 'EL');
 
-  // Seeds 1-2 enter Q1, seeds 3-4 enter Eliminator
-  // For RR playoffs: finishingPositions is the source positions (e.g. [1])
-  // In that case a single POSITION link to Q1 with DRAW feedProfile is correct
-  // because all qualifiers enter the PAGE_PLAYOFF draw which handles internal seeding
-  // For SE playoffs: finishingPositions like [1,2,3,4] need split links
-  if (finishingPositions.length > 1 && q1Structure && elimStructure) {
+  // PAGE_PLAYOFF: two valid RR configurations produce exactly 4 participants:
+  //   2 groups with finishingPositions [1, 2]: [1] → Q1, [2] → Eliminator
+  //   4 groups with finishingPositions [1]: all group winners, cross-group ranking splits to Q1/Eliminator
+  // SE playoffs with [1,2,3,4]: [1,2] → Q1, [3,4] → Eliminator
+  if (finishingPositions.length >= 2 && q1Structure && elimStructure) {
     const half = Math.ceil(finishingPositions.length / 2);
-    const topPositions = finishingPositions.slice(0, half);
-    const bottomPositions = finishingPositions.slice(half);
-
+    const q1Positions = finishingPositions.slice(0, half);
+    const elimPositions = finishingPositions.slice(half);
     links.push(
-      generatePlayoffLink({ playoffStructureId: q1Structure.structureId, finishingPositions: topPositions, sourceStructureId }),
-      generatePlayoffLink({ playoffStructureId: elimStructure.structureId, finishingPositions: bottomPositions, sourceStructureId }),
+      generatePlayoffLink({ playoffStructureId: q1Structure.structureId, finishingPositions: q1Positions, sourceStructureId }),
+      generatePlayoffLink({ playoffStructureId: elimStructure.structureId, finishingPositions: elimPositions, sourceStructureId }),
     );
-  } else if (q1Structure) {
-    // Single finishing position (RR group winner) — link all to Q1, internal seeding handles placement
+    finishingPositionTargets.push(
+      { structureId: q1Structure.structureId, finishingPositions: q1Positions },
+      { structureId: elimStructure.structureId, finishingPositions: elimPositions },
+    );
+  } else if (q1Structure && elimStructure) {
+    // Single finishingPosition (e.g. [1] from 4 groups): cross-group ranking determines Q1 vs Eliminator
+    // Both structures receive from the same source positions; advancement uses seeded ranking
     links.push(
       generatePlayoffLink({ playoffStructureId: q1Structure.structureId, finishingPositions, sourceStructureId }),
+      generatePlayoffLink({ playoffStructureId: elimStructure.structureId, finishingPositions, sourceStructureId }),
     );
-  }
-
-  if (q1Structure) {
-    finishingPositionTargets.push({
-      structureId: q1Structure.structureId,
-      finishingPositions,
-    });
+    finishingPositionTargets.push(
+      { structureId: q1Structure.structureId, finishingPositions },
+      { structureId: elimStructure.structureId, finishingPositions },
+    );
   }
 
   return undefined;
