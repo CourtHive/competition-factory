@@ -27,10 +27,11 @@ type IndividualParticipant = {
   participantId: string;
   participantType: 'INDIVIDUAL';
   participantRole: 'COMPETITOR' | 'ALTERNATE' | 'OFFICIAL';
+  participantOtherName?: string; // Nickname / display name
   person: {
     personId: string;
-    standardFamilyName: string;
-    standardGivenName: string;
+    standardFamilyName?: string; // Required unless participantOtherName or participantName is provided
+    standardGivenName?: string;  // Required unless participantOtherName or participantName is provided
     nationalityCode?: string;
     sex?: 'MALE' | 'FEMALE';
     birthDate?: string;
@@ -43,9 +44,14 @@ type IndividualParticipant = {
 };
 ```
 
-**Example:**
+:::note
+`standardFamilyName` and `standardGivenName` are required **unless** `participantOtherName` or `participantName` is provided. This supports scenarios such as ITF draw imports where structured person name fields may be unavailable. When person names are incomplete, `participantOtherName` is used as the display name.
+:::
+
+**Examples:**
 
 ```js
+// Standard participant with full person name
 const player = {
   participantId: 'player-123',
   participantType: 'INDIVIDUAL',
@@ -57,6 +63,14 @@ const player = {
     nationalityCode: 'SUI',
     sex: 'MALE',
   },
+};
+
+// Participant with nickname only (no structured person name)
+const nicknameParticipant = {
+  participantType: 'INDIVIDUAL',
+  participantRole: 'COMPETITOR',
+  participantOtherName: 'RF',
+  person: { personId: 'person-789' },
 };
 ```
 
@@ -269,6 +283,34 @@ const { participant } = tournamentEngine.addParticipant({
   },
 });
 ```
+
+#### Participants Without Structured Names
+
+When importing from external sources (e.g., ITF official draws), structured person name fields may not be available. In these cases, provide `participantOtherName` or `participantName` instead:
+
+```js
+// Using participantOtherName as display name
+const { participant } = tournamentEngine.addParticipant({
+  participant: {
+    participantType: 'INDIVIDUAL',
+    participantRole: 'COMPETITOR',
+    participantOtherName: 'Player Display Name',
+    person: { personId: 'person-xyz' },
+  },
+});
+
+// Using participantName directly
+const { participant: p2 } = tournamentEngine.addParticipant({
+  participant: {
+    participantType: 'INDIVIDUAL',
+    participantRole: 'COMPETITOR',
+    participantName: 'Player Display Name',
+    person: { personId: 'person-abc' },
+  },
+});
+```
+
+When person name fields are incomplete, `participantName` is automatically set from `participantOtherName`. For pair participants, the pair name falls back through `standardFamilyName` → `participantOtherName` → `participantName` for each individual component.
 
 ### Creating Pairs Automatically
 

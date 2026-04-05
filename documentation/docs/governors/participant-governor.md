@@ -27,14 +27,19 @@ Adds an INDIVIDUAL, PAIR or TEAM participant to tournament participants. Include
 To add PAIR participants it is only necessary to provide an array of 2 valid individualParticipantIds, participantType and participantRole.
 :::
 
+:::note
+For INDIVIDUAL participants, `person.standardFamilyName` and `person.standardGivenName` are required **unless** `participantOtherName` or `participantName` is provided. When person names are incomplete, `participantName` is automatically set from `participantOtherName`.
+:::
+
 ```js
 const participant = {
   participantId, // automatically generated if not provided
   participantRole: COMPETITOR,
   participantType: INDIVIDUAL,
+  participantOtherName, // optional - nickname/display name; can substitute for person names
   person: {
-    standardFamilyName: 'Family',
-    standardGivenName: 'Given',
+    standardFamilyName: 'Family', // required unless participantOtherName/participantName provided
+    standardGivenName: 'Given', // required unless participantOtherName/participantName provided
     nationalityCode, // optional
     sex, // optional
   },
@@ -452,17 +457,16 @@ engine.modifyParticipantName({
 
 ## modifyParticipantOtherName
 
-Updates the alternate/other name of a participant.
+Updates the alternate/other name (nickname) of a participant. Also available as a position action (`ADD_NICKNAME`) in draw views.
 
 ```js
 engine.modifyParticipantOtherName({
   participantId, // required
-  otherName, // required - new other name
-  tournamentRecord, // required
+  participantOtherName, // new nickname; pass undefined to clear
 });
 ```
 
-**Purpose:** Update participant's alternate name field.
+**Purpose:** Set or clear a participant's display nickname. When `participantOtherName` is set, it is used as the display name in draw structures (via `renderParticipant`) in preference to `participantName`. For participants without structured person names (`standardFamilyName`/`standardGivenName`), the `participantOtherName` also serves as the required identity — see [Participants Without Structured Names](../concepts/participants.md#participants-without-structured-names).
 
 ---
 
@@ -535,6 +539,10 @@ const formats = {
 };
 engine.regenerateParticipantNames({ formats });
 ```
+
+:::note
+Participants without `standardGivenName`/`standardFamilyName` are skipped — their existing `participantName` is preserved. For PAIR participants, individual components without person names fall back to `participantOtherName` or `participantName`.
+:::
 
 ---
 
