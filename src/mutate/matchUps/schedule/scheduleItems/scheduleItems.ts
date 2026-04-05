@@ -714,14 +714,13 @@ function addChronologicalTimeItem({
   const lastRelevantTimeItemIsTarget = lastRelevantTimeItem?.itemType === itemType;
 
   const latestRelevantTimeValue = relevantTimeItems
-    .filter((timeItem) => !lastRelevantTimeItemIsTarget || timeItem.createdAt !== lastRelevantTimeItem.createdAt)
+    .filter((timeItem) => !lastRelevantTimeItemIsTarget || timeItem !== lastRelevantTimeItem)
     .map((timeItem) => timeDate(timeItem.itemValue, scheduledDate))
     .reduce((latest: any, timeValue) => (!latest || timeValue > latest ? timeValue : latest), undefined);
 
   if (timeDate(timeValue, scheduledDate) > latestRelevantTimeValue) {
     if (matchUp?.timeItems && lastRelevantTimeItemIsTarget) {
-      const targetTimeStamp = lastRelevantTimeItem.createdAt;
-      matchUp.timeItems = matchUp.timeItems.filter((timeItem) => timeItem.createdAt !== targetTimeStamp);
+      matchUp.timeItems = matchUp.timeItems.filter((timeItem) => timeItem !== lastRelevantTimeItem);
     }
 
     const militaryTime = convertTime(timeValue, true, true);
