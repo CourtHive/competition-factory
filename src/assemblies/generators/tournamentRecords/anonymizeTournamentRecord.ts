@@ -432,7 +432,7 @@ function anonymizeExtensionIds({ tournamentRecord, idMap }) {
 function generatePairParticipantName({ individualParticipantIds, individualParticipants }) {
   let participantName = individualParticipants
     .filter(({ participantId }) => individualParticipantIds.includes(participantId))
-    .map(({ person }) => person?.standardFamilyName)
+    .map((p) => p.person?.standardFamilyName || p.participantOtherName || p.participantName || '')
     .filter(Boolean)
     .sort()
     .join('/');

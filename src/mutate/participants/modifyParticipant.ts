@@ -63,7 +63,7 @@ export function modifyParticipant(params) {
   if (contacts) newValues.contacts = contacts;
   if (onlineResources) newValues.onlineResources = onlineResources;
 
-  if (participantOtherName && isString(participantOtherName)) newValues.participantOtherName = participantOtherName;
+  if (participantOtherName !== undefined) newValues.participantOtherName = participantOtherName || undefined;
   if (participantName && isString(participantName)) newValues.participantName = participantName;
 
   if (Array.isArray(individualParticipantIds)) {
@@ -159,7 +159,7 @@ function generatePairParticipantName({ individualParticipants, newValues }) {
   const individualParticipantIds = newValues.individualParticipantIds;
   let participantName = individualParticipants
     .filter(({ participantId }) => individualParticipantIds.includes(participantId))
-    .map(({ person }) => person?.standardFamilyName)
+    .map((p) => p.person?.standardFamilyName || p.participantOtherName || p.participantName || '')
     .filter(Boolean)
     .sort()
     .join('/');
@@ -195,8 +195,14 @@ function updatePerson({ updateParticipantName, existingParticipant, newValues, p
   }
 
   if (personNameModified && updateParticipantName) {
-    const participantName = `${newPersonValues.standardGivenName} ${newPersonValues.standardFamilyName}`;
-    newValues.participantName = participantName;
+    const givenName = newPersonValues.standardGivenName || existingParticipant.person?.standardGivenName;
+    const familyName = newPersonValues.standardFamilyName || existingParticipant.person?.standardFamilyName;
+    if (givenName && familyName) {
+      newValues.participantName = `${givenName} ${familyName}`;
+    } else {
+      const nameParts = [givenName, familyName].filter(Boolean).join(' ');
+      newValues.participantName = nameParts || existingParticipant.participantOtherName || existingParticipant.participantName;
+    }
   }
 
   if (birthdate) {
