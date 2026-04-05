@@ -1,8 +1,16 @@
+import {
+  setSanctioningMethods,
+  getSanctioningMethods,
+  setSanctioningRecords,
+  setSanctioningRecord,
+  resetSanctioningState,
+} from '@Assemblies/engines/sanctioning/sanctioningState';
 import { sanctioningEngine } from '@Assemblies/engines/sanctioning';
 import { beforeEach, describe, expect, it } from 'vitest';
 
 // Constants
 import { DRAFT, SUBMITTED, WITHDRAWN } from '@Constants/sanctioningConstants';
+import { INVALID_VALUES } from '@Constants/errorConditionConstants';
 
 // Types
 import type { EventProposal, TournamentProposal, Applicant } from '@Types/sanctioningTypes';
@@ -440,5 +448,91 @@ describe('Sanctioning Engine — executionQueue', () => {
   it('rejects non-array directives', () => {
     let result: any = sanctioningEngine.executionQueue('bad' as any);
     expect(result.error).toBeDefined();
+  });
+});
+
+describe('sanctioningState coverage', () => {
+  beforeEach(() => {
+    sanctioningEngine.reset();
+  });
+
+  it('setSanctioningRecords with undefined defaults to empty object', () => {
+    let result: any = setSanctioningRecords(undefined as any);
+    expect(result.success).toBe(true);
+    let state: any = sanctioningEngine.getState();
+    expect(Object.keys(state.sanctioningRecords)).toHaveLength(0);
+  });
+
+  it('setSanctioningRecords with null defaults to empty object', () => {
+    let result: any = setSanctioningRecords(null as any);
+    expect(result.success).toBe(true);
+    let state: any = sanctioningEngine.getState();
+    expect(Object.keys(state.sanctioningRecords)).toHaveLength(0);
+  });
+
+  it('setSanctioningRecords with multiple records does not auto-select', () => {
+    let result: any = createTestRecord({ sanctioningId: 'rec-a' });
+    const recA = result.sanctioningRecord;
+    result = createTestRecord({ sanctioningId: 'rec-b' });
+    const recB = result.sanctioningRecord;
+
+    sanctioningEngine.reset();
+
+    setSanctioningRecords({ [recA.sanctioningId]: recA, [recB.sanctioningId]: recB });
+    expect(sanctioningEngine.getActiveSanctioningId()).toBeUndefined();
+  });
+
+  it('setSanctioningRecord with missing sanctioningId returns error', () => {
+    let result: any = setSanctioningRecord({} as any);
+    expect(result.error).toEqual(INVALID_VALUES);
+    expect(result.context.message).toEqual('Missing sanctioningId');
+  });
+
+  it('setSanctioningRecord with undefined record returns error', () => {
+    let result: any = setSanctioningRecord(undefined as any);
+    expect(result.error).toEqual(INVALID_VALUES);
+  });
+
+  it('removeSanctioningRecord on non-active record preserves activeSanctioningId', () => {
+    createTestRecord({ sanctioningId: 'active-rec' });
+    createTestRecord({ sanctioningId: 'other-rec' });
+
+    sanctioningEngine.setActiveSanctioningId('active-rec');
+    expect(sanctioningEngine.getActiveSanctioningId()).toEqual('active-rec');
+
+    let result: any = sanctioningEngine.removeSanctioningRecord('other-rec');
+    expect(result.success).toBe(true);
+    expect(sanctioningEngine.getActiveSanctioningId()).toEqual('active-rec');
+  });
+
+  it('getSanctioningMethods returns methods object', () => {
+    resetSanctioningState();
+    let result: any = getSanctioningMethods();
+    expect(result).toBeDefined();
+    expect(typeof result).toBe('object');
+  });
+
+  it('setSanctioningMethods stores function values and ignores non-functions', () => {
+    resetSanctioningState();
+    const testFn = () => 'hello';
+    let result: any = setSanctioningMethods({
+      myMethod: testFn,
+      notAFunction: 'string-value',
+      alsoNotAFunction: 42,
+    });
+    expect(result.success).toBe(true);
+
+    let methods: any = getSanctioningMethods();
+    expect(methods.myMethod).toBe(testFn);
+    expect(methods.notAFunction).toBeUndefined();
+    expect(methods.alsoNotAFunction).toBeUndefined();
+  });
+
+  it('setSanctioningRecords with zero records sets activeSanctioningId to undefined', () => {
+    createTestRecord({ sanctioningId: 'will-be-cleared' });
+    expect(sanctioningEngine.getActiveSanctioningId()).toEqual('will-be-cleared');
+
+    setSanctioningRecords({});
+    expect(sanctioningEngine.getActiveSanctioningId()).toBeUndefined();
   });
 });

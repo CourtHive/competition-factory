@@ -44,7 +44,7 @@ const features = [
 ];
 
 const stats = [
-  { number: '8,000+', label: 'Tests' },
+  { number: '9,000+', label: 'Tests' },
   { number: '96%', label: 'Coverage' },
   { number: '100%', label: 'TypeScript' },
   { number: '0', label: 'Runtime Deps' },

@@ -28,7 +28,6 @@ export function assignIndividualParticipants(params) {
           tieMatchUpId,
           drawId,
         });
-        if (!result.success) console.log(result);
         expect(result.success).toEqual(true);
       }
     });
@@ -50,7 +49,6 @@ export function assignIndividualParticipants(params) {
             tieMatchUpId,
             drawId,
           });
-          if (!result.success) console.log(result);
           expect(result.success).toEqual(true);
         });
       }
