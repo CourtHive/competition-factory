@@ -85,7 +85,14 @@ export const FEED_IN_CHAMPIONSHIP_TO_R16 = 'FEED_IN_CHAMPIONSHIP_TO_R16';
 export const MFIC = 'MODIFIED_FEED_IN_CHAMPIONSHIP';
 export const MODIFIED_FEED_IN_CHAMPIONSHIP = 'MODIFIED_FEED_IN_CHAMPIONSHIP';
 export const FEED_IN_CHAMPIONSHIP = 'FEED_IN_CHAMPIONSHIP';
+export const PAGE_PLAYOFF = 'PAGE_PLAYOFF';
 export const PLAYOFF = 'PLAYOFF';
+
+export const PAGE_PLAYOFF_ATTRIBUTES = {
+  0: { name: 'Qualifier 1', abbreviation: 'Q1' },
+  '0-1': { name: 'Eliminator', abbreviation: 'EL' },
+  '0-2': { name: 'Final', abbreviation: 'F' },
+};
 
 export const DOUBLE_ROUND_ROBIN = 'DOUBLE_ROUND_ROBIN';
 export const ROUND_ROBIN = 'ROUND_ROBIN';
@@ -141,6 +148,7 @@ export const MULTI_STRUCTURE_DRAWS = [
   LUCKY_DRAW,
   MODIFIED_FEED_IN_CHAMPIONSHIP,
   OLYMPIC,
+  PAGE_PLAYOFF,
   PLAYOFF,
   ROUND_ROBIN_WITH_PLAYOFF,
 ];
@@ -161,6 +169,7 @@ export const generatedDrawTypes = [
   LUCKY_DRAW,
   MODIFIED_FEED_IN_CHAMPIONSHIP,
   OLYMPIC,
+  PAGE_PLAYOFF,
   PLAYOFF,
   ROUND_ROBIN,
   ROUND_ROBIN_WITH_PLAYOFF,
@@ -184,6 +193,8 @@ export const drawDefinitionConstants = {
   FLEX_ROUNDS,
   COMPASS,
   PLAY_OFF,
+  PAGE_PLAYOFF,
+  PAGE_PLAYOFF_ATTRIBUTES,
   PLAYOFF,
   OLYMPIC,
   KNOCKOUT,

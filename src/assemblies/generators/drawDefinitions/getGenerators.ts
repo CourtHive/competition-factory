@@ -7,6 +7,7 @@ import { getAppliedPolicies } from '@Query/extensions/getAppliedPolicies';
 import { generateRoundRobin } from './drawTypes/roundRobin/roundRobin';
 import { generateAdaptiveStructures } from './drawTypes/adaptiveDraw';
 import structureTemplate from '../templates/structureTemplate';
+import { generatePagePlayoff } from './drawTypes/pagePlayoff';
 import { feedInChampionship } from './drawTypes/feedInChamp';
 import { treeMatchUps } from './drawTypes/eliminationTree';
 import { constantToString } from '@Tools/strings';
@@ -20,7 +21,7 @@ import { SUCCESS } from '@Constants/resultConstants';
 // prettier-ignore
 import {
   MAIN, PLAY_OFF, FICQF, FICSF, MFIC, AD_HOC, CURTIS, FICR16, COMPASS,
-  PLAYOFF, OLYMPIC, FEED_IN, ROUND_ROBIN,
+  PAGE_PLAYOFF, PLAYOFF, OLYMPIC, FEED_IN, ROUND_ROBIN,
   COMPASS_ATTRIBUTES, OLYMPIC_ATTRIBUTES, ADAPTIVE_ATTRIBUTES, ADAPTIVE,
   SINGLE_ELIMINATION, DOUBLE_ELIMINATION,
   FIRST_MATCH_LOSER_CONSOLATION,
@@ -114,6 +115,7 @@ export function getGenerators(params): { generators?: any; error?: ErrorType } {
         roundOffsetLimit: params.roundOffsetLimit ?? 3,
         playoffAttributes: playoffAttributes ?? ADAPTIVE_ATTRIBUTES,
       }),
+    [PAGE_PLAYOFF]: () => generatePagePlayoff(params),
     [PLAYOFF]: () => {
       return generatePlayoffStructures({ ...params, childStage: PLAY_OFF });
     },

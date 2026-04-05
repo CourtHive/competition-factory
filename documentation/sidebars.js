@@ -80,6 +80,7 @@ module.exports = {
                 'concepts/draw-types/consolation-draws',
                 'concepts/draw-types/ad-hoc',
                 'concepts/draw-types/drawmatic',
+                'concepts/draw-types/page-playoff',
                 'concepts/draw-types/playoff',
                 'concepts/draw-types/lucky-draw',
                 'concepts/draw-types/adaptive',

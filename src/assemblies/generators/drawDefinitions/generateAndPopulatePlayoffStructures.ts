@@ -1,4 +1,5 @@
 import { generateAndPopulateRRplayoffStructures } from './generateAndPopulateRRplayoffStructures';
+import { processPlayoffGroups } from './drawTypes/processPlayoffGroups';
 import { getAvailablePlayoffProfiles } from '@Query/drawDefinition/getAvailablePlayoffProfiles';
 import { assignDrawPositionBye } from '@Mutate/matchUps/drawPositions/assignDrawPositionBye';
 import { NamingEntry, generatePlayoffStructures } from './drawTypes/playoffStructures';
@@ -40,6 +41,7 @@ type GenerateAndPopulateArgs = {
   playoffPositions?: number[];
   roundOffsetLimit?: number;
   exitProfileLimit?: boolean;
+  playoffGroups?: any[];
   roundNumbers?: number[];
   structureId: string;
   idPrefix?: string;
@@ -77,6 +79,7 @@ export function generateAndPopulatePlayoffStructures(params: GenerateAndPopulate
     roundOffsetLimit,
     tournamentRecord,
     exitProfileLimit,
+    playoffGroups,
     roundProfiles,
     roundNumbers,
     idPrefix,
@@ -100,6 +103,22 @@ export function generateAndPopulatePlayoffStructures(params: GenerateAndPopulate
       ...params,
       ...availabilityResult,
       drawDefinition, // order is important!
+    });
+  }
+
+  // playoffGroups allows POSITION-based playoffs (e.g. PAGE_PLAYOFF) on SE structures
+  if (playoffGroups?.length) {
+    return generatePositionBasedPlayoffs({
+      sourceStructureId: sourceStructureId!,
+      tournamentRecord,
+      drawDefinition,
+      playoffGroups,
+      structure,
+      idPrefix,
+      isMock,
+      event,
+      uuids,
+      stack,
     });
   }
 
@@ -297,6 +316,75 @@ export function generateAndPopulatePlayoffStructures(params: GenerateAndPopulate
     structures: newStructures,
     matchUpModifications,
     links: newLinks,
+    drawDefinition,
+    ...SUCCESS,
+  };
+}
+
+function generatePositionBasedPlayoffs({
+  sourceStructureId,
+  tournamentRecord,
+  drawDefinition,
+  playoffGroups,
+  structure,
+  idPrefix,
+  isMock,
+  event,
+  uuids,
+  stack,
+}) {
+  const result = processPlayoffGroups({
+    requireSequential: false,
+    sourceStructureId,
+    drawDefinition,
+    playoffGroups,
+    stage: PLAY_OFF,
+    groupCount: 1,
+    idPrefix,
+    isMock,
+    uuids,
+  });
+  if (result.error) return decorateResult({ result, stack });
+  const { structures: playoffStructures, links: playoffLinks } = result;
+
+  if (!playoffStructures?.length) {
+    return decorateResult({
+      result: { error: INVALID_VALUES },
+      info: 'No playoff structures generated',
+      stack,
+    });
+  }
+
+  drawDefinition.structures.push(...playoffStructures);
+  drawDefinition.links.push(...playoffLinks);
+
+  const { matchUps: inContextDrawMatchUps, matchUpsMap } = getAllDrawMatchUps({
+    inContext: true,
+    drawDefinition,
+  });
+
+  advanceCompletedMatchUps({
+    inContextDrawMatchUps,
+    sourceStructureId,
+    tournamentRecord,
+    drawDefinition,
+    matchUpsMap,
+    structure,
+    event,
+  });
+
+  advanceByeMatchUps({
+    inContextDrawMatchUps,
+    sourceStructureId,
+    tournamentRecord,
+    drawDefinition,
+    event,
+  });
+
+  return {
+    structures: playoffStructures,
+    links: playoffLinks,
+    matchUpModifications: [],
     drawDefinition,
     ...SUCCESS,
   };

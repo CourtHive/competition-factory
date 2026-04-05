@@ -1,0 +1,197 @@
+---
+title: Page Playoff
+---
+
+import BrowserOnly from '@docusaurus/BrowserOnly';
+import TopologyViewer from '../../components/TopologyViewer';
+
+## Overview
+
+A **Page Playoff** draw is a 4-participant hybrid knockout format that gives the top two seeds double-elimination protection while maintaining single elimination for the remaining two. It resolves all four finishing positions definitively -- no shared placements.
+
+In the factory, this draw type is represented by the constant `PAGE_PLAYOFF`.
+
+The Page Playoff System (PPS) is used in professional cricket playoffs (IPL, PSL, BPL), the NBA Play-In Tournament, curling, and softball. Research by Rafique & Sanders (Syracuse University, 2025) proves that PPS maximizes **efficacy** (probability of the best team winning) and preserves **fairness** (win probability proportional to team strength) -- outperforming all classical single-elimination designs for 4-team brackets.
+
+## Structure
+
+The Page Playoff consists of four structures connected by winner and loser links:
+
+- **Qualifier 1 (Q1)**: The top two seeds play. The winner advances directly to the Final. The loser drops to Qualifier 2.
+- **Eliminator**: Seeds 3 and 4 play. The loser is eliminated (4th place). The winner advances to Qualifier 2.
+- **Qualifier 2 (Q2)**: The Q1 loser plays the Eliminator winner.
+  - The loser is eliminated (3rd place).
+  - The winner advances to the Final.
+- **Final**: The Q1 winner plays the Q2 winner. Determines 1st and 2nd place.
+
+<BrowserOnly>
+  {() => (
+    <TopologyViewer
+      height={400}
+      initialState={{
+        drawName: 'Page Playoff',
+        nodes: [
+          {
+            id: 'q1',
+            structureName: 'Qualifier 1',
+            stage: 'MAIN',
+            structureType: 'SINGLE_ELIMINATION',
+            drawSize: 2,
+            position: { x: 40, y: 40 },
+          },
+          {
+            id: 'elim',
+            structureName: 'Eliminator',
+            stage: 'MAIN',
+            structureType: 'SINGLE_ELIMINATION',
+            drawSize: 2,
+            position: { x: 40, y: 200 },
+          },
+          {
+            id: 'q2',
+            structureName: 'Qualifier 2',
+            stage: 'PLAY_OFF',
+            structureType: 'SINGLE_ELIMINATION',
+            drawSize: 2,
+            position: { x: 300, y: 200 },
+          },
+          {
+            id: 'final',
+            structureName: 'Final',
+            stage: 'PLAY_OFF',
+            structureType: 'SINGLE_ELIMINATION',
+            drawSize: 2,
+            position: { x: 500, y: 100 },
+          },
+        ],
+        edges: [
+          {
+            id: 'e1',
+            sourceNodeId: 'q1',
+            targetNodeId: 'final',
+            linkType: 'WINNER',
+            sourceRoundNumber: 1,
+            targetRoundNumber: 1,
+            label: 'Q1 winner',
+          },
+          {
+            id: 'e2',
+            sourceNodeId: 'q1',
+            targetNodeId: 'q2',
+            linkType: 'LOSER',
+            sourceRoundNumber: 1,
+            targetRoundNumber: 1,
+            label: 'Q1 loser',
+          },
+          {
+            id: 'e3',
+            sourceNodeId: 'elim',
+            targetNodeId: 'q2',
+            linkType: 'WINNER',
+            sourceRoundNumber: 1,
+            targetRoundNumber: 1,
+            label: 'Elim winner',
+          },
+          {
+            id: 'e4',
+            sourceNodeId: 'q2',
+            targetNodeId: 'final',
+            linkType: 'WINNER',
+            sourceRoundNumber: 1,
+            targetRoundNumber: 1,
+            label: 'Q2 winner',
+          },
+        ],
+      }}
+    />
+  )}
+</BrowserOnly>
+
+## Finishing Positions
+
+All four finishing positions are determined by actual matchUps:
+
+| Position | Determined by     |
+| -------- | ----------------- |
+| 1st      | Final winner      |
+| 2nd      | Final loser       |
+| 3rd      | Qualifier 2 loser |
+| 4th      | Eliminator loser  |
+
+This is equivalent to running a standard single elimination **plus** a 3rd/4th place match, but with a better topology. The 3rd place match in PPS (Qualifier 2) is meaningful because its winner advances to the Final -- it is not an afterthought.
+
+## Advantages Over Single Elimination
+
+In a standard 4-team single elimination (Draw A: 1v4, 2v3), every participant has exactly one chance. One upset eliminates the best team permanently.
+
+The Page Playoff provides **double-elimination protection for the top two seeds**. If seed 1 loses to seed 2 in Q1, seed 1 can still win the tournament by winning Q2 and the Final. This makes PPS:
+
+- **More efficacious**: The best team wins more often than in any single-elimination design.
+- **Fair**: Win probability remains proportional to team strength.
+- **Resilient to seeding errors**: Even when seeds don't perfectly reflect true strength, the double-chance mechanism compensates.
+
+## Generation
+
+### Standalone
+
+```js
+const { drawDefinition } = engine.generateDrawDefinition({
+  drawSize: 4,
+  drawType: 'PAGE_PLAYOFF',
+  automated: false,
+});
+```
+
+:::note
+Standalone `PAGE_PLAYOFF` generates the four structures and links but does not automatically position participants, since seeds must be distributed across two entry structures (Q1 and Eliminator). Use manual positioning or attach as a playoff to an upstream structure.
+:::
+
+### As a Playoff Group
+
+The primary use case for `PAGE_PLAYOFF` is as a playoff structure type attached to round robin groups or other source structures via `POSITION` links:
+
+```js
+const { drawDefinition } = engine.generateDrawDefinition({
+  drawSize: 16,
+  drawType: 'ROUND_ROBIN_WITH_PLAYOFF',
+  structureOptions: {
+    groupSize: 4,
+    playoffGroups: [
+      {
+        drawType: 'PAGE_PLAYOFF',
+        finishingPositions: [1],
+        structureName: 'Championship',
+      },
+    ],
+  },
+});
+```
+
+This creates round robin groups where each group winner advances to a Page Playoff bracket. With 4 groups, the 4 group winners form the PPS field.
+
+### Validation
+
+`PAGE_PLAYOFF` requires exactly 4 participants. If a different number is provided, generation returns an `INVALID_CONFIGURATION` error.
+
+## Use Cases
+
+- **Post-group playoffs**: After round robin groups, the top finishers play off using PPS for definitive 1st-4th placement.
+- **League playoffs**: Cricket leagues (IPL, PSL, BPL) use PPS for their final four teams after league play.
+- **Conference playoffs**: NBA Play-In Tournament uses PPS-style format for conference seeding.
+- **Any 4-team bracket**: When you want the strongest teams to have the best chance of winning while still resolving all four positions through actual matches.
+
+## References
+
+The theoretical foundations for the Page Playoff System are established in:
+
+> Hassan Rafique and Shane Sanders, "Modern Playoff Tournament-Design Analysis across Sports: A Bayesian Modeling and Advanced Simulation Study," Department of Sport Analytics, Falk College of Sport, Syracuse University. Presented at the MIT Sloan Sports Analytics Conference, 2026.
+
+The study proves PPS maximizes the probability of the best team winning (efficacy) and preserves fairness across 1 million simulated tournaments, using both discrete mathematical derivation and Bradley-Terry / Thurstone-Mosteller stochastic models.
+
+## Related
+
+- [Round Robin with Playoff](./round-robin-with-playoff) -- Group play feeding into playoff brackets
+- [Playoff](./playoff) -- Structures to play off all positions
+- [Double Elimination](./double-elimination) -- Full double-elimination format for all participants
+- [Finishing Positions](../finishing-positions) -- How finishing positions are determined across structures
+- [Draw Types Overview](../draw-types) -- List of all pre-defined draw types
