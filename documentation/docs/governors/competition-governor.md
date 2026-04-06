@@ -521,3 +521,397 @@ if (qualifyingLinks?.includes('main-draw-id')) {
 - Use after `linkTournaments()` to verify links were created
 
 ---
+
+## Competition Policy Methods
+
+The following methods manage per-draw competition state for policy-driven rating systems (dynamic form ratings, pressure ratings, leaderboards). Competition state is stored as a `COMPETITION_STATE` extension on a `drawDefinition` and is governed by a `POLICY_TYPE_COMPETITION` applied policy.
+
+---
+
+### initializeCompetitionState
+
+Initializes competition state for a draw by computing baseline ratings for all participants and storing the initial state as a `COMPETITION_STATE` extension on the draw definition.
+
+**Parameters:**
+
+```ts
+{
+  tournamentRecord: Tournament;   // Required - tournament containing participants
+  drawDefinition: DrawDefinition; // Required - draw to attach state to
+  participantIds: string[];       // Required - participants to include in competition state
+  event?: Event;                  // Optional - used for eventType-aware rating resolution
+}
+```
+
+**Returns:**
+
+```ts
+{
+  success?: boolean;
+  competitionState?: CompetitionState; // The initialized state (participantStates + roundStates)
+  error?: ErrorType;                   // MISSING_DRAW_DEFINITION, MISSING_VALUE
+}
+```
+
+**Example:**
+
+```js
+const result = engine.initializeCompetitionState({
+  tournamentRecord,
+  drawDefinition,
+  participantIds: ['p1', 'p2', 'p3', 'p4'],
+  event,
+});
+
+const { competitionState } = result;
+console.log(competitionState.participantStates['p1']);
+// {
+//   participantId: 'p1',
+//   baselineRating: 1500,
+//   dynamicFormRating: 1500,
+//   pressureRating: 0,
+//   roundsPlayed: 0,
+//   wins: 0, losses: 0, draws: 0,
+//   totalPointsWon: 0, totalPointsLost: 0,
+//   ratingHistory: []
+// }
+```
+
+**Notes:**
+
+- Requires a `POLICY_TYPE_COMPETITION` policy to be applied; returns success with no state if policy is absent
+- Baseline ratings are resolved via the policy's `ratingPolicy.baselineRating.scaleName` using the same infrastructure as DrawMatic
+- For DOUBLES events, individual participant ratings are aggregated using the policy's `ratingAggregation` method (AVERAGE, MIN, MAX, SUM)
+- State is persisted as a `COMPETITION_STATE` extension on the drawDefinition
+
+---
+
+### processCompetitionMatchUp
+
+Processes a single completed matchUp, updating both participants' dynamic form ratings, pressure ratings, win/loss records, and rating histories based on the competition policy.
+
+**Parameters:**
+
+```ts
+{
+  tournamentRecord?: Tournament;   // Optional - for policy resolution
+  drawDefinition: DrawDefinition;  // Required - draw containing competition state
+  matchUp: MatchUp;               // Required - the completed matchUp to process
+  event?: Event;                   // Optional - for policy resolution
+}
+```
+
+**Returns:**
+
+```ts
+{
+  success?: boolean;
+  error?: ErrorType;  // MISSING_DRAW_DEFINITION, MISSING_MATCHUP
+}
+```
+
+**Example:**
+
+```js
+const result = engine.processCompetitionMatchUp({
+  tournamentRecord,
+  drawDefinition,
+  matchUp: completedMatchUp,
+  event,
+});
+```
+
+**Notes:**
+
+- Both sides must have participantIds and existing participant states; silently succeeds if not
+- Uses Elo-style expected score calculations with the policy's `logisticScale` and `kFactor`
+- Dynamic form rating updates use dynamic-vs-dynamic expectations
+- Pressure rating deltas use actual-vs-baseline expectations
+- Point counts are derived from the matchUp score via `deriveCountables`
+- Updated state is persisted back to the `COMPETITION_STATE` extension
+
+---
+
+### processCompetitionRound
+
+Processes all completed matchUps in a given round number, updating competition state for each, and marks the round as processed to prevent double-processing.
+
+**Parameters:**
+
+```ts
+{
+  tournamentRecord?: Tournament;   // Optional - for policy resolution
+  drawDefinition: DrawDefinition;  // Required - draw containing competition state
+  roundNumber: number;             // Required - the round to process
+  matchUps: MatchUp[];            // Required - all matchUps in the draw (filtered internally)
+  event?: Event;                   // Optional - for policy resolution
+}
+```
+
+**Returns:**
+
+```ts
+{
+  success?: boolean;
+  error?: ErrorType;  // MISSING_DRAW_DEFINITION
+}
+```
+
+**Example:**
+
+```js
+const result = engine.processCompetitionRound({
+  tournamentRecord,
+  drawDefinition,
+  roundNumber: 1,
+  matchUps: allDrawMatchUps,
+  event,
+});
+```
+
+**Notes:**
+
+- Filters matchUps to the specified `roundNumber` and only those with a `winningSide` or a completed matchUpStatus
+- Delegates to `processCompetitionMatchUp` for each qualifying matchUp
+- Marks the round as `processed: true` in `competitionState.roundStates` to prevent re-processing
+- Idempotent: silently succeeds if the round was already processed
+
+---
+
+### resetCompetitionState
+
+Removes the `COMPETITION_STATE` extension from a draw definition, clearing all accumulated competition data.
+
+**Parameters:**
+
+```ts
+{
+  drawDefinition: DrawDefinition;  // Required - draw to reset
+}
+```
+
+**Returns:**
+
+```ts
+{
+  success?: boolean;
+  error?: ErrorType;  // MISSING_DRAW_DEFINITION
+}
+```
+
+**Example:**
+
+```js
+const result = engine.resetCompetitionState({ drawDefinition });
+// Competition state is now cleared; call initializeCompetitionState to start fresh
+```
+
+**Notes:**
+
+- Sets the `COMPETITION_STATE` extension value to `undefined`
+- Does not remove the competition policy; only clears accumulated state
+- Useful before re-initializing state after draw modifications
+
+---
+
+### getCompetitionState
+
+Retrieves the current `CompetitionState` stored on a draw definition, including all participant states and round processing records.
+
+**Parameters:**
+
+```ts
+{
+  drawDefinition: DrawDefinition;  // Required - draw to read state from
+}
+```
+
+**Returns:**
+
+```ts
+{
+  competitionState?: CompetitionState;
+  // CompetitionState contains:
+  //   participantStates: Record<string, CompetitionParticipantState>
+  //   roundStates: Record<number, { roundNumber: number; processed: boolean }>
+}
+```
+
+**Example:**
+
+```js
+const { competitionState } = engine.getCompetitionState({ drawDefinition });
+
+if (competitionState) {
+  const participantIds = Object.keys(competitionState.participantStates);
+  console.log(`Tracking ${participantIds.length} participants`);
+
+  const processedRounds = Object.values(competitionState.roundStates)
+    .filter((r) => r.processed)
+    .map((r) => r.roundNumber);
+  console.log(`Processed rounds: ${processedRounds}`);
+}
+```
+
+**Notes:**
+
+- Returns `undefined` for `competitionState` if no state has been initialized
+- Read-only; does not modify the draw definition
+
+---
+
+### getCompetitionPolicy
+
+Retrieves the `POLICY_TYPE_COMPETITION` policy applied to a draw, event, or tournament. The competition policy governs rating calculations, victory conditions, and leaderboard sorting.
+
+**Parameters:**
+
+```ts
+{
+  tournamentRecord?: Tournament;   // Optional - checked for applied policies
+  drawDefinition?: DrawDefinition; // Optional - checked for applied policies
+  event?: Event;                   // Optional - checked for applied policies
+}
+```
+
+**Returns:**
+
+```ts
+{
+  competitionPolicy?: CompetitionPolicy;
+  // CompetitionPolicy contains ratingPolicy, victoryPolicy, etc.
+}
+```
+
+**Example:**
+
+```js
+const { competitionPolicy } = engine.getCompetitionPolicy({
+  tournamentRecord,
+  drawDefinition,
+  event,
+});
+
+if (competitionPolicy) {
+  console.log(competitionPolicy.ratingPolicy.dynamicFormRating.kFactor);
+  console.log(competitionPolicy.victoryPolicy.primaryRanking);
+}
+```
+
+**Notes:**
+
+- Uses the standard applied policies resolution chain (draw -> event -> tournament)
+- Returns `undefined` for `competitionPolicy` if no competition policy is applied
+
+---
+
+### getCompetitionLeaderboard
+
+Returns a sorted leaderboard of all participants in the competition, ranked according to the policy's `primaryRanking` criterion and tiebreak rules.
+
+**Parameters:**
+
+```ts
+{
+  tournamentRecord?: Tournament;   // Optional - for policy resolution
+  drawDefinition: DrawDefinition;  // Required - draw containing competition state
+  event?: Event;                   // Optional - for policy resolution
+}
+```
+
+**Returns:**
+
+```ts
+{
+  leaderboard?: CompetitionLeaderboardRow[];
+  // Each row contains:
+  //   participantId: string
+  //   rank: number
+  //   baselineRating: number
+  //   dynamicFormRating: number
+  //   pressureRating: number
+  //   wins: number
+  //   losses: number
+  //   draws: number
+  //   pointsWon: number
+  //   pointsLost: number
+}
+```
+
+**Example:**
+
+```js
+const { leaderboard } = engine.getCompetitionLeaderboard({
+  tournamentRecord,
+  drawDefinition,
+  event,
+});
+
+for (const row of leaderboard) {
+  console.log(`#${row.rank} ${row.participantId}: ${row.wins}W-${row.losses}L (form: ${row.dynamicFormRating})`);
+}
+```
+
+**Notes:**
+
+- Primary ranking options: `PRESSURE_RATING`, `DYNAMIC_FORM_RATING`, `WINS`, `POINTS`
+- Tiebreak methods (applied in policy-defined order): `POINT_DIFFERENTIAL`, `DYNAMIC_FORM_RATING`, `PRESSURE_RATING`, `HEAD_TO_HEAD`, `HEAD_TO_HEAD_PRESSURE`, `STRENGTH_OF_OPPOSITION`
+- Returns an empty array if competition state or policy is not present
+
+---
+
+### getCompetitionParticipantState
+
+Retrieves the competition state for a single participant, including ratings, win/loss record, and rating history.
+
+**Parameters:**
+
+```ts
+{
+  drawDefinition: DrawDefinition;  // Required - draw containing competition state
+  participantId: string;           // Required - participant to look up
+}
+```
+
+**Returns:**
+
+```ts
+{
+  participantState?: CompetitionParticipantState;
+  // CompetitionParticipantState contains:
+  //   participantId: string
+  //   baselineRating: number
+  //   dynamicFormRating: number
+  //   pressureRating: number
+  //   roundsPlayed: number
+  //   wins: number
+  //   losses: number
+  //   draws: number
+  //   totalPointsWon: number
+  //   totalPointsLost: number
+  //   ratingHistory: RatingHistoryEntry[]
+}
+```
+
+**Example:**
+
+```js
+const { participantState } = engine.getCompetitionParticipantState({
+  drawDefinition,
+  participantId: 'p1',
+});
+
+if (participantState) {
+  console.log(`Rating: ${participantState.dynamicFormRating}`);
+  console.log(`Record: ${participantState.wins}-${participantState.losses}`);
+  console.log(`Pressure: ${participantState.pressureRating}`);
+  console.log(`Matches: ${participantState.ratingHistory.length}`);
+}
+```
+
+**Notes:**
+
+- Returns `undefined` for `participantState` if competition state is not initialized or participant is not found
+- Rating history entries include per-matchUp details: opponent, rating before/after, pressure delta, actual vs expected output
+
+---
