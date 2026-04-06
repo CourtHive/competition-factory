@@ -129,7 +129,7 @@ function validatePairParticipant({
     );
 
     let participantName = individualParticipants
-      .map((p) => p.person?.standardFamilyName)
+      .map((p) => p.person?.standardFamilyName || p.participantOtherName || p.participantName || '')
       .filter(Boolean)
       .join('/');
     if (individualParticipants.length === 1) participantName += '/Unknown';
@@ -204,11 +204,14 @@ export function addParticipant(params: AddParticipantType) {
     }
     if (pairError) return pairError;
   } else if (participantType === INDIVIDUAL) {
-    if (!participant.person?.standardFamilyName || !participant.person?.standardGivenName)
-      return { error: MISSING_PERSON_DETAILS };
+    const hasPersonName = participant.person?.standardFamilyName && participant.person?.standardGivenName;
+    const hasAlternateName = participant.participantOtherName || participant.participantName;
+    if (!hasPersonName && !hasAlternateName) return { error: MISSING_PERSON_DETAILS };
 
     if (!participant.participantName) {
-      participant.participantName = `${participant.person.standardGivenName} ${participant.person.standardFamilyName}`;
+      participant.participantName = hasPersonName
+        ? `${participant.person.standardGivenName} ${participant.person.standardFamilyName}`
+        : participant.participantOtherName ?? '';
     }
   } else if (participantType && [TEAM, GROUP].includes(participantType)) {
     const teamError = validateTeamGroupParticipant({ participant, tournamentIndividualParticipantIds });

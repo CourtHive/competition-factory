@@ -5,14 +5,15 @@ import { getValidSeedBlocks } from '@Query/drawDefinition/seedGetter';
 import { decorateResult } from '@Functions/global/decorateResult';
 import { getScaledEntries } from '@Query/event/getScaledEntries';
 import { getParticipantId } from '@Functions/global/extractors';
+import { isAdHocType } from '@Query/drawDefinition/isAdHocType';
 import { getDrawStructures } from '@Acquire/findStructure';
 import { findExtension } from '@Acquire/findExtension';
 
 // constants and types
 import { STRUCTURE_NOT_FOUND } from '@Constants/errorConditionConstants';
 import { DIRECT_ENTRY_STATUSES } from '@Constants/entryStatusConstants';
-import { AD_HOC, QUALIFYING } from '@Constants/drawDefinitionConstants';
 import { Entry, PositionAssignment } from '@Types/tournamentTypes';
+import { QUALIFYING } from '@Constants/drawDefinitionConstants';
 import { RANKING, SEEDING } from '@Constants/scaleConstants';
 import { ROUND_TARGET } from '@Constants/extensionConstants';
 import { ResultType } from '@Types/factoryTypes';
@@ -46,7 +47,9 @@ export function prepareStage(params): ResultType & {
   }
 
   const doPositioning =
-    params.automated !== false && params.drawType !== AD_HOC && !(params.qualifyingOnly && params.stage !== QUALIFYING);
+    params.automated !== false &&
+    !isAdHocType(params.drawType) &&
+    !(params.qualifyingOnly && params.stage !== QUALIFYING);
   const multipleStructures = (structures?.length || 0) > 1;
   const positioningResult = doPositioning ? positioning({ ...params, multipleStructures, seedLimit, structureId }) : {};
   if (positioningResult?.error) return decorateResult({ result: positioningResult, stack });

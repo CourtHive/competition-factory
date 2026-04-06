@@ -1,4 +1,5 @@
 import { generateDrawMaticRound, DrawMaticRoundResult } from './generateDrawMaticRound';
+import { isAdHocType } from '@Query/drawDefinition/isAdHocType';
 import { getParticipantIds } from './getParticipantIds';
 import { isAdHoc } from '@Query/drawDefinition/isAdHoc';
 import { getAdHocRatings } from './getAdHocRatings';
@@ -6,7 +7,7 @@ import { generateRange } from '@Tools/arrays';
 
 // types and constants
 import { INVALID_DRAW_DEFINITION, INVALID_VALUES, STRUCTURE_NOT_FOUND } from '@Constants/errorConditionConstants';
-import { AD_HOC, stageOrder } from '@Constants/drawDefinitionConstants';
+import { stageOrder } from '@Constants/drawDefinitionConstants';
 import { DrawMaticArgs, ResultType } from '@Types/factoryTypes';
 import { Structure, MatchUp } from '@Types/tournamentTypes';
 import { SUCCESS } from '@Constants/resultConstants';
@@ -95,7 +96,7 @@ function checkParams(params) {
   // When structureId is provided, skip drawType check — the target structure
   // will be validated as ad-hoc later. This supports AD_HOC voluntary consolation
   // structures within non-AD_HOC draws (e.g., ROUND_ROBIN main + AD_HOC consolation).
-  if (!params.structureId && params.drawDefinition.drawType && params.drawDefinition.drawType !== AD_HOC) {
+  if (!params.structureId && params.drawDefinition.drawType && !isAdHocType(params.drawDefinition.drawType)) {
     return { error: INVALID_DRAW_DEFINITION };
   }
 

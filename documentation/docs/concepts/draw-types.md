@@ -67,6 +67,7 @@ The convenience method `engine.generateDrawDefinition()` generates the following
 - **[LUCKY_DRAW](./draw-types/lucky-draw)** - Supports any participant count (not just power-of-2). Rounds with an odd number of matchUps produce a "lucky loser" who advances to balance the next round.
 - **[MODIFIED_FEED_IN_CHAMPIONSHIP](./draw-types/consolation-draws)** - First and Second round losers are fed into consolation structure.
 - **[OLYMPIC](./draw-types/olympic)** - Includes up to 4 structures; ensures participants a minimum of 2 matchUps.
+- **[PAGE_PLAYOFF](./draw-types/page-playoff)** - A 4-participant hybrid knockout format (used in IPL, NBA, curling) that gives the top two seeds double-elimination protection. Resolves all four finishing positions definitively. Can be used standalone or as a playoff structure type in `ROUND_ROBIN_WITH_PLAYOFF`.
 - **[PLAYOFF](./draw-types/playoff)** - All positions are played off; structures are added to ensure unique finishing positions. Note: `PLAY_OFF` (with underscore) is a stage type applied to structures. `PLAYOFF` (no underscore) is a draw type that generates structures to play off all positions.
 - **[ROUND_ROBIN](./draw-types/round-robin)** - Participants divided into specified group sizes.
 - **[ROUND_ROBIN_WITH_PLAYOFF](./draw-types/round-robin-with-playoff)** - Includes automated generation of specified playoff structures.

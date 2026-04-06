@@ -940,10 +940,9 @@ describe('schedule timing coverage', () => {
     expect(result.success).toBe(true);
 
     // Attempting to add another stop time exercises the lastRelevantTimeItemIsTarget branch
-    // in addChronologicalTimeItem. When createdAt is undefined, the filter removes all items
-    // causing INVALID_STOP_TIME. This exercises the else branch.
+    // in addChronologicalTimeItem. With reference identity checks, replacement always succeeds.
     result = tournamentEngine.addMatchUpStopTime({ matchUpId, stopTime: '10:45', drawId });
-    expect(result.error).toEqual(INVALID_STOP_TIME);
+    expect(result.success).toBe(true);
   });
 });
 

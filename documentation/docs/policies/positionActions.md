@@ -82,6 +82,8 @@ The following actions can be controlled by this policy:
 | **NICKNAME** | `ADD_NICKNAME` | `modifyParticipantOtherName` | Add/modify participant nickname |
 | **PENALTY**  | `ADD_PENALTY`  | `addPenalty`                 | Add penalty to a participant    |
 
+The **NICKNAME** action sets `participantOtherName` on the participant. When present, this value is used as the display name in draw structures. Clearing the value (passing `undefined` or empty string) removes the nickname and reverts to the standard `participantName`. See [modifyParticipantOtherName](/docs/governors/participant-governor#modifyparticipantothername) for the API.
+
 ### Doubles/Pairs Actions
 
 | Action          | Constant                 | Method                 | Description                      |

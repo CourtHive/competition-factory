@@ -298,12 +298,12 @@ export function validateParticipantRating(
  */
 export function getParticipantName(participant: Participant): string {
   const person = participant.person;
-  if (!person) return 'Unknown';
+  if (!person) return participant.participantOtherName || participant.participantName || 'Unknown';
 
   const given = person.standardGivenName || person.passportGivenName;
   const family = person.standardFamilyName || person.passportFamilyName;
 
-  return [given, family].filter(Boolean).join(' ') || 'Unknown';
+  return [given, family].filter(Boolean).join(' ') || participant.participantOtherName || participant.participantName || 'Unknown';
 }
 
 /**

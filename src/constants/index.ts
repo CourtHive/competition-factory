@@ -25,6 +25,7 @@ export { scaleConstants } from './scaleConstants';
 export { scheduleConstants } from './scheduleConstants';
 export { sortingConstants } from './sortingConstants';
 export { surfaceConstants } from './surfaceConstants';
+export { swissConstants } from './swissConstants';
 export { tallyConstants } from './tallyConstants';
 export { tieFormatConstants } from './tieFormatConstants';
 export { timeItemConstants } from './timeItemConstants';

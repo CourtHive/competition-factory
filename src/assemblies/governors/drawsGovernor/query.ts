@@ -1,4 +1,6 @@
 export { getEligibleVoluntaryConsolationParticipants } from '@Query/drawDefinition/getEligibleVoluntaryConsolationParticipants';
+export { getSwissStandings } from '@Query/drawDefinitions/swiss/getSwissStandings';
+export { getSwissChart } from '@Query/drawDefinitions/swiss/getSwissChart';
 export { getAvailableMatchUpsCount } from '@Generators/drawDefinitions/drawTypes/adHoc/getAvailableMatchUpsCount';
 export { getDrawParticipantRepresentativeIds } from '@Query/drawDefinition/getDrawParticipantRepresentativeIds';
 export { getValidGroupSizes } from '@Assemblies/generators/drawDefinitions/drawTypes/roundRobin/roundRobin';

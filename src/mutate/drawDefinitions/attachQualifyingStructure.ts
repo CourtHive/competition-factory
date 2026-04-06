@@ -1,4 +1,5 @@
 import { addMatchUpsNotice, modifyDrawNotice } from '@Mutate/notifications/drawNotifications';
+import { setStageDrawSize } from './entryGovernor/stageEntryCounts';
 import { checkRequiredParameters } from '@Helpers/parameters/checkRequiredParameters';
 import { getAllStructureMatchUps } from '@Query/matchUps/getAllStructureMatchUps';
 import { resequenceStructures } from './structureGovernor/resequenceStructures';
@@ -9,6 +10,7 @@ import { findStructure } from '@Acquire/findStructure';
 import { DRAW_DEFINITION, OBJECT, OF_TYPE, STRUCTURE, TOURNAMENT_RECORD } from '@Constants/attributeConstants';
 import { DrawDefinition, DrawLink, Structure } from '@Types/tournamentTypes';
 import { MISSING_TARGET_LINK } from '@Constants/errorConditionConstants';
+import { QUALIFYING } from '@Constants/drawDefinitionConstants';
 import { ERROR, SUCCESS } from '@Constants/resultConstants';
 
 export function attachQualifyingStructure(params) {
@@ -58,6 +60,12 @@ export function attachQualifying(params: AttachQualifyingArgs) {
   drawDefinition.links.push(link);
 
   resequenceStructures({ drawDefinition });
+
+  // Set up the QUALIFYING entry profile so addDrawEntries/getValidStage succeeds
+  const drawSize = structure.positionAssignments?.length || structure.structures?.[0]?.positionAssignments?.length || 0;
+  if (drawSize && structure.stage === QUALIFYING) {
+    setStageDrawSize({ drawDefinition, stage: QUALIFYING, drawSize });
+  }
 
   const matchUps = getAllStructureMatchUps({ structure })?.matchUps ?? [];
 

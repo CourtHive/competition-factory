@@ -1,4 +1,5 @@
 import { generatePlayoffStructures } from '@Generators/drawDefinitions/drawTypes/playoffStructures';
+import { generatePagePlayoff } from '@Generators/drawDefinitions/drawTypes/pagePlayoff';
 import { getPositionRangeMap } from '@Query/drawDefinition/getPositionRangeMap';
 import { validatePlayoffGroups } from '@Validators/validatePlayoffGroups';
 import { firstRoundLoserConsolation } from './firstRoundLoserConsolation';
@@ -31,14 +32,18 @@ import {
   FEED_IN_CHAMPIONSHIP_TO_SF,
   FIRST_MATCH_LOSER_CONSOLATION,
   FIRST_ROUND_LOSER_CONSOLATION,
+  LOSER,
   MODIFIED_FEED_IN_CHAMPIONSHIP,
   OLYMPIC,
   OLYMPIC_ATTRIBUTES,
   PLAY_OFF,
   PLAYOFF,
   POSITION,
+  PAGE_PLAYOFF,
   ROUND_ROBIN,
   SINGLE_ELIMINATION,
+  TOP_DOWN,
+  WINNER,
 } from '@Constants/drawDefinitionConstants';
 
 const FEED_IN_DRAW_TYPES = new Set([
@@ -68,7 +73,7 @@ export function processPlayoffGroups({
   idPrefix,
   isMock,
   uuids,
-}): ResultType & {
+}: any = {}): ResultType & {
   finishingPositionTargets?: any;
   structures?: Structure[];
   positionRangeMap?: any;
@@ -290,21 +295,29 @@ export function processPlayoffGroups({
     } else if (playoffDrawType === CURTIS_CONSOLATION) {
       const { structures: playoffStructures, links: playoffLinks } = generateCurtisConsolation(params);
       updateStructureAndLinks({ playoffStructures, playoffLinks });
-    } else if (playoffDrawType === AD_HOC) {
-      if (!finishingPositions.length && groupSize) {
-        finishingPositions.push(...Array.from({ length: groupSize }, (_, i) => i + 1));
-      }
-      const structure = structureTemplate({
-        structureId: playoffGroup.structureId ?? uuids?.pop(),
-        structureName: playoffGroup.structureName || structureName || 'Playoff',
-        finishingPosition: WIN_RATIO,
-        stage: PLAY_OFF,
-        stageSequence,
-        matchUps: [],
+    } else if (playoffDrawType === PAGE_PLAYOFF) {
+      const earlyReturn = processPagePlayoff({
+        finishingPositionTargets,
+        participantsInDraw,
+        sourceStructureId,
+        finishingPositions,
+        drawDefinition,
+        playoffGroup,
+        structures,
+        params,
+        links,
+        stack,
       });
-      updateStructureAndLinks({
-        playoffStructures: [structure],
-        playoffLinks: [],
+      if (earlyReturn) return earlyReturn;
+    } else if (playoffDrawType === AD_HOC) {
+      processAdHocPlayoff({
+        finishingPositions,
+        stageSequence,
+        structureName,
+        playoffGroup,
+        groupSize,
+        uuids,
+        updateStructureAndLinks,
       });
     }
   }
@@ -558,6 +571,163 @@ function processFeedInPlayoff({
   });
 }
 
+
+function processPagePlayoff({
+  finishingPositionTargets,
+  participantsInDraw,
+  sourceStructureId,
+  finishingPositions,
+  drawDefinition,
+  playoffGroup,
+  structures,
+  params,
+  links,
+  stack,
+}) {
+  if (participantsInDraw !== 4) {
+    return decorateResult({
+      result: { error: INVALID_CONFIGURATION },
+      context: { info: 'PAGE_PLAYOFF requires exactly 4 participants' },
+      stack,
+    });
+  }
+
+  const sourceStructure = drawDefinition?.structures?.find((s) => s.structureId === sourceStructureId);
+  const isEliminationSource = sourceStructure && !sourceStructure.structures && !sourceStructure.structureType;
+
+  if (isEliminationSource) {
+    return processPagePlayoffFromElimination({
+      finishingPositionTargets, sourceStructureId, drawDefinition, playoffGroup, structures, params, links,
+    });
+  }
+
+  return processPagePlayoffFromRR({
+    finishingPositionTargets, sourceStructureId, finishingPositions, playoffGroup, structures, params, links, stack,
+  });
+}
+
+function processPagePlayoffFromElimination({
+  finishingPositionTargets, sourceStructureId, drawDefinition, playoffGroup, structures, params, links,
+}) {
+  const structureName = playoffGroup.structureName;
+  const { matchUpType, isMock, uuids, idPrefix, finishingPositionOffset = 0 } = params;
+  const stage = PLAY_OFF;
+
+  const { matchUps: elimMatchUps } = treeMatchUps({
+    finishingPositionOffset: finishingPositionOffset + 2,
+    idPrefix: idPrefix && `${idPrefix}-el`,
+    drawSize: 2, matchUpType, isMock, uuids,
+  });
+  const elimStructure = structureTemplate({
+    structureName: structureName ? `${structureName} 3-4 Playoff` : '3-4 Playoff',
+    structureAbbreviation: 'EL', structureId: uuids?.pop(),
+    matchUps: elimMatchUps, stageSequence: 1, matchUpType, stage,
+  });
+
+  const { matchUps: q2MatchUps } = treeMatchUps({
+    finishingPositionOffset: finishingPositionOffset + 1,
+    idPrefix: idPrefix && `${idPrefix}-q2`,
+    drawSize: 2, matchUpType, isMock, uuids,
+  });
+  const q2Structure = structureTemplate({
+    structureName: structureName ? `${structureName} Playoff Qualifier` : 'Playoff Qualifier',
+    structureAbbreviation: 'Q2', structureId: uuids?.pop(),
+    matchUps: q2MatchUps, stageSequence: 2, matchUpType, stage,
+  });
+
+  const { matchUps: finalMatchUps } = treeMatchUps({
+    finishingPositionOffset,
+    idPrefix: idPrefix && `${idPrefix}-fi`,
+    drawSize: 2, matchUpType, isMock, uuids,
+  });
+  const finalStructure = structureTemplate({
+    structureName: structureName ? `${structureName} Final` : 'Playoff Final',
+    structureAbbreviation: 'F', structureId: uuids?.pop(),
+    matchUps: finalMatchUps, stageSequence: 3, matchUpType, stage,
+  });
+
+  structures.push(elimStructure, q2Structure, finalStructure);
+
+  const sourceStructure = drawDefinition?.structures?.find((s) => s.structureId === sourceStructureId);
+  const sourceMatchUps = sourceStructure?.matchUps || [];
+  const finalRoundNumber = sourceMatchUps.length ? Math.max(...sourceMatchUps.map((m) => m.roundNumber)) : 1;
+
+  const semifinalRoundNumber = finalRoundNumber - 1;
+
+  links.push(
+    { linkType: LOSER, source: { structureId: sourceStructureId, roundNumber: semifinalRoundNumber }, target: { feedProfile: TOP_DOWN, roundNumber: 1, structureId: elimStructure.structureId } },
+    { linkType: WINNER, source: { structureId: sourceStructureId, roundNumber: finalRoundNumber }, target: { feedProfile: TOP_DOWN, roundNumber: 1, structureId: finalStructure.structureId } },
+    { linkType: LOSER, source: { structureId: sourceStructureId, roundNumber: finalRoundNumber }, target: { feedProfile: TOP_DOWN, roundNumber: 1, structureId: q2Structure.structureId } },
+    { linkType: WINNER, source: { structureId: elimStructure.structureId, roundNumber: 1 }, target: { feedProfile: TOP_DOWN, roundNumber: 1, structureId: q2Structure.structureId } },
+    { linkType: WINNER, source: { structureId: q2Structure.structureId, roundNumber: 1 }, target: { feedProfile: TOP_DOWN, roundNumber: 1, structureId: finalStructure.structureId } },
+  );
+
+  finishingPositionTargets.push({ structureId: elimStructure.structureId, finishingPositions: [3, 4] });
+  return undefined;
+}
+
+function processPagePlayoffFromRR({
+  finishingPositionTargets, sourceStructureId, finishingPositions, playoffGroup, structures, params, links, stack,
+}) {
+  const pagePlayoffResult = generatePagePlayoff({ ...params, structureName: playoffGroup.structureName });
+  if (pagePlayoffResult.error) return decorateResult({ result: pagePlayoffResult, stack });
+
+  structures.push(...pagePlayoffResult.structures);
+  links.push(...pagePlayoffResult.links);
+
+  const q1Structure = pagePlayoffResult.structures.find((s) => s.structureAbbreviation === 'Q1');
+  const elimStructure = pagePlayoffResult.structures.find((s) => s.structureAbbreviation === 'EL');
+
+  if (finishingPositions.length >= 2 && q1Structure && elimStructure) {
+    const half = Math.ceil(finishingPositions.length / 2);
+    const q1Positions = finishingPositions.slice(0, half);
+    const elimPositions = finishingPositions.slice(half);
+    links.push(
+      generatePlayoffLink({ playoffStructureId: q1Structure.structureId, finishingPositions: q1Positions, sourceStructureId }),
+      generatePlayoffLink({ playoffStructureId: elimStructure.structureId, finishingPositions: elimPositions, sourceStructureId }),
+    );
+    finishingPositionTargets.push(
+      { structureId: q1Structure.structureId, finishingPositions: q1Positions },
+      { structureId: elimStructure.structureId, finishingPositions: elimPositions },
+    );
+  } else if (q1Structure && elimStructure) {
+    links.push(
+      generatePlayoffLink({ playoffStructureId: q1Structure.structureId, finishingPositions, sourceStructureId }),
+      generatePlayoffLink({ playoffStructureId: elimStructure.structureId, finishingPositions, sourceStructureId }),
+    );
+    finishingPositionTargets.push(
+      { structureId: q1Structure.structureId, finishingPositions },
+      { structureId: elimStructure.structureId, finishingPositions },
+    );
+  }
+  return undefined;
+}
+
+function processAdHocPlayoff({
+  finishingPositions,
+  stageSequence,
+  structureName,
+  playoffGroup,
+  groupSize,
+  uuids,
+  updateStructureAndLinks,
+}) {
+  if (!finishingPositions.length && groupSize) {
+    finishingPositions.push(...Array.from({ length: groupSize }, (_, i) => i + 1));
+  }
+  const structure = structureTemplate({
+    structureId: playoffGroup.structureId ?? uuids?.pop(),
+    structureName: playoffGroup.structureName || structureName || 'Playoff',
+    finishingPosition: WIN_RATIO,
+    stage: PLAY_OFF,
+    stageSequence,
+    matchUps: [],
+  });
+  updateStructureAndLinks({
+    playoffStructures: [structure],
+    playoffLinks: [],
+  });
+}
 
 function resolveStructureName({ positionsPlayedOff, playoffGroup }) {
   const finishingPositionRange =
