@@ -1,12 +1,13 @@
 import { generateDrawTypeAndModifyDrawDefinition } from '@Generators/drawDefinitions/generateDrawTypeAndModifyDrawDefinition';
 import { addDrawEntry } from '@Mutate/drawDefinitions/entryGovernor/addDrawEntries';
 import { isLuckyBasedDraw } from '@Query/drawDefinition/isLuckyBasedDraw';
+import { isAdHocType } from '@Query/drawDefinition/isAdHocType';
 import { generateAdHoc } from './generateAdHoc';
 import { prepareStage } from './prepareStage';
 import { ensureInt } from '@Tools/ensureInt';
 
 // constants and types
-import { AD_HOC, MAIN } from '@Constants/drawDefinitionConstants';
+import { MAIN } from '@Constants/drawDefinitionConstants';
 import { DrawDefinition } from '@Types/tournamentTypes';
 import { ResultType } from '@Types/factoryTypes';
 
@@ -73,7 +74,7 @@ export function generateNewDrawDefinition(params): ResultType & {
   const structureId = structureResult.structureId;
   if (structureResult.conflicts) conflicts = structureResult.conflicts;
 
-  if (drawType === AD_HOC && params.roundsCount) {
+  if (isAdHocType(drawType) && params.roundsCount) {
     generateAdHoc({ ...params, drawDefinition, structureId });
   }
 
@@ -89,7 +90,7 @@ function addEntries(params) {
 
     const entryData = {
       ...entry,
-      ignoreStageSpace: ignoreStageSpace ?? drawType === AD_HOC,
+      ignoreStageSpace: ignoreStageSpace ?? isAdHocType(drawType),
       entryStage: entry.entryStage ?? MAIN,
       event: params.event,
       drawDefinition,

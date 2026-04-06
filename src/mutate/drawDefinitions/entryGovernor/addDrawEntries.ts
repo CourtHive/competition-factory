@@ -7,11 +7,12 @@ import { getStageSpace } from '@Query/drawDefinition/getStageSpace';
 import { decorateResult } from '@Functions/global/decorateResult';
 import { isValidExtension } from '@Validators/isValidExtension';
 import { addExtension } from '@Mutate/extensions/addExtension';
+import { isAdHocType } from '@Query/drawDefinition/isAdHocType';
 import { definedAttributes } from '@Tools/definedAttributes';
 import { addNotice } from '@Global/state/globalState';
 
 // constants and types
-import { AD_HOC, MAIN, VOLUNTARY_CONSOLATION } from '@Constants/drawDefinitionConstants';
+import { MAIN, VOLUNTARY_CONSOLATION } from '@Constants/drawDefinitionConstants';
 import { DIRECT_ACCEPTANCE, LUCKY_LOSER } from '@Constants/entryStatusConstants';
 import { DRAW_DEFINITION, ENTRY_STAGE } from '@Constants/attributeConstants';
 import { ROUND_TARGET } from '@Constants/extensionConstants';
@@ -75,7 +76,7 @@ export function addDrawEntry(params: AddDrawEntryArgs) {
   } = params;
 
   const stack = 'addDrawEntry';
-  if (drawType !== AD_HOC && !getValidStage({ stage: entryStage, drawDefinition })) {
+  if (!isAdHocType(drawType) && !getValidStage({ stage: entryStage, drawDefinition })) {
     return decorateResult({ result: { error: INVALID_STAGE }, stack });
   }
   const spaceAvailable = getStageSpace({
@@ -85,7 +86,7 @@ export function addDrawEntry(params: AddDrawEntryArgs) {
     entryStatus,
   });
 
-  if (!ignoreStageSpace && !spaceAvailable.success && (!drawType || drawType !== AD_HOC)) {
+  if (!ignoreStageSpace && !spaceAvailable.success && (!drawType || !isAdHocType(drawType))) {
     return { error: spaceAvailable.error };
   }
 
@@ -195,7 +196,7 @@ export function addDrawEntries(params: AddDrawEntriesArgs) {
     event,
   } = params;
 
-  const isAdHocDraw = drawDefinition.drawType === AD_HOC;
+  const isAdHocDraw = isAdHocType(drawDefinition.drawType);
 
   if (!stage) return { error: MISSING_STAGE };
   if (!drawDefinition) return { error: MISSING_DRAW_DEFINITION };

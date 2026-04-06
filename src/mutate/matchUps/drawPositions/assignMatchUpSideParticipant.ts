@@ -1,11 +1,11 @@
 import { modifyMatchUpNotice } from '@Mutate/notifications/drawNotifications';
 import { decorateResult } from '@Functions/global/decorateResult';
+import { isAdHocType } from '@Query/drawDefinition/isAdHocType';
 import { findDrawMatchUp } from '@Acquire/findDrawMatchUp';
 
 // constants and types
 import { completedMatchUpStatuses, DOUBLE_DEFAULT, DOUBLE_WALKOVER } from '@Constants/matchUpStatusConstants';
 import { DrawDefinition, Event, Tournament } from '@Types/tournamentTypes';
-import { AD_HOC } from '@Constants/drawDefinitionConstants';
 import { SUCCESS } from '@Constants/resultConstants';
 import { ResultType } from '@Types/factoryTypes';
 import {
@@ -58,7 +58,7 @@ export function assignMatchUpSideParticipant({
 
   const isAdHoc =
     !structure?.structures &&
-    !(drawDefinition.drawType && drawDefinition.drawType !== AD_HOC) &&
+    !(drawDefinition.drawType && !isAdHocType(drawDefinition.drawType)) &&
     !structure?.matchUps?.find(({ roundPosition }) => !!roundPosition);
 
   if (!isAdHoc) return { error: INVALID_DRAW_TYPE };

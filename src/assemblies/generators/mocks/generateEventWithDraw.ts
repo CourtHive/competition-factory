@@ -30,10 +30,12 @@ import { coerceEven } from '@Tools/math';
 import { UUID } from '@Tools/UUID';
 
 // constants and types
+import { MAIN, QUALIFYING, ROUND_ROBIN_WITH_PLAYOFF, SINGLE_ELIMINATION } from '@Constants/drawDefinitionConstants';
 import { DRAW_DEFINITION_NOT_FOUND, STRUCTURE_NOT_FOUND } from '@Constants/errorConditionConstants';
 import { INDIVIDUAL, PAIR, TEAM } from '@Constants/participantConstants';
 import { SINGLES, DOUBLES, HYBRID } from '@Constants/eventConstants';
 import { FORMAT_STANDARD } from '@Fixtures/scoring/matchUpFormats';
+import { isAdHocType } from '@Query/drawDefinition/isAdHocType';
 import { COMPLETED } from '@Constants/matchUpStatusConstants';
 import { ALTERNATE } from '@Constants/entryStatusConstants';
 import { FEMALE, MALE } from '@Constants/genderConstants';
@@ -43,13 +45,6 @@ import { OBJECT } from '@Constants/attributeConstants';
 import { Participant } from '@Types/tournamentTypes';
 import { SUCCESS } from '@Constants/resultConstants';
 import { nameMocks } from './nameMocks';
-import {
-  AD_HOC,
-  MAIN,
-  QUALIFYING,
-  ROUND_ROBIN_WITH_PLAYOFF,
-  SINGLE_ELIMINATION,
-} from '@Constants/drawDefinitionConstants';
 
 function generateEventParticipants({
   qualifyingParticipantsCount,
@@ -238,12 +233,7 @@ function buildTeamParticipants({
   return { teamParticipants };
 }
 
-function buildHybridParticipants({
-  drawParticipantsCount,
-  tournamentRecord,
-  unique,
-  random,
-}) {
+function buildHybridParticipants({ drawParticipantsCount, tournamentRecord, unique, random }) {
   const individuals = unique.filter(({ participantType: pt }) => pt === INDIVIDUAL);
   const soloCount = drawParticipantsCount - Math.floor(drawParticipantsCount / 2);
   const pairMemberIndividuals = individuals.slice(soloCount);
@@ -424,12 +414,7 @@ function completeRoundRobinPlayoff({
   return undefined;
 }
 
-function applyDefinedOutcomes({
-  tournamentRecord,
-  drawDefinition,
-  outcomes,
-  event,
-}) {
+function applyDefinedOutcomes({ tournamentRecord, drawDefinition, outcomes, event }) {
   const { matchUps } = allDrawMatchUps({
     inContext: true,
     drawDefinition,
@@ -623,14 +608,7 @@ function addMockEntries({
   return undefined;
 }
 
-function applySeedingScales({
-  tournamentRecord,
-  participantIds,
-  seedingScaleName,
-  seedsCount,
-  startDate,
-  eventType,
-}) {
+function applySeedingScales({ tournamentRecord, participantIds, seedingScaleName, seedsCount, startDate, eventType }) {
   if (tournamentRecord && seedsCount && seedsCount <= participantIds.length) {
     const scaleValues = generateRange(1, seedsCount + 1);
     scaleValues.forEach((scaleValue, index) => {
@@ -881,14 +859,15 @@ export function generateEventWithDraw(params) {
     targetParticipants = genResult.targetParticipants;
   }
 
-  const { consideredParticipants, participantIds, isEventParticipantType, isEventGender } = filterConsideredParticipants({
-    allUniqueParticipantIds,
-    targetParticipants,
-    participantsCount,
-    drawProfile,
-    eventType,
-    isHybrid,
-  });
+  const { consideredParticipants, participantIds, isEventParticipantType, isEventGender } =
+    filterConsideredParticipants({
+      allUniqueParticipantIds,
+      targetParticipants,
+      participantsCount,
+      drawProfile,
+      eventType,
+      isHybrid,
+    });
 
   const entriesResult: any = addMockEntries({
     qualifyingParticipantsCount,
@@ -921,7 +900,7 @@ export function generateEventWithDraw(params) {
   });
 
   const iterativeAdHoc =
-    drawType === AD_HOC &&
+    isAdHocType(drawType) &&
     completeAllMatchUps &&
     drawProfile.automated !== false &&
     (drawProfileCopy.roundsCount ?? 1) > 1;
@@ -977,7 +956,17 @@ function calcQualifyingParticipantsCount({ qualifyingProfiles, participantType }
   return rawCount * (participantType === PAIR ? 2 : 1);
 }
 
-function buildMockEvent({ eventName, eventType, tieFormat, category, eventId, gender, timeItems, drawProfile, eventExtensions }) {
+function buildMockEvent({
+  eventName,
+  eventType,
+  tieFormat,
+  category,
+  eventId,
+  gender,
+  timeItems,
+  drawProfile,
+  eventExtensions,
+}) {
   const event = { eventName, eventType, tieFormat, category, eventId, gender };
 
   if (Array.isArray(timeItems)) {

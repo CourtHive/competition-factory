@@ -109,6 +109,7 @@ export const DrawTypeEnum = {
   ROUND_ROBIN: 'ROUND_ROBIN',
   ROUND_ROBIN_WITH_PLAYOFF: 'ROUND_ROBIN_WITH_PLAYOFF',
   SINGLE_ELIMINATION: 'SINGLE_ELIMINATION',
+  SWISS: 'SWISS',
 } as const;
 
 export type DrawTypeUnion = keyof typeof DrawTypeEnum;

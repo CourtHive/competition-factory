@@ -239,11 +239,14 @@ describe('PAGE_PLAYOFF draw type', () => {
     expect(q2).toBeDefined();
     expect(ppsFinal).toBeDefined();
 
-    // POSITION link: [3,4] → Eliminator
-    const positionLinks = result.links?.filter((l: any) => l.linkType === 'POSITION');
-    expect(positionLinks?.length).toEqual(1);
-    expect(positionLinks?.[0]?.source.finishingPositions).toEqual([3, 4]);
-    expect(positionLinks?.[0]?.target.structureId).toEqual(eliminator.structureId);
+    // LOSER link: SE semifinal → Eliminator (semifinal losers are positions 3-4)
+    const semifinalRound = mainFinalRound - 1;
+    const loserToElim = result.links?.find(
+      (l: any) => l.linkType === 'LOSER' && l.target.structureId === eliminator.structureId,
+    );
+    expect(loserToElim).toBeDefined();
+    expect(loserToElim?.source.structureId).toEqual(mainStructureId);
+    expect(loserToElim?.source.roundNumber).toEqual(semifinalRound);
 
     // WINNER link: SE final → PPS Final
     const winnerFromSE = result.links?.find(
@@ -254,9 +257,11 @@ describe('PAGE_PLAYOFF draw type', () => {
 
     // LOSER link: SE final → Q2
     const loserFromSE = result.links?.find(
-      (l: any) => l.linkType === 'LOSER' && l.source.structureId === mainStructureId,
+      (l: any) =>
+        l.linkType === 'LOSER' &&
+        l.source.structureId === mainStructureId &&
+        l.source.roundNumber === mainFinalRound,
     );
-    expect(loserFromSE?.source.roundNumber).toEqual(mainFinalRound);
     expect(loserFromSE?.target.structureId).toEqual(q2.structureId);
 
     // Internal: Eliminator WINNER → Q2

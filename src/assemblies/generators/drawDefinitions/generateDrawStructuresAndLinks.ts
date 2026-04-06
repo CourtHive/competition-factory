@@ -3,6 +3,7 @@ import { getPositionAssignments } from '@Query/drawDefinition/positionsGetter';
 import { generateQualifyingLink } from './links/generateQualifyingLink';
 import { decorateResult } from '@Functions/global/decorateResult';
 import { structureSort } from '@Functions/sorters/structureSort';
+import { isAdHocType } from '@Query/drawDefinition/isAdHocType';
 import { getDrawTypeCoercion } from './getDrawTypeCoercion';
 import { definedAttributes } from '@Tools/definedAttributes';
 import { getCoercedDrawType } from './getCoercedDrawType';
@@ -18,7 +19,6 @@ import { SUCCESS } from '@Constants/resultConstants';
 import { SINGLES } from '@Constants/matchUpTypes';
 import {
   MAIN,
-  AD_HOC,
   FEED_IN,
   ROUND_ROBIN,
   ROUND_ROBIN_WITH_PLAYOFF,
@@ -90,10 +90,7 @@ export function generateDrawStructuresAndLinks(params: GenerateDrawStructuresAnd
     existingQualifiersCount,
   } = analyzeExistingQualifying({ drawDefinition, structures });
 
-  if (
-    drawDefinition?.structures?.filter(({ stage }) => stage === QUALIFYING)?.length &&
-    !mainStructureIsPlaceholder
-  ) {
+  if (drawDefinition?.structures?.filter(({ stage }) => stage === QUALIFYING)?.length && !mainStructureIsPlaceholder) {
     return { error: EXISTING_STAGE };
   }
 
@@ -280,7 +277,7 @@ function analyzeExistingQualifying({ drawDefinition, structures }) {
 
 function isInvalidDrawSize({ drawType, drawSize, staggeredEntry }): boolean {
   return !!(
-    drawType !== AD_HOC &&
+    !isAdHocType(drawType) &&
     (!drawSize ||
       drawSize < 2 ||
       ([LUCKY_DRAW, ADAPTIVE].includes(drawType) && !isPowerOf2(drawSize) && drawSize < 5) ||

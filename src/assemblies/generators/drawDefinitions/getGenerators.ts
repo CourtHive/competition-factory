@@ -22,7 +22,7 @@ import { SUCCESS } from '@Constants/resultConstants';
 import {
   MAIN, PLAY_OFF, FICQF, FICSF, MFIC, AD_HOC, CURTIS, FICR16, COMPASS,
   PAGE_PLAYOFF, PLAYOFF, OLYMPIC, FEED_IN, ROUND_ROBIN,
-  COMPASS_ATTRIBUTES, OLYMPIC_ATTRIBUTES, ADAPTIVE_ATTRIBUTES, ADAPTIVE,
+  COMPASS_ATTRIBUTES, OLYMPIC_ATTRIBUTES, ADAPTIVE_ATTRIBUTES, ADAPTIVE, SWISS,
   SINGLE_ELIMINATION, DOUBLE_ELIMINATION,
   FIRST_MATCH_LOSER_CONSOLATION,
   FIRST_ROUND_LOSER_CONSOLATION,
@@ -67,6 +67,19 @@ export function getGenerators(params): { generators?: any; error?: ErrorType } {
 
   const generators = {
     [AD_HOC]: () => {
+      const structure = structureTemplate({
+        finishingPosition: WIN_RATIO,
+        stageSequence,
+        structureName,
+        matchUps: [],
+        matchUpType,
+        structureId,
+        stage,
+      });
+
+      return { structures: [structure], links: [], ...SUCCESS };
+    },
+    [SWISS]: () => {
       const structure = structureTemplate({
         finishingPosition: WIN_RATIO,
         stageSequence,

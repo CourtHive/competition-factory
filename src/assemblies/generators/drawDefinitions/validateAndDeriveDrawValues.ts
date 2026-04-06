@@ -1,6 +1,7 @@
 import { getAllowedDrawTypes, getAppliedPolicies } from '@Assemblies/governors/queryGovernor';
 import { decorateResult } from '@Functions/global/decorateResult';
 import { checkValidEntries } from '@Validators/checkValidEntries';
+import { isAdHocType } from '@Query/drawDefinition/isAdHocType';
 import { getDrawTypeCoercion } from './getDrawTypeCoercion';
 import { getCoercedDrawType } from './getCoercedDrawType';
 import { makeDeepCopy } from '@Tools/makeDeepCopy';
@@ -22,6 +23,7 @@ import {
   MAIN,
   ROUND_ROBIN,
   ROUND_ROBIN_WITH_PLAYOFF,
+  SWISS,
 } from '@Constants/drawDefinitionConstants';
 
 export function validateAndDeriveDrawValues(params): ResultType & {
@@ -45,7 +47,7 @@ export function validateAndDeriveDrawValues(params): ResultType & {
   if (drawTypeResult.error) return decorateResult({ result: drawTypeResult, stack });
   const drawType: DrawTypeUnion | undefined = drawTypeResult.drawType;
 
-  if (isNaN(drawSize) && drawType !== AD_HOC) {
+  if (Number.isNaN(drawSize) && !isAdHocType(drawType)) {
     return decorateResult({
       result: { error: MISSING_DRAW_SIZE },
       stack,
@@ -111,10 +113,10 @@ function getPolicies(params) {
   const { tournamentRecord, event } = params;
   const appliedPolicies = {
     ...params?.appliedPolicies,
-    ...(getAppliedPolicies({
+    ...getAppliedPolicies({
       tournamentRecord,
       event,
-    }).appliedPolicies ?? {}),
+    }).appliedPolicies,
   };
 
   const policyDefinitions = makeDeepCopy(params.policyDefinitions ?? {}, false, true);
@@ -153,7 +155,9 @@ function getDerivedDrawSize(params) {
   const derivedDrawSize =
     !params.drawSize &&
     params.consideredEntries.length &&
-    ![AD_HOC, DOUBLE_ELIMINATION, FEED_IN, ROUND_ROBIN, ROUND_ROBIN_WITH_PLAYOFF].includes(params.drawType ?? '') &&
+    ![AD_HOC, DOUBLE_ELIMINATION, FEED_IN, ROUND_ROBIN, ROUND_ROBIN_WITH_PLAYOFF, SWISS].includes(
+      params.drawType ?? '',
+    ) &&
     nextPowerOf2(params.consideredEntries.length);
 
   // coersion of drawSize and seedsCount to integers

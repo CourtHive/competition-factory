@@ -87,6 +87,7 @@ export const MODIFIED_FEED_IN_CHAMPIONSHIP = 'MODIFIED_FEED_IN_CHAMPIONSHIP';
 export const FEED_IN_CHAMPIONSHIP = 'FEED_IN_CHAMPIONSHIP';
 export const PAGE_PLAYOFF = 'PAGE_PLAYOFF';
 export const PLAYOFF = 'PLAYOFF';
+export const SWISS = 'SWISS';
 
 export const PAGE_PLAYOFF_ATTRIBUTES = {
   0: { name: 'Qualifier 1', abbreviation: 'Q1' },
@@ -174,6 +175,7 @@ export const generatedDrawTypes = [
   ROUND_ROBIN,
   ROUND_ROBIN_WITH_PLAYOFF,
   SINGLE_ELIMINATION,
+  SWISS,
 ];
 
 export const drawDefinitionConstants = {
@@ -196,6 +198,7 @@ export const drawDefinitionConstants = {
   PAGE_PLAYOFF,
   PAGE_PLAYOFF_ATTRIBUTES,
   PLAYOFF,
+  SWISS,
   OLYMPIC,
   KNOCKOUT,
   SINGLE_ELIMINATION,
