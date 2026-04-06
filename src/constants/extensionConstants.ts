@@ -1,5 +1,6 @@
 export const ACTIVE_SUSPENSION = 'activeSuspension';
 export const APPLIED_POLICIES = 'appliedPolicies';
+export const COMPETITION_STATE = 'competitionState';
 export const CONTEXT = 'context';
 export const DELEGATED_OUTCOME = 'delegatedOutcome';
 export const DISABLED = 'disabled';
@@ -35,6 +36,7 @@ export const TIE_FORMAT_MODIFICATIONS = 'tieFormatModification';
 export const extensionConstants = {
   ACTIVE_SUSPENSION,
   APPLIED_POLICIES,
+  COMPETITION_STATE,
   CONTEXT, // used to capture, e.g. context in which a venue was added
   DELEGATED_OUTCOME,
   DISABLED,
