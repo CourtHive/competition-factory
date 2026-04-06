@@ -205,7 +205,7 @@ describe('PAGE_PLAYOFF draw type', () => {
     expect(final?.stageSequence).toEqual(4);
   });
 
-  it('adds PAGE_PLAYOFF as playoff to completed SE16 with split POSITION links', () => {
+  it('adds PAGE_PLAYOFF to completed SE16: 3 new structures with correct links', () => {
     const drawSize = 16;
     const {
       tournamentRecord,
@@ -219,30 +219,57 @@ describe('PAGE_PLAYOFF draw type', () => {
 
     const { drawDefinition: dd } = tournamentEngine.getEvent({ drawId });
     const mainStructureId = dd.structures[0].structureId;
+    const mainFinalRound = Math.max(...dd.structures[0].matchUps.map((m) => m.roundNumber));
 
     let result: any = tournamentEngine.generateAndPopulatePlayoffStructures({
       playoffGroups: [{ drawType: PAGE_PLAYOFF, finishingPositions: [1, 2, 3, 4] }],
       structureId: mainStructureId,
       drawId,
     });
+    if (result.error) console.log('SE+PPS ERROR:', JSON.stringify(result, null, 2));
     expect(result.success).toEqual(true);
-    expect(result.structures?.length).toEqual(4);
 
-    // Two POSITION links: [1,2]->Q1 and [3,4]->Eliminator
+    // SE→PPS: 3 new structures (3-4 Playoff, Q2, Playoff Final) — SE final IS Q1
+    expect(result.structures?.length).toEqual(3);
+
+    const eliminator = result.structures?.find((s: any) => s.structureAbbreviation === 'EL');
+    const q2 = result.structures?.find((s: any) => s.structureAbbreviation === 'Q2');
+    const ppsFinal = result.structures?.find((s: any) => s.structureAbbreviation === 'F');
+    expect(eliminator).toBeDefined();
+    expect(q2).toBeDefined();
+    expect(ppsFinal).toBeDefined();
+
+    // POSITION link: [3,4] → Eliminator
     const positionLinks = result.links?.filter((l: any) => l.linkType === 'POSITION');
-    expect(positionLinks?.length).toEqual(2);
+    expect(positionLinks?.length).toEqual(1);
+    expect(positionLinks?.[0]?.source.finishingPositions).toEqual([3, 4]);
+    expect(positionLinks?.[0]?.target.structureId).toEqual(eliminator.structureId);
 
-    const q1Link = positionLinks?.find((l: any) => {
-      const target = result.structures?.find((s: any) => s.structureId === l.target.structureId);
-      return target?.structureAbbreviation === 'Q1';
-    });
-    expect(q1Link?.source.finishingPositions).toEqual([1, 2]);
+    // WINNER link: SE final → PPS Final
+    const winnerFromSE = result.links?.find(
+      (l: any) => l.linkType === 'WINNER' && l.source.structureId === mainStructureId,
+    );
+    expect(winnerFromSE?.source.roundNumber).toEqual(mainFinalRound);
+    expect(winnerFromSE?.target.structureId).toEqual(ppsFinal.structureId);
 
-    const elimLink = positionLinks?.find((l: any) => {
-      const target = result.structures?.find((s: any) => s.structureId === l.target.structureId);
-      return target?.structureAbbreviation === 'EL';
-    });
-    expect(elimLink?.source.finishingPositions).toEqual([3, 4]);
+    // LOSER link: SE final → Q2
+    const loserFromSE = result.links?.find(
+      (l: any) => l.linkType === 'LOSER' && l.source.structureId === mainStructureId,
+    );
+    expect(loserFromSE?.source.roundNumber).toEqual(mainFinalRound);
+    expect(loserFromSE?.target.structureId).toEqual(q2.structureId);
+
+    // Internal: Eliminator WINNER → Q2
+    const elimToQ2 = result.links?.find(
+      (l: any) => l.linkType === 'WINNER' && l.source.structureId === eliminator.structureId,
+    );
+    expect(elimToQ2?.target.structureId).toEqual(q2.structureId);
+
+    // Internal: Q2 WINNER → PPS Final
+    const q2ToFinal = result.links?.find(
+      (l: any) => l.linkType === 'WINNER' && l.source.structureId === q2.structureId,
+    );
+    expect(q2ToFinal?.target.structureId).toEqual(ppsFinal.structureId);
   });
 
   // TODO: participant advancement from SE to PAGE_PLAYOFF via POSITION links needs factory fix
