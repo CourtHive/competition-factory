@@ -663,12 +663,12 @@ TMX exposes a rating scale selector for Swiss draws (same dropdown as DrawMatic)
 
 `getSwissStandings` returns ranked standings with four tiebreaker methods:
 
-| Method | Description |
-| --- | --- |
-| BUCHHOLZ | Sum of all opponents' scores |
-| MEDIAN_BUCHHOLZ | Buchholz excluding highest and lowest opponent scores |
-| SONNEBORN_BERGER | Sum of defeated opponents' scores plus half the drawn opponents' scores |
-| PROGRESSIVE_SCORE | Cumulative sum of round-by-round cumulative point totals |
+| Method            | Description                                                             |
+| ----------------- | ----------------------------------------------------------------------- |
+| BUCHHOLZ          | Sum of all opponents' scores                                            |
+| MEDIAN_BUCHHOLZ   | Buchholz excluding highest and lowest opponent scores                   |
+| SONNEBORN_BERGER  | Sum of defeated opponents' scores plus half the drawn opponents' scores |
+| PROGRESSIVE_SCORE | Cumulative sum of round-by-round cumulative point totals                |
 
 ### Swiss Chart
 
@@ -693,11 +693,11 @@ A new `POLICY_TYPE_COMPETITION` policy type enables multi-round competition eval
 
 ### Three Rating Tracks
 
-| Track | Mutability | Purpose |
-| --- | --- | --- |
-| **Baseline Rating** | Frozen during event | Defines expected performance; source of pressure expectations |
-| **Dynamic Form Rating** | Updated each round | Drives pairing; ensures competitive matches via Elo-like updates |
-| **Pressure Rating** | Cumulative | Measures overperformance vs baseline expectation; determines winner |
+| Track                   | Mutability          | Purpose                                                             |
+| ----------------------- | ------------------- | ------------------------------------------------------------------- |
+| **Baseline Rating**     | Frozen during event | Defines expected performance; source of pressure expectations       |
+| **Dynamic Form Rating** | Updated each round  | Drives pairing; ensures competitive matches via Elo-like updates    |
+| **Pressure Rating**     | Cumulative          | Measures overperformance vs baseline expectation; determines winner |
 
 ### Core Invariant
 
@@ -725,11 +725,11 @@ Configurable primary ranking (`PRESSURE_RATING`, `DYNAMIC_FORM_RATING`, `WINS`, 
 
 ### Preset Fixtures
 
-| Fixture | Pairing | Primary Ranking | Processing |
-| --- | --- | --- | --- |
-| POLICY_COMPETITION_STANDARD | DrawMatic | WINS | PER_ROUND |
-| POLICY_COMPETITION_PRESSURE | DrawMatic | PRESSURE_RATING | PER_MATCHUP |
-| POLICY_COMPETITION_SWISS | Swiss | WINS + BUCHHOLZ tiebreak | PER_ROUND |
+| Fixture                     | Pairing   | Primary Ranking          | Processing  |
+| --------------------------- | --------- | ------------------------ | ----------- |
+| POLICY_COMPETITION_STANDARD | DrawMatic | WINS                     | PER_ROUND   |
+| POLICY_COMPETITION_PRESSURE | DrawMatic | PRESSURE_RATING          | PER_MATCHUP |
+| POLICY_COMPETITION_SWISS    | Swiss     | WINS + BUCHHOLZ tiebreak | PER_ROUND   |
 
 ### Pairing Integration
 
