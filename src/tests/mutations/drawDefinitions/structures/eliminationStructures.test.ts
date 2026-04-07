@@ -1,7 +1,6 @@
 import { generateDrawTypeAndModifyDrawDefinition } from '@Assemblies/generators/drawDefinitions/generateDrawTypeAndModifyDrawDefinition';
 import { treeMatchUps } from '@Assemblies/generators/drawDefinitions/drawTypes/eliminationTree';
 import { validDrawPositions } from '@Validators/validDrawPositions';
-import { setStageDrawSize } from '@Mutate/drawDefinitions/entryGovernor/stageEntryCounts';
 import { DrawDefinition } from '@Types/tournamentTypes';
 import { structureSort } from '@Functions/sorters/structureSort';
 import { newDrawDefinition } from '@Assemblies/generators/drawDefinitions/newDrawDefinition';
@@ -24,9 +23,8 @@ import {
 
 it('can generate main draw', () => {
   const drawDefinition = newDrawDefinition();
-  setStageDrawSize({ drawDefinition, stage: MAIN, drawSize: 16 });
 
-  const structure = generateDrawTypeAndModifyDrawDefinition({ drawDefinition })?.structures?.[0];
+  const structure = generateDrawTypeAndModifyDrawDefinition({ drawDefinition, drawSize: 16 })?.structures?.[0];
   const matchUps = structure?.matchUps ?? [];
   const matchUpsCount = matchUps?.length;
   expect(matchUpsCount).toEqual(15);
@@ -60,8 +58,7 @@ it('can generate main draw', () => {
 
 it('generates main draw with expected finishing drawPositions', () => {
   const drawDefinition = newDrawDefinition();
-  setStageDrawSize({ drawDefinition, stage: MAIN, drawSize: 16 });
-  const structure = generateDrawTypeAndModifyDrawDefinition({ drawDefinition })?.structures?.[0];
+  const structure = generateDrawTypeAndModifyDrawDefinition({ drawDefinition, drawSize: 16 })?.structures?.[0];
   const matchUps = structure?.matchUps ?? [];
   const matchesCount = matchUps?.length;
   expect(matchesCount).toEqual(15);
@@ -99,24 +96,22 @@ it('can generate qualifying draw based on desired qualifyingPositions', () => {
 
 it('can generate first matchUp loser consolation', () => {
   const drawDefinition: DrawDefinition = newDrawDefinition();
-  setStageDrawSize({ drawDefinition, stage: MAIN, drawSize: 16 });
   const result = generateDrawTypeAndModifyDrawDefinition({
     drawType: FIRST_MATCH_LOSER_CONSOLATION,
     drawDefinition,
-    drawSize: 32,
+    drawSize: 16,
   });
   expect(result).not.toHaveProperty(ERROR);
   expect(drawDefinition.links?.length).toEqual(2);
   expect(drawDefinition.structures?.length).toEqual(2);
   const mainDraw = drawDefinition.structures?.[0];
   const consolationDraw = drawDefinition.structures?.[1];
-  expect(mainDraw?.matchUps?.length).toEqual(31);
-  expect(consolationDraw?.matchUps?.length).toEqual(23);
+  expect(mainDraw?.matchUps?.length).toEqual(15);
+  expect(consolationDraw?.matchUps?.length).toEqual(11);
 });
 
 it('can generate a Curtis Consolation draw', () => {
   const drawDefinition: DrawDefinition = newDrawDefinition();
-  setStageDrawSize({ drawDefinition, stage: MAIN, drawSize: 64 });
   const result = generateDrawTypeAndModifyDrawDefinition({
     drawType: CURTIS,
     drawDefinition,
@@ -179,8 +174,8 @@ it('reasonably handles Curtis Consolation draw sizes less than 64', () => {
 
   drawSizes.forEach((_, i) => {
     const drawDefinition: DrawDefinition = newDrawDefinition();
-    setStageDrawSize({ drawDefinition, stage: MAIN, drawSize: drawSizes[i] });
     generateDrawTypeAndModifyDrawDefinition({
+      drawSize: drawSizes[i],
       drawType: CURTIS,
       drawDefinition,
     });
@@ -191,11 +186,11 @@ it('reasonably handles Curtis Consolation draw sizes less than 64', () => {
 
 it('does not generate multi-structure draws with fewer than 4 participants', () => {
   const drawDefinition: DrawDefinition = newDrawDefinition();
-  setStageDrawSize({ drawDefinition, stage: MAIN, drawSize: 2 });
   generateDrawTypeAndModifyDrawDefinition({
     drawTypeCoercion: false,
     drawType: CURTIS,
     drawDefinition,
+    drawSize: 2,
   });
   expect(drawDefinition.structures?.length).toEqual(0);
   expect(drawDefinition.links?.length).toEqual(0);
@@ -204,6 +199,7 @@ it('does not generate multi-structure draws with fewer than 4 participants', () 
     drawTypeCoercion: false,
     drawType: COMPASS,
     drawDefinition,
+    drawSize: 2,
   });
   expect(drawDefinition.structures?.length).toEqual(0);
   expect(drawDefinition.links?.length).toEqual(0);
@@ -211,6 +207,7 @@ it('does not generate multi-structure draws with fewer than 4 participants', () 
   generateDrawTypeAndModifyDrawDefinition({
     drawType: SINGLE_ELIMINATION,
     drawDefinition,
+    drawSize: 2,
   });
   expect(drawDefinition.structures?.length).toEqual(1);
   expect(drawDefinition.links?.length).toEqual(0);
@@ -218,23 +215,25 @@ it('does not generate multi-structure draws with fewer than 4 participants', () 
 
 it('can coerce multi-structure draws to SINGLE_ELIMINATION for drawSize: 2', () => {
   const drawDefinition: DrawDefinition = newDrawDefinition();
-  setStageDrawSize({ drawDefinition, stage: MAIN, drawSize: 2 });
   generateDrawTypeAndModifyDrawDefinition({
     drawTypeCoercion: true,
     drawType: CURTIS,
     drawDefinition,
+    drawSize: 2,
   });
   expect(drawDefinition.structures?.length).toEqual(1);
 
   generateDrawTypeAndModifyDrawDefinition({
     drawType: COMPASS,
     drawDefinition,
+    drawSize: 2,
   });
   expect(drawDefinition.structures?.length).toEqual(1);
 
   generateDrawTypeAndModifyDrawDefinition({
     drawType: FIRST_MATCH_LOSER_CONSOLATION,
     drawDefinition,
+    drawSize: 2,
   });
   expect(drawDefinition.structures?.length).toEqual(1);
 });

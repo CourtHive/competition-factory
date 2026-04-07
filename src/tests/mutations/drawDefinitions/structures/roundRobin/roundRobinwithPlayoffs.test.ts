@@ -2,7 +2,6 @@ import { generateDrawTypeAndModifyDrawDefinition } from '@Assemblies/generators/
 import { allPlayoffPositionsFilled, isCompletedStructure } from '@Query/drawDefinition/structureActions';
 import { tallyParticipantResults } from '@Query/matchUps/roundRobinTally/tallyParticipantResults';
 import { newDrawDefinition } from '@Assemblies/generators/drawDefinitions/newDrawDefinition';
-import { setStageDrawSize } from '@Mutate/drawDefinitions/entryGovernor/stageEntryCounts';
 import { getAllStructureMatchUps } from '@Query/matchUps/getAllStructureMatchUps';
 import { generateMatchUpOutcome } from '@Tests/helpers/generateMatchUpOutcome';
 import { chunkArray, intersection } from '@Tools/arrays';
@@ -34,7 +33,6 @@ const goldFlight = 'Gold Flight';
 it('can generate Round Robins 32 with playoffs', () => {
   const drawDefinition: DrawDefinition = newDrawDefinition();
   const drawSize = 32;
-  setStageDrawSize({ drawDefinition, stage: MAIN, drawSize });
   const drawType = ROUND_ROBIN_WITH_PLAYOFF;
   const structureOptions = {
     playoffGroups: [
@@ -45,6 +43,7 @@ it('can generate Round Robins 32 with playoffs', () => {
   const result = generateDrawTypeAndModifyDrawDefinition({
     structureOptions,
     drawDefinition,
+    drawSize,
     drawType,
   });
   const { structures: playoffStructures, links } = result;
@@ -75,7 +74,6 @@ it('can generate Round Robins 32 with playoffs', () => {
 
 it('can generate Round Robins 16 with playoffs', () => {
   const drawDefinition: DrawDefinition = newDrawDefinition();
-  setStageDrawSize({ drawDefinition, stage: MAIN, drawSize: 16 });
   const drawType = ROUND_ROBIN_WITH_PLAYOFF;
   const structureOptions = {
     playoffGroups: [
@@ -86,6 +84,7 @@ it('can generate Round Robins 16 with playoffs', () => {
   const result = generateDrawTypeAndModifyDrawDefinition({
     structureOptions,
     drawDefinition,
+    drawSize: 16,
     drawType,
   });
 

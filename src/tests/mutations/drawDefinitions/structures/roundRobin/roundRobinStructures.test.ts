@@ -1,5 +1,4 @@
 import { generateDrawTypeAndModifyDrawDefinition } from '@Assemblies/generators/drawDefinitions/generateDrawTypeAndModifyDrawDefinition';
-import { setStageDrawSize } from '@Mutate/drawDefinitions/entryGovernor/stageEntryCounts';
 import { newDrawDefinition } from '@Assemblies/generators/drawDefinitions/newDrawDefinition';
 import { expect, it } from 'vitest';
 
@@ -8,10 +7,10 @@ import { ITEM, CONTAINER, WIN_RATIO, ROUND_ROBIN } from '@Constants/drawDefiniti
 
 it('can generate Round Robin Main Draws', () => {
   let drawDefinition: DrawDefinition = newDrawDefinition();
-  setStageDrawSize({ drawDefinition, stage: 'MAIN', drawSize: 16 });
   const drawType = ROUND_ROBIN;
   let structure = generateDrawTypeAndModifyDrawDefinition({
     drawDefinition,
+    drawSize: 16,
     drawType,
   }).structures?.[0];
   expect(structure?.structureType).toEqual(CONTAINER);
@@ -21,9 +20,9 @@ it('can generate Round Robin Main Draws', () => {
   expect(structure?.structures?.[0].matchUps?.length).toEqual(6);
 
   drawDefinition = newDrawDefinition();
-  setStageDrawSize({ drawDefinition, stage: 'MAIN', drawSize: 32 });
   structure = generateDrawTypeAndModifyDrawDefinition({
     drawDefinition,
+    drawSize: 32,
     drawType,
   }).structures?.[0];
   expect(structure?.structures?.length).toEqual(8);
@@ -31,23 +30,23 @@ it('can generate Round Robin Main Draws', () => {
 
 it('can generate Round Robins with varying group sizes', () => {
   let drawDefinition: DrawDefinition = newDrawDefinition();
-  setStageDrawSize({ drawDefinition, stage: 'MAIN', drawSize: 30 });
   let structureOptions = { groupSize: 5 };
   let structure = generateDrawTypeAndModifyDrawDefinition({
     drawType: ROUND_ROBIN,
     structureOptions,
     drawDefinition,
+    drawSize: 30,
   }).structures?.[0];
   expect(structure?.structures?.length).toEqual(6);
   expect(structure?.structures?.[0].matchUps?.length).toEqual(10);
 
   drawDefinition = newDrawDefinition();
-  setStageDrawSize({ drawDefinition, stage: 'MAIN', drawSize: 30 });
   structureOptions = { groupSize: 3 };
   structure = generateDrawTypeAndModifyDrawDefinition({
     drawType: ROUND_ROBIN,
     structureOptions,
     drawDefinition,
+    drawSize: 30,
   }).structures?.[0];
   expect(structure?.structures?.length).toEqual(10);
   expect(structure?.structures?.[0].matchUps?.length).toEqual(3);

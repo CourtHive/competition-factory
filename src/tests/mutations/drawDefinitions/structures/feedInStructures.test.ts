@@ -1,6 +1,5 @@
 import { generateDrawTypeAndModifyDrawDefinition } from '@Assemblies/generators/drawDefinitions/generateDrawTypeAndModifyDrawDefinition';
 import { newDrawDefinition } from '@Assemblies/generators/drawDefinitions/newDrawDefinition';
-import { setStageDrawSize } from '@Mutate/drawDefinitions/entryGovernor/stageEntryCounts';
 import { feedInMatchUps } from '@Assemblies/generators/drawDefinitions/feedInMatchUps';
 import { getRoundMatchUps } from '@Query/matchUps/getRoundMatchUps';
 import { getDrawData } from '@Query/drawDefinition/getDrawData';
@@ -22,10 +21,10 @@ import {
 
 it('can generate structured entry draw', () => {
   const drawDefinition: DrawDefinition = newDrawDefinition();
-  setStageDrawSize({ drawDefinition, stage: 'MAIN', drawSize: 31 });
   const structure = generateDrawTypeAndModifyDrawDefinition({
     drawDefinition,
     drawType: FEED_IN,
+    drawSize: 31,
   })?.structures?.[0];
   const matchUps = structure?.matchUps ?? [];
   const matchUpsCount = matchUps.length;
@@ -71,10 +70,10 @@ it('can generate structured entry draw', () => {
 
 it('generates structured entry draw with expected finishing drawPositions', () => {
   const drawDefinition: DrawDefinition = newDrawDefinition();
-  setStageDrawSize({ drawDefinition, stage: 'MAIN', drawSize: 31 });
   const structure = generateDrawTypeAndModifyDrawDefinition({
     drawDefinition,
     drawType: FEED_IN,
+    drawSize: 31,
   })?.structures?.[0];
   const matchUps = structure?.matchUps ?? [];
   const matchUpsCount = matchUps.length;

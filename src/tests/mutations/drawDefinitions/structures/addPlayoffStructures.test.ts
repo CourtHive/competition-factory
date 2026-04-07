@@ -1,6 +1,5 @@
 import { generateDrawTypeAndModifyDrawDefinition } from '@Assemblies/generators/drawDefinitions/generateDrawTypeAndModifyDrawDefinition';
 import { newDrawDefinition } from '@Assemblies/generators/drawDefinitions/newDrawDefinition';
-import { setStageDrawSize } from '@Mutate/drawDefinitions/entryGovernor/stageEntryCounts';
 import { addPlayoffStructures } from '@Mutate/drawDefinitions/addPlayoffStructures';
 import { expect, it } from 'vitest';
 
@@ -92,9 +91,9 @@ function drawEngineAddStructuresTest(params) {
   const { playoffPositions, roundNumbers, drawSize, drawType } = params;
 
   const drawDefinition: DrawDefinition = newDrawDefinition();
-  setStageDrawSize({ drawDefinition, stage: MAIN, drawSize });
   let result = generateDrawTypeAndModifyDrawDefinition({
     drawDefinition,
+    drawSize,
     drawType,
   });
   expect(result.success).toEqual(true);

@@ -1,7 +1,6 @@
 import { generateDrawTypeAndModifyDrawDefinition } from '@Assemblies/generators/drawDefinitions/generateDrawTypeAndModifyDrawDefinition';
 import { setMatchUpMatchUpFormat } from '@Mutate/matchUps/matchUpFormat/setMatchUpMatchUpFormat';
 import { newDrawDefinition } from '@Assemblies/generators/drawDefinitions/newDrawDefinition';
-import { setStageDrawSize } from '@Mutate/drawDefinitions/entryGovernor/stageEntryCounts';
 import { getAllStructureMatchUps } from '@Query/matchUps/getAllStructureMatchUps';
 import { getStructureMatchUps } from '@Query/structure/getStructureMatchUps';
 import { getDrawMatchUps } from '@Query/matchUps/drawMatchUps';
@@ -31,10 +30,10 @@ const FORMAT_TIMED_10_1 = 'SET1-S:T10';
 
 it('can return matchUps from an SINGLE_ELIMINATION structure', () => {
   const drawDefinition: DrawDefinition = newDrawDefinition();
-  setStageDrawSize({ drawDefinition, stage: MAIN, drawSize: 16 });
   const structure = generateDrawTypeAndModifyDrawDefinition({
     drawType: SINGLE_ELIMINATION,
     drawDefinition,
+    drawSize: 16,
   })?.structures?.[0];
   const { matchUps } = getAllStructureMatchUps({ structure, inContext: true });
   expect(matchUps.length).toEqual(15);
@@ -52,10 +51,10 @@ it('can return matchUps from an SINGLE_ELIMINATION structure', () => {
 
 it('matchUps returned with context cannot modify original', () => {
   const drawDefinition: DrawDefinition = newDrawDefinition();
-  setStageDrawSize({ drawDefinition, stage: MAIN, drawSize: 16 });
   generateDrawTypeAndModifyDrawDefinition({
     drawType: SINGLE_ELIMINATION,
     drawDefinition,
+    drawSize: 16,
   });
   const { drawId } = drawDefinition;
   const {
@@ -104,9 +103,9 @@ it('matchUps returned with context cannot modify original', () => {
 it('can return matchUps from a ROUND_ROBIN structure', () => {
   const drawType = ROUND_ROBIN;
   const drawDefinition: DrawDefinition = newDrawDefinition();
-  setStageDrawSize({ drawDefinition, stage: MAIN, drawSize: 16 });
   const structure = generateDrawTypeAndModifyDrawDefinition({
     drawDefinition,
+    drawSize: 16,
     drawType,
   }).structures?.[0];
   const { matchUps } = getAllStructureMatchUps({ structure });
@@ -136,10 +135,10 @@ it('can return matchUps from a ROUND_ROBIN structure', () => {
 
 it('can set matchUpFormat', () => {
   const drawDefinition: DrawDefinition = newDrawDefinition();
-  setStageDrawSize({ drawDefinition, stage: MAIN, drawSize: 16 });
   const structure = generateDrawTypeAndModifyDrawDefinition({
     drawType: SINGLE_ELIMINATION,
     drawDefinition,
+    drawSize: 16,
   })?.structures?.[0];
   const { matchUps } = getAllStructureMatchUps({ structure });
   expect(matchUps.length).toEqual(15);

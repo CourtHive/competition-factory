@@ -1,6 +1,5 @@
 import { generateDrawTypeAndModifyDrawDefinition } from '@Assemblies/generators/drawDefinitions/generateDrawTypeAndModifyDrawDefinition';
 import { newDrawDefinition } from '@Assemblies/generators/drawDefinitions/newDrawDefinition';
-import { setStageDrawSize } from '@Mutate/drawDefinitions/entryGovernor/stageEntryCounts';
 import { feedInChampionship } from '../../mutations/drawDefinitions/primitives/feedIn';
 import { findStructure, getDrawStructures } from '@Acquire/findStructure';
 import { constantToString } from '@Tools/strings';
@@ -12,10 +11,10 @@ import { ERROR } from '@Constants/resultConstants';
 
 it('can find structures by structureId', () => {
   const drawDefinition: DrawDefinition = newDrawDefinition();
-  setStageDrawSize({ drawDefinition, stage: MAIN, drawSize: 32 });
   generateDrawTypeAndModifyDrawDefinition({
     drawDefinition,
     drawType: COMPASS,
+    drawSize: 32,
   });
   const { structures } = getDrawStructures({ drawDefinition, stage: MAIN });
   const structureIdMap = Object.assign(
@@ -32,10 +31,10 @@ it('can find structures by structureId', () => {
 
 it('can find structures by stage and stageSequence', () => {
   const drawDefinition: DrawDefinition = newDrawDefinition();
-  setStageDrawSize({ drawDefinition, stage: MAIN, drawSize: 32 });
   generateDrawTypeAndModifyDrawDefinition({
     drawType: COMPASS,
     drawDefinition,
+    drawSize: 32,
   });
 
   const { structures: stage2Structures } = getDrawStructures({

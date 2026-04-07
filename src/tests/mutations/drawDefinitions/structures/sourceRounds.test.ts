@@ -1,5 +1,4 @@
 import { generateDrawTypeAndModifyDrawDefinition } from '@Assemblies/generators/drawDefinitions/generateDrawTypeAndModifyDrawDefinition';
-import { setStageDrawSize } from '@Mutate/drawDefinitions/entryGovernor/stageEntryCounts';
 import { newDrawDefinition } from '@Assemblies/generators/drawDefinitions/newDrawDefinition';
 import { getSourceRounds } from '@Query/drawDefinition/getSourceRounds';
 import { it, expect } from 'vitest';
@@ -9,8 +8,7 @@ import { DrawDefinition } from '@Types/tournamentTypes';
 
 it('can correctly derive source rounds for final positions in SINGLE_ELIMINATION', () => {
   const drawDefinition: DrawDefinition = newDrawDefinition();
-  setStageDrawSize({ drawDefinition, stage: 'MAIN', drawSize: 16 });
-  const result = generateDrawTypeAndModifyDrawDefinition({ drawDefinition });
+  const result = generateDrawTypeAndModifyDrawDefinition({ drawDefinition, drawSize: 16 });
   expect(result.success).toEqual(true);
 
   const structureId = result.structures?.[0].structureId ?? '';
@@ -61,10 +59,10 @@ it('can correctly derive source rounds for final positions in SINGLE_ELIMINATION
 
 it('can correctly derive source rounds for final positions in FIRST_MATCH_LOSER_CONSOLATION', () => {
   const drawDefinition: DrawDefinition = newDrawDefinition();
-  setStageDrawSize({ drawDefinition, stage: 'MAIN', drawSize: 16 });
   const result = generateDrawTypeAndModifyDrawDefinition({
     drawDefinition,
     drawType: FIRST_MATCH_LOSER_CONSOLATION,
+    drawSize: 16,
   });
   expect(result.success).toEqual(true);
 

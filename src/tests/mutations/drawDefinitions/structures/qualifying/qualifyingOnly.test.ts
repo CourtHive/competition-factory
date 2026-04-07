@@ -8,7 +8,7 @@ import { expect, it } from 'vitest';
 import { DRAW_ID_EXISTS, INVALID_DRAW_SIZE } from '@Constants/errorConditionConstants';
 import { ADD_MATCHUPS, DELETED_MATCHUP_IDS } from '@Constants/topicConstants';
 import { INDIVIDUAL, PAIR, TEAM } from '@Constants/participantConstants';
-import { ENTRY_PROFILE } from '@Constants/extensionConstants';
+
 import { DOMINANT_DUO } from '@Constants/tieFormatConstants';
 import { TEAM_EVENT } from '@Constants/eventConstants';
 import {
@@ -127,27 +127,11 @@ it('can generate QUALIFYING structures when no MAIN structure is specified', () 
   expect(drawDefinition.structures[1].matchUps.length).toEqual(0);
   expect(result.drawDefinition.structures[1].matchUps.length).toEqual(31);
 
-  const existingEntryProfile = tournamentEngine.findExtension({
-    discover: ['drawDefinition'],
-    name: ENTRY_PROFILE,
-    drawId,
-  }).extension.value;
-
   result = tournamentEngine.generateDrawDefinition({
     drawSize: 32,
     drawId,
   });
   expect(result.success).toEqual(true);
-
-  const newEntryProfile = tournamentEngine.findExtension({
-    element: result.drawDefinition,
-    name: ENTRY_PROFILE,
-  }).extension.value;
-
-  expect(existingEntryProfile[QUALIFYING]).toEqual(newEntryProfile[QUALIFYING]);
-  expect(existingEntryProfile[MAIN]).not.toEqual(newEntryProfile[MAIN]);
-  expect(existingEntryProfile[MAIN].drawSize).toBeUndefined();
-  expect(newEntryProfile[MAIN].drawSize).toEqual(32);
 
   result = tournamentEngine.getEvent({ drawId });
   expect(result.drawDefinition.links.length).toEqual(1);

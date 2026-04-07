@@ -1,7 +1,6 @@
 import { generateDrawTypeAndModifyDrawDefinition } from '@Assemblies/generators/drawDefinitions/generateDrawTypeAndModifyDrawDefinition';
 import { initializeStructureSeedAssignments } from '@Mutate/drawDefinitions/positionGovernor/initializeSeedAssignments';
 import { newDrawDefinition } from '@Assemblies/generators/drawDefinitions/newDrawDefinition';
-import { setStageDrawSize } from '@Mutate/drawDefinitions/entryGovernor/stageEntryCounts';
 import { addDrawEntries } from '@Mutate/drawDefinitions/entryGovernor/addDrawEntries';
 import { automatedPositioning } from '@Mutate/drawDefinitions/automatedPositioning';
 import { assignSeed } from '@Mutate/drawDefinitions/entryGovernor/seedAssignment';
@@ -20,10 +19,10 @@ export function generateFMLC(params) {
   const drawType = FIRST_MATCH_LOSER_CONSOLATION;
 
   const drawDefinition = newDrawDefinition();
-  setStageDrawSize({ drawDefinition, stage: MAIN, drawSize });
   generateDrawTypeAndModifyDrawDefinition({
     policyDefinitions,
     drawDefinition,
+    drawSize,
     drawType,
   });
 

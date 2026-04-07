@@ -48,7 +48,7 @@ it('generates correct finishingPositionRanges for SINGLE_ELIMINATION draws', () 
   expect(result.success).toEqual(true);
 
   const { extensions } = drawDefinition;
-  expect(extensions.length).toEqual(2);
+  expect(extensions.length).toEqual(1);
   const { appliedPolicies } = getAppliedPolicies({ drawDefinition });
   expect(appliedPolicies?.seeding?.policyName).toEqual('ITF SEEDING');
 

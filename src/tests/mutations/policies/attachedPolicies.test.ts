@@ -2,7 +2,7 @@ import mocksEngine from '@Assemblies/engines/mock';
 import tournamentEngine from '@Engines/syncEngine';
 import { expect, it, test } from 'vitest';
 
-import { APPLIED_POLICIES, ENTRY_PROFILE, FLIGHT_PROFILE } from '@Constants/extensionConstants';
+import { APPLIED_POLICIES, FLIGHT_PROFILE } from '@Constants/extensionConstants';
 import { POLICY_TYPE_ROUND_NAMING, POLICY_TYPE_SEEDING } from '@Constants/policyConstants';
 import POLICY_SEEDING_BYES from '@Fixtures/policies/POLICY_SEEDING_BYES';
 import { AD_HOC, WIN_RATIO } from '@Constants/drawDefinitionConstants';
@@ -33,8 +33,7 @@ it('generateDrawDefinition will find seeding policy attached to tournamentRecord
   expect(drawDefinition.structures[0].finishingPosition).toEqual(WIN_RATIO);
 
   // There is no POLICY_TYPE_SEEDING on the drawDefinition because it is attached to the tournamentRecord
-  expect(drawDefinition.extensions.length).toEqual(1);
-  expect(drawDefinition.extensions[0].name).toEqual(ENTRY_PROFILE);
+  expect(drawDefinition.extensions?.length ?? 0).toEqual(0);
 });
 
 it('generateDrawDefinition will find seeding policy attached to event', () => {
@@ -69,9 +68,8 @@ it('generateDrawDefinition will find seeding policy attached to event', () => {
   const appliedPolicies = event.extensions.find(({ name }) => name === APPLIED_POLICIES);
   expect(Object.keys(appliedPolicies.value).length).toEqual(2);
 
-  // There is no POLICY_TYPE_SEEDING on the drawDefinition appliedPolicies because it is attached to the tournamentRecord
-  expect(drawDefinition.extensions.length).toEqual(1);
-  expect(drawDefinition.extensions[0].name).toEqual(ENTRY_PROFILE);
+  // There is no POLICY_TYPE_SEEDING on the drawDefinition appliedPolicies because it is attached to the event
+  expect(drawDefinition.extensions?.length ?? 0).toEqual(0);
 });
 
 it('policyDefinitions can be passed directly into generateDrawDefintion from drawProfiles', () => {
@@ -93,8 +91,8 @@ it('policyDefinitions can be passed directly into generateDrawDefintion from dra
   const { drawDefinition } = tournamentEngine.getEvent({ drawId });
 
   // There is no POLICY_TYPE_SEEDING on the drawDefinition attachedPolicies because it is attached to the tournamentRecord
-  expect(drawDefinition.extensions.length).toEqual(2);
-  expect(drawDefinition.extensions.map(({ name }) => name).sort()).toEqual([APPLIED_POLICIES, ENTRY_PROFILE]);
+  expect(drawDefinition.extensions.length).toEqual(1);
+  expect(drawDefinition.extensions.map(({ name }) => name).sort()).toEqual([APPLIED_POLICIES]);
 
   const appliedPolicies = drawDefinition.extensions.find(({ name }) => name === APPLIED_POLICIES);
   expect(Object.keys(appliedPolicies.value).length).toEqual(2);
@@ -128,5 +126,5 @@ test('seeding policies attached to tournamentRecords will be used when generatin
   });
 
   // there are no 'appliedPolicies' because seeding was found on the policies attached to the tournament
-  expect(drawDefinition.extensions.map(({ name }) => name)).toEqual(['entryProfile']);
+  expect(drawDefinition.extensions?.length ?? 0).toEqual(0);
 });
