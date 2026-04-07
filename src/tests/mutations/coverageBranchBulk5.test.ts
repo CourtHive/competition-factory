@@ -15,25 +15,17 @@ import tournamentEngine from '@Engines/syncEngine';
 import mocksEngine from '@Assemblies/engines/mock';
 import { expect, it, describe } from 'vitest';
 import {
-  setStageDrawSize,
-  setStageAlternatesCount,
-  setStageWildcardsCount,
-  setStageQualifiersCount,
-} from '@Mutate/drawDefinitions/entryGovernor/stageEntryCounts';
-import {
   structureActions,
   isCompletedStructure,
   allPlayoffPositionsFilled,
 } from '@Query/drawDefinition/structureActions';
 
 // constants
-import { MAIN, QUALIFYING, CONSOLATION } from '@Constants/drawDefinitionConstants';
+import { MAIN, CONSOLATION } from '@Constants/drawDefinitionConstants';
 import { FORMAT_STANDARD } from '@Fixtures/scoring/matchUpFormats';
 import { INDIVIDUAL, PAIR } from '@Constants/participantConstants';
 import { MATCHUP, STRUCTURE } from '@Constants/attributeConstants';
-import { ALTERNATE } from '@Constants/entryStatusConstants';
 import {
-  DRAW_SIZE_MISMATCH,
   INVALID_MATCHUP,
   INVALID_STAGE,
   INVALID_TOURNAMENT_RECORD,
@@ -46,59 +38,6 @@ import {
   NOT_FOUND,
 } from '@Constants/errorConditionConstants';
 
-// ----------------------------------------------------------------
-// 1. stageEntryCounts — uncovered branches
-// ----------------------------------------------------------------
-describe('stageEntryCounts branch coverage', () => {
-  it('setStageDrawSize returns error when drawDefinition is missing', () => {
-    const result = setStageDrawSize({ drawDefinition: undefined, drawSize: 8, stage: MAIN });
-    expect(result.error).toEqual(MISSING_DRAW_DEFINITION);
-  });
-
-  it('setStageDrawSize returns INVALID_STAGE for non-existent stage', () => {
-    const { drawIds, tournamentRecord } = mocksEngine.generateTournamentRecord({
-      drawProfiles: [{ drawSize: 8 }],
-    });
-    const { drawDefinition } = tournamentEngine.setState(tournamentRecord).getEvent({ drawId: drawIds[0] });
-    const result = setStageDrawSize({ drawDefinition, drawSize: 8, stage: 'BOGUS_STAGE' });
-    expect(result.error).toEqual(INVALID_STAGE);
-  });
-
-  it('setStageAlternatesCount returns error when drawDefinition is missing', () => {
-    const result = setStageAlternatesCount({ drawDefinition: undefined, alternatesCount: 2, stage: MAIN });
-    expect(result.error).toEqual(MISSING_DRAW_DEFINITION);
-  });
-
-  it('setStageAlternatesCount filters out ALTERNATE entries when alternatesCount is falsy', () => {
-    const { drawIds, tournamentRecord } = mocksEngine.generateTournamentRecord({
-      drawProfiles: [{ drawSize: 4, alternatesCount: 2 }],
-    });
-    const { drawDefinition } = tournamentEngine.setState(tournamentRecord).getEvent({ drawId: drawIds[0] });
-    const result: any = setStageAlternatesCount({ drawDefinition, alternatesCount: 0, stage: MAIN });
-    expect(result.success).toBe(true);
-    const alternateEntries = drawDefinition.entries?.filter((e) => e.entryStatus === ALTERNATE);
-    expect(alternateEntries?.length).toBe(0);
-  });
-
-  it('setStageWildcardsCount returns error when drawDefinition is missing', () => {
-    // @ts-expect-error missing drawDefinition
-    const result = setStageWildcardsCount({ drawDefinition: undefined, wildcardsCount: 2, stage: MAIN });
-    expect(result.error).toEqual(MISSING_DRAW_DEFINITION);
-  });
-
-  it('setStageQualifiersCount returns error for non-MAIN stage', () => {
-    const { drawIds, tournamentRecord } = mocksEngine.generateTournamentRecord({
-      drawProfiles: [{ drawSize: 8 }],
-    });
-    const { drawDefinition } = tournamentEngine.setState(tournamentRecord).getEvent({ drawId: drawIds[0] });
-    // Manually ensure QUALIFYING stage exists in entryProfile
-    if (!drawDefinition.entryProfile) drawDefinition.entryProfile = {};
-    drawDefinition.entryProfile[QUALIFYING] = { drawSize: 4 };
-    const result = setStageQualifiersCount({ drawDefinition, qualifiersCount: 2, stage: QUALIFYING });
-    expect(result.error).toEqual(DRAW_SIZE_MISMATCH);
-    expect(result.info).toBeDefined();
-  });
-});
 
 // ----------------------------------------------------------------
 // 2. structureActions — uncovered branches

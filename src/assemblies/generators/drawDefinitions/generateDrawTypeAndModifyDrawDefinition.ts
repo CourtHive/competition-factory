@@ -1,4 +1,3 @@
-import { setStageDrawSize, setStageQualifiersCount } from '@Mutate/drawDefinitions/entryGovernor/stageEntryCounts';
 import { getStageDrawPositionsCount } from '@Query/drawDefinition/getStageDrawPositions';
 import { resolveTieFormat } from '@Query/hierarchical/tieFormats/resolveTieFormat';
 import { generateDrawStructuresAndLinks } from './generateDrawStructuresAndLinks';
@@ -17,7 +16,7 @@ import { makeDeepCopy } from '@Tools/makeDeepCopy';
 // constants and types
 import { PolicyDefinitions, MatchUpsMap, ResultType } from '@Types/factoryTypes';
 import { MISSING_DRAW_DEFINITION } from '@Constants/errorConditionConstants';
-import { MAIN, QUALIFYING } from '@Constants/drawDefinitionConstants';
+import { MAIN } from '@Constants/drawDefinitionConstants';
 import { SUCCESS } from '@Constants/resultConstants';
 import { HydratedMatchUp } from '@Types/hydrated';
 import { SINGLES } from '@Constants/matchUpTypes';
@@ -63,7 +62,7 @@ export function generateDrawTypeAndModifyDrawDefinition(params: GenerateDrawType
   links?: DrawLink[];
   success?: boolean;
 } {
-  const { modifyOriginal = true, stageSequence = 1, isMock } = params ?? {};
+  const { modifyOriginal = true, isMock } = params ?? {};
 
   const stack = 'generateDrawTypeAndModifyDrawDefinition';
 
@@ -92,14 +91,7 @@ export function generateDrawTypeAndModifyDrawDefinition(params: GenerateDrawType
   });
   params.drawSize = params.drawSize ?? mainStageDrawPositionsCount;
 
-  if (!mainStageDrawPositionsCount && params.drawSize) {
-    setStageDrawSize({
-      drawSize: params.drawSize,
-      drawDefinition,
-      stageSequence,
-      stage: MAIN,
-    });
-  }
+  // drawSize is now derived from generated structures, not entryProfile
 
   const existingMatchUpIds = new Set(
     getMatchUpsMap({
@@ -112,36 +104,9 @@ export function generateDrawTypeAndModifyDrawDefinition(params: GenerateDrawType
     return decorateResult({ result, stack });
   }
 
-  const { structures, links, qualifyingResult } = result;
+  const { structures, links } = result;
   drawDefinition.structures = structures;
   drawDefinition.links = links;
-
-  const qualifiersCount = Math.max(params.qualifiersCount ?? 0, qualifyingResult?.qualifiersCount || 0);
-
-  if (qualifyingResult?.qualifyingDrawPositionsCount) {
-    const qualifyingStageDrawPositionsCount = getStageDrawPositionsCount({
-      stage: QUALIFYING,
-      drawDefinition,
-    });
-
-    if (!qualifyingStageDrawPositionsCount) {
-      const result = setStageDrawSize({
-        drawSize: qualifyingResult.qualifyingDrawPositionsCount,
-        stage: QUALIFYING,
-        drawDefinition,
-      });
-      if (result.error) return result;
-    }
-  }
-
-  if (qualifiersCount) {
-    const result = setStageQualifiersCount({
-      qualifiersCount,
-      drawDefinition,
-      stage: MAIN,
-    });
-    if (result.error) return result;
-  }
 
   const drawSize = params.drawSize ?? mainStageDrawPositionsCount;
 

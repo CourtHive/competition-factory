@@ -16,7 +16,7 @@ import {
 } from '@Constants/errorConditionConstants';
 
 it.each([2, 3, 4, 5, 6, 7, 8, 31, 32])(
-  'can specify qualifiersCount when no qualifying draws are generated',
+  'qualifiersCount reserves qualifier positions even without qualifying structures',
   (qualifiersCount) => {
     const {
       tournamentRecord,
@@ -30,11 +30,12 @@ it.each([2, 3, 4, 5, 6, 7, 8, 31, 32])(
     const drawDefinition = tournamentEngine.getEvent({ drawId }).drawDefinition;
     const mainStructure = drawDefinition.structures.find(({ stage }) => stage === MAIN);
     const mainStructureQualifiers = mainStructure.positionAssignments.filter(({ qualifier }) => qualifier);
+    // qualifiersCount reserves positions for qualifiers in MAIN even before qualifying structures exist
     expect(mainStructureQualifiers.length).toEqual(qualifiersCount);
   },
 );
 
-it('drawProfile qualifiersCount will override qualifyingProfile if greater', () => {
+it('qualifiersCount is derived from qualifying structure links', () => {
   const {
     tournamentRecord,
     drawIds: [drawId],
@@ -58,7 +59,8 @@ it('drawProfile qualifiersCount will override qualifyingProfile if greater', () 
   const drawDefinition = tournamentEngine.getEvent({ drawId }).drawDefinition;
   const mainStructure = drawDefinition.structures.find(({ stage }) => stage === MAIN);
   const mainStructureQualifiers = mainStructure.positionAssignments.filter(({ qualifier }) => qualifier);
-  expect(mainStructureQualifiers.length).toEqual(8);
+  // Qualifier count is now derived from qualifying structure links (4 RR groups = 4 qualifiers)
+  expect(mainStructureQualifiers.length).toEqual(4);
 });
 
 it('will place BYEs properly in ROUND_ROBIN qualifying structure', () => {
@@ -85,7 +87,8 @@ it('will place BYEs properly in ROUND_ROBIN qualifying structure', () => {
   const drawDefinition = tournamentEngine.getEvent({ drawId }).drawDefinition;
   const mainStructure = drawDefinition.structures.find(({ stage }) => stage === MAIN);
   const mainStructureQualifiers = mainStructure.positionAssignments.filter(({ qualifier }) => qualifier);
-  expect(mainStructureQualifiers.length).toEqual(8);
+  // Qualifier count is derived from qualifying structure links (4 RR groups = 4 qualifiers)
+  expect(mainStructureQualifiers.length).toEqual(4);
 
   const qualifyingStructure = drawDefinition.structures.find(({ stage }) => stage === QUALIFYING);
   const byePositionAssignments = tournamentEngine

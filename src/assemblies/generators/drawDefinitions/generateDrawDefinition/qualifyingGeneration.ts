@@ -54,10 +54,12 @@ export function qualifyingGeneration(params): ResultType & { qualifyingConflicts
       qualifyingOnly,
       tieFormat,
     });
+    const qualifyingPositions = params.qualifiersCount;
     const { link } = generateQualifyingLink({
       sourceStructureId: qualifyingStructure.structureId,
       targetStructureId: structureId,
       sourceRoundNumber: 0,
+      qualifyingPositions,
       linkType: POSITION,
     });
     drawDefinition.structures ??= [];

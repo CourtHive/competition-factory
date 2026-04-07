@@ -1,33 +1,29 @@
-import { modifyEntryProfile } from '@Mutate/drawDefinitions/entryGovernor/modifyEntryProfile';
+// Query
+import { getDrawCompositionConstraints } from './getDrawCompositionConstraints';
 import { getBestFinishers } from '@Query/drawDefinition/getBestFinishers';
+
+// Acquire
 import { findExtension } from '@Acquire/findExtension';
 import { findStructure } from '@Acquire/findStructure';
-import { getEntryProfile } from './getEntryProfile';
+
+// Helpers
 import { numericSort } from '@Tools/sorting';
 
-// constants and types
+// Constants
 import { ALTERNATE, FEED_IN, WILDCARD, DIRECT_ENTRY_STATUSES } from '@Constants/entryStatusConstants';
 import { POSITION, CONTAINER, PLAY_OFF, validStages } from '@Constants/drawDefinitionConstants';
-import { DrawDefinition, DrawLink, EntryStatusUnion } from '@Types/tournamentTypes';
 import { ROUND_TARGET, TALLY } from '@Constants/extensionConstants';
-import { ErrorType } from '@Constants/errorConditionConstants';
+
+// Types
+import type { DrawDefinition, DrawLink, EntryStatusUnion } from '@Types/tournamentTypes';
+import type { ErrorType } from '@Constants/errorConditionConstants';
 
 export function stageExists({ stage, drawDefinition }) {
-  const { entryProfile } = getEntryProfile({ drawDefinition });
-  const exists = Object.keys(entryProfile).includes(stage);
-  if (!exists && validStages.includes(stage)) {
-    const attributes = [
-      {
-        [stage]: {
-          drawSize: undefined,
-          alternates: true,
-        },
-      },
-    ];
-    modifyEntryProfile({ drawDefinition, attributes });
-    return true;
-  }
-  return exists;
+  if (!validStages.includes(stage)) return false;
+
+  // A stage exists if any structure is assigned to it, or if it's a valid stage name
+  const hasStructure = drawDefinition?.structures?.some((s: any) => s.stage === stage);
+  return hasStructure || validStages.includes(stage);
 }
 
 export function stageStructures({ stage, drawDefinition, stageSequence }) {
@@ -40,13 +36,15 @@ export function stageStructures({ stage, drawDefinition, stageSequence }) {
   );
 }
 
-export function stageAlternatesCount({ stage, drawDefinition }) {
-  const { entryProfile } = getEntryProfile({ drawDefinition });
-  return entryProfile[stage]?.alternates || 0;
+export function stageAlternatesCount({ tournamentRecord }: any) {
+  const { constraints } = getDrawCompositionConstraints({ tournamentRecord });
+  // Unsanctioned: alternates always allowed
+  return constraints?.maxAlternates ?? true;
 }
-export function getStageWildcardsCount({ stage, drawDefinition }) {
-  const { entryProfile } = getEntryProfile({ drawDefinition });
-  return entryProfile[stage]?.wildcardsCount || 0;
+export function getStageWildcardsCount({ tournamentRecord, event }: any) {
+  const { constraints } = getDrawCompositionConstraints({ tournamentRecord, event });
+  // Unsanctioned: no wildcard limit
+  return constraints?.maxWildcards ?? Infinity;
 }
 export function getStageEntryTypeCount({ stage, drawDefinition, entryStatus }) {
   return drawDefinition.entries.reduce(

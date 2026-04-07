@@ -269,6 +269,7 @@ export interface DrawLinkSource {
   isMock?: boolean;
   notes?: string;
   rankBy?: string;
+  qualifyingPositions?: number;
   remainder?: boolean;
   roundNumber?: number;
   structureId: string;

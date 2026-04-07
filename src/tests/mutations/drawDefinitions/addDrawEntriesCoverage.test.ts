@@ -1,5 +1,4 @@
 import { newDrawDefinition } from '@Assemblies/generators/drawDefinitions/newDrawDefinition';
-import { setStageDrawSize } from '@Mutate/drawDefinitions/entryGovernor/stageEntryCounts';
 import { addDrawEntries } from '@Mutate/drawDefinitions/entryGovernor/addDrawEntries';
 import { describe, expect, it } from 'vitest';
 
@@ -10,7 +9,6 @@ import { DrawDefinition } from '@Types/tournamentTypes';
 import {
   INVALID_PARTICIPANT_IDS,
   INVALID_STAGE,
-  PARTICIPANT_COUNT_EXCEEDS_DRAW_SIZE,
   DUPLICATE_ENTRY,
   INVALID_VALUES,
 } from '@Constants/errorConditionConstants';
@@ -18,7 +16,7 @@ import {
 describe('addDrawEntries coverage', () => {
   it('returns error when participantIds is not an array', () => {
     const drawDefinition: DrawDefinition = newDrawDefinition({ drawId: 'test' });
-    setStageDrawSize({ drawDefinition, stage: MAIN, drawSize: 8 });
+
     const result: any = addDrawEntries({
       drawDefinition,
       participantIds: 'notAnArray' as any,
@@ -29,8 +27,8 @@ describe('addDrawEntries coverage', () => {
 
   it('handles VOLUNTARY_CONSOLATION stage duplicate detection', () => {
     const drawDefinition: DrawDefinition = newDrawDefinition({ drawId: 'test' });
-    setStageDrawSize({ drawDefinition, stage: MAIN, drawSize: 8 });
-    setStageDrawSize({ drawDefinition, stage: VOLUNTARY_CONSOLATION, drawSize: 8 });
+
+
 
     // First add to VC stage
     addDrawEntries({
@@ -51,7 +49,7 @@ describe('addDrawEntries coverage', () => {
 
   it('returns error when stage is invalid', () => {
     const drawDefinition: DrawDefinition = newDrawDefinition({ drawId: 'test' });
-    setStageDrawSize({ drawDefinition, stage: MAIN, drawSize: 8 });
+
     const result: any = addDrawEntries({
       drawDefinition,
       participantIds: ['p1'],
@@ -60,20 +58,21 @@ describe('addDrawEntries coverage', () => {
     expect(result.error).toEqual(INVALID_STAGE);
   });
 
-  it('returns error when participant count exceeds draw size', () => {
+  it('succeeds when no structures exist (unconstrained)', () => {
     const drawDefinition: DrawDefinition = newDrawDefinition({ drawId: 'test' });
-    setStageDrawSize({ drawDefinition, stage: MAIN, drawSize: 2 });
+
     const result: any = addDrawEntries({
       drawDefinition,
       participantIds: ['p1', 'p2', 'p3'],
       stage: MAIN,
     });
-    expect(result.error).toEqual(PARTICIPANT_COUNT_EXCEEDS_DRAW_SIZE);
+    // Without structures, draws are unconstrained — no draw size limit to enforce
+    expect(result.success).toEqual(true);
   });
 
   it('adds entries successfully', () => {
     const drawDefinition: DrawDefinition = newDrawDefinition({ drawId: 'test' });
-    setStageDrawSize({ drawDefinition, stage: MAIN, drawSize: 8 });
+
     const result: any = addDrawEntries({
       drawDefinition,
       participantIds: ['p1', 'p2'],
@@ -85,7 +84,7 @@ describe('addDrawEntries coverage', () => {
 
   it('handles duplicate entries with suppressDuplicateEntries=true', () => {
     const drawDefinition: DrawDefinition = newDrawDefinition({ drawId: 'test' });
-    setStageDrawSize({ drawDefinition, stage: MAIN, drawSize: 8 });
+
     addDrawEntries({
       drawDefinition,
       participantIds: ['p1'],
@@ -103,7 +102,7 @@ describe('addDrawEntries coverage', () => {
 
   it('returns DUPLICATE_ENTRY error when suppressDuplicateEntries=false', () => {
     const drawDefinition: DrawDefinition = newDrawDefinition({ drawId: 'test' });
-    setStageDrawSize({ drawDefinition, stage: MAIN, drawSize: 8 });
+
     addDrawEntries({
       drawDefinition,
       participantIds: ['p1'],
@@ -120,7 +119,7 @@ describe('addDrawEntries coverage', () => {
 
   it('handles LUCKY_LOSER duplicate entries correctly', () => {
     const drawDefinition = newDrawDefinition({ drawId: 'test' });
-    setStageDrawSize({ drawDefinition, stage: MAIN, drawSize: 8 });
+
     // Add as direct acceptance first
     addDrawEntries({
       drawDefinition,
@@ -148,7 +147,7 @@ describe('addDrawEntries coverage', () => {
 
   it('adds entries with extensions and roundTarget', () => {
     const drawDefinition: DrawDefinition = newDrawDefinition({ drawId: 'test' });
-    setStageDrawSize({ drawDefinition, stage: MAIN, drawSize: 8 });
+
     const result: any = addDrawEntries({
       drawDefinition,
       participantIds: ['p1'],
@@ -164,7 +163,7 @@ describe('addDrawEntries coverage', () => {
 
   it('returns error for invalid extension', () => {
     const drawDefinition = newDrawDefinition({ drawId: 'test' });
-    setStageDrawSize({ drawDefinition, stage: MAIN, drawSize: 8 });
+
     const result = addDrawEntries({
       drawDefinition,
       participantIds: ['p1'],
@@ -176,7 +175,7 @@ describe('addDrawEntries coverage', () => {
 
   it('skips ignoreStageSpace when true', () => {
     const drawDefinition: DrawDefinition = newDrawDefinition({ drawId: 'test' });
-    setStageDrawSize({ drawDefinition, stage: MAIN, drawSize: 2 });
+
     const result: any = addDrawEntries({
       drawDefinition,
       participantIds: ['p1', 'p2', 'p3'],
@@ -200,7 +199,7 @@ describe('addDrawEntries coverage', () => {
 
   it('handles autoEntryPositions=false', () => {
     const drawDefinition: DrawDefinition = newDrawDefinition({ drawId: 'test' });
-    setStageDrawSize({ drawDefinition, stage: MAIN, drawSize: 8 });
+
     const result: any = addDrawEntries({
       drawDefinition,
       participantIds: ['p1', 'p2'],

@@ -72,13 +72,15 @@ function getInitialData(params, drawDefinition, structureId, event) {
       event,
     })?.appliedPolicies;
 
-  const { qualifiersCount } = getQualifiersCount({
+  const { qualifiersCount: derivedQualifiersCount } = getQualifiersCount({
     stageSequence: structure.stageSequence,
     provisionalPositioning: params.provisionalPositioning,
     stage: structure.stage,
     drawDefinition,
     structureId,
   });
+  // Fall back to explicit qualifiersCount param (e.g., placeholder qualifying)
+  const qualifiersCount = derivedQualifiersCount || params.qualifiersCount || 0;
 
   const entryStatuses = DIRECT_ENTRY_STATUSES;
   const entries = getStageEntries({
@@ -253,6 +255,7 @@ function handleQualifiersAndUnseeded({
   provisionalPositioning,
   unseededByePositions,
   multipleStructures,
+  qualifiersCount,
   structureId,
   drawSize,
   event,
@@ -267,6 +270,7 @@ function handleQualifiersAndUnseeded({
     appliedPolicies,
     validSeedBlocks,
     drawDefinition,
+    qualifiersCount,
     seedBlockInfo,
     participants,
     matchUpsMap,
@@ -449,6 +453,7 @@ export function automatedPositioning(params: AutomatedPositioningArgs): ResultTy
     provisionalPositioning,
     unseededByePositions,
     multipleStructures,
+    qualifiersCount,
     structureId,
     drawSize,
     event,

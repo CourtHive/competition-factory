@@ -1,8 +1,6 @@
-import { setStageDrawSize, setStageQualifiersCount } from '@Mutate/drawDefinitions/entryGovernor/stageEntryCounts';
 import { generateQualifyingStructures } from '@Generators/drawDefinitions/drawTypes/generateQualifyingStructures';
 import { generateQualifyingLink } from '@Generators/drawDefinitions/links/generateQualifyingLink';
 import { addDrawEntry } from '@Mutate/drawDefinitions/entryGovernor/addDrawEntries';
-import { getQualifiersCount } from '@Query/drawDefinition/getQualifiersCount';
 
 // constants and types
 import { MAIN, QUALIFYING } from '@Constants/drawDefinitionConstants';
@@ -50,7 +48,7 @@ export function processExistingDrawDefinition(params): ResultType & {
     ({ source }) => source.structureId !== existingQualifyingPlaceholderStructureId,
   );
 
-  const { qualifiersCount, qualifyingDrawPositionsCount, qualifyingDetails } = qualifyingResult ?? {};
+  const { qualifyingDrawPositionsCount, qualifyingDetails } = qualifyingResult ?? {};
 
   if (qualifyingDrawPositionsCount) {
     if (qualifyingResult?.structures) {
@@ -64,28 +62,7 @@ export function processExistingDrawDefinition(params): ResultType & {
   const mainStructure = drawDefinition.structures?.find(
     ({ stage, stageSequence }) => stage === MAIN && stageSequence === 1,
   );
-  const { qualifiersCount: existingQualifiersCount } = getQualifiersCount({
-    stageSequence: 1,
-    drawDefinition,
-    structureId,
-    stage: MAIN,
-  });
-
-  const derivedQualifiersCount = Math.max(qualifiersCount ?? 0, existingQualifiersCount ?? 0);
-
-  let result = setStageQualifiersCount({
-    qualifiersCount: derivedQualifiersCount,
-    drawDefinition,
-    stage: MAIN,
-  });
-  if (result.error) return result;
-
-  result = setStageDrawSize({
-    drawSize: qualifyingDrawPositionsCount,
-    stage: QUALIFYING,
-    drawDefinition,
-  });
-  if (result.error) return result;
+  // Qualifier counts are derived from structures and links
 
   addEntries({ drawDefinition, drawEntries, event });
   const qResult = processQualifyingDetails({ mainStructure, qualifyingDetails, drawDefinition });
