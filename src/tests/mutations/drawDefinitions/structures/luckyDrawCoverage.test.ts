@@ -256,7 +256,26 @@ describe('isLucky edge cases', () => {
     expect(result).toBe(true);
   });
 
-  test('returns true when positionAssignments have drawPositions and rounds are not power of 2', () => {
+  test('returns true when structure has lucky rounds (odd matchUp count → even)', () => {
+    // 5 matchUps in R1 (odd) → 2 in R2 (even) = lucky round
+    const structure: any = {
+      positionAssignments: [{ drawPosition: 1, participantId: 'pid-1' }],
+      matchUps: [
+        { roundNumber: 1, roundPosition: 1, matchUpId: 'mu-1' },
+        { roundNumber: 1, roundPosition: 2, matchUpId: 'mu-2' },
+        { roundNumber: 1, roundPosition: 3, matchUpId: 'mu-3' },
+        { roundNumber: 1, roundPosition: 4, matchUpId: 'mu-4' },
+        { roundNumber: 1, roundPosition: 5, matchUpId: 'mu-5' },
+        { roundNumber: 2, roundPosition: 1, matchUpId: 'mu-6' },
+        { roundNumber: 2, roundPosition: 2, matchUpId: 'mu-7' },
+      ],
+    };
+    let result: any = isLucky({ structure });
+    expect(result).toBe(true);
+  });
+
+  test('returns false when non-power-of-2 but no lucky rounds (odd → odd)', () => {
+    // 3 matchUps in R1 (odd) → 1 in R2 (odd) = not a lucky round
     const structure: any = {
       positionAssignments: [{ drawPosition: 1, participantId: 'pid-1' }],
       matchUps: [
@@ -267,7 +286,7 @@ describe('isLucky edge cases', () => {
       ],
     };
     let result: any = isLucky({ structure });
-    expect(result).toBe(true);
+    expect(result).toBe(false);
   });
 
   test('returns false when drawDefinition.drawType is LUCKY_DRAW', () => {
@@ -341,21 +360,36 @@ describe('isLucky edge cases', () => {
     expect(result).toBe(false);
   });
 
-  test('roundsNotPowerOf2 override is respected', () => {
-    const structure: any = {
+  test('roundsNotPowerOf2 override is respected only when lucky rounds exist', () => {
+    // Structure with lucky rounds: 3 matchUps in R1 (odd) → 2 in R2 (even)
+    const luckyStructure: any = {
       positionAssignments: [{ drawPosition: 1, participantId: 'pid-1' }],
       matchUps: [
-        { roundNumber: 1, roundPosition: 1 },
-        { roundNumber: 1, roundPosition: 2 },
-        { roundNumber: 1, roundPosition: 3 },
-        { roundNumber: 1, roundPosition: 4 },
+        { roundNumber: 1, roundPosition: 1, matchUpId: 'mu-1' },
+        { roundNumber: 1, roundPosition: 2, matchUpId: 'mu-2' },
+        { roundNumber: 1, roundPosition: 3, matchUpId: 'mu-3' },
+        { roundNumber: 2, roundPosition: 1, matchUpId: 'mu-4' },
+        { roundNumber: 2, roundPosition: 2, matchUpId: 'mu-5' },
       ],
     };
-    let result: any = isLucky({ structure, roundsNotPowerOf2: true });
+    let result: any = isLucky({ structure: luckyStructure, roundsNotPowerOf2: true });
     expect(result).toBe(true);
 
-    result = isLucky({ structure, roundsNotPowerOf2: false });
+    result = isLucky({ structure: luckyStructure, roundsNotPowerOf2: false });
     expect(result).toBe(false);
+
+    // Structure without lucky rounds but roundsNotPowerOf2 override
+    const nonLuckyStructure: any = {
+      positionAssignments: [{ drawPosition: 1, participantId: 'pid-1' }],
+      matchUps: [
+        { roundNumber: 1, roundPosition: 1, matchUpId: 'mu-1' },
+        { roundNumber: 1, roundPosition: 2, matchUpId: 'mu-2' },
+        { roundNumber: 1, roundPosition: 3, matchUpId: 'mu-3' },
+        { roundNumber: 1, roundPosition: 4, matchUpId: 'mu-4' },
+      ],
+    };
+    result = isLucky({ structure: nonLuckyStructure, roundsNotPowerOf2: true });
+    expect(result).toBe(false); // no lucky rounds despite override
   });
 });
 

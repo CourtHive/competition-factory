@@ -11,6 +11,7 @@ export { getAssignedParticipantIds } from '@Query/drawDefinition/getAssignedPart
 export { getStructureSeedAssignments } from '@Query/structure/getStructureSeedAssignments';
 export { publicFindDrawDefinition as findDrawDefinition } from '@Acquire/findDrawDefinition';
 export { getLuckyDrawRoundStatus } from '@Query/drawDefinition/getLuckyDrawRoundStatus';
+export { hasLuckyRounds } from '@Query/drawDefinition/isLucky';
 export { positionActions } from '@Query/drawDefinition/positionActions/positionActions';
 export { getDrawTypeCoercion } from '@Generators/drawDefinitions/getDrawTypeCoercion';
 export { getRandomQualifierList } from '@Query/drawDefinition/getRandomQualifierList';
