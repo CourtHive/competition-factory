@@ -11,6 +11,7 @@ import { ensureInt } from '@Tools/ensureInt';
 
 // constants and types
 import { MAIN, POSITION, QUALIFYING } from '@Constants/drawDefinitionConstants';
+import { WITHDRAWN } from '@Constants/entryStatusConstants';
 import { DrawDefinition } from '@Types/tournamentTypes';
 import { ResultType } from '@Types/factoryTypes';
 
@@ -117,6 +118,8 @@ function addEntries(params) {
   const { ignoreStageSpace, drawDefinition, drawEntries, drawType, entries } = params;
   // add all entries to the draw
   for (const entry of entries) {
+    // safeguard: never add WITHDRAWN entries to draw definition
+    if (entry.entryStatus === WITHDRAWN) continue;
     // if drawEntries and entryStage !== stage ignore
     if (drawEntries && entry.entryStage && entry.entryStage !== MAIN) continue;
 

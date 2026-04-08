@@ -9,7 +9,7 @@ import tournamentEngine from '@Engines/syncEngine';
 import mocksEngine from '@Assemblies/engines/mock';
 import { expect, it, describe } from 'vitest';
 
-import { MAIN, QUALIFYING } from '@Constants/drawDefinitionConstants';
+import { LUCKY_DRAW, MAIN, QUALIFYING } from '@Constants/drawDefinitionConstants';
 import { DIRECT_ACCEPTANCE } from '@Constants/entryStatusConstants';
 import { SINGLES_EVENT } from '@Constants/eventConstants';
 
@@ -310,5 +310,61 @@ describe('qualifying placeholder positioning: TMX two-step flow', () => {
     for (const pid of mainParticipantIds) {
       expect(positionedParticipantIds).toContain(pid);
     }
+  });
+
+  it('positions all participants in lucky draw with qualifyingPlaceholder', () => {
+    const mainEntryCount = 27;
+    const qualifyingEntryCount = 11;
+    const qualifiersCount = 3;
+    const drawSize = 30; // 27 entries + 3 qualifiers
+
+    const { eventId, mainParticipantIds } = setupTournamentWithEntries({
+      qualifyingEntryCount,
+      mainEntryCount,
+    });
+
+    const { event } = tournamentEngine.getEvent({ eventId });
+    const mainDrawEntries = event.entries.filter(
+      (e: any) => (!e.entryStage || e.entryStage === MAIN) && e.entryStatus === DIRECT_ACCEPTANCE,
+    );
+    expect(mainDrawEntries.length).toEqual(mainEntryCount);
+
+    const genResult = tournamentEngine.generateDrawDefinition({
+      drawType: LUCKY_DRAW,
+      drawEntries: mainDrawEntries,
+      qualifyingPlaceholder: true,
+      qualifiersCount,
+      automated: true,
+      drawSize,
+      eventId,
+    });
+    expect(genResult.success).toEqual(true);
+
+    const { drawDefinition } = genResult;
+
+    // Verify it's actually a lucky draw
+    expect(drawDefinition.drawType).toEqual(LUCKY_DRAW);
+
+    const mainStructure = drawDefinition.structures.find((s: any) => s.stage === MAIN);
+    expect(mainStructure).toBeDefined();
+    expect(mainStructure.positionAssignments.length).toEqual(drawSize);
+
+    // Verify qualifier positions are reserved
+    const qualifierPositions = mainStructure.positionAssignments.filter((pa: any) => pa.qualifier);
+    expect(qualifierPositions.length).toEqual(qualifiersCount);
+
+    // All main participants should be positioned
+    const positionedParticipantIds = mainStructure.positionAssignments
+      .filter((pa: any) => pa.participantId)
+      .map((pa: any) => pa.participantId);
+    expect(positionedParticipantIds.length).toEqual(mainEntryCount);
+
+    for (const pid of mainParticipantIds) {
+      expect(positionedParticipantIds).toContain(pid);
+    }
+
+    // No byes: 30 - 27 - 3 = 0
+    const byePositions = mainStructure.positionAssignments.filter((pa: any) => pa.bye);
+    expect(byePositions.length).toEqual(0);
   });
 });
