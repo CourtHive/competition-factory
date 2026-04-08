@@ -154,7 +154,7 @@ export function addDrawEntry(params: AddDrawEntryArgs) {
 
   if (roundTarget) {
     addExtension({
-      extension: { name: 'roundEntry', value: roundTarget },
+      extension: { name: ROUND_TARGET, value: roundTarget },
       element: entry,
     });
   }
