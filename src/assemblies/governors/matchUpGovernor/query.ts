@@ -25,6 +25,7 @@ export { getHomeParticipantId } from '@Query/matchUp/getHomeParticipantId';
 export { tournamentMatchUps } from '@Query/matchUps/getTournamentMatchUps';
 export { getMatchUpContextIds } from '@Query/matchUp/getMatchUpContextIds';
 export { isValidMatchUpFormat } from '@Validators/isValidMatchUpFormat';
+export { getCompetitionFormat } from '@Query/hierarchical/getCompetitionFormat';
 export { getMatchUpFormat } from '@Query/hierarchical/getMatchUpFormat';
 export { validMatchUp, validMatchUps } from '@Validators/validMatchUp';
 export { allEventMatchUps } from '@Query/matchUps/getAllEventMatchUps';
