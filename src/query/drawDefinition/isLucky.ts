@@ -2,6 +2,7 @@ import { isLuckyBasedDraw } from '@Query/drawDefinition/isLuckyBasedDraw';
 import { getRoundMatchUps } from '../matchUps/getRoundMatchUps';
 
 // constants and types
+import { QUALIFYING } from '@Constants/drawDefinitionConstants';
 import { DrawDefinition, Structure } from '@Types/tournamentTypes';
 import { HydratedMatchUp } from '@Types/hydrated';
 
@@ -13,6 +14,9 @@ type IsLuckyArgs = {
 };
 export function isLucky({ roundsNotPowerOf2, drawDefinition, structure, matchUps }: IsLuckyArgs) {
   if (!structure) return false;
+
+  // Qualifying structures are never lucky draws even if rounds aren't power of 2
+  if (structure.stage === QUALIFYING) return false;
 
   matchUps = matchUps ?? structure.matchUps ?? [];
   roundsNotPowerOf2 = roundsNotPowerOf2 ?? getRoundMatchUps({ matchUps }).roundsNotPowerOf2;

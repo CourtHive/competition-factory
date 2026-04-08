@@ -9,7 +9,7 @@ import tournamentEngine from '@Engines/syncEngine';
 import mocksEngine from '@Assemblies/engines/mock';
 import { expect, it, describe } from 'vitest';
 
-import { LUCKY_DRAW, MAIN, QUALIFYING } from '@Constants/drawDefinitionConstants';
+import { LUCKY_DRAW, MAIN, QUALIFYING, SWISS } from '@Constants/drawDefinitionConstants';
 import { DIRECT_ACCEPTANCE } from '@Constants/entryStatusConstants';
 import { SINGLES_EVENT } from '@Constants/eventConstants';
 
@@ -366,5 +366,93 @@ describe('qualifying placeholder positioning: TMX two-step flow', () => {
     // No byes: 30 - 27 - 3 = 0
     const byePositions = mainStructure.positionAssignments.filter((pa: any) => pa.bye);
     expect(byePositions.length).toEqual(0);
+  });
+
+  it('Swiss draw with qualifying: full two-step flow with getEventData', () => {
+    const mainEntryCount = 29;
+    const qualifyingEntryCount = 9;
+    const qualifiersCount = 3;
+    const drawSize = 32;
+    const qualifyingDrawSize = 16;
+
+    const { eventId, qualifyingParticipantIds } = setupTournamentWithEntries({
+      mainEntryCount,
+      qualifyingEntryCount,
+    });
+
+    const { event } = tournamentEngine.getEvent({ eventId });
+    const mainDrawEntries = event.entries.filter(
+      (e: any) => e.entryStage === MAIN && e.entryStatus === DIRECT_ACCEPTANCE,
+    );
+
+    // Step 1: Swiss main + qualifying placeholder
+    const genResult = tournamentEngine.generateDrawDefinition({
+      drawType: SWISS,
+      drawEntries: mainDrawEntries,
+      qualifyingPlaceholder: true,
+      qualifiersCount,
+      automated: false,
+      ignoreStageSpace: true,
+      drawSize,
+      eventId,
+    });
+    expect(genResult.success).toEqual(true);
+    expect(genResult.drawDefinition.drawType).toEqual(SWISS);
+
+    const drawId = genResult.drawDefinition.drawId;
+    tournamentEngine.addDrawDefinition({ eventId, drawDefinition: genResult.drawDefinition });
+
+    // Swiss main should have positionAssignments and qualifier reservations
+    let { drawDefinition } = tournamentEngine.getEvent({ drawId });
+    let mainStructure = drawDefinition.structures.find((s: any) => s.stage === MAIN);
+    expect(mainStructure.positionAssignments.length).toEqual(drawSize);
+    expect(mainStructure.positionAssignments.filter((pa: any) => pa.qualifier).length).toEqual(qualifiersCount);
+
+    // getEventData should not crash
+    let eventData = tournamentEngine.getEventData({ eventId });
+    expect(eventData.eventData?.drawsData?.length).toBeGreaterThan(0);
+
+    // Step 2: Generate qualifying structure
+    const qualDrawEntries = tournamentEngine.getEvent({ eventId }).event.entries.filter(
+      (e: any) => e.entryStage === QUALIFYING && e.entryStatus === DIRECT_ACCEPTANCE,
+    );
+
+    const qualGenResult = tournamentEngine.generateDrawDefinition({
+      drawEntries: qualDrawEntries,
+      qualifyingProfiles: [
+        { structureProfiles: [{ qualifyingPositions: qualifiersCount, drawSize: qualifyingDrawSize, stageSequence: 1 }] },
+      ],
+      automated: true,
+      drawSize,
+      eventId,
+      drawId,
+      ignoreStageSpace: true,
+    });
+    expect(qualGenResult.success).toEqual(true);
+
+    // drawType must be preserved as SWISS
+    expect(qualGenResult.drawDefinition.drawType).toEqual(SWISS);
+
+    tournamentEngine.addDrawDefinition({ eventId, drawDefinition: qualGenResult.drawDefinition, allowReplacement: true });
+
+    // Qualifying structure should have matchUps with roundPosition and drawPositions
+    ({ drawDefinition } = tournamentEngine.getEvent({ drawId }));
+    const qualStructure = drawDefinition.structures.find((s: any) => s.stage === QUALIFYING);
+    expect(qualStructure.matchUps.length).toBeGreaterThan(0);
+    expect(qualStructure.matchUps.every((m: any) => m.roundPosition)).toEqual(true);
+    expect(qualStructure.matchUps.every((m: any) => m.drawPositions?.length)).toEqual(true);
+
+    // Qualifying participants should be positioned
+    const positionedQualIds = qualStructure.positionAssignments
+      .filter((pa: any) => pa.participantId)
+      .map((pa: any) => pa.participantId);
+    expect(positionedQualIds.length).toEqual(qualifyingEntryCount);
+    for (const pid of qualifyingParticipantIds) {
+      expect(positionedQualIds).toContain(pid);
+    }
+
+    // getEventData should still work with qualifying added
+    eventData = tournamentEngine.getEventData({ eventId });
+    expect(eventData.eventData?.drawsData?.length).toBeGreaterThan(0);
   });
 });
