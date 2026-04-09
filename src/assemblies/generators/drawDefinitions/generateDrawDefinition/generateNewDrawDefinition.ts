@@ -48,6 +48,7 @@ export function generateNewDrawDefinition(params): ResultType & {
   const addResult = addEntries({
     suppressDuplicateEntries,
     ignoreStageSpace,
+    qualifyingOnly,
     drawDefinition,
     drawEntries,
     drawType,
@@ -115,13 +116,13 @@ export function generateNewDrawDefinition(params): ResultType & {
 }
 
 function addEntries(params) {
-  const { ignoreStageSpace, drawDefinition, drawEntries, drawType, entries } = params;
+  const { ignoreStageSpace, drawDefinition, drawEntries, drawType, qualifyingOnly, entries } = params;
   // add all entries to the draw
   for (const entry of entries) {
     // safeguard: never add WITHDRAWN entries to draw definition
     if (entry.entryStatus === WITHDRAWN) continue;
-    // if drawEntries and entryStage !== stage ignore
-    if (drawEntries && entry.entryStage && entry.entryStage !== MAIN) continue;
+    // if drawEntries and entryStage !== stage ignore (allow qualifying entries when qualifyingOnly)
+    if (drawEntries && entry.entryStage && entry.entryStage !== MAIN && !(qualifyingOnly && entry.entryStage === QUALIFYING)) continue;
 
     const entryData = {
       ...entry,
