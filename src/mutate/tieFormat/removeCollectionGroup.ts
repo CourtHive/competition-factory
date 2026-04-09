@@ -36,18 +36,18 @@ export function removeCollectionGroup({
   event,
 }: RemoveCollectionGroupArgs) {
   if (!collectionGroupNumber) return { error: MISSING_VALUE };
-  if (isNaN(collectionGroupNumber)) return { error: INVALID_VALUES };
+  if (Number.isNaN(Number(collectionGroupNumber))) return { error: INVALID_VALUES };
   const stack = 'removeCollectionGroup';
 
-  let result = !matchUp
-    ? getTieFormat({
+  let result = matchUp
+    ? undefined
+    : getTieFormat({
         drawDefinition,
         structureId,
         matchUpId,
         eventId,
         event,
-      })
-    : undefined;
+      });
   if (result?.error) return decorateResult({ result, stack });
 
   const structure = result?.structure;
@@ -62,16 +62,16 @@ export function removeCollectionGroup({
 
   const modifiedCollectionIds: string[] = [];
   // remove the collectionGroup and all references to it in other collectionDefinitions
-  tieFormat.collectionDefinitions = tieFormat.collectionDefinitions.map((collectionDefinition) => {
+  tieFormat.collectionDefinitions = (tieFormat.collectionDefinitions ?? []).map((collectionDefinition) => {
     const { collectionGroupNumber: groupNumber, ...rest } = collectionDefinition;
-    if (groupNumber !== collectionGroupNumber) {
-      return collectionDefinition;
-    } else {
+    if (groupNumber === collectionGroupNumber) {
       modifiedCollectionIds.push(collectionDefinition.collectionId);
       return rest;
+    } else {
+      return collectionDefinition;
     }
   });
-  tieFormat.collectionGroups = tieFormat.collectionGroups.filter(
+  tieFormat.collectionGroups = (tieFormat.collectionGroups ?? []).filter(
     ({ groupNumber }) => groupNumber !== collectionGroupNumber,
   );
 
