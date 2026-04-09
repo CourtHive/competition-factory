@@ -16,6 +16,7 @@ In the factory, this draw type is represented by the constant `SWISS`. Internall
 - Pairing happens within score groups -- participants with similar records play each other.
 - Participants who cannot be paired within their score group **float** to an adjacent group.
 - No participant is eliminated; everyone plays every round.
+- Swiss structures include `positionAssignments` for all participants (one per participant, without `drawPosition` numbers), enabling qualifier reservation and consistent participant tracking across rounds.
 
 ```text
 Round 1: (seeded pairing -- top half vs bottom half)
@@ -62,14 +63,14 @@ const swissPolicy = {
 
 ### SwissPolicy Options
 
-| Property | Type | Default | Description |
-|---|---|---|---|
-| `totalRounds` | `number` | -- | Planned number of rounds |
-| `allowDraws` | `boolean` | `false` | Whether drawn (tied) matchUps award 0.5 points |
-| `tiebreakMethods` | `string[]` | `['BUCHHOLZ', 'SONNEBORN_BERGER']` | Ordered list of tiebreaker methods |
-| `pairingMethod` | `'SCORE_GROUP' \| 'RATING_BASED'` | `'SCORE_GROUP'` | Pairing strategy |
-| `colorAlternation` | `boolean` | `false` | Reserved for side-alternation balancing |
-| `hardNoRepeat` | `boolean` | `false` | Strictly forbid repeat pairings |
+| Property           | Type                              | Default                            | Description                                    |
+| ------------------ | --------------------------------- | ---------------------------------- | ---------------------------------------------- |
+| `totalRounds`      | `number`                          | --                                 | Planned number of rounds                       |
+| `allowDraws`       | `boolean`                         | `false`                            | Whether drawn (tied) matchUps award 0.5 points |
+| `tiebreakMethods`  | `string[]`                        | `['BUCHHOLZ', 'SONNEBORN_BERGER']` | Ordered list of tiebreaker methods             |
+| `pairingMethod`    | `'SCORE_GROUP' \| 'RATING_BASED'` | `'SCORE_GROUP'`                    | Pairing strategy                               |
+| `colorAlternation` | `boolean`                         | `false`                            | Reserved for side-alternation balancing        |
+| `hardNoRepeat`     | `boolean`                         | `false`                            | Strictly forbid repeat pairings                |
 
 ## Round Generation
 
@@ -88,13 +89,13 @@ The function resolves the Ad Hoc structure, collects participant ratings, comput
 
 ### Parameters
 
-| Parameter | Type | Description |
-|---|---|---|
-| `drawId` | `string` | Target draw definition |
-| `structureId` | `string` | Optional -- defaults to the first Ad Hoc structure |
-| `scaleName` | `string` | Rating scale name for seed ordering (e.g., `'WTN'`, `'ELO'`) |
-| `swissPolicy` | `SwissPolicy` | Override the policy stored on the draw extension |
-| `participantIds` | `string[]` | Restrict pairing to a subset of participants |
+| Parameter        | Type          | Description                                                  |
+| ---------------- | ------------- | ------------------------------------------------------------ |
+| `drawId`         | `string`      | Target draw definition                                       |
+| `structureId`    | `string`      | Optional -- defaults to the first Ad Hoc structure           |
+| `scaleName`      | `string`      | Rating scale name for seed ordering (e.g., `'WTN'`, `'ELO'`) |
+| `swissPolicy`    | `SwissPolicy` | Override the policy stored on the draw extension             |
+| `participantIds` | `string[]`    | Restrict pairing to a subset of participants                 |
 
 ## Initial Pairing (Round 1)
 
@@ -135,12 +136,12 @@ Standings are sorted by **points** (wins = 1, draws = 0.5, losses = 0) with tieb
 
 ### Tiebreaker Methods
 
-| Constant | Method | Description |
-|---|---|---|
-| `BUCHHOLZ` | Buchholz | Sum of all opponents' points. Rewards playing against strong opposition. |
-| `MEDIAN_BUCHHOLZ` | Median Buchholz | Buchholz with the highest and lowest opponent scores removed. Reduces the impact of outlier opponents. |
-| `SONNEBORN_BERGER` | Sonneborn-Berger | Sum of defeated opponents' points, plus half of drawn opponents' points. Rewards beating strong opponents. |
-| `PROGRESSIVE_SCORE` | Progressive Score | Cumulative running total of round-by-round point sums. Rewards early wins over late wins. |
+| Constant            | Method            | Description                                                                                                |
+| ------------------- | ----------------- | ---------------------------------------------------------------------------------------------------------- |
+| `BUCHHOLZ`          | Buchholz          | Sum of all opponents' points. Rewards playing against strong opposition.                                   |
+| `MEDIAN_BUCHHOLZ`   | Median Buchholz   | Buchholz with the highest and lowest opponent scores removed. Reduces the impact of outlier opponents.     |
+| `SONNEBORN_BERGER`  | Sonneborn-Berger  | Sum of defeated opponents' points, plus half of drawn opponents' points. Rewards beating strong opponents. |
+| `PROGRESSIVE_SCORE` | Progressive Score | Cumulative running total of round-by-round point sums. Rewards early wins over late wins.                  |
 
 Tiebreaker constants are exported from `swissConstants`:
 

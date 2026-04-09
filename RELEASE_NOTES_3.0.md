@@ -190,6 +190,7 @@ Changed from `"SET3-S:6/TB7-F:TB10"` to `"SET3-S:6NOAD/TB7-F:TB10"`.
 The `ENTRY_PROFILE` extension on draw definitions has been removed entirely. This extension previously stored per-stage capacity constraints (`drawSize`, `qualifiersCount`, `wildcardsCount`, `alternates`) and was created as a byproduct of draw generation.
 
 **What changed:**
+
 - `ENTRY_PROFILE` constant removed from `extensionConstants`
 - `getEntryProfile()`, `modifyEntryProfile()` deleted
 - `setStageDrawSize()`, `setStageAlternatesCount()`, `setStageWildcardsCount()`, `setStageQualifiersCount()` deleted
@@ -200,6 +201,7 @@ The `ENTRY_PROFILE` extension on draw definitions has been removed entirely. Thi
 - `getValidStage()` checks structure existence, not entryProfile existence
 
 **Migration:**
+
 - Code importing `ENTRY_PROFILE` from `extensionConstants`: remove the import
 - Code calling `setStageDrawSize()`: pass `drawSize` directly to `generateDrawDefinition` or `generateDrawTypeAndModifyDrawDefinition`
 - Code calling `setStageQualifiersCount()`: pass `qualifiersCount` to `generateDrawDefinition`
@@ -231,10 +233,10 @@ A complete lifecycle engine for governing body tournament sanctioning workflows.
 
 `SanctioningTier` now includes draw composition fields:
 
-| Field | Purpose |
-| --- | --- |
-| `maxWildcards` | Maximum wildcard entries per draw |
-| `maxAlternates` | Maximum alternate entries per draw |
+| Field           | Purpose                              |
+| --------------- | ------------------------------------ |
+| `maxWildcards`  | Maximum wildcard entries per draw    |
+| `maxAlternates` | Maximum alternate entries per draw   |
 | `maxQualifiers` | Maximum qualifier positions per draw |
 
 When a sanctioned tournament is activated, these constraints are stored as a `SANCTIONING_CONSTRAINTS` extension on the tournament record. Runtime enforcement via `getStageSpace()` and `getDrawCompositionConstraints()` checks these limits when adding entries. Unsanctioned draws are unconstrained — no composition limits apply without sanctioning.
@@ -469,6 +471,32 @@ COMPASS and OLYMPIC draw types now use a single MAIN stage structure with recurs
 - Safeguard preventing `setTournamentDates` from excluding dates with scheduled items
 - Court availability conflict detection
 
+### Qualifying-First Draw Generation
+
+`generateDrawDefinition` now supports creating qualifying structures before the main draw exists. Passing `qualifyingOnly: true` with `qualifyingProfiles` and `drawEntries` (containing `entryStage: QUALIFYING` entries) generates populated qualifying structures with a MAIN placeholder (0 matchUps). The user can later generate the main draw by calling `generateDrawDefinition` again with a `drawSize` and the existing `drawId` — the factory detects the placeholder MAIN and populates it while preserving qualifying structures and links.
+
+- Qualifying entries are correctly added to the drawDefinition when `qualifyingOnly: true` and `drawEntries` is provided
+- Automated positioning works for qualifying structures in qualifying-first mode
+- MAIN placeholder has zero matchUps and empty positionAssignments until explicitly generated
+
+### `getCompetitionFormat` Hierarchical Query
+
+New query that resolves the `competitionFormat` through the hierarchy: structure → draw → event, returning the first defined value along with each level's individual setting.
+
+```js
+const {
+  structureDefaultCompetitionFormat,
+  drawDefaultCompetitionFormat,
+  eventDefaultCompetitionFormat,
+  competitionFormat, // resolved value (first defined in hierarchy)
+} = engine.getCompetitionFormat({
+  structureId, // optional
+  matchUpId, // optional
+  drawId, // optional
+  eventId, // optional
+});
+```
+
 ### Draw & Structure Utilities
 
 - `remapDrawDefinitionMatchUpIds` — remap matchUp IDs within a draw definition
@@ -666,6 +694,13 @@ Seven new documentation files covering the full mocksEngine surface:
 - Update `processPlayoffGroups` to support AD_HOC as playoff for RR
 - Correct `drawMatic` for targeting consolation structures
 - Clear up PLAY_OFF vs PLAYOFF confusion
+- Create qualifying placeholder before positioning to prevent bye/qualifier position clashes
+- Filter WITHDRAWN entries in `addEntries` during draw generation
+- Preserve `drawType` when adding qualifying to an existing draw
+- Swiss draws now have `positionAssignments` and proper qualifier reservation
+- Fix lucky draw detection for Swiss and qualifying structures
+- Fix `ROUND_TARGET` extension name in `addDrawEntry` (was incorrectly `'roundEntry'`)
+- Allow qualifying entries in drawDefinition when `qualifyingOnly: true` and `drawEntries` provided
 
 ### Scheduling / Dates
 
