@@ -131,7 +131,7 @@
     "@nestjs/jwt": "11.0.2",
     "@nestjs/platform-express": "11.1.18",
     "@nestjs/schematics": "11.0.10",
-    "@nestjs/swagger": "11.2.6",
+    "@nestjs/swagger": "11.2.7",
     "@nestjs/testing": "11.1.18",
     "@rollup/plugin-babel": "7.0.0",
     "@rollup/plugin-commonjs": "29.0.2",
