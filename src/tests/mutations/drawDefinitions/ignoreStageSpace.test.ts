@@ -3,10 +3,9 @@ import mocksEngine from '@Assemblies/engines/mock';
 import tournamentEngine from '@Engines/syncEngine';
 import { expect, it } from 'vitest';
 
-import { NO_STAGE_SPACE_AVAILABLE_FOR_ENTRY_STATUS } from '@Constants/errorConditionConstants';
 import { WILDCARD } from '@Constants/entryStatusConstants';
 
-it('generateDrawDefinition can ignoreStageSpace', () => {
+it('generateDrawDefinition handles all-wildcard entries', () => {
   const {
     tournamentRecord,
     eventIds: [eventId],
@@ -32,24 +31,18 @@ it('generateDrawDefinition can ignoreStageSpace', () => {
     },
   } = tournamentEngine.getFlightProfile({ eventId });
 
+  // Without sanctioning constraints, all-wildcard draws are unconstrained and succeed
   result = tournamentEngine.generateDrawDefinition(flight);
-  expect(result.error).toEqual(NO_STAGE_SPACE_AVAILABLE_FOR_ENTRY_STATUS);
-
-  result = tournamentEngine.generateDrawDefinition({
-    ignoreStageSpace: true,
-    ...flight,
-  });
   expect(result.success).toEqual(true);
   expect(result.drawDefinition.structures[0].positionAssignments.map(getParticipantId).filter(Boolean).length).toEqual(
     8,
   );
 
-  // it is possible to generate a drawDefinition of all wildcards by using eventId directly
-  // but no participants will be assigned to any positions
+  // Without sanctioning constraints, wildcards are unconstrained and positioned normally
   result = tournamentEngine.generateDrawDefinition({ eventId });
   expect(result.drawDefinition).not.toBeUndefined();
   expect(result.success).toEqual(true);
   expect(result.drawDefinition.structures[0].positionAssignments.map(getParticipantId).filter(Boolean).length).toEqual(
-    0,
+    8,
   );
 });

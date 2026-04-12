@@ -920,7 +920,7 @@ Link to court/venue information:
 
 ```js
 // Get all venues
-const { venues } = tournamentEngine.getVenues();
+const { venues } = tournamentEngine.getVenuesAndCourts();
 
 // Get specific venue with courts
 const { venue } = tournamentEngine.getVenue({

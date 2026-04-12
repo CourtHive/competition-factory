@@ -1,11 +1,15 @@
+// Query
 import { getAllStructureMatchUps } from '../matchUps/getAllStructureMatchUps';
-import { findStructure } from '@Acquire/findStructure';
-import { getEntryProfile } from './getEntryProfile';
 
-// constants and types
+// Acquire
+import { findStructure } from '@Acquire/findStructure';
+
+// Constants
 import { MISSING_DRAW_DEFINITION } from '@Constants/errorConditionConstants';
 import { CONTAINER, QUALIFYING } from '@Constants/drawDefinitionConstants';
-import { DrawDefinition } from '@Types/tournamentTypes';
+
+// Types
+import type { DrawDefinition } from '@Types/tournamentTypes';
 
 type GetQualifiersCountArgs = {
   provisionalPositioning?: boolean;
@@ -14,6 +18,7 @@ type GetQualifiersCountArgs = {
   structureId?: string;
   stage?: string;
 };
+
 function calculateQualifiersFromLinks({
   relevantLinks,
   drawDefinition,
@@ -42,6 +47,9 @@ function calculateQualifiersFromLinks({
         const groupCount = sourceStructure.structures?.length ?? 0;
         const finishingPositionsCount = relevantLink.source.finishingPositions?.length ?? 0;
         count = groupCount * finishingPositionsCount;
+      } else if (sourceRoundNumber === 0 && relevantLink.source.qualifyingPositions) {
+        // Placeholder link: use the stored qualifyingPositions count
+        count = relevantLink.source.qualifyingPositions;
       } else {
         const matchUps = getAllStructureMatchUps({
           matchUpFilters: { roundNumbers: [sourceRoundNumber] },
@@ -63,18 +71,12 @@ function calculateQualifiersFromLinks({
 }
 
 export function getQualifiersCount(params: GetQualifiersCountArgs) {
-  const { provisionalPositioning, drawDefinition, stageSequence, structureId, stage } = params;
+  const { provisionalPositioning, drawDefinition, structureId } = params;
   if (!drawDefinition) return { error: MISSING_DRAW_DEFINITION };
 
-  const { entryProfile } = getEntryProfile({ drawDefinition });
-  const profileQualifiersCount =
-    (stage && stageSequence && entryProfile?.[stage]?.stageSequence?.[stageSequence]?.qualifiersCount) ||
-    (stage && entryProfile?.[stage]?.qualifiersCount) ||
-    0;
+  const roundQualifiersCounts: Record<string, number> = {};
 
-  const roundQualifiersCounts = {};
-
-  if (!structureId) return { qualifiersCount: profileQualifiersCount, roundQualifiersCounts };
+  if (!structureId) return { qualifiersCount: 0, roundQualifiersCounts };
 
   const { structure } = findStructure({ drawDefinition, structureId });
   const relevantLinks = drawDefinition.links?.filter((link) => link?.target?.structureId === structure?.structureId);
@@ -89,17 +91,6 @@ export function getQualifiersCount(params: GetQualifiersCountArgs) {
       roundQualifiersCounts,
     });
   }
-
-  const qualifyingRounds = Object.keys(roundQualifiersCounts);
-  if (qualifyingRounds.length <= 1) {
-    const qualifyingRound = qualifyingRounds[0] || 1;
-    roundQualifiersCounts[qualifyingRound] = Math.max(
-      roundQualifiersCounts[qualifyingRound] || 0,
-      profileQualifiersCount,
-    );
-  }
-
-  qualifiersCount = Math.max(qualifiersCount, profileQualifiersCount);
 
   return { qualifiersCount, roundQualifiersCounts };
 }

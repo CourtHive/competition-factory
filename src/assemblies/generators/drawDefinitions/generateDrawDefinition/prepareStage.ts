@@ -54,6 +54,19 @@ export function prepareStage(params): ResultType & {
   const positioningResult = doPositioning ? positioning({ ...params, multipleStructures, seedLimit, structureId }) : {};
   if (positioningResult?.error) return decorateResult({ result: positioningResult, stack });
 
+  // For ad-hoc/Swiss draws where full positioning is skipped, still mark qualifier positions
+  if (!doPositioning && isAdHocType(params.drawType) && structure?.positionAssignments?.length) {
+    const qualifiersCount = params.qualifiersCount || 0;
+    if (qualifiersCount > 0) {
+      const unfilled = structure.positionAssignments.filter(
+        (a) => !a.participantId && !a.qualifier && !a.bye,
+      );
+      for (let i = 0; i < qualifiersCount && i < unfilled.length; i++) {
+        unfilled[i].qualifier = true;
+      }
+    }
+  }
+
   return {
     ...positioningResult,
     stageEntries,

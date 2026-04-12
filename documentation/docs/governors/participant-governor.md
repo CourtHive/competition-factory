@@ -791,27 +791,3 @@ engine.addParticipantTimeItem({
 ```
 
 ---
-
-## generateDynamicRatings
-
-Generates dynamic ELO-style ratings from completed matchUp results. Processes specified matchUps and calculates new rating values for all participants involved.
-
-```js
-const {
-  modifiedScaleValues,   // { [participantId]: newRating }
-  processedMatchUpIds,   // matchUpIds that were processed
-  outputScaleName,       // the scaleName used for output
-  ratingType,            // the rating type used (e.g. 'ELO')
-} = engine.generateDynamicRatings({
-  matchUpIds,                    // required — array of matchUpIds to process
-  ratingType,                    // optional — defaults to 'ELO'; must be a key in ratingsParameters
-  updateParticipantRatings,      // optional boolean — modify tournament participants with new scaleItems
-  removePriorValues,             // optional boolean — defaults to true; remove prior scaleItems for same scaleName
-  refreshDynamic,                // optional boolean — ignore previously calculated dynamic values
-  considerGames,                 // optional boolean — use games instead of sets for calculation
-  asDynamic,                     // optional boolean — use DYNAMIC scaleName prefix
-  drawDefinition,                // optional — scope to a specific draw (used with refreshDynamic)
-});
-```
-
----

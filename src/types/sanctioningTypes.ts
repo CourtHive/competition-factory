@@ -465,6 +465,11 @@ export interface SanctioningTier {
   maxQualifyingDrawSize?: number;
   qualifyingAllowed?: boolean;
 
+  // Draw composition constraints
+  maxWildcards?: number;
+  maxAlternates?: number;
+  maxQualifiers?: number;
+
   allowedMatchUpFormats?: string[];
 
   minimumPrizeMoney?: number;

@@ -60,7 +60,12 @@ export function positionQualifiers(params) {
   return { ...SUCCESS, qualifierDrawPositions };
 }
 
-export function getQualifiersData({ drawDefinition, structure, structureId }) {
+export function getQualifiersData({
+  drawDefinition,
+  structure,
+  structureId,
+  qualifiersCount: overrideQualifiersCount,
+}: any) {
   if (!structure) ({ structure } = findStructure({ drawDefinition, structureId }));
   if (!structureId) ({ structureId } = structure);
 
@@ -68,12 +73,20 @@ export function getQualifiersData({ drawDefinition, structure, structureId }) {
 
   const { stage, stageSequence } = structure;
 
-  const { qualifiersCount, roundQualifiersCounts } = getQualifiersCount({
+  const { qualifiersCount: derivedQualifiersCount, roundQualifiersCounts: derivedRoundCounts } = getQualifiersCount({
     drawDefinition,
     stageSequence,
     structureId,
     stage,
   });
+  const qualifiersCount = derivedQualifiersCount || overrideQualifiersCount || 0;
+  // When qualifier count comes from override (no links yet), assign all to round 1
+  // eslint-disable-next-line no-nested-ternary
+  const roundQualifiersCounts = Object.keys(derivedRoundCounts ?? {}).length
+    ? derivedRoundCounts
+    : qualifiersCount
+      ? { 1: qualifiersCount }
+      : {};
 
   // now figure out which drawPositions are in which rounds
   const trn = roundQualifiersCounts ? Object.keys(roundQualifiersCounts) : [];
@@ -93,7 +106,7 @@ export function getQualifiersData({ drawDefinition, structure, structureId }) {
     ?.filter((assignment) => assignment.qualifier)
     .map((assignment) => assignment.drawPosition);
 
-  const unplacedQualifiersCount = qualifiersCount - (assignedQualifierPositions?.length ?? 0);
+  const unplacedQualifiersCount = (qualifiersCount ?? 0) - (assignedQualifierPositions?.length ?? 0);
   const placedQualifiersCount = assignedQualifierPositions?.length;
 
   const unplacedRoundQualifierCounts = Object.assign(

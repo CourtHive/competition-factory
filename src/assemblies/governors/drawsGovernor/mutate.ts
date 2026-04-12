@@ -21,7 +21,7 @@ export { renameStructures } from '@Mutate/drawDefinitions/structureGovernor/rena
 export { assignDrawPositionBye } from '@Mutate/matchUps/drawPositions/assignDrawPositionBye';
 export { addDrawDefinitionTimeItem } from '@Mutate/drawDefinitions/addDrawDefinitionTimeItem';
 export { resolveDraftPositions } from '@Mutate/drawDefinitions/draft/resolveDraftPositions';
-export { addVoluntaryConsolationStage } from '@Mutate/events/addVoluntaryConsolationStage';
+
 export { resetQualifyingStructure } from '@Mutate/drawDefinitions/resetQualifyingStructure';
 export { removeStructure } from '@Mutate/drawDefinitions/structureGovernor/removeStructure';
 export { swapDrawPositionAssignments } from '@Mutate/matchUps/drawPositions/positionSwap';

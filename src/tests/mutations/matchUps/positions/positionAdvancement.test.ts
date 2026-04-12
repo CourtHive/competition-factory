@@ -1,7 +1,6 @@
 import { generateDrawTypeAndModifyDrawDefinition } from '@Assemblies/generators/drawDefinitions/generateDrawTypeAndModifyDrawDefinition';
 import { positionTargets } from '@Query/matchUp/positionTargets';
 import { getStructureMatchUps } from '@Query/structure/getStructureMatchUps';
-import { setStageDrawSize } from '@Mutate/drawDefinitions/entryGovernor/stageEntryCounts';
 import { getAllDrawMatchUps } from '@Query/matchUps/drawMatchUps';
 import { getDrawStructures } from '@Acquire/findStructure';
 import { feedInChampionship } from '../../drawDefinitions/primitives/feedIn';
@@ -15,10 +14,10 @@ import { MAIN, FEED_IN_CHAMPIONSHIP, FIRST_MATCH_LOSER_CONSOLATION, COMPASS } fr
 it('can direct participants in First Match Consolation (FIRST_MATCH_LOSER_CONSOLATION)', () => {
   const drawSize = 32;
   const drawDefinition: DrawDefinition = newDrawDefinition();
-  setStageDrawSize({ drawDefinition, stage: MAIN, drawSize });
   const result = generateDrawTypeAndModifyDrawDefinition({
     drawType: FIRST_MATCH_LOSER_CONSOLATION,
     drawDefinition,
+    drawSize,
   });
   expect(result).not.toHaveProperty(ERROR);
   expect(drawDefinition.links?.length).toEqual(2);
@@ -206,10 +205,10 @@ it('can direct participants in FEED_IN_CHAMPIONSHIP structure', () => {
 
 it('can direct participants in COMPASS', () => {
   const drawDefinition: DrawDefinition = newDrawDefinition() ?? {};
-  setStageDrawSize({ drawDefinition, stage: MAIN, drawSize: 32 });
   const result = generateDrawTypeAndModifyDrawDefinition({
     drawType: COMPASS,
     drawDefinition,
+    drawSize: 32,
   });
   expect(result).not.toHaveProperty(ERROR);
   expect(drawDefinition.links?.length).toEqual(7);

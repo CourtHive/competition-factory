@@ -5,6 +5,7 @@ import { DRAW, WINNER } from '@Constants/drawDefinitionConstants';
 import { LinkTypeUnion } from '@Types/tournamentTypes';
 
 type GenerateQualifyingLinkArgs = {
+  qualifyingPositions?: number;
   targetEntryRound?: number;
   sourceRoundNumber: number;
   finishingPositions?: any;
@@ -13,6 +14,7 @@ type GenerateQualifyingLinkArgs = {
   linkType?: LinkTypeUnion;
 };
 export function generateQualifyingLink({
+  qualifyingPositions,
   targetEntryRound = 1,
   finishingPositions,
   sourceRoundNumber,
@@ -27,6 +29,7 @@ export function generateQualifyingLink({
     source: {
       roundNumber: sourceRoundNumber,
       structureId: sourceStructureId,
+      qualifyingPositions,
       finishingPositions,
     },
     target: {

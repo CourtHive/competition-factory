@@ -180,7 +180,7 @@ const drawDefinitionValues = {
 
   qualifyingPlaceholder, // optional boolean - generate a placeholder qualifying structure if qualifiersCount and no qualifyingProfiles
   qualifiersCount, // optional - how many positionsAssignments will have { qualifier: true }
-  qualifyingOnly, // optional boolean - ignore event.entries that are not entryStage: QUALIFYING
+  qualifyingOnly, // optional boolean - generate only qualifying structures with MAIN placeholder; drawEntries with entryStage: QUALIFYING are included
   qualifyingProfiles, // optional array [{ roundTarget, structureProfiles: [{ drawSize, seedsCount, seedingScaleName, qualifyingPositions }]}]
 
   structureOptions: {
@@ -433,7 +433,7 @@ const { drawDefinition, matchUpsMap } = engine.generateDrawTypeAndModifyDrawDefi
   tieFormat, // optional - for TEAM matchUps
   structureOptions, // optional - { groupSize, playoffGroups } for ROUND_ROBIN
   qualifiersCount, // optional - number of qualifier positions
-  qualifyingOnly, // optional boolean - only process QUALIFYING stage entries
+  qualifyingOnly, // optional boolean - generate only qualifying structures with MAIN placeholder
   stageSequence, // optional - target specific stage (1=QUALIFYING, 2=MAIN)
   drawTypeCoercion, // optional boolean - coerce to SINGLE_ELIMINATION for small draws
   modifyOriginal, // optional boolean - defaults to true

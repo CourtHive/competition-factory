@@ -66,7 +66,6 @@ export const methodScopeMap: Record<string, MutationLockScope> = {
   assignDrawPositionBye: 'DRAWS',
   addDrawDefinitionTimeItem: 'DRAWS',
   removeStructure: 'DRAWS',
-  addVoluntaryConsolationStage: 'DRAWS',
   resetQualifyingStructure: 'DRAWS',
   swapDrawPositionAssignments: 'DRAWS',
   removeSeededParticipant: 'DRAWS',

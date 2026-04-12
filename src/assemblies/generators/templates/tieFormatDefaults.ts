@@ -15,6 +15,7 @@ import DOMINANT_DUO_TIE_FORMAT from '../../../fixtures/scoring/tieFormats/DOMINA
 import USTA_COLLEGE_TIE_FORMAT from '../../../fixtures/scoring/tieFormats/USTA_COLLEGE.json';
 import USTA_LEVEL_1_TIE_FORMAT from '../../../fixtures/scoring/tieFormats/USTA_LEVEL_1.json';
 import USTA_WTT_ITT_TIE_FORMAT from '../../../fixtures/scoring/tieFormats/USTA_WTT_ITT.json';
+import INTENNSE_2026_FORMAT from '../../../fixtures/scoring/tieFormats/INTENNSE_2026.json';
 import USTA_ZONAL_TIE_FORMAT from '../../../fixtures/scoring/tieFormats/USTA_ZONAL.json';
 import LAVER_CUP_TIE_FORMAT from '../../../fixtures/scoring/tieFormats/LAVER_CUP.json';
 import USTA_TOC_TIE_FORMAT from '../../../fixtures/scoring/tieFormats/USTA_TOC.json';
@@ -26,6 +27,7 @@ import {
   COLLEGE_JUCO,
   DOMINANT_DUO,
   DOMINANT_DUO_MIXED,
+  INTENNSE_2026,
   LAVER_CUP,
   TEAM_DOUBLES_3_AGGREGATION,
   USTA_BREWER_CUP,
@@ -98,6 +100,7 @@ const namedFormats = {
   [LAVER_CUP]: LAVER_CUP_TIE_FORMAT,
   [DOMINANT_DUO]: DOMINANT_DUO_TIE_FORMAT,
   [DOMINANT_DUO_MIXED]: DOMINANT_DUO_MIXED_TIE_FORMAT,
+  [INTENNSE_2026]: INTENNSE_2026_FORMAT,
   [TEAM_DOUBLES_3_AGGREGATION]: TEAM_AGGREGATION_TIE_FORMAT,
   [USTA_BREWER_CUP]: USTA_BREWER_CUP_TIE_FORMAT,
   [USTA_OZAKI_CUP]: USTA_OZAKI_CUP_TIE_FORMAT,

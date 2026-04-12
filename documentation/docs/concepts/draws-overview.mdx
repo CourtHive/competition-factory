@@ -62,7 +62,7 @@ const { drawDefinition } = tournamentEngine.generateDrawDefinition({
 
 - `qualifiersCount` - Number of positions reserved for qualifiers
 - `qualifyingProfiles` - Array defining complete qualifying structures
-- `qualifyingOnly` - Boolean - only include QUALIFYING stage entries
+- `qualifyingOnly` - Boolean - generate only qualifying structures with MAIN placeholder; see [Qualifying-First](#qualifying-first)
 - `qualifyingPlaceholder` - Generate placeholder qualifying structure
 
 **Advanced Options:**
@@ -139,6 +139,46 @@ const { drawDefinition } = tournamentEngine.generateDrawDefinition({
   seedsCount: 8,
   automated: true,
 });
+```
+
+#### Qualifying-First Draw {#qualifying-first}
+
+Generate qualifying structures before the main draw exists. The MAIN structure is created as an empty placeholder and can be populated later.
+
+```js
+// Step 1: Generate qualifying-only draw
+const qualifyingEntries = event.entries.filter(e => e.entryStage === 'QUALIFYING');
+const { drawDefinition } = tournamentEngine.generateDrawDefinition({
+  eventId: 'singles-championship',
+  qualifyingOnly: true,
+  drawEntries: qualifyingEntries,
+  qualifyingProfiles: [
+    {
+      structureProfiles: [
+        { drawSize: 16, qualifyingPositions: 4 },
+      ],
+    },
+  ],
+  automated: true,
+});
+
+// At this point: qualifying structure has matchUps and positioned participants;
+// MAIN structure exists but has 0 matchUps (placeholder).
+
+// Step 2: Later, generate the main draw
+const mainResult = tournamentEngine.generateDrawDefinition({
+  drawId: drawDefinition.drawId,  // existing draw
+  drawSize: 32,
+  drawType: 'SINGLE_ELIMINATION',
+});
+
+// Replace with the populated draw
+tournamentEngine.addDrawDefinition({
+  drawDefinition: mainResult.drawDefinition,
+  allowReplacement: true,
+  eventId,
+});
+// MAIN is now populated; qualifying links are preserved.
 ```
 
 #### Compass Draw

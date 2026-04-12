@@ -1,6 +1,5 @@
 import { generateDrawTypeAndModifyDrawDefinition } from '@Assemblies/generators/drawDefinitions/generateDrawTypeAndModifyDrawDefinition';
 import { newDrawDefinition } from '@Assemblies/generators/drawDefinitions/newDrawDefinition';
-import { setStageDrawSize } from '@Mutate/drawDefinitions/entryGovernor/stageEntryCounts';
 import { addDrawEntries } from '@Mutate/drawDefinitions/entryGovernor/addDrawEntries';
 import { automatedPositioning } from '@Mutate/drawDefinitions/automatedPositioning';
 import { getDrawStructures } from '@Acquire/findStructure';
@@ -21,8 +20,7 @@ import { DrawDefinition } from '@Types/tournamentTypes';
 describe('ADAPTIVE draw structure generation', () => {
   it('generates correct structures for drawSize 11', () => {
     const drawDefinition: DrawDefinition = newDrawDefinition();
-    setStageDrawSize({ drawDefinition, stage: MAIN, drawSize: 11 });
-    generateDrawTypeAndModifyDrawDefinition({ drawDefinition, drawType: ADAPTIVE });
+    generateDrawTypeAndModifyDrawDefinition({ drawDefinition, drawType: ADAPTIVE, drawSize: 11 });
 
     const stages = [MAIN, PLAY_OFF];
     const { structures } = getDrawStructures({ drawDefinition, stages });
@@ -50,8 +48,7 @@ describe('ADAPTIVE draw structure generation', () => {
 
   it('generates correct structures for drawSize 16 (power-of-2)', () => {
     const drawDefinition = newDrawDefinition();
-    setStageDrawSize({ drawDefinition, stage: MAIN, drawSize: 16 });
-    generateDrawTypeAndModifyDrawDefinition({ drawDefinition, drawType: ADAPTIVE });
+    generateDrawTypeAndModifyDrawDefinition({ drawDefinition, drawType: ADAPTIVE, drawSize: 16 });
 
     const stages = [MAIN, PLAY_OFF];
     const { structures } = getDrawStructures({ drawDefinition, stages });
@@ -70,8 +67,7 @@ describe('ADAPTIVE draw structure generation', () => {
 
   it('generates correct structures for drawSize 8', () => {
     const drawDefinition = newDrawDefinition();
-    setStageDrawSize({ drawDefinition, stage: MAIN, drawSize: 8 });
-    generateDrawTypeAndModifyDrawDefinition({ drawDefinition, drawType: ADAPTIVE });
+    generateDrawTypeAndModifyDrawDefinition({ drawDefinition, drawType: ADAPTIVE, drawSize: 8 });
 
     const stages = [MAIN, PLAY_OFF];
     const { structures } = getDrawStructures({ drawDefinition, stages });
@@ -108,8 +104,7 @@ describe('ADAPTIVE draw structure generation', () => {
 
   it('suppresses structures with fewer than 2 participants', () => {
     const drawDefinition = newDrawDefinition();
-    setStageDrawSize({ drawDefinition, stage: MAIN, drawSize: 5 });
-    generateDrawTypeAndModifyDrawDefinition({ drawDefinition, drawType: ADAPTIVE });
+    generateDrawTypeAndModifyDrawDefinition({ drawDefinition, drawType: ADAPTIVE, drawSize: 5 });
 
     const stages = [MAIN, PLAY_OFF];
     const { structures } = getDrawStructures({ drawDefinition, stages });
@@ -153,29 +148,25 @@ describe('ADAPTIVE draw structure generation', () => {
 describe('ADAPTIVE draw size validation', () => {
   test('rejects drawSize 3 (non-power-of-2 < 5)', () => {
     const drawDefinition = newDrawDefinition();
-    setStageDrawSize({ drawDefinition, stage: MAIN, drawSize: 3 });
-    const result = generateDrawTypeAndModifyDrawDefinition({ drawDefinition, drawType: ADAPTIVE });
+    const result = generateDrawTypeAndModifyDrawDefinition({ drawDefinition, drawType: ADAPTIVE, drawSize: 3 });
     expect(result.error).toEqual(INVALID_DRAW_SIZE);
   });
 
   test('accepts drawSize 4 (power-of-2)', () => {
     const drawDefinition = newDrawDefinition();
-    setStageDrawSize({ drawDefinition, stage: MAIN, drawSize: 4 });
-    const result = generateDrawTypeAndModifyDrawDefinition({ drawDefinition, drawType: ADAPTIVE });
+    const result = generateDrawTypeAndModifyDrawDefinition({ drawDefinition, drawType: ADAPTIVE, drawSize: 4 });
     expect(result.error).toBeUndefined();
   });
 
   test('accepts drawSize 5 (non-power-of-2 >= 5)', () => {
     const drawDefinition = newDrawDefinition();
-    setStageDrawSize({ drawDefinition, stage: MAIN, drawSize: 5 });
-    const result = generateDrawTypeAndModifyDrawDefinition({ drawDefinition, drawType: ADAPTIVE });
+    const result = generateDrawTypeAndModifyDrawDefinition({ drawDefinition, drawType: ADAPTIVE, drawSize: 5 });
     expect(result.error).toBeUndefined();
   });
 
   test.each([7, 11, 13, 16, 32])('accepts drawSize %i', (drawSize) => {
     const drawDefinition = newDrawDefinition();
-    setStageDrawSize({ drawDefinition, stage: MAIN, drawSize });
-    const result = generateDrawTypeAndModifyDrawDefinition({ drawDefinition, drawType: ADAPTIVE });
+    const result = generateDrawTypeAndModifyDrawDefinition({ drawDefinition, drawType: ADAPTIVE, drawSize });
     expect(result.error).toBeUndefined();
   });
 });
@@ -188,8 +179,7 @@ describe('ADAPTIVE draw positioning', () => {
   it('can position participants in drawSize 11', () => {
     const stage = MAIN;
     const drawDefinition = newDrawDefinition();
-    setStageDrawSize({ drawDefinition, stage, drawSize: 11 });
-    generateDrawTypeAndModifyDrawDefinition({ drawDefinition, drawType: ADAPTIVE });
+    generateDrawTypeAndModifyDrawDefinition({ drawDefinition, drawType: ADAPTIVE, drawSize: 11 });
 
     const {
       structures: [structure],
@@ -215,8 +205,7 @@ describe('ADAPTIVE draw positioning', () => {
   it('can position participants with BYE in drawSize 7', () => {
     const stage = MAIN;
     const drawDefinition = newDrawDefinition();
-    setStageDrawSize({ drawDefinition, stage, drawSize: 8 });
-    generateDrawTypeAndModifyDrawDefinition({ drawDefinition, drawType: ADAPTIVE });
+    generateDrawTypeAndModifyDrawDefinition({ drawDefinition, drawType: ADAPTIVE, drawSize: 8 });
 
     const {
       structures: [structure],

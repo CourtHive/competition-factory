@@ -1,12 +1,11 @@
 import { generateDrawTypeAndModifyDrawDefinition } from '@Assemblies/generators/drawDefinitions/generateDrawTypeAndModifyDrawDefinition';
 import { newDrawDefinition } from '@Assemblies/generators/drawDefinitions/newDrawDefinition';
-import { setStageDrawSize } from '@Mutate/drawDefinitions/entryGovernor/stageEntryCounts';
 import { instanceCount } from '@Tools/arrays';
 import { numericSort } from '@Tools/sorting';
 import { expect, it } from 'vitest';
 
 // Constants and types
-import { TOP_DOWN, LOSER, COMPASS, PLAYOFF, MAIN } from '@Constants/drawDefinitionConstants';
+import { TOP_DOWN, LOSER, COMPASS, PLAYOFF } from '@Constants/drawDefinitionConstants';
 import { DrawDefinition } from '@Types/tournamentTypes';
 import { ERROR } from '@Constants/resultConstants';
 
@@ -422,11 +421,11 @@ it('can generate elimination which specifies drawPositions to playoff', () => {
 function playoffDraw(params) {
   const { drawSize, drawType, finishingPositionLimit } = params;
   const drawDefinition: DrawDefinition = newDrawDefinition();
-  setStageDrawSize({ drawDefinition, stage: MAIN, drawSize });
 
   const result = generateDrawTypeAndModifyDrawDefinition({
     finishingPositionLimit,
     drawDefinition,
+    drawSize,
     drawType,
   });
   return { result, drawDefinition };

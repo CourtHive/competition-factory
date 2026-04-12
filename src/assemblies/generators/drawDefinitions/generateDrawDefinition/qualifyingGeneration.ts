@@ -48,22 +48,29 @@ export function qualifyingGeneration(params): ResultType & { qualifyingConflicts
     });
     if (profileResult?.error) return profileResult;
   } else if (structureId && generateQualifyingPlaceholder) {
-    const qualifyingStructure = structureTemplate({
-      structureName: constantToString(QUALIFYING),
-      stage: QUALIFYING,
-      qualifyingOnly,
-      tieFormat,
-    });
-    const { link } = generateQualifyingLink({
-      sourceStructureId: qualifyingStructure.structureId,
-      targetStructureId: structureId,
-      sourceRoundNumber: 0,
-      linkType: POSITION,
-    });
-    drawDefinition.structures ??= [];
-    drawDefinition.structures.push(qualifyingStructure);
-    drawDefinition.links ??= [];
-    drawDefinition.links.push(link);
+    // Check if the placeholder was already created by generateNewDrawDefinition
+    // (which creates it early so positioning can account for qualifier positions)
+    const existingPlaceholder = drawDefinition.structures?.find((s: any) => s.stage === QUALIFYING && !s.matchUps?.length);
+    if (!existingPlaceholder) {
+      const qualifyingStructure = structureTemplate({
+        structureName: constantToString(QUALIFYING),
+        stage: QUALIFYING,
+        qualifyingOnly,
+        tieFormat,
+      });
+      const qualifyingPositions = params.qualifiersCount;
+      const { link } = generateQualifyingLink({
+        sourceStructureId: qualifyingStructure.structureId,
+        targetStructureId: structureId,
+        sourceRoundNumber: 0,
+        qualifyingPositions,
+        linkType: POSITION,
+      });
+      drawDefinition.structures ??= [];
+      drawDefinition.structures.push(qualifyingStructure);
+      drawDefinition.links ??= [];
+      drawDefinition.links.push(link);
+    }
   }
 
   // complete qualifying generation

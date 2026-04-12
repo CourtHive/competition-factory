@@ -15,8 +15,12 @@ it('properly handles qualifiers with avoidances', () => {
   const qualifiersCount = 8;
   const drawProfiles = [
     {
-      qualifiersCount,
       drawSize: 64,
+      qualifyingProfiles: [
+        {
+          structureProfiles: [{ drawSize: 16, qualifyingPositions: qualifiersCount }],
+        },
+      ],
     },
   ];
 
@@ -34,12 +38,13 @@ it('properly handles qualifiers with avoidances', () => {
   tournamentEngine.setState(tournamentRecord);
   const { drawDefinition } = tournamentEngine.getEvent({ drawId });
 
+  const mainStructure = drawDefinition.structures.find((s) => s.stage === MAIN);
   expect(
-    drawDefinition.structures[0].positionAssignments.every(
+    mainStructure.positionAssignments.every(
       ({ participantId, qualifier }) => participantId || qualifier,
     ),
   ).toEqual(true);
-  expect(drawDefinition.structures[0].positionAssignments.filter(({ qualifier }) => qualifier).length).toEqual(
+  expect(mainStructure.positionAssignments.filter(({ qualifier }) => qualifier).length).toEqual(
     qualifiersCount,
   );
 

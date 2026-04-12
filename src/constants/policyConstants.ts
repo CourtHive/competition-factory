@@ -16,6 +16,7 @@ export const POLICY_TYPE_SEEDING = 'seeding';
 export const POLICY_TYPE_FEED_IN = 'feedIn';
 export const POLICY_TYPE_SANCTIONING = 'sanctioning';
 export const POLICY_TYPE_AUDIT = 'audit';
+export const POLICY_TYPE_COMPETITION = 'competition';
 export const POLICY_TYPE_DRAWS = 'draws';
 
 export type ValidPolicyTypes =
@@ -32,6 +33,7 @@ export type ValidPolicyTypes =
   | typeof POLICY_TYPE_AVOIDANCE
   | typeof POLICY_TYPE_DISPLAY
   | typeof POLICY_TYPE_PRIVACY
+  | typeof POLICY_TYPE_COMPETITION
   | typeof POLICY_TYPE_FEED_IN
   | typeof POLICY_TYPE_SCORING
   | typeof POLICY_TYPE_SEEDING
@@ -51,6 +53,7 @@ export const policyConstants = {
   POLICY_TYPE_PROGRESSION,
   POLICY_TYPE_SCHEDULING,
   POLICY_TYPE_AVOIDANCE,
+  POLICY_TYPE_COMPETITION,
   POLICY_TYPE_DISPLAY,
   POLICY_TYPE_PRIVACY,
   POLICY_TYPE_FEED_IN,

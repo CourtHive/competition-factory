@@ -185,6 +185,34 @@ Now correctly includes NOAD: `"SET3-S:6NOAD/TB7-F:TB10"`. The previous value was
 
 Changed from `"SET3-S:6/TB7-F:TB10"` to `"SET3-S:6NOAD/TB7-F:TB10"`.
 
+### `entryProfile` extension removed
+
+The `ENTRY_PROFILE` extension on draw definitions has been removed entirely. This extension previously stored per-stage capacity constraints (`drawSize`, `qualifiersCount`, `wildcardsCount`, `alternates`) and was created as a byproduct of draw generation.
+
+**What changed:**
+
+- `ENTRY_PROFILE` constant removed from `extensionConstants`
+- `getEntryProfile()`, `modifyEntryProfile()` deleted
+- `setStageDrawSize()`, `setStageAlternatesCount()`, `setStageWildcardsCount()`, `setStageQualifiersCount()` deleted
+- `getStageDrawPositionsCount()` now derives draw size from structure `positionAssignments.length` instead of the entryProfile extension
+- `getQualifiersCount()` derives entirely from links (no entryProfile fallback)
+- `stageAlternatesCount()`, `getStageWildcardsCount()` now read from sanctioning constraints; unsanctioned draws are unconstrained
+- `getStageSpace()` checks sanctioning constraints when present; returns unconstrained when no sanctioning
+- `getValidStage()` checks structure existence, not entryProfile existence
+
+**Migration:**
+
+- Code importing `ENTRY_PROFILE` from `extensionConstants`: remove the import
+- Code calling `setStageDrawSize()`: pass `drawSize` directly to `generateDrawDefinition` or `generateDrawTypeAndModifyDrawDefinition`
+- Code calling `setStageQualifiersCount()`: pass `qualifiersCount` to `generateDrawDefinition`
+- Code reading `entryProfile[stage].drawSize`: use `getStageDrawPositionsCount({ stage, drawDefinition })` which now derives from structures
+- Code reading `entryProfile[stage].qualifiersCount`: use `getQualifiersCount({ drawDefinition, structureId, stage })`
+- Draw composition enforcement (wildcards, alternates) now requires sanctioning constraints; unsanctioned draws have no composition limits
+
+### `DrawLinkSource` type expanded
+
+Added `qualifyingPositions?: number` to `DrawLinkSource`. When a qualifying placeholder link has `roundNumber: 0`, the `qualifyingPositions` field specifies how many qualifier positions to reserve in the target MAIN structure during automated positioning. This replaces the qualifier reservation that was previously handled by `entryProfile`.
+
 ---
 
 ## New Engines
@@ -200,6 +228,20 @@ A complete lifecycle engine for governing body tournament sanctioning workflows.
 - **188 tests** across 10 test files
 - Endorsement support, certification tracking, compliance monitoring
 - Full documentation suite
+
+#### Draw Composition Constraints
+
+`SanctioningTier` now includes draw composition fields:
+
+| Field           | Purpose                              |
+| --------------- | ------------------------------------ |
+| `maxWildcards`  | Maximum wildcard entries per draw    |
+| `maxAlternates` | Maximum alternate entries per draw   |
+| `maxQualifiers` | Maximum qualifier positions per draw |
+
+When a sanctioned tournament is activated, these constraints are stored as a `SANCTIONING_CONSTRAINTS` extension on the tournament record. Runtime enforcement via `getStageSpace()` and `getDrawCompositionConstraints()` checks these limits when adding entries. Unsanctioned draws are unconstrained — no composition limits apply without sanctioning.
+
+This replaces the `entryProfile` extension which previously stored draw composition data as a byproduct of draw generation rather than as a governance mechanism.
 
 ### Officiating Engine
 
@@ -429,6 +471,32 @@ COMPASS and OLYMPIC draw types now use a single MAIN stage structure with recurs
 - Safeguard preventing `setTournamentDates` from excluding dates with scheduled items
 - Court availability conflict detection
 
+### Qualifying-First Draw Generation
+
+`generateDrawDefinition` now supports creating qualifying structures before the main draw exists. Passing `qualifyingOnly: true` with `qualifyingProfiles` and `drawEntries` (containing `entryStage: QUALIFYING` entries) generates populated qualifying structures with a MAIN placeholder (0 matchUps). The user can later generate the main draw by calling `generateDrawDefinition` again with a `drawSize` and the existing `drawId` — the factory detects the placeholder MAIN and populates it while preserving qualifying structures and links.
+
+- Qualifying entries are correctly added to the drawDefinition when `qualifyingOnly: true` and `drawEntries` is provided
+- Automated positioning works for qualifying structures in qualifying-first mode
+- MAIN placeholder has zero matchUps and empty positionAssignments until explicitly generated
+
+### `getCompetitionFormat` Hierarchical Query
+
+New query that resolves the `competitionFormat` through the hierarchy: structure → draw → event, returning the first defined value along with each level's individual setting.
+
+```js
+const {
+  structureDefaultCompetitionFormat,
+  drawDefaultCompetitionFormat,
+  eventDefaultCompetitionFormat,
+  competitionFormat, // resolved value (first defined in hierarchy)
+} = engine.getCompetitionFormat({
+  structureId, // optional
+  matchUpId, // optional
+  drawId, // optional
+  eventId, // optional
+});
+```
+
 ### Draw & Structure Utilities
 
 - `remapDrawDefinitionMatchUpIds` — remap matchUp IDs within a draw definition
@@ -626,6 +694,13 @@ Seven new documentation files covering the full mocksEngine surface:
 - Update `processPlayoffGroups` to support AD_HOC as playoff for RR
 - Correct `drawMatic` for targeting consolation structures
 - Clear up PLAY_OFF vs PLAYOFF confusion
+- Create qualifying placeholder before positioning to prevent bye/qualifier position clashes
+- Filter WITHDRAWN entries in `addEntries` during draw generation
+- Preserve `drawType` when adding qualifying to an existing draw
+- Swiss draws now have `positionAssignments` and proper qualifier reservation
+- Fix lucky draw detection for Swiss and qualifying structures
+- Fix `ROUND_TARGET` extension name in `addDrawEntry` (was incorrectly `'roundEntry'`)
+- Allow qualifying entries in drawDefinition when `qualifyingOnly: true` and `drawEntries` provided
 
 ### Scheduling / Dates
 
@@ -643,6 +718,136 @@ Seven new documentation files covering the full mocksEngine surface:
 
 ---
 
+## PAGE_PLAYOFF Draw Type
+
+A new **Page Playoff System (PPS)** draw type — a 4-participant hybrid knockout format that gives the top two seeds double-elimination protection while maintaining single elimination for the remaining two. All four finishing positions are resolved definitively through actual matchUps.
+
+### Structure
+
+Four linked structures: **Qualifier 1** (seeds 1 vs 2), **Eliminator** (seeds 3 vs 4), **Qualifier 2** (Q1 loser vs Eliminator winner), **Final** (Q1 winner vs Q2 winner). Connected by 4 links (2 WINNER, 1 LOSER, 1 WINNER).
+
+### Three Usage Paths
+
+1. **Standalone draw type:** `drawType: PAGE_PLAYOFF, drawSize: 4` — generates structures with manual positioning
+2. **Round Robin playoff group:** `playoffGroups: [{ drawType: PAGE_PLAYOFF, finishingPositions: [1] }]` — POSITION link from RR groups, fully automated
+3. **Single Elimination playoff attachment:** via `generateAndPopulatePlayoffStructures` — TMX "Add Playoffs" modal has "Page Playoff (1-4)" toggle
+
+### Advantages
+
+Based on research by Rafique & Sanders (Syracuse University, MIT Sloan 2026) proving PPS maximizes efficacy (probability of the best team winning) and preserves fairness across 1 million simulated tournaments. Used in IPL/PSL/BPL cricket, NBA Play-In Tournament, curling, and softball.
+
+---
+
+## Swiss System Draw Type
+
+A full **Swiss System** implementation for multi-round tournament pairing, built on the Ad Hoc draw infrastructure.
+
+### Pairing Algorithm
+
+- **Round 1:** FIDE-style pairing — sort participants by rating (descending), split into top and bottom halves, pair top vs bottom (1v5, 2v6, 3v7, 4v8 for 8 players)
+- **Subsequent rounds:** Score-group pairing — group participants by W-L record, apply FIDE-style pairing within each group
+- **Floating:** When a score group has an odd count, the lowest-rated participant floats down to the next group
+- **Repeat avoidance:** Encounter tracking via pairing hash prevents re-matching opponents
+- **Bye handling:** Odd participant count assigns bye to the lowest-rated participant in the lowest score group
+
+### Rating Scale Support
+
+TMX exposes a rating scale selector for Swiss draws (same dropdown as DrawMatic). The selected scale is stored as a `swissScaleName` extension on the draw definition and passed through on each `generateSwissRound` call.
+
+### Standings and Tiebreakers
+
+`getSwissStandings` returns ranked standings with four tiebreaker methods:
+
+| Method            | Description                                                             |
+| ----------------- | ----------------------------------------------------------------------- |
+| BUCHHOLZ          | Sum of all opponents' scores                                            |
+| MEDIAN_BUCHHOLZ   | Buchholz excluding highest and lowest opponent scores                   |
+| SONNEBORN_BERGER  | Sum of defeated opponents' scores plus half the drawn opponents' scores |
+| PROGRESSIVE_SCORE | Cumulative sum of round-by-round cumulative point totals                |
+
+### Swiss Chart
+
+`getSwissChart` returns per-round snapshots of score groups for visualization — each round contains nodes with participant lists grouped by their W-L-D record.
+
+### Key Methods
+
+- `generateSwissRound({ drawId })` — generates the next round of Swiss pairings
+- `addAdHocMatchUps({ matchUps, structureId, drawId })` — adds generated matchUps to the draw
+- `getSwissStandings({ drawId })` — returns ranked standings with tiebreaker values
+- `getSwissChart({ drawId })` — returns score-group chart data for visualization
+
+### Competition Policy Integration
+
+Swiss draws support the new `POLICY_TYPE_COMPETITION` for three-track rating evaluation. When a competition policy is attached with `pairingPolicy.method: 'SWISS'`, the Swiss pairing algorithm uses dynamic form ratings from the competition state instead of raw scale values.
+
+---
+
+## Competition Policy (Three-Track Rating System)
+
+A new `POLICY_TYPE_COMPETITION` policy type enables multi-round competition evaluation with three distinct rating tracks. This is the architecture described in the "Luck vs. Skill" specification — a system where dynamic ratings affect opportunity (pairing) but never evaluation (pressure scoring).
+
+### Three Rating Tracks
+
+| Track                   | Mutability          | Purpose                                                             |
+| ----------------------- | ------------------- | ------------------------------------------------------------------- |
+| **Baseline Rating**     | Frozen during event | Defines expected performance; source of pressure expectations       |
+| **Dynamic Form Rating** | Updated each round  | Drives pairing; ensures competitive matches via Elo-like updates    |
+| **Pressure Rating**     | Cumulative          | Measures overperformance vs baseline expectation; determines winner |
+
+### Core Invariant
+
+**Dynamic ratings affect opportunity, never evaluation.** The pressure rating always uses the frozen baseline for expectation calculation, preventing a feedback loop where early overperformance inflates expectations.
+
+### Processing Granularity
+
+The policy supports two processing modes:
+
+- **PER_MATCHUP** — ratings update automatically in the scoring pipeline after each matchUp outcome is finalized
+- **PER_ROUND** — ratings update in batch when `processCompetitionRound` is called (typically at round generation time)
+
+### Rating Math
+
+- **Expected score:** Logistic function `E = 1 / (1 + 10^((Rj - Ri) / S))` with configurable logistic scale
+- **Actual output:** Format-agnostic — derives countable scoring units (games, points, sets) from any matchUp format
+  - `POINT_SHARE` mode: `pointsWon / totalPoints`
+  - `WEIGHTED` mode: configurable weights for point share, point differential, and context factor
+- **Pressure delta:** `actualOutput - expectedOutput` (always baseline-based)
+- **Dynamic form update:** `R_new = R_old + K * (actualOutput - dynamicExpected)`
+
+### Victory Policy
+
+Configurable primary ranking (`PRESSURE_RATING`, `DYNAMIC_FORM_RATING`, `WINS`, `POINTS`) with ordered tiebreakers including `HEAD_TO_HEAD`, `HEAD_TO_HEAD_PRESSURE`, `POINT_DIFFERENTIAL`, `STRENGTH_OF_OPPOSITION`, `BUCHHOLZ`, `SONNEBORN_BERGER`.
+
+### Preset Fixtures
+
+| Fixture                     | Pairing   | Primary Ranking          | Processing  |
+| --------------------------- | --------- | ------------------------ | ----------- |
+| POLICY_COMPETITION_STANDARD | DrawMatic | WINS                     | PER_ROUND   |
+| POLICY_COMPETITION_PRESSURE | DrawMatic | PRESSURE_RATING          | PER_MATCHUP |
+| POLICY_COMPETITION_SWISS    | Swiss     | WINS + BUCHHOLZ tiebreak | PER_ROUND   |
+
+### Pairing Integration
+
+When a competition policy is present, `generateDrawMaticRound` and `generateSwissRound` automatically use dynamic form ratings from the competition state instead of raw scale values or the legacy `dynamicRatings` system. The existing DrawMatic value function, encounter tracking, and candidate generation are fully reused.
+
+### New competitionGovernor Methods
+
+**Mutations:** `initializeCompetitionState`, `processCompetitionMatchUp`, `processCompetitionRound`, `resetCompetitionState`
+
+**Queries:** `getCompetitionState`, `getCompetitionPolicy`, `getCompetitionLeaderboard`, `getCompetitionParticipantState`
+
+### State Management
+
+Competition state is stored as a `competitionState` extension on the draw definition. It contains per-participant states (baseline, dynamic form, pressure ratings, W/L/D records, rating history) and per-round states (processing status, lane assignments).
+
+---
+
+## Infrastructure
+
+- Resolve Jest server test failures with TypeScript 6 (`jest.config.cjs` — explicit types configuration for ts-jest)
+
+---
+
 ## Documentation
 
 Comprehensive documentation was added across all new and existing features:
@@ -654,7 +859,8 @@ Comprehensive documentation was added across all new and existing features:
 - **Scale/Ranking Engine:** 6 docs (overview, API, ranking points pipeline, aggregation, quality wins)
 - **Scoring Engine:** 2 docs (overview/architecture, complete API reference)
 - **Publishing:** 8 docs (overview, embargo, events, order of play, participants, seeding, workflows, data subscriptions)
-- **Draw Types:** 13 new draw type documentation files
+- **Draw Types:** 14 new draw type documentation files (including Swiss System)
+- **Competition Policy:** policy documentation, competition governor methods
 - **Concepts:** draft draws, mutation locks, exit profiles, finishing positions, date/time handling, draw links, seed withdrawal cascade
 - **mocksEngine:** 7 docs (overview, getting started, tournament generation, participants, outcomes, patterns, governor)
 - **DrawMatic:** pressure ratings and pressure score documentation

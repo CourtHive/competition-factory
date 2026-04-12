@@ -1,7 +1,6 @@
 import { generateDrawTypeAndModifyDrawDefinition } from '@Assemblies/generators/drawDefinitions/generateDrawTypeAndModifyDrawDefinition';
 import { initializeStructureSeedAssignments } from '@Mutate/drawDefinitions/positionGovernor/initializeSeedAssignments';
 import { newDrawDefinition } from '@Assemblies/generators/drawDefinitions/newDrawDefinition';
-import { setStageDrawSize } from '@Mutate/drawDefinitions/entryGovernor/stageEntryCounts';
 import { addDrawEntries } from '@Mutate/drawDefinitions/entryGovernor/addDrawEntries';
 import { assignSeed } from '@Mutate/drawDefinitions/entryGovernor/seedAssignment';
 import { automatedPositioning } from '@Mutate/drawDefinitions/automatedPositioning';
@@ -196,8 +195,7 @@ function generateCompass({
   const drawType = COMPASS;
 
   const drawDefinition = newDrawDefinition();
-  setStageDrawSize({ drawDefinition, stage, drawSize });
-  generateDrawTypeAndModifyDrawDefinition({ drawDefinition, drawType });
+  generateDrawTypeAndModifyDrawDefinition({ drawDefinition, drawType, drawSize });
   const {
     structures: [structure],
   } = getDrawStructures({ drawDefinition, stage, stageSequence: 1 });

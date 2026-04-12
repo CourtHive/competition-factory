@@ -43,7 +43,8 @@ export function setUpDrawGeneration(params): ResultType & {
     !existingQualifyingStructures[0].matchUps?.length &&
     existingQualifyingStructures[0].structureId;
 
-  if (existingDrawDefinition && drawType !== existingDrawDefinition.drawType)
+  // Only overwrite drawType when not just adding qualifying to an existing draw
+  if (existingDrawDefinition && drawType !== existingDrawDefinition.drawType && !existingQualifyingPlaceholderStructureId)
     existingDrawDefinition.drawType = drawType as DrawTypeUnion;
 
   const drawDefinition: any =

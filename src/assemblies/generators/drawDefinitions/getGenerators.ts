@@ -90,6 +90,11 @@ export function getGenerators(params): { generators?: any; error?: ErrorType } {
         stage,
       });
 
+      // Swiss structures need positionAssignments based on drawSize for entry tracking and qualifier reservation
+      if (drawSize) {
+        structure.positionAssignments = Array.from({ length: drawSize }, (_, i) => ({ drawPosition: i + 1 }));
+      }
+
       return { structures: [structure], links: [], ...SUCCESS };
     },
     [LUCKY_DRAW]: () => {

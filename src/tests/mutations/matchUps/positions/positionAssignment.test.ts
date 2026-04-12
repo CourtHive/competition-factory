@@ -1,6 +1,5 @@
 import { generateDrawTypeAndModifyDrawDefinition } from '@Assemblies/generators/drawDefinitions/generateDrawTypeAndModifyDrawDefinition';
 import { newDrawDefinition } from '@Assemblies/generators/drawDefinitions/newDrawDefinition';
-import { setStageDrawSize } from '@Mutate/drawDefinitions/entryGovernor/stageEntryCounts';
 import { structureAssignedDrawPositions } from '@Query/drawDefinition/positionsGetter';
 import { assignDrawPosition } from '@Mutate/drawDefinitions/assignDrawPosition';
 import { getStageEntries } from '@Query/drawDefinition/stageGetter';
@@ -165,18 +164,18 @@ it('can assign ROUND_ROBIN draw drawPositions', () => {
 
 it('returns positionAssignments for SINGLE_ELIMINATION and ROUND_ROBIN strucures', () => {
   let drawDefinition = newDrawDefinition();
-  setStageDrawSize({ drawDefinition, stage: MAIN, drawSize: 16 });
   const elimination = generateDrawTypeAndModifyDrawDefinition({
     drawDefinition,
+    drawSize: 16,
   }).structures?.[0];
   const { positionAssignments: eliminationAssignments } = structureAssignedDrawPositions({ structure: elimination });
   expect(eliminationAssignments?.length).toEqual(16);
 
   drawDefinition = newDrawDefinition();
-  setStageDrawSize({ drawDefinition, stage: MAIN, drawSize: 16 });
   const drawType = ROUND_ROBIN;
   const roundRobin = generateDrawTypeAndModifyDrawDefinition({
     drawDefinition,
+    drawSize: 16,
     drawType,
   }).structures?.[0];
   const { positionAssignments: roundRobinAssignments } = structureAssignedDrawPositions({ structure: roundRobin });

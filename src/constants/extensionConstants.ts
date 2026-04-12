@@ -1,5 +1,6 @@
 export const ACTIVE_SUSPENSION = 'activeSuspension';
 export const APPLIED_POLICIES = 'appliedPolicies';
+export const COMPETITION_STATE = 'competitionState';
 export const CONTEXT = 'context';
 export const DELEGATED_OUTCOME = 'delegatedOutcome';
 export const DISABLED = 'disabled';
@@ -9,7 +10,6 @@ export const DISPLAY = 'display';
 export const DRAFT_STATE = 'draftState';
 export const DRAW_DELETIONS = 'drawDeletions';
 export const DRAW_PROFILE = 'drawProfile';
-export const ENTRY_PROFILE = 'entryProfile';
 export const EVENT_PROFILE = 'eventProfile';
 export const EVENT_WITHDRAWAL_REQUESTS = 'eventWithdrawalRequests';
 export const FACTORY = 'factory';
@@ -24,6 +24,7 @@ export const POSITION_ACTIONS = 'positionActions';
 export const RANKING_POINTS = 'rankingPoints';
 export const REGISTRATION = 'registration';
 export const ROUND_TARGET = 'roundTarget';
+export const SANCTIONING_CONSTRAINTS = 'sanctioningConstraints';
 export const SCHEDULE_LIMITS = 'scheduleLimits';
 export const SCHEDULE_TIMING = 'scheduleTiming';
 export const SCHEDULING_PROFILE = 'schedulingProfile';
@@ -35,6 +36,7 @@ export const TIE_FORMAT_MODIFICATIONS = 'tieFormatModification';
 export const extensionConstants = {
   ACTIVE_SUSPENSION,
   APPLIED_POLICIES,
+  COMPETITION_STATE,
   CONTEXT, // used to capture, e.g. context in which a venue was added
   DELEGATED_OUTCOME,
   DISABLED,
@@ -44,7 +46,6 @@ export const extensionConstants = {
   DRAFT_STATE,
   DRAW_DELETIONS,
   DRAW_PROFILE,
-  ENTRY_PROFILE, // used for drawGeneration; not relevant for anonymized tournaments
   EVENT_PROFILE,
   EVENT_WITHDRAWAL_REQUESTS,
   FLIGHT_PROFILE,
@@ -58,6 +59,7 @@ export const extensionConstants = {
   RANKING_POINTS, // for attaching points awarded to tournamentRecord
   REGISTRATION,
   ROUND_TARGET,
+  SANCTIONING_CONSTRAINTS,
   SCHEDULE_LIMITS,
   SCHEDULE_TIMING,
   SCHEDULING_PROFILE,

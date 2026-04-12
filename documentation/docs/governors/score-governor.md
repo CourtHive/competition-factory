@@ -10,20 +10,7 @@ The **scoreGovernor** is a collection of scoring related tools that provide anal
 
 Lightweight independent/reusable components such as scoring dialogs can make use of the **scoreGovernor** without having to import any Competition Factory engines.
 
----
-
-## addGame
-
-Adds a completed game to the score history. Part of the live scoring history tracking system.
-
-```js
-const result = scoreGovernor.addGame({
-  score, // current score object
-  sideNumber, // 1 or 2 - which side won the game
-});
-```
-
-**Purpose:** Track game-by-game scoring progression for analytics and undo/redo functionality.
+The scoreGovernor also re-exports the `ScoringEngine` class and `addPoint` for point-by-point scoring — see [ScoringEngine Methods](#scoringengine-methods) at the end of this page.
 
 ---
 
@@ -39,36 +26,6 @@ const result = scoreGovernor.addPoint({
 ```
 
 **Purpose:** Track point-by-point scoring progression for detailed analytics.
-
----
-
-## addSet
-
-Adds a completed set to the score history. Part of the live scoring history tracking system.
-
-```js
-const result = scoreGovernor.addSet({
-  score, // current score object
-  setObject, // completed set data
-});
-```
-
-**Purpose:** Track set-by-set scoring progression.
-
----
-
-## addShot
-
-Adds a shot detail to the score history. Part of the live scoring shot-tracking system.
-
-```js
-const result = scoreGovernor.addShot({
-  score, // current score object
-  shotDetails, // shot metadata (type, location, outcome, etc.)
-});
-```
-
-**Purpose:** Capture detailed shot-by-shot data for advanced analytics.
 
 ---
 
@@ -120,21 +77,6 @@ console.log(analysis.isComplete); // boolean
 
 ---
 
-## calculateHistoryScore
-
-Calculates the current score from scoring history, enabling reconstruction of score state.
-
-```js
-const { score } = scoreGovernor.calculateHistoryScore({
-  matchUpFormat, // required - match format
-  history, // required - array of scoring events
-});
-```
-
-**Purpose:** Reconstruct score from event history for undo/redo and validation.
-
----
-
 ## checkScoreHasValue
 
 Checks if a score object contains any actual scoring data.
@@ -165,20 +107,6 @@ const hasWinningSide = scoreGovernor.checkSetIsComplete({
   },
 });
 ```
-
----
-
-## clearHistory
-
-Clears the scoring history from a score object.
-
-```js
-const result = scoreGovernor.clearHistory({
-  score, // required - score object to clear history from
-});
-```
-
-**Purpose:** Reset history tracking while preserving current score.
 
 ---
 
@@ -274,67 +202,6 @@ Utility for generating score strings based on key entry. Please see `keyValueSco
 
 ---
 
-### participantResults
-
-An array of `{ drawPosition, participantId, participantResult }` objects is returned for each group of processed matchUps.
-
-In the example given below 3 of 4 participants were tied with equivalent metrics and final `rankOrder` was determined by **Head to Head** analysis.
-See [Round Robin Tally Policy](/docs/policies/tallyPolicy).
-
-```js
-{
-  drawPosition: 4,
-  participantId: 'uniqueParticipantId1',
-  participantResult: {
-    allDefaults: 0,
-    defaults: 0,
-    retirements: 0,
-    walkovers: 0,
-    matchUpsWon: 3,
-    matchUpsLost: 1,
-    victories: [
-      'uniqueMatchUpId1',
-      'uniqueMatchUpId2',
-      'uniqueMatchUpId3',
-    ],
-    defeats: ['uniqueMatchUpId4'],
-    matchUpsCancelled: 0,
-    setsWon: 6,
-    setsLost: 2,
-    gamesWon: 36,
-    gamesLost: 12,
-    pointsWon: 0,
-    pointsLost: 0,
-    setsPct: 3,
-    matchUpsPct: 3,
-    gamesPct: 0.75,
-    pointsPct: 0,
-    result: '3/1',
-    games: '36/12',
-    provisionalOrder: 1, // order when ROUND_ROBIN groups are incomplete;
-    groupOrder: 1, // order including manually entered 'subOrder' (for statistical ties)
-    rankOrder: 1, // order without manually entered 'subOrder'
-    GEMscore: 30003000075000000,
-  },
-};
-```
-
-#### GEMscore
-
-`GEMscore` is a hash of key participant metrics and is used for sorting participants from multiple groups where **Head to Head** does not apply.
-This is used to determine "seedProxies" when ordered participants from each group progress to playoff strutures.
-
-```js
-const GEM =
-  matchUpsPct * Math.pow(10, 20) +
-  tieMatchUpsPct * Math.pow(10, 16) +
-  setsPct * Math.pow(10, 12) +
-  gamesPct * Math.pow(10, 8) +
-  pointsPct * Math.pow(10, 3);
-```
-
----
-
 ## parseScoreString
 
 Produces CODES sets objects.
@@ -381,20 +248,6 @@ const format = scoreGovernor.parse({
 
 ---
 
-## redo
-
-Redoes the last undone scoring action in history.
-
-```js
-const result = scoreGovernor.redo({
-  score, // required - score object with history
-});
-```
-
-**Purpose:** Redo functionality for live scoring interfaces.
-
----
-
 ## reverseScore
 
 Reverses the perspective of a score (swaps side1 and side2).
@@ -409,21 +262,6 @@ const reversedScore = scoreGovernor.reverseScore({
 
 ---
 
-## setServingSide
-
-Sets which side is currently serving in the score history.
-
-```js
-const result = scoreGovernor.setServingSide({
-  score, // required - score object
-  sideNumber, // required - 1 or 2
-});
-```
-
-**Purpose:** Track serving order in live scoring.
-
----
-
 ## stringify
 
 Converts a structured matchUpFormat object to a format code string. Alias for `stringifyMatchUpFormat`.
@@ -435,35 +273,6 @@ const code = scoreGovernor.stringify({
 ```
 
 **Purpose:** Convert format objects to compact code strings.
-
----
-
-## umo
-
-"Undo Multiple Operations" - undoes multiple scoring actions at once.
-
-```js
-const result = scoreGovernor.umo({
-  score, // required - score object
-  count, // required - number of operations to undo
-});
-```
-
-**Purpose:** Bulk undo for correcting scoring errors.
-
----
-
-## undo
-
-Undoes the last scoring action in history.
-
-```js
-const result = scoreGovernor.undo({
-  score, // required - score object with history
-});
-```
-
-**Purpose:** Undo functionality for live scoring interfaces.
 
 ---
 
@@ -581,3 +390,25 @@ const {
 ```
 
 ---
+
+## ScoringEngine Methods
+
+The following methods are available on `ScoringEngine` instances, not as standalone `scoreGovernor` exports. The `ScoringEngine` class is re-exported from the scoreGovernor for convenience.
+
+```js
+import { ScoringEngine } from 'tods-competition-factory';
+
+const engine = new ScoringEngine({ matchUpFormat });
+```
+
+Instance methods include:
+
+- `addGame({ sideNumber })` — add a completed game to score history
+- `addSet({ setObject })` — add a completed set to score history
+- `addShot({ shotDetails })` — add shot detail for advanced analytics
+- `calculateHistoryScore({ matchUpFormat, history })` — reconstruct score from event history
+- `clearHistory()` — reset history tracking while preserving current score
+- `setServingSide({ sideNumber })` — set which side is currently serving
+- `undo()` — undo the last scoring action
+- `redo()` — redo the last undone scoring action
+- `umo({ count })` — undo multiple operations at once

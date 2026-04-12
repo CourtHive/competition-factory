@@ -46,7 +46,7 @@ export function getByesData({ provisionalPositioning, drawDefinition, matchUpsMa
     structureId,
     stage,
   });
-  const entriesCount = entries.length + qualifiersCount;
+  const entriesCount = entries.length + (qualifiersCount ?? 0);
 
   // # Byes = drawSize (positionAssignments) - total entries
   // const { positionAssignments, qualifierPositions, byePositions, unassignedPositions } = structureAssignedDrawPositions({structure});

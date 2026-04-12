@@ -1,13 +1,17 @@
 import { generateDrawTypeAndModifyDrawDefinition } from '@Generators/drawDefinitions/generateDrawTypeAndModifyDrawDefinition';
+import { generateQualifyingLink } from '@Generators/drawDefinitions/links/generateQualifyingLink';
 import { addDrawEntry } from '@Mutate/drawDefinitions/entryGovernor/addDrawEntries';
 import { isLuckyBasedDraw } from '@Query/drawDefinition/isLuckyBasedDraw';
+import structureTemplate from '@Generators/templates/structureTemplate';
 import { isAdHocType } from '@Query/drawDefinition/isAdHocType';
+import { constantToString } from '@Tools/strings';
 import { generateAdHoc } from './generateAdHoc';
 import { prepareStage } from './prepareStage';
 import { ensureInt } from '@Tools/ensureInt';
 
 // constants and types
-import { MAIN } from '@Constants/drawDefinitionConstants';
+import { MAIN, POSITION, QUALIFYING } from '@Constants/drawDefinitionConstants';
+import { WITHDRAWN } from '@Constants/entryStatusConstants';
 import { DrawDefinition } from '@Types/tournamentTypes';
 import { ResultType } from '@Types/factoryTypes';
 
@@ -44,12 +48,53 @@ export function generateNewDrawDefinition(params): ResultType & {
   const addResult = addEntries({
     suppressDuplicateEntries,
     ignoreStageSpace,
+    qualifyingOnly,
     drawDefinition,
     drawEntries,
     drawType,
     entries,
   });
   if (addResult.error) return addResult;
+
+  // When qualifyingPlaceholder is requested, create the placeholder structure and link
+  // BEFORE positioning so that getByesData/getQualifiersCount can account for qualifier positions.
+  // Skip when there is already a qualifying structure linked to the main (e.g. qualifying-first
+  // flow where the real qualifying structure already exists).
+  const { qualifyingPlaceholder, qualifyingProfiles, qualifiersCount } = params;
+  const mainStructureId = drawDefinition?.structures?.find(
+    (s) => s.stage === MAIN && s.stageSequence === 1,
+  )?.structureId;
+  const existingQualifyingLink =
+    mainStructureId &&
+    drawDefinition?.links?.some(
+      (l: any) => l.target?.structureId === mainStructureId && l.source?.structureId,
+    );
+  if (
+    qualifyingPlaceholder &&
+    !qualifyingProfiles?.length &&
+    qualifiersCount &&
+    drawDefinition &&
+    mainStructureId &&
+    !existingQualifyingLink
+  ) {
+    const qualifyingStructure = structureTemplate({
+      structureName: constantToString(QUALIFYING),
+      stage: QUALIFYING,
+      qualifyingOnly,
+      tieFormat: params.tieFormat,
+    });
+    const { link } = generateQualifyingLink({
+      sourceStructureId: qualifyingStructure.structureId,
+      targetStructureId: mainStructureId,
+      qualifyingPositions: qualifiersCount,
+      sourceRoundNumber: 0,
+      linkType: POSITION,
+    });
+    drawDefinition.structures ??= [];
+    drawDefinition.structures.push(qualifyingStructure);
+    drawDefinition.links ??= [];
+    drawDefinition.links.push(link);
+  }
 
   // temporary until seeding is supported in LUCKY_DRAW
   const seedsCount = isLuckyBasedDraw(drawType) ? 0 : ensureInt(params.seedsCount ?? 0);
@@ -82,11 +127,13 @@ export function generateNewDrawDefinition(params): ResultType & {
 }
 
 function addEntries(params) {
-  const { ignoreStageSpace, drawDefinition, drawEntries, drawType, entries } = params;
+  const { ignoreStageSpace, drawDefinition, drawEntries, drawType, qualifyingOnly, entries } = params;
   // add all entries to the draw
   for (const entry of entries) {
-    // if drawEntries and entryStage !== stage ignore
-    if (drawEntries && entry.entryStage && entry.entryStage !== MAIN) continue;
+    // safeguard: never add WITHDRAWN entries to draw definition
+    if (entry.entryStatus === WITHDRAWN) continue;
+    // if drawEntries and entryStage !== stage ignore (allow qualifying entries when qualifyingOnly)
+    if (drawEntries && entry.entryStage && entry.entryStage !== MAIN && !(qualifyingOnly && entry.entryStage === QUALIFYING)) continue;
 
     const entryData = {
       ...entry,

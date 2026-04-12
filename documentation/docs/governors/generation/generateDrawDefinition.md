@@ -23,82 +23,82 @@ const { drawDefinition, success } = engine.generateDrawDefinition({
 
 ### Required (when calling via engine)
 
-| Parameter | Type | Description |
-| --- | --- | --- |
+| Parameter | Type     | Description                                                                                    |
+| --------- | -------- | ---------------------------------------------------------------------------------------------- |
 | `eventId` | `string` | Event to generate the draw for. The engine resolves `tournamentRecord` and `event` from state. |
 
 ### Draw Structure
 
-| Parameter | Type | Default | Description |
-| --- | --- | --- | --- |
-| `drawSize` | `number` | derived from entries | Number of positions in the first-round structure |
-| `drawType` | `DrawTypeUnion` | `SINGLE_ELIMINATION` | Type of draw to generate (see [Draw Types](/docs/concepts/draw-types)) |
-| `drawName` | `string` | derived from drawType | Custom name for the draw |
-| `drawId` | `string` | auto-generated | Explicit draw ID |
-| `matchUpType` | `EventTypeUnion` | from event | `SINGLES`, `DOUBLES`, or `TEAM` |
-| `matchUpFormat` | `string` | from policy/event | Default [matchUpFormatCode](/docs/codes/matchup-format) for all matchUps |
-| `roundsCount` | `number` | — | For AD_HOC draws, number of rounds to pre-generate |
-| `structureName` | `string` | — | Custom name for the main structure |
+| Parameter       | Type             | Default               | Description                                                              |
+| --------------- | ---------------- | --------------------- | ------------------------------------------------------------------------ |
+| `drawSize`      | `number`         | derived from entries  | Number of positions in the first-round structure                         |
+| `drawType`      | `DrawTypeUnion`  | `SINGLE_ELIMINATION`  | Type of draw to generate (see [Draw Types](/docs/concepts/draw-types))   |
+| `drawName`      | `string`         | derived from drawType | Custom name for the draw                                                 |
+| `drawId`        | `string`         | auto-generated        | Explicit draw ID                                                         |
+| `matchUpType`   | `EventTypeUnion` | from event            | `SINGLES`, `DOUBLES`, or `TEAM`                                          |
+| `matchUpFormat` | `string`         | from policy/event     | Default [matchUpFormatCode](/docs/codes/matchup-format) for all matchUps |
+| `roundsCount`   | `number`         | —                     | For AD_HOC draws, number of rounds to pre-generate                       |
+| `structureName` | `string`         | —                     | Custom name for the main structure                                       |
 
 ### Entries and Seeding
 
-| Parameter | Type | Default | Description |
-| --- | --- | --- | --- |
-| `drawEntries` | `Entry[]` | from event | Entries for the draw; defaults to `event.entries` |
-| `automated` | `boolean \| { seedsOnly }` | `false` | Auto-place participants. `{ seedsOnly: true }` places only seeds and adjacent byes. |
-| `seedsCount` | `number` | from policy | Number of seeds to generate |
-| `seedingProfile` | `SeedingProfile` | — | `{ positioning: CLUSTER \| SEPARATE \| WATERFALL }` and optional `groupSeedingThreshold` |
-| `considerEventEntries` | `boolean` | `true` | Use `event.entries` when `drawEntries` not provided |
-| `placeByes` | `boolean` | `true` | Automatically place byes |
-| `enforceGender` | `boolean` | — | Validate participant gender against event |
+| Parameter              | Type                       | Default     | Description                                                                              |
+| ---------------------- | -------------------------- | ----------- | ---------------------------------------------------------------------------------------- |
+| `drawEntries`          | `Entry[]`                  | from event  | Entries for the draw; defaults to `event.entries`                                        |
+| `automated`            | `boolean \| { seedsOnly }` | `false`     | Auto-place participants. `{ seedsOnly: true }` places only seeds and adjacent byes.      |
+| `seedsCount`           | `number`                   | from policy | Number of seeds to generate                                                              |
+| `seedingProfile`       | `SeedingProfile`           | —           | `{ positioning: CLUSTER \| SEPARATE \| WATERFALL }` and optional `groupSeedingThreshold` |
+| `considerEventEntries` | `boolean`                  | `true`      | Use `event.entries` when `drawEntries` not provided                                      |
+| `placeByes`            | `boolean`                  | `true`      | Automatically place byes                                                                 |
+| `enforceGender`        | `boolean`                  | —           | Validate participant gender against event                                                |
 
 ### Qualifying
 
-| Parameter | Type | Description |
-| --- | --- | --- |
-| `qualifyingProfiles` | `any[]` | Array of qualifying structure configurations: `[{ roundTarget, structureProfiles: [{ drawSize, seedsCount, qualifyingPositions }] }]` |
-| `qualifyingPlaceholder` | `boolean` | Generate a placeholder qualifying structure when qualifiers count is set but no profiles provided |
-| `qualifyingOnly` | `boolean` | Only process entries with `entryStage: QUALIFYING` |
+| Parameter               | Type      | Description                                                                                                                                                                                                                                                                                                                                                     |
+| ----------------------- | --------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `qualifyingProfiles`    | `any[]`   | Array of qualifying structure configurations: `[{ roundTarget, structureProfiles: [{ drawSize, seedsCount, qualifyingPositions }] }]`                                                                                                                                                                                                                           |
+| `qualifyingPlaceholder` | `boolean` | Generate a placeholder qualifying structure when qualifiers count is set but no profiles provided                                                                                                                                                                                                                                                               |
+| `qualifyingOnly`        | `boolean` | Generate only qualifying structures with a MAIN placeholder. When combined with `drawEntries` containing `entryStage: QUALIFYING` entries and `qualifyingProfiles`, creates populated qualifying structures and an empty MAIN structure. The MAIN can be generated later by calling `generateDrawDefinition` again with a `drawSize` and the existing `drawId`. |
 
 ### Consolation and Voluntary Consolation
 
-| Parameter | Type | Description |
-| --- | --- | --- |
+| Parameter              | Type                                                       | Description                                                      |
+| ---------------------- | ---------------------------------------------------------- | ---------------------------------------------------------------- |
 | `voluntaryConsolation` | `{ structureName?, structureAbbreviation?, structureId? }` | Add a voluntary consolation structure (requires `drawSize >= 4`) |
 
 ### Playoffs and Complex Topologies
 
-| Parameter | Type | Description |
-| --- | --- | --- |
-| `withPlayoffs` | `WithPlayoffsArgs` | Add playoff structures linked to the main structure via LOSER links. Supports arbitrary recursive nesting for COMPASS-like topologies. See [Recursive Playoff Generation](#recursive-playoff-generation) below. |
-| `playoffAttributes` | `PlayoffAttributes` | Map of `exitProfile` or `finishingPositionRange` to `{ name, abbreviation }` for naming generated structures |
+| Parameter           | Type                | Description                                                                                                                                                                                                     |
+| ------------------- | ------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `withPlayoffs`      | `WithPlayoffsArgs`  | Add playoff structures linked to the main structure via LOSER links. Supports arbitrary recursive nesting for COMPASS-like topologies. See [Recursive Playoff Generation](#recursive-playoff-generation) below. |
+| `playoffAttributes` | `PlayoffAttributes` | Map of `exitProfile` or `finishingPositionRange` to `{ name, abbreviation }` for naming generated structures                                                                                                    |
 
 ### ID Management
 
-| Parameter | Type | Description |
-| --- | --- | --- |
-| `idPrefix` | `string` | Deterministic ID generation: all IDs become `{prefix}-{context}` instead of random UUIDs |
-| `uuids` | `string[]` | Pool of pre-generated UUIDs consumed via `pop()` for matchUpIds, structureIds, and other entities. **Order-dependent and shared** — see [ID Assignment](#id-assignment) for details. |
-| `targetMatchUpIds` | `TargetMatchUpId[]` | Post-generation remap of specific matchUpIds by location fingerprint. See [Targeted MatchUp ID Assignment](#targeted-matchup-id-assignment) below. |
+| Parameter          | Type                | Description                                                                                                                                                                          |
+| ------------------ | ------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `idPrefix`         | `string`            | Deterministic ID generation: all IDs become `{prefix}-{context}` instead of random UUIDs                                                                                             |
+| `uuids`            | `string[]`          | Pool of pre-generated UUIDs consumed via `pop()` for matchUpIds, structureIds, and other entities. **Order-dependent and shared** — see [ID Assignment](#id-assignment) for details. |
+| `targetMatchUpIds` | `TargetMatchUpId[]` | Post-generation remap of specific matchUpIds by location fingerprint. See [Targeted MatchUp ID Assignment](#targeted-matchup-id-assignment) below.                                   |
 
 ### Policies and Options
 
-| Parameter | Type | Description |
-| --- | --- | --- |
-| `policyDefinitions` | `PolicyDefinitions` | Seeding, avoidance, or other policies |
-| `enforceMinimumDrawSize` | `boolean` | Default `true`. Set to `false` to allow multi-structure draws with only 2 participants. |
-| `drawTypeCoercion` | `boolean` | Coerce multi-structure draw types to `SINGLE_ELIMINATION` when `drawSize: 2` |
-| `ignoreStageSpace` | `boolean` | Ignore wildcards count etc. when validating entries |
-| `staggeredEntry` | `boolean` | Accept non-power-of-2 draw sizes; generates feed arms for extra positions |
-| `isMock` | `boolean` | Mark generated entities as mock data |
+| Parameter                | Type                | Description                                                                             |
+| ------------------------ | ------------------- | --------------------------------------------------------------------------------------- |
+| `policyDefinitions`      | `PolicyDefinitions` | Seeding, avoidance, or other policies                                                   |
+| `enforceMinimumDrawSize` | `boolean`           | Default `true`. Set to `false` to allow multi-structure draws with only 2 participants. |
+| `drawTypeCoercion`       | `boolean`           | Coerce multi-structure draw types to `SINGLE_ELIMINATION` when `drawSize: 2`            |
+| `ignoreStageSpace`       | `boolean`           | Ignore wildcards count etc. when validating entries                                     |
+| `staggeredEntry`         | `boolean`           | Accept non-power-of-2 draw sizes; generates feed arms for extra positions               |
+| `isMock`                 | `boolean`           | Mark generated entities as mock data                                                    |
 
 ### TEAM Events
 
-| Parameter | Type | Description |
-| --- | --- | --- |
-| `tieFormat` | `TieFormat` | `{ collectionDefinitions, winCriteria }` for team/dual matchUps |
-| `tieFormatName` | `string` | Named tie format preset |
-| `hydrateCollections` | `boolean` | Propagate event `category` and `gender` to collection definitions |
+| Parameter            | Type        | Description                                                       |
+| -------------------- | ----------- | ----------------------------------------------------------------- |
+| `tieFormat`          | `TieFormat` | `{ collectionDefinitions, winCriteria }` for team/dual matchUps   |
+| `tieFormatName`      | `string`    | Named tie format preset                                           |
+| `hydrateCollections` | `boolean`   | Propagate event `category` and `gender` to collection definitions |
 
 ## Return Value
 
@@ -226,13 +226,13 @@ The `targetMatchUpIds` parameter remaps specific matchUpIds **after** the draw i
 
 ```ts
 type TargetMatchUpId = {
-  matchUpId: string;       // the ID to assign
-  roundNumber: number;     // required — which round
-  roundPosition: number;   // required — which position within the round
-  stage?: string;          // optional — 'MAIN', 'CONSOLATION', 'QUALIFYING', etc.
-  stageSequence?: number;  // optional — 1, 2, etc.
-  exitProfile?: string;    // optional — '0', '0-1', '0-1-2', etc. (see Exit Profiles)
-  structureId?: string;    // optional — target a known structure directly
+  matchUpId: string; // the ID to assign
+  roundNumber: number; // required — which round
+  roundPosition: number; // required — which position within the round
+  stage?: string; // optional — 'MAIN', 'CONSOLATION', 'QUALIFYING', etc.
+  stageSequence?: number; // optional — 1, 2, etc.
+  exitProfile?: string; // optional — '0', '0-1', '0-1-2', etc. (see Exit Profiles)
+  structureId?: string; // optional — target a known structure directly
 };
 ```
 

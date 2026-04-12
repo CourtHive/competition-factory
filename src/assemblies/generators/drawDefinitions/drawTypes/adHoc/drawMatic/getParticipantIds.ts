@@ -5,15 +5,24 @@ import { getParticipantId } from '@Functions/global/extractors';
 import { INVALID_PARTICIPANT_ID, INVALID_VALUES } from '@Constants/errorConditionConstants';
 import { STRUCTURE_SELECTED_STATUSES } from '@Constants/entryStatusConstants';
 import { EntryStatusUnion } from '@Types/tournamentTypes';
+import { MAIN } from '@Constants/drawDefinitionConstants';
 import { ResultType } from '@Types/factoryTypes';
 
 export function getParticipantIds(params): ResultType & { participantIds?: string[] } {
   let { participantIds } = params;
+  // When a targetStage is provided (e.g., the structure being generated), only include
+  // entries for that stage. Entries without an entryStage default to MAIN.
+  const targetStage = params.targetStage;
   const enteredParticipantIds =
     params.drawDefinition?.entries
       ?.filter((entry) => {
         const entryStatus = entry.entryStatus as EntryStatusUnion;
-        return !params.restrictEntryStatus || STRUCTURE_SELECTED_STATUSES.includes(entryStatus);
+        if (params.restrictEntryStatus && !STRUCTURE_SELECTED_STATUSES.includes(entryStatus)) return false;
+        if (targetStage) {
+          const entryStage = entry.entryStage ?? MAIN;
+          if (entryStage !== targetStage) return false;
+        }
+        return true;
       })
       .map(getParticipantId) ?? [];
 

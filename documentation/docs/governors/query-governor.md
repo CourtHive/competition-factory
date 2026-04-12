@@ -267,6 +267,26 @@ const { penalties } = engine.getCompetitionPenalties();
 
 ---
 
+## getCompetitionFormat
+
+Resolves the `competitionFormat` through the hierarchy: structure → draw → event. Returns the first defined value along with each level's individual setting. Accepts any combination of `structureId`, `matchUpId`, `drawId`, or `eventId` to identify the scope.
+
+```js
+const {
+  structureDefaultCompetitionFormat, // competitionFormat defined on the structure (if any)
+  drawDefaultCompetitionFormat, // competitionFormat defined on the drawDefinition (if any)
+  eventDefaultCompetitionFormat, // competitionFormat defined on the event (if any)
+  competitionFormat, // resolved value: first defined in the hierarchy
+} = engine.getCompetitionFormat({
+  structureId, // optional - resolve from a specific structure
+  matchUpId, // optional - resolve from the matchUp's structure/draw/event
+  drawId, // optional - resolve from a specific draw
+  eventId, // optional - resolve from a specific event
+});
+```
+
+---
+
 ## getCompetitionVenues
 
 ```js
@@ -1643,12 +1663,12 @@ Compares two tie format definitions and returns details about their differences,
 
 ```js
 const {
-  different,       // boolean — whether the formats differ
-  invalid,         // boolean — whether comparison could not be performed
-  modifications,   // array of modification descriptions
+  different, // boolean — whether the formats differ
+  invalid, // boolean — whether comparison could not be performed
+  modifications, // array of modification descriptions
 } = queryGovernor.compareTieFormats({
-  ancestor,        // required — the original tieFormat object
-  descendant,      // required — the modified tieFormat object
+  ancestor, // required — the original tieFormat object
+  descendant, // required — the modified tieFormat object
 });
 ```
 

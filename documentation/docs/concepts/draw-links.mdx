@@ -20,8 +20,9 @@ type Link = {
   linkType: 'LOSER' | 'WINNER' | 'POSITION'; // Type of participant flow
   source: {
     structureId: string; // Source structure UUID
-    roundNumber?: number; // Optional: specific round
+    roundNumber?: number; // Optional: specific round (0 = placeholder)
     finishingPositions?: number[]; // For POSITION links
+    qualifyingPositions?: number; // Qualifier count for placeholder links
   };
   target: {
     structureId: string; // Destination structure UUID
@@ -82,6 +83,26 @@ type Link = {
   }
 }
 ```
+
+**Placeholder Qualifying Links** - Reserve qualifier positions before qualifying structures are generated:
+
+```js
+{
+  linkType: 'POSITION',
+  source: {
+    structureId: 'placeholder-qualifying-id',
+    roundNumber: 0,           // 0 = placeholder (no matchUps yet)
+    qualifyingPositions: 4    // Reserve 4 qualifier positions in MAIN
+  },
+  target: {
+    structureId: 'main-draw-id',
+    roundNumber: 1,
+    feedProfile: 'DRAW'
+  }
+}
+```
+
+When `roundNumber: 0` and `qualifyingPositions` is set, the MAIN structure reserves that many positions as qualifier placeholders during automated positioning. When the actual qualifying structure is later generated, the placeholder is replaced with a real link.
 
 ### Feed Profiles
 

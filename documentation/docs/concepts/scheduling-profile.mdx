@@ -459,7 +459,7 @@ Distribute matches across available venues:
 
 ```js
 // Check court availability before assigning
-const { venues } = tournamentEngine.getVenues();
+const { venues } = tournamentEngine.getVenuesAndCourts();
 
 venues.forEach(venue => {
   const courtCount = venue.courts?.length || 0;

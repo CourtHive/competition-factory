@@ -89,6 +89,26 @@ const { drawDefinition } = engine.generateDrawDefinition({
 });
 ```
 
+### Detecting Lucky Rounds
+
+Use `hasLuckyRounds` to determine whether a structure contains lucky rounds — rounds where the matchUp count transitions from odd to even, meaning one participant advances without playing. This is the definitive structural test for a lucky-style draw, independent of `drawType`.
+
+```js
+const { hasLuckyRounds } = engine;
+
+// Works on any structure, regardless of stage (MAIN, QUALIFYING, etc.)
+const isLucky = hasLuckyRounds({ structure });
+
+// Or pass matchUps directly
+const isLucky = hasLuckyRounds({ matchUps });
+```
+
+A "lucky round" is identified when round _N_ has an **odd** number of matchUps and round _N+1_ has an **even** number. This transition means one extra winner from round _N_ must be accommodated by selecting a loser to advance (the lucky loser).
+
+:::tip
+`hasLuckyRounds` correctly handles qualifying structures that happen to have non-power-of-2 draw sizes — these are **not** lucky draws because their round transitions don't follow the odd→even pattern.
+:::
+
 ### Checking Round Status
 
 Use `getLuckyDrawRoundStatus` to determine which rounds need a lucky loser selection and to get the ranked list of eligible losers:

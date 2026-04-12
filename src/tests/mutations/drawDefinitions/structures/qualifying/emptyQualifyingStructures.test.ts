@@ -64,6 +64,7 @@ it('can specify qualifiersCount when no qualifying draws are generated', () => {
 
   const mainStructure = drawDefinition.structures.find(({ stage }) => stage === MAIN);
   const mainStructureQualifiers = mainStructure.positionAssignments.filter(({ qualifier }) => qualifier);
+  // Placeholder link carries qualifyingPositions metadata — positions are reserved
   expect(mainStructureQualifiers.length).toEqual(qualifiersCount);
   let qualifyingStructure = drawDefinition.structures.find(({ stage }) => stage === QUALIFYING);
   expect(qualifyingStructure).not.toBeUndefined();

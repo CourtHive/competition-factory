@@ -2,7 +2,6 @@ import { generateDrawTypeAndModifyDrawDefinition } from '@Assemblies/generators/
 import { getAllStructureMatchUps } from '@Query/matchUps/getAllStructureMatchUps';
 import { getStructureMatchUps } from '@Query/structure/getStructureMatchUps';
 import { attachPolicies } from '@Mutate/extensions/policies/attachPolicies';
-import { setStageDrawSize } from '@Mutate/drawDefinitions/entryGovernor/stageEntryCounts';
 import { getRoundMatchUps } from '@Query/matchUps/getRoundMatchUps';
 import { getAllDrawMatchUps } from '@Query/matchUps/drawMatchUps';
 import { constantToString } from '@Tools/strings';
@@ -21,11 +20,11 @@ import {
 
 it('can return matchUps with roundNames from an SINGLE_ELIMINATION structure', () => {
   const drawDefinition = newDrawDefinition();
-  setStageDrawSize({ drawDefinition, stage: MAIN, drawSize: 16 });
 
   const structure = generateDrawTypeAndModifyDrawDefinition({
     drawType: SINGLE_ELIMINATION,
     drawDefinition,
+    drawSize: 16,
   })?.structures?.[0];
   expect(structure?.structureName).toEqual(constantToString(MAIN));
   const result = attachPolicies({
@@ -76,11 +75,11 @@ it('can return matchUps with roundNames from an SINGLE_ELIMINATION structure', (
 
 it('can return matchUps with roundNames from a FIRST_MATCH_LOSER_CONSOLATION structure', () => {
   const drawDefinition = newDrawDefinition();
-  setStageDrawSize({ drawDefinition, stage: MAIN, drawSize: 16 });
 
   let result = generateDrawTypeAndModifyDrawDefinition({
     drawType: FIRST_MATCH_LOSER_CONSOLATION,
     drawDefinition,
+    drawSize: 16,
   });
   const consolationStructure = result?.structures?.[1];
   const mainStructure = result?.structures?.[0];
@@ -148,10 +147,10 @@ it('can return matchUps with roundNames from a FIRST_MATCH_LOSER_CONSOLATION str
 
 it('can return matchUps with roundNames from a FEED_IN structure and identify feedRounds', () => {
   const drawDefinition = newDrawDefinition();
-  setStageDrawSize({ drawDefinition, stage: MAIN, drawSize: 12 });
   const structure = generateDrawTypeAndModifyDrawDefinition({
     drawType: FEED_IN,
     drawDefinition,
+    drawSize: 12,
   })?.structures?.[0];
   expect(structure?.structureName).toEqual(constantToString(MAIN));
   const result = attachPolicies({
@@ -198,11 +197,11 @@ it('can return matchUps with roundNames from a FEED_IN structure and identify fe
 
 it('can return matchUps with roundNames from a OLYMPIC structure', () => {
   const drawDefinition: DrawDefinition = newDrawDefinition();
-  setStageDrawSize({ drawDefinition, stage: MAIN, drawSize: 16 });
 
   let result = generateDrawTypeAndModifyDrawDefinition({
     drawType: OLYMPIC,
     drawDefinition,
+    drawSize: 16,
   });
   expect(result.success).toEqual(true);
   expect(result.structures?.length).toEqual(4);

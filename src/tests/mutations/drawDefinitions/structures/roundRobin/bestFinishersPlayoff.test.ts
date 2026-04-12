@@ -1,6 +1,5 @@
 import { generateDrawTypeAndModifyDrawDefinition } from '@Assemblies/generators/drawDefinitions/generateDrawTypeAndModifyDrawDefinition';
 import { newDrawDefinition } from '@Assemblies/generators/drawDefinitions/newDrawDefinition';
-import { setStageDrawSize } from '@Mutate/drawDefinitions/entryGovernor/stageEntryCounts';
 import { getPositionAssignments } from '@Query/drawDefinition/positionsGetter';
 import { validatePlayoffGroups } from '@Validators/validatePlayoffGroups';
 import { findExtension } from '@Acquire/findExtension';
@@ -119,7 +118,6 @@ describe('bestFinishers draw generation', () => {
   it('generates a playoff structure with bestOf sizing', () => {
     const drawDefinition: DrawDefinition = newDrawDefinition();
     const drawSize = 12; // 3 groups of 4
-    setStageDrawSize({ drawDefinition, stage: MAIN, drawSize });
 
     const structureOptions = {
       playoffGroups: [
@@ -136,6 +134,7 @@ describe('bestFinishers draw generation', () => {
       drawType: ROUND_ROBIN_WITH_PLAYOFF,
       structureOptions,
       drawDefinition,
+      drawSize,
     });
 
     const { structures: playoffStructures, links } = result;
@@ -161,7 +160,6 @@ describe('bestFinishers draw generation', () => {
 
   it('generates correct draw size for bestOf: 5 with 3 groups', () => {
     const drawDefinition: DrawDefinition = newDrawDefinition();
-    setStageDrawSize({ drawDefinition, stage: MAIN, drawSize: 12 });
 
     const structureOptions = {
       playoffGroups: [
@@ -178,6 +176,7 @@ describe('bestFinishers draw generation', () => {
       drawType: ROUND_ROBIN_WITH_PLAYOFF,
       structureOptions,
       drawDefinition,
+      drawSize: 12,
     });
 
     const { structures: playoffStructures } = result;
@@ -189,7 +188,6 @@ describe('bestFinishers draw generation', () => {
 
   it('standard playoffGroups without bestOf still generate correctly', () => {
     const drawDefinition: DrawDefinition = newDrawDefinition();
-    setStageDrawSize({ drawDefinition, stage: MAIN, drawSize: 12 });
 
     const structureOptions = {
       playoffGroups: [
@@ -202,6 +200,7 @@ describe('bestFinishers draw generation', () => {
       drawType: ROUND_ROBIN_WITH_PLAYOFF,
       structureOptions,
       drawDefinition,
+      drawSize: 12,
     });
 
     const { structures: playoffStructures, links } = result;
@@ -687,7 +686,6 @@ describe('bestFinishers with remainder playoff group', () => {
   it('generates bestOf championship + remainder consolation structures', () => {
     const drawDefinition: DrawDefinition = newDrawDefinition();
     const drawSize = 12;
-    setStageDrawSize({ drawDefinition, stage: MAIN, drawSize });
 
     const structureOptions = {
       playoffGroups: [
@@ -708,6 +706,7 @@ describe('bestFinishers with remainder playoff group', () => {
       drawType: ROUND_ROBIN_WITH_PLAYOFF,
       structureOptions,
       drawDefinition,
+      drawSize,
     });
 
     const { structures: allStructures, links } = result;

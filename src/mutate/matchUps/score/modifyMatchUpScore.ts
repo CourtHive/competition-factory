@@ -1,5 +1,7 @@
 import { updateAssignmentParticipantResults } from '@Mutate/drawDefinitions/matchUpGovernor/updateAssignmentParticipantResults';
+import { processCompetitionMatchUp } from '@Mutate/drawDefinitions/competition/processCompetitionMatchUp';
 import { modifyMatchUpNotice, updateInContextMatchUp } from '@Mutate/notifications/drawNotifications';
+import { getCompetitionPolicy } from '@Query/drawDefinition/competition/getCompetitionPolicy';
 import { getAllStructureMatchUps } from '@Query/matchUps/getAllStructureMatchUps';
 import { getAppliedPolicies } from '@Query/extensions/getAppliedPolicies';
 import { checkScoreHasValue } from '@Query/matchUp/checkScoreHasValue';
@@ -141,6 +143,14 @@ export function modifyMatchUpScore(params: ModifyMatchUpScoreArgs) {
     event,
   });
   if (tallyResult?.error) return decorateResult({ result: tallyResult, stack });
+
+  // Competition policy processing — per-matchUp mode
+  if (drawDefinition && matchUp.winningSide) {
+    const { competitionPolicy } = getCompetitionPolicy({ tournamentRecord, drawDefinition, event });
+    if (competitionPolicy?.processingGranularity === 'PER_MATCHUP') {
+      processCompetitionMatchUp({ tournamentRecord, drawDefinition, matchUp, event });
+    }
+  }
 
   if (notes) {
     const result = addNotes({ element: matchUp, notes });

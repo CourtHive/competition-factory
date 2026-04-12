@@ -445,7 +445,7 @@ function calculateDrawPoints({
 
   let points;
 
-  if (awardProfiles) {
+  if (awardProfiles && structureParticipation) {
     const accum = buildAccumulator({ initialRequireWinFirstRound, requireWinForPoints });
 
     processAllParticipations({

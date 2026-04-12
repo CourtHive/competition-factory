@@ -174,7 +174,7 @@ syncEngine.importMethods(governors, true, 1);
 syncEngine.getAdminStats = function () {
   const { participants } = this.getParticipants();
   const { events } = this.getEvents();
-  const { venues } = this.getVenues();
+  const { venues } = this.getVenuesAndCourts();
   return {
     participantCount: participants?.length || 0,
     eventCount: events?.length || 0,

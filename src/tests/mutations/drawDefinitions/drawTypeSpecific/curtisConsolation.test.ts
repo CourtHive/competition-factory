@@ -2,7 +2,6 @@ import { generateDrawTypeAndModifyDrawDefinition } from '@Assemblies/generators/
 import { initializeStructureSeedAssignments } from '@Mutate/drawDefinitions/positionGovernor/initializeSeedAssignments';
 import { getStructureSeedAssignments } from '@Query/structure/getStructureSeedAssignments';
 import { newDrawDefinition } from '@Assemblies/generators/drawDefinitions/newDrawDefinition';
-import { setStageDrawSize } from '@Mutate/drawDefinitions/entryGovernor/stageEntryCounts';
 import { addDrawEntries } from '@Mutate/drawDefinitions/entryGovernor/addDrawEntries';
 import { automatedPositioning } from '@Mutate/drawDefinitions/automatedPositioning';
 import { assignSeed } from '@Mutate/drawDefinitions/entryGovernor/seedAssignment';
@@ -130,8 +129,7 @@ function generateCurtis({ seedAssignmentProfile = {}, participantsCount, assignS
   const drawType = CURTIS;
 
   const drawDefinition = newDrawDefinition();
-  setStageDrawSize({ drawDefinition, stage, drawSize });
-  generateDrawTypeAndModifyDrawDefinition({ drawDefinition, drawType });
+  generateDrawTypeAndModifyDrawDefinition({ drawDefinition, drawType, drawSize });
 
   const { stageStructures } = getDrawStructures({
     withStageGrouping: true,

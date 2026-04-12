@@ -1,7 +1,6 @@
 import { generateDrawTypeAndModifyDrawDefinition } from '@Assemblies/generators/drawDefinitions/generateDrawTypeAndModifyDrawDefinition';
 import { getAvailablePlayoffProfiles } from '@Query/drawDefinition/getAvailablePlayoffProfiles';
 import { newDrawDefinition } from '@Assemblies/generators/drawDefinitions/newDrawDefinition';
-import { setStageDrawSize } from '@Mutate/drawDefinitions/entryGovernor/stageEntryCounts';
 import { getDrawStructures } from '@Acquire/findStructure';
 import { constantToString } from '@Tools/strings';
 import tournamentEngine from '@Engines/syncEngine';
@@ -27,8 +26,7 @@ tournamentEngine.devContext(true);
 
 it('can correctly determine positions playedOff for STANDARD_ELIMINATION', () => {
   const drawDefinition: DrawDefinition = newDrawDefinition();
-  setStageDrawSize({ drawDefinition, stage: MAIN, drawSize: 16 });
-  const result = generateDrawTypeAndModifyDrawDefinition({ drawDefinition });
+  const result = generateDrawTypeAndModifyDrawDefinition({ drawDefinition, drawSize: 16 });
   expect(result.success).toEqual(true);
 
   const structureId = drawDefinition.structures?.[0].structureId;
@@ -99,10 +97,10 @@ it('can correctly determine positions played off for FMLC', () => {
 
 it('can correctly determine positions playedOff for FIRST_MATCH_LOSER_CONSOLATION', () => {
   const drawDefinition: DrawDefinition = newDrawDefinition();
-  setStageDrawSize({ drawDefinition, stage: MAIN, drawSize: 16 });
   const result = generateDrawTypeAndModifyDrawDefinition({
     drawType: FIRST_MATCH_LOSER_CONSOLATION,
     drawDefinition,
+    drawSize: 16,
   });
   expect(result.success).toEqual(true);
 

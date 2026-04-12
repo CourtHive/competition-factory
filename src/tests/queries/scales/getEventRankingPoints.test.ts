@@ -206,4 +206,39 @@ describe('getEventRankingPoints', () => {
     // With doublesAttribution: 'fullToEach', individual players should get awards
     expect(result.eventAwards.length).toBeGreaterThan(0);
   });
+
+  it('does not throw when a flight draw has no structures', () => {
+    // Scenario: event with a completed main draw plus an empty flight (entries only, no structures).
+    // Participants in the flight have draws[flightDrawId] without structureParticipation,
+    // which caused "t is not iterable" in getTournamentPoints.
+    const {
+      tournamentRecord,
+      eventIds: [eventId],
+    } = mocksEngine.generateTournamentRecord({
+      drawProfiles: [{ drawSize: 8, drawType: SINGLE_ELIMINATION }],
+      completeAllMatchUps: true,
+      randomWinningSide: true,
+    });
+    tournamentEngine.setState(tournamentRecord);
+
+    // Add a second flight with no draw generation — just entries
+    const { event } = tournamentEngine.getEvent({ eventId });
+    const someParticipantIds = event.entries.slice(0, 2).map((e: any) => e.participantId);
+    tournamentEngine.addFlight({
+      eventId,
+      stage: 'MAIN',
+      drawName: 'Flight 2',
+      drawEntries: someParticipantIds.map((participantId: string) => ({
+        participantId,
+        entryStatus: 'DIRECT_ACCEPTANCE',
+        entryStage: 'MAIN',
+      })),
+    });
+
+    // The flight draw exists but has no structures — structureParticipation will be undefined
+    const result = tournamentEngine.getEventRankingPoints({ eventId, policyDefinitions });
+    expect(result.success).toBe(true);
+    expect(Array.isArray(result.eventAwards)).toBe(true);
+    expect(result.eventAwards.length).toBeGreaterThan(0);
+  });
 });

@@ -114,10 +114,12 @@ export function generateDrawStructuresAndLinks(params: GenerateDrawStructuresAnd
     return qualifyingResult;
   }
 
-  const { qualifyingDrawPositionsCount, qualifyingDetails, qualifiersCount } = qualifyingResult || {
+  const { qualifyingDrawPositionsCount, qualifyingDetails, qualifiersCount: derivedQualifiersCount } = qualifyingResult || {
     qualifyingDrawPositionsCount: existingQualifyingDrawPositionsCount,
     qualifiersCount: existingQualifiersCount,
   };
+  // Fall back to explicit qualifiersCount param (e.g., placeholder qualifying)
+  const qualifiersCount = derivedQualifiersCount || (params as any).qualifiersCount || 0;
 
   if (qualifyingDrawPositionsCount) {
     if (qualifyingResult?.structures) {

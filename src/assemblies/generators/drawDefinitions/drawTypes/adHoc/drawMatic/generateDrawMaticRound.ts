@@ -1,17 +1,22 @@
+// Query
+import { getCompetitionState } from '@Query/drawDefinition/competition/getCompetitionState';
+import { getCompetitionPolicy } from '@Query/drawDefinition/competition/getCompetitionPolicy';
+
+// Generators
 import { generateDynamicRatings } from '@Generators/scales/generateDynamicRatings';
 import { generateAdHocMatchUps } from '../generateAdHocMatchUps';
+
+// Acquire
 import { findStructure } from '@Acquire/findStructure';
+
+// Helpers
 import { getPairingsData } from './getPairingsData';
 import { getEncounters } from './getEncounters';
 import { getPairings } from './getPairings';
 import { isObject } from '@Tools/objects';
 import { unique } from '@Tools/arrays';
 
-// constants and types
-import { DrawDefinition, MatchUp, Structure, EventTypeUnion, Event, Tournament } from '@Types/tournamentTypes';
-import { TEAM } from '@Constants/participantConstants';
-import { SUCCESS } from '@Constants/resultConstants';
-import { ResultType } from '@Types/factoryTypes';
+// Constants
 import {
   MISSING_DRAW_DEFINITION,
   MISSING_PARTICIPANT_IDS,
@@ -19,6 +24,12 @@ import {
   NO_CANDIDATES,
   STRUCTURE_NOT_FOUND,
 } from '@Constants/errorConditionConstants';
+import { TEAM } from '@Constants/participantConstants';
+import { SUCCESS } from '@Constants/resultConstants';
+
+// Types
+import { DrawDefinition, MatchUp, Structure, EventTypeUnion, Event, Tournament } from '@Types/tournamentTypes';
+import { ResultType } from '@Types/factoryTypes';
 
 // this should be in policyDefinitions
 const ENCOUNTER_VALUE = 100;
@@ -113,7 +124,17 @@ export function generateDrawMaticRound(params: GenerateDrawMaticRoundArgs): Resu
   let modifiedScaleValues: { [key: string]: number } = {};
   let sourceRatingType: string | undefined;
 
-  if (dynamicRatings) {
+  // Competition policy overrides legacy dynamicRatings
+  const { competitionPolicy } = getCompetitionPolicy({ tournamentRecord, drawDefinition, event });
+  const { competitionState } = competitionPolicy ? getCompetitionState({ drawDefinition }) : { competitionState: undefined };
+  const useCompetitionRatings = competitionPolicy && competitionState && competitionPolicy.pairingPolicy.ratingSource === 'DYNAMIC_FORM';
+
+  if (useCompetitionRatings) {
+    // Use dynamic form ratings from competition state instead of legacy dynamic ratings
+    for (const [pid, pState] of Object.entries(competitionState.participantStates)) {
+      modifiedScaleValues[pid] = pState.dynamicFormRating;
+    }
+  } else if (dynamicRatings) {
     const roundNumbers: number[] = unique(
       structure?.matchUps ? structure.matchUps.map(({ roundNumber }) => roundNumber) : [],
     );

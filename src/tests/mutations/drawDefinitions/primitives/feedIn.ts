@@ -3,7 +3,6 @@ import { getDrawStructures } from '@Acquire/findStructure';
 // constants and types
 import { generateDrawTypeAndModifyDrawDefinition } from '@Assemblies/generators/drawDefinitions/generateDrawTypeAndModifyDrawDefinition';
 import { newDrawDefinition } from '@Assemblies/generators/drawDefinitions/newDrawDefinition';
-import { setStageDrawSize } from '@Mutate/drawDefinitions/entryGovernor/stageEntryCounts';
 import { MAIN, CONSOLATION } from '@Constants/drawDefinitionConstants';
 import { DrawDefinition } from '@Types/tournamentTypes';
 import { ResultType } from '@Types/factoryTypes';
@@ -17,11 +16,11 @@ export function feedInChampionship(params): ResultType & {
 } {
   const { drawSize, drawType, feedPolicy, drawTypeCoercion } = params;
   const drawDefinition: DrawDefinition = newDrawDefinition();
-  setStageDrawSize({ drawDefinition, stage: MAIN, drawSize });
   const result = generateDrawTypeAndModifyDrawDefinition({
     drawTypeCoercion,
     drawDefinition,
     feedPolicy,
+    drawSize,
     drawType,
   });
   if (result.error) return result;

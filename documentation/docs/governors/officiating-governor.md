@@ -140,7 +140,7 @@ Attaches an evaluation template (sections, criteria, scoring method) to the offi
 
 ## Queries
 
-### getOfficialRecord
+### queryOfficialRecord
 
 ```ts
 { officialRecord }

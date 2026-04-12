@@ -108,7 +108,7 @@ tournamentEngine.autoSchedule({
 
 ```js
 // Get venue details
-const { venues } = tournamentEngine.getVenues();
+const { venues } = tournamentEngine.getVenuesAndCourts();
 
 // Get courts for venue
 const { courts } = tournamentEngine.getCourts({ venueId });
