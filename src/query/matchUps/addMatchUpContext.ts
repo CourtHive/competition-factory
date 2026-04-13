@@ -589,7 +589,7 @@ function processTieMatchUps(params) {
       teamParticipant &&
       definedAttributes({
         participantRoleResponsibilities: teamParticipant.participantRoleResponsibilities,
-        participantOtherName: teamParticipant.participanOthertName,
+        participantOtherName: teamParticipant.participantOtherName,
         participantName: teamParticipant.participantName,
         participantId: teamParticipant.participantId,
         teamId: teamParticipant.teamId,

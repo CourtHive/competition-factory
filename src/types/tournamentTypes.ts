@@ -1053,6 +1053,7 @@ export interface Participant {
   teamId?: string;
   timeItems?: TimeItem[];
   updatedAt?: Date | string;
+  useOtherName?: boolean;
 }
 
 export interface Contact {
@@ -1201,6 +1202,15 @@ export enum AddressTypeEnum {
 }
 export type AddressTypeUnion = keyof typeof AddressTypeEnum;
 
+export interface TeamAttribute {
+  teamId?: string;
+  teamName?: string;
+  jerseyNumber?: string;
+  jerseyName?: string;
+  position?: string;
+  captain?: boolean;
+}
+
 export interface BiographicalInformation {
   ageBeganTennis?: number;
   ageTurnedPro?: number;
@@ -1217,6 +1227,7 @@ export interface BiographicalInformation {
   placeOfResidence?: string;
   playingHand?: PlayingHandCodeUnion;
   residenceCountryCode?: CountryCodeUnion;
+  teamAttributes?: TeamAttribute[];
   timeItems?: TimeItem[];
   updatedAt?: Date | string;
   weight?: number;

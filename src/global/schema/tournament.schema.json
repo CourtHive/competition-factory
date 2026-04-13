@@ -2472,6 +2472,9 @@
         },
         "participantType": {
           "$ref": "#/definitions/ParticipantTypeEnum"
+        },
+        "useOtherName": {
+          "type": "boolean"
         }
       },
       "required": ["participantId"],
@@ -2891,6 +2894,36 @@
         },
         "weightUnit": {
           "$ref": "#/definitions/WeightUnitEnum"
+        },
+        "teamAttributes": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/TeamAttribute"
+          }
+        }
+      },
+      "additionalProperties": false
+    },
+    "TeamAttribute": {
+      "type": "object",
+      "properties": {
+        "teamId": {
+          "type": "string"
+        },
+        "teamName": {
+          "type": "string"
+        },
+        "jerseyNumber": {
+          "type": "string"
+        },
+        "jerseyName": {
+          "type": "string"
+        },
+        "position": {
+          "type": "string"
+        },
+        "captain": {
+          "type": "boolean"
         }
       },
       "additionalProperties": false

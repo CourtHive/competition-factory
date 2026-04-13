@@ -216,13 +216,38 @@ function buildTeamParticipants({
     rIndex += mixedCount;
 
     const individualParticipantIds = buildTeams !== false ? [...fPIDs, ...mPIDs, ...rIDs] : []; // NOSONAR
+    const teamName = teamNames[teamIndex] || `Team ${teamIndex + 1}`;
+    const teamId = UUID(undefined, random);
+
+    // Add jersey details to individual members' biographicalInformation
+    if (buildTeams !== false) {
+      let jerseyNumber = 1;
+      for (const pid of individualParticipantIds) {
+        const member = unique.find((p) => p.participantId === pid);
+        if (member?.person) {
+          if (!member.person.biographicalInformation) member.person.biographicalInformation = {};
+          if (!member.person.biographicalInformation.teamAttributes) {
+            member.person.biographicalInformation.teamAttributes = [];
+          }
+          member.person.biographicalInformation.teamAttributes.push({
+            jerseyName: member.person.standardFamilyName?.toUpperCase(),
+            jerseyNumber: String(jerseyNumber),
+            teamName,
+            teamId,
+          });
+          jerseyNumber += 1;
+        }
+      }
+    }
+
     return {
-      participantName: teamNames[teamIndex] || `Team ${teamIndex + 1}`,
       participantOtherName: `TM${teamIndex + 1}`,
-      participantId: UUID(undefined, random),
+      participantName: teamName,
+      participantId: teamId,
       participantRole: COMPETITOR,
       individualParticipantIds,
       participantType: TEAM,
+      useOtherName: false,
     };
   });
   const result = addParticipants({
