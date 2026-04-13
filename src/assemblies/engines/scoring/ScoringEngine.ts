@@ -227,10 +227,12 @@ export class ScoringEngine {
   /**
    * Get current matchUp state as JSON
    *
-   * @returns TODS matchUp object (direct reference, not copy)
+   * @returns Deep copy of the TODS matchUp object (safe from external mutation).
+   * Uses JSON round-trip instead of structuredClone because the state may contain
+   * framework proxy wrappers (e.g. Svelte 5 $state) that structuredClone rejects.
    */
   getState(): MatchUp {
-    return this.state;
+    return JSON.parse(JSON.stringify(this.state));
   }
 
   // ===========================================================================
@@ -276,11 +278,6 @@ export class ScoringEngine {
 
     // Record entry in unified timeline
     this.ensureHistory();
-    // Capture the resolved scoreValue from the point that was just added so
-    // undo→rebuild can replay with the correct increment (e.g. Winner=2, Touch=1
-    // in INTENNSE). The pure addPoint() stores it on the point when non-default.
-    const lastPoint = this.state.history!.points[this.state.history!.points.length - 1];
-    const resolvedScoreValue = (lastPoint as any)?.scoreValue;
     this.state.history!.entries!.push({
       type: 'point',
       data: {
@@ -293,7 +290,6 @@ export class ScoringEngine {
         rallyLength: options.rallyLength,
         result: options.result,
         penaltyType: options.penaltyType,
-        ...(resolvedScoreValue !== undefined && resolvedScoreValue !== 1 && { scoreValue: resolvedScoreValue }),
       },
       timestamp: options.timestamp || new Date().toISOString(),
       pointIndex,
@@ -665,7 +661,7 @@ export class ScoringEngine {
    *
    * @param side - Who should serve the next point (0 = side 1, 1 = side 2)
    */
-  setServer(side: 0 | 1): void {
+  setServer(side: 0 | 1, options?: { recordEntry?: boolean }): void {
     if (!this.cachedFormatStructure) return;
 
     const setsWon: [number, number] = [0, 0];
@@ -679,6 +675,10 @@ export class ScoringEngine {
     // side 0 served game 0). If they disagree, flip is needed.
     const baseServer = deriveServerBase(this.state, this.cachedFormatStructure, setType);
     this.state.serverFlip = side !== baseServer;
+
+    // Skip entry recording for derived server changes (e.g. INTENNSE post-point
+    // serving rules) so undo operates on user actions, not auto-derived state.
+    if (options?.recordEntry === false) return;
 
     // Record in timeline for undo/redo — store the desired side so
     // rebuild can recompute the flip at the correct position
