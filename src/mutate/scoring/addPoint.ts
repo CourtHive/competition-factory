@@ -506,8 +506,9 @@ function handleTimedSet(
  */
 function getOrCreateSet(matchUp: MatchUp, isTiebreakOnly: boolean, isTimed: boolean): SetScore {
   const currentSetIndex = matchUp.score.sets.length - 1;
-  if (currentSetIndex >= 0 && matchUp.score.sets[currentSetIndex].winningSide === undefined) {
-    return matchUp.score.sets[currentSetIndex];
+  const currentSet = currentSetIndex >= 0 ? matchUp.score.sets[currentSetIndex] : undefined;
+  if (currentSet && currentSet.winningSide === undefined && !(currentSet as any).segmentComplete) {
+    return currentSet;
   }
 
   // Need new set

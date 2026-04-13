@@ -659,7 +659,7 @@ describe('ScoringEngine — endSegment', () => {
     expect(beforeSets).toBe(afterSets);
   });
 
-  test('endSegment with tied score does not set winningSide', () => {
+  test('endSegment with tied score leaves winningSide undefined but marks segment complete', () => {
     const engine = new ScoringEngine({ matchUpFormat: 'SET7XA-S:T10P' });
     engine.addPoint({ winner: 0 });
     engine.addPoint({ winner: 1 });
@@ -667,6 +667,12 @@ describe('ScoringEngine — endSegment', () => {
 
     const set = engine.getState().score.sets[0];
     expect(set.winningSide).toBeUndefined();
+    expect((set as any).segmentComplete).toBe(true);
+
+    // Adding a point after a tied endSegment creates a new set (next bolt)
+    engine.addPoint({ winner: 0 });
+    expect(engine.getState().score.sets.length).toBe(2);
+    expect(engine.getState().score.sets[1].side1Score).toBe(1);
   });
 });
 

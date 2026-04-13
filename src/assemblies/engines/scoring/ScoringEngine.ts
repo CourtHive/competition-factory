@@ -1242,6 +1242,9 @@ export class ScoringEngine {
     if (s1 > s2) targetSet.winningSide = 1;
     else if (s2 > s1) targetSet.winningSide = 2;
 
+    // Mark segment as complete even when tied (aggregate formats need new set for next bolt)
+    (targetSet as any).segmentComplete = true;
+
     this.checkMatchCompletion();
   }
 
