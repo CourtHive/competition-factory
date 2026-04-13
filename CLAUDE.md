@@ -13,14 +13,14 @@ Before doing anything else, read `../Mentat/CLAUDE.md`, `../Mentat/TASKS.md`, `.
 ## Commands
 
 ```bash
-npm install
-npm run build             # Rollup + esbuild → dist/
-npm run start             # Rollup watch mode
-npm run test              # Vitest (3600+ tests)
-npm run tui               # Vitest interactive UI
-npm run coverage          # Coverage report (thresholds: 95/95/83/95%)
-npm run lint              # ESLint with fix
-npm run check-types       # tsc --noEmit
+pnpm install
+pnpm build                # Rollup + esbuild → dist/
+pnpm start                # Rollup watch mode
+pnpm test                 # Vitest (3600+ tests)
+pnpm tui                  # Vitest interactive UI
+pnpm coverage             # Coverage report (thresholds: 95/95/83/95%)
+pnpm lint                 # ESLint with fix
+pnpm check-types          # tsc --noEmit
 ```
 
 ## Architecture Notes
