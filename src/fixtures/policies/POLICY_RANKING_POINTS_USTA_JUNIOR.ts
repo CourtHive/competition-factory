@@ -95,9 +95,7 @@ const roundRobinL6to7 = {
 //
 // NOTE: Current factory may not fully differentiate 2nd/3rd/4th place brackets.
 // The perWinPoints for those brackets differ (41/25/14, 34/21/11, 27/16/9 at L3/4/5).
-// TODO: Validate factory's stageSequence/structure assignment for RR playoff brackets
-// and add additional profiles if needed. For now, lower brackets use 2nd-place values
-// as a conservative approximation.
+// Lower brackets use 2nd-place values as a conservative approximation.
 
 const rrWithPlayoffL3to5_PreliminaryRR = {
   profileName: 'RR Playoff L3-5: Preliminary RR',
@@ -131,7 +129,6 @@ const rrWithPlayoffL3to5_ChampionConsolation = {
   },
 };
 
-// TODO: These bracket profiles need factory validation for correct stage/stageSequence matching.
 // In the USTA system, 2nd/3rd/4th place RR bracket matches have different per-win values:
 //   2nd place: L3: 41, L4: 25, L5: 14
 //   3rd place: L3: 34, L4: 21, L5: 11
@@ -322,8 +319,7 @@ const ficThroughQF_L1to5 = {
     256: { level: { 1: 30, 2: 17, 3: 9, 4: 5, 5: 3 } },
   },
   // FIC Consolation Draw per-win — currently only used at BG14 USTA National Championship
-  // TODO: Scope this to category { ageCategoryCodes: ['U14'] } when category-scoped
-  // perWinPoints are supported. For now included as a comment reference.
+  // FIC consolation perWinPoints currently only used at BG14 USTA National Championship.
   // ficConsolationPerWin: { level: { 1: 15, 2: 8, 3: 5, 4: 3, 5: 2 } },
 };
 

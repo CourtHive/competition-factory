@@ -78,6 +78,35 @@ Also available on `tournamentEngine` and `scaleEngine`.
 
 ---
 
+### getApplicableAwardProfileLevels
+
+Returns the tournament levels from a ranking policy that can produce points for a given draw/event context. Useful for populating level selectors in UI — levels whose profiles cannot match the current draw type, event type, or category are excluded.
+
+```js
+const { levels } = scaleEngine.getApplicableAwardProfileLevels({
+  policyDefinitions: atpPolicy, // or use attached policy
+  eventId,
+  drawId,
+});
+// levels: [1, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15]
+// (L2 excluded for SINGLE_ELIMINATION — ATP Finals requires ROUND_ROBIN_WITH_PLAYOFF)
+```
+
+| Parameter           | Type                | Description                                              |
+| ------------------- | ------------------- | -------------------------------------------------------- |
+| `tournamentRecord`  | Tournament          | Tournament record (auto-resolved by engine)              |
+| `policyDefinitions` | PolicyDefinitions?  | Ranking policy override; falls back to attached policy   |
+| `eventId`           | string?             | Scope to event (resolves eventType, category, gender)    |
+| `drawId`            | string?             | Scope to draw (resolves drawType, drawSize)              |
+
+**Returns:** `{ levels: number[], ...SUCCESS }` — sorted array of applicable level numbers.
+
+When called without `eventId`/`drawId`, returns all levels present in the policy. When scoped, tests each level against the profile matcher across all plausible participation contexts (MAIN/QUALIFYING stages, participation orders 1-2).
+
+Also available on `tournamentEngine` and `scaleEngine`.
+
+---
+
 ### getAwardProfile
 
 Selects the best-matching award profile for a participation using specificity scoring.

@@ -843,7 +843,7 @@ export class TemporalEngine {
       };
     }
 
-    // TODO: Expand template operations into block mutations
+    // Template operations → block mutations expansion (tracked in Mentat TASKS.md)
     /*
                                                                                                                                                                                                                                       
     A TemplateOperation specifies:                                                                                                                                                                                                  

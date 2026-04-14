@@ -60,7 +60,6 @@ const grandSlamSingles = {
 //   Knockout: 1500 - 855 = 645
 //
 // These fixed values are approximations. Actual points vary by RR record.
-// TODO: Support per-match-played points for exact WTA Finals scoring.
 const wtaFinalsSingles = {
   profileName: 'WTA Finals Singles',
   levels: [2],

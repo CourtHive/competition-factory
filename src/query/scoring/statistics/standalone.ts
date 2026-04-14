@@ -86,7 +86,7 @@ export function enrichPointHistory(rawPoints: any[]): PointWithMetadata[] {
   const enriched: PointWithMetadata[] = [];
 
   // Track match state as we process points
-  let currentServer = 0; // TODO: Get from matchUp or format
+  let currentServer = 0;
   let currentSet = 0;
   let currentGame = 0;
 

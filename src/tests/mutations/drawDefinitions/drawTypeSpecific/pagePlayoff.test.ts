@@ -277,7 +277,7 @@ describe('PAGE_PLAYOFF draw type', () => {
     expect(q2ToFinal?.target.structureId).toEqual(ppsFinal.structureId);
   });
 
-  // TODO: participant advancement from SE to PAGE_PLAYOFF via POSITION links needs factory fix
+  // Participant advancement from SE to PAGE_PLAYOFF via POSITION links (tracked in Mentat TASKS.md)
   it.skip('progresses participants through all PAGE_PLAYOFF structures from SE16', () => {
     const drawSize = 16;
     const matchUpFormat = 'SET3-S:6/TB7';

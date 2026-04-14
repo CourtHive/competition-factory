@@ -297,7 +297,6 @@ const challengerItfDoubles = {
 // ── United Cup (Team Event) ─────────────────────────────────────────────────
 // United Cup awards 500 ATP ranking points to the winning team's players.
 // Full details in ATP Rulebook Section 4.03 G (not available in this source).
-// TODO: Add detailed United Cup point breakdown when rulebook section is provided.
 // For now, modeled as a simplified team event.
 const unitedCup = {
   profileName: 'United Cup',
