@@ -1072,6 +1072,63 @@ export class ScoringEngine {
   }
 
   /**
+   * Remove a point from the match history, recalculating downstream
+   * state (score, serve order, set/game progression, …) from the
+   * remaining entries.
+   *
+   * Paired with `editPoint` for targeted, non-LIFO corrections — the
+   * top-level `[UNDO]` button remains the LIFO popper. Motivated by
+   * the INTENNSE scorekeeper workflow: a penalty gets pushed into the
+   * history alongside regular points, and a stray undo tap may pop
+   * the penalty when the user meant to pop a prior rally outcome.
+   * Letting them target any past entry directly avoids that hazard.
+   *
+   * @param pointIndex - 0-based point index in history
+   * @param options - Remove options
+   *   - recalculate: true (default) rebuilds from the surviving
+   *     entries; false leaves `points` + `entries` trimmed but state
+   *     out of date (useful when the caller intends to make several
+   *     edits in a batch and rebuild once at the end).
+   *
+   * Out of range indexes are a no-op — matches `editPoint`'s tolerance.
+   */
+  removePoint(pointIndex: number, options?: { recalculate?: boolean }): void {
+    const points = this.state.history?.points;
+    if (!points || pointIndex < 0 || pointIndex >= points.length) return;
+
+    const shouldRecalculate = options?.recalculate !== false;
+
+    // Splice the point out of history.points.
+    points.splice(pointIndex, 1);
+
+    // Splice the corresponding entry out of history.entries, and
+    // decrement pointIndex on every later `point` entry so they keep
+    // matching their new positions in history.points.
+    const entries = this.state.history?.entries;
+    if (entries) {
+      const entryIdx = entries.findIndex(
+        (e) => e.type === 'point' && (e as any).pointIndex === pointIndex,
+      );
+      if (entryIdx !== -1) entries.splice(entryIdx, 1);
+      for (const e of entries) {
+        if (e.type === 'point' && (e as any).pointIndex > pointIndex) {
+          (e as any).pointIndex -= 1;
+        }
+      }
+    }
+
+    if (!shouldRecalculate) return;
+
+    if (entries && entries.length > 0) {
+      this.rebuildFromEntries();
+    } else {
+      this.rebuildState();
+    }
+
+    this.redoStack = [];
+  }
+
+  /**
    * Reset match to initial state
    *
    * Clears all points, entries, and undo/redo stacks.

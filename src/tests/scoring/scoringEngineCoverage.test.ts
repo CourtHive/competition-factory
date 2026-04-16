@@ -316,6 +316,126 @@ describe('ScoringEngine — editPoint', () => {
 });
 
 // ============================================================================
+// 3b. ScoringEngine — removePoint
+// ============================================================================
+
+describe('ScoringEngine — removePoint', () => {
+  test('removePoint with recalculate=false trims points + entries without rebuilding', () => {
+    const engine = new ScoringEngine({ matchUpFormat: 'SET3-S:6/TB7' });
+    engine.addPoint({ winner: 0 });
+    engine.addPoint({ winner: 1 });
+    engine.addPoint({ winner: 0 });
+    expect(engine.getPointCount()).toBe(3);
+
+    engine.removePoint(1, { recalculate: false });
+
+    // Points and entries were both trimmed.
+    expect(engine.getPointCount()).toBe(2);
+    const entries = engine.getState().history!.entries!;
+    const pointEntries = entries.filter((e) => e.type === 'point');
+    expect(pointEntries).toHaveLength(2);
+  });
+
+  test('removePoint with recalculate=true (default) rebuilds downstream state', () => {
+    const engine = new ScoringEngine({ matchUpFormat: 'SET3-S:6/TB7' });
+    engine.addPoint({ winner: 0 });
+    engine.addPoint({ winner: 0 });
+    engine.addPoint({ winner: 1 });
+    // Score: side 1 leading 2–1.
+
+    // Drop the middle point — now 1 point each side.
+    engine.removePoint(1);
+
+    const score = engine.getScore();
+    const points = score.points as number[];
+    expect(points[0]).toBe(1);
+    expect(points[1]).toBe(1);
+  });
+
+  test('removePoint shifts pointIndex down on later point entries', () => {
+    const engine = new ScoringEngine({ matchUpFormat: 'SET3-S:6/TB7' });
+    engine.addPoint({ winner: 0 });
+    engine.addPoint({ winner: 1 });
+    engine.addPoint({ winner: 0 });
+    // Before: entries have pointIndex 0, 1, 2.
+
+    engine.removePoint(0);
+
+    const entries = engine.getState().history!.entries!;
+    const pointIndexes = entries
+      .filter((e) => e.type === 'point')
+      .map((e) => (e as any).pointIndex)
+      .sort((a, b) => a - b);
+    // After removing index 0, the remaining point entries must
+    // be re-indexed 0 and 1 so they match history.points positions.
+    expect(pointIndexes).toEqual([0, 1]);
+  });
+
+  test('removePoint out of bounds is a no-op', () => {
+    const engine = new ScoringEngine({ matchUpFormat: 'SET3-S:6/TB7' });
+    engine.addPoint({ winner: 0 });
+    engine.addPoint({ winner: 1 });
+
+    engine.removePoint(-1);
+    engine.removePoint(99);
+
+    expect(engine.getPointCount()).toBe(2);
+  });
+
+  test('removePoint clears the redo stack', () => {
+    const engine = new ScoringEngine({ matchUpFormat: 'SET3-S:6/TB7' });
+    engine.addPoint({ winner: 0 });
+    engine.addPoint({ winner: 1 });
+    engine.undo();
+    // The undone point is in the redo stack.
+
+    engine.removePoint(0);
+
+    expect(engine.canRedo()).toBe(false);
+  });
+
+  test('removePoint works with only one point in history', () => {
+    const engine = new ScoringEngine({ matchUpFormat: 'SET3-S:6/TB7' });
+    engine.addPoint({ winner: 0 });
+
+    engine.removePoint(0);
+
+    expect(engine.getPointCount()).toBe(0);
+    const score = engine.getScore();
+    expect((score.points as number[])[0]).toBe(0);
+    expect((score.points as number[])[1]).toBe(0);
+  });
+
+  test('removePoint preserves unrelated entries (substitution / setServer / etc.)', () => {
+    const engine = new ScoringEngine({ matchUpFormat: 'SET3-S:6/TB7' });
+    engine.setServer(0);
+    engine.addPoint({ winner: 0 });
+    engine.addPoint({ winner: 1 });
+
+    const entriesBefore = engine.getState().history!.entries!.length;
+    engine.removePoint(0);
+    const entriesAfter = engine.getState().history!.entries!.length;
+    // Only the matching point entry was spliced — setServer stays.
+    expect(entriesAfter).toBe(entriesBefore - 1);
+  });
+
+  test('removePoint called repeatedly down to empty history is stable', () => {
+    const engine = new ScoringEngine({ matchUpFormat: 'SET3-S:6/TB7' });
+    engine.addPoint({ winner: 0 });
+    engine.addPoint({ winner: 1 });
+    engine.addPoint({ winner: 0 });
+
+    // Remove the leading point three times in a row — indexes always
+    // renormalise so this drains history.points cleanly.
+    engine.removePoint(0);
+    engine.removePoint(0);
+    engine.removePoint(0);
+
+    expect(engine.getPointCount()).toBe(0);
+  });
+});
+
+// ============================================================================
 // 4. ScoringEngine — decoratePoint and markHardBoundary
 // ============================================================================
 
