@@ -3,6 +3,7 @@ import { addNotes, removeNotes } from '../base/addRemoveNotes';
 import { addNotice } from '@Global/state/globalState';
 
 // constants
+import { INVALID_TIME_ZONE } from '@Constants/errorConditionConstants';
 import { MODIFY_TOURNAMENT_DETAIL } from '@Constants/topicConstants';
 import { TOURNAMENT_RECORD } from '@Constants/attributeConstants';
 import { SUCCESS } from '@Constants/resultConstants';
@@ -62,6 +63,58 @@ export function setTournamentNotes({ tournamentRecord, notes }) {
       parentOrganisation: tournamentRecord.parentOrganisation,
       tournamentId: tournamentRecord.tournamentId,
       notes: notes ?? '',
+    },
+  });
+
+  return { ...SUCCESS };
+}
+
+/**
+ * Set (or clear) the tournament's IANA local time zone
+ * (`tournamentRecord.localTimeZone`). Consumers use it to render
+ * timestamps in the tournament's canonical zone rather than the
+ * viewing laptop's local zone, so scores stay consistent regardless
+ * of which device is displaying them.
+ *
+ *   localTimeZone: 'America/New_York'   — set / change
+ *   localTimeZone: '' | null | undefined — clear
+ *
+ * Validation uses the JS runtime's `Intl.DateTimeFormat` IANA
+ * database; any string that constructor rejects is returned as
+ * `INVALID_TIME_ZONE` without mutating state.
+ *
+ * No-op on unchanged value.
+ */
+export function setTournamentLocalTimeZone({ tournamentRecord, localTimeZone }) {
+  const paramsCheck = requireParams({ tournamentRecord }, [TOURNAMENT_RECORD]);
+  if (paramsCheck.error) return paramsCheck;
+
+  const normalised = typeof localTimeZone === 'string' ? localTimeZone.trim() : '';
+
+  if (normalised) {
+    try {
+      // Any IANA zone that the runtime doesn't recognise throws here.
+      new Intl.DateTimeFormat(undefined, { timeZone: normalised });
+    } catch {
+      return { error: INVALID_TIME_ZONE };
+    }
+  }
+
+  const previous = tournamentRecord.localTimeZone;
+  if (normalised === (previous ?? '')) return { ...SUCCESS };
+
+  if (normalised) {
+    tournamentRecord.localTimeZone = normalised;
+  } else {
+    delete tournamentRecord.localTimeZone;
+  }
+
+  addNotice({
+    topic: MODIFY_TOURNAMENT_DETAIL,
+    payload: {
+      parentOrganisation: tournamentRecord.parentOrganisation,
+      tournamentId: tournamentRecord.tournamentId,
+      localTimeZone: normalised,
     },
   });
 
