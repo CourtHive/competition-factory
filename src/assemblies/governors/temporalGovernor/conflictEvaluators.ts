@@ -67,13 +67,14 @@ export const courtOverlapEvaluator = {
 
           const severity = isHardConflict ? 'ERROR' : 'WARN';
 
-          const overlapStart = block.start > existing.start ? block.start : existing.start;
-          const overlapEnd = block.end < existing.end ? block.end : existing.end;
+          // ISO 8601 strings — lexicographic compare is correct; Math.max/min would return NaN
+          const overlapStart = block.start > existing.start ? block.start : existing.start; //NOSONAR
+          const overlapEnd = block.end < existing.end ? block.end : existing.end; //NOSONAR
 
           conflicts.push({
             code: 'COURT_OVERLAP',
             message: `Block overlaps existing ${existing.type.toLowerCase()} (${existing.reason || 'no reason'}) on court ${block.court.courtId}`,
-            severity: severity as 'ERROR' | 'WARN',
+            severity: severity,
             timeRange: {
               start: overlapStart,
               end: overlapEnd,
@@ -451,7 +452,7 @@ export const defaultEvaluators = [
  * Allows dynamic registration and lookup.
  */
 export class EvaluatorRegistry {
-  private evaluators = new Map<string, any>();
+  private readonly evaluators = new Map<string, any>();
 
   register(evaluator: any): void {
     this.evaluators.set(evaluator.id, evaluator);
@@ -461,7 +462,7 @@ export class EvaluatorRegistry {
     this.evaluators.delete(evaluatorId);
   }
 
-  get(evaluatorId: string): any | undefined {
+  get(evaluatorId: string): any {
     return this.evaluators.get(evaluatorId);
   }
 
