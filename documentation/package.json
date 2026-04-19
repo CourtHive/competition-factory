@@ -20,10 +20,10 @@
     "@mdx-js/react": "^3.0.0",
     "@types/react": "18.3.28",
     "clsx": "2.1.1",
-    "courthive-components": "0.9.28-beta.37",
+    "courthive-components": "1.0.0",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
-    "tods-competition-factory": "3.0.0"
+    "tods-competition-factory": "3.0.1"
   },
   "browserslist": {
     "production": [
