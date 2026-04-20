@@ -13,6 +13,7 @@ export {
   setTournamentNotes,
   setTournamentCategories,
   setTournamentLocalTimeZone,
+  setTournamentTier,
 } from '@Mutate/tournaments/tournamentDetails';
 
 export {

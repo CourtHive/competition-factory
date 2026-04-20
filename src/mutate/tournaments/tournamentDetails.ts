@@ -121,6 +121,45 @@ export function setTournamentLocalTimeZone({ tournamentRecord, localTimeZone }) 
   return { ...SUCCESS };
 }
 
+/**
+ * Set (or clear) the tournament's competitive tier classification.
+ *
+ *   tournamentTier: { system: 'ITF_JUNIOR', value: '3', numericRank: 3 }  — set
+ *   tournamentTier: null | undefined                                       — clear
+ *
+ * The tier is orthogonal to `tournamentLevel` (organizational scope).
+ * Ranking policies use `tierToLevel` mappings to resolve numeric levels
+ * from the tier's system + value.
+ */
+export function setTournamentTier({ tournamentRecord, tournamentTier }) {
+  const paramsCheck = requireParams({ tournamentRecord }, [TOURNAMENT_RECORD]);
+  if (paramsCheck.error) return paramsCheck;
+
+  if (tournamentTier && typeof tournamentTier === 'object') {
+    if (!tournamentTier.system || !tournamentTier.value) {
+      return { error: 'TierClassification requires system and value' };
+    }
+    tournamentRecord.tournamentTier = {
+      system: String(tournamentTier.system).trim(),
+      value: String(tournamentTier.value).trim(),
+      ...(tournamentTier.numericRank !== undefined ? { numericRank: Number(tournamentTier.numericRank) } : {}),
+    };
+  } else {
+    delete tournamentRecord.tournamentTier;
+  }
+
+  addNotice({
+    topic: MODIFY_TOURNAMENT_DETAIL,
+    payload: {
+      parentOrganisation: tournamentRecord.parentOrganisation,
+      tournamentId: tournamentRecord.tournamentId,
+      tournamentTier: tournamentRecord.tournamentTier ?? null,
+    },
+  });
+
+  return { ...SUCCESS };
+}
+
 export function setTournamentCategories({ tournamentRecord, categories }) {
   const paramsCheck = requireParams({ tournamentRecord }, [TOURNAMENT_RECORD]);
   if (paramsCheck.error) return paramsCheck;

@@ -41,11 +41,18 @@ export function getEventRankingPoints({
     return { error: MISSING_POLICY_DEFINITION };
   }
 
+  // Auto-resolve numeric level from tier if not explicitly passed.
+  // eventTier overrides tournamentTier.
+  const resolvedLevel = level ?? resolveLevelFromTier(
+    event.eventTier ?? tournamentRecord.tournamentTier,
+    policyDefinitions?.[POLICY_TYPE_RANKING_POINTS],
+  );
+
   const result = getTournamentPoints({
     participantFilters: { eventIds: [eventId] },
+    level: resolvedLevel,
     policyDefinitions,
     tournamentRecord,
-    level,
   });
 
   if (result.error) return result;
@@ -110,6 +117,15 @@ function collectPersonAwards({ personPoints, personToParticipant, eventDrawIds, 
       });
     }
   }
+}
+
+/**
+ * Resolve a numeric ranking level from a TierClassification using the
+ * policy's tierToLevel mapping. Returns undefined if no match.
+ */
+function resolveLevelFromTier(tier: any, policy: any): number | undefined {
+  if (!tier?.system || !tier?.value || !policy?.tierToLevel) return undefined;
+  return policy.tierToLevel[tier.system]?.[tier.value];
 }
 
 function collectLookupAwards({ points, participantLookup, eventDrawIds, eventAwards }) {

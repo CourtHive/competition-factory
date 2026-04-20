@@ -33,6 +33,7 @@ export interface Tournament {
   tournamentOtherIds?: UnifiedTournamentID[];
   tournamentRank?: string;
   tournamentStatus?: TournamentStatusUnion;
+  tournamentTier?: TierClassification;
   updatedAt?: Date | string;
   venues?: Venue[];
   weekdays?: WeekdayUnion[];
@@ -66,6 +67,7 @@ export interface Event {
   eventName?: string;
   eventOrder?: number;
   eventRank?: string;
+  eventTier?: TierClassification;
   eventType?: EventTypeUnion;
   extensions?: Extension[];
   gender?: GenderUnion;
@@ -733,6 +735,25 @@ export enum StructureTypeEnum {
   ITEM = 'ITEM',
 }
 export type StructureTypeUnion = keyof typeof StructureTypeEnum;
+
+/**
+ * Competitive tier classification — federation-specific prestige level.
+ * Orthogonal to `tournamentLevel` (organizational scope: LOCAL → INTERNATIONAL).
+ *
+ * Examples:
+ *   { system: 'ITF_JUNIOR', value: '3', numericRank: 3 }
+ *   { system: 'ATP', value: '1000', numericRank: 2 }
+ *   { system: 'PPA', value: 'Gold', numericRank: 2 }
+ *   { system: 'BWF', value: 'Super 500', numericRank: 4 }
+ */
+export interface TierClassification {
+  /** Federation/governing body tier system (e.g. 'ITF_JUNIOR', 'ATP', 'PPA', 'BWF') */
+  system: string;
+  /** Tier value within the system (e.g. '3', '1000', 'Gold', 'Super 500') */
+  value: string;
+  /** Optional sortable prestige rank within the system (lower = more prestigious) */
+  numericRank?: number;
+}
 
 export enum TournamentLevelEnum {
   CLUB = 'CLUB',
