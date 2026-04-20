@@ -6,3 +6,4 @@ export * from './tournamentTypes';
 export * from './sanctioningTypes';
 export * from './swissTypes';
 export * from './officiatingTypes';
+export * from './reportTypes';
