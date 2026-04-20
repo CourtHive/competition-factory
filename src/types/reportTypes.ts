@@ -10,6 +10,7 @@ export type ReportDefinition = {
   name: string;
   description: string;
   category: string;
+  source?: 'factory' | 'server';
 };
 
 export type ReportResult = {

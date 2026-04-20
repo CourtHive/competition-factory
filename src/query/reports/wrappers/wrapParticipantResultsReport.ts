@@ -31,10 +31,11 @@ export function wrapParticipantResultsReport({
   for (const m of completed) {
     const side1Ids = getSideParticipantIds(m.sides?.[0], m.matchUpType ?? '');
     const side2Ids = getSideParticipantIds(m.sides?.[1], m.matchUpType ?? '');
+    const ws = m.winningSide ?? 0;
     const sideIds = [[], side1Ids, side2Ids];
-    const winnerIds = sideIds[m.winningSide] ?? [];
+    const winnerIds = sideIds[ws] ?? [];
     const loserSideIds = [[], side2Ids, side1Ids];
-    const loserIds = loserSideIds[m.winningSide] ?? [];
+    const loserIds = loserSideIds[ws] ?? [];
 
     const sets = m.score?.sets ?? [];
     let s1SetsWon = 0, s2SetsWon = 0, s1Games = 0, s2Games = 0;

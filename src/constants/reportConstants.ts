@@ -8,10 +8,22 @@ export const MATCHUP_STATUS_REPORT = 'matchUp.statusSummary';
 export const SEEDING_PERFORMANCE_REPORT = 'participant.seedingPerformance';
 export const COMPETITIVENESS_REPORT = 'matchUp.competitiveness';
 
+// Phase 4: Audit-trail reports (server-sourced, not computable from tournament record)
+export const DRAW_REVISIONS_REPORT = 'audit.drawRevisions';
+export const SCHEDULING_CHURN_REPORT = 'audit.schedulingChurn';
+export const MUTATION_LOG_REPORT = 'audit.mutationLog';
+export const POSITION_CHANGES_REPORT = 'audit.positionChanges';
+
 export const REPORT_CATEGORIES = {
   ENTRIES: 'Entries',
   DRAWS: 'Draws',
   MATCHUPS: 'MatchUps',
   PARTICIPANTS: 'Participants',
   SCHEDULING: 'Scheduling',
+  AUDIT: 'Audit',
+} as const;
+
+export const REPORT_SOURCE = {
+  FACTORY: 'factory',
+  SERVER: 'server',
 } as const;

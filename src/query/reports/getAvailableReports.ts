@@ -5,15 +5,20 @@ import { Tournament } from '@Types/tournamentTypes';
 
 import {
   COMPETITIVENESS_REPORT,
+  DRAW_REVISIONS_REPORT,
   ENTRY_STATUS_REPORT,
   MATCH_RESULTS_REPORT,
   MATCHUP_STATUS_REPORT,
+  MUTATION_LOG_REPORT,
   PARTICIPANT_RESULTS_REPORT,
   PARTICIPANT_STATS_REPORT,
+  POSITION_CHANGES_REPORT,
+  SCHEDULING_CHURN_REPORT,
   SEEDING_PERFORMANCE_REPORT,
   STRUCTURE_REPORT,
   VENUE_UTILIZATION_REPORT,
   REPORT_CATEGORIES,
+  REPORT_SOURCE,
 } from '@Constants/reportConstants';
 
 const REPORT_REGISTRY = [
@@ -71,6 +76,34 @@ const REPORT_REGISTRY = [
     description: 'Court availability and scheduling utilization by venue and date',
     category: REPORT_CATEGORIES.SCHEDULING,
   },
+  {
+    reportId: MUTATION_LOG_REPORT,
+    name: 'Mutation Log',
+    description: 'Chronological log of all server mutations with user attribution',
+    category: REPORT_CATEGORIES.AUDIT,
+    source: REPORT_SOURCE.SERVER,
+  },
+  {
+    reportId: DRAW_REVISIONS_REPORT,
+    name: 'Draw Revision History',
+    description: 'Timeline of draw changes — position assignments, seeding, generation',
+    category: REPORT_CATEGORIES.AUDIT,
+    source: REPORT_SOURCE.SERVER,
+  },
+  {
+    reportId: SCHEDULING_CHURN_REPORT,
+    name: 'Scheduling Churn',
+    description: 'Scheduling changes — bulk schedules, reschedules, clears',
+    category: REPORT_CATEGORIES.AUDIT,
+    source: REPORT_SOURCE.SERVER,
+  },
+  {
+    reportId: POSITION_CHANGES_REPORT,
+    name: 'Position Changes',
+    description: 'Draw position assignment changes over time',
+    category: REPORT_CATEGORIES.AUDIT,
+    source: REPORT_SOURCE.SERVER,
+  },
 ];
 
 type GetAvailableReportsArgs = {
@@ -108,6 +141,11 @@ export function getAvailableReports({
     [SEEDING_PERFORMANCE_REPORT]: hasSeededParticipants,
     [PARTICIPANT_STATS_REPORT]: hasTeamParticipants,
     [VENUE_UTILIZATION_REPORT]: hasVenues,
+    // Audit reports are always listed; TMX checks server connectivity
+    [MUTATION_LOG_REPORT]: true,
+    [DRAW_REVISIONS_REPORT]: true,
+    [SCHEDULING_CHURN_REPORT]: true,
+    [POSITION_CHANGES_REPORT]: true,
   };
 
   const availableReports = REPORT_REGISTRY.map((def) => ({
