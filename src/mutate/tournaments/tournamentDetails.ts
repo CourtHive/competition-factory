@@ -160,6 +160,31 @@ export function setTournamentTier({ tournamentRecord, tournamentTier }) {
   return { ...SUCCESS };
 }
 
+export function setRegistrationProfile({ tournamentRecord, registrationProfile }) {
+  const paramsCheck = requireParams({ tournamentRecord }, [TOURNAMENT_RECORD]);
+  if (paramsCheck.error) return paramsCheck;
+
+  if (registrationProfile && typeof registrationProfile === 'object') {
+    tournamentRecord.registrationProfile = {
+      ...tournamentRecord.registrationProfile,
+      ...registrationProfile,
+    };
+  } else {
+    delete tournamentRecord.registrationProfile;
+  }
+
+  addNotice({
+    topic: MODIFY_TOURNAMENT_DETAIL,
+    payload: {
+      parentOrganisation: tournamentRecord.parentOrganisation,
+      tournamentId: tournamentRecord.tournamentId,
+      registrationProfile: tournamentRecord.registrationProfile ?? null,
+    },
+  });
+
+  return { ...SUCCESS };
+}
+
 export function setTournamentCategories({ tournamentRecord, categories }) {
   const paramsCheck = requireParams({ tournamentRecord }, [TOURNAMENT_RECORD]);
   if (paramsCheck.error) return paramsCheck;

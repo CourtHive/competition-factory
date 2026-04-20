@@ -32,6 +32,7 @@ module.exports = {
         {
           Participants: ['concepts/participants', 'concepts/participant-context', 'concepts/scaleItems'],
         },
+        'concepts/registration-profile',
         {
           Policies: [
             'concepts/policies',

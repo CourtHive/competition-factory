@@ -21,11 +21,11 @@ interface TierClassification {
 
 ### Fields
 
-| Field | Type | Required | Description |
-|---|---|---|---|
-| `system` | string | yes | Identifies which federation's tier system this uses |
-| `value` | string | yes | The tier label within that system |
-| `numericRank` | number | no | Sortable prestige rank (1 = most prestigious). Enables sorting tournaments by prestige without a policy lookup |
+| Field         | Type   | Required | Description                                                                                                    |
+| ------------- | ------ | -------- | -------------------------------------------------------------------------------------------------------------- |
+| `system`      | string | yes      | Identifies which federation's tier system this uses                                                            |
+| `value`       | string | yes      | The tier label within that system                                                                              |
+| `numericRank` | number | no       | Sortable prestige rank (1 = most prestigious). Enables sorting tournaments by prestige without a policy lookup |
 
 ### Where it lives
 
@@ -36,16 +36,16 @@ Resolution: `event.eventTier ?? tournament.tournamentTier`
 
 ## Cross-Sport Examples
 
-| Sport | System | Value examples | numericRank |
-|---|---|---|---|
-| Tennis (ITF Junior) | `ITF_JUNIOR` | `1`, `2`, `3`, `J500`, `J300`, `J200`, `J100` | 1–9 |
-| Tennis (ATP) | `ATP` | `Grand Slam`, `1000`, `500`, `250` | 1–4 |
-| Tennis (WTA) | `WTA` | `Grand Slam`, `1000`, `500`, `250`, `125` | 1–5 |
-| Tennis (ITF Pro) | `ITF_PRO` | `M25`, `M15`, `W75`, `W60`, `W35`, `W25`, `W15` | varies |
-| Pickleball (PPA) | `PPA` | `Major`, `Gold`, `Silver`, `Bronze` | 1–4 |
-| Badminton (BWF) | `BWF` | `Super 1000`, `Super 750`, `Super 500`, `Super 300`, `Super 100` | 1–5 |
-| Table Tennis (ITTF) | `ITTF` | `Grand Smash`, `Champions`, `Contender`, `Feeder` | 1–4 |
-| Squash (PSA) | `PSA` | `Platinum`, `Gold`, `Silver`, `Bronze`, `Challenger`, `Satellite` | 1–6 |
+| Sport               | System       | Value examples                                                    | numericRank |
+| ------------------- | ------------ | ----------------------------------------------------------------- | ----------- |
+| Tennis (ITF Junior) | `ITF_JUNIOR` | `1`, `2`, `3`, `J500`, `J300`, `J200`, `J100`                     | 1–9         |
+| Tennis (ATP)        | `ATP`        | `Grand Slam`, `1000`, `500`, `250`                                | 1–4         |
+| Tennis (WTA)        | `WTA`        | `Grand Slam`, `1000`, `500`, `250`, `125`                         | 1–5         |
+| Tennis (ITF Pro)    | `ITF_PRO`    | `M25`, `M15`, `W75`, `W60`, `W35`, `W25`, `W15`                   | varies      |
+| Pickleball (PPA)    | `PPA`        | `Major`, `Gold`, `Silver`, `Bronze`                               | 1–4         |
+| Badminton (BWF)     | `BWF`        | `Super 1000`, `Super 750`, `Super 500`, `Super 300`, `Super 100`  | 1–5         |
+| Table Tennis (ITTF) | `ITTF`       | `Grand Smash`, `Champions`, `Contender`, `Feeder`                 | 1–4         |
+| Squash (PSA)        | `PSA`        | `Platinum`, `Gold`, `Silver`, `Bronze`, `Challenger`, `Satellite` | 1–6         |
 
 ## Setting Tournament Tier
 
@@ -76,12 +76,12 @@ const policy = {
     policyName: 'ITF Junior Points',
     tierToLevel: {
       ITF_JUNIOR: {
-        '1': 1,       // Grand Slam → Level 1
-        '2': 2,       // Junior Masters → Level 2
-        'J500': 4,    // Grade A → Level 4
-        'J300': 5,
-        'J200': 6,
-        'J100': 7,
+        1: 1, // Grand Slam → Level 1
+        2: 2, // Junior Masters → Level 2
+        J500: 4, // Grade A → Level 4
+        J300: 5,
+        J200: 6,
+        J100: 7,
       },
     },
     awardProfiles: [
@@ -109,7 +109,7 @@ When calling `getEventRankingPoints()` without an explicit `level` parameter, th
 const result = tournamentEngine.getEventRankingPoints({
   policyDefinitions: policy,
   eventId: 'evt-1',
-  level: 4,  // caller must know ITF J500 = level 4
+  level: 4, // caller must know ITF J500 = level 4
 });
 
 // After: level auto-resolved from tier
@@ -127,10 +127,10 @@ An explicit `level` parameter always takes precedence over tier resolution.
 
 ## vs tournamentLevel
 
-| | `tournamentLevel` | `tournamentTier` |
-|---|---|---|
-| **What** | Organizational scope | Competitive prestige |
-| **Type** | Enum (CLUB, DISTRICT, REGIONAL, NATIONAL, INTERNATIONAL, ZONAL, LOCAL, RECREATIONAL) | Structured: `{ system, value, numericRank? }` |
-| **Examples** | NATIONAL | `{ system: 'ATP', value: '1000' }` |
-| **Affects** | Governance, sanctioning | Ranking points, draw size requirements, prize money |
-| **Universal** | Yes — same across all sports | No — federation-specific |
+|               | `tournamentLevel`                                                                    | `tournamentTier`                                    |
+| ------------- | ------------------------------------------------------------------------------------ | --------------------------------------------------- |
+| **What**      | Organizational scope                                                                 | Competitive prestige                                |
+| **Type**      | Enum (CLUB, DISTRICT, REGIONAL, NATIONAL, INTERNATIONAL, ZONAL, LOCAL, RECREATIONAL) | Structured: `{ system, value, numericRank? }`       |
+| **Examples**  | NATIONAL                                                                             | `{ system: 'ATP', value: '1000' }`                  |
+| **Affects**   | Governance, sanctioning                                                              | Ranking points, draw size requirements, prize money |
+| **Universal** | Yes — same across all sports                                                         | No — federation-specific                            |

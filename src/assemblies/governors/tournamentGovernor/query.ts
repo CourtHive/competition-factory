@@ -8,6 +8,7 @@ export { getTournamentPersons } from '@Query/tournaments/getTournamentPersons';
 export { getAggregateTeamResults } from '@Query/scales/getAggregateTeamResults';
 export { getTournamentStructures } from '@Query/structure/structureGetter';
 export { analyzeTournament } from '@Query/tournaments/analyzeTournament';
+export { getRegistrationProfile } from '@Query/tournaments/getRegistrationProfile';
 export { getTournamentInfo } from '@Query/tournaments/getTournamentInfo';
 export { getApplicableAwardProfileLevels } from '@Query/scales/getApplicableAwardProfileLevels';
 export { getEventRankingPoints } from '@Query/scales/getEventRankingPoints';

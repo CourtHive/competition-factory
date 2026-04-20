@@ -2,12 +2,16 @@ import { getTournamentPoints } from '@Query/scales/getTournamentPoints';
 import { getParticipants } from '@Query/participants/getParticipants';
 
 // constants and types
-import { MISSING_EVENT, MISSING_POLICY_DEFINITION, MISSING_TOURNAMENT_RECORD } from '@Constants/errorConditionConstants';
 import { POLICY_TYPE_RANKING_POINTS } from '@Constants/policyConstants';
 import { PolicyDefinitions } from '@Types/factoryTypes';
-import { DOUBLES } from '@Constants/eventConstants';
 import { SUCCESS } from '@Constants/resultConstants';
 import { Tournament } from '@Types/tournamentTypes';
+import { DOUBLES } from '@Constants/eventConstants';
+import {
+  MISSING_EVENT,
+  MISSING_POLICY_DEFINITION,
+  MISSING_TOURNAMENT_RECORD,
+} from '@Constants/errorConditionConstants';
 
 type GetEventRankingPointsArgs = {
   policyDefinitions?: PolicyDefinitions;
@@ -43,10 +47,12 @@ export function getEventRankingPoints({
 
   // Auto-resolve numeric level from tier if not explicitly passed.
   // eventTier overrides tournamentTier.
-  const resolvedLevel = level ?? resolveLevelFromTier(
-    event.eventTier ?? tournamentRecord.tournamentTier,
-    policyDefinitions?.[POLICY_TYPE_RANKING_POINTS],
-  );
+  const resolvedLevel =
+    level ??
+    resolveLevelFromTier(
+      event.eventTier ?? tournamentRecord.tournamentTier,
+      policyDefinitions?.[POLICY_TYPE_RANKING_POINTS],
+    );
 
   const result = getTournamentPoints({
     participantFilters: { eventIds: [eventId] },
@@ -87,7 +93,9 @@ export function getEventRankingPoints({
   collectLookupAwards({ points: teamPoints, participantLookup, eventDrawIds, eventAwards });
 
   // Sort by points descending, then by participantName
-  eventAwards.sort((a, b) => (b.points || 0) - (a.points || 0) || (a.participantName ?? '').localeCompare(b.participantName ?? ''));
+  eventAwards.sort(
+    (a, b) => (b.points || 0) - (a.points || 0) || (a.participantName ?? '').localeCompare(b.participantName ?? ''),
+  );
 
   // Determine if this is a doubles event (for display purposes)
   const isDoubles = event.eventType === DOUBLES;
@@ -100,7 +108,6 @@ export function getEventRankingPoints({
     ...SUCCESS,
   };
 }
-
 
 function collectPersonAwards({ personPoints, personToParticipant, eventDrawIds, eventAwards }) {
   for (const [personId, awards] of Object.entries(personPoints)) {

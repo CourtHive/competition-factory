@@ -1303,15 +1303,92 @@ export enum SexEnum {
 export type SexUnion = keyof typeof SexEnum;
 
 export interface RegistrationProfile {
+  // temporal
   createdAt?: Date | string;
   entriesClose?: Date | string;
   entriesOpen?: Date | string;
+  updatedAt?: Date | string;
+  withdrawalDeadline?: Date | string;
+
+  // entry & eligibility
+  eligibilityNotes?: string;
+  entryFees?: RegistrationEntryFee[];
+  entryMethod?: string;
+  entryUrl?: string;
+
+  // logistics (structured + HTML notes)
+  accommodation?: LogisticsSection;
+  hospitality?: LogisticsSection;
+  medicalInfo?: LogisticsSection;
+  transportation?: LogisticsSection;
+
+  // simple text
+  contingencyPlan?: string;
+  dressCode?: string;
+
+  // ceremony & social
+  awardsCeremonyDate?: string;
+  awardsDescription?: string;
+  drawCeremonyDate?: string;
+  socialEvents?: SocialEvent[];
+
+  // regulations & compliance
+  codeOfConduct?: DocumentLink;
+  regulations?: DocumentLink[];
+
+  // branding
+  sponsors?: Sponsor[];
+
   extensions?: Extension[];
   isMock?: boolean;
   notes?: string;
   timeItems?: TimeItem[];
-  updatedAt?: Date | string;
-  withdrawalDeadline?: Date | string;
+}
+
+export interface LogisticsSection {
+  notes?: string;
+  options?: LogisticsOption[];
+}
+
+export interface LogisticsOption {
+  address?: string;
+  description?: string;
+  email?: string;
+  extensions?: Extension[];
+  name: string;
+  notes?: string;
+  phone?: string;
+  priceRange?: string;
+  url?: string;
+}
+
+export interface SocialEvent {
+  date?: string;
+  description?: string;
+  location?: string;
+  name: string;
+  time?: string;
+}
+
+export interface Sponsor {
+  logoUrl?: string;
+  name: string;
+  tier?: string;
+  websiteUrl?: string;
+}
+
+export interface DocumentLink {
+  description?: string;
+  name: string;
+  url?: string;
+}
+
+export interface RegistrationEntryFee {
+  amount: number;
+  category?: string;
+  currencyCode: string;
+  eventType?: EventTypeUnion;
+  extensions?: Extension[];
 }
 
 export interface PrizeMoney {

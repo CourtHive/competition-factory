@@ -9,6 +9,7 @@ export { addOnlineResource } from '@Mutate/base/addOnlineResource';
 export { addExtension } from '@Mutate/extensions/addExtension';
 
 export {
+  setRegistrationProfile,
   setTournamentName,
   setTournamentNotes,
   setTournamentCategories,
