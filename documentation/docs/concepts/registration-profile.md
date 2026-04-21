@@ -158,6 +158,10 @@ if (registrationProfile?.accommodation?.options?.length) {
 }
 ```
 
+## Related Concepts
+
+- **[Tournament Tier](./tournament-tier.md)** — the competitive prestige classification (`tournamentTier`). While the registration profile captures operational tournament metadata (deadlines, fees, logistics), the tier defines the competitive classification that determines ranking points, draw size requirements, and prize money bands. Both live on the tournament record and together provide a complete picture of what participants need to know.
+
 ## Design Principles
 
 - **Structured + HTML fallback**: logistics sections have structured `options` for rendering in courthive-public and PDF, plus an HTML `notes` field for anything unstructured.

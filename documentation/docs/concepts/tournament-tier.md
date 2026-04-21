@@ -125,6 +125,10 @@ const result = tournamentEngine.getEventRankingPoints({
 
 An explicit `level` parameter always takes precedence over tier resolution.
 
+## Related Concepts
+
+- **[Registration Profile](./registration-profile.md)** — tournament logistics and entry information. Together with `tournamentTier`, these form the complete tournament metadata: the tier defines the competitive classification (ranking points, draw size requirements) while the registration profile captures operational details (deadlines, fees, accommodation).
+
 ## vs tournamentLevel
 
 |               | `tournamentLevel`                                                                    | `tournamentTier`                                    |
