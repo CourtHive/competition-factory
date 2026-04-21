@@ -27,8 +27,8 @@ importers:
         specifier: 2.1.1
         version: 2.1.1
       courthive-components:
-        specifier: 1.0.0
-        version: 1.0.0
+        specifier: 1.0.1
+        version: 1.0.1
       react:
         specifier: ^18.2.0
         version: 18.3.1
@@ -2299,8 +2299,8 @@ packages:
       typescript:
         optional: true
 
-  courthive-components@1.0.0:
-    resolution: {integrity: sha512-kg4snAPaVRIE5S5HyukXFmVpfTviJZpsfo20mwUhU2EIStL3xcK4LhzdQEzy3MxV9PqNGn30ASMCZkAWjxcV/A==}
+  courthive-components@1.0.1:
+    resolution: {integrity: sha512-gawmMsCCu3mUa0GkEqdFgua1xEAuSMBjP69mo9mubhGhYm3u5hqJnWPbc9JXD8LRX5C0fklk8bxVFGfHuRoNQg==}
     engines: {node: '>=20.19.0 < 25'}
 
   cross-spawn@7.0.6:
@@ -2622,8 +2622,8 @@ packages:
     resolution: {integrity: sha512-8QmQKqEASLd5nx0U1B1okLElbUuuttJ/AnYmRXbbbGDWh6uS208EjD4Xqq/I9wK7u0v6O08XhTWnt5XtEbR6Dg==}
     engines: {node: '>= 0.4'}
 
-  delaunator@5.0.1:
-    resolution: {integrity: sha512-8nvh+XBe96aCESrGOqMp/84b13H9cdKbG5P2ejQCh4d4sK9RL4371qou9drQjMhvnPmhWl5hnmqbEE0fXr9Xnw==}
+  delaunator@5.1.0:
+    resolution: {integrity: sha512-AGrQ4QSgssa1NGmWmLPqN5NY2KajF5MqxetNEO+o0n3ZwZZeTmt7bBnvzHWrmkZFxGgr4HdyFgelzgi06otLuQ==}
 
   depd@1.1.2:
     resolution: {integrity: sha512-7emPTl6Dpo6JRXOXjLRxck+FlLRX5847cLKEn00PLAgc3g2hTZZgr+e4c2v6QpSmLeFP3n5yUo7ft6avBK/5jQ==}
@@ -2938,8 +2938,8 @@ packages:
     resolution: {integrity: sha512-b6suED+5/3rTpUBdG1gupIl8MPFCAMA0QXwmljLhvCUKcUvdE4gWky9zpuGCcXHOsz4J9wPGNWq6OKpmIzz3hQ==}
     hasBin: true
 
-  focus-trap@8.0.0:
-    resolution: {integrity: sha512-Aa84FOGHs99vVwufDMdq2qgOwXPC2e9U66GcqBhn1/jEHPDhJaP8PYhkIbqG9lhfL5Kddk/567lj46LLHYCRUw==}
+  focus-trap@8.0.1:
+    resolution: {integrity: sha512-9ptSG6z51YQOstI/oN4XuVGP/03u2nh0g//qz7L6zX0i6PZiPnkcf3GenXq7N2hZnASXaMxTPpbKwdI+PFvxlw==}
 
   follow-redirects@1.15.11:
     resolution: {integrity: sha512-deG2P0JfjrTxl50XGCDyfI97ZGVCxIpfKYmfyrQ54n5FO/0gfIES8C/Psl6kWVDolizcaaxZJnTS0QSMxvnsBQ==}
@@ -4685,8 +4685,8 @@ packages:
     resolution: {integrity: sha512-g6QUff04oZpHs0eG5p83rFLhHeV00ug/Yf9nZM6fLeUrPguBTkTQOdpAWWspMh55TZfVQDPaN3NQJfbVRAxdIw==}
     engines: {iojs: '>=1.0.0', node: '>=0.10.0'}
 
-  robust-predicates@3.0.2:
-    resolution: {integrity: sha512-IXgzBWvWQwE6PrDI05OvmXUIruQTcoMDzRsOd5CDvHCVLcLHMTSYvOK5Cm46kWqlV3yAbuSpBZdJ5oP5OUoStg==}
+  robust-predicates@3.0.3:
+    resolution: {integrity: sha512-NS3levdsRIUOmiJ8FZWCP7LG3QpJyrs/TE0Zpf1yvZu8cAJJ6QMW92H1c7kWpdIHo8RvmLxN/o2JXTKHp74lUA==}
 
   rtlcss@4.3.0:
     resolution: {integrity: sha512-FI+pHEn7Wc4NqKXMXFM+VAYKEj/mRIcW4h24YVwVtyjI+EqGrLc2Hx/Ny0lrZ21cBWU2goLy36eqMcNj3AQJig==}
@@ -5011,8 +5011,8 @@ packages:
   thunky@1.1.0:
     resolution: {integrity: sha512-eHY7nBftgThBqOyHGVN+l8gF0BucP09fMo0oO/Lb0w1OF80dJv+lDVpXG60WMQvkcxAkNybKsrEIE3ZtKGmPrA==}
 
-  timepicker-ui@4.1.6:
-    resolution: {integrity: sha512-d03EUof/5atNY6Hq7SvaJEh/mhs/D2UYMqT2bK1BmqN9j94DWxubZjUMRRkWusP9NE0U3n3fIb4bU2/IN7nvdg==}
+  timepicker-ui@4.3.0:
+    resolution: {integrity: sha512-Gw6QFGKvgrs9OOqFGT84/5g27t/YHMzTY1n0BOSZitnBLWH+ZKBxT73Nn/J7qMKGwZ70eqX+Jn99NzGAvwrwEA==}
 
   tiny-invariant@1.3.3:
     resolution: {integrity: sha512-+FbBPE1o9QAYvviau/qC5SE3caw21q3xkvWKBtja5vgqOWIHHJ3ioaq1VPfn/Szqctz2bU/oYeKd9/z5BL+PVg==}
@@ -8695,15 +8695,15 @@ snapshots:
       parse-json: 5.2.0
       path-type: 4.0.0
 
-  courthive-components@1.0.0:
+  courthive-components@1.0.1:
     dependencies:
       awesomplete: 1.1.7
       class-variance-authority: 0.7.1
       classnames: 2.5.1
       d3: 7.9.0
       dayjs: 1.11.20
-      focus-trap: 8.0.0
-      timepicker-ui: 4.1.6
+      focus-trap: 8.0.1
+      timepicker-ui: 4.3.0
       tippy.js: 6.3.7
       tods-competition-factory: 3.1.0
       vanillajs-datepicker: 1.3.4
@@ -8882,7 +8882,7 @@ snapshots:
 
   d3-delaunay@6.0.4:
     dependencies:
-      delaunator: 5.0.1
+      delaunator: 5.1.0
 
   d3-dispatch@3.0.1: {}
 
@@ -9057,9 +9057,9 @@ snapshots:
       has-property-descriptors: 1.0.2
       object-keys: 1.1.1
 
-  delaunator@5.0.1:
+  delaunator@5.1.0:
     dependencies:
-      robust-predicates: 3.0.2
+      robust-predicates: 3.0.3
 
   depd@1.1.2: {}
 
@@ -9410,7 +9410,7 @@ snapshots:
 
   flat@5.0.2: {}
 
-  focus-trap@8.0.0:
+  focus-trap@8.0.1:
     dependencies:
       tabbable: 6.4.0
 
@@ -11594,7 +11594,7 @@ snapshots:
 
   reusify@1.1.0: {}
 
-  robust-predicates@3.0.2: {}
+  robust-predicates@3.0.3: {}
 
   rtlcss@4.3.0:
     dependencies:
@@ -11957,7 +11957,7 @@ snapshots:
 
   thunky@1.1.0: {}
 
-  timepicker-ui@4.1.6: {}
+  timepicker-ui@4.3.0: {}
 
   tiny-invariant@1.3.3: {}
 
