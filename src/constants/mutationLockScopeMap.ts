@@ -237,6 +237,7 @@ export const methodScopeMap: Record<string, MutationLockScope> = {
   setTournamentStatus: 'TOURNAMENT',
   setTournamentName: 'TOURNAMENT',
   setTournamentNotes: 'TOURNAMENT',
+  setTournamentLocalTimeZone: 'TOURNAMENT',
   setTournamentCategories: 'TOURNAMENT',
   setTournamentDates: 'TOURNAMENT',
   setTournamentEndDate: 'TOURNAMENT',

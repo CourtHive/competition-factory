@@ -35,6 +35,7 @@ export { officiatingConstants } from './officiatingConstants';
 export { sanctioningConstants } from './sanctioningConstants';
 export { venueConstants } from './venueConstants';
 export { weekdayConstants } from './weekdayConstants';
+export * as reportConstants from './reportConstants';
 
 export {
   activeMatchUpStatuses,

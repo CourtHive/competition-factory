@@ -414,6 +414,9 @@ The server uses a focused subset of factory methods for mutation execution and q
 | ----------------------------------------------------------------------------------- | ----------------------------------------- | ------------------------------------- |
 | [generateTournamentRecord](/docs/governors/mocks-governor#generatetournamentrecord) | Mocks                                     | Generate mock tournaments for testing |
 | reportGovernor methods                                                              | [Report](/docs/governors/report-governor) | Merged into query engine              |
+| [getAvailableReports](/docs/governors/report-governor#getavailablereports)          | [Report](/docs/governors/report-governor) | Discover computable reports           |
+| [generateReport](/docs/governors/report-governor#generatereport)                    | [Report](/docs/governors/report-governor) | Generate any report by ID             |
+| [buildReportContext](/docs/governors/report-governor#buildreportcontext)            | [Report](/docs/governors/report-governor) | Pre-hydrate shared report context     |
 
 ### Server globalState
 

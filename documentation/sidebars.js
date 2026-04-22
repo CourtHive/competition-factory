@@ -32,17 +32,23 @@ module.exports = {
         {
           Participants: ['concepts/participants', 'concepts/participant-context', 'concepts/scaleItems'],
         },
+        'concepts/registration-profile',
+        'concepts/tournament-tier',
         {
           Policies: [
             'concepts/policies',
             'policies/roundRobinTallyPolicy',
+            'policies/tallyPolicy',
             'policies/avoidance',
             'policies/positionActions',
+            'policies/positioningSeeds',
             'policies/matchUpActions',
             'policies/roundNaming',
             'policies/participantPolicy',
             'policies/seedingPolicy',
             'policies/feedInPolicy',
+            'policies/feedPolicy',
+            'policies/maxParticipants',
             'policies/scheduling',
             'policies/scoringPolicy',
             'policies/draws',
@@ -90,6 +96,7 @@ module.exports = {
             },
             'concepts/draw-links',
             'concepts/draft-draws',
+            'concepts/seed-withdrawal-cascade',
             'concepts/exit-profiles',
             'concepts/finishing-positions',
             'concepts/actions',
@@ -195,8 +202,13 @@ module.exports = {
         },
         {
           type: 'category',
+          label: 'Draw Engine',
+          items: ['engines/draw-engine-overview', 'apis/draw-engine-api'],
+        },
+        {
+          type: 'category',
           label: 'Sanctioning Engine',
-          items: ['engines/sanctioning-engine'],
+          items: ['engines/sanctioning-engine', 'engines/sanctioning-engine-design'],
         },
         {
           type: 'category',

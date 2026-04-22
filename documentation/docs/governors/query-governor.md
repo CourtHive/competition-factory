@@ -1682,8 +1682,6 @@ Returns the current tournament record from the engine state. This is a convenien
 const { tournamentRecord } = engine.getTournament();
 ```
 
-See also: [Tournament Governor - getTournament](/docs/governors/tournament-governor#gettournament).
-
 ---
 
 ## getTournamentInfo

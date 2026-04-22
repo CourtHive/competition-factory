@@ -80,6 +80,50 @@ describe('drawNotifications edge cases', () => {
     expect(result.success).toEqual(true);
   });
 
+  it('addMatchUpsNotice stamps updatedAt on every matchUp in the payload', () => {
+    const m1 = { matchUpId: 'm1' } as any;
+    const m2 = { matchUpId: 'm2' } as any;
+    addMatchUpsNotice({ matchUps: [m1, m2], tournamentId: 't1' });
+    expect(typeof m1.updatedAt).toBe('string');
+    expect(typeof m2.updatedAt).toBe('string');
+    // ISO date strings are parseable
+    expect(Number.isNaN(new Date(m1.updatedAt).getTime())).toBe(false);
+    expect(Number.isNaN(new Date(m2.updatedAt).getTime())).toBe(false);
+  });
+
+  it('addMatchUpsNotice tolerates a missing matchUps array', () => {
+    // `matchUps: undefined` used to be valid before the stamp loop
+    // existed; keep it safe for legacy call sites that pass nothing.
+    const result: any = addMatchUpsNotice({ matchUps: undefined as any, tournamentId: 't1' });
+    expect(result.success).toEqual(true);
+  });
+
+  it('modifyMatchUpNotice stamps updatedAt on the matchUp', () => {
+    const matchUp = { matchUpId: 'm1' } as any;
+    modifyMatchUpNotice({ matchUp, tournamentId: 't1' });
+    expect(typeof matchUp.updatedAt).toBe('string');
+    expect(Number.isNaN(new Date(matchUp.updatedAt).getTime())).toBe(false);
+  });
+
+  it('repeated modifyMatchUpNotice produces strictly-greater updatedAt', () => {
+    const matchUp = { matchUpId: 'm1' } as any;
+    modifyMatchUpNotice({ matchUp, tournamentId: 't1' });
+    const first = new Date(matchUp.updatedAt).getTime();
+    // Same-millisecond mutation is the hot-loop worst case: the monotonic
+    // bump guarantees the next timestamp is at least +1ms.
+    modifyMatchUpNotice({ matchUp, tournamentId: 't1' });
+    const second = new Date(matchUp.updatedAt).getTime();
+    expect(second).toBeGreaterThan(first);
+  });
+
+  it('stampMatchUpUpdatedAt tolerates a prior Date-typed updatedAt', () => {
+    // The shape allows Date | string; make sure the bump logic handles
+    // both rather than coercing an existing Date to NaN.
+    const matchUp = { matchUpId: 'm1', updatedAt: new Date() } as any;
+    modifyMatchUpNotice({ matchUp, tournamentId: 't1' });
+    expect(typeof matchUp.updatedAt).toBe('string');
+  });
+
   it('updateInContextMatchUp returns error for missing matchUp', () => {
     const result = updateInContextMatchUp({ tournamentId: 't1', inContextMatchUp: undefined });
     expect(result.error).toBeDefined();

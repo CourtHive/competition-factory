@@ -187,10 +187,10 @@ The Competition Factory includes 16 governors organized into functional areas:
 
 **[Report Governor](./report-governor)** - Reporting and analytics
 
-- Participation reports
-- Draw reports
-- Scheduling reports
-- Statistical analysis
+- Unified report API: `getAvailableReports`, `generateReport`, `buildReportContext`
+- 13 registered reports across 6 categories (Entries, Draws, MatchUps, Participants, Scheduling, Audit)
+- Consistent `{ reportId, columns, rows, summary }` output shape for all reports
+- Entry status, draw structure, venue utilization, match results, competitiveness, participant results, seeding performance, team statistics
 
 ### Configuration
 
@@ -498,12 +498,12 @@ myEngine.scheduleMatchUps({ ... });
 
 ### MatchUp Operations
 
-| Governor                                             | Purpose            | Key Methods                                                     |
-| ---------------------------------------------------- | ------------------ | --------------------------------------------------------------- |
-| [MatchUp Governor](./matchup-governor)               | MatchUp management      | `setMatchUpStatus`, `setMatchUpScore`, `advanceParticipants`        |
-| [Score Governor](./score-governor)                   | Score handling          | `parseScoreString`, `generateScoreString`, `checkSetIsComplete`     |
-| [MatchUp Format Governor](./matchup-format-governor) | Format handling         | `parseMatchUpFormat`, `stringifyMatchUpFormat`                      |
-| [tieFormat Governor](./tie-format-governor)          | Team format management  | `modifyTieFormat`, `aggregateTieFormats`, `addCollectionDefinition` |
+| Governor                                             | Purpose                | Key Methods                                                         |
+| ---------------------------------------------------- | ---------------------- | ------------------------------------------------------------------- |
+| [MatchUp Governor](./matchup-governor)               | MatchUp management     | `setMatchUpStatus`, `setMatchUpScore`, `advanceParticipants`        |
+| [Score Governor](./score-governor)                   | Score handling         | `parseScoreString`, `generateScoreString`, `checkSetIsComplete`     |
+| [MatchUp Format Governor](./matchup-format-governor) | Format handling        | `parseMatchUpFormat`, `stringifyMatchUpFormat`                      |
+| [tieFormat Governor](./tie-format-governor)          | Team format management | `modifyTieFormat`, `aggregateTieFormats`, `addCollectionDefinition` |
 
 ### Scheduling & Venues
 

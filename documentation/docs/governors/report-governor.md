@@ -8,6 +8,196 @@ import { reportGovernor } from 'tods-competition-factory';
 
 The **reportGovernor** provides analytics and reporting functions that generate statistical summaries of tournaments, participants, structures, and venues. These methods are useful for dashboards, analytics pages, and tournament management reports.
 
+## Unified Reporting API
+
+The reporting engine provides a unified interface for generating reports in a consistent `{ reportId, columns, rows, summary }` shape. This allows consumers to render any report as a table, export to PDF/CSV/JSON, or publish as data without knowing the internal structure of each report.
+
+Three infrastructure methods power the unified API:
+
+- [`getAvailableReports`](#getavailablereports) — discover which reports are computable for a tournament
+- [`buildReportContext`](#buildreportcontext) — pre-hydrate shared data for multiple reports
+- [`generateReport`](#generatereport) — generate any registered report by ID
+
+The individual report methods ([`getParticipantStats`](#getparticipantstats), [`getEntryStatusReports`](#getentrystatusreports), [`getStructureReports`](#getstructurereports), [`getVenuesReport`](#getvenuesreport)) continue to work as before and return their original shapes. The unified API wraps them.
+
+---
+
+## getAvailableReports
+
+Returns a list of all registered reports with metadata indicating whether each is computable given the current tournament data.
+
+**Parameters:**
+
+```ts
+{
+  tournamentRecord: Tournament;
+}
+```
+
+**Returns:**
+
+```ts
+{
+  availableReports: Array<{
+    reportId: string; // Unique report identifier (e.g., 'entries.entryStatus')
+    name: string; // Human-readable name
+    description: string; // What the report shows
+    category: string; // Grouping: 'Entries' | 'Draws' | 'MatchUps' | 'Participants' | 'Scheduling' | 'Audit'
+    source?: 'factory' | 'server'; // Where data comes from (default: 'factory')
+    computableNow: boolean; // Whether the tournament has sufficient data
+  }>;
+}
+```
+
+**Examples:**
+
+```js
+const { availableReports } = tournamentEngine.getAvailableReports();
+
+// Show only computable reports
+const ready = availableReports.filter((r) => r.computableNow);
+console.log(`${ready.length} reports available`);
+
+ready.forEach((r) => {
+  console.log(`[${r.category}] ${r.name} — ${r.description}`);
+});
+
+// Group by category
+const byCategory = Object.groupBy(ready, (r) => r.category);
+```
+
+**Registered Reports:**
+
+| Report ID                        | Name                   | Category     | Requires            |
+| -------------------------------- | ---------------------- | ------------ | ------------------- |
+| `entries.entryStatus`            | Entry Status Report    | Entries      | Events              |
+| `structure.drawReport`           | Draw Structure Report  | Draws        | Events              |
+| `matchUp.results`                | Match Results          | MatchUps     | Completed draws     |
+| `matchUp.statusSummary`          | MatchUp Status Summary | MatchUps     | Completed draws     |
+| `matchUp.competitiveness`        | Match Competitiveness  | MatchUps     | Completed draws     |
+| `participant.results`            | Participant Results    | Participants | Completed draws     |
+| `participant.seedingPerformance` | Seeding Performance    | Participants | Seeded participants |
+| `participant.teamStats`          | Team Statistics        | Participants | Team participants   |
+| `venue.utilization`              | Venue Utilization      | Scheduling   | Venues              |
+| `audit.mutationLog`              | Mutation Log           | Audit        | Server audit trail  |
+| `audit.drawRevisions`            | Draw Revision History  | Audit        | Server audit trail  |
+| `audit.schedulingChurn`          | Scheduling Churn       | Audit        | Server audit trail  |
+| `audit.positionChanges`          | Position Changes       | Audit        | Server audit trail  |
+
+Reports with `source: 'server'` require data from the server audit trail and cannot be generated from the tournament record alone.
+
+---
+
+## buildReportContext
+
+Pre-hydrates participants, matchUps, and venues into a reusable context object. Use this when generating multiple reports to avoid redundant data fetching.
+
+**Parameters:**
+
+```ts
+{
+  tournamentRecord: Tournament;
+}
+```
+
+**Returns:**
+
+```ts
+{
+  tournamentRecord: Tournament;
+  participantMap: Record<string, any>;  // Hydrated with scales, events, seeding, draws
+  matchUps: HydratedMatchUp[];
+  venues: Venue[];
+}
+```
+
+**Examples:**
+
+```js
+const context = tournamentEngine.buildReportContext();
+
+// Use context for multiple reports (avoids re-hydrating participants each time)
+const report1 = tournamentEngine.generateReport({ reportId: 'entries.entryStatus' });
+const report2 = tournamentEngine.generateReport({ reportId: 'matchUp.results' });
+```
+
+---
+
+## generateReport
+
+Generates a report by ID, returning a unified shape with columns and rows suitable for table rendering, PDF export, or data serialization.
+
+**Parameters:**
+
+```ts
+{
+  tournamentRecord: Tournament;
+  reportId: string;               // One of the registered report IDs
+  parameters?: Record<string, any>; // Optional report-specific parameters
+}
+```
+
+**Returns:**
+
+```ts
+{
+  reportId: string;
+  generatedAt: string;            // ISO timestamp
+  parameters?: Record<string, any>;
+  columns: Array<{
+    key: string;                  // Field name in row data
+    title: string;                // Display header
+    type?: 'string' | 'number' | 'boolean' | 'date';
+    width?: number;
+  }>;
+  rows: Record<string, any>[];   // Array of row objects keyed by column.key
+  summary?: Record<string, any>; // Optional aggregate data
+}
+```
+
+**Examples:**
+
+```js
+// Generate a specific report
+const result = tournamentEngine.generateReport({
+  reportId: 'entries.entryStatus',
+});
+
+console.log(result.columns); // [{ key: 'participantName', title: 'Participant', type: 'string' }, ...]
+console.log(result.rows.length); // 32
+
+// Render as a table
+result.columns.forEach((col) => process.stdout.write(col.title.padEnd(20)));
+result.rows.forEach((row) => {
+  result.columns.forEach((col) => process.stdout.write(String(row[col.key]).padEnd(20)));
+});
+
+// Export as CSV
+const header = result.columns.map((c) => c.title).join(',');
+const csv = [header, ...result.rows.map((row) => result.columns.map((c) => String(row[c.key] ?? '')).join(','))].join(
+  '\n',
+);
+
+// Export as JSON
+const json = JSON.stringify(result, null, 2);
+
+// Rows may include extra fields (e.g., participantId) not in columns — useful for lookups
+// Only column keys should be rendered in UI; extra fields are for CSV/JSON export
+```
+
+**Error handling:**
+
+```js
+// Unknown report ID
+const result = tournamentEngine.generateReport({ reportId: 'nonexistent' });
+// { error: 'Invalid reportId' }
+
+// Server-sourced report (audit.*)
+const result = tournamentEngine.generateReport({ reportId: 'audit.mutationLog' });
+// { error: 'Invalid reportId' }
+// Server-sourced reports must be fetched from the audit worker, not from generateReport
+```
+
 ---
 
 ## getParticipantStats
@@ -56,21 +246,21 @@ type StatCounters = {
   participantId: string;
   participantName: string;
   competitorIds: string[];               // IDs of competitors in team
-  
+
   // Win/loss/draw tallies at different levels
   matchUps: { won: number; lost: number; played: number };
   sets: { won: number; lost: number; played: number };
   games: { won: number; lost: number; played: number };
   points: { won: number; lost: number; played: number };
   tiebreaks: { won: number; lost: number; played: number };
-  
+
   // Ratios (won/played)
   matchUpsRatio?: number;                // Match win percentage
   setsRatio?: number;                    // Set win percentage
   gamesRatio?: number;                   // Game win percentage
   pointsRatio?: number;                  // Point win percentage
   tiebreaksRatio?: number;               // Tiebreak win percentage
-  
+
   // Competitive profile
   competitiveness?: {
     decisive: Tally;                     // Dominant wins/losses
@@ -80,10 +270,10 @@ type StatCounters = {
   competitiveRatio?: number;             // % of competitive matches
   decisiveRatio?: number;                // % of decisive matches
   routineRatio?: number;                 // % of routine matches
-  
+
   // Match status breakdown
   matchUpStatuses: { [status: string]: number }; // Count by status
-  
+
   // Rankings (if multiple participants)
   matchUpsRank?: number;
   setsRank?: number;
@@ -107,7 +297,7 @@ const result = tournamentEngine.getParticipantStats({
 
 console.log(result.participatingTeamsCount); // 8
 console.log(result.allParticipantStats.length); // 8
-result.allParticipantStats.forEach(stats => {
+result.allParticipantStats.forEach((stats) => {
   console.log(`${stats.participantName}: ${stats.matchUps.won}W-${stats.matchUps.lost}L`);
   console.log(`  Match Win %: ${(stats.matchUpsRatio * 100).toFixed(1)}%`);
   console.log(`  Sets: ${stats.sets.won}W-${stats.sets.lost}L`);
@@ -182,7 +372,7 @@ Generates detailed reports about participant entry statuses across all events an
 
 ```ts
 {
-  tournamentRecord: Tournament;  // Required tournament record
+  tournamentRecord: Tournament; // Required tournament record
 }
 ```
 
@@ -206,7 +396,7 @@ Generates detailed reports about participant entry statuses across all events an
       totalEntriesCount: number;          // Total entries for event
     };
   };
-  
+
   participantReports: {
     [participantId: string]: Array<{
       participantId: string;
@@ -226,7 +416,7 @@ Generates detailed reports about participant entry statuses across all events an
       confidence?: string;                // WTN confidence level
     }>;
   };
-  
+
   entryStatusReports: {
     [eventId: string]: {
       [drawId: string]: {
@@ -238,7 +428,7 @@ Generates detailed reports about participant entry statuses across all events an
       };
     };
   };
-  
+
   withdrewCount: number;                  // Total withdrawn participants
   tournamentId: string;
 }
@@ -254,12 +444,12 @@ tournamentEngine.setState(tournamentRecord);
 const reports = tournamentEngine.getEntryStatusReports();
 
 // Event-level summary
-Object.values(reports.eventReports).forEach(eventReport => {
+Object.values(reports.eventReports).forEach((eventReport) => {
   console.log(`${eventReport.eventName}:`);
   console.log(`  Total Entries: ${eventReport.totalEntriesCount}`);
   console.log(`  In Draws: ${eventReport.structureSelectedCount}`);
   console.log(`  Entry Status Breakdown:`);
-  
+
   Object.entries(eventReport.entryStatuses).forEach(([status, stats]) => {
     console.log(`    ${status}: ${stats.count} (${stats.pct}%)`);
   });
@@ -280,7 +470,7 @@ Object.values(reports.eventReports).forEach(eventReport => {
 const participantId = 'participant-1';
 const participantEntries = reports.participantReports[participantId];
 
-participantEntries.forEach(entry => {
+participantEntries.forEach((entry) => {
   console.log(`Event: ${entry.eventType}`);
   console.log(`  Entry Status: ${entry.entryStatus}`);
   console.log(`  Stage: ${entry.entryStage}`);
@@ -294,7 +484,7 @@ const drawId = 'draw-1';
 const wildcards = reports.entryStatusReports[eventId]?.[drawId]?.WILDCARD;
 
 console.log(`Wildcards in draw: ${wildcards?.length || 0}`);
-wildcards?.forEach(wc => {
+wildcards?.forEach((wc) => {
   console.log(`  ${wc.participantName} (Seed: ${wc.mainSeeding || 'N/A'})`);
 });
 
@@ -361,14 +551,14 @@ Generates comprehensive reports about draw structures including size, format, pa
       maxPositionManipulations: number;   // Highest manipulation count in any structure
     };
   };
-  
+
   structureReports: Array<{
     // Structure identification
     structureId: string;
     drawId: string;
     eventId: string;
     tournamentId: string;
-    
+
     // Event details
     eventName: string;
     eventType: string;                    // SINGLES, DOUBLES, TEAM
@@ -376,10 +566,10 @@ Generates comprehensive reports about draw structures including size, format, pa
       ageCategoryCode: string;
       categoryName: string;
     };
-    
+
     // Flight information (if applicable)
     flightNumber?: number;
-    
+
     // Structure details
     structureName: string;                // e.g., "Main Draw", "Qualifying"
     structureType: string;                // SINGLE_ELIMINATION, ROUND_ROBIN, etc.
@@ -396,11 +586,11 @@ Generates comprehensive reports about draw structures including size, format, pa
     positionsAssigned: number;            // Positions filled (including BYEs)
     averageWTN?: number;                  // Average WTN rating of participants
     avgRating?: number;                   // Average rating (generic)
-    
+
     // Seeding
     seedsCount: number;                   // Number of seeded positions
     seedingBasis?: string;                // Seeding methodology
-    
+
     // Match format
     matchUpFormat: string;                // e.g., "SET3-S:6/TB7"
     matchUpFormatDesc?: string;           // Human-readable format description
@@ -411,11 +601,11 @@ Generates comprehensive reports about draw structures including size, format, pa
       matchUpValue?: number;
     }>;
     tieFormatDescription?: string;        // Description of team format
-    
+
     // Manipulations and auditing
     positionManipulations: number;        // Count of manual interventions
     manipulations?: string[];             // Details: ["LUCKY_LOSER: 5", "WITHDRAW_PARTICIPANT: 12/14"]
-    
+
     // Participant details
     participants: Array<{
       participantId: string;
@@ -428,11 +618,11 @@ Generates comprehensive reports about draw structures including size, format, pa
       wtn?: number;                       // WTN rating
       draw Position?: number;              // Assigned position
     }>;
-    
+
     // Custom extensions (if extensionProfiles provided)
     [extensionLabel: string]: any;
   }>;
-  
+
   // Flight summary (for multi-flight events)
   flightReports: Array<{
     drawId: string;
@@ -456,7 +646,7 @@ tournamentEngine.setState(tournamentRecord);
 const reports = tournamentEngine.getStructureReports();
 
 // Event-level summary
-Object.values(reports.eventStructureReports).forEach(eventReport => {
+Object.values(reports.eventStructureReports).forEach((eventReport) => {
   console.log(`Event: ${eventReport.eventId}`);
   console.log(`  Generated Draws: ${eventReport.generatedDrawsCount}`);
   console.log(`  Total Manipulations: ${eventReport.totalPositionManipulations}`);
@@ -464,7 +654,7 @@ Object.values(reports.eventStructureReports).forEach(eventReport => {
 });
 
 // Structure-level details
-reports.structureReports.forEach(structure => {
+reports.structureReports.forEach((structure) => {
   console.log(`${structure.eventName} - ${structure.structureName}:`);
   console.log(`  Structure Type: ${structure.structureType}`);
   console.log(`  Size: ${structure.structureSize}`);
@@ -472,10 +662,10 @@ reports.structureReports.forEach(structure => {
   console.log(`  Seeds: ${structure.seedsCount}`);
   console.log(`  Avg WTN: ${structure.averageWTN?.toFixed(2) || 'N/A'}`);
   console.log(`  Format: ${structure.matchUpFormat}`);
-  
+
   if (structure.positionManipulations > 0) {
     console.log(`  Manipulations: ${structure.positionManipulations}`);
-    structure.manipulations?.forEach(m => console.log(`    - ${m}`));
+    structure.manipulations?.forEach((m) => console.log(`    - ${m}`));
   }
 });
 
@@ -495,13 +685,13 @@ reports.structureReports.forEach(structure => {
 const reports = tournamentEngine.getStructureReports({
   extensionProfiles: [
     { name: 'customMetadata', label: 'metadata', accessor: 'some.nested.path' },
-    { name: 'drawProfile', label: 'profile' }
-  ]
+    { name: 'drawProfile', label: 'profile' },
+  ],
 });
 
-reports.structureReports.forEach(structure => {
+reports.structureReports.forEach((structure) => {
   console.log(structure.metadata); // Custom extension data
-  console.log(structure.profile);  // Another extension
+  console.log(structure.profile); // Another extension
 });
 
 // Filter to main structures only
@@ -519,7 +709,7 @@ const reports = tournamentEngine.getStructureReports({
   firstFlightOnly: true,
 });
 
-reports.flightReports.forEach(flight => {
+reports.flightReports.forEach((flight) => {
   console.log(`Flight ${flight.flightNumber}: ${flight.eventName} - ${flight.structureName}`);
 });
 ```
@@ -574,12 +764,13 @@ Generates utilization reports for venues showing court availability, scheduled m
     venueId: string;
     venueName: string;
     venueReport: {
-      [date: string]: {                   // One entry per date
-        availableCourts: number;          // Courts with availability on this date
-        availableMinutes: number;         // Total minutes available across all courts
-        scheduledMinutes: number;         // Total minutes with scheduled matchUps
-        scheduledMatchUpsCount: number;   // Number of matchUps scheduled
-        percentUtilization: string;       // Percentage (scheduledMinutes/availableMinutes)
+      [date: string]: {
+        // One entry per date
+        availableCourts: number; // Courts with availability on this date
+        availableMinutes: number; // Total minutes available across all courts
+        scheduledMinutes: number; // Total minutes with scheduled matchUps
+        scheduledMatchUpsCount: number; // Number of matchUps scheduled
+        percentUtilization: string; // Percentage (scheduledMinutes/availableMinutes)
       };
     };
   }>;
@@ -598,9 +789,9 @@ const result = competitionEngine.getVenuesReport({
   tournamentRecords,
 });
 
-result.venuesReport.forEach(venue => {
+result.venuesReport.forEach((venue) => {
   console.log(`${venue.venueName}:`);
-  
+
   Object.entries(venue.venueReport).forEach(([date, stats]) => {
     console.log(`  ${date}:`);
     console.log(`    Courts Available: ${stats.availableCourts}`);
@@ -648,7 +839,7 @@ const result = competitionEngine.getVenuesReport({
 });
 
 // Check for over-utilization (>100%)
-result.venuesReport.forEach(venue => {
+result.venuesReport.forEach((venue) => {
   Object.entries(venue.venueReport).forEach(([date, stats]) => {
     const utilization = parseFloat(stats.percentUtilization);
     if (utilization > 100) {
@@ -660,11 +851,13 @@ result.venuesReport.forEach(venue => {
 });
 
 // Find under-utilized venues
-result.venuesReport.forEach(venue => {
+result.venuesReport.forEach((venue) => {
   Object.entries(venue.venueReport).forEach(([date, stats]) => {
     const utilization = parseFloat(stats.percentUtilization);
     if (utilization < 50 && stats.availableCourts > 0) {
-      console.log(`💡 ${venue.venueName} on ${date}: Only ${utilization}% utilized (${stats.availableCourts} courts available)`);
+      console.log(
+        `💡 ${venue.venueName} on ${date}: Only ${utilization}% utilized (${stats.availableCourts} courts available)`,
+      );
     }
   });
 });

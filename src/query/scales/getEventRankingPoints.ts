@@ -2,12 +2,16 @@ import { getTournamentPoints } from '@Query/scales/getTournamentPoints';
 import { getParticipants } from '@Query/participants/getParticipants';
 
 // constants and types
-import { MISSING_EVENT, MISSING_POLICY_DEFINITION, MISSING_TOURNAMENT_RECORD } from '@Constants/errorConditionConstants';
 import { POLICY_TYPE_RANKING_POINTS } from '@Constants/policyConstants';
 import { PolicyDefinitions } from '@Types/factoryTypes';
-import { DOUBLES } from '@Constants/eventConstants';
 import { SUCCESS } from '@Constants/resultConstants';
 import { Tournament } from '@Types/tournamentTypes';
+import { DOUBLES } from '@Constants/eventConstants';
+import {
+  MISSING_EVENT,
+  MISSING_POLICY_DEFINITION,
+  MISSING_TOURNAMENT_RECORD,
+} from '@Constants/errorConditionConstants';
 
 type GetEventRankingPointsArgs = {
   policyDefinitions?: PolicyDefinitions;
@@ -41,11 +45,20 @@ export function getEventRankingPoints({
     return { error: MISSING_POLICY_DEFINITION };
   }
 
+  // Auto-resolve numeric level from tier if not explicitly passed.
+  // eventTier overrides tournamentTier.
+  const resolvedLevel =
+    level ??
+    resolveLevelFromTier(
+      event.eventTier ?? tournamentRecord.tournamentTier,
+      policyDefinitions?.[POLICY_TYPE_RANKING_POINTS],
+    );
+
   const result = getTournamentPoints({
     participantFilters: { eventIds: [eventId] },
+    level: resolvedLevel,
     policyDefinitions,
     tournamentRecord,
-    level,
   });
 
   if (result.error) return result;
@@ -80,7 +93,9 @@ export function getEventRankingPoints({
   collectLookupAwards({ points: teamPoints, participantLookup, eventDrawIds, eventAwards });
 
   // Sort by points descending, then by participantName
-  eventAwards.sort((a, b) => (b.points || 0) - (a.points || 0) || (a.participantName ?? '').localeCompare(b.participantName ?? ''));
+  eventAwards.sort(
+    (a, b) => (b.points || 0) - (a.points || 0) || (a.participantName ?? '').localeCompare(b.participantName ?? ''),
+  );
 
   // Determine if this is a doubles event (for display purposes)
   const isDoubles = event.eventType === DOUBLES;
@@ -93,7 +108,6 @@ export function getEventRankingPoints({
     ...SUCCESS,
   };
 }
-
 
 function collectPersonAwards({ personPoints, personToParticipant, eventDrawIds, eventAwards }) {
   for (const [personId, awards] of Object.entries(personPoints)) {
@@ -110,6 +124,15 @@ function collectPersonAwards({ personPoints, personToParticipant, eventDrawIds, 
       });
     }
   }
+}
+
+/**
+ * Resolve a numeric ranking level from a TierClassification using the
+ * policy's tierToLevel mapping. Returns undefined if no match.
+ */
+function resolveLevelFromTier(tier: any, policy: any): number | undefined {
+  if (!tier?.system || !tier?.value || !policy?.tierToLevel) return undefined;
+  return policy.tierToLevel[tier.system]?.[tier.value];
 }
 
 function collectLookupAwards({ points, participantLookup, eventDrawIds, eventAwards }) {

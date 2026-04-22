@@ -29,6 +29,21 @@ export interface RankingPolicy {
    * - 'participantPrimary': use participant's primary category scale
    */
   categoryResolution?: 'eventCategory' | 'participantPrimary';
+
+  /**
+   * Maps TierClassification (system + value) to numeric ranking levels.
+   * Keyed by system, then by value within that system.
+   *
+   * Example:
+   * ```
+   * tierToLevel: {
+   *   ITF_JUNIOR: { '1': 1, '2': 2, '3': 3, 'J500': 4, 'J300': 5 },
+   *   ATP: { 'Grand Slam': 1, '1000': 2, '500': 3, '250': 4 },
+   *   PPA: { 'Major': 1, 'Gold': 2, 'Silver': 3, 'Bronze': 4 },
+   * }
+   * ```
+   */
+  tierToLevel?: Record<string, Record<string, number>>;
 }
 
 // ─── Category Scope ──────────────────────────────────────────────────

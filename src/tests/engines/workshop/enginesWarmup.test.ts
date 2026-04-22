@@ -1,6 +1,7 @@
 import { completeDrawMatchUps } from '@Assemblies/generators/mocks/completeDrawMatchUps';
 import { setGlobalLog, setMethods, setStateProvider } from '@Global/state/globalState';
 import { deleteDrawDefinitions } from '@Mutate/events/deleteDrawDefinitions';
+import { factoryVersion as version } from '@Functions/global/factoryVersion';
 import { checkScoreHasValue } from '@Query/matchUp/checkScoreHasValue';
 import { getParticipants } from '@Query/participants/getParticipants';
 import asyncGlobalState from '../../../examples/asyncEngine/asyncGlobalState';
@@ -169,7 +170,7 @@ test.each([askEngine, syncEngine])('execution path coverage', async (engine) => 
   executionResult = await engine.execute({
     method: 'version',
   });
-  expect(executionResult).toEqual('@VERSION@');
+  expect(executionResult).toEqual(version());
 });
 
 test('execution path coverage', async () => {
@@ -181,7 +182,7 @@ test('execution path coverage', async () => {
   expect(engineAsync.error).toEqual(MISSING_ASYNC_STATE_PROVIDER);
   setStateProvider(asyncGlobalState);
   engineAsync = asyncEngine();
-  expect(engineAsync.version()).toEqual('@VERSION@');
+  expect(engineAsync.version()).toEqual(version());
 
   const stateResult = await engineAsync.setState(tournamentRecord);
   expect(stateResult.success).toEqual(true);
@@ -200,7 +201,7 @@ test('execution path coverage', async () => {
   executionResult = await engineAsync.execute({
     method: 'version',
   });
-  expect(executionResult).toEqual('@VERSION@');
+  expect(executionResult).toEqual(version());
 
   // askEngine can import methods
   const importResult = await engineAsync.importMethods({ getParticipants });

@@ -3005,11 +3005,93 @@
           "type": ["string", "object"],
           "format": "date-time"
         },
+        "entriesClose": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "entriesOpen": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "updatedAt": {
+          "type": ["string", "object"],
+          "format": "date-time"
+        },
+        "withdrawalDeadline": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "eligibilityNotes": {
+          "type": "string"
+        },
+        "entryFees": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/RegistrationEntryFee"
+          }
+        },
+        "entryMethod": {
+          "type": "string"
+        },
+        "entryUrl": {
+          "type": "string"
+        },
+        "accommodation": {
+          "$ref": "#/definitions/LogisticsSection"
+        },
+        "hospitality": {
+          "$ref": "#/definitions/LogisticsSection"
+        },
+        "medicalInfo": {
+          "$ref": "#/definitions/LogisticsSection"
+        },
+        "transportation": {
+          "$ref": "#/definitions/LogisticsSection"
+        },
+        "contingencyPlan": {
+          "type": "string"
+        },
+        "dressCode": {
+          "type": "string"
+        },
+        "awardsCeremonyDate": {
+          "type": "string"
+        },
+        "awardsDescription": {
+          "type": "string"
+        },
+        "drawCeremonyDate": {
+          "type": "string"
+        },
+        "socialEvents": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/SocialEvent"
+          }
+        },
+        "codeOfConduct": {
+          "$ref": "#/definitions/DocumentLink"
+        },
+        "regulations": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/DocumentLink"
+          }
+        },
+        "sponsors": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/Sponsor"
+          }
+        },
         "extensions": {
           "type": "array",
           "items": {
             "$ref": "#/definitions/Extension"
           }
+        },
+        "isMock": {
+          "type": "boolean"
         },
         "notes": {
           "type": "string"
@@ -3019,27 +3101,97 @@
           "items": {
             "$ref": "#/definitions/TimeItem"
           }
-        },
-        "updatedAt": {
-          "type": ["string", "object"],
-          "format": "date-time"
-        },
-        "isMock": {
-          "type": "boolean"
-        },
-        "entriesClose": {
-          "type": "string",
-          "format": "date-time"
-        },
-        "entriesOpen": {
-          "type": "string",
-          "format": "date-time"
-        },
-        "withdrawalDeadline": {
-          "type": "string",
-          "format": "date-time"
         }
       },
+      "additionalProperties": false
+    },
+    "LogisticsSection": {
+      "type": "object",
+      "properties": {
+        "notes": {
+          "type": "string"
+        },
+        "options": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/LogisticsOption"
+          }
+        }
+      },
+      "additionalProperties": false
+    },
+    "LogisticsOption": {
+      "type": "object",
+      "properties": {
+        "address": { "type": "string" },
+        "description": { "type": "string" },
+        "email": { "type": "string" },
+        "extensions": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/Extension"
+          }
+        },
+        "name": { "type": "string" },
+        "notes": { "type": "string" },
+        "phone": { "type": "string" },
+        "priceRange": { "type": "string" },
+        "url": { "type": "string" }
+      },
+      "required": ["name"],
+      "additionalProperties": false
+    },
+    "SocialEvent": {
+      "type": "object",
+      "properties": {
+        "date": { "type": "string" },
+        "description": { "type": "string" },
+        "location": { "type": "string" },
+        "name": { "type": "string" },
+        "time": { "type": "string" }
+      },
+      "required": ["name"],
+      "additionalProperties": false
+    },
+    "Sponsor": {
+      "type": "object",
+      "properties": {
+        "logoUrl": { "type": "string" },
+        "name": { "type": "string" },
+        "tier": { "type": "string" },
+        "websiteUrl": { "type": "string" }
+      },
+      "required": ["name"],
+      "additionalProperties": false
+    },
+    "DocumentLink": {
+      "type": "object",
+      "properties": {
+        "description": { "type": "string" },
+        "name": { "type": "string" },
+        "url": { "type": "string" }
+      },
+      "required": ["name"],
+      "additionalProperties": false
+    },
+    "RegistrationEntryFee": {
+      "type": "object",
+      "properties": {
+        "amount": { "type": "number" },
+        "category": { "type": "string" },
+        "currencyCode": { "type": "string" },
+        "eventType": {
+          "type": "string",
+          "enum": ["SINGLES", "DOUBLES", "TEAM", "HYBRID"]
+        },
+        "extensions": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/Extension"
+          }
+        }
+      },
+      "required": ["amount", "currencyCode"],
       "additionalProperties": false
     },
     "PrizeMoney": {

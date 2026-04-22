@@ -38,6 +38,24 @@ function drawUpdatedAt(drawDefinition: DrawDefinition, structureIds?: string[]) 
   return { ...SUCCESS };
 }
 
+/**
+ * Stamp an ISO UTC timestamp on a matchUp to mark that it has just been
+ * modified. Mirrors the monotonic bump used by `drawUpdatedAt` — if the
+ * wall-clock reads the same millisecond as the previously-recorded
+ * timestamp, we bump by 1ms so every mutation produces a strictly-
+ * greater `updatedAt`. Safe no-op on a falsy matchUp.
+ */
+function stampMatchUpUpdatedAt(matchUp?: MatchUp | null) {
+  if (!matchUp) return;
+  let timeStamp = Date.now();
+  const previous = matchUp.updatedAt;
+  if (previous) {
+    const prevMs = typeof previous === 'string' ? new Date(previous).getTime() : previous.getTime();
+    if (!Number.isNaN(prevMs) && timeStamp <= prevMs) timeStamp = prevMs + 1;
+  }
+  matchUp.updatedAt = new Date(timeStamp).toISOString();
+}
+
 type AddMatchUpsNoticeArgs = {
   drawDefinition?: DrawDefinition;
   tournamentId?: string;
@@ -46,6 +64,12 @@ type AddMatchUpsNoticeArgs = {
 };
 export function addMatchUpsNotice({ drawDefinition, tournamentId, matchUps, eventId }: AddMatchUpsNoticeArgs) {
   if (drawDefinition) drawUpdatedAt(drawDefinition);
+  // Stamp each matchUp's own updatedAt so downstream consumers (TMX
+  // matchUps table, arena relay, audit log) can distinguish freshly-
+  // touched matchUps from stale ones without walking drawDefinition.
+  if (Array.isArray(matchUps)) {
+    for (const matchUp of matchUps) stampMatchUpUpdatedAt(matchUp);
+  }
   addNotice({
     payload: { matchUps, tournamentId, eventId },
     topic: ADD_MATCHUPS,
@@ -115,6 +139,10 @@ export function modifyMatchUpNotice({
       eventId,
     });
   }
+  // Stamp the matchUp itself so consumers can see at-a-glance that it
+  // was just touched (complements the drawDefinition + structure
+  // timestamps written above via `modifyDrawNotice`).
+  stampMatchUpUpdatedAt(matchUp);
   addNotice({
     topic: MODIFY_MATCHUP,
     payload: { matchUp, tournamentId, context },
