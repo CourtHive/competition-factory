@@ -51,11 +51,13 @@ export function generatePositioningCandidate(params: GeneratePositioningCandidat
     (assignment) => !assignment.qualifier,
   );
 
-  // all drawPositions which are available for placement
+  // all drawPositions which are available for placement (excluding qualifier placeholders)
   const potentialDrawPositions = initialPositionAssignments
     .filter(
       (assignment) =>
-        !assignment.participantId && (!assignment.bye || unseededByePositions?.includes(assignment.drawPosition)),
+        !assignment.participantId &&
+        !assignment.qualifier &&
+        (!assignment.bye || unseededByePositions?.includes(assignment.drawPosition)),
     )
     .map((assignment) => assignment.drawPosition);
 
