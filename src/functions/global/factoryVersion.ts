@@ -1,3 +1,5 @@
+import { version } from '../../../package.json';
+
 export function factoryVersion() {
-  return '@VERSION@';
+  return version;
 }
