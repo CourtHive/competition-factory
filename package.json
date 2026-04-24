@@ -150,7 +150,7 @@
     "@vitest/coverage-v8": "4.1.5",
     "@vitest/ui": "4.1.5",
     "agadoo": "^3.0.0",
-    "ajv": "8.18.0",
+    "ajv": "8.20.0",
     "ajv-formats": "3.0.1",
     "body-parser": "2.2.2",
     "c8": "11.0.0",
