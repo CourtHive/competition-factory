@@ -275,6 +275,8 @@ const { tournamentInfo } = engine.getTournamentInfo();
 
 If a [primary venue](../concepts/venues-courts.md#primary-venue) is designated and has at least one address, `tournamentInfo.tournamentAddress` will contain that venue's first address. This is always included regardless of the `withVenueData` option.
 
+`tournamentInfo.eventInfo` returns a lightweight summary of each event. Each entry includes an `entriesCount` (the length of `event.entries`) alongside `drawDefinitionCount` and the other event metadata, so calendar admin dashboards can render entry totals without loading the full tournament record. Pass `usePublishState: true` to limit `eventInfo` to events listed in the tournament's published event IDs.
+
 ---
 
 ## getTournamentPenalties
@@ -347,12 +349,14 @@ Currently only accepts the directive `hydrateRoundNames: true`. Use of `eventPro
 engine.hydrateTournamentRecord({
   policyDefinitions: POLICY_ROUND_NAMING_DEFAULT,
   directives: { hydrateRoundNames: true },
-  eventProfiles: [{
-    directives: { hydrateRoundNames: true },
-    policyDefinitions: {},
-    eventId: 'eventId',
-  }]
-})
+  eventProfiles: [
+    {
+      directives: { hydrateRoundNames: true },
+      policyDefinitions: {},
+      eventId: 'eventId',
+    },
+  ],
+});
 ```
 
 ---
@@ -379,13 +383,13 @@ Removes an extension from a specified element in the tournament record.
 
 ```js
 engine.removeExtension({
-  name,               // required - extension name
-  tournamentId,       // optional - target tournament
-  participantId,      // optional - target participant
-  eventId,            // optional - target event
-  drawId,             // optional - target draw
-  structureId,        // optional - target structure
-  matchUpId,          // optional - target matchUp
+  name, // required - extension name
+  tournamentId, // optional - target tournament
+  participantId, // optional - target participant
+  eventId, // optional - target event
+  drawId, // optional - target draw
+  structureId, // optional - target structure
+  matchUpId, // optional - target matchUp
 });
 ```
 
@@ -490,15 +494,33 @@ Sets the start date, end date, active dates, and/or weekdays for a tournament. V
 ```js
 const {
   unscheduledMatchUpIds, // matchUpIds that were unscheduled due to date range change
-  datesRemoved,          // dates no longer in the tournament range
-  datesAdded,            // dates newly in the tournament range
+  datesRemoved, // dates no longer in the tournament range
+  datesAdded, // dates newly in the tournament range
 } = engine.setTournamentDates({
-  startDate,    // optional — 'YYYY-MM-DD'
-  endDate,      // optional — 'YYYY-MM-DD'
-  activeDates,  // optional — string[] of 'YYYY-MM-DD' dates within start/end range
-  weekdays,     // optional — array of weekday constants [MON, TUE, ...]
+  startDate, // optional — 'YYYY-MM-DD'
+  endDate, // optional — 'YYYY-MM-DD'
+  activeDates, // optional — string[] of 'YYYY-MM-DD' dates within start/end range
+  weekdays, // optional — array of weekday constants [MON, TUE, ...]
 });
 ```
+
+---
+
+## setTournamentLocalTimeZone
+
+Sets the canonical IANA timezone for a tournament. Once set, scoring and audit timestamps are recorded in this zone rather than the viewing device's local zone — so a score entered in Sydney and reviewed in Berlin reads the same wall-clock time. Validation uses the JS runtime's `Intl.DateTimeFormat` IANA database; any string the constructor rejects is returned as `INVALID_TIME_ZONE` without mutating state.
+
+```js
+// Set or change the zone
+engine.setTournamentLocalTimeZone({ localTimeZone: 'America/New_York' });
+
+// Clear the zone (any of these work)
+engine.setTournamentLocalTimeZone({ localTimeZone: '' });
+engine.setTournamentLocalTimeZone({ localTimeZone: null });
+engine.setTournamentLocalTimeZone({ localTimeZone: undefined });
+```
+
+No-op when the value is unchanged. On error returns `{ error: INVALID_TIME_ZONE }`.
 
 ---
 
@@ -508,9 +530,9 @@ Adds a timeItem to the tournament record. TimeItems are used to store time-based
 
 ```js
 engine.addTournamentTimeItem({
-  timeItem,               // required — { itemType, itemValue, ... } time item object
-  removePriorValues,      // optional boolean — remove prior timeItems of the same itemType
-  duplicateValues,        // optional boolean — allow duplicate values
+  timeItem, // required — { itemType, itemValue, ... } time item object
+  removePriorValues, // optional boolean — remove prior timeItems of the same itemType
+  duplicateValues, // optional boolean — allow duplicate values
 });
 ```
 
