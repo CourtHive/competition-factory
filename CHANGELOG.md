@@ -1,5 +1,12 @@
 # Changelog
 
+## [3.2.0](https://github.com/CourtHive/competition-factory/compare/v3.1.5...v3.2.0) (2026-04-28)
+
+
+### Features
+
+* **scheduling:** add courtIds filter to scheduleProfileRounds + scheduleProfileGrid ([756da06](https://github.com/CourtHive/competition-factory/commit/756da063f668ee8d05d83a2f3f3fff45b4ccc4bb))
+
 ## [3.1.5](https://github.com/CourtHive/competition-factory/compare/v3.1.4...v3.1.5) (2026-04-27)
 
 
