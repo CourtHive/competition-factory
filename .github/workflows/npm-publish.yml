@@ -1,9 +1,24 @@
 name: Publish to npm
 
+# Fires when a GitHub release is published. release-please creates
+# releases via GITHUB_TOKEN, and `release: published` is delivered
+# regardless of which token created it — unlike `push: tags`, which
+# GitHub silently drops when triggered by GITHUB_TOKEN to prevent
+# workflow loops. That gap is why v3.1.5 was tagged but never
+# auto-published.
+#
+# `workflow_dispatch` is kept for manual backfill — pass a `tag`
+# input (e.g. `v3.1.5`) to publish a tag that already exists.
+
 on:
-  push:
-    tags:
-      - 'v*'
+  release:
+    types: [published]
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: 'Tag to publish (e.g. v3.1.5). Must already exist.'
+        required: true
+        type: string
 
 jobs:
   publish:
@@ -12,7 +27,20 @@ jobs:
       contents: read
       id-token: write
     steps:
+      - name: Resolve tag
+        id: ref
+        run: |
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            TAG="${{ inputs.tag }}"
+          else
+            TAG="${{ github.event.release.tag_name }}"
+          fi
+          echo "tag=$TAG" >> "$GITHUB_OUTPUT"
+          echo "version=${TAG#v}" >> "$GITHUB_OUTPUT"
+
       - uses: actions/checkout@v6
+        with:
+          ref: ${{ steps.ref.outputs.tag }}
 
       - uses: actions/setup-node@v6
         with:
@@ -31,10 +59,10 @@ jobs:
 
       - run: npm run test:server -- --forceExit
 
-      - name: Determine npm tag
-        id: tag
+      - name: Determine npm dist-tag
+        id: distTag
         run: |
-          VERSION="${GITHUB_REF#refs/tags/v}"
+          VERSION="${{ steps.ref.outputs.version }}"
           if [[ "$VERSION" == *"-alpha"* ]]; then
             echo "tag=alpha" >> "$GITHUB_OUTPUT"
           elif [[ "$VERSION" == *"-beta"* ]]; then
@@ -43,4 +71,4 @@ jobs:
             echo "tag=latest" >> "$GITHUB_OUTPUT"
           fi
 
-      - run: npm publish --provenance --access public --tag ${{ steps.tag.outputs.tag }}
+      - run: npm publish --provenance --access public --tag ${{ steps.distTag.outputs.tag }}
