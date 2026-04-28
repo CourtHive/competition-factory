@@ -21,7 +21,97 @@ type ScheduleProfileGridArgs = {
   clearScheduleDates?: boolean;
   minCourtGridRows?: number;
   scheduleDates?: string[];
+  courtIds?: string[];
 };
+
+type RoundProfile = {
+  structureId: string;
+  roundNumber: number;
+  drawId: string;
+  roundSegment?: { segmentsCount: number; segmentNumber: number };
+};
+
+function getSegmentMatchUpIds(
+  allMatchUps: any[],
+  structureId: string,
+  roundNumber: number,
+  drawId: string,
+  segmentsCount: number,
+  segmentNumber: number,
+): string[] {
+  const roundMatchUps = allMatchUps.filter(
+    (rm: any) => rm.structureId === structureId && rm.roundNumber === roundNumber && rm.drawId === drawId,
+  );
+  const chunkSize = Math.ceil(roundMatchUps.length / segmentsCount);
+  const sortedIds = roundMatchUps
+    .sort((a: any, b: any) => (a.roundPosition ?? 0) - (b.roundPosition ?? 0))
+    .map((rm: any) => rm.matchUpId);
+  const segStart = (segmentNumber - 1) * chunkSize;
+  return sortedIds.slice(segStart, segStart + chunkSize);
+}
+
+function findRoundMatchUps(
+  roundProfile: RoundProfile,
+  allMatchUps: any[],
+  containedStructureIds: Record<string, string>,
+): any[] {
+  const { structureId, roundNumber, drawId, roundSegment } = roundProfile;
+  const effectiveStructureId = containedStructureIds[structureId] ?? structureId;
+
+  const segmentIds = roundSegment
+    ? new Set(
+        getSegmentMatchUpIds(
+          allMatchUps,
+          structureId,
+          roundNumber,
+          drawId,
+          roundSegment.segmentsCount,
+          roundSegment.segmentNumber,
+        ),
+      )
+    : null;
+
+  return allMatchUps.filter((m: any) => {
+    if (m.matchUpStatus === BYE) return false;
+    if (m.schedule?.courtId) return false;
+    if (m.schedule?.courtOrder) return false;
+    if (m.roundNumber !== roundNumber) return false;
+    if (m.drawId !== drawId) return false;
+
+    const mStructureId = containedStructureIds[m.structureId] ?? m.structureId;
+    if (mStructureId !== effectiveStructureId) return false;
+
+    return segmentIds ? segmentIds.has(m.matchUpId) : true;
+  });
+}
+
+function resolveTargetCourtIds(dateCourtIds: string[], courtIdsFilter: Set<string> | null): string[] | undefined {
+  if (courtIdsFilter) return dateCourtIds;
+  return dateCourtIds.length ? dateCourtIds : undefined;
+}
+
+function collectVenuePlan(
+  dateProfile: any,
+  courtsByVenue: Map<string, string[]>,
+  courtIdsFilter: Set<string> | null,
+  allMatchUps: any[],
+  containedStructureIds: Record<string, string>,
+): { dateMatchUps: any[]; dateCourtIds: string[] } {
+  const dateMatchUps: any[] = [];
+  const dateCourtIds: string[] = [];
+
+  for (const venueProfile of dateProfile.venues ?? []) {
+    const allVenueCourtIds = courtsByVenue.get(venueProfile.venueId) ?? [];
+    const venueCourtIds = courtIdsFilter ? allVenueCourtIds.filter((id) => courtIdsFilter.has(id)) : allVenueCourtIds;
+    dateCourtIds.push(...venueCourtIds);
+
+    for (const roundProfile of venueProfile.rounds ?? []) {
+      dateMatchUps.push(...findRoundMatchUps(roundProfile, allMatchUps, containedStructureIds));
+    }
+  }
+
+  return { dateMatchUps, dateCourtIds };
+}
 
 /**
  * Profile-driven grid scheduling (pro scheduling).
@@ -40,7 +130,10 @@ export function scheduleProfileGrid(params: ScheduleProfileGridArgs) {
     clearScheduleDates,
     scheduleDates = [],
     tournamentRecords,
+    courtIds,
   } = params;
+
+  const courtIdsFilter = Array.isArray(courtIds) ? new Set(courtIds) : null;
 
   const paramsCheck = checkRequiredParameters(params, [
     { [TOURNAMENT_RECORDS]: true },
@@ -121,63 +214,23 @@ export function scheduleProfileGrid(params: ScheduleProfileGridArgs) {
     const scheduledDate = extractDate(dateProfile.scheduleDate);
 
     // Collect matchUps for this date based on profile round ordering
-    const dateMatchUps: any[] = [];
-    const dateCourtIds: string[] = [];
-
-    for (const venueProfile of dateProfile.venues ?? []) {
-      const venueCourtIds = courtsByVenue.get(venueProfile.venueId) ?? [];
-      dateCourtIds.push(...venueCourtIds);
-
-      for (const roundProfile of venueProfile.rounds ?? []) {
-        const { structureId, roundNumber, drawId, roundSegment } = roundProfile;
-
-        // Resolve the effective structureId (handle round robin container)
-        const effectiveStructureId = containedStructureIds[structureId] ?? structureId;
-
-        // Find matching unscheduled matchUps
-        const roundMatchUps = (allMatchUps ?? []).filter((m: any) => {
-          if (m.matchUpStatus === BYE) return false;
-          if (m.schedule?.courtId) return false; // already has a court assignment
-          if (m.schedule?.courtOrder) return false; // already grid-positioned
-
-          const mStructureId = containedStructureIds[m.structureId] ?? m.structureId;
-          if (mStructureId !== effectiveStructureId) return false;
-          if (m.roundNumber !== roundNumber) return false;
-          if (m.drawId !== drawId) return false;
-
-          // Handle round segments
-          if (roundSegment) {
-            const segmentsCount = roundSegment.segmentsCount;
-            const segmentNumber = roundSegment.segmentNumber;
-            const chunkSize = Math.ceil(
-              (allMatchUps ?? []).filter(
-                (rm: any) => rm.structureId === m.structureId && rm.roundNumber === roundNumber && rm.drawId === drawId,
-              ).length / segmentsCount,
-            );
-            const sortedPositions = (allMatchUps ?? [])
-              .filter(
-                (rm: any) => rm.structureId === m.structureId && rm.roundNumber === roundNumber && rm.drawId === drawId,
-              )
-              .sort((a: any, b: any) => (a.roundPosition ?? 0) - (b.roundPosition ?? 0))
-              .map((rm: any) => rm.matchUpId);
-            const segStart = (segmentNumber - 1) * chunkSize;
-            const segEnd = segStart + chunkSize;
-            const segmentIds = sortedPositions.slice(segStart, segEnd);
-            return segmentIds.includes(m.matchUpId);
-          }
-
-          return true;
-        });
-
-        dateMatchUps.push(...roundMatchUps);
-      }
-    }
+    const { dateMatchUps, dateCourtIds } = collectVenuePlan(
+      dateProfile,
+      courtsByVenue,
+      courtIdsFilter,
+      allMatchUps ?? [],
+      containedStructureIds,
+    );
 
     if (!dateMatchUps.length) continue;
+    // When the caller has explicitly filtered courts and nothing remains for
+    // this date's venues, skip — falling back to "all courts" would defeat
+    // the filter.
+    if (courtIdsFilter && !dateCourtIds.length) continue;
 
     // Run proAutoSchedule for this date with the collected matchUps
     const gridResult: any = proAutoSchedule({
-      courtIds: dateCourtIds.length ? dateCourtIds : undefined,
+      courtIds: resolveTargetCourtIds(dateCourtIds, courtIdsFilter),
       scheduleCompletedMatchUps,
       minCourtGridRows,
       tournamentRecords,

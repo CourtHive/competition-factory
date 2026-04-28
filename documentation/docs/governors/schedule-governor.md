@@ -253,12 +253,21 @@ engine.scheduleProfileRounds({
   scheduleDates, // optional - specific dates to schedule
   clearScheduleDates, // optional - boolean or array of dates to clear first
 
+  // Court selection
+  courtIds, // optional array - restrict scheduling to only these courts
+
   // Execution control
   dryRun, // optional boolean - preview without changes
   pro, // optional boolean - use grid scheduling instead of Garman
   checkPotentialRequestConflicts, // optional boolean (default: true)
 });
 ```
+
+**Court filtering with `courtIds`**:
+
+When `courtIds` is provided, the scheduler only considers those courts as available capacity. Useful when an operator wants auto-scheduling to operate against a subset of courts (e.g. when some courts are reserved for other purposes, or when scheduling is being applied per-court). Passing an empty array means "no courts are available" — the scheduler will run but place no matchUps. Omitting the parameter (the default) considers all enabled courts at the profile's venues.
+
+In `pro: true` mode, matchUps will receive `courtId` assignments only from the filtered set. In default (Garman) mode, the filter constrains capacity but final court assignment may still be deferred to play time.
 
 **Returns**:
 
@@ -335,6 +344,34 @@ SINGLES and DOUBLES matchUps are scheduled automatically. TEAM matchUps require 
 :::
 
 **See**: [Scheduling Profile](../concepts/scheduling-profile) and [Pro Scheduling](../concepts/pro-scheduling) for details.
+
+---
+
+### scheduleProfileGrid
+
+Profile-driven grid scheduling. Uses the scheduling profile to determine which rounds go on which dates at which venues, then places matchUps onto court grid positions (`courtOrder`) **without assigning times**. Used when an operator wants to manually assign times after the grid placement step.
+
+```js
+engine.scheduleProfileGrid({
+  scheduleDates, // optional - specific dates to schedule
+  clearScheduleDates, // optional - boolean or array of dates to clear first
+  scheduleCompletedMatchUps, // optional boolean - include completed matchUps
+  minCourtGridRows, // optional number - rows per court (default: 10)
+  courtIds, // optional array - restrict placement to only these courts
+});
+```
+
+When `courtIds` is provided, only courts in the set are considered as placement targets at each venue. Passing an empty array places nothing. Omitting the parameter places onto all courts at the profile's venues (the default).
+
+**Returns**:
+
+```js
+{
+  scheduledDates,         // array - dates where matchUps were placed
+  scheduledMatchUpIds,    // record<date, matchUpIds[]> - matchUps placed per date
+  notScheduledMatchUpIds, // record<date, matchUpIds[]> - matchUps that didn't fit per date
+}
+```
 
 ---
 
@@ -1108,26 +1145,27 @@ Adds multiple schedule attributes to a matchUp in a single call. This is the met
 
 ```js
 engine.addMatchUpScheduleItems({
-  matchUpId,                // required — target matchUp
-  drawId,                   // required — resolved to drawDefinition by engine
-  schedule: {               // required — schedule attributes to set
-    scheduledDate,          // optional — 'YYYY-MM-DD'
-    scheduledTime,          // optional — 'HH:mm' or ISO datetime
-    startTime,              // optional — actual start time
-    endTime,                // optional — actual end time
-    resumeTime,             // optional — resume after suspension
-    stopTime,               // optional — suspension time
-    courtId,                // optional — assigned court
-    venueId,                // optional — assigned venue
-    courtOrder,             // optional — order on court
-    homeParticipantId,      // optional — home team participant
-    courtIds,               // optional — for TEAM matchUps, allocate courts
+  matchUpId, // required — target matchUp
+  drawId, // required — resolved to drawDefinition by engine
+  schedule: {
+    // required — schedule attributes to set
+    scheduledDate, // optional — 'YYYY-MM-DD'
+    scheduledTime, // optional — 'HH:mm' or ISO datetime
+    startTime, // optional — actual start time
+    endTime, // optional — actual end time
+    resumeTime, // optional — resume after suspension
+    stopTime, // optional — suspension time
+    courtId, // optional — assigned court
+    venueId, // optional — assigned venue
+    courtOrder, // optional — order on court
+    homeParticipantId, // optional — home team participant
+    courtIds, // optional — for TEAM matchUps, allocate courts
   },
-  removePriorValues,        // optional boolean — clear existing schedule timeItems first
-  checkChronology,          // optional boolean — defaults to true; validate time ordering
-  errorOnAnachronism,       // optional boolean — return error on chronological violations
-  proConflictDetection,     // optional boolean — detect pro scheduling conflicts
-  disableNotice,            // optional boolean — suppress modification notices
+  removePriorValues, // optional boolean — clear existing schedule timeItems first
+  checkChronology, // optional boolean — defaults to true; validate time ordering
+  errorOnAnachronism, // optional boolean — return error on chronological violations
+  proConflictDetection, // optional boolean — detect pro scheduling conflicts
+  disableNotice, // optional boolean — suppress modification notices
 });
 ```
 
