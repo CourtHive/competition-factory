@@ -27,6 +27,7 @@ type ScheduleProfileRoundsArgs = {
   scheduleDates?: string[];
   periodLength?: number;
   useGarman?: boolean;
+  courtIds?: string[];
   dryRun?: boolean;
   pro?: boolean;
 };
@@ -40,6 +41,7 @@ export function scheduleProfileRounds(params: ScheduleProfileRoundsArgs) {
     tournamentRecords,
     periodLength,
     useGarman,
+    courtIds,
     dryRun,
     pro,
   } = params;
@@ -101,10 +103,14 @@ export function scheduleProfileRounds(params: ScheduleProfileRoundsArgs) {
     clearScheduledMatchUps({ tournamentRecords, scheduledDates });
   }
 
-  const courts = getVenuesAndCourts({
+  const allCourts = getVenuesAndCourts({
     ignoreDisabled: false,
     tournamentRecords,
   }).courts as any[];
+
+  const courts = Array.isArray(courtIds)
+    ? allCourts.filter((court: any) => courtIds.includes(court.courtId))
+    : allCourts;
 
   const { matchUps } = allCompetitionMatchUps({
     matchUpFilters: { matchUpTypes: [SINGLES, DOUBLES] },
