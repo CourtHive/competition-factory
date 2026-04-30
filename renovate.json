@@ -1,3 +1,10 @@
 {
-  "extends": ["config:base", ":semanticCommits"]
+  "extends": ["config:base", ":semanticCommits"],
+  "packageRules": [
+    {
+      "matchPackageNames": ["tods-competition-factory"],
+      "matchFileNames": ["documentation/**"],
+      "semanticCommitType": "chore"
+    }
+  ]
 }
