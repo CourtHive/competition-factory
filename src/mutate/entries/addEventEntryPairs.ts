@@ -35,6 +35,7 @@ type AddEventEntryPairsArgs = {
   tournamentRecord: Tournament;
   drawDefinition: DrawDefinition;
   entryStage?: StageTypeUnion;
+  enforceCategory?: boolean;
   uuids?: string[];
   event: Event;
 };
@@ -48,6 +49,7 @@ export function addEventEntryPairs(params: AddEventEntryPairsArgs) {
     participantIdPairs = [],
     entryStage = MAIN,
     tournamentRecord,
+    enforceCategory,
     drawDefinition,
     event,
     uuids,
@@ -142,6 +144,7 @@ export function addEventEntryPairs(params: AddEventEntryPairsArgs) {
   const result = addEventEntries({
     participantIds: pairParticipantIds,
     tournamentRecord,
+    enforceCategory,
     drawDefinition,
     entryStatus,
     entryStage,

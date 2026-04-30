@@ -1,4 +1,5 @@
 import { validateCollectionValueProfiles } from '@Validators/validateCollectionValueProfiles';
+import { getAllStructureMatchUps } from '@Query/matchUps/getAllStructureMatchUps';
 import { copyTieFormat } from '@Query/hierarchical/tieFormats/copyTieFormat';
 import { calculateWinCriteria } from '@Query/matchUp/calculateWinCriteria';
 import { getTieFormat } from '@Query/hierarchical/tieFormats/getTieFormat';
@@ -17,6 +18,7 @@ import { INVALID_VALUES, MISSING_VALUE, NOT_FOUND, NOT_IMPLEMENTED } from '@Cons
 import { genderConstants } from '@Constants/genderConstants';
 import { SUCCESS } from '@Constants/resultConstants';
 import { ResultType } from '@Types/factoryTypes';
+import { TEAM } from '@Constants/matchUpTypes';
 import {
   Category,
   CollectionValueProfile,
@@ -256,6 +258,14 @@ export function modifyCollectionDefinition({
   });
 
   if (!result.error) {
+    const genderModified = gender && sourceCollectionDefinition.gender !== gender;
+    if (genderModified) {
+      const affectedMatchUps = getAffectedMatchUps({ matchUp, structure, drawDefinition });
+      for (const affectedMatchUp of affectedMatchUps) {
+        removeCollectionAssignmentsForCollection(affectedMatchUp, collectionId);
+      }
+    }
+
     const { appliedPolicies } = getAppliedPolicies({ tournamentRecord });
     const auditData = definedAttributes({
       collectionDefinition: targetCollectionDefinition,
@@ -312,14 +322,7 @@ function validateModificationInputs({
   }
 
   const valueCount = Object.values(valueAssignments).filter(Boolean).length;
-  if (
-    !valueCount &&
-    !collectionOrder &&
-    !collectionName &&
-    !matchUpFormat &&
-    !matchUpCount &&
-    !matchUpType
-  ) {
+  if (!valueCount && !collectionOrder && !collectionName && !matchUpFormat && !matchUpCount && !matchUpType) {
     return decorateResult({ result: { error: MISSING_VALUE }, stack });
   }
 
@@ -442,4 +445,43 @@ function applyFieldModifications({
   }
 
   return undefined;
+}
+
+function getAffectedMatchUps({ matchUp, structure, drawDefinition }) {
+  if (matchUp) return [matchUp];
+
+  if (structure) {
+    return (
+      getAllStructureMatchUps({
+        matchUpFilters: { matchUpTypes: [TEAM] },
+        structure,
+      })?.matchUps ?? []
+    );
+  }
+
+  if (drawDefinition) {
+    const allMatchUps: any[] = [];
+    for (const struct of drawDefinition.structures ?? []) {
+      const structMatchUps =
+        getAllStructureMatchUps({
+          matchUpFilters: { matchUpTypes: [TEAM] },
+          structure: struct,
+        })?.matchUps ?? [];
+      allMatchUps.push(...structMatchUps);
+    }
+    return allMatchUps;
+  }
+
+  return [];
+}
+
+function removeCollectionAssignmentsForCollection(matchUp, collectionId: string) {
+  for (const side of matchUp?.sides ?? []) {
+    side.lineUp = (side.lineUp ?? []).map((assignment) => ({
+      participantId: assignment.participantId,
+      collectionAssignments: (assignment?.collectionAssignments ?? []).filter(
+        (collectionAssignment) => collectionAssignment.collectionId !== collectionId,
+      ),
+    }));
+  }
 }

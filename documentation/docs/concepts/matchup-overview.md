@@ -464,6 +464,22 @@ validActions.forEach((action) => {
 
 **See:** [Actions](./actions#matchupactions) for complete action documentation.
 
+## Mutation Timestamps
+
+Every matchUp carries an `updatedAt` field stamped with an ISO UTC timestamp at the end of every mutation that flows through the factory's notification hooks — score changes, status changes, schedule updates, lineup operations, structure attachment, and so on. Consumers use this for audit trails, "team was active" indicators, scheduler dashboards, and freshness checks without having to walk the drawDefinition.
+
+```js
+{
+  matchUpId: 'match-123',
+  updatedAt: '2026-04-16T17:25:31.142Z',
+  // ...
+}
+```
+
+The stamp is **monotonic**: if two mutations land in the same millisecond, the later one is bumped by 1ms so consumers always see strictly-increasing values. Both string and `Date` previous values are tolerated.
+
+`updatedAt` flows through hydrated views (`tournamentMatchUps`, `allTournamentMatchUps`, `getAllDrawMatchUps`) automatically. Deletion does not stamp the deleted matchUp; the `inContextMatchUp` derived view also skips stamping since it's not canonical state.
+
 ## Common Use Cases
 
 ### Display Order of Play

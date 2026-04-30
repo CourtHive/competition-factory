@@ -182,6 +182,12 @@ describe('generateReport', () => {
     expect(result.rows[0]).toHaveProperty('seedValue');
     expect(result.rows[0]).toHaveProperty('finishingPosition');
     expect(result.rows[0]).toHaveProperty('performance');
+    // seedValue and expectedPosition must be scalars, not the seed assignment object
+    for (const row of result.rows) {
+      expect(typeof row.seedValue).not.toBe('object');
+      expect(['number', 'string']).toContain(typeof row.seedValue);
+      expect(row.expectedPosition).not.toBe('[object Object]');
+    }
   });
 
   it('every column key exists in each row', () => {

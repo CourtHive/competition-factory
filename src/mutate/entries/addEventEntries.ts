@@ -1,4 +1,4 @@
-import { CategoryRejection, getEventDateRange, validateParticipantCategory } from './categoryValidation';
+import { CategoryRejection, getEventDateRange, getParticipantName, validateParticipantCategory } from './categoryValidation';
 import { isMatchUpEventType } from '@Helpers/matchUpEventTypes/isMatchUpEventType';
 import { getAppliedPolicies } from '@Query/extensions/getAppliedPolicies';
 import { addDrawEntries } from '@Mutate/drawDefinitions/addDrawEntries';
@@ -14,7 +14,7 @@ import { isMixed } from '@Validators/isMixed';
 import { isAny } from '@Validators/isAny';
 
 // constants and types
-import { DrawDefinition, EntryStatusUnion, Event, Extension, StageTypeUnion, Tournament } from '@Types/tournamentTypes';
+import { DrawDefinition, EntryStatusUnion, Event, Extension, Participant, StageTypeUnion, Tournament } from '@Types/tournamentTypes';
 import POLICY_MATCHUP_ACTIONS_DEFAULT from '@Fixtures/policies/POLICY_MATCHUP_ACTIONS_DEFAULT';
 import { DOUBLES_EVENT, HYBRID_EVENT, TEAM_EVENT } from '@Constants/eventConstants';
 import { INDIVIDUAL, PAIR, TEAM } from '@Constants/participantConstants';
@@ -182,6 +182,44 @@ function getTypedParticipantIdsHelper({
   );
 }
 
+function validateCompoundParticipantCategory(
+  participant: Participant,
+  tournamentRecord: Tournament,
+  event: Event,
+  startDate: string,
+  endDate: string,
+): CategoryRejection | null {
+  const individualRejections: CategoryRejection[] = [];
+
+  for (const individualId of participant.individualParticipantIds ?? []) {
+    const individualParticipant = tournamentRecord.participants?.find((p) => p.participantId === individualId);
+    if (!individualParticipant) continue;
+
+    const rejection = validateParticipantCategory(individualParticipant, event.category!, event, startDate, endDate, tournamentRecord);
+    if (rejection) individualRejections.push(rejection);
+  }
+
+  if (!individualRejections.length) return null;
+
+  return {
+    participantId: participant.participantId,
+    participantName: getParticipantName(participant),
+    rejectionReasons: individualRejections.flatMap((r) =>
+      r.rejectionReasons.map((reason) => ({
+        ...reason,
+        reason: `${r.participantName}: ${reason.reason}`,
+      })),
+    ),
+  };
+}
+
+function isCompoundParticipant(participant: Participant): boolean {
+  return (
+    (participant.participantType === PAIR || participant.participantType === TEAM) &&
+    !!participant.individualParticipantIds?.length
+  );
+}
+
 function filterCategoryValidParticipantIds({
   typedParticipantIds,
   categoryRejections,
@@ -202,20 +240,12 @@ function filterCategoryValidParticipantIds({
   for (const participantId of typedParticipantIds) {
     const participant = tournamentRecord.participants?.find((p) => p.participantId === participantId);
 
-    if (!participant) {
-      // Participant not found, exclude but don't track as rejection
-      continue;
-    }
+    if (!participant) continue;
 
     if (event.category) {
-      const rejection = validateParticipantCategory(
-        participant,
-        event.category,
-        event,
-        startDate,
-        endDate,
-        tournamentRecord,
-      );
+      const rejection = isCompoundParticipant(participant)
+        ? validateCompoundParticipantCategory(participant, tournamentRecord, event, startDate, endDate)
+        : validateParticipantCategory(participant, event.category, event, startDate, endDate, tournamentRecord);
 
       if (rejection) {
         categoryRejections.push(rejection);

@@ -529,6 +529,28 @@ engine.markHardBoundary({ setIndex: 0, gameIndex: 4 });
 
 ---
 
+### removePoint
+
+```ts
+removePoint(pointIndex: number, options?: { recalculate?: boolean }): void
+```
+
+Remove a point from history at any position — not just the most recent (which `undo` covers). The corresponding history entry is removed and `pointIndex` values on later entries are renormalised so they continue to match their new positions in `points`. Out-of-range indices are silently ignored.
+
+By default, the score is rebuilt from history after removal and the redo stack is cleared. Pass `{ recalculate: false }` to splice the point out without re-deriving state — useful when you'll immediately follow with another mutation that triggers its own rebuild.
+
+```js
+// Remove a wrongly-recorded point in the middle of a game
+engine.removePoint(5);
+
+// Drop without recalculating (caller will rebuild)
+engine.removePoint(5, { recalculate: false });
+```
+
+Use `removePoint` when the user intends to delete a specific historical point (e.g. a misclicked penalty in a long rally sequence); use `undo` when the user simply wants to step back the last action.
+
+---
+
 ## Persistence
 
 ### getSupplementaryState

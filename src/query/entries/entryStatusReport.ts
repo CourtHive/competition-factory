@@ -110,8 +110,9 @@ export function getEntryStatusReports({ tournamentRecord }: GetEntryStatusReport
         const { participantId, entryStatus, entryStage } = params;
         countEntryStatus(entryStatus);
 
-        const mainSeeding = participantMap?.[participantId]?.draws?.[drawId]?.seedAssignments?.[MAIN];
-        const qualifyingSeeding = participantMap?.[participantId]?.draws?.[drawId]?.seedAssignments?.[QUALIFYING];
+        const seedAssignments = participantMap?.[participantId]?.draws?.[drawId]?.seedAssignments;
+        const mainSeeding = seedAssignments?.[MAIN]?.seedValue ?? seedAssignments?.[MAIN]?.seedNumber;
+        const qualifyingSeeding = seedAssignments?.[QUALIFYING]?.seedValue ?? seedAssignments?.[QUALIFYING]?.seedNumber;
 
         return {
           qualifyingSeeding,

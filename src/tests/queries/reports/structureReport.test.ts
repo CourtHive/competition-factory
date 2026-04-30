@@ -173,7 +173,7 @@ it('can identify winningParticipants and map WTN and ranking', () => {
     'tournamentId',
   ]);
 
-  expect(instanceCount(participantEntryReports.map((r) => r.mainSeeding?.seedValue).filter(Boolean))).toEqual({
+  expect(instanceCount(participantEntryReports.map((r) => r.mainSeeding).filter(Boolean))).toEqual({
     1: 4,
     2: 4,
   });

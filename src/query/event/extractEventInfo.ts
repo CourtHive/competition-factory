@@ -16,8 +16,11 @@ export function extractEventInfo({ event }) {
     notes,
   } = event;
 
+  const entriesCount = event.entries?.length ?? 0;
+
   const eventInfo = {
     drawDefinitionCount: event.drawDefinitions?.length,
+    entriesCount,
     surfaceCategory,
     onlineResources,
     matchUpFormat,

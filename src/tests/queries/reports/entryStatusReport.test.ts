@@ -60,6 +60,22 @@ describe('getEntryStatusReports', () => {
     expect(entry).toHaveProperty('drawId');
   });
 
+  it('mainSeeding is a scalar (not the seed assignment object)', () => {
+    const drawProfiles = [{ drawSize: 8, seedsCount: 4 }];
+    mocksEngine.generateTournamentRecord({
+      drawProfiles,
+      setState: true,
+    });
+
+    let result: any = tournamentEngine.getEntryStatusReports();
+    const seeded = result.participantEntryReports.filter((e: any) => e.mainSeeding != null);
+    expect(seeded.length).toBeGreaterThan(0);
+    for (const entry of seeded) {
+      expect(typeof entry.mainSeeding).not.toBe('object');
+      expect(['number', 'string']).toContain(typeof entry.mainSeeding);
+    }
+  });
+
   it('tournament entry report includes participant counts', () => {
     const drawProfiles = [{ drawSize: 16, seedsCount: 4 }];
     mocksEngine.generateTournamentRecord({

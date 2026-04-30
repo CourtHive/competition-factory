@@ -1,0 +1,56 @@
+name: release-please
+
+# release-please maintains a perpetual release PR on master that
+# accumulates conventional commits since the last release. Merging
+# the PR creates a GitHub release + a `v{version}` tag.
+#
+# We mint a token from a GitHub App (instead of using the default
+# GITHUB_TOKEN) so that the `release: published` event actually fires
+# `npm-publish.yml`. GitHub silently suppresses workflow events
+# triggered by GITHUB_TOKEN to prevent recursive runs; minting via
+# an App sidesteps that rule. (PR #4278 swapped npm-publish from
+# `push: tags` to `release: published` under the assumption that
+# the loop-prevention only applied to `push` — it applies to
+# `release` too. v3.2.0 was released but never auto-published.)
+#
+# Required repo secrets:
+#   RELEASE_BOT_APP_ID         — numeric App ID
+#   RELEASE_BOT_PRIVATE_KEY    — PEM contents (BEGIN/END markers included)
+#
+# The App needs Contents: Write + Pull requests: Write on this repo.
+#
+# Day-to-day flow:
+#   1. Land feature/fix PRs on master with conventional commits
+#      (feat:, fix:, chore:, docs:, etc.)
+#   2. The bot updates a `chore: release X.Y.Z` PR automatically
+#   3. Merge the release PR → GitHub release fires `npm-publish.yml`
+#
+# To force a specific version, edit `.release-please-manifest.json`
+# on master directly.
+
+on:
+  push:
+    branches:
+      - master
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  release-please:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Mint App token
+        id: app-token
+        uses: actions/create-github-app-token@v3
+        with:
+          app-id: ${{ secrets.RELEASE_BOT_APP_ID }}
+          private-key: ${{ secrets.RELEASE_BOT_PRIVATE_KEY }}
+
+      - uses: googleapis/release-please-action@v5
+        with:
+          token: ${{ steps.app-token.outputs.token }}
+          target-branch: master
+          config-file: release-please-config.json
+          manifest-file: .release-please-manifest.json

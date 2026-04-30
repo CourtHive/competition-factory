@@ -33,7 +33,8 @@ function buildDrawRows(event: any, drawDefinition: any, participantMap: any, tou
     const pData = participantMap?.[participantId];
     if (!pData) continue;
 
-    const seedValue = pData.draws?.[drawDefinition.drawId]?.seedAssignments?.[MAIN];
+    const mainSeedAssignment = pData.draws?.[drawDefinition.drawId]?.seedAssignments?.[MAIN];
+    const seedValue = mainSeedAssignment?.seedValue ?? mainSeedAssignment?.seedNumber;
     if (!seedValue) continue;
 
     const finishStr = formatFinishRange(posData);

@@ -3,8 +3,9 @@ import tournamentEngine from '@Engines/syncEngine';
 import { expect, it, describe } from 'vitest';
 
 import { INVALID_PARTICIPANT_IDS } from '@Constants/errorConditionConstants';
-import { INDIVIDUAL } from '@Constants/participantConstants';
-import { SINGLES } from '@Constants/matchUpTypes';
+import { INDIVIDUAL, PAIR } from '@Constants/participantConstants';
+import { DOUBLES, SINGLES } from '@Constants/matchUpTypes';
+import { COMPETITOR } from '@Constants/participantRoles';
 
 describe('Category Validation in addEventEntries', () => {
   describe('Age Validation', () => {
@@ -1157,6 +1158,285 @@ describe('Category Validation in addEventEntries', () => {
       expect(reason.details.ageAtEnd).toBeDefined();
       expect(reason.details.requiredMin).toEqual(12);
       expect(reason.details.requiredMax).toEqual(18);
+    });
+  });
+
+  describe('Paired Entry Category Validation', () => {
+    it('rejects a PAIR entry where one member exceeds U14 age limit', () => {
+      const { tournamentRecord } = mocksEngine.generateTournamentRecord({
+        startDate: '2024-08-01',
+        endDate: '2024-08-15',
+      });
+
+      const validIndividual = {
+        participantId: 'p-young-valid',
+        participantType: INDIVIDUAL,
+        person: {
+          birthDate: '2012-01-01', // Age 12 - valid for U14
+          standardGivenName: 'Young',
+          standardFamilyName: 'Player',
+          sex: 'MALE',
+        },
+      };
+
+      const invalidIndividual = {
+        participantId: 'p-too-old',
+        participantType: INDIVIDUAL,
+        person: {
+          birthDate: '1999-03-15', // Age 25 - invalid for U14
+          standardGivenName: 'Old',
+          standardFamilyName: 'Player',
+          sex: 'MALE',
+        },
+      };
+
+      const pairParticipant = {
+        participantId: 'pair-1',
+        participantType: PAIR,
+        participantRole: COMPETITOR,
+        individualParticipantIds: ['p-young-valid', 'p-too-old'],
+      };
+
+      tournamentRecord.participants = [validIndividual, invalidIndividual, pairParticipant];
+      tournamentEngine.setState(tournamentRecord);
+
+      const event = {
+        eventName: 'U14 Doubles',
+        eventType: DOUBLES,
+        category: {
+          ageCategoryCode: 'U14',
+        },
+      };
+
+      let result: any = tournamentEngine.addEvent({ event });
+      const { eventId } = result.event;
+
+      result = tournamentEngine.addEventEntryPairs({
+        participantIdPairs: [['p-young-valid', 'p-too-old']],
+        enforceCategory: true,
+        eventId,
+      });
+
+      expect(result.error).toEqual(INVALID_PARTICIPANT_IDS);
+      expect(result.context.categoryRejections).toBeDefined();
+      expect(result.context.categoryRejections.length).toEqual(1);
+
+      const rejection = result.context.categoryRejections[0];
+      expect(rejection.rejectionReasons.length).toBeGreaterThanOrEqual(1);
+      expect(rejection.rejectionReasons[0].type).toEqual('age');
+      expect(rejection.rejectionReasons[0].reason).toContain('Old Player');
+    });
+
+    it('accepts a PAIR entry where both members are within U14 age limit', () => {
+      const { tournamentRecord } = mocksEngine.generateTournamentRecord({
+        startDate: '2024-08-01',
+        endDate: '2024-08-15',
+      });
+
+      const individual1 = {
+        participantId: 'p-valid-1',
+        participantType: INDIVIDUAL,
+        person: {
+          birthDate: '2012-01-01', // Age 12
+          standardGivenName: 'Valid',
+          standardFamilyName: 'One',
+          sex: 'MALE',
+        },
+      };
+
+      const individual2 = {
+        participantId: 'p-valid-2',
+        participantType: INDIVIDUAL,
+        person: {
+          birthDate: '2011-06-15', // Age 13
+          standardGivenName: 'Valid',
+          standardFamilyName: 'Two',
+          sex: 'MALE',
+        },
+      };
+
+      const pairParticipant = {
+        participantId: 'pair-valid',
+        participantType: PAIR,
+        participantRole: COMPETITOR,
+        individualParticipantIds: ['p-valid-1', 'p-valid-2'],
+      };
+
+      tournamentRecord.participants = [individual1, individual2, pairParticipant];
+      tournamentEngine.setState(tournamentRecord);
+
+      const event = {
+        eventName: 'U14 Doubles',
+        eventType: DOUBLES,
+        category: {
+          ageCategoryCode: 'U14',
+        },
+      };
+
+      let result: any = tournamentEngine.addEvent({ event });
+      const { eventId } = result.event;
+
+      result = tournamentEngine.addEventEntryPairs({
+        participantIdPairs: [['p-valid-1', 'p-valid-2']],
+        enforceCategory: true,
+        eventId,
+      });
+
+      expect(result.success).toEqual(true);
+    });
+
+    it('skips validation for combined age categories (C50-70) on pair entries', () => {
+      const { tournamentRecord } = mocksEngine.generateTournamentRecord({
+        startDate: '2024-08-01',
+        endDate: '2024-08-15',
+      });
+
+      const individual1 = {
+        participantId: 'p-young-c',
+        participantType: INDIVIDUAL,
+        person: {
+          birthDate: '2000-01-01', // Age 24
+          standardGivenName: 'Young',
+          standardFamilyName: 'Partner',
+          sex: 'MALE',
+        },
+      };
+
+      const individual2 = {
+        participantId: 'p-old-c',
+        participantType: INDIVIDUAL,
+        person: {
+          birthDate: '1960-01-01', // Age 64
+          standardGivenName: 'Old',
+          standardFamilyName: 'Partner',
+          sex: 'MALE',
+        },
+      };
+
+      const pairParticipant = {
+        participantId: 'pair-combined',
+        participantType: PAIR,
+        participantRole: COMPETITOR,
+        individualParticipantIds: ['p-young-c', 'p-old-c'],
+      };
+
+      tournamentRecord.participants = [individual1, individual2, pairParticipant];
+      tournamentEngine.setState(tournamentRecord);
+
+      const event = {
+        eventName: 'Combined 50-70 Doubles',
+        eventType: DOUBLES,
+        category: {
+          ageCategoryCode: 'C50-70',
+          ageMin: 50,
+          ageMax: 70,
+        },
+      };
+
+      let result: any = tournamentEngine.addEvent({ event });
+      const { eventId } = result.event;
+
+      result = tournamentEngine.addEventEntryPairs({
+        participantIdPairs: [['p-young-c', 'p-old-c']],
+        enforceCategory: true,
+        eventId,
+      });
+
+      // Combined age categories skip individual age validation
+      expect(result.success).toEqual(true);
+    });
+
+    it('rejects a PAIR entry when one member rating exceeds category maximum', () => {
+      const { tournamentRecord } = mocksEngine.generateTournamentRecord({
+        startDate: '2024-08-01',
+        endDate: '2024-08-15',
+      });
+
+      const individual1 = {
+        participantId: 'p-good-rating',
+        participantType: INDIVIDUAL,
+        person: {
+          birthDate: '2000-01-01',
+          standardGivenName: 'Good',
+          standardFamilyName: 'Rating',
+          sex: 'MALE',
+        },
+      };
+
+      const individual2 = {
+        participantId: 'p-high-rating',
+        participantType: INDIVIDUAL,
+        person: {
+          birthDate: '2000-01-01',
+          standardGivenName: 'High',
+          standardFamilyName: 'Rating',
+          sex: 'MALE',
+        },
+      };
+
+      const pairParticipant = {
+        participantId: 'pair-rating',
+        participantType: PAIR,
+        participantRole: COMPETITOR,
+        individualParticipantIds: ['p-good-rating', 'p-high-rating'],
+      };
+
+      tournamentRecord.participants = [individual1, individual2, pairParticipant];
+      tournamentEngine.setState(tournamentRecord);
+
+      // Add ratings using DOUBLES eventType to match the event
+      tournamentEngine.setParticipantScaleItem({
+        participantId: 'p-good-rating',
+        scaleItem: {
+          scaleType: 'RATING',
+          scaleName: 'WTN',
+          scaleValue: 10,
+          eventType: DOUBLES,
+          scaleDate: '2024-07-01',
+        },
+      });
+
+      tournamentEngine.setParticipantScaleItem({
+        participantId: 'p-high-rating',
+        scaleItem: {
+          scaleType: 'RATING',
+          scaleName: 'WTN',
+          scaleValue: 15,
+          eventType: DOUBLES,
+          scaleDate: '2024-07-01',
+        },
+      });
+
+      const event = {
+        eventName: 'Beginner Doubles',
+        eventType: DOUBLES,
+        category: {
+          categoryName: 'Beginner',
+          ratingType: 'WTN',
+          ratingMax: 12,
+        },
+      };
+
+      let result: any = tournamentEngine.addEvent({ event });
+      const { eventId } = result.event;
+
+      result = tournamentEngine.addEventEntryPairs({
+        participantIdPairs: [['p-good-rating', 'p-high-rating']],
+        enforceCategory: true,
+        eventId,
+      });
+
+      expect(result.error).toEqual(INVALID_PARTICIPANT_IDS);
+      expect(result.context.categoryRejections).toBeDefined();
+      expect(result.context.categoryRejections.length).toEqual(1);
+
+      const rejection = result.context.categoryRejections[0];
+      expect(rejection.rejectionReasons.length).toBeGreaterThanOrEqual(1);
+
+      const ratingReason = rejection.rejectionReasons.find((r: any) => r.type === 'rating');
+      expect(ratingReason).toBeDefined();
+      expect(ratingReason.reason).toContain('High Rating');
+      expect(ratingReason.reason).toContain('above maximum');
     });
   });
 });

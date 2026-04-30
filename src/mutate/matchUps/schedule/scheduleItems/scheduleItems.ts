@@ -21,7 +21,14 @@ import { ensureInt } from '@Tools/ensureInt';
 import { isString } from '@Tools/objects';
 
 // constants and types
-import { START_TIME, STOP_TIME, RESUME_TIME, END_TIME, COURT_ORDER, COURT_ANNOTATION } from '@Constants/timeItemConstants';
+import {
+  START_TIME,
+  STOP_TIME,
+  RESUME_TIME,
+  END_TIME,
+  COURT_ORDER,
+  COURT_ANNOTATION,
+} from '@Constants/timeItemConstants';
 import { DrawDefinition, Event, TimeItem } from '@Types/tournamentTypes';
 import { OBJECT, OF_TYPE } from '@Constants/attributeConstants';
 import { AddScheduleAttributeArgs } from '@Types/factoryTypes';
@@ -210,7 +217,7 @@ function applyScheduleAssignments({
     if (result?.error) return decorateResult({ result, stack, context: { venueId } });
   }
 
-  if (courtOrder !== undefined && isConvertableInteger(courtOrder)) {
+  if (courtOrder !== undefined) {
     const result = addMatchUpCourtOrder({
       disableNotice: true,
       removePriorValues,
