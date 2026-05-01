@@ -35,4 +35,4 @@ The structure of a **_policyDefinitions_** object is as follows:
 - [Voluntary Consolation Policy](../policies/consolationPolicy.md): Specifies `{ winsLimit, finishingRoundLimit }` for voluntary consolation eligibility
 - [Competitive Bands](../policies/competitiveBands): Determines thresholds for ROUTINE and COMPETITIVE matches in `getCompetitiveProfile`
 - [Draws Policy](/docs/policies/draws): Configures either global or draw-type-specific `drawTypeCoercion`
-- [Print Policy](../policies/printPolicy): Tournament-level overrides for printed-artifact composition (consumed by `pdf-factory`)
+- [Print Policy](../policies/printPolicy): Opaque extension slot for per-tournament print artifact composition (interpreted by consumers)
