@@ -1,5 +1,5 @@
 {
-  "extends": ["config:base", ":semanticCommits"],
+  "extends": ["config:recommended", ":semanticCommits"],
   "packageRules": [
     {
       "matchPackageNames": ["tods-competition-factory"],
