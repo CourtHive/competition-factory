@@ -18,6 +18,7 @@
 
 * **policies:** add Print Policy reference page ([2021dcb](https://github.com/CourtHive/competition-factory/commit/2021dcb5bc0c286677004e2ff6f9a8c01b098a92))
 * **policies:** rewrite Print Policy to stand alone ([d9a52c9](https://github.com/CourtHive/competition-factory/commit/d9a52c97fa52b9b5151bf3c04cb192bc12c3adbd))
+* scrub external repo references for standalone factory docs ([4f7bf1e](https://github.com/CourtHive/competition-factory/commit/4f7bf1e5da74b86b60715f9cb48da4cd5d286bd8))
 
 ## [3.2.3](https://github.com/CourtHive/competition-factory/compare/v3.2.2...v3.2.3) (2026-04-30)
 
