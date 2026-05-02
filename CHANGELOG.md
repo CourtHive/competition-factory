@@ -1,5 +1,24 @@
 # Changelog
 
+## [3.3.0](https://github.com/CourtHive/competition-factory/compare/v3.2.3...v3.3.0) (2026-05-02)
+
+
+### Features
+
+* **constants:** add POLICY_TYPE_PRINT + default fixture ([cde627e](https://github.com/CourtHive/competition-factory/commit/cde627e6e60473f25514dcd77feb769669bbcca5))
+
+
+### Bug Fixes
+
+* **deps:** update dependency courthive-components to v1.1.1 ([#4292](https://github.com/CourtHive/competition-factory/issues/4292)) ([3149f75](https://github.com/CourtHive/competition-factory/commit/3149f75d4705a7abee5ab9cfbe85c88d0470fa74))
+* **deps:** update docusaurus monorepo to v3.10.1 ([#4290](https://github.com/CourtHive/competition-factory/issues/4290)) ([e0c1fc9](https://github.com/CourtHive/competition-factory/commit/e0c1fc963e5b9f7d393f17c6a4c74d287d45c8cc))
+
+
+### Documentation
+
+* **policies:** add Print Policy reference page ([2021dcb](https://github.com/CourtHive/competition-factory/commit/2021dcb5bc0c286677004e2ff6f9a8c01b098a92))
+* **policies:** rewrite Print Policy to stand alone ([d9a52c9](https://github.com/CourtHive/competition-factory/commit/d9a52c97fa52b9b5151bf3c04cb192bc12c3adbd))
+
 ## [3.2.3](https://github.com/CourtHive/competition-factory/compare/v3.2.2...v3.2.3) (2026-04-30)
 
 
