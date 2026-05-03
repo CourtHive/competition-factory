@@ -151,6 +151,44 @@ describe('generateReport', () => {
     expect(result.rows[0]).toHaveProperty('competitiveness');
   });
 
+  it('competitiveness report renders walkover rows with empty Spread % (not NaN)', async () => {
+    const { ROUND_ROBIN } = await import('@Constants/drawDefinitionConstants');
+    const { SINGLES } = await import('@Constants/eventConstants');
+    const { WALKOVER, DEFAULTED } = await import('@Constants/matchUpStatusConstants');
+
+    mocksEngine.generateTournamentRecord({
+      drawProfiles: [
+        {
+          drawSize: 4,
+          drawType: ROUND_ROBIN,
+          eventType: SINGLES,
+          outcomes: [
+            { drawPositions: [1, 2], matchUpStatus: WALKOVER, winningSide: 1 },
+            { drawPositions: [1, 3], scoreString: '6-3 6-3', winningSide: 1 },
+            { drawPositions: [1, 4], scoreString: '6-2 6-2', winningSide: 1 },
+            { drawPositions: [2, 3], matchUpStatus: DEFAULTED, winningSide: 2 },
+            { drawPositions: [2, 4], scoreString: '6-1 6-1', winningSide: 2 },
+            { drawPositions: [3, 4], scoreString: '6-0 6-0', winningSide: 1 },
+          ],
+        },
+      ],
+      setState: true,
+    });
+
+    let result: any = tournamentEngine.generateReport({ reportId: COMPETITIVENESS_REPORT });
+    expect(result.reportId).toBe(COMPETITIVENESS_REPORT);
+
+    const walkoverRow = result.rows.find((r: any) => r.competitiveness === 'WALKOVER');
+    expect(walkoverRow).toBeDefined();
+    expect(walkoverRow.pctSpread).toEqual('');
+    expect(Number.isNaN(walkoverRow.pctSpread)).toEqual(false);
+
+    const playedRow = result.rows.find((r: any) => r.competitiveness !== 'WALKOVER');
+    expect(playedRow).toBeDefined();
+    expect(typeof playedRow.pctSpread).toEqual('number');
+    expect(Number.isFinite(playedRow.pctSpread)).toEqual(true);
+  });
+
   it('generates participant results report', () => {
     const drawProfiles = [{ drawSize: 8 }];
     mocksEngine.generateTournamentRecord({

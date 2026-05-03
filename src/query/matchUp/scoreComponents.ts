@@ -2,10 +2,10 @@ import { COMPETITIVE, DECISIVE, ROUTINE, WALKOVER } from '@Constants/statsConsta
 
 const add = (a, b) => (a || 0) + (b || 0);
 
-export function getBand(spread: number | [number], bandProfiles: { [key: string]: number }) {
+export function getBand(spread: number | number[] | undefined, bandProfiles: { [key: string]: number }) {
   const spreadValue = Array.isArray(spread) ? spread[0] : spread;
+  if (spreadValue === undefined || Number.isNaN(spreadValue)) return WALKOVER;
   return (
-    (Number.isNaN(spreadValue) && WALKOVER) ||
     (spreadValue <= bandProfiles[DECISIVE] && DECISIVE) ||
     (spreadValue <= bandProfiles[ROUTINE] && ROUTINE) ||
     COMPETITIVE
@@ -40,15 +40,19 @@ export function getScoreComponents({ score }) {
   return { sets, games, score };
 }
 
-function gamesPercent(scoreComponents) {
-  const minGames = Math.min(...scoreComponents.games);
-  const maxGames = Math.max(...scoreComponents.games);
+function gamesPercent(scoreComponents): number | undefined {
+  const games = scoreComponents?.games;
+  if (!games?.length) return undefined;
+  const maxGames = Math.max(...games);
+  if (maxGames === 0) return undefined;
+  const minGames = Math.min(...games);
   return Math.round((minGames / maxGames) * 100);
 }
 
-export function pctSpread(pcts) {
+export function pctSpread(pcts): number[] {
   return pcts
     .map(gamesPercent)
+    .filter((p): p is number => p !== undefined)
     .sort((a, b) => a - b)
     .map((p) => parseFloat(p.toFixed(2)));
 }
