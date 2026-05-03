@@ -1,5 +1,12 @@
 # Changelog
 
+## [3.3.1](https://github.com/CourtHive/competition-factory/compare/v3.3.0...v3.3.1) (2026-05-03)
+
+
+### Bug Fixes
+
+* **reports:** handle walkover outcomes in competitiveness Spread % ([5b9078c](https://github.com/CourtHive/competition-factory/commit/5b9078c870b7fc64501e0d6598dd7bf11a1c8ddf))
+
 ## [3.3.0](https://github.com/CourtHive/competition-factory/compare/v3.2.3...v3.3.0) (2026-05-02)
 
 
