@@ -27,6 +27,10 @@ The **Competitive Bands Policy** (`POLICY_TYPE_COMPETITIVE_BANDS`) defines thres
       ROUTINE: number;             // Threshold for routine matches (%)
       // Matches above ROUTINE threshold are considered COMPETITIVE
     };
+    predictionModel?: {            // Optional — used by predictMatchUpCompetitiveBands
+      competitiveAnchors: Array<{ delta: number; probability: number }>;
+      decisiveAnchors: Array<{ delta: number; probability: number }>;
+    };
   }
 }
 ```
@@ -278,6 +282,101 @@ tournamentEngine.attachPolicies({
   eventId: 'junior-event-id',
 });
 ```
+
+---
+
+## Predictive Use — `predictionModel`
+
+The `profileBands` block describes **retrospective** competitiveness — how completed matches are classified by score spread. The optional `predictionModel` block describes **predictive** competitiveness — how likely a _projected_ matchUp is to land in each band, given the rating delta of the two sides.
+
+The default model is anchored on Dave Fish's 2011 _"Need For a Rating System"_ observations:
+
+- ~70% competitive at delta ≈ 0 (well-matched / ATP-Slam-equivalent depth)
+- ~55% competitive at delta ≈ 0.5 (WTA-Slam / ITA-Women's depth)
+- ~25% competitive at delta ≈ 1.5 (USTA sectional age-group baseline)
+
+A two-anchor logistic curve is fit through `competitiveAnchors` for the COMPETITIVE band, and through `decisiveAnchors` for the DECISIVE band. ROUTINE is the residual.
+
+```js
+// Default prediction model
+{
+  competitiveAnchors: [
+    { delta: 0,   probability: 0.70 },
+    { delta: 1.5, probability: 0.25 },
+  ],
+  decisiveAnchors: [
+    { delta: 0,   probability: 0.10 },
+    { delta: 1.5, probability: 0.55 },
+  ],
+}
+```
+
+### Example — predict a single matchUp
+
+```js
+const result = tournamentEngine.predictMatchUpCompetitiveBands({
+  side1Rating: 4.5,
+  side2Rating: 5.0,
+});
+// → { competitive: 0.55, decisive: 0.18, routine: 0.27, delta: 0.5 }
+```
+
+### Example — predict an entire draw
+
+```js
+const result = tournamentEngine.predictDrawCompetitiveBands({
+  ratings: [5.5, 5.4, 5.3, 5.2, 5.1, 5.0, 4.9, 4.8],
+  drawType: 'SINGLE_ELIMINATION',
+});
+// → {
+//     competitive: 0.62,
+//     decisive: 0.13,
+//     routine: 0.25,
+//     projectionMode: 'BALANCED_BRACKET',
+//     projectedPairs: [[5.5, 4.8], [5.4, 4.9], [5.3, 5.0], [5.2, 5.1]],
+//     expectedMatchCount: 4,
+//   }
+```
+
+### Projection modes
+
+The draw-level predictor projects the matchUps that will play. Three modes are available, auto-resolved from `drawType`:
+
+| Mode               | Auto-mapped from                                                                                                                                                                                              | Pairing                                                                                             |
+| ------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------- |
+| `BALANCED_BRACKET` | `SINGLE_ELIMINATION`, `DOUBLE_ELIMINATION`, `COMPASS`, `LUCKY_DRAW`, `ADAPTIVE`, `FIRST_MATCH_LOSER_CONSOLATION`, `FIRST_ROUND_LOSER_CONSOLATION`, `FEED_IN_CHAMPIONSHIP_TO_QF`, `FEED_IN_CHAMPIONSHIP_TO_SF` | i-th highest rating vs i-th lowest — mirrors R1 of standard seed placement                          |
+| `ROUND_ROBIN`      | `ROUND_ROBIN`, `DOUBLE_ROUND_ROBIN`, `ROUND_ROBIN_WITH_PLAYOFF`                                                                                                                                               | All pairs within each group; uses `groupSize` when supplied                                         |
+| `MIN_DELTA`        | `SWISS`                                                                                                                                                                                                       | Adjacent ratings — minimum delta. Suitable for Swiss R1 and DrawMatic-style rating-balanced pairing |
+
+`projectionMode` can also be passed explicitly, overriding the auto-mapping. This is the path for ad-hoc draw types (e.g., DrawMatic) that aren't first-class draw-type constants.
+
+### Custom anchors per audience
+
+```js
+// Junior tournament — wider rating spreads tolerated
+const juniorPolicy = {
+  [POLICY_TYPE_COMPETITIVE_BANDS]: {
+    policyName: 'Junior Competitive Bands',
+    profileBands: { DECISIVE: 25, ROUTINE: 55 },
+    predictionModel: {
+      competitiveAnchors: [
+        { delta: 0, probability: 0.65 },
+        { delta: 2.0, probability: 0.3 },
+      ],
+      decisiveAnchors: [
+        { delta: 0, probability: 0.15 },
+        { delta: 2.0, probability: 0.5 },
+      ],
+    },
+  },
+};
+```
+
+### Scope and limits
+
+- **Singles only.** Doubles ratings (paired/team aggregation) are not currently modeled.
+- **Bracket projection is R1-only** for elimination draws and full pairwise for round-robin. Later rounds depend on results that have not happened; full-tournament Monte Carlo simulation is out of scope.
+- **The model is statistical, not deterministic.** Output is a probability distribution suitable for ranking candidate plans against one another, not for predicting a specific matchUp's outcome.
 
 ---
 
