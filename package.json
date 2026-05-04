@@ -140,7 +140,7 @@
     "@rollup/plugin-terser": "1.0.0",
     "@rollup/plugin-typescript": "12.3.0",
     "@swc/cli": "0.8.1",
-    "@swc/core": "1.15.32",
+    "@swc/core": "1.15.33",
     "@types/express": "5.0.6",
     "@types/jest": "30.0.0",
     "@types/node": "24.12.2",
