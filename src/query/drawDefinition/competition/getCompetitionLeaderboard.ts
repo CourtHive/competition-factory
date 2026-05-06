@@ -3,7 +3,11 @@ import { getCompetitionPolicy } from './getCompetitionPolicy';
 import { getCompetitionState } from './getCompetitionState';
 
 // Types
-import type { CompetitionLeaderboardRow, CompetitionParticipantState, PrimaryRanking } from '@Types/competitionPolicyTypes';
+import type {
+  CompetitionLeaderboardRow,
+  CompetitionParticipantState,
+  PrimaryRanking,
+} from '@Types/competitionPolicyTypes';
 import type { DrawDefinition, Event, Tournament } from '@Types/tournamentTypes';
 import type { ResultType } from '@Types/factoryTypes';
 
@@ -17,9 +21,7 @@ type GetCompetitionLeaderboardResult = ResultType & {
   leaderboard?: CompetitionLeaderboardRow[];
 };
 
-export function getCompetitionLeaderboard(
-  params: GetCompetitionLeaderboardArgs,
-): GetCompetitionLeaderboardResult {
+export function getCompetitionLeaderboard(params: GetCompetitionLeaderboardArgs): GetCompetitionLeaderboardResult {
   const { tournamentRecord, drawDefinition, event } = params;
 
   const { competitionPolicy } = getCompetitionPolicy({ tournamentRecord, drawDefinition, event });
@@ -79,26 +81,29 @@ function applyTiebreak(
   tiebreak: string,
   _participantStates: Record<string, CompetitionParticipantState>,
 ): number {
+  // Comparator returns positive ⇒ a sorts AFTER b ⇒ b ranks higher.
+  // Tiebreaks rank larger values higher (matching primary ranking direction),
+  // so each branch returns (b's value − a's value).
   switch (tiebreak) {
     case 'POINT_DIFFERENTIAL':
-      return (a.totalPointsWon - a.totalPointsLost) - (b.totalPointsWon - b.totalPointsLost);
+      return b.totalPointsWon - b.totalPointsLost - (a.totalPointsWon - a.totalPointsLost);
     case 'DYNAMIC_FORM_RATING':
-      return a.dynamicFormRating - b.dynamicFormRating;
+      return b.dynamicFormRating - a.dynamicFormRating;
     case 'PRESSURE_RATING':
-      return a.pressureRating - b.pressureRating;
+      return b.pressureRating - a.pressureRating;
     case 'HEAD_TO_HEAD': {
       const aVsB = a.ratingHistory.filter((h) => h.opponentParticipantId === b.participantId);
       const bVsA = b.ratingHistory.filter((h) => h.opponentParticipantId === a.participantId);
       const aWins = aVsB.filter((h) => h.actualOutput > 0.5).length;
       const bWins = bVsA.filter((h) => h.actualOutput > 0.5).length;
-      return aWins - bWins;
+      return bWins - aWins;
     }
     case 'HEAD_TO_HEAD_PRESSURE': {
       const aVsB = a.ratingHistory.filter((h) => h.opponentParticipantId === b.participantId);
       const bVsA = b.ratingHistory.filter((h) => h.opponentParticipantId === a.participantId);
       const aPressure = aVsB.reduce((sum, h) => sum + h.pressureDelta, 0);
       const bPressure = bVsA.reduce((sum, h) => sum + h.pressureDelta, 0);
-      return aPressure - bPressure;
+      return bPressure - aPressure;
     }
     case 'STRENGTH_OF_OPPOSITION': {
       const aOpponentRatings = a.ratingHistory.map(
@@ -109,7 +114,7 @@ function applyTiebreak(
       );
       const aAvg = aOpponentRatings.length ? aOpponentRatings.reduce((s, v) => s + v, 0) / aOpponentRatings.length : 0;
       const bAvg = bOpponentRatings.length ? bOpponentRatings.reduce((s, v) => s + v, 0) / bOpponentRatings.length : 0;
-      return aAvg - bAvg;
+      return bAvg - aAvg;
     }
     default:
       return 0;
