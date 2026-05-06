@@ -32,8 +32,8 @@ importers:
         specifier: 2.1.1
         version: 2.1.1
       courthive-components:
-        specifier: 1.2.0
-        version: 1.2.0
+        specifier: 1.3.0
+        version: 1.3.0
       react:
         specifier: ^19.0.0
         version: 19.2.6
@@ -2299,8 +2299,8 @@ packages:
       typescript:
         optional: true
 
-  courthive-components@1.2.0:
-    resolution: {integrity: sha512-PnImw6kOInens8bHJ30TkN9dNY+F8BRhqLmX9PYEAGepb8e7m7XJD41msyE0wkk8ScpWWH3XflsZB+Hko5ctXA==}
+  courthive-components@1.3.0:
+    resolution: {integrity: sha512-kKkpMcHVziPZpM2WtqB7MSPn7DdDfmj6dMc0kv6d1r9nUu2kAnU+coNRJIN1j/Dg5z5oRT6nMudHsX47BmZnUA==}
     engines: {node: '>=22'}
 
   cross-spawn@7.0.6:
@@ -8673,7 +8673,7 @@ snapshots:
       parse-json: 5.2.0
       path-type: 4.0.0
 
-  courthive-components@1.2.0:
+  courthive-components@1.3.0:
     dependencies:
       awesomplete: 1.1.7
       class-variance-authority: 0.7.1
