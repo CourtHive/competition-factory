@@ -1,5 +1,13 @@
 # Changelog
 
+## [3.4.1](https://github.com/CourtHive/competition-factory/compare/v3.4.0...v3.4.1) (2026-05-06)
+
+
+### Bug Fixes
+
+* **query:** correct polarity in getPredictiveAccuracy ([16815ad](https://github.com/CourtHive/competition-factory/commit/16815ad31d6edaf24f55e799aad401e6caabd97e))
+* **query:** correct tiebreak polarity in getCompetitionLeaderboard + cover gaps ([334679b](https://github.com/CourtHive/competition-factory/commit/334679b6505045b541cacee75fe403049b5d7e59))
+
 ## [3.4.0](https://github.com/CourtHive/competition-factory/compare/v3.3.1...v3.4.0) (2026-05-05)
 
 
