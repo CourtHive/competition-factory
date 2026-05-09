@@ -1,5 +1,8 @@
 packages: []
 
+allowBuilds:
+  core-js: true
+
 ignoredBuiltDependencies:
   - core-js
   - core-js-pure
