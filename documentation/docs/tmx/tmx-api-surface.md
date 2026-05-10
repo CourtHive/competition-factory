@@ -6,7 +6,7 @@ sidebar_position: 9
 
 # TMX API Surface
 
-This page documents all `tods-competition-factory` methods used by the **TMX client** and the **competition-factory-server**, organized by category. Each method links to its governor documentation page.
+This page documents all `tods-competition-factory` methods used by the **TMX client** and its server, organized by category. Each method links to its governor documentation page.
 
 ---
 

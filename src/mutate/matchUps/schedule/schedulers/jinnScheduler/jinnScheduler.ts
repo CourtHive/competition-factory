@@ -1,6 +1,7 @@
 import { checkDependenciesScheduled } from '@Mutate/matchUps/schedule/scheduleMatchUps/checkDependenciesScheduled';
 import { updateTimeAfterRecovery } from '@Mutate/matchUps/schedule/scheduleMatchUps/updateTimeAfterRecovery';
 import { checkDependendantTiming } from '@Mutate/matchUps/schedule/scheduleMatchUps/checkDependentTiming';
+import { addMatchUpScheduledDate } from '@Mutate/matchUps/schedule/scheduleItems/addMatchUpScheduledDate';
 import { checkRequestConflicts } from '@Mutate/matchUps/schedule/scheduleMatchUps/checkRequestConflicts';
 import { processNextMatchUps } from '@Mutate/matchUps/schedule/scheduleMatchUps/processNextMatchUps';
 import { getVenueSchedulingDetails } from '@Query/matchUps/scheduling/getVenueSchedulingDetails';
@@ -411,8 +412,7 @@ function scheduleVenueRounds({
 
     schedulingIterations += 1;
     schedulingComplete =
-      venues.every(({ venueId }) => venueScheduledRoundDetails[venueId].complete) ||
-      schedulingIterations === failSafe;
+      venues.every(({ venueId }) => venueScheduledRoundDetails[venueId].complete) || schedulingIterations === failSafe;
   }
 }
 
@@ -479,16 +479,26 @@ function scheduleMatchUpTime({
   if (!scheduleTime) return;
 
   const formatTime = scheduleTime.split(':').map(zeroPad).join(':');
-  const scheduledTime = `${extractDate(scheduleDate)}T${formatTime}`;
+  const scheduledDate = extractDate(scheduleDate);
 
   if (dryRun) {
     scheduledMatchUpIds[scheduleDate].push(matchUpId);
     return;
   }
 
+  // Persist date and time as separate timeItems so SCHEDULED_TIME is plain HH:mm.
+  // Without an explicit SCHEDULED_DATE, addMatchUpScheduledTime falls back to
+  // embedding the date in the time value, which surfaces as "YYYY-MM-DDTHH:mm" in UI.
+  addMatchUpScheduledDate({
+    tournamentRecord,
+    drawDefinition,
+    scheduledDate,
+    matchUpId,
+  });
+
   const result = addMatchUpScheduledTime({
     drawDefinition,
-    scheduledTime,
+    scheduledTime: formatTime,
     matchUpId,
   });
   if (result.success) scheduledMatchUpIds[scheduleDate].push(matchUpId);

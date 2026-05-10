@@ -159,7 +159,7 @@ it('can bulk reschedule matchUps that have been auto-scheduled', () => {
 
   expect(scheduledMatchUps[0].schedule.scheduledDate).toEqual(dateStringDaysChange(startDate, 1));
 
-  expect(scheduledMatchUps[0].schedule.scheduledTime).toEqual('2022-01-01T08:00');
+  expect(scheduledMatchUps[0].schedule.scheduledTime).toEqual('08:00');
   result = tournamentEngine.bulkRescheduleMatchUps({
     scheduleChange: { minutesChange: 300 },
     matchUpIds,

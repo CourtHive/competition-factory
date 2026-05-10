@@ -6,9 +6,9 @@
 
 It lives directly on the tournament record and serves three consumers:
 
-1. **TMX** — structured editor for tournament directors
-2. **courthive-public** — web rendering of tournament fact sheets
-3. **pdf-factory** — PDF fact sheet generation and draw sheet header auto-population
+1. **Editor clients** (e.g. TMX) — structured editing for tournament directors
+2. **Web rendering** — tournament fact sheets for participants and the public
+3. **PDF generation** — fact sheets and draw sheet header auto-population
 
 ## RegistrationProfile
 
@@ -21,7 +21,7 @@ interface RegistrationProfile {
 
   // entry & eligibility
   entryFees?: RegistrationEntryFee[];
-  entryMethod?: string;         // 'ONLINE' | 'EMAIL' | 'POSTAL' | 'OTHER'
+  entryMethod?: string; // 'ONLINE' | 'EMAIL' | 'POSTAL' | 'OTHER'
   entryUrl?: string;
   eligibilityNotes?: string;
 
@@ -61,17 +61,17 @@ Each logistics area (accommodation, transportation, hospitality, medical) uses t
 ```typescript
 interface LogisticsSection {
   options?: LogisticsOption[];
-  notes?: string;               // HTML for free-form content
+  notes?: string; // HTML for free-form content
 }
 
 interface LogisticsOption {
-  name: string;                 // required
+  name: string; // required
   description?: string;
   address?: string;
   phone?: string;
   email?: string;
   url?: string;
-  priceRange?: string;          // e.g. "$80-120/night"
+  priceRange?: string; // e.g. "$80-120/night"
   notes?: string;
 }
 ```
@@ -80,14 +80,14 @@ interface LogisticsOption {
 
 ```typescript
 interface RegistrationEntryFee {
-  amount: number;               // required
-  currencyCode: string;         // required, e.g. "USD"
-  eventType?: EventTypeUnion;   // SINGLES | DOUBLES | TEAM | HYBRID
+  amount: number; // required
+  currencyCode: string; // required, e.g. "USD"
+  eventType?: EventTypeUnion; // SINGLES | DOUBLES | TEAM | HYBRID
   category?: string;
 }
 
 interface SocialEvent {
-  name: string;                 // required
+  name: string; // required
   date?: string;
   time?: string;
   location?: string;
@@ -95,14 +95,14 @@ interface SocialEvent {
 }
 
 interface Sponsor {
-  name: string;                 // required
-  tier?: string;                // TITLE | PRESENTING | OFFICIAL | SUPPORTING
+  name: string; // required
+  tier?: string; // TITLE | PRESENTING | OFFICIAL | SUPPORTING
   logoUrl?: string;
   websiteUrl?: string;
 }
 
 interface DocumentLink {
-  name: string;                 // required
+  name: string; // required
   url?: string;
   description?: string;
 }
@@ -164,7 +164,7 @@ if (registrationProfile?.accommodation?.options?.length) {
 
 ## Design Principles
 
-- **Structured + HTML fallback**: logistics sections have structured `options` for rendering in courthive-public and PDF, plus an HTML `notes` field for anything unstructured.
+- **Structured + HTML fallback**: logistics sections have structured `options` for rendering in web and PDF outputs, plus an HTML `notes` field for anything unstructured.
 - **Additive merge**: `setRegistrationProfile` spreads new fields over existing ones, so consumers can update one section without resending the entire profile.
-- **Factory purity**: the factory stores and retrieves the profile. Rendering (PDF headers, web fact sheets) happens in pdf-factory and courthive-public respectively.
+- **Factory purity**: the factory stores and retrieves the profile. Rendering (PDF headers, web fact sheets) happens in downstream consumer applications.
 - **TODS alignment**: `RegistrationProfile` is a first-class type on the tournament record, not an extension. All new fields are optional, so existing tournament records are unaffected.

@@ -253,13 +253,15 @@ it('can assess predictive accuracy of scaleValues', () => {
     }
   });
 
+  // WTN is ascending: true (lower = stronger). Affirmative ⇒ rating-favored
+  // (lower-value) player won; negative ⇒ upset (higher-value player won).
   accuracy.affirmative.forEach(({ winningSide, sideValues }) => {
     const winningIndex = winningSide - 1;
-    expect(sideValues[winningIndex].value).toBeGreaterThanOrEqual(sideValues[1 - winningIndex].value);
+    expect(sideValues[winningIndex].value).toBeLessThanOrEqual(sideValues[1 - winningIndex].value);
   });
   accuracy.negative.forEach(({ winningSide, sideValues }) => {
     const winningIndex = winningSide - 1;
-    expect(sideValues[winningIndex].value).toBeLessThanOrEqual(sideValues[1 - winningIndex].value);
+    expect(sideValues[winningIndex].value).toBeGreaterThanOrEqual(sideValues[1 - winningIndex].value);
   });
 });
 

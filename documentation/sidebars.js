@@ -35,6 +35,16 @@ module.exports = {
         'concepts/registration-profile',
         'concepts/tournament-tier',
         {
+          type: 'category',
+          label: 'Format Wizard',
+          collapsed: true,
+          items: [
+            'concepts/format-wizard/engine',
+            'concepts/format-wizard/distribution',
+            'concepts/format-wizard/example',
+          ],
+        },
+        {
           Policies: [
             'concepts/policies',
             'policies/roundRobinTallyPolicy',
@@ -58,6 +68,7 @@ module.exports = {
             'policies/competitiveBands',
             'policies/competitionPolicy',
             'policies/sanctioningPolicy',
+            'policies/printPolicy',
           ],
         },
         {

@@ -15,6 +15,7 @@ The engine follows the same architectural pattern as the existing factory engine
 Research across tennis (ITF, ATP, WTA, USTA, LTA, Tennis Australia, FFT), badminton (BWF), squash (PSA), table tennis (ITTF/WTT), pickleball (USA Pickleball), swimming (USA Swimming/USMS), athletics (USATF/World Athletics), disc golf (PDGA), and golf (PGA) reveals universal patterns:
 
 **Universal application elements:**
+
 1. Organizer identification and credentials (SafeSport, certifications)
 2. Venue/facility details (court specs, capacity, safety)
 3. Event classification/level (tier/category the event falls into)
@@ -26,6 +27,7 @@ Research across tennis (ITF, ATP, WTA, USTA, LTA, Tennis Australia, FFT), badmin
 9. Insurance coverage (naming governing body as additionally insured)
 
 **Universal workflow states:**
+
 ```
 DRAFT → SUBMITTED → UNDER_REVIEW → APPROVED | CONDITIONALLY_APPROVED | REJECTED | WITHDRAWN
   APPROVED → MODIFICATION_REQUESTED → RE_APPROVED
@@ -35,6 +37,7 @@ DRAFT → SUBMITTED → UNDER_REVIEW → APPROVED | CONDITIONALLY_APPROVED | REJ
 ```
 
 **Key sanctioning constraints on tournament operations:**
+
 - Minimum standards (draw sizes, prize money floors, court specs, medical)
 - Personnel requirements (certified officials, licensed referees)
 - Software mandates (approved tournament management systems)
@@ -43,6 +46,7 @@ DRAFT → SUBMITTED → UNDER_REVIEW → APPROVED | CONDITIONALLY_APPROVED | REJ
 - Anti-corruption/integrity program compliance
 
 **Sanctioning-to-ranking connection:**
+
 - Tournament level directly determines ranking points table
 - Points scale by draw size, round reached, and competition level
 - Existing factory `AwardProfile` / `AwardProfileScope` already models this via `levels`, `drawSizes`, `stages`, `category`
@@ -50,6 +54,7 @@ DRAFT → SUBMITTED → UNDER_REVIEW → APPROVED | CONDITIONALLY_APPROVED | REJ
 ### 2.2 Tennis-Specific Insights
 
 **ITF sanctioning flow:**
+
 1. Organizer contacts National Association
 2. National Association endorses application
 3. Application submitted to ITF (16-21 weeks before tournament week depending on level)
@@ -67,11 +72,13 @@ DRAFT → SUBMITTED → UNDER_REVIEW → APPROVED | CONDITIONALLY_APPROVED | REJ
 | W100 | $100,000 | 32S/16Q | 100 | Enhanced hospitality |
 
 **USTA levels (1-7):**
+
 - Level determines: minimum participants, facility requirements, official certifications, whether TD and Referee can be the same person
 - Applications via "Serve Tennis" platform
 - Primary deadline: September 30; late applications on bi-monthly basis
 
 **Calendar coordination:**
+
 - Centralized calendars prevent geographic/temporal conflicts
 - Higher-tier events take priority
 - Pipeline transparency lets applicants see pending applications
@@ -88,7 +95,7 @@ The `SanctioningRecord` is the central document. It is **not** a `tournamentReco
 interface SanctioningRecord {
   sanctioningId: string;
   status: SanctioningStatus;
-  version: number;                        // incremented on each mutation
+  version: number; // incremented on each mutation
 
   // Temporal
   createdAt: string;
@@ -98,22 +105,22 @@ interface SanctioningRecord {
   approvedAt?: string;
 
   // Who
-  applicant: Applicant;                   // organizer/club/academy
-  endorser?: Endorser;                    // national federation / regional body
-  reviewer?: Reviewer;                    // governing body reviewer
+  applicant: Applicant; // organizer/club/academy
+  endorser?: Endorser; // national federation / regional body
+  reviewer?: Reviewer; // governing body reviewer
 
   // What — the proposed tournament
   proposal: TournamentProposal;
 
   // Governance
-  governingBodyId: string;                // which body sanctions this
-  sanctioningLevel?: string;              // level applied for (maps to policy)
-  sanctioningPolicy?: string;             // policy name to validate against
+  governingBodyId: string; // which body sanctions this
+  sanctioningLevel?: string; // level applied for (maps to policy)
+  sanctioningPolicy?: string; // policy name to validate against
 
   // Workflow
-  conditions?: Condition[];               // conditions for conditional approval
-  reviewNotes?: ReviewNote[];             // reviewer feedback
-  modifications?: Modification[];         // change history
+  conditions?: Condition[]; // conditions for conditional approval
+  reviewNotes?: ReviewNote[]; // reviewer feedback
+  modifications?: Modification[]; // change history
 
   // Extensions for org-specific fields
   extensions?: Extension[];
@@ -133,9 +140,9 @@ interface TournamentProposal {
   promotionalName?: string;
 
   // Classification
-  tournamentLevel?: TournamentLevelUnion;  // existing enum: CLUB..INTERNATIONAL
-  sanctioningTier?: string;               // org-specific tier (e.g., "W50", "Level 3", "Grade 4")
-  discipline?: DisciplineUnion;           // TENNIS, BEACH_TENNIS, WHEELCHAIR_TENNIS
+  tournamentLevel?: TournamentLevelUnion; // existing enum: CLUB..INTERNATIONAL
+  sanctioningTier?: string; // org-specific tier (e.g., "W50", "Level 3", "Grade 4")
+  discipline?: DisciplineUnion; // TENNIS, BEACH_TENNIS, WHEELCHAIR_TENNIS
 
   // When & Where
   proposedStartDate: string;
@@ -167,11 +174,11 @@ interface TournamentProposal {
   safeguardingCompliance?: boolean;
 
   // Registration
-  registrationProfile?: RegistrationProfile;  // reuse existing type
+  registrationProfile?: RegistrationProfile; // reuse existing type
 
   // Calendar
-  calendarSection?: string;               // geographic region / section
-  calendarConflictCheck?: boolean;         // request conflict analysis
+  calendarSection?: string; // geographic region / section
+  calendarConflictCheck?: boolean; // request conflict analysis
 
   extensions?: Extension[];
 }
@@ -182,19 +189,19 @@ interface TournamentProposal {
 ```typescript
 interface EventProposal {
   eventName: string;
-  eventType: EventTypeUnion;              // SINGLES, DOUBLES, TEAM, HYBRID
+  eventType: EventTypeUnion; // SINGLES, DOUBLES, TEAM, HYBRID
   gender?: GenderUnion;
-  category?: Category;                    // reuse existing Category type
+  category?: Category; // reuse existing Category type
 
   // Draw constraints
-  drawType?: DrawTypeUnion;               // proposed draw structure
-  allowedDrawTypes?: DrawTypeUnion[];      // or a set of allowed types
-  drawSize?: number;                      // proposed main draw size
+  drawType?: DrawTypeUnion; // proposed draw structure
+  allowedDrawTypes?: DrawTypeUnion[]; // or a set of allowed types
+  drawSize?: number; // proposed main draw size
   qualifyingDrawSize?: number;
 
   // Format
-  matchUpFormat?: string;                 // matchUpFormatCode
-  allowedMatchUpFormats?: string[];        // or a set of allowed formats
+  matchUpFormat?: string; // matchUpFormatCode
+  allowedMatchUpFormats?: string[]; // or a set of allowed formats
   tieFormat?: TieFormat;
 
   // Surface / conditions (can differ from tournament-level)
@@ -261,10 +268,10 @@ type SanctioningStatus =
   | 'REJECTED'
   | 'WITHDRAWN'
   | 'MODIFICATION_REQUESTED'
-  | 'ACTIVE'                  // tournament created from this sanctioning
-  | 'POST_EVENT'              // tournament completed, awaiting compliance
-  | 'CLOSED'                  // fully resolved
-  | 'ISSUES_FLAGGED';         // compliance problems detected
+  | 'ACTIVE' // tournament created from this sanctioning
+  | 'POST_EVENT' // tournament completed, awaiting compliance
+  | 'CLOSED' // fully resolved
+  | 'ISSUES_FLAGGED'; // compliance problems detected
 ```
 
 ### 3.5 Sanctioning Policy
@@ -286,7 +293,7 @@ interface SanctioningPolicy {
   personnelRules?: PersonnelRules;
 
   // Global constraints
-  requireEndorsement?: boolean;           // must have national federation endorsement
+  requireEndorsement?: boolean; // must have national federation endorsement
   requireInsurance?: boolean;
   requireSafetyPlan?: boolean;
   requireMedicalPlan?: boolean;
@@ -294,38 +301,38 @@ interface SanctioningPolicy {
   requireSafeguarding?: boolean;
 
   // Application timing
-  minimumLeadWeeks?: number;              // how far ahead must application be submitted
+  minimumLeadWeeks?: number; // how far ahead must application be submitted
 
   // Post-event
-  resultsDeadlineDays?: number;           // days after event to submit results
+  resultsDeadlineDays?: number; // days after event to submit results
   requirePostEventReport?: boolean;
 }
 
 interface SanctioningTier {
-  tierName: string;                       // e.g., "W50", "Level 3", "Grade 4", "B-Tier"
-  tierLevel: number;                      // numeric ordering (higher = more prestigious)
+  tierName: string; // e.g., "W50", "Level 3", "Grade 4", "B-Tier"
+  tierLevel: number; // numeric ordering (higher = more prestigious)
 
   // What events can be in this tier
   allowedEventTypes?: EventTypeUnion[];
-  allowedCategories?: Category[];         // age/rating restrictions
+  allowedCategories?: Category[]; // age/rating restrictions
   allowedGenders?: GenderUnion[];
   allowedDisciplines?: DisciplineUnion[];
 
   // Draw constraints per tier
   allowedDrawTypes?: DrawTypeUnion[];
-  allowedDrawSizes?: number[];            // e.g., [16, 32, 64, 128]
-  maxQualifyingDrawSize?: number;         // relative to main draw
+  allowedDrawSizes?: number[]; // e.g., [16, 32, 64, 128]
+  maxQualifyingDrawSize?: number; // relative to main draw
   qualifyingAllowed?: boolean;
 
   // Format constraints
-  allowedMatchUpFormats?: string[];       // matchUpFormatCodes
+  allowedMatchUpFormats?: string[]; // matchUpFormatCodes
 
   // Financial constraints
   minimumPrizeMoney?: number;
   maximumPrizeMoney?: number;
   currencyCode?: string;
-  sanctionFeePercent?: number;            // BWF model: % of prize fund
-  sanctionFeeFixed?: number;              // fixed fee model
+  sanctionFeePercent?: number; // BWF model: % of prize fund
+  sanctionFeeFixed?: number; // fixed fee model
 
   // Facility constraints
   minimumCourts?: number;
@@ -335,38 +342,38 @@ interface SanctioningTier {
   // Personnel
   minimumOfficials?: number;
   officialCertificationLevel?: string;
-  tdRefereeSameAllowed?: boolean;         // USTA: not allowed at Level 5+
+  tdRefereeSameAllowed?: boolean; // USTA: not allowed at Level 5+
 
   // Participant minimums
-  minimumParticipants?: number;           // USTA: varies by level
+  minimumParticipants?: number; // USTA: varies by level
 
   // Ranking points (links to existing AwardProfile system)
-  rankingPointsProfile?: string;          // reference to AwardProfile name
+  rankingPointsProfile?: string; // reference to AwardProfile name
 
   // Progression requirements (PDGA model: must have history at lower tier)
   prerequisiteTiers?: string[];
   prerequisiteEventCount?: number;
 
   // Lead time
-  minimumLeadWeeks?: number;              // override global
+  minimumLeadWeeks?: number; // override global
 
   extensions?: Extension[];
 }
 
 interface CalendarRules {
-  proximityRadiusKm?: number;             // min distance between same-tier events
-  proximityWeeks?: number;                // min weeks between same-tier events in region
-  blackoutDates?: string[];               // dates when no events allowed
-  mandatoryWeeks?: string[];              // weeks reserved for mandatory events
-  maxEventsPerWeek?: number;              // per region/section
-  calendarSections?: CalendarSection[];   // geographic divisions
+  proximityRadiusKm?: number; // min distance between same-tier events
+  proximityWeeks?: number; // min weeks between same-tier events in region
+  blackoutDates?: string[]; // dates when no events allowed
+  mandatoryWeeks?: string[]; // weeks reserved for mandatory events
+  maxEventsPerWeek?: number; // per region/section
+  calendarSections?: CalendarSection[]; // geographic divisions
 }
 
 interface CalendarSection {
   sectionId: string;
   sectionName: string;
-  countyCodes?: string[];                 // countries in this section
-  regionCodes?: string[];                 // sub-national regions
+  countyCodes?: string[]; // countries in this section
+  regionCodes?: string[]; // sub-national regions
 }
 
 interface PersonnelRules {
@@ -374,7 +381,7 @@ interface PersonnelRules {
 }
 
 interface PersonnelRole {
-  roleName: string;                       // "Tournament Director", "Referee", "Chair Umpire"
+  roleName: string; // "Tournament Director", "Referee", "Chair Umpire"
   required: boolean;
   minimumCount?: number;
   certificationRequired?: string;
@@ -486,6 +493,7 @@ function activateFromSanctioning({ sanctioningRecord }) {
 ```
 
 The attached policy ensures TMX (or any client using the factory) **cannot** deviate from the sanctioned parameters. For example:
+
 - `allowedDrawTypes` on each event prevents unauthorized draw structures
 - A scoring policy restricts `matchUpFormat` to approved formats
 - Category constraints prevent adding unsanctioned age groups
@@ -499,6 +507,7 @@ The attached policy ensures TMX (or any client using the factory) **cannot** dev
 **Goal:** Define the type system and state machine, no mutations yet.
 
 **Files:**
+
 - `src/types/sanctioningTypes.ts` — all interfaces
 - `src/constants/sanctioningConstants.ts` — statuses, transitions, error codes
 - `src/constants/policyConstants.ts` — add `POLICY_TYPE_SANCTIONING`
@@ -511,6 +520,7 @@ The attached policy ensures TMX (or any client using the factory) **cannot** dev
 **Goal:** Create, read, update sanctioning records. No policy validation yet.
 
 **Files:**
+
 - `src/assemblies/engines/sanctioning/index.ts`
 - `src/assemblies/engines/sanctioning/stateProvider.ts`
 - `src/assemblies/engines/sanctioning/stateMachine.ts`
@@ -531,6 +541,7 @@ The attached policy ensures TMX (or any client using the factory) **cannot** dev
 **Goal:** Submit, review, approve, reject, withdraw, modify cycle.
 
 **Files:**
+
 - `src/mutate/sanctioning/submitApplication.ts`
 - `src/mutate/sanctioning/withdrawApplication.ts`
 - `src/mutate/sanctioning/approveApplication.ts`
@@ -549,6 +560,7 @@ The attached policy ensures TMX (or any client using the factory) **cannot** dev
 **Goal:** Validate proposals against sanctioning policies. This is the "brain" of the engine.
 
 **Files:**
+
 - `src/fixtures/policies/POLICY_SANCTIONING_GENERIC.ts`
 - `src/fixtures/policies/POLICY_SANCTIONING_ITF.ts`
 - `src/validators/sanctioning/validateProposal.ts`
@@ -567,6 +579,7 @@ The attached policy ensures TMX (or any client using the factory) **cannot** dev
 **Goal:** Detect scheduling conflicts based on calendar rules.
 
 **Files:**
+
 - `src/validators/sanctioning/validateCalendarPlacement.ts`
 - `src/query/sanctioning/getCalendarConflicts.ts`
 
@@ -577,6 +590,7 @@ The attached policy ensures TMX (or any client using the factory) **cannot** dev
 **Goal:** Generate a constrained `tournamentRecord` from an approved sanctioning.
 
 **Files:**
+
 - `src/mutate/sanctioning/activateFromSanctioning.ts`
 - `src/mutate/sanctioning/closeApplication.ts`
 - `src/mutate/sanctioning/flagComplianceIssue.ts`
@@ -589,6 +603,7 @@ The attached policy ensures TMX (or any client using the factory) **cannot** dev
 **Goal:** Sport-specific policies, USTA/LTA/Tennis Australia examples.
 
 **Files:**
+
 - `src/fixtures/policies/POLICY_SANCTIONING_USTA.ts`
 - `src/fixtures/policies/POLICY_SANCTIONING_LTA.ts`
 - Additional sport-specific policies as needed
@@ -597,9 +612,10 @@ The attached policy ensures TMX (or any client using the factory) **cannot** dev
 
 ### Phase 8: Server & Client Integration
 
-**Goal:** Integrate with competition-factory-server and TMX.
+**Goal:** Integrate with the server and TMX.
 
 **Scope (outside factory, noted for planning):**
+
 - Server: sanctioning record storage, API endpoints, WebSocket events
 - TMX: sanctioning workflow UI (multi-step form, status dashboard)
 - Admin client: reviewer interface for governing body staff
@@ -611,6 +627,7 @@ The attached policy ensures TMX (or any client using the factory) **cannot** dev
 ### 5.1 Separate Document, Not a Tournament Extension
 
 The sanctioning record is its own first-class document rather than an extension on a tournament record because:
+
 - It has its own lifecycle (can exist before any tournament)
 - It has its own state machine (DRAFT → APPROVED → ACTIVE)
 - Multiple sanctioning records might feed into one tournament (multi-sanctioned events)
@@ -619,6 +636,7 @@ The sanctioning record is its own first-class document rather than an extension 
 ### 5.2 Policy-Driven Validation
 
 Rather than hard-coding rules for ITF/USTA/LTA, all requirements are expressed as **policy documents**. This means:
+
 - New governing bodies can define their own rules without code changes
 - Existing policies can be versioned and updated
 - The engine is sport-agnostic — a pickleball federation can use the same engine with different policies
@@ -626,6 +644,7 @@ Rather than hard-coding rules for ITF/USTA/LTA, all requirements are expressed a
 ### 5.3 Progressive Disclosure / Completeness Model
 
 The engine doesn't force all fields at creation. Instead:
+
 - `getCompleteness()` returns a score (0-100%) and missing fields
 - `getMissingRequirements()` returns what's needed for the current tier
 - `submitApplication()` validates against the policy and blocks if critical fields are missing
@@ -634,6 +653,7 @@ The engine doesn't force all fields at creation. Instead:
 ### 5.4 Extension Points
 
 For org-specific needs beyond the schema:
+
 - `extensions` on every major object (reusing factory pattern)
 - `timeItems` for temporal metadata (deadlines, dates, milestones)
 - Custom policy fields via `extensions` on `SanctioningTier`
@@ -641,6 +661,7 @@ For org-specific needs beyond the schema:
 ### 5.5 Audit Trail
 
 Every state transition is recorded:
+
 - `modifications[]` on the sanctioning record captures change history
 - `reviewNotes[]` captures reviewer feedback
 - `timeItems` capture temporal milestones (submitted, reviewed, approved)
@@ -650,17 +671,17 @@ Every state transition is recorded:
 
 ## 6. Relationship to Existing Factory Systems
 
-| Existing System | Sanctioning Intersection |
-|----------------|--------------------------|
-| **Category** | EventProposal reuses `Category` type for age/rating restrictions |
-| **matchUpFormatCode** | Policies define `allowedMatchUpFormats` per tier; validated using existing parser |
-| **DrawType** | Policies define `allowedDrawTypes` per tier; carried to event `allowedDrawTypes` |
-| **TournamentLevel** | Maps from sanctioning tier to existing `TournamentLevelUnion` |
-| **RankingPoints / AwardProfile** | Sanctioning tier links to `rankingPointsProfile` for points allocation |
-| **RegistrationProfile** | Reused directly in `TournamentProposal` |
-| **Extension / TimeItem** | Reused for extensibility throughout sanctioning schema |
-| **Policy system** | New `POLICY_TYPE_SANCTIONING` integrates with existing `attachPolicies` mechanism |
-| **executionQueue** | Sanctioning engine supports the same directive/pipe pattern |
+| Existing System                  | Sanctioning Intersection                                                          |
+| -------------------------------- | --------------------------------------------------------------------------------- |
+| **Category**                     | EventProposal reuses `Category` type for age/rating restrictions                  |
+| **matchUpFormatCode**            | Policies define `allowedMatchUpFormats` per tier; validated using existing parser |
+| **DrawType**                     | Policies define `allowedDrawTypes` per tier; carried to event `allowedDrawTypes`  |
+| **TournamentLevel**              | Maps from sanctioning tier to existing `TournamentLevelUnion`                     |
+| **RankingPoints / AwardProfile** | Sanctioning tier links to `rankingPointsProfile` for points allocation            |
+| **RegistrationProfile**          | Reused directly in `TournamentProposal`                                           |
+| **Extension / TimeItem**         | Reused for extensibility throughout sanctioning schema                            |
+| **Policy system**                | New `POLICY_TYPE_SANCTIONING` integrates with existing `attachPolicies` mechanism |
+| **executionQueue**               | Sanctioning engine supports the same directive/pipe pattern                       |
 
 ---
 
@@ -700,6 +721,7 @@ interface SanctioningRecord {
 ```
 
 **Design rules:**
+
 - Each governing body gets its own `SanctioningRecord` — no combined applications
 - A `sanctioningRelationship` field indicates whether this is the primary sanction (hierarchical model), secondary (subordinate to another body's sanction), or independent (parallel model like ATP+WTA)
 - The `activateFromSanctioning` bridge should accept multiple sanctioning records when generating a `tournamentRecord`, merging constraints (union of restrictions, intersection of allowed values)
@@ -727,13 +749,13 @@ The USTA "Serve Tennis" platform and BWF's sanctioning portal both handle calend
 ```typescript
 // The engine query accepts injected calendar context:
 getCalendarConflicts({
-  sanctioningRecord,                      // the proposal being checked
-  calendarContext: CalendarContext,        // injected by server or test
-})
+  sanctioningRecord, // the proposal being checked
+  calendarContext: CalendarContext, // injected by server or test
+});
 
 interface CalendarContext {
-  existingEvents: CalendarEvent[];        // all sanctioned events in scope
-  calendarRules: CalendarRules;           // from the governing body's policy
+  existingEvents: CalendarEvent[]; // all sanctioned events in scope
+  calendarRules: CalendarRules; // from the governing body's policy
 }
 
 interface CalendarEvent {
@@ -744,11 +766,12 @@ interface CalendarEvent {
   sanctioningTier?: string;
   calendarSection?: string;
   countryCode?: string;
-  coordinates?: { lat: number; lng: number };  // for proximity calculation
+  coordinates?: { lat: number; lng: number }; // for proximity calculation
 }
 ```
 
 **Design rules:**
+
 - The **algorithm lives in the factory** (pure function, no I/O) — testable without a server
 - The **data comes from the caller** — on the server, fetched from `calendarStorage`; in tests, supplied as fixtures
 - This follows the factory's existing pattern: the engine never fetches data; it operates on what's given to it
@@ -783,19 +806,20 @@ interface SanctioningRecord {
 
 interface Endorsement {
   status: 'PENDING' | 'ENDORSED' | 'DECLINED' | 'NOT_REQUIRED';
-  endorserId?: string;                    // organisation ID of endorsing body
+  endorserId?: string; // organisation ID of endorsing body
   endorserName?: string;
   endorsedAt?: string;
   declinedAt?: string;
   declineReason?: string;
   endorserNotes?: string;
-  endorserContact?: PersonReference;      // who at the federation handled it
-  conditions?: string[];                  // conditions the endorser attached
+  endorserContact?: PersonReference; // who at the federation handled it
+  conditions?: string[]; // conditions the endorser attached
   extensions?: Extension[];
 }
 ```
 
 **Design rules:**
+
 - Endorsement is a **required step** before `submitApplication()` can transition the record to `SUBMITTED` — unless the policy sets `requireEndorsement: false` (for local/club-level events that don't need federation sign-off)
 - The endorsement status is part of the completeness calculation: `getCompleteness()` reports it as a missing requirement when `endorsement.status` is `PENDING`
 - `submitApplication()` checks `endorsement.status === 'ENDORSED'` or policy doesn't require it
@@ -844,10 +868,10 @@ interface ComplianceItem {
   description: string;
   required: boolean;
   status: 'PENDING' | 'SUBMITTED' | 'VERIFIED' | 'OVERDUE' | 'WAIVED';
-  deadline?: string;                      // absolute date
+  deadline?: string; // absolute date
   submittedAt?: string;
   verifiedAt?: string;
-  value?: any;                            // attached data (e.g., result file reference)
+  value?: any; // attached data (e.g., result file reference)
   extensions?: Extension[];
 }
 
@@ -864,6 +888,7 @@ type ComplianceItemType =
 ```
 
 **Design rules:**
+
 - Compliance items are **generated from the sanctioning policy** when the sanctioning record transitions to `POST_EVENT`. The policy's `postEventRequirements` (new field on `SanctioningPolicy`) defines which items are required for each tier, with deadlines expressed as days-after-event
 - Items start as `PENDING` and progress through `SUBMITTED` → `VERIFIED`
 - If a deadline passes without submission, the item becomes `OVERDUE`
@@ -872,6 +897,7 @@ type ComplianceItemType =
 - Keep the checklist **data-light**: the engine tracks what's due and what's been submitted, but the actual result files, financial documents, etc. are stored externally (referenced by `value` or `extensions`). The engine is not a document store
 
 **New policy fields:**
+
 ```typescript
 interface SanctioningPolicy {
   // ... existing fields ...
@@ -882,8 +908,8 @@ interface PostEventRequirement {
   itemType: ComplianceItemType;
   description: string;
   required: boolean;
-  deadlineDays: number;                   // days after tournament endDate
-  tiers?: string[];                       // applies to specific tiers only (all if omitted)
+  deadlineDays: number; // days after tournament endDate
+  tiers?: string[]; // applies to specific tiers only (all if omitted)
 }
 ```
 
@@ -898,6 +924,7 @@ interface PostEventRequirement {
 **Research findings:**
 
 Every governing body researched versions its regulations annually:
+
 - **ITF**: Published annually (e.g., "2025 WTT Regulations", "2026 WTT Regulations"), effective January 1, with a "Summary of Key Rule Changes" document. Changes shown in underlined text.
 - **USTA**: Versioned by year, amendments effective January 1 following adoption. Mid-year conforming changes possible with General Counsel authorization.
 - **FIFA/IFAB**: Annual rule changes, typically effective July 1 (season alignment).
@@ -912,19 +939,20 @@ The factory's existing policy system has **no versioning** — policies are atta
 ```typescript
 interface SanctioningPolicy {
   // ... existing fields ...
-  policyVersion: string;                  // e.g., "2026.1" or "2026-01-01"
-  effectiveDate: string;                  // ISO 8601 — when this version takes effect
-  supersededDate?: string;                // when this version was superseded (if ever)
+  policyVersion: string; // e.g., "2026.1" or "2026-01-01"
+  effectiveDate: string; // ISO 8601 — when this version takes effect
+  supersededDate?: string; // when this version was superseded (if ever)
 }
 
 interface SanctioningRecord {
   // ... existing fields ...
-  policyVersion?: string;                 // locked at submission time
-  policySnapshot?: SanctioningPolicy;     // full policy at time of submission
+  policyVersion?: string; // locked at submission time
+  policySnapshot?: SanctioningPolicy; // full policy at time of submission
 }
 ```
 
 **Design rules:**
+
 - Policies carry a `policyVersion` and `effectiveDate`. The engine resolves which policy version is current based on `effectiveDate <= now && !supersededDate`
 - On `submitApplication()`, the current policy version is recorded on the sanctioning record (`policyVersion` field) and a deep copy of the policy is stored as `policySnapshot`. All subsequent validation for this record uses the snapshot, not the live policy
 - This matches real-world practice: the 2026 ITF rules govern a tournament sanctioned under the 2026 rules, even if the 2027 rules are published before the tournament takes place
@@ -964,19 +992,19 @@ interface Amendment {
   status: 'PROPOSED' | 'UNDER_REVIEW' | 'APPROVED' | 'REJECTED';
   proposedAt: string;
   resolvedAt?: string;
-  proposedBy?: string;                    // applicant or governing body
+  proposedBy?: string; // applicant or governing body
   reviewerNotes?: string;
 
   // What changed — structured diff
   changes: ProposalChange[];
 
   // Classification
-  severity: 'MINOR' | 'SUBSTANTIAL';     // derived from policy rules
-  withinTimeline: boolean;                // is this within the allowed modification window
+  severity: 'MINOR' | 'SUBSTANTIAL'; // derived from policy rules
+  withinTimeline: boolean; // is this within the allowed modification window
 }
 
 interface ProposalChange {
-  field: string;                          // dot-path: "proposal.proposedStartDate", "proposal.events[0].drawSize"
+  field: string; // dot-path: "proposal.proposedStartDate", "proposal.events[0].drawSize"
   previousValue: any;
   proposedValue: any;
   changeType: 'MODIFIED' | 'ADDED' | 'REMOVED';
@@ -984,6 +1012,7 @@ interface ProposalChange {
 ```
 
 **New policy fields:**
+
 ```typescript
 interface SanctioningPolicy {
   // ... existing fields ...
@@ -992,22 +1021,23 @@ interface SanctioningPolicy {
 
 interface AmendmentRules {
   // What constitutes a substantial change (everything else is minor)
-  substantialChangeFields?: string[];     // e.g., ["proposedStartDate", "proposedEndDate", "sanctioningTier", "events.*.drawSize"]
+  substantialChangeFields?: string[]; // e.g., ["proposedStartDate", "proposedEndDate", "sanctioningTier", "events.*.drawSize"]
 
   // Timeline gates
-  noChangeWindowWeeks?: number;           // weeks before event when NO changes allowed (ITF: 9)
-  substantialChangeWindowWeeks?: number;  // weeks before event when substantial changes require re-review (BWF: 13)
+  noChangeWindowWeeks?: number; // weeks before event when NO changes allowed (ITF: 9)
+  substantialChangeWindowWeeks?: number; // weeks before event when substantial changes require re-review (BWF: 13)
 
   // Financial
   prizeMoneyIncrease?: 'ALLOWED' | 'REQUIRES_REVIEW' | 'PROHIBITED';
-  prizeMoneyDecrease?: 'ALLOWED' | 'REQUIRES_REVIEW' | 'PROHIBITED';  // BWF: prohibited
+  prizeMoneyDecrease?: 'ALLOWED' | 'REQUIRES_REVIEW' | 'PROHIBITED'; // BWF: prohibited
 
   // Penalties
-  lateChangePenalty?: boolean;            // flag for the governing body's attention
+  lateChangePenalty?: boolean; // flag for the governing body's attention
 }
 ```
 
 **Design rules:**
+
 - The sanctioning record stays in `APPROVED` status throughout the amendment process — it doesn't re-enter `UNDER_REVIEW`. Amendments have their own mini-lifecycle (`PROPOSED` → `APPROVED`/`REJECTED`)
 - `proposeAmendment()` automatically classifies severity by checking `amendmentRules.substantialChangeFields`. If the changed field is in that list, it's `SUBSTANTIAL`; otherwise `MINOR`
 - Minor amendments within the allowed timeline can be **auto-approved** by the engine (no reviewer needed) — policy-configurable
@@ -1062,6 +1092,7 @@ interface WorkflowOverrides {
 **Current:** `submitApplication()` has a hardcoded endorsement check. No other transition has precondition validation beyond the state machine itself.
 
 **Problem:** Policies can't define "what must be true before this transition is allowed." For example:
+
 - ITF W75+: require minimum 8 courts before approval (currently only checked by `validateProposal`, not enforced at transition time)
 - USTA Level 1: require minimum 225 participants registered before activation
 - BWF: require prize money deposit confirmation before approval
@@ -1077,9 +1108,9 @@ interface SanctioningPolicy {
 interface TransitionGuard {
   transition: { from: SanctioningStatus; to: SanctioningStatus };
   guard: 'ENDORSEMENT_REQUIRED' | 'PROPOSAL_VALID' | 'ALL_CONDITIONS_MET' | 'COMPLIANCE_COMPLETE' | 'CUSTOM';
-  customGuardField?: string;   // for CUSTOM: dot-path field that must be truthy
-  message?: string;            // error message when guard fails
-  tiers?: string[];            // only apply to specific tiers
+  customGuardField?: string; // for CUSTOM: dot-path field that must be truthy
+  message?: string; // error message when guard fails
+  tiers?: string[]; // only apply to specific tiers
 }
 ```
 
@@ -1100,17 +1131,18 @@ interface TransitionGuard {
 ```typescript
 interface SanctioningRecord {
   // ... existing ...
-  endorsements?: Endorsement[];  // ordered by endorsement level
+  endorsements?: Endorsement[]; // ordered by endorsement level
 }
 
 interface Endorsement {
   // ... existing fields ...
-  endorsementLevel?: number;     // 1 = first required, 2 = second, etc.
+  endorsementLevel?: number; // 1 = first required, 2 = second, etc.
   prerequisiteEndorserId?: string; // must be endorsed before this one can be requested
 }
 ```
 
 **Implementation:**
+
 - `requestEndorsement()` pushes to the array instead of replacing the single object
 - `endorseApplication()` accepts an `endorserId` to identify which endorsement to update
 - `submitApplication()` checks that ALL required endorsements (defined by policy) are met
@@ -1161,9 +1193,7 @@ function findPersonnelForRole(proposal: TournamentProposal, role: PersonnelRole)
 
 ```typescript
 export function getCalendarConflicts({ sanctioningRecord, calendarContext }) {
-  const rules = calendarContext.calendarRules
-    ?? sanctioningRecord.policySnapshot?.calendarRules
-    ?? {};
+  const rules = calendarContext.calendarRules ?? sanctioningRecord.policySnapshot?.calendarRules ?? {};
   // ... use rules ...
 }
 ```
@@ -1185,9 +1215,10 @@ export function getCalendarConflicts({ sanctioningRecord, calendarContext }) {
 ```typescript
 export function submitApplication({ sanctioningRecord, sanctioningPolicy, priorRecords }) {
   if (priorRecords?.length) {
-    const hasOutstanding = priorRecords.some(r =>
-      r.compliance?.status === 'ISSUES_FLAGGED' ||
-      r.compliance?.items?.some(i => i.status === 'OVERDUE' && i.required)
+    const hasOutstanding = priorRecords.some(
+      (r) =>
+        r.compliance?.status === 'ISSUES_FLAGGED' ||
+        r.compliance?.items?.some((i) => i.status === 'OVERDUE' && i.required),
     );
     if (hasOutstanding) return { error: OUTSTANDING_COMPLIANCE };
   }
@@ -1224,7 +1255,7 @@ export function checkComplianceDeadlines({ sanctioningRecord }) {
 }
 ```
 
-**Implementation:** Add to engine as a query/mutation. The server calls it periodically (via n8n health check) or before returning compliance data. Mentat's health-monitor agent could trigger this daily.
+**Implementation:** Add to engine as a query/mutation. The server calls it periodically (via a health check) or before returning compliance data.
 
 **Complexity:** Low.
 
@@ -1253,29 +1284,29 @@ export function resubmitUnderCurrentPolicy({ sanctioningRecord, sanctioningPolic
 
 ### Summary: Priority Order
 
-| Gap | Severity | Complexity | Recommendation |
-|-----|----------|------------|----------------|
-| 5. Calendar rules from policy | Low | Trivial | Fix immediately |
-| 4. Personnel certification | Medium | Low | Fix next |
-| 7. Auto-OVERDUE detection | Medium | Low | Fix next |
-| 6. Prior-compliance gate | Medium | Low | Implement with server integration |
-| 3. Multi-endorsement | Medium | Low-Medium | Implement when ITF/USTA policies are actively used |
-| 2. Transition guards | High | Medium | Implement to unlock policy-driven workflows |
-| 1. Workflow overrides | High | Medium | Implement after transition guards |
-| 8. Resubmit under new policy | Low | Low | Implement on demand |
+| Gap                           | Severity | Complexity | Recommendation                                     |
+| ----------------------------- | -------- | ---------- | -------------------------------------------------- |
+| 5. Calendar rules from policy | Low      | Trivial    | Fix immediately                                    |
+| 4. Personnel certification    | Medium   | Low        | Fix next                                           |
+| 7. Auto-OVERDUE detection     | Medium   | Low        | Fix next                                           |
+| 6. Prior-compliance gate      | Medium   | Low        | Implement with server integration                  |
+| 3. Multi-endorsement          | Medium   | Low-Medium | Implement when ITF/USTA policies are actively used |
+| 2. Transition guards          | High     | Medium     | Implement to unlock policy-driven workflows        |
+| 1. Workflow overrides         | High     | Medium     | Implement after transition guards                  |
+| 8. Resubmit under new policy  | Low      | Low        | Implement on demand                                |
 
 ---
 
 ## 9. File Summary
 
-| Phase | New Files | New Tests |
-|-------|----------|-----------|
-| 1 - Foundation | 3 | ~10 |
-| 2 - Core Engine | 10 | ~25 |
-| 3 - Workflow | 10 | ~20 |
-| 4 - Policy Validation | 8 | ~30 |
-| 5 - Calendar | 2 | ~10 |
-| 6 - Tournament Generation | 4 | ~15 |
-| 7 - Additional Policies | 2-5 | ~10 |
-| 8 - Server/Client | (outside factory) | — |
-| **Total** | **~40-43** | **~120** |
+| Phase                     | New Files         | New Tests |
+| ------------------------- | ----------------- | --------- |
+| 1 - Foundation            | 3                 | ~10       |
+| 2 - Core Engine           | 10                | ~25       |
+| 3 - Workflow              | 10                | ~20       |
+| 4 - Policy Validation     | 8                 | ~30       |
+| 5 - Calendar              | 2                 | ~10       |
+| 6 - Tournament Generation | 4                 | ~15       |
+| 7 - Additional Policies   | 2-5               | ~10       |
+| 8 - Server/Client         | (outside factory) | —         |
+| **Total**                 | **~40-43**        | **~120**  |

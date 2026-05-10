@@ -18,6 +18,7 @@ export const POLICY_TYPE_SANCTIONING = 'sanctioning';
 export const POLICY_TYPE_AUDIT = 'audit';
 export const POLICY_TYPE_COMPETITION = 'competition';
 export const POLICY_TYPE_DRAWS = 'draws';
+export const POLICY_TYPE_PRINT = 'print';
 
 export type ValidPolicyTypes =
   | typeof POLICY_TYPE_VOLUNTARY_CONSOLATION
@@ -39,7 +40,8 @@ export type ValidPolicyTypes =
   | typeof POLICY_TYPE_SEEDING
   | typeof POLICY_TYPE_SANCTIONING
   | typeof POLICY_TYPE_AUDIT
-  | typeof POLICY_TYPE_DRAWS;
+  | typeof POLICY_TYPE_DRAWS
+  | typeof POLICY_TYPE_PRINT;
 
 export const policyConstants = {
   POLICY_TYPE_VOLUNTARY_CONSOLATION,
@@ -62,4 +64,5 @@ export const policyConstants = {
   POLICY_TYPE_SANCTIONING,
   POLICY_TYPE_AUDIT,
   POLICY_TYPE_DRAWS,
+  POLICY_TYPE_PRINT,
 } as const;

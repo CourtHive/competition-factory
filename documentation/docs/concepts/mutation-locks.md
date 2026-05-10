@@ -6,7 +6,7 @@ title: Mutation Locks
 
 Mutation locks provide concurrency control for scoped mutations within a tournament record. They allow a calling application to restrict who can perform certain operations — like scheduling, scoring, or draw modifications — by requiring a matching `lockToken` on mutation calls.
 
-The factory is **agnostic to user identity**. It stores locks as [extensions](./extensions) and performs a simple string equality check on `lockToken`. The calling application (TMX, competition-factory-server) handles identity, authorization, and token issuance.
+The factory is **agnostic to user identity**. It stores locks as [extensions](./extensions) and performs a simple string equality check on `lockToken`. The calling application handles identity, authorization, and token issuance.
 
 ### Key Concepts
 

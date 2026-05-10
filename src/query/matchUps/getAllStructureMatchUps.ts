@@ -3,6 +3,8 @@ import { structureAssignedDrawPositions } from '@Query/drawDefinition/positionsG
 import { resolveTieFormat } from '@Query/hierarchical/tieFormats/resolveTieFormat';
 import { getCollectionPositionMatchUps } from './getCollectionPositionMatchUps';
 import { getMatchUpsMap, getMappedStructureMatchUps } from './getMatchUpsMap';
+import { resolveCompetitiveBands } from '@Query/matchUp/resolveCompetitiveBands';
+import { getMatchUpCompetitiveProfile } from '@Query/matchUp/getMatchUpCompetitiveProfile';
 import { hydrateParticipants } from '@Query/participants/hydrateParticipants';
 import { getSourceDrawPositionRanges } from './getSourceDrawPositionRanges';
 import { getAppliedPolicies } from '@Query/extensions/getAppliedPolicies';
@@ -222,6 +224,16 @@ export function getAllStructureMatchUps(params: GetAllStructureMatchUps) {
     });
   } else {
     matchUps = appendTieMatchUps(matchUps);
+    if (contextProfile?.withCompetitiveness) {
+      matchUps = enrichMatchUpsWithCompetitiveProfile({
+        policyDefinitions: params.policyDefinitions,
+        tournamentRecord,
+        drawDefinition,
+        structure,
+        matchUps,
+        event,
+      });
+    }
   }
 
   // must make a pass after tieMatchUps have been added
@@ -269,6 +281,29 @@ function appendTieMatchUps(matchUps) {
     result = result.concat(...matchUpTie.tieMatchUps);
   });
   return result;
+}
+
+function enrichMatchUpsWithCompetitiveProfile({
+  policyDefinitions,
+  tournamentRecord,
+  drawDefinition,
+  structure,
+  matchUps,
+  event,
+}) {
+  const profileBands = resolveCompetitiveBands({
+    policyDefinitions,
+    tournamentRecord,
+    drawDefinition,
+    structure,
+    event,
+  });
+  return matchUps.map((matchUp) => {
+    if (matchUp.competitiveProfile || !matchUp.winningSide) return matchUp;
+    const competitiveProfile = getMatchUpCompetitiveProfile({ profileBands, matchUp });
+    if (competitiveProfile.error) return matchUp;
+    return { ...matchUp, competitiveProfile };
+  });
 }
 
 function hydrateMatchUpsInContext({

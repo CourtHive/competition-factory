@@ -356,7 +356,10 @@ function processMatchUp({ matchUp, accuracy, excludeMargin, exclusionRule, value
     return;
   }
 
-  const signedGap = ascending ? valuesGap : valuesGap * -1;
+  // signedGap > 0 ⇒ rating-favored player won (affirmative).
+  // For ascending: false the higher value is stronger (UTR, ELO, NTRP, …) so favored-wins ⇔ valuesGap > 0.
+  // For ascending: true the lower value is stronger (WTN, BWF rank, …) so favored-wins ⇔ valuesGap < 0.
+  const signedGap = ascending ? -valuesGap : valuesGap;
   const winningScoreString = winningSide === 1 ? score?.scoreStringSide1 : score?.scoreStringSide2;
 
   if (signedGap > 0) {

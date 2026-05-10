@@ -3,6 +3,7 @@ import { validMatchUps } from '@Validators/validMatchUp';
 import { findPolicy } from '@Acquire/findPolicy';
 
 import POLICY_COMPETITIVE_BANDS_DEFAULT from '@Fixtures/policies/POLICY_COMPETITIVE_BANDS_DEFAULT';
+import { DEFAULTED, WALKOVER as WALKOVER_STATUS } from '@Constants/matchUpStatusConstants';
 import { POLICY_TYPE_COMPETITIVE_BANDS } from '@Constants/policyConstants';
 import { MISSING_MATCHUPS } from '@Constants/errorConditionConstants';
 import { SUCCESS } from '@Constants/resultConstants';
@@ -25,6 +26,10 @@ export function getMatchUpsStats({ profileBands, tournamentRecord, matchUps }) {
 
   const relevantMatchUps = matchUps.filter(({ winningSide }) => winningSide);
 
+  const walkoverCount = relevantMatchUps.filter(
+    ({ matchUpStatus }) => matchUpStatus === WALKOVER_STATUS || matchUpStatus === DEFAULTED,
+  ).length;
+
   const gamesMap = relevantMatchUps.map(getScoreComponents);
 
   const categorize = (p, spread) => {
@@ -37,7 +42,7 @@ export function getMatchUpsStats({ profileBands, tournamentRecord, matchUps }) {
     [COMPETITIVE]: 0,
     [ROUTINE]: 0,
     [DECISIVE]: 0,
-    [WALKOVER]: 0,
+    [WALKOVER]: walkoverCount,
   });
   const total: number = Object.keys(pctspd).reduce((a, k) => (pctspd[k] || 0) + a, 0);
 

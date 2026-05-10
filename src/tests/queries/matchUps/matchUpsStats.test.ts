@@ -6,8 +6,11 @@ import { instanceCount } from '@Tools/arrays';
 import { expect, it, describe } from 'vitest';
 
 // constants
-import { COMPETITIVE, DECISIVE, ROUTINE } from '@Constants/statsConstants';
+import { COMPETITIVE, DECISIVE, ROUTINE, WALKOVER } from '@Constants/statsConstants';
+import { DEFAULTED, WALKOVER as WALKOVER_STATUS } from '@Constants/matchUpStatusConstants';
 import { MISSING_EVENT } from '@Constants/errorConditionConstants';
+import { ROUND_ROBIN } from '@Constants/drawDefinitionConstants';
+import { SINGLES } from '@Constants/eventConstants';
 
 it('can generate competitive statistics for matchUps and add competitiveness', () => {
   const mocksProfile = {
@@ -109,6 +112,74 @@ it('can determine competitive band for matchUps', () => {
   );
 
   expect(competitiveness).toEqual([DECISIVE, ROUTINE, COMPETITIVE, DECISIVE]);
+});
+
+describe('walkover outcomes do not produce NaN pctSpread', () => {
+  it('getMatchUpCompetitiveProfile returns undefined pctSpread + WALKOVER band for a walkover matchUp', () => {
+    const { tournamentRecord } = mocksEngine.generateTournamentRecord({
+      drawProfiles: [
+        {
+          drawSize: 4,
+          drawType: ROUND_ROBIN,
+          eventType: SINGLES,
+          outcomes: [
+            { drawPositions: [1, 2], matchUpStatus: WALKOVER_STATUS, winningSide: 1 },
+            { drawPositions: [1, 3], scoreString: '6-3 6-3', winningSide: 1 },
+            { drawPositions: [1, 4], scoreString: '6-2 6-2', winningSide: 1 },
+            { drawPositions: [2, 3], matchUpStatus: DEFAULTED, winningSide: 2 },
+            { drawPositions: [2, 4], scoreString: '6-1 6-1', winningSide: 2 },
+            { drawPositions: [3, 4], scoreString: '6-0 6-0', winningSide: 1 },
+          ],
+        },
+      ],
+    });
+    tournamentEngine.setState(tournamentRecord);
+    const { matchUps } = tournamentEngine.allTournamentMatchUps();
+
+    const walkoverMatchUp = matchUps.find((m) => m.matchUpStatus === WALKOVER_STATUS);
+    const walkoverProfile = tournamentEngine.getMatchUpCompetitiveProfile({ matchUp: walkoverMatchUp });
+    expect(walkoverProfile.competitiveness).toEqual(WALKOVER);
+    expect(walkoverProfile.pctSpread).toBeUndefined();
+
+    const defaultedMatchUp = matchUps.find((m) => m.matchUpStatus === DEFAULTED);
+    const defaultedProfile = tournamentEngine.getMatchUpCompetitiveProfile({ matchUp: defaultedMatchUp });
+    expect(defaultedProfile.competitiveness).toEqual(WALKOVER);
+    expect(defaultedProfile.pctSpread).toBeUndefined();
+
+    const playedMatchUp = matchUps.find((m) => m.matchUpStatus !== WALKOVER_STATUS && m.matchUpStatus !== DEFAULTED);
+    const playedProfile = tournamentEngine.getMatchUpCompetitiveProfile({ matchUp: playedMatchUp });
+    expect(playedProfile.competitiveness).not.toEqual(WALKOVER);
+    expect(Number.isFinite(playedProfile.pctSpread)).toEqual(true);
+  });
+
+  it('getMatchUpsStats counts walkovers in the WALKOVER band and bands sum to 100%', () => {
+    const { tournamentRecord } = mocksEngine.generateTournamentRecord({
+      drawProfiles: [
+        {
+          drawSize: 4,
+          drawType: ROUND_ROBIN,
+          eventType: SINGLES,
+          outcomes: [
+            { drawPositions: [1, 2], matchUpStatus: WALKOVER_STATUS, winningSide: 1 },
+            { drawPositions: [1, 3], scoreString: '6-3 6-3', winningSide: 1 },
+            { drawPositions: [1, 4], scoreString: '6-2 6-2', winningSide: 1 },
+            { drawPositions: [2, 3], matchUpStatus: DEFAULTED, winningSide: 2 },
+            { drawPositions: [2, 4], scoreString: '6-1 6-1', winningSide: 2 },
+            { drawPositions: [3, 4], scoreString: '6-0 6-0', winningSide: 1 },
+          ],
+        },
+      ],
+    });
+    tournamentEngine.setState(tournamentRecord);
+    const { matchUps } = tournamentEngine.allTournamentMatchUps();
+
+    const result = tournamentEngine.getMatchUpsStats({ matchUps });
+    expect(result.success).toEqual(true);
+    expect(result.competitiveBands[WALKOVER]).toBeGreaterThan(0);
+
+    const sum = (Object.values(result.competitiveBands) as number[]).reduce((a, b) => a + b, 0);
+    expect(Math.round(sum)).toEqual(100);
+  });
 });
 
 describe('allEventMatchUps branch coverage', () => {
