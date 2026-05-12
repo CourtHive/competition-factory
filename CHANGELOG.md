@@ -1,5 +1,17 @@
 # Changelog
 
+## [3.4.3](https://github.com/CourtHive/competition-factory/compare/v3.4.2...v3.4.3) (2026-05-12)
+
+
+### Bug Fixes
+
+* **scheduling:** default to POLICY_SCHEDULING_DEFAULT + parse timed formats ([bc37974](https://github.com/CourtHive/competition-factory/commit/bc3797498c4472834ab5bbec0741e22f82c02237))
+
+
+### Documentation
+
+* **policies:** document withCompetitiveness + inContext:false path ([596995b](https://github.com/CourtHive/competition-factory/commit/596995b567a46856bbeb43ad96d607a234114919))
+
 ## [3.4.2](https://github.com/CourtHive/competition-factory/compare/v3.4.1...v3.4.2) (2026-05-09)
 
 
