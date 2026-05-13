@@ -42,6 +42,23 @@ it('will not schedule RR PLAY_OFF rounds before MAIN rounds', () => {
 
   competitionEngine.setState(tournamentRecord);
 
+  // Pin scheduling to the legacy 90/0 defaults with no daily limits.
+  // POLICY_SCHEDULING_DEFAULT is now the implicit fallback (longer
+  // recoveries plus 3-matches-per-day limit) which would block the
+  // PLAY_OFFs from running same-day for capacity reasons. This test is
+  // about DEPENDENCY-based deferral, not capacity, so we attach a
+  // permissive inline policy to keep the slot math stable.
+  competitionEngine.attachPolicies({
+    policyDefinitions: {
+      scheduling: {
+        defaultTimes: {
+          averageTimes: [{ minutes: { default: 90 } }],
+          recoveryTimes: [{ minutes: { default: 0 } }],
+        },
+      },
+    },
+  });
+
   const { rounds: derivedRounds } = competitionEngine.getRounds();
 
   // even if the rounds are shuffled to be "out of order" the test will still work

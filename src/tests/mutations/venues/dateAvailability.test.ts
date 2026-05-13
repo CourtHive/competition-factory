@@ -168,6 +168,20 @@ it('can add events, venues, and modify court availbility', () => {
   let result = tournamentEngine.setState(tournamentRecord);
   expect(result.success).toEqual(true);
 
+  // Pin scheduling to legacy 90/0 timing. POLICY_SCHEDULING_DEFAULT is now
+  // the implicit fallback; its longer recoveries would shift the times in
+  // the matchUpScheduleTimes array asserted below.
+  tournamentEngine.attachPolicies({
+    policyDefinitions: {
+      scheduling: {
+        defaultTimes: {
+          averageTimes: [{ minutes: { default: 90 } }],
+          recoveryTimes: [{ minutes: { default: 0 } }],
+        },
+      },
+    },
+  });
+
   let { courts } = tournamentEngine.getCourts();
   expect(courts.length).toEqual(3);
   const courtId = courts[0].courtId;

@@ -39,8 +39,11 @@ test.each([tournamentEngine])(
       categoryType: JUNIOR,
       matchUpFormat,
     });
+    // Without an attached policy, POLICY_SCHEDULING_DEFAULT acts as the
+    // built-in fallback. FORMAT_STANDARD for JUNIOR resolves to 90 min
+    // average + 60 min recovery from the default policy.
     expect(result.averageMinutes).toEqual(90);
-    expect(result.recoveryMinutes).toEqual(0);
+    expect(result.recoveryMinutes).toEqual(60);
 
     result = tournamentEngine.modifyMatchUpFormatTiming({
       averageTimes: [{ categoryTypes: [JUNIOR], minutes: { default: 127 } }],
@@ -91,5 +94,31 @@ test.each([tournamentEngine])(
       matchUpFormats: [matchUpFormat],
     });
     expect(result.eventMatchUpFormatTiming[0].averageMinutes).toEqual(127);
+  },
+);
+
+// Timed-format defaults derived from the matchUpFormat code itself —
+// applies when neither an attached policy nor POLICY_SCHEDULING_DEFAULT
+// enumerates the format. Best-of-N timed matches use the worst-case
+// total: bestOf × setMinutes (or (bestOf - 1) × setMinutes + finalSetMinutes
+// when a final-set time differs), with whole-match -M:T<n> caps winning
+// outright.
+test.each([
+  { matchUpFormat: 'SET1-S:T20', expectedMinutes: 20 },
+  { matchUpFormat: 'SET3-S:T15', expectedMinutes: 45 },
+  { matchUpFormat: 'SET5-S:T10', expectedMinutes: 50 },
+  // Final-set time differs from regular sets.
+  { matchUpFormat: 'SET3-S:T15-F:T10', expectedMinutes: 40 },
+])(
+  'derives default averageMinutes from timed matchUpFormat ($matchUpFormat → $expectedMinutes)',
+  ({ matchUpFormat, expectedMinutes }) => {
+    const { tournamentRecord } = mocksEngine.generateTournamentRecord({
+      drawProfiles: [{ drawSize: 4 }],
+      startDate: '2022-01-01',
+      endDate: '2022-01-03',
+    });
+    tournamentEngine.setState(tournamentRecord);
+    const result = tournamentEngine.findMatchUpFormatTiming({ matchUpFormat });
+    expect(result.averageMinutes).toEqual(expectedMinutes);
   },
 );

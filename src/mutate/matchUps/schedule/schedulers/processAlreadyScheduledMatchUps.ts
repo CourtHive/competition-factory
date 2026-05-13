@@ -2,9 +2,10 @@ import { modifyParticipantMatchUpsCount } from '@Mutate/matchUps/schedule/schedu
 import { updateTimeAfterRecovery } from '@Mutate/matchUps/schedule/scheduleMatchUps/updateTimeAfterRecovery';
 import { getMatchUpId } from '@Functions/global/extractors';
 import { hasSchedule } from '@Query/matchUp/hasSchedule';
+import { extractDate } from '@Tools/dateTime';
 
 // constants and types
-import { BYE } from '@Constants/matchUpStatusConstants';
+import { BYE, COMPLETED } from '@Constants/matchUpStatusConstants';
 import { HydratedMatchUp } from '@Types/hydrated';
 
 type ProcessAlreadyScheduledMatchUpsArgs = {
@@ -15,7 +16,9 @@ type ProcessAlreadyScheduledMatchUpsArgs = {
   individualParticipantProfiles: any;
   dateScheduledMatchUpIds: string[];
   greatestAverageMinutes?: number;
+  excludeNoDateCompleted?: boolean;
   clearScheduleDates?: boolean;
+  excludePriorDates?: boolean;
   matchUps: HydratedMatchUp[];
   matchUpDependencies: any;
   scheduleDate: string;
@@ -24,11 +27,13 @@ type ProcessAlreadyScheduledMatchUpsArgs = {
 export function processAlreadyScheduledMatchUps({
   matchUpPotentialParticipantIds,
   individualParticipantProfiles,
+  excludeNoDateCompleted = true,
   dateScheduledMatchUpIds,
   greatestAverageMinutes,
   dateScheduledMatchUps,
   matchUpNotBeforeTimes,
   matchUpScheduleTimes,
+  excludePriorDates = true,
   matchUpDependencies,
   clearScheduleDates,
   scheduleDate,
@@ -65,7 +70,28 @@ export function processAlreadyScheduledMatchUps({
     ? []
     : matchUps.filter(({ matchUpId }) => dateScheduledMatchUpIds.includes(matchUpId));
 
+  // Exclude historical/orphan matchUps from contributing to the day's per-participant
+  // counters. The Day Plan defines what is being scheduled today; matchUps that
+  // (a) completed without ever carrying a scheduledDate, or (b) carry a scheduledDate
+  // strictly prior to the day being scheduled, must not consume a participant's
+  // daily-limit budget for today. Both checks default on; callers wanting the legacy
+  // behavior can opt back in by passing the flag as false.
+  const targetDate = excludePriorDates && scheduleDate ? extractDate(scheduleDate) : undefined;
+  const shouldExclude = (matchUp: HydratedMatchUp) => {
+    const schedule = matchUp.schedule ?? {};
+    const matchUpStatus = matchUp.matchUpStatus;
+    const isCompletedOrBye = matchUpStatus === COMPLETED || matchUpStatus === BYE;
+    if (excludeNoDateCompleted && isCompletedOrBye && !schedule.scheduledDate) return true;
+    if (targetDate && schedule.scheduledDate) {
+      const matchUpDate = extractDate(schedule.scheduledDate);
+      if (matchUpDate && matchUpDate < targetDate) return true;
+    }
+    return false;
+  };
+
   for (const matchUp of alreadyScheduled) {
+    if (shouldExclude(matchUp)) continue;
+
     modifyParticipantMatchUpsCount({
       matchUpPotentialParticipantIds,
       individualParticipantProfiles,

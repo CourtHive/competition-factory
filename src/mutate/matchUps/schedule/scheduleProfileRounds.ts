@@ -23,7 +23,9 @@ type ScheduleProfileRoundsArgs = {
   checkPotentialRequestConflicts?: boolean;
   tournamentRecords: TournamentRecords;
   scheduleCompletedMatchUps?: boolean;
+  excludeNoDateCompleted?: boolean;
   clearScheduleDates?: boolean;
+  excludePriorDates?: boolean;
   scheduleDates?: string[];
   periodLength?: number;
   useGarman?: boolean;
@@ -35,7 +37,9 @@ type ScheduleProfileRoundsArgs = {
 export function scheduleProfileRounds(params: ScheduleProfileRoundsArgs) {
   const {
     checkPotentialRequestConflicts = true,
+    excludeNoDateCompleted = true,
     scheduleCompletedMatchUps,
+    excludePriorDates = true,
     clearScheduleDates,
     scheduleDates = [],
     tournamentRecords,
@@ -147,11 +151,13 @@ export function scheduleProfileRounds(params: ScheduleProfileRoundsArgs) {
     schedulingProfileModifications,
     checkPotentialRequestConflicts,
     scheduleCompletedMatchUps,
+    excludeNoDateCompleted,
     schedulingProfileIssues,
     dateSchedulingProfiles,
     containedStructureIds,
     matchUpDependencies,
     matchUpDailyLimits,
+    excludePriorDates,
     clearScheduleDates,
     tournamentRecords,
     schedulingProfile,

@@ -260,8 +260,24 @@ engine.scheduleProfileRounds({
   dryRun, // optional boolean - preview without changes
   pro, // optional boolean - use grid scheduling instead of Garman
   checkPotentialRequestConflicts, // optional boolean (default: true)
+
+  // Daily-limit accounting (apply to already-scheduled matchUps that contribute
+  // to per-participant per-day counters)
+  excludeNoDateCompleted, // optional boolean (default: true) - skip COMPLETED/BYE
+  // matchUps that carry no scheduledDate
+  excludePriorDates, // optional boolean (default: true) - skip matchUps whose
+  // scheduledDate is strictly before the date being scheduled
 });
 ```
+
+**Daily-limit accounting with `excludeNoDateCompleted` / `excludePriorDates`**:
+
+The Day Plan defines what is being scheduled today. When the scheduler reconciles already-scheduled matchUps against the per-participant daily limits in the scheduling policy, historical or orphan matchUps should not consume today's budget:
+
+- `excludeNoDateCompleted` (default `true`) drops `COMPLETED` and `BYE` matchUps that carry no `scheduledDate`. These represent finished play that was never anchored to a specific day; counting them would block legitimate scheduling for the day in question.
+- `excludePriorDates` (default `true`) drops matchUps whose `scheduledDate` is strictly before the date being scheduled. This is a defensive filter: in normal flow same-day filtering already excludes them, but the flag guarantees historical records never leak into a future day's counters.
+
+Set either flag to `false` to restore the pre-defaults legacy semantics where every matchUp in the already-scheduled set consumes its participants' daily-limit budget regardless of status or date.
 
 **Court filtering with `courtIds`**:
 

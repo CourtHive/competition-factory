@@ -23,6 +23,20 @@ test('supports v2 scheduler', () => {
   });
 
   tournamentEngine.setState(tournamentRecord);
+  // Pin to the legacy 90/0 scheduling defaults so the scheduler-output
+  // expectations below stay stable. POLICY_SCHEDULING_DEFAULT is now the
+  // implicit fallback and its longer recoveries + daily limits would
+  // change the per-day slot math.
+  tournamentEngine.attachPolicies({
+    policyDefinitions: {
+      scheduling: {
+        defaultTimes: {
+          averageTimes: [{ minutes: { default: 90 } }],
+          recoveryTimes: [{ minutes: { default: 0 } }],
+        },
+      },
+    },
+  });
 
   const tournamentDateRange = generateDateRange(startDate, endDate);
   const { rounds } = tournamentEngine.getRounds();
@@ -115,6 +129,18 @@ test('scheduling v2 respects DO_NOT_SCHEDULE requests', () => {
     tournamentName: 'New Tournament',
     startDate,
     endDate,
+  });
+  // Pin to legacy 90/0 timing so the scheduler-output expectations stay
+  // stable under the new POLICY_SCHEDULING_DEFAULT implicit fallback.
+  tournamentEngine.attachPolicies({
+    policyDefinitions: {
+      scheduling: {
+        defaultTimes: {
+          averageTimes: [{ minutes: { default: 90 } }],
+          recoveryTimes: [{ minutes: { default: 0 } }],
+        },
+      },
+    },
   });
 
   const {

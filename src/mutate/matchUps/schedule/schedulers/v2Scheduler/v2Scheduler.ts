@@ -550,11 +550,13 @@ type V2Scheduler = {
   tournamentRecords: TournamentRecords;
   scheduleCompletedMatchUps?: boolean;
   schedulingProfileModifications: any;
+  excludeNoDateCompleted?: boolean;
   personRequests?: PersonRequests;
   containedStructureIds: string[];
   schedulingProfileIssues?: any[];
   dateSchedulingProfiles: any[];
   matchUps?: HydratedMatchUp[];
+  excludePriorDates?: boolean;
   clearScheduleDates?: boolean;
   matchUpDailyLimits?: any;
   courts: HydratedCourt[];
@@ -567,11 +569,13 @@ export function v2Scheduler({
   schedulingProfileModifications,
   checkPotentialRequestConflicts,
   scheduleCompletedMatchUps, // override which can be used by mocksEngine
+  excludeNoDateCompleted,
   schedulingProfileIssues,
   dateSchedulingProfiles,
   containedStructureIds,
   matchUpDependencies,
   matchUpDailyLimits,
+  excludePriorDates,
   clearScheduleDates,
   tournamentRecords,
   periodLength = 30,
@@ -636,10 +640,12 @@ export function v2Scheduler({
       matchUpPotentialParticipantIds,
       individualParticipantProfiles,
       scheduleCompletedMatchUps,
+      excludeNoDateCompleted,
       containedStructureIds,
       matchUpNotBeforeTimes,
       matchUpScheduleTimes,
       matchUpDependencies,
+      excludePriorDates,
       clearScheduleDates,
       tournamentRecords,
       periodLength,

@@ -47,9 +47,12 @@ it.each([
       eventType,
       eventId,
     });
-    expect(result.averageMinutes).toEqual(87);
+    // Without an attached policy POLICY_SCHEDULING_DEFAULT now acts as the
+    // built-in fallback. FORMAT_STANDARD is enumerated there, so the
+    // caller-supplied 87/57 defaults are not consulted.
+    expect(result.averageMinutes).toEqual(averageMinutes);
     if (recoveryMinutes) {
-      expect(result.recoveryMinutes).toEqual(57);
+      expect(result.recoveryMinutes).toEqual(recoveryMinutes);
     }
 
     result = tournamentEngine.attachPolicies({

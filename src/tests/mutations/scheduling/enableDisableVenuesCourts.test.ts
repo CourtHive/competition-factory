@@ -24,6 +24,19 @@ it('can disable and enable courts and venues', () => {
   });
 
   tournamentEngine.setState(tournamentRecord);
+  // Pin scheduling to legacy 90/0 timing. POLICY_SCHEDULING_DEFAULT is now
+  // the implicit fallback; its longer recoveries and daily limits would
+  // reduce how many matchUps fit per day below the test's >= 50 threshold.
+  tournamentEngine.attachPolicies({
+    policyDefinitions: {
+      scheduling: {
+        defaultTimes: {
+          averageTimes: [{ minutes: { default: 90 } }],
+          recoveryTimes: [{ minutes: { default: 0 } }],
+        },
+      },
+    },
+  });
 
   const { rounds } = tournamentEngine.getRounds();
   const draw1rounds = rounds.filter(({ drawId }) => drawId === 'drawId1');

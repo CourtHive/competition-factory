@@ -221,10 +221,21 @@ test('mocksEngine can modify existing tournamentRecords with drawProfiles', () =
   const venueId = 'venueId';
   const venueProfiles = [{ venueId, courtsCount: 40 }];
   const drawProfiles = [{ drawId: 'd1', drawSize: 4 }];
+  // Pin scheduling to legacy 90/0 timing. POLICY_SCHEDULING_DEFAULT is now
+  // the implicit fallback; its added recovery would push the third matchUp
+  // from 08:30 to 09:30 and break the expected stagger.
   const { tournamentRecord } = mocksEngine.generateTournamentRecord({
     venueProfiles,
     drawProfiles,
     startDate,
+    policyDefinitions: {
+      scheduling: {
+        defaultTimes: {
+          averageTimes: [{ minutes: { default: 90 } }],
+          recoveryTimes: [{ minutes: { default: 0 } }],
+        },
+      },
+    },
   });
 
   const { rounds } = tournamentEngine.setState(tournamentRecord).getRounds();

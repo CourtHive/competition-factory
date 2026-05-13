@@ -17,8 +17,10 @@ type GetVenueSchedulingDetailsArgs = {
   matchUpNotBeforeTimes: { [key: string]: any };
   matchUpDependencies: { [key: string]: any };
   scheduleCompletedMatchUps?: boolean;
+  excludeNoDateCompleted?: boolean;
   containedStructureIds: string[];
   clearScheduleDates?: boolean;
+  excludePriorDates?: boolean;
   matchUps: HydratedMatchUp[];
   periodLength?: number;
   scheduleDate: string;
@@ -31,10 +33,12 @@ export function getVenueSchedulingDetails({
   matchUpPotentialParticipantIds,
   individualParticipantProfiles,
   scheduleCompletedMatchUps,
+  excludeNoDateCompleted,
   containedStructureIds,
   matchUpNotBeforeTimes,
   matchUpScheduleTimes,
   matchUpDependencies,
+  excludePriorDates,
   clearScheduleDates,
   tournamentRecords,
   periodLength,
@@ -105,10 +109,12 @@ export function getVenueSchedulingDetails({
     const processResult = processAlreadyScheduledMatchUps({
       matchUpPotentialParticipantIds,
       individualParticipantProfiles,
+      excludeNoDateCompleted,
       dateScheduledMatchUpIds,
       greatestAverageMinutes,
       matchUpNotBeforeTimes,
       matchUpScheduleTimes,
+      excludePriorDates,
       matchUpDependencies,
       clearScheduleDates,
       scheduleDate,
