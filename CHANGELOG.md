@@ -1,5 +1,12 @@
 # Changelog
 
+## [3.4.4](https://github.com/CourtHive/competition-factory/compare/v3.4.3...v3.4.4) (2026-05-12)
+
+
+### Bug Fixes
+
+* **scheduling:** exclude historical/orphan matchUps from daily-limit budget ([2e5d085](https://github.com/CourtHive/competition-factory/commit/2e5d0851b6a6d8bef01056b3da3fd545c9310cd4))
+
 ## [3.4.3](https://github.com/CourtHive/competition-factory/compare/v3.4.2...v3.4.3) (2026-05-12)
 
 
