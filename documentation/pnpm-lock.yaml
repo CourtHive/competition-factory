@@ -37,7 +37,7 @@ importers:
         version: 19.2.6(react@19.2.6)
       tods-competition-factory:
         specifier: '>=3.4.1'
-        version: 3.4.3
+        version: 3.4.4
 
 packages:
 
@@ -5015,8 +5015,8 @@ packages:
     resolution: {integrity: sha512-65P7iz6X5yEr1cwcgvQxbbIw7Uk3gOy5dIdtZ4rDveLqhrdJP+Li/Hx6tyK0NEb+2GCyneCMJiGqrADCSNk8sQ==}
     engines: {node: '>=8.0'}
 
-  tods-competition-factory@3.4.3:
-    resolution: {integrity: sha512-NALbcsujWLT/iqRyQvkFaBf0OCGSmYPHk/HZKJ1MRzvFC5K4xrGmydFm8RfdQTtG8ivRjAhPd2X0ZiX257K24w==}
+  tods-competition-factory@3.4.4:
+    resolution: {integrity: sha512-g82U9Qv26IKiNlEsQ9994olF0C7fDVrKSCuNt8ensOPkSUeV63P1jI56+BGemi35CqhPGTYTu79aQrUkh15gcg==}
     engines: {node: '>=22'}
 
   toidentifier@1.0.1:
@@ -8681,7 +8681,7 @@ snapshots:
       focus-trap: 8.1.0
       timepicker-ui: 4.3.0
       tippy.js: 6.3.7
-      tods-competition-factory: 3.4.3
+      tods-competition-factory: 3.4.4
       vanillajs-datepicker: 1.3.4
 
   cross-spawn@7.0.6:
@@ -11936,7 +11936,7 @@ snapshots:
     dependencies:
       is-number: 7.0.0
 
-  tods-competition-factory@3.4.3: {}
+  tods-competition-factory@3.4.4: {}
 
   toidentifier@1.0.1: {}
 
