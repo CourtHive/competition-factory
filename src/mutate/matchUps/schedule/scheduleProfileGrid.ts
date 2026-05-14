@@ -17,6 +17,7 @@ import { SUCCESS } from '@Constants/resultConstants';
 
 type ScheduleProfileGridArgs = {
   tournamentRecords: TournamentRecords;
+  matchUpDailyLimits?: { [key: string]: number };
   scheduleCompletedMatchUps?: boolean;
   clearScheduleDates?: boolean;
   minCourtGridRows?: number;
@@ -135,6 +136,7 @@ function collectVenuePlan(
 export function scheduleProfileGrid(params: ScheduleProfileGridArgs) {
   const {
     scheduleCompletedMatchUps,
+    matchUpDailyLimits,
     minCourtGridRows = 10,
     clearScheduleDates,
     scheduleDates = [],
@@ -217,6 +219,7 @@ export function scheduleProfileGrid(params: ScheduleProfileGridArgs) {
   // Track results per date
   const scheduledMatchUpIds: Record<string, string[]> = {};
   const notScheduledMatchUpIds: Record<string, string[]> = {};
+  const overLimitMatchUpIds: Record<string, string[]> = {};
   const scheduledDates: string[] = [];
 
   for (const dateProfile of dateProfiles) {
@@ -242,6 +245,7 @@ export function scheduleProfileGrid(params: ScheduleProfileGridArgs) {
     const gridResult: any = proAutoSchedule({
       courtIds: resolveTargetCourtIds(dateCourtIds, courtIdsFilter),
       scheduleCompletedMatchUps,
+      matchUpDailyLimits,
       minCourtGridRows,
       tournamentRecords,
       matchUps: dateMatchUps,
@@ -252,6 +256,7 @@ export function scheduleProfileGrid(params: ScheduleProfileGridArgs) {
 
     const dateScheduledIds = (gridResult.scheduled ?? []).map((m) => m.matchUpId);
     const dateNotScheduledIds = (gridResult.notScheduled ?? []).map((m) => m.matchUpId);
+    const dateOverLimitIds: string[] = gridResult.overLimitMatchUpIds ?? [];
 
     if (dateScheduledIds.length) {
       scheduledMatchUpIds[scheduledDate] = dateScheduledIds;
@@ -260,12 +265,16 @@ export function scheduleProfileGrid(params: ScheduleProfileGridArgs) {
     if (dateNotScheduledIds.length) {
       notScheduledMatchUpIds[scheduledDate] = dateNotScheduledIds;
     }
+    if (dateOverLimitIds.length) {
+      overLimitMatchUpIds[scheduledDate] = dateOverLimitIds;
+    }
   }
 
   return {
     ...SUCCESS,
     scheduledMatchUpIds,
     notScheduledMatchUpIds,
+    overLimitMatchUpIds,
     scheduledDates,
   };
 }

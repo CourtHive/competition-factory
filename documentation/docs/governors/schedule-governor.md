@@ -373,6 +373,8 @@ engine.scheduleProfileGrid({
   clearScheduleDates, // optional - boolean or array of dates to clear first
   scheduleCompletedMatchUps, // optional boolean (default: false) - include
   // already-COMPLETED matchUps in the placement pool
+  matchUpDailyLimits, // optional - { SINGLES, DOUBLES, total } per-participant
+  // daily limits; when omitted, no enforcement
   minCourtGridRows, // optional number - rows per court (default: 10)
   courtIds, // optional array - restrict placement to only these courts
 });
@@ -382,6 +384,8 @@ When `courtIds` is provided, only courts in the set are considered as placement 
 
 **Completed matchUps**: By default the pro scheduler excludes matchUps that already carry a terminal status (`COMPLETED`, `RETIRED`, `WALKOVER`, `DEFAULTED`, etc.) from the placement pool — these don't need a court slot and would otherwise occupy grid rows, pushing newly-placed matchUps down. Set `scheduleCompletedMatchUps: true` only for callers (such as `mocksEngine` seeding) that intentionally want completed matchUps to receive grid coordinates.
 
+**Daily-limit enforcement** (opt-in via `matchUpDailyLimits`): When provided, the pro scheduler refuses to place a matchUp whose entered participants or winner-advancement potentials would push any single participant past the per-day cap for the matchUp type or for the daily `total`. Counters are seeded from matchUps already on the grid for the date so subsequent runs see total daily load. Refused matchUps are reported in `overLimitMatchUpIds`, NOT in `notScheduledMatchUpIds`. Existing direct callers that omit `matchUpDailyLimits` see no behavior change.
+
 **Returns**:
 
 ```js
@@ -389,6 +393,8 @@ When `courtIds` is provided, only courts in the set are considered as placement 
   scheduledDates,         // array - dates where matchUps were placed
   scheduledMatchUpIds,    // record<date, matchUpIds[]> - matchUps placed per date
   notScheduledMatchUpIds, // record<date, matchUpIds[]> - matchUps that didn't fit per date
+  overLimitMatchUpIds,    // record<date, matchUpIds[]> - matchUps rejected by daily limits
+  // (populated only when matchUpDailyLimits was provided)
 }
 ```
 

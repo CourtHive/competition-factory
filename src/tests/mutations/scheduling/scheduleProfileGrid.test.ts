@@ -354,6 +354,100 @@ describe('scheduleProfileGrid', () => {
     expect(byCourtOrder.map((p) => p.courtOrder)).toEqual([1, 2, 3, 4]);
   });
 
+  it('does not enforce daily limits when matchUpDailyLimits is omitted (default behavior)', () => {
+    const venueId = 'venue-no-limits';
+    const drawId = 'draw-no-limits';
+    const { tournamentRecord } = mocksEngine.generateTournamentRecord({
+      venueProfiles: [{ venueName: 'CC', venueAbbreviation: 'CC', courtsCount: 4, venueId }],
+      drawProfiles: [{ drawId, drawSize: 8 }],
+      startDate,
+      endDate,
+    });
+
+    let result: any = tournamentEngine.setState(tournamentRecord);
+    expect(result.success).toEqual(true);
+
+    const { matchUps } = tournamentEngine.allCompetitionMatchUps({ inContext: true });
+    const { tournamentId, eventId, structureId } = matchUps[0];
+
+    tournamentEngine.setSchedulingProfile({
+      schedulingProfile: [
+        {
+          scheduleDate: startDate,
+          venues: [
+            {
+              venueId,
+              rounds: [
+                { tournamentId, eventId, drawId, structureId, roundNumber: 1 },
+                { tournamentId, eventId, drawId, structureId, roundNumber: 2 },
+              ],
+            },
+          ],
+        },
+      ],
+    });
+
+    // No matchUpDailyLimits passed — all 4 R1 + 2 R2 should land.
+    result = tournamentEngine.scheduleProfileGrid({ scheduleDates: [startDate] });
+    expect(result.success).toEqual(true);
+    expect((result.scheduledMatchUpIds[startDate] ?? []).length).toEqual(6);
+    expect(result.overLimitMatchUpIds[startDate]).toBeUndefined();
+  });
+
+  it('shunts matchUps that exceed matchUpDailyLimits.SINGLES to overLimitMatchUpIds', () => {
+    const venueId = 'venue-with-limit';
+    const drawId = 'draw-with-limit';
+    const { tournamentRecord } = mocksEngine.generateTournamentRecord({
+      venueProfiles: [{ venueName: 'CC', venueAbbreviation: 'CC', courtsCount: 4, venueId }],
+      drawProfiles: [{ drawId, drawSize: 8 }],
+      startDate,
+      endDate,
+    });
+
+    let result: any = tournamentEngine.setState(tournamentRecord);
+    expect(result.success).toEqual(true);
+
+    const { matchUps } = tournamentEngine.allCompetitionMatchUps({ inContext: true });
+    const { tournamentId, eventId, structureId } = matchUps[0];
+
+    tournamentEngine.setSchedulingProfile({
+      schedulingProfile: [
+        {
+          scheduleDate: startDate,
+          venues: [
+            {
+              venueId,
+              rounds: [
+                { tournamentId, eventId, drawId, structureId, roundNumber: 1 },
+                { tournamentId, eventId, drawId, structureId, roundNumber: 2 },
+                { tournamentId, eventId, drawId, structureId, roundNumber: 3 },
+              ],
+            },
+          ],
+        },
+      ],
+    });
+
+    // SINGLES limit of 1 per participant per day. R1 has 4 matchUps with 8
+    // unique participants — each plays exactly 1 match in R1, hitting the
+    // limit. R2 (and R3) potentialParticipants are R1 winners, all at limit
+    // → R2 + R3 matchUps must end up in overLimitMatchUpIds.
+    result = tournamentEngine.scheduleProfileGrid({
+      scheduleDates: [startDate],
+      matchUpDailyLimits: { SINGLES: 1, total: 1 },
+    });
+    expect(result.success).toEqual(true);
+
+    const scheduledIds: string[] = result.scheduledMatchUpIds[startDate] ?? [];
+    const overLimitIds: string[] = result.overLimitMatchUpIds[startDate] ?? [];
+    expect(scheduledIds.length).toEqual(4); // only R1 matchUps placed
+    // R2 has 2 matchUps + R3 has 1 matchUp → 3 over-limit total.
+    expect(overLimitIds.length).toEqual(3);
+
+    // Sanity: no overlap between scheduled and over-limit.
+    for (const id of scheduledIds) expect(overLimitIds).not.toContain(id);
+  });
+
   it('handles multiple venues in a single date', () => {
     const venueId1 = 'venue-a';
     const venueId2 = 'venue-b';
