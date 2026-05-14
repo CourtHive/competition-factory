@@ -1,5 +1,18 @@
 # Changelog
 
+## [3.5.0](https://github.com/CourtHive/competition-factory/compare/v3.4.4...v3.5.0) (2026-05-14)
+
+
+### Features
+
+* **scheduling:** opt-in daily-limit enforcement in pro scheduler ([8eb14f9](https://github.com/CourtHive/competition-factory/commit/8eb14f9115a618dd80b765218606937ee489c4db))
+
+
+### Bug Fixes
+
+* **scheduling:** exclude completed matchUps from pro-scheduler grid placement ([10ef2f8](https://github.com/CourtHive/competition-factory/commit/10ef2f8737ded49435c139c7fa46bbeaddce2a29))
+* **scheduling:** pro scheduler walks earlier scheduled times first ([eb55666](https://github.com/CourtHive/competition-factory/commit/eb556669806e89181f2a3ef70b34fd598677ac6a))
+
 ## [3.4.4](https://github.com/CourtHive/competition-factory/compare/v3.4.3...v3.4.4) (2026-05-12)
 
 
