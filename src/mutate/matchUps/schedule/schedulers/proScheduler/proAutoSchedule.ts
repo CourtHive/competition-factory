@@ -75,10 +75,7 @@ export function proAutoSchedule({
     });
     const availableCourts = Object.values(row).filter(
       (c: any) =>
-        isObject(c) &&
-        !c.matchUpId &&
-        !c.isBlocked &&
-        (!courtIds?.length || courtIds.includes(c.schedule?.courtId)),
+        isObject(c) && !c.matchUpId && !c.isBlocked && (!courtIds?.length || courtIds.includes(c.schedule?.courtId)),
     );
     return gridRows.concat({
       matchUpIds,
@@ -96,6 +93,26 @@ export function proAutoSchedule({
         (scheduleCompletedMatchUps || !completedMatchUpStatuses.includes(matchUpStatus)),
     )
     .sort(matchUpSort);
+
+  // When Garman has already set scheduledTime on matchUps (Garman → Pro
+  // workflow), walk earlier times first so they land on earlier rows.
+  // Scoped within scheduledDate so multi-date inputs stay grouped. Pairs
+  // where either side is missing date or time return 0 — stable sort
+  // preserves input order for those (covers fresh proAutoSchedule runs
+  // with no times, e.g. proConflicts.test fixtures). TODO: migrate this
+  // comparator into matchUpSort once we've reviewed every other caller
+  // for compatibility, then remove this local sort.
+  matchUps.sort((a, b) => {
+    const aDate = a.schedule?.scheduledDate;
+    const bDate = b.schedule?.scheduledDate;
+    const aTime = a.schedule?.scheduledTime;
+    const bTime = b.schedule?.scheduledTime;
+    if (aDate && bDate) {
+      if (aDate !== bDate) return aDate.localeCompare(bDate);
+      if (aTime && bTime && aTime !== bTime) return aTime.localeCompare(bTime);
+    }
+    return 0;
+  });
 
   const deps = getMatchUpDependencies({
     matchUps: matchUps.concat(gridMatchUps),

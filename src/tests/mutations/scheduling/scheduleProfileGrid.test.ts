@@ -286,6 +286,74 @@ describe('scheduleProfileGrid', () => {
     expect(scheduledIds.length).toBeGreaterThan(2);
   });
 
+  // Regression: when Garman has already assigned scheduledTime to matchUps
+  // (Garman → Pro workflow), the pro scheduler used to place them by
+  // roundPosition only, so a 09:30 matchUp could end up on a row below a
+  // later-time matchUp from the same round. Now matchUps are pre-sorted
+  // by (scheduledDate, scheduledTime) so earlier times prefer earlier rows.
+  // Single-court fixture makes the (time → courtOrder) mapping 1:1.
+  it('respects existing scheduledTime when ordering matchUps onto the grid', () => {
+    const venueId = 'venue-time-aware';
+    const drawId = 'draw-time-aware';
+    const { tournamentRecord } = mocksEngine.generateTournamentRecord({
+      venueProfiles: [{ venueName: 'CC', venueAbbreviation: 'CC', courtsCount: 1, venueId }],
+      drawProfiles: [{ drawId, drawSize: 8 }],
+      startDate,
+      endDate,
+    });
+
+    let result: any = tournamentEngine.setState(tournamentRecord);
+    expect(result.success).toEqual(true);
+
+    const { matchUps } = tournamentEngine.allCompetitionMatchUps({ inContext: true });
+    const r1 = matchUps.filter((m) => m.roundNumber === 1).sort((a, b) => a.roundPosition - b.roundPosition);
+    expect(r1.length).toEqual(4);
+
+    // Pre-set scheduledDate + scheduledTime in REVERSE order of roundPosition.
+    // The earliest time (08:00) is assigned to roundPosition 4 — under the
+    // old behavior this matchUp landed on the last row; with the chronological
+    // sort it must land on courtOrder 1.
+    const timeAssignments = [
+      { matchUpId: r1[0].matchUpId, scheduledTime: '11:00' }, // roundPosition 1
+      { matchUpId: r1[1].matchUpId, scheduledTime: '10:00' }, // roundPosition 2
+      { matchUpId: r1[2].matchUpId, scheduledTime: '09:00' }, // roundPosition 3
+      { matchUpId: r1[3].matchUpId, scheduledTime: '08:00' }, // roundPosition 4
+    ];
+
+    for (const { matchUpId, scheduledTime } of timeAssignments) {
+      result = tournamentEngine.addMatchUpScheduleItems({
+        matchUpId,
+        drawId,
+        schedule: { scheduledDate: startDate, scheduledTime },
+      });
+      expect(result.success).toEqual(true);
+    }
+
+    const { tournamentId, eventId, structureId } = matchUps[0];
+    tournamentEngine.setSchedulingProfile({
+      schedulingProfile: [
+        {
+          scheduleDate: startDate,
+          venues: [{ venueId, rounds: [{ tournamentId, eventId, drawId, structureId, roundNumber: 1 }] }],
+        },
+      ],
+    });
+
+    result = tournamentEngine.scheduleProfileGrid({ scheduleDates: [startDate] });
+    expect(result.success).toEqual(true);
+
+    const { matchUps: after } = tournamentEngine.allCompetitionMatchUps({ inContext: true });
+    const placed = after
+      .filter((m) => m.roundNumber === 1 && m.schedule?.courtOrder)
+      .map((m) => ({ time: m.schedule.scheduledTime, courtOrder: m.schedule.courtOrder }));
+    expect(placed.length).toEqual(4);
+
+    // 1 court → 1 mu per row → strict chronological mapping.
+    const byCourtOrder = [...placed].sort((a, b) => a.courtOrder - b.courtOrder);
+    expect(byCourtOrder.map((p) => p.time)).toEqual(['08:00', '09:00', '10:00', '11:00']);
+    expect(byCourtOrder.map((p) => p.courtOrder)).toEqual([1, 2, 3, 4]);
+  });
+
   it('handles multiple venues in a single date', () => {
     const venueId1 = 'venue-a';
     const venueId2 = 'venue-b';
