@@ -9,11 +9,11 @@ import { extractDate, isValidDateString } from '@Tools/dateTime';
 
 // constants and types
 import { ARRAY, OF_TYPE, SCHEDULE_DATES, TOURNAMENT_RECORDS, VALIDATE } from '@Constants/attributeConstants';
+import { BYE, completedMatchUpStatuses } from '@Constants/matchUpStatusConstants';
 import { NO_VALID_DATES } from '@Constants/errorConditionConstants';
 import { DOUBLES, SINGLES } from '@Constants/matchUpTypes';
 import { TournamentRecords } from '@Types/factoryTypes';
 import { SUCCESS } from '@Constants/resultConstants';
-import { BYE } from '@Constants/matchUpStatusConstants';
 
 type ScheduleProfileGridArgs = {
   tournamentRecords: TournamentRecords;
@@ -54,6 +54,7 @@ function findRoundMatchUps(
   roundProfile: RoundProfile,
   allMatchUps: any[],
   containedStructureIds: Record<string, string>,
+  scheduleCompletedMatchUps?: boolean,
 ): any[] {
   const { structureId, roundNumber, drawId, roundSegment } = roundProfile;
   const effectiveStructureId = containedStructureIds[structureId] ?? structureId;
@@ -73,6 +74,11 @@ function findRoundMatchUps(
 
   return allMatchUps.filter((m: any) => {
     if (m.matchUpStatus === BYE) return false;
+    // Completed matchUps from earlier sessions must not be carried into the
+    // pro scheduler — they don't need placement and would otherwise occupy
+    // grid rows, pushing newly-scheduled matchUps down. mocksEngine and a
+    // few other callers explicitly opt back in via scheduleCompletedMatchUps.
+    if (!scheduleCompletedMatchUps && completedMatchUpStatuses.includes(m.matchUpStatus)) return false;
     if (m.schedule?.courtId) return false;
     if (m.schedule?.courtOrder) return false;
     if (m.roundNumber !== roundNumber) return false;
@@ -96,6 +102,7 @@ function collectVenuePlan(
   courtIdsFilter: Set<string> | null,
   allMatchUps: any[],
   containedStructureIds: Record<string, string>,
+  scheduleCompletedMatchUps?: boolean,
 ): { dateMatchUps: any[]; dateCourtIds: string[] } {
   const dateMatchUps: any[] = [];
   const dateCourtIds: string[] = [];
@@ -106,7 +113,9 @@ function collectVenuePlan(
     dateCourtIds.push(...venueCourtIds);
 
     for (const roundProfile of venueProfile.rounds ?? []) {
-      dateMatchUps.push(...findRoundMatchUps(roundProfile, allMatchUps, containedStructureIds));
+      dateMatchUps.push(
+        ...findRoundMatchUps(roundProfile, allMatchUps, containedStructureIds, scheduleCompletedMatchUps),
+      );
     }
   }
 
@@ -220,6 +229,7 @@ export function scheduleProfileGrid(params: ScheduleProfileGridArgs) {
       courtIdsFilter,
       allMatchUps ?? [],
       containedStructureIds,
+      scheduleCompletedMatchUps,
     );
 
     if (!dateMatchUps.length) continue;

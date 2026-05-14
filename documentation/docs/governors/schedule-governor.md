@@ -371,13 +371,16 @@ Profile-driven grid scheduling. Uses the scheduling profile to determine which r
 engine.scheduleProfileGrid({
   scheduleDates, // optional - specific dates to schedule
   clearScheduleDates, // optional - boolean or array of dates to clear first
-  scheduleCompletedMatchUps, // optional boolean - include completed matchUps
+  scheduleCompletedMatchUps, // optional boolean (default: false) - include
+  // already-COMPLETED matchUps in the placement pool
   minCourtGridRows, // optional number - rows per court (default: 10)
   courtIds, // optional array - restrict placement to only these courts
 });
 ```
 
 When `courtIds` is provided, only courts in the set are considered as placement targets at each venue. Passing an empty array places nothing. Omitting the parameter places onto all courts at the profile's venues (the default).
+
+**Completed matchUps**: By default the pro scheduler excludes matchUps that already carry a terminal status (`COMPLETED`, `RETIRED`, `WALKOVER`, `DEFAULTED`, etc.) from the placement pool — these don't need a court slot and would otherwise occupy grid rows, pushing newly-placed matchUps down. Set `scheduleCompletedMatchUps: true` only for callers (such as `mocksEngine` seeding) that intentionally want completed matchUps to receive grid coordinates.
 
 **Returns**:
 
