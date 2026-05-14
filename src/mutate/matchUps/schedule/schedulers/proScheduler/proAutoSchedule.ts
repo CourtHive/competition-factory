@@ -4,13 +4,11 @@ import { checkDailyLimits } from '@Mutate/matchUps/schedule/scheduleMatchUps/che
 import { competitionScheduleMatchUps } from '@Query/matchUps/competitionScheduleMatchUps';
 import { bulkScheduleMatchUps } from '@Mutate/matchUps/schedule/bulkScheduleMatchUps';
 import { getMatchUpDependencies } from '@Query/matchUps/getMatchUpDependencies';
-import { matchUpSort } from '@Functions/sorters/matchUpSort';
 import { validMatchUps } from '@Validators/validMatchUp';
 import { isObject } from '@Tools/objects';
 
 // constants and types
 import { INVALID_VALUES, MISSING_CONTEXT } from '@Constants/errorConditionConstants';
-import { BYE, completedMatchUpStatuses } from '@Constants/matchUpStatusConstants';
 import { Tournament } from '@Types/tournamentTypes';
 import { HydratedMatchUp } from '@Types/hydrated';
 
@@ -19,14 +17,12 @@ import { HydratedMatchUp } from '@Types/hydrated';
 type ProAutoScheduleArgs = {
   tournamentRecords: { [key: string]: Tournament };
   matchUpDailyLimits?: { [key: string]: number };
-  scheduleCompletedMatchUps?: boolean;
   matchUps: HydratedMatchUp[];
   minCourtGridRows?: number;
   scheduledDate: string;
   courtIds?: string[];
 };
 export function proAutoSchedule({
-  scheduleCompletedMatchUps,
   matchUpDailyLimits,
   minCourtGridRows = 10,
   tournamentRecords,
@@ -90,15 +86,6 @@ export function proAutoSchedule({
     });
   }, []);
 
-  matchUps
-    .filter(
-      ({ matchUpStatus }) =>
-        matchUpStatus &&
-        matchUpStatus !== BYE &&
-        (scheduleCompletedMatchUps || !completedMatchUpStatuses.includes(matchUpStatus)),
-    )
-    .sort(matchUpSort);
-
   // When Garman has already set scheduledTime on matchUps (Garman → Pro
   // workflow), walk earlier times first so they land on earlier rows.
   // Scoped within scheduledDate so multi-date inputs stay grouped. Pairs
@@ -107,6 +94,8 @@ export function proAutoSchedule({
   // with no times, e.g. proConflicts.test fixtures). TODO: migrate this
   // comparator into matchUpSort once we've reviewed every other caller
   // for compatibility, then remove this local sort.
+  // BYE / completed filtering happens upstream in `findRoundMatchUps` for
+  // the production path; direct callers (tests) pass raw matchUps through.
   matchUps.sort((a, b) => {
     const aDate = a.schedule?.scheduledDate;
     const bDate = b.schedule?.scheduledDate;

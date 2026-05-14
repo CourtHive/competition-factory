@@ -241,10 +241,12 @@ export function scheduleProfileGrid(params: ScheduleProfileGridArgs) {
     // the filter.
     if (courtIdsFilter && !dateCourtIds.length) continue;
 
-    // Run proAutoSchedule for this date with the collected matchUps
+    // Run proAutoSchedule for this date with the collected matchUps.
+    // BYE / completed filtering already happened in `findRoundMatchUps` above
+    // when `scheduleCompletedMatchUps` was false (the default), so the
+    // scheduler is fed the pre-filtered set.
     const gridResult: any = proAutoSchedule({
       courtIds: resolveTargetCourtIds(dateCourtIds, courtIdsFilter),
-      scheduleCompletedMatchUps,
       matchUpDailyLimits,
       minCourtGridRows,
       tournamentRecords,
