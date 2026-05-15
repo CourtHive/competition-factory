@@ -208,6 +208,35 @@ test('all dashboard booleans can be combined', () => {
   expect(tournamentInfo.venues.length).toEqual(1);
 });
 
+test('getTournamentInfo returns registrationProfile when set', () => {
+  mocksEngine.generateTournamentRecord({ setState: true });
+
+  const registrationProfile = {
+    entriesOpen: '2026-05-01',
+    entriesClose: '2026-05-15',
+    withdrawalDeadline: '2026-05-20',
+    entryMethod: 'ONLINE',
+    entryUrl: 'https://example.com/entry',
+    dressCode: 'All-white',
+    accommodation: {
+      options: [{ name: 'Grand Hotel', priceRange: '$120-180/night', phone: '555-0100' }],
+      notes: '<p>Negotiated rates available.</p>',
+    },
+    sponsors: [{ name: 'AcmeCorp', tier: 'TITLE', websiteUrl: 'https://acme.example' }],
+  };
+
+  let result: any = tournamentEngine.setRegistrationProfile({ registrationProfile });
+  expect(result.success).toBe(true);
+
+  const { tournamentInfo } = tournamentEngine.getTournamentInfo();
+  expect(tournamentInfo.registrationProfile).toBeDefined();
+  expect(tournamentInfo.registrationProfile.entriesOpen).toEqual('2026-05-01');
+  expect(tournamentInfo.registrationProfile.entryMethod).toEqual('ONLINE');
+  expect(tournamentInfo.registrationProfile.accommodation.options[0].name).toEqual('Grand Hotel');
+  expect(tournamentInfo.registrationProfile.accommodation.notes).toContain('Negotiated rates');
+  expect(tournamentInfo.registrationProfile.sponsors[0].tier).toEqual('TITLE');
+});
+
 test('empty tournament handles dashboard booleans gracefully', () => {
   mocksEngine.generateTournamentRecord({
     participantsProfile: { participantsCount: 0 },
