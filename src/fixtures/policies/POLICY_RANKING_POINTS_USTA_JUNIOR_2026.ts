@@ -1,13 +1,15 @@
 /**
  * USTA Junior Tournaments Ranking System — 2026 Edition
  *
- * Source: jr-points-table-2025.pdf (Updated January 2025) — carried forward.
- *         jr-ranking-system-2025.pdf
+ * Source: jr-points-table-2026.pdf (https://www.usta.com/content/dam/usta/2026-pdfs/jr-points-table-2026.pdf)
+ *         jr-ranking-system-2025.pdf — system regulations carried forward
  *         Junior National Standings List FAQs
  *
- * TODO: confirm 2026 deltas — the published 2026 USTA Junior points table
- * (and any algorithm changes vs. 2025) need to be sourced once available.
- * Until then, the tables below are identical to the 2025 fixture.
+ * Confirmed 2026-05-16: a byte-level diff of the 2025 and 2026 USTA Junior
+ * points-table PDFs is empty — the point tables are identical between
+ * revisions. This fixture exists as a separate file for date-bounded
+ * policy selection (validDateRange) but carries the same point values
+ * as POLICY_RANKING_POINTS_USTA_JUNIOR_2025.
  * Covers all 8 pages of the PDF including:
  *   - Round Robin (page 2)
  *   - Round Robin with First Match Consolation Playoff (page 2)
