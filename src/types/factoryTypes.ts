@@ -46,7 +46,7 @@ export type FactoryEngine = {
  *   import { tournamentEngine, FactoryEngineTyped } from 'tods-competition-factory';
  *   const engine = tournamentEngine as FactoryEngineTyped;
  */
-export type FactoryEngineTyped = Record<FactoryEngineMethod, (params?: any) => any>;
+export type FactoryEngineTyped = Record<FactoryEngineMethod, (...args: any[]) => any>;
 
 export type { FactoryEngineMethod } from './factoryEngineMethods';
 
