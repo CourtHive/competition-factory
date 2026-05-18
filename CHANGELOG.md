@@ -1,5 +1,17 @@
 # Changelog
 
+## [3.8.0](https://github.com/CourtHive/competition-factory/compare/v3.7.0...v3.8.0) (2026-05-18)
+
+
+### Features
+
+* **types:** expose FactoryEngineTyped to catch unregistered method calls ([8aa1cc7](https://github.com/CourtHive/competition-factory/commit/8aa1cc7f6dbbe96be2355b106bee8872053f6e7c))
+
+
+### Bug Fixes
+
+* **types:** allow multi-arg methods in FactoryEngineTyped ([be1bcdf](https://github.com/CourtHive/competition-factory/commit/be1bcdfb0732d2a271ae16c2bec7cec42faf14f7))
+
 ## [3.7.0](https://github.com/CourtHive/competition-factory/compare/v3.6.0...v3.7.0) (2026-05-18)
 
 
