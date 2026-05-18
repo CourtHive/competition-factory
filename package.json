@@ -197,19 +197,5 @@
   "browserslist": [
     "defaults and supports es6-module",
     "maintained node versions"
-  ],
-  "pnpm": {
-    "onlyBuiltDependencies": [
-      "@nestjs/core",
-      "@swc/core"
-    ],
-    "ignoredBuiltDependencies": [
-      "@dep-tree/cli",
-      "@nestjs/core",
-      "@scarf/scarf",
-      "esbuild",
-      "rollup",
-      "unrs-resolver"
-    ]
-  }
+  ]
 }
