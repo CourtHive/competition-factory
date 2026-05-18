@@ -1,5 +1,17 @@
 # Changelog
 
+## [3.7.0](https://github.com/CourtHive/competition-factory/compare/v3.6.0...v3.7.0) (2026-05-18)
+
+
+### Features
+
+* **fixtures:** encode per-federation ranking policies (Phase 0 PR 0.5) ([362cb03](https://github.com/CourtHive/competition-factory/commit/362cb03f1d62dd5c0b12f9e9c9fd65aba114e8bd))
+* **query:** expose computeRatingDistributionStats as a top-level export ([13a5dbc](https://github.com/CourtHive/competition-factory/commit/13a5dbcbe60f72e782989bbe935dd46d3b90a6ea))
+* **ranking:** add applyDerivedRankings for filtered sub-rankings ([fa3e439](https://github.com/CourtHive/competition-factory/commit/fa3e4399a007afbe40f4b196903609519c9f8669))
+* **ranking:** add pointPoolModel, categoryAggregation, derivedRankings types ([050eed0](https://github.com/CourtHive/competition-factory/commit/050eed0df645d945d27d2adc245257fd88835e98))
+* **ranking:** add scaleEngine.getTournamentPointAwards() pipeline entry ([3da33ae](https://github.com/CourtHive/competition-factory/commit/3da33aed44a8ce91c82015c0783739f5b021ea35))
+* **ranking:** interpret categoryAggregation in generateRankingList ([8fcf3e3](https://github.com/CourtHive/competition-factory/commit/8fcf3e34b9641c3f791ed3c1cfcea19e9e24f83f))
+
 ## [3.6.0](https://github.com/CourtHive/competition-factory/compare/v3.5.0...v3.6.0) (2026-05-16)
 
 
