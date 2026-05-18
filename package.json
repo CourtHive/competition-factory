@@ -86,7 +86,7 @@
     "start": "rollup --config -w",
     "gen:engine-methods": "node scripts/generateEngineMethods.mjs",
     "check:engine-methods": "node scripts/generateEngineMethods.mjs --check",
-    "prebuild": "pnpm gen:engine-methods",
+    "prebuild": "node scripts/generateEngineMethods.mjs",
     "build": "rimraf dist && rollup --config && ./esbuild.mjs",
     "esm": "rimraf dist && ./esbuild.mjs",
     "test": "VITE_CJS_IGNORE_WARNING=true vitest",
