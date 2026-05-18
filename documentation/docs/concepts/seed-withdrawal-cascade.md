@@ -12,23 +12,23 @@ The Competition Factory implements this as the `seedWithdrawalCascade` mutation,
 
 Seeds are organized into blocks that correspond to their placement in the draw:
 
-| Block | Seeds | Draw Position Purpose |
-|-------|-------|----------------------|
-| 1 | 1 | Top of draw |
-| 2 | 2 | Bottom of draw |
-| 3 | 3–4 | Semi-final quarter separation |
-| 4 | 5–8 | Quarter-final separation |
-| 5 | 9–16 | Round of 16 separation |
-| 6 | 17–32 | Round of 32 separation |
+| Block | Seeds | Draw Position Purpose         |
+| ----- | ----- | ----------------------------- |
+| 1     | 1     | Top of draw                   |
+| 2     | 2     | Bottom of draw                |
+| 3     | 3–4   | Semi-final quarter separation |
+| 4     | 5–8   | Quarter-final separation      |
+| 5     | 9–16  | Round of 16 separation        |
+| 6     | 17–32 | Round of 32 separation        |
 
 The number of populated seed blocks depends on the draw size and seeding policy:
 
-| Draw Size | Max Seeds (Default Policy) | Blocks |
-|-----------|---------------------------|--------|
-| 4 | 2 | [1], [2] |
-| 16 | 4 | [1], [2], [3-4] |
-| 32 | 8 | [1], [2], [3-4], [5-8] |
-| 64 | 16 | [1], [2], [3-4], [5-8], [9-16] |
+| Draw Size | Max Seeds (Default Policy) | Blocks                         |
+| --------- | -------------------------- | ------------------------------ |
+| 4         | 2                          | [1], [2]                       |
+| 16        | 4                          | [1], [2], [3-4]                |
+| 32        | 8                          | [1], [2], [3-4], [5-8]         |
+| 64        | 16                         | [1], [2], [3-4], [5-8], [9-16] |
 
 ## How the Cascade Works
 
@@ -36,7 +36,7 @@ When a seed withdraws, **one seed from each successive lower block** moves up to
 
 ### Example: Seed 3 Withdraws (64-draw, 16 seeds)
 
-```
+```text
 Seed 3 (block [3,4]) withdraws
   → Seed 5 (block [5-8]) moves into Seed 3's draw position
     → Seed 9 (block [9-16]) moves into Seed 5's draw position
@@ -47,7 +47,7 @@ The tournament director then fills the vacancy at Seed 9's old draw position wit
 
 ### Example: Seed 1 Withdraws (16-draw, 4 seeds)
 
-```
+```text
 Seed 1 (block [1]) withdraws
   → Seed 2 (block [2]) moves into Seed 1's draw position
     → Seed 3 (block [3,4]) moves into Seed 2's draw position
@@ -80,7 +80,7 @@ const { validActions } = tournamentEngine.positionActions({
   drawPosition: seedDrawPosition,
 });
 
-const cascadeAction = validActions.find(a => a.type === 'SEED_CASCADE');
+const cascadeAction = validActions.find((a) => a.type === 'SEED_CASCADE');
 // cascadeAction = {
 //   type: 'SEED_CASCADE',
 //   method: 'seedWithdrawalCascade',

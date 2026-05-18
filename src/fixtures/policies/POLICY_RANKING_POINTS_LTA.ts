@@ -163,6 +163,15 @@ const teamDoubles = {
 
 // ─── Aggregation Rules ───────────────────────────────────────────────────────
 
+// LTA Combined Rankings: each age-target list draws from results in target +
+// up to two older age categories. Carried results compete with native target
+// results for bucket slots. Minimum 3 native (target-category) results
+// required to appear on the list. Source remains eligible for 12 months
+// after the player ages into the target.
+//
+// TODO: AggregationRules.countingBuckets does not yet model a doubles weight
+// (0.25 per spec). Until the type is extended, the weight is documented here
+// in the bucketName / category comment and applied client-side by consumers.
 const aggregationRules = {
   rollingPeriodDays: 364, // 52 weeks
   separateByGender: true,
@@ -176,11 +185,61 @@ const aggregationRules = {
       pointComponents: ['positionPoints', 'perWinPoints'] as const,
     },
     {
+      // TODO: doubles bucket should carry a 0.25 weight per LTA Combined
+      // Ranking spec; CountingBucket has no `weight` field in the current
+      // schema. The weight is documented here and applied client-side by
+      // consumers until the type is extended.
       bucketName: 'Doubles',
       eventTypes: [DOUBLES],
       bestOfCount: 6,
       pointComponents: ['positionPoints', 'perWinPoints'] as const,
-      weight: 0.25,
+    },
+  ],
+
+  categoryAggregation: [
+    {
+      ruleName: '12U Combined Ranking pool',
+      source: { ageCategoryCodes: ['12U', '14U', '16U'] },
+      target: { ageCategoryCodes: ['12U'] },
+      multiplier: 1.0,
+      minResultsFromTarget: 3,
+      eligibleSourceWindow: { olderBy: 2 },
+      retentionMonthsAfterAging: 12,
+      maxCarriedResults: 3,
+      subjectToBucketLimits: true,
+    },
+    {
+      ruleName: '14U Combined Ranking pool',
+      source: { ageCategoryCodes: ['14U', '16U', '18U'] },
+      target: { ageCategoryCodes: ['14U'] },
+      multiplier: 1.0,
+      minResultsFromTarget: 3,
+      eligibleSourceWindow: { olderBy: 2 },
+      retentionMonthsAfterAging: 12,
+      maxCarriedResults: 3,
+      subjectToBucketLimits: true,
+    },
+    {
+      ruleName: '16U Combined Ranking pool',
+      source: { ageCategoryCodes: ['16U', '18U'] },
+      target: { ageCategoryCodes: ['16U'] },
+      multiplier: 1.0,
+      minResultsFromTarget: 3,
+      eligibleSourceWindow: { olderBy: 2 },
+      retentionMonthsAfterAging: 12,
+      maxCarriedResults: 3,
+      subjectToBucketLimits: true,
+    },
+    {
+      ruleName: '18U Combined Ranking pool',
+      source: { ageCategoryCodes: ['18U'] },
+      target: { ageCategoryCodes: ['18U'] },
+      multiplier: 1.0,
+      minResultsFromTarget: 3,
+      eligibleSourceWindow: { olderBy: 2 },
+      retentionMonthsAfterAging: 12,
+      maxCarriedResults: 3,
+      subjectToBucketLimits: true,
     },
   ],
 };
@@ -216,6 +275,8 @@ export const POLICY_RANKING_POINTS_LTA = {
     policyName: 'LTA Rankings',
     policyVersion: '2020.04',
     validDateRange: { startDate: '2020-04-01' },
+
+    pointPoolModel: 'per-category' as const,
 
     awardProfiles,
     aggregationRules,

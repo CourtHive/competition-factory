@@ -21,10 +21,10 @@ In team competitions a single "tie" (or "dual match") consists of multiple indiv
 
 ```js
 const tieFormat = {
-  tieFormatId: 'uuid',       // optional — present when centrally stored
+  tieFormatId: 'uuid', // optional — present when centrally stored
   tieFormatName: 'My Format', // optional — human-readable label
   winCriteria: {
-    valueGoal: 5,             // OR aggregateValue: true
+    valueGoal: 5, // OR aggregateValue: true
   },
   collectionDefinitions: [
     {
@@ -32,15 +32,16 @@ const tieFormat = {
       collectionName: 'Singles',
       matchUpType: 'SINGLES',
       matchUpCount: 6,
-      matchUpValue: 1,        // one of: matchUpValue, setValue, scoreValue, collectionValue, collectionValueProfiles
+      matchUpValue: 1, // one of: matchUpValue, setValue, scoreValue, collectionValue, collectionValueProfiles
       matchUpFormat: 'SET3-S:6/TB7',
-      gender: 'MALE',        // optional
-      category: {},           // optional
+      gender: 'MALE', // optional
+      category: {}, // optional
       collectionGroupNumber: 1, // optional — links to a collectionGroup
     },
     // ...more collections
   ],
-  collectionGroups: [         // optional
+  collectionGroups: [
+    // optional
     { groupNumber: 1, groupName: 'Day 1', groupValue: 3 },
   ],
 };
@@ -50,12 +51,12 @@ const tieFormat = {
 
 A `tieFormat` can be attached at four levels within a tournament record:
 
-| Level | Property | Purpose |
-|-------|----------|---------|
-| **Event** | `event.tieFormat` | Default for all draws in the event |
-| **DrawDefinition** | `drawDefinition.tieFormat` | Overrides event default for one draw |
-| **Structure** | `structure.tieFormat` | Overrides draw default for one structure (e.g. consolation) |
-| **MatchUp** | `matchUp.tieFormat` | Overrides all ancestors for one specific matchUp |
+| Level              | Property                   | Purpose                                                     |
+| ------------------ | -------------------------- | ----------------------------------------------------------- |
+| **Event**          | `event.tieFormat`          | Default for all draws in the event                          |
+| **DrawDefinition** | `drawDefinition.tieFormat` | Overrides event default for one draw                        |
+| **Structure**      | `structure.tieFormat`      | Overrides draw default for one structure (e.g. consolation) |
+| **MatchUp**        | `matchUp.tieFormat`        | Overrides all ancestors for one specific matchUp            |
 
 When the factory resolves the active tieFormat for a matchUp it walks **matchUp → structure → draw → event**, returning the first one found. This means you only need to attach a tieFormat at a lower level when it _differs_ from the ancestor default — for instance, shortening formats for rain-delayed matches.
 
@@ -73,12 +74,12 @@ This dramatically reduces storage for tournaments with many team matchUps sharin
 
 Each `collectionDefinition` uses exactly one of these scoring mechanisms:
 
-| Property | Meaning |
-|----------|---------|
-| `matchUpValue` | Fixed value awarded per matchUp win |
-| `setValue` | Value awarded per set win |
-| `scoreValue` | Value awarded per game/point won (typically used with `aggregateValue`) |
-| `collectionValue` | Value awarded for winning the majority of matchUps in the collection |
+| Property                  | Meaning                                                                 |
+| ------------------------- | ----------------------------------------------------------------------- |
+| `matchUpValue`            | Fixed value awarded per matchUp win                                     |
+| `setValue`                | Value awarded per set win                                               |
+| `scoreValue`              | Value awarded per game/point won (typically used with `aggregateValue`) |
+| `collectionValue`         | Value awarded for winning the majority of matchUps in the collection    |
 | `collectionValueProfiles` | Per-position value array (e.g. `[{ collectionPosition: 1, value: 2 }]`) |
 
 A `collectionGroup` can additionally define a `groupValue` threshold across multiple collections.

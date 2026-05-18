@@ -135,7 +135,7 @@ The dynamic form rating tracks in-competition momentum. It starts equal to the b
 
 The logistic expectation function:
 
-```
+```text
 E = 1 / (1 + 10^((ratingB - ratingA) / scale))
 ```
 
@@ -152,7 +152,7 @@ The pressure rating is a cumulative measure of overperformance against baseline 
 
 When `actualOutputMethod` is `WEIGHTED`, the actual output is:
 
-```
+```text
 output = (w1 * pointShare + w2 * normalizedDifferential + w3 * contextFactor) / totalWeight
 ```
 
@@ -166,10 +166,10 @@ If no score data is available (total points is zero), actual output defaults to 
 
 The `processingGranularity` field controls when rating updates are applied:
 
-| Value | Behavior |
-|---|---|
+| Value         | Behavior                                                                                                                                                                              |
+| ------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `PER_MATCHUP` | Ratings update immediately after each matchUp is scored. A participant's dynamic form rating may change between their first and second matchUp within the same round (if applicable). |
-| `PER_ROUND` | Ratings update after all matchUps in a round are complete. All matchUps in a round use the same dynamic form ratings for expectation calculations. |
+| `PER_ROUND`   | Ratings update after all matchUps in a round are complete. All matchUps in a round use the same dynamic form ratings for expectation calculations.                                    |
 
 `PER_ROUND` is the more common choice for Swiss and DrawMatic competitions, where all pairings in a round are determined simultaneously. `PER_MATCHUP` is useful when matchUps complete asynchronously and subsequent pairings depend on live results.
 
@@ -181,11 +181,11 @@ The `pairingPolicy` block controls how participants are matched each round.
 
 ### Methods
 
-| Method | Description |
-|---|---|
-| `DRAW_MATIC` | Lane-based pairing. Participants are sorted by the chosen `ratingSource` and divided into lanes of `laneSize`. Pairings are drawn within or across adjacent lanes. Supports `sameTeamValue` penalty to discourage intra-team matchups. |
-| `SWISS` | Standard Swiss-system pairing. Participants with equal scores are paired together, using rating to break ties within score groups. |
-| `LEVEL_BASED` | Participants are paired within rating bands. Simpler than DrawMatic, without the lane structure. |
+| Method        | Description                                                                                                                                                                                                                            |
+| ------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `DRAW_MATIC`  | Lane-based pairing. Participants are sorted by the chosen `ratingSource` and divided into lanes of `laneSize`. Pairings are drawn within or across adjacent lanes. Supports `sameTeamValue` penalty to discourage intra-team matchups. |
+| `SWISS`       | Standard Swiss-system pairing. Participants with equal scores are paired together, using rating to break ties within score groups.                                                                                                     |
+| `LEVEL_BASED` | Participants are paired within rating bands. Simpler than DrawMatic, without the lane structure.                                                                                                                                       |
 
 ### Configuration
 
@@ -202,27 +202,27 @@ The `victoryPolicy` block determines the leaderboard ranking.
 
 ### Primary Ranking
 
-| Value | Leaderboard sorted by |
-|---|---|
-| `WINS` | Total match wins |
-| `POINTS` | Total points scored |
-| `PRESSURE_RATING` | Cumulative overperformance |
-| `DYNAMIC_FORM_RATING` | Current form rating |
+| Value                 | Leaderboard sorted by      |
+| --------------------- | -------------------------- |
+| `WINS`                | Total match wins           |
+| `POINTS`              | Total points scored        |
+| `PRESSURE_RATING`     | Cumulative overperformance |
+| `DYNAMIC_FORM_RATING` | Current form rating        |
 
 ### Tiebreak Order
 
 When participants are tied on the primary ranking, the `tiebreakOrder` array defines the sequence of tiebreak methods applied:
 
-| Tiebreak | Description |
-|---|---|
-| `HEAD_TO_HEAD` | Direct result between tied participants |
-| `HEAD_TO_HEAD_PRESSURE` | Pressure rating differential in head-to-head matchUps |
-| `POINT_DIFFERENTIAL` | `totalPointsWon - totalPointsLost` |
-| `STRENGTH_OF_OPPOSITION` | Average baseline rating of opponents faced |
-| `DYNAMIC_FORM_RATING` | Current dynamic form rating |
-| `PRESSURE_RATING` | Cumulative pressure rating |
-| `BUCHHOLZ` | Sum of opponents' scores (Swiss tiebreak) |
-| `SONNEBORN_BERGER` | Sum of beaten opponents' scores + half of drawn opponents' scores |
+| Tiebreak                 | Description                                                       |
+| ------------------------ | ----------------------------------------------------------------- |
+| `HEAD_TO_HEAD`           | Direct result between tied participants                           |
+| `HEAD_TO_HEAD_PRESSURE`  | Pressure rating differential in head-to-head matchUps             |
+| `POINT_DIFFERENTIAL`     | `totalPointsWon - totalPointsLost`                                |
+| `STRENGTH_OF_OPPOSITION` | Average baseline rating of opponents faced                        |
+| `DYNAMIC_FORM_RATING`    | Current dynamic form rating                                       |
+| `PRESSURE_RATING`        | Cumulative pressure rating                                        |
+| `BUCHHOLZ`               | Sum of opponents' scores (Swiss tiebreak)                         |
+| `SONNEBORN_BERGER`       | Sum of beaten opponents' scores + half of drawn opponents' scores |
 
 ---
 
@@ -238,14 +238,14 @@ Standard DrawMatic competition. No pressure tracking. Rankings based on wins wit
 import { POLICY_COMPETITION_STANDARD } from 'tods-competition-factory';
 ```
 
-| Setting | Value |
-|---|---|
-| Pairing | `DRAW_MATIC`, `DYNAMIC_FORM` source |
-| Primary ranking | `WINS` |
-| Tiebreaks | `POINT_DIFFERENTIAL`, `HEAD_TO_HEAD`, `DYNAMIC_FORM_RATING` |
-| Pressure | Disabled |
-| Granularity | `PER_ROUND` |
-| kFactor / scale | 24 / 400 |
+| Setting         | Value                                                       |
+| --------------- | ----------------------------------------------------------- |
+| Pairing         | `DRAW_MATIC`, `DYNAMIC_FORM` source                         |
+| Primary ranking | `WINS`                                                      |
+| Tiebreaks       | `POINT_DIFFERENTIAL`, `HEAD_TO_HEAD`, `DYNAMIC_FORM_RATING` |
+| Pressure        | Disabled                                                    |
+| Granularity     | `PER_ROUND`                                                 |
+| kFactor / scale | 24 / 400                                                    |
 
 ### POLICY_COMPETITION_PRESSURE
 
@@ -255,14 +255,14 @@ DrawMatic competition with full pressure tracking. Rankings based on cumulative 
 import { POLICY_COMPETITION_PRESSURE } from 'tods-competition-factory';
 ```
 
-| Setting | Value |
-|---|---|
-| Pairing | `DRAW_MATIC`, `DYNAMIC_FORM` source |
-| Primary ranking | `PRESSURE_RATING` |
-| Tiebreaks | `HEAD_TO_HEAD_PRESSURE`, `POINT_DIFFERENTIAL`, `STRENGTH_OF_OPPOSITION` |
-| Pressure | Enabled, `POINT_SHARE` method |
-| Granularity | `PER_MATCHUP` |
-| kFactor / scale | 24 / 400 |
+| Setting         | Value                                                                   |
+| --------------- | ----------------------------------------------------------------------- |
+| Pairing         | `DRAW_MATIC`, `DYNAMIC_FORM` source                                     |
+| Primary ranking | `PRESSURE_RATING`                                                       |
+| Tiebreaks       | `HEAD_TO_HEAD_PRESSURE`, `POINT_DIFFERENTIAL`, `STRENGTH_OF_OPPOSITION` |
+| Pressure        | Enabled, `POINT_SHARE` method                                           |
+| Granularity     | `PER_MATCHUP`                                                           |
+| kFactor / scale | 24 / 400                                                                |
 
 ### POLICY_COMPETITION_SWISS
 
@@ -272,14 +272,14 @@ Swiss-system competition with pressure tracking. Rankings based on wins with che
 import { POLICY_COMPETITION_SWISS } from 'tods-competition-factory';
 ```
 
-| Setting | Value |
-|---|---|
-| Pairing | `SWISS`, `DYNAMIC_FORM` source |
-| Primary ranking | `WINS` |
-| Tiebreaks | `BUCHHOLZ`, `SONNEBORN_BERGER`, `HEAD_TO_HEAD`, `PRESSURE_RATING` |
-| Pressure | Enabled, `POINT_SHARE` method |
-| Granularity | `PER_ROUND` |
-| kFactor / scale | 24 / 400 |
+| Setting         | Value                                                             |
+| --------------- | ----------------------------------------------------------------- |
+| Pairing         | `SWISS`, `DYNAMIC_FORM` source                                    |
+| Primary ranking | `WINS`                                                            |
+| Tiebreaks       | `BUCHHOLZ`, `SONNEBORN_BERGER`, `HEAD_TO_HEAD`, `PRESSURE_RATING` |
+| Pressure        | Enabled, `POINT_SHARE` method                                     |
+| Granularity     | `PER_ROUND`                                                       |
+| kFactor / scale | 24 / 400                                                          |
 
 ---
 
@@ -294,9 +294,9 @@ Each participant entry maintains:
 ```ts
 {
   participantId: string;
-  baselineRating: number;        // Frozen for the event
-  dynamicFormRating: number;     // Updated after each processed matchUp
-  pressureRating: number;        // Cumulative overperformance (starts at 0)
+  baselineRating: number; // Frozen for the event
+  dynamicFormRating: number; // Updated after each processed matchUp
+  pressureRating: number; // Cumulative overperformance (starts at 0)
   roundsPlayed: number;
   wins: number;
   losses: number;
@@ -308,9 +308,9 @@ Each participant entry maintains:
     opponentParticipantId: string;
     dynamicFormRatingBefore: number;
     dynamicFormRatingAfter: number;
-    pressureDelta: number;       // actualOutput - expectedBaseline
+    pressureDelta: number; // actualOutput - expectedBaseline
     actualOutput: number;
-    expectedOutput: number;      // From baseline ratings
+    expectedOutput: number; // From baseline ratings
   }>;
 }
 ```

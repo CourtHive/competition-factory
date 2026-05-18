@@ -260,6 +260,31 @@ describe('Priority override', () => {
     });
     expect(awardProfile?.profileName).toEqual('High Priority');
   });
+
+  it('tied priority falls back to array order (first wins)', () => {
+    const firstTied = {
+      profileName: 'First Tied',
+      levels: [1, 2, 3],
+      priority: 5,
+      perWinPoints: { level: { 1: 10 } },
+    };
+
+    const secondTied = {
+      profileName: 'Second Tied',
+      levels: [1, 2, 3],
+      priority: 5,
+      perWinPoints: { level: { 1: 50 } },
+    };
+
+    const awardProfiles = [firstTied, secondTied];
+
+    const { awardProfile } = getAwardProfile({
+      awardProfiles,
+      level: 2,
+      participation: { participationOrder: 1, flightNumber: 1 },
+    });
+    expect(awardProfile?.profileName).toEqual('First Tied');
+  });
 });
 
 describe('profileName in output', () => {

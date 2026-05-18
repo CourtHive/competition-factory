@@ -9,14 +9,15 @@ import { extractDate, isValidDateString } from '@Tools/dateTime';
 
 // constants and types
 import { ARRAY, OF_TYPE, SCHEDULE_DATES, TOURNAMENT_RECORDS, VALIDATE } from '@Constants/attributeConstants';
+import { BYE, completedMatchUpStatuses } from '@Constants/matchUpStatusConstants';
 import { NO_VALID_DATES } from '@Constants/errorConditionConstants';
 import { DOUBLES, SINGLES } from '@Constants/matchUpTypes';
 import { TournamentRecords } from '@Types/factoryTypes';
 import { SUCCESS } from '@Constants/resultConstants';
-import { BYE } from '@Constants/matchUpStatusConstants';
 
 type ScheduleProfileGridArgs = {
   tournamentRecords: TournamentRecords;
+  matchUpDailyLimits?: { [key: string]: number };
   scheduleCompletedMatchUps?: boolean;
   clearScheduleDates?: boolean;
   minCourtGridRows?: number;
@@ -54,6 +55,7 @@ function findRoundMatchUps(
   roundProfile: RoundProfile,
   allMatchUps: any[],
   containedStructureIds: Record<string, string>,
+  scheduleCompletedMatchUps?: boolean,
 ): any[] {
   const { structureId, roundNumber, drawId, roundSegment } = roundProfile;
   const effectiveStructureId = containedStructureIds[structureId] ?? structureId;
@@ -73,6 +75,11 @@ function findRoundMatchUps(
 
   return allMatchUps.filter((m: any) => {
     if (m.matchUpStatus === BYE) return false;
+    // Completed matchUps from earlier sessions must not be carried into the
+    // pro scheduler — they don't need placement and would otherwise occupy
+    // grid rows, pushing newly-scheduled matchUps down. mocksEngine and a
+    // few other callers explicitly opt back in via scheduleCompletedMatchUps.
+    if (!scheduleCompletedMatchUps && completedMatchUpStatuses.includes(m.matchUpStatus)) return false;
     if (m.schedule?.courtId) return false;
     if (m.schedule?.courtOrder) return false;
     if (m.roundNumber !== roundNumber) return false;
@@ -96,6 +103,7 @@ function collectVenuePlan(
   courtIdsFilter: Set<string> | null,
   allMatchUps: any[],
   containedStructureIds: Record<string, string>,
+  scheduleCompletedMatchUps?: boolean,
 ): { dateMatchUps: any[]; dateCourtIds: string[] } {
   const dateMatchUps: any[] = [];
   const dateCourtIds: string[] = [];
@@ -106,7 +114,9 @@ function collectVenuePlan(
     dateCourtIds.push(...venueCourtIds);
 
     for (const roundProfile of venueProfile.rounds ?? []) {
-      dateMatchUps.push(...findRoundMatchUps(roundProfile, allMatchUps, containedStructureIds));
+      dateMatchUps.push(
+        ...findRoundMatchUps(roundProfile, allMatchUps, containedStructureIds, scheduleCompletedMatchUps),
+      );
     }
   }
 
@@ -126,6 +136,7 @@ function collectVenuePlan(
 export function scheduleProfileGrid(params: ScheduleProfileGridArgs) {
   const {
     scheduleCompletedMatchUps,
+    matchUpDailyLimits,
     minCourtGridRows = 10,
     clearScheduleDates,
     scheduleDates = [],
@@ -208,6 +219,7 @@ export function scheduleProfileGrid(params: ScheduleProfileGridArgs) {
   // Track results per date
   const scheduledMatchUpIds: Record<string, string[]> = {};
   const notScheduledMatchUpIds: Record<string, string[]> = {};
+  const overLimitMatchUpIds: Record<string, string[]> = {};
   const scheduledDates: string[] = [];
 
   for (const dateProfile of dateProfiles) {
@@ -220,6 +232,7 @@ export function scheduleProfileGrid(params: ScheduleProfileGridArgs) {
       courtIdsFilter,
       allMatchUps ?? [],
       containedStructureIds,
+      scheduleCompletedMatchUps,
     );
 
     if (!dateMatchUps.length) continue;
@@ -228,10 +241,13 @@ export function scheduleProfileGrid(params: ScheduleProfileGridArgs) {
     // the filter.
     if (courtIdsFilter && !dateCourtIds.length) continue;
 
-    // Run proAutoSchedule for this date with the collected matchUps
+    // Run proAutoSchedule for this date with the collected matchUps.
+    // BYE / completed filtering already happened in `findRoundMatchUps` above
+    // when `scheduleCompletedMatchUps` was false (the default), so the
+    // scheduler is fed the pre-filtered set.
     const gridResult: any = proAutoSchedule({
       courtIds: resolveTargetCourtIds(dateCourtIds, courtIdsFilter),
-      scheduleCompletedMatchUps,
+      matchUpDailyLimits,
       minCourtGridRows,
       tournamentRecords,
       matchUps: dateMatchUps,
@@ -242,6 +258,7 @@ export function scheduleProfileGrid(params: ScheduleProfileGridArgs) {
 
     const dateScheduledIds = (gridResult.scheduled ?? []).map((m) => m.matchUpId);
     const dateNotScheduledIds = (gridResult.notScheduled ?? []).map((m) => m.matchUpId);
+    const dateOverLimitIds: string[] = gridResult.overLimitMatchUpIds ?? [];
 
     if (dateScheduledIds.length) {
       scheduledMatchUpIds[scheduledDate] = dateScheduledIds;
@@ -250,12 +267,16 @@ export function scheduleProfileGrid(params: ScheduleProfileGridArgs) {
     if (dateNotScheduledIds.length) {
       notScheduledMatchUpIds[scheduledDate] = dateNotScheduledIds;
     }
+    if (dateOverLimitIds.length) {
+      overLimitMatchUpIds[scheduledDate] = dateOverLimitIds;
+    }
   }
 
   return {
     ...SUCCESS,
     scheduledMatchUpIds,
     notScheduledMatchUpIds,
+    overLimitMatchUpIds,
     scheduledDates,
   };
 }

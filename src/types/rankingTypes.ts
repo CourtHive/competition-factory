@@ -44,7 +44,30 @@ export interface RankingPolicy {
    * ```
    */
   tierToLevel?: Record<string, Record<string, number>>;
+
+  /**
+   * How results contribute to ranking lists.
+   * - 'per-category' (default): each ranking list is computed from awards
+   *   filtered to its category, plus optional categoryAggregation rules.
+   * - 'shared': one pool of awards feeds every age-eligible ranking list
+   *   the participant qualifies for. No categoryAggregation rules are
+   *   evaluated under this model. (Tennis Canada paradigm.)
+   */
+  pointPoolModel?: PointPoolModel;
+
+  /**
+   * Ranking lists that are filtered views of another list, not computed
+   * independently. Captures ČTS's "U16 is a reduced extract of the U18
+   * ranking" — and could also model TE's "14&U-eligible players appear
+   * on both 14&U and 16&U lists" if we ever choose to refactor that.
+   *
+   * At snapshot-generation time, the derived snapshot is produced by
+   * filtering the source snapshot's entries — no independent aggregation.
+   */
+  derivedRankings?: DerivedRanking[];
 }
+
+export type PointPoolModel = 'per-category' | 'shared';
 
 // ─── Category Scope ──────────────────────────────────────────────────
 
@@ -333,6 +356,158 @@ export interface AggregationRules {
 
   /** Tiebreaker criteria, applied in order */
   tiebreakCriteria?: TiebreakCriterion[];
+
+  /**
+   * Category aggregation rules: how point awards earned in one category
+   * contribute to ranking lists in another. Evaluated by generateRankingList
+   * at aggregation time (not at award-emission time).
+   *
+   * - USTA Junior uses these for downward 20% carry + upward play-up.
+   * - Tennis Europe uses them for the 14&U max-2-of-6 cap and the
+   *   12&U→14&U carry (via rerateTo).
+   * - LTA uses them for Combined Ranking pool composition.
+   * - Tennis Australia uses them for the De Minaur Junior Tour caps + carve-outs.
+   * - ČTS uses an empty array (Article 28 prohibits cross-category rerate).
+   * - Tennis Canada (pointPoolModel='shared') does not evaluate these.
+   */
+  categoryAggregation?: CategoryAggregationRule[];
+}
+
+// ─── Category Aggregation Rules ──────────────────────────────────────
+
+/**
+ * How point awards earned in one category contribute to ranking lists
+ * in another. Evaluated by generateRankingList at aggregation time.
+ *
+ * PointAwards themselves are never rewritten — the rule is interpreted
+ * at list-generation, not at award-emission. (Tennis Europe's 12U starting
+ * points are an emission-time concern handled separately.)
+ */
+export interface CategoryAggregationRule {
+  /** Human-readable label for auditing. */
+  ruleName?: string;
+
+  /** Source categories whose awards feed this rule. */
+  source: CategoryScope;
+
+  /** Target category that the carried contribution lands in. */
+  target: CategoryScope;
+
+  /**
+   * Multiplier on source point components.
+   * - 0.2 : USTA 20% next-older carry
+   * - 1.0 : USTA upward play-up, Tennis Europe play-up, Tennis Australia
+   * Mutually exclusive with rerateTo.
+   */
+  multiplier?: number;
+
+  /**
+   * Re-rate the source result against a different award profile
+   * (by profileName). Captures DTB Rangliste's own-age-determines-
+   * round-value rule. Tennis Europe's 12U starting-points carry is
+   * handled at emission time, not via this field.
+   * Mutually exclusive with multiplier.
+   */
+  rerateTo?: { profileName: string };
+
+  /**
+   * Boolean form (USTA): participant must have at least one direct
+   * target-category award to appear on the target list at all.
+   */
+  requireParticipationInTarget?: boolean;
+
+  /**
+   * Numeric form (LTA, DTB participation floor): minimum number of
+   * direct target-category results required. Stronger than the boolean.
+   */
+  minResultsFromTarget?: number;
+
+  /**
+   * Bounded window of eligible source categories relative to target.
+   * LTA: { olderBy: 2 } — up to 2 age groups above target.
+   * If omitted, source is whatever CategoryScope matches.
+   */
+  eligibleSourceWindow?: {
+    olderBy?: number;
+    youngerBy?: number;
+  };
+
+  /**
+   * After a player ages up into the target, prior-category results
+   * remain eligible for this many months. LTA: 12.
+   */
+  retentionMonthsAfterAging?: number;
+
+  /**
+   * Maximum carried results per participant per rule.
+   * Tennis Europe: 2 (singles from 16U). Tennis Australia: 3 singles + 3 doubles.
+   */
+  maxCarriedResults?: number;
+
+  /**
+   * Carried results compete with native target awards for bestOfCount
+   * slots (default true); when false, contributions sum on top.
+   */
+  subjectToBucketLimits?: boolean;
+
+  /**
+   * Which point components to carry. Defaults to all components.
+   */
+  carryComponents?: PointComponent[];
+
+  /**
+   * Exclusion predicates for source awards. Tennis Australia's
+   * "J1000 14u results excluded for player aging up to 16u Finals".
+   * Any matching predicate disqualifies the source award from this rule.
+   */
+  excludedSourceFilters?: SourceFilter[];
+}
+
+export interface SourceFilter {
+  levels?: number[];
+  drawTypes?: string[];
+  eventTiers?: string[];
+  /** Disqualify when participant has aged out of source category by snapshot date. */
+  ageEligibility?: 'agingUpToTarget' | 'agingDownFromSource';
+}
+
+// ─── Derived Rankings ────────────────────────────────────────────────
+
+/**
+ * A ranking list that is a filtered view of another list, not an
+ * independent computation. Used by ČTS where the U16 ("ml. dorost")
+ * ranking is a reduced extract of the U18 ("dorost") ranking.
+ *
+ * At snapshot-generation time, the derived snapshot's entries are
+ * the source snapshot's entries filtered by the rules below, with
+ * ranks re-numbered 1..N within the filtered set.
+ */
+export interface DerivedRanking {
+  /** The category whose ranking list is being derived (e.g., U16). */
+  category: CategoryScope;
+
+  /** The source ranking list this is derived from (e.g., U18). */
+  derivedFrom: CategoryScope;
+
+  /** Filter applied to source entries to produce derived entries. */
+  filter: DerivedFilter;
+}
+
+export interface DerivedFilter {
+  /**
+   * Exclude players who will age up at end of current period.
+   * Captures ČTS's rCŽ (reduced ranking) rule.
+   */
+  excludePlayersAgingUp?: boolean;
+
+  /**
+   * Limit to participants whose effective age is in this range at
+   * snapshot date. Inclusive bounds. ČTS U16 = { max: 16 }.
+   */
+  ageRange?: { min?: number; max?: number };
+
+  /** Further category match (e.g., gender) applied as conjunction. */
+  additionalScope?: CategoryScope;
 }
 
 export interface CountingBucket {

@@ -95,25 +95,33 @@ const standardDoubles = {
 
 // ─── Aggregation Rules ───────────────────────────────────────────────────────
 
+// Tennis Canada uses a shared-pool model: one pool of awards feeds every
+// age-eligible ranking list the participant qualifies for, with no
+// cross-category contribution rules (categoryAggregation is empty and not
+// evaluated under pointPoolModel: 'shared').
 const aggregationRules = {
-  rollingPeriodDays: 364, // 52 weeks
+  rollingPeriodDays: 365,
   separateByGender: true,
   perCategory: true, // Separate rankings per age group (U12, U14, U16, U18)
 
   countingBuckets: [
     {
-      bucketName: 'Singles',
+      bucketName: 'singles',
       eventTypes: [SINGLES],
-      bestOfCount: 6,
+      bestOfCount: 5,
       pointComponents: ['positionPoints'] as const,
     },
     {
-      bucketName: 'Doubles',
+      bucketName: 'doubles',
       eventTypes: [DOUBLES],
-      bestOfCount: 6,
+      bestOfCount: 5,
       pointComponents: ['positionPoints'] as const,
     },
   ],
+
+  // Empty under shared-pool model — generateRankingList does not evaluate
+  // categoryAggregation when pointPoolModel === 'shared'.
+  categoryAggregation: [],
 };
 
 // ─── Assembled Policy ────────────────────────────────────────────────────────
@@ -127,6 +135,8 @@ export const POLICY_RANKING_POINTS_TENNIS_CANADA = {
     policyName: 'Tennis Canada Junior Rankings',
     policyVersion: '2025.01',
     validDateRange: { startDate: '2025-01-01' },
+
+    pointPoolModel: 'shared' as const,
 
     awardProfiles,
     aggregationRules,

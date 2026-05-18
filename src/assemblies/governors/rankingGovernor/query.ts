@@ -1,8 +1,10 @@
 export { getApplicableAwardProfileLevels } from '@Query/scales/getApplicableAwardProfileLevels';
+export { getTournamentPointAwards } from '@Query/scales/getTournamentPointAwards';
 export { getEventRankingPoints } from '@Query/scales/getEventRankingPoints';
-export { getTournamentPoints } from '@Query/scales/getTournamentPoints';
-export { generateRankingList } from '@Query/scales/generateRankingList';
 export { getParticipantPoints } from '@Query/scales/getParticipantPoints';
+export { applyDerivedRankings } from '@Query/scales/applyDerivedRankings';
+export { getTournamentPoints } from '@Query/scales/getTournamentPoints';
 export { getQualityWinPoints } from '@Query/scales/getQualityWinPoints';
+export { generateRankingList } from '@Query/scales/generateRankingList';
 export { getAwardProfile } from '@Query/scales/getAwardProfile';
 export { getAwardPoints } from '@Query/scales/getAwardPoints';

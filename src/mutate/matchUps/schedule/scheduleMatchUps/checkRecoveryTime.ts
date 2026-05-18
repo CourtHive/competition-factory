@@ -25,17 +25,19 @@ export function checkRecoveryTime({
   const averageMatchUpMinutes = details?.minutesMap?.[matchUp.matchUpId]?.averageMinutes || 0;
   const recoveryMinutes = details?.minutesMap?.[matchUp.matchUpId]?.recoveryMinutes || 0;
 
-  const sufficientTimeForIndiiduals = participantIdDependencies.every((participantId) => {
+  // Collect the participantIds whose existing bookings overlap the proposed
+  // schedule window (matchUp duration + recovery). Used for explanation in
+  // the drawer; original boolean semantics preserved via `blockingParticipantIds.length === 0`.
+  const blockingParticipantIds: string[] = [];
+  for (const participantId of participantIdDependencies) {
     checkParticipantProfileInitialization({
       individualParticipantProfiles,
       participantId,
     });
 
     const profile = individualParticipantProfiles[participantId];
-    if (!profile.timeAfterRecovery) return true;
+    if (!profile.timeAfterRecovery) continue;
 
-    // details are provided by jinnScheduler and this enables treating a participant's scheduled matchUps as "bookings"
-    // if (details && timeBetween < 0) {
     const endTime = extractTime(matchUp?.schedule?.endTime);
     const timeAfterRecovery = endTime
       ? addMinutesToTimeString(endTime, ensureInt(recoveryMinutes))
@@ -43,17 +45,18 @@ export function checkRecoveryTime({
 
     const potentialParticipantBookings = Object.keys(profile.potentialBookings)
       .filter((drawId) => drawId !== matchUp.drawId)
-      .map((drawId) => profile.potentialBookings[drawId])
-      .flat();
+      .flatMap((drawId) => profile.potentialBookings[drawId]);
 
     const participantBookings = [...potentialParticipantBookings, ...profile.bookings];
 
-    const timeOverlap = !!participantBookings.find(
+    const timeOverlap = participantBookings.some(
       (booking) => analyzeScheduleOverlap({ scheduleTime, timeAfterRecovery }, booking).hasOverlap,
     );
 
-    return !timeOverlap;
-  });
+    if (timeOverlap) blockingParticipantIds.push(participantId);
+  }
+
+  const sufficientTimeForIndiiduals = blockingParticipantIds.length === 0;
 
   const notBeforeTime = matchUpNotBeforeTimes[matchUp.matchUpId];
   const timeBetweenMatchUps = notBeforeTime
@@ -63,5 +66,5 @@ export function checkRecoveryTime({
 
   const enoughTime = sufficientTimeForIndiiduals && sufficientTimeBetweenMatchUps;
 
-  return { enoughTime };
+  return { enoughTime, blockingParticipantIds, notBeforeTime };
 }

@@ -28,7 +28,7 @@ Research across tennis (ITF, ATP, WTA, USTA, LTA, Tennis Australia, FFT), badmin
 
 **Universal workflow states:**
 
-```
+```text
 DRAFT → SUBMITTED → UNDER_REVIEW → APPROVED | CONDITIONALLY_APPROVED | REJECTED | WITHDRAWN
   APPROVED → MODIFICATION_REQUESTED → RE_APPROVED
   APPROVED → EVENT_CONDUCTED → POST_EVENT_REPORTING → COMPLIANCE_VERIFIED | ISSUES_FLAGGED
@@ -63,13 +63,14 @@ DRAFT → SUBMITTED → UNDER_REVIEW → APPROVED | CONDITIONALLY_APPROVED | REJ
 6. Post-event: results reporting, financial reconciliation, compliance review
 
 **Level-driven requirements (ITF example):**
-| Level | Prize Money | Draw Size | Winner Points | Qualifying |
-|-------|-----------|-----------|---------------|------------|
-| M15/W15 | $15,000 | 32S/16Q | 15 | Max = main draw size |
-| M25/W35 | $25,000/$35,000 | 32S/16Q | 35 | Not allowed if main ≤ 16 |
-| W50 | $50,000 | 32S/16Q | 50 | Enhanced hospitality |
-| W75 | $75,000 | 32S/16Q | 75 | Enhanced hospitality |
-| W100 | $100,000 | 32S/16Q | 100 | Enhanced hospitality |
+
+| Level   | Prize Money     | Draw Size | Winner Points | Qualifying               |
+| ------- | --------------- | --------- | ------------- | ------------------------ |
+| M15/W15 | $15,000         | 32S/16Q   | 15            | Max = main draw size     |
+| M25/W35 | $25,000/$35,000 | 32S/16Q   | 35            | Not allowed if main ≤ 16 |
+| W50     | $50,000         | 32S/16Q   | 50            | Enhanced hospitality     |
+| W75     | $75,000         | 32S/16Q   | 75            | Enhanced hospitality     |
+| W100    | $100,000        | 32S/16Q   | 100           | Enhanced hospitality     |
 
 **USTA levels (1-7):**
 
@@ -220,7 +221,7 @@ interface EventProposal {
 
 ### 3.4 State Machine
 
-```
+```text
                     ┌──────────┐
                     │  DRAFT   │
                     └────┬─────┘
@@ -393,7 +394,7 @@ interface PersonnelRole {
 
 Following the existing factory engine pattern:
 
-```
+```text
 src/
   assemblies/
     engines/

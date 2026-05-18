@@ -148,6 +148,306 @@ describe('scheduleProfileGrid', () => {
     expect(day1Ids.length).toEqual(3);
   });
 
+  // Regression: completed matchUps from a prior session were consuming court
+  // grid slots before being discarded at persist time, pushing newly-scheduled
+  // matchUps several rows down. Originally surfaced as a 32-draw SE whose
+  // 16 completed R1 matchUps reserved rows 1-3 + part of row 4 in the grid,
+  // so Round 2 of the same draw and an unrelated event's Round 1 both started
+  // at courtOrder 4 instead of 1.
+  it('does not reserve grid slots for completed matchUps in earlier rounds', () => {
+    const venueId = 'venue-completed-r1';
+    const drawId = 'draw-with-completed-r1';
+    const { tournamentRecord } = mocksEngine.generateTournamentRecord({
+      venueProfiles: [{ venueName: 'CC', venueAbbreviation: 'CC', courtsCount: 4, venueId }],
+      drawProfiles: [
+        {
+          drawId,
+          drawSize: 16,
+          // Complete every Round 1 matchUp so R1 contributes 0 placeable matchUps.
+          outcomes: [
+            { roundNumber: 1, roundPosition: 1, scoreString: '6-0 6-0', winningSide: 1 },
+            { roundNumber: 1, roundPosition: 2, scoreString: '6-0 6-0', winningSide: 1 },
+            { roundNumber: 1, roundPosition: 3, scoreString: '6-0 6-0', winningSide: 1 },
+            { roundNumber: 1, roundPosition: 4, scoreString: '6-0 6-0', winningSide: 1 },
+            { roundNumber: 1, roundPosition: 5, scoreString: '6-0 6-0', winningSide: 1 },
+            { roundNumber: 1, roundPosition: 6, scoreString: '6-0 6-0', winningSide: 1 },
+            { roundNumber: 1, roundPosition: 7, scoreString: '6-0 6-0', winningSide: 1 },
+            { roundNumber: 1, roundPosition: 8, scoreString: '6-0 6-0', winningSide: 1 },
+          ],
+        },
+      ],
+      startDate,
+      endDate,
+    });
+
+    let result: any = tournamentEngine.setState(tournamentRecord);
+    expect(result.success).toEqual(true);
+
+    const { matchUps } = tournamentEngine.allCompetitionMatchUps({ inContext: true });
+    const r1 = matchUps.filter((m) => m.roundNumber === 1);
+    const r2 = matchUps.filter((m) => m.roundNumber === 2);
+    expect(r1.every((m) => m.matchUpStatus === 'COMPLETED')).toEqual(true);
+    expect(r2.length).toEqual(4);
+    const { tournamentId, eventId, structureId } = matchUps[0];
+
+    tournamentEngine.setSchedulingProfile({
+      schedulingProfile: [
+        {
+          scheduleDate: startDate,
+          venues: [
+            {
+              venueId,
+              rounds: [
+                { tournamentId, eventId, drawId, structureId, roundNumber: 1 },
+                { tournamentId, eventId, drawId, structureId, roundNumber: 2 },
+              ],
+            },
+          ],
+        },
+      ],
+    });
+
+    result = tournamentEngine.scheduleProfileGrid({ scheduleDates: [startDate] });
+    expect(result.success).toEqual(true);
+
+    // Only the 4 R2 matchUps should be scheduled; the 8 completed R1 matchUps
+    // must not be present in scheduledMatchUpIds.
+    const scheduledIds = result.scheduledMatchUpIds[startDate] ?? [];
+    expect(scheduledIds.length).toEqual(4);
+    const r1Ids = new Set(r1.map((m) => m.matchUpId));
+    expect(scheduledIds.some((id) => r1Ids.has(id))).toEqual(false);
+
+    // Critical regression assertion: R2 matchUps must land at courtOrder 1,
+    // not be pushed down by the (filtered-out) completed R1 matchUps.
+    const { matchUps: allAfter } = tournamentEngine.allCompetitionMatchUps({ inContext: true });
+    const scheduledR2 = allAfter.filter((m) => m.roundNumber === 2 && m.schedule?.courtOrder);
+    expect(scheduledR2.length).toEqual(4);
+    const courtOrders = scheduledR2.map((m) => m.schedule.courtOrder).sort((a, b) => a - b);
+    // 4 R2 matchUps on 4 courts → each takes courtOrder 1, not courtOrder >1.
+    expect(courtOrders[0]).toEqual(1);
+    expect(Math.max(...courtOrders)).toBeLessThanOrEqual(1);
+  });
+
+  it('respects scheduleCompletedMatchUps override (legacy mocksEngine behavior)', () => {
+    const venueId = 'venue-include-completed';
+    const drawId = 'draw-include-completed';
+    const { tournamentRecord } = mocksEngine.generateTournamentRecord({
+      venueProfiles: [{ venueName: 'CC', venueAbbreviation: 'CC', courtsCount: 4, venueId }],
+      drawProfiles: [
+        {
+          drawId,
+          drawSize: 8,
+          outcomes: [
+            { roundNumber: 1, roundPosition: 1, scoreString: '6-0 6-0', winningSide: 1 },
+            { roundNumber: 1, roundPosition: 2, scoreString: '6-0 6-0', winningSide: 1 },
+            { roundNumber: 1, roundPosition: 3, scoreString: '6-0 6-0', winningSide: 1 },
+            { roundNumber: 1, roundPosition: 4, scoreString: '6-0 6-0', winningSide: 1 },
+          ],
+        },
+      ],
+      startDate,
+      endDate,
+    });
+
+    let result: any = tournamentEngine.setState(tournamentRecord);
+    expect(result.success).toEqual(true);
+
+    const { matchUps } = tournamentEngine.allCompetitionMatchUps({ inContext: true });
+    const { tournamentId, eventId, structureId } = matchUps[0];
+
+    tournamentEngine.setSchedulingProfile({
+      schedulingProfile: [
+        {
+          scheduleDate: startDate,
+          venues: [
+            {
+              venueId,
+              rounds: [
+                { tournamentId, eventId, drawId, structureId, roundNumber: 1 },
+                { tournamentId, eventId, drawId, structureId, roundNumber: 2 },
+              ],
+            },
+          ],
+        },
+      ],
+    });
+
+    // With override, completed matchUps re-enter the pipeline (the legacy
+    // path used by mocksEngine seeding). We don't assert on exact placement
+    // here — only that the override is respected so the count is higher.
+    result = tournamentEngine.scheduleProfileGrid({
+      scheduleDates: [startDate],
+      scheduleCompletedMatchUps: true,
+    });
+    expect(result.success).toEqual(true);
+    const scheduledIds = result.scheduledMatchUpIds[startDate] ?? [];
+    // Default-path baseline would only schedule R2 (2 matchUps); with override
+    // the 4 completed R1 also enter the pipeline.
+    expect(scheduledIds.length).toBeGreaterThan(2);
+  });
+
+  // Regression: when Garman has already assigned scheduledTime to matchUps
+  // (Garman → Pro workflow), the pro scheduler used to place them by
+  // roundPosition only, so a 09:30 matchUp could end up on a row below a
+  // later-time matchUp from the same round. Now matchUps are pre-sorted
+  // by (scheduledDate, scheduledTime) so earlier times prefer earlier rows.
+  // Single-court fixture makes the (time → courtOrder) mapping 1:1.
+  it('respects existing scheduledTime when ordering matchUps onto the grid', () => {
+    const venueId = 'venue-time-aware';
+    const drawId = 'draw-time-aware';
+    const { tournamentRecord } = mocksEngine.generateTournamentRecord({
+      venueProfiles: [{ venueName: 'CC', venueAbbreviation: 'CC', courtsCount: 1, venueId }],
+      drawProfiles: [{ drawId, drawSize: 8 }],
+      startDate,
+      endDate,
+    });
+
+    let result: any = tournamentEngine.setState(tournamentRecord);
+    expect(result.success).toEqual(true);
+
+    const { matchUps } = tournamentEngine.allCompetitionMatchUps({ inContext: true });
+    const r1 = matchUps.filter((m) => m.roundNumber === 1).sort((a, b) => a.roundPosition - b.roundPosition);
+    expect(r1.length).toEqual(4);
+
+    // Pre-set scheduledDate + scheduledTime in REVERSE order of roundPosition.
+    // The earliest time (08:00) is assigned to roundPosition 4 — under the
+    // old behavior this matchUp landed on the last row; with the chronological
+    // sort it must land on courtOrder 1.
+    const timeAssignments = [
+      { matchUpId: r1[0].matchUpId, scheduledTime: '11:00' }, // roundPosition 1
+      { matchUpId: r1[1].matchUpId, scheduledTime: '10:00' }, // roundPosition 2
+      { matchUpId: r1[2].matchUpId, scheduledTime: '09:00' }, // roundPosition 3
+      { matchUpId: r1[3].matchUpId, scheduledTime: '08:00' }, // roundPosition 4
+    ];
+
+    for (const { matchUpId, scheduledTime } of timeAssignments) {
+      result = tournamentEngine.addMatchUpScheduleItems({
+        matchUpId,
+        drawId,
+        schedule: { scheduledDate: startDate, scheduledTime },
+      });
+      expect(result.success).toEqual(true);
+    }
+
+    const { tournamentId, eventId, structureId } = matchUps[0];
+    tournamentEngine.setSchedulingProfile({
+      schedulingProfile: [
+        {
+          scheduleDate: startDate,
+          venues: [{ venueId, rounds: [{ tournamentId, eventId, drawId, structureId, roundNumber: 1 }] }],
+        },
+      ],
+    });
+
+    result = tournamentEngine.scheduleProfileGrid({ scheduleDates: [startDate] });
+    expect(result.success).toEqual(true);
+
+    const { matchUps: after } = tournamentEngine.allCompetitionMatchUps({ inContext: true });
+    const placed = after
+      .filter((m) => m.roundNumber === 1 && m.schedule?.courtOrder)
+      .map((m) => ({ time: m.schedule.scheduledTime, courtOrder: m.schedule.courtOrder }));
+    expect(placed.length).toEqual(4);
+
+    // 1 court → 1 mu per row → strict chronological mapping.
+    const byCourtOrder = [...placed].sort((a, b) => a.courtOrder - b.courtOrder);
+    expect(byCourtOrder.map((p) => p.time)).toEqual(['08:00', '09:00', '10:00', '11:00']);
+    expect(byCourtOrder.map((p) => p.courtOrder)).toEqual([1, 2, 3, 4]);
+  });
+
+  it('does not enforce daily limits when matchUpDailyLimits is omitted (default behavior)', () => {
+    const venueId = 'venue-no-limits';
+    const drawId = 'draw-no-limits';
+    const { tournamentRecord } = mocksEngine.generateTournamentRecord({
+      venueProfiles: [{ venueName: 'CC', venueAbbreviation: 'CC', courtsCount: 4, venueId }],
+      drawProfiles: [{ drawId, drawSize: 8 }],
+      startDate,
+      endDate,
+    });
+
+    let result: any = tournamentEngine.setState(tournamentRecord);
+    expect(result.success).toEqual(true);
+
+    const { matchUps } = tournamentEngine.allCompetitionMatchUps({ inContext: true });
+    const { tournamentId, eventId, structureId } = matchUps[0];
+
+    tournamentEngine.setSchedulingProfile({
+      schedulingProfile: [
+        {
+          scheduleDate: startDate,
+          venues: [
+            {
+              venueId,
+              rounds: [
+                { tournamentId, eventId, drawId, structureId, roundNumber: 1 },
+                { tournamentId, eventId, drawId, structureId, roundNumber: 2 },
+              ],
+            },
+          ],
+        },
+      ],
+    });
+
+    // No matchUpDailyLimits passed — all 4 R1 + 2 R2 should land.
+    result = tournamentEngine.scheduleProfileGrid({ scheduleDates: [startDate] });
+    expect(result.success).toEqual(true);
+    expect((result.scheduledMatchUpIds[startDate] ?? []).length).toEqual(6);
+    expect(result.overLimitMatchUpIds[startDate]).toBeUndefined();
+  });
+
+  it('shunts matchUps that exceed matchUpDailyLimits.SINGLES to overLimitMatchUpIds', () => {
+    const venueId = 'venue-with-limit';
+    const drawId = 'draw-with-limit';
+    const { tournamentRecord } = mocksEngine.generateTournamentRecord({
+      venueProfiles: [{ venueName: 'CC', venueAbbreviation: 'CC', courtsCount: 4, venueId }],
+      drawProfiles: [{ drawId, drawSize: 8 }],
+      startDate,
+      endDate,
+    });
+
+    let result: any = tournamentEngine.setState(tournamentRecord);
+    expect(result.success).toEqual(true);
+
+    const { matchUps } = tournamentEngine.allCompetitionMatchUps({ inContext: true });
+    const { tournamentId, eventId, structureId } = matchUps[0];
+
+    tournamentEngine.setSchedulingProfile({
+      schedulingProfile: [
+        {
+          scheduleDate: startDate,
+          venues: [
+            {
+              venueId,
+              rounds: [
+                { tournamentId, eventId, drawId, structureId, roundNumber: 1 },
+                { tournamentId, eventId, drawId, structureId, roundNumber: 2 },
+                { tournamentId, eventId, drawId, structureId, roundNumber: 3 },
+              ],
+            },
+          ],
+        },
+      ],
+    });
+
+    // SINGLES limit of 1 per participant per day. R1 has 4 matchUps with 8
+    // unique participants — each plays exactly 1 match in R1, hitting the
+    // limit. R2 (and R3) potentialParticipants are R1 winners, all at limit
+    // → R2 + R3 matchUps must end up in overLimitMatchUpIds.
+    result = tournamentEngine.scheduleProfileGrid({
+      scheduleDates: [startDate],
+      matchUpDailyLimits: { SINGLES: 1, total: 1 },
+    });
+    expect(result.success).toEqual(true);
+
+    const scheduledIds: string[] = result.scheduledMatchUpIds[startDate] ?? [];
+    const overLimitIds: string[] = result.overLimitMatchUpIds[startDate] ?? [];
+    expect(scheduledIds.length).toEqual(4); // only R1 matchUps placed
+    // R2 has 2 matchUps + R3 has 1 matchUp → 3 over-limit total.
+    expect(overLimitIds.length).toEqual(3);
+
+    // Sanity: no overlap between scheduled and over-limit.
+    for (const id of scheduledIds) expect(overLimitIds).not.toContain(id);
+  });
+
   it('handles multiple venues in a single date', () => {
     const venueId1 = 'venue-a';
     const venueId2 = 'venue-b';

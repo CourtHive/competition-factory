@@ -59,16 +59,70 @@ const standardDoubles = {
 
 // ─── Aggregation Rules ───────────────────────────────────────────────────────
 
+// De Minaur Junior Tour cross-category rules:
+//   - Up to 3 non-target-age results count toward 12u and 14u lists
+//     (subject to bucket limits). J1000 results are excluded when the
+//     participant is aging up to the 16u Finals (excludedSourceFilters).
+//   - J125 events use an 18u rating band: results in J125 18u events count
+//     in BOTH the 12u and 14u lists for J125-RATED participants.
 const aggregationRules = {
-  rollingPeriodDays: 364, // ~12 months (October to October qualification period)
+  rollingPeriodDays: 365,
   separateByGender: true,
   perCategory: true, // Separate rankings per age group (12U, 14U, 16U)
 
   countingBuckets: [
     {
-      bucketName: 'Singles & Doubles',
+      bucketName: 'singles',
+      eventTypes: [SINGLES],
       bestOfCount: 8,
       pointComponents: ['positionPoints'] as const,
+    },
+    {
+      bucketName: 'doubles',
+      eventTypes: [DOUBLES],
+      bestOfCount: 8,
+      pointComponents: ['positionPoints'] as const,
+    },
+  ],
+
+  categoryAggregation: [
+    // Non-12u → 12u list: at most 3 carried results, subject to bucket limits.
+    // J1000 (level 1) results excluded for players aging up to next category.
+    {
+      ruleName: 'Non-12u → 12u (cap 3 each event type)',
+      source: { ageCategoryCodes: ['14U', '16U'] },
+      target: { ageCategoryCodes: ['12U'] },
+      multiplier: 1.0,
+      maxCarriedResults: 3,
+      subjectToBucketLimits: true,
+      excludedSourceFilters: [{ levels: [1], ageEligibility: 'agingUpToTarget' }],
+    },
+
+    // Non-14u → 14u list: same caps and J1000 carve-out as above.
+    {
+      ruleName: 'Non-14u → 14u (cap 3 each event type)',
+      source: { ageCategoryCodes: ['12U', '16U'] },
+      target: { ageCategoryCodes: ['14U'] },
+      multiplier: 1.0,
+      maxCarriedResults: 3,
+      subjectToBucketLimits: true,
+      excludedSourceFilters: [{ levels: [1], ageEligibility: 'agingUpToTarget' }],
+    },
+
+    // J125 18u-rating-band dual counting — results from 18u events at the
+    // J125 rating type count on BOTH 12u and 14u lists for participants
+    // carrying the J125-RATED rating.
+    {
+      ruleName: 'J125 18u-rating → 12u',
+      source: { ageCategoryCodes: ['18U'], ratingTypes: ['J125-RATED'] },
+      target: { ageCategoryCodes: ['12U'] },
+      multiplier: 1.0,
+    },
+    {
+      ruleName: 'J125 18u-rating → 14u',
+      source: { ageCategoryCodes: ['18U'], ratingTypes: ['J125-RATED'] },
+      target: { ageCategoryCodes: ['14U'] },
+      multiplier: 1.0,
     },
   ],
 };
@@ -84,6 +138,8 @@ export const POLICY_RANKING_POINTS_TENNIS_AUSTRALIA = {
     policyName: 'Tennis Australia Junior Tour',
     policyVersion: '2025.01',
     validDateRange: { startDate: '2025-10-01' },
+
+    pointPoolModel: 'per-category' as const,
 
     awardProfiles,
     aggregationRules,

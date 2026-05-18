@@ -5,10 +5,10 @@
     "MD029": false,
     "MD033": false,
     "MD025": {
-      "front_matter_title": ""
+      "front_matter_title": "",
     },
     "MD036": false,
-    "MD041": false
+    "MD041": false,
   },
-  "ignores": ["**/node_modules/**", "dist/**", "build/**", "**/.git/**"]
+  "ignores": ["**/node_modules/**", "dist/**", "build/**", "**/.git/**", "CHANGELOG.md"],
 }

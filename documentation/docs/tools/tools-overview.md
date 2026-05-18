@@ -79,6 +79,7 @@ See [Date and Time Handling](/docs/concepts/date-time-handling) for usage patter
 - **parseScoreString** - Parse score strings into structured data
 - **checkScoreHasValue** - Verify scores contain values
 - **matchUpSort** - Sort matchUps by various criteria
+- **matchUpChronologicalSort** - Sort matchUps by `(scheduledDate, scheduledTime)`, no-op when either side lacks the field
 - **dehydrateMatchUps** - Remove computed attributes from matchUps
 - **visualizeScheduledMatchUps** - Color-coded console display of schedules
 

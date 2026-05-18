@@ -51,6 +51,8 @@ export function getTournamentInfo(params?: {
     venues,
     notes,
 
+    registrationProfile,
+
     updatedAt,
   }: Tournament) => ({
     tournamentId,
@@ -70,6 +72,8 @@ export function getTournamentInfo(params?: {
     hostCountryCode,
     venues,
     notes,
+
+    registrationProfile,
 
     updatedAt,
   });

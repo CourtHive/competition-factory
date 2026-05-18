@@ -14,7 +14,7 @@ name: release-please
 # `release` too. v3.2.0 was released but never auto-published.)
 #
 # Required repo secrets:
-#   RELEASE_BOT_APP_ID         — numeric App ID
+#   RELEASE_BOT_CLIENT_ID      — App Client ID (string, e.g. "Iv23li...")
 #   RELEASE_BOT_PRIVATE_KEY    — PEM contents (BEGIN/END markers included)
 #
 # The App needs Contents: Write + Pull requests: Write on this repo.
@@ -45,7 +45,7 @@ jobs:
         id: app-token
         uses: actions/create-github-app-token@v3
         with:
-          app-id: ${{ secrets.RELEASE_BOT_APP_ID }}
+          client-id: ${{ secrets.RELEASE_BOT_CLIENT_ID }}
           private-key: ${{ secrets.RELEASE_BOT_PRIVATE_KEY }}
 
       - uses: googleapis/release-please-action@v5

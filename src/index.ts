@@ -42,6 +42,9 @@ export { tournamentEngine } from './tests/engines/syncEngine';
 // FIXTURES --------------------------------------------------------------
 export { fixtures } from './fixtures';
 
+// PURE STATS — usable without an engine instance.
+export { computeRatingDistributionStats } from './query/formatWizard/distributionStats';
+
 // CONSTANTS -------------------------------------------------------------
 export * as factoryConstants from './constants';
 export * from './constants';
@@ -53,4 +56,3 @@ export type * from './types';
 export type { StatObject, MatchStatistics, StatCounters, StatisticsOptions } from './query/scoring/statistics/types';
 export { toStatObjects } from './query/scoring/statistics/toStatObjects';
 export { calculateMatchStatistics } from './query/scoring/statistics/standalone';
-

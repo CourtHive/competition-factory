@@ -49,6 +49,24 @@
           "type": "string",
           "enum": ["eventCategory", "participantPrimary"],
           "description": "How to resolve category when matching profiles. 'eventCategory' (default) uses event.category + event.gender. 'participantPrimary' uses participant's primary category scale."
+        },
+        "tierToLevel": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "object",
+            "additionalProperties": { "type": "number" }
+          },
+          "description": "Maps TierClassification (system + value) to numeric ranking levels."
+        },
+        "pointPoolModel": {
+          "type": "string",
+          "enum": ["per-category", "shared"],
+          "description": "How results contribute to ranking lists. 'per-category' (default): each list computed from awards filtered to its category, with optional categoryAggregation rules. 'shared': one pool feeds every age-eligible list (Tennis Canada paradigm); categoryAggregation is not evaluated."
+        },
+        "derivedRankings": {
+          "type": "array",
+          "items": { "$ref": "#/definitions/DerivedRanking" },
+          "description": "Ranking lists that are filtered views of another list (ČTS's U16 = U18 filtered)."
         }
       },
       "additionalProperties": false
@@ -87,10 +105,7 @@
         },
         "pointsPerWin": {
           "description": "Simple points-per-win shorthand. Flat number or level-keyed.",
-          "oneOf": [
-            { "type": "number" },
-            { "$ref": "#/definitions/LevelKeyed" }
-          ]
+          "oneOf": [{ "type": "number" }, { "$ref": "#/definitions/LevelKeyed" }]
         },
         "finishingPositionPoints": {
           "type": "object",
@@ -104,10 +119,7 @@
         },
         "maxCountableMatches": {
           "description": "Cap on matches that earn per-win points. Per participant per draw. Flat number or level-keyed.",
-          "oneOf": [
-            { "type": "number" },
-            { "$ref": "#/definitions/LevelKeyed" }
-          ]
+          "oneOf": [{ "type": "number" }, { "$ref": "#/definitions/LevelKeyed" }]
         },
         "bonusPoints": {
           "type": "array",
@@ -195,10 +207,7 @@
         "value": { "type": "number", "description": "Flat value" },
         "level": {
           "description": "Level-keyed lookup. Record<level, value|FlightValues> or array indexed by level-1.",
-          "oneOf": [
-            { "type": "object", "additionalProperties": {} },
-            { "type": "array" }
-          ]
+          "oneOf": [{ "type": "object", "additionalProperties": {} }, { "type": "array" }]
         },
         "flights": {
           "type": "array",
@@ -211,7 +220,11 @@
           "description": "Short form for flights"
         },
         "drawSize": { "type": "number", "description": "Specific drawSize this entry applies to" },
-        "drawSizes": { "type": "array", "items": { "type": "number" }, "description": "Array of drawSizes this entry applies to" },
+        "drawSizes": {
+          "type": "array",
+          "items": { "type": "number" },
+          "description": "Array of drawSizes this entry applies to"
+        },
         "threshold": { "type": "boolean", "description": "When true, applies to drawSizes >= drawSize" },
         "requireWin": { "type": "boolean", "description": "Require a win to earn these points" },
         "won": { "$ref": "#/definitions/PositionValue", "description": "Points for winning at this finishing round" },
@@ -228,10 +241,7 @@
         "value": { "type": "number", "description": "Flat per-win value" },
         "level": {
           "description": "Level-keyed value. Record<level, value|LineValues> or array indexed by level-1.",
-          "oneOf": [
-            { "type": "object", "additionalProperties": {} },
-            { "type": "array" }
-          ]
+          "oneOf": [{ "type": "object", "additionalProperties": {} }, { "type": "array" }]
         },
         "line": {
           "type": "array",
@@ -255,10 +265,7 @@
         },
         "value": {
           "description": "Bonus value. Flat number or level-keyed.",
-          "oneOf": [
-            { "type": "number" },
-            { "$ref": "#/definitions/LevelKeyed" }
-          ]
+          "oneOf": [{ "type": "number" }, { "$ref": "#/definitions/LevelKeyed" }]
         }
       },
       "additionalProperties": false
@@ -274,8 +281,14 @@
           "items": { "$ref": "#/definitions/QualityWinRange" },
           "description": "Ranking ranges and their corresponding bonus point values"
         },
-        "rankingScaleName": { "type": "string", "description": "Which ranking scale to use for opponent ranking lookup" },
-        "rankingEventType": { "type": "string", "description": "Event type for the ranking scale lookup (defaults to matchUp's eventType)" },
+        "rankingScaleName": {
+          "type": "string",
+          "description": "Which ranking scale to use for opponent ranking lookup"
+        },
+        "rankingEventType": {
+          "type": "string",
+          "description": "Event type for the ranking scale lookup (defaults to matchUp's eventType)"
+        },
         "rankingSnapshot": {
           "type": "string",
           "enum": ["tournamentStart", "matchDate", "latestAvailable"],
@@ -286,14 +299,20 @@
           "enum": ["noBonus", "useDefaultRank"],
           "description": "Fallback when opponent has no ranking"
         },
-        "defaultRank": { "type": "number", "description": "Default rank to use when unrankedOpponentBehavior is 'useDefaultRank'" },
+        "defaultRank": {
+          "type": "number",
+          "description": "Default rank to use when unrankedOpponentBehavior is 'useDefaultRank'"
+        },
         "levels": { "type": "array", "items": { "type": "number" } },
         "eventTypes": { "type": "array", "items": { "$ref": "#/definitions/EventType" } },
         "drawTypes": { "type": "array", "items": { "type": "string" } },
         "stages": { "type": "array", "items": { "type": "string" } },
         "dateRanges": { "type": "array", "items": { "$ref": "#/definitions/DateRange" } },
         "category": { "$ref": "#/definitions/CategoryScope" },
-        "maxBonusPerTournament": { "type": "number", "description": "Maximum total quality-win bonus per tournament per participant" },
+        "maxBonusPerTournament": {
+          "type": "number",
+          "description": "Maximum total quality-win bonus per tournament per participant"
+        },
         "includeWalkovers": { "type": "boolean", "description": "Whether walkovers/defaults count as quality wins" }
       },
       "additionalProperties": false
@@ -325,8 +344,14 @@
           "items": { "$ref": "#/definitions/CountingBucket" },
           "description": "Separate counting buckets (e.g., Singles, Doubles). If omitted, all results summed directly."
         },
-        "bestOfCount": { "type": "number", "description": "Global best-of-N across all results. 0 or undefined = count all." },
-        "rollingPeriodDays": { "type": "number", "description": "Rolling period in days (e.g., 365 for 52-week ranking)" },
+        "bestOfCount": {
+          "type": "number",
+          "description": "Global best-of-N across all results. 0 or undefined = count all."
+        },
+        "rollingPeriodDays": {
+          "type": "number",
+          "description": "Rolling period in days (e.g., 365 for 52-week ranking)"
+        },
         "decayFunction": {
           "type": "string",
           "enum": ["none", "linear", "stepped"],
@@ -345,7 +370,10 @@
         },
         "separateByGender": { "type": "boolean", "description": "Separate ranking lists by gender (default: true)" },
         "perCategory": { "type": "boolean", "description": "Generate per-category ranking lists (default: true)" },
-        "minCountableResults": { "type": "number", "description": "Minimum counting results (across all buckets) to receive a ranking" },
+        "minCountableResults": {
+          "type": "number",
+          "description": "Minimum counting results (across all buckets) to receive a ranking"
+        },
         "maxResultsPerLevel": {
           "type": "object",
           "additionalProperties": { "type": "number" },
@@ -356,6 +384,134 @@
           "type": "array",
           "items": { "$ref": "#/definitions/TiebreakCriterion" },
           "description": "Tiebreaker criteria, applied in order"
+        },
+        "categoryAggregation": {
+          "type": "array",
+          "items": { "$ref": "#/definitions/CategoryAggregationRule" },
+          "description": "Cross-category contribution rules: how awards earned in one category contribute to ranking lists in another. Evaluated at aggregation time."
+        }
+      },
+      "additionalProperties": false
+    },
+
+    "CategoryAggregationRule": {
+      "type": "object",
+      "description": "How point awards earned in one category contribute to ranking lists in another. Evaluated by generateRankingList at aggregation time.",
+      "required": ["source", "target"],
+      "properties": {
+        "ruleName": { "type": "string", "description": "Human-readable label for auditing" },
+        "source": {
+          "$ref": "#/definitions/CategoryScope",
+          "description": "Source categories whose awards feed this rule"
+        },
+        "target": {
+          "$ref": "#/definitions/CategoryScope",
+          "description": "Target category that the carried contribution lands in"
+        },
+        "multiplier": {
+          "type": "number",
+          "description": "Multiplier on source point components (e.g. 0.2 for USTA, 1.0 for full carry). Mutually exclusive with rerateTo."
+        },
+        "rerateTo": {
+          "type": "object",
+          "required": ["profileName"],
+          "properties": { "profileName": { "type": "string" } },
+          "description": "Re-rate the source result against a different award profile. Mutually exclusive with multiplier."
+        },
+        "requireParticipationInTarget": {
+          "type": "boolean",
+          "description": "USTA: must have at least one direct target-category award"
+        },
+        "minResultsFromTarget": {
+          "type": "number",
+          "description": "LTA: minimum number of direct target-category results required"
+        },
+        "eligibleSourceWindow": {
+          "type": "object",
+          "properties": {
+            "olderBy": { "type": "number" },
+            "youngerBy": { "type": "number" }
+          },
+          "additionalProperties": false,
+          "description": "Bounded window of eligible source categories relative to target (LTA olderBy: 2)"
+        },
+        "retentionMonthsAfterAging": {
+          "type": "number",
+          "description": "LTA: months prior-category results remain eligible after aging up"
+        },
+        "maxCarriedResults": {
+          "type": "number",
+          "description": "Maximum carried results per participant per rule (TE: 2, TA: 3)"
+        },
+        "subjectToBucketLimits": {
+          "type": "boolean",
+          "description": "Carried results compete with native for bestOfCount slots (default true)"
+        },
+        "carryComponents": {
+          "type": "array",
+          "items": { "$ref": "#/definitions/PointComponent" },
+          "description": "Which point components to carry. Defaults to all."
+        },
+        "excludedSourceFilters": {
+          "type": "array",
+          "items": { "$ref": "#/definitions/SourceFilter" },
+          "description": "Exclusion predicates that disqualify source awards from this rule (TA J1000 carve-out)"
+        }
+      },
+      "additionalProperties": false
+    },
+
+    "SourceFilter": {
+      "type": "object",
+      "description": "Predicate that disqualifies source awards from a CategoryAggregationRule",
+      "properties": {
+        "levels": { "type": "array", "items": { "type": "number" } },
+        "drawTypes": { "type": "array", "items": { "type": "string" } },
+        "eventTiers": { "type": "array", "items": { "type": "string" } },
+        "ageEligibility": {
+          "type": "string",
+          "enum": ["agingUpToTarget", "agingDownFromSource"],
+          "description": "Disqualify when participant has aged out of source by snapshot date"
+        }
+      },
+      "additionalProperties": false
+    },
+
+    "DerivedRanking": {
+      "type": "object",
+      "description": "Ranking list that is a filtered view of another (not independently computed). ČTS U16 = U18 filtered by age.",
+      "required": ["category", "derivedFrom", "filter"],
+      "properties": {
+        "category": {
+          "$ref": "#/definitions/CategoryScope",
+          "description": "The category whose ranking list is derived"
+        },
+        "derivedFrom": { "$ref": "#/definitions/CategoryScope", "description": "The source ranking list" },
+        "filter": { "$ref": "#/definitions/DerivedFilter" }
+      },
+      "additionalProperties": false
+    },
+
+    "DerivedFilter": {
+      "type": "object",
+      "description": "Filter applied to source entries to produce derived entries",
+      "properties": {
+        "excludePlayersAgingUp": {
+          "type": "boolean",
+          "description": "ČTS rCŽ: exclude players aging up at end of period"
+        },
+        "ageRange": {
+          "type": "object",
+          "properties": {
+            "min": { "type": "number" },
+            "max": { "type": "number" }
+          },
+          "additionalProperties": false,
+          "description": "Limit to participants whose effective age is in this range at snapshot date (inclusive)"
+        },
+        "additionalScope": {
+          "$ref": "#/definitions/CategoryScope",
+          "description": "Further category match applied as conjunction"
         }
       },
       "additionalProperties": false
@@ -366,7 +522,11 @@
       "description": "A bucket of results that are counted separately toward the ranking total",
       "properties": {
         "bucketName": { "type": "string", "description": "Human-readable label (e.g., 'Singles', 'Doubles')" },
-        "eventTypes": { "type": "array", "items": { "$ref": "#/definitions/EventType" }, "description": "Which eventTypes feed into this bucket (undefined = all)" },
+        "eventTypes": {
+          "type": "array",
+          "items": { "$ref": "#/definitions/EventType" },
+          "description": "Which eventTypes feed into this bucket (undefined = all)"
+        },
         "pointComponents": {
           "type": "array",
           "items": { "$ref": "#/definitions/PointComponent" },
@@ -375,7 +535,11 @@
         "bestOfCount": { "type": "number", "description": "How many best results to count (0 or undefined = all)" },
         "maxResultsPerLevel": { "type": "object", "additionalProperties": { "type": "number" } },
         "minResults": { "type": "number", "description": "Minimum results in this bucket required" },
-        "levels": { "type": "array", "items": { "type": "number" }, "description": "Level filter — only include results from these levels" },
+        "levels": {
+          "type": "array",
+          "items": { "type": "number" },
+          "description": "Level filter — only include results from these levels"
+        },
         "mandatoryRules": {
           "type": "array",
           "items": { "$ref": "#/definitions/MandatoryRule" },
@@ -391,8 +555,15 @@
       "required": ["levels"],
       "properties": {
         "ruleName": { "type": "string", "description": "Human-readable label (e.g., 'Grand Slams')" },
-        "levels": { "type": "array", "items": { "type": "number" }, "description": "Tournament levels that are mandatory" },
-        "bestOfCount": { "type": "number", "description": "If set, only best N from mandatory levels count; otherwise all count" }
+        "levels": {
+          "type": "array",
+          "items": { "type": "number" },
+          "description": "Tournament levels that are mandatory"
+        },
+        "bestOfCount": {
+          "type": "number",
+          "description": "If set, only best N from mandatory levels count; otherwise all count"
+        }
       },
       "additionalProperties": false
     },
@@ -401,13 +572,37 @@
       "type": "object",
       "description": "Category matching criteria. All populated fields are AND'd. Values within array fields are OR'd.",
       "properties": {
-        "ageCategoryCodes": { "type": "array", "items": { "type": "string" }, "description": "Match event.category.ageCategoryCode" },
-        "genders": { "type": "array", "items": { "type": "string" }, "description": "Match event.gender (MALE, FEMALE, MIXED, ANY)" },
-        "categoryNames": { "type": "array", "items": { "type": "string" }, "description": "Match event.category.categoryName" },
-        "categoryTypes": { "type": "array", "items": { "type": "string" }, "description": "Match event.category.type (AGE, BOTH, LEVEL)" },
-        "ratingTypes": { "type": "array", "items": { "type": "string" }, "description": "Match event.category.ratingType" },
+        "ageCategoryCodes": {
+          "type": "array",
+          "items": { "type": "string" },
+          "description": "Match event.category.ageCategoryCode"
+        },
+        "genders": {
+          "type": "array",
+          "items": { "type": "string" },
+          "description": "Match event.gender (MALE, FEMALE, MIXED, ANY)"
+        },
+        "categoryNames": {
+          "type": "array",
+          "items": { "type": "string" },
+          "description": "Match event.category.categoryName"
+        },
+        "categoryTypes": {
+          "type": "array",
+          "items": { "type": "string" },
+          "description": "Match event.category.type (AGE, BOTH, LEVEL)"
+        },
+        "ratingTypes": {
+          "type": "array",
+          "items": { "type": "string" },
+          "description": "Match event.category.ratingType"
+        },
         "ballTypes": { "type": "array", "items": { "type": "string" }, "description": "Match event.category.ballType" },
-        "wheelchairClasses": { "type": "array", "items": { "type": "string" }, "description": "Match event.wheelchairClass" },
+        "wheelchairClasses": {
+          "type": "array",
+          "items": { "type": "string" },
+          "description": "Match event.wheelchairClass"
+        },
         "subTypes": { "type": "array", "items": { "type": "string" }, "description": "Match event.category.subType" }
       },
       "additionalProperties": false
@@ -416,7 +611,18 @@
     "PointAward": {
       "type": "object",
       "description": "Granular point breakdown for a single participant in a single draw. Output of getTournamentPoints.",
-      "required": ["participantId", "drawId", "eventType", "points", "positionPoints", "perWinPoints", "qualityWinPoints", "bonusPoints", "winCount", "rangeAccessor"],
+      "required": [
+        "participantId",
+        "drawId",
+        "eventType",
+        "points",
+        "positionPoints",
+        "perWinPoints",
+        "qualityWinPoints",
+        "bonusPoints",
+        "winCount",
+        "rangeAccessor"
+      ],
       "properties": {
         "participantId": { "type": "string" },
         "personId": { "type": "string" },
@@ -510,10 +716,7 @@
       "description": "Level-keyed value: Record<level, T> or T[] indexed by level-1. Prefer Record form.",
       "properties": {
         "level": {
-          "oneOf": [
-            { "type": "object", "additionalProperties": {} },
-            { "type": "array" }
-          ]
+          "oneOf": [{ "type": "object", "additionalProperties": {} }, { "type": "array" }]
         }
       },
       "required": ["level"],

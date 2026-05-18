@@ -529,6 +529,18 @@ Sort matchUps by schedule time.
 const sorted = matchUps.sort(tools.matchUpScheduleSort);
 ```
 
+### matchUpChronologicalSort
+
+Sort matchUps by `(scheduledDate, scheduledTime)`. The comparator returns 0
+whenever either matchUp lacks the relevant field, so a stable sort preserves
+input order for mixed-or-unscheduled inputs. Use this when the caller has
+already pre-sorted by the canonical `matchUpSort` order and only wants
+chronological refinement layered on top (e.g. Garman → Pro hand-off).
+
+```js
+const sorted = matchUps.sort(tools.matchUpChronologicalSort);
+```
+
 ### structureSort
 
 Sort draw structures by stage, size, and sequence. See [dedicated page](./structure-sort.md).

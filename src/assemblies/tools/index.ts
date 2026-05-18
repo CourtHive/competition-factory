@@ -2,6 +2,7 @@ export { nearestPowerOf2, nextPowerOf2, isPowerOf2, isOdd, isConvertableInteger,
 export { visualizeScheduledMatchUps } from '../../tests/testHarness/testUtilities/visualizeScheduledMatchUps';
 export { hasAttributeValues, createMap, generateHashCode, undefinedToNull } from '@Tools/objects';
 export { generateDateRange, dateTime, isValidEmbargoDate } from '@Tools/dateTime';
+export { matchUpChronologicalSort } from '@Functions/sorters/matchUpChronologicalSort';
 export { matchUpScheduleSort } from '@Functions/sorters/matchUpScheduleSorter';
 export { structureSort } from '../../functions/sorters/structureSort';
 export { matchUpSort } from '../../functions/sorters/matchUpSort';

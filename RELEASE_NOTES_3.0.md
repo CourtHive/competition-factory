@@ -852,7 +852,7 @@ Competition state is stored as a `competitionState` extension on the draw defini
 
 ---
 
-## Infrastructure
+## TypeScript 6 Compatibility
 
 - Resolve Jest server test failures with TypeScript 6 (`jest.config.cjs` — explicit types configuration for ts-jest)
 
