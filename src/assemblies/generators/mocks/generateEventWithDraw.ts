@@ -760,6 +760,7 @@ export function generateEventWithDraw(params) {
 
   const {
     allUniqueParticipantIds = [],
+    useExistingParticipants,
     participantsProfile = {},
     matchUpStatusProfile,
     completeAllMatchUps,
@@ -845,14 +846,19 @@ export function generateEventWithDraw(params) {
   });
 
   const uniqueParticipantIds: string[] = [];
+  // `useExistingParticipants` (set by `generateTournamentRecord` when the caller
+  // passed pre-built `participants`) suppresses per-draw participant synthesis
+  // so the supplied pool is used. Filtering by gender / eventType /
+  // participantType still happens downstream via filterConsideredParticipants.
   const needsUniqueParticipants =
-    participantsProfile?.participantsCount === 0 ||
-    drawProfile.uniqueParticipants ||
-    qualifyingParticipantsCount ||
-    !tournamentRecord ||
-    gender ||
-    category ||
-    isHybrid;
+    !useExistingParticipants &&
+    (participantsProfile?.participantsCount === 0 ||
+      drawProfile.uniqueParticipants ||
+      qualifyingParticipantsCount ||
+      !tournamentRecord ||
+      gender ||
+      category ||
+      isHybrid);
 
   if (needsUniqueParticipants) {
     const drawParticipantsCount = (participantsCount || 0) + alternatesCount + qualifyingParticipantsCount;

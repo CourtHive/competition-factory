@@ -570,6 +570,44 @@ const { participants } = mocksEngine.generateParticipants({
 }
 ```
 
+## Pre-built participants (ingest pipelines)
+
+`generateTournamentRecord` accepts a top-level `participants` array. When supplied, factory uses the caller's participant pool as the entry source instead of synthesizing fresh mocks via `addTournamentParticipants` / `generateEventParticipants`.
+
+```js
+const participants = [
+  // ...pre-built Participant[] from upstream source (e.g. federation HTML)
+];
+
+mocksEngine.generateTournamentRecord({
+  tournamentName: 'Real Federation Data',
+  participants,
+  eventProfiles: [
+    {
+      eventName: 'Singles',
+      eventType: 'SINGLES',
+      gender: 'MALE',
+      drawProfiles: [
+        {
+          drawSize: 32,
+          participantsCount: 32,
+          automated: false,
+        },
+      ],
+    },
+  ],
+});
+```
+
+When `participants` is non-empty:
+
+- Factory calls `addParticipants` directly with the supplied list, skipping the synthesis path entirely.
+- Per-draw participant synthesis (`generateEventParticipants`) is suppressed.
+- `filterConsideredParticipants` still applies event-level filters (gender, eventType, participantType) on the supplied pool — supply participants that satisfy those filters or the draw will run short on entries.
+- `automated: false` on the drawProfile leaves positionAssignments empty so the caller can fill them in via `tournamentEngine.assignDrawPosition` with the caller's stable IDs, then walk outcomes via `tournamentEngine.setMatchUpStatus`.
+
+This path was added for ingest pipelines (e.g. `courthive-ingest`'s federation adapters) where stable provider-issued IDs need to survive through the canonical TODS shape that mocksEngine produces. The corresponding test fixture lives in `src/tests/documentation/presetParticipants.test.ts`.
+
 ## Tips
 
 1. **Match participants to draw requirements** - Generate appropriate counts for your draw sizes

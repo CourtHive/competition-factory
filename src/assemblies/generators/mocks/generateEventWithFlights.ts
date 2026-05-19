@@ -22,6 +22,7 @@ import { MAIN } from '@Constants/drawDefinitionConstants';
 export function generateEventWithFlights(params) {
   const {
     allUniqueParticipantIds,
+    useExistingParticipants,
     matchUpStatusProfile,
     participantsProfile,
     completeAllMatchUps,
@@ -77,6 +78,7 @@ export function generateEventWithFlights(params) {
     drawProfiles,
     category,
     gender,
+    useExistingParticipants,
   });
 
   const eventParticipantType =
@@ -140,6 +142,7 @@ export function generateEventWithFlights(params) {
   if (drawProfiles?.length) {
     const flightResult = generateFlights({
       uniqueDrawParticipants,
+      useExistingParticipants,
       autoEntryPositions,
       stageParticipants,
       tournamentRecord,
