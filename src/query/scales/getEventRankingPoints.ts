@@ -1,5 +1,6 @@
 import { getTournamentPoints } from '@Query/scales/getTournamentPoints';
 import { getParticipants } from '@Query/participants/getParticipants';
+import { policyRegistry } from '@Global/policyRegistry';
 
 // constants and types
 import { POLICY_TYPE_RANKING_POINTS } from '@Constants/policyConstants';
@@ -16,6 +17,7 @@ import {
 type GetEventRankingPointsArgs = {
   policyDefinitions?: PolicyDefinitions;
   tournamentRecord: Tournament;
+  policyName?: string;
   eventId: string;
   level?: number;
 };
@@ -32,6 +34,7 @@ type GetEventRankingPointsArgs = {
 export function getEventRankingPoints({
   policyDefinitions,
   tournamentRecord,
+  policyName,
   eventId,
   level,
 }: GetEventRankingPointsArgs) {
@@ -41,23 +44,23 @@ export function getEventRankingPoints({
   const event = tournamentRecord.events?.find((e) => e.eventId === eventId);
   if (!event) return { error: MISSING_EVENT };
 
-  if (!policyDefinitions?.[POLICY_TYPE_RANKING_POINTS]) {
+  const pointsPolicy =
+    policyDefinitions?.[POLICY_TYPE_RANKING_POINTS] ??
+    (policyName ? policyRegistry.lookup({ policyType: POLICY_TYPE_RANKING_POINTS, name: policyName }) : undefined);
+  if (!pointsPolicy) {
     return { error: MISSING_POLICY_DEFINITION };
   }
 
   // Auto-resolve numeric level from tier if not explicitly passed.
   // eventTier overrides tournamentTier.
-  const resolvedLevel =
-    level ??
-    resolveLevelFromTier(
-      event.eventTier ?? tournamentRecord.tournamentTier,
-      policyDefinitions?.[POLICY_TYPE_RANKING_POINTS],
-    );
+  const resolvedLevel = level ?? resolveLevelFromTier(event.eventTier ?? tournamentRecord.tournamentTier, pointsPolicy);
+
+  const effectivePolicyDefinitions = policyDefinitions ?? { [POLICY_TYPE_RANKING_POINTS]: pointsPolicy };
 
   const result = getTournamentPoints({
     participantFilters: { eventIds: [eventId] },
+    policyDefinitions: effectivePolicyDefinitions,
     level: resolvedLevel,
-    policyDefinitions,
     tournamentRecord,
   });
 

@@ -5,6 +5,7 @@ import { getTargetElement } from '@Query/scales/getTargetElement';
 import { getAwardProfile } from '@Query/scales/getAwardProfile';
 import { getAwardPoints } from '@Query/scales/getAwardPoints';
 import { getDevContext } from '@Global/state/globalState';
+import { policyRegistry } from '@Global/policyRegistry';
 import { unique } from '@Tools/arrays';
 
 // constants and types
@@ -195,12 +196,7 @@ function resolvePositionPoints({ awardProfile, participation, level, drawSize })
     accessor = participantWon ? 1 : Math.pow(2, participation.finishingRound);
   }
 
-  const {
-    finishingPositionPoints = {},
-    finishingPositionRanges,
-    finishingRound,
-    flights,
-  } = awardProfile;
+  const { finishingPositionPoints = {}, finishingPositionRanges, finishingRound, flights } = awardProfile;
 
   const participationOrders = finishingPositionPoints.participationOrders;
   const isValidOrder = !participationOrders || participationOrders.includes(participationOrder);
@@ -380,8 +376,7 @@ function processParticipation({
     const firstRound = accessor && rankingStage !== QUALIFYING && finishingPositionRange?.includes(drawSize);
 
     if (awardProfile.requireWinForPoints !== undefined) accum.requireWin = awardProfile.requireWinForPoints;
-    if (awardProfile.requireWinFirstRound !== undefined)
-      accum.requireWinFirstRound = awardProfile.requireWinFirstRound;
+    if (awardProfile.requireWinFirstRound !== undefined) accum.requireWinFirstRound = awardProfile.requireWinFirstRound;
 
     if (firstRound && accum.requireWinFirstRound !== undefined) {
       accum.requireWin = accum.requireWinFirstRound;
@@ -653,12 +648,14 @@ type GetTournamentPointsArgs = {
   participantFilters?: ParticipantFilters;
   policyDefinitions?: PolicyDefinitions;
   tournamentRecord: Tournament;
+  policyName?: string;
   level?: number;
 };
 export function getTournamentPoints({
   participantFilters,
   policyDefinitions,
   tournamentRecord,
+  policyName,
   level,
 }: GetTournamentPointsArgs) {
   if (!tournamentRecord) return { error: MISSING_TOURNAMENT_RECORD };
@@ -670,8 +667,11 @@ export function getTournamentPoints({
     tournamentRecord,
   });
 
-  const pointsPolicy =
+  const explicitOrAttached =
     policyDefinitions?.[POLICY_TYPE_RANKING_POINTS] ?? attachedPolicies?.[POLICY_TYPE_RANKING_POINTS];
+  const pointsPolicy =
+    explicitOrAttached ??
+    (policyName ? policyRegistry.lookup({ policyType: POLICY_TYPE_RANKING_POINTS, name: policyName }) : undefined);
   if (!pointsPolicy) return { error: MISSING_POLICY_DEFINITION };
 
   const awardProfiles = pointsPolicy.awardProfiles;
