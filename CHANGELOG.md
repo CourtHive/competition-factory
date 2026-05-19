@@ -1,5 +1,19 @@
 # Changelog
 
+## [3.9.0](https://github.com/CourtHive/competition-factory/compare/v3.8.0...v3.9.0) (2026-05-19)
+
+
+### Features
+
+* **mocks:** support preset participants in generateTournamentRecord ([e8ab280](https://github.com/CourtHive/competition-factory/commit/e8ab28015ca6bc7f6cbf5d790f2076a4cd830f80))
+* **participants:** add PAYMENT_STATUS as a participant timeItem ([6dd9fb2](https://github.com/CourtHive/competition-factory/commit/6dd9fb280c5d7ecae5e570945f262c63cd51895a))
+* **policies:** encode CTS Tabulka IV — 21 categories × singles+doubles ([c6cff55](https://github.com/CourtHive/competition-factory/commit/c6cff55d25192af439fa6859a6fd626ddfe74065))
+
+
+### Documentation
+
+* **mocks:** expand preset participants documentation ([cd0791d](https://github.com/CourtHive/competition-factory/commit/cd0791d6f2da2c003bbd227b7151205192f62853))
+
 ## [3.8.0](https://github.com/CourtHive/competition-factory/compare/v3.7.0...v3.8.0) (2026-05-18)
 
 
