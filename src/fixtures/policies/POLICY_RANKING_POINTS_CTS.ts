@@ -32,7 +32,7 @@
 
 import { POLICY_TYPE_RANKING_POINTS } from '@Constants/policyConstants';
 import { SINGLES, DOUBLES } from '@Constants/eventConstants';
-import { MAIN, SINGLE_ELIMINATION } from '@Constants/drawDefinitionConstants';
+import { MAIN, QUALIFYING, SINGLE_ELIMINATION } from '@Constants/drawDefinitionConstants';
 
 // ─── Tabulka IV ──────────────────────────────────────────────────────────────
 //
@@ -116,16 +116,96 @@ function buildProfile(level: number, eventType: 'SINGLES' | 'DOUBLES'): object {
   };
 }
 
+// ─── Qualifying Award Profiles (Article 21 / Tabulka IV postscript) ─────────
+//
+// "Points for victory in qualifying (for advancing to the main draw) are
+//  obtained depending on the size of the starting field in the main draw.
+//  E.g., for a 32-MAIN in category 14: qualifying winners get 42 pts,
+//  qualifying finalists 29 pts, qualifying semifinalists 20 pts."
+//
+// Mechanics:
+//   - Qualifying WINNERS (who advance) — DO play MAIN. If they lose R1 MAIN,
+//     Article 17 says they receive the full MAIN-R1 points. That's covered
+//     by the MAIN awardProfile naturally and is NOT encoded as a Q award
+//     here (encoding it would double-count).
+//   - Qualifying NON-ADVANCERS — receive points for their qualifying-stage
+//     finishing position, read from Tabulka IV at a column shifted right
+//     of the linked MAIN's R1 column. Q-final losers shift +1 column;
+//     Q-SF losers shift +2; etc.
+//
+// The CTS convention assumes MAIN drawSize = Q drawSize × 2 (e.g., 16-Q
+// feeds 32-MAIN; 32-Q feeds 64-MAIN). The two combinations actually present
+// in the 2026 Class A corpus are 16-Q→32-MAIN and 32-Q→64-MAIN. Other
+// (level, Q) combinations are encoded too in case future tournaments use
+// them; rows that don't have enough columns at low levels (e.g., col 8 at
+// level 5 is undefined) simply drop the unsupported rangeKey.
+//
+// `qualifyingPositions` typically = qDrawSize / 4 in CZE, producing a
+// 2-round qualifying structure. Q-finalists land in finishingPositionRange
+// rangeKey = qDrawSize/2; Q-SF losers in rangeKey = qDrawSize. Both rangeKeys
+// are emitted per (level, qDrawSize) when the corresponding Tabulka IV
+// column exists.
+
+const Q_TO_MAIN_RATIO = 2;
+const QUALIFYING_DRAW_SIZES = [4, 8, 16, 32];
+
+function buildQualifyingProfile(level: number, qDrawSize: number): object | undefined {
+  const row = TABULKA_IV[level];
+  const mainDrawSize = qDrawSize * Q_TO_MAIN_RATIO;
+  const mainR1ColumnIndex = Math.log2(mainDrawSize); // 16→4, 32→5, 64→6, 128→7
+  // Per `resolvePositionPoints` in getTournamentPoints.ts:194-196, when
+  // rankingStage === QUALIFYING the accessor is rewritten to
+  //   participantWon ? 1 : Math.pow(2, participation.finishingRound)
+  // i.e. accessor 1 = qualifier (advanced); 2 = Q-final loser (1 round shy);
+  // 4 = Q-SF loser (2 rounds shy); 8 = Q-QF loser (3 rounds shy).
+  //
+  // Tabulka IV postscript shifts the points column based on rounds-shy-of-
+  // advancing. Q final losers shift +1 column right of MAIN R1; Q SF losers
+  // shift +2; etc. Qualifier (accessor 1) is omitted — qualifiers play MAIN
+  // and get the matching MAIN award per Article 17, so encoding it here
+  // would double-count.
+  const finishingPositionRanges: Record<number, number> = {};
+  const shifts: { accessor: number; columnShift: number }[] = [
+    { accessor: 2, columnShift: 1 }, // Q-final loser
+    { accessor: 4, columnShift: 2 }, // Q-SF loser
+    { accessor: 8, columnShift: 3 }, // Q-QF loser
+  ];
+  for (const { accessor, columnShift } of shifts) {
+    const pts = row[mainR1ColumnIndex + columnShift];
+    if (typeof pts === 'number') finishingPositionRanges[accessor] = pts;
+  }
+  if (Object.keys(finishingPositionRanges).length === 0) return undefined;
+  // Filter by MAIN drawSize (the structure size factory passes when computing
+  // points for a QUALIFYING-stage participation; per
+  // getParticipantEntries.ts:346-350, drawSize on derivedDrawInfo is set from
+  // the MAIN structure, not the QUALIFYING one).
+  return {
+    profileName: `CTS SINGLES Cat ${level} Q→MAIN-${mainDrawSize}`,
+    drawTypes: [SINGLE_ELIMINATION],
+    eventTypes: [SINGLES],
+    stages: [QUALIFYING],
+    drawSizes: [mainDrawSize],
+    levels: [level],
+    finishingPositionRanges,
+  };
+}
+
 // ─── Award Profiles ──────────────────────────────────────────────────────────
 //
-// One profile per (level, eventType). 21 categories × 2 event types = 42
+// MAIN: one profile per (level, eventType). 21 categories × 2 event types = 42
 // profiles. Matches Tennis Europe's encoding pattern (POLICY_RANKING_POINTS_TENNIS_EUROPE)
 // — plain numbers in finishingPositionRanges, no nested `level` maps (which
 // the factory's award selector doesn't traverse).
+//
+// QUALIFYING (SINGLES only — doubles has no qualifying in CZE): one profile per
+// (level, Q drawSize) where Tabulka IV has enough columns to support the shift.
 
 const awardProfiles = [
   ...CATEGORIES.map((cat) => buildProfile(cat, 'SINGLES')),
   ...CATEGORIES.map((cat) => buildProfile(cat, 'DOUBLES')),
+  ...CATEGORIES.flatMap((cat) =>
+    QUALIFYING_DRAW_SIZES.map((qSize) => buildQualifyingProfile(cat, qSize)).filter((p) => p !== undefined),
+  ),
 ];
 
 // ─── Tier → Level mapping ────────────────────────────────────────────────────
