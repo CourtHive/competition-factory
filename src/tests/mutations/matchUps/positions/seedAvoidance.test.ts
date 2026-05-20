@@ -30,9 +30,18 @@ describe('seed placement avoidance', () => {
 
     const participants = tournamentRecord.participants;
 
+    // mocksEngine assigns random nationality codes from a finite pool, so
+    // there's a ~5% chance an unseeded participant rolls the same code as
+    // our target seeds — that grows the conflict group and the avoidance
+    // algorithm may legitimately fail to put our two seeds in different
+    // halves. Reset every participant to a unique synthetic code so the
+    // only conflict group is the one we declare below (seeds 3 + 4).
+    participants.forEach((p, i) => {
+      if (p.person) p.person.nationalityCode = `Z${String(i).padStart(2, '0')}`;
+    });
+
     // Assign the same nationality to seeds 3 and 4 to create a conflict scenario
     const targetNationality = 'USA';
-    // We'll set nationalities on the first 4 participants (which will be seeds)
     if (participants[2]?.person) participants[2].person.nationalityCode = targetNationality;
     if (participants[3]?.person) participants[3].person.nationalityCode = targetNationality;
 
@@ -172,6 +181,12 @@ describe('seed placement avoidance', () => {
     });
 
     const participants = tournamentRecord.participants;
+    // Unique synthetic codes for every participant so the only conflict
+    // groups are the ones we declare below. See top test for the flake-mode
+    // this defends against.
+    participants.forEach((p, i) => {
+      if (p.person) p.person.nationalityCode = `Z${String(i).padStart(2, '0')}`;
+    });
     // Seeds 1,5 = USA, Seeds 2,6 = GBR, Seeds 3,7 = FRA, Seeds 4,8 = AUS
     const seedNationalities = ['USA', 'GBR', 'FRA', 'AUS', 'USA', 'GBR', 'FRA', 'AUS'];
     for (let i = 0; i < 8; i++) {
