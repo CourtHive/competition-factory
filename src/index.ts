@@ -11,6 +11,7 @@ export * as tools from './assemblies/tools';
 
 // GLOBAL STATE ---------------------------------------------------------
 export * as globalState from './global/state/globalState';
+export { policyRegistry } from './global/policyRegistry';
 
 export { forge } from './forge';
 
