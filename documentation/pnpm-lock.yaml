@@ -35,8 +35,8 @@ importers:
         specifier: ^19.2.6
         version: 19.2.6(react@19.2.6)
       tods-competition-factory:
-        specifier: ^3.9.0
-        version: 3.9.0
+        specifier: ^4.0.0
+        version: 4.0.0
 
 packages:
   '@algolia/abtesting@1.18.1':
@@ -6217,6 +6217,11 @@ packages:
   tods-competition-factory@3.9.0:
     resolution:
       { integrity: sha512-g8IBFwP9nBuUc9kI3qklmDOCzW/nX3Vyyk25KhvBHB2FpicDwkGWFZYkdFiTGr6WO0jV817KG57cF5IpCZ0H2A== }
+    engines: { node: '>=22' }
+
+  tods-competition-factory@4.0.0:
+    resolution:
+      { integrity: sha512-ZpSVmepDJz7enn4lsXDoHcue1T9QhDh6/PJcsY7Aamd8g9nnarncAi5catsJnSVAlToQfUwyR+E99B6InywBbw== }
     engines: { node: '>=22' }
 
   toidentifier@1.0.1:
@@ -13379,6 +13384,8 @@ snapshots:
       is-number: 7.0.0
 
   tods-competition-factory@3.9.0: {}
+
+  tods-competition-factory@4.0.0: {}
 
   toidentifier@1.0.1: {}
 
