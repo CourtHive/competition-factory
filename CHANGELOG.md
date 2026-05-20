@@ -1,5 +1,25 @@
 # Changelog
 
+## [4.0.0](https://github.com/CourtHive/competition-factory/compare/v3.9.0...v4.0.0) (2026-05-20)
+
+
+### ⚠ BREAKING CHANGES
+
+* **policies:** the following policies are no longer exported from `tods-competition-factory`:
+
+### Features
+
+* **policies:** cts article 21 qualifying-stage award profiles ([#4360](https://github.com/CourtHive/competition-factory/issues/4360)) ([32d87ed](https://github.com/CourtHive/competition-factory/commit/32d87ed11520fef0996cc0439aeb428b64a141e5))
+* **policies:** export policyRegistry from public api ([5ce8ad2](https://github.com/CourtHive/competition-factory/commit/5ce8ad237168ba507698e5609686336337d31770))
+* **policies:** introduce policyRegistry as engine indirection point ([6705367](https://github.com/CourtHive/competition-factory/commit/67053672fd88aae33306d200533a9f971d0e0989))
+* **policies:** remove federation ranking-point fixtures from bundle ([1f8ea0c](https://github.com/CourtHive/competition-factory/commit/1f8ea0cc07f192f7c0db8b90db4b1d4c58cd0e55))
+* **tournaments:** reject orphaning setTournamentCategories ([b607f8a](https://github.com/CourtHive/competition-factory/commit/b607f8aba730c5d3ee88f7986cf2f6cde38b3891))
+
+
+### Documentation
+
+* **policies:** align ranking docs with 4.0.0 fixture set ([aaef9d7](https://github.com/CourtHive/competition-factory/commit/aaef9d7601393828fe805c43f8bb8b9b2bd89e00))
+
 ## [3.9.0](https://github.com/CourtHive/competition-factory/compare/v3.8.0...v3.9.0) (2026-05-19)
 
 
