@@ -1,5 +1,20 @@
 # Changelog
 
+## [4.1.0](https://github.com/CourtHive/competition-factory/compare/v4.0.0...v4.1.0) (2026-05-21)
+
+
+### Features
+
+* **policies:** add pointsAuthority on ranking policies and emitted awards ([b02f50b](https://github.com/CourtHive/competition-factory/commit/b02f50b94e299ac7d49ae39db583961e0760666e))
+* **policies:** hybrid example fixture + stage field on emitted awards ([fc02f06](https://github.com/CourtHive/competition-factory/commit/fc02f06338f690718ecb8f01c13f6040b50c265a))
+* **policies:** per-AwardProfile pointsAuthority override ([1bbbc9c](https://github.com/CourtHive/competition-factory/commit/1bbbc9cc537894093a3390a952d2e8f943b755ea))
+
+
+### Bug Fixes
+
+* **deps:** update dependency tods-competition-factory to v4.0.0 ([da2ee74](https://github.com/CourtHive/competition-factory/commit/da2ee74828c103ef3f3e4eaa495c9bd93b5b55ac))
+* **tests:** make seedAvoidance.test.ts non-flaky ([aac8483](https://github.com/CourtHive/competition-factory/commit/aac848331aeea9e4681de9881b721fa34fdc0dbe))
+
 ## [4.0.0](https://github.com/CourtHive/competition-factory/compare/v3.9.0...v4.0.0) (2026-05-20)
 
 
