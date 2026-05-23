@@ -1,5 +1,16 @@
 packages: []
 
+# Security overrides for transitive deps of the Docusaurus docs build (not
+# part of the published package). pnpm v11 reads overrides from here, not from
+# `pnpm.overrides` in package.json when this workspace file is present.
+# - serialize-javascript: GHSA-5c6j-r48x-rmvq (RCE, high) + GHSA-qj8w-gfj5-8c6v
+#   (DoS); patched 7.0.5.
+# - uuid: GHSA-w5hq-g745-h8pq (missing buffer bounds check); patched >= 11.1.1.
+overrides:
+  serialize-javascript: '^7.0.5'
+  uuid: '^14.0.0'
+  webpackbar: '7.0.0'
+
 allowBuilds:
   core-js: true
 

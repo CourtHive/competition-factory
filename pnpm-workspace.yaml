@@ -18,3 +18,11 @@ allowBuilds:
 #   build cycle), so the check is noise.
 minimumReleaseAge: 0
 verifyDepsBeforeRun: false
+
+# Security overrides for transitive (dev-only) dependencies. pnpm v11 reads
+# overrides from pnpm-workspace.yaml; `pnpm.overrides` in package.json is
+# ignored when this file is present.
+# - qs: GHSA-q8mj-m7cp-5q26 (DoS in stringify); patched 6.15.2. Pulled in via
+#   dev/test tooling (body-parser, supertest) only — not a runtime dependency.
+overrides:
+  qs: '^6.15.2'
