@@ -132,10 +132,13 @@ function checkParticipantAges(params, category) {
   ) {
     for (const individualParticipant of individualParticpants) {
       const birthDate = individualParticipant.person?.birthDate;
-      if (!birthDate) {
+      const birthYear = individualParticipant.person?.birthYear;
+      if (!birthDate && birthYear === undefined) {
         return decorateResult({ result: { error: MISSING_BIRTH_DATE }, stack: params.stack });
       }
-      const birthTime = new Date(birthDate).getTime();
+      // birthDate authoritative; for a year-precision birthYear use a mid-year
+      // representative date (minimises error against the date-boundary checks).
+      const birthTime = new Date(birthDate ?? `${birthYear}-07-01`).getTime();
 
       const startCheck = checkAgeAgainstDetails(birthTime, startAgeDetails, params.stack);
       if (startCheck) return startCheck;
@@ -200,7 +203,7 @@ function getParticipantsProfile({ enteredParticipants }) {
   const enteredParticipantTypes = enteredParticipants.reduce((types: any[], participant) => {
     const genders = participant.person?.sex
       ? [participant.person.sex]
-      : participant.individualParticpants?.map((p) => p.person?.sex) ?? [];
+      : (participant.individualParticpants?.map((p) => p.person?.sex) ?? []);
     genderAccumulator.push(...genders);
     return types.includes(participant.participantType) ? types : types.concat(participant.participantType);
   }, []);
@@ -229,8 +232,7 @@ function checkGenderUpdates({ noFlightsNoDraws, enteredParticipantGenders, event
 }
 
 function checkEventType({ enteredParticipantTypes, eventUpdates, stack }) {
-  const hasMixedTypes =
-    enteredParticipantTypes.includes(INDIVIDUAL) && enteredParticipantTypes.includes(PAIR);
+  const hasMixedTypes = enteredParticipantTypes.includes(INDIVIDUAL) && enteredParticipantTypes.includes(PAIR);
   const validEventTypes = (hasMixedTypes && [HYBRID]) ||
     (enteredParticipantTypes.includes(TEAM) && [TEAM]) ||
     (enteredParticipantTypes.includes(INDIVIDUAL) && [SINGLES, HYBRID]) ||

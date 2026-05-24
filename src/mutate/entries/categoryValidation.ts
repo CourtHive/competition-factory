@@ -21,6 +21,7 @@ export interface RejectionReason {
 
 export interface AgeRejectionDetails {
   birthDate?: string;
+  birthYear?: number;
   ageAtStart?: number;
   ageAtEnd?: number;
   requiredMin?: number;
@@ -55,6 +56,15 @@ export function getEventDateRange(event: Event, tournamentRecord?: Tournament): 
   }
 
   return { startDate, endDate };
+}
+
+/**
+ * Calendar-year age for a year-precision DOB: the age a player reaches during
+ * `atDate`'s calendar year (year − birthYear). This is the standard junior
+ * eligibility convention used when only the birth year is known.
+ */
+export function calendarYearAge(birthYear: number, atDate: string): number {
+  return Number(extractDate(atDate).split('-')[0]) - birthYear;
 }
 
 /**
@@ -133,10 +143,11 @@ export function validateParticipantAge(
   }
 
   const birthDate = participant.person?.birthDate;
-  if (!birthDate) {
+  const birthYear = participant.person?.birthYear;
+  if (!birthDate && birthYear === undefined) {
     return {
       valid: false,
-      reason: 'Missing birthDate',
+      reason: 'Missing birthDate or birthYear',
       details: {
         requiredMin: effectiveAgeMin,
         requiredMax: effectiveAgeMax,
@@ -144,9 +155,13 @@ export function validateParticipantAge(
     };
   }
 
-  // Check age at event start and end
-  const ageAtStart = calculateAge(birthDate, startDate);
-  const ageAtEnd = calculateAge(birthDate, endDate);
+  // DOB detail echoed in rejections; birthDate is authoritative when present.
+  const dobDetails: { birthDate?: string; birthYear?: number } = birthDate ? { birthDate } : { birthYear };
+
+  // Check age at event start and end. birthDate gives exact age; a year-precision
+  // birthYear falls back to the calendar-year convention (age = year − birthYear).
+  const ageAtStart = birthDate ? calculateAge(birthDate, startDate) : calendarYearAge(birthYear as number, startDate);
+  const ageAtEnd = birthDate ? calculateAge(birthDate, endDate) : calendarYearAge(birthYear as number, endDate);
 
   // Check if valid throughout event period
   const validAtStart = checkAgeInRange(ageAtStart, effectiveAgeMin, effectiveAgeMax);
@@ -164,7 +179,7 @@ export function validateParticipantAge(
       valid: false,
       reason: `Age ${ageAtStart} at event start (${startDate}) outside range [${rangeStr}]`,
       details: {
-        birthDate,
+        ...dobDetails,
         ageAtStart,
         ageAtEnd,
         requiredMin: effectiveAgeMin,
@@ -185,7 +200,7 @@ export function validateParticipantAge(
       valid: false,
       reason: `Age ${ageAtEnd} at event end (${endDate}) outside range [${rangeStr}]`,
       details: {
-        birthDate,
+        ...dobDetails,
         ageAtStart,
         ageAtEnd,
         requiredMin: effectiveAgeMin,
@@ -303,7 +318,12 @@ export function getParticipantName(participant: Participant): string {
   const given = person.standardGivenName || person.passportGivenName;
   const family = person.standardFamilyName || person.passportFamilyName;
 
-  return [given, family].filter(Boolean).join(' ') || participant.participantOtherName || participant.participantName || 'Unknown';
+  return (
+    [given, family].filter(Boolean).join(' ') ||
+    participant.participantOtherName ||
+    participant.participantName ||
+    'Unknown'
+  );
 }
 
 /**
