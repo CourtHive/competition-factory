@@ -130,12 +130,18 @@ function collectPersonAwards({ personPoints, personToParticipant, eventDrawIds, 
 }
 
 /**
- * Resolve a numeric ranking level from a TierClassification using the
- * policy's tierToLevel mapping. Returns undefined if no match.
+ * Resolve a numeric ranking level from a TierClassification. Prefer the policy's
+ * `tierToLevel[system][value]` mapping; fall back to the tier's own
+ * `numericRank` when the policy declares no mapping for that system/value. This
+ * lets a federation that stamps the level directly on the tier (e.g. an ingest
+ * adapter setting `numericRank` to the resolved level) drive ranking points
+ * without every policy enumerating that federation's categories. Returns
+ * undefined when neither source yields a level.
  */
 function resolveLevelFromTier(tier: any, policy: any): number | undefined {
-  if (!tier?.system || !tier?.value || !policy?.tierToLevel) return undefined;
-  return policy.tierToLevel[tier.system]?.[tier.value];
+  if (!tier?.system || !tier?.value) return undefined;
+  const mapped = policy?.tierToLevel?.[tier.system]?.[tier.value];
+  return mapped ?? tier.numericRank;
 }
 
 function collectLookupAwards({ points, participantLookup, eventDrawIds, eventAwards }) {
