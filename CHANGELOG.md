@@ -1,5 +1,18 @@
 # Changelog
 
+## [4.1.1](https://github.com/CourtHive/competition-factory/compare/v4.1.0...v4.1.1) (2026-05-24)
+
+
+### Bug Fixes
+
+* **mocks:** gender-filter preset participants across multi-gender events ([a03929f](https://github.com/CourtHive/competition-factory/commit/a03929fd0e06a1baa82231e3177e128e9675516f))
+* **scheduling:** base court-grid row floor on unplaced matchUps only ([747e641](https://github.com/CourtHive/competition-factory/commit/747e6412c04ad9e6abe3742a7498aa027395f8f2))
+
+
+### Documentation
+
+* :memo: doc update ([8959bea](https://github.com/CourtHive/competition-factory/commit/8959bea9d9e6a95d477845a8d52d5abceef89e86))
+
 ## [4.1.0](https://github.com/CourtHive/competition-factory/compare/v4.0.0...v4.1.0) (2026-05-21)
 
 
