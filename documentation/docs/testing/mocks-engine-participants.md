@@ -627,8 +627,9 @@ When `participants` is a non-empty array:
 - Factory calls `addParticipants` directly with your list.
 - The synthesis path is fully suppressed: `addTournamentParticipants`, `generateEventParticipants`, and per-draw `uniqueDrawParticipants` generation are all skipped.
 - `participantsProfile` synthesis fields (`participantsCount`, `participantType`, `sex`, etc.) are ignored — your pool is authoritative.
-- `filterConsideredParticipants` still applies event-level filters: `gender`, `eventType` (SINGLES → INDIVIDUAL, DOUBLES → PAIR, etc.), `participantType`. Supply participants that satisfy those filters, or the draw will run short on entries.
+- Event-level filters still apply when selecting from your pool: `gender`, `eventType` (SINGLES → INDIVIDUAL, DOUBLES → PAIR, etc.), `participantType`. Supply participants that satisfy those filters, or the draw will run short on entries.
 - For DOUBLES events, supply pre-formed PAIR participants in the list (see [Participant Types](#participant-types)).
+- **Multiple events spanning different genders in one call are supported.** A single `generateTournamentRecord({ participants })` may define, for example, Boys Singles, Girls Singles, Boys Doubles, and Girls Doubles together: each event selects only its matching-gender participants (PAIRs are matched by their constituents), and participants consumed by one event are not reused by another. A gendered event selects by `event.gender`, not pool order, so a Boys event picks the males even if females appear first in the pool.
 
 ### End-to-end ingest pattern
 

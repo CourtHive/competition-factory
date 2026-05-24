@@ -54,6 +54,7 @@ function processExistingEvent({ event, eventProfile, tournamentRecord, allUnique
       allUniqueParticipantIds,
       stageParticipantsCount,
       eventParticipantType,
+      gender,
     });
 
     let result: any = generateFlights({

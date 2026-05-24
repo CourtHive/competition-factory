@@ -137,6 +137,7 @@ export function generateEventWithFlights(params) {
     stageParticipantsCount,
     eventParticipantType,
     targetParticipants,
+    gender,
   });
 
   if (drawProfiles?.length) {
@@ -184,7 +185,18 @@ export function generateEventWithFlights(params) {
     publishEvent({ tournamentRecord, event });
   }
 
-  return { drawIds, eventId, uniqueParticipantIds };
+  // When pulling from a preset pool, report the participants this event consumed
+  // so subsequent events (via `allUniqueParticipantIds`) don't re-select them.
+  // Synthesized participants are already tracked through `uniqueParticipantIds`.
+  const consumedExistingIds = useExistingParticipants
+    ? [...(stageParticipants.MAIN ?? []), ...(stageParticipants.QUALIFYING ?? [])].map((p) => p.participantId)
+    : [];
+
+  return {
+    drawIds,
+    eventId,
+    uniqueParticipantIds: [...new Set([...uniqueParticipantIds, ...consumedExistingIds])],
+  };
 }
 
 function buildEventObject({
