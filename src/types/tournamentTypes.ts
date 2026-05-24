@@ -1165,6 +1165,11 @@ export interface Person {
   addresses?: Address[];
   biographicalInformation?: BiographicalInformation;
   birthDate?: string;
+  /** Year-precision date of birth (CODES). Use when only the birth year is
+   *  known (common in federation junior data). `birthDate` is authoritative when
+   *  both are present; age/category eligibility falls back to this via the
+   *  calendar-year convention (age-in-year = year − birthYear). */
+  birthYear?: number;
   contacts?: Contact[];
   createdAt?: Date | string;
   extensions?: Extension[];

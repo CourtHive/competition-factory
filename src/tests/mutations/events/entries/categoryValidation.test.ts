@@ -306,7 +306,7 @@ describe('Category Validation in addEventEntries', () => {
     });
 
     it('validates age using ageCategoryCode when ageMin/ageMax not provided', () => {
-      const { tournamentRecord} = mocksEngine.generateTournamentRecord({
+      const { tournamentRecord } = mocksEngine.generateTournamentRecord({
         startDate: '2024-08-01',
         endDate: '2024-08-15',
       });
@@ -1437,6 +1437,67 @@ describe('Category Validation in addEventEntries', () => {
       expect(ratingReason).toBeDefined();
       expect(ratingReason.reason).toContain('High Rating');
       expect(ratingReason.reason).toContain('above maximum');
+    });
+  });
+
+  describe('Year-precision birthYear (CODES)', () => {
+    function setup(person: any, category: any) {
+      const { tournamentRecord } = mocksEngine.generateTournamentRecord({
+        startDate: '2024-08-01',
+        endDate: '2024-08-15',
+      });
+      const participant = { participantId: 'p-by', participantType: INDIVIDUAL, person };
+      tournamentRecord.participants = [participant];
+      tournamentEngine.setState(tournamentRecord);
+      const { eventId } = tournamentEngine.addEvent({ event: { eventName: 'E', eventType: SINGLES, category } }).event;
+      return tournamentEngine.addEventEntries({ participantIds: ['p-by'], enforceCategory: true, eventId });
+    }
+
+    it('accepts a person with only birthYear when calendar-year age is in range', () => {
+      // 2024 − 2008 = 16, within U18 (ageMax 17)
+      const result: any = setup(
+        { birthYear: 2008, standardGivenName: 'Year', standardFamilyName: 'Only', sex: 'MALE' },
+        { categoryName: 'U18', ageMax: 17 },
+      );
+      expect(result.success).toEqual(true);
+      expect(result.addedEntriesCount).toEqual(1);
+    });
+
+    it('rejects a person with only birthYear who is too old, reporting birthYear in details', () => {
+      // 2024 − 2000 = 24, outside U18
+      const result: any = setup(
+        { birthYear: 2000, standardGivenName: 'Year', standardFamilyName: 'Old', sex: 'MALE' },
+        { categoryName: 'U18', ageMax: 17 },
+      );
+      expect(result.error).toEqual(INVALID_PARTICIPANT_IDS);
+      const reason = result.context.categoryRejections[0].rejectionReasons[0];
+      expect(reason.type).toEqual('age');
+      expect(reason.details.birthYear).toEqual(2000);
+      expect(reason.details.birthDate).toBeUndefined();
+      expect(reason.details.ageAtStart).toEqual(24);
+    });
+
+    it('birthDate is authoritative when both birthDate and birthYear are present', () => {
+      // birthYear 2010 would pass, but birthDate 2000 (age 24) must win → rejected
+      const result: any = setup(
+        { birthDate: '2000-01-01', birthYear: 2010, standardGivenName: 'Both', standardFamilyName: 'Set', sex: 'MALE' },
+        { categoryName: 'U18', ageMax: 17 },
+      );
+      expect(result.error).toEqual(INVALID_PARTICIPANT_IDS);
+      const reason = result.context.categoryRejections[0].rejectionReasons[0];
+      expect(reason.details.birthDate).toEqual('2000-01-01');
+      expect(reason.details.birthYear).toBeUndefined();
+    });
+
+    it('rejects when both birthDate and birthYear are missing', () => {
+      const result: any = setup(
+        { standardGivenName: 'No', standardFamilyName: 'Dob', sex: 'MALE' },
+        { categoryName: 'U18', ageMax: 17 },
+      );
+      expect(result.error).toEqual(INVALID_PARTICIPANT_IDS);
+      expect(result.context.categoryRejections[0].rejectionReasons[0].reason).toContain(
+        'Missing birthDate or birthYear',
+      );
     });
   });
 });

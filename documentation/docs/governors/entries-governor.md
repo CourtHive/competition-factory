@@ -61,7 +61,11 @@ When `enforceCategory: true`, validates participants against event category cons
 **Age Validation**:
 
 - Participant must be valid throughout entire event period (start to end date)
-- Requires `person.birthDate` if age restrictions exist
+- Requires `person.birthDate` **or** `person.birthYear` if age restrictions exist.
+  `birthDate` gives exact age; a year-precision `birthYear` falls back to the
+  calendar-year convention (age-in-year = year − birthYear), the standard for
+  junior eligibility when only the birth year is known. `birthDate` is
+  authoritative when both are present.
 - Combined age categories (e.g., `C50-70`) are automatically skipped for individuals
 
 **Rating Validation**:
