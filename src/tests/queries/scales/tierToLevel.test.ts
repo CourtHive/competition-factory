@@ -1,3 +1,4 @@
+import { POLICY_RANKING_POINTS_TENNIS_EUROPE } from '@Tests/fixtures/policies/POLICY_RANKING_POINTS_TENNIS_EUROPE';
 import mocksEngine from '@Assemblies/engines/mock';
 import tournamentEngine from '@Engines/syncEngine';
 import { expect, it, describe } from 'vitest';
@@ -13,7 +14,7 @@ const TIER_AWARE_POLICY = {
   [POLICY_TYPE_RANKING_POINTS]: {
     policyName: 'Tier Test Policy',
     tierToLevel: {
-      ITF_JUNIOR: { 'J500': 4, 'J300': 5, 'J200': 6 },
+      ITF_JUNIOR: { J500: 4, J300: 5, J200: 6 },
       ATP: { 'Grand Slam': 1, '1000': 2, '500': 3, '250': 4 },
     },
     awardProfiles: [
@@ -124,5 +125,44 @@ describe('tierToLevel — ranking points auto-resolution', () => {
     });
 
     expect(result.error).toBeUndefined();
+  });
+});
+
+describe('tierToLevel — TENNIS_EUROPE policy', () => {
+  const tePolicy: any = POLICY_RANKING_POINTS_TENNIS_EUROPE;
+
+  it('exposes the TE category → level map', () => {
+    expect(tePolicy[POLICY_TYPE_RANKING_POINTS].tierToLevel.TENNIS_EUROPE).toEqual({
+      'Super Category': 2,
+      'Category 1': 3,
+      'Category 2': 4,
+      'Category 3': 5,
+    });
+  });
+
+  function teWinnerPoints(value: string, numericRank: number): number {
+    mocksEngine.generateTournamentRecord({
+      eventProfiles: [
+        {
+          eventType: 'SINGLES',
+          category: { ageCategoryCode: '16U' },
+          drawProfiles: [{ drawSize: 16, completionGoal: 16 }],
+        },
+      ],
+      setState: true,
+    });
+    tournamentEngine.setTournamentTier({ tournamentTier: { system: 'TENNIS_EUROPE', value, numericRank } });
+    const { tournamentRecord } = tournamentEngine.getTournament();
+    const eventId = tournamentRecord.events[0].eventId;
+    const result: any = tournamentEngine.getEventRankingPoints({ policyDefinitions: tePolicy, eventId });
+    expect(result.error).toBeUndefined();
+    return result.eventAwards?.[0]?.points ?? 0;
+  }
+
+  it('resolves the ranking level from a TENNIS_EUROPE tier (higher category → more points)', () => {
+    const superPts = teWinnerPoints('Super Category', 2); // level 2
+    const cat3Pts = teWinnerPoints('Category 3', 5); // level 5
+    expect(superPts).toBeGreaterThan(0);
+    expect(superPts).toBeGreaterThan(cat3Pts);
   });
 });

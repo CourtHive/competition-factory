@@ -480,6 +480,21 @@ const awardProfiles = [
   te12Cat2Doubles,
 ];
 
+// ─── Tier → level ─────────────────────────────────────────────────────────
+// Lets getEventRankingPoints resolve the ranking level from a record's
+// `eventTier` / `tournamentTier` (system TENNIS_EUROPE) when no explicit level
+// is passed. Values mirror the TournamentSoftware factsheet category strings
+// and the level scheme documented at the top of this file (Super=2, Cat1=3,
+// Cat2=4, Cat3=5). 12&U is starting-points-only and resolved via age, not tier.
+const tierToLevel = {
+  TENNIS_EUROPE: {
+    'Super Category': 2,
+    'Category 1': 3,
+    'Category 2': 4,
+    'Category 3': 5,
+  },
+};
+
 // ─── Export ─────────────────────────────────────────────────────────────────
 
 export const POLICY_RANKING_POINTS_TENNIS_EUROPE = {
@@ -492,6 +507,7 @@ export const POLICY_RANKING_POINTS_TENNIS_EUROPE = {
 
     awardProfiles,
     aggregationRules,
+    tierToLevel,
 
     doublesAttribution: 'fullToEach' as const,
     categoryResolution: 'eventCategory' as const,
