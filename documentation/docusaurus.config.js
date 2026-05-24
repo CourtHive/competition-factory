@@ -2,7 +2,7 @@
 module.exports = {
   title: 'Competition Factory',
   tagline: 'Open-source engine for tournament management — draws, scheduling, scoring, and more.',
-  url: 'https://courthive.github.com',
+  url: 'https://courthive.github.io',
   baseUrl: '/competition-factory/',
   onBrokenLinks: 'warn',
   favicon: 'img/favicon.ico',
