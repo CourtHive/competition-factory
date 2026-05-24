@@ -1,5 +1,18 @@
 # Changelog
 
+## [4.2.0](https://github.com/CourtHive/competition-factory/compare/v4.1.1...v4.2.0) (2026-05-24)
+
+
+### Features
+
+* **participants:** optional Person.birthYear with age/category fallback (CODES) ([#4374](https://github.com/CourtHive/competition-factory/issues/4374)) ([58698d2](https://github.com/CourtHive/competition-factory/commit/58698d26e68cf90ab2ff7ff24f9bd228016122f2))
+* **scales:** fall back to tier.numericRank when a policy declares no tierToLevel ([#4373](https://github.com/CourtHive/competition-factory/issues/4373)) ([40582fa](https://github.com/CourtHive/competition-factory/commit/40582fa029e5d8469c5efaa1b526e987964e1a5a))
+
+
+### Documentation
+
+* correct site url to courthive.github.io ([#4370](https://github.com/CourtHive/competition-factory/issues/4370)) ([42016fb](https://github.com/CourtHive/competition-factory/commit/42016fb9fd2414204c76fbabd650de43a011c534))
+
 ## [4.1.1](https://github.com/CourtHive/competition-factory/compare/v4.1.0...v4.1.1) (2026-05-24)
 
 
