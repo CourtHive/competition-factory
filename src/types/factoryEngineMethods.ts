@@ -384,6 +384,7 @@ export type FactoryEngineMethod =
   | 'mergeAdjacentSegments'
   | 'mergeOverlappingAvailability'
   | 'mergeParticipants'
+  | 'migrateTournamentRecord'
   | 'minutesToHhmm'
   | 'modifyCertification'
   | 'modifyCollectionDefinition'
@@ -982,6 +983,7 @@ export const FACTORY_ENGINE_METHODS: readonly FactoryEngineMethod[] = [
   'mergeAdjacentSegments',
   'mergeOverlappingAvailability',
   'mergeParticipants',
+  'migrateTournamentRecord',
   'minutesToHhmm',
   'modifyCertification',
   'modifyCollectionDefinition',

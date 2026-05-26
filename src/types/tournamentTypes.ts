@@ -12,6 +12,9 @@ export interface Tournament {
   hostCountryCode?: CountryCodeUnion;
   indoorOutdoor?: IndoorOutdoorUnion;
   isMock?: boolean;
+  // CODES first-class: previously stored as `linkedTournamentsIds` extension
+  // with shape `{tournamentIds: string[]}`; CODES flattens that wrapper away.
+  linkedTournamentIds?: string[];
   localTimeZone?: string;
   matchUps?: MatchUp[];
   notes?: string;

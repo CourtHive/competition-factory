@@ -1,3 +1,4 @@
+export { migrateTournamentRecord } from '@Mutate/tournaments/migrateTournamentRecord';
 export { removeMutationLock } from '@Mutate/tournaments/mutationLocks/removeMutationLock';
 export { addMutationLock } from '@Mutate/tournaments/mutationLocks/addMutationLock';
 export { hydrateTournamentRecord } from '@Mutate/base/hydrateTournamentRecord';
