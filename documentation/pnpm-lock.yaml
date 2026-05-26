@@ -32,8 +32,8 @@ importers:
         specifier: 2.1.1
         version: 2.1.1
       courthive-components:
-        specifier: 1.9.0
-        version: 1.9.0
+        specifier: 1.10.0
+        version: 1.10.0
       react:
         specifier: ^19.2.6
         version: 19.2.6
@@ -42,7 +42,7 @@ importers:
         version: 19.2.6(react@19.2.6)
       tods-competition-factory:
         specifier: ^4.0.0
-        version: 4.1.1
+        version: 4.2.0
 
 packages:
 
@@ -2307,8 +2307,8 @@ packages:
       typescript:
         optional: true
 
-  courthive-components@1.9.0:
-    resolution: {integrity: sha512-QrbsdSFrqav9TLORdN/jogWCLGcp+9AzTBCsE8AkkTzHvnmi9wZ0a6reYMYo8d0hIz2gxlzCOJ/FbJmfrQjXog==}
+  courthive-components@1.10.0:
+    resolution: {integrity: sha512-33+KJXWhkeba+FUe4HIjdwiv/N7WXOuVFJnIe/nbb5XohPomZrO0kL7ChlSt30yVNjBoW9FhCUY+5gS+jr9zgg==}
     engines: {node: '>=22'}
 
   cross-spawn@7.0.6:
@@ -5049,8 +5049,8 @@ packages:
     resolution: {integrity: sha512-65P7iz6X5yEr1cwcgvQxbbIw7Uk3gOy5dIdtZ4rDveLqhrdJP+Li/Hx6tyK0NEb+2GCyneCMJiGqrADCSNk8sQ==}
     engines: {node: '>=8.0'}
 
-  tods-competition-factory@4.1.1:
-    resolution: {integrity: sha512-EPYis5Ne4bd5S6eIQpqfZMUDtDl2ECwAxaOJ3cLi9czr/+Nxqe42dm6ExR47cRs+cVf9X5La8gN5sVVniS68IQ==}
+  tods-competition-factory@4.2.0:
+    resolution: {integrity: sha512-fTDEO72jDLYPGf7zdTF6hYc65Q21OJ0ZbWVLA5Wh0EhJCvjQvDcJvj59LY508kJR+9JCF95FBPJZLJ8LAJZGUw==}
     engines: {node: '>=22'}
 
   toidentifier@1.0.1:
@@ -8874,7 +8874,7 @@ snapshots:
       parse-json: 5.2.0
       path-type: 4.0.0
 
-  courthive-components@1.9.0:
+  courthive-components@1.10.0:
     dependencies:
       awesomplete: 1.1.7
       class-variance-authority: 0.7.1
@@ -8884,7 +8884,7 @@ snapshots:
       focus-trap: 8.2.1
       timepicker-ui: 4.3.0
       tippy.js: 6.3.7
-      tods-competition-factory: 4.1.1
+      tods-competition-factory: 4.2.0
       vanillajs-datepicker: 1.3.4
 
   cross-spawn@7.0.6:
@@ -12134,7 +12134,7 @@ snapshots:
     dependencies:
       is-number: 7.0.0
 
-  tods-competition-factory@4.1.1: {}
+  tods-competition-factory@4.2.0: {}
 
   toidentifier@1.0.1: {}
 
