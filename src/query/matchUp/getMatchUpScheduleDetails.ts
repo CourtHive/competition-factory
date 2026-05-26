@@ -95,8 +95,7 @@ export function getMatchUpScheduleDetails(params: GetMatchUpScheduleDetailsArgs)
   const { endTime } = matchUpEndTime({ matchUp });
 
   const { eventIds, drawIds } = scheduleVisibilityFilters ?? {};
-  const isVisible =
-    (!eventIds || eventIds.includes(matchUp.eventId)) && (!drawIds || drawIds.includes(matchUp.drawId));
+  const isVisible = (!eventIds || eventIds.includes(matchUp.eventId)) && (!drawIds || drawIds.includes(matchUp.drawId));
 
   let schedule = isVisible
     ? buildFullSchedule({
@@ -150,7 +149,18 @@ export function getMatchUpScheduleDetails(params: GetMatchUpScheduleDetailsArgs)
   return { schedule, endDate };
 }
 
-function buildFullSchedule({ tournamentRecord, scheduleTiming, afterRecoveryTimes, matchUpFormat, matchUpType, matchUp, endTime, startTime, milliseconds, time }) {
+function buildFullSchedule({
+  tournamentRecord,
+  scheduleTiming,
+  afterRecoveryTimes,
+  matchUpFormat,
+  matchUpType,
+  matchUp,
+  endTime,
+  startTime,
+  milliseconds,
+  time,
+}) {
   const getTimeStamp = (item) => (item.createdAt ? new Date(item.createdAt).getTime() : 0);
 
   const timeItemMap = new Map();
@@ -158,16 +168,21 @@ function buildFullSchedule({ tournamentRecord, scheduleTiming, afterRecoveryTime
   for (const timeItem of sortedTimeItems) {
     timeItemMap.set(timeItem.itemType, timeItem.itemValue);
   }
-  const homeParticipantId = timeItemMap.get(HOME_PARTICIPANT_ID);
-  const courtAnnotation = timeItemMap.get(COURT_ANNOTATION);
-  const allocatedCourts = timeItemMap.get(ALLOCATE_COURTS);
-  const scheduledTime = timeItemMap.get(SCHEDULED_TIME);
-  const timeModifiers = timeItemMap.get(TIME_MODIFIERS);
-  let scheduledDate = timeItemMap.get(SCHEDULED_DATE);
-  const official = timeItemMap.get(ASSIGN_OFFICIAL);
-  const courtOrder = timeItemMap.get(COURT_ORDER);
-  const venueId = timeItemMap.get(ASSIGN_VENUE);
-  const courtId = timeItemMap.get(ASSIGN_COURT);
+
+  // CODES: prefer first-class `matchUp.schedule.*` attributes; fall back to
+  // the legacy timeItem entry. Records written in NATIVE / DUAL / LEGACY all
+  // hydrate to the same shape.
+  const firstClass = matchUp.schedule ?? {};
+  const homeParticipantId = firstClass.homeParticipantId ?? timeItemMap.get(HOME_PARTICIPANT_ID);
+  const courtAnnotation = firstClass.courtAnnotation ?? timeItemMap.get(COURT_ANNOTATION);
+  const allocatedCourts = firstClass.allocatedCourts ?? timeItemMap.get(ALLOCATE_COURTS);
+  const scheduledTime = firstClass.scheduledTime ?? timeItemMap.get(SCHEDULED_TIME);
+  const timeModifiers = firstClass.timeModifiers ?? timeItemMap.get(TIME_MODIFIERS);
+  let scheduledDate = firstClass.scheduledDate ?? timeItemMap.get(SCHEDULED_DATE);
+  const official = firstClass.official ?? timeItemMap.get(ASSIGN_OFFICIAL);
+  const courtOrder = firstClass.courtOrder ?? timeItemMap.get(COURT_ORDER);
+  const venueId = firstClass.venueId ?? timeItemMap.get(ASSIGN_VENUE);
+  const courtId = firstClass.courtId ?? timeItemMap.get(ASSIGN_COURT);
 
   const recoveryTimes = computeRecoveryTimes({
     scheduleTiming,
@@ -217,7 +232,15 @@ function buildFullSchedule({ tournamentRecord, scheduleTiming, afterRecoveryTime
   });
 }
 
-function computeRecoveryTimes({ scheduleTiming, afterRecoveryTimes, matchUpFormat, matchUpType, matchUp, endTime, scheduledTime }) {
+function computeRecoveryTimes({
+  scheduleTiming,
+  afterRecoveryTimes,
+  matchUpFormat,
+  matchUpType,
+  matchUp,
+  endTime,
+  scheduledTime,
+}) {
   let timeAfterRecovery, averageMinutes, recoveryMinutes, typeChangeRecoveryMinutes, typeChangeTimeAfterRecovery;
 
   const eventType = matchUp.matchUpType ?? matchUpType;

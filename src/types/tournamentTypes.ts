@@ -318,6 +318,32 @@ export interface Interleave {
 
 export type EventTypeUnion = 'SINGLES' | 'DOUBLES' | 'TEAM' | 'HYBRID';
 
+/**
+ * CODES first-class schedule attributes on a matchUp. Each field was
+ * historically stored as a `timeItem` of the corresponding `itemType`
+ * (SCHEDULED_DATE, ASSIGN_COURT, etc.). In CODES the canonical surface is
+ * this object; `timeItems[]` remains the home of `START_TIME / STOP_TIME /
+ * RESUME_TIME / END_TIME` because `matchUpDuration()` walks the full
+ * ordered history. Derived fields like `startTime`, `endTime`,
+ * `milliseconds`, `time`, `venueName`, `courtName`, `isoDateString`, and
+ * the recovery-time calculations remain hydration-time outputs and are
+ * NOT first-class writable.
+ */
+export interface MatchUpSchedule {
+  allocatedCourts?: any[];
+  courtAnnotation?: string;
+  courtId?: string;
+  courtOrder?: number;
+  homeParticipantId?: string;
+  official?: any;
+  scheduledDate?: string;
+  scheduledTime?: string;
+  timeModifiers?: string[];
+  venueId?: string;
+  // derived/hydrated read-only fields (populated by getMatchUpScheduleDetails)
+  [key: string]: any;
+}
+
 export interface MatchUp {
   collectionId?: string;
   collectionPosition?: number;
@@ -342,6 +368,8 @@ export interface MatchUp {
   roundName?: string;
   roundNumber?: number;
   roundPosition?: number;
+  // CODES first-class: previously stored as schedule-related timeItems
+  schedule?: MatchUpSchedule;
   score?: Score;
   sides?: Side[];
   startDate?: string;

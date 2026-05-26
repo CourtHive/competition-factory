@@ -1,4 +1,4 @@
-import { addMatchUpTimeItem } from '@Mutate/timeItems/matchUps/matchUpTimeItems';
+import { setMatchUpFirstClassOrTimeItem } from '@Mutate/timeItems/matchUps/setMatchUpFirstClassOrTimeItem';
 import { convertTime, extractDate, validTimeValue } from '@Tools/dateTime';
 import { scheduledMatchUpDate } from '@Query/matchUp/scheduledMatchUpDate';
 import { matchUpTimeModifiers } from '@Query/matchUp/timeModifiers';
@@ -71,20 +71,17 @@ export function addMatchUpScheduledTime(params: AddMatchUpScheduledTimeArgs) {
 
   // All times stored as military time
   const militaryTime = convertTime(scheduledTime, true, keepDate);
-  const itemValue = militaryTime;
-  const timeItem = {
-    itemType: SCHEDULED_TIME,
-    itemValue,
-  };
 
-  return addMatchUpTimeItem({
+  return setMatchUpFirstClassOrTimeItem({
     duplicateValues: false,
+    attribute: 'scheduledTime',
+    itemType: SCHEDULED_TIME,
+    value: militaryTime,
     removePriorValues,
     tournamentRecord,
     drawDefinition,
     disableNotice,
     matchUpId,
-    timeItem,
   });
 }
 
@@ -141,18 +138,15 @@ export function addMatchUpTimeModifiers({
   // undefined value when array is empty;
   const itemValue = !timeModifiers?.length ? undefined : [...toBeAdded, ...existingTimeModifiers];
 
-  const timeItem = {
-    itemType: TIME_MODIFIERS,
-    itemValue,
-  };
-
-  return addMatchUpTimeItem({
+  return setMatchUpFirstClassOrTimeItem({
     duplicateValues: false,
+    attribute: 'timeModifiers',
+    itemType: TIME_MODIFIERS,
+    value: itemValue,
     removePriorValues,
     tournamentRecord,
     drawDefinition,
     disableNotice,
     matchUpId,
-    timeItem,
   });
 }

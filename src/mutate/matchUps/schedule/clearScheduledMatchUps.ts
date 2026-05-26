@@ -101,7 +101,7 @@ function clearSchedules({
     if (
       (!matchUpStatus || !ignoreMatchUpStatuses.includes(matchUpStatus)) &&
       hasSchedule({ schedule, scheduleAttributes }) &&
-      (!venueIds?.length || venueIds.includes(schedule.venueId))
+      (!venueIds?.length || venueIds.includes(schedule?.venueId ?? ''))
     ) {
       if (!drawMatchUpIds[drawId]) drawMatchUpIds[drawId] = [];
       drawMatchUpIds[drawId].push(matchUpId);
@@ -121,9 +121,15 @@ function clearSchedules({
       matchUp.timeItems = (matchUp.timeItems ?? []).filter((timeItem) => {
         const preserve =
           timeItem?.itemType &&
-          ![ALLOCATE_COURTS, ASSIGN_COURT, ASSIGN_VENUE, COURT_ANNOTATION, COURT_ORDER, SCHEDULED_DATE, SCHEDULED_TIME].includes(
-            timeItem?.itemType,
-          );
+          ![
+            ALLOCATE_COURTS,
+            ASSIGN_COURT,
+            ASSIGN_VENUE,
+            COURT_ANNOTATION,
+            COURT_ORDER,
+            SCHEDULED_DATE,
+            SCHEDULED_TIME,
+          ].includes(timeItem?.itemType);
         if (!preserve) modified = true;
         return preserve;
       });

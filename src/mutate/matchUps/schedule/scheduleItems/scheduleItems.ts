@@ -1,5 +1,6 @@
 import { convertTime, extractDate, extractTime, formatDate, getIsoDateString, validTimeValue } from '@Tools/dateTime';
 import { setMatchUpHomeParticipantId } from '@Mutate/matchUps/schedule/scheduleItems/setMatchUpHomeParticipantId';
+import { setMatchUpFirstClassOrTimeItem } from '@Mutate/timeItems/matchUps/setMatchUpFirstClassOrTimeItem';
 import { addMatchUpScheduledTime, addMatchUpTimeModifiers } from '@Mutate/matchUps/schedule/scheduledTime';
 import { addMatchUpScheduledDate } from '@Mutate/matchUps/schedule/scheduleItems/addMatchUpScheduledDate';
 import { allocateTeamMatchUpCourts } from '@Mutate/matchUps/schedule/allocateTeamMatchUpCourts';
@@ -29,7 +30,7 @@ import {
   COURT_ORDER,
   COURT_ANNOTATION,
 } from '@Constants/timeItemConstants';
-import { DrawDefinition, Event, TimeItem } from '@Types/tournamentTypes';
+import { DrawDefinition, Event } from '@Types/tournamentTypes';
 import { OBJECT, OF_TYPE } from '@Constants/attributeConstants';
 import { AddScheduleAttributeArgs } from '@Types/factoryTypes';
 import { INDIVIDUAL } from '@Constants/participantConstants';
@@ -495,19 +496,17 @@ export function addMatchUpCourtOrder({
     return { error: INVALID_VALUES, info: 'courtOrder must be numeric' };
 
   const itemValue = courtOrder && ensureInt(courtOrder);
-  const timeItem = {
-    itemType: COURT_ORDER,
-    itemValue,
-  };
 
-  return addMatchUpTimeItem({
+  return setMatchUpFirstClassOrTimeItem({
     duplicateValues: false,
+    attribute: 'courtOrder',
+    itemType: COURT_ORDER,
+    value: itemValue,
     removePriorValues,
     tournamentRecord,
     drawDefinition,
     disableNotice,
     matchUpId,
-    timeItem,
   });
 }
 
@@ -523,19 +522,17 @@ export function addMatchUpCourtAnnotation({
 
   // undefined or empty string clears the annotation
   const itemValue = courtAnnotation || undefined;
-  const timeItem = {
-    itemType: COURT_ANNOTATION,
-    itemValue,
-  };
 
-  return addMatchUpTimeItem({
+  return setMatchUpFirstClassOrTimeItem({
     duplicateValues: false,
+    attribute: 'courtAnnotation',
+    itemType: COURT_ANNOTATION,
+    value: itemValue,
     removePriorValues,
     tournamentRecord,
     drawDefinition,
     disableNotice,
     matchUpId,
-    timeItem,
   });
 }
 
@@ -573,20 +570,17 @@ export function addMatchUpOfficial({
     if (!participant) return { error: PARTICIPANT_NOT_FOUND };
   }
 
-  const timeItem: TimeItem = {
-    itemType: 'SCHEDULE.ASSIGNMENT.OFFICIAL',
-    itemValue: participantId,
-  };
-  if (officialType) timeItem.itemSubTypes = [officialType];
-
-  return addMatchUpTimeItem({
+  return setMatchUpFirstClassOrTimeItem({
     duplicateValues: false,
+    attribute: 'official',
+    itemType: 'SCHEDULE.ASSIGNMENT.OFFICIAL',
+    itemSubTypes: officialType ? [officialType] : undefined,
+    value: participantId,
     removePriorValues,
     tournamentRecord,
     drawDefinition,
     disableNotice,
     matchUpId,
-    timeItem,
   });
 }
 
