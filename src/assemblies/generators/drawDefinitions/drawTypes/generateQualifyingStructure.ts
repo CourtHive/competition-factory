@@ -4,7 +4,7 @@ import { getAllStructureMatchUps } from '@Query/matchUps/getAllStructureMatchUps
 import { getStructureGroups } from '@Query/structure/getStructureGroups';
 import { decorateResult } from '@Functions/global/decorateResult';
 import { coerceEven, isConvertableInteger } from '@Tools/math';
-import { addExtension } from '@Mutate/extensions/addExtension';
+import { setFirstClassOrExtension } from '@Mutate/extensions/setFirstClassOrExtension';
 import { generateRoundRobin } from './roundRobin/roundRobin';
 import { generateTieMatchUps } from '../tieMatchUps';
 import { constantToString } from '@Tools/strings';
@@ -127,9 +127,11 @@ function generateEliminationStructure(args: any) {
   });
 
   if (args.roundTarget) {
-    addExtension({
-      extension: { name: ROUND_TARGET, value: args.roundTarget },
+    setFirstClassOrExtension({
       element: structure,
+      attribute: 'roundTarget',
+      name: ROUND_TARGET,
+      value: args.roundTarget,
     });
   }
 

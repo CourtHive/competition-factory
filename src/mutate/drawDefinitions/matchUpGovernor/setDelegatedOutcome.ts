@@ -1,4 +1,4 @@
-import { addExtension } from '../../extensions/addExtension';
+import { setFirstClassOrExtension } from '../../extensions/setFirstClassOrExtension';
 import { findDrawMatchUp } from '@Acquire/findDrawMatchUp';
 
 import { DELEGATED_OUTCOME } from '@Constants/extensionConstants';
@@ -27,10 +27,10 @@ export function setDelegatedOutcome({ drawDefinition, matchUpId, outcome, matchU
     return { error: INVALID_VALUES };
   }
 
-  const extension = {
+  return setFirstClassOrExtension({
+    element: matchUp,
+    attribute: 'delegatedOutcome',
     name: DELEGATED_OUTCOME,
     value: outcome,
-  };
-
-  return addExtension({ element: matchUp, extension });
+  });
 }

@@ -2,7 +2,7 @@ import { getPositionAssignments } from '../drawDefinition/positionsGetter';
 import { chunkArray, generateRange } from '@Tools/arrays';
 import { getDevContext } from '@Global/state/globalState';
 import { reduceGroupedOrder } from './reduceGroupedOrder';
-import { findExtension } from '@Acquire/findExtension';
+import { firstClassOrExtension } from '@Acquire/firstClassOrExtension';
 import { findStructure } from '@Acquire/findStructure';
 
 // constants
@@ -127,11 +127,12 @@ export function getTargetMatchUp({
 
   const relevantAssignment = positionAssignments?.find(({ drawPosition }) => drawPosition === targetDrawPosition);
   if (relevantAssignment) {
-    const { extension } = findExtension({
+    const disableLinks = firstClassOrExtension({
       element: relevantAssignment,
+      attribute: 'disableLinks',
       name: DISABLE_LINKS,
     });
-    if (extension?.value) {
+    if (disableLinks) {
       return { disabledDrawPosition: targetDrawPosition };
     }
   }

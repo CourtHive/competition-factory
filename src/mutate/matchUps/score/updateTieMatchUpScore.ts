@@ -1,13 +1,13 @@
 import { generateTieMatchUpScore } from '@Assemblies/generators/tieMatchUpScore/generateTieMatchUpScore';
+import { setFirstClassOrExtension } from '@Mutate/extensions/setFirstClassOrExtension';
 import { resolveTieFormat } from '@Query/hierarchical/tieFormats/resolveTieFormat';
 import { ensureSideLineUps } from '@Mutate/matchUps/lineUps/ensureSideLineUps';
+import { firstClassOrExtension } from '@Acquire/firstClassOrExtension';
 import { modifyMatchUpScore } from '@Mutate/matchUps/score/modifyMatchUpScore';
 import { copyTieFormat } from '@Query/hierarchical/tieFormats/copyTieFormat';
-import { removeExtension } from '@Mutate/extensions/removeExtension';
 import { isActiveMatchUp } from '@Query/matchUp/activeMatchUp';
 import { findTournamentId } from '@Acquire/findTournamentId';
 import { findDrawMatchUp } from '@Acquire/findDrawMatchUp';
-import { findExtension } from '@Acquire/findExtension';
 
 // constants and types
 import { COMPLETED, completedMatchUpStatuses, IN_PROGRESS, TO_BE_PLAYED } from '@Constants/matchUpStatusConstants';
@@ -72,16 +72,22 @@ export function updateTieMatchUpScore(params: UpdateTieMatchUpScoreArgs): {
     drawDefinition,
   });
 
-  const { extension } = findExtension({
-    name: DISABLE_AUTO_CALC,
+  const disableAutoCalc = firstClassOrExtension({
     element: matchUp,
+    attribute: 'disableAutoCalc',
+    name: DISABLE_AUTO_CALC,
   });
 
-  if (extension?.value) {
+  if (disableAutoCalc) {
     if (!removeScore) {
       return { ...SUCCESS, score: matchUp.score };
     } else {
-      removeExtension({ element: matchUp, name: DISABLE_AUTO_CALC });
+      setFirstClassOrExtension({
+        element: matchUp,
+        attribute: 'disableAutoCalc',
+        name: DISABLE_AUTO_CALC,
+        value: undefined,
+      });
     }
   }
 

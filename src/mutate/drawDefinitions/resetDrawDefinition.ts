@@ -61,6 +61,8 @@ export function resetDrawDefinition({ tournamentRecord, removeScheduling, remove
   drawDefinition.extensions = drawDefinition.extensions.filter(
     (extension) => extension.name !== POSITION_ACTIONS && extension.name !== DRAFT_STATE,
   );
+  // CODES: also wipe the first-class draftState if present
+  delete drawDefinition.draftState;
 
   const structureIds = (drawDefinition.structures ?? []).map(({ structureId }) => structureId);
 

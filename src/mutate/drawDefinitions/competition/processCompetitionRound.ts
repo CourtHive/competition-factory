@@ -4,7 +4,7 @@ import { getCompetitionState } from '@Query/drawDefinition/competition/getCompet
 
 // Mutate
 import { processCompetitionMatchUp } from './processCompetitionMatchUp';
-import { addExtension } from '@Mutate/extensions/addExtension';
+import { setFirstClassOrExtension } from '@Mutate/extensions/setFirstClassOrExtension';
 
 // Constants
 import { completedMatchUpStatuses } from '@Constants/matchUpStatusConstants';
@@ -55,9 +55,11 @@ export function processCompetitionRound(params: ProcessCompetitionRoundArgs): Re
       processed: true,
     };
 
-    addExtension({
+    setFirstClassOrExtension({
       element: drawDefinition,
-      extension: { name: COMPETITION_STATE, value: updatedState },
+      attribute: 'competitionState',
+      name: COMPETITION_STATE,
+      value: updatedState,
     });
   }
 

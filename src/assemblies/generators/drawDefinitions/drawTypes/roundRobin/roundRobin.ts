@@ -1,6 +1,6 @@
 import { getRoundRobinGroupMatchUps, drawPositionsHash, groupRounds } from './roundRobinGroups';
 import { structureTemplate } from '@Generators/templates/structureTemplate';
-import { addExtension } from '@Mutate/extensions/addExtension';
+import { setFirstClassOrExtension } from '@Mutate/extensions/setFirstClassOrExtension';
 import { constantToString } from '@Tools/strings';
 import { generateRange } from '@Tools/arrays';
 import { UUID } from '@Tools/UUID';
@@ -111,9 +111,11 @@ export function generateRoundRobin(params: GenerateRoundRobinArgs) {
   });
 
   if (roundTarget)
-    addExtension({
-      extension: { name: ROUND_TARGET, value: roundTarget },
+    setFirstClassOrExtension({
       element: structure,
+      attribute: 'roundTarget',
+      name: ROUND_TARGET,
+      value: roundTarget,
     });
 
   return {

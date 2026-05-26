@@ -1,10 +1,16 @@
-import { CategoryRejection, getEventDateRange, getParticipantName, validateParticipantCategory } from './categoryValidation';
+import {
+  CategoryRejection,
+  getEventDateRange,
+  getParticipantName,
+  validateParticipantCategory,
+} from './categoryValidation';
 import { isMatchUpEventType } from '@Helpers/matchUpEventTypes/isMatchUpEventType';
 import { getAppliedPolicies } from '@Query/extensions/getAppliedPolicies';
 import { addDrawEntries } from '@Mutate/drawDefinitions/addDrawEntries';
 import { decorateResult } from '@Functions/global/decorateResult';
 import { refreshEntryPositions } from './refreshEntryPositions';
 import { isValidExtension } from '@Validators/isValidExtension';
+import { setFirstClassOrExtension } from '@Mutate/extensions/setFirstClassOrExtension';
 import { addExtension } from '@Mutate/extensions/addExtension';
 import { definedAttributes } from '@Tools/definedAttributes';
 import { removeEventEntries } from './removeEventEntries';
@@ -14,7 +20,15 @@ import { isMixed } from '@Validators/isMixed';
 import { isAny } from '@Validators/isAny';
 
 // constants and types
-import { DrawDefinition, EntryStatusUnion, Event, Extension, Participant, StageTypeUnion, Tournament } from '@Types/tournamentTypes';
+import {
+  DrawDefinition,
+  EntryStatusUnion,
+  Event,
+  Extension,
+  Participant,
+  StageTypeUnion,
+  Tournament,
+} from '@Types/tournamentTypes';
 import POLICY_MATCHUP_ACTIONS_DEFAULT from '@Fixtures/policies/POLICY_MATCHUP_ACTIONS_DEFAULT';
 import { DOUBLES_EVENT, HYBRID_EVENT, TEAM_EVENT } from '@Constants/eventConstants';
 import { INDIVIDUAL, PAIR, TEAM } from '@Constants/participantConstants';
@@ -195,7 +209,14 @@ function validateCompoundParticipantCategory(
     const individualParticipant = tournamentRecord.participants?.find((p) => p.participantId === individualId);
     if (!individualParticipant) continue;
 
-    const rejection = validateParticipantCategory(individualParticipant, event.category!, event, startDate, endDate, tournamentRecord);
+    const rejection = validateParticipantCategory(
+      individualParticipant,
+      event.category!,
+      event,
+      startDate,
+      endDate,
+      tournamentRecord,
+    );
     if (rejection) individualRejections.push(rejection);
   }
 
@@ -331,9 +352,11 @@ function createEntriesHelper({
       }
 
       if (roundTarget) {
-        addExtension({
-          extension: { name: ROUND_TARGET, value: roundTarget },
+        setFirstClassOrExtension({
           element: entry,
+          attribute: 'roundTarget',
+          name: ROUND_TARGET,
+          value: roundTarget,
         });
       }
       if (entryStageSequence) entry.entryStageSequence = entryStageSequence;

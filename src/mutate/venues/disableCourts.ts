@@ -1,6 +1,6 @@
+import { setFirstClassOrExtension } from '../extensions/setFirstClassOrExtension';
 import { resolveTournamentRecords } from '@Helpers/parameters/resolveTournamentRecords';
 import { checkRequiredParameters } from '@Helpers/parameters/checkRequiredParameters';
-import { addExtension } from '../extensions/addExtension';
 
 // constants
 import { COURT_IDS, TOURNAMENT_RECORDS } from '@Constants/attributeConstants';
@@ -31,10 +31,12 @@ export function disableCourts(params: DisableCourtsArgs) {
 function courtsDisable({ tournamentRecord, courtIds, dates }) {
   const disabledValue = Array.isArray(dates) && dates.length ? { dates } : true;
   const disableCourt = (court) =>
-    addExtension({
-      extension: { value: disabledValue, name: DISABLED },
-      creationTime: false,
+    setFirstClassOrExtension({
       element: court,
+      attribute: 'disabled',
+      name: DISABLED,
+      value: disabledValue,
+      creationTime: false,
     });
 
   for (const venue of tournamentRecord.venues ?? []) {

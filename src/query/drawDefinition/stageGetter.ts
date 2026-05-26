@@ -4,7 +4,6 @@ import { getBestFinishers } from '@Query/drawDefinition/getBestFinishers';
 
 // Acquire
 import { firstClassOrExtension } from '@Acquire/firstClassOrExtension';
-import { findExtension } from '@Acquire/findExtension';
 import { findStructure } from '@Acquire/findStructure';
 
 // Helpers
@@ -82,10 +81,7 @@ export function getStageEntries({
 }: GetStageEntriesArgs) {
   const entries =
     drawDefinition.entries?.reduce((entries: any[], entry) => {
-      const entryRoundTarget = findExtension({
-        name: ROUND_TARGET,
-        element: entry,
-      })?.extension?.value;
+      const entryRoundTarget = firstClassOrExtension({ element: entry, attribute: 'roundTarget', name: ROUND_TARGET });
       const stageTarget =
         (stage && entry.entryStage === stage) ||
         (stages?.length && entry.entryStage && stages.includes(entry.entryStage));

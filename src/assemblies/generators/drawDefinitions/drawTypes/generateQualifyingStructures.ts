@@ -3,7 +3,7 @@ import { getAllStructureMatchUps } from '@Query/matchUps/getAllStructureMatchUps
 import structureTemplate from '@Generators/templates/structureTemplate';
 import { decorateResult } from '@Functions/global/decorateResult';
 import { coerceEven, isConvertableInteger } from '@Tools/math';
-import { addExtension } from '@Mutate/extensions/addExtension';
+import { setFirstClassOrExtension } from '@Mutate/extensions/setFirstClassOrExtension';
 import { generateRoundRobin } from './roundRobin/roundRobin';
 import { constantToString } from '@Tools/strings';
 import { treeMatchUps } from './eliminationTree';
@@ -224,9 +224,11 @@ function processStructureProfile({
     });
 
     if (roundTarget) {
-      addExtension({
-        extension: { name: ROUND_TARGET, value: roundTarget },
+      setFirstClassOrExtension({
         element: structure,
+        attribute: 'roundTarget',
+        name: ROUND_TARGET,
+        value: roundTarget,
       });
     }
 

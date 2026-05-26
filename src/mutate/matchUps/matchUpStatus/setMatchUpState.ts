@@ -12,15 +12,14 @@ import { swapWinnerLoser } from '@Mutate/matchUps/drawPositions/swapWinnerLoser'
 import { modifyMatchUpScore } from '@Mutate/matchUps/score/modifyMatchUpScore';
 import { ensureSideLineUps } from '@Mutate/matchUps/lineUps/ensureSideLineUps';
 import { getPositionAssignments } from '@Query/drawDefinition/positionsGetter';
+import { setFirstClassOrExtension } from '@Mutate/extensions/setFirstClassOrExtension';
 import { isActiveDownstream } from '@Query/drawDefinition/isActiveDownstream';
 import { getAppliedPolicies } from '@Query/extensions/getAppliedPolicies';
 import { checkScoreHasValue } from '@Query/matchUp/checkScoreHasValue';
-import { removeExtension } from '@Mutate/extensions/removeExtension';
 import { getAllDrawMatchUps } from '@Query/matchUps/drawMatchUps';
 import { decorateResult } from '@Functions/global/decorateResult';
 import { positionTargets } from '@Query/matchUp/positionTargets';
 import { getMatchUpsMap } from '@Query/matchUps/getMatchUpsMap';
-import { addExtension } from '@Mutate/extensions/addExtension';
 import { pushGlobalLog } from '@Functions/global/globalLog';
 import { validateScore } from '@Validators/validateScore';
 import { findDrawMatchUp } from '@Acquire/findDrawMatchUp';
@@ -115,10 +114,26 @@ export function setMatchUpState(params: SetMatchUpStateArgs): any {
   const validationError = validateMatchUpStateInputs({ drawDefinition, matchUpStatus, winningSide });
   if (validationError) return validationError;
 
-  const resolved = resolveMatchUpAndContext({ tournamentRecord, drawDefinition, matchUpId, event, matchUpStatus, winningSide });
+  const resolved = resolveMatchUpAndContext({
+    tournamentRecord,
+    drawDefinition,
+    matchUpId,
+    event,
+    matchUpStatus,
+    winningSide,
+  });
   if (resolved.error) return resolved;
 
-  const { matchUp, inContextMatchUp, inContextDrawMatchUps, matchUpsMap, structure, isTeam, assignedDrawPositions, matchUpTieId } = resolved;
+  const {
+    matchUp,
+    inContextMatchUp,
+    inContextDrawMatchUps,
+    matchUpsMap,
+    structure,
+    isTeam,
+    assignedDrawPositions,
+    matchUpTieId,
+  } = resolved;
 
   const targetData = positionTargets({
     matchUpId: matchUpTieId || matchUpId,
@@ -344,7 +359,16 @@ function checkDownstreamCompatibility({ matchUpTieId, activeDownstream, matchUpS
 }
 
 function resolveAndApplyOutcome({ params, isTeam, dualWinningSideChange, activeDownstream, stack }) {
-  const { allowChangePropagation, tournamentRecords, tournamentRecord, drawDefinition, winningSide, matchUpId, matchUpTieId, matchUp } = params;
+  const {
+    allowChangePropagation,
+    tournamentRecords,
+    tournamentRecord,
+    drawDefinition,
+    winningSide,
+    matchUpId,
+    matchUpTieId,
+    matchUp,
+  } = params;
 
   const { schedule } = params;
   if (schedule) {
@@ -364,11 +388,7 @@ function resolveAndApplyOutcome({ params, isTeam, dualWinningSideChange, activeD
   const validWinningSideSwap =
     !isTeam && !dualWinningSideChange && winningSide && matchUp.winningSide && matchUp.winningSide !== winningSide;
 
-  if (
-    allowChangePropagation &&
-    validWinningSideSwap &&
-    matchUp.roundPosition
-  ) {
+  if (allowChangePropagation && validWinningSideSwap && matchUp.roundPosition) {
     return swapWinnerLoser(params);
   }
 
@@ -413,9 +433,11 @@ function handleTeamAutoCalc({
   let dualWinningSideChange;
 
   if (disableAutoCalc) {
-    addExtension({
-      extension: { name: DISABLE_AUTO_CALC, value: true },
+    setFirstClassOrExtension({
       element: matchUp,
+      attribute: 'disableAutoCalc',
+      name: DISABLE_AUTO_CALC,
+      value: true,
     });
   } else if (enableAutoCalc) {
     const existingDualMatchUpWinningSide = matchUp.winningSide;
@@ -450,7 +472,12 @@ function handleTeamAutoCalc({
       });
     }
 
-    removeExtension({ name: DISABLE_AUTO_CALC, element: matchUp });
+    setFirstClassOrExtension({
+      element: matchUp,
+      attribute: 'disableAutoCalc',
+      name: DISABLE_AUTO_CALC,
+      value: undefined,
+    });
 
     // setting these parameters will enable noDownStreamDependencies to attemptToSetWinningSide
     Object.assign(params, {

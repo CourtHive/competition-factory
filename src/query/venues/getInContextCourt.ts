@@ -1,6 +1,6 @@
+import { firstClassOrExtension } from '@Acquire/firstClassOrExtension';
 import { applyVenueConstraints } from './applyVenueConstraints';
 import { makeDeepCopy } from '@Tools/makeDeepCopy';
-import { findExtension } from '@Acquire/findExtension';
 import { isObject } from '@Tools/objects';
 
 import { DISABLED } from '@Constants/extensionConstants';
@@ -10,16 +10,13 @@ export function getInContextCourt({ convertExtensions, ignoreDisabled, venue, co
     ...makeDeepCopy(court, convertExtensions, true),
     venueId: venue.venueId,
   };
-  const { extension } = findExtension({
-    name: DISABLED,
-    element: court,
-  });
+  const disabledValue = firstClassOrExtension({ element: court, attribute: 'disabled', name: DISABLED });
 
-  if (ignoreDisabled && extension) {
-    const disabledDates = isObject(extension.value) ? extension.value?.dates : undefined;
+  if (ignoreDisabled && disabledValue !== undefined) {
+    const disabledDates = isObject(disabledValue) ? disabledValue?.dates : undefined;
 
     const dateAvailability =
-      extension?.value === true
+      disabledValue === true
         ? []
         : inContextCourt.dateAvailability
             .map((availability) => {

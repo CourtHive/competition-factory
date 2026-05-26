@@ -1,4 +1,4 @@
-import { findExtension } from '@Acquire/findExtension';
+import { firstClassOrExtension } from '@Acquire/firstClassOrExtension';
 
 // constants and types
 import { completedMatchUpStatuses } from '@Constants/matchUpStatusConstants';
@@ -14,7 +14,7 @@ import {
 } from '@Constants/drawDefinitionConstants';
 
 export function structureSort(a: Structure | undefined, b: Structure | undefined, config?): number {
-  const getRoundTarget = (element) => findExtension({ element, name: ROUND_TARGET })?.extension?.value;
+  const getRoundTarget = (element) => firstClassOrExtension({ element, attribute: 'roundTarget', name: ROUND_TARGET });
 
   const completed = config?.deprioritizeCompleted;
   const aggregate = config?.mode === AGGREGATE_EVENT_STRUCTURES && aggregateOrder;

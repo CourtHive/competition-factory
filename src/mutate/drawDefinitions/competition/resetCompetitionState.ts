@@ -1,5 +1,5 @@
 // Mutate
-import { addExtension } from '@Mutate/extensions/addExtension';
+import { setFirstClassOrExtension } from '@Mutate/extensions/setFirstClassOrExtension';
 
 // Constants
 import { MISSING_DRAW_DEFINITION } from '@Constants/errorConditionConstants';
@@ -17,9 +17,11 @@ type ResetCompetitionStateArgs = {
 export function resetCompetitionState({ drawDefinition }: ResetCompetitionStateArgs): ResultType {
   if (!drawDefinition) return { error: MISSING_DRAW_DEFINITION };
 
-  addExtension({
+  setFirstClassOrExtension({
     element: drawDefinition,
-    extension: { name: COMPETITION_STATE, value: undefined },
+    attribute: 'competitionState',
+    name: COMPETITION_STATE,
+    value: undefined,
   });
 
   return { ...SUCCESS };

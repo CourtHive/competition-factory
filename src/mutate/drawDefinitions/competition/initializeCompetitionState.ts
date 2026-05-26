@@ -5,7 +5,7 @@ import { getCompetitionPolicy } from '@Query/drawDefinition/competition/getCompe
 import { getAdHocRatings } from '@Generators/drawDefinitions/drawTypes/adHoc/drawMatic/getAdHocRatings';
 
 // Mutate
-import { addExtension } from '@Mutate/extensions/addExtension';
+import { setFirstClassOrExtension } from '@Mutate/extensions/setFirstClassOrExtension';
 
 // Constants
 import { MISSING_DRAW_DEFINITION, MISSING_VALUE } from '@Constants/errorConditionConstants';
@@ -29,9 +29,7 @@ type InitializeCompetitionStateResult = ResultType & {
   competitionState?: CompetitionState;
 };
 
-export function initializeCompetitionState(
-  params: InitializeCompetitionStateArgs,
-): InitializeCompetitionStateResult {
+export function initializeCompetitionState(params: InitializeCompetitionStateArgs): InitializeCompetitionStateResult {
   const { tournamentRecord, drawDefinition, participantIds, event } = params;
   if (!drawDefinition) return { error: MISSING_DRAW_DEFINITION };
   if (!participantIds?.length) return { error: MISSING_VALUE };
@@ -45,9 +43,7 @@ export function initializeCompetitionState(
   const eventType = event?.eventType;
 
   // Resolve baseline ratings using the same infrastructure as DrawMatic
-  const adHocRatings = scaleName
-    ? getAdHocRatings({ tournamentRecord, participantIds, scaleName, eventType })
-    : {};
+  const adHocRatings = scaleName ? getAdHocRatings({ tournamentRecord, participantIds, scaleName, eventType }) : {};
 
   const participantStates: Record<string, CompetitionParticipantState> = {};
 
@@ -80,9 +76,11 @@ export function initializeCompetitionState(
     roundStates: {},
   };
 
-  addExtension({
+  setFirstClassOrExtension({
     element: drawDefinition,
-    extension: { name: COMPETITION_STATE, value: competitionState },
+    attribute: 'competitionState',
+    name: COMPETITION_STATE,
+    value: competitionState,
   });
 
   return { competitionState, ...SUCCESS };

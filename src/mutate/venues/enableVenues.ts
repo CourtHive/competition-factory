@@ -1,6 +1,6 @@
+import { setFirstClassOrExtension } from '../extensions/setFirstClassOrExtension';
 import { resolveTournamentRecords } from '@Helpers/parameters/resolveTournamentRecords';
 import { checkRequiredParameters } from '@Helpers/parameters/checkRequiredParameters';
-import { removeExtension } from '../extensions/removeExtension';
 
 // constants and types
 import { TOURNAMENT_RECORDS, VENUE_IDS } from '@Constants/attributeConstants';
@@ -24,7 +24,8 @@ export function enableVenues(params: EnableVenuesArgs) {
   const { venueIds, enableAll } = params;
   for (const tournamentRecord of Object.values(tournamentRecords)) {
     for (const venue of tournamentRecord.venues ?? []) {
-      if (enableAll || venueIds?.includes(venue.venueId)) removeExtension({ element: venue, name: DISABLED });
+      if (enableAll || venueIds?.includes(venue.venueId))
+        setFirstClassOrExtension({ element: venue, attribute: 'disabled', name: DISABLED, value: undefined });
     }
   }
 

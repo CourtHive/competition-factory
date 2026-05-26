@@ -6,6 +6,8 @@ export interface Tournament {
   endDate?: string;
   events?: Event[];
   extensions?: Extension[];
+  // CODES first-class: previously stored as `factory` extension (processor versioning)
+  factory?: { version?: string; [key: string]: any };
   formalName?: string;
   hostCountryCode?: CountryCodeUnion;
   indoorOutdoor?: IndoorOutdoorUnion;
@@ -183,6 +185,10 @@ export interface DrawDefinition {
   endDate?: string;
   entries?: Entry[];
   extensions?: Extension[];
+  // CODES first-class: previously stored as `competitionState` extension
+  competitionState?: any;
+  // CODES first-class: previously stored as `draftState` extension
+  draftState?: any;
   // CODES first-class: previously stored as `flightProfile` extension
   flightProfile?: any;
   isMock?: boolean;
@@ -215,6 +221,8 @@ export interface Entry {
   isMock?: boolean;
   notes?: string;
   participantId: string;
+  // CODES first-class: previously stored as `roundTarget` extension on entry
+  roundTarget?: number;
   timeItems?: TimeItem[];
   updatedAt?: Date | string;
   scaleValue?: number;
@@ -354,6 +362,10 @@ export interface MatchUp {
   collectionId?: string;
   collectionPosition?: number;
   createdAt?: Date | string;
+  // CODES first-class: previously stored as `delegatedOutcome` extension
+  delegatedOutcome?: any;
+  // CODES first-class: previously stored as `disableAutoCalc` extension (tie matchUp)
+  disableAutoCalc?: boolean;
   drawPositions?: number[];
   endDate?: string;
   extensions?: Extension[];
@@ -716,6 +728,8 @@ export interface Structure {
   qualifyingRoundNumber?: number;
   roundLimit?: number;
   roundOffset?: number;
+  // CODES first-class: previously stored as `roundTarget` extension (qualifying routing)
+  roundTarget?: number;
   seedAssignments?: SeedAssignment[];
   seedingProfile?: SeedingProfileUnion;
   seedLimit?: number;
@@ -779,6 +793,8 @@ export interface TallyResult {
 export interface PositionAssignment {
   bye?: boolean;
   createdAt?: Date | string;
+  // CODES first-class: previously stored as `disableLinks` extension
+  disableLinks?: boolean;
   drawPosition: number;
   extensions?: Extension[];
   isMock?: boolean;
@@ -1502,6 +1518,8 @@ export interface Venue {
   dateAvailability?: Availability[];
   defaultEndTime?: string;
   defaultStartTime?: string;
+  // CODES first-class: previously stored as `disabled` extension
+  disabled?: boolean | { dates?: string[] };
   extensions?: Extension[];
   isMock?: boolean;
   isPrimary?: boolean;
@@ -1526,6 +1544,8 @@ export interface Court {
   courtName?: string;
   createdAt?: Date | string;
   dateAvailability?: Availability[];
+  // CODES first-class: previously stored as `disabled` extension
+  disabled?: boolean | { dates?: string[] };
   extensions?: Extension[];
   floodlit?: boolean;
   indoorOutdoor?: IndoorOutdoorUnion;

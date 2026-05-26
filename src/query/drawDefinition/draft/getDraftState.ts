@@ -1,4 +1,4 @@
-import { findExtension } from '@Acquire/findExtension';
+import { firstClassOrExtension } from '@Acquire/firstClassOrExtension';
 
 // constants and types
 import { MISSING_DRAW_DEFINITION, NOT_FOUND } from '@Constants/errorConditionConstants';
@@ -13,10 +13,8 @@ type GetDraftStateArgs = {
 export function getDraftState({ drawDefinition }: GetDraftStateArgs) {
   if (!drawDefinition) return { error: MISSING_DRAW_DEFINITION };
 
-  const { extension } = findExtension({ element: drawDefinition, name: DRAFT_STATE });
-  if (!extension?.value) return { error: NOT_FOUND, info: 'No draft found' };
-
-  const draftState = extension.value;
+  const draftState = firstClassOrExtension({ element: drawDefinition, attribute: 'draftState', name: DRAFT_STATE });
+  if (!draftState) return { error: NOT_FOUND, info: 'No draft found' };
 
   // compute summary stats
   const totalParticipants = draftState.tiers?.reduce(

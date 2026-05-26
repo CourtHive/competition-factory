@@ -1,5 +1,5 @@
+import { setFirstClassOrExtension } from '@Mutate/extensions/setFirstClassOrExtension';
 import { getPositionAssignments } from '@Query/drawDefinition/positionsGetter';
-import { addExtension } from '@Mutate/extensions/addExtension';
 
 // constants
 import { MAIN, QUALIFYING } from '@Constants/drawDefinitionConstants';
@@ -13,10 +13,11 @@ export function conditionallyDisableLinkPositioning({ drawPositions, structure }
   const { positionAssignments } = getPositionAssignments({ structure });
   const relevantAssignments = positionAssignments?.filter(({ drawPosition }) => drawPositions?.includes(drawPosition));
   relevantAssignments?.forEach((assignment) => {
-    const extension = {
+    setFirstClassOrExtension({
+      element: assignment,
+      attribute: 'disableLinks',
       name: DISABLE_LINKS,
       value: true,
-    };
-    addExtension({ element: assignment, extension });
+    });
   });
 }

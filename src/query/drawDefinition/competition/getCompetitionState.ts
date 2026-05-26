@@ -1,5 +1,5 @@
 // Acquire
-import { findExtension } from '@Acquire/findExtension';
+import { firstClassOrExtension } from '@Acquire/firstClassOrExtension';
 
 // Constants
 import { COMPETITION_STATE } from '@Constants/extensionConstants';
@@ -18,6 +18,10 @@ type GetCompetitionStateResult = ResultType & {
 };
 
 export function getCompetitionState({ drawDefinition }: GetCompetitionStateArgs): GetCompetitionStateResult {
-  const { extension } = findExtension({ element: drawDefinition, name: COMPETITION_STATE });
-  return { competitionState: extension?.value as CompetitionState | undefined };
+  const competitionState = firstClassOrExtension({
+    element: drawDefinition,
+    attribute: 'competitionState',
+    name: COMPETITION_STATE,
+  });
+  return { competitionState: competitionState as CompetitionState | undefined };
 }

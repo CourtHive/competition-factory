@@ -1,7 +1,7 @@
 import { getParticipantScaleItem } from '@Query/participant/getParticipantScaleItem';
 import { getPositionAssignments } from '@Query/drawDefinition/positionsGetter';
-import { addExtension } from '@Mutate/extensions/addExtension';
-import { findExtension } from '@Acquire/findExtension';
+import { setFirstClassOrExtension } from '@Mutate/extensions/setFirstClassOrExtension';
+import { firstClassOrExtension } from '@Acquire/firstClassOrExtension';
 import { findStructure } from '@Acquire/findStructure';
 
 // constants and types
@@ -63,8 +63,8 @@ export function initializeDraft({
   if (!structure) return { error: MISSING_STRUCTURE_ID };
 
   // check for existing draft
-  const { extension: existing } = findExtension({ element: drawDefinition, name: DRAFT_STATE });
-  if (existing?.value?.status && existing.value.status !== 'COMPLETE' && !force) {
+  const existing = firstClassOrExtension({ element: drawDefinition, attribute: 'draftState', name: DRAFT_STATE });
+  if (existing?.status && existing.status !== 'COMPLETE' && !force) {
     return { error: EXISTING_DRAFT };
   }
 
@@ -125,9 +125,11 @@ export function initializeDraft({
     unassignedDrawPositions: unassignedPositions,
   };
 
-  addExtension({
+  setFirstClassOrExtension({
     element: drawDefinition,
-    extension: { name: DRAFT_STATE, value: draftState },
+    attribute: 'draftState',
+    name: DRAFT_STATE,
+    value: draftState,
   });
 
   return {

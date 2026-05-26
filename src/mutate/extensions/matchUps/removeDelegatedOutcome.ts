@@ -1,6 +1,6 @@
+import { setFirstClassOrExtension } from '../setFirstClassOrExtension';
 import { requireParams } from '@Helpers/parameters/requireParams';
 import { findDrawMatchUp } from '@Acquire/findDrawMatchUp';
-import { removeExtension } from '../removeExtension';
 
 import { DRAW_DEFINITION, MATCHUP_ID } from '@Constants/attributeConstants';
 import { MATCHUP_NOT_FOUND } from '@Constants/errorConditionConstants';
@@ -13,8 +13,10 @@ export function removeDelegatedOutcome({ drawDefinition, event, matchUpId }) {
   const { matchUp } = findDrawMatchUp({ drawDefinition, event, matchUpId });
   if (!matchUp) return { error: MATCHUP_NOT_FOUND };
 
-  return removeExtension({
-    name: DELEGATED_OUTCOME,
+  return setFirstClassOrExtension({
     element: matchUp,
+    attribute: 'delegatedOutcome',
+    name: DELEGATED_OUTCOME,
+    value: undefined,
   });
 }
