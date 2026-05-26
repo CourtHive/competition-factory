@@ -22,6 +22,14 @@ export interface Tournament {
   processCodes?: string[];
   promotionalName?: string;
   registrationProfile?: RegistrationProfile;
+  // CODES first-class group leaf: previously stored as separate
+  // `schedulingProfile`, `scheduleLimits`, and `scheduleTiming` extensions.
+  scheduling?: {
+    profile?: any;
+    dailyLimits?: any;
+    timing?: any;
+    [key: string]: any;
+  };
   season?: string;
   startDate?: string;
   surfaceCategory?: SurfaceCategoryUnion;

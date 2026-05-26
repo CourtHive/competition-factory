@@ -1,3 +1,4 @@
+import { firstClassGroupLeafOrExtension } from '@Mutate/extensions/setGroupLeafOrExtension';
 import { findExtension } from '@Acquire/findExtension';
 import { findPolicy } from '@Acquire/findPolicy';
 
@@ -22,13 +23,17 @@ export function getScheduleTiming({ tournamentRecord, categoryName, categoryType
     event,
   });
 
-  const tournamentExtension = tournamentRecord
-    ? findExtension({
+  // CODES: tournament-level scheduling timing has been promoted to
+  // `tournamentRecord.scheduling.timing` (group leaf). Event-level
+  // SCHEDULE_TIMING remains an extension.
+  const tournamentScheduling = tournamentRecord
+    ? firstClassGroupLeafOrExtension({
         element: tournamentRecord,
+        groupAttribute: 'scheduling',
+        leafAttribute: 'timing',
         name: SCHEDULE_TIMING,
-      }).extension
+      })
     : undefined;
-  const tournamentScheduling = tournamentExtension?.value;
 
   const eventExtension =
     event &&

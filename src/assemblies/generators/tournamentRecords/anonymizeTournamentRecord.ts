@@ -56,6 +56,15 @@ export function anonymizeTournamentRecord({
   return { ...SUCCESS };
 }
 
+function anonymizeSchedulingProfileRounds(rounds: any[], idMap: any) {
+  for (const round of rounds) {
+    round.tournamentId = idMap[round.tournamentId];
+    round.structureId = idMap[round.structureId];
+    round.eventId = idMap[round.eventId];
+    round.drawId = idMap[round.drawId];
+  }
+}
+
 function anonymizeFlightProfileFlights(flightProfile: any, idMap: any) {
   for (const flight of flightProfile.flights) {
     flight.drawId = idMap[flight.drawId];
@@ -414,12 +423,11 @@ function anonymizeExtensionIds({ tournamentRecord, idMap }) {
   });
 
   if (Array.isArray(schedulingProfile?.value)) {
-    schedulingProfile?.value.forEach((round) => {
-      round.tournamentId = idMap[round.tournamentId];
-      round.structureId = idMap[round.structureId];
-      round.eventId = idMap[round.eventId];
-      round.drawId = idMap[round.drawId];
-    });
+    anonymizeSchedulingProfileRounds(schedulingProfile.value, idMap);
+  }
+  // CODES: also anonymize the first-class `tournamentRecord.scheduling.profile`
+  if (Array.isArray(tournamentRecord.scheduling?.profile)) {
+    anonymizeSchedulingProfileRounds(tournamentRecord.scheduling.profile, idMap);
   }
 
   const { extension: personRequests } = findExtension({

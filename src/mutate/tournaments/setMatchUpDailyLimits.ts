@@ -1,4 +1,4 @@
-import { addExtension } from '@Mutate/extensions/addExtension';
+import { setGroupLeafOrExtension } from '@Mutate/extensions/setGroupLeafOrExtension';
 
 // constants and types
 import { INVALID_OBJECT, INVALID_VALUES, MISSING_TOURNAMENT_RECORDS } from '@Constants/errorConditionConstants';
@@ -35,9 +35,12 @@ export function setMatchUpDailyLimits(params: SetMatchUpDailyLimitsArgs): Result
 
   for (const currentTournamentId of tournamentIds) {
     const tournamentRecord = tournamentRecords[currentTournamentId];
-    const result = addExtension({
-      extension: { name: SCHEDULE_LIMITS, value: { dailyLimits } },
+    const result = setGroupLeafOrExtension({
       element: tournamentRecord,
+      groupAttribute: 'scheduling',
+      leafAttribute: 'dailyLimits',
+      name: SCHEDULE_LIMITS,
+      value: { dailyLimits },
     });
     if (result.error) return result;
   }
