@@ -11,6 +11,7 @@ export default defineConfig({
     onConsoleLog: () => {},
     environment: 'node',
     include: ['src/**/*.test.{js,mjs,cjs,ts,mts,cts,jsx,tsx}'],
+    setupFiles: ['./src/tests/testHarness/setSchemaWriteModeLegacy.ts'],
     coverage: {
       reporter: ['html', 'json-summary'],
       include: ['src/**/*.{js,mjs,cjs,ts,mts,cts,jsx,tsx}'],

@@ -322,6 +322,7 @@ export type FactoryEngineMethod =
   | 'getScheduledRoundsDetails'
   | 'getSchedulingProfile'
   | 'getSchedulingProfileIssues'
+  | 'getSchemaWriteMode'
   | 'getScore'
   | 'getScoreboard'
   | 'getSeedingThresholds'
@@ -508,6 +509,7 @@ export type FactoryEngineMethod =
   | 'scheduleMatchUps'
   | 'scheduleProfileGrid'
   | 'scheduleProfileRounds'
+  | 'schemaWriteMode'
   | 'ScoringEngine'
   | 'seedWithdrawalCascade'
   | 'setDelegatedOutcome'
@@ -918,6 +920,7 @@ export const FACTORY_ENGINE_METHODS: readonly FactoryEngineMethod[] = [
   'getScheduledRoundsDetails',
   'getSchedulingProfile',
   'getSchedulingProfileIssues',
+  'getSchemaWriteMode',
   'getScore',
   'getScoreboard',
   'getSeedingThresholds',
@@ -1104,6 +1107,7 @@ export const FACTORY_ENGINE_METHODS: readonly FactoryEngineMethod[] = [
   'scheduleMatchUps',
   'scheduleProfileGrid',
   'scheduleProfileRounds',
+  'schemaWriteMode',
   'ScoringEngine',
   'seedWithdrawalCascade',
   'setDelegatedOutcome',

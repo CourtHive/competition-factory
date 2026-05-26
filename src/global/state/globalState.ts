@@ -5,6 +5,7 @@ import { isNumeric } from '@Tools/math';
 
 // constants and types
 import { TournamentRecords, ResultType } from '@Types/factoryTypes';
+import { DUAL, LEGACY, NATIVE, SchemaWriteMode, schemaWriteModes } from '@Constants/schemaWriteModeConstants';
 import { SUCCESS } from '@Constants/resultConstants';
 import {
   ErrorType,
@@ -52,6 +53,7 @@ type GlobalStateTypes = {
   globalMethods: { [key: string]: any };
   deepCopyAttributes: DeepCopyType;
   devContext?: DevContextType; // devContext is used to control logging
+  schemaWriteMode: SchemaWriteMode; // controls extension vs first-class write behavior
   timers: timersType; // timers are used to track elapsed time for methods
   deepCopy: boolean;
   globalLog?: any;
@@ -76,6 +78,7 @@ const globalState: GlobalStateTypes = {
     toJSON: [],
   },
   globalMethods: [],
+  schemaWriteMode: NATIVE,
   deepCopy: true,
 };
 
@@ -215,6 +218,31 @@ export function setGlobalLog(loggingFx?: any) {
 
 export function setDevContext(value?: DevContextType) {
   globalState.devContext = value;
+}
+
+export function setSchemaWriteMode(mode?: SchemaWriteMode): {
+  success?: boolean;
+  error?: ErrorType;
+} {
+  if (mode === undefined) {
+    globalState.schemaWriteMode = NATIVE;
+    return { ...SUCCESS };
+  }
+  if (!schemaWriteModes.includes(mode)) return { error: INVALID_VALUES };
+  globalState.schemaWriteMode = mode;
+  return { ...SUCCESS };
+}
+
+export function getSchemaWriteMode(): SchemaWriteMode {
+  return globalState.schemaWriteMode;
+}
+
+export function writeNativeEnabled(): boolean {
+  return globalState.schemaWriteMode === NATIVE || globalState.schemaWriteMode === DUAL;
+}
+
+export function writeLegacyEnabled(): boolean {
+  return globalState.schemaWriteMode === LEGACY || globalState.schemaWriteMode === DUAL;
 }
 
 export function disableNotifications() {

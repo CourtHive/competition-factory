@@ -6,6 +6,8 @@ import {
   setDeepCopy,
   setDevContext,
   getDevContext,
+  setSchemaWriteMode,
+  getSchemaWriteMode,
   removeTournamentRecord,
   setTournamentRecords,
   setTournamentId,
@@ -42,6 +44,11 @@ export function engineStart(engine: FactoryEngine, engineInvoke: any): void {
     return processResult(engine);
   };
   engine.getDevContext = (contextCriteria) => getDevContext(contextCriteria);
+  engine.schemaWriteMode = (mode) => {
+    const result = setSchemaWriteMode(mode);
+    return processResult(engine, result);
+  };
+  engine.getSchemaWriteMode = () => getSchemaWriteMode();
   engine.newTournamentRecord = (params = {}) => {
     const result = createTournamentRecord(params);
     const tournamentId = result.tournamentId;
