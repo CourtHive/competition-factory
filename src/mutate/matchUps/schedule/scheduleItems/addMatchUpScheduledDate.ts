@@ -1,4 +1,4 @@
-import { addMatchUpTimeItem } from '@Mutate/timeItems/matchUps/matchUpTimeItems';
+import { setMatchUpFirstClassOrTimeItem } from '@Mutate/timeItems/matchUps/setMatchUpFirstClassOrTimeItem';
 import { decorateResult } from '@Functions/global/decorateResult';
 import { dateValidation } from '@Validators/regex';
 import { extractDate } from '@Tools/dateTime';
@@ -37,18 +37,15 @@ export function addMatchUpScheduledDate({
       });
   }
 
-  const timeItem = {
-    itemValue: scheduledDate,
-    itemType: SCHEDULED_DATE,
-  };
-
-  return addMatchUpTimeItem({
+  return setMatchUpFirstClassOrTimeItem({
     duplicateValues: false,
+    attribute: 'scheduledDate',
+    itemType: SCHEDULED_DATE,
+    value: scheduledDate,
     removePriorValues,
     tournamentRecord,
     drawDefinition,
     disableNotice,
     matchUpId,
-    timeItem,
   });
 }

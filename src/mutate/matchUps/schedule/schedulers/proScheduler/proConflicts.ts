@@ -56,7 +56,9 @@ export function proConflicts({
 
   const sortedFiltered = filteredRows.flat().filter(Boolean).sort(matchUpSort);
 
-  sortedFiltered.forEach(({ schedule }) => delete schedule[SCHEDULE_STATE]);
+  sortedFiltered.forEach(({ schedule }) => {
+    if (schedule) delete schedule[SCHEDULE_STATE];
+  });
 
   const drawIds = unique(matchUps.map(({ drawId }) => drawId));
   const depsResult = getMatchUpDependencies({
@@ -82,7 +84,7 @@ export function proConflicts({
         const { matchUpId, winnerMatchUpId, loserMatchUpId, schedule, sides, potentialParticipants } = matchUp;
         const courtId = schedule?.courtId;
         rowIndices[matchUpId] = rowIndex;
-        courtIssues[courtId] = [];
+        if (courtId) courtIssues[courtId] = [];
 
         profile.matchUpIds.push(matchUpId);
         mappedMatchUps[matchUpId] = matchUp;
@@ -345,7 +347,12 @@ export function proConflicts({
         if (matchUpIdSet.size > 1) {
           const matchUpIds = [...matchUpIdSet];
           for (const matchUpId of matchUpIds) {
-            annotate(matchUpId, SCHEDULE_WARNING, CONFLICT_POTENTIAL_PARTICIPANTS, matchUpIds.filter((id) => id !== matchUpId));
+            annotate(
+              matchUpId,
+              SCHEDULE_WARNING,
+              CONFLICT_POTENTIAL_PARTICIPANTS,
+              matchUpIds.filter((id) => id !== matchUpId),
+            );
           }
         }
       }
@@ -360,7 +367,12 @@ export function proConflicts({
           if (previousDeepMap[participantId]) {
             const involvedMatchUpIds = [...new Set([...currentMatchUpIdSet, ...previousDeepMap[participantId]])];
             for (const matchUpId of involvedMatchUpIds) {
-              annotate(matchUpId, SCHEDULE_WARNING, CONFLICT_POTENTIAL_PARTICIPANTS, involvedMatchUpIds.filter((id) => id !== matchUpId));
+              annotate(
+                matchUpId,
+                SCHEDULE_WARNING,
+                CONFLICT_POTENTIAL_PARTICIPANTS,
+                involvedMatchUpIds.filter((id) => id !== matchUpId),
+              );
             }
           }
         }
