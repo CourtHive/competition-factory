@@ -13,9 +13,8 @@ overrides:
 
 allowBuilds:
   core-js: true
+  esbuild: true
 
 ignoredBuiltDependencies:
-  - core-js
   - core-js-pure
-  - esbuild
   - puppeteer
