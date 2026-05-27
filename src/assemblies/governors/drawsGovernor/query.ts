@@ -17,6 +17,7 @@ export { getPositionsPlayedOff } from '@Query/drawDefinition/getPositionsPlayedO
 export { getSwissStandings } from '@Query/drawDefinitions/swiss/getSwissStandings';
 export { isValidForQualifying } from '@Query/drawDefinition/isValidForQualifying';
 export { getPositionAssignments } from '@Query/structure/getPositionAssignments';
+export { getTally } from '@Query/structure/getTally';
 export { getSeedingThresholds } from '@Query/drawDefinition/getSeedBlocks';
 export { getSwissChart } from '@Query/drawDefinitions/swiss/getSwissChart';
 export { validatePlayoffGroups } from '@Validators/validatePlayoffGroups';

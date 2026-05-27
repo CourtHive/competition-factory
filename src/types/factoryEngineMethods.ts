@@ -337,6 +337,7 @@ export type FactoryEngineMethod =
   | 'getStructureSeedAssignments'
   | 'getSwissChart'
   | 'getSwissStandings'
+  | 'getTally'
   | 'getTeamLineUp'
   | 'getTiebreakComplement'
   | 'getTieFormat'
@@ -940,6 +941,7 @@ export const FACTORY_ENGINE_METHODS: readonly FactoryEngineMethod[] = [
   'getStructureSeedAssignments',
   'getSwissChart',
   'getSwissStandings',
+  'getTally',
   'getTeamLineUp',
   'getTiebreakComplement',
   'getTieFormat',
