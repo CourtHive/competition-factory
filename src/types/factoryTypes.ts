@@ -46,7 +46,20 @@ export type FactoryEngine = {
  *   import { tournamentEngine, FactoryEngineTyped } from 'tods-competition-factory';
  *   const engine = tournamentEngine as FactoryEngineTyped;
  */
-export type FactoryEngineTyped = Record<FactoryEngineMethod, (...args: any[]) => any>;
+export type FactoryEngineTyped = Record<FactoryEngineMethod, (...args: any[]) => any> & {
+  /**
+   * Developer-JOY unwrap query facade — see `src/forge/q.ts`.
+   *
+   * Returns the unwrapped primary payload of common queries directly:
+   *
+   *   const events = engine.q.events();          // Event[]
+   *   const event  = engine.q.event({ eventId }); // Event | undefined
+   *
+   * Replaces the `tournamentEngine.getEvents()?.events ?? []` boilerplate.
+   * Per-method arg shapes are still `any`; typed signatures are a follow-up.
+   */
+  q: import('../forge').QueryFacade;
+};
 
 export type { FactoryEngineMethod } from './factoryEngineMethods';
 

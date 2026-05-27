@@ -2,6 +2,7 @@ import { createTournamentRecord } from '@Generators/tournamentRecords/createTour
 import { methodImporter } from '@Assemblies/engines/parts/methodImporter';
 import { processResult } from '@Assemblies/engines/parts/processResult';
 import { factoryVersion } from '@Functions/global/factoryVersion';
+import { buildQueryFacade, inspect } from '@Forge/index';
 import {
   setDeepCopy,
   setDevContext,
@@ -91,4 +92,9 @@ export function engineStart(engine: FactoryEngine, engineInvoke: any): void {
     const result = removeUnlinkedTournamentRecords();
     return processResult(engine, result);
   };
+  // Developer-JOY facades (forge) — see `src/forge/q.ts` and `src/forge/inspect.ts`.
+  // The query facade is built lazily-wired: it holds a closure over `engine`,
+  // so it picks up governor methods that get added after engineStart returns.
+  engine.q = buildQueryFacade(engine);
+  engine.inspect = () => inspect();
 }

@@ -55,6 +55,7 @@ export default defineConfig({
       '@Constants': new URL('./src/constants', import.meta.url).pathname,
       '@Functions': new URL('./src/functions', import.meta.url).pathname,
       '@Fixtures': new URL('./src/fixtures', import.meta.url).pathname,
+      '@Forge': new URL('./src/forge', import.meta.url).pathname,
       '@Acquire': new URL('./src/acquire', import.meta.url).pathname,
       '@Helpers': new URL('./src/helpers', import.meta.url).pathname,
       '@Global': new URL('./src/global', import.meta.url).pathname,
