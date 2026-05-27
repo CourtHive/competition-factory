@@ -367,6 +367,7 @@ export type FactoryEngineMethod =
   | 'inferServeSide'
   | 'initializeCompetitionState'
   | 'initializeDraft'
+  | 'inspect'
   | 'intervalsOverlap'
   | 'isAdHoc'
   | 'isAggregateFormat'
@@ -972,6 +973,7 @@ export const FACTORY_ENGINE_METHODS: readonly FactoryEngineMethod[] = [
   'inferServeSide',
   'initializeCompetitionState',
   'initializeDraft',
+  'inspect',
   'intervalsOverlap',
   'isAdHoc',
   'isAggregateFormat',

@@ -30,6 +30,7 @@
       "@Constants/*": ["./src/constants/*"],
       "@Functions/*": ["./src/functions/*"],
       "@Fixtures/*": ["./src/fixtures/*"],
+      "@Forge/*": ["./src/forge/*"],
       "@Acquire/*": ["./src/acquire/*"],
       "@Helpers/*": ["./src/helpers/*"],
       "@Global/*": ["./src/global/*"],
