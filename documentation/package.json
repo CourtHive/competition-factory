@@ -20,7 +20,7 @@
     "@mdx-js/react": "^3.1.1",
     "@types/react": "19.2.15",
     "clsx": "2.1.1",
-    "courthive-components": "1.10.0",
+    "courthive-components": "1.10.1",
     "react": "^19.2.6",
     "react-dom": "^19.2.6",
     "tods-competition-factory": "^4.0.0"
