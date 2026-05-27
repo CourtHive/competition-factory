@@ -32,8 +32,8 @@ importers:
         specifier: 2.1.1
         version: 2.1.1
       courthive-components:
-        specifier: 1.10.0
-        version: 1.10.0
+        specifier: 1.10.1
+        version: 1.10.1
       react:
         specifier: ^19.2.6
         version: 19.2.6
@@ -2307,8 +2307,8 @@ packages:
       typescript:
         optional: true
 
-  courthive-components@1.10.0:
-    resolution: {integrity: sha512-33+KJXWhkeba+FUe4HIjdwiv/N7WXOuVFJnIe/nbb5XohPomZrO0kL7ChlSt30yVNjBoW9FhCUY+5gS+jr9zgg==}
+  courthive-components@1.10.1:
+    resolution: {integrity: sha512-vm8l0oAiVKnDyMcLUZlme+1PTLfotBqJxeqU453nqyl2aHfqlgvauRZi7q/NMjd54v1cEjT/MLkPj4FDR+6XDA==}
     engines: {node: '>=22'}
 
   cross-spawn@7.0.6:
@@ -2564,8 +2564,8 @@ packages:
     resolution: {integrity: sha512-e1U46jVP+w7Iut8Jt8ri1YsPOvFpg46k+K8TpCb0P+zjCkjkPnV7WzfDJzMHy1LnA+wj5pLT1wjO901gLXeEhA==}
     engines: {node: '>=12'}
 
-  dayjs@1.11.20:
-    resolution: {integrity: sha512-YbwwqR/uYpeoP4pu043q+LTDLFBLApUP6VxRihdfNTqu4ubqMlGDLd6ErXhEgsyvY0K6nCs7nggYumAN+9uEuQ==}
+  dayjs@1.11.21:
+    resolution: {integrity: sha512-98IT+HOahAisibz/yjKbzuOBwYcjJ7BCLPzARyHiyEBmRz4fatF+KPJszEHXsGYjUG234aH/cOjW1wwTbKUZlA==}
 
   debounce@1.2.1:
     resolution: {integrity: sha512-XRRe6Glud4rd/ZGQfiV1ruXSfbvfJedlV9Y6zOlP+2K04vBYiJEte6stfFkCP03aMnY5tsipamumUjL14fofug==}
@@ -8874,13 +8874,13 @@ snapshots:
       parse-json: 5.2.0
       path-type: 4.0.0
 
-  courthive-components@1.10.0:
+  courthive-components@1.10.1:
     dependencies:
       awesomplete: 1.1.7
       class-variance-authority: 0.7.1
       classnames: 2.5.1
       d3: 7.9.0
-      dayjs: 1.11.20
+      dayjs: 1.11.21
       focus-trap: 8.2.1
       timepicker-ui: 4.3.0
       tippy.js: 6.3.7
@@ -9187,7 +9187,7 @@ snapshots:
       d3-transition: 3.0.1(d3-selection@3.0.0)
       d3-zoom: 3.0.0
 
-  dayjs@1.11.20: {}
+  dayjs@1.11.21: {}
 
   debounce@1.2.1: {}
 
