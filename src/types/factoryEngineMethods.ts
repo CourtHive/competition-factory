@@ -527,6 +527,7 @@ export type FactoryEngineMethod =
   | 'setEventDisplay'
   | 'setEventEndDate'
   | 'setEventStartDate'
+  | 'setMatchUpCalledAt'
   | 'setMatchUpDailyLimits'
   | 'setMatchUpFormat'
   | 'setMatchUpHomeParticipantId'
@@ -1131,6 +1132,7 @@ export const FACTORY_ENGINE_METHODS: readonly FactoryEngineMethod[] = [
   'setEventDisplay',
   'setEventEndDate',
   'setEventStartDate',
+  'setMatchUpCalledAt',
   'setMatchUpDailyLimits',
   'setMatchUpFormat',
   'setMatchUpHomeParticipantId',

@@ -356,6 +356,11 @@ export type EventTypeUnion = 'SINGLES' | 'DOUBLES' | 'TEAM' | 'HYBRID';
  */
 export interface MatchUpSchedule {
   allocatedCourts?: any[];
+  // CODES 5.0.0 first-class: ISO timestamp captured when the matchUp is
+  // deliberately placed on the TMX active strip ("calling the match to court").
+  // Distinct from scheduledTime (plan) and START_TIME timeItem (actual start).
+  // Cleared only by explicit removal; persists past START_TIME as history.
+  calledAt?: string;
   courtAnnotation?: string;
   courtId?: string;
   courtOrder?: number;
