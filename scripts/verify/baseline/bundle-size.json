@@ -1,0 +1,22 @@
+{
+  "index.js": {
+    "raw": 225,
+    "gzip": 155
+  },
+  "index.mjs": {
+    "raw": 1496434,
+    "gzip": 413546
+  },
+  "tods-competition-factory.d.ts": {
+    "raw": 702199,
+    "gzip": 106991
+  },
+  "tods-competition-factory.development.cjs.js": {
+    "raw": 3362159,
+    "gzip": 573774
+  },
+  "tods-competition-factory.production.cjs.min.js": {
+    "raw": 1497623,
+    "gzip": 393488
+  }
+}

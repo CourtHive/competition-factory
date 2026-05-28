@@ -14,6 +14,25 @@ export * as globalState from './global/state/globalState';
 export { policyRegistry } from './global/policyRegistry';
 
 export { forge } from './forge';
+export type {
+  BuildFacade,
+  BuildResult,
+  DrawOpts,
+  EngineInspection,
+  EngineInspectionCounts,
+  EntriesOpts,
+  EventBus,
+  EventHandler,
+  EventPredicate,
+  EventSeed,
+  GenderInput,
+  ParticipantBuildResult,
+  PersonInput,
+  QueryFacade,
+  Topic,
+  TopicPayloadMap,
+  Unsubscribe,
+} from './forge';
 
 // ENGINES - For cusomization --------------------------------------------
 export { asyncEngine } from './assemblies/engines/async';

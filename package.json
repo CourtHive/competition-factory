@@ -105,11 +105,24 @@
     "lint:md:fix": "markdownlint-cli2 --fix \"**/*.md\"",
     "lint:report": "eslint src & eslint --cache src -f json > eslint-report.json",
     "prepare": "husky",
-    "prepublishOnly": "pinst --disable",
+    "prepublishOnly": "pinst --disable && pnpm verify",
     "postpublish": "pinst --enable",
     "docs:publish": "cd documentation && GIT_USER=CourtHive USE_SSH=true pnpm docpub",
-    "shakeable": "npx agadoo dist/tods-competition-factory.cjs.min.js",
-    "check-types": "tsc --noEmit"
+    "shakeable": "npx agadoo dist/tods-competition-factory.production.cjs.min.js",
+    "check-types": "tsc --noEmit",
+    "verify": "pnpm verify:types && pnpm verify:lint && pnpm verify:coverage && pnpm verify:server && pnpm verify:audit && pnpm verify:build && pnpm verify:runtime && pnpm verify:bundle-size && pnpm verify:surface && pnpm verify:pack && pnpm verify:ecosystem",
+    "verify:types": "tsc --noEmit",
+    "verify:lint": "eslint src --cache --max-warnings 0",
+    "verify:coverage": "vitest run --coverage",
+    "verify:server": "jest",
+    "verify:shakeable": "npx agadoo dist/tods-competition-factory.production.cjs.min.js",
+    "verify:build": "rimraf dist && rollup --config && ./esbuild.mjs",
+    "verify:audit": "node scripts/verify/audit.mjs",
+    "verify:pack": "node scripts/verify/pack.mjs",
+    "verify:surface": "node scripts/verify/surface.mjs",
+    "verify:bundle-size": "node scripts/verify/bundle-size.mjs",
+    "verify:runtime": "node scripts/verify/runtime.mjs",
+    "verify:ecosystem": "node scripts/verify/ecosystem.mjs"
   },
   "husky": {
     "hooks": {

@@ -1,0 +1,75 @@
+name: Verify
+
+# Runs the full verification suite on every PR + push to main. The `verify`
+# script is also wired into `prepublishOnly`, so this acts as the canary —
+# any check that fails here will also block publish, but here we catch it
+# at PR time instead of at release-tag time.
+#
+# Ecosystem sweep is intentionally NOT run in CI here — sibling consumer
+# repos aren't checked out. Maintainers run `pnpm verify:ecosystem` locally
+# when needed. CI tests the factory in isolation across the supported Node
+# matrix.
+
+on:
+  pull_request:
+  push:
+    branches: [master]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        node-version: [22, 24]
+    name: verify (node ${{ matrix.node-version }})
+
+    steps:
+      - uses: actions/checkout@v6
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 11
+
+      - uses: actions/setup-node@v6
+        with:
+          node-version: ${{ matrix.node-version }}
+          cache: pnpm
+
+      - run: pnpm install --frozen-lockfile --ignore-scripts
+
+      # In-CI verify minus the ecosystem sweep (siblings aren't here).
+      # Order: cheap fail-fast → expensive checks last.
+      - name: verify:types
+        run: pnpm verify:types
+
+      - name: verify:lint
+        run: pnpm verify:lint
+
+      - name: verify:coverage
+        run: pnpm verify:coverage
+
+      - name: verify:server
+        run: pnpm verify:server
+
+      - name: verify:audit
+        run: pnpm verify:audit
+
+      - name: verify:build
+        run: pnpm verify:build
+
+      - name: verify:runtime
+        run: pnpm verify:runtime
+
+      - name: verify:bundle-size
+        run: pnpm verify:bundle-size
+
+      - name: verify:surface
+        run: pnpm verify:surface
+
+      - name: verify:pack
+        run: pnpm verify:pack

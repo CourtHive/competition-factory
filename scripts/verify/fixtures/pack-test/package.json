@@ -1,0 +1,12 @@
+{
+  "name": "verify-pack-test",
+  "private": true,
+  "version": "0.0.0",
+  "description": "Throwaway consumer fixture. The factory tarball is installed here via `verify:pack` to confirm the dist .d.ts compiles standalone.",
+  "dependencies": {
+    "tods-competition-factory": "file:./factory-tarball.tgz"
+  },
+  "devDependencies": {
+    "typescript": "^6.0.2"
+  }
+}
