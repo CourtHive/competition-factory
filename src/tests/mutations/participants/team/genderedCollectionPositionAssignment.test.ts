@@ -60,10 +60,13 @@ it('can enforce collection gender', () => {
     // first ensure that gender is present on hydrated matchUp
     expect([MALE, FEMALE].includes(matchUp.gender)).toBeTruthy();
 
-    // should only return participants matching collectionDefinition.gender
-    expect(unique(validActions[2].availableParticipants.map((p) => p.person.sex))[0]).toEqual(matchUp.gender);
-
     const assignPositionAction = validActions.find(({ type }) => type === ASSIGN_PARTICIPANT);
+    // should only return participants matching collectionDefinition.gender
+    // (look up the action by type rather than positional index — the surrounding
+    //  validActions array order is policy-dependent, so [2] is brittle under
+    //  unrelated suite-wide policy mutations)
+    expect(unique(assignPositionAction.availableParticipants.map((p) => p.person.sex))[0]).toEqual(matchUp.gender);
+
     const { method, payload, availableParticipantIds } = assignPositionAction;
     let participantId = availableParticipantIds[0];
 
