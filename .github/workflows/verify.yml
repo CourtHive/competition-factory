@@ -62,6 +62,9 @@ jobs:
       - name: verify:build
         run: pnpm verify:build
 
+      - name: verify:publint
+        run: pnpm verify:publint
+
       - name: verify:runtime
         run: pnpm verify:runtime
 

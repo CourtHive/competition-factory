@@ -26,6 +26,8 @@ const TRACKED = [
   'index.js',
   'index.mjs',
   'tods-competition-factory.d.ts',
+  'tods-competition-factory.d.mts',
+  'tods-competition-factory.d.cts',
   'tods-competition-factory.development.cjs.js',
   'tods-competition-factory.production.cjs.min.js',
 ];

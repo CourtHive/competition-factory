@@ -82,9 +82,12 @@ for (const c of CONSUMERS) {
   log(`→ ${c.name}: pnpm ${c.script}`);
   const start = Date.now();
   try {
-    const out = execSync(`pnpm ${c.script}`, { cwd: dir, encoding: 'utf8', stdio: 'pipe' });
+    // Capture stderr too — jest writes its "Tests: X passed" summary to
+    // stderr, vitest writes to stdout. Without 2>&1 we miss the count for
+    // every jest-based repo (NestJS apps).
+    const out = execSync(`pnpm ${c.script} 2>&1`, { cwd: dir, encoding: 'utf8', stdio: 'pipe' });
     const elapsed = ((Date.now() - start) / 1000).toFixed(1);
-    // try to extract a tests-passing count
+    // try to extract a tests-passing count from either runner's summary
     const m = out.match(/Tests:\s+(\d+) passed/) || out.match(/Tests\s+(\d+) passed/) || out.match(/(\d+)\s+passed/);
     const passing = m ? m[1] : '?';
     results.push({ name: c.name, status: 'pass', tests: passing, sec: elapsed });

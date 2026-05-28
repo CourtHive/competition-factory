@@ -4,12 +4,20 @@
     "gzip": 155
   },
   "index.mjs": {
-    "raw": 1496434,
-    "gzip": 413546
+    "raw": 1496430,
+    "gzip": 413505
   },
   "tods-competition-factory.d.ts": {
-    "raw": 702199,
-    "gzip": 106991
+    "raw": 702658,
+    "gzip": 107124
+  },
+  "tods-competition-factory.d.mts": {
+    "raw": 702658,
+    "gzip": 107124
+  },
+  "tods-competition-factory.d.cts": {
+    "raw": 702658,
+    "gzip": 107124
   },
   "tods-competition-factory.development.cjs.js": {
     "raw": 3362159,

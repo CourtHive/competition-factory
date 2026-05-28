@@ -33,6 +33,16 @@ export type FactoryEngine = {
 };
 
 /**
+ * Names of methods provided by the developer-JOY facades (`engine.q`,
+ * `engine.on/once/off/waitFor`, `engine.inspect`, `engine.build`). These
+ * names also appear in `FactoryEngineMethod` because `gen:engine-methods`
+ * walks the runtime engine, so we have to exclude them from the
+ * `(...args: any[]) => any` fallback or the open shape competes with the
+ * facades' precise generics in the intersection and TS picks `any`.
+ */
+type FacadeMethodNames = 'q' | 'on' | 'once' | 'off' | 'waitFor' | 'inspect' | 'build';
+
+/**
  * Closed engine surface for consumers — every method name comes from
  * `factoryEngineMethods.ts`, which is regenerated from the live engine via
  * `pnpm gen:engine-methods`. Has no index signature, so calls like
@@ -51,7 +61,7 @@ export type FactoryEngine = {
  *   const engine = tournamentEngine as FactoryEngineTyped;
  */
 export type FactoryEngineTyped = MethodSignatures &
-  Record<Exclude<FactoryEngineMethod, keyof MethodSignatures>, (...args: any[]) => any> & {
+  Record<Exclude<FactoryEngineMethod, keyof MethodSignatures | FacadeMethodNames>, (...args: any[]) => any> & {
     /**
      * Developer-JOY unwrap query facade — see `src/forge/q.ts`.
      *
@@ -76,10 +86,35 @@ export type FactoryEngineTyped = MethodSignatures &
      *   const off = engine.on('addMatchUps', e => relay.publish(e.matchUps));
      *   const m   = await engine.waitFor('modifyMatchUp', p => p.matchUp.matchUpId === id);
      */
-    on: import('../forge').EventBus['on'];
-    once: import('../forge').EventBus['once'];
-    off: import('../forge').EventBus['off'];
-    waitFor: import('../forge').EventBus['waitFor'];
+    // Inline the bus generics directly (rather than `EventBus['on']` lookups)
+    // so contextual inference flows through in consumer code under strict.
+    // The handler param picks up its TopicPayloadMap[T] type from the topic
+    // literal without an explicit annotation.
+    on<T extends import('../forge').Topic>(
+      topic: T,
+      handler: (payload: import('../forge').TopicPayloadMap[T]) => void,
+    ): import('../forge').Unsubscribe;
+    once<T extends import('../forge').Topic>(
+      topic: T,
+      handler: (payload: import('../forge').TopicPayloadMap[T]) => void,
+    ): import('../forge').Unsubscribe;
+    off<T extends import('../forge').Topic>(
+      topic: T,
+      handler?: (payload: import('../forge').TopicPayloadMap[T]) => void,
+    ): void;
+    waitFor<T extends import('../forge').Topic>(
+      topic: T,
+      predicate?: (payload: import('../forge').TopicPayloadMap[T]) => boolean,
+    ): Promise<import('../forge').TopicPayloadMap[T]>;
+
+    /**
+     * Developer-JOY state-inspection snapshot — see `src/forge/inspect.ts`.
+     *
+     * Returns a typed snapshot of "what's loaded right now": engine version,
+     * write-mode flags, loaded tournament IDs + counts, subscribed topics,
+     * devContext. Side-effect-free and cheap; safe to call from hot paths.
+     */
+    inspect(): import('../forge').EngineInspection;
 
     /**
      * Developer-JOY fluent builders — see `src/forge/builders/`.

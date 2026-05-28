@@ -32,7 +32,6 @@ import type {
   Venue,
   HydratedMatchUp,
   HydratedParticipant,
-  TopicPayloadMap,
 } from 'tods-competition-factory';
 
 // --- Cast to the typed engine surface ---
@@ -65,13 +64,11 @@ void version;
 void counts.matchUps;
 
 // --- engine.on returns Unsubscribe and is per-topic typed ---
-// NOTE: In consumer code under `strict: true`, the per-topic payload generic
-// on engine.on doesn't always infer through the `EventBus['on']` indirection
-// in `FactoryEngineTyped`. Annotating via `TopicPayloadMap['addMatchUps']`
-// gets the typed payload reliably. Open follow-up: tighten the indirection so
-// inference works without the annotation. Tracked as a known limitation.
+// The handler's `payload` is inferred from the topic literal — no annotation
+// needed. FactoryEngineTyped inlines the generic so contextual typing flows
+// through the cast.
 
-const off = engine.on('addMatchUps', (payload: TopicPayloadMap['addMatchUps']) => {
+const off = engine.on('addMatchUps', (payload) => {
   const tid: string = payload.tournamentId;
   const items: MatchUp[] = payload.matchUps;
   void tid;

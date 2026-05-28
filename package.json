@@ -37,14 +37,21 @@
   },
   "main": "dist/index.js",
   "module": "dist/index.mjs",
+  "type": "commonjs",
   "exports": {
     ".": {
-      "types": "./dist/tods-competition-factory.d.ts",
-      "import": "./dist/index.mjs",
-      "default": "./dist/index.js"
+      "import": {
+        "types": "./dist/tods-competition-factory.d.mts",
+        "default": "./dist/index.mjs"
+      },
+      "require": {
+        "types": "./dist/tods-competition-factory.d.cts",
+        "default": "./dist/index.js"
+      }
     }
   },
   "types": "dist/tods-competition-factory.d.ts",
+  "sideEffects": false,
   "typesVersions": {
     "*": {
       "query": [
@@ -110,7 +117,7 @@
     "docs:publish": "cd documentation && GIT_USER=CourtHive USE_SSH=true pnpm docpub",
     "shakeable": "npx agadoo dist/tods-competition-factory.production.cjs.min.js",
     "check-types": "tsc --noEmit",
-    "verify": "pnpm verify:types && pnpm verify:lint && pnpm verify:coverage && pnpm verify:server && pnpm verify:audit && pnpm verify:build && pnpm verify:runtime && pnpm verify:bundle-size && pnpm verify:surface && pnpm verify:pack && pnpm verify:ecosystem",
+    "verify": "pnpm verify:types && pnpm verify:lint && pnpm verify:coverage && pnpm verify:server && pnpm verify:audit && pnpm verify:build && pnpm verify:publint && pnpm verify:runtime && pnpm verify:bundle-size && pnpm verify:surface && pnpm verify:pack && pnpm verify:ecosystem",
     "verify:types": "tsc --noEmit",
     "verify:lint": "eslint src --cache --max-warnings 0",
     "verify:coverage": "vitest run --coverage",
@@ -118,6 +125,7 @@
     "verify:shakeable": "npx agadoo dist/tods-competition-factory.production.cjs.min.js",
     "verify:build": "rimraf dist && rollup --config && ./esbuild.mjs",
     "verify:audit": "node scripts/verify/audit.mjs",
+    "verify:publint": "node scripts/verify/publint.mjs",
     "verify:pack": "node scripts/verify/pack.mjs",
     "verify:surface": "node scripts/verify/surface.mjs",
     "verify:bundle-size": "node scripts/verify/bundle-size.mjs",
