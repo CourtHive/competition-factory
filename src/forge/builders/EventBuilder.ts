@@ -135,15 +135,17 @@ export class EventBuilder {
 
     if (this.entriesSpec) {
       const { participantIds, opts } = this.entriesSpec;
-      directives.push({
-        method: 'addEventEntries',
-        params: {
-          eventId: this._eventId,
-          participantIds,
-          entryStage: opts?.entryStage ?? MAIN,
-          entryStatus: opts?.entryStatus ?? DIRECT_ACCEPTANCE,
-        },
-      });
+      const entriesParams: any = {
+        eventId: this._eventId,
+        participantIds,
+        entryStage: opts?.entryStage ?? MAIN,
+        entryStatus: opts?.entryStatus ?? DIRECT_ACCEPTANCE,
+      };
+      // Pass through only when explicitly set so addEventEntries' own defaults
+      // (enforceGender: true, enforceCategory: false) apply otherwise.
+      if (opts?.enforceGender !== undefined) entriesParams.enforceGender = opts.enforceGender;
+      if (opts?.enforceCategory !== undefined) entriesParams.enforceCategory = opts.enforceCategory;
+      directives.push({ method: 'addEventEntries', params: entriesParams });
     }
 
     return directives;

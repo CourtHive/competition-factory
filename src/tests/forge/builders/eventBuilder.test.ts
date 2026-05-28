@@ -111,4 +111,43 @@ describe('engine.build.event — fluent EventBuilder', () => {
     const directives: any[] = tournamentEngine.build.event({ eventName: 'CFG' }).team('TEAM_FORMAT').toDirectives();
     expect(directives[0].params.event.tieFormatName).toEqual('TEAM_FORMAT');
   });
+
+  it('entries opts pass enforceGender/enforceCategory through only when set', () => {
+    const defaultDirectives: any[] = tournamentEngine.build
+      .event()
+      .singles()
+      .draw(8)
+      .entries(['p1', 'p2'])
+      .toDirectives();
+    const defaultEntries = defaultDirectives.find((d) => d.method === 'addEventEntries').params;
+    expect(defaultEntries.enforceGender).toBeUndefined();
+    expect(defaultEntries.enforceCategory).toBeUndefined();
+
+    const overrideDirectives: any[] = tournamentEngine.build
+      .event()
+      .singles()
+      .draw(8)
+      .entries(['p1', 'p2'], { enforceGender: false, enforceCategory: true })
+      .toDirectives();
+    const overrideEntries = overrideDirectives.find((d) => d.method === 'addEventEntries').params;
+    expect(overrideEntries.enforceGender).toEqual(false);
+    expect(overrideEntries.enforceCategory).toEqual(true);
+  });
+
+  it('enforceGender:false lets a gendered event accept mixed-gender mocksEngine participants', () => {
+    const setup: any = seed(16);
+    const participantIds = participantIdsFromSeed(setup, 16);
+
+    const result: any = tournamentEngine.build
+      .event({ eventName: 'Mixed-pool sanity' })
+      .singles()
+      .gender('MALE')
+      .draw(16, { seedsCount: 4 })
+      .entries(participantIds, { enforceGender: false })
+      .create();
+
+    expect(result.success).toEqual(true);
+    const event: any = tournamentEngine.q.event({ eventId: result.eventId });
+    expect(event?.entries?.length).toEqual(16);
+  });
 });

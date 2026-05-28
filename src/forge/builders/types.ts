@@ -39,6 +39,10 @@ export interface DrawOpts {
 export interface EntriesOpts {
   entryStage?: string;
   entryStatus?: string;
+  /** Skip the default `enforceGender: true` check on the underlying addEventEntries. */
+  enforceGender?: boolean;
+  /** Skip the default `enforceCategory: false` check on the underlying addEventEntries. */
+  enforceCategory?: boolean;
 }
 
 export interface BuildResult {
