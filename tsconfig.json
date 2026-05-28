@@ -1,51 +1,13 @@
 {
-  "include": ["src/**/*.ts", "src/**/*.js"],
-  "exclude": ["dist", "src/**/*.test.ts", "src/**/scratch/**", "**/*tsconfig*/**", "src/**/*.spec.ts"],
-  "compilerOptions": {
-    "allowJs": true,
-    "allowSyntheticDefaultImports": true,
-    "declaration": true,
-    "esModuleInterop": true,
-    "forceConsistentCasingInFileNames": true,
-    "importHelpers": true,
-    "lib": ["dom", "esnext"],
-    "module": "esnext",
-    "moduleResolution": "bundler",
-    "noEmit": true,
-    "noFallthroughCasesInSwitch": true,
-    "noImplicitAny": false,
-    "noImplicitReturns": true,
-    "noUnusedLocals": true,
-    "noUnusedParameters": true,
-    "outDir": "./dist",
-    "resolveJsonModule": true,
-    "rootDir": ".",
-    "sourceMap": false,
-    "strict": true,
-    "paths": {
-      "@Generators/*": ["./src/assemblies/generators/*"],
-      "@Engines/*": ["./src/tests/engines/*"],
-      "@Assemblies/*": ["./src/assemblies/*"],
-      "@Validators/*": ["./src/validators/*"],
-      "@Constants/*": ["./src/constants/*"],
-      "@Functions/*": ["./src/functions/*"],
-      "@Fixtures/*": ["./src/fixtures/*"],
-      "@Forge/*": ["./src/forge/*"],
-      "@Acquire/*": ["./src/acquire/*"],
-      "@Helpers/*": ["./src/helpers/*"],
-      "@Global/*": ["./src/global/*"],
-      "@Mutate/*": ["./src/mutate/*"],
-      "@Server/*": ["./src/server/*"],
-      "@Query/*": ["./src/query/*"],
-      "@Tests/*": ["./src/tests/*"],
-      "@Tools/*": ["./src/tools/*"],
-      "@Types/*": ["./src/types/*"]
-    },
-
-    "emitDecoratorMetadata": true,
-    "experimentalDecorators": true,
-    "removeComments": true,
-    "skipLibCheck": true,
-    "target": "ES2021"
-  }
+  // NOTE: tsconfig.base.json is the single source of truth for compilerOptions
+  // (including `paths`). jest reads it directly via Node `require()`, which does
+  // NOT follow `extends`, so `paths` must live on disk in tsconfig.base.json.
+  //
+  // This file extends it and only overrides what differs for `tsc --noEmit`:
+  // excluding tests/specs/dist so the build typecheck doesn't try to load them.
+  //
+  // When adding a new path alias, edit tsconfig.base.json — both tsc and jest
+  // will see it. No edits required here.
+  "extends": "./tsconfig.base.json",
+  "exclude": ["dist", "src/**/*.test.ts", "src/**/scratch/**", "**/*tsconfig*/**", "src/**/*.spec.ts"]
 }
