@@ -16,7 +16,7 @@
 
 export { buildQueryFacade, queryRegistry } from './q';
 export type { QueryFacade } from './q';
-export { unwrap } from './unwrap';
+export { unwrap, unwrapOr } from './unwrap';
 export type { Unwrap } from './unwrap';
 export { inspect } from './inspect';
 export type { EngineInspection, EngineInspectionCounts } from './inspect';

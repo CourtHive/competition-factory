@@ -4,7 +4,7 @@
 import { describe, expect, it } from 'vitest';
 
 import { EventNotFoundError, FactoryError, InvalidValuesError, MissingTournamentRecordError } from '../errors';
-import { unwrap } from './unwrap';
+import { unwrap, unwrapOr } from './unwrap';
 
 describe('unwrap', () => {
   it('returns the result as-is when no error', () => {
@@ -127,3 +127,76 @@ describe('unwrap', () => {
     expect(events).toEqual([{ eventId: 'e1' }]);
   });
 });
+
+describe('unwrapOr', () => {
+  it('returns the result when no error', () => {
+    const result = { events: [{ eventId: 'e1' }] };
+    expect(unwrapOr(result, { events: [] })).toBe(result);
+  });
+
+  it('returns the fallback when result.error is a legacy POJO', () => {
+    const fallback = { events: [] as { eventId: string }[] };
+    const out = unwrapOr({ error: { code: 'X', message: 'broken' } }, fallback);
+    expect(out).toBe(fallback);
+  });
+
+  it('returns the fallback when result.error is a FactoryError instance', () => {
+    const fallback = { events: [] };
+    const out = unwrapOr({ error: new InvalidValuesError() }, fallback);
+    expect(out).toBe(fallback);
+  });
+
+  it('returns the fallback for null / undefined result', () => {
+    expect(unwrapOr(undefined, 'fb')).toBe('fb');
+    expect(unwrapOr(null, 'fb')).toBe('fb');
+  });
+
+  it('treats undefined/null error as success (no fallback)', () => {
+    const a = { events: [] as any[], error: undefined };
+    expect(unwrapOr(a, { events: [{ eventId: 'fb' }] })).toBe(a);
+    const b = { events: [] as any[], error: null };
+    expect(unwrapOr(b as any, { events: [{ eventId: 'fb' }] })).toBe(b);
+  });
+
+  it('lets destructure-with-defaults migrate cleanly from `if (error) return` narrowing', () => {
+    // Migration pattern documented in the doc-comment:
+    //   const { courtIssues = {}, rowIssues = {} } = unwrapOr(engine.proConflicts({matchUps}), {});
+    const errored = { error: { code: 'X', message: 'broken' } };
+    const happy = { courtIssues: { a: 1 }, rowIssues: { b: 2 } };
+    const { courtIssues: ci1 = {}, rowIssues: ri1 = {} } = unwrapOr(errored as any, {});
+    const { courtIssues: ci2 = {}, rowIssues: ri2 = {} } = unwrapOr(happy as any, {});
+    expect(ci1).toEqual({});
+    expect(ri1).toEqual({});
+    expect(ci2).toEqual({ a: 1 });
+    expect(ri2).toEqual({ b: 2 });
+  });
+
+  it('accepts null fallback for early-exit patterns', () => {
+    // Migration pattern for `if (error) return;`:
+    //   const result = unwrapOr(engine.proConflicts({matchUps}), null);
+    //   if (!result) return;
+    const errored = unwrapOr({ error: { code: 'X', message: 'broken' } }, null);
+    expect(errored).toBeNull();
+    const happy = unwrapOr({ payload: 42 }, null);
+    expect(happy).toEqual({ payload: 42 });
+  });
+
+  it('does not invoke suggestions / cause / methodName paths — purely a value swap', () => {
+    // Validate the silent-fallback contract: no side effects.
+    let suggestionsCalled = 0;
+    const err = new InvalidValuesError();
+    Object.defineProperty(err, 'suggestions', {
+      get: () => {
+        suggestionsCalled++;
+        return [];
+      },
+    });
+    unwrapOr({ error: err }, { ok: true });
+    expect(suggestionsCalled).toBe(0);
+  });
+});
+
+// Reference unused suggestion ctor placeholder for the suggestions-side path
+// would-be: ensure InvalidValuesError + EventNotFoundError + MissingTournamentRecordError
+// classes are loaded; satisfies the linter checking import use.
+void [EventNotFoundError, MissingTournamentRecordError, FactoryError, InvalidValuesError];

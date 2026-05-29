@@ -29,11 +29,19 @@ import { FactoryError } from '../errors/FactoryError';
 import { constructFactoryError } from '../errors/codeRegistry';
 
 /**
- * Type-level: strip `error` from the result so callers see the success-branch
- * shape after unwrap. `success` is left in place — some methods carry both
- * `success` and a payload, and consumers occasionally inspect it.
+ * Type-level: narrow to the success arm.
+ *
+ * For discriminated unions like `{ error: ErrorType } | { success, payload }`
+ * — the dominant shape across factory methods — `Exclude` drops any arm
+ * whose `error` is a real ErrorType (i.e. required, not optional). Single-
+ * shape returns with `error?: ErrorType` (optional) are NOT discriminated,
+ * so the arm survives unchanged and callers can still destructure the
+ * (now-known-absent) payload.
+ *
+ * The detector matches `{ error: { code: string } }` rather than the full
+ * ErrorType so it tolerates minor shape drift (extra/different info keys).
  */
-export type Unwrap<T> = T extends { error?: any } ? Omit<T, 'error'> : T;
+export type Unwrap<T> = Exclude<T, { error: { code: string } }>;
 
 /**
  * Heuristic for "the result envelope reports an error". Accepts both the
@@ -77,5 +85,34 @@ export function unwrap<T>(result: T, opts?: { methodName?: string }): Unwrap<T> 
     });
   }
 
+  return result as Unwrap<T>;
+}
+
+/**
+ * `unwrapOr(result, fallback)` — silent-fallback companion to `unwrap()`.
+ *
+ * Same envelope checks (legacy POJO error, `FactoryError` instance, or
+ * `null`/`undefined` result) — but returns `fallback` instead of throwing.
+ * Picks up where `engine.q.*` stops: `q.*` is curated to the highest-fan-in
+ * queries with sensible empty defaults; `unwrapOr` works on any method's
+ * result and lets the caller name the fallback inline.
+ *
+ *   const { courtIssues, rowIssues } = unwrapOr(
+ *     engine.proConflicts({ matchUps }),
+ *     { courtIssues: {}, rowIssues: {} },
+ *   );
+ *
+ *   // Or with `null` to express "skip on error":
+ *   const result = unwrapOr(engine.proConflicts({ matchUps }), null);
+ *   if (!result) return;
+ *
+ * Intentionally silent — no logging, no toast, no `console.warn`. The
+ * caller chose silent fallback; if they want to surface the error they
+ * use `unwrap()` with their own catch instead. Keeps the two helpers'
+ * contracts crisp: `unwrap` = loud, `unwrapOr` = silent.
+ */
+export function unwrapOr<T, F>(result: T, fallback: F): Unwrap<T> | F {
+  if (result === undefined || result === null) return fallback;
+  if (hasError(result)) return fallback;
   return result as Unwrap<T>;
 }

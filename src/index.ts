@@ -39,7 +39,7 @@ export {
 } from './errors';
 export type { FactoryErrorOptions } from './errors';
 
-export { forge, unwrap } from './forge';
+export { forge, unwrap, unwrapOr } from './forge';
 export type { Unwrap } from './forge';
 export type {
   BuildFacade,

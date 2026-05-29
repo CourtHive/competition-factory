@@ -66,8 +66,9 @@ describe('FactoryError', () => {
     });
   });
 
-  it('returns empty suggestions when no factory is registered', () => {
-    const err = new EventNotFoundError();
+  it('returns empty suggestions when no factory is registered for the code', () => {
+    // Using a synthetic code that the defaults module does not populate.
+    const err = new FactoryError('SOME_UNREGISTERED_CODE', 'no suggestions for this one');
     expect(err.suggestions).toEqual([]);
   });
 
@@ -110,6 +111,34 @@ describe('concrete subclasses', () => {
     expect(err).toBeInstanceOf(ParticipantNotFoundError);
     expect(err).toBeInstanceOf(FactoryError);
     expect(err).toBeInstanceOf(Error);
+  });
+});
+
+describe('default suggestions registry', () => {
+  // The default registrations live in `./defaultSuggestions.ts` and are
+  // wired into `./index.ts` as a side-effect import. These tests confirm
+  // the highest-fan-in codes resolve to non-empty actionable text out of
+  // the box — without requiring consumers to call anything.
+  it('MissingTournamentRecordError carries a setState suggestion', () => {
+    const s = new MissingTournamentRecordError().suggestions;
+    expect(s.length).toBeGreaterThan(0);
+    expect(s.join(' ')).toMatch(/setState/);
+  });
+
+  it('InvalidValuesError surfaces context field names when present', () => {
+    const err = new InvalidValuesError({ context: { drawSize: 33, structureId: 's1' } });
+    expect(err.suggestions[0]).toMatch(/drawSize, structureId/);
+  });
+
+  it('falls back to a generic hint when context is absent', () => {
+    const err = new InvalidValuesError();
+    expect(err.suggestions[0]).toMatch(/expected types and ranges/);
+  });
+
+  it('ENGINE_RETURNED_UNDEFINED suggests setState or method-name check', () => {
+    const s = new FactoryError('ENGINE_RETURNED_UNDEFINED', 'no result').suggestions;
+    expect(s.some((t) => /setState/.test(t))).toBe(true);
+    expect(s.some((t) => /method name/.test(t))).toBe(true);
   });
 });
 
