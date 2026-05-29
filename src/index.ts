@@ -13,6 +13,32 @@ export * as tools from './assemblies/tools';
 export * as globalState from './global/state/globalState';
 export { policyRegistry } from './global/policyRegistry';
 
+// ERRORS - rich, typed error hierarchy ---------------------------------
+// Class-based errors carrying code + cause + suggestions + path + context.
+// Backwards-compatible with the legacy `{ error: { code, message } }`
+// envelope via `FactoryError.toJSON()`; pairs with the upcoming `unwrap()`
+// helper which throws subclasses by `error.code`.
+export * as errors from './errors';
+export {
+  FactoryError,
+  EventNotFoundError,
+  InvalidDateError,
+  InvalidValuesError,
+  MatchUpNotFoundError,
+  MissingDrawDefinitionError,
+  MissingEventError,
+  MissingOfficialRecordError,
+  MissingSanctioningRecordError,
+  MissingTournamentRecordError,
+  MissingTournamentRecordsError,
+  MissingValueError,
+  ParticipantNotFoundError,
+  StructureNotFoundError,
+  constructFactoryError,
+  registerSuggestions,
+} from './errors';
+export type { FactoryErrorOptions } from './errors';
+
 export { forge } from './forge';
 export type {
   BuildFacade,
