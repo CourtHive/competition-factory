@@ -4,14 +4,64 @@ title: Migration 4.x to 5.0.0
 
 Version 5.0.0 of the Competition Factory completes the **CODES (Competition Open Data Exchange Standards)** schema initiative — promoting a long list of canonical internal extensions and schedule-related timeItems from the `extensions[]` envelope to first-class typed attributes on `tournamentTypes.ts`.
 
-The breaking change is a **default flip**: `engine.schemaWriteMode` defaults to `'native'` in 5.0.0 (previously implicit-`'legacy'` behavior in 4.x). Consumers that read former-extension values from raw `element.extensions[]` will see `undefined` in NATIVE mode because the factory no longer writes the legacy envelope.
+5.0.0 ships **two** breaking changes consumers should know about:
+
+1. **`engine.schemaWriteMode` default flips to `'native'`** (previously implicit-`'legacy'` behavior in 4.x). Consumers that read former-extension values from raw `element.extensions[]` will see `undefined` in NATIVE mode because the factory no longer writes the legacy envelope.
+2. **`tournamentEngine` and `competitionEngine` exports are now typed as `FactoryEngineTyped`** (previously the open `FactoryEngine` / `{[key: string]: any}` shape). Method-name autocomplete, per-method params/returns, and the developer-JOY facades (`engine.q.*`, `engine.dryRun`, `engine.explain`, `engine.inspect`, `engine.on/once/off/waitFor`, `engine.build.*`) all surface automatically. **An opt-out is provided** for downstream consumers that can't take the typed lift yet — see "Typed engine default + opt-out" below.
 
 This document is for **consumers** of the factory (TMX, courthive-components, the server, downstream tools). It catalogues:
 
-1. Every promoted name and its first-class location.
-2. The factory query method (engine method) to call for a mode-agnostic read — recommended for all new and migrated code.
-3. New 5.0.0 attributes and mutations that didn't exist in 4.x.
-4. Worked examples from the CourtHive ecosystem's own migration.
+1. The typed-engine default change and how to opt out.
+2. Every promoted name and its first-class location.
+3. The factory query method (engine method) to call for a mode-agnostic read — recommended for all new and migrated code.
+4. New 5.0.0 attributes and mutations that didn't exist in 4.x.
+5. Worked examples from the CourtHive ecosystem's own migration.
+
+## Typed engine default + opt-out
+
+In 5.0.0 the singleton engine exports change static type:
+
+```ts
+import { tournamentEngine, competitionEngine } from 'tods-competition-factory';
+
+// tournamentEngine: FactoryEngineTyped   <-- new in 5.0.0
+// In 4.x: FactoryEngine ({[key: string]: any} — open shape)
+```
+
+What you get for free:
+
+- **Method-name autocomplete.** `tournamentEngine.getEevents()` is a compile-time red squiggle now; previously it was an `any`-shaped runtime no-op that returned `undefined` and crashed downstream.
+- **Per-method params + returns.** ~89% of the 600-method engine surface has signatures lifted from the source declarations via `MethodSignatures`. The rest still type as `(...args: any[]) => any` so the surface stays complete; methods get tightened incrementally without breaking consumers.
+- **Precise generics on the developer-JOY facades.** `engine.q.events()` returns `Event[]` directly. `engine.on('addMatchUps', e => …)` infers the topic payload. `engine.dryRun(directives)` returns a typed `DryRunResult` with the RFC 6902 patch + emitted notices.
+- **Auto-resolved entities are optional.** Passing `drawId` is enough — the engine middleware resolves `drawDefinition` / `event` / `tournamentRecord` from state, and the typed surface no longer demands them at the call site.
+
+### Opt-out: keep the open shape
+
+If you're upgrading to 5.0.0 to get a non-type-related fix (CODES schema reads, new mutations, etc.) but can't take the typed lift at the same time — for example, your TypeScript build has `noImplicitAny: false` and your code accesses methods that haven't been added to `MethodSignatures` yet — import the `Untyped` variants instead:
+
+```ts
+import { tournamentEngineUntyped, competitionEngineUntyped } from 'tods-competition-factory';
+
+// Same runtime singleton as `tournamentEngine`; typed as the pre-5.x
+// open `FactoryEngine` shape.
+const engine = tournamentEngineUntyped;
+engine.someMethodNotYetTyped({ ...whatever });
+```
+
+Runtime is identical — they're the same engine instance under a looser type. Opt back in to the typed default at your pace.
+
+### Adopting the typed default progressively
+
+For an existing consumer that imports `tournamentEngine` today, switching to the typed default is automatic on package upgrade — no code change required to flip the type. What changes is what your `tsc --noEmit` reports: latent shape errors that the open `FactoryEngine` swallowed will now surface as proper compile errors.
+
+The migration playbook (see worked examples below):
+
+1. Upgrade `tods-competition-factory` to 5.0.0.
+2. Run `pnpm check-types` / `tsc --noEmit`.
+3. For each surfaced error: fix the call site (preferred), or as a temporary measure, swap that file's import to `tournamentEngineUntyped` and revisit later.
+4. When all `Untyped` imports are gone, you've finished the migration.
+
+For an end-to-end story see the TMX migration commits referenced in the **Worked examples** section.
 
 ## Reading promoted attributes — use the factory query methods
 
