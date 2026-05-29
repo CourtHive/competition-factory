@@ -90,7 +90,7 @@ export type EngineMethod<F> = F extends (firstParam: infer P, ...rest: infer R) 
  * `(...args: any[]) => any` fallback or the open shape competes with the
  * facades' precise generics in the intersection and TS picks `any`.
  */
-type FacadeMethodNames = 'q' | 'on' | 'once' | 'off' | 'waitFor' | 'inspect' | 'build';
+type FacadeMethodNames = 'q' | 'on' | 'once' | 'off' | 'waitFor' | 'inspect' | 'build' | 'dryRun' | 'explain';
 
 /**
  * Closed engine surface for consumers — every method name comes from
@@ -181,6 +181,32 @@ export type FactoryEngineTyped = MethodSignatures &
      *   socket.send('executionQueue', request);
      */
     build: import('../forge').BuildFacade;
+
+    /**
+     * Developer-JOY mutation preview — see `src/forge/dryRun.ts` (#3).
+     *
+     * Run an `executionQueue` against the loaded state, capture the
+     * would-be diff (RFC 6902 JSON patch) and the topic/payload notices
+     * the real call would emit, then restore the snapshot. State is
+     * never persisted; subscribers are never notified.
+     *
+     *   const { wouldSucceed, patch, willEmitNotices } = engine.dryRun([
+     *     { method: 'deleteDrawDefinition', params: { drawId } },
+     *   ]);
+     */
+    dryRun(directives: Directives): import('../forge').DryRunResult;
+
+    /**
+     * Developer-JOY pre-flight readiness check — see `src/forge/explain.ts` (#12).
+     *
+     * Project `dryRun` down to the four signals UI gating wants:
+     *   `{ wouldSucceed, reason?, willEmitTopics, touchesPaths }`.
+     * Plus `detail` carrying the full dryRun result for callers that
+     * need the patch.
+     *
+     *   const { wouldSucceed, reason } = engine.explain('deleteDrawDefinition', { drawId });
+     */
+    explain(method: string, params?: Record<string, any>): import('../forge').ExplainResult;
   };
 
 export type { FactoryEngineMethod } from './factoryEngineMethods';

@@ -7,6 +7,12 @@
  *  - `engine.q.*` — the unwrap query facade (see `q.ts`, #2 silent-fallback)
  *  - `unwrap(result)` — the throwing variant that pairs with #7's typed
  *    error hierarchy (see `unwrap.ts`)
+ *  - `engine.dryRun(directives)` — preview executionQueue without
+ *    committing (see `dryRun.ts`, #3); returns RFC 6902 patch + emitted
+ *    notices via the hand-rolled `jsonPatch` generator
+ *  - `engine.explain(method, params)` — pre-flight readiness check
+ *    projecting dryRun down to the four signals UI gating wants
+ *    (see `explain.ts`, #12)
  *  - `engine.inspect()` — the live state snapshot (see `inspect.ts`, #8)
  *  - `engine.on/once/off/waitFor` — the typed event bus (see `bus.ts`, #5)
  *  - `engine.build.*` — fluent builders (see `builders/`, #6)
@@ -18,6 +24,12 @@ export { buildQueryFacade, queryRegistry } from './q';
 export type { QueryFacade } from './q';
 export { unwrap, unwrapOr } from './unwrap';
 export type { Unwrap } from './unwrap';
+export { generatePatch } from './jsonPatch';
+export type { JsonPatch, JsonPatchOp } from './jsonPatch';
+export { dryRun } from './dryRun';
+export type { DryRunResult, EmittedNotice } from './dryRun';
+export { explain } from './explain';
+export type { ExplainResult } from './explain';
 export { inspect } from './inspect';
 export type { EngineInspection, EngineInspectionCounts } from './inspect';
 export { createEventBus } from './bus';

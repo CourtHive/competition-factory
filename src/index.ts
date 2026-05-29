@@ -39,8 +39,8 @@ export {
 } from './errors';
 export type { FactoryErrorOptions } from './errors';
 
-export { forge, unwrap, unwrapOr } from './forge';
-export type { Unwrap } from './forge';
+export { forge, unwrap, unwrapOr, generatePatch, dryRun, explain } from './forge';
+export type { Unwrap, JsonPatch, JsonPatchOp, DryRunResult, EmittedNotice, ExplainResult } from './forge';
 export type {
   BuildFacade,
   BuildResult,

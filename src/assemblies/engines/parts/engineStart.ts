@@ -2,7 +2,7 @@ import { createTournamentRecord } from '@Generators/tournamentRecords/createTour
 import { methodImporter } from '@Assemblies/engines/parts/methodImporter';
 import { processResult } from '@Assemblies/engines/parts/processResult';
 import { factoryVersion } from '@Functions/global/factoryVersion';
-import { buildQueryFacade, buildFacade, createEventBus, inspect } from '@Forge/index';
+import { buildQueryFacade, buildFacade, createEventBus, inspect, dryRun, explain } from '@Forge/index';
 import {
   setDeepCopy,
   setDevContext,
@@ -97,6 +97,10 @@ export function engineStart(engine: FactoryEngine, engineInvoke: any): void {
   // so it picks up governor methods that get added after engineStart returns.
   engine.q = buildQueryFacade(engine);
   engine.inspect = () => inspect();
+  // Preview + preflight. Both restore state before returning; subscribers
+  // are NOT notified. See `src/forge/{dryRun,explain}.ts`.
+  engine.dryRun = (directives) => dryRun(engine, directives);
+  engine.explain = (method, params) => explain(engine, method, params);
   const bus = createEventBus();
   engine.on = bus.on;
   engine.once = bus.once;

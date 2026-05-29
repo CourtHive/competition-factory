@@ -165,6 +165,7 @@ export type FactoryEngineMethod =
   | 'disableVenues'
   | 'drawMatchUps'
   | 'drawMatic'
+  | 'dryRun'
   | 'enableCourts'
   | 'enableTieAutoCalc'
   | 'enableVenues'
@@ -173,6 +174,7 @@ export type FactoryEngineMethod =
   | 'eventMatchUps'
   | 'execute'
   | 'executionQueue'
+  | 'explain'
   | 'exportMatchUpJSON'
   | 'extractDay'
   | 'filterCapacityCurve'
@@ -775,6 +777,7 @@ export const FACTORY_ENGINE_METHODS: readonly FactoryEngineMethod[] = [
   'disableVenues',
   'drawMatchUps',
   'drawMatic',
+  'dryRun',
   'enableCourts',
   'enableTieAutoCalc',
   'enableVenues',
@@ -783,6 +786,7 @@ export const FACTORY_ENGINE_METHODS: readonly FactoryEngineMethod[] = [
   'eventMatchUps',
   'execute',
   'executionQueue',
+  'explain',
   'exportMatchUpJSON',
   'extractDay',
   'filterCapacityCurve',
