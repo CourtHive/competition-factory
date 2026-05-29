@@ -71,8 +71,14 @@ type EngineHintKeys = {
  * matches every documented engine call site in the ecosystem.
  */
 export type EngineMethod<F> = F extends (firstParam: infer P, ...rest: infer R) => infer Ret
-  ? P extends object
-    ? (params?: Partial<P> & EngineHintKeys, ...rest: R) => Ret
+  ? // `[P] extends [object]` prevents distribution when source declares
+    // `(params?: T) => R` — there, `P` infers as `T | undefined`, and the
+    // naked-conditional `P extends object` would split the result into a
+    // union of two function shapes, which TS then intersects at the call
+    // site, putting the un-`Partial`-ed `T` back. The bracketed form keeps
+    // `P` whole so the consumer-facing param stays uniformly `Partial<P>`.
+    [NonNullable<P>] extends [object]
+    ? (params?: Partial<NonNullable<P>> & EngineHintKeys, ...rest: R) => Ret
     : F
   : F;
 
