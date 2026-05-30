@@ -167,7 +167,14 @@ module.exports = {
         'engines/subscriptions',
         'engines/fluent-builders',
         'engines/query-facade',
+        'engines/unwrap',
+        'engines/factory-errors',
+        'engines/dry-run-explain',
+        'engines/json-patch',
         'engines/state-inspection',
+        'engines/policy-composer',
+        'engines/migrate-tournament-record',
+        'engines/get-tally',
         'engines/custom-engines',
         'engines/global-state',
         {
@@ -325,7 +332,7 @@ module.exports = {
     {
       type: 'category',
       label: 'Migration',
-      items: ['migration'],
+      items: ['whats-new-5.0.0', 'migration-5.0.0', 'migration'],
     },
   ],
 };

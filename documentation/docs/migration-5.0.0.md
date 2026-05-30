@@ -132,11 +132,9 @@ Two things changed at once on this attribute, which is why it was deferred from 
 
 **Change 2 — wrapper unwrapping.** The 4.x extension `value` was an object wrapping the array: `{ tournamentIds: ['t-1', 't-2'] }`. The 5.0.0 first-class attribute is a flat array: `['t-1', 't-2']`.
 
-```
+```ts
 // 4.x — extension
-record.extensions = [
-  { name: 'linkedTournamentsIds', value: { tournamentIds: ['t-1', 't-2'] } }
-];
+record.extensions = [{ name: 'linkedTournamentsIds', value: { tournamentIds: ['t-1', 't-2'] } }];
 
 // 5.0.0 — first-class
 record.linkedTournamentIds = ['t-1', 't-2'];

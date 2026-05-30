@@ -22,6 +22,7 @@ Every consumer that needs a federation-specific tweak of a stock policy faces th
 
 1. **Copy the entire policy** and edit the changed fields by hand. The two ~25-line `POLICY_SEEDING_DEFAULT` / `POLICY_SEEDING_ITF` blocks in `TMX/src/components/drawers/addDraw/submitDrawParams.ts` are the canonical example — they differ in three fields and share twenty-two.
 2. **Hand-merge with spreads**, accepting that every level of nesting that needs to be modified requires its own spread:
+
    ```ts
    const cts = {
      [POLICY_TYPE_SEEDING]: {
@@ -34,6 +35,7 @@ Every consumer that needs a federation-specific tweak of a stock policy faces th
      },
    };
    ```
+
    Adding a fourth modified field at a new depth means re-deriving the spread chain.
 
 The composer collapses both forms to two lines:
