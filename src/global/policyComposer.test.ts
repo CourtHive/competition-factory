@@ -350,3 +350,24 @@ describe('policyComposer — empty-path edge cases', () => {
     expect(composer.get('')).toEqual({ a: 1, b: 2 });
   });
 });
+
+// Coverage holes around the defensive guards in setRecursive / merge — writing
+// into a pre-existing array element (rather than creating one) and merging
+// onto a scalar target (where current isn't an object, so the fragment wins).
+describe('policyComposer — array-recycle and merge-onto-scalar', () => {
+  it('writes into an existing array element without recreating the array', () => {
+    const result: any = policyComposer(POLICY_TYPE_SEEDING)
+      .extend({ arr: [{ x: 1 }, { x: 2 }] })
+      .set('arr.1.y', 99)
+      .build();
+    expect(result[POLICY_TYPE_SEEDING].arr).toEqual([{ x: 1 }, { x: 2, y: 99 }]);
+  });
+
+  it('treats merge() onto a scalar target as a replace with the fragment', () => {
+    const result: any = policyComposer(POLICY_TYPE_SEEDING)
+      .extend({ field: 'scalar' })
+      .merge('field', { now: 'object' })
+      .build();
+    expect(result[POLICY_TYPE_SEEDING].field).toEqual({ now: 'object' });
+  });
+});
