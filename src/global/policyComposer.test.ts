@@ -171,6 +171,22 @@ describe('policyComposer.unset', () => {
       .build();
     expect(result[POLICY_TYPE_SEEDING].seedingProfile.positioning).toBe('SEPARATE');
   });
+
+  // Walks through an array index to reach a sub-key, exercises the array
+  // intermediate branch in unsetRecursive (sibling array entries preserved).
+  it('removes a key inside an array element without splicing the element', () => {
+    const result: any = policyComposer(POLICY_TYPE_SEEDING)
+      .extend(stockUstaSeeding)
+      .unset('seedsCountThresholds.1.minimumParticipantCount')
+      .build();
+    const thresholds = result[POLICY_TYPE_SEEDING].seedsCountThresholds;
+    expect(thresholds).toHaveLength(3);
+    expect(thresholds[1].drawSize).toBe(16);
+    expect(thresholds[1].seedsCount).toBe(4);
+    expect(thresholds[1].minimumParticipantCount).toBeUndefined();
+    expect(thresholds[0].minimumParticipantCount).toBe(3);
+    expect(thresholds[2].minimumParticipantCount).toBe(24);
+  });
 });
 
 describe('policyComposer.get', () => {
@@ -218,6 +234,13 @@ describe('policyComposer.from (registry integration)', () => {
 
   it('throws on a missing entry', () => {
     expect(() => policyComposer(POLICY_TYPE_SEEDING).from({ name: 'MISSING' })).toThrow(/MISSING/);
+  });
+
+  // Distinct error path: the not-found message embeds `version` when supplied.
+  it('throws on a missing entry and surfaces the version in the message', () => {
+    expect(() => policyComposer(POLICY_TYPE_SEEDING).from({ name: 'MISSING', version: '2099' })).toThrow(
+      /version 2099/,
+    );
   });
 
   it('throws when called on an untyped composer', () => {
@@ -290,5 +313,40 @@ describe('policyComposer — composing without a policyType wrapper', () => {
     const fragment = policyComposer().set('drawTypes.ROUND_ROBIN.positioning', 'WATERFALL').build();
     const result: any = policyComposer(POLICY_TYPE_SCORING).merge('seedingProfile', fragment).build();
     expect(result[POLICY_TYPE_SCORING].seedingProfile.drawTypes.ROUND_ROBIN.positioning).toBe('WATERFALL');
+  });
+
+  // An untyped composer treats every extend() input as raw — even objects
+  // shaped like wrapped policies — because there's no policyType to detect.
+  it('does NOT auto-unwrap policy-type-shaped inputs when untyped', () => {
+    const fragment: any = policyComposer()
+      .extend({ [POLICY_TYPE_SEEDING]: { policyName: 'A' } })
+      .build();
+    expect(fragment).toEqual({ [POLICY_TYPE_SEEDING]: { policyName: 'A' } });
+  });
+
+  it('reads back values via get() on an untyped composer', () => {
+    const composer = policyComposer().extend({ nested: { value: 42 } });
+    expect(composer.get('nested.value')).toBe(42);
+    expect(composer.get('nested.missing')).toBeUndefined();
+  });
+});
+
+// Empty-path inputs aren't a documented use case but the guard branches in
+// splitPath / setAtPath / unsetAtPath need exercising; the no-op behavior
+// here is the right contract (returns the existing state unchanged).
+describe('policyComposer — empty-path edge cases', () => {
+  it('treats set(empty, …) as a no-op', () => {
+    const result: any = policyComposer(POLICY_TYPE_SEEDING).extend({ a: 1 }).set('', 999).build();
+    expect(result[POLICY_TYPE_SEEDING]).toEqual({ a: 1 });
+  });
+
+  it('treats unset(empty) as a no-op', () => {
+    const result: any = policyComposer(POLICY_TYPE_SEEDING).extend({ a: 1 }).unset('').build();
+    expect(result[POLICY_TYPE_SEEDING]).toEqual({ a: 1 });
+  });
+
+  it('treats get(empty) as a read of the whole accumulator', () => {
+    const composer = policyComposer(POLICY_TYPE_SEEDING).extend({ a: 1, b: 2 });
+    expect(composer.get('')).toEqual({ a: 1, b: 2 });
   });
 });

@@ -19,6 +19,12 @@ on:
 permissions:
   contents: read
 
+# Opt JavaScript actions (e.g. actions/cache) into Node 24 before
+# GitHub's June 16 2026 forced cutover; silences the Node-20 deprecation
+# warning today and de-risks the runner-side migration.
+env:
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+
 jobs:
   verify:
     runs-on: ubuntu-latest
