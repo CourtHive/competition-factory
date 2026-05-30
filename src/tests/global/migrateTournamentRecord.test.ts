@@ -224,4 +224,78 @@ describe('migrateTournamentRecord — promotion coverage', () => {
     const result = migrateTournamentRecord({ tournamentRecord: undefined as any });
     expect(result.error).toBeDefined();
   });
+
+  // Covers the multi-timeItem sort branch: when a single matchUp has more
+  // than one timeItem entry for the same itemType, the helper picks the
+  // most-recent by createdAt.
+  it('picks the most-recent timeItem when multiple exist for the same itemType', () => {
+    const record: any = {
+      tournamentId: 't-multi',
+      events: [
+        {
+          eventId: 'e1',
+          drawDefinitions: [
+            {
+              drawId: 'd1',
+              structures: [
+                {
+                  structureId: 's1',
+                  matchUps: [
+                    {
+                      matchUpId: 'm1',
+                      timeItems: [
+                        { itemType: SCHEDULED_DATE, itemValue: '2026-01-01', createdAt: '2026-01-01T10:00:00Z' },
+                        { itemType: SCHEDULED_DATE, itemValue: '2026-01-02', createdAt: '2026-01-02T10:00:00Z' },
+                        { itemType: SCHEDULED_DATE, itemValue: '2026-01-03', createdAt: '2026-01-03T10:00:00Z' },
+                      ],
+                    },
+                  ],
+                },
+              ],
+            },
+          ],
+        },
+      ],
+    };
+
+    migrateTournamentRecord({ tournamentRecord: record });
+    const matchUp = record.events[0].drawDefinitions[0].structures[0].matchUps[0];
+    expect(matchUp.schedule.scheduledDate).toBe('2026-01-03');
+    expect(matchUp.timeItems).toEqual([]);
+  });
+
+  // Covers the explicit-clear-sentinel branch: an itemValue of null means
+  // "the user cleared this schedule slot" — no first-class value is written
+  // but the legacy entry IS still stripped when clearLegacy is true.
+  it('treats a null itemValue as an explicit clear (strip without promoting)', () => {
+    const record: any = {
+      tournamentId: 't-null',
+      events: [
+        {
+          eventId: 'e1',
+          drawDefinitions: [
+            {
+              drawId: 'd1',
+              structures: [
+                {
+                  structureId: 's1',
+                  matchUps: [
+                    {
+                      matchUpId: 'm1',
+                      timeItems: [{ itemType: SCHEDULED_DATE, itemValue: null }],
+                    },
+                  ],
+                },
+              ],
+            },
+          ],
+        },
+      ],
+    };
+
+    migrateTournamentRecord({ tournamentRecord: record });
+    const matchUp = record.events[0].drawDefinitions[0].structures[0].matchUps[0];
+    expect(matchUp.schedule?.scheduledDate).toBeUndefined();
+    expect(matchUp.timeItems).toEqual([]);
+  });
 });

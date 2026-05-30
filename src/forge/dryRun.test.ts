@@ -102,6 +102,34 @@ describe('dryRun', () => {
     expect(result.wouldSucceed).toBe(false);
     expect(result.error?.message).toMatch(/noSuchMethod/);
   });
+
+  it('rejects a non-object directive', () => {
+    let result: any = dryRun(tournamentEngine, ['not-a-directive' as any]);
+    expect(result.wouldSucceed).toBe(false);
+    expect(result.error?.message).toMatch(/directive must be an object/);
+  });
+
+  it('rejects a directive whose params is not an object', () => {
+    let result: any = dryRun(tournamentEngine, [{ method: 'modifyEvent', params: 'oops' as any }]);
+    expect(result.wouldSucceed).toBe(false);
+    expect(result.error?.message).toMatch(/params must be an object/);
+  });
+
+  it('threads a piped key from the previous result into the next directive', () => {
+    // generateDrawDefinition followed by addDrawDefinition with pipe:{drawDefinition:true}.
+    // The pipe path inside dryRun copies prev.drawDefinition into the next directive's params.
+    const eventResult: any = tournamentEngine.getEvents();
+    const eventId = eventResult.events[0].eventId;
+
+    let result: any = dryRun(tournamentEngine, [
+      { method: 'generateDrawDefinition', params: { eventId, drawSize: 8 } },
+      { method: 'addDrawDefinition', params: { eventId }, pipe: { drawDefinition: true } },
+    ]);
+
+    expect(result.wouldSucceed).toBe(true);
+    // The pipe should have merged drawDefinition from the first result into the second.
+    expect(result.results[1].methodName).toBe('addDrawDefinition');
+  });
 });
 
 describe('explain', () => {

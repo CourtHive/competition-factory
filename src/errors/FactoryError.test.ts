@@ -6,9 +6,18 @@ import { describe, expect, it } from 'vitest';
 import {
   EventNotFoundError,
   FactoryError,
+  InvalidDateError,
   InvalidValuesError,
+  MatchUpNotFoundError,
+  MissingDrawDefinitionError,
+  MissingEventError,
+  MissingOfficialRecordError,
+  MissingSanctioningRecordError,
   MissingTournamentRecordError,
+  MissingTournamentRecordsError,
+  MissingValueError,
   ParticipantNotFoundError,
+  StructureNotFoundError,
   constructFactoryError,
   registerSuggestions,
 } from './index';
@@ -88,16 +97,30 @@ describe('FactoryError', () => {
 });
 
 describe('concrete subclasses', () => {
-  it('match the legacy code + message for backwards compatibility', () => {
+  it('match the legacy code + message for backwards compatibility (all 13 subclasses)', () => {
     const cases: Array<[FactoryError, string, string]> = [
       [new MissingTournamentRecordError(), 'ERR_MISSING_TOURNAMENT', 'Missing tournamentRecord'],
+      [new MissingTournamentRecordsError(), 'ERR_MISSING_TOURNAMENTS', 'Missing tournamentRecords'],
+      [new MissingDrawDefinitionError(), 'ERR_MISSING_DRAWDEF', 'Missing drawDefinition'],
+      [new MissingEventError(), 'ERR_MISSING_EVENT_ID', 'Missing event / eventId'],
+      [new MissingValueError(), 'ERR_MISSING_VALUE', 'Missing value'],
+      [new MissingSanctioningRecordError(), 'ERR_MISSING_SANCTIONING_RECORD', 'Missing sanctioningRecord'],
+      [new MissingOfficialRecordError(), 'ERR_MISSING_OFFICIAL_RECORD', 'Missing officialRecord'],
       [new InvalidValuesError(), 'ERR_INVALID_VALUES', 'Invalid values'],
+      [new InvalidDateError(), 'ERR_INVALID_DATE', 'Invalid Date'],
       [new ParticipantNotFoundError(), 'ERR_NOT_FOUND_PARTICIPANT', 'Participant Not Found'],
+      [new StructureNotFoundError(), 'ERR_NOT_FOUND_STRUCTURE', 'structure not found'],
+      [new MatchUpNotFoundError(), 'ERR_NOT_FOUND_MATCHUP', 'matchUp not found'],
       [new EventNotFoundError(), 'ERR_NOT_FOUND_EVENT', 'Event not found'],
     ];
+    expect(cases).toHaveLength(13);
     for (const [err, code, message] of cases) {
       expect(err.code).toBe(code);
       expect(err.message).toBe(message);
+      expect(err).toBeInstanceOf(FactoryError);
+      // name property matches the constructor name so devtools and
+      // e.name === 'X' checks both work.
+      expect(err.name).toBe(err.constructor.name);
     }
   });
 

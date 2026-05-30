@@ -4,10 +4,20 @@ import fs from 'fs-extra';
 import Ajv from 'ajv';
 
 const ajv = new Ajv({ allowUnionTypes: true, verbose: true, allErrors: true });
-ajv.addFormat('date-time', (dateTime: any) => {
+
+/**
+ * Ajv `date-time` format validator. Accepts ISO 8601 strings and `Date`
+ * instances (which are stringified via `.toISOString()` before parsing).
+ * Returns `false` for unparseable input. Exported for direct unit-testing —
+ * Ajv only invokes this when a schema asserts `format: 'date-time'`, which
+ * the current rankingPolicy schema does not, so the callback is otherwise
+ * dead from a coverage standpoint.
+ */
+export function dateTimeFormat(dateTime: any): boolean {
   if (typeof dateTime === 'object') dateTime = dateTime.toISOString();
   return !Number.isNaN(Date.parse(dateTime));
-});
+}
+ajv.addFormat('date-time', dateTimeFormat);
 addFormats(ajv);
 
 const schema = JSON.parse(fs.readFileSync('./src/global/schema/rankingPolicy.schema.json', { encoding: 'utf8' }));

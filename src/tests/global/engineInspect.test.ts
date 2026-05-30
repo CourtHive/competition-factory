@@ -101,4 +101,37 @@ describe('engine.inspect — live state snapshot', () => {
     expect(snap.loaded.counts.tournaments).toEqual(2);
     expect(snap.loaded.counts.events).toBeGreaterThanOrEqual(2);
   });
+
+  // Skeleton records exercise the optional-chain fallback branches in
+  // countLoadedRecords — `record?.events ?? []`, `event?.drawDefinitions ?? []`,
+  // `dd?.structures ?? []`, `record?.venues ?? []`.
+  it('handles partial records with missing collections (0 counts, no throw)', () => {
+    tournamentEngine.reset();
+    tournamentEngine.setTournamentRecord({ tournamentId: 'skeleton-1' } as any);
+
+    const snap = tournamentEngine.inspect();
+    expect(snap.loaded.counts.tournaments).toEqual(1);
+    expect(snap.loaded.counts.events).toEqual(0);
+    expect(snap.loaded.counts.drawDefinitions).toEqual(0);
+    expect(snap.loaded.counts.structures).toEqual(0);
+    expect(snap.loaded.counts.matchUps).toEqual(0);
+    expect(snap.loaded.counts.participants).toEqual(0);
+    expect(snap.loaded.counts.venues).toEqual(0);
+    expect(snap.loaded.counts.courts).toEqual(0);
+  });
+
+  it('records with events but no drawDefinitions still count tournaments + events', () => {
+    tournamentEngine.reset();
+    tournamentEngine.setTournamentRecord({
+      tournamentId: 'events-only',
+      events: [{ eventId: 'e1' }, { eventId: 'e2' }],
+      venues: [{ venueId: 'v1' }],
+    } as any);
+
+    const snap = tournamentEngine.inspect();
+    expect(snap.loaded.counts.events).toEqual(2);
+    expect(snap.loaded.counts.drawDefinitions).toEqual(0);
+    expect(snap.loaded.counts.venues).toEqual(1);
+    expect(snap.loaded.counts.courts).toEqual(0);
+  });
 });

@@ -38,11 +38,34 @@ export default defineConfig({
         'src/fixtures/data/**',
       ],
       provider: 'v8',
+      // Two-tier coverage gates:
+      //
+      // 1. GLOBAL AGGREGATE — applied across the whole report. Current state
+      //    after the 2026-05-30 coverage push is 95.15 / 86.76 / 97.9 / 97.55
+      //    (stmts / branches / funcs / lines). These thresholds lock in the
+      //    progress without leaving more headroom than the observed ~0.03%
+      //    v8 drift on Node 24.
+      //
+      // 2. PER-FILE FLOOR — every individual src file must clear these.
+      //    Catches egregious individual-file regressions (a brand-new
+      //    untested file would fail at 0%, no matter how high the aggregate
+      //    is). The long-term per-file target is 70% branches / 90% statements;
+      //    several files in the legacy coverage backlog still sit between the
+      //    50% floor and the 70% target. Lifting them is incremental work —
+      //    see scripts/verify/ if you want to gate a tighter floor for new
+      //    files only.
       thresholds: {
         statements: 95,
         functions: 95,
-        branches: 83,
+        branches: 85,
         lines: 95,
+        'src/**/*.{ts,mts,cts,js,mjs,cjs}': {
+          perFile: true,
+          statements: 50,
+          functions: 50,
+          branches: 50,
+          lines: 50,
+        },
       },
     },
   },

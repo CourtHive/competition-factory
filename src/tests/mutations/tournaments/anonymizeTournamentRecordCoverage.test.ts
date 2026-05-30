@@ -194,3 +194,55 @@ test('anonymize tournament with person requests extension', () => {
   expect(personRequests.value[0].personId).not.toEqual(personId);
   expect(personRequests.value[0].personId).toBeDefined();
 });
+
+// Covers the seedAssignments branch + lineUp.map callback + birthYear path
+// + non-gendered participant counter + first-class flightProfile + first-class
+// scheduling.profile — these are the v5/CODES NATIVE-mode paths that the
+// existing fixtures (LEGACY-style) miss.
+test('anonymize covers v5 NATIVE-mode + birthDate + non-gendered paths', () => {
+  const { tournamentRecord } = mocksEngine.generateTournamentRecord({
+    drawProfiles: [{ drawSize: 4 }],
+  });
+
+  // Seed assignments — populate so the participantId-rewrite branch runs.
+  const drawDef = tournamentRecord.events[0].drawDefinitions[0];
+  const structure = drawDef.structures[0];
+  const participant = tournamentRecord.participants[0];
+  structure.seedAssignments = [{ seedNumber: 1, participantId: participant.participantId }];
+
+  // lineUp on a matchUp side — exercises the .map() row callback.
+  const matchUp = structure.matchUps[0];
+  matchUp.sides = matchUp.sides ?? [{ sideNumber: 1 }, { sideNumber: 2 }];
+  matchUp.sides[0].lineUp = [
+    { participantId: tournamentRecord.participants[0].participantId, collectionAssignments: [] },
+    { participantId: tournamentRecord.participants[1].participantId, collectionAssignments: [] },
+  ];
+
+  // First-class flightProfile (CODES Phase 3) — picked up alongside the
+  // legacy extension form.
+  tournamentRecord.events[0].flightProfile = {
+    flights: [{ flightNumber: 1, drawId: drawDef.drawId, drawEntries: [] }],
+  };
+
+  // First-class scheduling.profile (CODES Phase 5).
+  tournamentRecord.scheduling = {
+    profile: [{ scheduleDate: '2026-06-01', venues: [{ venueId: 'v1', rounds: [] }] }],
+  };
+
+  // Give a participant a birthDate so the year-preserving branch runs.
+  participant.person.birthDate = '1990-04-15';
+
+  // Knock another participant's sex out so the non-gendered counter branch hits.
+  const anotherParticipant = tournamentRecord.participants.find((p, i) => i > 0 && p.participantType === 'INDIVIDUAL');
+  if (anotherParticipant?.person) anotherParticipant.person.sex = undefined;
+
+  const result = mocksEngine.anonymizeTournamentRecord({ tournamentRecord });
+  expect(result.success).toEqual(true);
+
+  // birthDate preserved its year but rewrote month/day from the generated person
+  expect(participant.person.birthDate?.startsWith('1990-')).toBe(true);
+
+  // flightProfile + scheduling.profile remain present after anonymization
+  expect(Array.isArray(tournamentRecord.events[0].flightProfile?.flights)).toBe(true);
+  expect(Array.isArray(tournamentRecord.scheduling?.profile)).toBe(true);
+});
