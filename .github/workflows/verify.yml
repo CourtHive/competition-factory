@@ -49,7 +49,7 @@ jobs:
       - name: Resolve pnpm store path
         run: echo "PNPM_STORE_PATH=$(pnpm store path --silent)" >> "$GITHUB_ENV"
 
-      - uses: actions/cache@v4
+      - uses: actions/cache@v5
         with:
           path: ${{ env.PNPM_STORE_PATH }}
           key: ${{ runner.os }}-node${{ matrix.node-version }}-pnpm-${{ hashFiles('**/pnpm-lock.yaml') }}
