@@ -123,6 +123,35 @@ engine.addPersons({
 
 ---
 
+## addPersonOtherId
+
+Upserts a `UnifiedPersonID` entry into the participant's `person.personOtherIds[]` array. Only valid on INDIVIDUAL participants (the ones that have a `person` object).
+
+```js
+engine.addPersonOtherId({
+  participantId, // required
+  organisationId, // required — the federation / registry identifier (string)
+  personId, // required — the externalId issued by that organisation
+});
+```
+
+**Semantics:**
+
+- **Upsert by `organisationId`**: if the participant already has an entry under the given `organisationId`, that entry's `personId` is replaced (and `updatedAt` is stamped). Otherwise a new entry is appended with `createdAt`.
+- **Idempotent**: re-applying the same `(organisationId, personId)` is a no-op. The array does not grow.
+- **Federation-agnostic**: the factory does not validate or interpret `organisationId`. Callers choose what to use — a federation abbreviation (`'USTA'`, `'ITA'`, `'HTS'`, `'CTS'`), a canonical-registry name, anything stable and meaningful within the consuming application.
+
+**Errors:**
+
+- `MISSING_TOURNAMENT_RECORD`, `MISSING_PARTICIPANT_ID` — standard parameter checks.
+- `MISSING_VALUE` — when `organisationId` or `personId` is empty.
+- `PARTICIPANT_NOT_FOUND` — when no participant matches.
+- `INVALID_VALUES` — when the participant is not INDIVIDUAL (has no `person` object). Only INDIVIDUAL participants accept `personOtherIds`.
+
+**Purpose:** Establish a stable, queryable link between a TODS participant and an external identity — a federation member roster, a canonical person registry, or any other identifier-issuing system. The mutation is the write-half of the TODS `personOtherIds` shape; reads use that array directly.
+
+---
+
 ## addPersonRequests
 
 Validates and adds person requests.

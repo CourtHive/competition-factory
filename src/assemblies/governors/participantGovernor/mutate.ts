@@ -21,6 +21,7 @@ export { deleteParticipants } from '@Mutate/participants/deleteParticipants';
 export { mergeParticipants } from '@Mutate/participants/mergeParticipants';
 export { modifyParticipant } from '@Mutate/participants/modifyParticipant';
 export { addParticipants } from '@Mutate/participants/addParticipants';
+export { addPersonOtherId } from '@Mutate/participants/addPersonOtherId';
 export { addPenalty } from '@Mutate/participants/penalties/addPenalty';
 export { addParticipant } from '@Mutate/participants/addParticipant';
 export { addPersons } from '@Mutate/participants/addPersons';

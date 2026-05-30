@@ -48,6 +48,7 @@ export type FactoryEngineMethod =
   | 'addParticipants'
   | 'addParticipantTimeItem'
   | 'addPenalty'
+  | 'addPersonOtherId'
   | 'addPersonRequests'
   | 'addPersons'
   | 'addPlayoffStructures'
@@ -660,6 +661,7 @@ export const FACTORY_ENGINE_METHODS: readonly FactoryEngineMethod[] = [
   'addParticipants',
   'addParticipantTimeItem',
   'addPenalty',
+  'addPersonOtherId',
   'addPersonRequests',
   'addPersons',
   'addPlayoffStructures',

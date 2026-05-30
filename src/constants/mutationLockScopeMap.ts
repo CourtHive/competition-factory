@@ -163,6 +163,7 @@ export const methodScopeMap: Record<string, MutationLockScope> = {
   addPenalty: 'PARTICIPANTS',
   addParticipant: 'PARTICIPANTS',
   addPersons: 'PARTICIPANTS',
+  addPersonOtherId: 'PARTICIPANTS',
   removeIndividualParticipantIds: 'PARTICIPANTS',
   removeParticipantIdsFromAllTeams: 'PARTICIPANTS',
 

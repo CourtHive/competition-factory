@@ -322,6 +322,7 @@ import type {
 } from '@Mutate/tournaments/setTournamentDates';
 import type { suggestFormatPlans } from '@Query/formatWizard/suggestFormatPlans';
 import type { unPublishOrderOfPlay } from '@Mutate/timeItems/unPublishOrderOfPlay';
+import type { addPersonOtherId } from '@Mutate/participants/addPersonOtherId';
 import type { aggregateTieFormats } from '@Mutate/tieFormat/aggregateTieFormats';
 import type { applyLineUps } from '@Mutate/matchUps/lineUps/applyLineUps';
 import type { calculateMatchUpMargin } from '@Query/matchUp/calculateMatchUpMargin';
@@ -586,6 +587,7 @@ export interface MethodSignatures {
   addParticipants: EngineMethod<typeof addParticipants>;
   addParticipantTimeItem: EngineMethod<typeof addParticipantTimeItem>;
   addPenalty: EngineMethod<typeof addPenalty>;
+  addPersonOtherId: EngineMethod<typeof addPersonOtherId>;
   addPersonRequests: EngineMethod<typeof addPersonRequests>;
   addPersons: EngineMethod<typeof addPersons>;
   addPlayoffStructures: EngineMethod<typeof addPlayoffStructures>;
