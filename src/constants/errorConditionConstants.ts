@@ -858,10 +858,22 @@ export const TOURNAMENT_CATEGORY_IN_USE = {
   code: 'ERR_TOURNAMENT_CATEGORY_IN_USE',
 };
 
+export const REGISTRATION_NOT_FOUND = {
+  message: 'Practice registration not found',
+  code: 'ERR_NOT_FOUND_REGISTRATION',
+};
+
+export const CAPACITY_EXCEEDED = {
+  message: 'Booking capacity exceeded',
+  code: 'ERR_CAPACITY_EXCEEDED',
+};
+
 export const errorConditionConstants = {
   ANACHRONISM,
   BOOKING_NOT_FOUND,
   CANNOT_CHANGE_WINNING_SIDE,
+  CAPACITY_EXCEEDED,
+  REGISTRATION_NOT_FOUND,
   CANNOT_MODIFY_TIEFORMAT,
   TOURNAMENT_CATEGORY_IN_USE,
   CANNOT_MODIFY_PARTICIPANT_TYPE,

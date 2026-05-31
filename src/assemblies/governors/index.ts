@@ -18,4 +18,5 @@ export * as tieFormatGovernor from './tieFormatGovernor';
 export * as tournamentGovernor from './tournamentGovernor';
 export * as availabilityGovernor from './availabilityGovernor';
 export * as officiatingGovernor from './officiatingGovernor';
+export * as practiceGovernor from './practiceGovernor';
 export * as venueGovernor from './venueGovernor';

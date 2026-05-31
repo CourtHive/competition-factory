@@ -267,6 +267,7 @@ module.exports = {
         'governors/mocks-governor',
         'governors/participant-governor',
         'governors/policy-governor',
+        'governors/practice-governor',
         'governors/publishing-governor',
         'governors/query-governor',
         'governors/ranking-governor',

@@ -31,6 +31,9 @@ export interface Tournament {
     profile?: any;
     dailyLimits?: any;
     timing?: any;
+    practice?: {
+      defaultCapacity?: number | null;
+    };
     [key: string]: any;
   };
   season?: string;
@@ -1600,13 +1603,33 @@ export interface Availability {
 }
 
 export interface Booking {
+  bookingId?: string;
   bookingType?: string;
+  capacity?: number | null;
   createdAt?: Date | string;
   endTime?: string;
   extensions?: Extension[];
   isMock?: boolean;
   notes?: string;
+  registrations?: PracticeRegistration[];
   startTime?: string;
+  timeItems?: TimeItem[];
+  updatedAt?: Date | string;
+}
+
+export type PracticeRegistrationStatus = 'CONFIRMED' | 'CANCELLED';
+
+export interface PracticeRegistration {
+  cancelledAt?: Date | string;
+  createdAt?: Date | string;
+  endTime: string;
+  extensions?: Extension[];
+  notes?: string;
+  participantId: string;
+  registeredAt?: Date | string;
+  registrationId: string;
+  startTime: string;
+  status?: PracticeRegistrationStatus;
   timeItems?: TimeItem[];
   updatedAt?: Date | string;
 }
