@@ -34,7 +34,6 @@ module.exports = {
         },
         'concepts/registration-profile',
         'concepts/tournament-tier',
-        'concepts/provider-theming',
         {
           type: 'category',
           label: 'Format Wizard',
