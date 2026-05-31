@@ -53,6 +53,7 @@ export type FactoryEngineMethod =
   | 'addPersons'
   | 'addPlayoffStructures'
   | 'addPoint'
+  | 'addPracticeRegistration'
   | 'addQualifyingStructure'
   | 'addSchedulingProfileRound'
   | 'addSuspension'
@@ -312,6 +313,7 @@ export type FactoryEngineMethod =
   | 'getPolicyDefinitions'
   | 'getPositionAssignments'
   | 'getPositionsPlayedOff'
+  | 'getPracticeRegistrations'
   | 'getPredictiveAccuracy'
   | 'getProfileRounds'
   | 'getPublishState'
@@ -485,6 +487,7 @@ export type FactoryEngineMethod =
   | 'removePenalty'
   | 'removePersonRequests'
   | 'removePolicy'
+  | 'removePracticeRegistration'
   | 'removeRatings'
   | 'removeRoundMatchUps'
   | 'removeScaleValues'
@@ -590,6 +593,7 @@ export type FactoryEngineMethod =
   | 'unPublishOrderOfPlay'
   | 'unPublishParticipants'
   | 'updateDrawIdsOrder'
+  | 'updatePracticeRegistration'
   | 'updateTeamLineUp'
   | 'updateTieMatchUpScore'
   | 'validateCategory'
@@ -666,6 +670,7 @@ export const FACTORY_ENGINE_METHODS: readonly FactoryEngineMethod[] = [
   'addPersons',
   'addPlayoffStructures',
   'addPoint',
+  'addPracticeRegistration',
   'addQualifyingStructure',
   'addSchedulingProfileRound',
   'addSuspension',
@@ -925,6 +930,7 @@ export const FACTORY_ENGINE_METHODS: readonly FactoryEngineMethod[] = [
   'getPolicyDefinitions',
   'getPositionAssignments',
   'getPositionsPlayedOff',
+  'getPracticeRegistrations',
   'getPredictiveAccuracy',
   'getProfileRounds',
   'getPublishState',
@@ -1098,6 +1104,7 @@ export const FACTORY_ENGINE_METHODS: readonly FactoryEngineMethod[] = [
   'removePenalty',
   'removePersonRequests',
   'removePolicy',
+  'removePracticeRegistration',
   'removeRatings',
   'removeRoundMatchUps',
   'removeScaleValues',
@@ -1203,6 +1210,7 @@ export const FACTORY_ENGINE_METHODS: readonly FactoryEngineMethod[] = [
   'unPublishOrderOfPlay',
   'unPublishParticipants',
   'updateDrawIdsOrder',
+  'updatePracticeRegistration',
   'updateTeamLineUp',
   'updateTieMatchUpScore',
   'validateCategory',

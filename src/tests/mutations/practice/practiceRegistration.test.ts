@@ -1,3 +1,4 @@
+import { setPracticeDefaultCapacity } from '@Mutate/practice/setPracticeDefaultCapacity';
 import { updatePracticeRegistration } from '@Mutate/practice/updatePracticeRegistration';
 import { removePracticeRegistration } from '@Mutate/practice/removePracticeRegistration';
 import { addPracticeRegistration } from '@Mutate/practice/addPracticeRegistration';
@@ -476,5 +477,79 @@ describe('getPracticeRegistrations', () => {
   it('returns empty when tournamentRecord is missing', () => {
     const result = getPracticeRegistrations({ tournamentRecord: undefined as any });
     expect(result.registrations).toEqual([]);
+  });
+});
+
+describe('setPracticeDefaultCapacity', () => {
+  it('writes the default capacity onto tournament.scheduling.practice', () => {
+    const setup = setupPracticeBooking();
+    const result: any = setPracticeDefaultCapacity({
+      tournamentRecord: setup.tournamentRecord,
+      defaultCapacity: 4,
+    });
+    expect(result.success).toEqual(true);
+    expect(setup.tournamentRecord.scheduling.practice.defaultCapacity).toEqual(4);
+  });
+
+  it('accepts null to unset the default (unlimited)', () => {
+    const setup = setupPracticeBooking({ defaultCapacity: 2 });
+    const result: any = setPracticeDefaultCapacity({
+      tournamentRecord: setup.tournamentRecord,
+      defaultCapacity: null,
+    });
+    expect(result.success).toEqual(true);
+    expect(setup.tournamentRecord.scheduling.practice.defaultCapacity).toBeNull();
+  });
+
+  it('accepts 0 (closed)', () => {
+    const setup = setupPracticeBooking();
+    const result: any = setPracticeDefaultCapacity({
+      tournamentRecord: setup.tournamentRecord,
+      defaultCapacity: 0,
+    });
+    expect(result.success).toEqual(true);
+    expect(setup.tournamentRecord.scheduling.practice.defaultCapacity).toEqual(0);
+  });
+
+  it('rejects negative or fractional values', () => {
+    const setup = setupPracticeBooking();
+    const negative: any = setPracticeDefaultCapacity({
+      tournamentRecord: setup.tournamentRecord,
+      defaultCapacity: -1,
+    });
+    expect(negative.error).toEqual(INVALID_VALUES);
+
+    const fractional: any = setPracticeDefaultCapacity({
+      tournamentRecord: setup.tournamentRecord,
+      defaultCapacity: 1.5,
+    });
+    expect(fractional.error).toEqual(INVALID_VALUES);
+  });
+
+  it('changes downstream addPracticeRegistration capacity behavior', () => {
+    const setup = setupPracticeBooking();
+    setPracticeDefaultCapacity({ tournamentRecord: setup.tournamentRecord, defaultCapacity: 1 });
+
+    const first: any = addPracticeRegistration({
+      tournamentRecord: setup.tournamentRecord,
+      courtId: setup.courtId,
+      date: TEST_DATE,
+      bookingId: setup.bookingId,
+      participantId: setup.participantId,
+      startTime: '14:00',
+      endTime: '14:30',
+    });
+    expect(first.success).toEqual(true);
+
+    const second: any = addPracticeRegistration({
+      tournamentRecord: setup.tournamentRecord,
+      courtId: setup.courtId,
+      date: TEST_DATE,
+      bookingId: setup.bookingId,
+      participantId: setup.secondParticipantId,
+      startTime: '14:00',
+      endTime: '14:30',
+    });
+    expect(second.error).toEqual(CAPACITY_EXCEEDED);
   });
 });

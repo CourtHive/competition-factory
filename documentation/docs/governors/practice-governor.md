@@ -96,6 +96,26 @@ logic.
 
 ---
 
+## setPracticeDefaultCapacity
+
+Sets the tournament-wide default capacity for PRACTICE bookings that don't
+carry their own per-block `booking.capacity`. The setting lives at
+`Tournament.scheduling.practice.defaultCapacity`.
+
+**Parameters:**
+
+- `tournamentRecord` _required_
+- `defaultCapacity` _required_ — `number | null`. `null` clears the field
+  (unlimited); `0` closes the slot to new registrations; positive integers
+  cap the simultaneous CONFIRMED registrations whose sub-windows overlap.
+
+**Returns:** standard `{ success }` envelope.
+
+Rejected values: negative numbers, fractional numbers, non-number /
+non-null types return `ERR_INVALID_VALUES`.
+
+---
+
 ## getPracticeRegistrations
 
 Returns every registration in the tournament as a flat list, optionally

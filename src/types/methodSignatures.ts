@@ -221,9 +221,11 @@ import type { getPositionsPlayedOff } from '@Query/drawDefinition/getPositionsPl
 import type { getProfileRounds } from '@Query/matchUps/scheduling/getProfileRounds';
 import type { migrateTournamentRecord } from '@Mutate/tournaments/migrateTournamentRecord';
 import type { pruneDrawDefinition } from '@Mutate/drawDefinitions/pruneDrawDefinition';
+import type { removePracticeRegistration } from '@Mutate/practice/removePracticeRegistration';
 import type { resetDrawDefinition } from '@Mutate/drawDefinitions/resetDrawDefinition';
 import type { setDelegatedOutcome } from '@Mutate/drawDefinitions/setDelegatedOutcome';
 import type { swapDrawPositionAssignments } from '@Mutate/matchUps/drawPositions/positionSwap';
+import type { updatePracticeRegistration } from '@Mutate/practice/updatePracticeRegistration';
 import type { assignDrawPosition } from '@Mutate/drawDefinitions/assignDrawPosition';
 import type { attachPolicies } from '@Mutate/extensions/policies/attachPolicies';
 import type { generateTournamentRecord } from '@Generators/mocks/generateTournamentRecord';
@@ -251,6 +253,7 @@ import type { reverseScore } from '@Assemblies/generators/score/reverseScore';
 import type { scaledTeamAssignment } from '@Mutate/participants/scaledTeamAssignment';
 import type { ScoringEngine } from '@Assemblies/engines/scoring/ScoringEngine';
 import type { setMatchUpDailyLimits } from '@Mutate/tournaments/setMatchUpDailyLimits';
+import type { addPracticeRegistration } from '@Mutate/practice/addPracticeRegistration';
 import type { allTournamentMatchUps } from '@Query/matchUps/getAllTournamentMatchUps';
 import type {
   attachConsolationStructures,
@@ -264,6 +267,7 @@ import type { getCompetitionFormat } from '@Query/hierarchical/getCompetitionFor
 import type { getEvaluationTemplate } from '@Query/officiating/getEvaluationTemplate';
 import type { getMatchUpScheduleDetails } from '@Query/matchUp/getMatchUpScheduleDetails';
 import type { getParticipantIdFinishingPositions } from '@Query/drawDefinition/finishingPositions';
+import type { getPracticeRegistrations } from '@Query/practice/getPracticeRegistrations';
 import type { modifyTournamentRecord } from '@Generators/mocks/modifyTournamentRecord';
 import type { removePolicy } from '@Mutate/extensions/policies/removePolicy';
 import type { setOrderOfFinish } from '@Mutate/drawDefinitions/setOrderOfFinish';
@@ -592,6 +596,7 @@ export interface MethodSignatures {
   addPersons: EngineMethod<typeof addPersons>;
   addPlayoffStructures: EngineMethod<typeof addPlayoffStructures>;
   addPoint: EngineMethod<typeof addPoint>;
+  addPracticeRegistration: EngineMethod<typeof addPracticeRegistration>;
   addQualifyingStructure: EngineMethod<typeof addQualifyingStructure>;
   addSchedulingProfileRound: EngineMethod<typeof addSchedulingProfileRound>;
   addSuspension: EngineMethod<typeof addSuspension>;
@@ -821,6 +826,7 @@ export interface MethodSignatures {
   getPolicyDefinitions: EngineMethod<typeof getPolicyDefinitions>;
   getPositionAssignments: EngineMethod<typeof getPositionAssignments>;
   getPositionsPlayedOff: EngineMethod<typeof getPositionsPlayedOff>;
+  getPracticeRegistrations: EngineMethod<typeof getPracticeRegistrations>;
   getPredictiveAccuracy: EngineMethod<typeof getPredictiveAccuracy>;
   getProfileRounds: EngineMethod<typeof getProfileRounds>;
   getPublishState: EngineMethod<typeof getPublishState>;
@@ -973,6 +979,7 @@ export interface MethodSignatures {
   removePenalty: EngineMethod<typeof removePenalty>;
   removePersonRequests: EngineMethod<typeof removePersonRequests>;
   removePolicy: EngineMethod<typeof removePolicy>;
+  removePracticeRegistration: EngineMethod<typeof removePracticeRegistration>;
   removeRatings: EngineMethod<typeof removeRatings>;
   removeRoundMatchUps: EngineMethod<typeof removeRoundMatchUps>;
   removeScaleValues: EngineMethod<typeof removeScaleValues>;
@@ -1059,6 +1066,7 @@ export interface MethodSignatures {
   unPublishOrderOfPlay: EngineMethod<typeof unPublishOrderOfPlay>;
   unPublishParticipants: EngineMethod<typeof unPublishParticipants>;
   updateDrawIdsOrder: EngineMethod<typeof updateDrawIdsOrder>;
+  updatePracticeRegistration: EngineMethod<typeof updatePracticeRegistration>;
   updateTeamLineUp: EngineMethod<typeof updateTeamLineUp>;
   updateTieMatchUpScore: EngineMethod<typeof updateTieMatchUpScore>;
   validateCategory: EngineMethod<typeof validateCategory>;
