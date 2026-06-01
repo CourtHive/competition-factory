@@ -1,5 +1,20 @@
 # Changelog
 
+## [5.1.0](https://github.com/CourtHive/competition-factory/compare/v5.0.0...v5.1.0) (2026-06-01)
+
+
+### Features
+
+* **engines:** export competitionEngineAsync + tournamentEngineAsync from public index ([08ae91b](https://github.com/CourtHive/competition-factory/commit/08ae91b53baea28cffe477474bfa1687065b2c87))
+* **practice:** add practice court registration governor ([08abdf9](https://github.com/CourtHive/competition-factory/commit/08abdf9516047a484c25daad2f188c62b6b8e44b))
+* **practice:** register setPracticeDefaultCapacity in engine method lists ([d00f2ec](https://github.com/CourtHive/competition-factory/commit/d00f2ec2f51707bd5a2e7a06065437a324d4d334))
+* **practice:** setPracticeDefaultCapacity tournament-wide setting ([480499b](https://github.com/CourtHive/competition-factory/commit/480499b98405f5a576166a6b8bf30d49d7cceec9))
+
+
+### Bug Fixes
+
+* **modifyCourtAvailability:** ignore completed matchUps in conflict check ([5ca4cad](https://github.com/CourtHive/competition-factory/commit/5ca4cad0fed153561e1b2ea24e57268a27eed7f0))
+
 ## [5.0.0](https://github.com/CourtHive/competition-factory/compare/v4.2.0...v5.0.0) (2026-05-31)
 
 
