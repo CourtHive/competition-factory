@@ -11,6 +11,10 @@ export default defineConfig({
     onConsoleLog: () => {},
     environment: 'node',
     include: ['src/**/*.test.{js,mjs,cjs,ts,mts,cts,jsx,tsx}'],
+    // Untracked scratch tests are excluded from coverage but were still running
+    // and exercising production code — inflating local % above CI's. Excluding
+    // them from the runner makes local match CI.
+    exclude: [...configDefaults.exclude, '**/scratch/**'],
     setupFiles: ['./src/tests/testHarness/setSchemaWriteModeLegacy.ts'],
     coverage: {
       reporter: ['html', 'json-summary'],
