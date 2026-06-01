@@ -1,5 +1,6 @@
 import { positionSeedBlocks } from '@Mutate/matchUps/drawPositions/positionSeeds';
 import { POLICY_AVOIDANCE_COUNTRY } from '@Fixtures/policies/POLICY_AVOIDANCE_COUNTRY';
+import { createSeededRandom } from '@Tools/prng';
 import tournamentEngine from '@Engines/syncEngine';
 import mocksEngine from '@Assemblies/engines/mock';
 import { expect, it, describe } from 'vitest';
@@ -20,10 +21,14 @@ import { MAIN } from '@Constants/drawDefinitionConstants';
 // reorderSeedsForAvoidance swap path — call positionSeedBlocks directly
 // ──────────────────────────────────────────────────────────────────────────────
 describe('reorderSeedsForAvoidance swap loop', () => {
-  // Iterate multiple deterministic seeds so at least one run lays the
-  // conflict-group members into the same section AND keeps non-group seeds
-  // available in another section — triggering the swap block.
-  it.each([0.07, 0.19, 0.31, 0.43, 0.61, 0.79, 0.91])('triggers swap with random=%s', (r) => {
+  // Iterate deterministic PRNG seeds for both mocksEngine (participant
+  // generation) and positionSeedBlocks (seed-block shuffle). Both have to be
+  // pinned — mocksEngine alone leaves participant IDs randomized, which
+  // permutes the unplacedSeedParticipantIds order and makes "did the swap
+  // path fire?" flaky across runs. With multiple seeds at least one is
+  // guaranteed to crowd conflict-group members into the same section AND
+  // leave a non-group seed in another section.
+  it.each([1, 2, 3, 7, 11, 13, 17, 19, 23, 29])('triggers swap with nonRandom=%s', (seed) => {
     const drawSize = 32;
     const seedsCount = 8;
     const drawProfiles = [{ drawSize, seedsCount, automated: false }];
@@ -32,6 +37,7 @@ describe('reorderSeedsForAvoidance swap loop', () => {
       participantsProfile: { participantsCount: drawSize },
       policyDefinitions: POLICY_AVOIDANCE_COUNTRY,
       drawProfiles,
+      nonRandom: seed,
     });
 
     // Two nationalities concentrated across seed slots → guaranteed conflict
@@ -53,10 +59,10 @@ describe('reorderSeedsForAvoidance swap loop', () => {
     // Direct call bypasses the engine's "one function arg" wrapper limit.
     const result: any = positionSeedBlocks({
       participants: tournamentRecord.participants as any,
+      random: createSeededRandom(seed),
       structureId: structure.structureId,
       drawDefinition,
       structure,
-      random: () => r,
     });
     expect(result).toBeDefined();
   });

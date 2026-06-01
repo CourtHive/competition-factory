@@ -217,13 +217,14 @@ function reorderSeedsForAvoidance({
   });
 
   // For each conflict group, try to assign members to different sections
-  // by swapping their positions in the seed order
+  // by swapping their positions in the seed order.
+  //
+  // groupIds.length and indices.length are both guaranteed >= 2 here:
+  // conflictGroups was filtered to ids.length > 1, and getAttributeGroupings
+  // only emits participantIds that came from unplacedSeedParticipantIds —
+  // so every groupIds member is found by indexOf.
   for (const groupIds of conflictGroups) {
-    if (groupIds.length < 2) continue;
-
-    const indices = groupIds.map((id) => unplacedSeedParticipantIds.indexOf(id)).filter((i) => i >= 0);
-
-    if (indices.length < 2) continue;
+    const indices = groupIds.map((id) => unplacedSeedParticipantIds.indexOf(id));
 
     // Check if any members are already in the same section
     const sectionsUsed = indices.map((i) => slotSections[i]);
