@@ -91,6 +91,15 @@ export { officiatingEngine } from './assemblies/engines/officiating';
 // reliance — same runtime singleton, looser type).
 export { competitionEngine, tournamentEngine } from './tests/engines/syncEngine';
 export { competitionEngineUntyped, tournamentEngineUntyped } from './tests/engines/syncEngine';
+// Async variants — same governor surface as competitionEngine /
+// tournamentEngine, but built atop `asyncEngine()` so each consumer
+// gets per-request state isolation via Node's async_hooks. Use these
+// where a sync singleton would risk cross-request contamination —
+// e.g. CFS executionQueue helpers that need findMatchUp on a record
+// fetched under a per-tournament lock. The bare `asyncEngine()`
+// factory remains exported for callers that want to assemble a
+// custom governor set themselves.
+export { competitionEngineAsync, tournamentEngineAsync } from './tests/engines/asyncEngine';
 
 // FIXTURES --------------------------------------------------------------
 export { fixtures } from './fixtures';
