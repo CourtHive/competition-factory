@@ -1,5 +1,12 @@
 # Changelog
 
+## [5.2.1](https://github.com/CourtHive/competition-factory/compare/v5.2.0...v5.2.1) (2026-06-02)
+
+
+### Bug Fixes
+
+* **release:** cut 5.2.1 to re-trigger publish ([706a628](https://github.com/CourtHive/competition-factory/commit/706a628ad60f7cf958a0d1c8ce36e7d93d72eebb))
+
 ## [5.2.0](https://github.com/CourtHive/competition-factory/compare/v5.1.0...v5.2.0) (2026-06-02)
 
 
