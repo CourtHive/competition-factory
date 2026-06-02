@@ -1,5 +1,13 @@
 # Changelog
 
+## [5.2.2](https://github.com/CourtHive/competition-factory/compare/v5.2.1...v5.2.2) (2026-06-02)
+
+
+### Documentation
+
+* **readme:** availability-engine rename, pnpm, current test count ([16a9f86](https://github.com/CourtHive/competition-factory/commit/16a9f86036d6fe67a247fbedd9112026e0510794))
+* **verify:** reflect 11-check chain + opt-in verify:ecosystem ([0f7a8b2](https://github.com/CourtHive/competition-factory/commit/0f7a8b2f1a047bad33ce6f7593723fa58c4522c0))
+
 ## [5.2.1](https://github.com/CourtHive/competition-factory/compare/v5.2.0...v5.2.1) (2026-06-02)
 
 
