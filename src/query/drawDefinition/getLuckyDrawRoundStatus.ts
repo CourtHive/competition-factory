@@ -3,6 +3,7 @@ import { isLuckyBasedDraw } from '@Query/drawDefinition/isLuckyBasedDraw';
 import { getRoundMatchUps } from '@Query/matchUps/getRoundMatchUps';
 import { isLucky } from '@Query/drawDefinition/isLucky';
 import { findStructure } from '@Acquire/findStructure';
+import { findExtension } from '@Acquire/findExtension';
 
 // constants
 import { ErrorType, INVALID_VALUES, MISSING_DRAW_DEFINITION } from '@Constants/errorConditionConstants';
@@ -39,6 +40,7 @@ type LuckyRoundInfo = {
   isPreFeedRound: boolean;
   needsLuckySelection: boolean;
   nextRoundHasOpenPosition: boolean;
+  requiredLuckyLoserCount: number;
   advancingWinners?: LuckyParticipantInfo[];
   eligibleLosers?: LuckyParticipantInfo[];
   consolidationLinks?: ConsolidationLinkInfo[];
@@ -88,6 +90,15 @@ export function getLuckyDrawRoundStatus({
   const { roundProfile, roundNumbers } = getRoundMatchUps({ matchUps });
   if (!roundProfile || !roundNumbers?.length) return { ...SUCCESS, isLuckyDraw: true, rounds: [] };
 
+  // LUCKY_DRAW with an explicit `roundProfile` persists the per-round
+  // matchUp-count profile as a structure extension. When present, the required
+  // lucky-loser count for each transition derives from the size delta
+  // (2 * next - current), instead of the implicit "odd matchUp count → 1 LL"
+  // rule used by the default ceil-halving cascade.
+  const customRoundProfile = findExtension({ element: structure, name: 'customRoundProfile' }).extension?.value as
+    | number[]
+    | undefined;
+
   // Build lookup maps for resolving participants from drawPositions
   const positionAssignments = structure.positionAssignments ?? [];
   const positionToParticipantId: Record<number, string> = {};
@@ -114,7 +125,25 @@ export function getLuckyDrawRoundStatus({
     ).length;
     const isComplete = completedCount === profile.matchUpsCount;
     const isFinalRound = profile.matchUpsCount === 1;
-    const isPreFeedRound = !isFinalRound && profile.matchUpsCount % 2 !== 0;
+
+    // requiredLuckyLoserCount: number of lucky losers this round contributes to
+    // the next round. When the structure has a `customRoundProfile` extension
+    // (LUCKY_DRAW generated with explicit roundProfile), the count derives from
+    // the size delta; otherwise fall back to the legacy "current round odd → 1 LL"
+    // inference used by the default ceil-halving cascade.
+    let requiredLuckyLoserCount = 0;
+    if (!isFinalRound) {
+      if (customRoundProfile) {
+        const currentSize = customRoundProfile[roundNumber - 1];
+        const nextSize = customRoundProfile[roundNumber];
+        if (currentSize && nextSize) {
+          requiredLuckyLoserCount = Math.max(0, 2 * nextSize - currentSize);
+        }
+      } else if (profile.matchUpsCount % 2 !== 0) {
+        requiredLuckyLoserCount = 1;
+      }
+    }
+    const isPreFeedRound = requiredLuckyLoserCount > 0;
 
     const nextRoundNumber = roundNumber + 1;
     const nextRoundMatchUps = matchUps.filter((m) => m.roundNumber === nextRoundNumber);
@@ -168,6 +197,7 @@ export function getLuckyDrawRoundStatus({
       isPreFeedRound,
       needsLuckySelection,
       nextRoundHasOpenPosition,
+      requiredLuckyLoserCount,
       ...(consolidationLinks.length && { consolidationLinks }),
     };
 

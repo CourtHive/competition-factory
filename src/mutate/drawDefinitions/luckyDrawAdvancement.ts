@@ -17,7 +17,11 @@ import { ResultType } from '@Types/factoryTypes';
 type LuckyDrawAdvancementArgs = {
   tournamentRecord?: Tournament;
   drawDefinition: DrawDefinition;
+  /** Single lucky-loser participantId (legacy LUCKY_DRAW path, single LL per transition). */
   participantId?: string;
+  /** Array of lucky-loser participantIds; required when a transition needs more than one LL
+   *  (LUCKY_DRAW with an explicit `roundProfile` that stretches a round). */
+  participantIds?: string[];
   structureId?: string;
   random?: () => number;
   roundNumber: number;
@@ -40,6 +44,7 @@ export function luckyDrawAdvancement({
   tournamentRecord,
   drawDefinition,
   participantId,
+  participantIds,
   structureId,
   roundNumber,
   random,
@@ -66,15 +71,34 @@ export function luckyDrawAdvancement({
     return decorateResult({ result: { error: INVALID_VALUES }, info: 'Round is not complete' });
   }
 
-  // Validate pre-feed round requires a lucky loser selection
-  if (roundStatus.isPreFeedRound && roundStatus.needsLuckySelection) {
-    if (!participantId) return { error: MISSING_PARTICIPANT_ID };
+  // Normalize the lucky-loser selection: array form preferred; fall back to the
+  // legacy scalar participantId. Profile-driven transitions can require 2+ LL.
+  const luckyLoserIds = participantIds ?? (participantId ? [participantId] : []);
 
-    const eligible = roundStatus.eligibleLosers?.find((l) => l.participantId === participantId);
-    if (!eligible) {
+  // Validate count + eligibility when this round is a source of lucky losers
+  if (roundStatus.needsLuckySelection) {
+    if (!luckyLoserIds.length) return { error: MISSING_PARTICIPANT_ID };
+
+    if (luckyLoserIds.length !== roundStatus.requiredLuckyLoserCount) {
       return decorateResult({
         result: { error: INVALID_VALUES },
-        info: 'Participant is not an eligible loser from this round',
+        info: `Expected ${roundStatus.requiredLuckyLoserCount} lucky loser(s), got ${luckyLoserIds.length}`,
+      });
+    }
+
+    if (new Set(luckyLoserIds).size !== luckyLoserIds.length) {
+      return decorateResult({
+        result: { error: INVALID_VALUES },
+        info: 'Duplicate lucky loser participantIds',
+      });
+    }
+
+    const eligibleIds = new Set((roundStatus.eligibleLosers ?? []).map((l) => l.participantId));
+    const ineligible = luckyLoserIds.find((id) => !eligibleIds.has(id));
+    if (ineligible) {
+      return decorateResult({
+        result: { error: INVALID_VALUES },
+        info: `Participant ${ineligible} is not an eligible loser from this round`,
       });
     }
   }
@@ -85,16 +109,16 @@ export function luckyDrawAdvancement({
     .filter((m) => m.roundNumber === nextRoundNumber)
     .sort((a, b) => (a.roundPosition || 0) - (b.roundPosition || 0));
 
-  // Collect advancing participant IDs: winners in roundPosition order + lucky loser
+  // Collect advancing participant IDs: winners in roundPosition order + lucky losers
   const winners = roundStatus.advancingWinners ?? [];
   const advancingParticipantIds = winners.map((w) => w.participantId);
 
-  if (roundStatus.isPreFeedRound && participantId) {
-    insertLuckyLoser({
+  if (roundStatus.isPreFeedRound && luckyLoserIds.length) {
+    placeLuckyLosers({
       advancingParticipantIds,
       nextRoundMatchUps,
       roundStatus,
-      participantId,
+      luckyLoserIds,
       winners,
       random,
     });
@@ -133,7 +157,7 @@ export function luckyDrawAdvancement({
     drawDefinition,
     roundNumber,
     roundStatus,
-    participantId,
+    luckyLoserIds,
     tournamentId,
     structureId,
     structure,
@@ -146,12 +170,12 @@ export function luckyDrawAdvancement({
     event,
   });
 
-  if (roundStatus.isPreFeedRound && participantId) {
+  if (roundStatus.isPreFeedRound && luckyLoserIds.length) {
     handleDiscardedLosers({
       drawDefinition,
       tournamentRecord,
       roundStatus,
-      participantId,
+      luckyLoserIds,
       structureId,
       roundNumber,
       event,
@@ -274,13 +298,14 @@ function handleDiscardedLosers({
   drawDefinition,
   tournamentRecord,
   roundStatus,
-  participantId,
+  luckyLoserIds,
   structureId,
   roundNumber,
   event,
 }) {
+  const advancedSet = new Set<string>(luckyLoserIds);
   const discardedLosers = (roundStatus.eligibleLosers ?? [])
-    .filter((l) => l.participantId !== participantId)
+    .filter((l) => !advancedSet.has(l.participantId))
     .map((l) => l.participantId);
 
   if (!discardedLosers.length) return;
@@ -338,40 +363,158 @@ function prepareNextRoundMatchUps({ nextRoundMatchUps, positionAssignments }): R
   return undefined;
 }
 
-function insertLuckyLoser({ advancingParticipantIds, nextRoundMatchUps, roundStatus, participantId, winners, random }) {
-  const luckyLoserInfo = roundStatus.eligibleLosers?.find((l) => l.participantId === participantId);
-  const defeatingWinnerIdx = luckyLoserInfo ? winners.findIndex((w) => w.matchUpId === luckyLoserInfo.matchUpId) : -1;
-
+/**
+ * Places one or more lucky losers into `advancingParticipantIds` (which starts
+ * as the winners array in roundPosition order). Each LL is scored against
+ * candidate insertion positions to (1) avoid the same half as the winner who
+ * beat them, (2) prefer a different quarter, and (3) spread multiple LL across
+ * halves rather than clustering. LL are placed sequentially; for the K-th LL,
+ * the "working bracket size" is the array length after this insertion, which
+ * is an approximation when later LL still need placement.
+ */
+function placeLuckyLosers({
+  advancingParticipantIds,
+  nextRoundMatchUps,
+  roundStatus,
+  luckyLoserIds,
+  winners,
+  random,
+}: {
+  advancingParticipantIds: string[];
+  nextRoundMatchUps: any[];
+  roundStatus: any;
+  luckyLoserIds: string[];
+  winners: any[];
+  random?: () => number;
+}) {
+  const rng = random ?? Math.random;
   const numMatchUps = nextRoundMatchUps.length;
-  const halfSplit = Math.ceil(numMatchUps / 2);
+  const winnerIds = new Set(winners.map((w) => w.participantId));
 
-  if (defeatingWinnerIdx < 0 || numMatchUps <= 1) {
-    advancingParticipantIds.push(participantId);
+  for (const llId of luckyLoserIds) {
+    placeOneLuckyLoser({
+      advancingParticipantIds,
+      numMatchUps,
+      roundStatus,
+      winnerIds,
+      winners,
+      llId,
+      rng,
+    });
+  }
+}
+
+function placeOneLuckyLoser({
+  advancingParticipantIds,
+  numMatchUps,
+  roundStatus,
+  winnerIds,
+  winners,
+  llId,
+  rng,
+}: {
+  advancingParticipantIds: string[];
+  numMatchUps: number;
+  roundStatus: any;
+  winnerIds: Set<string>;
+  winners: any[];
+  llId: string;
+  rng: () => number;
+}) {
+  const luckyLoserInfo = roundStatus.eligibleLosers?.find((l: any) => l.participantId === llId);
+  if (!luckyLoserInfo || numMatchUps <= 1) {
+    advancingParticipantIds.push(llId);
     return;
   }
 
-  const totalSlots = numMatchUps * 2;
-  const validPositions: number[] = [];
-
-  for (let p = 0; p < totalSlots; p++) {
-    const luckyMatchUp = Math.floor(p / 2);
-    const shiftedIdx = defeatingWinnerIdx + (p <= defeatingWinnerIdx ? 1 : 0);
-    const winnerMatchUp = Math.floor(shiftedIdx / 2);
-
-    const luckyInTopHalf = luckyMatchUp < halfSplit;
-    const winnerInTopHalf = winnerMatchUp < halfSplit;
-
-    if (luckyInTopHalf !== winnerInTopHalf) {
-      validPositions.push(p);
-    }
+  const defeatingWinner = winners.find((w) => w.matchUpId === luckyLoserInfo.matchUpId);
+  if (!defeatingWinner) {
+    advancingParticipantIds.push(llId);
+    return;
   }
 
-  if (validPositions.length) {
-    const randomIdx = Math.floor((random ?? Math.random)() * validPositions.length);
-    advancingParticipantIds.splice(validPositions[randomIdx], 0, participantId);
-  } else {
-    advancingParticipantIds.push(participantId);
+  const defeatingWinnerIdx = advancingParticipantIds.indexOf(defeatingWinner.participantId);
+  if (defeatingWinnerIdx < 0) {
+    advancingParticipantIds.push(llId);
+    return;
   }
+
+  // working size = array length after this insertion; used for half/quarter math
+  const workingMatchUps = (advancingParticipantIds.length + 1) / 2;
+  const halfSplit = Math.ceil(workingMatchUps / 2);
+  const quarterSplit = Math.max(1, Math.ceil(workingMatchUps / 4));
+
+  const scored = scoreCandidatePositions({
+    advancingParticipantIds,
+    defeatingWinnerIdx,
+    winnerIds,
+    halfSplit,
+    quarterSplit,
+  });
+
+  let minScore = Infinity;
+  for (const c of scored) if (c.score < minScore) minScore = c.score;
+  const bestPositions = scored.filter((c) => c.score === minScore).map((c) => c.p);
+  const chosenP = bestPositions[Math.floor(rng() * bestPositions.length)];
+  advancingParticipantIds.splice(chosenP, 0, llId);
+}
+
+function scoreCandidatePositions({
+  advancingParticipantIds,
+  defeatingWinnerIdx,
+  winnerIds,
+  halfSplit,
+  quarterSplit,
+}: {
+  advancingParticipantIds: string[];
+  defeatingWinnerIdx: number;
+  winnerIds: Set<string>;
+  halfSplit: number;
+  quarterSplit: number;
+}): { p: number; score: number }[] {
+  const candidates: { p: number; score: number }[] = [];
+  for (let p = 0; p <= advancingParticipantIds.length; p++) {
+    const llMatchUp = Math.floor(p / 2);
+    const winnerShifted = defeatingWinnerIdx + (p <= defeatingWinnerIdx ? 1 : 0);
+    const winnerMatchUp = Math.floor(winnerShifted / 2);
+
+    const llHalf = llMatchUp < halfSplit ? 0 : 1;
+    const winnerHalf = winnerMatchUp < halfSplit ? 0 : 1;
+    const llQuarter = Math.floor(llMatchUp / quarterSplit);
+    const winnerQuarter = Math.floor(winnerMatchUp / quarterSplit);
+
+    let score = 0;
+    if (llHalf === winnerHalf) score += 100; // hard: same half as defeating winner
+    if (llQuarter === winnerQuarter) score += 10; // soft: same quarter
+    score +=
+      countPriorLLsInHalf({ advancingParticipantIds, winnerIds, insertAtP: p, halfSplit, targetHalf: llHalf }) * 2;
+    candidates.push({ p, score });
+  }
+  return candidates;
+}
+
+function countPriorLLsInHalf({
+  advancingParticipantIds,
+  winnerIds,
+  insertAtP,
+  halfSplit,
+  targetHalf,
+}: {
+  advancingParticipantIds: string[];
+  winnerIds: Set<string>;
+  insertAtP: number;
+  halfSplit: number;
+  targetHalf: number;
+}): number {
+  let count = 0;
+  for (let i = 0; i < advancingParticipantIds.length; i++) {
+    if (winnerIds.has(advancingParticipantIds[i])) continue;
+    const shiftedIdx = i < insertAtP ? i : i + 1;
+    const otherMatchUp = Math.floor(shiftedIdx / 2);
+    const otherHalf = otherMatchUp < halfSplit ? 0 : 1;
+    if (otherHalf === targetHalf) count++;
+  }
+  return count;
 }
 
 function cleanupStalePositionAssignments({ positionAssignments, nextRoundMatchUps, structure, roundNumber }) {
@@ -414,7 +557,7 @@ function assignNextRoundPositions({
   drawDefinition,
   roundNumber,
   roundStatus,
-  participantId,
+  luckyLoserIds,
   tournamentId,
   structureId,
   structure,
@@ -424,6 +567,10 @@ function assignNextRoundPositions({
   const allPositions = [...allAssignedPositions, ...allMatchUpPositions];
   const maxPosition = allPositions.length ? Math.max(...allPositions) : 0;
   let nextPosition = maxPosition + 1;
+
+  const llSet: Set<string> = new Set(luckyLoserIds ?? []);
+  const tagLL = roundStatus.isPreFeedRound && llSet.size > 0;
+  const luckyExtension = () => ({ name: 'luckyAdvancement', value: { fromRoundNumber: roundNumber } });
 
   for (let i = 0; i < nextRoundMatchUps.length; i++) {
     const matchUp = nextRoundMatchUps[i];
@@ -437,12 +584,9 @@ function assignNextRoundPositions({
     const assignment1: any = { drawPosition: pos1, participantId: pid1 };
     const assignment2: any = { drawPosition: pos2, participantId: pid2 };
 
-    if (roundStatus.isPreFeedRound && participantId) {
-      if (pid1 === participantId) {
-        assignment1.extensions = [{ name: 'luckyAdvancement', value: { fromRoundNumber: roundNumber } }];
-      } else if (pid2 === participantId) {
-        assignment2.extensions = [{ name: 'luckyAdvancement', value: { fromRoundNumber: roundNumber } }];
-      }
+    if (tagLL) {
+      if (llSet.has(pid1)) assignment1.extensions = [luckyExtension()];
+      if (llSet.has(pid2)) assignment2.extensions = [luckyExtension()];
     }
 
     positionAssignments.push(assignment1, assignment2);

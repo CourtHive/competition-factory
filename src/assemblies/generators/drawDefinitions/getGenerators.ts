@@ -8,6 +8,7 @@ import { generateRoundRobin } from './drawTypes/roundRobin/roundRobin';
 import { generateAdaptiveStructures } from './drawTypes/adaptiveDraw';
 import structureTemplate from '../templates/structureTemplate';
 import { generatePagePlayoff } from './drawTypes/pagePlayoff';
+import { customLuckyDraw } from './drawTypes/customLuckyDraw';
 import { feedInChampionship } from './drawTypes/feedInChamp';
 import { treeMatchUps } from './drawTypes/eliminationTree';
 import { constantToString } from '@Tools/strings';
@@ -98,6 +99,31 @@ export function getGenerators(params): { generators?: any; error?: ErrorType } {
       return { structures: [structure], links: [], ...SUCCESS };
     },
     [LUCKY_DRAW]: () => {
+      // An explicit per-round matchUp-count profile turns the default
+      // ceil-halving cascade into the deterministic variant. The profile
+      // is persisted as a structure extension so advancement-time queries
+      // can derive `requiredLuckyLoserCount` per transition. When absent,
+      // the standard halving generator runs unchanged.
+      if (params.roundProfile) {
+        const { matchUps, roundProfile, error, info } = customLuckyDraw(params);
+        if (error) return { error, info };
+
+        const structure = structureTemplate({
+          stageSequence,
+          structureName,
+          matchUpType,
+          structureId,
+          matchUps,
+          stage,
+        });
+
+        if (roundProfile) {
+          structure.extensions = [{ name: 'customRoundProfile', value: roundProfile }];
+        }
+
+        return { structures: [structure], links: [], ...SUCCESS };
+      }
+
       const { matchUps } = luckyDraw(params);
       const structure = structureTemplate({
         stageSequence,
