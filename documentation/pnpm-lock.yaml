@@ -32,8 +32,8 @@ importers:
         specifier: 2.1.1
         version: 2.1.1
       courthive-components:
-        specifier: 2.0.0
-        version: 2.0.0(@tiptap/pm@3.24.0)
+        specifier: 3.0.0
+        version: 3.0.0(@tiptap/pm@3.24.0)
       react:
         specifier: ^19.2.6
         version: 19.2.6
@@ -42,7 +42,7 @@ importers:
         version: 19.2.6(react@19.2.6)
       tods-competition-factory:
         specifier: ^5.0.0
-        version: 5.0.0
+        version: 5.1.0
 
 packages:
 
@@ -2452,8 +2452,8 @@ packages:
       typescript:
         optional: true
 
-  courthive-components@2.0.0:
-    resolution: {integrity: sha512-86wUa7Sdo+4DZG4DSV2X4dSfC7BBscZj5FKoA8KSa3x73zAULqVaddVv3lx4dGBsWbI8X3mw7ijMzFz4Pe/noQ==}
+  courthive-components@3.0.0:
+    resolution: {integrity: sha512-4DLTdFJWYspvqlieFspMyDz4UoUezdHnZ0E6PhrXK+4Ua69ZhqVc4uWACnBDbnMgZaxyoX+OpEKbphwMqZqptw==}
     engines: {node: '>=22'}
 
   cross-spawn@7.0.6:
@@ -5243,12 +5243,8 @@ packages:
     resolution: {integrity: sha512-65P7iz6X5yEr1cwcgvQxbbIw7Uk3gOy5dIdtZ4rDveLqhrdJP+Li/Hx6tyK0NEb+2GCyneCMJiGqrADCSNk8sQ==}
     engines: {node: '>=8.0'}
 
-  tods-competition-factory@4.2.0:
-    resolution: {integrity: sha512-fTDEO72jDLYPGf7zdTF6hYc65Q21OJ0ZbWVLA5Wh0EhJCvjQvDcJvj59LY508kJR+9JCF95FBPJZLJ8LAJZGUw==}
-    engines: {node: '>=22'}
-
-  tods-competition-factory@5.0.0:
-    resolution: {integrity: sha512-78pkcHJ9qhbZrQMpIUEwxcEN79+BmSgQ9LcqIU0EuaKqNmpdEW6NQGigcfMA9m7/YLNYjExiyl2+drYrpH7ctg==}
+  tods-competition-factory@5.1.0:
+    resolution: {integrity: sha512-m/b8r6xr/yLwRvhMTa+9dFe0YVLZXBGkIn4/9d7ZfTHp2G0XptLMMtssPJpQIy9ULRmN5ePUZ+IBgGDSh5DQFQ==}
     engines: {node: '>=22'}
 
   toidentifier@1.0.1:
@@ -9226,7 +9222,7 @@ snapshots:
       parse-json: 5.2.0
       path-type: 4.0.0
 
-  courthive-components@2.0.0(@tiptap/pm@3.24.0):
+  courthive-components@3.0.0(@tiptap/pm@3.24.0):
     dependencies:
       '@tiptap/core': 3.24.0(@tiptap/pm@3.24.0)
       '@tiptap/extension-color': 3.24.0(@tiptap/extension-text-style@3.24.0(@tiptap/core@3.24.0(@tiptap/pm@3.24.0)))
@@ -9243,7 +9239,7 @@ snapshots:
       focus-trap: 8.2.1
       timepicker-ui: 4.3.0
       tippy.js: 6.3.7
-      tods-competition-factory: 5.0.0
+      tods-competition-factory: 5.1.0
       vanillajs-datepicker: 1.3.4
     transitivePeerDependencies:
       - '@tiptap/pm'
@@ -12575,9 +12571,7 @@ snapshots:
     dependencies:
       is-number: 7.0.0
 
-  tods-competition-factory@4.2.0: {}
-
-  tods-competition-factory@5.0.0: {}
+  tods-competition-factory@5.1.0: {}
 
   toidentifier@1.0.1: {}
 
