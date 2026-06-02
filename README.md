@@ -42,7 +42,7 @@ Beyond pre-defined draw types, the factory's linked structure architecture enabl
 
 Two complementary scheduling approaches: **Garman scheduling** for automated multi-day distribution respecting recovery periods, daily limits, and court availability; and **Pro scheduling** for grid-based control with fixed time slots, follow-on support, and comprehensive conflict detection.
 
-The **Temporal Engine** extends this by modelling court availability as continuous capacity streams, enabling "what-if" scenario simulation before committing to the tournament record.
+The **Availability Engine** extends this by modelling court availability as continuous capacity streams, enabling "what-if" scenario simulation before committing to the tournament record. (Renamed from `TemporalEngine` in 5.0.0 — the `Temporal` name was vacated for the TC39 `Temporal` global; existing call sites continue to work via the engine assemblies.)
 
 ## Publishing and Embargo
 
@@ -80,9 +80,9 @@ Full documentation with interactive examples: **[courthive.github.io/competition
 
 ## Testing
 
-8,200+ tests covering draws, scheduling, scoring, participants, publishing, and ranking points.
+9,800+ tests covering draws, scheduling, scoring, participants, publishing, and ranking points.
 
 ```bash
-npm test          # run all tests
-npm run coverage  # coverage report (thresholds: 95/95/83/95%)
+pnpm test          # run all tests (Vitest)
+pnpm coverage      # coverage report (thresholds: 95/95/83/95%)
 ```
