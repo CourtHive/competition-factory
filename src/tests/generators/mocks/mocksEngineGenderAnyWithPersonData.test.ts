@@ -107,6 +107,82 @@ describe('mocksEngine — gender:ANY + participantsProfile.personData', () => {
     expect(completed).toBe(31);
   });
 
+  it('generates valid M+F PAIRs for MIXED DOUBLES via drawProfiles', () => {
+    // Pre-fix: ERR_INVALID_ENTRIES — generateParticipants pair-built sequentially
+    // without gender awareness, so half the PAIRs were same-sex and
+    // checkValidEntries rejected them.
+    const personData = makePersonData(32);
+    const { tournamentRecord } = mocksEngine.generateTournamentRecord({
+      tournamentAttributes: { tournamentName: 'Mixed doubles', endDate: '2026-01-15' },
+      participantsProfile: { participantsCount: 32, participantType: 'INDIVIDUAL', personData },
+      drawProfiles: [
+        {
+          drawSize: 16,
+          drawType: SINGLE_ELIMINATION,
+          eventType: 'DOUBLES',
+          eventName: 'Mixed Doubles',
+          gender: MIXED,
+        },
+      ],
+      completeAllMatchUps: true,
+      randomWinningSide: true,
+      nonRandom: 11,
+    });
+
+    expect(tournamentRecord).toBeDefined();
+    const pairs = (tournamentRecord.participants ?? []).filter((p: any) => p.participantType === 'PAIR');
+    expect(pairs.length).toBe(16);
+
+    const participantsById = new Map<string, any>(
+      (tournamentRecord.participants ?? []).map((p: any) => [p.participantId, p] as [string, any]),
+    );
+    for (const pair of pairs) {
+      const memberSexes = (pair.individualParticipantIds ?? [])
+        .map((id: string) => participantsById.get(id)?.person?.sex)
+        .filter(Boolean)
+        .sort();
+      expect(memberSexes).toEqual(['FEMALE', 'MALE']);
+    }
+
+    tournamentEngine.setState(tournamentRecord);
+    const { matchUps } = tournamentEngine.allTournamentMatchUps();
+    expect((matchUps ?? []).filter((m: any) => m.winningSide).length).toBe(15);
+  });
+
+  it('generates valid M+F PAIRs for MIXED DOUBLES via eventProfiles', () => {
+    // Sibling path (eventProfiles → processExistingEvent → generateEventParticipants.ts)
+    // also has the same bug; same fix applied to both.
+    const { tournamentRecord } = mocksEngine.generateTournamentRecord({
+      tournamentAttributes: { tournamentName: 'Mixed via eventProfiles', endDate: '2026-01-15' },
+      eventProfiles: [
+        {
+          eventName: 'Mixed Doubles',
+          eventType: 'DOUBLES',
+          gender: MIXED,
+          drawProfiles: [{ drawSize: 16, drawType: SINGLE_ELIMINATION }],
+        },
+      ],
+      completeAllMatchUps: true,
+      randomWinningSide: true,
+      nonRandom: 11,
+    });
+
+    expect(tournamentRecord).toBeDefined();
+    const pairs = (tournamentRecord.participants ?? []).filter((p: any) => p.participantType === 'PAIR');
+    expect(pairs.length).toBe(16);
+
+    const participantsById = new Map<string, any>(
+      (tournamentRecord.participants ?? []).map((p: any) => [p.participantId, p] as [string, any]),
+    );
+    for (const pair of pairs) {
+      const memberSexes = (pair.individualParticipantIds ?? [])
+        .map((id: string) => participantsById.get(id)?.person?.sex)
+        .filter(Boolean)
+        .sort();
+      expect(memberSexes).toEqual(['FEMALE', 'MALE']);
+    }
+  });
+
   it('still constrains the pool when gender is a real sex (MALE)', () => {
     // Confirm the fix doesn't regress real gender filtering. With personData
     // of mixed sex (16 MALE, 16 FEMALE) and gender:MALE, the engine should

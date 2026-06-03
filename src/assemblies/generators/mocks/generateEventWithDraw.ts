@@ -1,3 +1,4 @@
+import { rebuildPairsAsMixed } from './rebuildPairsAsMixed';
 import { generateDrawDefinition } from '../drawDefinitions/generateDrawDefinition/generateDrawDefinition';
 import { automatedPlayoffPositioning } from '@Mutate/drawDefinitions/automatedPlayoffPositioning';
 import { setParticipantScaleItem } from '@Mutate/participants/scaleItems/addScaleItems';
@@ -71,6 +72,17 @@ function generateEventParticipants({
   const gendersCount = { [MALE]: 0, [FEMALE]: 0 };
   let teamSize, genders;
 
+  // MIXED DOUBLES: every PAIR must contain one MALE and one FEMALE member.
+  // Without this, generatePersons hands generateParticipants a random mix
+  // and the sequential pair-builder produces same-sex pairs that then fail
+  // checkValidEntries → ERR_INVALID_ENTRIES. Request balanced counts here
+  // and re-pair the generated individuals at the bottom of this function.
+  const isMixedDoubles = eventType === DOUBLES && gender === MIXED;
+  if (isMixedDoubles) {
+    gendersCount[MALE] = drawParticipantsCount;
+    gendersCount[FEMALE] = drawParticipantsCount;
+  }
+
   if (isHybrid) {
     // HYBRID: half entries are INDIVIDUAL, half are PAIR
     // Need extra individuals to form the pairs
@@ -130,6 +142,10 @@ function generateEventParticipants({
 
   // update categoryName **after** generating participants
   if (event.category) event.category.categoryName = categoryName;
+
+  if (isMixedDoubles) {
+    rebuildPairsAsMixed(unique);
+  }
 
   if (tournamentRecord) {
     const result = addParticipants({
