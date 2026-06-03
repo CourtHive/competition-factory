@@ -1,5 +1,12 @@
 # Changelog
 
+## [5.2.3](https://github.com/CourtHive/competition-factory/compare/v5.2.2...v5.2.3) (2026-06-03)
+
+
+### Bug Fixes
+
+* **generate-draw-definition:** support adding qualifying to existing main + cross-stage drawEntries ([7fab28d](https://github.com/CourtHive/competition-factory/commit/7fab28d09b534cff0f66b5d35c1c8e1b1c1665b6))
+
 ## [5.2.2](https://github.com/CourtHive/competition-factory/compare/v5.2.1...v5.2.2) (2026-06-02)
 
 
