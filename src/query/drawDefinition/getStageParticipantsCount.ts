@@ -1,4 +1,5 @@
 import { MAIN, QUALIFYING } from '@Constants/drawDefinitionConstants';
+import { ANY } from '@Constants/genderConstants';
 
 export function getStageParticipantsCount({ drawProfiles, category, gender, useExistingParticipants = false }) {
   const uniqueParticipantsCount = {};
@@ -19,8 +20,10 @@ export function getStageParticipantsCount({ drawProfiles, category, gender, useE
     // "unique stage" branch keeps the synthesis path (generateEventParticipants)
     // inert; filterConsideredParticipants still applies gender / eventType /
     // participantType filters on the supplied pool.
+    // `gender: ANY` is "no gender constraint" — see getParticipantsCount.ts.
     const requiresUniqueParticipants =
-      !useExistingParticipants && (uniqueParticipants || gender || category || stage === QUALIFYING);
+      !useExistingParticipants &&
+      (uniqueParticipants || (gender && gender !== ANY) || category || stage === QUALIFYING);
 
     if (requiresUniqueParticipants) {
       if (!Object.keys(uniqueParticipantsCount).includes(stage)) uniqueParticipantsCount[stage] = 0;

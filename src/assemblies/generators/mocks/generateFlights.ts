@@ -1,6 +1,7 @@
 import { generateFlight } from './generateFlight';
 
 import { MAIN, QUALIFYING } from '@Constants/drawDefinitionConstants';
+import { ANY } from '@Constants/genderConstants';
 import { SUCCESS } from '@Constants/resultConstants';
 
 export function generateFlights({
@@ -23,8 +24,10 @@ export function generateFlights({
     // to generateTournamentRecord, pull from stageParticipants (the supplied
     // pool) rather than from uniqueDrawParticipants (which is empty because
     // event-level synthesis was skipped).
+    // `gender: ANY` means "no gender constraint" — see getParticipantsCount.ts.
     const requiresUniqueParticipants =
-      !useExistingParticipants && (uniqueParticipants || gender || category || stage === QUALIFYING);
+      !useExistingParticipants &&
+      (uniqueParticipants || (gender && gender !== ANY) || category || stage === QUALIFYING);
 
     // if a drawProfile has specified uniqueParticipants...
     const drawParticipants = requiresUniqueParticipants

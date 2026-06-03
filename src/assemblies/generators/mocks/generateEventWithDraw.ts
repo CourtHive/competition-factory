@@ -38,7 +38,7 @@ import { FORMAT_STANDARD } from '@Fixtures/scoring/matchUpFormats';
 import { isAdHocType } from '@Query/drawDefinition/isAdHocType';
 import { COMPLETED } from '@Constants/matchUpStatusConstants';
 import { ALTERNATE } from '@Constants/entryStatusConstants';
-import { FEMALE, MALE } from '@Constants/genderConstants';
+import { ANY, FEMALE, MALE } from '@Constants/genderConstants';
 import { COMPETITOR } from '@Constants/participantRoles';
 import { SEEDING } from '@Constants/timeItemConstants';
 import { OBJECT } from '@Constants/attributeConstants';
@@ -850,13 +850,14 @@ export function generateEventWithDraw(params) {
   // passed pre-built `participants`) suppresses per-draw participant synthesis
   // so the supplied pool is used. Filtering by gender / eventType /
   // participantType still happens downstream via filterConsideredParticipants.
+  // `gender: ANY` is "no gender constraint" — see getParticipantsCount.ts.
   const needsUniqueParticipants =
     !useExistingParticipants &&
     (participantsProfile?.participantsCount === 0 ||
       drawProfile.uniqueParticipants ||
       qualifyingParticipantsCount ||
       !tournamentRecord ||
-      gender ||
+      (gender && gender !== ANY) ||
       category ||
       isHybrid);
 
@@ -1066,6 +1067,10 @@ function filterConsideredParticipants({
 
   const isEventGender = (participant) => {
     if (!drawProfile.gender) return true;
+    // `gender: ANY` is a no-op gender constraint — every participant qualifies.
+    // Without this, the literal-equality check below filters everyone out
+    // (no participant has person.sex === 'ANY'), leaving the draw empty.
+    if (drawProfile.gender === ANY) return true;
     if (participant.person?.sex === drawProfile.gender) return true;
     return participant.individualParticipantIds?.some((participantId) => {
       const individualParticipant = targetParticipants.find((p) => p.participantId === participantId);
