@@ -206,19 +206,36 @@ The `bestFinishingPosition` is `Math.min(finishingPositionRange)` — the best p
 
 ## Doubles Attribution
 
-Controls how pair (doubles) points flow to individual participants:
+Declares the **ranking entity** for doubles events — whether each
+individual owns the award (and the pair is bookkeeping for who played
+together) or the pair owns the award (and individual rankings ignore
+the doubles result). The output maps `personPoints` and `pairPoints`
+are mutually exclusive for any given doubles draw: exactly one of them
+holds the award.
 
 ```js
 rankingPolicy: {
-  doublesAttribution: 'fullToEach', // or 'splitEven'
+  doublesAttribution: 'fullToEach', // 'splitEven' | 'teamOnly'
 }
 ```
 
-| Mode           | Effect                                                     |
-| -------------- | ---------------------------------------------------------- |
-| `'fullToEach'` | Each individual receives 100% of pair points               |
-| `'splitEven'`  | Each individual receives 50% of pair points (rounded)      |
-| Not set        | Points only on pair record, not distributed to individuals |
+| Mode           | `personPoints` (per individual) | `pairPoints` (per pair) |
+| -------------- | ------------------------------- | ----------------------- |
+| `'fullToEach'` | full value                      | empty                   |
+| `'splitEven'`  | half value (rounded)            | empty                   |
+| `'teamOnly'`   | empty                           | one entry               |
+| _Not set_      | empty                           | one entry               |
+
+Every shipped pro-tennis policy (ATP, WTA, ITF Junior, ITF WTT, BASIC)
+declares `'fullToEach'` — the dominant convention is that each
+doubles partner's individual ranking gets the full team result.
+`'splitEven'` is the half-share alternative, used by federations that
+treat a team result as a single pot shared between partners.
+`'teamOnly'` (and the legacy default, _Not set_) is for pair-tour /
+club-team formats where the pair itself is the ranking entity.
+
+See [Ranking Policy → Doubles Attribution](/docs/policies/rankingPolicy#doubles-attribution)
+for examples and the per-mode output shape.
 
 ## PointAward Output
 
