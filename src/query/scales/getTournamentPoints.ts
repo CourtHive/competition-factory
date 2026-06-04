@@ -14,9 +14,9 @@ import { ParticipantFilters, PolicyDefinitions } from '@Types/factoryTypes';
 import { PAIR, TEAM_PARTICIPANT } from '@Constants/participantConstants';
 import { POLICY_TYPE_RANKING_POINTS } from '@Constants/policyConstants';
 import { QUALIFYING } from '@Constants/drawDefinitionConstants';
-import { TEAM_EVENT } from '@Constants/eventConstants';
+import { DOUBLES, TEAM_EVENT } from '@Constants/eventConstants';
 import { SUCCESS } from '@Constants/resultConstants';
-import { SPLIT_EVEN } from '@Constants/rankingConstants';
+import { SPLIT_EVEN, TEAM_ONLY } from '@Constants/rankingConstants';
 import { Tournament } from '@Types/tournamentTypes';
 
 function calculateBonusPoints(primaryAwardProfile, bestFinishingPosition, level) {
@@ -295,29 +295,41 @@ function distributeAward({
   if (personId) {
     if (!personPoints[personId]) personPoints[personId] = [];
     personPoints[personId].push(award);
-  } else if (participantType === PAIR) {
-    if (!pairPoints[participantId]) pairPoints[participantId] = [];
-    pairPoints[participantId].push(award);
+    return;
+  }
 
-    if (doublesAttribution) {
-      const multiplier = doublesAttribution === SPLIT_EVEN ? 0.5 : 1;
-      const individualIds = participantIndividualIdsMap[participantId] ?? [];
-      for (const indId of individualIds) {
-        const indPersonId = participantPersonMap[indId];
-        if (!indPersonId) continue;
-        const individualAward = {
-          ...award,
-          points: Math.round(award.points * multiplier),
-          positionPoints: Math.round(award.positionPoints * multiplier),
-          perWinPoints: Math.round(award.perWinPoints * multiplier),
-          bonusPoints: Math.round(award.bonusPoints * multiplier),
-          doublesParticipantId: participantId,
-        };
-        if (!personPoints[indPersonId]) personPoints[indPersonId] = [];
-        personPoints[indPersonId].push(individualAward);
-      }
+  if (participantType === PAIR) {
+    // The pair "owns" the award only when the policy treats the pair as
+    // the ranking entity — either `teamOnly` (explicit pair ranking) or
+    // no doublesAttribution declared at all (legacy default). Under
+    // `fullToEach` and `splitEven` the per-individual rankings are the
+    // target; the pair is bookkeeping for who played together and gets
+    // nothing of its own.
+    if (!doublesAttribution || doublesAttribution === TEAM_ONLY) {
+      if (!pairPoints[participantId]) pairPoints[participantId] = [];
+      pairPoints[participantId].push(award);
+      return;
     }
-  } else if (participantType === TEAM_PARTICIPANT) {
+
+    const multiplier = doublesAttribution === SPLIT_EVEN ? 0.5 : 1;
+    const individualIds = participantIndividualIdsMap[participantId] ?? [];
+    for (const indId of individualIds) {
+      const indPersonId = participantPersonMap[indId];
+      if (!indPersonId) continue;
+      const individualAward = {
+        ...award,
+        points: Math.round(award.points * multiplier),
+        positionPoints: Math.round(award.positionPoints * multiplier),
+        perWinPoints: Math.round(award.perWinPoints * multiplier),
+        bonusPoints: Math.round(award.bonusPoints * multiplier),
+      };
+      if (!personPoints[indPersonId]) personPoints[indPersonId] = [];
+      personPoints[indPersonId].push(individualAward);
+    }
+    return;
+  }
+
+  if (participantType === TEAM_PARTICIPANT) {
     if (!teamPoints[participantId]) teamPoints[participantId] = [];
     teamPoints[participantId].push(award);
   }
@@ -446,6 +458,19 @@ function calculateDrawPoints({
   const endDate = draw.endDate || eventInfo.endDate || tournamentRecord.endDate;
 
   if (eventType === TEAM_EVENT && participantType !== TEAM_PARTICIPANT) {
+    return;
+  }
+
+  // Mirror of the TEAM_EVENT guard above for DOUBLES: the PAIR
+  // participant is the canonical processing path for every doubles
+  // event regardless of policy mode. distributeAward's PAIR branch
+  // routes the resulting award to either personPoints (fullToEach,
+  // splitEven) or pairPoints (teamOnly, no attribution declared)
+  // based on policy. The individual's own draw participation would
+  // otherwise emit a duplicate per-personId award; under modes that
+  // route to pairPoints it would also leak individual awards that
+  // the policy explicitly didn't ask for.
+  if (eventType === DOUBLES && participantType !== PAIR) {
     return;
   }
 

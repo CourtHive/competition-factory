@@ -30,7 +30,7 @@ scaleEngine.getTournamentPoints({ policyDefinitions, level: 3 });
 {
   awardProfiles: AwardProfile[];           // How points are awarded per draw/event
   qualityWinProfiles?: QualityWinProfile[]; // Bonus for beating ranked opponents
-  doublesAttribution?: string;              // 'fullToEach' | 'splitEven'
+  doublesAttribution?: string;              // 'fullToEach' | 'splitEven' | 'teamOnly'
   requireWinForPoints?: boolean;            // Global: must win to earn position points
   requireWinFirstRound?: boolean;           // Global: R1 losers need a win for points
   pointsAuthority?: PointsAuthority;        // Issuing authority (ATP, WTA, ITF, …)
@@ -385,18 +385,50 @@ See [Quality Win Points](/docs/scale-engine/quality-win-points) for detailed doc
 
 ## Doubles Attribution
 
-Controls how pair points flow to individual participant records:
+Declares the **ranking entity** for doubles events — whether the pair
+participant owns the award (and individual rankings ignore the doubles
+result), or each individual owns the award (and the pair is bookkeeping
+for who played together).
 
 ```js
 {
   doublesAttribution: 'fullToEach';
-} // each individual gets 100%
+} // each individual gets the full team value (ATP/WTA convention)
 {
   doublesAttribution: 'splitEven';
-} // each individual gets 50%
+} // each individual gets half the team value
+{
+  doublesAttribution: 'teamOnly';
+} // the pair owns the award; individuals get nothing from doubles
 ```
 
-When not specified, points remain only on the pair record.
+When not specified, the behavior matches `'teamOnly'` — the pair record
+holds the award and individuals are unaffected.
+
+Concretely:
+
+| Mode           | `personPoints`                         | `pairPoints`       |
+| -------------- | -------------------------------------- | ------------------ |
+| `'fullToEach'` | one entry per individual at full value | empty              |
+| `'splitEven'`  | one entry per individual at half value | empty              |
+| `'teamOnly'`   | empty                                  | one entry per pair |
+| _(undefined)_  | empty                                  | one entry per pair |
+
+The two halves of the output map (`personPoints`, `pairPoints`) are
+mutually exclusive for any given doubles draw — exactly one of them
+holds the award. This makes downstream aggregation (federated rank
+lists, individual rankings, team-only ladders) a simple matter of
+reading the right map without having to reconcile pair-vs-individual
+attribution at consume time.
+
+Every shipped pro-tennis policy (ATP, WTA, ITF Junior, ITF WTT, BASIC)
+declares `'fullToEach'` — the dominant convention across pro and amateur
+tennis is that each doubles partner's individual ranking gets the full
+team result. `'splitEven'` is supported for federations that treat the
+team's tournament outcome as a single pot shared between partners.
+`'teamOnly'` (and the legacy default) is for club / pair-tour formats
+where the pair is itself the ranking entity (recurring partnerships,
+team ladders, etc.).
 
 ## Specificity Scoring
 

@@ -99,7 +99,7 @@ describe('getTournamentPointAwards', () => {
     expect(flatPersonAwardCount).toEqual(groupedPersonAwardCount);
   });
 
-  it('honors doublesAttribution: fullToEach — pair awards split into person awards at full value', () => {
+  it('honors doublesAttribution: fullToEach — individuals each get full-value awards, pair record is empty', () => {
     mocksEngine.generateTournamentRecord({
       drawProfiles: [{ drawType: SINGLE_ELIMINATION, drawSize: 8, eventType: DOUBLES }],
       completeAllMatchUps: true,
@@ -119,26 +119,33 @@ describe('getTournamentPointAwards', () => {
     });
 
     expect(result.success).toEqual(true);
+
     const personAwards = result.pointAwards.filter((a: any) => a.personId);
+    const pairAwards = result.pointAwards.filter((a: any) => !a.personId);
+
     expect(personAwards.length).toBeGreaterThan(0);
-    // doublesParticipantId marker is set on individual awards split from pairs
-    const splitAwards = personAwards.filter((a: any) => a.doublesParticipantId);
-    expect(splitAwards.length).toBeGreaterThan(0);
+    // fullToEach treats the individual as the ranking entity; the pair
+    // is bookkeeping for who played together and gets no award of its
+    // own.
+    expect(pairAwards).toHaveLength(0);
+
+    // At most one award per (personId, drawId): no duplicate emission
+    // between the individual's own draw participation and the pair's
+    // fullToEach distribution.
+    const perPair = new Map<string, number>();
+    for (const a of personAwards as any[]) {
+      const key = `${a.personId}|${a.drawId}`;
+      perPair.set(key, (perPair.get(key) ?? 0) + 1);
+    }
+    expect(Math.max(...perPair.values())).toBe(1);
   });
 
-  it('honors doublesAttribution: splitEven — pair awards split with 0.5 multiplier', () => {
+  it('honors doublesAttribution: splitEven — every individual award is exactly half the fullToEach value', () => {
     mocksEngine.generateTournamentRecord({
       drawProfiles: [{ drawType: SINGLE_ELIMINATION, drawSize: 8, eventType: DOUBLES }],
       completeAllMatchUps: true,
       setState: true,
     });
-
-    const policy = {
-      [POLICY_TYPE_RANKING_POINTS]: {
-        ...simplePolicy[POLICY_TYPE_RANKING_POINTS],
-        doublesAttribution: SPLIT_EVEN,
-      },
-    };
 
     const fullResult = scaleEngine.getTournamentPointAwards({
       policyDefinitions: {
@@ -147,29 +154,68 @@ describe('getTournamentPointAwards', () => {
       level: 1,
     });
     const splitResult = scaleEngine.getTournamentPointAwards({
-      policyDefinitions: policy,
+      policyDefinitions: {
+        [POLICY_TYPE_RANKING_POINTS]: { ...simplePolicy[POLICY_TYPE_RANKING_POINTS], doublesAttribution: SPLIT_EVEN },
+      },
       level: 1,
     });
 
     expect(fullResult.success).toEqual(true);
     expect(splitResult.success).toEqual(true);
 
-    const fullSum = fullResult.pointAwards
-      .filter((a: any) => a.doublesParticipantId)
-      .reduce((s: number, a: any) => s + (a.points || 0), 0);
-    const splitSum = splitResult.pointAwards
-      .filter((a: any) => a.doublesParticipantId)
-      .reduce((s: number, a: any) => s + (a.points || 0), 0);
+    const fullSum = (fullResult.pointAwards as any[])
+      .filter((a) => a.personId)
+      .reduce((s, a) => s + (a.points || 0), 0);
+    const splitSum = (splitResult.pointAwards as any[])
+      .filter((a) => a.personId)
+      .reduce((s, a) => s + (a.points || 0), 0);
 
-    // Split-even should produce roughly half the per-person points of full-to-each.
-    expect(splitSum).toBeLessThan(fullSum);
-    expect(splitSum).toBeGreaterThan(0);
+    expect(fullSum).toBeGreaterThan(0);
+    expect(splitSum).toEqual(Math.round(fullSum / 2));
   });
 
-  // TODO: TEAM_ONLY semantics are broken in distributeAward (treats any
-  // truthy doublesAttribution as splitting with multiplier=1). Fix in a
-  // separate PR; gate the test there.
-  it.skip('honors doublesAttribution: teamOnly — pair awards stay at pair level', () => {
-    void TEAM_ONLY;
+  it('honors doublesAttribution: teamOnly — the pair is the ranking entity; no per-person awards from doubles', () => {
+    mocksEngine.generateTournamentRecord({
+      drawProfiles: [{ drawType: SINGLE_ELIMINATION, drawSize: 8, eventType: DOUBLES }],
+      completeAllMatchUps: true,
+      setState: true,
+    });
+
+    const result = scaleEngine.getTournamentPointAwards({
+      policyDefinitions: {
+        [POLICY_TYPE_RANKING_POINTS]: { ...simplePolicy[POLICY_TYPE_RANKING_POINTS], doublesAttribution: TEAM_ONLY },
+      },
+      level: 1,
+    });
+
+    expect(result.success).toEqual(true);
+
+    const personAwards = (result.pointAwards as any[]).filter((a) => a.personId);
+    const pairAwards = (result.pointAwards as any[]).filter((a) => !a.personId);
+
+    expect(personAwards).toHaveLength(0);
+    expect(pairAwards.length).toBeGreaterThan(0);
+    expect((pairAwards[0] as any).points).toBeGreaterThan(0);
+  });
+
+  it('without doublesAttribution — legacy default: pair owns the award, individuals get nothing from DOUBLES draws', () => {
+    mocksEngine.generateTournamentRecord({
+      drawProfiles: [{ drawType: SINGLE_ELIMINATION, drawSize: 8, eventType: DOUBLES }],
+      completeAllMatchUps: true,
+      setState: true,
+    });
+
+    const result = scaleEngine.getTournamentPointAwards({
+      policyDefinitions: simplePolicy, // doublesAttribution undefined
+      level: 1,
+    });
+
+    expect(result.success).toEqual(true);
+
+    const personAwards = (result.pointAwards as any[]).filter((a) => a.personId);
+    const pairAwards = (result.pointAwards as any[]).filter((a) => !a.personId);
+
+    expect(personAwards).toHaveLength(0);
+    expect(pairAwards.length).toBeGreaterThan(0);
   });
 });

@@ -88,26 +88,18 @@ describe('getTournamentPoints doubles attribution', () => {
     expect(result.pairPoints).toBeDefined();
     expect(result.personPoints).toBeDefined();
 
-    // pairPoints should have entries for pair participants
-    const pairAwards = Object.values(result.pairPoints);
-    expect(pairAwards.length).toBeGreaterThan(0);
-
-    // personPoints should have individual entries from the split
+    // splitEven: individuals are the ranking entity; pair is bookkeeping
+    // for who played together and gets nothing of its own.
     const personAwards: any = Object.values(result.personPoints);
+    const pairAwards = Object.values(result.pairPoints);
     expect(personAwards.length).toBeGreaterThan(0);
+    expect(pairAwards).toHaveLength(0);
 
-    // Each individual should get half the pair points (SPLIT_EVEN multiplier = 0.5)
-    for (const awards of personAwards) {
-      for (const award of awards) {
-        if (award.doublesParticipantId) {
-          // Look up the matching pair award by the doublesParticipantId
-          const pairAward = result.pairPoints[award.doublesParticipantId]?.[0];
-          if (pairAward) {
-            expect(award.points).toBe(Math.round(pairAward.points * 0.5));
-          }
-        }
-      }
-    }
+    // Each individual should get half the per-position table value
+    // (SPLIT_EVEN multiplier = 0.5). Winner position value is 100 →
+    // each finalist gets 50.
+    const winnerAward = personAwards.flat().find((a: any) => a.positionPoints === 50);
+    expect(winnerAward).toBeDefined();
   });
 
   it('gives full points to each member with fullToEach attribution', () => {
@@ -138,16 +130,15 @@ describe('getTournamentPoints doubles attribution', () => {
     expect(result.pairPoints).toBeDefined();
     expect(result.personPoints).toBeDefined();
 
-    // With fullToEach, individual points should equal pair points (multiplier = 1)
+    // fullToEach: individuals each get the full position-table value;
+    // pair gets nothing of its own.
     const personAwards: any = Object.values(result.personPoints);
-    for (const awards of personAwards) {
-      for (const award of awards) {
-        if (award.doublesParticipantId) {
-          const pairAward = result.pairPoints[award.doublesParticipantId]?.[0];
-          expect(award.points).toBe(pairAward?.points);
-        }
-      }
-    }
+    const pairAwards = Object.values(result.pairPoints);
+    expect(personAwards.length).toBeGreaterThan(0);
+    expect(pairAwards).toHaveLength(0);
+
+    const winnerAward = personAwards.flat().find((a: any) => a.positionPoints === 100);
+    expect(winnerAward).toBeDefined();
   });
 });
 
