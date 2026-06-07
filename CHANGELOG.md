@@ -1,5 +1,12 @@
 # Changelog
 
+## [5.2.5](https://github.com/CourtHive/competition-factory/compare/v5.2.4...v5.2.5) (2026-06-07)
+
+
+### Bug Fixes
+
+* **query:** preserve hydrated schedule under NATIVE mode (matchUp.schedule clobber) ([#4423](https://github.com/CourtHive/competition-factory/issues/4423)) ([8847e2e](https://github.com/CourtHive/competition-factory/commit/8847e2eaa2da5b49234cb3d1d8db967a0723042e))
+
 ## [5.2.4](https://github.com/CourtHive/competition-factory/compare/v5.2.3...v5.2.4) (2026-06-04)
 
 
