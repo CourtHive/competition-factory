@@ -2,6 +2,7 @@ import { customLuckyDraw } from '@Generators/drawDefinitions/drawTypes/customLuc
 import { getRoundMatchUps } from '@Query/matchUps/getRoundMatchUps';
 import tournamentEngine from '@Engines/syncEngine';
 import mocksEngine from '@Assemblies/engines/mock';
+import { createSeededRandom } from '@Tools/prng';
 import { expect, test, describe } from 'vitest';
 
 import { LUCKY_DRAW } from '@Constants/drawDefinitionConstants';
@@ -56,6 +57,23 @@ describe('customLuckyDraw generator', () => {
 // End-to-end: round-status + advancement with multi-LL
 // ──────────────────────────────────────────────────────────────────────────────
 
+// The end-to-end LUCKY_DRAW tests exercise stochastic code paths in
+// `mocksEngine.generateTournamentRecord` (R1 outcomes) and
+// `luckyDrawAdvancement` (LL placement scoring tie-breaks).
+//
+// For mocksEngine: pass `nonRandom: <seed>` — the engine middleware at
+// src/assemblies/engines/mock/index.ts:55-57 wires
+// `random: createSeededRandom(seed)` through every internal Math.random
+// consumer.
+//
+// For luckyDrawAdvancement: the syncEngine wrapper rejects function-
+// typed params (`there must be only one arg with typeof function` in
+// src/assemblies/engines/sync/engineInvoke.ts:14-21 — the guard is
+// load-bearing because the wrapper uses the lone function in `args` to
+// dispatch the method). syncEngine has no analogous `nonRandom` middleware
+// today; patching Math.random for the single advancement call is the
+// minimum-blast-radius fix. Lifting the engine restriction (or adding the
+// nonRandom middleware to syncEngine) would be a cleaner long-term play.
 describe('LUCKY_DRAW with explicit roundProfile end-to-end', () => {
   test('round-status reports requiredLuckyLoserCount derived from profile', () => {
     const roundProfile = [20, 12, 8, 4, 2, 1];
@@ -63,7 +81,7 @@ describe('LUCKY_DRAW with explicit roundProfile end-to-end', () => {
     const {
       tournamentRecord,
       drawIds: [drawId],
-    } = mocksEngine.generateTournamentRecord({ completeAllMatchUps: true, drawProfiles });
+    } = mocksEngine.generateTournamentRecord({ completeAllMatchUps: true, drawProfiles, nonRandom: 1 });
 
     tournamentEngine.setState(tournamentRecord);
 
@@ -96,7 +114,7 @@ describe('LUCKY_DRAW with explicit roundProfile end-to-end', () => {
     const {
       tournamentRecord,
       drawIds: [drawId],
-    } = mocksEngine.generateTournamentRecord({ completeAllMatchUps: true, drawProfiles });
+    } = mocksEngine.generateTournamentRecord({ completeAllMatchUps: true, drawProfiles, nonRandom: 1 });
 
     tournamentEngine.setState(tournamentRecord);
 
@@ -112,12 +130,22 @@ describe('LUCKY_DRAW with explicit roundProfile end-to-end', () => {
     const selectedLL = round1!.eligibleLosers!.slice(0, 4);
     const participantIds = selectedLL.map((l: any) => l.participantId);
 
-    const result = tournamentEngine.luckyDrawAdvancement({
-      participantIds,
-      roundNumber: 1,
-      structureId,
-      drawId,
-    });
+    // Patch Math.random only around the advancement call; restore
+    // immediately after. See the describe-block header for why this
+    // can't piggy-back on the nonRandom middleware.
+    const originalRandom = Math.random;
+    Math.random = createSeededRandom(2);
+    let result: any;
+    try {
+      result = tournamentEngine.luckyDrawAdvancement({
+        participantIds,
+        roundNumber: 1,
+        structureId,
+        drawId,
+      });
+    } finally {
+      Math.random = originalRandom;
+    }
     expect(result.success).toBe(true);
 
     // R2 should now have 12 matchUps fully populated (24 participants)
