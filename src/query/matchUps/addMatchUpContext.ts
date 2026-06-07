@@ -79,8 +79,7 @@ type AddMatchUpContextArgs = {
 function applyEmbargoFilter({ publishStatus, drawDefinition, structure, matchUp, schedule }) {
   if (!publishStatus || !drawDefinition?.drawId || !structure?.structureId) return schedule;
 
-  const structDetail =
-    publishStatus?.drawDetails?.[drawDefinition.drawId]?.structureDetails?.[structure.structureId];
+  const structDetail = publishStatus?.drawDetails?.[drawDefinition.drawId]?.structureDetails?.[structure.structureId];
   if (!structDetail) return schedule;
 
   const rn = matchUp.roundNumber;
@@ -245,6 +244,29 @@ export function addMatchUpContext({
   // order is important here as Round Robin matchUps already have inContext structureId
   const onlyDefined = (obj) => definedAttributes(obj, undefined, true);
 
+  // CODES Phase 2 promoted `matchUp.schedule.*` to first-class. The source
+  // matchUp now carries its own `schedule` object, and a naive spread of
+  // `makeDeepCopy(matchUp)` would *replace* the hydrated `schedule` (with
+  // derived venueName / courtName / venueAbbreviation / isoDateString /
+  // milliseconds / time + any embargo/publishStatus filtering applied) —
+  // losing all the derived fields whenever the source has a non-empty
+  // first-class schedule object.
+  //
+  // Strip schedule from the source spread and merge it onto the hydrated
+  // schedule explicitly. Source-side first-class fields the hydrator
+  // doesn't yet know about (e.g. `calledAt`) come through via the
+  // base layer; hydrated-side derived names + applied filters win where
+  // they overlap.
+  //
+  // Also closes a privacy leak in the embargo path: when
+  // `applyEmbargoFilter` zeroed the hydrated schedule to undefined, the
+  // source schedule used to leak through; now it gets dropped entirely
+  // unless something explicitly merged it back in.
+  const sourceMatchUp = makeDeepCopy(onlyDefined(matchUp), true, true);
+  const sourceSchedule = sourceMatchUp.schedule;
+  delete sourceMatchUp.schedule;
+  const mergedSchedule = schedule ? { ...(sourceSchedule ?? {}), ...schedule } : schedule;
+
   const matchUpWithContext = {
     ...onlyDefined(context),
     ...onlyDefined({
@@ -276,11 +298,11 @@ export function addMatchUpContext({
       roundName,
       drawName,
       drawType,
-      schedule,
+      schedule: mergedSchedule,
       drawId,
       stage,
     }),
-    ...makeDeepCopy(onlyDefined(matchUp), true, true),
+    ...sourceMatchUp,
   };
 
   if (matchUpFormat && matchUp.score?.scoreStringSide1) {
@@ -459,7 +481,17 @@ function buildMatchUpSides({
   });
 }
 
-function hydrateSides({ tournamentParticipants, hydrateParticipants, positionAssignments, appliedPolicies, drawDefinition, participantMap, contextProfile, matchUpWithContext, event }) {
+function hydrateSides({
+  tournamentParticipants,
+  hydrateParticipants,
+  positionAssignments,
+  appliedPolicies,
+  drawDefinition,
+  participantMap,
+  contextProfile,
+  matchUpWithContext,
+  event,
+}) {
   const participantAttributes = appliedPolicies?.[POLICY_TYPE_PARTICIPANT];
   const getMappedParticipant = (participantId) => {
     const participant = participantMap?.[participantId]?.participant;
@@ -505,7 +537,17 @@ function hydrateSides({ tournamentParticipants, hydrateParticipants, positionAss
   });
 }
 
-function hydrateSideParticipant({ side, getMappedParticipant, tournamentParticipants, hydrateParticipants, positionAssignments, appliedPolicies, drawDefinition, contextProfile, event }) {
+function hydrateSideParticipant({
+  side,
+  getMappedParticipant,
+  tournamentParticipants,
+  hydrateParticipants,
+  positionAssignments,
+  appliedPolicies,
+  drawDefinition,
+  contextProfile,
+  event,
+}) {
   if (!side.participantId) return;
 
   const participant = makeDeepCopy(

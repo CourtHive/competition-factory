@@ -12,9 +12,12 @@
  * in the same PR — these are part of the public API contract of the
  * server's scheduled-matchups response.
  */
+import { setSchemaWriteMode } from '@Global/state/globalState';
 import mocksEngine from '@Assemblies/engines/mock';
 import tournamentEngine from '@Engines/syncEngine';
 import { describe, expect, it } from 'vitest';
+
+import { NATIVE, DUAL, LEGACY, SchemaWriteMode } from '@Constants/schemaWriteModeConstants';
 
 function scheduleOneMatchUp(opts: { startDate: string }) {
   const venueProfiles = [
@@ -206,3 +209,48 @@ describe('competitionScheduleMatchUps — public API shape', () => {
     expect(venue?.courts?.find((c: any) => c.courtId === courtId)?.courtId).toEqual(courtId);
   });
 });
+
+/**
+ * Regression for the IONSport bug. CODES Phase 2 promoted
+ * `matchUp.schedule.*` to a first-class object on the source matchUp. In
+ * `addMatchUpContext` the original spread order was:
+ *
+ *   { ...context, ...{ ..., schedule, ... }, ...makeDeepCopy(matchUp) }
+ *
+ * Under LEGACY mode the source `matchUp.schedule` is undefined, so the
+ * hydrated schedule from the second spread survived — which is what the
+ * default vitest setup pins, and what the rest of this test file
+ * exercises. Under NATIVE (production default) and DUAL the source
+ * `matchUp.schedule` is non-empty, so the third spread fully replaced
+ * the hydrated `schedule` — losing every derived field (`venueName`,
+ * `courtName`, `venueAbbreviation`, `isoDateString`, `milliseconds`,
+ * `time`, recovery times) and also bypassing the embargo / publish-state
+ * filtering the hydrator had applied.
+ *
+ * The fix in `addMatchUpContext` strips `schedule` from the source spread
+ * and merges any source-only first-class fields (e.g. `calledAt`) onto
+ * the hydrated schedule explicitly. This describe-block locks down that
+ * behaviour under all three schema-write modes so the bug can't recur on
+ * a future shape promotion.
+ */
+describe.each([NATIVE, DUAL, LEGACY] as SchemaWriteMode[])(
+  'schedule hydration survives matchUp.schedule first-class clobber (mode=%s)',
+  (mode) => {
+    it('keeps venueName + courtName on dateMatchUps[].schedule', () => {
+      setSchemaWriteMode(mode);
+      const startDate = '2026-06-06';
+      const { matchUpId, venueName, courtName, venueId, courtId } = scheduleOneMatchUp({ startDate });
+
+      const result = tournamentEngine.competitionScheduleMatchUps({
+        matchUpFilters: { scheduledDate: startDate },
+        usePublishState: false,
+      });
+      const target = result.dateMatchUps.find((m: any) => m.matchUpId === matchUpId);
+
+      expect(target?.schedule?.venueId).toEqual(venueId);
+      expect(target?.schedule?.courtId).toEqual(courtId);
+      expect(target?.schedule?.venueName).toEqual(venueName);
+      expect(target?.schedule?.courtName).toEqual(courtName);
+    });
+  },
+);
