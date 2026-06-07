@@ -6,6 +6,7 @@ import { notifySubscribers } from '@Global/state/notifySubscribers';
 import { setState } from '@Assemblies/engines/parts/stateMethods';
 import { isFunction, isObject, isString } from '@Tools/objects';
 import { getMethods } from '@Global/state/syncGlobalState';
+import { createSeededRandom } from '@Tools/prng';
 import { makeDeepCopy } from '@Tools/makeDeepCopy';
 
 // constants
@@ -27,6 +28,17 @@ export function engineInvoke(engine: { [key: string]: any }, args: any) {
 
   const { [methodName]: passedMethod, ...remainingArgs } = args;
   const params = args?.params ? { ...args.params } : { ...remainingArgs };
+
+  // nonRandom: <seed> middleware. Mirrors mocksEngine's
+  // src/assemblies/engines/mock/index.ts:55-57 — transforms a numeric seed into
+  // a seeded `random` function so callers can make stochastic mutations
+  // deterministic without hand-patching Math.random around the call site. Done
+  // on `params` (not `args`) so we stay clear of the function-count guard
+  // above, which is load-bearing for method dispatch.
+  if (typeof params.nonRandom === 'number') {
+    params.random = createSeededRandom(params.nonRandom);
+    delete params.nonRandom;
+  }
 
   const snapshot = params.rollbackOnError && makeDeepCopy(getTournamentRecords(), false, true);
 

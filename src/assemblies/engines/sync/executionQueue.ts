@@ -4,6 +4,7 @@ import { logMethodNotFound } from '@Assemblies/engines/parts/logMethodNotFound';
 import { executeFunction } from '@Assemblies/engines/parts/executeMethod';
 import { notifySubscribers } from '@Global/state/notifySubscribers';
 import { setState } from '@Assemblies/engines/parts/stateMethods';
+import { createSeededRandom } from '@Tools/prng';
 import { makeDeepCopy } from '@Tools/makeDeepCopy';
 
 // constants and types
@@ -27,6 +28,12 @@ export function executionQueue(engine: FactoryEngine, directives: Directives, ro
     const { method: methodName, pipe } = directive;
     const params = directive.params ? { ...directive.params } : {};
     if (!methods[methodName]) return logMethodNotFound({ methodName, start, params });
+
+    // nonRandom: <seed> middleware — see engineInvoke.ts for the rationale.
+    if (typeof params.nonRandom === 'number') {
+      params.random = createSeededRandom(params.nonRandom);
+      delete params.nonRandom;
+    }
 
     if (pipe) {
       const lastResult = results.at(-1);

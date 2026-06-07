@@ -1,3 +1,4 @@
+import { engineInvoke } from '@Assemblies/engines/sync/engineInvoke';
 import { mocksEngine } from '@Assemblies/engines/mock';
 import { createSeededRandom } from '@Tools/prng';
 import { shuffleArray } from '@Tools/arrays';
@@ -125,4 +126,49 @@ test('without nonRandom, results vary between calls', () => {
 
   // With 16 random participants, it's astronomically unlikely to get the same order twice
   expect(names1).not.toEqual(names2);
+});
+
+// syncEngine wrapper middleware: a numeric `nonRandom` arriving on a method
+// call is transformed into `random: createSeededRandom(nonRandom)` before
+// dispatch — see src/assemblies/engines/sync/engineInvoke.ts. Mirrors the
+// long-standing mocksEngine middleware so stochastic mutations (e.g.
+// luckyDrawAdvancement) can be made deterministic without hand-patching
+// Math.random around the call site.
+test('engineInvoke transforms nonRandom into a seeded random function', () => {
+  let receivedParams: any;
+  const fakeEngine: any = {
+    echo: (params: any) => {
+      receivedParams = params;
+      return { success: true };
+    },
+  };
+
+  engineInvoke(fakeEngine, { method: 'echo', nonRandom: 42 });
+
+  expect(typeof receivedParams.random).toBe('function');
+  expect(receivedParams).not.toHaveProperty('nonRandom');
+
+  // Seeded output must match a freshly constructed seededRandom(42).
+  const reference = createSeededRandom(42);
+  const seededSample = Array.from({ length: 5 }, () => receivedParams.random());
+  const referenceSample = Array.from({ length: 5 }, () => reference());
+  expect(seededSample).toEqual(referenceSample);
+});
+
+test('engineInvoke leaves params untouched when nonRandom is absent or non-numeric', () => {
+  let receivedParams: any;
+  const fakeEngine: any = {
+    echo: (params: any) => {
+      receivedParams = params;
+      return { success: true };
+    },
+  };
+
+  engineInvoke(fakeEngine, { method: 'echo', participantId: 'p1' });
+  expect(receivedParams).not.toHaveProperty('random');
+  expect(receivedParams).not.toHaveProperty('nonRandom');
+
+  engineInvoke(fakeEngine, { method: 'echo', nonRandom: 'not-a-number' });
+  expect(receivedParams).not.toHaveProperty('random');
+  expect(receivedParams.nonRandom).toBe('not-a-number');
 });
