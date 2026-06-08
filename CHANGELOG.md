@@ -1,5 +1,17 @@
 # Changelog
 
+## [5.4.0](https://github.com/CourtHive/competition-factory/compare/v5.3.0...v5.4.0) (2026-06-08)
+
+
+### Features
+
+* **query:** propagate tournamentTier through getTournamentInfo ([baa7d42](https://github.com/CourtHive/competition-factory/commit/baa7d4272275de281bd66d3ed55878765b38804d))
+
+
+### Bug Fixes
+
+* **docs:** bump tods-competition-factory caret to 5.3.0 ([25d54de](https://github.com/CourtHive/competition-factory/commit/25d54de6ccab162527a2a19ce7ad9e1357fb23d0))
+
 ## [5.3.0](https://github.com/CourtHive/competition-factory/compare/v5.2.5...v5.3.0) (2026-06-08)
 
 
