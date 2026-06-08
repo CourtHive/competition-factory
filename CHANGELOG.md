@@ -1,5 +1,14 @@
 # Changelog
 
+## [5.3.0](https://github.com/CourtHive/competition-factory/compare/v5.2.5...v5.3.0) (2026-06-08)
+
+
+### Features
+
+* **mutate:** modifyEvent accepts competitionFormat in eventUpdates ([41dffee](https://github.com/CourtHive/competition-factory/commit/41dffee7ec63d5c3cb63dd12a2b49f127ad6048d))
+* **query:** hydrate competitionFormat onto eventInfo in getEventData ([cd189c8](https://github.com/CourtHive/competition-factory/commit/cd189c81102c3eeab4dfd55ccb3d7b4df9d0e940))
+* **sync:** port nonRandom middleware from mocksEngine to syncEngine ([#4428](https://github.com/CourtHive/competition-factory/issues/4428)) ([1f1c65b](https://github.com/CourtHive/competition-factory/commit/1f1c65b65210546427aea6cdf92996e2ff1cf485))
+
 ## [5.2.5](https://github.com/CourtHive/competition-factory/compare/v5.2.4...v5.2.5) (2026-06-07)
 
 
