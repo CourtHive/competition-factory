@@ -8,6 +8,7 @@ import { expect, it } from 'vitest';
 import { EVENT_NOT_FOUND, INVALID_VALUES } from '@Constants/errorConditionConstants';
 import { FEMALE, MALE, ANY } from '@Constants/genderConstants';
 import { DOUBLES, SINGLES } from '@Constants/eventConstants';
+import { competitionFormats } from '@Fixtures/scoring/competitionFormats';
 import { addDays } from '@Tools/dateTime';
 
 it('supports modifying event gender, name and eventType', () => {
@@ -112,4 +113,45 @@ it('supports modifying event gender, name and eventType', () => {
     });
     expect(result.error).not.toBeUndefined();
   });
+});
+
+it('supports attaching, replacing, and clearing competitionFormat on an event', () => {
+  const eventId = 'cf-modify';
+  mocksEngine.generateTournamentRecord({
+    eventProfiles: [{ eventId, eventName: 'Test Event', eventType: SINGLES }],
+    setState: true,
+  });
+
+  // Initially absent
+  let event = tournamentEngine.getEvent({ eventId }).event;
+  expect(event.competitionFormat).toBeUndefined();
+
+  // Attach INTENNSE_STANDARD
+  let result = tournamentEngine.modifyEvent({
+    eventUpdates: { competitionFormat: competitionFormats.INTENNSE_STANDARD as any },
+    eventId,
+  });
+  expect(result.success).toEqual(true);
+  event = tournamentEngine.getEvent({ eventId }).event;
+  expect(event.competitionFormat?.competitionFormatId).toEqual(
+    competitionFormats.INTENNSE_STANDARD.competitionFormatId,
+  );
+
+  // Replace with TENNIS_STANDARD
+  result = tournamentEngine.modifyEvent({
+    eventUpdates: { competitionFormat: competitionFormats.TENNIS_STANDARD as any },
+    eventId,
+  });
+  expect(result.success).toEqual(true);
+  event = tournamentEngine.getEvent({ eventId }).event;
+  expect(event.competitionFormat?.competitionFormatId).toEqual(competitionFormats.TENNIS_STANDARD.competitionFormatId);
+
+  // Clear with null
+  result = tournamentEngine.modifyEvent({
+    eventUpdates: { competitionFormat: null },
+    eventId,
+  });
+  expect(result.success).toEqual(true);
+  event = tournamentEngine.getEvent({ eventId }).event;
+  expect(event.competitionFormat).toBeUndefined();
 });

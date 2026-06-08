@@ -14,6 +14,7 @@ import { unique } from '@Tools/arrays';
 
 // constants and types
 import { Category, Event, Tournament, EventTypeUnion, GenderUnion, TieFormat } from '@Types/tournamentTypes';
+import type { competitionFormat } from '@Types/competitionFormat';
 import { ALTERNATE, STRUCTURE_SELECTED_STATUSES } from '@Constants/entryStatusConstants';
 import { DOUBLES, HYBRID, SINGLES, TEAM } from '@Constants/eventConstants';
 import { INDIVIDUAL, PAIR } from '@Constants/participantConstants';
@@ -37,6 +38,11 @@ type ModifyEventArgs = {
     endDate?: string;
     category?: Category;
     eventName?: string;
+    // Set to a competitionFormat object to attach sport rules (timers,
+    // multipliers, penalties) to the event. Pass null to clear an existing
+    // value. Hierarchical resolution lets drawDefinition/structure overrides
+    // win at lower scopes. See @Types/competitionFormat.
+    competitionFormat?: competitionFormat | null;
   };
   eventId: string;
   event: Event;
@@ -74,6 +80,14 @@ export function modifyEvent(params: ModifyEventArgs): ResultType {
   if (eventUpdates.eventType) event.eventType = eventUpdates.eventType;
   if (eventUpdates.eventName) event.eventName = eventUpdates.eventName;
   if (eventUpdates.gender) event.gender = eventUpdates.gender;
+
+  if (eventUpdates.competitionFormat !== undefined) {
+    if (eventUpdates.competitionFormat === null) {
+      delete event.competitionFormat;
+    } else {
+      event.competitionFormat = eventUpdates.competitionFormat;
+    }
+  }
 
   return { ...SUCCESS };
 }
