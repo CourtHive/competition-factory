@@ -8,7 +8,9 @@ module.exports = {
         'data-standards',
         'time-capsule',
         {
-          'TMX Example': [
+          type: 'category',
+          label: 'TMX Example',
+          items: [
             'tmx',
             'tmx/overview',
             'tmx/participants',
@@ -30,10 +32,10 @@ module.exports = {
       label: 'Concepts',
       items: [
         {
-          Participants: ['concepts/participants', 'concepts/participant-context', 'concepts/scaleItems'],
+          type: 'category',
+          label: 'Tournament Setup',
+          items: ['concepts/registration-profile', 'concepts/tournament-tier'],
         },
-        'concepts/registration-profile',
-        'concepts/tournament-tier',
         {
           type: 'category',
           label: 'Format Wizard',
@@ -45,34 +47,14 @@ module.exports = {
           ],
         },
         {
-          Policies: [
-            'concepts/policies',
-            'policies/roundRobinTallyPolicy',
-            'policies/tallyPolicy',
-            'policies/avoidance',
-            'policies/positionActions',
-            'policies/positioningSeeds',
-            'policies/matchUpActions',
-            'policies/roundNaming',
-            'policies/participantPolicy',
-            'policies/seedingPolicy',
-            'policies/feedInPolicy',
-            'policies/feedPolicy',
-            'policies/maxParticipants',
-            'policies/scheduling',
-            'policies/scoringPolicy',
-            'policies/draws',
-            'policies/rankingPolicy',
-            'policies/progressionPolicy',
-            'policies/consolationPolicy',
-            'policies/competitiveBands',
-            'policies/competitionPolicy',
-            'policies/sanctioningPolicy',
-            'policies/printPolicy',
-          ],
+          type: 'category',
+          label: 'Participants',
+          items: ['concepts/participants', 'concepts/participant-context', 'concepts/scaleItems'],
         },
         {
-          Events: [
+          type: 'category',
+          label: 'Events',
+          items: [
             'concepts/events/events-overview',
             'concepts/events/categories',
             'concepts/events/entries',
@@ -80,7 +62,9 @@ module.exports = {
           ],
         },
         {
-          Draws: [
+          type: 'category',
+          label: 'Draws',
+          items: [
             'concepts/draws-overview',
             'concepts/draw-types',
             {
@@ -114,7 +98,9 @@ module.exports = {
           ],
         },
         {
-          matchUps: [
+          type: 'category',
+          label: 'matchUps',
+          items: [
             'concepts/matchup-overview',
             'concepts/matchup-context',
             'concepts/matchup-filtering',
@@ -124,7 +110,9 @@ module.exports = {
           ],
         },
         {
-          Scheduling: [
+          type: 'category',
+          label: 'Scheduling',
+          items: [
             'concepts/scheduling-overview',
             'concepts/venues-courts',
             'concepts/scheduling-policy',
@@ -132,11 +120,13 @@ module.exports = {
             'concepts/automated-scheduling',
             'concepts/pro-scheduling',
             'concepts/scheduling-conflicts',
+            'concepts/date-time-handling',
           ],
         },
-        'concepts/date-time-handling',
         {
-          Publishing: [
+          type: 'category',
+          label: 'Publishing',
+          items: [
             'concepts/publishing/publishing-overview',
             'concepts/publishing/publishing-events',
             'concepts/publishing/publishing-seeding',
@@ -147,7 +137,65 @@ module.exports = {
             'concepts/publishing/publishing-workflows',
           ],
         },
-        'concepts/mutation-locks',
+        {
+          type: 'category',
+          label: 'Record Data',
+          items: ['concepts/accessors', 'concepts/timeItems', 'concepts/extensions'],
+        },
+        {
+          type: 'category',
+          label: 'Policies',
+          items: [
+            'concepts/policies',
+            {
+              type: 'category',
+              label: 'Positioning & Seeding',
+              items: [
+                'policies/positionActions',
+                'policies/positioningSeeds',
+                'policies/seedingPolicy',
+                'policies/avoidance',
+              ],
+            },
+            {
+              type: 'category',
+              label: 'Draw Shape',
+              items: [
+                'policies/draws',
+                'policies/maxParticipants',
+                'policies/feedInPolicy',
+                'policies/feedPolicy',
+                'policies/consolationPolicy',
+                'policies/progressionPolicy',
+              ],
+            },
+            {
+              type: 'category',
+              label: 'matchUps & Rounds',
+              items: [
+                'policies/matchUpActions',
+                'policies/roundNaming',
+                'policies/tallyPolicy',
+                'policies/roundRobinTallyPolicy',
+              ],
+            },
+            {
+              type: 'category',
+              label: 'Scoring & Ranking',
+              items: ['policies/scoringPolicy', 'policies/rankingPolicy', 'policies/competitiveBands'],
+            },
+            {
+              type: 'category',
+              label: 'Eligibility & Compliance',
+              items: ['policies/participantPolicy', 'policies/sanctioningPolicy', 'policies/competitionPolicy'],
+            },
+            {
+              type: 'category',
+              label: 'Operations',
+              items: ['policies/scheduling', 'policies/printPolicy'],
+            },
+          ],
+        },
       ],
     },
     {
@@ -159,24 +207,39 @@ module.exports = {
           label: 'Overview',
           id: 'engines/state-engines',
         },
-        'engines/engine-methods',
-        'engines/typed-engine',
-        'engines/engine-logging',
-        'engines/engine-middleware',
-        'engines/mutation-engines',
-        'engines/subscriptions',
-        'engines/fluent-builders',
-        'engines/query-facade',
-        'engines/unwrap',
-        'engines/factory-errors',
-        'engines/dry-run-explain',
-        'engines/json-patch',
-        'engines/state-inspection',
-        'engines/policy-composer',
-        'engines/migrate-tournament-record',
-        'engines/get-tally',
-        'engines/custom-engines',
-        'engines/global-state',
+        {
+          type: 'category',
+          label: 'Composition & Configuration',
+          items: ['engines/engine-methods', 'engines/typed-engine', 'engines/custom-engines', 'engines/global-state'],
+        },
+        {
+          type: 'category',
+          label: 'Reading State',
+          items: ['engines/query-facade', 'engines/unwrap', 'engines/state-inspection', 'engines/get-tally'],
+        },
+        {
+          type: 'category',
+          label: 'Mutating State',
+          items: [
+            'engines/mutation-engines',
+            'engines/fluent-builders',
+            'engines/engine-middleware',
+            'engines/subscriptions',
+            'engines/dry-run-explain',
+            'engines/json-patch',
+            'concepts/mutation-locks',
+          ],
+        },
+        {
+          type: 'category',
+          label: 'Diagnostics & Helpers',
+          items: [
+            'engines/engine-logging',
+            'engines/factory-errors',
+            'engines/policy-composer',
+            'engines/migrate-tournament-record',
+          ],
+        },
         {
           type: 'category',
           label: 'Scale Engine',
@@ -248,13 +311,20 @@ module.exports = {
           label: 'Overview',
           id: 'governors/governors-overview',
         },
-        'governors/competition-governor',
-        'governors/draws-governor',
-        'governors/entries-governor',
-        'governors/event-governor',
         {
           type: 'category',
-          label: 'Generation Governor',
+          label: 'Tournament & Events',
+          items: [
+            'governors/tournament-governor',
+            'governors/competition-governor',
+            'governors/event-governor',
+            'governors/draws-governor',
+            'governors/entries-governor',
+          ],
+        },
+        {
+          type: 'category',
+          label: 'Generation',
           items: [
             'governors/generation-governor',
             'governors/generation/generateDrawDefinition',
@@ -262,23 +332,41 @@ module.exports = {
             'governors/generation/remapDrawDefinitionMatchUpIds',
           ],
         },
-        'governors/matchup-governor',
-        'governors/matchup-format-governor',
-        'governors/mocks-governor',
-        'governors/participant-governor',
-        'governors/policy-governor',
-        'governors/practice-governor',
-        'governors/publishing-governor',
-        'governors/query-governor',
-        'governors/ranking-governor',
-        'governors/report-governor',
-        'governors/schedule-governor',
-        'governors/score-governor',
-        'governors/tie-format-governor',
-        'governors/officiating-governor',
-        'governors/sanctioning-governor',
-        'governors/tournament-governor',
-        'governors/venue-governor',
+        {
+          type: 'category',
+          label: 'matchUps & Scoring',
+          items: [
+            'governors/matchup-governor',
+            'governors/matchup-format-governor',
+            'governors/tie-format-governor',
+            'governors/score-governor',
+          ],
+        },
+        {
+          type: 'category',
+          label: 'People & Ranking',
+          items: ['governors/participant-governor', 'governors/ranking-governor'],
+        },
+        {
+          type: 'category',
+          label: 'Scheduling & Venues',
+          items: ['governors/schedule-governor', 'governors/venue-governor'],
+        },
+        {
+          type: 'category',
+          label: 'Reporting & Querying',
+          items: ['governors/query-governor', 'governors/publishing-governor', 'governors/report-governor'],
+        },
+        {
+          type: 'category',
+          label: 'Compliance & Officiating',
+          items: ['governors/policy-governor', 'governors/sanctioning-governor', 'governors/officiating-governor'],
+        },
+        {
+          type: 'category',
+          label: 'Mocks & Practice',
+          items: ['governors/mocks-governor', 'governors/practice-governor'],
+        },
       ],
     },
     {
@@ -297,7 +385,9 @@ module.exports = {
       ],
     },
     {
-      Testing: [
+      type: 'category',
+      label: 'Testing',
+      items: [
         { type: 'doc', label: 'Overview', id: 'testing/testing-overview' },
         {
           type: 'category',
@@ -321,19 +411,25 @@ module.exports = {
       label: 'Data',
       items: [
         'constants',
-        {
-          Codes: ['codes/age-category', 'codes/matchup-format'],
-        },
         'types/typedefs',
-        'concepts/accessors',
-        'concepts/timeItems',
-        'concepts/extensions',
+        {
+          type: 'category',
+          label: 'Codes',
+          items: ['codes/age-category', 'codes/matchup-format'],
+        },
       ],
     },
     {
       type: 'category',
-      label: 'Migration',
-      items: ['whats-new-5.0.0', 'migration-5.0.0', 'migration-4.0.0', 'migration-3.0.0', 'migration'],
+      label: 'Release Notes & Migration',
+      items: [
+        'whats-new-5.0.0',
+        {
+          type: 'category',
+          label: 'Migration Guides',
+          items: ['migration-5.0.0', 'migration-4.0.0', 'migration-3.0.0', 'migration'],
+        },
+      ],
     },
   ],
 };
