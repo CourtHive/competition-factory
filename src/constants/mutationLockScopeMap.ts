@@ -83,6 +83,7 @@ export const methodScopeMap: Record<string, MutationLockScope> = {
   addAdHocMatchUps: 'DRAWS',
   modifyDrawName: 'DRAWS',
   setSubOrder: 'DRAWS',
+  updateParticipantResults: 'DRAWS',
   addLinkedConsolationStructure: 'DRAWS',
   attachConsolationStructures: 'DRAWS',
   attachPlayoffStructures: 'DRAWS',

@@ -43,6 +43,7 @@ export { updateTeamLineUp } from '@Mutate/drawDefinitions/updateTeamLineUp';
 export { addAdHocMatchUps } from '@Mutate/structures/addAdHocMatchUps';
 export { modifyDrawName } from '@Mutate/drawDefinitions/modifyDrawName';
 export { setSubOrder } from '@Mutate/structures/setSubOrder';
+export { updateParticipantResults } from '@Mutate/structures/updateParticipantResults';
 export {
   attachConsolationStructures,
   attachPlayoffStructures,

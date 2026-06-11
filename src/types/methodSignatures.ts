@@ -226,6 +226,7 @@ import type { resetDrawDefinition } from '@Mutate/drawDefinitions/resetDrawDefin
 import type { setDelegatedOutcome } from '@Mutate/drawDefinitions/setDelegatedOutcome';
 import type { setPracticeDefaultCapacity } from '@Mutate/practice/setPracticeDefaultCapacity';
 import type { swapDrawPositionAssignments } from '@Mutate/matchUps/drawPositions/positionSwap';
+import type { updateParticipantResults } from '@Mutate/structures/updateParticipantResults';
 import type { updatePracticeRegistration } from '@Mutate/practice/updatePracticeRegistration';
 import type { assignDrawPosition } from '@Mutate/drawDefinitions/assignDrawPosition';
 import type { attachPolicies } from '@Mutate/extensions/policies/attachPolicies';
@@ -1068,6 +1069,7 @@ export interface MethodSignatures {
   unPublishOrderOfPlay: EngineMethod<typeof unPublishOrderOfPlay>;
   unPublishParticipants: EngineMethod<typeof unPublishParticipants>;
   updateDrawIdsOrder: EngineMethod<typeof updateDrawIdsOrder>;
+  updateParticipantResults: EngineMethod<typeof updateParticipantResults>;
   updatePracticeRegistration: EngineMethod<typeof updatePracticeRegistration>;
   updateTeamLineUp: EngineMethod<typeof updateTeamLineUp>;
   updateTieMatchUpScore: EngineMethod<typeof updateTieMatchUpScore>;

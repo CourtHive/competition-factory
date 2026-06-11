@@ -594,6 +594,7 @@ export type FactoryEngineMethod =
   | 'unPublishOrderOfPlay'
   | 'unPublishParticipants'
   | 'updateDrawIdsOrder'
+  | 'updateParticipantResults'
   | 'updatePracticeRegistration'
   | 'updateTeamLineUp'
   | 'updateTieMatchUpScore'
@@ -1212,6 +1213,7 @@ export const FACTORY_ENGINE_METHODS: readonly FactoryEngineMethod[] = [
   'unPublishOrderOfPlay',
   'unPublishParticipants',
   'updateDrawIdsOrder',
+  'updateParticipantResults',
   'updatePracticeRegistration',
   'updateTeamLineUp',
   'updateTieMatchUpScore',
