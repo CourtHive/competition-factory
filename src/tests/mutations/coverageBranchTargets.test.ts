@@ -62,7 +62,9 @@ describe('headToHead branch coverage', () => {
     // Partial HydratedMatchUp shape — participantHeadToHead only reads
     // score/winningSide/matchUpFormat/matchUpStatus, so the other fields
     // (structureId, drawId, eventId, tournamentId) are intentionally omitted.
-    const mappedMatchUps = {
+    // `: any` on the binding (rather than `as any` on the literal) avoids
+    // both the missing-properties error and the "unnecessary assertion" lint.
+    const mappedMatchUps: any = {
       [matchUpId]: {
         matchUpId,
         matchUpStatus: DEFAULTED,
@@ -70,7 +72,7 @@ describe('headToHead branch coverage', () => {
         score: undefined,
         matchUpFormat: 'SET3-S:6/TB7',
       },
-    } as any;
+    };
 
     const result = participantHeadToHead({ participants, mappedMatchUps });
     expect(result.success).toEqual(true);
@@ -108,7 +110,7 @@ describe('headToHead branch coverage', () => {
     ] as any;
 
     // Partial HydratedMatchUp shape (see note above).
-    const mappedMatchUps = {
+    const mappedMatchUps: any = {
       [matchUpId]: {
         matchUpId,
         matchUpStatus: COMPLETED,
@@ -116,7 +118,7 @@ describe('headToHead branch coverage', () => {
         score: undefined, // winningSide but no score
         matchUpFormat: 'SET3-S:6/TB7',
       },
-    } as any;
+    };
 
     const result = participantHeadToHead({ participants, mappedMatchUps });
     expect(result.success).toEqual(true);
@@ -154,7 +156,7 @@ describe('headToHead branch coverage', () => {
     ] as any;
 
     // Partial HydratedMatchUp shape (see note above).
-    const mappedMatchUps = {
+    const mappedMatchUps: any = {
       m1: {
         matchUpId: 'm1',
         matchUpStatus: COMPLETED,
@@ -179,7 +181,7 @@ describe('headToHead branch coverage', () => {
         },
         matchUpFormat: 'SET3-S:6/TB7',
       },
-    } as any;
+    };
 
     const result = participantHeadToHead({ participants, mappedMatchUps });
     expect(result.success).toEqual(true);
@@ -218,10 +220,10 @@ describe('headToHead branch coverage', () => {
     ] as any;
 
     // Partial HydratedMatchUp shape (see note above).
-    const mappedMatchUps = {
+    const mappedMatchUps: any = {
       m1: { matchUpId: 'm1', matchUpStatus: COMPLETED, winningSide: 1, score: {}, matchUpFormat: 'SET3-S:6/TB7' },
       m2: { matchUpId: 'm2', matchUpStatus: COMPLETED, winningSide: 1, score: {}, matchUpFormat: 'SET3-S:6/TB7' },
-    } as any;
+    };
 
     const result = participantHeadToHead({ participants, mappedMatchUps });
     expect(result.success).toEqual(true);
