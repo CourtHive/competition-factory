@@ -1,5 +1,25 @@
 # Changelog
 
+## [5.5.0](https://github.com/CourtHive/competition-factory/compare/v5.4.0...v5.5.0) (2026-06-12)
+
+
+### Features
+
+* **structures:** add updateParticipantResults mutation ([9ae4f8c](https://github.com/CourtHive/competition-factory/commit/9ae4f8ce49e052c526de7fbcbef829a67edfd451))
+
+
+### Bug Fixes
+
+* **docs:** bump tods-competition-factory caret to 5.4.0 ([d2d4e9f](https://github.com/CourtHive/competition-factory/commit/d2d4e9f1a6e40ef4c0a2d8a128a1caef018766cf))
+* **test:** cast partial mappedMatchUps literals in coverageBranchTargets ([e0fcbfd](https://github.com/CourtHive/competition-factory/commit/e0fcbfd7e30dd1e1dfe516c8a908744376f28128))
+* **test:** move `any` annotation onto mappedMatchUps binding instead of literal ([2fbb781](https://github.com/CourtHive/competition-factory/commit/2fbb7814696303798cc1437737460cbd2cf67b3a))
+
+
+### Documentation
+
+* **format-wizard:** unlink stub references until distribution + example publish ([6652b2d](https://github.com/CourtHive/competition-factory/commit/6652b2de45a9ba574bb10ff1a2316da2c8df51fd))
+* **sidebar:** regroup State Engines, Concepts, Governors; consolidate syntax ([8ed8d00](https://github.com/CourtHive/competition-factory/commit/8ed8d0089496ac1c2cf1ac895eca9fc8ed0332ca))
+
 ## [5.4.0](https://github.com/CourtHive/competition-factory/compare/v5.3.0...v5.4.0) (2026-06-08)
 
 
