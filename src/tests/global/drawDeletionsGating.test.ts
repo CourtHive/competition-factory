@@ -1,14 +1,14 @@
 import { afterEach, describe, expect, it } from 'vitest';
 
 import { setAuditAuthorityServer, setSaveDrawDeletions, setSubscriptions } from '@Global/state/globalState';
-import mocksEngine from '@Assemblies/engines/mock';
 import { findExtension } from '@Acquire/findExtension';
-import tournamentEngine from '@Engines/syncEngine';
 import { getTimeItem } from '@Query/base/timeItems';
+import mocksEngine from '@Assemblies/engines/mock';
+import tournamentEngine from '@Engines/syncEngine';
 
 // constants
-import { DELETE_DRAW_DEFINITIONS } from '@Constants/auditConstants';
 import { APPLIED_POLICIES, DRAW_DELETIONS } from '@Constants/extensionConstants';
+import { DELETE_DRAW_DEFINITIONS } from '@Constants/auditConstants';
 import { AUDIT } from '@Constants/topicConstants';
 
 const DRAW_PROFILES = [{ participantsCount: 30, drawSize: 32 }];

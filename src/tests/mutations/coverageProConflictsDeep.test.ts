@@ -7,8 +7,8 @@
  *   - Lines 379-380: extended sourceDistance gap analysis (useDeepDependencies Pass B)
  *     when k >= 2 and distance > 0 && k < distance
  */
-import tournamentEngine from '@Engines/syncEngine';
 import { mocksEngine } from '@Assemblies/engines/mock';
+import tournamentEngine from '@Engines/syncEngine';
 import { expect, it, describe } from 'vitest';
 
 // constants

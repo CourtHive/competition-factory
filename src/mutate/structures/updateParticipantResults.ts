@@ -4,12 +4,12 @@ import { modifyDrawNotice } from '@Mutate/notifications/drawNotifications';
 import { findStructure } from '@Acquire/findStructure';
 
 // constants and types
+import { MISSING_DRAW_DEFINITION, MISSING_STRUCTURE_ID, STRUCTURE_NOT_FOUND } from '@Constants/errorConditionConstants';
 import { DrawDefinition, Event, Structure, Tournament } from '@Types/tournamentTypes';
 import { CONTAINER } from '@Constants/drawDefinitionConstants';
 import { SUCCESS } from '@Constants/resultConstants';
 import { ResultType } from '@Types/factoryTypes';
 import { TEAM } from '@Constants/matchUpTypes';
-import { MISSING_DRAW_DEFINITION, MISSING_STRUCTURE_ID, STRUCTURE_NOT_FOUND } from '@Constants/errorConditionConstants';
 
 /**
  * Recompute and save participant-result tallies for a round-robin / ad-hoc /

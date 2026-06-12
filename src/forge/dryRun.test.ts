@@ -1,7 +1,7 @@
 import { beforeEach, describe, expect, it } from 'vitest';
 
-import tournamentEngine from '../tests/engines/syncEngine';
-import { mocksEngine } from '../assemblies/engines/mock';
+import { mocksEngine } from '@Assemblies/engines/mock';
+import tournamentEngine from '@Engines/syncEngine';
 import { explain } from './explain';
 import { dryRun } from './dryRun';
 

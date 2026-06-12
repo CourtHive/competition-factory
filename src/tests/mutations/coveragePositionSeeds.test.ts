@@ -1,10 +1,10 @@
 import { positionSeedBlocks } from '@Mutate/matchUps/drawPositions/positionSeeds';
-import { POLICY_AVOIDANCE_COUNTRY } from '@Fixtures/policies/POLICY_AVOIDANCE_COUNTRY';
-import { createSeededRandom } from '@Tools/prng';
 import tournamentEngine from '@Engines/syncEngine';
 import mocksEngine from '@Assemblies/engines/mock';
+import { createSeededRandom } from '@Tools/prng';
 import { expect, it, describe } from 'vitest';
 
+import { POLICY_AVOIDANCE_COUNTRY } from '@Fixtures/policies/POLICY_AVOIDANCE_COUNTRY';
 import { POLICY_TYPE_AVOIDANCE } from '@Constants/policyConstants';
 import { APPLIED_POLICIES } from '@Constants/extensionConstants';
 import { MAIN } from '@Constants/drawDefinitionConstants';
@@ -58,7 +58,7 @@ describe('reorderSeedsForAvoidance swap loop', () => {
 
     // Direct call bypasses the engine's "one function arg" wrapper limit.
     const result: any = positionSeedBlocks({
-      participants: tournamentRecord.participants as any,
+      participants: tournamentRecord.participants,
       random: createSeededRandom(seed),
       structureId: structure.structureId,
       drawDefinition,
@@ -89,7 +89,7 @@ describe('reorderSeedsForAvoidance swap loop', () => {
     const structure = drawDefinition.structures.find((s) => s.stage === MAIN);
 
     const result: any = positionSeedBlocks({
-      participants: tournamentRecord.participants as any,
+      participants: tournamentRecord.participants,
       structureId: structure.structureId,
       drawDefinition,
       structure,
@@ -125,7 +125,7 @@ describe('reorderSeedsForAvoidance early returns', () => {
     });
 
     const result: any = positionSeedBlocks({
-      participants: tournamentRecord.participants as any,
+      participants: tournamentRecord.participants,
       structureId: structure.structureId,
       drawDefinition,
       structure,
@@ -167,7 +167,7 @@ describe('positionSeedBlocks error aggregation', () => {
     }));
 
     const result: any = positionSeedBlocks({
-      participants: tournamentRecord.participants as any,
+      participants: tournamentRecord.participants,
       structureId: structure.structureId,
       drawDefinition,
       groupsCount: seedsCount,

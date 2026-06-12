@@ -6,8 +6,8 @@ import { getMatchUpsToSchedule } from '@Mutate/matchUps/schedule/scheduleMatchUp
 import { addFlight } from '@Mutate/events/addFlight';
 
 // Query
-import { checkMatchUpIsComplete } from '@Query/matchUp/checkMatchUpIsComplete';
 import { querySanctioningRecord } from '@Query/sanctioning/getSanctioningRecord';
+import { checkMatchUpIsComplete } from '@Query/matchUp/checkMatchUpIsComplete';
 import { getScaleValues } from '@Query/participant/getScaleValues';
 
 // Validators
@@ -140,10 +140,7 @@ describe('getMatchUpsToSchedule', () => {
   });
 
   it('filters out matchUps with winningSide', () => {
-    const matchUps = [
-      { matchUpId: 'm1', winningSide: 1 },
-      { matchUpId: 'm2' },
-    ];
+    const matchUps = [{ matchUpId: 'm1', winningSide: 1 }, { matchUpId: 'm2' }];
     const orderedMatchUpIds = ['m1', 'm2'];
 
     const { matchUpsToSchedule } = getMatchUpsToSchedule({ matchUps, orderedMatchUpIds });
@@ -152,11 +149,7 @@ describe('getMatchUpsToSchedule', () => {
   });
 
   it('returns only matchUps in orderedMatchUpIds', () => {
-    const matchUps = [
-      { matchUpId: 'm1' },
-      { matchUpId: 'm2' },
-      { matchUpId: 'm3' },
-    ];
+    const matchUps = [{ matchUpId: 'm1' }, { matchUpId: 'm2' }, { matchUpId: 'm3' }];
     const orderedMatchUpIds = ['m2'];
 
     const { matchUpsToSchedule } = getMatchUpsToSchedule({ matchUps, orderedMatchUpIds });
@@ -165,10 +158,7 @@ describe('getMatchUpsToSchedule', () => {
   });
 
   it('includes completed matchUps when scheduleCompletedMatchUps is true', () => {
-    const matchUps = [
-      { matchUpId: 'm1', matchUpStatus: COMPLETED },
-      { matchUpId: 'm2' },
-    ];
+    const matchUps = [{ matchUpId: 'm1', matchUpStatus: COMPLETED }, { matchUpId: 'm2' }];
     const orderedMatchUpIds = ['m1', 'm2'];
 
     const { matchUpsToSchedule } = getMatchUpsToSchedule({

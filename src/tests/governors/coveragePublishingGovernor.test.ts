@@ -52,7 +52,7 @@ describe('isEmbargoed', () => {
   });
 
   it('returns false when detail is undefined', () => {
-    expect(isEmbargoed(undefined)).toBe(false);
+    expect(isEmbargoed()).toBe(false);
   });
 
   it('returns false when detail has no embargo', () => {
@@ -83,7 +83,7 @@ describe('isVisiblyPublished', () => {
   });
 
   it('returns false when detail is undefined', () => {
-    expect(isVisiblyPublished(undefined)).toBe(false);
+    expect(isVisiblyPublished()).toBe(false);
   });
 
   it('returns false when not published', () => {

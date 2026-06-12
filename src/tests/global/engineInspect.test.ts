@@ -1,13 +1,13 @@
 import { describe, expect, it } from 'vitest';
 
+import mocksEngine from '@Assemblies/engines/mock';
+import tournamentEngine from '@Engines/syncEngine';
 import {
   setAuditAuthorityServer,
   setSaveDrawDeletions,
   setSchemaWriteMode,
   setSubscriptions,
 } from '@Global/state/globalState';
-import mocksEngine from '@Assemblies/engines/mock';
-import tournamentEngine from '@Engines/syncEngine';
 
 // constants and types
 import { LEGACY, NATIVE } from '@Constants/schemaWriteModeConstants';

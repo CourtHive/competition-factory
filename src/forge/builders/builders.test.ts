@@ -7,15 +7,15 @@
  */
 import { beforeEach, describe, expect, it } from 'vitest';
 
-import { COMPETITOR, COACH } from '@Constants/participantRoles';
-import { INDIVIDUAL, PAIR, TEAM } from '@Constants/participantConstants';
-import { DOUBLES, HYBRID, SINGLES, TEAM as TEAM_EVENT } from '@Constants/eventConstants';
-import { DIRECT_ACCEPTANCE } from '@Constants/entryStatusConstants';
-import { MAIN, QUALIFYING } from '@Constants/drawDefinitionConstants';
-
-import { mocksEngine } from '@Assemblies/engines/mock';
-import tournamentEngine from '../../tests/engines/syncEngine';
 import { EventBuilder, ParticipantBuilder } from './index';
+import { mocksEngine } from '@Assemblies/engines/mock';
+import tournamentEngine from '@Engines/syncEngine';
+
+import { DOUBLES, HYBRID, SINGLES, TEAM as TEAM_EVENT } from '@Constants/eventConstants';
+import { INDIVIDUAL, PAIR, TEAM } from '@Constants/participantConstants';
+import { MAIN, QUALIFYING } from '@Constants/drawDefinitionConstants';
+import { DIRECT_ACCEPTANCE } from '@Constants/entryStatusConstants';
+import { COMPETITOR, COACH } from '@Constants/participantRoles';
 
 describe('EventBuilder', () => {
   beforeEach(() => {

@@ -2,8 +2,8 @@
 
 // Generators
 import { generateDrawStructuresAndLinks } from '@Generators/drawDefinitions/generateDrawStructuresAndLinks';
-import { addFinishingRounds } from '@Generators/drawDefinitions/addFinishingRounds';
 import { getDrawTypeCoercion } from '@Generators/drawDefinitions/getDrawTypeCoercion';
+import { addFinishingRounds } from '@Generators/drawDefinitions/addFinishingRounds';
 import { newDrawDefinition } from '@Generators/drawDefinitions/newDrawDefinition';
 
 // Query
@@ -18,8 +18,8 @@ import mocksEngine from '@Assemblies/engines/mock';
 import { expect, it, describe } from 'vitest';
 
 // Constants
-import { MISSING_DRAW_DEFINITION } from '@Constants/errorConditionConstants';
 import { AD_HOC, SINGLE_ELIMINATION } from '@Constants/drawDefinitionConstants';
+import { MISSING_DRAW_DEFINITION } from '@Constants/errorConditionConstants';
 import { POLICY_TYPE_DRAWS } from '@Constants/policyConstants';
 
 // ----------------------------------------------------------------
