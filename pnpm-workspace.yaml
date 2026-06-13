@@ -29,6 +29,8 @@ minimumReleaseAgeExclude:
   - 'pdf-factory'
   - 'scoring-visualizations'
   - 'tabulator-scorecards'
+  # Renovate security update: esbuild@0.28.1
+  - esbuild@0.28.1
 verifyDepsBeforeRun: false
 
 # Security overrides for transitive (dev-only) dependencies. pnpm v11 reads
