@@ -1,5 +1,17 @@
 # Changelog
 
+## [5.6.0](https://github.com/CourtHive/competition-factory/compare/v5.5.0...v5.6.0) (2026-06-13)
+
+
+### Features
+
+* **anonymize:** attach mock parentOrganisation when provided ([d6c4f2e](https://github.com/CourtHive/competition-factory/commit/d6c4f2e0a5dd12850c11cb6ba25cac1cc75bd614))
+
+
+### Bug Fixes
+
+* **participants:** default entries to [] so getParticipants survives sparse records ([3f0c31f](https://github.com/CourtHive/competition-factory/commit/3f0c31f0a63b85b97df12019d3fc2d2e242d67ac))
+
 ## [5.5.0](https://github.com/CourtHive/competition-factory/compare/v5.4.0...v5.5.0) (2026-06-12)
 
 
