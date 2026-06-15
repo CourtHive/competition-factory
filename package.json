@@ -1,6 +1,6 @@
 {
   "name": "tods-competition-factory",
-  "packageManager": "pnpm@11.6.0",
+  "packageManager": "pnpm@11.7.0",
   "author": "Charles Allen <charles@CourtHive.com> (CourtHive.com)",
   "description": "Create and mutate TODS compliant tournament objects",
   "keywords": [
