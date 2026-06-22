@@ -1196,6 +1196,35 @@ engine.addMatchUpScheduleItems({
 
 ---
 
+## Auto-captured `scoredTime`
+
+`matchUp.schedule.scoredTime` is a first-class ISO-8601 timestamp that the engine
+captures **automatically** the first time a matchUp becomes scored — that is, when
+a score with value, a `winningSide`, or a completed `matchUpStatus` is applied via
+`setMatchUpStatus`. No caller action is required.
+
+Behavior:
+
+- **Captured once.** The first scored mutation stamps the timestamp; later score
+  corrections preserve the original value (it records when the result first
+  entered the system, not the latest edit).
+- **Cleared on removal.** If the score is removed (the matchUp is reset to
+  `TO_BE_PLAYED`), `scoredTime` is deleted, so a subsequent re-score gets a fresh
+  stamp.
+- **Proxy for completion time.** It is a lightweight stand-in for "when did this
+  match actually finish" when no explicit `END_TIME` time-item was recorded —
+  useful for analytics on tournament-director behaviour (how promptly results are
+  entered). An actual `endTime`, when present, supersedes it.
+- **No legacy mirror.** Like `calledAt`, `scoredTime` is a CODES-native schedule
+  attribute with no legacy time-item equivalent — it is always read from and
+  written to `matchUp.schedule.scoredTime`.
+
+This is engine-generated state, not an input: it is treated as read-only by
+consumers and reflects the engine's own capture, not a value supplied by the
+caller.
+
+---
+
 ## Related Documentation
 
 - **[Scheduling Overview](../concepts/scheduling-overview)** - Core scheduling concepts

@@ -377,6 +377,13 @@ export interface MatchUpSchedule {
   official?: any;
   scheduledDate?: string;
   scheduledTime?: string;
+  // CODES 5.0.0 first-class: ISO timestamp auto-captured the first time a
+  // matchUp receives a meaningful score/winningSide. A lightweight proxy for
+  // "when did this match actually finish" — useful for analytics on tournament
+  // director behavior when no explicit END_TIME timeItem was recorded.
+  // Cleared automatically when the score is removed; an actual endTime, when
+  // present, supersedes it. No legacy timeItem mirror.
+  scoredTime?: string;
   timeModifiers?: string[];
   venueId?: string;
   // derived/hydrated read-only fields (populated by getMatchUpScheduleDetails)

@@ -51,6 +51,7 @@ import {
   BYE,
   CANCELLED,
   COMPLETED,
+  completedMatchUpStatuses,
   DEFAULTED,
   DOUBLE_DEFAULT,
   DOUBLE_WALKOVER,
@@ -413,7 +414,30 @@ function resolveAndApplyOutcome({ params, isTeam, dualWinningSideChange, activeD
     result = { error: NO_VALID_ACTIONS };
   }
 
+  if (!result?.error) applyScoredTime({ matchUp });
+
   return decorateResult({ result, stack });
+}
+
+// Auto-capture matchUp.schedule.scoredTime the first time a matchUp becomes
+// "scored" (a score with value, a winningSide, or a completed status). Applied
+// at the convergence point so it covers every apply sub-path. Captured once —
+// later score corrections keep the original timestamp; cleared when the score
+// is removed so a subsequent re-score gets a fresh stamp. A lightweight proxy
+// for when the match actually finished (TD-behavior analytics) when no explicit
+// END_TIME timeItem is recorded; an actual endTime supersedes it at read time.
+function applyScoredTime({ matchUp }) {
+  const isScored =
+    !!matchUp.winningSide ||
+    checkScoreHasValue({ score: matchUp.score }) ||
+    (matchUp.matchUpStatus && completedMatchUpStatuses.includes(matchUp.matchUpStatus));
+
+  if (isScored) {
+    if (!matchUp.schedule) matchUp.schedule = {};
+    if (!matchUp.schedule.scoredTime) matchUp.schedule.scoredTime = new Date().toISOString();
+  } else if (matchUp.schedule?.scoredTime) {
+    delete matchUp.schedule.scoredTime;
+  }
 }
 
 function handleTeamAutoCalc({
