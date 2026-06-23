@@ -1,3 +1,4 @@
+import { removeAssignment } from '../../drawDefinitions/testingUtilities';
 import tournamentEngine from '@Tests/engines/syncEngine';
 import mocksEngine from '@Assemblies/engines/mock';
 import { unique } from '@Tools/arrays';
@@ -533,4 +534,71 @@ test('can automatically progress the winner in a feed in round that already had 
   expect(round3ConsolationMatchUp?.sides?.[0].participantId).toBeUndefined;
   //making sure the progressed player is the one that was mark as the winner in the fed in round
   expect(round3ConsolationMatchUp?.sides?.[1].participantId).toEqual(winnerParticipantId);
+});
+
+test('FMLC: propagated WO against consolation BYE advances the WO player (not the BYE) to the next round', () => {
+  // Scenario: FMLC 8-player draw where positions 2 and 4 are BYEs.
+  // - Player at position 1 and player at position 3 both advance to R2P1 via BYE in R1 (validForConsolation).
+  // - The R1 losers (BYEs) produce a double-BYE in consolation R1P1, which auto-cascades to consolation R2P1.
+  // - When R2P1 is set as WALKOVER (propagated), the WO player is fed into consolation R2P1 against that BYE.
+  // - With the fix: the WO player wins consolation R2P1 (not the BYE) and advances to consolation R3.
+  // - Without the fix: the BYE wins consolation R2P1, giving consolation R3 BYE status and blocking the other player.
+  const idPrefix = 'm';
+  const drawId = 'drawId';
+  mocksEngine.generateTournamentRecord({
+    drawProfiles: [{ drawId, drawSize: 8, drawType: FIRST_MATCH_LOSER_CONSOLATION, idPrefix }],
+    setState: true,
+  });
+
+  const {
+    drawDefinition: {
+      structures: [mainStructure, consolationStructure],
+    },
+  } = tournamentEngine.getEvent({ drawId });
+
+  // Replace positions 2 and 4 with BYEs so:
+  //   - R1P1=[position1(player), BYE]   → player1 auto-advances to R2P1 (validForConsolation)
+  //   - R1P2=[position3(player), BYE]   → player3 auto-advances to R2P1 (validForConsolation)
+  //   - Consolation R1P1 receives [BYE, BYE] → double-BYE cascades a BYE into consolation R2P1
+  removeAssignment({ drawId, structureId: mainStructure.structureId, drawPosition: 2, replaceWithBye: true });
+  removeAssignment({ drawId, structureId: mainStructure.structureId, drawPosition: 4, replaceWithBye: true });
+
+  // Set R1P3 and R1P4 scores so the bottom half of the draw completes normally
+  const { outcome } = mocksEngine.generateOutcomeFromScoreString({ scoreString: '6-1 6-1', winningSide: 1 });
+  tournamentEngine.setMatchUpStatus({ matchUpId: 'm-1-3', outcome, drawId });
+  tournamentEngine.setMatchUpStatus({ matchUpId: 'm-1-4', outcome, drawId });
+
+  // Set R2P1: player3 (winningSide=2, side 1 is player1) wins via WALKOVER (propagated).
+  // Player1 had 0 scored wins (won R1 via BYE) → validForConsolation.
+  const result = tournamentEngine.setMatchUpStatus({
+    outcome: { matchUpStatus: WALKOVER, winningSide: 2, matchUpStatusCodes: ['W1'] },
+    propagateExitStatus: true,
+    matchUpId: 'm-2-1',
+    drawId,
+  });
+  expect(result.success).toEqual(true);
+
+  const matchUps = tournamentEngine.allDrawMatchUps({ drawId, inContext: true }).matchUps;
+  const consolationMatchUps = matchUps.filter((m) => m.structureId === consolationStructure.structureId);
+
+  // The feed-in consolation match (R2) for the WO player should be WALKOVER
+  // and the WO player (player1) should be the WINNER (not the BYE)
+  const consolationFeedInMatchUp = consolationMatchUps.find((m) => m.roundNumber === 2 && m.roundPosition === 1);
+  expect(consolationFeedInMatchUp?.matchUpStatus).toEqual(WALKOVER);
+
+  // The WO player's participantId is at the WINNING side
+  const winningSideParticipantId =
+    consolationFeedInMatchUp?.sides?.find((s) => s.sideNumber === consolationFeedInMatchUp.winningSide)
+      ?.participantId;
+  expect(winningSideParticipantId).toBeDefined();
+
+  // The consolation R3 match must NOT be BYE — it should be TO_BE_PLAYED awaiting the other R2 winner
+  const consolationR3MatchUp = consolationMatchUps.find((m) => m.roundNumber === 3);
+  expect(consolationR3MatchUp?.matchUpStatus).toEqual(TO_BE_PLAYED);
+
+  // The WO player must be in consolation R3, ready to play their opponent
+  const consolationR3HasWoPlayer = consolationR3MatchUp?.sides?.some(
+    (s) => s.participantId === winningSideParticipantId,
+  );
+  expect(consolationR3HasWoPlayer).toEqual(true);
 });
