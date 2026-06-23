@@ -1,5 +1,12 @@
 # Changelog
 
+## [5.7.0](https://github.com/CourtHive/competition-factory/compare/v5.6.0...v5.7.0) (2026-06-23)
+
+
+### Features
+
+* **schedule:** auto-capture matchUp.schedule.scoredTime on first score ([#4451](https://github.com/CourtHive/competition-factory/issues/4451)) ([b330ced](https://github.com/CourtHive/competition-factory/commit/b330ced061cc73a6b939aa328fc66526be9a7eee))
+
 ## [5.6.0](https://github.com/CourtHive/competition-factory/compare/v5.5.0...v5.6.0) (2026-06-13)
 
 
