@@ -8,7 +8,7 @@ overrides:
   qs: ^6.15.2
   form-data: '>=4.0.6'
   multer: '>=2.2.0'
-  piscina: ^4.9.3
+  piscina: ^5.0.0
 
 importers:
 
@@ -4807,8 +4807,9 @@ packages:
     resolution: {integrity: sha512-TfySrs/5nm8fQJDcBDuUng3VOUKsd7S+zqvbOTiGXHfxX4wK31ard+hoNuvkicM/2YFzlpDgABOevKSsB4G/FA==}
     engines: {node: '>= 6'}
 
-  piscina@4.9.3:
-    resolution: {integrity: sha512-3e3ka9QCE8RJ5I9uszdAADZnkcYi21cqmF3gxox3u884N72qpFHCsIVhHt8cEQ9t3Auq/NqoiCEuhxlxxQuDWA==}
+  piscina@5.2.0:
+    resolution: {integrity: sha512-DszUCKeVN/5G5QKo6jAVHL8fmKnkJvQ0ACiVgY7YGCq3TUB2oznAOayvZPIAdEThvhczkXR+qm3IHsNXpFCYfA==}
+    engines: {node: '>=20.x'}
 
   pkg-dir@4.2.0:
     resolution: {integrity: sha512-HRDzbaKjC+AOWVXxAU/x54COGeIv9eb+6CkDSQoNTt4XyWoIJvuPsXizxu/Fr23EiekbtZwmh1IcIG/l/a10GQ==}
@@ -7833,7 +7834,7 @@ snapshots:
       '@xhmikosr/bin-wrapper': 14.2.3
       commander: 8.3.0
       minimatch: 9.0.9
-      piscina: 4.9.3
+      piscina: 5.2.0
       semver: 7.8.5
       slash: 3.0.0
       source-map: 0.7.6
@@ -10877,7 +10878,7 @@ snapshots:
 
   pirates@4.0.7: {}
 
-  piscina@4.9.3:
+  piscina@5.2.0:
     optionalDependencies:
       '@napi-rs/nice': 1.1.1
 
