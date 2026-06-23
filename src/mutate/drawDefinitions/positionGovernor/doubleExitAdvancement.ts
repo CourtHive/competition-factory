@@ -148,9 +148,7 @@ function handleLoserMatchUp({
   }
 
   const { feedRound, drawPositions, matchUpId } = loserMatchUp;
-  const walkoverWinningSide: number | undefined = feedRound
-    ? 2
-    : 2 - drawPositions.indexOf(loserTargetDrawPosition);
+  const walkoverWinningSide: number | undefined = feedRound ? 2 : 2 - drawPositions.indexOf(loserTargetDrawPosition);
   logAdvancement(stack, {
     color: 'cyan',
     decision: 'conditionallyAdvanceLoser',
@@ -549,18 +547,6 @@ function advanceFromTarget({
     });
   } else if (pairedPreviousMatchUpIsDoubleExit) {
     if (!noContextNextWinnerMatchUp) return { error: MISSING_MATCHUP };
-
-    if (nextWinnerMatchUpHasDrawPosition) {
-      const drawPosition = nextWinnerMatchUpDrawPositions[0];
-      const woWinningSide = getExitWinningSide({
-        matchUpId: targetMatchUp.matchUpId,
-        inContextDrawMatchUps,
-        drawPosition,
-      });
-      console.log('existing drawPosition is winningSide', {
-        walkoverWinningSide: woWinningSide,
-      });
-    }
 
     const nextMatchUpStatus = isExit(noContextNextWinnerMatchUp.matchUpStatus) ? EXIT : DOUBLE_EXIT;
 
