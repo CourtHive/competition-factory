@@ -9,6 +9,15 @@ import { DOUBLE_WALKOVER, RETIRED, WALKOVER } from '@Constants/matchUpStatusCons
 import { MISSING_MATCHUP } from '@Constants/errorConditionConstants';
 import { OUTCOME_WALKOVER } from '@Helpers/keyValueScore/constants';
 
+// When the opponent draw position is a BYE, the walkover player is the only real
+// participant and should advance — a BYE cannot win the match. Extracted from
+// progressExitStatus to keep it within the cognitive-complexity limit.
+function singleParticipantWinningSide(loserParticipantSide, updatedLoserMatchUp) {
+  const otherSideNumber = loserParticipantSide.sideNumber === 1 ? 2 : 1;
+  const otherSideIsBye = updatedLoserMatchUp.sides?.find((s) => s.sideNumber === otherSideNumber)?.bye;
+  return otherSideIsBye ? loserParticipantSide.sideNumber : otherSideNumber;
+}
+
 export function progressExitStatus({
   sourceMatchUpStatusCodes,
   propagateExitStatus,
@@ -103,11 +112,7 @@ export function progressExitStatus({
       //So we make sure there is only one participant and no existing status codes, otherwise
       //it should be set as a double walkover.
       if (participantsCount === 1 && statusCodes.length === 0) {
-        const otherSideNumber = loserParticipantSide.sideNumber === 1 ? 2 : 1;
-        const otherSideIsBye = updatedLoserMatchUp.sides?.find((s) => s.sideNumber === otherSideNumber)?.bye;
-        // When the opponent draw position is a BYE, the WO player is the only real participant
-        // and should advance (a BYE cannot win the match)
-        winningSide = otherSideIsBye ? loserParticipantSide.sideNumber : otherSideNumber;
+        winningSide = singleParticipantWinningSide(loserParticipantSide, updatedLoserMatchUp);
         //set the original status code from the original status codes
         //this is flawed a bit, or at least the TDesk ui, as even if there are two participants
         //for a WO/DEFAULT, the status code is always the first element.
