@@ -1,5 +1,17 @@
 # Changelog
 
+## [5.8.0](https://github.com/CourtHive/competition-factory/compare/v5.7.1...v5.8.0) (2026-06-28)
+
+
+### Features
+
+* **setTournamentDates:** block changes that orphan scheduled matchUps; add force override ([03f8f84](https://github.com/CourtHive/competition-factory/commit/03f8f84874e7c984f8d6457613d6a5eb58bb2378))
+
+
+### Documentation
+
+* pnpm install allowed (npm still blocked) ([7440e94](https://github.com/CourtHive/competition-factory/commit/7440e944cad1bbec852f92f5a4e1ccc918662732))
+
 ## [5.7.1](https://github.com/CourtHive/competition-factory/compare/v5.7.0...v5.7.1) (2026-06-23)
 
 
