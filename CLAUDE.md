@@ -47,4 +47,4 @@ pnpm check-types          # tsc --noEmit
 
 ## Package Installation
 
-**Never run `npm install`.** Adding dependencies is a manual developer operation. Mentat standards apply.
+**Never run `npm install`** (it corrupts the pnpm-managed store). `pnpm install` is allowed — e.g. to sync the lockfile after editing deps. Keep dependency additions deliberate. Mentat standards apply.
