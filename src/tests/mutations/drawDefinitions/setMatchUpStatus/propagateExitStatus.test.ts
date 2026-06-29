@@ -346,6 +346,47 @@ test('can propagate an exit status and progress the already existing opponent in
   expect(loserMatchUp?.winningSide).toEqual(1);
 });
 
+test('FMLC 32p: WO player with BYE cascade should be eliminated at consolation R3, not advance to R4', () => {
+  const drawId = 'drawId';
+  mocksEngine.generateTournamentRecord({
+    drawProfiles: [{ drawId, drawSize: 32, drawType: FIRST_MATCH_LOSER_CONSOLATION }],
+    setState: true,
+  });
+
+  const { drawDefinition: { structures: [mainStructure, consolationStructure] } } = tournamentEngine.getEvent({ drawId });
+
+  // BYEs at 2, 6, 8, 10 match the pattern from reported real-world tournament data
+  for (const drawPosition of [2, 6, 8, 10]) {
+    removeAssignment({ drawId, structureId: mainStructure.structureId, drawPosition, replaceWithBye: true });
+  }
+
+  // Find main R2P2 (pos5 vs pos7 — both had BYEs at R1 so their first match is R2)
+  let matchUps = tournamentEngine.allDrawMatchUps({ drawId, inContext: true }).matchUps;
+  const mainR2P2 = matchUps.find(
+    (m) => m.structureId === mainStructure.structureId && m.roundNumber === 2 && m.roundPosition === 2,
+  );
+  expect(mainR2P2).toBeDefined();
+
+  const woLoserId = mainR2P2.sides?.find((s) => s.sideNumber === 1)?.participantId;
+  expect(woLoserId).toBeDefined();
+
+  // WO: side 2 wins, side 1 (the BYE-player) loses and enters consolation
+  tournamentEngine.setMatchUpStatus({
+    outcome: { matchUpStatus: WALKOVER, winningSide: 2, matchUpStatusCodes: ['W1'] },
+    propagateExitStatus: true,
+    matchUpId: mainR2P2.matchUpId,
+    drawId,
+  });
+
+  matchUps = tournamentEngine.allDrawMatchUps({ drawId, inContext: true }).matchUps;
+  const consolationR4Plus = matchUps.filter(
+    (m) => m.structureId === consolationStructure.structureId && m.roundNumber >= 4,
+  );
+
+  const woLosterInR4Plus = consolationR4Plus.some((m) => m.sides?.some((s) => s.participantId === woLoserId));
+  expect(woLosterInR4Plus).toBe(false);
+});
+
 test('can propagate an exit status in a compass draw', () => {
   const idPrefix = 'matchUp';
   const drawId = 'drawId';
@@ -541,8 +582,8 @@ test('FMLC: propagated WO against consolation BYE advances the WO player (not th
   // - Player at position 1 and player at position 3 both advance to R2P1 via BYE in R1 (validForConsolation).
   // - The R1 losers (BYEs) produce a double-BYE in consolation R1P1, which auto-cascades to consolation R2P1.
   // - When R2P1 is set as WALKOVER (propagated), the WO player is fed into consolation R2P1 against that BYE.
-  // - With the fix: the WO player wins consolation R2P1 (not the BYE) and advances to consolation R3.
-  // - Without the fix: the BYE wins consolation R2P1, giving consolation R3 BYE status and blocking the other player.
+  // - The WO player wins consolation R2P1 (not the BYE) and advances to consolation R3.
+  // - The WO status is then carried forward to consolation R3, where the WO player is eliminated.
   const idPrefix = 'm';
   const drawId = 'drawId';
   mocksEngine.generateTournamentRecord({
@@ -586,19 +627,79 @@ test('FMLC: propagated WO against consolation BYE advances the WO player (not th
   const consolationFeedInMatchUp = consolationMatchUps.find((m) => m.roundNumber === 2 && m.roundPosition === 1);
   expect(consolationFeedInMatchUp?.matchUpStatus).toEqual(WALKOVER);
 
-  // The WO player's participantId is at the WINNING side
-  const winningSideParticipantId =
+  // The WO player's participantId is at the WINNING side of consolation R2
+  const woPlayerParticipantId =
     consolationFeedInMatchUp?.sides?.find((s) => s.sideNumber === consolationFeedInMatchUp.winningSide)
       ?.participantId;
-  expect(winningSideParticipantId).toBeDefined();
+  expect(woPlayerParticipantId).toBeDefined();
 
-  // The consolation R3 match must NOT be BYE — it should be TO_BE_PLAYED awaiting the other R2 winner
+  // Consolation R3 must be WALKOVER — the WO status was carried from R2 into R3
   const consolationR3MatchUp = consolationMatchUps.find((m) => m.roundNumber === 3);
-  expect(consolationR3MatchUp?.matchUpStatus).toEqual(TO_BE_PLAYED);
+  expect(consolationR3MatchUp?.matchUpStatus).toEqual(WALKOVER);
 
-  // The WO player must be in consolation R3, ready to play their opponent
-  const consolationR3HasWoPlayer = consolationR3MatchUp?.sides?.some(
-    (s) => s.participantId === winningSideParticipantId,
+  // The WO player must be in consolation R3 on the LOSING side (they exit here)
+  const woPlayerSideInR3 = consolationR3MatchUp?.sides?.find((s) => s.participantId === woPlayerParticipantId);
+  expect(woPlayerSideInR3).toBeDefined();
+  expect(woPlayerSideInR3?.sideNumber).not.toEqual(consolationR3MatchUp?.winningSide);
+});
+
+test('FMLC: propagated WO carried through consolation BYE eliminates WO player when opponent already present in next round', () => {
+  // Scenario: same 8-player FMLC with BYEs at positions 2 and 4, but consolation R2P2 is played first
+  // so that consolation R3 already has a real player when the WO propagates.
+  // The WO player should lose to that real player in consolation R3.
+  const idPrefix = 'm';
+  const drawId = 'drawId';
+  mocksEngine.generateTournamentRecord({
+    drawProfiles: [{ drawId, drawSize: 8, drawType: FIRST_MATCH_LOSER_CONSOLATION, idPrefix }],
+    setState: true,
+  });
+
+  const {
+    drawDefinition: {
+      structures: [mainStructure, consolationStructure],
+    },
+  } = tournamentEngine.getEvent({ drawId });
+
+  removeAssignment({ drawId, structureId: mainStructure.structureId, drawPosition: 2, replaceWithBye: true });
+  removeAssignment({ drawId, structureId: mainStructure.structureId, drawPosition: 4, replaceWithBye: true });
+
+  const { outcome: winOutcome } = mocksEngine.generateOutcomeFromScoreString({ scoreString: '6-1 6-1', winningSide: 1 });
+  // Complete the bottom half of the main draw so consolation R1P2 gets its 2 players
+  tournamentEngine.setMatchUpStatus({ matchUpId: 'm-1-3', outcome: winOutcome, drawId });
+  tournamentEngine.setMatchUpStatus({ matchUpId: 'm-1-4', outcome: winOutcome, drawId });
+  // Complete main R2P2 so its loser feeds into consolation R2P2
+  tournamentEngine.setMatchUpStatus({ matchUpId: 'm-2-2', outcome: winOutcome, drawId });
+  // Complete consolation R1P2 so its winner feeds into consolation R2P2
+  tournamentEngine.setMatchUpStatus({ matchUpId: 'm-c-1-2', outcome: winOutcome, drawId });
+  // Complete consolation R2P2 so a real player is now waiting in consolation R3
+  tournamentEngine.setMatchUpStatus({ matchUpId: 'm-c-2-2', outcome: winOutcome, drawId });
+
+  let matchUps = tournamentEngine.allDrawMatchUps({ drawId, inContext: true }).matchUps;
+  const consolationMatchUpsBeforeWO = matchUps.filter((m) => m.structureId === consolationStructure.structureId);
+  const consolationR3Before = consolationMatchUpsBeforeWO.find((m) => m.roundNumber === 3);
+  // Consolation R3 should already have one real player present before the WO
+  const opponentParticipantId = consolationR3Before?.sides?.find((s) => s.participantId)?.participantId;
+  expect(opponentParticipantId).toBeDefined();
+
+  // Now propagate the WO from main R2P1 — player1 is validForConsolation and faces the BYE chain
+  const result = tournamentEngine.setMatchUpStatus({
+    outcome: { matchUpStatus: WALKOVER, winningSide: 2, matchUpStatusCodes: ['W1'] },
+    propagateExitStatus: true,
+    matchUpId: 'm-2-1',
+    drawId,
+  });
+  expect(result.success).toEqual(true);
+
+  matchUps = tournamentEngine.allDrawMatchUps({ drawId, inContext: true }).matchUps;
+  const consolationMatchUps = matchUps.filter((m) => m.structureId === consolationStructure.structureId);
+
+  // Consolation R3 must now be WALKOVER with the real opponent winning
+  const consolationR3MatchUp = consolationMatchUps.find((m) => m.roundNumber === 3);
+  expect(consolationR3MatchUp?.matchUpStatus).toEqual(WALKOVER);
+
+  // The real opponent (not the WO player) must be the winner
+  const consolationR3Winner = consolationR3MatchUp?.sides?.find(
+    (s) => s.sideNumber === consolationR3MatchUp.winningSide,
   );
-  expect(consolationR3HasWoPlayer).toEqual(true);
+  expect(consolationR3Winner?.participantId).toEqual(opponentParticipantId);
 });
