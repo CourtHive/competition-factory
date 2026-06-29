@@ -1,5 +1,12 @@
 # Changelog
 
+## [5.9.0](https://github.com/CourtHive/competition-factory/compare/v5.8.0...v5.9.0) (2026-06-29)
+
+
+### Features
+
+* **matchUps:** setDelegatedOutcome accepts canonical outcome ([2d068db](https://github.com/CourtHive/competition-factory/commit/2d068db5858991e15370cc0c146388f8045ff991))
+
 ## [5.8.0](https://github.com/CourtHive/competition-factory/compare/v5.7.1...v5.8.0) (2026-06-28)
 
 
