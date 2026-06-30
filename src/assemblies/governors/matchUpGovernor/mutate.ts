@@ -6,6 +6,7 @@ export { removeTieMatchUpParticipantId } from '@Mutate/matchUps/lineUps/removeTi
 export { removeMatchUpSideParticipant } from '@Mutate/matchUps/sides/removeMatchUpSideParticipant';
 export { enableTieAutoCalc } from '@Mutate/drawDefinitions/matchUpGovernor/enableTieAutoCalc';
 export { removeDelegatedOutcome } from '@Mutate/extensions/matchUps/removeDelegatedOutcome';
+export { abandonTournamentMatchUps } from '@Mutate/tournaments/abandonTournamentMatchUps';
 export { updateTieMatchUpScore } from '@Mutate/matchUps/score/updateTieMatchUpScore';
 export { substituteParticipant } from '@Mutate/drawDefinitions/substituteParticipant';
 export { checkOutParticipant } from '@Mutate/timeItems/matchUps/checkOutParticipant';

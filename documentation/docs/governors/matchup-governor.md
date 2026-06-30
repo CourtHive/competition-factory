@@ -6,6 +6,28 @@ title: matchUp Governor
 import { matchUpGovernor } from 'tods-competition-factory';
 ```
 
+## abandonTournamentMatchUps
+
+Bulk "end the tournament": sets every still-playable matchUp to `ABANDONED`. Intended for tournaments whose draws cannot be completed (for example, rain) — rather than leaving unplayed matchUps as `TO_BE_PLAYED`, a director marks them `ABANDONED` in a single call.
+
+Selection is driven by the derived `readyToScore` state: a matchUp with assigned participants on **both** sides, no `winningSide`, and an active structure. As a result BYEs, already-decided matchUps (`COMPLETED`, `WALKOVER`, `RETIRED`, …), already-terminal matchUps (`ABANDONED`, `CANCELLED`), and empty downstream rounds (no participants yet) are never touched. `ABANDONED` is a non-directing status, so no participant is advanced.
+
+This mutates matchUps only — it does **not** change event or tournament status. TEAM container matchUps and tie collection matchUps are out of scope.
+
+```js
+const { abandoned, matchUpIds } = engine.abandonTournamentMatchUps({
+  eventIds, // optional - restrict to these events
+  drawIds, // optional - restrict to these draws
+  requireNoScore, // optional - default true; when true, in-progress matchUps that already
+  // have a partial score are left untouched. Set false to also abandon
+  // started-but-unfinished matchUps.
+});
+// abandoned: number of matchUps set to ABANDONED
+// matchUpIds: ids of the matchUps that were abandoned
+```
+
+---
+
 ## allCompetitionMatchUps
 
 Returns all matchUps from all tournaments in a competition. See examples in [Using proConflicts() for Analysis](../concepts/pro-scheduling.md#using-proconflicts-for-analysis).
