@@ -43,7 +43,7 @@ export function modifyParticipant(params) {
   if (!existingParticipant) return addParticipant({ tournamentRecord, participant });
 
   const {
-    participantRoleResponsibilties,
+    participantRoleResponsibilities,
     individualParticipantIds,
     participantOtherName,
     participantName,
@@ -80,8 +80,8 @@ export function modifyParticipant(params) {
   if (Object.keys(participantRoles).includes(participantRole)) newValues.participantRole = participantRole;
   if (Object.keys(participantTypes).includes(participantType)) newValues.participantType = participantType;
 
-  if (Array.isArray(participantRoleResponsibilties))
-    newValues.participantRoleResponsibilties = participantRoleResponsibilties;
+  if (Array.isArray(participantRoleResponsibilities))
+    newValues.participantRoleResponsibilities = participantRoleResponsibilities;
 
   if (existingParticipant.participantType === participantTypes.INDIVIDUAL && person) {
     const personResult = updatePerson({
