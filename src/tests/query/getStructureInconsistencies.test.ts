@@ -1,6 +1,8 @@
 import {
   getStructureInconsistencies,
   WINNING_SIDE_ADVANCEMENT_MISMATCH,
+  WINNING_SIDE_WITHOUT_PARTICIPANT,
+  DRAW_POSITION_UNASSIGNED,
   DRAW_POSITIONS_NOT_SORTED,
   EXIT_CODE_ON_WINNER_SIDE,
   EXIT_WITHOUT_LOSER,
@@ -17,12 +19,19 @@ import {
   ROUND_ROBIN_WITH_PLAYOFF,
   SINGLE_ELIMINATION,
 } from '@Constants/drawDefinitionConstants';
-import { WALKOVER } from '@Constants/matchUpStatusConstants';
+import { DOUBLE_WALKOVER, WALKOVER } from '@Constants/matchUpStatusConstants';
 
 const matchUpAt = (drawId, roundNumber, roundPosition) =>
   tournamentEngine
     .allDrawMatchUps({ drawId, inContext: true })
     .matchUps.find((m) => m.roundNumber === roundNumber && m.roundPosition === roundPosition);
+
+const matchUpInStructure = (drawId, structureId, roundNumber, roundPosition) =>
+  tournamentEngine
+    .allDrawMatchUps({ drawId, inContext: true })
+    .matchUps.find(
+      (m) => m.structureId === structureId && m.roundNumber === roundNumber && m.roundPosition === roundPosition,
+    );
 
 test.for([[SINGLE_ELIMINATION], [FIRST_MATCH_LOSER_CONSOLATION], [COMPASS], [ROUND_ROBIN_WITH_PLAYOFF]])(
   'reports no inconsistencies for a fully-completed %s draw',
@@ -105,17 +114,17 @@ test('a legitimately PENDING propagated exit is NOT reported as inconsistent', (
   [2, 6, 8, 10, 23, 31].forEach((drawPosition) =>
     removeAssignment({ drawId, structureId: mainStructureId, drawPosition, replaceWithBye: true }),
   );
-  const mm = (r, p) =>
-    tournamentEngine
-      .allDrawMatchUps({ drawId, inContext: true })
-      .matchUps.find((m) => m.structureId === mainStructureId && m.roundNumber === r && m.roundPosition === p);
   const { outcome } = mocksEngine.generateOutcomeFromScoreString({ scoreString: '6-1 6-1', winningSide: 1 });
-  tournamentEngine.setMatchUpStatus({ matchUpId: mm(1, 2).matchUpId, outcome, drawId });
+  tournamentEngine.setMatchUpStatus({
+    matchUpId: matchUpInStructure(drawId, mainStructureId, 1, 2).matchUpId,
+    outcome,
+    drawId,
+  });
   // propagate a WALKOVER into the consolation → pending exit (empty winner slot)
   tournamentEngine.setMatchUpStatus({
     outcome: { matchUpStatus: WALKOVER, winningSide: 2, matchUpStatusCodes: ['W1'] },
     propagateExitStatus: true,
-    matchUpId: mm(2, 2).matchUpId,
+    matchUpId: matchUpInStructure(drawId, mainStructureId, 2, 2).matchUpId,
     drawId,
   });
 
@@ -166,6 +175,99 @@ test('detects an exit with no participant on the losing side', () => {
   const result: any = getStructureInconsistencies({ drawDefinition });
   const issue = result.inconsistencies.find((i) => i.matchUpId === woMatchUp.matchUpId);
   expect(issue?.issueType).toEqual(EXIT_WITHOUT_LOSER);
+});
+
+test('detects a decided matchUp referencing an unassigned (phantom) losing drawPosition', () => {
+  setSubscriptions({});
+  const drawId = 'phantom';
+  mocksEngine.generateTournamentRecord({
+    drawProfiles: [{ drawId, drawSize: 8, drawType: SINGLE_ELIMINATION, idPrefix: 'm' }],
+    completeAllMatchUps: true,
+    setState: true,
+  });
+  expect(tournamentEngine.getStructureInconsistencies({ drawId }).valid).toEqual(true);
+
+  // corrupt: on a completed, non-exit round-1 matchUp, clear the LOSING participant's
+  // stored positionAssignment. inContext derivation silently resolves that slot to a side
+  // with no participantId; no winning-side / exit check inspects the losing side of a
+  // non-exit, so only the stored-state phantom pass surfaces it.
+  const { drawDefinition } = tournamentEngine.getEvent({ drawId });
+  const structure = drawDefinition.structures[0];
+  const target = structure.matchUps.find(
+    (m) => m.roundNumber === 1 && m.winningSide && (m.drawPositions ?? []).filter(Boolean).length === 2,
+  );
+  // clear the assignment for the loser's drawPosition (the one NOT on the winning side)
+  const winnerDrawPosition = target.drawPositions[target.winningSide - 1];
+  const loserDrawPosition = target.drawPositions.find((dp) => dp !== winnerDrawPosition);
+  const assignment = structure.positionAssignments.find((a) => a.drawPosition === loserDrawPosition);
+  delete assignment.participantId;
+
+  const result: any = getStructureInconsistencies({ drawDefinition });
+  expect(result.valid).toEqual(false);
+  const forMatchUp = result.inconsistencies.filter((i) => i.matchUpId === target.matchUpId);
+  const phantom = forMatchUp.find((i) => i.issueType === DRAW_POSITION_UNASSIGNED);
+  expect(phantom).toBeTruthy();
+  expect(phantom.phantomPositions).toContain(loserDrawPosition);
+  // proves the stored pass is not redundant with the inContext winning-side check:
+  // clearing a LOSING slot produces no WINNING_SIDE_WITHOUT_PARTICIPANT for this matchUp
+  expect(forMatchUp.some((i) => i.issueType === WINNING_SIDE_WITHOUT_PARTICIPANT)).toEqual(false);
+});
+
+test('a pending propagated exit with an empty slot is NOT flagged as a phantom position', () => {
+  setSubscriptions({});
+  const drawId = 'phantomPending';
+  mocksEngine.generateTournamentRecord({
+    drawProfiles: [{ drawId, drawSize: 32, drawType: FIRST_MATCH_LOSER_CONSOLATION, idPrefix: 'm' }],
+    setState: true,
+  });
+  const { drawDefinition } = tournamentEngine.getEvent({ drawId });
+  const mainStructureId = drawDefinition.structures[0].structureId;
+  [2, 6, 8, 10, 23, 31].forEach((drawPosition) =>
+    removeAssignment({ drawId, structureId: mainStructureId, drawPosition, replaceWithBye: true }),
+  );
+  const { outcome } = mocksEngine.generateOutcomeFromScoreString({ scoreString: '6-1 6-1', winningSide: 1 });
+  tournamentEngine.setMatchUpStatus({
+    matchUpId: matchUpInStructure(drawId, mainStructureId, 1, 2).matchUpId,
+    outcome,
+    drawId,
+  });
+  tournamentEngine.setMatchUpStatus({
+    outcome: { matchUpStatus: WALKOVER, winningSide: 2, matchUpStatusCodes: ['W1'] },
+    propagateExitStatus: true,
+    matchUpId: matchUpInStructure(drawId, mainStructureId, 2, 2).matchUpId,
+    drawId,
+  });
+
+  const result: any = tournamentEngine.getStructureInconsistencies({ drawId });
+  expect(result.inconsistencies.some((i) => i.issueType === DRAW_POSITION_UNASSIGNED)).toEqual(false);
+  expect(result.valid).toEqual(true);
+});
+
+test('a consolation exit PRODUCED by an upstream double-walkover is NOT flagged as an orphan', () => {
+  // regression for the EXIT_WITHOUT_LOSER false positive the CI sweep surfaced: a main-draw
+  // DOUBLE_WALKOVER feeds an empty loser slot into consolation, which the engine legitimately
+  // resolves to a WALKOVER (stamped previousMatchUpStatus). That empty losing slot is correct.
+  setSubscriptions({});
+  const drawId = 'producedExit';
+  const { drawIds } = mocksEngine.generateTournamentRecord({
+    drawProfiles: [
+      {
+        drawId,
+        drawSize: 8,
+        drawType: FIRST_MATCH_LOSER_CONSOLATION,
+        idPrefix: 'pe',
+        outcomes: [{ roundNumber: 1, roundPosition: 1, matchUpStatus: DOUBLE_WALKOVER }],
+      },
+    ],
+    completeAllMatchUps: true,
+    setState: true,
+  });
+  expect(drawIds).toContain(drawId);
+
+  const result: any = tournamentEngine.getStructureInconsistencies({ drawId });
+  const producedExits = result.inconsistencies.filter((i) => i.issueType === EXIT_WITHOUT_LOSER);
+  expect(producedExits).toEqual([]);
+  expect(result.valid).toEqual(true);
 });
 
 // Corpus sweep: no legitimately-generated, fully-completed draw should report any

@@ -494,6 +494,31 @@ const { valid, inconsistencies } = engine.getStructureInconsistencies({
 // inconsistencies: [{ issueType, message, matchUpId, structureId, winningSide, ... }]
 ```
 
+You can also call it directly against a `drawDefinition` object, without loading a
+tournament into the engine — useful when validating records built outside the factory:
+
+```js
+import { drawsGovernor } from 'tods-competition-factory';
+
+const { valid, inconsistencies } = drawsGovernor.getStructureInconsistencies({ drawDefinition });
+```
+
+### Validating hand-built / reconstructed CODES draws
+
+Beyond internal engine regression testing, this method is a **structural conformance check
+for drawDefinitions that were _not_ produced by the factory's own generators**. Third-party
+provisioners and ingest pipelines routinely reconstruct CODES draw structures by hand — for
+example scraping results from an external provider (IONSport) or reconstructing draws from a
+national federation's data (Czech Tennis, ITF, Tennis Europe). Those pipelines have to place
+participants into `positionAssignments`, wire `winnerMatchUpId` / `loserMatchUpId` feeds, and
+set `winningSide` / `matchUpStatus` on each matchUp — exactly the relationships this checker
+audits. Running `getStructureInconsistencies` over a reconstructed `drawDefinition` surfaces
+the common reconstruction defects (an advanced participant that disagrees with `winningSide`,
+a decided matchUp pointing at an empty drawPosition, an exit code on the wrong side, unsorted
+`drawPositions`) as a concrete, machine-readable list of what is missing or wrong — before the
+record is published or fed into ranking / scheduling. It complements `analyzeDraws` /
+`getDrawData` (which describe a draw) by _asserting_ that its decided state is self-consistent.
+
 Checks (each a distinct `issueType`):
 
 - `WINNING_SIDE_WITHOUT_PARTICIPANT` — a non-exit decided matchUp whose winning side
@@ -508,8 +533,39 @@ Checks (each a distinct `issueType`):
 - `EXIT_CODE_ON_WINNER_SIDE` — on a single `WALKOVER`/`DEFAULTED`, a status code sits on
   the winning side rather than the exiting (loser) side.
 - `EXIT_WITHOUT_LOSER` — a single `WALKOVER`/`DEFAULTED` with a `winningSide` whose losing
-  side holds no participant (an orphaned exit — nobody who walked over). A pending exit is
-  not flagged: there the loser side holds the exit carrier.
+  side holds a **fed** drawPosition but no participant (an orphaned exit — nobody who walked
+  over). Three legitimate empty-loser cases are excluded: a pending exit (the loser side
+  holds the exit carrier); an exit whose losing slot was never fed because an upstream
+  double-exit produced no advancer; and an exit the engine _produced_ by propagation into a
+  fed-but-empty slot (marked with a `previousMatchUpStatus` provenance code — e.g. a
+  consolation walkover fed a double-walkover void).
+- `DRAW_POSITION_UNASSIGNED` — a decided, non-exit matchUp references a drawPosition whose
+  stored `positionAssignment` holds no participant, bye or qualifier (a phantom position).
+  Evaluated over **stored** structure state (`drawPositions` ↔ `positionAssignments`) rather
+  than inContext sides: inContext derives sides _from_ the assignments, so an empty **losing**
+  slot on an otherwise-decided matchUp silently resolves to a side with no `participantId` and
+  is not surfaced by any inContext check (`WINNING_SIDE_WITHOUT_PARTICIPANT` inspects only the
+  winning side). Exits are excluded because a legitimately pending propagated exit may hold an
+  empty slot. The result carries `phantomPositions` (the offending drawPositions).
+
+The `winningSide`/`drawPositions` and stored-vs-inContext passes are exercised together by a
+CI-style engine-consistency guard (`getStructureInconsistenciesCorpus.test.ts`) that generates
+every supported draw type at sizes 8/16/32/64, seeds each with a mix of
+`WALKOVER`/`DEFAULTED`/`RETIRED`/`DOUBLE_WALKOVER` outcomes, completes it, and asserts zero
+inconsistencies — so the checker doubles as a regression guard on exit-propagation and
+advancement drift across the generators.
+
+### Deferred check: `STALE_EXIT_STATUS`
+
+A proposed check — a single `WALKOVER`/`DEFAULTED` with a `winningSide`, no exit status code,
+and no upstream feeder that is itself an exit (an exit that should have collapsed to
+`TO_BE_PLAYED`) — is intentionally **not** implemented. It cannot be made zero-false-positive
+from stored state: a legitimate direct walkover is stored with empty `matchUpStatusCodes`, has
+a `winningSide`, and has no upstream exit — indistinguishable from the hypothesised stale exit.
+`matchUpStatusCodes` is optional metadata that legitimate walkovers routinely omit, so the
+heuristic would flag the entire codeless-walkover population. A trustworthy version would need
+to re-derive whether the exit is still justified at the mutation boundary that produces it, not
+as a read-only post-hoc scan.
 
 ## getTimeItem
 
