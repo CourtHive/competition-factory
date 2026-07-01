@@ -1,3 +1,4 @@
+import { reconcilePropagatedExits, revertActiveByeThroughExit } from './reconcilePropagatedExits';
 import { includesMatchUpStatuses } from '@Mutate/drawDefinitions/matchUpGovernor/includesMatchUpStatuses';
 import { removeSubsequentRoundsParticipant } from './removeSubsequentRoundsParticipant';
 import { structureAssignedDrawPositions } from '@Query/drawDefinition/positionsGetter';
@@ -13,7 +14,12 @@ import { clearDrawPosition } from './positionClear';
 import { instanceCount } from '@Tools/arrays';
 
 // constants and types
-import { ErrorType, MISSING_DRAW_POSITIONS, STRUCTURE_NOT_FOUND } from '@Constants/errorConditionConstants';
+import {
+  ErrorType,
+  DRAW_POSITION_ACTIVE,
+  MISSING_DRAW_POSITIONS,
+  STRUCTURE_NOT_FOUND,
+} from '@Constants/errorConditionConstants';
 import { DrawDefinition, DrawLink, Event, Tournament } from '@Types/tournamentTypes';
 import { FIRST_MATCHUP } from '@Constants/drawDefinitionConstants';
 import { DOUBLE_WALKOVER, TO_BE_PLAYED } from '@Constants/matchUpStatusConstants';
@@ -134,7 +140,7 @@ export function removeDirectedParticipants(params): {
     if (winnerHadBye && firstMatchUpLoss) {
       // The fed drawPosition is always the lowest number
       const drawPosition = Math.min(...loserMatchUp.drawPositions);
-      removeDirectedBye({
+      const byeResult = removeDirectedBye({
         targetLink: loserTargetLink,
         inContextDrawMatchUps,
         drawDefinition,
@@ -142,6 +148,21 @@ export function removeDirectedParticipants(params): {
         matchUpsMap,
         event,
       });
+
+      // the BYE clear no-ops when its paired participant advanced through a
+      // propagated exit (auto-resolve fall-through); unwind that first, then retry
+      if (byeResult?.error === DRAW_POSITION_ACTIVE) {
+        revertActiveByeThroughExit({
+          targetLink: loserTargetLink,
+          byeDrawPosition: drawPosition,
+          inContextDrawMatchUps,
+          tournamentRecord,
+          drawDefinition,
+          loserMatchUp,
+          matchUpsMap,
+          event,
+        });
+      }
     }
 
     const removeLoserResult = removeDirectedLoser({
@@ -172,6 +193,18 @@ export function removeDirectedParticipants(params): {
       event,
     });
   }
+
+  // reverse of the forward propagated-exit cascade: collapse any consolation exit
+  // matchUp left stale after the carrier was removed, and un-advance its auto-resolve
+  // winner (no-op when the loser structure holds no propagated exit)
+  reconcilePropagatedExits({
+    inContextDrawMatchUps,
+    tournamentRecord,
+    drawDefinition,
+    matchUpsMap,
+    targetData,
+    event,
+  });
 
   const annotate = tieMatchUpResult && { tieMatchUpResult };
   return { ...SUCCESS, ...annotate };

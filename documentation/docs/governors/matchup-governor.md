@@ -933,6 +933,22 @@ engine.setMatchUpStatus({
 });
 ```
 
+### Reversing a propagated exit
+
+Resetting a matchUp that was applied with `propagateExitStatus` back to `TO_BE_PLAYED`
+(pass `matchUpStatus: TO_BE_PLAYED`, `winningSide: undefined`, and an empty score) fully unwinds the consolation cascade it created, from either direction:
+
+- Removing the **exit source** itself collapses the downstream consolation exit matchUp
+  back to `TO_BE_PLAYED` and un-advances any participant that had auto-resolved the
+  pending walkover.
+- Removing a later **fall-through completion** whose BYE auto-resolved a pending exit
+  reverts the consolation exit matchUp to its pending form (the surviving exit
+  participant present, the winning side an empty feed slot) and un-advances the
+  fall-through participant back to where it was waiting.
+
+The reversal is derived structurally from current draw positions, so it generalizes
+across exit types (`WALKOVER`, `DEFAULTED`) and multi-BYE consolation depth.
+
 ---
 
 ## setOrderOfFinish

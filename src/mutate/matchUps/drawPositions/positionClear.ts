@@ -488,9 +488,7 @@ function updateMatchUpStatusAfterRemoval({
   const matchUpContainsBye = matchUpAssignments.filter((assignment) => assignment.bye).length;
 
   const newMatchUpStatus =
-    (matchUpContainsBye && BYE) ||
-    (targetMatchUp.matchUpStatus && isExit(targetMatchUp.matchUpStatus) && targetMatchUp.matcHUpStatus) ||
-    TO_BE_PLAYED;
+    (matchUpContainsBye && BYE) || (isExit(targetMatchUp.matchUpStatus) && targetMatchUp.matchUpStatus) || TO_BE_PLAYED;
 
   targetMatchUp.matchUpStatus = newMatchUpStatus;
 
