@@ -264,6 +264,12 @@ function applyPositionToMatchUp({
       drawDefinition,
       matchUpsMap,
     }).matchUps ?? [];
+  // A participant advancing into a PENDING propagated exit fills its empty WINNER slot
+  // (progressExitStatus set winningSide to the empty side). drawPositions is then
+  // re-sorted, so the winning side is the side the advancing participant now occupies
+  // in updatedDrawPositions — NOT the pre-sort winningSide (which, after the sort, can
+  // point at the exiting/loser side). Mirrors resolvePropagatedExitOnAdvance (BYE path).
+  const advancedExitWinningSide = isPropagatedExit ? updatedDrawPositions.indexOf(drawPosition) + 1 : undefined;
   const exitWinningSide =
     (isDoubleExitExit &&
       getExitWinningSide({
@@ -271,12 +277,24 @@ function applyPositionToMatchUp({
         drawPosition,
         matchUpId,
       })) ||
-    //if the match is already marked as a WO with a winning side
-    //we keep the winning side
-    (isPropagatedExit && matchUp.winningSide) ||
+    advancedExitWinningSide ||
     undefined;
 
-  if (matchUp?.matchUpStatusCodes) {
+  // Advancing into a single pending propagated exit re-orders the sides, so the carried
+  // exit code must follow the EXITING participant to its new side (opposite the advancing
+  // winner) — otherwise it mislabels the winner. Mirrors resolvePropagatedExitOnAdvance.
+  if (advancedExitWinningSide && !isDoubleExitExit) {
+    const exitSideNumber = advancedExitWinningSide === 1 ? 2 : 1;
+    const carriedCode = (matchUp.matchUpStatusCodes ?? [])
+      .map((code: any) => (typeof code === 'string' ? code : code?.code))
+      .find(Boolean);
+    const matchUpStatusCodes: string[] = [];
+    if (carriedCode) {
+      for (let i = 0; i < exitSideNumber - 1; i++) matchUpStatusCodes[i] = '';
+      matchUpStatusCodes[exitSideNumber - 1] = carriedCode;
+    }
+    matchUp.matchUpStatusCodes = matchUpStatusCodes;
+  } else if (matchUp?.matchUpStatusCodes) {
     updateMatchUpStatusCodes({
       inContextDrawMatchUps: refreshedMatchUps,
       sourceMatchUpStatus,
