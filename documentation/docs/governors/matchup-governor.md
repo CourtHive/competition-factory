@@ -935,19 +935,18 @@ engine.setMatchUpStatus({
 
 ### Reversing a propagated exit
 
-Resetting a matchUp that was applied with `propagateExitStatus` back to `TO_BE_PLAYED`
-(pass `matchUpStatus: TO_BE_PLAYED`, `winningSide: undefined`, and an empty score) fully unwinds the consolation cascade it created, from either direction:
+A propagated exit can advance through a consolation BYE into a later matchUp that then
+**resolves** — a real participant falls through into the empty winner slot and advances
+onward. Once that has happened the downstream consolation matchUp is active, and the
+standard active-downstream rule applies: **the source result cannot be reset** to
+`TO_BE_PLAYED` until the resolving consolation matchUps are undone first. This holds
+whether you attempt to reset the exit source itself or the later fall-through completion,
+and for both `WALKOVER` and `DEFAULTED` exits.
 
-- Removing the **exit source** itself collapses the downstream consolation exit matchUp
-  back to `TO_BE_PLAYED` and un-advances any participant that had auto-resolved the
-  pending walkover.
-- Removing a later **fall-through completion** whose BYE auto-resolved a pending exit
-  reverts the consolation exit matchUp to its pending form (the surviving exit
-  participant present, the winning side an empty feed slot) and un-advances the
-  fall-through participant back to where it was waiting.
-
-The reversal is derived structurally from current draw positions, so it generalizes
-across exit types (`WALKOVER`, `DEFAULTED`) and multi-BYE consolation depth.
+`isActiveDownstream` looks **past** the fed FMLC BYE the exit advanced through, so the
+resolved walkover is correctly detected as active rather than being masked by the BYE. A
+still-**pending** propagated exit (its winning side is an empty feed slot, nothing has
+fallen through yet) is not active, so the source result can still be reset while pending.
 
 ---
 

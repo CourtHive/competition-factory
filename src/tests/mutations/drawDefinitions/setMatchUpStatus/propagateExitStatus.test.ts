@@ -833,96 +833,68 @@ const resetToTBP = (drawId, matchUpId) =>
     drawId,
   });
 
-test('FMLC undo (a): removing the fall-through source reverts the consolation exit to a PENDING walkover', () => {
+// asserts the consolation exit + its downstream are untouched by a refused reset
+function expectResolvedExitUnchanged(consolationMatchUp, consolationMatchUps, exitMatchUpId, advPlayerId, exitStatus) {
+  const exit = consolationMatchUp(exitMatchUpId);
+  expect(exit.matchUpStatus).toEqual(exitStatus);
+  expect(exit.sides.find((s) => s.sideNumber === exit.winningSide)?.participantId).toEqual(advPlayerId);
+  // pAdv is still advanced beyond the exit round (the resolved walkover it won still stands)
+  const beyond = consolationMatchUps().filter(
+    (m) => m.roundNumber > exit.roundNumber && m.sides?.some((s) => s.participantId === advPlayerId),
+  );
+  expect(beyond.length).toBeGreaterThan(0);
+}
+
+// Once a propagated exit has RESOLVED downstream in the consolation — a real participant
+// fell through into the empty winner slot and advanced — that downstream is active. The
+// factory's standard rule applies: the source result cannot be reset until the downstream
+// consolation matchUps are undone first. isActiveDownstream must see PAST the fed FMLC BYE
+// the exit advanced through (its short-circuit previously masked the resolved walkover).
+
+test('FMLC: resetting the fall-through source is BLOCKED while the consolation exit is resolved downstream', () => {
   setSubscriptions({});
-  const { drawId, mainMatchUp, consolationMatchUps, consolationMatchUp, exitMatchUpId, woPlayerId, advPlayerId } =
+  const { drawId, mainMatchUp, consolationMatchUps, consolationMatchUp, exitMatchUpId, advPlayerId } =
     buildAutoResolveCascade();
 
-  // sanity: before undo, the exit is a RESOLVED walkover the fall-through (pAdv) won
+  // sanity: before the reset, the exit is a RESOLVED walkover the fall-through (pAdv) won
   const before = consolationMatchUp(exitMatchUpId);
   expect(before.matchUpStatus).toEqual(WALKOVER);
   expect(before.sides.find((s) => s.sideNumber === before.winningSide)?.participantId).toEqual(advPlayerId);
 
-  // UNDO (a): reset the completed main R2P1 (the fall-through source) back to TO_BE_PLAYED
+  // reset the completed main R2P1 (the fall-through source) → refused (active downstream)
   const result = resetToTBP(drawId, mainMatchUp(2, 1).matchUpId);
-  expect(result.success).toEqual(true);
+  expect(result.success).not.toEqual(true);
+  expect(result.error).toBeDefined();
 
-  // the exit matchUp reverts to a PENDING walkover: pWo present, opponent slot empty,
-  // winningSide = the empty side, carried code on pWo's side
-  const exit = consolationMatchUp(exitMatchUpId);
-  expect(exit.matchUpStatus).toEqual(WALKOVER);
-  const woSide = exit.sides.find((s) => s.participantId === woPlayerId)?.sideNumber;
-  expect(woSide).toBeDefined();
-  expect(exit.winningSide).toEqual(woSide === 1 ? 2 : 1);
-  expect(exit.matchUpStatusCodes?.[woSide - 1]).toEqual('W1');
-  expect(exit.sides.filter((s) => s.participantId).length).toEqual(1); // only pWo present
-
-  // pAdv un-advances back to its pending home: its FURTHEST consolation matchUp is now
-  // before the exit round, TO_BE_PLAYED, awaiting an opponent (no BYE alongside it)
-  const advMatchUps = consolationMatchUps().filter((m) => m.sides?.some((s) => s.participantId === advPlayerId));
-  const advHome = advMatchUps.slice().sort((a, b) => b.roundNumber - a.roundNumber)[0];
-  expect(advHome.roundNumber).toBeLessThan(exit.roundNumber);
-  expect(advHome.matchUpStatus).toEqual(TO_BE_PLAYED);
-  expect(advHome.sides.some((s) => s.bye)).toEqual(false);
-
-  // nothing at/beyond the exit round holds pAdv (R3 opponent slot empty; R4 cleared)
-  const beyond = consolationMatchUps().filter(
-    (m) => m.roundNumber >= exit.roundNumber && m.sides?.some((s) => s.participantId === advPlayerId),
-  );
-  expect(beyond.length).toEqual(0);
+  expectResolvedExitUnchanged(consolationMatchUp, consolationMatchUps, exitMatchUpId, advPlayerId, WALKOVER);
 });
 
-test('FMLC undo (b): removing the propagated WALKOVER collapses the consolation exit to TO_BE_PLAYED', () => {
+test('FMLC: resetting the propagated WALKOVER is BLOCKED while its consolation exit is resolved downstream', () => {
   setSubscriptions({});
   const { drawId, mainMatchUp, consolationMatchUps, consolationMatchUp, exitMatchUpId, woPlayerId, advPlayerId } =
     buildAutoResolveCascade();
 
-  // UNDO (b): reset the main WALKOVER (the exit source) back to TO_BE_PLAYED
+  // reset the main WALKOVER (the exit source) → refused
   const result = resetToTBP(drawId, mainMatchUp(2, 2).matchUpId);
-  expect(result.success).toEqual(true);
+  expect(result.success).not.toEqual(true);
+  expect(result.error).toBeDefined();
 
-  // pWo is fully removed from the consolation
-  const pWoPresent = consolationMatchUps().some((m) => m.sides?.some((s) => s.participantId === woPlayerId));
-  expect(pWoPresent).toEqual(false);
-
-  // the exit matchUp collapses: no walkover survives. pAdv still advanced here via the
-  // surviving R2 BYE (the R2P1 completion still stands), opponent slot empty → TO_BE_PLAYED
-  const exit = consolationMatchUp(exitMatchUpId);
-  expect(exit.matchUpStatus).toEqual(TO_BE_PLAYED);
-  expect(exit.winningSide).toBeUndefined();
-  expect(exit.sides.some((s) => s.participantId === advPlayerId)).toEqual(true);
-  expect(exit.sides.filter((s) => s.participantId).length).toEqual(1);
-  expect((exit.matchUpStatusCodes ?? []).filter(Boolean).length).toEqual(0);
-
-  // pAdv is NOT advanced beyond the exit round (R4 cleared)
-  const beyond = consolationMatchUps().filter(
-    (m) => m.roundNumber > exit.roundNumber && m.sides?.some((s) => s.participantId === advPlayerId),
-  );
-  expect(beyond.length).toEqual(0);
+  // the propagated exit + its exiting participant are untouched
+  expect(consolationMatchUps().some((m) => m.sides?.some((s) => s.participantId === woPlayerId))).toEqual(true);
+  expectResolvedExitUnchanged(consolationMatchUp, consolationMatchUps, exitMatchUpId, advPlayerId, WALKOVER);
 });
 
-test('FMLC undo (b) — DEFAULT: the reverse generalizes across exit types (collapses to TO_BE_PLAYED)', () => {
+test('FMLC — DEFAULT: the active-downstream block generalizes across exit types', () => {
   setSubscriptions({});
-  const { drawId, mainMatchUp, consolationMatchUps, consolationMatchUp, exitMatchUpId, woPlayerId, advPlayerId } =
+  const { drawId, mainMatchUp, consolationMatchUps, consolationMatchUp, exitMatchUpId, advPlayerId } =
     buildAutoResolveCascade({ exitStatus: DEFAULTED, exitCode: 'D1' });
 
   // the cascade produced a DEFAULTED consolation exit (not WALKOVER)
   expect(consolationMatchUp(exitMatchUpId).matchUpStatus).toEqual(DEFAULTED);
 
-  // UNDO: reset the main DEFAULT back to TO_BE_PLAYED
   const result = resetToTBP(drawId, mainMatchUp(2, 2).matchUpId);
-  expect(result.success).toEqual(true);
+  expect(result.success).not.toEqual(true);
+  expect(result.error).toBeDefined();
 
-  expect(consolationMatchUps().some((m) => m.sides?.some((s) => s.participantId === woPlayerId))).toEqual(false);
-
-  const exit = consolationMatchUp(exitMatchUpId);
-  expect(exit.matchUpStatus).toEqual(TO_BE_PLAYED);
-  expect(exit.winningSide).toBeUndefined();
-  expect(exit.sides.some((s) => s.participantId === advPlayerId)).toEqual(true);
-  expect((exit.matchUpStatusCodes ?? []).filter(Boolean).length).toEqual(0);
-
-  const beyond = consolationMatchUps().filter(
-    (m) => m.roundNumber > exit.roundNumber && m.sides?.some((s) => s.participantId === advPlayerId),
-  );
-  expect(beyond.length).toEqual(0);
+  expectResolvedExitUnchanged(consolationMatchUp, consolationMatchUps, exitMatchUpId, advPlayerId, DEFAULTED);
 });
