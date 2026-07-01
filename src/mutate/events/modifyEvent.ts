@@ -131,8 +131,8 @@ function checkTeamCategory(params) {
 function checkParticipantAges(params, category) {
   const startDate = params.eventUpdates.startDate || params.event.startDate || params.tournamentRecord.startDate;
   const endDate = params.eventUpdates.endDate || params.event.endDate || params.tournamentRecord.endDate;
-  const individualParticpants = params.enteredParticipants.flatMap((p) =>
-    p.participantType === INDIVIDUAL ? [p] : (p.individualParticpants ?? []),
+  const individualParticipants = params.enteredParticipants.flatMap((p) =>
+    p.participantType === INDIVIDUAL ? [p] : (p.individualParticipants ?? []),
   );
 
   const startAgeDetails = getCategoryAgeDetails({ category, consideredDate: startDate });
@@ -144,7 +144,7 @@ function checkParticipantAges(params, category) {
     endAgeDetails?.ageMinDate ||
     endAgeDetails?.ageMaxDate
   ) {
-    for (const individualParticipant of individualParticpants) {
+    for (const individualParticipant of individualParticipants) {
       const birthDate = individualParticipant.person?.birthDate;
       const birthYear = individualParticipant.person?.birthYear;
       if (!birthDate && birthYear === undefined) {
@@ -217,7 +217,7 @@ function getParticipantsProfile({ enteredParticipants }) {
   const enteredParticipantTypes = enteredParticipants.reduce((types: any[], participant) => {
     const genders = participant.person?.sex
       ? [participant.person.sex]
-      : (participant.individualParticpants?.map((p) => p.person?.sex) ?? []);
+      : (participant.individualParticipants?.map((p) => p.person?.sex) ?? []);
     genderAccumulator.push(...genders);
     return types.includes(participant.participantType) ? types : types.concat(participant.participantType);
   }, []);
