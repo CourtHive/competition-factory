@@ -12,7 +12,6 @@ import { getMatchUpsMap } from '@Query/matchUps/getMatchUpsMap';
 import { pushGlobalLog } from '@Functions/global/globalLog';
 import { findStructure } from '@Acquire/findStructure';
 import { ensureInt } from '@Tools/ensureInt';
-import { isExit } from '@Validators/isExit';
 import { overlap } from '@Tools/arrays';
 
 // constants and types
@@ -487,15 +486,14 @@ function updateMatchUpStatusAfterRemoval({
   );
   const matchUpContainsBye = matchUpAssignments.filter((assignment) => assignment.bye).length;
 
-  const newMatchUpStatus =
-    (matchUpContainsBye && BYE) || (isExit(targetMatchUp.matchUpStatus) && targetMatchUp.matchUpStatus) || TO_BE_PLAYED;
-
-  targetMatchUp.matchUpStatus = newMatchUpStatus;
-
-  // if the matchUpStatus is WALKOVER then it is DOUBLE_WALKOVER produced
-  // if the matchUpStatus is DEFAULTED then it is DOUBLE_DEFAULT produced
-  // ... and the winningSide must be removed
-  if (targetMatchUp.matchUpStatus && isExit(targetMatchUp.matchUpStatus)) targetMatchUp.winningSide = undefined;
+  // Collapse to BYE (when a BYE remains) or TO_BE_PLAYED. This path never has a single
+  // exit to preserve: clearDrawPosition refuses active positions (DRAW_POSITION_ACTIVE),
+  // so it only ever clears BYEs / inactive positions, whose downstream matchUps are
+  // BYE / TO_BE_PLAYED — never a WALKOVER/DEFAULTED. Exit-status handling on removal
+  // lives elsewhere: removeDoubleExit (DOUBLE_WALKOVER -> WALKOVER) and the sibling
+  // removeSubsequentRoundsParticipant (un-advancing a directed winner off a WALKOVER,
+  // where the exit-preservation + winningSide clearing actually run).
+  targetMatchUp.matchUpStatus = (matchUpContainsBye && BYE) || TO_BE_PLAYED;
 
   const removedDrawPosition = initialDrawPositions?.find(
     (position) => !targetMatchUp.drawPositions?.includes(position),
