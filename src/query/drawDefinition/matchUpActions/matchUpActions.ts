@@ -105,12 +105,7 @@ export function matchUpActions(params?: MatchUpActionsArgs): ResultType & {
 
   if (!matchUp) return { error: MATCHUP_NOT_FOUND };
 
-  const {
-    appliedPolicies,
-    policyActions,
-    matchUpActionsPolicy,
-    otherFlightEntries,
-  } = resolvePolicies({
+  const { appliedPolicies, policyActions, matchUpActionsPolicy, otherFlightEntries } = resolvePolicies({
     specifiedPolicyDefinitions,
     tournamentRecord,
     drawDefinition,
@@ -135,9 +130,7 @@ export function matchUpActions(params?: MatchUpActionsArgs): ResultType & {
   const side: any = sideNumber && inContextMatchUp?.sides?.find((s) => s.sideNumber === sideNumber);
 
   const matchUpParticipantIds =
-    inContextMatchUp?.sides
-      ?.map((s: any) => s.participantId || s.participant?.participantid)
-      .filter(Boolean) ?? [];
+    inContextMatchUp?.sides?.map((s: any) => s.participantId || s.participant?.participantId).filter(Boolean) ?? [];
 
   const { assignedPositions, allPositionsAssigned } = structureAssignedDrawPositions({ structure });
   const { structureId } = structure ?? {};
@@ -148,20 +141,22 @@ export function matchUpActions(params?: MatchUpActionsArgs): ResultType & {
   const isCollectionMatchUp = Boolean(matchUp.collectionId);
 
   if (isAdHoc({ structure }) && !isCollectionMatchUp) {
-    validActions.push(...adHocMatchUpActions({
-      restrictAdHocRoundParticipants,
-      tournamentParticipants,
-      matchUpParticipantIds,
-      otherFlightEntries,
-      drawDefinition,
-      structureId,
-      sideNumber,
-      matchUpId,
-      structure,
-      matchUp,
-      drawId,
-      event,
-    }));
+    validActions.push(
+      ...adHocMatchUpActions({
+        restrictAdHocRoundParticipants,
+        tournamentParticipants,
+        matchUpParticipantIds,
+        otherFlightEntries,
+        drawDefinition,
+        structureId,
+        sideNumber,
+        matchUpId,
+        structure,
+        matchUp,
+        drawId,
+        event,
+      }),
+    );
   }
 
   const structureIsComplete = isCompletedStructure({ drawDefinition, structure });
@@ -206,13 +201,7 @@ function resolveDrawDefinition({ tournamentRecord, matchUpId }) {
   return { drawDefinition, event };
 }
 
-function resolvePolicies({
-  specifiedPolicyDefinitions,
-  tournamentRecord,
-  drawDefinition,
-  structure,
-  event,
-}) {
+function resolvePolicies({ specifiedPolicyDefinitions, tournamentRecord, drawDefinition, structure, event }) {
   const appliedPolicies =
     getAppliedPolicies({ tournamentRecord, drawDefinition, structure, event }).appliedPolicies ?? {};
   Object.assign(appliedPolicies, specifiedPolicyDefinitions ?? {});
@@ -337,21 +326,23 @@ function addStandardActions({
   }
 
   if (isCollectionMatchUp && inContextMatchUp) {
-    validActions.push(...collectionMatchUpActions({
-      specifiedPolicyDefinitions,
-      inContextDrawMatchUps,
-      matchUpParticipantIds,
-      matchUpActionsPolicy,
-      inContextMatchUp,
-      policyActions,
-      enforceGender,
-      participantId,
-      sideNumber,
-      matchUpId,
-      matchUp,
-      drawId,
-      side,
-    }));
+    validActions.push(
+      ...collectionMatchUpActions({
+        specifiedPolicyDefinitions,
+        inContextDrawMatchUps,
+        matchUpParticipantIds,
+        matchUpActionsPolicy,
+        inContextMatchUp,
+        policyActions,
+        enforceGender,
+        participantId,
+        sideNumber,
+        matchUpId,
+        matchUp,
+        drawId,
+        side,
+      }),
+    );
   }
 }
 
