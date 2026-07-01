@@ -23,7 +23,7 @@ export function attemptToSetMatchUpStatus(params) {
 
   const teamRoundRobinContext = !!(
     matchUp.tieMatchUps &&
-    !matchUp.rondPosition &&
+    !matchUp.roundPosition &&
     params.inContextDrawMatchUps.find((icdm) => icdm.matchUpId === matchUp.matchUpId).containerStructureId
   );
 
