@@ -141,9 +141,9 @@ export function generateDynamicRatings(params): ResultType & {
 
     const parsedFormat: any = matchUpFormat ? parse(matchUpFormat) : {};
     const bestOf = parsedFormat?.bestOf || 1;
-    const setsTo = parsedFormat?.setsTo || 1;
+    const setTo = parsedFormat?.setFormat?.setTo || 1;
 
-    const maxCountables = considerGames ? bestOf & setsTo : bestOf;
+    const maxCountables = considerGames ? bestOf * setTo : bestOf;
 
     const countables = (score?.sets && aggregateSets(score.sets)) || (winningSide === 1 && [1, 0]) || [0, 1];
 
