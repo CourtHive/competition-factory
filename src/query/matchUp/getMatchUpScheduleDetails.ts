@@ -286,7 +286,7 @@ function resolveVenueAndCourt({ tournamentRecord, allocatedCourts, venueId, cour
 
   for (const allocatedCourt of allocatedCourts ?? []) {
     if (!tournamentRecord) break;
-    if (allocatedCourt.venueId && !venueDataMap[allocatedCourt.venueid]) {
+    if (allocatedCourt.venueId && !venueDataMap[allocatedCourt.venueId]) {
       venueDataMap[allocatedCourt.venueId] = getVenueData({
         venueId: allocatedCourt.venueId,
         tournamentRecord,
