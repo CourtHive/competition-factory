@@ -40,6 +40,7 @@ The **Scoring Policy** (`POLICY_TYPE_SCORING`) controls scoring requirements, fo
 
     // Change propagation
     allowChangePropagation?: boolean;                  // Propagate winningSide changes downstream (default: false)
+    propagateExitStatus?: boolean;                     // Propagate exit status (WALKOVER/DEFAULTED) into the consolation (default: false)
 
     // Stage-specific requirements
     stage?: {
@@ -550,6 +551,27 @@ const propagationPolicy = {
 
 // WARNING: Can cause unexpected changes in large structures
 // Recommended: Keep false for manual control
+```
+
+### Exit-Status Propagation
+
+`propagateExitStatus` controls whether an exit (`WALKOVER` / `DEFAULTED`) applied to a
+matchUp is propagated into the consolation — placing the exiting participant into their
+consolation matchUp with the carried exit status rather than as an ordinary loser.
+
+```js
+const propagationPolicy = {
+  [POLICY_TYPE_SCORING]: {
+    policyName: 'Propagate Exits',
+    propagateExitStatus: true, // exits flow into the consolation by default
+  },
+};
+
+// Resolution precedence (mirrors allowChangePropagation):
+//   setMatchUpStatus({ ..., propagateExitStatus: true })  → always propagates (override)
+//   otherwise the scoring policy's propagateExitStatus is used
+//   POLICY_SCORING_DEFAULT: false   POLICY_SCORING_USTA: true
+// An explicit params boolean `false` defers to the policy (it does not force-off).
 ```
 
 ---

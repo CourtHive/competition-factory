@@ -1,4 +1,6 @@
+import POLICY_SCORING_DEFAULT from '@Fixtures/policies/POLICY_SCORING_DEFAULT';
 import { removeAssignment } from '../../drawDefinitions/testingUtilities';
+import POLICY_SCORING_USTA from '@Fixtures/policies/POLICY_SCORING_USTA';
 import { setSubscriptions } from '@Global/state/globalState';
 import tournamentEngine from '@Tests/engines/syncEngine';
 import mocksEngine from '@Assemblies/engines/mock';
@@ -952,4 +954,62 @@ test('FMLC: resetting a source while its propagated exit is still PENDING is all
   expect(cleared.winningSide).toBeUndefined();
   expect((cleared.matchUpStatusCodes ?? []).filter(Boolean).length).toEqual(0);
   expect(cleared.sides.some((s) => s.participantId === woPlayerId)).toEqual(false);
+});
+
+// Whether setting main R2P2 to WALKOVER propagates an exit into the consolation
+// (a consolation matchUp becomes WALKOVER) is now gated by the scoring policy's
+// propagateExitStatus, with an explicit params flag overriding it.
+function consolationHasPropagatedExit({ suffix, policyDefinitions, propagateExitStatus }) {
+  const drawId = `policyGate-${suffix}`;
+  mocksEngine.generateTournamentRecord({
+    drawProfiles: [{ drawId, drawSize: 32, drawType: FIRST_MATCH_LOSER_CONSOLATION, idPrefix: 'm' }],
+    setState: true,
+  });
+  const {
+    drawDefinition: {
+      structures: [mainStructure, consolationStructure],
+    },
+  } = tournamentEngine.getEvent({ drawId });
+  [2, 6, 8, 10, 23, 31].forEach((drawPosition) =>
+    removeAssignment({ drawId, structureId: mainStructure.structureId, drawPosition, replaceWithBye: true }),
+  );
+  if (policyDefinitions) tournamentEngine.attachPolicies({ policyDefinitions });
+
+  const woMatchUp = structureMatchUpAt(drawId, mainStructure.structureId, 2, 2);
+  const params: any = {
+    outcome: { matchUpStatus: WALKOVER, winningSide: 2, matchUpStatusCodes: ['W1'] },
+    matchUpId: woMatchUp.matchUpId,
+    drawId,
+  };
+  if (propagateExitStatus !== undefined) params.propagateExitStatus = propagateExitStatus;
+  const result = tournamentEngine.setMatchUpStatus(params);
+  expect(result.success).toEqual(true);
+
+  return structureMatchUps(drawId, consolationStructure.structureId).some((m) => m.matchUpStatus === WALKOVER);
+}
+
+test('scoring policy gates propagateExitStatus: USTA policy (true) propagates with no params flag', () => {
+  setSubscriptions({});
+  expect(consolationHasPropagatedExit({ suffix: 'usta', policyDefinitions: POLICY_SCORING_USTA })).toEqual(true);
+});
+
+test('scoring policy gates propagateExitStatus: DEFAULT policy (false) does not propagate with no params flag', () => {
+  setSubscriptions({});
+  expect(consolationHasPropagatedExit({ suffix: 'default', policyDefinitions: POLICY_SCORING_DEFAULT })).toEqual(false);
+});
+
+test('scoring policy gates propagateExitStatus: no scoring policy attached does not propagate by default', () => {
+  setSubscriptions({});
+  expect(consolationHasPropagatedExit({ suffix: 'none' })).toEqual(false);
+});
+
+test('scoring policy gates propagateExitStatus: params true overrides an absent/false policy', () => {
+  setSubscriptions({});
+  expect(
+    consolationHasPropagatedExit({
+      suffix: 'override',
+      policyDefinitions: POLICY_SCORING_DEFAULT,
+      propagateExitStatus: true,
+    }),
+  ).toEqual(true);
 });

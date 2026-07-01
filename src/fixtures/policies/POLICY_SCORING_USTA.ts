@@ -9,6 +9,8 @@ const personalCircumstance = 'Personal circumstance';
 export const POLICY_SCORING_USTA = {
   [POLICY_TYPE_SCORING]: {
     requireAllPositionsAssigned: false,
+    // exit statuses (WALKOVER/DEFAULTED) propagate into the consolation by default
+    propagateExitStatus: true,
     stage: {
       [MAIN]: {
         stageSequence: {

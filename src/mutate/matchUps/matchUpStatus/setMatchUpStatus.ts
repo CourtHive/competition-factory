@@ -71,7 +71,6 @@ export function setMatchUpStatus(params: SetMatchUpStatusArgs) {
 
   const {
     disableScoreValidation,
-    propagateExitStatus,
     policyDefinitions,
     tournamentRecord,
     disableAutoCalc,
@@ -101,6 +100,15 @@ export function setMatchUpStatus(params: SetMatchUpStatusArgs) {
   const allowChangePropagation =
     (params.allowChangePropagation !== undefined && params.allowChangePropagation) ||
     (policy?.allowChangePropagation !== undefined && policy.allowChangePropagation) ||
+    undefined;
+
+  // DECISION: whether an exit status (WALKOVER/DEFAULTED) propagates into the consolation
+  // WHY: gated by the scoring policy so a provider can default it on/off; an explicit
+  // params.propagateExitStatus === true always overrides the policy (same precedence as
+  // allowChangePropagation — an explicit boolean false defers to the policy)
+  const propagateExitStatus =
+    (params.propagateExitStatus !== undefined && params.propagateExitStatus) ||
+    (policy?.propagateExitStatus !== undefined && policy.propagateExitStatus) ||
     undefined;
 
   const { outcome, setTBlast } = params;
@@ -190,7 +198,7 @@ export function setMatchUpStatus(params: SetMatchUpStatusArgs) {
         sourceMatchUpStatusCodes: result.context.sourceMatchUpStatusCodes,
         sourceMatchUpStatus: result.context.sourceMatchUpStatus,
         loserParticipantId: result.context.loserParticipantId,
-        propagateExitStatus: params.propagateExitStatus,
+        propagateExitStatus,
         tournamentRecord: params.tournamentRecord,
         loserMatchUp: result.context.loserMatchUp,
         matchUpsMap: result.context.matchUpsMap,

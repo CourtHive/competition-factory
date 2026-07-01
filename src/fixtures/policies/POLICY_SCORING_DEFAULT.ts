@@ -21,6 +21,7 @@ export const POLICY_SCORING_DEFAULT = {
      */
     requireAllPositionsAssigned: undefined, // default is true; NOT required when value is false
     allowChangePropagation: false, // changes to winningSide will propagate to all "downstream" matchUps in the structure
+    propagateExitStatus: false, // exit statuses (WALKOVER/DEFAULTED) do NOT propagate into the consolation unless params override
     stage: {
       [MAIN]: {
         stageSequence: {
