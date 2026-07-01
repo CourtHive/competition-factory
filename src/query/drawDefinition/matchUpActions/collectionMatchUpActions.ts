@@ -59,7 +59,7 @@ export function collectionMatchUpActions({
   const assignedGender =
     isMixed(inContextMatchUp.gender) &&
     inContextMatchUp.sideNumber &&
-    inContextMatchUp.sides?.filter((side: any) => side.particiapntId).length === 1 &&
+    inContextMatchUp.sides?.filter((side: any) => side.participantId).length === 1 &&
     firstFoundSide?.participant?.person?.sex;
   const matchUpType = inContextMatchUp.matchUpType;
   const genderEnforced = (enforceGender ?? matchUpActionsPolicy?.participants?.enforceGender) !== false;
