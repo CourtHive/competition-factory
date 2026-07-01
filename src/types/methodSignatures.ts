@@ -134,6 +134,7 @@ import type { addDynamicRatings } from '@Mutate/participants/scaleItems/addDynam
 import type { addMutationLock } from '@Mutate/tournaments/mutationLocks/addMutationLock';
 import type { attachQualifyingStructure } from '@Mutate/drawDefinitions/attachQualifyingStructure';
 import type { getAvailablePlayoffProfiles } from '@Query/drawDefinition/getAvailablePlayoffProfiles';
+import type { getStructureInconsistencies } from '@Query/drawDefinition/getStructureInconsistencies';
 import type { predictDrawCompetitiveBands } from '@Query/drawDefinition/predictDrawCompetitiveBands';
 import type { reorderUpcomingMatchUps } from '@Mutate/matchUps/schedule/reorderUpcomingMatchUps';
 import type { transitionCertificationStatus } from '@Mutate/officiating/transitionCertificationStatus';
@@ -852,6 +853,7 @@ export interface MethodSignatures {
   getSeedsCount: EngineMethod<typeof getSeedsCount>;
   getSetComplement: EngineMethod<typeof getSetComplement>;
   getSetScoreString: EngineMethod<typeof getSetScoreString>;
+  getStructureInconsistencies: EngineMethod<typeof getStructureInconsistencies>;
   getStructureReports: EngineMethod<typeof getStructureReports>;
   getStructureSeedAssignments: EngineMethod<typeof getStructureSeedAssignments>;
   getSwissChart: EngineMethod<typeof getSwissChart>;
