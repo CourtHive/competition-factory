@@ -339,6 +339,7 @@ export type FactoryEngineMethod =
   | 'getSetComplement'
   | 'getSetScoreString'
   | 'getState'
+  | 'getStructureCompleteness'
   | 'getStructureInconsistencies'
   | 'getStructureReports'
   | 'getStructureSeedAssignments'
@@ -960,6 +961,7 @@ export const FACTORY_ENGINE_METHODS: readonly FactoryEngineMethod[] = [
   'getSetComplement',
   'getSetScoreString',
   'getState',
+  'getStructureCompleteness',
   'getStructureInconsistencies',
   'getStructureReports',
   'getStructureSeedAssignments',

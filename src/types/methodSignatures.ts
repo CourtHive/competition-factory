@@ -170,6 +170,7 @@ import type { generateEventsFromTieFormat } from '@Generators/events/generateEve
 import type { generateStatCrew } from '@Generators/tournamentRecords/generateStatCrew';
 import type { getCompetitionParticipants } from '@Query/participants/getCompetitionParticipants';
 import type { getParticipantEventDetails } from '@Query/participants/getParticipantEventDetails';
+import type { getStructureCompleteness } from '@Query/drawDefinition/getStructureCompleteness';
 import type { getSwissStandings } from '@Query/drawDefinitions/swiss/getSwissStandings';
 import type { setMatchUpState } from '@Mutate/matchUps/matchUpStatus/setMatchUpState';
 import type { transitionAssignmentStatus } from '@Mutate/officiating/transitionAssignmentStatus';
@@ -853,6 +854,7 @@ export interface MethodSignatures {
   getSeedsCount: EngineMethod<typeof getSeedsCount>;
   getSetComplement: EngineMethod<typeof getSetComplement>;
   getSetScoreString: EngineMethod<typeof getSetScoreString>;
+  getStructureCompleteness: EngineMethod<typeof getStructureCompleteness>;
   getStructureInconsistencies: EngineMethod<typeof getStructureInconsistencies>;
   getStructureReports: EngineMethod<typeof getStructureReports>;
   getStructureSeedAssignments: EngineMethod<typeof getStructureSeedAssignments>;

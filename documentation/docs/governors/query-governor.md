@@ -567,6 +567,45 @@ heuristic would flag the entire codeless-walkover population. A trustworthy vers
 to re-derive whether the exit is still justified at the mutation boundary that produces it, not
 as a read-only post-hoc scan.
 
+## getStructureCompleteness
+
+The **companion** to `getStructureInconsistencies`. Where the inconsistency checker asks _"is the
+decided state self-consistent?"_, completeness asks _"what is still missing before the draw is
+fully populated and played?"_ — the question a manual position-assignment workflow or a
+third-party CODES reconstruction pipeline needs answered at a publish checkpoint. An unassigned
+drawPosition or an unplayed matchUp is a valid in-progress state, **not** a defect, so it is
+deliberately reported separately from the inconsistency checks (which stay silent for
+in-progress draws).
+
+```js
+const { complete, completeness } = engine.getStructureCompleteness({
+  drawId, // required — resolved to drawDefinition by the engine
+  structureId, // optional — restrict the scan to a single structure
+});
+// complete: true when nothing is outstanding across the scanned structures
+// completeness: {
+//   unassignedPositionCount,   // total empty positionAssignments (no participant/bye/qualifier)
+//   unplayedMatchUpCount,      // total matchUps with no winningSide and no completed status
+//   structures: [{ structureId, structureName, stage, unassignedPositions, unplayedMatchUps }]
+// }
+```
+
+Only structures with something outstanding appear in `completeness.structures`; a fully populated
+and played draw returns `complete: true` with an empty array. A matchUp counts as played when it
+has a `winningSide`, is a `BYE`, or carries a completed status that resolves without a winner
+(`DOUBLE_WALKOVER` / `DOUBLE_DEFAULT` / `CANCELLED` / `ABANDONED` / `DEAD_RUBBER`). Like the
+inconsistency checker it reads stored structure state, so it also runs directly against a
+hand-built `drawDefinition`:
+
+```js
+import { drawsGovernor } from 'tods-competition-factory';
+
+const { complete, completeness } = drawsGovernor.getStructureCompleteness({ drawDefinition });
+```
+
+Pair the two for reconstruction pipelines: `getStructureInconsistencies` proves the decided state
+is correct, `getStructureCompleteness` enumerates what remains to be filled in.
+
 ## getTimeItem
 
 ```js
