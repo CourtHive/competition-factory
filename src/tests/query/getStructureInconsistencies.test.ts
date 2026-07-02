@@ -18,6 +18,7 @@ import {
   FIRST_MATCH_LOSER_CONSOLATION,
   ROUND_ROBIN_WITH_PLAYOFF,
   SINGLE_ELIMINATION,
+  ROUND_ROBIN,
 } from '@Constants/drawDefinitionConstants';
 import { DOUBLE_WALKOVER, WALKOVER } from '@Constants/matchUpStatusConstants';
 
@@ -149,6 +150,30 @@ test('detects unsorted drawPositions', () => {
   const result: any = getStructureInconsistencies({ drawDefinition });
   const issue = result.inconsistencies.find((i) => i.matchUpId === target.matchUpId);
   expect(issue?.issueType).toEqual(DRAW_POSITIONS_NOT_SORTED);
+});
+
+test('round-robin group matchUps are exempt from the drawPositions-sorted check', () => {
+  // RR groups store drawPositions in Berger round-pairing order (e.g. [10,7]); the engine
+  // normalizes to ascending when deriving sides, so unsorted order is benign. Confirmed
+  // against the full prod corpus (2026-07-01). Elimination structures still assert the sort.
+  setSubscriptions({});
+  const drawId = 'rrUnsorted';
+  mocksEngine.generateTournamentRecord({
+    drawProfiles: [{ drawId, drawSize: 8, drawType: ROUND_ROBIN, idPrefix: 'rr' }],
+    completeAllMatchUps: true,
+    setState: true,
+  });
+  const { drawDefinition } = tournamentEngine.getEvent({ drawId });
+  // RR group structures are ITEM children of the CONTAINER
+  const group = drawDefinition.structures[0].structures.find((s) => (s.matchUps ?? []).length);
+  const target = group.matchUps.find((m) => (m.drawPositions ?? []).filter(Boolean).length === 2);
+  target.drawPositions = [...target.drawPositions].sort((a, b) => b - a); // force descending
+
+  const result: any = getStructureInconsistencies({ drawDefinition });
+  const flagged = result.inconsistencies.filter(
+    (i) => i.matchUpId === target.matchUpId && i.issueType === DRAW_POSITIONS_NOT_SORTED,
+  );
+  expect(flagged).toEqual([]);
 });
 
 test('detects an exit with no participant on the losing side', () => {

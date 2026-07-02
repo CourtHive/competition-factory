@@ -170,6 +170,7 @@ import type { generateCourts } from '../assemblies/generators/venues/generateCou
 import type { generateEventsFromTieFormat } from '@Generators/events/generateEventsFromTieFormat';
 import type { generateStatCrew } from '@Generators/tournamentRecords/generateStatCrew';
 import type { getCompetitionParticipants } from '@Query/participants/getCompetitionParticipants';
+import type { getMatchUpFormatVariance } from '@Query/drawDefinition/getMatchUpFormatVariance';
 import type { getParticipantEventDetails } from '@Query/participants/getParticipantEventDetails';
 import type { getStructureCompleteness } from '@Query/drawDefinition/getStructureCompleteness';
 import type { getSwissStandings } from '@Query/drawDefinitions/swiss/getSwissStandings';
@@ -814,6 +815,7 @@ export interface MethodSignatures {
   getMatchUpFormat: EngineMethod<typeof getMatchUpFormat>;
   getMatchUpFormatTiming: EngineMethod<typeof getMatchUpFormatTiming>;
   getMatchUpFormatTimingUpdate: EngineMethod<typeof getMatchUpFormatTimingUpdate>;
+  getMatchUpFormatVariance: EngineMethod<typeof getMatchUpFormatVariance>;
   getMatchUpScheduleDetails: EngineMethod<typeof getMatchUpScheduleDetails>;
   getMatchUpsMap: EngineMethod<typeof getMatchUpsMap>;
   getMatchUpsStats: EngineMethod<typeof getMatchUpsStats>;
