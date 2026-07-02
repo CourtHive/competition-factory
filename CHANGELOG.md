@@ -1,5 +1,47 @@
 # Changelog
 
+## [6.0.0](https://github.com/CourtHive/competition-factory/compare/v5.9.0...v6.0.0) (2026-07-02)
+
+
+### ⚠ BREAKING CHANGES
+
+* **scales:** generateDynamicRatings with considerGames:true now produces materially different (correct) rating values, since the K-factor normaliser is the true max countable games (bestOf * setTo) rather than the previous ~1. Callers that opted into considerGames will see changed ratings.
+* **participants:** modifyParticipant now reads and stores person.birthDate instead of the previous non-canonical person.birthdate. Callers relying on the lowercase spelling must switch to birthDate (the canonical field used across the ecosystem).
+
+### Features
+
+* add abandonTournamentMatchUps to bulk-abandon still-playable matchUps ([f092322](https://github.com/CourtHive/competition-factory/commit/f092322373e572ac9ad11653a49661334dac753b))
+* add getStructureInconsistencies structure-consistency checker ([e6ad5e5](https://github.com/CourtHive/competition-factory/commit/e6ad5e578159aa6d1747f246b5f965ba84d6eda2))
+* gate propagateExitStatus by scoring policy ([241cac9](https://github.com/CourtHive/competition-factory/commit/241cac99759879bfa7e66da3df593905e819fc88))
+* getStructureInconsistencies v2 — sort invariant, orphaned exits, corpus sweep ([63cf059](https://github.com/CourtHive/competition-factory/commit/63cf059b2418b125f0bcfb4fdc9abb0570eeb47a))
+* **query:** add data-integrity query hierarchy (draw/event/tournament) ([33e8b01](https://github.com/CourtHive/competition-factory/commit/33e8b013bac4855e908c6c520678dbe3e77dc573))
+* **query:** add getMatchUpFormatVariance + round-robin drawPositions-sort exemption ([0132a04](https://github.com/CourtHive/competition-factory/commit/0132a04ed0ab7b5c64a03b4f061870ddfb5a0244))
+* **query:** add getStructureCompleteness companion to the inconsistency checker ([bed00cd](https://github.com/CourtHive/competition-factory/commit/bed00cd566ad66db9783de7e3463b6fab35f984c))
+* **query:** extend getStructureInconsistencies with phantom-position check and ci sweep ([4e53697](https://github.com/CourtHive/competition-factory/commit/4e536971bf3b4e90f777cfaef03ec3858e46f38a))
+* **query:** sound cross-structure loser progression check ([71f457c](https://github.com/CourtHive/competition-factory/commit/71f457c679dea4740f71063695869b7479871157))
+* **query:** winner-linked progression check (double-elimination feed-back) ([d494b5a](https://github.com/CourtHive/competition-factory/commit/d494b5a067a2eaf42d3f59ff3beaca15b78b63f2))
+
+
+### Bug Fixes
+
+* block reset of a source whose propagated exit resolved downstream ([cf091d7](https://github.com/CourtHive/competition-factory/commit/cf091d73e3015909801951a060e222155dbb0d9e))
+* cascade propagated exit status through consolation byes and auto-resolve on fall-through ([44ac5b2](https://github.com/CourtHive/competition-factory/commit/44ac5b2791a48a3806dc0b016f7d4bb5a49b4171))
+* clear stale winningSide/codes when a pending propagated exit is removed ([bca7d11](https://github.com/CourtHive/competition-factory/commit/bca7d113e6c83cf9750f3dc92688dc4ad2190162))
+* emit modifyMatchUp notice when a participant advances into a pre-seeded consolation slot ([01b639a](https://github.com/CourtHive/competition-factory/commit/01b639afe741d5bdd63e155cfe273cf1cdf6e86b))
+* **events:** age-check individual members of PAIR/TEAM entries ([ce24d5d](https://github.com/CourtHive/competition-factory/commit/ce24d5d3796b268b4e2cccf88f659938e6fdd8aa))
+* **matchUps:** block un-assigning participants from completed ad-hoc matchUps ([88f2ba2](https://github.com/CourtHive/competition-factory/commit/88f2ba2017f9518bf20c52e3c557f43df9e7c19b))
+* **matchUps:** enforce mixed-doubles second-participant gender ([68d7834](https://github.com/CourtHive/competition-factory/commit/68d7834391bb916d615ef78571646b54370db5fd))
+* **matchUps:** reference participantId in mixed-doubles gender inference ([61de73b](https://github.com/CourtHive/competition-factory/commit/61de73b50cf15e531bc4448dc79c971f2e08ed41))
+* **matchUps:** reference participantId in side id fallback ([b37564d](https://github.com/CourtHive/competition-factory/commit/b37564d2871a13462c32f862c868cecee1900900))
+* **matchUps:** reference roundPosition in teamRoundRobinContext guard ([7e22bf3](https://github.com/CourtHive/competition-factory/commit/7e22bf3ee3733ee2de21ea8097dd0a71bd23a81b))
+* **participants:** apply canonical participantRoleResponsibilities ([61012e3](https://github.com/CourtHive/competition-factory/commit/61012e371d5847fa22ce3f0ef8a4590b52425937))
+* **participants:** store person.birthDate under the canonical field ([36fe9c5](https://github.com/CourtHive/competition-factory/commit/36fe9c5052b0776cbb758335a3a0cc6409753c53))
+* re-derive winningSide/exit code when advancing into a pending propagated exit ([97fc07b](https://github.com/CourtHive/competition-factory/commit/97fc07b12619349a25e62c118d2e0c7349e06707))
+* **scales:** compute considerGames K-factor as bestOf * setTo ([49b518e](https://github.com/CourtHive/competition-factory/commit/49b518eb5797b7c520abd1da1a9c66b099ff2ca8))
+* **schedule:** dedupe venue data lookups by correct venueId ([618efd9](https://github.com/CourtHive/competition-factory/commit/618efd9e11cf3fcfbe0efb15fc58650b94c14b19))
+* **tieFormat:** preserve existing collectionGroups when adding a group ([bb6cfde](https://github.com/CourtHive/competition-factory/commit/bb6cfde857bd61893d56533ca2a84b13b4b8d5b7))
+* unwind propagated exit-status cascade on removal ([b49f4aa](https://github.com/CourtHive/competition-factory/commit/b49f4aa3841fa1f60d23fce85ec97f072ddcac94))
+
 ## [5.9.0](https://github.com/CourtHive/competition-factory/compare/v5.8.0...v5.9.0) (2026-06-29)
 
 
