@@ -1,3 +1,4 @@
+import { finalize, Inconsistency } from '@Query/integrity/inconsistency';
 import { getAllDrawMatchUps } from '@Query/matchUps/drawMatchUps';
 import { isExit } from '@Validators/isExit';
 
@@ -5,6 +6,7 @@ import { isExit } from '@Validators/isExit';
 import { DrawDefinition, Event, MatchUp, PositionAssignment, Structure, Tournament } from '@Types/tournamentTypes';
 import { DOUBLE_DEFAULT, DOUBLE_WALKOVER } from '@Constants/matchUpStatusConstants';
 import { MISSING_DRAW_DEFINITION } from '@Constants/errorConditionConstants';
+import { CONTAINER } from '@Constants/drawDefinitionConstants';
 import { MatchUpsMap, ResultType } from '@Types/factoryTypes';
 import { SUCCESS } from '@Constants/resultConstants';
 
@@ -16,11 +18,22 @@ import { SUCCESS } from '@Constants/resultConstants';
 //  - WINNING_SIDE_ADVANCEMENT_MISMATCH: the participant that advanced into this
 //    matchUp's winnerMatchUp is the LOSER, not the participant on the winning side —
 //    the exact drawPositions-sort-vs-winningSide drift (factory 97fc07b12).
+//  - WINNER_NOT_ADVANCED: the winning-side participant is absent from its next matchUp
+//    WITHIN the same structure. Winning advances unconditionally within a structure, so the
+//    winner must be present. Cross-structure winnerMatchUpId feeds (a double-elimination
+//    consolation-final winner feeding back into MAIN only if they have lost once) are
+//    CONDITIONAL on history and excluded — the winner mirror of the FMLC loser-feed caveat.
 //  - EXIT_CODE_ON_WINNER_SIDE: on a single WALKOVER/DEFAULTED, a status code sits on
 //    the winning side rather than the exiting (loser) side.
 //  - DRAW_POSITIONS_NOT_SORTED: a matchUp's drawPositions are not stored ascending
 //    (ignoring empty slots) — the sort invariant the rest of the engine relies on to
-//    derive sides, fed positions (Math.min), and rendering.
+//    derive sides, fed positions (Math.min), and rendering. ROUND-ROBIN GROUP structures
+//    (ITEM children of a CONTAINER) are EXCLUDED from this check: their matchUps store
+//    drawPositions in Berger round-pairing order (e.g. [10,7]), and the engine normalizes
+//    to ascending when deriving sides, so both participants always resolve correctly — the
+//    stored order carries no meaning to sort against. Confirmed benign across the full prod
+//    corpus (2026-07-01 audit). Elimination / feed / playoff structures still assert it,
+//    because there the ascending invariant genuinely feeds position derivation.
 //  - EXIT_WITHOUT_LOSER: a single WALKOVER/DEFAULTED with a winningSide whose LOSING
 //    side holds no participant — a walkover with nobody who walked over (an orphaned
 //    exit). A pending exit is not flagged: there the loser side holds the exit carrier.
@@ -34,6 +47,7 @@ import { SUCCESS } from '@Constants/resultConstants';
 //    because a legitimately pending propagated exit may hold an empty slot.
 export const WINNING_SIDE_WITHOUT_PARTICIPANT = 'WINNING_SIDE_WITHOUT_PARTICIPANT';
 export const WINNING_SIDE_ADVANCEMENT_MISMATCH = 'WINNING_SIDE_ADVANCEMENT_MISMATCH';
+export const WINNER_NOT_ADVANCED = 'WINNER_NOT_ADVANCED';
 export const DRAW_POSITION_UNASSIGNED = 'DRAW_POSITION_UNASSIGNED';
 export const DRAW_POSITIONS_NOT_SORTED = 'DRAW_POSITIONS_NOT_SORTED';
 export const EXIT_CODE_ON_WINNER_SIDE = 'EXIT_CODE_ON_WINNER_SIDE';
@@ -86,7 +100,7 @@ function codeString(code: any): string | undefined {
 // onto one of its status codes — the marker it writes when a downstream slot resolves to a
 // WALKOVER/DEFAULTED because an upstream double-exit (or fed exit) delivered no participant.
 // Such an exit legitimately has an empty losing slot and must NOT be flagged as an orphan.
-function exitProducedByPropagation(matchUpStatusCodes: any): boolean {
+export function exitProducedByPropagation(matchUpStatusCodes: any): boolean {
   if (!Array.isArray(matchUpStatusCodes)) return false;
   return matchUpStatusCodes.some((code) => typeof code === 'object' && code?.previousMatchUpStatus);
 }
@@ -105,6 +119,20 @@ function collectAssignedStructures(structures: Structure[] | undefined, collecte
   for (const structure of structures ?? []) {
     if (structure.positionAssignments?.length && structure.matchUps?.length) collected.push(structure);
     if (structure.structures?.length) collectAssignedStructures(structure.structures, collected);
+  }
+}
+
+// Collect the structureIds of round-robin GROUP structures — the ITEM children of a
+// CONTAINER. Their matchUps store drawPositions in Berger round-pairing order, not ascending,
+// which is legitimate (see DRAW_POSITIONS_NOT_SORTED note), so they are exempted from the
+// sort check. Playoff structures in a ROUND_ROBIN_WITH_PLAYOFF are NOT container children and
+// are therefore (correctly) not exempted.
+function collectRoundRobinGroupStructureIds(structures: Structure[] | undefined, ids: Set<string>): void {
+  for (const structure of structures ?? []) {
+    if (structure.structureType === CONTAINER) {
+      for (const child of structure.structures ?? []) ids.add(child.structureId);
+    }
+    if (structure.structures?.length) collectRoundRobinGroupStructureIds(structure.structures, ids);
   }
 }
 
@@ -153,7 +181,7 @@ function getPhantomPositionInconsistencies(
 
 export function getStructureInconsistencies(
   params: GetStructureInconsistenciesArgs,
-): ResultType & { valid?: boolean; inconsistencies?: StructureInconsistency[] } {
+): ResultType & { valid?: boolean; inconsistencies?: Inconsistency[] } {
   const { drawDefinition, structureId, matchUpsMap } = params;
   if (!drawDefinition) return { error: MISSING_DRAW_DEFINITION };
 
@@ -166,14 +194,21 @@ export function getStructureInconsistencies(
 
   const inconsistencies: StructureInconsistency[] = getPhantomPositionInconsistencies(drawDefinition, structureId);
 
+  const roundRobinGroupStructureIds = new Set<string>();
+  collectRoundRobinGroupStructureIds(drawDefinition.structures, roundRobinGroupStructureIds);
+
   for (const matchUp of scoped) {
     const { winningSide, matchUpStatus, matchUpStatusCodes, sides, matchUpId, winnerMatchUpId, drawPositions } =
       matchUp;
 
-    // DRAW_POSITIONS_NOT_SORTED — applies to every matchUp (the ascending-sort invariant)
+    // DRAW_POSITIONS_NOT_SORTED — the ascending-sort invariant. Exempt round-robin group
+    // structures: they store drawPositions in Berger round-pairing order (benign).
     const filledPositions = (drawPositions ?? []).filter((drawPosition) => typeof drawPosition === 'number');
     const ascending = [...filledPositions].sort((a, b) => a - b);
-    if (filledPositions.some((drawPosition, index) => drawPosition !== ascending[index])) {
+    if (
+      !roundRobinGroupStructureIds.has(matchUp.structureId) &&
+      filledPositions.some((drawPosition, index) => drawPosition !== ascending[index])
+    ) {
       inconsistencies.push({
         matchUpId,
         structureId: matchUp.structureId,
@@ -233,28 +268,43 @@ export function getStructureInconsistencies(
       });
     }
 
-    // WINNING_SIDE_ADVANCEMENT_MISMATCH: the loser advanced into the winnerMatchUp while
-    // the winning-side participant did not
+    // Winner advancement. WINNING_SIDE_ADVANCEMENT_MISMATCH: the loser advanced into the
+    // winnerMatchUp while the winning-side participant did not. WINNER_NOT_ADVANCED: the winner is
+    // absent from its next matchUp WITHIN the same structure (a genuine dropped advancement, since
+    // winning advances unconditionally within a structure). Cross-structure winnerMatchUpId feeds
+    // are conditional on history (double-elimination consolation-final winner back to MAIN only if
+    // they lost once) and are excluded from WINNER_NOT_ADVANCED — the winner mirror of the FMLC
+    // loser-feed caveat.
     const winnerMatchUp = winnerMatchUpId ? matchUpById.get(winnerMatchUpId) : undefined;
-    if (winnerSide?.participantId && loserSide?.participantId && winnerMatchUp) {
+    if (winnerSide?.participantId && winnerMatchUp) {
       const advancedParticipantIds = (winnerMatchUp.sides ?? [])
         .map((side) => side.participantId)
         .filter(Boolean) as string[];
-      const loserAdvanced = advancedParticipantIds.includes(loserSide.participantId);
       const winnerAdvanced = advancedParticipantIds.includes(winnerSide.participantId);
+      const loserAdvanced = !!loserSide?.participantId && advancedParticipantIds.includes(loserSide.participantId);
+      const sameStructure = winnerMatchUp.structureId === matchUp.structureId;
+
       if (loserAdvanced && !winnerAdvanced) {
         inconsistencies.push({
           ...base,
           issueType: WINNING_SIDE_ADVANCEMENT_MISMATCH,
           message:
             'the losing-side participant advanced into the winnerMatchUp instead of the winning-side participant',
-          advancedParticipantId: loserSide.participantId,
+          advancedParticipantId: loserSide?.participantId,
           winningParticipantId: winnerSide.participantId,
+          winnerMatchUpId,
+        });
+      } else if (!winnerAdvanced && sameStructure) {
+        inconsistencies.push({
+          ...base,
+          issueType: WINNER_NOT_ADVANCED,
+          message: 'winning-side participant did not advance into its next matchUp within the structure',
           winnerMatchUpId,
         });
       }
     }
   }
 
-  return { ...SUCCESS, valid: inconsistencies.length === 0, inconsistencies };
+  const finalized = finalize(inconsistencies, { scope: 'STRUCTURE' });
+  return { ...SUCCESS, valid: finalized.length === 0, inconsistencies: finalized };
 }

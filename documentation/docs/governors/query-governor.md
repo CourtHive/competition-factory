@@ -527,6 +527,12 @@ Checks (each a distinct `issueType`):
 - `WINNING_SIDE_ADVANCEMENT_MISMATCH` — the losing-side participant advanced into the
   `winnerMatchUp` while the winning-side participant did not (the
   `winningSide`/`drawPositions` drift class).
+- `WINNER_NOT_ADVANCED` — a decided matchUp's winning-side participant is absent from its next
+  matchUp **within the same structure**. Winning advances unconditionally within a structure, so
+  the winner must be present. Cross-structure `winnerMatchUpId` feeds are **excluded** because they
+  are conditional on history — e.g. a `DOUBLE_ELIMINATION` consolation-final winner feeds back into
+  MAIN only if they have lost exactly once; the pointer is present but unused otherwise (the winner
+  mirror of the FMLC loser-feed caveat that makes cross-structure progression a deferred sub-phase).
 - `DRAW_POSITIONS_NOT_SORTED` — a matchUp's `drawPositions` are not stored in ascending
   order (the sort invariant the engine relies on to derive sides, fed positions, and
   rendering).
@@ -605,6 +611,143 @@ const { complete, completeness } = drawsGovernor.getStructureCompleteness({ draw
 
 Pair the two for reconstruction pipelines: `getStructureInconsistencies` proves the decided state
 is correct, `getStructureCompleteness` enumerates what remains to be filled in.
+
+## The integrity query hierarchy (draw / event / tournament)
+
+`getStructureInconsistencies` / `getStructureCompleteness` are the **leaf** of a four-level
+hierarchy that mirrors the data hierarchy. Each higher level fans out to the level below and adds
+checks that are only visible at its own level — relationships the lower level cannot see:
+
+```text
+getTournamentInconsistencies   cross-event checks (identity duplication)
+  └─ getEventInconsistencies    eventType ↔ participantType coherence
+      └─ getDrawInconsistencies  cross-structure LINK integrity
+          └─ getStructureInconsistencies   (leaf)
+```
+
+The `*Completeness` functions compose the same way (`getDrawCompleteness` → `getEventCompleteness`
+→ `getTournamentCompleteness`), rolling up `unassignedPositionCount` / `unplayedMatchUpCount` while
+preserving the per-draw / per-event breakdown.
+
+### Inconsistency envelope
+
+Every inconsistency returned anywhere in the hierarchy carries a common shape:
+
+```js
+// {
+//   issueType,     // the specific check that fired
+//   message,       // human-readable description
+//   severity,      // 'error' | 'warning' | 'info' — route alerts on this
+//   scope,         // 'STRUCTURE' | 'DRAW' | 'EVENT' | 'TOURNAMENT' — where the check lives
+//   tournamentId, eventId, drawId, structureId, matchUpId,  // provenance (stamped as it bubbles up)
+//   fingerprint,   // stable hash of the identity fields — dedup key
+//   ...            // issue-specific detail
+// }
+```
+
+Provenance is **stamped as results bubble up**: a `STRUCTURE`-scoped leaf issue keeps its scope,
+but the draw layer stamps `drawId`, the event layer `eventId`, the tournament layer `tournamentId`,
+recomputing the `fingerprint` at each level so it reflects every id known there. The `fingerprint`
+is a deterministic FNV-1a hash of the identity fields (`issueType` + all ids) — a consumer scanning
+repeatedly can dedup on it (the same defect produces the same fingerprint every scan) and route on
+`severity`. These functions stay **pure** — they return data and know nothing of transport,
+alerting, or storage.
+
+## getDrawInconsistencies
+
+The **draw** layer. Fans out to `getStructureInconsistencies` for every structure of the draw and
+adds the checks that require the whole draw in view — the integrity of the cross-structure `links`:
+
+```js
+const { valid, inconsistencies } = engine.getDrawInconsistencies({ drawId });
+// or, directly against a record built outside the factory:
+import { drawsGovernor } from 'tods-competition-factory';
+const { valid, inconsistencies } = drawsGovernor.getDrawInconsistencies({ drawDefinition });
+```
+
+Draw-level checks (in addition to every structure-level `issueType`):
+
+- `DANGLING_LINK` — a link whose `source` or `target` `structureId` is not a structure in the draw.
+  Detected structurally **before** fan-out, because inContext derivation itself throws on such a
+  draw. (error)
+- `LINK_MISSING_SOURCE_ROUND` — a `WINNER`/`LOSER` link with no `source.roundNumber`; the engine
+  cannot determine which round feeds the target. (error)
+- `SCAN_ERROR` — structure-level derivation threw on this draw (corrupt state the leaf could not
+  read); surfaced rather than allowed to crash the scan. (error)
+
+> **Deferred — participant progression checks.** Whether a given loser actually feeds a linked
+> target depends on feed-eligibility the link alone does not encode (a
+> `FIRST_MATCH_LOSER_CONSOLATION` round-2 `LOSER` link exists but feeds only players whose first
+> match was round 2, i.e. had a round-1 bye — in a full draw with no byes it feeds nobody). A sound
+> progression check must reuse the engine's feed-assignment logic rather than infer feeding from
+> link presence; it is intentionally not implemented in this phase.
+
+## getDrawCompleteness
+
+The **draw** layer of the completeness roll-up. `getStructureCompleteness` already aggregates every
+structure of the draw, so this stamps `drawId` for provenance and is the composition point the event
+layer rolls up.
+
+```js
+const { complete, completeness } = engine.getDrawCompleteness({ drawId });
+// completeness: { drawId, unassignedPositionCount, unplayedMatchUpCount, structures: [...] }
+```
+
+## getEventInconsistencies
+
+The **event** layer. Fans out to `getDrawInconsistencies` for every `drawDefinition` (stamping
+`eventId`) and adds the check only visible at the event level: whether the participantTypes actually
+assigned in the event's draws are consistent with the event's `eventType`.
+
+```js
+const { valid, inconsistencies } = engine.getEventInconsistencies({ eventId });
+```
+
+- `EVENT_PARTICIPANT_TYPE_MISMATCH` — a participant whose `participantType` is inconsistent with the
+  `eventType` is assigned in one of the event's draws (a `DOUBLES` event carrying an `INDIVIDUAL`
+  participant, a `SINGLES` event carrying a `PAIR`, etc.). `HYBRID` events legitimately carry both
+  `INDIVIDUAL` and `PAIR`. Reads stored `positionAssignments` and resolves each participant's type
+  via the participant map. (error)
+
+> The expected participantType is derived by the shared `expectedParticipantType(eventType)` helper —
+> the same single source of truth `checkValidEntries` uses for entry validation. Entries-vs-placed
+> drift and gender/category eligibility are deferred to a later sub-phase.
+
+## getEventCompleteness
+
+The **event** layer of the completeness roll-up: aggregates `getDrawCompleteness` across the event's
+draws, preserving the per-draw breakdown for a director-facing progress view.
+
+```js
+const { complete, completeness } = engine.getEventCompleteness({ eventId });
+// completeness: { eventId, unassignedPositionCount, unplayedMatchUpCount, byDraw: [...] }
+```
+
+## getTournamentInconsistencies
+
+The **top** layer. Fans out to `getEventInconsistencies` for every event (resolving the participant
+map once for reuse, stamping `tournamentId`) and adds the checks only visible tournament-wide:
+
+```js
+const { valid, inconsistencies } = engine.getTournamentInconsistencies();
+```
+
+- `PARTICIPANT_IDENTITY_DUPLICATION` — a single person (`personId`) is represented by more than one
+  distinct `INDIVIDUAL` participant; the classic merged/imported-data defect that silently splits a
+  competitor's results across two identities. (warning)
+
+> Scheduling collisions and date containment are deferred — they require the scheduling model and are
+> a later sub-phase.
+
+## getTournamentCompleteness
+
+The **top** layer of the completeness roll-up: aggregates `getEventCompleteness` across the
+tournament's events, preserving the per-event breakdown.
+
+```js
+const { complete, completeness } = engine.getTournamentCompleteness();
+// completeness: { tournamentId, unassignedPositionCount, unplayedMatchUpCount, byEvent: [...] }
+```
 
 ## getTimeItem
 

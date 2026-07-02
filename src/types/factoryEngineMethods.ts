@@ -252,8 +252,10 @@ export type FactoryEngineMethod =
   | 'getCourts'
   | 'getDevContext'
   | 'getDraftState'
+  | 'getDrawCompleteness'
   | 'getDrawData'
   | 'getDrawDefinitionTimeItem'
+  | 'getDrawInconsistencies'
   | 'getDrawParticipantRepresentativeIds'
   | 'getDrawStructures'
   | 'getDrawTypeCoercion'
@@ -265,7 +267,9 @@ export type FactoryEngineMethod =
   | 'getEvaluationSummary'
   | 'getEvaluationTemplate'
   | 'getEvent'
+  | 'getEventCompleteness'
   | 'getEventData'
+  | 'getEventInconsistencies'
   | 'getEventMatchUpFormatTiming'
   | 'getEventProperties'
   | 'getEventPublishStatus'
@@ -351,8 +355,10 @@ export type FactoryEngineMethod =
   | 'getTieFormat'
   | 'getTimeItem'
   | 'getTournament'
+  | 'getTournamentCompleteness'
   | 'getTournamentId'
   | 'getTournamentIds'
+  | 'getTournamentInconsistencies'
   | 'getTournamentInfo'
   | 'getTournamentPenalties'
   | 'getTournamentPersons'
@@ -874,8 +880,10 @@ export const FACTORY_ENGINE_METHODS: readonly FactoryEngineMethod[] = [
   'getCourts',
   'getDevContext',
   'getDraftState',
+  'getDrawCompleteness',
   'getDrawData',
   'getDrawDefinitionTimeItem',
+  'getDrawInconsistencies',
   'getDrawParticipantRepresentativeIds',
   'getDrawStructures',
   'getDrawTypeCoercion',
@@ -887,7 +895,9 @@ export const FACTORY_ENGINE_METHODS: readonly FactoryEngineMethod[] = [
   'getEvaluationSummary',
   'getEvaluationTemplate',
   'getEvent',
+  'getEventCompleteness',
   'getEventData',
+  'getEventInconsistencies',
   'getEventMatchUpFormatTiming',
   'getEventProperties',
   'getEventPublishStatus',
@@ -973,8 +983,10 @@ export const FACTORY_ENGINE_METHODS: readonly FactoryEngineMethod[] = [
   'getTieFormat',
   'getTimeItem',
   'getTournament',
+  'getTournamentCompleteness',
   'getTournamentId',
   'getTournamentIds',
+  'getTournamentInconsistencies',
   'getTournamentInfo',
   'getTournamentPenalties',
   'getTournamentPersons',

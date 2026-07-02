@@ -5,5 +5,7 @@ export { categoryCanContain } from '@Query/event/categoryCanContain';
 export { getScaledEntries } from '@Query/event/getScaledEntries';
 export { getFlightProfile } from '@Query/event/getFlightProfile';
 export { getEventTimeItem } from '@Query/base/timeItems';
+export { getEventInconsistencies } from '@Query/event/getEventInconsistencies';
+export { getEventCompleteness } from '@Query/event/getEventCompleteness';
 export { getEvents } from '@Query/events/getEvents';
 export { getEvent } from '@Query/events/getEvent';

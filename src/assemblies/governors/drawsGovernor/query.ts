@@ -9,6 +9,8 @@ export { getParticipantIdFinishingPositions } from '@Query/drawDefinition/finish
 export { getAssignedParticipantIds } from '@Query/drawDefinition/getAssignedParticipantIds';
 export { getStructureInconsistencies } from '@Query/drawDefinition/getStructureInconsistencies';
 export { getStructureCompleteness } from '@Query/drawDefinition/getStructureCompleteness';
+export { getDrawInconsistencies } from '@Query/drawDefinition/getDrawInconsistencies';
+export { getDrawCompleteness } from '@Query/drawDefinition/getDrawCompleteness';
 export { getStructureSeedAssignments } from '@Query/structure/getStructureSeedAssignments';
 export { publicFindDrawDefinition as findDrawDefinition } from '@Acquire/findDrawDefinition';
 export { positionActions } from '@Query/drawDefinition/positionActions/positionActions';

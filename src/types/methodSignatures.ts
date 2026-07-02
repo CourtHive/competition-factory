@@ -151,6 +151,7 @@ import type { resetQualifyingStructure } from '@Mutate/drawDefinitions/resetQual
 import type { addCertificationRequirement } from '@Mutate/officiating/addCertificationRequirement';
 import type { getAssignedParticipantIds } from '@Query/drawDefinition/getAssignedParticipantIds';
 import type { getDrawTypeCoercion } from '@Generators/drawDefinitions/getDrawTypeCoercion';
+import type { getTournamentInconsistencies } from '@Query/tournaments/getTournamentInconsistencies';
 import type { matchUpScheduleChange } from '@Mutate/matchUps/schedule/matchUpScheduleChange';
 import type { modifyParticipantOtherName } from '@Mutate/participants/modifyParticipantOtherName';
 import type { regenerateParticipantNames } from '@Mutate/participants/regenerateParticipantNames';
@@ -195,11 +196,13 @@ import type { assignMatchUpCourt } from '@Mutate/matchUps/schedule/assignMatchUp
 import type { assignMatchUpVenue } from '@Mutate/matchUps/schedule/assignMatchUpVenue';
 import type { automatedPositioning } from '@Mutate/drawDefinitions/automatedPositioning';
 import type { cleanExpiredMutationLocks } from '@Query/tournaments/cleanExpiredMutationLocks';
+import type { getDrawInconsistencies } from '@Query/drawDefinition/getDrawInconsistencies';
 import type { getOfficialCertifications } from '@Query/officiating/getOfficialCertifications';
 import type { getParticipantMembership } from '@Query/participants/getParticipantMembership';
 import type { getPersonRequests } from '@Query/matchUps/scheduling/getPersonRequests';
 import type { getRandomQualifierList } from '@Query/drawDefinition/getRandomQualifierList';
 import type { getStructureSeedAssignments } from '@Query/structure/getStructureSeedAssignments';
+import type { getTournamentCompleteness } from '@Query/tournaments/getTournamentCompleteness';
 import type { isAggregateFormat } from '@Helpers/matchUpFormatCode/isAggregateFormat';
 import type { luckyDrawAdvancement } from '@Mutate/drawDefinitions/luckyDrawAdvancement';
 import type { modifyCollectionDefinition } from '@Mutate/tieFormat/modifyCollectionDefinition';
@@ -248,6 +251,7 @@ import type { allCompetitionMatchUps } from '@Query/matchUps/getAllCompetitionMa
 import type { buildDrawHierarchy } from '@Generators/drawDefinitions/drawHierarchy';
 import type { getCheckedInParticipantIds } from '@Query/matchUp/getCheckedInParticipantIds';
 import type { getDraftState } from '@Query/drawDefinition/draft/getDraftState';
+import type { getDrawCompleteness } from '@Query/drawDefinition/getDrawCompleteness';
 import type { getLinkedTournamentIds } from '@Query/tournaments/getLinkedTournamentIds';
 import type { getOfficialAssignments } from '@Query/officiating/getOfficialAssignments';
 import type { getOfficialEligibility } from '@Query/officiating/getOfficialEligibility';
@@ -360,6 +364,7 @@ import type { calculateMatchStatistics, enrichPointHistory, getQuickStats } from
 import type { courtGridRows } from '@Generators/scheduling/courtGridRows';
 import type { deleteDrawDefinitions } from '@Mutate/events/deleteDrawDefinitions';
 import type { getAppliedPolicies, getPolicyDefinitions } from '@Query/extensions/getAppliedPolicies';
+import type { getEventInconsistencies } from '@Query/event/getEventInconsistencies';
 import type { getMatchUpFormat } from '@Query/hierarchical/getMatchUpFormat';
 import type { getRounds } from '@Query/matchUps/scheduling/getRounds';
 import type { getTournamentInfo } from '@Query/tournaments/getTournamentInfo';
@@ -416,6 +421,7 @@ import type { generateOutcome } from '@Generators/mocks/generateOutcome';
 import type { generateRankingList } from '@Query/scales/generateRankingList';
 import type { getDrawData } from '@Query/drawDefinition/getDrawData';
 import type { getEvaluations } from '@Query/officiating/getEvaluations';
+import type { getEventCompleteness } from '@Query/event/getEventCompleteness';
 import type { getPublishState } from '@Query/publishing/getPublishState';
 import type { getQualityWinPoints } from '@Query/scales/getQualityWinPoints';
 import type { getScaleValues } from '@Query/participant/getScaleValues';
@@ -771,8 +777,10 @@ export interface MethodSignatures {
   getCourtInfo: EngineMethod<typeof getCourtInfo>;
   getCourts: EngineMethod<typeof getCourts>;
   getDraftState: EngineMethod<typeof getDraftState>;
+  getDrawCompleteness: EngineMethod<typeof getDrawCompleteness>;
   getDrawData: EngineMethod<typeof getDrawData>;
   getDrawDefinitionTimeItem: EngineMethod<typeof getDrawDefinitionTimeItem>;
+  getDrawInconsistencies: EngineMethod<typeof getDrawInconsistencies>;
   getDrawParticipantRepresentativeIds: EngineMethod<typeof getDrawParticipantRepresentativeIds>;
   getDrawStructures: EngineMethod<typeof getDrawStructures>;
   getDrawTypeCoercion: EngineMethod<typeof getDrawTypeCoercion>;
@@ -784,7 +792,9 @@ export interface MethodSignatures {
   getEvaluationSummary: EngineMethod<typeof getEvaluationSummary>;
   getEvaluationTemplate: EngineMethod<typeof getEvaluationTemplate>;
   getEvent: EngineMethod<typeof getEvent>;
+  getEventCompleteness: EngineMethod<typeof getEventCompleteness>;
   getEventData: EngineMethod<typeof getEventData>;
+  getEventInconsistencies: EngineMethod<typeof getEventInconsistencies>;
   getEventMatchUpFormatTiming: EngineMethod<typeof getEventMatchUpFormatTiming>;
   getEventProperties: EngineMethod<typeof getEventProperties>;
   getEventPublishStatus: EngineMethod<typeof getEventPublishStatus>;
@@ -865,7 +875,9 @@ export interface MethodSignatures {
   getTiebreakComplement: EngineMethod<typeof getTiebreakComplement>;
   getTieFormat: EngineMethod<typeof getTieFormat>;
   getTimeItem: EngineMethod<typeof getTimeItem>;
+  getTournamentCompleteness: EngineMethod<typeof getTournamentCompleteness>;
   getTournamentIds: EngineMethod<typeof getTournamentIds>;
+  getTournamentInconsistencies: EngineMethod<typeof getTournamentInconsistencies>;
   getTournamentInfo: EngineMethod<typeof getTournamentInfo>;
   getTournamentPenalties: EngineMethod<typeof getTournamentPenalties>;
   getTournamentPersons: EngineMethod<typeof getTournamentPersons>;
