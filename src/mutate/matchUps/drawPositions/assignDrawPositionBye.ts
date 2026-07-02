@@ -462,17 +462,12 @@ function advanceWinner({
     existingDrawPositions?.includes(assignment.drawPosition),
   );
 
-  const advancingAssignmentIsBye = positionAssignments?.find(
-    ({ drawPosition }) => drawPosition === drawPositionToAdvance,
-  );
-
   /// ????????????????????????????????????????
   // This may be unnecessary....
   const priorPair = sourceDrawPositions?.find((drawPosition) => drawPosition !== drawPositionToAdvance);
   const priorPairAssignment = priorPair && existingAssignments?.find(({ drawPosition }) => drawPosition === priorPair);
   const priorPairIsBye = priorPairAssignment?.bye;
   const isByeAdvancedBye = drawPositionToAdvanceIsBye && priorPairIsBye;
-  if (isByeAdvancedBye) console.log({ isByeAdvancedBye });
   /// ????????????????????????????????????????
 
   if (existingDrawPositions?.length > 1 && drawPositionToAdvanceIsBye && !priorPairIsBye) {
@@ -500,11 +495,6 @@ function advanceWinner({
     .sort(numericSort);
 
   if (!drawPositionAssigned) {
-    console.log('@@@@@@@', {
-      advancingAssignmentIsBye,
-      drawPositionToAdvance,
-      existingAssignments,
-    });
     return decorateResult({ result: { error: DRAW_POSITION_ASSIGNED }, stack });
   }
 
