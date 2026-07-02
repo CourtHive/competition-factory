@@ -674,13 +674,22 @@ Draw-level checks (in addition to every structure-level `issueType`):
   cannot determine which round feeds the target. (error)
 - `SCAN_ERROR` — structure-level derivation threw on this draw (corrupt state the leaf could not
   read); surfaced rather than allowed to crash the scan. (error)
+- `DROPPED_PROGRESSION` — a `LOSER`-linked source matchUp whose loser is **eligible** to feed the
+  target structure (per the engine's own feed predicate) yet is absent from that structure's
+  `positionAssignments` — a consolation feed that silently failed. (error)
 
-> **Deferred — participant progression checks.** Whether a given loser actually feeds a linked
-> target depends on feed-eligibility the link alone does not encode (a
-> `FIRST_MATCH_LOSER_CONSOLATION` round-2 `LOSER` link exists but feeds only players whose first
-> match was round 2, i.e. had a round-1 bye — in a full draw with no byes it feeds nobody). A sound
-> progression check must reuse the engine's feed-assignment logic rather than infer feeding from
-> link presence; it is intentionally not implemented in this phase.
+**Sound progression via the shared predicate.** Whether a given loser actually feeds a linked target
+depends on eligibility the `LOSER` link alone does not encode — a `FIRST_MATCH_LOSER_CONSOLATION`
+round-2 link exists but feeds only players whose first match _was_ round 2 (zero prior scored wins;
+i.e. they had a round-1 bye). `DROPPED_PROGRESSION` avoids the resulting false positives by reusing
+`isFedLoserEligible`, which shares `getDrawPositionWinCount` with `directLoser` (the engine's
+mutation-time positioning code) — so the check and the engine apply the _same_ eligibility gate and
+cannot diverge.
+
+> **Still deferred — `WINNER`-linked progression.** Double-elimination consolation-final feed-back
+> (into MAIN, only if the participant has lost exactly once) and qualifying → main placement are not
+> yet checked: their eligibility (loss count) is not a cleanly extractable predicate the way the
+> loser gate is. That is a later sub-phase.
 
 ## getDrawCompleteness
 

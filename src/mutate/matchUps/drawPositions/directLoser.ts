@@ -2,10 +2,10 @@ import { removeLineUpSubstitutions } from '@Mutate/drawDefinitions/removeLineUpS
 import { assignDrawPositionBye } from '@Mutate/matchUps/drawPositions/assignDrawPositionBye';
 import { assignDrawPosition } from '@Mutate/matchUps/drawPositions/positionAssignment';
 import { structureAssignedDrawPositions } from '@Query/drawDefinition/positionsGetter';
+import { getDrawPositionWinCount } from '@Query/matchUp/getDrawPositionWinCount';
 import { getAllStructureMatchUps } from '@Query/matchUps/getAllStructureMatchUps';
 import { assignSeed } from '@Mutate/drawDefinitions/entryGovernor/seedAssignment';
 import { modifyMatchUpNotice } from '@Mutate/notifications/drawNotifications';
-import { checkScoreHasValue } from '@Query/matchUp/checkScoreHasValue';
 import { decorateResult } from '@Functions/global/decorateResult';
 import { findStructure } from '@Acquire/findStructure';
 import { numericSort } from '@Tools/sorting';
@@ -66,18 +66,10 @@ export function directLoser(params): ResultType {
     event,
   });
 
-  const drawPositionMatchUps = sourceMatchUps.filter((matchUp) => matchUp.drawPositions?.includes(loserDrawPosition));
-
-  // in this calculation BYEs and WALKOVERs are not counted as wins
-  // as well as DEFAULTED when there is no score component
-  const loserDrawPositionWins = drawPositionMatchUps.filter((matchUp) => {
-    const drawPositionSide = matchUp.sides.find((side) => side.drawPosition === loserDrawPosition);
-    const unscoredOutcome =
-      matchUp.matchUpStatus === WALKOVER || (matchUp.matchUpStatus === DEFAULTED && !checkScoreHasValue(matchUp));
-    return drawPositionSide?.sideNumber === matchUp.winningSide && !unscoredOutcome;
-  });
-
-  const validForConsolation = loserLinkCondition === FIRST_MATCHUP && loserDrawPositionWins.length === 0;
+  // BYEs and WALKOVERs (and unscored DEFAULTED) are not counted as wins — see getDrawPositionWinCount,
+  // shared with the read-only feed-eligibility integrity check so the two never diverge.
+  const loserDrawPositionWins = getDrawPositionWinCount({ sourceMatchUps, drawPosition: loserDrawPosition });
+  const validForConsolation = loserLinkCondition === FIRST_MATCHUP && loserDrawPositionWins === 0;
 
   const { positionAssignments: sourcePositionAssignments } = structureAssignedDrawPositions({
     structureId: sourceStructureId,
@@ -227,7 +219,10 @@ function placeLoser({
       drawDefinition,
       event,
     });
-    return decorateResult({ result: decorateResult({ result: byeResult, stack: 'assignLoserPositionBye' }), stack: innerStack });
+    return decorateResult({
+      result: decorateResult({ result: byeResult, stack: 'assignLoserPositionBye' }),
+      stack: innerStack,
+    });
   }
 
   if (isFirstRoundValidDrawPosition) {
