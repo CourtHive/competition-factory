@@ -231,7 +231,6 @@ export function assignDrawPositionBye({
 
   if (matchUp && drawPositionToAdvance) {
     const result = advanceDrawPosition({
-      sourceDrawPositions: matchUp.drawPositions,
       matchUpId: matchUp.matchUpId,
       inContextDrawMatchUps,
       drawPositionToAdvance,
@@ -336,7 +335,6 @@ function assignRoundRobinBYE({
 // and if so advances the appropriate drawPosition into the targetMatchUp
 type AdvanceDrawPositionType = {
   inContextDrawMatchUps: HydratedMatchUp[];
-  sourceDrawPositions?: number[];
   drawPositionToAdvance: number;
   tournamentRecord?: Tournament;
   drawDefinition: DrawDefinition;
@@ -347,7 +345,6 @@ type AdvanceDrawPositionType = {
 export function advanceDrawPosition({
   drawPositionToAdvance,
   inContextDrawMatchUps,
-  sourceDrawPositions,
   tournamentRecord,
   drawDefinition,
   matchUpsMap,
@@ -396,7 +393,6 @@ export function advanceDrawPosition({
     advanceWinner({
       drawPositionToAdvance,
       inContextDrawMatchUps,
-      sourceDrawPositions,
       tournamentRecord,
       drawDefinition,
       winnerMatchUp,
@@ -438,7 +434,6 @@ export function advanceDrawPosition({
 function advanceWinner({
   drawPositionToAdvance,
   inContextDrawMatchUps,
-  sourceDrawPositions,
   tournamentRecord,
   drawDefinition,
   winnerMatchUp,
@@ -458,24 +453,18 @@ function advanceWinner({
   );
   const drawPositionToAdvanceIsBye = drawPositionToAdvanceAssigment?.bye;
   const existingDrawPositions = noContextWinnerMatchUp.drawPositions?.filter(Boolean);
-  const existingAssignments = positionAssignments?.filter((assignment) =>
-    existingDrawPositions?.includes(assignment.drawPosition),
-  );
 
-  /// ????????????????????????????????????????
-  // This may be unnecessary....
-  const priorPair = sourceDrawPositions?.find((drawPosition) => drawPosition !== drawPositionToAdvance);
-  const priorPairAssignment = priorPair && existingAssignments?.find(({ drawPosition }) => drawPosition === priorPair);
-  const priorPairIsBye = priorPairAssignment?.bye;
-  const isByeAdvancedBye = drawPositionToAdvanceIsBye && priorPairIsBye;
-  /// ????????????????????????????????????????
-
-  if (existingDrawPositions?.length > 1 && drawPositionToAdvanceIsBye && !priorPairIsBye) {
+  // Defensive: advanceWinner only ever advances a WINNER (a real surviving side),
+  // never a BYE — BYE cascades are dispatched through advanceDrawPosition's own
+  // BYE branch below. If a BYE ever reaches here as the position to advance into an
+  // already-populated matchUp, refuse rather than mis-place it. See the
+  // never-advance-a-bye regression test (advanceWinnerNeverAdvancesBye.test.ts).
+  if (existingDrawPositions?.length > 1 && drawPositionToAdvanceIsBye) {
     return decorateResult({ result: { error: DRAW_POSITION_ASSIGNED }, stack });
   }
   const pairedDrawPosition = existingDrawPositions?.find((drawPosition) => drawPosition !== drawPositionToAdvance);
 
-  let drawPositionAssigned = isByeAdvancedBye;
+  let drawPositionAssigned = false;
   // always ensure there are two drawPositions to iterate over
   const twoDrawPositions = [
     ...(noContextWinnerMatchUp.drawPositions ?? []).filter(Boolean),
