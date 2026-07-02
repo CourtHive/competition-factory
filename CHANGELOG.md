@@ -1,5 +1,13 @@
 # Changelog
 
+## [6.0.1](https://github.com/CourtHive/competition-factory/compare/v6.0.0...v6.0.1) (2026-07-02)
+
+
+### Documentation
+
+* curate 6.0.0 changelog release notes ([52f2141](https://github.com/CourtHive/competition-factory/commit/52f2141b5c7b351925cd2c99f721b76bb11958ca))
+* **query-governor:** document getMatchUpFormatVariance ([934d534](https://github.com/CourtHive/competition-factory/commit/934d53422e00b9c9c859f997831d9d00e82cb938))
+
 ## [6.0.0](https://github.com/CourtHive/competition-factory/compare/v5.9.0...v6.0.0) (2026-07-02)
 
 This is a **major** release. The version bump is driven by two breaking changes to rating
