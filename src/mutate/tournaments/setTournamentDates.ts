@@ -9,6 +9,7 @@ import { generateDateRange } from '@Tools/dateTime';
 import { dateValidation } from '@Validators/regex';
 
 // constants and types
+import { completedMatchUpStatuses } from '@Constants/matchUpStatusConstants';
 import { MODIFY_TOURNAMENT_DETAIL } from '@Constants/topicConstants';
 import { INVALID, VALIDATE } from '@Constants/attributeConstants';
 import { Tournament, WeekdayUnion } from '@Types/tournamentTypes';
@@ -17,6 +18,7 @@ import { ResultType } from '@Types/factoryTypes';
 import {
   INVALID_DATE,
   INVALID_VALUES,
+  MATCHUPS_COMPLETED_OUTSIDE_DATES,
   MATCHUPS_SCHEDULED_OUTSIDE_DATES,
   SCHEDULE_NOT_CLEARED,
 } from '@Constants/errorConditionConstants';
@@ -35,6 +37,10 @@ export function setTournamentDates(params: SetTournamentDatesArgs): ResultType &
   // matchUpIds / dates scheduled outside the requested range (populated on the rejection path)
   outOfRangeMatchUpIds?: string[];
   outOfRangeDates?: string[];
+  // completed matchUps played outside the requested range — a hard block that force
+  // cannot override (unscheduling would erase the record of when a match was played)
+  completedOutOfRangeMatchUpIds?: string[];
+  completedOutOfRangeDates?: string[];
   // matchUpIds unscheduled when force: true was used to push past the rejection
   unscheduledMatchUpIds?: string[];
   datesRemoved?: string[];
@@ -91,13 +97,34 @@ export function setTournamentDates(params: SetTournamentDatesArgs): ResultType &
   if (checkScheduling) {
     const prospectiveStart = startDate ?? tournamentRecord.startDate;
     const prospectiveEnd = endDate ?? tournamentRecord.endDate;
-    const { scheduledDates, matchUpIds } = findMatchUpsScheduledOutsideDates({
+    const { scheduledDates, matchUpIds, completedDates, completedMatchUpIds } = findMatchUpsScheduledOutsideDates({
       tournamentRecord,
       startDate: prospectiveStart,
       endDate: prospectiveEnd,
     });
+
+    // Completed matchUps were actually played on those dates, so the tournament range
+    // MUST include them. This is a hard block that force cannot override — unscheduling
+    // a completed matchUp would erase the record of when it was played, and a date on
+    // which a match occurred cannot fall outside the tournament. (Reported separately
+    // from the clearable, non-completed matchUps below so callers never offer an
+    // "unschedule" action that clearScheduledMatchUps would refuse — the divergence
+    // that previously surfaced as a misleading SCHEDULE_NOT_CLEARED error.)
+    if (completedDates.length) {
+      const sorted = completedDates.toSorted((a, b) => a.localeCompare(b));
+      return {
+        error: {
+          ...MATCHUPS_COMPLETED_OUTSIDE_DATES,
+          message: `Cannot change tournament dates: completed matchUps were played outside the new range on ${sorted.join(', ')}`,
+        },
+        info: `${completedMatchUpIds.length} completed matchUp(s) played outside ${prospectiveStart} - ${prospectiveEnd}`,
+        completedOutOfRangeMatchUpIds: completedMatchUpIds,
+        completedOutOfRangeDates: sorted,
+      };
+    }
+
     if (scheduledDates.length) {
-      const sorted = scheduledDates.sort((a, b) => a.localeCompare(b));
+      const sorted = scheduledDates.toSorted((a, b) => a.localeCompare(b));
       if (force) {
         forcedUnscheduling = { scheduledDates: sorted, matchUpIds };
       } else {
@@ -213,7 +240,11 @@ export function setTournamentEndDate({ tournamentRecord, endDate, force }) {
   return setTournamentDates({ tournamentRecord, endDate, force });
 }
 
-// detect scheduled matchUps that fall outside of the given tournament date range
+// detect scheduled matchUps that fall outside of the given tournament date range.
+// Completed matchUps are reported separately (completedDates/completedMatchUpIds) because
+// they cannot be unscheduled to make room for a date change — a match played on a date
+// forces that date into the tournament range. Non-completed matchUps remain in
+// scheduledDates/matchUpIds and stay clearable via `force`.
 export function findMatchUpsScheduledOutsideDates({ tournamentRecord, startDate, endDate }) {
   const matchUps = allTournamentMatchUps({ tournamentRecord }).matchUps ?? [];
 
@@ -222,15 +253,22 @@ export function findMatchUpsScheduledOutsideDates({ tournamentRecord, startDate,
 
   const scheduledDates: string[] = [];
   const matchUpIds: string[] = [];
+  const completedDates: string[] = [];
+  const completedMatchUpIds: string[] = [];
   for (const matchUp of matchUps) {
     const scheduledDate = matchUp.schedule?.scheduledDate;
     if (!scheduledDate) continue;
     const date = new Date(scheduledDate);
     if ((start && date < start) || (end && date > end)) {
-      matchUpIds.push(matchUp.matchUpId);
-      if (!scheduledDates.includes(scheduledDate)) scheduledDates.push(scheduledDate);
+      if (matchUp.matchUpStatus && completedMatchUpStatuses.includes(matchUp.matchUpStatus)) {
+        completedMatchUpIds.push(matchUp.matchUpId);
+        if (!completedDates.includes(scheduledDate)) completedDates.push(scheduledDate);
+      } else {
+        matchUpIds.push(matchUp.matchUpId);
+        if (!scheduledDates.includes(scheduledDate)) scheduledDates.push(scheduledDate);
+      }
     }
   }
 
-  return { scheduledDates, matchUpIds };
+  return { scheduledDates, matchUpIds, completedDates, completedMatchUpIds };
 }

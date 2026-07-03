@@ -27,6 +27,32 @@ import {
   SCHEDULED_TIME,
 } from '@Constants/timeItemConstants';
 
+// Schedule-placement timeItem types (LEGACY / DUAL) and their first-class
+// `matchUp.schedule.*` counterparts (NATIVE / DUAL). Kept in lockstep so an
+// unschedule clears the same placement regardless of the record's write mode.
+const SCHEDULE_ITEM_TYPES = new Set([
+  ALLOCATE_COURTS,
+  ASSIGN_COURT,
+  ASSIGN_VENUE,
+  COURT_ANNOTATION,
+  COURT_ORDER,
+  SCHEDULED_DATE,
+  SCHEDULED_TIME,
+]);
+const SCHEDULE_FIRST_CLASS_ATTRIBUTES = [
+  'allocatedCourts', // ALLOCATE_COURTS
+  'courtId', // ASSIGN_COURT
+  'venueId', // ASSIGN_VENUE
+  'courtAnnotation', // COURT_ANNOTATION
+  'courtOrder', // COURT_ORDER
+  'scheduledDate', // SCHEDULED_DATE
+  'scheduledTime', // SCHEDULED_TIME
+  // first-class only (no timeItem mirror): the "called to court" stamp. A full
+  // unschedule must drop it too — otherwise an unscheduled matchUp keeps a stale
+  // "called" marker with no placement behind it.
+  'calledAt',
+];
+
 type ClearScheduledMatchUpsArgs = {
   ignoreMatchUpStatuses?: MatchUpStatusUnion[];
   tournamentRecords?: TournamentRecords;
@@ -118,21 +144,24 @@ function clearSchedules({
 
     for (const matchUp of drawMatchUps) {
       let modified = false;
+      // LEGACY / DUAL records store schedule data as timeItems — strip them.
       matchUp.timeItems = (matchUp.timeItems ?? []).filter((timeItem) => {
-        const preserve =
-          timeItem?.itemType &&
-          ![
-            ALLOCATE_COURTS,
-            ASSIGN_COURT,
-            ASSIGN_VENUE,
-            COURT_ANNOTATION,
-            COURT_ORDER,
-            SCHEDULED_DATE,
-            SCHEDULED_TIME,
-          ].includes(timeItem?.itemType);
+        const preserve = timeItem?.itemType && !SCHEDULE_ITEM_TYPES.has(timeItem?.itemType);
         if (!preserve) modified = true;
         return preserve;
       });
+      // NATIVE / DUAL records store schedule data as first-class `matchUp.schedule.*`
+      // attributes (CODES Phase 2) with no timeItem mirror. Without clearing these the
+      // unschedule is a no-op in production NATIVE mode — the divergence that surfaced
+      // as SCHEDULE_NOT_CLEARED when a date change tried to force-unschedule matchUps.
+      if (matchUp.schedule && typeof matchUp.schedule === 'object') {
+        for (const attribute of SCHEDULE_FIRST_CLASS_ATTRIBUTES) {
+          if (matchUp.schedule[attribute] !== undefined) {
+            delete matchUp.schedule[attribute];
+            modified = true;
+          }
+        }
+      }
       if (modified) {
         modifyMatchUpNotice({
           context: 'clear schedules',
