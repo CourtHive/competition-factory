@@ -14,11 +14,16 @@ import { ErrorType, MISSING_TOURNAMENT_RECORDS } from '@Constants/errorCondition
 type GetExtensionUpdateArgs = {
   tournamentRecords: TournamentRecords;
   extensionName: string;
+  // CODES: when the extension has been promoted to a first-class group leaf
+  // (e.g. SCHEDULE_TIMING → scheduling.timing) NATIVE records carry no legacy
+  // extension. Pass the promoted location so the sync method is still emitted.
+  firstClass?: { groupAttribute: string; leafAttribute: string };
 };
 
 export function getExtensionUpdate({
   tournamentRecords,
   extensionName,
+  firstClass,
 }: GetExtensionUpdateArgs): { error?: ErrorType } | { methods: QueueMethod[] } {
   if (typeof tournamentRecords !== 'object' || !Object.keys(tournamentRecords).length)
     return { error: MISSING_TOURNAMENT_RECORDS };
@@ -31,10 +36,16 @@ export function getExtensionUpdate({
       name: extensionName,
     });
 
+    // In NATIVE writeMode the promoted value lives first-class with no extension mirror;
+    // synthesize the extension shape so the replay method is emitted in every writeMode.
+    const firstClassValue = firstClass && tournamentRecord?.[firstClass.groupAttribute]?.[firstClass.leafAttribute];
+    const tournamentExtension =
+      extension ?? (firstClassValue !== undefined ? { name: extensionName, value: firstClassValue } : undefined);
+
     // only necessary to push this method once to cover both tournaments
-    if (extension && !tournamentExtensionAdded) {
+    if (tournamentExtension && !tournamentExtensionAdded) {
       methods.push({
-        params: { extension, discover: true },
+        params: { extension: tournamentExtension, discover: true },
         method: 'addExtension',
       });
       tournamentExtensionAdded = true;
