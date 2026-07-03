@@ -14,7 +14,12 @@ export default defineConfig({
     // Untracked scratch tests are excluded from coverage but were still running
     // and exercising production code — inflating local % above CI's. Excluding
     // them from the runner makes local match CI.
-    exclude: [...configDefaults.exclude, '**/scratch/**'],
+    //
+    // `*.native.test.*` specs assert the NATIVE (first-class) storage shape and must run under
+    // the NATIVE writeMode — they run via `pnpm test:native` (vitest.native.config.mts), NOT here
+    // under the LEGACY pin. Exclude them from the default run so they don't execute in the wrong
+    // mode. (writeModeMatrix-based specs live in ordinary *.test.* files and set their own mode.)
+    exclude: [...configDefaults.exclude, '**/scratch/**', '**/*.native.test.{js,mjs,cjs,ts,mts,cts,jsx,tsx}'],
     setupFiles: ['./src/tests/testHarness/setSchemaWriteModeLegacy.ts'],
     coverage: {
       reporter: ['html', 'json-summary'],
