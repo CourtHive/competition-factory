@@ -19,7 +19,7 @@ export function scheduledSortedMatchUps({ schedulingProfile, matchUps = [] }: Sc
     const roundsGroupings = schedulingProfile.flatMap(({ venues }) => venues.map(({ rounds }) => rounds));
 
     roundsGroupings.forEach((grouping) => {
-      const sortedRounds = grouping.sort((a, b) => (a.sortOrder || 0) - (b.sortOrder || 0));
+      const sortedRounds = grouping.toSorted((a, b) => (a.sortOrder || 0) - (b.sortOrder || 0));
       sortedRounds.forEach(({ eventId, drawId, structureId, roundNumber }, index) => {
         const hash = getHash({ eventId, drawId, structureId, roundNumber });
         profileHash[hash] = index;
@@ -62,7 +62,7 @@ export function scheduledSortedMatchUps({ schedulingProfile, matchUps = [] }: Sc
     // for each time group, sort sub-structure group matchUps by round number
     for (const timeKey of Object.keys(timeGroups)) {
       const timeGroup = timeGroups[timeKey];
-      const sortedTimeGroup = timeGroup.sort((a, b) => (a['roundNumber'] || 0) - (b['roundNumber'] || 0));
+      const sortedTimeGroup = timeGroup.toSorted((a, b) => (a['roundNumber'] || 0) - (b['roundNumber'] || 0));
       timeGroups[timeKey] = sortedTimeGroup;
     }
 

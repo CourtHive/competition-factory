@@ -78,7 +78,10 @@ export function removeDoubleExit(params) {
       ({ roundNumber, structureId }) => structureId === matchUp.structureId && roundNumber === 1,
     );
     const roundPositions = roundMatchUps.map(({ roundPosition }) => roundPosition);
-    const pairedPositions = chunkArray(roundPositions.sort((a, b) => a - b), 2).find((chunk) => chunk.includes(matchUp.roundPosition));
+    const pairedPositions = chunkArray(
+      roundPositions.toSorted((a, b) => a - b),
+      2,
+    ).find((chunk) => chunk.includes(matchUp.roundPosition));
     const pairedMatchUpStatuses = roundMatchUps
       .filter(({ roundPosition }) => pairedPositions.includes(roundPosition))
       ?.map(({ matchUpStatus }) => matchUpStatus);

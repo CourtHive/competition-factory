@@ -120,10 +120,10 @@ export function generateLineUps(params: GenerateLineUpsArgs): ResultType & {
   const participantIdPairs: string[][] = [];
   const collectionDefinitions = tieFormat?.collectionDefinitions ?? [];
   for (const teamParticipant of teamParticipants) {
-    const singlesSort = teamParticipant.individualParticipants?.sort(singlesScaleSort) ?? [];
+    const singlesSort = teamParticipant.individualParticipants?.toSorted(singlesScaleSort) ?? [];
     const doublesSort = singlesOnly
       ? singlesSort
-      : (teamParticipant.individualParticipants?.sort(doublesScaleSort) ?? []);
+      : (teamParticipant.individualParticipants?.toSorted(doublesScaleSort) ?? []);
 
     const participantAssignments: { [key: string]: CollectionAssignment[] } = {};
     for (const collectionDefinition of collectionDefinitions) {

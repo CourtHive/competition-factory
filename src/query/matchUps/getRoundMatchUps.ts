@@ -58,7 +58,7 @@ export function getRoundMatchUps({ matchUps = [], interpolate }: GetRoundMatchUp
       const consideredMatchUps = hasTeamMatchUps
         ? roundMatchUps.filter(({ matchUpType }) => matchUpType === TEAM)
         : roundMatchUps;
-      const getSorted = (items) => items.sort((a, b) => numericSort(a.roundPosition, b.roundPosition));
+      const getSorted = (items) => items.toSorted((a, b) => numericSort(a.roundPosition, b.roundPosition));
       return {
         [roundNumber]: getSorted(consideredMatchUps),
       };
@@ -148,7 +148,7 @@ export function getRoundMatchUps({ matchUps = [], interpolate }: GetRoundMatchUp
     roundProfile[roundNumber].finishingPositionRange = roundMatchUps[roundNumber]?.[0]?.finishingPositionRange;
 
     if (roundNumber === 1 || !roundProfile[roundNumber - 1]) {
-      const orderedDrawPositions = currentRoundDrawPositions.sort(numericSort);
+      const orderedDrawPositions = currentRoundDrawPositions.toSorted(numericSort);
       const pairedDrawPositions = chunkArray(orderedDrawPositions, 2);
       roundProfile[roundNumber].drawPositions = orderedDrawPositions;
       roundProfile[roundNumber].pairedDrawPositions = pairedDrawPositions;
