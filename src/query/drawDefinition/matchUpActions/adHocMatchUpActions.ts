@@ -54,19 +54,22 @@ export function adHocMatchUpActions({
       ?.filter(({ entryStatus }) => entryStatus && DIRECT_ENTRY_STATUSES.includes(entryStatus))
       .map(getParticipantId) ?? [];
 
-  const roundAssignedParticipantIds = roundMatchUps
-    .map((matchUp) => (matchUp.sides ?? []).flatMap(getParticipantId))
-    .flat()
-    .filter(Boolean);
+  const roundAssignedParticipantIds = new Set(
+    roundMatchUps
+      .map((matchUp) => (matchUp.sides ?? []).flatMap(getParticipantId))
+      .flat()
+      .filter(Boolean),
+  );
 
   const availableParticipantIds = enteredParticipantIds.filter(
     (participantId) =>
       !matchUpParticipantIds.includes(participantId) &&
-      (!restrictAdHocRoundParticipants || !roundAssignedParticipantIds.includes(participantId)),
+      (!restrictAdHocRoundParticipants || !roundAssignedParticipantIds.has(participantId)),
   );
+  const availableParticipantIdSet = new Set(availableParticipantIds);
 
   const participantsAvailable = tournamentParticipants
-    ?.filter((participant) => availableParticipantIds?.includes(participant.participantId))
+    ?.filter((participant) => availableParticipantIdSet.has(participant.participantId))
     .map((participant) => makeDeepCopy(participant, undefined, true));
 
   participantsAvailable?.forEach((participant: HydratedParticipant) => {
@@ -110,12 +113,13 @@ export function adHocMatchUpActions({
   availableAlternatesParticipantIds = availableAlternatesParticipantIds.filter(
     (participantId) =>
       !matchUpParticipantIds.includes(participantId) &&
-      !availableParticipantIds.includes(participantId) &&
-      (!restrictAdHocRoundParticipants || !roundAssignedParticipantIds.includes(participantId)),
+      !availableParticipantIdSet.has(participantId) &&
+      (!restrictAdHocRoundParticipants || !roundAssignedParticipantIds.has(participantId)),
   );
 
+  const availableAlternatesSet = new Set(availableAlternatesParticipantIds);
   const availableAlternates = tournamentParticipants
-    ?.filter((participant) => availableAlternatesParticipantIds.includes(participant.participantId))
+    ?.filter((participant) => availableAlternatesSet.has(participant.participantId))
     .map((participant) => makeDeepCopy(participant, undefined, true));
   availableAlternates?.forEach((alternate: HydratedParticipant) => {
     const entry = (drawDefinition.entries ?? []).find((entry) => entry.participantId === alternate.participantId);
