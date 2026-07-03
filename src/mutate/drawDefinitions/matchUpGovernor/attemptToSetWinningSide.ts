@@ -18,8 +18,9 @@ export function attemptToSetWinningSide(params) {
 
   const { appliedPolicies, disableAutoCalc, drawDefinition, dualMatchUp, winningSide, structure, matchUp } = params;
 
-  // disableAutoCalc means the score is being set manually
-  if (dualMatchUp?._disableAutoCalc && disableAutoCalc !== false) {
+  // disableAutoCalc means the score is being set manually; read first-class (NATIVE) with
+  // fallback to the legacy `_disableAutoCalc` hydrated alias (LEGACY writeMode)
+  if ((dualMatchUp?.disableAutoCalc ?? dualMatchUp?._disableAutoCalc) && disableAutoCalc !== false) {
     return attemptToModifyScore(params);
   }
 

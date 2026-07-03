@@ -1,3 +1,4 @@
+import { firstClassOrExtension } from '@Acquire/firstClassOrExtension';
 import tournamentEngine from '@Engines/syncEngine';
 import mocksEngine from '@Assemblies/engines/mock';
 import { expect, it } from 'vitest';
@@ -124,7 +125,7 @@ it('disabled auto calc with manually advanced team will not advance calculated w
     drawId,
   }).matchUp;
   expect(targetTeamMatchUp.winningSide).toEqual(3 - originalWinningSide);
-  expect(targetTeamMatchUp._disableAutoCalc).toEqual(true);
+  expect(targetTeamMatchUp.disableAutoCalc ?? targetTeamMatchUp._disableAutoCalc).toEqual(true);
 
   winnerTeamMatchUp = tournamentEngine.findMatchUp({
     matchUpId: winnerTeamMatchUpId,
@@ -202,7 +203,7 @@ it('will properly tally team games when automated scoring is disabled', () => {
   });
 
   let assignment = positionAssignments.find((assignment) => assignment.drawPosition === side.drawPosition);
-  let tally = assignment.extensions.find(({ name }) => name === TALLY).value;
+  let tally = firstClassOrExtension({ element: assignment, attribute: 'tally', name: TALLY });
   checkTally(tally);
 
   const methods = [
@@ -253,6 +254,6 @@ it('will properly tally team games when automated scoring is disabled', () => {
   }).positionAssignments;
 
   assignment = positionAssignments.find((assignment) => assignment.drawPosition === side.drawPosition);
-  tally = assignment.extensions.find(({ name }) => name === TALLY).value;
+  tally = firstClassOrExtension({ element: assignment, attribute: 'tally', name: TALLY });
   checkTally(tally);
 });

@@ -479,8 +479,8 @@ test.each(outcomeScenarios)('aggregateValue works with matchUpValue', (scenario)
   expect(manuallyAdvancedTeamName).not.toEqual(automaticallyAdvancedTeamName);
 
   // now re-score one of the singles matchUps and expect the team score not to change
-  // NOTE: extensions have been converted to _extension format
-  expect(teamMatchUp._disableAutoCalc).toEqual(true);
+  // disableAutoCalc is first-class in NATIVE, hydrated as `_disableAutoCalc` in LEGACY
+  expect(teamMatchUp.disableAutoCalc ?? teamMatchUp._disableAutoCalc).toEqual(true);
 
   singlesMatchUps = teamMatchUp.tieMatchUps.filter((m) => m.matchUpType === SINGLES);
 
@@ -524,7 +524,7 @@ test.each(outcomeScenarios)('aggregateValue works with matchUpValue', (scenario)
   // test disabling / enabling auto calc
   matchUps = tournamentEngine.allTournamentMatchUps().matchUps;
   teamMatchUp = matchUps.find(({ matchUpId }) => matchUpId === teamMatchUp.matchUpId);
-  expect(teamMatchUp._disableAutoCalc).toBeUndefined();
+  expect(teamMatchUp.disableAutoCalc ?? teamMatchUp._disableAutoCalc).toBeUndefined();
   expect(teamMatchUp.score).toEqual(automaticallyCalculatedScore);
 
   result = tournamentEngine.disableTieAutoCalc({
@@ -535,7 +535,7 @@ test.each(outcomeScenarios)('aggregateValue works with matchUpValue', (scenario)
 
   matchUps = tournamentEngine.allTournamentMatchUps().matchUps;
   teamMatchUp = matchUps.find(({ matchUpId }) => matchUpId === teamMatchUp.matchUpId);
-  expect(teamMatchUp._disableAutoCalc).toEqual(true);
+  expect(teamMatchUp.disableAutoCalc ?? teamMatchUp._disableAutoCalc).toEqual(true);
 
   result = tournamentEngine.enableTieAutoCalc({
     matchUpId: teamMatchUp.matchUpId,
@@ -545,5 +545,5 @@ test.each(outcomeScenarios)('aggregateValue works with matchUpValue', (scenario)
 
   matchUps = tournamentEngine.allTournamentMatchUps().matchUps;
   teamMatchUp = matchUps.find(({ matchUpId }) => matchUpId === teamMatchUp.matchUpId);
-  expect(teamMatchUp._disableAutoCalc).toBeUndefined();
+  expect(teamMatchUp.disableAutoCalc ?? teamMatchUp._disableAutoCalc).toBeUndefined();
 });

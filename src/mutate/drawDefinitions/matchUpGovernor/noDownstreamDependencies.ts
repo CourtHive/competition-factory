@@ -60,8 +60,9 @@ export function noDownstreamDependencies(params) {
     let connectedStructures;
     const { structure, drawDefinition, dualMatchUp, disableAutoCalc } = params;
 
-    // disableAutoCalc means the score is being set manually
-    if (dualMatchUp?._disableAutoCalc && disableAutoCalc !== false) {
+    // disableAutoCalc means the score is being set manually; read first-class (NATIVE) with
+    // fallback to the legacy `_disableAutoCalc` hydrated alias (LEGACY writeMode)
+    if ((dualMatchUp?.disableAutoCalc ?? dualMatchUp?._disableAutoCalc) && disableAutoCalc !== false) {
       return attemptToModifyScore({ ...params, removeWinningSide });
     }
 

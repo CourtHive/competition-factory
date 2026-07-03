@@ -94,7 +94,8 @@ it('attached delegated outcomes to matchUps', () => {
     drawId,
   });
 
-  expect(matchUp._delegatedOutcome).toEqual(outcome);
+  // delegatedOutcome is first-class in NATIVE, hydrated as `_delegatedOutcome` in LEGACY
+  expect(matchUp.delegatedOutcome ?? matchUp._delegatedOutcome).toEqual(outcome);
 
   result = tournamentEngine.removeDelegatedOutcome({ drawId });
   expect(result.error).toEqual(MISSING_MATCHUP_ID);
@@ -142,8 +143,10 @@ it('accepts a canonical (sets-based) delegated outcome and derives side strings'
   } = tournamentEngine.allDrawMatchUps({ inContext: true, drawId });
 
   // The factory derived the per-side strings from sets and stored them.
-  expect(matchUp._delegatedOutcome.score.scoreStringSide1).toEqual('6-1 6-1');
-  expect(matchUp._delegatedOutcome.score.scoreStringSide2).toEqual('1-6 1-6');
+  // delegatedOutcome is first-class in NATIVE, hydrated as `_delegatedOutcome` in LEGACY
+  const delegatedOutcome = matchUp.delegatedOutcome ?? matchUp._delegatedOutcome;
+  expect(delegatedOutcome.score.scoreStringSide1).toEqual('6-1 6-1');
+  expect(delegatedOutcome.score.scoreStringSide2).toEqual('1-6 1-6');
   // The canonical sets are preserved.
-  expect(matchUp._delegatedOutcome.score.sets).toHaveLength(2);
+  expect(delegatedOutcome.score.sets).toHaveLength(2);
 });

@@ -41,8 +41,10 @@ export function getParticipantResults({
   for (const matchUp of filteredMatchUps ?? []) {
     const { matchUpStatus, tieMatchUps, tieFormat, score, winningSide, sides } = matchUp;
 
+    // first-class (NATIVE) with fallback to the legacy `_disableAutoCalc` hydrated alias (LEGACY)
+    const disableAutoCalc = matchUp.disableAutoCalc ?? matchUp._disableAutoCalc;
     const manualGamesOverride =
-      tieFormat && matchUp._disableAutoCalc && tieFormat.collectionDefinitions.every(({ scoreValue }) => scoreValue);
+      tieFormat && disableAutoCalc && tieFormat.collectionDefinitions.every(({ scoreValue }) => scoreValue);
 
     const winningParticipantId = winningSide && getWinningSideId(matchUp);
     const losingParticipantId = winningSide && getLosingSideId(matchUp);
@@ -131,7 +133,15 @@ function computeTotals({ filteredMatchUps, excludeMatchUpStatuses }) {
   return { totalSets, totalGames };
 }
 
-function processNoWinnerMatchUp({ participantResults, manualGamesOverride, matchUpStatus, tieMatchUps, perPlayer, score, sides }) {
+function processNoWinnerMatchUp({
+  participantResults,
+  manualGamesOverride,
+  matchUpStatus,
+  tieMatchUps,
+  perPlayer,
+  score,
+  sides,
+}) {
   if (matchUpStatus && completedMatchUpStatuses.includes(matchUpStatus)) {
     const participantIdSide1 = getSideId({ sides }, 0);
     const participantIdSide2 = getSideId({ sides }, 1);
@@ -171,12 +181,8 @@ function processNoWinnerMatchUp({ participantResults, manualGamesOverride, match
 }
 
 function tallyTieMatchUpNoWinner({ participantResults, tieMatchUp, sides }) {
-  const tieWinningParticipantId = sides?.find(
-    ({ sideNumber }) => sideNumber === tieMatchUp.winningSide,
-  )?.participantId;
-  const tieLosingParticipantId = sides?.find(
-    ({ sideNumber }) => sideNumber === tieMatchUp.winningSide,
-  )?.participantId;
+  const tieWinningParticipantId = sides?.find(({ sideNumber }) => sideNumber === tieMatchUp.winningSide)?.participantId;
+  const tieLosingParticipantId = sides?.find(({ sideNumber }) => sideNumber === tieMatchUp.winningSide)?.participantId;
   if (tieWinningParticipantId && tieLosingParticipantId) {
     checkInitializeParticipant(participantResults, tieWinningParticipantId);
     checkInitializeParticipant(participantResults, tieLosingParticipantId);

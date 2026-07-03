@@ -586,7 +586,8 @@ function resolveTieMatchUpContext({
 
   const existingDualMatchUpWinningSide = dualMatchUp.winningSide;
   const dualWinningSideChange = projectedWinningSide !== existingDualMatchUpWinningSide;
-  const autoCalcDisabled = dualMatchUp._disableAutoCalc;
+  // first-class (NATIVE) with fallback to the legacy `_disableAutoCalc` hydrated alias (LEGACY)
+  const autoCalcDisabled = dualMatchUp.disableAutoCalc ?? dualMatchUp._disableAutoCalc;
 
   return {
     isCollectionMatchUp: true,
