@@ -1,3 +1,4 @@
+import { firstClassOrExtension } from '@Acquire/firstClassOrExtension';
 import { attachFlightProfile } from '@Mutate/events/attachFlightProfile';
 import mocksEngine from '@Assemblies/engines/mock';
 import tournamentEngine from '@Engines/syncEngine';
@@ -399,7 +400,12 @@ describe('attachFlightProfile', () => {
 
     // Verify it's attached via tournamentEngine
     const retrievedEvent = tournamentEngine.getEvent({ eventId: event.eventId })?.event;
-    expect(retrievedEvent.extensions).toBeDefined();
+    const retrievedFlightProfile = firstClassOrExtension({
+      element: retrievedEvent,
+      attribute: 'flightProfile',
+      name: 'flightProfile',
+    });
+    expect(retrievedFlightProfile).toBeDefined();
   });
 
   it('handles consecutive attach and replace operations', () => {

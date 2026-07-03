@@ -1,4 +1,5 @@
 import { removeLineUpSubstitutions } from '@Mutate/drawDefinitions/removeLineUpSubstitutions';
+import { firstClassOrExtension } from '@Acquire/firstClassOrExtension';
 import { generateTeamTournament } from '../participants/team/generateTestTeamTournament';
 import { checkScoreHasValue } from '@Query/matchUp/checkScoreHasValue';
 import { validateLineUp } from '@Validators/validateTeamLineUp';
@@ -119,8 +120,8 @@ it('can substitute an individual participant in a TEAM tieMatchUp', () => {
   tournamentEngine.setState(tournamentRecord);
 
   let { drawDefinition } = tournamentEngine.getEvent({ drawId });
-  let lineUpExtension = drawDefinition.extensions.find(({ name }) => name === LINEUPS);
-  expect(lineUpExtension).toBeUndefined();
+  let lineUps = firstClassOrExtension({ element: drawDefinition, attribute: 'lineUps', name: LINEUPS });
+  expect(lineUps).toBeUndefined();
 
   const { participants: teamParticipants } = tournamentEngine.getParticipants({
     participantFilters: { participantTypes: [TEAM_PARTICIPANT] },
@@ -137,8 +138,8 @@ it('can substitute an individual participant in a TEAM tieMatchUp', () => {
   });
 
   drawDefinition = tournamentEngine.getEvent({ drawId }).drawDefinition;
-  lineUpExtension = drawDefinition.extensions.find(({ name }) => name === LINEUPS);
-  expect(lineUpExtension).not.toBeUndefined();
+  lineUps = firstClassOrExtension({ element: drawDefinition, attribute: 'lineUps', name: LINEUPS });
+  expect(lineUps).not.toBeUndefined();
 
   const { participants: pairParticipants } = tournamentEngine.getParticipants({
     participantFilters: { participantTypes: [PAIR] },
@@ -592,8 +593,8 @@ it('can substitute a single individual participant in a TEAM tieMatchUp when onl
   tournamentEngine.setState(tournamentRecord);
 
   let { drawDefinition } = tournamentEngine.getEvent({ drawId });
-  let lineUpExtension = drawDefinition.extensions.find(({ name }) => name === LINEUPS);
-  expect(lineUpExtension).toBeUndefined();
+  let lineUps = firstClassOrExtension({ element: drawDefinition, attribute: 'lineUps', name: LINEUPS });
+  expect(lineUps).toBeUndefined();
 
   const { participants: teamParticipants } = tournamentEngine.getParticipants({
     participantFilters: { participantTypes: [TEAM_PARTICIPANT] },
@@ -636,8 +637,8 @@ it('can substitute a single individual participant in a TEAM tieMatchUp when onl
   });
 
   drawDefinition = tournamentEngine.getEvent({ drawId }).drawDefinition;
-  lineUpExtension = drawDefinition.extensions.find(({ name }) => name === LINEUPS);
-  expect(lineUpExtension).not.toBeUndefined();
+  lineUps = firstClassOrExtension({ element: drawDefinition, attribute: 'lineUps', name: LINEUPS });
+  expect(lineUps).not.toBeUndefined();
 
   result = tournamentEngine.matchUpActions({
     policyDefinitions: {

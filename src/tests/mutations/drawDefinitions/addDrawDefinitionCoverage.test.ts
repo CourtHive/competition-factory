@@ -1,4 +1,5 @@
 import { newDrawDefinition } from '@Assemblies/generators/drawDefinitions/newDrawDefinition';
+import { firstClassOrExtension } from '@Acquire/firstClassOrExtension';
 import { addDrawDefinition } from '@Mutate/drawDefinitions/addDrawDefinition';
 import mocksEngine from '@Assemblies/engines/mock';
 import tournamentEngine from '@Engines/syncEngine';
@@ -439,9 +440,9 @@ describe('addDrawDefinition coverage', () => {
     const result = addDrawDefinition({ drawDefinition, event });
     expect(result.success).toBe(true);
 
-    const flightExt = event.extensions?.find((e: any) => e.name === FLIGHT_PROFILE);
-    expect(flightExt).toBeDefined();
-    const flight = flightExt.value.flights.find((f: any) => f.drawId === 'manual-draw');
+    const flightProfile = firstClassOrExtension({ element: event, attribute: 'flightProfile', name: FLIGHT_PROFILE });
+    expect(flightProfile).toBeDefined();
+    const flight = flightProfile.flights.find((f: any) => f.drawId === 'manual-draw');
     expect(flight).toBeDefined();
     expect(flight.manuallyAdded).toBe(true);
     expect(flight.drawName).toEqual('Manual Draw');
@@ -474,8 +475,8 @@ describe('addDrawDefinition coverage', () => {
     const result = addDrawDefinition({ drawDefinition, event });
     expect(result.success).toBe(true);
 
-    const flightExt = event.extensions?.find((e: any) => e.name === FLIGHT_PROFILE);
-    const flight = flightExt.value.flights.find((f: any) => f.drawId === 'name-update-draw');
+    const flightProfile = firstClassOrExtension({ element: event, attribute: 'flightProfile', name: FLIGHT_PROFILE });
+    const flight = flightProfile.flights.find((f: any) => f.drawId === 'name-update-draw');
     expect(flight.drawName).toEqual('Updated Name');
   });
 

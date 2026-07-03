@@ -1,4 +1,5 @@
 import { completeDrawMatchUps } from '@Assemblies/generators/mocks/completeDrawMatchUps';
+import { firstClassOrExtension } from '@Acquire/firstClassOrExtension';
 import { validMatchUp, validMatchUps } from '@Validators/validMatchUp';
 import { intersection, unique } from '@Tools/arrays';
 import mocksEngine from '@Assemblies/engines/mock';
@@ -194,7 +195,12 @@ test('adHoc matchUpActions can restrict adHoc round participants to diallow recu
   expect(scoringResult.success).toEqual(true);
 
   const drawDefinition = tournamentEngine.getEvent({ drawId }).drawDefinition;
-  expect(drawDefinition.structures[0].positionAssignments[0].extensions[0].value.gamesWon).toEqual(10);
+  const tally = firstClassOrExtension({
+    element: drawDefinition.structures[0].positionAssignments[0],
+    attribute: 'tally',
+    name: 'tally',
+  });
+  expect(tally.gamesWon).toEqual(10);
 });
 
 it('can remove adHoc rounds', () => {

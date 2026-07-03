@@ -3,6 +3,7 @@
  * Targets ~229 uncovered statements across 20 files to push past 95%.
  */
 import { generateStatCrew } from '@Assemblies/generators/tournamentRecords/generateStatCrew';
+import { firstClassOrExtension } from '@Acquire/firstClassOrExtension';
 import { proConflicts } from '@Mutate/matchUps/schedule/schedulers/proScheduler/proConflicts';
 import { generateLineUps } from '@Assemblies/generators/participants/generateLineUps';
 import { updateTieFormat } from '@Mutate/tieFormat/updateTieFormat';
@@ -860,9 +861,9 @@ describe('generateLineUps paths', () => {
       attach: true,
     });
     expect(result.success).toBe(true);
-    // Check that LINEUPS extension was added
-    const ext = drawDefinition.extensions?.find((e) => e.name === 'lineUps');
-    expect(ext).toBeDefined();
+    // lineUps is first-class in NATIVE, a legacy extension in LEGACY
+    const lineUps = firstClassOrExtension({ element: drawDefinition, attribute: 'lineUps', name: 'lineUps' });
+    expect(lineUps).toBeDefined();
   });
 });
 

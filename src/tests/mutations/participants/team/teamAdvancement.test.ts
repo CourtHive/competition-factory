@@ -1,7 +1,7 @@
 import { generateTieMatchUpScore } from '@Assemblies/generators/tieMatchUpScore/generateTieMatchUpScore';
 import { generateTeamTournament } from './generateTestTeamTournament';
 import { setSubscriptions } from '@Global/state/globalState';
-import { findExtension } from '@Acquire/findExtension';
+import { firstClassOrExtension } from '@Acquire/firstClassOrExtension';
 import mocksEngine from '@Assemblies/engines/mock';
 import tournamentEngine from '@Engines/syncEngine';
 import { expect, it, test } from 'vitest';
@@ -83,11 +83,8 @@ it.each(scenarios)('can advance teamParticipants', (scenario) => {
 
   if (expectLineUps) {
     ({ drawDefinition, event } = tournamentEngine.getEvent({ drawId }));
-    const { extension } = findExtension({
-      element: drawDefinition,
-      name: LINEUPS,
-    });
-    expect(extension).not.toBeUndefined();
+    const lineUps = firstClassOrExtension({ element: drawDefinition, attribute: 'lineUps', name: LINEUPS });
+    expect(lineUps).not.toBeUndefined();
   }
 
   teamParticipants.forEach(({ participantId }) => {

@@ -1,3 +1,4 @@
+import { firstClassOrExtension } from '@Acquire/firstClassOrExtension';
 import { mocksEngine } from '@Assemblies/engines/mock';
 import tournamentEngine from '@Engines/syncEngine';
 import { expect, it } from 'vitest';
@@ -81,16 +82,22 @@ it('handles TEAM ROUND_ROBIN tallyParticipants', () => {
     structureId,
   });
 
-  const assignmentsWithTally = positionAssignments.filter(({ extensions }) => extensions);
+  const assignmentsWithTally = positionAssignments.filter((assignment) =>
+    firstClassOrExtension({ element: assignment, attribute: 'tally', name: TALLY }),
+  );
   expect(assignmentsWithTally.length).toEqual(4);
 
   assignmentsWithTally.forEach((assignment) => {
-    expect(assignment.extensions.filter(({ name }) => name === TALLY).length).toEqual(1);
+    expect(firstClassOrExtension({ element: assignment, attribute: 'tally', name: TALLY })).toBeDefined();
   });
 
   const GEMscores = assignmentsWithTally
     .map((assignment) => {
-      const { GEMscore, provisionalOrder } = assignment.extensions[0].value;
+      const { GEMscore, provisionalOrder } = firstClassOrExtension({
+        element: assignment,
+        attribute: 'tally',
+        name: TALLY,
+      });
       return [GEMscore, provisionalOrder];
     })
     .sort((a, b) => a[1] - b[1]);
