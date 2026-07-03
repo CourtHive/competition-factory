@@ -6,8 +6,13 @@ import { expect, it } from 'vitest';
 
 // constants
 import { MODIFY_DRAW_DEFINITION, MODIFY_MATCHUP } from '@Constants/topicConstants';
-import { INVALID_DATE, INVALID_VALUES, MATCHUPS_SCHEDULED_OUTSIDE_DATES } from '@Constants/errorConditionConstants';
 import { MON } from '@Constants/weekdayConstants';
+import {
+  INVALID_DATE,
+  INVALID_VALUES,
+  MATCHUPS_COMPLETED_OUTSIDE_DATES,
+  MATCHUPS_SCHEDULED_OUTSIDE_DATES,
+} from '@Constants/errorConditionConstants';
 
 it('will remove court.dateAvailabiilty items that fall outside of tournament dates', () => {
   const venueId = 'venueId';
@@ -255,6 +260,60 @@ it('force: true unschedules matchUps outside the new dates instead of blocking',
     .allTournamentMatchUps()
     .matchUps.filter((m) => m.schedule?.scheduledDate === startDate);
   expect(stillOnDay0.length).toEqual(0);
+});
+
+it('hard-blocks a date change when a COMPLETED matchUp was played outside the new range (even with force)', () => {
+  // Regression: a completed matchUp scheduled outside the new range is detected by
+  // findMatchUpsScheduledOutsideDates but was skipped by clearScheduledMatchUps (which
+  // ignores completedMatchUpStatuses), so force: true returned a misleading
+  // SCHEDULE_NOT_CLEARED. A match played on a date forces that date into the tournament
+  // range, so this must be an explicit, non-forceable block.
+  const drawId = 'drawId';
+  const startDate = '2026-06-22';
+  const endDate = addDays(startDate, 6);
+  const venueProfiles = [
+    { courtsCount: 4, startTime: '08:00', endTime: '21:00', venueName: 'Venue', venueId: 'venueId' },
+  ];
+  mocksEngine.generateTournamentRecord({
+    setState: true,
+    venueProfiles,
+    drawProfiles: [{ drawId, drawSize: 32 }],
+    startDate,
+    endDate,
+  });
+
+  const courts = tournamentEngine.getVenuesAndCourts().courts;
+  const target = tournamentEngine
+    .allTournamentMatchUps()
+    .matchUps.find((m) => m.roundNumber === 1 && m.sides?.every((s) => s.participant));
+
+  tournamentEngine.addMatchUpScheduleItems({
+    drawId,
+    matchUpId: target.matchUpId,
+    schedule: { scheduledDate: startDate, scheduledTime: '10:00', venueId: 'venueId', courtId: courts[2].courtId },
+  });
+  const completed = tournamentEngine.setMatchUpStatus({
+    drawId,
+    matchUpId: target.matchUpId,
+    matchUpStatus: 'COMPLETED',
+    outcome: { winningSide: 1, scoreString: '6-3 6-2' },
+  });
+  expect(completed.success).toEqual(true);
+
+  const nextDay = addDays(startDate, 1);
+
+  // force: true must NOT return SCHEDULE_NOT_CLEARED — it returns the explicit completed block
+  const result = tournamentEngine.setTournamentDates({ startDate: nextDay, force: true });
+  expect(result.success).toBeUndefined();
+  expect(result.error.code).toEqual(MATCHUPS_COMPLETED_OUTSIDE_DATES.code);
+  expect(result.completedOutOfRangeDates).toEqual([startDate]);
+  expect(result.completedOutOfRangeMatchUpIds).toEqual([target.matchUpId]);
+
+  // the date change was rejected and the completed matchUp keeps its schedule + result
+  expect(tournamentEngine.getTournamentInfo().tournamentInfo.startDate).toEqual(startDate);
+  const after = tournamentEngine.allTournamentMatchUps().matchUps.find((m) => m.matchUpId === target.matchUpId);
+  expect(after.schedule?.scheduledDate).toEqual(startDate);
+  expect(after.winningSide).toEqual(1);
 });
 
 it('can set activeDates for a tournament', () => {

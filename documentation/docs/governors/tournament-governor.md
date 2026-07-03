@@ -489,11 +489,11 @@ engine.setTournamentStatus({ status: CANCELLED });
 
 ## setTournamentDates
 
-Sets the start date, end date, active dates, and/or weekdays for a tournament. Validates that dates are proper `'YYYY-MM-DD'` strings and that `activeDates` fall within the start/end range. If the date range shrinks, matchUps scheduled outside the new range are automatically unscheduled. Event dates are coerced to fit within the new tournament dates.
+Sets the start date, end date, active dates, and/or weekdays for a tournament. Validates that dates are proper `'YYYY-MM-DD'` strings and that `activeDates` fall within the start/end range. Event dates are coerced to fit within the new tournament dates.
 
 ```js
 const {
-  unscheduledMatchUpIds, // matchUpIds that were unscheduled due to date range change
+  unscheduledMatchUpIds, // matchUpIds unscheduled by a force: true date change
   datesRemoved, // dates no longer in the tournament range
   datesAdded, // dates newly in the tournament range
 } = engine.setTournamentDates({
@@ -501,8 +501,18 @@ const {
   endDate, // optional — 'YYYY-MM-DD'
   activeDates, // optional — string[] of 'YYYY-MM-DD' dates within start/end range
   weekdays, // optional — array of weekday constants [MON, TUE, ...]
+  force, // optional boolean — unschedule non-completed matchUps that fall outside the new range
 });
 ```
+
+### Scheduling outside the new range
+
+When the range shrinks so that scheduled matchUps fall outside the new start/end dates, the mutation does **not** silently discard their placement. Behavior depends on whether those matchUps have been played:
+
+- **Non-completed matchUps** — rejected by default with `MATCHUPS_SCHEDULED_OUTSIDE_DATES`. The rejection carries `outOfRangeMatchUpIds` and `outOfRangeDates`. Pass `force: true` to proceed and unschedule them; the returned `unscheduledMatchUpIds` lists what was cleared.
+- **Completed matchUps** — rejected with `MATCHUPS_COMPLETED_OUTSIDE_DATES` and this block **cannot** be overridden by `force`. A match played on a given date forces that date into the tournament range; unscheduling it would erase the record of when it was played. The rejection carries `completedOutOfRangeMatchUpIds` and `completedOutOfRangeDates`. To proceed, either widen the range to include those dates or reschedule/clear the completed matchUps' results first.
+
+When both kinds are present, the completed block takes precedence (there is no partial date change).
 
 ---
 

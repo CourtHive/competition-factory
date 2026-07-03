@@ -78,6 +78,10 @@ export const MATCHUPS_SCHEDULED_OUTSIDE_DATES = {
   message: 'MatchUps are scheduled outside the new tournament dates',
   code: 'ERR_MATCHUPS_SCHEDULED_OUTSIDE_DATES',
 };
+export const MATCHUPS_COMPLETED_OUTSIDE_DATES = {
+  message: 'Completed matchUps were played outside the new tournament dates',
+  code: 'ERR_MATCHUPS_COMPLETED_OUTSIDE_DATES',
+};
 export const SCHEDULE_CONFLICT_DOUBLE_BOOKING = {
   message: 'Schedule conflict: court slot already occupied',
   code: 'ERR_SCHEDULE_CONFLICT_DOUBLE_BOOKING',
@@ -964,6 +968,7 @@ export const errorConditionConstants = {
   INVALID_VALUES,
   INVALID_WINNING_SIDE,
   LUCKY_DRAW_BYE_LIMIT,
+  MATCHUPS_COMPLETED_OUTSIDE_DATES,
   MATCHUP_NOT_FOUND,
   METHOD_NOT_FOUND,
   MUTATION_LOCKED,
