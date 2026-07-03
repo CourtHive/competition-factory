@@ -47,6 +47,9 @@ export function removeCourtAssignment({
   }
   if (!matchUp) return { error: MATCHUP_NOT_FOUND };
 
+  let modified = false;
+
+  // LEGACY / DUAL: court assignment lives in timeItems
   if (matchUp.timeItems) {
     const hasCourtAssignment = matchUp.timeItems.find((candidate) =>
       [ASSIGN_COURT, ALLOCATE_COURTS].includes(candidate.itemType),
@@ -56,14 +59,30 @@ export function removeCourtAssignment({
       matchUp.timeItems = matchUp.timeItems.filter(
         ({ itemType }) => ![ASSIGN_COURT, ALLOCATE_COURTS].includes(itemType),
       );
-
-      modifyMatchUpNotice({
-        tournamentId: tournamentRecord?.tournamentId,
-        context: stack,
-        drawDefinition,
-        matchUp,
-      });
+      modified = true;
     }
+  }
+
+  // NATIVE / DUAL: court assignment is first-class schedule.courtId / schedule.allocatedCourts,
+  // with no timeItem mirror — without this, deleteCourt left the court assigned in NATIVE.
+  if (matchUp.schedule && typeof matchUp.schedule === 'object') {
+    if (matchUp.schedule.courtId !== undefined) {
+      delete matchUp.schedule.courtId;
+      modified = true;
+    }
+    if (matchUp.schedule.allocatedCourts !== undefined) {
+      delete matchUp.schedule.allocatedCourts;
+      modified = true;
+    }
+  }
+
+  if (modified) {
+    modifyMatchUpNotice({
+      tournamentId: tournamentRecord?.tournamentId,
+      context: stack,
+      drawDefinition,
+      matchUp,
+    });
   }
 
   return { ...SUCCESS };

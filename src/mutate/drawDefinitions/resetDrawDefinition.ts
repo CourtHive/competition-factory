@@ -188,6 +188,20 @@ function resetMatchUpScore({ matchUp, isLuckyDraw, removeAssignments, roundNumbe
   }
 }
 
+// first-class schedule attributes (NATIVE / DUAL) matching the schedule timeItem types below —
+// no timeItem mirror, so resetting the draw must clear these directly or the placement persists.
+const SCHEDULE_FIRST_CLASS_ATTRS = [
+  'allocatedCourts',
+  'courtId',
+  'venueId',
+  'official',
+  'courtAnnotation',
+  'scheduledDate',
+  'scheduledTime',
+  'courtOrder',
+  'calledAt',
+];
+
 function resetMatchUpScheduling({ matchUp, removeScheduling }) {
   if (removeScheduling) {
     delete matchUp.timeItems;
@@ -206,5 +220,9 @@ function resetMatchUpScheduling({ matchUp, removeScheduling }) {
           COURT_ORDER,
         ].includes(timeItem.itemType),
     );
+  }
+
+  if (matchUp.schedule && typeof matchUp.schedule === 'object') {
+    for (const attribute of SCHEDULE_FIRST_CLASS_ATTRS) delete matchUp.schedule[attribute];
   }
 }
