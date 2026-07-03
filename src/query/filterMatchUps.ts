@@ -68,7 +68,8 @@ export function filterMatchUps(params: FilterMatchUpsArgs) {
   const targetRoundNumbers = Array.isArray(roundNumbers) ? roundNumbers.filter(Boolean) : [];
   const targetRoundPositions = Array.isArray(roundPositions) ? roundPositions.filter(Boolean) : [];
 
-  const targetMatchUpIds = Array.isArray(matchUpIds) && filterMatchUpIds ? matchUpIds.filter(Boolean) : [];
+  // Large pure-membership ID lists → Sets for O(1) per-matchUp lookups.
+  const targetMatchUpIds = new Set(Array.isArray(matchUpIds) && filterMatchUpIds ? matchUpIds.filter(Boolean) : []);
   const targetMatchUpTypes = Array.isArray(matchUpTypes) && filterMatchUpTypes ? matchUpTypes.filter(Boolean) : [];
   const targetCourtIds = Array.isArray(courtIds) ? courtIds.filter(Boolean) : [];
   const targetVenueIds = Array.isArray(venueIds) ? venueIds.filter(Boolean) : [];
@@ -81,10 +82,10 @@ export function filterMatchUps(params: FilterMatchUpsArgs) {
     (typeof scheduledDate === 'string' && scheduledDate.length && [scheduledDate]) ||
     [];
 
-  const targetTournamentIds = Array.isArray(tournamentIds) ? tournamentIds.filter(Boolean) : [];
-  const targetEventIds = Array.isArray(eventIds) ? eventIds.filter(Boolean) : [];
-  const targetDrawIds = Array.isArray(drawIds) ? drawIds.filter(Boolean) : [];
-  const targetStructureIds = Array.isArray(structureIds) ? structureIds.filter(Boolean) : [];
+  const targetTournamentIds = new Set(Array.isArray(tournamentIds) ? tournamentIds.filter(Boolean) : []);
+  const targetEventIds = new Set(Array.isArray(eventIds) ? eventIds.filter(Boolean) : []);
+  const targetDrawIds = new Set(Array.isArray(drawIds) ? drawIds.filter(Boolean) : []);
+  const targetStructureIds = new Set(Array.isArray(structureIds) ? structureIds.filter(Boolean) : []);
 
   return matchUps.filter((matchUp) => {
     if (!passesBasicFilters({ matchUp, readyToScore, hasWinningSide, isMatchUpTie, isCollectionMatchUp })) {
@@ -170,10 +171,16 @@ function passesMatchUpPropertyFilters({
   if (targetRoundNumbers.length && (!matchUp.roundNumber || !targetRoundNumbers.includes(matchUp.roundNumber))) {
     return false;
   }
-  if (targetRoundPositions.length && (!matchUp.roundPosition || !targetRoundPositions.includes(matchUp.roundPosition))) {
+  if (
+    targetRoundPositions.length &&
+    (!matchUp.roundPosition || !targetRoundPositions.includes(matchUp.roundPosition))
+  ) {
     return false;
   }
-  if (targetMatchUpStatuses.length && (!matchUp.matchUpStatus || !targetMatchUpStatuses.includes(matchUp.matchUpStatus))) {
+  if (
+    targetMatchUpStatuses.length &&
+    (!matchUp.matchUpStatus || !targetMatchUpStatuses.includes(matchUp.matchUpStatus))
+  ) {
     return false;
   }
   if (
@@ -183,14 +190,17 @@ function passesMatchUpPropertyFilters({
   ) {
     return false;
   }
-  if (targetMatchUpIds.length && !targetMatchUpIds.includes(matchUp.matchUpId)) return false;
+  if (targetMatchUpIds.size && !targetMatchUpIds.has(matchUp.matchUpId)) return false;
   if (
     targetMatchUpTypes.length &&
     (!matchUp.matchUpType || !includesMatchUpEventType(targetMatchUpTypes, matchUp.matchUpType))
   ) {
     return false;
   }
-  if (targetMatchUpFormats.length && (!matchUp.matchUpFormat || !targetMatchUpFormats.includes(matchUp.matchUpFormat))) {
+  if (
+    targetMatchUpFormats.length &&
+    (!matchUp.matchUpFormat || !targetMatchUpFormats.includes(matchUp.matchUpFormat))
+  ) {
     return false;
   }
   return true;
@@ -232,10 +242,10 @@ function passesContextFilters({
   targetParticipantIds,
   hasParticipantsCount,
 }) {
-  if (targetTournamentIds.length && !targetTournamentIds.includes(matchUp.tournamentId)) return false;
-  if (targetEventIds.length && !targetEventIds.includes(matchUp.eventId)) return false;
-  if (targetDrawIds.length && !targetDrawIds.includes(matchUp.drawId)) return false;
-  if (targetStructureIds.length && !targetStructureIds.includes(matchUp.structureId)) return false;
+  if (targetTournamentIds.size && !targetTournamentIds.has(matchUp.tournamentId)) return false;
+  if (targetEventIds.size && !targetEventIds.has(matchUp.eventId)) return false;
+  if (targetDrawIds.size && !targetDrawIds.has(matchUp.drawId)) return false;
+  if (targetStructureIds.size && !targetStructureIds.has(matchUp.structureId)) return false;
 
   const matchUpParticipantIds = matchUp.sides?.map(({ participantId }) => participantId).filter(Boolean) ?? [];
   if (hasParticipantsCount && matchUpParticipantIds.length < hasParticipantsCount) return false;
