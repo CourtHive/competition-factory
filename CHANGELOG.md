@@ -1,5 +1,12 @@
 # Changelog
 
+## [6.1.1](https://github.com/CourtHive/competition-factory/compare/v6.1.0...v6.1.1) (2026-07-04)
+
+
+### Bug Fixes
+
+* **reports:** compute call timing variance at whole-minute resolution ([74a4e16](https://github.com/CourtHive/competition-factory/commit/74a4e16ceb3289bd4fc90b2febc46bce2b0be6e4))
+
 ## [6.1.0](https://github.com/CourtHive/competition-factory/compare/v6.0.2...v6.1.0) (2026-07-04)
 
 
