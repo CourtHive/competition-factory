@@ -1,5 +1,31 @@
 # Changelog
 
+## [6.0.2](https://github.com/CourtHive/competition-factory/compare/v6.0.1...v6.0.2) (2026-07-04)
+
+
+### Bug Fixes
+
+* **extensions:** emit sync-update methods for promoted timing/limits in native writeMode ([14c0a44](https://github.com/CourtHive/competition-factory/commit/14c0a44bf48bebea61dbb8a4adad9d869965ebc5))
+* **query:** make schedule readers first-class-aware (CODES Phase 2) ([f3b86d8](https://github.com/CourtHive/competition-factory/commit/f3b86d8f3bf8bf3ef91b44fd66efd04c9c791571))
+* **schedule:** clear first-class schedule on court removal + draw reset ([76b46f9](https://github.com/CourtHive/competition-factory/commit/76b46f904c83633209effb9501d9d37a140da949))
+* **schedule:** clear first-class schedule on force-unschedule ([2e4ab75](https://github.com/CourtHive/competition-factory/commit/2e4ab75eb12d3de5ed839078d6da136b5d1609ed))
+* **schedule:** embargoed rounds keep their date in native writeMode ([90d1665](https://github.com/CourtHive/competition-factory/commit/90d1665a84b4ce614439ad5ba9458e4c4676d0d8))
+* **schedule:** remove team court assignment first-class-aware ([42b3b92](https://github.com/CourtHive/competition-factory/commit/42b3b927228ebd6d50c708e2d27e91d0121b2c33))
+* **schema:** allow codes-promoted first-class attributes in tournament schema ([e08d0fc](https://github.com/CourtHive/competition-factory/commit/e08d0fcda1fe66959606174641e61e5de925f911))
+* **scoring:** read disableAutoCalc first-class in native writeMode ([a4d60c1](https://github.com/CourtHive/competition-factory/commit/a4d60c106465ab201a1e8d87115e7e1b80e55fe6))
+
+
+### Performance
+
+* **query:** use Set membership for alternates/adHoc participant lookups ([d96bc0f](https://github.com/CourtHive/competition-factory/commit/d96bc0f4e4f49f4c5c5b4bd1879b50189bc7b30c))
+* **query:** use Set membership for matchUp-filter ID lookups ([16d4ab0](https://github.com/CourtHive/competition-factory/commit/16d4ab0875b26d2ada7e0972221856708b1c3001))
+* **query:** use Set membership for participant-filter ID lookups ([8516809](https://github.com/CourtHive/competition-factory/commit/85168092b81a99485a8a75f5c9596dc272356deb))
+
+
+### Documentation
+
+* add 6.0.0 release notes and migration guide ([3cadbed](https://github.com/CourtHive/competition-factory/commit/3cadbed9bfdb4815e3659e4c88279f728d2e272a))
+
 ## [6.0.1](https://github.com/CourtHive/competition-factory/compare/v6.0.0...v6.0.1) (2026-07-02)
 
 
