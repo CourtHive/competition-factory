@@ -6,14 +6,15 @@ import { setAuditAuthorityServer, setSaveDrawDeletions, setSchemaWriteMode } fro
 import { NATIVE } from '@Constants/schemaWriteModeConstants';
 
 /**
- * Vitest setupFiles hook for the NATIVE writeMode run (see vitest.native.config.mts).
+ * Vitest setupFiles hook pinning the NATIVE writeMode. This is the DEFAULT suite setup as of the
+ * 2026-07-03 writeMode flip (vitest.config.mts) — production runs NATIVE (first-class
+ * `matchUp.schedule.*` / first-class scalars, no timeItem mirror), so the suite validates the
+ * representation production actually writes.
  *
- * The default suite is pinned to LEGACY (setSchemaWriteModeLegacy) so historical
- * `timeItems[]` / `extensions[]` assertions keep passing. Production runs the default
- * NATIVE mode — first-class `matchUp.schedule.*` / first-class scalars, no timeItem mirror.
- * This hook pins NATIVE so `*.native.test.ts` specs validate the representation production
- * actually writes. Keeps the same drawDeletions / audit flags as the LEGACY hook so only the
- * write mode differs. See planning/NATIVE_WRITEMODE_COVERAGE.md.
+ * Legacy-shape storage specs opt back into LEGACY via the `legacyMode()` helper (which uses
+ * setSchemaWriteModeLegacy semantics); behavioral specs cover all modes via `writeModeMatrix`.
+ * Keeps the same drawDeletions / audit flags as the LEGACY hook so only the write mode differs.
+ * See planning/NATIVE_WRITEMODE_COVERAGE.md.
  */
 beforeEach(() => {
   setSchemaWriteMode(NATIVE);

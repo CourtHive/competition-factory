@@ -24,7 +24,7 @@ const t200101_9 = '2020-01-01T09:00:00Z';
 const t200101_8 = '2020-01-01T08:15:00Z';
 
 // asserts legacy timeItem accumulation; NATIVE first-class schedule storage is covered by
-// scheduleFirstClassStorage.native.test.ts
+// scheduleFirstClassStorage.test.ts
 legacyMode('can add schedule items', () => {
   it('can add schedule items', () => {
     const { tournamentRecord } = mocksEngine.generateTournamentRecord({

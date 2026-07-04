@@ -44,7 +44,7 @@ async function forceDelay(delay = 10) {
 }
 
 // asserts the legacy timeItem sequence for scheduling; NATIVE first-class schedule storage is
-// covered by scheduleFirstClassStorage.native.test.ts
+// covered by scheduleFirstClassStorage.test.ts
 legacyMode('can add events, venues, and schedule matchUps and modify drawDefinition.updatedAt', () => {
   it('can add events, venues, and schedule matchUps and modify drawDefinition.updatedAt', async () => {
     const startDate = '2020-01-01';

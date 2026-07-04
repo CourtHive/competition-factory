@@ -6,11 +6,11 @@ import { DUAL, LEGACY, NATIVE, SchemaWriteMode } from '@Constants/schemaWriteMod
 /**
  * Run a block of *behavioral* specs under multiple schemaWriteModes.
  *
- * The default suite pins LEGACY via setupFiles; production runs NATIVE. Behavioral specs (does the
- * scheduler place/limit/deconflict correctly, does a query resolve the value) are representation-
- * agnostic and should hold in every mode — assert via engine queries, NOT raw `timeItems[]` /
- * `schedule.*`. Storage-shape specs (which representation the data lands in) stay mode-specific:
- * keep the LEGACY assertion, add a `*.native.test.ts` sibling.
+ * The default suite pins NATIVE via setupFiles (production parity, since the 2026-07-03 flip).
+ * Behavioral specs (does the scheduler place/limit/deconflict correctly, does a query resolve the
+ * value) are representation-agnostic and should hold in every mode — assert via engine queries, NOT
+ * raw `timeItems[]` / `schedule.*`. Storage-shape specs (which representation the data lands in) stay
+ * mode-specific: run the NATIVE assertion by default and `legacyMode()`-scope the LEGACY counterpart.
  *
  * Each mode gets its own `describe` whose `beforeEach` sets the mode. Because that hook is
  * registered after the global setupFiles hook, it runs later and wins; `afterEach` restores LEGACY

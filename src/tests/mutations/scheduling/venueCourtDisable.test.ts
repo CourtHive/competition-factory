@@ -3,9 +3,10 @@ import tournamentEngine from '@Engines/syncEngine';
 import { expect, it } from 'vitest';
 
 /**
- * NATIVE-writeMode sibling of enableDisableVenuesCourts (which asserts the LEGACY shape
- * `venue.extensions[0].name === DISABLED`). Under NATIVE the disabled flag is first-class
- * `venue.disabled` / `court.disabled` with no extension mirror. Runs via `pnpm test:native`.
+ * NATIVE-writeMode counterpart of enableDisableVenuesCourts (which is legacyMode-scoped to assert
+ * the LEGACY shape `venue.extensions[0].name === DISABLED`). Under NATIVE — the default writeMode
+ * since the 2026-07-03 flip — the disabled flag is first-class `venue.disabled` / `court.disabled`
+ * with no extension mirror.
  *
  * See planning/NATIVE_WRITEMODE_COVERAGE.md.
  */

@@ -14,14 +14,12 @@ export default defineConfig({
     // Untracked scratch tests are excluded from coverage but were still running
     // and exercising production code — inflating local % above CI's. Excluding
     // them from the runner makes local match CI.
-    //
-    // `*.native.test.*` specs assert the NATIVE (first-class) storage shape; with the default now
-    // pinned NATIVE they are redundant here, so they continue to run via `pnpm test:native`
-    // (vitest.native.config.mts) and stay excluded from the default run. Legacy-shape storage specs
-    // opt back into LEGACY via the `legacyMode()` helper; behavioral specs use `writeModeMatrix`.
-    exclude: [...configDefaults.exclude, '**/scratch/**', '**/*.native.test.{js,mjs,cjs,ts,mts,cts,jsx,tsx}'],
+    exclude: [...configDefaults.exclude, '**/scratch/**'],
     // Default pinned to NATIVE (production parity) as of the 2026-07-03 writeMode flip. The whole
-    // suite passes under NATIVE; setSchemaWriteModeLegacy.ts is retained for the legacyMode() helper.
+    // suite passes under NATIVE; the former `*.native.test.*` first-class-storage siblings are now
+    // ordinary specs that run under this default. Legacy-shape storage specs opt back into LEGACY via
+    // the `legacyMode()` helper; behavioral specs cover all modes via `writeModeMatrix`.
+    // setSchemaWriteModeLegacy.ts is retained for the legacyMode() helper.
     setupFiles: ['./src/tests/testHarness/setSchemaWriteModeNative.ts'],
     coverage: {
       reporter: ['html', 'json-summary'],

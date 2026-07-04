@@ -4,11 +4,11 @@ import tournamentEngine from '@Engines/syncEngine';
 import { expect, it } from 'vitest';
 
 /**
- * NATIVE-writeMode sibling of the LEGACY schedule specs (scheduleMatchUps / scheduleMatchUps2 /
- * scheduleMatchUps assertions on `matchUp.timeItems[]`). Runs under vitest.native.config.mts
- * (`pnpm test:native`), where the default NATIVE writeMode is active. Asserts the first-class
- * storage contract production actually writes: schedule data lands on `matchUp.schedule.*` with
- * NO `SCHEDULE.*` timeItem mirror. The LEGACY originals keep asserting the timeItem shape.
+ * NATIVE-writeMode counterpart of the legacyMode-scoped schedule specs (scheduleMatchUps /
+ * scheduleMatchUps2 assertions on `matchUp.timeItems[]`). Runs under the default NATIVE writeMode
+ * (the default since the 2026-07-03 flip). Asserts the first-class storage contract production
+ * actually writes: schedule data lands on `matchUp.schedule.*` with NO `SCHEDULE.*` timeItem
+ * mirror. The legacyMode-scoped originals keep asserting the timeItem shape.
  *
  * See planning/NATIVE_WRITEMODE_COVERAGE.md.
  */

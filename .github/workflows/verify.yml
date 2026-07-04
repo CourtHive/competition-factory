@@ -89,11 +89,6 @@ jobs:
       - name: verify:coverage
         run: pnpm verify:coverage
 
-      # NATIVE writeMode run — the default suite is pinned to LEGACY; this executes the
-      # first-class-storage `*.native.test.*` specs under the NATIVE mode production uses.
-      - name: verify:native
-        run: pnpm verify:native
-
       - name: verify:server
         run: pnpm verify:server
 

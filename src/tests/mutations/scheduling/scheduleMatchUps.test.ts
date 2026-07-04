@@ -25,7 +25,7 @@ import {
 } from '@Constants/errorConditionConstants';
 
 // asserts legacy timeItem counts for scheduling; NATIVE first-class schedule storage is covered by
-// scheduleFirstClassStorage.native.test.ts
+// scheduleFirstClassStorage.test.ts
 legacyMode('scheduleMatchUps — legacy timeItems', () => {
   it('can add events, venues, and schedule matchUps', () => {
     let startDate = '2020-01-01';
