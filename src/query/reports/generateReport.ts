@@ -1,3 +1,4 @@
+import { wrapCallTimingVarianceReport } from './wrappers/wrapCallTimingVarianceReport';
 import { wrapSeedingPerformanceReport } from './wrappers/wrapSeedingPerformanceReport';
 import { wrapParticipantResultsReport } from './wrappers/wrapParticipantResultsReport';
 import { wrapCompetitivenessReport } from './wrappers/wrapCompetitivenessReport';
@@ -14,6 +15,7 @@ import { Tournament } from '@Types/tournamentTypes';
 import { ReportResult } from '@Types/reportTypes';
 
 import {
+  CALL_TIMING_VARIANCE_REPORT,
   COMPETITIVENESS_REPORT,
   ENTRY_STATUS_REPORT,
   MATCH_RESULTS_REPORT,
@@ -33,7 +35,9 @@ type GenerateReportArgs = {
   parameters?: Record<string, any>;
 };
 
-const wrapperMap: Record<string, (args: { tournamentRecord: Tournament }) => ReportResult | { error: any }> = {
+type WrapperArgs = { tournamentRecord: Tournament; parameters?: Record<string, any> };
+
+const wrapperMap: Record<string, (args: WrapperArgs) => ReportResult | { error: any }> = {
   [ENTRY_STATUS_REPORT]: wrapEntryStatusReport,
   [STRUCTURE_REPORT]: wrapStructureReport,
   [MATCH_RESULTS_REPORT]: wrapMatchResultsReport,
@@ -43,13 +47,18 @@ const wrapperMap: Record<string, (args: { tournamentRecord: Tournament }) => Rep
   [SEEDING_PERFORMANCE_REPORT]: wrapSeedingPerformanceReport,
   [PARTICIPANT_STATS_REPORT]: wrapParticipantStats,
   [VENUE_UTILIZATION_REPORT]: wrapVenuesReport,
+  [CALL_TIMING_VARIANCE_REPORT]: wrapCallTimingVarianceReport,
 };
 
-export function generateReport({ tournamentRecord, reportId }: GenerateReportArgs): ReportResult | { error: any } {
+export function generateReport({
+  tournamentRecord,
+  reportId,
+  parameters,
+}: GenerateReportArgs): ReportResult | { error: any } {
   if (!tournamentRecord) return { error: MISSING_TOURNAMENT_RECORD };
 
   const wrapper = wrapperMap[reportId];
   if (!wrapper) return INVALID_REPORT_ID;
 
-  return wrapper({ tournamentRecord });
+  return wrapper({ tournamentRecord, parameters });
 }

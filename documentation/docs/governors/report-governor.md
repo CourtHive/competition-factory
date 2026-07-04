@@ -79,6 +79,7 @@ const byCategory = Object.groupBy(ready, (r) => r.category);
 | `participant.seedingPerformance` | Seeding Performance    | Participants | Seeded participants |
 | `participant.teamStats`          | Team Statistics        | Participants | Team participants   |
 | `venue.utilization`              | Venue Utilization      | Scheduling   | Venues              |
+| `scheduling.callTimingVariance`  | Call Timing Variance   | Scheduling   | Venues              |
 | `audit.mutationLog`              | Mutation Log           | Audit        | Server audit trail  |
 | `audit.drawRevisions`            | Draw Revision History  | Audit        | Server audit trail  |
 | `audit.schedulingChurn`          | Scheduling Churn       | Audit        | Server audit trail  |
@@ -197,6 +198,64 @@ const result = tournamentEngine.generateReport({ reportId: 'audit.mutationLog' }
 // { error: 'Invalid reportId' }
 // Server-sourced reports must be fetched from the audit worker, not from generateReport
 ```
+
+---
+
+## Call Timing Variance Report
+
+`reportId: 'scheduling.callTimingVariance'` — for every matchUp that carries both a planned `scheduledTime` and an actual `calledAt` (the timestamp stamped when a matchUp is called to court via the schedule "Now" strip), reports the signed variance in minutes.
+
+- **Positive variance** = the match was called **late** (running behind schedule).
+- **Negative variance** = the match was called **early**.
+
+Rows are sorted worst-late first, so the matches that ran furthest behind surface at the top. This quantifies how far behind an event is running — useful for operations that reliably run late and want to measure the drift.
+
+**Parameters:**
+
+```ts
+{
+  utcOffsetMinutes?: number; // Venue offset from UTC (local = UTC + offset). Default 0.
+}
+```
+
+`calledAt` is stored as a UTC ISO timestamp while `scheduledTime` is a wall-clock `"HH:mm"`. Supply `utcOffsetMinutes` (e.g. `-300` for US Eastern Standard Time) so absolute variance is accurate; omit it to treat both in the same frame (the relative ordering of variances is unaffected by the offset). TMX passes the operator's browser offset automatically, which matches the venue timezone when the tournament is run on-site.
+
+**Columns:** `eventName`, `drawName`, `roundName`, `matchUp`, `venueName`, `courtName`, `scheduledDate`, `scheduledTime`, `calledAt`, `varianceMinutes`.
+
+`scheduledTime` and `calledAt` display as bare clock times (`HH:mm`); `calledAt` is prefixed with its date only when the call fell on a different calendar day than `scheduledDate`. Each row also carries `calledAtIso` (the full UTC timestamp) for lossless export.
+
+**Summary:**
+
+```ts
+{
+  matchUpsWithCallData: number; // rows in the report
+  scheduledButUncalled: number; // scheduled matchUps that were never called to court
+  averageVarianceMinutes: number;
+  medianVarianceMinutes: number;
+  maxVarianceMinutes: number; // worst late
+  minVarianceMinutes: number; // earliest call
+  calledLateCount: number;
+  calledLatePercentage: number;
+  utcOffsetMinutes: number; // echo of the parameter used
+}
+```
+
+**Example:**
+
+```js
+const result = tournamentEngine.generateReport({
+  reportId: 'scheduling.callTimingVariance',
+  parameters: { utcOffsetMinutes: -300 }, // US Eastern Standard Time
+});
+
+console.log(`${result.summary.calledLatePercentage}% of matches called late`);
+console.log(`Worst delay: ${result.summary.maxVarianceMinutes} min`);
+result.rows.slice(0, 5).forEach((r) => {
+  console.log(`${r.matchUp} on ${r.courtName}: ${r.varianceMinutes >= 0 ? '+' : ''}${r.varianceMinutes} min`);
+});
+```
+
+The report is listed (`computableNow: true`) whenever the tournament has venues; rows populate once matchUps are called to court. Until then the report is empty and `summary.scheduledButUncalled` reflects scheduled matchUps still awaiting a call.
 
 ---
 

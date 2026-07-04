@@ -4,6 +4,7 @@ import { ReportAvailability } from '@Types/reportTypes';
 import { Tournament } from '@Types/tournamentTypes';
 
 import {
+  CALL_TIMING_VARIANCE_REPORT,
   COMPETITIVENESS_REPORT,
   DRAW_REVISIONS_REPORT,
   ENTRY_STATUS_REPORT,
@@ -77,6 +78,12 @@ const REPORT_REGISTRY = [
     category: REPORT_CATEGORIES.SCHEDULING,
   },
   {
+    reportId: CALL_TIMING_VARIANCE_REPORT,
+    name: 'Call Timing Variance',
+    description: 'Planned scheduled time vs actual called-to-court time — how far behind matches are running',
+    category: REPORT_CATEGORIES.SCHEDULING,
+  },
+  {
     reportId: MUTATION_LOG_REPORT,
     name: 'Mutation Log',
     description: 'Chronological log of all server mutations with user attribution',
@@ -141,6 +148,7 @@ export function getAvailableReports({
     [SEEDING_PERFORMANCE_REPORT]: hasSeededParticipants,
     [PARTICIPANT_STATS_REPORT]: hasTeamParticipants,
     [VENUE_UTILIZATION_REPORT]: hasVenues,
+    [CALL_TIMING_VARIANCE_REPORT]: hasVenues,
     // Audit reports are always listed; TMX checks server connectivity
     [MUTATION_LOG_REPORT]: true,
     [DRAW_REVISIONS_REPORT]: true,

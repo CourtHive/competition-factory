@@ -7,6 +7,7 @@ export const MATCH_RESULTS_REPORT = 'matchUp.results';
 export const MATCHUP_STATUS_REPORT = 'matchUp.statusSummary';
 export const SEEDING_PERFORMANCE_REPORT = 'participant.seedingPerformance';
 export const COMPETITIVENESS_REPORT = 'matchUp.competitiveness';
+export const CALL_TIMING_VARIANCE_REPORT = 'scheduling.callTimingVariance';
 
 // Phase 4: Audit-trail reports (server-sourced, not computable from tournament record)
 export const DRAW_REVISIONS_REPORT = 'audit.drawRevisions';
