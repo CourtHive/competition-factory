@@ -1,5 +1,12 @@
 # Changelog
 
+## [6.1.2](https://github.com/CourtHive/competition-factory/compare/v6.1.1...v6.1.2) (2026-07-05)
+
+
+### Bug Fixes
+
+* **scheduling:** clear grid position when a matchup is re-dated ([b1eab0a](https://github.com/CourtHive/competition-factory/commit/b1eab0a1c1fbd8645c16279e86c3a2bf52d616db))
+
 ## [6.1.1](https://github.com/CourtHive/competition-factory/compare/v6.1.0...v6.1.1) (2026-07-04)
 
 
