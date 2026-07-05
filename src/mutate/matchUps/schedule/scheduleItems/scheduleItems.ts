@@ -269,6 +269,16 @@ function applyScheduleAssignments({
   return undefined;
 }
 
+// courtOrder/courtId/venueId describe a position on ONE day's schedule grid.
+// When a matchUp is re-dated they no longer apply and are cleared so the match
+// does not inherit the prior day's row on the new day.
+function unassignGridPosition({ tournamentRecords, tournamentRecord, drawDefinition, matchUpId, courtDayDate }) {
+  const shared = { removePriorValues: true, disableNotice: true, tournamentRecord, drawDefinition, matchUpId };
+  addMatchUpCourtOrder({ ...shared, courtOrder: undefined });
+  assignMatchUpCourt({ ...shared, tournamentRecords, courtDayDate, courtId: '' });
+  assignMatchUpVenue({ ...shared, tournamentRecords, venueId: undefined });
+}
+
 type AddMatchUpScheduleItemsArgs = {
   inContextMatchUps?: HydratedMatchUp[];
   drawMatchUps?: HydratedMatchUp[];
@@ -378,6 +388,19 @@ export function addMatchUpScheduleItems(params: AddMatchUpScheduleItemsArgs): {
     }
   }
 
+  // Detect a day change BEFORE applyScheduleTiming mutates the matchUp's date.
+  // When the date moves and the caller supplies no explicit grid position, the
+  // prior day's courtOrder/court/venue are stale and get cleared below.
+  const priorScheduledDate = scheduledMatchUpDate({ matchUp })?.scheduledDate;
+  const nextScheduledDate = scheduledDate !== undefined ? extractDate(scheduledDate) : undefined;
+  const clearGridPositionOnDateChange =
+    !!nextScheduledDate &&
+    !!priorScheduledDate &&
+    extractDate(priorScheduledDate) !== nextScheduledDate &&
+    courtOrder === undefined &&
+    courtId === undefined &&
+    venueId === undefined;
+
   const timingResult = applyScheduleTiming({
     removePriorValues,
     tournamentRecord,
@@ -414,6 +437,16 @@ export function addMatchUpScheduleItems(params: AddMatchUpScheduleItemsArgs): {
     stack,
   });
   if (assignmentResult?.error) return assignmentResult;
+
+  if (clearGridPositionOnDateChange) {
+    unassignGridPosition({
+      tournamentRecords,
+      tournamentRecord,
+      drawDefinition,
+      matchUpId,
+      courtDayDate: nextScheduledDate,
+    });
+  }
 
   if (!disableNotice) {
     modifyMatchUpNotice({

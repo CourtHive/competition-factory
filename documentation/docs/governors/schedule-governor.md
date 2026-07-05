@@ -1194,6 +1194,26 @@ engine.addMatchUpScheduleItems({
 });
 ```
 
+### Grid position is cleared on a date change
+
+`courtOrder`, `courtId`, and `venueId` describe a matchUp's position on **one
+specific day's** schedule grid. When a call changes `scheduledDate` to a different
+day and does **not** supply an explicit `courtOrder`/`courtId`/`venueId` in the
+same `schedule` object, the engine clears those stale grid-position attributes so
+the matchUp does not inherit the prior day's row on its new day.
+
+- A date-only re-date (e.g. `schedule: { scheduledDate, scheduledTime }`) returns
+  the matchUp to the unplaced pool for the new day — it keeps its date and time but
+  is no longer pinned to a court or row.
+- Re-applying the **same** date leaves the existing grid position untouched.
+- Supplying an explicit `courtOrder` (and/or `courtId`/`venueId`) alongside the new
+  date is honored verbatim — a deliberate "move to a new day and row" is respected.
+
+This also governs `bulkScheduleMatchUps`, which delegates to
+`addMatchUpScheduleItems` per matchUp. The lower-level `addMatchUpScheduledDate`
+primitive does **not** clear grid position; use `addMatchUpScheduleItems` (the path
+TMX and integrations use) for date changes.
+
 ---
 
 ## Auto-captured `scoredTime`
