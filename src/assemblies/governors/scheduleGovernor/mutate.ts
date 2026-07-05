@@ -27,8 +27,8 @@ export { setMatchUpDailyLimits } from '@Mutate/tournaments/setMatchUpDailyLimits
 export { assignMatchUpCourt } from '@Mutate/matchUps/schedule/assignMatchUpCourt';
 export { assignMatchUpVenue } from '@Mutate/matchUps/schedule/assignMatchUpVenue';
 export { setMatchUpCalledAt } from '@Mutate/matchUps/schedule/setMatchUpCalledAt';
-export { validateSchedulingProfile } from '@Validators/validateSchedulingProfile';
 export { generateBookings } from '@Generators/scheduling/utils/generateBookings';
+export { validateSchedulingProfile } from '@Validators/validateSchedulingProfile';
 export { removeCourtGridBooking } from '@Mutate/venues/removeCourtGridBooking';
 export { setSchedulingProfile } from '@Mutate/tournaments/schedulingProfile';
 export { findMatchUpFormatTiming } from '@Acquire/findMatchUpFormatTiming';
