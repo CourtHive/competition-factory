@@ -35,6 +35,7 @@ import type { setMatchUpHomeParticipantId } from '@Mutate/matchUps/schedule/sche
 import type { generateSeedingScaleItems } from '../assemblies/generators/drawDefinitions/generateSeedingScaleItems';
 import type { generateVoluntaryConsolation } from '@Generators/drawDefinitions/drawTypes/generateVoluntaryConsolation';
 import type { getMatchUpFormatTimingUpdate } from '@Query/extensions/matchUpFormatTiming/getMatchUpFormatTimingUpdate';
+import type { proColumnResolve } from '@Mutate/matchUps/schedule/schedulers/proScheduler/proColumnResolve';
 import type { calculateScheduleTimes } from '@Mutate/matchUps/schedule/scheduleMatchUps/calculateScheduleTimes';
 import type { generateAdHocMatchUps } from '@Generators/drawDefinitions/drawTypes/adHoc/generateAdHocMatchUps';
 import type { generateQualifyingStructure } from '@Generators/drawDefinitions/drawTypes/generateQualifyingStructure';
@@ -958,6 +959,7 @@ export interface MethodSignatures {
   proAutoSchedule: EngineMethod<typeof proAutoSchedule>;
   processCompetitionMatchUp: EngineMethod<typeof processCompetitionMatchUp>;
   processCompetitionRound: EngineMethod<typeof processCompetitionRound>;
+  proColumnResolve: EngineMethod<typeof proColumnResolve>;
   proConflicts: EngineMethod<typeof proConflicts>;
   promoteAlternate: EngineMethod<typeof promoteAlternate>;
   promoteAlternates: EngineMethod<typeof promoteAlternates>;

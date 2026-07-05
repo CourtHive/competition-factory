@@ -14,6 +14,7 @@ export const methodScopeMap: Record<string, MutationLockScope> = {
   toggleParticipantCheckInState: 'SCHEDULING',
   removeMatchUpCourtAssignment: 'SCHEDULING',
   proAutoSchedule: 'SCHEDULING',
+  proColumnResolve: 'SCHEDULING',
   bulkUpdateCourtAssignments: 'SCHEDULING',
   allocateTeamMatchUpCourts: 'SCHEDULING',
   scheduleMatchUps: 'SCHEDULING',

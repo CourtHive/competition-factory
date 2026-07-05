@@ -638,6 +638,32 @@ if (Object.values(recheck.rowIssues).flat().length === 0) {
 }
 ```
 
+### Automatically Resolving Participant Conflicts with proColumnResolve()
+
+Where the workflow above resolves conflicts by hand, `proColumnResolve()` resolves cross-column participant conflicts automatically **without moving any match off its court or changing its clock time**. It re-lays the grid vertically — reassigning `courtOrder` and inserting blank rows — so colliding matchUps land on different rows.
+
+It folds both `participantConflict` and `potentialParticipantConflict` (winner-advancement collisions) into each matchUp's deep dependency participant set, anchors completed matchUps at the top of each column (in play order), keeps in-progress beneath them, orders the to-be-played tail by `scheduledTime`, and preserves progression (every source in a strictly earlier row than the match it feeds).
+
+```js
+const { matchUps } = engine.allCompetitionMatchUps({
+  matchUpFilters: { scheduledDate: '2024-03-20' },
+  nextMatchUps: true,
+  inContext: true,
+});
+
+const { resolved, unresolvable } = engine.proColumnResolve({
+  scheduledDate: '2024-03-20',
+  matchUps,
+});
+
+// `resolved` lists every courtOrder change: { matchUpId, courtId, from, to }
+// `unresolvable` lists what spacing cannot fix, each with a reason:
+//   - 'chronology'       a feeder scheduled at a LATER time than the match it feeds
+//   - 'orderingDeadlock' a same-column ordering cycle broken to make progress
+```
+
+Because every normally-placed row is conflict-free by construction, re-running `proConflicts()` on the result is the canonical confirmation. Court and `scheduledTime` are invariant — only `courtOrder` moves. See [proColumnResolve](/docs/governors/schedule-governor#procolumnresolve) in the Schedule Governor reference.
+
 ### Preventing Conflicts During Scheduling
 
 #### Strategy 1: Pre-validate Before Assignment

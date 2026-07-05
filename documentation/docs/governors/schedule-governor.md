@@ -920,6 +920,33 @@ const { conflicts } = engine.proConflicts({
 
 ---
 
+### proColumnResolve
+
+Court-preserving, `scheduledTime`-preserving conflict resolver. Where `proAutoSchedule` may reassign courts, `proColumnResolve` re-lays the grid **vertically only**: a matchUp never changes its `courtId` or its `scheduledTime` — only its `courtOrder` (row) changes, and blank rows are inserted to space colliding matchUps onto different rows.
+
+It removes cross-column participant collisions — the same participant, or the same **potential** participant (winner advancement), appearing in two cells of the same row — by folding both `CONFLICT_PARTICIPANTS` and `CONFLICT_POTENTIAL_PARTICIPANTS` into each matchUp's deep dependency participant set.
+
+Per-column ordering: completed matchUps are anchored at the top (in play order), in-progress beneath them, and to-be-played below in `scheduledTime` order (which also repairs a director's time-inversions). Every dependency source is placed in a strictly earlier row than the match it feeds.
+
+```js
+const { resolved, unresolvable } = engine.proColumnResolve({
+  scheduledDate, // required
+  matchUps, // required — { inContext: true, nextMatchUps: true }
+  courtIds, // optional — restrict to specific courts
+});
+```
+
+Returns:
+
+- `resolved` — matchUps whose `courtOrder` changed: `{ matchUpId, courtId, from, to }`
+- `unresolvable` — matchUps that cannot be deconflicted by spacing, each with a `reason`:
+  - `chronology` — a director scheduled a feeder at a **later** clock time than the match it feeds (physically impossible; times are never changed)
+  - `orderingDeadlock` — a same-column ordering cycle that had to be broken to make progress
+
+Confirm the result by re-running `proConflicts` — every normally-placed row is conflict-free by construction.
+
+---
+
 ### publicFindCourt
 
 Finds a court with privacy policies applied for public APIs.

@@ -452,6 +452,7 @@ export type FactoryEngineMethod =
   | 'proAutoSchedule'
   | 'processCompetitionMatchUp'
   | 'processCompetitionRound'
+  | 'proColumnResolve'
   | 'proConflicts'
   | 'promoteAlternate'
   | 'promoteAlternates'
@@ -1081,6 +1082,7 @@ export const FACTORY_ENGINE_METHODS: readonly FactoryEngineMethod[] = [
   'proAutoSchedule',
   'processCompetitionMatchUp',
   'processCompetitionRound',
+  'proColumnResolve',
   'proConflicts',
   'promoteAlternate',
   'promoteAlternates',
