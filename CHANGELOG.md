@@ -1,5 +1,12 @@
 # Changelog
 
+## [6.2.0](https://github.com/CourtHive/competition-factory/compare/v6.1.2...v6.2.0) (2026-07-05)
+
+
+### Features
+
+* **reports:** carry matchUp/draw/structure ids in call-timing variance rows ([535f980](https://github.com/CourtHive/competition-factory/commit/535f980a5c3e7024fbb95af1526d23089b90c31c))
+
 ## [6.1.2](https://github.com/CourtHive/competition-factory/compare/v6.1.1...v6.1.2) (2026-07-05)
 
 
