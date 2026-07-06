@@ -1,5 +1,18 @@
 # Changelog
 
+## [6.3.0](https://github.com/CourtHive/competition-factory/compare/v6.2.0...v6.3.0) (2026-07-06)
+
+
+### Features
+
+* **scheduling:** add proColumnResolve court-preserving conflict resolver ([e8d78f0](https://github.com/CourtHive/competition-factory/commit/e8d78f0bb57315105d4de4720f7987a85ac3e58a))
+
+
+### Bug Fixes
+
+* canonicalize draw/draft status to COMPLETED and harden status unions ([880ed5a](https://github.com/CourtHive/competition-factory/commit/880ed5a32dc32d4668b412923355364c34f51d04))
+* correct schedule-time-resume typo dropping resumed matchUp duration ([9e29c6b](https://github.com/CourtHive/competition-factory/commit/9e29c6b2523f407f9acb635f19e27e9a356b7ebf))
+
 ## [6.2.0](https://github.com/CourtHive/competition-factory/compare/v6.1.2...v6.2.0) (2026-07-05)
 
 
