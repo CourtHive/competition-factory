@@ -40,7 +40,7 @@ export function matchUpDuration({ matchUp }) {
           }
           break;
         case STOP_TIME:
-          if ([START_TIME, 'SCHECULE.TIME.RESUME'].includes(elapsed.lastType)) {
+          if ([START_TIME, RESUME_TIME].includes(elapsed.lastType)) {
             const interval = timeDate(timeItem.itemValue).getTime() - timeDate(elapsed.lastValue).getTime();
             milliseconds = elapsed.milliseconds + interval;
           } else {
