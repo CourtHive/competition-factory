@@ -1,5 +1,17 @@
 # Changelog
 
+## [6.4.0](https://github.com/CourtHive/competition-factory/compare/v6.3.0...v6.4.0) (2026-07-07)
+
+
+### Features
+
+* **reports:** venue-first columns and recency sort for call timing variance ([217626a](https://github.com/CourtHive/competition-factory/commit/217626affd066f99eee4aa02c70acc6dc775b5b0))
+
+
+### Bug Fixes
+
+* guard matchUpStatus transitions against silent result loss ([b3cf55f](https://github.com/CourtHive/competition-factory/commit/b3cf55f4390bc3150e3f0874ff9456262ec36eee))
+
 ## [6.3.0](https://github.com/CourtHive/competition-factory/compare/v6.2.0...v6.3.0) (2026-07-06)
 
 
