@@ -1,5 +1,12 @@
 # Changelog
 
+## [6.5.0](https://github.com/CourtHive/competition-factory/compare/v6.4.0...v6.5.0) (2026-07-07)
+
+
+### Features
+
+* add getTournamentActionableMatchUps completeness query ([a273cf1](https://github.com/CourtHive/competition-factory/commit/a273cf1672102be91370d35578f18d56d19963f7))
+
 ## [6.4.0](https://github.com/CourtHive/competition-factory/compare/v6.3.0...v6.4.0) (2026-07-07)
 
 
