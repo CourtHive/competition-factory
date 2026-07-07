@@ -129,6 +129,7 @@ import type { removeMatchUpSideParticipant } from '@Mutate/matchUps/sides/remove
 import type { resolveDraftPositions } from '@Mutate/drawDefinitions/draft/resolveDraftPositions';
 import type { copyTournamentRecord } from '@Generators/tournamentRecords/copyTournamentRecord';
 import type { generateVirtualCourts } from '@Generators/scheduling/utils/generateVirtualCourts';
+import type { getTournamentActionableMatchUps } from '@Query/tournaments/getTournamentActionableMatchUps';
 import type { removeDelegatedOutcome } from '@Mutate/extensions/matchUps/removeDelegatedOutcome';
 import type { addDrawDefinitionTimeItem } from '@Mutate/drawDefinitions/addDrawDefinitionTimeItem';
 import type { addDynamicRatings } from '@Mutate/participants/scaleItems/addDynamicRatings';
@@ -878,6 +879,7 @@ export interface MethodSignatures {
   getTiebreakComplement: EngineMethod<typeof getTiebreakComplement>;
   getTieFormat: EngineMethod<typeof getTieFormat>;
   getTimeItem: EngineMethod<typeof getTimeItem>;
+  getTournamentActionableMatchUps: EngineMethod<typeof getTournamentActionableMatchUps>;
   getTournamentCompleteness: EngineMethod<typeof getTournamentCompleteness>;
   getTournamentIds: EngineMethod<typeof getTournamentIds>;
   getTournamentInconsistencies: EngineMethod<typeof getTournamentInconsistencies>;

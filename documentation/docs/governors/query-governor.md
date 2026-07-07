@@ -762,6 +762,28 @@ const { complete, completeness } = engine.getTournamentCompleteness();
 // completeness: { tournamentId, unassignedPositionCount, unplayedMatchUpCount, byEvent: [...] }
 ```
 
+## getTournamentActionableMatchUps
+
+Reports whether a tournament is **effectively complete** — nothing is left to score — which is
+looser than the strict `getTournamentCompleteness` roll-up. Every non-BYE matchUp is classified:
+
+- **decided** — has a `winningSide`, or a terminal `completedMatchUpStatus` (COMPLETED / RETIRED /
+  WALKOVER / DEFAULTED / DOUBLE_* / **ABANDONED** / **CANCELLED** / DEAD_RUBBER).
+- **actionable** — `IN_PROGRESS` / `SUSPENDED`, or `readyToScore` with no winner. The only matchUps
+  that can still be scored, so the only ones that block completion.
+- **pending** — not ready and not decided (waiting on upstream). A pending matchUp whose feeders are
+  terminal-without-advancer (e.g. both abandoned) can never become ready, so it does **not** block.
+
+`effectivelyComplete` is true when there are **no actionable matchUps**. This surfaces the case where
+every ready-to-score matchUp was abandoned as complete, which strict completeness would not.
+
+```js
+const { effectivelyComplete, allDecided, counts, actionableMatchUpIds } = engine.getTournamentActionableMatchUps();
+// counts: { total, decided, actionable, pending }
+// effectivelyComplete === (counts.actionable === 0)
+// allDecided === (counts.actionable === 0 && counts.pending === 0)
+```
+
 ## getMatchUpFormatVariance
 
 Reports where a draw's `matchUpFormat` (scoring format) is **not uniform**, grouped by structure

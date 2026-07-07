@@ -11,6 +11,7 @@ export { getTournamentPersons } from '@Query/tournaments/getTournamentPersons';
 export { getEventRankingPoints } from '@Query/scales/getEventRankingPoints';
 export { suggestFormatPlans } from '@Query/formatWizard/suggestFormatPlans';
 export { getTournamentStructures } from '@Query/structure/structureGetter';
+export { getTournamentActionableMatchUps } from '@Query/tournaments/getTournamentActionableMatchUps';
 export { getTournamentInconsistencies } from '@Query/tournaments/getTournamentInconsistencies';
 export { getTournamentCompleteness } from '@Query/tournaments/getTournamentCompleteness';
 export { getTournamentInfo } from '@Query/tournaments/getTournamentInfo';
