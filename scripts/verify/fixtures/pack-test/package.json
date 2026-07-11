@@ -7,6 +7,6 @@
     "tods-competition-factory": "file:./factory-tarball.tgz"
   },
   "devDependencies": {
-    "typescript": "^6.0.2"
+    "typescript": "^7.0.0"
   }
 }
