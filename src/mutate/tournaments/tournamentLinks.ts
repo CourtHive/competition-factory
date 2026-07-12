@@ -38,20 +38,34 @@ function writeRecordLinkedTournamentIds(tournamentRecord: any, tournamentIds: st
   }
 }
 
-/**
- * Links all tournaments which are currently loaded into competitionEngine state
- */
+type LinkTournamentsArgs = {
+  tournamentRecords: TournamentRecords;
+  tournamentIds?: string[];
+};
 
-export function linkTournaments({ tournamentRecords }: { tournamentRecords: TournamentRecords }): ResultType {
+/**
+ * Link tournaments together (symmetric peers). By default links every tournament currently loaded
+ * into competitionEngine state. When `tournamentIds` is provided, links exactly that subset —
+ * enabling "link these three of my five" — and sets each selected record's link set to precisely
+ * the selected group; records outside the subset are left untouched. Every id in `tournamentIds`
+ * must be loaded, otherwise `MISSING_TOURNAMENT_ID` is returned.
+ */
+export function linkTournaments({ tournamentRecords, tournamentIds: selected }: LinkTournamentsArgs): ResultType {
   if (typeof tournamentRecords !== 'object' || !Object.keys(tournamentRecords).length)
     return { error: MISSING_TOURNAMENT_RECORDS };
 
-  const result = getTournamentIds({ tournamentRecords });
-  const { tournamentIds } = result;
+  const { tournamentIds: loadedTournamentIds } = getTournamentIds({ tournamentRecords });
 
-  if (tournamentIds?.length > 1) {
-    for (const tournamentRecord of Object.values(tournamentRecords)) {
-      writeRecordLinkedTournamentIds(tournamentRecord, tournamentIds);
+  let linkIds = loadedTournamentIds;
+  if (selected?.length) {
+    if (selected.some((tournamentId) => !loadedTournamentIds.includes(tournamentId)))
+      return { error: MISSING_TOURNAMENT_ID };
+    linkIds = selected;
+  }
+
+  if (linkIds.length > 1) {
+    for (const tournamentId of linkIds) {
+      writeRecordLinkedTournamentIds(tournamentRecords[tournamentId], linkIds);
     }
   }
 
