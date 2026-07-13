@@ -1,5 +1,18 @@
 # Changelog
 
+## [6.6.0](https://github.com/CourtHive/competition-factory/compare/v6.5.0...v6.6.0) (2026-07-13)
+
+
+### Features
+
+* **query:** add getTournamentCalendarEntry deriver ([#4491](https://github.com/CourtHive/competition-factory/issues/4491)) ([df26eac](https://github.com/CourtHive/competition-factory/commit/df26eac7c53b15145103c9b5abd2f36af57c0e6b))
+* **scheduling:** shared-facility schedule projection + merge transforms ([#4487](https://github.com/CourtHive/competition-factory/issues/4487)) ([4f170c0](https://github.com/CourtHive/competition-factory/commit/4f170c013a530e534e0da323b129cbc75b1bc3a6))
+
+
+### Bug Fixes
+
+* **deps:** pin typescript to 6.0.3 to block native ts7 ([37e1d2f](https://github.com/CourtHive/competition-factory/commit/37e1d2f76c6ff9897e9935c6a94e21633f1539ac))
+
 ## [6.5.0](https://github.com/CourtHive/competition-factory/compare/v6.4.0...v6.5.0) (2026-07-07)
 
 
