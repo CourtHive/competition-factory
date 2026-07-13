@@ -6,7 +6,7 @@ import { Tournament } from '@Types/tournamentTypes';
 
 export type TournamentCalendarEntry = {
   searchText: string;
-  tournamentId?: string;
+  tournamentId: string;
   providerId?: string;
   tournament: any;
 };
