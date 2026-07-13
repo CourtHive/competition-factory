@@ -185,6 +185,7 @@ import type { generateBookings } from '@Generators/scheduling/utils/generateBook
 import type { getApplicableAwardProfileLevels } from '@Query/scales/getApplicableAwardProfileLevels';
 import type { getLuckyDrawRoundStatus } from '@Query/drawDefinition/getLuckyDrawRoundStatus';
 import type { getMatchUpDailyLimitsUpdate } from '@Query/extensions/getMatchUpDailyLimitsUpdate';
+import type { getTournamentCalendarEntry } from '@Query/tournaments/getTournamentCalendarEntry';
 import type { getTournamentPublishStatus } from '@Query/tournaments/getTournamentPublishStatus';
 import type { initializeDraft } from '@Mutate/drawDefinitions/draft/initializeDraft';
 import type { predictMatchUpCompetitiveBands } from '@Query/matchUp/predictMatchUpCompetitiveBands';
@@ -880,6 +881,7 @@ export interface MethodSignatures {
   getTieFormat: EngineMethod<typeof getTieFormat>;
   getTimeItem: EngineMethod<typeof getTimeItem>;
   getTournamentActionableMatchUps: EngineMethod<typeof getTournamentActionableMatchUps>;
+  getTournamentCalendarEntry: EngineMethod<typeof getTournamentCalendarEntry>;
   getTournamentCompleteness: EngineMethod<typeof getTournamentCompleteness>;
   getTournamentIds: EngineMethod<typeof getTournamentIds>;
   getTournamentInconsistencies: EngineMethod<typeof getTournamentInconsistencies>;

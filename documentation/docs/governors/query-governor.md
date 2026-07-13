@@ -2043,6 +2043,19 @@ const { tournamentRecord } = engine.getTournament();
 
 ---
 
+## getTournamentCalendarEntry
+
+Derives the lightweight **calendar-list entry** for a tournament — the shape a tournaments list renders from without loading full tournament records. It wraps `getTournamentInfo` (so the `tournament` projection already carries `onlineResources`) and flattens the URL tournament image to `tournamentImageURL`. Non-URL images (e.g. court-SVG) are not flattened but remain available in `onlineResources` for the consumer to extract.
+
+Intended as the single source of truth for every calendar surface — a server persists it as a provider-calendar side-effect and a client can derive the identical entry from a local record, so remote and offline lists match. Pure: server-specific projections (e.g. an ownership stamp) are added by the caller.
+
+```js
+const { searchText, tournamentId, providerId, tournament } = engine.getTournamentCalendarEntry({ tournamentRecord });
+// tournament: { ...getTournamentInfo projection, startDate, endDate, tournamentName, tournamentImageURL }
+```
+
+---
+
 ## getTournamentInfo
 
 Returns tournament attributes. Used to attach details to publishing payload by `getEventData`.
