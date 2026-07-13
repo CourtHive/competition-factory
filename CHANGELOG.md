@@ -1,5 +1,13 @@
 # Changelog
 
+## [6.7.0](https://github.com/CourtHive/competition-factory/compare/v6.6.0...v6.7.0) (2026-07-13)
+
+
+### Features
+
+* **mutations:** refuse to replace a draw with scores present unless forced ([daf2cab](https://github.com/CourtHive/competition-factory/commit/daf2cabc182b42b206aa6ced836138c6cb241936))
+* **mutations:** snapshot the outgoing draw when a replace overwrites a populated draw ([6dff34c](https://github.com/CourtHive/competition-factory/commit/6dff34cff6858b38abee07bb344972a2748b9b47))
+
 ## [6.6.0](https://github.com/CourtHive/competition-factory/compare/v6.5.0...v6.6.0) (2026-07-13)
 
 
