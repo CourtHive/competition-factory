@@ -357,6 +357,7 @@ export type FactoryEngineMethod =
   | 'getTimeItem'
   | 'getTournament'
   | 'getTournamentActionableMatchUps'
+  | 'getTournamentCalendarEntry'
   | 'getTournamentCompleteness'
   | 'getTournamentId'
   | 'getTournamentIds'
@@ -988,6 +989,7 @@ export const FACTORY_ENGINE_METHODS: readonly FactoryEngineMethod[] = [
   'getTimeItem',
   'getTournament',
   'getTournamentActionableMatchUps',
+  'getTournamentCalendarEntry',
   'getTournamentCompleteness',
   'getTournamentId',
   'getTournamentIds',

@@ -14,6 +14,7 @@ export { getTournamentStructures } from '@Query/structure/structureGetter';
 export { getTournamentActionableMatchUps } from '@Query/tournaments/getTournamentActionableMatchUps';
 export { getTournamentInconsistencies } from '@Query/tournaments/getTournamentInconsistencies';
 export { getTournamentCompleteness } from '@Query/tournaments/getTournamentCompleteness';
+export { getTournamentCalendarEntry } from '@Query/tournaments/getTournamentCalendarEntry';
 export { getTournamentInfo } from '@Query/tournaments/getTournamentInfo';
 export { analyzeTournament } from '@Query/tournaments/analyzeTournament';
 export { getTournamentPoints } from '@Query/scales/getTournamentPoints';
