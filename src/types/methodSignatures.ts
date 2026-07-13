@@ -186,6 +186,7 @@ import type { getApplicableAwardProfileLevels } from '@Query/scales/getApplicabl
 import type { getLuckyDrawRoundStatus } from '@Query/drawDefinition/getLuckyDrawRoundStatus';
 import type { getMatchUpDailyLimitsUpdate } from '@Query/extensions/getMatchUpDailyLimitsUpdate';
 import type { getScheduleProjection } from '@Query/facilitySchedule/getScheduleProjection';
+import type { getTournamentCalendarEntry } from '@Query/tournaments/getTournamentCalendarEntry';
 import type { getTournamentPublishStatus } from '@Query/tournaments/getTournamentPublishStatus';
 import type { initializeDraft } from '@Mutate/drawDefinitions/draft/initializeDraft';
 import type { mergeFacilitySchedule } from '@Query/facilitySchedule/mergeFacilitySchedule';
@@ -883,6 +884,7 @@ export interface MethodSignatures {
   getTieFormat: EngineMethod<typeof getTieFormat>;
   getTimeItem: EngineMethod<typeof getTimeItem>;
   getTournamentActionableMatchUps: EngineMethod<typeof getTournamentActionableMatchUps>;
+  getTournamentCalendarEntry: EngineMethod<typeof getTournamentCalendarEntry>;
   getTournamentCompleteness: EngineMethod<typeof getTournamentCompleteness>;
   getTournamentIds: EngineMethod<typeof getTournamentIds>;
   getTournamentInconsistencies: EngineMethod<typeof getTournamentInconsistencies>;
