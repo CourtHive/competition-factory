@@ -1,5 +1,12 @@
 # Changelog
 
+## [6.8.1](https://github.com/CourtHive/competition-factory/compare/v6.8.0...v6.8.1) (2026-07-15)
+
+
+### Documentation
+
+* **engines:** document the Declaration Engine toolkit + injection principle ([882f54f](https://github.com/CourtHive/competition-factory/commit/882f54f0c4d6de646cad3608c9d2d2dc98aff9b7))
+
 ## [6.8.0](https://github.com/CourtHive/competition-factory/compare/v6.7.0...v6.8.0) (2026-07-15)
 
 
