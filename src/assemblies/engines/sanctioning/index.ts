@@ -24,6 +24,7 @@ import { addReviewNote } from '@Mutate/sanctioning/addReviewNote';
 import { meetCondition } from '@Mutate/sanctioning/meetCondition';
 import { factoryVersion } from '@Functions/global/factoryVersion';
 import { executeDeclarationQueue } from '@Functions/declaration/executeDeclarationQueue';
+import { registerCreatedRecord } from '@Functions/declaration/registerCreatedRecord';
 import { makeDeepCopy } from '@Tools/makeDeepCopy';
 import {
   getSanctioningRecords,
@@ -95,19 +96,16 @@ export const sanctioningEngine = (() => {
     // -----------------------------------------------------------------------
     // Mutations
     // -----------------------------------------------------------------------
-    createSanctioningRecord: (params: any) => {
-      const result = createSanctioningRecord(params);
-      if (result.error) return result;
-      const { sanctioningRecord } = result;
-      if (!sanctioningRecord) return result;
-
-      const existing = getSanctioningRecord(sanctioningRecord.sanctioningId);
-      if (existing) return { error: SANCTIONING_RECORD_EXISTS };
-
-      setSanctioningRecord(sanctioningRecord);
-      setActiveSanctioningId(sanctioningRecord.sanctioningId);
-      return result;
-    },
+    createSanctioningRecord: (params: any) =>
+      registerCreatedRecord({
+        result: createSanctioningRecord(params),
+        recordKey: 'sanctioningRecord',
+        idKey: 'sanctioningId',
+        getRecord: getSanctioningRecord,
+        setRecord: setSanctioningRecord,
+        setActiveId: setActiveSanctioningId,
+        existsError: SANCTIONING_RECORD_EXISTS,
+      }),
 
     updateProposal: (params: any) => {
       const sanctioningRecord = params.sanctioningRecord ?? resolveRecord(params.sanctioningId);

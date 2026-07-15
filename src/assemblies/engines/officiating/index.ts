@@ -24,6 +24,7 @@ import { addEvaluation } from '@Mutate/officiating/addEvaluation';
 import { addSuspension } from '@Mutate/officiating/addSuspension';
 import { assignOfficial } from '@Mutate/officiating/assignOfficial';
 import { executeDeclarationQueue } from '@Functions/declaration/executeDeclarationQueue';
+import { registerCreatedRecord } from '@Functions/declaration/registerCreatedRecord';
 import { makeDeepCopy } from '@Tools/makeDeepCopy';
 import {
   getOfficialRecords,
@@ -85,19 +86,16 @@ export const officiatingEngine = (() => {
     // -----------------------------------------------------------------------
     // Mutations
     // -----------------------------------------------------------------------
-    createOfficialRecord: (params: any) => {
-      const result = createOfficialRecord(params);
-      if (result.error) return result;
-      const { officialRecord } = result;
-      if (!officialRecord) return result;
-
-      const existing = getOfficialRecord(officialRecord.officialRecordId);
-      if (existing) return { error: OFFICIAL_RECORD_EXISTS };
-
-      setOfficialRecord(officialRecord);
-      setActiveOfficialRecordId(officialRecord.officialRecordId);
-      return result;
-    },
+    createOfficialRecord: (params: any) =>
+      registerCreatedRecord({
+        result: createOfficialRecord(params),
+        recordKey: 'officialRecord',
+        idKey: 'officialRecordId',
+        getRecord: getOfficialRecord,
+        setRecord: setOfficialRecord,
+        setActiveId: setActiveOfficialRecordId,
+        existsError: OFFICIAL_RECORD_EXISTS,
+      }),
 
     // --- Certifications ---
     addCertification: (params: any) => {
