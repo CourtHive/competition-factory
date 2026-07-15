@@ -1,5 +1,24 @@
 # Changelog
 
+## [6.8.0](https://github.com/CourtHive/competition-factory/compare/v6.7.0...v6.8.0) (2026-07-15)
+
+
+### Features
+
+* **scheduling:** record cross-midnight match end via sparse END_DATE ([4636db9](https://github.com/CourtHive/competition-factory/commit/4636db9013a9019cef2ecc330cdecb265c8f2957))
+* **tournaments:** add getTournamentTimeZone resolver ([166ac32](https://github.com/CourtHive/competition-factory/commit/166ac3222431422d42d63dd39bdad37fc2f681a2))
+
+
+### Bug Fixes
+
+* **scheduling:** compare scheduled dates by calendar day in matchUpScheduleSort ([adb25ab](https://github.com/CourtHive/competition-factory/commit/adb25ab90d6412ec497bffb3ddbf9ceaab76ae40))
+
+
+### Documentation
+
+* **config:** revert explicit trailingSlash — it breaks relative doc links ([d01af59](https://github.com/CourtHive/competition-factory/commit/d01af590e797ca32eaba30c20fcda6d451274ef0))
+* **config:** set explicit trailingSlash true for github pages ([8b4bcae](https://github.com/CourtHive/competition-factory/commit/8b4bcae5a1f7b507aac989c3e6badfac8e92d62f))
+
 ## [6.7.0](https://github.com/CourtHive/competition-factory/compare/v6.6.0...v6.7.0) (2026-07-13)
 
 
