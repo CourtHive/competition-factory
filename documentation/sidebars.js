@@ -210,7 +210,13 @@ module.exports = {
         {
           type: 'category',
           label: 'Composition & Configuration',
-          items: ['engines/engine-methods', 'engines/typed-engine', 'engines/custom-engines', 'engines/global-state'],
+          items: [
+            'engines/engine-methods',
+            'engines/typed-engine',
+            'engines/custom-engines',
+            'engines/declaration-engine',
+            'engines/global-state',
+          ],
         },
         {
           type: 'category',
