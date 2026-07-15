@@ -12,6 +12,11 @@
   },
   "packageRules": [
     {
+      "description": "pnpm 11.12.0 self-installer regression breaks pnpm/action-setup in CI (integrity/undefined crash). Skip only that version; other pnpm updates allowed.",
+      "matchPackageNames": ["pnpm"],
+      "allowedVersions": "!/^11\\.12\\.0$/"
+    },
+    {
       "matchPackageNames": ["tods-competition-factory"],
       "matchFileNames": ["documentation/**"],
       "semanticCommitType": "chore"
