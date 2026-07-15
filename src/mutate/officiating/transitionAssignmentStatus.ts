@@ -1,14 +1,12 @@
-// Constants
-import { INVALID_VALUES } from '@Constants/errorConditionConstants';
-import { SUCCESS } from '@Constants/resultConstants';
+import { transitionRecordStatus } from '@Functions/declaration/transitionRecordStatus';
+
+// constants and types
 import {
   MISSING_OFFICIAL_RECORD,
   ASSIGNMENT_NOT_FOUND,
   INVALID_OFFICIATING_STATUS_TRANSITION,
   VALID_ASSIGNMENT_TRANSITIONS,
 } from '@Constants/officiatingConstants';
-
-// Types
 import type { OfficialRecord, AssignmentStatus, OfficialAssignment } from '@Types/officiatingTypes';
 
 type TransitionAssignmentStatusArgs = {
@@ -26,34 +24,20 @@ export function transitionAssignmentStatus({
   transitionedBy,
   reason,
 }: TransitionAssignmentStatusArgs): { error?: any; assignment?: OfficialAssignment; success?: boolean } {
-  if (!officialRecord) return { error: MISSING_OFFICIAL_RECORD };
-  if (!assignmentId) return { error: INVALID_VALUES, context: { message: 'Missing assignmentId' } } as any;
-  if (!toStatus) return { error: INVALID_VALUES, context: { message: 'Missing toStatus' } } as any;
-
-  const assignment = officialRecord.assignments.find((a) => a.assignmentId === assignmentId);
-  if (!assignment) return { error: ASSIGNMENT_NOT_FOUND, context: { assignmentId } } as any;
-
-  const validTargets = VALID_ASSIGNMENT_TRANSITIONS[assignment.status];
-  if (!validTargets?.includes(toStatus)) {
-    return {
-      error: INVALID_OFFICIATING_STATUS_TRANSITION,
-      context: { fromStatus: assignment.status, toStatus, validTargets },
-    } as any;
-  }
-
-  const now = new Date().toISOString();
-
-  assignment.statusHistory ??= [];
-  assignment.statusHistory.push({
-    fromStatus: assignment.status,
+  return transitionRecordStatus({
+    record: officialRecord,
+    collectionKey: 'assignments',
+    idKey: 'assignmentId',
+    entityId: assignmentId,
     toStatus,
-    transitionedAt: now,
     transitionedBy,
     reason,
+    machineDef: VALID_ASSIGNMENT_TRANSITIONS,
+    resultKey: 'assignment',
+    errors: {
+      missingRecord: MISSING_OFFICIAL_RECORD,
+      notFound: ASSIGNMENT_NOT_FOUND,
+      invalidTransition: INVALID_OFFICIATING_STATUS_TRANSITION,
+    },
   });
-
-  assignment.status = toStatus;
-  officialRecord.updatedAt = now;
-
-  return { ...SUCCESS, assignment };
 }
