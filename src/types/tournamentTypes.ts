@@ -382,6 +382,9 @@ export interface MatchUpSchedule {
   homeParticipantId?: string;
   official?: any;
   scheduledDate?: string;
+  // sparse: the calendar day (scheduledDate + 1) on which a matchUp's END_TIME
+  // falls when the match crossed midnight. Absent ⇒ the end is on scheduledDate.
+  endDate?: string;
   scheduledTime?: string;
   // CODES 5.0.0 first-class: ISO timestamp auto-captured the first time a
   // matchUp receives a meaningful score/winningSide. A lightweight proxy for

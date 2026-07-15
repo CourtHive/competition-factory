@@ -1,4 +1,12 @@
-import { convertTime, extractDate, extractTime, formatDate, getIsoDateString, validTimeValue } from '@Tools/dateTime';
+import {
+  convertTime,
+  dateStringDaysChange,
+  extractDate,
+  extractTime,
+  formatDate,
+  getIsoDateString,
+  validTimeValue,
+} from '@Tools/dateTime';
 import { setMatchUpHomeParticipantId } from '@Mutate/matchUps/schedule/scheduleItems/setMatchUpHomeParticipantId';
 import { setMatchUpFirstClassOrTimeItem } from '@Mutate/timeItems/matchUps/setMatchUpFirstClassOrTimeItem';
 import { addMatchUpScheduledTime, addMatchUpTimeModifiers } from '@Mutate/matchUps/schedule/scheduledTime';
@@ -27,6 +35,7 @@ import {
   STOP_TIME,
   RESUME_TIME,
   END_TIME,
+  END_DATE,
   COURT_ORDER,
   COURT_ANNOTATION,
 } from '@Constants/timeItemConstants';
@@ -662,6 +671,42 @@ export function addMatchUpStartTime({
   }
 }
 
+// Sanity cap for rolling an after-midnight END_TIME onto the next calendar day.
+// A same-day end that sorts before the latest START/STOP/RESUME is treated as
+// crossing midnight only if the rolled interval is within this span; beyond it,
+// the value is rejected as a genuine "end before start" error.
+const MAX_CROSS_MIDNIGHT_SPAN_MS = 12 * 60 * 60 * 1000;
+
+function resolveEndTimePlacement({
+  latestRelevantTimeValue,
+  validateTimeSeries,
+  scheduledDate,
+  endTime,
+}: {
+  latestRelevantTimeValue?: number;
+  validateTimeSeries?: boolean;
+  scheduledDate?: string;
+  endTime?: string;
+}): { acceptable: boolean; endDate?: string } {
+  const sameDayEnd = timeDate(endTime, scheduledDate);
+  if (!validateTimeSeries || !latestRelevantTimeValue || sameDayEnd > latestRelevantTimeValue) {
+    return { acceptable: true };
+  }
+
+  // The same-day end sorts at/before the latest START/STOP/RESUME — the match ran
+  // past midnight. Roll the end onto the following calendar day if the resulting
+  // span is plausible; otherwise it's a genuine end-before-start error.
+  if (scheduledDate) {
+    const endDate = dateStringDaysChange(scheduledDate, 1);
+    const rolledEnd = timeDate(endTime, endDate);
+    if (rolledEnd > latestRelevantTimeValue && rolledEnd - latestRelevantTimeValue <= MAX_CROSS_MIDNIGHT_SPAN_MS) {
+      return { acceptable: true, endDate };
+    }
+  }
+
+  return { acceptable: false };
+}
+
 export function addMatchUpEndTime({
   validateTimeSeries = true,
   removePriorValues,
@@ -687,29 +732,44 @@ export function addMatchUpEndTime({
     .map((timeItem) => timeDate(timeItem.itemValue, scheduledDate))
     .reduce((latest: any, timeValue) => (!latest || timeValue > latest ? timeValue : latest), undefined);
 
-  // END_TIME must be after any START_TIMEs, STOP_TIMEs, RESUME_TIMEs
-  if (!validateTimeSeries || !latestRelevantTimeValue || timeDate(endTime, scheduledDate) > latestRelevantTimeValue) {
-    // there can be only one END_TIME; if a prior END_TIME exists, remove it
-    if (matchUp?.timeItems) {
-      matchUp.timeItems = matchUp.timeItems.filter((timeItem) => timeItem.itemType !== END_TIME);
-    }
+  const placement = resolveEndTimePlacement({ latestRelevantTimeValue, validateTimeSeries, scheduledDate, endTime });
+  if (!placement.acceptable) return { error: INVALID_END_TIME };
 
-    // All times stored as military time
-    const militaryTime = convertTime(endTime, true, true);
-    const timeItem = { itemType: END_TIME, itemValue: militaryTime };
+  // there can be only one END_TIME / END_DATE; remove any prior values before writing
+  if (matchUp?.timeItems) {
+    matchUp.timeItems = matchUp.timeItems.filter(
+      (timeItem) => timeItem.itemType !== END_TIME && timeItem.itemType !== END_DATE,
+    );
+  }
 
-    return addMatchUpTimeItem({
+  // All times stored as military time; END_TIME stays a bare HH:MM value
+  const militaryTime = convertTime(endTime, true, true);
+  const endTimeResult: any = addMatchUpTimeItem({
+    duplicateValues: false,
+    removePriorValues,
+    tournamentRecord,
+    drawDefinition,
+    disableNotice,
+    matchUpId,
+    timeItem: { itemType: END_TIME, itemValue: militaryTime },
+  });
+  if (endTimeResult?.error) return endTimeResult;
+
+  // when the match crossed midnight, record the end's calendar day (scheduledDate + 1)
+  if (placement.endDate) {
+    const endDateResult: any = addMatchUpTimeItem({
       duplicateValues: false,
       removePriorValues,
       tournamentRecord,
       drawDefinition,
       disableNotice,
       matchUpId,
-      timeItem,
+      timeItem: { itemType: END_DATE, itemValue: placement.endDate },
     });
-  } else {
-    return { error: INVALID_END_TIME };
+    if (endDateResult?.error) return endDateResult;
   }
+
+  return endTimeResult;
 }
 
 function addChronologicalTimeItem({

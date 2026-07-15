@@ -24,6 +24,7 @@ import {
   ASSIGN_VENUE,
   COURT_ANNOTATION,
   COURT_ORDER,
+  END_DATE,
   HOME_PARTICIPANT_ID,
   SCHEDULED_DATE,
   SCHEDULED_TIME,
@@ -144,7 +145,8 @@ export function getMatchUpScheduleDetails(params: GetMatchUpScheduleDetailsArgs)
   const hasCompletedStatus = matchUp.matchUpStatus && completedMatchUpStatuses.includes(matchUp.matchUpStatus);
 
   const endDate =
-    (hasCompletedStatus && (extractDate(endTime) || extractDate(scheduledDate) || extractDate(scheduledTime))) ||
+    (hasCompletedStatus &&
+      (schedule?.endDate || extractDate(endTime) || extractDate(scheduledDate) || extractDate(scheduledTime))) ||
     undefined;
 
   return { schedule, endDate };
@@ -180,6 +182,7 @@ function buildFullSchedule({
   const scheduledTime = firstClass.scheduledTime ?? timeItemMap.get(SCHEDULED_TIME);
   const timeModifiers = firstClass.timeModifiers ?? timeItemMap.get(TIME_MODIFIERS);
   let scheduledDate = firstClass.scheduledDate ?? timeItemMap.get(SCHEDULED_DATE);
+  const endDate = firstClass.endDate ?? timeItemMap.get(END_DATE);
   const official = firstClass.official ?? timeItemMap.get(ASSIGN_OFFICIAL);
   const courtOrder = firstClass.courtOrder ?? timeItemMap.get(COURT_ORDER);
   const venueId = firstClass.venueId ?? timeItemMap.get(ASSIGN_VENUE);
@@ -219,6 +222,7 @@ function buildFullSchedule({
     scheduledDate,
     scheduledTime,
     isoDateString,
+    endDate,
     timeModifiers,
     venueName,
     venueId,

@@ -1,25 +1,42 @@
+import { getUTCdateString, dateStringDaysChange } from '@Tools/dateTime';
 import { validTimeString } from '@Validators/regex';
-import { getUTCdateString } from '@Tools/dateTime';
 
+import { START_TIME, STOP_TIME, RESUME_TIME, END_TIME, END_DATE, SCHEDULED_DATE } from '@Constants/timeItemConstants';
 import { MISSING_MATCHUP, MISSING_TIME_ITEMS } from '@Constants/errorConditionConstants';
-import { START_TIME, STOP_TIME, RESUME_TIME, END_TIME } from '@Constants/timeItemConstants';
 
-function timeDate(value) {
-  if (validTimeString.test(value)) {
-    const dateString = getUTCdateString();
-    return new Date(`${dateString}T${value}`);
-  } else {
-    return new Date(value);
-  }
+const MS_PER_DAY = 1000 * 60 * 60 * 24;
+
+function daysBetween(fromDate, toDate) {
+  return Math.round((new Date(toDate).getTime() - new Date(fromDate).getTime()) / MS_PER_DAY);
 }
 
 export function matchUpDuration({ matchUp }) {
   if (!matchUp) return { error: MISSING_MATCHUP };
   if (!matchUp.timeItems) return { error: MISSING_TIME_ITEMS };
 
+  // scheduledDate/endDate may be stored first-class (NATIVE writeMode) or as timeItems (legacy)
+  const firstClass = matchUp.schedule ?? {};
+  const scheduledDate =
+    firstClass.scheduledDate ?? matchUp.timeItems.find((timeItem) => timeItem?.itemType === SCHEDULED_DATE)?.itemValue;
+  const endDate =
+    firstClass.endDate ?? matchUp.timeItems.find((timeItem) => timeItem?.itemType === END_DATE)?.itemValue;
+
+  // Bare HH:MM time items are anchored to a single reference day. When a sparse
+  // END_DATE marks a match that crossed midnight, the END_TIME item is anchored
+  // that many calendar days later so the series sorts and the duration computes
+  // correctly. Absent END_DATE, all items share the reference day (unchanged).
+  const refDate = getUTCdateString();
+  const endOffsetDays = endDate && scheduledDate ? daysBetween(scheduledDate, endDate) : 0;
+  const endRefDate = endOffsetDays ? dateStringDaysChange(refDate, endOffsetDays) : refDate;
+  const timeDate = (value, itemType) => {
+    if (!validTimeString.test(value)) return new Date(value);
+    const dateString = itemType === END_TIME ? endRefDate : refDate;
+    return new Date(`${dateString}T${value}`);
+  };
+
   const relevantTimeItems = matchUp.timeItems
     .filter((timeItem) => [START_TIME, STOP_TIME, RESUME_TIME, END_TIME].includes(timeItem?.itemType))
-    .sort((a, b) => timeDate(a.itemValue).getTime() - timeDate(b.itemValue).getTime());
+    .sort((a, b) => timeDate(a.itemValue, a.itemType).getTime() - timeDate(b.itemValue, b.itemType).getTime());
 
   const elapsed = relevantTimeItems.reduce(
     (elapsed, timeItem) => {
@@ -33,7 +50,9 @@ export function matchUpDuration({ matchUp }) {
           break;
         case END_TIME:
           if (elapsed.lastValue && [START_TIME, RESUME_TIME].includes(elapsed.lastType)) {
-            const interval = timeDate(timeItem.itemValue).getTime() - timeDate(elapsed.lastValue).getTime();
+            const interval =
+              timeDate(timeItem.itemValue, timeItem.itemType).getTime() -
+              timeDate(elapsed.lastValue, elapsed.lastType).getTime();
             milliseconds = elapsed.milliseconds + interval;
           } else {
             milliseconds = elapsed.milliseconds;
@@ -41,7 +60,9 @@ export function matchUpDuration({ matchUp }) {
           break;
         case STOP_TIME:
           if ([START_TIME, RESUME_TIME].includes(elapsed.lastType)) {
-            const interval = timeDate(timeItem.itemValue).getTime() - timeDate(elapsed.lastValue).getTime();
+            const interval =
+              timeDate(timeItem.itemValue, timeItem.itemType).getTime() -
+              timeDate(elapsed.lastValue, elapsed.lastType).getTime();
             milliseconds = elapsed.milliseconds + interval;
           } else {
             milliseconds = elapsed.milliseconds;
@@ -61,7 +82,7 @@ export function matchUpDuration({ matchUp }) {
   );
 
   if ([START_TIME, RESUME_TIME].includes(elapsed.lastType)) {
-    const interval = new Date().getTime() - timeDate(elapsed.lastValue).getTime();
+    const interval = new Date().getTime() - timeDate(elapsed.lastValue, elapsed.lastType).getTime();
     elapsed.milliseconds += interval;
   }
 

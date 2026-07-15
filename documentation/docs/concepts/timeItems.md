@@ -98,6 +98,7 @@ The factory uses dot notation in `itemType` to create a hierarchical structure t
 'SCHEDULE.ASSIGNMENT.OFFICIAL'; // Official assignment
 'SCHEDULE.COURT.ORDER'; // Order of play position
 'SCHEDULE.DATE'; // Scheduled date
+'SCHEDULE.DATE.END'; // Calendar day the match ended, written only when it crossed midnight (sparse)
 'SCHEDULE.TIME.SCHEDULED'; // Scheduled time
 'SCHEDULE.TIME.START'; // Actual start time
 'SCHEDULE.TIME.STOP'; // Stop/interruption time
@@ -238,6 +239,18 @@ Time items on matchUps capture scheduling lifecycle and changes:
   createdAt: '2024-06-15T16:15:00Z'
 }
 ```
+
+#### Matches that cross midnight
+
+`START_TIME` / `STOP_TIME` / `RESUME_TIME` / `END_TIME` values are wall-clock times anchored to the matchUp's `scheduledDate`. When a match runs past midnight, its `END_TIME` (e.g. `'00:23'`) would otherwise sort _before_ the evening start on the same calendar day. Rather than encode a full timestamp in the time field, `addMatchUpEndTime` records the end's calendar day in a **sparse `SCHEDULE.DATE.END` time item** (`scheduledDate + 1`) and keeps `END_TIME` a bare `HH:MM` value:
+
+```js
+// scheduledDate '2026-07-11', match started 21:00, ended 00:23 the next day
+{ itemType: 'SCHEDULE.TIME.END', itemValue: '00:23', itemDate: '2026-07-11' }
+{ itemType: 'SCHEDULE.DATE.END', itemValue: '2026-07-12', itemDate: '2026-07-11' }
+```
+
+`SCHEDULE.DATE.END` is **sparse** — absent when the match ended on `scheduledDate`, in which case the end day is simply the scheduledDate. It surfaces on the hydrated `matchUp.schedule.endDate`, and `matchUpDuration` uses it to anchor the end time to the correct day so cross-midnight durations compute as a positive span. `addMatchUpEndTime` only rolls the end forward when the resulting span is within a sanity cap (12 hours); a larger gap is treated as a genuine end-before-start error and rejected. `scheduledDate`/`scheduledTime` stay separate date/time attributes — no timestamp is fused into the time field.
 
 **Duration Calculation Example**:
 

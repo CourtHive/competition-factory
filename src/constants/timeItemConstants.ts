@@ -9,6 +9,7 @@ export const COURT_ORDER = 'SCHEDULE.COURT.ORDER';
 export const COURT_ANNOTATION = 'SCHEDULE.COURT.ANNOTATION';
 
 export const SCHEDULED_DATE = 'SCHEDULE.DATE';
+export const END_DATE = 'SCHEDULE.DATE.END'; // sparse: written only when a matchUp's END_TIME falls on the day after scheduledDate (crosses midnight)
 export const COMPLETED_DATE = 'COMPLETED.DATE'; // considering adding this timeItem on completed score entry provided date is between tournament startDate/endDate
 
 export const HOME_PARTICIPANT_ID = 'HOME_PARTICIPANT_ID';
@@ -61,6 +62,7 @@ export const timeItemConstants = {
   COURT_ANNOTATION,
   COURT_ORDER,
   ELIGIBILITY,
+  END_DATE,
   END_TIME,
   FOLLOWED_BY,
   MEDICAL,
