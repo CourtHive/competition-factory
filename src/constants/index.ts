@@ -21,6 +21,7 @@ export { positionActionConstants } from './positionActionConstants';
 export { rankingConstants } from './rankingConstants';
 export { ratingConstants } from './ratingConstants';
 export { requestConstants } from './requestConstants';
+export { availabilityConstants } from './availabilityConstants';
 export { resourceContants } from './resourceConstants';
 export { resultConstants } from './resultConstants';
 export { scaleConstants } from './scaleConstants';

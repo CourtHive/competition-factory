@@ -2,6 +2,7 @@ export * from './formatWizardTypes';
 export * from './competitionFormat';
 export * from './officiatingTypes';
 export * from './sanctioningTypes';
+export * from './declarationTypes';
 export * from './tournamentTypes';
 export * from './rankingTypes';
 export * from './factoryTypes';

@@ -107,6 +107,11 @@ export { fixtures } from './fixtures';
 // PURE STATS — usable without an engine instance.
 export { computeRatingDistributionStats } from './query/formatWizard/distributionStats';
 
+// PURE — availability → personRequests translation (usable without an engine instance).
+// Maps a person's declared per-day availability to whole-day DO_NOT_SCHEDULE
+// personRequests for a tournament's scheduled dates. See declarations tier.
+export { translateAvailabilityToPersonRequests } from './mutate/matchUps/schedule/scheduleMatchUps/personRequests/translateAvailabilityToPersonRequests';
+
 // CONSTANTS -------------------------------------------------------------
 export * as factoryConstants from './constants';
 export * from './constants';

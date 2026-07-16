@@ -120,6 +120,50 @@ createDeclaration: (params) =>
 
 Everything population-specific — the record shape, the state machines, the error constants — stays in the consuming engine. The toolkit owns the mechanics that were previously copied.
 
+## Player availability (Phase 1)
+
+The first consumer of the declarations tier is **player availability** — a person's self-declared, per-day willingness to be scheduled. Factory owns two pure pieces of this: the payload types and a translation helper. It deliberately does **not** own the availability record's persistence or a dedicated engine instance — that lives in the declarations service (off the tournament-record path).
+
+### Payload
+
+```ts
+// src/types/declarationTypes.ts
+type DayState = 'AVAILABLE' | 'IF_NEEDED' | 'UNAVAILABLE'; // absent from `days` = NOT_SET
+
+type AvailabilityPayload = {
+  span: { from: string; to: string }; // rolling window, 'YYYY-MM-DD'
+  days: { [date: string]: DayState }; // sparse per-day map
+  timeAway?: { from: string; to: string; reason?: string }[]; // date ranges forcing UNAVAILABLE
+  currentThroughWeek?: string; // advisory "up to date as of" nudge
+};
+```
+
+Per-day, no times, in v1 — matching the reference collection UX. Time-of-day windows are a later extension gated on the factory timezone work.
+
+### `translateAvailabilityToPersonRequests`
+
+A pure function (no engine, no persistence) mapping a person's availability to the scheduler's existing negative vocabulary, windowed to a tournament's scheduled dates:
+
+```ts
+import { translateAvailabilityToPersonRequests } from 'tods-competition-factory';
+
+const { requests, ifNeededDates } = translateAvailabilityToPersonRequests({
+  availability, // AvailabilityPayload
+  dates, // the tournament's scheduled dates, 'YYYY-MM-DD'[]
+});
+// requests → apply via executionQueue([{ method: 'addPersonRequests', params: { personId, requests } }])
+```
+
+The three positive day-states translate as:
+
+| DayState              | Scheduler effect                                                                                   |
+| --------------------- | -------------------------------------------------------------------------------------------------- |
+| `UNAVAILABLE`         | A whole-day (`00:00`–`23:59`) `DO_NOT_SCHEDULE` personRequest — honored by `checkRequestConflicts` |
+| `IF_NEEDED`           | Advisory only — returned in `ifNeededDates`, never a request (no scheduler enforcement in v1)      |
+| `AVAILABLE`/`NOT_SET` | No constraint                                                                                      |
+
+A day inside any `timeAway` range is a hard `UNAVAILABLE` override, regardless of its explicit `days` state. Only dates present in the `dates` window produce output, so the same cross-tournament availability declaration windows cleanly to whichever tournament pulls it. This "translate first" path reuses the scheduler's first-class `DO_NOT_SCHEDULE` input and adds **zero** new engine surface.
+
 ## Related
 
 - **[Custom Engines](./custom-engines)** — assembling engine facades from factory functions
