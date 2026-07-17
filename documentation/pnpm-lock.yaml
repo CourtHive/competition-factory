@@ -42,7 +42,7 @@ importers:
         version: 19.2.7(react@19.2.7)
       tods-competition-factory:
         specifier: ^6.0.0
-        version: 6.5.0
+        version: 6.7.0
 
 packages:
 
@@ -5271,6 +5271,10 @@ packages:
 
   tods-competition-factory@6.5.0:
     resolution: {integrity: sha512-DRoJWk0f47Y/w/OoNr2wTqGvM1YaVoCib7S4K8gLiNpT2F57uupCnE41fEswpM+MuYOA7O/T+LSNhuT18nPXjg==}
+    engines: {node: '>=22'}
+
+  tods-competition-factory@6.7.0:
+    resolution: {integrity: sha512-tGmaVcO21+GKYMfghRRsYARb9XoEWzxnw0H4/m5N6T1gSKv089gzStvU0hJkI6xeR/f00iuZz4reQPGCYW2VtA==}
     engines: {node: '>=22'}
 
   toidentifier@1.0.1:
@@ -12593,6 +12597,8 @@ snapshots:
       is-number: 7.0.0
 
   tods-competition-factory@6.5.0: {}
+
+  tods-competition-factory@6.7.0: {}
 
   toidentifier@1.0.1: {}
 
