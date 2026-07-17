@@ -32,11 +32,6 @@
       "schedule": ["before 6am on monday"]
     },
     {
-      "description": "piscina is a transitive dev-only dep (via @nestjs/cli > @swc/cli, which expects 4.x). The pnpm override is a security floor (>=4.9.3 clears GHSA-x9g3-xrwr-cwfg); forcing 5.x only reintroduces an @swc/cli peer mismatch with no benefit. Pin to 4.x.",
-      "matchPackageNames": ["piscina"],
-      "allowedVersions": "<5"
-    },
-    {
       "description": "Block TypeScript major bumps. TS7 ships the native (Go) compiler, whose JS API shim lacks getParsedCommandLineOfConfigFile — nest/tsc-based build toolchains crash on it. Re-enable deliberately once the toolchain supports TS7.",
       "matchPackageNames": ["typescript"],
       "matchUpdateTypes": ["major"],
