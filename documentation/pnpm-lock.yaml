@@ -5273,6 +5273,10 @@ packages:
     resolution: {integrity: sha512-tGmaVcO21+GKYMfghRRsYARb9XoEWzxnw0H4/m5N6T1gSKv089gzStvU0hJkI6xeR/f00iuZz4reQPGCYW2VtA==}
     engines: {node: '>=22'}
 
+  tods-competition-factory@6.7.0:
+    resolution: {integrity: sha512-tGmaVcO21+GKYMfghRRsYARb9XoEWzxnw0H4/m5N6T1gSKv089gzStvU0hJkI6xeR/f00iuZz4reQPGCYW2VtA==}
+    engines: {node: '>=22'}
+
   toidentifier@1.0.1:
     resolution: {integrity: sha512-o5sSPKEkg/DIQNmH43V0/uerLrpzVedkUh8tGNvaeXpfpuwjKenlSox/2O/BTlZUtEe+JG7s5YhEz608PlAHRA==}
     engines: {node: '>=0.6'}
@@ -12591,6 +12595,8 @@ snapshots:
   to-regex-range@5.0.1:
     dependencies:
       is-number: 7.0.0
+
+  tods-competition-factory@6.7.0: {}
 
   tods-competition-factory@6.7.0: {}
 
