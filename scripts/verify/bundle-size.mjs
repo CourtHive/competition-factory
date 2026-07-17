@@ -11,7 +11,7 @@
  *   --budget=N             override growth threshold (decimal, default 0.10)
  */
 import { gzipSync } from 'node:zlib';
-import { existsSync, mkdirSync, readFileSync, statSync, writeFileSync } from 'node:fs';
+import { existsSync, mkdirSync, readFileSync, readdirSync, writeFileSync } from 'node:fs';
 import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
@@ -24,7 +24,6 @@ const DIST = join(FACTORY_ROOT, 'dist');
 // included in published tarballs by default and are excluded here too.
 const TRACKED = [
   'index.js',
-  'index.mjs',
   'tods-competition-factory.d.ts',
   'tods-competition-factory.d.mts',
   'tods-competition-factory.d.cts',
@@ -50,6 +49,16 @@ function parseArgs(argv) {
   return args;
 }
 
+function walk(dir) {
+  const out = [];
+  for (const entry of readdirSync(dir, { withFileTypes: true })) {
+    const full = join(dir, entry.name);
+    if (entry.isDirectory()) out.push(...walk(full));
+    else out.push(full);
+  }
+  return out;
+}
+
 function measure() {
   const result = {};
   for (const name of TRACKED) {
@@ -61,6 +70,22 @@ function measure() {
     const raw = readFileSync(path);
     const gzipped = gzipSync(raw, { level: 9 });
     result[name] = { raw: raw.length, gzip: gzipped.length };
+  }
+  // The ESM build (exports.import) is a preserveModules tree of ~1200 files
+  // rather than one artifact — budget its aggregate .mjs size as a single line.
+  const esmDir = join(DIST, 'esm');
+  if (existsSync(esmDir)) {
+    let raw = 0;
+    let gzip = 0;
+    let files = 0;
+    for (const file of walk(esmDir)) {
+      if (!file.endsWith('.mjs')) continue;
+      const buf = readFileSync(file);
+      raw += buf.length;
+      gzip += gzipSync(buf, { level: 9 }).length;
+      files += 1;
+    }
+    result['esm/** (aggregate)'] = { raw, gzip, files };
   }
   return result;
 }

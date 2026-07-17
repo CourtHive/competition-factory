@@ -3,8 +3,8 @@
  * Codegen: emit src/types/factoryEngineMethods.ts containing a string-literal
  * union of every function-typed property on the singleton `tournamentEngine`.
  *
- * Runs the real engine assembly through esbuild (same pipeline as the
- * production `dist/index.mjs` build) and introspects `Object.keys(engine)`
+ * Runs the real engine assembly through esbuild (bundled in-memory to
+ * introspect the runtime surface) and introspects `Object.keys(engine)`
  * filtered to `typeof === 'function'`. This is the source of truth — what
  * `importMethods(governors, true, 1)` actually exposes at runtime.
  *

@@ -36,13 +36,13 @@
     "url": "git+https://github.com/CourtHive/competition-factory.git"
   },
   "main": "dist/index.js",
-  "module": "dist/index.mjs",
+  "module": "dist/esm/index.mjs",
   "type": "commonjs",
   "exports": {
     ".": {
       "import": {
         "types": "./dist/tods-competition-factory.d.mts",
-        "default": "./dist/index.mjs"
+        "default": "./dist/esm/index.mjs"
       },
       "require": {
         "types": "./dist/tods-competition-factory.d.cts",
@@ -96,8 +96,7 @@
     "gen:method-signatures": "node scripts/generateMethodSignatures.mjs",
     "check:method-signatures": "node scripts/generateMethodSignatures.mjs --check",
     "prebuild": "node scripts/generateEngineMethods.mjs && node scripts/generateMethodSignatures.mjs",
-    "build": "rimraf dist && rollup --config && ./esbuild.mjs",
-    "esm": "rimraf dist && ./esbuild.mjs",
+    "build": "rimraf dist && rollup --config && node postbuild.mjs",
     "test": "VITE_CJS_IGNORE_WARNING=true vitest",
     "test:server": "jest",
     "test:server-debug": "node --inspect-brk -r tsconfig-paths/register -r ts-node/register node_modules/jest/bin/jest --runInBand",
@@ -117,16 +116,16 @@
     "prepublishOnly": "pinst --disable && pnpm verify",
     "postpublish": "pinst --enable",
     "docs:publish": "cd documentation && GIT_USER=CourtHive USE_SSH=true pnpm docpub",
-    "shakeable": "npx agadoo dist/tods-competition-factory.production.cjs.min.js",
+    "shakeable": "node scripts/verify/shakeable.mjs",
     "check-types": "tsc --noEmit",
-    "verify": "pnpm verify:types && pnpm verify:lint && pnpm verify:coverage && pnpm verify:server && pnpm verify:audit && pnpm verify:build && pnpm verify:publint && pnpm verify:runtime && pnpm verify:bundle-size && pnpm verify:surface && pnpm verify:pack",
+    "verify": "pnpm verify:types && pnpm verify:lint && pnpm verify:coverage && pnpm verify:server && pnpm verify:audit && pnpm verify:build && pnpm verify:publint && pnpm verify:runtime && pnpm verify:shakeable && pnpm verify:bundle-size && pnpm verify:surface && pnpm verify:pack",
     "verify:all": "pnpm verify && pnpm verify:ecosystem",
     "verify:types": "tsc --noEmit",
     "verify:lint": "eslint src --cache --max-warnings 0",
     "verify:coverage": "vitest run --coverage",
     "verify:server": "jest",
-    "verify:shakeable": "npx agadoo dist/tods-competition-factory.production.cjs.min.js",
-    "verify:build": "rimraf dist && rollup --config && ./esbuild.mjs",
+    "verify:shakeable": "node scripts/verify/shakeable.mjs",
+    "verify:build": "rimraf dist && rollup --config && node postbuild.mjs",
     "verify:audit": "node scripts/verify/audit.mjs",
     "verify:publint": "node scripts/verify/publint.mjs",
     "verify:pack": "node scripts/verify/pack.mjs",

@@ -7,7 +7,7 @@
  * shaped returns. Catches "compiles but doesn't run" regressions.
  *
  * The CJS path imports the dist via require('./tods-competition-factory.development.cjs.js').
- * The ESM path imports via import statements against dist/index.mjs.
+ * The ESM path imports via import statements against dist/esm/index.mjs.
  *
  * No npm install required — we point Node directly at the dist files.
  */
@@ -80,7 +80,7 @@ try {
 // --- ESM smoke ---
 log('ESM: dynamic import + engine smoke…');
 const esmScript = `
-const fac = await import('file://' + ${JSON.stringify(FACTORY_ROOT)} + '/dist/index.mjs');
+const fac = await import('file://' + ${JSON.stringify(FACTORY_ROOT)} + '/dist/esm/index.mjs');
 const required = ['tournamentEngine', 'syncEngine', 'mocksEngine', 'globalState', 'forge', 'factoryConstants', 'topicConstants', 'version'];
 for (const k of required) {
   if (fac[k] === undefined) { console.error('missing export:', k); process.exit(1); }
