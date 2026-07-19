@@ -148,6 +148,64 @@ engine.assignMatchUpCourt({
 
 ---
 
+### assignMatchUpScorekeeper
+
+Nominates a tournament participant as the official **scorekeeper** of a matchUp.
+The nominee must be an `INDIVIDUAL` participant in the tournament; unlike an
+official there is no role restriction — a competitor may also be nominated to
+keep score. Stored the same way as court/official assignments (a
+`SCHEDULE.ASSIGNMENT.SCOREKEEPER` first-class value surfaced as
+`matchUp.schedule.scorekeeper`). Not cleared by rescheduling.
+
+```js
+engine.assignMatchUpScorekeeper({
+  matchUpId, // required
+  drawId, // required
+  participantId, // required - an INDIVIDUAL participant in the tournament
+  disableNotice, // optional boolean - suppress notifications
+});
+```
+
+Clear a nomination with `removeMatchUpScorekeeper`:
+
+```js
+engine.removeMatchUpScorekeeper({ matchUpId, drawId });
+```
+
+A participant may instead (or additionally) be approved to keep score for **any**
+matchUp by carrying the `SCOREKEEPER` role in `participantRoleResponsibilities`
+(set via `modifyParticipant`), which is filterable via `getParticipants`:
+
+```js
+engine.modifyParticipant({
+  participant: { participantId, participantRoleResponsibilities: ['SCOREKEEPER'] },
+});
+```
+
+---
+
+### assignMatchUpTimekeeper
+
+Assigns a tournament participant as the **timekeeper** of a matchUp — relevant
+for timed `matchUpFormat`s (e.g. INTENNSE bolt/serve clocks). Same participant
+rule and storage as the scorekeeper (a `SCHEDULE.ASSIGNMENT.TIMEKEEPER`
+first-class value surfaced as `matchUp.schedule.timekeeper`). Not cleared by
+rescheduling. The `TIMEKEEPER` role is also available as a
+`participantRoleResponsibility`.
+
+```js
+engine.assignMatchUpTimekeeper({
+  matchUpId, // required
+  drawId, // required
+  participantId, // required - an INDIVIDUAL participant in the tournament
+  disableNotice, // optional boolean - suppress notifications
+});
+
+engine.removeMatchUpTimekeeper({ matchUpId, drawId });
+```
+
+---
+
 ## Automated Scheduling Methods
 
 ### scheduleMatchUps

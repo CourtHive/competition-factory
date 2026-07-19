@@ -21,6 +21,8 @@ import {
   ALLOCATE_COURTS,
   ASSIGN_COURT,
   ASSIGN_OFFICIAL,
+  ASSIGN_SCOREKEEPER,
+  ASSIGN_TIMEKEEPER,
   ASSIGN_VENUE,
   COURT_ANNOTATION,
   COURT_ORDER,
@@ -184,6 +186,8 @@ function buildFullSchedule({
   let scheduledDate = firstClass.scheduledDate ?? timeItemMap.get(SCHEDULED_DATE);
   const endDate = firstClass.endDate ?? timeItemMap.get(END_DATE);
   const official = firstClass.official ?? timeItemMap.get(ASSIGN_OFFICIAL);
+  const scorekeeper = firstClass.scorekeeper ?? timeItemMap.get(ASSIGN_SCOREKEEPER);
+  const timekeeper = firstClass.timekeeper ?? timeItemMap.get(ASSIGN_TIMEKEEPER);
   const courtOrder = firstClass.courtOrder ?? timeItemMap.get(COURT_ORDER);
   const venueId = firstClass.venueId ?? timeItemMap.get(ASSIGN_VENUE);
   const courtId = firstClass.courtId ?? timeItemMap.get(ASSIGN_COURT);
@@ -230,6 +234,8 @@ function buildFullSchedule({
     courtName,
     courtId,
     official,
+    scorekeeper,
+    timekeeper,
     milliseconds,
     startTime,
     endTime,

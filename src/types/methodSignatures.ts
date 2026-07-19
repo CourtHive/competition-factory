@@ -127,6 +127,10 @@ import type {
 } from '@Mutate/participants/removeIndividualParticipantIds';
 import type { removeMatchUpSideParticipant } from '@Mutate/matchUps/sides/removeMatchUpSideParticipant';
 import type { resolveDraftPositions } from '@Mutate/drawDefinitions/draft/resolveDraftPositions';
+import type {
+  assignMatchUpScorekeeper,
+  removeMatchUpScorekeeper,
+} from '@Mutate/matchUps/schedule/assignMatchUpScorekeeper';
 import type { copyTournamentRecord } from '@Generators/tournamentRecords/copyTournamentRecord';
 import type { generateVirtualCourts } from '@Generators/scheduling/utils/generateVirtualCourts';
 import type { getTournamentActionableMatchUps } from '@Query/tournaments/getTournamentActionableMatchUps';
@@ -134,6 +138,10 @@ import type { removeDelegatedOutcome } from '@Mutate/extensions/matchUps/removeD
 import type { addDrawDefinitionTimeItem } from '@Mutate/drawDefinitions/addDrawDefinitionTimeItem';
 import type { addDynamicRatings } from '@Mutate/participants/scaleItems/addDynamicRatings';
 import type { addMutationLock } from '@Mutate/tournaments/mutationLocks/addMutationLock';
+import type {
+  assignMatchUpTimekeeper,
+  removeMatchUpTimekeeper,
+} from '@Mutate/matchUps/schedule/assignMatchUpTimekeeper';
 import type { attachQualifyingStructure } from '@Mutate/drawDefinitions/attachQualifyingStructure';
 import type { getAvailablePlayoffProfiles } from '@Query/drawDefinition/getAvailablePlayoffProfiles';
 import type { getStructureInconsistencies } from '@Query/drawDefinition/getStructureInconsistencies';
@@ -646,7 +654,9 @@ export interface MethodSignatures {
   assignDrawPosition: EngineMethod<typeof assignDrawPosition>;
   assignDrawPositionBye: EngineMethod<typeof assignDrawPositionBye>;
   assignMatchUpCourt: EngineMethod<typeof assignMatchUpCourt>;
+  assignMatchUpScorekeeper: EngineMethod<typeof assignMatchUpScorekeeper>;
   assignMatchUpSideParticipant: EngineMethod<typeof assignMatchUpSideParticipant>;
+  assignMatchUpTimekeeper: EngineMethod<typeof assignMatchUpTimekeeper>;
   assignMatchUpVenue: EngineMethod<typeof assignMatchUpVenue>;
   assignOfficial: EngineMethod<typeof assignOfficial>;
   assignSeedPositions: EngineMethod<typeof assignSeedPositions>;
@@ -1002,7 +1012,9 @@ export interface MethodSignatures {
   removeIndividualParticipantIds: EngineMethod<typeof removeIndividualParticipantIds>;
   removeMatchUpCourtAssignment: EngineMethod<typeof removeMatchUpCourtAssignment>;
   removeMatchUpOutcome: EngineMethod<typeof removeMatchUpOutcome>;
+  removeMatchUpScorekeeper: EngineMethod<typeof removeMatchUpScorekeeper>;
   removeMatchUpSideParticipant: EngineMethod<typeof removeMatchUpSideParticipant>;
+  removeMatchUpTimekeeper: EngineMethod<typeof removeMatchUpTimekeeper>;
   removeMutationLock: EngineMethod<typeof removeMutationLock>;
   removeNotes: EngineMethod<typeof removeNotes>;
   removeOfficialAssignment: EngineMethod<typeof removeOfficialAssignment>;

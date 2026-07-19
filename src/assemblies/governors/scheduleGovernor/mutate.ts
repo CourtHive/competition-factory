@@ -25,6 +25,8 @@ export { scheduleProfileGrid } from '@Mutate/matchUps/schedule/scheduleProfileGr
 export { addMatchUpScheduledTime } from '@Mutate/matchUps/schedule/scheduledTime';
 export { setMatchUpDailyLimits } from '@Mutate/tournaments/setMatchUpDailyLimits';
 export { assignMatchUpCourt } from '@Mutate/matchUps/schedule/assignMatchUpCourt';
+export { assignMatchUpScorekeeper, removeMatchUpScorekeeper } from '@Mutate/matchUps/schedule/assignMatchUpScorekeeper';
+export { assignMatchUpTimekeeper, removeMatchUpTimekeeper } from '@Mutate/matchUps/schedule/assignMatchUpTimekeeper';
 export { assignMatchUpVenue } from '@Mutate/matchUps/schedule/assignMatchUpVenue';
 export { setMatchUpCalledAt } from '@Mutate/matchUps/schedule/setMatchUpCalledAt';
 export { generateBookings } from '@Generators/scheduling/utils/generateBookings';

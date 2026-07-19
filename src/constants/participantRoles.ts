@@ -16,9 +16,19 @@ export const MEDICAL: any = 'MEDICAL';
 export const OFFICIAL: any = 'OFFICIAL';
 export const OTHER: any = 'OTHER';
 export const PHYSIO: any = 'PHYSIO';
+// SCOREKEEPER: a participant approved to keep score for matchUps (crowd-scoring
+// nomination). Carried as a primary role for a dedicated scorekeeper, or (more
+// commonly) as a participantRoleResponsibility on a competitor/official who may
+// also keep score. Aligns with the existing INTENNSE "scorekeeper" workflow.
+export const SCOREKEEPER: any = 'SCOREKEEPER';
 export const SECURITY: any = 'SECURITY';
 export const STRINGER: any = 'STRINGER';
 export const SUPERVISOR: any = 'SUPERVISOR';
+// TIMEKEEPER: a participant responsible for the match clock. Becomes relevant
+// for timed matchUpFormats (e.g. INTENNSE bolt/serve clocks). Role-only today;
+// a per-matchUp assignMatchUpTimekeeper can mirror the scorekeeper mutation when
+// timed formats need a nominated timekeeper.
+export const TIMEKEEPER: any = 'TIMEKEEPER';
 export const TRAINER: any = 'TRAINER';
 export const TRANSPORT: any = 'TRANSPORT';
 export const VOLUNTEER: any = 'VOLUNTEER';
@@ -35,9 +45,11 @@ export const participantRoles = {
   OFFICIAL,
   OTHER,
   PHYSIO,
+  SCOREKEEPER,
   SECURITY,
   STRINGER,
   SUPERVISOR,
+  TIMEKEEPER,
   TRAINER,
   TRANSPORT,
   VOLUNTEER,

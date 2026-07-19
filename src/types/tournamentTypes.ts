@@ -381,6 +381,12 @@ export interface MatchUpSchedule {
   courtOrder?: number;
   homeParticipantId?: string;
   official?: any;
+  // participantId of a nominated scorekeeper for this matchUp (crowd-scoring Phase D).
+  // SCHEDULE.ASSIGNMENT.SCOREKEEPER first-class value; not cleared by rescheduling.
+  scorekeeper?: any;
+  // participantId of an assigned timekeeper (timed matchUpFormats).
+  // SCHEDULE.ASSIGNMENT.TIMEKEEPER first-class value; not cleared by rescheduling.
+  timekeeper?: any;
   scheduledDate?: string;
   // sparse: the calendar day (scheduledDate + 1) on which a matchUp's END_TIME
   // falls when the match crossed midnight. Absent ⇒ the end is on scheduledDate.

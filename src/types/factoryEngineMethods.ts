@@ -86,7 +86,9 @@ export type FactoryEngineMethod =
   | 'assignDrawPosition'
   | 'assignDrawPositionBye'
   | 'assignMatchUpCourt'
+  | 'assignMatchUpScorekeeper'
   | 'assignMatchUpSideParticipant'
+  | 'assignMatchUpTimekeeper'
   | 'assignMatchUpVenue'
   | 'assignOfficial'
   | 'assignSeedPositions'
@@ -492,7 +494,9 @@ export type FactoryEngineMethod =
   | 'removeIndividualParticipantIds'
   | 'removeMatchUpCourtAssignment'
   | 'removeMatchUpOutcome'
+  | 'removeMatchUpScorekeeper'
   | 'removeMatchUpSideParticipant'
+  | 'removeMatchUpTimekeeper'
   | 'removeMutationLock'
   | 'removeNotes'
   | 'removeOfficialAssignment'
@@ -721,7 +725,9 @@ export const FACTORY_ENGINE_METHODS: readonly FactoryEngineMethod[] = [
   'assignDrawPosition',
   'assignDrawPositionBye',
   'assignMatchUpCourt',
+  'assignMatchUpScorekeeper',
   'assignMatchUpSideParticipant',
+  'assignMatchUpTimekeeper',
   'assignMatchUpVenue',
   'assignOfficial',
   'assignSeedPositions',
@@ -1127,7 +1133,9 @@ export const FACTORY_ENGINE_METHODS: readonly FactoryEngineMethod[] = [
   'removeIndividualParticipantIds',
   'removeMatchUpCourtAssignment',
   'removeMatchUpOutcome',
+  'removeMatchUpScorekeeper',
   'removeMatchUpSideParticipant',
+  'removeMatchUpTimekeeper',
   'removeMutationLock',
   'removeNotes',
   'removeOfficialAssignment',
