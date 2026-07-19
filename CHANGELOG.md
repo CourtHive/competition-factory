@@ -1,5 +1,14 @@
 # Changelog
 
+## [6.9.0](https://github.com/CourtHive/competition-factory/compare/v6.8.1...v6.9.0) (2026-07-19)
+
+
+### Features
+
+* **declarations:** availability payload types + translateAvailabilityToPersonRequests ([2e2dd3b](https://github.com/CourtHive/competition-factory/commit/2e2dd3b122bc4238ab83f126420b979a4fe4daeb))
+* **sanctioning:** openProposalRegistration mutation ([261eab3](https://github.com/CourtHive/competition-factory/commit/261eab3f2df479e92018545c5ed5d41b02bdc797))
+* **sanctioning:** pre-assignable tournamentId on the proposal ([d7e2307](https://github.com/CourtHive/competition-factory/commit/d7e23075810aee1c2f4d71831fc759ed149e9045))
+
 ## [6.8.1](https://github.com/CourtHive/competition-factory/compare/v6.8.0...v6.8.1) (2026-07-15)
 
 
