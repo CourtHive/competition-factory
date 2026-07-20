@@ -1,5 +1,13 @@
 # Changelog
 
+## [6.10.0](https://github.com/CourtHive/competition-factory/compare/v6.9.0...v6.10.0) (2026-07-20)
+
+
+### Features
+
+* **query:** expose parentOrganisation on getTournamentInfo ([52b43f7](https://github.com/CourtHive/competition-factory/commit/52b43f795676b5440c7eb8bc7ce805c9dd1aa4ef))
+* **scheduling:** add matchUp scorekeeper/timekeeper assignment + participant roles ([6cb8088](https://github.com/CourtHive/competition-factory/commit/6cb8088a6fa76865fd0fd0f7c029471c0006de4b))
+
 ## [6.9.0](https://github.com/CourtHive/competition-factory/compare/v6.8.1...v6.9.0) (2026-07-19)
 
 
