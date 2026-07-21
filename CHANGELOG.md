@@ -1,5 +1,12 @@
 # Changelog
 
+## [6.11.0](https://github.com/CourtHive/competition-factory/compare/v6.10.0...v6.11.0) (2026-07-21)
+
+
+### Features
+
+* **sanctioning:** thread stable eventId from proposal through activation ([c9cbbea](https://github.com/CourtHive/competition-factory/commit/c9cbbeaaea082dfca7bb8ae032cf417977849144))
+
 ## [6.10.0](https://github.com/CourtHive/competition-factory/compare/v6.9.0...v6.10.0) (2026-07-20)
 
 
