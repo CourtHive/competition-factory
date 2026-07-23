@@ -1187,6 +1187,83 @@ engine.setSchedulingProfile({ schedulingProfile });
 
 ---
 
+## Schedule Scenario Methods
+
+Named alternate ("contingency") scheduling plans stored first-class on `tournamentRecord.scheduling.scenarios`. See **[Schedule Scenarios](../concepts/schedule-scenarios)** for the full concept.
+
+### addScheduleScenario
+
+Creates an alternate scheduling plan. `scenarioName` is required; `scenarioId` is generated when omitted. The scenario is validated before it is stored.
+
+```js
+const { scenarioId } = engine.addScheduleScenario({
+  scenario: {
+    scenarioName, // required
+    scheduledDates, // optional - ISO 'YYYY-MM-DD' dates the plan re-plans
+    placements, // ScenarioPlacement[] — a bulkScheduleMatchUps matchUpDetails payload
+  },
+});
+```
+
+---
+
+### getScheduleScenarios / getScheduleScenario
+
+Reads stored scenarios.
+
+```js
+engine.getScheduleScenarios(); // → { scenarios: ScheduleScenario[] }
+engine.getScheduleScenario({ scenarioId }); // → { scenario } | { error }
+```
+
+---
+
+### updateScheduleScenario
+
+Merges `updates` over an existing scenario (preserving `scenarioId`) and re-validates.
+
+```js
+engine.updateScheduleScenario({
+  scenarioId, // required
+  updates, // Partial<ScheduleScenario>
+});
+```
+
+---
+
+### removeScheduleScenario
+
+```js
+engine.removeScheduleScenario({ scenarioId });
+```
+
+---
+
+### applyScheduleScenario
+
+Commits a scenario's placements as the official schedule via `bulkScheduleMatchUps`. **Skips completed matchUps** by default; `removePriorValues` defaults to `true`. The scenario is left in place after commit.
+
+```js
+const result = engine.applyScheduleScenario({
+  scenarioId, // required
+  removePriorValues, // optional - default true
+  scheduleCompletedMatchUps, // optional - default false
+});
+// → { success: true, applied: <matchUps scheduled>, ... }
+```
+
+---
+
+### validateScheduleScenario
+
+Shape + light referential validation for a scenario object (used internally by add/update).
+
+```js
+engine.validateScheduleScenario({ scenario }); // → { valid: boolean, error?, info? }
+```
+
+---
+
 ### setMatchUpDailyLimits
 
 Sets daily limits for participant matchUp participation.

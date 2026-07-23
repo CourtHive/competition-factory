@@ -5,6 +5,7 @@ export { getScheduleProjection } from '@Query/facilitySchedule/getScheduleProjec
 export { mergeFacilitySchedule } from '@Query/facilitySchedule/mergeFacilitySchedule';
 export { getPersonRequests } from '@Query/matchUps/scheduling/getPersonRequests';
 export { getProfileRounds } from '@Query/matchUps/scheduling/getProfileRounds';
+export { getScheduleScenarios, getScheduleScenario } from '@Mutate/tournaments/scheduleScenarios';
 export { getSchedulingProfile } from '@Mutate/tournaments/schedulingProfile';
 export { courtGridRows } from '@Generators/scheduling/courtGridRows';
 export { publicFindCourt } from '@Query/venues/findCourt';

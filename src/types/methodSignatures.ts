@@ -159,6 +159,7 @@ import type { generateOutcomeFromScoreString } from '@Generators/mocks/generateO
 import type { qualifierDrawPositionAssignment } from '@Mutate/matchUps/drawPositions/positionQualifier';
 import type { resetQualifyingStructure } from '@Mutate/drawDefinitions/resetQualifyingStructure';
 import type { addCertificationRequirement } from '@Mutate/officiating/addCertificationRequirement';
+import type { applyScheduleScenario } from '@Mutate/matchUps/schedule/applyScheduleScenario';
 import type { getAssignedParticipantIds } from '@Query/drawDefinition/getAssignedParticipantIds';
 import type { getDrawTypeCoercion } from '@Generators/drawDefinitions/getDrawTypeCoercion';
 import type { getTournamentInconsistencies } from '@Query/tournaments/getTournamentInconsistencies';
@@ -351,6 +352,13 @@ import type {
 import type { suggestFormatPlans } from '@Query/formatWizard/suggestFormatPlans';
 import type { unPublishOrderOfPlay } from '@Mutate/timeItems/unPublishOrderOfPlay';
 import type { addPersonOtherId } from '@Mutate/participants/addPersonOtherId';
+import type {
+  addScheduleScenario,
+  getScheduleScenario,
+  getScheduleScenarios,
+  removeScheduleScenario,
+  updateScheduleScenario,
+} from '@Mutate/tournaments/scheduleScenarios';
 import type { aggregateTieFormats } from '@Mutate/tieFormat/aggregateTieFormats';
 import type { applyLineUps } from '@Mutate/matchUps/lineUps/applyLineUps';
 import type { calculateMatchUpMargin } from '@Query/matchUp/calculateMatchUpMargin';
@@ -392,6 +400,7 @@ import type { refreshEventDrawOrder } from '@Mutate/events/refreshEventDrawOrder
 import type { removeEvaluation } from '@Mutate/officiating/removeEvaluation';
 import type { removeSuspension } from '@Mutate/officiating/removeSuspension';
 import type { stringify } from '@Helpers/matchUpFormatCode/stringify';
+import type { validateScheduleScenario } from '@Validators/validateScheduleScenario';
 import type { addAdHocMatchUps } from '@Mutate/structures/addAdHocMatchUps';
 import type { addParticipant } from '@Mutate/participants/addParticipant';
 import type { allEventMatchUps } from '@Query/matchUps/getAllEventMatchUps';
@@ -626,6 +635,7 @@ export interface MethodSignatures {
   addPoint: EngineMethod<typeof addPoint>;
   addPracticeRegistration: EngineMethod<typeof addPracticeRegistration>;
   addQualifyingStructure: EngineMethod<typeof addQualifyingStructure>;
+  addScheduleScenario: EngineMethod<typeof addScheduleScenario>;
   addSchedulingProfileRound: EngineMethod<typeof addSchedulingProfileRound>;
   addSuspension: EngineMethod<typeof addSuspension>;
   addTimeItem: EngineMethod<typeof addTimeItem>;
@@ -651,6 +661,7 @@ export interface MethodSignatures {
   anonymizeTournamentRecord: EngineMethod<typeof anonymizeTournamentRecord>;
   applyDerivedRankings: EngineMethod<typeof applyDerivedRankings>;
   applyLineUps: EngineMethod<typeof applyLineUps>;
+  applyScheduleScenario: EngineMethod<typeof applyScheduleScenario>;
   applyTournamentRankingPoints: EngineMethod<typeof applyTournamentRankingPoints>;
   assignDrawPosition: EngineMethod<typeof assignDrawPosition>;
   assignDrawPositionBye: EngineMethod<typeof assignDrawPositionBye>;
@@ -877,6 +888,8 @@ export interface MethodSignatures {
   getScaleValues: EngineMethod<typeof getScaleValues>;
   getScheduledRoundsDetails: EngineMethod<typeof getScheduledRoundsDetails>;
   getScheduleProjection: EngineMethod<typeof getScheduleProjection>;
+  getScheduleScenario: EngineMethod<typeof getScheduleScenario>;
+  getScheduleScenarios: EngineMethod<typeof getScheduleScenarios>;
   getSchedulingProfile: EngineMethod<typeof getSchedulingProfile>;
   getSchedulingProfileIssues: EngineMethod<typeof getSchedulingProfileIssues>;
   getScore: EngineMethod<typeof getScore>;
@@ -1031,6 +1044,7 @@ export interface MethodSignatures {
   removeRatings: EngineMethod<typeof removeRatings>;
   removeRoundMatchUps: EngineMethod<typeof removeRoundMatchUps>;
   removeScaleValues: EngineMethod<typeof removeScaleValues>;
+  removeScheduleScenario: EngineMethod<typeof removeScheduleScenario>;
   removeSeededParticipant: EngineMethod<typeof removeSeededParticipant>;
   removeSeeding: EngineMethod<typeof removeSeeding>;
   removeStageEntries: EngineMethod<typeof removeStageEntries>;
@@ -1117,6 +1131,7 @@ export interface MethodSignatures {
   updateDrawIdsOrder: EngineMethod<typeof updateDrawIdsOrder>;
   updateParticipantResults: EngineMethod<typeof updateParticipantResults>;
   updatePracticeRegistration: EngineMethod<typeof updatePracticeRegistration>;
+  updateScheduleScenario: EngineMethod<typeof updateScheduleScenario>;
   updateTeamLineUp: EngineMethod<typeof updateTeamLineUp>;
   updateTieMatchUpScore: EngineMethod<typeof updateTieMatchUpScore>;
   validateCategory: EngineMethod<typeof validateCategory>;
@@ -1128,6 +1143,7 @@ export interface MethodSignatures {
   validateMCPMatch: EngineMethod<typeof validateMCPMatch>;
   validateOfficiatingStatusTransition: EngineMethod<typeof validateOfficiatingStatusTransition>;
   validatePlayoffGroups: EngineMethod<typeof validatePlayoffGroups>;
+  validateScheduleScenario: EngineMethod<typeof validateScheduleScenario>;
   validateSchedulingProfile: EngineMethod<typeof validateSchedulingProfile>;
   validateScore: EngineMethod<typeof validateScore>;
   validateSet: EngineMethod<typeof validateSet>;

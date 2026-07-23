@@ -1,0 +1,102 @@
+---
+title: Schedule Scenarios
+---
+
+## Overview
+
+A **Schedule Scenario** is a named, alternate ("contingency") scheduling plan a tournament director builds off the current schedule — a rain plan, a "compress onto the indoor courts", a "shift the afternoon back two hours". Scenarios let a director prepare and compare several plans **without disturbing the live schedule**, then **commit** one as the official schedule when needed.
+
+**Key characteristics:**
+
+- **Persisted first-class** on `tournamentRecord.scheduling.scenarios` — never a legacy extension, and never emitted to public / arena read surfaces.
+- **Many named scenarios** per tournament; a director cycles through them and commits at most one.
+- **Resolved matchUp placements only** (courts / times / order) — a scenario never re-runs the round-level scheduler.
+- **Commit is a direct hand-off** — a scenario's `placements` array is, by construction, a [`bulkScheduleMatchUps`](../governors/schedule-governor#bulkschedulematchups) `matchUpDetails` payload.
+- **Uncompleted matchUps only** — applying a scenario skips completed matchUps automatically (inherited from `bulkScheduleMatchUps`).
+
+## Data Structure
+
+Scenarios are stored as an array on the tournament's `scheduling` group:
+
+```ts
+type ScheduleScenario = {
+  scenarioId: string; // generated on add when not supplied
+  scenarioName: string; // required, human-readable
+  scheduledDates?: string[]; // ISO 'YYYY-MM-DD' dates the plan re-plans
+  createdAt?: string; // caller-provided ISO string (factory does not stamp wall-clock)
+  updatedAt?: string; // caller-provided ISO string
+  notes?: string;
+  basedOnHash?: string; // fingerprint of the official schedule at authoring time (drift detection — Phase 1)
+  placements: ScenarioPlacement[];
+};
+
+type ScenarioPlacement = {
+  tournamentId: string;
+  matchUpId: string;
+  schedule: MatchUpSchedule; // scheduledDate, scheduledTime, courtId, venueId, courtOrder, timeModifiers, …
+};
+```
+
+`createdAt` / `updatedAt` follow the `calledAt` idiom — the caller (TMX) provides ISO strings; the factory never reads the wall clock, so behaviour stays deterministic.
+
+## Managing Scenarios
+
+```js
+import { scheduleGovernor } from 'tods-competition-factory';
+```
+
+### Create
+
+```js
+const { scenarioId } = engine.addScheduleScenario({
+  scenario: {
+    scenarioName: 'Rain plan — Saturday indoor',
+    scheduledDates: ['2024-05-04'],
+    placements: [
+      {
+        tournamentId,
+        matchUpId,
+        schedule: { scheduledDate: '2024-05-04', scheduledTime: '10:00', courtId, courtOrder: 1 },
+      },
+      // …
+    ],
+  },
+});
+```
+
+`scenarioName` is required; `scenarioId` is generated when omitted. The scenario is validated before it is stored (shape + that each placement targets a known `tournamentId`).
+
+### Read
+
+```js
+engine.getScheduleScenarios(); // → { scenarios: ScheduleScenario[] }
+engine.getScheduleScenario({ scenarioId }); // → { scenario } | { error }
+```
+
+### Update / Remove
+
+```js
+engine.updateScheduleScenario({ scenarioId, updates: { scenarioName: 'Rain plan v2', notes: 'moved to indoor' } });
+engine.removeScheduleScenario({ scenarioId });
+```
+
+`updates` are merged over the existing scenario (the `scenarioId` is preserved) and the result is re-validated.
+
+## Committing a Scenario
+
+`applyScheduleScenario` commits a scenario's placements as the official schedule:
+
+```js
+const result = engine.applyScheduleScenario({ scenarioId });
+// → { success: true, applied: <matchUps scheduled>, ... }
+```
+
+Because the placements are a `bulkScheduleMatchUps` payload:
+
+- **Completed matchUps are skipped** by default (pass `scheduleCompletedMatchUps: true` to override).
+- `removePriorValues` defaults to `true`, matching TMX grid-drop semantics (a re-dated matchUp sheds stale grid position — see [Scheduling Conflicts](./scheduling-conflicts)).
+- The scenario is **left in place** after a commit; the caller decides whether to `removeScheduleScenario`.
+
+:::note
+Drift / rebase reconciliation (detecting when a scenario is out of date because the official schedule changed or matchUps completed since it was authored, via `basedOnHash`) and the read-model projection that renders a scenario as an unofficial grid overlay land in a later phase alongside the TMX "Plan" mode.
+:::

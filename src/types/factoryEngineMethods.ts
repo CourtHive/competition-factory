@@ -56,6 +56,7 @@ export type FactoryEngineMethod =
   | 'addPoint'
   | 'addPracticeRegistration'
   | 'addQualifyingStructure'
+  | 'addScheduleScenario'
   | 'addSchedulingProfileRound'
   | 'addSuspension'
   | 'addTimeItem'
@@ -82,6 +83,7 @@ export type FactoryEngineMethod =
   | 'applyAvailabilityToTournamentRecord'
   | 'applyDerivedRankings'
   | 'applyLineUps'
+  | 'applyScheduleScenario'
   | 'applyTournamentRankingPoints'
   | 'assignDrawPosition'
   | 'assignDrawPositionBye'
@@ -338,6 +340,8 @@ export type FactoryEngineMethod =
   | 'getScaleValues'
   | 'getScheduledRoundsDetails'
   | 'getScheduleProjection'
+  | 'getScheduleScenario'
+  | 'getScheduleScenarios'
   | 'getSchedulingProfile'
   | 'getSchedulingProfileIssues'
   | 'getSchemaWriteMode'
@@ -512,6 +516,7 @@ export type FactoryEngineMethod =
   | 'removeRatings'
   | 'removeRoundMatchUps'
   | 'removeScaleValues'
+  | 'removeScheduleScenario'
   | 'removeSeededParticipant'
   | 'removeSeeding'
   | 'removeStageEntries'
@@ -617,6 +622,7 @@ export type FactoryEngineMethod =
   | 'updateDrawIdsOrder'
   | 'updateParticipantResults'
   | 'updatePracticeRegistration'
+  | 'updateScheduleScenario'
   | 'updateTeamLineUp'
   | 'updateTieMatchUpScore'
   | 'validateCategory'
@@ -629,6 +635,7 @@ export type FactoryEngineMethod =
   | 'validateMCPMatch'
   | 'validateOfficiatingStatusTransition'
   | 'validatePlayoffGroups'
+  | 'validateScheduleScenario'
   | 'validateSchedulingProfile'
   | 'validateSchedulingProfileFormat'
   | 'validateScore'
@@ -696,6 +703,7 @@ export const FACTORY_ENGINE_METHODS: readonly FactoryEngineMethod[] = [
   'addPoint',
   'addPracticeRegistration',
   'addQualifyingStructure',
+  'addScheduleScenario',
   'addSchedulingProfileRound',
   'addSuspension',
   'addTimeItem',
@@ -722,6 +730,7 @@ export const FACTORY_ENGINE_METHODS: readonly FactoryEngineMethod[] = [
   'applyAvailabilityToTournamentRecord',
   'applyDerivedRankings',
   'applyLineUps',
+  'applyScheduleScenario',
   'applyTournamentRankingPoints',
   'assignDrawPosition',
   'assignDrawPositionBye',
@@ -978,6 +987,8 @@ export const FACTORY_ENGINE_METHODS: readonly FactoryEngineMethod[] = [
   'getScaleValues',
   'getScheduledRoundsDetails',
   'getScheduleProjection',
+  'getScheduleScenario',
+  'getScheduleScenarios',
   'getSchedulingProfile',
   'getSchedulingProfileIssues',
   'getSchemaWriteMode',
@@ -1152,6 +1163,7 @@ export const FACTORY_ENGINE_METHODS: readonly FactoryEngineMethod[] = [
   'removeRatings',
   'removeRoundMatchUps',
   'removeScaleValues',
+  'removeScheduleScenario',
   'removeSeededParticipant',
   'removeSeeding',
   'removeStageEntries',
@@ -1257,6 +1269,7 @@ export const FACTORY_ENGINE_METHODS: readonly FactoryEngineMethod[] = [
   'updateDrawIdsOrder',
   'updateParticipantResults',
   'updatePracticeRegistration',
+  'updateScheduleScenario',
   'updateTeamLineUp',
   'updateTieMatchUpScore',
   'validateCategory',
@@ -1269,6 +1282,7 @@ export const FACTORY_ENGINE_METHODS: readonly FactoryEngineMethod[] = [
   'validateMCPMatch',
   'validateOfficiatingStatusTransition',
   'validatePlayoffGroups',
+  'validateScheduleScenario',
   'validateSchedulingProfile',
   'validateSchedulingProfileFormat',
   'validateScore',

@@ -662,6 +662,14 @@ export const BOOKING_NOT_FOUND = {
   message: 'Booking not found',
   code: 'ERR_NOT_FOUND_BOOKING',
 };
+export const SCHEDULE_SCENARIO_NOT_FOUND = {
+  message: 'Schedule scenario not found',
+  code: 'ERR_NOT_FOUND_SCHEDULE_SCENARIO',
+};
+export const SCHEDULE_SCENARIO_EXISTS = {
+  message: 'Schedule scenario exists',
+  code: 'ERR_EXISTING_SCHEDULE_SCENARIO',
+};
 export const EXISTING_DRAFT = {
   message: 'An active draft already exists for this draw',
   code: 'ERR_EXISTING_DRAFT',

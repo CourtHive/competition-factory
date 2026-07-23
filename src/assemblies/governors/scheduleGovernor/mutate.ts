@@ -30,6 +30,13 @@ export { assignMatchUpTimekeeper, removeMatchUpTimekeeper } from '@Mutate/matchU
 export { assignMatchUpVenue } from '@Mutate/matchUps/schedule/assignMatchUpVenue';
 export { setMatchUpCalledAt } from '@Mutate/matchUps/schedule/setMatchUpCalledAt';
 export { generateBookings } from '@Generators/scheduling/utils/generateBookings';
+export {
+  addScheduleScenario,
+  updateScheduleScenario,
+  removeScheduleScenario,
+} from '@Mutate/tournaments/scheduleScenarios';
+export { applyScheduleScenario } from '@Mutate/matchUps/schedule/applyScheduleScenario';
+export { validateScheduleScenario } from '@Validators/validateScheduleScenario';
 export { validateSchedulingProfile } from '@Validators/validateSchedulingProfile';
 export { removeCourtGridBooking } from '@Mutate/venues/removeCourtGridBooking';
 export { setSchedulingProfile } from '@Mutate/tournaments/schedulingProfile';

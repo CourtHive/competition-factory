@@ -33,6 +33,11 @@ export interface Tournament {
     profile?: any;
     dailyLimits?: any;
     timing?: any;
+    // Alternate ("contingency") scheduling plans a tournament director builds
+    // off the current schedule, cycles through, and can commit as the official
+    // schedule (uncompleted matchUps only). Persisted first-class — NEVER a
+    // legacy extension, and NEVER emitted to public / arena read surfaces.
+    scenarios?: ScheduleScenario[];
     practice?: {
       defaultCapacity?: number | null;
     };
@@ -403,6 +408,38 @@ export interface MatchUpSchedule {
   venueId?: string;
   // derived/hydrated read-only fields (populated by getMatchUpScheduleDetails)
   [key: string]: any;
+}
+
+/**
+ * One proposed matchUp placement inside a {@link ScheduleScenario}. The shape
+ * is deliberately identical to a `bulkScheduleMatchUps` `matchUpDetails` entry
+ * so that committing a scenario is a direct hand-off to that mutation. An
+ * empty `schedule` (with `removePriorValues`) encodes "pull this matchUp off
+ * the grid" when the scenario is applied.
+ */
+export interface ScenarioPlacement {
+  tournamentId: string;
+  matchUpId: string;
+  schedule: MatchUpSchedule;
+}
+
+/**
+ * A named alternate scheduling plan stored on `tournamentRecord.scheduling.scenarios`.
+ * Placements hold resolved matchUp positions only (courts / times / order) — a
+ * scenario never re-runs the round-level scheduler. `createdAt` / `updatedAt`
+ * are caller-provided ISO strings (factory does not stamp wall-clock, matching
+ * the `calledAt` idiom). `basedOnHash` fingerprints the official schedule at
+ * authoring time so drift / rebase can be detected before a commit.
+ */
+export interface ScheduleScenario {
+  scenarioId: string;
+  scenarioName: string;
+  scheduledDates?: string[];
+  createdAt?: string;
+  updatedAt?: string;
+  notes?: string;
+  basedOnHash?: string;
+  placements: ScenarioPlacement[];
 }
 
 export interface MatchUp {

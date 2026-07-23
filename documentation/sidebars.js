@@ -117,6 +117,7 @@ module.exports = {
             'concepts/venues-courts',
             'concepts/scheduling-policy',
             'concepts/scheduling-profile',
+            'concepts/schedule-scenarios',
             'concepts/automated-scheduling',
             'concepts/pro-scheduling',
             'concepts/scheduling-conflicts',
