@@ -18,6 +18,12 @@ A **venue** represents a physical location that contains one or more courts. Ven
   venueName: string;            // Display name
   venueAbbreviation?: string;   // Short name for schedules
 
+  // Canonical cross-tournament facility identity. Defaults to `venueId` — a venue
+  // is its own facility unless several record-level venues are deduped to one
+  // physical facility (courthive-facilities). Read into the read-model
+  // `facility_id` by `cast()`; the join key for "tournaments at this facility".
+  facilityId?: string;
+
   // Location information
   address?: {
     addressLine1?: string;

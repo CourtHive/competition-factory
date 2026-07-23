@@ -3369,6 +3369,9 @@
         "venueName": {
           "type": "string"
         },
+        "facilityId": {
+          "type": "string"
+        },
         "venueOtherIds": {
           "type": "array",
           "items": {
