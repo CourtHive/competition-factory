@@ -50,6 +50,11 @@ export function cast(params?: CastArgs): { error?: ErrorType; success?: boolean;
   const match_ups: ReadModelMatchUpRow[] = [];
   const match_up_competitors: ReadModelCompetitorRow[] = [];
   for (const matchUp of matchUps) {
+    // A TEAM draw's flatten returns each rubber BOTH nested under its TEAM matchUp
+    // (as `tieMatchUps`) AND as a top-level sibling (carrying a `collectionId`).
+    // Skip the top-level rubber — it is projected as a RUBBER row via its TEAM
+    // parent in `matchUpRowSet`; processing it here too would double-project it.
+    if (matchUp.collectionId) continue;
     const status = matchUp.eventId ? publishStatusByEventId.get(matchUp.eventId) : undefined;
     const { published, embargo } = resolveMatchUpPublishState(
       status,

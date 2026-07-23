@@ -97,6 +97,15 @@ describe('cast — team (TIE container + RUBBER nesting)', () => {
     expect(teamRows.every((c) => c.person_id === null)).toBe(true);
   });
 
+  it('projects each rubber exactly once (RUBBER via its TEAM parent, never a duplicate STANDARD)', () => {
+    const { rows } = cast({ tournamentRecord });
+    const ids = rows!.match_ups.map((m) => m.match_up_id);
+    expect(new Set(ids).size).toEqual(ids.length); // no duplicate match_up_id rows
+    // every rubber-carrying id is a RUBBER row, not a top-level STANDARD sibling
+    expect(rows!.match_ups.some((m) => m.match_up_level === 'RUBBER')).toBe(true);
+    expect(rows!.match_ups.filter((m) => m.match_up_level === 'STANDARD')).toHaveLength(0);
+  });
+
   it('stamps each RUBBER with its tieFormat weight; TIE/STANDARD carry none', () => {
     const { rows } = cast({ tournamentRecord });
     const rubbers = rows!.match_ups.filter((m) => m.match_up_level === 'RUBBER');
