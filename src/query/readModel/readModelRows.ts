@@ -235,6 +235,24 @@ export function matchUpRowSet(matchUp: any, ctx: MatchUpRowContext): MatchUpRowS
   return { matchUpRows, competitorRows };
 }
 
+// ── slim result update (incremental MODIFY_MATCHUP path) ─────────────────────────
+
+/** Partial `match_ups` row for a result-only update (no flatten): the result
+ *  fields plus the NOT-NULL `tournament_id` so a first insert still satisfies the
+ *  schema. Used by the incremental producer's MODIFY_MATCHUP path; `cast()` (full
+ *  rebuild) does not need it. Publish/embargo/tie_value are left to a full flatten. */
+export function matchUpResultRow(matchUp: any, tournamentId: string, providerId: string | undefined): Record<string, any> {
+  return {
+    match_up_id: matchUp?.matchUpId,
+    tournament_id: tournamentId,
+    provider_id: providerId ?? null,
+    match_up_status: matchUp?.matchUpStatus ?? null,
+    winning_side: matchUp?.winningSide ?? null,
+    score_string: winnerPerspectiveScore(matchUp),
+    scheduled_date: matchUpScheduledDate(matchUp),
+  };
+}
+
 // ── entries ──────────────────────────────────────────────────────────────────────
 
 // participantId → personId map for entry person resolution. Includes INDIVIDUAL

@@ -1,4 +1,5 @@
 import * as queryGovernor from '@Assemblies/governors/queryGovernor';
+import * as readModel from '@Query/readModel';
 import tournamentEngine from '@Engines/syncEngine';
 import mocksEngine from '@Assemblies/engines/mock';
 import { expect, it, describe } from 'vitest';
@@ -25,5 +26,22 @@ describe('cast governor/engine exposure', () => {
     const viaGovernor = queryGovernor.cast({ tournamentRecord: record });
     expect(viaGovernor.rows.match_ups.length).toEqual(viaEngine.rows.match_ups.length);
     expect(viaGovernor.rows.match_up_competitors.length).toEqual(viaEngine.rows.match_up_competitors.length);
+  });
+
+  it('exposes the read-model builder toolkit for the incremental producer to share', () => {
+    for (const fn of [
+      readModel.cast,
+      readModel.matchUpRowSet,
+      readModel.matchUpResultRow,
+      readModel.tournamentRow,
+      readModel.venueRow,
+      readModel.entryRows,
+      readModel.rubberTieValue,
+      readModel.resolveMatchUpPublishState,
+      readModel.resolvePersonLink,
+      readModel.isFactoryUuid,
+    ]) {
+      expect(typeof fn).toEqual('function');
+    }
   });
 });

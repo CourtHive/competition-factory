@@ -1,5 +1,6 @@
 export * from './formatWizardTypes';
 export * from './competitionFormat';
+export * from './readModelTypes';
 export * from './officiatingTypes';
 export * from './sanctioningTypes';
 export * from './declarationTypes';
