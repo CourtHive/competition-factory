@@ -22,3 +22,4 @@ export { getTournamentPoints } from '@Query/scales/getTournamentPoints';
 export { getMutationLocks } from '@Query/tournaments/getMutationLocks';
 export { analyzeDraws } from '@Query/tournaments/analyzeDraws';
 export { getTournamentTimeItem } from '@Query/base/timeItems';
+export { cast } from '@Query/readModel/cast';

@@ -1570,6 +1570,10 @@ export interface Venue {
   // CODES first-class: previously stored as `disabled` extension
   disabled?: boolean | { dates?: string[] };
   extensions?: Extension[];
+  // Canonical cross-tournament facility identity (courthive-facilities). Defaults
+  // to venueId — a venue is its own facility unless several venues dedupe to one
+  // physical facility. Read into the read-model `facility_id` by cast().
+  facilityId?: string;
   isMock?: boolean;
   isPrimary?: boolean;
   notes?: string;

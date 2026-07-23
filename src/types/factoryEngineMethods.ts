@@ -121,6 +121,7 @@ export type FactoryEngineMethod =
   | 'calculatePointsTo'
   | 'calculateScheduleTimes'
   | 'calculateWinCriteria'
+  | 'cast'
   | 'categoryCanContain'
   | 'checkInParticipant'
   | 'checkMatchUpIsComplete'
@@ -760,6 +761,7 @@ export const FACTORY_ENGINE_METHODS: readonly FactoryEngineMethod[] = [
   'calculatePointsTo',
   'calculateScheduleTimes',
   'calculateWinCriteria',
+  'cast',
   'categoryCanContain',
   'checkInParticipant',
   'checkMatchUpIsComplete',

@@ -561,6 +561,7 @@ import type { publicFindCourt } from '@Query/venues/findCourt';
 import type { findExtension } from '@Acquire/findExtension';
 import type { getDrawStructures } from '@Acquire/findStructure';
 import type { getEvent } from '@Query/events/getEvent';
+import type { cast } from '@Query/readModel/cast';
 import type { filterMatchUps } from '@Query/filterMatchUps';
 import type {
   getDrawDefinitionTimeItem,
@@ -683,6 +684,7 @@ export interface MethodSignatures {
   calculatePointsTo: EngineMethod<typeof calculatePointsTo>;
   calculateScheduleTimes: EngineMethod<typeof calculateScheduleTimes>;
   calculateWinCriteria: EngineMethod<typeof calculateWinCriteria>;
+  cast: EngineMethod<typeof cast>;
   categoryCanContain: EngineMethod<typeof categoryCanContain>;
   checkInParticipant: EngineMethod<typeof checkInParticipant>;
   checkMatchUpIsComplete: EngineMethod<typeof checkMatchUpIsComplete>;

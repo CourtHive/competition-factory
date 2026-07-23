@@ -72,6 +72,30 @@ const { matchUps, groupInfo } = engine.allTournamentMatchUps({
 
 ---
 
+## cast
+
+Cast a single `tournamentRecord` into the flattened, query-optimized **read-model row set** (the CQRS read-side that `courthive-query` stores as its `query_*` SQL tables). `cast()` is a **pure** transform (no I/O, no globalState) and is the single, factory-owned source of that shape — shared by the server's incremental projection (on mutation) and the read-model rebuild pipeline, so the two paths stay byte-identical.
+
+Every derived row comes from the factory flattener (`allTournamentMatchUps`, hydrated **inContext**) with `usePublishState: false`, so **all** matchUps are projected; each carries a `published` boolean (visibility, not omission). Rows are keyed by **logical** table name (`match_ups`, not `query_match_ups`); the consumer maps logical → physical.
+
+```js
+const { rows } = engine.cast();
+// rows: {
+//   tournaments,            // one row: id, name, provider_id, dates, city
+//   match_ups,              // STANDARD | TIE (team container) | RUBBER (nested)
+//   match_up_competitors,   // per-INDIVIDUAL grain; doubles = 2 rows/side; team_id on team/rubber rows
+//   entries,                // participation != matchUps (alternates, withdrawn, un-drawn)
+//   venues,                 // facility_id defaults to venue_id
+//   tournament_venues,      // tournament ↔ venue links
+// }
+```
+
+`match_up_competitors.person_id` is populated only for a **real canonical person** — a `personId` that is not equal to the `participantId` and is not a factory `UUID()` (i.e. a provider/federation id such as a UTR id, `link_source: 'providerId'`); synthetic/local participants are left `NULL` (`link_source: 'unresolved'`). `venue.facilityId` is a canonical first-class attribute that **defaults to `venueId`**.
+
+Callable on the engine (injects the loaded `tournamentRecord`) or via `queryGovernor.cast({ tournamentRecord })` (the server / rebuild-pipeline call pattern).
+
+---
+
 ## competitionScheduleMatchUps
 
 Returns scheduled matchUps for a competition, with optional publish-state and embargo filtering. See full documentation in the [MatchUp Governor](./matchup-governor.md#competitionschedulematchups).
