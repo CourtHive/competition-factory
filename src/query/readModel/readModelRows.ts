@@ -19,6 +19,7 @@ export interface MatchUpRowContext {
   tournamentId: string;
   providerId: string | undefined;
   published: boolean;
+  embargo: string | null;
 }
 
 export interface MatchUpRowSet {
@@ -57,25 +58,21 @@ export function venueRow(venue: any): ReadModelVenueRow {
   };
 }
 
-// ── published-by-draw (event PUBLISH.STATUS timeItem, latest wins) ───────────────
+// ── tie_value (rubber weight from the tieFormat) ─────────────────────────────────
 
-/**
- * Map drawId → published boolean, read from each event's last `PUBLISH.STATUS`
- * timeItem. Best-effort: unknown → false (visibility stored, not omission).
- * Mirrors the CFS incremental producer's `deriveDrawPublished` for conformance.
- */
-export function buildPublishedByDrawId(record: any): Record<string, boolean> {
-  const map: Record<string, boolean> = {};
-  for (const event of record?.events ?? []) {
-    const statusItems = (event?.timeItems ?? []).filter((t: any) => t?.itemType === 'PUBLISH.STATUS');
-    const itemValue = statusItems.at(-1)?.itemValue?.PUBLIC;
-    for (const draw of event?.drawDefinitions ?? []) {
-      if (!draw?.drawId) continue;
-      const detail = itemValue?.drawDetails?.[draw.drawId]?.publishingDetail?.published;
-      map[draw.drawId] = itemValue ? (detail ?? !!itemValue.published) : false;
-    }
+/** Nominal weight a rubber contributes to its tie, from the parent tie's
+ *  tieFormat collectionDefinition: explicit `matchUpValue`, else a per-position
+ *  profile value, else the collection value split across its matchUps. */
+export function rubberTieValue(tieFormat: any, collectionId?: string, collectionPosition?: number): number | null {
+  const definition = tieFormat?.collectionDefinitions?.find((d: any) => d?.collectionId === collectionId);
+  if (!definition) return null;
+  if (typeof definition.matchUpValue === 'number') return definition.matchUpValue;
+  const profile = definition.collectionValueProfiles?.find((p: any) => p?.collectionPosition === collectionPosition);
+  if (profile && typeof profile.matchUpValue === 'number') return profile.matchUpValue;
+  if (typeof definition.collectionValue === 'number' && definition.matchUpCount) {
+    return definition.collectionValue / definition.matchUpCount;
   }
-  return map;
+  return null;
 }
 
 // ── match_ups + match_up_competitors ─────────────────────────────────────────────
@@ -103,6 +100,7 @@ function matchUpRow(
   level: string,
   parentMatchUpId: string | null,
   ctx: MatchUpRowContext,
+  tieValue: number | null,
 ): ReadModelMatchUpRow {
   return {
     match_up_id: matchUp?.matchUpId,
@@ -122,9 +120,10 @@ function matchUpRow(
     match_up_status: matchUp?.matchUpStatus ?? null,
     winning_side: matchUp?.winningSide ?? null,
     score_string: winnerPerspectiveScore(matchUp),
-    tie_value: null,
+    tie_value: tieValue,
     scheduled_date: matchUpScheduledDate(matchUp),
     published: ctx.published,
+    embargo: ctx.embargo,
   };
 }
 
@@ -213,16 +212,18 @@ export function matchUpRowSet(matchUp: any, ctx: MatchUpRowContext): MatchUpRowS
   if (!matchUpId) return { matchUpRows, competitorRows };
 
   const isTeam = matchUp?.matchUpType === TEAM || Array.isArray(matchUp?.tieMatchUps);
-  matchUpRows.push(matchUpRow(matchUp, isTeam ? LEVEL_TIE : LEVEL_STANDARD, null, ctx));
+  matchUpRows.push(matchUpRow(matchUp, isTeam ? LEVEL_TIE : LEVEL_STANDARD, null, ctx, null));
   for (const side of matchUp?.sides ?? []) {
     competitorRows.push(...sideCompetitorRows(side, matchUpId, ctx, null));
   }
 
   if (isTeam) {
+    const tieFormat = matchUp?.tieFormat;
     for (const rubber of matchUp?.tieMatchUps ?? []) {
       const rubberId = rubber?.matchUpId;
       if (!rubberId) continue;
-      matchUpRows.push(matchUpRow(rubber, LEVEL_RUBBER, matchUpId, ctx));
+      const tieValue = rubberTieValue(tieFormat, rubber?.collectionId, rubber?.collectionPosition);
+      matchUpRows.push(matchUpRow(rubber, LEVEL_RUBBER, matchUpId, ctx, tieValue));
       for (const side of rubber?.sides ?? []) {
         competitorRows.push(
           ...sideCompetitorRows(side, rubberId, ctx, teamIdForSide(matchUp, side?.sideNumber ?? null)),

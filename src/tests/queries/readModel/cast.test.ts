@@ -1,3 +1,4 @@
+import tournamentEngine from '@Engines/syncEngine';
 import mocksEngine from '@Assemblies/engines/mock';
 import { expect, it, describe } from 'vitest';
 import { cast } from '@Query/readModel/cast';
@@ -94,6 +95,51 @@ describe('cast — team (TIE container + RUBBER nesting)', () => {
     expect(teamRows.every((c) => typeof c.team_id === 'string')).toBe(true);
     // TEAM competitor rows are not resolved to a person
     expect(teamRows.every((c) => c.person_id === null)).toBe(true);
+  });
+
+  it('stamps each RUBBER with its tieFormat weight; TIE/STANDARD carry none', () => {
+    const { rows } = cast({ tournamentRecord });
+    const rubbers = rows!.match_ups.filter((m) => m.match_up_level === 'RUBBER');
+    expect(rubbers.every((r) => typeof r.tie_value === 'number')).toBe(true); // COLLEGE_DEFAULT weights
+    expect(rubbers.some((r) => r.tie_value === 1)).toBe(true); // the matchUpValue:1 collection
+    const ties = rows!.match_ups.filter((m) => m.match_up_level === 'TIE');
+    expect(ties.every((m) => m.tie_value === null)).toBe(true);
+  });
+});
+
+describe('cast — embargo (read-time gate inputs, never a stale visible flag)', () => {
+  it('keeps published intent true under a future embargo and stores the release timestamp', () => {
+    const FUTURE = '2999-01-01T00:00:00.000Z';
+    const {
+      tournamentRecord,
+      drawIds: [drawId],
+      eventIds: [eventId],
+    } = mocksEngine.generateTournamentRecord({
+      drawProfiles: [{ drawSize: 8, eventName: 'E1' }],
+      nonRandom: 1,
+    });
+    tournamentEngine.setState(tournamentRecord);
+    tournamentEngine.publishEvent({
+      eventId,
+      drawDetails: { [drawId]: { publishingDetail: { published: true, embargo: FUTURE } } },
+    });
+    const { tournamentRecord: record } = tournamentEngine.getTournament();
+
+    const { rows } = cast({ tournamentRecord: record });
+    expect(rows!.match_ups.length).toBeGreaterThan(0);
+    // intent is published (embargo is NOT collapsed into `published`)...
+    expect(rows!.match_ups.every((m) => m.published === true)).toBe(true);
+    // ...and the raw release timestamp is stored for a read-time gate
+    expect(rows!.match_ups.every((m) => m.embargo === FUTURE)).toBe(true);
+  });
+
+  it('leaves embargo null for an unpublished draw', () => {
+    const { tournamentRecord } = mocksEngine.generateTournamentRecord({
+      drawProfiles: [{ drawSize: 8 }],
+      nonRandom: 1,
+    });
+    const { rows } = cast({ tournamentRecord });
+    expect(rows!.match_ups.every((m) => m.published === false && m.embargo === null)).toBe(true);
   });
 });
 

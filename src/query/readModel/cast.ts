@@ -1,12 +1,7 @@
-import {
-  buildPublishedByDrawId,
-  entryRows,
-  matchUpRowSet,
-  tournamentRow,
-  venueRow,
-  MatchUpRowContext,
-} from './readModelRows';
+import { entryRows, matchUpRowSet, tournamentRow, venueRow, MatchUpRowContext } from './readModelRows';
+import { getEventPublishStatus } from '@Query/event/getEventPublishStatus';
 import { allTournamentMatchUps } from '@Query/matchUps/getAllTournamentMatchUps';
+import { resolveMatchUpPublishState } from './readModelPublish';
 import { decorateResult } from '@Functions/global/decorateResult';
 
 // constants and types
@@ -28,10 +23,13 @@ type CastArgs = {
  *
  * Pure: no I/O, no globalState. Derives every row from the factory flattener
  * (`allTournamentMatchUps`, hydrated in-context) with `usePublishState: false`
- * (ALL matchUps projected, each carrying a `published` boolean — visibility, not
- * omission). Rows are keyed by LOGICAL table name; the consumer maps logical →
- * physical `query_<name>`. person_id follows the person rule (populated only for
- * a real non-UUID provider personId).
+ * (ALL matchUps projected). Each matchUp carries `published` (publish INTENT,
+ * resolved through the structure/stage/draw cascade) + `embargo` (the effective
+ * release timestamp) so visibility is a READ-time gate (`published AND (embargo
+ * IS NULL OR embargo <= now())`), never a stale stored boolean. Rows are keyed by
+ * LOGICAL table name; the consumer maps logical → physical `query_<name>`.
+ * person_id follows the person rule (populated only for a real non-UUID provider
+ * personId); RUBBER rows carry `tie_value` from the tieFormat.
  */
 export function cast(params?: CastArgs): { error?: ErrorType; success?: boolean; rows?: ReadModelRows } {
   const tournamentRecord = params?.tournamentRecord;
@@ -41,19 +39,25 @@ export function cast(params?: CastArgs): { error?: ErrorType; success?: boolean;
 
   const tournamentId = tournamentRecord.tournamentId;
   const providerId = tournamentRecord.parentOrganisation?.organisationId;
-  const publishedByDrawId = buildPublishedByDrawId(tournamentRecord);
+
+  const publishStatusByEventId = new Map<string, any>();
+  for (const event of tournamentRecord.events ?? []) {
+    if (event?.eventId) publishStatusByEventId.set(event.eventId, getEventPublishStatus({ event }));
+  }
 
   const { matchUps = [] } = allTournamentMatchUps({ tournamentRecord, inContext: true, usePublishState: false });
 
   const match_ups: ReadModelMatchUpRow[] = [];
   const match_up_competitors: ReadModelCompetitorRow[] = [];
   for (const matchUp of matchUps) {
-    const drawId = matchUp.drawId;
-    const ctx: MatchUpRowContext = {
-      tournamentId,
-      providerId,
-      published: drawId ? (publishedByDrawId[drawId] ?? false) : false,
-    };
+    const status = matchUp.eventId ? publishStatusByEventId.get(matchUp.eventId) : undefined;
+    const { published, embargo } = resolveMatchUpPublishState(
+      status,
+      matchUp.drawId,
+      matchUp.structureId,
+      matchUp.stage,
+    );
+    const ctx: MatchUpRowContext = { tournamentId, providerId, published, embargo };
     const { matchUpRows, competitorRows } = matchUpRowSet(matchUp, ctx);
     match_ups.push(...matchUpRows);
     match_up_competitors.push(...competitorRows);

@@ -76,7 +76,16 @@ const { matchUps, groupInfo } = engine.allTournamentMatchUps({
 
 Cast a single `tournamentRecord` into the flattened, query-optimized **read-model row set** (the CQRS read-side that `courthive-query` stores as its `query_*` SQL tables). `cast()` is a **pure** transform (no I/O, no globalState) and is the single, factory-owned source of that shape — shared by the server's incremental projection (on mutation) and the read-model rebuild pipeline, so the two paths stay byte-identical.
 
-Every derived row comes from the factory flattener (`allTournamentMatchUps`, hydrated **inContext**) with `usePublishState: false`, so **all** matchUps are projected; each carries a `published` boolean (visibility, not omission). Rows are keyed by **logical** table name (`match_ups`, not `query_match_ups`); the consumer maps logical → physical.
+Every derived row comes from the factory flattener (`allTournamentMatchUps`, hydrated **inContext**) with `usePublishState: false`, so **all** matchUps are projected. Rows are keyed by **logical** table name (`match_ups`, not `query_match_ups`); the consumer maps logical → physical.
+
+**Publishing & embargo are stored as read-time inputs, never a "visible now" flag.** A projection only refreshes on mutation, so a baked-in visibility boolean would go stale the moment an embargo lifts. Instead each `match_ups` row carries:
+
+- `published` — publish **intent** (embargo-independent), resolved through the **draw → stage → structure** cascade;
+- `embargo` — the effective embargo **release timestamp** (ISO), with draw > stage > structure precedence, or `null`.
+
+Actual visibility is computed at **read time**: `published AND (embargo IS NULL OR embargo <= now())`. This is the only way a refresh-on-mutation projection can be embargo-correct.
+
+RUBBER rows carry `tie_value` — the rubber's weight from the parent tie's `tieFormat` collection (`matchUpValue`, else a per-position profile value, else `collectionValue / matchUpCount`); `NULL` for STANDARD/TIE rows.
 
 ```js
 const { rows } = engine.cast();

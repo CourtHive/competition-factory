@@ -1,14 +1,14 @@
 import {
-  buildPublishedByDrawId,
   entryRows,
   matchUpRowSet,
+  rubberTieValue,
   tournamentRow,
   venueRow,
   MatchUpRowContext,
 } from '@Query/readModel/readModelRows';
 import { expect, it, describe } from 'vitest';
 
-const ctx: MatchUpRowContext = { tournamentId: 't1', providerId: 'PROV', published: false };
+const ctx: MatchUpRowContext = { tournamentId: 't1', providerId: 'PROV', published: false, embargo: null };
 
 describe('tournamentRow', () => {
   it('reads city from tournamentContacts, falling back to record.city', () => {
@@ -51,30 +51,28 @@ describe('venueRow', () => {
   });
 });
 
-describe('buildPublishedByDrawId', () => {
-  it('is false with no timeItems, true from drawDetails, true from itemValue.published', () => {
-    const map = buildPublishedByDrawId({
-      events: [
-        { drawDefinitions: [{ drawId: 'd0' }] }, // no timeItems → false
-        {
-          drawDefinitions: [{ drawId: 'd1' }, { drawId: 'd2' }, { noDrawId: true }],
-          timeItems: [
-            { itemType: 'OTHER' },
-            {
-              itemType: 'PUBLISH.STATUS',
-              itemValue: {
-                PUBLIC: { drawDetails: { d1: { publishingDetail: { published: true } } }, published: true },
-              },
-            },
-          ],
-        },
-      ],
-    });
-    expect(map).toEqual({ d0: false, d1: true, d2: true }); // d2 via itemValue.published fallback; no-drawId skipped
+describe('rubberTieValue', () => {
+  const tieFormat = {
+    collectionDefinitions: [
+      { collectionId: 'C1', collectionValue: 1, matchUpCount: 3 }, // split → 1/3
+      { collectionId: 'C2', matchUpValue: 2, matchUpCount: 6 }, // explicit per-rubber
+      {
+        collectionId: 'C3',
+        collectionValueProfiles: [{ collectionPosition: 1, matchUpValue: 5 }],
+      },
+    ],
+  };
+
+  it('uses matchUpValue, then a position profile, then collectionValue/matchUpCount', () => {
+    expect(rubberTieValue(tieFormat, 'C2', 1)).toEqual(2);
+    expect(rubberTieValue(tieFormat, 'C3', 1)).toEqual(5);
+    expect(rubberTieValue(tieFormat, 'C1', 1)).toBeCloseTo(1 / 3);
   });
 
-  it('returns an empty map when there are no events', () => {
-    expect(buildPublishedByDrawId({})).toEqual({});
+  it('returns null for an unknown/absent collection or tieFormat', () => {
+    expect(rubberTieValue(tieFormat, 'NOPE', 1)).toBeNull();
+    expect(rubberTieValue(undefined, 'C1', 1)).toBeNull();
+    expect(rubberTieValue({ collectionDefinitions: [{ collectionId: 'C1' }] }, 'C1', 1)).toBeNull();
   });
 });
 
@@ -113,6 +111,8 @@ describe('matchUpRowSet', () => {
     expect(matchUpRows[0].score_string).toEqual('1-6 2-6'); // winner (side 2) perspective
     expect(matchUpRows[0].scheduled_date).toEqual('2025-02-02');
     expect(matchUpRows[0].venue_id).toEqual('vX');
+    expect(matchUpRows[0].tie_value).toBeNull(); // STANDARD carries no tie weight
+    expect(matchUpRows[0].embargo).toBeNull(); // from ctx
 
     expect(competitorRows).toHaveLength(2); // BYE side produced none
     const c1 = competitorRows.find((c) => c.side_participant_id === 'p1')!;
@@ -128,6 +128,7 @@ describe('matchUpRowSet', () => {
       {
         matchUpId: 'tie1',
         matchUpType: 'TEAM',
+        tieFormat: { collectionDefinitions: [{ collectionId: 'COL1', matchUpValue: 3 }] },
         sides: [
           {
             sideNumber: 1,
@@ -146,6 +147,8 @@ describe('matchUpRowSet', () => {
         tieMatchUps: [
           {
             matchUpId: 'r1',
+            collectionId: 'COL1',
+            collectionPosition: 1,
             sides: [
               { sideNumber: 1, participant: { participantId: 'p1', participantType: 'INDIVIDUAL' } },
               { sideNumber: 2, participant: { participantId: 'p2', participantType: 'INDIVIDUAL' } },
@@ -159,6 +162,8 @@ describe('matchUpRowSet', () => {
     const levels = matchUpRows.map((m) => m.match_up_level);
     expect(levels).toEqual(['TIE', 'RUBBER']);
     expect(matchUpRows[1].parent_match_up_id).toEqual('tie1');
+    expect(matchUpRows[0].tie_value).toBeNull(); // the TIE container carries no weight
+    expect(matchUpRows[1].tie_value).toEqual(3); // the RUBBER carries its collection matchUpValue
 
     const teamRows = competitorRows.filter((c) => c.participant_type === 'TEAM');
     expect(teamRows.find((c) => c.side_participant_id === 'team1')!.team_id).toEqual('TEAM_A');
