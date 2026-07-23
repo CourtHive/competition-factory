@@ -37,7 +37,10 @@ Creates a new `SanctioningRecord` in `DRAFT` status.
 Updates proposal fields on a record in editable status (`DRAFT` or `MODIFICATION_REQUESTED`).
 
 ```ts
-{ sanctioningRecord: SanctioningRecord; updates: Partial<TournamentProposal> }
+{
+  sanctioningRecord: SanctioningRecord;
+  updates: Partial<TournamentProposal>;
+}
 ```
 
 ---
@@ -48,14 +51,24 @@ CRUD operations for event proposals within a sanctioning record.
 
 ```ts
 // Add
-{ sanctioningRecord; eventProposal: EventProposal }
+{
+  sanctioningRecord;
+  eventProposal: EventProposal;
+}
 // Returns: { success, eventProposalId }
 
 // Remove
-{ sanctioningRecord; eventProposalId: string }
+{
+  sanctioningRecord;
+  eventProposalId: string;
+}
 
 // Update
-{ sanctioningRecord; eventProposalId: string; updates: Partial<EventProposal> }
+{
+  sanctioningRecord;
+  eventProposalId: string;
+  updates: Partial<EventProposal>;
+}
 ```
 
 ---
@@ -169,9 +182,21 @@ Adds a review note to the record.
 
 ---
 
+### openProposalRegistration
+
+Opens (or adjusts) public registration on a proposal **before** a `tournamentRecord` exists. Assigns a `tournamentId` to the proposal (minting one if absent) so a public site can render a registration page against a not-yet-activated proposal, and gives each proposed event a stable `eventId`. Merges any supplied `registrationProfile` fields and ensures `entriesOpen` is set (opening now when no explicit value is present). Gated only against terminal statuses (`REJECTED`, `WITHDRAWN`, `CLOSED`); stricter workflow/policy is enforced by the consuming service.
+
+```ts
+{ sanctioningRecord; tournamentId?: string; registrationProfile?: Partial<RegistrationProfile> }
+```
+
+**Returns:** `{ success, tournamentId, registrationProfile }`
+
+---
+
 ### activateFromSanctioning
 
-Generates a `tournamentRecord` from an `APPROVED` sanctioning record and transitions to `ACTIVE`.
+Generates a `tournamentRecord` from an `APPROVED` sanctioning record and transitions to `ACTIVE`. Reuses the `tournamentId` and per-event `eventId`s already assigned by [`openProposalRegistration`](#openproposalregistration) — so registrations collected before activation remain valid — otherwise mints new ids.
 
 ```ts
 { sanctioningRecord; sanctioningPolicy?: SanctioningPolicy }
@@ -258,7 +283,9 @@ Transitions to `CLOSED` (terminal).
 Returns a deep copy of the sanctioning record.
 
 ```ts
-{ sanctioningRecord }
+{
+  sanctioningRecord;
+}
 ```
 
 ---
@@ -268,7 +295,9 @@ Returns a deep copy of the sanctioning record.
 Returns valid status transitions for the record's current status.
 
 ```ts
-{ sanctioningRecord }
+{
+  sanctioningRecord;
+}
 ```
 
 **Returns:** `{ success, availableTransitions: SanctioningStatus[] }`
@@ -280,7 +309,9 @@ Returns valid status transitions for the record's current status.
 Returns the full status transition history.
 
 ```ts
-{ sanctioningRecord }
+{
+  sanctioningRecord;
+}
 ```
 
 **Returns:** `{ success, statusHistory: StatusTransition[] }`
@@ -304,7 +335,10 @@ Returns a completeness score (0-100%) with missing fields.
 Returns which policy tiers the proposal qualifies for.
 
 ```ts
-{ proposal: TournamentProposal; sanctioningPolicy: SanctioningPolicy }
+{
+  proposal: TournamentProposal;
+  sanctioningPolicy: SanctioningPolicy;
+}
 ```
 
 **Returns:** `{ success, eligibleTiers, tierEligibilities }`
@@ -316,7 +350,10 @@ Returns which policy tiers the proposal qualifies for.
 Detects scheduling conflicts using injected calendar context.
 
 ```ts
-{ sanctioningRecord; calendarContext: CalendarContext }
+{
+  sanctioningRecord;
+  calendarContext: CalendarContext;
+}
 ```
 
 **Returns:** `{ success, conflicts, errors, warnings, hasConflicts }`
@@ -344,7 +381,10 @@ Checks: insurance, safety plan, medical plan, anti-corruption, safeguarding, lea
 Validates whether a status transition is allowed.
 
 ```ts
-{ fromStatus: SanctioningStatus; toStatus: SanctioningStatus }
+{
+  fromStatus: SanctioningStatus;
+  toStatus: SanctioningStatus;
+}
 ```
 
 **Returns:** `{ success, valid }` or `{ error }` with valid targets in context.
