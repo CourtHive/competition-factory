@@ -249,9 +249,26 @@ sanctioningEngine.submitApplication({ sanctioningPolicy });
 
 ## Tournament Generation
 
+### openProposalRegistration
+
+Opens public registration on a proposal **before** it is activated into a `tournamentRecord`. This lets people register against a proposal that has not yet become a tournament — for example a public site rendering a registration page during the approval window.
+
+It assigns a `tournamentId` to the proposal (minting one if none is supplied), gives each proposed event a stable `eventId`, merges any supplied `registrationProfile` fields, and opens `entriesOpen` when no explicit value is present. [`activateFromSanctioning`](#activatefromsanctioning) later reuses these same ids, so registrations collected now survive activation.
+
+Registration can be (re)opened from any non-terminal status; only `REJECTED`, `WITHDRAWN`, and `CLOSED` are rejected. Stricter workflow gating (e.g. requiring approval first) is left to the consuming service.
+
+```js
+const { tournamentId, registrationProfile } = sanctioningEngine.openProposalRegistration({
+  registrationProfile: { entriesOpen: '2026-05-01' },
+});
+// tournamentId is now stable on the proposal and reused at activation
+```
+
+---
+
 ### activateFromSanctioning
 
-When a sanctioning record is `APPROVED`, this method generates a constrained `tournamentRecord` and transitions the sanctioning to `ACTIVE`.
+When a sanctioning record is `APPROVED`, this method generates a constrained `tournamentRecord` and transitions the sanctioning to `ACTIVE`. It reuses any `tournamentId` and per-event `eventId`s already assigned by [`openProposalRegistration`](#openproposalregistration) so pre-activation registrations remain valid; otherwise new ids are minted.
 
 The generated tournament carries:
 
