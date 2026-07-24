@@ -1,5 +1,12 @@
 # Changelog
 
+## [6.13.0](https://github.com/CourtHive/competition-factory/compare/v6.12.0...v6.13.0) (2026-07-24)
+
+
+### Features
+
+* **schedule:** getScenarioScheduleView grid-ready overlay — phase 1.x ([2a0059f](https://github.com/CourtHive/competition-factory/commit/2a0059f3ea60256f728259c80ff781f08fdc973b))
+
 ## [6.12.0](https://github.com/CourtHive/competition-factory/compare/v6.11.0...v6.12.0) (2026-07-24)
 
 
