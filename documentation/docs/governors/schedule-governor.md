@@ -1264,6 +1264,41 @@ engine.validateScheduleScenario({ scenario }); // → { valid: boolean, error?, 
 
 ---
 
+### getScenarioScheduleProjection
+
+The unofficial "Plan mode" overlay — the official schedule with a scenario's placements laid on top, without writing to any matchUp. Cells are tagged `official` / `planned`; conflicts come from `mergeFacilitySchedule`.
+
+```js
+const { scheduleCells, grid, conflicts, plannedMatchUpIds, skippedCompletedMatchUpIds } =
+  engine.getScenarioScheduleProjection({
+    scenarioId, // required
+    venueIds, // optional - restrict to these venues
+  });
+```
+
+---
+
+### getScheduleScenarioStatus
+
+Reconciles a scenario against current state so a client can alert when a plan is out of date and preview what a commit would do.
+
+```js
+engine.getScheduleScenarioStatus({ scenarioId });
+// → { outOfDate, currentHash, basedOnHash, completedMatchUpIds, missingMatchUpIds, applicableMatchUpIds }
+```
+
+---
+
+### rebaseScheduleScenario
+
+Re-anchors a scenario's drift baseline (`basedOnHash`) to the official schedule as it stands now — the explicit "I've reconciled, this plan is current" action.
+
+```js
+engine.rebaseScheduleScenario({ scenarioId });
+```
+
+---
+
 ### setMatchUpDailyLimits
 
 Sets daily limits for participant matchUp participation.

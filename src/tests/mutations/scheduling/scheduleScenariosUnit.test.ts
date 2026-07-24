@@ -1,7 +1,13 @@
+import { getScenarioScheduleProjection } from '@Query/matchUps/scheduling/getScenarioScheduleProjection';
 import { applyScheduleScenario } from '@Mutate/matchUps/schedule/applyScheduleScenario';
 import { validateScheduleScenario } from '@Validators/validateScheduleScenario';
 import { expect, it } from 'vitest';
 import {
+  computeScheduleFingerprint,
+  getScheduleScenarioStatus,
+} from '@Query/matchUps/scheduling/scheduleScenarioReconciliation';
+import {
+  rebaseScheduleScenario,
   removeScheduleScenario,
   updateScheduleScenario,
   getScheduleScenarios,
@@ -9,7 +15,11 @@ import {
   getScheduleScenario,
 } from '@Mutate/tournaments/scheduleScenarios';
 
-import { MISSING_TOURNAMENT_RECORD, MISSING_TOURNAMENT_RECORDS } from '@Constants/errorConditionConstants';
+import {
+  MISSING_TOURNAMENT_RECORD,
+  MISSING_TOURNAMENT_RECORDS,
+  SCHEDULE_SCENARIO_NOT_FOUND,
+} from '@Constants/errorConditionConstants';
 
 // Direct-import unit tests exercising the record-resolution and validation
 // branches that the engine-level tests can't reach (single-record injection,
@@ -56,6 +66,50 @@ it('applyScheduleScenario guards missing records and applies via the tournamentR
   const result = applyScheduleScenario({ tournamentRecord, scenarioId: 's1' });
   expect(result.success).toEqual(true);
   expect(result.applied).toEqual(0);
+});
+
+it('rebase / projection / status error + record-resolution branches (direct)', () => {
+  // no resolvable record
+  expect(rebaseScheduleScenario({ scenarioId: 'x' }).error).toEqual(MISSING_TOURNAMENT_RECORD);
+
+  const tournamentRecord: any = {
+    tournamentId: 't1',
+    events: [],
+    scheduling: {
+      scenarios: [
+        {
+          scenarioId: 's1',
+          scenarioName: 'A',
+          placements: [
+            { tournamentId: 't1', matchUpId: 'm1', schedule: { scheduledDate: '2024-05-01', scheduledTime: '10:00' } },
+          ],
+        },
+      ],
+    },
+  };
+
+  // rebase: not found, then success (stamps a baseline hash)
+  expect(rebaseScheduleScenario({ tournamentRecord, scenarioId: 'nope' }).error).toEqual(SCHEDULE_SCENARIO_NOT_FOUND);
+  const rebased = rebaseScheduleScenario({ tournamentRecord, scenarioId: 's1' });
+  expect(rebased.success).toEqual(true);
+  expect(rebased.scenario?.basedOnHash).toBeDefined();
+
+  // projection + status resolve the scenario or error
+  expect(getScenarioScheduleProjection({ tournamentRecord, scenarioId: 'nope' }).error).toEqual(
+    SCHEDULE_SCENARIO_NOT_FOUND,
+  );
+  expect((getScheduleScenarioStatus({ tournamentRecord, scenarioId: 'nope' }) as any).error).toEqual(
+    SCHEDULE_SCENARIO_NOT_FOUND,
+  );
+
+  // a placement whose matchUp does not exist is reported missing; projection yields no cell
+  const status: any = getScheduleScenarioStatus({ tournamentRecord, scenarioId: 's1' });
+  expect(status.missingMatchUpIds).toContain('m1');
+  expect(status.applicableMatchUpIds).toEqual([]);
+  expect(getScenarioScheduleProjection({ tournamentRecord, scenarioId: 's1' }).scheduleCells).toEqual([]);
+
+  // fingerprint over the tournamentRecord scope with a missing matchUp is still deterministic
+  expect(typeof computeScheduleFingerprint({ tournamentRecord, matchUpIds: ['m1'] })).toEqual('string');
 });
 
 it('validateScheduleScenario rejects every malformed shape', () => {

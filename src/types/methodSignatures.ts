@@ -70,11 +70,13 @@ import type { renameStructures } from '@Mutate/drawDefinitions/structureGovernor
 import type { resetVoluntaryConsolationStructure } from '@Mutate/drawDefinitions/resetVoluntaryConsolationStructure';
 import type { enableTieAutoCalc } from '@Mutate/drawDefinitions/matchUpGovernor/enableTieAutoCalc';
 import type { getDrawParticipantRepresentativeIds } from '@Query/drawDefinition/getDrawParticipantRepresentativeIds';
+import type { getScheduleScenarioStatus } from '@Query/matchUps/scheduling/scheduleScenarioReconciliation';
 import type { removeStructure } from '@Mutate/drawDefinitions/structureGovernor/removeStructure';
 import type { resetCompetitionState } from '@Mutate/drawDefinitions/competition/resetCompetitionState';
 import type { withdrawParticipantAtDrawPosition } from '@Mutate/drawDefinitions/withdrawParticipantAtDrawPosition';
 import type { addVoluntaryConsolationStructure } from '@Mutate/drawDefinitions/addVoluntaryConsolationStructure';
 import type { bulkScheduleTournamentMatchUps } from '@Mutate/matchUps/schedule/bulkScheduleTournamentMatchUps';
+import type { getScenarioScheduleProjection } from '@Query/matchUps/scheduling/getScenarioScheduleProjection';
 import type { luckyLoserDrawPositionAssignment } from '@Mutate/drawDefinitions/luckyLoserDrawPositionAssignment';
 import type { modifyEventMatchUpFormatTiming } from '@Mutate/extensions/events/modifyEventMatchUpFormatTiming';
 import type { removeEventMatchUpFormatTiming } from '@Mutate/extensions/events/removeEventMatchUpFormatTiming';
@@ -356,6 +358,7 @@ import type {
   addScheduleScenario,
   getScheduleScenario,
   getScheduleScenarios,
+  rebaseScheduleScenario,
   removeScheduleScenario,
   updateScheduleScenario,
 } from '@Mutate/tournaments/scheduleScenarios';
@@ -886,10 +889,12 @@ export interface MethodSignatures {
   getRoundVisibilityState: EngineMethod<typeof getRoundVisibilityState>;
   getScaledEntries: EngineMethod<typeof getScaledEntries>;
   getScaleValues: EngineMethod<typeof getScaleValues>;
+  getScenarioScheduleProjection: EngineMethod<typeof getScenarioScheduleProjection>;
   getScheduledRoundsDetails: EngineMethod<typeof getScheduledRoundsDetails>;
   getScheduleProjection: EngineMethod<typeof getScheduleProjection>;
   getScheduleScenario: EngineMethod<typeof getScheduleScenario>;
   getScheduleScenarios: EngineMethod<typeof getScheduleScenarios>;
+  getScheduleScenarioStatus: EngineMethod<typeof getScheduleScenarioStatus>;
   getSchedulingProfile: EngineMethod<typeof getSchedulingProfile>;
   getSchedulingProfileIssues: EngineMethod<typeof getSchedulingProfileIssues>;
   getScore: EngineMethod<typeof getScore>;
@@ -1008,6 +1013,7 @@ export interface MethodSignatures {
   qualifierDrawPositionAssignment: EngineMethod<typeof qualifierDrawPositionAssignment>;
   qualifierProgression: EngineMethod<typeof qualifierProgression>;
   queryOfficialRecord: EngineMethod<typeof queryOfficialRecord>;
+  rebaseScheduleScenario: EngineMethod<typeof rebaseScheduleScenario>;
   refreshEventDrawOrder: EngineMethod<typeof refreshEventDrawOrder>;
   regenerateParticipantNames: EngineMethod<typeof regenerateParticipantNames>;
   remapDrawDefinitionMatchUpIds: EngineMethod<typeof remapDrawDefinitionMatchUpIds>;

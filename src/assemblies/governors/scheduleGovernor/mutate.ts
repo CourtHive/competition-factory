@@ -34,6 +34,7 @@ export {
   addScheduleScenario,
   updateScheduleScenario,
   removeScheduleScenario,
+  rebaseScheduleScenario,
 } from '@Mutate/tournaments/scheduleScenarios';
 export { applyScheduleScenario } from '@Mutate/matchUps/schedule/applyScheduleScenario';
 export { validateScheduleScenario } from '@Validators/validateScheduleScenario';

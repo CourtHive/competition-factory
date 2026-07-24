@@ -338,10 +338,12 @@ export type FactoryEngineMethod =
   | 'getSaveDrawDeletions'
   | 'getScaledEntries'
   | 'getScaleValues'
+  | 'getScenarioScheduleProjection'
   | 'getScheduledRoundsDetails'
   | 'getScheduleProjection'
   | 'getScheduleScenario'
   | 'getScheduleScenarios'
+  | 'getScheduleScenarioStatus'
   | 'getSchedulingProfile'
   | 'getSchedulingProfileIssues'
   | 'getSchemaWriteMode'
@@ -480,6 +482,7 @@ export type FactoryEngineMethod =
   | 'queryOfficialRecord'
   | 'railsToDateAvailability'
   | 'rangesOverlap'
+  | 'rebaseScheduleScenario'
   | 'refreshEventDrawOrder'
   | 'regenerateParticipantNames'
   | 'remapDrawDefinitionMatchUpIds'
@@ -985,10 +988,12 @@ export const FACTORY_ENGINE_METHODS: readonly FactoryEngineMethod[] = [
   'getSaveDrawDeletions',
   'getScaledEntries',
   'getScaleValues',
+  'getScenarioScheduleProjection',
   'getScheduledRoundsDetails',
   'getScheduleProjection',
   'getScheduleScenario',
   'getScheduleScenarios',
+  'getScheduleScenarioStatus',
   'getSchedulingProfile',
   'getSchedulingProfileIssues',
   'getSchemaWriteMode',
@@ -1127,6 +1132,7 @@ export const FACTORY_ENGINE_METHODS: readonly FactoryEngineMethod[] = [
   'queryOfficialRecord',
   'railsToDateAvailability',
   'rangesOverlap',
+  'rebaseScheduleScenario',
   'refreshEventDrawOrder',
   'regenerateParticipantNames',
   'remapDrawDefinitionMatchUpIds',

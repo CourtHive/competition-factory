@@ -1,3 +1,4 @@
+import { computeScheduleFingerprint } from '@Query/matchUps/scheduling/scheduleScenarioReconciliation';
 import { validateScheduleScenario } from '@Validators/validateScheduleScenario';
 import { UUID } from '@Tools/UUID';
 
@@ -84,6 +85,12 @@ export function addScheduleScenario(params: AddScheduleScenarioArgs): {
   if (record.scheduling.scenarios.some((s) => s.scenarioId === scenarioId)) return { error: SCHEDULE_SCENARIO_EXISTS };
 
   const newScenario = { ...scenario, scenarioId, placements: scenario.placements ?? [] } as ScheduleScenario;
+  // Anchor the scenario to the official schedule as it stands now (baseline for
+  // drift detection). Factory-computed — never a caller-supplied value.
+  newScenario.basedOnHash = computeScheduleFingerprint({
+    tournamentRecords: recordsFor(record, params.tournamentRecords),
+    matchUpIds: newScenario.placements.map((p) => p.matchUpId),
+  });
   record.scheduling.scenarios.push(newScenario);
 
   return { ...SUCCESS, scenario: newScenario, scenarioId };
@@ -106,7 +113,15 @@ export function updateScheduleScenario(params: UpdateScheduleScenarioArgs): {
   const index = scenarios.findIndex((s) => s.scenarioId === params.scenarioId);
   if (index < 0) return { error: SCHEDULE_SCENARIO_NOT_FOUND };
 
-  const merged = { ...scenarios[index], ...params.updates, scenarioId: params.scenarioId } as ScheduleScenario;
+  // Preserve the baseline anchor across edits — editing the plan (rename, notes,
+  // moving placements) must NOT silently re-anchor it and clear an "out of date"
+  // alert. Re-anchoring is an explicit action (rebaseScheduleScenario).
+  const merged = {
+    ...scenarios[index],
+    ...params.updates,
+    scenarioId: params.scenarioId,
+    basedOnHash: scenarios[index].basedOnHash,
+  } as ScheduleScenario;
 
   const validity = validateScheduleScenario({
     tournamentRecords: recordsFor(record, params.tournamentRecords),
@@ -116,6 +131,28 @@ export function updateScheduleScenario(params: UpdateScheduleScenarioArgs): {
 
   scenarios[index] = merged;
   return { ...SUCCESS, scenario: merged };
+}
+
+// Re-anchor a scenario's drift baseline to the official schedule as it stands
+// now — the explicit "I've reconciled, this plan is current" action.
+export function rebaseScheduleScenario(params: RecordResolution & { scenarioId: string }): {
+  scenario?: ScheduleScenario;
+  success?: boolean;
+  error?: any;
+} {
+  const record = resolveRecord(params);
+  if (!record) return { error: MISSING_TOURNAMENT_RECORD };
+
+  const scenarios = record.scheduling?.scenarios ?? [];
+  const index = scenarios.findIndex((s) => s.scenarioId === params.scenarioId);
+  if (index < 0) return { error: SCHEDULE_SCENARIO_NOT_FOUND };
+
+  const basedOnHash = computeScheduleFingerprint({
+    tournamentRecords: recordsFor(record, params.tournamentRecords),
+    matchUpIds: scenarios[index].placements.map((p) => p.matchUpId),
+  });
+  scenarios[index] = { ...scenarios[index], basedOnHash };
+  return { ...SUCCESS, scenario: scenarios[index] };
 }
 
 export function removeScheduleScenario(params: RecordResolution & { scenarioId: string }): {

@@ -97,6 +97,43 @@ Because the placements are a `bulkScheduleMatchUps` payload:
 - `removePriorValues` defaults to `true`, matching TMX grid-drop semantics (a re-dated matchUp sheds stale grid position — see [Scheduling Conflicts](./scheduling-conflicts)).
 - The scenario is **left in place** after a commit; the caller decides whether to `removeScheduleScenario`.
 
+## Rendering a plan — the unofficial overlay
+
+`getScenarioScheduleProjection` produces the "Plan mode" view: the official schedule with a scenario's placements laid on top, **without writing to any matchUp**. Each cell is tagged `official` or `planned`, and double-booking conflicts in the projected plan are detected via the shared-facility `mergeFacilitySchedule` (`SAME_COURT_ORDER` / `SAME_SCHEDULED_TIME`).
+
+```js
+const { scheduleCells, grid, conflicts, plannedMatchUpIds, skippedCompletedMatchUpIds } =
+  engine.getScenarioScheduleProjection({ scenarioId, venueIds /* optional filter */ });
+```
+
+- `scheduleCells` — `ScheduleCell[]` (the shared-facility contract) each with `scenarioStatus: 'official' | 'planned'`.
+- `grid` — the same cells arranged into a venue → court → date grid (`FacilityScheduleGrid`).
+- `conflicts` — advisory double-bookings in the projected plan (detection only, never blocks).
+- `plannedMatchUpIds` / `skippedCompletedMatchUpIds` — what the plan moves vs. the completed matchUps it can't.
+
+Completed matchUps keep their official placement (a commit skips them) and are reported in `skippedCompletedMatchUpIds`.
+
+## Drift detection & rebase
+
+A scenario is anchored to the official schedule as it stood when it was authored (or last rebased) via `basedOnHash` — a fingerprint over the official placement + status of the scenario's matchUps. Editing a scenario (rename, notes, moving placements) **does not** re-anchor it, so an "out of date" alert persists until the director explicitly reconciles.
+
+```js
+const status = engine.getScheduleScenarioStatus({ scenarioId });
+// {
+//   outOfDate,             // the official baseline moved since authoring/rebase
+//   currentHash, basedOnHash,
+//   completedMatchUpIds,   // placements now completed → skipped on commit
+//   missingMatchUpIds,     // placements whose matchUp no longer exists
+//   applicableMatchUpIds,  // placements that would actually be scheduled
+// }
+```
+
+When a director has reviewed the changes and wants to accept current state as the new baseline:
+
+```js
+engine.rebaseScheduleScenario({ scenarioId }); // recomputes basedOnHash → outOfDate clears
+```
+
 :::note
-Drift / rebase reconciliation (detecting when a scenario is out of date because the official schedule changed or matchUps completed since it was authored, via `basedOnHash`) and the read-model projection that renders a scenario as an unofficial grid overlay land in a later phase alongside the TMX "Plan" mode.
+The TMX "Plan" mode UI (mode toggle, scenario switcher, drift banner, "Make official" commit) consumes these three read/rebase methods plus `applyScheduleScenario`; it lands in a later phase.
 :::

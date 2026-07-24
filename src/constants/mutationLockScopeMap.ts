@@ -38,6 +38,7 @@ export const methodScopeMap: Record<string, MutationLockScope> = {
   addScheduleScenario: 'SCHEDULING',
   updateScheduleScenario: 'SCHEDULING',
   removeScheduleScenario: 'SCHEDULING',
+  rebaseScheduleScenario: 'SCHEDULING',
   applyScheduleScenario: 'SCHEDULING',
   addCourtGridBooking: 'SCHEDULING',
   removeCourtGridBooking: 'SCHEDULING',
