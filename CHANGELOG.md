@@ -1,5 +1,28 @@
 # Changelog
 
+## [6.12.0](https://github.com/CourtHive/competition-factory/compare/v6.11.0...v6.12.0) (2026-07-24)
+
+
+### Features
+
+* **query:** add cast() read-model projection + canonical Venue.facilityId ([a0204e7](https://github.com/CourtHive/competition-factory/commit/a0204e78eb8468934b842a949d7854ab6dec7047))
+* **query:** embargo-aware publish cascade + tie_value in cast() ([c8bfb86](https://github.com/CourtHive/competition-factory/commit/c8bfb86f8e08464ad8955e651a1cf594c2c5a019))
+* **query:** export readModel builder toolkit as the single projection source ([5a01ebe](https://github.com/CourtHive/competition-factory/commit/5a01ebec6e51929dadec2691b4a9a800882d7713))
+* **schedule:** add schedule scenarios (contingency plans) — phase 0 ([8b5ba5d](https://github.com/CourtHive/competition-factory/commit/8b5ba5d4314793058727119dfb2c88dbb7718da5))
+* **schedule:** scenario projection + drift reconciliation — phase 1 ([7d28516](https://github.com/CourtHive/competition-factory/commit/7d285169fe40af2d279a54fea67bf9e5ea4b126e))
+
+
+### Bug Fixes
+
+* **deps:** patch fast-uri to 3.1.4 (host confusion advisory) ([c4633ef](https://github.com/CourtHive/competition-factory/commit/c4633ef5ce94ffdeb6951be9160f6c5f36d6a451))
+* **deps:** restore @types/jest for verify:server jest specs ([cbf7ed3](https://github.com/CourtHive/competition-factory/commit/cbf7ed36ac469a3eea265f7ab8a0b939368473b1))
+* **query:** cast() must not double-project team rubbers ([a43cf6d](https://github.com/CourtHive/competition-factory/commit/a43cf6d687a5ba2241005de449ac7fd199bad31e))
+
+
+### Documentation
+
+* **sanctioning:** document openProposalRegistration + tournamentId reuse ([7da2d16](https://github.com/CourtHive/competition-factory/commit/7da2d16750abab761f962b49672cf6eff5b98f43))
+
 ## [6.11.0](https://github.com/CourtHive/competition-factory/compare/v6.10.0...v6.11.0) (2026-07-21)
 
 
