@@ -31,6 +31,9 @@ minimumReleaseAgeExclude:
   - 'tabulator-scorecards'
   # Renovate security update: esbuild@0.28.1
   - esbuild@0.28.1
+  # Security override: js-yaml@5.2.2 (GHSA-pm4m-ph32-ghv5) — exempt the freshly
+  # published patch so the freshness guard doesn't block the security fix.
+  - js-yaml@5.2.2
 verifyDepsBeforeRun: false
 
 # Security overrides for transitive (dev-only) dependencies. pnpm v11 reads
@@ -42,8 +45,11 @@ verifyDepsBeforeRun: false
 # - multer: GHSA-72gw-mp4g-v24j (DoS via nested field names); patched 2.2.0. Via @nestjs/platform-express.
 # - brace-expansion: GHSA-v6h2-p8h4-qcjw (ReDoS via exponential expansion); patched 1.1.16 / 2.1.2.
 #   Two lines present (v1 via minimatch@3, v2 via other jest tooling) — patch each major separately.
-# - js-yaml: GHSA-724g-mxrg-4qvm (quadratic-complexity DoS via !!omap tag); patched 5.2.1.
-#   Only the v5 line is vulnerable (via markdownlint-cli2); 3.x/4.x consumers are unaffected.
+# - js-yaml: GHSA-pm4m-ph32-ghv5 (exponential parsing time in flow collections
+#   → DoS); patched 5.2.2. Only the v5 line is vulnerable (via markdownlint-cli2);
+#   3.x/4.x consumers are unaffected.
+# - postcss: GHSA-r28c-9q8g-f849 (path traversal in source-map auto-loading);
+#   patched 8.5.18. Via vitest/vite dev tooling only — not a runtime dependency.
 overrides:
   typescript: 6.0.3 # block native TS7 (no classic JS API — crashes tsc/nest/sonarjs); pairs with renovate TS-major block
   qs: '^6.15.2'
@@ -51,4 +57,5 @@ overrides:
   multer: '>=2.2.0'
   brace-expansion@1: '>=1.1.16'
   brace-expansion@2: '>=2.1.2'
-  js-yaml@5: '>=5.2.1'
+  js-yaml@5: '>=5.2.2'
+  postcss: '>=8.5.18'
