@@ -135,6 +135,7 @@ import type {
 } from '@Mutate/matchUps/schedule/assignMatchUpScorekeeper';
 import type { copyTournamentRecord } from '@Generators/tournamentRecords/copyTournamentRecord';
 import type { generateVirtualCourts } from '@Generators/scheduling/utils/generateVirtualCourts';
+import type { getScenarioScheduleView } from '@Query/matchUps/scheduling/getScenarioScheduleView';
 import type { getTournamentActionableMatchUps } from '@Query/tournaments/getTournamentActionableMatchUps';
 import type { removeDelegatedOutcome } from '@Mutate/extensions/matchUps/removeDelegatedOutcome';
 import type { addDrawDefinitionTimeItem } from '@Mutate/drawDefinitions/addDrawDefinitionTimeItem';
@@ -890,6 +891,7 @@ export interface MethodSignatures {
   getScaledEntries: EngineMethod<typeof getScaledEntries>;
   getScaleValues: EngineMethod<typeof getScaleValues>;
   getScenarioScheduleProjection: EngineMethod<typeof getScenarioScheduleProjection>;
+  getScenarioScheduleView: EngineMethod<typeof getScenarioScheduleView>;
   getScheduledRoundsDetails: EngineMethod<typeof getScheduledRoundsDetails>;
   getScheduleProjection: EngineMethod<typeof getScheduleProjection>;
   getScheduleScenario: EngineMethod<typeof getScheduleScenario>;

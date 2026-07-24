@@ -1289,6 +1289,22 @@ engine.getScheduleScenarioStatus({ scenarioId });
 
 ---
 
+### getScenarioScheduleView
+
+Grid-ready projection for a client "Plan mode" — returns the same shape as `competitionScheduleMatchUps` (`dateMatchUps` / `rows` / `courtsData` / `courtPrefix`) with the scenario's placements laid on top, so the client renders the plan through its existing grid path. The overlay is applied to a **throwaway deep copy**; the real records / engine state are never mutated.
+
+```js
+const view = engine.getScenarioScheduleView({
+  scenarioId, // required
+  matchUpFilters, // e.g. { scheduledDate }
+  withCourtGridRows, // default true
+  minCourtGridRows,
+});
+// → { dateMatchUps, rows, courtsData, courtPrefix, plannedMatchUpIds, skippedCompletedMatchUpIds, ... }
+```
+
+---
+
 ### rebaseScheduleScenario
 
 Re-anchors a scenario's drift baseline (`basedOnHash`) to the official schedule as it stands now — the explicit "I've reconciled, this plan is current" action.

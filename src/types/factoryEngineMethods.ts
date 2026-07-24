@@ -339,6 +339,7 @@ export type FactoryEngineMethod =
   | 'getScaledEntries'
   | 'getScaleValues'
   | 'getScenarioScheduleProjection'
+  | 'getScenarioScheduleView'
   | 'getScheduledRoundsDetails'
   | 'getScheduleProjection'
   | 'getScheduleScenario'
@@ -989,6 +990,7 @@ export const FACTORY_ENGINE_METHODS: readonly FactoryEngineMethod[] = [
   'getScaledEntries',
   'getScaleValues',
   'getScenarioScheduleProjection',
+  'getScenarioScheduleView',
   'getScheduledRoundsDetails',
   'getScheduleProjection',
   'getScheduleScenario',
