@@ -105,6 +105,28 @@ Callable on the engine (injects the loaded `tournamentRecord`) or via `queryGove
 
 ---
 
+## readModel (toolkit)
+
+`cast()` is a full-tournament rebuild. The lower-level primitives it composes are also exported as a namespace so an incremental producer (e.g. the CFS server projecting a single draw on mutation) can emit **byte-identical** rows without re-casting the whole record. Both paths must stay identical, so they share this one toolkit — the single source of the read-model shape.
+
+```js
+import { readModel } from 'tods-competition-factory';
+```
+
+| Export                                     | Purpose                                                                                                                                                                      |
+| ------------------------------------------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `cast`                                     | Full-tournament projection (the same function documented above).                                                                                                             |
+| `tournamentRow` / `venueRow` / `entryRows` | Row builders for the `tournaments`, `venues`/`tournament_venues`, and `entries` tables.                                                                                      |
+| `matchUpRowSet`                            | Builds the `match_ups` / `match_up_competitors` rows for a matchUp set (STANDARD / TIE container / nested RUBBER). Typed by `MatchUpRowContext` → `MatchUpRowSet`.           |
+| `matchUpResultRow` / `rubberTieValue`      | Result-row projection and the RUBBER `tie_value` weighting rule.                                                                                                             |
+| `resolveMatchUpPublishState`               | Resolves a matchUp's `published` intent + effective `embargo` release timestamp via the draw → stage → structure cascade (returns `MatchUpPublishState`).                    |
+| `getEventPublishStatus`                    | Event-level publish status used by the cascade.                                                                                                                              |
+| `resolvePersonLink` / `isFactoryUuid`      | Canonical `person_id` resolution — `LINK_PROVIDER_ID` for a real federation/provider id, `LINK_UNRESOLVED` (`NULL`) for synthetic/local participants (returns `PersonLink`). |
+
+This is an advanced integration surface for read-model producers (`courthive-query`, the CFS incremental projection); most consumers only need `cast()`.
+
+---
+
 ## competitionScheduleMatchUps
 
 Returns scheduled matchUps for a competition, with optional publish-state and embargo filtering. See full documentation in the [MatchUp Governor](./matchup-governor.md#competitionschedulematchups).
