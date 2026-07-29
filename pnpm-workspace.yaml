@@ -43,8 +43,12 @@ verifyDepsBeforeRun: false
 #   dev/test tooling (body-parser, supertest) only — not a runtime dependency.
 # - form-data: GHSA-hmw2-7cc7-3qxx (CRLF injection); patched 4.0.6. Via supertest/superagent.
 # - multer: GHSA-72gw-mp4g-v24j (DoS via nested field names); patched 2.2.0. Via @nestjs/platform-express.
-# - brace-expansion: GHSA-v6h2-p8h4-qcjw (ReDoS via exponential expansion); patched 1.1.16 / 2.1.2.
-#   Two lines present (v1 via minimatch@3, v2 via other jest tooling) — patch each major separately.
+# - brace-expansion: two advisories — GHSA-v6h2-p8h4-qcjw (ReDoS via exponential
+#   expansion) and a high DoS via unbounded expansion length (<=5.0.7; patched 5.0.8).
+#   The ONLY consumer in the tree is minimatch (v3/v9/v10), whose expand() usage is
+#   API-stable across brace-expansion majors — so a single global override to the
+#   patched v5 line is safe and avoids the earlier major-scoped `>=` overrides
+#   silently floating (and deduping) onto the vulnerable 5.0.7. Dev tree only.
 # - js-yaml: GHSA-pm4m-ph32-ghv5 (exponential parsing time in flow collections
 #   → DoS); patched 5.2.2. Only the v5 line is vulnerable (via markdownlint-cli2);
 #   3.x/4.x consumers are unaffected.
@@ -55,7 +59,6 @@ overrides:
   qs: '^6.15.2'
   form-data: '>=4.0.6'
   multer: '>=2.2.0'
-  brace-expansion@1: '>=1.1.16'
-  brace-expansion@2: '>=2.1.2'
+  brace-expansion: '>=5.0.8'
   js-yaml@5: '>=5.2.2'
   postcss: '>=8.5.18'
