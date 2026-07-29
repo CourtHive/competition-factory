@@ -1221,7 +1221,7 @@ export interface OnlineResource {
 export enum OnlineResourceTypeEnum {
   EMAIL = 'EMAIL',
   OTHER = 'OTHER',
-  SOCIAl_MEDIA = 'SOCIAL_MEDIA',
+  SOCIAL_MEDIA = 'SOCIAL_MEDIA',
   URL = 'URL',
 }
 export type OnlineResourceTypeUnion = keyof typeof OnlineResourceTypeEnum;
