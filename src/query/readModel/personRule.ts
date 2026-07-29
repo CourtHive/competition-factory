@@ -23,20 +23,22 @@ export function isFactoryUuid(id?: string | null): boolean {
 }
 
 /**
- * Person-resolution rule (CA-locked). Populate `person_id` ONLY when the
- * participant's `personId` is a real canonical person:
- *   1. `personId === participantId` → synthetic/local → skip (equal ids mean no
- *      real linkage).
- *   2. `personId` IS a factory UUID → also synthetic/generated → skip.
- *   3. otherwise (a non-UUID id — almost certainly a providerId/federation id
- *      such as a UTR id) → REAL person → populate, link_source='providerId'.
+ * Person-resolution rule (CA-locked; revised 2026-07-29). Populate `person_id`
+ * whenever the participant's `personId` is NOT a factory `tools.UUID()` value —
+ * i.e. it is a real provider/federation id (e.g. a UTR id):
+ *   1. `personId` absent → skip.
+ *   2. `personId` IS a factory UUID → synthetic/generated → skip.
+ *   3. otherwise (a non-UUID id) → REAL person → populate, link_source='providerId'.
  *
- * BOBOCA / HTS / CTS records (pulled from UTR data) carry real provider
- * personIds and resolve; courthive-ingest MUST generate UUID participantIds so
- * this test cleanly separates the real person from the synthetic participant.
+ * `personId === participantId` is NOT a skip signal. Some importers (IONSPORT →
+ * BOBOCA/HTS/CTS) reuse the real provider personId AS the participantId, so a
+ * non-UUID id equal to the participantId is still a real person and MUST resolve.
+ * The ONLY synthetic marker is the factory-UUID shape. (`participantId` stays in
+ * the signature for call-site symmetry but no longer gates.) courthive-ingest
+ * SHOULD still generate UUID participantIds, but the rule no longer depends on it.
  */
-export function resolvePersonLink(participantId?: string, personId?: string): PersonLink {
-  if (personId && personId !== participantId && !isFactoryUuid(personId)) {
+export function resolvePersonLink(_participantId?: string, personId?: string): PersonLink {
+  if (personId && !isFactoryUuid(personId)) {
     return { personId, linkSource: LINK_PROVIDER_ID };
   }
   return { personId: null, linkSource: LINK_UNRESOLVED };

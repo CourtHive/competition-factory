@@ -20,14 +20,20 @@ describe('isFactoryUuid', () => {
 });
 
 describe('resolvePersonLink', () => {
-  it('populates a real provider personId', () => {
+  it('populates a real provider personId distinct from participantId', () => {
     const link = resolvePersonLink('c8b0...-uuid-participant', 'UTR12345');
     expect(link.personId).toEqual('UTR12345');
     expect(link.linkSource).toEqual('providerId');
   });
 
-  it('skips when personId === participantId (synthetic/local)', () => {
-    const link = resolvePersonLink('same-id', 'same-id');
+  it('populates a non-UUID provider personId even when reused as the participantId (IONSPORT/BOBOCA)', () => {
+    const link = resolvePersonLink('424106', '424106');
+    expect(link.personId).toEqual('424106');
+    expect(link.linkSource).toEqual('providerId');
+  });
+
+  it('skips when personId is a factory UUID even if it equals the participantId', () => {
+    const link = resolvePersonLink('1b671a64-40d5-491e-99b0-da01ff1f3341', '1b671a64-40d5-491e-99b0-da01ff1f3341');
     expect(link.personId).toBeNull();
     expect(link.linkSource).toEqual('unresolved');
   });

@@ -203,7 +203,11 @@ describe('matchUpRowSet', () => {
     expect(competitorRows).toHaveLength(2);
     expect(competitorRows.map((c) => c.competitor_index)).toEqual([0, 1]);
     expect(competitorRows.every((c) => c.side_participant_id === 'pair1')).toBe(true);
-    expect(competitorRows[0].person_id).toBeNull(); // personId === participantId → synthetic
+    // i1's personId ('i1') is non-UUID → a real provider id (even though it equals participantId) → resolves.
+    expect(competitorRows[0].person_id).toEqual('i1');
+    expect(competitorRows[0].link_source).toEqual('providerId');
+    // i2 carries no person.personId → unresolved.
+    expect(competitorRows[1].person_id).toBeNull();
   });
 });
 
