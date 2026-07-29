@@ -1,5 +1,21 @@
 # Changelog
 
+## [6.13.1](https://github.com/CourtHive/competition-factory/compare/v6.13.0...v6.13.1) (2026-07-29)
+
+
+### Bug Fixes
+
+* correct SOCIAL_MEDIA enum member name in OnlineResourceTypeEnum ([e3a8d1b](https://github.com/CourtHive/competition-factory/commit/e3a8d1b51a7d62c224fdc1fb1436553eacf5d38b))
+* correct SOCIAL_MEDIA enum member name in OnlineResourceTypeEnum ([48468a8](https://github.com/CourtHive/competition-factory/commit/48468a8984069697e8900b8943b2580fa51d604a))
+* override brace-expansion to &gt;=5.0.8 to clear high audit advisory ([f684137](https://github.com/CourtHive/competition-factory/commit/f68413753dd8b59e31ba38e2518a6364870e8baa))
+* override brace-expansion to &gt;=5.0.8 to clear high audit advisory ([e80586b](https://github.com/CourtHive/competition-factory/commit/e80586b0ab9ef55b8bebe2d8be884fb189030043))
+
+
+### Documentation
+
+* **query:** document readModel builder toolkit namespace ([9f25939](https://github.com/CourtHive/competition-factory/commit/9f25939ebdeb6525ce1f5a3142875c43aaa0c456))
+* **schedule:** drop TMX/phase reference in schedule-scenarios note ([c9e43ff](https://github.com/CourtHive/competition-factory/commit/c9e43ff6dd9609b3526a99f0b853ac6d51f6a128))
+
 ## [6.13.0](https://github.com/CourtHive/competition-factory/compare/v6.12.0...v6.13.0) (2026-07-24)
 
 
