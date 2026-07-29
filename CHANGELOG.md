@@ -1,5 +1,12 @@
 # Changelog
 
+## [6.13.2](https://github.com/CourtHive/competition-factory/compare/v6.13.1...v6.13.2) (2026-07-29)
+
+
+### Bug Fixes
+
+* **readModel:** resolve non-UUID personId even when it equals participantId ([ec13ade](https://github.com/CourtHive/competition-factory/commit/ec13ade17ba5074a408d628ab8b659fa62cd2c5a))
+
 ## [6.13.1](https://github.com/CourtHive/competition-factory/compare/v6.13.0...v6.13.1) (2026-07-29)
 
 
