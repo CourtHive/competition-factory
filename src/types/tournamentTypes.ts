@@ -1,5 +1,6 @@
 import { DOUBLES, HYBRID, SINGLES, TEAM } from '@Constants/eventConstants';
 import { tournamentStatuses } from '@Constants/tournamentConstants';
+import { indoorOutdoorTypes } from '@Constants/venueConstants';
 import { disciplines } from '@Constants/disciplineConstants';
 import type { competitionFormat } from './competitionFormat';
 
@@ -493,7 +494,10 @@ export interface MatchUpFinishingPositionRange {
   winner: number[];
 }
 
-export type IndoorOutdoorUnion = 'INDOOR' | 'MIXED' | 'OUTDOOR';
+// Derived from the canonical indoorOutdoorTypes tuple (mirrors TournamentStatusUnion / DisciplineUnion)
+// so the type and venueConstants share one source of truth and attr-audit has a value vocab to guard the
+// indoorOutdoor literals (e.g. court.indoorOutdoor === 'INDOOR') against typos.
+export type IndoorOutdoorUnion = (typeof indoorOutdoorTypes)[number];
 
 export enum MatchUpStatusEnum {
   ABANDONED = 'ABANDONED',
