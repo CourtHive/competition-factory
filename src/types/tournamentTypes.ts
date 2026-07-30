@@ -1,5 +1,6 @@
 import { DOUBLES, HYBRID, SINGLES, TEAM } from '@Constants/eventConstants';
 import { tournamentStatuses } from '@Constants/tournamentConstants';
+import { disciplines } from '@Constants/disciplineConstants';
 import type { competitionFormat } from './competitionFormat';
 
 export interface Tournament {
@@ -192,7 +193,9 @@ export interface TimeItem {
   itemValue?: any;
 }
 
-export type DisciplineUnion = 'BEACH_TENNIS' | 'TENNIS' | 'WHEELCHAIR_TENNIS';
+// Derived from the canonical disciplines tuple (mirrors TournamentStatusUnion) so the type and
+// disciplineConstants share one source of truth and attr-audit has a value vocab to guard against typos.
+export type DisciplineUnion = (typeof disciplines)[number];
 export type CategoryUnion = 'AGE' | 'BOTH' | 'LEVEL';
 
 export interface DrawDefinition {

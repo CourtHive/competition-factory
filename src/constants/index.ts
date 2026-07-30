@@ -1,5 +1,6 @@
 export { auditConstants } from './auditConstants';
 export { competitionFormatConstants } from './competitionFormatConstants';
+export { disciplineConstants } from './disciplineConstants';
 export { drawDefinitionConstants } from './drawDefinitionConstants';
 export { displayConstants } from './displayConstants';
 export { entryStatusConstants } from './entryStatusConstants';
