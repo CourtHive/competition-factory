@@ -1,5 +1,12 @@
 # Changelog
 
+## [6.13.3](https://github.com/CourtHive/competition-factory/compare/v6.13.2...v6.13.3) (2026-07-30)
+
+
+### Bug Fixes
+
+* **types:** correct DrawTypeEnum key capitalization typos ([fcb9a92](https://github.com/CourtHive/competition-factory/commit/fcb9a92fff0c2527363d7fd563b434c538839856))
+
 ## [6.13.2](https://github.com/CourtHive/competition-factory/compare/v6.13.1...v6.13.2) (2026-07-29)
 
 
