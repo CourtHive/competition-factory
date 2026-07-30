@@ -23,6 +23,16 @@
 //      property-name AST pass is blind to these because they are StringLiteral nodes,
 //      not property identifiers (this is why `TournamentStatusUnion = 'ABANDONDED'`
 //      survived a full property audit).
+//   5. KEY/VALUE MISMATCH — in a "self-mapping enum" object (`export const X = { FOO:
+//      'FOO', BAR: 'BAR', … } as const`, the pattern behind `type T = keyof typeof X`),
+//      the KEY is declared identical to its string VALUE: the KEY becomes a union member
+//      while the VALUE is what code emits. A KEY that differs from its own VALUE — most
+//      often by CASE alone (`CURTIS_cONSOLATION: 'CURTIS_CONSOLATION'`) — silently
+//      pollutes the `keyof typeof` union with a misspelled member. Passes #1 and #4 are
+//      both blind to this: the CORRECT spelling appears only as a string VALUE (never as
+//      a frequent property NAME, so #1 has no canonical), and the VALUE itself is
+//      canonical (so #4 sees nothing wrong). This pass compares each key to its own value
+//      inside self-mapping objects and flags case-only or edit-distance-1 divergence.
 //
 // This file is the CANONICAL source. It is:
 //   - installed into each repo as `scripts/attr-audit.mjs` + a `pnpm attr-audit` script
@@ -520,6 +530,56 @@ function detectDeadSchemaValues(schemaProv, stringOcc, ignore) {
   return out;
 }
 
+// (E) Key/value mismatch in self-mapping enum objects. Object literals of the form
+// `{ FOO: 'FOO', BAR: 'BAR', … }` — the shape behind `export const X = {…} as const;
+// type T = keyof typeof X` — are declared so each KEY equals its string VALUE. A KEY
+// that differs from its own VALUE, especially by CASE alone (`CURTIS_cONSOLATION:
+// 'CURTIS_CONSOLATION'`), poisons the `keyof typeof` union with a member no producer
+// emits. To keep precision high we only inspect objects that are actually self-mapping
+// enums (>= MIN_SELFMAP identical key/value pairs), then within them flag a key that
+// (a) matches its value case-insensitively but not exactly — a pure capitalization
+// typo, the highest-confidence class — or (b) is enum-shaped and edit-distance 1 from
+// its value. Keys equal to their value, or far from it (a deliberate short-key → long-
+// value map), are never flagged. Config keys use the same allow/ignore lists as #1.
+const MIN_SELFMAP = 2;
+function keyText(ts, name) {
+  if (ts.isIdentifier(name) || ts.isStringLiteral(name)) return name.text;
+  return null;
+}
+function detectKeyValueMismatch(ts, files, root, ignore, allow) {
+  const out = [];
+  for (const file of files) {
+    const rel = path.relative(root, file);
+    let sf;
+    try { sf = ts.createSourceFile(file, fs.readFileSync(file, 'utf8'), ts.ScriptTarget.Latest, true); } catch { continue; }
+    const visit = (node) => {
+      if (ts.isObjectLiteralExpression(node)) {
+        const pairs = [];
+        for (const prop of node.properties) {
+          if (!ts.isPropertyAssignment(prop) || !prop.initializer || !ts.isStringLiteral(prop.initializer)) continue;
+          const key = keyText(ts, prop.name);
+          if (key !== null) pairs.push({ key, value: prop.initializer.text, nameNode: prop.name });
+        }
+        const selfMap = pairs.filter((p) => p.key === p.value).length;
+        if (selfMap >= MIN_SELFMAP) {
+          for (const p of pairs) {
+            if (p.key === p.value || ignore.has(p.key) || allow.has(p.key)) continue;
+            const caseOnly = p.key.toUpperCase() === p.value.toUpperCase();
+            const near = ENUM_SHAPE.test(p.value) && dl(p.key, p.value) === 1;
+            if (!caseOnly && !near) continue;
+            const { line } = sf.getLineAndCharacterOfPosition(p.nameNode.getStart(sf));
+            out.push({ suspect: p.key, canonical: p.value, klass: caseOnly ? 'case' : 'near', at: `${rel}:${line + 1}` });
+          }
+        }
+      }
+      ts.forEachChild(node, visit);
+    };
+    visit(sf);
+  }
+  out.sort((a, b) => a.suspect.localeCompare(b.suspect));
+  return out;
+}
+
 // ---------- main ----------
 async function main() {
   const cli = parseArgs(process.argv.slice(2));
@@ -564,6 +624,7 @@ async function main() {
 
   const { usage, funcValued, occ } = extract(ts, files, root);
   const typos = detectTypos(usage, occ, opts, canonical, opts.ignore);
+  const keyValueMismatch = detectKeyValueMismatch(ts, files, root, opts.ignore, allow);
   const writeOnly = opts.writeOnly ? detectWriteOnly(usage, funcValued, occ, opts.ignore) : [];
 
   // Value passes: canonical string values = schema enums + const-module values, with
@@ -598,7 +659,8 @@ async function main() {
       root, files: files.length, distinctAttributes: usage.size,
       schemaProps: schemaProps ? schemaProps.size : 0, typeProps: typeProps ? typeProps.size : 0,
       canonicalValues: canonicalValues ? canonicalValues.size : 0,
-      typoCandidates: typos, valueTypoCandidates: valueTypos,
+      typoCandidates: typos, keyValueMismatchCandidates: keyValueMismatch,
+      valueTypoCandidates: valueTypos,
       expressionValueTypoCandidates: exprValueTypos,
       orphanValues, crossEnumPairs: crossEnum, deadSchemaValues: deadSchema,
       writeOnly,
@@ -609,12 +671,14 @@ async function main() {
   const varCandidates = typos.filter((t) => !t.dangerous);
   const unallowedProp = propCandidates.filter((t) => !allow.has(t.suspect));
   const unallowedValue = [...valueTypos, ...exprValueTypos].filter((t) => !allow.has(t.suspect));
+  const unallowedKeyValue = keyValueMismatch.filter((t) => !allow.has(t.suspect));
 
   if (!opts.quiet) {
     console.log(`\nattr-audit  ${path.basename(root)}`);
     console.log(`  files: ${files.length}  |  distinct attributes: ${usage.size}` +
       (canonical ? `  |  canonical vocab: ${canonical.size}` : ''));
     console.log(`  typo candidates: ${typos.length}  (PROP/dangerous: ${propCandidates.length}, var/cosmetic: ${varCandidates.length})`);
+    console.log(`  key/value mismatch candidates: ${keyValueMismatch.length}  (self-mapping enum key ≠ its own value)`);
     if (canonicalValues) console.log(`  value vocab: ${canonicalValues.size}  |  VALUE typo candidates: ${valueTypos.length} (type/enum) + ${exprValueTypos.length} (expression)`);
     if (opts.extended && canonicalValues) console.log(`  orphan values: ${orphanValues.length}  |  cross-enum near-pairs: ${crossEnum.length}  |  dead schema values: ${deadSchema.length}`);
     if (opts.writeOnly) console.log(`  write-only (low precision): ${writeOnly.length}`);
@@ -624,6 +688,12 @@ async function main() {
       const flag = allow.has(t.suspect) ? ' [allow]' : '';
       const sch = t.canonicalInSchema ? ' {canon∈schema}' : '';
       console.log(`    ${t.suspect} (x${t.total} w${t.writes}/r${t.reads}) ~ ${t.canonical} (x${t.canonicalTotal})${sch}  @ ${t.at} ${t.kind || ''}${flag}`);
+    }
+    console.log(`\n  === KEY/VALUE mismatch candidates (self-mapping enum key ≠ its own value — case/near typo) ===`);
+    if (!keyValueMismatch.length) console.log('    (none)');
+    for (const t of keyValueMismatch) {
+      const flag = allow.has(t.suspect) ? ' [allow]' : '';
+      console.log(`    ${t.suspect}: '${t.canonical}'  (${t.klass})  @ ${t.at}${flag}`);
     }
     if (canonicalValues) {
       console.log(`\n  === ENUM / LITERAL-VALUE typo candidates (type admits a value nothing produces) ===`);
@@ -669,10 +739,14 @@ async function main() {
     if (opts.json) console.log(`\n  JSON written to ${opts.json}/`);
   }
 
-  if (opts.ci && (unallowedProp.length || unallowedValue.length)) {
+  if (opts.ci && (unallowedProp.length || unallowedValue.length || unallowedKeyValue.length)) {
     if (unallowedProp.length) {
       console.error(`\nattr-audit: ${unallowedProp.length} PROP-class typo candidate(s) not in allow-list:`);
       for (const t of unallowedProp) console.error(`  - ${t.suspect} ~ ${t.canonical}  @ ${t.at}`);
+    }
+    if (unallowedKeyValue.length) {
+      console.error(`\nattr-audit: ${unallowedKeyValue.length} KEY/VALUE mismatch candidate(s) not in allow-list:`);
+      for (const t of unallowedKeyValue) console.error(`  - ${t.suspect}: '${t.canonical}' (${t.klass})  @ ${t.at}`);
     }
     if (unallowedValue.length) {
       console.error(`\nattr-audit: ${unallowedValue.length} ENUM/LITERAL-VALUE typo candidate(s) not in allow-list:`);
