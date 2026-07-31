@@ -615,7 +615,7 @@ export interface CourtPosition {
 }
 
 export enum CourtPositionEnum {
-  BaSELINE = 'BASELINE',
+  BASELINE = 'BASELINE',
   LEFT_SERVICE_COURT = 'LEFT_SERVICE_COURT',
   NET = 'NET',
   RIGHT_SERVICE_COURT = 'RIGHT_SERVICE_COURT',
@@ -943,7 +943,7 @@ export enum TournamentLevelEnum {
   INTERNATIONAL = 'INTERNATIONAL',
   LOCAL = 'LOCAL',
   NATIONAL = 'NATIONAL',
-  Recreational = 'RECREATIONAL',
+  RECREATIONAL = 'RECREATIONAL',
   REGIONAL = 'REGIONAL',
   ZONAL = 'ZONAL',
 }
