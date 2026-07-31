@@ -24,8 +24,9 @@
 //      not property identifiers (this is why `TournamentStatusUnion = 'ABANDONDED'`
 //      survived a full property audit).
 //   5. KEY/VALUE MISMATCH — in a "self-mapping enum" object (`export const X = { FOO:
-//      'FOO', BAR: 'BAR', … } as const`, the pattern behind `type T = keyof typeof X`),
-//      the KEY is declared identical to its string VALUE: the KEY becomes a union member
+//      'FOO', BAR: 'BAR', … } as const`, the pattern behind `type T = keyof typeof X`)
+//      OR a string enum declaration (`export enum X { FOO = 'FOO', … }`, `type T = keyof
+//      typeof X`), the KEY is declared identical to its string VALUE: the KEY becomes a union member
 //      while the VALUE is what code emits. A KEY that differs from its own VALUE — most
 //      often by CASE alone (`CURTIS_cONSOLATION: 'CURTIS_CONSOLATION'`) — silently
 //      pollutes the `keyof typeof` union with a misspelled member. Passes #1 and #4 are
@@ -548,11 +549,40 @@ function keyText(ts, name) {
 }
 function detectKeyValueMismatch(ts, files, root, ignore, allow) {
   const out = [];
+  const norm = (s) => s.replace(/[^a-z0-9]/gi, '').toUpperCase();
+  // Given self-mapping key/value pairs, flag any key that differs from its own value
+  // by case alone (highest-confidence typo), by case+separator (`NETcORD`/`NET_CORD` —
+  // edit-distance 2, missed by both the case-only and edit-distance-1 tests), or is
+  // enum-shaped edit-distance 1. When the DEVIATIONS OUTNUMBER the exact self-maps the
+  // deviation is a systemic convention (e.g. an all-PascalCase country-code enum), not a
+  // set of typos — collapse it to a single advisory so it can't drown out lone outliers.
+  const flag = (pairs, sf, rel, container) => {
+    const selfMap = pairs.filter((p) => p.key === p.value).length;
+    if (selfMap < MIN_SELFMAP) return;
+    const hits = [];
+    for (const p of pairs) {
+      if (p.key === p.value || ignore.has(p.key) || allow.has(p.key)) continue;
+      const caseOnly = p.key.toUpperCase() === p.value.toUpperCase();
+      const sepCase = !caseOnly && norm(p.key) === norm(p.value);
+      const near = ENUM_SHAPE.test(p.value) && dl(p.key, p.value) === 1;
+      if (!caseOnly && !sepCase && !near) continue;
+      const { line } = sf.getLineAndCharacterOfPosition(p.nameNode.getStart(sf));
+      const klass = caseOnly ? 'case' : sepCase ? 'sep' : 'near';
+      hits.push({ suspect: p.key, canonical: p.value, klass, at: `${rel}:${line + 1}`, container });
+    }
+    if (!hits.length) return;
+    if (hits.length > selfMap) {
+      out.push({ suspect: container, canonical: `${hits.length} of ${pairs.length} members`, klass: 'systemic', at: hits[0].at, container, systemic: true });
+    } else {
+      out.push(...hits);
+    }
+  };
   for (const file of files) {
     const rel = path.relative(root, file);
     let sf;
     try { sf = ts.createSourceFile(file, fs.readFileSync(file, 'utf8'), ts.ScriptTarget.Latest, true); } catch { continue; }
     const visit = (node) => {
+      // (a) `export const X = { FOO: 'FOO', … }` object-literal self-maps.
       if (ts.isObjectLiteralExpression(node)) {
         const pairs = [];
         for (const prop of node.properties) {
@@ -560,17 +590,22 @@ function detectKeyValueMismatch(ts, files, root, ignore, allow) {
           const key = keyText(ts, prop.name);
           if (key !== null) pairs.push({ key, value: prop.initializer.text, nameNode: prop.name });
         }
-        const selfMap = pairs.filter((p) => p.key === p.value).length;
-        if (selfMap >= MIN_SELFMAP) {
-          for (const p of pairs) {
-            if (p.key === p.value || ignore.has(p.key) || allow.has(p.key)) continue;
-            const caseOnly = p.key.toUpperCase() === p.value.toUpperCase();
-            const near = ENUM_SHAPE.test(p.value) && dl(p.key, p.value) === 1;
-            if (!caseOnly && !near) continue;
-            const { line } = sf.getLineAndCharacterOfPosition(p.nameNode.getStart(sf));
-            out.push({ suspect: p.key, canonical: p.value, klass: caseOnly ? 'case' : 'near', at: `${rel}:${line + 1}` });
-          }
+        // Name the container from the enclosing `const X = {…}` when present, else anonymous.
+        const owner = node.parent && ts.isVariableDeclaration(node.parent) && ts.isIdentifier(node.parent.name)
+          ? node.parent.name.text : '(object literal)';
+        flag(pairs, sf, rel, owner);
+      }
+      // (b) `export enum X { FOO = 'FOO', … }` string-enum declarations. Same class of
+      // bug (key poisons the `keyof typeof X` union), different AST node — this branch
+      // is why WinReasonEnum.NETcORD / BallTypeEnum.Stage1Green slipped past pass #5.
+      if (ts.isEnumDeclaration(node)) {
+        const pairs = [];
+        for (const member of node.members) {
+          if (!member.initializer || !ts.isStringLiteral(member.initializer)) continue;
+          const key = keyText(ts, member.name);
+          if (key !== null) pairs.push({ key, value: member.initializer.text, nameNode: member.name });
         }
+        flag(pairs, sf, rel, node.name.text);
       }
       ts.forEachChild(node, visit);
     };
@@ -693,7 +728,8 @@ async function main() {
     if (!keyValueMismatch.length) console.log('    (none)');
     for (const t of keyValueMismatch) {
       const flag = allow.has(t.suspect) ? ' [allow]' : '';
-      console.log(`    ${t.suspect}: '${t.canonical}'  (${t.klass})  @ ${t.at}${flag}`);
+      if (t.systemic) console.log(`    ${t.suspect}: ${t.canonical} deviate from their values (systemic — review as a group)  @ ${t.at}${flag}`);
+      else console.log(`    ${t.suspect}: '${t.canonical}'  (${t.klass})  @ ${t.at}${flag}`);
     }
     if (canonicalValues) {
       console.log(`\n  === ENUM / LITERAL-VALUE typo candidates (type admits a value nothing produces) ===`);
