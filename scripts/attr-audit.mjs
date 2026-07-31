@@ -354,7 +354,6 @@ function dl(a, b) {
   return d[al][bl];
 }
 
-const PROP_KINDS = new Set(['propRead', 'propAssign', 'objectKey', 'shorthandKey', 'destructure']);
 const DANGEROUS_KINDS = new Set(['propRead', 'propAssign', 'objectKey']);
 
 function detectTypos(usage, occ, opts, schemaProps, ignore) {
@@ -376,8 +375,6 @@ function detectTypos(usage, occ, opts, schemaProps, ignore) {
     }
     if (!best) continue;
     const kinds = (occ.get(a.name) || []).map((o) => o.kind);
-    const isProp = kinds.some((k) => DANGEROUS_KINDS.has(k)) ||
-      (kinds.every((k) => k === 'destructure') && false); // destructure-only counted as var below
     const dangerous = kinds.some((k) => DANGEROUS_KINDS.has(k));
     const primary = (occ.get(a.name) || []).find((o) => DANGEROUS_KINDS.has(o.kind)) || (occ.get(a.name) || [])[0] || {};
     candidates.push({

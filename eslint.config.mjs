@@ -82,4 +82,15 @@ export default [
       '@typescript-eslint/no-empty-function': 'off',
     },
   },
+  {
+    // Node ESM build/audit scripts (*.mjs) — the main block only matches .ts/.js,
+    // so without this these get js.recommended's no-undef but no Node globals,
+    // flagging console/process/URL. Give them Node globals; skip the TS/sonar rules.
+    files: ['scripts/**/*.mjs'],
+    languageOptions: {
+      ecmaVersion: 'latest',
+      sourceType: 'module',
+      globals: { ...globals.node },
+    },
+  },
 ];
