@@ -178,7 +178,7 @@ export enum BallTypeEnum {
   TYPE1FAST = 'TYPE1FAST',
   TYPE3SLOW = 'TYPE3SLOW',
 }
-export type BallTypeUnion = keyof typeof BallTypeEnum;
+export type BallTypeUnion = `${BallTypeEnum}`;
 
 export interface Extension {
   description?: string;
@@ -270,7 +270,7 @@ export enum StageTypeEnum {
   QUALIFYING = 'QUALIFYING',
   VOLUNTARY_CONSOLATION = 'VOLUNTARY_CONSOLATION',
 }
-export type StageTypeUnion = keyof typeof StageTypeEnum;
+export type StageTypeUnion = `${StageTypeEnum}`;
 
 export enum EntryStatusEnum {
   ALTERNATE = 'ALTERNATE',
@@ -288,7 +288,7 @@ export enum EntryStatusEnum {
   WILDCARD = 'WILDCARD',
   WITHDRAWN = 'WITHDRAWN',
 }
-export type EntryStatusUnion = keyof typeof EntryStatusEnum;
+export type EntryStatusUnion = `${EntryStatusEnum}`;
 
 export interface DrawLink {
   createdAt?: Date | string;
@@ -308,7 +308,7 @@ export enum LinkTypeEnum {
   POSITION = 'POSITION',
   WINNER = 'WINNER',
 }
-export type LinkTypeUnion = keyof typeof LinkTypeEnum;
+export type LinkTypeUnion = `${LinkTypeEnum}`;
 
 export interface DrawLinkSource {
   bestOf?: number;
@@ -350,14 +350,14 @@ export enum PositioningProfileEnum {
   TOP_DOWN = 'TOP_DOWN',
   WATERFALL = 'WATERFALL',
 }
-export type PositioningProfileUnion = keyof typeof PositioningProfileEnum;
+export type PositioningProfileUnion = `${PositioningProfileEnum}`;
 
 export enum SeedingProfileEnum {
   CLUSTER = 'CLUSTER',
   SEPARATE = 'SEPARATE',
   WATERFALL = 'WATERFALL',
 }
-export type SeedingProfileUnion = keyof typeof SeedingProfileEnum;
+export type SeedingProfileUnion = `${SeedingProfileEnum}`;
 
 export interface Interleave {
   interleave: number;
@@ -517,7 +517,7 @@ export enum MatchUpStatusEnum {
   TO_BE_PLAYED = 'TO_BE_PLAYED',
   WALKOVER = 'WALKOVER',
 }
-export type MatchUpStatusUnion = keyof typeof MatchUpStatusEnum;
+export type MatchUpStatusUnion = `${MatchUpStatusEnum}`;
 
 export interface Score {
   createdAt?: Date | string;
@@ -621,7 +621,7 @@ export enum CourtPositionEnum {
   RIGHT_SERVICE_COURT = 'RIGHT_SERVICE_COURT',
   SERVICELINE = 'SERVICELINE',
 }
-export type CourtPositionUnion = keyof typeof CourtPositionEnum;
+export type CourtPositionUnion = `${CourtPositionEnum}`;
 
 export enum ShotDetailEnum {
   DRIVE = 'DRIVE',
@@ -635,7 +635,7 @@ export enum ShotDetailEnum {
   TRICK = 'TRICK',
   VOLLEY = 'VOLLEY',
 }
-export type ShotDetailUnion = keyof typeof ShotDetailEnum;
+export type ShotDetailUnion = `${ShotDetailEnum}`;
 
 export enum ShotOutcomeEnum {
   IN = 'IN',
@@ -643,14 +643,14 @@ export enum ShotOutcomeEnum {
   NET = 'NET',
   OUT = 'OUT',
 }
-export type ShotOutcomeUnion = keyof typeof ShotOutcomeEnum;
+export type ShotOutcomeUnion = `${ShotOutcomeEnum}`;
 
 export enum ShotTypeEnum {
   BACKHAND = 'BACKHAND',
   FOREHAND = 'FOREHAND',
   SERVE = 'SERVE',
 }
-export type ShotTypeUnion = keyof typeof ShotTypeEnum;
+export type ShotTypeUnion = `${ShotTypeEnum}`;
 
 export enum WinReasonEnum {
   ACE = 'ACE',
@@ -662,7 +662,7 @@ export enum WinReasonEnum {
   UNFORCED = 'UNFORCED',
   WINNER = 'WINNER',
 }
-export type WinReasonUnion = keyof typeof WinReasonEnum;
+export type WinReasonUnion = `${WinReasonEnum}`;
 
 export interface Side {
   createdAt?: Date | string;
@@ -714,7 +714,7 @@ export enum SurfaceCategoryEnum {
   GRASS = 'GRASS',
   HARD = 'HARD',
 }
-export type SurfaceCategoryUnion = keyof typeof SurfaceCategoryEnum;
+export type SurfaceCategoryUnion = `${SurfaceCategoryEnum}`;
 
 export interface TieFormat {
   collectionDefinitions: CollectionDefinition[];
@@ -842,7 +842,7 @@ export enum FinishingPositionEnum {
   ROUND_OUTCOME = 'ROUND_OUTCOME',
   WIN_RATIO = 'WIN_RATIO',
 }
-export type FinishingPositionUnion = keyof typeof FinishingPositionEnum;
+export type FinishingPositionUnion = `${FinishingPositionEnum}`;
 
 export interface TallyResult {
   GEMscore?: number;
@@ -916,7 +916,7 @@ export enum StructureTypeEnum {
   CONTAINER = 'CONTAINER',
   ITEM = 'ITEM',
 }
-export type StructureTypeUnion = keyof typeof StructureTypeEnum;
+export type StructureTypeUnion = `${StructureTypeEnum}`;
 
 /**
  * Competitive tier classification — federation-specific prestige level.
@@ -947,13 +947,13 @@ export enum TournamentLevelEnum {
   REGIONAL = 'REGIONAL',
   ZONAL = 'ZONAL',
 }
-export type TournamentLevelUnion = keyof typeof TournamentLevelEnum;
+export type TournamentLevelUnion = `${TournamentLevelEnum}`;
 
 export enum WheelchairClassEnum {
   QUAD = 'QUAD',
   STANDARD = 'STANDARD',
 }
-export type WheelchairClassUnion = keyof typeof WheelchairClassEnum;
+export type WheelchairClassUnion = `${WheelchairClassEnum}`;
 
 export enum CountryCodeEnum {
   ABW = 'ABW',
@@ -1231,7 +1231,7 @@ export enum OnlineResourceTypeEnum {
   SOCIAL_MEDIA = 'SOCIAL_MEDIA',
   URL = 'URL',
 }
-export type OnlineResourceTypeUnion = keyof typeof OnlineResourceTypeEnum;
+export type OnlineResourceTypeUnion = `${OnlineResourceTypeEnum}`;
 
 export interface Participant {
   contacts?: Contact[];
@@ -1293,13 +1293,13 @@ export enum ParticipantRoleEnum {
   TRANSPORT = 'TRANSPORT',
   VOLUNTEER = 'VOLUNTEER',
 }
-export type ParticipantRoleUnion = keyof typeof ParticipantRoleEnum;
+export type ParticipantRoleUnion = `${ParticipantRoleEnum}`;
 
 export enum ParticipantStatusEnum {
   ACTIVE = 'ACTIVE',
   WITHDRAWN = 'WITHDRAWN',
 }
-export type ParticipantStatusUnion = keyof typeof ParticipantStatusEnum;
+export type ParticipantStatusUnion = `${ParticipantStatusEnum}`;
 
 export enum ParticipantTypeEnum {
   GROUP = 'GROUP',
@@ -1307,7 +1307,7 @@ export enum ParticipantTypeEnum {
   PAIR = 'PAIR',
   TEAM = 'TEAM',
 }
-export type ParticipantTypeUnion = keyof typeof ParticipantTypeEnum;
+export type ParticipantTypeUnion = `${ParticipantTypeEnum}`;
 
 export interface Penalty {
   createdAt?: Date | string;
@@ -1343,7 +1343,7 @@ export enum PenaltyTypeEnum {
   UNSPORTSMANLIKE_CONDUCT = 'UNSPORTSMANLIKE_CONDUCT',
   VERBAL_ABUSE = 'VERBAL_ABUSE',
 }
-export type PenaltyTypeUnion = keyof typeof PenaltyTypeEnum;
+export type PenaltyTypeUnion = `${PenaltyTypeEnum}`;
 
 export interface Person {
   addresses?: Address[];
@@ -1410,7 +1410,7 @@ export enum AddressTypeEnum {
   VENUE = 'VENUE',
   WORK = 'WORK',
 }
-export type AddressTypeUnion = keyof typeof AddressTypeEnum;
+export type AddressTypeUnion = `${AddressTypeEnum}`;
 
 export interface TeamAttribute {
   teamId?: string;
@@ -1450,27 +1450,27 @@ export enum PlayingDoubleHandCodeEnum {
   FOREHAND = 'FOREHAND',
   NONE = 'NONE',
 }
-export type PlayingDoubleHandCodeUnion = keyof typeof PlayingDoubleHandCodeEnum;
+export type PlayingDoubleHandCodeUnion = `${PlayingDoubleHandCodeEnum}`;
 
 export enum LengthUnitEnum {
   CENTIMETER = 'CENTIMETER',
   METER = 'METER',
   MILLIMETER = 'MILLIMETER',
 }
-export type LengthUnitUnion = keyof typeof LengthUnitEnum;
+export type LengthUnitUnion = `${LengthUnitEnum}`;
 
 export enum PlayingHandCodeEnum {
   AMBIDEXTROUS = 'AMBIDEXTROUS',
   LEFT = 'LEFT',
   RIGHT = 'RIGHT',
 }
-export type PlayingHandCodeUnion = keyof typeof PlayingHandCodeEnum;
+export type PlayingHandCodeUnion = `${PlayingHandCodeEnum}`;
 
 enum WeightUnitEnum {
   GRAM = 'GRAM',
   KILOGRAM = 'KILOGRAM',
 }
-export type WeightUnitUnion = keyof typeof WeightUnitEnum;
+export type WeightUnitUnion = `${WeightUnitEnum}`;
 
 export interface UnifiedPersonID {
   createdAt?: Date | string;
@@ -1489,7 +1489,7 @@ export enum SexEnum {
   MALE = 'MALE',
   OTHER = 'OTHER',
 }
-export type SexUnion = keyof typeof SexEnum;
+export type SexUnion = `${SexEnum}`;
 
 export interface RegistrationProfile {
   // temporal
@@ -1725,4 +1725,4 @@ export enum WeekdayEnum {
   SAT = 'SAT',
   SUN = 'SUN',
 }
-export type WeekdayUnion = keyof typeof WeekdayEnum;
+export type WeekdayUnion = `${WeekdayEnum}`;
