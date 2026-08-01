@@ -1,5 +1,7 @@
 import { OTHER, OTHER_ABBR } from '@Constants/genderConstants';
 
+const OTHER_SEXES = new Set([OTHER, OTHER_ABBR]);
+
 export function isOther(sex: any): boolean {
-  return [OTHER, OTHER_ABBR].includes(sex);
+  return OTHER_SEXES.has(sex);
 }

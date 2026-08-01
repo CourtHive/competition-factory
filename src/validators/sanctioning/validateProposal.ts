@@ -5,7 +5,7 @@ import { MISSING_SANCTIONING_POLICY, MISSING_PROPOSAL } from '@Constants/sanctio
 import { SUCCESS } from '@Constants/resultConstants';
 
 // Types
-import type {
+import {
   TournamentProposal,
   SanctioningPolicy,
   SanctioningTier,
@@ -189,7 +189,7 @@ function validateEventConstraints(event, index: number, tier: SanctioningTier, i
   if (
     tier.allowedGenders?.length &&
     event.gender &&
-    !tier.allowedGenders.map(coercedGender).includes(coercedGender(event.gender))
+    !new Set(tier.allowedGenders.map(coercedGender)).has(coercedGender(event.gender))
   ) {
     issues.push({
       field: `${prefix}.gender`,
