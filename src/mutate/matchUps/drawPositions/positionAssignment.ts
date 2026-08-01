@@ -139,6 +139,13 @@ export function assignDrawPosition({
       stack,
     });
 
+  // Idempotent no-op: the participant is already assigned to exactly this
+  // drawPosition. Re-asserting the same assignment (a bulk re-sync or a retry —
+  // e.g. an integration re-pushing an already-populated draw) must succeed, not
+  // error. The "already assigned" guard below still applies when the participant
+  // sits at a DIFFERENT drawPosition — that's a real conflict needing a swap/clear.
+  if (positionAssignment.participantId === participantId) return { positionAssignments, ...SUCCESS };
+
   const participantAlreadyAssigned = positionAssignments?.map(getParticipantId).includes(participantId);
 
   if (participantAlreadyAssigned) {
@@ -262,9 +269,7 @@ function propagateSeedAssignment({
   if (!mainSeeding && !(structure.stage && [CONSOLATION, PLAY_OFF].includes(structure.stage))) return;
 
   const targetStage = structure.stage === QUALIFYING ? QUALIFYING : MAIN;
-  const targetStructure = drawDefinition.structures?.find(
-    (s) => s?.stage === targetStage && s?.stageSequence === 1,
-  );
+  const targetStructure = drawDefinition.structures?.find((s) => s?.stage === targetStage && s?.stageSequence === 1);
   const seedAssignments = targetStructure?.seedAssignments ?? [];
   const assignment = seedAssignments.find((a) => a.participantId === participantId);
 
