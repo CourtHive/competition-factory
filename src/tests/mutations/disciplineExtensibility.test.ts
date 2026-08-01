@@ -4,6 +4,7 @@ import { tournamentEngine } from '@Engines/syncEngine';
 import mocksEngine from '@Assemblies/engines/mock';
 import { expect, test } from 'vitest';
 
+import tournamentSchema from '@Global/schema/tournament.schema.json';
 import { disciplines } from '@Constants/disciplineConstants';
 
 // Phase 0 — normalization + curated known-set + drift guard.
@@ -44,6 +45,16 @@ test('known set includes the schema-enumerated racquet disciplines (drift guard)
   for (const d of ['TENNIS', 'BEACH_TENNIS', 'WHEELCHAIR_TENNIS', 'PADEL', 'PICKLEBALL']) {
     expect(disciplines).toContain(d);
   }
+});
+
+// Now that the schema DisciplineEnum is OPEN, its `examples` list is the documented known set.
+// disciplineConstants is the single source of truth, so the two must stay in lockstep — this
+// fails if a discipline is added to the constants but not the schema examples (or vice versa),
+// preventing the soft re-drift the open model could otherwise reintroduce.
+test('schema DisciplineEnum examples stay in lockstep with disciplineConstants', () => {
+  const examples: string[] = (tournamentSchema as any).definitions.DisciplineEnum.examples ?? [];
+  const sorted = (arr: readonly string[]) => [...arr].toSorted((a, b) => a.localeCompare(b));
+  expect(sorted(examples)).toEqual(sorted(disciplines));
 });
 
 // Phase 2 — policy gate + normalize-on-write.
