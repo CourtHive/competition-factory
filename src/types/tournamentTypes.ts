@@ -773,12 +773,11 @@ enum GenderEnum {
   ANY_ABBR = 'A',
 
   FEMALE = 'FEMALE',
-  OTHER = 'OTHER',
   MIXED = 'MIXED',
   MALE = 'MALE',
   ANY = 'ANY',
 }
-export type GenderUnion = keyof typeof GenderEnum;
+export type GenderUnion = `${GenderEnum}`;
 
 export interface WinCriteria {
   aggregateValue?: boolean;
@@ -1485,6 +1484,10 @@ export interface UnifiedPersonID {
 }
 
 export enum SexEnum {
+  FEMALE_ABBR = 'F',
+  MALE_ABBR = 'M',
+  OTHER_ABBR = 'O',
+
   FEMALE = 'FEMALE',
   MALE = 'MALE',
   OTHER = 'OTHER',

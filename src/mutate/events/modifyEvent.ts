@@ -7,6 +7,7 @@ import { categoryCanContain } from '@Query/event/categoryCanContain';
 import { decorateResult } from '@Functions/global/decorateResult';
 import { getFlightProfile } from '@Query/event/getFlightProfile';
 import { validateCategory } from '@Validators/validateCategory';
+import { normalizeGender } from '@Helpers/coercedGender';
 import { setEventDates } from './setEventDates';
 import { isMixed } from '@Validators/isMixed';
 import { isAny } from '@Validators/isAny';
@@ -57,6 +58,10 @@ export function modifyEvent(params: ModifyEventArgs): ResultType {
 
   const { eventUpdates, event } = params;
   const stack = 'modifyEvent';
+
+  // normalize accepted TODS short codes (M/F/X/A) to the canonical extended form
+  // before validation + persistence, so records stay canonical at rest
+  if (eventUpdates.gender) eventUpdates.gender = normalizeGender(eventUpdates.gender);
 
   const enteredParticipants = getEnteredParticipants(params);
   const participantsProfile = getParticipantsProfile({ enteredParticipants });

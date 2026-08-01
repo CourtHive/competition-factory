@@ -5,7 +5,7 @@ import { requireParams } from '@Helpers/parameters/requireParams';
 import { getParticipantId } from '@Functions/global/extractors';
 import { participantRoles } from '@Constants/participantRoles';
 import { definedAttributes } from '@Tools/definedAttributes';
-import { genderConstants } from '@Constants/genderConstants';
+import { coercedSex } from '@Helpers/coercedSex';
 import { addNotice } from '@Global/state/globalState';
 import { isValidDateString } from '@Tools/dateTime';
 import { makeDeepCopy } from '@Tools/makeDeepCopy';
@@ -170,7 +170,8 @@ function generatePairParticipantName({ individualParticipants, newValues }) {
 function updatePerson({ updateParticipantName, existingParticipant, newValues, person }) {
   const newPersonValues: any = {};
   const { standardFamilyName, standardGivenName, nationalityCode, personId, birthDate, tennisId, sex } = person;
-  if (sex && Object.keys(genderConstants).includes(sex)) newPersonValues.sex = sex;
+  const canonicalSex = coercedSex(sex);
+  if (canonicalSex) newPersonValues.sex = canonicalSex;
 
   let personNameModified;
   if (isString(personId)) newPersonValues.personId = personId;

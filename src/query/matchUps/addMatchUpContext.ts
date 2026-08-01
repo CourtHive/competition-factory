@@ -21,7 +21,7 @@ import { POLICY_TYPE_PARTICIPANT } from '@Constants/policyConstants';
 import { isEmbargoed } from '@Query/publishing/isEmbargoed';
 import { QUALIFYING } from '@Constants/drawDefinitionConstants';
 import { BYE } from '@Constants/matchUpStatusConstants';
-import { MIXED } from '@Constants/genderConstants';
+import { isMixed } from '@Validators/isMixed';
 import { HydratedMatchUp } from '@Types/hydrated';
 import { SINGLES } from '@Constants/matchUpTypes';
 import { TEAM } from '@Constants/eventConstants';
@@ -622,7 +622,7 @@ function hydrateSideParticipant({
 function inferMatchUpGender({ contextProfile, matchUpWithContext }) {
   const inferGender =
     contextProfile?.inferGender &&
-    (!matchUpWithContext.gender || matchUpWithContext.gender === MIXED) &&
+    (!matchUpWithContext.gender || isMixed(matchUpWithContext.gender)) &&
     matchUpWithContext.sides?.length === 2 &&
     matchUpWithContext.matchUpType !== TEAM;
 

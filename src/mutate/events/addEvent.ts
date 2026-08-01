@@ -4,6 +4,7 @@ import { addEventNotice } from '@Mutate/notifications/eventNotifications';
 import { allEventMatchUps } from '@Query/matchUps/getAllEventMatchUps';
 import { validateTieFormat } from '@Validators/validateTieFormat';
 import { requireParams } from '@Helpers/parameters/requireParams';
+import { normalizeGender } from '@Helpers/coercedGender';
 import { definedAttributes } from '@Tools/definedAttributes';
 import { getTopics } from '@Global/state/globalState';
 import { UUID } from '@Tools/UUID';
@@ -57,6 +58,10 @@ export function addEvent({ suppressNotifications, tournamentRecord, internalUse,
     endDate,
     ...event,
   };
+
+  // normalize accepted TODS short codes (M/F/X/A) to the canonical extended form
+  // so events are stored with a canonical gender at rest
+  if (eventRecord.gender) eventRecord.gender = normalizeGender(eventRecord.gender);
 
   if (event.eventType === TEAM_EVENT) {
     if (event.tieFormat) {

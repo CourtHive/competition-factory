@@ -1,5 +1,6 @@
 import { decorateResult } from '@Functions/global/decorateResult';
 import { definedAttributes } from '@Tools/definedAttributes';
+import { coercePersonSex } from '@Helpers/coercedSex';
 import { addNotice } from '@Global/state/globalState';
 import { makeDeepCopy } from '@Tools/makeDeepCopy';
 import { intersection } from '@Tools/arrays';
@@ -204,6 +205,8 @@ export function addParticipant(params: AddParticipantType) {
     }
     if (pairError) return pairError;
   } else if (participantType === INDIVIDUAL) {
+    // normalize accepted sex short codes (F/M/O) to the canonical extended form at rest
+    coercePersonSex(participant.person);
     const hasPersonName = participant.person?.standardFamilyName && participant.person?.standardGivenName;
     const hasAlternateName = participant.participantOtherName || participant.participantName;
     if (!hasPersonName && !hasAlternateName) return { error: MISSING_PERSON_DETAILS };
@@ -211,7 +214,7 @@ export function addParticipant(params: AddParticipantType) {
     if (!participant.participantName) {
       participant.participantName = hasPersonName
         ? `${participant.person.standardGivenName} ${participant.person.standardFamilyName}`
-        : participant.participantOtherName ?? '';
+        : (participant.participantOtherName ?? '');
     }
   } else if (participantType && [TEAM, GROUP].includes(participantType)) {
     const teamError = validateTeamGroupParticipant({ participant, tournamentIndividualParticipantIds });

@@ -1,5 +1,5 @@
 import { MAIN, QUALIFYING } from '@Constants/drawDefinitionConstants';
-import { ANY } from '@Constants/genderConstants';
+import { isAny } from '@Validators/isAny';
 
 export function getStageParticipantsCount({ drawProfiles, category, gender, useExistingParticipants = false }) {
   const uniqueParticipantsCount = {};
@@ -23,7 +23,7 @@ export function getStageParticipantsCount({ drawProfiles, category, gender, useE
     // `gender: ANY` is "no gender constraint" — see getParticipantsCount.ts.
     const requiresUniqueParticipants =
       !useExistingParticipants &&
-      (uniqueParticipants || (gender && gender !== ANY) || category || stage === QUALIFYING);
+      (uniqueParticipants || (gender && !isAny(gender)) || category || stage === QUALIFYING);
 
     if (requiresUniqueParticipants) {
       if (!Object.keys(uniqueParticipantsCount).includes(stage)) uniqueParticipantsCount[stage] = 0;

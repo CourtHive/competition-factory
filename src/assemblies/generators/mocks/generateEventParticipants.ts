@@ -3,6 +3,7 @@ import { addParticipants } from '@Mutate/participants/addParticipants';
 import { getParticipantId } from '@Functions/global/extractors';
 import { rebuildPairsAsMixed } from './rebuildPairsAsMixed';
 import { generateParticipants } from './generateParticipants';
+import { coercedGender } from '@Helpers/coercedGender';
 import { isGendered } from '@Validators/isGendered';
 
 // constants and types
@@ -45,7 +46,7 @@ export function generateEventParticipants(params) {
   // Without this the auto-generated PAIRs are random-sex and fail
   // `checkValidEntries` → ERR_INVALID_ENTRIES. See generateEventWithDraw.ts
   // for the sibling fix on the drawProfiles path.
-  const isMixedDoubles = eventParticipantType === PAIR && gender === MIXED;
+  const isMixedDoubles = eventParticipantType === PAIR && coercedGender(gender) === MIXED;
   const gendersCount = isMixedDoubles ? { [MALE]: participantsCount, [FEMALE]: participantsCount } : undefined;
 
   const idPrefix = participantsProfile?.idPrefix ? `E-${eventIndex}-${participantsProfile?.idPrefix}` : undefined;

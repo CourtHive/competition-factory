@@ -295,7 +295,11 @@ function checkMixedDoublesPairing({ targetSide, gender, participantToAssign, gen
   const placedMembers = targetSide?.participant?.individualParticipants ?? [];
   const assignedSex = participantToAssign.person?.sex;
 
-  if (placedMembers.length === 1 && assignedSex && placedMembers[0]?.person?.sex === assignedSex) {
+  if (
+    placedMembers.length === 1 &&
+    assignedSex &&
+    coercedGender(placedMembers[0]?.person?.sex) === coercedGender(assignedSex)
+  ) {
     return { error: INVALID_PARTICIPANT, info: 'Mixed doubles pair requires one participant of each gender' };
   }
 

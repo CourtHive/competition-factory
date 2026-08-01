@@ -2,6 +2,7 @@ import { isAvailableAction } from '@Query/drawDefinition/positionActions/actionP
 import { isMatchUpEventType } from '@Helpers/matchUpEventTypes/isMatchUpEventType';
 import { checkScoreHasValue } from '@Query/matchUp/checkScoreHasValue';
 import { getParticipantId } from '@Functions/global/extractors';
+import { coercedGender } from '@Helpers/coercedGender';
 import { isMixed } from '@Validators/isMixed';
 import { isAny } from '@Validators/isAny';
 
@@ -89,10 +90,10 @@ export function collectionMatchUpActions({
         !existingParticipantIds?.includes(participantId) &&
         (!gender ||
           isAny(gender) ||
-          person.sex === gender ||
+          coercedGender(person.sex) === coercedGender(gender) ||
           // case where one gendered member has been assigned
           (isMixed(gender) && !assignedGender) ||
-          (assignedGender && person.sex !== assignedGender)),
+          (assignedGender && coercedGender(person.sex) !== coercedGender(assignedGender))),
     ),
   );
 
