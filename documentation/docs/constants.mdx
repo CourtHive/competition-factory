@@ -362,11 +362,23 @@ const { FLIGHT, FLIGHT_PROFILE, SPLIT_LEVEL_BASED, SPLIT_WATERFALL } = factoryCo
 const { TOURNAMENT_RECORDS } = factoryConstants.tournamentConstants;
 ```
 
-**venueConstants** - Venue-related identifiers
+**venueConstants** - `indoorOutdoor` values
 
 ```js
-const { COURTS, VENUES } = factoryConstants.venueConstants;
+const { INDOOR, OUTDOOR, MIXED } = factoryConstants.venueConstants;
 ```
+
+`INDOOR`, `OUTDOOR`, and `MIXED` are the values of the `indoorOutdoor` field
+(`IndoorOutdoorUnion`) on `tournament`, `event`, and `matchUp` records.
+
+**disciplineConstants** - `discipline` values
+
+```js
+const { TENNIS, BEACH_TENNIS, WHEELCHAIR_TENNIS } = factoryConstants.disciplineConstants;
+```
+
+`TENNIS`, `BEACH_TENNIS`, and `WHEELCHAIR_TENNIS` are the values of the
+`event.discipline` field (`DisciplineUnion`).
 
 **topicConstants** - Notification/subscription topic types
 

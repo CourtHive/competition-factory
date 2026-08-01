@@ -4,7 +4,8 @@ export const matchUp = {
     '{\\"type\\":\\"number\\",\\"required\\":\\"false\\",\\"note\\":\\"only applies to tieMatchUps\\"}',
   drawPositions: '{\\"type\\":\\"number\\",\\"array\\":\\"true\\",\\"required\\":\\"false\\"}',
   endDate: '{\\"type\\":\\"string\\",\\"required\\":\\"true\\",\\"note\\":\\"\'YYYY-MM-DD\'\\"}',
-  indoorOutdoor: '{\\"type\\":\\"enum\\",\\"enum\\": \\"\\",\\"required\\":\\"false\\"}',
+  indoorOutdoor:
+    '{\\"type\\":\\"enum\\",\\"enum\\": \\"\\",\\"required\\":\\"false\\",\\"note\\":\\"INDOOR, OUTDOOR, or MIXED\\"}',
   finishingPositionRange: '{\\"type\\":\\"object\\",\\"object\\":\\"positionRange\\",\\"required\\":\\"false\\"}',
   finishingRound: '{\\"type\\":\\"number\\",\\"required\\":\\"false\\"}',
   loserMatchUpId: '{\\"type\\":\\"string\\",\\"required\\":\\"false\\"}',

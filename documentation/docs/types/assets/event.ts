@@ -1,6 +1,7 @@
 export const event = {
   category: '{\\"type\\":\\"object\\",\\"object\\":\\"category\\",\\"array\\":\\"true\\",\\"required\\":\\"false\\"}',
-  discipline: '{\\"type\\":\\"enum\\",\\"enum\\": \\"\\",\\"required\\":\\"false\\"}',
+  discipline:
+    '{\\"type\\":\\"enum\\",\\"enum\\": \\"\\",\\"required\\":\\"false\\",\\"note\\":\\"TENNIS, BEACH_TENNIS, or WHEELCHAIR_TENNIS\\"}',
   drawDefinitions:
     '{\\"type\\":\\"object\\",\\"object\\":\\"drawDefinition\\",\\"array\\":\\"true\\",\\"required\\":\\"false\\"}',
   entries: '{\\"type\\":\\"object\\",\\"object\\":\\"entry\\",\\"array\\":\\"true\\",\\"required\\":\\"false\\"}',
@@ -12,7 +13,8 @@ export const event = {
   eventType:
     '{\\"type\\":\\"enum\\",\\"enum\\": \\"\\",\\"required\\":\\"true\\",\\"note\\":\\"SINGLES, DOUBLES, or TEAM\\"}',
   gender: '{\\"type\\":\\"enum\\",\\"enum\\": \\"\\",\\"required\\":\\"false\\"}',
-  indoorOutdoor: '{\\"type\\":\\"enum\\",\\"enum\\": \\"\\",\\"required\\":\\"false\\"}',
+  indoorOutdoor:
+    '{\\"type\\":\\"enum\\",\\"enum\\": \\"\\",\\"required\\":\\"false\\",\\"note\\":\\"INDOOR, OUTDOOR, or MIXED\\"}',
   links: '{\\"type\\":\\"object\\",\\"object\\":\\"link\\",\\"array\\":\\"true\\",\\"required\\":\\"false\\"}',
   matchUpFormat:
     '{\\"type\\":\\"string\\",\\"required\\":\\"false\\",\\"note\\":\\"CODES matchup format, e.g. \'SET3-S:6/TB7\'\\"}',
