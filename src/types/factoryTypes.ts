@@ -314,7 +314,7 @@ export type ParticipantFilters = {
   drawEntryStatuses?: string[]; // {string[]} participantIds that are in draw.entries or flightProfile.flights[].drawEnteredParticipantIds with entryStatuses
   enableOrFiltering?: boolean;
   participantIds?: string[];
-  genders?: GenderUnion;
+  genders?: GenderUnion[];
   eventIds?: string[];
 };
 

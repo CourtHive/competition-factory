@@ -1,3 +1,5 @@
+import { coercedGender } from '@Helpers/coercedGender';
+
 // Constants
 import { MISSING_SANCTIONING_POLICY, MISSING_PROPOSAL } from '@Constants/sanctioningConstants';
 import { SUCCESS } from '@Constants/resultConstants';
@@ -153,19 +155,47 @@ function validateEventConstraints(event, index: number, tier: SanctioningTier, i
   const tierName = tier.tierName;
 
   if (tier.allowedEventTypes?.length && !tier.allowedEventTypes.includes(event.eventType)) {
-    issues.push({ field: `${prefix}.eventType`, message: `Event type '${event.eventType}' not allowed for tier ${tierName}`, severity: 'error' });
+    issues.push({
+      field: `${prefix}.eventType`,
+      message: `Event type '${event.eventType}' not allowed for tier ${tierName}`,
+      severity: 'error',
+    });
   }
   if (tier.allowedDrawTypes?.length && event.drawType && !tier.allowedDrawTypes.includes(event.drawType)) {
-    issues.push({ field: `${prefix}.drawType`, message: `Draw type '${event.drawType}' not allowed for tier ${tierName}`, severity: 'error' });
+    issues.push({
+      field: `${prefix}.drawType`,
+      message: `Draw type '${event.drawType}' not allowed for tier ${tierName}`,
+      severity: 'error',
+    });
   }
   if (tier.allowedDrawSizes?.length && event.drawSize && !tier.allowedDrawSizes.includes(event.drawSize)) {
-    issues.push({ field: `${prefix}.drawSize`, message: `Draw size ${event.drawSize} not allowed for tier ${tierName}; allowed: ${tier.allowedDrawSizes.join(', ')}`, severity: 'error' });
+    issues.push({
+      field: `${prefix}.drawSize`,
+      message: `Draw size ${event.drawSize} not allowed for tier ${tierName}; allowed: ${tier.allowedDrawSizes.join(', ')}`,
+      severity: 'error',
+    });
   }
-  if (tier.allowedMatchUpFormats?.length && event.matchUpFormat && !tier.allowedMatchUpFormats.includes(event.matchUpFormat)) {
-    issues.push({ field: `${prefix}.matchUpFormat`, message: `Match format '${event.matchUpFormat}' not allowed for tier ${tierName}`, severity: 'error' });
+  if (
+    tier.allowedMatchUpFormats?.length &&
+    event.matchUpFormat &&
+    !tier.allowedMatchUpFormats.includes(event.matchUpFormat)
+  ) {
+    issues.push({
+      field: `${prefix}.matchUpFormat`,
+      message: `Match format '${event.matchUpFormat}' not allowed for tier ${tierName}`,
+      severity: 'error',
+    });
   }
-  if (tier.allowedGenders?.length && event.gender && !tier.allowedGenders.includes(event.gender)) {
-    issues.push({ field: `${prefix}.gender`, message: `Gender '${event.gender}' not allowed for tier ${tierName}`, severity: 'error' });
+  if (
+    tier.allowedGenders?.length &&
+    event.gender &&
+    !tier.allowedGenders.map(coercedGender).includes(coercedGender(event.gender))
+  ) {
+    issues.push({
+      field: `${prefix}.gender`,
+      message: `Gender '${event.gender}' not allowed for tier ${tierName}`,
+      severity: 'error',
+    });
   }
 
   validateQualifyingConstraints(event, prefix, tier, issues);

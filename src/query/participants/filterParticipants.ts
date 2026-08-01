@@ -1,6 +1,7 @@
 import { isMatchUpEventType } from '@Helpers/matchUpEventTypes/isMatchUpEventType';
 import { getAllPositionedParticipantIds } from '../drawDefinition/positionsGetter';
 import { getParticipantId } from '@Functions/global/extractors';
+import { coercedGender } from '@Helpers/coercedGender';
 import { getAccessorValue } from '@Tools/getAccessorValue';
 import { getFlightProfile } from '../event/getFlightProfile';
 import { getTimeItem } from '../base/timeItems';
@@ -77,7 +78,9 @@ export function filterParticipants({
   // Membership sets — built once so the per-participant checks below are O(1)
   // rather than O(n). The original arrays are kept for the `!array` presence
   // guards (an absent filter differs from an empty set).
-  const genderSet = genders && new Set(genders);
+  // coerce to canonical so the filter matches records that store either the
+  // extended form or a TODS short code (e.g. externally-built records with sex 'M')
+  const genderSet = genders && new Set(genders.map((gender) => coercedGender(gender)));
   const participantTypeSet = participantTypes && new Set(participantTypes);
   const participantRoleSet = participantRoles && new Set(participantRoles);
   const participantIdSet = participantIds && new Set(participantIds);
@@ -98,7 +101,8 @@ export function filterParticipants({
       person,
     } = participant;
 
-    const hasGender = Array.isArray(genders) && genders?.length && person?.sex && genderSet?.has(person.sex);
+    const hasGender =
+      Array.isArray(genders) && genders?.length && person?.sex && genderSet?.has(coercedGender(person.sex));
 
     if (enableOrFiltering) {
       return (

@@ -689,7 +689,7 @@ export interface TeamCompetitor {
 }
 
 export interface Team {
-  gender?: GenderEnum;
+  gender?: GenderUnion;
   homeVenueIds?: string[];
   nativeTeamName?: string;
   otherTeamNames?: string[];

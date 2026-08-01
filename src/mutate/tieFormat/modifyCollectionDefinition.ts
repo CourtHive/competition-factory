@@ -11,6 +11,7 @@ import { validateTieFormat } from '@Validators/validateTieFormat';
 import { definedAttributes } from '@Tools/definedAttributes';
 import { tieFormatTelemetry } from './tieFormatTelemetry';
 import { isConvertableInteger } from '@Tools/math';
+import { coercedGender, normalizeGender } from '@Helpers/coercedGender';
 import { intersection } from '@Tools/arrays';
 
 // constants and types
@@ -258,7 +259,7 @@ export function modifyCollectionDefinition({
   });
 
   if (!result.error) {
-    const genderModified = gender && sourceCollectionDefinition.gender !== gender;
+    const genderModified = gender && coercedGender(sourceCollectionDefinition.gender) !== coercedGender(gender);
     if (genderModified) {
       const affectedMatchUps = getAffectedMatchUps({ matchUp, structure, drawDefinition });
       for (const affectedMatchUp of affectedMatchUps) {
@@ -439,9 +440,10 @@ function applyFieldModifications({
     targetCollectionDefinition.category = category;
     modifications.push({ collectionId, category });
   }
-  if (gender && sourceCollectionDefinition.gender !== gender) {
-    targetCollectionDefinition.gender = gender;
-    modifications.push({ collectionId, gender });
+  const canonicalGender = gender && normalizeGender(gender);
+  if (canonicalGender && coercedGender(sourceCollectionDefinition.gender) !== coercedGender(canonicalGender)) {
+    targetCollectionDefinition.gender = canonicalGender;
+    modifications.push({ collectionId, gender: canonicalGender });
   }
 
   return undefined;

@@ -1,5 +1,6 @@
 import { decorateResult } from '@Functions/global/decorateResult';
 import { definedAttributes } from '@Tools/definedAttributes';
+import { normalizeGender } from '@Helpers/coercedGender';
 import { coercePersonSex } from '@Helpers/coercedSex';
 import { addNotice } from '@Global/state/globalState';
 import { makeDeepCopy } from '@Tools/makeDeepCopy';
@@ -143,6 +144,9 @@ function validatePairParticipant({
 
 function validateTeamGroupParticipant({ participant, tournamentIndividualParticipantIds }) {
   const stack = 'addParticipant';
+
+  // normalize an accepted team gender short code (M/F/X/A) to the canonical extended form
+  if (participant.gender) participant.gender = normalizeGender(participant.gender);
 
   participant.individualParticipantIds ??= [];
   if (participant.individualParticipantIds?.length) {

@@ -5,9 +5,10 @@ import mocksEngine from '@Assemblies/engines/mock';
 import { expect, it, describe } from 'vitest';
 
 // constants and types
-import { ANY, FEMALE, MALE, MIXED, OTHER } from '@Constants/genderConstants';
-import { INDIVIDUAL } from '@Constants/participantConstants';
+import { ANY, FEMALE, FEMALE_ABBR, MALE, MALE_ABBR, MIXED, OTHER } from '@Constants/genderConstants';
+import { INDIVIDUAL, TEAM } from '@Constants/participantConstants';
 import { COMPETITOR } from '@Constants/participantRoles';
+import { SINGLES } from '@Constants/eventConstants';
 import { SUCCESS } from '@Constants/resultConstants';
 
 // TODS Standard Codes accept short codes (M/F/X/A) alongside the extended forms.
@@ -87,4 +88,82 @@ it('addParticipants normalizes a person short-code sex to the extended form at r
   });
   const added = participants.find((p: any) => p.person?.standardFamilyName === 'Short');
   expect(added.person.sex).toEqual(FEMALE); // stored canonical, not 'F'
+});
+
+it('normalizes a team participant short-code gender to the extended form at rest', () => {
+  const { tournamentRecord } = mocksEngine.generateTournamentRecord({ participantsProfile: { participantsCount: 4 } });
+  tournamentEngine.setState(tournamentRecord);
+
+  const team = { participantType: TEAM, participantRole: COMPETITOR, participantName: 'Team Short', gender: 'M' };
+  const result = tournamentEngine.addParticipants({ participants: [team] });
+  expect(result).toMatchObject(SUCCESS);
+
+  const { participants } = tournamentEngine.getParticipants({ participantFilters: { participantTypes: [TEAM] } });
+  const added = participants.find((p: any) => p.participantName === 'Team Short');
+  expect(added.gender).toEqual(MALE); // stored canonical, not 'M'
+});
+
+// The following exercise the READ paths against a tournamentRecord constructed OUTSIDE
+// the factory that already stores the abbreviated TODS short codes. setState performs no
+// normalization, so these prove the read-side coercion — not write-side normalization —
+// handles abbreviated values at rest.
+
+describe('reading an externally-constructed record with abbreviated gender/sex at rest', () => {
+  // build a canonical mocks record, then rewrite it to the short codes as an external
+  // (non-factory) producer would, WITHOUT re-adding through the factory
+  function externalAbbreviatedRecord(participantsCount = 20) {
+    const { tournamentRecord } = mocksEngine.generateTournamentRecord({ participantsProfile: { participantsCount } });
+    const individuals = tournamentRecord.participants.filter((p: any) => p.participantType === INDIVIDUAL);
+    individuals.forEach((p: any) => {
+      if (p.person?.sex === MALE) p.person.sex = MALE_ABBR;
+      else if (p.person?.sex === FEMALE) p.person.sex = FEMALE_ABBR;
+    });
+    const maleCount = individuals.filter((p: any) => p.person?.sex === MALE_ABBR).length;
+    const femaleCount = individuals.filter((p: any) => p.person?.sex === FEMALE_ABBR).length;
+    return { tournamentRecord, maleCount, femaleCount };
+  }
+
+  it('filters participants by canonical gender against abbreviated stored sex', () => {
+    const { tournamentRecord, maleCount } = externalAbbreviatedRecord();
+    expect(maleCount).toBeGreaterThan(0);
+    tournamentEngine.setState(tournamentRecord); // no normalization
+
+    const { participants } = tournamentEngine.getParticipants({
+      participantFilters: { genders: [MALE], participantTypes: [INDIVIDUAL] },
+    });
+    expect(participants.length).toEqual(maleCount);
+    // the stored value is untouched — still abbreviated (read did not rewrite it)
+    expect(participants.every((p: any) => p.person?.sex === MALE_ABBR)).toEqual(true);
+  });
+
+  it('applies entry gender eligibility against an abbreviated stored event gender + person sex', () => {
+    const { tournamentRecord } = externalAbbreviatedRecord(16);
+    tournamentRecord.events = tournamentRecord.events ?? [];
+    tournamentRecord.events.push({
+      eventId: 'ext-male-event',
+      eventName: 'External Male (abbr)',
+      eventType: SINGLES,
+      gender: MALE_ABBR, // 'M' stored directly, never normalized
+      entries: [],
+      drawDefinitions: [],
+    });
+    tournamentEngine.setState(tournamentRecord);
+
+    const maleIds = tournamentEngine
+      .getParticipants({ participantFilters: { genders: [MALE], participantTypes: [INDIVIDUAL] } })
+      .participants.map((p: any) => p.participantId);
+    const femaleIds = tournamentEngine
+      .getParticipants({ participantFilters: { genders: [FEMALE], participantTypes: [INDIVIDUAL] } })
+      .participants.map((p: any) => p.participantId);
+    expect(maleIds.length).toBeGreaterThan(0);
+    expect(femaleIds.length).toBeGreaterThan(0);
+
+    // male participants (stored sex 'M') are eligible for the 'M' event
+    let result = tournamentEngine.addEventEntries({ eventId: 'ext-male-event', participantIds: maleIds });
+    expect(result.success).toEqual(true);
+
+    // a female participant (stored sex 'F') is rejected from the 'M' event
+    result = tournamentEngine.addEventEntries({ eventId: 'ext-male-event', participantIds: [femaleIds[0]] });
+    expect(result.success).not.toEqual(true);
+  });
 });
