@@ -186,6 +186,22 @@ gender code. `ANY` and `MIXED` are gender-only (an individual's `sex` cannot be
 "any" or "mixed"). Because storage is always canonical, the published TODS schema
 enumerates only the extended forms.
 
+**Reads and comparisons honor short codes too.** `setState` does no normalization, so
+externally-built records may store either form. To keep matching correct regardless,
+gender/sex comparisons coerce **both sides** to the canonical form before comparing —
+they are not limited to the write path:
+
+- **Participant filtering** — `getParticipants({ participantFilters: { genders } })`
+  matches a stored `person.sex` whether it is `MALE` or `M`, and accepts short-code
+  filter values.
+- **Team / collection definitions** — `modifyCollectionDefinition` coerces the gender
+  diff and normalizes the stored value to the extended form.
+- **Sanctioning** — proposal validation coerces `event.gender` against a tier's
+  `allowedGenders` so an abbreviated gender is not wrongly rejected.
+
+In short: **write** paths normalize to the extended (canonical) form; **read / filter /
+validate** paths coerce for comparison without mutating stored data.
+
 ### Entry & Status Constants
 
 **entryStatusConstants** - Entry status values
