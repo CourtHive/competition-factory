@@ -35,7 +35,7 @@ export default defineConfig({
         '**/server/**',
         // src/forge is no longer "incubation" — it hosts production-accessible
         // engine surface (engine.q, engine.inspect, engine.on, engine.build).
-        // Subject to the 95/95/83/95 thresholds like everything else.
+        // Subject to the 95/95/85/95 thresholds like everything else.
         '**/types/**',
         '**/*.json',
         // deprecated code and data - excluded from coverage
