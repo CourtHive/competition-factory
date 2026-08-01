@@ -4,6 +4,7 @@ import { addEventNotice } from '@Mutate/notifications/eventNotifications';
 import { allEventMatchUps } from '@Query/matchUps/getAllEventMatchUps';
 import { validateTieFormat } from '@Validators/validateTieFormat';
 import { requireParams } from '@Helpers/parameters/requireParams';
+import { normalizeDiscipline } from '@Helpers/coercedDiscipline';
 import { definedAttributes } from '@Tools/definedAttributes';
 import { normalizeGender } from '@Helpers/coercedGender';
 import { getTopics } from '@Global/state/globalState';
@@ -62,6 +63,10 @@ export function addEvent({ suppressNotifications, tournamentRecord, internalUse,
   // normalize accepted TODS short codes (M/F/X/A) to the canonical extended form
   // so events are stored with a canonical gender at rest
   if (eventRecord.gender) eventRecord.gender = normalizeGender(eventRecord.gender);
+
+  // discipline is an open vocabulary — normalize casing/separators on write so
+  // 'beach volleyball' and 'BEACH_VOLLEYBALL' are stored identically
+  if (eventRecord.discipline) eventRecord.discipline = normalizeDiscipline(eventRecord.discipline);
 
   if (event.eventType === TEAM_EVENT) {
     if (event.tieFormat) {

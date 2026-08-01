@@ -482,7 +482,16 @@
     },
     "DisciplineEnum": {
       "type": "string",
-      "enum": ["BEACH_TENNIS", "PADEL", "PICKLEBALL", "TENNIS", "WHEELCHAIR_TENNIS"]
+      "description": "Sport/discipline. Open, sport-agnostic vocabulary — any well-formed value is accepted so new sports need no schema release (see disciplineConstants / planning/DISCIPLINE_EXTENSIBILITY.md). Constrain via the allowedDisciplines policy where a fixed list is required. Known values are listed in examples.",
+      "examples": [
+        "TENNIS",
+        "BEACH_TENNIS",
+        "WHEELCHAIR_TENNIS",
+        "PADEL",
+        "PICKLEBALL",
+        "VOLLEYBALL",
+        "BEACH_VOLLEYBALL"
+      ]
     },
     "DrawDefinition": {
       "type": "object",

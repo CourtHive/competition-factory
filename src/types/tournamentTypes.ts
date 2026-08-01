@@ -194,9 +194,13 @@ export interface TimeItem {
   itemValue?: any;
 }
 
-// Derived from the canonical disciplines tuple (mirrors TournamentStatusUnion) so the type and
-// disciplineConstants share one source of truth and attr-audit has a value vocab to guard against typos.
-export type DisciplineUnion = (typeof disciplines)[number];
+// OPEN, sport-agnostic vocabulary (see planning/DISCIPLINE_EXTENSIBILITY.md). The `disciplines`
+// tuple is the curated KNOWN set (autocompletes, feeds attr-audit typo defense), but the type
+// accepts any string so new sports (VOLLEYBALL, PADEL, …) need no factory release. The
+// `& {}` on the string arm preserves literal autocomplete for the known values (a bare
+// `| string` would collapse the union). Constrain to a whitelist via the `allowedDisciplines`
+// policy, and normalize input with `normalizeDiscipline` (@Helpers/coercedDiscipline).
+export type DisciplineUnion = (typeof disciplines)[number] | (string & {});
 export type CategoryUnion = 'AGE' | 'BOTH' | 'LEVEL';
 
 export interface DrawDefinition {

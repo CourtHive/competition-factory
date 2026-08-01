@@ -12,8 +12,6 @@ import {
 // (see tournamentTypes.ts), so this tuple and the disciplineConstants object are what
 // keep the type, the constants, and attr-audit's value vocab in agreement.
 test('disciplines tuple and disciplineConstants stay consistent', () => {
-  const expected = [TENNIS, BEACH_TENNIS, WHEELCHAIR_TENNIS];
-
   // every constant self-maps (key === value) — the invariant attr-audit pass #5 now enforces
   for (const [key, value] of Object.entries(disciplineConstants)) {
     expect(key).toEqual(value);
@@ -21,12 +19,15 @@ test('disciplines tuple and disciplineConstants stay consistent', () => {
   }
 
   // the tuple the type derives from and the constant object expose the same value set
+  // (asserted as an invariant, not a hardcoded list — the vocabulary is open and grows)
   expect([...disciplines].toSorted((a, b) => a.localeCompare(b))).toEqual(
-    expected.toSorted((a, b) => a.localeCompare(b)),
+    Object.values(disciplineConstants).toSorted((a, b) => a.localeCompare(b)),
   );
-  expect(Object.values(disciplineConstants).toSorted((a, b) => a.localeCompare(b))).toEqual(
-    expected.toSorted((a, b) => a.localeCompare(b)),
-  );
+
+  // the core racquet disciplines are always present in the known set
+  for (const discipline of [TENNIS, BEACH_TENNIS, WHEELCHAIR_TENNIS]) {
+    expect(disciplines).toContain(discipline);
+  }
 });
 
 function isScreamingSnake(str: string): boolean {

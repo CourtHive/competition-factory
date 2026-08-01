@@ -1,3 +1,4 @@
+import { isDisciplineAllowed } from '@Helpers/coercedDiscipline';
 import { coercedGender } from '@Helpers/coercedGender';
 
 // Constants
@@ -194,6 +195,17 @@ function validateEventConstraints(event, index: number, tier: SanctioningTier, i
     issues.push({
       field: `${prefix}.gender`,
       message: `Gender '${event.gender}' not allowed for tier ${tierName}`,
+      severity: 'error',
+    });
+  }
+  if (
+    tier.allowedDisciplines?.length &&
+    event.discipline &&
+    !isDisciplineAllowed(event.discipline, tier.allowedDisciplines)
+  ) {
+    issues.push({
+      field: `${prefix}.discipline`,
+      message: `Discipline '${event.discipline}' not allowed for tier ${tierName}`,
       severity: 'error',
     });
   }

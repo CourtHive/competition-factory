@@ -481,7 +481,7 @@ describe('generateEventWithDraw additional options', () => {
     });
     expect(result.tournamentRecord).toBeDefined();
     const event = result.tournamentRecord.events?.[0];
-    expect(event?.discipline).toBe('test');
+    expect(event?.discipline).toBe('TEST'); // discipline is normalized to canonical form on write
   });
 
   it('handles timeItems on event', () => {
