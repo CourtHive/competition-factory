@@ -5,12 +5,12 @@ import { requireParams } from '@Helpers/parameters/requireParams';
 import { getParticipantId } from '@Functions/global/extractors';
 import { participantRoles } from '@Constants/participantRoles';
 import { definedAttributes } from '@Tools/definedAttributes';
-import { coercedSex } from '@Helpers/coercedSex';
 import { addNotice } from '@Global/state/globalState';
 import { isValidDateString } from '@Tools/dateTime';
 import { makeDeepCopy } from '@Tools/makeDeepCopy';
 import { countries } from '@Fixtures/countryData';
 import { addParticipant } from './addParticipant';
+import { coercedSex } from '@Helpers/coercedSex';
 import { isString } from '@Tools/objects';
 
 // constants

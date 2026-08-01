@@ -5,13 +5,13 @@ import { calculateWinCriteria } from '@Query/matchUp/calculateWinCriteria';
 import { getTieFormat } from '@Query/hierarchical/tieFormats/getTieFormat';
 import { getAppliedPolicies } from '@Query/extensions/getAppliedPolicies';
 import { isValidMatchUpFormat } from '@Validators/isValidMatchUpFormat';
+import { coercedGender, normalizeGender } from '@Helpers/coercedGender';
 import { updateTieFormat } from '@Mutate/tieFormat/updateTieFormat';
 import { decorateResult } from '@Functions/global/decorateResult';
 import { validateTieFormat } from '@Validators/validateTieFormat';
 import { definedAttributes } from '@Tools/definedAttributes';
 import { tieFormatTelemetry } from './tieFormatTelemetry';
 import { isConvertableInteger } from '@Tools/math';
-import { coercedGender, normalizeGender } from '@Helpers/coercedGender';
 import { intersection } from '@Tools/arrays';
 
 // constants and types

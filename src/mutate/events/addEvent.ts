@@ -4,8 +4,8 @@ import { addEventNotice } from '@Mutate/notifications/eventNotifications';
 import { allEventMatchUps } from '@Query/matchUps/getAllEventMatchUps';
 import { validateTieFormat } from '@Validators/validateTieFormat';
 import { requireParams } from '@Helpers/parameters/requireParams';
-import { normalizeGender } from '@Helpers/coercedGender';
 import { definedAttributes } from '@Tools/definedAttributes';
+import { normalizeGender } from '@Helpers/coercedGender';
 import { getTopics } from '@Global/state/globalState';
 import { UUID } from '@Tools/UUID';
 

@@ -1,9 +1,9 @@
 import { isMatchUpEventType } from '@Helpers/matchUpEventTypes/isMatchUpEventType';
 import { getAllPositionedParticipantIds } from '../drawDefinition/positionsGetter';
 import { getParticipantId } from '@Functions/global/extractors';
-import { coercedGender } from '@Helpers/coercedGender';
-import { getAccessorValue } from '@Tools/getAccessorValue';
 import { getFlightProfile } from '../event/getFlightProfile';
+import { getAccessorValue } from '@Tools/getAccessorValue';
+import { coercedGender } from '@Helpers/coercedGender';
 import { getTimeItem } from '../base/timeItems';
 import { unique } from '@Tools/arrays';
 
