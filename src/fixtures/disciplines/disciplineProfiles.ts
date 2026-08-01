@@ -1,6 +1,7 @@
 import { normalizeDiscipline } from '@Helpers/coercedDiscipline';
 
 // constants and types
+import { DisciplineUnion } from '@Types/tournamentTypes';
 import { SINGLES, DOUBLES, TEAM } from '@Constants/matchUpTypes';
 import {
   TENNIS,
@@ -17,7 +18,7 @@ import {
 // minimal to start; extend the shape as real per-sport behavior lands (court model, stat
 // definitions, gender applicability, renderers, …).
 export interface DisciplineProfile {
-  discipline: string; // canonical (normalized) discipline
+  discipline: DisciplineUnion; // canonical (normalized) discipline
   matchUpTypes?: string[]; // applicable matchUpTypes (SINGLES / DOUBLES / TEAM / …)
   defaultMatchUpFormat?: string; // default scoring-format code, when one is well-established
 }
@@ -50,7 +51,7 @@ for (const profile of BUILT_IN) registerDisciplineProfile(profile);
 // Resolve the profile for a discipline (normalization-insensitive). Returns `undefined`
 // for a discipline with no registered profile — the open vocabulary means that is a normal,
 // non-error state, so callers should fall back rather than assume a profile exists.
-export function getDisciplineProfile(params: { discipline: any }): DisciplineProfile | undefined {
+export function getDisciplineProfile(params: { discipline: DisciplineUnion }): DisciplineProfile | undefined {
   if (typeof params?.discipline !== 'string') return undefined;
   return registry.get(normalizeDiscipline(params.discipline));
 }

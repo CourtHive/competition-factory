@@ -103,6 +103,7 @@ export { competitionEngineAsync, tournamentEngineAsync } from './tests/engines/a
 
 // FIXTURES --------------------------------------------------------------
 export { fixtures } from './fixtures';
+export type { DisciplineProfile } from './fixtures/disciplines/disciplineProfiles';
 
 // PURE STATS — usable without an engine instance.
 export { computeRatingDistributionStats } from './query/formatWizard/distributionStats';
