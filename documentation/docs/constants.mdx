@@ -25,22 +25,26 @@ import {
 ### Event & Match Constants
 
 **eventConstants** - Event types and category types
+
 ```js
 const { SINGLES, DOUBLES, TEAM, AGE, RATING, BOTH } = factoryConstants.eventConstants;
 ```
+
 - `SINGLES` / `SINGLES_EVENT` - Singles competition
-- `DOUBLES` / `DOUBLES_EVENT` - Doubles competition  
+- `DOUBLES` / `DOUBLES_EVENT` - Doubles competition
 - `TEAM` / `TEAM_EVENT` - Team competition
 - `AGE` - Age-based category
 - `RATING` - Rating-based category
 - `BOTH` - Combined age and rating category
 
 **matchUpTypes** - Match format types
+
 ```js
 const { SINGLES, DOUBLES, TEAM } = factoryConstants.matchUpTypes;
 ```
 
 **matchUpStatusConstants** - MatchUp lifecycle states
+
 ```js
 const {
   TO_BE_PLAYED,
@@ -63,6 +67,7 @@ const {
 ```
 
 Status groupings are also exported:
+
 - `directingMatchUpStatuses` - Statuses that direct participants to next round
 - `nonDirectingMatchUpStatuses` - Statuses that don't advance participants
 - `completedMatchUpStatuses` - All terminal statuses
@@ -75,6 +80,7 @@ Status groupings are also exported:
 ### Draw & Structure Constants
 
 **drawDefinitionConstants** - Draw types, stages, and positioning
+
 ```js
 const {
   // Draw Types
@@ -89,14 +95,14 @@ const {
   FIRST_MATCH_LOSER_CONSOLATION,
   FIRST_ROUND_LOSER_CONSOLATION,
   AD_HOC,
-  
+
   // Stages
   MAIN,
   QUALIFYING,
   CONSOLATION,
   VOLUNTARY_CONSOLATION,
   PLAY_OFF,
-  
+
   // Positioning
   CLUSTER,
   SEPARATE,
@@ -104,7 +110,7 @@ const {
   TOP_DOWN,
   BOTTOM_UP,
   RANDOM,
-  
+
   // Link Types
   WINNER,
   LOSER,
@@ -115,19 +121,13 @@ const {
 ### Participant Constants
 
 **participantConstants** - Participant types and states
+
 ```js
-const {
-  INDIVIDUAL,
-  PAIR,
-  TEAM,
-  GROUP,
-  SIGN_IN_STATUS,
-  SIGNED_IN,
-  SIGNED_OUT,
-} = factoryConstants.participantConstants;
+const { INDIVIDUAL, PAIR, TEAM, GROUP, SIGN_IN_STATUS, SIGNED_IN, SIGNED_OUT } = factoryConstants.participantConstants;
 ```
 
 **participantRoles** - Roles participants can have in a tournament. See [Participant Roles](./concepts/participants.md#participant-roles).
+
 ```js
 const {
   ADMINISTRATION,
@@ -149,6 +149,7 @@ const {
 ```
 
 **genderConstants** - Gender categories and abbreviations
+
 ```js
 const {
   MALE,
@@ -156,34 +157,50 @@ const {
   MIXED,
   ANY,
   OTHER,
-  MALE_ABBR,    // 'M'
-  FEMALE_ABBR,  // 'F'
-  MIXED_ABBR,   // 'X'
-  ANY_ABBR,     // 'A'
-  OTHER_ABBR,   // 'O'
+  MALE_ABBR, // 'M'
+  FEMALE_ABBR, // 'F'
+  MIXED_ABBR, // 'X'
+  ANY_ABBR, // 'A'
+  OTHER_ABBR, // 'O'
 } = factoryConstants.genderConstants;
 ```
+
+#### Short codes and normalization
+
+The factory accepts the [TODS Standard Codes](https://itftennis.atlassian.net/wiki/spaces/TODS/pages/1272840305/Standard+Codes)
+short forms as input wherever a gender or sex is supplied (`event.gender`,
+`person.sex`, mock draw/event profiles, participant modifications). Short codes
+are **normalized to the extended canonical form on write**, so records are always
+stored canonically — `event.gender: 'M'` is persisted as `MALE`, `person.sex: 'F'`
+as `FEMALE`.
+
+Two distinct vocabularies apply:
+
+| Field                                    | Extended (canonical, stored)  | Short code      | Excludes       |
+| ---------------------------------------- | ----------------------------- | --------------- | -------------- |
+| **gender** (`event`, `team`, `category`) | `MALE` `FEMALE` `MIXED` `ANY` | `M` `F` `X` `A` | `OTHER`        |
+| **sex** (`person`)                       | `MALE` `FEMALE` `OTHER`       | `M` `F` `O`     | `ANY`, `MIXED` |
+
+`OTHER` is a CourtHive/CODES extension for a person's `sex` and is **not** a TODS
+gender code. `ANY` and `MIXED` are gender-only (an individual's `sex` cannot be
+"any" or "mixed"). Because storage is always canonical, the published TODS schema
+enumerates only the extended forms.
 
 ### Entry & Status Constants
 
 **entryStatusConstants** - Entry status values
+
 ```js
-const {
-  DIRECT_ACCEPTANCE,
-  ALTERNATE,
-  UNGROUPED,
-  WILDCARD,
-  QUALIFIER,
-  LUCKY_LOSER,
-  WITHDRAWN,
-} = factoryConstants.entryStatusConstants;
+const { DIRECT_ACCEPTANCE, ALTERNATE, UNGROUPED, WILDCARD, QUALIFIER, LUCKY_LOSER, WITHDRAWN } =
+  factoryConstants.entryStatusConstants;
 ```
 
 **ratingConstants** - Rating system identifiers
+
 ```js
 const {
-  WTN,  // World Tennis Number
-  UTR,  // Universal Tennis Rating
+  WTN, // World Tennis Number
+  UTR, // Universal Tennis Rating
   NTRP, // National Tennis Rating Program
 } = factoryConstants.ratingConstants;
 ```
@@ -191,47 +208,28 @@ const {
 ### Time & Scheduling Constants
 
 **scheduleConstants** - Scheduling-related values
+
 ```js
-const {
-  SCHEDULE_TIMING,
-  START_TIME,
-  END_TIME,
-  SCHEDULED_TIME,
-  SCHEDULE_DATE,
-  COURTS,
-  VENUES,
-} = factoryConstants.scheduleConstants;
+const { SCHEDULE_TIMING, START_TIME, END_TIME, SCHEDULED_TIME, SCHEDULE_DATE, COURTS, VENUES } =
+  factoryConstants.scheduleConstants;
 ```
 
 **timeItemConstants** - Time item types
+
 ```js
-const {
-  RANKING,
-  RATING,
-  SEEDING,
-  PUBLISH,
-  SCHEDULE,
-  STATUS,
-  SCORE,
-} = factoryConstants.timeItemConstants;
+const { RANKING, RATING, SEEDING, PUBLISH, SCHEDULE, STATUS, SCORE } = factoryConstants.timeItemConstants;
 ```
 
 **weekdayConstants** - Day of week values
+
 ```js
-const {
-  MONDAY,
-  TUESDAY,
-  WEDNESDAY,
-  THURSDAY,
-  FRIDAY,
-  SATURDAY,
-  SUNDAY,
-} = factoryConstants.weekdayConstants;
+const { MONDAY, TUESDAY, WEDNESDAY, THURSDAY, FRIDAY, SATURDAY, SUNDAY } = factoryConstants.weekdayConstants;
 ```
 
 ### Policy & Configuration Constants
 
 **policyConstants** - Policy type identifiers
+
 ```js
 const {
   POLICY_TYPE_SCORING,
@@ -245,6 +243,7 @@ const {
 ```
 
 **extensionConstants** - Extension name constants
+
 ```js
 const {
   ALTITUDE,
@@ -262,52 +261,33 @@ const {
 ### Competition Format Constants
 
 **tieFormatConstants** - Team match tie format values
+
 ```js
-const {
-  AGGREGATE,
-  TEAM_TIEBREAK,
-  WIN_RATIO,
-} = factoryConstants.tieFormatConstants;
+const { AGGREGATE, TEAM_TIEBREAK, WIN_RATIO } = factoryConstants.tieFormatConstants;
 ```
 
 **surfaceConstants** - Court surface types
+
 ```js
-const {
-  CLAY,
-  GRASS,
-  HARD,
-  CARPET,
-  ARTIFICIAL_CLAY,
-  ARTIFICIAL_GRASS,
-} = factoryConstants.surfaceConstants;
+const { CLAY, GRASS, HARD, CARPET, ARTIFICIAL_CLAY, ARTIFICIAL_GRASS } = factoryConstants.surfaceConstants;
 ```
 
 **scaleConstants** - Scale/ranking system types
+
 ```js
-const {
-  SEEDING,
-  RANKING,
-  RATING,
-} = factoryConstants.scaleConstants;
+const { SEEDING, RANKING, RATING } = factoryConstants.scaleConstants;
 ```
 
 ### Action & Modification Constants
 
 **matchUpActionConstants** - Available matchUp actions
+
 ```js
-const {
-  REFEREE,
-  SCORE,
-  STATUS,
-  SCHEDULE,
-  START,
-  END,
-  PENALTY,
-  OFFICIAL,
-} = factoryConstants.matchUpActionConstants;
+const { REFEREE, SCORE, STATUS, SCHEDULE, START, END, PENALTY, OFFICIAL } = factoryConstants.matchUpActionConstants;
 ```
 
 **positionActionConstants** - Position assignment actions
+
 ```js
 const {
   ASSIGN_BYE,
@@ -320,95 +300,79 @@ const {
 ```
 
 **penaltyConstants** - Penalty types
+
 ```js
-const {
-  BALL_ABUSE,
-  VERBAL_ABUSE,
-  PHYSICAL_ABUSE,
-  COACHING,
-  DELAY_OF_GAME,
-  UNSPORTSMANLIKE_CONDUCT,
-} = factoryConstants.penaltyConstants;
+const { BALL_ABUSE, VERBAL_ABUSE, PHYSICAL_ABUSE, COACHING, DELAY_OF_GAME, UNSPORTSMANLIKE_CONDUCT } =
+  factoryConstants.penaltyConstants;
 ```
 
 ### Data & Resource Constants
 
 **auditConstants** - Audit trail action types
+
 ```js
-const {
-  ADD,
-  MODIFY,
-  DELETE,
-} = factoryConstants.auditConstants;
+const { ADD, MODIFY, DELETE } = factoryConstants.auditConstants;
 ```
 
 **resultConstants** - Result outcome types
+
 ```js
-const {
-  WIN,
-  LOSS,
-} = factoryConstants.resultConstants;
+const { WIN, LOSS } = factoryConstants.resultConstants;
 ```
 
 **sortingConstants** - Sorting options
+
 ```js
-const {
-  ASCENDING,
-  DESCENDING,
-} = factoryConstants.sortingConstants;
+const { ASCENDING, DESCENDING } = factoryConstants.sortingConstants;
 ```
 
 **displayConstants** - Display format options
+
 ```js
-const {
-  ABBREVIATED,
-  FULL,
-} = factoryConstants.displayConstants;
+const { ABBREVIATED, FULL } = factoryConstants.displayConstants;
 ```
 
 ### Other Constants
 
 **flightConstants** - Flight-related constants
+
 ```js
-const {
-  FLIGHT,
-  FLIGHT_PROFILE,
-  SPLIT_LEVEL_BASED,
-  SPLIT_WATERFALL,
-} = factoryConstants.flightConstants;
+const { FLIGHT, FLIGHT_PROFILE, SPLIT_LEVEL_BASED, SPLIT_WATERFALL } = factoryConstants.flightConstants;
 ```
 
 **tournamentConstants** - Tournament identifiers
+
 ```js
 const { TOURNAMENT_RECORDS } = factoryConstants.tournamentConstants;
 ```
 
-**venueConstants** - Venue-related identifiers  
+**venueConstants** - Venue-related identifiers
+
 ```js
 const { COURTS, VENUES } = factoryConstants.venueConstants;
 ```
 
 **topicConstants** - Notification/subscription topic types
+
 ```js
-const {
-  AUDIT_TOPIC,
-  MODIFY_MATCHUP_TOPIC,
-  PUBLISH_TOPIC,
-} = factoryConstants.topicConstants;
+const { AUDIT_TOPIC, MODIFY_MATCHUP_TOPIC, PUBLISH_TOPIC } = factoryConstants.topicConstants;
 ```
 
 **errorConditionConstants** - Error codes for validation and operations
+
 ```js
 // Import the large collection of error condition constants
 const { INVALID_VALUES, MISSING_VALUE, NOT_FOUND } = factoryConstants.errorConditionConstants;
 ```
 
 **requestConstants** - Request parameter constants
+
 ```js
 const { REQUEST_PARAMS } = factoryConstants.requestConstants;
 ```
 
 **resourceContants** - Resource type identifiers
+
 ```js
 const { MATCHUP, EVENT, PARTICIPANT } = factoryConstants.resourceContants;
 ```
@@ -416,6 +380,7 @@ const { MATCHUP, EVENT, PARTICIPANT } = factoryConstants.resourceContants;
 ## Usage Examples
 
 ### Event Creation
+
 ```js
 const { eventConstants, genderConstants } = factoryConstants;
 
@@ -426,6 +391,7 @@ const event = {
 ```
 
 ### MatchUp Status Checking
+
 ```js
 const { matchUpStatusConstants, completedMatchUpStatuses } = factoryConstants;
 
@@ -440,6 +406,7 @@ if (matchUp.matchUpStatus === matchUpStatusConstants.COMPLETED) {
 ```
 
 ### Draw Generation
+
 ```js
 const { drawDefinitionConstants } = factoryConstants;
 
@@ -451,12 +418,11 @@ const drawProfile = {
 ```
 
 ### Participant Filtering
+
 ```js
 const { participantConstants } = factoryConstants;
 
-const individuals = participants.filter(
-  (p) => p.participantType === participantConstants.INDIVIDUAL
-);
+const individuals = participants.filter((p) => p.participantType === participantConstants.INDIVIDUAL);
 ```
 
 ## Type Safety
@@ -479,8 +445,12 @@ All exported constants are typed and provide autocomplete support in TypeScript-
 ```js
 // Good
 const { SINGLES, DOUBLES } = eventConstants;
-if (event.eventType === SINGLES) { /* ... */ }
+if (event.eventType === SINGLES) {
+  /* ... */
+}
 
 // Avoid
-if (event.eventType === 'SINGLES') { /* ... */ }
+if (event.eventType === 'SINGLES') {
+  /* ... */
+}
 ```
