@@ -1,7 +1,7 @@
 export const event = {
   category: '{\\"type\\":\\"object\\",\\"object\\":\\"category\\",\\"array\\":\\"true\\",\\"required\\":\\"false\\"}',
   discipline:
-    '{\\"type\\":\\"enum\\",\\"enum\\": \\"\\",\\"required\\":\\"false\\",\\"note\\":\\"TENNIS, BEACH_TENNIS, or WHEELCHAIR_TENNIS\\"}',
+    '{\\"type\\":\\"enum\\",\\"enum\\": \\"\\",\\"required\\":\\"false\\",\\"note\\":\\"open vocabulary; known: TENNIS, BEACH_TENNIS, WHEELCHAIR_TENNIS, PADEL, PICKLEBALL, VOLLEYBALL, BEACH_VOLLEYBALL\\"}',
   drawDefinitions:
     '{\\"type\\":\\"object\\",\\"object\\":\\"drawDefinition\\",\\"array\\":\\"true\\",\\"required\\":\\"false\\"}',
   entries: '{\\"type\\":\\"object\\",\\"object\\":\\"entry\\",\\"array\\":\\"true\\",\\"required\\":\\"false\\"}',

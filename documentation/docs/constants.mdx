@@ -371,14 +371,21 @@ const { INDOOR, OUTDOOR, MIXED } = factoryConstants.venueConstants;
 `INDOOR`, `OUTDOOR`, and `MIXED` are the values of the `indoorOutdoor` field
 (`IndoorOutdoorUnion`) on `tournament`, `event`, and `matchUp` records.
 
-**disciplineConstants** - `discipline` values
+**disciplineConstants** - known `discipline` values (open vocabulary)
 
 ```js
-const { TENNIS, BEACH_TENNIS, WHEELCHAIR_TENNIS } = factoryConstants.disciplineConstants;
+const { TENNIS, BEACH_TENNIS, WHEELCHAIR_TENNIS, PADEL, PICKLEBALL, VOLLEYBALL, BEACH_VOLLEYBALL } =
+  factoryConstants.disciplineConstants;
 ```
 
-`TENNIS`, `BEACH_TENNIS`, and `WHEELCHAIR_TENNIS` are the values of the
-`event.discipline` field (`DisciplineUnion`).
+`event.discipline` is an **open, sport-agnostic vocabulary** (`DisciplineUnion`): any well-formed value
+is accepted, so new sports need no factory release. The constants above are the curated **known** set
+(used for autocomplete and typo defense). Input is normalized to a canonical form on write
+(`beach volleyball` → `BEACH_VOLLEYBALL`), and a fixed list can be enforced where required via the
+`allowedDisciplines` policy (e.g. a sanctioning tier). Per-sport defaults (applicable `matchUpTypes`,
+default scoring format) live in the discipline profile registry, resolved with
+`fixtures.getDisciplineProfile({ discipline })` and extensible at runtime via
+`fixtures.registerDisciplineProfile({ discipline, matchUpTypes, defaultMatchUpFormat })`.
 
 **topicConstants** - Notification/subscription topic types
 
