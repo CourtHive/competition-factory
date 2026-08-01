@@ -1,5 +1,34 @@
 # Changelog
 
+## [6.14.0](https://github.com/CourtHive/competition-factory/compare/v6.13.3...v6.14.0) (2026-08-01)
+
+
+### Features
+
+* accept gender/sex short codes and normalize to canonical on write ([56d6728](https://github.com/CourtHive/competition-factory/commit/56d6728b72eb4665a64342d92795f1aa20439b5d))
+* extend gender/sex short-code handling to reads, Team, collection defs ([6c51105](https://github.com/CourtHive/competition-factory/commit/6c51105a0fc073026de0acdf9982229cf7a75ff1))
+* **types:** make event.discipline an open, sport-agnostic vocabulary ([d351a21](https://github.com/CourtHive/competition-factory/commit/d351a21d76a4e67033783cebef884b4ef1018591))
+
+
+### Bug Fixes
+
+* **mutate:** make assignDrawPosition idempotent for same participant+position ([2c69ac5](https://github.com/CourtHive/competition-factory/commit/2c69ac5e8317021ad0bb6fe9d3f4e11f0b731af6))
+* **types:** correct BallTypeEnum/WinReasonEnum member key casing ([6876c0d](https://github.com/CourtHive/competition-factory/commit/6876c0d3a91ace00f5ac47941ecbe3a5cd8eb7cc))
+* **types:** correct CourtPositionEnum/TournamentLevelEnum member key casing ([bb61d0e](https://github.com/CourtHive/competition-factory/commit/bb61d0e6507f9b610cd668e6c4fc576185fa5e3c))
+* **types:** derive DisciplineUnion from disciplineConstants ([74c7b09](https://github.com/CourtHive/competition-factory/commit/74c7b09b3ea74b128fb4c45a2313072e9be4b78d))
+* **types:** derive IndoorOutdoorUnion from venueConstants ([4d03208](https://github.com/CourtHive/competition-factory/commit/4d0320808c065fbe0fbeafd2df6265d58f93d4dc))
+* **types:** export DisciplineProfile + type discipline params as DisciplineUnion ([89de2f4](https://github.com/CourtHive/competition-factory/commit/89de2f46886addf74f9a34da333ada0af0c03aac))
+* **types:** normalize CountryCodeEnum member keys to match ISO-code values ([2961fab](https://github.com/CourtHive/competition-factory/commit/2961fab0cc227ec7ee72d6096313f34757db7aa4))
+
+
+### Documentation
+
+* correct coverage branches threshold (85, not 83) ([806c833](https://github.com/CourtHive/competition-factory/commit/806c8331c8a63115fde5af07e9ddcc36069d8c3d))
+* cover assignDrawPosition idempotency + gender/sex short codes on reads ([69fb69b](https://github.com/CourtHive/competition-factory/commit/69fb69be63437e82662dc137c92baba104ac68c3))
+* document discipline as an open, sport-agnostic vocabulary ([9a5ef0f](https://github.com/CourtHive/competition-factory/commit/9a5ef0f9c0941dd368c85da73d698f6645d67b9c))
+* document gender/sex short codes + normalize-on-write vocab ([52403a0](https://github.com/CourtHive/competition-factory/commit/52403a0505c03ef7e8cfac1f5336664004204cae))
+* enumerate discipline + indoorOutdoor enum values ([09fedaa](https://github.com/CourtHive/competition-factory/commit/09fedaa975ac2d21322b23ffb28aa8c45b1e3aa7))
+
 ## [6.13.3](https://github.com/CourtHive/competition-factory/compare/v6.13.2...v6.13.3) (2026-07-30)
 
 
