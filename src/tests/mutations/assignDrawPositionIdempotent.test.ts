@@ -48,3 +48,41 @@ test('assignDrawPosition is idempotent for the same participant at the same draw
   result = tournamentEngine.assignDrawPosition({ drawId, structureId, drawPosition: 2, participantId });
   expect(result.error).toEqual(EXISTING_PARTICIPANT_DRAW_POSITION_ASSIGNMENT);
 });
+
+// The actual production path: an integration re-pushes the full, already-correct
+// position set as an executionQueue batch with rollbackOnError. Pre-fix, the first
+// already-placed participant errored and rolled back the ENTIRE batch (observed with
+// an IONSport 128-method re-sync). Post-fix, each re-assertion is a no-op and the
+// batch commits.
+test('a re-asserting executionQueue batch commits instead of rolling back', async () => {
+  tournamentEngine.reset();
+  const gen = mocksEngine.generateTournamentRecord({
+    drawProfiles: [{ drawSize: 4, eventType: SINGLES }], // automated → positions assigned
+    setState: true,
+  });
+  expect(gen.success).toEqual(true);
+
+  const drawId = gen.drawIds[0];
+  const structure = gen.tournamentRecord.events[0].drawDefinitions[0].structures[0];
+  const structureId = structure.structureId;
+  const assigned = structure.positionAssignments.filter((a: any) => a.participantId);
+  expect(assigned.length).toBeGreaterThan(0);
+
+  // re-push every already-correct assignment (mirrors the integration re-sync)
+  const methods = assigned.map((a: any) => ({
+    method: 'assignDrawPosition',
+    params: { drawId, structureId, drawPosition: a.drawPosition, participantId: a.participantId },
+  }));
+
+  let result: any = await tournamentEngine.executionQueue(methods, true); // rollbackOnError
+  expect(result.success).toEqual(true);
+  expect(result.rolledBack).not.toEqual(true);
+
+  // nothing rolled back — the draw is still fully assigned
+  const after: any[] = tournamentEngine
+    .getState()
+    .tournamentRecords[
+      gen.tournamentRecord.tournamentId
+    ].events[0].drawDefinitions[0].structures[0].positionAssignments.filter((a: any) => a.participantId);
+  expect(after.length).toEqual(assigned.length);
+});
