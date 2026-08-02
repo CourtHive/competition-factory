@@ -1,5 +1,12 @@
 # Changelog
 
+## [6.14.1](https://github.com/CourtHive/competition-factory/compare/v6.14.0...v6.14.1) (2026-08-02)
+
+
+### Bug Fixes
+
+* **reports:** floor cross-day pre-stages to 0 in call-timing variance ([4497f52](https://github.com/CourtHive/competition-factory/commit/4497f522888912e6575e6926d2936bf05ab21269))
+
 ## [6.14.0](https://github.com/CourtHive/competition-factory/compare/v6.13.3...v6.14.0) (2026-08-01)
 
 
