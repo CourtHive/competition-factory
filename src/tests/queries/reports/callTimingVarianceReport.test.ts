@@ -81,6 +81,54 @@ describe('call timing variance report', () => {
     expect(result.summary.medianVarianceMinutes).toBe(10);
   });
 
+  it('floors a cross-day pre-stage to 0 while keeping same-day early calls negative', () => {
+    const [first, second] = seedTwoScheduledMatchUps();
+
+    // Dragged onto the "Now" strip the evening before its scheduled day: raw
+    // variance is ~ −1140 min, but as a pre-stage it must report 0.
+    tournamentEngine.addMatchUpScheduleItems({
+      matchUpId: first.matchUpId,
+      drawId: first.drawId,
+      schedule: { scheduledDate: SCHEDULED_DATE, scheduledTime: '09:00' },
+    });
+    tournamentEngine.setMatchUpCalledAt({
+      matchUpId: first.matchUpId,
+      drawId: first.drawId,
+      calledAt: '2026-01-14T20:00:00.000Z',
+    });
+
+    // A genuine same-day early call keeps its negative variance.
+    tournamentEngine.addMatchUpScheduleItems({
+      matchUpId: second.matchUpId,
+      drawId: second.drawId,
+      schedule: { scheduledDate: SCHEDULED_DATE, scheduledTime: '11:00' },
+    });
+    tournamentEngine.setMatchUpCalledAt({
+      matchUpId: second.matchUpId,
+      drawId: second.drawId,
+      calledAt: '2026-01-15T10:55:00.000Z',
+    });
+
+    const result: any = tournamentEngine.generateReport({
+      reportId: CALL_TIMING_VARIANCE_REPORT,
+      parameters: { utcOffsetMinutes: 0 },
+    });
+
+    const preStageRow = result.rows.find((r: any) => r.matchUpId === first.matchUpId);
+    const sameDayRow = result.rows.find((r: any) => r.matchUpId === second.matchUpId);
+
+    // Cross-day pre-stage floored to 0; its prior-day timestamp is still shown.
+    expect(preStageRow.varianceMinutes).toBe(0);
+    expect(preStageRow.calledAt).toBe('2026-01-14 20:00');
+    // Same-day early call retains its negative variance.
+    expect(sameDayRow.varianceMinutes).toBe(-5);
+
+    // The floored pre-stage does not read as late and does not drag min to −1100.
+    expect(result.summary.calledLateCount).toBe(0);
+    expect(result.summary.minVarianceMinutes).toBe(-5);
+    expect(result.summary.maxVarianceMinutes).toBe(0);
+  });
+
   it('applies utcOffsetMinutes so venue-local scheduledTime aligns with UTC calledAt', () => {
     const [first] = seedTwoScheduledMatchUps();
 

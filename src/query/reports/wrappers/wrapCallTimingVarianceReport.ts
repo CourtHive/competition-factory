@@ -74,12 +74,20 @@ function buildRow(
   drawNameMap: Record<string, string>,
 ) {
   const schedule = matchUp.schedule ?? {};
+  const parts = localClockParts(schedule.calledAt, utcOffsetMinutes);
   // Whole-minute resolution so the number agrees with the HH:mm shown for
   // calledAt (which truncates seconds): a call at 15:05:45 displays as 15:05,
   // so 15:00 → 15:05 reads as 5, not 6.
-  const varianceMinutes =
+  const rawVarianceMinutes =
     Math.floor(Date.parse(schedule.calledAt) / MS_PER_MINUTE) - Math.floor(planned / MS_PER_MINUTE);
-  const parts = localClockParts(schedule.calledAt, utcOffsetMinutes);
+  // A calledAt whose venue-local calendar day precedes scheduledDate means the
+  // matchUp was pre-staged onto the "Now"/live strip on an earlier day (e.g. the
+  // night before), not called early/late against its plan. Report 0 for these so
+  // pre-stages don't surface as large spurious negatives (−1100+ minutes) that
+  // swamp the average/median/min. The actual calledAt timestamp is still shown,
+  // date-prefixed, so an operator can see it was staged ahead of the day.
+  const preStaged = parts !== null && !!schedule.scheduledDate && parts.date < schedule.scheduledDate;
+  const varianceMinutes = preStaged ? 0 : rawVarianceMinutes;
   return {
     // Location IDs (not shown as columns) so a consumer can navigate from a row
     // to the matchUp in its draw structure.
@@ -106,7 +114,12 @@ function buildRow(
  * Call Timing Variance — for every matchUp that carries both a planned
  * `scheduledTime` and an actual `calledAt` (the moment it was called to court
  * via the schedule "Now" strip), report the signed variance in minutes.
- * Positive = called LATE (running behind); negative = called early.
+ * Positive = called LATE (running behind); negative = called early (same day).
+ *
+ * A calledAt on an earlier calendar day than scheduledDate is treated as a
+ * pre-stage (the matchUp was dragged onto the "Now" strip ahead of the day) and
+ * reported as 0 variance rather than a large negative — the timestamp is still
+ * shown so the pre-stage is visible.
  *
  * Rows are sorted most-recent-day first, then most-recently-called within each
  * day, so the latest activity surfaces at the top. The summary rolls up
