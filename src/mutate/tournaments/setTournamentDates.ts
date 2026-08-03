@@ -2,6 +2,7 @@ import { clearScheduledMatchUps } from '@Mutate/matchUps/schedule/clearScheduled
 import { checkRequiredParameters } from '@Helpers/parameters/checkRequiredParameters';
 import { allTournamentMatchUps } from '@Query/matchUps/getAllTournamentMatchUps';
 import { updateCourtAvailability } from '@Mutate/venues/updateCourtAvailability';
+import { modifyEventNotice } from '@Mutate/notifications/eventNotifications';
 import { isValidWeekdaysValue } from '@Validators/isValidWeekdaysValue';
 import { definedAttributes } from '@Tools/definedAttributes';
 import { addNotice } from '@Global/state/globalState';
@@ -185,12 +186,17 @@ export function setTournamentDates(params: SetTournamentDatesArgs): ResultType &
 
 function coerceEventDates({ tournamentRecord, startDate, endDate }) {
   for (const event of tournamentRecord.events ?? []) {
+    const { startDate: priorStart, endDate: priorEnd } = event;
     if (startDate && event.startDate && new Date(event.startDate) < new Date(startDate)) event.startDate = startDate;
     if (endDate && event.startDate && new Date(event.startDate) > new Date(endDate))
       event.startDate = startDate ?? endDate;
     if (endDate && event.endDate && new Date(event.endDate) > new Date(endDate)) event.endDate = endDate;
     if (startDate && event.endDate && new Date(event.endDate) < new Date(startDate))
       event.endDate = endDate ?? startDate;
+    // an event whose dates were coerced inward changed — cover it with MODIFY_EVENT.
+    if (event.startDate !== priorStart || event.endDate !== priorEnd) {
+      modifyEventNotice({ tournamentId: tournamentRecord.tournamentId, event });
+    }
   }
 }
 

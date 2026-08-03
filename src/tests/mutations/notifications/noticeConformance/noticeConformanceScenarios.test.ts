@@ -643,6 +643,30 @@ const scenarios: Scenario[] = [
       });
     },
   },
+
+  // ── Tier-2 batch 10 (cross-entity coercion gaps) ───────────────────────────
+  {
+    // Shrinking the tournament window coerces each event's start/end inward
+    // (coerceEventDates). The event entities change and must get MODIFY_EVENT —
+    // not just the root MODIFY_TOURNAMENT_DETAIL.
+    name: 'setTournamentDates (shrink → event date coerce)',
+    expectation: 'covered',
+    run: () => tournamentEngine.setTournamentDates({ startDate: '2025-01-05', endDate: '2025-01-10' }),
+  },
+  {
+    // Reordering an event-level tieFormat's collections (no structureIds) writes
+    // event.tieFormat → must be covered by MODIFY_EVENT.
+    name: 'orderCollectionDefinitions (event scope)',
+    expectation: 'covered',
+    seed: teamContext,
+    run: (ctx) => {
+      const event = tournamentEngine.getTournament().tournamentRecord.events[0];
+      const defs = event.tieFormat.collectionDefinitions;
+      const orderMap: Record<string, number> = {};
+      defs.forEach((d: any, i: number) => (orderMap[d.collectionId] = defs.length - i));
+      tournamentEngine.orderCollectionDefinitions({ eventId: ctx.eventId, orderMap });
+    },
+  },
 ];
 
 const gapReport: Array<{ name: string; note?: string; violations: number }> = [];

@@ -1,6 +1,7 @@
 import { modifyDrawNotice, modifyMatchUpNotice } from '@Mutate/notifications/drawNotifications';
 import { getAllStructureMatchUps } from '@Query/matchUps/getAllStructureMatchUps';
 import { copyTieFormat } from '@Query/hierarchical/tieFormats/copyTieFormat';
+import { modifyEventNotice } from '@Mutate/notifications/eventNotifications';
 import { decorateResult } from '@Functions/global/decorateResult';
 import { getTieFormat } from '@Query/hierarchical/getTieFormat';
 import { findDrawMatchUp } from '@Acquire/findDrawMatchUp';
@@ -147,7 +148,11 @@ function updateEventTieFormat({
     tieFormat: event.tieFormat,
     orderMap,
   });
-  if (!structureIds?.length) event.tieFormat = updatedFormat;
+  if (!structureIds?.length) {
+    event.tieFormat = updatedFormat;
+    // event.tieFormat is a first-class event attribute — cover the change.
+    modifyEventNotice({ tournamentId: tournamentRecord?.tournamentId, event });
+  }
 
   for (const drawDefinition of event.drawDefinitions ?? []) {
     updateDrawTieFormat({
