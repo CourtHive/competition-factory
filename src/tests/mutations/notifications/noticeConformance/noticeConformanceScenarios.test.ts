@@ -115,9 +115,9 @@ const scenarios: Scenario[] = [
     run: (ctx) => tournamentEngine.removeEventEntries({ eventId: ctx.eventId, participantIds: [ctx.alternateIds[0]] }),
   },
   {
+    // C1 CLOSED: renameStructures now dispatches MODIFY_DRAW_DEFINITION.
     name: 'renameStructures',
-    expectation: 'gap',
-    note: 'C1 — silent structure rename',
+    expectation: 'covered',
     run: (ctx) =>
       tournamentEngine.renameStructures({
         drawId: ctx.drawId,
