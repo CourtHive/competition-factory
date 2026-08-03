@@ -194,6 +194,41 @@ const scenarios: Scenario[] = [
     expectation: 'covered',
     run: (ctx) => tournamentEngine.setEventDisplay({ eventId: ctx.eventId, displaySettings: { draws: {} } }),
   },
+
+  // ── Tier-2 catalog expansion (venues / scheduling / scale-items) ───────────
+  {
+    name: 'addVenue',
+    expectation: 'covered',
+    run: () => tournamentEngine.addVenue({ venue: { venueName: 'Center' } }),
+  },
+  {
+    name: 'modifyVenue',
+    expectation: 'covered',
+    setup: () => tournamentEngine.addVenue({ venue: { venueName: 'Center' } }),
+    run: () => {
+      const venue = tournamentEngine.getTournament().tournamentRecord.venues[0];
+      tournamentEngine.modifyVenue({ venueId: venue.venueId, modifications: { venueName: 'Renamed Center' } });
+    },
+  },
+  {
+    name: 'addMatchUpScheduleItems',
+    expectation: 'covered',
+    run: (ctx) =>
+      tournamentEngine.addMatchUpScheduleItems({
+        matchUpId: ctx.matchUpId,
+        drawId: ctx.drawId,
+        schedule: { scheduledDate: '2025-01-05', courtOrder: 1 },
+      }),
+  },
+  {
+    name: 'setParticipantScaleItem',
+    expectation: 'covered',
+    run: (ctx) =>
+      tournamentEngine.setParticipantScaleItem({
+        participantId: ctx.enteredIds[0],
+        scaleItem: { scaleType: 'RATING', eventType: 'SINGLES', scaleName: 'WTN', scaleValue: 15 },
+      }),
+  },
 ];
 
 const gapReport: Array<{ name: string; note?: string; violations: number }> = [];

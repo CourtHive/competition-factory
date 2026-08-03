@@ -26,7 +26,10 @@ import {
   ADD_EVENT,
   ADD_MATCHUPS,
   ADD_PARTICIPANTS,
+  ADD_VENUE,
   DELETE_EVENT,
+  DELETE_VENUE,
+  MODIFY_VENUE,
   DELETED_DRAW_IDS,
   DELETED_MATCHUP_IDS,
   DELETE_PARTICIPANTS,
@@ -42,7 +45,7 @@ import {
   topicConstants,
 } from '@Constants/topicConstants';
 
-export type EntityKind = 'participant' | 'event' | 'drawDefinition' | 'structure' | 'matchUp' | 'entries';
+export type EntityKind = 'participant' | 'event' | 'drawDefinition' | 'structure' | 'matchUp' | 'entries' | 'venue';
 export type ChangeType = 'added' | 'modified' | 'removed';
 export type CapturedNotice = { topic: string; payload: any };
 export type EntityChange = { kind: EntityKind; id: string; change: ChangeType };
@@ -81,6 +84,7 @@ export const entityTopicSpec: Record<EntityKind, Partial<Record<ChangeType, stri
     modified: [MODIFY_EVENT_ENTRIES, MODIFY_DRAW_ENTRIES],
     removed: [MODIFY_EVENT_ENTRIES, MODIFY_DRAW_ENTRIES],
   },
+  venue: { added: [ADD_VENUE], modified: [MODIFY_VENUE], removed: [DELETE_VENUE] },
 };
 
 /**
@@ -214,9 +218,13 @@ export function collectEntities(record: any): EntityMaps {
     structure: new Map(),
     matchUp: new Map(),
     entries: new Map(),
+    venue: new Map(),
   };
   for (const participant of record?.participants ?? []) {
     maps.participant.set(participant.participantId, omit(participant, []));
+  }
+  for (const venue of record?.venues ?? []) {
+    maps.venue.set(venue.venueId, omit(venue, []));
   }
   for (const event of record?.events ?? []) {
     // event attributes only — sub-entities are tracked separately
@@ -306,6 +314,13 @@ export function noticedEntityKeys(captured: CapturedNotice[]): Set<string> {
         break;
       case MODIFY_DRAW_ENTRIES:
         add('entries', `draw:${payload?.drawId}`);
+        break;
+      case ADD_VENUE:
+      case MODIFY_VENUE:
+        add('venue', payload?.venue?.venueId ?? payload?.venueId);
+        break;
+      case DELETE_VENUE:
+        add('venue', payload?.venueId);
         break;
     }
   }
