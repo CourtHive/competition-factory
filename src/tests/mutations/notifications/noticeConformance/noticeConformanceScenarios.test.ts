@@ -34,21 +34,13 @@ type Scenario = {
   name: string;
   expectation: 'covered' | 'gap';
   note?: string; // owning coverage workstream for a gap
+  seed?: () => Ctx; // per-scenario seed override (default: seedContext)
   setup?: (ctx: Ctx) => void; // runs BEFORE capture (not measured)
   run: (ctx: Ctx) => void;
 };
 
-function seedContext(): Ctx {
-  const { tournamentRecord } = mocksEngine.generateTournamentRecord({
-    tournamentAttributes: { tournamentId: 'conf-scn' },
-    participantsProfile: { participantsCount: 16 },
-    drawProfiles: [{ drawSize: 8, eventName: 'Singles' }],
-    startDate: '2025-01-01',
-    endDate: '2025-01-14',
-    completeAllMatchUps: true,
-    nonRandom: 1,
-  });
-  tournamentEngine.setState(tournamentRecord);
+/** Read the current engine state into a Ctx (shared by every seed variant). */
+function extractContext(): Ctx {
   const record = tournamentEngine.getTournament().tournamentRecord;
   const event = record.events[0];
   const drawDefinition = event.drawDefinitions[0];
@@ -64,6 +56,38 @@ function seedContext(): Ctx {
     alternateIds: ids.filter((id: string) => !entered.has(id)),
     matchUpId: matchUps[0]?.matchUpId,
   };
+}
+
+function seedContext(): Ctx {
+  const { tournamentRecord } = mocksEngine.generateTournamentRecord({
+    tournamentAttributes: { tournamentId: 'conf-scn' },
+    participantsProfile: { participantsCount: 16 },
+    drawProfiles: [{ drawSize: 8, eventName: 'Singles' }],
+    startDate: '2025-01-01',
+    endDate: '2025-01-14',
+    completeAllMatchUps: true,
+    nonRandom: 1,
+  });
+  tournamentEngine.setState(tournamentRecord);
+  return extractContext();
+}
+
+/**
+ * Seed with UNASSIGNED draw positions (`automated: false`) so position mutations
+ * (assign/remove/swap) have open positions to act on — the completeAllMatchUps
+ * `seedContext` has every position filled.
+ */
+function openPositionsContext(): Ctx {
+  const { tournamentRecord } = mocksEngine.generateTournamentRecord({
+    tournamentAttributes: { tournamentId: 'conf-scn-open' },
+    participantsProfile: { participantsCount: 16 },
+    drawProfiles: [{ drawSize: 8, participantsCount: 8, automated: false, eventName: 'Singles' }],
+    startDate: '2025-01-01',
+    endDate: '2025-01-14',
+    nonRandom: 1,
+  });
+  tournamentEngine.setState(tournamentRecord);
+  return extractContext();
 }
 
 const DELEGATED_OUTCOME = { score: { scoreStringSide1: '6-1 6-1', scoreStringSide2: '1-6 1-6' } };
@@ -242,6 +266,69 @@ const scenarios: Scenario[] = [
     setup: (ctx) => tournamentEngine.publishEvent({ eventId: ctx.eventId }),
     run: (ctx) => tournamentEngine.unPublishEvent({ eventId: ctx.eventId }),
   },
+
+  // ── Tier-2 batch 3 (draw positions — open-position seed) ───────────────────
+  {
+    // assignDrawPosition places a participant into an open position →
+    // MODIFY_POSITION_ASSIGNMENTS (cascades to MODIFY_DRAW_DEFINITION).
+    name: 'assignDrawPosition',
+    expectation: 'covered',
+    seed: openPositionsContext,
+    run: (ctx) =>
+      tournamentEngine.assignDrawPosition({
+        drawId: ctx.drawId,
+        structureId: ctx.structureId,
+        drawPosition: 1,
+        participantId: ctx.enteredIds[0],
+      }),
+  },
+  {
+    // swapDrawPositionAssignments exchanges two assigned positions →
+    // MODIFY_POSITION_ASSIGNMENTS. Setup fills positions 1 and 2.
+    name: 'swapDrawPositionAssignments',
+    expectation: 'covered',
+    seed: openPositionsContext,
+    setup: (ctx) => {
+      tournamentEngine.assignDrawPosition({
+        drawId: ctx.drawId,
+        structureId: ctx.structureId,
+        drawPosition: 1,
+        participantId: ctx.enteredIds[0],
+      });
+      tournamentEngine.assignDrawPosition({
+        drawId: ctx.drawId,
+        structureId: ctx.structureId,
+        drawPosition: 2,
+        participantId: ctx.enteredIds[1],
+      });
+    },
+    run: (ctx) =>
+      tournamentEngine.swapDrawPositionAssignments({
+        drawId: ctx.drawId,
+        structureId: ctx.structureId,
+        drawPositions: [1, 2],
+      }),
+  },
+  {
+    // removeDrawPositionAssignment clears an assigned position →
+    // MODIFY_POSITION_ASSIGNMENTS (+ MODIFY_MATCHUP for the cleared matchUp).
+    name: 'removeDrawPositionAssignment',
+    expectation: 'covered',
+    seed: openPositionsContext,
+    setup: (ctx) =>
+      tournamentEngine.assignDrawPosition({
+        drawId: ctx.drawId,
+        structureId: ctx.structureId,
+        drawPosition: 1,
+        participantId: ctx.enteredIds[0],
+      }),
+    run: (ctx) =>
+      tournamentEngine.removeDrawPositionAssignment({
+        drawId: ctx.drawId,
+        structureId: ctx.structureId,
+        drawPosition: 1,
+      }),
+  },
 ];
 
 const gapReport: Array<{ name: string; note?: string; violations: number }> = [];
@@ -270,7 +357,7 @@ describe('notice conformance — scenario catalog (D-scenarios)', () => {
   for (const scn of scenarios) {
     const label = scn.expectation === 'gap' ? 'GAP' : 'covered';
     it(`${label}: ${scn.name}`, () => {
-      const ctx = seedContext();
+      const ctx = (scn.seed ?? seedContext)();
       scn.setup?.(ctx);
 
       const before = structuredClone(tournamentEngine.getTournament().tournamentRecord);
