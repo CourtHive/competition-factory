@@ -1,3 +1,4 @@
+import { modifyEventNotice } from '@Mutate/notifications/eventNotifications';
 import { modifyEventPublishStatus } from './modifyEventPublishStatus';
 import { decorateResult } from '@Functions/global/decorateResult';
 import { isObject, objShallowEqual } from '@Tools/objects';
@@ -73,6 +74,8 @@ export function setEventDisplay({
     event,
   });
   if (result.error) return result;
+
+  modifyEventNotice({ event, tournamentId: tournamentRecord.tournamentId });
 
   return { ...SUCCESS };
 }

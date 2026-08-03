@@ -26,5 +26,7 @@ export function refreshEventDrawOrder({ tournamentRecord, event }) {
     ...[...(orderedFlightDrawIds ?? []), ...(orderedDrawIds ?? [])].map((drawId, i) => ({ [drawId]: i + 1 })),
   );
 
-  return orderedDrawIdsMap ? updateDrawIdsOrder({ event, orderedDrawIdsMap }) : { ...SUCCESS };
+  // updateDrawIdsOrder dispatches MODIFY_EVENT; thread tournamentRecord through
+  // so the notice carries the tournamentId.
+  return orderedDrawIdsMap ? updateDrawIdsOrder({ event, tournamentRecord, orderedDrawIdsMap }) : { ...SUCCESS };
 }

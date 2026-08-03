@@ -1,4 +1,5 @@
 import { setFirstClassOrExtension } from '../extensions/setFirstClassOrExtension';
+import { modifyEventNotice } from '@Mutate/notifications/eventNotifications';
 import { decorateResult } from '@Functions/global/decorateResult';
 import { getFlightProfile } from '@Query/event/getFlightProfile';
 import { makeDeepCopy } from '@Tools/makeDeepCopy';
@@ -13,7 +14,19 @@ import {
   MISSING_VALUE,
 } from '@Constants/errorConditionConstants';
 
-export function attachFlightProfile({ deleteExisting, event, flightProfile }) {
+export function attachFlightProfile({
+  deleteExisting,
+  tournamentRecord,
+  disableNotice,
+  event,
+  flightProfile,
+}: {
+  deleteExisting?: boolean;
+  tournamentRecord?: any;
+  disableNotice?: boolean;
+  event?: any;
+  flightProfile?: any;
+}) {
   const stack = 'attachFlightProfile';
   if (!flightProfile) return decorateResult({ result: { error: MISSING_VALUE }, stack });
   if (!event) return decorateResult({ result: { error: MISSING_EVENT }, stack });
@@ -33,6 +46,8 @@ export function attachFlightProfile({ deleteExisting, event, flightProfile }) {
     name: FLIGHT_PROFILE,
     value: flightProfile,
   });
+
+  if (!disableNotice) modifyEventNotice({ event, tournamentId: tournamentRecord?.tournamentId });
 
   return {
     flightProfile: makeDeepCopy(flightProfile, false, true),

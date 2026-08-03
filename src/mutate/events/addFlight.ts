@@ -1,4 +1,5 @@
 import { setFirstClassOrExtension } from '../extensions/setFirstClassOrExtension';
+import { modifyEventNotice } from '@Mutate/notifications/eventNotifications';
 import { decorateResult } from '@Functions/global/decorateResult';
 import { getFlightProfile } from '@Query/event/getFlightProfile';
 import { getParticipantId } from '@Functions/global/extractors';
@@ -8,11 +9,13 @@ import { UUID } from '@Tools/UUID';
 
 // constants
 import { EXISTING_FLIGHT, INVALID_VALUES, MISSING_EVENT, MISSING_VALUE } from '@Constants/errorConditionConstants';
+import { Entry, Event, Tournament } from '@Types/tournamentTypes';
 import { FLIGHT_PROFILE } from '@Constants/extensionConstants';
-import { Entry, Event } from '@Types/tournamentTypes';
 
 type AddFlightArgs = {
   qualifyingPositions?: number;
+  tournamentRecord?: Tournament;
+  disableNotice?: boolean;
   drawEntries?: Entry[];
   drawName?: string;
   drawId: string;
@@ -21,6 +24,8 @@ type AddFlightArgs = {
 };
 export function addFlight({
   qualifyingPositions,
+  tournamentRecord,
+  disableNotice,
   drawEntries = [], // [{ entryPosition, entryStatus, participantId }]
   drawName,
   drawId,
@@ -65,10 +70,15 @@ export function addFlight({
 
   const flights = (flightProfile?.flights ?? []).concat(flight);
 
-  return setFirstClassOrExtension({
+  const result = setFirstClassOrExtension({
     element: event,
     attribute: 'flightProfile',
     name: FLIGHT_PROFILE,
     value: { ...flightProfile, flights },
   });
+  if (result.error) return result;
+
+  if (!disableNotice) modifyEventNotice({ event, tournamentId: tournamentRecord?.tournamentId });
+
+  return result;
 }

@@ -176,6 +176,24 @@ const scenarios: Scenario[] = [
         timeItem: { itemType: 'NOTE', itemValue: 'hello' },
       }),
   },
+  {
+    // C2-tail CLOSED: addFlight now dispatches MODIFY_EVENT.
+    name: 'addFlight',
+    expectation: 'covered',
+    run: (ctx) => tournamentEngine.addFlight({ eventId: ctx.eventId, drawId: 'scn-flight', drawName: 'Flight 2' }),
+  },
+  {
+    // C2-tail CLOSED: updateDrawIdsOrder dispatches MODIFY_DRAW_DEFINITION per reordered draw.
+    name: 'updateDrawIdsOrder',
+    expectation: 'covered',
+    run: (ctx) => tournamentEngine.updateDrawIdsOrder({ eventId: ctx.eventId, orderedDrawIdsMap: { [ctx.drawId]: 2 } }),
+  },
+  {
+    // C2-tail CLOSED: setEventDisplay now dispatches MODIFY_EVENT.
+    name: 'setEventDisplay',
+    expectation: 'covered',
+    run: (ctx) => tournamentEngine.setEventDisplay({ eventId: ctx.eventId, displaySettings: { draws: {} } }),
+  },
 ];
 
 const gapReport: Array<{ name: string; note?: string; violations: number }> = [];
