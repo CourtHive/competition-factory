@@ -142,6 +142,13 @@ const scenarios: Scenario[] = [
     expectation: 'covered',
     run: (ctx) => tournamentEngine.deleteEvents({ eventIds: [ctx.eventId] }),
   },
+  {
+    // WS-A CLOSED: regenerateParticipantNames now dispatches MODIFY_PARTICIPANTS.
+    name: 'regenerateParticipantNames',
+    expectation: 'covered',
+    run: () =>
+      tournamentEngine.regenerateParticipantNames({ formats: { INDIVIDUAL: { personFormat: 'LAST, First' } } }),
+  },
 ];
 
 const gapReport: Array<{ name: string; note?: string; violations: number }> = [];

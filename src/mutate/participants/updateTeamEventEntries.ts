@@ -1,3 +1,4 @@
+import { modifyDrawEntriesNotice, modifyEventEntriesNotice } from '@Mutate/notifications/entriesNotifications';
 import { getFlightProfile } from '@Query/event/getFlightProfile';
 
 import { SUCCESS } from '@Constants/resultConstants';
@@ -13,8 +14,10 @@ export function updateTeamEventEntries({ individualParticipantIds, groupingParti
   );
 
   const filterEntry = (entry) => !individualParticipantIds.includes(entry.participantId);
+  const tournamentId = tournamentRecord.tournamentId;
 
   for (const event of relevantEvents) {
+    const eventBefore = (event.entries ?? []).length;
     event.entries = (event.entries ?? []).filter(filterEntry);
 
     const { flightProfile } = getFlightProfile({ event });
@@ -23,8 +26,14 @@ export function updateTeamEventEntries({ individualParticipantIds, groupingParti
     });
 
     event?.drawDefinitions?.forEach((drawDefinition) => {
+      const drawBefore = (drawDefinition.entries ?? []).length;
       drawDefinition.entries = (drawDefinition.entries ?? []).filter(filterEntry);
+      if ((drawDefinition.entries?.length ?? 0) !== drawBefore) {
+        modifyDrawEntriesNotice({ drawDefinition, tournamentId, eventId: event.eventId });
+      }
     });
+
+    if ((event.entries?.length ?? 0) !== eventBefore) modifyEventEntriesNotice({ event, tournamentId });
   }
 
   return { ...SUCCESS };

@@ -1,7 +1,9 @@
 import { formatParticipantName } from '@Assemblies/generators/participants/formatParticipantName';
+import { addNotice } from '@Global/state/globalState';
 import { createMap, isObject } from '@Tools/objects';
 
 import { MISSING_TOURNAMENT_RECORD, MISSING_VALUE } from '@Constants/errorConditionConstants';
+import { MODIFY_PARTICIPANTS } from '@Constants/topicConstants';
 import { Tournament } from '@Types/tournamentTypes';
 import { SUCCESS } from '@Constants/resultConstants';
 
@@ -30,6 +32,11 @@ export function regenerateParticipantNames({ tournamentRecord, formats }: RegenA
 
   for (const participant of participants) {
     formatParticipantName({ participant, participantMap, formats });
+  }
+
+  // every participantName may have been rewritten → dispatch MODIFY_PARTICIPANTS
+  if (participants.length) {
+    addNotice({ topic: MODIFY_PARTICIPANTS, payload: { tournamentId: tournamentRecord.tournamentId, participants } });
   }
 
   return { ...SUCCESS };
