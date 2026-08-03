@@ -73,6 +73,25 @@ function seedContext(): Ctx {
 }
 
 /**
+ * Seed with positions assigned but matchUps UNSCORED (no completeAllMatchUps), so
+ * scoring a first-round matchUp cleanly advances a winner into round 2 — exercising
+ * the multi-matchUp coverage requirement (the scored matchUp AND every downstream
+ * matchUp the advancement touches must each get a MODIFY_MATCHUP).
+ */
+function unscoredContext(): Ctx {
+  const { tournamentRecord } = mocksEngine.generateTournamentRecord({
+    tournamentAttributes: { tournamentId: 'conf-scn-unscored' },
+    participantsProfile: { participantsCount: 16 },
+    drawProfiles: [{ drawSize: 8, eventName: 'Singles' }],
+    startDate: '2025-01-01',
+    endDate: '2025-01-14',
+    nonRandom: 1,
+  });
+  tournamentEngine.setState(tournamentRecord);
+  return extractContext();
+}
+
+/**
  * Seed with UNASSIGNED draw positions (`automated: false`) so position mutations
  * (assign/remove/swap) have open positions to act on — the completeAllMatchUps
  * `seedContext` has every position filled.
@@ -328,6 +347,27 @@ const scenarios: Scenario[] = [
         structureId: ctx.structureId,
         drawPosition: 1,
       }),
+  },
+
+  // ── Tier-2 batch 4 (scoring — advancement cascade) ─────────────────────────
+  {
+    // Completing a first-round matchUp advances the winner into round 2. Both the
+    // scored matchUp AND the downstream matchUp the winner lands in must each be
+    // covered by a MODIFY_MATCHUP — a multi-matchUp coverage probe.
+    name: 'setMatchUpStatus (first-round completion → advancement)',
+    expectation: 'covered',
+    seed: unscoredContext,
+    run: (ctx) => {
+      const { matchUps } = tournamentEngine.allTournamentMatchUps({ inContext: true });
+      const firstRound = matchUps.find(
+        (m: any) => m.roundNumber === 1 && m.drawPositions?.filter(Boolean).length === 2,
+      );
+      tournamentEngine.setMatchUpStatus({
+        drawId: ctx.drawId,
+        matchUpId: firstRound.matchUpId,
+        outcome: { winningSide: 1, scoreString: '6-3 6-2' },
+      });
+    },
   },
 ];
 
