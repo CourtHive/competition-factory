@@ -41,13 +41,15 @@ import {
   MODIFY_POSITION_ASSIGNMENTS,
   MODIFY_SEED_ASSIGNMENTS,
   MODIFY_PARTICIPANTS,
+  MODIFY_TOURNAMENT_DETAIL,
   PUBLISH_EVENT,
   UNPUBLISH_EVENT,
   UPDATE_INCONTEXT_MATCHUP,
   topicConstants,
 } from '@Constants/topicConstants';
 
-export type EntityKind = 'participant' | 'event' | 'drawDefinition' | 'structure' | 'matchUp' | 'entries' | 'venue';
+export type EntityKind =
+  'tournament' | 'participant' | 'event' | 'drawDefinition' | 'structure' | 'matchUp' | 'entries' | 'venue';
 export type ChangeType = 'added' | 'modified' | 'removed';
 export type CapturedNotice = { topic: string; payload: any };
 export type EntityChange = { kind: EntityKind; id: string; change: ChangeType };
@@ -65,6 +67,7 @@ const INCIDENTAL_KEYS = new Set(['updatedAt', 'createdAt', 'timeStamp', 'process
  * uncoverable and surfaces as a violation (Workstream C2).
  */
 export const entityTopicSpec: Record<EntityKind, Partial<Record<ChangeType, string[]>>> = {
+  tournament: { modified: [MODIFY_TOURNAMENT_DETAIL] },
   participant: { added: [ADD_PARTICIPANTS], modified: [MODIFY_PARTICIPANTS], removed: [DELETE_PARTICIPANTS] },
   matchUp: {
     added: [ADD_MATCHUPS],
@@ -227,6 +230,7 @@ function collectMatchUps(structure: any, out: Map<string, any>): void {
 /** Flatten a tournamentRecord into per-kind id→entity maps for structural diffing. */
 export function collectEntities(record: any): EntityMaps {
   const maps: EntityMaps = {
+    tournament: new Map(),
     participant: new Map(),
     event: new Map(),
     drawDefinition: new Map(),
@@ -235,6 +239,17 @@ export function collectEntities(record: any): EntityMaps {
     entries: new Map(),
     venue: new Map(),
   };
+  // tournament-root scalar attributes only; sub-collections are tracked as their
+  // own entity kinds, and root `extensions`/`timeItems` are out of scope (generic
+  // extension setters are intentionally silent — see the notice-completeness plan).
+  if (record?.tournamentId) {
+    // `factory` is an engine version/timestamp stamp written on the first mutation
+    // of a cycle — bookkeeping, not tournament data — so it is omitted too.
+    maps.tournament.set(
+      record.tournamentId,
+      omit(record, ['events', 'participants', 'venues', 'extensions', 'timeItems', 'factory']),
+    );
+  }
   for (const participant of record?.participants ?? []) {
     maps.participant.set(participant.participantId, omit(participant, []));
   }
@@ -284,6 +299,9 @@ export function noticedEntityKeys(captured: CapturedNotice[]): Set<string> {
   const add = (kind: EntityKind, id?: string) => id && keys.add(`${kind}:${id}`);
   for (const { topic, payload } of captured) {
     switch (topic) {
+      case MODIFY_TOURNAMENT_DETAIL:
+        add('tournament', payload?.tournamentId);
+        break;
       case ADD_PARTICIPANTS:
       case MODIFY_PARTICIPANTS:
         for (const p of payload?.participants ?? []) add('participant', p?.participantId);

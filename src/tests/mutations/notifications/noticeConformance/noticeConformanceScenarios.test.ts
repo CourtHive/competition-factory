@@ -569,6 +569,22 @@ const scenarios: Scenario[] = [
       tournamentEngine.addCourt({ venueId: venue.venueId, court: { courtName: 'Court 1' } });
     },
   },
+
+  // ── Tier-2 batch 8 (tournament-root attributes) ────────────────────────────
+  {
+    // setTournamentName changes a root scalar → MODIFY_TOURNAMENT_DETAIL. Exercises
+    // the new `tournament` entity kind (previously the harness tracked no root attrs).
+    name: 'setTournamentName',
+    expectation: 'covered',
+    run: () => tournamentEngine.setTournamentName({ tournamentName: 'Conformance Renamed Open' }),
+  },
+  {
+    // setTournamentDates widens the window (no matchUp unscheduled) → the root
+    // start/end/activeDates/weekdays change, covered by MODIFY_TOURNAMENT_DETAIL.
+    name: 'setTournamentDates (widen)',
+    expectation: 'covered',
+    run: () => tournamentEngine.setTournamentDates({ startDate: '2025-01-01', endDate: '2025-01-20' }),
+  },
 ];
 
 const gapReport: Array<{ name: string; note?: string; violations: number }> = [];
