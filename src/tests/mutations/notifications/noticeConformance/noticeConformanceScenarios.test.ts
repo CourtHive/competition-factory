@@ -91,6 +91,35 @@ function unscoredContext(): Ctx {
   return extractContext();
 }
 
+/** Seed with declared seeds so seed-assignment mutations have real seeds to move. */
+function seededContext(): Ctx {
+  const { tournamentRecord } = mocksEngine.generateTournamentRecord({
+    tournamentAttributes: { tournamentId: 'conf-scn-seeded' },
+    participantsProfile: { participantsCount: 16 },
+    drawProfiles: [{ drawSize: 8, seedsCount: 4, eventName: 'Singles' }],
+    startDate: '2025-01-01',
+    endDate: '2025-01-14',
+    nonRandom: 1,
+  });
+  tournamentEngine.setState(tournamentRecord);
+  return extractContext();
+}
+
+/** The first structure of the seed's draw, read live (reads dispatch no notices). */
+function firstStructure(ctx: Ctx): any {
+  const record = tournamentEngine.getTournament().tournamentRecord;
+  const drawDefinition = record.events
+    .flatMap((e: any) => e.drawDefinitions ?? [])
+    .find((d: any) => d.drawId === ctx.drawId);
+  return drawDefinition.structures.find((s: any) => s.structureId === ctx.structureId);
+}
+
+/** An entered participant not currently holding a seed in the given structure. */
+function unseededEnteredId(ctx: Ctx): string {
+  const seeded = new Set((firstStructure(ctx).seedAssignments ?? []).map((a: any) => a.participantId));
+  return ctx.enteredIds.find((id) => !seeded.has(id)) as string;
+}
+
 /**
  * Seed with UNASSIGNED draw positions (`automated: false`) so position mutations
  * (assign/remove/swap) have open positions to act on — the completeAllMatchUps
@@ -368,6 +397,35 @@ const scenarios: Scenario[] = [
         outcome: { winningSide: 1, scoreString: '6-3 6-2' },
       });
     },
+  },
+
+  // ── Tier-2 batch 5 (seeding) ───────────────────────────────────────────────
+  {
+    // modifySeedAssignment adds/updates a seed on the structure →
+    // MODIFY_SEED_ASSIGNMENTS (cascades to MODIFY_DRAW_DEFINITION).
+    name: 'modifySeedAssignment',
+    expectation: 'covered',
+    seed: seededContext,
+    run: (ctx) =>
+      tournamentEngine.modifySeedAssignment({
+        drawId: ctx.drawId,
+        structureId: ctx.structureId,
+        participantId: unseededEnteredId(ctx),
+        seedValue: 3,
+      }),
+  },
+  {
+    // assignSeedPositions reassigns a seed number to a different participant →
+    // MODIFY_SEED_ASSIGNMENTS.
+    name: 'assignSeedPositions',
+    expectation: 'covered',
+    seed: seededContext,
+    run: (ctx) =>
+      tournamentEngine.assignSeedPositions({
+        drawId: ctx.drawId,
+        structureId: ctx.structureId,
+        assignments: [{ seedNumber: 1, participantId: unseededEnteredId(ctx) }],
+      }),
   },
 ];
 
