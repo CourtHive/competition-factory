@@ -8,7 +8,7 @@ import { getTimeItem } from '@Query/base/timeItems';
 
 // constants and types
 import { DrawDefinition, Event, TimeItem, Tournament } from '@Types/tournamentTypes';
-import { MODIFY_TOURNAMENT_DETAIL } from '@Constants/topicConstants';
+import { MODIFY_PARTICIPANTS, MODIFY_TOURNAMENT_DETAIL } from '@Constants/topicConstants';
 import { SUCCESS } from '@Constants/resultConstants';
 import {
   EVENT_NOT_FOUND,
@@ -90,6 +90,7 @@ type AddParticipantTimeItemArgs = {
   tournamentRecord: Tournament;
   removePriorValues?: boolean;
   duplicateValues?: boolean;
+  disableNotice?: boolean;
   creationTime?: boolean;
   participantId: string;
   timeItem: TimeItem;
@@ -100,6 +101,7 @@ export function addParticipantTimeItem({
   removePriorValues,
   tournamentRecord,
   duplicateValues,
+  disableNotice,
   participantId,
   timeItem,
 }: AddParticipantTimeItemArgs) {
@@ -109,13 +111,26 @@ export function addParticipantTimeItem({
   const result = findTournamentParticipant({ tournamentRecord, participantId });
   if (result.error) return result;
 
-  return addTimeItem({
+  const addResult = addTimeItem({
     element: result.participant,
     removePriorValues,
     duplicateValues,
     creationTime,
     timeItem,
   });
+  if (addResult.error) return addResult;
+
+  // The generic participant time-item entry point was silent — direct callers
+  // got no notice (batch callers like sign-in/payment status dispatch their own,
+  // passing disableNotice). Dispatch MODIFY_PARTICIPANTS for the touched participant.
+  if (!disableNotice) {
+    addNotice({
+      topic: MODIFY_PARTICIPANTS,
+      payload: { tournamentId: tournamentRecord.tournamentId, participants: [result.participant] },
+    });
+  }
+
+  return addResult;
 }
 
 export function addTournamentTimeItem(params) {

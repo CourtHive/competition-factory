@@ -46,6 +46,7 @@ export function modifyParticipantsPaymentStatus({
       };
       const result = addParticipantTimeItem({
         duplicateValues: false,
+        disableNotice: true, // this fn batch-dispatches MODIFY_PARTICIPANTS below
         tournamentRecord,
         participantId,
         timeItem,

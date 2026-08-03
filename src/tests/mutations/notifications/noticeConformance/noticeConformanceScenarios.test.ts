@@ -165,6 +165,17 @@ const scenarios: Scenario[] = [
         representativeParticipantIds: [ctx.enteredIds[0]],
       }),
   },
+  {
+    // WS-A CLOSED: addParticipantTimeItem (generic entry point) now dispatches
+    // MODIFY_PARTICIPANTS for the touched participant (batch callers pass disableNotice).
+    name: 'addParticipantTimeItem',
+    expectation: 'covered',
+    run: (ctx) =>
+      tournamentEngine.addParticipantTimeItem({
+        participantId: ctx.enteredIds[0],
+        timeItem: { itemType: 'NOTE', itemValue: 'hello' },
+      }),
+  },
 ];
 
 const gapReport: Array<{ name: string; note?: string; violations: number }> = [];
