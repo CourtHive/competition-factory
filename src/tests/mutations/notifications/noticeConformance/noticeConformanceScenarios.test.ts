@@ -91,6 +91,49 @@ function unscoredContext(): Ctx {
   return extractContext();
 }
 
+/** TEAM event seed so tieFormat mutations have a team draw with collections. */
+function teamContext(): Ctx {
+  const { tournamentRecord } = mocksEngine.generateTournamentRecord({
+    tournamentAttributes: { tournamentId: 'conf-scn-team' },
+    drawProfiles: [{ eventType: 'TEAM', drawSize: 4, eventName: 'Team' }],
+    startDate: '2025-01-01',
+    endDate: '2025-01-14',
+    nonRandom: 1,
+  });
+  tournamentEngine.setState(tournamentRecord);
+  return extractContext();
+}
+
+/**
+ * Seed with an event that has entries but NO draw (`generate: false`), so a
+ * generate+add draw scenario adds a whole drawDefinition subtree.
+ */
+function drawGenContext(): Ctx {
+  const { tournamentRecord } = mocksEngine.generateTournamentRecord({
+    tournamentAttributes: { tournamentId: 'conf-scn-drawgen' },
+    participantsProfile: { participantsCount: 16 },
+    eventProfiles: [{ eventName: 'ToGenerate', drawProfiles: [{ drawSize: 8, generate: false }] }],
+    startDate: '2025-01-01',
+    endDate: '2025-01-14',
+    nonRandom: 1,
+  });
+  tournamentEngine.setState(tournamentRecord);
+  const record = tournamentEngine.getTournament().tournamentRecord;
+  const event = record.events[0];
+  const entered = new Set((event.entries ?? []).map((e: any) => e.participantId));
+  const { participants } = tournamentEngine.getParticipants({ participantFilters: { participantTypes: [INDIVIDUAL] } });
+  const ids = participants.map((p: any) => p.participantId);
+  // no draw yet — drawId/structureId/matchUpId are unused by the generation scenario
+  return {
+    eventId: event.eventId,
+    drawId: '',
+    structureId: '',
+    enteredIds: ids.filter((id: string) => entered.has(id)),
+    alternateIds: ids.filter((id: string) => !entered.has(id)),
+    matchUpId: '',
+  };
+}
+
 /** Seed with declared seeds so seed-assignment mutations have real seeds to move. */
 function seededContext(): Ctx {
   const { tournamentRecord } = mocksEngine.generateTournamentRecord({
@@ -426,6 +469,41 @@ const scenarios: Scenario[] = [
         structureId: ctx.structureId,
         assignments: [{ seedNumber: 1, participantId: unseededEnteredId(ctx) }],
       }),
+  },
+
+  // ── Tier-2 batch 6 (tieFormat) ─────────────────────────────────────────────
+  {
+    // addCollectionDefinition adds a collection to a team draw's tieFormat →
+    // ADD_MATCHUPS (new tie rubbers) + MODIFY_MATCHUP (parent ties) +
+    // MODIFY_DRAW_DEFINITION (tieFormat on the draw).
+    name: 'addCollectionDefinition',
+    expectation: 'covered',
+    seed: teamContext,
+    run: (ctx) =>
+      tournamentEngine.addCollectionDefinition({
+        drawId: ctx.drawId,
+        collectionDefinition: {
+          matchUpType: 'DOUBLES',
+          matchUpFormat: 'SET1-S:T10P',
+          collectionName: 'Overtime',
+          matchUpCount: 1,
+          matchUpValue: 1,
+        },
+      }),
+  },
+
+  // ── Tier-2 batch 6 (draw generation) ───────────────────────────────────────
+  {
+    // Generating + adding a draw attaches a whole drawDefinition subtree →
+    // ADD_DRAW_DEFINITION (draw + its entries) + ADD_MATCHUPS. (generateDrawDefinition
+    // is a pure generator and dispatches nothing; the record change is the add.)
+    name: 'generateDrawDefinition + addDrawDefinition',
+    expectation: 'covered',
+    seed: drawGenContext,
+    run: (ctx) => {
+      const { drawDefinition } = tournamentEngine.generateDrawDefinition({ eventId: ctx.eventId, drawSize: 8 });
+      tournamentEngine.addDrawDefinition({ eventId: ctx.eventId, drawDefinition });
+    },
   },
 ];
 

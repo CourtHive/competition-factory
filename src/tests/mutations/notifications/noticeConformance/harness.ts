@@ -77,6 +77,7 @@ export const entityTopicSpec: Record<EntityKind, Partial<Record<ChangeType, stri
     removed: [DELETED_DRAW_IDS],
   },
   structure: {
+    added: [ADD_DRAW_DEFINITION, MODIFY_DRAW_DEFINITION],
     modified: [MODIFY_DRAW_DEFINITION, MODIFY_SEED_ASSIGNMENTS, MODIFY_POSITION_ASSIGNMENTS],
     removed: [DELETED_DRAW_IDS, MODIFY_DRAW_DEFINITION],
   },
@@ -133,15 +134,17 @@ function ancestorDeleteCovers(drawId: string | undefined, noticed: Set<string>, 
   return !!eventId && noticed.has(`event:${eventId}`);
 }
 
-// entries are covered by a MODIFY_*_ENTRIES for their owning event/draw, or —
-// when removed with the event/draw — by that ancestor's delete notice.
+// entries are covered by a MODIFY_*_ENTRIES for their owning event/draw, or — when
+// added/removed WITH the owning event/draw — by that ancestor's add/delete notice
+// (ADD_DRAW_DEFINITION carries the new draw's entries; DELETE_EVENT/DELETED_DRAW_IDS
+// take them away). A *modified* entry always needs its own MODIFY_*_ENTRIES.
 function entriesCovered(change: EntityChange, noticed: Set<string>): boolean {
   for (const key of noticed) {
     if (!key.startsWith('entries:')) continue;
     const scope = key.slice('entries:'.length); // e.g. 'event:E1' or 'draw:D1'
     if (change.id.startsWith(`${scope}:`)) return true;
   }
-  if (change.change !== 'removed') return false;
+  if (change.change === 'modified') return false;
   const [scopeKind, scopeId] = change.id.split(':'); // 'event'|'draw', <id>
   if (scopeKind === 'event') return noticed.has(`event:${scopeId}`);
   if (scopeKind === 'draw') return noticed.has(`drawDefinition:${scopeId}`);
@@ -175,11 +178,21 @@ function isEntityCovered(change: EntityChange, noticed: Set<string>, parentage: 
   return false;
 }
 
+// An empty array / empty object is treated as absent: a mutation that merely
+// initializes `timeItems: undefined → []` (draw generation does this per entrant)
+// is not a meaningful change. A populated→empty transition is still detected —
+// the populated side keeps the key, so the two records still differ.
+function isEmptyCollection(value: any): boolean {
+  if (Array.isArray(value)) return value.length === 0;
+  return !!value && typeof value === 'object' && Object.keys(value).length === 0;
+}
+
 function omit(obj: any, subtreeKeys: string[]): any {
   if (!obj || typeof obj !== 'object') return obj;
   const out: any = {};
   for (const key of Object.keys(obj)) {
     if (subtreeKeys.includes(key) || INCIDENTAL_KEYS.has(key)) continue;
+    if (isEmptyCollection(obj[key])) continue;
     out[key] = obj[key];
   }
   return out;

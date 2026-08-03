@@ -1,4 +1,5 @@
 import { setFirstClassOrExtension } from '@Mutate/extensions/setFirstClassOrExtension';
+import { modifyEventNotice } from '@Mutate/notifications/eventNotifications';
 import { getAppliedPolicies } from '@Query/extensions/getAppliedPolicies';
 import { checkScoreHasValue } from '@Query/matchUp/checkScoreHasValue';
 import { allDrawMatchUps } from '@Query/matchUps/getAllDrawMatchUps';
@@ -275,6 +276,9 @@ function replaceExistingDraw({
 
     const structureIds = drawDefinition.structures?.map(({ structureId }) => structureId);
     modifyDrawNotice({ drawDefinition, tournamentId, structureIds, eventId });
+    // the event's flightProfile (a first-class/extension index of draws) is mutated above,
+    // so the event entity itself changed — cover it with MODIFY_EVENT.
+    modifyEventNotice({ tournamentId, event });
   }
 }
 
@@ -310,5 +314,8 @@ function addNewDraw({ suppressNotifications, tournamentRecord, drawDefinition, t
       });
 
     addDrawNotice({ drawDefinition, tournamentId, eventId });
+    // adding a draw mutates the event's flightProfile (see setFirstClassOrExtension
+    // above), so the event entity changed too — cover it with MODIFY_EVENT.
+    modifyEventNotice({ tournamentId, event });
   }
 }
