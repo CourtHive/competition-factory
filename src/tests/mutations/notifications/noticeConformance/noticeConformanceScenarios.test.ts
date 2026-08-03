@@ -229,6 +229,19 @@ const scenarios: Scenario[] = [
         scaleItem: { scaleType: 'RATING', eventType: 'SINGLES', scaleName: 'WTN', scaleValue: 15 },
       }),
   },
+
+  // ── Tier-2 batch 2 (publishing) ────────────────────────────────────────────
+  {
+    name: 'publishEvent',
+    expectation: 'covered',
+    run: (ctx) => tournamentEngine.publishEvent({ eventId: ctx.eventId }),
+  },
+  {
+    name: 'unPublishEvent',
+    expectation: 'covered',
+    setup: (ctx) => tournamentEngine.publishEvent({ eventId: ctx.eventId }),
+    run: (ctx) => tournamentEngine.unPublishEvent({ eventId: ctx.eventId }),
+  },
 ];
 
 const gapReport: Array<{ name: string; note?: string; violations: number }> = [];

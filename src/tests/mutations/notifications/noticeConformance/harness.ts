@@ -41,6 +41,8 @@ import {
   MODIFY_POSITION_ASSIGNMENTS,
   MODIFY_SEED_ASSIGNMENTS,
   MODIFY_PARTICIPANTS,
+  PUBLISH_EVENT,
+  UNPUBLISH_EVENT,
   UPDATE_INCONTEXT_MATCHUP,
   topicConstants,
 } from '@Constants/topicConstants';
@@ -78,7 +80,7 @@ export const entityTopicSpec: Record<EntityKind, Partial<Record<ChangeType, stri
     modified: [MODIFY_DRAW_DEFINITION, MODIFY_SEED_ASSIGNMENTS, MODIFY_POSITION_ASSIGNMENTS],
     removed: [DELETED_DRAW_IDS, MODIFY_DRAW_DEFINITION],
   },
-  event: { added: [ADD_EVENT], modified: [MODIFY_EVENT], removed: [DELETE_EVENT] },
+  event: { added: [ADD_EVENT], modified: [MODIFY_EVENT, PUBLISH_EVENT, UNPUBLISH_EVENT], removed: [DELETE_EVENT] },
   entries: {
     added: [MODIFY_EVENT_ENTRIES, MODIFY_DRAW_ENTRIES],
     modified: [MODIFY_EVENT_ENTRIES, MODIFY_DRAW_ENTRIES],
@@ -318,6 +320,12 @@ export function noticedEntityKeys(captured: CapturedNotice[]): Set<string> {
       case ADD_VENUE:
       case MODIFY_VENUE:
         add('venue', payload?.venue?.venueId ?? payload?.venueId);
+        break;
+      case PUBLISH_EVENT:
+        add('event', payload?.eventData?.eventInfo?.eventId ?? payload?.eventId);
+        break;
+      case UNPUBLISH_EVENT:
+        add('event', payload?.eventId);
         break;
       case DELETE_VENUE:
         add('venue', payload?.venueId);
