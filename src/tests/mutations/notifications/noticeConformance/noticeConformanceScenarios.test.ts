@@ -87,17 +87,17 @@ const scenarios: Scenario[] = [
     },
   },
 
-  // ── known gaps (tripwires) — see audit + Workstreams C1/C2/C3 ──────────────
+  // ── audit-named mutations (all gaps now CLOSED; kept as regression guards) ──
   {
+    // C2 CLOSED: modifyEvent now dispatches MODIFY_EVENT.
     name: 'modifyEvent (eventName)',
-    expectation: 'gap',
-    note: 'C2 — no MODIFY_EVENT topic',
+    expectation: 'covered',
     run: (ctx) => tournamentEngine.modifyEvent({ eventId: ctx.eventId, eventUpdates: { eventName: 'Renamed' } }),
   },
   {
+    // C2 CLOSED: setEventDates now dispatches MODIFY_EVENT.
     name: 'setEventDates',
-    expectation: 'gap',
-    note: 'C2 — no MODIFY_EVENT topic',
+    expectation: 'covered',
     run: (ctx) =>
       tournamentEngine.setEventDates({ eventId: ctx.eventId, startDate: '2025-01-03', endDate: '2025-01-12' }),
   },
@@ -137,9 +137,9 @@ const scenarios: Scenario[] = [
       }),
   },
   {
+    // C2 CLOSED: deleteEvents now cascades DELETE_EVENT + DELETED_DRAW_IDS + DELETE_PARTICIPANTS.
     name: 'deleteEvents (cascade)',
-    expectation: 'gap',
-    note: 'C2 — emits only AUDIT; no DELETED_DRAW_IDS / DELETED_MATCHUP_IDS cascade',
+    expectation: 'covered',
     run: (ctx) => tournamentEngine.deleteEvents({ eventIds: [ctx.eventId] }),
   },
 ];

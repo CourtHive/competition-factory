@@ -6,12 +6,14 @@ export const ADD_EVENT = 'addEvent';
 export const ADD_VENUE = 'addVenue';
 export const AUDIT = 'audit';
 export const DATA_ISSUE = 'dataIssue';
+export const DELETE_EVENT = 'deleteEvent';
 export const DELETE_PARTICIPANTS = 'deleteParticipants';
 export const DELETE_VENUE = 'deleteVenue';
 export const DELETED_DRAW_IDS = 'deletedDrawIds';
 export const DELETED_MATCHUP_IDS = 'deletedMatchUpIds';
 export const MODIFY_DRAW_DEFINITION = 'modifyDrawDefinition';
 export const MODIFY_DRAW_ENTRIES = 'modifyDrawEntries';
+export const MODIFY_EVENT = 'modifyEvent';
 export const MODIFY_EVENT_ENTRIES = 'modifyEventEntries';
 export const MODIFY_MATCHUP = 'modifyMatchUp';
 export const MODIFY_PARTICIPANTS = 'modifyParticipants';
@@ -40,12 +42,14 @@ export const topicConstants = {
   ADD_VENUE,
   AUDIT,
   DATA_ISSUE,
+  DELETE_EVENT,
   DELETE_PARTICIPANTS,
   DELETE_VENUE,
   DELETED_DRAW_IDS,
   DELETED_MATCHUP_IDS,
   MODIFY_DRAW_DEFINITION,
   MODIFY_DRAW_ENTRIES,
+  MODIFY_EVENT,
   MODIFY_EVENT_ENTRIES,
   MODIFY_MATCHUP,
   MODIFY_PARTICIPANTS,

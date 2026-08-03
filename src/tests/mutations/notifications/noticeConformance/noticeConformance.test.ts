@@ -54,7 +54,7 @@ describe('notice conformance harness (D-core scaffold)', () => {
     expect(conformanceViolations(before, after, captured)).toEqual([]);
   });
 
-  it('GAP TRIPWIRE: setEventDates changes the event but emits no covering notice', () => {
+  it('COMPLETENESS: setEventDates changes the event and is covered by MODIFY_EVENT (C2 closed)', () => {
     seed();
     const before = structuredClone(tournamentEngine.getTournament().tournamentRecord);
     const eventId = before.events[0].eventId;
@@ -64,12 +64,9 @@ describe('notice conformance harness (D-core scaffold)', () => {
     });
     const after = structuredClone(tournamentEngine.getTournament().tournamentRecord);
 
-    // the event attributes actually changed …
+    // the event attributes changed, and MODIFY_EVENT (added in C2) now covers it.
     expect(changedEntities(before, after).some((c) => c.kind === 'event' && c.change === 'modified')).toBe(true);
-    // … but no notice covers it (there is no MODIFY_EVENT topic — Workstream C2).
-    // WHEN C2 lands MODIFY_EVENT + wires setEventDates, this assertion flips and
-    // this tripwire fails — that is the signal to update entityTopicSpec + remove it.
-    expect(conformanceViolations(before, after, captured).some((v) => v.kind === 'event')).toBe(true);
+    expect(conformanceViolations(before, after, captured)).toEqual([]);
   });
 
   it('FIDELITY: castDiff is empty for an unchanged record (sanity)', () => {

@@ -26,11 +26,13 @@ import {
   ADD_EVENT,
   ADD_MATCHUPS,
   ADD_PARTICIPANTS,
+  DELETE_EVENT,
   DELETED_DRAW_IDS,
   DELETED_MATCHUP_IDS,
   DELETE_PARTICIPANTS,
   MODIFY_DRAW_DEFINITION,
   MODIFY_DRAW_ENTRIES,
+  MODIFY_EVENT,
   MODIFY_EVENT_ENTRIES,
   MODIFY_MATCHUP,
   MODIFY_POSITION_ASSIGNMENTS,
@@ -69,8 +71,11 @@ export const entityTopicSpec: Record<EntityKind, Partial<Record<ChangeType, stri
     modified: [MODIFY_DRAW_DEFINITION, MODIFY_SEED_ASSIGNMENTS, MODIFY_POSITION_ASSIGNMENTS],
     removed: [DELETED_DRAW_IDS],
   },
-  structure: { modified: [MODIFY_DRAW_DEFINITION, MODIFY_SEED_ASSIGNMENTS, MODIFY_POSITION_ASSIGNMENTS] },
-  event: { added: [ADD_EVENT], modified: [] /* MODIFY_EVENT MISSING — C2 */, removed: [] /* DELETE_EVENT MISSING */ },
+  structure: {
+    modified: [MODIFY_DRAW_DEFINITION, MODIFY_SEED_ASSIGNMENTS, MODIFY_POSITION_ASSIGNMENTS],
+    removed: [DELETED_DRAW_IDS, MODIFY_DRAW_DEFINITION],
+  },
+  event: { added: [ADD_EVENT], modified: [MODIFY_EVENT], removed: [DELETE_EVENT] },
   entries: {
     added: [MODIFY_EVENT_ENTRIES, MODIFY_DRAW_ENTRIES],
     modified: [MODIFY_EVENT_ENTRIES, MODIFY_DRAW_ENTRIES],
@@ -79,25 +84,87 @@ export const entityTopicSpec: Record<EntityKind, Partial<Record<ChangeType, stri
 };
 
 /**
- * Is a changed entity covered by the emitted notice stream?
- * - entries are covered at event/draw scope (a MODIFY_*_ENTRIES for the owning
- *   event/draw covers every entry change under it);
- * - a structure change is covered by any draw-level notice (structures live
- *   under a drawDefinition, whose MODIFY notice implies the structures moved);
- * - everything else is covered by an exact `${kind}:${id}` match.
+ * Parent linkage built from the pre-mutation record, so a removed child can be
+ * matched to an ancestor delete notice (a subtree delete is covered by the
+ * delete of its root — the consumer cascades via foreign keys).
  */
-function isEntityCovered(change: EntityChange, noticed: Set<string>): boolean {
-  if (change.kind === 'entries') {
-    for (const key of noticed) {
-      if (!key.startsWith('entries:')) continue;
-      const scope = key.slice('entries:'.length); // e.g. 'event:E1' or 'draw:D1'
-      if (change.id.startsWith(`${scope}:`)) return true;
-    }
-    return false;
+export type Parentage = {
+  drawOfStructure: Map<string, string>;
+  drawOfMatchUp: Map<string, string>;
+  eventOfDraw: Map<string, string>;
+};
+
+function collectMatchUpDrawIds(structure: any, drawId: string, out: Map<string, string>): void {
+  for (const matchUp of structure?.matchUps ?? []) {
+    out.set(matchUp.matchUpId, drawId);
+    for (const tieMatchUp of matchUp.tieMatchUps ?? []) out.set(tieMatchUp.matchUpId, drawId);
   }
+  for (const sub of structure?.structures ?? []) collectMatchUpDrawIds(sub, drawId, out);
+}
+
+export function buildParentage(record: any): Parentage {
+  const drawOfStructure = new Map<string, string>();
+  const drawOfMatchUp = new Map<string, string>();
+  const eventOfDraw = new Map<string, string>();
+  for (const event of record?.events ?? []) {
+    for (const drawDefinition of event.drawDefinitions ?? []) {
+      eventOfDraw.set(drawDefinition.drawId, event.eventId);
+      for (const structure of drawDefinition.structures ?? []) {
+        drawOfStructure.set(structure.structureId, drawDefinition.drawId);
+        collectMatchUpDrawIds(structure, drawDefinition.drawId, drawOfMatchUp);
+      }
+    }
+  }
+  return { drawOfStructure, drawOfMatchUp, eventOfDraw };
+}
+
+// A removed child is covered if a delete notice fired for its parent draw
+// (DELETED_DRAW_IDS) or its ancestor event (DELETE_EVENT).
+function ancestorDeleteCovers(drawId: string | undefined, noticed: Set<string>, parentage: Parentage): boolean {
+  if (!drawId) return false;
+  if (noticed.has(`drawDefinition:${drawId}`)) return true;
+  const eventId = parentage.eventOfDraw.get(drawId);
+  return !!eventId && noticed.has(`event:${eventId}`);
+}
+
+// entries are covered by a MODIFY_*_ENTRIES for their owning event/draw, or —
+// when removed with the event/draw — by that ancestor's delete notice.
+function entriesCovered(change: EntityChange, noticed: Set<string>): boolean {
+  for (const key of noticed) {
+    if (!key.startsWith('entries:')) continue;
+    const scope = key.slice('entries:'.length); // e.g. 'event:E1' or 'draw:D1'
+    if (change.id.startsWith(`${scope}:`)) return true;
+  }
+  if (change.change !== 'removed') return false;
+  const [scopeKind, scopeId] = change.id.split(':'); // 'event'|'draw', <id>
+  if (scopeKind === 'event') return noticed.has(`event:${scopeId}`);
+  if (scopeKind === 'draw') return noticed.has(`drawDefinition:${scopeId}`);
+  return false;
+}
+
+// a structure change is covered by a delete of its parent draw/event, or by any
+// draw-level modify notice (structures move under a drawDefinition MODIFY).
+function structureCovered(change: EntityChange, noticed: Set<string>, parentage: Parentage): boolean {
+  if (ancestorDeleteCovers(parentage.drawOfStructure.get(change.id), noticed, parentage)) return true;
+  for (const key of noticed) if (key.startsWith('drawDefinition:')) return true;
+  return false;
+}
+
+/**
+ * Is a changed entity covered by the emitted notice stream? Exact `${kind}:${id}`
+ * match first, then structural fallbacks: entries at event/draw scope, structures
+ * under any draw notice, and — for removals — an ancestor delete notice.
+ */
+function isEntityCovered(change: EntityChange, noticed: Set<string>, parentage: Parentage): boolean {
+  if (change.kind === 'entries') return entriesCovered(change, noticed);
   if (noticed.has(`${change.kind}:${change.id}`)) return true;
-  if (change.kind === 'structure') {
-    for (const key of noticed) if (key.startsWith('drawDefinition:')) return true;
+  if (change.kind === 'structure') return structureCovered(change, noticed, parentage);
+  if (change.kind === 'matchUp' && change.change === 'removed') {
+    return ancestorDeleteCovers(parentage.drawOfMatchUp.get(change.id), noticed, parentage);
+  }
+  if (change.kind === 'drawDefinition' && change.change === 'removed') {
+    const eventId = parentage.eventOfDraw.get(change.id);
+    return !!eventId && noticed.has(`event:${eventId}`);
   }
   return false;
 }
@@ -227,7 +294,11 @@ export function noticedEntityKeys(captured: CapturedNotice[]): Set<string> {
         add('structure', payload?.structureId);
         break;
       case ADD_EVENT:
+      case MODIFY_EVENT:
         add('event', payload?.event?.eventId ?? payload?.eventId);
+        break;
+      case DELETE_EVENT:
+        for (const id of payload?.eventIds ?? []) add('event', id);
         break;
       case MODIFY_EVENT_ENTRIES:
         // covers all entries of the event; matched loosely by eventId prefix below
@@ -248,7 +319,7 @@ export function noticedEntityKeys(captured: CapturedNotice[]): Set<string> {
 export function conformanceViolations(before: any, after: any, captured: CapturedNotice[]): Violation[] {
   const changes = changedEntities(before, after);
   const noticed = noticedEntityKeys(captured);
-  const firedTopics = new Set(captured.map((n) => n.topic));
+  const parentage = buildParentage(before);
   const violations: Violation[] = [];
 
   for (const change of changes) {
@@ -257,10 +328,8 @@ export function conformanceViolations(before: any, after: any, captured: Capture
       violations.push({ ...change, reason: `no notice topic exists to cover ${change.kind} ${change.change}` });
       continue;
     }
-    const covered = isEntityCovered(change, noticed);
-    const anyLegitTopicFired = legitTopics.some((t) => firedTopics.has(t));
-    if (!covered && !anyLegitTopicFired) {
-      violations.push({ ...change, reason: `changed but no covering notice (${legitTopics.join('|')}) fired` });
+    if (!isEntityCovered(change, noticed, parentage)) {
+      violations.push({ ...change, reason: `changed but not covered by a notice (${legitTopics.join('|')})` });
     }
   }
   return violations;

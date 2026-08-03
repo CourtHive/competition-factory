@@ -1,6 +1,7 @@
 import { getObjectTieFormat } from '@Query/hierarchical/tieFormats/getObjectTieFormat';
 import { checkRequiredParameters } from '@Helpers/parameters/checkRequiredParameters';
 import { getCategoryAgeDetails } from '@Query/event/getCategoryAgeDetails';
+import { modifyEventNotice } from '@Mutate/notifications/eventNotifications';
 import { allEventMatchUps } from '@Query/matchUps/getAllEventMatchUps';
 import { getParticipants } from '@Query/participants/getParticipants';
 import { categoryCanContain } from '@Query/event/categoryCanContain';
@@ -93,6 +94,10 @@ export function modifyEvent(params: ModifyEventArgs): ResultType {
       event.competitionFormat = eventUpdates.competitionFormat;
     }
   }
+
+  // event attributes changed → dispatch MODIFY_EVENT (deduped by eventId with any
+  // notice fired by an internal setEventDates call).
+  modifyEventNotice({ event, tournamentId: params.tournamentRecord?.tournamentId });
 
   return { ...SUCCESS };
 }
