@@ -91,6 +91,20 @@ function unscoredContext(): Ctx {
   return extractContext();
 }
 
+/** DOUBLES event seed with spare individuals so pair/ungrouped entries can be added. */
+function doublesContext(): Ctx {
+  const { tournamentRecord } = mocksEngine.generateTournamentRecord({
+    tournamentAttributes: { tournamentId: 'conf-scn-doubles' },
+    participantsProfile: { participantsCount: 24 },
+    drawProfiles: [{ drawSize: 4, eventType: 'DOUBLES', eventName: 'Doubles' }],
+    startDate: '2025-01-01',
+    endDate: '2025-01-14',
+    nonRandom: 1,
+  });
+  tournamentEngine.setState(tournamentRecord);
+  return extractContext();
+}
+
 /** TEAM event seed so tieFormat mutations have a team draw with collections. */
 function teamContext(): Ctx {
   const { tournamentRecord } = mocksEngine.generateTournamentRecord({
@@ -703,6 +717,27 @@ const scenarios: Scenario[] = [
         participantIds: [ctx.alternateIds[0]],
         entryStatus: 'WITHDRAWN',
       }),
+  },
+  {
+    // modifyEventEntries adds ungrouped individual entries to a doubles event →
+    // event.entries grows and must be covered by MODIFY_EVENT_ENTRIES.
+    name: 'modifyEventEntries (add ungrouped)',
+    expectation: 'covered',
+    seed: doublesContext,
+    run: (ctx) => {
+      const record = tournamentEngine.getTournament().tournamentRecord;
+      const event = record.events[0];
+      const enteredPairIds = new Set(event.entries.map((e: any) => e.participantId));
+      const pairedIndividuals = new Set(
+        record.participants
+          .filter((p: any) => p.participantType === 'PAIR' && enteredPairIds.has(p.participantId))
+          .flatMap((p: any) => p.individualParticipantIds ?? []),
+      );
+      const spare = record.participants
+        .filter((p: any) => p.participantType === 'INDIVIDUAL' && !pairedIndividuals.has(p.participantId))
+        .map((p: any) => p.participantId);
+      tournamentEngine.modifyEventEntries({ eventId: ctx.eventId, unpairedParticipantIds: [spare[0], spare[1]] });
+    },
   },
 ];
 

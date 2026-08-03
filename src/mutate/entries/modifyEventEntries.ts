@@ -1,3 +1,4 @@
+import { modifyEventEntriesNotice } from '../notifications/entriesNotifications';
 import { getPairedParticipant } from '@Query/participant/getPairedParticipant';
 import { requireParams } from '@Helpers/parameters/requireParams';
 import { addParticipants } from '../participants/addParticipants';
@@ -101,6 +102,9 @@ export function modifyEventEntries({
   event.entries = (event.entries ?? []).filter((entry) => entry.entryStage === entryStage);
 
   event.entries = event.entries.concat(...pairParticipantEntries, ...unpairedParticipantEntries);
+
+  // event.entries was rebuilt (pairs/ungrouped added, prior stage entries dropped) — cover it.
+  modifyEventEntriesNotice({ event, tournamentId: tournamentRecord?.tournamentId });
 
   return { ...SUCCESS };
 }
