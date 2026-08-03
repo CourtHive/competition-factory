@@ -194,10 +194,14 @@ type DeleteDrawNoticeArgs = {
   drawId: string;
 };
 export function deleteDrawNotice({ tournamentId, eventId, drawId }: DeleteDrawNoticeArgs) {
+  // NB: the DELETED_DRAW_IDS notice is added WITHOUT a key (mirroring
+  // deleteMatchUpsNotice's DELETED_MATCHUP_IDS). The `deleteNotice({ key: drawId })`
+  // purge below removes prior keyed notices for this draw (ADD/MODIFY_DRAW_DEFINITION)
+  // that are now moot — but deleteNotice filters on key alone, so a keyed
+  // DELETED_DRAW_IDS here would purge itself and never be delivered.
   addNotice({
     payload: { drawId, tournamentId, eventId },
     topic: DELETED_DRAW_IDS,
-    key: drawId,
   });
   deleteNotice({ key: drawId });
 

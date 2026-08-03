@@ -182,8 +182,13 @@ export function deleteNotices() {
 }
 
 export function deleteNotice({ topic, key }: DeleteNoticeArgs) {
+  // Delete only notices matching the key AND (when a topic is supplied) that
+  // topic. The prior form `(!topic || topic===) && key!==` deleted every notice
+  // of OTHER topics whenever a topic was passed — a footgun for any caller that
+  // scopes a purge by topic. No-topic behaviour (purge by key across all topics)
+  // is unchanged.
   syncGlobalState.notices = syncGlobalState.notices.filter(
-    (notice) => (!topic || notice.topic === topic) && notice.key !== key,
+    (notice) => !((!topic || notice.topic === topic) && notice.key === key),
   );
 }
 

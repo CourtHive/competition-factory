@@ -42,6 +42,9 @@ export default defineConfig({
         'src/mutate/score/staticScoreChange/**',
         'src/mutate/matchUps/score/history/**',
         'src/tests/testHarness/**',
+        // notice-conformance harness is test infrastructure (like testHarness/**),
+        // exercised incrementally as the D-scenarios sweep grows — not product code.
+        'src/tests/mutations/notifications/noticeConformance/harness.ts',
         'src/assemblies/governors/**',
         'src/assemblies/tools/**',
         'src/fixtures/data/**',

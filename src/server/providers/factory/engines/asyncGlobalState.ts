@@ -223,8 +223,12 @@ function deleteNotices() {
 
 function deleteNotice({ key, topic }) {
   const instanceState = getInstanceState();
+  // Delete only notices matching the key AND (when a topic is supplied) that
+  // topic. The prior form `(!topic || topic===) && key!==` deleted every notice
+  // of OTHER topics whenever a topic was passed. No-topic behaviour (purge by
+  // key across all topics) is unchanged. Mirrors syncGlobalState.deleteNotice.
   instanceState.notices = instanceState.notices.filter(
-    (notice) => (!topic || notice.topic === topic) && notice.key !== key,
+    (notice) => !((!topic || notice.topic === topic) && notice.key === key),
   );
 }
 

@@ -216,8 +216,9 @@ function deleteNotices() {
 
 function deleteNotice({ key, topic }) {
   const instanceState = getInstanceState();
+  // Delete only notices matching the key AND (when a topic is supplied) that topic.
   instanceState.notices = instanceState.notices.filter(
-    (notice) => (!topic || notice.topic === topic) && notice.key !== key,
+    (notice) => !((!topic || notice.topic === topic) && notice.key === key),
   );
 }
 
