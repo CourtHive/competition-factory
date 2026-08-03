@@ -4,6 +4,7 @@ import { setFirstClassOrExtension } from '../extensions/setFirstClassOrExtension
 import { getPositionAssignments } from '@Query/structure/getPositionAssignments';
 import { getEventPublishStatus } from '@Query/event/getEventPublishStatus';
 import { getAppliedPolicies } from '@Query/extensions/getAppliedPolicies';
+import { modifyEventNotice } from '../notifications/eventNotifications';
 import { checkScoreHasValue } from '@Query/matchUp/checkScoreHasValue';
 import { modifyEventPublishStatus } from './modifyEventPublishStatus';
 import { allDrawMatchUps } from '@Query/matchUps/getAllDrawMatchUps';
@@ -200,6 +201,7 @@ export function deleteDrawDefinitions(params: DeleteDrawDefinitionArgs) {
 
   event.drawDefinitions = filteredDrawDefinitions;
 
+  let eventModified = false;
   if (flightProfile) {
     setFirstClassOrExtension({
       element: event,
@@ -207,6 +209,7 @@ export function deleteDrawDefinitions(params: DeleteDrawDefinitionArgs) {
       name: FLIGHT_PROFILE,
       value: flightProfile,
     });
+    eventModified = true;
   }
 
   // cleanup references to drawId in schedulingProfile extension
@@ -244,6 +247,10 @@ export function deleteDrawDefinitions(params: DeleteDrawDefinitionArgs) {
   }
 
   drawIds.forEach((drawId) => deleteDrawNotice({ drawId }));
+
+  // the deleted draws' flightProfile entries were pruned from the event above, so
+  // the event entity changed — cover it with MODIFY_EVENT (symmetric to addDrawDefinition).
+  if (eventModified) modifyEventNotice({ tournamentId: tournamentRecord?.tournamentId, event });
 
   if (autoPublish && publishedDrawsDeleted) {
     const result = publishEvent({

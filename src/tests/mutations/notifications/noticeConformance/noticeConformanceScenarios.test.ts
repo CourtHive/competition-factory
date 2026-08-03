@@ -505,6 +505,70 @@ const scenarios: Scenario[] = [
       tournamentEngine.addDrawDefinition({ eventId: ctx.eventId, drawDefinition });
     },
   },
+
+  // ── Tier-2 batch 7 (deletion + structural breadth) ─────────────────────────
+  {
+    // Deleting a draw removes it (DELETED_DRAW_IDS + DELETED_MATCHUP_IDS) AND
+    // mutates the event's flightProfile — the event must get MODIFY_EVENT (the
+    // symmetric case of the addDrawDefinition gap). Unscored seed so the delete
+    // is not blocked by SCORES_PRESENT.
+    name: 'deleteDrawDefinitions',
+    expectation: 'covered',
+    seed: unscoredContext,
+    run: (ctx) => tournamentEngine.deleteDrawDefinitions({ eventId: ctx.eventId, drawIds: [ctx.drawId] }),
+  },
+  {
+    // addParticipants → ADD_PARTICIPANTS.
+    name: 'addParticipants',
+    expectation: 'covered',
+    run: () =>
+      tournamentEngine.addParticipants({
+        participants: [
+          {
+            participantId: 'conf-new-participant',
+            participantType: INDIVIDUAL,
+            participantRole: 'COMPETITOR',
+            person: { standardGivenName: 'New', standardFamilyName: 'Entrant' },
+          },
+        ],
+      }),
+  },
+  {
+    // deleteParticipants (an unentered alternate) → DELETE_PARTICIPANTS.
+    name: 'deleteParticipants',
+    expectation: 'covered',
+    run: (ctx) => tournamentEngine.deleteParticipants({ participantIds: [ctx.alternateIds[0]] }),
+  },
+  {
+    // addPenalty attaches a penalty timeItem to a participant → MODIFY_PARTICIPANTS.
+    name: 'addPenalty',
+    expectation: 'covered',
+    run: (ctx) =>
+      tournamentEngine.addPenalty({
+        participantIds: [ctx.enteredIds[0]],
+        penaltyType: 'Ball Abuse',
+        penaltyCode: 'conf-penalty',
+        matchUpId: ctx.matchUpId,
+        drawId: ctx.drawId,
+      }),
+  },
+  {
+    // setMatchUpFormat on a draw rewrites each structure's matchUpFormat →
+    // MODIFY_DRAW_DEFINITION (per modified structure).
+    name: 'setMatchUpFormat (draw scope)',
+    expectation: 'covered',
+    run: (ctx) => tournamentEngine.setMatchUpFormat({ drawId: ctx.drawId, matchUpFormat: 'SET3-S:4/TB7' }),
+  },
+  {
+    // addCourt adds a court under a venue → MODIFY_VENUE.
+    name: 'addCourt',
+    expectation: 'covered',
+    setup: () => tournamentEngine.addVenue({ venue: { venueName: 'Center' } }),
+    run: () => {
+      const venue = tournamentEngine.getTournament().tournamentRecord.venues[0];
+      tournamentEngine.addCourt({ venueId: venue.venueId, court: { courtName: 'Court 1' } });
+    },
+  },
 ];
 
 const gapReport: Array<{ name: string; note?: string; violations: number }> = [];
