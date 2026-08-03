@@ -667,6 +667,43 @@ const scenarios: Scenario[] = [
       tournamentEngine.orderCollectionDefinitions({ eventId: ctx.eventId, orderMap });
     },
   },
+
+  // ── Tier-2 batch 11 (entries-family event mutations) ───────────────────────
+  {
+    // setEntryPositions rewrites event.entries' entryPosition values → the entry
+    // entities change and must be covered by MODIFY_EVENT_ENTRIES.
+    name: 'setEntryPositions',
+    expectation: 'covered',
+    run: (ctx) => {
+      const event = tournamentEngine.getTournament().tournamentRecord.events[0];
+      const [a, b] = event.entries;
+      tournamentEngine.setEntryPositions({
+        eventId: ctx.eventId,
+        entryPositions: [
+          { participantId: a.participantId, entryPosition: (b.entryPosition ?? 2) + 10 },
+          { participantId: b.participantId, entryPosition: (a.entryPosition ?? 1) + 10 },
+        ],
+      });
+    },
+  },
+  {
+    // modifyEntriesStatus changes an event entry's entryStatus (ALTERNATE→WITHDRAWN)
+    // → event.entries changes and must be covered by MODIFY_EVENT_ENTRIES.
+    name: 'modifyEntriesStatus (event entry)',
+    expectation: 'covered',
+    setup: (ctx) =>
+      tournamentEngine.addEventEntries({
+        eventId: ctx.eventId,
+        participantIds: [ctx.alternateIds[0]],
+        entryStatus: 'ALTERNATE',
+      }),
+    run: (ctx) =>
+      tournamentEngine.modifyEntriesStatus({
+        eventId: ctx.eventId,
+        participantIds: [ctx.alternateIds[0]],
+        entryStatus: 'WITHDRAWN',
+      }),
+  },
 ];
 
 const gapReport: Array<{ name: string; note?: string; violations: number }> = [];

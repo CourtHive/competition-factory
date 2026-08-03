@@ -1,4 +1,5 @@
 import { getAssignedParticipantIds } from '@Query/drawDefinition/getAssignedParticipantIds';
+import { modifyEventEntriesNotice } from '../notifications/entriesNotifications';
 import { modifyDrawNotice } from '../notifications/drawNotifications';
 import { decorateResult } from '@Functions/global/decorateResult';
 import { refreshEntryPositions } from './refreshEntryPositions';
@@ -71,7 +72,14 @@ export function modifyEntriesStatus({
   stage,
   event,
 }: ModifyEntriesStatusArgs) {
-  const validationError = validateModifyParams({ participantIds, drawDefinition, entryStatus, entryStage, extension, event });
+  const validationError = validateModifyParams({
+    participantIds,
+    drawDefinition,
+    entryStatus,
+    entryStage,
+    extension,
+    event,
+  });
   if (validationError) return validationError;
 
   const stack = 'modifyEntriesStatus';
@@ -143,24 +151,40 @@ export function modifyEntriesStatus({
     return { error: ENTRY_STATUS_NOT_ALLOWED_FOR_EVENT };
   }
 
+  let eventEntriesModified = false;
   if ((!flight && !drawDefinition) || entryStatus === WITHDRAWN || (eventSync && singleDraw)) {
     const result = updateEntryStatus(event?.entries);
     if (result?.error) return decorateResult({ result, stack });
+    eventEntriesModified = !!event?.entries;
 
     if (entryStatus === WITHDRAWN) {
-      const withdrawnError = withdrawFromAllFlightsAndDraws({ updateEntryStatus, participantIds, flightProfile, event });
+      const withdrawnError = withdrawFromAllFlightsAndDraws({
+        updateEntryStatus,
+        participantIds,
+        flightProfile,
+        event,
+      });
       if (withdrawnError) return decorateResult({ result: { error: withdrawnError }, stack });
     }
   }
 
   if (autoEntryPositions) autoPosition({ flight, drawDefinition });
 
+  dispatchEntriesStatusNotices({ tournamentRecord, event, modifiedDrawIds, eventEntriesModified });
+
+  return { ...SUCCESS };
+}
+
+// Notices for a status change: MODIFY_DRAW_DEFINITION for each affected draw, and —
+// when event.entries statuses were updated — MODIFY_EVENT_ENTRIES for the event.
+function dispatchEntriesStatusNotices({ tournamentRecord, event, modifiedDrawIds, eventEntriesModified }) {
   for (const dd of event?.drawDefinitions ?? []) {
     if (modifiedDrawIds.length && !modifiedDrawIds.includes(dd.drawId)) continue;
     modifyDrawNotice({ tournamentId: tournamentRecord.tournamentId, eventId: event?.eventId, drawDefinition: dd });
   }
-
-  return { ...SUCCESS };
+  if (eventEntriesModified && event) {
+    modifyEventEntriesNotice({ event, tournamentId: tournamentRecord.tournamentId });
+  }
 }
 
 function validateModifyParams({ participantIds, drawDefinition, entryStatus, entryStage, extension, event }) {
@@ -174,7 +198,12 @@ function validateModifyParams({ participantIds, drawDefinition, entryStatus, ent
   if (!entryStatus && !extension)
     return decorateResult({ result: { error: MISSING_VALUE }, info: 'Missing entryStatus', stack });
   if (extension && !isValidExtension({ extension, requiredAttributes: ['name'] }))
-    return decorateResult({ result: { error: INVALID_VALUES }, info: 'Invalid extension', context: { extension }, stack });
+    return decorateResult({
+      result: { error: INVALID_VALUES },
+      info: 'Invalid extension',
+      context: { extension },
+      stack,
+    });
 
   return undefined;
 }
@@ -182,7 +211,8 @@ function validateModifyParams({ participantIds, drawDefinition, entryStatus, ent
 function buildAssignedParticipantIds({ event, stage }) {
   const assignedParticipantIds: string[] = [];
   event?.drawDefinitions?.forEach((dd) => {
-    const ids = getAssignedParticipantIds({ stages: stage && [stage], drawDefinition: dd }).assignedParticipantIds ?? [];
+    const ids =
+      getAssignedParticipantIds({ stages: stage && [stage], drawDefinition: dd }).assignedParticipantIds ?? [];
     assignedParticipantIds.push(...ids);
   });
   return assignedParticipantIds;
@@ -204,7 +234,15 @@ function isValidEntryStatusForParticipants({ participantIds, tournamentParticipa
   });
 }
 
-function buildUpdateEntryStatus({ assignedParticipantIds, ignoreAssignment, participantIds, entryStatus, entryStage, extension, stage }) {
+function buildUpdateEntryStatus({
+  assignedParticipantIds,
+  ignoreAssignment,
+  participantIds,
+  entryStatus,
+  entryStage,
+  extension,
+  stage,
+}) {
   return (entries?) => {
     const filteredEntries = (entries ?? [])
       .filter((entry: Entry) => !stage || !entry.entryStage || stage === entry.entryStage)
@@ -213,15 +251,27 @@ function buildUpdateEntryStatus({ assignedParticipantIds, ignoreAssignment, part
     const isAssigned = (entry) =>
       entryStatus &&
       assignedParticipantIds.includes(entry.participantId) &&
-      !(EQUIVALENT_ACCEPTANCE_STATUSES.includes(entry.entryStatus) && EQUIVALENT_ACCEPTANCE_STATUSES.includes(entryStatus));
+      !(
+        EQUIVALENT_ACCEPTANCE_STATUSES.includes(entry.entryStatus) &&
+        EQUIVALENT_ACCEPTANCE_STATUSES.includes(entryStatus)
+      );
 
     const success = filteredEntries.every((entry: Entry) => {
       if (isAssigned(entry) && !ignoreAssignment) return false;
-      if (entryStatus) { entry.entryStatus = entryStatus; delete entry.entryPosition; }
-      if (entryStage) { entry.entryStage = entryStage; delete entry.entryPosition; }
+      if (entryStatus) {
+        entry.entryStatus = entryStatus;
+        delete entry.entryPosition;
+      }
+      if (entryStage) {
+        entry.entryStage = entryStage;
+        delete entry.entryPosition;
+      }
       if (extension) {
-        if (extension.value) { addExtension({ element: entry, extension }); }
-        else { removeExtension({ element: entry, name: extension.name }); }
+        if (extension.value) {
+          addExtension({ element: entry, extension });
+        } else {
+          removeExtension({ element: entry, name: extension.name });
+        }
       }
       return true;
     });
