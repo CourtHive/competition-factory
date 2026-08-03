@@ -71,8 +71,36 @@ export const entityTopicSpec: Record<EntityKind, Partial<Record<ChangeType, stri
   },
   structure: { modified: [MODIFY_DRAW_DEFINITION, MODIFY_SEED_ASSIGNMENTS, MODIFY_POSITION_ASSIGNMENTS] },
   event: { added: [ADD_EVENT], modified: [] /* MODIFY_EVENT MISSING — C2 */, removed: [] /* DELETE_EVENT MISSING */ },
-  entries: { modified: [MODIFY_EVENT_ENTRIES, MODIFY_DRAW_ENTRIES] },
+  entries: {
+    added: [MODIFY_EVENT_ENTRIES, MODIFY_DRAW_ENTRIES],
+    modified: [MODIFY_EVENT_ENTRIES, MODIFY_DRAW_ENTRIES],
+    removed: [MODIFY_EVENT_ENTRIES, MODIFY_DRAW_ENTRIES],
+  },
 };
+
+/**
+ * Is a changed entity covered by the emitted notice stream?
+ * - entries are covered at event/draw scope (a MODIFY_*_ENTRIES for the owning
+ *   event/draw covers every entry change under it);
+ * - a structure change is covered by any draw-level notice (structures live
+ *   under a drawDefinition, whose MODIFY notice implies the structures moved);
+ * - everything else is covered by an exact `${kind}:${id}` match.
+ */
+function isEntityCovered(change: EntityChange, noticed: Set<string>): boolean {
+  if (change.kind === 'entries') {
+    for (const key of noticed) {
+      if (!key.startsWith('entries:')) continue;
+      const scope = key.slice('entries:'.length); // e.g. 'event:E1' or 'draw:D1'
+      if (change.id.startsWith(`${scope}:`)) return true;
+    }
+    return false;
+  }
+  if (noticed.has(`${change.kind}:${change.id}`)) return true;
+  if (change.kind === 'structure') {
+    for (const key of noticed) if (key.startsWith('drawDefinition:')) return true;
+  }
+  return false;
+}
 
 function omit(obj: any, subtreeKeys: string[]): any {
   if (!obj || typeof obj !== 'object') return obj;
@@ -229,20 +257,7 @@ export function conformanceViolations(before: any, after: any, captured: Capture
       violations.push({ ...change, reason: `no notice topic exists to cover ${change.kind} ${change.change}` });
       continue;
     }
-    // entries are covered at event/draw granularity (prefix match); others by exact id
-    const covered =
-      change.kind === 'entries'
-        ? [...noticed].some((k) =>
-            change.id.startsWith(
-              k
-                .replace(/^entries:/, 'entries:')
-                .split(':')
-                .slice(0, 3)
-                .join(':'),
-            ),
-          )
-        : noticed.has(`${change.kind}:${change.id}`) ||
-          (change.kind === 'structure' && [...noticed].some((k) => k.startsWith('drawDefinition:')));
+    const covered = isEntityCovered(change, noticed);
     const anyLegitTopicFired = legitTopics.some((t) => firedTopics.has(t));
     if (!covered && !anyLegitTopicFired) {
       violations.push({ ...change, reason: `changed but no covering notice (${legitTopics.join('|')}) fired` });
