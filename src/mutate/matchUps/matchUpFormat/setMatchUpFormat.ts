@@ -2,6 +2,7 @@ import { includesMatchUpEventType } from '@Helpers/matchUpEventTypes/includesMat
 import { modifyDrawNotice, modifyMatchUpNotice } from '@Mutate/notifications/drawNotifications';
 import { checkRequiredParameters } from '@Helpers/parameters/checkRequiredParameters';
 import { getAllStructureMatchUps } from '@Query/matchUps/getAllStructureMatchUps';
+import { modifyEventNotice } from '@Mutate/notifications/eventNotifications';
 import { isValidMatchUpFormat } from '@Validators/isValidMatchUpFormat';
 import { setMatchUpMatchUpFormat } from './setMatchUpMatchUpFormat';
 import { decorateResult } from '@Functions/global/decorateResult';
@@ -169,6 +170,8 @@ function applyFormatToEvents({
     } else if (evt.matchUpFormat !== matchUpFormat) {
       evt.matchUpFormat = matchUpFormat;
       count += 1;
+      // event.matchUpFormat is a first-class event attribute — cover the change.
+      modifyEventNotice({ tournamentId: tournamentRecord?.tournamentId, event: evt });
     }
   }
   return count;

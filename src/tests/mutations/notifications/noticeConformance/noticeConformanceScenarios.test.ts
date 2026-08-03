@@ -585,6 +585,64 @@ const scenarios: Scenario[] = [
     expectation: 'covered',
     run: () => tournamentEngine.setTournamentDates({ startDate: '2025-01-01', endDate: '2025-01-20' }),
   },
+
+  // ── Tier-2 batch 9 (event-scope format + venue/schedule breadth) ───────────
+  {
+    // setMatchUpFormat at EVENT scope (no drawIds/structureIds) writes
+    // event.matchUpFormat → must be covered by MODIFY_EVENT. (Distinct code path
+    // from the draw-scope scenario above, which routes through MODIFY_DRAW_DEFINITION.)
+    name: 'setMatchUpFormat (event scope)',
+    expectation: 'covered',
+    run: (ctx) => tournamentEngine.setMatchUpFormat({ eventId: ctx.eventId, matchUpFormat: 'SET3-S:4/TB7' }),
+  },
+  {
+    // deleteVenue → DELETE_VENUE.
+    name: 'deleteVenue',
+    expectation: 'covered',
+    setup: () => tournamentEngine.addVenue({ venue: { venueName: 'Center' } }),
+    run: () => {
+      const venue = tournamentEngine.getTournament().tournamentRecord.venues[0];
+      tournamentEngine.deleteVenue({ venueId: venue.venueId });
+    },
+  },
+  {
+    // modifyCourt → MODIFY_VENUE (a court is a sub-entity of the venue).
+    name: 'modifyCourt',
+    expectation: 'covered',
+    setup: () => {
+      tournamentEngine.addVenue({ venue: { venueName: 'Center' } });
+      const venue = tournamentEngine.getTournament().tournamentRecord.venues[0];
+      tournamentEngine.addCourt({ venueId: venue.venueId, court: { courtName: 'Court 1' } });
+    },
+    run: () => {
+      const venue = tournamentEngine.getTournament().tournamentRecord.venues[0];
+      tournamentEngine.modifyCourt({ courtId: venue.courts[0].courtId, modifications: { indoorOutdoor: 'INDOOR' } });
+    },
+  },
+  {
+    // assignMatchUpCourt attaches a court to a matchUp's schedule → MODIFY_MATCHUP.
+    name: 'assignMatchUpCourt',
+    expectation: 'covered',
+    setup: (ctx) => {
+      tournamentEngine.addVenue({ venue: { venueName: 'Center' } });
+      const venue = tournamentEngine.getTournament().tournamentRecord.venues[0];
+      tournamentEngine.addCourt({ venueId: venue.venueId, court: { courtName: 'Court 1' } });
+      tournamentEngine.addMatchUpScheduleItems({
+        matchUpId: ctx.matchUpId,
+        drawId: ctx.drawId,
+        schedule: { scheduledDate: '2025-01-05' },
+      });
+    },
+    run: (ctx) => {
+      const venue = tournamentEngine.getTournament().tournamentRecord.venues[0];
+      tournamentEngine.assignMatchUpCourt({
+        matchUpId: ctx.matchUpId,
+        drawId: ctx.drawId,
+        courtId: venue.courts[0].courtId,
+        courtDayDate: '2025-01-05',
+      });
+    },
+  },
 ];
 
 const gapReport: Array<{ name: string; note?: string; violations: number }> = [];
