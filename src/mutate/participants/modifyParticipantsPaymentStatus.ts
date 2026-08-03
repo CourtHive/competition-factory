@@ -1,6 +1,7 @@
 import { addParticipantTimeItem } from '../timeItems/addTimeItem';
 import { requireParams } from '@Helpers/parameters/requireParams';
-import { addNotice, getTopics } from '@Global/state/globalState';
+import { getTopics } from '@Global/state/globalState';
+import { modifyParticipantsNotice } from '@Mutate/notifications/participantNotifications';
 import { getParticipantId } from '@Functions/global/extractors';
 
 import { INVALID_VALUES, MISSING_PARTICIPANTS, MISSING_VALUE } from '@Constants/errorConditionConstants';
@@ -58,12 +59,9 @@ export function modifyParticipantsPaymentStatus({
 
   const { topics } = getTopics();
   if (modifiedParticipants.length && topics.includes(MODIFY_PARTICIPANTS)) {
-    addNotice({
-      topic: MODIFY_PARTICIPANTS,
-      payload: {
-        tournamentId: tournamentRecord.tournamentId,
-        participants: modifiedParticipants,
-      },
+    modifyParticipantsNotice({
+      tournamentId: tournamentRecord.tournamentId,
+      participants: modifiedParticipants,
     });
   }
 

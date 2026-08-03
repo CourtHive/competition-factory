@@ -1,4 +1,5 @@
 import { addNotice, getTopics } from '@Global/state/globalState';
+import { modifyParticipantsNotice } from '@Mutate/notifications/participantNotifications';
 import { xa } from '@Tools/extractAttributes';
 import { deepMerge } from '@Tools/deepMerge';
 
@@ -48,12 +49,9 @@ export function mergeParticipants({ participants: incomingParticipants = [], tou
   }
 
   if (modifiedParticipants.length && topics.includes(MODIFY_PARTICIPANTS)) {
-    addNotice({
-      topic: MODIFY_PARTICIPANTS,
-      payload: {
-        tournamentId: tournamentRecord.tournamentId,
-        participants: modifiedParticipants,
-      },
+    modifyParticipantsNotice({
+      tournamentId: tournamentRecord.tournamentId,
+      participants: modifiedParticipants,
     });
   }
 

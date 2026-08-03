@@ -5,7 +5,7 @@ import { requireParams } from '@Helpers/parameters/requireParams';
 import { getParticipantId } from '@Functions/global/extractors';
 import { participantRoles } from '@Constants/participantRoles';
 import { definedAttributes } from '@Tools/definedAttributes';
-import { addNotice } from '@Global/state/globalState';
+import { modifyParticipantsNotice } from '@Mutate/notifications/participantNotifications';
 import { isValidDateString } from '@Tools/dateTime';
 import { makeDeepCopy } from '@Tools/makeDeepCopy';
 import { countries } from '@Fixtures/countryData';
@@ -17,7 +17,6 @@ import { isString } from '@Tools/objects';
 import { CANNOT_MODIFY_PARTICIPANT_TYPE, INVALID_DATE } from '@Constants/errorConditionConstants';
 import { GROUP, INDIVIDUAL, PAIR, participantTypes } from '@Constants/participantConstants';
 import { TOURNAMENT_RECORD, PARTICIPANT } from '@Constants/attributeConstants';
-import { MODIFY_PARTICIPANTS } from '@Constants/topicConstants';
 import { SUCCESS } from '@Constants/resultConstants';
 import { TEAM } from '@Constants/matchUpTypes';
 
@@ -104,12 +103,9 @@ export function modifyParticipant(params) {
     });
   }
 
-  addNotice({
-    topic: MODIFY_PARTICIPANTS,
-    payload: {
-      tournamentId: tournamentRecord.tournamentId,
-      participants: [existingParticipant],
-    },
+  modifyParticipantsNotice({
+    tournamentId: tournamentRecord.tournamentId,
+    participants: [existingParticipant],
   });
 
   return {

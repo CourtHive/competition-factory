@@ -6,12 +6,11 @@ import { setFirstClassOrExtension } from '@Mutate/extensions/setFirstClassOrExte
 import { firstClassOrExtension } from '@Acquire/firstClassOrExtension';
 import { addEventEntries } from '@Mutate/entries/addEventEntries';
 import { decorateResult } from '@Functions/global/decorateResult';
-import { addNotice } from '@Global/state/globalState';
+import { modifyParticipantsNotice } from '@Mutate/notifications/participantNotifications';
 
 // constants and types
 import { Participant, ParticipantRoleUnion, Tournament } from '@Types/tournamentTypes';
 import { GROUP, TEAM, TEAM_PARTICIPANT } from '@Constants/participantConstants';
-import { MODIFY_PARTICIPANTS } from '@Constants/topicConstants';
 import { UNGROUPED } from '@Constants/entryStatusConstants';
 import { COMPETITOR } from '@Constants/participantRoles';
 import { LINEUPS } from '@Constants/extensionConstants';
@@ -95,12 +94,9 @@ export function removeIndividualParticipantIds({
   }
 
   if (removed) {
-    addNotice({
-      topic: MODIFY_PARTICIPANTS,
-      payload: {
-        tournamentId: tournamentRecord.tournamentId,
-        participants: [groupingParticipant],
-      },
+    modifyParticipantsNotice({
+      tournamentId: tournamentRecord.tournamentId,
+      participants: [groupingParticipant],
     });
   }
 

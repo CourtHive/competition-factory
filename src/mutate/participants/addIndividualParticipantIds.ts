@@ -1,6 +1,7 @@
 import { decorateResult } from '@Functions/global/decorateResult';
 import { updateTeamEventEntries } from './updateTeamEventEntries';
-import { addNotice, getTopics } from '@Global/state/globalState';
+import { getTopics } from '@Global/state/globalState';
+import { modifyParticipantsNotice } from '@Mutate/notifications/participantNotifications';
 import { makeDeepCopy } from '@Tools/makeDeepCopy';
 
 // constants and types
@@ -96,10 +97,7 @@ export function addIndividualParticipantIds({
       ({ participantId }) => participantId === groupingParticipantId,
     );
 
-    addNotice({
-      topic: MODIFY_PARTICIPANTS,
-      payload: { participants: [updatedParticipant] },
-    });
+    modifyParticipantsNotice({ tournamentId: tournamentRecord.tournamentId, participants: [updatedParticipant] });
   }
 
   updateTeamEventEntries({

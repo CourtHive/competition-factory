@@ -1,12 +1,11 @@
 import { checkRequiredParameters } from '@Helpers/parameters/checkRequiredParameters';
-import { addNotice } from '@Global/state/globalState';
+import { modifyParticipantsNotice } from '@Mutate/notifications/participantNotifications';
 
 // constants and fixtures
 import { EVENT_TYPE, TOURNAMENT_RECORD, VALIDATE } from '@Constants/attributeConstants';
 import { EventTypeUnion, Participant, Tournament } from '@Types/tournamentTypes';
 import ratingsParameters from '@Fixtures/ratings/ratingsParameters';
 import { DYNAMIC, RATING, SCALE } from '@Constants/scaleConstants';
-import { MODIFY_PARTICIPANTS } from '@Constants/topicConstants';
 import { SUCCESS } from '@Constants/resultConstants';
 
 export function removeRatings(params: {
@@ -36,9 +35,9 @@ export function removeRatings(params: {
   }
 
   if (modifiedParticipants.length) {
-    addNotice({
-      topic: MODIFY_PARTICIPANTS,
-      payload: { tournamentId: params.tournamentRecord.tournamentId, participants: modifiedParticipants },
+    modifyParticipantsNotice({
+      tournamentId: params.tournamentRecord.tournamentId,
+      participants: modifiedParticipants,
     });
   }
 

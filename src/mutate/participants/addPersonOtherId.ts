@@ -1,6 +1,7 @@
 import { findTournamentParticipant } from '@Acquire/findTournamentParticipant';
 import { requireParams } from '@Helpers/parameters/requireParams';
-import { addNotice, getTopics } from '@Global/state/globalState';
+import { getTopics } from '@Global/state/globalState';
+import { modifyParticipantsNotice } from '@Mutate/notifications/participantNotifications';
 
 import { INVALID_VALUES, MISSING_VALUE, PARTICIPANT_NOT_FOUND } from '@Constants/errorConditionConstants';
 import { TOURNAMENT_RECORD, PARTICIPANT_ID } from '@Constants/attributeConstants';
@@ -78,12 +79,9 @@ export function addPersonOtherId({
 
   const { topics } = getTopics();
   if (topics.includes(MODIFY_PARTICIPANTS)) {
-    addNotice({
-      topic: MODIFY_PARTICIPANTS,
-      payload: {
-        tournamentId: tournamentRecord.tournamentId,
-        participants: [participant],
-      },
+    modifyParticipantsNotice({
+      tournamentId: tournamentRecord.tournamentId,
+      participants: [participant],
     });
   }
 

@@ -1,10 +1,9 @@
 import { requireParams } from '@Helpers/parameters/requireParams';
-import { addNotice } from '@Global/state/globalState';
+import { modifyParticipantsNotice } from '@Mutate/notifications/participantNotifications';
 
 import { PENALTY_NOT_FOUND, ErrorType, MISSING_TOURNAMENT_RECORDS } from '@Constants/errorConditionConstants';
 import { TOURNAMENT_RECORD, PENALTY_ID } from '@Constants/attributeConstants';
 import { Participant, Penalty, Tournament } from '@Types/tournamentTypes';
-import { MODIFY_PARTICIPANTS } from '@Constants/topicConstants';
 import { SUCCESS } from '@Constants/resultConstants';
 
 export function removePenalty(params) {
@@ -53,12 +52,9 @@ function penaltyRemove({ tournamentRecord, penaltyId }: RemovePenaltyArgs): {
   });
 
   if (removedPenalty) {
-    addNotice({
-      topic: MODIFY_PARTICIPANTS,
-      payload: {
-        tournamentId: tournamentRecord.tournamentId,
-        participants: modifiedParticipants,
-      },
+    modifyParticipantsNotice({
+      tournamentId: tournamentRecord.tournamentId,
+      participants: modifiedParticipants,
     });
   }
 

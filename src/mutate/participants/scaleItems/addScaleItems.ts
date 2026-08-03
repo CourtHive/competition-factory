@@ -4,6 +4,7 @@ import { participantScaleItem } from '@Query/participant/participantScaleItem';
 import { decorateResult } from '@Functions/global/decorateResult';
 import { requireParams } from '@Helpers/parameters/requireParams';
 import { addNotice, getTopics } from '@Global/state/globalState';
+import { modifyParticipantsNotice } from '@Mutate/notifications/participantNotifications';
 import { definedAttributes } from '@Tools/definedAttributes';
 import { isValidDateString } from '@Tools/dateTime';
 import { findEvent } from '@Acquire/findEvent';
@@ -59,12 +60,9 @@ export function setParticipantScaleItem(params: SetParticipantScaleItemArgs) {
 
       const { topics } = getTopics();
       if (topics.includes(MODIFY_PARTICIPANTS)) {
-        addNotice({
-          topic: MODIFY_PARTICIPANTS,
-          payload: {
-            tournamentId: tournamentRecord.tournamentId,
-            participants: [participant],
-          },
+        modifyParticipantsNotice({
+          tournamentId: tournamentRecord.tournamentId,
+          participants: [participant],
         });
       }
     }
@@ -113,12 +111,9 @@ export function setParticipantScaleItems(params: SetParticipantScaleItemsArgs) {
   const info = modificationsApplied ? undefined : NO_MODIFICATIONS_APPLIED;
   const { topics } = getTopics();
   if (topics.includes(MODIFY_PARTICIPANTS) && modificationsApplied) {
-    addNotice({
-      topic: MODIFY_PARTICIPANTS,
-      payload: {
-        tournamentId: tournamentRecord.tournamentId,
-        participants: modifiedParticipants,
-      },
+    modifyParticipantsNotice({
+      tournamentId: tournamentRecord.tournamentId,
+      participants: modifiedParticipants,
     });
   }
 

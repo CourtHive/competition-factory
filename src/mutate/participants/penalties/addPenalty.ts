@@ -2,7 +2,7 @@ import { getParticipants } from '@Query/participants/getParticipants';
 import { requireParams } from '@Helpers/parameters/requireParams';
 import { getParticipantId } from '@Functions/global/extractors';
 import { addExtension } from '@Mutate/extensions/addExtension';
-import { addNotice } from '@Global/state/globalState';
+import { modifyParticipantsNotice } from '@Mutate/notifications/participantNotifications';
 
 // constants and types
 import { MISSING_PARTICIPANT_ID, PARTICIPANT_NOT_FOUND, ErrorType } from '@Constants/errorConditionConstants';
@@ -10,7 +10,6 @@ import { Extension, Penalty, PenaltyTypeUnion, Tournament } from '@Types/tournam
 import { TOURNAMENT_RECORD, PENALTY_TYPE } from '@Constants/attributeConstants';
 import penaltyTemplate from '@Assemblies/generators/templates/penaltyTemplate';
 import { TournamentRecords, ResultType } from '@Types/factoryTypes';
-import { MODIFY_PARTICIPANTS } from '@Constants/topicConstants';
 import { SUCCESS } from '@Constants/resultConstants';
 
 type AddPenaltyArgs = {
@@ -105,12 +104,9 @@ function penaltyAdd({
     participant.penalties.push(penaltyItem);
   });
 
-  addNotice({
-    topic: MODIFY_PARTICIPANTS,
-    payload: {
-      tournamentId: tournamentRecord!.tournamentId,
-      participants: relevantParticipants,
-    },
+  modifyParticipantsNotice({
+    tournamentId: tournamentRecord!.tournamentId,
+    participants: relevantParticipants,
   });
 
   return { ...SUCCESS, penaltyId: penaltyItem.penaltyId };

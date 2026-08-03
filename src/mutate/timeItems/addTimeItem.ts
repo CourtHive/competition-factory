@@ -2,13 +2,14 @@ import { findTournamentParticipant } from '@Acquire/findTournamentParticipant';
 import { deriveElement } from '@Query/base/deriveElement';
 import { getTimeItemValues } from './getTimeItemValues';
 import { addNotice } from '@Global/state/globalState';
+import { modifyParticipantsNotice } from '@Mutate/notifications/participantNotifications';
 import { isValidDateString } from '@Tools/dateTime';
 import { isObject, isString } from '@Tools/objects';
 import { getTimeItem } from '@Query/base/timeItems';
 
 // constants and types
 import { DrawDefinition, Event, TimeItem, Tournament } from '@Types/tournamentTypes';
-import { MODIFY_PARTICIPANTS, MODIFY_TOURNAMENT_DETAIL } from '@Constants/topicConstants';
+import { MODIFY_TOURNAMENT_DETAIL } from '@Constants/topicConstants';
 import { SUCCESS } from '@Constants/resultConstants';
 import {
   EVENT_NOT_FOUND,
@@ -124,10 +125,7 @@ export function addParticipantTimeItem({
   // got no notice (batch callers like sign-in/payment status dispatch their own,
   // passing disableNotice). Dispatch MODIFY_PARTICIPANTS for the touched participant.
   if (!disableNotice) {
-    addNotice({
-      topic: MODIFY_PARTICIPANTS,
-      payload: { tournamentId: tournamentRecord.tournamentId, participants: [result.participant] },
-    });
+    modifyParticipantsNotice({ tournamentId: tournamentRecord.tournamentId, participants: [result.participant] });
   }
 
   return addResult;
