@@ -102,15 +102,15 @@ const scenarios: Scenario[] = [
       tournamentEngine.setEventDates({ eventId: ctx.eventId, startDate: '2025-01-03', endDate: '2025-01-12' }),
   },
   {
+    // C3 CLOSED: addEventEntries now dispatches MODIFY_EVENT_ENTRIES.
     name: 'addEventEntries (alternate)',
-    expectation: 'gap',
-    note: 'C3 — MODIFY_EVENT_ENTRIES never dispatched',
+    expectation: 'covered',
     run: (ctx) => tournamentEngine.addEventEntries({ eventId: ctx.eventId, participantIds: [ctx.alternateIds[0]] }),
   },
   {
+    // C3 CLOSED: removeEventEntries now dispatches MODIFY_EVENT_ENTRIES.
     name: 'removeEventEntries',
-    expectation: 'gap',
-    note: 'C3 — MODIFY_EVENT_ENTRIES never dispatched',
+    expectation: 'covered',
     setup: (ctx) => tournamentEngine.addEventEntries({ eventId: ctx.eventId, participantIds: [ctx.alternateIds[0]] }),
     run: (ctx) => tournamentEngine.removeEventEntries({ eventId: ctx.eventId, participantIds: [ctx.alternateIds[0]] }),
   },

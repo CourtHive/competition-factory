@@ -10,6 +10,7 @@ import { addDrawEntries } from '@Mutate/drawDefinitions/addDrawEntries';
 import { decorateResult } from '@Functions/global/decorateResult';
 import { refreshEntryPositions } from './refreshEntryPositions';
 import { isValidExtension } from '@Validators/isValidExtension';
+import { modifyEventEntriesNotice } from '@Mutate/notifications/entriesNotifications';
 import { setFirstClassOrExtension } from '@Mutate/extensions/setFirstClassOrExtension';
 import { addExtension } from '@Mutate/extensions/addExtension';
 import { definedAttributes } from '@Tools/definedAttributes';
@@ -600,6 +601,12 @@ export function addEventEntries(params: AddEventEntriesArgs): ResultType {
 
   const addedEntriesCount = addedParticipantIdEntries.length;
   const removedEntriesCount = removedEntries.length;
+
+  // event.entries changed → dispatch MODIFY_EVENT_ENTRIES so projections and the
+  // record's modified flag reflect the roster change.
+  if (addedEntriesCount || removedEntriesCount) {
+    modifyEventEntriesNotice({ event, tournamentId: tournamentRecord?.tournamentId });
+  }
 
   return decorateResult({
     result: {
