@@ -149,6 +149,22 @@ const scenarios: Scenario[] = [
     run: () =>
       tournamentEngine.regenerateParticipantNames({ formats: { INDIVIDUAL: { personFormat: 'LAST, First' } } }),
   },
+  {
+    // C1 CLOSED: setStructureOrder now dispatches MODIFY_DRAW_DEFINITION.
+    name: 'setStructureOrder',
+    expectation: 'covered',
+    run: (ctx) => tournamentEngine.setStructureOrder({ drawId: ctx.drawId, orderMap: { [ctx.structureId]: 2 } }),
+  },
+  {
+    // C4 CLOSED: setDrawParticipantRepresentativeIds (draw extension) now dispatches MODIFY_DRAW_DEFINITION.
+    name: 'setDrawParticipantRepresentativeIds',
+    expectation: 'covered',
+    run: (ctx) =>
+      tournamentEngine.setDrawParticipantRepresentativeIds({
+        drawId: ctx.drawId,
+        representativeParticipantIds: [ctx.enteredIds[0]],
+      }),
+  },
 ];
 
 const gapReport: Array<{ name: string; note?: string; violations: number }> = [];

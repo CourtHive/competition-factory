@@ -1,4 +1,5 @@
 import { getAssignedParticipantIds } from '@Query/drawDefinition/getAssignedParticipantIds';
+import { modifyDrawEntriesNotice } from '@Mutate/notifications/entriesNotifications';
 import { refreshEntryPositions } from '../entries/refreshEntryPositions';
 import { getFlightProfile } from '@Query/event/getFlightProfile';
 import { overlap } from '@Tools/arrays';
@@ -13,8 +14,10 @@ import {
 
 export function removeDrawEntries({
   autoEntryPositions = true,
+  tournamentRecord,
   participantIds,
   drawDefinition,
+  disableNotice,
   drawId,
   stages,
   event,
@@ -49,10 +52,18 @@ export function removeDrawEntries({
   }
 
   if (drawDefinition?.entries) {
+    const before = drawDefinition.entries.length;
     drawDefinition.entries = drawDefinition.entries.filter(filterEntry);
     if (autoEntryPositions) {
       drawDefinition.entries = refreshEntryPositions({
         entries: drawDefinition.entries,
+      });
+    }
+    if (!disableNotice && drawDefinition.entries.length !== before) {
+      modifyDrawEntriesNotice({
+        drawDefinition,
+        tournamentId: tournamentRecord?.tournamentId,
+        eventId: event?.eventId,
       });
     }
   }
