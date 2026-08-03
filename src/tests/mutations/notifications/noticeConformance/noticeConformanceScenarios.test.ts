@@ -125,9 +125,10 @@ const scenarios: Scenario[] = [
       }),
   },
   {
+    // C1 CLOSED: setDelegatedOutcome now dispatches MODIFY_MATCHUP for the
+    // first-class matchUp.delegatedOutcome write (was silent).
     name: 'setDelegatedOutcome',
-    expectation: 'gap',
-    note: 'C1 — writes first-class matchUp.delegatedOutcome, emits no MODIFY_MATCHUP',
+    expectation: 'covered',
     run: (ctx) =>
       tournamentEngine.setDelegatedOutcome({
         matchUpId: ctx.matchUpId,

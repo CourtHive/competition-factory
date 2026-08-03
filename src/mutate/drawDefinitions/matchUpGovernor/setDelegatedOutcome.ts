@@ -1,5 +1,6 @@
 import { setFirstClassOrExtension } from '../../extensions/setFirstClassOrExtension';
 import { generateScoreString } from '@Generators/matchUps/generateScoreString';
+import { modifyMatchUpNotice } from '@Mutate/notifications/drawNotifications';
 import { findDrawMatchUp } from '@Acquire/findDrawMatchUp';
 
 import { DELEGATED_OUTCOME } from '@Constants/extensionConstants';
@@ -10,7 +11,15 @@ import {
   MISSING_VALUE,
 } from '@Constants/errorConditionConstants';
 
-export function setDelegatedOutcome({ drawDefinition, matchUpId, outcome, matchUp }) {
+export function setDelegatedOutcome({
+  drawDefinition,
+  tournamentRecord,
+  disableNotice,
+  matchUpId,
+  outcome,
+  matchUp,
+  event,
+}) {
   if (!matchUp && !drawDefinition) return { error: MISSING_DRAW_DEFINITION };
   if (!outcome) return { error: MISSING_VALUE, info: 'missing outcome' };
   if (!matchUp && !matchUpId) return { error: MISSING_MATCHUP };
@@ -39,12 +48,28 @@ export function setDelegatedOutcome({ drawDefinition, matchUpId, outcome, matchU
   // own generator so the stored outcome stays display-ready.
   const value = hasSideStrings ? outcome : withDerivedSideStrings(outcome, matchUp);
 
-  return setFirstClassOrExtension({
+  const result = setFirstClassOrExtension({
     element: matchUp,
     attribute: 'delegatedOutcome',
     name: DELEGATED_OUTCOME,
     value,
   });
+  if (result.error) return result;
+
+  // A delegatedOutcome is a first-class matchUp attribute (NATIVE writeMode);
+  // dispatch MODIFY_MATCHUP so downstream projections/consumers see the change
+  // (and so `mutationStatus` is set, marking the record modified for persistence).
+  if (!disableNotice) {
+    modifyMatchUpNotice({
+      drawDefinition,
+      tournamentId: tournamentRecord?.tournamentId,
+      structureId: matchUp.structureId,
+      eventId: event?.eventId,
+      matchUp,
+    });
+  }
+
+  return result;
 }
 
 function withDerivedSideStrings(outcome, matchUp) {
