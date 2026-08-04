@@ -1,5 +1,6 @@
+import { modifyEventEntriesNotice, modifyDrawEntriesNotice } from '../notifications/entriesNotifications';
 import { getAssignedParticipantIds } from '@Query/drawDefinition/getAssignedParticipantIds';
-import { modifyEventEntriesNotice } from '../notifications/entriesNotifications';
+import { modifyEventNotice } from '../notifications/eventNotifications';
 import { modifyDrawNotice } from '../notifications/drawNotifications';
 import { decorateResult } from '@Functions/global/decorateResult';
 import { refreshEntryPositions } from './refreshEntryPositions';
@@ -84,6 +85,7 @@ export function modifyEntriesStatus({
 
   const stack = 'modifyEntriesStatus';
   const modifiedDrawIds: string[] = [];
+  let flightProfileModified = false; // a flight's drawEntries live in event.flightProfile
 
   const assignedParticipantIds = buildAssignedParticipantIds({ event, stage });
   const tournamentParticipants = tournamentRecord?.participants ?? [];
@@ -106,7 +108,10 @@ export function modifyEntriesStatus({
 
   const autoPosition = ({ flight: fl, drawDefinition: dd }) => {
     if (event) event.entries = refreshEntryPositions({ entries: event.entries ?? [] });
-    if (fl) fl.drawEntries = refreshEntryPositions({ entries: fl.drawEntries });
+    if (fl) {
+      fl.drawEntries = refreshEntryPositions({ entries: fl.drawEntries });
+      flightProfileModified = true;
+    }
     if (dd) dd.entries = refreshEntryPositions({ entries: dd.entries });
   };
 
@@ -115,6 +120,7 @@ export function modifyEntriesStatus({
     if (fl) {
       const result = updateEntryStatus(fl.drawEntries);
       if (result.error) return decorateResult({ result, stack: innerStack });
+      flightProfileModified = true;
     }
     if (dd) {
       const result = updateEntryStatus(dd.entries);
@@ -170,20 +176,40 @@ export function modifyEntriesStatus({
 
   if (autoEntryPositions) autoPosition({ flight, drawDefinition });
 
-  dispatchEntriesStatusNotices({ tournamentRecord, event, modifiedDrawIds, eventEntriesModified });
+  dispatchEntriesStatusNotices({
+    tournamentRecord,
+    event,
+    modifiedDrawIds,
+    eventEntriesModified,
+    flightProfileModified,
+  });
 
   return { ...SUCCESS };
 }
 
-// Notices for a status change: MODIFY_DRAW_DEFINITION for each affected draw, and —
-// when event.entries statuses were updated — MODIFY_EVENT_ENTRIES for the event.
-function dispatchEntriesStatusNotices({ tournamentRecord, event, modifiedDrawIds, eventEntriesModified }) {
+// Notices for a status change: MODIFY_DRAW_DEFINITION for each affected draw plus
+// MODIFY_DRAW_ENTRIES for any draw whose entries were updated; MODIFY_EVENT_ENTRIES
+// when event.entries statuses changed; and MODIFY_EVENT when a flight's drawEntries
+// (which live in event.flightProfile) were re-sequenced.
+function dispatchEntriesStatusNotices({
+  tournamentRecord,
+  event,
+  modifiedDrawIds,
+  eventEntriesModified,
+  flightProfileModified,
+}) {
+  const tournamentId = tournamentRecord.tournamentId;
+  const eventId = event?.eventId;
   for (const dd of event?.drawDefinitions ?? []) {
     if (modifiedDrawIds.length && !modifiedDrawIds.includes(dd.drawId)) continue;
-    modifyDrawNotice({ tournamentId: tournamentRecord.tournamentId, eventId: event?.eventId, drawDefinition: dd });
+    modifyDrawNotice({ tournamentId, eventId, drawDefinition: dd });
+    if (modifiedDrawIds.includes(dd.drawId)) modifyDrawEntriesNotice({ drawDefinition: dd, tournamentId, eventId });
   }
   if (eventEntriesModified && event) {
-    modifyEventEntriesNotice({ event, tournamentId: tournamentRecord.tournamentId });
+    modifyEventEntriesNotice({ event, tournamentId });
+  }
+  if (flightProfileModified && event) {
+    modifyEventNotice({ tournamentId, event });
   }
 }
 

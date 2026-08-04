@@ -739,6 +739,34 @@ const scenarios: Scenario[] = [
       tournamentEngine.modifyEventEntries({ eventId: ctx.eventId, unpairedParticipantIds: [spare[0], spare[1]] });
     },
   },
+
+  // ── Tier-2 batch 13 (entries draw-scope + draw/tournament regression guards) ─
+  {
+    // modifyEntriesStatus on a DRAW entry (open-position seed so it isn't blocked
+    // by a position assignment) changes drawDefinition.entries → MODIFY_DRAW_ENTRIES.
+    name: 'modifyEntriesStatus (draw entry)',
+    expectation: 'covered',
+    seed: openPositionsContext,
+    run: (ctx) =>
+      tournamentEngine.modifyEntriesStatus({
+        drawId: ctx.drawId,
+        participantIds: [ctx.enteredIds[0]],
+        entryStatus: 'ALTERNATE',
+      }),
+  },
+  {
+    // modifyDrawName renames the draw AND updates the matching flightProfile flight's
+    // drawName on the event → MODIFY_DRAW_DEFINITION + (event flightProfile) MODIFY_EVENT.
+    name: 'modifyDrawName',
+    expectation: 'covered',
+    run: (ctx) => tournamentEngine.modifyDrawName({ drawId: ctx.drawId, drawName: 'Renamed Draw' }),
+  },
+  {
+    // setTournamentTier writes a root TierClassification → MODIFY_TOURNAMENT_DETAIL.
+    name: 'setTournamentTier',
+    expectation: 'covered',
+    run: () => tournamentEngine.setTournamentTier({ tournamentTier: { system: 'ITF', value: 'J100' } }),
+  },
 ];
 
 const gapReport: Array<{ name: string; note?: string; violations: number }> = [];

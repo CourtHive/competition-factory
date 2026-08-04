@@ -1,4 +1,5 @@
 import { setFirstClassOrExtension } from '@Mutate/extensions/setFirstClassOrExtension';
+import { modifyEventNotice } from '@Mutate/notifications/eventNotifications';
 import { modifyDrawNotice } from '@Mutate/notifications/drawNotifications';
 import { decorateResult } from '@Functions/global/decorateResult';
 import { getFlightProfile } from '@Query/event/getFlightProfile';
@@ -46,6 +47,8 @@ export function modifyDrawName({
       name: FLIGHT_PROFILE,
       value: { ...flightProfile, flights: flightProfile.flights },
     });
+    // event.flightProfile was mutated — cover the event change.
+    modifyEventNotice({ tournamentId: tournamentRecord?.tournamentId, event });
   }
 
   if (drawDefinition) {
