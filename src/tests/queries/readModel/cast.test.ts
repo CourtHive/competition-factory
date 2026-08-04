@@ -231,6 +231,25 @@ describe('cast — published flag (visibility, not omission)', () => {
   });
 });
 
+describe('cast — courts', () => {
+  const { tournamentRecord } = mocksEngine.generateTournamentRecord({
+    tournamentAttributes: { tournamentId: 'tC' },
+    drawProfiles: [{ drawSize: 4, eventName: 'Singles' }],
+    venueProfiles: [{ venueId: 'vC', venueName: 'Club', courtsCount: 3, idPrefix: 'court' }],
+    nonRandom: 1,
+  });
+
+  it('emits one courts row per court, linked to its venue', () => {
+    const { rows } = cast({ tournamentRecord });
+    expect(rows!.courts).toHaveLength(3);
+    expect(rows!.courts.every((c) => c.venue_id === 'vC' && c.tournament_id === 'tC')).toBe(true);
+    expect(rows!.courts.every((c) => c.court_id && c.court_name)).toBe(true);
+    // every court's venue_id joins a venues row
+    const venueIds = new Set(rows!.venues.map((v) => v.venue_id));
+    expect(rows!.courts.every((c) => venueIds.has(c.venue_id))).toBe(true);
+  });
+});
+
 describe('cast — draws + structures', () => {
   const { tournamentRecord } = mocksEngine.generateTournamentRecord({
     tournamentAttributes: { tournamentId: 'tD' },

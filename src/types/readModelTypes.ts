@@ -123,6 +123,19 @@ export interface ReadModelVenueRow {
   address: string | null;
 }
 
+export interface ReadModelCourtRow {
+  court_id: string;
+  venue_id: string;
+  tournament_id: string;
+  provider_id: string | null;
+  court_name: string | null;
+  indoor_outdoor: string | null;
+  surface_category: string | null;
+  surface_type: string | null;
+  latitude: string | null;
+  longitude: string | null;
+}
+
 export interface ReadModelTournamentVenueRow {
   tournament_id: string;
   venue_id: string;
@@ -135,6 +148,7 @@ export interface ReadModelRows {
   draws: ReadModelDrawRow[];
   structures: ReadModelStructureRow[];
   seeds: ReadModelSeedRow[];
+  courts: ReadModelCourtRow[];
   match_ups: ReadModelMatchUpRow[];
   match_up_competitors: ReadModelCompetitorRow[];
   entries: ReadModelEntryRow[];

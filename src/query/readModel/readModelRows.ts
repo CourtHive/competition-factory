@@ -5,6 +5,7 @@ import {
   ReadModelTournamentRow,
   ReadModelCompetitorRow,
   ReadModelMatchUpRow,
+  ReadModelCourtRow,
   ReadModelDrawRow,
   ReadModelEntryRow,
   ReadModelEventRow,
@@ -166,6 +167,28 @@ export function venueRow(venue: any): ReadModelVenueRow {
     // venues dedupe to one physical facility (courthive-facilities).
     facility_id: venue?.facilityId ?? venue?.venueId ?? null,
     address: addressText,
+  };
+}
+
+export interface CourtRowContext {
+  venueId: string;
+  tournamentId: string;
+  providerId: string | undefined;
+}
+
+/** One row per court of a placed venue. */
+export function courtRow(court: any, ctx: CourtRowContext): ReadModelCourtRow {
+  return {
+    court_id: court?.courtId,
+    venue_id: ctx.venueId,
+    tournament_id: ctx.tournamentId,
+    provider_id: ctx.providerId ?? null,
+    court_name: court?.courtName ?? null,
+    indoor_outdoor: court?.indoorOutdoor ?? null,
+    surface_category: court?.surfaceCategory ?? null,
+    surface_type: court?.surfaceType ?? null,
+    latitude: court?.latitude ?? null,
+    longitude: court?.longitude ?? null,
   };
 }
 

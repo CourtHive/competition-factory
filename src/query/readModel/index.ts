@@ -16,15 +16,23 @@ export {
   structureRow,
   seedRow,
   venueRow,
+  courtRow,
   entryRows,
   matchUpRowSet,
   matchUpResultRow,
   rubberTieValue,
 } from './readModelRows';
-export type { MatchUpRowContext, MatchUpRowSet, SeedRowContext, StructureRowContext } from './readModelRows';
+export type {
+  MatchUpRowContext,
+  MatchUpRowSet,
+  SeedRowContext,
+  StructureRowContext,
+  CourtRowContext,
+} from './readModelRows';
 export type {
   ReadModelEventRow,
   ReadModelSeedRow,
   ReadModelDrawRow,
   ReadModelStructureRow,
+  ReadModelCourtRow,
 } from '@Types/readModelTypes';

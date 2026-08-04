@@ -1,4 +1,5 @@
 import {
+  courtRow,
   drawRow,
   entryRows,
   eventRow,
@@ -184,6 +185,42 @@ describe('seedRow', () => {
   it('stringifies a range seedValue and nulls a missing one', () => {
     expect(seedRow({ seedNumber: 3, participantId: 'p3', seedValue: '3-4' }, seedCtx).seed_value).toEqual('3-4');
     expect(seedRow({ seedNumber: 5, participantId: 'p5' }, seedCtx).seed_value).toEqual(null);
+  });
+});
+
+describe('courtRow', () => {
+  it('maps court attributes with its venue context, nulling optionals on a bare court', () => {
+    const ctx = { venueId: 'v1', tournamentId: 't1', providerId: 'PROV' };
+    expect(
+      courtRow(
+        {
+          courtId: 'c1',
+          courtName: 'Court 1',
+          indoorOutdoor: 'INDOOR',
+          surfaceCategory: 'HARD',
+          surfaceType: 'Plexicushion',
+        },
+        ctx,
+      ),
+    ).toEqual({
+      court_id: 'c1',
+      venue_id: 'v1',
+      tournament_id: 't1',
+      provider_id: 'PROV',
+      court_name: 'Court 1',
+      indoor_outdoor: 'INDOOR',
+      surface_category: 'HARD',
+      surface_type: 'Plexicushion',
+      latitude: null,
+      longitude: null,
+    });
+    expect(courtRow({ courtId: 'c2' }, { venueId: 'v1', tournamentId: 't1', providerId: undefined })).toMatchObject({
+      court_id: 'c2',
+      provider_id: null,
+      court_name: null,
+      indoor_outdoor: null,
+      surface_category: null,
+    });
   });
 });
 

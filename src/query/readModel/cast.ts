@@ -1,4 +1,5 @@
 import {
+  courtRow,
   drawRow,
   entryRows,
   eventRow,
@@ -88,6 +89,14 @@ export function cast(params?: CastArgs): { error?: ErrorType; success?: boolean;
 
   const { draws, structures, seeds } = buildDrawEntityRows(tournamentRecord, tournamentId, providerId);
 
+  const courts: ReadModelRows['courts'] = [];
+  for (const venue of placedVenues) {
+    for (const court of venue.courts ?? []) {
+      if (!court?.courtId) continue;
+      courts.push(courtRow(court, { venueId: venue.venueId, tournamentId, providerId }));
+    }
+  }
+
   return {
     ...SUCCESS,
     rows: {
@@ -96,6 +105,7 @@ export function cast(params?: CastArgs): { error?: ErrorType; success?: boolean;
       draws,
       structures,
       seeds,
+      courts,
       match_ups,
       match_up_competitors,
       entries: entryRows(tournamentRecord),
