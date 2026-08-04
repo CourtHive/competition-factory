@@ -92,6 +92,8 @@ const { rows } = engine.cast();
 // rows: {
 //   tournaments,            // one row: id, name, provider_id, dates, city
 //   events,                 // one row/event: name, type, gender, category, matchUpFormat, dates, published
+//   draws,                  // one row/draw: name, type, matchUpFormat
+//   structures,             // one row/top-level structure: name, stage, stageSequence, type, matchUpFormat
 //   seeds,                  // one row/participant-holding seed assignment (structure_id + seed_number)
 //   match_ups,              // STANDARD | TIE (team container) | RUBBER (nested)
 //   match_up_competitors,   // per-INDIVIDUAL grain; doubles = 2 rows/side; team_id on team/rubber rows
@@ -115,16 +117,17 @@ Callable on the engine (injects the loaded `tournamentRecord`) or via `queryGove
 import { readModel } from 'tods-competition-factory';
 ```
 
-| Export                                     | Purpose                                                                                                                                                                                  |
-| ------------------------------------------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `cast`                                     | Full-tournament projection (the same function documented above).                                                                                                                         |
-| `tournamentRow` / `venueRow` / `entryRows` | Row builders for the `tournaments`, `venues`/`tournament_venues`, and `entries` tables.                                                                                                  |
-| `eventRow` / `seedRow`                     | Row builders for the `events` table (one row/event) and the `seeds` table (one row per participant-holding seed assignment; caller supplies the structure context via `SeedRowContext`). |
-| `matchUpRowSet`                            | Builds the `match_ups` / `match_up_competitors` rows for a matchUp set (STANDARD / TIE container / nested RUBBER). Typed by `MatchUpRowContext` → `MatchUpRowSet`.                       |
-| `matchUpResultRow` / `rubberTieValue`      | Result-row projection and the RUBBER `tie_value` weighting rule.                                                                                                                         |
-| `resolveMatchUpPublishState`               | Resolves a matchUp's `published` intent + effective `embargo` release timestamp via the draw → stage → structure cascade (returns `MatchUpPublishState`).                                |
-| `getEventPublishStatus`                    | Event-level publish status used by the cascade.                                                                                                                                          |
-| `resolvePersonLink` / `isFactoryUuid`      | Canonical `person_id` resolution — `LINK_PROVIDER_ID` for a real federation/provider id, `LINK_UNRESOLVED` (`NULL`) for synthetic/local participants (returns `PersonLink`).             |
+| Export                                     | Purpose                                                                                                                                                                                                       |
+| ------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `cast`                                     | Full-tournament projection (the same function documented above).                                                                                                                                              |
+| `tournamentRow` / `venueRow` / `entryRows` | Row builders for the `tournaments`, `venues`/`tournament_venues`, and `entries` tables.                                                                                                                       |
+| `eventRow` / `seedRow`                     | Row builders for the `events` table (one row/event) and the `seeds` table (one row per participant-holding seed assignment; caller supplies the structure context via `SeedRowContext`).                      |
+| `drawRow` / `structureRow`                 | Row builders for the `draws` table (one row/draw) and the `structures` table (one row per top-level structure; context via `StructureRowContext`). Nested round-robin group sub-structures are not projected. |
+| `matchUpRowSet`                            | Builds the `match_ups` / `match_up_competitors` rows for a matchUp set (STANDARD / TIE container / nested RUBBER). Typed by `MatchUpRowContext` → `MatchUpRowSet`.                                            |
+| `matchUpResultRow` / `rubberTieValue`      | Result-row projection and the RUBBER `tie_value` weighting rule.                                                                                                                                              |
+| `resolveMatchUpPublishState`               | Resolves a matchUp's `published` intent + effective `embargo` release timestamp via the draw → stage → structure cascade (returns `MatchUpPublishState`).                                                     |
+| `getEventPublishStatus`                    | Event-level publish status used by the cascade.                                                                                                                                                               |
+| `resolvePersonLink` / `isFactoryUuid`      | Canonical `person_id` resolution — `LINK_PROVIDER_ID` for a real federation/provider id, `LINK_UNRESOLVED` (`NULL`) for synthetic/local participants (returns `PersonLink`).                                  |
 
 This is an advanced integration surface for read-model producers (`courthive-query`, the CFS incremental projection); most consumers only need `cast()`.
 
