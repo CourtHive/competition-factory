@@ -84,7 +84,14 @@ export function resolveMatchUpPublishState(
 ): MatchUpPublishState {
   if (!status) return NOT_PUBLISHED; // no PUBLISH.STATUS → not published
   const { drawDetails } = status;
-  if (!drawDetails) return { published: !!status.published, embargo: null }; // legacy event-level flag
+  if (!drawDetails) {
+    // legacy v1 shape: a top-level `drawIds` array lists the published draws (no
+    // per-draw detail). Mirror getDrawIsPublished's drawIds branch — a listed draw
+    // is published, an unlisted one is not (so a stray event-level `published:true`
+    // no longer over-discloses unlisted draws).
+    if (Array.isArray(status.drawIds)) return { published: !!drawId && status.drawIds.includes(drawId), embargo: null };
+    return { published: !!status.published, embargo: null }; // legacy event-level flag
+  }
   if (!Object.keys(drawDetails).length) return { published: true, embargo: null }; // empty drawDetails → all published
 
   const drawDetail = drawId ? drawDetails[drawId] : undefined;

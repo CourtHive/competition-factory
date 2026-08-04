@@ -7,6 +7,7 @@ import {
   orderOfPlayRow,
   participantPublishRow,
   schedulingProfileRows,
+  resolveSchedulingProfile,
   seedRow,
   structureRow,
   tournamentRow,
@@ -15,8 +16,6 @@ import {
 } from './readModelRows';
 import { getTournamentPublishStatus } from '@Query/tournaments/getTournamentPublishStatus';
 import { getEventPublishStatus } from '@Query/event/getEventPublishStatus';
-import { findExtension } from '@Acquire/findExtension';
-import { SCHEDULING_PROFILE } from '@Constants/extensionConstants';
 import { allTournamentMatchUps } from '@Query/matchUps/getAllTournamentMatchUps';
 import { resolveMatchUpPublishState } from './readModelPublish';
 import { decorateResult } from '@Functions/global/decorateResult';
@@ -115,13 +114,9 @@ export function cast(params?: CastArgs): { error?: ErrorType; success?: boolean;
     ? [participantPublishRow(tournamentId, participants)]
     : [];
 
-  // scheduling PLAN (first-class `scheduling.profile` in NATIVE mode, else the
-  // SCHEDULING_PROFILE extension in LEGACY mode)
-  const profile =
-    (tournamentRecord as any).scheduling?.profile ??
-    findExtension({ element: tournamentRecord, name: SCHEDULING_PROFILE })?.extension?.value ??
-    [];
-  const scheduling_profile = schedulingProfileRows(tournamentId, profile);
+  // scheduling PLAN (first-class `scheduling.profile` NATIVE, else SCHEDULING_PROFILE
+  // extension LEGACY) — the shared resolver the CFS rebuild reads too.
+  const scheduling_profile = schedulingProfileRows(tournamentId, resolveSchedulingProfile(tournamentRecord));
 
   return {
     ...SUCCESS,

@@ -20,6 +20,7 @@ export {
   courtRow,
   orderOfPlayRow,
   schedulingProfileRows,
+  resolveSchedulingProfile,
   participantPublishRow,
   entryRows,
   matchUpRowSet,
