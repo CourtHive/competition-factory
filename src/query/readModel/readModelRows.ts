@@ -9,6 +9,8 @@ import {
   ReadModelDrawRow,
   ReadModelEntryRow,
   ReadModelEventRow,
+  ReadModelOrderOfPlayRow,
+  ReadModelSchedulingProfileRow,
   ReadModelSeedRow,
   ReadModelStructureRow,
   ReadModelVenueRow,
@@ -121,6 +123,55 @@ export function structureRow(structure: any, ctx: StructureRowContext): ReadMode
     structure_order: structure?.structureOrder ?? null,
     match_up_format: structure?.matchUpFormat ?? null,
   };
+}
+
+// ── order of play + scheduling profile (the schedule PLAN + its publication) ────
+
+/**
+ * The tournament-level order-of-play PUBLICATION state (distinct from per-matchUp
+ * scheduling): from the PUBLIC `orderOfPlay` publish status. `scheduled_dates` /
+ * `event_ids` are null when the publish did not scope them (= "all").
+ */
+export function orderOfPlayRow(tournamentId: string, orderOfPlay: any): ReadModelOrderOfPlayRow {
+  return {
+    tournament_id: tournamentId,
+    published: !!orderOfPlay?.published,
+    scheduled_dates: orderOfPlay?.scheduledDates ?? null,
+    event_ids: orderOfPlay?.eventIds ?? null,
+    embargo: orderOfPlay?.embargo ?? null,
+  };
+}
+
+/**
+ * Flatten the scheduling PLAN (`scheduling.profile`: per-date, per-venue ordered
+ * rounds) into one row per (date, venue, round position). This is the admin plan
+ * that drives auto-scheduling — NOT the resulting per-matchUp schedule.
+ */
+export function schedulingProfileRows(tournamentId: string, schedulingProfile: any[]): ReadModelSchedulingProfileRow[] {
+  const rows: ReadModelSchedulingProfileRow[] = [];
+  for (const dateProfile of schedulingProfile ?? []) {
+    const scheduleDate = dateProfile?.scheduleDate;
+    if (!scheduleDate) continue;
+    for (const venue of dateProfile?.venues ?? []) {
+      const venueId = venue?.venueId;
+      if (!venueId) continue;
+      (venue?.rounds ?? []).forEach((round: any, roundOrder: number) => {
+        rows.push({
+          tournament_id: tournamentId,
+          schedule_date: scheduleDate,
+          venue_id: venueId,
+          round_order: roundOrder,
+          event_id: round?.eventId ?? null,
+          draw_id: round?.drawId ?? null,
+          structure_id: round?.structureId ?? null,
+          round_number: round?.roundNumber ?? null,
+          round_segment: round?.roundSegment ?? null,
+          winner_finishing_position_range: round?.winnerFinishingPositionRange ?? null,
+        });
+      });
+    }
+  }
+  return rows;
 }
 
 // ── seeds ─────────────────────────────────────────────────────────────────────

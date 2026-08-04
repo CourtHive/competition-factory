@@ -3,8 +3,10 @@ import { getUpdatedSchedulingProfile } from '@Query/matchUps/scheduling/getUpdat
 import { validateSchedulingProfile } from '@Validators/validateSchedulingProfile';
 import { getCompetitionVenues } from '@Query/venues/venuesAndCourtsGetter';
 import { getEventIdsAndDrawIds } from '@Query/tournaments/getEventIdsAndDrawIds';
+import { addNotice } from '@Global/state/globalState';
 
 import { ErrorType, MISSING_TOURNAMENT_RECORDS } from '@Constants/errorConditionConstants';
+import { MODIFY_SCHEDULING_PROFILE } from '@Constants/topicConstants';
 import { SCHEDULING_PROFILE } from '@Constants/extensionConstants';
 import { TournamentRecords } from '@Types/factoryTypes';
 import { SUCCESS } from '@Constants/resultConstants';
@@ -101,6 +103,13 @@ export function setSchedulingProfile({
       leafAttribute: 'profile',
       name: SCHEDULING_PROFILE,
       value: schedulingProfile,
+    });
+    // the scheduling profile (an extension) previously changed silently — cover it so
+    // consumers (read-model projection) can react to the scheduling plan changing.
+    addNotice({
+      topic: MODIFY_SCHEDULING_PROFILE,
+      payload: { tournamentId: target.tournamentId, schedulingProfile },
+      key: target.tournamentId,
     });
   }
   return { ...SUCCESS };

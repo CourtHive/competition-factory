@@ -231,6 +231,52 @@ describe('cast — published flag (visibility, not omission)', () => {
   });
 });
 
+describe('cast — order of play + scheduling profile', () => {
+  const { tournamentRecord } = mocksEngine.generateTournamentRecord({
+    tournamentAttributes: { tournamentId: 'tOoP' },
+    drawProfiles: [{ drawSize: 4, eventName: 'Singles' }],
+    venueProfiles: [{ venueId: 'v1', venueName: 'Club', courtsCount: 2, idPrefix: 'v1c' }],
+    nonRandom: 1,
+  });
+  const drawId = tournamentRecord.events[0].drawDefinitions[0].drawId;
+  // publish the order of play (PUBLIC) and set a scheduling plan directly on the record
+  tournamentRecord.timeItems = [
+    {
+      itemType: 'PUBLISH.STATUS',
+      itemValue: { PUBLIC: { orderOfPlay: { published: true, scheduledDates: ['2025-01-05'] } } },
+    },
+  ];
+  (tournamentRecord as any).scheduling = {
+    profile: [
+      {
+        scheduleDate: '2025-01-05',
+        venues: [{ venueId: 'v1', rounds: [{ drawId, winnerFinishingPositionRange: '1-4' }] }],
+      },
+    ],
+  };
+
+  it('projects the published order-of-play state and the flattened scheduling plan', () => {
+    const { rows } = cast({ tournamentRecord });
+    expect(rows!.order_of_play).toEqual([
+      { tournament_id: 'tOoP', published: true, scheduled_dates: ['2025-01-05'], event_ids: null, embargo: null },
+    ]);
+    expect(rows!.scheduling_profile).toHaveLength(1);
+    expect(rows!.scheduling_profile[0]).toMatchObject({
+      tournament_id: 'tOoP',
+      schedule_date: '2025-01-05',
+      venue_id: 'v1',
+      round_order: 0,
+      draw_id: drawId,
+      winner_finishing_position_range: '1-4',
+    });
+  });
+
+  it('emits no order_of_play row when the schedule is not published', () => {
+    const { rows } = cast({ tournamentRecord: { ...tournamentRecord, timeItems: [] } as any });
+    expect(rows!.order_of_play).toEqual([]);
+  });
+});
+
 describe('cast — courts', () => {
   const { tournamentRecord } = mocksEngine.generateTournamentRecord({
     tournamentAttributes: { tournamentId: 'tC' },

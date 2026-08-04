@@ -4,13 +4,18 @@ import {
   entryRows,
   eventRow,
   matchUpRowSet,
+  orderOfPlayRow,
+  schedulingProfileRows,
   seedRow,
   structureRow,
   tournamentRow,
   venueRow,
   MatchUpRowContext,
 } from './readModelRows';
+import { getTournamentPublishStatus } from '@Query/tournaments/getTournamentPublishStatus';
 import { getEventPublishStatus } from '@Query/event/getEventPublishStatus';
+import { findExtension } from '@Acquire/findExtension';
+import { SCHEDULING_PROFILE } from '@Constants/extensionConstants';
 import { allTournamentMatchUps } from '@Query/matchUps/getAllTournamentMatchUps';
 import { resolveMatchUpPublishState } from './readModelPublish';
 import { decorateResult } from '@Functions/global/decorateResult';
@@ -97,6 +102,20 @@ export function cast(params?: CastArgs): { error?: ErrorType; success?: boolean;
     }
   }
 
+  // order-of-play PUBLICATION state (one row when the schedule is published)
+  const orderOfPlay = getTournamentPublishStatus({ tournamentRecord })?.orderOfPlay;
+  const order_of_play: ReadModelRows['order_of_play'] = orderOfPlay?.published
+    ? [orderOfPlayRow(tournamentId, orderOfPlay)]
+    : [];
+
+  // scheduling PLAN (first-class `scheduling.profile` in NATIVE mode, else the
+  // SCHEDULING_PROFILE extension in LEGACY mode)
+  const profile =
+    (tournamentRecord as any).scheduling?.profile ??
+    findExtension({ element: tournamentRecord, name: SCHEDULING_PROFILE })?.extension?.value ??
+    [];
+  const scheduling_profile = schedulingProfileRows(tournamentId, profile);
+
   return {
     ...SUCCESS,
     rows: {
@@ -106,6 +125,8 @@ export function cast(params?: CastArgs): { error?: ErrorType; success?: boolean;
       structures,
       seeds,
       courts,
+      order_of_play,
+      scheduling_profile,
       match_ups,
       match_up_competitors,
       entries: entryRows(tournamentRecord),

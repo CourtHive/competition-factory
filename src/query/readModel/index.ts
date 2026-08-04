@@ -5,6 +5,7 @@
 
 export { cast } from './cast';
 export { getEventPublishStatus } from '@Query/event/getEventPublishStatus';
+export { getTournamentPublishStatus } from '@Query/tournaments/getTournamentPublishStatus';
 export { resolveMatchUpPublishState } from './readModelPublish';
 export type { MatchUpPublishState } from './readModelPublish';
 export { isFactoryUuid, resolvePersonLink, LINK_PROVIDER_ID, LINK_UNRESOLVED } from './personRule';
@@ -17,6 +18,8 @@ export {
   seedRow,
   venueRow,
   courtRow,
+  orderOfPlayRow,
+  schedulingProfileRows,
   entryRows,
   matchUpRowSet,
   matchUpResultRow,
@@ -35,4 +38,6 @@ export type {
   ReadModelDrawRow,
   ReadModelStructureRow,
   ReadModelCourtRow,
+  ReadModelOrderOfPlayRow,
+  ReadModelSchedulingProfileRow,
 } from '@Types/readModelTypes';

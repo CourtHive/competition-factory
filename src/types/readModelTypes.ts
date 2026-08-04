@@ -105,6 +105,27 @@ export interface ReadModelStructureRow {
   match_up_format: string | null;
 }
 
+export interface ReadModelOrderOfPlayRow {
+  tournament_id: string;
+  published: boolean;
+  scheduled_dates: string[] | null; // published dates; null = all
+  event_ids: string[] | null; // published events; null = all
+  embargo: string | null;
+}
+
+export interface ReadModelSchedulingProfileRow {
+  tournament_id: string;
+  schedule_date: string;
+  venue_id: string;
+  round_order: number; // position of the round within the venue's plan for the date
+  event_id: string | null;
+  draw_id: string | null;
+  structure_id: string | null;
+  round_number: number | null;
+  round_segment: number | null;
+  winner_finishing_position_range: string | null;
+}
+
 export interface ReadModelSeedRow {
   structure_id: string;
   seed_number: number;
@@ -149,6 +170,8 @@ export interface ReadModelRows {
   structures: ReadModelStructureRow[];
   seeds: ReadModelSeedRow[];
   courts: ReadModelCourtRow[];
+  order_of_play: ReadModelOrderOfPlayRow[];
+  scheduling_profile: ReadModelSchedulingProfileRow[];
   match_ups: ReadModelMatchUpRow[];
   match_up_competitors: ReadModelCompetitorRow[];
   entries: ReadModelEntryRow[];

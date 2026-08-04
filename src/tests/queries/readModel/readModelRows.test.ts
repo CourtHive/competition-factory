@@ -4,7 +4,9 @@ import {
   entryRows,
   eventRow,
   matchUpRowSet,
+  orderOfPlayRow,
   rubberTieValue,
+  schedulingProfileRows,
   seedRow,
   structureRow,
   tournamentRow,
@@ -221,6 +223,86 @@ describe('courtRow', () => {
       indoor_outdoor: null,
       surface_category: null,
     });
+  });
+});
+
+describe('orderOfPlayRow', () => {
+  it('maps a scoped publish (dates + events + embargo)', () => {
+    expect(
+      orderOfPlayRow('t1', {
+        published: true,
+        scheduledDates: ['2025-01-05'],
+        eventIds: ['e1'],
+        embargo: '2025-01-04T00:00',
+      }),
+    ).toEqual({
+      tournament_id: 't1',
+      published: true,
+      scheduled_dates: ['2025-01-05'],
+      event_ids: ['e1'],
+      embargo: '2025-01-04T00:00',
+    });
+  });
+
+  it('nulls unscoped dates/events (= all) and a missing embargo', () => {
+    expect(orderOfPlayRow('t1', { published: true })).toEqual({
+      tournament_id: 't1',
+      published: true,
+      scheduled_dates: null,
+      event_ids: null,
+      embargo: null,
+    });
+  });
+});
+
+describe('schedulingProfileRows', () => {
+  it('flattens per (date, venue, round order) with round identity', () => {
+    const profile = [
+      {
+        scheduleDate: '2025-01-05',
+        venues: [
+          {
+            venueId: 'v1',
+            rounds: [
+              { eventId: 'e1', drawId: 'd1', structureId: 's1', roundNumber: 1 },
+              { drawId: 'd2', roundNumber: 2, roundSegment: 1 },
+            ],
+          },
+        ],
+      },
+    ];
+    const rows = schedulingProfileRows('t1', profile);
+    expect(rows).toEqual([
+      {
+        tournament_id: 't1',
+        schedule_date: '2025-01-05',
+        venue_id: 'v1',
+        round_order: 0,
+        event_id: 'e1',
+        draw_id: 'd1',
+        structure_id: 's1',
+        round_number: 1,
+        round_segment: null,
+        winner_finishing_position_range: null,
+      },
+      {
+        tournament_id: 't1',
+        schedule_date: '2025-01-05',
+        venue_id: 'v1',
+        round_order: 1,
+        event_id: null,
+        draw_id: 'd2',
+        structure_id: null,
+        round_number: 2,
+        round_segment: 1,
+        winner_finishing_position_range: null,
+      },
+    ]);
+  });
+
+  it('skips date/venue entries missing their id, and empty profiles', () => {
+    expect(schedulingProfileRows('t1', [])).toEqual([]);
+    expect(schedulingProfileRows('t1', [{ venues: [{ venueId: 'v1', rounds: [{ drawId: 'd1' }] }] }])).toEqual([]);
   });
 });
 
