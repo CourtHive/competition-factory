@@ -231,6 +231,19 @@ const scenarios: Scenario[] = [
       tournamentEngine.setEventDates({ eventId: ctx.eventId, startDate: '2025-01-03', endDate: '2025-01-12' }),
   },
   {
+    // gap #7 CLOSED: the standalone setEventStartDate now dispatches MODIFY_EVENT
+    // (previously silent — only the setEventDates wrapper fired it).
+    name: 'setEventStartDate',
+    expectation: 'covered',
+    run: (ctx) => tournamentEngine.setEventStartDate({ eventId: ctx.eventId, startDate: '2025-01-04' }),
+  },
+  {
+    // gap #7 CLOSED: the standalone setEventEndDate now dispatches MODIFY_EVENT.
+    name: 'setEventEndDate',
+    expectation: 'covered',
+    run: (ctx) => tournamentEngine.setEventEndDate({ eventId: ctx.eventId, endDate: '2025-01-11' }),
+  },
+  {
     // C3 CLOSED: addEventEntries now dispatches MODIFY_EVENT_ENTRIES.
     name: 'addEventEntries (alternate)',
     expectation: 'covered',
