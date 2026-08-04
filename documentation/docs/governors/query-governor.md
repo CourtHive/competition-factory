@@ -99,6 +99,7 @@ const { rows } = engine.cast();
 //   match_up_competitors,   // per-INDIVIDUAL grain; doubles = 2 rows/side; team_id on team/rubber rows
 //   entries,                // participation != matchUps (alternates, withdrawn, un-drawn)
 //   venues,                 // facility_id defaults to venue_id
+//   courts,                 // one row/court: name, indoorOutdoor, surface, lat/long
 //   tournament_venues,      // tournament ↔ venue links
 // }
 ```
@@ -123,6 +124,7 @@ import { readModel } from 'tods-competition-factory';
 | `tournamentRow` / `venueRow` / `entryRows` | Row builders for the `tournaments`, `venues`/`tournament_venues`, and `entries` tables.                                                                                                                       |
 | `eventRow` / `seedRow`                     | Row builders for the `events` table (one row/event) and the `seeds` table (one row per participant-holding seed assignment; caller supplies the structure context via `SeedRowContext`).                      |
 | `drawRow` / `structureRow`                 | Row builders for the `draws` table (one row/draw) and the `structures` table (one row per top-level structure; context via `StructureRowContext`). Nested round-robin group sub-structures are not projected. |
+| `courtRow`                                 | Row builder for the `courts` table (one row per court of a placed venue; context via `CourtRowContext`).                                                                                                      |
 | `matchUpRowSet`                            | Builds the `match_ups` / `match_up_competitors` rows for a matchUp set (STANDARD / TIE container / nested RUBBER). Typed by `MatchUpRowContext` → `MatchUpRowSet`.                                            |
 | `matchUpResultRow` / `rubberTieValue`      | Result-row projection and the RUBBER `tie_value` weighting rule.                                                                                                                                              |
 | `resolveMatchUpPublishState`               | Resolves a matchUp's `published` intent + effective `embargo` release timestamp via the draw → stage → structure cascade (returns `MatchUpPublishState`).                                                     |
