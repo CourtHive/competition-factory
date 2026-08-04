@@ -16,6 +16,14 @@ describe('resolveMatchUpPublishState', () => {
     expect(resolveMatchUpPublishState({ published: false }, 'd1')).toEqual({ published: false, embargo: null });
   });
 
+  it('resolves the legacy v1 drawIds-array shape per-draw (mirrors getDrawIsPublished)', () => {
+    // a listed draw is published; an unlisted one is not.
+    expect(resolveMatchUpPublishState({ drawIds: ['d1'] }, 'd1')).toEqual({ published: true, embargo: null });
+    expect(resolveMatchUpPublishState({ drawIds: ['d1'] }, 'd2')).toEqual({ published: false, embargo: null });
+    // a stray event-level published:true must NOT over-disclose an unlisted draw.
+    expect(resolveMatchUpPublishState({ published: true, drawIds: ['d1'] }, 'd2').published).toBe(false);
+  });
+
   it('treats empty drawDetails as all-published', () => {
     expect(resolveMatchUpPublishState({ drawDetails: {} }, 'd1')).toEqual({ published: true, embargo: null });
   });

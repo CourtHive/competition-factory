@@ -1,5 +1,7 @@
 import { getTournamentPublishStatus } from '@Query/tournaments/getTournamentPublishStatus';
+import { SCHEDULING_PROFILE } from '@Constants/extensionConstants';
 import { LINK_UNRESOLVED, resolvePersonLink } from './personRule';
+import { findExtension } from '@Acquire/findExtension';
 
 // types
 import {
@@ -161,6 +163,19 @@ export function orderOfPlayRow(tournamentId: string, orderOfPlay: any): ReadMode
     event_ids: orderOfPlay?.eventIds ?? null,
     embargo: orderOfPlay?.embargo ?? null,
   };
+}
+
+/**
+ * The stored scheduling PLAN for a tournament: first-class `scheduling.profile`
+ * (NATIVE writeMode), else the `SCHEDULING_PROFILE` extension (LEGACY/imported
+ * records). The single source both `cast()` and the CFS rebuild read, so a LEGACY
+ * record projects identically either way (the rebuild used to read NATIVE only and
+ * silently wiped the table for extension-backed profiles).
+ */
+export function resolveSchedulingProfile(record: any): any[] {
+  return (
+    record?.scheduling?.profile ?? findExtension({ element: record, name: SCHEDULING_PROFILE })?.extension?.value ?? []
+  );
 }
 
 /**
