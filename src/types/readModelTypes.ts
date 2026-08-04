@@ -67,6 +67,20 @@ export interface ReadModelEntryRow {
   entry_status: string | null;
 }
 
+export interface ReadModelEventRow {
+  event_id: string;
+  tournament_id: string;
+  provider_id: string | null;
+  event_name: string | null;
+  event_type: string | null; // SINGLES | DOUBLES | TEAM | HYBRID
+  gender: string | null;
+  category_name: string | null;
+  match_up_format: string | null;
+  start_date: string | null;
+  end_date: string | null;
+  published: boolean;
+}
+
 export interface ReadModelVenueRow {
   venue_id: string;
   venue_name: string | null;
@@ -82,6 +96,7 @@ export interface ReadModelTournamentVenueRow {
 /** The full read-model projection of one `tournamentRecord`. */
 export interface ReadModelRows {
   tournaments: ReadModelTournamentRow[];
+  events: ReadModelEventRow[];
   match_ups: ReadModelMatchUpRow[];
   match_up_competitors: ReadModelCompetitorRow[];
   entries: ReadModelEntryRow[];

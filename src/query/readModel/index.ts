@@ -11,6 +11,7 @@ export { isFactoryUuid, resolvePersonLink, LINK_PROVIDER_ID, LINK_UNRESOLVED } f
 export type { PersonLink } from './personRule';
 export {
   tournamentRow,
+  eventRow,
   venueRow,
   entryRows,
   matchUpRowSet,
@@ -18,3 +19,4 @@ export {
   rubberTieValue,
 } from './readModelRows';
 export type { MatchUpRowContext, MatchUpRowSet } from './readModelRows';
+export type { ReadModelEventRow } from '@Types/readModelTypes';

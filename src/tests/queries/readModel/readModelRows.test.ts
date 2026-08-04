@@ -1,5 +1,6 @@
 import {
   entryRows,
+  eventRow,
   matchUpRowSet,
   rubberTieValue,
   tournamentRow,
@@ -9,6 +10,55 @@ import {
 import { expect, it, describe } from 'vitest';
 
 const ctx: MatchUpRowContext = { tournamentId: 't1', providerId: 'PROV', published: false, embargo: null };
+
+describe('eventRow', () => {
+  it('maps event attributes and passes provider + published through', () => {
+    const row = eventRow(
+      {
+        eventId: 'e1',
+        eventName: 'Singles',
+        eventType: 'SINGLES',
+        gender: 'MALE',
+        category: { categoryName: 'U18' },
+        matchUpFormat: 'SET3-S:6/TB7',
+        startDate: '2025-01-02',
+        endDate: '2025-01-05',
+      },
+      't1',
+      'PROV',
+      true,
+    );
+    expect(row).toEqual({
+      event_id: 'e1',
+      tournament_id: 't1',
+      provider_id: 'PROV',
+      event_name: 'Singles',
+      event_type: 'SINGLES',
+      gender: 'MALE',
+      category_name: 'U18',
+      match_up_format: 'SET3-S:6/TB7',
+      start_date: '2025-01-02',
+      end_date: '2025-01-05',
+      published: true,
+    });
+  });
+
+  it('falls back categoryName → ageCategoryCode and nulls optional fields on a bare event', () => {
+    expect(eventRow({ eventId: 'e2', category: { ageCategoryCode: 'U16' } }, 't1', undefined, false)).toEqual({
+      event_id: 'e2',
+      tournament_id: 't1',
+      provider_id: null,
+      event_name: null,
+      event_type: null,
+      gender: null,
+      category_name: 'U16',
+      match_up_format: null,
+      start_date: null,
+      end_date: null,
+      published: false,
+    });
+  });
+});
 
 describe('tournamentRow', () => {
   it('reads city from tournamentContacts, falling back to record.city', () => {

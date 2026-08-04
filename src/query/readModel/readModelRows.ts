@@ -6,6 +6,7 @@ import {
   ReadModelCompetitorRow,
   ReadModelMatchUpRow,
   ReadModelEntryRow,
+  ReadModelEventRow,
   ReadModelVenueRow,
 } from '@Types/readModelTypes';
 
@@ -37,6 +38,36 @@ export function tournamentRow(record: any): ReadModelTournamentRow {
     start_date: record?.startDate ?? null,
     end_date: record?.endDate ?? null,
     city: record?.tournamentContacts?.[0]?.city ?? record?.city ?? null,
+  };
+}
+
+// ── events ──────────────────────────────────────────────────────────────────────
+
+/**
+ * One row per event. `providerId` and the event-level `published` flag are passed
+ * in (resolved by the caller from the record's parentOrganisation + the event's
+ * PUBLISH.STATUS) so this builder stays pure — mirroring `matchUpResultRow`. The
+ * category falls back categoryName → ageCategoryCode; TEAM events commonly have no
+ * `matchUpFormat` (it lives in the tieFormat) → `match_up_format` resolves to null.
+ */
+export function eventRow(
+  event: any,
+  tournamentId: string,
+  providerId: string | undefined,
+  published: boolean,
+): ReadModelEventRow {
+  return {
+    event_id: event?.eventId,
+    tournament_id: tournamentId,
+    provider_id: providerId ?? null,
+    event_name: event?.eventName ?? null,
+    event_type: event?.eventType ?? null,
+    gender: event?.gender ?? null,
+    category_name: event?.category?.categoryName ?? event?.category?.ageCategoryCode ?? null,
+    match_up_format: event?.matchUpFormat ?? null,
+    start_date: event?.startDate ?? null,
+    end_date: event?.endDate ?? null,
+    published,
   };
 }
 
@@ -241,7 +272,11 @@ export function matchUpRowSet(matchUp: any, ctx: MatchUpRowContext): MatchUpRowS
  *  fields plus the NOT-NULL `tournament_id` so a first insert still satisfies the
  *  schema. Used by the incremental producer's MODIFY_MATCHUP path; `cast()` (full
  *  rebuild) does not need it. Publish/embargo/tie_value are left to a full flatten. */
-export function matchUpResultRow(matchUp: any, tournamentId: string, providerId: string | undefined): Record<string, any> {
+export function matchUpResultRow(
+  matchUp: any,
+  tournamentId: string,
+  providerId: string | undefined,
+): Record<string, any> {
   return {
     match_up_id: matchUp?.matchUpId,
     tournament_id: tournamentId,

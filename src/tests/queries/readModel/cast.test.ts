@@ -24,6 +24,18 @@ describe('cast — singles (STANDARD)', () => {
     expect(rows!.tournaments[0].end_date).toEqual('2025-01-07');
   });
 
+  it('projects one events row per event with attributes + a published flag', () => {
+    const { rows } = cast({ tournamentRecord });
+    expect(rows!.events).toHaveLength(1);
+    const event = rows!.events[0];
+    expect(event.event_name).toEqual('Singles');
+    expect(event.event_type).toEqual('SINGLES');
+    expect(event.tournament_id).toEqual('t1');
+    expect(typeof event.published).toEqual('boolean');
+    // event_id joins back to the match_ups' event_id
+    expect(rows!.match_ups.every((m) => m.event_id === event.event_id)).toBe(true);
+  });
+
   it('flattens every matchUp at STANDARD level, one competitor per assigned side', () => {
     const { rows } = cast({ tournamentRecord });
     expect(rows!.match_ups.length).toBeGreaterThan(0);

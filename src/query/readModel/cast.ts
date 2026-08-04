@@ -1,4 +1,4 @@
-import { entryRows, matchUpRowSet, tournamentRow, venueRow, MatchUpRowContext } from './readModelRows';
+import { entryRows, eventRow, matchUpRowSet, tournamentRow, venueRow, MatchUpRowContext } from './readModelRows';
 import { getEventPublishStatus } from '@Query/event/getEventPublishStatus';
 import { allTournamentMatchUps } from '@Query/matchUps/getAllTournamentMatchUps';
 import { resolveMatchUpPublishState } from './readModelPublish';
@@ -70,10 +70,17 @@ export function cast(params?: CastArgs): { error?: ErrorType; success?: boolean;
 
   const placedVenues = (tournamentRecord.venues ?? []).filter((venue: any) => venue?.venueId);
 
+  // one row per event; `published` = the event carries a PUBLISH.STATUS.PUBLIC object
+  // (the same map used for the per-matchUp publish cascade above).
+  const events = (tournamentRecord.events ?? [])
+    .filter((event: any) => event?.eventId)
+    .map((event: any) => eventRow(event, tournamentId, providerId, !!publishStatusByEventId.get(event.eventId)));
+
   return {
     ...SUCCESS,
     rows: {
       tournaments: [tournamentRow(tournamentRecord)],
+      events,
       match_ups,
       match_up_competitors,
       entries: entryRows(tournamentRecord),
