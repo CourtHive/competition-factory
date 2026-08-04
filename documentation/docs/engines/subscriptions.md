@@ -41,6 +41,7 @@ const subscriptions = {
 
   [topicConstants.MODIFY_POSITION_ASSIGNMENTS]: (payload) => {},
   [topicConstants.MODIFY_SEED_ASSIGNMENTS]: (payload) => {},
+  [topicConstants.MODIFY_SCHEDULING_PROFILE]: (payload) => {},
 
   [topicConstants.ADD_DRAW_DEFINITION]: (payload) => {},
   [topicConstants.MODIFY_DRAW_DEFINITION]: (payload) => {},
@@ -81,6 +82,7 @@ This is a tested property. A conformance harness (`src/tests/mutations/notificat
 | `ADD_EVENT` / `MODIFY_EVENT` / `DELETE_EVENT` | an event is added, its attributes change (name, dates, gender, category, `matchUpFormat`, `tieFormat`, flight profile), or it is deleted |
 | `MODIFY_EVENT_ENTRIES`                        | an event's entries change — added, removed, status change, or re-ordered                                                                 |
 | `MODIFY_DRAW_ENTRIES`                         | a draw's entries change                                                                                                                  |
+| `MODIFY_SCHEDULING_PROFILE`                   | the scheduling plan (`scheduling.profile`) changes — previously a silent extension mutation                                              |
 
 These topics are additive; existing subscribers are unaffected.
 

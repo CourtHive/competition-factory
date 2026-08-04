@@ -100,6 +100,8 @@ const { rows } = engine.cast();
 //   entries,                // participation != matchUps (alternates, withdrawn, un-drawn)
 //   venues,                 // facility_id defaults to venue_id
 //   courts,                 // one row/court: name, indoorOutdoor, surface, lat/long
+//   order_of_play,          // order-of-play PUBLICATION state (published + dates/events + embargo)
+//   scheduling_profile,     // the admin scheduling PLAN, one row/date/venue/round-order
 //   tournament_venues,      // tournament ↔ venue links
 // }
 ```
@@ -125,6 +127,8 @@ import { readModel } from 'tods-competition-factory';
 | `eventRow` / `seedRow`                     | Row builders for the `events` table (one row/event) and the `seeds` table (one row per participant-holding seed assignment; caller supplies the structure context via `SeedRowContext`).                      |
 | `drawRow` / `structureRow`                 | Row builders for the `draws` table (one row/draw) and the `structures` table (one row per top-level structure; context via `StructureRowContext`). Nested round-robin group sub-structures are not projected. |
 | `courtRow`                                 | Row builder for the `courts` table (one row per court of a placed venue; context via `CourtRowContext`).                                                                                                      |
+| `orderOfPlayRow` / `schedulingProfileRows` | Row builders for the `order_of_play` table (the publication state — distinct from per-matchUp scheduling) and the `scheduling_profile` table (the flattened admin plan, one row per date/venue/round).        |
+| `getTournamentPublishStatus`               | Tournament-level publish status (its `orderOfPlay` drives the order_of_play row); the tournament analog of `getEventPublishStatus`.                                                                           |
 | `matchUpRowSet`                            | Builds the `match_ups` / `match_up_competitors` rows for a matchUp set (STANDARD / TIE container / nested RUBBER). Typed by `MatchUpRowContext` → `MatchUpRowSet`.                                            |
 | `matchUpResultRow` / `rubberTieValue`      | Result-row projection and the RUBBER `tie_value` weighting rule.                                                                                                                                              |
 | `resolveMatchUpPublishState`               | Resolves a matchUp's `published` intent + effective `embargo` release timestamp via the draw → stage → structure cascade (returns `MatchUpPublishState`).                                                     |
