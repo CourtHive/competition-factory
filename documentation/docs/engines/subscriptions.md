@@ -26,16 +26,16 @@ const subscriptions = {
   [topicConstants.UNPUBLISH_EVENT]: (payload) => {},
 
   [topicConstants.PUBLISH_EVENT_SEEDING]: (payload) => {},
-  [topicConstants.UNPUBLISH_EVENT_SEEDING]: (payload) => (),
+  [topicConstants.UNPUBLISH_EVENT_SEEDING]: (payload) => {},
 
   [topicConstants.PUBLISH_ORDER_OF_PLAY]: (payload) => {},
-  [topicConstants.UNPUBLISH_ORDER_OF_PLAY]: (payload) => (),
+  [topicConstants.UNPUBLISH_ORDER_OF_PLAY]: (payload) => {},
 
   [topicConstants.ADD_VENUE]: (payload) => {},
   [topicConstants.MODIFY_VENUE]: (payload) => {},
   [topicConstants.DELETE_VENUE]: (payload) => {},
 
-  [topicConstants.add_participants]: (payload) => {},
+  [topicConstants.ADD_PARTICIPANTS]: (payload) => {},
   [topicConstants.MODIFY_PARTICIPANTS]: (payload) => {},
   [topicConstants.DELETE_PARTICIPANTS]: (payload) => {},
 
@@ -46,8 +46,15 @@ const subscriptions = {
   [topicConstants.MODIFY_DRAW_DEFINITION]: (payload) => {},
   [topicConstants.DELETED_DRAW_IDS]: (payload) => {},
 
+  [topicConstants.ADD_EVENT]: (payload) => {},
+  [topicConstants.MODIFY_EVENT]: (payload) => {},
+  [topicConstants.DELETE_EVENT]: (payload) => {},
+
+  [topicConstants.MODIFY_EVENT_ENTRIES]: (payload) => {},
+  [topicConstants.MODIFY_DRAW_ENTRIES]: (payload) => {},
+
   [topicConstants.MODIFY_TOURNAMENT_DETAIL]: (payload) => {},
-  [topicContants.ADD_SCALE_ITEMS]: (payload) => {},
+  [topicConstants.ADD_SCALE_ITEMS]: (payload) => {},
   [topicConstants.DATA_ISSUE]: (payload) => {},
 
   // to notify of all mutations { methods, params }
@@ -62,6 +69,20 @@ import { globalState: { setSubcriptions } } from 'tods-competition-factory';
 
 setSubscriptions(subscriptions);
 ```
+
+## Completeness guarantee
+
+The notice stream is a **complete, faithful change-log of the tournament record**: every mutation that changes the record dispatches at least one notice whose topic covers the changed entity. This makes it safe to keep an external cache, read-model, or reactive UI in sync from notices alone — a table driven by the notice deltas equals a direct re-query of the record.
+
+This is a tested property. A conformance harness (`src/tests/mutations/notifications/noticeConformance`) runs each mutation, structurally diffs the record before/after, and asserts every changed entity is covered by an emitted notice — failing CI if a mutation ever goes silent. Recent topic additions extend that coverage to events and entries:
+
+| Topic                                         | Fires when                                                                                                                               |
+| --------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------- |
+| `ADD_EVENT` / `MODIFY_EVENT` / `DELETE_EVENT` | an event is added, its attributes change (name, dates, gender, category, `matchUpFormat`, `tieFormat`, flight profile), or it is deleted |
+| `MODIFY_EVENT_ENTRIES`                        | an event's entries change — added, removed, status change, or re-ordered                                                                 |
+| `MODIFY_DRAW_ENTRIES`                         | a draw's entries change                                                                                                                  |
+
+These topics are additive; existing subscribers are unaffected.
 
 ## Typed event bus (`engine.on / once / off / waitFor`)
 
