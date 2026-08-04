@@ -243,7 +243,9 @@ describe('cast — order of play + scheduling profile', () => {
   tournamentRecord.timeItems = [
     {
       itemType: 'PUBLISH.STATUS',
-      itemValue: { PUBLIC: { orderOfPlay: { published: true, scheduledDates: ['2025-01-05'] } } },
+      itemValue: {
+        PUBLIC: { orderOfPlay: { published: true, scheduledDates: ['2025-01-05'] }, participants: { published: true } },
+      },
     },
   ];
   (tournamentRecord as any).scheduling = {
@@ -269,11 +271,16 @@ describe('cast — order of play + scheduling profile', () => {
       draw_id: drawId,
       winner_finishing_position_range: '1-4',
     });
+    // participant-list publish state + the aggregate tournaments.published flag
+    expect(rows!.participant_publish).toEqual([{ tournament_id: 'tOoP', published: true, embargo: null }]);
+    expect(rows!.tournaments[0].published).toBe(true);
   });
 
-  it('emits no order_of_play row when the schedule is not published', () => {
+  it('emits no order_of_play / participant_publish rows and unpublished tournament when nothing is published', () => {
     const { rows } = cast({ tournamentRecord: { ...tournamentRecord, timeItems: [] } as any });
     expect(rows!.order_of_play).toEqual([]);
+    expect(rows!.participant_publish).toEqual([]);
+    expect(rows!.tournaments[0].published).toBe(false);
   });
 });
 

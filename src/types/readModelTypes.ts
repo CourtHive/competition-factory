@@ -18,6 +18,13 @@ export interface ReadModelTournamentRow {
   start_date: string | null;
   end_date: string | null;
   city: string | null;
+  published: boolean; // aggregate: order-of-play OR participants published
+}
+
+export interface ReadModelParticipantPublishRow {
+  tournament_id: string;
+  published: boolean;
+  embargo: string | null;
 }
 
 export interface ReadModelMatchUpRow {
@@ -172,6 +179,7 @@ export interface ReadModelRows {
   courts: ReadModelCourtRow[];
   order_of_play: ReadModelOrderOfPlayRow[];
   scheduling_profile: ReadModelSchedulingProfileRow[];
+  participant_publish: ReadModelParticipantPublishRow[];
   match_ups: ReadModelMatchUpRow[];
   match_up_competitors: ReadModelCompetitorRow[];
   entries: ReadModelEntryRow[];

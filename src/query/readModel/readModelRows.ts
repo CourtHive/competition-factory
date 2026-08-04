@@ -1,3 +1,4 @@
+import { getTournamentPublishStatus } from '@Query/tournaments/getTournamentPublishStatus';
 import { LINK_UNRESOLVED, resolvePersonLink } from './personRule';
 
 // types
@@ -10,6 +11,7 @@ import {
   ReadModelEntryRow,
   ReadModelEventRow,
   ReadModelOrderOfPlayRow,
+  ReadModelParticipantPublishRow,
   ReadModelSchedulingProfileRow,
   ReadModelSeedRow,
   ReadModelStructureRow,
@@ -37,6 +39,9 @@ export interface MatchUpRowSet {
 // ── tournaments ────────────────────────────────────────────────────────────────
 
 export function tournamentRow(record: any): ReadModelTournamentRow {
+  // aggregate publish flag: the tournament is "published" when its order of play OR
+  // its participant list is published (the same condition that drives UNPUBLISH_TOURNAMENT).
+  const pubStatus: any = getTournamentPublishStatus({ tournamentRecord: record });
   return {
     tournament_id: record?.tournamentId,
     tournament_name: record?.tournamentName ?? null,
@@ -44,6 +49,19 @@ export function tournamentRow(record: any): ReadModelTournamentRow {
     start_date: record?.startDate ?? null,
     end_date: record?.endDate ?? null,
     city: record?.tournamentContacts?.[0]?.city ?? record?.city ?? null,
+    published: !!(pubStatus?.orderOfPlay?.published || pubStatus?.participants?.published),
+  };
+}
+
+// ── participant-list publication state ──────────────────────────────────────────
+
+/** The tournament-level participant-list PUBLICATION state (from the PUBLIC
+ *  `participants` publish status): published + optional embargo. */
+export function participantPublishRow(tournamentId: string, participants: any): ReadModelParticipantPublishRow {
+  return {
+    tournament_id: tournamentId,
+    published: !!participants?.published,
+    embargo: participants?.embargo ?? null,
   };
 }
 

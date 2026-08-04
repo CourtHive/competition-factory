@@ -5,6 +5,7 @@ import {
   eventRow,
   matchUpRowSet,
   orderOfPlayRow,
+  participantPublishRow,
   rubberTieValue,
   schedulingProfileRows,
   seedRow,
@@ -74,7 +75,7 @@ describe('tournamentRow', () => {
     expect(tournamentRow({ tournamentId: 't', city: 'Prague' }).city).toEqual('Prague');
   });
 
-  it('nulls every optional field on a bare record', () => {
+  it('nulls every optional field on a bare record and is unpublished', () => {
     const row = tournamentRow({ tournamentId: 't' });
     expect(row).toEqual({
       tournament_id: 't',
@@ -83,6 +84,35 @@ describe('tournamentRow', () => {
       start_date: null,
       end_date: null,
       city: null,
+      published: false,
+    });
+  });
+
+  it('is published when the order of play or participants are published', () => {
+    const oop = tournamentRow({
+      tournamentId: 't',
+      timeItems: [{ itemType: 'PUBLISH.STATUS', itemValue: { PUBLIC: { orderOfPlay: { published: true } } } }],
+    });
+    expect(oop.published).toBe(true);
+    const parts = tournamentRow({
+      tournamentId: 't',
+      timeItems: [{ itemType: 'PUBLISH.STATUS', itemValue: { PUBLIC: { participants: { published: true } } } }],
+    });
+    expect(parts.published).toBe(true);
+  });
+});
+
+describe('participantPublishRow', () => {
+  it('maps the participant-list publish state (published + embargo)', () => {
+    expect(participantPublishRow('t1', { published: true, embargo: '2025-01-04T00:00' })).toEqual({
+      tournament_id: 't1',
+      published: true,
+      embargo: '2025-01-04T00:00',
+    });
+    expect(participantPublishRow('t1', { published: true })).toEqual({
+      tournament_id: 't1',
+      published: true,
+      embargo: null,
     });
   });
 });

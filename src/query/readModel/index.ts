@@ -20,6 +20,7 @@ export {
   courtRow,
   orderOfPlayRow,
   schedulingProfileRows,
+  participantPublishRow,
   entryRows,
   matchUpRowSet,
   matchUpResultRow,
@@ -40,4 +41,5 @@ export type {
   ReadModelCourtRow,
   ReadModelOrderOfPlayRow,
   ReadModelSchedulingProfileRow,
+  ReadModelParticipantPublishRow,
 } from '@Types/readModelTypes';

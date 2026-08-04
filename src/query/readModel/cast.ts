@@ -5,6 +5,7 @@ import {
   eventRow,
   matchUpRowSet,
   orderOfPlayRow,
+  participantPublishRow,
   schedulingProfileRows,
   seedRow,
   structureRow,
@@ -102,10 +103,15 @@ export function cast(params?: CastArgs): { error?: ErrorType; success?: boolean;
     }
   }
 
-  // order-of-play PUBLICATION state (one row when the schedule is published)
-  const orderOfPlay = getTournamentPublishStatus({ tournamentRecord })?.orderOfPlay;
+  // order-of-play + participant-list PUBLICATION state (one row each when published)
+  const publishStatus: any = getTournamentPublishStatus({ tournamentRecord });
+  const orderOfPlay = publishStatus?.orderOfPlay;
   const order_of_play: ReadModelRows['order_of_play'] = orderOfPlay?.published
     ? [orderOfPlayRow(tournamentId, orderOfPlay)]
+    : [];
+  const participants = publishStatus?.participants;
+  const participant_publish: ReadModelRows['participant_publish'] = participants?.published
+    ? [participantPublishRow(tournamentId, participants)]
     : [];
 
   // scheduling PLAN (first-class `scheduling.profile` in NATIVE mode, else the
@@ -127,6 +133,7 @@ export function cast(params?: CastArgs): { error?: ErrorType; success?: boolean;
       courts,
       order_of_play,
       scheduling_profile,
+      participant_publish,
       match_ups,
       match_up_competitors,
       entries: entryRows(tournamentRecord),
