@@ -1,13 +1,16 @@
 import {
+  drawRow,
   entryRows,
   eventRow,
   matchUpRowSet,
   rubberTieValue,
   seedRow,
+  structureRow,
   tournamentRow,
   venueRow,
   MatchUpRowContext,
   SeedRowContext,
+  StructureRowContext,
 } from '@Query/readModel/readModelRows';
 import { expect, it, describe } from 'vitest';
 
@@ -77,6 +80,81 @@ describe('tournamentRow', () => {
       start_date: null,
       end_date: null,
       city: null,
+    });
+  });
+});
+
+describe('drawRow', () => {
+  it('maps draw attributes, nulling optional ones on a bare draw', () => {
+    expect(
+      drawRow(
+        { drawId: 'd1', drawName: 'Main', drawType: 'SINGLE_ELIMINATION', matchUpFormat: 'SET3-S:6/TB7' },
+        't1',
+        'e1',
+        'PROV',
+      ),
+    ).toEqual({
+      draw_id: 'd1',
+      tournament_id: 't1',
+      event_id: 'e1',
+      provider_id: 'PROV',
+      draw_name: 'Main',
+      draw_type: 'SINGLE_ELIMINATION',
+      match_up_format: 'SET3-S:6/TB7',
+    });
+    expect(drawRow({ drawId: 'd2' }, 't1', null, undefined)).toMatchObject({
+      draw_id: 'd2',
+      event_id: null,
+      provider_id: null,
+      draw_name: null,
+      draw_type: null,
+      match_up_format: null,
+    });
+  });
+});
+
+describe('structureRow', () => {
+  const sctx: StructureRowContext = { tournamentId: 't1', eventId: 'e1', drawId: 'd1', providerId: 'PROV' };
+
+  it('maps structure attributes with its draw context', () => {
+    expect(
+      structureRow(
+        {
+          structureId: 's1',
+          structureName: 'Main',
+          stage: 'MAIN',
+          stageSequence: 1,
+          structureType: 'ITEM',
+          structureOrder: 1,
+          matchUpFormat: 'SET3-S:6/TB7',
+        },
+        sctx,
+      ),
+    ).toEqual({
+      structure_id: 's1',
+      draw_id: 'd1',
+      tournament_id: 't1',
+      event_id: 'e1',
+      provider_id: 'PROV',
+      structure_name: 'Main',
+      stage: 'MAIN',
+      stage_sequence: 1,
+      structure_type: 'ITEM',
+      structure_order: 1,
+      match_up_format: 'SET3-S:6/TB7',
+    });
+  });
+
+  it('nulls optional fields on a bare structure', () => {
+    expect(structureRow({ structureId: 's2' }, sctx)).toMatchObject({
+      structure_id: 's2',
+      draw_id: 'd1',
+      structure_name: null,
+      stage: null,
+      stage_sequence: null,
+      structure_type: null,
+      structure_order: null,
+      match_up_format: null,
     });
   });
 });

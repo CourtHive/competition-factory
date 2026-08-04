@@ -81,6 +81,30 @@ export interface ReadModelEventRow {
   published: boolean;
 }
 
+export interface ReadModelDrawRow {
+  draw_id: string;
+  tournament_id: string;
+  event_id: string | null;
+  provider_id: string | null;
+  draw_name: string | null;
+  draw_type: string | null;
+  match_up_format: string | null;
+}
+
+export interface ReadModelStructureRow {
+  structure_id: string;
+  draw_id: string;
+  tournament_id: string;
+  event_id: string | null;
+  provider_id: string | null;
+  structure_name: string | null;
+  stage: string | null;
+  stage_sequence: number | null;
+  structure_type: string | null;
+  structure_order: number | null;
+  match_up_format: string | null;
+}
+
 export interface ReadModelSeedRow {
   structure_id: string;
   seed_number: number;
@@ -108,6 +132,8 @@ export interface ReadModelTournamentVenueRow {
 export interface ReadModelRows {
   tournaments: ReadModelTournamentRow[];
   events: ReadModelEventRow[];
+  draws: ReadModelDrawRow[];
+  structures: ReadModelStructureRow[];
   seeds: ReadModelSeedRow[];
   match_ups: ReadModelMatchUpRow[];
   match_up_competitors: ReadModelCompetitorRow[];

@@ -1,8 +1,10 @@
 import {
+  drawRow,
   entryRows,
   eventRow,
   matchUpRowSet,
   seedRow,
+  structureRow,
   tournamentRow,
   venueRow,
   MatchUpRowContext,
@@ -84,31 +86,15 @@ export function cast(params?: CastArgs): { error?: ErrorType; success?: boolean;
     .filter((event: any) => event?.eventId)
     .map((event: any) => eventRow(event, tournamentId, providerId, !!publishStatusByEventId.get(event.eventId)));
 
-  // one row per participant-holding seed assignment, per structure.
-  const seeds: ReadModelRows['seeds'] = [];
-  for (const event of tournamentRecord.events ?? []) {
-    for (const draw of event.drawDefinitions ?? []) {
-      for (const structure of draw.structures ?? []) {
-        for (const assignment of structure.seedAssignments ?? []) {
-          if (!assignment?.participantId) continue;
-          const ctx = {
-            tournamentId,
-            eventId: event.eventId,
-            drawId: draw.drawId,
-            structureId: structure.structureId,
-            providerId,
-          };
-          seeds.push(seedRow(assignment, ctx));
-        }
-      }
-    }
-  }
+  const { draws, structures, seeds } = buildDrawEntityRows(tournamentRecord, tournamentId, providerId);
 
   return {
     ...SUCCESS,
     rows: {
       tournaments: [tournamentRow(tournamentRecord)],
       events,
+      draws,
+      structures,
       seeds,
       match_ups,
       match_up_competitors,
@@ -117,4 +103,33 @@ export function cast(params?: CastArgs): { error?: ErrorType; success?: boolean;
       tournament_venues: placedVenues.map((venue: any) => ({ tournament_id: tournamentId, venue_id: venue.venueId })),
     },
   };
+}
+
+// One row per draw, per top-level structure, and per participant-holding seed
+// assignment (walked together since they share the events → draws → structures
+// nesting). Extracted from cast() to keep its cognitive complexity within bounds.
+function buildDrawEntityRows(
+  tournamentRecord: any,
+  tournamentId: string,
+  providerId: string | undefined,
+): { draws: ReadModelRows['draws']; structures: ReadModelRows['structures']; seeds: ReadModelRows['seeds'] } {
+  const draws: ReadModelRows['draws'] = [];
+  const structures: ReadModelRows['structures'] = [];
+  const seeds: ReadModelRows['seeds'] = [];
+  for (const event of tournamentRecord.events ?? []) {
+    for (const draw of event.drawDefinitions ?? []) {
+      if (!draw?.drawId) continue;
+      draws.push(drawRow(draw, tournamentId, event.eventId, providerId));
+      for (const structure of draw.structures ?? []) {
+        if (!structure?.structureId) continue;
+        const sctx = { tournamentId, eventId: event.eventId, drawId: draw.drawId, providerId };
+        structures.push(structureRow(structure, sctx));
+        for (const assignment of structure.seedAssignments ?? []) {
+          if (!assignment?.participantId) continue;
+          seeds.push(seedRow(assignment, { ...sctx, structureId: structure.structureId }));
+        }
+      }
+    }
+  }
+  return { draws, structures, seeds };
 }

@@ -12,6 +12,8 @@ export type { PersonLink } from './personRule';
 export {
   tournamentRow,
   eventRow,
+  drawRow,
+  structureRow,
   seedRow,
   venueRow,
   entryRows,
@@ -19,5 +21,10 @@ export {
   matchUpResultRow,
   rubberTieValue,
 } from './readModelRows';
-export type { MatchUpRowContext, MatchUpRowSet, SeedRowContext } from './readModelRows';
-export type { ReadModelEventRow, ReadModelSeedRow } from '@Types/readModelTypes';
+export type { MatchUpRowContext, MatchUpRowSet, SeedRowContext, StructureRowContext } from './readModelRows';
+export type {
+  ReadModelEventRow,
+  ReadModelSeedRow,
+  ReadModelDrawRow,
+  ReadModelStructureRow,
+} from '@Types/readModelTypes';

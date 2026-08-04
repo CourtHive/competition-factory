@@ -35,6 +35,8 @@ describe('cast governor/engine exposure', () => {
       readModel.matchUpResultRow,
       readModel.tournamentRow,
       readModel.eventRow,
+      readModel.drawRow,
+      readModel.structureRow,
       readModel.seedRow,
       readModel.venueRow,
       readModel.entryRows,

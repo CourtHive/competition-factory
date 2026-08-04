@@ -231,6 +231,29 @@ describe('cast — published flag (visibility, not omission)', () => {
   });
 });
 
+describe('cast — draws + structures', () => {
+  const { tournamentRecord } = mocksEngine.generateTournamentRecord({
+    tournamentAttributes: { tournamentId: 'tD' },
+    drawProfiles: [{ drawSize: 8, drawName: 'Main Draw', eventName: 'Singles' }],
+    nonRandom: 1,
+  });
+
+  it('emits one draws row per draw and one structures row per top-level structure', () => {
+    const { rows } = cast({ tournamentRecord });
+    expect(rows!.draws).toHaveLength(1);
+    expect(rows!.draws[0]).toMatchObject({ tournament_id: 'tD', draw_name: 'Main Draw' });
+    expect(rows!.draws[0].draw_type).toBeTruthy();
+
+    expect(rows!.structures.length).toBeGreaterThan(0);
+    const drawId = rows!.draws[0].draw_id;
+    expect(rows!.structures.every((s) => s.draw_id === drawId)).toBe(true);
+    // a MAIN structure exists and its structure_id joins back to the match_ups
+    const main = rows!.structures.find((s) => s.stage === 'MAIN');
+    expect(main).toBeTruthy();
+    expect(rows!.match_ups.some((m) => m.structure_id === main!.structure_id)).toBe(true);
+  });
+});
+
 describe('cast — seeds', () => {
   const { tournamentRecord } = mocksEngine.generateTournamentRecord({
     tournamentAttributes: { tournamentId: 'tS' },

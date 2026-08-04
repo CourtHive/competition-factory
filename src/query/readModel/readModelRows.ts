@@ -5,9 +5,11 @@ import {
   ReadModelTournamentRow,
   ReadModelCompetitorRow,
   ReadModelMatchUpRow,
+  ReadModelDrawRow,
   ReadModelEntryRow,
   ReadModelEventRow,
   ReadModelSeedRow,
+  ReadModelStructureRow,
   ReadModelVenueRow,
 } from '@Types/readModelTypes';
 
@@ -69,6 +71,54 @@ export function eventRow(
     start_date: event?.startDate ?? null,
     end_date: event?.endDate ?? null,
     published,
+  };
+}
+
+// ── draws + structures ──────────────────────────────────────────────────────────
+
+/** One row per drawDefinition. */
+export function drawRow(
+  draw: any,
+  tournamentId: string,
+  eventId: string | null,
+  providerId: string | undefined,
+): ReadModelDrawRow {
+  return {
+    draw_id: draw?.drawId,
+    tournament_id: tournamentId,
+    event_id: eventId ?? null,
+    provider_id: providerId ?? null,
+    draw_name: draw?.drawName ?? null,
+    draw_type: draw?.drawType ?? null,
+    match_up_format: draw?.matchUpFormat ?? null,
+  };
+}
+
+export interface StructureRowContext {
+  tournamentId: string;
+  eventId: string | null;
+  drawId: string;
+  providerId: string | undefined;
+}
+
+/**
+ * One row per TOP-LEVEL structure of a draw. Nested sub-structures (round-robin
+ * groups) are not projected as their own rows — a known limitation shared with the
+ * seeds table; playoff/qualifying structures are top-level siblings and ARE covered.
+ */
+export function structureRow(structure: any, ctx: StructureRowContext): ReadModelStructureRow {
+  return {
+    structure_id: structure?.structureId,
+    draw_id: ctx.drawId,
+    tournament_id: ctx.tournamentId,
+    event_id: ctx.eventId ?? null,
+    provider_id: ctx.providerId ?? null,
+    structure_name: structure?.structureName ?? null,
+    stage: structure?.stage ?? null,
+    stage_sequence: structure?.stageSequence ?? null,
+    structure_type: structure?.structureType ?? null,
+    structure_order: structure?.structureOrder ?? null,
+    match_up_format: structure?.matchUpFormat ?? null,
   };
 }
 
