@@ -175,7 +175,17 @@ describe('structureRow', () => {
       structure_type: 'ITEM',
       structure_order: 1,
       match_up_format: 'SET3-S:6/TB7',
+      parent_structure_id: null,
     });
+  });
+
+  it('carries parent_structure_id for a nested round-robin group', () => {
+    const row = structureRow(
+      { structureId: 'g1', structureName: 'Group 1', structureType: 'ITEM' },
+      { ...sctx, parentStructureId: 'container-1' },
+    );
+    expect(row.structure_id).toBe('g1');
+    expect(row.parent_structure_id).toBe('container-1');
   });
 
   it('nulls optional fields on a bare structure', () => {

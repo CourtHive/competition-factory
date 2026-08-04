@@ -120,12 +120,14 @@ export interface StructureRowContext {
   eventId: string | null;
   drawId: string;
   providerId: string | undefined;
+  // the owning CONTAINER structure when this is a nested round-robin group; omitted for top-level.
+  parentStructureId?: string | null;
 }
 
 /**
- * One row per TOP-LEVEL structure of a draw. Nested sub-structures (round-robin
- * groups) are not projected as their own rows — a known limitation shared with the
- * seeds table; playoff/qualifying structures are top-level siblings and ARE covered.
+ * One row per structure of a draw — top-level structures AND their nested
+ * round-robin group sub-structures (each carries `parent_structure_id` = its
+ * CONTAINER, so a matchUp's `structure_id` always resolves to a structures row).
  */
 export function structureRow(structure: any, ctx: StructureRowContext): ReadModelStructureRow {
   return {
@@ -140,6 +142,7 @@ export function structureRow(structure: any, ctx: StructureRowContext): ReadMode
     structure_type: structure?.structureType ?? null,
     structure_order: structure?.structureOrder ?? null,
     match_up_format: structure?.matchUpFormat ?? null,
+    parent_structure_id: ctx.parentStructureId ?? null,
   };
 }
 

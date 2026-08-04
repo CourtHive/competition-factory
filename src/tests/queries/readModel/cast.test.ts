@@ -356,3 +356,29 @@ describe('cast — guard', () => {
     expect(result.error).toEqual(MISSING_TOURNAMENT_RECORD);
   });
 });
+
+describe('cast — round-robin nested group structures', () => {
+  it('projects each group sub-structure so every matchUp structure_id resolves (no orphans)', () => {
+    const { tournamentRecord } = mocksEngine.generateTournamentRecord({
+      drawProfiles: [{ drawSize: 8, drawType: 'ROUND_ROBIN', eventName: 'RR' }],
+      nonRandom: 1,
+    });
+    const { rows } = cast({ tournamentRecord });
+    const structureIds = new Set(rows!.structures.map((s: any) => s.structure_id));
+    const matchUpStructureIds = [...new Set(rows!.match_ups.map((s: any) => s.structure_id))];
+
+    // every distinct matchUp structure_id resolves to a structures row (the join fix).
+    expect(matchUpStructureIds.length).toBeGreaterThan(0);
+    expect(matchUpStructureIds.every((id) => structureIds.has(id))).toBe(true);
+
+    // the container is projected AND at least two group ITEM rows point at it.
+    const container = rows!.structures.find((s: any) => s.structure_type === 'CONTAINER');
+    const groups = rows!.structures.filter((s: any) => s.parent_structure_id === container?.structure_id);
+    expect(container).toBeDefined();
+    expect(groups.length).toBeGreaterThanOrEqual(2);
+    // the group rows are exactly the structures the matchUps reference.
+    expect(groups.every((g: any) => matchUpStructureIds.includes(g.structure_id))).toBe(true);
+    // a top-level structure has a null parent.
+    expect(container!.parent_structure_id).toBeNull();
+  });
+});

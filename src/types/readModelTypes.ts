@@ -110,6 +110,9 @@ export interface ReadModelStructureRow {
   structure_type: string | null;
   structure_order: number | null;
   match_up_format: string | null;
+  // the parent (CONTAINER) structure for a nested round-robin group; null for a
+  // top-level structure. Lets a consumer relate a group ITEM to its container.
+  parent_structure_id: string | null;
 }
 
 export interface ReadModelOrderOfPlayRow {

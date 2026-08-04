@@ -147,6 +147,28 @@ export function cast(params?: CastArgs): { error?: ErrorType; success?: boolean;
 // One row per draw, per top-level structure, and per participant-holding seed
 // assignment (walked together since they share the events → draws → structures
 // nesting). Extracted from cast() to keep its cognitive complexity within bounds.
+// Walk a structure list (and its nested round-robin group sub-structures)
+// depth-first, emitting a structures row + seed rows for each. `parentStructureId`
+// is the owning CONTAINER for a nested group (null at the top level) so a matchUp's
+// `structure_id` — which points at the GROUP, not the container — always resolves.
+function collectStructures(
+  structureList: any[],
+  baseCtx: { tournamentId: string; eventId: string; drawId: string; providerId: string | undefined },
+  parentStructureId: string | null,
+  structures: ReadModelRows['structures'],
+  seeds: ReadModelRows['seeds'],
+): void {
+  for (const structure of structureList ?? []) {
+    if (!structure?.structureId) continue;
+    structures.push(structureRow(structure, { ...baseCtx, parentStructureId }));
+    for (const assignment of structure.seedAssignments ?? []) {
+      if (!assignment?.participantId) continue;
+      seeds.push(seedRow(assignment, { ...baseCtx, structureId: structure.structureId }));
+    }
+    collectStructures(structure.structures, baseCtx, structure.structureId, structures, seeds);
+  }
+}
+
 function buildDrawEntityRows(
   tournamentRecord: any,
   tournamentId: string,
@@ -159,15 +181,8 @@ function buildDrawEntityRows(
     for (const draw of event.drawDefinitions ?? []) {
       if (!draw?.drawId) continue;
       draws.push(drawRow(draw, tournamentId, event.eventId, providerId));
-      for (const structure of draw.structures ?? []) {
-        if (!structure?.structureId) continue;
-        const sctx = { tournamentId, eventId: event.eventId, drawId: draw.drawId, providerId };
-        structures.push(structureRow(structure, sctx));
-        for (const assignment of structure.seedAssignments ?? []) {
-          if (!assignment?.participantId) continue;
-          seeds.push(seedRow(assignment, { ...sctx, structureId: structure.structureId }));
-        }
-      }
+      const baseCtx = { tournamentId, eventId: event.eventId, drawId: draw.drawId, providerId };
+      collectStructures(draw.structures, baseCtx, null, structures, seeds);
     }
   }
   return { draws, structures, seeds };
