@@ -81,6 +81,17 @@ export interface ReadModelEventRow {
   published: boolean;
 }
 
+export interface ReadModelSeedRow {
+  structure_id: string;
+  seed_number: number;
+  tournament_id: string;
+  event_id: string | null;
+  draw_id: string | null;
+  seed_value: string | null; // display value; may be a range e.g. "3-4"
+  participant_id: string;
+  provider_id: string | null;
+}
+
 export interface ReadModelVenueRow {
   venue_id: string;
   venue_name: string | null;
@@ -97,6 +108,7 @@ export interface ReadModelTournamentVenueRow {
 export interface ReadModelRows {
   tournaments: ReadModelTournamentRow[];
   events: ReadModelEventRow[];
+  seeds: ReadModelSeedRow[];
   match_ups: ReadModelMatchUpRow[];
   match_up_competitors: ReadModelCompetitorRow[];
   entries: ReadModelEntryRow[];

@@ -12,11 +12,12 @@ export type { PersonLink } from './personRule';
 export {
   tournamentRow,
   eventRow,
+  seedRow,
   venueRow,
   entryRows,
   matchUpRowSet,
   matchUpResultRow,
   rubberTieValue,
 } from './readModelRows';
-export type { MatchUpRowContext, MatchUpRowSet } from './readModelRows';
-export type { ReadModelEventRow } from '@Types/readModelTypes';
+export type { MatchUpRowContext, MatchUpRowSet, SeedRowContext } from './readModelRows';
+export type { ReadModelEventRow, ReadModelSeedRow } from '@Types/readModelTypes';

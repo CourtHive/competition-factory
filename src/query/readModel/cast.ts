@@ -1,4 +1,12 @@
-import { entryRows, eventRow, matchUpRowSet, tournamentRow, venueRow, MatchUpRowContext } from './readModelRows';
+import {
+  entryRows,
+  eventRow,
+  matchUpRowSet,
+  seedRow,
+  tournamentRow,
+  venueRow,
+  MatchUpRowContext,
+} from './readModelRows';
 import { getEventPublishStatus } from '@Query/event/getEventPublishStatus';
 import { allTournamentMatchUps } from '@Query/matchUps/getAllTournamentMatchUps';
 import { resolveMatchUpPublishState } from './readModelPublish';
@@ -76,11 +84,32 @@ export function cast(params?: CastArgs): { error?: ErrorType; success?: boolean;
     .filter((event: any) => event?.eventId)
     .map((event: any) => eventRow(event, tournamentId, providerId, !!publishStatusByEventId.get(event.eventId)));
 
+  // one row per participant-holding seed assignment, per structure.
+  const seeds: ReadModelRows['seeds'] = [];
+  for (const event of tournamentRecord.events ?? []) {
+    for (const draw of event.drawDefinitions ?? []) {
+      for (const structure of draw.structures ?? []) {
+        for (const assignment of structure.seedAssignments ?? []) {
+          if (!assignment?.participantId) continue;
+          const ctx = {
+            tournamentId,
+            eventId: event.eventId,
+            drawId: draw.drawId,
+            structureId: structure.structureId,
+            providerId,
+          };
+          seeds.push(seedRow(assignment, ctx));
+        }
+      }
+    }
+  }
+
   return {
     ...SUCCESS,
     rows: {
       tournaments: [tournamentRow(tournamentRecord)],
       events,
+      seeds,
       match_ups,
       match_up_competitors,
       entries: entryRows(tournamentRecord),

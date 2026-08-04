@@ -3,9 +3,11 @@ import {
   eventRow,
   matchUpRowSet,
   rubberTieValue,
+  seedRow,
   tournamentRow,
   venueRow,
   MatchUpRowContext,
+  SeedRowContext,
 } from '@Query/readModel/readModelRows';
 import { expect, it, describe } from 'vitest';
 
@@ -76,6 +78,34 @@ describe('tournamentRow', () => {
       end_date: null,
       city: null,
     });
+  });
+});
+
+describe('seedRow', () => {
+  const seedCtx: SeedRowContext = {
+    tournamentId: 't1',
+    eventId: 'e1',
+    drawId: 'd1',
+    structureId: 's1',
+    providerId: 'PROV',
+  };
+
+  it('maps a seed assignment with its structure context', () => {
+    expect(seedRow({ seedNumber: 1, participantId: 'p1', seedValue: 1 }, seedCtx)).toEqual({
+      structure_id: 's1',
+      seed_number: 1,
+      tournament_id: 't1',
+      event_id: 'e1',
+      draw_id: 'd1',
+      seed_value: '1',
+      participant_id: 'p1',
+      provider_id: 'PROV',
+    });
+  });
+
+  it('stringifies a range seedValue and nulls a missing one', () => {
+    expect(seedRow({ seedNumber: 3, participantId: 'p3', seedValue: '3-4' }, seedCtx).seed_value).toEqual('3-4');
+    expect(seedRow({ seedNumber: 5, participantId: 'p5' }, seedCtx).seed_value).toEqual(null);
   });
 });
 

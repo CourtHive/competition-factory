@@ -231,6 +231,24 @@ describe('cast — published flag (visibility, not omission)', () => {
   });
 });
 
+describe('cast — seeds', () => {
+  const { tournamentRecord } = mocksEngine.generateTournamentRecord({
+    tournamentAttributes: { tournamentId: 'tS' },
+    drawProfiles: [{ drawSize: 8, seedsCount: 4, eventName: 'Seeded' }],
+    nonRandom: 1,
+  });
+
+  it('emits one seeds row per participant-holding seed assignment', () => {
+    const { rows } = cast({ tournamentRecord });
+    expect(rows!.seeds.length).toBeGreaterThan(0);
+    expect(rows!.seeds.every((s) => s.participant_id && typeof s.seed_number === 'number')).toBe(true);
+    expect(rows!.seeds.every((s) => s.tournament_id === 'tS')).toBe(true);
+    // each seed row's structure joins back to a match_ups structure_id
+    const structureIds = new Set(rows!.match_ups.map((m) => m.structure_id));
+    expect(rows!.seeds.every((s) => structureIds.has(s.structure_id))).toBe(true);
+  });
+});
+
 describe('cast — guard', () => {
   it('errors (no throw) when tournamentRecord is missing', () => {
     const result = cast({});

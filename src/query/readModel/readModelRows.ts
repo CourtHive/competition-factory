@@ -7,6 +7,7 @@ import {
   ReadModelMatchUpRow,
   ReadModelEntryRow,
   ReadModelEventRow,
+  ReadModelSeedRow,
   ReadModelVenueRow,
 } from '@Types/readModelTypes';
 
@@ -68,6 +69,35 @@ export function eventRow(
     start_date: event?.startDate ?? null,
     end_date: event?.endDate ?? null,
     published,
+  };
+}
+
+// ── seeds ─────────────────────────────────────────────────────────────────────
+
+export interface SeedRowContext {
+  tournamentId: string;
+  eventId: string | null;
+  drawId: string | null;
+  structureId: string;
+  providerId: string | undefined;
+}
+
+/**
+ * One row per seed ASSIGNMENT that has a participant. `seedValue` is a display
+ * value that may be a range ("3-4"), so it is stringified. Caller supplies the
+ * structure's event/draw/provider context (cast from its loop; the CFS producer
+ * from a structureId lookup) so the builder stays pure.
+ */
+export function seedRow(assignment: any, ctx: SeedRowContext): ReadModelSeedRow {
+  return {
+    structure_id: ctx.structureId,
+    seed_number: assignment?.seedNumber,
+    tournament_id: ctx.tournamentId,
+    event_id: ctx.eventId ?? null,
+    draw_id: ctx.drawId ?? null,
+    seed_value: assignment?.seedValue != null ? String(assignment.seedValue) : null,
+    participant_id: assignment?.participantId,
+    provider_id: ctx.providerId ?? null,
   };
 }
 
