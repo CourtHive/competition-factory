@@ -31,6 +31,12 @@ const subscriptions = {
   [topicConstants.PUBLISH_ORDER_OF_PLAY]: (payload) => {},
   [topicConstants.UNPUBLISH_ORDER_OF_PLAY]: (payload) => {},
 
+  [topicConstants.PUBLISH_PARTICIPANTS]: (payload) => {},
+  [topicConstants.UNPUBLISH_PARTICIPANTS]: (payload) => {},
+
+  // fires when neither the order of play nor the participant list is published
+  [topicConstants.UNPUBLISH_TOURNAMENT]: (payload) => {},
+
   [topicConstants.ADD_VENUE]: (payload) => {},
   [topicConstants.MODIFY_VENUE]: (payload) => {},
   [topicConstants.DELETE_VENUE]: (payload) => {},
