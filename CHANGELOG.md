@@ -1,5 +1,58 @@
 # Changelog
 
+## [6.15.0](https://github.com/CourtHive/competition-factory/compare/v6.14.1...v6.15.0) (2026-08-04)
+
+
+### Features
+
+* add courts table + courtRow builder to the read-model cast() ([e891cce](https://github.com/CourtHive/competition-factory/commit/e891ccec44c6bd34af131474625c0d965804c03c))
+* add draws + structures tables + row builders to the read-model cast() ([5c6e9ad](https://github.com/CourtHive/competition-factory/commit/5c6e9ad539438fb932071b251bf8c4a9431c3ba3))
+* add events table + eventRow builder to the read-model cast() ([1b8335c](https://github.com/CourtHive/competition-factory/commit/1b8335cd298add96d1af77f8a9ed24781f94eda1))
+* add MODIFY_EVENT / DELETE_EVENT topics and wire event mutations (notice gap C2) ([938714f](https://github.com/CourtHive/competition-factory/commit/938714f0d314019ff33544607afdd12f1028bd6e))
+* add order-of-play + scheduling-profile read-model tables (un-silence the profile) ([5108438](https://github.com/CourtHive/competition-factory/commit/5108438ca165b9a199b14505dd9b322dd0cc0a2e))
+* add participant-publish table + tournaments.published to the read-model cast() ([f261e8f](https://github.com/CourtHive/competition-factory/commit/f261e8f6d6c33d843db4e1142f45bb374eabe75e))
+* add seeds table + seedRow builder to the read-model cast() ([107f230](https://github.com/CourtHive/competition-factory/commit/107f230fed4893da2b139c2722e5a82889e3feed))
+* **read-model:** project nested round-robin group structures ([056e2eb](https://github.com/CourtHive/competition-factory/commit/056e2ebafff17bd4b77ad419b9af60361345deeb))
+* **read-model:** project nested round-robin group structures (fix orphaned structure_id join) ([2384bf9](https://github.com/CourtHive/competition-factory/commit/2384bf91c9b220de9c97c1445e773ca20a53950f))
+
+
+### Bug Fixes
+
+* cover silent draw-entry and flightProfile changes (Tier-2 batch 13) ([714a12f](https://github.com/CourtHive/competition-factory/commit/714a12fcccceeb9f8b3d9b0aa1b10e482cec5cca))
+* deliver draw-delete notices and scope topic-keyed deleteNotice ([56fc112](https://github.com/CourtHive/competition-factory/commit/56fc1122a4a07dd9f0fa0e7c47a0c23dd678e697))
+* dispatch draw notices for silent draw mutations (notice gap C1/C4) ([ac4b2ed](https://github.com/CourtHive/competition-factory/commit/ac4b2ed9b55095c60ce62037850e1d5a703caace))
+* dispatch MODIFY_DRAW_DEFINITION on renameStructures (notice gap C1) ([438f86f](https://github.com/CourtHive/competition-factory/commit/438f86fdf764fdb672343af850ad26d06c7ea060))
+* dispatch MODIFY_EVENT for silent event coercions (Tier-2 batch 10) ([70e19ba](https://github.com/CourtHive/competition-factory/commit/70e19bad6c1857015a82c8c540e2b3daa197d028))
+* dispatch MODIFY_EVENT when addDrawDefinition mutates flightProfile (Tier-2 batch 6) ([e3a6e64](https://github.com/CourtHive/competition-factory/commit/e3a6e642b82d32392e680ddb8688fe9c4f67586e))
+* dispatch MODIFY_EVENT when deleteDrawDefinitions prunes flightProfile (Tier-2 batch 7) ([d316491](https://github.com/CourtHive/competition-factory/commit/d31649103e14e090fd2014186e646958d1bcf96f))
+* dispatch MODIFY_EVENT when setMatchUpFormat sets event.matchUpFormat (Tier-2 batch 9) ([32e4261](https://github.com/CourtHive/competition-factory/commit/32e426130ad6b68f4ab1cdb1ebaeeb83b52f23d2))
+* dispatch MODIFY_EVENT_ENTRIES / MODIFY_DRAW_ENTRIES on entry mutations (notice gap C3) ([0309b3e](https://github.com/CourtHive/competition-factory/commit/0309b3eccf66d4c3674341a4c2e9facd0114c71f))
+* dispatch MODIFY_EVENT_ENTRIES for silent entries mutations (Tier-2 batch 11) ([6a4d45b](https://github.com/CourtHive/competition-factory/commit/6a4d45b010fdc1a1f7e06ad9b7f33e347d9485b7))
+* dispatch MODIFY_EVENT_ENTRIES when modifyEventEntries rebuilds entries (Tier-2 batch 12) ([f6eade7](https://github.com/CourtHive/competition-factory/commit/f6eade7fcbf48417270053aa3495ac0838b90ba9))
+* dispatch MODIFY_MATCHUP on setDelegatedOutcome (notice gap C1) ([64556de](https://github.com/CourtHive/competition-factory/commit/64556de1383b4f052ad8bfe693df8d0ef8112b91))
+* dispatch MODIFY_PARTICIPANTS on addParticipantTimeItem (notice gap WS-A) ([2e91ef9](https://github.com/CourtHive/competition-factory/commit/2e91ef9150d5a8e3a588addd77dd3ea978afabb4))
+* dispatch MODIFY_PARTICIPANTS on removeParticipantsScaleItems (notice gap WS-A) ([cd06fc0](https://github.com/CourtHive/competition-factory/commit/cd06fc0f522722cf7e414577652de7e222f2241e))
+* dispatch notices for silent event/flight mutations (notice gap C2 tail) ([fcb6765](https://github.com/CourtHive/competition-factory/commit/fcb6765206455cc2fe0c0456fb7d1330240a71a7))
+* dispatch participant/entries notices for silent mutations (notice gap WS-A) ([7fde954](https://github.com/CourtHive/competition-factory/commit/7fde95490c07bd85261aed8dbdd77a14e829ba28))
+* **events:** dispatch a modify-event notice from the standalone event-date setters ([ae15d3e](https://github.com/CourtHive/competition-factory/commit/ae15d3e4ca12961e20e883a85c934f1f239eaca4))
+* **events:** dispatch modify-event notice from standalone event-date setters ([e36aff2](https://github.com/CourtHive/competition-factory/commit/e36aff2ff838831d0a078a4eb87880b8d1eccf1b))
+* **read-model:** legacy drawIds publish shape ([#5](https://github.com/CourtHive/competition-factory/issues/5)) + shared scheduling-profile reader ([#6](https://github.com/CourtHive/competition-factory/issues/6)) ([cd58c84](https://github.com/CourtHive/competition-factory/commit/cd58c8402a7fdf73a832fab6c623dcb9f6d10478))
+* **read-model:** match_up_format + schedule_embargo columns, derive scheduled_date ([ee1c9ef](https://github.com/CourtHive/competition-factory/commit/ee1c9ef137243ad867dd958147a9310bc7074bcd))
+* **read-model:** match_up_format + schedule_embargo columns, derive scheduled_date ([#9](https://github.com/CourtHive/competition-factory/issues/9)/[#10](https://github.com/CourtHive/competition-factory/issues/10)/[#11](https://github.com/CourtHive/competition-factory/issues/11)) ([e2c440d](https://github.com/CourtHive/competition-factory/commit/e2c440d0fc9e57a7fd17a1439cf5c99c2e32fbe3))
+* **read-model:** max-of-levels embargo + roundLimit gating (disclosure fixes) ([3fdad01](https://github.com/CourtHive/competition-factory/commit/3fdad0104b6a5cf2dc195680695c1dc6be9b5f5c))
+* **read-model:** max-of-levels embargo + roundLimit gating in resolveMatchUpPublishState ([a815188](https://github.com/CourtHive/competition-factory/commit/a815188cd2a3939c1286fe36f82573d1b4ede83b))
+* **read-model:** resolve legacy drawIds publish shape + share the scheduling-profile reader ([017e33f](https://github.com/CourtHive/competition-factory/commit/017e33f7a32e5e1f554e23f995a2b20129e82776))
+
+
+### Documentation
+
+* add courts to the cast() read-model row set and readModel toolkit ([07999b4](https://github.com/CourtHive/competition-factory/commit/07999b47ebdf6a97a888dbd4201b9cd504d3ac98))
+* add draws + structures to the cast() read-model row set and readModel toolkit ([eb01132](https://github.com/CourtHive/competition-factory/commit/eb01132a0f5adb5f8a450c7fc720c657ad33f4a6))
+* add participant_publish + tournaments.published to the read-model row set ([2232929](https://github.com/CourtHive/competition-factory/commit/223292915c36365d0ee6f8dd4325945a02645b51))
+* add publish-participants + unpublish-tournament to the subscriptions example ([7fb2948](https://github.com/CourtHive/competition-factory/commit/7fb294884df6857726418c795aa09a6d12328f9d))
+* document MODIFY_SCHEDULING_PROFILE topic + order_of_play/scheduling_profile read-model tables ([d028573](https://github.com/CourtHive/competition-factory/commit/d0285737f72ab721599d0d5ef6de237e469e82e2))
+* document notice completeness, event/entry topics, and events/seeds read-model tables ([be5ba1a](https://github.com/CourtHive/competition-factory/commit/be5ba1a956ee816563006a46b9d60c650b069666))
+
 ## [6.14.1](https://github.com/CourtHive/competition-factory/compare/v6.14.0...v6.14.1) (2026-08-02)
 
 
