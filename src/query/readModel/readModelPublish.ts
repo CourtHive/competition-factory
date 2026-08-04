@@ -24,9 +24,13 @@ import { isISODateString } from '@Tools/dateTime';
 export interface MatchUpPublishState {
   published: boolean;
   embargo: string | null;
+  // round-level (scheduledRounds) embargo release: while active, getEventData redacts
+  // the round's placement (venue/court/time) though the matchUp itself stays visible.
+  // Stored so a consumer gates venue_id/court_id at read time (like `embargo`); NULL = none.
+  scheduleEmbargo: string | null;
 }
 
-const NOT_PUBLISHED: MatchUpPublishState = { published: false, embargo: null };
+const NOT_PUBLISHED: MatchUpPublishState = { published: false, embargo: null, scheduleEmbargo: null };
 
 function keyed(obj?: Record<string, any>): boolean {
   return !!obj && Object.keys(obj).length > 0;
@@ -75,6 +79,14 @@ function roundHidden(drawDetail: any, structureId?: string, roundNumber?: number
   return roundLimit != null && roundNumber > roundLimit;
 }
 
+// The round-level scheduledRounds embargo (structure → round), the finer gate that
+// redacts a round's placement while the matchUp stays visible. Only ISO strings constrain.
+function resolveScheduleEmbargo(drawDetail: any, structureId?: string, roundNumber?: number): string | null {
+  if (structureId == null || roundNumber == null) return null;
+  const embargo = drawDetail.structureDetails?.[structureId]?.scheduledRounds?.[roundNumber]?.embargo;
+  return typeof embargo === 'string' && isISODateString(embargo) ? embargo : null;
+}
+
 export function resolveMatchUpPublishState(
   status: any,
   drawId?: string,
@@ -89,10 +101,11 @@ export function resolveMatchUpPublishState(
     // per-draw detail). Mirror getDrawIsPublished's drawIds branch — a listed draw
     // is published, an unlisted one is not (so a stray event-level `published:true`
     // no longer over-discloses unlisted draws).
-    if (Array.isArray(status.drawIds)) return { published: !!drawId && status.drawIds.includes(drawId), embargo: null };
-    return { published: !!status.published, embargo: null }; // legacy event-level flag
+    if (Array.isArray(status.drawIds))
+      return { published: !!drawId && status.drawIds.includes(drawId), embargo: null, scheduleEmbargo: null };
+    return { published: !!status.published, embargo: null, scheduleEmbargo: null }; // legacy event-level flag
   }
-  if (!Object.keys(drawDetails).length) return { published: true, embargo: null }; // empty drawDetails → all published
+  if (!Object.keys(drawDetails).length) return { published: true, embargo: null, scheduleEmbargo: null }; // empty → all published
 
   const drawDetail = drawId ? drawDetails[drawId] : undefined;
   if (!drawDetail) return NOT_PUBLISHED; // draws enumerated, this one absent → not published
@@ -101,5 +114,6 @@ export function resolveMatchUpPublishState(
   return {
     published,
     embargo: resolveEmbargo(drawDetail, structureId, stage),
+    scheduleEmbargo: resolveScheduleEmbargo(drawDetail, structureId, roundNumber),
   };
 }

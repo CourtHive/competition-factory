@@ -46,9 +46,11 @@ export interface ReadModelMatchUpRow {
   winning_side: number | null;
   score_string: string | null; // winner-perspective
   tie_value: number | null; // rubber weight from the tieFormat (RUBBER rows); NULL otherwise
+  match_up_format: string | null; // per-matchUp scoring-format override; NULL = draw/structure default
   scheduled_date: string | null;
   published: boolean; // publish INTENT (embargo-independent) — resolved through the structure/stage/draw cascade
   embargo: string | null; // effective embargo release (ISO), draw>stage>structure precedence; NULL when none
+  schedule_embargo: string | null; // round-level (scheduledRounds) embargo release; gate venue_id/court_id on it at read time
 }
 
 export interface ReadModelCompetitorRow {
