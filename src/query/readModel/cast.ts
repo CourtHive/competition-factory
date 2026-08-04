@@ -72,14 +72,14 @@ export function cast(params?: CastArgs): { error?: ErrorType; success?: boolean;
     // parent in `matchUpRowSet`; processing it here too would double-project it.
     if (matchUp.collectionId) continue;
     const status = matchUp.eventId ? publishStatusByEventId.get(matchUp.eventId) : undefined;
-    const { published, embargo } = resolveMatchUpPublishState(
+    const { published, embargo, scheduleEmbargo } = resolveMatchUpPublishState(
       status,
       matchUp.drawId,
       matchUp.structureId,
       matchUp.stage,
       matchUp.roundNumber,
     );
-    const ctx: MatchUpRowContext = { tournamentId, providerId, published, embargo };
+    const ctx: MatchUpRowContext = { tournamentId, providerId, published, embargo, scheduleEmbargo };
     const { matchUpRows, competitorRows } = matchUpRowSet(matchUp, ctx);
     match_ups.push(...matchUpRows);
     match_up_competitors.push(...competitorRows);

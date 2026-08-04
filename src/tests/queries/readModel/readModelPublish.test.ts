@@ -8,34 +8,66 @@ const LATE = '2999-06-01T00:00:00.000Z';
 
 describe('resolveMatchUpPublishState', () => {
   it('is unpublished with no status', () => {
-    expect(resolveMatchUpPublishState(undefined, 'd1')).toEqual({ published: false, embargo: null });
+    expect(resolveMatchUpPublishState(undefined, 'd1')).toEqual({
+      published: false,
+      embargo: null,
+      scheduleEmbargo: null,
+    });
   });
 
   it('honors a legacy event-level published flag when drawDetails is absent', () => {
-    expect(resolveMatchUpPublishState({ published: true }, 'd1')).toEqual({ published: true, embargo: null });
-    expect(resolveMatchUpPublishState({ published: false }, 'd1')).toEqual({ published: false, embargo: null });
+    expect(resolveMatchUpPublishState({ published: true }, 'd1')).toEqual({
+      published: true,
+      embargo: null,
+      scheduleEmbargo: null,
+    });
+    expect(resolveMatchUpPublishState({ published: false }, 'd1')).toEqual({
+      published: false,
+      embargo: null,
+      scheduleEmbargo: null,
+    });
   });
 
   it('resolves the legacy v1 drawIds-array shape per-draw (mirrors getDrawIsPublished)', () => {
     // a listed draw is published; an unlisted one is not.
-    expect(resolveMatchUpPublishState({ drawIds: ['d1'] }, 'd1')).toEqual({ published: true, embargo: null });
-    expect(resolveMatchUpPublishState({ drawIds: ['d1'] }, 'd2')).toEqual({ published: false, embargo: null });
+    expect(resolveMatchUpPublishState({ drawIds: ['d1'] }, 'd1')).toEqual({
+      published: true,
+      embargo: null,
+      scheduleEmbargo: null,
+    });
+    expect(resolveMatchUpPublishState({ drawIds: ['d1'] }, 'd2')).toEqual({
+      published: false,
+      embargo: null,
+      scheduleEmbargo: null,
+    });
     // a stray event-level published:true must NOT over-disclose an unlisted draw.
     expect(resolveMatchUpPublishState({ published: true, drawIds: ['d1'] }, 'd2').published).toBe(false);
   });
 
   it('treats empty drawDetails as all-published', () => {
-    expect(resolveMatchUpPublishState({ drawDetails: {} }, 'd1')).toEqual({ published: true, embargo: null });
+    expect(resolveMatchUpPublishState({ drawDetails: {} }, 'd1')).toEqual({
+      published: true,
+      embargo: null,
+      scheduleEmbargo: null,
+    });
   });
 
   it('is unpublished when the draw is enumerated but absent', () => {
     const status = { drawDetails: { other: { publishingDetail: { published: true } } } };
-    expect(resolveMatchUpPublishState(status, 'd1')).toEqual({ published: false, embargo: null });
+    expect(resolveMatchUpPublishState(status, 'd1')).toEqual({
+      published: false,
+      embargo: null,
+      scheduleEmbargo: null,
+    });
   });
 
   it('publishes a listed draw and carries a draw-level embargo (intent stays true under embargo)', () => {
     const status = { drawDetails: { d1: { publishingDetail: { published: true, embargo: FUTURE } } } };
-    expect(resolveMatchUpPublishState(status, 'd1', 's1', 'MAIN')).toEqual({ published: true, embargo: FUTURE });
+    expect(resolveMatchUpPublishState(status, 'd1', 's1', 'MAIN')).toEqual({
+      published: true,
+      embargo: FUTURE,
+      scheduleEmbargo: null,
+    });
   });
 
   it('applies the structure gate: enumerated structures publish only the listed ones', () => {
@@ -112,6 +144,22 @@ describe('resolveMatchUpPublishState', () => {
       drawDetails: { d1: { publishingDetail: { published: true, embargo: 'not-a-date' } } },
     };
     expect(resolveMatchUpPublishState(nonIso, 'd1', 's1', 'MAIN').embargo).toEqual(null);
+  });
+
+  it('resolves the round-level scheduledRounds embargo into scheduleEmbargo (#9)', () => {
+    const status = {
+      drawDetails: {
+        d1: {
+          publishingDetail: { published: true },
+          structureDetails: { s1: { published: true, scheduledRounds: { 2: { embargo: LATE } } } },
+        },
+      },
+    };
+    // the embargoed round carries scheduleEmbargo; other rounds do not.
+    expect(resolveMatchUpPublishState(status, 'd1', 's1', 'MAIN', 2).scheduleEmbargo).toBe(LATE);
+    expect(resolveMatchUpPublishState(status, 'd1', 's1', 'MAIN', 1).scheduleEmbargo).toBeNull();
+    // the matchUp itself stays published (whole-matchUp visibility is unaffected).
+    expect(resolveMatchUpPublishState(status, 'd1', 's1', 'MAIN', 2).published).toBe(true);
   });
 
   it('hides rounds beyond a per-structure roundLimit (published:false; the #4 fix)', () => {

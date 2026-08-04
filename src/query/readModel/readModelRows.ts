@@ -31,6 +31,7 @@ export interface MatchUpRowContext {
   providerId: string | undefined;
   published: boolean;
   embargo: string | null;
+  scheduleEmbargo?: string | null;
 }
 
 export interface MatchUpRowSet {
@@ -306,7 +307,15 @@ function winnerPerspectiveScore(matchUp: any): string | null {
 }
 
 function matchUpScheduledDate(matchUp: any): string | null {
-  return matchUp?.schedule?.scheduledDate ?? matchUp?.scheduledDate ?? null;
+  const schedule = matchUp?.schedule;
+  if (schedule?.scheduledDate) return schedule.scheduledDate;
+  // A scheduledTime stored as a full ISO datetime carries the date; the inContext
+  // flatten derives scheduledDate from it. Mirror that so the slim MODIFY_MATCHUP
+  // result row (which sees the raw matchUp) does not clobber a flattened
+  // scheduled_date to null for a scheduledTime-only matchUp.
+  const isoDate = /^(\d{4}-\d{2}-\d{2})T/.exec(schedule?.scheduledTime ?? '');
+  if (isoDate) return isoDate[1];
+  return matchUp?.scheduledDate ?? null;
 }
 
 function matchUpVenueId(matchUp: any): string | null {
@@ -342,9 +351,13 @@ function matchUpRow(
     winning_side: matchUp?.winningSide ?? null,
     score_string: winnerPerspectiveScore(matchUp),
     tie_value: tieValue,
+    // a per-matchUp scoring-format override (e.g. a best-of-5 final in a best-of-3
+    // draw); null falls back to the draw/structure default at read time.
+    match_up_format: matchUp?.matchUpFormat ?? null,
     scheduled_date: matchUpScheduledDate(matchUp),
     published: ctx.published,
     embargo: ctx.embargo,
+    schedule_embargo: ctx.scheduleEmbargo ?? null,
   };
 }
 
