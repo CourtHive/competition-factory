@@ -2,6 +2,9 @@ import { resolveMatchUpPublishState } from '@Query/readModel/readModelPublish';
 import { expect, it, describe } from 'vitest';
 
 const FUTURE = '2999-01-01T00:00:00.000Z';
+const EARLY = '2020-01-01T00:00:00.000Z';
+const MID = '2050-01-01T00:00:00.000Z';
+const LATE = '2999-06-01T00:00:00.000Z';
 
 describe('resolveMatchUpPublishState', () => {
   it('is unpublished with no status', () => {
@@ -53,32 +56,72 @@ describe('resolveMatchUpPublishState', () => {
     expect(resolveMatchUpPublishState(status, 'd1', 's', 'QUALIFYING').published).toBe(false);
   });
 
-  it('resolves embargo with draw > stage > structure precedence', () => {
+  it('resolves the effective embargo as the LATEST (max) of applicable levels', () => {
     const structureOnly = {
-      drawDetails: { d1: { publishingDetail: { published: true }, structureDetails: { s1: { embargo: 'STRUCT' } } } },
+      drawDetails: { d1: { publishingDetail: { published: true }, structureDetails: { s1: { embargo: LATE } } } },
     };
-    expect(resolveMatchUpPublishState(structureOnly, 'd1', 's1', 'MAIN').embargo).toEqual('STRUCT');
+    expect(resolveMatchUpPublishState(structureOnly, 'd1', 's1', 'MAIN').embargo).toEqual(LATE);
 
-    const stageOverStructure = {
+    // a lifted/earlier DRAW embargo must NOT mask a later STRUCTURE embargo (the #3 fix):
+    // getEventData still hides while the structure embargo is active, so the read model
+    // must store the later release, not the higher-precedence one.
+    const earlyDrawLateStructure = {
       drawDetails: {
         d1: {
-          publishingDetail: { published: true },
-          stageDetails: { MAIN: { embargo: 'STAGE' } },
-          structureDetails: { s1: { embargo: 'STRUCT' } },
+          publishingDetail: { published: true, embargo: EARLY },
+          structureDetails: { s1: { embargo: LATE } },
         },
       },
     };
-    expect(resolveMatchUpPublishState(stageOverStructure, 'd1', 's1', 'MAIN').embargo).toEqual('STAGE');
+    expect(resolveMatchUpPublishState(earlyDrawLateStructure, 'd1', 's1', 'MAIN').embargo).toEqual(LATE);
 
-    const drawOverAll = {
+    // symmetric: a later DRAW embargo wins over an earlier structure embargo.
+    const lateDrawEarlyStructure = {
       drawDetails: {
         d1: {
-          publishingDetail: { published: true, embargo: 'DRAW' },
-          stageDetails: { MAIN: { embargo: 'STAGE' } },
-          structureDetails: { s1: { embargo: 'STRUCT' } },
+          publishingDetail: { published: true, embargo: LATE },
+          stageDetails: { MAIN: { embargo: MID } },
+          structureDetails: { s1: { embargo: EARLY } },
         },
       },
     };
-    expect(resolveMatchUpPublishState(drawOverAll, 'd1', 's1', 'MAIN').embargo).toEqual('DRAW');
+    expect(resolveMatchUpPublishState(lateDrawEarlyStructure, 'd1', 's1', 'MAIN').embargo).toEqual(LATE);
+
+    // the stage level participates in the max too.
+    const stageIsLatest = {
+      drawDetails: {
+        d1: {
+          publishingDetail: { published: true, embargo: EARLY },
+          stageDetails: { MAIN: { embargo: LATE } },
+          structureDetails: { s1: { embargo: MID } },
+        },
+      },
+    };
+    expect(resolveMatchUpPublishState(stageIsLatest, 'd1', 's1', 'MAIN').embargo).toEqual(LATE);
+
+    // non-ISO embargo values do not constrain (matches isEmbargoed) → null when none valid.
+    const nonIso = {
+      drawDetails: { d1: { publishingDetail: { published: true, embargo: 'not-a-date' } } },
+    };
+    expect(resolveMatchUpPublishState(nonIso, 'd1', 's1', 'MAIN').embargo).toEqual(null);
+  });
+
+  it('hides rounds beyond a per-structure roundLimit (published:false; the #4 fix)', () => {
+    const status = {
+      drawDetails: {
+        d1: { publishingDetail: { published: true }, structureDetails: { s1: { published: true, roundLimit: 1 } } },
+      },
+    };
+    // round 1 is within the limit → published; rounds beyond it are hidden.
+    expect(resolveMatchUpPublishState(status, 'd1', 's1', 'MAIN', 1).published).toBe(true);
+    expect(resolveMatchUpPublishState(status, 'd1', 's1', 'MAIN', 2).published).toBe(false);
+    expect(resolveMatchUpPublishState(status, 'd1', 's1', 'MAIN', 3).published).toBe(false);
+    // no roundNumber supplied → the roundLimit gate does not apply (back-compat).
+    expect(resolveMatchUpPublishState(status, 'd1', 's1', 'MAIN').published).toBe(true);
+    // no roundLimit set → all rounds published.
+    const noLimit = {
+      drawDetails: { d1: { publishingDetail: { published: true }, structureDetails: { s1: { published: true } } } },
+    };
+    expect(resolveMatchUpPublishState(noLimit, 'd1', 's1', 'MAIN', 9).published).toBe(true);
   });
 });

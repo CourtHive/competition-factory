@@ -7,13 +7,19 @@
  * boolean — a projection only refreshes on mutation, so a stored visibility flag
  * would go stale the instant an embargo lifts. Instead:
  *   - `published` = publish INTENT, resolved through the draw → stage → structure
- *     cascade (embargo-independent).
- *   - `embargo`   = the effective embargo release timestamp (ISO), with
- *     draw > stage > structure precedence (draw supersedes stage supersedes
- *     structure, per `DrawPublishingDetails`).
+ *     cascade (embargo-independent), further gated by a per-structure `roundLimit`
+ *     (rounds beyond the limit are hidden — a hard, time-independent hide).
+ *   - `embargo`   = the effective embargo release timestamp (ISO): the LATEST
+ *     (max) of every applicable level's embargo. `getEventData` hides a matchUp
+ *     while ANY of its applicable draw / stage / structure embargoes is active
+ *     (they are independent AND-gates), so it only becomes visible once the LAST
+ *     one lifts. A precedence "first-present" pick would let a lifted draw embargo
+ *     unmask a still-active structure embargo (premature disclosure).
  * Actual visibility is computed at READ time: `published AND (embargo IS NULL OR
  * embargo <= now())`.
  */
+
+import { isISODateString } from '@Tools/dateTime';
 
 export interface MatchUpPublishState {
   published: boolean;
@@ -43,12 +49,30 @@ function resolveIntent(drawDetail: any, structureId?: string, stage?: string): b
   return true;
 }
 
-// Effective embargo release, draw > stage > structure precedence.
+// Effective embargo release: the LATEST (max) of every applicable level's embargo.
+// A matchUp is hidden while ANY applicable draw/stage/structure embargo is active, so
+// it is visible only once the last one lifts — NOT the highest-precedence one (a lifted
+// draw embargo must not unmask a still-active structure embargo). Only ISO strings
+// constrain, matching `isEmbargoed`.
 function resolveEmbargo(drawDetail: any, structureId?: string, stage?: string): string | null {
-  const drawEmbargo = drawDetail.publishingDetail?.embargo;
-  const stageEmbargo = stage ? drawDetail.stageDetails?.[stage]?.embargo : undefined;
-  const structureEmbargo = structureId ? drawDetail.structureDetails?.[structureId]?.embargo : undefined;
-  return drawEmbargo ?? stageEmbargo ?? structureEmbargo ?? null;
+  const candidates = [
+    drawDetail.publishingDetail?.embargo,
+    stage ? drawDetail.stageDetails?.[stage]?.embargo : undefined,
+    structureId ? drawDetail.structureDetails?.[structureId]?.embargo : undefined,
+  ].filter((embargo): embargo is string => typeof embargo === 'string' && isISODateString(embargo));
+  if (!candidates.length) return null;
+  return candidates.reduce((latest, embargo) =>
+    new Date(embargo).getTime() > new Date(latest).getTime() ? embargo : latest,
+  );
+}
+
+// A per-structure `roundLimit` hides every round beyond the limit (getEventData drops
+// them from `roundMatchUps`); a hidden round is simply not published — a hard,
+// time-independent hide, distinct from an embargo release.
+function roundHidden(drawDetail: any, structureId?: string, roundNumber?: number): boolean {
+  if (structureId == null || roundNumber == null) return false;
+  const roundLimit = drawDetail.structureDetails?.[structureId]?.roundLimit;
+  return roundLimit != null && roundNumber > roundLimit;
 }
 
 export function resolveMatchUpPublishState(
@@ -56,6 +80,7 @@ export function resolveMatchUpPublishState(
   drawId?: string,
   structureId?: string,
   stage?: string,
+  roundNumber?: number,
 ): MatchUpPublishState {
   if (!status) return NOT_PUBLISHED; // no PUBLISH.STATUS → not published
   const { drawDetails } = status;
@@ -65,8 +90,9 @@ export function resolveMatchUpPublishState(
   const drawDetail = drawId ? drawDetails[drawId] : undefined;
   if (!drawDetail) return NOT_PUBLISHED; // draws enumerated, this one absent → not published
 
+  const published = resolveIntent(drawDetail, structureId, stage) && !roundHidden(drawDetail, structureId, roundNumber);
   return {
-    published: resolveIntent(drawDetail, structureId, stage),
+    published,
     embargo: resolveEmbargo(drawDetail, structureId, stage),
   };
 }
