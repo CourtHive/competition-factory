@@ -418,6 +418,7 @@ module.exports = {
       label: 'Data',
       items: [
         'constants',
+        'enums',
         'types/typedefs',
         {
           type: 'category',

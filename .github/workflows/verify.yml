@@ -117,6 +117,11 @@ jobs:
       - name: verify:runtime
         run: pnpm verify:runtime
 
+      # Reads dist/esm/index.mjs, so it must follow verify:build. Kept in the
+      # same position as the `verify` chain (runtime → shakeable → bundle-size).
+      - name: verify:shakeable
+        run: pnpm verify:shakeable
+
       - name: verify:bundle-size
         run: pnpm verify:bundle-size
 
