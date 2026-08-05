@@ -1,0 +1,150 @@
+---
+title: Enums
+---
+
+The Competition Factory exposes its controlled vocabularies twice: as **enums** (`MatchUpStatusEnum.COMPLETED`) and as
+**string constants** (`matchUpStatusConstants.COMPLETED`). Both surfaces carry identical values — that equivalence is
+machine-enforced, not a convention — so you can pick whichever reads better in your codebase and mix the two freely.
+
+Enums are exported as **runtime values**, so members can be referenced in executing code and not only in type positions.
+
+:::note
+Before `6.16.0` the enums were re-exported type-only. They could be used to type a value, but reading a member at
+runtime yielded `undefined`. If you are on an older version, use the string constants instead — or upgrade.
+:::
+
+## Importing
+
+```js
+import { MatchUpStatusEnum, EntryStatusEnum, DrawTypeEnum } from 'tods-competition-factory';
+
+MatchUpStatusEnum.COMPLETED; // 'COMPLETED'
+EntryStatusEnum.DIRECT_ACCEPTANCE; // 'DIRECT_ACCEPTANCE'
+DrawTypeEnum.SINGLE_ELIMINATION; // 'SINGLE_ELIMINATION'
+```
+
+The same named exports are available from both the ESM and CommonJS builds.
+
+In TypeScript an enum is both a value and a type, so a single import covers both uses:
+
+```ts
+import { MatchUpStatusEnum } from 'tods-competition-factory';
+
+function isFinished(status: MatchUpStatusEnum): boolean {
+  return status === MatchUpStatusEnum.COMPLETED;
+}
+```
+
+## Enums or constants?
+
+Neither surface is deprecated; they answer different needs.
+
+|                    | Enums                                             | Constants                                                    |
+| ------------------ | ------------------------------------------------- | ------------------------------------------------------------ |
+| Shape              | Namespaced object — `MatchUpStatusEnum.COMPLETED` | Bare exports — `COMPLETED`, grouped under `factoryConstants` |
+| Discoverability    | Members autocomplete off the enum name            | Requires knowing which constant group to import from         |
+| TypeScript         | Doubles as a type (`status: MatchUpStatusEnum`)   | Pair with the matching `*Union` type                         |
+| Semantic groupings | Members only                                      | Also exports curated sets (see below)                        |
+
+Reach for **enums** when you are writing code outside this repository — extending the factory, or building against it —
+where a namespaced, self-documenting reference is easier to read and to autocomplete than a bare imported string.
+
+Reach for **constants** when you want the curated groupings that have no enum equivalent, because they express a
+_rule_ rather than a vocabulary:
+
+```js
+import { matchUpStatusConstants } from 'tods-competition-factory';
+
+const { recoveryTimeRequiredMatchUpStatuses, completedMatchUpStatuses } = matchUpStatusConstants;
+```
+
+Those hand-authored sets live alongside the generated members in the same constant module, so one import gets you both.
+See [Constants](./constants.mdx) for the full catalogue.
+
+## Values are always strings
+
+Every enum is a string enum. There are no numeric members, so there is no reverse mapping (`MatchUpStatusEnum[0]` is
+`undefined`, not a member name) and values can be persisted, compared against raw TODS documents, or sent over the wire
+without translation.
+
+Member names and their values are identical in every enum but one: `SexEnum`'s abbreviated members carry short codes.
+
+```js
+SexEnum.FEMALE; // 'FEMALE'
+SexEnum.FEMALE_ABBR; // 'F'   ← name and value differ
+```
+
+That exception is the reason to reference `SexEnum.FEMALE_ABBR` rather than hard-coding `'F'`.
+
+## Union types stay type-only
+
+Each vocabulary also has a `*Union` type — `MatchUpStatusUnion`, `DrawTypeUnion`, `WeekdayUnion`. These are **types**,
+not runtime values, and importing one as a value will fail:
+
+```ts
+import type { MatchUpStatusUnion } from 'tods-competition-factory'; // ✅
+import { MatchUpStatusUnion } from 'tods-competition-factory'; // ❌ not a runtime export
+```
+
+Use a union when a field should accept any member value without forcing callers through the enum — which is how the
+factory's own types are written, so that plain TODS data (`{ matchUpStatus: 'COMPLETED' }`) type-checks without
+importing anything:
+
+```ts
+import type { MatchUpStatusUnion } from 'tods-competition-factory';
+
+interface Row {
+  matchUpStatus?: MatchUpStatusUnion; // accepts 'COMPLETED' *and* MatchUpStatusEnum.COMPLETED
+}
+```
+
+## Available enums
+
+Thirty vocabularies are exported. Member counts as of `6.17.0`:
+
+**MatchUps and scoring** — `MatchUpStatusEnum` (16), `WinReasonEnum` (8), `ShotTypeEnum` (3), `ShotDetailEnum` (10),
+`ShotOutcomeEnum` (4), `CourtPositionEnum` (5)
+
+**Draws and structures** — `DrawTypeEnum` (22), `StageTypeEnum` (5), `StructureTypeEnum` (2), `LinkTypeEnum` (3),
+`SeedingProfileEnum` (3), `PositioningProfileEnum` (6), `FinishingPositionEnum` (2)
+
+**Participants and entries** — `EntryStatusEnum` (14), `ParticipantTypeEnum` (4), `ParticipantRoleEnum` (17),
+`ParticipantStatusEnum` (2), `SexEnum` (6), `PlayingHandCodeEnum` (3), `PlayingDoubleHandCodeEnum` (4),
+`WheelchairClassEnum` (2), `PenaltyTypeEnum` (17)
+
+**Venues, scheduling and tournaments** — `SurfaceCategoryEnum` (5), `BallTypeEnum` (8), `WeekdayEnum` (7),
+`TournamentLevelEnum` (8), `LengthUnitEnum` (3)
+
+**Contact and reference data** — `CountryCodeEnum` (252), `AddressTypeEnum` (6), `OnlineResourceTypeEnum` (4)
+
+`DrawTypeEnum` is declared as a `const` object rather than a TypeScript `enum`, so its union is
+`keyof typeof DrawTypeEnum`. At the call site it behaves identically to the others.
+
+## How the two surfaces stay in sync
+
+You do not have to trust that the enums and constants agree — three guards enforce it, and both CI and
+`prepublishOnly` fail if they diverge, so a divergence cannot reach npm.
+
+For the four vocabularies with a dedicated 1:1 constant module — `MatchUpStatusEnum`, `EntryStatusEnum`,
+`SurfaceCategoryEnum`, `WeekdayEnum` — the constants are **generated from the enum**. The enum in
+`src/types/tournamentTypes.ts` is the single source of truth; `src/constants/*Values.ts` is generated output carrying an
+`AUTO-GENERATED — do not edit by hand` header, and its constant module re-exports it alongside the hand-authored
+groupings.
+
+Contributors adding or renaming a member:
+
+```bash
+pnpm gen:enum-constants    # regenerate the mirrors from the enums
+pnpm check:enum-constants  # drift guard — exits non-zero if a mirror is stale
+```
+
+The three enforcement layers, weakest to strongest:
+
+1. **Runtime** — `src/tests/constants/enumConstConformance.test.ts` asserts bidirectional key and value parity, plus
+   value coverage for the bucket modules (whose constant names deliberately differ from enum member names) and that
+   every exported enum is accounted for.
+2. **Compile-time** — `src/constants/enumConstConformance.ts` fails `tsc` naming the exact offending member. It is a
+   real source file rather than a test, because the factory's `check-types` config excludes `*.test.ts`; it is
+   type-only and tree-shaken out of the build.
+3. **Codegen** — the generated mirrors cannot drift by hand-edit, and `pnpm verify:generated` (first step of both the
+   `verify` chain and CI) re-runs the generators in `--check` mode.
