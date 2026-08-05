@@ -1,10 +1,10 @@
-export const ADMINISTRATION: any = 'ADMINISTRATION';
-export const CAPTAIN: any = 'CAPTAIN';
-export const COACH: any = 'COACH';
-export const COMPETITOR: any = 'COMPETITOR';
-export const DIRECTOR: any = 'DIRECTOR';
-export const HOSPITALITY: any = 'HOSPITALITY';
-export const MEDIA: any = 'MEDIA';
+export const ADMINISTRATION = 'ADMINISTRATION';
+export const CAPTAIN = 'CAPTAIN';
+export const COACH = 'COACH';
+export const COMPETITOR = 'COMPETITOR';
+export const DIRECTOR = 'DIRECTOR';
+export const HOSPITALITY = 'HOSPITALITY';
+export const MEDIA = 'MEDIA';
 // MEDICAL stays as the umbrella role for doctors / paramedics / on-call
 // medical staff. TRAINER and PHYSIO are deliberately separate constants
 // because team rosters distinguish them: a strength-and-conditioning
@@ -12,26 +12,26 @@ export const MEDIA: any = 'MEDIA';
 // soft-tissue work, and `MEDICAL` covers the qualified physician overseeing
 // the program. Collapsing them into MEDICAL would lose roster-level
 // information the import wizard already carries.
-export const MEDICAL: any = 'MEDICAL';
-export const OFFICIAL: any = 'OFFICIAL';
-export const OTHER: any = 'OTHER';
-export const PHYSIO: any = 'PHYSIO';
+export const MEDICAL = 'MEDICAL';
+export const OFFICIAL = 'OFFICIAL';
+export const OTHER = 'OTHER';
+export const PHYSIO = 'PHYSIO';
 // SCOREKEEPER: a participant approved to keep score for matchUps (crowd-scoring
 // nomination). Carried as a primary role for a dedicated scorekeeper, or (more
 // commonly) as a participantRoleResponsibility on a competitor/official who may
 // also keep score. Aligns with the existing INTENNSE "scorekeeper" workflow.
-export const SCOREKEEPER: any = 'SCOREKEEPER';
-export const SECURITY: any = 'SECURITY';
-export const STRINGER: any = 'STRINGER';
-export const SUPERVISOR: any = 'SUPERVISOR';
+export const SCOREKEEPER = 'SCOREKEEPER';
+export const SECURITY = 'SECURITY';
+export const STRINGER = 'STRINGER';
+export const SUPERVISOR = 'SUPERVISOR';
 // TIMEKEEPER: a participant responsible for the match clock. Becomes relevant
 // for timed matchUpFormats (e.g. INTENNSE bolt/serve clocks). Role-only today;
 // a per-matchUp assignMatchUpTimekeeper can mirror the scorekeeper mutation when
 // timed formats need a nominated timekeeper.
-export const TIMEKEEPER: any = 'TIMEKEEPER';
-export const TRAINER: any = 'TRAINER';
-export const TRANSPORT: any = 'TRANSPORT';
-export const VOLUNTEER: any = 'VOLUNTEER';
+export const TIMEKEEPER = 'TIMEKEEPER';
+export const TRAINER = 'TRAINER';
+export const TRANSPORT = 'TRANSPORT';
+export const VOLUNTEER = 'VOLUNTEER';
 
 export const participantRoles = {
   ADMINISTRATION,
