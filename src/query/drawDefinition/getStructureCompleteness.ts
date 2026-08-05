@@ -46,7 +46,9 @@ function positionOccupied(assignment: PositionAssignment): boolean {
 // that resolves without a winner (double walkover/default, cancelled, abandoned, dead rubber).
 function matchUpResolved(matchUp: MatchUp): boolean {
   return (
-    !!matchUp.winningSide || matchUp.matchUpStatus === BYE || completedMatchUpStatuses.includes(matchUp.matchUpStatus)
+    !!matchUp.winningSide ||
+    matchUp.matchUpStatus === BYE ||
+    (!!matchUp.matchUpStatus && completedMatchUpStatuses.includes(matchUp.matchUpStatus))
   );
 }
 

@@ -67,7 +67,7 @@ export function assignMatchUpSideParticipant({
   if (
     !participantId &&
     (matchUp?.score?.scoreStringSide1 ||
-      completedMatchUpStatuses.includes(matchUp?.matchUpStatus) ||
+      (matchUp?.matchUpStatus && completedMatchUpStatuses.includes(matchUp.matchUpStatus)) ||
       (matchUp?.matchUpStatus && [DOUBLE_WALKOVER, DOUBLE_DEFAULT].includes(matchUp.matchUpStatus)))
   )
     return {

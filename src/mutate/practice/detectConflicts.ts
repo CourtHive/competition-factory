@@ -93,7 +93,7 @@ function detectMatchUpConflicts({
 
   return matchUps
     .filter((matchUp) => {
-      if (completedMatchUpStatuses.includes(matchUp.matchUpStatus)) return false;
+      if (matchUp.matchUpStatus && completedMatchUpStatuses.includes(matchUp.matchUpStatus)) return false;
       if (matchUp.winningSide) return false;
       const { scheduledDate, scheduledTime } = matchUp.schedule ?? {};
       if (!scheduledDate || !scheduledTime) return false;
