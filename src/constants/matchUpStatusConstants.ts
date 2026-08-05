@@ -1,21 +1,26 @@
+import {
+  ABANDONED,
+  AWAITING_RESULT,
+  BYE,
+  CANCELLED,
+  COMPLETED,
+  DEAD_RUBBER,
+  DEFAULTED,
+  DOUBLE_DEFAULT,
+  DOUBLE_WALKOVER,
+  IN_PROGRESS,
+  INCOMPLETE,
+  NOT_PLAYED,
+  RETIRED,
+  SUSPENDED,
+  TO_BE_PLAYED,
+  WALKOVER,
+} from './matchUpStatusValues';
 import type { MatchUpStatusUnion } from '@Types/tournamentTypes';
 
-export const ABANDONED = 'ABANDONED';
-export const AWAITING_RESULT = 'AWAITING_RESULT';
-export const BYE = 'BYE';
-export const CANCELLED = 'CANCELLED';
-export const COMPLETED = 'COMPLETED';
-export const DEAD_RUBBER = 'DEAD_RUBBER';
-export const DEFAULTED = 'DEFAULTED';
-export const DOUBLE_DEFAULT = 'DOUBLE_DEFAULT';
-export const DOUBLE_WALKOVER = 'DOUBLE_WALKOVER';
-export const IN_PROGRESS = 'IN_PROGRESS';
-export const INCOMPLETE = 'INCOMPLETE';
-export const NOT_PLAYED = 'NOT_PLAYED';
-export const RETIRED = 'RETIRED';
-export const SUSPENDED = 'SUSPENDED';
-export const TO_BE_PLAYED = 'TO_BE_PLAYED';
-export const WALKOVER = 'WALKOVER';
+// primitive matchUp-status consts are generated from MatchUpStatusEnum (see
+// matchUpStatusValues.ts); the semantic groupings below are hand-authored.
+export * from './matchUpStatusValues';
 
 export const recoveryTimeRequiredMatchUpStatuses: MatchUpStatusUnion[] = [
   AWAITING_RESULT,
