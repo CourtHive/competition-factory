@@ -118,7 +118,7 @@ export function generateAdaptiveStructures(params: GenerateAdaptiveStructuresArg
     });
 
     if (childResult.structureId && structure.structureId) {
-      const link = {
+      const link: DrawLink = {
         linkType: LOSER,
         source: {
           roundNumber,

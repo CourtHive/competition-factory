@@ -46,15 +46,15 @@ export const ITEM = 'ITEM';
 export const CONTAINER = 'CONTAINER';
 
 // positioningProfile
-export const DRAW: any = 'DRAW';
-export const RANDOM: any = 'RANDOM';
-export const TOP_DOWN: any = 'TOP_DOWN';
-export const BOTTOM_UP: any = 'BOTTOM_UP';
+export const DRAW = 'DRAW';
+export const RANDOM = 'RANDOM';
+export const TOP_DOWN = 'TOP_DOWN';
+export const BOTTOM_UP = 'BOTTOM_UP';
 
 // Match and Link types
-export const POSITION: any = 'POSITION'; // participant advances based on their finishing position
-export const WINNER: any = 'WINNER'; // participant advances based on winning a matchUp
-export const LOSER: any = 'LOSER'; // partticipant advances based on losing a matchUp
+export const POSITION = 'POSITION'; // participant advances based on their finishing position
+export const WINNER = 'WINNER'; // participant advances based on winning a matchUp
+export const LOSER = 'LOSER'; // partticipant advances based on losing a matchUp
 export const FIRST_MATCHUP = 'FIRST_MATCHUP'; // condition for valididty of link
 
 // draw types
