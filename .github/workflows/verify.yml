@@ -80,6 +80,16 @@ jobs:
 
       # In-CI verify minus the ecosystem sweep (siblings aren't here).
       # Order: cheap fail-fast → expensive checks last.
+      #
+      # verify:generated runs first: it re-runs the three code generators in
+      # --check mode, so drift between a hand-edited source enum/method and its
+      # generated mirror fails here with an explicit "run `pnpm gen:X`" message
+      # instead of surfacing later as an opaque conformance/type error. Note it
+      # cannot be left to `verify:build` — that invokes rollup directly, and the
+      # `prebuild` hook (which regenerates rather than checks) never fires.
+      - name: verify:generated
+        run: pnpm verify:generated
+
       - name: verify:types
         run: pnpm verify:types
 
