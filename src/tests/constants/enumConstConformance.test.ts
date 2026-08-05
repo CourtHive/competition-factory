@@ -27,6 +27,9 @@ import { describe, it, expect } from 'vitest';
  * Enums with NO const twin are enum-only (a single source — nothing to guard); they
  * are listed in ENUM_ONLY so the coverage is explicit and adding a new enum forces a
  * deliberate "mirror, bucket, or enum-only?" decision here.
+ *
+ * The COMPILE-TIME twin (Layer 2) lives in `src/constants/enumConstConformance.ts`
+ * (this test file is excluded from `check-types`, so type assertions here would be dead).
  */
 
 const stringEntries = (mod: Record<string, unknown>): Record<string, string> => {
