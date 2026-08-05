@@ -1,3 +1,5 @@
+import type { EntryStatusUnion } from '@Types/tournamentTypes';
+
 export const ALTERNATE = 'ALTERNATE';
 export const CONFIRMED = 'CONFIRMED';
 export const DIRECT_ACCEPTANCE = 'DIRECT_ACCEPTANCE';
@@ -13,16 +15,16 @@ export const UNPAIRED = 'UNPAIRED';
 export const WILDCARD = 'WILDCARD';
 export const WITHDRAWN = 'WITHDRAWN';
 
-export const EQUIVALENT_ACCEPTANCE_STATUSES: any = [
+export const EQUIVALENT_ACCEPTANCE_STATUSES: EntryStatusUnion[] = [
   CONFIRMED,
   DIRECT_ACCEPTANCE,
   JUNIOR_EXEMPT,
   ORGANISER_ACCEPTANCE,
   SPECIAL_EXEMPT,
 ];
-export const DRAW_SPECIFIC_STATUSES: any = [FEED_IN, LUCKY_LOSER, QUALIFIER];
+export const DRAW_SPECIFIC_STATUSES: EntryStatusUnion[] = [FEED_IN, LUCKY_LOSER, QUALIFIER];
 
-export const DIRECT_ENTRY_STATUSES: any = [
+export const DIRECT_ENTRY_STATUSES: EntryStatusUnion[] = [
   CONFIRMED,
   DIRECT_ACCEPTANCE,
   FEED_IN,
@@ -32,7 +34,7 @@ export const DIRECT_ENTRY_STATUSES: any = [
   WILDCARD,
 ];
 
-export const STRUCTURE_SELECTED_STATUSES: any = [
+export const STRUCTURE_SELECTED_STATUSES: EntryStatusUnion[] = [
   CONFIRMED,
   DIRECT_ACCEPTANCE,
   JUNIOR_EXEMPT,
@@ -43,7 +45,7 @@ export const STRUCTURE_SELECTED_STATUSES: any = [
   WILDCARD,
 ];
 
-export const VALID_ENTRY_STATUSES: any = [
+export const VALID_ENTRY_STATUSES: EntryStatusUnion[] = [
   ALTERNATE,
   CONFIRMED,
   DIRECT_ACCEPTANCE,
@@ -60,7 +62,7 @@ export const VALID_ENTRY_STATUSES: any = [
   WITHDRAWN,
 ];
 
-export const entryStatusConstants: any = {
+export const entryStatusConstants = {
   ALTERNATE,
   CONFIRMED,
   DIRECT_ACCEPTANCE,
