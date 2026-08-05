@@ -53,13 +53,15 @@ Reach for **constants** when you want the curated groupings that have no enum eq
 _rule_ rather than a vocabulary:
 
 ```js
-import { matchUpStatusConstants } from 'tods-competition-factory';
+import { completedMatchUpStatuses, recoveryTimeRequiredMatchUpStatuses } from 'tods-competition-factory';
 
-const { recoveryTimeRequiredMatchUpStatuses, completedMatchUpStatuses } = matchUpStatusConstants;
+completedMatchUpStatuses; // ['CANCELLED', 'ABANDONED', 'COMPLETED', 'DEAD_RUBBER', …]
 ```
 
-Those hand-authored sets live alongside the generated members in the same constant module, so one import gets you both.
-See [Constants](./constants.mdx) for the full catalogue.
+These curated sets are **top-level named exports**, also reachable as `factoryConstants.completedMatchUpStatuses`.
+They are deliberately _not_ members of the `matchUpStatusConstants` object, which mirrors the enum members and nothing
+else — so `matchUpStatusConstants.completedMatchUpStatuses` is `undefined`. See [Constants](./constants.mdx) for the
+full catalogue.
 
 ## Values are always strings
 
