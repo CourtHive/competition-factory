@@ -124,6 +124,45 @@ export * from './constants';
 // TYPES -----------------------------------------------------------------
 export type * from './types';
 
+// Enums are value-exported (runtime) IN ADDITION to the type-only `./types` surface
+// above, so consumers can reference members at runtime (e.g. `MatchUpStatusEnum.COMPLETED`),
+// not just type against them. These explicit named exports override the type-only star
+// re-export for the same names. They are kept in lock-step with the runtime string values
+// in `src/constants/*` by the enum/const conformance guard
+// (`src/tests/constants/enumConstConformance.test.ts`).
+export {
+  AddressTypeEnum,
+  BallTypeEnum,
+  CountryCodeEnum,
+  CourtPositionEnum,
+  DrawTypeEnum,
+  EntryStatusEnum,
+  FinishingPositionEnum,
+  LengthUnitEnum,
+  LinkTypeEnum,
+  MatchUpStatusEnum,
+  OnlineResourceTypeEnum,
+  ParticipantRoleEnum,
+  ParticipantStatusEnum,
+  ParticipantTypeEnum,
+  PenaltyTypeEnum,
+  PlayingDoubleHandCodeEnum,
+  PlayingHandCodeEnum,
+  PositioningProfileEnum,
+  SeedingProfileEnum,
+  SexEnum,
+  ShotDetailEnum,
+  ShotOutcomeEnum,
+  ShotTypeEnum,
+  StageTypeEnum,
+  StructureTypeEnum,
+  SurfaceCategoryEnum,
+  TournamentLevelEnum,
+  WeekdayEnum,
+  WheelchairClassEnum,
+  WinReasonEnum,
+} from './types/tournamentTypes';
+
 // Statistics types (top-level convenience re-exports)
 export type { StatObject, MatchStatistics, StatCounters, StatisticsOptions } from './query/scoring/statistics/types';
 export { toStatObjects } from './query/scoring/statistics/toStatObjects';
