@@ -96,8 +96,7 @@ export function getLuckyDrawRoundStatus({
   // (2 * next - current), instead of the implicit "odd matchUp count → 1 LL"
   // rule used by the default ceil-halving cascade.
   const customRoundProfile = findExtension({ element: structure, name: 'customRoundProfile' }).extension?.value as
-    | number[]
-    | undefined;
+    number[] | undefined;
 
   // Build lookup maps for resolving participants from drawPositions
   const positionAssignments = structure.positionAssignments ?? [];
@@ -121,7 +120,10 @@ export function getLuckyDrawRoundStatus({
     const profile = roundProfile[roundNumber];
     const roundMatchUps = matchUps.filter((m) => m.roundNumber === roundNumber);
     const completedCount = roundMatchUps.filter(
-      (m) => completedMatchUpStatuses.includes(m.matchUpStatus) || m.winningSide || m.matchUpStatus === BYE,
+      (m) =>
+        (m.matchUpStatus && completedMatchUpStatuses.includes(m.matchUpStatus)) ||
+        m.winningSide ||
+        m.matchUpStatus === BYE,
     ).length;
     const isComplete = completedCount === profile.matchUpsCount;
     const isFinalRound = profile.matchUpsCount === 1;

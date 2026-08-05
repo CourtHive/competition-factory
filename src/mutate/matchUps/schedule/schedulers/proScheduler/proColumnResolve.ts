@@ -106,7 +106,7 @@ export function proColumnResolve({ tournamentRecords, matchUps, scheduledDate, c
 
 function tierOf(matchUp: HydratedMatchUp): number {
   if (matchUp.winningSide) return 0;
-  if (ACTIVE_STATUSES.has(matchUp.matchUpStatus)) return 1;
+  if (matchUp.matchUpStatus && ACTIVE_STATUSES.has(matchUp.matchUpStatus)) return 1;
   return 2;
 }
 

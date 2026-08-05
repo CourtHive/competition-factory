@@ -225,7 +225,7 @@ export function getStructureInconsistencies(
     const winnerSide = sides.find((side) => side.sideNumber === winningSide);
     const loserSide = sides.find((side) => side.sideNumber === (winningSide === 1 ? 2 : 1));
     const exit = isExit(matchUpStatus);
-    const singleExit = exit && ![DOUBLE_WALKOVER, DOUBLE_DEFAULT].includes(matchUpStatus);
+    const singleExit = exit && (!matchUpStatus || ![DOUBLE_WALKOVER, DOUBLE_DEFAULT].includes(matchUpStatus));
     const base = { matchUpId, structureId: matchUp.structureId, winningSide };
 
     // WINNING_SIDE_WITHOUT_PARTICIPANT (non-exit only — pending exits may be empty)

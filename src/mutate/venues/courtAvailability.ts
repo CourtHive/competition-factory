@@ -72,7 +72,7 @@ export function modifyCourtAvailability({
     // already happened, not future commitments. Modifying court availability
     // should never be blocked by play that has already concluded.
     const matchUpsWithInvalidScheduling = courtMatchUps.filter((matchUp) => {
-      if (completedMatchUpStatuses.includes(matchUp.matchUpStatus)) return false;
+      if (matchUp.matchUpStatus && completedMatchUpStatuses.includes(matchUp.matchUpStatus)) return false;
       if (matchUp.winningSide) return false;
       const { scheduledDate, scheduledTime } = matchUp.schedule ?? {};
       if (!scheduledDate || !scheduledTime) return false;
