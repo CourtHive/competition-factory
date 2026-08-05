@@ -1,5 +1,13 @@
 # Changelog
 
+## [6.16.0](https://github.com/CourtHive/competition-factory/compare/v6.15.0...v6.16.0) (2026-08-05)
+
+
+### Features
+
+* **types:** value-export domain enums + enum/const conformance guard ([7d07cf1](https://github.com/CourtHive/competition-factory/commit/7d07cf18631a59960da421c85e2346a2855123bb))
+* **types:** value-export domain enums + enum/const conformance guard ([d2d780f](https://github.com/CourtHive/competition-factory/commit/d2d780f3e3793e2ccd3ed9b5ddc35567675f09c3))
+
 ## [6.15.0](https://github.com/CourtHive/competition-factory/compare/v6.14.1...v6.15.0) (2026-08-04)
 
 
