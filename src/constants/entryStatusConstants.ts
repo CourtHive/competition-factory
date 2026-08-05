@@ -1,19 +1,24 @@
+import {
+  ALTERNATE,
+  CONFIRMED,
+  DIRECT_ACCEPTANCE,
+  FEED_IN,
+  JUNIOR_EXEMPT,
+  LUCKY_LOSER,
+  ORGANISER_ACCEPTANCE,
+  QUALIFIER,
+  REGISTERED,
+  SPECIAL_EXEMPT,
+  UNGROUPED,
+  UNPAIRED,
+  WILDCARD,
+  WITHDRAWN,
+} from './entryStatusValues';
 import type { EntryStatusUnion } from '@Types/tournamentTypes';
 
-export const ALTERNATE = 'ALTERNATE';
-export const CONFIRMED = 'CONFIRMED';
-export const DIRECT_ACCEPTANCE = 'DIRECT_ACCEPTANCE';
-export const FEED_IN = 'FEED_IN';
-export const JUNIOR_EXEMPT = 'JUNIOR_EXEMPT';
-export const LUCKY_LOSER = 'LUCKY_LOSER';
-export const ORGANISER_ACCEPTANCE = 'ORGANISER_ACCEPTANCE';
-export const QUALIFIER = 'QUALIFIER';
-export const REGISTERED = 'REGISTERED';
-export const SPECIAL_EXEMPT = 'SPECIAL_EXEMPT';
-export const UNGROUPED = 'UNGROUPED';
-export const UNPAIRED = 'UNPAIRED';
-export const WILDCARD = 'WILDCARD';
-export const WITHDRAWN = 'WITHDRAWN';
+// primitive entry-status consts are generated from EntryStatusEnum (see
+// entryStatusValues.ts); the semantic groupings below are hand-authored.
+export * from './entryStatusValues';
 
 export const EQUIVALENT_ACCEPTANCE_STATUSES: EntryStatusUnion[] = [
   CONFIRMED,
