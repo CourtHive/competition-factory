@@ -1,5 +1,18 @@
 # Changelog
 
+## [6.17.0](https://github.com/CourtHive/competition-factory/compare/v6.16.0...v6.17.0) (2026-08-05)
+
+
+### Features
+
+* **constants:** codegen enum-mirror const values from the enums (single source / Layer 3) ([66cb37f](https://github.com/CourtHive/competition-factory/commit/66cb37f60b35a8d3384e5a649bd3bd05affd0342))
+* **constants:** codegen the enum-mirror const values from the enums (single source) ([0df5b8a](https://github.com/CourtHive/competition-factory/commit/0df5b8a5f6734ce7697fa5f364cfc03149c16a9e))
+
+
+### Documentation
+
+* document the runtime-exported enums; add missing verify:shakeable CI step ([e335a08](https://github.com/CourtHive/competition-factory/commit/e335a08f85ead572a4234582e210ba156a2ab982))
+
 ## [6.16.0](https://github.com/CourtHive/competition-factory/compare/v6.15.0...v6.16.0) (2026-08-05)
 
 
