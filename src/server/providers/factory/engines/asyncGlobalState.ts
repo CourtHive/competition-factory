@@ -1,4 +1,4 @@
-import { executionAsyncId, createHook } from 'node:async_hooks';
+import { AsyncLocalStorage } from 'node:async_hooks';
 import {
   CallListenerArgs,
   GetNoticesArgs,
@@ -12,31 +12,24 @@ import { INVALID_VALUES, MISSING_TOURNAMENT_RECORD, NOT_FOUND } from '@Constants
 import { SUCCESS } from '@Constants/resultConstants';
 
 /**
- * This code enables "global" state for each async execution context.
- * Creates instance state for each async execution context to support multiple concurrent requests.
- * Sample on this page: https://stackabuse.com/using-async-hooks-for-request-context-handling-in-node-js/
+ * Per-async-context "global" state, so concurrent requests each mutate their own
+ * factory engine state instead of sharing one.
+ *
+ * DECISION: AsyncLocalStorage, not `createHook` + `executionAsyncId()` + Map.
+ * WHY: the previous implementation keyed state by `executionAsyncId()` and relied on an
+ * `init` hook copying the parent's entry to each new async resource. That propagation is
+ * call-shape dependent — reproducible plain-Node harnesses using identical await shapes
+ * disagree: one isolates cleanly, another loses state after `await null` AND lets a second
+ * context read the first's state. A per-request boundary that holds in one call shape and
+ * silently leaks in another is the worst failure mode, because it passes tests and leaks in
+ * production. AsyncLocalStorage propagates deterministically across every await shape.
+ * See competition-factory#4564 / Mentat TASKS.md.
  */
 
-const asyncCtxStateMap = new Map();
+const asyncLocalStorage = new AsyncLocalStorage<ImplemtationGlobalStateTypes>();
 
-const asyncHook = createHook({
-  init: (asyncId, _, _triggerAsyncId) => {
-    if (asyncCtxStateMap.has(_triggerAsyncId)) {
-      asyncCtxStateMap.set(asyncId, asyncCtxStateMap.get(_triggerAsyncId));
-    }
-  },
-  destroy: (asyncId) => {
-    if (asyncCtxStateMap.has(asyncId)) {
-      asyncCtxStateMap.delete(asyncId);
-    }
-  },
-});
-
-asyncHook.enable();
-
-function createInstanceState() {
-  const asyncId = executionAsyncId();
-  const instanceState: ImplemtationGlobalStateTypes = {
+function newInstanceState(): ImplemtationGlobalStateTypes {
+  return {
     disableNotifications: false,
     tournamentId: undefined,
     tournamentRecords: {},
@@ -45,15 +38,44 @@ function createInstanceState() {
     notices: [],
     methods: {},
   };
-
-  asyncCtxStateMap.set(asyncId, instanceState);
 }
 
-function getInstanceState() {
-  const asyncTaskId = executionAsyncId();
-  const instanceState = asyncCtxStateMap.get(asyncTaskId);
+/**
+ * Run `fn` with a fresh instance state bound to it and every async context it spawns.
+ * PREFERRED entry point: the store is scoped to the callback, so it cannot outlive the
+ * request or bleed into a sibling. Wrap each request/mutation in this.
+ */
+function runWithInstanceState<T>(fn: () => T): T {
+  return asyncLocalStorage.run(newInstanceState(), fn);
+}
 
-  if (!instanceState) throw new Error(`Can not get instance state for async task ${asyncTaskId}`);
+/**
+ * Bind a fresh instance state to the CURRENT execution context and its descendants.
+ * Back-compat shim for callers that seed and then continue inline rather than inside a
+ * callback. Prefer `runWithInstanceState` — `enterWith` has no scope end, so the store
+ * persists for the remainder of the surrounding context.
+ */
+function createInstanceState() {
+  asyncLocalStorage.enterWith(newInstanceState());
+}
+
+/**
+ * DECISION: throw rather than fall back to a shared default state.
+ * WHY: a permissive default is fail-open — a caller that forgets to establish a context
+ * would silently share one process-wide state, which is exactly the defect this replaces,
+ * and it would be invisible. Throwing preserves the previous contract and surfaces the
+ * mistake immediately. Safe to be strict: the only module-scope setup CFS performs
+ * (`setStateMethods` with global=true, `setGlobalSubscriptions`, `setAuditAuthorityServer`)
+ * writes to module-level globalState, never to instance state.
+ */
+function getInstanceState(): ImplemtationGlobalStateTypes {
+  const instanceState = asyncLocalStorage.getStore();
+
+  if (!instanceState) {
+    throw new Error(
+      'No factory instance state for the current async context — wrap the request in runWithInstanceState()',
+    );
+  }
 
   return instanceState;
 }
@@ -62,6 +84,7 @@ export default {
   addNotice,
   callListener,
   createInstanceState,
+  runWithInstanceState,
   cycleMutationStatus,
   deleteNotice,
   deleteNotices,
