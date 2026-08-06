@@ -60,24 +60,48 @@ function createInstanceState() {
 }
 
 /**
- * DECISION: throw rather than fall back to a shared default state.
- * WHY: a permissive default is fail-open — a caller that forgets to establish a context
- * would silently share one process-wide state, which is exactly the defect this replaces,
- * and it would be invisible. Throwing preserves the previous contract and surfaces the
- * mistake immediately. Safe to be strict: the only module-scope setup CFS performs
- * (`setStateMethods` with global=true, `setGlobalSubscriptions`, `setAuditAuthorityServer`)
- * writes to module-level globalState, never to instance state.
+ * DECISION: lazily bind a NEW state to the current async context; never share, never throw.
+ * WHY: two alternatives were tried and rejected.
+ *   - Falling back to one shared default is fail-open — it IS the defect this replaces (a single
+ *     process-wide state) and it is invisible.
+ *   - Throwing assumes every entry point is statically enumerable. It is not. An earlier revision
+ *     of this file threw, and wiring it into competition-factory-server produced 56 failures
+ *     across 15 suites: `governors.mocksGovernor.generateTournamentRecord()` dispatches notices,
+ *     so a DIRECT governor call touches instance state without going near an engine. Governors are
+ *     not uniformly pure. A strict throw trades a silent correctness bug for a loud outage on a
+ *     call graph that cannot be fully swept.
+ * Lazy creation binds via `enterWith`, so the new state covers the current context AND its
+ * descendants — `setState` → `await` → `getState` stays coherent — while remaining separate from
+ * other context subtrees. The warning keeps it fail-soft rather than silent (A2).
+ *
+ * ⚠️ LIMIT: this is a safety net, NOT isolation. Unwrapped siblings launched from a COMMON parent
+ * context still share, because the first access binds a store to that shared parent which the
+ * sibling then inherits. Wrap every entry point in `runWithInstanceState` — do not rely on the net.
+ * See competition-factory#4564.
  */
+let implicitContextCount = 0;
+
 function getInstanceState(): ImplemtationGlobalStateTypes {
   const instanceState = asyncLocalStorage.getStore();
+  if (instanceState) return instanceState;
 
-  if (!instanceState) {
-    throw new Error(
-      'No factory instance state for the current async context — wrap the request in runWithInstanceState()',
+  implicitContextCount += 1;
+  if (implicitContextCount === 1 || implicitContextCount % 100 === 0) {
+    console.warn(
+      `[asyncGlobalState] engine state accessed outside runWithInstanceState() ` +
+        `(${implicitContextCount} so far) — an implicit per-context state was created. ` +
+        `Wrap the entry point in runWithInstanceState() so the store is scoped to the request.`,
     );
   }
 
-  return instanceState;
+  const created = newInstanceState();
+  asyncLocalStorage.enterWith(created);
+  return created;
+}
+
+/** Diagnostic: how many times state was created implicitly rather than via runWithInstanceState. */
+function implicitContextCreations(): number {
+  return implicitContextCount;
 }
 
 export default {
@@ -85,6 +109,7 @@ export default {
   callListener,
   createInstanceState,
   runWithInstanceState,
+  implicitContextCreations,
   cycleMutationStatus,
   deleteNotice,
   deleteNotices,
