@@ -31,31 +31,27 @@ export type RuleId = string;
  * - AVAILABLE is derived, not stored as blocks
  */
 export const BLOCK_TYPES = {
-  MAINTENANCE: 'MAINTENANCE',
-  PRACTICE: 'PRACTICE',
-  RESERVED: 'RESERVED',
-  BLOCKED: 'BLOCKED',
-  CLOSED: 'CLOSED',
-  SCHEDULED: 'SCHEDULED',
-  SOFT_BLOCK: 'SOFT_BLOCK',
-  HARD_BLOCK: 'HARD_BLOCK',
-  LOCKED: 'LOCKED',
-  AVAILABLE: 'AVAILABLE',
-  UNSPECIFIED: 'UNSPECIFIED',
+  DRYING: 'DRYING', // Surface drying after rain — reactive, cannot be deferred
+  MAINTENANCE: 'MAINTENANCE', // Court maintenance/cleaning — planned
+  PRACTICE: 'PRACTICE', // Practice time reserved
+  RESERVED: 'RESERVED', // Reserved for recreational/paying players
+  BLOCKED: 'BLOCKED', // Generic unavailable (miscellaneous)
+  CLOSED: 'CLOSED', // Court closed (outside open hours or explicitly closed)
+  SCHEDULED: 'SCHEDULED', // Tournament matches (read-only, created by scheduler)
+  SOFT_BLOCK: 'SOFT_BLOCK', // Can be overridden if needed (legacy)
+  HARD_BLOCK: 'HARD_BLOCK', // Cannot be overridden (legacy)
+  LOCKED: 'LOCKED', // System-locked, no user modification (legacy)
+  AVAILABLE: 'AVAILABLE', // Derived status - time without any blocks
+  UNSPECIFIED: 'UNSPECIFIED', // No explicit status (gray fog - for backwards compatibility)
 } as const;
 
-export type BlockType =
-  | 'MAINTENANCE' // Court maintenance/cleaning
-  | 'PRACTICE' // Practice time reserved
-  | 'RESERVED' // Reserved for recreational/paying players
-  | 'BLOCKED' // Generic unavailable (miscellaneous)
-  | 'CLOSED' // Court closed (outside open hours or explicitly closed)
-  | 'SCHEDULED' // Tournament matches (read-only, created by scheduler)
-  | 'SOFT_BLOCK' // Can be overridden if needed (legacy)
-  | 'HARD_BLOCK' // Cannot be overridden (legacy)
-  | 'LOCKED' // System-locked, no user modification (legacy)
-  | 'AVAILABLE' // Derived status - time without any blocks
-  | 'UNSPECIFIED'; // No explicit status (gray fog - for backwards compatibility)
+/**
+ * Derived from BLOCK_TYPES rather than hand-written.
+ *
+ * This union used to be maintained as a second, parallel list, so adding a
+ * member meant editing two places and nothing caught it if you edited one.
+ */
+export type BlockType = (typeof BLOCK_TYPES)[keyof typeof BLOCK_TYPES];
 
 export type BlockSource = 'USER' | 'TEMPLATE' | 'RULE' | 'SYSTEM';
 export type BlockHardness = 'HARD' | 'SOFT';
@@ -297,11 +293,7 @@ export interface EngineContext {
 // ============================================================================
 
 export type EngineEventType =
-  | 'STATE_CHANGED'
-  | 'BLOCKS_CHANGED'
-  | 'CONFLICTS_CHANGED'
-  | 'AVAILABILITY_CHANGED'
-  | 'PLAN_CHANGED';
+  'STATE_CHANGED' | 'BLOCKS_CHANGED' | 'CONFLICTS_CHANGED' | 'AVAILABILITY_CHANGED' | 'PLAN_CHANGED';
 
 export interface EngineEvent {
   type: EngineEventType;

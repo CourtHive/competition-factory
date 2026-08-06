@@ -795,6 +795,48 @@ describe('Tournament Record Loading', () => {
     expect(engine.getAllBlocks()[0].type).toBe(BLOCK_TYPES.BLOCKED);
   });
 
+  it('should map DRYING bookingType to DRYING BlockType', () => {
+    const record = makeBasicRecord();
+    (record.venues[0].courts[0] as any).dateAvailability = [
+      {
+        date: '2026-06-15',
+        bookings: [{ startTime: '10:00', endTime: '11:00', bookingType: 'DRYING' }],
+      },
+    ];
+
+    const engine = new AvailabilityEngine();
+    engine.init(record, { tournamentId: TEST_TOURNAMENT });
+
+    expect(engine.getAllBlocks()[0].type).toBe(BLOCK_TYPES.DRYING);
+  });
+
+  // DRYING sits above MAINTENANCE in the default precedence: maintenance can
+  // usually be deferred, drying cannot, so drying wins an overlap.
+  it('should resolve DRYING over MAINTENANCE when they overlap', () => {
+    const engine = new AvailabilityEngine();
+    engine.init(makeBasicRecord(), { tournamentId: TEST_TOURNAMENT });
+    const precedence = engine.getConfig().typePrecedence;
+
+    expect(precedence.indexOf(BLOCK_TYPES.DRYING)).toBeLessThan(precedence.indexOf(BLOCK_TYPES.MAINTENANCE));
+  });
+
+  // MATCH predates BookingTypeEnum and is not a member; it resolves through the
+  // legacy alias table, NOT through the unmapped fallback.
+  it('should still resolve the legacy MATCH bookingType to SCHEDULED', () => {
+    const record = makeBasicRecord();
+    (record.venues[0].courts[0] as any).dateAvailability = [
+      {
+        date: '2026-06-15',
+        bookings: [{ startTime: '10:00', endTime: '11:00', bookingType: 'MATCH' }],
+      },
+    ];
+
+    const engine = new AvailabilityEngine();
+    engine.init(record, { tournamentId: TEST_TOURNAMENT });
+
+    expect(engine.getAllBlocks()[0].type).toBe(BLOCK_TYPES.SCHEDULED);
+  });
+
   it('should map CLOSED bookingType to CLOSED BlockType', () => {
     const record = makeBasicRecord();
     (record.venues[0].courts[0] as any).dateAvailability = [
