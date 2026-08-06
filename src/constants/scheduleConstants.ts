@@ -1,3 +1,5 @@
+import { BLOCKED, MAINTENANCE, PRACTICE } from './bookingTypeValues';
+
 export const DOUBLES_SINGLES = 'DOUBLES_SINGLES';
 export const SINGLES_DOUBLES = 'SINGLES_DOUBLES';
 export const TOTAL = 'total';
@@ -14,10 +16,13 @@ export const SCHEDULE_ERROR = 'ERROR';
 export const SCHEDULE_ISSUE = 'ISSUE';
 export const SCHEDULE_STATE = 'STATE';
 
-// Booking types for court grid bookings
-export const BLOCKED = 'BLOCKED';
-export const PRACTICE = 'PRACTICE';
-export const MAINTENANCE = 'MAINTENANCE';
+// Booking types for court grid bookings.
+// Re-exported from the generated BookingTypeEnum mirror rather than redefined,
+// so there is a single source. The full vocabulary (incl. CLOSED, DRYING,
+// RESERVED, SCHEDULED) lives in `bookingTypeConstants`; these three are kept
+// here as named exports because they are long-standing published surface via
+// `factoryConstants.scheduleConstants`.
+export { BLOCKED, MAINTENANCE, PRACTICE };
 
 export const scheduleConstants = {
   SINGLES_DOUBLES,

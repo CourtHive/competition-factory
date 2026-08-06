@@ -18,10 +18,17 @@
  * different const key names, so their coverage is enforced only by the runtime guard.
  */
 import * as matchUpStatusConstants from './matchUpStatusConstants';
+import * as bookingTypeConstants from './bookingTypeConstants';
 import * as entryStatusConstants from './entryStatusConstants';
 import * as weekdayConstants from './weekdayConstants';
 import * as surfaceConstants from './surfaceConstants';
-import { MatchUpStatusEnum, EntryStatusEnum, SurfaceCategoryEnum, WeekdayEnum } from '@Types/tournamentTypes';
+import {
+  MatchUpStatusEnum,
+  EntryStatusEnum,
+  SurfaceCategoryEnum,
+  WeekdayEnum,
+  BookingTypeEnum,
+} from '@Types/tournamentTypes';
 
 type Assert<T extends true> = T;
 
@@ -37,6 +44,7 @@ export type _KeysMatchUpStatus = Assert<KeysMirrored<typeof MatchUpStatusEnum, t
 export type _KeysEntryStatus = Assert<KeysMirrored<typeof EntryStatusEnum, typeof entryStatusConstants>>;
 export type _KeysSurfaceCategory = Assert<KeysMirrored<typeof SurfaceCategoryEnum, typeof surfaceConstants>>;
 export type _KeysWeekday = Assert<KeysMirrored<typeof WeekdayEnum, typeof weekdayConstants>>;
+export type _KeysBookingType = Assert<KeysMirrored<typeof BookingTypeEnum, typeof bookingTypeConstants>>;
 
 // ── VALUE conformance: each const's literal value equals the enum member's value ─
 // For enum key K, `${E[K] & string}` is the enum member's string value; the const's
@@ -52,3 +60,4 @@ export type _ValuesMatchUpStatus = Assert<ValuesMirrored<typeof MatchUpStatusEnu
 export type _ValuesEntryStatus = Assert<ValuesMirrored<typeof EntryStatusEnum, typeof entryStatusConstants>>;
 export type _ValuesSurfaceCategory = Assert<ValuesMirrored<typeof SurfaceCategoryEnum, typeof surfaceConstants>>;
 export type _ValuesWeekday = Assert<ValuesMirrored<typeof WeekdayEnum, typeof weekdayConstants>>;
+export type _ValuesBookingType = Assert<ValuesMirrored<typeof BookingTypeEnum, typeof bookingTypeConstants>>;

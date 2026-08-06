@@ -2,6 +2,7 @@ import * as drawDefinitionConstants from '@Constants/drawDefinitionConstants';
 import * as matchUpStatusConstants from '@Constants/matchUpStatusConstants';
 import * as participantConstants from '@Constants/participantConstants';
 import * as entryStatusConstants from '@Constants/entryStatusConstants';
+import * as bookingTypeConstants from '@Constants/bookingTypeConstants';
 import * as weekdayConstants from '@Constants/weekdayConstants';
 import * as surfaceConstants from '@Constants/surfaceConstants';
 import * as genderConstants from '@Constants/genderConstants';
@@ -46,6 +47,7 @@ const MIRRORS: { name: string; enum: Record<string, unknown>; consts: Record<str
   { name: 'EntryStatus', enum: T.EntryStatusEnum, consts: entryStatusConstants },
   { name: 'SurfaceCategory', enum: T.SurfaceCategoryEnum, consts: surfaceConstants },
   { name: 'Weekday', enum: T.WeekdayEnum, consts: weekdayConstants },
+  { name: 'BookingType', enum: T.BookingTypeEnum, consts: bookingTypeConstants },
 ];
 
 // ── Bucket coverage — every enum value backed by a const value in the bucket ──

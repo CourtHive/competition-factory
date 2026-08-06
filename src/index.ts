@@ -73,6 +73,10 @@ export { mocksEngine } from './assemblies/engines/mock';
 
 // ENGINES - Standalone class engines -----------------------------------
 export { AvailabilityEngine } from './assemblies/engines/availability';
+// The engine-side block vocabulary. Consumers can write `Booking.bookingType`
+// (see BookingTypeEnum), so they need to be able to see what it resolves to —
+// BLOCK_TYPES is the superset that also carries derived and legacy states.
+export { BLOCK_TYPES } from './assemblies/governors/availabilityGovernor/types';
 export * as availability from './assemblies/engines/availability';
 
 // ENGINES - Scale engine -----------------------------------------------
@@ -133,6 +137,7 @@ export type * from './types';
 export {
   AddressTypeEnum,
   BallTypeEnum,
+  BookingTypeEnum,
   CountryCodeEnum,
   CourtPositionEnum,
   DrawTypeEnum,

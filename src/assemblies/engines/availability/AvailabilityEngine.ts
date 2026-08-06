@@ -49,6 +49,8 @@ import { getDisabledStatus } from '@Query/extensions/getDisabledStatus';
 import { firstClassOrExtension } from '@Acquire/firstClassOrExtension';
 import { extractDate } from '@Tools/dateTime';
 
+import type { BookingTypeUnion } from '@Types/tournamentTypes';
+
 import { DISABLED } from '@Constants/extensionConstants';
 
 import {
@@ -122,6 +124,9 @@ export class AvailabilityEngine {
         BLOCK_TYPES.HARD_BLOCK,
         BLOCK_TYPES.LOCKED,
         BLOCK_TYPES.SCHEDULED,
+        // above MAINTENANCE: drying is reactive and cannot be deferred, whereas
+        // maintenance usually can — so when they overlap, drying wins.
+        BLOCK_TYPES.DRYING,
         BLOCK_TYPES.MAINTENANCE,
         BLOCK_TYPES.CLOSED,
         BLOCK_TYPES.BLOCKED,
@@ -1200,14 +1205,24 @@ export class AvailabilityEngine {
    * a different and wrong meaning ("reserved for recreational/paying players")
    * with a different precedence slot.
    */
-  private static readonly BOOKING_TYPE_MAP: Record<string, BlockType> = {
+  private static readonly BOOKING_TYPE_MAP: Record<BookingTypeUnion, BlockType> = {
     BLOCKED: BLOCK_TYPES.BLOCKED,
     CLOSED: BLOCK_TYPES.CLOSED,
+    DRYING: BLOCK_TYPES.DRYING,
     MAINTENANCE: BLOCK_TYPES.MAINTENANCE,
     PRACTICE: BLOCK_TYPES.PRACTICE,
     RESERVED: BLOCK_TYPES.RESERVED,
-    MATCH: BLOCK_TYPES.SCHEDULED,
     SCHEDULED: BLOCK_TYPES.SCHEDULED,
+  };
+
+  /**
+   * Booking types that predate `BookingTypeEnum` and still occur in stored
+   * records. Kept separate from BOOKING_TYPE_MAP so that map stays exhaustive
+   * over the enum — the exhaustiveness is what makes a new member a compile
+   * error here instead of a silent runtime fallback.
+   */
+  private static readonly LEGACY_BOOKING_TYPE_ALIASES: Record<string, BlockType> = {
+    MATCH: BLOCK_TYPES.SCHEDULED,
   };
 
   /**
@@ -1324,8 +1339,10 @@ export class AvailabilityEngine {
     if (!booking.startTime || !booking.endTime) return;
     const st = booking.startTime.length === 5 ? `${booking.startTime}:00` : booking.startTime;
     const et = booking.endTime.length === 5 ? `${booking.endTime}:00` : booking.endTime;
+    const rawType = (booking.bookingType || '').toUpperCase();
     const blockType: BlockType =
-      AvailabilityEngine.BOOKING_TYPE_MAP[(booking.bookingType || '').toUpperCase()] ??
+      AvailabilityEngine.BOOKING_TYPE_MAP[rawType as BookingTypeUnion] ??
+      AvailabilityEngine.LEGACY_BOOKING_TYPE_ALIASES[rawType] ??
       AvailabilityEngine.UNMAPPED_BOOKING_BLOCK_TYPE;
 
     const blockId = this.generateBlockId();

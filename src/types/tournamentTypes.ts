@@ -1679,9 +1679,34 @@ export interface Availability {
   updatedAt?: Date | string;
 }
 
+/**
+ * What a court booking represents. Persisted on `Booking.bookingType`.
+ *
+ * DRYING is deliberately distinct from MAINTENANCE: maintenance is planned and
+ * can usually be deferred, drying is reactive and cannot — they need separate
+ * scheduling precedence, and collapsing them makes "how much court time did we
+ * lose to weather?" unanswerable after the fact.
+ *
+ * The engine-side vocabulary these map onto is `BLOCK_TYPES` (a superset —
+ * it also carries derived and legacy states that are never persisted here).
+ */
+export enum BookingTypeEnum {
+  BLOCKED = 'BLOCKED',
+  CLOSED = 'CLOSED',
+  DRYING = 'DRYING',
+  MAINTENANCE = 'MAINTENANCE',
+  PRACTICE = 'PRACTICE',
+  RESERVED = 'RESERVED',
+  SCHEDULED = 'SCHEDULED',
+}
+export type BookingTypeUnion = `${BookingTypeEnum}`;
+
 export interface Booking {
   bookingId?: string;
-  bookingType?: string;
+  // Widened with `(string & {})` so unrecognised values from external sources
+  // still type-check while known members keep autocompleting. The engine maps
+  // anything unrecognised to BLOCK_TYPES.BLOCKED — see BOOKING_TYPE_MAP.
+  bookingType?: BookingTypeUnion | (string & {});
   capacity?: number | null;
   createdAt?: Date | string;
   endTime?: string;
