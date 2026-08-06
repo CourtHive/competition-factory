@@ -6,14 +6,17 @@ import { expect, describe, test } from 'vitest';
 // implementation had never been tested; in production (CFS) a single module-scope seed meant
 // every request shared one state object.
 //
-// HONEST SCOPE: measured against the old implementation, 3 of these fail (nested scoping,
-// createInstanceState binding, fail-closed read) and 4 pass. The old primitive's propagation is
-// call-shape dependent — it happens to work under vitest's shape, which is precisely why the
-// defect survived unnoticed. A unit test cannot reproduce the production trigger (module-scope
-// seeding + the CFS request shape), so do NOT read these as proof the old code was broken; they
-// lock in the properties that actually differ and guard against regressing away from
-// AsyncLocalStorage. The fail-closed test is the load-bearing one: it is what turns "silently
-// shared one process-wide state" into a loud error.
+// HONEST SCOPE: most of these also pass against the OLD createHook implementation. Its
+// propagation is call-shape dependent and happens to work under vitest's shape — precisely why
+// the defect survived unnoticed for years. A provider unit test cannot reproduce the production
+// trigger, which was the module-scope seed in competition-factory-server, not the primitive.
+// So do NOT read these as proof the old code was broken. What they do is lock in the properties
+// that actually differ (scoped `run`, nested scoping, coherent implicit contexts) and guard
+// against regressing away from AsyncLocalStorage.
+//
+// The real guard against the production defect is structural, not here: every entry point wraps
+// itself in runWithInstanceState. `DOCUMENTS THE LIMIT` below exists to stop anyone treating the
+// implicit-context safety net as a substitute for that.
 
 const {
   runWithInstanceState,
@@ -28,17 +31,18 @@ const {
 
 const record = (tournamentId: string) => ({ tournamentId, tournamentName: `T-${tournamentId}` });
 
+/** Write one record inside a scoped context, yield, then read the context's records back. */
+const scopedWriteThenRead = (tag: string) =>
+  runWithInstanceState(async () => {
+    setTournamentRecord(record(tag));
+    await new Promise((resolve) => setTimeout(resolve, 5));
+    return Object.keys(getTournamentRecords());
+  });
+
 describe('asyncGlobalState per-context isolation', () => {
   test('concurrent contexts do not share tournamentRecords', async () => {
-    const request = (tag: string) =>
-      runWithInstanceState(async () => {
-        setTournamentRecord(record(tag));
-        // yield so the sibling context interleaves between write and read
-        await new Promise((resolve) => setTimeout(resolve, 5));
-        return Object.keys(getTournamentRecords());
-      });
-
-    const [a, b, c] = await Promise.all([request('A'), request('B'), request('C')]);
+    // each yields between write and read so siblings interleave
+    const [a, b, c] = await Promise.all([scopedWriteThenRead('A'), scopedWriteThenRead('B'), scopedWriteThenRead('C')]);
 
     expect(a).toEqual(['A']);
     expect(b).toEqual(['B']);
@@ -130,9 +134,39 @@ describe('asyncGlobalState per-context isolation', () => {
     expect(result).toEqual(['SEEDED']);
   });
 
-  test('reading state with no context established throws rather than falling back', () => {
-    // fail-closed: a permissive default would silently reintroduce one shared process-wide
-    // state, which is the defect this provider replaces
-    expect(() => getTournamentRecords()).toThrow(/No factory instance state/);
+  test('an implicit context survives an await, so setState → await → getState stays coherent', async () => {
+    const result: any = await (async () => {
+      setTournamentRecord(record('IMPLICIT'));
+      await new Promise((resolve) => setTimeout(resolve, 5));
+      return Object.keys(getTournamentRecords());
+    })();
+
+    expect(result).toEqual(['IMPLICIT']);
+  });
+
+  test('DOCUMENTS THE LIMIT: implicit creation is a safety net, NOT isolation', async () => {
+    // Unwrapped siblings launched from a COMMON parent context still share: the first access
+    // binds a store to that shared parent via `enterWith`, and the sibling inherits it. Implicit
+    // creation only guarantees state is scoped to a context SUBTREE rather than living
+    // process-wide forever. Strictly better than the defect, but not a substitute for wrapping —
+    // which is why every real entry point calls runWithInstanceState explicitly.
+    const before = asyncGlobalState.implicitContextCreations();
+
+    const unwrapped = (tag: string) =>
+      (async () => {
+        setTournamentRecord(record(tag));
+        await new Promise((resolve) => setTimeout(resolve, 5));
+        return Object.keys(getTournamentRecords());
+      })();
+
+    const [a, b] = await Promise.all([unwrapped('A'), unwrapped('B')]);
+    expect(a).toEqual(['A', 'B']); // shared — the documented limit
+    expect(b).toEqual(['A', 'B']);
+
+    // wrapping the SAME calls restores isolation
+    expect(await Promise.all([scopedWriteThenRead('A'), scopedWriteThenRead('B')])).toEqual([['A'], ['B']]);
+
+    // and the implicit path is reported, not silent
+    expect(asyncGlobalState.implicitContextCreations()).toBeGreaterThan(before);
   });
 });
