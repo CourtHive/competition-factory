@@ -1,4 +1,4 @@
-import { IF_NEEDED, UNAVAILABLE } from '@Constants/availabilityConstants';
+import { IF_NEEDED, UNAVAILABLE } from '@Constants/dayStateConstants';
 import { DO_NOT_SCHEDULE } from '@Constants/requestConstants';
 import { AvailabilityPayload, AvailabilityTimeAway, DayState } from '@Types/declarationTypes';
 

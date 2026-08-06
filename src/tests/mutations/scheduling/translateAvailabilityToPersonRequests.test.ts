@@ -4,7 +4,7 @@ import mocksEngine from '@Assemblies/engines/mock';
 import competitionEngine from '@Engines/syncEngine';
 import { expect, it, describe } from 'vitest';
 
-import { AVAILABLE, IF_NEEDED, UNAVAILABLE } from '@Constants/availabilityConstants';
+import { AVAILABLE, IF_NEEDED, UNAVAILABLE } from '@Constants/dayStateConstants';
 import { DO_NOT_SCHEDULE } from '@Constants/requestConstants';
 import { AvailabilityPayload } from '@Types/declarationTypes';
 

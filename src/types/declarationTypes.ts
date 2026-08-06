@@ -1,4 +1,4 @@
-import { AVAILABLE, IF_NEEDED, UNAVAILABLE } from '@Constants/availabilityConstants';
+import { AVAILABLE, IF_NEEDED, UNAVAILABLE } from '@Constants/dayStateConstants';
 
 // Person-declarations tier payload types. Phase 1 covers the AVAILABILITY
 // declaration only (jim.tennis-shaped, per-day, no times). Other declaration
