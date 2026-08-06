@@ -489,10 +489,9 @@ engine.addEvent({
 
 See [Global State](/docs/engines/global-state#setstate)
 
-```js
-
 **API Reference:** [addEvent](/docs/governors/event-governor#addevent)
 
+```js
 engine.setState(tournamentRecords, deepCopyOption, deepCopyAttributes);
 ```
 
@@ -571,11 +570,10 @@ Returns the currently active tournament ID.
 
 **Returns:**
 
-```ts
-
 **API Reference:** [addParticipants](/docs/governors/participant-governor#addparticipants)
 
-string | undefined  // Active tournament ID, or undefined if none set
+```ts
+string | undefined; // Active tournament ID, or undefined if none set
 ```
 
 **Examples:**

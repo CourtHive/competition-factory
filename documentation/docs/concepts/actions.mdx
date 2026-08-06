@@ -15,6 +15,7 @@ along with both pre-populated parameters and valid values for parameters which a
 ### Action Validation
 
 Actions are validated based on:
+
 - **Draw structure integrity**: Can't remove participants if dependent matches have been played
 - **Tournament state**: Some actions only available before/after draw publication
 - **Participant status**: Can't withdraw already withdrawn participants
@@ -22,9 +23,10 @@ Actions are validated based on:
 
 :::tip Policy Configuration
 Available actions can be customized using policies:
+
 - **[Position Actions Policy](/docs/policies/positionActions)** - Configure which position actions are allowed
 - **[MatchUp Actions Policy](/docs/policies/matchUpActions)** - Configure which matchUp actions are allowed
-:::
+  :::
 
 ## positionActions
 
@@ -33,6 +35,7 @@ Actions which are relevant to assigned positions within a draw structure. These 
 ### Supported Actions
 
 **Participant Assignment:**
+
 - **Assign Participant** - Assign accepted/selected participants to specified draw position
 - **Assign Alternate** - Assign participant from the list of alternates to specified draw position
 - **Assign Qualifier** - Assign qualifier from Qualifying structure to specified draw position
@@ -41,18 +44,22 @@ Actions which are relevant to assigned positions within a draw structure. These 
 - **Withdraw Participant** - Clear specified draw position and withdraw participant from event
 
 **Draw Position Management:**
+
 - **Assign Bye** - Assign a BYE to specified draw position
 - **Swap Participants** - Swap participant at specified draw position with any other positioned participant
 - **Modify Pair Assignment** - Modify individual participant within a positioned doubles pair participant
 
 **Seeding:**
+
 - **Set Seed Value** - Assign custom seed value to participant at draw position
 - **Remove Seed Value** - Remove seed assignment from participant at draw position
 
 **Display:**
+
 - **Set Nickname** - Set a nickname for assigned participant (useful when players have excessively long names or multiple players have the same name)
 
 **Administrative:**
+
 - **Add Penalty** - Record a penalty for participant at specified draw position
 
 ### Usage
@@ -61,11 +68,11 @@ Actions which are relevant to assigned positions within a draw structure. These 
 const { validActions, isByePosition } = tournamentEngine.positionActions({
   drawId: 'draw-123',
   structureId: 'structure-456',
-  drawPosition: 1
+  drawPosition: 1,
 });
 
 // validActions is an array of available action objects
-validActions.forEach(action => {
+validActions.forEach((action) => {
   console.log(`${action.type}: ${action.method}`);
   // Each action includes:
   // - type: action name
@@ -79,10 +86,9 @@ validActions.forEach(action => {
 
 Position actions can be restricted using the Position Actions Policy:
 
-```js
-
 **API Reference:** [positionActions](/docs/governors/query-governor#positionactions)
 
+```js
 tournamentEngine.attachPolicies({
   policyDefinitions: {
     positionActions: {
@@ -91,9 +97,9 @@ tournamentEngine.attachPolicies({
       disableAssignQualifier: true,
       disableAssignLuckyLoser: true,
       // Only allow actions before draw publication
-      requireUnpublished: true
-    }
-  }
+      requireUnpublished: true,
+    },
+  },
 });
 ```
 
@@ -102,6 +108,7 @@ tournamentEngine.attachPolicies({
 [askEngine.positionActions()](/docs/governors/query-governor#positionactions)
 
 **See Also:**
+
 - **[Position Actions Policy](/docs/policies/positionActions)** - Complete policy configuration guide
 - **[Draw Generation](./draws-overview)** - Creating draws with participant assignments
 
@@ -112,22 +119,27 @@ Actions which are relevant to a specific `matchUp` within a draw structure. Thes
 ### Supported Actions
 
 **Match Outcomes:**
+
 - **Set Score** - Submit either complete or partial score for specified `matchUp`
 - **Set Status** - Submit `matchUpStatus` for specified `matchUp` (e.g., WALKOVER, DEFAULTED, RETIRED)
 
 **Scheduling:**
+
 - **Set Schedule** - Submit scheduling details for specified `matchUp` (date, time, court, venue)
 - **Set Start Time** - Set start time for specified `matchUp`
 - **Set End Time** - Set end time for specified `matchUp`
 
 **Officials:**
+
 - **Assign Referee** - Set Referee Participant for specified `matchUp`
 - **Add Officials** - Assign additional officials (line judges, supervisors)
 
 **Administrative:**
+
 - **Add Penalty** - Record a penalty for participant within specified `matchUp`
 
 **Team Events (TEAM matchUpType):**
+
 - **Assign Lineup Position** - Assign participant to lineup position for specified `matchUp`
 - **Remove Lineup Position** - Remove participant from lineup position for specified `matchUp`
 - **Replace Lineup Position** - Replace participant assigned to lineup position for specified `matchUp`
@@ -138,11 +150,11 @@ Actions which are relevant to a specific `matchUp` within a draw structure. Thes
 ```js
 const { validActions, isByeMatchUp } = tournamentEngine.matchUpActions({
   matchUpId: 'matchup-789',
-  drawId: 'draw-123'
+  drawId: 'draw-123',
 });
 
 // validActions is an array of available action objects
-validActions.forEach(action => {
+validActions.forEach((action) => {
   console.log(`${action.type}: ${action.method}`);
   // Each action includes:
   // - type: action name
@@ -152,14 +164,14 @@ validActions.forEach(action => {
 });
 
 // Example: Set score action
-const scoreAction = validActions.find(a => a.type === 'SCORE');
+const scoreAction = validActions.find((a) => a.type === 'SCORE');
 if (scoreAction) {
   // scoreAction.payload includes matchUpId, drawId
   // scoreAction.options includes valid matchUpStatus values
   tournamentEngine[scoreAction.method]({
     ...scoreAction.payload,
     score: { sets: [{ side1Score: 6, side2Score: 4 }] },
-    winningSide: 1
+    winningSide: 1,
   });
 }
 ```
@@ -168,27 +180,26 @@ if (scoreAction) {
 
 MatchUp actions can be restricted using the MatchUp Actions Policy:
 
-```js
-
 **API Reference:** [matchUpActions](/docs/governors/query-governor#matchupactions)
 
+```js
 tournamentEngine.attachPolicies({
   policyDefinitions: {
     matchUpActions: {
       policyName: 'TournamentDirector',
       // Disable certain actions for published draws
       disableScoreEntry: false,
-      requireRefereeAssignment: true,  // Require referee before scoring
+      requireRefereeAssignment: true, // Require referee before scoring
       // Control substitution rules
       substitutionLimits: {
         maxPerTeam: 2,
-        maxPerPosition: 1
+        maxPerPosition: 1,
       },
       // Restrict scheduling actions
       enableScheduleModification: true,
-      requireScheduleApproval: false
-    }
-  }
+      requireScheduleApproval: false,
+    },
+  },
 });
 ```
 
@@ -207,6 +218,7 @@ Different matchUpStatus values trigger different actions:
 [askEngine.matchUpActions()](/docs/governors/query-governor#matchupactions)
 
 **See Also:**
-- **[MatchUp Actions Policy](/docs/policies/matchUpActions)** - Complete policy configuration guide  
+
+- **[MatchUp Actions Policy](/docs/policies/matchUpActions)** - Complete policy configuration guide
 - **[Scheduling Overview](./scheduling-overview)** - Understanding match scheduling
 - **[Team Events](./tieFormat)** - Lineup and substitution management

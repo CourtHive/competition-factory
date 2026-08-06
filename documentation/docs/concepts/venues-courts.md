@@ -87,10 +87,9 @@ console.log(venue.venueId); // Generated UUID
 
 ### Modifying Venues
 
-```js
-
 **API Reference:** [addVenue](/docs/governors/venue-governor#addvenue)
 
+```js
 // Update venue properties
 tournamentEngine.modifyVenue({
   venueId: 'venue-uuid',
@@ -114,12 +113,11 @@ A **court** represents an individual playing surface within a venue. Courts have
 
 ### Court Properties
 
-```ts
-
 **API Reference:** [modifyVenue](/docs/governors/venue-governor#modifyvenue)
 
 **API Reference:** [deleteVenues](/docs/governors/venue-governor#deletevenues)
 
+```ts
 {
   courtId: string;              // Unique identifier (UUID)
   courtName: string;            // Display name (e.g., 'Court 1', 'Centre Court')
@@ -182,10 +180,9 @@ console.log(courts.map((c) => c.courtId)); // Generated UUIDs
 
 ### Modifying Courts
 
-```js
-
 **API Reference:** [addCourts](/docs/governors/venue-governor#addcourts)
 
+```js
 // Update court properties
 tournamentEngine.modifyCourt({
   courtId: 'court-uuid',
@@ -218,10 +215,9 @@ tournamentEngine.deleteCourts({
 
 ### Basic Structure
 
-```ts
-
 **API Reference:** [modifyCourt](/docs/governors/venue-governor#modifycourt)
 
+```ts
 type DateAvailability = {
   date?: string; // ISO date (YYYY-MM-DD) - optional
   startTime?: string; // HH:MM format
@@ -263,10 +259,9 @@ tournamentEngine.addCourts({
 
 When `date` **is specified**, the availability applies only to that date:
 
-```js
-
 **API Reference:** [addCourts](/docs/governors/venue-governor#addcourts)
 
+```js
 // Different hours on different days
 const dateAvailability = [
   // Default availability (all days)
@@ -670,12 +665,11 @@ tournamentEngine.addCourts({
 
 ### Scheduling Across Venues
 
-```js
-
 **API Reference:** [addVenue](/docs/governors/venue-governor#addvenue)
 
 **API Reference:** [addCourts](/docs/governors/venue-governor#addcourts)
 
+```js
 // Schedule early rounds at practice venue
 tournamentEngine.scheduleMatchUps({
   venueId: practiceVenue.venue.venueId,
@@ -757,10 +751,9 @@ Common surface types:
 
 Courts with lighting can host evening matches:
 
-```js
-
 **API Reference:** [addVenue](/docs/governors/venue-governor#addvenue)
 
+```js
 {
   courtName: 'Court 1',
   lighting: true,

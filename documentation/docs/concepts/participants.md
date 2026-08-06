@@ -31,7 +31,7 @@ type IndividualParticipant = {
   person: {
     personId: string;
     standardFamilyName?: string; // Required unless participantOtherName or participantName is provided
-    standardGivenName?: string;  // Required unless participantOtherName or participantName is provided
+    standardGivenName?: string; // Required unless participantOtherName or participantName is provided
     nationalityCode?: string;
     sex?: 'MALE' | 'FEMALE';
     birthDate?: string;
@@ -213,10 +213,9 @@ A fundamental design principle of CODES: **draw logic is participant-agnostic**.
 
 **Position Assignments** are the universal mechanism:
 
-```js
-
 **API Reference:** [addParticipant](/docs/governors/participant-governor#addparticipant)
 
+```js
 // Same structure works for any participant type
 positionAssignment = {
   drawPosition: 1,
@@ -316,10 +315,9 @@ When person name fields are incomplete, `participantName` is automatically set f
 
 The Competition Factory can automatically create PAIR participants from individuals:
 
-```js
-
 **API Reference:** [addParticipant](/docs/governors/participant-governor#addparticipant)
 
+```js
 // When assigning individuals to a DOUBLES matchUp, pairs are created automatically
 tournamentEngine.assignTieMatchUpParticipantId({
   participantId: 'player-1', // Individual
@@ -331,10 +329,9 @@ tournamentEngine.assignTieMatchUpParticipantId({
 
 ### Adding Teams
 
-```js
-
 **API Reference:** [assignTieMatchUpParticipantId](/docs/governors/matchup-governor#assigntiematchupparticipantid)
 
+```js
 const { participant } = tournamentEngine.addParticipant({
   participant: {
     participantType: 'TEAM',
@@ -348,10 +345,9 @@ const { participant } = tournamentEngine.addParticipant({
 
 ### Basic Retrieval
 
-```js
-
 **API Reference:** [addParticipant](/docs/governors/participant-governor#addparticipant)
 
+```js
 const { participants } = tournamentEngine.getParticipants({
   participantFilters: {
     participantTypes: ['INDIVIDUAL'],
@@ -364,10 +360,9 @@ const { participants } = tournamentEngine.getParticipants({
 
 Add contextual information like events, matchUps, and statistics:
 
-```js
-
 **API Reference:** [getParticipants](/docs/governors/query-governor#getparticipants)
 
+```js
 const { participants } = tournamentEngine.getParticipants({
   withMatchUps: true,           // Include matchUps for each participant
   withStatistics: true,         // Add win/loss statistics
@@ -397,10 +392,9 @@ const { participants } = tournamentEngine.getParticipants({
 
 ### Filtering Participants
 
-```js
-
 **API Reference:** [getParticipants](/docs/governors/query-governor#getparticipants)
 
+```js
 const participantFilters = {
   // Filter by type
   participantTypes: ['INDIVIDUAL', 'PAIR'],
@@ -430,10 +424,9 @@ const { participants } = tournamentEngine.getParticipants({
 
 When retrieving PAIR, TEAM, or GROUP participants, use `withIndividualParticipants` to expand their composition:
 
-```js
-
 **API Reference:** [getParticipants](/docs/governors/query-governor#getparticipants)
 
+```js
 const { participants } = tournamentEngine.getParticipants({
   participantFilters: { participantTypes: ['PAIR'] },
   withIndividualParticipants: true,
@@ -452,10 +445,9 @@ participants.forEach((pair) => {
 
 Find all grouping participants (PAIR, TEAM, GROUP) that include a specific individual:
 
-```js
-
 **API Reference:** [getParticipants](/docs/governors/query-governor#getparticipants)
 
+```js
 const {
   PAIR: doublesParticipantIds,
   GROUP: groupParticipantIds,
@@ -472,10 +464,9 @@ console.log(`Player appears in ${teamParticipantIds.length} teams`);
 
 Track participant availability for matches:
 
-```js
-
 **API Reference:** [getParticipantMembership](/docs/governors/query-governor#getparticipantmembership)
 
+```js
 // Check in a participant
 tournamentEngine.checkInParticipant({
   participantId: 'player-123',
@@ -499,14 +490,13 @@ tournamentEngine.toggleParticipantCheckInState({
 
 Use Participant Policies to control which participant data is exposed:
 
-```js
-
 **API Reference:** [checkInParticipant](/docs/governors/matchup-governor#checkinparticipant)
 
 **API Reference:** [checkOutParticipant](/docs/governors/matchup-governor#checkoutparticipant)
 
 **API Reference:** [toggleParticipantCheckInState](/docs/governors/matchup-governor#toggleparticipantcheckinstate)
 
+```js
 const participantPolicy = {
   participant: {
     // Hide birth dates

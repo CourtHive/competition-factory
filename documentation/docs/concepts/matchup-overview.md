@@ -145,17 +145,16 @@ console.log(`${matchUps.length} finished matches`);
 
 Get all matchUps across entire tournament:
 
-```js
-
 **API Reference:** [allTournamentMatchUps](/docs/governors/query-governor#alltournamentmatchups)
 
+```js
 const { matchUps } = tournamentEngine.allTournamentMatchUps({
-  inContext: true,  // Add tournament/event/draw context (default)
-  nextMatchUps: true  // Include winnerTo/loserTo information
+  inContext: true, // Add tournament/event/draw context (default)
+  nextMatchUps: true, // Include winnerTo/loserTo information
 });
 
 // MatchUps are automatically returned with context
-matchUps.forEach(matchUp => {
+matchUps.forEach((matchUp) => {
   console.log(`${matchUp.tournamentName} - ${matchUp.eventName}`);
   console.log(`  ${matchUp.drawName} - Round ${matchUp.roundNumber}`);
 });
@@ -165,13 +164,12 @@ matchUps.forEach(matchUp => {
 
 Get matchUps for a specific event:
 
-```js
-
 **API Reference:** [allTournamentMatchUps](/docs/governors/query-governor#alltournamentmatchups)
 
+```js
 const { matchUps } = tournamentEngine.allEventMatchUps({
   eventId: 'singles-main',
-  inContext: true
+  inContext: true,
 });
 ```
 
@@ -179,13 +177,12 @@ const { matchUps } = tournamentEngine.allEventMatchUps({
 
 Get matchUps from a specific draw:
 
-```js
-
 **API Reference:** [allEventMatchUps](/docs/governors/query-governor#alleventmatchups)
 
+```js
 const { matchUps } = tournamentEngine.allDrawMatchUps({
   drawId: 'draw-123',
-  inContext: true
+  inContext: true,
 });
 ```
 
@@ -193,22 +190,21 @@ const { matchUps } = tournamentEngine.allDrawMatchUps({
 
 Filter matchUps by various criteria:
 
-```js
-
 **API Reference:** [allDrawMatchUps](/docs/governors/query-governor#alldrawmatchups)
 
+```js
 const { matchUps } = tournamentEngine.allTournamentMatchUps({
   matchUpFilters: {
     matchUpStatuses: ['COMPLETED'],
     matchUpTypes: ['SINGLES', 'DOUBLES'],
     roundNumbers: [1, 2],
-    hasWinningSide: true
+    hasWinningSide: true,
   },
   contextFilters: {
     scheduledDate: '2024-06-15',
     venueIds: ['venue-123'],
-    courtIds: ['court-1', 'court-2']
-  }
+    courtIds: ['court-1', 'court-2'],
+  },
 });
 ```
 
@@ -218,10 +214,9 @@ const { matchUps } = tournamentEngine.allTournamentMatchUps({
 
 Each matchUp has two sides representing the competing participants:
 
-```js
-
 **API Reference:** [allTournamentMatchUps](/docs/governors/query-governor#alltournamentmatchups)
 
+```js
 {
   matchUpId: 'match-123',
   sides: [
@@ -310,10 +305,9 @@ tournamentEngine.setMatchUpStatus({
 
 MatchUps include comprehensive scheduling details:
 
-```js
-
 **API Reference:** [setMatchUpStatus](/docs/governors/matchup-governor#setmatchupstatus)
 
+```js
 {
   matchUpId: 'match-123',
   schedule: {
@@ -383,16 +377,15 @@ if (matchUp.sides.every((side) => side.checkInState === 'CHECKED_IN')) {
 
 When `nextMatchUps: true`, each matchUp includes progression information:
 
-```js
-
 **API Reference:** [checkInParticipant](/docs/governors/matchup-governor#checkinparticipant)
 
+```js
 const { matchUps } = tournamentEngine.allDrawMatchUps({
   drawId: 'draw-123',
-  nextMatchUps: true
+  nextMatchUps: true,
 });
 
-matchUps.forEach(matchUp => {
+matchUps.forEach((matchUp) => {
   if (matchUp.winnerTo) {
     console.log(`Winner advances to matchUp ${matchUp.winnerTo.matchUpId}`);
     console.log(`  Round ${matchUp.winnerTo.roundNumber}`);
@@ -408,10 +401,9 @@ matchUps.forEach(matchUp => {
 
 TEAM matchUps contain collection matchUps (individual matches):
 
-```js
-
 **API Reference:** [allDrawMatchUps](/docs/governors/query-governor#alldrawmatchups)
 
+```js
 const teamMatchUp = {
   matchUpId: 'team-match-123',
   matchUpType: 'TEAM',
@@ -420,25 +412,25 @@ const teamMatchUp = {
       matchUpId: 'singles-1',
       matchUpType: 'SINGLES',
       collectionId: 'singles-collection',
-      collectionPosition: 1
+      collectionPosition: 1,
     },
     {
       matchUpId: 'singles-2',
       matchUpType: 'SINGLES',
       collectionId: 'singles-collection',
-      collectionPosition: 2
+      collectionPosition: 2,
     },
     {
       matchUpId: 'doubles-1',
       matchUpType: 'DOUBLES',
       collectionId: 'doubles-collection',
-      collectionPosition: 1
-    }
-  ]
+      collectionPosition: 1,
+    },
+  ],
 };
 
 // Access individual matches
-teamMatchUp.tieMatchUps.forEach(tieMatchUp => {
+teamMatchUp.tieMatchUps.forEach((tieMatchUp) => {
   console.log(`${tieMatchUp.matchUpType} Match ${tieMatchUp.collectionPosition}`);
 });
 ```
@@ -484,18 +476,17 @@ The stamp is **monotonic**: if two mutations land in the same millisecond, the l
 
 ### Display Order of Play
 
-```js
-
 **API Reference:** [matchUpActions](/docs/governors/query-governor#matchupactions)
 
+```js
 const { matchUps } = tournamentEngine.allTournamentMatchUps({
   contextFilters: {
     scheduledDate: '2024-06-15',
-    venueIds: ['main-stadium']
+    venueIds: ['main-stadium'],
   },
   matchUpFilters: {
-    matchUpStatuses: ['TO_BE_PLAYED', 'IN_PROGRESS']
-  }
+    matchUpStatuses: ['TO_BE_PLAYED', 'IN_PROGRESS'],
+  },
 });
 
 // Group by court
@@ -509,7 +500,7 @@ const byCourt = matchUps.reduce((acc, matchUp) => {
 // Display
 Object.entries(byCourt).forEach(([courtId, matches]) => {
   console.log(`\n${matches[0]?.courtName || 'Unscheduled'}:`);
-  matches.forEach(m => {
+  matches.forEach((m) => {
     console.log(`  ${m.schedule.scheduledTime} - ${m.roundName}`);
   });
 });
@@ -517,25 +508,22 @@ Object.entries(byCourt).forEach(([courtId, matches]) => {
 
 ### Results Feed
 
-```js
-
 **API Reference:** [allTournamentMatchUps](/docs/governors/query-governor#alltournamentmatchups)
 
+```js
 const { matchUps } = tournamentEngine.allTournamentMatchUps({
   matchUpFilters: {
-    matchUpStatuses: ['COMPLETED']
-  }
+    matchUpStatuses: ['COMPLETED'],
+  },
 });
 
 // Sort by completion time
 matchUps
-  .sort((a, b) =>
-    new Date(b.schedule?.endTime || 0) - new Date(a.schedule?.endTime || 0)
-  )
-  .slice(0, 10)  // Latest 10 results
-  .forEach(matchUp => {
-    const winner = matchUp.sides.find(s => s.sideNumber === matchUp.winningSide);
-    const loser = matchUp.sides.find(s => s.sideNumber !== matchUp.winningSide);
+  .sort((a, b) => new Date(b.schedule?.endTime || 0) - new Date(a.schedule?.endTime || 0))
+  .slice(0, 10) // Latest 10 results
+  .forEach((matchUp) => {
+    const winner = matchUp.sides.find((s) => s.sideNumber === matchUp.winningSide);
+    const loser = matchUp.sides.find((s) => s.sideNumber !== matchUp.winningSide);
     console.log(`${winner.participant.person.standardFamilyName} d. ${loser.participant.person.standardFamilyName}`);
     console.log(`  ${matchUp.score.scoreStringSide1}`);
   });
@@ -543,20 +531,19 @@ matchUps
 
 ### Live Matches
 
-```js
-
 **API Reference:** [allTournamentMatchUps](/docs/governors/query-governor#alltournamentmatchups)
 
+```js
 const { matchUps } = tournamentEngine.allTournamentMatchUps({
   matchUpFilters: {
-    matchUpStatuses: ['IN_PROGRESS']
-  }
+    matchUpStatuses: ['IN_PROGRESS'],
+  },
 });
 
 console.log(`${matchUps.length} matches in progress`);
-matchUps.forEach(matchUp => {
+matchUps.forEach((matchUp) => {
   console.log(`${matchUp.courtName}: ${matchUp.roundName}`);
-  matchUp.sides.forEach(side => {
+  matchUp.sides.forEach((side) => {
     console.log(`  ${side.participant.person.standardFamilyName}`);
   });
 });

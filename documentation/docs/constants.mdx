@@ -212,9 +212,27 @@ validate** paths coerce for comparison without mutating stored data.
 **entryStatusConstants** - Entry status values
 
 ```js
-const { DIRECT_ACCEPTANCE, ALTERNATE, UNGROUPED, WILDCARD, QUALIFIER, LUCKY_LOSER, WITHDRAWN } =
-  factoryConstants.entryStatusConstants;
+const {
+  DIRECT_ACCEPTANCE,
+  ORGANISER_ACCEPTANCE,
+  ALTERNATE,
+  UNGROUPED,
+  UNPAIRED,
+  WILDCARD,
+  QUALIFIER,
+  LUCKY_LOSER,
+  JUNIOR_EXEMPT,
+  SPECIAL_EXEMPT,
+  REGISTERED,
+  CONFIRMED,
+  FEED_IN,
+  WITHDRAWN,
+} = factoryConstants.entryStatusConstants;
 ```
+
+The module also exports curated groupings — `VALID_ENTRY_STATUSES`, `DIRECT_ENTRY_STATUSES`,
+`EQUIVALENT_ACCEPTANCE_STATUSES`, `STRUCTURE_SELECTED_STATUSES` and `DRAW_SPECIFIC_STATUSES` —
+so consumers can test membership without re-deriving the sets.
 
 **ratingConstants** - Rating system identifiers
 
@@ -246,6 +264,36 @@ const { RANKING, RATING, SEEDING, PUBLISH, SCHEDULE, STATUS, SCORE } = factoryCo
 ```js
 const { MONDAY, TUESDAY, WEDNESDAY, THURSDAY, FRIDAY, SATURDAY, SUNDAY } = factoryConstants.weekdayConstants;
 ```
+
+**bookingTypeConstants** - Why a court is occupied
+
+```js
+const { SCHEDULED, PRACTICE, MAINTENANCE, DRYING, RESERVED, BLOCKED, CLOSED } = factoryConstants.bookingTypeConstants;
+```
+
+Generated from `BookingTypeEnum` — see [Enums](./enums.mdx). `DRYING` is deliberately
+distinct from `MAINTENANCE`: maintenance is planned work, drying is a weather-driven
+delay, and schedulers treat the two differently.
+
+**dayStateConstants** - A person's self-declared willingness to be scheduled on a given day
+
+```js
+const { AVAILABLE, IF_NEEDED, UNAVAILABLE, NOT_SET } = factoryConstants.dayStateConstants;
+```
+
+`NOT_SET` is the implicit state of any day absent from a declarations payload.
+
+:::caution
+This is **person** day-state, not **court** availability. Court availability is
+`BLOCK_TYPES` in the [Availability Engine](./availability-engine/availability-engine-overview.md) —
+a different vocabulary answering a different question. The two even share the literal
+`'AVAILABLE'` while meaning unrelated things: here "this person said yes", there
+"no block covers this court time".
+
+`availabilityConstants` is a deprecated alias for this same object, kept so the rename
+is not a breaking change. It is slated for removal in the next major — prefer
+`dayStateConstants`.
+:::
 
 ### Policy & Configuration Constants
 
@@ -319,6 +367,27 @@ const {
   WITHDRAW_PARTICIPANT,
 } = factoryConstants.positionActionConstants;
 ```
+
+**actionMethodConstants** - Engine method names carried on actions
+
+Every action returned by `positionActions()` and `matchUpActions()` looks like
+`{ type, method, payload, … }`, where `method` names the engine method to invoke.
+`actionMethodConstants` enumerates those method names in one place.
+
+```js
+const { ASSIGN_PARTICIPANT_METHOD, ASSIGN_BYE_METHOD, SUBSTITUTION_METHOD, SCHEDULE_METHOD } =
+  factoryConstants.actionMethodConstants;
+```
+
+:::note
+Most consumers do not need this. Actions are meant to be forwarded verbatim —
+`{ method: action.method, params: action.payload }` — and code that branches on an
+action should key off `action.type`, which `positionActionConstants` and
+`matchUpActionConstants` already expose. This aggregate exists primarily as a
+type anchor: it is typed against the generated engine-method union, so renaming an
+engine method fails the factory's own type check rather than surfacing as
+"method not found" in a consumer.
+:::
 
 **penaltyConstants** - Penalty types
 

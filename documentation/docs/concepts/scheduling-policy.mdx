@@ -26,7 +26,7 @@ import { tournamentEngine, POLICY_SCHEDULING_DEFAULT } from 'tods-competition-fa
 
 tournamentEngine.setState(tournamentRecord);
 tournamentEngine.attachPolicies({
-  policyDefinitions: POLICY_SCHEDULING_DEFAULT
+  policyDefinitions: POLICY_SCHEDULING_DEFAULT,
 });
 ```
 
@@ -36,10 +36,9 @@ tournamentEngine.attachPolicies({
 `modifyMatchUpFormatTiming()` adds an extension to the tournament record that is read by scheduling functions to override default policy timing for specific formats. The extension persists at the tournament level and affects all subsequent scheduling operations.
 :::
 
-```js
-
 **API Reference:** [attachPolicies](/docs/governors/policy-governor#attachpolicies)
 
+```js
 // Set averageTimes for a specific matchUpFormat
 engine.modifyMatchUpFormatTiming({
   matchUpFormat: 'SET3-S:6/TB7',
@@ -79,10 +78,11 @@ engine.setMatchUpDailyLimits({
 
 :::info Further Reading
 See the complete [Scheduling Policy Reference](/docs/policies/scheduling) for:
+
 - Full policy structure and configuration options
 - Category-based and format-specific timing
 - Participant-specific daily limits
 - Venue modification protection
 - Policy hierarchy and inheritance
 - Advanced examples and patterns
-:::
+  :::

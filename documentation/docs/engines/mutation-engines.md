@@ -38,24 +38,26 @@ tournamentEngine.addEvent({ event: { eventName: 'Singles', eventType: 'SINGLES' 
 
 Use `asyncEngine` for multi-client server applications:
 
-```js
-
 **API Reference:** [addEvent](/docs/governors/event-governor#addevent)
 
+```js
 import { asyncEngine, globalState } from 'tods-competition-factory';
-import { asyncGlobalState } from './asyncGlobalState';
+import asyncGlobalState from './asyncGlobalState';
 
 // Configure async state provider once at startup
 globalState.setStateProvider(asyncGlobalState);
 
 // Each client request gets isolated state
 app.post('/api/tournament/:id/event', async (req, res) => {
-  const tournamentRecord = await loadTournament(req.params.id);
-  await asyncEngine.setState(tournamentRecord);
-  
-  const result = await asyncEngine.addEvent({ event: req.body.event });
-  await saveTournament(asyncEngine.getState());
-  
+  const result = await asyncGlobalState.runWithInstanceState(async () => {
+    const tournamentRecord = await loadTournament(req.params.id);
+    await asyncEngine.setState(tournamentRecord);
+
+    const outcome = await asyncEngine.addEvent({ event: req.body.event });
+    await saveTournament(asyncEngine.getState());
+    return outcome;
+  });
+
   res.json(result);
 });
 ```
@@ -68,7 +70,10 @@ app.post('/api/tournament/:id/event', async (req, res) => {
 - Any scenario with concurrent state modifications
 
 **State Isolation:**
-Async engines use Node's `executionAsyncId()` to maintain separate state for each async execution context, preventing state collision between concurrent requests.
+Async engines keep separate state per async execution context via `AsyncLocalStorage`,
+preventing state collision between concurrent requests. Bind a fresh state to each
+request with `runWithInstanceState` — see [Asynchronous State Provider](#asynchronous-state-provider)
+for the provider contract and the failure modes it is designed around.
 
 ---
 
@@ -87,18 +92,18 @@ addNotification({
   payload: (payload) => {
     console.log('MatchUps added:', payload.matchUps);
     // Update UI, trigger webhooks, etc.
-  }
+  },
 });
 
 addNotification({
   topic: 'modifyMatchUp',
   payload: (payload) => {
     console.log('MatchUp modified:', payload.matchUp);
-  }
+  },
 });
 
 // Now mutations trigger notifications
-tournamentEngine.generateDrawDefinition({ /* ... */ });
+tournamentEngine.generateDrawDefinition({/* ... */});
 // Triggers 'addMatchUps' notification
 ```
 
@@ -113,10 +118,9 @@ tournamentEngine.generateDrawDefinition({ /* ... */ });
 
 ### Real-World Example: Live Scoring Updates
 
-```js
-
 **API Reference:** [generateDrawDefinition](/docs/governors/generation-governor#generatedrawdefinition)
 
+```js
 import { tournamentEngine, addNotification } from 'tods-competition-factory';
 import { broadcastToWebSocketClients } from './websocket';
 
@@ -129,10 +133,10 @@ addNotification({
         type: 'SCORE_UPDATE',
         matchUpId: payload.matchUp.matchUpId,
         score: payload.matchUp.score,
-        matchUpStatus: payload.matchUp.matchUpStatus
+        matchUpStatus: payload.matchUp.matchUpStatus,
       });
     }
-  }
+  },
 });
 
 // Recording a score triggers notification
@@ -142,10 +146,10 @@ tournamentEngine.setMatchUpStatus({
     score: {
       sets: [
         { side1Score: 6, side2Score: 4 },
-        { side1Score: 6, side2Score: 3 }
-      ]
-    }
-  }
+        { side1Score: 6, side2Score: 3 },
+      ],
+    },
+  },
 });
 // WebSocket clients receive live update
 ```
@@ -160,10 +164,9 @@ Protect tournament integrity by automatically reverting changes when operations 
 
 ### Basic Rollback
 
-```js
-
 **API Reference:** [setMatchUpStatus](/docs/governors/matchup-governor#setmatchupstatus)
 
+```js
 import { tournamentEngine } from 'tods-competition-factory';
 
 tournamentEngine.setState(tournamentRecord);
@@ -171,7 +174,7 @@ tournamentEngine.setState(tournamentRecord);
 try {
   const result = await tournamentEngine.automatedPositioning({
     drawId: 'draw-1',
-    rollbackOnError: true  // Enable automatic rollback
+    rollbackOnError: true, // Enable automatic rollback
   });
 } catch (error) {
   // State automatically reverted to pre-operation state
@@ -181,10 +184,9 @@ try {
 
 ### Transaction Pattern
 
-```js
-
 **API Reference:** [automatedPositioning](/docs/governors/draws-governor#automatedpositioning)
 
+```js
 // Complex operation with multiple mutations
 tournamentEngine.setState(tournamentRecord);
 const originalState = tournamentEngine.getState();
@@ -194,7 +196,7 @@ try {
   await tournamentEngine.addEvent({ event, rollbackOnError: true });
   await tournamentEngine.generateDrawDefinition({ drawSize: 32, rollbackOnError: true });
   await tournamentEngine.attachPolicy({ policyDefinitions, rollbackOnError: true });
-  
+
   // All succeeded, persist state
   await saveToDatabase(tournamentEngine.getState());
 } catch (error) {
@@ -228,12 +230,9 @@ try {
 
 Synchronous engines maintain state in memory without special configuration:
 
-```js
-
 **API Reference:** [addEvent](/docs/governors/event-governor#addevent)
 
-**API Reference:** [generateDrawDefinition](/docs/governors/generation-governor#generatedrawdefinition)
-
+```js
 import { tournamentEngine } from 'tods-competition-factory';
 
 // No setup required for sync engines
@@ -241,61 +240,80 @@ tournamentEngine.setState(tournamentRecord);
 tournamentEngine.addEvent({ event });
 ```
 
+A sync engine holds **one** state for the whole process. That is correct for a client,
+where there is one user and one tournament in view. On a server handling concurrent
+requests it is not — every request would mutate the same records.
+
 ### Asynchronous State Provider
 
-For multi-client scenarios, implement a custom state provider:
+For a server, supply a state provider that gives each request its own engine state.
 
-```js
+A provider is **not** a `getState`/`setState` pair. It implements the full internal
+state surface the engines call into — `getTournamentRecords`, `setTournamentRecord`,
+`addNotice`, `callListener`, `getMethods`, and so on.
 
-**API Reference:** [addEvent](/docs/governors/event-governor#addevent)
-
-// asyncGlobalState.js
-import { AsyncLocalStorage } from 'async_hooks';
-
-const asyncLocalStorage = new AsyncLocalStorage();
-
-export const asyncGlobalState = {
-  // Get state for current async context
-  getState: () => asyncLocalStorage.getStore() || {},
-  
-  // Set state for current async context
-  setState: (state) => {
-    const store = asyncLocalStorage.getStore();
-    if (store) {
-      Object.assign(store, state);
-    }
-  },
-  
-  // Run callback in new async context
-  run: (callback) => {
-    asyncLocalStorage.run({}, callback);
-  }
-};
-```
+The provider is **not exported from the package** — only `dist` is published, under a
+single `"."` entry. Copy the reference implementation into your own server and register
+it at startup, which is exactly what competition-factory-server does:
 
 ```js
 // server.js
-import { globalState, asyncEngine } from 'tods-competition-factory';
-import { asyncGlobalState } from './asyncGlobalState';
+import { globalState, asyncEngine, governors } from 'tods-competition-factory';
+import asyncGlobalState from './asyncGlobalState'; // your copy of the reference implementation
 
 // Configure once at app startup
+globalState.setStateMethods(governors, /* traverse */ true, /* depth */ 1, /* global */ true);
 globalState.setStateProvider(asyncGlobalState);
+```
 
-// Each request gets isolated state
-app.use((req, res, next) => {
-  asyncGlobalState.run(() => next());
-});
+The provider is built on `AsyncLocalStorage`, which propagates deterministically across
+every `await` shape. Bind a fresh state per request by wrapping the request in
+`runWithInstanceState` — the store is scoped to the callback, so it cannot outlive the
+request or bleed into a sibling:
 
+```js
 app.post('/api/event', async (req, res) => {
-  // State isolated to this request
-  await asyncEngine.setState(req.tournament);
-  const result = await asyncEngine.addEvent({ event: req.body });
+  const result = await asyncGlobalState.runWithInstanceState(async () => {
+    await asyncEngine.setState(req.tournament);
+    return asyncEngine.addEvent({ event: req.body });
+  });
   res.json(result);
 });
 ```
 
+:::caution Wrap every entry point
+If engine state is touched outside `runWithInstanceState`, the provider lazily binds a
+new state to the current async context and logs a warning — it never falls back to a
+shared default and never throws.
+
+That is a **safety net, not isolation**. Unwrapped siblings launched from a common
+parent context still share state, because the first access binds a store to that shared
+parent which the sibling then inherits. `asyncGlobalState.implicitContextCreations()`
+returns how many times state was created implicitly; treat a non-zero count in
+production as an unwrapped entry point to find, not as noise.
+:::
+
+:::warning Patterns that do not work
+Two shapes were tried against real server traffic and rejected — do not reimplement them:
+
+- **`getStore() || {}`** — returns a throwaway object when no context is bound. Reads
+  and writes silently go nowhere, and it degrades to one shared process-wide state,
+  which is the defect a provider exists to fix.
+- **Throwing when no context is bound** — assumes every entry point is statically
+  enumerable. It is not: governors are not uniformly pure, and
+  `mocksGovernor.generateTournamentRecord()` dispatches notices, so a direct governor
+  call touches instance state without going near an engine. A strict throw trades a
+  silent correctness bug for a loud outage.
+
+An earlier implementation keyed state by `executionAsyncId()` with an `init` hook
+copying the parent's entry. That propagation is call-shape dependent — it isolates
+under one `await` shape and leaks under another. `AsyncLocalStorage` does not have
+this failure mode. See [competition-factory#4564](https://github.com/CourtHive/competition-factory/issues/4564).
+:::
+
 **Reference Implementation:**
-See `src/examples/asyncEngine` in the source code for a complete async state provider example.
+`src/examples/asyncEngine/asyncGlobalState.ts` in the source code, which re-exports the
+single implementation used by competition-factory-server.
 
 ---
 
@@ -308,10 +326,10 @@ import { tournamentEngine, globalState } from 'tods-competition-factory';
 
 // Enable detailed logging
 globalState.setDevContext({
-  errors: true,    // Log errors
-  params: true,    // Log method parameters  
-  result: true,    // Log method results
-  perf: 100        // Log methods taking >100ms
+  errors: true, // Log errors
+  params: true, // Log method parameters
+  result: true, // Log method results
+  perf: 100, // Log methods taking >100ms
 });
 
 tournamentEngine.setState(tournamentRecord);
@@ -326,7 +344,7 @@ tournamentEngine.generateDrawDefinition({ drawSize: 32 });
 
 - `errors: true` - Log all errors
 - `params: true | ['methodName']` - Log parameters for all or specific methods
-- `result: true | ['methodName']` - Log results for all or specific methods  
+- `result: true | ['methodName']` - Log results for all or specific methods
 - `perf: number` - Log methods exceeding threshold (ms)
 - `exclude: ['methodName']` - Exclude specific methods from logging
 

@@ -111,10 +111,9 @@ participants.forEach((p) => {
 
 Add calculated win/loss statistics:
 
-```js
-
 **API Reference:** [getParticipants](/docs/governors/query-governor#getparticipants)
 
+```js
 const { participants } = tournamentEngine.getParticipants({
   withStatistics: true,
 });
@@ -137,10 +136,9 @@ participants.forEach((p) => {
 
 Include information about all opponents faced:
 
-```js
-
 **API Reference:** [getParticipants](/docs/governors/query-governor#getparticipants)
 
+```js
 const { participants } = tournamentEngine.getParticipants({
   withOpponents: true,
   withMatchUps: true, // Often used together
@@ -158,10 +156,9 @@ participants.forEach((p) => {
 
 For PAIR, TEAM, or GROUP participants, expand to include full individual participant details:
 
-```js
-
 **API Reference:** [getParticipants](/docs/governors/query-governor#getparticipants)
 
+```js
 const { participants } = tournamentEngine.getParticipants({
   participantFilters: { participantTypes: ['PAIR'] },
   withIndividualParticipants: true
@@ -203,10 +200,9 @@ const { participants } = tournamentEngine.getParticipants({
 
 Convert timeItems (rankings/ratings) into accessible scale values:
 
-```js
-
 **API Reference:** [getParticipants](/docs/governors/query-governor#getparticipants)
 
+```js
 const { participants } = tournamentEngine.getParticipants({
   withScaleValues: true,
 });
@@ -223,10 +219,9 @@ participants.forEach((p) => {
 
 **Converts timeItems like:**
 
-```js
-
 **API Reference:** [getParticipants](/docs/governors/query-governor#getparticipants)
 
+```js
 // From:
 timeItems: [{
   itemType: 'RANKING.SINGLES',
@@ -276,10 +271,9 @@ if (participant._membershipLevel === 'GOLD') {
 
 Add event and draw information:
 
-```js
-
 **API Reference:** [getParticipants](/docs/governors/query-governor#getparticipants)
 
+```js
 const { participants } = tournamentEngine.getParticipants({
   withEvents: true,
   withDraws: true,
@@ -300,10 +294,9 @@ participants.forEach((p) => {
 
 Detect participants with scheduling conflicts:
 
-```js
-
 **API Reference:** [getParticipants](/docs/governors/query-governor#getparticipants)
 
+```js
 const { participants, participantIdsWithConflicts } = tournamentEngine.getParticipants({
   withMatchUps: true,
   scheduleAnalysis: {
@@ -331,10 +324,9 @@ if (participantIdsWithConflicts.length > 0) {
 
 Retrieve fully enriched participant data for display:
 
-```js
-
 **API Reference:** [getParticipants](/docs/governors/query-governor#getparticipants)
 
+```js
 const { participants } = tournamentEngine.getParticipants({
   participantFilters: {
     participantTypes: ['INDIVIDUAL'],
@@ -412,10 +404,9 @@ const { participants } = tournamentEngine.getParticipants({
 
 For fast lookups without full hydration:
 
-```js
-
 **API Reference:** [getParticipants](/docs/governors/query-governor#getparticipants)
 
+```js
 const {
   participantMap, // Object: { [participantId]: participant }
 } = tournamentEngine.getParticipants({
@@ -432,10 +423,9 @@ const participant = participantMap['player-123'];
 
 Pass additional context to be added to all participants:
 
-```js
-
 **API Reference:** [getParticipants](/docs/governors/query-governor#getparticipants)
 
+```js
 const { participants } = tournamentEngine.getParticipants({
   context: {
     tournamentName: 'US Open 2024',
@@ -454,10 +444,9 @@ participants.forEach((p) => {
 
 ### INDIVIDUAL Hydration
 
-```js
-
 **API Reference:** [getParticipants](/docs/governors/query-governor#getparticipants)
 
+```js
 const { participants } = tournamentEngine.getParticipants({
   participantFilters: { participantTypes: ['INDIVIDUAL'] },
   withMatchUps: true,
@@ -469,10 +458,9 @@ const { participants } = tournamentEngine.getParticipants({
 
 ### PAIR Hydration
 
-```js
-
 **API Reference:** [getParticipants](/docs/governors/query-governor#getparticipants)
 
+```js
 const { participants } = tournamentEngine.getParticipants({
   participantFilters: { participantTypes: ['PAIR'] },
   withIndividualParticipants: true, // Critical for pairs
@@ -488,10 +476,9 @@ const { participants } = tournamentEngine.getParticipants({
 
 ### TEAM Hydration
 
-```js
-
 **API Reference:** [getParticipants](/docs/governors/query-governor#getparticipants)
 
+```js
 const { participants } = tournamentEngine.getParticipants({
   participantFilters: { participantTypes: ['TEAM'] },
   withIndividualParticipants: true, // Shows full roster

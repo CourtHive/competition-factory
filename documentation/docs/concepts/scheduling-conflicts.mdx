@@ -63,10 +63,9 @@ if (participantIdsWithConflicts.length > 0) {
 
 Override policy defaults with a specific minute difference:
 
-```js
-
 **API Reference:** [getParticipants](/docs/governors/query-governor#getparticipants)
 
+```js
 const { participants, participantIdsWithConflicts } = tournamentEngine.getParticipants({
   scheduleAnalysis: {
     scheduledMinutesDifference: 60, // Flag any matches within 60 minutes
@@ -85,10 +84,9 @@ This approach:
 
 Participants with conflicts include a `scheduleConflicts` array:
 
-```ts
-
 **API Reference:** [getParticipants](/docs/governors/query-governor#getparticipants)
 
+```ts
 type Participant = {
   participantId: string;
   participantName: string;
@@ -175,10 +173,9 @@ console.log(`Minor conflicts: ${minorConflicts.length}`);
 
 ### 2. Reschedule Conflicting Matches
 
-```js
-
 **API Reference:** [getParticipants](/docs/governors/query-governor#getparticipants)
 
+```js
 // Reschedule one of the conflicting matches
 criticalConflicts.forEach(({ player, conflict }) => {
   // Get match details
@@ -212,10 +209,9 @@ console.log(`Remaining conflicts: ${remainingConflicts.length}`);
 
 If conflicts are systematic, adjust the policy. These functions add extensions to the tournament record that are read by scheduling functions:
 
-```js
-
 **API Reference:** [getParticipants](/docs/governors/query-governor#getparticipants)
 
+```js
 // Increase recovery times (adds tournament-level extension)
 tournamentEngine.modifyMatchUpFormatTiming({
   matchUpFormat: 'SET3-S:6/TB7',
@@ -313,7 +309,6 @@ multiEventPlayers.forEach((player) => {
   console.log(`${player.participantName} has ${player.scheduleConflicts.length} cross-event conflicts`);
 });
 ```
-
 
 **API Reference:** [getParticipants](/docs/governors/query-governor#getparticipants)
 

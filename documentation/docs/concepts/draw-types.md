@@ -139,10 +139,9 @@ const { drawDefinition } = tournamentEngine.generateDrawDefinition({
 
 The same main draw structure can receive qualifiers at different rounds, with each round's qualifiers coming from different qualifying structures:
 
-```text
-
 **API Reference:** [generateDrawDefinition](/docs/governors/generation-governor#generatedrawdefinition)
 
+```text
 Main Draw Structure (32 positions):
   Round 1 (16 positions):
     ├─ Positions 1-4: Qualifiers from Qualifying A

@@ -41,10 +41,9 @@ console.log(raw[0].tournamentName); // ✗ undefined
 
 Every hydrated matchUp includes identifiers and names from its hierarchy:
 
-```js
-
 **API Reference:** [allTournamentMatchUps](/docs/governors/query-governor#alltournamentmatchups)
 
+```js
 {
   matchUpId: 'match-123',
 
@@ -191,10 +190,9 @@ matchUps.forEach((matchUp) => {
 
 ### Example: Final Match Progression
 
-```js
-
 **API Reference:** [allDrawMatchUps](/docs/governors/query-governor#alldrawmatchups)
 
+```js
 {
   matchUpId: 'semifinal-1',
   roundName: 'Semifinals',
@@ -249,10 +247,9 @@ console.log(matchUps[0].extensions);  // Array of extension objects
 
 Extension names are converted to camelCase with underscore prefix:
 
-```js
-
 **API Reference:** [allTournamentMatchUps](/docs/governors/query-governor#alltournamentmatchups)
 
+```js
 // Extension name → Attribute name
 'courtPreference'      → _courtPreference
 'broadcast_match'      → _broadcastMatch
@@ -303,10 +300,9 @@ Disable context when:
 - Only need core matchUp data (IDs, scores, status)
 - Implementing high-frequency operations
 
-```js
-
 **API Reference:** [allTournamentMatchUps](/docs/governors/query-governor#alltournamentmatchups)
 
+```js
 // Fast: minimal data
 const { matchUps } = tournamentEngine.allTournamentMatchUps({
   inContext: false,
@@ -322,10 +318,9 @@ const { matchUps } = tournamentEngine.allTournamentMatchUps({
 
 All hydrated matchUps are deep copies, ensuring data integrity but using more memory:
 
-```js
-
 **API Reference:** [allTournamentMatchUps](/docs/governors/query-governor#alltournamentmatchups)
 
+```js
 // Get hydrated matchUps
 const { matchUps } = tournamentEngine.allTournamentMatchUps();
 
@@ -343,10 +338,9 @@ console.log(fresh[0].roundName); // Still present
 
 Control how participants are hydrated within matchUps:
 
-```js
-
 **API Reference:** [allTournamentMatchUps](/docs/governors/query-governor#alltournamentmatchups)
 
+```js
 const { matchUps } = tournamentEngine.allTournamentMatchUps({
   // Include full participant details (default)
   inContext: true,
@@ -374,10 +368,9 @@ matchUps[0].sides.forEach((side) => {
 
 Pass additional contextual data to retrieval methods:
 
-```js
-
 **API Reference:** [allTournamentMatchUps](/docs/governors/query-governor#alltournamentmatchups)
 
+```js
 const { matchUps } = tournamentEngine.allTournamentMatchUps({
   context: {
     myCustomField: 'value',
@@ -396,10 +389,9 @@ matchUps.forEach((matchUp) => {
 
 When working with tournament records directly, context can be passed:
 
-```js
-
 **API Reference:** [allTournamentMatchUps](/docs/governors/query-governor#alltournamentmatchups)
 
+```js
 import { getMatchUps } from 'tods-competition-factory';
 
 const matchUps = getMatchUps({
@@ -439,10 +431,9 @@ matchUps.forEach((matchUp) => {
 
 ### Results with Full Context
 
-```js
-
 **API Reference:** [allTournamentMatchUps](/docs/governors/query-governor#alltournamentmatchups)
 
+```js
 const { matchUps } = tournamentEngine.allTournamentMatchUps({
   matchUpFilters: {
     matchUpStatuses: ['COMPLETED'],
@@ -467,10 +458,9 @@ matchUps.forEach((matchUp) => {
 
 ### Build Draw Bracket
 
-```js
-
 **API Reference:** [allTournamentMatchUps](/docs/governors/query-governor#alltournamentmatchups)
 
+```js
 const { matchUps } = tournamentEngine.allDrawMatchUps({
   drawId: 'draw-123',
   nextMatchUps: true,

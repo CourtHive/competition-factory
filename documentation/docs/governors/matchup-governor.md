@@ -899,7 +899,7 @@ const outcome = {
   matchUpStatus, // optional — e.g. COMPLETED, RETIRED, WALKOVER, DEFAULTED, DOUBLE_WALKOVER
   matchUpStatusCodes, // optional — array of status code strings
   winningSide, // optional — 1 or 2
-  score, // optional — { sets, scoreStringSide1, scoreStringSide2 }
+  score, // optional — { sets } — see note; per-side strings are derived, not accepted
   matchUpFormat, // optional — override matchUpFormat for this matchUp
 };
 
@@ -932,6 +932,27 @@ engine.setMatchUpStatus({
   },
 });
 ```
+
+### Score strings are derived, never trusted
+
+`score.sets` is the source of truth. `scoreStringSide1` / `scoreStringSide2` are
+**regenerated from `sets` on every call**, and any strings supplied by the caller are
+discarded rather than persisted.
+
+Previously generation was skipped whenever the caller supplied its own strings, so a
+client could persist strings the factory would never emit and its own `parseScoreString`
+could not round-trip — including set scores present in the string but absent from `sets`.
+Callers that hand-author score strings should stop doing so; send `sets` and read the
+derived strings back.
+
+Two consequences worth knowing:
+
+- The matchUp's **effective** `matchUpFormat` is resolved via `getMatchUpFormat` rather
+  than read off `outcome.matchUpFormat`, which is usually absent. Without it a
+  tiebreak-only deciding set (`F:TB10`) rendered as a plain game score instead of
+  `[10-8]`.
+- The derived score object is **merged into** `outcome.score` rather than replacing it,
+  so non-derived attributes such as `score.side1PointScore` survive.
 
 ### Reversing a propagated exit
 

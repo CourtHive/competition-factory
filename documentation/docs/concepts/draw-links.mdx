@@ -240,26 +240,25 @@ const { drawDefinition } = tournamentEngine.generateDrawDefinition({
 
 Some tournaments use progressive qualifying where different levels feed into different rounds:
 
-```js
-
 **API Reference:** [generateDrawDefinition](/docs/governors/generation-governor#generatedrawdefinition)
 
+```js
 const { drawDefinition } = tournamentEngine.generateDrawDefinition({
   drawSize: 128,
   qualifyingProfiles: [
     {
       roundTarget: 1,
       structureProfiles: [
-        { drawSize: 128, qualifyingPositions: 16 }  // Main qualifying
-      ]
+        { drawSize: 128, qualifyingPositions: 16 }, // Main qualifying
+      ],
     },
     {
       roundTarget: 2,
       structureProfiles: [
-        { drawSize: 32, qualifyingPositions: 4 }    // Lucky loser qualifying
-      ]
-    }
-  ]
+        { drawSize: 32, qualifyingPositions: 4 }, // Lucky loser qualifying
+      ],
+    },
+  ],
 });
 
 // Creates:
@@ -355,9 +354,7 @@ const { tournamentRecord } = mocksEngine.generateTournamentRecord({
     {
       drawSize: 32,
       drawName: 'East',
-      withPlayoffs: {
-        /* nested roundPlayoffs tree */
-      },
+      withPlayoffs: {/* nested roundPlayoffs tree */},
     },
   ],
 });
@@ -369,9 +366,7 @@ const { tournamentRecord } = mocksEngine.generateTournamentRecord({
       drawProfiles: [
         {
           drawSize: 32,
-          withPlayoffs: {
-            /* nested roundPlayoffs tree */
-          },
+          withPlayoffs: {/* nested roundPlayoffs tree */},
         },
       ],
     },

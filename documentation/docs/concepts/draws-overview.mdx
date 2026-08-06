@@ -92,10 +92,9 @@ const { drawDefinition } = tournamentEngine.generateDrawDefinition({
 
 The `finishingPositions` array in each playoff group determines which group finishers advance to that bracket. See [Finishing Positions](./finishing-positions) for how these map to overall draw positions and ranking points.
 
-```js
-
 **API Reference:** [generateDrawDefinition](/docs/governors/generation-governor#generatedrawdefinition)
 
+```js
 const { drawDefinition } = tournamentEngine.generateDrawDefinition({
   eventId: 'doubles-u18',
   drawSize: 16,
@@ -114,10 +113,9 @@ const { drawDefinition } = tournamentEngine.generateDrawDefinition({
 
 #### Draw with Qualifying
 
-```js
-
 **API Reference:** [generateDrawDefinition](/docs/governors/generation-governor#generatedrawdefinition)
 
+```js
 const { drawDefinition } = tournamentEngine.generateDrawDefinition({
   eventId: 'singles-championship',
   drawSize: 32,
@@ -147,16 +145,14 @@ Generate qualifying structures before the main draw exists. The MAIN structure i
 
 ```js
 // Step 1: Generate qualifying-only draw
-const qualifyingEntries = event.entries.filter(e => e.entryStage === 'QUALIFYING');
+const qualifyingEntries = event.entries.filter((e) => e.entryStage === 'QUALIFYING');
 const { drawDefinition } = tournamentEngine.generateDrawDefinition({
   eventId: 'singles-championship',
   qualifyingOnly: true,
   drawEntries: qualifyingEntries,
   qualifyingProfiles: [
     {
-      structureProfiles: [
-        { drawSize: 16, qualifyingPositions: 4 },
-      ],
+      structureProfiles: [{ drawSize: 16, qualifyingPositions: 4 }],
     },
   ],
   automated: true,
@@ -167,7 +163,7 @@ const { drawDefinition } = tournamentEngine.generateDrawDefinition({
 
 // Step 2: Later, generate the main draw
 const mainResult = tournamentEngine.generateDrawDefinition({
-  drawId: drawDefinition.drawId,  // existing draw
+  drawId: drawDefinition.drawId, // existing draw
   drawSize: 32,
   drawType: 'SINGLE_ELIMINATION',
 });
@@ -183,10 +179,9 @@ tournamentEngine.addDrawDefinition({
 
 #### Compass Draw
 
-```js
-
 **API Reference:** [generateDrawDefinition](/docs/governors/generation-governor#generatedrawdefinition)
 
+```js
 const { drawDefinition } = tournamentEngine.generateDrawDefinition({
   eventId: 'singles-compass',
   drawSize: 8,
@@ -198,10 +193,9 @@ const { drawDefinition } = tournamentEngine.generateDrawDefinition({
 
 #### Manual Placement (Seeds Only)
 
-```js
-
 **API Reference:** [generateDrawDefinition](/docs/governors/generation-governor#generatedrawdefinition)
 
+```js
 const { drawDefinition } = tournamentEngine.generateDrawDefinition({
   eventId: 'singles-main',
   drawSize: 32,
@@ -224,10 +218,9 @@ Control how seeded participants are positioned:
 
 **WATERFALL** (for Round Robin):
 
-```js
-
 **API Reference:** [generateDrawDefinition](/docs/governors/generation-governor#generatedrawdefinition)
 
+```js
 seedingProfile: {
   positioning: 'WATERFALL';
 }

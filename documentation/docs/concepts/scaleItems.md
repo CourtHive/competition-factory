@@ -51,10 +51,9 @@ tournamentEngine.setParticipantScaleItem({
 
 Numerical assessment of playing ability (can be any numeric range):
 
-```js
-
 **API Reference:** [setParticipantScaleItem](/docs/governors/participant-governor#setparticipantscaleitem)
 
+```js
 const ratingItem = {
   scaleType: 'RATING',
   scaleValue: 8.3, // WTN rating (1.0-16.0 scale)
@@ -80,10 +79,9 @@ tournamentEngine.setParticipantScaleItem({
 
 Tournament-specific competitive ordering:
 
-```js
-
 **API Reference:** [setParticipantScaleItem](/docs/governors/participant-governor#setparticipantscaleitem)
 
+```js
 const seedingItem = {
   scaleType: 'SEEDING',
   scaleValue: 1, // Seed number (1 = top seed)
@@ -104,10 +102,9 @@ Seeding values determine draw placement and are typically generated from ranking
 
 ### Basic Structure
 
-```typescript
-
 **API Reference:** [setParticipantScaleItem](/docs/governors/participant-governor#setparticipantscaleitem)
 
+```typescript
 type ScaleItem = {
   scaleType: 'RANKING' | 'RATING' | 'SEEDING';
   scaleValue: number | object; // Numeric value or complex object
@@ -200,10 +197,9 @@ tournamentEngine.setParticipantScaleItem({
 
 Set multiple scale items at once:
 
-```js
-
 **API Reference:** [setParticipantScaleItem](/docs/governors/participant-governor#setparticipantscaleitem)
 
+```js
 tournamentEngine.setParticipantScaleItems({
   participantId: 'player-123',
   scaleItems: [
@@ -236,10 +232,9 @@ tournamentEngine.setParticipantScaleItems({
 
 Set scale items for many participants efficiently:
 
-```js
-
 **API Reference:** [setParticipantScaleItems](/docs/governors/participant-governor#setparticipantscaleitems)
 
+```js
 const participantScaleItems = [
   {
     participantId: 'player-1',
@@ -266,10 +261,9 @@ participantScaleItems.forEach(({ participantId, scaleItems }) => {
 
 Retrieve the most recent scale item matching specific criteria:
 
-```js
-
 **API Reference:** [setParticipantScaleItems](/docs/governors/participant-governor#setparticipantscaleitems)
 
+```js
 const { scaleItem } = tournamentEngine.getParticipantScaleItem({
   participantId: 'player-123',
   scaleAttributes: {
@@ -290,10 +284,9 @@ console.log(scaleItem.scaleDate); // '2024-06-15'
 
 Retrieve all scale items for a participant:
 
-```js
-
 **API Reference:** [getParticipantScaleItem](/docs/governors/query-governor#getparticipantscaleitem)
 
+```js
 const { participant } = tournamentEngine.getParticipant({
   participantId: 'player-123',
 });
@@ -407,10 +400,9 @@ Organizations often have proprietary methods for determining seed order, especia
 
 **Example (from TMX):**
 
-```js
-
 **API Reference:** [getParticipantScaleItem](/docs/governors/query-governor#getparticipantscaleitem)
 
+```js
 // Step 1: Get entries and seeds count
 const { seedsCount, stageEntries } = tournamentEngine.getEntriesAndSeedsCount({
   policyDefinitions: POLICY_SEEDING,
@@ -466,12 +458,11 @@ scaleItemsWithParticipantIds.forEach(({ participantId, scaleItems }) => {
 
 For simpler cases where standard sorting by a scale value is sufficient, use `getScaledEntries()`:
 
-```js
-
 **API Reference:** [generateSeedingScaleItems](/docs/governors/generation-governor#generateseedingscaleitems)
 
 **API Reference:** [setParticipantScaleItems](/docs/governors/participant-governor#setparticipantscaleitems)
 
+```js
 // Step 1: Get scaled entries sorted by scale value
 const { scaledEntries } = tournamentEngine.getScaledEntries({
   eventId,
@@ -518,8 +509,6 @@ scaleItemsWithParticipantIds.forEach(({ participantId, scaleItems }) => {
 
 For fully automated seeding generation and assignment:
 
-```js
-
 **API Reference:** [getScaledEntries](/docs/governors/query-governor#getscaledentries)
 
 **API Reference:** [getEntriesAndSeedsCount](/docs/governors/query-governor#getentriesandseedscount)
@@ -528,6 +517,7 @@ For fully automated seeding generation and assignment:
 
 **API Reference:** [setParticipantScaleItems](/docs/governors/participant-governor#setparticipantscaleitems)
 
+```js
 // Automatically generate and assign seeding based on WTN ratings
 const result = tournamentEngine.autoSeeding({
   eventId: 'singles-main',
@@ -558,10 +548,9 @@ const result = tournamentEngine.autoSeeding({
 
 **Scale attributes** define criteria for retrieving or matching scale items:
 
-```typescript
-
 **API Reference:** [autoSeeding](/docs/governors/draws-governor#autoseeding)
 
+```typescript
 type ScaleAttributes = {
   scaleType: 'RANKING' | 'RATING' | 'SEEDING';
   scaleName: string;
@@ -591,10 +580,9 @@ const { scaleItem } = tournamentEngine.getParticipantScaleItem({
 
 When scale values are objects, use accessor to specify the value location:
 
-```js
-
 **API Reference:** [getParticipantScaleItem](/docs/governors/query-governor#getparticipantscaleitem)
 
+```js
 const scaleAttributes = {
   scaleType: 'RATING',
   scaleName: 'NTRP',
@@ -617,10 +605,9 @@ const { scaleItem } = tournamentEngine.getParticipantScaleItem({
 
 ### Tournament Entry with Ratings
 
-```js
-
 **API Reference:** [getParticipantScaleItem](/docs/governors/query-governor#getparticipantscaleitem)
 
+```js
 // Add participants with ratings
 const participants = [
   {
@@ -667,12 +654,11 @@ tournamentEngine.setParticipantScaleItem({
 
 ### Seeding from Rankings
 
-```js
-
 **API Reference:** [addParticipants](/docs/governors/participant-governor#addparticipants)
 
 **API Reference:** [setParticipantScaleItem](/docs/governors/participant-governor#setparticipantscaleitem)
 
+```js
 // Set ATP rankings
 const rankings = [
   { participantId: 'player-1', ranking: 1 },
@@ -713,12 +699,11 @@ tournamentEngine.autoSeeding({
 
 Maintain ratings in different systems:
 
-```js
-
 **API Reference:** [setParticipantScaleItem](/docs/governors/participant-governor#setparticipantscaleitem)
 
 **API Reference:** [autoSeeding](/docs/governors/draws-governor#autoseeding)
 
+```js
 const multipleRatings = [
   {
     scaleType: 'RATING',
@@ -772,12 +757,11 @@ const { scaleItem: utr } = tournamentEngine.getParticipantScaleItem({
 
 Participants can have different ratings for each event type:
 
-```js
-
 **API Reference:** [setParticipantScaleItems](/docs/governors/participant-governor#setparticipantscaleitems)
 
 **API Reference:** [getParticipantScaleItem](/docs/governors/query-governor#getparticipantscaleitem)
 
+```js
 tournamentEngine.setParticipantScaleItems({
   participantId: 'player-123',
   scaleItems: [
@@ -805,10 +789,9 @@ tournamentEngine.setParticipantScaleItems({
 
 **CRITICAL:** Scale dates **MUST** use ISO 8601 date format (`YYYY-MM-DD`). The factory will not function correctly with other date formats:
 
-```js
-
 **API Reference:** [setParticipantScaleItems](/docs/governors/participant-governor#setparticipantscaleitems)
 
+```js
 // ✓ CORRECT - ISO 8601 format (YYYY-MM-DD)
 const scaleDate = '2024-06-15';
 
@@ -875,10 +858,9 @@ tournamentEngine.autoSeeding({
 
 When using object scale values, always provide accessor for operations:
 
-```js
-
 **API Reference:** [autoSeeding](/docs/governors/draws-governor#autoseeding)
 
+```js
 // Complex scale value
 const scaleItem = {
   scaleType: 'RATING',
