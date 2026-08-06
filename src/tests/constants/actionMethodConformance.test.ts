@@ -1,30 +1,36 @@
 /**
- * Action `method:` reachability guard.
+ * Action `method:` validity guard.
  *
  * `positionActions()` and `matchUpActions()` hand consumers actions shaped like
  * `{ type, method, payload }`, where `method` names the engine method to invoke.
- * A consumer that cannot see the constant behind that value has to hardcode the
- * literal — which is exactly what TMX did (`method: 'assignDrawPosition'`) for as
- * long as the 22 `*_METHOD` constants were exported by their modules but absent
- * from every exported object.
+ * The invariant worth protecting is that those names are REAL — rename an engine
+ * method and the actions keep emitting the old string, which fails at consumer
+ * dispatch time as "method not found", in someone else's codebase.
  *
- * That is the same defect class as `entryStatusConstants.REGISTERED` (a value the
- * factory produces, unreachable on the surface consumers actually use), but it is
- * not enum-backed, so the enum/const conformance guards cannot see it. This is its
- * counterpart: scan what `src/query/` EMITS, and require it to be reachable.
+ * `actionMethodConstants` is typed `Record<string, FactoryEngineMethod>`, so tsc
+ * catches an invalid name at the aggregation point. This file covers the two gaps
+ * that typing alone leaves:
  *
- * Fails when a new action is added with a `method:` constant that never makes it
- * onto an exported constants object.
+ *   1. COMPLETENESS — a newly added action method that never reaches
+ *      `actionMethodConstants` is simply not covered by that type. The scan of what
+ *      `src/query/` actually emits is what keeps the enumeration honest.
+ *   2. BUILT OUTPUT — the type can be bypassed (`as any`, a `.js` source). The
+ *      runtime check re-verifies values against the generated method union.
+ *
+ * Note this deliberately does NOT assert that consumers need these constants. They
+ * do not: nothing in the ecosystem branches on `action.method` — consumers forward
+ * it verbatim, and branching keys off `action.type`, which was always exported.
  */
 import { describe, expect, it } from 'vitest';
 import { readFileSync, readdirSync, statSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
-import * as factoryConstants from '@Constants/index';
+import { actionMethodConstants } from '@Constants/actionMethodConstants';
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '../../..');
 const QUERY_DIR = join(ROOT, 'src/query');
+const ENGINE_METHODS_FILE = join(ROOT, 'src/types/factoryEngineMethods.ts');
 
 function tsFiles(dir: string): string[] {
   const out: string[] = [];
@@ -48,42 +54,36 @@ function emittedMethodIdentifiers(): string[] {
   return [...found].sort();
 }
 
-/** Every constant NAME reachable on any exported constants object. */
-function reachableConstantNames(): Set<string> {
-  const names = new Set<string>();
-  for (const [key, value] of Object.entries(factoryConstants as Record<string, unknown>)) {
-    if (typeof value === 'string') names.add(key);
-    if (value && typeof value === 'object') {
-      for (const [innerKey, innerValue] of Object.entries(value as Record<string, unknown>)) {
-        if (typeof innerValue === 'string') names.add(innerKey);
-      }
-    }
-  }
-  return names;
+/** The generated FactoryEngineMethod union, read as data. */
+function engineMethodNames(): Set<string> {
+  const src = readFileSync(ENGINE_METHODS_FILE, 'utf8');
+  return new Set([...src.matchAll(/\| '([^']+)'/g)].map((m) => m[1]));
 }
 
-describe('action `method:` constants are reachable by consumers', () => {
+describe('action `method:` validity', () => {
   const emitted = emittedMethodIdentifiers();
 
-  it('finds the emitted method identifiers (guard is actually scanning)', () => {
-    // A tripwire: if the scan silently matches nothing — moved directory, changed
-    // payload shape — the reachability assertion below would vacuously pass.
+  it('the scan actually finds emitted method identifiers', () => {
+    // Tripwire. If the scan silently matches nothing — directory moved, payload
+    // shape changed — the completeness assertion below would vacuously pass.
     expect(emitted.length).toBeGreaterThan(15);
     expect(emitted).toContain('ASSIGN_PARTICIPANT_METHOD');
   });
 
-  it('every emitted method constant is reachable on an exported constants object', () => {
-    const reachable = reachableConstantNames();
-    const unreachable = emitted.filter((name) => !reachable.has(name));
-    expect(unreachable).toEqual([]);
+  it('every emitted method constant is enumerated in actionMethodConstants', () => {
+    // Completeness: this is what keeps the typed aggregate covering the full set.
+    const missing = emitted.filter((name) => !(name in actionMethodConstants));
+    expect(missing).toEqual([]);
   });
 
-  it('actionMethodConstants values are the engine method names, not the constant names', () => {
-    // Guards against someone "fixing" a gap by adding NAME: 'NAME' placeholders.
-    const { actionMethodConstants } = factoryConstants;
-    for (const [name, value] of Object.entries(actionMethodConstants)) {
-      expect(value, `${name} should hold an engine method name`).not.toBe(name);
-      expect(value).toMatch(/^[a-z]/);
-    }
+  it('every enumerated method resolves to a real engine method', () => {
+    // Runtime mirror of the Record<string, FactoryEngineMethod> type, so an
+    // `as any` or a .js source cannot smuggle a dead method name through.
+    const engineMethods = engineMethodNames();
+    expect(engineMethods.size).toBeGreaterThan(500); // tripwire on the union parse
+    const dead = Object.entries(actionMethodConstants)
+      .filter(([, value]) => !engineMethods.has(value))
+      .map(([name, value]) => `${name} → ${value}`);
+    expect(dead).toEqual([]);
   });
 });

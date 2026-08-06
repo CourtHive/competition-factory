@@ -1,23 +1,31 @@
 /**
- * Engine method names carried on the actions returned by `positionActions()` and
- * `matchUpActions()`.
+ * Every engine method name carried on the actions returned by `positionActions()`
+ * and `matchUpActions()`, enumerated in one place.
  *
- * Each action a consumer receives looks like `{ type, method, payload, … }`, where
- * `method` is the name of the engine method to invoke — `'assignDrawPosition'`,
- * `'addPenalty'`, and so on. That makes these values part of the consumer contract,
- * not internal detail: a client that renders available actions has to be able to
- * recognise and dispatch them.
+ * WHY THIS EXISTS — it is an internal invariant anchor first, a public export second.
  *
- * They are grouped here rather than folded into `positionActionConstants` /
- * `matchUpActionConstants` because they answer a different question. Those objects
- * carry action *identities* (`ASSIGN_PARTICIPANT`); these carry the engine *method*
- * to call for one (`ASSIGN_PARTICIPANT_METHOD`). Keeping the boundary explicit also
- * keeps each source module's action/method pairing intact — the constants are still
- * declared next to their actions and only aggregated here.
+ * Each action looks like `{ type, method, payload, … }`, where `method` names the
+ * engine method a consumer will invoke. Nothing previously tied those strings to the
+ * engine surface: rename an engine method and the actions keep emitting the old name,
+ * with the failure surfacing at consumer dispatch time as "method not found" — in
+ * someone else's codebase. Typing this aggregate as `Record<string, FactoryEngineMethod>`
+ * against the generated method union turns that into a compile error here instead.
  *
- * Guarded by `src/tests/constants/actionMethodConformance.test.ts`, which fails if
- * any identifier emitted as a `method:` field under `src/query/` is not reachable on
- * an exported constants object.
+ * Being exported is a side benefit, NOT the justification. No consumer in the
+ * CourtHive ecosystem branches on `action.method` — they forward it verbatim
+ * (`{ method: action.method, params: action.payload }`), and code that needs to
+ * branch on an action keys off `action.type`, which `positionActionConstants` /
+ * `matchUpActionConstants` already expose. External CODES implementers may still
+ * find it useful, which is why it stays exported.
+ *
+ * Grouped here rather than folded into those two objects because they answer a
+ * different question: they carry action *identities* (`ASSIGN_PARTICIPANT`), this
+ * carries the engine *method* to call for one (`ASSIGN_PARTICIPANT_METHOD`). The
+ * constants stay declared next to their actions and are only aggregated here.
+ *
+ * `src/tests/constants/actionMethodConformance.test.ts` keeps the enumeration
+ * complete — without it, a newly added action method would simply never reach this
+ * object and the type check above would silently stop covering it.
  */
 import {
   ASSIGN_SIDE_METHOD,
@@ -46,7 +54,9 @@ import {
   WITHDRAW_PARTICIPANT_METHOD,
 } from './positionActionConstants';
 
-export const actionMethodConstants = {
+import type { FactoryEngineMethod } from '@Types/factoryEngineMethods';
+
+export const actionMethodConstants: Record<string, FactoryEngineMethod> = {
   // position actions
   ADD_NICKNAME_METHOD,
   ADD_PENALTY_METHOD,
