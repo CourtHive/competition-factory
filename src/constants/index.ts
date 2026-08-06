@@ -25,6 +25,7 @@ export { requestConstants } from './requestConstants';
 export { availabilityConstants } from './availabilityConstants';
 export { resourceContants } from './resourceConstants';
 export { resultConstants } from './resultConstants';
+export { actionMethodConstants } from './actionMethodConstants';
 export { bookingTypeConstants } from './bookingTypeConstants';
 export { scaleConstants } from './scaleConstants';
 export { scheduleConstants } from './scheduleConstants';
