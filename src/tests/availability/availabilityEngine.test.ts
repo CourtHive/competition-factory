@@ -775,7 +775,45 @@ describe('Tournament Record Loading', () => {
     expect(engine.getAllBlocks()[0].type).toBe(BLOCK_TYPES.SCHEDULED);
   });
 
-  it('should default unknown bookingType to RESERVED', () => {
+  // BLOCKED is what TMX's generic "block N rows" pills write — by far the most
+  // common booking type in practice. It was missing from BOOKING_TYPE_MAP, so
+  // every one of those blocks silently arrived as RESERVED ("reserved for
+  // recreational/paying players"), a different meaning in a different
+  // precedence slot.
+  it('should map BLOCKED bookingType to BLOCKED BlockType', () => {
+    const record = makeBasicRecord();
+    (record.venues[0].courts[0] as any).dateAvailability = [
+      {
+        date: '2026-06-15',
+        bookings: [{ startTime: '10:00', endTime: '11:00', bookingType: 'BLOCKED' }],
+      },
+    ];
+
+    const engine = new AvailabilityEngine();
+    engine.init(record, { tournamentId: TEST_TOURNAMENT });
+
+    expect(engine.getAllBlocks()[0].type).toBe(BLOCK_TYPES.BLOCKED);
+  });
+
+  it('should map CLOSED bookingType to CLOSED BlockType', () => {
+    const record = makeBasicRecord();
+    (record.venues[0].courts[0] as any).dateAvailability = [
+      {
+        date: '2026-06-15',
+        bookings: [{ startTime: '10:00', endTime: '11:00', bookingType: 'CLOSED' }],
+      },
+    ];
+
+    const engine = new AvailabilityEngine();
+    engine.init(record, { tournamentId: TEST_TOURNAMENT });
+
+    expect(engine.getAllBlocks()[0].type).toBe(BLOCK_TYPES.CLOSED);
+  });
+
+  // Unknown types fail CLOSED, not into a meaning the data never claimed. The
+  // previous default was RESERVED; UNSPECIFIED would be worse still, since the
+  // capacity curve ignores it and the court would read as free.
+  it('should default unknown bookingType to BLOCKED and preserve the raw value', () => {
     const record = makeBasicRecord();
     (record.venues[0].courts[0] as any).dateAvailability = [
       {
@@ -787,7 +825,10 @@ describe('Tournament Record Loading', () => {
     const engine = new AvailabilityEngine();
     engine.init(record, { tournamentId: TEST_TOURNAMENT });
 
-    expect(engine.getAllBlocks()[0].type).toBe(BLOCK_TYPES.RESERVED);
+    const block = engine.getAllBlocks()[0];
+    expect(block.type).toBe(BLOCK_TYPES.BLOCKED);
+    // the original string is never lost — it survives on `reason`
+    expect(block.reason).toBe('UNKNOWN_TYPE');
   });
 
   it('should load court dateAvailability times', () => {
@@ -908,6 +949,76 @@ describe('Court Metadata', () => {
     const engine2 = new AvailabilityEngine();
     engine2.init({ tournamentId: TEST_TOURNAMENT });
     expect(engine2.listCourtMeta()).toHaveLength(0);
+  });
+});
+
+// ============================================================================
+// 8b. Disabled venues and courts
+//
+// The engine must agree with `query/venues/venuesAndCourtsGetter` — the reader
+// the scheduler uses. Previously the engine iterated `venue.courts` raw, so a
+// disabled court was invisible to the scheduler but visible here: two readers,
+// two answers, same record.
+// ============================================================================
+
+describe('Disabled venues and courts', () => {
+  const DAY = '2026-06-15';
+
+  it('should exclude a court disabled outright', () => {
+    const record = makeBasicRecord();
+    (record.venues[0].courts[0] as any).disabled = true;
+
+    const engine = new AvailabilityEngine();
+    engine.init(record, { tournamentId: TEST_TOURNAMENT });
+
+    expect(engine.listCourtMeta().map((m) => m.ref.courtId)).toEqual([COURT_2]);
+  });
+
+  it('should exclude every court of a disabled venue', () => {
+    const record = makeBasicRecord();
+    (record.venues[0] as any).disabled = true;
+
+    const engine = new AvailabilityEngine();
+    engine.init(record, { tournamentId: TEST_TOURNAMENT });
+
+    expect(engine.listCourtMeta()).toHaveLength(0);
+  });
+
+  it('should honour date-scoped disabling for the day being queried', () => {
+    const record = makeBasicRecord();
+    (record.venues[0].courts[0] as any).disabled = { dates: [DAY] };
+
+    const engine = new AvailabilityEngine();
+    engine.init(record, { tournamentId: TEST_TOURNAMENT });
+
+    // COURT_1 is disabled on DAY, so only COURT_2 appears in that day's timeline
+    const timeline = engine.getDayTimeline(DAY);
+    const courtIds = timeline.flatMap((v) => v.rails.map((r) => r.court.courtId));
+    expect(courtIds).toEqual([COURT_2]);
+  });
+
+  it('should not exclude a date-scoped disabled court on other days', () => {
+    const record = makeBasicRecord();
+    (record.venues[0].courts[0] as any).disabled = { dates: [DAY] };
+
+    const engine = new AvailabilityEngine();
+    engine.init(record, { tournamentId: TEST_TOURNAMENT });
+
+    const timeline = engine.getDayTimeline('2026-06-16');
+    const courtIds = timeline.flatMap((v) => v.rails.map((r) => r.court.courtId)).sort();
+    expect(courtIds).toEqual([COURT_1, COURT_2]);
+  });
+
+  it('should keep date-scoped disabled courts when no day context is available', () => {
+    const record = makeBasicRecord();
+    (record.venues[0].courts[0] as any).disabled = { dates: [DAY] };
+
+    const engine = new AvailabilityEngine();
+    engine.init(record, { tournamentId: TEST_TOURNAMENT });
+
+    // listCourtMeta() has no day, so only a blanket `disabled: true` excludes —
+    // matching the getter's behaviour when no dates are supplied.
+    expect(engine.listCourtMeta()).toHaveLength(2);
   });
 });
 
