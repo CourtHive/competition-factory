@@ -102,7 +102,7 @@ interface Row {
 
 ## Available enums
 
-Thirty vocabularies are exported. Member counts as of `6.17.0`:
+Thirty-one vocabularies are exported. Member counts as of `6.18.0`:
 
 **MatchUps and scoring** — `MatchUpStatusEnum` (16), `WinReasonEnum` (8), `ShotTypeEnum` (3), `ShotDetailEnum` (10),
 `ShotOutcomeEnum` (4), `CourtPositionEnum` (5)
@@ -115,7 +115,7 @@ Thirty vocabularies are exported. Member counts as of `6.17.0`:
 `WheelchairClassEnum` (2), `PenaltyTypeEnum` (17)
 
 **Venues, scheduling and tournaments** — `SurfaceCategoryEnum` (5), `BallTypeEnum` (8), `WeekdayEnum` (7),
-`TournamentLevelEnum` (8), `LengthUnitEnum` (3)
+`TournamentLevelEnum` (8), `LengthUnitEnum` (3), `BookingTypeEnum` (7)
 
 **Contact and reference data** — `CountryCodeEnum` (252), `AddressTypeEnum` (6), `OnlineResourceTypeEnum` (4)
 
@@ -127,8 +127,8 @@ Thirty vocabularies are exported. Member counts as of `6.17.0`:
 You do not have to trust that the enums and constants agree — three guards enforce it, and both CI and
 `prepublishOnly` fail if they diverge, so a divergence cannot reach npm.
 
-For the four vocabularies with a dedicated 1:1 constant module — `MatchUpStatusEnum`, `EntryStatusEnum`,
-`SurfaceCategoryEnum`, `WeekdayEnum` — the constants are **generated from the enum**. The enum in
+For the five vocabularies with a dedicated 1:1 constant module — `MatchUpStatusEnum`, `EntryStatusEnum`,
+`SurfaceCategoryEnum`, `WeekdayEnum`, `BookingTypeEnum` — the constants are **generated from the enum**. The enum in
 `src/types/tournamentTypes.ts` is the single source of truth; `src/constants/*Values.ts` is generated output carrying an
 `AUTO-GENERATED — do not edit by hand` header, and its constant module re-exports it alongside the hand-authored
 groupings.
