@@ -22,7 +22,9 @@ export { positionActionConstants } from './positionActionConstants';
 export { rankingConstants } from './rankingConstants';
 export { ratingConstants } from './ratingConstants';
 export { requestConstants } from './requestConstants';
-export { availabilityConstants } from './availabilityConstants';
+export { dayStateConstants } from './dayStateConstants';
+// @deprecated — renamed to dayStateConstants; kept so the rename is non-breaking
+export { availabilityConstants } from './dayStateConstants';
 export { resourceContants } from './resourceConstants';
 export { resultConstants } from './resultConstants';
 export { actionMethodConstants } from './actionMethodConstants';
