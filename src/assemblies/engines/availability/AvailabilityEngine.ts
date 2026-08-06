@@ -1216,16 +1216,6 @@ export class AvailabilityEngine {
   };
 
   /**
-   * Booking types that predate `BookingTypeEnum` and still occur in stored
-   * records. Kept separate from BOOKING_TYPE_MAP so that map stays exhaustive
-   * over the enum — the exhaustiveness is what makes a new member a compile
-   * error here instead of a silent runtime fallback.
-   */
-  private static readonly LEGACY_BOOKING_TYPE_ALIASES: Record<string, BlockType> = {
-    MATCH: BLOCK_TYPES.SCHEDULED,
-  };
-
-  /**
    * Where an unrecognised `bookingType` lands.
    *
    * BLOCKED, deliberately: it is the generic "unavailable, reason unspecified"
@@ -1342,7 +1332,6 @@ export class AvailabilityEngine {
     const rawType = (booking.bookingType || '').toUpperCase();
     const blockType: BlockType =
       AvailabilityEngine.BOOKING_TYPE_MAP[rawType as BookingTypeUnion] ??
-      AvailabilityEngine.LEGACY_BOOKING_TYPE_ALIASES[rawType] ??
       AvailabilityEngine.UNMAPPED_BOOKING_BLOCK_TYPE;
 
     const blockId = this.generateBlockId();

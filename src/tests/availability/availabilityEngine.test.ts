@@ -760,21 +760,6 @@ describe('Tournament Record Loading', () => {
     expect(engine.getAllBlocks()[0].type).toBe(BLOCK_TYPES.PRACTICE);
   });
 
-  it('should map MATCH bookingType to SCHEDULED BlockType', () => {
-    const record = makeBasicRecord();
-    (record.venues[0].courts[0] as any).dateAvailability = [
-      {
-        date: '2026-06-15',
-        bookings: [{ startTime: '10:00', endTime: '11:00', bookingType: 'MATCH' }],
-      },
-    ];
-
-    const engine = new AvailabilityEngine();
-    engine.init(record, { tournamentId: TEST_TOURNAMENT });
-
-    expect(engine.getAllBlocks()[0].type).toBe(BLOCK_TYPES.SCHEDULED);
-  });
-
   // BLOCKED is what TMX's generic "block N rows" pills write — by far the most
   // common booking type in practice. It was missing from BOOKING_TYPE_MAP, so
   // every one of those blocks silently arrived as RESERVED ("reserved for
@@ -818,23 +803,6 @@ describe('Tournament Record Loading', () => {
     const precedence = engine.getConfig().typePrecedence;
 
     expect(precedence.indexOf(BLOCK_TYPES.DRYING)).toBeLessThan(precedence.indexOf(BLOCK_TYPES.MAINTENANCE));
-  });
-
-  // MATCH predates BookingTypeEnum and is not a member; it resolves through the
-  // legacy alias table, NOT through the unmapped fallback.
-  it('should still resolve the legacy MATCH bookingType to SCHEDULED', () => {
-    const record = makeBasicRecord();
-    (record.venues[0].courts[0] as any).dateAvailability = [
-      {
-        date: '2026-06-15',
-        bookings: [{ startTime: '10:00', endTime: '11:00', bookingType: 'MATCH' }],
-      },
-    ];
-
-    const engine = new AvailabilityEngine();
-    engine.init(record, { tournamentId: TEST_TOURNAMENT });
-
-    expect(engine.getAllBlocks()[0].type).toBe(BLOCK_TYPES.SCHEDULED);
   });
 
   it('should map CLOSED bookingType to CLOSED BlockType', () => {
