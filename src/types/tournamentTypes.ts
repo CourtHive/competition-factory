@@ -1687,8 +1687,15 @@ export interface Availability {
  * scheduling precedence, and collapsing them makes "how much court time did we
  * lose to weather?" unanswerable after the fact.
  *
- * The engine-side vocabulary these map onto is `BLOCK_TYPES` (a superset —
- * it also carries derived and legacy states that are never persisted here).
+ * SCHEDULED is an umbrella for court time allocated to tournament play — it
+ * means the time is spoken for, whether or not a specific matchUp ends up on
+ * the court. It is NOT how scheduled matchUps reach the availability engine:
+ * those arrive through `AvailabilityEngine.importScheduledMatchUps()`, which
+ * builds SCHEDULED blocks straight from matchUps and never touches
+ * `bookingType`.
+ *
+ * The engine-side vocabulary these map onto is `BLOCK_TYPES` (a superset — it
+ * also carries derived and legacy states that are never persisted here).
  */
 export enum BookingTypeEnum {
   BLOCKED = 'BLOCKED',
