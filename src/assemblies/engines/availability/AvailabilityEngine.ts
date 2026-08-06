@@ -45,7 +45,11 @@ import {
   type TemplateId,
 } from '@Assemblies/governors/availabilityGovernor/types';
 
+import { getDisabledStatus } from '@Query/extensions/getDisabledStatus';
+import { firstClassOrExtension } from '@Acquire/firstClassOrExtension';
 import { extractDate } from '@Tools/dateTime';
+
+import { DISABLED } from '@Constants/extensionConstants';
 
 import {
   courtDayKey,
@@ -340,7 +344,7 @@ export class AvailabilityEngine {
    * Returns the earliest start and latest end among the given courts (or all courts).
    */
   getVisibleTimeRange(day: DayId, courtRefs?: CourtRef[]): { startTime: string; endTime: string } {
-    const courts = courtRefs && courtRefs.length > 0 ? courtRefs : this.getAllCourtsFromTournamentRecord();
+    const courts = courtRefs && courtRefs.length > 0 ? courtRefs : this.getAllCourtsFromTournamentRecord(day);
 
     let earliestStart = '23:59';
     let latestEnd = '00:00';
@@ -412,7 +416,7 @@ export class AvailabilityEngine {
    * Get complete timeline for a day (all venues, all courts)
    */
   getDayTimeline(day: DayId): VenueDayTimeline[] {
-    const courts = this.getAllCourtsFromTournamentRecord();
+    const courts = this.getAllCourtsFromTournamentRecord(day);
 
     // Group by venue
     const venuesMap = new Map<VenueId, CourtRef[]>();
@@ -1188,13 +1192,38 @@ export class AvailabilityEngine {
   /**
    * Booking type -> engine BlockType mapping
    */
+  /**
+   * `Booking.bookingType` (persisted, free-form string) → engine `BlockType`.
+   *
+   * BLOCKED and CLOSED were missing: BLOCKED is what TMX's most-used block
+   * pills write, so every generic court block was arriving here as RESERVED —
+   * a different and wrong meaning ("reserved for recreational/paying players")
+   * with a different precedence slot.
+   */
   private static readonly BOOKING_TYPE_MAP: Record<string, BlockType> = {
+    BLOCKED: BLOCK_TYPES.BLOCKED,
+    CLOSED: BLOCK_TYPES.CLOSED,
     MAINTENANCE: BLOCK_TYPES.MAINTENANCE,
     PRACTICE: BLOCK_TYPES.PRACTICE,
     RESERVED: BLOCK_TYPES.RESERVED,
     MATCH: BLOCK_TYPES.SCHEDULED,
     SCHEDULED: BLOCK_TYPES.SCHEDULED,
   };
+
+  /**
+   * Where an unrecognised `bookingType` lands.
+   *
+   * BLOCKED, deliberately: it is the generic "unavailable, reason unspecified"
+   * type, so an unknown booking still removes the court from availability.
+   * Two alternatives are wrong — RESERVED (the previous behaviour) asserts a
+   * specific meaning the data never claimed, and UNSPECIFIED is excluded from
+   * the capacity curve entirely, so an unknown booking would leave the court
+   * looking free and invite a double-booking. Fail closed.
+   *
+   * The raw string is preserved on `Block.reason`, so the original value is
+   * never lost — see `createBlockFromBooking`.
+   */
+  private static readonly UNMAPPED_BOOKING_BLOCK_TYPE: BlockType = BLOCK_TYPES.BLOCKED;
 
   /**
    * Load blocks from court dateAvailability bookings in the tournament record.
@@ -1296,7 +1325,8 @@ export class AvailabilityEngine {
     const st = booking.startTime.length === 5 ? `${booking.startTime}:00` : booking.startTime;
     const et = booking.endTime.length === 5 ? `${booking.endTime}:00` : booking.endTime;
     const blockType: BlockType =
-      AvailabilityEngine.BOOKING_TYPE_MAP[(booking.bookingType || '').toUpperCase()] || BLOCK_TYPES.RESERVED;
+      AvailabilityEngine.BOOKING_TYPE_MAP[(booking.bookingType || '').toUpperCase()] ??
+      AvailabilityEngine.UNMAPPED_BOOKING_BLOCK_TYPE;
 
     const blockId = this.generateBlockId();
     const block: Block = {
@@ -1313,18 +1343,36 @@ export class AvailabilityEngine {
   }
 
   /**
-   * Get all courts from tournament record
+   * Get all courts from tournament record.
+   *
+   * Disabled venues and courts are excluded, matching
+   * `query/venues/venuesAndCourtsGetter` — the reader the scheduler uses. Both
+   * paths delegate to `getDisabledStatus` so `disabled` has exactly ONE
+   * semantic; before this they diverged, and a disabled court was invisible to
+   * the scheduler but visible here.
+   *
+   * @param day - Optional day context. `disabled` may be date-scoped
+   * (`{ dates: [...] }`); with a day the engine honours that scoping, without
+   * one only a blanket `disabled: true` excludes — the same conservative
+   * behaviour the getter has when no dates are supplied.
    */
-  private getAllCourtsFromTournamentRecord(): CourtRef[] {
+  private getAllCourtsFromTournamentRecord(day?: DayId): CourtRef[] {
     if (!this.tournamentRecord?.venues) {
       return [];
     }
 
+    const dates = day ? [day] : [];
     const courts: CourtRef[] = [];
     for (const venue of this.tournamentRecord.venues) {
+      const venueDisabled = firstClassOrExtension({ element: venue, attribute: 'disabled', name: DISABLED });
+      if (venueDisabled) continue;
+
       const vid = resolveVenueId(venue);
       if (venue.courts) {
         for (const court of venue.courts) {
+          const disabledValue = firstClassOrExtension({ element: court, attribute: 'disabled', name: DISABLED });
+          if (getDisabledStatus({ disabledValue, dates })) continue;
+
           courts.push({
             tournamentId: this.config.tournamentId,
             venueId: vid,
