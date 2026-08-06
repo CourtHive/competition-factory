@@ -172,11 +172,9 @@ export function setMatchUpStatus(params: SetMatchUpStatusArgs) {
       score: { ...outcome.score, sets },
       setTBlast,
     });
-    // DECISION: merge rather than replace so non-derived score attributes survive
-    // WHY: matchUpScore returns only { sets, scoreStringSide1, scoreStringSide2 }; replacing wholesale
-    // would drop live-scoring attributes such as score.side1PointScore that callers legitimately set
-    // on an in-progress matchUp and that previously survived via the skip-generation branch
-    outcome.score = { ...outcome.score, ...scoreObject };
+    // matchUpScore carries forward every non-derived attribute of the score it was handed
+    // (score.side1PointScore and friends), so assigning its result is not lossy
+    outcome.score = scoreObject;
   }
 
   // DECISION: Delegate to setMatchUpState for core status/score setting logic
