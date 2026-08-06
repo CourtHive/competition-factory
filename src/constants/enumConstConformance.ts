@@ -6,7 +6,17 @@
  * for each dedicated mirror it asserts, at `check-types` (tsc) time:
  *   - KEY coverage: every enum member has a same-named const export; and
  *   - VALUE conformance: each such const's literal value equals the enum member's
- *     value (unblocked now the const values are literal-typed — see the (b) pass).
+ *     value (unblocked now the const values are literal-typed — see the (b) pass); and
+ *   - OBJECT coverage: every enum member is also present on the exported
+ *     `<name>Constants` OBJECT.
+ *
+ * The object check exists because the two surfaces are NOT the same thing. The
+ * module namespace is filled in automatically by `export * from './<name>Values'`,
+ * so it can never lag the enum — but consumers reach constants through the
+ * hand-authored object literal (`factoryConstants.entryStatusConstants`), and that
+ * object is maintained by hand. Guarding only the namespace let
+ * `entryStatusConstants.REGISTERED` ship as `undefined` in 6.16.0 and 6.17.0 while
+ * this file stayed green; TMX destructured it and silently got `undefined`.
  * Either drift is a compile failure naming the exact member, caught earlier than the
  * runtime test. Bucket modules use different const key names, so their coverage stays
  * runtime-only.
@@ -22,6 +32,13 @@ import * as bookingTypeConstants from './bookingTypeConstants';
 import * as entryStatusConstants from './entryStatusConstants';
 import * as weekdayConstants from './weekdayConstants';
 import * as surfaceConstants from './surfaceConstants';
+
+// The exported OBJECTS — the surface consumers actually reach via factoryConstants.
+import { matchUpStatusConstants as matchUpStatusObject } from './matchUpStatusConstants';
+import { bookingTypeConstants as bookingTypeObject } from './bookingTypeConstants';
+import { entryStatusConstants as entryStatusObject } from './entryStatusConstants';
+import { weekdayConstants as weekdayObject } from './weekdayConstants';
+import { surfaceConstants as surfaceObject } from './surfaceConstants';
 import {
   MatchUpStatusEnum,
   EntryStatusEnum,
@@ -61,3 +78,13 @@ export type _ValuesEntryStatus = Assert<ValuesMirrored<typeof EntryStatusEnum, t
 export type _ValuesSurfaceCategory = Assert<ValuesMirrored<typeof SurfaceCategoryEnum, typeof surfaceConstants>>;
 export type _ValuesWeekday = Assert<ValuesMirrored<typeof WeekdayEnum, typeof weekdayConstants>>;
 export type _ValuesBookingType = Assert<ValuesMirrored<typeof BookingTypeEnum, typeof bookingTypeConstants>>;
+
+// ── OBJECT coverage: every enum member is also on the exported object ─────────
+// Reuses KeysMirrored — the failure surfaces as __ENUM_MEMBER_HAS_NO_CONST__ naming
+// the exact member missing from the object literal. This is the check that would
+// have caught entryStatusConstants.REGISTERED before it reached consumers.
+export type _ObjectMatchUpStatus = Assert<KeysMirrored<typeof MatchUpStatusEnum, typeof matchUpStatusObject>>;
+export type _ObjectEntryStatus = Assert<KeysMirrored<typeof EntryStatusEnum, typeof entryStatusObject>>;
+export type _ObjectSurfaceCategory = Assert<KeysMirrored<typeof SurfaceCategoryEnum, typeof surfaceObject>>;
+export type _ObjectWeekday = Assert<KeysMirrored<typeof WeekdayEnum, typeof weekdayObject>>;
+export type _ObjectBookingType = Assert<KeysMirrored<typeof BookingTypeEnum, typeof bookingTypeObject>>;

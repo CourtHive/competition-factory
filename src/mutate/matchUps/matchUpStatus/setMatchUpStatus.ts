@@ -4,6 +4,7 @@ import { checkRequiredParameters } from '@Helpers/parameters/checkRequiredParame
 import { setMatchUpState } from '@Mutate/matchUps/matchUpStatus/setMatchUpState';
 import { matchUpScore } from '@Assemblies/generators/matchUps/matchUpScore';
 import { progressExitStatus } from '../drawPositions/progressExitStatus';
+import { getMatchUpFormat } from '@Query/hierarchical/getMatchUpFormat';
 import { decorateResult } from '@Functions/global/decorateResult';
 import { findPolicy } from '@Acquire/findPolicy';
 import { findEvent } from '@Acquire/findEvent';
@@ -134,15 +135,18 @@ export function setMatchUpStatus(params: SetMatchUpStatusArgs) {
     if (result.error) return result;
   }
 
-  // DECISION: Generate score strings from sets if not already provided
-  // WHY: Allows API to accept either structured sets data OR pre-formatted score strings
-  // This transformation ensures downstream code gets consistent score objects
-  if (outcome?.score?.sets && !outcome.score.scoreStringSide1) {
-    const { score: scoreObject } = matchUpScore({ ...outcome, setTBlast });
-    outcome.score = scoreObject;
-    // DECISION: Filter out empty sets (no scores recorded)
-    // WHY: Prevents invalid/incomplete sets from being saved
-    outcome.score.sets = outcome.score.sets.filter(
+  // DECISION: score strings are DERIVED from score.sets — never accepted from the caller
+  // WHY: validateScore only type-checks scoreStringSide1/scoreStringSide2; nothing compares them to
+  // score.sets. Previously generation was skipped whenever the caller supplied a string, so an
+  // integration that sent its own strings bypassed generation permanently and factory persisted
+  // strings it could never emit and its own parseScoreString could not round-trip — including
+  // set scores present in the string but absent from sets. Regenerating unconditionally makes
+  // score.sets the single source of truth. See competition-factory#4564.
+  if (outcome?.score?.sets) {
+    // DECISION: Filter out empty sets BEFORE generating score strings
+    // WHY: Prevents invalid/incomplete sets from being saved, and filtering afterwards left the
+    // generated string describing a set that had just been removed from score.sets
+    const sets = outcome.score.sets.filter(
       (set) =>
         set.side1Score ||
         set.side2Score ||
@@ -151,6 +155,28 @@ export function setMatchUpStatus(params: SetMatchUpStatusArgs) {
         set.side1PointScore ||
         set.side2PointScore,
     );
+
+    // DECISION: resolve the matchUp's effective format rather than relying on outcome.matchUpFormat
+    // WHY: generateScoreString needs the format to recognize a tiebreak-only deciding set (F:TB10) and
+    // render it as [10-8]. The format usually lives on the matchUp, not on the outcome, so spreading
+    // outcome alone left it undefined and the deciding set rendered as a plain game score.
+    // Resolution failure yields undefined — the same format-less rendering as before, never worse.
+    const formatResult: any = matchUpFormat
+      ? undefined
+      : getMatchUpFormat({ tournamentRecord, drawDefinition, matchUpId, event });
+    const effectiveMatchUpFormat = matchUpFormat ?? formatResult?.matchUpFormat;
+
+    const { score: scoreObject } = matchUpScore({
+      ...outcome,
+      matchUpFormat: effectiveMatchUpFormat,
+      score: { ...outcome.score, sets },
+      setTBlast,
+    });
+    // DECISION: merge rather than replace so non-derived score attributes survive
+    // WHY: matchUpScore returns only { sets, scoreStringSide1, scoreStringSide2 }; replacing wholesale
+    // would drop live-scoring attributes such as score.side1PointScore that callers legitimately set
+    // on an in-progress matchUp and that previously survived via the skip-generation branch
+    outcome.score = { ...outcome.score, ...scoreObject };
   }
 
   // DECISION: Delegate to setMatchUpState for core status/score setting logic
