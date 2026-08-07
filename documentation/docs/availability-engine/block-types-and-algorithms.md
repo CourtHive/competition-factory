@@ -59,6 +59,22 @@ When multiple blocks overlap on the same court at the same time, the block with 
 `DRYING` sits **above** `MAINTENANCE` deliberately: drying is reactive and cannot be
 deferred, whereas maintenance usually can — so when the two overlap, drying wins.
 
+### Block Interface
+
+```ts
+interface Block extends TimeRange {
+  id: BlockId;
+  court: CourtRef;
+  type: BlockType;
+  reason?: string;
+  priority?: number;
+  hardSoft?: BlockHardness; // 'HARD' | 'SOFT'
+  recurrenceKey?: string;
+  source?: BlockSource; // 'USER' | 'TEMPLATE' | 'RULE' | 'SYSTEM'
+  matchUpId?: string; // For SCHEDULED blocks
+}
+```
+
 ## Court bookings → block types
 
 Court bookings on the tournament record carry a `bookingType` ([`bookingTypeConstants`](../constants.mdx)).
@@ -113,22 +129,6 @@ Both readers delegate to the same `getDisabledStatus`, so `disabled` has exactly
 semantic across the codebase. They previously diverged, which meant a disabled court
 could be invisible to the scheduler while still visible to the availability engine —
 two readers giving two answers from the same record.
-
-### Block Interface
-
-```ts
-interface Block extends TimeRange {
-  id: BlockId;
-  court: CourtRef;
-  type: BlockType;
-  reason?: string;
-  priority?: number;
-  hardSoft?: BlockHardness; // 'HARD' | 'SOFT'
-  recurrenceKey?: string;
-  source?: BlockSource; // 'USER' | 'TEMPLATE' | 'RULE' | 'SYSTEM'
-  matchUpId?: string; // For SCHEDULED blocks
-}
-```
 
 ## Rail Derivation Algorithm
 
