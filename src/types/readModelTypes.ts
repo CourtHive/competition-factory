@@ -134,7 +134,14 @@ export interface ReadModelSchedulingProfileRow {
   draw_id: string | null;
   structure_id: string | null;
   round_number: number | null;
-  round_segment: number | null;
+  // A round's segment is a PAIR — "segment 2 of 3" — so it needs two columns.
+  // These were previously one `round_segment: number | null`, which was a lie: the
+  // producer assigned the whole `{ segmentsCount, segmentNumber }` object to it,
+  // unchecked because the source round is `any`. Postgres rejected every such row
+  // against an `integer` column, and since the scheduling plan re-projects as
+  // delete-then-insert, each segmented round was deleted and never restored.
+  round_segment_number: number | null;
+  round_segments_count: number | null;
   winner_finishing_position_range: string | null;
 }
 
