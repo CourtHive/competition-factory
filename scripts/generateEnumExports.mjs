@@ -39,8 +39,18 @@ function collect() {
     if (!file.endsWith('.ts') || file === OUT_BASENAME) continue;
     const src = readFileSync(join(TYPES_DIR, file), 'utf8');
     const names = [
+      // `export enum Name {}` — definitive, whatever it is called.
       ...[...src.matchAll(/^export enum (\w+)/gm)].map((m) => m[1]),
-      ...[...src.matchAll(/^export const (\w+Enum) = \{/gm)].map((m) => m[1]),
+      // Const-object enums, matched on SHAPE rather than an `Enum` name suffix.
+      // Keying off the suffix let an enum escape simply by being named without it,
+      // which is one of the holes this scan exists to close. A const object whose
+      // every member is a string literal IS an enum for our purposes.
+      ...[...src.matchAll(/^export const (\w+) = \{([\s\S]*?)\n\} as const;/gm)]
+        .filter(([, , body]) => {
+          const members = body.split('\n').filter((l) => l.trim() && !l.trim().startsWith('//'));
+          return members.length > 0 && members.every((l) => /^\s*\w+:\s*'[^']*',?\s*$/.test(l));
+        })
+        .map((m) => m[1]),
     ].sort();
     if (names.length) byFile.push({ module: `./${file.replace(/\.ts$/, '')}`, names });
   }

@@ -28,6 +28,15 @@ import { disciplines } from '@Constants/disciplineConstants';
 import { tournamentStatuses } from '@Constants/tournamentConstants';
 import { indoorOutdoorTypes } from '@Constants/venueConstants';
 import * as T from '@Types/tournamentTypes';
+// The generated, drift-guarded enumeration of EVERY enum under src/types — the
+// authoritative list. Reading it here means the registry and the value-export
+// generator cannot disagree, and a new enum in ANY types file is covered.
+import * as ALL_ENUMS from '@Types/enumExports';
+import * as E from '@Types/enumExports';
+import * as officiatingConstants from '@Constants/officiatingConstants';
+import * as sanctioningConstants from '@Constants/sanctioningConstants';
+import { officiatingConstants as officiatingObject } from '@Constants/officiatingConstants';
+import { sanctioningConstants as sanctioningObject } from '@Constants/sanctioningConstants';
 import { describe, it, expect } from 'vitest';
 
 /**
@@ -99,6 +108,20 @@ const COVERAGE: {
   { name: 'TournamentStatus', enum: T.TournamentStatusEnum, consts: tournamentConstants, object: tournamentObject },
   { name: 'IndoorOutdoor', enum: T.IndoorOutdoorEnum, consts: venueConstants, object: venueObject },
   { name: 'Discipline', enum: T.DisciplineEnum, consts: disciplineConstants, object: disciplineObject },
+  { name: 'AssignmentStatus', enum: E.AssignmentStatusEnum, consts: officiatingConstants, object: officiatingObject },
+  {
+    name: 'CertificationStatus',
+    enum: E.CertificationStatusEnum,
+    consts: officiatingConstants,
+    object: officiatingObject,
+  },
+  { name: 'EvaluationStatus', enum: E.EvaluationStatusEnum, consts: officiatingConstants, object: officiatingObject },
+  {
+    name: 'SanctioningStatus',
+    enum: E.SanctioningStatusEnum,
+    consts: sanctioningConstants,
+    object: sanctioningObject,
+  },
 ];
 
 // Enum-only: no const-module twin (single source of truth — nothing to reconcile).
@@ -109,6 +132,24 @@ const ENUM_ONLY = [
   'WeightUnitEnum',
   // LEVEL has no const module; AGE/BOTH live in eventConstants but the set is not covered
   'CategoryEnum',
+  // Sport lives with the competition-format types and has no const-module twin.
+  'SportEnum',
+  // The officiating + sanctioning engines carry these vocabularies as const-object
+  // enums in src/types with NO value-carrying twin in src/constants — verified
+  // per-enum, not assumed: the four that ARE fully carried by officiatingConstants /
+  // sanctioningConstants are registered as buckets below instead.
+  'CertificationFamilyEnum',
+  'CertificationLevelEnum',
+  'OfficialRoleSubtypeEnum',
+  'ScoringMethodEnum',
+  'ScoringTypeEnum',
+  'AmendmentSeverityEnum',
+  'AmendmentStatusEnum',
+  'ComplianceItemStatusEnum',
+  'ComplianceItemTypeEnum',
+  'ComplianceStatusEnum',
+  'EndorsementStatusEnum',
+  'SanctioningRelationshipEnum',
   // its values are matchUp-status strings reused for a DIFFERENT concept (draw-level
   // aggregate play state), so pinning it to matchUpStatusConstants would assert a
   // relationship that does not exist
@@ -163,12 +204,17 @@ describe('enum ↔ const conformance guard', () => {
       ...COVERAGE.map((c) => `${c.name}Enum`),
       ...ENUM_ONLY,
     ]);
-    // every real enum object exported from tournamentTypes must be accounted for above,
-    // so a newly-added enum forces a deliberate mirror/bucket/enum-only decision here.
-    const allEnums = Object.keys(T).filter((k) => {
-      const v = (T as any)[k];
-      return k.endsWith('Enum') && v && typeof v === 'object' && Object.values(v).some((x) => typeof x === 'string');
+    // Sourced from the generated enumExports module, NOT from tournamentTypes and NOT
+    // by name suffix. Both of those were real holes: the registry used to read only
+    // tournamentTypes, so SportEnum (in competitionFormat.ts) was covered by nothing;
+    // and it filtered on `endsWith('Enum')`, so an enum named without the suffix walked
+    // straight past. Shape is the test now — a string-valued object — and coverage
+    // follows whatever the drift-guarded generator found.
+    const allEnums = Object.keys(ALL_ENUMS).filter((k) => {
+      const v = (ALL_ENUMS as any)[k];
+      return v && typeof v === 'object' && Object.values(v).some((x) => typeof x === 'string');
     });
+    expect(allEnums.length).toBeGreaterThan(50); // tripwire: the import must resolve
     const unaccounted = allEnums.filter((name) => !accounted.has(name));
     expect({ unaccounted }).toEqual({ unaccounted: [] });
   });
@@ -189,6 +235,24 @@ describe('enum ↔ exported OBJECT conformance', () => {
   it.each(MIRRORS)('$name: every enum member is present on the exported object', ({ enum: e, object }) => {
     const missing = Object.keys(enumEntries(e)).filter((k) => !(k in object));
     expect(missing).toEqual([]);
+  });
+
+  /**
+   * The REGISTERED bug in reverse. Object coverage above is enum→object only, so a
+   * key on the object that no enum member backs — `entryStatusConstants.PROVISIONAL`
+   * say — used to ship freely as a real string that its own Union rejects.
+   *
+   * Restricted to string-valued keys on purpose: the mirror objects also carry curated
+   * groupings (entryStatusConstants has five `*_STATUSES` arrays) which are legitimately
+   * not enum members.
+   */
+  it.each(MIRRORS)('$name: the exported object has no key the enum does not back', ({ enum: e, object }) => {
+    const enumKeys = new Set(Object.keys(enumEntries(e)));
+    const phantom = Object.entries(object)
+      .filter(([, v]) => typeof v === 'string')
+      .map(([k]) => k)
+      .filter((k) => !enumKeys.has(k));
+    expect(phantom).toEqual([]);
   });
 
   it.each(MIRRORS)('$name: enum values match the exported object values', ({ enum: e, object }) => {
