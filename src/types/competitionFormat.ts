@@ -39,18 +39,21 @@ export interface competitionFormat {
 // Sport Union
 // ============================================================================
 
-export type SportUnion =
-  | 'TENNIS'
-  | 'PADEL'
-  | 'PICKLEBALL'
-  | 'SQUASH'
-  | 'BADMINTON'
-  | 'TABLE_TENNIS'
-  | 'INTENNSE'
-  | 'TYPTI'
-  | 'VOLLEYBALL'
-  | 'FENCING'
-  | 'OTHER';
+/** Sports a competition format can describe. */
+export enum SportEnum {
+  TENNIS = 'TENNIS',
+  PADEL = 'PADEL',
+  PICKLEBALL = 'PICKLEBALL',
+  SQUASH = 'SQUASH',
+  BADMINTON = 'BADMINTON',
+  TABLE_TENNIS = 'TABLE_TENNIS',
+  INTENNSE = 'INTENNSE',
+  TYPTI = 'TYPTI',
+  VOLLEYBALL = 'VOLLEYBALL',
+  FENCING = 'FENCING',
+  OTHER = 'OTHER',
+}
+export type SportUnion = `${SportEnum}`;
 
 // ============================================================================
 // Timer Profile

@@ -1,6 +1,3 @@
-import { tournamentStatuses } from '@Constants/tournamentConstants';
-import { indoorOutdoorTypes } from '@Constants/venueConstants';
-import { disciplines } from '@Constants/disciplineConstants';
 import type { competitionFormat } from './competitionFormat';
 
 export interface Tournament {
@@ -66,7 +63,15 @@ export interface Tournament {
 // Derived from the canonical tournamentStatuses tuple so the type, the constants, and the
 // setTournamentStatus validator share one source of truth (previously the hand-written union
 // read 'ABANDONDED' and omitted IN_PROGRESS, which the validator nonetheless accepted).
-export type TournamentStatusUnion = (typeof tournamentStatuses)[number];
+/** Lifecycle status of a tournament. Values mirror the `tournamentStatuses` tuple. */
+export enum TournamentStatusEnum {
+  ACTIVE = 'ACTIVE',
+  IN_PROGRESS = 'IN_PROGRESS',
+  COMPLETED = 'COMPLETED',
+  ABANDONED = 'ABANDONED',
+  CANCELLED = 'CANCELLED',
+}
+export type TournamentStatusUnion = `${TournamentStatusEnum}`;
 
 export interface Organisation {
   onlineResources?: OnlineResource[];
@@ -199,8 +204,29 @@ export interface TimeItem {
 // `& {}` on the string arm preserves literal autocomplete for the known values (a bare
 // `| string` would collapse the union). Constrain to a whitelist via the `allowedDisciplines`
 // policy, and normalize input with `normalizeDiscipline` (@Helpers/coercedDiscipline).
-export type DisciplineUnion = (typeof disciplines)[number] | (string & {});
-export type CategoryUnion = 'AGE' | 'BOTH' | 'LEVEL';
+/**
+ * The KNOWN disciplines. The vocabulary is deliberately OPEN — see
+ * planning/DISCIPLINE_EXTENSIBILITY.md — so DisciplineUnion keeps its
+ * `| (string & {})` arm and still accepts any string. This enum names the
+ * curated set for autocomplete and normalization; it does not close the type.
+ */
+export enum DisciplineEnum {
+  TENNIS = 'TENNIS',
+  BEACH_TENNIS = 'BEACH_TENNIS',
+  WHEELCHAIR_TENNIS = 'WHEELCHAIR_TENNIS',
+  PADEL = 'PADEL',
+  PICKLEBALL = 'PICKLEBALL',
+  VOLLEYBALL = 'VOLLEYBALL',
+  BEACH_VOLLEYBALL = 'BEACH_VOLLEYBALL',
+}
+export type DisciplineUnion = `${DisciplineEnum}` | (string & {});
+/** How an event category is defined. */
+export enum CategoryEnum {
+  AGE = 'AGE',
+  BOTH = 'BOTH',
+  LEVEL = 'LEVEL',
+}
+export type CategoryUnion = `${CategoryEnum}`;
 
 export interface DrawDefinition {
   activeDates?: Date[] | string[]; // dates from startDate to endDate on which the tournament is active
@@ -245,7 +271,13 @@ export interface DrawDefinition {
   updatedAt?: Date | string;
 }
 
-export type DrawStatusUnion = 'COMPLETED' | 'IN_PROGRESS' | 'TO_BE_PLAYED';
+/** Aggregate play state of a draw. */
+export enum DrawStatusEnum {
+  COMPLETED = 'COMPLETED',
+  IN_PROGRESS = 'IN_PROGRESS',
+  TO_BE_PLAYED = 'TO_BE_PLAYED',
+}
+export type DrawStatusUnion = `${DrawStatusEnum}`;
 
 export interface Entry {
   createdAt?: Date | string;
@@ -513,7 +545,13 @@ export interface MatchUpFinishingPositionRange {
 // Derived from the canonical indoorOutdoorTypes tuple (mirrors TournamentStatusUnion / DisciplineUnion)
 // so the type and venueConstants share one source of truth and attr-audit has a value vocab to guard the
 // indoorOutdoor literals (e.g. court.indoorOutdoor === 'INDOOR') against typos.
-export type IndoorOutdoorUnion = (typeof indoorOutdoorTypes)[number];
+/** Whether a venue or court is indoors. Mirrors the `indoorOutdoorTypes` tuple. */
+export enum IndoorOutdoorEnum {
+  INDOOR = 'INDOOR',
+  OUTDOOR = 'OUTDOOR',
+  MIXED = 'MIXED',
+}
+export type IndoorOutdoorUnion = `${IndoorOutdoorEnum}`;
 
 export enum MatchUpStatusEnum {
   ABANDONED = 'ABANDONED',

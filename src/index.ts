@@ -138,12 +138,16 @@ export {
   AddressTypeEnum,
   BallTypeEnum,
   BookingTypeEnum,
+  CategoryEnum,
   CountryCodeEnum,
   CourtPositionEnum,
+  DisciplineEnum,
   DrawTypeEnum,
+  DrawStatusEnum,
   EntryStatusEnum,
   EventTypeEnum,
   FinishingPositionEnum,
+  IndoorOutdoorEnum,
   GenderEnum,
   LengthUnitEnum,
   LinkTypeEnum,
@@ -165,11 +169,16 @@ export {
   StructureTypeEnum,
   SurfaceCategoryEnum,
   TournamentLevelEnum,
+  TournamentStatusEnum,
   WeekdayEnum,
   WeightUnitEnum,
   WheelchairClassEnum,
   WinReasonEnum,
 } from './types/tournamentTypes';
+
+// SportEnum lives with the competition-format types rather than tournamentTypes;
+// value-exported alongside the rest so every *Union has a reachable enum.
+export { SportEnum } from './types/competitionFormat';
 
 // Statistics types (top-level convenience re-exports)
 export type { StatObject, MatchStatistics, StatCounters, StatisticsOptions } from './query/scoring/statistics/types';
