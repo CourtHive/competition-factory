@@ -13,11 +13,20 @@ import { surfaceConstants as surfaceObject } from '@Constants/surfaceConstants';
 import { participantConstants as participantObject } from '@Constants/participantConstants';
 import { genderConstants as genderObject } from '@Constants/genderConstants';
 import { eventConstants as eventObject } from '@Constants/eventConstants';
+import { tournamentConstants as tournamentObject } from '@Constants/tournamentConstants';
+import { venueConstants as venueObject } from '@Constants/venueConstants';
+import { disciplineConstants as disciplineObject } from '@Constants/disciplineConstants';
 import { drawDefinitionConstants as drawDefinitionObject } from '@Constants/drawDefinitionConstants';
 import * as weekdayConstants from '@Constants/weekdayConstants';
 import * as surfaceConstants from '@Constants/surfaceConstants';
 import * as genderConstants from '@Constants/genderConstants';
 import * as eventConstants from '@Constants/eventConstants';
+import * as tournamentConstants from '@Constants/tournamentConstants';
+import * as venueConstants from '@Constants/venueConstants';
+import * as disciplineConstants from '@Constants/disciplineConstants';
+import { disciplines } from '@Constants/disciplineConstants';
+import { tournamentStatuses } from '@Constants/tournamentConstants';
+import { indoorOutdoorTypes } from '@Constants/venueConstants';
 import * as T from '@Types/tournamentTypes';
 import { describe, it, expect } from 'vitest';
 
@@ -87,6 +96,9 @@ const COVERAGE: {
   { name: 'Sex', enum: T.SexEnum, consts: genderConstants, object: genderObject },
   { name: 'Gender', enum: T.GenderEnum, consts: genderConstants, object: genderObject },
   { name: 'EventType', enum: T.EventTypeEnum, consts: eventConstants, object: eventObject },
+  { name: 'TournamentStatus', enum: T.TournamentStatusEnum, consts: tournamentConstants, object: tournamentObject },
+  { name: 'IndoorOutdoor', enum: T.IndoorOutdoorEnum, consts: venueConstants, object: venueObject },
+  { name: 'Discipline', enum: T.DisciplineEnum, consts: disciplineConstants, object: disciplineObject },
 ];
 
 // Enum-only: no const-module twin (single source of truth — nothing to reconcile).
@@ -95,6 +107,12 @@ const ENUM_ONLY = [
   'AddressTypeEnum',
   // no const-module twin: weight units are used only on the equipment types
   'WeightUnitEnum',
+  // LEVEL has no const module; AGE/BOTH live in eventConstants but the set is not covered
+  'CategoryEnum',
+  // its values are matchUp-status strings reused for a DIFFERENT concept (draw-level
+  // aggregate play state), so pinning it to matchUpStatusConstants would assert a
+  // relationship that does not exist
+  'DrawStatusEnum',
   'BallTypeEnum',
   'CountryCodeEnum',
   'CourtPositionEnum',
@@ -185,5 +203,26 @@ describe('enum ↔ exported OBJECT conformance', () => {
     const values = valuesOf(object);
     const missing = Object.values(enumEntries(e)).filter((v) => !values.has(v));
     expect(missing).toEqual([]);
+  });
+});
+
+/**
+ * Enums that mirror an exported `as const` TUPLE.
+ *
+ * These unions used to be derived from the tuple directly — `(typeof x)[number]` —
+ * so the two could not disagree. Now that the union derives from the enum, the
+ * tuple is a second source for the same vocabulary and CAN drift. Both remain
+ * public surface (courthive-facilities imports indoorOutdoorTypes), so both are
+ * pinned to each other here.
+ */
+describe('enum ↔ backing tuple parity', () => {
+  const PAIRS: { name: string; enum: Record<string, unknown>; tuple: readonly string[] }[] = [
+    { name: 'TournamentStatus', enum: T.TournamentStatusEnum, tuple: tournamentStatuses },
+    { name: 'IndoorOutdoor', enum: T.IndoorOutdoorEnum, tuple: indoorOutdoorTypes },
+    { name: 'Discipline', enum: T.DisciplineEnum, tuple: disciplines },
+  ];
+
+  it.each(PAIRS)('$name: enum values and tuple entries are the same set', ({ enum: e, tuple }) => {
+    expect(Object.values(enumEntries(e)).sort()).toEqual([...tuple].sort());
   });
 });
