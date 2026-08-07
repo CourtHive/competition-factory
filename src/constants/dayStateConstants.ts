@@ -19,7 +19,7 @@ export const dayStateConstants = {
   IF_NEEDED,
   UNAVAILABLE,
   NOT_SET,
-};
+} as const;
 
 /**
  * @deprecated Renamed to `dayStateConstants` — "availability" collides with court

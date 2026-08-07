@@ -249,6 +249,6 @@ export const drawDefinitionConstants = {
   finishOrder,
   AGGREGATE_EVENT_STRUCTURES,
   FINISHING_POSITIONS,
-};
+} as const;
 
 export default drawDefinitionConstants;

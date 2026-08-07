@@ -1080,6 +1080,6 @@ export const errorConditionConstants = {
   UNRECOGNIZED_MATCHUP_STATUS,
   VALUE_UNCHANGED,
   VENUE_EXISTS,
-};
+} as const;
 
 export default errorConditionConstants;

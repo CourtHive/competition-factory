@@ -53,4 +53,4 @@ export const participantRoles = {
   TRAINER,
   TRANSPORT,
   VOLUNTEER,
-};
+} as const;

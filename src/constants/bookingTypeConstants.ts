@@ -11,6 +11,6 @@ export const bookingTypeConstants = {
   PRACTICE,
   RESERVED,
   SCHEDULED,
-};
+} as const;
 
 export default bookingTypeConstants;

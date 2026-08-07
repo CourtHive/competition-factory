@@ -19,4 +19,4 @@ export const tournamentConstants = {
   CANCELLED,
   COMPLETED,
   ACTIVE,
-};
+} as const;

@@ -12,10 +12,12 @@ import { weekdayConstants as weekdayObject } from '@Constants/weekdayConstants';
 import { surfaceConstants as surfaceObject } from '@Constants/surfaceConstants';
 import { participantConstants as participantObject } from '@Constants/participantConstants';
 import { genderConstants as genderObject } from '@Constants/genderConstants';
+import { eventConstants as eventObject } from '@Constants/eventConstants';
 import { drawDefinitionConstants as drawDefinitionObject } from '@Constants/drawDefinitionConstants';
 import * as weekdayConstants from '@Constants/weekdayConstants';
 import * as surfaceConstants from '@Constants/surfaceConstants';
 import * as genderConstants from '@Constants/genderConstants';
+import * as eventConstants from '@Constants/eventConstants';
 import * as T from '@Types/tournamentTypes';
 import { describe, it, expect } from 'vitest';
 
@@ -83,12 +85,16 @@ const COVERAGE: {
   },
   { name: 'ParticipantType', enum: T.ParticipantTypeEnum, consts: participantConstants, object: participantObject },
   { name: 'Sex', enum: T.SexEnum, consts: genderConstants, object: genderObject },
+  { name: 'Gender', enum: T.GenderEnum, consts: genderConstants, object: genderObject },
+  { name: 'EventType', enum: T.EventTypeEnum, consts: eventConstants, object: eventObject },
 ];
 
 // Enum-only: no const-module twin (single source of truth — nothing to reconcile).
 // Listed so a newly-added enum can't silently skip the mirror/bucket decision above.
 const ENUM_ONLY = [
   'AddressTypeEnum',
+  // no const-module twin: weight units are used only on the equipment types
+  'WeightUnitEnum',
   'BallTypeEnum',
   'CountryCodeEnum',
   'CourtPositionEnum',

@@ -142,7 +142,9 @@ export {
   CourtPositionEnum,
   DrawTypeEnum,
   EntryStatusEnum,
+  EventTypeEnum,
   FinishingPositionEnum,
+  GenderEnum,
   LengthUnitEnum,
   LinkTypeEnum,
   MatchUpStatusEnum,
@@ -164,6 +166,7 @@ export {
   SurfaceCategoryEnum,
   TournamentLevelEnum,
   WeekdayEnum,
+  WeightUnitEnum,
   WheelchairClassEnum,
   WinReasonEnum,
 } from './types/tournamentTypes';

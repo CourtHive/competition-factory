@@ -87,4 +87,4 @@ export const entryStatusConstants = {
   VALID_ENTRY_STATUSES,
   WILDCARD,
   WITHDRAWN,
-};
+} as const;

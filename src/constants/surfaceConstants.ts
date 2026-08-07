@@ -9,6 +9,6 @@ export const surfaceConstants = {
   GRASS,
   CARPET,
   ARTIFICIAL,
-};
+} as const;
 
 export default surfaceConstants;

@@ -68,7 +68,7 @@ export const extensionConstants = {
   TALLY,
   TIE_FORMAT_MODIFICATIONS, // for auditing, not important when anonymized
   FACTORY, // used for capturing versioning of factory and other TODS document processors
-};
+} as const;
 
 export const internalExtensions = [
   DELEGATED_OUTCOME,

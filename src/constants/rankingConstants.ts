@@ -45,4 +45,4 @@ export const rankingConstants = {
   TEAM_ONLY,
   CATEGORY_SCOPE_FIELDS,
   PROFILE_SCOPE_FIELDS,
-};
+} as const;

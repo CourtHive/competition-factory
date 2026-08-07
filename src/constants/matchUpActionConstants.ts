@@ -34,6 +34,6 @@ export const matchUpActionConstants = {
   SCORE,
   START,
   END,
-};
+} as const;
 
 export default matchUpActionConstants;

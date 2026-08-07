@@ -8,4 +8,4 @@ export const resourceContants = {
   RESOURCE_TYPE,
   IDENTIFIER,
   NAME,
-};
+} as const;

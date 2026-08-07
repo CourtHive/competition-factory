@@ -129,4 +129,4 @@ export const matchUpStatusConstants = {
   SUSPENDED,
   TO_BE_PLAYED,
   WALKOVER,
-};
+} as const;

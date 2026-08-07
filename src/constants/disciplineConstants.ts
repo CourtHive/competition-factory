@@ -30,4 +30,4 @@ export const disciplineConstants = {
   PICKLEBALL,
   PADEL,
   TENNIS,
-};
+} as const;

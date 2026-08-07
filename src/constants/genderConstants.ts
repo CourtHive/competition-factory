@@ -21,4 +21,4 @@ export const genderConstants = {
   OTHER,
   MALE,
   ANY,
-};
+} as const;
