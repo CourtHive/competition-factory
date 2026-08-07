@@ -1,5 +1,27 @@
 # Changelog
 
+## [6.19.0](https://github.com/CourtHive/competition-factory/compare/v6.18.0...v6.19.0) (2026-08-07)
+
+
+### Features
+
+* **types:** every exported Union is now enum-backed ([#4576](https://github.com/CourtHive/competition-factory/issues/4576)) ([beacef3](https://github.com/CourtHive/competition-factory/commit/beacef3f8672f12829ef5e5b694debaaed1178cb))
+
+
+### Bug Fixes
+
+* **readModel:** round_segment silently deleted every segmented round ([#4579](https://github.com/CourtHive/competition-factory/issues/4579)) ([421a128](https://github.com/CourtHive/competition-factory/commit/421a128eda14e423e5a6d388baea155c1795095c))
+* **tests:** close four proven holes in the conformance guards ([#4578](https://github.com/CourtHive/competition-factory/issues/4578)) ([da71b23](https://github.com/CourtHive/competition-factory/commit/da71b238eaf6302bf2314615f3eabf2791debe09))
+* **types:** generate the enum value-exports instead of maintaining them by hand ([#4577](https://github.com/CourtHive/competition-factory/issues/4577)) ([718b9fa](https://github.com/CourtHive/competition-factory/commit/718b9facad5d3894b72d655b8031aec9c0b64b61))
+* **types:** stop constant objects widening; close the union/enum gaps ([#4575](https://github.com/CourtHive/competition-factory/issues/4575)) ([6db9d15](https://github.com/CourtHive/competition-factory/commit/6db9d1555bdab2231f2c9221feadd697b014a76b))
+
+
+### Documentation
+
+* document availability disabled courts, booking-type mapping and the missing constant groups ([c0049eb](https://github.com/CourtHive/competition-factory/commit/c0049eb2acc52bd192a5b138d658e5c32b18d76a))
+* keep Block Interface under Block Types ([9a083f0](https://github.com/CourtHive/competition-factory/commit/9a083f02e12f9f31c6e33f14e1e572d02f690a6b))
+* stop using the invalid 'EVENT' bookingType in venues examples ([6c34699](https://github.com/CourtHive/competition-factory/commit/6c34699ac121003bf2bee3e19a6a25dbf9b299b5))
+
 ## [6.18.0](https://github.com/CourtHive/competition-factory/compare/v6.17.0...v6.18.0) (2026-08-07)
 
 
