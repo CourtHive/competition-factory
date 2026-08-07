@@ -20,27 +20,99 @@ This approach is particularly effective for tournament scheduling where courts s
 
 ## Block Types
 
-| Type          | Meaning                           | Typical Source  | Category        |
-| ------------- | --------------------------------- | --------------- | --------------- |
-| `MAINTENANCE` | Court under maintenance           | Template / User | Hard constraint |
-| `PRACTICE`    | Reserved for practice             | User            | Soft constraint |
-| `RESERVED`    | Reserved (general purpose)        | User / System   | Soft constraint |
-| `BLOCKED`     | Generically blocked               | User            | Hard constraint |
-| `CLOSED`      | Court closed for the day          | System          | Hard constraint |
-| `SCHEDULED`   | Match scheduled here              | System (import) | Informational   |
-| `SOFT_BLOCK`  | Soft block (can be overridden)    | User / Rule     | Soft constraint |
-| `HARD_BLOCK`  | Hard block (cannot be overridden) | User / Rule     | Hard constraint |
-| `LOCKED`      | Locked — immutable                | System          | Hard constraint |
-| `AVAILABLE`   | Explicitly available              | Derived         | Free time       |
-| `UNSPECIFIED` | Unknown/default                   | Fallback        | Neutral         |
+| Type          | Meaning                                      | Typical Source  | Category        |
+| ------------- | -------------------------------------------- | --------------- | --------------- |
+| `DRYING`      | Surface drying after rain — reactive         | User / System   | Hard constraint |
+| `MAINTENANCE` | Court under maintenance — planned            | Template / User | Hard constraint |
+| `PRACTICE`    | Reserved for practice                        | User            | Soft constraint |
+| `RESERVED`    | Reserved for recreational/paying players     | User / System   | Soft constraint |
+| `BLOCKED`     | Generic unavailable (miscellaneous)          | User            | Hard constraint |
+| `CLOSED`      | Outside open hours, or explicitly closed     | System          | Hard constraint |
+| `SCHEDULED`   | Tournament matches (read-only, by scheduler) | System (import) | Informational   |
+| `SOFT_BLOCK`  | Soft block (can be overridden) — legacy      | User / Rule     | Soft constraint |
+| `HARD_BLOCK`  | Hard block (cannot be overridden) — legacy   | User / Rule     | Hard constraint |
+| `LOCKED`      | System-locked, immutable — legacy            | System          | Hard constraint |
+| `AVAILABLE`   | Derived — time without any blocks            | Derived         | Free time       |
+| `UNSPECIFIED` | No explicit status                           | Fallback        | Neutral         |
 
 **Default `typePrecedence`:**
 
 ```js
-['HARD_BLOCK', 'LOCKED', 'MAINTENANCE', 'BLOCKED', 'PRACTICE', 'RESERVED', 'SOFT_BLOCK', 'AVAILABLE', 'UNSPECIFIED'];
+[
+  'HARD_BLOCK',
+  'LOCKED',
+  'SCHEDULED',
+  'DRYING', // above MAINTENANCE — see below
+  'MAINTENANCE',
+  'CLOSED',
+  'BLOCKED',
+  'PRACTICE',
+  'RESERVED',
+  'SOFT_BLOCK',
+  'AVAILABLE',
+  'UNSPECIFIED',
+];
 ```
 
 When multiple blocks overlap on the same court at the same time, the block with the highest precedence (leftmost in the array) wins.
+
+`DRYING` sits **above** `MAINTENANCE` deliberately: drying is reactive and cannot be
+deferred, whereas maintenance usually can — so when the two overlap, drying wins.
+
+## Court bookings → block types
+
+Court bookings on the tournament record carry a `bookingType` ([`bookingTypeConstants`](../constants.mdx)).
+The engine maps each onto a block type:
+
+| `bookingType` | Block type    |
+| ------------- | ------------- |
+| `SCHEDULED`   | `SCHEDULED`   |
+| `PRACTICE`    | `PRACTICE`    |
+| `MAINTENANCE` | `MAINTENANCE` |
+| `DRYING`      | `DRYING`      |
+| `RESERVED`    | `RESERVED`    |
+| `BLOCKED`     | `BLOCKED`     |
+| `CLOSED`      | `CLOSED`      |
+
+`BLOCK_TYPES` is a superset of the booking vocabulary — `SOFT_BLOCK`, `HARD_BLOCK`,
+`LOCKED`, `AVAILABLE` and `UNSPECIFIED` are engine-side only and have no booking
+counterpart.
+
+:::info Unrecognised booking types fail closed
+An unmapped `bookingType` becomes **`BLOCKED`**, and the raw string is preserved on
+`Block.reason` so nothing is lost.
+
+`BLOCKED` is the generic "unavailable, reason unspecified" type, so an unknown booking
+still removes the court from availability. The two alternatives are worse: `RESERVED`
+asserts a specific meaning ("reserved for recreational/paying players") that the data
+never claimed, and `UNSPECIFIED` is excluded from the capacity curve entirely — an
+unknown booking would leave the court looking free and invite a double-booking.
+:::
+
+## Disabled venues and courts
+
+Disabled venues and courts are **excluded** from availability entirely — they never
+produce courts, blocks, or capacity.
+
+`disabled` may be a blanket boolean or date-scoped:
+
+```js
+court.disabled = true; // disabled outright
+court.disabled = { dates: ['2026-08-11'] }; // disabled on those days only
+```
+
+Whether a date-scoped court is excluded depends on the day context:
+
+- **With a day** (any per-day query), date-scoping is honoured — the court is excluded
+  only on the listed dates.
+- **Without a day**, only a blanket `disabled: true` excludes. This is conservative by
+  design and matches `query/venues/venuesAndCourtsGetter` — the reader the scheduler
+  uses — when no dates are supplied.
+
+Both readers delegate to the same `getDisabledStatus`, so `disabled` has exactly one
+semantic across the codebase. They previously diverged, which meant a disabled court
+could be invisible to the scheduler while still visible to the availability engine —
+two readers giving two answers from the same record.
 
 ### Block Interface
 

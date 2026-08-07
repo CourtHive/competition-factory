@@ -111,8 +111,12 @@ interface EngineConfig {
 **Default `typePrecedence`:**
 
 ```text
-HARD_BLOCK → LOCKED → MAINTENANCE → BLOCKED → PRACTICE → RESERVED → SOFT_BLOCK → AVAILABLE → UNSPECIFIED
+HARD_BLOCK → LOCKED → SCHEDULED → DRYING → MAINTENANCE → CLOSED → BLOCKED
+  → PRACTICE → RESERVED → SOFT_BLOCK → AVAILABLE → UNSPECIFIED
 ```
+
+See [Block Types](./block-types-and-algorithms.md#block-types) for what each type means
+and why `DRYING` outranks `MAINTENANCE`.
 
 During `init()`, the engine:
 

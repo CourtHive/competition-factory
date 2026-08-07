@@ -461,6 +461,82 @@ default scoring format) live in the discipline profile registry, resolved with
 `fixtures.getDisciplineProfile({ discipline })` and extensible at runtime via
 `fixtures.registerDisciplineProfile({ discipline, matchUpTypes, defaultMatchUpFormat })`.
 
+**competitionFormatConstants** - Competition format profiles and timing scopes
+
+```js
+const { INTENNSE_STANDARD, TENNIS_STANDARD, MATCHUP, SET, HALF, SEGMENT, BETWEEN_GAMES, BETWEEN_POINTS, ANY } =
+  factoryConstants.competitionFormatConstants;
+```
+
+`INTENNSE_STANDARD` / `TENNIS_STANDARD` name format profiles; the remainder are the
+scopes a timing or interruption rule can apply to.
+
+**swissConstants** - Swiss pairing tiebreak and grouping methods
+
+```js
+const { BUCHHOLZ, MEDIAN_BUCHHOLZ, SONNEBORN_BERGER, PROGRESSIVE_SCORE, SCORE_GROUP, RATING_BASED } =
+  factoryConstants.swissConstants;
+```
+
+**tallyConstants** - Tally method identifiers
+
+```js
+const { GEM_SCORE } = factoryConstants.tallyConstants; // 'GEMscore'
+```
+
+**rankingConstants** - Ranking-points pipeline vocabulary
+
+```js
+const { RANKING_POINTS, QUALITY_WIN, FULL_TO_EACH, SPLIT_EVEN, TEAM_ONLY } = factoryConstants.rankingConstants;
+```
+
+`FULL_TO_EACH` / `SPLIT_EVEN` / `TEAM_ONLY` are doubles points-distribution modes. The module
+also exports `CATEGORY_SCOPE_FIELDS` and `PROFILE_SCOPE_FIELDS`, the field lists a points
+profile may scope on. See [Ranking Points Pipeline](./scale-engine/ranking-points-pipeline.md).
+
+**pointsAuthorityConstants** - Bodies that award ranking points
+
+```js
+const { ATP, WTA, ITF, ITF_JUNIOR, ITF_WHEELCHAIR, TENNIS_EUROPE, USTA, LTA, FFT, DTB, PPA, BWF, UTR, UNSPECIFIED } =
+  factoryConstants.pointsAuthorityConstants;
+```
+
+`POINTS_AUTHORITIES` is exported as the full array.
+
+**sanctioningConstants** - Sanctioning proposal lifecycle
+
+```js
+const { DRAFT, SUBMITTED, UNDER_REVIEW, APPROVED, CONDITIONALLY_APPROVED, REJECTED, WITHDRAWN } =
+  factoryConstants.sanctioningConstants;
+```
+
+Also `MODIFICATION_REQUESTED`, `ACTIVE`, `POST_EVENT`, `CLOSED`, `ISSUES_FLAGGED`, plus
+`VALID_STATUS_TRANSITIONS` — the state machine mapping each status to its legal successors.
+See [Sanctioning Policy](./policies/sanctioningPolicy.md).
+
+**officiatingConstants** - Official certification, evaluation and assignment states
+
+```js
+const { CERT_ACTIVE, CERT_EXPIRED, CERT_SUSPENDED, CERT_REVOKED, CERT_PENDING_RENEWAL } =
+  factoryConstants.officiatingConstants;
+```
+
+Three prefixed groups — `CERT_*` (certification), `EVAL_*` (evaluation workflow: `DRAFT`,
+`SUBMITTED`, `REVIEWED`, `APPROVED`, `REJECTED`) and `ASSIGN_*` (assignment: `PROPOSED`,
+`CONFIRMED`, `DECLINED`, `CANCELLED`, `COMPLETED`) — each with a
+`VALID_*_TRANSITIONS` map. The prefixes exist because the raw values collide across
+groups (`APPROVED` is both an evaluation and a sanctioning status).
+See [Officiating Engine](./engines/officiating-engine.md).
+
+**keyValueConstants** - Key bindings for keyboard-driven score entry
+
+```js
+const { OUTCOMEKEYS, SIDE1KEYS, SIDE2KEYS, MODIFIERS, PROMPT, MOVEUP, MOVEDOWN, HOTKEYS } =
+  factoryConstants.keyValueConstants;
+```
+
+Used by the keyValue scoring helper to map keystrokes onto score mutations.
+
 **topicConstants** - Notification/subscription topic types
 
 ```js

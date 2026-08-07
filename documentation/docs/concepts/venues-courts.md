@@ -228,10 +228,31 @@ type DateAvailability = {
 type Booking = {
   startTime: string; // HH:MM format
   endTime: string; // HH:MM format
-  bookingType?: string; // 'PRACTICE', 'MAINTENANCE', 'EVENT', etc.
+  bookingType?: BookingType; // see below
   notes?: string;
 };
 ```
+
+`bookingType` is a closed vocabulary, exported as
+[`bookingTypeConstants`](../constants.mdx) and typed by `BookingTypeEnum`:
+
+| Value         | Meaning                                  |
+| ------------- | ---------------------------------------- |
+| `SCHEDULED`   | Tournament match scheduled here          |
+| `PRACTICE`    | Practice time                            |
+| `MAINTENANCE` | Planned court maintenance or cleaning    |
+| `DRYING`      | Surface drying after rain — reactive     |
+| `RESERVED`    | Reserved for recreational/paying players |
+| `BLOCKED`     | Generic unavailable, reason unspecified  |
+| `CLOSED`      | Outside open hours, or explicitly closed |
+
+`DRYING` is deliberately distinct from `MAINTENANCE` — maintenance is planned work that
+can usually be deferred, drying is weather-driven and cannot be, and the AvailabilityEngine
+ranks drying higher when the two overlap.
+
+An unrecognised value does not throw: the AvailabilityEngine treats it as `BLOCKED` and
+preserves the original string on `Block.reason`. See
+[Court bookings → block types](../availability-engine/block-types-and-algorithms.md#court-bookings--block-types).
 
 ### Default Availability
 
