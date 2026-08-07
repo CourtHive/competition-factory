@@ -44,4 +44,4 @@ export const scheduleConstants = {
   BLOCKED,
   PRACTICE,
   MAINTENANCE,
-};
+} as const;

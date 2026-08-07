@@ -25,7 +25,7 @@ export const participantTypes = {
   GROUP,
   TEAM,
   PAIR,
-};
+} as const;
 
 export const participantConstants = {
   INDIVIDUAL,
@@ -43,4 +43,4 @@ export const participantConstants = {
   WAIVED,
   UNPAID,
   PAID,
-};
+} as const;

@@ -70,4 +70,4 @@ export const topicConstants = {
   UNPUBLISH_PARTICIPANTS,
   UNPUBLISH_TOURNAMENT,
   UPDATE_INCONTEXT_MATCHUP,
-};
+} as const;

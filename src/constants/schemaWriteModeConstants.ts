@@ -10,4 +10,4 @@ export const schemaWriteModeConstants = {
   NATIVE,
   LEGACY,
   DUAL,
-};
+} as const;

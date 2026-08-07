@@ -30,6 +30,6 @@ export const ratingConstants = {
   ITTF,
   USAR,
   BWF,
-};
+} as const;
 
 export default ratingConstants;

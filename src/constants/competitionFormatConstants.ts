@@ -23,6 +23,6 @@ export const competitionFormatConstants = {
   BETWEEN_GAMES,
   BETWEEN_POINTS,
   ANY,
-};
+} as const;
 
 export default competitionFormatConstants;

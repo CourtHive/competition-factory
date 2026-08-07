@@ -14,6 +14,6 @@ export const venueConstants = {
   INDOOR,
   OUTDOOR,
   MIXED,
-};
+} as const;
 
 export default venueConstants;

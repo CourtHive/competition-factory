@@ -1,4 +1,3 @@
-import { DOUBLES, HYBRID, SINGLES, TEAM } from '@Constants/eventConstants';
 import { tournamentStatuses } from '@Constants/tournamentConstants';
 import { indoorOutdoorTypes } from '@Constants/venueConstants';
 import { disciplines } from '@Constants/disciplineConstants';
@@ -368,8 +367,21 @@ export interface Interleave {
   offset: number;
 }
 
-// Derived from eventConstants (drift-proof; see TournamentStatusUnion note).
-export type EventTypeUnion = typeof SINGLES | typeof DOUBLES | typeof TEAM | typeof HYBRID;
+/**
+ * The competition formats an event can take.
+ *
+ * Was previously a union of `typeof` constants with no enum behind it, which left
+ * consumers able to type against EventTypeUnion but unable to reference a member
+ * at runtime — the outlier ClubSpark reported. Now enum-backed like the other 33
+ * vocabularies, with the union derived from it.
+ */
+export enum EventTypeEnum {
+  SINGLES = 'SINGLES',
+  DOUBLES = 'DOUBLES',
+  TEAM = 'TEAM',
+  HYBRID = 'HYBRID',
+}
+export type EventTypeUnion = `${EventTypeEnum}`;
 
 /**
  * CODES first-class schedule attributes on a matchUp. Each field was
@@ -770,7 +782,20 @@ export interface CollectionValueProfile {
   notes?: string;
 }
 
-enum GenderEnum {
+/**
+ * The gender category of a COMPETITION — an event, a category, a draw.
+ *
+ * Distinct from {@link SexEnum}, which describes a PERSON. The two overlap on
+ * F / M / FEMALE / MALE and then diverge deliberately: a competition can be
+ * MIXED or ANY, a person cannot; a person can be OTHER, a competition cannot.
+ *
+ * Both vocabularies are served by the single `genderConstants` object, so
+ * `genderConstants.OTHER` is a legitimate `sex` but NOT a legitimate `gender`,
+ * and `genderConstants.MIXED` is the reverse. Prefer the enum members over the
+ * bucket when you know which dimension you are setting — the union types reject
+ * the wrong one at compile time.
+ */
+export enum GenderEnum {
   FEMALE_ABBR = 'F',
   MIXED_ABBR = 'X',
   MALE_ABBR = 'M',
@@ -1469,7 +1494,7 @@ export enum PlayingHandCodeEnum {
 }
 export type PlayingHandCodeUnion = `${PlayingHandCodeEnum}`;
 
-enum WeightUnitEnum {
+export enum WeightUnitEnum {
   GRAM = 'GRAM',
   KILOGRAM = 'KILOGRAM',
 }
@@ -1487,6 +1512,10 @@ export interface UnifiedPersonID {
   updatedAt?: Date | string;
 }
 
+/**
+ * The sex of a PERSON. Distinct from {@link GenderEnum}, which is the gender
+ * category of a competition — see the note there for how the two diverge.
+ */
 export enum SexEnum {
   FEMALE_ABBR = 'F',
   MALE_ABBR = 'M',

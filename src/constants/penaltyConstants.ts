@@ -36,6 +36,6 @@ export const penaltyConstants = {
   OTHER,
   PUNCTUALITY,
   FAILUIRE_TO_SIGN_IN,
-};
+} as const;
 
 export default penaltyConstants;

@@ -94,4 +94,4 @@ export const timeItemConstants = {
   SUSPENSION,
   TIME_MODIFIERS,
   TO_BE_ANNOUNCED,
-};
+} as const;

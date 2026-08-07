@@ -12,4 +12,4 @@ export const practiceConstants = {
   PRACTICE_REGISTRATION_CONFIRMED,
   PRACTICE_REGISTRATION_CANCELLED,
   practiceRegistrationStatuses,
-};
+} as const;
