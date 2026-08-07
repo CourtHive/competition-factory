@@ -1,5 +1,40 @@
 # Changelog
 
+## [6.18.0](https://github.com/CourtHive/competition-factory/compare/v6.17.0...v6.18.0) (2026-08-07)
+
+
+### Features
+
+* **codes:** add BookingTypeEnum and the DRYING court booking type ([d7accfa](https://github.com/CourtHive/competition-factory/commit/d7accfa55146be9b818dd726719f811e2e0d011c))
+* **codes:** add BookingTypeEnum and the DRYING court booking type ([7864740](https://github.com/CourtHive/competition-factory/commit/786474012cf63b8470a4dce01d9bd842aaddde31))
+* **constants:** expose action method names via actionMethodConstants ([26b00a0](https://github.com/CourtHive/competition-factory/commit/26b00a0ce3f3397188416456b272feade902d0ec))
+* **constants:** expose action method names via actionMethodConstants ([a8a460c](https://github.com/CourtHive/competition-factory/commit/a8a460ce380a54fd5be61c47fe9c7ae94bccf46f))
+* **constants:** rename availabilityConstants to dayStateConstants ([0d67e37](https://github.com/CourtHive/competition-factory/commit/0d67e370b4284b492a4ff9162a49a1cb29c9280f))
+* **constants:** rename availabilityConstants to dayStateConstants ([66c6634](https://github.com/CourtHive/competition-factory/commit/66c6634c5d9be4cd507d3bc3af454bfd387cf831))
+
+
+### Bug Fixes
+
+* **availability:** honour disabled courts and stop mislabelling unmapped booking types ([5b47c98](https://github.com/CourtHive/competition-factory/commit/5b47c986dae6efd09ea45a732d273bbfdb72e09a))
+* **availability:** honour disabled courts and stop mislabelling unmapped booking types ([c982378](https://github.com/CourtHive/competition-factory/commit/c982378880ce8a0f75a1d5bd0fb97504e8044705))
+* **constants:** export REGISTERED on entryStatusConstants; guard the exported objects ([0d8e812](https://github.com/CourtHive/competition-factory/commit/0d8e812e23a87b087150135d92977ca37086c89d))
+* **constants:** export REGISTERED on entryStatusConstants; guard the exported objects ([ca4cc2b](https://github.com/CourtHive/competition-factory/commit/ca4cc2b79bf632ba8548965fe28683339e5f6fe2))
+* **constants:** ground actionMethodConstants in engine-method validity ([656b35b](https://github.com/CourtHive/competition-factory/commit/656b35ba0026d901a9a99e9b420be7f2acd2658b))
+* **constants:** ground actionMethodConstants in engine-method validity ([4ad919f](https://github.com/CourtHive/competition-factory/commit/4ad919f3130d17d61d3f3b95773230e80658c570))
+* **score:** derive score strings from sets instead of trusting the caller ([277341b](https://github.com/CourtHive/competition-factory/commit/277341b3d2ea4c7fabca9bce7e8f7ade417efeac)), closes [#4564](https://github.com/CourtHive/competition-factory/issues/4564)
+* **score:** matchUpScore carries forward non-derived score attributes ([#4566](https://github.com/CourtHive/competition-factory/issues/4566)) ([1e913a7](https://github.com/CourtHive/competition-factory/commit/1e913a7a9af9a6f5e4881f44a796f7cece7c4bd6)), closes [#4564](https://github.com/CourtHive/competition-factory/issues/4564)
+* **state:** async state provider isolation — AsyncLocalStorage, fail-closed, un-skip example ([#4567](https://github.com/CourtHive/competition-factory/issues/4567)) ([e585d95](https://github.com/CourtHive/competition-factory/commit/e585d9549c4995ddd8ba76c764d272ac049d2071))
+* **state:** lazily bind a per-context state instead of throwing ([#4570](https://github.com/CourtHive/competition-factory/issues/4570)) ([55a020a](https://github.com/CourtHive/competition-factory/commit/55a020aca65206e3dfe1252b01ff597a3c3f8630)), closes [#4564](https://github.com/CourtHive/competition-factory/issues/4564)
+
+
+### Documentation
+
+* **enums:** add BookingTypeEnum to the catalogue ([215921f](https://github.com/CourtHive/competition-factory/commit/215921f155d533cd550d5f317fe592d0b6f13ae8))
+* **enums:** add BookingTypeEnum to the catalogue ([564a964](https://github.com/CourtHive/competition-factory/commit/564a964170284c9e7388a5cc312a83180b1e3096))
+* **enums:** correct the curated matchUpStatus sets example ([b33a26b](https://github.com/CourtHive/competition-factory/commit/b33a26b7b60610c854700614b770ba8420173cfb))
+* **enums:** correct the curated matchUpStatus sets example ([c1d9c76](https://github.com/CourtHive/competition-factory/commit/c1d9c76f31e13c30058b9ab4d39c1d328366341d))
+* refresh for 6.18.0 and unbreak injected API Reference markers ([be36fa8](https://github.com/CourtHive/competition-factory/commit/be36fa8b31f38f72afee0150076da615976f8307))
+
 ## [6.17.0](https://github.com/CourtHive/competition-factory/compare/v6.16.0...v6.17.0) (2026-08-05)
 
 
