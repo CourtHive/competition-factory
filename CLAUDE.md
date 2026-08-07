@@ -19,7 +19,8 @@ pnpm start                # Rollup watch mode
 pnpm test                 # Vitest (3600+ tests)
 pnpm tui                  # Vitest interactive UI
 pnpm coverage             # Coverage report (thresholds: 95/95/85/95%)
-pnpm lint                 # ESLint with fix
+pnpm lint                 # ESLint — non-mutating, fails on any warning
+pnpm lint:fix             # ESLint with auto-fix (rewrites source)
 pnpm check-types          # tsc --noEmit
 ```
 
