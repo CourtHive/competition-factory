@@ -130,55 +130,14 @@ export type * from './types';
 
 // Enums are value-exported (runtime) IN ADDITION to the type-only `./types` surface
 // above, so consumers can reference members at runtime (e.g. `MatchUpStatusEnum.COMPLETED`),
-// not just type against them. These explicit named exports override the type-only star
-// re-export for the same names. They are kept in lock-step with the runtime string values
-// in `src/constants/*` by the enum/const conformance guard
-// (`src/tests/constants/enumConstConformance.test.ts`).
-export {
-  AddressTypeEnum,
-  BallTypeEnum,
-  BookingTypeEnum,
-  CategoryEnum,
-  CountryCodeEnum,
-  CourtPositionEnum,
-  DisciplineEnum,
-  DrawTypeEnum,
-  DrawStatusEnum,
-  EntryStatusEnum,
-  EventTypeEnum,
-  FinishingPositionEnum,
-  IndoorOutdoorEnum,
-  GenderEnum,
-  LengthUnitEnum,
-  LinkTypeEnum,
-  MatchUpStatusEnum,
-  OnlineResourceTypeEnum,
-  ParticipantRoleEnum,
-  ParticipantStatusEnum,
-  ParticipantTypeEnum,
-  PenaltyTypeEnum,
-  PlayingDoubleHandCodeEnum,
-  PlayingHandCodeEnum,
-  PositioningProfileEnum,
-  SeedingProfileEnum,
-  SexEnum,
-  ShotDetailEnum,
-  ShotOutcomeEnum,
-  ShotTypeEnum,
-  StageTypeEnum,
-  StructureTypeEnum,
-  SurfaceCategoryEnum,
-  TournamentLevelEnum,
-  TournamentStatusEnum,
-  WeekdayEnum,
-  WeightUnitEnum,
-  WheelchairClassEnum,
-  WinReasonEnum,
-} from './types/tournamentTypes';
-
-// SportEnum lives with the competition-format types rather than tournamentTypes;
-// value-exported alongside the rest so every *Union has a reachable enum.
-export { SportEnum } from './types/competitionFormat';
+// not just type against them. These named exports override the type-only star re-export
+// for the same names.
+//
+// GENERATED, not hand-maintained. The hand-maintained version drifted and shipped 16
+// enums that were present in the .d.ts as values but `undefined` at runtime — code that
+// compiled clean and then threw. See scripts/generateEnumExports.mjs; the drift guard
+// `check:enum-exports` runs in prebuild and verify:generated.
+export * from './types/enumExports';
 
 // Statistics types (top-level convenience re-exports)
 export type { StatObject, MatchStatistics, StatCounters, StatisticsOptions } from './query/scoring/statistics/types';
