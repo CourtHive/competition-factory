@@ -296,6 +296,30 @@ describe('orderOfPlayRow', () => {
 });
 
 describe('schedulingProfileRows', () => {
+  /**
+   * The regression that motivated the split. `roundSegment` is an OBJECT
+   * ({ segmentsCount, segmentNumber }); it used to be assigned whole to a single
+   * `round_segment` field declared `number | null` — unchecked, because the source
+   * round is `any`. The read model's column is `integer`, so Postgres rejected every
+   * segmented row, and because the scheduling plan re-projects as delete-then-insert
+   * the row was deleted and never restored. Both halves must emit as scalars.
+   */
+  it('emits a segmented round as two scalars, never the raw object', () => {
+    const profile = [
+      {
+        scheduleDate: '2025-01-05',
+        venues: [{ venueId: 'v1', rounds: [{ roundNumber: 2, roundSegment: { segmentsCount: 3, segmentNumber: 2 } }] }],
+      },
+    ];
+    const [row] = schedulingProfileRows('t1', profile) as any[];
+    expect(row.round_segment_number).toBe(2);
+    expect(row.round_segments_count).toBe(3);
+    expect(typeof row.round_segment_number).toBe('number');
+    expect(typeof row.round_segments_count).toBe('number');
+    // the field that could not hold the value is gone entirely
+    expect('round_segment' in row).toBe(false);
+  });
+
   it('flattens per (date, venue, round order) with round identity', () => {
     const profile = [
       {
@@ -305,7 +329,7 @@ describe('schedulingProfileRows', () => {
             venueId: 'v1',
             rounds: [
               { eventId: 'e1', drawId: 'd1', structureId: 's1', roundNumber: 1 },
-              { drawId: 'd2', roundNumber: 2, roundSegment: 1 },
+              { drawId: 'd2', roundNumber: 2, roundSegment: { segmentsCount: 3, segmentNumber: 2 } },
             ],
           },
         ],
@@ -322,7 +346,8 @@ describe('schedulingProfileRows', () => {
         draw_id: 'd1',
         structure_id: 's1',
         round_number: 1,
-        round_segment: null,
+        round_segment_number: null,
+        round_segments_count: null,
         winner_finishing_position_range: null,
       },
       {
@@ -334,7 +359,8 @@ describe('schedulingProfileRows', () => {
         draw_id: 'd2',
         structure_id: null,
         round_number: 2,
-        round_segment: 1,
+        round_segment_number: 2,
+        round_segments_count: 3,
         winner_finishing_position_range: null,
       },
     ]);

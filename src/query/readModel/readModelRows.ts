@@ -202,7 +202,8 @@ export function schedulingProfileRows(tournamentId: string, schedulingProfile: a
           draw_id: round?.drawId ?? null,
           structure_id: round?.structureId ?? null,
           round_number: round?.roundNumber ?? null,
-          round_segment: round?.roundSegment ?? null,
+          round_segment_number: round?.roundSegment?.segmentNumber ?? null,
+          round_segments_count: round?.roundSegment?.segmentsCount ?? null,
           winner_finishing_position_range: round?.winnerFinishingPositionRange ?? null,
         });
       });
