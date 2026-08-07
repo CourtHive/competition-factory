@@ -368,7 +368,7 @@ tournamentEngine.modifyCourtDateAvailability({
         {
           startTime: '14:00',
           endTime: '15:00',
-          bookingType: 'EVENT',
+          bookingType: 'BLOCKED',
           notes: 'Trophy presentation ceremony',
         },
       ],
@@ -927,7 +927,7 @@ Link to court/venue information:
     {
       startTime: '17:00',
       endTime: '17:30',
-      bookingType: 'EVENT',
+      bookingType: 'BLOCKED',
       notes: 'Opening ceremony for finals'
     }
   ]
