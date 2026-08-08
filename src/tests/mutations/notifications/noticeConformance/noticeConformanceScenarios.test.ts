@@ -1,4 +1,4 @@
-import { captureNotices, changedEntities, conformanceViolations } from './harness';
+import { captureNotices, changedEntities, conformanceViolations, fidelityViolations } from './harness';
 import { setSubscriptions, deleteNotices } from '@Global/state/globalState';
 import mocksEngine from '@Assemblies/engines/mock';
 import tournamentEngine from '@Engines/syncEngine';
@@ -34,6 +34,10 @@ type Scenario = {
   name: string;
   expectation: 'covered' | 'gap';
   note?: string; // owning coverage workstream for a gap
+  // Set when a scenario is complete-but-not-faithful: a notice DOES fire for the changed
+  // entity, but the notice stream does not cover every cast() row the mutation moves.
+  // Value = why / who owns it. Acts as a tripwire: closing the hole fails this scenario.
+  fidelityGap?: string;
   seed?: () => Ctx; // per-scenario seed override (default: seedContext)
   setup?: (ctx: Ctx) => void; // runs BEFORE capture (not measured)
   run: (ctx: Ctx) => void;
@@ -202,6 +206,15 @@ const scenarios: Scenario[] = [
   {
     name: 'modifyParticipant (person name)',
     expectation: 'covered',
+    // COMPLETE but not FAITHFUL. MODIFY_PARTICIPANTS fires and covers the participant,
+    // but `cast().match_up_competitors` carries `participant_name`, so every competitor
+    // row for that person moves too — and a participant is NOT an ancestor of a matchUp,
+    // so the notice stream never says which matchUp rows to re-project. Verified against
+    // the real consumer: CFS `recordParticipants` pushes `{kind:'participants'}`, and
+    // `buildProjectionDeltas` line ~510 re-projects ONLY the entries table from it;
+    // match_up_competitors is written exclusively by the draw-scoped `flattenDraw` path.
+    // → read-model staleness after a rename. Owner: CFS (fan out participants → competitors).
+    fidelityGap: 'CFS recordParticipants re-projects only entries; match_up_competitors.participant_name goes stale',
     run: () => {
       const { participants } = tournamentEngine.getParticipants({
         participantFilters: { participantTypes: [INDIVIDUAL] },
@@ -288,6 +301,9 @@ const scenarios: Scenario[] = [
     // WS-A CLOSED: regenerateParticipantNames now dispatches MODIFY_PARTICIPANTS.
     name: 'regenerateParticipantNames',
     expectation: 'covered',
+    // Same class as `modifyParticipant (person name)` above, at bulk scale — this one
+    // moves a competitor row for every renamed participant in the draw.
+    fidelityGap: 'CFS recordParticipants re-projects only entries; match_up_competitors.participant_name goes stale',
     run: () =>
       tournamentEngine.regenerateParticipantNames({ formats: { INDIVIDUAL: { personFormat: 'LAST, First' } } }),
   },
@@ -783,6 +799,7 @@ const scenarios: Scenario[] = [
 ];
 
 const gapReport: Array<{ name: string; note?: string; violations: number }> = [];
+const fidelityReport: Array<{ name: string; note?: string; violations: number }> = [];
 
 const reset = () => {
   setSubscriptions({ subscriptions: {} });
@@ -802,6 +819,15 @@ describe('notice conformance — scenario catalog (D-scenarios)', () => {
         .join('\n');
       // Living gap list — the audit's hand-probed silences, now automated.
       console.log(`\n[notice-conformance] known coverage gaps (tripwires):\n${lines}\n`);
+    }
+    if (fidelityReport.length) {
+      const lines = fidelityReport
+        .map((g) => {
+          const suffix = g.note ? ` [${g.note}]` : '';
+          return `  • ${g.name} — ${g.violations} projected-row violation(s)${suffix}`;
+        })
+        .join('\n');
+      console.log(`\n[notice-conformance] known PROJECTION-fidelity gaps (tripwires):\n${lines}\n`);
     }
   });
 
@@ -824,6 +850,18 @@ describe('notice conformance — scenario catalog (D-scenarios)', () => {
       } else {
         expect(violations.length).toBeGreaterThan(0);
         gapReport.push({ name: scn.name, note: scn.note, violations: violations.length });
+      }
+
+      // ORACLE (i) — FIDELITY. Completeness above proves a notice fired for the entity
+      // that changed in the RECORD; this proves the notice stream also covers every row
+      // a `cast()` rebuild would move. Both halves of the locked "D-oracle = BOTH".
+      // `fidelityGap` marks scenarios whose projection coverage is a known, tracked hole.
+      const fidelity = fidelityViolations(before, after, captured);
+      if (scn.expectation === 'covered' && !scn.fidelityGap) {
+        expect(fidelity).toEqual([]);
+      } else if (scn.fidelityGap) {
+        expect(fidelity.length).toBeGreaterThan(0);
+        fidelityReport.push({ name: scn.name, note: scn.fidelityGap, violations: fidelity.length });
       }
     });
   }
