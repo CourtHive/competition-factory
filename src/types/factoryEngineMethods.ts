@@ -63,6 +63,7 @@ export type FactoryEngineMethod =
   | 'addTournamentExtension'
   | 'addTournamentTimeItem'
   | 'addVenue'
+  | 'addVenueOtherId'
   | 'addVoluntaryConsolationStructure'
   | 'adHocPositionSwap'
   | 'aggregateTieFormats'
@@ -714,6 +715,7 @@ export const FACTORY_ENGINE_METHODS: readonly FactoryEngineMethod[] = [
   'addTournamentExtension',
   'addTournamentTimeItem',
   'addVenue',
+  'addVenueOtherId',
   'addVoluntaryConsolationStructure',
   'adHocPositionSwap',
   'aggregateTieFormats',

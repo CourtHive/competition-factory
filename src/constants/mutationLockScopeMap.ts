@@ -230,6 +230,7 @@ export const methodScopeMap: Record<string, MutationLockScope> = {
   deleteCourts: 'VENUES',
   modifyCourt: 'VENUES',
   modifyVenue: 'VENUES',
+  addVenueOtherId: 'VENUES',
   addVenue: 'VENUES',
 
   // PUBLISHING — publishingGovernor/mutate
