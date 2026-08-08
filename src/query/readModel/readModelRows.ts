@@ -498,6 +498,15 @@ export function matchUpResultRow(
     winning_side: matchUp?.winningSide ?? null,
     score_string: winnerPerspectiveScore(matchUp),
     scheduled_date: matchUpScheduledDate(matchUp),
+    // Progression edges ride the slim row too. Without them a MODIFY_MATCHUP that
+    // REWIRES a matchUp (removeStructure stripping a loser feed) would update status and
+    // score but silently leave a dangling `loser_match_up_id` pointing at a deleted row —
+    // the incremental path would never converge to cast(). `?? null` is deliberate and
+    // load-bearing: clearing an edge has to WRITE null, and since modifyMatchUpNotice
+    // always carries the full stored matchUp, absence genuinely means "no edge" rather
+    // than "not included in this payload".
+    winner_match_up_id: matchUp?.winnerMatchUpId ?? null,
+    loser_match_up_id: matchUp?.loserMatchUpId ?? null,
   };
 }
 
