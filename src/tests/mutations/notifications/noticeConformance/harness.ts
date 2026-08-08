@@ -128,9 +128,21 @@ export function buildParentage(record: any): Parentage {
   return { drawOfStructure, drawOfMatchUp, eventOfDraw };
 }
 
-// A removed child is covered if a delete notice fired for its parent draw
-// (DELETED_DRAW_IDS) or its ancestor event (DELETE_EVENT).
-function ancestorDeleteCovers(drawId: string | undefined, noticed: Set<string>, parentage: Parentage): boolean {
+/** Union two parentage maps (before + after) so added and removed rows both resolve. */
+export function mergeParentage(a: Parentage, b: Parentage): Parentage {
+  return {
+    drawOfStructure: new Map([...a.drawOfStructure, ...b.drawOfStructure]),
+    drawOfMatchUp: new Map([...a.drawOfMatchUp, ...b.drawOfMatchUp]),
+    eventOfDraw: new Map([...a.eventOfDraw, ...b.eventOfDraw]),
+  };
+}
+
+// Is a draw (and therefore everything beneath it) covered by a notice on the draw
+// itself or on its ancestor event? Used for BOTH senses of ancestry: a removed child
+// covered by its parent's delete (DELETED_DRAW_IDS / DELETE_EVENT), and — in the
+// fidelity oracle — a projected row covered because a consumer must re-project the
+// whole subtree when told "this draw changed".
+function ancestorScopeCovers(drawId: string | undefined, noticed: Set<string>, parentage: Parentage): boolean {
   if (!drawId) return false;
   if (noticed.has(`drawDefinition:${drawId}`)) return true;
   const eventId = parentage.eventOfDraw.get(drawId);
@@ -157,7 +169,7 @@ function entriesCovered(change: EntityChange, noticed: Set<string>): boolean {
 // a structure change is covered by a delete of its parent draw/event, or by any
 // draw-level modify notice (structures move under a drawDefinition MODIFY).
 function structureCovered(change: EntityChange, noticed: Set<string>, parentage: Parentage): boolean {
-  if (ancestorDeleteCovers(parentage.drawOfStructure.get(change.id), noticed, parentage)) return true;
+  if (ancestorScopeCovers(parentage.drawOfStructure.get(change.id), noticed, parentage)) return true;
   for (const key of noticed) if (key.startsWith('drawDefinition:')) return true;
   return false;
 }
@@ -172,7 +184,7 @@ function isEntityCovered(change: EntityChange, noticed: Set<string>, parentage: 
   if (noticed.has(`${change.kind}:${change.id}`)) return true;
   if (change.kind === 'structure') return structureCovered(change, noticed, parentage);
   if (change.kind === 'matchUp' && change.change === 'removed') {
-    return ancestorDeleteCovers(parentage.drawOfMatchUp.get(change.id), noticed, parentage);
+    return ancestorScopeCovers(parentage.drawOfMatchUp.get(change.id), noticed, parentage);
   }
   if (change.kind === 'drawDefinition' && change.change === 'removed') {
     const eventId = parentage.eventOfDraw.get(change.id);
@@ -391,6 +403,130 @@ export function conformanceViolations(before: any, after: any, captured: Capture
 
 type Row = Record<string, any>;
 export type CastTableDiff = { added: Row[]; removed: Row[]; modified: Array<{ before: Row; after: Row }> };
+
+/**
+ * cast() table → the record entity that OWNS each of its rows, and how to read that
+ * entity's id off the row. This is the bridge that lets the fidelity oracle reuse the
+ * completeness oracle's coverage logic (`isEntityCovered`) — including its structural
+ * fallbacks for ancestor deletes and entries scoping — so the two oracles can never
+ * disagree about what "covered" means.
+ *
+ * FAIL-CLOSED BY DESIGN: a cast() table with no entry here is reported as a violation
+ * rather than skipped. Adding a table to the read model without deciding which notice
+ * covers it is exactly the silent-projection-gap this harness exists to catch, and a
+ * permissive default would hide it (see architectural-standards on fail-open defaults).
+ */
+const CAST_TABLE_OWNER: Record<string, { kind: EntityKind; idOf: (row: Row) => string | undefined }> = {
+  tournaments: { kind: 'tournament', idOf: (r) => r.tournament_id },
+  events: { kind: 'event', idOf: (r) => r.event_id },
+  draws: { kind: 'drawDefinition', idOf: (r) => r.draw_id },
+  structures: { kind: 'structure', idOf: (r) => r.structure_id },
+  seeds: { kind: 'structure', idOf: (r) => r.structure_id },
+  match_ups: { kind: 'matchUp', idOf: (r) => r.match_up_id },
+  match_up_competitors: { kind: 'matchUp', idOf: (r) => r.match_up_id },
+  // cast() projects EVENT-scoped entries only (no draw_id column), matching the
+  // `event:<eventId>:<participantId>` key `collectEntities` builds.
+  entries: { kind: 'entries', idOf: (r) => `event:${r.event_id}:${r.participant_id}` },
+  venues: { kind: 'venue', idOf: (r) => r.venue_id },
+  courts: { kind: 'venue', idOf: (r) => r.venue_id },
+  tournament_venues: { kind: 'venue', idOf: (r) => r.venue_id },
+  // tournament-scoped publication + planning state
+  order_of_play: { kind: 'tournament', idOf: (r) => r.tournament_id },
+  participant_publish: { kind: 'tournament', idOf: (r) => r.tournament_id },
+  scheduling_profile: { kind: 'tournament', idOf: (r) => r.tournament_id },
+};
+
+/** The cast() tables the fidelity oracle knows how to attribute — for the drift guard. */
+export function castTableOwnerNames(): string[] {
+  return Object.keys(CAST_TABLE_OWNER);
+}
+
+/** Present on both sides of the diff = modified; one side only = added / removed. */
+function resolveChange(wasAdded: boolean, wasRemoved: boolean): ChangeType {
+  if (!wasAdded) return 'removed';
+  return wasRemoved ? 'modified' : 'added';
+}
+
+export type FidelityViolation = EntityChange & { table: string; reason: string };
+
+/**
+ * Does the notice stream cover a projected row via an ANCESTOR of its owning entity?
+ *
+ * This is a property of the RECORD HIERARCHY, not of any particular consumer: a
+ * tournamentRecord nests event → drawDefinition → structure → matchUp, so a notice
+ * that says "draw D changed" necessarily obliges a consumer to re-project D's whole
+ * subtree — it cannot know which rows underneath moved. (CFS does exactly this:
+ * MODIFY_POSITION_ASSIGNMENTS → `flattenDraw`, PUBLISH_EVENT → `republishEvent` →
+ * flatten every draw of the event. But the rule is derived from the record shape,
+ * not copied from CFS — factory must not encode consumer semantics.)
+ *
+ * Deliberately does NOT treat a participant notice as covering a matchUp row.
+ * Participants are a sibling collection referenced by id, not an ancestor, so
+ * "participant P changed" does not tell a consumer which matchUp rows to re-project.
+ * That asymmetry is load-bearing — it is what keeps the participant-rename →
+ * `match_up_competitors` staleness visible instead of being explained away.
+ */
+function ancestorCovers(change: EntityChange, noticed: Set<string>, parentage: Parentage): boolean {
+  if (change.kind === 'matchUp') return ancestorScopeCovers(parentage.drawOfMatchUp.get(change.id), noticed, parentage);
+  if (change.kind === 'structure')
+    return ancestorScopeCovers(parentage.drawOfStructure.get(change.id), noticed, parentage);
+  if (change.kind === 'drawDefinition') {
+    const eventId = parentage.eventOfDraw.get(change.id);
+    return !!eventId && noticed.has(`event:${eventId}`);
+  }
+  return false;
+}
+
+/**
+ * FIDELITY check (oracle (i)): every `cast()` row that a rebuild would change must be
+ * covered by the notice stream. This is the north-star equation
+ * `apply(noticeDeltas(S)) ≡ cast(R_after_S)` stated as a coverage assertion over the
+ * PROJECTED rows rather than the raw record.
+ *
+ * It is NOT redundant with `conformanceViolations`. The completeness oracle diffs the
+ * tournamentRecord and deliberately omits root `extensions`/`timeItems` and the
+ * INCIDENTAL_KEYS; several cast row-builders READ exactly those (e.g.
+ * `resolveSchedulingProfile` reads the SCHEDULING_PROFILE extension). A mutation that
+ * writes only an extension is therefore invisible to completeness while still moving
+ * projected rows — that class is only reachable from this side.
+ */
+export function fidelityViolations(before: any, after: any, captured: CapturedNotice[]): FidelityViolation[] {
+  const diff = castDiff(before, after);
+  const noticed = noticedEntityKeys(captured);
+  // Merge before+after parentage: an ADDED row (draw generation, position assignment
+  // into a new matchUp) has no ancestor in `before`, and a REMOVED one has none in
+  // `after`. Reading only one side would silently mis-resolve half the changes.
+  const parentage = mergeParentage(buildParentage(before), buildParentage(after));
+  const violations: FidelityViolation[] = [];
+
+  for (const [table, tableDiff] of Object.entries(diff)) {
+    const owner = CAST_TABLE_OWNER[table];
+    if (!owner) {
+      violations.push({
+        kind: 'tournament',
+        id: table,
+        change: 'modified',
+        table,
+        reason: `cast() table '${table}' has no CAST_TABLE_OWNER mapping — decide which notice covers it`,
+      });
+      continue;
+    }
+    const removedIds = new Set(tableDiff.removed.map(owner.idOf).filter(Boolean) as string[]);
+    const addedIds = new Set(tableDiff.added.map(owner.idOf).filter(Boolean) as string[]);
+    for (const id of new Set([...removedIds, ...addedIds])) {
+      const change: ChangeType = resolveChange(addedIds.has(id), removedIds.has(id));
+      const entityChange: EntityChange = { kind: owner.kind, id, change };
+      if (!isEntityCovered(entityChange, noticed, parentage) && !ancestorCovers(entityChange, noticed, parentage)) {
+        violations.push({
+          ...entityChange,
+          table,
+          reason: `cast().${table} row ${change} but no notice covers ${owner.kind} ${id}`,
+        });
+      }
+    }
+  }
+  return violations;
+}
 
 function castRows(record: any): Record<string, Row[]> {
   return (cast({ tournamentRecord: record })?.rows as any) ?? {};
