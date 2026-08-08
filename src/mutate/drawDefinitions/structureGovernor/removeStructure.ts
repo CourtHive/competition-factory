@@ -1,4 +1,4 @@
-import { deleteMatchUpsNotice, modifyDrawNotice } from '@Mutate/notifications/drawNotifications';
+import { deleteMatchUpsNotice, modifyDrawNotice, modifyMatchUpNotice } from '@Mutate/notifications/drawNotifications';
 import { checkRequiredParameters } from '@Helpers/parameters/checkRequiredParameters';
 import { getAllStructureMatchUps } from '@Query/matchUps/getAllStructureMatchUps';
 import { getAppliedPolicies } from '@Query/extensions/getAppliedPolicies';
@@ -62,7 +62,7 @@ export function removeStructure(params: RemoveStructureArgs) {
     structureId,
   });
 
-  removeReferencesToRemovedMatchUps({ removedMatchUpIds, drawDefinition });
+  const { modifiedMatchUps } = removeReferencesToRemovedMatchUps({ removedMatchUpIds, drawDefinition });
 
   // if this is MAIN stageSequence: 1 there must be qualifying, return to empty state
   if (isMainStageSequence1) {
@@ -87,6 +87,22 @@ export function removeStructure(params: RemoveStructureArgs) {
     drawDefinition,
   });
   modifyDrawNotice({ drawDefinition, eventId: event?.eventId });
+
+  // Surviving matchUps whose winner/loser progression edge pointed into the removed
+  // structure were rewired above; each needs its own MODIFY_MATCHUP. The MODIFY_DRAW_DEFINITION
+  // dispatched a line above says the draw changed but names no matchUp, so a consumer would
+  // have to re-derive the whole draw to find them — and `winnerMatchUpId`/`loserMatchUpId` are
+  // projected read-model columns, so a missed edge is a silently stale row, not a cosmetic gap.
+  // `drawDefinition` is deliberately NOT passed: modifyMatchUpNotice would then emit a
+  // redundant draw notice per matchUp on top of the single one above.
+  for (const matchUp of modifiedMatchUps) {
+    modifyMatchUpNotice({
+      tournamentId: tournamentRecord?.tournamentId,
+      context: ['removeStructure'],
+      eventId: event?.eventId,
+      matchUp,
+    });
+  }
 
   return { ...SUCCESS, removedMatchUpIds, removedStructureIds };
 }
@@ -137,17 +153,28 @@ function policyCheck({
   return { ...SUCCESS };
 }
 
-function removeReferencesToRemovedMatchUps({ removedMatchUpIds, drawDefinition }) {
-  // now cleanup references to removed matchUps
+// Cleanup references to removed matchUps, returning the matchUps actually rewired so the
+// caller can dispatch a notice per changed matchUp. Structures being removed are already
+// spliced out of `drawDefinition` by this point, so nothing here is itself being deleted —
+// no matchUp gets both a MODIFY and a DELETE.
+function removeReferencesToRemovedMatchUps({ removedMatchUpIds, drawDefinition }): {
+  modifiedMatchUps: HydratedMatchUp[];
+} {
   const { matchUps } = getAllDrawMatchUps({ drawDefinition });
+  const modifiedMatchUps: HydratedMatchUp[] = [];
   matchUps?.forEach((matchUp) => {
+    let modified = false;
     if (matchUp.winnerMatchUpId && removedMatchUpIds.includes(matchUp.winnerMatchUpId)) {
       delete matchUp.winnerMatchUpId;
+      modified = true;
     }
     if (matchUp.loserMatchUpId && removedMatchUpIds.includes(matchUp.loserMatchUpId)) {
       delete matchUp.loserMatchUpId;
+      modified = true;
     }
+    if (modified) modifiedMatchUps.push(matchUp);
   });
+  return { modifiedMatchUps };
 }
 
 function getIdsToRemove({

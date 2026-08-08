@@ -840,30 +840,12 @@ const scenarios: Scenario[] = [
   },
   {
     // Removing a playoff structure drops the structure AND its matchUps.
-    // ⚠️ GAP — NEEDS AN OWNER DECISION, not obviously a product bug.
-    // removeStructure deletes the playoff's own matchUps (covered by DELETED_MATCHUP_IDS)
-    // but ALSO strips `loserMatchUpId` from the 4 SOURCE matchUps that fed it, and no
-    // matchUp-level notice fires for those. What DOES fire is MODIFY_DRAW_DEFINITION on
-    // the owning draw.
-    //
-    // Two defensible readings, and they lead to different fixes:
-    //  (a) it is covered — a draw-level notice obliges the consumer to re-project the
-    //      draw's subtree, which is exactly the hierarchy rule `ancestorCovers` applies
-    //      in the FIDELITY oracle; completeness would then be inconsistent for allowing
-    //      it for structures (`structureCovered`) but not for matchUps.
-    //  (b) it is a silent mutation — "no silent mutation" is the completeness half's
-    //      whole point, and a matchUp changed with nothing naming it.
-    //
-    // Deliberately NOT resolved here by relaxing completeness: that guarantee is
-    // load-bearing across 13 shipped batches and weakening it is an owner's call.
-    // Recorded as a tripwire so the decision is visible rather than made silently.
-    //
-    // Note the fidelity oracle is SILENT on this one, correctly: `loserMatchUpId` is not
-    // a projected column, so no cast() row moves. Read-model integrity is not at risk —
-    // this is purely about the changelog guarantee.
+    // Rewiring case: removeStructure deletes the playoff's own matchUps (DELETED_MATCHUP_IDS)
+    // AND strips `loserMatchUpId` from the source matchUps that fed it. Those source matchUps
+    // now get their own MODIFY_MATCHUP — the progression edges are projected read-model
+    // columns, so a missed one is a silently stale row.
     name: 'removeStructure (playoff)',
-    expectation: 'gap',
-    note: 'strips loserMatchUpId from source matchUps; only MODIFY_DRAW_DEFINITION fires — see comment',
+    expectation: 'covered',
     seed: playoffContext,
     setup: (ctx) => {
       tournamentEngine.addPlayoffStructures({
