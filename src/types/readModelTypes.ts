@@ -42,6 +42,9 @@ export interface ReadModelMatchUpRow {
   event_type: string | null; // SINGLES | DOUBLES | TEAM
   round_name: string | null;
   round_number: number | null;
+  // draw-progression edges (stored on the drawDefinition matchUp, not derived)
+  winner_match_up_id: string | null;
+  loser_match_up_id: string | null;
   match_up_status: string | null;
   winning_side: number | null;
   score_string: string | null; // winner-perspective

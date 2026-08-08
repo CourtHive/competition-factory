@@ -348,6 +348,15 @@ function matchUpRow(
     event_type: matchUp?.matchUpType ?? null,
     round_name: matchUp?.roundName ?? null,
     round_number: matchUp?.roundNumber ?? null,
+    // Draw-progression edges. These are first-class STORED fields on the drawDefinition
+    // matchUp (verified identical stored vs inContext), not query-time derivations, so
+    // projecting them is a copy. They are the only faithful representation of a
+    // non-standard topology: winner/loser targets cannot be re-derived from round
+    // coordinates once consolation feeds, playoff attachment or qualifying→main are in
+    // play. `winnerMatchUpId` is absent on a terminal matchUp; `loserMatchUpId` is absent
+    // wherever no loser feed exists (every matchUp of a plain single-elimination draw).
+    winner_match_up_id: matchUp?.winnerMatchUpId ?? null,
+    loser_match_up_id: matchUp?.loserMatchUpId ?? null,
     match_up_status: matchUp?.matchUpStatus ?? null,
     winning_side: matchUp?.winningSide ?? null,
     score_string: winnerPerspectiveScore(matchUp),
