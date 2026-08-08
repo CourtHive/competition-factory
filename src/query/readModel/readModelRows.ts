@@ -348,6 +348,11 @@ function matchUpRow(
     event_type: matchUp?.matchUpType ?? null,
     round_name: matchUp?.roundName ?? null,
     round_number: matchUp?.roundNumber ?? null,
+    // Position WITHIN the round — the second half of a matchUp's bracket coordinate.
+    // `round_number` alone cannot order or place a matchUp in a bracket; with this the
+    // read model can render one and sort a round deterministically. Optional on the
+    // stored matchUp: adHoc and round-robin matchUps have no round position.
+    round_position: matchUp?.roundPosition ?? null,
     // Draw-progression edges. These are first-class STORED fields on the drawDefinition
     // matchUp (verified identical stored vs inContext), not query-time derivations, so
     // projecting them is a copy. They are the only faithful representation of a
