@@ -152,6 +152,25 @@ function drawGenContext(): Ctx {
   };
 }
 
+/**
+ * drawSize 32 so a playoff can actually be generated: `roundProfiles: [{ 3: 1 }]`
+ * needs a round-3 loser pool big enough to seat a structure, which a drawSize-8 draw
+ * does not have (its round 3 IS the final — one loser).
+ */
+function playoffContext(): Ctx {
+  const { tournamentRecord } = mocksEngine.generateTournamentRecord({
+    tournamentAttributes: { tournamentId: 'conf-scn-playoff' },
+    participantsProfile: { participantsCount: 32 },
+    drawProfiles: [{ drawSize: 32, eventName: 'Singles' }],
+    startDate: '2025-01-01',
+    endDate: '2025-01-14',
+    completeAllMatchUps: true,
+    nonRandom: 1,
+  });
+  tournamentEngine.setState(tournamentRecord);
+  return extractContext();
+}
+
 /** Seed with declared seeds so seed-assignment mutations have real seeds to move. */
 function seededContext(): Ctx {
   const { tournamentRecord } = mocksEngine.generateTournamentRecord({
@@ -795,6 +814,100 @@ const scenarios: Scenario[] = [
     name: 'setTournamentTier',
     expectation: 'covered',
     run: () => tournamentEngine.setTournamentTier({ tournamentTier: { system: 'ITF', value: 'J100' } }),
+  },
+
+  // ── Tier-2 batch 14 (structures: playoff / qualifying / voluntary consolation) ─
+  // Highest-yield uncovered family per the cross-entity heuristic: these all ATTACH or
+  // REMOVE whole structure subtrees (structures + matchUps + links) under a draw, and
+  // several also touch the owning event's flightProfile. Both oracles apply — the
+  // fidelity half additionally requires the cast() structures/match_ups rows to be covered.
+  {
+    // Attaching playoffs to a completed SE draw adds new structures + matchUps + links
+    // under the draw → MODIFY_DRAW_DEFINITION covers the subtree.
+    name: 'addPlayoffStructures',
+    expectation: 'covered',
+    seed: playoffContext,
+    run: (ctx) => {
+      const structureId = firstStructure(ctx).structureId;
+      const result = tournamentEngine.addPlayoffStructures({
+        playoffStructureNameBase: 'Playoff',
+        roundProfiles: [{ 3: 1 }],
+        structureId,
+        drawId: ctx.drawId,
+      });
+      expect(result.success).toEqual(true);
+    },
+  },
+  {
+    // Removing a playoff structure drops the structure AND its matchUps.
+    // ⚠️ GAP — NEEDS AN OWNER DECISION, not obviously a product bug.
+    // removeStructure deletes the playoff's own matchUps (covered by DELETED_MATCHUP_IDS)
+    // but ALSO strips `loserMatchUpId` from the 4 SOURCE matchUps that fed it, and no
+    // matchUp-level notice fires for those. What DOES fire is MODIFY_DRAW_DEFINITION on
+    // the owning draw.
+    //
+    // Two defensible readings, and they lead to different fixes:
+    //  (a) it is covered — a draw-level notice obliges the consumer to re-project the
+    //      draw's subtree, which is exactly the hierarchy rule `ancestorCovers` applies
+    //      in the FIDELITY oracle; completeness would then be inconsistent for allowing
+    //      it for structures (`structureCovered`) but not for matchUps.
+    //  (b) it is a silent mutation — "no silent mutation" is the completeness half's
+    //      whole point, and a matchUp changed with nothing naming it.
+    //
+    // Deliberately NOT resolved here by relaxing completeness: that guarantee is
+    // load-bearing across 13 shipped batches and weakening it is an owner's call.
+    // Recorded as a tripwire so the decision is visible rather than made silently.
+    //
+    // Note the fidelity oracle is SILENT on this one, correctly: `loserMatchUpId` is not
+    // a projected column, so no cast() row moves. Read-model integrity is not at risk —
+    // this is purely about the changelog guarantee.
+    name: 'removeStructure (playoff)',
+    expectation: 'gap',
+    note: 'strips loserMatchUpId from source matchUps; only MODIFY_DRAW_DEFINITION fires — see comment',
+    seed: playoffContext,
+    setup: (ctx) => {
+      tournamentEngine.addPlayoffStructures({
+        playoffStructureNameBase: 'Playoff',
+        roundProfiles: [{ 3: 1 }],
+        structureId: firstStructure(ctx).structureId,
+        drawId: ctx.drawId,
+      });
+    },
+    run: (ctx) => {
+      const drawDefinition = tournamentEngine.getEvent({ drawId: ctx.drawId }).drawDefinition;
+      const playoff = drawDefinition.structures.find((st: any) => st.structureId !== ctx.structureId);
+      expect(playoff).toBeDefined();
+      const result = tournamentEngine.removeStructure({ structureId: playoff.structureId, drawId: ctx.drawId });
+      expect(result.success).toEqual(true);
+    },
+  },
+  {
+    // A qualifying structure attaches a whole new stage (structure + matchUps + a link
+    // into MAIN) and stamps qualifier positions onto the target structure.
+    name: 'addQualifyingStructure',
+    expectation: 'covered',
+    seed: unscoredContext,
+    run: (ctx) => {
+      const result = tournamentEngine.addQualifyingStructure({
+        targetStructureId: firstStructure(ctx).structureId,
+        qualifyingRoundNumber: 2,
+        drawSize: 8,
+        drawId: ctx.drawId,
+      });
+      expect(result.success).toEqual(true);
+    },
+  },
+  {
+    // Voluntary consolation adds a structure fed by opt-in entries rather than by links.
+    name: 'addVoluntaryConsolationStructure',
+    expectation: 'covered',
+    run: (ctx) => {
+      const result = tournamentEngine.addVoluntaryConsolationStructure({
+        drawId: ctx.drawId,
+        structureName: 'Voluntary Consolation',
+      });
+      expect(result.success).toEqual(true);
+    },
   },
 ];
 
