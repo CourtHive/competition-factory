@@ -1,0 +1,49 @@
+{
+  "competitionFormatName": "PICKLEBALL_STANDARD",
+  "matchUpFormat": "SET3-S:TB11",
+  "sport": "PICKLEBALL",
+  "serverRule": "WINNER_SERVES",
+  "timerProfile": {
+    "changeoverSeconds": 60,
+    "setBreakSeconds": 120
+  },
+  "timeoutRules": {
+    "count": 1,
+    "per": "SET"
+  },
+  "substitutionRules": {
+    "allowed": false
+  },
+  "penaltyProfile": {
+    "sport": "PICKLEBALL",
+    "penaltyTypes": [
+      { "penaltyType": "TIME_VIOLATION", "label": "Time Violation", "category": "time_violation" },
+      { "penaltyType": "COACHING", "label": "Coaching", "category": "code_violation" },
+      { "penaltyType": "UNSPORTSMANLIKE_CONDUCT", "label": "Unsportsmanlike", "category": "conduct" },
+      { "penaltyType": "PADDLE_ABUSE", "label": "Paddle Abuse", "category": "conduct" },
+      { "penaltyType": "BALL_ABUSE", "label": "Ball Abuse", "category": "conduct" },
+      { "penaltyType": "VERBAL_ABUSE", "label": "Verbal Abuse", "category": "conduct" },
+      { "penaltyType": "AUDIBLE_OBSCENITY", "label": "Audible Obscenity", "category": "conduct" }
+    ],
+    "escalation": [
+      { "step": 1, "consequence": "warning" },
+      { "step": 2, "consequence": "point" },
+      { "step": 3, "consequence": "game" },
+      { "step": 4, "consequence": "default" }
+    ]
+  },
+  "pointProfile": {
+    "sport": "PICKLEBALL",
+    "pointResults": [
+      { "result": "Ace", "label": "Ace", "isServe": true },
+      { "result": "Winner", "label": "Winner" },
+      { "result": "Serve Winner", "label": "Serve Winner", "isServe": true },
+      { "result": "Forced Error", "label": "Forced Error", "isError": true },
+      { "result": "Unforced Error", "label": "Unforced Error", "isError": true },
+      { "result": "Service Fault", "label": "Service Fault", "isServe": true, "isError": true },
+      { "result": "Kitchen Fault", "label": "Non-Volley Zone Fault", "isError": true },
+      { "result": "Penalty", "label": "Penalty" }
+    ]
+  },
+  "pointMultipliers": []
+}

@@ -10,6 +10,7 @@ import { resolveSetType } from '@Tools/scoring/scoringUtilities';
 import { parse } from '@Helpers/matchUpFormatCode/parse';
 import { calculatePointsTo } from '@Mutate/scoring/pointsToCalculator';
 import { deriveServer, formatGameScore } from '@Mutate/scoring/addPoint';
+import { RALLY } from '@Constants/matchUpFormatConstants';
 
 export interface GetScoreOptions {
   useBracketNotation?: boolean; // Use [10-8] format for match tiebreaks
@@ -144,9 +145,7 @@ function computeSituation(matchUp: MatchUp): PointSituation | undefined {
     isDecidingSet && formatStructure.finalSetFormat ? formatStructure.finalSetFormat : formatStructure.setFormat;
 
   // Derive server for the next point
-  const isRallyScoring = !!(
-    activeSetFormat?.tiebreakSet?.modifier === 'RALLY' || activeSetFormat?.modifier === 'RALLY'
-  );
+  const isRallyScoring = !!(activeSetFormat?.tiebreakSet?.modifier === RALLY || activeSetFormat?.modifier === RALLY);
   let server: 0 | 1 | undefined;
   if (!isRallyScoring) {
     server = deriveServer(matchUp, formatStructure, setType);
@@ -200,8 +199,7 @@ function computeSituation(matchUp: MatchUp): PointSituation | undefined {
   // isGoldenPoint: both sides need exactly 1 point to win the game
   // Triggers for NoAD (every deuce) or deuceAfter (at the Nth deuce)
   const deuceAfter = formatStructure.gameFormat?.deuceAfter;
-  const isGoldenPoint =
-    pointsToGame[0] === 1 && pointsToGame[1] === 1 && (isNoAD || (!!deuceAfter && !isTiebreak));
+  const isGoldenPoint = pointsToGame[0] === 1 && pointsToGame[1] === 1 && (isNoAD || (!!deuceAfter && !isTiebreak));
 
   // isGamePoint: server is 1 point from winning the game
   const isGamePoint = server === undefined ? false : pointsToGame[server] === 1;

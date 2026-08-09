@@ -464,12 +464,24 @@ default scoring format) live in the discipline profile registry, resolved with
 **competitionFormatConstants** - Competition format profiles and timing scopes
 
 ```js
-const { INTENNSE_STANDARD, TENNIS_STANDARD, MATCHUP, SET, HALF, SEGMENT, BETWEEN_GAMES, BETWEEN_POINTS, ANY } =
-  factoryConstants.competitionFormatConstants;
+const {
+  PICKLEBALL_STANDARD,
+  INTENNSE_STANDARD,
+  TENNIS_STANDARD,
+  MATCHUP,
+  SET,
+  HALF,
+  SEGMENT,
+  BETWEEN_GAMES,
+  BETWEEN_POINTS,
+  ANY,
+} = factoryConstants.competitionFormatConstants;
 ```
 
-`INTENNSE_STANDARD` / `TENNIS_STANDARD` name format profiles; the remainder are the
-scopes a timing or interruption rule can apply to.
+`PICKLEBALL_STANDARD` / `INTENNSE_STANDARD` / `TENNIS_STANDARD` name format profiles
+(`fixtures.competitionFormats`); the remainder are the scopes a timing or interruption rule can
+apply to. A profile carries what a `matchUpFormat` code cannot: server rule, timeouts, penalties and
+the sport's point vocabulary.
 
 **swissConstants** - Swiss pairing tiebreak and grouping methods
 

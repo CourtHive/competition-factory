@@ -254,6 +254,19 @@ engine.setMatchUpStatus({
 | MLP (Major League Pickleball) | `SET5-S:TB21@RALLY-F:TB15@RALLY` | 4 games to 21, 5th to 15  |
 | Single game tiebreaker        | `SET1-S:TB11@RALLY`              | MLP singles format        |
 
+A pickleball game is a **tiebreak set** — a race to a target with no games beneath it. Two tokens carry
+the rules that differ between pickleball variants:
+
+- **`@RALLY`** — rally scoring: every rally scores a point regardless of who served. It is
+  scoring-significant, not cosmetic: the scoring engine skips server derivation under it. Absent the
+  modifier the format is traditional **side-out** scoring, where only the serving side can score.
+- **`NOAD`** — sudden death at the target (win by 1). Absent it, a game continues past the target until a
+  side leads by two.
+
+Named presets for these are published as `fixtures.matchUpFormats.FORMAT_PICKLEBALL*`, and
+`fixtures.competitionFormats.PICKLEBALL_STANDARD` carries the parts a format code cannot express —
+server rule, timeouts, penalties, and the sport's point vocabulary (including non-volley-zone faults).
+
 #### Padel
 
 | Format                      | Code                         | Notes                 |

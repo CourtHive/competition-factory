@@ -1,4 +1,5 @@
 // Competition format names
+export const PICKLEBALL_STANDARD = 'PICKLEBALL_STANDARD';
 export const INTENNSE_STANDARD = 'INTENNSE_STANDARD';
 export const TENNIS_STANDARD = 'TENNIS_STANDARD';
 
@@ -14,6 +15,7 @@ export const BETWEEN_POINTS = 'BETWEEN_POINTS';
 export const ANY = 'ANY';
 
 export const competitionFormatConstants = {
+  PICKLEBALL_STANDARD,
   INTENNSE_STANDARD,
   TENNIS_STANDARD,
   MATCHUP,
