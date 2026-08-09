@@ -1,5 +1,28 @@
 # Changelog
 
+## [6.20.0](https://github.com/CourtHive/competition-factory/compare/v6.19.0...v6.20.0) (2026-08-09)
+
+
+### Features
+
+* **readModel:** project draw-progression edges and notice their rewiring ([e602852](https://github.com/CourtHive/competition-factory/commit/e6028522b6ef88fdf7607d58fca862a5b88849af))
+* **readModel:** project round_position on match_ups ([17f8868](https://github.com/CourtHive/competition-factory/commit/17f8868626d05feca8ae996359af1c641309bc2f))
+* **venues:** add addVenueOtherId mutation for UnifiedVenueID capture ([#4583](https://github.com/CourtHive/competition-factory/issues/4583)) ([a85ec20](https://github.com/CourtHive/competition-factory/commit/a85ec20399e16f42d4115430526e019650235487))
+
+
+### Bug Fixes
+
+* **deps:** override nanoid to the patched 3.x line ([36d24ec](https://github.com/CourtHive/competition-factory/commit/36d24ec2ec953b3a4f6b386779108d76fbd417c7))
+* **deps:** patch nanoid in the documentation project ([bb4b1b3](https://github.com/CourtHive/competition-factory/commit/bb4b1b32f4ca420174ce757e74b68073cb6fa57a))
+* **readModel:** carry progression edges on the slim matchUp result row ([3643ce3](https://github.com/CourtHive/competition-factory/commit/3643ce332446c96b95e3cdb59de51463a277c111))
+* **readModel:** resolve events.published through the publish cascade ([da08abc](https://github.com/CourtHive/competition-factory/commit/da08abc79e467c1363654891ff86da17d34faa7e))
+* **readModel:** treat published seeding as an independent event publish surface ([d225eb2](https://github.com/CourtHive/competition-factory/commit/d225eb2e371e0e4e4626963bc384ab1fb45a0751))
+
+
+### Documentation
+
+* document the 6.20.0 read-model and venue surfaces ([d757050](https://github.com/CourtHive/competition-factory/commit/d757050bbf551ba152d91e9ba626c6cda82041c0))
+
 ## [6.19.0](https://github.com/CourtHive/competition-factory/compare/v6.18.0...v6.19.0) (2026-08-07)
 
 
