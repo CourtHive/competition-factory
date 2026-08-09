@@ -26,7 +26,17 @@ minimumReleaseAgeExclude:
 #   5.0.8). Sole consumer is minimatch (via docusaurus -> serve-handler), whose
 #   expand() usage is API-stable across majors, so a global bump to the patched
 #   v5 line is safe. Mirrors the root workspace override.
+# NOTE: image-size (GHSA-5p2g-fcmc-qvqq + ICNS parser DoS, <=2.0.2) has NO fix
+#   published — 2.0.2 IS latest, and the advisory's 'patched >=2.0.3' does not
+#   exist on npm yet. Reached via @docusaurus/mdx-loader; build-time only, and
+#   this site is private. Nothing to override until upstream ships 2.0.3.
+# - nanoid: GHSA-2v37-7h3g-55p8 (custom generators loop indefinitely when size
+#   is zero -> DoS); patched 3.3.17. Docusaurus dev/build tooling only; this
+#   site is private and ships no package. Caret-bounded to v3 for the same
+#   reason as the root workspace: an unbounded range floats to nanoid v6,
+#   which postcss cannot consume.
 overrides:
+  nanoid: '^3.3.17'
   serialize-javascript: '^7.0.5'
   uuid: '^14.0.0'
   webpackbar: '7.0.0'
