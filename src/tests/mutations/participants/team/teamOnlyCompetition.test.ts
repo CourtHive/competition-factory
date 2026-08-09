@@ -1,14 +1,14 @@
 import { mocksEngine } from '@Assemblies/engines/mock';
 import tournamentEngine from '@Engines/syncEngine';
-import { cast } from '@Query/readModel/cast';
 import { expect, it, describe } from 'vitest';
+import { cast } from '@Query/readModel/cast';
 
 // constants and types
-import { INDIVIDUAL, TEAM as TEAM_PARTICIPANT } from '@Constants/participantConstants';
+import { INDIVIDUAL, PAIR, TEAM as TEAM_PARTICIPANT } from '@Constants/participantConstants';
 import { ROUND_ROBIN } from '@Constants/drawDefinitionConstants';
-import { TieScoreSourceEnum } from '@Types/tournamentTypes';
-import { COMPLETED } from '@Constants/matchUpStatusConstants';
 import { COLLEGE_DEFAULT } from '@Constants/tieFormatConstants';
+import { COMPLETED } from '@Constants/matchUpStatusConstants';
+import { TieScoreSourceEnum } from '@Types/tournamentTypes';
 import { DOUBLES, SINGLES } from '@Constants/matchUpTypes';
 import { TEAM } from '@Constants/eventConstants';
 
@@ -43,7 +43,7 @@ function generateTeamOnlyLeague({ scoreSource }: { scoreSource?: any } = {}) {
     ],
   };
 
-  const result: any = mocksEngine.generateTournamentRecord({
+  let result: any = mocksEngine.generateTournamentRecord({
     leagueProfiles: [
       {
         pairingProfile: { shape: ROUND_ROBIN },
@@ -149,6 +149,18 @@ describe('team competitions without individual participants', () => {
     // competitors are TEAMs; no person_id is claimed for anyone
     expect(rows.match_up_competitors.length).toBeGreaterThan(0);
     expect(rows.match_up_competitors.every(({ person_id }) => !person_id)).toEqual(true);
+  });
+
+  // a PAIR is DEFINED by its two individuals, so the flag must not strip them
+  it('ignores individualParticipants for PAIR participants', () => {
+    const { participants }: any = mocksEngine.generateParticipants({
+      individualParticipants: false,
+      participantType: PAIR,
+      participantsCount: 3,
+    });
+
+    expect(participants.filter(({ participantType }) => participantType === PAIR).length).toEqual(3);
+    expect(participants.filter(({ participantType }) => participantType === INDIVIDUAL).length).toEqual(6);
   });
 
   // falsification: the same profile WITHOUT the flag enumerates individuals, so the assertions
