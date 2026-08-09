@@ -54,6 +54,11 @@ verifyDepsBeforeRun: false
 #   3.x/4.x consumers are unaffected.
 # - postcss: GHSA-r28c-9q8g-f849 (path traversal in source-map auto-loading);
 #   patched 8.5.18. Via vitest/vite dev tooling only — not a runtime dependency.
+# - nanoid: GHSA-2v37-7h3g-55p8 (custom generators loop indefinitely when size is
+#   zero -> DoS); patched 3.3.17. Reached only via vitest/vite -> postcss dev
+#   tooling. Caret-bounded to the v3 line on purpose: postcss requires ^3.3.16,
+#   and an unbounded `>=3.3.17` floats straight to nanoid v6 (ESM-only, different
+#   API) while leaving the vulnerable 3.3.16 still resolved elsewhere — observed.
 overrides:
   typescript: 6.0.3 # block native TS7 (no classic JS API — crashes tsc/nest/sonarjs); pairs with renovate TS-major block
   qs: '^6.15.2'
@@ -62,3 +67,4 @@ overrides:
   brace-expansion: '>=5.0.8'
   js-yaml@5: '>=5.2.2'
   postcss: '>=8.5.18'
+  nanoid: '^3.3.17'
