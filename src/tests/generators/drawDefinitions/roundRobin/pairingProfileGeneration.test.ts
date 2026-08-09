@@ -16,7 +16,7 @@ function generateShapedDraw(params: any) {
   tournamentEngine.addEvent({ event: { eventName: 'Shaped event', eventId: 'eventId' } });
   tournamentEngine.addEventEntries({ eventId: 'eventId', participantIds });
 
-  const result: any = tournamentEngine.generateDrawDefinition({
+  let result: any = tournamentEngine.generateDrawDefinition({
     drawType: AD_HOC,
     drawSize: DRAW_SIZE,
     eventId: 'eventId',

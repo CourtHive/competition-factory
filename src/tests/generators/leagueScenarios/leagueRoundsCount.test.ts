@@ -22,7 +22,7 @@ function generateLeague(roundsCount?: any) {
     },
   ];
 
-  const result: any = mocksEngine.generateTournamentRecord({
+  let result: any = mocksEngine.generateTournamentRecord({
     startDate: '2026-01-01',
     endDate: '2026-04-30',
     leagueProfiles,
@@ -83,7 +83,7 @@ describe('leagueProfiles pairingProfile', () => {
       },
     ];
 
-    const result: any = mocksEngine.generateTournamentRecord({
+    let result: any = mocksEngine.generateTournamentRecord({
       startDate: '2026-01-01',
       endDate: '2026-04-30',
       leagueProfiles,

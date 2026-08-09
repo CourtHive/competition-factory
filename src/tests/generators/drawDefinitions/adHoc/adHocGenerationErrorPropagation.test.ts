@@ -15,7 +15,7 @@ function generateAdHocDraw(params: any) {
   tournamentEngine.addEvent({ event: { eventName: 'AD_HOC event', eventId: 'eventId' } });
   tournamentEngine.addEventEntries({ eventId: 'eventId', participantIds });
 
-  const result: any = tournamentEngine.generateDrawDefinition({
+  let result: any = tournamentEngine.generateDrawDefinition({
     drawType: AD_HOC,
     drawSize: DRAW_SIZE,
     automated: true,

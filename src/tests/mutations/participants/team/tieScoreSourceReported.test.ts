@@ -87,7 +87,7 @@ describe('tieFormat scoreSource: REPORTED', () => {
       drawId: 'drawId',
     });
 
-    const result: any = tournamentEngine.updateTieMatchUpScore({ matchUpId: teamMatchUp.matchUpId, drawId: 'drawId' });
+    let result: any = tournamentEngine.updateTieMatchUpScore({ matchUpId: teamMatchUp.matchUpId, drawId: 'drawId' });
     expect(result.success).toEqual(true);
 
     const updated = getTeamMatchUp(teamMatchUp.matchUpId);
@@ -104,7 +104,7 @@ describe('tieFormat scoreSource: REPORTED', () => {
     expect(teamMatchUp).toBeDefined();
 
     for (const tie of matchUps.filter(({ matchUpType }) => matchUpType === TEAM)) {
-      const result: any = tournamentEngine.setMatchUpStatus({
+      let result: any = tournamentEngine.setMatchUpStatus({
         outcome: {
           score: { scoreStringSide1: '2-1', scoreStringSide2: '1-2', sets: [{ side1Score: 2, side2Score: 1 }] },
           winningSide: 1,
@@ -139,7 +139,7 @@ describe('REPORTED suppresses line materialization', () => {
   it('scores a reported tie that has no lines at all', () => {
     const { teamMatchUp } = generateTeamEvent({ scoreSource: TieScoreSourceEnum.REPORTED });
 
-    const result: any = tournamentEngine.setMatchUpStatus({
+    let result: any = tournamentEngine.setMatchUpStatus({
       outcome: {
         score: { scoreStringSide1: '3-0', scoreStringSide2: '0-3', sets: [{ side1Score: 3, side2Score: 0 }] },
         winningSide: 1,

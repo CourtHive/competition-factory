@@ -3,17 +3,17 @@ import { resolveTieScoreSource } from '@Query/hierarchical/tieFormats/resolveTie
 import { setFirstClassOrExtension } from '@Mutate/extensions/setFirstClassOrExtension';
 import { resolveTieFormat } from '@Query/hierarchical/tieFormats/resolveTieFormat';
 import { ensureSideLineUps } from '@Mutate/matchUps/lineUps/ensureSideLineUps';
-import { firstClassOrExtension } from '@Acquire/firstClassOrExtension';
 import { modifyMatchUpScore } from '@Mutate/matchUps/score/modifyMatchUpScore';
 import { copyTieFormat } from '@Query/hierarchical/tieFormats/copyTieFormat';
+import { firstClassOrExtension } from '@Acquire/firstClassOrExtension';
 import { isActiveMatchUp } from '@Query/matchUp/activeMatchUp';
 import { findTournamentId } from '@Acquire/findTournamentId';
 import { findDrawMatchUp } from '@Acquire/findDrawMatchUp';
 
 // constants and types
 import { COMPLETED, completedMatchUpStatuses, IN_PROGRESS, TO_BE_PLAYED } from '@Constants/matchUpStatusConstants';
-import { PolicyDefinitions, TournamentRecords, MatchUpsMap } from '@Types/factoryTypes';
 import { DrawDefinition, Event, TieScoreSourceEnum, Tournament } from '@Types/tournamentTypes';
+import { PolicyDefinitions, TournamentRecords, MatchUpsMap } from '@Types/factoryTypes';
 import { DISABLE_AUTO_CALC } from '@Constants/extensionConstants';
 import { SUCCESS } from '@Constants/resultConstants';
 import {

@@ -1,14 +1,14 @@
 import { generateRoundRobinPairings, PairingRound } from './roundRobinPairing/generateRoundRobinPairings';
+import { getParticipantIds } from './drawMatic/getParticipantIds';
 import { decorateResult } from '@Functions/global/decorateResult';
 import { generateAdHocMatchUps } from './generateAdHocMatchUps';
 import { generateRange } from '@Tools/arrays';
 
-// types
+// constants and types
 import { DrawDefinition, Event, MatchUp } from '@Types/tournamentTypes';
-import { PairingProfile, ResultType } from '@Types/factoryTypes';
-import { getParticipantIds } from './drawMatic/getParticipantIds';
 import { INVALID_VALUES } from '@Constants/errorConditionConstants';
 import { ROUND_ROBIN } from '@Constants/drawDefinitionConstants';
+import { PairingProfile, ResultType } from '@Types/factoryTypes';
 
 type GenerateAdHocRoundsArgs = {
   restrictMatchUpsCount?: boolean;

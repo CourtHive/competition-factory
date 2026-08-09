@@ -13,7 +13,7 @@ function generateRoundRobinGroups(structureOptions?: any) {
   tournamentEngine.addEvent({ event: { eventName: 'Round robin event', eventId: 'eventId' } });
   tournamentEngine.addEventEntries({ eventId: 'eventId', participantIds });
 
-  const result: any = tournamentEngine.generateDrawDefinition({
+  let result: any = tournamentEngine.generateDrawDefinition({
     drawType: ROUND_ROBIN,
     drawSize: DRAW_SIZE,
     eventId: 'eventId',

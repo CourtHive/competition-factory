@@ -13,7 +13,7 @@ function pairingHashes(rounds: string[][][]) {
 describe('generateRoundRobinPairings', () => {
   it('pairs every entrant with every other entrant exactly once', () => {
     const participantIds = ids(8);
-    const result: any = generateRoundRobinPairings({ participantIds });
+    let result: any = generateRoundRobinPairings({ participantIds });
 
     expect(result.error).toBeUndefined();
     expect(result.rounds.length).toEqual(7);
@@ -26,7 +26,7 @@ describe('generateRoundRobinPairings', () => {
 
   it('sits one entrant out each round when the count is odd', () => {
     const participantIds = ids(5);
-    const result: any = generateRoundRobinPairings({ participantIds });
+    let result: any = generateRoundRobinPairings({ participantIds });
 
     expect(result.error).toBeUndefined();
     expect(result.rounds.length).toEqual(4 * 1 + 1); // (n - 1) rounds
@@ -39,7 +39,7 @@ describe('generateRoundRobinPairings', () => {
 
   it('repeats the schedule for each encounter', () => {
     const participantIds = ids(4);
-    const result: any = generateRoundRobinPairings({ participantIds, encounters: 3 });
+    let result: any = generateRoundRobinPairings({ participantIds, encounters: 3 });
 
     expect(result.error).toBeUndefined();
     expect(result.rounds.length).toEqual(9); // (4 - 1) * 3
@@ -54,7 +54,7 @@ describe('generateRoundRobinPairings', () => {
 
   it('mirrors side order on the second encounter so a double round robin is home-and-home', () => {
     const participantIds = ids(4);
-    const result: any = generateRoundRobinPairings({ participantIds, encounters: 2 });
+    let result: any = generateRoundRobinPairings({ participantIds, encounters: 2 });
 
     const firstCycle = result.rounds.slice(0, 3);
     const secondCycle = result.rounds.slice(3);
@@ -64,14 +64,14 @@ describe('generateRoundRobinPairings', () => {
 
   it('preserves side order across encounters when mirrored is false', () => {
     const participantIds = ids(4);
-    const result: any = generateRoundRobinPairings({ participantIds, encounters: 2, mirrored: false });
+    let result: any = generateRoundRobinPairings({ participantIds, encounters: 2, mirrored: false });
 
     expect(result.rounds.slice(3)).toEqual(result.rounds.slice(0, 3));
   });
 
   it('truncates to a partial round robin when roundsCount is supplied', () => {
     const participantIds = ids(8);
-    const result: any = generateRoundRobinPairings({ participantIds, roundsCount: 3 });
+    let result: any = generateRoundRobinPairings({ participantIds, roundsCount: 3 });
 
     expect(result.error).toBeUndefined();
     expect(result.rounds.length).toEqual(3);
@@ -83,13 +83,13 @@ describe('generateRoundRobinPairings', () => {
 
   // the residual from the groupSize fix: an unsatisfiable request is reported, not quietly reduced
   it('reports an unsatisfiable roundsCount rather than generating what it can', () => {
-    const result: any = generateRoundRobinPairings({ participantIds: ids(4), roundsCount: 4 });
+    let result: any = generateRoundRobinPairings({ participantIds: ids(4), roundsCount: 4 });
     expect(result.error).toEqual(INVALID_VALUES);
     expect(result.rounds).toBeUndefined();
   });
 
   it('accepts a roundsCount reachable only through additional encounters', () => {
-    const result: any = generateRoundRobinPairings({ participantIds: ids(4), roundsCount: 4, encounters: 2 });
+    let result: any = generateRoundRobinPairings({ participantIds: ids(4), roundsCount: 4, encounters: 2 });
     expect(result.error).toBeUndefined();
     expect(result.rounds.length).toEqual(4);
   });
