@@ -366,6 +366,7 @@ export type FactoryEngineMethod =
   | 'getTeamLineUp'
   | 'getTiebreakComplement'
   | 'getTieFormat'
+  | 'getTierMovement'
   | 'getTimeItem'
   | 'getTournament'
   | 'getTournamentActionableMatchUps'
@@ -1018,6 +1019,7 @@ export const FACTORY_ENGINE_METHODS: readonly FactoryEngineMethod[] = [
   'getTeamLineUp',
   'getTiebreakComplement',
   'getTieFormat',
+  'getTierMovement',
   'getTimeItem',
   'getTournament',
   'getTournamentActionableMatchUps',
