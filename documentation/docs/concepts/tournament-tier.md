@@ -146,7 +146,7 @@ const { movement, fromLevel, toLevel } = engine.getTierMovement({
 | `RELEGATED` | moved to a less prestigious tier                         |
 | `HELD`      | same tier, or two values that resolve to the same level  |
 | `REALIGNED` | the tier changed but the two are not comparable          |
-| `WITHDREW`  | present in the earlier season, absent from the later one |
+| `WITHDRAWN` | present in the earlier season, absent from the later one |
 | `ENTERED`   | absent from the earlier season, present in the later one |
 
 Ordering comes from the same source ranking points use: `tierToLevel[system][value]`, falling back to the

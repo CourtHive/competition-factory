@@ -1035,7 +1035,7 @@ export enum TierMovementEnum {
   /** the tier changed but the two are not comparable (different systems, or no level resolvable) */
   REALIGNED = 'REALIGNED',
   /** present in the earlier season, absent from the later one */
-  WITHDREW = 'WITHDREW',
+  WITHDRAWN = 'WITHDRAWN',
   /** absent from the earlier season, present in the later one */
   ENTERED = 'ENTERED',
 }

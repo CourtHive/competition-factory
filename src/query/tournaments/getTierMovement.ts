@@ -39,7 +39,7 @@ export function getTierMovement(params: GetTierMovementArgs): {
   const { fromTier, toTier, policyDefinitions } = params ?? {};
 
   if (!fromTier && !toTier) return { movement: TierMovementEnum.REALIGNED };
-  if (!toTier) return { movement: TierMovementEnum.WITHDREW };
+  if (!toTier) return { movement: TierMovementEnum.WITHDRAWN };
   if (!fromTier) return { movement: TierMovementEnum.ENTERED };
 
   const sameTier = fromTier.system === toTier.system && fromTier.value === toTier.value;

@@ -68,8 +68,8 @@ describe('getTierMovement', () => {
     expect(result.movement).toEqual(TierMovementEnum.REALIGNED);
   });
 
-  it('reports WITHDREW and ENTERED at the edges of a competitor lifecycle', () => {
-    expect(getTierMovement({ fromTier: tier('A1'), toTier: undefined }).movement).toEqual(TierMovementEnum.WITHDREW);
+  it('reports WITHDRAWN and ENTERED at the edges of a competitor lifecycle', () => {
+    expect(getTierMovement({ fromTier: tier('A1'), toTier: undefined }).movement).toEqual(TierMovementEnum.WITHDRAWN);
     expect(getTierMovement({ fromTier: undefined, toTier: tier('A1') }).movement).toEqual(TierMovementEnum.ENTERED);
   });
 
