@@ -82,6 +82,38 @@ engine.addVenue({
 
 ---
 
+## addVenueOtherId
+
+Upserts a `UnifiedVenueID` entry into a venue's `venueOtherIds[]` array — the CODES mechanism for recording that the same physical venue is known by a different id at another organisation (a federation, a canonical facility registry, an upstream league site). The venue analog of [addPersonOtherId](./participant-governor.md#addpersonotherid).
+
+```js
+engine.addVenueOtherId({
+  venueId, // required — locates the venue WITHIN this tournamentRecord
+  organisationId, // required — the issuing organisation (string)
+  otherVenueId, // required — the venue's id in THAT organisation's namespace
+  uniqueOrganisationName, // optional — human-readable name for the organisation
+});
+```
+
+**Two distinct ids.** `venueId` locates the venue inside the current `tournamentRecord`; `otherVenueId` is the value stored into the entry's `UnifiedVenueID.venueId` field — the id in the _other_ organisation's namespace (an ALTA facility number, an ITA institution slug, a `courthive-facilities` `facilityId`).
+
+**Semantics:**
+
+- **Upsert by `organisationId`**: if the venue already has an entry under the given `organisationId`, that entry's `venueId` (and optional `uniqueOrganisationName`) is replaced. Otherwise a new entry is appended with `createdAt`.
+- **Idempotent**: re-applying the same `(organisationId, otherVenueId)` is a no-op; the array does not grow.
+- **Organisation-agnostic**: the factory neither validates nor interprets `organisationId`. Callers choose what it means — a federation id, a canonical-registry id from a downstream service, anything stable within the consuming application.
+- Dispatches a `MODIFY_VENUE` notice.
+
+**Errors:**
+
+- `MISSING_VENUE_ID` — standard parameter check.
+- `MISSING_VALUE` — when `organisationId` or `otherVenueId` is empty.
+- `VENUE_NOT_FOUND` — when no venue in the resolved records matches `venueId`.
+
+**Purpose:** give a physical place one identity across providers. A venue entered independently in two tournaments — or held canonically by a facility registry — can be reconciled without the factory taking a position on whose id is authoritative.
+
+---
+
 ## deleteCourt
 
 ```js

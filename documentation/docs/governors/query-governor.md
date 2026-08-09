@@ -87,6 +87,13 @@ Actual visibility is computed at **read time**: `published AND (embargo IS NULL 
 
 RUBBER rows carry `tie_value` — the rubber's weight from the parent tie's `tieFormat` collection (`matchUpValue`, else a per-position profile value, else `collectionValue / matchUpCount`); `NULL` for STANDARD/TIE rows.
 
+**Bracket topology.** Each `match_ups` row also carries the draw's shape, so a consumer can render a bracket or answer "where does this winner play next" without re-deriving it:
+
+- `winner_match_up_id` / `loser_match_up_id` — the progression edges, copied from the stored matchUp. `NULL` is meaningful, not missing: a terminal matchUp has no winner target, and `loser_match_up_id` is `NULL` wherever no loser feed exists — which is **every** matchUp of a plain single-elimination draw. They appear wherever a feed does: consolation, playoff attachment, qualifying → main.
+- `round_position` — the matchUp's position within its round; with `round_number` this is a complete bracket coordinate. `NULL` for adHoc and round-robin matchUps, which have no round position.
+
+These are the only faithful representation of a non-standard topology: the standard-bracket derivation (round _r_ position _p_ → round _r+1_ position ⌈_p_/2⌉) does not hold once consolation feeds, playoff attachment or qualifying → main are involved. Rewiring is carried incrementally too — `removeStructure` strips the loser edge from the matchUps that fed a removed structure and dispatches `MODIFY_MATCHUP` for each, so `matchUpResultRow` carries the edges as well as the result columns.
+
 ```js
 const { rows } = engine.cast();
 // rows: {
@@ -107,6 +114,8 @@ const { rows } = engine.cast();
 // }
 ```
 
+**`events.published` resolves through the same cascade as the matchUps** — it is not a truthiness test on the event's `PUBLISH.STATUS.PUBLIC` envelope. `unPublishEvent` leaves that envelope in place with undefined-valued keys, so a truthiness (or even a non-empty) test reports an unpublished event as published while its matchUps correctly report `false`. `readModel.isEventPublished` resolves it at **draw** granularity — an event whose draw publishes only selected structures is still a published event — and treats **seeding as an independent publish surface**: `publishEventSeeding` writes `seeding: { published: true }` with no draw detail at all, and an event with published seeding is published even when no draw is.
+
 `match_up_competitors.person_id` is populated only for a **real canonical person** — a `personId` that is not equal to the `participantId` and is not a factory `UUID()` (i.e. a provider/federation id such as a UTR id, `link_source: 'providerId'`); synthetic/local participants are left `NULL` (`link_source: 'unresolved'`). `venue.facilityId` is a canonical first-class attribute that **defaults to `venueId`**.
 
 Callable on the engine (injects the loaded `tournamentRecord`) or via `queryGovernor.cast({ tournamentRecord })` (the server / rebuild-pipeline call pattern).
@@ -121,21 +130,22 @@ Callable on the engine (injects the loaded `tournamentRecord`) or via `queryGove
 import { readModel } from 'tods-competition-factory';
 ```
 
-| Export                                     | Purpose                                                                                                                                                                                                            |
-| ------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| `cast`                                     | Full-tournament projection (the same function documented above).                                                                                                                                                   |
-| `tournamentRow` / `venueRow` / `entryRows` | Row builders for the `tournaments`, `venues`/`tournament_venues`, and `entries` tables.                                                                                                                            |
-| `eventRow` / `seedRow`                     | Row builders for the `events` table (one row/event) and the `seeds` table (one row per participant-holding seed assignment; caller supplies the structure context via `SeedRowContext`).                           |
-| `drawRow` / `structureRow`                 | Row builders for the `draws` table (one row/draw) and the `structures` table (one row per top-level structure; context via `StructureRowContext`). Nested round-robin group sub-structures are not projected.      |
-| `courtRow`                                 | Row builder for the `courts` table (one row per court of a placed venue; context via `CourtRowContext`).                                                                                                           |
-| `orderOfPlayRow` / `schedulingProfileRows` | Row builders for the `order_of_play` table (the publication state — distinct from per-matchUp scheduling) and the `scheduling_profile` table (the flattened admin plan, one row per date/venue/round).             |
-| `participantPublishRow`                    | Row builder for the `participant_publish` table (participant-list publication state); the `tournaments` row also carries an aggregate `published` flag (order-of-play OR participants published).                  |
-| `getTournamentPublishStatus`               | Tournament-level publish status (its `orderOfPlay` / `participants` drive the order_of_play / participant_publish rows + the aggregate `tournaments.published`); the tournament analog of `getEventPublishStatus`. |
-| `matchUpRowSet`                            | Builds the `match_ups` / `match_up_competitors` rows for a matchUp set (STANDARD / TIE container / nested RUBBER). Typed by `MatchUpRowContext` → `MatchUpRowSet`.                                                 |
-| `matchUpResultRow` / `rubberTieValue`      | Result-row projection and the RUBBER `tie_value` weighting rule.                                                                                                                                                   |
-| `resolveMatchUpPublishState`               | Resolves a matchUp's `published` intent + effective `embargo` release timestamp via the draw → stage → structure cascade (returns `MatchUpPublishState`).                                                          |
-| `getEventPublishStatus`                    | Event-level publish status used by the cascade.                                                                                                                                                                    |
-| `resolvePersonLink` / `isFactoryUuid`      | Canonical `person_id` resolution — `LINK_PROVIDER_ID` for a real federation/provider id, `LINK_UNRESOLVED` (`NULL`) for synthetic/local participants (returns `PersonLink`).                                       |
+| Export                                     | Purpose                                                                                                                                                                                                                             |
+| ------------------------------------------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `cast`                                     | Full-tournament projection (the same function documented above).                                                                                                                                                                    |
+| `tournamentRow` / `venueRow` / `entryRows` | Row builders for the `tournaments`, `venues`/`tournament_venues`, and `entries` tables.                                                                                                                                             |
+| `eventRow` / `seedRow`                     | Row builders for the `events` table (one row/event) and the `seeds` table (one row per participant-holding seed assignment; caller supplies the structure context via `SeedRowContext`).                                            |
+| `drawRow` / `structureRow`                 | Row builders for the `draws` table (one row/draw) and the `structures` table (one row per top-level structure; context via `StructureRowContext`). Nested round-robin group sub-structures are not projected.                       |
+| `courtRow`                                 | Row builder for the `courts` table (one row per court of a placed venue; context via `CourtRowContext`).                                                                                                                            |
+| `orderOfPlayRow` / `schedulingProfileRows` | Row builders for the `order_of_play` table (the publication state — distinct from per-matchUp scheduling) and the `scheduling_profile` table (the flattened admin plan, one row per date/venue/round).                              |
+| `participantPublishRow`                    | Row builder for the `participant_publish` table (participant-list publication state); the `tournaments` row also carries an aggregate `published` flag (order-of-play OR participants published).                                   |
+| `getTournamentPublishStatus`               | Tournament-level publish status (its `orderOfPlay` / `participants` drive the order_of_play / participant_publish rows + the aggregate `tournaments.published`); the tournament analog of `getEventPublishStatus`.                  |
+| `matchUpRowSet`                            | Builds the `match_ups` / `match_up_competitors` rows for a matchUp set (STANDARD / TIE container / nested RUBBER). Typed by `MatchUpRowContext` → `MatchUpRowSet`.                                                                  |
+| `matchUpResultRow` / `rubberTieValue`      | Slim result-row projection (status / winning side / score / scheduled date) **plus the progression edges**, so a `MODIFY_MATCHUP` that rewires a matchUp does not leave a dangling edge; and the RUBBER `tie_value` weighting rule. |
+| `resolveMatchUpPublishState`               | Resolves a matchUp's `published` intent + effective `embargo` release timestamp via the draw → stage → structure cascade (returns `MatchUpPublishState`).                                                                           |
+| `getEventPublishStatus`                    | Event-level publish status used by the cascade — the raw `PUBLISH.STATUS.PUBLIC` envelope. Do **not** test it for truthiness; see `isEventPublished`.                                                                               |
+| `isEventPublished`                         | Resolves `events.published` from that envelope through the draw-level cascade, including published seeding as an independent surface. Shared by `cast()` and incremental producers so the two cannot diverge.                       |
+| `resolvePersonLink` / `isFactoryUuid`      | Canonical `person_id` resolution — `LINK_PROVIDER_ID` for a real federation/provider id, `LINK_UNRESOLVED` (`NULL`) for synthetic/local participants (returns `PersonLink`).                                                        |
 
 This is an advanced integration surface for read-model producers (`courthive-query`, the CFS incremental projection); most consumers only need `cast()`.
 
