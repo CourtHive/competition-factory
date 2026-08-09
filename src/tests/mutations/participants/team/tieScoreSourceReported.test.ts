@@ -118,3 +118,41 @@ describe('tieFormat scoreSource: REPORTED', () => {
     }
   });
 });
+
+describe('REPORTED suppresses line materialization', () => {
+  it('generates no tieMatchUps while the tieFormat still describes the collections', () => {
+    const { teamMatchUp } = generateTeamEvent({ scoreSource: TieScoreSourceEnum.REPORTED });
+
+    expect(teamMatchUp.tieMatchUps).toEqual([]);
+
+    // the format still states WHAT was played — only the unfillable matchUps are absent
+    const { event } = tournamentEngine.getEvent({ drawId: 'drawId' });
+    expect(event.tieFormat.collectionDefinitions[0].matchUpCount).toEqual(3);
+    expect(event.tieFormat.scoreSource).toEqual(TieScoreSourceEnum.REPORTED);
+  });
+
+  it('still generates tieMatchUps when the tieFormat does not declare REPORTED', () => {
+    const { teamMatchUp } = generateTeamEvent({ scoreSource: undefined });
+    expect(teamMatchUp.tieMatchUps.length).toEqual(3);
+  });
+
+  it('scores a reported tie that has no lines at all', () => {
+    const { teamMatchUp } = generateTeamEvent({ scoreSource: TieScoreSourceEnum.REPORTED });
+
+    const result: any = tournamentEngine.setMatchUpStatus({
+      outcome: {
+        score: { scoreStringSide1: '3-0', scoreStringSide2: '0-3', sets: [{ side1Score: 3, side2Score: 0 }] },
+        winningSide: 1,
+        matchUpStatus: COMPLETED,
+      },
+      matchUpId: teamMatchUp.matchUpId,
+      drawId: 'drawId',
+    });
+
+    expect(result.success).toEqual(true);
+    const updated = getTeamMatchUp(teamMatchUp.matchUpId);
+    expect(updated.tieMatchUps).toEqual([]);
+    expect(updated.winningSide).toEqual(1);
+    expect(updated.score.scoreStringSide1).toEqual('3-0');
+  });
+});

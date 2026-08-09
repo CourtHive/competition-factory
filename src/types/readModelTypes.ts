@@ -50,6 +50,10 @@ export interface ReadModelMatchUpRow {
   winning_side: number | null;
   score_string: string | null; // winner-perspective
   tie_value: number | null; // rubber weight from the tieFormat (RUBBER rows); NULL otherwise
+  // Where a TIE's score comes from, when the tieFormat says so: REPORTED means the aggregate is
+  // authoritative and the lines are unpopulated BY DESIGN, so a tie with no rubbers is COMPLETE, not
+  // awaiting data entry. NULL = DERIVED (the default) and on every non-TIE row.
+  score_source: string | null;
   match_up_format: string | null; // per-matchUp scoring-format override; NULL = draw/structure default
   scheduled_date: string | null;
   published: boolean; // publish INTENT (embargo-independent) — resolved through the structure/stage/draw cascade

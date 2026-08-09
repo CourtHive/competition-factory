@@ -332,6 +332,7 @@ function matchUpRow(
   parentMatchUpId: string | null,
   ctx: MatchUpRowContext,
   tieValue: number | null,
+  scoreSource: string | null = null,
 ): ReadModelMatchUpRow {
   return {
     match_up_id: matchUp?.matchUpId,
@@ -366,6 +367,9 @@ function matchUpRow(
     winning_side: matchUp?.winningSide ?? null,
     score_string: winnerPerspectiveScore(matchUp),
     tie_value: tieValue,
+    // TIE rows only: REPORTED marks a tie whose lines are unpopulated by design, so a consumer can
+    // render "no line detail published" rather than an empty scorecard awaiting entry.
+    score_source: scoreSource,
     // a per-matchUp scoring-format override (e.g. a best-of-5 final in a best-of-3
     // draw); null falls back to the draw/structure default at read time.
     match_up_format: matchUp?.matchUpFormat ?? null,
@@ -461,7 +465,8 @@ export function matchUpRowSet(matchUp: any, ctx: MatchUpRowContext): MatchUpRowS
   if (!matchUpId) return { matchUpRows, competitorRows };
 
   const isTeam = matchUp?.matchUpType === TEAM || Array.isArray(matchUp?.tieMatchUps);
-  matchUpRows.push(matchUpRow(matchUp, isTeam ? LEVEL_TIE : LEVEL_STANDARD, null, ctx, null));
+  const scoreSource = (isTeam && matchUp?.tieFormat?.scoreSource) || null;
+  matchUpRows.push(matchUpRow(matchUp, isTeam ? LEVEL_TIE : LEVEL_STANDARD, null, ctx, null, scoreSource));
   for (const side of matchUp?.sides ?? []) {
     competitorRows.push(...sideCompetitorRows(side, matchUpId, ctx, null));
   }

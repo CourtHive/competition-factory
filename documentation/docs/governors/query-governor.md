@@ -87,6 +87,13 @@ Actual visibility is computed at **read time**: `published AND (embargo IS NULL 
 
 RUBBER rows carry `tie_value` — the rubber's weight from the parent tie's `tieFormat` collection (`matchUpValue`, else a per-position profile value, else `collectionValue / matchUpCount`); `NULL` for STANDARD/TIE rows.
 
+TIE rows carry `score_source`, so a consumer can tell **"no line detail exists"** from **"the lines have not been entered yet"** — two states that otherwise project identically (a TIE row with no RUBBER rows beneath it):
+
+- `NULL` — `DERIVED`, the default: the tie score comes from its rubbers, and an empty scorecard means results are still outstanding.
+- `'REPORTED'` — the competition publishes only the team result and the lines are **unpopulated by design**. Such a tie generates no rubbers at all, so a TIE row with zero RUBBER rows is **complete**, not awaiting entry.
+
+`score_source` is `NULL` on STANDARD and RUBBER rows. It comes from the [tieFormat's `scoreSource`](../concepts/tieFormat#score-source--derived-vs-reported), resolved hierarchically, so a federation declares it once on the event and every tie beneath it projects the value.
+
 **Bracket topology.** Each `match_ups` row also carries the draw's shape, so a consumer can render a bracket or answer "where does this winner play next" without re-deriving it:
 
 - `winner_match_up_id` / `loser_match_up_id` — the progression edges, copied from the stored matchUp. `NULL` is meaningful, not missing: a terminal matchUp has no winner target, and `loser_match_up_id` is `NULL` wherever no loser feed exists — which is **every** matchUp of a plain single-elimination draw. They appear wherever a feed does: consolation, playoff attachment, qualifying → main.

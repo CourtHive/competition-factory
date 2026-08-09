@@ -119,8 +119,16 @@ this document — `event` > `drawDefinition` > `structure` > `matchUp`. A federa
 detail declares it **once on the event** rather than per tie, and an individual tie can still override it
 where detail does exist.
 
-When the resolved score source is `REPORTED`, the reported score and winningSide are preserved: a
-recalculation will not overwrite them with a derivation from empty lines.
+When the resolved score source is `REPORTED`:
+
+- the reported score and winningSide are **preserved** — a recalculation will not overwrite them with a
+  derivation from empty lines;
+- **no `tieMatchUps` are generated.** Lines that can never be filled are not materialized: for a federation
+  season that is the bulk of the record's weight, and it removes the ambiguity of an empty scorecard. The
+  `collectionDefinitions` still describe **what was played** — only the unfillable matchUps are absent;
+- the read model projects `score_source: 'REPORTED'` on the TIE row, so a consumer can render "no line
+  detail published" rather than an empty scorecard awaiting entry (see
+  [`cast`](../governors/query-governor#cast)).
 
 ### Relationship to `disableAutoCalc`
 
