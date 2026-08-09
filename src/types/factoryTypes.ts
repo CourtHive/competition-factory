@@ -683,6 +683,19 @@ export type MatchUpFilters = {
   filterMatchUpIds?: boolean;
 };
 
+/**
+ * A pairing SHAPE applied by round generation, as distinct from a draw structure. `ROUND_ROBIN` pairs every
+ * entrant with every other entrant once per encounter; `encounters: 2` is a double round robin, `3` a
+ * triple. `mirrored` (default true) swaps side order on alternating encounters, making a double round robin
+ * home-and-home. A `roundsCount` alongside a pairingProfile truncates the schedule to a PARTIAL round robin
+ * and is rejected if it exceeds the rounds the shape can supply.
+ */
+export type PairingProfile = {
+  shape: string;
+  encounters?: number;
+  mirrored?: boolean;
+};
+
 export type GenerateDrawDefinitionArgs = {
   automated?: boolean | { seedsOnly: boolean };
   playoffAttributes?: PlayoffAttributes;
@@ -704,6 +717,8 @@ export type GenerateDrawDefinitionArgs = {
   hydrateRoundNames?: boolean;
   /** AD_HOC: permit a roundsCount of up to (entrants - 1) * 2, replaying pairings a second time */
   enableDoubleRobin?: boolean;
+  /** AD_HOC: apply a pairing shape to round generation (see {@link PairingProfile}) */
+  pairingProfile?: PairingProfile;
   drawTypeCoercion?: boolean;
   ignoreStageSpace?: boolean;
   qualifyingProfiles?: any[];

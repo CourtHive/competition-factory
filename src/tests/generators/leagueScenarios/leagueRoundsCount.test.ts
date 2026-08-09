@@ -3,7 +3,7 @@ import tournamentEngine from '@Engines/syncEngine';
 import { expect, it, describe } from 'vitest';
 
 // constants
-import { DOUBLE_ROUND_ROBIN } from '@Constants/drawDefinitionConstants';
+import { DOUBLE_ROUND_ROBIN, ROUND_ROBIN } from '@Constants/drawDefinitionConstants';
 import { COLLEGE_DEFAULT } from '@Constants/tieFormatConstants';
 import { unique } from '@Tools/arrays';
 
@@ -67,5 +67,76 @@ describe('leagueProfiles roundsCount', () => {
     expect(error).toBeUndefined();
     expect(roundsGenerated).toEqual(SINGLE_ROUND_ROBIN_ROUNDS * 2);
     expect(teamMatchUpsCount).toEqual(SINGLE_ROUND_ROBIN_ROUNDS * 2 * MATCHUPS_PER_ROUND);
+  });
+});
+
+describe('leagueProfiles pairingProfile', () => {
+  function generateShapedLeague(pairingProfile: any, roundsCount?: number) {
+    const leagueProfiles = [
+      {
+        leagueName: 'shaped league',
+        tieFormatName: COLLEGE_DEFAULT,
+        teamsCount: TEAMS_COUNT,
+        automated: true,
+        pairingProfile,
+        roundsCount,
+      },
+    ];
+
+    const result: any = mocksEngine.generateTournamentRecord({
+      startDate: '2026-01-01',
+      endDate: '2026-04-30',
+      leagueProfiles,
+      setState: true,
+    });
+
+    const teamMatchUps = tournamentEngine.allTournamentMatchUps().matchUps.filter(({ tieMatchUps }) => tieMatchUps);
+    const meetings = teamMatchUps.map(({ sides }) =>
+      sides
+        .map(({ participantId }) => participantId)
+        .sort((a, b) => a.localeCompare(b))
+        .join('|'),
+    );
+
+    return {
+      error: result.error,
+      roundsGenerated: unique(teamMatchUps.map(({ roundNumber }) => roundNumber)).length,
+      teamMatchUpsCount: teamMatchUps.length,
+      uniqueMeetings: new Set(meetings).size,
+    };
+  }
+
+  it('generates a true round robin schedule for a league', () => {
+    const { error, roundsGenerated, teamMatchUpsCount, uniqueMeetings } = generateShapedLeague({ shape: ROUND_ROBIN });
+
+    expect(error).toBeUndefined();
+    expect(roundsGenerated).toEqual(SINGLE_ROUND_ROBIN_ROUNDS);
+    expect(teamMatchUpsCount).toEqual(SINGLE_ROUND_ROBIN_ROUNDS * MATCHUPS_PER_ROUND);
+    // every team meets every other team exactly once
+    expect(uniqueMeetings).toEqual((TEAMS_COUNT * (TEAMS_COUNT - 1)) / 2);
+    expect(uniqueMeetings).toEqual(teamMatchUpsCount);
+  });
+
+  it('generates a home-and-home double round robin for a league', () => {
+    const { error, roundsGenerated, teamMatchUpsCount, uniqueMeetings } = generateShapedLeague({
+      shape: ROUND_ROBIN,
+      encounters: 2,
+    });
+
+    expect(error).toBeUndefined();
+    expect(roundsGenerated).toEqual(SINGLE_ROUND_ROBIN_ROUNDS * 2);
+    expect(uniqueMeetings).toEqual(teamMatchUpsCount / 2);
+  });
+
+  it('generates a partial round robin for a league', () => {
+    const { error, roundsGenerated, teamMatchUpsCount, uniqueMeetings } = generateShapedLeague(
+      { shape: ROUND_ROBIN },
+      3,
+    );
+
+    expect(error).toBeUndefined();
+    expect(roundsGenerated).toEqual(3);
+    expect(teamMatchUpsCount).toEqual(3 * MATCHUPS_PER_ROUND);
+    expect(uniqueMeetings).toEqual(teamMatchUpsCount);
   });
 });

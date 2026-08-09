@@ -127,17 +127,23 @@ export function processLeagueProfiles(params): any {
     tournamentRecord.events.push(event);
 
     if (entries.length) {
-      const roundsCount = deriveLeagueRoundsCount({ roundsCount: leagueProfile.roundsCount, drawSize });
+      // a pairingProfile supplies the schedule itself, so roundsCount is then only an optional
+      // truncation to a partial round robin and the shape validates it
+      const { pairingProfile } = leagueProfile;
+      const roundsCount = pairingProfile
+        ? isNumeric(leagueProfile.roundsCount) && leagueProfile.roundsCount
+        : deriveLeagueRoundsCount({ roundsCount: leagueProfile.roundsCount, drawSize });
       // a single round robin is (drawSize - 1) rounds; anything beyond that replays pairings,
       // which drawMatic only permits when enableDoubleRobin is set
-      const enableDoubleRobin = roundsCount > drawSize - 1;
+      const enableDoubleRobin = !pairingProfile && roundsCount > drawSize - 1;
       // generate drawDefinition for league
       const result = generateDrawDefinition({
         automated: leagueProfile.automated,
+        roundsCount: roundsCount || undefined,
         enableDoubleRobin,
         tournamentRecord,
+        pairingProfile,
         drawType: AD_HOC,
-        roundsCount,
         drawSize,
         event,
       });

@@ -117,7 +117,8 @@ export function generateNewDrawDefinition(params): ResultType & {
   const structureId = structureResult.structureId;
   if (structureResult.conflicts) conflicts = structureResult.conflicts;
 
-  if (isAdHocType(drawType) && params.roundsCount) {
+  // a pairingProfile supplies its own schedule length, so it does not require an explicit roundsCount
+  if (isAdHocType(drawType) && (params.roundsCount || params.pairingProfile)) {
     // propagate: without this every error raised beneath generateAdHoc — notably drawMatic's
     // 'Not enough participants for roundsCount' — is discarded and the caller receives a
     // well-formed drawDefinition containing zero matchUps and no error
