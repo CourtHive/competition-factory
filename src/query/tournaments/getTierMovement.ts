@@ -1,7 +1,7 @@
 // constants and types
 import { TierClassification, TierMovementEnum, TierMovementUnion } from '@Types/tournamentTypes';
-import { PolicyDefinitions } from '@Types/factoryTypes';
 import { POLICY_TYPE_RANKING_POINTS } from '@Constants/policyConstants';
+import { PolicyDefinitions } from '@Types/factoryTypes';
 
 type GetTierMovementArgs = {
   /** the competitor's tier in the EARLIER season; absent means they were not in it */

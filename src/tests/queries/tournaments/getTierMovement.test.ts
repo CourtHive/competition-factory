@@ -75,6 +75,24 @@ describe('getTierMovement', () => {
 
   it('reports REALIGNED when neither season carries a tier', () => {
     expect(getTierMovement({}).movement).toEqual(TierMovementEnum.REALIGNED);
+    expect(getTierMovement(undefined as any).movement).toEqual(TierMovementEnum.REALIGNED);
+  });
+
+  // a malformed tier carries no resolvable level, so it must not be forced into a direction
+  it('reports REALIGNED when a tier is missing its system or value', () => {
+    const noValue: any = { system: ALTA };
+    const noSystem: any = { value: 'A1' };
+
+    expect(getTierMovement({ fromTier: noValue, toTier: tier('AA'), policyDefinitions }).movement).toEqual(
+      TierMovementEnum.REALIGNED,
+    );
+    expect(getTierMovement({ fromTier: tier('AA'), toTier: noValue, policyDefinitions }).movement).toEqual(
+      TierMovementEnum.REALIGNED,
+    );
+    // a missing system is also a different system, so it cannot be compared
+    expect(getTierMovement({ fromTier: noSystem, toTier: tier('AA'), policyDefinitions }).movement).toEqual(
+      TierMovementEnum.REALIGNED,
+    );
   });
 
   it('is reachable from the engine surface', async () => {
