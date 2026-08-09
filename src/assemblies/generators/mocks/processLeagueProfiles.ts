@@ -77,16 +77,21 @@ export function processLeagueProfiles(params): any {
       const teamId = teamProfiles?.[index]?.teamId || uuids?.pop() || UUID(undefined, random);
 
       const consideredDate = leagueProfile.startDate ?? params.startDate;
-      const participants = generateParticipants({
-        ...leagueProfile?.participantsProfile,
-        participantsCount: teamSize,
-        consideredDate,
-        gendersCount,
-        category,
-        gender,
-        random,
-        uuids,
-      }).participants as Participant[];
+      // a team-only league enumerates no individuals: the competition is between TEAMs and the
+      // federation never publishes who played. Generating placeholder persons would invent data.
+      const participants =
+        leagueProfile.individualParticipants === false
+          ? []
+          : (generateParticipants({
+              ...leagueProfile?.participantsProfile,
+              participantsCount: teamSize,
+              consideredDate,
+              gendersCount,
+              category,
+              gender,
+              random,
+              uuids,
+            }).participants as Participant[]);
 
       const individualParticipantIds = participants.map((participant) => participant.participantId);
 

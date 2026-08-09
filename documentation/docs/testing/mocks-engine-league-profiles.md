@@ -48,6 +48,7 @@ interface LeagueProfile {
   pairingProfile?: PairingProfile; // Apply a pairing shape instead of DrawMatic (see below)
 
   // Participant Configuration
+  individualParticipants?: boolean; // false generates TEAM participants with NO members (see below)
   category?: Category; // Age/skill category
   gender?: string; // MALE, FEMALE, MIXED, ANY
   startDate?: string; // Override tournament startDate for age calculations
@@ -116,6 +117,46 @@ than the number of rounds to generate:
 
 See [Round Robin Pairing](/docs/concepts/draw-types/round-robin-pairing) for the shape's full semantics —
 encounters, side mirroring, odd team counts, and error conditions.
+
+## Team-Only Competitions
+
+Many federations publish the teams and the results but never the players — rosters are not part of the
+public data, and inventing placeholder persons would fabricate what the source does not contain. Such a
+competition is a **legitimate shape**, not a degraded record: TEAM participants that enumerate no
+individuals at all.
+
+```js
+mocksEngine.generateTournamentRecord({
+  leagueProfiles: [
+    {
+      leagueName: 'Metro Division 1',
+      teamsCount: 8,
+      individualParticipants: false, // TEAM participants with no members
+      pairingProfile: { shape: ROUND_ROBIN },
+      tieFormat: {
+        scoreSource: 'REPORTED', // ...and no line detail either
+        winCriteria: { valueGoal: 2 },
+        collectionDefinitions: [/* still describes what was played */],
+      },
+    },
+  ],
+});
+```
+
+The generated record contains only TEAM participants: no INDIVIDUAL participants exist, and each team's
+`individualParticipantIds` is empty. Draw generation, scoring, standings and the read-model projection all
+work from team results alone — the read model claims no `person_id` for anyone, because there is no person.
+
+Combined with [`scoreSource: REPORTED`](/docs/concepts/tieFormat#score-source--derived-vs-reported) this is
+the full shape of a federation data lift where neither rosters nor line scores are published.
+
+**Ranking and rating implications.** Ranking is person-scoped, so a team-only record produces no ranking
+points for anyone. Competitive standing for these teams is a team-level question (tier and movement between
+seasons), not a person-level one.
+
+**Note:** `individualParticipants: false` is currently supported for `leagueProfiles`. Team events generated
+through `drawProfiles` still build teams from a tournament-level participant pool and always enumerate
+members.
 
 ## Tie Format and Team Sizing
 
