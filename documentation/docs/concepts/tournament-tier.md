@@ -125,6 +125,48 @@ const result = tournamentEngine.getEventRankingPoints({
 
 An explicit `level` parameter always takes precedence over tier resolution.
 
+## Tier Movement — promotion and relegation
+
+A league's competitive structure is a lattice of tiers (flights, divisions) that competitors move between
+from one season to the next. `getTierMovement` derives that movement by comparing two
+`TierClassification`s:
+
+```js
+const { movement, fromLevel, toLevel } = engine.getTierMovement({
+  fromTier: { system: 'ALTA', value: 'A1' }, // the earlier season
+  toTier: { system: 'ALTA', value: 'AA' }, // the later season
+  policyDefinitions, // supplies tierToLevel
+});
+// movement: 'PROMOTED', fromLevel: 3, toLevel: 2
+```
+
+| Movement    | Meaning                                                  |
+| ----------- | -------------------------------------------------------- |
+| `PROMOTED`  | moved to a more prestigious tier (a lower level)         |
+| `RELEGATED` | moved to a less prestigious tier                         |
+| `HELD`      | same tier, or two values that resolve to the same level  |
+| `REALIGNED` | the tier changed but the two are not comparable          |
+| `WITHDREW`  | present in the earlier season, absent from the later one |
+| `ENTERED`   | absent from the earlier season, present in the later one |
+
+Ordering comes from the same source ranking points use: `tierToLevel[system][value]`, falling back to the
+tier's own `numericRank`. A federation that stamps `numericRank` at ingest needs no policy at all.
+
+**It never guesses a direction it cannot evidence.** Tiers from different systems are not on one scale —
+"PPA Gold" and "USTA Level 1" cannot be ordered against each other, and a level coincidence between them
+would be meaningless — so those come back `REALIGNED`, as do tiers whose level nothing resolves.
+
+`getTierMovement` compares **tiers, not records**: it takes the two classifications rather than the
+tournaments they came from, because the season lattice that groups tournaments into a league season is
+declared outside CODES. That keeps the factory able to answer "how did this competitor move" for a season
+assembled anywhere.
+
+**Why this matters beyond bookkeeping.** Tier trajectory across seasons is the leveling signal for a
+population that often has no individual ratings at all: community-league TEAMs whose members are never
+enumerated (see [League Profiles](/docs/testing/mocks-engine-league-profiles#team-only-competitions)).
+Ranking is person-scoped and produces nothing for them; movement between tiers is the team-level
+equivalent.
+
 ## Related Concepts
 
 - **[Registration Profile](./registration-profile.md)** — tournament logistics and entry information. Together with `tournamentTier`, these form the complete tournament metadata: the tier defines the competitive classification (ranking points, draw size requirements) while the registration profile captures operational details (deadlines, fees, accommodation).

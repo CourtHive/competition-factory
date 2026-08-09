@@ -20,6 +20,7 @@ export { getTournamentInfo } from '@Query/tournaments/getTournamentInfo';
 export { analyzeTournament } from '@Query/tournaments/analyzeTournament';
 export { getTournamentPoints } from '@Query/scales/getTournamentPoints';
 export { getMutationLocks } from '@Query/tournaments/getMutationLocks';
+export { getTierMovement } from '@Query/tournaments/getTierMovement';
 export { analyzeDraws } from '@Query/tournaments/analyzeDraws';
 export { getTournamentTimeItem } from '@Query/base/timeItems';
 export { cast } from '@Query/readModel/cast';

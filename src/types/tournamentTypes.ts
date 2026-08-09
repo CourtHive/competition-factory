@@ -1015,6 +1015,32 @@ export type StructureTypeUnion = `${StructureTypeEnum}`;
  *   { system: 'PPA', value: 'Gold', numericRank: 2 }
  *   { system: 'BWF', value: 'Super 500', numericRank: 4 }
  */
+/**
+ * Movement of a competitor between the tiers of consecutive seasons — promotion and relegation.
+ *
+ * A league's competitive structure is a lattice of tiers (flights, divisions) that competitors move
+ * between from one season to the next. That movement is the leveling signal for a population that
+ * often has no individual ratings at all: community-league TEAMs whose members are never enumerated.
+ *
+ * Derived by comparing two {@link TierClassification}s, so it says only what the evidence supports —
+ * `REALIGNED` where the tiers are not comparable, rather than guessing a direction.
+ */
+export enum TierMovementEnum {
+  /** moved to a more prestigious tier */
+  PROMOTED = 'PROMOTED',
+  /** moved to a less prestigious tier */
+  RELEGATED = 'RELEGATED',
+  /** same tier in both seasons */
+  HELD = 'HELD',
+  /** the tier changed but the two are not comparable (different systems, or no level resolvable) */
+  REALIGNED = 'REALIGNED',
+  /** present in the earlier season, absent from the later one */
+  WITHDREW = 'WITHDREW',
+  /** absent from the earlier season, present in the later one */
+  ENTERED = 'ENTERED',
+}
+export type TierMovementUnion = `${TierMovementEnum}`;
+
 export interface TierClassification {
   /** Federation/governing body tier system (e.g. 'ITF_JUNIOR', 'ATP', 'PPA', 'BWF') */
   system: string;

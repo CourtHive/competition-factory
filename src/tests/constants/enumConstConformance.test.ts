@@ -175,6 +175,9 @@ const ENUM_ONLY = [
   // score-source vocabulary is a different concept that happens to be declared on the same object,
   // so it is carried by the value-exported enum alone rather than pinned to that bucket
   'TieScoreSourceEnum',
+  // tier MOVEMENT is a derived vocabulary (promotion/relegation between seasons) with no
+  // const-module twin — the tier systems themselves are free-form federation strings
+  'TierMovementEnum',
   'WheelchairClassEnum',
   'WinReasonEnum',
 ];
