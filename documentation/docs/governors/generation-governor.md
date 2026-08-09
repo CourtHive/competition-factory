@@ -183,10 +183,18 @@ const drawDefinitionValues = {
   qualifyingOnly, // optional boolean - generate only qualifying structures with MAIN placeholder; drawEntries with entryStage: QUALIFYING are included
   qualifyingProfiles, // optional array [{ roundTarget, structureProfiles: [{ drawSize, seedsCount, seedingScaleName, qualifyingPositions }]}]
 
+  pairingProfile: {
+    // optional - for AD_HOC - applies a pairing SHAPE to round generation
+    shape: ROUND_ROBIN, // every entrant meets every other entrant
+    encounters: 2, // optional - 2 = double round robin, 3 = triple; defaults to 1
+    mirrored: true, // optional - alternating encounters swap side order (home-and-home); defaults to true
+  },
+  enableDoubleRobin, // optional boolean - for AD_HOC/DrawMatic - allow roundsCount up to (entrants - 1) * 2
+
   structureOptions: {
     // optional - for ROUND_ROBIN - { groupSize, playoffGroups }
-    groupSize, // e.g. 4 participants per group
-    groupSizeLimit: 8,
+    groupSize, // e.g. 4 participants per group; an explicit groupSize raises groupSizeLimit to match
+    groupSizeLimit: 8, // optional - explicit limit wins over the groupSize-implied one
     playoffGroups: [
       { finishingPositions: [1], structureName: 'Gold Flight', drawType }, // drawype defaults to SINGLE_ELIMINATION
       { finishingPositions: [2], structureName: 'Silver Flight', drawType }, // drawType can also be COMPASS or FIRST_MATCH_LOSER_CONSOLATION

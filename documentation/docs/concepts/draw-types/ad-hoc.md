@@ -44,8 +44,26 @@ MatchUps can be added to the draw after generation using the appropriate engine 
 
 For events where participants should be paired by skill level with dynamic ratings, Ad Hoc draws support automated pairing via **[DrawMatic](./drawmatic)** — a probabilistic algorithm that generates fair, balanced matchups each round while avoiding repeat opponents and same-team pairings.
 
+## Pairing Shapes
+
+Where the full schedule is known before play begins — a league in which everyone plays everyone, possibly
+home-and-home — a **[round robin pairing shape](./round-robin-pairing)** generates it in one call:
+
+```js
+const { drawDefinition } = engine.generateDrawDefinition({
+  drawType: 'AD_HOC',
+  drawSize: 8,
+  eventId,
+  pairingProfile: { shape: 'ROUND_ROBIN', encounters: 2 },
+});
+```
+
+Unlike DrawMatic, a shape guarantees that every entrant meets every other entrant, and supports partial
+schedules via `roundsCount`.
+
 ## Related
 
+- [Round Robin Pairing](./round-robin-pairing) -- Deterministic pairing shapes for Ad Hoc draws
 - [DrawMatic](./drawmatic) -- Automated pairing algorithm for Ad Hoc draws
 - [Draw Types Overview](../draw-types) -- List of all pre-defined draw types
 - [Generation Governor](/docs/governors/generation-governor) -- API reference for draw generation

@@ -81,6 +81,7 @@ module.exports = {
                 'concepts/draw-types/feed-in',
                 'concepts/draw-types/consolation-draws',
                 'concepts/draw-types/ad-hoc',
+                'concepts/draw-types/round-robin-pairing',
                 'concepts/draw-types/drawmatic',
                 'concepts/draw-types/page-playoff',
                 'concepts/draw-types/playoff',

@@ -29,16 +29,32 @@ const { drawDefinition, success } = engine.generateDrawDefinition({
 
 ### Draw Structure
 
-| Parameter       | Type             | Default               | Description                                                              |
-| --------------- | ---------------- | --------------------- | ------------------------------------------------------------------------ |
-| `drawSize`      | `number`         | derived from entries  | Number of positions in the first-round structure                         |
-| `drawType`      | `DrawTypeUnion`  | `SINGLE_ELIMINATION`  | Type of draw to generate (see [Draw Types](/docs/concepts/draw-types))   |
-| `drawName`      | `string`         | derived from drawType | Custom name for the draw                                                 |
-| `drawId`        | `string`         | auto-generated        | Explicit draw ID                                                         |
-| `matchUpType`   | `EventTypeUnion` | from event            | `SINGLES`, `DOUBLES`, or `TEAM`                                          |
-| `matchUpFormat` | `string`         | from policy/event     | Default [matchUpFormatCode](/docs/codes/matchup-format) for all matchUps |
-| `roundsCount`   | `number`         | —                     | For AD_HOC draws, number of rounds to pre-generate                       |
-| `structureName` | `string`         | —                     | Custom name for the main structure                                       |
+| Parameter       | Type             | Default               | Description                                                                                                                                 |
+| --------------- | ---------------- | --------------------- | ------------------------------------------------------------------------------------------------------------------------------------------- |
+| `drawSize`      | `number`         | derived from entries  | Number of positions in the first-round structure                                                                                            |
+| `drawType`      | `DrawTypeUnion`  | `SINGLE_ELIMINATION`  | Type of draw to generate (see [Draw Types](/docs/concepts/draw-types))                                                                      |
+| `drawName`      | `string`         | derived from drawType | Custom name for the draw                                                                                                                    |
+| `drawId`        | `string`         | auto-generated        | Explicit draw ID                                                                                                                            |
+| `matchUpType`   | `EventTypeUnion` | from event            | `SINGLES`, `DOUBLES`, or `TEAM`                                                                                                             |
+| `matchUpFormat` | `string`         | from policy/event     | Default [matchUpFormatCode](/docs/codes/matchup-format) for all matchUps                                                                    |
+| `roundsCount`   | `number`         | —                     | For AD_HOC draws, number of rounds to pre-generate. Alongside a `pairingProfile` it instead truncates the schedule to a partial round robin |
+| `structureName` | `string`         | —                     | Custom name for the main structure                                                                                                          |
+
+### AD_HOC round generation
+
+| Parameter           | Type             | Default | Description                                                                                                                                                                          |
+| ------------------- | ---------------- | ------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `pairingProfile`    | `PairingProfile` | —       | Apply a pairing **shape** to round generation: `{ shape: ROUND_ROBIN, encounters, mirrored }`. See [Round Robin Pairing](/docs/concepts/draw-types/round-robin-pairing)              |
+| `enableDoubleRobin` | `boolean`        | `false` | Permit a `roundsCount` of up to `(entrants - 1) × 2`, replaying pairings a second time. Applies to DrawMatic pairing; a `pairingProfile` expresses repeats with `encounters` instead |
+| `drawMatic`         | `DrawMaticArgs`  | —       | Rating-weighted pairing options. See [DrawMatic](/docs/governors/generation/drawMatic)                                                                                               |
+
+`pairingProfile` supersedes `automated` for pairing purposes: a shape _is_ the pairing decision, so DrawMatic
+is not consulted when one is supplied. A `pairingProfile` also supplies its own schedule length, so
+`roundsCount` is optional when using one.
+
+An AD_HOC draw generated with no entrants produces a structure with no matchUps — that is the legitimate
+result of an empty draw, not an error. Errors raised during round generation (for example a `roundsCount`
+larger than the entrants can pair) are returned to the caller rather than leaving a silently empty draw.
 
 ### Entries and Seeding
 
