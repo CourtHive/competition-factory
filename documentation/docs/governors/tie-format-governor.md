@@ -78,6 +78,30 @@ tieFormat, it applies to every tie in the event without touching them individual
 See [Score source — derived vs reported](/docs/concepts/tieFormat#score-source--derived-vs-reported) for the
 full semantics and how it differs from [`disableTieAutoCalc`](/docs/governors/matchup-governor#disabletieautocalc).
 
+### Named Tie Formats
+
+Federation formats ship as fixtures (`fixtures.tieFormats.COLLEGE_DEFAULT`, `USTA_COLLEGE`, `COLLEGE_D3`,
+`LAVER_CUP`, …) and are also selectable by name wherever a `tieFormatName` is accepted.
+
+`valueGoal` is the value at which a tie is **clinched**, so for a straightforward format it is the majority
+of the value the format can award — one more than half. The college formats show why the distinction
+matters:
+
+| Fixture           | Structure                                    | Max value | `valueGoal` |
+| ----------------- | -------------------------------------------- | --------- | ----------- |
+| `COLLEGE_DEFAULT` | doubles collection worth 1 point + 6 singles | 7         | 4           |
+| `USTA_COLLEGE`    | same doubles-point structure                 | 7         | 4           |
+| `COLLEGE_D3`      | 3 doubles worth 1 each + 6 singles           | 9         | 5           |
+| `COLLEGE_JUCO`    | same all-nine structure                      | 9         | 5           |
+
+A goal set above the majority does not merely delay the clinch — it can leave a completed tie with **no
+winner at all**. `COLLEGE_DEFAULT` carried `valueGoal: 5` against a seven-point structure until 2026-08-09,
+so a dual won 4-3 reached no goal and produced no winning side.
+
+Not every format is a bare majority: `USTA_OZAKI_CUP` (23 of 36) and `USTA_SECTION_BATTLE` (9 of 13)
+deliberately set a higher bar, and `TEAM_DOUBLES_3_AGGREGATION`, `USTA_TOC` and `USTA_WTT_ITT` use
+`aggregateValue` instead of a goal.
+
 ### Centralised Storage with `tieFormatId`
 
 Rather than duplicating identical tieFormat objects on every draw, structure, and matchUp, the factory supports **centralised storage**:
