@@ -61,5 +61,15 @@ describe('isEventPublished resolves through the publish cascade', () => {
     expect(isEventPublished({ drawIds: ['d1'] })).toEqual(true); // legacy v1
     expect(isEventPublished({ published: true })).toEqual(true); // legacy event-level flag
     expect(isEventPublished({ published: false })).toEqual(false);
+    // seeding is an INDEPENDENT surface — published seeding with no published draw still
+    // makes the event published, and unPublishEventSeeding leaves the key with published:false
+    expect(isEventPublished({ seeding: { published: true, drawIds: [] } })).toEqual(true);
+    expect(isEventPublished({ seeding: { published: false } })).toEqual(false);
+    expect(
+      isEventPublished({
+        seeding: { published: true },
+        drawDetails: { d1: { publishingDetail: { published: false } } },
+      }),
+    ).toEqual(true);
   });
 });

@@ -105,6 +105,13 @@ function resolveScheduleEmbargo(drawDetail: any, structureId?: string, roundNumb
  */
 export function isEventPublished(status: any): boolean {
   if (!status) return false; // no PUBLISH.STATUS → not published
+
+  // Seeding is an INDEPENDENT publish surface, not a draw one: publishEventSeeding writes
+  // `seeding: { published: true }` with NO drawDetails, and an event whose seeding is
+  // published is published even when no draw is. unPublishEventSeeding leaves
+  // `seeding: { published: false }`, so the flag must be read rather than the key's presence.
+  if (status.seeding?.published) return true;
+
   const { drawDetails } = status;
   if (drawDetails) {
     // empty enumeration means "all published" (inherit), matching the cascade
