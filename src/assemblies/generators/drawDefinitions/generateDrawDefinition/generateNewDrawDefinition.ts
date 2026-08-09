@@ -118,7 +118,11 @@ export function generateNewDrawDefinition(params): ResultType & {
   if (structureResult.conflicts) conflicts = structureResult.conflicts;
 
   if (isAdHocType(drawType) && params.roundsCount) {
-    generateAdHoc({ ...params, drawDefinition, structureId });
+    // propagate: without this every error raised beneath generateAdHoc — notably drawMatic's
+    // 'Not enough participants for roundsCount' — is discarded and the caller receives a
+    // well-formed drawDefinition containing zero matchUps and no error
+    const adHocResult = generateAdHoc({ ...params, drawDefinition, structureId });
+    if (adHocResult?.error) return adHocResult;
   }
 
   return { drawDefinition, positioningReports, conflicts, structureId };

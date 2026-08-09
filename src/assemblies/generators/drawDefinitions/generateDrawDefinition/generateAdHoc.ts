@@ -18,10 +18,15 @@ export function generateAdHoc(params) {
   const participantIds = entries?.map(getParticipantId);
   const matchUpsCount = entries ? Math.floor(entries.length / 2) : 0;
 
+  // with no entrants there is nothing to pair: an AD_HOC structure with zero matchUps is the
+  // legitimate result of an empty draw, not an error
+  if (!participantIds?.length) return { ...SUCCESS };
+
   if (params.automated) {
     return automateAdHoc({ ...params, participantIds });
   } else {
     const genResult = generateAdHocRounds({
+      enableDoubleRobin: params.enableDoubleRobin,
       roundsCount: params.roundsCount,
       drawDefinition,
       matchUpsCount,

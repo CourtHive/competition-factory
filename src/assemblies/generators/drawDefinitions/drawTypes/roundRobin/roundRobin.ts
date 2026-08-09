@@ -133,7 +133,11 @@ function deriveGroups({ appliedPolicies, structureOptions, drawSize }) {
   }
 
   let groupSize = structureOptions?.groupSize;
-  const groupSizeLimit = structureOptions?.groupSizeLimit || 8;
+  // an explicitly requested groupSize implies a limit at least that large. Without this, a request
+  // for ONE full round robin (groupSize === drawSize, as a league division requires) is silently
+  // regrouped into groups of 8 or fewer — the request is neither honored nor reported.
+  // An explicitly supplied groupSizeLimit still wins.
+  const groupSizeLimit = structureOptions?.groupSizeLimit || Math.max(groupSize ?? 0, 8);
   const { validGroupSizes } = getValidGroupSizes({
     groupSizeLimit,
     drawSize,

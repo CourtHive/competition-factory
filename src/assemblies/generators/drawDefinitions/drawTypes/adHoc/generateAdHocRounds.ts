@@ -11,6 +11,8 @@ type GenerateAdHocRoundsArgs = {
   restrictMatchUpsCount?: boolean;
   restrictRoundsCount?: boolean;
   drawDefinition: DrawDefinition;
+  // permits a roundsCount of up to (entrants - 1) * 2, replaying pairings a second time
+  enableDoubleRobin?: boolean;
   matchUpsCount?: number; // number of matchUps to be generated
   matchUpIds?: string[];
   roundNumber?: number;

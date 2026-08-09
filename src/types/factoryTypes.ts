@@ -702,6 +702,8 @@ export type GenerateDrawDefinitionArgs = {
   tournamentRecord: Tournament;
   matchUpType?: EventTypeUnion;
   hydrateRoundNames?: boolean;
+  /** AD_HOC: permit a roundsCount of up to (entrants - 1) * 2, replaying pairings a second time */
+  enableDoubleRobin?: boolean;
   drawTypeCoercion?: boolean;
   ignoreStageSpace?: boolean;
   qualifyingProfiles?: any[];
