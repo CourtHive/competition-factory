@@ -265,6 +265,11 @@ Disable default behavior of auto calculating TEAM matchUp scores.
 engine.disableTieAutoCalc({ drawId, matchUpId });
 ```
 
+This is a **per-matchUp** override — "this particular tie's score was entered by hand" — and is cleared when
+the score is removed. To state that an entire competition publishes only team results and never line detail,
+declare [`scoreSource: REPORTED`](/docs/concepts/tieFormat#score-source--derived-vs-reported) on the
+tieFormat instead: it is inherited by every tie under it and carries no per-matchUp state.
+
 ---
 
 ## enableTieAutoCalc

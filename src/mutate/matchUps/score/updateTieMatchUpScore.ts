@@ -1,4 +1,5 @@
 import { generateTieMatchUpScore } from '@Assemblies/generators/tieMatchUpScore/generateTieMatchUpScore';
+import { resolveTieScoreSource } from '@Query/hierarchical/tieFormats/resolveTieScoreSource';
 import { setFirstClassOrExtension } from '@Mutate/extensions/setFirstClassOrExtension';
 import { resolveTieFormat } from '@Query/hierarchical/tieFormats/resolveTieFormat';
 import { ensureSideLineUps } from '@Mutate/matchUps/lineUps/ensureSideLineUps';
@@ -12,7 +13,7 @@ import { findDrawMatchUp } from '@Acquire/findDrawMatchUp';
 // constants and types
 import { COMPLETED, completedMatchUpStatuses, IN_PROGRESS, TO_BE_PLAYED } from '@Constants/matchUpStatusConstants';
 import { PolicyDefinitions, TournamentRecords, MatchUpsMap } from '@Types/factoryTypes';
-import { DrawDefinition, Event, Tournament } from '@Types/tournamentTypes';
+import { DrawDefinition, Event, TieScoreSourceEnum, Tournament } from '@Types/tournamentTypes';
 import { DISABLE_AUTO_CALC } from '@Constants/extensionConstants';
 import { SUCCESS } from '@Constants/resultConstants';
 import {
@@ -78,10 +79,18 @@ export function updateTieMatchUpScore(params: UpdateTieMatchUpScoreArgs): {
     name: DISABLE_AUTO_CALC,
   });
 
-  if (disableAutoCalc) {
+  // a tieFormat declaring scoreSource: REPORTED states that the aggregate is authoritative and the lines
+  // are unpopulated by design, so there is nothing to derive a score FROM. disableAutoCalc is the
+  // per-matchUp manual override of the same effect; REPORTED is the declarative, inherited one.
+  const scoreIsReported =
+    resolveTieScoreSource({ drawDefinition, structure, matchUp, event }) === TieScoreSourceEnum.REPORTED;
+
+  if (disableAutoCalc || scoreIsReported) {
     if (!removeScore) {
       return { ...SUCCESS, score: matchUp.score };
-    } else {
+    } else if (disableAutoCalc) {
+      // removing the score re-opens the tie to derivation; a REPORTED tieFormat carries no per-matchUp
+      // state to clear, and its empty lines derive an empty score, which is the removal
       setFirstClassOrExtension({
         element: matchUp,
         attribute: 'disableAutoCalc',

@@ -171,6 +171,10 @@ const ENUM_ONLY = [
   'ShotOutcomeEnum',
   'ShotTypeEnum',
   'TournamentLevelEnum',
+  // tieFormatConstants is a bucket of NAMED TIE FORMATS (COLLEGE_DEFAULT, LAVER_CUP, ...); the
+  // score-source vocabulary is a different concept that happens to be declared on the same object,
+  // so it is carried by the value-exported enum alone rather than pinned to that bucket
+  'TieScoreSourceEnum',
   'WheelchairClassEnum',
   'WinReasonEnum',
 ];

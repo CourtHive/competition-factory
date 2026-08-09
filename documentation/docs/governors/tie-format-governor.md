@@ -23,6 +23,7 @@ In team competitions a single "tie" (or "dual match") consists of multiple indiv
 const tieFormat = {
   tieFormatId: 'uuid', // optional — present when centrally stored
   tieFormatName: 'My Format', // optional — human-readable label
+  scoreSource: 'DERIVED', // optional — DERIVED (default) or REPORTED; see Score Source below
   winCriteria: {
     valueGoal: 5, // OR aggregateValue: true
   },
@@ -59,6 +60,23 @@ A `tieFormat` can be attached at four levels within a tournament record:
 | **MatchUp**        | `matchUp.tieFormat`        | Overrides all ancestors for one specific matchUp            |
 
 When the factory resolves the active tieFormat for a matchUp it walks **matchUp → structure → draw → event**, returning the first one found. This means you only need to attach a tieFormat at a lower level when it _differs_ from the ancestor default — for instance, shortening formats for rain-delayed matches.
+
+### Score Source
+
+`scoreSource` states where a TEAM matchUp's score comes from, and resolves through the same hierarchy:
+
+| Value      | Meaning                                                                           |
+| ---------- | --------------------------------------------------------------------------------- |
+| `DERIVED`  | Default. The tie score is computed from the collection matchUps ("lines")         |
+| `REPORTED` | The aggregate result is authoritative and the lines are **unpopulated by design** |
+
+`REPORTED` exists for competitions that publish only the team result — "3–2", or a games aggregate — and
+never the per-line detail. It makes "no line data exists" distinguishable from "lines not entered yet", and
+preserves the reported score and winningSide against recalculation from empty lines. Declared on the event
+tieFormat, it applies to every tie in the event without touching them individually.
+
+See [Score source — derived vs reported](/docs/concepts/tieFormat#score-source--derived-vs-reported) for the
+full semantics and how it differs from [`disableTieAutoCalc`](/docs/governors/matchup-governor#disabletieautocalc).
 
 ### Centralised Storage with `tieFormatId`
 

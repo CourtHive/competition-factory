@@ -91,6 +91,50 @@ The mapping between `participants` in a `lineUp` must be preserved for `matchUps
 As TEAM `participants` progress through draw `structures` the most recent `lineUp` is saved (via an `extension` on the `drawDefinition`) such that it can be propagated to subsequent `matchUps`.
 When a `matchUp` is scored or the `lineUp` changes, the `lineUp` is saved directly to the target `matchUp`.
 
+## Score source — derived vs reported
+
+By default a TEAM `matchUp` score is **derived**: it is computed from the collection `matchUps` ("lines")
+beneath it. Many federations, however, publish only the team result — "3–2", or a games aggregate — and
+never the per-line detail. Those ties have no lines to derive from, and an empty scorecard beneath them is
+not missing data entry; it is the complete truth about what was published.
+
+`scoreSource` on a `tieFormat` states which of the two applies:
+
+| Value      | Meaning                                                                           |
+| ---------- | --------------------------------------------------------------------------------- |
+| `DERIVED`  | Default. The tie score is computed from the lines                                 |
+| `REPORTED` | The aggregate result is authoritative and the lines are **unpopulated by design** |
+
+```js
+const tieFormat = {
+  tieFormatName: 'LEAGUE_REPORTED',
+  scoreSource: 'REPORTED',
+  winCriteria: { valueGoal: 3 },
+  collectionDefinitions: [/* still describes WHAT was played, even though the results are not published */],
+};
+```
+
+Because `scoreSource` lives on the `tieFormat`, it resolves through the same hierarchy as everything else in
+this document — `event` > `drawDefinition` > `structure` > `matchUp`. A federation that never publishes line
+detail declares it **once on the event** rather than per tie, and an individual tie can still override it
+where detail does exist.
+
+When the resolved score source is `REPORTED`, the reported score and winningSide are preserved: a
+recalculation will not overwrite them with a derivation from empty lines.
+
+### Relationship to `disableAutoCalc`
+
+[`disableTieAutoCalc`](../governors/matchup-governor) sets `disableAutoCalc` on a single TEAM `matchUp` and
+has the same protective effect. The two express different things:
+
+- `disableAutoCalc` — **per-matchUp state**: "this particular tie's score was entered by hand". Cleared when
+  the score is removed.
+- `scoreSource: REPORTED` — **declarative and inherited**: "ties under this format never have line detail".
+  Carries no per-matchUp state.
+
+Use `disableAutoCalc` for a one-off manual override; use `scoreSource` to describe how a competition
+publishes its results.
+
 ## Related
 
 - [tieFormat Governor](../governors/tie-format-governor) — methods for creating, modifying, deduplicating, and validating tieFormats

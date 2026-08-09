@@ -770,6 +770,26 @@ export enum SurfaceCategoryEnum {
 }
 export type SurfaceCategoryUnion = `${SurfaceCategoryEnum}`;
 
+/**
+ * Where a TEAM matchUp's score comes from.
+ *
+ * `DERIVED` (the default) computes the tie score from the collection matchUps ("lines"), which is how a
+ * scored tie behaves everywhere the lines are entered.
+ *
+ * `REPORTED` states that the aggregate result is authoritative and the lines are **unpopulated by design**
+ * — the publisher reports the team result (3–2, or games) and never the per-line detail. This is a
+ * different fact from "the lines have not been entered yet", and consumers need to tell them apart: a
+ * REPORTED tie with empty lines is complete, not awaiting data entry.
+ *
+ * Declared on a {@link TieFormat}, so it resolves hierarchically (matchUp > structure > drawDefinition >
+ * event) and a federation that never publishes line detail can state it once on the event.
+ */
+export enum TieScoreSourceEnum {
+  DERIVED = 'DERIVED',
+  REPORTED = 'REPORTED',
+}
+export type TieScoreSourceUnion = `${TieScoreSourceEnum}`;
+
 export interface TieFormat {
   collectionDefinitions: CollectionDefinition[];
   collectionGroups?: CollectionGroup[];
@@ -777,6 +797,7 @@ export interface TieFormat {
   extensions?: Extension[];
   isMock?: boolean;
   notes?: string;
+  scoreSource?: TieScoreSourceUnion;
   tieFormatId?: string;
   tieFormatName?: string;
   timeItems?: TimeItem[];
