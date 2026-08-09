@@ -17,6 +17,7 @@ import {
 import { getTournamentPublishStatus } from '@Query/tournaments/getTournamentPublishStatus';
 import { getEventPublishStatus } from '@Query/event/getEventPublishStatus';
 import { isEventPublished } from './readModelPublish';
+import { applyProgressionEdges } from './progressionEdges';
 import { allTournamentMatchUps } from '@Query/matchUps/getAllTournamentMatchUps';
 import { resolveMatchUpPublishState } from './readModelPublish';
 import { decorateResult } from '@Functions/global/decorateResult';
@@ -63,6 +64,14 @@ export function cast(params?: CastArgs): { error?: ErrorType; success?: boolean;
   }
 
   const { matchUps = [] } = allTournamentMatchUps({ tournamentRecord, inContext: true, usePublishState: false });
+
+  // Progression edges are DERIVED rather than read straight off the flatten: draws
+  // generated before the edges were materialised (and TODS files not produced by the
+  // factory) carry none, and a NULL edge is indistinguishable from "no feed exists".
+  applyProgressionEdges({
+    drawDefinitions: (tournamentRecord.events ?? []).flatMap((event: any) => event?.drawDefinitions ?? []),
+    matchUps,
+  });
 
   const match_ups: ReadModelMatchUpRow[] = [];
   const match_up_competitors: ReadModelCompetitorRow[] = [];

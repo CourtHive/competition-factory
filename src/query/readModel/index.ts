@@ -7,6 +7,7 @@ export { cast } from './cast';
 export { getEventPublishStatus } from '@Query/event/getEventPublishStatus';
 export { getTournamentPublishStatus } from '@Query/tournaments/getTournamentPublishStatus';
 export { resolveMatchUpPublishState, isEventPublished } from './readModelPublish';
+export { applyProgressionEdges } from './progressionEdges';
 export type { MatchUpPublishState } from './readModelPublish';
 export { isFactoryUuid, resolvePersonLink, LINK_PROVIDER_ID, LINK_UNRESOLVED } from './personRule';
 export type { PersonLink } from './personRule';
