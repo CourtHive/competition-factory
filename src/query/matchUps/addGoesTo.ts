@@ -19,12 +19,19 @@ export function addGoesTo({ inContextDrawMatchUps, drawDefinition, matchUpsMap }
 
   const goesToMap = { loserMatchUpIds: {}, winnerMatchUpIds: {} };
 
-  if (!inContextDrawMatchUps) {
-    ({ matchUps: inContextDrawMatchUps, matchUpsMap } = getAllDrawMatchUps({
-      inContext: true,
-      drawDefinition,
-      matchUpsMap,
-    }));
+  // Both args are optional, so all four combinations must work. Previously the map was
+  // only ever built inside `if (!inContextDrawMatchUps)`, which meant the one combination
+  // an integrator would most naturally reach for — "here are the matchUps I already
+  // flattened, enrich them" — dereferenced an undefined map and threw a bare
+  // `Cannot read properties of undefined` out of getMappedStructureMatchUps.
+  //
+  // Resolve each independently, and use `??=` so a caller-supplied array is never
+  // replaced by a freshly-flattened one: callers pass their own array precisely because
+  // they intend THAT array to be mutated in place.
+  if (!inContextDrawMatchUps || !matchUpsMap) {
+    const resolved = getAllDrawMatchUps({ inContext: true, drawDefinition, matchUpsMap });
+    inContextDrawMatchUps ??= resolved.matchUps;
+    matchUpsMap ??= resolved.matchUpsMap;
   }
 
   const hasFinishingPositionRanges = matchUpsMap?.drawMatchUps.some((m) => m.finishingPositionRange);
