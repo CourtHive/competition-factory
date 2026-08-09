@@ -16,6 +16,7 @@ import {
 } from './readModelRows';
 import { getTournamentPublishStatus } from '@Query/tournaments/getTournamentPublishStatus';
 import { getEventPublishStatus } from '@Query/event/getEventPublishStatus';
+import { isEventPublished } from './readModelPublish';
 import { allTournamentMatchUps } from '@Query/matchUps/getAllTournamentMatchUps';
 import { resolveMatchUpPublishState } from './readModelPublish';
 import { decorateResult } from '@Functions/global/decorateResult';
@@ -87,11 +88,14 @@ export function cast(params?: CastArgs): { error?: ErrorType; success?: boolean;
 
   const placedVenues = (tournamentRecord.venues ?? []).filter((venue: any) => venue?.venueId);
 
-  // one row per event; `published` = the event carries a PUBLISH.STATUS.PUBLIC object
-  // (the same map used for the per-matchUp publish cascade above).
+  // one row per event; `published` resolves through the SAME cascade as the per-matchUp
+  // state above (`isEventPublished`), not a truthiness test on the PUBLIC envelope — an
+  // unpublished event retains that envelope with undefined-valued keys.
   const events = (tournamentRecord.events ?? [])
     .filter((event: any) => event?.eventId)
-    .map((event: any) => eventRow(event, tournamentId, providerId, !!publishStatusByEventId.get(event.eventId)));
+    .map((event: any) =>
+      eventRow(event, tournamentId, providerId, isEventPublished(publishStatusByEventId.get(event.eventId))),
+    );
 
   const { draws, structures, seeds } = buildDrawEntityRows(tournamentRecord, tournamentId, providerId);
 

@@ -87,6 +87,35 @@ function resolveScheduleEmbargo(drawDetail: any, structureId?: string, roundNumb
   return typeof embargo === 'string' && isISODateString(embargo) ? embargo : null;
 }
 
+/**
+ * Is an EVENT published, for the `events.published` read-model column?
+ *
+ * NOT `!!getEventPublishStatus({ event })`. `unPublishEvent` leaves the `PUBLISH.STATUS`
+ * timeItem in place with a PUBLIC envelope of
+ * `{ structureIds: undefined, drawIds: undefined, seeding: undefined }`. `JSON.stringify`
+ * renders that as `{}` because it omits undefined values, so it LOOKS empty in any debug
+ * dump — but it is truthy and `Object.keys().length` is 3, so a `keyed()` / non-empty test
+ * does not save you either. Both traps were hit before landing this.
+ *
+ * Mirrors `resolveMatchUpPublishState`'s branch structure at DRAW granularity, which is
+ * why matchUps were already correct while the event flag was not: matchUps resolve through
+ * the cascade, the event flag short-circuited it. Deliberately draw-level rather than
+ * per-matchUp — an event whose draw publishes only selected structures is still a
+ * published event.
+ */
+export function isEventPublished(status: any): boolean {
+  if (!status) return false; // no PUBLISH.STATUS → not published
+  const { drawDetails } = status;
+  if (drawDetails) {
+    // empty enumeration means "all published" (inherit), matching the cascade
+    if (!Object.keys(drawDetails).length) return true;
+    return Object.values(drawDetails).some((detail: any) => !!detail?.publishingDetail?.published);
+  }
+  // legacy v1 shape: a top-level `drawIds` array lists the published draws
+  if (Array.isArray(status.drawIds)) return status.drawIds.length > 0;
+  return !!status.published; // legacy event-level flag
+}
+
 export function resolveMatchUpPublishState(
   status: any,
   drawId?: string,
