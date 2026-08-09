@@ -437,6 +437,7 @@ import type { getCategoryAgeDetails } from '@Query/event/getCategoryAgeDetails';
 import type { getEventPublishStatus } from '@Query/event/getEventPublishStatus';
 import type { getMaxEntryPosition } from '@Query/entries/getMaxEntryPosition';
 import type { getParticipantPoints } from '@Query/scales/getParticipantPoints';
+import type { getTierMovement } from '@Query/tournaments/getTierMovement';
 import type { modifyEventEntries } from '@Mutate/entries/modifyEventEntries';
 import type { removeEventEntries } from '@Mutate/entries/removeEventEntries';
 import type { removeExtension } from '@Mutate/extensions/removeExtension';
@@ -917,6 +918,7 @@ export interface MethodSignatures {
   getTeamLineUp: EngineMethod<typeof getTeamLineUp>;
   getTiebreakComplement: EngineMethod<typeof getTiebreakComplement>;
   getTieFormat: EngineMethod<typeof getTieFormat>;
+  getTierMovement: EngineMethod<typeof getTierMovement>;
   getTimeItem: EngineMethod<typeof getTimeItem>;
   getTournamentActionableMatchUps: EngineMethod<typeof getTournamentActionableMatchUps>;
   getTournamentCalendarEntry: EngineMethod<typeof getTournamentCalendarEntry>;
