@@ -32,8 +32,14 @@
       "schedule": ["before 6am on monday"]
     },
     {
-      "description": "Block TypeScript major bumps. TS7 ships the native (Go) compiler, whose JS API shim lacks getParsedCommandLineOfConfigFile — nest/tsc-based build toolchains crash on it. Re-enable deliberately once the toolchain supports TS7.",
+      "description": "Block TypeScript major bumps. TS7 ships the native (Go) compiler, whose JS API shim lacks getParsedCommandLineOfConfigFile \u2014 nest/tsc-based build toolchains crash on it. Re-enable deliberately once the toolchain supports TS7.",
       "matchPackageNames": ["typescript"],
+      "matchUpdateTypes": ["major"],
+      "enabled": false
+    },
+    {
+      "description": "Block nanoid major bumps. nanoid is present only as a transitive dev dependency (vitest -> vite -> postcss), and postcss requires ^3.3.16 while nanoid v6 is ESM-only (\"type\": \"module\", engines node ^22||^24||>=26) \u2014 a major bump makes postcss unloadable. The pnpm-workspace override pins ^3.3.17 purely to carry the GHSA-2v37-7h3g-55p8 patch inside the v3 line; renovate must not retarget it.",
+      "matchPackageNames": ["nanoid"],
       "matchUpdateTypes": ["major"],
       "enabled": false
     }
