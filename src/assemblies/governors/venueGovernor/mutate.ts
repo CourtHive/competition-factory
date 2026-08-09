@@ -8,4 +8,5 @@ export { enableCourts } from '@Mutate/venues/enableCourts';
 export { enableVenues } from '@Mutate/venues/enableVenues';
 export { modifyCourt } from '@Mutate/venues/modifyCourt';
 export { modifyVenue } from '@Mutate/venues/modifyVenue';
+export { addVenueOtherId } from '@Mutate/venues/addVenueOtherId';
 export { addVenue } from '@Mutate/venues/addVenue';

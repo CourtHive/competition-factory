@@ -495,6 +495,7 @@ import type { publishEvent } from '@Mutate/publishing/publishEvent';
 import type { publishEventSeeding, unPublishEventSeeding } from '@Mutate/publishing/eventSeeding';
 import type { resetScorecard } from '@Mutate/matchUps/resetScorecard';
 import type { addOnlineResource } from '@Mutate/base/addOnlineResource';
+import type { addVenueOtherId } from '@Mutate/venues/addVenueOtherId';
 import type { publicFindParticipant } from '@Acquire/publicFindParticipant';
 import type { getMatchUpsMap } from '@Query/matchUps/getMatchUpsMap';
 import type { setEventDisplay } from '@Mutate/events/setEventDisplay';
@@ -646,6 +647,7 @@ export interface MethodSignatures {
   addTournamentExtension: EngineMethod<typeof addTournamentExtension>;
   addTournamentTimeItem: EngineMethod<typeof addTournamentTimeItem>;
   addVenue: EngineMethod<typeof addVenue>;
+  addVenueOtherId: EngineMethod<typeof addVenueOtherId>;
   addVoluntaryConsolationStructure: EngineMethod<typeof addVoluntaryConsolationStructure>;
   adHocPositionSwap: EngineMethod<typeof adHocPositionSwap>;
   aggregateTieFormats: EngineMethod<typeof aggregateTieFormats>;
