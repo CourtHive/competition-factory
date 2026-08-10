@@ -1,5 +1,31 @@
 # Changelog
 
+## [6.21.0](https://github.com/CourtHive/competition-factory/compare/v6.20.0...v6.21.0) (2026-08-10)
+
+
+### Features
+
+* **fixtures:** pickleball matchUpFormat presets and competitionFormat profile ([838e62c](https://github.com/CourtHive/competition-factory/commit/838e62cd80f7f74e352df4a564de70d144b9cc44))
+* **generators:** round generation with a pairing shape ([9b7948c](https://github.com/CourtHive/competition-factory/commit/9b7948cda4a3a7cf40d9cadc325d9768e401bdd3))
+* **mocks:** generate team competitions that enumerate no individuals ([c963f1a](https://github.com/CourtHive/competition-factory/commit/c963f1a7c69e0b06e0c9232f40b5100d6116cea6))
+* **query:** derive tier movement between seasons ([62a5601](https://github.com/CourtHive/competition-factory/commit/62a56015ee287e02f058d692bc9e384f870083a9))
+* **readModel:** derive progression edges rather than only reading stored ones ([972f642](https://github.com/CourtHive/competition-factory/commit/972f64284b15eeaf51e63c9c46d52e122ce0ea09))
+* **tieFormat:** scoreSource distinguishes a reported aggregate from unentered lines ([fdbcf18](https://github.com/CourtHive/competition-factory/commit/fdbcf187d1ca6058b09bddaddbaee3b2db60f067))
+* **tieFormat:** suppress line generation and project scoreSource to the read model ([687410a](https://github.com/CourtHive/competition-factory/commit/687410a05965167635ad238b21a21684ef4998a6))
+
+
+### Bug Fixes
+
+* **fixtures:** college default tieFormat clinches at four, not five ([fbd6fa4](https://github.com/CourtHive/competition-factory/commit/fbd6fa4a350e8610d32f577854cf269e6fd933ea))
+* **generators:** surface ad-hoc generation errors and honor explicit round and group requests ([8cea27f](https://github.com/CourtHive/competition-factory/commit/8cea27f8f05396731616b705d2b51d1c531e8213))
+* **query:** addGoesTo threw when given matchUps without a matchUpsMap ([46e02d1](https://github.com/CourtHive/competition-factory/commit/46e02d14e0289ff7e64adb54f5af93358f050889))
+* **tieFormat:** mint collectionIds so published fixtures are usable ([#4586](https://github.com/CourtHive/competition-factory/issues/4586)) ([577756b](https://github.com/CourtHive/competition-factory/commit/577756b732c21403abaac1512c2e4b9036ab7832))
+
+
+### Documentation
+
+* **generation:** round robin pairing shapes and ad-hoc generation semantics ([ef1ba11](https://github.com/CourtHive/competition-factory/commit/ef1ba112d4b2ef8cfde0022f3d293930068434f2))
+
 ## [6.20.0](https://github.com/CourtHive/competition-factory/compare/v6.19.0...v6.20.0) (2026-08-09)
 
 
