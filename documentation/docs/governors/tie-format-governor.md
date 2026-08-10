@@ -102,6 +102,29 @@ Not every format is a bare majority: `USTA_OZAKI_CUP` (23 of 36) and `USTA_SECTI
 deliberately set a higher bar, and `TEAM_DOUBLES_3_AGGREGATION`, `USTA_TOC` and `USTA_WTT_ITT` use
 `aggregateValue` instead of a goal.
 
+### Collection identity
+
+The published fixtures carry **no `collectionId`** — and cannot. A `collectionId` identifies a collection
+_instance_ within a record, and matchUps reference it; a shared fixture holding one would hand every record
+that used it the same collection identities.
+
+The factory therefore **mints collectionIds when a tieFormat is attached** — on a copy, so the object you
+passed (often the shared fixture itself) is never stamped. Consuming a fixture directly is safe:
+
+```js
+const { event } = engine.addEvent({
+  event: { eventName: 'Dual', eventType: TEAM, tieFormat: fixtures.tieFormats.USTA_COLLEGE },
+});
+// event.tieFormat.collectionDefinitions each carry a freshly minted collectionId
+```
+
+Two records built from the same fixture get **distinct** collection identities, which is the point.
+
+> Before 2026-08-09 this minting did not happen on that path: `addEvent` minted for a `tieFormatName` but
+> only validated a supplied tieFormat object. Lines were then generated with `collectionId: null`, could not
+> be attributed to their collection, and the tie never scored — a completed 4-3 dual stayed `TO_BE_PLAYED`.
+> `validateTieFormat` still reports such a tieFormat valid unless called with `checkCollectionIds: true`.
+
 ### Centralised Storage with `tieFormatId`
 
 Rather than duplicating identical tieFormat objects on every draw, structure, and matchUp, the factory supports **centralised storage**:

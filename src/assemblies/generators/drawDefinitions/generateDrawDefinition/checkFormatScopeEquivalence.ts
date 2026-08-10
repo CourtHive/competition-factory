@@ -1,5 +1,6 @@
 import { setMatchUpMatchUpFormat } from '@Mutate/matchUps/matchUpFormat/setMatchUpMatchUpFormat';
 import { checkTieFormat } from '@Mutate/tieFormat/checkTieFormat';
+import { makeDeepCopy } from '@Tools/makeDeepCopy';
 
 export function checkFormatScopeEquivalence({
   existingQualifyingStructures,
@@ -21,7 +22,10 @@ export function checkFormatScopeEquivalence({
     // there is no need to attach to the drawDefinition
     if (!equivalentInScope) {
       if (tieFormat) {
-        const result = checkTieFormat({ tieFormat });
+        // on a COPY: checkTieFormat mints missing collectionIds IN PLACE, and `tieFormat` here is the
+        // caller's object — which is the shared `fixtures.tieFormats.*` object when a published fixture
+        // was passed. Stamping ids onto it would give every later record the same collection identities.
+        const result = checkTieFormat({ tieFormat: makeDeepCopy(tieFormat, false, true) });
         if (result.error) return result;
 
         const existingQualifyingTieFormats = existingQualifyingStructures?.every((structure) => structure.tieFormat);
