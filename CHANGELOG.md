@@ -1,5 +1,12 @@
 # Changelog
 
+## [6.22.0](https://github.com/CourtHive/competition-factory/compare/v6.21.0...v6.22.0) (2026-08-12)
+
+
+### Features
+
+* **sanctioning:** materialize venues when activating a sanctioned tournament ([#4594](https://github.com/CourtHive/competition-factory/issues/4594)) ([08d18fd](https://github.com/CourtHive/competition-factory/commit/08d18fd0c854155178f8a385da7488a99469553c))
+
 ## [6.21.0](https://github.com/CourtHive/competition-factory/compare/v6.20.0...v6.21.0) (2026-08-10)
 
 
