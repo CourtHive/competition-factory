@@ -7,15 +7,78 @@ import { INVALID_VALUES } from '@Constants/errorConditionConstants';
 import { SUCCESS } from '@Constants/resultConstants';
 
 // types
-import type { SanctioningRecord, SanctioningPolicy, ComplianceRecord, ComplianceItem } from '@Types/sanctioningTypes';
-import type { Tournament, Event } from '@Types/tournamentTypes';
+import type {
+  SanctioningRecord,
+  SanctioningPolicy,
+  ComplianceRecord,
+  ComplianceItem,
+  VenueProposal,
+} from '@Types/sanctioningTypes';
+import type { Tournament, Event, Venue } from '@Types/tournamentTypes';
 
 type ActivateFromSanctioningArgs = {
   sanctioningRecord: SanctioningRecord;
   sanctioningPolicy?: SanctioningPolicy;
+  /**
+   * Canonical venues, already resolved by the caller — typically pulled from the facility registry
+   * for the facility the sanctioning record was attached to. Supplied rather than fetched because
+   * the factory has no runtime dependencies and no service awareness; resolution is the caller's
+   * job, materialization is ours.
+   *
+   * These carry `facilityId` and typed `courts`, so the activated tournament inherits one
+   * cross-tournament identity for the place it is played at instead of a re-entered venue.
+   */
+  venues?: Venue[];
 };
 
-export function activateFromSanctioning({ sanctioningRecord, sanctioningPolicy }: ActivateFromSanctioningArgs) {
+/**
+ * A proposal's own venue description, used only when no canonical venue was supplied.
+ *
+ * This is strictly a fallback: a VenueProposal is what an applicant typed at proposal time, so it
+ * has no canonical identity and no real courts. It is still better than dropping the venue
+ * entirely, which is what happened before — `venues: []` was hardcoded while
+ * `proposal.venues` was declared and read nowhere.
+ *
+ * `numberOfCourts` is deliberately NOT expanded into placeholder courts: inventing "Court 1..n"
+ * would fabricate identities that later have to be reconciled against the registry's real ones.
+ */
+function venueFromProposal(vp: VenueProposal): Venue {
+  const venueId = vp.venueId ?? UUID();
+  const address =
+    vp.address || vp.city || vp.state || vp.countryCode || vp.coordinates
+      ? [
+          {
+            ...(vp.address ? { addressLine1: vp.address } : {}),
+            ...(vp.city ? { city: vp.city } : {}),
+            ...(vp.state ? { state: vp.state } : {}),
+            ...(vp.countryCode ? { countryCode: vp.countryCode } : {}),
+            // TODS Address stores coordinates as strings while VenueProposal.coordinates are
+            // numbers — coerce rather than widen Address, which many other call sites depend on.
+            ...(vp.coordinates
+              ? { latitude: String(vp.coordinates.latitude), longitude: String(vp.coordinates.longitude) }
+              : {}),
+          },
+        ]
+      : undefined;
+
+  return {
+    venueId,
+    // A venue is its own facility until something dedupes it onto a canonical one.
+    facilityId: venueId,
+    venueName: vp.venueName,
+    ...(address ? { addresses: address } : {}),
+    ...(vp.extensions ? { extensions: vp.extensions } : {}),
+    courts: [],
+  };
+}
+
+/** Caller-resolved canonical venues win; the proposal's description is the fallback. */
+function resolveVenues(venues: Venue[] | undefined, proposalVenues: VenueProposal[] | undefined): Venue[] {
+  if (venues?.length) return venues;
+  return (proposalVenues ?? []).map(venueFromProposal);
+}
+
+export function activateFromSanctioning({ sanctioningRecord, sanctioningPolicy, venues }: ActivateFromSanctioningArgs) {
   if (!sanctioningRecord) return { error: MISSING_SANCTIONING_RECORD };
   if (sanctioningRecord.status !== 'APPROVED') {
     return {
@@ -94,7 +157,7 @@ export function activateFromSanctioning({ sanctioningRecord, sanctioningPolicy }
         : []),
     ],
 
-    venues: [],
+    venues: resolveVenues(venues, proposal.venues),
     participants: [],
     timeItems: [],
   };
