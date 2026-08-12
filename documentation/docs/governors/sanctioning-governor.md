@@ -199,8 +199,21 @@ Opens (or adjusts) public registration on a proposal **before** a `tournamentRec
 Generates a `tournamentRecord` from an `APPROVED` sanctioning record and transitions to `ACTIVE`. Reuses the `tournamentId` and per-event `eventId`s already assigned by [`openProposalRegistration`](#openproposalregistration) — so registrations collected before activation remain valid — otherwise mints new ids.
 
 ```ts
-{ sanctioningRecord; sanctioningPolicy?: SanctioningPolicy }
+{ sanctioningRecord; sanctioningPolicy?: SanctioningPolicy; venues?: Venue[] }
 ```
+
+**Venues.** Pass `venues` to materialize canonical venues onto the generated `tournamentRecord` —
+typically pulled by the caller from a facility registry for the facility the sanctioning record was
+attached to. They are **supplied, not resolved**: the factory has no runtime dependencies and no
+service awareness, so resolution belongs to the caller and materialization to the engine. A canonical
+venue carries `facilityId` and typed `courts`, so the activated tournament inherits one
+cross-tournament identity for the place it is played at instead of a re-entered venue.
+
+When no `venues` are supplied, `proposal.venues` (`VenueProposal[]`) is materialized instead. That is
+a fallback: a proposal venue is what an applicant typed, so it has no canonical identity — its
+`facilityId` defaults to its own `venueId` — and `numberOfCourts` is deliberately **not** expanded
+into placeholder courts, which would fabricate identities to be reconciled against a registry later.
+Supplied `venues` always win over the proposal description.
 
 **Returns:** `{ success, tournamentRecord }`
 
