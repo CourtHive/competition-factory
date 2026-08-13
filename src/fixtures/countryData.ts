@@ -1,9 +1,29 @@
 // ISO- 3166-1 alpha-2
 
+/**
+ * A country's flag emoji.
+ *
+ * A flag is two Unicode regional indicator symbols, one per letter of the ISO 3166-1
+ * **alpha-2** code. This maps letter -> indicator, so the argument must resolve to alpha-2
+ * before mapping: given a three-letter code it would otherwise emit THREE indicators, which
+ * renders as the flag followed by a stray letter ("🇺🇸🇦" for 'USA').
+ *
+ * That is not a hypothetical — `countries[].iso` is alpha-**3**, so it is what most callers
+ * hold and pass, and `flagIOC` below fed alpha-3 in for every country. Accepting alpha-3 and
+ * IOC codes here fixes each caller in place rather than requiring every one of them to reach
+ * for `iso2` (and makes the defensive `.slice(0, 4)` some consumers apply a no-op).
+ *
+ * Anything that resolves to no known country is returned unchanged — better a visible code
+ * than a garbage glyph.
+ */
 export function countryToFlag(isoCode: string): string {
-  return isoCode && typeof String.fromCodePoint !== 'undefined'
-    ? isoCode.toUpperCase().replace(/./g, (char) => String.fromCodePoint(char.charCodeAt(0) + 127397))
-    : isoCode;
+  if (!isoCode || typeof String.fromCodePoint === 'undefined') return isoCode;
+
+  const code = isoCode.toUpperCase();
+  const alpha2 = code.length === 2 ? code : countries.find((c) => c.iso === code || c.ioc === code)?.iso2;
+  if (alpha2?.length !== 2) return isoCode;
+
+  return alpha2.replace(/./g, (char) => String.fromCodePoint(char.charCodeAt(0) + 127397));
 }
 
 export function flagIOC(ioc: string): string {
