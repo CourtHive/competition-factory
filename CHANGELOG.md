@@ -1,5 +1,12 @@
 # Changelog
 
+## [6.22.1](https://github.com/CourtHive/competition-factory/compare/v6.22.0...v6.22.1) (2026-08-13)
+
+
+### Bug Fixes
+
+* **fixtures:** resolve alpha-3 and IOC codes before building a country flag ([#4597](https://github.com/CourtHive/competition-factory/issues/4597)) ([f58873f](https://github.com/CourtHive/competition-factory/commit/f58873f0bca4f317c29ef50610240021e245fbee))
+
 ## [6.22.0](https://github.com/CourtHive/competition-factory/compare/v6.21.0...v6.22.0) (2026-08-12)
 
 
