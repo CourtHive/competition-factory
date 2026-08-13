@@ -163,8 +163,17 @@ function generatePairParticipantName({ individualParticipants, newValues }) {
   return participantName;
 }
 
+// An explicit empty string means "clear this field". `undefined` must keep meaning "leave
+// untouched" — consumers send the whole person object on every save, so a field they do not
+// manage has to survive. Clearing DELETES the key rather than storing '', so readers see an
+// absent field instead of a falsy one each of them would have to special-case.
+function isClearRequest(value) {
+  return value === '';
+}
+
 function updatePerson({ updateParticipantName, existingParticipant, newValues, person }) {
   const newPersonValues: any = {};
+  const clearedKeys: string[] = [];
   const { standardFamilyName, standardGivenName, nationalityCode, personId, birthDate, tennisId, sex } = person;
   const canonicalSex = coercedSex(sex);
   if (canonicalSex) newPersonValues.sex = canonicalSex;
@@ -172,11 +181,9 @@ function updatePerson({ updateParticipantName, existingParticipant, newValues, p
   let personNameModified;
   if (isString(personId)) newPersonValues.personId = personId;
 
-  if (
-    nationalityCode &&
-    isString(nationalityCode) &&
-    (validNationalityCode(nationalityCode) || nationalityCode === '') // empty string to remove value
-  ) {
+  if (isClearRequest(nationalityCode)) {
+    clearedKeys.push('nationalityCode');
+  } else if (nationalityCode && isString(nationalityCode) && validNationalityCode(nationalityCode)) {
     newPersonValues.nationalityCode = nationalityCode;
   }
 
@@ -202,7 +209,9 @@ function updatePerson({ updateParticipantName, existingParticipant, newValues, p
     }
   }
 
-  if (birthDate) {
+  if (isClearRequest(birthDate)) {
+    clearedKeys.push('birthDate');
+  } else if (birthDate) {
     if (!isValidDateString(birthDate)) return { error: INVALID_DATE };
     const birthYear = new Date(birthDate).getFullYear();
     if (new Date(birthDate) > new Date() || birthYear < 1900) {
@@ -216,6 +225,7 @@ function updatePerson({ updateParticipantName, existingParticipant, newValues, p
   }
 
   Object.assign(existingParticipant.person, newPersonValues);
+  for (const key of clearedKeys) delete existingParticipant.person[key];
   return undefined;
 }
 
