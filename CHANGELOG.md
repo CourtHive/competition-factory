@@ -1,5 +1,17 @@
 # Changelog
 
+## [6.23.0](https://github.com/CourtHive/competition-factory/compare/v6.22.2...v6.23.0) (2026-08-14)
+
+
+### Features
+
+* **query:** policy-shaped delta bands — a signed competitive-exposure axis ([#4602](https://github.com/CourtHive/competition-factory/issues/4602)) ([d099251](https://github.com/CourtHive/competition-factory/commit/d0992519e49ebbb6242031206ce7e6b1ccd0cc1d))
+
+
+### Bug Fixes
+
+* **query:** zonePct margin was 100x too large ([#4601](https://github.com/CourtHive/competition-factory/issues/4601)) ([03b5f8d](https://github.com/CourtHive/competition-factory/commit/03b5f8de6790d9a80cc40d81c58a475768892d27))
+
 ## [6.22.2](https://github.com/CourtHive/competition-factory/compare/v6.22.1...v6.22.2) (2026-08-13)
 
 
