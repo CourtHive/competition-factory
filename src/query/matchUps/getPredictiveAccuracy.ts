@@ -66,9 +66,12 @@ export function getPredictiveAccuracy(params: getPredictiveAccuracyArgs) {
     ? Math.abs(scaleProfile.range[0] - scaleProfile.range[1])
     : 0;
 
+  // `zonePct` is a PERCENT of the scale's range. The parentheses here were previously misplaced —
+  // `(zonePct ?? 0 / 100)` parses as `zonePct ?? (0 / 100)` because `/` binds tighter than `??`, so the
+  // division never applied and the margin came out 100x too large (zonePct: 20 on WTN gave 780, not 7.8).
   const zoneMargin =
     isConvertableInteger(zonePct) && ratingsRangeDifference
-      ? (zonePct ?? 0 / 100) * ratingsRangeDifference
+      ? ((zonePct ?? 0) / 100) * ratingsRangeDifference
       : (params.zoneMargin ?? ratingsRangeDifference);
 
   const contextProfile = { withScaleValues: true, withCompetitiveness: true };
@@ -176,6 +179,7 @@ export function getPredictiveAccuracy(params: getPredictiveAccuracyArgs) {
     ...SUCCESS,
     relevantMatchUps,
     zoneDistribution,
+    zoneMargin, // returned so callers (and tests) can assert the resolved margin, not just infer it
     zoneData,
     accuracy,
     nonZone,
