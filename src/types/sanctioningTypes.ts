@@ -12,6 +12,7 @@ import type {
   RegistrationProfile,
   SurfaceCategoryUnion,
   TieFormat,
+  TierClassification,
   TimeItem,
   TournamentLevelUnion,
   WheelchairClassUnion,
@@ -119,7 +120,19 @@ export interface SanctioningRecord {
   // Governance
   governingBodyId: string;
   governingBody?: Organisation;
-  sanctioningLevel?: string;
+  /**
+   * The federation grade applied for, e.g. `{ system: 'ITF', value: 'W50' }`.
+   *
+   * Structured as a {@link TierClassification} — the same type a tournament's `tournamentTier` uses —
+   * so `activateFromSanctioning` assigns it across rather than mapping, and ranking-points resolution
+   * (`tierToLevel[system][value]`) works on a sanctioned tournament with no translation layer.
+   *
+   * `numericRank` is deliberately NOT populated by sanctioning. A sanctioning policy's `tierLevel`
+   * runs OPPOSITE to `numericRank` ("lower = more prestigious"): in the ITF ladder M15/W15 is
+   * `tierLevel: 1` and is the BOTTOM rung. Deriving one from the other would invert prestige in both
+   * `getEventRankingPoints` and `getTierMovement`; an absent value is already handled by both.
+   */
+  sanctioningTier?: TierClassification;
 
   // Provider (the operator/club that owns this application)
   applicantProviderId?: string;
@@ -209,8 +222,12 @@ export interface TournamentProposal {
   promotionalName?: string;
 
   // Classification
+  //
+  // The sanctioned tier is NOT here: it lives on the SanctioningRecord as `sanctioningTier`, which is
+  // the single home. A proposal-level copy was declared here and never assigned by any path, production
+  // or test, while the amendment machinery listed it as amendable — so amendments wrote a field nothing
+  // read. If a per-proposal tier is genuinely wanted later, add it back deliberately, with a writer.
   tournamentLevel?: TournamentLevelUnion;
-  sanctioningTier?: string;
   discipline?: DisciplineUnion;
 
   // When & Where
@@ -531,7 +548,7 @@ export interface CalendarEvent {
   tournamentName?: string;
   startDate: string;
   endDate: string;
-  sanctioningTier?: string;
+  sanctioningTier?: TierClassification;
   calendarSection?: string;
   countryCode?: CountryCodeUnion;
   coordinates?: Coordinates;

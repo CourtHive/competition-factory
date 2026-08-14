@@ -89,7 +89,7 @@ describe('Scenario: ITF W50 Full Lifecycle (Brazil)', () => {
       governingBodyId: 'itf',
       applicant: itfApplicant,
       proposal: w50Proposal,
-      sanctioningLevel: 'W50',
+      sanctioningTier: { system: 'ITF', value: 'W50' },
     });
     expect(result.success).toBe(true);
 
@@ -100,7 +100,7 @@ describe('Scenario: ITF W50 Full Lifecycle (Brazil)', () => {
     // 3. Validate proposal
     let validation: any = sanctioningEngine.validateProposal({
       sanctioningPolicy: POLICY_SANCTIONING_ITF,
-      sanctioningTier: 'W50',
+      sanctioningTier: { system: 'ITF', value: 'W50' },
     });
     expect(validation.valid).toBe(true);
 
@@ -203,7 +203,7 @@ describe('Scenario: USTA Level 3 with Modification Request', () => {
       governingBodyId: 'usta',
       applicant: ustaApplicant,
       proposal: ustaProposal,
-      sanctioningLevel: 'Level 3',
+      sanctioningTier: { system: 'USTA', value: 'Level 3' },
     });
 
     // Endorse
@@ -396,7 +396,7 @@ describe('Scenario: Amendment Security & Edge Cases', () => {
             proposedEndDate: '2029-06-07',
             events: [{ eventName: 'Singles', eventType: 'SINGLES', drawSize: 32, drawType: 'SINGLE_ELIMINATION' }],
           },
-          sanctioningLevel: 'Level 2',
+          sanctioningTier: { system: 'GENERIC', value: 'Level 2' },
         },
       },
       { method: 'submitApplication', params: { sanctioningPolicy: POLICY_SANCTIONING_GENERIC } },
@@ -518,7 +518,7 @@ describe('Scenario: Calendar Conflict Detection — Real-World Patterns', () => 
         calendarSection: 'South America',
         events: [{ eventName: 'Singles', eventType: 'SINGLES', drawSize: 32 }],
       },
-      sanctioningLevel: 'W25',
+      sanctioningTier: { system: 'ITF', value: 'W25' },
     });
 
     let result: any = sanctioningEngine.getCalendarConflicts({
@@ -528,7 +528,7 @@ describe('Scenario: Calendar Conflict Detection — Real-World Patterns', () => 
             tournamentName: 'W25 Buenos Aires',
             startDate: '2028-03-14',
             endDate: '2028-03-20',
-            sanctioningTier: 'W25',
+            sanctioningTier: { system: 'ITF', value: 'W25' },
             calendarSection: 'South America',
           },
         ],
@@ -551,7 +551,7 @@ describe('Scenario: Calendar Conflict Detection — Real-World Patterns', () => 
         calendarSection: 'Asia',
         events: [{ eventName: 'Singles', eventType: 'SINGLES' }],
       },
-      sanctioningLevel: 'W25',
+      sanctioningTier: { system: 'ITF', value: 'W25' },
     });
 
     let result: any = sanctioningEngine.getCalendarConflicts({
@@ -561,7 +561,7 @@ describe('Scenario: Calendar Conflict Detection — Real-World Patterns', () => 
             tournamentName: 'W25 Madrid',
             startDate: '2028-03-11',
             endDate: '2028-03-17',
-            sanctioningTier: 'W25',
+            sanctioningTier: { system: 'ITF', value: 'W25' },
             calendarSection: 'Europe',
           },
         ],
@@ -583,7 +583,7 @@ describe('Scenario: Calendar Conflict Detection — Real-World Patterns', () => 
         calendarSection: 'North America',
         events: [{ eventName: 'Singles', eventType: 'SINGLES' }],
       },
-      sanctioningLevel: 'W50',
+      sanctioningTier: { system: 'ITF', value: 'W50' },
     });
 
     let result: any = sanctioningEngine.getCalendarConflicts({
@@ -593,7 +593,7 @@ describe('Scenario: Calendar Conflict Detection — Real-World Patterns', () => 
             tournamentName: 'W50 Event B',
             startDate: '2028-06-10',
             endDate: '2028-06-16',
-            sanctioningTier: 'W50',
+            sanctioningTier: { system: 'ITF', value: 'W50' },
             calendarSection: 'North America',
           },
         ],
@@ -616,7 +616,7 @@ describe('Scenario: Calendar Conflict Detection — Real-World Patterns', () => 
         calendarSection: 'North America',
         events: [{ eventName: 'Singles', eventType: 'SINGLES' }],
       },
-      sanctioningLevel: 'W15',
+      sanctioningTier: { system: 'ITF', value: 'W15' },
     });
 
     let result: any = sanctioningEngine.getCalendarConflicts({
@@ -626,7 +626,7 @@ describe('Scenario: Calendar Conflict Detection — Real-World Patterns', () => 
             tournamentName: 'W100 Big Event',
             startDate: '2028-03-11',
             endDate: '2028-03-17',
-            sanctioningTier: 'W100',
+            sanctioningTier: { system: 'ITF', value: 'W100' },
             calendarSection: 'North America',
           },
         ],
@@ -658,7 +658,7 @@ describe('Scenario: Post-Event Compliance Issues (USATF pattern)', () => {
             proposedEndDate: '2027-01-07',
             events: [{ eventName: 'Singles', eventType: 'SINGLES' }],
           },
-          sanctioningLevel: 'Level 2',
+          sanctioningTier: { system: 'GENERIC', value: 'Level 2' },
         },
       },
       { method: 'submitApplication', params: { sanctioningPolicy: POLICY_SANCTIONING_GENERIC } },
@@ -705,7 +705,7 @@ describe('Scenario: Post-Event Compliance Issues (USATF pattern)', () => {
             proposedEndDate: '2027-01-07',
             events: [{ eventName: 'Singles', eventType: 'SINGLES' }],
           },
-          sanctioningLevel: 'Level 2',
+          sanctioningTier: { system: 'GENERIC', value: 'Level 2' },
         },
       },
       { method: 'submitApplication', params: { sanctioningPolicy: POLICY_SANCTIONING_GENERIC } },
@@ -775,7 +775,7 @@ describe('Scenario: Multi-Category Tournament Validation', () => {
           },
         ],
       },
-      sanctioningLevel: 'Level 3',
+      sanctioningTier: { system: 'USTA', value: 'Level 3' },
     });
 
     // Should be eligible for USTA tiers that support these draw sizes
@@ -972,7 +972,7 @@ describe('Scenario: Policy Transition Guards', () => {
             proposedEndDate: '2027-01-07',
             events: [{ eventName: 'Singles', eventType: 'SINGLES' }],
           },
-          sanctioningLevel: 'Level 2',
+          sanctioningTier: { system: 'GENERIC', value: 'Level 2' },
         },
       },
       { method: 'submitApplication', params: { sanctioningPolicy: guardedPolicy } },

@@ -6,6 +6,7 @@ import { POLICY_SANCTIONING_GENERIC } from '@Fixtures/policies/POLICY_SANCTIONIN
 
 // Types
 import type { Applicant, TournamentProposal } from '@Types/sanctioningTypes';
+import type { TierClassification } from '@Types/tournamentTypes';
 
 const testApplicant: Applicant = {
   organisationId: 'org-001',
@@ -37,12 +38,13 @@ const baseProposal: TournamentProposal = {
   totalPrizeMoney: [{ amount: 20000, currencyCode: 'USD' }],
 };
 
-function createTestRecord(proposalOverrides?: Partial<TournamentProposal>) {
+function createTestRecord(proposalOverrides?: Partial<TournamentProposal>, sanctioningTier?: TierClassification) {
   const proposal = { ...baseProposal, ...proposalOverrides };
   sanctioningEngine.createSanctioningRecord({
     governingBodyId: 'gov-001',
     applicant: testApplicant,
     proposal,
+    sanctioningTier,
   });
 }
 
@@ -57,7 +59,7 @@ describe('Policy Validation — validateProposal', () => {
     });
     let result: any = sanctioningEngine.validateProposal({
       sanctioningPolicy: POLICY_SANCTIONING_GENERIC,
-      sanctioningTier: 'Level 3',
+      sanctioningTier: { system: 'GENERIC', value: 'Level 3' },
     });
     expect(result.success).toBe(true);
     expect(result.valid).toBe(true);
@@ -79,7 +81,7 @@ describe('Policy Validation — validateProposal', () => {
     createTestRecord({ totalPrizeMoney: [{ amount: 1000, currencyCode: 'USD' }] });
     let result: any = sanctioningEngine.validateProposal({
       sanctioningPolicy: POLICY_SANCTIONING_GENERIC,
-      sanctioningTier: 'Level 3',
+      sanctioningTier: { system: 'GENERIC', value: 'Level 3' },
     });
     expect(result.valid).toBe(false);
     const pmIssue = result.errors.find((i: any) => i.field === 'totalPrizeMoney');
@@ -92,7 +94,7 @@ describe('Policy Validation — validateProposal', () => {
     });
     let result: any = sanctioningEngine.validateProposal({
       sanctioningPolicy: POLICY_SANCTIONING_GENERIC,
-      sanctioningTier: 'Level 2',
+      sanctioningTier: { system: 'GENERIC', value: 'Level 2' },
     });
     expect(result.valid).toBe(false);
     const sizeIssue = result.errors.find((i: any) => i.field.includes('drawSize'));
@@ -105,7 +107,7 @@ describe('Policy Validation — validateProposal', () => {
     });
     let result: any = sanctioningEngine.validateProposal({
       sanctioningPolicy: POLICY_SANCTIONING_GENERIC,
-      sanctioningTier: 'Level 2',
+      sanctioningTier: { system: 'GENERIC', value: 'Level 2' },
     });
     expect(result.valid).toBe(false);
     const typeIssue = result.errors.find((i: any) => i.field.includes('drawType'));
@@ -125,7 +127,7 @@ describe('Policy Validation — validateProposal', () => {
     });
     let result: any = sanctioningEngine.validateProposal({
       sanctioningPolicy: POLICY_SANCTIONING_GENERIC,
-      sanctioningTier: 'Level 2',
+      sanctioningTier: { system: 'GENERIC', value: 'Level 2' },
     });
     const fmtIssue = result.errors.find((i: any) => i.field.includes('matchUpFormat'));
     expect(fmtIssue).toBeDefined();
@@ -137,7 +139,7 @@ describe('Policy Validation — validateProposal', () => {
     });
     let result: any = sanctioningEngine.validateProposal({
       sanctioningPolicy: POLICY_SANCTIONING_GENERIC,
-      sanctioningTier: 'Level 1',
+      sanctioningTier: { system: 'GENERIC', value: 'Level 1' },
     });
     const qIssue = result.errors.find((i: any) => i.field.includes('qualifyingDrawSize'));
     expect(qIssue).toBeDefined();
@@ -147,7 +149,7 @@ describe('Policy Validation — validateProposal', () => {
     createTestRecord({ venues: [{ venueName: 'Small', numberOfCourts: 1 }] });
     let result: any = sanctioningEngine.validateProposal({
       sanctioningPolicy: POLICY_SANCTIONING_GENERIC,
-      sanctioningTier: 'Level 2',
+      sanctioningTier: { system: 'GENERIC', value: 'Level 2' },
     });
     const courtIssue = result.errors.find((i: any) => i.field === 'venues');
     expect(courtIssue).toBeDefined();
@@ -319,5 +321,67 @@ describe('Completeness Scoring', () => {
     });
     // Generic policy requires insurance
     expect(result.completeness.missingFields).toContain('proposal.insuranceCertificate');
+  });
+});
+
+// ---------------------------------------------------------------------------
+// The engine defaults `sanctioningTier` from the record the same way it defaults `proposal`.
+//
+// Before that defaulting existed, a caller holding only a sanctioningId got `sanctioningTier:
+// undefined`, so `tiers.find((t) => t.tierName === undefined)` missed and EVERY tier-specific rule
+// silently did not run — allowed draw types and sizes, qualifying, minimum prize money, gender and
+// event-type limits. Only the global requirements applied, and the proposal reported clean.
+// ---------------------------------------------------------------------------
+describe('Policy Validation — tier defaults from the sanctioning record', () => {
+  beforeEach(() => {
+    sanctioningEngine.reset();
+  });
+
+  // A draw size of 16 is disallowed by GENERIC 'Level 3' (allowedDrawSizes: [32, 64, 128]) and is
+  // constrained by no global rule — so the issue can only surface when the tier actually resolves.
+  const undersizedDraw: Partial<TournamentProposal> = {
+    insuranceCertificate: { documentType: 'insurance', verified: true },
+    events: [
+      {
+        eventName: "Men's Singles",
+        eventType: 'SINGLES',
+        gender: 'MALE',
+        drawSize: 16,
+        drawType: 'SINGLE_ELIMINATION',
+        matchUpFormat: 'SET3-S:6/TB7',
+      },
+    ],
+  };
+
+  it('applies tier-specific rules when the caller passes no tier', () => {
+    createTestRecord(undersizedDraw, { system: 'GENERIC', value: 'Level 3' });
+
+    let result: any = sanctioningEngine.validateProposal({ sanctioningPolicy: POLICY_SANCTIONING_GENERIC });
+
+    expect(result.valid).toBe(false);
+    expect(result.errors.some((i: any) => i.field.includes('drawSize'))).toBe(true);
+  });
+
+  // Falsifies the assertion above: identical proposal and identical call, but no tier anywhere. The
+  // drawSize issue disappears, which is what makes the previous test evidence of tier resolution
+  // rather than of the proposal being invalid on its own.
+  it('reports no tier-specific issue when the record carries no tier', () => {
+    createTestRecord(undersizedDraw);
+
+    let result: any = sanctioningEngine.validateProposal({ sanctioningPolicy: POLICY_SANCTIONING_GENERIC });
+
+    expect(result.errors.some((i: any) => i.field.includes('drawSize'))).toBe(false);
+  });
+
+  it('lets an explicitly passed tier override the record', () => {
+    createTestRecord(undersizedDraw, { system: 'GENERIC', value: 'Level 3' });
+
+    let result: any = sanctioningEngine.validateProposal({
+      sanctioningPolicy: POLICY_SANCTIONING_GENERIC,
+      sanctioningTier: { system: 'GENERIC', value: 'Level 1' },
+    });
+
+    // 'Level 1' allows a draw size of 16
+    expect(result.errors.some((i: any) => i.field.includes('drawSize'))).toBe(false);
   });
 });

@@ -23,7 +23,7 @@ Creates a new `SanctioningRecord` in `DRAFT` status.
   governingBodyId: string;
   applicant: Applicant;
   proposal: TournamentProposal;
-  sanctioningLevel?: string;
+  sanctioningTier?: TierClassification;
   sanctioningPolicy?: string;
 }
 ```
@@ -380,7 +380,7 @@ Conflict types: `PROXIMITY`, `SAME_WEEK`, `BLACKOUT`, `MAX_EVENTS_PER_WEEK`
 Validates proposal against policy and optional tier constraints.
 
 ```ts
-{ proposal: TournamentProposal; sanctioningPolicy: SanctioningPolicy; sanctioningTier?: string }
+{ proposal: TournamentProposal; sanctioningPolicy: SanctioningPolicy; sanctioningTier?: TierClassification }
 ```
 
 **Returns:** `{ success, valid, issues, errors, warnings }`

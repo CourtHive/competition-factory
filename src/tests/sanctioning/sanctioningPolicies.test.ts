@@ -116,7 +116,7 @@ describe('Policy Fixtures — Engine Integration', () => {
 
     let result: any = sanctioningEngine.validateProposal({
       sanctioningPolicy: POLICY_SANCTIONING_ITF,
-      sanctioningTier: 'W50',
+      sanctioningTier: { system: 'ITF', value: 'W50' },
     });
     expect(result.success).toBe(true);
     expect(result.valid).toBe(true);
@@ -137,7 +137,7 @@ describe('Policy Fixtures — Engine Integration', () => {
 
     let result: any = sanctioningEngine.validateProposal({
       sanctioningPolicy: POLICY_SANCTIONING_ITF,
-      sanctioningTier: 'W50',
+      sanctioningTier: { system: 'ITF', value: 'W50' },
     });
     const genderIssue = result.errors.find((i: any) => i.field.includes('gender'));
     expect(genderIssue).toBeDefined();

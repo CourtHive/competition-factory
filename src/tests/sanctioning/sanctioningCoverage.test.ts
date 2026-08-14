@@ -72,7 +72,7 @@ function createApprovedViaEngine() {
         governingBodyId: 'gov-001',
         applicant: testApplicant,
         proposal: minimalProposal(),
-        sanctioningLevel: 'Level 2',
+        sanctioningTier: { system: 'GENERIC', value: 'Level 2' },
       },
     },
     { method: 'submitApplication', params: { sanctioningPolicy: basePolicy } },
@@ -146,7 +146,11 @@ describe('validateProposal — maximumPrizeMoney', () => {
       tiers: [{ tierName: 'Capped', tierLevel: 1, maximumPrizeMoney: 5000 }],
     };
     const proposal = minimalProposal({ totalPrizeMoney: [{ amount: 6000, currencyCode: 'USD' }] });
-    let result: any = validateProposal({ proposal, sanctioningPolicy: policy, sanctioningTier: 'Capped' });
+    let result: any = validateProposal({
+      proposal,
+      sanctioningPolicy: policy,
+      sanctioningTier: { system: 'TEST', value: 'Capped' },
+    });
     expect(result.valid).toBe(false);
     const pmIssue = result.errors.find((i: any) => i.field === 'totalPrizeMoney');
     expect(pmIssue).toBeDefined();
@@ -162,7 +166,11 @@ describe('validateProposal — allowedEventTypes and allowedGenders', () => {
       tiers: [{ tierName: 'Restrict', tierLevel: 1, allowedEventTypes: ['DOUBLES'] }],
     };
     const proposal = minimalProposal();
-    let result: any = validateProposal({ proposal, sanctioningPolicy: policy, sanctioningTier: 'Restrict' });
+    let result: any = validateProposal({
+      proposal,
+      sanctioningPolicy: policy,
+      sanctioningTier: { system: 'TEST', value: 'Restrict' },
+    });
     const issue = result.errors.find((i: any) => i.field.includes('eventType'));
     expect(issue).toBeDefined();
     expect(issue.message).toContain('SINGLES');
@@ -177,7 +185,11 @@ describe('validateProposal — allowedEventTypes and allowedGenders', () => {
     const proposal = minimalProposal({
       events: [{ eventName: 'MS', eventType: 'SINGLES', gender: 'MALE' }],
     });
-    let result: any = validateProposal({ proposal, sanctioningPolicy: policy, sanctioningTier: 'GenderTier' });
+    let result: any = validateProposal({
+      proposal,
+      sanctioningPolicy: policy,
+      sanctioningTier: { system: 'TEST', value: 'GenderTier' },
+    });
     const issue = result.errors.find((i: any) => i.field.includes('gender'));
     expect(issue).toBeDefined();
     expect(issue.message).toContain('MALE');
@@ -202,7 +214,11 @@ describe('validateProposal — lead time', () => {
       tiers: [{ tierName: 'Slow', tierLevel: 1, minimumLeadWeeks: 52 }],
     };
     const proposal = minimalProposal({ proposedStartDate: futureDate(10) });
-    let result: any = validateProposal({ proposal, sanctioningPolicy: policy, sanctioningTier: 'Slow' });
+    let result: any = validateProposal({
+      proposal,
+      sanctioningPolicy: policy,
+      sanctioningTier: { system: 'TEST', value: 'Slow' },
+    });
     const issue = result.errors.find((i: any) => i.field === 'proposedStartDate');
     expect(issue).toBeDefined();
     expect(issue.message).toContain('52');
@@ -219,7 +235,11 @@ describe('validateProposal — maxQualifyingDrawSize', () => {
     const proposal = minimalProposal({
       events: [{ eventName: 'S', eventType: 'SINGLES', qualifyingDrawSize: 32 }],
     });
-    let result: any = validateProposal({ proposal, sanctioningPolicy: policy, sanctioningTier: 'Q' });
+    let result: any = validateProposal({
+      proposal,
+      sanctioningPolicy: policy,
+      sanctioningTier: { system: 'TEST', value: 'Q' },
+    });
     const issue = result.errors.find((i: any) => i.field.includes('qualifyingDrawSize'));
     expect(issue).toBeDefined();
     expect(issue.message).toContain('exceeds maximum 16');
@@ -496,7 +516,7 @@ describe('Compliance edge cases', () => {
           governingBodyId: 'gov-001',
           applicant: testApplicant,
           proposal: minimalProposal(),
-          sanctioningLevel: 'Level 2',
+          sanctioningTier: { system: 'GENERIC', value: 'Level 2' },
         },
       },
       { method: 'submitApplication', params: { sanctioningPolicy: basePolicy } },
@@ -524,7 +544,7 @@ describe('Compliance edge cases', () => {
           governingBodyId: 'gov-001',
           applicant: testApplicant,
           proposal: minimalProposal(),
-          sanctioningLevel: 'Level 2',
+          sanctioningTier: { system: 'GENERIC', value: 'Level 2' },
         },
       },
       { method: 'submitApplication', params: { sanctioningPolicy: basePolicy } },
@@ -584,7 +604,7 @@ describe('Compliance edge cases', () => {
           governingBodyId: 'gov-001',
           applicant: testApplicant,
           proposal: minimalProposal(),
-          sanctioningLevel: 'Level 2',
+          sanctioningTier: { system: 'GENERIC', value: 'Level 2' },
         },
       },
       { method: 'submitApplication', params: { sanctioningPolicy: basePolicy } },

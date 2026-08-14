@@ -77,9 +77,10 @@ function evaluateGuards({
 }) {
   const applicable = guards.filter((g) => g.from === from && g.to === to);
 
-  // Filter by tier if specified
+  // Filter by tier if specified. A policy's `tiers` are tier NAMES, so they match the tier's
+  // `value` — the system half identifies whose ladder it is, not which rung.
   const tierFiltered = applicable.filter(
-    (g) => !g.tiers?.length || g.tiers.includes(sanctioningRecord.sanctioningLevel ?? ''),
+    (g) => !g.tiers?.length || g.tiers.includes(sanctioningRecord.sanctioningTier?.value ?? ''),
   );
 
   for (const guard of tierFiltered) {

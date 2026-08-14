@@ -29,7 +29,7 @@ function approve() {
         governingBodyId: 'gov-001',
         applicant: testApplicant,
         proposal: testProposal,
-        sanctioningLevel: 'Level 2',
+        sanctioningTier: { system: 'GENERIC', value: 'Level 2' },
       },
     },
     { method: 'submitApplication', params: { sanctioningPolicy: testPolicy } },

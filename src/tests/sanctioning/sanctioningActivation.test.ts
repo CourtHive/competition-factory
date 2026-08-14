@@ -58,7 +58,7 @@ function createApprovedRecord() {
         governingBodyId: 'gov-001',
         applicant: testApplicant,
         proposal: testProposal,
-        sanctioningLevel: 'Level 2',
+        sanctioningTier: { system: 'GENERIC', value: 'Level 2' },
       },
     },
     { method: 'submitApplication', params: { sanctioningPolicy: testPolicy } },
@@ -125,6 +125,37 @@ describe('Activation — Tournament Generation', () => {
     const tierExt = tr.extensions.find((e: any) => e.name === 'sanctioningTier');
     expect(tierExt).toBeDefined();
     expect(tierExt.value).toEqual('Level 2');
+  });
+
+  // The regression this suite previously had no coverage for: the sanctioned tier used to reach the
+  // tournament ONLY as the name/value extension asserted above, so a tournament born from sanctioning
+  // had no `tournamentTier` and `getEventRankingPoints` resolved no level for it — even when the
+  // applicant had explicitly chosen a tier.
+  it('sets NATIVE tournamentTier from the sanctioning record', () => {
+    createApprovedRecord();
+    let result: any = sanctioningEngine.activateFromSanctioning({ sanctioningPolicy: testPolicy });
+    const tr = result.tournamentRecord;
+
+    expect(tr.tournamentTier).toEqual({ system: 'GENERIC', value: 'Level 2' });
+  });
+
+  // Sanctioning stores { system, value } only. A sanctioning policy's `tierLevel` runs OPPOSITE to
+  // `numericRank` ("lower = more prestigious"), so deriving one from the other would invert prestige
+  // in getEventRankingPoints and getTierMovement. Absent is correct — both callers handle it.
+  it('does not invent a numericRank on the activated tournamentTier', () => {
+    createApprovedRecord();
+    let result: any = sanctioningEngine.activateFromSanctioning({ sanctioningPolicy: testPolicy });
+
+    expect(result.tournamentRecord.tournamentTier.numericRank).toBeUndefined();
+  });
+
+  it('copies the tier rather than aliasing the sanctioning record', () => {
+    createApprovedRecord();
+    let result: any = sanctioningEngine.activateFromSanctioning({ sanctioningPolicy: testPolicy });
+    result.tournamentRecord.tournamentTier.value = 'MUTATED';
+
+    let recordResult: any = sanctioningEngine.getSanctioningRecord();
+    expect(recordResult.sanctioningRecord.sanctioningTier.value).toEqual('Level 2');
   });
 
   it('transitions sanctioning record to ACTIVE status', () => {
@@ -210,7 +241,7 @@ describe('Activation — pre-assigned tournamentId (registration before the reco
           governingBodyId: 'gov-001',
           applicant: testApplicant,
           proposal: { ...testProposal, tournamentId: preassigned },
-          sanctioningLevel: 'Level 2',
+          sanctioningTier: { system: 'GENERIC', value: 'Level 2' },
         },
       },
       { method: 'submitApplication', params: { sanctioningPolicy: testPolicy } },
@@ -245,7 +276,7 @@ describe('Full Lifecycle — End-to-End', () => {
           governingBodyId: 'gov-001',
           applicant: testApplicant,
           proposal: testProposal,
-          sanctioningLevel: 'Level 2',
+          sanctioningTier: { system: 'GENERIC', value: 'Level 2' },
         },
       },
       { method: 'submitApplication', params: { sanctioningPolicy: testPolicy } },

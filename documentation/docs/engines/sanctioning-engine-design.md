@@ -115,7 +115,7 @@ interface SanctioningRecord {
 
   // Governance
   governingBodyId: string; // which body sanctions this
-  sanctioningLevel?: string; // level applied for (maps to policy)
+  sanctioningTier?: TierClassification; // tier applied for — { system, value }, shared with tournamentTier
   sanctioningPolicy?: string; // policy name to validate against
 
   // Workflow
@@ -142,7 +142,7 @@ interface TournamentProposal {
 
   // Classification
   tournamentLevel?: TournamentLevelUnion; // existing enum: CLUB..INTERNATIONAL
-  sanctioningTier?: string; // org-specific tier (e.g., "W50", "Level 3", "Grade 4")
+  // NOTE: the sanctioned tier is NOT on the proposal — it lives on the SanctioningRecord (§3.1)
   discipline?: DisciplineUnion; // TENNIS, BEACH_TENNIS, WHEELCHAIR_TENNIS
 
   // When & Where
@@ -764,7 +764,7 @@ interface CalendarEvent {
   tournamentId?: string;
   startDate: string;
   endDate: string;
-  sanctioningTier?: string;
+  sanctioningTier?: TierClassification;
   calendarSection?: string;
   countryCode?: string;
   coordinates?: { lat: number; lng: number }; // for proximity calculation

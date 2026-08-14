@@ -15,7 +15,7 @@ function createRecord(startDate: string, endDate: string, overrides?: Partial<To
   sanctioningEngine.createSanctioningRecord({
     governingBodyId: 'gov-001',
     applicant: testApplicant,
-    sanctioningLevel: 'Level 2',
+    sanctioningTier: { system: 'GENERIC', value: 'Level 2' },
     proposal: {
       tournamentName: 'Test Open',
       proposedStartDate: startDate,
@@ -41,7 +41,7 @@ describe('Calendar Conflict Detection', () => {
         tournamentName: 'Existing Open',
         startDate: '2027-06-03',
         endDate: '2027-06-09',
-        sanctioningTier: 'Level 2',
+        sanctioningTier: { system: 'GENERIC', value: 'Level 2' },
         calendarSection: 'Southeast',
       },
     ];
@@ -66,7 +66,7 @@ describe('Calendar Conflict Detection', () => {
         tournamentName: 'Nearby Open',
         startDate: '2027-06-01',
         endDate: '2027-06-07',
-        sanctioningTier: 'Level 2',
+        sanctioningTier: { system: 'GENERIC', value: 'Level 2' },
         calendarSection: 'Southeast',
       },
     ];
@@ -89,7 +89,7 @@ describe('Calendar Conflict Detection', () => {
       {
         startDate: '2027-06-01',
         endDate: '2027-06-07',
-        sanctioningTier: 'Level 2',
+        sanctioningTier: { system: 'GENERIC', value: 'Level 2' },
         calendarSection: 'Southeast',
       },
     ];
@@ -111,7 +111,7 @@ describe('Calendar Conflict Detection', () => {
       {
         startDate: '2027-06-01',
         endDate: '2027-06-07',
-        sanctioningTier: 'Level 2',
+        sanctioningTier: { system: 'GENERIC', value: 'Level 2' },
         calendarSection: 'Southeast',
       },
     ];
@@ -246,7 +246,7 @@ describe('Calendar Conflict Detection', () => {
     sanctioningEngine.createSanctioningRecord({
       governingBodyId: 'gov-001',
       applicant: testApplicant,
-      sanctioningLevel: 'Level 2',
+      sanctioningTier: { system: 'GENERIC', value: 'Level 2' },
       proposal: {
         tournamentName: 'Policy Rules Test',
         proposedStartDate: '2027-06-01',
@@ -275,7 +275,7 @@ describe('Calendar Conflict Detection', () => {
           {
             startDate: '2027-06-01',
             endDate: '2027-06-07',
-            sanctioningTier: 'Level 2',
+            sanctioningTier: { system: 'GENERIC', value: 'Level 2' },
             calendarSection: 'Southeast',
           },
         ],
