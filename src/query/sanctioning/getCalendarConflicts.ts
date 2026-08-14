@@ -5,9 +5,24 @@ import { SUCCESS } from '@Constants/resultConstants';
 
 // Types
 import type { SanctioningRecord, CalendarContext, CalendarEvent, Coordinates } from '@Types/sanctioningTypes';
+import type { TierClassification } from '@Types/tournamentTypes';
 
 function eventLabel(event: CalendarEvent): string {
   return event.tournamentName ?? event.sanctioningId ?? 'existing event';
+}
+
+/**
+ * Whether two tiers are the same rung of the same ladder — used to decide if a proximity rule
+ * applies between two events.
+ *
+ * An absent tier on either side means "unknown", which does NOT exempt the pair: the check stays
+ * conservative and reports the conflict, exactly as it did when both sides were bare strings.
+ * Tiers from DIFFERENT systems are never the same tier, even when their values coincide —
+ * "USTA Level 3" and "ITF_JUNIOR 3" are not one rung.
+ */
+function isSameTier(a?: TierClassification, b?: TierClassification): boolean {
+  if (!a || !b) return true;
+  return a.system === b.system && a.value === b.value;
 }
 
 export type CalendarConflict = {
@@ -77,7 +92,15 @@ function computeGap(proposedStart: Date, proposedEnd: Date, existStart: Date, ex
   return { gap, isOverlapping };
 }
 
-function checkTemporalProximity(calendarRules, proposal, sanctioningRecord, proposedStart: Date, proposedEnd: Date, existing: CalendarEvent, conflicts: CalendarConflict[]) {
+function checkTemporalProximity(
+  calendarRules,
+  proposal,
+  sanctioningRecord,
+  proposedStart: Date,
+  proposedEnd: Date,
+  existing: CalendarEvent,
+  conflicts: CalendarConflict[],
+) {
   if (!calendarRules.proximityWeeks) return;
 
   const existStart = new Date(existing.startDate);
@@ -88,13 +111,8 @@ function checkTemporalProximity(calendarRules, proposal, sanctioningRecord, prop
   if (gap >= proximityMs) return;
 
   const sameSection =
-    !proposal.calendarSection ||
-    !existing.calendarSection ||
-    proposal.calendarSection === existing.calendarSection;
-  const sameTier =
-    !sanctioningRecord.sanctioningLevel ||
-    !existing.sanctioningTier ||
-    sanctioningRecord.sanctioningLevel === existing.sanctioningTier;
+    !proposal.calendarSection || !existing.calendarSection || proposal.calendarSection === existing.calendarSection;
+  const sameTier = isSameTier(sanctioningRecord.sanctioningTier, existing.sanctioningTier);
 
   if (!sameSection || !sameTier) return;
 
@@ -115,7 +133,14 @@ function checkTemporalProximity(calendarRules, proposal, sanctioningRecord, prop
   }
 }
 
-function checkGeographicProximity(calendarRules, proposal, proposedStart: Date, proposedEnd: Date, existing: CalendarEvent, conflicts: CalendarConflict[]) {
+function checkGeographicProximity(
+  calendarRules,
+  proposal,
+  proposedStart: Date,
+  proposedEnd: Date,
+  existing: CalendarEvent,
+  conflicts: CalendarConflict[],
+) {
   if (!calendarRules.proximityRadiusKm || !proposal.venues?.length || !existing.coordinates) return;
 
   const proposedCoords = proposal.venues.find((v) => v.coordinates)?.coordinates;
@@ -137,7 +162,12 @@ function checkGeographicProximity(calendarRules, proposal, proposedStart: Date, 
   }
 }
 
-function checkMaxEventsPerWeek(calendarRules, existingEvents: CalendarEvent[], proposedStart: Date, conflicts: CalendarConflict[]) {
+function checkMaxEventsPerWeek(
+  calendarRules,
+  existingEvents: CalendarEvent[],
+  proposedStart: Date,
+  conflicts: CalendarConflict[],
+) {
   if (!calendarRules.maxEventsPerWeek) return;
 
   const proposedWeekStart = getWeekStart(proposedStart);

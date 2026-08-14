@@ -166,8 +166,9 @@ function checkTimeline(
   return { blocked: false, withinSubstantialWindow };
 }
 
-// Fields that amendments are allowed to modify on the proposal.
-// All other paths are rejected to prevent tampering with internal state.
+// Fields amendments are allowed to modify. All other paths are rejected to prevent tampering with
+// internal state. Every entry here addresses the proposal EXCEPT the ones in RECORD_LEVEL_FIELDS
+// below, which live on the sanctioning record itself.
 const AMENDABLE_FIELD_PREFIXES = new Set([
   'tournamentName',
   'formalName',
@@ -190,10 +191,58 @@ const AMENDABLE_FIELD_PREFIXES = new Set([
   'registrationProfile',
 ]);
 
+/**
+ * Amendable fields that live on the sanctioning RECORD, not on its proposal.
+ *
+ * `sanctioningTier` is the only one today. It was previously routed at `proposal.sanctioningTier` —
+ * a field that was declared but never assigned by any path, so every amendment to it wrote a
+ * property nothing read. The tier's single home is the record; the amendment has to follow it.
+ */
+const RECORD_LEVEL_FIELDS = new Set(['sanctioningTier']);
+
+function fieldRoot(field: string): string {
+  return field.replaceAll(/\[\d+\]/g, '.*').split('.')[0];
+}
+
 function isAmendableField(field: string): boolean {
-  const normalized = field.replaceAll(/\[\d+\]/g, '.*');
-  const root = normalized.split('.')[0];
-  return AMENDABLE_FIELD_PREFIXES.has(root);
+  return AMENDABLE_FIELD_PREFIXES.has(fieldRoot(field));
+}
+
+/** `name[index]` notation in an amendment path, e.g. `events[0].drawSize`. */
+const ARRAY_KEY = /^(\w+)\[(\d+)\]$/;
+
+/** Resolve one path segment against `target`. Undefined when the segment does not lead anywhere. */
+function descend(target: any, key: string): any {
+  const arrayMatch = ARRAY_KEY.exec(key);
+  if (!arrayMatch) return target?.[key];
+
+  const arr = target?.[arrayMatch[1]];
+  const idx = Number.parseInt(arrayMatch[2]);
+  if (!Array.isArray(arr) || idx < 0 || idx >= arr.length) return undefined;
+  return arr[idx];
+}
+
+/** Walk every segment but the last, so the caller ends up holding the object to write into. */
+function resolveContainer(root: any, parts: string[]): any {
+  let target = root;
+  for (const key of parts.slice(0, -1)) {
+    target = descend(target, key);
+    if (target === undefined || target === null) return undefined;
+  }
+  return target;
+}
+
+/** Write at the final segment. Out-of-bounds array writes are dropped rather than extending the array. */
+function assignAt(container: any, lastKey: string, value: any) {
+  const arrayMatch = ARRAY_KEY.exec(lastKey);
+  if (!arrayMatch) {
+    container[lastKey] = value;
+    return;
+  }
+
+  const arr = container[arrayMatch[1]];
+  const idx = Number.parseInt(arrayMatch[2]);
+  if (Array.isArray(arr) && idx >= 0 && idx < arr.length) arr[idx] = value;
 }
 
 function applyChanges(record: SanctioningRecord, changes: ProposalChange[]) {
@@ -202,37 +251,12 @@ function applyChanges(record: SanctioningRecord, changes: ProposalChange[]) {
     if (!isAmendableField(change.field)) continue;
 
     const parts = change.field.split('.');
-    let target: any = record.proposal;
+    const root = RECORD_LEVEL_FIELDS.has(fieldRoot(change.field)) ? record : record.proposal;
+    const container = resolveContainer(root, parts);
+    const lastKey = parts.at(-1);
 
-    for (let i = 0; i < parts.length - 1; i++) {
-      const key = parts[i];
-      const arrayMatch = new RegExp(/^(\w+)\[(\d+)\]$/).exec(key);
-      if (arrayMatch) {
-        const arr = target[arrayMatch[1]];
-        const idx = Number.parseInt(arrayMatch[2]);
-        if (!Array.isArray(arr) || idx < 0 || idx >= arr.length) {
-          target = undefined;
-          break;
-        }
-        target = arr[idx];
-      } else {
-        target = target?.[key];
-      }
-      if (target === undefined || target === null) break;
-    }
-
-    if (target !== undefined && target !== null) {
-      const lastKey = parts.at(-1);
-      const arrayMatch = lastKey?.match(/^(\w+)\[(\d+)\]$/);
-      if (arrayMatch) {
-        const arr = target[arrayMatch[1]];
-        const idx = Number.parseInt(arrayMatch[2]);
-        if (Array.isArray(arr) && idx >= 0 && idx < arr.length) {
-          arr[idx] = change.proposedValue;
-        }
-      } else if (lastKey) {
-        target[lastKey] = change.proposedValue;
-      }
+    if (container !== undefined && container !== null && lastKey) {
+      assignAt(container, lastKey, change.proposedValue);
     }
   }
 }

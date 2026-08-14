@@ -105,6 +105,11 @@ export function activateFromSanctioning({ sanctioningRecord, sanctioningPolicy, 
     surfaceCategory: proposal.surfaceCategory,
     localTimeZone: proposal.localTimeZone,
     tournamentLevel: proposal.tournamentLevel,
+    // The sanctioned tier reaches the tournament NATIVELY. It used to arrive only as a CODES
+    // name/value extension, so `getEventRankingPoints` resolved no level for a tournament born from
+    // sanctioning even when the applicant had explicitly chosen a tier. `tournamentTier` is the
+    // canonical home and the record already carries the same TierClassification shape.
+    ...(sanctioningRecord.sanctioningTier ? { tournamentTier: { ...sanctioningRecord.sanctioningTier } } : {}),
     totalPrizeMoney: proposal.totalPrizeMoney,
     registrationProfile: proposal.registrationProfile,
     tournamentStatus: 'ACTIVE',
@@ -146,14 +151,19 @@ export function activateFromSanctioning({ sanctioningRecord, sanctioningPolicy, 
       return event;
     }),
 
-    // Store sanctioning reference
+    // Store sanctioning reference.
+    //
+    // The `sanctioningTier` extension is now REDUNDANT with native `tournamentTier` above, and is
+    // written for one release only so that anything already reading it does not break. It keeps its
+    // original string shape (the tier's value) for exactly that reason. Scheduled for removal in
+    // phase 4 of planning/SANCTIONING_TIER_VOCABULARY.md, one release after this one.
     extensions: [
       {
         name: 'sanctioningId',
         value: sanctioningRecord.sanctioningId,
       },
-      ...(sanctioningRecord.sanctioningLevel
-        ? [{ name: 'sanctioningTier', value: sanctioningRecord.sanctioningLevel }]
+      ...(sanctioningRecord.sanctioningTier
+        ? [{ name: 'sanctioningTier', value: sanctioningRecord.sanctioningTier.value }]
         : []),
     ],
 
@@ -175,7 +185,8 @@ export function activateFromSanctioning({ sanctioningRecord, sanctioningPolicy, 
   if (policy?.postEventRequirements?.length) {
     const endDate = new Date(proposal.proposedEndDate);
     const items: ComplianceItem[] = policy.postEventRequirements
-      .filter((req) => !req.tiers?.length || req.tiers.includes(sanctioningRecord.sanctioningLevel ?? ''))
+      // `tiers` on a requirement are tier NAMES, so they match the tier's `value`.
+      .filter((req) => !req.tiers?.length || req.tiers.includes(sanctioningRecord.sanctioningTier?.value ?? ''))
       .map((req) => {
         const deadline = new Date(endDate);
         deadline.setDate(deadline.getDate() + req.deadlineDays);

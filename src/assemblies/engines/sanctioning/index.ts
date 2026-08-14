@@ -278,7 +278,15 @@ export const sanctioningEngine = (() => {
     validateProposal: (params: any) => {
       const sanctioningRecord = params?.sanctioningRecord ?? resolveRecord(params?.sanctioningId);
       const proposal = params.proposal ?? sanctioningRecord?.proposal;
-      return validateProposal({ proposal, ...params });
+      // The tier MUST default from the record the same way the proposal does. Without this, a caller
+      // that has a sanctioningId and validates against it gets `sanctioningTier: undefined`, the tier
+      // lookup misses, and every tier-specific rule — allowed draw types and sizes, qualifying,
+      // minimum prize money, gender and event-type limits — silently does not run, leaving only the
+      // global requirements. It validated clean and enforced almost nothing.
+      const sanctioningTier = params.sanctioningTier ?? sanctioningRecord?.sanctioningTier;
+      // Defaults come AFTER the spread: a params key present-but-undefined would otherwise overwrite
+      // the value just resolved from the record, which is the very failure this block exists to fix.
+      return validateProposal({ ...params, proposal, sanctioningTier });
     },
 
     getCalendarConflicts: (params: any) => {

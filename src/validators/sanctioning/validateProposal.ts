@@ -13,6 +13,7 @@ import {
   PersonnelRole,
   PersonReference,
 } from '@Types/sanctioningTypes';
+import { TierClassification } from '@Types/tournamentTypes';
 
 export type ValidationIssue = {
   field: string;
@@ -23,7 +24,12 @@ export type ValidationIssue = {
 type ValidateProposalArgs = {
   proposal: TournamentProposal;
   sanctioningPolicy: SanctioningPolicy;
-  sanctioningTier?: string;
+  /**
+   * The tier being applied for. Normally defaulted from the sanctioning record by the engine, so a
+   * caller holding only a `sanctioningId` still gets the tier-specific rules — see the engine's
+   * `validateProposal` wiring.
+   */
+  sanctioningTier?: TierClassification;
 };
 
 export function validateProposal({ proposal, sanctioningPolicy, sanctioningTier }: ValidateProposalArgs) {
@@ -31,7 +37,11 @@ export function validateProposal({ proposal, sanctioningPolicy, sanctioningTier 
   if (!sanctioningPolicy) return { error: MISSING_SANCTIONING_POLICY };
 
   const issues: ValidationIssue[] = [];
-  const tier = sanctioningTier ? sanctioningPolicy.tiers.find((t) => t.tierName === sanctioningTier) : undefined;
+  // A policy's tiers are named rungs on one federation's ladder, so the tier's `value` is what
+  // identifies the rung; `system` says whose ladder it is.
+  const tier = sanctioningTier?.value
+    ? sanctioningPolicy.tiers.find((t) => t.tierName === sanctioningTier.value)
+    : undefined;
 
   // --- Global policy requirements ---
   if (sanctioningPolicy.requireInsurance && !proposal.insuranceCertificate) {

@@ -96,14 +96,14 @@ describe('getCalendarConflicts — temporal proximity', () => {
     tournamentName: 'Existing Open',
     startDate: '2027-06-01',
     endDate: '2027-06-07',
-    sanctioningTier: 'W50',
+    sanctioningTier: { system: 'ITF', value: 'W50' },
     calendarSection: 'Southeast',
   };
 
   it('skips temporal check when proximityWeeks is not set', () => {
     let result: any = getCalendarConflicts({
       sanctioningRecord: minimalRecord({
-        sanctioningLevel: 'W50',
+        sanctioningTier: { system: 'ITF', value: 'W50' },
         proposal: minimalProposal({ calendarSection: 'Southeast' }),
       }),
       calendarContext: { existingEvents: [existingEvent], calendarRules: {} },
@@ -114,7 +114,7 @@ describe('getCalendarConflicts — temporal proximity', () => {
   it('reports SAME_WEEK error for overlapping events in same section and tier', () => {
     let result: any = getCalendarConflicts({
       sanctioningRecord: minimalRecord({
-        sanctioningLevel: 'W50',
+        sanctioningTier: { system: 'ITF', value: 'W50' },
         proposal: minimalProposal({
           proposedStartDate: '2027-06-03',
           proposedEndDate: '2027-06-09',
@@ -130,7 +130,7 @@ describe('getCalendarConflicts — temporal proximity', () => {
   it('reports PROXIMITY warning when proposed is after existing within proximity window', () => {
     let result: any = getCalendarConflicts({
       sanctioningRecord: minimalRecord({
-        sanctioningLevel: 'W50',
+        sanctioningTier: { system: 'ITF', value: 'W50' },
         proposal: minimalProposal({
           proposedStartDate: '2027-06-10',
           proposedEndDate: '2027-06-16',
@@ -146,7 +146,7 @@ describe('getCalendarConflicts — temporal proximity', () => {
   it('reports PROXIMITY warning when proposed is before existing within proximity window', () => {
     let result: any = getCalendarConflicts({
       sanctioningRecord: minimalRecord({
-        sanctioningLevel: 'W50',
+        sanctioningTier: { system: 'ITF', value: 'W50' },
         proposal: minimalProposal({
           proposedStartDate: '2027-05-26',
           proposedEndDate: '2027-05-30',
@@ -161,7 +161,7 @@ describe('getCalendarConflicts — temporal proximity', () => {
   it('no temporal conflict when gap exceeds proximity window', () => {
     let result: any = getCalendarConflicts({
       sanctioningRecord: minimalRecord({
-        sanctioningLevel: 'W50',
+        sanctioningTier: { system: 'ITF', value: 'W50' },
         proposal: minimalProposal({ calendarSection: 'Southeast' }),
       }),
       calendarContext: { existingEvents: [existingEvent], calendarRules: { proximityWeeks: 1 } },
@@ -173,7 +173,7 @@ describe('getCalendarConflicts — temporal proximity', () => {
   it('skips temporal conflict when different calendarSection', () => {
     let result: any = getCalendarConflicts({
       sanctioningRecord: minimalRecord({
-        sanctioningLevel: 'W50',
+        sanctioningTier: { system: 'ITF', value: 'W50' },
         proposal: minimalProposal({
           proposedStartDate: '2027-06-03',
           proposedEndDate: '2027-06-09',
@@ -188,7 +188,7 @@ describe('getCalendarConflicts — temporal proximity', () => {
   it('skips temporal conflict when different sanctioning tier', () => {
     let result: any = getCalendarConflicts({
       sanctioningRecord: minimalRecord({
-        sanctioningLevel: 'W100',
+        sanctioningTier: { system: 'ITF', value: 'W100' },
         proposal: minimalProposal({
           proposedStartDate: '2027-06-03',
           proposedEndDate: '2027-06-09',
@@ -198,6 +198,41 @@ describe('getCalendarConflicts — temporal proximity', () => {
       calendarContext: { existingEvents: [existingEvent], calendarRules: { proximityWeeks: 2 } },
     });
     expect(result.conflicts.filter((c: any) => c.type === 'SAME_WEEK')).toHaveLength(0);
+  });
+
+  // Two tiers are the same rung only if they are on the same ladder. Now that a tier carries its
+  // system, a value collision across federations no longer reads as a match — 'W50' on the ITF
+  // ladder and 'W50' on some other body's ladder are unrelated. When both sides were bare strings
+  // this pair was indistinguishable from the same-tier case above and reported SAME_WEEK.
+  it('skips temporal conflict when tier values match but the systems differ', () => {
+    let result: any = getCalendarConflicts({
+      sanctioningRecord: minimalRecord({
+        sanctioningTier: { system: 'USTA', value: 'W50' },
+        proposal: minimalProposal({
+          proposedStartDate: '2027-06-03',
+          proposedEndDate: '2027-06-09',
+          calendarSection: 'Southeast',
+        }),
+      }),
+      calendarContext: { existingEvents: [existingEvent], calendarRules: { proximityWeeks: 2 } },
+    });
+    expect(result.conflicts.filter((c: any) => c.type === 'SAME_WEEK')).toHaveLength(0);
+  });
+
+  // An unknown tier on either side must NOT exempt the pair — the check stays conservative and
+  // still reports, exactly as it did before the tier was structured.
+  it('still reports SAME_WEEK when the proposing record carries no tier at all', () => {
+    let result: any = getCalendarConflicts({
+      sanctioningRecord: minimalRecord({
+        proposal: minimalProposal({
+          proposedStartDate: '2027-06-03',
+          proposedEndDate: '2027-06-09',
+          calendarSection: 'Southeast',
+        }),
+      }),
+      calendarContext: { existingEvents: [existingEvent], calendarRules: { proximityWeeks: 2 } },
+    });
+    expect(result.errors.some((c: any) => c.type === 'SAME_WEEK')).toBe(true);
   });
 });
 
@@ -390,13 +425,13 @@ describe('getCalendarConflicts — eventLabel fallback and policySnapshot', () =
       sanctioningId: 'sanc-existing',
       startDate: '2027-06-15',
       endDate: '2027-06-21',
-      sanctioningTier: 'W50',
+      sanctioningTier: { system: 'ITF', value: 'W50' },
       calendarSection: 'Southeast',
     };
 
     let result: any = getCalendarConflicts({
       sanctioningRecord: minimalRecord({
-        sanctioningLevel: 'W50',
+        sanctioningTier: { system: 'ITF', value: 'W50' },
         proposal: minimalProposal({
           proposedStartDate: '2027-06-17',
           proposedEndDate: '2027-06-23',
@@ -430,7 +465,7 @@ describe('getCalendarConflicts — eventLabel fallback and policySnapshot', () =
   it('falls back to policySnapshot.calendarRules when calendarContext omits calendarRules', () => {
     let result: any = getCalendarConflicts({
       sanctioningRecord: minimalRecord({
-        sanctioningLevel: 'W50',
+        sanctioningTier: { system: 'ITF', value: 'W50' },
         policySnapshot: {
           policyName: 'Test',
           policyVersion: '1.0',
@@ -451,7 +486,7 @@ describe('getCalendarConflicts — eventLabel fallback and policySnapshot', () =
             tournamentName: 'Existing',
             startDate: '2027-06-01',
             endDate: '2027-06-07',
-            sanctioningTier: 'W50',
+            sanctioningTier: { system: 'ITF', value: 'W50' },
             calendarSection: 'Southeast',
           },
         ],

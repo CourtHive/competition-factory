@@ -91,7 +91,7 @@ Creates a new sanctioning record in `DRAFT` status. Automatically assigns UUIDs 
   governingBodyId: string;         // required — which body sanctions this
   applicant: Applicant;            // required — who is applying
   proposal: TournamentProposal;    // required — what tournament is proposed
-  sanctioningLevel?: string;       // e.g., "W50", "Level 3"
+  sanctioningTier?: TierClassification; // { system, value } — e.g. { system: 'ITF', value: 'W50' }
   sanctioningPolicy?: string;      // policy name to validate against
 }
 ```
@@ -115,7 +115,7 @@ const result = sanctioningEngine.createSanctioningRecord({
       { eventName: "Women's Singles", eventType: 'SINGLES', gender: 'FEMALE', drawSize: 32 },
     ],
   },
-  sanctioningLevel: 'Level 3',
+  sanctioningTier: { system: 'USTA', value: 'Level 3' },
 });
 ```
 
@@ -275,8 +275,18 @@ The generated tournament carries:
 - Events with `allowedDrawTypes` from event proposals
 - `processCodes: ['SANCTIONED']`
 - `parentOrganisationId` from the governing body
+- `tournamentTier` — the record's `sanctioningTier`, assigned natively (both are a `TierClassification`)
 - Sanctioning ID stored as an extension
 - A compliance checklist generated from the policy's `postEventRequirements`
+
+Because the tier lands on the native `tournamentTier` field, ranking policies resolve a level for a
+sanctioned tournament through the usual `tierToLevel[system][value]` path, with no translation step.
+
+:::note
+A `sanctioningTier` **extension** carrying the tier's value is still written alongside
+`tournamentTier`, for one release, so anything already reading it keeps working. Read
+`tournamentTier`; the extension is scheduled for removal.
+:::
 
 ```js
 const { tournamentRecord } = sanctioningEngine.activateFromSanctioning({
@@ -378,7 +388,7 @@ Validates the proposal against a sanctioning policy and optional tier. Returns s
 ```js
 const { valid, errors, warnings, issues } = sanctioningEngine.validateProposal({
   sanctioningPolicy,
-  sanctioningTier: 'Level 3',
+  sanctioningTier: { system: 'USTA', value: 'Level 3' }, // optional — defaults from the record
 });
 ```
 
