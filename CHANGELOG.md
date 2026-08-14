@@ -1,5 +1,12 @@
 # Changelog
 
+## [6.22.2](https://github.com/CourtHive/competition-factory/compare/v6.22.1...v6.22.2) (2026-08-13)
+
+
+### Bug Fixes
+
+* **participants:** let an empty string clear birthDate and nationalityCode ([#4599](https://github.com/CourtHive/competition-factory/issues/4599)) ([0387768](https://github.com/CourtHive/competition-factory/commit/0387768dd75d0f8cf4c93bfd29935a5b8851d3fc))
+
 ## [6.22.1](https://github.com/CourtHive/competition-factory/compare/v6.22.0...v6.22.1) (2026-08-13)
 
 
