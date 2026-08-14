@@ -1,5 +1,20 @@
 export { nearestPowerOf2, nextPowerOf2, isPowerOf2, isOdd, isConvertableInteger, isNumeric } from '@Tools/math';
 export { visualizeScheduledMatchUps } from '../../tests/testHarness/testUtilities/visualizeScheduledMatchUps';
+// Pure helpers for the signed competitive-exposure axis. Exported here rather
+// than from a governor because they take POSITIONAL arguments — a governor
+// export becomes an engine method, and the engine wrapper hands every method a
+// single params object, which would silently arrive as `signedDelta`.
+//
+// `resolveDeltaBand` validates on every call, which is right for one-off use.
+// A corpus walk pairs `resolveDeltaBoundaries` (validate + convert ONCE) with
+// `bandFromBoundaries` (walk per row); exporting only the former would leave
+// the boundaries it returns as inert data.
+export {
+  resolveDeltaBoundaries,
+  bandFromBoundaries,
+  signedRatingDelta,
+  resolveDeltaBand,
+} from '@Query/matchUp/resolveDeltaBand';
 export { hasAttributeValues, createMap, generateHashCode, undefinedToNull } from '@Tools/objects';
 export { generateDateRange, dateTime, isValidEmbargoDate } from '@Tools/dateTime';
 export { matchUpChronologicalSort } from '@Functions/sorters/matchUpChronologicalSort';

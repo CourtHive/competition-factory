@@ -1,5 +1,7 @@
 import { POLICY_AVOIDANCE_COUNTRY } from './POLICY_AVOIDANCE_COUNTRY';
 
+import { POLICY_COMPETITIVE_BANDS_DEFAULT } from './POLICY_COMPETITIVE_BANDS_DEFAULT';
+
 import { POLICY_COMPETITION_STANDARD } from './POLICY_COMPETITION_STANDARD';
 import { POLICY_COMPETITION_PRESSURE } from './POLICY_COMPETITION_PRESSURE';
 import { POLICY_COMPETITION_SWISS } from './POLICY_COMPETITION_SWISS';
@@ -38,6 +40,10 @@ import { POLICY_PRINT_DEFAULT } from './POLICY_PRINT_DEFAULT';
 
 export const policies = {
   POLICY_AVOIDANCE_COUNTRY,
+
+  // The only way for a consumer to obtain the default `deltaBands`, which the
+  // signed-exposure APIs deliberately do NOT fall back to on their own.
+  POLICY_COMPETITIVE_BANDS_DEFAULT,
 
   POLICY_COMPETITION_STANDARD,
   POLICY_COMPETITION_PRESSURE,
