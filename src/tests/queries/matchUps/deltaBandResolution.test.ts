@@ -1,9 +1,11 @@
 import {
   resolveDeltaBoundaries,
   resolveScaleOrientation,
+  bandFromBoundaries,
   signedRatingDelta,
   resolveDeltaBand,
 } from '@Query/matchUp/resolveDeltaBand';
+import * as tools from '@Assemblies/tools';
 import { describe, expect, it } from 'vitest';
 
 // constants and fixtures
@@ -78,6 +80,37 @@ describe('resolveDeltaBand — band count and names come from policy', () => {
     const bands = [{ key: 'ALL' }];
     expect(resolveDeltaBand(-99, bands).band).toEqual('ALL');
     expect(resolveDeltaBand(99, bands).band).toEqual('ALL');
+  });
+});
+
+describe('the corpus path — validate once, then walk', () => {
+  it('agrees with resolveDeltaBand on every delta', () => {
+    const bands = [
+      { key: ANCHOR, maxPct: -10.3 },
+      { key: DOWN, maxPct: -1.3 },
+      { key: EVEN, maxPct: 1.3 },
+      { key: UP, maxPct: 10.3 },
+      { key: STRETCH },
+    ];
+    const { boundaries } = resolveDeltaBoundaries(bands, WTN);
+    expect(boundaries).toHaveLength(5);
+
+    // The per-row walk must not drift from the validating single call — that
+    // divergence is the whole failure mode this module exists to remove.
+    const deltas = [-20, -4.017, -4.016, -0.507, -0.506, 0, 0.507, 4.017, 4.018, 20];
+    const walked = deltas.map((delta) => bandFromBoundaries(delta, boundaries as any));
+    const resolved = deltas.map((delta) => resolveDeltaBand(delta, bands, WTN).band);
+    expect(walked).toEqual(resolved);
+    expect(walked).toEqual([ANCHOR, ANCHOR, DOWN, DOWN, EVEN, EVEN, EVEN, UP, STRETCH, STRETCH]);
+  });
+
+  it('is reachable on the public tools surface', () => {
+    // Guards the barrel specifically: the assertions above import the module
+    // directly and would still pass if the public export were dropped.
+    for (const name of ['resolveDeltaBand', 'resolveDeltaBoundaries', 'bandFromBoundaries', 'signedRatingDelta']) {
+      expect(typeof tools[name]).toEqual('function');
+    }
+    expect(tools.resolveDeltaBand(-5, FIVE_BANDS).band).toEqual(ANCHOR);
   });
 });
 
