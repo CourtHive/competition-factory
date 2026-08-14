@@ -254,6 +254,7 @@ export type FactoryEngineMethod =
   | 'getCompetitionPolicy'
   | 'getCompetitionState'
   | 'getCompetitionVenues'
+  | 'getCompetitiveProfile'
   | 'getCourtInfo'
   | 'getCourts'
   | 'getDevContext'
@@ -297,6 +298,7 @@ export type FactoryEngineMethod =
   | 'getMatchUpFormatTiming'
   | 'getMatchUpFormatTimingUpdate'
   | 'getMatchUpFormatVariance'
+  | 'getMatchUpRatingDelta'
   | 'getMatchUpScheduleDetails'
   | 'getMatchUpsMap'
   | 'getMatchUpsStats'
@@ -907,6 +909,7 @@ export const FACTORY_ENGINE_METHODS: readonly FactoryEngineMethod[] = [
   'getCompetitionPolicy',
   'getCompetitionState',
   'getCompetitionVenues',
+  'getCompetitiveProfile',
   'getCourtInfo',
   'getCourts',
   'getDevContext',
@@ -950,6 +953,7 @@ export const FACTORY_ENGINE_METHODS: readonly FactoryEngineMethod[] = [
   'getMatchUpFormatTiming',
   'getMatchUpFormatTimingUpdate',
   'getMatchUpFormatVariance',
+  'getMatchUpRatingDelta',
   'getMatchUpScheduleDetails',
   'getMatchUpsMap',
   'getMatchUpsStats',

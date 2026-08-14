@@ -368,6 +368,7 @@ import type { applyLineUps } from '@Mutate/matchUps/lineUps/applyLineUps';
 import type { calculateMatchUpMargin } from '@Query/matchUp/calculateMatchUpMargin';
 import type { checkMatchUpIsComplete } from '@Query/matchUp/checkMatchUpIsComplete';
 import type { getAggregateTeamResults } from '@Query/scales/getAggregateTeamResults';
+import type { getCompetitiveProfile } from '@Query/matchUps/getCompetitiveProfile';
 import type { getPredictiveAccuracy } from '@Query/matchUps/getPredictiveAccuracy';
 import type { getSchedulingProfile, setSchedulingProfile } from '@Mutate/tournaments/schedulingProfile';
 import type { publishParticipants } from '@Mutate/timeItems/publishParticipants';
@@ -393,6 +394,7 @@ import type { deleteDrawDefinitions } from '@Mutate/events/deleteDrawDefinitions
 import type { getAppliedPolicies, getPolicyDefinitions } from '@Query/extensions/getAppliedPolicies';
 import type { getEventInconsistencies } from '@Query/event/getEventInconsistencies';
 import type { getMatchUpFormat } from '@Query/hierarchical/getMatchUpFormat';
+import type { getMatchUpRatingDelta } from '@Query/matchUp/getMatchUpRatingDelta';
 import type { getRounds } from '@Query/matchUps/scheduling/getRounds';
 import type { getTournamentInfo } from '@Query/tournaments/getTournamentInfo';
 import type { hydrateTournamentRecord } from '@Mutate/base/hydrateTournamentRecord';
@@ -811,6 +813,7 @@ export interface MethodSignatures {
   getCompetitionPolicy: EngineMethod<typeof getCompetitionPolicy>;
   getCompetitionState: EngineMethod<typeof getCompetitionState>;
   getCompetitionVenues: EngineMethod<typeof getCompetitionVenues>;
+  getCompetitiveProfile: EngineMethod<typeof getCompetitiveProfile>;
   getCourtInfo: EngineMethod<typeof getCourtInfo>;
   getCourts: EngineMethod<typeof getCourts>;
   getDraftState: EngineMethod<typeof getDraftState>;
@@ -852,6 +855,7 @@ export interface MethodSignatures {
   getMatchUpFormatTiming: EngineMethod<typeof getMatchUpFormatTiming>;
   getMatchUpFormatTimingUpdate: EngineMethod<typeof getMatchUpFormatTimingUpdate>;
   getMatchUpFormatVariance: EngineMethod<typeof getMatchUpFormatVariance>;
+  getMatchUpRatingDelta: EngineMethod<typeof getMatchUpRatingDelta>;
   getMatchUpScheduleDetails: EngineMethod<typeof getMatchUpScheduleDetails>;
   getMatchUpsMap: EngineMethod<typeof getMatchUpsMap>;
   getMatchUpsStats: EngineMethod<typeof getMatchUpsStats>;
