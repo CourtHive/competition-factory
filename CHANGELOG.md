@@ -1,5 +1,12 @@
 # Changelog
 
+## [6.24.0](https://github.com/CourtHive/competition-factory/compare/v6.23.0...v6.24.0) (2026-08-14)
+
+
+### Features
+
+* **sanctioning:** unify sanctioningLevel and sanctioningTier on one TierClassification ([#4606](https://github.com/CourtHive/competition-factory/issues/4606)) ([a816fb3](https://github.com/CourtHive/competition-factory/commit/a816fb32cc4a6b333064b5baa72d8c1de44da8f0))
+
 ## [6.23.0](https://github.com/CourtHive/competition-factory/compare/v6.22.2...v6.23.0) (2026-08-14)
 
 
