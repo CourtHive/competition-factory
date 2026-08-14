@@ -88,12 +88,22 @@ Validates transition. On `SUBMITTED`, validates required criterion scores agains
 
 ```ts
 // Assign
-{ officialRecord; tournamentId: string; roleSubtype: string; assignedDate?: string; startDate?: string; endDate?: string }
-// Returns: { success, assignment }
+{ officialRecord; tournamentId: string; roleSubtype: string; assignedDate?: string; startDate?: string; endDate?: string;
+  // Conflict-of-interest gate (opt-in) — see getOfficialConflicts
+  policyDefinitions?: PolicyDefinitions; participants?: Participant[]; nationalityCode?: string; organisationIds?: string[] }
+// Returns: { success, assignment, conflicts? }
 
 // Remove
 { officialRecord; assignmentId: string }
 ```
+
+The conflict gate is **opt-in**: with no `policyDefinitions` the assignment behaves exactly as before.
+Supply a conflict policy _and_ `participants` and the assignment is checked first — a `BLOCK`-severity
+conflict returns `{ error: OFFICIAL_CONFLICT_OF_INTEREST, conflicts }` and records nothing, while
+`WARN`-severity conflicts are returned alongside a successful `assignment` so the caller can surface them.
+
+Supplying a policy **without** `participants` is an error (`MISSING_CONFLICT_PARTICIPANTS`), not a silent
+pass: a check that could not run must not be indistinguishable from a check that found nothing.
 
 ---
 
@@ -102,6 +112,27 @@ Validates transition. On `SUBMITTED`, validates required criterion scores agains
 ```ts
 { officialRecord; assignmentId: string; toStatus: AssignmentStatus; transitionedBy?: string; reason?: string }
 ```
+
+---
+
+### addConflictDeclaration / removeConflictDeclaration
+
+Records a relationship the official has declared. Self-declaration is how federations administer conflicts
+of interest — the factory cannot infer that an official coaches a player, so the declaration is the record
+of it.
+
+```ts
+// Add — one of personId, participantId or organisationId is REQUIRED
+{ officialRecord; personId?: string; participantId?: string; organisationId?: string;
+  relationship?: string; declaredAt?: string; declaredBy?: string; notes?: string }
+// Returns: { success, declaration }
+
+// Remove
+{ officialRecord; declarationId: string }
+```
+
+A declaration that identifies nothing is refused (`INVALID_VALUES`) — it could never match a participant,
+so accepting it would create a record that looks like a disclosure while checking nothing.
 
 ---
 
@@ -133,7 +164,10 @@ Defines organisational prerequisites for a certification level. Used by `getOffi
 Attaches an evaluation template (sections, criteria, scoring method) to the official record.
 
 ```ts
-{ officialRecord; evaluationPolicy: EvaluationPolicy }
+{
+  officialRecord;
+  evaluationPolicy: EvaluationPolicy;
+}
 ```
 
 ---
@@ -143,7 +177,9 @@ Attaches an evaluation template (sections, criteria, scoring method) to the offi
 ### queryOfficialRecord
 
 ```ts
-{ officialRecord }
+{
+  officialRecord;
+}
 ```
 
 **Returns:** `{ success, officialRecord }` — the full record structure.
@@ -215,3 +251,42 @@ Checks whether an official meets all requirements for a certification: active ce
 ```
 
 **Returns:** `{ success, assignments }`
+
+---
+
+### getOfficialConflicts
+
+Evaluates an official against a tournament's entered participants and returns every conflict of interest
+the supplied policy declares interest in. Pure and side-effect free — the caller supplies the participants,
+so the query makes no assumption about where the tournament record lives.
+
+```ts
+{ officialRecord; participants?: Participant[]; nationalityCode?: string; organisationIds?: string[];
+  policyDefinitions?: PolicyDefinitions }
+```
+
+**Returns:** `{ success, conflicts, blocked }` — `blocked` is true when any conflict carries `BLOCK` severity.
+
+#### Rules
+
+| Rule                    | Detects                                                                                        |
+| ----------------------- | ---------------------------------------------------------------------------------------------- |
+| `SAME_PERSON`           | The official is themselves entered in the tournament.                                          |
+| `DECLARED_RELATIONSHIP` | A declaration matches an entered participant by `personId` or `participantId`.                 |
+| `NATIONALITY`           | The official's `nationalityCode` matches a participant's nationality (or `representing`).      |
+| `ORGANISATION`          | A declared — or supplied — organisation matches a participant's `person.parentOrganisationId`. |
+
+`nationalityCode` must be supplied by the caller: an `OfficialRecord` carries no person detail, so the
+official's own nationality cannot be derived from it.
+
+A rule that is absent from the policy, or present with `enabled: false`, is **not evaluated at all** — a
+policy is an allow-list of checks, never a silent partial application.
+
+#### Policies
+
+`POLICY_OFFICIATING_CONFLICT_OF_INTEREST` (default) blocks on `SAME_PERSON` and `DECLARED_RELATIONSHIP`,
+warns on `ORGANISATION`, and leaves `NATIONALITY` **disabled**. Shared nationality is disqualifying at
+ITF-level international events and meaningless at national ones, where every official necessarily shares
+the players' nationality — enabling it by default would make the check noise at most events.
+
+`POLICY_OFFICIATING_CONFLICT_OF_INTEREST_ITF` enables all four rules at `BLOCK`.

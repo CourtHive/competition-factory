@@ -47,7 +47,15 @@ function collect() {
       // every member is a string literal IS an enum for our purposes.
       ...[...src.matchAll(/^export const (\w+) = \{([\s\S]*?)\n\} as const;/gm)]
         .filter(([, , body]) => {
-          const members = body.split('\n').filter((l) => l.trim() && !l.trim().startsWith('//'));
+          // Block comments are stripped BEFORE the per-line test. Filtering only
+          // `//` lines meant a member carrying a `/** ... */` doc comment failed
+          // the `every` check and the whole enum was dropped — silently, which is
+          // the exact compiles-clean-but-undefined-at-runtime shape this scan
+          // exists to prevent. Documenting an enum member must not un-export it.
+          const members = body
+            .replace(/\/\*[\s\S]*?\*\//g, '')
+            .split('\n')
+            .filter((l) => l.trim() && !l.trim().startsWith('//'));
           return members.length > 0 && members.every((l) => /^\s*\w+:\s*'[^']*',?\s*$/.test(l));
         })
         .map((m) => m[1]),

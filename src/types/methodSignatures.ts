@@ -203,6 +203,7 @@ import type { getTournamentPublishStatus } from '@Query/tournaments/getTournamen
 import type { initializeDraft } from '@Mutate/drawDefinitions/draft/initializeDraft';
 import type { mergeFacilitySchedule } from '@Query/facilitySchedule/mergeFacilitySchedule';
 import type { predictMatchUpCompetitiveBands } from '@Query/matchUp/predictMatchUpCompetitiveBands';
+import type { removeConflictDeclaration } from '@Mutate/officiating/removeConflictDeclaration';
 import type { removeRatings } from '@Mutate/participants/scaleItems/removeRatings';
 import type { scheduleProfileGrid } from '@Mutate/matchUps/schedule/scheduleProfileGrid';
 import type { seedWithdrawalCascade } from '@Mutate/drawDefinitions/seedWithdrawalCascade';
@@ -252,6 +253,7 @@ import type { setPracticeDefaultCapacity } from '@Mutate/practice/setPracticeDef
 import type { swapDrawPositionAssignments } from '@Mutate/matchUps/drawPositions/positionSwap';
 import type { updateParticipantResults } from '@Mutate/structures/updateParticipantResults';
 import type { updatePracticeRegistration } from '@Mutate/practice/updatePracticeRegistration';
+import type { addConflictDeclaration } from '@Mutate/officiating/addConflictDeclaration';
 import type { assignDrawPosition } from '@Mutate/drawDefinitions/assignDrawPosition';
 import type { attachPolicies } from '@Mutate/extensions/policies/attachPolicies';
 import type { generateTournamentRecord } from '@Generators/mocks/generateTournamentRecord';
@@ -310,6 +312,7 @@ import type { generateEventWithDraw } from '@Generators/mocks/generateEventWithD
 import type { getAllStructureMatchUps } from '@Query/matchUps/getAllStructureMatchUps';
 import type { getEvaluationSummary } from '@Query/officiating/getEvaluationSummary';
 import type { getMatchUpDailyLimits } from '@Query/extensions/getMatchUpDailyLimits';
+import type { getOfficialConflicts } from '@Query/officiating/getOfficialConflicts';
 import type { getPairedParticipant } from '@Query/participant/getPairedParticipant';
 import type { getPositionAssignments } from '@Query/structure/getPositionAssignments';
 import type { getTournamentPersons } from '@Query/tournaments/getTournamentPersons';
@@ -598,6 +601,7 @@ export interface MethodSignatures {
   addCertificationRequirement: EngineMethod<typeof addCertificationRequirement>;
   addCollectionDefinition: EngineMethod<typeof addCollectionDefinition>;
   addCollectionGroup: EngineMethod<typeof addCollectionGroup>;
+  addConflictDeclaration: EngineMethod<typeof addConflictDeclaration>;
   addCourt: EngineMethod<typeof addCourt>;
   addCourtGridBooking: EngineMethod<typeof addCourtGridBooking>;
   addCourts: EngineMethod<typeof addCourts>;
@@ -866,6 +870,7 @@ export interface MethodSignatures {
   getMutationLocks: EngineMethod<typeof getMutationLocks>;
   getOfficialAssignments: EngineMethod<typeof getOfficialAssignments>;
   getOfficialCertifications: EngineMethod<typeof getOfficialCertifications>;
+  getOfficialConflicts: EngineMethod<typeof getOfficialConflicts>;
   getOfficialEligibility: EngineMethod<typeof getOfficialEligibility>;
   getPairedParticipant: EngineMethod<typeof getPairedParticipant>;
   getParticipantEventDetails: EngineMethod<typeof getParticipantEventDetails>;
@@ -1030,6 +1035,7 @@ export interface MethodSignatures {
   removeCertification: EngineMethod<typeof removeCertification>;
   removeCollectionDefinition: EngineMethod<typeof removeCollectionDefinition>;
   removeCollectionGroup: EngineMethod<typeof removeCollectionGroup>;
+  removeConflictDeclaration: EngineMethod<typeof removeConflictDeclaration>;
   removeCourtGridBooking: EngineMethod<typeof removeCourtGridBooking>;
   removeDelegatedOutcome: EngineMethod<typeof removeDelegatedOutcome>;
   removeDrawDefinitionExtension: EngineMethod<typeof removeDrawDefinitionExtension>;

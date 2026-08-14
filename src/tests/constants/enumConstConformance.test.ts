@@ -37,7 +37,9 @@ import * as officiatingConstants from '@Constants/officiatingConstants';
 import * as sanctioningConstants from '@Constants/sanctioningConstants';
 import { officiatingConstants as officiatingObject } from '@Constants/officiatingConstants';
 import { sanctioningConstants as sanctioningObject } from '@Constants/sanctioningConstants';
+import { readdirSync, readFileSync } from 'node:fs';
 import { describe, it, expect } from 'vitest';
+import { join } from 'node:path';
 
 /**
  * Enum ↔ const-module conformance guard (Layer 1).
@@ -109,6 +111,8 @@ const COVERAGE: {
   { name: 'IndoorOutdoor', enum: T.IndoorOutdoorEnum, consts: venueConstants, object: venueObject },
   { name: 'Discipline', enum: T.DisciplineEnum, consts: disciplineConstants, object: disciplineObject },
   { name: 'AssignmentStatus', enum: E.AssignmentStatusEnum, consts: officiatingConstants, object: officiatingObject },
+  { name: 'ConflictType', enum: E.ConflictTypeEnum, consts: officiatingConstants, object: officiatingObject },
+  { name: 'ConflictSeverity', enum: E.ConflictSeverityEnum, consts: officiatingConstants, object: officiatingObject },
   {
     name: 'CertificationStatus',
     enum: E.CertificationStatusEnum,
@@ -295,5 +299,40 @@ describe('enum ↔ backing tuple parity', () => {
 
   it.each(PAIRS)('$name: enum values and tuple entries are the same set', ({ enum: e, tuple }) => {
     expect(Object.values(enumEntries(e)).sort()).toEqual([...tuple].sort());
+  });
+});
+
+/**
+ * Independent cross-check on the enumExports GENERATOR.
+ *
+ * `check:enum-exports` compares the generated file against the committed one, so
+ * it cannot see an enum the generator never detected — generator and committed
+ * file drop it together and the guard stays green. That is not hypothetical: the
+ * shape test filtered `//` lines but not `/** *\/` blocks, so documenting a member
+ * silently un-exported the whole enum (ConflictTypeEnum, caught here).
+ *
+ * This scans by NAME where the generator scans by SHAPE, so the two detection
+ * paths are genuinely independent — a bug in one does not blind the other.
+ */
+describe('enumExports covers every declared enum (independent of the generator)', () => {
+  const TYPES_DIR = join(__dirname, '../../types');
+
+  const declared = readdirSync(TYPES_DIR)
+    .filter((file) => file.endsWith('.ts') && file !== 'enumExports.ts')
+    .flatMap((file) => {
+      const src = readFileSync(join(TYPES_DIR, file), 'utf8');
+      return [
+        ...[...src.matchAll(/^export enum (\w+)/gm)].map((m) => m[1]),
+        ...[...src.matchAll(/^export const (\w+Enum) = \{/gm)].map((m) => m[1]),
+      ].map((name) => ({ file, name }));
+    });
+
+  it('finds enum declarations to check', () => {
+    expect(declared.length).toBeGreaterThan(50);
+  });
+
+  it('every declared enum is value-exported from enumExports', () => {
+    const missing = declared.filter(({ name }) => !(name in ALL_ENUMS)).map(({ file, name }) => `${file}:${name}`);
+    expect(missing).toEqual([]);
   });
 });

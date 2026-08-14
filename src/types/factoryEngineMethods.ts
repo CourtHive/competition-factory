@@ -11,6 +11,7 @@ export type FactoryEngineMethod =
   | 'addCertificationRequirement'
   | 'addCollectionDefinition'
   | 'addCollectionGroup'
+  | 'addConflictDeclaration'
   | 'addCourt'
   | 'addCourtGridBooking'
   | 'addCourts'
@@ -309,6 +310,7 @@ export type FactoryEngineMethod =
   | 'getMutationLocks'
   | 'getOfficialAssignments'
   | 'getOfficialCertifications'
+  | 'getOfficialConflicts'
   | 'getOfficialEligibility'
   | 'getPairedParticipant'
   | 'getParticipantEventDetails'
@@ -494,6 +496,7 @@ export type FactoryEngineMethod =
   | 'removeCertification'
   | 'removeCollectionDefinition'
   | 'removeCollectionGroup'
+  | 'removeConflictDeclaration'
   | 'removeCourtGridBooking'
   | 'removeDelegatedOutcome'
   | 'removeDrawDefinitionExtension'
@@ -666,6 +669,7 @@ export const FACTORY_ENGINE_METHODS: readonly FactoryEngineMethod[] = [
   'addCertificationRequirement',
   'addCollectionDefinition',
   'addCollectionGroup',
+  'addConflictDeclaration',
   'addCourt',
   'addCourtGridBooking',
   'addCourts',
@@ -964,6 +968,7 @@ export const FACTORY_ENGINE_METHODS: readonly FactoryEngineMethod[] = [
   'getMutationLocks',
   'getOfficialAssignments',
   'getOfficialCertifications',
+  'getOfficialConflicts',
   'getOfficialEligibility',
   'getPairedParticipant',
   'getParticipantEventDetails',
@@ -1149,6 +1154,7 @@ export const FACTORY_ENGINE_METHODS: readonly FactoryEngineMethod[] = [
   'removeCertification',
   'removeCollectionDefinition',
   'removeCollectionGroup',
+  'removeConflictDeclaration',
   'removeCourtGridBooking',
   'removeDelegatedOutcome',
   'removeDrawDefinitionExtension',

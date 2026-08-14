@@ -68,6 +68,18 @@ export const ASSIGNMENT_TERMINAL: AssignmentStatus[] = [ASSIGN_DECLINED, ASSIGN_
 export const EVALUATION_EDITABLE: EvaluationStatus[] = [EVAL_DRAFT, EVAL_REJECTED];
 
 // ---------------------------------------------------------------------------
+// Conflict of Interest
+// ---------------------------------------------------------------------------
+
+export const CONFLICT_SAME_PERSON = 'SAME_PERSON';
+export const CONFLICT_DECLARED_RELATIONSHIP = 'DECLARED_RELATIONSHIP';
+export const CONFLICT_NATIONALITY = 'NATIONALITY';
+export const CONFLICT_ORGANISATION = 'ORGANISATION';
+
+export const CONFLICT_BLOCK = 'BLOCK';
+export const CONFLICT_WARN = 'WARN';
+
+// ---------------------------------------------------------------------------
 // Evaluation Scale Options
 // ---------------------------------------------------------------------------
 
@@ -158,6 +170,21 @@ export const MISSING_EVALUATION_POLICY: ErrorType = {
   code: 'ERR_MISSING_EVALUATION_POLICY',
 };
 
+export const CONFLICT_DECLARATION_NOT_FOUND: ErrorType = {
+  message: 'Conflict declaration not found',
+  code: 'ERR_NOT_FOUND_CONFLICT_DECLARATION',
+};
+
+export const MISSING_CONFLICT_PARTICIPANTS: ErrorType = {
+  message: 'Missing participants — a conflict-of-interest policy was supplied but there is nothing to check against',
+  code: 'ERR_MISSING_CONFLICT_PARTICIPANTS',
+};
+
+export const OFFICIAL_CONFLICT_OF_INTEREST: ErrorType = {
+  message: 'Official has a blocking conflict of interest',
+  code: 'ERR_OFFICIAL_CONFLICT_OF_INTEREST',
+};
+
 // ---------------------------------------------------------------------------
 // Notification Topics
 // ---------------------------------------------------------------------------
@@ -198,4 +225,10 @@ export const officiatingConstants = {
   ASSIGNMENT_TERMINAL,
   EVALUATION_EDITABLE,
   EVALUATION_SCALE_OPTIONS,
+  CONFLICT_SAME_PERSON,
+  CONFLICT_DECLARED_RELATIONSHIP,
+  CONFLICT_NATIONALITY,
+  CONFLICT_ORGANISATION,
+  CONFLICT_BLOCK,
+  CONFLICT_WARN,
 } as const;
