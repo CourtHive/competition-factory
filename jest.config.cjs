@@ -18,5 +18,12 @@ module.exports = {
   collectCoverageFrom: ['**/*.(t|j)s'],
   coverageDirectory: '../coverage',
   testRegex: '.*\\.spec\\.ts$',
+  // `rootDir` is the repo root, so a git worktree checked out under `.claude/worktrees/`
+  // would otherwise be globbed as a second copy of every spec. Those copies resolve
+  // incoherently — aliases map back to `<rootDir>/src` while relative imports hit the
+  // worktree's own (unbuilt) tree — so exclude them from test discovery and from the
+  // haste map (the latter also silences duplicate-package-name collision warnings).
+  testPathIgnorePatterns: ['/node_modules/', '<rootDir>/.claude/'],
+  modulePathIgnorePatterns: ['<rootDir>/.claude/'],
   moduleNameMapper: pathsToModuleNameMapper(compilerOptions.paths, { prefix: '<rootDir>/' }),
 };
