@@ -283,9 +283,9 @@ Because the tier lands on the native `tournamentTier` field, ranking policies re
 sanctioned tournament through the usual `tierToLevel[system][value]` path, with no translation step.
 
 :::note
-A `sanctioningTier` **extension** carrying the tier's value is still written alongside
-`tournamentTier`, for one release, so anything already reading it keeps working. Read
-`tournamentTier`; the extension is scheduled for removal.
+`sanctioningId` is the only extension activation writes. A redundant `sanctioningTier` extension was
+written alongside `tournamentTier` for one release (6.24.0) and was removed in 6.25.0 — read
+`tournamentTier`.
 :::
 
 ```js
