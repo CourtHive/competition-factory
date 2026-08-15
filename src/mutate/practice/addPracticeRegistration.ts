@@ -28,6 +28,7 @@ type AddPracticeRegistrationArgs = {
   endTime: string;
   notes?: string;
   disableNotice?: boolean;
+  registrationId?: string;
 };
 
 type AddPracticeRegistrationResult = ResultType & {
@@ -45,8 +46,18 @@ type AddPracticeRegistrationResult = ResultType & {
  * Callers (TMX) surface a confirmModal and decide whether to proceed.
  */
 export function addPracticeRegistration(params: AddPracticeRegistrationArgs): AddPracticeRegistrationResult {
-  const { tournamentRecord, courtId, date, bookingId, participantId, startTime, endTime, notes, disableNotice } =
-    params;
+  const {
+    tournamentRecord,
+    courtId,
+    date,
+    bookingId,
+    participantId,
+    startTime,
+    endTime,
+    notes,
+    disableNotice,
+    registrationId,
+  } = params;
 
   const paramsCheck = requireParams({ tournamentRecord, courtId, participantId }, [
     TOURNAMENT_RECORD,
@@ -88,7 +99,10 @@ export function addPracticeRegistration(params: AddPracticeRegistrationArgs): Ad
   });
 
   const registration: PracticeRegistration = {
-    registrationId: UUID('reg'),
+    // Caller-supplied id wins — see addReviewNote for why this is not cosmetic.
+    // The `'reg'` prefix applies only to the minted path; a supplied id is taken
+    // verbatim rather than re-prefixed, so round-tripping an existing id is safe.
+    registrationId: registrationId ?? UUID('reg'),
     participantId,
     startTime,
     endTime,

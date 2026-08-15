@@ -47,6 +47,11 @@ export function writeTieFormat({ target, tieFormat, event }: WriteTieFormatArgs)
 
     // Multiple references share this ID — create a new entry so we don't affect others
     const newTieFormat = makeDeepCopy(tieFormat, undefined, true);
+    // DELIBERATELY unconditional, unlike the caller-supplied-id convention applied
+    // across mutate/ in 2026-08. This is copy-on-write: the whole point is to
+    // diverge from the shared tieFormatId, so honouring a supplied id would write
+    // back onto the format the other references still point at. Do not "complete
+    // the set" by making this respect a parameter.
     newTieFormat.tieFormatId = UUID();
     event.tieFormats.push(newTieFormat);
     target.tieFormatId = newTieFormat.tieFormatId;

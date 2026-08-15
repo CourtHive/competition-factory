@@ -30,6 +30,18 @@ type ActivateFromSanctioningArgs = {
    * cross-tournament identity for the place it is played at instead of a re-entered venue.
    */
   venues?: Venue[];
+  /**
+   * Optional pool of ids for the generated compliance-checklist items, consumed
+   * in order. Follows the existing `uuids` idiom (`generateVenues`,
+   * `createTeamsFromAttributes`, `addEventEntryPairs`).
+   *
+   * Compliance items are derived from `policy.postEventRequirements`, which carry
+   * no id of their own, so there is nothing stable to key them to. Without a pool
+   * this mutation mints ids engine-side and is therefore not replayable: a site
+   * server mirrors `{method, params}` upstream, and engine-minted ids differ
+   * between instances. Supply the pool when identity must survive a replay.
+   */
+  uuids?: string[];
 };
 
 /**
@@ -121,7 +133,12 @@ function resolveEventOtherIds(
   ];
 }
 
-export function activateFromSanctioning({ sanctioningRecord, sanctioningPolicy, venues }: ActivateFromSanctioningArgs) {
+export function activateFromSanctioning({
+  sanctioningRecord,
+  sanctioningPolicy,
+  venues,
+  uuids,
+}: ActivateFromSanctioningArgs) {
   if (!sanctioningRecord) return { error: MISSING_SANCTIONING_RECORD };
   if (sanctioningRecord.status !== 'APPROVED') {
     return {
@@ -237,7 +254,8 @@ export function activateFromSanctioning({ sanctioningRecord, sanctioningPolicy, 
         const deadline = new Date(endDate);
         deadline.setDate(deadline.getDate() + req.deadlineDays);
         return {
-          itemId: UUID(),
+          // Caller-supplied ids win, consumed in list order.
+          itemId: uuids?.pop() ?? UUID(),
           itemType: req.itemType,
           description: req.description,
           required: req.required,
