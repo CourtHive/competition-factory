@@ -255,6 +255,7 @@ import type { swapDrawPositionAssignments } from '@Mutate/matchUps/drawPositions
 import type { updateParticipantResults } from '@Mutate/structures/updateParticipantResults';
 import type { updatePracticeRegistration } from '@Mutate/practice/updatePracticeRegistration';
 import type { addConflictDeclaration } from '@Mutate/officiating/addConflictDeclaration';
+import type { addParticipantOtherId } from '@Mutate/participants/addParticipantOtherId';
 import type { assignDrawPosition } from '@Mutate/drawDefinitions/assignDrawPosition';
 import type { attachPolicies } from '@Mutate/extensions/policies/attachPolicies';
 import type { generateTournamentRecord } from '@Generators/mocks/generateTournamentRecord';
@@ -359,7 +360,6 @@ import type {
 import type { suggestFormatPlans } from '@Query/formatWizard/suggestFormatPlans';
 import type { unPublishOrderOfPlay } from '@Mutate/timeItems/unPublishOrderOfPlay';
 import type { addPersonOtherId } from '@Mutate/participants/addPersonOtherId';
-import type { addParticipantOtherId } from '@Mutate/participants/addParticipantOtherId';
 import type {
   addScheduleScenario,
   getScheduleScenario,
@@ -639,10 +639,10 @@ export interface MethodSignatures {
   addOnlineResource: EngineMethod<typeof addOnlineResource>;
   addParticipant: EngineMethod<typeof addParticipant>;
   addParticipantExtension: EngineMethod<typeof addParticipantExtension>;
+  addParticipantOtherId: EngineMethod<typeof addParticipantOtherId>;
   addParticipants: EngineMethod<typeof addParticipants>;
   addParticipantTimeItem: EngineMethod<typeof addParticipantTimeItem>;
   addPenalty: EngineMethod<typeof addPenalty>;
-  addParticipantOtherId: EngineMethod<typeof addParticipantOtherId>;
   addPersonOtherId: EngineMethod<typeof addPersonOtherId>;
   addPersonRequests: EngineMethod<typeof addPersonRequests>;
   addPersons: EngineMethod<typeof addPersons>;

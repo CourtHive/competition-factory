@@ -47,10 +47,10 @@ export type FactoryEngineMethod =
   | 'addOnlineResource'
   | 'addParticipant'
   | 'addParticipantExtension'
+  | 'addParticipantOtherId'
   | 'addParticipants'
   | 'addParticipantTimeItem'
   | 'addPenalty'
-  | 'addParticipantOtherId'
   | 'addPersonOtherId'
   | 'addPersonRequests'
   | 'addPersons'
@@ -707,10 +707,10 @@ export const FACTORY_ENGINE_METHODS: readonly FactoryEngineMethod[] = [
   'addOnlineResource',
   'addParticipant',
   'addParticipantExtension',
+  'addParticipantOtherId',
   'addParticipants',
   'addParticipantTimeItem',
   'addPenalty',
-  'addParticipantOtherId',
   'addPersonOtherId',
   'addPersonRequests',
   'addPersons',
