@@ -32,9 +32,17 @@ type AssignOfficialArgs = {
   participants?: Participant[];
   nationalityCode?: string;
   organisationIds?: string[];
+  /** The official's participantId in the tournament being assigned to, plus that tournament's GROUP
+   *  participants. Together these enable the SHARED_GROUPING rule — a relationship declared inside the
+   *  tournamentRecord rather than in the registry. Without them this route can only see registry
+   *  declarations, which would make the same conflict visible per-matchUp and invisible here. */
+  officialParticipantId?: string;
+  groupParticipants?: Participant[];
 };
 
 export function assignOfficial({
+  officialParticipantId,
+  groupParticipants,
   officialRecord,
   organisationIds,
   nationalityCode,
@@ -60,6 +68,8 @@ export function assignOfficial({
   if (!roleSubtype) return { error: INVALID_VALUES, context: { message: 'Missing roleSubtype' } } as any;
 
   const conflictResult = getOfficialConflicts({
+    officialParticipantId,
+    groupParticipants,
     officialRecord,
     participants,
     nationalityCode,

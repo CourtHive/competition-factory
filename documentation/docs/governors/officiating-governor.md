@@ -97,6 +97,21 @@ Validates transition. On `SUBMITTED`, validates required criterion scores agains
 { officialRecord; assignmentId: string }
 ```
 
+```ts
+// tournament-scoped declarations work on this route too
+{ officialRecord; tournamentId; roleSubtype;
+  policyDefinitions?; participants?;
+  officialParticipantId?; groupParticipants?;   // SHARED_GROUPING inputs
+  nationalityCode?; organisationIds? }
+```
+
+Both assignment routes see the same declarations. Without `officialParticipantId` + `groupParticipants`
+this route would see only registry declarations, so a GROUP-expressed conflict would block per-matchUp and
+pass here — same feature, two routes, different answers.
+
+Note `officialRecord` **is** required here, unlike `getOfficialConflicts`: `assignOfficial` mutates the
+record (it pushes an assignment onto it).
+
 The conflict gate is **opt-in**: with no `policyDefinitions` the assignment behaves exactly as before.
 Supply a conflict policy _and_ `participants` and the assignment is checked first — a `BLOCK`-severity
 conflict returns `{ error: OFFICIAL_CONFLICT_OF_INTEREST, conflicts }` and records nothing, while
