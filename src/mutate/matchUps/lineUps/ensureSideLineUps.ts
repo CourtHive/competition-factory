@@ -3,7 +3,7 @@ import { firstClassOrExtension } from '@Acquire/firstClassOrExtension';
 import { findDrawMatchUp } from '@Acquire/findDrawMatchUp';
 import { makeDeepCopy } from '@Tools/makeDeepCopy';
 
-import { DrawDefinition, MatchUp } from '@Types/tournamentTypes';
+import { DrawDefinition, Event, MatchUp } from '@Types/tournamentTypes';
 import { LINEUPS } from '@Constants/extensionConstants';
 import { HydratedMatchUp } from '@Types/hydrated';
 
@@ -13,6 +13,13 @@ type EnsureSideLineUpsArgs = {
   tournamentId?: string;
   dualMatchUp?: MatchUp;
   eventId?: string;
+  /**
+   * Required to resolve a CENTRALIZED tieFormat during hydration below. After
+   * `aggregateTieFormats()` a matchUp carries `tieFormatId` rather than an inline
+   * `tieFormat`, and resolving that reference needs `event.tieFormats[]`. Passing
+   * only `eventId` is not enough — every caller already has the object.
+   */
+  event?: Event;
 };
 export function ensureSideLineUps({
   inContextDualMatchUp,
@@ -20,6 +27,7 @@ export function ensureSideLineUps({
   tournamentId,
   dualMatchUp,
   eventId,
+  event,
 }: EnsureSideLineUpsArgs) {
   if (dualMatchUp) {
     if (!inContextDualMatchUp) {
@@ -27,6 +35,7 @@ export function ensureSideLineUps({
         matchUpId: dualMatchUp.matchUpId,
         inContext: true,
         drawDefinition,
+        event,
       })?.matchUp;
     }
 

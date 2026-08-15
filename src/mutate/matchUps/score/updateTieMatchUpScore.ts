@@ -71,6 +71,7 @@ export function updateTieMatchUpScore(params: UpdateTieMatchUpScoreArgs): {
     eventId: event?.eventId,
     dualMatchUp: matchUp,
     drawDefinition,
+    event,
   });
 
   const disableAutoCalc = firstClassOrExtension({

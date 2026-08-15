@@ -114,7 +114,13 @@ function handleDoublesPairModification({
   return undefined;
 }
 
-function modifyOrDeleteUnattachedPair({ individualParticipantIds, pairParticipantId, tournamentRecord, pairParticipant, stack }) {
+function modifyOrDeleteUnattachedPair({
+  individualParticipantIds,
+  pairParticipantId,
+  tournamentRecord,
+  pairParticipant,
+  stack,
+}) {
   if (individualParticipantIds.length) {
     pairParticipant.individualParticipantIds = individualParticipantIds;
     const result = modifyParticipant({
@@ -246,6 +252,7 @@ export function removeTieMatchUpParticipantId(
     inContextDualMatchUp,
     drawDefinition,
     dualMatchUp,
+    event,
   });
 
   let dualMatchUpSide = dualMatchUp.sides?.find(({ sideNumber }) => sideNumber === side.sideNumber);

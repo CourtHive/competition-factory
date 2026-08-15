@@ -159,6 +159,7 @@ export function assignTieMatchUpParticipantId(
     inContextDualMatchUp,
     drawDefinition,
     dualMatchUp,
+    event,
   });
 
   const dualMatchUpSide = dualMatchUp?.sides?.find((side) => side.sideNumber === sideNumber);

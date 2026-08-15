@@ -616,6 +616,7 @@ function handleTeamAutoCalc({
     eventId: event?.eventId,
     dualMatchUp: matchUp,
     drawDefinition,
+    event,
   });
 
   return { dualWinningSideChange };
