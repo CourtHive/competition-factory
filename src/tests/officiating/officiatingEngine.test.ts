@@ -1,4 +1,5 @@
 import { getOfficiatingMethods, setOfficiatingMethods } from '@Assemblies/engines/officiating/officiatingState';
+import * as officiatingGovernor from '@Assemblies/governors/officiatingGovernor';
 import { officiatingEngine } from '@Assemblies/engines/officiating';
 import { beforeEach, describe, expect, it } from 'vitest';
 
@@ -888,5 +889,95 @@ describe('Officiating Engine — Methods Registration', () => {
     expect(methods.myMethod()).toBe('custom');
     // Non-function values should not be registered
     expect(methods.notAFunction).toBeUndefined();
+  });
+});
+
+/**
+ * Governor ↔ engine exposure guard.
+ *
+ * The officiating engine is a HAND-AUTHORED object literal, so adding a method to the governor does
+ * NOT expose it on the engine. That split has already bitten once: factory 6.25.0 shipped the
+ * conflict-of-interest methods on the governor (which CFS imports) but not on the engine — and
+ * courthive-ams drives every officiating operation through a generic `engine[method]` passthrough, so
+ * the whole feature was unreachable while every existing test stayed green.
+ *
+ * Anything deliberately NOT exposed must be listed in NOT_ON_ENGINE with a reason, so the omission is
+ * a decision on the record rather than an oversight.
+ */
+const NOT_ON_ENGINE: Record<string, string> = {
+  // Belongs on `tournamentEngine`, NOT here — it needs a tournamentRecord + drawDefinition, which this
+  // engine's state does not hold (this is an OfficialRecord aggregate). It IS already exposed on
+  // tournamentEngine, which resolves both from engine state given a drawId, so this is a placement
+  // decision rather than an absence. Verified empirically, not assumed.
+  getMatchUpOfficialConflicts: 'lives on tournamentEngine — needs tournament state, not OfficialRecord state',
+  // Pure status-transition validator, consumed directly rather than as an engine operation.
+  // (`validateCertification` IS on the engine — this guard caught that on its first run.)
+  validateOfficiatingStatusTransition: 'pure validator, consumed directly',
+  // Engine exposes this as `queryOfficialRecord`'s underlying getter via getState/resolveRecord.
+  queryOfficialRecord: 'engine exposes record access via getState / resolveRecord',
+};
+
+describe('Officiating governor ↔ engine exposure', () => {
+  const governorMethods = Object.entries(officiatingGovernor as Record<string, unknown>)
+    .filter(([, value]) => typeof value === 'function')
+    .map(([name]) => name);
+
+  it('finds governor methods to check', () => {
+    expect(governorMethods.length).toBeGreaterThan(10);
+  });
+
+  it('every governor method is on the engine, or explicitly excluded with a reason', () => {
+    const missing = governorMethods.filter(
+      (name) => typeof (officiatingEngine as any)[name] !== 'function' && !NOT_ON_ENGINE[name],
+    );
+    expect(missing).toEqual([]);
+  });
+
+  it('the exclusion list has no stale entries', () => {
+    // An excluded name that IS on the engine means the list is lying about the surface.
+    const contradictory = Object.keys(NOT_ON_ENGINE).filter(
+      (name) => typeof (officiatingEngine as any)[name] === 'function',
+    );
+    expect(contradictory).toEqual([]);
+  });
+});
+
+describe('Officiating Engine — Conflict of Interest', () => {
+  beforeEach(() => {
+    officiatingEngine.reset();
+  });
+
+  it('adds, evaluates and removes a conflict declaration through the engine', () => {
+    // This is the path courthive-ams uses: engine[method] against the active record.
+    const created: any = createTestRecord();
+    const officialRecordId = created.officialRecord.officialRecordId;
+
+    let result: any = officiatingEngine.addConflictDeclaration({
+      officialRecordId,
+      personId: 'person-042',
+      relationship: 'COACH',
+    });
+    expect(result.success).toBe(true);
+    const declarationId = result.declaration.declarationId;
+
+    // Evaluate against a participant matching the declaration.
+    result = officiatingEngine.getOfficialConflicts({
+      officialRecordId,
+      participants: [{ participantId: 'par-1', person: { personId: 'person-042' } }],
+      policyDefinitions: {
+        officiatingConflict: {
+          conflictRules: { DECLARED_RELATIONSHIP: { enabled: true, severity: 'BLOCK' } },
+        },
+      },
+    });
+    expect(result.success).toBe(true);
+    expect(result.conflicts).toHaveLength(1);
+    expect(result.blocked).toBe(true);
+
+    result = officiatingEngine.removeConflictDeclaration({ officialRecordId, declarationId });
+    expect(result.success).toBe(true);
+
+    const state: any = officiatingEngine.getState();
+    expect(state.officialRecords[officialRecordId].conflictDeclarations).toHaveLength(0);
   });
 });

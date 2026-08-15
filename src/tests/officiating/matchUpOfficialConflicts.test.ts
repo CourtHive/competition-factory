@@ -260,6 +260,34 @@ describe('getMatchUpOfficialConflicts', () => {
   });
 });
 
+describe('getMatchUpOfficialConflicts is exposed on tournamentEngine', () => {
+  // It is deliberately absent from `officiatingEngine` (an OfficialRecord aggregate with no tournament
+  // state) — but it must be present on the engine that DOES hold a tournament, and must resolve
+  // tournamentRecord + drawDefinition from engine state rather than requiring the caller to assemble
+  // them. Asserted rather than assumed: the officiating engine's exclusion list points here.
+  it('is a function on tournamentEngine', () => {
+    expect((tournamentEngine as any).getMatchUpOfficialConflicts).toBeTypeOf('function');
+  });
+
+  it('resolves tournamentRecord and drawDefinition from engine state given only drawId', () => {
+    const { matchUpId, drawId, sides } = setup();
+
+    const result: any = (tournamentEngine as any).getMatchUpOfficialConflicts({
+      policyDefinitions: POLICY_OFFICIATING_CONFLICT_OF_INTEREST,
+      officialRecord: makeOfficialRecord({
+        conflictDeclarations: [{ declarationId: 'dec-1', participantId: sides[0].participantId }],
+      }),
+      matchUpId,
+      drawId,
+    });
+
+    expect(result.error).toBeUndefined();
+    expect(result.checkedParticipants).toHaveLength(2);
+    expect(result.conflicts).toHaveLength(1);
+    expect(result.blocked).toBe(true);
+  });
+});
+
 describe('addMatchUpOfficial conflict gate', () => {
   it('assigns unchanged when no conflict policy is supplied', () => {
     const { tournamentId, matchUpId, drawId, officialParticipantId } = setup();

@@ -2,7 +2,10 @@ import { transitionCertificationStatus } from '@Mutate/officiating/transitionCer
 import { transitionEvaluationStatus } from '@Mutate/officiating/transitionEvaluationStatus';
 import { transitionAssignmentStatus } from '@Mutate/officiating/transitionAssignmentStatus';
 import { addCertificationRequirement } from '@Mutate/officiating/addCertificationRequirement';
+import { removeConflictDeclaration } from '@Mutate/officiating/removeConflictDeclaration';
 import { removeOfficialAssignment } from '@Mutate/officiating/removeOfficialAssignment';
+import { addConflictDeclaration } from '@Mutate/officiating/addConflictDeclaration';
+import { getOfficialConflicts } from '@Query/officiating/getOfficialConflicts';
 import { getOfficialCertifications } from '@Query/officiating/getOfficialCertifications';
 import { validateCertification } from '@Validators/officiating/validateCertification';
 import { getOfficialAssignments } from '@Query/officiating/getOfficialAssignments';
@@ -170,6 +173,26 @@ export const officiatingEngine = (() => {
     removeSuspension: (params: any) => {
       const officialRecord = params.officialRecord ?? resolveRecord(params.officialRecordId);
       return removeSuspension({ ...params, officialRecord });
+    },
+
+    // --- Conflict of Interest ---
+    // NOTE: `getMatchUpOfficialConflicts` is deliberately NOT exposed here — it belongs on
+    // `tournamentEngine`, where it already is. It needs a tournamentRecord + drawDefinition, which
+    // this engine's state does not hold (this is an OfficialRecord aggregate); tournamentEngine
+    // resolves both from its own state given a drawId. Do not "complete the set" by adding it here.
+    addConflictDeclaration: (params: any) => {
+      const officialRecord = params.officialRecord ?? resolveRecord(params.officialRecordId);
+      return addConflictDeclaration({ ...params, officialRecord });
+    },
+
+    removeConflictDeclaration: (params: any) => {
+      const officialRecord = params.officialRecord ?? resolveRecord(params.officialRecordId);
+      return removeConflictDeclaration({ ...params, officialRecord });
+    },
+
+    getOfficialConflicts: (params: any) => {
+      const officialRecord = params?.officialRecord ?? resolveRecord(params?.officialRecordId);
+      return getOfficialConflicts({ ...params, officialRecord: officialRecord as OfficialRecord });
     },
 
     // --- Evaluation Policies ---
