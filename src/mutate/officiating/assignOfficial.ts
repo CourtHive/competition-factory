@@ -1,3 +1,4 @@
+import { conflictInputsFrom } from '@Query/officiating/conflictEvaluationInputs';
 import { getOfficialConflicts } from '@Query/officiating/getOfficialConflicts';
 import { UUID } from '@Tools/UUID';
 
@@ -11,10 +12,15 @@ import { INVALID_VALUES } from '@Constants/errorConditionConstants';
 import { SUCCESS } from '@Constants/resultConstants';
 
 // Types
-import type { OfficialConflict, OfficialAssignment, OfficialRecord } from '@Types/officiatingTypes';
+import type {
+  ConflictEvaluationInputs,
+  OfficialConflict,
+  OfficialAssignment,
+  OfficialRecord,
+} from '@Types/officiatingTypes';
 import type { Participant } from '@Types/tournamentTypes';
 
-type AssignOfficialArgs = {
+type AssignOfficialArgs = ConflictEvaluationInputs & {
   officialRecord: OfficialRecord;
   assignmentId?: string;
   tournamentId: string;
@@ -25,56 +31,42 @@ type AssignOfficialArgs = {
   assignedBy?: string;
   notes?: string;
   extensions?: any[];
-  /** Conflict-of-interest gate — opt-in. Supply a policy AND the tournament's
-   *  participants to have the assignment checked; a BLOCK-severity conflict
-   *  refuses it. Omitting policyDefinitions skips the check entirely. */
-  policyDefinitions?: { [key: string]: any };
+  /** Conflict-of-interest gate — opt-in. Supply a policy (via ConflictEvaluationInputs) AND the
+   *  tournament's participants to have the assignment checked; a BLOCK-severity conflict refuses it.
+   *  Omitting policyDefinitions skips the check entirely. The rest of the conflict inputs come from
+   *  ConflictEvaluationInputs and are forwarded whole. */
   participants?: Participant[];
-  nationalityCode?: string;
-  organisationIds?: string[];
-  /** The official's participantId in the tournament being assigned to, plus that tournament's GROUP
-   *  participants. Together these enable the SHARED_GROUPING rule — a relationship declared inside the
-   *  tournamentRecord rather than in the registry. Without them this route can only see registry
-   *  declarations, which would make the same conflict visible per-matchUp and invisible here. */
-  officialParticipantId?: string;
-  groupParticipants?: Participant[];
 };
 
-export function assignOfficial({
-  officialParticipantId,
-  groupParticipants,
-  officialRecord,
-  organisationIds,
-  nationalityCode,
-  policyDefinitions,
-  assignmentId,
-  participants,
-  tournamentId,
-  roleSubtype,
-  assignedDate,
-  startDate,
-  endDate,
-  assignedBy,
-  notes,
-  extensions,
-}: AssignOfficialArgs): {
+export function assignOfficial(params: AssignOfficialArgs): {
   error?: any;
   assignment?: OfficialAssignment;
   conflicts?: OfficialConflict[];
   success?: boolean;
 } {
+  const {
+    officialRecord,
+    assignmentId,
+    participants,
+    tournamentId,
+    roleSubtype,
+    assignedDate,
+    startDate,
+    endDate,
+    assignedBy,
+    notes,
+    extensions,
+  } = params;
+
   if (!officialRecord) return { error: MISSING_OFFICIAL_RECORD };
   if (!tournamentId) return { error: INVALID_VALUES, context: { message: 'Missing tournamentId' } } as any;
   if (!roleSubtype) return { error: INVALID_VALUES, context: { message: 'Missing roleSubtype' } } as any;
 
+  // Forward the conflict inputs WHOLE. Hand-listing them here is what let this route disagree with
+  // addMatchUpOfficial about the same conflict — see conflictEvaluationInputs.ts.
   const conflictResult = getOfficialConflicts({
-    officialParticipantId,
-    groupParticipants,
-    officialRecord,
+    ...conflictInputsFrom(params),
     participants,
-    nationalityCode,
-    organisationIds,
-    policyDefinitions,
   });
   // A malformed conflict check must not fall through to an unchecked assignment.
   if (conflictResult.error) return { error: conflictResult.error };
