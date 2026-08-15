@@ -1509,8 +1509,13 @@ export interface Address {
   createdAt?: Date | string;
   extensions?: Extension[];
   isMock?: boolean;
-  latitude?: string;
-  longitude?: string;
+  /**
+   * Stored as a number in production records, but written as a string by some
+   * producers (e.g. `activateFromSanctioning` stringifies sanctioning coordinates).
+   * Both forms are real; consumers must coerce rather than assume.
+   */
+  latitude?: string | number;
+  longitude?: string | number;
   notes?: string;
   postalCode?: string;
   state?: string;
