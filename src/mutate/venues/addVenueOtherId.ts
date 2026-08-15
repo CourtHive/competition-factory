@@ -38,8 +38,13 @@ export function addVenueOtherId(params: {
   organisationId: string;
   otherVenueId: string;
   venueId: string;
+  /**
+   * ISO string recording when the id was actually assigned, rather than when
+   * this instance wrote it. Defaults to now.
+   */
+  occurredAt?: string;
 }) {
-  const { uniqueOrganisationName, organisationId, otherVenueId, venueId } = params;
+  const { uniqueOrganisationName, organisationId, otherVenueId, venueId, occurredAt } = params;
 
   const tournamentRecords = resolveTournamentRecords(params);
   const paramsCheck = requireParams({ venueId }, ['venueId']);
@@ -57,6 +62,7 @@ export function addVenueOtherId(params: {
       organisationId,
       otherVenueId,
       tournamentRecord,
+      occurredAt,
       venueId,
     });
     if (result.success) success = true;
@@ -73,12 +79,14 @@ function venueOtherIdAdd({
   organisationId,
   otherVenueId,
   tournamentRecord,
+  occurredAt,
   venueId,
 }: {
   uniqueOrganisationName?: string;
   organisationId: string;
   otherVenueId: string;
   tournamentRecord: any;
+  occurredAt?: string;
   venueId: string;
 }): { success?: boolean; error?: ErrorType } {
   const { venue } = findVenue({ tournamentRecord, venueId });
@@ -94,13 +102,13 @@ function venueOtherIdAdd({
     }
     existing.venueId = otherVenueId;
     if (uniqueOrganisationName !== undefined) existing.uniqueOrganisationName = uniqueOrganisationName;
-    existing.updatedAt = new Date().toISOString();
+    existing.updatedAt = occurredAt ?? new Date().toISOString();
   } else {
     venue.venueOtherIds.push({
       ...(uniqueOrganisationName !== undefined ? { uniqueOrganisationName } : {}),
       organisationId,
       venueId: otherVenueId,
-      createdAt: new Date().toISOString(),
+      createdAt: occurredAt ?? new Date().toISOString(),
     });
   }
 

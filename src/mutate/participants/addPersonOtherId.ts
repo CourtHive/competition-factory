@@ -34,11 +34,17 @@ export function addPersonOtherId({
   participantId,
   organisationId,
   personId,
+  occurredAt,
 }: {
   tournamentRecord: any;
   participantId: string;
   organisationId: string;
   personId: string;
+  /**
+   * ISO string recording when the id was actually assigned, rather than when
+   * this instance wrote it. Defaults to now.
+   */
+  occurredAt?: string;
 }) {
   const paramsCheck = requireParams({ tournamentRecord, participantId }, [TOURNAMENT_RECORD, PARTICIPANT_ID]);
   if (paramsCheck.error) return paramsCheck;
@@ -68,12 +74,12 @@ export function addPersonOtherId({
       return { ...SUCCESS };
     }
     existing.personId = personId;
-    existing.updatedAt = new Date().toISOString();
+    existing.updatedAt = occurredAt ?? new Date().toISOString();
   } else {
     person.personOtherIds.push({
       organisationId,
       personId,
-      createdAt: new Date().toISOString(),
+      createdAt: occurredAt ?? new Date().toISOString(),
     });
   }
 

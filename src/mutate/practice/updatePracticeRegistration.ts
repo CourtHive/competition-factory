@@ -32,6 +32,12 @@ type UpdatePracticeRegistrationArgs = {
   registrationId: string;
   updates: Updates;
   disableNotice?: boolean;
+  /**
+   * ISO string recording when the change was actually made, rather than when
+   * this instance wrote it. Defaults to now. Also stamps `cancelledAt`, so a
+   * cancellation made courtside and synced later records the real time.
+   */
+  occurredAt?: string;
 };
 
 type UpdatePracticeRegistrationResult = ResultType & {
@@ -47,7 +53,9 @@ type UpdatePracticeRegistrationResult = ResultType & {
  * are returned alongside success (same posture as `addPracticeRegistration`).
  */
 export function updatePracticeRegistration(params: UpdatePracticeRegistrationArgs): UpdatePracticeRegistrationResult {
-  const { tournamentRecord, courtId, date, bookingId, registrationId, updates, disableNotice } = params;
+  const { tournamentRecord, courtId, date, bookingId, registrationId, updates, disableNotice, occurredAt } = params;
+
+  const stampedAt = occurredAt ?? new Date().toISOString();
 
   const paramsCheck = requireParams({ tournamentRecord, courtId }, [TOURNAMENT_RECORD, COURT_ID]);
   if (paramsCheck.error) return paramsCheck;
@@ -97,11 +105,11 @@ export function updatePracticeRegistration(params: UpdatePracticeRegistrationArg
   registration.status = nextStatus;
   if (updates.notes !== undefined) registration.notes = updates.notes;
   if (nextStatus === 'CANCELLED') {
-    registration.cancelledAt = new Date().toISOString();
+    registration.cancelledAt = stampedAt;
   } else {
     delete registration.cancelledAt;
   }
-  registration.updatedAt = new Date().toISOString();
+  registration.updatedAt = stampedAt;
   booking.updatedAt = registration.updatedAt;
 
   if (!disableNotice && venue) {
