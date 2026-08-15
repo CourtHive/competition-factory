@@ -13,8 +13,9 @@ import type {
   ComplianceRecord,
   ComplianceItem,
   VenueProposal,
+  EventProposal,
 } from '@Types/sanctioningTypes';
-import type { Tournament, Event, Venue } from '@Types/tournamentTypes';
+import type { Tournament, Event, Venue, UnifiedEventID } from '@Types/tournamentTypes';
 
 type ActivateFromSanctioningArgs = {
   sanctioningRecord: SanctioningRecord;
@@ -76,6 +77,48 @@ function venueFromProposal(vp: VenueProposal): Venue {
 function resolveVenues(venues: Venue[] | undefined, proposalVenues: VenueProposal[] | undefined): Venue[] {
   if (venues?.length) return venues;
   return (proposalVenues ?? []).map(venueFromProposal);
+}
+
+/**
+ * The activated event's `eventOtherIds`: whatever the proposal carried, plus an `isOrigin`
+ * entry naming the sanctioning source when the proposal named none.
+ *
+ * Both directions matter. A sanction originating OUTSIDE this ecosystem arrives with the
+ * foreign body's own tournamentId/eventId already flagged `isOrigin`, and that entry must
+ * survive activation untouched — it is the address an integration layer sends results back
+ * to. A sanction originating HERE carries nothing, so we stamp our own governing body plus
+ * `proposal.tournamentId`, which makes every sanctioned record queryable by origin on the
+ * same terms rather than leaving the local case as a special case.
+ *
+ * The stamped `tournamentId` is `proposal.tournamentId` — the SANCTIONED id — which is not
+ * necessarily the carrying record's. Today they are the same value, but multi-sanctioning
+ * exists precisely to let one record carry events sanctioned elsewhere, so reading one for
+ * the other is the mistake this field exists to prevent.
+ */
+function resolveEventOtherIds(
+  ep: EventProposal,
+  eventId: string,
+  sanctioningRecord: SanctioningRecord,
+): UnifiedEventID[] {
+  const supplied = ep.eventOtherIds ?? [];
+  if (supplied.some((otherId) => otherId?.isOrigin)) return [...supplied];
+
+  // governingBodyId is required on the type, but a record arriving over the wire can still
+  // lack it; without an organisation there is nothing to attribute the origin to, and a
+  // half-formed origin entry is worse than none.
+  const organisationId = sanctioningRecord.governingBodyId;
+  if (!organisationId) return [...supplied];
+
+  return [
+    ...supplied,
+    {
+      organisationId,
+      uniqueOrganisationName: sanctioningRecord.governingBody?.organisationName,
+      tournamentId: sanctioningRecord.proposal?.tournamentId,
+      eventId,
+      isOrigin: true,
+    },
+  ];
 }
 
 export function activateFromSanctioning({ sanctioningRecord, sanctioningPolicy, venues }: ActivateFromSanctioningArgs) {
@@ -147,6 +190,9 @@ export function activateFromSanctioning({ sanctioningRecord, sanctioningPolicy, 
       // Carry sanctioning constraints
       if (ep.allowedDrawTypes?.length) event.allowedDrawTypes = [...ep.allowedDrawTypes];
       else if (ep.drawType) event.allowedDrawTypes = [ep.drawType];
+
+      const eventOtherIds = resolveEventOtherIds(ep, event.eventId, sanctioningRecord);
+      if (eventOtherIds.length) event.eventOtherIds = eventOtherIds;
 
       return event;
     }),

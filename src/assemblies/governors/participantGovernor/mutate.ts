@@ -22,6 +22,7 @@ export { mergeParticipants } from '@Mutate/participants/mergeParticipants';
 export { modifyParticipant } from '@Mutate/participants/modifyParticipant';
 export { addParticipants } from '@Mutate/participants/addParticipants';
 export { addPersonOtherId } from '@Mutate/participants/addPersonOtherId';
+export { addParticipantOtherId } from '@Mutate/participants/addParticipantOtherId';
 export { addPenalty } from '@Mutate/participants/penalties/addPenalty';
 export { addParticipant } from '@Mutate/participants/addParticipant';
 export { addPersons } from '@Mutate/participants/addPersons';

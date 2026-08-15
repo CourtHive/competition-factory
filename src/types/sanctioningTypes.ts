@@ -15,6 +15,7 @@ import type {
   TierClassification,
   TimeItem,
   TournamentLevelUnion,
+  UnifiedEventID,
   WheelchairClassUnion,
 } from './tournamentTypes';
 
@@ -308,6 +309,19 @@ export interface EventProposal {
 
   // Wheelchair
   wheelchairClass?: WheelchairClassUnion;
+
+  /**
+   * The event's identity in OTHER organisations' systems, carried INBOUND on the proposal
+   * and copied onto the activated event by `activateFromSanctioning`. Mirrors the
+   * record-side `Event.eventOtherIds` exactly, so a sanction originating outside this
+   * ecosystem keeps its own tournamentId/eventId through activation and an integration
+   * layer can address results back to it.
+   *
+   * An entry flagged `isOrigin` names the sanctioning source. When the proposal supplies
+   * none, activation stamps the sanctioning body's own identity as the origin — so a
+   * locally sanctioned tournament is queryable by origin on the same terms.
+   */
+  eventOtherIds?: UnifiedEventID[];
 
   extensions?: Extension[];
 }

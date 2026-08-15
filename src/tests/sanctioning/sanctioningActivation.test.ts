@@ -316,3 +316,86 @@ describe('Full Lifecycle — End-to-End', () => {
     expect(history.statusHistory.length).toBeGreaterThanOrEqual(5);
   });
 });
+
+// The sanctioned tournamentId/eventId must survive activation as the event's ORIGIN, so an
+// integration layer can address results back to the body that sanctioned them. See
+// Mentat planning/SANCTIONING_ACTIVATION_AND_EVENTID_THREADING.md Part 3d.
+describe('Activation — event sanctioning origin (eventOtherIds)', () => {
+  beforeEach(() => {
+    sanctioningEngine.reset();
+  });
+
+  it('stamps the governing body as the origin when the proposal names none', () => {
+    createApprovedRecord();
+    const result: any = sanctioningEngine.activateFromSanctioning({ sanctioningPolicy: testPolicy });
+    const tr = result.tournamentRecord;
+
+    for (const event of tr.events) {
+      const origin = event.eventOtherIds?.find((otherId: any) => otherId.isOrigin);
+      expect(origin).toBeDefined();
+      expect(origin.organisationId).toEqual('gov-001');
+      // the ORIGIN's eventId is this event's id, and its tournamentId is the SANCTIONED one
+      expect(origin.eventId).toEqual(event.eventId);
+      expect(Object.hasOwn(origin, 'tournamentId')).toBe(true);
+    }
+  });
+
+  it('preserves a FOREIGN origin supplied on the proposal instead of overwriting it', () => {
+    const foreignOrigin = {
+      organisationId: 'ITA',
+      uniqueOrganisationName: 'Intercollegiate Tennis Association',
+      tournamentId: 'ita-4471',
+      eventId: 'ita-ev-9',
+      isOrigin: true,
+    };
+    const foreignProposal: TournamentProposal = {
+      ...testProposal,
+      events: [{ ...testProposal.events[0], eventOtherIds: [foreignOrigin] }],
+    };
+
+    sanctioningEngine.executionQueue([
+      {
+        method: 'createSanctioningRecord',
+        params: { governingBodyId: 'gov-001', applicant: testApplicant, proposal: foreignProposal },
+      },
+      { method: 'submitApplication', params: { sanctioningPolicy: testPolicy } },
+      { method: 'reviewApplication', params: {} },
+      { method: 'approveApplication', params: {} },
+    ]);
+
+    const result: any = sanctioningEngine.activateFromSanctioning({ sanctioningPolicy: testPolicy });
+    const event = result.tournamentRecord.events[0];
+
+    // exactly one origin, and it is THEIRS — not overwritten by the sanctioning body
+    const origins = event.eventOtherIds.filter((otherId: any) => otherId.isOrigin);
+    expect(origins).toHaveLength(1);
+    expect(origins[0]).toEqual(foreignOrigin);
+    // the foreign tournamentId is NOT the carrying record's — that independence is the point
+    expect(origins[0].tournamentId).not.toEqual(result.tournamentRecord.tournamentId);
+  });
+
+  it('keeps non-origin entries and appends the stamp alongside them', () => {
+    const copyBack = { organisationId: 'USTA', tournamentId: 'usta-88', eventId: 'usta-ev-2' };
+    const proposal: TournamentProposal = {
+      ...testProposal,
+      events: [{ ...testProposal.events[0], eventOtherIds: [copyBack] }],
+    };
+
+    sanctioningEngine.executionQueue([
+      {
+        method: 'createSanctioningRecord',
+        params: { governingBodyId: 'gov-001', applicant: testApplicant, proposal },
+      },
+      { method: 'submitApplication', params: { sanctioningPolicy: testPolicy } },
+      { method: 'reviewApplication', params: {} },
+      { method: 'approveApplication', params: {} },
+    ]);
+
+    const result: any = sanctioningEngine.activateFromSanctioning({ sanctioningPolicy: testPolicy });
+    const event = result.tournamentRecord.events[0];
+
+    expect(event.eventOtherIds).toHaveLength(2);
+    expect(event.eventOtherIds.filter((o: any) => o.isOrigin)).toHaveLength(1);
+    expect(event.eventOtherIds).toContainEqual(copyBack); // the USTA entry survives untouched
+  });
+});
