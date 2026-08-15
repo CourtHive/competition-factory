@@ -48,6 +48,12 @@ type RemoveCollectionDefinitionArgs = {
   matchUpId?: string;
   matchUp?: MatchUp;
   eventId?: string;
+  /**
+   * Pool for tieFormat copy-on-write forks in `writeTieFormat`. Separate from any
+   * matchUp-id pool so an `INSUFFICIENT_UUIDS` shortfall is attributable to one
+   * stream. Strict when supplied.
+   */
+  tieFormatUuids?: string[];
   event?: Event;
 };
 
@@ -62,6 +68,7 @@ export function removeCollectionDefinition({
   matchUpId,
   eventId,
   matchUp,
+  tieFormatUuids,
   event,
 }: RemoveCollectionDefinitionArgs): {
   // Produced by `filterTargetMatchUps` which returns `MatchUp[]`; the
@@ -166,16 +173,18 @@ export function removeCollectionDefinition({
 
   const deletedMatchUpIds: string[] = [];
   for (const targetMatchUp of targetMatchUps) {
-    processTargetMatchUp({
+    const processResult: any = processTargetMatchUp({
       deletedMatchUpIds,
       tournamentRecord,
       drawDefinition,
       collectionId,
+      tieFormatUuids,
       tieFormat,
       stack,
       event,
       matchUp: targetMatchUp,
     });
+    if (processResult?.error) return decorateResult({ result: processResult, stack });
     const scoreResult = updateTargetMatchUpScore({
       updateInProgressMatchUps,
       tournamentRecord,
@@ -202,17 +211,19 @@ export function removeCollectionDefinition({
   result = validateTieFormat({ tieFormat: prunedTieFormat });
   if (result.error) return decorateResult({ result, stack });
 
-  if (eventId && event) {
-    writeTieFormat({ target: event, tieFormat: prunedTieFormat, event });
-  } else if (matchUpId && matchUp) {
-    writeTieFormat({ target: matchUp, tieFormat: prunedTieFormat, event });
-  } else if (structure) {
-    writeTieFormat({ target: structure, tieFormat: prunedTieFormat, event });
-  } else if (drawDefinition) {
-    writeTieFormat({ target: drawDefinition, tieFormat: prunedTieFormat, event });
-  } else if (!matchUp || !drawDefinition) {
-    return { error: MISSING_DRAW_DEFINITION };
-  }
+  // Target selection extracted so this function keeps ONE write and ONE error
+  // check. Inlining a write plus an error branch per candidate pushed cognitive
+  // complexity to 38, over the ecosystem's threshold of 30.
+  const writeTarget = resolveWriteTarget({ eventId, event, matchUpId, matchUp, structure, drawDefinition });
+  if (!writeTarget) return { error: MISSING_DRAW_DEFINITION };
+
+  const writeResult = writeTieFormat({
+    target: writeTarget,
+    tieFormat: prunedTieFormat,
+    event,
+    uuids: tieFormatUuids,
+  });
+  if (writeResult?.error) return decorateResult({ result: writeResult, stack });
 
   modifyDrawNotice({ drawDefinition, eventId: event?.eventId });
 
@@ -232,6 +243,22 @@ export function removeCollectionDefinition({
     targetMatchUps,
     ...SUCCESS,
   };
+}
+
+/**
+ * The single object the modified tieFormat is written back to, in precedence
+ * order: event, then matchUp, then structure, then drawDefinition.
+ *
+ * Returns undefined when none applies, which the caller reports as
+ * MISSING_DRAW_DEFINITION — preserving the previous behaviour of the if/else
+ * chain this replaces.
+ */
+function resolveWriteTarget({ eventId, event, matchUpId, matchUp, structure, drawDefinition }): any {
+  if (eventId && event) return event;
+  if (matchUpId && matchUp) return matchUp;
+  if (structure) return structure;
+  if (drawDefinition) return drawDefinition;
+  return undefined;
 }
 
 function getScopedMatchUps({ matchUpId, matchUp, structureId, structure, drawDefinition, event }): MatchUp[] {
@@ -304,6 +331,7 @@ function clearCollectionScores({
 function processTargetMatchUp({
   deletedMatchUpIds,
   collectionId,
+  tieFormatUuids,
   tieFormat,
   stack,
   event,
@@ -327,7 +355,13 @@ function processTargetMatchUp({
   });
 
   if (matchUp.tieFormat || matchUp.tieFormatId) {
-    writeTieFormat({ target: matchUp, tieFormat: copyTieFormat(tieFormat), event });
+    const writeResult = writeTieFormat({
+      target: matchUp,
+      tieFormat: copyTieFormat(tieFormat),
+      event,
+      uuids: tieFormatUuids,
+    });
+    if (writeResult?.error) return writeResult;
   }
 
   modifyMatchUpNotice({
@@ -337,6 +371,8 @@ function processTargetMatchUp({
     context: stack,
     matchUp,
   });
+
+  return undefined;
 }
 
 function updateTargetMatchUpScore({
