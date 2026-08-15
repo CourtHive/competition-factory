@@ -2171,6 +2171,31 @@ const {
 } = tournamentInfo;
 ```
 
+`tournamentInfo.eventInfo` carries one projection per event (filtered to published events when
+`usePublishState` is set). Alongside the event's own attributes it includes two format fields:
+
+```js
+const [event] = tournamentInfo.eventInfo;
+
+event.matchUpFormat; // the event's OWN declared code, or undefined
+event.competitionFormat; // the event's OWN competitionFormat, or undefined
+event.matchUpFormats; // every distinct code declared anywhere in the event
+```
+
+`matchUpFormats` is a **survey, not a resolution.** It collects distinct codes from the event, each of its
+drawDefinitions, and their structures (depth-first, recursing because round-robin item structures nest),
+in encounter order. Nothing about the order implies precedence — `competitionFormat` documents the
+effective-format hierarchy as `matchUp > structure > drawDefinition > event`, where specificity flows
+downward, so a caller must not read `matchUpFormats[0]` as "the" format for the event. When draws disagree
+the survey keeps every code, precisely so a caller can tell the event is not uniform. It is omitted when
+nothing declares a format.
+
+The survey exists because a scoring code identifies the **sport** being played, and the sport is a property
+of the whole event however deep the code happens to be stored. In practice codes are declared at
+drawDefinition level far more often than on the event: a live tournament surveyed when this was added
+declared nothing on the event and `SET3-S:6/TB7` on its drawDefinition, so an event-level read alone
+reported no format at all.
+
 ---
 
 ## getTournamentPersons
