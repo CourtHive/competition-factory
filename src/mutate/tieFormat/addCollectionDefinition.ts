@@ -53,6 +53,16 @@ type AddCollectionDefinitionArgs = {
   matchUp?: MatchUp;
   eventId?: string;
   uuids?: string[];
+  /**
+   * Pool for tieFormat copy-on-write forks in `writeTieFormat`, SEPARATE from
+   * `uuids` (which feeds matchUp id minting).
+   *
+   * Two pools rather than one so a shortfall is attributable: sharing a pool
+   * couples two unrelated id streams, and `INSUFFICIENT_UUIDS` could not say
+   * which one ran short. Strict when supplied — an exhausted pool signals that
+   * this replay needed a different number of ids than the origin did.
+   */
+  tieFormatUuids?: string[];
   event?: Event;
 };
 
@@ -72,6 +82,7 @@ export function addCollectionDefinition({
   matchUp,
   eventId,
   uuids,
+  tieFormatUuids,
   event,
 }: AddCollectionDefinitionArgs): ResultType & {
   tieFormat?: TieFormat;
@@ -188,9 +199,13 @@ export function addCollectionDefinition({
     eventId,
     event,
     uuids,
+    tieFormatUuids,
     stack,
   });
-  if (scopeResult?.error) return scopeResult;
+  // `as any`: the union now includes writeTieFormat's `{ error }` shape alongside
+  // `{ targetMatchUps }`, which has no `error` member to narrow against. Mirrors
+  // the existing cast on the next line.
+  if ((scopeResult as any)?.error) return scopeResult;
   targetMatchUps = (scopeResult as any)?.targetMatchUps ?? targetMatchUps;
 
   const auditData = definedAttributes({
@@ -232,6 +247,41 @@ function resolveEnforcementFlags({
   return { checkCategory, checkGender };
 }
 
+/**
+ * Apply the new collectionDefinition to every structure that INHERITS the event's
+ * tieFormat — i.e. skipping any drawDefinition or structure carrying its own.
+ *
+ * Extracted from `applyTieFormatToScope` to keep that function under the
+ * ecosystem's cognitive-complexity threshold of 30: two nested loops each with a
+ * `continue` guard concentrate a lot of the score once per-branch error handling
+ * is added around them.
+ */
+function applyToInheritingStructures({
+  updateInProgressMatchUps,
+  modifiedStructureIds,
+  collectionDefinition,
+  targetMatchUps,
+  addedMatchUps,
+  event,
+  uuids,
+}) {
+  for (const dd of event.drawDefinitions ?? []) {
+    if (dd.tieFormat || dd.tieFormatId) continue;
+    for (const s of dd.structures ?? []) {
+      if (s.tieFormat || s.tieFormatId) continue;
+      const result = updateStructureMatchUps({
+        updateInProgressMatchUps,
+        collectionDefinition,
+        structure: s,
+        uuids,
+      });
+      addedMatchUps.push(...result.newMatchUps);
+      targetMatchUps.push(...result.targetMatchUps);
+      modifiedStructureIds.push(s.structureId);
+    }
+  }
+}
+
 function applyTieFormatToScope({
   updateInProgressMatchUps,
   collectionDefinition,
@@ -248,26 +298,22 @@ function applyTieFormatToScope({
   eventId,
   event,
   uuids,
+  tieFormatUuids,
   stack,
 }) {
   if (eventId && event) {
-    writeTieFormat({ target: event, tieFormat: prunedTieFormat, event });
+    const writeResult = writeTieFormat({ target: event, tieFormat: prunedTieFormat, event, uuids: tieFormatUuids });
+    if (writeResult?.error) return writeResult;
 
-    for (const dd of event.drawDefinitions ?? []) {
-      if (dd.tieFormat || dd.tieFormatId) continue;
-      for (const s of dd.structures ?? []) {
-        if (s.tieFormat || s.tieFormatId) continue;
-        const result = updateStructureMatchUps({
-          updateInProgressMatchUps,
-          collectionDefinition,
-          structure: s,
-          uuids,
-        });
-        addedMatchUps.push(...result.newMatchUps);
-        targetMatchUps.push(...result.targetMatchUps);
-        modifiedStructureIds.push(s.structureId);
-      }
-    }
+    applyToInheritingStructures({
+      updateInProgressMatchUps,
+      modifiedStructureIds,
+      collectionDefinition,
+      targetMatchUps,
+      addedMatchUps,
+      event,
+      uuids,
+    });
 
     queueNoficiations({
       modifiedMatchUps: targetMatchUps,
@@ -282,7 +328,8 @@ function applyTieFormatToScope({
   }
 
   if (structureId && structure) {
-    writeTieFormat({ target: structure, tieFormat: prunedTieFormat, event });
+    const writeResult = writeTieFormat({ target: structure, tieFormat: prunedTieFormat, event, uuids: tieFormatUuids });
+    if (writeResult?.error) return writeResult;
     const result = updateStructureMatchUps({
       updateInProgressMatchUps,
       collectionDefinition,
@@ -312,7 +359,8 @@ function applyTieFormatToScope({
       });
     }
 
-    writeTieFormat({ target: matchUp, tieFormat: prunedTieFormat, event });
+    const writeResult = writeTieFormat({ target: matchUp, tieFormat: prunedTieFormat, event, uuids: tieFormatUuids });
+    if (writeResult?.error) return writeResult;
     const newMatchUps: MatchUp[] = generateCollectionMatchUps({
       collectionDefinition,
       matchUp,
@@ -336,7 +384,13 @@ function applyTieFormatToScope({
   }
 
   if (drawDefinition) {
-    writeTieFormat({ target: drawDefinition, tieFormat: prunedTieFormat, event });
+    const writeResult = writeTieFormat({
+      target: drawDefinition,
+      tieFormat: prunedTieFormat,
+      event,
+      uuids: tieFormatUuids,
+    });
+    if (writeResult?.error) return writeResult;
 
     for (const s of drawDefinition.structures ?? []) {
       const result = updateStructureMatchUps({
