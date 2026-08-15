@@ -320,6 +320,50 @@ officiatingEngine.addCertificationRequirement({
 
 ---
 
+### Conflict of Interest
+
+Declared relationships that make an official unsuitable for an assignment. Self-declaration is how
+federations administer this — the factory cannot infer that an official coaches a player.
+
+#### addConflictDeclaration / removeConflictDeclaration
+
+```js
+// At least one of personId / participantId / organisationId is REQUIRED — a declaration that
+// identifies nobody can never match a participant.
+officiatingEngine.addConflictDeclaration({
+  officialRecordId,
+  personId: 'person-042',
+  relationship: 'COACH',
+});
+// → { success: true, declaration }
+
+officiatingEngine.removeConflictDeclaration({ officialRecordId, declarationId });
+```
+
+#### getOfficialConflicts
+
+Evaluates the official against a supplied participant list.
+
+```js
+officiatingEngine.getOfficialConflicts({
+  officialRecordId,
+  participants, // the participants to check against
+  nationalityCode, // optional — required for the NATIONALITY rule
+  policyDefinitions, // POLICY_OFFICIATING_CONFLICT_OF_INTEREST or a variant
+});
+// → { success: true, conflicts, blocked }
+```
+
+Rules absent from the policy, or present with `enabled: false`, are not evaluated at all — a policy is
+an allow-list of checks, never a silent partial application.
+
+:::note `getMatchUpOfficialConflicts` is not an engine method
+The per-matchUp variant needs a `tournamentRecord` + `drawDefinition`, which officiating-engine state
+does not hold — this engine is an `OfficialRecord` aggregate. Consumers that hold a tournament (the
+server, TMX) import it from the officiating **governor** instead. A regression test asserts this
+omission is deliberate, so it cannot be silently "fixed".
+:::
+
 ### Evaluation Policies
 
 #### addEvaluationPolicy
