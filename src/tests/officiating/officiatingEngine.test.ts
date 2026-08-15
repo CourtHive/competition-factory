@@ -905,9 +905,11 @@ describe('Officiating Engine — Methods Registration', () => {
  * a decision on the record rather than an oversight.
  */
 const NOT_ON_ENGINE: Record<string, string> = {
-  // Needs a tournamentRecord + drawDefinition, which officiating-engine state does not hold. Stays a
-  // governor/direct import for consumers that hold a tournament (CFS, TMX).
-  getMatchUpOfficialConflicts: 'requires tournamentRecord + drawDefinition, not OfficialRecord state',
+  // Belongs on `tournamentEngine`, NOT here — it needs a tournamentRecord + drawDefinition, which this
+  // engine's state does not hold (this is an OfficialRecord aggregate). It IS already exposed on
+  // tournamentEngine, which resolves both from engine state given a drawId, so this is a placement
+  // decision rather than an absence. Verified empirically, not assumed.
+  getMatchUpOfficialConflicts: 'lives on tournamentEngine — needs tournament state, not OfficialRecord state',
   // Pure status-transition validator, consumed directly rather than as an engine operation.
   // (`validateCertification` IS on the engine — this guard caught that on its first run.)
   validateOfficiatingStatusTransition: 'pure validator, consumed directly',

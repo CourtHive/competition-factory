@@ -357,11 +357,23 @@ officiatingEngine.getOfficialConflicts({
 Rules absent from the policy, or present with `enabled: false`, are not evaluated at all — a policy is
 an allow-list of checks, never a silent partial application.
 
-:::note `getMatchUpOfficialConflicts` is not an engine method
+:::note `getMatchUpOfficialConflicts` lives on `tournamentEngine`, not here
 The per-matchUp variant needs a `tournamentRecord` + `drawDefinition`, which officiating-engine state
-does not hold — this engine is an `OfficialRecord` aggregate. Consumers that hold a tournament (the
-server, TMX) import it from the officiating **governor** instead. A regression test asserts this
-omission is deliberate, so it cannot be silently "fixed".
+does not hold — this engine is an `OfficialRecord` aggregate. It is exposed on **`tournamentEngine`**,
+which resolves both from its own state:
+
+```js
+tournamentEngine.getMatchUpOfficialConflicts({
+  drawId, // tournamentRecord + drawDefinition resolved from engine state
+  matchUpId,
+  officialRecord, // optional registry record
+  policyDefinitions,
+});
+// → { success, conflicts, blocked, checkedParticipants }
+```
+
+Regression tests assert both halves: that it is absent here, and that it is present and state-resolving
+on `tournamentEngine`.
 :::
 
 ### Evaluation Policies

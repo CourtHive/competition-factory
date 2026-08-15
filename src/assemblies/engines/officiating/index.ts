@@ -176,10 +176,10 @@ export const officiatingEngine = (() => {
     },
 
     // --- Conflict of Interest ---
-    // NOTE: `getMatchUpOfficialConflicts` is deliberately NOT exposed here. It needs a
-    // tournamentRecord + drawDefinition, which officiating-engine state does not hold — this engine
-    // is an OfficialRecord aggregate. It stays a governor/direct import for consumers that hold a
-    // tournament (CFS, TMX). Do not "complete the set" by adding it.
+    // NOTE: `getMatchUpOfficialConflicts` is deliberately NOT exposed here — it belongs on
+    // `tournamentEngine`, where it already is. It needs a tournamentRecord + drawDefinition, which
+    // this engine's state does not hold (this is an OfficialRecord aggregate); tournamentEngine
+    // resolves both from its own state given a drawId. Do not "complete the set" by adding it here.
     addConflictDeclaration: (params: any) => {
       const officialRecord = params.officialRecord ?? resolveRecord(params.officialRecordId);
       return addConflictDeclaration({ ...params, officialRecord });
