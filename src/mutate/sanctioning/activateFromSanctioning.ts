@@ -153,18 +153,18 @@ export function activateFromSanctioning({ sanctioningRecord, sanctioningPolicy, 
 
     // Store sanctioning reference.
     //
-    // The `sanctioningTier` extension is now REDUNDANT with native `tournamentTier` above, and is
-    // written for one release only so that anything already reading it does not break. It keeps its
-    // original string shape (the tier's value) for exactly that reason. Scheduled for removal in
-    // phase 4 of planning/SANCTIONING_TIER_VOCABULARY.md, one release after this one.
+    // `sanctioningId` is the only extension written here. The tier's home is the native
+    // `tournamentTier` field set above — a canonical value with a native home should not also
+    // arrive as a CODES name/value extension, which is the escape hatch for values that have none.
+    //
+    // A redundant `sanctioningTier` extension was written alongside it for one release (6.24.0) so
+    // that anything already reading it would not break. Nothing did: no reader existed anywhere in
+    // the ecosystem, and no tournament in production ever carried it.
     extensions: [
       {
         name: 'sanctioningId',
         value: sanctioningRecord.sanctioningId,
       },
-      ...(sanctioningRecord.sanctioningTier
-        ? [{ name: 'sanctioningTier', value: sanctioningRecord.sanctioningTier.value }]
-        : []),
     ],
 
     venues: resolveVenues(venues, proposal.venues),

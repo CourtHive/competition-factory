@@ -1023,7 +1023,7 @@ describe('activateFromSanctioning — guard paths', () => {
     expect(record.compliance).toBeUndefined();
   });
 
-  it('generates tournament without sanctioningTier extension or tournamentTier when tier not set', () => {
+  it('generates tournament without a tier extension or tournamentTier when tier not set', () => {
     const record = makeRecord({ status: 'APPROVED' });
     delete (record as any).sanctioningTier;
     let result: any = activateFromSanctioning({ sanctioningRecord: record });

@@ -121,14 +121,27 @@ describe('Activation — Tournament Generation', () => {
     const sanctioningExt = tr.extensions.find((e: any) => e.name === 'sanctioningId');
     expect(sanctioningExt).toBeDefined();
     expect(sanctioningExt.value).toBeDefined();
+  });
 
-    const tierExt = tr.extensions.find((e: any) => e.name === 'sanctioningTier');
-    expect(tierExt).toBeDefined();
-    expect(tierExt.value).toEqual('Level 2');
+  // Inverted in phase 4. 6.24.0 wrote a `sanctioningTier` extension alongside the native
+  // `tournamentTier` for exactly one release, so anything reading it had a transition window.
+  // Nothing was: no reader existed in the ecosystem and no production tournament carried it.
+  // The tier's only home is now the native field — a canonical value with a native home must not
+  // also arrive as a CODES escape-hatch extension.
+  it('no longer writes a redundant sanctioningTier extension', () => {
+    createApprovedRecord();
+    let result: any = sanctioningEngine.activateFromSanctioning({ sanctioningPolicy: testPolicy });
+    const tr = result.tournamentRecord;
+
+    expect(tr.extensions.find((e: any) => e.name === 'sanctioningTier')).toBeUndefined();
+    // ...while the tier itself is still present, natively
+    expect(tr.tournamentTier).toEqual({ system: 'GENERIC', value: 'Level 2' });
+    // sanctioningId is the ONLY extension activation writes
+    expect(tr.extensions.map((e: any) => e.name)).toEqual(['sanctioningId']);
   });
 
   // The regression this suite previously had no coverage for: the sanctioned tier used to reach the
-  // tournament ONLY as the name/value extension asserted above, so a tournament born from sanctioning
+  // tournament ONLY as a name/value extension, so a tournament born from sanctioning
   // had no `tournamentTier` and `getEventRankingPoints` resolved no level for it — even when the
   // applicant had explicitly chosen a tier.
   it('sets NATIVE tournamentTier from the sanctioning record', () => {
