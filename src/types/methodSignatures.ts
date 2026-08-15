@@ -359,6 +359,7 @@ import type {
 import type { suggestFormatPlans } from '@Query/formatWizard/suggestFormatPlans';
 import type { unPublishOrderOfPlay } from '@Mutate/timeItems/unPublishOrderOfPlay';
 import type { addPersonOtherId } from '@Mutate/participants/addPersonOtherId';
+import type { addParticipantOtherId } from '@Mutate/participants/addParticipantOtherId';
 import type {
   addScheduleScenario,
   getScheduleScenario,
@@ -641,6 +642,7 @@ export interface MethodSignatures {
   addParticipants: EngineMethod<typeof addParticipants>;
   addParticipantTimeItem: EngineMethod<typeof addParticipantTimeItem>;
   addPenalty: EngineMethod<typeof addPenalty>;
+  addParticipantOtherId: EngineMethod<typeof addParticipantOtherId>;
   addPersonOtherId: EngineMethod<typeof addPersonOtherId>;
   addPersonRequests: EngineMethod<typeof addPersonRequests>;
   addPersons: EngineMethod<typeof addPersons>;

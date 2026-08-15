@@ -1361,6 +1361,10 @@ export interface Participant {
   onlineResources?: OnlineResource[];
   participantId: string;
   participantName?: string;
+  // CODES first-class: this participant's identity in OTHER organisations' systems, one
+  // entry per organisation. Unlike `person.personOtherIds` this works for PAIR and TEAM
+  // participants, which carry no `person` at all.
+  participantOtherIds?: UnifiedParticipantID[];
   participantOtherName?: string;
   participantRole?: ParticipantRoleUnion;
   participantRoleResponsibilities?: string[];
@@ -1750,6 +1754,35 @@ export interface UnifiedTournamentID {
  * an event may be copied back to its origin after the fact, or through an external
  * API integration, at which point the returned id is written here.
  */
+/**
+ * CODES first-class: a PARTICIPANT's identity in another organisation's system — the
+ * participant-grain member of the `Unified*ID` family ({@link UnifiedTournamentID},
+ * {@link UnifiedEventID}, {@link UnifiedPersonID}, {@link UnifiedVenueID}).
+ *
+ * Carried on `Participant.participantOtherIds[]`. It exists because
+ * {@link UnifiedPersonID} cannot cover every competitor: `personOtherIds` hangs off
+ * `participant.person`, and a **PAIR or TEAM participant has no `person`** — only
+ * `individualParticipantIds`. So a pair or team registered with an outside body had
+ * nowhere to record that body's id for it.
+ *
+ * Sitting on the participant rather than the person makes it uniform across INDIVIDUAL,
+ * PAIR and TEAM, and it is what lets an integration layer address results back to the
+ * sanctioning system that registered them.
+ */
+export interface UnifiedParticipantID {
+  createdAt?: Date | string;
+  extensions?: Extension[];
+  isMock?: boolean;
+  notes?: string;
+  organisationId: string;
+  /** that organisation's id for this participant — its registration/entry identity, which
+   *  need not resemble any id of ours */
+  participantId: string;
+  timeItems?: TimeItem[];
+  uniqueOrganisationName?: string;
+  updatedAt?: Date | string;
+}
+
 export interface UnifiedEventID {
   createdAt?: Date | string;
   eventId?: string;

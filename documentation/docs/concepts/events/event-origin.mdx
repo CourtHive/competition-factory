@@ -102,3 +102,53 @@ events row:
 
 `tournament_id` and `origin_tournament_id` are independent by design. Reading one for the
 other is the mistake this concept exists to prevent.
+
+## The identity a third party actually needs
+
+An outside sanctioning body is **not** expected to hold a CODES `tournamentRecord`. It has
+its own model and its own API, and an integration layer transforms results outward to it.
+Nothing is replicated to them. Our whole obligation is to carry enough identity that the
+results are **addressable** — three things:
+
+| identity                  | where it lives                               |
+| ------------------------- | -------------------------------------------- |
+| sanctioned tournamentId   | `event.eventOtherIds[isOrigin].tournamentId` |
+| sanctioned eventId        | `event.eventOtherIds[isOrigin].eventId`      |
+| sanctioned participant id | `participant.participantOtherIds[]`          |
+
+The third has its own field for a specific reason. `person.personOtherIds` carries an
+outside body's id for a **person** — but it hangs off `participant.person`, and a **PAIR or
+TEAM participant has no `person` at all**. `addPersonOtherId` says so in its own error
+text: _"only INDIVIDUAL participants accept personOtherIds"_. A registered pair or team
+therefore had nowhere to record the id the sanctioning body knows it by.
+
+`Participant.participantOtherIds[]` (`UnifiedParticipantID`) sits on the **participant**,
+so it works uniformly for INDIVIDUAL, PAIR and TEAM:
+
+```js
+participant.participantOtherIds = [{ organisationId: 'ITA', participantId: 'ita-entry-771' }];
+```
+
+Append or update one with `addParticipantOtherId` — the participant-grain sibling of
+`addPersonOtherId`, keyed on `organisationId` and idempotent:
+
+```js
+engine.addParticipantOtherId({
+  participantId, // ours
+  organisationId: 'ITA',
+  otherParticipantId: 'ita-entry-771', // theirs
+});
+```
+
+`otherParticipantId` is named distinctly from `participantId` on purpose: both are
+participant ids, and silently transposing them would stamp a participant with its own id
+and still look like it worked.
+
+## Where activation fits
+
+`activateFromSanctioning` stamps the event origin automatically. A proposal that arrives
+carrying its own `eventOtherIds` — a sanction that originated outside this ecosystem —
+keeps that entry untouched, because it is the address results are sent back to. A proposal
+that carries none gets the sanctioning body's own identity stamped as the origin, so a
+locally sanctioned tournament is queryable on exactly the same terms rather than being a
+special case.
