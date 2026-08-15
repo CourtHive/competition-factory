@@ -98,6 +98,10 @@ export interface Event {
   eventLevel?: TournamentLevelUnion;
   eventName?: string;
   eventOrder?: number;
+  // CODES first-class: this event's identity in OTHER organisations' systems, one entry
+  // per organisation. The entry flagged `isOrigin` is the sanctioning source the event
+  // came from — its `tournamentId` is that organisation's, NOT the carrying record's.
+  eventOtherIds?: UnifiedEventID[];
   eventRank?: string;
   eventTier?: TierClassification;
   eventType?: EventTypeUnion;
@@ -1720,6 +1724,40 @@ export interface UnifiedTournamentID {
   organisationId: string;
   timeItems?: TimeItem[];
   tournamentId: string;
+  uniqueOrganisationName?: string;
+  updatedAt?: Date | string;
+}
+
+/**
+ * CODES first-class: an EVENT's identity in another organisation's system —
+ * the event-grain member of the `Unified*ID` family
+ * ({@link UnifiedTournamentID}, {@link UnifiedPersonID}, {@link UnifiedVenueID}).
+ *
+ * Carried on `Event.eventOtherIds[]`. It exists because a single tournamentRecord
+ * can hold events sanctioned by SEVERAL organisations, each of which has its own
+ * internal `tournamentId`. The record has exactly one `tournamentId`; an event's
+ * sanctioning tournament is independent of it, and the sanctioning body may hold no
+ * record that carries the event at all.
+ *
+ * `tournamentId` is therefore OPTIONAL and deliberately *not* the carrying record's:
+ * it is the id of the tournament in `organisationId`'s system. `eventId` is likewise
+ * that system's id for this event, which is absent until the event exists there —
+ * an event may be copied back to its origin after the fact, or through an external
+ * API integration, at which point the returned id is written here.
+ */
+export interface UnifiedEventID {
+  createdAt?: Date | string;
+  eventId?: string;
+  extensions?: Extension[];
+  /** marks this entry as the SANCTIONING SOURCE the event originated from. At most one
+   *  entry per event should carry it; every other entry is a system the event is merely
+   *  also known to (typically acquired by copy-back). */
+  isOrigin?: boolean;
+  isMock?: boolean;
+  notes?: string;
+  organisationId: string;
+  timeItems?: TimeItem[];
+  tournamentId?: string;
   uniqueOrganisationName?: string;
   updatedAt?: Date | string;
 }

@@ -8,6 +8,8 @@ export const event = {
   endDate: '{\\"type\\":\\"string\\",\\"required\\":\\"true\\",\\"note\\":\\"\'YYYY-MM-DD\'\\"}',
   eventId: '{\\"type\\":\\"string\\",\\"required\\":\\"true\\"}',
   eventName: '{\\"type\\":\\"string\\",\\"required\\":\\"false\\"}',
+  eventOtherIds:
+    '{\\"type\\":\\"object\\",\\"array\\":\\"true\\",\\"required\\":\\"false\\",\\"note\\":\\"this event\'s identity in other organisations\' systems; the entry flagged isOrigin is the sanctioning source, and its tournamentId belongs to THAT organisation, not the carrying tournamentRecord\\"}',
   eventRank: '{\\"type\\":\\"string\\",\\"required\\":\\"false\\"}',
   eventLevel: '{\\"type\\":\\"enum\\",\\"enum\\": \\"\\",\\"required\\":\\"false\\"}',
   eventType:

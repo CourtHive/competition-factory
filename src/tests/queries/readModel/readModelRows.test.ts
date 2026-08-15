@@ -2,6 +2,7 @@ import {
   courtRow,
   drawRow,
   entryRows,
+  eventOrigin,
   eventRow,
   matchUpRowSet,
   orderOfPlayRow,
@@ -49,6 +50,9 @@ describe('eventRow', () => {
       start_date: '2025-01-02',
       end_date: '2025-01-05',
       published: true,
+      origin_organisation_id: null,
+      origin_tournament_id: null,
+      origin_event_id: null,
     });
   });
 
@@ -65,7 +69,68 @@ describe('eventRow', () => {
       start_date: null,
       end_date: null,
       published: false,
+      origin_organisation_id: null,
+      origin_tournament_id: null,
+      origin_event_id: null,
     });
+  });
+
+  // The origin is the SANCTIONING source, whose tournamentId belongs to the origin
+  // organisation and is deliberately unrelated to the carrying record's tournamentId —
+  // one record can hold events sanctioned by several organisations.
+  it('projects the isOrigin eventOtherIds entry, independent of the carrying tournamentId', () => {
+    const row = eventRow(
+      {
+        eventId: 'e3',
+        eventOtherIds: [
+          { organisationId: 'USTA', tournamentId: 'usta-88', eventId: 'usta-ev-2' },
+          { organisationId: 'ITA', tournamentId: 'ita-4471', eventId: 'ita-ev-9', isOrigin: true },
+        ],
+      },
+      'carrier-record-id',
+      'PROV',
+      false,
+    );
+    expect(row.tournament_id).toEqual('carrier-record-id');
+    expect(row.origin_organisation_id).toEqual('ITA');
+    expect(row.origin_tournament_id).toEqual('ita-4471');
+    expect(row.origin_event_id).toEqual('ita-ev-9');
+  });
+
+  it('nulls every origin column when eventOtherIds carries no isOrigin entry', () => {
+    const row = eventRow(
+      { eventId: 'e4', eventOtherIds: [{ organisationId: 'USTA', tournamentId: 'usta-88' }] },
+      't1',
+      'PROV',
+      false,
+    );
+    expect(row.origin_organisation_id).toBeNull();
+    expect(row.origin_tournament_id).toBeNull();
+    expect(row.origin_event_id).toBeNull();
+  });
+
+  // An event sanctioned but not yet created in the origin system has no origin eventId;
+  // it is written back after the copy-back / API integration lands.
+  it('projects an origin with no eventId yet', () => {
+    const row = eventRow(
+      { eventId: 'e5', eventOtherIds: [{ organisationId: 'ITA', tournamentId: 'ita-4471', isOrigin: true }] },
+      't1',
+      'PROV',
+      false,
+    );
+    expect(row.origin_organisation_id).toEqual('ITA');
+    expect(row.origin_tournament_id).toEqual('ita-4471');
+    expect(row.origin_event_id).toBeNull();
+  });
+});
+
+describe('eventOrigin', () => {
+  it('finds the flagged entry, and is undefined when none is flagged or the array is absent', () => {
+    const origin = { organisationId: 'ITA', tournamentId: 'ita-4471', isOrigin: true };
+    expect(eventOrigin({ eventOtherIds: [{ organisationId: 'USTA' }, origin] })).toEqual(origin);
+    expect(eventOrigin({ eventOtherIds: [{ organisationId: 'USTA' }] })).toBeUndefined();
+    expect(eventOrigin({})).toBeUndefined();
+    expect(eventOrigin(undefined)).toBeUndefined();
   });
 });
 
@@ -551,6 +616,43 @@ describe('matchUpRowSet', () => {
     expect(competitorRows[0].link_source).toEqual('providerId');
     // i2 carries no person.personId → unresolved.
     expect(competitorRows[1].person_id).toBeNull();
+  });
+
+  // Competitor rows previously reached their tournament ONLY through match_up_id, which
+  // left the incremental producer's rename / person-claim UPDATEs unscopable — they key
+  // on a participantId alone and `buildUpdate` cannot express a join. Every grain must
+  // carry it: INDIVIDUAL, TEAM, PAIR and rubber rows.
+  it('stamps ctx.tournamentId on every competitor row, at every grain', () => {
+    const { competitorRows } = matchUpRowSet(
+      {
+        matchUpId: 'tie1',
+        matchUpType: 'TEAM',
+        sides: [
+          { sideNumber: 1, participant: { participantId: 'team1', participantType: 'TEAM', teamId: 'TEAM_A' } },
+          { sideNumber: 2, participant: { participantId: 'team2', participantType: 'TEAM' } },
+        ],
+        tieMatchUps: [
+          {
+            matchUpId: 'r1',
+            sides: [
+              { sideNumber: 1, participant: { participantId: 'p1', participantType: 'INDIVIDUAL' } },
+              {
+                sideNumber: 2,
+                participant: {
+                  participantId: 'pair1',
+                  participantType: 'PAIR',
+                  individualParticipants: [{ participantId: 'i1' }, { participantId: 'i2' }],
+                },
+              },
+            ],
+          },
+        ],
+      },
+      ctx,
+    );
+    const grains = new Set(competitorRows.map((c) => c.participant_type));
+    expect(grains).toEqual(new Set(['TEAM', 'INDIVIDUAL', 'PAIR']));
+    expect(competitorRows.every((c) => c.tournament_id === 't1')).toBe(true);
   });
 });
 

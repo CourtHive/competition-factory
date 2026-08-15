@@ -1,0 +1,104 @@
+---
+title: Event Origin & Other IDs
+---
+
+## Why an event needs its own identity
+
+A `tournamentRecord` has exactly one `tournamentId`. An **event** inside it may have been
+sanctioned somewhere else entirely — by a governing body that holds its own tournament,
+with its own internal id, in its own system.
+
+A single record can carry events from **several sanctioning systems at once**. When that
+happens there is no single "the" sanctioning tournamentId for the record, and the event's
+origin cannot be inferred from the record that carries it.
+
+`Event.eventOtherIds[]` is where that identity lives.
+
+## Shape
+
+`UnifiedEventID` is the event-grain member of the `Unified*ID` family, alongside
+`UnifiedTournamentID` (`tournament.tournamentOtherIds`), `UnifiedPersonID`
+(`person.personOtherIds`) and `UnifiedVenueID` (`venue.venueOtherIds`).
+
+```js
+event.eventOtherIds = [
+  { organisationId: 'ITA', tournamentId: 'ita-4471', eventId: 'ita-ev-9', isOrigin: true },
+  { organisationId: 'USTA', tournamentId: 'usta-88', eventId: 'usta-ev-2' },
+];
+```
+
+| attribute                | meaning                                                            |
+| ------------------------ | ------------------------------------------------------------------ |
+| `organisationId`         | the organisation whose system this id belongs to (required)        |
+| `tournamentId`           | **that organisation's** tournamentId — _not_ the carrying record's |
+| `eventId`                | that organisation's id for this event                              |
+| `isOrigin`               | marks the entry as the sanctioning source the event came from      |
+| `uniqueOrganisationName` | human-readable name of the organisation                            |
+
+Three properties of the shape are load-bearing:
+
+- **`tournamentId` is optional and belongs to `organisationId`.** It names a tournament in
+  that organisation's system, never the carrying record. It is not assumed to resolve
+  locally — see the two linking modes below.
+- **`eventId` is optional.** An event sanctioned but not yet created in the origin system
+  has no id there. It is written back after the event is copied to the origin — after the
+  fact, or through an external API integration.
+- **At most one entry carries `isOrigin`.** Everything else in the array is a system the
+  event is merely _also_ known to. An event with no flagged entry simply has no declared
+  origin, which is the ordinary single-sanction case.
+
+## Two linking modes
+
+The sanctioning workflow can attach an event to either kind of origin, and the same
+`UnifiedEventID` expresses both:
+
+| mode                                                                                                                    | `organisationId`         | does `tournamentId` resolve here?                              |
+| ----------------------------------------------------------------------------------------------------------------------- | ------------------------ | -------------------------------------------------------------- |
+| **External** — a tournament sanctioned outside this ecosystem, linked in as an event of the tournament being sanctioned | a foreign governing body | usually **no**; the body may hold no record carrying the event |
+| **Internal** — a tournament already sanctioned _within_ this ecosystem, linked as an event                              | a CourtHive provider     | **yes**, it is a real tournamentRecord                         |
+
+The distinction is data, not schema: nothing branches on it, and a consumer that wants the
+origin's local record simply attempts the lookup. This is exactly why the projected
+`origin_tournament_id` **cannot** carry a foreign key — a constraint satisfiable for
+internal links is impossible for external ones. Resolution is a read-time `LEFT JOIN`,
+never a write-time constraint.
+
+## Reading the origin
+
+```js
+import { readModel } from 'tods-competition-factory';
+
+const origin = readModel.eventOrigin(event); // the isOrigin entry, or undefined
+```
+
+## Writing
+
+Through the standard mutation. The array is replaced wholesale — the natural grain, since
+a caller reconciling against a sanctioning body holds the full list. Pass `null` to clear.
+
+```js
+engine.modifyEvent({
+  eventUpdates: {
+    eventOtherIds: [{ organisationId: 'ITA', tournamentId: 'ita-4471', isOrigin: true }],
+  },
+  eventId,
+});
+```
+
+This dispatches `MODIFY_EVENT`, so any subscriber maintaining a projection of events sees
+the change.
+
+## In the read model
+
+`cast()` and the incremental projection producer both flatten the flagged entry onto the
+events row:
+
+| column                   | source                                |
+| ------------------------ | ------------------------------------- |
+| `tournament_id`          | the record that **carries** the event |
+| `origin_organisation_id` | `eventOrigin(event).organisationId`   |
+| `origin_tournament_id`   | `eventOrigin(event).tournamentId`     |
+| `origin_event_id`        | `eventOrigin(event).eventId`          |
+
+`tournament_id` and `origin_tournament_id` are independent by design. Reading one for the
+other is the mistake this concept exists to prevent.

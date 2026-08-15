@@ -59,6 +59,7 @@ module.exports = {
             'concepts/events/categories',
             'concepts/events/entries',
             'concepts/events/flights',
+            'concepts/events/event-origin',
           ],
         },
         {

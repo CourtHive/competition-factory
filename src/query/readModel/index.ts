@@ -14,6 +14,7 @@ export type { PersonLink } from './personRule';
 export {
   tournamentRow,
   eventRow,
+  eventOrigin,
   drawRow,
   structureRow,
   seedRow,
