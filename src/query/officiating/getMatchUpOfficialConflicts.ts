@@ -4,7 +4,8 @@ import { findDrawMatchUp } from '@Acquire/findDrawMatchUp';
 
 // Constants
 import { MISSING_TOURNAMENT_RECORD, MISSING_MATCHUP_ID } from '@Constants/errorConditionConstants';
-import { MISSING_OFFICIAL_RECORD } from '@Constants/officiatingConstants';
+import { MISSING_CONFLICT_SOURCE } from '@Constants/officiatingConstants';
+import { GROUP } from '@Constants/participantConstants';
 import { POLICY_TYPE_OFFICIATING_CONFLICT } from '@Constants/policyConstants';
 import { SUCCESS } from '@Constants/resultConstants';
 
@@ -14,7 +15,10 @@ import type { OfficialConflict, OfficialRecord } from '@Types/officiatingTypes';
 
 type GetMatchUpOfficialConflictsArgs = {
   policyDefinitions?: { [key: string]: any };
-  officialRecord: OfficialRecord;
+  /** Durable registry declarations. OPTIONAL when `officialParticipantId` is supplied. */
+  officialRecord?: OfficialRecord;
+  /** The official's participantId in this tournament — enables the SHARED_GROUPING rule. */
+  officialParticipantId?: string;
   drawDefinition: DrawDefinition;
   tournamentRecord: Tournament;
   organisationIds?: string[];
@@ -49,6 +53,7 @@ type GetMatchUpOfficialConflictsResult = {
  * every possible opponent as a conflict would block most early-round assignments.
  */
 export function getMatchUpOfficialConflicts({
+  officialParticipantId,
   policyDefinitions,
   tournamentRecord,
   organisationIds,
@@ -60,7 +65,9 @@ export function getMatchUpOfficialConflicts({
 }: GetMatchUpOfficialConflictsArgs): GetMatchUpOfficialConflictsResult {
   if (!tournamentRecord) return { error: MISSING_TOURNAMENT_RECORD };
   if (!matchUpId) return { error: MISSING_MATCHUP_ID };
-  if (!officialRecord) return { error: MISSING_OFFICIAL_RECORD };
+  // Either declaration source is sufficient: a registry record, or the official's participantId
+  // (which unlocks tournament-scoped GROUP relationships).
+  if (!officialRecord && !officialParticipantId) return { error: MISSING_CONFLICT_SOURCE };
 
   // No conflict policy ⇒ nothing to evaluate; skip resolving participants.
   if (!policyDefinitions?.[POLICY_TYPE_OFFICIATING_CONFLICT]) {
@@ -101,8 +108,14 @@ export function getMatchUpOfficialConflicts({
   };
   for (const participantId of sideParticipantIds) include(participantId);
 
+  // GROUP participants are the tournament-scoped declaration source: a GROUP containing the official
+  // and a competitor IS the relationship. Passed whole; the query resolves the official's memberships.
+  const groupParticipants = tournamentParticipants.filter((participant) => participant.participantType === GROUP);
+
   const conflictResult = getOfficialConflicts({
     participants: checkedParticipants,
+    officialParticipantId,
+    groupParticipants,
     policyDefinitions,
     organisationIds,
     nationalityCode,

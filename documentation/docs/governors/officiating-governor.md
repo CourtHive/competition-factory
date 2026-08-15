@@ -279,6 +279,43 @@ so the query makes no assumption about where the tournament record lives.
 `nationalityCode` must be supplied by the caller: an `OfficialRecord` carries no person detail, so the
 official's own nationality cannot be derived from it.
 
+#### Two declaration sources — either is sufficient
+
+`officialRecord` is **optional**. A conflict declaration can come from either:
+
+| source                   | scope                      | supplied as                                   |
+| ------------------------ | -------------------------- | --------------------------------------------- |
+| registry (courthive-ams) | durable, cross-tournament  | `officialRecord.conflictDeclarations`         |
+| tournamentRecord         | transient, this event only | `officialParticipantId` + `groupParticipants` |
+
+Supplying **neither** is an error (`MISSING_CONFLICT_SOURCE`).
+
+The tournament-scoped source exists because expecting officials to keep a global registry current is
+unrealistic — and an empty registry would otherwise make every check return "no conflicts", which is
+indistinguishable from a check that passed. A tournament assignment is the natural moment to capture a
+relationship, so the declaration lives where it is created.
+
+A `GROUP` participant containing the official and one or more competitors **is** the declaration. Create
+it with `createGroupParticipant({ groupName, individualParticipantIds, participantRole })`.
+
+#### `participantRole` marks an authored relationship
+
+`SHARED_GROUPING` defaults to `WARN`, because `GROUP` is a general primitive — squads and
+attribute-derived groupings are legitimate and would otherwise false-positive. The GROUP's own
+`participantRole` distinguishes an authored relationship from an incidental one, and `ConflictRule.roleSeverity`
+escalates per role:
+
+```ts
+[CONFLICT_SHARED_GROUPING]: {
+  enabled: true,
+  severity: CONFLICT_WARN,                       // incidental groupings
+  roleSeverity: { COACH: 'BLOCK', MEDICAL: 'BLOCK', PHYSIO: 'BLOCK', TRAINER: 'BLOCK' },
+}
+```
+
+`createGroupParticipant` defaults `participantRole` to `OTHER`, so an unspecified grouping carries `OTHER`,
+is absent from `roleSeverity`, and falls through to the base severity.
+
 A rule that is absent from the policy, or present with `enabled: false`, is **not evaluated at all** — a
 policy is an allow-list of checks, never a silent partial application.
 
