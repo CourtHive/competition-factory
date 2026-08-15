@@ -1,6 +1,9 @@
 import { sanctioningEngine } from '@Assemblies/engines/sanctioning';
 import { beforeEach, describe, expect, it } from 'vitest';
 
+// constants
+import { INSUFFICIENT_UUIDS } from '@Constants/errorConditionConstants';
+
 // Types
 import type { Applicant, EventProposal, TournamentProposal, SanctioningPolicy } from '@Types/sanctioningTypes';
 
@@ -228,16 +231,27 @@ describe('activateFromSanctioning — supplied compliance item ids', () => {
     }
   });
 
-  it('falls back to minting once a partial pool is exhausted', () => {
+  it('REJECTS a short pool rather than minting the shortfall', () => {
+    // Strict when supplied. A pool that runs short means this replay needed a
+    // different number of ids than the origin did — i.e. the two instances'
+    // states have diverged. Minting the difference would convert a detectable
+    // divergence into a silent, permanent id mismatch, so it is an error.
+    // (An earlier revision of this test asserted the opposite, lenient
+    // behaviour; that was wrong for replay and was changed deliberately.)
     approveWithCompliancePolicy();
-    sanctioningEngine.activateFromSanctioning({ uuids: ['only-one'] });
+    const result: any = sanctioningEngine.activateFromSanctioning({ uuids: ['only-one'] });
 
-    const itemIds = getRecord().compliance.items.map((i: any) => i.itemId);
-    expect(itemIds).toHaveLength(2);
-    expect(itemIds).toContain('only-one');
-    // The other item still received a usable id rather than undefined.
-    const minted = itemIds.find((id: string) => id !== 'only-one');
-    expect(typeof minted).toEqual('string');
-    expect(minted.length).toBeGreaterThan(0);
+    expect(result.error).toEqual(INSUFFICIENT_UUIDS);
+    expect(result.context).toEqual({ required: 2, supplied: 1 });
+  });
+
+  it('accepts a pool larger than needed', () => {
+    // Over-supply is not a divergence signal — the origin may batch ids
+    // generously. Only a SHORT pool indicates the counts disagreed.
+    approveWithCompliancePolicy();
+    const result: any = sanctioningEngine.activateFromSanctioning({ uuids: ['a', 'b', 'c', 'd'] });
+
+    expect(result.error).toBeUndefined();
+    expect(getRecord().compliance.items).toHaveLength(2);
   });
 });

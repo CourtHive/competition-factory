@@ -1,6 +1,6 @@
 import { allEventMatchUps } from '@Query/matchUps/getAllEventMatchUps';
 import { makeDeepCopy } from '@Tools/makeDeepCopy';
-import { UUID } from '@Tools/UUID';
+import { takeUUID } from '@Tools/UUID';
 
 // constants and types
 import { Event, TieFormat } from '@Types/tournamentTypes';
@@ -15,6 +15,23 @@ type WriteTieFormatArgs = {
   target: WriteTieFormatTarget;
   tieFormat: TieFormat;
   event?: Event;
+  /**
+   * Optional pool for the copy-on-write fork below.
+   *
+   * NOT a `tieFormatId` parameter, deliberately. Naming the id directly would let
+   * a caller write back onto the format other references still point at, which is
+   * exactly what the fork exists to avoid. A pool says only "when you need to
+   * mint, draw from here" — the format still diverges, still gets an id distinct
+   * from the shared one, but the VALUE is reproducible.
+   *
+   * Why a pool is the only option here: the fork creates an entity the caller
+   * never asked for, so a caller cannot pre-supply its id by naming it. TMX
+   * otherwise mints at the origin and threads ids through params — whole
+   * generated objects, or an explicit `uuids` pool (`addFlights`,
+   * `pairFromUnified`) — which is what keeps its two executions (CFS, then the
+   * local re-run on ack) in agreement. This path had no pool to thread.
+   */
+  uuids?: string[];
 };
 
 /**
@@ -24,9 +41,21 @@ type WriteTieFormatArgs = {
  * - If the target had a `tieFormatId` (centralized): updates the centralized entry in event.tieFormats[]
  *   if no other objects share the same ID, or creates a new entry if shared.
  * - If the target had an inline `tieFormat`: writes inline (backwards-compatible).
+ *
+ * ⚠️ RETURNS AN ERROR OBJECT. Callers currently ignore the return value, which is
+ * safe ONLY because none of them thread `uuids` yet — with no pool supplied the
+ * error path is unreachable. Any caller that starts passing `uuids` MUST check
+ * the result and propagate, or an exhausted pool becomes a silent no-op write.
+ *
+ * Threading the pool through the ~20 call sites in addCollectionDefinition,
+ * removeCollectionDefinition, updateTieFormat and collectionGroupUpdate is
+ * deliberately NOT done piecemeal: partial threading makes replay divergence
+ * intermittent (some paths reproducible, others not), which is harder to diagnose
+ * than the current consistent behaviour. Do it as one pass, with error checks at
+ * every site.
  */
-export function writeTieFormat({ target, tieFormat, event }: WriteTieFormatArgs) {
-  if (!target) return;
+export function writeTieFormat({ target, tieFormat, event, uuids }: WriteTieFormatArgs) {
+  if (!target) return undefined;
 
   // If the target was using a centralized tieFormatId reference
   if (target.tieFormatId && event?.tieFormats?.length) {
@@ -41,26 +70,29 @@ export function writeTieFormat({ target, tieFormat, event }: WriteTieFormatArgs)
         updatedTieFormat.tieFormatId = existingId;
         event.tieFormats[existingIndex] = updatedTieFormat;
         // target keeps its existing tieFormatId, no change needed
-        return;
+        return undefined;
       }
     }
 
     // Multiple references share this ID — create a new entry so we don't affect others
     const newTieFormat = makeDeepCopy(tieFormat, undefined, true);
-    // DELIBERATELY unconditional, unlike the caller-supplied-id convention applied
-    // across mutate/ in 2026-08. This is copy-on-write: the whole point is to
-    // diverge from the shared tieFormatId, so honouring a supplied id would write
-    // back onto the format the other references still point at. Do not "complete
-    // the set" by making this respect a parameter.
-    newTieFormat.tieFormatId = UUID();
+    // The fork itself is unconditional — that is the point of copy-on-write — but
+    // the VALUE comes from the caller's pool when one was supplied, so both
+    // instances replaying this mutation land on the same id. Strict when supplied:
+    // an exhausted pool is a divergence signal, not a licence to mint.
+    const { uuid, error } = takeUUID({ uuids });
+    if (error) return { error };
+
+    newTieFormat.tieFormatId = uuid;
     event.tieFormats.push(newTieFormat);
     target.tieFormatId = newTieFormat.tieFormatId;
     delete target.tieFormat;
-    return;
+    return undefined;
   }
 
   // Fallback: write inline (backwards-compatible for pre-aggregation state)
   target.tieFormat = tieFormat;
+  return undefined;
 }
 
 type CountReferencesArgs = {
