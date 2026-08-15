@@ -7,6 +7,7 @@ import {
   getIsoDateString,
   validTimeValue,
 } from '@Tools/dateTime';
+import { getMatchUpOfficialConflicts } from '@Query/officiating/getMatchUpOfficialConflicts';
 import { setMatchUpHomeParticipantId } from '@Mutate/matchUps/schedule/scheduleItems/setMatchUpHomeParticipantId';
 import { setMatchUpFirstClassOrTimeItem } from '@Mutate/timeItems/matchUps/setMatchUpFirstClassOrTimeItem';
 import { addMatchUpScheduledTime, addMatchUpTimeModifiers } from '@Mutate/matchUps/schedule/scheduledTime';
@@ -43,8 +44,11 @@ import { DrawDefinition, Event } from '@Types/tournamentTypes';
 import { OBJECT, OF_TYPE } from '@Constants/attributeConstants';
 import { AddScheduleAttributeArgs } from '@Types/factoryTypes';
 import { INDIVIDUAL } from '@Constants/participantConstants';
+import { MISSING_OFFICIAL_RECORD, OFFICIAL_CONFLICT_OF_INTEREST } from '@Constants/officiatingConstants';
+import { POLICY_TYPE_OFFICIATING_CONFLICT } from '@Constants/policyConstants';
 import { OFFICIAL } from '@Constants/participantRoles';
 import { SUCCESS } from '@Constants/resultConstants';
+import type { OfficialRecord } from '@Types/officiatingTypes';
 import { HydratedMatchUp } from '@Types/hydrated';
 import {
   SCHEDULE_CONFLICT_DOUBLE_BOOKING,
@@ -58,6 +62,7 @@ import {
   ANACHRONISM,
   INVALID_VALUES,
   ErrorType,
+  MISSING_TOURNAMENT_RECORD,
   MISSING_PARTICIPANT_ID,
   PARTICIPANT_NOT_FOUND,
 } from '@Constants/errorConditionConstants';
@@ -580,13 +585,22 @@ export function addMatchUpCourtAnnotation({
 
 export function addMatchUpOfficial({
   removePriorValues,
+  policyDefinitions,
   tournamentRecord,
+  organisationIds,
+  nationalityCode,
   drawDefinition,
+  officialRecord,
   disableNotice,
   participantId,
   officialType,
   matchUpId,
+  event,
 }: AddScheduleAttributeArgs & {
+  policyDefinitions?: { [key: string]: any };
+  officialRecord?: OfficialRecord;
+  organisationIds?: string[];
+  nationalityCode?: string;
   participantId?: string;
   officialType?: string;
 }) {
@@ -610,6 +624,49 @@ export function addMatchUpOfficial({
     });
 
     if (!participant) return { error: PARTICIPANT_NOT_FOUND };
+  }
+
+  // Conflict-of-interest gate — opt-in, and scoped to THIS matchUp's sides
+  // rather than the whole field. Requires both a policy and the official's
+  // record; supplying a policy without the record is an error rather than a
+  // silent pass, for the same reason `assignOfficial` fails closed.
+  // The two guards below also narrow the optional params for the call that
+  // follows; `getMatchUpOfficialConflicts` enforces the same preconditions
+  // independently, so neither is load-bearing on its own.
+  if (policyDefinitions?.[POLICY_TYPE_OFFICIATING_CONFLICT]) {
+    if (!tournamentRecord) return { error: MISSING_TOURNAMENT_RECORD };
+    if (!officialRecord) return { error: MISSING_OFFICIAL_RECORD };
+
+    const conflictResult = getMatchUpOfficialConflicts({
+      policyDefinitions,
+      tournamentRecord,
+      organisationIds,
+      nationalityCode,
+      drawDefinition,
+      officialRecord,
+      matchUpId,
+      event,
+    });
+    if (conflictResult.error) return { error: conflictResult.error };
+    if (conflictResult.blocked) {
+      return { error: OFFICIAL_CONFLICT_OF_INTEREST, conflicts: conflictResult.conflicts };
+    }
+
+    const result: any = setMatchUpFirstClassOrTimeItem({
+      duplicateValues: false,
+      attribute: 'official',
+      itemType: 'SCHEDULE.ASSIGNMENT.OFFICIAL',
+      itemSubTypes: officialType ? [officialType] : undefined,
+      value: participantId,
+      removePriorValues,
+      tournamentRecord,
+      drawDefinition,
+      disableNotice,
+      matchUpId,
+    });
+
+    // Non-blocking (WARN) conflicts ride back with the successful assignment.
+    return conflictResult.conflicts?.length ? { ...result, conflicts: conflictResult.conflicts } : result;
   }
 
   return setMatchUpFirstClassOrTimeItem({

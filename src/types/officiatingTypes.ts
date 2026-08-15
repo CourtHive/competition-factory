@@ -82,6 +82,79 @@ export const ScoringMethodEnum = {
 
 export type ScoringMethod = (typeof ScoringMethodEnum)[keyof typeof ScoringMethodEnum];
 
+export const ConflictTypeEnum = {
+  /** The official is themselves entered in the tournament. */
+  SAME_PERSON: 'SAME_PERSON',
+  /** The official has declared a relationship with an entered participant. */
+  DECLARED_RELATIONSHIP: 'DECLARED_RELATIONSHIP',
+  /** The official shares a nationality with an entered participant. */
+  NATIONALITY: 'NATIONALITY',
+  /** The official has declared an affiliation with an entered participant's organisation. */
+  ORGANISATION: 'ORGANISATION',
+} as const;
+
+export type ConflictType = (typeof ConflictTypeEnum)[keyof typeof ConflictTypeEnum];
+
+/**
+ * BLOCK refuses the assignment; WARN surfaces the conflict and allows an
+ * authorized user to proceed. Which rule carries which severity is a policy
+ * decision, not a factory one — federations disagree, most sharply on
+ * NATIONALITY (disqualifying at ITF-level international events, unworkable at
+ * national ones where every official shares the players' nationality).
+ */
+export const ConflictSeverityEnum = {
+  BLOCK: 'BLOCK',
+  WARN: 'WARN',
+} as const;
+
+export type ConflictSeverity = (typeof ConflictSeverityEnum)[keyof typeof ConflictSeverityEnum];
+
+/**
+ * A relationship the official has declared. Self-declaration is how federations
+ * actually administer conflicts of interest — the factory cannot infer that an
+ * official coaches a player, so the declaration is the record of it.
+ */
+export interface OfficialConflictDeclaration {
+  declarationId: string;
+  /** The related person. Matched against participants' `person.personId`. */
+  personId?: string;
+  /** A specific participant, when the relationship is to an entry rather than a person. */
+  participantId?: string;
+  /** An organisation (club, academy, school) the official is affiliated with. */
+  organisationId?: string;
+  /** Free-form nature of the relationship, e.g. 'FAMILY', 'COACH', 'ACADEMY'. */
+  relationship?: string;
+  declaredAt?: string;
+  declaredBy?: string;
+  notes?: string;
+  extensions?: Extension[];
+}
+
+/** One detected conflict between an official and an entered participant. */
+export interface OfficialConflict {
+  conflictType: ConflictType;
+  severity: ConflictSeverity;
+  personId?: string;
+  participantId?: string;
+  participantName?: string;
+  organisationId?: string;
+  relationship?: string;
+  nationalityCode?: string;
+  declarationId?: string;
+  reason: string;
+}
+
+/** Per-rule configuration within a conflict-of-interest policy. */
+export interface ConflictRule {
+  enabled: boolean;
+  severity: ConflictSeverity;
+}
+
+export interface ConflictOfInterestPolicy {
+  policyName?: string;
+  conflictRules: Partial<Record<ConflictType, ConflictRule>>;
+}
+
 // ---------------------------------------------------------------------------
 // Status Transition (shared shape for all officiating workflows)
 // ---------------------------------------------------------------------------
@@ -283,6 +356,8 @@ export interface OfficialRecord {
   suspensions: OfficialSuspension[];
   certificationRequirements: CertificationRequirement[];
   evaluationPolicies: EvaluationPolicy[];
+  /** Optional: absent on records created before conflict declarations existed. */
+  conflictDeclarations?: OfficialConflictDeclaration[];
   createdAt: string;
   updatedAt: string;
   extensions?: Extension[];

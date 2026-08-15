@@ -1,10 +1,12 @@
 export { transitionCertificationStatus } from '@Mutate/officiating/transitionCertificationStatus';
-export { transitionEvaluationStatus } from '@Mutate/officiating/transitionEvaluationStatus';
 export { addCertificationRequirement } from '@Mutate/officiating/addCertificationRequirement';
+export { transitionEvaluationStatus } from '@Mutate/officiating/transitionEvaluationStatus';
 export { transitionAssignmentStatus } from '@Mutate/officiating/transitionAssignmentStatus';
+export { removeConflictDeclaration } from '@Mutate/officiating/removeConflictDeclaration';
 export { removeOfficialAssignment } from '@Mutate/officiating/removeOfficialAssignment';
-export { addEvaluationPolicy } from '@Mutate/officiating/addEvaluationPolicy';
+export { addConflictDeclaration } from '@Mutate/officiating/addConflictDeclaration';
 export { createOfficialRecord } from '@Mutate/officiating/createOfficialRecord';
+export { addEvaluationPolicy } from '@Mutate/officiating/addEvaluationPolicy';
 export { modifyCertification } from '@Mutate/officiating/modifyCertification';
 export { removeCertification } from '@Mutate/officiating/removeCertification';
 export { modifyEvaluation } from '@Mutate/officiating/modifyEvaluation';
