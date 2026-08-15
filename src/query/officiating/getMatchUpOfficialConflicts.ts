@@ -1,3 +1,4 @@
+import { conflictInputsFrom } from '@Query/officiating/conflictEvaluationInputs';
 import { getOfficialConflicts } from '@Query/officiating/getOfficialConflicts';
 import { getParticipants } from '@Query/participants/getParticipants';
 import { findDrawMatchUp } from '@Acquire/findDrawMatchUp';
@@ -11,18 +12,11 @@ import { SUCCESS } from '@Constants/resultConstants';
 
 // Types
 import type { DrawDefinition, Event, Participant, Tournament } from '@Types/tournamentTypes';
-import type { OfficialConflict, OfficialRecord } from '@Types/officiatingTypes';
+import type { ConflictEvaluationInputs, OfficialConflict } from '@Types/officiatingTypes';
 
-type GetMatchUpOfficialConflictsArgs = {
-  policyDefinitions?: { [key: string]: any };
-  /** Durable registry declarations. OPTIONAL when `officialParticipantId` is supplied. */
-  officialRecord?: OfficialRecord;
-  /** The official's participantId in this tournament — enables the SHARED_GROUPING rule. */
-  officialParticipantId?: string;
+type GetMatchUpOfficialConflictsArgs = ConflictEvaluationInputs & {
   drawDefinition: DrawDefinition;
   tournamentRecord: Tournament;
-  organisationIds?: string[];
-  nationalityCode?: string;
   matchUpId: string;
   event?: Event;
 };
@@ -52,17 +46,18 @@ type GetMatchUpOfficialConflictsResult = {
  * considered: an unresolved side has no official yet in practice, and treating
  * every possible opponent as a conflict would block most early-round assignments.
  */
-export function getMatchUpOfficialConflicts({
-  officialParticipantId,
-  policyDefinitions,
-  tournamentRecord,
-  organisationIds,
-  nationalityCode,
-  drawDefinition,
-  officialRecord,
-  matchUpId,
-  event,
-}: GetMatchUpOfficialConflictsArgs): GetMatchUpOfficialConflictsResult {
+export function getMatchUpOfficialConflicts(
+  params: GetMatchUpOfficialConflictsArgs,
+): GetMatchUpOfficialConflictsResult {
+  const {
+    officialParticipantId,
+    policyDefinitions,
+    tournamentRecord,
+    drawDefinition,
+    officialRecord,
+    matchUpId,
+    event,
+  } = params;
   if (!tournamentRecord) return { error: MISSING_TOURNAMENT_RECORD };
   if (!matchUpId) return { error: MISSING_MATCHUP_ID };
   // Either declaration source is sufficient: a registry record, or the official's participantId
@@ -112,14 +107,13 @@ export function getMatchUpOfficialConflicts({
   // and a competitor IS the relationship. Passed whole; the query resolves the official's memberships.
   const groupParticipants = tournamentParticipants.filter((participant) => participant.participantType === GROUP);
 
+  // Forward the conflict inputs WHOLE (see conflictEvaluationInputs.ts). `groupParticipants` is
+  // derived here rather than supplied, so it overrides the forwarded set; `participants` is
+  // route-specific by design.
   const conflictResult = getOfficialConflicts({
+    ...conflictInputsFrom(params),
     participants: checkedParticipants,
-    officialParticipantId,
     groupParticipants,
-    policyDefinitions,
-    organisationIds,
-    nationalityCode,
-    officialRecord,
   });
   if (conflictResult.error) return { error: conflictResult.error };
 

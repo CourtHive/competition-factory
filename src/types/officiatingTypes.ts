@@ -1,4 +1,4 @@
-import type { Extension, TimeItem } from './tournamentTypes';
+import type { Extension, Participant, TimeItem } from './tournamentTypes';
 import type { DocumentReference } from './sanctioningTypes';
 
 // ---------------------------------------------------------------------------
@@ -173,6 +173,31 @@ export interface ConflictRule {
    * groupings merely warn.
    */
   roleSeverity?: Record<string, ConflictSeverity>;
+}
+
+/**
+ * The inputs that configure a conflict-of-interest evaluation.
+ *
+ * Every route able to evaluate conflicts accepts this set and forwards it WHOLE to
+ * `getOfficialConflicts` via `conflictInputsFrom()`. Hand-listing the fields per route is what allowed
+ * `assignOfficial` and `addMatchUpOfficial` to disagree about the same conflict. Add a new input here and
+ * to `CONFLICT_INPUT_KEYS`; every route inherits it, and a conformance test proves they do.
+ *
+ * `participants` is intentionally excluded — it is route-specific (supplied by the caller on one route,
+ * derived from the matchUp's sides on the other).
+ */
+export interface ConflictEvaluationInputs {
+  policyDefinitions?: { [key: string]: any };
+  /** Durable registry declarations (courthive-ams). */
+  officialRecord?: OfficialRecord;
+  /** The official's participantId in this tournament — enables SHARED_GROUPING. */
+  officialParticipantId?: string;
+  /** The tournament's GROUP participants — the tournament-scoped declaration source. */
+  groupParticipants?: Participant[];
+  /** The official's own nationality — required for the NATIONALITY rule. */
+  nationalityCode?: string;
+  /** Organisations the official is affiliated with, beyond any declared ones. */
+  organisationIds?: string[];
 }
 
 export interface ConflictOfInterestPolicy {

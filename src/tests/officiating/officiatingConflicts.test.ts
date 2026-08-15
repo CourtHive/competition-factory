@@ -14,6 +14,7 @@ import {
   OFFICIAL_CONFLICT_OF_INTEREST,
   MISSING_CONFLICT_PARTICIPANTS,
   CONFLICT_DECLARED_RELATIONSHIP,
+  CONFLICT_SHARED_GROUPING,
   MISSING_CONFLICT_SOURCE,
   MISSING_OFFICIAL_RECORD,
   CONFLICT_ORGANISATION,
@@ -393,6 +394,57 @@ describe('assignOfficial conflict gate', () => {
     expect(result.success).toBe(true);
     expect(result.conflicts).toHaveLength(1);
     expect(result.conflicts[0].severity).toEqual(CONFLICT_WARN);
+    expect(officialRecord.assignments).toHaveLength(1);
+  });
+
+  it('sees a tournament GROUP relationship — parity with addMatchUpOfficial', () => {
+    // Without officialParticipantId + groupParticipants this route can only see registry declarations,
+    // so the SAME conflict would block per-matchUp and pass here. Same feature, two routes, one answer.
+    const officialRecord = makeRecord();
+    const result: any = assignOfficial({
+      officialRecord,
+      tournamentId: 't-1',
+      roleSubtype: 'CHAIR_UMPIRE',
+      participants: [makeParticipant({ participantId: 'par-competitor' })],
+      officialParticipantId: 'par-official',
+      groupParticipants: [
+        {
+          participantId: 'grp-1',
+          participantType: 'GROUP',
+          participantName: 'Team Alpha',
+          participantRole: 'COACH',
+          individualParticipantIds: ['par-official', 'par-competitor'],
+        } as any,
+      ],
+      policyDefinitions: POLICY_OFFICIATING_CONFLICT_OF_INTEREST,
+    });
+
+    expect(result.error).toEqual(OFFICIAL_CONFLICT_OF_INTEREST);
+    expect(result.conflicts).toHaveLength(1);
+    expect(result.conflicts[0].conflictType).toEqual(CONFLICT_SHARED_GROUPING);
+    expect(result.conflicts[0].groupRole).toEqual('COACH');
+    expect(officialRecord.assignments).toHaveLength(0);
+  });
+
+  it('does not flag a grouping the official is not a member of', () => {
+    const officialRecord = makeRecord();
+    const result: any = assignOfficial({
+      officialRecord,
+      tournamentId: 't-1',
+      roleSubtype: 'CHAIR_UMPIRE',
+      participants: [makeParticipant({ participantId: 'par-competitor' })],
+      officialParticipantId: 'par-official',
+      groupParticipants: [
+        {
+          participantId: 'grp-1',
+          participantType: 'GROUP',
+          participantRole: 'COACH',
+          individualParticipantIds: ['someone-else', 'par-competitor'],
+        } as any,
+      ],
+      policyDefinitions: POLICY_OFFICIATING_CONFLICT_OF_INTEREST,
+    });
+    expect(result.success).toBe(true);
     expect(officialRecord.assignments).toHaveLength(1);
   });
 

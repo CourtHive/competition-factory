@@ -97,6 +97,37 @@ Validates transition. On `SUBMITTED`, validates required criterion scores agains
 { officialRecord; assignmentId: string }
 ```
 
+```ts
+// tournament-scoped declarations work on this route too
+{ officialRecord; tournamentId; roleSubtype;
+  policyDefinitions?; participants?;
+  officialParticipantId?; groupParticipants?;   // SHARED_GROUPING inputs
+  nationalityCode?; organisationIds? }
+```
+
+#### One input set, forwarded whole
+
+Every route that can evaluate a conflict accepts `ConflictEvaluationInputs` and forwards it **whole** via
+`conflictInputsFrom()`. Adding a new input means editing `CONFLICT_INPUT_KEYS` once; every route inherits
+it.
+
+This is structural, not stylistic. Routes used to hand-list the fields they forwarded, and when the
+tournament-scoped inputs (`officialParticipantId` + `groupParticipants`) were added, one route forwarded
+them and the other did not — so the same conflict blocked a per-matchUp assignment and passed on the
+tournament-level one. A rule that applies or not depending on which route the operator used is worse than
+no rule, because it looks enforced. A conformance test now fails, naming the route and the key, if any
+route drops an input.
+
+`participants` is deliberately outside the set: it is route-specific (supplied by the caller on
+`assignOfficial`, derived from the matchUp's sides on `getMatchUpOfficialConflicts`).
+
+Both assignment routes see the same declarations. Without `officialParticipantId` + `groupParticipants`
+this route would see only registry declarations, so a GROUP-expressed conflict would block per-matchUp and
+pass here — same feature, two routes, different answers.
+
+Note `officialRecord` **is** required here, unlike `getOfficialConflicts`: `assignOfficial` mutates the
+record (it pushes an assignment onto it).
+
 The conflict gate is **opt-in**: with no `policyDefinitions` the assignment behaves exactly as before.
 Supply a conflict policy _and_ `participants` and the assignment is checked first — a `BLOCK`-severity
 conflict returns `{ error: OFFICIAL_CONFLICT_OF_INTEREST, conflicts }` and records nothing, while
