@@ -110,6 +110,7 @@ export function replaceTieMatchUpParticipantId(params: ReplaceTieMatchUpParticip
     inContextDualMatchUp,
     drawDefinition,
     dualMatchUp,
+    event,
   });
 
   const dualMatchUpSide = dualMatchUp?.sides?.find(({ sideNumber }) => sideNumber === side.sideNumber);
