@@ -1,12 +1,26 @@
 import { POLICY_TYPE_OFFICIATING_CONFLICT } from '@Constants/policyConstants';
 import {
   CONFLICT_DECLARED_RELATIONSHIP,
+  CONFLICT_SHARED_GROUPING,
   CONFLICT_ORGANISATION,
   CONFLICT_NATIONALITY,
   CONFLICT_SAME_PERSON,
   CONFLICT_BLOCK,
   CONFLICT_WARN,
 } from '@Constants/officiatingConstants';
+import { COACH, MEDICAL, PHYSIO, TRAINER } from '@Constants/participantRoles';
+
+/**
+ * GROUP participantRoles that represent a relationship close enough to disqualify an official.
+ * A GROUP carrying one of these was authored to express that relationship; a GROUP with no role
+ * (a squad, an attribute-derived grouping) is incidental and only warns.
+ */
+const DISQUALIFYING_GROUP_ROLES = {
+  [COACH]: CONFLICT_BLOCK,
+  [MEDICAL]: CONFLICT_BLOCK,
+  [PHYSIO]: CONFLICT_BLOCK,
+  [TRAINER]: CONFLICT_BLOCK,
+};
 
 /**
  * Default conflict-of-interest policy for official assignment.
@@ -30,6 +44,15 @@ export const POLICY_OFFICIATING_CONFLICT_OF_INTEREST = {
       [CONFLICT_DECLARED_RELATIONSHIP]: { enabled: true, severity: CONFLICT_BLOCK },
       [CONFLICT_ORGANISATION]: { enabled: true, severity: CONFLICT_WARN },
       [CONFLICT_NATIONALITY]: { enabled: false, severity: CONFLICT_WARN },
+      // Tournament-scoped relationships expressed as GROUP membership. WARN by default because
+      // GROUP is a general primitive — squads and attribute-derived groupings are legitimate and
+      // would otherwise false-positive. `roleSeverity` escalates the groups that were authored to
+      // express a relationship.
+      [CONFLICT_SHARED_GROUPING]: {
+        enabled: true,
+        severity: CONFLICT_WARN,
+        roleSeverity: DISQUALIFYING_GROUP_ROLES,
+      },
     },
   },
 };
@@ -46,6 +69,11 @@ export const POLICY_OFFICIATING_CONFLICT_OF_INTEREST_ITF = {
       [CONFLICT_DECLARED_RELATIONSHIP]: { enabled: true, severity: CONFLICT_BLOCK },
       [CONFLICT_ORGANISATION]: { enabled: true, severity: CONFLICT_BLOCK },
       [CONFLICT_NATIONALITY]: { enabled: true, severity: CONFLICT_BLOCK },
+      [CONFLICT_SHARED_GROUPING]: {
+        enabled: true,
+        severity: CONFLICT_BLOCK,
+        roleSeverity: DISQUALIFYING_GROUP_ROLES,
+      },
     },
   },
 };

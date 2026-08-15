@@ -2,8 +2,9 @@
 import {
   CONFLICT_DECLARED_RELATIONSHIP,
   MISSING_CONFLICT_PARTICIPANTS,
+  CONFLICT_SHARED_GROUPING,
+  MISSING_CONFLICT_SOURCE,
   CONFLICT_ORGANISATION,
-  MISSING_OFFICIAL_RECORD,
   CONFLICT_NATIONALITY,
   CONFLICT_SAME_PERSON,
   CONFLICT_BLOCK,
@@ -16,6 +17,7 @@ import type {
   OfficialConflictDeclaration,
   ConflictOfInterestPolicy,
   ConflictSeverity,
+  ConflictRule,
   OfficialConflict,
   OfficialRecord,
   ConflictType,
@@ -23,8 +25,13 @@ import type {
 import type { Participant } from '@Types/tournamentTypes';
 
 type GetOfficialConflictsArgs = {
-  officialRecord: OfficialRecord;
+  /** Durable registry declarations. OPTIONAL — a tournament-scoped check needs no registry record. */
+  officialRecord?: OfficialRecord;
   participants?: Participant[];
+  /** The official's participantId in THIS tournament — required for the SHARED_GROUPING rule. */
+  officialParticipantId?: string;
+  /** GROUP participants of the tournament, used to detect a shared grouping. */
+  groupParticipants?: Participant[];
   /** The official's own nationality — required for the NATIONALITY rule, which
    *  cannot be derived from the OfficialRecord (it carries no person detail). */
   nationalityCode?: string;
@@ -53,8 +60,12 @@ type ParticipantContext = {
 type RuleContext = ParticipantContext & {
   declarations: OfficialConflictDeclaration[];
   declaredOrganisationIds: Set<string>;
-  officialPersonId: string;
+  /** GROUP participants containing the official, keyed for membership lookup. */
+  officialGroupings: Participant[];
+  officialParticipantId?: string;
+  officialPersonId?: string;
   nationalityCode?: string;
+  rule?: ConflictRule;
 };
 
 function participantContext(participant: Participant): ParticipantContext {
@@ -145,6 +156,34 @@ function organisationConflicts(severity: ConflictSeverity, context: RuleContext)
   ];
 }
 
+function sharedGroupingConflicts(severity: ConflictSeverity, context: RuleContext): OfficialConflict[] {
+  const { participantPersonId, participantName, participantId, officialGroupings, rule } = context;
+  if (!participantId) return [];
+
+  return officialGroupings
+    .filter((group) => (group.individualParticipantIds ?? []).includes(participantId))
+    .map((group) => {
+      // A GROUP carrying a `participantRole` is an explicitly-authored relationship (e.g. a coaching
+      // group); one without is an incidental grouping. Per-role escalation lets policy block the
+      // former while merely warning on the latter.
+      const groupRole = group.participantRole;
+      const escalated = groupRole ? rule?.roleSeverity?.[groupRole] : undefined;
+      return {
+        conflictType: CONFLICT_SHARED_GROUPING,
+        severity: escalated ?? severity,
+        personId: participantPersonId,
+        participantId,
+        participantName,
+        groupParticipantId: group.participantId,
+        groupName: group.participantName,
+        groupRole,
+        reason: groupRole
+          ? `Official shares a ${groupRole} grouping (${group.participantName ?? group.participantId}) with this participant`
+          : `Official shares a grouping (${group.participantName ?? group.participantId}) with this participant`,
+      };
+    });
+}
+
 const CONFLICT_EVALUATORS: Record<
   ConflictType,
   (severity: ConflictSeverity, context: RuleContext) => OfficialConflict[]
@@ -153,15 +192,16 @@ const CONFLICT_EVALUATORS: Record<
   [CONFLICT_DECLARED_RELATIONSHIP]: declaredRelationshipConflicts,
   [CONFLICT_NATIONALITY]: nationalityConflicts,
   [CONFLICT_ORGANISATION]: organisationConflicts,
+  [CONFLICT_SHARED_GROUPING]: sharedGroupingConflicts,
 };
 
 /** Rules absent from the policy, or present with `enabled: false`, are not
  *  evaluated at all — a policy is an allow-list of checks, never a silent
  *  partial application. */
-function enabledRules(policy: ConflictOfInterestPolicy): [ConflictType, ConflictSeverity][] {
+function enabledRules(policy: ConflictOfInterestPolicy): [ConflictType, ConflictRule][] {
   return Object.entries(policy.conflictRules ?? {})
     .filter(([conflictType, rule]) => rule?.enabled && conflictType in CONFLICT_EVALUATORS)
-    .map(([conflictType, rule]) => [conflictType as ConflictType, rule!.severity]);
+    .map(([conflictType, rule]) => [conflictType as ConflictType, rule as ConflictRule]);
 }
 
 /**
@@ -171,24 +211,37 @@ function enabledRules(policy: ConflictOfInterestPolicy): [ConflictType, Conflict
  * Pure and side-effect free: the caller supplies the participants, so this makes
  * no assumption about where the tournament record lives.
  *
+ * **Two independent declaration sources, either of which is sufficient:**
+ * - `officialRecord.conflictDeclarations` — durable, registry-owned (courthive-ams)
+ * - `groupParticipants` + `officialParticipantId` — transient, expressed inside the
+ *   tournamentRecord as GROUP membership (a coach GROUPed with players IS the declaration)
+ *
+ * The tournament-scoped source exists because expecting officials to keep a global registry
+ * current is unrealistic, and an empty registry would otherwise make this return "no conflicts"
+ * for everyone — indistinguishable from a check that passed.
+ *
  * Returns an error rather than an empty result when a policy is supplied with no
  * participants to check: "no conflicts" and "nothing was checked" must not look
  * the same to a caller that is about to make an assignment decision.
  */
 export function getOfficialConflicts({
-  officialRecord,
-  participants,
+  officialParticipantId,
+  groupParticipants,
+  policyDefinitions,
   nationalityCode,
   organisationIds,
-  policyDefinitions,
+  officialRecord,
+  participants,
 }: GetOfficialConflictsArgs): GetOfficialConflictsResult {
-  if (!officialRecord) return { error: MISSING_OFFICIAL_RECORD };
+  const hasRegistrySource = Boolean(officialRecord);
+  const hasTournamentSource = Boolean(officialParticipantId);
+  if (!hasRegistrySource && !hasTournamentSource) return { error: MISSING_CONFLICT_SOURCE };
 
   const policy: ConflictOfInterestPolicy | undefined = policyDefinitions?.[POLICY_TYPE_OFFICIATING_CONFLICT];
   if (!policy) return { ...SUCCESS, conflicts: [], blocked: false };
   if (!Array.isArray(participants)) return { error: MISSING_CONFLICT_PARTICIPANTS };
 
-  const declarations = officialRecord.conflictDeclarations ?? [];
+  const declarations = officialRecord?.conflictDeclarations ?? [];
   const declaredOrganisationIds = new Set(
     [...declarations.map((declaration) => declaration.organisationId), ...(organisationIds ?? [])].filter(
       (organisationId): organisationId is string => Boolean(organisationId),
@@ -197,15 +250,27 @@ export function getOfficialConflicts({
 
   const rules = enabledRules(policy);
 
+  // GROUP participants the official belongs to. Resolved once — membership is the same for every
+  // participant being checked.
+  const officialGroupings = officialParticipantId
+    ? (groupParticipants ?? []).filter((group) =>
+        (group.individualParticipantIds ?? []).includes(officialParticipantId),
+      )
+    : [];
+
   const conflicts = participants.flatMap((participant) => {
     const context: RuleContext = {
       ...participantContext(participant),
-      officialPersonId: officialRecord.personId,
+      officialPersonId: officialRecord?.personId,
       declaredOrganisationIds,
+      officialParticipantId,
+      officialGroupings,
       nationalityCode,
       declarations,
     };
-    return rules.flatMap(([conflictType, severity]) => CONFLICT_EVALUATORS[conflictType](severity, context));
+    return rules.flatMap(([conflictType, rule]) =>
+      CONFLICT_EVALUATORS[conflictType](rule.severity, { ...context, rule }),
+    );
   });
 
   const blocked = conflicts.some((conflict) => conflict.severity === CONFLICT_BLOCK);

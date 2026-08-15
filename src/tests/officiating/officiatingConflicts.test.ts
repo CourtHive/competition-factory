@@ -14,6 +14,7 @@ import {
   OFFICIAL_CONFLICT_OF_INTEREST,
   MISSING_CONFLICT_PARTICIPANTS,
   CONFLICT_DECLARED_RELATIONSHIP,
+  MISSING_CONFLICT_SOURCE,
   MISSING_OFFICIAL_RECORD,
   CONFLICT_ORGANISATION,
   CONFLICT_NATIONALITY,
@@ -72,9 +73,22 @@ const ALL_RULES_BLOCK = {
 // getOfficialConflicts
 // ---------------------------------------------------------------------------
 describe('getOfficialConflicts', () => {
-  it('returns error when officialRecord is missing', () => {
+  it('returns error when NEITHER declaration source is supplied', () => {
+    // officialRecord is optional since SHARED_GROUPING: an officialParticipantId (tournament GROUP
+    // membership) is an equally valid source. Supplying neither is still an error.
     let result: any = getOfficialConflicts({ officialRecord: undefined as any });
-    expect(result.error).toEqual(MISSING_OFFICIAL_RECORD);
+    expect(result.error).toEqual(MISSING_CONFLICT_SOURCE);
+  });
+
+  it('accepts an officialParticipantId with NO officialRecord', () => {
+    let result: any = getOfficialConflicts({
+      officialParticipantId: 'par-official',
+      participants: [makeParticipant()],
+      policyDefinitions: POLICY_OFFICIATING_CONFLICT_OF_INTEREST,
+      groupParticipants: [],
+    });
+    expect(result.error).toBeUndefined();
+    expect(result.success).toBe(true);
   });
 
   it('is inert when no conflict policy is supplied', () => {

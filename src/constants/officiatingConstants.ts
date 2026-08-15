@@ -75,6 +75,7 @@ export const CONFLICT_SAME_PERSON = 'SAME_PERSON';
 export const CONFLICT_DECLARED_RELATIONSHIP = 'DECLARED_RELATIONSHIP';
 export const CONFLICT_NATIONALITY = 'NATIONALITY';
 export const CONFLICT_ORGANISATION = 'ORGANISATION';
+export const CONFLICT_SHARED_GROUPING = 'SHARED_GROUPING';
 
 export const CONFLICT_BLOCK = 'BLOCK';
 export const CONFLICT_WARN = 'WARN';
@@ -175,6 +176,12 @@ export const CONFLICT_DECLARATION_NOT_FOUND: ErrorType = {
   code: 'ERR_NOT_FOUND_CONFLICT_DECLARATION',
 };
 
+export const MISSING_CONFLICT_SOURCE: ErrorType = {
+  message:
+    'Missing conflict source — supply an officialRecord and/or the official participant plus tournament groupings',
+  code: 'ERR_MISSING_CONFLICT_SOURCE',
+};
+
 export const MISSING_CONFLICT_PARTICIPANTS: ErrorType = {
   message: 'Missing participants — a conflict-of-interest policy was supplied but there is nothing to check against',
   code: 'ERR_MISSING_CONFLICT_PARTICIPANTS',
@@ -229,6 +236,7 @@ export const officiatingConstants = {
   CONFLICT_DECLARED_RELATIONSHIP,
   CONFLICT_NATIONALITY,
   CONFLICT_ORGANISATION,
+  CONFLICT_SHARED_GROUPING,
   CONFLICT_BLOCK,
   CONFLICT_WARN,
 } as const;

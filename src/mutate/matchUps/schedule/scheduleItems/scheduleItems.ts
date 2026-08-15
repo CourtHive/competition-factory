@@ -44,7 +44,7 @@ import { DrawDefinition, Event } from '@Types/tournamentTypes';
 import { OBJECT, OF_TYPE } from '@Constants/attributeConstants';
 import { AddScheduleAttributeArgs } from '@Types/factoryTypes';
 import { INDIVIDUAL } from '@Constants/participantConstants';
-import { MISSING_OFFICIAL_RECORD, OFFICIAL_CONFLICT_OF_INTEREST } from '@Constants/officiatingConstants';
+import { OFFICIAL_CONFLICT_OF_INTEREST } from '@Constants/officiatingConstants';
 import { POLICY_TYPE_OFFICIATING_CONFLICT } from '@Constants/policyConstants';
 import { OFFICIAL } from '@Constants/participantRoles';
 import { SUCCESS } from '@Constants/resultConstants';
@@ -626,18 +626,17 @@ export function addMatchUpOfficial({
     if (!participant) return { error: PARTICIPANT_NOT_FOUND };
   }
 
-  // Conflict-of-interest gate — opt-in, and scoped to THIS matchUp's sides
-  // rather than the whole field. Requires both a policy and the official's
-  // record; supplying a policy without the record is an error rather than a
-  // silent pass, for the same reason `assignOfficial` fails closed.
-  // The two guards below also narrow the optional params for the call that
-  // follows; `getMatchUpOfficialConflicts` enforces the same preconditions
-  // independently, so neither is load-bearing on its own.
+  // Conflict-of-interest gate — opt-in, and scoped to THIS matchUp's sides rather than the whole
+  // field. An `officialRecord` is NOT required: the official's own participantId is a sufficient
+  // declaration source via tournament GROUP membership, so the gate works with nothing but the
+  // tournamentRecord. A registry record, when supplied, adds durable cross-tournament declarations.
   if (policyDefinitions?.[POLICY_TYPE_OFFICIATING_CONFLICT]) {
     if (!tournamentRecord) return { error: MISSING_TOURNAMENT_RECORD };
-    if (!officialRecord) return { error: MISSING_OFFICIAL_RECORD };
 
     const conflictResult = getMatchUpOfficialConflicts({
+      // The official being assigned IS the subject of the check — their participantId unlocks the
+      // tournament-scoped SHARED_GROUPING rule with no registry record required.
+      officialParticipantId: participantId,
       policyDefinitions,
       tournamentRecord,
       organisationIds,

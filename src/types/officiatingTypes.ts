@@ -91,6 +91,17 @@ export const ConflictTypeEnum = {
   NATIONALITY: 'NATIONALITY',
   /** The official has declared an affiliation with an entered participant's organisation. */
   ORGANISATION: 'ORGANISATION',
+  /**
+   * The official shares a GROUP participant with an entered participant — a relationship expressed
+   * inside the tournamentRecord rather than in an external registry. A GROUP containing a coach and
+   * the players they coach IS the declaration, and it is scoped to the tournament where it applies.
+   *
+   * GROUP is a general grouping primitive (squads, attribute-derived groupings), so a bare shared
+   * grouping is an inferred association, not a declared one — hence the default severity is WARN.
+   * A GROUP carrying a `participantRole` is an explicitly-authored relationship and can be escalated
+   * per-role via `ConflictRule.roleSeverity`.
+   */
+  SHARED_GROUPING: 'SHARED_GROUPING',
 } as const;
 
 export type ConflictType = (typeof ConflictTypeEnum)[keyof typeof ConflictTypeEnum];
@@ -141,6 +152,11 @@ export interface OfficialConflict {
   relationship?: string;
   nationalityCode?: string;
   declarationId?: string;
+  /** SHARED_GROUPING only — the GROUP participant that links official and participant. */
+  groupParticipantId?: string;
+  groupName?: string;
+  /** The GROUP's own `participantRole`, when it carries one. */
+  groupRole?: string;
   reason: string;
 }
 
@@ -148,6 +164,15 @@ export interface OfficialConflict {
 export interface ConflictRule {
   enabled: boolean;
   severity: ConflictSeverity;
+  /**
+   * SHARED_GROUPING only: severity override keyed by the GROUP participant's own `participantRole`.
+   * A grouping with no role, or a role absent from this map, falls back to `severity`.
+   *
+   * This is what separates an explicitly-authored relationship group (`participantRole: 'COACH'`)
+   * from an incidental one — e.g. `{ COACH: 'BLOCK' }` blocks coach groupings while other shared
+   * groupings merely warn.
+   */
+  roleSeverity?: Record<string, ConflictSeverity>;
 }
 
 export interface ConflictOfInterestPolicy {
