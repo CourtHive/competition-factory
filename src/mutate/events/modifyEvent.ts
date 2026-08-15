@@ -15,7 +15,6 @@ import { isAny } from '@Validators/isAny';
 import { unique } from '@Tools/arrays';
 
 // constants and types
-import { Category, Event, Tournament, EventTypeUnion, GenderUnion, TieFormat } from '@Types/tournamentTypes';
 import { ALTERNATE, STRUCTURE_SELECTED_STATUSES } from '@Constants/entryStatusConstants';
 import { DOUBLES, HYBRID, SINGLES, TEAM } from '@Constants/eventConstants';
 import { INDIVIDUAL, PAIR } from '@Constants/participantConstants';
@@ -23,6 +22,15 @@ import { competitionFormat } from '@Types/competitionFormat';
 import { OBJECT } from '@Constants/attributeConstants';
 import { SUCCESS } from '@Constants/resultConstants';
 import { ResultType } from '@Types/factoryTypes';
+import {
+  Category,
+  Event,
+  Tournament,
+  EventTypeUnion,
+  GenderUnion,
+  TieFormat,
+  UnifiedEventID,
+} from '@Types/tournamentTypes';
 import {
   CATEGORY_MISMATCH,
   INVALID_CATEGORY,
@@ -40,6 +48,11 @@ type ModifyEventArgs = {
     endDate?: string;
     category?: Category;
     eventName?: string;
+    // The event's identity in other organisations' systems; the entry flagged `isOrigin`
+    // is the sanctioning source. Pass an array to replace the whole set (the natural
+    // grain — a caller reconciling against a sanctioning body holds the full list), or
+    // null to clear it. Mirrors the competitionFormat null-clears convention below.
+    eventOtherIds?: UnifiedEventID[] | null;
     // Set to a competitionFormat object to attach sport rules (timers,
     // multipliers, penalties) to the event. Pass null to clear an existing
     // value. Hierarchical resolution lets drawDefinition/structure overrides
@@ -92,6 +105,14 @@ export function modifyEvent(params: ModifyEventArgs): ResultType {
       delete event.competitionFormat;
     } else {
       event.competitionFormat = eventUpdates.competitionFormat;
+    }
+  }
+
+  if (eventUpdates.eventOtherIds !== undefined) {
+    if (eventUpdates.eventOtherIds === null) {
+      delete event.eventOtherIds;
+    } else {
+      event.eventOtherIds = eventUpdates.eventOtherIds;
     }
   }
 

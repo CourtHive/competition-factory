@@ -157,3 +157,39 @@ it('supports attaching, replacing, and clearing competitionFormat on an event', 
   event = tournamentEngine.getEvent({ eventId }).event;
   expect(event.competitionFormat).toBeUndefined();
 });
+
+// The origin of an event is a tournament in ANOTHER organisation's system. Its
+// tournamentId is that organisation's and must never be confused with the carrying
+// record's — a single record can hold events sanctioned by several organisations.
+it('supports setting, replacing, and clearing eventOtherIds on an event', () => {
+  const eventId = 'origin-modify';
+  const { tournamentRecord } = mocksEngine.generateTournamentRecord({
+    eventProfiles: [{ eventId, eventName: 'Sanctioned Event', eventType: SINGLES }],
+    nonRandom: 1,
+    setState: true,
+  });
+
+  let event = tournamentEngine.getEvent({ eventId }).event;
+  expect(event.eventOtherIds).toBeUndefined();
+
+  const origin = { organisationId: 'ITA', tournamentId: 'ita-4471', eventId: 'ita-ev-9', isOrigin: true };
+  let result: any = tournamentEngine.modifyEvent({ eventUpdates: { eventOtherIds: [origin] }, eventId });
+  expect(result.success).toEqual(true);
+  event = tournamentEngine.getEvent({ eventId }).event;
+  expect(event.eventOtherIds).toEqual([origin]);
+  // the origin's tournamentId is the ORIGIN organisation's, not the carrying record's
+  expect(event.eventOtherIds?.[0].tournamentId).not.toEqual(tournamentRecord.tournamentId);
+
+  // a copy-back to a second organisation appends its id — the array is replaced wholesale
+  const copyBack = { organisationId: 'USTA', tournamentId: 'usta-88', eventId: 'usta-ev-2' };
+  result = tournamentEngine.modifyEvent({ eventUpdates: { eventOtherIds: [origin, copyBack] }, eventId });
+  expect(result.success).toEqual(true);
+  event = tournamentEngine.getEvent({ eventId }).event;
+  expect(event.eventOtherIds).toHaveLength(2);
+  expect(event.eventOtherIds?.filter((otherId) => otherId.isOrigin)).toHaveLength(1);
+
+  result = tournamentEngine.modifyEvent({ eventUpdates: { eventOtherIds: null }, eventId });
+  expect(result.success).toEqual(true);
+  event = tournamentEngine.getEvent({ eventId }).event;
+  expect(event.eventOtherIds).toBeUndefined();
+});

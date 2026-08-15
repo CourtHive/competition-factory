@@ -63,6 +63,12 @@ export interface ReadModelMatchUpRow {
 
 export interface ReadModelCompetitorRow {
   match_up_id: string;
+  // Denormalized from the parent matchUp. The competitors table's tournament linkage was
+  // previously transitive ONLY (match_up_id → match_ups.tournament_id), which left the
+  // incremental producer's participant-rename and person-claim UPDATEs keyed on a
+  // participantId alone — table-wide, unscoped by tournament. Carrying the column makes
+  // those statements scopable; `buildUpdate` cannot express a join.
+  tournament_id: string;
   side_number: number | null; // 1 | 2
   competitor_index: number; // 0 (singles/team) | 0,1 (doubles)
   participant_type: string | null; // INDIVIDUAL | PAIR | TEAM
@@ -96,6 +102,14 @@ export interface ReadModelEventRow {
   start_date: string | null;
   end_date: string | null;
   published: boolean;
+  // The SANCTIONING SOURCE this event originated from — the `eventOtherIds[]` entry
+  // flagged `isOrigin`, flattened. `origin_tournament_id` is the ORIGIN organisation's
+  // tournamentId and is deliberately independent of `tournament_id` above (the record
+  // that carries the event); one record can hold events from several sanctioning
+  // systems. All three are null for an event with no declared origin.
+  origin_organisation_id: string | null;
+  origin_tournament_id: string | null;
+  origin_event_id: string | null;
 }
 
 export interface ReadModelDrawRow {

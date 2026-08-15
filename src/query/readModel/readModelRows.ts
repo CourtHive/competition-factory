@@ -4,6 +4,7 @@ import { LINK_UNRESOLVED, resolvePersonLink } from './personRule';
 import { findExtension } from '@Acquire/findExtension';
 
 // types
+import { UnifiedEventID } from '@Types/tournamentTypes';
 import {
   ReadModelTournamentRow,
   ReadModelCompetitorRow,
@@ -83,6 +84,7 @@ export function eventRow(
   providerId: string | undefined,
   published: boolean,
 ): ReadModelEventRow {
+  const origin = eventOrigin(event);
   return {
     event_id: event?.eventId,
     tournament_id: tournamentId,
@@ -95,7 +97,23 @@ export function eventRow(
     start_date: event?.startDate ?? null,
     end_date: event?.endDate ?? null,
     published,
+    origin_organisation_id: origin?.organisationId ?? null,
+    origin_tournament_id: origin?.tournamentId ?? null,
+    origin_event_id: origin?.eventId ?? null,
   };
+}
+
+/**
+ * The `eventOtherIds[]` entry flagged `isOrigin` — the sanctioning source the event came
+ * from. Returns undefined when the event declares no origin (the ordinary single-sanction
+ * case), so every origin_* column projects null rather than picking an arbitrary entry.
+ *
+ * `find` rather than `filter`+index: at most one entry should carry the flag. If more than
+ * one does the record is malformed; taking the first is stable (array order is preserved
+ * through storage) and keeps the projection deterministic rather than throwing on a read.
+ */
+export function eventOrigin(event: any): UnifiedEventID | undefined {
+  return (event?.eventOtherIds ?? []).find((otherId: UnifiedEventID) => otherId?.isOrigin);
 }
 
 // ── draws + structures ──────────────────────────────────────────────────────────
@@ -392,6 +410,7 @@ function pairCompetitorRows(
     const link = resolvePersonLink(individual?.participantId, individual?.person?.personId);
     return {
       match_up_id: matchUpId,
+      tournament_id: ctx.tournamentId,
       side_number: sideNumber,
       competitor_index: index,
       participant_type: PAIR,
@@ -434,6 +453,7 @@ function sideCompetitorRows(
   return [
     {
       match_up_id: matchUpId,
+      tournament_id: ctx.tournamentId,
       side_number: sideNumber,
       competitor_index: 0,
       participant_type: participantType,
