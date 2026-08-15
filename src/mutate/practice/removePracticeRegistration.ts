@@ -17,6 +17,11 @@ type RemovePracticeRegistrationArgs = {
   bookingId: string;
   registrationId: string;
   disableNotice?: boolean;
+  /**
+   * ISO string recording when the removal actually happened, rather than when
+   * this instance wrote it. Defaults to now.
+   */
+  occurredAt?: string;
 };
 
 /**
@@ -25,7 +30,7 @@ type RemovePracticeRegistrationArgs = {
  * `status: 'CANCELLED'` to preserve audit history instead.
  */
 export function removePracticeRegistration(params: RemovePracticeRegistrationArgs): ResultType {
-  const { tournamentRecord, courtId, date, bookingId, registrationId, disableNotice } = params;
+  const { tournamentRecord, courtId, date, bookingId, registrationId, disableNotice, occurredAt } = params;
 
   const paramsCheck = requireParams({ tournamentRecord, courtId }, [TOURNAMENT_RECORD, COURT_ID]);
   if (paramsCheck.error) return paramsCheck;
@@ -42,7 +47,7 @@ export function removePracticeRegistration(params: RemovePracticeRegistrationArg
   if (index < 0) return { error: REGISTRATION_NOT_FOUND };
 
   booking.registrations!.splice(index, 1);
-  booking.updatedAt = new Date().toISOString();
+  booking.updatedAt = occurredAt ?? new Date().toISOString();
 
   if (!disableNotice && venue) {
     addNotice({

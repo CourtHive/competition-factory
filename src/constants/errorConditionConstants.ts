@@ -633,6 +633,11 @@ export const INSUFFICIENT_DRAW_POSITIONS = {
   code: 'ERR_INSUFFICIENT_DRAW_POSITIONS',
 };
 
+export const INSUFFICIENT_UUIDS = {
+  message: 'Supplied uuids pool exhausted',
+  code: 'ERR_INSUFFICIENT_UUIDS',
+};
+
 export const MISSING_PENALTY_TYPE = {
   message: 'Missing penaltyType',
   code: 'ERR_MISSING_PENALTY_TYPE',
@@ -932,6 +937,7 @@ export const errorConditionConstants = {
   INCOMPATIBLE_MATCHUP_STATUS,
   INCOMPLETE_SOURCE_STRUCTURE,
   INSUFFICIENT_DRAW_POSITIONS,
+  INSUFFICIENT_UUIDS,
   INVALID_ACTION,
   INVALID_ASSIGNMENT,
   INVALID_BOOKINGS,

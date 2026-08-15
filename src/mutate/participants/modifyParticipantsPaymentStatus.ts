@@ -15,12 +15,21 @@ type ModifyParticipantsPaymentStatusArgs = {
   tournamentRecord: any;
   participantIds: string[];
   paymentState: PaymentStatusUnion;
+  /**
+   * ISO string recording when the payment status actually CHANGED, as opposed to
+   * when this instance wrote it. Defaults to now, so existing callers are
+   * unaffected. Payment status is stored as a timeItem, whose `createdAt` is the
+   * ordering key used to resolve the CURRENT status — see
+   * `Mentat/planning/DISCONNECTED_SYNC_RECONCILIATION.md` §4.1.
+   */
+  occurredAt?: string;
 };
 
 export function modifyParticipantsPaymentStatus({
   tournamentRecord,
   participantIds,
   paymentState,
+  occurredAt,
 }: ModifyParticipantsPaymentStatusArgs) {
   const paramsCheck = requireParams({ tournamentRecord }, [TOURNAMENT_RECORD]);
   if (paramsCheck.error) return paramsCheck;
@@ -36,7 +45,7 @@ export function modifyParticipantsPaymentStatus({
   if (invalidParticipantIds.length) return { error: INVALID_VALUES, context: { invalidParticipantIds } };
 
   const modifiedParticipants: Participant[] = [];
-  const createdAt = new Date().toISOString();
+  const createdAt = occurredAt ?? new Date().toISOString();
   for (const participant of participants) {
     const { participantId } = participant;
     if (participantIds.includes(participantId)) {

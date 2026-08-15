@@ -11,7 +11,18 @@ import { MODIFY_PARTICIPANTS } from '@Constants/topicConstants';
 import { Participant } from '@Types/tournamentTypes';
 import { SUCCESS } from '@Constants/resultConstants';
 
-export function modifyParticipantsSignInStatus({ tournamentRecord, participantIds, signInState }) {
+/**
+ * `occurredAt` — ISO string recording when the sign-in actually HAPPENED, as
+ * opposed to when this instance wrote it. Defaults to now, so existing callers
+ * are unaffected.
+ *
+ * Sign-in status is stored as a timeItem, and timeItem `createdAt` is the
+ * ordering key the query layer uses to resolve the CURRENT status. An edit made
+ * at a venue and synced later must therefore carry its own time, or it both
+ * misreports when the player signed in and sorts as though it happened at sync
+ * time. See `Mentat/planning/DISCONNECTED_SYNC_RECONCILIATION.md` §4.1.
+ */
+export function modifyParticipantsSignInStatus({ tournamentRecord, participantIds, signInState, occurredAt }) {
   const paramsCheck = requireParams({ tournamentRecord }, [TOURNAMENT_RECORD]);
   if (paramsCheck.error) return paramsCheck;
   if (!Array.isArray(participantIds)) return { error: MISSING_VALUE };
@@ -27,7 +38,7 @@ export function modifyParticipantsSignInStatus({ tournamentRecord, participantId
   if (invalidParticipantIds.length) return { error: INVALID_VALUES, context: { invalidParticipantIds } };
 
   const modifiedParticipants: Participant[] = [];
-  const createdAt = new Date().toISOString();
+  const createdAt = occurredAt ?? new Date().toISOString();
   for (const participant of participants) {
     const { participantId } = participant;
     if (participantIds.includes(participantId)) {

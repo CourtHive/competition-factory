@@ -58,8 +58,22 @@ export function addTimeItem(params: AddTimeItemArgs) {
   if (timeItem.itemSubTypes && !timeItem.itemSubTypes.length) delete timeItem.itemSubTypes;
 
   if (creationTime) {
-    const createdAt = new Date().toISOString();
-    Object.assign(timeItem, { createdAt });
+    // Honour a caller-supplied `createdAt` rather than overwriting it.
+    //
+    // `createdAt` on a timeItem is not decoration — it is the ORDERING KEY used
+    // to resolve "the latest value" (ratings via getScaleValues /
+    // participantScaleItem, check-in, startTime/endTime, scheduling details,
+    // quality-win points, latestVisibleTimeItemValue). Stamping unconditionally
+    // means the value can only ever be *write* time, so an edit made at a venue
+    // and synced hours later is recorded as having happened at sync time.
+    //
+    // Inert for every current caller: none of the 11 call sites supplies
+    // `createdAt`, so the default path is unchanged. This only lets an origin
+    // pin the value — which is what makes the mutation faithfully replayable,
+    // the same principle as minting ids at the origin.
+    //
+    // `creationTime: false` still means "do not add a createdAt at all".
+    timeItem.createdAt ??= new Date().toISOString();
   }
 
   if (removePriorValues) element.timeItems = element.timeItems.filter(({ itemType }) => timeItem.itemType !== itemType);

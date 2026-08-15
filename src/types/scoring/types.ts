@@ -280,14 +280,7 @@ export interface Point {
  * Point result types (how the point ended)
  */
 export type PointResult =
-  | 'Ace'
-  | 'Winner'
-  | 'Serve Winner'
-  | 'Forced Error'
-  | 'Unforced Error'
-  | 'Double Fault'
-  | 'Penalty'
-  | 'Unknown';
+  'Ace' | 'Winner' | 'Serve Winner' | 'Forced Error' | 'Unforced Error' | 'Double Fault' | 'Penalty' | 'Unknown';
 
 /**
  * Stroke types in tennis
@@ -357,14 +350,7 @@ export interface MatchUpState {
 // ============================================================================
 
 export type MatchUpStatus =
-  | 'TO_BE_PLAYED'
-  | 'IN_PROGRESS'
-  | 'COMPLETED'
-  | 'CANCELLED'
-  | 'ABANDONED'
-  | 'DEFAULTED'
-  | 'RETIRED'
-  | 'WALKOVER';
+  'TO_BE_PLAYED' | 'IN_PROGRESS' | 'COMPLETED' | 'CANCELLED' | 'ABANDONED' | 'DEFAULTED' | 'RETIRED' | 'WALKOVER';
 
 export type MatchUpType = 'SINGLES' | 'DOUBLES' | 'TEAM';
 
@@ -387,6 +373,12 @@ export interface CreateMatchUpOptions {
   participants?: Participant[];
   isDoubles?: boolean;
   matchUpType?: MatchUpType;
+  /**
+   * ISO string recording when the matchUp was created at its ORIGIN, rather than
+   * when this instance wrote it. Defaults to now, so existing callers are
+   * unaffected. See `Mentat/planning/DISCONNECTED_SYNC_RECONCILIATION.md` §4.1.
+   */
+  occurredAt?: string;
 }
 
 /**

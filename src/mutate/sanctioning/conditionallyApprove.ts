@@ -10,7 +10,9 @@ import type { SanctioningRecord, Condition } from '@Types/sanctioningTypes';
 
 type ConditionallyApproveArgs = {
   sanctioningRecord: SanctioningRecord;
-  conditions: Array<{ description: string }>;
+  // `conditionId` is per-element rather than a parallel array so a caller cannot
+  // mis-align ids with descriptions.
+  conditions: Array<{ description: string; conditionId?: string }>;
   approvedBy?: string;
 };
 
@@ -32,7 +34,8 @@ export function conditionallyApprove({ sanctioningRecord, conditions, approvedBy
   sanctioningRecord.conditions ??= [];
   for (const c of conditions) {
     const condition: Condition = {
-      conditionId: UUID(),
+      // Caller-supplied id wins — see addReviewNote for why this is not cosmetic.
+      conditionId: c.conditionId ?? UUID(),
       description: c.description,
       met: false,
       createdAt: now,

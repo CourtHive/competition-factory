@@ -23,6 +23,11 @@ type AddPenaltyArgs = {
   penaltyId?: string;
   matchUpId?: string;
   issuedAt?: string;
+  /**
+   * ISO string recording when the penalty record was created at its ORIGIN, as
+   * opposed to when this instance wrote it. Defaults to `issuedAt`, then to now.
+   */
+  occurredAt?: string;
   notes?: string;
 };
 
@@ -69,6 +74,7 @@ function penaltyAdd({
   extensions,
   penaltyId,
   matchUpId,
+  occurredAt,
   issuedAt,
   notes,
 }: AddPenaltyArgs): {
@@ -84,7 +90,12 @@ function penaltyAdd({
   const relevantParticipants = participants.filter((participant) => participantIds.includes(participant.participantId));
   if (!relevantParticipants.length) return { error: PARTICIPANT_NOT_FOUND };
 
-  const createdAt = new Date().toISOString();
+  // A penalty already carries `issuedAt` — when it was handed down on court.
+  // `createdAt` is when the record was written, and defaulting it to `issuedAt`
+  // keeps the two coherent for a penalty captured courtside and synced later.
+  // Falls back to now when the caller supplied neither, so existing callers are
+  // unaffected. This is the field a governing body reads on appeal.
+  const createdAt = occurredAt ?? issuedAt ?? new Date().toISOString();
   const penaltyItem: Penalty = Object.assign(penaltyTemplate({ penaltyId }), {
     refereeParticipantId,
     penaltyCode,

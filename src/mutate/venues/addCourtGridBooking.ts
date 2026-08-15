@@ -19,6 +19,11 @@ type AddCourtGridBookingArgs = {
   courtId: string;
   rowCount?: number;
   notes?: string;
+  /**
+   * ISO string recording when the booking was actually made, rather than when
+   * this instance wrote it. Defaults to now.
+   */
+  occurredAt?: string;
 };
 
 /**
@@ -39,6 +44,7 @@ export function addCourtGridBooking(params: AddCourtGridBookingArgs): ResultType
     rowCount = 1,
     courtId,
     notes,
+    occurredAt,
   } = params;
 
   // Validate required parameters
@@ -131,7 +137,7 @@ export function addCourtGridBooking(params: AddCourtGridBookingArgs): ResultType
     rowCount,
     bookingType,
     notes,
-    createdAt: new Date().toISOString(),
+    createdAt: occurredAt ?? new Date().toISOString(),
   };
 
   targetCourtDate.bookings ??= [];

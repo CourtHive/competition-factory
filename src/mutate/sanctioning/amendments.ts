@@ -30,9 +30,16 @@ type ProposeAmendmentArgs = {
   changes: ProposalChange[];
   sanctioningPolicy?: SanctioningPolicy;
   proposedBy?: string;
+  amendmentId?: string;
 };
 
-export function proposeAmendment({ sanctioningRecord, changes, sanctioningPolicy, proposedBy }: ProposeAmendmentArgs) {
+export function proposeAmendment({
+  sanctioningRecord,
+  changes,
+  sanctioningPolicy,
+  proposedBy,
+  amendmentId,
+}: ProposeAmendmentArgs) {
   if (!sanctioningRecord) return { error: MISSING_SANCTIONING_RECORD };
   if (!Array.isArray(changes) || changes.length === 0) {
     return { error: INVALID_VALUES, context: { message: 'At least one change is required' } };
@@ -55,7 +62,8 @@ export function proposeAmendment({ sanctioningRecord, changes, sanctioningPolicy
 
   const now = new Date().toISOString();
   const amendment: Amendment = {
-    amendmentId: UUID(),
+    // Caller-supplied id wins — see addReviewNote for why this is not cosmetic.
+    amendmentId: amendmentId ?? UUID(),
     status: 'PROPOSED',
     proposedAt: now,
     proposedBy,

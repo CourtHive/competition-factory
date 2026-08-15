@@ -151,7 +151,19 @@ export function addParticipantScaleItem({ removePriorValues, participant, scaleI
 
   if (!validScaleItem) return { error: INVALID_SCALE_ITEM };
 
-  const createdAt = new Date().toISOString();
+  // Honour a `createdAt` already on the caller's scaleItem rather than stamping
+  // over it. No new parameter is needed here — the caller already supplies the
+  // object, so this is the same shape as `participantId ??= UUID()`.
+  //
+  // This is the ordering case that matters most: `participantScaleItem` and
+  // `getScaleValues` sort a participant's scale timeItems by `createdAt` to
+  // resolve the CURRENT rating. A rating recorded at a venue and synced later
+  // must carry its own time or it sorts as though it happened at sync time —
+  // and would wrongly supersede a rating actually set after it.
+  //
+  // Distinct from `scaleItem.scaleDate`, which is the date the rating APPLIES
+  // to; `createdAt` is when it was recorded.
+  const createdAt = scaleItem.createdAt ?? new Date().toISOString();
   participant.timeItems ??= [];
 
   const { scaleItem: existingScaleItem } = participantScaleItem({

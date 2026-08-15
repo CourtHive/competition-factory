@@ -1,9 +1,9 @@
 import { transitionStatus } from './transitionStatus';
-import { UUID } from '@Tools/UUID';
+import { takeUUID, UUID } from '@Tools/UUID';
 
 // constants
+import { INSUFFICIENT_UUIDS, INVALID_VALUES } from '@Constants/errorConditionConstants';
 import { MISSING_SANCTIONING_RECORD, ACTIVE } from '@Constants/sanctioningConstants';
-import { INVALID_VALUES } from '@Constants/errorConditionConstants';
 import { SUCCESS } from '@Constants/resultConstants';
 
 // types
@@ -30,6 +30,18 @@ type ActivateFromSanctioningArgs = {
    * cross-tournament identity for the place it is played at instead of a re-entered venue.
    */
   venues?: Venue[];
+  /**
+   * Optional pool of ids for the generated compliance-checklist items, consumed
+   * in order. Follows the existing `uuids` idiom (`generateVenues`,
+   * `createTeamsFromAttributes`, `addEventEntryPairs`).
+   *
+   * Compliance items are derived from `policy.postEventRequirements`, which carry
+   * no id of their own, so there is nothing stable to key them to. Without a pool
+   * this mutation mints ids engine-side and is therefore not replayable: a site
+   * server mirrors `{method, params}` upstream, and engine-minted ids differ
+   * between instances. Supply the pool when identity must survive a replay.
+   */
+  uuids?: string[];
 };
 
 /**
@@ -121,7 +133,12 @@ function resolveEventOtherIds(
   ];
 }
 
-export function activateFromSanctioning({ sanctioningRecord, sanctioningPolicy, venues }: ActivateFromSanctioningArgs) {
+export function activateFromSanctioning({
+  sanctioningRecord,
+  sanctioningPolicy,
+  venues,
+  uuids,
+}: ActivateFromSanctioningArgs) {
   if (!sanctioningRecord) return { error: MISSING_SANCTIONING_RECORD };
   if (sanctioningRecord.status !== 'APPROVED') {
     return {
@@ -230,21 +247,36 @@ export function activateFromSanctioning({ sanctioningRecord, sanctioningPolicy, 
   const policy = sanctioningPolicy ?? sanctioningRecord.policySnapshot;
   if (policy?.postEventRequirements?.length) {
     const endDate = new Date(proposal.proposedEndDate);
-    const items: ComplianceItem[] = policy.postEventRequirements
-      // `tiers` on a requirement are tier NAMES, so they match the tier's `value`.
-      .filter((req) => !req.tiers?.length || req.tiers.includes(sanctioningRecord.sanctioningTier?.value ?? ''))
-      .map((req) => {
-        const deadline = new Date(endDate);
-        deadline.setDate(deadline.getDate() + req.deadlineDays);
-        return {
-          itemId: UUID(),
-          itemType: req.itemType,
-          description: req.description,
-          required: req.required,
-          status: 'PENDING' as const,
-          deadline: deadline.toISOString().split('T')[0],
-        };
-      });
+    // `tiers` on a requirement are tier NAMES, so they match the tier's `value`.
+    const applicableRequirements = policy.postEventRequirements.filter(
+      (req) => !req.tiers?.length || req.tiers.includes(sanctioningRecord.sanctioningTier?.value ?? ''),
+    );
+
+    // Validate the pool BEFORE minting. The count is knowable up front here, so a
+    // short pool can be reported precisely rather than discovered halfway through
+    // and leaving some items with ids and others without. Strict when supplied:
+    // a short pool means this replay needed a different number of ids than the
+    // origin did — a divergence signal, not a licence to mint.
+    if (uuids !== undefined && uuids.length < applicableRequirements.length) {
+      return {
+        error: INSUFFICIENT_UUIDS,
+        context: { required: applicableRequirements.length, supplied: uuids.length },
+      };
+    }
+
+    const items: ComplianceItem[] = applicableRequirements.map((req) => {
+      const deadline = new Date(endDate);
+      deadline.setDate(deadline.getDate() + req.deadlineDays);
+      return {
+        // Pool sufficiency was validated above, so this cannot come back empty.
+        itemId: takeUUID({ uuids }).uuid as string,
+        itemType: req.itemType,
+        description: req.description,
+        required: req.required,
+        status: 'PENDING' as const,
+        deadline: deadline.toISOString().split('T')[0],
+      };
+    });
 
     const compliance: ComplianceRecord = {
       status: 'PENDING',

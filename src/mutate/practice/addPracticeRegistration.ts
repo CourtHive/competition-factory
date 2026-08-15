@@ -28,6 +28,13 @@ type AddPracticeRegistrationArgs = {
   endTime: string;
   notes?: string;
   disableNotice?: boolean;
+  registrationId?: string;
+  /**
+   * ISO string recording when the registration was actually made, rather than
+   * when this instance wrote it. Defaults to now, so existing callers are
+   * unaffected. See `Mentat/planning/DISCONNECTED_SYNC_RECONCILIATION.md` §4.1.
+   */
+  occurredAt?: string;
 };
 
 type AddPracticeRegistrationResult = ResultType & {
@@ -45,8 +52,21 @@ type AddPracticeRegistrationResult = ResultType & {
  * Callers (TMX) surface a confirmModal and decide whether to proceed.
  */
 export function addPracticeRegistration(params: AddPracticeRegistrationArgs): AddPracticeRegistrationResult {
-  const { tournamentRecord, courtId, date, bookingId, participantId, startTime, endTime, notes, disableNotice } =
-    params;
+  const {
+    tournamentRecord,
+    courtId,
+    date,
+    bookingId,
+    participantId,
+    startTime,
+    endTime,
+    notes,
+    disableNotice,
+    registrationId,
+    occurredAt,
+  } = params;
+
+  const stampedAt = occurredAt ?? new Date().toISOString();
 
   const paramsCheck = requireParams({ tournamentRecord, courtId, participantId }, [
     TOURNAMENT_RECORD,
@@ -88,19 +108,25 @@ export function addPracticeRegistration(params: AddPracticeRegistrationArgs): Ad
   });
 
   const registration: PracticeRegistration = {
-    registrationId: UUID('reg'),
+    // Caller-supplied id wins — see addReviewNote for why this is not cosmetic.
+    // The `'reg'` prefix applies only to the minted path; a supplied id is taken
+    // verbatim rather than re-prefixed, so round-tripping an existing id is safe.
+    registrationId: registrationId ?? UUID('reg'),
     participantId,
     startTime,
     endTime,
     status: 'CONFIRMED',
-    registeredAt: new Date().toISOString(),
-    createdAt: new Date().toISOString(),
+    // One resolved value for the whole mutation rather than three separate
+    // `new Date()` calls, which could otherwise differ for a single logical
+    // event. `registeredAt` is when the player actually booked the court.
+    registeredAt: stampedAt,
+    createdAt: stampedAt,
   };
   if (notes) registration.notes = notes;
 
   booking.registrations ??= [];
   booking.registrations.push(registration);
-  booking.updatedAt = new Date().toISOString();
+  booking.updatedAt = stampedAt;
 
   if (!disableNotice && venue) {
     addNotice({
