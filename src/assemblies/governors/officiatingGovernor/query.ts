@@ -1,4 +1,5 @@
 export { validateOfficiatingStatusTransition } from '@Validators/officiating/validateOfficiatingStatusTransition';
+export { getMatchUpOfficialConflicts } from '@Query/officiating/getMatchUpOfficialConflicts';
 export { getOfficialCertifications } from '@Query/officiating/getOfficialCertifications';
 export { validateCertification } from '@Validators/officiating/validateCertification';
 export { getOfficialEligibility } from '@Query/officiating/getOfficialEligibility';

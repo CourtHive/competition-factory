@@ -290,3 +290,48 @@ ITF-level international events and meaningless at national ones, where every off
 the players' nationality — enabling it by default would make the check noise at most events.
 
 `POLICY_OFFICIATING_CONFLICT_OF_INTEREST_ITF` enables all four rules at `BLOCK`.
+
+---
+
+### getMatchUpOfficialConflicts
+
+The per-matchUp counterpart to `getOfficialConflicts`. Resolves the sides of a single matchUp — expanding
+any PAIR/TEAM side to the individuals within it — and evaluates the official against just those
+participants.
+
+```ts
+{ officialRecord; tournamentRecord; drawDefinition; matchUpId: string; event?: Event;
+  nationalityCode?: string; organisationIds?: string[]; policyDefinitions?: PolicyDefinitions }
+```
+
+**Returns:** `{ success, conflicts, blocked, checkedParticipants }`
+
+Scoping to one matchUp is the sharper check — a chair umpire who shares a nationality with someone in a
+different quarter of the draw is not a conflict for _this_ assignment. Only participants actually assigned
+to the matchUp's sides are evaluated; **potential** participants (those who could still advance into it)
+are deliberately excluded, since treating every possible opponent as a conflict would block most
+early-round assignments.
+
+Note this resolves the matchUp `inContext`: a raw drawDefinition matchUp carries only `drawPosition` on its
+sides, and participantIds come from the structure's `positionAssignments` during hydration.
+
+#### Gating `addMatchUpOfficial`
+
+`addMatchUpOfficial` (scheduleGovernor) accepts the same opt-in gate as `assignOfficial`:
+
+```ts
+{ matchUpId; participantId; officialType?;
+  policyDefinitions?; officialRecord?; nationalityCode?; organisationIds? }
+// Returns: { success, conflicts? } | { error: OFFICIAL_CONFLICT_OF_INTEREST, conflicts }
+```
+
+With no `policyDefinitions` the behaviour is unchanged. With a policy, an `officialRecord` is **required** —
+a policy supplied without one is an error, not a pass. `BLOCK` refuses the assignment and writes nothing;
+`WARN` conflicts return alongside the successful assignment.
+
+The two routes cover different scopes and are independent:
+
+| route                                   | scope                                            |
+| --------------------------------------- | ------------------------------------------------ |
+| `assignOfficial` (officiatingGovernor)  | the official's tournament-level engagement       |
+| `addMatchUpOfficial` (scheduleGovernor) | a specific matchUp — `matchUp.schedule.official` |

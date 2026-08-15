@@ -299,6 +299,7 @@ export type FactoryEngineMethod =
   | 'getMatchUpFormatTiming'
   | 'getMatchUpFormatTimingUpdate'
   | 'getMatchUpFormatVariance'
+  | 'getMatchUpOfficialConflicts'
   | 'getMatchUpRatingDelta'
   | 'getMatchUpScheduleDetails'
   | 'getMatchUpsMap'
@@ -957,6 +958,7 @@ export const FACTORY_ENGINE_METHODS: readonly FactoryEngineMethod[] = [
   'getMatchUpFormatTiming',
   'getMatchUpFormatTimingUpdate',
   'getMatchUpFormatVariance',
+  'getMatchUpOfficialConflicts',
   'getMatchUpRatingDelta',
   'getMatchUpScheduleDetails',
   'getMatchUpsMap',
