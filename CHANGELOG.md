@@ -1,5 +1,17 @@
 # Changelog
 
+## [6.26.0](https://github.com/CourtHive/competition-factory/compare/v6.25.0...v6.26.0) (2026-08-15)
+
+
+### Features
+
+* **officiating:** tournament-scoped conflict declarations via GROUP participants ([#4612](https://github.com/CourtHive/competition-factory/issues/4612)) ([8d46c65](https://github.com/CourtHive/competition-factory/commit/8d46c6547e316eb6b8746b299dd92bc1eb879256))
+
+
+### Bug Fixes
+
+* **officiating:** expose conflict-of-interest methods on officiatingEngine ([#4611](https://github.com/CourtHive/competition-factory/issues/4611)) ([992b24c](https://github.com/CourtHive/competition-factory/commit/992b24c00f1be412d0f465874f5f0af0b4b539b4))
+
 ## [6.25.0](https://github.com/CourtHive/competition-factory/compare/v6.24.0...v6.25.0) (2026-08-15)
 
 
