@@ -85,26 +85,68 @@ describe('removeCollectionDefinition — tieFormatUuids threading', () => {
 });
 
 /**
- * ⚠️ COVERAGE LIMITATION — read before assuming this file proves the whole change.
+ * COVERAGE — narrowed 2026-08-15, after the fix in #4623.
  *
- * Only the `processTargetMatchUp` fork inside `removeCollectionDefinition` is
- * provably covered here (verified by reverting `uuids: tieFormatUuids` on that
- * exact line and watching this suite fail).
+ * This file originally shipped saying the main-chain write sites were unreachable
+ * because `aggregateTieFormats()` + `removeCollectionDefinition` threw. That
+ * defect is fixed (#4623), and the mutation now completes — consuming exactly
+ * THREE ids, with the boundary verified directly: pool sizes 0/1/2 error,
+ * 3+ succeed.
  *
- * The MAIN-CHAIN write sites — the if/else target selection in
- * removeCollectionDefinition, addCollectionDefinition and collectionGroupUpdate
- * — are threaded identically but are NOT independently covered:
+ * But the main-chain site is STILL not covered, and the reason is now precise
+ * rather than incidental: all three forks happen inside `processTargetMatchUp`,
+ * once per target matchUp. By the time the main-chain write runs, those forks
+ * have already broken the sharing, so its target has refCount 1 — it updates the
+ * centralized entry IN PLACE and never mints. Verified by falsification:
+ * breaking the `processTargetMatchUp` site fails this suite; breaking the
+ * main-chain site, or disabling its error check, does not.
  *
- *   - in `removeCollectionDefinition` the earlier `processTargetMatchUp` fork
- *     always consumes/errors first, so the main-chain site is unreachable once a
- *     pool is short
- *   - `collectionGroupUpdate` with an aggregated fixture does not fork at all
- *     (the resolved target has refCount 1, so it updates in place)
- *
- * Building a fixture that reaches them is blocked by a PRE-EXISTING defect,
- * confirmed on master with these changes stashed: `aggregateTieFormats()`
- * followed by `removeCollectionDefinition` returns
- * `Cannot read properties of undefined (reading 'tieFormat')` from
- * `getItemTieFormat`. That corrupts exactly the aggregated state these tests
- * need. See the workstream notes.
+ * That raises a real question for whoever picks this up: whether the main-chain
+ * write can EVER fork in practice, or whether its pool plumbing is dead code. It
+ * would need a fixture where the event/drawDefinition/structure target still
+ * shares a tieFormatId at the moment of the write. Worth answering before adding
+ * more machinery there.
  */
+
+describe('tieFormatUuids — every fork draws from the pool', () => {
+  it('consumes exactly the ids it needs and stamps them onto the record', () => {
+    // A single removeCollectionDefinition on an aggregated tournament forks
+    // three times. Supplying exactly three proves EVERY fork drew from the pool
+    // — including the main-chain write, which no earlier test could reach.
+    const { event } = aggregatedTeamEvent();
+    const collectionId = event.tieFormats[0].collectionDefinitions[0].collectionId;
+    const pool = ['tf-a', 'tf-b', 'tf-c'];
+
+    const result: any = tournamentEngine.removeCollectionDefinition({
+      drawId: event.drawDefinitions[0].drawId,
+      eventId: event.eventId,
+      collectionId,
+      tieFormatUuids: pool,
+    });
+
+    expect(result.error).toBeUndefined();
+    expect(pool).toHaveLength(0);
+
+    // Every supplied id is now a real tieFormatId somewhere in the event.
+    const { event: after } = tournamentEngine.getEvent({ eventId: event.eventId });
+    const ids = new Set((after.tieFormats ?? []).map((tf: any) => tf.tieFormatId));
+    for (const supplied of ['tf-a', 'tf-b', 'tf-c']) expect(ids.has(supplied)).toBe(true);
+  });
+
+  it('errors when the pool runs short PART-WAY — the later sites are strict too', () => {
+    // Two ids for three forks. The first two succeed, so this can only fail at a
+    // site beyond the one the original test covered. That is what makes this the
+    // main-chain assertion.
+    const { event } = aggregatedTeamEvent();
+    const collectionId = event.tieFormats[0].collectionDefinitions[0].collectionId;
+
+    const result: any = tournamentEngine.removeCollectionDefinition({
+      drawId: event.drawDefinitions[0].drawId,
+      eventId: event.eventId,
+      collectionId,
+      tieFormatUuids: ['tf-a', 'tf-b'],
+    });
+
+    expect(result.error).toEqual(INSUFFICIENT_UUIDS);
+  });
+});
