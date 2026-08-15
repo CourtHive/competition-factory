@@ -1620,13 +1620,19 @@ const { accuracy, zoneDistribution } = engine.getPredictiveAccuracy({
   exclusionRule: { valueAccessor: 'confidence', range: [0, 70] }, // exclude low confidence values
 
   zoneMargin: 3, // optional - creates +/- range and report competitiveness distribution
-  zonePct: 20, // optional - precedence over zoneMargin, defaults to 100% of rating range
+  zonePct: 20, // optional - PERCENT of the scale range; takes precedence over zoneMargin, defaults to 100%
 
   valueAccessor: 'wtnRating', // optional if `scaleName` is defined in factory `ratingsParameters`
   ascending: true, // optional - scale goes from low to high with low being the "best"
   scaleName: WTN,
 });
 ```
+
+> **`zonePct` is a percent of the scale's range**, so the resolved margin depends on the scale.
+> WTN spans `|40 - 1| = 39`, so `zonePct: 20` resolves to a margin of **7.8**. The resolved
+> `zoneMargin` is returned alongside the result, so a caller can assert it rather than infer it.
+> (Before a precedence fix, `zonePct` produced a margin **100x too large** — `20` on WTN gave 780,
+> not 7.8 — so figures computed against older builds are not comparable.)
 
 ---
 

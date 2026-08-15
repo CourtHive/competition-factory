@@ -85,26 +85,37 @@ describe('removeCollectionDefinition — tieFormatUuids threading', () => {
 });
 
 /**
- * ⚠️ COVERAGE LIMITATION — read before assuming this file proves the whole change.
+ * COVERAGE — what this file proves, and what proves the rest.
  *
- * Only the `processTargetMatchUp` fork inside `removeCollectionDefinition` is
- * provably covered here (verified by reverting `uuids: tieFormatUuids` on that
- * exact line and watching this suite fail).
+ * UPDATED 2026-08-15. An earlier version of this note said the remaining sites
+ * were blocked by a pre-existing defect: `aggregateTieFormats()` followed by
+ * `removeCollectionDefinition` threw `Cannot read properties of undefined
+ * (reading 'tieFormat')` from `getItemTieFormat`. **That defect is fixed** (PR
+ * #4623 guarded the optional `drawDefinition` / `event` dereferences) and the
+ * sequence now succeeds — verified directly before rewriting this note.
  *
- * The MAIN-CHAIN write sites — the if/else target selection in
- * removeCollectionDefinition, addCollectionDefinition and collectionGroupUpdate
- * — are threaded identically but are NOT independently covered:
+ * Removing the blocker did NOT make the other sites reachable, and the reason is
+ * structural rather than a fixture problem. `writeTieFormat` forks only when a
+ * centralized `tieFormatId` has `refCount > 1`. In these mutations the
+ * matchUp-level processing runs FIRST and re-points every competing reference,
+ * so by the time the main-chain write executes the event is the sole remaining
+ * reference — `refCount === 1` — and it takes the in-place branch, minting
+ * nothing and consuming no pool.
  *
- *   - in `removeCollectionDefinition` the earlier `processTargetMatchUp` fork
- *     always consumes/errors first, so the main-chain site is unreachable once a
- *     pool is short
- *   - `collectionGroupUpdate` with an aggregated fixture does not fork at all
- *     (the resolved target has refCount 1, so it updates in place)
+ * Measured, not argued: instrumenting the fork and running the full suite shows
+ * it is reached from exactly ONE site across all 10,912 tests —
+ * `removeCollectionDefinition`'s `processTargetMatchUp` path, which is what this
+ * file covers. The main-chain sites here, in `addCollectionDefinition` and in
+ * `collectionGroupUpdate` are never reached. Three fixtures built through the
+ * public API (single draw, two draws in one event, event-scoped write target)
+ * all took the in-place branch.
  *
- * Building a fixture that reaches them is blocked by a PRE-EXISTING defect,
- * confirmed on master with these changes stashed: `aggregateTieFormats()`
- * followed by `removeCollectionDefinition` returns
- * `Cannot read properties of undefined (reading 'tieFormat')` from
- * `getItemTieFormat`. That corrupts exactly the aggregated state these tests
- * need. See the workstream notes.
+ * The threading on those unreached lines is therefore DEFENSIVE and correct to
+ * keep — if a future change makes them reachable the pool must be honoured — but
+ * no integration test can exercise them today.
+ *
+ * The fork's own behaviour is covered directly in
+ * `writeTieFormatUuidPool.test.ts`: pool consumed, exhaustion errors, absent
+ * pool mints, and the `refCount === 1` in-place branch that makes the above
+ * unreachable is pinned as behaviour.
  */

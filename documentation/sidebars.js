@@ -143,7 +143,12 @@ module.exports = {
         {
           type: 'category',
           label: 'Record Data',
-          items: ['concepts/accessors', 'concepts/timeItems', 'concepts/extensions'],
+          items: [
+            'concepts/accessors',
+            'concepts/timeItems',
+            'concepts/extensions',
+            'concepts/caller-supplied-identity',
+          ],
         },
         {
           type: 'category',
