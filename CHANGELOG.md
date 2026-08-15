@@ -1,5 +1,13 @@
 # Changelog
 
+## [6.25.0](https://github.com/CourtHive/competition-factory/compare/v6.24.0...v6.25.0) (2026-08-15)
+
+
+### Features
+
+* **officiating:** policy-driven conflict-of-interest checks for official assignment (both routes) ([#4609](https://github.com/CourtHive/competition-factory/issues/4609)) ([d5379a1](https://github.com/CourtHive/competition-factory/commit/d5379a1bcfc3ee74e131da21b49eb1f14440a0e8))
+* **sanctioning:** retire the redundant sanctioningTier extension ([#4608](https://github.com/CourtHive/competition-factory/issues/4608)) ([2c138dc](https://github.com/CourtHive/competition-factory/commit/2c138dc0e0ca469e0a16bd3768b136550132bfc3))
+
 ## [6.24.0](https://github.com/CourtHive/competition-factory/compare/v6.23.0...v6.24.0) (2026-08-14)
 
 
