@@ -553,12 +553,41 @@ const { eventData } = engine.getEventData({
   policyDefinitions, // optional
   usePublishState, // optional - filter out draws which are not published; enforces embargo timestamps
   contextProfile, // optional: { inferGender: true, withCompetitiveness: true, withScaleValues: true, exclude: ['attribute', 'to', 'exclude']}
+  drawsProfile, // optional: 'FULL' (default) | 'STUBS' — how much of each draw to return
   eventId,
 });
 const { drawsData, venuesData, eventInfo, tournamentInfo } = eventData;
 ```
 
 When `usePublishState: true`, this method enforces [embargo](../concepts/publishing/publishing-embargo) timestamps — embargoed draws, stages, and structures are filtered from `drawsData` until the embargo passes.
+
+### drawsProfile
+
+Selects how much of each draw is assembled. The axis is monotone containment — `drawInfo ⊃ structures ⊃ roundMatchUps` — so it is one ordinal parameter rather than independent flags.
+
+| value            | returns                                                                       |
+| ---------------- | ----------------------------------------------------------------------------- |
+| `FULL` (default) | every draw hydrated through `getDrawData` — unchanged, pre-existing behaviour |
+| `STUBS`          | cheap per-draw metadata only; structure assembly is skipped entirely          |
+
+`STUBS` is intended for the most common first request — _"what is in this event?"_ — where a client renders a list of draws and only later drills into one. On a Grand-Slam singles event it is roughly **15 KB against 788 KB**.
+
+A stub carries:
+
+```js
+{
+  drawId, drawName, drawType, matchUpFormat, updatedAt, display,
+  drawGenerated,  // boolean - draw has matchUps
+  drawCompleted,  // boolean - every matchUp is in a completed status
+  drawPublished,  // present only when usePublishState
+}
+```
+
+`drawGenerated` and `drawCompleted` are included because both reduce `matchUpStatus`, which is available on the un-hydrated matchUp — so they cost nothing extra and a draw list can still render a status column.
+
+`participantPlacements`, `drawActive` and `structures` are **absent** from a stub: they cannot be derived without the structure assembly this profile exists to skip. Request `FULL`, or fetch the draw individually, when they are needed.
+
+`drawsProfile` is purely additive — omitting it is byte-identical to `FULL`. An unrecognised value returns `INVALID_VALUES` rather than falling back, so a typo cannot silently return the full payload.
 
 **See**: [Embargo](../concepts/publishing/publishing-embargo) for details on how embargo timestamps work.
 

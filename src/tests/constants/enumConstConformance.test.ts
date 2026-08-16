@@ -132,6 +132,9 @@ const COVERAGE: {
 // Listed so a newly-added enum can't silently skip the mirror/bucket decision above.
 const ENUM_ONLY = [
   'AddressTypeEnum',
+  // getEventData's payload-detail selector. Enum-only by design: it is a REQUEST-shape vocabulary,
+  // consumed as a typed param, and has no domain-constant twin for callers to destructure.
+  'DrawsProfileEnum',
   // no const-module twin: weight units are used only on the equipment types
   'WeightUnitEnum',
   // LEVEL has no const module; AGE/BOTH live in eventConstants but the set is not covered
