@@ -145,7 +145,17 @@ export function modifyMatchUpNotice({
   stampMatchUpUpdatedAt(matchUp);
   addNotice({
     topic: MODIFY_MATCHUP,
-    payload: { matchUp, tournamentId, context },
+    // eventId/drawId/structureId ride the ENVELOPE, not just the entity. A subscriber that only needs
+    // to know WHICH event changed — cache eviction, fan-out routing — should not have to resolve the
+    // matchUp to find out. `drawDefinition` is optional here, so drawId is best-effort.
+    payload: {
+      matchUp,
+      tournamentId,
+      eventId,
+      drawId: drawDefinition?.drawId ?? (matchUp as any)?.drawId,
+      structureId,
+      context,
+    },
     key: matchUp.matchUpId,
   });
 

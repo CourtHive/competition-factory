@@ -21,6 +21,28 @@
 import type { MatchUp, Event, DrawDefinition, Tournament } from '@Types/tournamentTypes';
 
 // ============================================================================
+// Identity envelope
+// ============================================================================
+
+/**
+ * The identity a subscriber needs to route a change WITHOUT resolving the entity it describes.
+ *
+ * Topics touching events / draws / structures / matchUps carry as much of this as applies, on the
+ * payload itself rather than only nested inside `event`, `matchUp` or `eventData`. That distinction is
+ * what lets a subscriber drive cache eviction and data fan-out from the notice alone — see
+ * `Mentat/planning/FACTORY_NOTICE_IDENTITY_AUDIT.md`.
+ *
+ * Fields are optional because scope genuinely differs: a venue change has no `eventId`, and forcing one
+ * would invent precision that does not exist.
+ */
+export interface NoticeIdentity {
+  tournamentId?: string;
+  eventId?: string;
+  drawId?: string;
+  structureId?: string;
+}
+
+// ============================================================================
 // Per-topic payload shapes
 // ============================================================================
 
@@ -53,9 +75,11 @@ export interface AddMatchUpsPayload {
   matchUps: MatchUp[];
 }
 
-export interface ModifyMatchUpPayload {
+export interface ModifyMatchUpPayload extends NoticeIdentity {
   tournamentId: string;
   matchUp: MatchUp;
+  /** `drawDefinition` is optional at the emit site, so this is best-effort. */
+  drawId?: string;
   context?: { [key: string]: any };
 }
 
@@ -82,13 +106,55 @@ export interface DeleteParticipantsPayload {
   participantIds: string[];
 }
 
-export interface PublishEventPayload {
+export interface PublishEventPayload extends NoticeIdentity {
   tournamentId: string;
+  /** On the envelope, not only inside `eventData.eventInfo` — a subscriber needing just the id
+   *  should not have to reach through the payload for it. */
+  eventId?: string;
   eventData: any;
 }
 
 export interface ModifyTournamentDetailPayload {
   tournamentRecord: Tournament;
+}
+
+export interface ModifyPositionAssignmentsPayload extends NoticeIdentity {
+  tournamentId: string;
+  eventId: string;
+  drawId: string;
+  structureId: string;
+  positionAssignments: any[];
+}
+
+export interface ModifySeedAssignmentsPayload extends NoticeIdentity {
+  tournamentId: string;
+  eventId: string;
+  drawId: string;
+  structureId: string;
+  seedAssignments: any[];
+}
+
+export interface ModifyDrawEntriesPayload extends NoticeIdentity {
+  tournamentId: string;
+  eventId: string;
+  drawId: string;
+  drawEntries: any[];
+}
+
+export interface ModifyEventEntriesPayload extends NoticeIdentity {
+  tournamentId: string;
+  eventId: string;
+  entries: any[];
+}
+
+export interface UnPublishEventPayload extends NoticeIdentity {
+  tournamentId: string;
+  eventId: string;
+}
+
+export interface ModifyEventPayload {
+  tournamentId: string;
+  event: Event;
 }
 
 // ============================================================================
@@ -121,6 +187,12 @@ export interface TopicPayloadMap {
   modifyParticipants: ModifyParticipantsPayload;
   deleteParticipants: DeleteParticipantsPayload;
   publishEvent: PublishEventPayload;
+  unPublishEvent: UnPublishEventPayload;
+  modifyEvent: ModifyEventPayload;
+  modifyPositionAssignments: ModifyPositionAssignmentsPayload;
+  modifySeedAssignments: ModifySeedAssignmentsPayload;
+  modifyDrawEntries: ModifyDrawEntriesPayload;
+  modifyEventEntries: ModifyEventEntriesPayload;
   modifyTournamentDetail: ModifyTournamentDetailPayload;
 
   // Catch-all for un-typed topics — keeps the bus typeable without forcing
