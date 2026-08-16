@@ -134,7 +134,7 @@ type CountReferencesArgs = {
  * Counts how many objects (event, drawDefinitions, structures, matchUps)
  * in the event reference a given tieFormatId.
  */
-function countTieFormatReferences({ event, tieFormatId }: CountReferencesArgs): number {
+export function countTieFormatReferences({ event, tieFormatId }: CountReferencesArgs): number {
   let count = 0;
 
   if (event.tieFormatId === tieFormatId) count++;
@@ -188,4 +188,35 @@ export function removeOrphanedTieFormats({ event }: { event: Event }) {
   event.tieFormats = event.tieFormats.filter((tf) => tf.tieFormatId && referencedIds.has(tf.tieFormatId));
 
   if (!event.tieFormats.length) delete event.tieFormats;
+}
+
+type RequiredForkIdsArgs = {
+  /** Every object this operation will write a tieFormat to. */
+  targets: Array<{ tieFormatId?: string } | undefined>;
+  event?: Event;
+};
+
+/**
+ * How many ids an operation must draw from its pool, computed BEFORE mutating.
+ *
+ * One per DISTINCT source tieFormatId that would fork — because `forkCache`
+ * makes every later target sharing a source join the first fork rather than
+ * minting again.
+ *
+ * This is an upper bound, and deliberately so. As targets fork away, the source's
+ * refCount falls; if it reaches 1 the final referent takes the in-place branch and
+ * mints nothing. Over-requiring by one rejects a pool that would just have
+ * sufficed — annoying but safe. Under-requiring would let the operation begin and
+ * fail part-way, which is the failure this exists to prevent.
+ */
+export function requiredForkIds({ targets, event }: RequiredForkIdsArgs): number {
+  if (!event?.tieFormats?.length) return 0;
+
+  const sources = new Set<string>();
+  for (const target of targets) {
+    const tieFormatId = target?.tieFormatId;
+    if (!tieFormatId) continue;
+    if (countTieFormatReferences({ event, tieFormatId }) > 1) sources.add(tieFormatId);
+  }
+  return sources.size;
 }

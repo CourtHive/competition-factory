@@ -156,6 +156,86 @@ describe('shared tieFormat does not fragment on removeCollectionDefinition', () 
     expect(orphans).toEqual([]);
   });
 
+  it('an insufficient pool leaves the record COMPLETELY untouched', () => {
+    // Reporting the error was not enough. processTargetMatchUp splices a
+    // matchUp's tieMatchUps BEFORE writing its tieFormat, so failing at the write
+    // left the splice behind — measured at [9,9,9,9,9,9,9] -> [6,9,9,9,9,9,9] on
+    // a drawSize-8 event, error returned and partial mutation persisted.
+    //
+    // `executionQueue({ rollbackOnError: true })` did restore it, and TMX always
+    // sends that, but a direct engine caller had no protection. The pool is now
+    // validated BEFORE anything is mutated, so the operation never starts when it
+    // cannot finish.
+    const { event, eventId, drawId } = aggregatedTeamEvent();
+    const collectionId = event.tieFormats[0].collectionDefinitions[0].collectionId;
+
+    const before = JSON.stringify({
+      formats: tournamentEngine.getEvent({ eventId }).event.tieFormats,
+      tieMatchUpCounts: tournamentEngine
+        .allTournamentMatchUps({ matchUpFilters: { matchUpTypes: [TEAM_MATCHUP] } })
+        .matchUps.map((m: any) => m.tieMatchUps?.length ?? 0),
+    });
+
+    const result: any = tournamentEngine.removeCollectionDefinition({
+      drawId,
+      eventId,
+      collectionId,
+      tieFormatUuids: [],
+    });
+
+    expect(result.error).toEqual(INSUFFICIENT_UUIDS);
+    expect(result.context).toEqual({ required: 1, supplied: 0 });
+
+    const after = JSON.stringify({
+      formats: tournamentEngine.getEvent({ eventId }).event.tieFormats,
+      tieMatchUpCounts: tournamentEngine
+        .allTournamentMatchUps({ matchUpFilters: { matchUpTypes: [TEAM_MATCHUP] } })
+        .matchUps.map((m: any) => m.tieMatchUps?.length ?? 0),
+    });
+
+    expect(after).toEqual(before);
+  });
+
+  it('the pre-flight requirement matches what the operation actually consumes', () => {
+    // The pre-flight is a separate calculation from the fork logic, so it can
+    // drift. This pins them together: whatever it demands is what a successful
+    // run spends.
+    const { event, eventId, drawId } = aggregatedTeamEvent();
+    const collectionId = event.tieFormats[0].collectionDefinitions[0].collectionId;
+
+    // One less than required must be rejected...
+    const short: any = tournamentEngine.removeCollectionDefinition({
+      drawId,
+      eventId,
+      collectionId,
+      tieFormatUuids: [],
+    });
+    expect(short.error).toEqual(INSUFFICIENT_UUIDS);
+    const required = short.context.required;
+
+    // ...and exactly the required number must succeed and be fully consumed.
+    const fresh = aggregatedTeamEvent();
+    const pool = Array.from({ length: required }, (_, i) => `tf-${i}`);
+    const ok: any = tournamentEngine.removeCollectionDefinition({
+      drawId: fresh.drawId,
+      eventId: fresh.eventId,
+      collectionId: fresh.event.tieFormats[0].collectionDefinitions[0].collectionId,
+      tieFormatUuids: pool,
+    });
+
+    expect(ok.error).toBeUndefined();
+    expect(pool).toHaveLength(0);
+
+    // NOT covered here: the `refCount > 1` filter inside `requiredForkIds`.
+    // Every target in this fixture shares ONE source tieFormatId, so removing the
+    // filter still yields 1 and this suite stays green — verified by
+    // falsification. The filter only matters where some target's format is
+    // already unshared, which needs a fixture with a structure- or
+    // drawDefinition-scoped format alongside the aggregated one. Over-counting is
+    // the SAFE direction (it rejects a pool that would just have sufficed), so
+    // this gap cannot cause partial application — only an unnecessary rejection.
+  });
+
   it('the removed collection is actually gone from the shared format', () => {
     // Guards against "de-duplicated" turning into "did not apply the edit".
     const { event, eventId, drawId } = aggregatedTeamEvent();
