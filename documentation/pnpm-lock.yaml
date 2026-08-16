@@ -36,7 +36,7 @@ importers:
         version: 2.1.1
       courthive-components:
         specifier: 3.13.1
-        version: 3.13.1(@tiptap/pm@3.29.2)(leaflet@1.9.4)(tods-competition-factory@6.22.0)
+        version: 3.13.1(@tiptap/pm@3.29.2)(leaflet@1.9.4)(tods-competition-factory@6.22.1)
       leaflet:
         specifier: ^1.9.4
         version: 1.9.4
@@ -48,7 +48,7 @@ importers:
         version: 19.2.8(react@19.2.8)
       tods-competition-factory:
         specifier: ^6.21.0
-        version: 6.22.0
+        version: 6.22.1
 
 packages:
 
@@ -5279,8 +5279,8 @@ packages:
     resolution: {integrity: sha512-65P7iz6X5yEr1cwcgvQxbbIw7Uk3gOy5dIdtZ4rDveLqhrdJP+Li/Hx6tyK0NEb+2GCyneCMJiGqrADCSNk8sQ==}
     engines: {node: '>=8.0'}
 
-  tods-competition-factory@6.22.0:
-    resolution: {integrity: sha512-jQ/Z88Wtz8qwotE6DN8LzYktvsTE6f2eY0FUl/4Whke4wnexIH3CwIhu0soSliTOiFTVQaOcal6vrU0ZVyNMOg==}
+  tods-competition-factory@6.22.1:
+    resolution: {integrity: sha512-XIdyg1yfkmqYj/K/0kTQTlE05S3ktq3cA8kRBMaYxplaRvQ9xPV2qZn/pZl47Q0XCCKE4/DrTb+ODbSuOSO5lw==}
     engines: {node: '>=22'}
 
   toidentifier@1.0.1:
@@ -9255,7 +9255,7 @@ snapshots:
       parse-json: 5.2.0
       path-type: 4.0.0
 
-  courthive-components@3.13.1(@tiptap/pm@3.29.2)(leaflet@1.9.4)(tods-competition-factory@6.22.0):
+  courthive-components@3.13.1(@tiptap/pm@3.29.2)(leaflet@1.9.4)(tods-competition-factory@6.22.1):
     dependencies:
       '@tiptap/core': 3.29.2(@tiptap/pm@3.29.2)
       '@tiptap/extension-color': 3.29.2(@tiptap/extension-text-style@3.29.2(@tiptap/core@3.29.2(@tiptap/pm@3.29.2)))
@@ -9272,7 +9272,7 @@ snapshots:
       focus-trap: 8.2.2
       timepicker-ui: 4.4.0
       tippy.js: 6.3.7
-      tods-competition-factory: 6.22.0
+      tods-competition-factory: 6.22.1
       vanillajs-datepicker: 1.3.4
     optionalDependencies:
       leaflet: 1.9.4
@@ -12610,7 +12610,7 @@ snapshots:
     dependencies:
       is-number: 7.0.0
 
-  tods-competition-factory@6.22.0: {}
+  tods-competition-factory@6.22.1: {}
 
   toidentifier@1.0.1: {}
 
