@@ -43,15 +43,13 @@ describe('MODIFY_MATCHUP carries the sanctioning origin', () => {
     const { drawId, eventId } = seed();
 
     const origin = { organisationId: 'ORG-EXTERNAL', tournamentId: 'THEIR-TID', eventId: 'THEIR-EID', isOrigin: true };
-    const modified: any = tournamentEngine.modifyEvent({
-      eventId,
-      eventUpdates: { eventOtherIds: [origin] },
-    });
-    expect(modified.success).toEqual(true);
+    let result: any = tournamentEngine.modifyEvent({ eventId, eventUpdates: { eventOtherIds: [origin] } });
+    expect(result.success).toEqual(true);
 
     const notices: any[] = [];
     setSubscriptions({ subscriptions: { [MODIFY_MATCHUP]: (n: any[]) => notices.push(...n) } });
-    expect(scoreOne(drawId).success).toEqual(true);
+    result = scoreOne(drawId);
+    expect(result.success).toEqual(true);
     setSubscriptions({ subscriptions: {} });
 
     expect(notices.length).toBeGreaterThan(0);
@@ -70,7 +68,8 @@ describe('MODIFY_MATCHUP carries the sanctioning origin', () => {
 
     const notices: any[] = [];
     setSubscriptions({ subscriptions: { [MODIFY_MATCHUP]: (n: any[]) => notices.push(...n) } });
-    expect(scoreOne(drawId).success).toEqual(true);
+    const result: any = scoreOne(drawId);
+    expect(result.success).toEqual(true);
     setSubscriptions({ subscriptions: {} });
 
     expect(notices.length).toBeGreaterThan(0);

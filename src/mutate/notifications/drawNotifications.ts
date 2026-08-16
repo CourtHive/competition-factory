@@ -1,7 +1,7 @@
 import { getPositionAssignments } from '@Query/drawDefinition/positionsGetter';
 import { addNotice, deleteNotice } from '@Global/state/globalState';
-import { eventOrigin } from '@Query/readModel/readModelRows';
 import { requireParams } from '@Helpers/parameters/requireParams';
+import { eventOrigin } from '@Query/readModel/readModelRows';
 
 // Constants and types
 import { ErrorType, MISSING_DRAW_DEFINITION, MISSING_MATCHUP } from '@Constants/errorConditionConstants';
