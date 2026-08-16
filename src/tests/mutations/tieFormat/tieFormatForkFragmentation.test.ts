@@ -226,14 +226,47 @@ describe('shared tieFormat does not fragment on removeCollectionDefinition', () 
     expect(ok.error).toBeUndefined();
     expect(pool).toHaveLength(0);
 
-    // NOT covered here: the `refCount > 1` filter inside `requiredForkIds`.
-    // Every target in this fixture shares ONE source tieFormatId, so removing the
-    // filter still yields 1 and this suite stays green — verified by
-    // falsification. The filter only matters where some target's format is
-    // already unshared, which needs a fixture with a structure- or
-    // drawDefinition-scoped format alongside the aggregated one. Over-counting is
-    // the SAFE direction (it rejects a pool that would just have sufficed), so
-    // this gap cannot cause partial application — only an unnecessary rejection.
+    // The `refCount > 1` filter is covered by the mixed-refCount test below.
+    void 0;
+  });
+
+  it('does not over-require when a target format is UNSHARED (refCount filter)', () => {
+    // Closes the gap the earlier version of this file recorded as uncovered.
+    //
+    // One matchUp is given its OWN tieFormat entry, so its refCount is 1 and it
+    // takes the in-place branch without minting. The other two still share the
+    // aggregated format and fork once between them.
+    //
+    //   with the refCount filter   → requires 1
+    //   without it                 → requires 2 (counts the unshared id too)
+    //
+    // Supplying exactly 1 therefore passes only while the filter is honoured.
+    // Without it the operation is rejected for a pool that was sufficient.
+    const { eventId } = aggregatedTeamEvent();
+
+    const { tournamentRecord } = tournamentEngine.getTournament();
+    const event = tournamentRecord.events.find((e: any) => e.eventId === eventId);
+    const structure = event.drawDefinitions[0].structures[0];
+    const teamMatchUps = structure.matchUps.filter((m: any) => m.tieMatchUps);
+    expect(teamMatchUps.length).toBeGreaterThan(1);
+
+    const privateFormat = JSON.parse(JSON.stringify(event.tieFormats[0]));
+    privateFormat.tieFormatId = 'private-tf';
+    event.tieFormats.push(privateFormat);
+    teamMatchUps[0].tieFormatId = 'private-tf';
+    tournamentEngine.setState(tournamentRecord);
+
+    const refreshed = tournamentEngine.getEvent({ eventId }).event;
+    const collectionId = refreshed.tieFormats[0].collectionDefinitions[0].collectionId;
+
+    const result: any = tournamentEngine.removeCollectionDefinition({
+      drawId: refreshed.drawDefinitions[0].drawId,
+      eventId,
+      collectionId,
+      tieFormatUuids: ['just-one'],
+    });
+
+    expect(result.error).toBeUndefined();
   });
 
   it('the removed collection is actually gone from the shared format', () => {
