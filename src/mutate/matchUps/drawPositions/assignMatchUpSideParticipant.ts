@@ -97,6 +97,7 @@ export function assignMatchUpSideParticipant({
       context: 'assignSideParticipant',
       drawDefinition,
       matchUp,
+      event,
     });
   }
 

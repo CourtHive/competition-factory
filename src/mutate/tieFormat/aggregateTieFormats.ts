@@ -69,6 +69,7 @@ export function aggregateTieFormats({
           tournamentId: tournamentRecord?.tournamentId,
           eventId: event.eventId,
           matchUp,
+          event,
         });
       }
     };

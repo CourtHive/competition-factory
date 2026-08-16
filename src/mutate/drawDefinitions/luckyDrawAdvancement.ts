@@ -279,6 +279,7 @@ function placeDiscardedLosers({
         tournamentId,
         structureId: targetStructureId,
         matchUp,
+        event,
       });
     }
   }

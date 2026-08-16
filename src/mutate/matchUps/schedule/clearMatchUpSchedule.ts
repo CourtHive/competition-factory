@@ -59,12 +59,14 @@ export function clearMatchUpSchedule({
   tournamentRecord,
   drawDefinition,
   matchUpId,
+  event,
 }: {
   overrideScheduleLock?: boolean;
   scheduleAttributes?: string[];
   tournamentRecord?: any;
   drawDefinition?: any;
   matchUpId: string;
+  event?: any;
 }) {
   const stack = 'clearMatchUpSchedule';
   const matchUp = drawDefinition
@@ -106,6 +108,7 @@ export function clearMatchUpSchedule({
     context: stack,
     drawDefinition,
     matchUp,
+    event,
   });
 
   return { ...SUCCESS };

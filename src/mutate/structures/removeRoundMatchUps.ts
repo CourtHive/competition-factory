@@ -58,6 +58,7 @@ export function removeRoundMatchUps({
       drawDefinition,
       roundNumber,
       structure,
+      event,
     });
   } else {
     console.log('not implemented');
@@ -73,6 +74,7 @@ function removeAdHocRound({
   roundNumber,
   structure,
   eventId,
+  event,
 }): ResultType & { deletedMatchUpsCount?: number; roundRemoved?: boolean } {
   const matchUps = structure?.matchUps ?? [];
   const deletedTieMatchUpIds: string[] = [];
@@ -121,6 +123,7 @@ function removeAdHocRound({
               tournamentId,
               eventId,
               matchUp,
+              event,
             });
           }
         });
