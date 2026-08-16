@@ -161,6 +161,7 @@ import type { deleteFlightProfileAndFlightDraws } from '@Mutate/events/deleteFli
 import type { generateOutcomeFromScoreString } from '@Generators/mocks/generateOutcomeFromScoreString';
 import type { qualifierDrawPositionAssignment } from '@Mutate/matchUps/drawPositions/positionQualifier';
 import type { resetQualifyingStructure } from '@Mutate/drawDefinitions/resetQualifyingStructure';
+import type { setMatchUpScheduleLock } from '@Mutate/matchUps/schedule/setMatchUpScheduleLock';
 import type { addCertificationRequirement } from '@Mutate/officiating/addCertificationRequirement';
 import type { applyScheduleScenario } from '@Mutate/matchUps/schedule/applyScheduleScenario';
 import type { getAssignedParticipantIds } from '@Query/drawDefinition/getAssignedParticipantIds';
@@ -1111,6 +1112,7 @@ export interface MethodSignatures {
   setMatchUpDailyLimits: EngineMethod<typeof setMatchUpDailyLimits>;
   setMatchUpFormat: EngineMethod<typeof setMatchUpFormat>;
   setMatchUpHomeParticipantId: EngineMethod<typeof setMatchUpHomeParticipantId>;
+  setMatchUpScheduleLock: EngineMethod<typeof setMatchUpScheduleLock>;
   setMatchUpState: EngineMethod<typeof setMatchUpState>;
   setMatchUpStatus: EngineMethod<typeof setMatchUpStatus>;
   setOrderOfFinish: EngineMethod<typeof setOrderOfFinish>;

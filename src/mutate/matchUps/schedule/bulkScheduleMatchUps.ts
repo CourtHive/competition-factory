@@ -12,6 +12,7 @@ import { Tournament } from '@Types/tournamentTypes';
 type BulkScheduleMatchUpsArgs = {
   tournamentRecords: { [key: string]: Tournament };
   scheduleCompletedMatchUps?: boolean;
+  overrideScheduleLock?: boolean;
   tournamentRecord?: Tournament;
   scheduleByeMatchUps?: boolean;
   errorOnAnachronism?: boolean;
@@ -26,6 +27,7 @@ export function bulkScheduleMatchUps(params: BulkScheduleMatchUpsArgs) {
   const {
     scheduleCompletedMatchUps = false,
     scheduleByeMatchUps = false,
+    overrideScheduleLock,
     errorOnAnachronism,
     matchUpContextIds,
     removePriorValues,
@@ -50,6 +52,7 @@ export function bulkScheduleMatchUps(params: BulkScheduleMatchUpsArgs) {
   if ((!matchUpDetails || matchUpContextIds) && !schedule)
     return { error: MISSING_VALUE, info: 'schedule is required' };
 
+  const lockedMatchUpIds: string[] = [];
   const warnings: any[] = [];
   let scheduled = 0;
 
@@ -69,6 +72,7 @@ export function bulkScheduleMatchUps(params: BulkScheduleMatchUpsArgs) {
       const result = bulkScheduleTournamentMatchUps({
         matchUpDetails: tournamentMatchUpDetails,
         scheduleCompletedMatchUps,
+        overrideScheduleLock,
         scheduleByeMatchUps,
         matchUpDependencies,
         errorOnAnachronism,
@@ -80,10 +84,16 @@ export function bulkScheduleMatchUps(params: BulkScheduleMatchUpsArgs) {
         schedule,
       });
       if (result.warnings?.length) warnings.push(...result.warnings);
+      if (result.lockedMatchUpIds?.length) lockedMatchUpIds.push(...result.lockedMatchUpIds);
       if (result.scheduled) scheduled += result.scheduled;
       if (result.error) return result;
     }
   }
 
-  return warnings.length ? { ...SUCCESS, scheduled, warnings } : { ...SUCCESS, scheduled };
+  return {
+    ...SUCCESS,
+    ...(warnings.length ? { warnings } : {}),
+    ...(lockedMatchUpIds.length ? { lockedMatchUpIds } : {}),
+    scheduled,
+  };
 }

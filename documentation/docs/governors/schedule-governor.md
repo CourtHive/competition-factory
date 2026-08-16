@@ -206,6 +206,39 @@ engine.removeMatchUpTimekeeper({ matchUpId, drawId });
 
 ---
 
+### setMatchUpScheduleLock
+
+Pins a matchUp's **placement** so bulk and automated scheduling cannot move it —
+the marquee match that must keep centre court at 19:00 while the rest of the day
+is rebuilt around it. Stored first-class as `matchUp.schedule.lock`. Presence of
+the object is the lock; `attributes` narrows it to specific placement fields.
+
+Guards placement only: `startTime` / `stopTime` / `resumeTime` / `endTime` stay
+writable so a pinned matchUp can still be played. Every placement mutation
+accepts `overrideScheduleLock: true` for callers that have confirmed the move
+with the operator; an override moves the placement but never removes the lock.
+The lock goes inert (it is not deleted) once the matchUp completes, or while it
+has no placement to guard.
+
+See [Schedule Locks](../concepts/schedule-locks.mdx) for the full model.
+
+```js
+engine.setMatchUpScheduleLock({
+  matchUpId, // required
+  drawId, // required
+  lock, // required - a ScheduleLock object, or null to unlock
+  disableNotice, // optional boolean - suppress notifications
+});
+
+// pin only the clock time; the court stays free to move
+engine.setMatchUpScheduleLock({ matchUpId, drawId, lock: { attributes: ['scheduledTime'] } });
+
+// unlock
+engine.setMatchUpScheduleLock({ matchUpId, drawId, lock: null });
+```
+
+---
+
 ## Automated Scheduling Methods
 
 ### scheduleMatchUps

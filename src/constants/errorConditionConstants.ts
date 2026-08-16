@@ -74,6 +74,10 @@ export const SCHEDULE_NOT_CLEARED = {
   message: 'Schedule not cleared',
   code: 'ERR_UNCHANGED_SCHEDULE_NOT_CLEARED',
 };
+export const SCHEDULE_LOCKED = {
+  message: 'matchUp schedule is locked',
+  code: 'ERR_SCHEDULE_LOCKED',
+};
 export const MATCHUPS_SCHEDULED_OUTSIDE_DATES = {
   message: 'MatchUps are scheduled outside the new tournament dates',
   code: 'ERR_MATCHUPS_SCHEDULED_OUTSIDE_DATES',
@@ -1069,6 +1073,7 @@ export const errorConditionConstants = {
   PENALTY_NOT_FOUND,
   POLICY_NOT_ATTACHED,
   POLICY_NOT_FOUND,
+  SCHEDULE_LOCKED,
   SCHEDULE_NOT_CLEARED,
   SCHEDULE_CONFLICT_DOUBLE_BOOKING,
   SCHEDULE_CONFLICT_COURT_UNAVAILABLE,

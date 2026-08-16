@@ -28,6 +28,7 @@ export const methodScopeMap: Record<string, MutationLockScope> = {
   bulkScheduleMatchUps: 'SCHEDULING',
   scheduleProfileRounds: 'SCHEDULING',
   clearMatchUpSchedule: 'SCHEDULING',
+  setMatchUpScheduleLock: 'SCHEDULING',
   addMatchUpScheduledTime: 'SCHEDULING',
   setMatchUpDailyLimits: 'SCHEDULING',
   assignMatchUpCourt: 'SCHEDULING',

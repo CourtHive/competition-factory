@@ -1,9 +1,10 @@
 import { allTournamentMatchUps } from '@Query/matchUps/getAllTournamentMatchUps';
 import { modifyMatchUpNotice } from '@Mutate/notifications/drawNotifications';
 import { allDrawMatchUps } from '@Query/matchUps/getAllDrawMatchUps';
+import { isScheduleLocked } from '@Query/matchUp/isScheduleLocked';
 
 // constants
-import { MATCHUP_NOT_FOUND } from '@Constants/errorConditionConstants';
+import { MATCHUP_NOT_FOUND, SCHEDULE_LOCKED } from '@Constants/errorConditionConstants';
 import { SUCCESS } from '@Constants/resultConstants';
 import {
   ALLOCATE_COURTS,
@@ -54,9 +55,16 @@ export function clearMatchUpSchedule({
     RESUME_TIME,
     STOP_TIME,
   ],
+  overrideScheduleLock,
   tournamentRecord,
   drawDefinition,
   matchUpId,
+}: {
+  overrideScheduleLock?: boolean;
+  scheduleAttributes?: string[];
+  tournamentRecord?: any;
+  drawDefinition?: any;
+  matchUpId: string;
 }) {
   const stack = 'clearMatchUpSchedule';
   const matchUp = drawDefinition
@@ -72,6 +80,11 @@ export function clearMatchUpSchedule({
       }).matchUps?.[0];
 
   if (!matchUp) return { error: MATCHUP_NOT_FOUND };
+
+  // A pinned placement is not cleared by a single-matchUp clear either. Callers
+  // that have confirmed the intent with the operator pass `overrideScheduleLock`
+  // (the lock itself survives — only setMatchUpScheduleLock removes it).
+  if (!overrideScheduleLock && isScheduleLocked({ matchUp })) return { error: SCHEDULE_LOCKED };
 
   const newTimeItems = (matchUp.timeItems ?? []).filter(
     (timeItem) => timeItem?.itemType && !scheduleAttributes.includes(timeItem?.itemType),

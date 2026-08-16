@@ -439,6 +439,35 @@ export enum EventTypeEnum {
 }
 export type EventTypeUnion = `${EventTypeEnum}`;
 
+/** Placement attributes a {@link ScheduleLock} can pin. */
+export type ScheduleLockAttribute =
+  'allocatedCourts' | 'courtId' | 'courtOrder' | 'scheduledDate' | 'scheduledTime' | 'venueId';
+
+/**
+ * CODES first-class: a director's declaration that a matchUp's placement is
+ * deliberate and must not be moved by bulk or automated scheduling — the
+ * marquee match promised centre court at 19:00 surviving a Clear or a
+ * re-schedule of the rest of the day.
+ *
+ * The lock guards PLACEMENT only. `startTime` / `stopTime` / `resumeTime` /
+ * `endTime` record actual play and stay writable, or a locked matchUp could
+ * never be played. It is also inert once the matchUp reaches a completed
+ * status, where completed-status protection already applies.
+ *
+ * Presence of the object is the lock; `attributes` narrows it to specific
+ * placement fields (absent ⇒ the whole placement). Timestamps are
+ * caller-supplied — the factory never stamps wall-clock.
+ *
+ * Unrelated to `tournamentRecord.mutationLocks`, which gate whole methods at
+ * tournament grain.
+ */
+export interface ScheduleLock {
+  attributes?: ScheduleLockAttribute[];
+  lockedAt?: string;
+  lockedBy?: string;
+  reason?: string;
+}
+
 /**
  * CODES first-class schedule attributes on a matchUp. Each field was
  * historically stored as a `timeItem` of the corresponding `itemType`
@@ -461,6 +490,9 @@ export interface MatchUpSchedule {
   courtId?: string;
   courtOrder?: number;
   homeParticipantId?: string;
+  // CODES 5.0.0 first-class: pins this placement against bulk clears and
+  // automated scheduling. See {@link ScheduleLock}. No legacy timeItem mirror.
+  lock?: ScheduleLock;
   official?: any;
   // participantId of a nominated scorekeeper for this matchUp (crowd-scoring Phase D).
   // SCHEDULE.ASSIGNMENT.SCOREKEEPER first-class value; not cleared by rescheduling.

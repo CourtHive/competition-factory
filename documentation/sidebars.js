@@ -120,6 +120,7 @@ module.exports = {
             'concepts/scheduling-policy',
             'concepts/scheduling-profile',
             'concepts/schedule-scenarios',
+            'concepts/schedule-locks',
             'concepts/automated-scheduling',
             'concepts/pro-scheduling',
             'concepts/scheduling-conflicts',

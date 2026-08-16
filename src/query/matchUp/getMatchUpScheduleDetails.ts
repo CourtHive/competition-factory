@@ -116,6 +116,10 @@ export function getMatchUpScheduleDetails(params: GetMatchUpScheduleDetailsArgs)
       })
     : definedAttributes({ milliseconds, startTime, endTime, time });
 
+  // A schedule lock is an internal operations annotation — it means nothing to
+  // a published or public view, and `lock.reason` is the director's own note.
+  if (usePublishState && schedule?.lock) delete schedule.lock;
+
   const { scheduledDate } = scheduledMatchUpDate({ matchUp });
   const { scheduledTime } = scheduledMatchUpTime({ matchUp });
 
@@ -191,6 +195,10 @@ function buildFullSchedule({
   const courtOrder = firstClass.courtOrder ?? timeItemMap.get(COURT_ORDER);
   const venueId = firstClass.venueId ?? timeItemMap.get(ASSIGN_VENUE);
   const courtId = firstClass.courtId ?? timeItemMap.get(ASSIGN_COURT);
+  // First-class only — a schedule lock has no legacy timeItem mirror. Hydrated
+  // here (rather than merged in addMatchUpContext alongside calledAt) so that
+  // the embargo filter strips it with the rest of the placement.
+  const lock = firstClass.lock;
 
   const recoveryTimes = computeRecoveryTimes({
     scheduleTiming,
@@ -222,6 +230,7 @@ function buildFullSchedule({
     homeParticipantId,
     courtAnnotation,
     venueAbbreviation,
+    lock,
     allocatedCourts,
     scheduledDate,
     scheduledTime,

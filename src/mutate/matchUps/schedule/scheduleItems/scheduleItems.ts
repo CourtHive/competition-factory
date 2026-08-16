@@ -8,6 +8,7 @@ import {
   validTimeValue,
 } from '@Tools/dateTime';
 import { getMatchUpOfficialConflicts } from '@Query/officiating/getMatchUpOfficialConflicts';
+import { scheduleLockConflicts } from '@Query/matchUp/isScheduleLocked';
 import { setMatchUpHomeParticipantId } from '@Mutate/matchUps/schedule/scheduleItems/setMatchUpHomeParticipantId';
 import { setMatchUpFirstClassOrTimeItem } from '@Mutate/timeItems/matchUps/setMatchUpFirstClassOrTimeItem';
 import { addMatchUpScheduledTime, addMatchUpTimeModifiers } from '@Mutate/matchUps/schedule/scheduledTime';
@@ -52,6 +53,7 @@ import type { OfficialRecord } from '@Types/officiatingTypes';
 import { HydratedMatchUp } from '@Types/hydrated';
 import {
   SCHEDULE_CONFLICT_DOUBLE_BOOKING,
+  SCHEDULE_LOCKED,
   MISSING_MATCHUP_ID,
   INVALID_RESUME_TIME,
   INVALID_START_TIME,
@@ -296,6 +298,7 @@ function unassignGridPosition({ tournamentRecords, tournamentRecord, drawDefinit
 type AddMatchUpScheduleItemsArgs = {
   inContextMatchUps?: HydratedMatchUp[];
   drawMatchUps?: HydratedMatchUp[];
+  overrideScheduleLock?: boolean;
   proConflictDetection?: boolean;
   drawDefinition: DrawDefinition;
   errorOnAnachronism?: boolean;
@@ -333,6 +336,7 @@ export function addMatchUpScheduleItems(params: AddMatchUpScheduleItemsArgs): {
     proConflictDetection = false,
     errorOnAnachronism = false,
     checkChronology = true,
+    overrideScheduleLock,
     removePriorValues,
     tournamentRecords,
     tournamentRecord,
@@ -351,6 +355,21 @@ export function addMatchUpScheduleItems(params: AddMatchUpScheduleItemsArgs): {
     const result = findDrawMatchUp({ drawDefinition, event, matchUpId });
     if (result.error) return result;
     matchUp = result.matchUp;
+  }
+
+  // A director's schedule lock pins PLACEMENT. Actual-play attributes
+  // (startTime / stopTime / resumeTime / endTime) are never guarded, so a
+  // locked matchUp can still be started, suspended and completed. Callers that
+  // have confirmed the move with the operator pass `overrideScheduleLock`.
+  if (!overrideScheduleLock) {
+    const lockedAttributes = scheduleLockConflicts({ matchUp, schedule });
+    if (lockedAttributes.length) {
+      return decorateResult({
+        info: `schedule locked: ${lockedAttributes.join(', ')}`,
+        result: { error: SCHEDULE_LOCKED },
+        stack,
+      });
+    }
   }
 
   const {
