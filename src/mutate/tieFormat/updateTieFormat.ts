@@ -103,9 +103,8 @@ export function updateTieFormat({
   const eventDefaultTieFormat = getTieFormat({ event })?.tieFormat;
 
   if (event && eventId) {
-    for (const drawDefinition of event.drawDefinitions ?? []) {
-      processDrawDefinition({ drawDefinition });
-    }
+    const eventDrawsResult = processEventDrawDefinitions();
+    if (eventDrawsResult?.error) return decorateResult({ result: eventDrawsResult, stack });
     writeTieFormat({ target: event, tieFormat: copyTieFormat(tieFormat), event });
     modifiedCount += 1;
   } else if (matchUp) {
@@ -158,10 +157,9 @@ export function updateTieFormat({
     // attaching a tieFormat to the structure must ensure that affected TEAM matchUps within the structure all have appropriate tieMatchUps
     // therefore those that fail to match the modified tieFormat MUST have an appropriate tieFormat attached from higher in the hierarchy
     const inheritedTieFormat = drawDefaultTieFormat ?? eventDefaultTieFormat;
-    const modified = processStructure({
-      inheritedTieFormat,
-      structure,
-    })?.modifiedMatchUpsCount;
+    const structureResult = processStructure({ inheritedTieFormat, structure });
+    if (structureResult?.error) return decorateResult({ result: structureResult, stack });
+    const modified = structureResult?.modifiedMatchUpsCount;
 
     if (modified) {
       modifiedMatchUpsCount += modified;
@@ -169,7 +167,9 @@ export function updateTieFormat({
       modifiedCount += 1;
     }
 
-    const existingStructureTieFormat = structure.tieFormat ?? (structure.tieFormatId ? getTieFormat({ drawDefinition, structure, event })?.tieFormat : undefined);
+    const existingStructureTieFormat =
+      structure.tieFormat ??
+      (structure.tieFormatId ? getTieFormat({ drawDefinition, structure, event })?.tieFormat : undefined);
     const different =
       !existingStructureTieFormat ||
       compareTieFormats({
@@ -191,7 +191,8 @@ export function updateTieFormat({
         drawDefinition,
       });
   } else if (drawDefinition) {
-    processDrawDefinition({ drawDefinition });
+    const drawResult = processDrawDefinition({ drawDefinition });
+    if (drawResult?.error) return decorateResult({ result: drawResult, stack });
     writeTieFormat({ target: drawDefinition, tieFormat: copyTieFormat(tieFormat), event });
     modifiedCount += 1;
   } else {
@@ -207,7 +208,21 @@ export function updateTieFormat({
     tieFormat,
   };
 
-  function processDrawDefinition({ drawDefinition }) {
+  /**
+   * Apply to every drawDefinition in the event, stopping at the first failure.
+   *
+   * Extracted so `updateTieFormat` stays under the cognitive-complexity threshold
+   * of 30 — adding the error checks this fix requires took it to 32.
+   */
+  function processEventDrawDefinitions(): ResultType | undefined {
+    for (const drawDefinition of event?.drawDefinitions ?? []) {
+      const drawResult = processDrawDefinition({ drawDefinition });
+      if (drawResult?.error) return drawResult;
+    }
+    return undefined;
+  }
+
+  function processDrawDefinition({ drawDefinition }): ResultType & { modifiedStructureIds?: string[] } {
     const structures = drawDefinition.structures ?? [];
     const modifiedStructureIds: string[] = [];
 
@@ -216,10 +231,13 @@ export function updateTieFormat({
       if (structure.tieFormat || structure.tieFormatId) continue;
 
       const inheritedTieFormat = eventDefaultTieFormat;
-      const modifiedCount = processStructure({
-        inheritedTieFormat,
-        structure,
-      })?.modifiedMatchUpsCount;
+      // `processStructure` can return MISSING_TIE_FORMAT. Reading only
+      // `modifiedMatchUpsCount` discarded it, and this function returned a NUMBER
+      // so it could not have propagated one anyway — a real failure surfaced as
+      // "nothing was modified" and the mutation reported success.
+      const structureResult = processStructure({ inheritedTieFormat, structure });
+      if (structureResult?.error) return structureResult;
+      const modifiedCount = structureResult?.modifiedMatchUpsCount;
 
       if (modifiedCount) {
         modifiedStructuresCount += 1;
@@ -235,7 +253,7 @@ export function updateTieFormat({
       drawDefinition,
     });
 
-    return modifiedStructureIds.length;
+    return { ...SUCCESS, modifiedStructureIds };
   }
 
   function processStructure({ inheritedTieFormat, structure }): ResultType & {
@@ -266,7 +284,9 @@ export function updateTieFormat({
         if (changesArePossible && !matchUp.tieFormat && !matchUp.tieFormatId) {
           makeChanges({ changes, matchUp, tieFormat, uuids });
         } else if (inheritedTieFormat) {
-          const matchUpTieFormat = matchUp.tieFormat ?? (matchUp.tieFormatId ? event?.tieFormats?.find((tf) => tf.tieFormatId === matchUp.tieFormatId) : undefined);
+          const matchUpTieFormat =
+            matchUp.tieFormat ??
+            (matchUp.tieFormatId ? event?.tieFormats?.find((tf) => tf.tieFormatId === matchUp.tieFormatId) : undefined);
           const different =
             !matchUpTieFormat ||
             compareTieFormats({
