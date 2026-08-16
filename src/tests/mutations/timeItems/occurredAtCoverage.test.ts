@@ -192,7 +192,8 @@ describe('addDrawDefinitionTimeItem — supplied createdAt', () => {
 describe('addExtension — supplied createdAt', () => {
   it('honours a createdAt on the caller extension, and stamps when absent', () => {
     const supplied: any = { extensions: [] };
-    addExtension({ element: supplied, extension: { name: 'x', value: 1, createdAt: OCCURRED } as any });
+    // no cast — `Extension` now declares `createdAt`, which is the point of the type fix
+    addExtension({ element: supplied, extension: { name: 'x', value: 1, createdAt: OCCURRED } });
     expect(supplied.extensions.at(-1).createdAt).toEqual(OCCURRED);
 
     const defaulted: any = { extensions: [] };

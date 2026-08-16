@@ -189,6 +189,11 @@ export enum BallTypeEnum {
 export type BallTypeUnion = `${BallTypeEnum}`;
 
 export interface Extension {
+  // Written by `addExtension` whenever `creationTime` is not disabled, and honoured when
+  // the caller supplies one. Declared here to match runtime: the field has always been
+  // written, but an `Object.assign` bypassed the checker, so the type was silently out of
+  // sync for as long as the field existed. Mirrors {@link TimeItem}.
+  createdAt?: Date | string;
   description?: string;
   name: string;
   value: any;
