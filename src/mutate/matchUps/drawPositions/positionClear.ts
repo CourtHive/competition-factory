@@ -465,6 +465,7 @@ function handleTeamPositionRemoval({
       eventId: event?.eventId,
       matchUp: targetMatchUp,
       drawDefinition,
+      event,
     });
   }
 }
@@ -520,6 +521,7 @@ function updateMatchUpStatusAfterRemoval({
       eventId: event?.eventId,
       matchUp: targetMatchUp,
       drawDefinition,
+      event,
     });
   }
 

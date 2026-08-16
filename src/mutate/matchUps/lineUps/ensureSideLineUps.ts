@@ -67,6 +67,7 @@ export function ensureSideLineUps({
       drawDefinition,
       tournamentId,
       eventId,
+      event,
     });
   }
 }

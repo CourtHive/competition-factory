@@ -23,7 +23,7 @@ import {
   COURT_ORDER,
 } from '@Constants/timeItemConstants';
 
-export function resetDrawDefinition({ tournamentRecord, removeScheduling, removeAssignments, drawDefinition }) {
+export function resetDrawDefinition({ tournamentRecord, removeScheduling, removeAssignments, drawDefinition, event }) {
   if (!drawDefinition) return { error: MISSING_DRAW_DEFINITION };
 
   const isLuckyDraw = isLuckyBasedDraw(drawDefinition.drawType);
@@ -50,6 +50,7 @@ export function resetDrawDefinition({ tournamentRecord, removeScheduling, remove
       matchUpsMap,
       structure,
       removeAssignments,
+      event,
     });
   }
 
@@ -135,6 +136,7 @@ function resetStructureMatchUps({
   isLuckyDraw,
   matchUpsMap,
   structure,
+  event,
 }) {
   const { matchUps: inContextMatchUps, isRoundRobin } = getAllStructureMatchUps({
     afterRecoveryTimes: false,
@@ -160,6 +162,7 @@ function resetStructureMatchUps({
       context: 'resetDrawDefinition',
       drawDefinition,
       matchUp,
+      event,
     });
   }
 }

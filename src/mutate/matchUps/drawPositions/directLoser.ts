@@ -158,6 +158,7 @@ export function directLoser(params): ResultType {
     dualMatchUp,
     matchUpsMap,
     stack,
+    event,
   });
 
   return decorateResult({ result: { ...SUCCESS }, stack, context });
@@ -289,6 +290,7 @@ function propagateLoserLineUp({
   dualMatchUp,
   matchUpsMap,
   stack,
+  event,
 }) {
   if (!dualMatchUp || !projectedWinningSide) return;
 
@@ -318,6 +320,7 @@ function propagateLoserLineUp({
       context: stack,
       drawDefinition,
       eventId,
+      event,
     });
   }
 }

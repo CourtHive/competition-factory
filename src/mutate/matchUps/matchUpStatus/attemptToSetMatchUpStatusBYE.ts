@@ -6,7 +6,7 @@ import { BYE } from '@Constants/matchUpStatusConstants';
 import { SUCCESS } from '@Constants/resultConstants';
 import { INVALID_MATCHUP_STATUS, INVALID_MATCHUP_STATUS_BYE } from '@Constants/errorConditionConstants';
 
-export function attemptToSetMatchUpStatusBYE({ tournamentRecord, drawDefinition, structure, matchUp }) {
+export function attemptToSetMatchUpStatusBYE({ tournamentRecord, drawDefinition, structure, matchUp, event }) {
   const stack = 'attemptToSetMatchUpStatusBYE';
   if (matchUp?.winningSide) {
     return decorateResult({
@@ -36,6 +36,7 @@ export function attemptToSetMatchUpStatusBYE({ tournamentRecord, drawDefinition,
       context: stack,
       drawDefinition,
       matchUp,
+      event,
     });
     return { ...SUCCESS };
   } else {

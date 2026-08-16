@@ -213,7 +213,7 @@ function purgeParticipantFromLineUps({ groupingParticipantId, tournamentRecord, 
   for (const event of tournamentRecord.events ?? []) {
     for (const drawDefinition of event.drawDefinitions ?? []) {
       purgeFromDrawLineUp({ drawDefinition, groupingParticipantId, participantId });
-      purgeFromMatchUpLineUps({ drawDefinition, tournamentRecord, participantId });
+      purgeFromMatchUpLineUps({ drawDefinition, tournamentRecord, participantId, event });
     }
   }
 }
@@ -228,7 +228,7 @@ function purgeFromDrawLineUp({ drawDefinition, groupingParticipantId, participan
   }
 }
 
-function purgeFromMatchUpLineUps({ drawDefinition, tournamentRecord, participantId }) {
+function purgeFromMatchUpLineUps({ drawDefinition, tournamentRecord, participantId, event }) {
   const matchUps = allDrawMatchUps({ drawDefinition, inContext: false }).matchUps ?? [];
 
   for (const matchUp of matchUps) {
@@ -241,6 +241,7 @@ function purgeFromMatchUpLineUps({ drawDefinition, tournamentRecord, participant
           tournamentId: tournamentRecord?.tournamentId,
           drawDefinition,
           matchUp,
+          event,
         });
       }
     }

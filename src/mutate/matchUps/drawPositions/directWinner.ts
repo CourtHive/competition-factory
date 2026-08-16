@@ -67,6 +67,7 @@ export function directWinner({
       dualMatchUp,
       matchUpsMap,
       stack,
+      event,
     });
   }
 
@@ -170,9 +171,7 @@ function directWinnerViaLink({
   }
 
   if (structure?.seedAssignments && structure.structureId !== targetStructureId) {
-    const seedAssignment = structure.seedAssignments.find(
-      ({ participantId }) => participantId === winnerParticipantId,
-    );
+    const seedAssignment = structure.seedAssignments.find(({ participantId }) => participantId === winnerParticipantId);
     const participantId = seedAssignment?.participantId;
     if (seedAssignment && participantId) {
       assignSeed({
@@ -197,6 +196,7 @@ function propagateLineUp({
   dualMatchUp,
   matchUpsMap,
   stack,
+  event,
 }) {
   const side = dualMatchUp.sides?.find((s) => s.sideNumber === projectedWinningSide);
   if (!side?.lineUp) return;
@@ -226,6 +226,7 @@ function propagateLineUp({
       matchUp: targetMatchUp,
       context: stack,
       drawDefinition,
+      event,
     });
   }
 }

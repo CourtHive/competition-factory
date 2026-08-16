@@ -318,6 +318,7 @@ export function updateTieFormat({
           context: stack,
           eventId,
           matchUp,
+          event,
         });
       }
     }

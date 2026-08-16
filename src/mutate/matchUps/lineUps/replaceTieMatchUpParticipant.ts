@@ -194,6 +194,7 @@ export function replaceTieMatchUpParticipantId(params: ReplaceTieMatchUpParticip
     tieMatchUp,
     stack,
     side,
+    event,
   });
 
   if (dualMatchUp) {
@@ -385,6 +386,7 @@ function handleProcessCodes({
   tieMatchUp,
   stack,
   side,
+  event,
 }) {
   if (substitution || side.substitutions?.length === 1) {
     if (substitution) {
@@ -406,6 +408,7 @@ function handleProcessCodes({
         matchUp: tieMatchUp,
         context: stack,
         drawDefinition,
+        event,
       });
     }
   }

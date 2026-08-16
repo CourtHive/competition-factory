@@ -161,6 +161,7 @@ export function luckyDrawAdvancement({
     tournamentId,
     structureId,
     structure,
+    event,
   });
 
   modifyPositionAssignmentsNotice({
@@ -561,6 +562,7 @@ function assignNextRoundPositions({
   tournamentId,
   structureId,
   structure,
+  event,
 }) {
   const allAssignedPositions = new Set(positionAssignments.map((a) => a.drawPosition));
   const allMatchUpPositions = (structure.matchUps ?? []).flatMap((m) => m.drawPositions ?? []).filter(Boolean);
@@ -597,6 +599,7 @@ function assignNextRoundPositions({
       tournamentId,
       structureId,
       matchUp,
+      event,
     });
   }
 
