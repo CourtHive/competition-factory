@@ -1,0 +1,90 @@
+---
+title: Schedule Locks
+---
+
+## Overview
+
+A **Schedule Lock** is a tournament director's declaration that a matchUp's placement is deliberate and must not be moved by bulk or automated scheduling. The marquee match promised centre court at 19:00 survives a "Clear this day", a re-schedule of everything around it, or a committed [schedule scenario](./schedule-scenarios.mdx).
+
+**Key characteristics:**
+
+- **Persisted first-class** on `matchUp.schedule.lock` — no legacy `timeItem` mirror, no `LEGACY` / `DUAL` / `NATIVE` branching.
+- **Guards placement only.** `startTime`, `stopTime`, `resumeTime` and `endTime` record actual play and are never guarded — a pinned match must still be startable, suspendable and completable.
+- **Skipped, never fatal, in bulk paths.** One pinned matchUp cannot abort the clear of the other two hundred; the skipped ids come back as `lockedMatchUpIds`.
+- **Inert rather than removed** once the matchUp completes, or while it has no placement to guard. Nothing is ever unwritten.
+- **Invisible to published views** — a lock is an internal operations annotation, and `lock.reason` is the director's own note.
+- **Unrelated to `mutationLocks`**, which gate whole methods at tournament grain. Different mechanism, different scope; only the word is shared.
+
+## Data Structure
+
+```ts
+type ScheduleLock = {
+  attributes?: ScheduleLockAttribute[]; // absent ⇒ the whole placement is pinned
+  lockedAt?: string; // caller-provided ISO string (factory does not stamp wall-clock)
+  lockedBy?: string;
+  reason?: string; // 'featured' | 'broadcast' | free text
+};
+
+type ScheduleLockAttribute =
+  'allocatedCourts' | 'courtId' | 'courtOrder' | 'scheduledDate' | 'scheduledTime' | 'venueId';
+```
+
+The **presence** of the object is the lock. `{}` pins the entire placement; `{ attributes: ['scheduledTime'] }` pins the time and leaves the court free to move.
+
+## Setting and clearing
+
+```js
+// pin the whole placement
+engine.setMatchUpScheduleLock({
+  lock: { reason: 'featured', lockedBy: userId, lockedAt: new Date().toISOString() },
+  matchUpId,
+  drawId,
+});
+
+// pin only the clock time
+engine.setMatchUpScheduleLock({ lock: { attributes: ['scheduledTime'] }, matchUpId, drawId });
+
+// unlock
+engine.setMatchUpScheduleLock({ lock: null, matchUpId, drawId });
+```
+
+## What a lock stops
+
+The predicate is enforced at every mutation that writes or wipes placement, so there is no path that quietly bypasses it:
+
+| Mutation                                                  | Behaviour on a locked matchUp                                              |
+| --------------------------------------------------------- | -------------------------------------------------------------------------- |
+| `addMatchUpScheduleItems`                                 | Returns `SCHEDULE_LOCKED`; `info` names the locked attributes              |
+| `bulkScheduleMatchUps` / `bulkScheduleTournamentMatchUps` | **Skips** the matchUp, continues with the rest, returns `lockedMatchUpIds` |
+| `clearScheduledMatchUps`                                  | Skips the matchUp, returns `lockedMatchUpIds`                              |
+| `clearMatchUpSchedule`                                    | Returns `SCHEDULE_LOCKED`                                                  |
+| `applyScheduleScenario`                                   | Skips (hand-off to `bulkScheduleMatchUps`), returns `lockedMatchUpIds`     |
+
+Every one of them accepts **`overrideScheduleLock: true`** for callers that have confirmed the intent with the operator — the TMX grid, for example, confirms a drag of a pinned matchUp and then passes the override. **An override moves the placement but does not remove the lock**: only `setMatchUpScheduleLock` does that.
+
+Two paths deliberately ignore locks:
+
+- **`deleteCourt` / `deleteVenue`.** A lock cannot survive the deletion of the court it pins to — keeping the assignment would leave a dangling `courtId`.
+- **`resetDrawDefinition`.** A draw reset discards the schedule wholesale, lock included.
+
+## What a lock does not stop
+
+Automated scheduling never needed guarding: `proAutoSchedule` only fills **empty** grid cells, and `processAlreadyScheduledMatchUps` already counts existing placements against court capacity. A locked matchUp therefore reserves its own slot in every scheduler run for free. The one scheduler path that could have moved it — `clearScheduleDates`, which routes through `clearScheduledMatchUps` — is covered by the table above.
+
+Annotations on a placement stay editable while pinned: `courtAnnotation`, `timeModifiers`, and the official / scorekeeper / timekeeper assignments.
+
+## Release on completion
+
+A lock is **inert** — not deleted — once the matchUp reaches a status in `completedMatchUpStatuses`:
+
+```js
+isScheduleLocked({ matchUp }); // false once matchUpStatus is COMPLETED / RETIRED / WALKOVER / …
+```
+
+This is deliberate. Completed matchUps are already skipped by every bulk scheduling path unless `scheduleCompletedMatchUps` is passed, so a lock has nothing left to guard; releasing it lazily keeps schedule writes off the scoring path entirely and leaves nothing to undo if a score is later removed.
+
+The same inertness applies when a matchUp has **no placement**. A lock left behind by an overridden clear must not make the matchUp silently unschedulable — a failure that would present as "auto-schedule keeps ignoring this match" with nothing in the record to explain it.
+
+## Write-mode parity
+
+`LEGACY` and `DUAL` records keep placement in `timeItems[]`; `NATIVE` keeps it in first-class `matchUp.schedule.*`. The lock predicate reads **both** surfaces, so a lock behaves identically in every `schemaWriteMode`. A first-class-only read would have made locks silently inert in `LEGACY` — the same divergence that once made unscheduling a no-op in `NATIVE`.

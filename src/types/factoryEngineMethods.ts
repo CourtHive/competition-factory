@@ -580,6 +580,7 @@ export type FactoryEngineMethod =
   | 'setMatchUpDailyLimits'
   | 'setMatchUpFormat'
   | 'setMatchUpHomeParticipantId'
+  | 'setMatchUpScheduleLock'
   | 'setMatchUpState'
   | 'setMatchUpStatus'
   | 'setOrderOfFinish'
@@ -1240,6 +1241,7 @@ export const FACTORY_ENGINE_METHODS: readonly FactoryEngineMethod[] = [
   'setMatchUpDailyLimits',
   'setMatchUpFormat',
   'setMatchUpHomeParticipantId',
+  'setMatchUpScheduleLock',
   'setMatchUpState',
   'setMatchUpStatus',
   'setOrderOfFinish',

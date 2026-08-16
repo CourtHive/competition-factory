@@ -8,6 +8,7 @@ import { TournamentRecords } from '@Types/factoryTypes';
 type ApplyScheduleScenarioArgs = {
   tournamentRecords?: TournamentRecords;
   scheduleCompletedMatchUps?: boolean;
+  overrideScheduleLock?: boolean;
   tournamentRecord?: Tournament;
   removePriorValues?: boolean;
   scenarioId: string;
@@ -23,9 +24,20 @@ type ApplyScheduleScenarioArgs = {
  * to `true` to match TMX grid-drop semantics (re-dated matchUps shed stale grid
  * position). The scenario is left in place; the caller decides whether to remove
  * it post-commit. Drift / rebase reconciliation lands in Phase 1.
+ *
+ * Schedule-locked matchUps are skipped for the same reason and by the same
+ * mechanism, and come back as `lockedMatchUpIds` — a scenario cannot silently
+ * move a placement a director pinned. Pass `overrideScheduleLock` to apply the
+ * scenario over locks.
  */
 export function applyScheduleScenario(params: ApplyScheduleScenarioArgs) {
-  const { tournamentRecord, scenarioId, removePriorValues = true, scheduleCompletedMatchUps = false } = params;
+  const {
+    scheduleCompletedMatchUps = false,
+    removePriorValues = true,
+    overrideScheduleLock,
+    tournamentRecord,
+    scenarioId,
+  } = params;
 
   const tournamentRecords =
     params.tournamentRecords ?? (tournamentRecord ? { [tournamentRecord.tournamentId]: tournamentRecord } : undefined);
@@ -42,6 +54,7 @@ export function applyScheduleScenario(params: ApplyScheduleScenarioArgs) {
   const result = bulkScheduleMatchUps({
     scheduleCompletedMatchUps,
     matchUpDetails: scenario.placements,
+    overrideScheduleLock,
     removePriorValues,
     tournamentRecords,
   });

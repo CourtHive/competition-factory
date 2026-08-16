@@ -28,6 +28,7 @@ export { assignMatchUpCourt } from '@Mutate/matchUps/schedule/assignMatchUpCourt
 export { assignMatchUpScorekeeper, removeMatchUpScorekeeper } from '@Mutate/matchUps/schedule/assignMatchUpScorekeeper';
 export { assignMatchUpTimekeeper, removeMatchUpTimekeeper } from '@Mutate/matchUps/schedule/assignMatchUpTimekeeper';
 export { assignMatchUpVenue } from '@Mutate/matchUps/schedule/assignMatchUpVenue';
+export { setMatchUpScheduleLock } from '@Mutate/matchUps/schedule/setMatchUpScheduleLock';
 export { setMatchUpCalledAt } from '@Mutate/matchUps/schedule/setMatchUpCalledAt';
 export { generateBookings } from '@Generators/scheduling/utils/generateBookings';
 export {

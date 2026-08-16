@@ -1,6 +1,7 @@
 import { resolveTournamentRecords } from '@Helpers/parameters/resolveTournamentRecords';
 import { allTournamentMatchUps } from '@Query/matchUps/getAllTournamentMatchUps';
 import { modifyMatchUpNotice } from '@Mutate/notifications/drawNotifications';
+import { isScheduleLocked } from '@Query/matchUp/isScheduleLocked';
 import { allDrawMatchUps } from '@Query/matchUps/getAllDrawMatchUps';
 import { hasSchedule } from '@Query/matchUp/hasSchedule';
 import { findEvent } from '@Acquire/findEvent';
@@ -56,17 +57,20 @@ const SCHEDULE_FIRST_CLASS_ATTRIBUTES = [
 type ClearScheduledMatchUpsArgs = {
   ignoreMatchUpStatuses?: MatchUpStatusUnion[];
   tournamentRecords?: TournamentRecords;
+  overrideScheduleLock?: boolean;
   tournamentRecord?: Tournament;
   scheduleAttributes?: string[];
   scheduledDates: string[];
   venueIds?: string[];
 };
 export function clearScheduledMatchUps(params: ClearScheduledMatchUpsArgs): ResultType & {
+  lockedMatchUpIds?: string[];
   clearedScheduleCount?: number;
 } {
   const {
     scheduleAttributes = ['scheduledDate', 'scheduledTime', 'courtOrder'],
     ignoreMatchUpStatuses = completedMatchUpStatuses,
+    overrideScheduleLock,
     scheduledDates,
     venueIds,
   } = params;
@@ -80,10 +84,12 @@ export function clearScheduledMatchUps(params: ClearScheduledMatchUpsArgs): Resu
     : [];
   if (!tournamentIds?.length) return { error: MISSING_TOURNAMENT_RECORDS };
 
+  const lockedMatchUpIds: string[] = [];
   let clearedScheduleCount = 0;
   for (const tournamentId of tournamentIds) {
     const tournamentRecord = tournamentRecords[tournamentId];
     const result = clearSchedules({
+      overrideScheduleLock,
       ignoreMatchUpStatuses,
       scheduleAttributes,
       tournamentRecord,
@@ -91,20 +97,25 @@ export function clearScheduledMatchUps(params: ClearScheduledMatchUpsArgs): Resu
       venueIds,
     });
     if (result.error) return result;
+    if (result.lockedMatchUpIds?.length) lockedMatchUpIds.push(...result.lockedMatchUpIds);
     clearedScheduleCount += result.clearedScheduleCount ?? 0;
   }
 
-  return { ...SUCCESS, clearedScheduleCount };
+  return lockedMatchUpIds.length
+    ? { ...SUCCESS, clearedScheduleCount, lockedMatchUpIds }
+    : { ...SUCCESS, clearedScheduleCount };
 }
 
 function clearSchedules({
   scheduleAttributes = ['scheduledDate', 'scheduledTime', 'courtOrder'],
   ignoreMatchUpStatuses = completedMatchUpStatuses,
+  overrideScheduleLock,
   tournamentRecord,
   scheduledDates,
   venueIds = [],
 }: ClearScheduledMatchUpsArgs): {
   clearedScheduleCount?: number;
+  lockedMatchUpIds?: string[];
   success?: boolean;
   error?: ErrorType;
 } {
@@ -135,6 +146,7 @@ function clearSchedules({
   });
 
   const tournamentId = tournamentRecord.tournamentId;
+  const lockedMatchUpIds: string[] = [];
   let clearedScheduleCount = 0;
 
   for (const drawId in drawMatchUpIds) {
@@ -143,6 +155,12 @@ function clearSchedules({
       allDrawMatchUps({ drawDefinition, matchUpFilters: { matchUpIds: drawMatchUpIds[drawId] } }).matchUps ?? [];
 
     for (const matchUp of drawMatchUps) {
+      // A director's lock survives a date/venue-scoped clear — the whole point
+      // of pinning the marquee match before rebuilding the day around it.
+      if (!overrideScheduleLock && isScheduleLocked({ matchUp })) {
+        lockedMatchUpIds.push(matchUp.matchUpId);
+        continue;
+      }
       let modified = false;
       // LEGACY / DUAL records store schedule data as timeItems — strip them.
       matchUp.timeItems = (matchUp.timeItems ?? []).filter((timeItem) => {
@@ -175,5 +193,7 @@ function clearSchedules({
     }
   }
 
-  return { ...SUCCESS, clearedScheduleCount };
+  return lockedMatchUpIds.length
+    ? { ...SUCCESS, clearedScheduleCount, lockedMatchUpIds }
+    : { ...SUCCESS, clearedScheduleCount };
 }
