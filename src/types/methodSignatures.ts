@@ -337,6 +337,7 @@ import type {
   removeTournamentExtension,
 } from '@Mutate/extensions/addRemoveExtensions';
 import type { addDrawEntries } from '@Mutate/drawDefinitions/addDrawEntries';
+import type { addTournamentOtherId, setTournamentOtherIds } from '@Mutate/tournaments/tournamentOtherIds';
 import type { allPlayoffPositionsFilled, isCompletedStructure } from '@Query/drawDefinition/structureActions';
 import type { bulkMatchUpStatusUpdate } from '@Mutate/events/bulkMatchUpStatusUpdate';
 import type { completeDrawMatchUps } from '@Generators/mocks/completeDrawMatchUps';
@@ -392,6 +393,7 @@ import type { tournamentMatchUps } from '@Query/matchUps/getTournamentMatchUps';
 import type { validateSchedulingProfile } from '@Validators/validateSchedulingProfile';
 import type { addCertification } from '@Mutate/officiating/addCertification';
 import type { addCollectionGroup } from '@Mutate/tieFormat/addCollectionGroup';
+import type { addDrawOtherId, setDrawOtherIds } from '@Mutate/drawDefinitions/drawOtherIds';
 import type { addParticipants } from '@Mutate/participants/addParticipants';
 import type { analyzeTournament } from '@Query/tournaments/analyzeTournament';
 import type { calculateMatchStatistics, enrichPointHistory, getQuickStats } from '@Query/scoring/statistics/standalone';
@@ -613,6 +615,7 @@ export interface MethodSignatures {
   addDrawDefinitionExtension: EngineMethod<typeof addDrawDefinitionExtension>;
   addDrawDefinitionTimeItem: EngineMethod<typeof addDrawDefinitionTimeItem>;
   addDrawEntries: EngineMethod<typeof addDrawEntries>;
+  addDrawOtherId: EngineMethod<typeof addDrawOtherId>;
   addDynamicRatings: EngineMethod<typeof addDynamicRatings>;
   addEvaluation: EngineMethod<typeof addEvaluation>;
   addEvaluationPolicy: EngineMethod<typeof addEvaluationPolicy>;
@@ -657,6 +660,7 @@ export interface MethodSignatures {
   addSuspension: EngineMethod<typeof addSuspension>;
   addTimeItem: EngineMethod<typeof addTimeItem>;
   addTournamentExtension: EngineMethod<typeof addTournamentExtension>;
+  addTournamentOtherId: EngineMethod<typeof addTournamentOtherId>;
   addTournamentTimeItem: EngineMethod<typeof addTournamentTimeItem>;
   addVenue: EngineMethod<typeof addVenue>;
   addVenueOtherId: EngineMethod<typeof addVenueOtherId>;
@@ -1103,6 +1107,7 @@ export interface MethodSignatures {
   ScoringEngine: EngineMethod<typeof ScoringEngine>;
   seedWithdrawalCascade: EngineMethod<typeof seedWithdrawalCascade>;
   setDelegatedOutcome: EngineMethod<typeof setDelegatedOutcome>;
+  setDrawOtherIds: EngineMethod<typeof setDrawOtherIds>;
   setDrawParticipantRepresentativeIds: EngineMethod<typeof setDrawParticipantRepresentativeIds>;
   setDrawPositionPreferences: EngineMethod<typeof setDrawPositionPreferences>;
   setEntryPosition: EngineMethod<typeof setEntryPosition>;
@@ -1133,6 +1138,7 @@ export interface MethodSignatures {
   setTournamentLocalTimeZone: EngineMethod<typeof setTournamentLocalTimeZone>;
   setTournamentName: EngineMethod<typeof setTournamentName>;
   setTournamentNotes: EngineMethod<typeof setTournamentNotes>;
+  setTournamentOtherIds: EngineMethod<typeof setTournamentOtherIds>;
   setTournamentStartDate: EngineMethod<typeof setTournamentStartDate>;
   setTournamentStatus: EngineMethod<typeof setTournamentStatus>;
   setTournamentTier: EngineMethod<typeof setTournamentTier>;

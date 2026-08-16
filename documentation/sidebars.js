@@ -149,6 +149,7 @@ module.exports = {
             'concepts/timeItems',
             'concepts/extensions',
             'concepts/caller-supplied-identity',
+            'concepts/unified-identity',
           ],
         },
         {

@@ -19,6 +19,13 @@ export interface ReadModelTournamentRow {
   end_date: string | null;
   city: string | null;
   published: boolean; // aggregate: order-of-play OR participants published
+  // The system the RECORD was acquired from — the `tournamentOtherIds[]` entry flagged
+  // `isOrigin`, flattened. `origin_tournament_id` is the ORIGIN organisation's id and is
+  // deliberately independent of `tournament_id` above. Independent, too, of the events
+  // table's origin columns: a record acquired wholesale from one organisation can carry
+  // events sanctioned by others. Both null when no origin is declared.
+  origin_organisation_id: string | null;
+  origin_tournament_id: string | null;
 }
 
 export interface ReadModelParticipantPublishRow {
@@ -120,6 +127,15 @@ export interface ReadModelDrawRow {
   draw_name: string | null;
   draw_type: string | null;
   match_up_format: string | null;
+  // The system this DRAW came from — the `drawOtherIds[]` entry flagged `isOrigin`,
+  // flattened. Each column is independently nullable because an origin supplies only the
+  // grains it models: a UTR flight yields origin_tournament_id (UTR's event id) +
+  // origin_draw_id (the flight GUID) and leaves origin_event_id null, UTR having no
+  // event-grain object at all.
+  origin_organisation_id: string | null;
+  origin_tournament_id: string | null;
+  origin_event_id: string | null;
+  origin_draw_id: string | null;
 }
 
 export interface ReadModelStructureRow {

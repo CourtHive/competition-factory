@@ -72,6 +72,8 @@ export const methodScopeMap: Record<string, MutationLockScope> = {
   renameStructures: 'DRAWS',
   assignDrawPositionBye: 'DRAWS',
   addDrawDefinitionTimeItem: 'DRAWS',
+  addDrawOtherId: 'DRAWS',
+  setDrawOtherIds: 'DRAWS',
   removeStructure: 'DRAWS',
   resetQualifyingStructure: 'DRAWS',
   swapDrawPositionAssignments: 'DRAWS',
@@ -256,6 +258,8 @@ export const methodScopeMap: Record<string, MutationLockScope> = {
   setTournamentStartDate: 'TOURNAMENT',
   addTournamentExtension: 'TOURNAMENT',
   removeTournamentExtension: 'TOURNAMENT',
+  addTournamentOtherId: 'TOURNAMENT',
+  setTournamentOtherIds: 'TOURNAMENT',
 
   // TIE_FORMAT — tieFormatGovernor/mutate
   modifyCollectionDefinition: 'TIE_FORMAT',

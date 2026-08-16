@@ -245,6 +245,9 @@ export interface DrawDefinition {
   drawId: string;
   drawName?: string;
   drawOrder?: number;
+  // CODES first-class: this draw's identity in OTHER organisations' systems. The entry
+  // flagged `isOrigin` is the system the draw came from. See {@link UnifiedDrawID}.
+  drawOtherIds?: UnifiedDrawID[];
   drawRepresentativeIds?: string[];
   drawStatus?: DrawStatusUnion;
   drawType?: DrawTypeUnion;
@@ -1781,10 +1784,63 @@ export interface UnifiedTournamentID {
   createdAt?: Date | string;
   extensions?: Extension[];
   isMock?: boolean;
+  /** marks this entry as the source the RECORD originated from — the ingest or
+   *  sanctioning system the whole tournament was acquired from. At most one entry per
+   *  tournament should carry it; every other entry is a system the tournament is merely
+   *  also known to (typically acquired by copy-back).
+   *
+   *  Mirrors {@link UnifiedEventID.isOrigin} one grain up. The two are independent: a
+   *  record acquired wholesale from one organisation can still carry events sanctioned
+   *  by others, so neither flag can be inferred from the other.
+   *
+   *  Unlike `UnifiedEventID`, `tournamentId` here stays REQUIRED. `eventId` is optional
+   *  at event grain because the origin may not hold the event yet; at tournament grain
+   *  the id is the entire payload, and an entry without one carries no identity at all. */
+  isOrigin?: boolean;
   notes?: string;
   organisationId: string;
   timeItems?: TimeItem[];
   tournamentId: string;
+  uniqueOrganisationName?: string;
+  updatedAt?: Date | string;
+}
+
+/**
+ * CODES first-class: a DRAW's identity in another organisation's system — the
+ * draw-grain member of the `Unified*ID` family ({@link UnifiedTournamentID},
+ * {@link UnifiedEventID}, {@link UnifiedParticipantID}, {@link UnifiedPersonID},
+ * {@link UnifiedVenueID}).
+ *
+ * Carried on `DrawDefinition.drawOtherIds[]`. It exists because an outside organisation's
+ * draw-grain object is frequently the ONLY grain that carries the identity and the
+ * metadata worth addressing. UTR is the motivating case: a UTR "flight" is a real remote
+ * object with its own GUID, its own `drawSize`, and its own UTR-band bounds, and it maps
+ * 1:1 to a CODES `drawDefinition` — while UTR has no event-grain object at all, so the
+ * CODES event above it is a synthetic gender × matchUpType grouping with no counterpart
+ * to record.
+ *
+ * Every id attribute is OPTIONAL and belongs to `organisationId`, never to the carrying
+ * record. Populate only the ones the origin system actually has: UTR supplies
+ * `tournamentId` (its event id) + `drawId` (the flight GUID) and no `eventId`, and an
+ * origin that models events supplies `eventId` too. `drawId` is absent until the draw
+ * exists there, which is the copy-back case — see {@link UnifiedEventID}.
+ */
+export interface UnifiedDrawID {
+  createdAt?: Date | string;
+  /** that organisation's id for this draw */
+  drawId?: string;
+  /** that organisation's id for the event carrying this draw, when it models events */
+  eventId?: string;
+  extensions?: Extension[];
+  isMock?: boolean;
+  /** marks this entry as the source the draw originated from. At most one entry per draw
+   *  should carry it. */
+  isOrigin?: boolean;
+  notes?: string;
+  organisationId: string;
+  timeItems?: TimeItem[];
+  /** **that organisation's** tournamentId — never the carrying record's */
+  tournamentId?: string;
   uniqueOrganisationName?: string;
   updatedAt?: Date | string;
 }

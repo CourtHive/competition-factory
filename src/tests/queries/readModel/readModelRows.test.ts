@@ -150,6 +150,8 @@ describe('tournamentRow', () => {
       end_date: null,
       city: null,
       published: false,
+      origin_organisation_id: null,
+      origin_tournament_id: null,
     });
   });
 
@@ -199,6 +201,10 @@ describe('drawRow', () => {
       draw_name: 'Main',
       draw_type: 'SINGLE_ELIMINATION',
       match_up_format: 'SET3-S:6/TB7',
+      origin_organisation_id: null,
+      origin_tournament_id: null,
+      origin_event_id: null,
+      origin_draw_id: null,
     });
     expect(drawRow({ drawId: 'd2' }, 't1', null, undefined)).toMatchObject({
       draw_id: 'd2',
