@@ -411,6 +411,7 @@ export type FactoryEngineMethod =
   | 'isComplete'
   | 'isCompletedStructure'
   | 'isEmbargoed'
+  | 'isScheduleLocked'
   | 'isValid'
   | 'isValidForQualifying'
   | 'isValidMatchUpFormat'
@@ -422,6 +423,7 @@ export type FactoryEngineMethod =
   | 'luckyLoserDrawPositionAssignment'
   | 'matchUpActions'
   | 'matchUpScheduleChange'
+  | 'matchUpScheduleLocked'
   | 'mcpValidator'
   | 'mergeAdjacentSegments'
   | 'mergeFacilitySchedule'
@@ -1072,6 +1074,7 @@ export const FACTORY_ENGINE_METHODS: readonly FactoryEngineMethod[] = [
   'isComplete',
   'isCompletedStructure',
   'isEmbargoed',
+  'isScheduleLocked',
   'isValid',
   'isValidForQualifying',
   'isValidMatchUpFormat',
@@ -1083,6 +1086,7 @@ export const FACTORY_ENGINE_METHODS: readonly FactoryEngineMethod[] = [
   'luckyLoserDrawPositionAssignment',
   'matchUpActions',
   'matchUpScheduleChange',
+  'matchUpScheduleLocked',
   'mcpValidator',
   'mergeAdjacentSegments',
   'mergeFacilitySchedule',

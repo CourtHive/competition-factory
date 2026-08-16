@@ -1,7 +1,7 @@
 import { resolveTournamentRecords } from '@Helpers/parameters/resolveTournamentRecords';
 import { allTournamentMatchUps } from '@Query/matchUps/getAllTournamentMatchUps';
 import { modifyMatchUpNotice } from '@Mutate/notifications/drawNotifications';
-import { isScheduleLocked } from '@Query/matchUp/isScheduleLocked';
+import { matchUpScheduleLocked } from '@Query/matchUp/isScheduleLocked';
 import { allDrawMatchUps } from '@Query/matchUps/getAllDrawMatchUps';
 import { hasSchedule } from '@Query/matchUp/hasSchedule';
 import { findEvent } from '@Acquire/findEvent';
@@ -157,7 +157,7 @@ function clearSchedules({
     for (const matchUp of drawMatchUps) {
       // A director's lock survives a date/venue-scoped clear — the whole point
       // of pinning the marquee match before rebuilding the day around it.
-      if (!overrideScheduleLock && isScheduleLocked({ matchUp })) {
+      if (!overrideScheduleLock && matchUpScheduleLocked({ matchUp })) {
         lockedMatchUpIds.push(matchUp.matchUpId);
         continue;
       }

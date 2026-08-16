@@ -425,3 +425,48 @@ it('locks silently when notices are disabled', () => {
   expect(result.success).toEqual(true);
   expect(scheduleOf(lockedId)?.lock).not.toBeUndefined();
 });
+
+it('answers isScheduleLocked from ids, and returns the lock so a caller can say why', () => {
+  const { lockedId, otherId } = seed();
+  lock(lockedId, { reason: 'broadcast' });
+
+  let byIds: any = tournamentEngine.isScheduleLocked({ matchUpId: lockedId, drawId: DRAW_ID });
+  expect(byIds.scheduleLocked).toEqual(true);
+  expect(byIds.lock.reason).toEqual('broadcast');
+
+  let unlocked: any = tournamentEngine.isScheduleLocked({ matchUpId: otherId, drawId: DRAW_ID });
+  expect(unlocked.scheduleLocked).toEqual(false);
+  expect(unlocked.lock).toBeUndefined();
+});
+
+it('answers isScheduleLocked from a matchUp object — the cheap form for a table of rows', () => {
+  const { lockedId } = seed();
+  lock(lockedId);
+
+  const matchUp = tournamentEngine.allTournamentMatchUps().matchUps.find((m: any) => m.matchUpId === lockedId);
+  let result: any = tournamentEngine.isScheduleLocked({ matchUp });
+  expect(result.scheduleLocked).toEqual(true);
+});
+
+it('reports a lock that exists but is inert, rather than hiding it', () => {
+  // Completed ⇒ the lock stops applying, but a caller asking "why is this
+  // pinned?" should still see the record rather than a bare false.
+  const { lockedId } = seed();
+  lock(lockedId, { reason: 'featured' });
+  const { outcome } = mocksEngine.generateOutcomeFromScoreString({
+    matchUpStatus: COMPLETED,
+    scoreString: '6-1 6-1',
+    winningSide: 1,
+  });
+  expect(tournamentEngine.setMatchUpStatus({ outcome, matchUpId: lockedId, drawId: DRAW_ID }).success).toEqual(true);
+
+  let result: any = tournamentEngine.isScheduleLocked({ matchUpId: lockedId, drawId: DRAW_ID });
+  expect(result.scheduleLocked).toEqual(false);
+  expect(result.lock.reason).toEqual('featured');
+});
+
+it('errors rather than guessing when neither a matchUp nor a resolvable id is given', () => {
+  seed();
+  expect(tournamentEngine.isScheduleLocked({ drawId: DRAW_ID }).error).not.toBeUndefined();
+  expect(tournamentEngine.isScheduleLocked({ matchUpId: 'nope', drawId: DRAW_ID }).error).not.toBeUndefined();
+});
