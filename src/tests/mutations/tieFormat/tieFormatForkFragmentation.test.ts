@@ -119,6 +119,43 @@ describe('shared tieFormat does not fragment on removeCollectionDefinition', () 
     expect(result.error).toEqual(INSUFFICIENT_UUIDS);
   });
 
+  it('leaves NO orphaned entries, even after re-aggregating', () => {
+    // The fragmentation had a second-order cost. Pre-fix, the three identical
+    // copies survived as stored entries; re-running aggregation de-duplicated the
+    // REFERENCES to one id but left the other two stranded with no referent:
+    //
+    //   pre-fix:   after remove  stored 4 / orphans 0
+    //              re-aggregate  stored 4 / orphans 2
+    //   post-fix:  after remove  stored 2 / orphans 0
+    //              re-aggregate  stored 2 / orphans 0
+    //
+    // Measured both ways by checking out master's writeTieFormat alongside this
+    // fix. So orphan accumulation on this path was an ARTIFACT of the
+    // fragmentation, not an independent defect — which is why no
+    // `removeOrphanedTieFormats` call is added here. `resetTieFormat` remains its
+    // only production caller, and that stays correct.
+    const { event, eventId, drawId } = aggregatedTeamEvent();
+    const collectionId = event.tieFormats[0].collectionDefinitions[0].collectionId;
+
+    tournamentEngine.removeCollectionDefinition({ drawId, eventId, collectionId });
+    expect(tournamentEngine.aggregateTieFormats().success).toEqual(true);
+
+    const after = tournamentEngine.getEvent({ eventId }).event;
+    const referenced = new Set<string>();
+    if (after.tieFormatId) referenced.add(after.tieFormatId);
+    for (const dd of after.drawDefinitions ?? []) {
+      if (dd.tieFormatId) referenced.add(dd.tieFormatId);
+      for (const st of dd.structures ?? []) if (st.tieFormatId) referenced.add(st.tieFormatId);
+    }
+    for (const id of teamTieFormatIds()) if (id) referenced.add(id);
+
+    const orphans = (after.tieFormats ?? [])
+      .map((tf: any) => tf.tieFormatId)
+      .filter((id: string) => !referenced.has(id));
+
+    expect(orphans).toEqual([]);
+  });
+
   it('the removed collection is actually gone from the shared format', () => {
     // Guards against "de-duplicated" turning into "did not apply the edit".
     const { event, eventId, drawId } = aggregatedTeamEvent();
