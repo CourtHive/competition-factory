@@ -236,6 +236,7 @@ export function assignTieMatchUpParticipantId(
       matchUp: dualMatchUp,
       context: stack,
       drawDefinition,
+      event,
     });
 
   if (deletedParticipantId) {

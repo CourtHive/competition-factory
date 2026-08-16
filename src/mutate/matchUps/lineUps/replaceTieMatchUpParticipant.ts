@@ -203,6 +203,7 @@ export function replaceTieMatchUpParticipantId(params: ReplaceTieMatchUpParticip
       matchUp: dualMatchUp,
       context: stack,
       drawDefinition,
+      event,
     });
   }
 
