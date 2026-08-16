@@ -11,12 +11,18 @@ import { createSubOrderMap } from '@Query/structure/createSubOrderMap';
 import { getPublishState } from '@Query/publishing/getPublishState';
 import { structureSort } from '@Functions/sorters/structureSort';
 import { findStructure } from '@Acquire/findStructure';
+import { PayloadProfileEnum } from '@Types/tournamentTypes';
 import { findExtension } from '@Acquire/findExtension';
 import { makeDeepCopy } from '@Tools/makeDeepCopy';
 import { xa } from '@Tools/extractAttributes';
 
 // constants and types
-import { ErrorType, MISSING_DRAW_DEFINITION, UNLINKED_STRUCTURES } from '@Constants/errorConditionConstants';
+import {
+  ErrorType,
+  INVALID_VALUES,
+  MISSING_DRAW_DEFINITION,
+  UNLINKED_STRUCTURES,
+} from '@Constants/errorConditionConstants';
 import { CONSOLATION, MAIN, PLAY_OFF, QUALIFYING } from '@Constants/drawDefinitionConstants';
 import { PARTICIPANT_ID } from '@Constants/attributeConstants';
 import { DISPLAY, TALLY } from '@Constants/extensionConstants';
@@ -60,7 +66,14 @@ export function getDrawData(params): {
     sortConfig,
     context,
     event,
+    structuresProfile = PayloadProfileEnum.FULL,
   } = params;
+
+  // Unknown value is an ERROR, never a silent fall-through to FULL — a typo must not quietly return the
+  // full payload a caller was explicitly trying to avoid. Mirrors getEventData's drawsProfile.
+  if (!Object.values(PayloadProfileEnum).includes(structuresProfile as PayloadProfileEnum)) {
+    return { error: INVALID_VALUES } as any;
+  }
 
   if (!drawDefinition) return { error: MISSING_DRAW_DEFINITION };
 
@@ -92,7 +105,45 @@ export function getDrawData(params): {
 
   let drawActive = false;
   let participantPlacements = false; // if any positionAssignments include a participantId
+  /**
+   * Cheap per-structure metadata — no `getAllStructureMatchUps`, no participant hydration.
+   *
+   * `structureActive` / `structureCompleted` are kept because both reduce `matchUpStatus`, which is
+   * first-class on the RAW matchUp — the same reasoning that keeps drawGenerated/drawCompleted in a
+   * draw stub. The recursion into nested `structures[]` is load-bearing: round-robin containers hold
+   * their matchUps one level down, and a flat read reports every such structure as inactive.
+   *
+   * Absent by design: roundMatchUps, roundProfile, participantResults, seedAssignments,
+   * positionAssignments and report — they cannot be produced without the work this profile skips.
+   */
+  const buildStructureStub = (structureId) => {
+    const { structure } = findStructure({ drawDefinition, structureId });
+    const leafMatchUps = (function collect(structs) {
+      return (structs ?? []).flatMap((st) => (st?.structures?.length ? collect(st.structures) : (st?.matchUps ?? [])));
+    })(structure ? [structure] : []);
+    const completedStatuses = [...completedMatchUpStatuses, BYE];
+    const displaySettings = findExtension({ element: structure, name: DISPLAY }).extension?.value;
+
+    return {
+      stageSequence: structure?.stageSequence,
+      structureName: structure?.structureName,
+      structureType: structure?.structureType,
+      finishingPosition: structure?.finishingPosition,
+      matchUpFormat: structure?.matchUpFormat,
+      stage: structure?.stage,
+      display: displaySettings?.[PUBLIC_DISPLAY] ?? displaySettings,
+      structureActive: leafMatchUps.some(
+        (matchUp) => !!matchUp?.winningSide || !!matchUp?.score?.scoreStringSide1 || matchUp?.matchUpStatus === BYE,
+      ),
+      structureCompleted:
+        leafMatchUps.length > 0 && leafMatchUps.every((matchUp) => completedStatuses.includes(matchUp?.matchUpStatus)),
+      structureId,
+    };
+  };
+
   const groupedStructures = structureGroups.map((structureIds) => {
+    if (structuresProfile === PayloadProfileEnum.STUBS) return structureIds.map(buildStructureStub);
+
     const completedStructures = {};
     const structures = structureIds
       .map((structureId) => {

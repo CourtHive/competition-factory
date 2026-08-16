@@ -430,6 +430,7 @@ const {
 } = engine.getDrawData({
   allParticipantResults, // optional boolean; include round statistics per structure even for elimination structures
   contextProfile, // optional: { inferGender: true, withCompetitiveness: true, withScaleValues: true, exclude: ['attribute', 'to', 'exclude']}
+  structuresProfile, // optional: 'FULL' (default) | 'STUBS' — how much of each structure to return
   drawId,
 });
 ```
@@ -539,6 +540,31 @@ const { events } = engine.getEvents({
 ```
 
 ---
+
+### structuresProfile
+
+The structure-grain counterpart of [`drawsProfile`](#drawsprofile). `STUBS` skips
+`getAllStructureMatchUps` entirely and returns cheap per-structure metadata.
+
+A structure stub carries:
+
+```js
+{
+  structureId, structureName, structureType, stage, stageSequence,
+  finishingPosition, matchUpFormat, display,
+  structureActive,     // boolean - any matchUp played
+  structureCompleted,  // boolean - every matchUp in a completed status
+}
+```
+
+`structureActive` and `structureCompleted` are included because both reduce `matchUpStatus`, which is
+available on the un-hydrated matchUp — so a structure list still renders a status column for free.
+
+**Absent** from a stub: `roundMatchUps`, `roundProfile`, `participantResults`, `seedAssignments`,
+`positionAssignments` and `report`. None can be produced without the assembly this profile exists to skip.
+
+Purely additive — omitting it is byte-identical to `FULL`, and an unrecognised value returns
+`INVALID_VALUES` rather than falling back.
 
 ## getEventData
 

@@ -6,7 +6,7 @@ import { expect, it, describe } from 'vitest';
 import { SINGLE_ELIMINATION, ROUND_ROBIN, COMPASS } from '@Constants/drawDefinitionConstants';
 import { completedMatchUpStatuses, BYE } from '@Constants/matchUpStatusConstants';
 import { INVALID_VALUES } from '@Constants/errorConditionConstants';
-import { DrawsProfileEnum } from '@Types/tournamentTypes';
+import { PayloadProfileEnum } from '@Types/tournamentTypes';
 
 const seed = { nonRandom: 1 };
 
@@ -45,7 +45,7 @@ describe('getEventData drawsProfile', () => {
     const eventId = loadDraw({ drawSize: 16, drawType: COMPASS });
 
     const omitted = tournamentEngine.getEventData({ eventId });
-    const explicit = tournamentEngine.getEventData({ eventId, drawsProfile: DrawsProfileEnum.FULL });
+    const explicit = tournamentEngine.getEventData({ eventId, drawsProfile: PayloadProfileEnum.FULL });
 
     expect(JSON.stringify(omitted)).toEqual(JSON.stringify(explicit));
     expect(omitted.eventData.drawsData[0].structures?.length).toBeGreaterThan(0);
@@ -64,7 +64,7 @@ describe('getEventData drawsProfile', () => {
     const eventId = loadDraw({ drawSize: 32, drawType: SINGLE_ELIMINATION });
 
     const full = tournamentEngine.getEventData({ eventId });
-    const stubs = tournamentEngine.getEventData({ eventId, drawsProfile: DrawsProfileEnum.STUBS });
+    const stubs = tournamentEngine.getEventData({ eventId, drawsProfile: PayloadProfileEnum.STUBS });
 
     const stub = stubs.eventData.drawsData[0];
     expect(stub.structures).toBeUndefined();
@@ -82,7 +82,7 @@ describe('getEventData drawsProfile', () => {
     // Regression guard: FULL ends with `.filter((drawData) => drawData.structures?.length)`, which
     // would delete every stub if stubs were routed through the same pipeline.
     const eventId = loadDraw({ drawSize: 16, drawType: SINGLE_ELIMINATION });
-    const stubs = tournamentEngine.getEventData({ eventId, drawsProfile: DrawsProfileEnum.STUBS });
+    const stubs = tournamentEngine.getEventData({ eventId, drawsProfile: PayloadProfileEnum.STUBS });
     expect(stubs.eventData.drawsData.length).toEqual(1);
   });
 
@@ -97,7 +97,7 @@ describe('getEventData drawsProfile', () => {
       // untouched
       let eventId = loadDraw(profile);
       let full = tournamentEngine.getEventData({ eventId });
-      let stubs = tournamentEngine.getEventData({ eventId, drawsProfile: DrawsProfileEnum.STUBS });
+      let stubs = tournamentEngine.getEventData({ eventId, drawsProfile: PayloadProfileEnum.STUBS });
       expect(stubs.eventData.drawsData[0].drawGenerated).toEqual(!!full.eventData.drawsData[0].drawGenerated);
       expect(stubs.eventData.drawsData[0].drawCompleted).toEqual(!!full.eventData.drawsData[0].drawCompleted);
       expect(stubs.eventData.drawsData[0].drawCompleted).toEqual(false);
@@ -106,7 +106,7 @@ describe('getEventData drawsProfile', () => {
       eventId = loadDraw(profile);
       completeAll();
       full = tournamentEngine.getEventData({ eventId });
-      stubs = tournamentEngine.getEventData({ eventId, drawsProfile: DrawsProfileEnum.STUBS });
+      stubs = tournamentEngine.getEventData({ eventId, drawsProfile: PayloadProfileEnum.STUBS });
       expect(stubs.eventData.drawsData[0].drawCompleted).toEqual(!!full.eventData.drawsData[0].drawCompleted);
       expect(stubs.eventData.drawsData[0].drawCompleted).toEqual(true);
       expect(completedStatuses.length).toBeGreaterThan(1);
