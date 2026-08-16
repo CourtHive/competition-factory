@@ -1,7 +1,7 @@
 import { getPositionAssignments } from '@Query/drawDefinition/positionsGetter';
 import { addNotice, deleteNotice } from '@Global/state/globalState';
 import { requireParams } from '@Helpers/parameters/requireParams';
-import { eventOrigin } from '@Query/readModel/readModelRows';
+import { drawOrigin, eventOrigin } from '@Query/readModel/readModelRows';
 
 // Constants and types
 import { ErrorType, MISSING_DRAW_DEFINITION, MISSING_MATCHUP } from '@Constants/errorConditionConstants';
@@ -155,7 +155,12 @@ export function modifyMatchUpNotice({
   // was just touched (complements the drawDefinition + structure
   // timestamps written above via `modifyDrawNotice`).
   stampMatchUpUpdatedAt(matchUp);
-  const origin = eventOrigin(event);
+  // Most-specific grain wins. A matchUp lives in a DRAW, and an origin system supplies only the grains
+  // it actually models — a UTR flight carries tournament + draw ids with NO event grain at all
+  // (see drawOrigin in readModelRows). Resolving only the event origin would leave those notices with
+  // no attribution whatsoever, which is the case fan-out most needs. One coherent origin per notice
+  // rather than two organisationIds that could disagree.
+  const origin = drawOrigin(drawDefinition) ?? eventOrigin(event);
   addNotice({
     topic: MODIFY_MATCHUP,
     // eventId/drawId/structureId ride the ENVELOPE, not just the entity. A subscriber that only needs
@@ -173,6 +178,7 @@ export function modifyMatchUpNotice({
       originOrganisationId: origin?.organisationId,
       originTournamentId: origin?.tournamentId,
       originEventId: origin?.eventId,
+      originDrawId: (origin as any)?.drawId,
       context,
     },
     key: matchUp.matchUpId,
