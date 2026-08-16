@@ -1,12 +1,12 @@
 import { setSubscriptions } from '@Global/state/globalState';
-import * as readModel from '@Query/readModel';
 import mocksEngine from '@Assemblies/engines/mock';
 import tournamentEngine from '@Engines/syncEngine';
+import * as readModel from '@Query/readModel';
 import { describe, expect, it } from 'vitest';
 
 // constants and types
-import { MODIFY_DRAW_DEFINITION } from '@Constants/topicConstants';
 import { SINGLE_ELIMINATION } from '@Constants/drawDefinitionConstants';
+import { MODIFY_DRAW_DEFINITION } from '@Constants/topicConstants';
 
 /**
  * `drawOtherIds` is the draw-grain member of the `Unified*ID` family, added because an

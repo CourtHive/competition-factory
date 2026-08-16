@@ -1,7 +1,7 @@
 import { setSubscriptions } from '@Global/state/globalState';
-import * as readModel from '@Query/readModel';
 import mocksEngine from '@Assemblies/engines/mock';
 import tournamentEngine from '@Engines/syncEngine';
+import * as readModel from '@Query/readModel';
 import { describe, expect, it } from 'vitest';
 
 // constants and types
@@ -96,6 +96,47 @@ describe('addTournamentOtherId', () => {
 
     const { tournamentRecord } = tournamentEngine.getTournament();
     expect(readModel.tournamentOrigin(tournamentRecord)?.organisationId).toEqual('UTR');
+  });
+
+  // The upsert refuses to MOVE isOrigin to a different organisation, but promoting the entry
+  // that already holds the slot is the ordinary copy-back case and must work.
+  it('promotes an existing entry to origin, and updates a changed organisation name', () => {
+    seed();
+    tournamentEngine.addTournamentOtherId({ organisationId: 'UTR', otherTournamentId: '306618' });
+
+    let stored = tournamentEngine.getTournament().tournamentRecord.tournamentOtherIds[0];
+    expect(stored.isOrigin).toBeUndefined();
+
+    let result: any = tournamentEngine.addTournamentOtherId({
+      uniqueOrganisationName: 'Universal Tennis',
+      otherTournamentId: '306618',
+      organisationId: 'UTR',
+      isOrigin: true,
+    });
+    expect(result.success).toEqual(true);
+
+    stored = tournamentEngine.getTournament().tournamentRecord.tournamentOtherIds[0];
+    expect(stored.isOrigin).toEqual(true);
+    expect(stored.uniqueOrganisationName).toEqual('Universal Tennis');
+    expect(stored.updatedAt).toBeDefined();
+
+    // a name-only change is still a change — it must not be swallowed as a no-op
+    result = tournamentEngine.addTournamentOtherId({
+      uniqueOrganisationName: 'Universal Tennis (UTR)',
+      otherTournamentId: '306618',
+      organisationId: 'UTR',
+    });
+    expect(result.success).toEqual(true);
+    stored = tournamentEngine.getTournament().tournamentRecord.tournamentOtherIds[0];
+    expect(stored.uniqueOrganisationName).toEqual('Universal Tennis (UTR)');
+    expect(stored.isOrigin).toEqual(true); // promotion is not undone by an unrelated update
+  });
+
+  it('clearing when nothing is set is a silent no-op rather than an error', () => {
+    seed();
+    const result: any = tournamentEngine.setTournamentOtherIds({ tournamentOtherIds: null });
+    expect(result.success).toEqual(true);
+    expect(tournamentEngine.getTournament().tournamentRecord.tournamentOtherIds).toBeUndefined();
   });
 
   it('requires organisationId and otherTournamentId', () => {
