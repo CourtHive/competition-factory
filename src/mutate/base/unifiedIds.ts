@@ -18,6 +18,8 @@ import { INVALID_VALUES, MISSING_VALUE } from '@Constants/errorConditionConstant
 /** The id attributes belonging to the OTHER organisation, keyed by attribute name. */
 type OriginValues = Record<string, string | undefined>;
 
+type CheckResult = { error?: any; info?: string } | undefined;
+
 /**
  * Rejects an array carrying more than one `isOrigin` entry.
  *
@@ -25,9 +27,11 @@ type OriginValues = Record<string, string | undefined>;
  * `find` the first flagged entry, so a malformed record read from storage projects
  * deterministically rather than throwing. This is the write-side counterpart: a caller
  * cannot CREATE that ambiguity through a factory mutation.
+ *
+ * Not exported — `checkUnifiedIds` is the only entry point, and it has already established
+ * that `entries` is an array by the time this runs.
  */
-export function checkSingleOrigin(entries: any[] | undefined): { error?: any; info?: string } | undefined {
-  if (!Array.isArray(entries)) return undefined;
+function checkSingleOrigin(entries: any[]): CheckResult {
   const flagged = entries.filter((entry: any) => entry?.isOrigin);
   if (flagged.length > 1) {
     const organisations = flagged.map((entry: any) => entry?.organisationId).join(', ');
@@ -40,8 +44,7 @@ export function checkSingleOrigin(entries: any[] | undefined): { error?: any; in
 }
 
 /** Rejects an array whose entries do not each carry an `organisationId` — the upsert key. */
-export function checkOrganisationIds(entries: any[] | undefined): { error?: any; info?: string } | undefined {
-  if (!Array.isArray(entries)) return undefined;
+function checkOrganisationIds(entries: any[]): CheckResult {
   const missing = entries.filter((entry: any) => !entry?.organisationId).length;
   if (missing) return { error: MISSING_VALUE, info: `Every entry requires an organisationId; ${missing} missing` };
   return undefined;
@@ -50,9 +53,13 @@ export function checkOrganisationIds(entries: any[] | undefined): { error?: any;
 /**
  * Validates a wholesale replacement array for any `Unified*ID` grain.
  * Returns an error result, or undefined when the array is acceptable.
+ *
+ * Requires a real array. Callers handle `null` (the clear) before reaching here, so anything
+ * else — `undefined`, an object, a string — is a caller mistake rather than an intent, and
+ * accepting it would silently write a non-array into the record.
  */
-export function checkUnifiedIds(entries: any[] | undefined): { error?: any; info?: string } | undefined {
-  if (entries !== undefined && !Array.isArray(entries)) return { error: INVALID_VALUES, info: 'Expected an array' };
+export function checkUnifiedIds(entries: any): CheckResult {
+  if (!Array.isArray(entries)) return { error: INVALID_VALUES, info: 'Expected an array of Unified*ID entries' };
   return checkOrganisationIds(entries) ?? checkSingleOrigin(entries);
 }
 

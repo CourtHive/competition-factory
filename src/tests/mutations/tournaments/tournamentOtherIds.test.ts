@@ -215,6 +215,19 @@ describe('setTournamentOtherIds', () => {
     expect(tournamentEngine.getTournament().tournamentRecord.tournamentOtherIds).toBeUndefined();
   });
 
+  // `null` clears. Anything else that is not an array is a caller mistake, and accepting it
+  // would write a non-array into the record where every reader expects `.find()` to work.
+  it('REJECTS a non-array, including undefined, rather than storing it', () => {
+    seed();
+
+    for (const tournamentOtherIds of ['nope', 42, {}, undefined] as any[]) {
+      const result: any = tournamentEngine.setTournamentOtherIds({ tournamentOtherIds });
+      expect(result.error).toBeDefined();
+      expect(result.info).toContain('array');
+    }
+    expect(tournamentEngine.getTournament().tournamentRecord.tournamentOtherIds).toBeUndefined();
+  });
+
   it('REJECTS an entry with no organisationId — the upsert key', () => {
     seed();
 

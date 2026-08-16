@@ -161,6 +161,23 @@ describe('setDrawOtherIds', () => {
     expect(drawOf(drawId).drawOtherIds).toBeUndefined();
   });
 
+  // Asserted at tournament grain from the start; the draw grain had the same behaviour and no
+  // test, which is an asymmetry in the tests rather than in the code.
+  it('clearing when nothing is set is a silent no-op rather than an error', () => {
+    const drawId = seed();
+    const result: any = tournamentEngine.setDrawOtherIds({ drawOtherIds: null, drawId });
+    expect(result.success).toEqual(true);
+    expect(drawOf(drawId).drawOtherIds).toBeUndefined();
+  });
+
+  it('REJECTS a non-array rather than storing it', () => {
+    const drawId = seed();
+    const result: any = tournamentEngine.setDrawOtherIds({ drawOtherIds: 'nope' as any, drawId });
+    expect(result.error).toBeDefined();
+    expect(result.info).toContain('array');
+    expect(drawOf(drawId).drawOtherIds).toBeUndefined();
+  });
+
   it('REJECTS two isOrigin entries and leaves the draw untouched', () => {
     const drawId = seed();
 
