@@ -10,7 +10,7 @@
     "esModuleInterop": true,
     "forceConsistentCasingInFileNames": true,
     "importHelpers": true,
-    "lib": ["dom", "esnext"],
+    "lib": ["esnext"],
     "module": "esnext",
     "moduleResolution": "bundler",
     "noEmit": true,
