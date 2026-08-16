@@ -171,6 +171,12 @@ export function removeCollectionDefinition({
     matchUp = clearResult.matchUp;
   }
 
+  // ONE fork cache for the whole operation. Every target here is written with the
+  // SAME pruned tieFormat, so without this a shared centralized format fragments
+  // into one identical copy per TEAM matchUp — 1 tieFormat became 4 on a drawSize
+  // 4 event. See writeTieFormat's `forkCache`.
+  const forkCache = new Map<string, any>();
+
   const deletedMatchUpIds: string[] = [];
   for (const targetMatchUp of targetMatchUps) {
     const processResult: any = processTargetMatchUp({
@@ -179,6 +185,7 @@ export function removeCollectionDefinition({
       drawDefinition,
       collectionId,
       tieFormatUuids,
+      forkCache,
       tieFormat,
       stack,
       event,
@@ -222,6 +229,7 @@ export function removeCollectionDefinition({
     tieFormat: prunedTieFormat,
     event,
     uuids: tieFormatUuids,
+    forkCache,
   });
   if (writeResult?.error) return decorateResult({ result: writeResult, stack });
 
@@ -332,6 +340,7 @@ function processTargetMatchUp({
   deletedMatchUpIds,
   collectionId,
   tieFormatUuids,
+  forkCache,
   tieFormat,
   stack,
   event,
@@ -360,6 +369,7 @@ function processTargetMatchUp({
       tieFormat: copyTieFormat(tieFormat),
       event,
       uuids: tieFormatUuids,
+      forkCache,
     });
     if (writeResult?.error) return writeResult;
   }
