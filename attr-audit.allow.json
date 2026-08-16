@@ -31,6 +31,7 @@
   "sanctioningRecords",
   "scaleItems",
   "SCHEDULED",
+  "scheduledDate",
   "serve",
   "test",
   "time",
