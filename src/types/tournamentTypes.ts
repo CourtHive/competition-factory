@@ -396,6 +396,21 @@ export enum PositioningProfileEnum {
 }
 export type PositioningProfileUnion = `${PositioningProfileEnum}`;
 
+/**
+ * How much of each draw `getEventData` returns.
+ *
+ * `FULL` is the default and the pre-existing behaviour — every draw hydrated through `getDrawData`.
+ * `STUBS` emits cheap per-draw metadata only, skipping structure assembly entirely: on a Grand-Slam
+ * singles event that is ~15 KB against ~788 KB. The axis is monotone containment
+ * (`drawInfo ⊃ structures ⊃ roundMatchUps`), which is why it is one ordinal parameter rather than
+ * independent flags.
+ */
+export enum DrawsProfileEnum {
+  FULL = 'FULL',
+  STUBS = 'STUBS',
+}
+export type DrawsProfileUnion = `${DrawsProfileEnum}`;
+
 export enum SeedingProfileEnum {
   CLUSTER = 'CLUSTER',
   SEPARATE = 'SEPARATE',
