@@ -100,6 +100,7 @@ export function orderCollectionDefinitions({
         drawDefinition,
         structure,
         orderMap,
+        event,
       });
       modifyDrawNotice({
         drawDefinition,
@@ -204,13 +205,14 @@ function updateDrawTieFormat({
       drawDefinition,
       structure,
       orderMap,
+      event,
     });
     modifiedStructureIds.push(structure.structureId);
   }
   modifyDrawNotice({ drawDefinition, structureIds: modifiedStructureIds });
 }
 
-function updateStructureMatchUps({ tournamentRecord, drawDefinition, structure, orderMap, eventId }) {
+function updateStructureMatchUps({ tournamentRecord, drawDefinition, structure, orderMap, eventId, event }) {
   const matchUps = getAllStructureMatchUps({
     matchUpFilters: { matchUpTypes: [TEAM] },
     structure,
@@ -227,6 +229,7 @@ function updateStructureMatchUps({ tournamentRecord, drawDefinition, structure, 
         drawDefinition,
         eventId,
         matchUp,
+        event,
       });
     }
   }

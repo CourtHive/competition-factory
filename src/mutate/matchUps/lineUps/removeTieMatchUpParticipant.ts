@@ -38,6 +38,7 @@ function removeSubstitutionProcessCodes({
   tieMatchUp,
   stack,
   side,
+  event,
 }) {
   const otherSide: any = inContextTieMatchUp?.sides?.find((s) => s.sideNumber !== side.sideNumber);
   if (!otherSide?.substitutions?.length && tieMatchUp?.processCodes?.length) {
@@ -51,6 +52,7 @@ function removeSubstitutionProcessCodes({
       matchUp: tieMatchUp,
       context: stack,
       drawDefinition,
+      event,
     });
   }
 }
@@ -318,6 +320,7 @@ export function removeTieMatchUpParticipantId(
       tieMatchUp,
       stack,
       side,
+      event,
     });
   }
 

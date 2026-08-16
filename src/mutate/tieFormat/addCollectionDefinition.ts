@@ -445,6 +445,8 @@ function updateStructureMatchUps({ updateInProgressMatchUps, collectionDefinitio
 }
 
 type QueueNotificationsArgs = {
+  /** Supplied so notices can carry the sanctioning origin; resolved by paramsMiddleware. */
+  event?: any;
   modifiedStructureIds?: string[];
   tournamentRecord?: Tournament;
   drawDefinition: DrawDefinition;
@@ -461,6 +463,7 @@ function queueNoficiations({
   addedMatchUps,
   eventId,
   stack,
+  event,
 }: QueueNotificationsArgs) {
   addMatchUpsNotice({
     tournamentId: tournamentRecord?.tournamentId,
@@ -475,6 +478,7 @@ function queueNoficiations({
       context: stack,
       matchUp,
       eventId,
+      event,
     });
   });
   modifyDrawNotice({

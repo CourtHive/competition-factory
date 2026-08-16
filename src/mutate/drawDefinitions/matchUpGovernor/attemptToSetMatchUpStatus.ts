@@ -19,7 +19,7 @@ import {
 } from '@Constants/matchUpStatusConstants';
 
 export function attemptToSetMatchUpStatus(params) {
-  const { tournamentRecord, drawDefinition, matchUpStatus, structure, matchUp } = params;
+  const { tournamentRecord, drawDefinition, matchUpStatus, structure, matchUp, event } = params;
 
   const teamRoundRobinContext = !!(
     matchUp.tieMatchUps &&
@@ -102,6 +102,7 @@ export function attemptToSetMatchUpStatus(params) {
         drawDefinition,
         structure,
         matchUp,
+        event,
       })) ||
     (!directing && { error: UNRECOGNIZED_MATCHUP_STATUS }) ||
     (isDoubleExit && modifyScoreAndAdvanceDoubleExit(params)) ||

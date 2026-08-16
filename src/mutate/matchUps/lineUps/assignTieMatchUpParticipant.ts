@@ -212,6 +212,7 @@ export function assignTieMatchUpParticipantId(
       collectionId,
       tieFormat,
       stack,
+      event,
     });
     if (doublesResult.error) return doublesResult;
     deletedParticipantId = doublesResult.deletedParticipantId;
@@ -367,6 +368,7 @@ function handleDoublesAssignment({
   collectionId,
   tieFormat,
   stack,
+  event,
 }) {
   let deletedParticipantId;
 
@@ -397,6 +399,7 @@ function handleDoublesAssignment({
         matchUp: dualMatchUp,
         context: stack,
         drawDefinition,
+        event,
       });
     }
   } else {

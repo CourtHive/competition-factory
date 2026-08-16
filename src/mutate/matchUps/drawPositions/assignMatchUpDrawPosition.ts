@@ -148,6 +148,7 @@ export function assignMatchUpDrawPosition({
       matchUpId,
       matchUp,
       stack,
+      event,
     });
   } else if (matchUp && positionAssigned && slotNewlyOccupied) {
     modifyMatchUpNotice({
@@ -156,6 +157,7 @@ export function assignMatchUpDrawPosition({
       context: stack,
       drawDefinition,
       matchUp,
+      event,
     });
   }
 
@@ -256,6 +258,7 @@ function applyPositionToMatchUp({
   matchUpId,
   matchUp,
   stack,
+  event,
 }) {
   // necessary to refresh inContextDrawMatchUps after mutation
   const refreshedMatchUps =
@@ -318,6 +321,7 @@ function applyPositionToMatchUp({
     context: stack,
     drawDefinition,
     matchUp,
+    event,
   });
 }
 

@@ -141,6 +141,7 @@ function removeDrawPosition({
     context: `${stack}-${targetDrawPosition}`,
     drawDefinition,
     matchUp,
+    event,
   });
 
   return { ...SUCCESS };

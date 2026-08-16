@@ -17,6 +17,8 @@ import {
 import { DrawDefinition, Tournament } from '@Types/tournamentTypes';
 
 type RemoveCourtAssignmentArgs = {
+  /** Supplied so notices can carry the sanctioning origin; resolved by paramsMiddleware. */
+  event?: any;
   drawDefinition?: DrawDefinition;
   tournamentRecord?: Tournament;
   matchUpId: string;
@@ -27,6 +29,7 @@ export function removeCourtAssignment({
   drawDefinition,
   matchUpId,
   drawId,
+  event,
 }: RemoveCourtAssignmentArgs) {
   const stack = 'removeCourtAssignment';
   if (!matchUpId) return { error: MISSING_MATCHUP_ID };
@@ -82,6 +85,7 @@ export function removeCourtAssignment({
       context: stack,
       drawDefinition,
       matchUp,
+      event,
     });
   }
 

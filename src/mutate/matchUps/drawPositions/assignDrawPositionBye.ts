@@ -301,6 +301,7 @@ function setMatchUpStatusBYE({ tournamentRecord, drawDefinition, eventId, matchU
     context: 'setMatchUpStatusBye',
     drawDefinition,
     matchUp,
+    event,
   });
 }
 

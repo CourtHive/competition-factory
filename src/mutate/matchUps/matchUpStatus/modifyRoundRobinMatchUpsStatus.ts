@@ -45,6 +45,7 @@ export function modifyRoundRobinMatchUpsStatus({
         eventId: event?.eventId,
         drawDefinition,
         matchUp,
+        event,
       });
     }
   });
