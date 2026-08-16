@@ -56,17 +56,7 @@ export function addExtension(params?: AddExtensionArgs): {
     // Honour a `createdAt` already on the caller's extension rather than
     // stamping over it — same convention as `addTimeItem`. Inert when nothing is
     // supplied; `creationTime: false` still means "add no createdAt at all".
-    //
-    // The cast is deliberate and temporary. `Extension` does not DECLARE
-    // `createdAt`, even though this function has always written one — the
-    // previous `Object.assign(extension, { createdAt })` simply bypassed the
-    // checker, so the type has been out of sync with runtime for as long as the
-    // field has existed. The correct fix is `createdAt?: Date | string` on
-    // `Extension` (mirroring `TimeItem`), but `src/types/tournamentTypes.ts` is
-    // held by an active in-flight claim
-    // (`codes-participant-other-ids-and-event-origin-stamp`), so the type
-    // addition is deferred rather than colliding with it.
-    (params.extension as any).createdAt ??= new Date().toISOString();
+    params.extension.createdAt ??= new Date().toISOString();
   }
 
   const existingExtension = params.element.extensions.find(({ name }) => name === params.extension.name);
