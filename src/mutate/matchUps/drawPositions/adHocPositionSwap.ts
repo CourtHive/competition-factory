@@ -67,6 +67,7 @@ export function adHocPositionSwap(params: AdHocPositionSwapArgs): ResultType {
       modifyMatchUpNotice({
         tournamentId: tournamentRecord?.tournamentId,
         eventId: event?.eventId,
+        event,
         drawDefinition,
         matchUp,
       });

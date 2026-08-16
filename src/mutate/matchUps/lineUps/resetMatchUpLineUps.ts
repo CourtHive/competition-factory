@@ -64,6 +64,7 @@ export function resetMatchUpLineUps({
       tournamentId: tournamentRecord?.tournamentId,
       context: 'resetMatchUpLineUps',
       eventId: event?.eventId,
+      event,
       drawDefinition,
       matchUp,
     });

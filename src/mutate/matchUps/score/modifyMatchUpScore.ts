@@ -181,6 +181,7 @@ export function modifyMatchUpScore(params: ModifyMatchUpScoreArgs) {
 
   modifyMatchUpNotice({
     eventId: event?.eventId,
+    event,
     context: stack,
     drawDefinition,
     tournamentId,

@@ -399,6 +399,7 @@ function processTargetMatchUp({
   modifyMatchUpNotice({
     tournamentId: tournamentRecord?.tournamentId,
     eventId: event?.eventId,
+    event,
     drawDefinition,
     context: stack,
     matchUp,

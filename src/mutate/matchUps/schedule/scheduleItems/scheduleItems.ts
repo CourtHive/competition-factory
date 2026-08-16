@@ -466,6 +466,7 @@ export function addMatchUpScheduleItems(params: AddMatchUpScheduleItemsArgs): {
     modifyMatchUpNotice({
       tournamentId: tournamentRecord?.tournamentId,
       eventId: event?.eventId,
+      event,
       context: stack,
       drawDefinition,
       matchUp,

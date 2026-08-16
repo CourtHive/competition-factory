@@ -100,6 +100,7 @@ export function removeStructure(params: RemoveStructureArgs) {
       tournamentId: tournamentRecord?.tournamentId,
       context: ['removeStructure'],
       eventId: event?.eventId,
+      event,
       matchUp,
     });
   }

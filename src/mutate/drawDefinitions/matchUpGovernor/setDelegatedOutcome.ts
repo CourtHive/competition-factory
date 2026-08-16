@@ -65,6 +65,7 @@ export function setDelegatedOutcome({
       tournamentId: tournamentRecord?.tournamentId,
       structureId: matchUp.structureId,
       eventId: event?.eventId,
+      event,
       matchUp,
     });
   }

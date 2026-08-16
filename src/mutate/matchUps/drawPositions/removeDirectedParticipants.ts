@@ -259,6 +259,7 @@ export function removeDirectedWinner({
       modifyMatchUpNotice({
         tournamentId: tournamentRecord?.tournamentId,
         eventId: event?.eventId,
+        event,
         matchUp: targetMatchUp,
         context: stack,
         drawDefinition,
@@ -339,6 +340,7 @@ function removeDirectedLoser({
       modifyMatchUpNotice({
         tournamentId: tournamentRecord?.tournamentId,
         eventId: event?.eventId,
+        event,
         matchUp: targetMatchUp,
         context: stack,
         drawDefinition,

@@ -8,6 +8,7 @@ export function modifyMappedMatchUps({ params, modMap, structure }) {
       modifyMatchUpNotice({
         tournamentId: tournamentRecord?.tournamentId,
         eventId: event?.eventId,
+        event,
         drawDefinition,
         matchUp,
       });

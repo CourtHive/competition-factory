@@ -94,6 +94,7 @@ export function deleteAdHocMatchUps(params: DeleteAdHocMatchUpsArgs): ResultType
               tournamentId: tournamentRecord?.tournamentId,
               context: ['adHoc round deletion'],
               eventId: event?.eventId,
+              event,
               drawDefinition,
               matchUp,
             });

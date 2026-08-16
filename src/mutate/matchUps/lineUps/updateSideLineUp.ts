@@ -54,6 +54,7 @@ export function updateSideLineUp({
     tournamentId: tournamentRecord?.tournamentId,
     context: 'updateSidLineUp',
     eventId: event?.eventId,
+    event,
     drawDefinition,
     matchUp,
   });
