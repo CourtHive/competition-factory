@@ -802,6 +802,32 @@ const { times } = engine.calculateScheduleTimes({
 
 ---
 
+### isScheduleLocked
+
+Whether a matchUp's placement is pinned by a director. Accepts the matchUp
+either way round — `{ matchUpId, drawId }` when only ids are in hand, or
+`{ matchUp }` when it isn't (the cheap form: a table rendering hundreds of rows
+should not resolve each one by id).
+
+Returns the lock alongside the verdict so a caller can show _why_ a matchUp is
+pinned without a second lookup. `scheduleLocked` is `false` — with `lock` still
+returned — when a lock exists but is inert: the matchUp completed, or there is
+no placement left to guard. See [Schedule Locks](../concepts/schedule-locks.mdx).
+
+```js
+engine.isScheduleLocked({ matchUpId, drawId });
+// → { success: true, scheduleLocked: true, lock: { reason: 'featured' } }
+
+engine.isScheduleLocked({ matchUp });
+engine.isScheduleLocked({ matchUp, attributes: ['courtId'] }); // narrow to one placement field
+```
+
+`scheduleGovernor.matchUpScheduleLocked({ matchUp })` is the bare predicate
+behind it — a plain boolean with no result envelope, used by the factory's own
+enforcement. Consumers should prefer `isScheduleLocked`.
+
+---
+
 ### courtGridRows
 
 Returns court grid data for pro scheduling visualization.

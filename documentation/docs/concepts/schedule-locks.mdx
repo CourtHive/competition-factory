@@ -48,6 +48,22 @@ engine.setMatchUpScheduleLock({ lock: { attributes: ['scheduledTime'] }, matchUp
 engine.setMatchUpScheduleLock({ lock: null, matchUpId, drawId });
 ```
 
+## Asking whether a matchUp is locked
+
+```js
+// ids — drawId resolves to drawDefinition through the engine
+engine.isScheduleLocked({ matchUpId, drawId });
+// → { success: true, scheduleLocked: true, lock: { reason: 'featured', … } }
+
+// a matchUp already in hand — the cheap form; a table of hundreds of rows
+// should not resolve each one by id
+engine.isScheduleLocked({ matchUp });
+```
+
+The lock object comes back alongside the verdict so a caller can show **why** a matchUp is pinned without a second lookup. `scheduleLocked` is `false` — with the lock still returned — when a lock exists but is inert (the matchUp completed, or there is no placement to guard).
+
+`scheduleGovernor.matchUpScheduleLocked({ matchUp })` is the bare predicate behind it, returning a boolean with no result envelope. Enforcement inside the factory uses that; consumers should prefer `isScheduleLocked`.
+
 ## What a lock stops
 
 The predicate is enforced at every mutation that writes or wipes placement, so there is no path that quietly bypasses it:

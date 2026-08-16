@@ -1,8 +1,13 @@
+import { decorateResult } from '@Functions/global/decorateResult';
+import { findDrawMatchUp } from '@Acquire/findDrawMatchUp';
 import { isObject } from '@Tools/objects';
 
 // constants and types
+import { MATCHUP_NOT_FOUND, MISSING_DRAW_DEFINITION, MISSING_MATCHUP_ID } from '@Constants/errorConditionConstants';
+import { DrawDefinition, Event, ScheduleLock, ScheduleLockAttribute } from '@Types/tournamentTypes';
 import { completedMatchUpStatuses } from '@Constants/matchUpStatusConstants';
-import { ScheduleLockAttribute } from '@Types/tournamentTypes';
+import { SUCCESS } from '@Constants/resultConstants';
+import { ResultType } from '@Types/factoryTypes';
 import {
   ALLOCATE_COURTS,
   ASSIGN_COURT,
@@ -118,7 +123,7 @@ function equivalent(requested: any, current: any): boolean {
  * Pass `attributes` to ask about specific placement fields; a lock with no
  * `attributes` of its own pins the entire placement.
  */
-export function isScheduleLocked({
+export function matchUpScheduleLocked({
   attributes,
   matchUp,
 }: {
@@ -139,6 +144,49 @@ export function isScheduleLocked({
 }
 
 /**
+ * Public query: is this matchUp's placement pinned?
+ *
+ * Accepts the matchUp either way round, because callers arrive from both
+ * directions:
+ *
+ *  - `{ matchUp }` — a hydrated matchUp already in hand. This is the cheap form:
+ *    a table rendering hundreds of rows should not resolve each one by id.
+ *  - `{ drawId, matchUpId }` — ids only. `drawId` resolves to `drawDefinition`
+ *    through the engine's params middleware; a `drawDefinition` passed directly
+ *    also works.
+ *
+ * Returns the lock itself alongside the verdict so a caller can show *why* a
+ * matchUp is pinned (`lock.reason`) without a second lookup. `scheduleLocked`
+ * is false — with the lock still returned — when the lock exists but is inert
+ * (matchUp completed, or nothing placed to guard).
+ */
+export function isScheduleLocked(params: {
+  attributes?: ScheduleLockAttribute[];
+  drawDefinition?: DrawDefinition;
+  matchUpId?: string;
+  matchUp?: any;
+  event?: Event;
+}): ResultType & { scheduleLocked?: boolean; lock?: ScheduleLock } {
+  const stack = 'isScheduleLocked';
+  const { attributes, drawDefinition, matchUpId, event } = params;
+
+  let matchUp = params.matchUp;
+  if (!matchUp) {
+    if (!matchUpId) return decorateResult({ result: { error: MISSING_MATCHUP_ID }, stack });
+    if (!drawDefinition) return decorateResult({ result: { error: MISSING_DRAW_DEFINITION }, stack });
+    matchUp = findDrawMatchUp({ drawDefinition, event, matchUpId }).matchUp;
+    if (!matchUp) return decorateResult({ result: { error: MATCHUP_NOT_FOUND }, stack });
+  }
+
+  const lock = matchUp?.schedule?.lock;
+  return {
+    ...SUCCESS,
+    scheduleLocked: matchUpScheduleLocked({ matchUp, attributes }),
+    ...(isObject(lock) ? { lock } : {}),
+  };
+}
+
+/**
  * Which locked placement attributes a requested `schedule` write would change.
  * Empty ⇒ the write is permitted: either nothing is locked, or the call only
  * touches unlocked/actual-play attributes, or it rewrites the same values.
@@ -150,13 +198,13 @@ export function scheduleLockConflicts({
   matchUp?: any;
   schedule?: any;
 }): ScheduleLockAttribute[] {
-  if (!isObject(schedule) || !isScheduleLocked({ matchUp })) return [];
+  if (!isObject(schedule) || !matchUpScheduleLocked({ matchUp })) return [];
 
   const conflicts = new Set<ScheduleLockAttribute>();
 
   for (const key of Object.keys(schedule)) {
     const attribute = REQUEST_KEY_TO_ATTRIBUTE[key];
-    if (!attribute || !isScheduleLocked({ matchUp, attributes: [attribute] })) continue;
+    if (!attribute || !matchUpScheduleLocked({ matchUp, attributes: [attribute] })) continue;
     if (equivalent(schedule[key], currentValue(matchUp, attribute))) continue;
     conflicts.add(attribute);
   }

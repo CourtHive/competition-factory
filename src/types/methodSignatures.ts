@@ -500,6 +500,7 @@ import type { drawMatchUps } from '@Query/matchUps/getDrawMatchUps';
 import type { getAllowedDrawTypes, getAllowedMatchUpFormats } from '@Query/tournaments/allowedTypes';
 import type { getEventProperties } from '@Query/event/getEventProperties';
 import type { getParticipantSignInStatus } from '@Query/participant/signInStatus';
+import type { isScheduleLocked, matchUpScheduleLocked } from '@Query/matchUp/isScheduleLocked';
 import type { publishEvent } from '@Mutate/publishing/publishEvent';
 import type { publishEventSeeding, unPublishEventSeeding } from '@Mutate/publishing/eventSeeding';
 import type { resetScorecard } from '@Mutate/matchUps/resetScorecard';
@@ -964,6 +965,7 @@ export interface MethodSignatures {
   isComplete: EngineMethod<typeof isComplete>;
   isCompletedStructure: EngineMethod<typeof isCompletedStructure>;
   isEmbargoed: EngineMethod<typeof isEmbargoed>;
+  isScheduleLocked: EngineMethod<typeof isScheduleLocked>;
   isValid: EngineMethod<typeof isValidMatchUpFormat>;
   isValidForQualifying: EngineMethod<typeof isValidForQualifying>;
   isValidMatchUpFormat: EngineMethod<typeof isValidMatchUpFormat>;
@@ -974,6 +976,7 @@ export interface MethodSignatures {
   luckyLoserDrawPositionAssignment: EngineMethod<typeof luckyLoserDrawPositionAssignment>;
   matchUpActions: EngineMethod<typeof matchUpActions>;
   matchUpScheduleChange: EngineMethod<typeof matchUpScheduleChange>;
+  matchUpScheduleLocked: EngineMethod<typeof matchUpScheduleLocked>;
   mcpValidator: EngineMethod<typeof mcpValidator>;
   mergeFacilitySchedule: EngineMethod<typeof mergeFacilitySchedule>;
   mergeParticipants: EngineMethod<typeof mergeParticipants>;
