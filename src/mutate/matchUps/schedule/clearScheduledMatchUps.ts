@@ -187,6 +187,7 @@ function clearSchedules({
           drawDefinition,
           tournamentId,
           matchUp,
+          event,
         });
         clearedScheduleCount += 1;
       }
