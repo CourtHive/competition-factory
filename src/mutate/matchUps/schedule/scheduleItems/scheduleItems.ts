@@ -69,6 +69,20 @@ import {
   PARTICIPANT_NOT_FOUND,
 } from '@Constants/errorConditionConstants';
 
+/**
+ * Court identities from an `allocatedCourts` value, in the bare-string form the
+ * allocation mutation expects. Accepts what a matchUp reads back — hydrated
+ * court objects — as well as plain ids, so read → write round-trips.
+ *
+ * Returns `undefined` for a non-array (nothing to alias) and passes an empty
+ * array through unchanged, so `allocatedCourts: []` behaves exactly as
+ * `courtIds: []` does rather than acquiring new semantics here.
+ */
+function allocatedCourtIds(value: any): string[] | undefined {
+  if (!Array.isArray(value)) return undefined;
+  return value.map((entry) => (typeof entry === 'string' ? entry : entry?.courtId)).filter(Boolean);
+}
+
 function timeDate(value, scheduledDate) {
   const time = validTimeString.test(value) ? value : extractTime(value);
   const date = extractDate(value) || extractDate(scheduledDate) || formatDate(new Date());
@@ -375,7 +389,6 @@ export function addMatchUpScheduleItems(params: AddMatchUpScheduleItemsArgs): {
   const {
     endTime,
     courtId,
-    courtIds,
     courtAnnotation,
     courtOrder,
     resumeTime,
@@ -387,6 +400,14 @@ export function addMatchUpScheduleItems(params: AddMatchUpScheduleItemsArgs): {
     timeModifiers,
     venueId,
   } = schedule;
+
+  // `courtIds` is the write spelling; `allocatedCourts` is what a matchUp READS
+  // back (`[{ courtId, venueId }]`, hydrated with court/venue names). Accept
+  // both so a schedule object round-trips: reading a matchUp's schedule and
+  // writing it back used to drop a TEAM court allocation silently, because this
+  // function destructured only `courtIds` and ignored the other key entirely.
+  // An explicit `courtIds` wins when a caller supplies both.
+  const courtIds = schedule.courtIds ?? allocatedCourtIds(schedule.allocatedCourts);
 
   if (checkChronology && (!matchUpDependencies || !inContextMatchUps)) {
     ({ matchUpDependencies, matchUps: inContextMatchUps } = getMatchUpDependencies({
