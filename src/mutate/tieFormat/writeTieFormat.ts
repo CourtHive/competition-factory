@@ -1,3 +1,4 @@
+import { compareTieFormats } from '@Query/hierarchical/tieFormats/compareTieFormats';
 import { allEventMatchUps } from '@Query/matchUps/getAllEventMatchUps';
 import { makeDeepCopy } from '@Tools/makeDeepCopy';
 import { takeUUID } from '@Tools/UUID';
@@ -32,6 +33,24 @@ type WriteTieFormatArgs = {
    * local re-run on ack) in agreement. This path had no pool to thread.
    */
   uuids?: string[];
+  /**
+   * Within-operation cache of forks already made, keyed by the SOURCE
+   * tieFormatId. Optional; omitting it preserves the previous per-target
+   * behaviour.
+   *
+   * Why it exists: a single mutation frequently rewrites several targets that
+   * all reference one shared tieFormat, with IDENTICAL new content — e.g.
+   * `removeCollectionDefinition` on an aggregated event writes every TEAM
+   * matchUp. Without a cache each target forks independently, so one shared
+   * format fragments into N byte-identical copies, which is exactly what
+   * aggregation exists to prevent. With it, the first fork mints and the rest
+   * point at the same new entry.
+   *
+   * Content is compared before reuse, so two targets that happen to share a
+   * source id but are being written with DIFFERENT formats still fork
+   * separately.
+   */
+  forkCache?: Map<string, TieFormat>;
 };
 
 /**
@@ -54,7 +73,7 @@ type WriteTieFormatArgs = {
  * than the current consistent behaviour. Do it as one pass, with error checks at
  * every site.
  */
-export function writeTieFormat({ target, tieFormat, event, uuids }: WriteTieFormatArgs) {
+export function writeTieFormat({ target, tieFormat, event, uuids, forkCache }: WriteTieFormatArgs) {
   if (!target) return undefined;
 
   // If the target was using a centralized tieFormatId reference
@@ -74,7 +93,17 @@ export function writeTieFormat({ target, tieFormat, event, uuids }: WriteTieForm
       }
     }
 
-    // Multiple references share this ID — create a new entry so we don't affect others
+    // Multiple references share this ID — create a new entry so we don't affect others.
+    //
+    // Unless this operation already forked the same source with the same content,
+    // in which case join that fork rather than minting another identical entry.
+    const cached = forkCache?.get(existingId);
+    if (cached && !compareTieFormats({ ancestor: cached, descendant: tieFormat })?.different) {
+      target.tieFormatId = cached.tieFormatId;
+      delete target.tieFormat;
+      return undefined;
+    }
+
     const newTieFormat = makeDeepCopy(tieFormat, undefined, true);
     // The fork itself is unconditional — that is the point of copy-on-write — but
     // the VALUE comes from the caller's pool when one was supplied, so both
@@ -85,6 +114,7 @@ export function writeTieFormat({ target, tieFormat, event, uuids }: WriteTieForm
 
     newTieFormat.tieFormatId = uuid;
     event.tieFormats.push(newTieFormat);
+    forkCache?.set(existingId, newTieFormat);
     target.tieFormatId = newTieFormat.tieFormatId;
     delete target.tieFormat;
     return undefined;
@@ -104,7 +134,7 @@ type CountReferencesArgs = {
  * Counts how many objects (event, drawDefinitions, structures, matchUps)
  * in the event reference a given tieFormatId.
  */
-function countTieFormatReferences({ event, tieFormatId }: CountReferencesArgs): number {
+export function countTieFormatReferences({ event, tieFormatId }: CountReferencesArgs): number {
   let count = 0;
 
   if (event.tieFormatId === tieFormatId) count++;
@@ -158,4 +188,35 @@ export function removeOrphanedTieFormats({ event }: { event: Event }) {
   event.tieFormats = event.tieFormats.filter((tf) => tf.tieFormatId && referencedIds.has(tf.tieFormatId));
 
   if (!event.tieFormats.length) delete event.tieFormats;
+}
+
+type RequiredForkIdsArgs = {
+  /** Every object this operation will write a tieFormat to. */
+  targets: Array<{ tieFormatId?: string } | undefined>;
+  event?: Event;
+};
+
+/**
+ * How many ids an operation must draw from its pool, computed BEFORE mutating.
+ *
+ * One per DISTINCT source tieFormatId that would fork — because `forkCache`
+ * makes every later target sharing a source join the first fork rather than
+ * minting again.
+ *
+ * This is an upper bound, and deliberately so. As targets fork away, the source's
+ * refCount falls; if it reaches 1 the final referent takes the in-place branch and
+ * mints nothing. Over-requiring by one rejects a pool that would just have
+ * sufficed — annoying but safe. Under-requiring would let the operation begin and
+ * fail part-way, which is the failure this exists to prevent.
+ */
+export function requiredForkIds({ targets, event }: RequiredForkIdsArgs): number {
+  if (!event?.tieFormats?.length) return 0;
+
+  const sources = new Set<string>();
+  for (const target of targets) {
+    const tieFormatId = target?.tieFormatId;
+    if (!tieFormatId) continue;
+    if (countTieFormatReferences({ event, tieFormatId }) > 1) sources.add(tieFormatId);
+  }
+  return sources.size;
 }

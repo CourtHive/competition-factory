@@ -13,7 +13,7 @@ import { tieFormatTelemetry } from '@Mutate/tieFormat/tieFormatTelemetry';
 import { allEventMatchUps } from '@Query/matchUps/getAllEventMatchUps';
 import { checkScoreHasValue } from '@Query/matchUp/checkScoreHasValue';
 import { allDrawMatchUps } from '@Query/matchUps/getAllDrawMatchUps';
-import { writeTieFormat } from '@Mutate/tieFormat/writeTieFormat';
+import { requiredForkIds, writeTieFormat } from '@Mutate/tieFormat/writeTieFormat';
 import { validateTieFormat } from '@Validators/validateTieFormat';
 import { definedAttributes } from '@Tools/definedAttributes';
 import { findDrawMatchUp } from '@Acquire/findDrawMatchUp';
@@ -26,6 +26,7 @@ import { SUCCESS } from '@Constants/resultConstants';
 import { TEAM } from '@Constants/matchUpTypes';
 import {
   ErrorType,
+  INSUFFICIENT_UUIDS,
   MISSING_DRAW_DEFINITION,
   NOT_FOUND,
   NO_MODIFICATIONS_APPLIED,
@@ -171,6 +172,33 @@ export function removeCollectionDefinition({
     matchUp = clearResult.matchUp;
   }
 
+  // Validate the pool BEFORE mutating anything.
+  //
+  // Reporting an exhausted pool part-way is not enough: `processTargetMatchUp`
+  // splices a matchUp's tieMatchUps BEFORE writing its tieFormat, so a failure at
+  // the write leaves the splice behind. Measured: an empty pool took
+  // tieMatchUp counts from [9,9,9,9,9,9,9] to [6,9,9,9,9,9,9] and still returned
+  // an error. `executionQueue({ rollbackOnError: true })` restores that — and TMX
+  // always sends it — but a direct engine caller has no such protection, so the
+  // mutation should not begin at all when it cannot finish.
+  const requiredIds = requiredForkIds({
+    targets: [...targetMatchUps, resolveWriteTarget({ eventId, event, matchUpId, matchUp, structure, drawDefinition })],
+    event,
+  });
+  if (tieFormatUuids !== undefined && tieFormatUuids.length < requiredIds) {
+    return decorateResult({
+      result: { error: INSUFFICIENT_UUIDS },
+      context: { required: requiredIds, supplied: tieFormatUuids.length },
+      stack,
+    });
+  }
+
+  // ONE fork cache for the whole operation. Every target here is written with the
+  // SAME pruned tieFormat, so without this a shared centralized format fragments
+  // into one identical copy per TEAM matchUp — 1 tieFormat became 4 on a drawSize
+  // 4 event. See writeTieFormat's `forkCache`.
+  const forkCache = new Map<string, any>();
+
   const deletedMatchUpIds: string[] = [];
   for (const targetMatchUp of targetMatchUps) {
     const processResult: any = processTargetMatchUp({
@@ -179,6 +207,7 @@ export function removeCollectionDefinition({
       drawDefinition,
       collectionId,
       tieFormatUuids,
+      forkCache,
       tieFormat,
       stack,
       event,
@@ -222,6 +251,7 @@ export function removeCollectionDefinition({
     tieFormat: prunedTieFormat,
     event,
     uuids: tieFormatUuids,
+    forkCache,
   });
   if (writeResult?.error) return decorateResult({ result: writeResult, stack });
 
@@ -332,6 +362,7 @@ function processTargetMatchUp({
   deletedMatchUpIds,
   collectionId,
   tieFormatUuids,
+  forkCache,
   tieFormat,
   stack,
   event,
@@ -360,6 +391,7 @@ function processTargetMatchUp({
       tieFormat: copyTieFormat(tieFormat),
       event,
       uuids: tieFormatUuids,
+      forkCache,
     });
     if (writeResult?.error) return writeResult;
   }

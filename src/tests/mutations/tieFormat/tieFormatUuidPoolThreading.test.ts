@@ -118,4 +118,16 @@ describe('removeCollectionDefinition — tieFormatUuids threading', () => {
  * `writeTieFormatUuidPool.test.ts`: pool consumed, exhaustion errors, absent
  * pool mints, and the `refCount === 1` in-place branch that makes the above
  * unreachable is pinned as behaviour.
+ *
+ * ADDENDUM 2026-08-15 — fork MULTIPLICITY changed under this note.
+ *
+ * The single reachable site above used to fork once per TEAM matchUp, so a
+ * drawSize-4 event consumed THREE ids and fragmented one shared tieFormat into
+ * four. That was a defect, not a design: every matchUp was being written with
+ * identical content. It is fixed by a per-operation `forkCache`
+ * (`tieFormatForkFragmentation.test.ts`), and the operation now forks ONCE and
+ * consumes ONE id.
+ *
+ * Everything this note says about WHICH sites are reachable is unchanged — still
+ * exactly the `processTargetMatchUp` path. Only how many times it fires changed.
  */
