@@ -1,7 +1,7 @@
 import { allTournamentMatchUps } from '@Query/matchUps/getAllTournamentMatchUps';
 import { modifyMatchUpNotice } from '@Mutate/notifications/drawNotifications';
-import { allDrawMatchUps } from '@Query/matchUps/getAllDrawMatchUps';
 import { matchUpScheduleLocked } from '@Query/matchUp/isScheduleLocked';
+import { allDrawMatchUps } from '@Query/matchUps/getAllDrawMatchUps';
 
 // constants
 import { MATCHUP_NOT_FOUND, SCHEDULE_LOCKED } from '@Constants/errorConditionConstants';
