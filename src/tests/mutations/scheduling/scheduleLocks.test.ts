@@ -3,9 +3,18 @@ import mocksEngine from '@Assemblies/engines/mock';
 import tournamentEngine from '@Engines/syncEngine';
 import { afterEach, expect, it } from 'vitest';
 
+// constants and types
+import { OFFICIAL_CONFLICT_OF_INTEREST } from '@Constants/officiatingConstants';
 import { LEGACY, NATIVE } from '@Constants/schemaWriteModeConstants';
 import { SCHEDULE_LOCKED } from '@Constants/errorConditionConstants';
 import { COMPLETED } from '@Constants/matchUpStatusConstants';
+import { INDIVIDUAL } from '@Constants/participantConstants';
+import { DOMINANT_DUO } from '@Constants/tieFormatConstants';
+import { OFFICIAL } from '@Constants/participantRoles';
+import { TEAM } from '@Constants/eventConstants';
+
+// Fixtures
+import { POLICY_OFFICIATING_CONFLICT_OF_INTEREST } from '@Fixtures/policies/POLICY_OFFICIATING_CONFLICT_OF_INTEREST';
 
 /**
  * Schedule locks — a director pins a marquee matchUp's placement so bulk and
@@ -52,8 +61,40 @@ function seed() {
   place(matchUps[0].matchUpId, 0, '19:00');
   place(matchUps[1].matchUpId, 1, '10:00');
 
-  return { lockedId: matchUps[0].matchUpId, otherId: matchUps[1].matchUpId, courts };
+  return {
+    sides: matchUps[0].sides,
+    lockedId: matchUps[0].matchUpId,
+    otherId: matchUps[1].matchUpId,
+    courts,
+  };
 }
+
+/** An OFFICIAL participant, plus an officialRecord declaring a FAMILY tie to `participantId`. */
+function addOfficial() {
+  const { participant } = tournamentEngine.addParticipant({
+    participant: {
+      person: { standardFamilyName: 'Umpire', standardGivenName: 'Chair' },
+      participantType: INDIVIDUAL,
+      participantRole: OFFICIAL,
+    },
+    returnParticipant: true,
+  });
+  return participant.participantId;
+}
+
+const conflictedRecord = (participantId: string): any => ({
+  conflictDeclarations: [{ declarationId: 'dec-1', participantId, relationship: 'FAMILY' }],
+  certificationRequirements: [],
+  officialRecordId: 'rec-001',
+  personId: 'person-official',
+  evaluationPolicies: [],
+  certifications: [],
+  createdAt: '2025-01-01',
+  updatedAt: '2025-01-01',
+  evaluations: [],
+  assignments: [],
+  suspensions: [],
+});
 
 const lock = (matchUpId: string, lockValue: any = { reason: 'featured' }) =>
   tournamentEngine.setMatchUpScheduleLock({ matchUpId, drawId: DRAW_ID, lock: lockValue });
@@ -72,7 +113,7 @@ it('preserves a locked placement through a bulk clear and reports what it kept',
   const { lockedId, otherId } = seed();
   lock(lockedId);
 
-  const result: any = clearAll({ matchUpIds: [lockedId, otherId] });
+  let result: any = clearAll({ matchUpIds: [lockedId, otherId] });
   expect(result.success).toEqual(true);
   expect(result.lockedMatchUpIds).toEqual([lockedId]);
 
@@ -87,7 +128,7 @@ it('a locked matchUp never aborts the clear of its neighbours', () => {
   const { lockedId, otherId } = seed();
   lock(lockedId);
 
-  const result: any = clearAll({ matchUpIds: [lockedId, otherId] });
+  let result: any = clearAll({ matchUpIds: [lockedId, otherId] });
   // one skipped, one cleared — not an error result
   expect(result.error).toBeUndefined();
   expect(result.scheduled).toEqual(1);
@@ -97,7 +138,7 @@ it('clears a locked placement when the caller overrides, and the lock survives t
   const { lockedId } = seed();
   lock(lockedId);
 
-  const result: any = clearAll({ matchUpIds: [lockedId], overrideScheduleLock: true });
+  let result: any = clearAll({ matchUpIds: [lockedId], overrideScheduleLock: true });
   expect(result.success).toEqual(true);
   expect(result.lockedMatchUpIds).toBeUndefined();
   expect(scheduleOf(lockedId)?.scheduledTime).toBeUndefined();
@@ -109,7 +150,7 @@ it('refuses a single-matchUp placement change, naming the locked attributes', ()
   const { lockedId, courts } = seed();
   lock(lockedId);
 
-  const result: any = tournamentEngine.addMatchUpScheduleItems({
+  let result: any = tournamentEngine.addMatchUpScheduleItems({
     schedule: { scheduledTime: '11:00', courtId: courts[3].courtId },
     matchUpId: lockedId,
     drawId: DRAW_ID,
@@ -123,7 +164,7 @@ it('permits actual-play attributes on a locked matchUp — a pinned match must s
   const { lockedId } = seed();
   lock(lockedId);
 
-  const result: any = tournamentEngine.addMatchUpScheduleItems({
+  let result: any = tournamentEngine.addMatchUpScheduleItems({
     schedule: { startTime: '2026-06-22T19:04:00.000Z' },
     matchUpId: lockedId,
     drawId: DRAW_ID,
@@ -136,7 +177,7 @@ it('permits a no-op rewrite of the same placement values', () => {
   const { lockedId, courts } = seed();
   lock(lockedId);
 
-  const result: any = tournamentEngine.addMatchUpScheduleItems({
+  let result: any = tournamentEngine.addMatchUpScheduleItems({
     schedule: { scheduledDate: SCHEDULED_DATE, scheduledTime: '19:00', courtId: courts[0].courtId },
     matchUpId: lockedId,
     drawId: DRAW_ID,
@@ -153,13 +194,13 @@ it('releases the lock lazily once the matchUp reaches a completed status', () =>
     scoreString: '6-1 6-1',
     winningSide: 1,
   });
-  const completion: any = tournamentEngine.setMatchUpStatus({ outcome, matchUpId: lockedId, drawId: DRAW_ID });
+  let completion: any = tournamentEngine.setMatchUpStatus({ outcome, matchUpId: lockedId, drawId: DRAW_ID });
   // guard the guard: a rejected outcome would leave the matchUp TO_BE_PLAYED and
   // make the assertions below pass for the wrong reason
   expect(completion.success).toEqual(true);
   expect(scheduleOf(lockedId)?.lock).not.toBeUndefined();
 
-  const result: any = clearAll({ matchUpIds: [lockedId], scheduleCompletedMatchUps: true });
+  let result: any = clearAll({ matchUpIds: [lockedId], scheduleCompletedMatchUps: true });
   expect(result.lockedMatchUpIds).toBeUndefined();
   expect(scheduleOf(lockedId)?.scheduledTime).toBeUndefined();
 });
@@ -172,7 +213,7 @@ it('an unscheduled matchUp is not made unschedulable by a leftover lock', () => 
   // the lock object is still on the record, but with no placement to guard it
   // must not silently block the matchUp from being scheduled again
   expect(scheduleOf(lockedId)?.lock).not.toBeUndefined();
-  const result: any = tournamentEngine.addMatchUpScheduleItems({
+  let result: any = tournamentEngine.addMatchUpScheduleItems({
     schedule: { scheduledDate: SCHEDULED_DATE, scheduledTime: '14:00', courtId: courts[2].courtId },
     matchUpId: lockedId,
     drawId: DRAW_ID,
@@ -185,7 +226,7 @@ it('survives clearScheduledMatchUps, the date-scoped clear the schedulers use', 
   const { lockedId, otherId } = seed();
   lock(lockedId);
 
-  const result: any = tournamentEngine.clearScheduledMatchUps({ scheduledDates: [SCHEDULED_DATE] });
+  let result: any = tournamentEngine.clearScheduledMatchUps({ scheduledDates: [SCHEDULED_DATE] });
   expect(result.lockedMatchUpIds).toEqual([lockedId]);
   expect(scheduleOf(lockedId)?.scheduledTime).toEqual('19:00');
   expect(scheduleOf(otherId)?.scheduledTime).toBeUndefined();
@@ -195,10 +236,10 @@ it('survives clearMatchUpSchedule unless overridden', () => {
   const { lockedId } = seed();
   lock(lockedId);
 
-  const blocked: any = tournamentEngine.clearMatchUpSchedule({ matchUpId: lockedId, drawId: DRAW_ID });
+  let blocked: any = tournamentEngine.clearMatchUpSchedule({ matchUpId: lockedId, drawId: DRAW_ID });
   expect(blocked.error).toEqual(SCHEDULE_LOCKED);
 
-  const allowed: any = tournamentEngine.clearMatchUpSchedule({
+  let allowed: any = tournamentEngine.clearMatchUpSchedule({
     overrideScheduleLock: true,
     matchUpId: lockedId,
     drawId: DRAW_ID,
@@ -211,7 +252,7 @@ it('a partial lock guards only the attributes it names', () => {
   lock(lockedId, { attributes: ['scheduledTime'] });
 
   // court is not pinned — reassigning it is permitted
-  const courtChange: any = tournamentEngine.addMatchUpScheduleItems({
+  let courtChange: any = tournamentEngine.addMatchUpScheduleItems({
     schedule: { courtId: courts[3].courtId },
     matchUpId: lockedId,
     drawId: DRAW_ID,
@@ -219,7 +260,7 @@ it('a partial lock guards only the attributes it names', () => {
   expect(courtChange.error).toBeUndefined();
 
   // time is pinned
-  const timeChange: any = tournamentEngine.addMatchUpScheduleItems({
+  let timeChange: any = tournamentEngine.addMatchUpScheduleItems({
     schedule: { scheduledTime: '08:30' },
     matchUpId: lockedId,
     drawId: DRAW_ID,
@@ -241,7 +282,7 @@ it('unlocks with a null lock', () => {
   tournamentEngine.setMatchUpScheduleLock({ matchUpId: lockedId, drawId: DRAW_ID, lock: null });
   expect(scheduleOf(lockedId)?.lock).toBeUndefined();
 
-  const result: any = clearAll({ matchUpIds: [lockedId] });
+  let result: any = clearAll({ matchUpIds: [lockedId] });
   expect(result.lockedMatchUpIds).toBeUndefined();
   expect(scheduleOf(lockedId)?.scheduledTime).toBeUndefined();
 });
@@ -251,7 +292,7 @@ it('behaves identically in NATIVE, where placement is first-class', () => {
   const { lockedId, otherId } = seed();
   lock(lockedId);
 
-  const result: any = clearAll({ matchUpIds: [lockedId, otherId] });
+  let result: any = clearAll({ matchUpIds: [lockedId, otherId] });
   expect(result.lockedMatchUpIds).toEqual([lockedId]);
   expect(scheduleOf(lockedId)?.scheduledTime).toEqual('19:00');
   expect(scheduleOf(otherId)?.scheduledTime).toBeUndefined();
@@ -261,10 +302,126 @@ it('keeps the lock out of published views', () => {
   const { lockedId } = seed();
   lock(lockedId);
 
-  const publishedSchedule = tournamentEngine
+  let publishedSchedule = tournamentEngine
     .allTournamentMatchUps({ usePublishState: true })
     .matchUps.find((m: any) => m.matchUpId === lockedId)?.schedule;
   expect(publishedSchedule?.lock).toBeUndefined();
   // …while the operational view still carries it
+  expect(scheduleOf(lockedId)?.lock).not.toBeUndefined();
+});
+
+it('assigns an official to a locked matchUp — an official is not a placement', () => {
+  const { lockedId } = seed();
+  lock(lockedId);
+
+  let result: any = tournamentEngine.addMatchUpOfficial({
+    participantId: addOfficial(),
+    matchUpId: lockedId,
+    drawId: DRAW_ID,
+  });
+  expect(result.error).toBeUndefined();
+  expect(result.success).toEqual(true);
+  expect(scheduleOf(lockedId)?.official).not.toBeUndefined();
+  // the placement is untouched by the assignment
+  expect(scheduleOf(lockedId)?.scheduledTime).toEqual('19:00');
+});
+
+it('reports an officiating conflict on a locked matchUp — the lock must not mask it', () => {
+  // The conflict gate lives in addMatchUpOfficial, the lock guard in
+  // addMatchUpScheduleItems. If a refactor ever merges those paths, a lock
+  // refusal would return first and hide the conflict from a director who then
+  // unlocks, retries, and meets a second refusal they were never warned about.
+  const { lockedId, sides } = seed();
+  lock(lockedId);
+
+  let result: any = tournamentEngine.addMatchUpOfficial({
+    policyDefinitions: POLICY_OFFICIATING_CONFLICT_OF_INTEREST,
+    officialRecord: conflictedRecord(sides[0].participantId),
+    participantId: addOfficial(),
+    matchUpId: lockedId,
+    drawId: DRAW_ID,
+  });
+
+  expect(result.error).toEqual(OFFICIAL_CONFLICT_OF_INTEREST);
+  expect(result.error).not.toEqual(SCHEDULE_LOCKED);
+  expect(result.conflicts).toHaveLength(1);
+  // the conflict refusal wrote nothing, and the lock is unaffected
+  expect(scheduleOf(lockedId)?.official).toBeUndefined();
+  expect(scheduleOf(lockedId)?.lock).not.toBeUndefined();
+});
+
+it('pins allocated courts, comparing the allocation rather than the reference', () => {
+  // Only TEAM matchUps carry `allocatedCourts` (the write-side spelling is
+  // `courtIds`); a singles matchUp silently holds none. This is the one path
+  // where the lock compares arrays, so it needs a TEAM draw to be real.
+  const {
+    drawIds: [teamDrawId],
+  } = mocksEngine.generateTournamentRecord({
+    drawProfiles: [{ drawSize: 2, eventType: TEAM, tieFormatName: DOMINANT_DUO }],
+    venueProfiles: [{ courtsCount: 4, startTime: '08:00', endTime: '21:00', venueId: VENUE_ID }],
+    startDate: SCHEDULED_DATE,
+    endDate: '2026-06-28',
+    setState: true,
+  });
+
+  const courts = tournamentEngine.getVenuesAndCourts().courts;
+  const teamMatchUpId = tournamentEngine
+    .allTournamentMatchUps()
+    .matchUps.find((m: any) => m.matchUpType === TEAM)?.matchUpId;
+  const courtIds = [courts[0].courtId, courts[1].courtId];
+
+  tournamentEngine.addMatchUpScheduleItems({
+    schedule: { scheduledDate: SCHEDULED_DATE, courtIds },
+    matchUpId: teamMatchUpId,
+    drawId: teamDrawId,
+  });
+  // guard the guard: without a stored allocation the comparison below is vacuous
+  expect(scheduleOf(teamMatchUpId)?.allocatedCourts?.length).toEqual(2);
+
+  tournamentEngine.setMatchUpScheduleLock({ matchUpId: teamMatchUpId, drawId: teamDrawId, lock: {} });
+
+  // the same allocation rewritten is not a move
+  let unchanged: any = tournamentEngine.addMatchUpScheduleItems({
+    schedule: { courtIds },
+    matchUpId: teamMatchUpId,
+    drawId: teamDrawId,
+  });
+  expect(unchanged.error).toBeUndefined();
+
+  // a different allocation is
+  let moved: any = tournamentEngine.addMatchUpScheduleItems({
+    schedule: { courtIds: [courts[2].courtId] },
+    matchUpId: teamMatchUpId,
+    drawId: teamDrawId,
+  });
+  expect(moved.error).toEqual(SCHEDULE_LOCKED);
+  expect(moved.info).toContain('allocatedCourts');
+});
+
+it('rejects a lock request that names no matchUp', () => {
+  seed();
+  let result: any = tournamentEngine.setMatchUpScheduleLock({ drawId: DRAW_ID, lock: {} });
+  expect(result.error).not.toBeUndefined();
+});
+
+it('rejects a lock request for a matchUp that is not in the draw', () => {
+  seed();
+  let result: any = tournamentEngine.setMatchUpScheduleLock({
+    matchUpId: 'no-such-matchUp',
+    drawId: DRAW_ID,
+    lock: {},
+  });
+  expect(result.error).not.toBeUndefined();
+});
+
+it('locks silently when notices are disabled', () => {
+  const { lockedId } = seed();
+  let result: any = tournamentEngine.setMatchUpScheduleLock({
+    matchUpId: lockedId,
+    disableNotice: true,
+    drawId: DRAW_ID,
+    lock: {},
+  });
+  expect(result.success).toEqual(true);
   expect(scheduleOf(lockedId)?.lock).not.toBeUndefined();
 });

@@ -71,7 +71,9 @@ Two paths deliberately ignore locks:
 
 Automated scheduling never needed guarding: `proAutoSchedule` only fills **empty** grid cells, and `processAlreadyScheduledMatchUps` already counts existing placements against court capacity. A locked matchUp therefore reserves its own slot in every scheduler run for free. The one scheduler path that could have moved it — `clearScheduleDates`, which routes through `clearScheduledMatchUps` — is covered by the table above.
 
-Annotations on a placement stay editable while pinned: `courtAnnotation`, `timeModifiers`, and the official / scorekeeper / timekeeper assignments.
+Annotations on a placement stay editable while pinned: `courtAnnotation`, `timeModifiers`, and the official / scorekeeper / timekeeper assignments. **Assigning an official is never blocked by a lock, and an officiating conflict-of-interest refusal is never masked by one** — the two gates live in different mutations (`addMatchUpOfficial` vs `addMatchUpScheduleItems`) and are asserted independently, so a director cannot unlock, retry, and meet a second refusal they were never warned about.
+
+A write that changes nothing is also permitted: re-writing the same values does not trip a lock. That includes court allocations, which are compared by court identity rather than structurally — `allocatedCourts` is written as bare courtIds but stored as hydrated court objects, and re-ordering the same courts is not a move.
 
 ## Release on completion
 

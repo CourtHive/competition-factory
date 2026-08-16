@@ -72,6 +72,22 @@ function currentValue(matchUp: any, attribute: ScheduleLockAttribute): any {
 }
 
 /**
+ * The identity of a court allocation, order-independent.
+ *
+ * `allocatedCourts` is WRITTEN as bare courtIds but STORED as hydrated court
+ * objects (`{ courtId, courtName, venueId, venueName }`), so a structural
+ * comparison of the two sides never matches and re-writing an unchanged
+ * allocation would trip the lock. Reduce both to their courtIds; re-ordering
+ * the same courts is not a move.
+ */
+const allocationIdentity = (value: any): string =>
+  (Array.isArray(value) ? value : [value])
+    .map((entry) => (typeof entry === 'string' ? entry : entry?.courtId))
+    .filter(Boolean)
+    .toSorted((a: string, b: string) => a.localeCompare(b, 'en'))
+    .join('|');
+
+/**
  * Would writing `requested` over `current` actually move the placement?
  * Clearing an already-absent attribute is a no-op, and `3` / `'3'` are the same
  * court order — neither should trip a lock.
@@ -79,7 +95,9 @@ function currentValue(matchUp: any, attribute: ScheduleLockAttribute): any {
 function equivalent(requested: any, current: any): boolean {
   if (isEmpty(requested) && isEmpty(current)) return true;
   if (isEmpty(requested) || isEmpty(current)) return false;
-  if (Array.isArray(requested) || Array.isArray(current)) return JSON.stringify(requested) === JSON.stringify(current);
+  if (Array.isArray(requested) || Array.isArray(current)) {
+    return allocationIdentity(requested) === allocationIdentity(current);
+  }
   return String(requested) === String(current);
 }
 
