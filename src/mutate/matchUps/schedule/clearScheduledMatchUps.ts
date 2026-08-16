@@ -166,7 +166,6 @@ function clearSchedules({
         modifyMatchUpNotice({
           context: 'clear schedules',
           eventId: event?.eventId,
-          event,
           drawDefinition,
           tournamentId,
           matchUp,
