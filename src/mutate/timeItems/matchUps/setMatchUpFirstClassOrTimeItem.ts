@@ -66,6 +66,7 @@ export function setMatchUpFirstClassOrTimeItem({
     modifyMatchUpNotice({
       tournamentId: tournamentRecord?.tournamentId,
       eventId: event?.eventId,
+      event,
       context: 'setFirstClassOrTimeItem',
       drawDefinition,
       matchUp,

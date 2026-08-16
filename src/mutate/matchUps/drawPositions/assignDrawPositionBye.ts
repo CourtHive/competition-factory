@@ -546,6 +546,7 @@ function advanceWinner({
     tournamentId: tournamentRecord?.tournamentId,
     matchUp: noContextWinnerMatchUp,
     eventId: event?.eventId,
+    event,
     context: stack,
     drawDefinition,
   });
@@ -636,6 +637,7 @@ function resolvePropagatedExitOnAdvance({
   modifyMatchUpNotice({
     tournamentId: tournamentRecord?.tournamentId,
     eventId: event?.eventId,
+    event,
     context: stack,
     drawDefinition,
     matchUp,

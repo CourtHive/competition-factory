@@ -147,6 +147,7 @@ export function updateTieFormat({
     modifiedMatchUpsCount += 1;
     modifyMatchUpNotice({
       eventId: event?.eventId,
+      event,
       context: stack,
       drawDefinition,
       tournamentId,

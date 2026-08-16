@@ -1,6 +1,7 @@
 import { getPositionAssignments } from '@Query/drawDefinition/positionsGetter';
 import { addNotice, deleteNotice } from '@Global/state/globalState';
 import { requireParams } from '@Helpers/parameters/requireParams';
+import { eventOrigin } from '@Query/readModel/readModelRows';
 
 // Constants and types
 import { ErrorType, MISSING_DRAW_DEFINITION, MISSING_MATCHUP } from '@Constants/errorConditionConstants';
@@ -116,6 +117,16 @@ type ModifyMatchUpNoticeArgs = {
   matchUp: MatchUp;
   eventId?: string;
   context?: any;
+  /**
+   * The event this matchUp belongs to. Supplied so the notice can carry the SANCTIONING ORIGIN —
+   * one tournamentRecord can hold events sanctioned by several organisations, and a subscriber
+   * driving fan-out must be able to attribute a change without resolving the event itself.
+   *
+   * Callers rarely need to add it: `paramsMiddleware` already resolves `drawId` (or
+   * `matchUp.drawId`) into `params.event`, so most engine-entry methods receive it and only need to
+   * destructure it.
+   */
+  event?: any;
 };
 
 export function modifyMatchUpNotice({
@@ -125,6 +136,7 @@ export function modifyMatchUpNotice({
   context,
   eventId,
   matchUp,
+  event,
 }: ModifyMatchUpNoticeArgs) {
   if (!matchUp) {
     console.log(MISSING_MATCHUP);
@@ -143,6 +155,7 @@ export function modifyMatchUpNotice({
   // was just touched (complements the drawDefinition + structure
   // timestamps written above via `modifyDrawNotice`).
   stampMatchUpUpdatedAt(matchUp);
+  const origin = eventOrigin(event);
   addNotice({
     topic: MODIFY_MATCHUP,
     // eventId/drawId/structureId ride the ENVELOPE, not just the entity. A subscriber that only needs
@@ -151,9 +164,15 @@ export function modifyMatchUpNotice({
     payload: {
       matchUp,
       tournamentId,
-      eventId,
+      eventId: eventId ?? event?.eventId,
       drawId: drawDefinition?.drawId ?? (matchUp as any)?.drawId,
       structureId,
+      // The sanctioning source, flattened — same vocabulary as the read-model's
+      // origin_organisation_id / origin_tournament_id / origin_event_id. Absent when the event
+      // declares no origin, which is the ordinary single-sanction case.
+      originOrganisationId: origin?.organisationId,
+      originTournamentId: origin?.tournamentId,
+      originEventId: origin?.eventId,
       context,
     },
     key: matchUp.matchUpId,

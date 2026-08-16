@@ -235,6 +235,7 @@ function applyFormatToStructures({
           modifyMatchUpNotice({
             tournamentId: tournamentRecord?.tournamentId,
             eventId: event?.eventId,
+            event,
             context: stack,
             drawDefinition,
             matchUp,
