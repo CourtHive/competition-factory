@@ -488,6 +488,7 @@ export function addMatchUpScheduleItems(params: AddMatchUpScheduleItemsArgs): {
       context: stack,
       drawDefinition,
       matchUp,
+      event,
     });
   }
 

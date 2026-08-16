@@ -8,7 +8,7 @@ import { getDevContext } from '@Global/state/globalState';
  * for FMLC 2nd round matchUps test whether it works if a first loss for both participants
  */
 export function swapWinnerLoser(params) {
-  const { tournamentRecord, inContextMatchUp, structure, drawDefinition } = params;
+  const { tournamentRecord, inContextMatchUp, structure, drawDefinition, event } = params;
   const matchUpRoundNumber = inContextMatchUp.roundNumber;
 
   const existingWinnerSide = inContextMatchUp.sides.find((side) => side.sideNumber === inContextMatchUp.winningSide);
@@ -39,6 +39,7 @@ export function swapWinnerLoser(params) {
       context: stack,
       drawDefinition,
       matchUp,
+      event,
     });
   });
 

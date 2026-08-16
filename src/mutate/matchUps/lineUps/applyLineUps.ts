@@ -124,6 +124,7 @@ export function applyLineUps(params: ApplyLineUps) {
     context: stack,
     drawDefinition,
     matchUp,
+    event,
   });
 
   return { ...SUCCESS };

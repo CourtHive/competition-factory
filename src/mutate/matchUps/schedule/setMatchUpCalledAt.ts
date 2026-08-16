@@ -67,6 +67,7 @@ export function setMatchUpCalledAt(params: SetMatchUpCalledAtArgs) {
       tournamentId: tournamentRecord?.tournamentId,
       context: stack,
       matchUp,
+      event,
     });
   }
 

@@ -329,6 +329,7 @@ export function removeTieMatchUpParticipantId(
     matchUp: dualMatchUp,
     context: stack,
     drawDefinition,
+    event,
   });
 
   return { ...SUCCESS, modifiedLineUp };

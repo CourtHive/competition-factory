@@ -95,6 +95,7 @@ export function setMatchUpScheduleLock(params: SetMatchUpScheduleLockArgs) {
       context: stack,
       drawDefinition,
       matchUp,
+      event,
     });
   }
 
