@@ -13,9 +13,11 @@ export { isFactoryUuid, resolvePersonLink, LINK_PROVIDER_ID, LINK_UNRESOLVED } f
 export type { PersonLink } from './personRule';
 export {
   tournamentRow,
+  tournamentOrigin,
   eventRow,
   eventOrigin,
   drawRow,
+  drawOrigin,
   structureRow,
   seedRow,
   venueRow,

@@ -4,7 +4,7 @@ import { LINK_UNRESOLVED, resolvePersonLink } from './personRule';
 import { findExtension } from '@Acquire/findExtension';
 
 // types
-import { UnifiedEventID } from '@Types/tournamentTypes';
+import { UnifiedDrawID, UnifiedEventID, UnifiedTournamentID } from '@Types/tournamentTypes';
 import {
   ReadModelTournamentRow,
   ReadModelCompetitorRow,
@@ -46,6 +46,7 @@ export function tournamentRow(record: any): ReadModelTournamentRow {
   // aggregate publish flag: the tournament is "published" when its order of play OR
   // its participant list is published (the same condition that drives UNPUBLISH_TOURNAMENT).
   const pubStatus: any = getTournamentPublishStatus({ tournamentRecord: record });
+  const origin = tournamentOrigin(record);
   return {
     tournament_id: record?.tournamentId,
     tournament_name: record?.tournamentName ?? null,
@@ -54,7 +55,22 @@ export function tournamentRow(record: any): ReadModelTournamentRow {
     end_date: record?.endDate ?? null,
     city: record?.tournamentContacts?.[0]?.city ?? record?.city ?? null,
     published: !!(pubStatus?.orderOfPlay?.published || pubStatus?.participants?.published),
+    origin_organisation_id: origin?.organisationId ?? null,
+    origin_tournament_id: origin?.tournamentId ?? null,
   };
+}
+
+/**
+ * The `tournamentOtherIds[]` entry flagged `isOrigin` — the system the whole RECORD was
+ * acquired from (an ingest source, or a sanctioning body that handed the record over).
+ *
+ * Independent of {@link eventOrigin} one grain down: a record acquired wholesale from one
+ * organisation can still carry events sanctioned by others, so neither can be inferred
+ * from the other. Tolerant of a malformed record for the same reason `eventOrigin` is —
+ * see the note there.
+ */
+export function tournamentOrigin(record: any): UnifiedTournamentID | undefined {
+  return (record?.tournamentOtherIds ?? []).find((otherId: UnifiedTournamentID) => otherId?.isOrigin);
 }
 
 // ── participant-list publication state ──────────────────────────────────────────
@@ -125,6 +141,7 @@ export function drawRow(
   eventId: string | null,
   providerId: string | undefined,
 ): ReadModelDrawRow {
+  const origin = drawOrigin(draw);
   return {
     draw_id: draw?.drawId,
     tournament_id: tournamentId,
@@ -133,7 +150,23 @@ export function drawRow(
     draw_name: draw?.drawName ?? null,
     draw_type: draw?.drawType ?? null,
     match_up_format: draw?.matchUpFormat ?? null,
+    origin_organisation_id: origin?.organisationId ?? null,
+    origin_tournament_id: origin?.tournamentId ?? null,
+    origin_event_id: origin?.eventId ?? null,
+    origin_draw_id: origin?.drawId ?? null,
   };
+}
+
+/**
+ * The `drawOtherIds[]` entry flagged `isOrigin` — the system this draw came from.
+ *
+ * All four projected columns are independently nullable because an origin system supplies
+ * only the grains it actually models: a UTR flight yields `origin_tournament_id` (UTR's
+ * event id) and `origin_draw_id` (the flight GUID) with `origin_event_id` NULL, since UTR
+ * has no event-grain object.
+ */
+export function drawOrigin(draw: any): UnifiedDrawID | undefined {
+  return (draw?.drawOtherIds ?? []).find((otherId: UnifiedDrawID) => otherId?.isOrigin);
 }
 
 export interface StructureRowContext {

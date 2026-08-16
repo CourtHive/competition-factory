@@ -9,6 +9,8 @@ export { addNotes, removeNotes } from '@Mutate/base/addRemoveNotes';
 export { addOnlineResource } from '@Mutate/base/addOnlineResource';
 export { addExtension } from '@Mutate/extensions/addExtension';
 
+export { addTournamentOtherId, setTournamentOtherIds } from '@Mutate/tournaments/tournamentOtherIds';
+
 export {
   setRegistrationProfile,
   setTournamentName,

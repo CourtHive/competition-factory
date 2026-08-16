@@ -19,6 +19,7 @@ export type FactoryEngineMethod =
   | 'addDrawDefinitionExtension'
   | 'addDrawDefinitionTimeItem'
   | 'addDrawEntries'
+  | 'addDrawOtherId'
   | 'addDynamicRatings'
   | 'addEvaluation'
   | 'addEvaluationPolicy'
@@ -63,6 +64,7 @@ export type FactoryEngineMethod =
   | 'addSuspension'
   | 'addTimeItem'
   | 'addTournamentExtension'
+  | 'addTournamentOtherId'
   | 'addTournamentTimeItem'
   | 'addVenue'
   | 'addVenueOtherId'
@@ -570,6 +572,7 @@ export type FactoryEngineMethod =
   | 'ScoringEngine'
   | 'seedWithdrawalCascade'
   | 'setDelegatedOutcome'
+  | 'setDrawOtherIds'
   | 'setDrawParticipantRepresentativeIds'
   | 'setDrawPositionPreferences'
   | 'setEntryPosition'
@@ -602,6 +605,7 @@ export type FactoryEngineMethod =
   | 'setTournamentLocalTimeZone'
   | 'setTournamentName'
   | 'setTournamentNotes'
+  | 'setTournamentOtherIds'
   | 'setTournamentRecord'
   | 'setTournamentStartDate'
   | 'setTournamentStatus'
@@ -682,6 +686,7 @@ export const FACTORY_ENGINE_METHODS: readonly FactoryEngineMethod[] = [
   'addDrawDefinitionExtension',
   'addDrawDefinitionTimeItem',
   'addDrawEntries',
+  'addDrawOtherId',
   'addDynamicRatings',
   'addEvaluation',
   'addEvaluationPolicy',
@@ -726,6 +731,7 @@ export const FACTORY_ENGINE_METHODS: readonly FactoryEngineMethod[] = [
   'addSuspension',
   'addTimeItem',
   'addTournamentExtension',
+  'addTournamentOtherId',
   'addTournamentTimeItem',
   'addVenue',
   'addVenueOtherId',
@@ -1233,6 +1239,7 @@ export const FACTORY_ENGINE_METHODS: readonly FactoryEngineMethod[] = [
   'ScoringEngine',
   'seedWithdrawalCascade',
   'setDelegatedOutcome',
+  'setDrawOtherIds',
   'setDrawParticipantRepresentativeIds',
   'setDrawPositionPreferences',
   'setEntryPosition',
@@ -1265,6 +1272,7 @@ export const FACTORY_ENGINE_METHODS: readonly FactoryEngineMethod[] = [
   'setTournamentLocalTimeZone',
   'setTournamentName',
   'setTournamentNotes',
+  'setTournamentOtherIds',
   'setTournamentRecord',
   'setTournamentStartDate',
   'setTournamentStatus',

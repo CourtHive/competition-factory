@@ -17,8 +17,15 @@ origin cannot be inferred from the record that carries it.
 ## Shape
 
 `UnifiedEventID` is the event-grain member of the `Unified*ID` family, alongside
-`UnifiedTournamentID` (`tournament.tournamentOtherIds`), `UnifiedPersonID`
-(`person.personOtherIds`) and `UnifiedVenueID` (`venue.venueOtherIds`).
+`UnifiedTournamentID` (`tournament.tournamentOtherIds`), `UnifiedDrawID`
+(`drawDefinition.drawOtherIds`), `UnifiedParticipantID`
+(`participant.participantOtherIds`), `UnifiedPersonID` (`person.personOtherIds`) and
+`UnifiedVenueID` (`venue.venueOtherIds`).
+
+See [Unified Identity](../unified-identity.md) for the rules shared across the whole
+family, and for the tournament and draw grains in particular — the tournament grain
+answers "where did this whole record come from?", which is the natural question for an
+ingested record, and is independent of the per-event sanctioning origin described here.
 
 ```js
 event.eventOtherIds = [
