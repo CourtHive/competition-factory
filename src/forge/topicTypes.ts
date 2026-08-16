@@ -18,7 +18,7 @@
  * optional (e.g. `tournamentId` for participant topics).
  */
 
-import type { MatchUp, Event, DrawDefinition, Tournament } from '@Types/tournamentTypes';
+import type { MatchUp, Event, DrawDefinition } from '@Types/tournamentTypes';
 
 // ============================================================================
 // Identity envelope
@@ -114,8 +114,22 @@ export interface PublishEventPayload extends NoticeIdentity {
   eventData: any;
 }
 
+/**
+ * ⚠️ CORRECTED 2026-08-16 — this previously declared `tournamentRecord: Tournament`, which **no
+ * callsite has ever emitted**. A consumer reading `payload.tournamentRecord.tournamentId` got a
+ * TypeError. Found by the conformance guard in `src/tests/forge/topicPayloadConformance.test.ts` on its
+ * first run — the exact failure the guard exists for.
+ *
+ * Real shape, across all 11 emit sites: `tournamentId` is the only universal field;
+ * `parentOrganisation` rides 10 of 11; the remaining keys are detail-specific (`notes`,
+ * `localTimeZone`, `tournamentTier`, `registrationProfile`, `categories`, `onlineResources`,
+ * `timeItemValues`, or a spread of `detailUpdates`).
+ */
 export interface ModifyTournamentDetailPayload {
-  tournamentRecord: Tournament;
+  tournamentId: string;
+  parentOrganisation?: any;
+  /** Detail-specific — which key arrives depends on which mutation fired. */
+  [detail: string]: unknown;
 }
 
 export interface ModifyPositionAssignmentsPayload extends NoticeIdentity {
