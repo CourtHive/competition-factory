@@ -17,7 +17,7 @@ import { generateRange } from '@Tools/arrays';
 // constants and types
 import { ParticipantsProfile, PolicyDefinitions, StructureSortConfig } from '@Types/factoryTypes';
 import { EVENT_NOT_FOUND, INVALID_VALUES, ErrorType } from '@Constants/errorConditionConstants';
-import { DrawsProfileEnum, DrawsProfileUnion, Event, Tournament } from '@Types/tournamentTypes';
+import { PayloadProfileEnum, PayloadProfileUnion, Event, Tournament } from '@Types/tournamentTypes';
 import { completedMatchUpStatuses, BYE } from '@Constants/matchUpStatusConstants';
 import { DISPLAY } from '@Constants/extensionConstants';
 import { ANY_OF } from '@Constants/attributeConstants';
@@ -36,7 +36,7 @@ type GetEventDataArgs = {
   usePublishState?: boolean;
   refreshResults?: boolean;
   pressureRating?: boolean;
-  drawsProfile?: DrawsProfileUnion;
+  drawsProfile?: PayloadProfileUnion;
   participantFilters?: any;
   contextProfile?: any;
   eventId?: string;
@@ -58,12 +58,12 @@ export function getEventData(params: GetEventDataArgs): {
     status = PUBLIC,
     contextProfile,
     sortConfig,
-    drawsProfile = DrawsProfileEnum.FULL,
+    drawsProfile = PayloadProfileEnum.FULL,
   } = params;
 
   // Unknown value is an ERROR, never a silent fall-through to FULL: a typo must not quietly return
   // the 788 KB payload a caller was explicitly trying to avoid.
-  if (!Object.values(DrawsProfileEnum).includes(drawsProfile as DrawsProfileEnum)) {
+  if (!Object.values(PayloadProfileEnum).includes(drawsProfile as PayloadProfileEnum)) {
     return { error: INVALID_VALUES, context: { drawsProfile } } as any;
   }
 
@@ -230,7 +230,7 @@ export function getEventData(params: GetEventDataArgs): {
   let drawsData;
   if (!drawsVisible) {
     drawsData = undefined;
-  } else if (drawsProfile === DrawsProfileEnum.STUBS) {
+  } else if (drawsProfile === PayloadProfileEnum.STUBS) {
     drawsData = drawDefinitions.filter(drawFilter).map(buildDrawStub);
   } else {
     drawsData = buildFullDrawsData();

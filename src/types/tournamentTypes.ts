@@ -400,7 +400,8 @@ export enum PositioningProfileEnum {
 export type PositioningProfileUnion = `${PositioningProfileEnum}`;
 
 /**
- * How much of each draw `getEventData` returns.
+ * How much of a nested collection a query returns — shared by `getEventData({ drawsProfile })` and
+ * `getDrawData({ structuresProfile })`.
  *
  * `FULL` is the default and the pre-existing behaviour — every draw hydrated through `getDrawData`.
  * `STUBS` emits cheap per-draw metadata only, skipping structure assembly entirely: on a Grand-Slam
@@ -408,11 +409,11 @@ export type PositioningProfileUnion = `${PositioningProfileEnum}`;
  * (`drawInfo ⊃ structures ⊃ roundMatchUps`), which is why it is one ordinal parameter rather than
  * independent flags.
  */
-export enum DrawsProfileEnum {
+export enum PayloadProfileEnum {
   FULL = 'FULL',
   STUBS = 'STUBS',
 }
-export type DrawsProfileUnion = `${DrawsProfileEnum}`;
+export type PayloadProfileUnion = `${PayloadProfileEnum}`;
 
 export enum SeedingProfileEnum {
   CLUSTER = 'CLUSTER',
