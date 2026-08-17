@@ -1,5 +1,12 @@
 # Changelog
 
+## [6.28.0](https://github.com/CourtHive/competition-factory/compare/v6.27.0...v6.28.0) (2026-08-17)
+
+
+### Features
+
+* **notifications:** populate structureId on MODIFY_MATCHUP notices ([#4647](https://github.com/CourtHive/competition-factory/issues/4647)) ([d827910](https://github.com/CourtHive/competition-factory/commit/d827910b02ab14aa77c44307f8f3a5284a6ac820))
+
 ## [6.27.0](https://github.com/CourtHive/competition-factory/compare/v6.26.0...v6.27.0) (2026-08-17)
 
 
