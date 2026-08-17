@@ -1,5 +1,13 @@
 # Changelog
 
+## [6.28.1](https://github.com/CourtHive/competition-factory/compare/v6.28.0...v6.28.1) (2026-08-17)
+
+
+### Bug Fixes
+
+* **notifications:** apply the eventId fallback to the draw notice too ([#4651](https://github.com/CourtHive/competition-factory/issues/4651)) ([e056de5](https://github.com/CourtHive/competition-factory/commit/e056de5c2bcac5e39d1dcafe256a0e04208c7e73))
+* **notifications:** carry eventId on notices for PROPAGATED matchUps ([#4649](https://github.com/CourtHive/competition-factory/issues/4649)) ([e55d47b](https://github.com/CourtHive/competition-factory/commit/e55d47bc0de98eb2f2bf48773f8aee5d645a2852))
+
 ## [6.28.0](https://github.com/CourtHive/competition-factory/compare/v6.27.0...v6.28.0) (2026-08-17)
 
 
