@@ -129,6 +129,37 @@ type ModifyMatchUpNoticeArgs = {
   event?: any;
 };
 
+/**
+ * Resolve the structure a matchUp lives in, for notice ATTRIBUTION only.
+ *
+ * Stored matchUps carry no `structureId` — only inContext ones do — so a notice emitted from the
+ * mutation path has nothing to read. Callers that already hold a `structure` should pass
+ * `structureId` explicitly; this is the fallback that keeps the envelope populated for the 57 of 61
+ * `modifyMatchUpNotice` call sites that do not, every score path among them.
+ *
+ * Returns the id of the structure DIRECTLY holding the matchUp — for round robins that is the group
+ * (child) structure, matching what `allTournamentMatchUps` reports inContext. Conformance with that
+ * convention is asserted in noticeStructureId.test.ts; a subscriber must not have to know which of
+ * two vocabularies a given topic used.
+ */
+function resolveStructureId(drawDefinition?: DrawDefinition, matchUpId?: string): string | undefined {
+  if (!drawDefinition?.structures?.length || !matchUpId) return undefined;
+
+  const search = (structures: any[]): string | undefined => {
+    for (const structure of structures) {
+      // Depth first: the group structure owns the matchUp, not its round-robin parent.
+      if (structure?.structures?.length) {
+        const found = search(structure.structures);
+        if (found) return found;
+      }
+      if (structure?.matchUps?.some((m: any) => m?.matchUpId === matchUpId)) return structure.structureId;
+    }
+    return undefined;
+  };
+
+  return search(drawDefinition.structures);
+}
+
 export function modifyMatchUpNotice({
   drawDefinition,
   tournamentId,
@@ -143,6 +174,11 @@ export function modifyMatchUpNotice({
     return { error: MISSING_MATCHUP };
   }
   if (drawDefinition) {
+    // DELIBERATELY the caller-supplied structureId only, NOT the resolved one below. This argument
+    // decides which structures get their `updatedAt` stamped by `drawUpdatedAt`; widening it to the
+    // resolved id would narrow stamping from "every structure" to "one" at 57 call sites — a
+    // behaviour change to timestamps consumers may sync on. Notice attribution and updatedAt
+    // stamping are separate concerns and are kept separate here.
     const structureIds = structureId ? [structureId] : undefined;
     modifyDrawNotice({
       drawDefinition,
@@ -171,7 +207,9 @@ export function modifyMatchUpNotice({
       tournamentId,
       eventId: eventId ?? event?.eventId,
       drawId: drawDefinition?.drawId ?? (matchUp as any)?.drawId,
-      structureId,
+      // Best-effort, same as drawId above: an explicit caller value wins, otherwise resolve it from
+      // the drawDefinition so the envelope is populated regardless of call site.
+      structureId: structureId ?? resolveStructureId(drawDefinition, matchUp?.matchUpId),
       // The sanctioning source, flattened — same vocabulary as the read-model's
       // origin_organisation_id / origin_tournament_id / origin_event_id. Absent when the event
       // declares no origin, which is the ordinary single-sanction case.
