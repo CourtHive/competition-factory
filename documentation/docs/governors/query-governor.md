@@ -566,6 +566,35 @@ available on the un-hydrated matchUp — so a structure list still renders a sta
 Purely additive — omitting it is byte-identical to `FULL`, and an unrecognised value returns
 `INVALID_VALUES` rather than falling back.
 
+## getStructureData
+
+One structure's data — the drill-in tier of the payload decomposition. A client lists draws with
+[`drawsProfile: 'STUBS'`](#drawsprofile), lists structures with
+[`structuresProfile: 'STUBS'`](#structuresprofile), then fetches exactly the structure it is about to
+render.
+
+```js
+const { structure, drawInfo } = engine.getStructureData({
+  drawId,
+  structureId,
+  // ...accepts the same optional params as getDrawData
+});
+```
+
+> **This narrows the payload, not the computation.** Every draw type measured — single elimination,
+> round robin, compass, Curtis consolation, feed-in championship, and a qualifying-fed draw — resolves
+> to a **single structure group**, because `getStructureGroups` partitions by linkage and a draw's
+> structures are linked by construction. There is no independent group to skip, and assembling one
+> structure in isolation is not available cheaply: within-group values depend on siblings
+> (`sourceStructuresComplete` reads `completedStructures[sourceId]`).
+>
+> The value is a **smaller response** and a **per-structure cache entry** — cache granularity is
+> invalidation granularity, so a score in one structure need not evict another's cached payload.
+
+Returns `STRUCTURE_NOT_FOUND` when the id is not in the draw, and `MISSING_STRUCTURE_ID` when omitted. A
+structure filtered out by publish state yields `structure: undefined` with `success` — a legitimate
+empty result for a public reader rather than an error.
+
 ## getEventData
 
 Returns event information optimized for publishing: `matchUps` have context and separated into rounds for consumption by visualization libraries such as `tods-react-draws`. See examples: [Event Data Payload](../concepts/publishing/publishing-data-subscriptions.md#event-data-payload), [Event Data](../concepts/publishing/publishing-workflows.md#event-data), [Test Publish State](../concepts/publishing/publishing-workflows.md#test-publish-state).
