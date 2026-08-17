@@ -10,7 +10,7 @@ import {
   SINGLE_ELIMINATION,
   FIRST_MATCH_LOSER_CONSOLATION,
 } from '@Constants/drawDefinitionConstants';
-import { MODIFY_MATCHUP, MODIFY_POSITION_ASSIGNMENTS } from '@Constants/topicConstants';
+import { MODIFY_MATCHUP, MODIFY_POSITION_ASSIGNMENTS, MODIFY_DRAW_DEFINITION } from '@Constants/topicConstants';
 
 /**
  * MODIFY_MATCHUP must carry the structure a change happened in, so a subscriber can route it without
@@ -122,6 +122,47 @@ describe('MODIFY_MATCHUP structureId', () => {
     expect(emitted.filter((p: any) => !p.eventId)).toEqual([]);
     expect(emitted.filter((p: any) => !p.structureId)).toEqual([]);
     expect(emitted.filter((p: any) => !p.drawId)).toEqual([]);
+
+    setSubscriptions({ subscriptions: {} });
+  });
+
+  it('MODIFY_DRAW_DEFINITION emitted alongside a score carries the same eventId', () => {
+    // The two notices come from ONE call. The fallback used to be applied to the MODIFY_MATCHUP
+    // payload but not to the drawNotice, so a caller supplying `event` (and not `eventId`) produced
+    // one notice that could be attributed and one that could not — and a consumer needs only one
+    // unattributable notice to lose the whole batch's granularity.
+    const {
+      drawIds: [drawId],
+    } = mocksEngine.generateTournamentRecord({
+      drawProfiles: [{ drawSize: 8, drawType: SINGLE_ELIMINATION }],
+      participantsProfile: { nonRandom: 1 },
+      setState: true,
+    });
+
+    const notices = capture([MODIFY_MATCHUP, MODIFY_DRAW_DEFINITION]);
+    const matchUps: any[] = tournamentEngine.allTournamentMatchUps().matchUps ?? [];
+    const { outcome } = mocksEngine.generateOutcomeFromScoreString({
+      scoreString: '6-4 6-2',
+      matchUpStatus: 'COMPLETED',
+      winningSide: 1,
+    });
+    let scored = 0;
+    for (let pass = 0; pass < 12; pass++) {
+      const all: any[] = tournamentEngine.allTournamentMatchUps().matchUps ?? [];
+      const next = all.filter(
+        (m: any) => !m.winningSide && (m.sides ?? []).filter((s: any) => s?.participantId).length === 2,
+      );
+      if (!next.length) break;
+      for (const m of next) {
+        if (tournamentEngine.setMatchUpStatus({ matchUpId: m.matchUpId, drawId, outcome }).success) scored += 1;
+      }
+    }
+    expect(scored).toBeGreaterThan(0);
+    expect(matchUps.length).toBeGreaterThan(0);
+
+    const drawNotices = notices.filter((n) => n.topic === MODIFY_DRAW_DEFINITION).map((n) => n.p);
+    expect(drawNotices.length).toBeGreaterThan(0);
+    expect(drawNotices.filter((p: any) => !p.eventId)).toEqual([]);
 
     setSubscriptions({ subscriptions: {} });
   });

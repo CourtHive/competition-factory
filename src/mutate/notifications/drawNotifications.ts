@@ -173,6 +173,12 @@ export function modifyMatchUpNotice({
     console.log(MISSING_MATCHUP);
     return { error: MISSING_MATCHUP };
   }
+  // Resolve ONCE and use everywhere. Previously the fallback was applied to this notice's own payload
+  // but not to the drawNotice below, so a caller supplying `event` (and not `eventId`) produced a
+  // MODIFY_MATCHUP that could be attributed and a MODIFY_DRAW_DEFINITION that could not — from the
+  // same call. One unattributable notice is enough to cost a consumer the whole batch's granularity.
+  const resolvedEventId = eventId ?? event?.eventId;
+
   if (drawDefinition) {
     // DELIBERATELY the caller-supplied structureId only, NOT the resolved one below. This argument
     // decides which structures get their `updatedAt` stamped by `drawUpdatedAt`; widening it to the
@@ -184,7 +190,7 @@ export function modifyMatchUpNotice({
       drawDefinition,
       structureIds,
       tournamentId,
-      eventId,
+      eventId: resolvedEventId,
     });
   }
   // Stamp the matchUp itself so consumers can see at-a-glance that it
@@ -205,7 +211,7 @@ export function modifyMatchUpNotice({
     payload: {
       matchUp,
       tournamentId,
-      eventId: eventId ?? event?.eventId,
+      eventId: resolvedEventId,
       drawId: drawDefinition?.drawId ?? (matchUp as any)?.drawId,
       // Best-effort, same as drawId above: an explicit caller value wins, otherwise resolve it from
       // the drawDefinition so the envelope is populated regardless of call site.
