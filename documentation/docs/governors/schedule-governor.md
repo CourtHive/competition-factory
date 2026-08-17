@@ -1457,6 +1457,7 @@ engine.addMatchUpScheduleItems({
     courtOrder, // optional — order on court
     homeParticipantId, // optional — home team participant
     courtIds, // optional — for TEAM matchUps, allocate courts
+    allocatedCourts, // optional — alias for courtIds; accepts the read-side shape
   },
   removePriorValues, // optional boolean — clear existing schedule timeItems first
   checkChronology, // optional boolean — defaults to true; validate time ordering
@@ -1465,6 +1466,24 @@ engine.addMatchUpScheduleItems({
   disableNotice, // optional boolean — suppress modification notices
 });
 ```
+
+### Court allocation: `courtIds` in, `allocatedCourts` out
+
+A TEAM matchUp's court allocation is **written** as bare `courtIds` and **read back** as
+`schedule.allocatedCourts` — court objects (`{ courtId, venueId }`, hydrated with `courtName` /
+`venueName`). Because the write path originally destructured only `courtIds`, a schedule object read
+off one matchUp and applied to another silently carried no allocation: the unrecognised key was
+ignored, with no error and no warning.
+
+`allocatedCourts` is now accepted as an alias, in either shape:
+
+```js
+engine.addMatchUpScheduleItems({ matchUpId, drawId, schedule: { allocatedCourts: [courtIdA, courtIdB] } });
+engine.addMatchUpScheduleItems({ matchUpId, drawId, schedule: { ...anotherMatchUp.schedule } }); // round-trips
+```
+
+An explicit `courtIds` wins when a caller supplies both. A non-array `allocatedCourts` is ignored
+rather than treated as an error, since it cannot have come from a read.
 
 ### Grid position is cleared on a date change
 
