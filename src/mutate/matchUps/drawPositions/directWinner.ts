@@ -54,6 +54,7 @@ export function directWinner({
       sourceMatchUpId,
       drawDefinition,
       matchUpsMap,
+      event,
     });
     if (result.error) return result;
   }
@@ -162,6 +163,7 @@ function directWinnerViaLink({
       sourceMatchUpId,
       drawDefinition,
       matchUpsMap,
+      event,
     });
     if (assignResult.error) return decorateResult({ result: assignResult, stack });
   } else if (structure?.stage !== QUALIFYING) {

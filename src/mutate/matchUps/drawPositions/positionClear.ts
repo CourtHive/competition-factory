@@ -149,6 +149,7 @@ export function drawPositionRemovals({
       drawDefinition,
       matchUpsMap,
       structure,
+      event,
     });
     return { drawPositionCleared, ...SUCCESS };
   }

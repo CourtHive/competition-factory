@@ -216,6 +216,7 @@ export function assignDrawPosition({
       participantId,
       matchUpsMap,
       structure,
+      event,
     });
   } else {
     addDrawPositionToMatchUps({
@@ -298,6 +299,7 @@ function handleContainerAssignment({
   participantId,
   matchUpsMap,
   structure,
+  event,
 }) {
   modifyRoundRobinMatchUpsStatus({
     positionAssignments,
@@ -305,6 +307,7 @@ function handleContainerAssignment({
     drawDefinition,
     matchUpsMap,
     structure,
+    event,
   });
 
   const { drawPositions, matchUps, targetMatchUps } = getTargetMatchUps({
@@ -374,6 +377,7 @@ function addDrawPositionToMatchUps({
       drawDefinition,
       drawPosition,
       matchUpsMap,
+      event,
     });
     if (result.error)
       return decorateResult({

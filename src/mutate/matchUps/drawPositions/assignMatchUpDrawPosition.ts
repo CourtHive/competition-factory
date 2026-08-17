@@ -176,6 +176,7 @@ export function assignMatchUpDrawPosition({
   const isLuckyDraw = isLuckyBasedDraw(drawDefinition?.drawType);
 
   const advanceResult = advanceDrawPosition({
+    event,
     inContextDrawMatchUps: resolvedInContextDrawMatchUps,
     positionAssigned,
     isPropagatedExit,
@@ -340,11 +341,13 @@ function advanceDrawPosition({
   matchUpsMap,
   matchUp,
   structure,
+  event,
 }) {
   if (positionAssigned && isByeMatchUp && !isLuckyDraw) {
     if (winnerMatchUp) {
       if ([BYE, DOUBLE_WALKOVER, DOUBLE_DEFAULT].includes(matchUpStatus)) {
         const result = assignMatchUpDrawPosition({
+          event,
           matchUpId: winnerMatchUp.matchUpId,
           inContextDrawMatchUps,
           tournamentRecord,
@@ -363,6 +366,7 @@ function advanceDrawPosition({
   } else if (positionAssigned && isPropagatedExit) {
     if (winnerMatchUp) {
       const result = assignMatchUpDrawPosition({
+        event,
         matchUpId: winnerMatchUp.matchUpId,
         inContextDrawMatchUps,
         tournamentRecord,
@@ -382,6 +386,7 @@ function advanceDrawPosition({
 
     if (pairedPreviousMatchUpIsDoubleExit) {
       const result = assignMatchUpDrawPosition({
+        event,
         matchUpId: winnerMatchUp.matchUpId,
         inContextDrawMatchUps,
         tournamentRecord,

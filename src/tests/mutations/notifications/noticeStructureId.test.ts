@@ -77,6 +77,55 @@ describe('MODIFY_MATCHUP structureId', () => {
     setSubscriptions({ subscriptions: {} });
   });
 
+  it.each([
+    ['single elimination', 'SINGLE_ELIMINATION'],
+    ['compass', 'COMPASS'],
+    ['round robin', 'ROUND_ROBIN'],
+    ['first match loser consolation', 'FIRST_MATCH_LOSER_CONSOLATION'],
+    ['round robin with playoff', 'ROUND_ROBIN_WITH_PLAYOFF'],
+    ['feed in championship', 'FEED_IN_CHAMPIONSHIP'],
+  ])('%s — EVERY notice from a fully played draw carries an eventId', (_label, drawType) => {
+    // Advancement paths used to drop `event` on the way down (directWinner -> assignMatchUpDrawPosition,
+    // handleContainerAssignment -> modifyRoundRobinMatchUpsStatus, advanceDrawPosition), so notices for
+    // PROPAGATED matchUps arrived with no eventId. A consumer cannot route those, and one unattributable
+    // notice forces a wholesale cache sweep — it only takes one to lose the granularity for the batch.
+    // Playing the draw OUT is the point: the gap was in advancement, not in the first score.
+    const {
+      drawIds: [drawId],
+    } = mocksEngine.generateTournamentRecord({
+      drawProfiles: [{ drawSize: 8, drawType }],
+      participantsProfile: { nonRandom: 1 },
+      setState: true,
+    });
+
+    const notices = capture([MODIFY_MATCHUP]);
+    const { outcome } = mocksEngine.generateOutcomeFromScoreString({
+      scoreString: '6-4 6-2',
+      matchUpStatus: 'COMPLETED',
+      winningSide: 1,
+    });
+    let scored = 0;
+    for (let pass = 0; pass < 14; pass++) {
+      const all: any[] = tournamentEngine.allTournamentMatchUps().matchUps ?? [];
+      const next = all.filter(
+        (m: any) => !m.winningSide && (m.sides ?? []).filter((s: any) => s?.participantId).length === 2,
+      );
+      if (!next.length) break;
+      for (const m of next) {
+        if (tournamentEngine.setMatchUpStatus({ matchUpId: m.matchUpId, drawId, outcome }).success) scored += 1;
+      }
+    }
+    expect(scored).toBeGreaterThan(0); // guard: the timing/coverage claim rests on real mutations
+
+    const emitted = notices.map((n) => n.p);
+    expect(emitted.length).toBeGreaterThan(0);
+    expect(emitted.filter((p: any) => !p.eventId)).toEqual([]);
+    expect(emitted.filter((p: any) => !p.structureId)).toEqual([]);
+    expect(emitted.filter((p: any) => !p.drawId)).toEqual([]);
+
+    setSubscriptions({ subscriptions: {} });
+  });
+
   it('a caller-supplied structureId is not overwritten by the fallback', () => {
     // The fallback must stay a fallback: call sites that know the structure remain authoritative.
     const {
