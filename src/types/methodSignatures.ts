@@ -348,6 +348,7 @@ import type { getCompetitionMatchUps } from '@Query/matchUps/getCompetitionMatch
 import type { getEntriesAndSeedsCount } from '@Query/entries/getEntriesAndSeedsCount';
 import type { getMatchUpDependencies } from '@Query/matchUps/getMatchUpDependencies';
 import type { getParticipantStats } from '@Query/participant/getParticipantStats';
+import type { getStructureData } from '@Query/drawDefinition/getStructureData';
 import type { getTournamentPointAwards } from '@Query/scales/getTournamentPointAwards';
 import type { mergeParticipants } from '@Mutate/participants/mergeParticipants';
 import type { modifyDrawName } from '@Mutate/drawDefinitions/modifyDrawName';
@@ -928,6 +929,7 @@ export interface MethodSignatures {
   getSetComplement: EngineMethod<typeof getSetComplement>;
   getSetScoreString: EngineMethod<typeof getSetScoreString>;
   getStructureCompleteness: EngineMethod<typeof getStructureCompleteness>;
+  getStructureData: EngineMethod<typeof getStructureData>;
   getStructureInconsistencies: EngineMethod<typeof getStructureInconsistencies>;
   getStructureReports: EngineMethod<typeof getStructureReports>;
   getStructureSeedAssignments: EngineMethod<typeof getStructureSeedAssignments>;
