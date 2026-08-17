@@ -1,5 +1,40 @@
 # Changelog
 
+## [6.27.0](https://github.com/CourtHive/competition-factory/compare/v6.26.0...v6.27.0) (2026-08-17)
+
+
+### Features
+
+* **codes:** add participantOtherIds and stamp the event sanctioning origin ([#4620](https://github.com/CourtHive/competition-factory/issues/4620)) ([d5608b8](https://github.com/CourtHive/competition-factory/commit/d5608b86cd89fd254c45be79de4eda30e5cf9aed))
+* **codes:** implement the tournament and draw grains of the Unified*ID family ([#4636](https://github.com/CourtHive/competition-factory/issues/4636)) ([90a1f93](https://github.com/CourtHive/competition-factory/commit/90a1f93586644a0c24676ac9bad42399da8ea1fb))
+* **mutate:** honour origin-supplied identity and timestamps ([#4621](https://github.com/CourtHive/competition-factory/issues/4621)) ([a9c46e4](https://github.com/CourtHive/competition-factory/commit/a9c46e4520675e7d001da587a5bd0bf7fd323ebd))
+* **mutate:** thread a separate tieFormatUuids pool to writeTieFormat ([#4622](https://github.com/CourtHive/competition-factory/issues/4622)) ([153cc35](https://github.com/CourtHive/competition-factory/commit/153cc35607d830aa48a5259dcf9e52e405a0fddd))
+* **notifications:** carry event identity on the notice envelope ([#4630](https://github.com/CourtHive/competition-factory/issues/4630)) ([1ec60de](https://github.com/CourtHive/competition-factory/commit/1ec60de44a81653ec913c6af3f59b1f2099fd3f2))
+* **notifications:** carry the sanctioning origin on MODIFY_MATCHUP ([#4632](https://github.com/CourtHive/competition-factory/issues/4632)) ([a199812](https://github.com/CourtHive/competition-factory/commit/a199812b74afd32ecaf9575fbc500e64068d6aaa))
+* **notifications:** resolve notice origin at the draw grain ([#4641](https://github.com/CourtHive/competition-factory/issues/4641)) ([c0d388a](https://github.com/CourtHive/competition-factory/commit/c0d388ab7f2722384897d0050b1e9e53e05ee0bd))
+* **notifications:** thread event to 20 more matchUp notice emitters ([#4634](https://github.com/CourtHive/competition-factory/issues/4634)) ([cfae29f](https://github.com/CourtHive/competition-factory/commit/cfae29fad9ad66920e2abda87b5a037d10fc22d1))
+* **notifications:** thread event to the remaining schedule and tie notice emitters ([#4635](https://github.com/CourtHive/competition-factory/issues/4635)) ([d5ac4e3](https://github.com/CourtHive/competition-factory/commit/d5ac4e3fd3018c6b55389f68a249bc36607adb16))
+* **query:** add drawsProfile STUBS to getEventData ([#4629](https://github.com/CourtHive/competition-factory/issues/4629)) ([f37bad1](https://github.com/CourtHive/competition-factory/commit/f37bad1d6213ae0fc5ab2bfc3bdca35e07efe1c5))
+* **query:** add getStructureData ([#4646](https://github.com/CourtHive/competition-factory/issues/4646)) ([e9092bc](https://github.com/CourtHive/competition-factory/commit/e9092bc77d73507749b6e02346c9c09be9354783))
+* **query:** add structuresProfile STUBS to getDrawData ([#4643](https://github.com/CourtHive/competition-factory/issues/4643)) ([f5336d9](https://github.com/CourtHive/competition-factory/commit/f5336d9bdc14faf18e8a8aa3c017ae7bc32bc0e7))
+* **query:** survey matchUpFormats across an event, project competitionFormat ([#4615](https://github.com/CourtHive/competition-factory/issues/4615)) ([2b76dc4](https://github.com/CourtHive/competition-factory/commit/2b76dc4acc340b2ee98fae18b77ae35dbfb2adfd))
+* **read-model:** scope competitors by tournament and project event origin ([#4616](https://github.com/CourtHive/competition-factory/issues/4616)) ([82f99d0](https://github.com/CourtHive/competition-factory/commit/82f99d0fcebc9799bc085f2f152ca97e945152ce))
+* **scheduling:** isScheduleLocked as a query, by ids or by matchUp ([#4638](https://github.com/CourtHive/competition-factory/issues/4638)) ([56fb88a](https://github.com/CourtHive/competition-factory/commit/56fb88a6444cd3f371d3724cb6c6fb5368c289c8))
+* **scheduling:** schedule locks pin a matchUp placement against bulk clears ([#4633](https://github.com/CourtHive/competition-factory/issues/4633)) ([31d8168](https://github.com/CourtHive/competition-factory/commit/31d8168ddada44e8bd99ed1ae6d40a40f879a40e))
+
+
+### Bug Fixes
+
+* **forge:** guard TopicPayloadMap against real addNotice payloads ([#4631](https://github.com/CourtHive/competition-factory/issues/4631)) ([9b2c96c](https://github.com/CourtHive/competition-factory/commit/9b2c96cb80f5e38bb63003eff87bec1bd2645fae))
+* **officiating:** one conflict-input set forwarded by every route, with a conformance guard ([#4617](https://github.com/CourtHive/competition-factory/issues/4617)) ([6e2ea13](https://github.com/CourtHive/competition-factory/commit/6e2ea13ede629edafe2b300e7e677374347df699))
+* **query:** resolve centralized tieFormats when hydrating from ensureSideLineUps ([#4623](https://github.com/CourtHive/competition-factory/issues/4623)) ([0a85937](https://github.com/CourtHive/competition-factory/commit/0a85937e576f45f3fce9f06f47cb22e2024c5212))
+* **scheduling:** accept allocatedCourts as an alias for courtIds ([#4642](https://github.com/CourtHive/competition-factory/issues/4642)) ([06c712b](https://github.com/CourtHive/competition-factory/commit/06c712b2deb5625ed635460c1d0287c5cdefbf17))
+* **tieFormat:** propagate errors from updateTieFormat's nested helpers ([#4628](https://github.com/CourtHive/competition-factory/issues/4628)) ([181ff65](https://github.com/CourtHive/competition-factory/commit/181ff65c593e5030b03daafa3fff5e0959aea6f2))
+* **tieFormat:** stop a shared tieFormat fragmenting into identical copies ([#4626](https://github.com/CourtHive/competition-factory/issues/4626)) ([6697921](https://github.com/CourtHive/competition-factory/commit/6697921f16b699052c4f2f8a61f1621175b49726))
+* **tsconfig:** drop the DOM lib — factory is not a DOM consumer ([#4637](https://github.com/CourtHive/competition-factory/issues/4637)) ([91903e3](https://github.com/CourtHive/competition-factory/commit/91903e39ea652cade5ddf0625992a4f54d56cc77))
+* **types:** Address latitude/longitude accept string or number ([#4619](https://github.com/CourtHive/competition-factory/issues/4619)) ([15dfecd](https://github.com/CourtHive/competition-factory/commit/15dfecd923ba9e498b03d7bdaaee2dc7a5a5ecfa))
+* **types:** declare Extension.createdAt, which runtime has always written ([#4627](https://github.com/CourtHive/competition-factory/issues/4627)) ([ac05014](https://github.com/CourtHive/competition-factory/commit/ac05014c43939a923b130d632897b9b7fd4daf85))
+
 ## [6.26.0](https://github.com/CourtHive/competition-factory/compare/v6.25.0...v6.26.0) (2026-08-15)
 
 
