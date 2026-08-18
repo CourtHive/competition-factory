@@ -2025,7 +2025,24 @@ export interface Booking {
   updatedAt?: Date | string;
 }
 
-export type PracticeRegistrationStatus = 'CONFIRMED' | 'CANCELLED';
+/**
+ * Lifecycle of one participant's registration against a PRACTICE booking.
+ *
+ * Enum-only by design — there is deliberately no const-module twin. Both values
+ * are strings that already carry unrelated meanings elsewhere in the domain:
+ * `CONFIRMED` is an entry status (`entryStatusValues`) and `CANCELLED` is both a
+ * matchUp status (`matchUpStatusValues`) and a tournament status
+ * (`tournamentConstants`). Pinning this vocabulary to any of those buckets would
+ * assert a relationship that does not exist, and minting a third `CANCELLED`
+ * const would make an import ambiguous at a glance. Same call, same reasoning as
+ * `DrawStatusEnum`. The enum is value-exported (see `types/enumExports.ts`), so
+ * consumers reach `PracticeRegistrationStatusEnum.CONFIRMED` at runtime.
+ */
+export enum PracticeRegistrationStatusEnum {
+  CONFIRMED = 'CONFIRMED',
+  CANCELLED = 'CANCELLED',
+}
+export type PracticeRegistrationStatusUnion = `${PracticeRegistrationStatusEnum}`;
 
 export interface PracticeRegistration {
   cancelledAt?: Date | string;
@@ -2037,7 +2054,7 @@ export interface PracticeRegistration {
   registeredAt?: Date | string;
   registrationId: string;
   startTime: string;
-  status?: PracticeRegistrationStatus;
+  status?: PracticeRegistrationStatusUnion;
   timeItems?: TimeItem[];
   updatedAt?: Date | string;
 }

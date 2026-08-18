@@ -161,6 +161,14 @@ const ENUM_ONLY = [
   // aggregate play state), so pinning it to matchUpStatusConstants would assert a
   // relationship that does not exist
   'DrawStatusEnum',
+  // same call as DrawStatusEnum: a practice-court registration's lifecycle reuses
+  // CONFIRMED (an ENTRY status) and CANCELLED (a matchUp AND a tournament status) for a
+  // third, unrelated concept. Pinning it to any of those buckets would assert a
+  // relationship that does not exist, and a dedicated mirror would mint a third
+  // top-level `CANCELLED` const — ambiguous at the import site. Enum-only, so the
+  // vocabulary has exactly one source and consumers reach it as
+  // PracticeRegistrationStatusEnum.CONFIRMED.
+  'PracticeRegistrationStatusEnum',
   'BallTypeEnum',
   'CountryCodeEnum',
   'CourtPositionEnum',
