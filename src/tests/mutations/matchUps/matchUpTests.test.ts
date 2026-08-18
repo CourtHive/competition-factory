@@ -1,5 +1,5 @@
 import { generateDrawTypeAndModifyDrawDefinition } from '@Assemblies/generators/drawDefinitions/generateDrawTypeAndModifyDrawDefinition';
-import { setMatchUpMatchUpFormat } from '@Mutate/matchUps/matchUpFormat/setMatchUpMatchUpFormat';
+import { applyMatchUpFormat } from '@Mutate/matchUps/matchUpFormat/applyMatchUpFormat';
 import { newDrawDefinition } from '@Assemblies/generators/drawDefinitions/newDrawDefinition';
 import { getAllStructureMatchUps } from '@Query/matchUps/getAllStructureMatchUps';
 import { getStructureMatchUps } from '@Query/structure/getStructureMatchUps';
@@ -152,14 +152,14 @@ it('can set matchUpFormat', () => {
   expect(matchUp?.matchUpFormat).toEqual(undefined);
 
   const matchUpId = matchUp?.matchUpId as string;
-  let result = setMatchUpMatchUpFormat({
+  let result = applyMatchUpFormat({
     drawDefinition,
     matchUpFormat,
     matchUpId,
   });
   expect(result.success).toEqual(true);
 
-  result = setMatchUpMatchUpFormat({
+  result = applyMatchUpFormat({
     drawDefinition,
     matchUpFormat,
   });
@@ -173,48 +173,48 @@ it('can set matchUpFormat', () => {
 
   // eslint-disable-next-line @typescript-eslint/ban-ts-comment
   // @ts-ignore
-  result = setMatchUpMatchUpFormat({ drawDefinition, matchUpId });
+  result = applyMatchUpFormat({ drawDefinition, matchUpId });
   expect(result.error).toEqual(MISSING_MATCHUP_FORMAT);
 
   // eslint-disable-next-line @typescript-eslint/ban-ts-comment
   // @ts-ignore
-  result = setMatchUpMatchUpFormat({
+  result = applyMatchUpFormat({
     matchUpId: 'bogus matchUpId',
     matchUpFormat,
   });
   expect(result.error).toEqual(MISSING_DRAW_DEFINITION);
-  result = setMatchUpMatchUpFormat({
+  result = applyMatchUpFormat({
     matchUpId: 'bogus matchUpId',
     drawDefinition,
     matchUpFormat,
   });
   expect(result.error).toEqual(MATCHUP_NOT_FOUND);
-  result = setMatchUpMatchUpFormat({
+  result = applyMatchUpFormat({
     structureId: 'bogus structureId',
     drawDefinition,
     matchUpFormat,
   });
   expect(result.error).toEqual(STRUCTURE_NOT_FOUND);
-  result = setMatchUpMatchUpFormat({
+  result = applyMatchUpFormat({
     structureId: structure?.structureId,
     drawDefinition,
     matchUpFormat,
   });
   expect(result.success).toEqual(true);
-  result = setMatchUpMatchUpFormat({
+  result = applyMatchUpFormat({
     // @ts-expect-error possibly undefined param
     structureIds: [structure?.structureId],
     drawDefinition,
     matchUpFormat,
   });
   expect(result.success).toEqual(true);
-  result = setMatchUpMatchUpFormat({
+  result = applyMatchUpFormat({
     structureIds: ['bogus structureId'],
     drawDefinition,
     matchUpFormat,
   });
   expect(result.error).toEqual(STRUCTURE_NOT_FOUND);
-  result = setMatchUpMatchUpFormat({
+  result = applyMatchUpFormat({
     structureId: structure?.structureId,
     matchUpFormat: 'bogus format',
     drawDefinition,
@@ -222,7 +222,7 @@ it('can set matchUpFormat', () => {
   expect(result.error).toEqual(UNRECOGNIZED_MATCHUP_FORMAT);
 
   // @ts-expect-error missing params
-  result = setMatchUpMatchUpFormat({
+  result = applyMatchUpFormat({
     structureId: structure?.structureId,
     matchUpFormat,
   });
@@ -240,7 +240,7 @@ it('throws error when setting matchUpFormat on TEAM events', () => {
 
   expect(event.eventType).toEqual(TEAM_EVENT);
 
-  let result = setMatchUpMatchUpFormat({
+  let result = applyMatchUpFormat({
     matchUpFormat: FORMAT_TIMED_10_1,
     drawDefinition,
     structureId,
@@ -248,7 +248,7 @@ it('throws error when setting matchUpFormat on TEAM events', () => {
   });
   expect(result.error).toEqual(INVALID_EVENT_TYPE);
 
-  result = setMatchUpMatchUpFormat({
+  result = applyMatchUpFormat({
     matchUpFormat: FORMAT_TIMED_10_1,
     structureIds: [structureId],
     drawDefinition,
@@ -256,28 +256,28 @@ it('throws error when setting matchUpFormat on TEAM events', () => {
   });
   expect(result.error).toEqual(INVALID_EVENT_TYPE);
 
-  result = setMatchUpMatchUpFormat({
+  result = applyMatchUpFormat({
     matchUpFormat: FORMAT_TIMED_10_1,
     matchUpId: 'match-1-1',
     drawDefinition,
   });
   expect(result.error).toEqual(INVALID_MATCHUP);
 
-  result = setMatchUpMatchUpFormat({
+  result = applyMatchUpFormat({
     matchUpFormat: FORMAT_TIMED_10_1,
     matchUpId: 'match-x-y',
     drawDefinition,
   });
   expect(result.error).toEqual(MATCHUP_NOT_FOUND);
 
-  result = setMatchUpMatchUpFormat({
+  result = applyMatchUpFormat({
     structureId: 'bogusStructureId',
     matchUpFormat: FORMAT_TIMED_10_1,
     drawDefinition,
   });
   expect(result.error).toEqual(STRUCTURE_NOT_FOUND);
 
-  result = setMatchUpMatchUpFormat({
+  result = applyMatchUpFormat({
     structureIds: ['bogusStructureId'],
     matchUpFormat: FORMAT_TIMED_10_1,
     drawDefinition,

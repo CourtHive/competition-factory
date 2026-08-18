@@ -1,4 +1,4 @@
-import { setMatchUpMatchUpFormat } from '@Mutate/matchUps/matchUpFormat/setMatchUpMatchUpFormat';
+import { applyMatchUpFormat } from '@Mutate/matchUps/matchUpFormat/applyMatchUpFormat';
 import { resolveTournamentRecords } from '@Helpers/parameters/resolveTournamentRecords';
 import { checkRequiredParameters } from '@Helpers/parameters/checkRequiredParameters';
 import { setMatchUpState } from '@Mutate/matchUps/matchUpStatus/setMatchUpState';
@@ -125,7 +125,7 @@ export function setMatchUpStatus(params: SetMatchUpStatusArgs) {
   // WHY: Format affects score validation (e.g., number of sets, tiebreak rules)
   // Must be set first to ensure score is validated against correct format
   if (matchUpFormat) {
-    const result = setMatchUpMatchUpFormat({
+    const result = applyMatchUpFormat({
       tournamentRecord,
       drawDefinition,
       matchUpFormat,

@@ -4,7 +4,7 @@ import { checkRequiredParameters } from '@Helpers/parameters/checkRequiredParame
 import { getAllStructureMatchUps } from '@Query/matchUps/getAllStructureMatchUps';
 import { modifyEventNotice } from '@Mutate/notifications/eventNotifications';
 import { isValidMatchUpFormat } from '@Validators/isValidMatchUpFormat';
-import { setMatchUpMatchUpFormat } from './setMatchUpMatchUpFormat';
+import { applyMatchUpFormat } from './applyMatchUpFormat';
 import { decorateResult } from '@Functions/global/decorateResult';
 import { getMatchUpId } from '@Functions/global/extractors';
 
@@ -94,7 +94,7 @@ export function setMatchUpFormat(params: SetMatchUpStatusArgs) {
   }
 
   if (drawId && matchUpId && drawDefinition) {
-    const result = setMatchUpMatchUpFormat({
+    const result = applyMatchUpFormat({
       tournamentRecord,
       drawDefinition,
       matchUpFormat,
