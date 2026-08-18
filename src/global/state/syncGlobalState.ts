@@ -1,3 +1,4 @@
+import { preserveNoticeIdentity } from './noticeIdentity';
 import {
   CallListenerArgs,
   DeleteNoticeArgs,
@@ -158,13 +159,22 @@ export function addNotice({ topic, payload, key }: Notice, isGlobalSubscription?
   if (!syncGlobalState.disableNotifications) syncGlobalState.modified = true;
   if (syncGlobalState.disableNotifications || (!syncGlobalState.subscriptions[topic] && !isGlobalSubscription)) return;
 
+  let outgoing = payload;
+
   if (key) {
-    syncGlobalState.notices = syncGlobalState.notices.filter(
-      (notice) => !(notice.topic === topic && notice.key === key),
-    );
+    const retained: any[] = [];
+    for (const notice of syncGlobalState.notices) {
+      if (notice.topic === topic && notice.key === key) {
+        // superseded — but its identity is still true of this key, so do not discard it
+        outgoing = preserveNoticeIdentity(outgoing, notice.payload);
+      } else {
+        retained.push(notice);
+      }
+    }
+    syncGlobalState.notices = retained;
   }
 
-  syncGlobalState.notices.push({ topic, payload, key });
+  syncGlobalState.notices.push({ topic, payload: outgoing, key });
 
   return { ...SUCCESS };
 }

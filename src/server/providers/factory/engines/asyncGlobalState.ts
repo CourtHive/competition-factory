@@ -1,3 +1,4 @@
+import { preserveNoticeIdentity } from '@Global/state/noticeIdentity';
 import { AsyncLocalStorage } from 'node:async_hooks';
 import {
   CallListenerArgs,
@@ -243,13 +244,27 @@ function addNotice({ topic, payload, key }: Notice, isGlobalSubscription?: boole
   if (!instanceState.disableNotifications) instanceState.modified = true;
   if (instanceState.disableNotifications || (!instanceState.subscriptions[topic] && !isGlobalSubscription)) return;
 
+  let outgoing = payload;
+
   if (key) {
-    instanceState.notices = instanceState.notices.filter((notice) => !(notice.topic === topic && notice.key === key));
+    const retained: any[] = [];
+    for (const notice of instanceState.notices) {
+      if (notice.topic === topic && notice.key === key) {
+        // Superseded — but its identity is still true of this key, so do not discard it. A later
+        // emission often knows LESS; replacing wholesale used to deliver the only unroutable notice
+        // in a batch. Shared helper, never a local copy: this file is the reference an async provider
+        // gets copied FROM, so a divergent copy here propagates to every implementation derived from it.
+        outgoing = preserveNoticeIdentity(outgoing, notice.payload);
+      } else {
+        retained.push(notice);
+      }
+    }
+    instanceState.notices = retained;
   }
   // NOTE: when backend does not recognize undefined for updates
   // params = undefinedToNull(params) // => see object.js utils
 
-  instanceState.notices.push({ topic, payload, key });
+  instanceState.notices.push({ topic, payload: outgoing, key });
 
   return { ...SUCCESS };
 }

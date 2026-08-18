@@ -34,19 +34,22 @@ import * as topicConstants from '@Constants/topicConstants';
  * On the MUTATION path (scoring, advancement, publishing) an unattributable notice has a measured
  * cost: CFS cannot narrow its cache eviction and sweeps a whole tier. That path is asserted strictly.
  *
- * During draw GENERATION the notice chain runs through helpers that never accepted an `event`
- * (`attachPolicies`, `applyMatchUpFormat`, and their callers). Threading it through all of them
- * is a real but separate piece of work, and the payoff is small: generating a draw changes the whole
- * event's payload anyway, so a consumer sweeping the event tier there is CORRECT, not degraded.
+ * The one remaining generation-phase gap is `ADD_DRAW_DEFINITION`, emitted while the draw is still
+ * being built and genuinely not yet attached to an event.
  *
- * So generation-phase gaps are recorded in a ledger rather than ignored. Exact-match, deliberately:
- * a NEW topic joining the list fails, and FIXING one also fails — which forces the ledger to stay
- * true instead of quietly over-stating what is broken.
+ * `MODIFY_DRAW_DEFINITION` used to sit here too, and why it no longer does is the useful part: it was
+ * never "a caller forgot an eventId". Keyed notices de-duplicate, and a later notice with the same
+ * topic+key used to REPLACE the earlier one wholesale — so of ~12 emissions per generated draw, eight
+ * carrying full identity were discarded in favour of a final one carrying none. The transport was
+ * destroying identity the system already had. `addNotice` now carries identity across a supersede
+ * (`preserveNoticeIdentity`, global/state/noticeIdentity.ts), which closed this gap without touching a
+ * single emitter.
+ *
+ * Remaining gaps are recorded in a ledger rather than ignored, matched EXACTLY: a NEW topic joining
+ * fails, and so does a FIX that removes the last emitter of a listed topic — which is precisely how
+ * the de-dup fix above forced this list to shrink.
  */
 const GENERATION_KNOWN_GAPS: Record<string, string> = {
-  // reached via drawDefinitionPolicyAttachment -> attachPolicies, and
-  // checkFormatScopeEquivalence -> applyMatchUpFormat; neither helper takes an `event`
-  [topicConstants.MODIFY_DRAW_DEFINITION]: 'policy/format helpers in the generation chain take no event',
   // emitted while the draw is still being built, before it is attached to an event
   [topicConstants.ADD_DRAW_DEFINITION]: 'draw not yet attached to an event when emitted',
 };
