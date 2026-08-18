@@ -6,19 +6,20 @@ A 12th check, `verify:ecosystem`, runs downstream consumer tests against the in-
 
 ## What each check catches
 
-| Step                 | Catches                                                                                                                                                                           | Cost   |
-| -------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------ |
-| `verify:types`       | type errors anywhere in `src`                                                                                                                                                     | ~3 s   |
-| `verify:lint`        | style + cognitive-complexity violations; zero-warnings rule                                                                                                                       | ~5 s   |
-| `verify:coverage`    | regressions below `95/95/85/95` statements/functions/branches/lines                                                                                                               | ~100 s |
-| `verify:server`      | NestJS-style server tests (`pnpm test:server` alias for `jest`)                                                                                                                   | ~12 s  |
-| `verify:audit`       | high or critical `pnpm audit` advisories in **every** lockfile (package + `documentation/`), minus entries in `audit-waivers.json`; a waiver matching no open advisory also fails | ~10 s  |
-| `verify:build`       | the full prod build produces `dist/` (run after the above so a tiny lint/type fix re-runs the cheap stuff first)                                                                  | ~13 s  |
-| `verify:publint`     | `publint --strict --level warning` — package.json `exports` correctness, per-format type declarations, `sideEffects` / `type` hints, tarball contents match `files` field         | ~6 s   |
-| `verify:runtime`     | "compiles but doesn't run" — CJS + ESM smoke against the built dist                                                                                                               | ~3 s   |
-| `verify:bundle-size` | a file in `dist/` grew beyond +10 % vs baseline                                                                                                                                   | ~1 s   |
-| `verify:surface`     | a public export was removed (breaking) or signature drifted                                                                                                                       | ~1 s   |
-| `verify:pack`        | the published `.d.ts` references an internal path that didn't get packed; runtime `require()` smoke after `npm install` of the tarball                                            | ~30 s  |
+| Step                       | Catches                                                                                                                                                                           | Cost   |
+| -------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------ |
+| `verify:types`             | type errors anywhere in `src`                                                                                                                                                     | ~3 s   |
+| `verify:lint`              | style + cognitive-complexity violations; zero-warnings rule                                                                                                                       | ~5 s   |
+| `verify:coverage`          | regressions below `95/95/85/95` statements/functions/branches/lines                                                                                                               | ~100 s |
+| `verify:coverage-headroom` | a change spending more than 25 items of margin before the coverage floor; always prints headroom per metric                                                                       | ~0 s   |
+| `verify:server`            | NestJS-style server tests (`pnpm test:server` alias for `jest`)                                                                                                                   | ~12 s  |
+| `verify:audit`             | high or critical `pnpm audit` advisories in **every** lockfile (package + `documentation/`), minus entries in `audit-waivers.json`; a waiver matching no open advisory also fails | ~10 s  |
+| `verify:build`             | the full prod build produces `dist/` (run after the above so a tiny lint/type fix re-runs the cheap stuff first)                                                                  | ~13 s  |
+| `verify:publint`           | `publint --strict --level warning` — package.json `exports` correctness, per-format type declarations, `sideEffects` / `type` hints, tarball contents match `files` field         | ~6 s   |
+| `verify:runtime`           | "compiles but doesn't run" — CJS + ESM smoke against the built dist                                                                                                               | ~3 s   |
+| `verify:bundle-size`       | a file in `dist/` grew beyond +10 % vs baseline                                                                                                                                   | ~1 s   |
+| `verify:surface`           | a public export was removed (breaking) or signature drifted                                                                                                                       | ~1 s   |
+| `verify:pack`              | the published `.d.ts` references an internal path that didn't get packed; runtime `require()` smoke after `npm install` of the tarball                                            | ~30 s  |
 
 Total: ~3 minutes warm. The chain is ordered so cheap fail-fast checks run first.
 
@@ -36,10 +37,11 @@ Total: ~3 minutes warm. The chain is ordered so cheap fail-fast checks run first
 
 ## Baselines
 
-Two artifacts live under `scripts/verify/baseline/`:
+Three artifacts live under `scripts/verify/baseline/`:
 
 - **`surface.txt`** — sorted list of every public export name. Surface drift is computed by set diff against this file. Regenerate after intentional surface changes with `pnpm verify:surface -- --update-baseline`.
 - **`bundle-size.json`** — `{ rawBytes, gzipBytes }` per published file. Growth-budget is +10 % per file by default; override with `--budget=N` (decimal).
+- **`coverage-headroom.json`** — items of margin per metric before the coverage floor. A change may spend 25 by default (`--budget=N`); accept a new margin with `node scripts/verify/coverage-headroom.mjs --update-baseline`. Percentages hide how close the floor is — 95.09 % against a 95 floor was **39 statements** out of 43,284 — so this tracks the number in items.
 
 Both baselines are tracked in git so the budget travels with the code.
 
