@@ -40,6 +40,21 @@ export interface NoticeIdentity {
   eventId?: string;
   drawId?: string;
   structureId?: string;
+
+  /**
+   * The sanctioning source, flattened — same vocabulary as the read-model's
+   * `origin_organisation_id` / `origin_tournament_id` / `origin_event_id`. `originTournamentId` is the
+   * ORIGIN organisation's id and is deliberately independent of `tournamentId` above; all are absent
+   * when the event declares no origin, which is the ordinary single-sanction case.
+   *
+   * Declared here because `modifyMatchUpNotice` has emitted them since 6.27.0 while this interface did
+   * not list them — under-declaring what is on the wire. Caught by the drift guard in
+   * `tests/global/noticeIdentityPreservation.test.ts`.
+   */
+  originOrganisationId?: string;
+  originTournamentId?: string;
+  originEventId?: string;
+  originDrawId?: string;
 }
 
 // ============================================================================
