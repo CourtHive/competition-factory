@@ -34,13 +34,20 @@ import * as topicConstants from '@Constants/topicConstants';
  * On the MUTATION path (scoring, advancement, publishing) an unattributable notice has a measured
  * cost: CFS cannot narrow its cache eviction and sweeps a whole tier. That path is asserted strictly.
  *
- * During draw GENERATION the chain reaches `modifyDrawNotice` through helpers that HAVE an `event`
- * available but do not forward its id to the notice — `attachPolicies` (which accepts `event` and
- * emits `{ drawDefinition, tournamentId }`) and `applyMatchUpFormat` (which accepts `event` and emits
- * `{ drawDefinition, structureIds }`). Fixing it is a small edit in each, not a threading exercise;
- * it is listed as a follow-up rather than done here because the payoff is small: generating a draw
- * changes the whole event's payload anyway, so a consumer sweeping the event tier there is CORRECT,
- * not degraded.
+ * Draw GENERATION is different, and the reason is NOT simply "some caller forgot an eventId".
+ *
+ * `addNotice` de-duplicates by `key` (syncGlobalState.ts): a new notice with the same topic+key
+ * REPLACES the earlier one. `modifyDrawNotice` keys on `drawDefinition.drawId`, so generating one
+ * draw fires ~12 emissions that collapse to a SINGLE delivered notice — last writer wins.
+ *
+ * The practical consequence, measured rather than reasoned: threading `eventId` through
+ * `attachPolicies` and `applyMatchUpFormat` changed the delivered notices NOT AT ALL (2 violations
+ * per draw type before and after, identical topic breakdown), because neither is the final emitter.
+ * Any fix here has to target whichever emitter fires LAST, so this is a chain to trace, not a set of
+ * call sites to patch. Do not assume a named call site is the culprit without re-measuring.
+ *
+ * It is left as a follow-up because the payoff is small: generating a draw changes the whole event's
+ * payload anyway, so a consumer sweeping the event tier there is CORRECT, not degraded.
  *
  * So generation-phase gaps are recorded in a ledger rather than ignored, and matched EXACTLY.
  *
@@ -57,10 +64,8 @@ import * as topicConstants from '@Constants/topicConstants';
  * prove the ledger's per-call-site notes are still accurate. Re-measure those when acting on them.
  */
 const GENERATION_KNOWN_GAPS: Record<string, string> = {
-  // reached via drawDefinitionPolicyAttachment -> attachPolicies, and
-  // checkFormatScopeEquivalence -> applyMatchUpFormat. Both helpers DO accept an `event`; neither
-  // forwards `event?.eventId` to modifyDrawNotice. attachPolicies is additionally called without one
-  // from drawDefinitionPolicyAttachment, so that caller needs the id threaded too.
+  // ~12 emissions per draw collapse to one delivered notice via key de-dup; the survivor is the last
+  // writer. Patching attachPolicies / applyMatchUpFormat was measured to change nothing.
   [topicConstants.MODIFY_DRAW_DEFINITION]: 'policy/format helpers in the generation chain take no event',
   // emitted while the draw is still being built, before it is attached to an event
   [topicConstants.ADD_DRAW_DEFINITION]: 'draw not yet attached to an event when emitted',
