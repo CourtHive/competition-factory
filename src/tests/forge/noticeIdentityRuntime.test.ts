@@ -35,7 +35,7 @@ import * as topicConstants from '@Constants/topicConstants';
  * cost: CFS cannot narrow its cache eviction and sweeps a whole tier. That path is asserted strictly.
  *
  * During draw GENERATION the notice chain runs through helpers that never accepted an `event`
- * (`attachPolicies`, `setMatchUpMatchUpFormat`, and their callers). Threading it through all of them
+ * (`attachPolicies`, `applyMatchUpFormat`, and their callers). Threading it through all of them
  * is a real but separate piece of work, and the payoff is small: generating a draw changes the whole
  * event's payload anyway, so a consumer sweeping the event tier there is CORRECT, not degraded.
  *
@@ -45,7 +45,7 @@ import * as topicConstants from '@Constants/topicConstants';
  */
 const GENERATION_KNOWN_GAPS: Record<string, string> = {
   // reached via drawDefinitionPolicyAttachment -> attachPolicies, and
-  // checkFormatScopeEquivalence -> setMatchUpMatchUpFormat; neither helper takes an `event`
+  // checkFormatScopeEquivalence -> applyMatchUpFormat; neither helper takes an `event`
   [topicConstants.MODIFY_DRAW_DEFINITION]: 'policy/format helpers in the generation chain take no event',
   // emitted while the draw is still being built, before it is attached to an event
   [topicConstants.ADD_DRAW_DEFINITION]: 'draw not yet attached to an event when emitted',
