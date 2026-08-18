@@ -1,5 +1,5 @@
 // constants and types
-import { Booking, Tournament } from '@Types/tournamentTypes';
+import { Booking, PracticeRegistrationStatusEnum, Tournament } from '@Types/tournamentTypes';
 
 /**
  * Resolves the effective capacity for a PRACTICE booking:
@@ -41,7 +41,7 @@ export function countOverlappingRegistrations({
   const registrations = booking.registrations ?? [];
   return registrations.filter((r) => {
     if (r.registrationId === excludeRegistrationId) return false;
-    if (r.status === 'CANCELLED') return false;
+    if (r.status === PracticeRegistrationStatusEnum.CANCELLED) return false;
     return r.startTime < endTime && r.endTime > startTime;
   }).length;
 }

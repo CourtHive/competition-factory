@@ -7,7 +7,7 @@ import { UUID } from '@Tools/UUID';
 
 // constants and types
 import { COURT_ID, PARTICIPANT_ID, TOURNAMENT_RECORD } from '@Constants/attributeConstants';
-import { PracticeRegistration, Tournament } from '@Types/tournamentTypes';
+import { PracticeRegistration, PracticeRegistrationStatusEnum, Tournament } from '@Types/tournamentTypes';
 import { MODIFY_VENUE } from '@Constants/topicConstants';
 import { SUCCESS } from '@Constants/resultConstants';
 import { ResultType } from '@Types/factoryTypes';
@@ -115,7 +115,7 @@ export function addPracticeRegistration(params: AddPracticeRegistrationArgs): Ad
     participantId,
     startTime,
     endTime,
-    status: 'CONFIRMED',
+    status: PracticeRegistrationStatusEnum.CONFIRMED,
     // One resolved value for the whole mutation rather than three separate
     // `new Date()` calls, which could otherwise differ for a single logical
     // event. `registeredAt` is when the player actually booked the court.

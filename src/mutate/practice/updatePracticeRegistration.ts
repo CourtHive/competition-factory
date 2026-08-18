@@ -5,7 +5,12 @@ import { findPracticeBooking } from './findPracticeBooking';
 import { addNotice } from '@Global/state/globalState';
 
 // constants and types
-import { PracticeRegistration, PracticeRegistrationStatus, Tournament } from '@Types/tournamentTypes';
+import {
+  PracticeRegistration,
+  PracticeRegistrationStatusEnum,
+  PracticeRegistrationStatusUnion,
+  Tournament,
+} from '@Types/tournamentTypes';
 import { COURT_ID, TOURNAMENT_RECORD } from '@Constants/attributeConstants';
 import { MODIFY_VENUE } from '@Constants/topicConstants';
 import { SUCCESS } from '@Constants/resultConstants';
@@ -21,7 +26,7 @@ type Updates = {
   startTime?: string;
   endTime?: string;
   notes?: string;
-  status?: PracticeRegistrationStatus;
+  status?: PracticeRegistrationStatusUnion;
 };
 
 type UpdatePracticeRegistrationArgs = {
@@ -86,8 +91,9 @@ export function updatePracticeRegistration(params: UpdatePracticeRegistrationArg
     return { error: INVALID_VALUES, info: 'sub-window must fall inside the booking window' };
   }
 
-  const nextStatus: PracticeRegistrationStatus = updates.status ?? registration.status ?? 'CONFIRMED';
-  const becomesActive = nextStatus === 'CONFIRMED';
+  const nextStatus: PracticeRegistrationStatusUnion =
+    updates.status ?? registration.status ?? PracticeRegistrationStatusEnum.CONFIRMED;
+  const becomesActive = nextStatus === PracticeRegistrationStatusEnum.CONFIRMED;
 
   if (becomesActive) {
     const capacityError = checkCapacityForUpdate({
@@ -104,7 +110,7 @@ export function updatePracticeRegistration(params: UpdatePracticeRegistrationArg
   registration.endTime = nextEndTime;
   registration.status = nextStatus;
   if (updates.notes !== undefined) registration.notes = updates.notes;
-  if (nextStatus === 'CANCELLED') {
+  if (nextStatus === PracticeRegistrationStatusEnum.CANCELLED) {
     registration.cancelledAt = stampedAt;
   } else {
     delete registration.cancelledAt;

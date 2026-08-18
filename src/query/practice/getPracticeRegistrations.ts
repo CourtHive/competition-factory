@@ -2,7 +2,7 @@ import { deriveBookingId } from '@Mutate/practice/findPracticeBooking';
 import { sameDay } from '@Tools/dateTime';
 
 // constants and types
-import { PracticeRegistration, Tournament } from '@Types/tournamentTypes';
+import { PracticeRegistration, PracticeRegistrationStatusEnum, Tournament } from '@Types/tournamentTypes';
 import { PRACTICE } from '@Constants/scheduleConstants';
 
 export type PracticeRegistrationRecord = {
@@ -91,7 +91,7 @@ function collectBookingRegistrations({
 }): void {
   const resolvedBookingId = booking.bookingId ?? deriveBookingId({ courtId, date, startTime: booking.startTime });
   for (const registration of booking.registrations ?? []) {
-    if (!filter.includeCancelled && registration.status === 'CANCELLED') continue;
+    if (!filter.includeCancelled && registration.status === PracticeRegistrationStatusEnum.CANCELLED) continue;
     if (filter.participantId && registration.participantId !== filter.participantId) continue;
     out.push({
       registration,

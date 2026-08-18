@@ -3,7 +3,7 @@ import { sameDay } from '@Tools/dateTime';
 
 // constants and types
 import { completedMatchUpStatuses } from '@Constants/matchUpStatusConstants';
-import { Tournament } from '@Types/tournamentTypes';
+import { PracticeRegistrationStatusEnum, Tournament } from '@Types/tournamentTypes';
 
 export type MatchUpConflict = {
   matchUpId: string;
@@ -190,7 +190,7 @@ function collectBookingConflicts({
 
 function matchesConflictFilter({ registration, filter }: { registration: any; filter: ConflictFilter }): boolean {
   if (registration.registrationId === filter.excludeRegistrationId) return false;
-  if (registration.status === 'CANCELLED') return false;
+  if (registration.status === PracticeRegistrationStatusEnum.CANCELLED) return false;
   if (registration.participantId !== filter.participantId) return false;
   if (registration.startTime >= filter.endTime) return false;
   if (registration.endTime <= filter.startTime) return false;
