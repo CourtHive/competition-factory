@@ -26,16 +26,12 @@ type ApplyMatchUpFormatArgs = {
   event?: Event;
 };
 
-// internal use only; set matchUpFormat for a matchUp or structure
-
 /**
  * Writes a `matchUpFormat` onto the matchUps identified by the params — one matchUp, a structure, or
  * a set of structures.
  *
  * NOT public. `setMatchUpFormat` is the exported engine method; this is the worker it delegates to,
- * shared with `setMatchUpStatus` and `checkFormatScopeEquivalence`. It was called
- * `setMatchUpMatchUpFormat` — `setMatchUp` + `MatchUpFormat` — which read as a typo rather than as a
- * distinct role, and collided confusingly with the public name.
+ * shared with `setMatchUpStatus` and `checkFormatScopeEquivalence`.
  */
 export function applyMatchUpFormat(params: ApplyMatchUpFormatArgs): {
   success?: boolean;
