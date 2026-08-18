@@ -10,7 +10,7 @@ A 12th check, `verify:ecosystem`, runs downstream consumer tests against the in-
 | -------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------ |
 | `verify:types`       | type errors anywhere in `src`                                                                                                                                             | ~3 s   |
 | `verify:lint`        | style + cognitive-complexity violations; zero-warnings rule                                                                                                               | ~5 s   |
-| `verify:coverage`    | regressions below `95/95/83/95` statements/functions/branches/lines                                                                                                       | ~100 s |
+| `verify:coverage`    | regressions below `95/95/85/95` statements/functions/branches/lines                                                                                                       | ~100 s |
 | `verify:server`      | NestJS-style server tests (`pnpm test:server` alias for `jest`)                                                                                                           | ~12 s  |
 | `verify:audit`       | high or critical `pnpm audit` advisories                                                                                                                                  | ~5 s   |
 | `verify:build`       | the full prod build produces `dist/` (run after the above so a tiny lint/type fix re-runs the cheap stuff first)                                                          | ~13 s  |

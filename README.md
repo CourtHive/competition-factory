@@ -84,5 +84,5 @@ Full documentation with interactive examples: **[courthive.github.io/competition
 
 ```bash
 pnpm test          # run all tests (Vitest)
-pnpm coverage      # coverage report (thresholds: 95/95/83/95%)
+pnpm coverage      # coverage report (thresholds: 95/95/85/95%)
 ```
