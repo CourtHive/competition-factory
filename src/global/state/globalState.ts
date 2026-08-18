@@ -1,4 +1,3 @@
-export { preserveNoticeIdentity, NOTICE_IDENTITY_FIELDS } from './noticeIdentity';
 import { isFunction, isObject } from '@Tools/objects';
 import syncGlobalState from './syncGlobalState';
 import { intersection } from '@Tools/arrays';
@@ -14,6 +13,10 @@ import {
   MISSING_ASYNC_STATE_PROVIDER,
   MISSING_VALUE,
 } from '@Constants/errorConditionConstants';
+
+// Re-exported so any OTHER implementation of the notice buffer — competition-factory-server supplies
+// its own provider for per-request async isolation — calls THIS merge rather than copying it.
+export { preserveNoticeIdentity, NOTICE_IDENTITY_FIELDS } from './noticeIdentity';
 
 export type Notice = {
   topic: string;

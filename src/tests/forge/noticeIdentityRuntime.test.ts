@@ -42,7 +42,8 @@ import * as topicConstants from '@Constants/topicConstants';
  * topic+key used to REPLACE the earlier one wholesale — so of ~12 emissions per generated draw, eight
  * carrying full identity were discarded in favour of a final one carrying none. The transport was
  * destroying identity the system already had. `addNotice` now carries identity across a supersede
- * (`preserveIdentity`, syncGlobalState.ts), which closed this gap without touching a single emitter.
+ * (`preserveNoticeIdentity`, global/state/noticeIdentity.ts), which closed this gap without touching a
+ * single emitter.
  *
  * Remaining gaps are recorded in a ledger rather than ignored, matched EXACTLY: a NEW topic joining
  * fails, and so does a FIX that removes the last emitter of a listed topic — which is precisely how
