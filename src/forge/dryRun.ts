@@ -4,7 +4,7 @@
  *
  * Same machinery as the real `executionQueue` (per-tournament snapshot via
  * `makeDeepCopy`, sequential method dispatch via `executeFunction`) but
- * with two contract differences:
+ * with three contract differences:
  *
  *   1. **State is always restored** at the end — both on success and on
  *      error. Callers never see persisted side effects.
@@ -13,6 +13,13 @@
  *      the buffer so the next real call starts clean. A consumer that
  *      wants to know "what would have fired" inspects the returned
  *      `willEmitNotices` array.
+ *   3. **Dev-log lines are tagged `dryRun: true`.** Dispatch goes through
+ *      the same `executeFunction` as a real mutation, so without the tag a
+ *      pre-flight and the commit that follows it print identical lines and
+ *      read as the mutation having fired twice. A single summary line —
+ *      `{ dryRun, methods, elapsed, overhead, execute, patchOps }` — is
+ *      emitted under `devContext` so the deep copies, patch walk and
+ *      restore this costs are visible rather than hidden in the caller.
  *
  * Returns the RFC 6902 JSON patch between the pre-state and the would-be
  * post-state, plus the per-method results and what topics/payloads the
@@ -35,7 +42,15 @@
  * (50+ events, full draws) it's 50–200 ms. Safe for dev/preflight callers,
  * not for hot paths — for hot-path gating use `explain` instead.
  */
-import { deleteNotices, getMethods, getNotices, getTopics, getTournamentRecords } from '@Global/state/globalState';
+import {
+  deleteNotices,
+  getDevContext,
+  getMethods,
+  getNotices,
+  getTopics,
+  getTournamentRecords,
+  globalLog,
+} from '@Global/state/globalState';
 import { executeFunction } from '@Assemblies/engines/parts/executeMethod';
 import { setState } from '@Assemblies/engines/parts/stateMethods';
 import { generatePatch, JsonPatch } from './jsonPatch';
@@ -80,7 +95,10 @@ export function dryRun(engine: FactoryEngine, directives: Directives): DryRunRes
 
   // Snapshot BEFORE any method runs. Independent deep copies so we can
   // diff `snapshot` against the post-state without aliasing surprises.
+  const snapshotStart = Date.now();
   const snapshot = makeDeepCopy(getTournamentRecords(), false, true);
+  const snapshotElapsed = Date.now() - snapshotStart;
+  const executeStart = Date.now();
 
   const results: any[] = [];
   let error: any = undefined;
@@ -111,7 +129,7 @@ export function dryRun(engine: FactoryEngine, directives: Directives): DryRunRes
       }
     }
 
-    const result = executeFunction(engine, methods[methodName], params, methodName, 'sync');
+    const result = executeFunction(engine, methods[methodName], params, methodName, 'sync', { dryRun: true });
     results.push({ ...result, methodName });
 
     if (result?.error) {
@@ -120,11 +138,15 @@ export function dryRun(engine: FactoryEngine, directives: Directives): DryRunRes
     }
   }
 
+  const executeElapsed = Date.now() - executeStart;
+
   // Capture the would-be post-state BEFORE restoring; diff snapshot vs. it.
   // The post-snapshot must also be a deep copy so the cached `tournamentRecords`
   // reference isn't shared with `snapshot` once we call `setState(snapshot)`.
+  const diffStart = Date.now();
   const postState = makeDeepCopy(getTournamentRecords(), false, true);
   const patch = generatePatch(snapshot, postState);
+  const diffElapsed = Date.now() - diffStart;
 
   // Drain the notices buffer the methods accumulated. Capture per-topic
   // payloads first, then `deleteNotices()` so the next real call starts
@@ -139,7 +161,28 @@ export function dryRun(engine: FactoryEngine, directives: Directives): DryRunRes
   deleteNotices();
 
   // Restore the snapshot. Always — dryRun's contract is "never persist".
+  const restoreStart = Date.now();
   setState(snapshot);
+  const restoreElapsed = Date.now() - restoreStart;
+
+  // Cost summary. The per-method lines carry `dryRun: true` but only account
+  // for the method's own execution — the deep copies, the patch walk and the
+  // restore are dryRun's overhead and are invisible without this. Making the
+  // price legible is the point: a caller gating a UI action on `explain` pays
+  // it on every click, and 5ms on a small state is 200ms on a large one.
+  if (typeof getDevContext() === 'object') {
+    globalLog(
+      {
+        dryRun: true,
+        methods: results.length,
+        elapsed: snapshotElapsed + executeElapsed + diffElapsed + restoreElapsed,
+        overhead: { snapshot: snapshotElapsed, diff: diffElapsed, restore: restoreElapsed },
+        execute: executeElapsed,
+        patchOps: patch.length,
+      },
+      'sync',
+    );
+  }
 
   return {
     wouldSucceed: !error,
