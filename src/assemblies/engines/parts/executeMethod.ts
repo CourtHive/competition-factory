@@ -19,6 +19,9 @@ export function executeFunction(
   params: { [key: string]: any } | undefined,
   methodName: string,
   engineType: string,
+  // `dryRun` only tags the dev log — it does not change dispatch. The caller
+  // that sets it (`forge/dryRun`) owns snapshotting and restoring the state.
+  options?: { dryRun?: boolean },
 ) {
   delete engine.success;
   delete engine.error;
@@ -51,7 +54,7 @@ export function executeFunction(
     method,
   });
   const elapsed = Date.now() - start;
-  engineLogging({ result, methodName, elapsed, params: paramsToLog, engineType });
+  engineLogging({ result, methodName, elapsed, params: paramsToLog, engineType, dryRun: options?.dryRun });
 
   return result;
 }

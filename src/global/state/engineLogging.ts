@@ -9,13 +9,19 @@ type EngineLoggingArgs = {
   engineType: string;
   methodName: string;
   elapsed: number;
+  /** True when the call came from `dryRun`/`explain` — the method ran against a
+   *  snapshot and nothing was committed. Without the tag a pre-flight and the
+   *  real mutation that follows it are indistinguishable in the dev log, which
+   *  reads as the mutation having fired twice. */
+  dryRun?: boolean;
 };
 
-export function engineLogging({ engineType, methodName, elapsed, params, result }: EngineLoggingArgs) {
+export function engineLogging({ engineType, methodName, elapsed, params, result, dryRun }: EngineLoggingArgs) {
   const devContext: DevContextType = getDevContext();
   if (typeof devContext !== 'object') return;
 
   const log: any = { method: methodName };
+  if (dryRun) log.dryRun = true;
   const logError =
     result?.error &&
     (devContext.errors === true || (Array.isArray(devContext.errors) && devContext.errors.includes(methodName)));
@@ -50,5 +56,8 @@ export function engineLogging({ engineType, methodName, elapsed, params, result 
     log.result = result;
   }
 
-  if (Object.keys(log).length > 1) globalLog(log, engineType);
+  // `method` and `dryRun` are labels, not content — neither on its own is a
+  // reason to emit a line. Only elapsed/params/result make a log worth printing.
+  const hasContent = Object.keys(log).some((key) => key !== 'method' && key !== 'dryRun');
+  if (hasContent) globalLog(log, engineType);
 }
