@@ -1,5 +1,32 @@
 # Changelog
 
+## [6.29.0](https://github.com/CourtHive/competition-factory/compare/v6.28.1...v6.29.0) (2026-08-18)
+
+
+### Features
+
+* **forge:** tag dryRun dev-log lines and surface their cost ([#4659](https://github.com/CourtHive/competition-factory/issues/4659)) ([fdeac52](https://github.com/CourtHive/competition-factory/commit/fdeac521e14d97f26a6cdd3d2c78c0a86cd67246))
+* **participants:** surface when participantName is superseded by the derived name ([#4667](https://github.com/CourtHive/competition-factory/issues/4667)) ([5e38544](https://github.com/CourtHive/competition-factory/commit/5e385440092f7413afcd0eb515abf41f409c8d85))
+* **query:** participantsVersion handshake on getEventData ([#4664](https://github.com/CourtHive/competition-factory/issues/4664)) ([59b95cc](https://github.com/CourtHive/competition-factory/commit/59b95cc60c2523feaaae9c0f8901d98dd8b1e283))
+* **venues:** add discipline to Court ([#4662](https://github.com/CourtHive/competition-factory/issues/4662)) ([1a70240](https://github.com/CourtHive/competition-factory/commit/1a70240c7f310fbf1e8746b63db69cf7ac5996cb))
+* **verify:** report coverage headroom in items, and budget the delta ([#4666](https://github.com/CourtHive/competition-factory/issues/4666)) ([4954668](https://github.com/CourtHive/competition-factory/commit/49546681a5ff1498dbdb596f2a2437911db7d592))
+
+
+### Bug Fixes
+
+* **notices:** keyed de-dup no longer destroys identity it already had ([#4657](https://github.com/CourtHive/competition-factory/issues/4657)) ([98d0fb3](https://github.com/CourtHive/competition-factory/commit/98d0fb3051591710ea872c20e68376933803c29c))
+* **verify:** audit every lockfile, not just the package's ([#4663](https://github.com/CourtHive/competition-factory/issues/4663)) ([6cb6a55](https://github.com/CourtHive/competition-factory/commit/6cb6a55d97512a9c9fef14a0ce72dd1c754b50cc))
+
+
+### Performance
+
+* **query:** make participantsVersion opt-in ([#4665](https://github.com/CourtHive/competition-factory/issues/4665)) ([2b1027d](https://github.com/CourtHive/competition-factory/commit/2b1027dceeba892c9e28c1365d38f40fc89c2d11))
+
+
+### Documentation
+
+* **matchUps:** drop the rename history from applyMatchUpFormat ([#4654](https://github.com/CourtHive/competition-factory/issues/4654)) ([192701f](https://github.com/CourtHive/competition-factory/commit/192701f4c5729d18befa9a72f5e0518a5a409979))
+
 ## [6.28.1](https://github.com/CourtHive/competition-factory/compare/v6.28.0...v6.28.1) (2026-08-17)
 
 
