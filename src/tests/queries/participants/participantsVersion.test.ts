@@ -67,14 +67,42 @@ describe('participantsVersion', () => {
       } = loadTournament();
 
       const result: any = tournamentEngine.getEventData({ eventId });
-      const { participantsVersion: version, ...withoutNewField } = result;
 
-      expect(version).toBeDefined();
-      expect(withoutNewField.participants?.length).toBeGreaterThan(0);
-      expect(withoutNewField.eventData).toBeDefined();
-      expect(withoutNewField.success).toEqual(true);
-      // nothing else appeared
-      expect(Object.keys(withoutNewField).sort()).toEqual(['eventData', 'participants', 'success']);
+      // NOTHING is added by default — not even the stamp. Hashing costs ~20% of the build, so a
+      // caller that never uses the handshake must not pay for it.
+      expect(result.participantsVersion).toBeUndefined();
+      expect(result.participants?.length).toBeGreaterThan(0);
+      expect(result.eventData).toBeDefined();
+      expect(result.success).toEqual(true);
+      expect(Object.keys(result).sort()).toEqual(['eventData', 'participants', 'success']);
+    });
+
+    it('withParticipantsVersion returns the stamp WITHOUT omitting anything', () => {
+      // Asking for the stamp is not asking to skip participants — a first-time caller needs both.
+      const {
+        eventIds: [eventId],
+      } = loadTournament();
+
+      const result: any = tournamentEngine.getEventData({ eventId, withParticipantsVersion: true });
+      expect(result.participantsVersion).toBeDefined();
+      expect(result.participants?.length).toBeGreaterThan(0);
+    });
+
+    it('supplying a version implies wanting the comparison — no second flag needed', () => {
+      // Requiring BOTH a flag and a version to get one behaviour is how a caller ends up setting one
+      // of them and silently getting the slow-and-useless combination.
+      const {
+        eventIds: [eventId],
+      } = loadTournament();
+
+      const { participantsVersion: version }: any = tournamentEngine.getEventData({
+        eventId,
+        withParticipantsVersion: true,
+      });
+      // note: no withParticipantsVersion here
+      const result: any = tournamentEngine.getEventData({ eventId, participantsVersion: version });
+      expect(result.participants).toBeUndefined();
+      expect(result.participantsVersion).toEqual(version);
     });
 
     it('omits participants ONLY on an exact version match', () => {
@@ -82,7 +110,7 @@ describe('participantsVersion', () => {
         eventIds: [eventId],
       } = loadTournament();
 
-      const first: any = tournamentEngine.getEventData({ eventId });
+      const first: any = tournamentEngine.getEventData({ eventId, withParticipantsVersion: true });
       const version = first.participantsVersion;
       expect(first.participants.length).toBeGreaterThan(0);
 
@@ -118,7 +146,7 @@ describe('participantsVersion', () => {
         eventIds: [eventId],
       } = loadTournament();
 
-      const before: any = tournamentEngine.getEventData({ eventId });
+      const before: any = tournamentEngine.getEventData({ eventId, withParticipantsVersion: true });
       const staleVersion = before.participantsVersion;
 
       const { participants: additions } = mocksEngine.generateParticipants({
@@ -143,7 +171,7 @@ describe('participantsVersion', () => {
         drawIds: [drawId],
       } = loadTournament();
 
-      const before: any = tournamentEngine.getEventData({ eventId });
+      const before: any = tournamentEngine.getEventData({ eventId, withParticipantsVersion: true });
 
       const { outcome } = mocksEngine.generateOutcomeFromScoreString({
         scoreString: '6-4 6-2',
