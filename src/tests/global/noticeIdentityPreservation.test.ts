@@ -128,4 +128,37 @@ describe('keyed notice de-dup preserves identity', () => {
     const merged = globalStateModule.preserveNoticeIdentity({ matchUp: {} }, { eventId: 'e1' });
     expect(merged.eventId).toEqual('e1');
   });
+
+  it('every notice buffer in this repo preserves identity — no copy may skip it', async () => {
+    // The real protection. Three implementations of this de-dup existed (syncGlobalState, the
+    // reference async provider under src/server, and — outside this repo — CFS's asyncGlobalState),
+    // and only fixing them one at a time guarantees the next copy reintroduces the bug.
+    //
+    // Anything that de-duplicates notices by key must route through the shared helper.
+    const fs = await import('fs');
+    const path = await import('path');
+
+    const root = path.resolve(__dirname, '../../');
+    const offenders: string[] = [];
+
+    const walk = (dir: string) => {
+      for (const entry of fs.readdirSync(dir)) {
+        const full = path.join(dir, entry);
+        if (fs.statSync(full).isDirectory()) {
+          if (entry === 'tests' || entry === 'node_modules') continue;
+          walk(full);
+        } else if (entry.endsWith('.ts')) {
+          const src = fs.readFileSync(full, 'utf8');
+          // the signature of a keyed notice buffer: it compares BOTH topic and key on stored notices
+          const dedupes = /notice\.topic === topic && notice\.key === key/.test(src);
+          if (dedupes && !src.includes('preserveNoticeIdentity')) {
+            offenders.push(full.slice(root.length + 1));
+          }
+        }
+      }
+    };
+    walk(root);
+
+    expect({ offenders }).toEqual({ offenders: [] });
+  });
 });
