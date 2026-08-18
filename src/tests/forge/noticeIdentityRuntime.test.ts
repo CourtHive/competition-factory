@@ -34,18 +34,33 @@ import * as topicConstants from '@Constants/topicConstants';
  * On the MUTATION path (scoring, advancement, publishing) an unattributable notice has a measured
  * cost: CFS cannot narrow its cache eviction and sweeps a whole tier. That path is asserted strictly.
  *
- * During draw GENERATION the notice chain runs through helpers that never accepted an `event`
- * (`attachPolicies`, `applyMatchUpFormat`, and their callers). Threading it through all of them
- * is a real but separate piece of work, and the payoff is small: generating a draw changes the whole
- * event's payload anyway, so a consumer sweeping the event tier there is CORRECT, not degraded.
+ * During draw GENERATION the chain reaches `modifyDrawNotice` through helpers that HAVE an `event`
+ * available but do not forward its id to the notice — `attachPolicies` (which accepts `event` and
+ * emits `{ drawDefinition, tournamentId }`) and `applyMatchUpFormat` (which accepts `event` and emits
+ * `{ drawDefinition, structureIds }`). Fixing it is a small edit in each, not a threading exercise;
+ * it is listed as a follow-up rather than done here because the payoff is small: generating a draw
+ * changes the whole event's payload anyway, so a consumer sweeping the event tier there is CORRECT,
+ * not degraded.
  *
- * So generation-phase gaps are recorded in a ledger rather than ignored. Exact-match, deliberately:
- * a NEW topic joining the list fails, and FIXING one also fails — which forces the ledger to stay
- * true instead of quietly over-stating what is broken.
+ * So generation-phase gaps are recorded in a ledger rather than ignored, and matched EXACTLY.
+ *
+ * Know the granularity, because it bounds what this buys you: the ledger is keyed by TOPIC, not by
+ * call site. Verified by experiment, not assumed —
+ *
+ *   - a topic that NEWLY gains a gap fails the assertion (confirmed: breaking the eventId fallback
+ *     in modifyMatchUpNotice turns it red)
+ *   - fixing a gap fails only when it removes the LAST emitter of that topic in this phase
+ *     (confirmed: threading eventId through BOTH attachPolicies and applyMatchUpFormat left the
+ *     assertion green, because other generation-phase emitters of the same two topics remain)
+ *
+ * So it reliably catches regressions and stops the ledger silently growing; it does not by itself
+ * prove the ledger's per-call-site notes are still accurate. Re-measure those when acting on them.
  */
 const GENERATION_KNOWN_GAPS: Record<string, string> = {
   // reached via drawDefinitionPolicyAttachment -> attachPolicies, and
-  // checkFormatScopeEquivalence -> applyMatchUpFormat; neither helper takes an `event`
+  // checkFormatScopeEquivalence -> applyMatchUpFormat. Both helpers DO accept an `event`; neither
+  // forwards `event?.eventId` to modifyDrawNotice. attachPolicies is additionally called without one
+  // from drawDefinitionPolicyAttachment, so that caller needs the id threaded too.
   [topicConstants.MODIFY_DRAW_DEFINITION]: 'policy/format helpers in the generation chain take no event',
   // emitted while the draw is still being built, before it is attached to an event
   [topicConstants.ADD_DRAW_DEFINITION]: 'draw not yet attached to an event when emitted',
