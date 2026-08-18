@@ -1,4 +1,4 @@
-import { setMatchUpMatchUpFormat } from '@Mutate/matchUps/matchUpFormat/setMatchUpMatchUpFormat';
+import { applyMatchUpFormat } from '@Mutate/matchUps/matchUpFormat/applyMatchUpFormat';
 import { checkTieFormat } from '@Mutate/tieFormat/checkTieFormat';
 import { makeDeepCopy } from '@Tools/makeDeepCopy';
 
@@ -34,7 +34,7 @@ export function checkFormatScopeEquivalence({
           drawDefinition.tieFormat = result.tieFormat ?? tieFormat;
         }
       } else if (matchUpFormat) {
-        const result = setMatchUpMatchUpFormat({
+        const result = applyMatchUpFormat({
           tournamentRecord,
           drawDefinition,
           matchUpFormat,

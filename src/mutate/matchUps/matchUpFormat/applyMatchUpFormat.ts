@@ -16,7 +16,7 @@ import {
   ErrorType,
 } from '@Constants/errorConditionConstants';
 
-type SetMatchUpMatchUpFormatArgs = {
+type ApplyMatchUpFormatArgs = {
   tournamentRecord?: Tournament;
   drawDefinition: DrawDefinition;
   structureIds?: string[];
@@ -28,7 +28,16 @@ type SetMatchUpMatchUpFormatArgs = {
 
 // internal use only; set matchUpFormat for a matchUp or structure
 
-export function setMatchUpMatchUpFormat(params: SetMatchUpMatchUpFormatArgs): {
+/**
+ * Writes a `matchUpFormat` onto the matchUps identified by the params — one matchUp, a structure, or
+ * a set of structures.
+ *
+ * NOT public. `setMatchUpFormat` is the exported engine method; this is the worker it delegates to,
+ * shared with `setMatchUpStatus` and `checkFormatScopeEquivalence`. It was called
+ * `setMatchUpMatchUpFormat` — `setMatchUp` + `MatchUpFormat` — which read as a typo rather than as a
+ * distinct role, and collided confusingly with the public name.
+ */
+export function applyMatchUpFormat(params: ApplyMatchUpFormatArgs): {
   success?: boolean;
   error?: ErrorType;
   info?: string;
@@ -40,6 +49,9 @@ export function setMatchUpMatchUpFormat(params: SetMatchUpMatchUpFormatArgs): {
   if (paramsCheck.error) return paramsCheck;
 
   if (!isValidMatchUpFormat({ matchUpFormat })) return { error: UNRECOGNIZED_MATCHUP_FORMAT };
+  // DELIBERATELY still the PUBLIC entry point's name, not this function's. `stack` is surfaced in
+  // decorated errors, and `setMatchUpFormat` is the only one of the two a consumer can call or
+  // recognise. Not a missed rename.
   const stack = 'setMatchUpFormat';
 
   if (matchUpId) {
