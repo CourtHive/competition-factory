@@ -2,6 +2,7 @@ import { checkRequiredParameters } from '@Helpers/parameters/checkRequiredParame
 import { getEventPublishStatus } from '@Query/event/getEventPublishStatus';
 import { getDrawIsPublished } from '@Query/publishing/getDrawIsPublished';
 import { getTournamentInfo } from '@Query/tournaments/getTournamentInfo';
+import { participantsVersion as computeParticipantsVersion } from '@Query/participants/participantsVersion';
 import { getParticipants } from '@Query/participants/getParticipants';
 import { getPublishState } from '@Query/publishing/getPublishState';
 import { isVisiblyPublished } from '@Query/publishing/isEmbargoed';
@@ -38,6 +39,7 @@ type GetEventDataArgs = {
   pressureRating?: boolean;
   drawsProfile?: PayloadProfileUnion;
   participantFilters?: any;
+  participantsVersion?: string;
   contextProfile?: any;
   eventId?: string;
   status?: string;
@@ -46,6 +48,7 @@ type GetEventDataArgs = {
 
 export function getEventData(params: GetEventDataArgs): {
   participants?: HydratedParticipant[];
+  participantsVersion?: string;
   error?: ErrorType;
   success?: boolean;
   eventData?: any;
@@ -304,5 +307,18 @@ export function getEventData(params: GetEventDataArgs): {
   eventData.eventInfo.publishState = eventPublishState;
   eventData.eventInfo.published = eventPublishState?.status?.published;
 
-  return { ...SUCCESS, eventData, participants: tournamentParticipants };
+  // ADDITIVE: the stamp always rides the response; omission happens only when the caller PROVES it
+  // already holds this exact set. `participantsVersion` absent from params → unchanged behaviour,
+  // which is the ClubSpark constraint (their deployed pattern must not move).
+  const version = computeParticipantsVersion(tournamentParticipants);
+  const clientHoldsCurrentSet = !!params.participantsVersion && params.participantsVersion === version;
+
+  return {
+    ...SUCCESS,
+    eventData,
+    // A mismatch or absence sends participants, exactly as today. Only an EXACT match omits them, so
+    // the failure direction is "sent bytes that were not needed" rather than a blank bracket.
+    participants: clientHoldsCurrentSet ? undefined : tournamentParticipants,
+    participantsVersion: version,
+  };
 }
