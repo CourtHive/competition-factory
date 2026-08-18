@@ -16,6 +16,7 @@ import { isString } from '@Tools/objects';
 // constants
 import { CANNOT_MODIFY_PARTICIPANT_TYPE, INVALID_DATE } from '@Constants/errorConditionConstants';
 import { GROUP, INDIVIDUAL, PAIR, participantTypes } from '@Constants/participantConstants';
+import { PARTICIPANT_NAME_DERIVED_FROM_PERSON } from '@Constants/infoConstants';
 import { TOURNAMENT_RECORD, PARTICIPANT } from '@Constants/attributeConstants';
 import { SUCCESS } from '@Constants/resultConstants';
 import { TEAM } from '@Constants/matchUpTypes';
@@ -63,7 +64,8 @@ export function modifyParticipant(params) {
   if (onlineResources) newValues.onlineResources = onlineResources;
 
   if (participantOtherName !== undefined) newValues.participantOtherName = participantOtherName || undefined;
-  if (participantName && isString(participantName)) newValues.participantName = participantName;
+  const suppliedParticipantName = participantName && isString(participantName) ? participantName : undefined;
+  if (suppliedParticipantName) newValues.participantName = suppliedParticipantName;
 
   if (Array.isArray(individualParticipantIds)) {
     updateIndividualParticipantIds({
@@ -92,6 +94,12 @@ export function modifyParticipant(params) {
     if (personResult?.error) return personResult;
   }
 
+  // A supplied participantName can be superseded by a derived one — from `person` for an INDIVIDUAL,
+  // or from the individuals of a PAIR. That is intended precedence, but returning success while
+  // silently dropping a value the caller passed makes a partial no-op indistinguishable from a full
+  // success. Surface it instead. See PARTICIPANT_NAME_DERIVED_FROM_PERSON.
+  const participantNameSuperseded = !!suppliedParticipantName && newValues.participantName !== suppliedParticipantName;
+
   Object.assign(existingParticipant, definedAttributes(newValues));
 
   if (groupingParticipantId) {
@@ -111,6 +119,8 @@ export function modifyParticipant(params) {
   return {
     participant: makeDeepCopy(existingParticipant),
     ...SUCCESS,
+    // conditional: callers that did not hit the precedence see the response shape they always have
+    ...(participantNameSuperseded && { info: PARTICIPANT_NAME_DERIVED_FROM_PERSON }),
   };
 }
 
