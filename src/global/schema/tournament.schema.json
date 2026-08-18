@@ -3410,6 +3410,7 @@
       "type": "object",
       "properties": {
         "disabled": { "type": "boolean" },
+        "discipline": { "$ref": "#/definitions/DisciplineEnum" },
         "createdAt": {
           "type": ["string", "object"],
           "format": "date-time"

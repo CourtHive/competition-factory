@@ -1949,6 +1949,21 @@ export interface Court {
   dateAvailability?: Availability[];
   // CODES first-class: previously stored as `disabled` extension
   disabled?: boolean | { dates?: string[] };
+  /**
+   * The sport this court is for. Absent means unspecified, NOT tennis — a court nobody has
+   * declared a discipline for is not evidence that it is a tennis court, and defaulting it
+   * would invent data.
+   *
+   * A physical surface can serve more than one sport (a tennis court with pickleball lines, or a
+   * portable net dropped on it). That is a court CAPABILITY and is deliberately NOT modelled
+   * here: this field says what the court IS, so a dedicated pickleball court is distinguishable
+   * from a tennis court. Do not repurpose it to mean "can also host" — that turns one physical
+   * slab into two schedulable courts.
+   *
+   * Open vocabulary, like `Event.discipline`: normalize with `normalizeDiscipline` and constrain
+   * with the `allowedDisciplines` policy where a fixed list is required.
+   */
+  discipline?: DisciplineUnion;
   extensions?: Extension[];
   floodlit?: boolean;
   indoorOutdoor?: IndoorOutdoorUnion;
