@@ -29,9 +29,9 @@
  * call the same underlying method.
  */
 
-import type { DrawDefinition, Event, Extension, TimeItem, Tournament, Venue } from '@Types/tournamentTypes';
-import type { HydratedMatchUp, HydratedParticipant } from '@Types/hydrated';
-import type { FlightProfile, MatchUpsMap, PolicyDefinitions } from '@Types/factoryTypes';
+import { DrawDefinition, Event, Extension, TimeItem, Tournament, Venue } from '@Types/tournamentTypes';
+import { HydratedMatchUp, HydratedParticipant } from '@Types/hydrated';
+import { FlightProfile, MatchUpsMap, PolicyDefinitions } from '@Types/factoryTypes';
 
 type QueryRegistryEntry = {
   /** factory engine method name to invoke */

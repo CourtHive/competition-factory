@@ -5,7 +5,7 @@ import { unique } from '@Tools/arrays';
 
 // constants and types
 import { INVALID_SCORE, INVALID_VALUES } from '@Constants/errorConditionConstants';
-import type { Score } from '@Types/tournamentTypes';
+import { Score } from '@Types/tournamentTypes';
 import { ResultType } from '@Types/factoryTypes';
 
 type validateScoreTypes = {

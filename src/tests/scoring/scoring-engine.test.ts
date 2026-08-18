@@ -1,4 +1,4 @@
-import type { competitionFormat, PointMultiplier } from '@Assemblies/governors/scoreGovernor';
+import { competitionFormat, PointMultiplier } from '@Assemblies/governors/scoreGovernor';
 import { ScoringEngine } from '@Assemblies/governors/scoreGovernor';
 import { describe, it, expect } from 'vitest';
 

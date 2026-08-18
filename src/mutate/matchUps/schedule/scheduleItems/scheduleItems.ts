@@ -49,7 +49,7 @@ import { OFFICIAL_CONFLICT_OF_INTEREST } from '@Constants/officiatingConstants';
 import { POLICY_TYPE_OFFICIATING_CONFLICT } from '@Constants/policyConstants';
 import { OFFICIAL } from '@Constants/participantRoles';
 import { SUCCESS } from '@Constants/resultConstants';
-import type { OfficialRecord } from '@Types/officiatingTypes';
+import { OfficialRecord } from '@Types/officiatingTypes';
 import { HydratedMatchUp } from '@Types/hydrated';
 import {
   SCHEDULE_CONFLICT_DOUBLE_BOOKING,

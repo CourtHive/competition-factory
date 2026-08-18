@@ -5,7 +5,7 @@ import { isAdHoc } from '@Query/drawDefinition/isAdHoc';
 
 import { MISSING_DRAW_DEFINITION, STRUCTURE_NOT_FOUND, ErrorType } from '@Constants/errorConditionConstants';
 import { STRUCTURE_SELECTED_STATUSES } from '@Constants/entryStatusConstants';
-import type { DrawDefinition } from '@Types/tournamentTypes';
+import { DrawDefinition } from '@Types/tournamentTypes';
 import { COMPLETED } from '@Constants/matchUpStatusConstants';
 import { SUCCESS } from '@Constants/resultConstants';
 

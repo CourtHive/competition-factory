@@ -12,13 +12,13 @@ import { INVALID_VALUES } from '@Constants/errorConditionConstants';
 import { SUCCESS } from '@Constants/resultConstants';
 
 // Types
-import type {
+import {
   ConflictEvaluationInputs,
   OfficialConflict,
   OfficialAssignment,
   OfficialRecord,
 } from '@Types/officiatingTypes';
-import type { Participant } from '@Types/tournamentTypes';
+import { Participant } from '@Types/tournamentTypes';
 
 type AssignOfficialArgs = ConflictEvaluationInputs & {
   officialRecord: OfficialRecord;

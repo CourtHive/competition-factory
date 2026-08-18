@@ -11,9 +11,9 @@
  * - Rally scoring: same as tiebreak-only
  */
 
-import type { MatchUp, FormatStructure, SetScore } from '@Types/scoring/types';
+import { MatchUp, FormatStructure, SetScore } from '@Types/scoring/types';
 import { isAggregateFormat } from '@Tools/scoring/scoringUtilities';
-import type { SetType } from '@Tools/scoring/scoringUtilities';
+import { SetType } from '@Tools/scoring/scoringUtilities';
 
 /**
  * Infer which court side the serve should come from
@@ -65,10 +65,7 @@ function getActiveSet(matchUp: MatchUp): SetScore | undefined {
  * INTENNSE rule: "serve is always from the deuce side when the aggregate score
  * is even, and always from the ad side when the aggregate score is odd"
  */
-function inferAggregateSide(
-  matchUp: MatchUp,
-  currentSet: SetScore | undefined,
-): 'deuce' | 'ad' {
+function inferAggregateSide(matchUp: MatchUp, currentSet: SetScore | undefined): 'deuce' | 'ad' {
   // Sum all scores across all completed sets
   let aggregateTotal = 0;
   for (const set of matchUp.score.sets) {

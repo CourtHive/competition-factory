@@ -4,7 +4,7 @@ import { INVALID_VALUES } from '@Constants/errorConditionConstants';
 import { SUCCESS } from '@Constants/resultConstants';
 
 // Types
-import type { SanctioningRecord, TournamentProposal } from '@Types/sanctioningTypes';
+import { SanctioningRecord, TournamentProposal } from '@Types/sanctioningTypes';
 
 type UpdateProposalArgs = {
   sanctioningRecord: SanctioningRecord;

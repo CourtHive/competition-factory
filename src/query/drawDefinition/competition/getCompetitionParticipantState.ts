@@ -2,9 +2,9 @@
 import { getCompetitionState } from './getCompetitionState';
 
 // Types
-import type { CompetitionParticipantState } from '@Types/competitionPolicyTypes';
-import type { DrawDefinition } from '@Types/tournamentTypes';
-import type { ResultType } from '@Types/factoryTypes';
+import { CompetitionParticipantState } from '@Types/competitionPolicyTypes';
+import { DrawDefinition } from '@Types/tournamentTypes';
+import { ResultType } from '@Types/factoryTypes';
 
 type GetCompetitionParticipantStateArgs = {
   drawDefinition: DrawDefinition;

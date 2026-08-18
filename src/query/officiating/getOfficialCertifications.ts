@@ -3,7 +3,7 @@ import { MISSING_OFFICIAL_RECORD } from '@Constants/officiatingConstants';
 import { SUCCESS } from '@Constants/resultConstants';
 
 // Types
-import type { OfficialRecord, OfficialCertification } from '@Types/officiatingTypes';
+import { OfficialRecord, OfficialCertification } from '@Types/officiatingTypes';
 
 type GetOfficialCertificationsArgs = {
   officialRecord: OfficialRecord;

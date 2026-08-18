@@ -5,7 +5,7 @@ import { findExtension } from '@Acquire/findExtension';
 import { SANCTIONING_CONSTRAINTS } from '@Constants/extensionConstants';
 
 // Types
-import type { Event, Tournament } from '@Types/tournamentTypes';
+import { Event, Tournament } from '@Types/tournamentTypes';
 
 export type DrawCompositionConstraints = {
   drawSize?: number;
@@ -24,10 +24,9 @@ type GetDrawCompositionConstraintsArgs = {
  * extension on the tournament record. Returns undefined when no sanctioning
  * constraints exist (unsanctioned draws are unconstrained).
  */
-export function getDrawCompositionConstraints({
-  tournamentRecord,
-  event,
-}: GetDrawCompositionConstraintsArgs): { constraints?: DrawCompositionConstraints } {
+export function getDrawCompositionConstraints({ tournamentRecord, event }: GetDrawCompositionConstraintsArgs): {
+  constraints?: DrawCompositionConstraints;
+} {
   if (!tournamentRecord) return {};
 
   const { extension } = findExtension({

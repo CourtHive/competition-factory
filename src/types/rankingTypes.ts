@@ -1,5 +1,5 @@
-import type { PointsAuthority } from '../constants/pointsAuthorityConstants';
-import type { EventTypeUnion } from './tournamentTypes';
+import { PointsAuthority } from '../constants/pointsAuthorityConstants';
+import { EventTypeUnion } from './tournamentTypes';
 
 // ─── Top-Level Policy ────────────────────────────────────────────────
 

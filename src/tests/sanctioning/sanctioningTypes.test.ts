@@ -23,7 +23,7 @@ import {
 } from '@Constants/sanctioningConstants';
 
 // Types
-import type { SanctioningStatus } from '@Types/sanctioningTypes';
+import { SanctioningStatus } from '@Types/sanctioningTypes';
 import {
   SanctioningStatusEnum,
   EndorsementStatusEnum,

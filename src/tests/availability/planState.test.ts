@@ -13,8 +13,8 @@
 
 import { describe, it, expect, beforeEach } from 'vitest';
 import { AvailabilityEngine } from '@Assemblies/engines/availability/AvailabilityEngine';
-import { computePlanItemId, type PlanItem } from '@Assemblies/governors/availabilityGovernor/planState';
-import type { EngineEvent } from '@Assemblies/governors/availabilityGovernor/types';
+import { computePlanItemId, PlanItem } from '@Assemblies/governors/availabilityGovernor/planState';
+import { EngineEvent } from '@Assemblies/governors/availabilityGovernor/types';
 
 // ============================================================================
 // Test Fixtures

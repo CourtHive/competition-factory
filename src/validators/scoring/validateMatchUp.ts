@@ -8,7 +8,7 @@
  * 4. Return validation results
  */
 
-import type { MatchUp, SetScore, Participant } from '@Types/scoring/types';
+import { MatchUp, SetScore, Participant } from '@Types/scoring/types';
 import { createMatchUp } from '@Mutate/scoring/createMatchUp';
 import { addPoint } from '@Mutate/scoring/addPoint';
 import { getScore } from '@Query/scoring/getScore';

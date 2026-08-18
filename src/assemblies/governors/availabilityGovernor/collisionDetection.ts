@@ -15,7 +15,7 @@
  * C. Drag spans multiple blocks -> create first valid segment only
  */
 
-import type { Block, TimeRange } from './types';
+import { Block, TimeRange } from './types';
 
 function toTimestamp(isoString: string): number {
   return new Date(isoString?.endsWith('Z') ? isoString : isoString + 'Z').getTime();

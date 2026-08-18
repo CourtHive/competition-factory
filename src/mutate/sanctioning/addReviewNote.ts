@@ -6,7 +6,7 @@ import { INVALID_VALUES } from '@Constants/errorConditionConstants';
 import { SUCCESS } from '@Constants/resultConstants';
 
 // Types
-import type { SanctioningRecord, ReviewNote } from '@Types/sanctioningTypes';
+import { SanctioningRecord, ReviewNote } from '@Types/sanctioningTypes';
 
 type AddReviewNoteArgs = {
   sanctioningRecord: SanctioningRecord;

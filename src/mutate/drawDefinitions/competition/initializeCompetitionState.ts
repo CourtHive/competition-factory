@@ -14,9 +14,9 @@ import { SUCCESS } from '@Constants/resultConstants';
 import { DOUBLES } from '@Constants/eventConstants';
 
 // Types
-import type { CompetitionParticipantState, CompetitionState } from '@Types/competitionPolicyTypes';
-import type { DrawDefinition, Event, Tournament } from '@Types/tournamentTypes';
-import type { ResultType } from '@Types/factoryTypes';
+import { CompetitionParticipantState, CompetitionState } from '@Types/competitionPolicyTypes';
+import { DrawDefinition, Event, Tournament } from '@Types/tournamentTypes';
+import { ResultType } from '@Types/factoryTypes';
 
 type InitializeCompetitionStateArgs = {
   tournamentRecord: Tournament;

@@ -1,5 +1,5 @@
-import type { Extension, Participant, TimeItem } from './tournamentTypes';
-import type { DocumentReference } from './sanctioningTypes';
+import { Extension, Participant, TimeItem } from './tournamentTypes';
+import { DocumentReference } from './sanctioningTypes';
 
 // ---------------------------------------------------------------------------
 // Status & State Machine

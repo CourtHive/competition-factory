@@ -1,5 +1,5 @@
 // Types
-import type { CompetitionPolicy } from '@Types/competitionPolicyTypes';
+import { CompetitionPolicy } from '@Types/competitionPolicyTypes';
 
 type ActualOutputArgs = {
   pointsWon: number;

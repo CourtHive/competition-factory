@@ -1,4 +1,4 @@
-import type { FormatStructure, SetFormatStructure } from '@Types/scoring/types';
+import { FormatStructure, SetFormatStructure } from '@Types/scoring/types';
 import { parse } from '@Helpers/matchUpFormatCode/parse';
 import { describe, expect, it } from 'vitest';
 import {

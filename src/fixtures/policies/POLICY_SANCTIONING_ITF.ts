@@ -1,4 +1,4 @@
-import type { SanctioningPolicy } from '@Types/sanctioningTypes';
+import { SanctioningPolicy } from '@Types/sanctioningTypes';
 
 const WHITE_BADGE = 'White Badge';
 

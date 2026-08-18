@@ -1,6 +1,6 @@
 // Format Converter Module
 
-import type { FormatStructure, SetFormatStructure, GameFormatStructure } from '@Types/scoring/types';
+import { FormatStructure, SetFormatStructure, GameFormatStructure } from '@Types/scoring/types';
 import { stringify } from '@Helpers/matchUpFormatCode/stringify';
 import { parse } from '@Helpers/matchUpFormatCode/parse';
 

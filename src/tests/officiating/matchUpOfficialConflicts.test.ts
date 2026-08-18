@@ -20,7 +20,7 @@ import { INDIVIDUAL, PAIR } from '@Constants/participantConstants';
 import { COACH, OFFICIAL, OTHER } from '@Constants/participantRoles';
 import { DOUBLES } from '@Constants/matchUpTypes';
 
-import type { OfficialRecord } from '@Types/officiatingTypes';
+import { OfficialRecord } from '@Types/officiatingTypes';
 
 function makeOfficialRecord(overrides?: Partial<OfficialRecord>): OfficialRecord {
   return {

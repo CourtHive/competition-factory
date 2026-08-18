@@ -4,7 +4,7 @@ import { INVALID_VALUES } from '@Constants/errorConditionConstants';
 import { SUCCESS } from '@Constants/resultConstants';
 
 // Types
-import type { OfficialRecord } from '@Types/officiatingTypes';
+import { OfficialRecord } from '@Types/officiatingTypes';
 
 type RemoveEvaluationArgs = {
   officialRecord: OfficialRecord;

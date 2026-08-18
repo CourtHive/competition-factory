@@ -13,7 +13,7 @@
 
 import { extractDate } from '@Tools/dateTime';
 
-import { BLOCK_TYPES, type BlockMutation, type EngineConflict, type EngineContext } from './types';
+import { BLOCK_TYPES, BlockMutation, EngineConflict, EngineContext } from './types';
 
 import { diffMinutes, rangesOverlap } from './railDerivation';
 

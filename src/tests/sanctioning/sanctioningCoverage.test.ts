@@ -10,7 +10,7 @@ import { beforeEach, describe, expect, it } from 'vitest';
 import { POLICY_SANCTIONING_GENERIC } from '@Fixtures/policies/POLICY_SANCTIONING_GENERIC';
 
 // Types
-import type {
+import {
   TournamentProposal,
   SanctioningRecord,
   SanctioningPolicy,

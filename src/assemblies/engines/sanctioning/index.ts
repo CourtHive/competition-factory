@@ -53,7 +53,7 @@ import { SANCTIONING_RECORD_EXISTS } from '@Constants/sanctioningConstants';
 import { SUCCESS } from '@Constants/resultConstants';
 
 // types
-import type { SanctioningRecord, SanctioningRecords, SanctioningDirectives } from '@Types/sanctioningTypes';
+import { SanctioningRecord, SanctioningRecords, SanctioningDirectives } from '@Types/sanctioningTypes';
 
 function resolveRecord(sanctioningId?: string): SanctioningRecord | undefined {
   return getSanctioningRecord(sanctioningId ?? getActiveSanctioningId());

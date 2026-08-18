@@ -5,7 +5,7 @@ import { MISSING_OFFICIAL_RECORD } from '@Constants/officiatingConstants';
 import { SUCCESS } from '@Constants/resultConstants';
 
 // Types
-import type { OfficialRecord, OfficialSuspension } from '@Types/officiatingTypes';
+import { OfficialRecord, OfficialSuspension } from '@Types/officiatingTypes';
 
 type AddSuspensionArgs = {
   officialRecord: OfficialRecord;

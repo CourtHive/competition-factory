@@ -7,7 +7,7 @@ import {
   INVALID_OFFICIATING_STATUS_TRANSITION,
   VALID_ASSIGNMENT_TRANSITIONS,
 } from '@Constants/officiatingConstants';
-import type { OfficialRecord, AssignmentStatus, OfficialAssignment } from '@Types/officiatingTypes';
+import { OfficialRecord, AssignmentStatus, OfficialAssignment } from '@Types/officiatingTypes';
 
 type TransitionAssignmentStatusArgs = {
   officialRecord: OfficialRecord;

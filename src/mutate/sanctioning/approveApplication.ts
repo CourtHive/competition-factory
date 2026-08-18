@@ -3,7 +3,7 @@ import { transitionStatus } from './transitionStatus';
 // Constants
 import { MISSING_SANCTIONING_RECORD, APPROVED } from '@Constants/sanctioningConstants';
 
-import type { SanctioningRecord } from '@Types/sanctioningTypes';
+import { SanctioningRecord } from '@Types/sanctioningTypes';
 
 type ApproveApplicationArgs = {
   sanctioningRecord: SanctioningRecord;

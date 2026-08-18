@@ -5,8 +5,8 @@ import { findStructure } from '@Acquire/findStructure';
 import { isAdHoc } from '@Query/drawDefinition/isAdHoc';
 
 import { MISSING_DRAW_DEFINITION, STRUCTURE_NOT_FOUND, ErrorType } from '@Constants/errorConditionConstants';
-import type { DrawDefinition } from '@Types/tournamentTypes';
-import type { SwissStanding, ScoreGroup } from '@Types/swissTypes';
+import { DrawDefinition } from '@Types/tournamentTypes';
+import { SwissStanding, ScoreGroup } from '@Types/swissTypes';
 import { STRUCTURE_SELECTED_STATUSES } from '@Constants/entryStatusConstants';
 import { SUCCESS } from '@Constants/resultConstants';
 

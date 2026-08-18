@@ -212,7 +212,7 @@ lines.push(' * fallback on `FactoryEngineTyped`; that set shrinks as the parser'
 lines.push(' * resolves more of the public surface over time.');
 lines.push(' */');
 lines.push('');
-lines.push("import type { EngineMethod } from './factoryTypes';");
+lines.push("import { EngineMethod } from './factoryTypes';");
 lines.push('');
 
 for (const path of sortedPaths) {
@@ -223,15 +223,15 @@ for (const path of sortedPaths) {
   // dedupe sourceName per path
   const uniq = Array.from(new Map(entries.map((e) => [e.sourceName, e])).values());
   if (uniq.length === 1) {
-    lines.push(`import type { ${uniq[0].sourceName} } from '${path}';`);
+    lines.push(`import { ${uniq[0].sourceName} } from '${path}';`);
   } else {
     // Mirror Prettier's collapse behavior (printWidth 120 in .prettierrc.json)
     // so prebuild output stays clean without a follow-up `prettier --write`.
-    const single = `import type { ${uniq.map((e) => e.sourceName).join(', ')} } from '${path}';`;
+    const single = `import { ${uniq.map((e) => e.sourceName).join(', ')} } from '${path}';`;
     if (single.length <= 120) {
       lines.push(single);
     } else {
-      lines.push(`import type {`);
+      lines.push(`import {`);
       for (const e of uniq) lines.push(`  ${e.sourceName},`);
       lines.push(`} from '${path}';`);
     }

@@ -9,7 +9,7 @@ import {
 } from '@Constants/sanctioningConstants';
 
 // Types
-import type { SanctioningRecord, EventProposal } from '@Types/sanctioningTypes';
+import { SanctioningRecord, EventProposal } from '@Types/sanctioningTypes';
 
 type UpdateEventProposalArgs = {
   sanctioningRecord: SanctioningRecord;

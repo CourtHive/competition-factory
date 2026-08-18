@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { getScoreboard } from '@Query/scoring/getScoreboard';
-import type { MatchUp, SetScore } from '@Types/scoring/types';
+import { MatchUp, SetScore } from '@Types/scoring/types';
 
 function tennisScore(p1: number, p2: number): string {
   // Build enough game scores to place our target at the last index

@@ -20,8 +20,8 @@ import { QUALIFYING, WINNER } from '@Constants/drawDefinitionConstants';
 import { SUCCESS } from '@Constants/resultConstants';
 
 // Types
-import type { DrawDefinition, Event, MatchUp, Tournament } from '@Types/tournamentTypes';
-import type { SwissPolicy } from '@Types/swissTypes';
+import { DrawDefinition, Event, MatchUp, Tournament } from '@Types/tournamentTypes';
+import { SwissPolicy } from '@Types/swissTypes';
 import { ResultType } from '@Types/factoryTypes';
 
 type GenerateSwissRoundArgs = {

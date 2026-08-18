@@ -1,4 +1,4 @@
-import type { ConflictEvaluationInputs } from '@Types/officiatingTypes';
+import { ConflictEvaluationInputs } from '@Types/officiatingTypes';
 
 /**
  * The single list of inputs that configure a conflict-of-interest evaluation.

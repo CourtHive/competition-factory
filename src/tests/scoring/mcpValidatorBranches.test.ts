@@ -1,5 +1,5 @@
 import { mcpValidator, validateMCPMatch, exportMatchUpJSON } from '@Validators/scoring/mcpValidator';
-import type { MCPMatch, MCPPoint } from '@Validators/scoring/mcpParser';
+import { MCPMatch, MCPPoint } from '@Validators/scoring/mcpParser';
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 
 // Helper to create a minimal MCPPoint with no Set values (avoids bad format deduction)
@@ -508,10 +508,7 @@ describe('mcpValidator - Branch Coverage', () => {
     it('should process all matches when no matchId filter', () => {
       const match1Id = '20200101-M-Test-F-A-B';
       const match2Id = '20200102-M-Test-F-C-D';
-      const points = [
-        makeMCPPoint({ match_id: match1Id }),
-        makeMCPPoint({ match_id: match2Id }),
-      ];
+      const points = [makeMCPPoint({ match_id: match1Id }), makeMCPPoint({ match_id: match2Id })];
       const csvData = buildCSV(points);
 
       const result = mcpValidator({ csvData, matchUpFormat: 'SET3-S:6/TB7' });

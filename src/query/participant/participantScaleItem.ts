@@ -3,7 +3,7 @@ import { getAccessorValue } from '@Tools/getAccessorValue';
 // constants and types
 import { INVALID_SCALE_ITEM, INVALID_VALUES, MISSING_PARTICIPANT } from '@Constants/errorConditionConstants';
 import { ScaleAttributes, ScaleItem, ResultType } from '@Types/factoryTypes';
-import type { Participant, EventTypeUnion } from '@Types/tournamentTypes';
+import { Participant, EventTypeUnion } from '@Types/tournamentTypes';
 import { SUCCESS } from '@Constants/resultConstants';
 import { SCALE } from '@Constants/scaleConstants';
 import { isObject } from '@Tools/objects';

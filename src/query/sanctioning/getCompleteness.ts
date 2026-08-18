@@ -3,7 +3,7 @@ import { MISSING_SANCTIONING_RECORD } from '@Constants/sanctioningConstants';
 import { SUCCESS } from '@Constants/resultConstants';
 
 // Types
-import type { SanctioningRecord, SanctioningPolicy } from '@Types/sanctioningTypes';
+import { SanctioningRecord, SanctioningPolicy } from '@Types/sanctioningTypes';
 
 type GetCompletenessArgs = {
   sanctioningRecord: SanctioningRecord;

@@ -6,8 +6,8 @@ import { DRAFT } from '@Constants/sanctioningConstants';
 import { SUCCESS } from '@Constants/resultConstants';
 
 // Types
-import type { SanctioningRecord, TournamentProposal, Applicant } from '@Types/sanctioningTypes';
-import type { TierClassification } from '@Types/tournamentTypes';
+import { SanctioningRecord, TournamentProposal, Applicant } from '@Types/sanctioningTypes';
+import { TierClassification } from '@Types/tournamentTypes';
 
 type CreateSanctioningRecordArgs = {
   sanctioningId?: string;

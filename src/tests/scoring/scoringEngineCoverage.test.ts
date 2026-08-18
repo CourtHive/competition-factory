@@ -10,7 +10,7 @@ import { calculatePointsTo, calcPointsToGameInTiebreak } from '@Mutate/scoring/p
 import { createMatchUp, addPoint, getScore } from '@Assemblies/governors/scoreGovernor';
 import { ScoringEngine } from '@Assemblies/engines/scoring/ScoringEngine';
 import { resolveSetType } from '@Tools/scoring/scoringUtilities';
-import type { SetFormatStructure } from '@Types/scoring/types';
+import { SetFormatStructure } from '@Types/scoring/types';
 import { formatGameScore } from '@Mutate/scoring/addPoint';
 import { parse } from '@Helpers/matchUpFormatCode/parse';
 import { describe, test, expect, vi } from 'vitest';

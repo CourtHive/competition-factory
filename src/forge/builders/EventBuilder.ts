@@ -20,8 +20,8 @@ import { DIRECT_ACCEPTANCE } from '@Constants/entryStatusConstants';
 import { MAIN } from '@Constants/drawDefinitionConstants';
 import { UUID } from '@Tools/UUID';
 
-import type { DrawOpts, EntriesOpts, EventSeed, GenderInput, BuildResult } from './types';
-import type { Directives, FactoryEngine } from '@Types/factoryTypes';
+import { DrawOpts, EntriesOpts, EventSeed, GenderInput, BuildResult } from './types';
+import { Directives, FactoryEngine } from '@Types/factoryTypes';
 
 type DrawSpec = { drawId: string; drawSize: number; opts: DrawOpts };
 

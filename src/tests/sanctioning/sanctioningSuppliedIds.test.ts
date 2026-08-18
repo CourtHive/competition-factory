@@ -5,7 +5,7 @@ import { beforeEach, describe, expect, it } from 'vitest';
 import { INSUFFICIENT_UUIDS } from '@Constants/errorConditionConstants';
 
 // Types
-import type { Applicant, EventProposal, TournamentProposal, SanctioningPolicy } from '@Types/sanctioningTypes';
+import { Applicant, EventProposal, TournamentProposal, SanctioningPolicy } from '@Types/sanctioningTypes';
 
 /**
  * Caller-supplied entity ids must be honoured, never overwritten by an

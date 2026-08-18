@@ -6,8 +6,8 @@
  * types they want to reference at API boundaries.
  */
 
-import type { ErrorType } from '@Constants/errorConditionConstants';
-import type { Directives } from '@Types/factoryTypes';
+import { ErrorType } from '@Constants/errorConditionConstants';
+import { Directives } from '@Types/factoryTypes';
 
 export type GenderInput = 'MALE' | 'FEMALE' | 'MIXED' | 'ANY' | 'OTHER';
 

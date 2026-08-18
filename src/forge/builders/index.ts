@@ -17,8 +17,8 @@
 import { EventBuilder } from './EventBuilder';
 import { ParticipantBuilder } from './ParticipantBuilder';
 
-import type { EventSeed } from './types';
-import type { FactoryEngine } from '@Types/factoryTypes';
+import { EventSeed } from './types';
+import { FactoryEngine } from '@Types/factoryTypes';
 
 export interface BuildFacade {
   event(seed?: Partial<EventSeed>): EventBuilder;

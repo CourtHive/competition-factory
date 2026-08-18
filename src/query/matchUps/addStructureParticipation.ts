@@ -1,8 +1,8 @@
 import { DEFAULTED, WALKOVER } from '@Constants/matchUpStatusConstants';
 
 // constants and types
-import type { MatchUpFinishingPositionRange, MatchUpStatusUnion, StageTypeUnion } from '@Types/tournamentTypes';
-import type { ParticipantMap } from '@Types/factoryTypes';
+import { MatchUpFinishingPositionRange, MatchUpStatusUnion, StageTypeUnion } from '@Types/tournamentTypes';
+import { ParticipantMap } from '@Types/factoryTypes';
 
 export function addStructureParticipation({
   finishingPositionRange: matchUpFinishingPositionRanges = { winner: [], loser: [] },

@@ -1,4 +1,4 @@
-import type { SanctioningPolicy } from '@Types/sanctioningTypes';
+import { SanctioningPolicy } from '@Types/sanctioningTypes';
 
 const BEST_OF_3 = 'SET3-S:6/TB7';
 

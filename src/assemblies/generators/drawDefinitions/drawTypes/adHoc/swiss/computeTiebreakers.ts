@@ -1,4 +1,4 @@
-import type { SwissParticipantRecord, SwissStanding } from '@Types/swissTypes';
+import { SwissParticipantRecord, SwissStanding } from '@Types/swissTypes';
 
 type ComputeTiebreakersArgs = {
   records: Map<string, SwissParticipantRecord>;
@@ -61,9 +61,7 @@ function computeMedianBuchholz(participantId: string, records: Map<string, Swiss
   const record = records.get(participantId);
   if (!record || record.opponentIds.length < 3) return computeBuchholz(participantId, records);
 
-  const oppScores = record.opponentIds
-    .map((oppId) => records.get(oppId)?.points ?? 0)
-    .sort((a, b) => a - b);
+  const oppScores = record.opponentIds.map((oppId) => records.get(oppId)?.points ?? 0).sort((a, b) => a - b);
 
   // drop highest and lowest
   const trimmed = oppScores.slice(1, -1);

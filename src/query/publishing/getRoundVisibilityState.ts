@@ -14,7 +14,7 @@
  */
 import { isEmbargoed } from './isEmbargoed';
 
-import type { PublishingDetail } from '@Mutate/publishing/publishEvent';
+import { PublishingDetail } from '@Mutate/publishing/publishEvent';
 
 export interface RoundVisibility {
   hidden?: boolean;

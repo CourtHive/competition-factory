@@ -10,7 +10,7 @@
  */
 
 import { isString } from '@Tools/objects';
-import type { PointResult, StrokeType, ServeLocation, RallyShot } from '@Types/scoring/types';
+import { PointResult, StrokeType, ServeLocation, RallyShot } from '@Types/scoring/types';
 
 // ============================================================================
 // Types

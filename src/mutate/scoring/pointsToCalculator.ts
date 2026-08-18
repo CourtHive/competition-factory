@@ -12,8 +12,8 @@
  * Calculated BEFORE the point is processed (state at time of serve).
  */
 
-import type { MatchUp, FormatStructure, SetFormatStructure, SetScore } from '@Types/scoring/types';
-import type { SetType } from '@Tools/scoring/scoringUtilities';
+import { MatchUp, FormatStructure, SetFormatStructure, SetScore } from '@Types/scoring/types';
+import { SetType } from '@Tools/scoring/scoringUtilities';
 
 export interface PointsToDecoration {
   pointsToGame: [number, number];

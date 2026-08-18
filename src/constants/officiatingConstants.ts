@@ -1,5 +1,5 @@
-import type { CertificationStatus, EvaluationStatus, AssignmentStatus } from '@Types/officiatingTypes';
-import type { ErrorType } from './errorConditionConstants';
+import { CertificationStatus, EvaluationStatus, AssignmentStatus } from '@Types/officiatingTypes';
+import { ErrorType } from './errorConditionConstants';
 
 // ---------------------------------------------------------------------------
 // Certification Status Constants

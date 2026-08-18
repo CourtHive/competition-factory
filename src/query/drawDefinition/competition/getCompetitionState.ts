@@ -5,9 +5,9 @@ import { firstClassOrExtension } from '@Acquire/firstClassOrExtension';
 import { COMPETITION_STATE } from '@Constants/extensionConstants';
 
 // Types
-import type { CompetitionState } from '@Types/competitionPolicyTypes';
-import type { DrawDefinition } from '@Types/tournamentTypes';
-import type { ResultType } from '@Types/factoryTypes';
+import { CompetitionState } from '@Types/competitionPolicyTypes';
+import { DrawDefinition } from '@Types/tournamentTypes';
+import { ResultType } from '@Types/factoryTypes';
 
 type GetCompetitionStateArgs = {
   drawDefinition: DrawDefinition;

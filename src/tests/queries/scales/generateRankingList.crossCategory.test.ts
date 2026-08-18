@@ -1,7 +1,7 @@
 import { generateRankingList } from '@Query/scales/generateRankingList';
 import { describe, expect, it } from 'vitest';
 
-import type { CategoryAggregationRule, PointPoolModel } from '@Types/rankingTypes';
+import { CategoryAggregationRule, PointPoolModel } from '@Types/rankingTypes';
 
 type Award = Record<string, any>;
 

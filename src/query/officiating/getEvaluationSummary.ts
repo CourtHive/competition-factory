@@ -3,7 +3,7 @@ import { MISSING_OFFICIAL_RECORD } from '@Constants/officiatingConstants';
 import { SUCCESS } from '@Constants/resultConstants';
 
 // Types
-import type { OfficialRecord } from '@Types/officiatingTypes';
+import { OfficialRecord } from '@Types/officiatingTypes';
 
 type GetEvaluationSummaryArgs = {
   officialRecord: OfficialRecord;

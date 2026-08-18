@@ -16,17 +16,7 @@
 
 import { extractDate } from '@Tools/dateTime';
 
-import {
-  BLOCK_TYPES,
-  type Block,
-  type BlockId,
-  type BlockType,
-  type CourtRef,
-  type Edge,
-  type EngineConfig,
-  type RailSegment,
-  type TimeRange,
-} from './types';
+import { BLOCK_TYPES, Block, BlockId, BlockType, CourtRef, Edge, EngineConfig, RailSegment, TimeRange } from './types';
 
 // ============================================================================
 // Key Generation

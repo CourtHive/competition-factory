@@ -5,7 +5,7 @@ import { MISSING_SANCTIONING_RECORD, MODIFICATION_REQUESTED } from '@Constants/s
 import { UUID } from '@Tools/UUID';
 
 // Types
-import type { SanctioningRecord, ReviewNote } from '@Types/sanctioningTypes';
+import { SanctioningRecord, ReviewNote } from '@Types/sanctioningTypes';
 
 type RequestModificationArgs = {
   sanctioningRecord: SanctioningRecord;

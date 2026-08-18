@@ -15,8 +15,8 @@ import { COMPETITOR } from '@Constants/participantRoles';
 import { INDIVIDUAL, PAIR, TEAM } from '@Constants/participantConstants';
 import { UUID } from '@Tools/UUID';
 
-import type { ParticipantBuildResult, PersonInput } from './types';
-import type { Directives, FactoryEngine } from '@Types/factoryTypes';
+import { ParticipantBuildResult, PersonInput } from './types';
+import { Directives, FactoryEngine } from '@Types/factoryTypes';
 
 type ParticipantShape =
   | { kind: 'individual'; person: PersonInput }

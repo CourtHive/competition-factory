@@ -1,5 +1,5 @@
 import { EVALUATION_SCALE_OPTIONS } from '@Constants/officiatingConstants';
-import type { EvaluationPolicy } from '@Types/officiatingTypes';
+import { EvaluationPolicy } from '@Types/officiatingTypes';
 
 export const POLICY_OFFICIATING_EVALUATION_CHAIR_UMPIRE: EvaluationPolicy = {
   policyName: 'ITF_CHAIR_UMPIRE_EVALUATION',

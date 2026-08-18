@@ -5,7 +5,7 @@ import { MISSING_SANCTIONING_RECORD } from '@Constants/sanctioningConstants';
 import { SUCCESS } from '@Constants/resultConstants';
 
 // Types
-import type { SanctioningRecord } from '@Types/sanctioningTypes';
+import { SanctioningRecord } from '@Types/sanctioningTypes';
 
 type GetSanctioningRecordArgs = {
   sanctioningRecord?: SanctioningRecord;

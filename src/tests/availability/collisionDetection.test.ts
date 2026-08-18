@@ -12,12 +12,7 @@
  */
 
 import { describe, it, expect } from 'vitest';
-import {
-  BLOCK_TYPES,
-  type Block,
-  type BlockType,
-  type CourtRef,
-} from '@Assemblies/governors/availabilityGovernor/types';
+import { BLOCK_TYPES, Block, BlockType, CourtRef } from '@Assemblies/governors/availabilityGovernor/types';
 import {
   clampDragToCollisions,
   findBlocksContainingTime,

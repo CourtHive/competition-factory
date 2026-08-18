@@ -9,7 +9,7 @@ import { ScoringEngine } from '@Assemblies/engines/scoring/ScoringEngine';
 import { parse } from '@Helpers/matchUpFormatCode/parse';
 import { expect, it } from 'vitest';
 
-import type { MatchUp } from '@Types/scoring/types';
+import { MatchUp } from '@Types/scoring/types';
 
 function createMatchUp(format: string): MatchUp {
   return {

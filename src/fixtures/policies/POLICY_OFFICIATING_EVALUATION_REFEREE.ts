@@ -1,5 +1,5 @@
 import { EVALUATION_SCALE_OPTIONS } from '@Constants/officiatingConstants';
-import type { EvaluationPolicy } from '@Types/officiatingTypes';
+import { EvaluationPolicy } from '@Types/officiatingTypes';
 
 export const POLICY_OFFICIATING_EVALUATION_REFEREE: EvaluationPolicy = {
   policyName: 'ITF_REFEREE_EVALUATION',

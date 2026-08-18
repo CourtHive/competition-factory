@@ -3,8 +3,8 @@ import { getEncounters } from '../drawMatic/getEncounters';
 import { computeScoreGroups } from './computeScoreGroups';
 
 // Types
-import type { ScoreGroup, SwissParticipantRecord } from '@Types/swissTypes';
-import type { MatchUp } from '@Types/tournamentTypes';
+import { ScoreGroup, SwissParticipantRecord } from '@Types/swissTypes';
+import { MatchUp } from '@Types/tournamentTypes';
 
 type SwissPairingArgs = {
   adHocRatings?: { [key: string]: number };

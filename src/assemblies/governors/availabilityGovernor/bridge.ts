@@ -12,9 +12,9 @@
  * Design: Pure functions, fully testable, no side effects.
  */
 
-import { BLOCK_TYPES, type BlockType, type CourtRef, type VenueDayTimeline, type RailSegment } from './types';
+import { BLOCK_TYPES, BlockType, CourtRef, VenueDayTimeline, RailSegment } from './types';
 import { resolveVenueId, resolveCourtId } from './railDerivation';
-import type { AvailabilityEngine } from '@Assemblies/engines/availability/AvailabilityEngine';
+import { AvailabilityEngine } from '@Assemblies/engines/availability/AvailabilityEngine';
 
 // ============================================================================
 // TODS Type Definitions

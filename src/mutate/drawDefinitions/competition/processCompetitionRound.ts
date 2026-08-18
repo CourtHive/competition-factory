@@ -13,8 +13,8 @@ import { COMPETITION_STATE } from '@Constants/extensionConstants';
 import { SUCCESS } from '@Constants/resultConstants';
 
 // Types
-import type { DrawDefinition, Event, MatchUp, Tournament } from '@Types/tournamentTypes';
-import type { ResultType } from '@Types/factoryTypes';
+import { DrawDefinition, Event, MatchUp, Tournament } from '@Types/tournamentTypes';
+import { ResultType } from '@Types/factoryTypes';
 
 type ProcessCompetitionRoundArgs = {
   tournamentRecord?: Tournament;

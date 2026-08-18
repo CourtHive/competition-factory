@@ -1,4 +1,4 @@
-import type { competitionFormat } from './competitionFormat';
+import { competitionFormat } from './competitionFormat';
 
 export interface Tournament {
   activeDates?: Date[] | string[]; // dates from startDate to endDate on which the tournament is active

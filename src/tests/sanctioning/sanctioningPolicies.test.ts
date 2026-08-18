@@ -7,7 +7,7 @@ import { POLICY_SANCTIONING_USTA } from '@Fixtures/policies/POLICY_SANCTIONING_U
 import { POLICY_SANCTIONING_ITF } from '@Fixtures/policies/POLICY_SANCTIONING_ITF';
 
 // Types
-import type { Applicant, TournamentProposal } from '@Types/sanctioningTypes';
+import { Applicant, TournamentProposal } from '@Types/sanctioningTypes';
 
 const testApplicant: Applicant = {
   organisationId: 'org-001',

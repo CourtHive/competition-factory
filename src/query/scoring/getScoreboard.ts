@@ -4,7 +4,7 @@
  * Pure function that formats score for display
  */
 
-import type { MatchUp, GetScoreboardOptions } from '@Types/scoring/types';
+import { MatchUp, GetScoreboardOptions } from '@Types/scoring/types';
 import { parse } from '@Helpers/matchUpFormatCode/parse';
 
 /**

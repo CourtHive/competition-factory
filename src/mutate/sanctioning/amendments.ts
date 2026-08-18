@@ -12,7 +12,7 @@ import {
 } from '@Constants/sanctioningConstants';
 
 // Types
-import type {
+import {
   SanctioningRecord,
   SanctioningPolicy,
   Amendment,

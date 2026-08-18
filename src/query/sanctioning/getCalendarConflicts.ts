@@ -4,8 +4,8 @@ import { INVALID_VALUES } from '@Constants/errorConditionConstants';
 import { SUCCESS } from '@Constants/resultConstants';
 
 // Types
-import type { SanctioningRecord, CalendarContext, CalendarEvent, Coordinates } from '@Types/sanctioningTypes';
-import type { TierClassification } from '@Types/tournamentTypes';
+import { SanctioningRecord, CalendarContext, CalendarEvent, Coordinates } from '@Types/sanctioningTypes';
+import { TierClassification } from '@Types/tournamentTypes';
 
 function eventLabel(event: CalendarEvent): string {
   return event.tournamentName ?? event.sanctioningId ?? 'existing event';

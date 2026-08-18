@@ -29,6 +29,21 @@ export default [
       sonarjs: sonarjs,
     },
     rules: {
+      // ── CourtHive coding standards, machine-enforced ────────────────────
+      // Prose in Mentat/standards/coding-standards.md drifts because lint,
+      // types AND prettier all pass while the code violates it. Never
+      // `import type` — plain `import` covers types and values, and neither
+      // verbatimModuleSyntax nor isolatedModules is set, so types still elide.
+      // `disallowTypeAnnotations: false` — the standard bans `import type`
+      // STATEMENTS. Inline `import('...')` type annotations are a different
+      // construct used here to reference a type without creating a module-level
+      // edge (e.g. `q: import('../forge').QueryFacade`), which is how some
+      // import cycles stay broken. Banning those would force top-level imports
+      // and risk reintroducing the cycles.
+      '@typescript-eslint/consistent-type-imports': [
+        'warn',
+        { prefer: 'no-type-imports', disallowTypeAnnotations: false },
+      ],
       ...tseslint.configs.recommended.rules,
       '@typescript-eslint/explicit-function-return-type': 'off',
       '@typescript-eslint/explicit-module-boundary-types': 'off',

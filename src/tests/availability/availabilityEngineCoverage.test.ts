@@ -1,4 +1,4 @@
-import { BLOCK_TYPES, type CourtRef } from '@Assemblies/governors/availabilityGovernor/types';
+import { BLOCK_TYPES, CourtRef } from '@Assemblies/governors/availabilityGovernor/types';
 import { AvailabilityEngine } from '@Assemblies/engines/availability/AvailabilityEngine';
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 

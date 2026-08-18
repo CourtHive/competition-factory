@@ -5,7 +5,7 @@ import { MISSING_SANCTIONING_RECORD, INVALID_STATUS_TRANSITION } from '@Constant
 import { SUCCESS } from '@Constants/resultConstants';
 
 // Types
-import type {
+import {
   SanctioningRecord,
   SanctioningStatus,
   SanctioningPolicy,

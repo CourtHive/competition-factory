@@ -26,7 +26,7 @@ import {
 } from '@Constants/officiatingConstants';
 import { INVALID_VALUES } from '@Constants/errorConditionConstants';
 
-import type { OfficialRecord } from '@Types/officiatingTypes';
+import { OfficialRecord } from '@Types/officiatingTypes';
 
 // ---------------------------------------------------------------------------
 // Helpers

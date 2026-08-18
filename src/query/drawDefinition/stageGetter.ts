@@ -15,8 +15,8 @@ import { POSITION, CONTAINER, PLAY_OFF, validStages } from '@Constants/drawDefin
 import { ROUND_TARGET, TALLY } from '@Constants/extensionConstants';
 
 // Types
-import type { DrawDefinition, DrawLink, EntryStatusUnion } from '@Types/tournamentTypes';
-import type { ErrorType } from '@Constants/errorConditionConstants';
+import { DrawDefinition, DrawLink, EntryStatusUnion } from '@Types/tournamentTypes';
+import { ErrorType } from '@Constants/errorConditionConstants';
 
 export function stageExists({ stage, drawDefinition }) {
   if (!validStages.includes(stage)) return false;

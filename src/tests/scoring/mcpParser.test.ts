@@ -1,4 +1,4 @@
-import type { MCPPoint } from '@Validators/scoring/mcpParser';
+import { MCPPoint } from '@Validators/scoring/mcpParser';
 import { describe, it, expect } from 'vitest';
 import {
   shotSplitter,

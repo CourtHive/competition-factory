@@ -14,7 +14,7 @@
  *  - rebuildFromEntries(): initialScore branch with TO_BE_PLAYED status
  */
 
-import type { CompetitionFormat } from '@Assemblies/engines/scoring/ScoringEngine';
+import { CompetitionFormat } from '@Assemblies/engines/scoring/ScoringEngine';
 import { ScoringEngine } from '@Assemblies/governors/scoreGovernor';
 import { describe, expect, it } from 'vitest';
 
@@ -394,10 +394,7 @@ describe('ScoringEngine — substitution guards', () => {
     const engine = new ScoringEngine({ matchUpFormat: 'SET3-S:6/TB7', isDoubles: true });
 
     // Set up lineUp with known players
-    engine.setLineUp(1, [
-      { participantId: 'player1' },
-      { participantId: 'player2' },
-    ]);
+    engine.setLineUp(1, [{ participantId: 'player1' }, { participantId: 'player2' }]);
 
     // Try substitution with unknown outParticipantId — hits outIndex === -1 guard
     engine.substitute({

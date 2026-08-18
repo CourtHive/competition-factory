@@ -3,7 +3,7 @@ import { MISSING_SANCTIONING_POLICY, MISSING_PROPOSAL } from '@Constants/sanctio
 import { SUCCESS } from '@Constants/resultConstants';
 
 // Types
-import type { TournamentProposal, SanctioningPolicy } from '@Types/sanctioningTypes';
+import { TournamentProposal, SanctioningPolicy } from '@Types/sanctioningTypes';
 
 type GetEligibleTiersArgs = {
   proposal: TournamentProposal;

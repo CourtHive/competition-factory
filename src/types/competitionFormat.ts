@@ -8,7 +8,7 @@
  *   matchUp > structure > drawDefinition > event
  */
 
-import type { Extension } from './tournamentTypes';
+import { Extension } from './tournamentTypes';
 
 // ============================================================================
 // Core competitionFormat

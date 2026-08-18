@@ -4,7 +4,7 @@
 
 import { describe, test, expect } from 'vitest';
 import { createMatchUp } from '@Assemblies/governors/scoreGovernor';
-import type { MatchUp } from '@Types/scoring/types';
+import { MatchUp } from '@Types/scoring/types';
 
 describe('createMatchUp', () => {
   test('should create a basic matchUp', () => {

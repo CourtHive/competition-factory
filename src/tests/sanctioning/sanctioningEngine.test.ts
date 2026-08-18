@@ -13,7 +13,7 @@ import { DRAFT, SUBMITTED, WITHDRAWN } from '@Constants/sanctioningConstants';
 import { INVALID_VALUES } from '@Constants/errorConditionConstants';
 
 // Types
-import type { EventProposal, TournamentProposal, Applicant } from '@Types/sanctioningTypes';
+import { EventProposal, TournamentProposal, Applicant } from '@Types/sanctioningTypes';
 
 const testApplicant: Applicant = {
   organisationId: 'org-001',

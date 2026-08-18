@@ -5,8 +5,8 @@ import { beforeEach, describe, expect, it } from 'vitest';
 import { POLICY_SANCTIONING_GENERIC } from '@Fixtures/policies/POLICY_SANCTIONING_GENERIC';
 
 // Types
-import type { Applicant, TournamentProposal } from '@Types/sanctioningTypes';
-import type { TierClassification } from '@Types/tournamentTypes';
+import { Applicant, TournamentProposal } from '@Types/sanctioningTypes';
+import { TierClassification } from '@Types/tournamentTypes';
 
 const testApplicant: Applicant = {
   organisationId: 'org-001',

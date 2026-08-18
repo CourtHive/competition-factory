@@ -1,5 +1,5 @@
 // Types
-import type { MatchUp } from '@Types/tournamentTypes';
+import { MatchUp } from '@Types/tournamentTypes';
 
 type DeriveCountablesResult = {
   side1Count: number;

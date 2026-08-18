@@ -13,8 +13,8 @@ import { describe, expect, it } from 'vitest';
 import mocksEngine from '@Assemblies/engines/mock';
 import tournamentEngine from '@Engines/syncEngine';
 
-import type { Event, MatchUp, Tournament } from '@Types/tournamentTypes';
-import type { FactoryEngineTyped } from '@Types/factoryTypes';
+import { Event, MatchUp, Tournament } from '@Types/tournamentTypes';
+import { FactoryEngineTyped } from '@Types/factoryTypes';
 
 const engine = tournamentEngine as unknown as FactoryEngineTyped;
 

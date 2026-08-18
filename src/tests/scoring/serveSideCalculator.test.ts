@@ -23,7 +23,7 @@
  * 6. getActiveSet: empty sets, last set completed (winningSide defined), last set in progress
  */
 
-import type { MatchUp, FormatStructure, SetScore } from '@Types/scoring/types';
+import { MatchUp, FormatStructure, SetScore } from '@Types/scoring/types';
 import { inferServeSide } from '@Mutate/scoring/serveSideCalculator';
 import { describe, test, expect } from 'vitest';
 

@@ -5,7 +5,7 @@
  * display-formatted point values and point situation booleans.
  */
 
-import type { MatchUp, ScoreResult, PointSituation, FormatStructure, SetFormatStructure } from '@Types/scoring/types';
+import { MatchUp, ScoreResult, PointSituation, FormatStructure, SetFormatStructure } from '@Types/scoring/types';
 import { resolveSetType } from '@Tools/scoring/scoringUtilities';
 import { parse } from '@Helpers/matchUpFormatCode/parse';
 import { calculatePointsTo } from '@Mutate/scoring/pointsToCalculator';

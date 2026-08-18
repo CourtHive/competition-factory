@@ -26,8 +26,8 @@ import {
 import { POLICY_TYPE_OFFICIATING_CONFLICT } from '@Constants/policyConstants';
 import { INVALID_VALUES } from '@Constants/errorConditionConstants';
 
-import type { OfficialRecord } from '@Types/officiatingTypes';
-import type { Participant } from '@Types/tournamentTypes';
+import { OfficialRecord } from '@Types/officiatingTypes';
+import { Participant } from '@Types/tournamentTypes';
 
 const OFFICIAL_PERSON_ID = 'person-official';
 

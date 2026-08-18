@@ -6,7 +6,7 @@
  * day and venue, enabling the scheduling profile workflow.
  */
 
-import type { DayId, VenueId } from './types';
+import { DayId, VenueId } from './types';
 
 // ============================================================================
 // Plan Item Types

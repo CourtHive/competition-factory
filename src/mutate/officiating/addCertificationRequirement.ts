@@ -6,7 +6,7 @@ import { INVALID_VALUES } from '@Constants/errorConditionConstants';
 import { SUCCESS } from '@Constants/resultConstants';
 
 // Types
-import type { OfficialRecord, CertificationRequirement, RequirementItem } from '@Types/officiatingTypes';
+import { OfficialRecord, CertificationRequirement, RequirementItem } from '@Types/officiatingTypes';
 
 type AddCertificationRequirementArgs = {
   officialRecord: OfficialRecord;
@@ -44,8 +44,7 @@ export function addCertificationRequirement({
   if (!officialRecord) return { error: MISSING_OFFICIAL_RECORD };
   if (!certificationFamily)
     return { error: INVALID_VALUES, context: { message: 'Missing certificationFamily' } } as any;
-  if (!certificationLevel)
-    return { error: INVALID_VALUES, context: { message: 'Missing certificationLevel' } } as any;
+  if (!certificationLevel) return { error: INVALID_VALUES, context: { message: 'Missing certificationLevel' } } as any;
   if (!organisationId) return { error: INVALID_VALUES, context: { message: 'Missing organisationId' } } as any;
   if (!Array.isArray(requirements) || requirements.length === 0)
     return { error: INVALID_VALUES, context: { message: 'Requirements must be a non-empty array' } } as any;

@@ -16,40 +16,40 @@
 
 import {
   BLOCK_TYPES,
-  type ApplyBlockOptions,
-  type ApplyTemplateOptions,
-  type Block,
-  type BlockId,
-  type BlockMutation,
-  type BlockType,
-  type CapacityCurve,
-  type CourtDayAvailability,
-  type CourtMeta,
-  type CourtRef,
-  type CourtRail,
-  type CourtSchedulingSummary,
-  type DayId,
-  type EngineConfig,
-  type EngineContext,
-  type EngineEvent,
-  type TournamentId,
-  type VenueDayTimeline,
-  type VenueId,
-  type MoveBlockOptions,
-  type MutationResult,
-  type ResizeBlockOptions,
-  type Rule,
-  type RuleId,
-  type SimulationResult,
-  type Template,
-  type TemplateId,
+  ApplyBlockOptions,
+  ApplyTemplateOptions,
+  Block,
+  BlockId,
+  BlockMutation,
+  BlockType,
+  CapacityCurve,
+  CourtDayAvailability,
+  CourtMeta,
+  CourtRef,
+  CourtRail,
+  CourtSchedulingSummary,
+  DayId,
+  EngineConfig,
+  EngineContext,
+  EngineEvent,
+  TournamentId,
+  VenueDayTimeline,
+  VenueId,
+  MoveBlockOptions,
+  MutationResult,
+  ResizeBlockOptions,
+  Rule,
+  RuleId,
+  SimulationResult,
+  Template,
+  TemplateId,
 } from '@Assemblies/governors/availabilityGovernor/types';
 
 import { getDisabledStatus } from '@Query/extensions/getDisabledStatus';
 import { firstClassOrExtension } from '@Acquire/firstClassOrExtension';
 import { extractDate } from '@Tools/dateTime';
 
-import type { BookingTypeUnion } from '@Types/tournamentTypes';
+import { BookingTypeUnion } from '@Types/tournamentTypes';
 
 import { DISABLED } from '@Constants/extensionConstants';
 
@@ -65,7 +65,7 @@ import {
 
 import { generateCapacityCurve } from '@Assemblies/governors/availabilityGovernor/capacityCurve';
 
-import { type PlanItem, type DayPlan, computePlanItemId } from '@Assemblies/governors/availabilityGovernor/planState';
+import { PlanItem, DayPlan, computePlanItemId } from '@Assemblies/governors/availabilityGovernor/planState';
 
 // ============================================================================
 // Availability Engine Class

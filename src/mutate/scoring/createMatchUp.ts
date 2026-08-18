@@ -7,7 +7,7 @@
 import { UUID } from '@Tools/UUID';
 
 // Import necessary types
-import type { MatchUp, CreateMatchUpOptions, Side, Score } from '@Types/scoring/types';
+import { MatchUp, CreateMatchUpOptions, Side, Score } from '@Types/scoring/types';
 
 /**
  * Create a new matchUp

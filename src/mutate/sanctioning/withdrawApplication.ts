@@ -4,7 +4,7 @@ import { transitionStatus } from './transitionStatus';
 import { MISSING_SANCTIONING_RECORD, WITHDRAWN } from '@Constants/sanctioningConstants';
 
 // Types
-import type { SanctioningRecord } from '@Types/sanctioningTypes';
+import { SanctioningRecord } from '@Types/sanctioningTypes';
 
 type WithdrawApplicationArgs = {
   sanctioningRecord: SanctioningRecord;

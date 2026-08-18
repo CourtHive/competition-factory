@@ -3,7 +3,7 @@ import { VALID_STATUS_TRANSITIONS, MISSING_SANCTIONING_RECORD } from '@Constants
 import { SUCCESS } from '@Constants/resultConstants';
 
 // Types
-import type { SanctioningRecord, SanctioningStatus } from '@Types/sanctioningTypes';
+import { SanctioningRecord, SanctioningStatus } from '@Types/sanctioningTypes';
 
 type GetAvailableTransitionsArgs = {
   sanctioningRecord: SanctioningRecord;

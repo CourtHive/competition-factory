@@ -1,5 +1,5 @@
 import { applyDerivedRankings } from '@Query/scales/applyDerivedRankings';
-import type { RankingListEntry } from '@Query/scales/generateRankingList';
+import { RankingListEntry } from '@Query/scales/generateRankingList';
 import { describe, expect, it } from 'vitest';
 
 const mkEntry = (personId: string, totalPoints: number, rank: number): RankingListEntry => ({

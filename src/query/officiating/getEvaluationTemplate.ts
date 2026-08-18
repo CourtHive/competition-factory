@@ -4,7 +4,7 @@ import { INVALID_VALUES } from '@Constants/errorConditionConstants';
 import { SUCCESS } from '@Constants/resultConstants';
 
 // Types
-import type { OfficialRecord, EvaluationPolicy, EvaluationFormField } from '@Types/officiatingTypes';
+import { OfficialRecord, EvaluationPolicy, EvaluationFormField } from '@Types/officiatingTypes';
 
 type GetEvaluationTemplateArgs = {
   officialRecord?: OfficialRecord;
@@ -12,11 +12,7 @@ type GetEvaluationTemplateArgs = {
   evaluationPolicy?: EvaluationPolicy;
 };
 
-export function getEvaluationTemplate({
-  officialRecord,
-  policyName,
-  evaluationPolicy,
-}: GetEvaluationTemplateArgs): {
+export function getEvaluationTemplate({ officialRecord, policyName, evaluationPolicy }: GetEvaluationTemplateArgs): {
   error?: any;
   success?: boolean;
   fields?: EvaluationFormField[];

@@ -2,7 +2,7 @@ import { createRecordStore } from '@Functions/declaration/recordStore';
 
 // constants and types
 import { OFFICIAL_RECORD_NOT_FOUND } from '@Constants/officiatingConstants';
-import type { OfficialRecord, OfficialRecords } from '@Types/officiatingTypes';
+import { OfficialRecord, OfficialRecords } from '@Types/officiatingTypes';
 
 const store = createRecordStore({ idKey: 'officialRecordId', notFoundError: OFFICIAL_RECORD_NOT_FOUND });
 

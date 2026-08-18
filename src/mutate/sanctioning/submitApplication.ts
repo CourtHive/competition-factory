@@ -9,7 +9,7 @@ import {
 } from '@Constants/sanctioningConstants';
 
 // Types
-import type { SanctioningRecord, SanctioningPolicy } from '@Types/sanctioningTypes';
+import { SanctioningRecord, SanctioningPolicy } from '@Types/sanctioningTypes';
 import { makeDeepCopy } from '@Tools/makeDeepCopy';
 
 type SubmitApplicationArgs = {
@@ -41,10 +41,9 @@ export function submitApplication({
   const requireEndorsement = sanctioningPolicy?.requireEndorsement ?? false;
   if (requireEndorsement) {
     const requiredCount = sanctioningPolicy?.requiredEndorsementCount ?? 1;
-    const endorsements = sanctioningRecord.endorsements ?? (sanctioningRecord.endorsement ? [sanctioningRecord.endorsement] : []);
-    const endorsedCount = endorsements.filter(
-      (e) => e.status === 'ENDORSED' || e.status === 'NOT_REQUIRED',
-    ).length;
+    const endorsements =
+      sanctioningRecord.endorsements ?? (sanctioningRecord.endorsement ? [sanctioningRecord.endorsement] : []);
+    const endorsedCount = endorsements.filter((e) => e.status === 'ENDORSED' || e.status === 'NOT_REQUIRED').length;
     if (endorsedCount < requiredCount) {
       return { error: ENDORSEMENT_REQUIRED };
     }

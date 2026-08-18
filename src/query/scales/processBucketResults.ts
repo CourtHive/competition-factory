@@ -1,4 +1,4 @@
-import type { MandatoryRule } from '@Types/rankingTypes';
+import { MandatoryRule } from '@Types/rankingTypes';
 
 type PointAward = Record<string, any>;
 

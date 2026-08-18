@@ -9,7 +9,7 @@ import { MISSING_DRAW_DEFINITION } from '@Constants/errorConditionConstants';
 import { CONTAINER, QUALIFYING } from '@Constants/drawDefinitionConstants';
 
 // Types
-import type { DrawDefinition } from '@Types/tournamentTypes';
+import { DrawDefinition } from '@Types/tournamentTypes';
 
 type GetQualifiersCountArgs = {
   provisionalPositioning?: boolean;

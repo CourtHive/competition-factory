@@ -1,5 +1,5 @@
 import { ScoringEngine, resolvePointValue } from '@Assemblies/governors/scoreGovernor';
-import type { PointMultiplier } from '@Assemblies/governors/scoreGovernor';
+import { PointMultiplier } from '@Assemblies/governors/scoreGovernor';
 import { describe, it, expect } from 'vitest';
 
 const INTENNSE_MULTIPLIERS: PointMultiplier[] = [

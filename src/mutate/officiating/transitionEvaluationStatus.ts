@@ -9,7 +9,7 @@ import {
   INVALID_EVALUATION_SCORES,
   EVAL_SUBMITTED,
 } from '@Constants/officiatingConstants';
-import type { OfficialRecord, EvaluationStatus, OfficialEvaluation } from '@Types/officiatingTypes';
+import { OfficialRecord, EvaluationStatus, OfficialEvaluation } from '@Types/officiatingTypes';
 
 type TransitionEvaluationStatusArgs = {
   officialRecord: OfficialRecord;

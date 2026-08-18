@@ -13,7 +13,7 @@ import { POLICY_TYPE_OFFICIATING_CONFLICT } from '@Constants/policyConstants';
 import { SUCCESS } from '@Constants/resultConstants';
 
 // Types
-import type {
+import {
   OfficialConflictDeclaration,
   ConflictOfInterestPolicy,
   ConflictSeverity,
@@ -22,7 +22,7 @@ import type {
   OfficialRecord,
   ConflictType,
 } from '@Types/officiatingTypes';
-import type { Participant } from '@Types/tournamentTypes';
+import { Participant } from '@Types/tournamentTypes';
 
 type GetOfficialConflictsArgs = {
   /** Durable registry declarations. OPTIONAL — a tournament-scoped check needs no registry record. */

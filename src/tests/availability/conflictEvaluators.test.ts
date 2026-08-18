@@ -7,10 +7,10 @@
 import { describe, it, expect } from 'vitest';
 import {
   BLOCK_TYPES,
-  type Block,
-  type BlockMutation,
-  type EngineConfig,
-  type EngineContext,
+  Block,
+  BlockMutation,
+  EngineConfig,
+  EngineContext,
 } from '@Assemblies/governors/availabilityGovernor/types';
 import {
   adjacentBlockEvaluator,

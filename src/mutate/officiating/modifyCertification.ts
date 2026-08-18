@@ -4,7 +4,7 @@ import { INVALID_VALUES } from '@Constants/errorConditionConstants';
 import { SUCCESS } from '@Constants/resultConstants';
 
 // Types
-import type { OfficialRecord, OfficialCertification } from '@Types/officiatingTypes';
+import { OfficialRecord, OfficialCertification } from '@Types/officiatingTypes';
 
 type ModifyCertificationArgs = {
   officialRecord: OfficialRecord;
@@ -17,11 +17,11 @@ type ModifyCertificationArgs = {
   >;
 };
 
-export function modifyCertification({
-  officialRecord,
-  certificationId,
-  updates,
-}: ModifyCertificationArgs): { error?: any; certification?: OfficialCertification; success?: boolean } {
+export function modifyCertification({ officialRecord, certificationId, updates }: ModifyCertificationArgs): {
+  error?: any;
+  certification?: OfficialCertification;
+  success?: boolean;
+} {
   if (!officialRecord) return { error: MISSING_OFFICIAL_RECORD };
   if (!certificationId) return { error: INVALID_VALUES, context: { message: 'Missing certificationId' } } as any;
 

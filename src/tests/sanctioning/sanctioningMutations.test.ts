@@ -29,7 +29,7 @@ import { addReviewNote } from '@Mutate/sanctioning/addReviewNote';
 import { meetCondition } from '@Mutate/sanctioning/meetCondition';
 import { describe, expect, it } from 'vitest';
 
-import type {
+import {
   SanctioningRecord,
   Applicant,
   TournamentProposal,

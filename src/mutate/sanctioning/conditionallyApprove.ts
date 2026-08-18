@@ -6,7 +6,7 @@ import { INVALID_VALUES } from '@Constants/errorConditionConstants';
 import { UUID } from '@Tools/UUID';
 
 // Types
-import type { SanctioningRecord, Condition } from '@Types/sanctioningTypes';
+import { SanctioningRecord, Condition } from '@Types/sanctioningTypes';
 
 type ConditionallyApproveArgs = {
   sanctioningRecord: SanctioningRecord;

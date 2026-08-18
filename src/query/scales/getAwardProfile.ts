@@ -1,6 +1,6 @@
 import { CATEGORY_SCOPE_FIELDS, PROFILE_SCOPE_FIELDS } from '@Constants/rankingConstants';
 
-import type { CategoryScope } from '@Types/rankingTypes';
+import { CategoryScope } from '@Types/rankingTypes';
 
 export function getAwardProfile(params) {
   const {

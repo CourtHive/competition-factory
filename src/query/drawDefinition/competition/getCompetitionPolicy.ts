@@ -5,9 +5,9 @@ import { getAppliedPolicies } from '@Query/extensions/getAppliedPolicies';
 import { POLICY_TYPE_COMPETITION } from '@Constants/policyConstants';
 
 // Types
-import type { DrawDefinition, Event, Tournament } from '@Types/tournamentTypes';
-import type { CompetitionPolicy } from '@Types/competitionPolicyTypes';
-import type { ResultType } from '@Types/factoryTypes';
+import { DrawDefinition, Event, Tournament } from '@Types/tournamentTypes';
+import { CompetitionPolicy } from '@Types/competitionPolicyTypes';
+import { ResultType } from '@Types/factoryTypes';
 
 type GetCompetitionPolicyArgs = {
   tournamentRecord?: Tournament;

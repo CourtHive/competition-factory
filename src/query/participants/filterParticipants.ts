@@ -10,7 +10,7 @@ import { unique } from '@Tools/arrays';
 // constants and types
 import { SIGN_IN_STATUS } from '@Constants/participantConstants';
 import { ParticipantFilters } from '@Types/factoryTypes';
-import type { Tournament } from '@Types/tournamentTypes';
+import { Tournament } from '@Types/tournamentTypes';
 import { HydratedParticipant } from '@Types/hydrated';
 import { SINGLES } from '@Constants/eventConstants';
 

@@ -3,7 +3,7 @@ import { beforeEach, describe, expect, it } from 'vitest';
 
 import { POLICY_SANCTIONING_GENERIC } from '@Fixtures/policies/POLICY_SANCTIONING_GENERIC';
 
-import type { Applicant, TournamentProposal, SanctioningPolicy } from '@Types/sanctioningTypes';
+import { Applicant, TournamentProposal, SanctioningPolicy } from '@Types/sanctioningTypes';
 
 const testApplicant: Applicant = {
   organisationId: 'org-001',

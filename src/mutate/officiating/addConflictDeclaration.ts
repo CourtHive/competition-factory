@@ -6,7 +6,7 @@ import { INVALID_VALUES } from '@Constants/errorConditionConstants';
 import { SUCCESS } from '@Constants/resultConstants';
 
 // Types
-import type { OfficialConflictDeclaration, OfficialRecord } from '@Types/officiatingTypes';
+import { OfficialConflictDeclaration, OfficialRecord } from '@Types/officiatingTypes';
 
 type AddConflictDeclarationArgs = {
   officialRecord: OfficialRecord;

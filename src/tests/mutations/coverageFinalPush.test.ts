@@ -4,7 +4,7 @@
  */
 import { generateAndPopulatePlayoffStructures } from '@Generators/drawDefinitions/generateAndPopulatePlayoffStructures';
 import { generateVoluntaryConsolation } from '@Generators/drawDefinitions/drawTypes/generateVoluntaryConsolation';
-import { BLOCK_TYPES, type CourtRef } from '@Assemblies/governors/availabilityGovernor/types';
+import { BLOCK_TYPES, CourtRef } from '@Assemblies/governors/availabilityGovernor/types';
 import { AvailabilityEngine } from '@Assemblies/engines/availability/AvailabilityEngine';
 import { getParticipantStats } from '@Query/participant/getParticipantStats';
 import tournamentEngine from '@Engines/syncEngine';

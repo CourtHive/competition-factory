@@ -21,10 +21,10 @@ import {
 } from '@Assemblies/governors/availabilityGovernor/capacityCurve';
 import {
   BLOCK_TYPES,
-  type VenueDayTimeline,
-  type RailSegment,
-  type BlockType,
-  type CourtRef,
+  VenueDayTimeline,
+  RailSegment,
+  BlockType,
+  CourtRef,
 } from '@Assemblies/governors/availabilityGovernor/types';
 
 // ============================================================================

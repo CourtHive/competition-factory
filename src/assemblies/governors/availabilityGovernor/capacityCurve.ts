@@ -8,14 +8,7 @@
  * temporal grid's philosophy.
  */
 
-import {
-  BLOCK_TYPES,
-  type CapacityCurve,
-  type CapacityPoint,
-  type DayId,
-  type VenueDayTimeline,
-  type RailSegment,
-} from './types';
+import { BLOCK_TYPES, CapacityCurve, CapacityPoint, DayId, VenueDayTimeline, RailSegment } from './types';
 
 // ============================================================================
 // Capacity Point Extraction

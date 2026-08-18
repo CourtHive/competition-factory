@@ -9,7 +9,7 @@ import {
 } from '@Constants/officiatingConstants';
 
 // Types
-import type { OfficialRecord, OfficialEvaluation, EvaluationScore } from '@Types/officiatingTypes';
+import { OfficialRecord, OfficialEvaluation, EvaluationScore } from '@Types/officiatingTypes';
 
 type ModifyEvaluationArgs = {
   officialRecord: OfficialRecord;

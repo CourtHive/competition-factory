@@ -38,7 +38,6 @@ import {
   NOT_FOUND,
 } from '@Constants/errorConditionConstants';
 
-
 // ----------------------------------------------------------------
 // 2. structureActions — uncovered branches
 // ----------------------------------------------------------------

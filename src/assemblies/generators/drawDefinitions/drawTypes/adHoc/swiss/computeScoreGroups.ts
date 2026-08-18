@@ -1,9 +1,9 @@
 import { getParticipantId } from '@Functions/global/extractors';
 
 // Constants and Types
-import type { ScoreGroup, SwissParticipantRecord } from '@Types/swissTypes';
+import { ScoreGroup, SwissParticipantRecord } from '@Types/swissTypes';
 import { COMPLETED } from '@Constants/matchUpStatusConstants';
-import type { MatchUp } from '@Types/tournamentTypes';
+import { MatchUp } from '@Types/tournamentTypes';
 
 type ComputeScoreGroupsArgs = {
   participantIds: string[];

@@ -1,5 +1,5 @@
-import { processBucketResults, type ScoredAward } from './processBucketResults';
-import type {
+import { processBucketResults, ScoredAward } from './processBucketResults';
+import {
   CategoryAggregationRule,
   CategoryScope,
   DoublesAttribution,

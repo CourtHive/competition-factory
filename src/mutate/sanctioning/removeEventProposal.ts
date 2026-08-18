@@ -9,7 +9,7 @@ import {
 } from '@Constants/sanctioningConstants';
 
 // Types
-import type { SanctioningRecord } from '@Types/sanctioningTypes';
+import { SanctioningRecord } from '@Types/sanctioningTypes';
 
 type RemoveEventProposalArgs = {
   sanctioningRecord: SanctioningRecord;

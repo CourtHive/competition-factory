@@ -6,7 +6,7 @@ import { expect, it } from 'vitest';
 import { COMPLETED } from '@Constants/matchUpStatusConstants';
 
 // types
-import type { Set } from '@Types/tournamentTypes';
+import { Set } from '@Types/tournamentTypes';
 
 it('determines winner for SET1A-S:T10 (single set aggregate)', () => {
   const matchUpFormat = 'SET1A-S:T10';

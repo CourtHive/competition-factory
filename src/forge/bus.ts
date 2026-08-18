@@ -30,7 +30,7 @@
  */
 
 import { setSubscriptions } from '@Global/state/globalState';
-import type { Topic, TopicPayloadMap } from './topicTypes';
+import { Topic, TopicPayloadMap } from './topicTypes';
 
 export type Unsubscribe = () => void;
 type AnyHandler = (payload: any) => void;

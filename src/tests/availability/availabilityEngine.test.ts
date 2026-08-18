@@ -17,11 +17,11 @@ import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { AvailabilityEngine } from '@Assemblies/engines/availability/AvailabilityEngine';
 import {
   BLOCK_TYPES,
-  type Block,
-  type BlockMutation,
-  type ConflictEvaluator,
-  type CourtRef,
-  type EngineEvent,
+  Block,
+  BlockMutation,
+  ConflictEvaluator,
+  CourtRef,
+  EngineEvent,
 } from '@Assemblies/governors/availabilityGovernor/types';
 
 // ============================================================================

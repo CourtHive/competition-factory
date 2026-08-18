@@ -17,7 +17,7 @@
 import { validateMatchUp, getSetScoreString, validateSet } from '@Validators/scoring/validateMatchUp';
 import { createMatchUp } from '@Mutate/scoring/createMatchUp';
 import { addPoint } from '@Mutate/scoring/addPoint';
-import type { MatchUp } from '@Types/scoring/types';
+import { MatchUp } from '@Types/scoring/types';
 import { describe, it, expect } from 'vitest';
 
 describe('validateMatchUp - Coverage Improvements', () => {

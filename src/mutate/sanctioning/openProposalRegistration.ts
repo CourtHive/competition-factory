@@ -6,8 +6,8 @@ import { INVALID_VALUES } from '@Constants/errorConditionConstants';
 import { SUCCESS } from '@Constants/resultConstants';
 
 // Types
-import type { SanctioningRecord } from '@Types/sanctioningTypes';
-import type { RegistrationProfile } from '@Types/tournamentTypes';
+import { SanctioningRecord } from '@Types/sanctioningTypes';
+import { RegistrationProfile } from '@Types/tournamentTypes';
 
 type OpenProposalRegistrationArgs = {
   sanctioningRecord: SanctioningRecord;

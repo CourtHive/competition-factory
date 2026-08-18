@@ -6,7 +6,7 @@ import { INVALID_VALUES } from '@Constants/errorConditionConstants';
 import { SUCCESS } from '@Constants/resultConstants';
 
 // Types
-import type { OfficialRecord, OfficialEvaluation, EvaluationScore } from '@Types/officiatingTypes';
+import { OfficialRecord, OfficialEvaluation, EvaluationScore } from '@Types/officiatingTypes';
 
 type AddEvaluationArgs = {
   officialRecord: OfficialRecord;

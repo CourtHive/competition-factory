@@ -8,7 +8,7 @@
 import { describe, it, expect, beforeEach } from 'vitest';
 import { AvailabilityEngine } from '@Assemblies/engines/availability/AvailabilityEngine';
 import { runValidationPipeline } from '@Assemblies/governors/availabilityGovernor/validationPipeline';
-import type { ValidationPhase } from '@Assemblies/governors/availabilityGovernor/validationPipeline';
+import { ValidationPhase } from '@Assemblies/governors/availabilityGovernor/validationPipeline';
 
 // ============================================================================
 // Test Fixtures

@@ -34,9 +34,9 @@ import {
 } from '@Mutate/scoring/addPoint';
 
 // constants and types
-import type { MatchStatistics, StatisticsOptions, StatObject } from '@Query/scoring/statistics/types';
-import type { PointMultiplier } from '@Mutate/scoring/resolvePointValue';
-import type {
+import { MatchStatistics, StatisticsOptions, StatObject } from '@Query/scoring/statistics/types';
+import { PointMultiplier } from '@Mutate/scoring/resolvePointValue';
+import {
   MatchUp,
   AddPointOptions,
   AddSetOptions,
@@ -1106,9 +1106,7 @@ export class ScoringEngine {
     // matching their new positions in history.points.
     const entries = this.state.history?.entries;
     if (entries) {
-      const entryIdx = entries.findIndex(
-        (e) => e.type === 'point' && (e as any).pointIndex === pointIndex,
-      );
+      const entryIdx = entries.findIndex((e) => e.type === 'point' && (e as any).pointIndex === pointIndex);
       if (entryIdx !== -1) entries.splice(entryIdx, 1);
       for (const e of entries) {
         if (e.type === 'point' && (e as any).pointIndex > pointIndex) {

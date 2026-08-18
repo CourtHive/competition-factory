@@ -14,7 +14,7 @@ import { POLICY_SANCTIONING_USTA } from '@Fixtures/policies/POLICY_SANCTIONING_U
 import { POLICY_SANCTIONING_GENERIC } from '@Fixtures/policies/POLICY_SANCTIONING_GENERIC';
 
 // Types
-import type { Applicant, TournamentProposal, SanctioningPolicy } from '@Types/sanctioningTypes';
+import { Applicant, TournamentProposal, SanctioningPolicy } from '@Types/sanctioningTypes';
 
 // ---------------------------------------------------------------------------
 // Shared fixtures

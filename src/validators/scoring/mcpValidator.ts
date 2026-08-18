@@ -13,8 +13,8 @@ import { createMatchUp } from '@Mutate/scoring/createMatchUp';
 import { addPoint } from '@Mutate/scoring/addPoint';
 import { getScore } from '@Query/scoring/getScore';
 import { deduceMatchUpFormat } from '@Query/scoring/deduceMatchUpFormat';
-import type { MatchUp, AddPointOptions } from '@Types/scoring/types';
-import { parseCSV, groupByMatch, parseMCPPoint, type MCPPoint, type MCPMatch } from './mcpParser';
+import { MatchUp, AddPointOptions } from '@Types/scoring/types';
+import { parseCSV, groupByMatch, parseMCPPoint, MCPPoint, MCPMatch } from './mcpParser';
 
 // ============================================================================
 // Types

@@ -3,7 +3,7 @@ import { MISSING_SANCTIONING_RECORD } from '@Constants/sanctioningConstants';
 import { INVALID_VALUES } from '@Constants/errorConditionConstants';
 import { describe, expect, it } from 'vitest';
 
-import type { CalendarContext, CalendarEvent, SanctioningRecord, TournamentProposal } from '@Types/sanctioningTypes';
+import { CalendarContext, CalendarEvent, SanctioningRecord, TournamentProposal } from '@Types/sanctioningTypes';
 
 function minimalProposal(overrides?: Partial<TournamentProposal>): TournamentProposal {
   return {

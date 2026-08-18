@@ -2,7 +2,7 @@
 import { POLICY_TYPE_COMPETITION } from '@Constants/policyConstants';
 
 // Types
-import type { CompetitionPolicy } from '@Types/competitionPolicyTypes';
+import { CompetitionPolicy } from '@Types/competitionPolicyTypes';
 
 export const POLICY_COMPETITION_SWISS = {
   [POLICY_TYPE_COMPETITION]: {

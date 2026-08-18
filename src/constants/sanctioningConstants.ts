@@ -1,5 +1,5 @@
-import type { SanctioningStatus } from '@Types/sanctioningTypes';
-import type { ErrorType } from './errorConditionConstants';
+import { SanctioningStatus } from '@Types/sanctioningTypes';
+import { ErrorType } from './errorConditionConstants';
 
 // ---------------------------------------------------------------------------
 // Status Constants

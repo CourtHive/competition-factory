@@ -30,26 +30,26 @@ const stockUstaSeeding = {
 
 describe('policyComposer — construction + build', () => {
   it('returns an empty wrapped object when nothing has been added', () => {
-    const result: any = policyComposer(POLICY_TYPE_SEEDING).build();
+    let result: any = policyComposer(POLICY_TYPE_SEEDING).build();
     expect(result).toEqual({ [POLICY_TYPE_SEEDING]: {} });
   });
 
   it('returns a raw {} when no policyType was supplied', () => {
-    const result: any = policyComposer().build();
+    let result: any = policyComposer().build();
     expect(result).toEqual({});
   });
 });
 
 describe('policyComposer.extend', () => {
   it('accepts the WRAPPED form and unwraps it', () => {
-    const result: any = policyComposer(POLICY_TYPE_SEEDING)
+    let result: any = policyComposer(POLICY_TYPE_SEEDING)
       .extend({ [POLICY_TYPE_SEEDING]: stockUstaSeeding })
       .build();
     expect(result[POLICY_TYPE_SEEDING]).toEqual(stockUstaSeeding);
   });
 
   it('accepts the RAW inner form too', () => {
-    const result: any = policyComposer(POLICY_TYPE_SEEDING).extend(stockUstaSeeding).build();
+    let result: any = policyComposer(POLICY_TYPE_SEEDING).extend(stockUstaSeeding).build();
     expect(result[POLICY_TYPE_SEEDING]).toEqual(stockUstaSeeding);
   });
 
@@ -60,7 +60,7 @@ describe('policyComposer.extend', () => {
   });
 
   it('deep-merges two extend() calls — later wins on conflict', () => {
-    const result: any = policyComposer(POLICY_TYPE_SEEDING)
+    let result: any = policyComposer(POLICY_TYPE_SEEDING)
       .extend({
         policyName: 'A',
         seedingProfile: { positioning: 'SEPARATE', drawTypes: { RR: { positioning: 'WATERFALL' } } },
@@ -74,7 +74,7 @@ describe('policyComposer.extend', () => {
   });
 
   it('replaces arrays (does not concat)', () => {
-    const result: any = policyComposer(POLICY_TYPE_SEEDING)
+    let result: any = policyComposer(POLICY_TYPE_SEEDING)
       .extend({ seedsCountThresholds: [{ drawSize: 4 }, { drawSize: 8 }] })
       .extend({ seedsCountThresholds: [{ drawSize: 32 }] })
       .build();
@@ -84,7 +84,7 @@ describe('policyComposer.extend', () => {
 
 describe('policyComposer.set', () => {
   it('sets a top-level scalar', () => {
-    const result: any = policyComposer(POLICY_TYPE_SEEDING)
+    let result: any = policyComposer(POLICY_TYPE_SEEDING)
       .extend(stockUstaSeeding)
       .set('policyName', 'CTS SEEDING')
       .build();
@@ -92,7 +92,7 @@ describe('policyComposer.set', () => {
   });
 
   it('sets a deep dot-path without losing siblings', () => {
-    const result: any = policyComposer(POLICY_TYPE_SEEDING)
+    let result: any = policyComposer(POLICY_TYPE_SEEDING)
       .extend(stockUstaSeeding)
       .set('seedingProfile.positioning', 'CLUSTER')
       .build();
@@ -101,12 +101,12 @@ describe('policyComposer.set', () => {
   });
 
   it('creates intermediate objects when the path does not exist yet', () => {
-    const result: any = policyComposer(POLICY_TYPE_SEEDING).set('a.b.c.d', 42).build();
+    let result: any = policyComposer(POLICY_TYPE_SEEDING).set('a.b.c.d', 42).build();
     expect(result[POLICY_TYPE_SEEDING]).toEqual({ a: { b: { c: { d: 42 } } } });
   });
 
   it('uses arrays for numeric next-segments when creating intermediates', () => {
-    const result: any = policyComposer(POLICY_TYPE_SEEDING).set('thresholds.0.drawSize', 4).build();
+    let result: any = policyComposer(POLICY_TYPE_SEEDING).set('thresholds.0.drawSize', 4).build();
     expect(result[POLICY_TYPE_SEEDING].thresholds).toEqual([{ drawSize: 4 }]);
   });
 
@@ -122,7 +122,7 @@ describe('policyComposer.set', () => {
 
 describe('policyComposer.merge', () => {
   it('deep-merges a fragment at a path', () => {
-    const result: any = policyComposer(POLICY_TYPE_SEEDING)
+    let result: any = policyComposer(POLICY_TYPE_SEEDING)
       .extend(stockUstaSeeding)
       .merge('seedingProfile.drawTypes', { SINGLE_ELIMINATION: { positioning: 'CLUSTER' } })
       .build();
@@ -132,20 +132,20 @@ describe('policyComposer.merge', () => {
   });
 
   it('treats missing target as a plain set', () => {
-    const result: any = policyComposer(POLICY_TYPE_SEEDING).merge('newSection.subsection', { added: true }).build();
+    let result: any = policyComposer(POLICY_TYPE_SEEDING).merge('newSection.subsection', { added: true }).build();
     expect(result[POLICY_TYPE_SEEDING].newSection.subsection).toEqual({ added: true });
   });
 });
 
 describe('policyComposer.unset', () => {
   it('removes a top-level key', () => {
-    const result: any = policyComposer(POLICY_TYPE_SEEDING).extend(stockUstaSeeding).unset('policyName').build();
+    let result: any = policyComposer(POLICY_TYPE_SEEDING).extend(stockUstaSeeding).unset('policyName').build();
     expect(result[POLICY_TYPE_SEEDING].policyName).toBeUndefined();
     expect(result[POLICY_TYPE_SEEDING].seedingProfile).toBeDefined();
   });
 
   it('removes a deep key without disturbing siblings', () => {
-    const result: any = policyComposer(POLICY_TYPE_SEEDING)
+    let result: any = policyComposer(POLICY_TYPE_SEEDING)
       .extend(stockUstaSeeding)
       .unset('seedingProfile.positioning')
       .build();
@@ -154,7 +154,7 @@ describe('policyComposer.unset', () => {
   });
 
   it('splices an array element', () => {
-    const result: any = policyComposer(POLICY_TYPE_SEEDING)
+    let result: any = policyComposer(POLICY_TYPE_SEEDING)
       .extend(stockUstaSeeding)
       .unset('seedsCountThresholds.1')
       .build();
@@ -165,7 +165,7 @@ describe('policyComposer.unset', () => {
   });
 
   it('is a no-op when the path does not exist', () => {
-    const result: any = policyComposer(POLICY_TYPE_SEEDING)
+    let result: any = policyComposer(POLICY_TYPE_SEEDING)
       .extend(stockUstaSeeding)
       .unset('seedingProfile.nonexistent.deep')
       .build();
@@ -175,7 +175,7 @@ describe('policyComposer.unset', () => {
   // Walks through an array index to reach a sub-key, exercises the array
   // intermediate branch in unsetRecursive (sibling array entries preserved).
   it('removes a key inside an array element without splicing the element', () => {
-    const result: any = policyComposer(POLICY_TYPE_SEEDING)
+    let result: any = policyComposer(POLICY_TYPE_SEEDING)
       .extend(stockUstaSeeding)
       .unset('seedsCountThresholds.1.minimumParticipantCount')
       .build();
@@ -207,7 +207,7 @@ describe('policyComposer.from (registry integration)', () => {
 
   it('loads from the registry by name', () => {
     policyRegistry.register({ policyType: POLICY_TYPE_SEEDING, name: 'USTA_DEFAULT', definition: stockUstaSeeding });
-    const result: any = policyComposer(POLICY_TYPE_SEEDING)
+    let result: any = policyComposer(POLICY_TYPE_SEEDING)
       .from({ name: 'USTA_DEFAULT' })
       .set('policyName', 'CTS SEEDING')
       .build();
@@ -311,7 +311,7 @@ describe('policyComposer — composing without a policyType wrapper', () => {
 
   it('works with separate composers and feeds the unwrapped fragment into another composer', () => {
     const fragment = policyComposer().set('drawTypes.ROUND_ROBIN.positioning', 'WATERFALL').build();
-    const result: any = policyComposer(POLICY_TYPE_SCORING).merge('seedingProfile', fragment).build();
+    let result: any = policyComposer(POLICY_TYPE_SCORING).merge('seedingProfile', fragment).build();
     expect(result[POLICY_TYPE_SCORING].seedingProfile.drawTypes.ROUND_ROBIN.positioning).toBe('WATERFALL');
   });
 
@@ -336,12 +336,12 @@ describe('policyComposer — composing without a policyType wrapper', () => {
 // here is the right contract (returns the existing state unchanged).
 describe('policyComposer — empty-path edge cases', () => {
   it('treats set(empty, …) as a no-op', () => {
-    const result: any = policyComposer(POLICY_TYPE_SEEDING).extend({ a: 1 }).set('', 999).build();
+    let result: any = policyComposer(POLICY_TYPE_SEEDING).extend({ a: 1 }).set('', 999).build();
     expect(result[POLICY_TYPE_SEEDING]).toEqual({ a: 1 });
   });
 
   it('treats unset(empty) as a no-op', () => {
-    const result: any = policyComposer(POLICY_TYPE_SEEDING).extend({ a: 1 }).unset('').build();
+    let result: any = policyComposer(POLICY_TYPE_SEEDING).extend({ a: 1 }).unset('').build();
     expect(result[POLICY_TYPE_SEEDING]).toEqual({ a: 1 });
   });
 
@@ -356,7 +356,7 @@ describe('policyComposer — empty-path edge cases', () => {
 // onto a scalar target (where current isn't an object, so the fragment wins).
 describe('policyComposer — array-recycle and merge-onto-scalar', () => {
   it('writes into an existing array element without recreating the array', () => {
-    const result: any = policyComposer(POLICY_TYPE_SEEDING)
+    let result: any = policyComposer(POLICY_TYPE_SEEDING)
       .extend({ arr: [{ x: 1 }, { x: 2 }] })
       .set('arr.1.y', 99)
       .build();
@@ -364,7 +364,7 @@ describe('policyComposer — array-recycle and merge-onto-scalar', () => {
   });
 
   it('treats merge() onto a scalar target as a replace with the fragment', () => {
-    const result: any = policyComposer(POLICY_TYPE_SEEDING)
+    let result: any = policyComposer(POLICY_TYPE_SEEDING)
       .extend({ field: 'scalar' })
       .merge('field', { now: 'object' })
       .build();

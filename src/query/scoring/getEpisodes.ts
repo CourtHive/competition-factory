@@ -10,7 +10,7 @@
  * functionality directly from the engine.
  */
 
-import type { MatchUp, Episode, EpisodeNeeded } from '@Types/scoring/types';
+import { MatchUp, Episode, EpisodeNeeded } from '@Types/scoring/types';
 
 export function getEpisodes(matchUp: MatchUp): Episode[] {
   if (!matchUp) return [];

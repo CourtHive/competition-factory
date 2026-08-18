@@ -13,10 +13,10 @@
 import { describe, it, expect } from 'vitest';
 import {
   BLOCK_TYPES,
-  type Block,
-  type BlockType,
-  type EngineConfig,
-  type TimeRange,
+  Block,
+  BlockType,
+  EngineConfig,
+  TimeRange,
 } from '@Assemblies/governors/availabilityGovernor/types';
 import {
   buildDayRange,

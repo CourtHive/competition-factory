@@ -3,13 +3,9 @@ import { getCompetitionPolicy } from './getCompetitionPolicy';
 import { getCompetitionState } from './getCompetitionState';
 
 // Types
-import type {
-  CompetitionLeaderboardRow,
-  CompetitionParticipantState,
-  PrimaryRanking,
-} from '@Types/competitionPolicyTypes';
-import type { DrawDefinition, Event, Tournament } from '@Types/tournamentTypes';
-import type { ResultType } from '@Types/factoryTypes';
+import { CompetitionLeaderboardRow, CompetitionParticipantState, PrimaryRanking } from '@Types/competitionPolicyTypes';
+import { DrawDefinition, Event, Tournament } from '@Types/tournamentTypes';
+import { ResultType } from '@Types/factoryTypes';
 
 type GetCompetitionLeaderboardArgs = {
   tournamentRecord?: Tournament;

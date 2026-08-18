@@ -1,5 +1,5 @@
 import { processBucketResults } from './processBucketResults';
-import type { MandatoryRule } from '@Types/rankingTypes';
+import { MandatoryRule } from '@Types/rankingTypes';
 
 type PointAward = Record<string, any>;
 
@@ -31,11 +31,7 @@ type GetParticipantPointsArgs = {
   aggregationRules?: AggregationRules;
 };
 
-export function getParticipantPoints({
-  pointAwards,
-  personId,
-  aggregationRules = {},
-}: GetParticipantPointsArgs): {
+export function getParticipantPoints({ pointAwards, personId, aggregationRules = {} }: GetParticipantPointsArgs): {
   buckets: BucketBreakdown[];
   totalPoints: number;
 } {
@@ -49,7 +45,14 @@ export function getParticipantPoints({
     let totalPoints = 0;
 
     for (const bucket of countingBuckets) {
-      const { bucketName, eventTypes, pointComponents, bestOfCount: bucketBestOf, maxResultsPerLevel: bucketMaxPerLevel, mandatoryRules } = bucket;
+      const {
+        bucketName,
+        eventTypes,
+        pointComponents,
+        bestOfCount: bucketBestOf,
+        maxResultsPerLevel: bucketMaxPerLevel,
+        mandatoryRules,
+      } = bucket;
 
       let bucketAwards = awards;
       if (eventTypes?.length) {

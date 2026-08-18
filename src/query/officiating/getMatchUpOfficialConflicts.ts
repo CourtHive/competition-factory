@@ -11,8 +11,8 @@ import { POLICY_TYPE_OFFICIATING_CONFLICT } from '@Constants/policyConstants';
 import { SUCCESS } from '@Constants/resultConstants';
 
 // Types
-import type { DrawDefinition, Event, Participant, Tournament } from '@Types/tournamentTypes';
-import type { ConflictEvaluationInputs, OfficialConflict } from '@Types/officiatingTypes';
+import { DrawDefinition, Event, Participant, Tournament } from '@Types/tournamentTypes';
+import { ConflictEvaluationInputs, OfficialConflict } from '@Types/officiatingTypes';
 
 type GetMatchUpOfficialConflictsArgs = ConflictEvaluationInputs & {
   drawDefinition: DrawDefinition;

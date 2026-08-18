@@ -1,4 +1,4 @@
-import type { DrawDefinition, Event, Structure } from '@Types/tournamentTypes';
+import { DrawDefinition, Event, Structure } from '@Types/tournamentTypes';
 
 /**
  * Walk a structure tree collecting declared matchUpFormat codes.

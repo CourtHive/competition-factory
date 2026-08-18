@@ -5,17 +5,14 @@
  * First matching multiplier wins; default is 1.
  */
 
-import type { Point } from '@Types/scoring/types';
+import { Point } from '@Types/scoring/types';
 
 export interface PointMultiplier {
   condition: { results?: string[]; strokes?: string[]; setTypes?: string[] };
   value: number;
 }
 
-export function resolvePointValue(
-  point: Partial<Point>,
-  multipliers: PointMultiplier[],
-): number {
+export function resolvePointValue(point: Partial<Point>, multipliers: PointMultiplier[]): number {
   if (!multipliers.length) return 1;
 
   for (const { condition, value } of multipliers) {

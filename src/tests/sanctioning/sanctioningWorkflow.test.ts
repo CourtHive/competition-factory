@@ -2,7 +2,7 @@ import { sanctioningEngine } from '@Assemblies/engines/sanctioning';
 import { beforeEach, describe, expect, it } from 'vitest';
 
 // Types
-import type { Applicant, EventProposal, TournamentProposal, SanctioningPolicy } from '@Types/sanctioningTypes';
+import { Applicant, EventProposal, TournamentProposal, SanctioningPolicy } from '@Types/sanctioningTypes';
 
 const testApplicant: Applicant = {
   organisationId: 'org-001',

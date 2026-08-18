@@ -14,7 +14,7 @@ import {
 } from '@Constants/errorConditionConstants';
 
 // Types
-import type { DrawDefinition, Event, Tournament } from '@Types/tournamentTypes';
+import { DrawDefinition, Event, Tournament } from '@Types/tournamentTypes';
 
 type GetStageSpaceArgs = {
   tournamentRecord?: Tournament;
@@ -46,7 +46,8 @@ export function getStageSpace({
     if (constraints.maxAlternates === undefined) return { positionsAvailable: Infinity, ...SUCCESS };
 
     const alternateCount = getStageEntryTypeCount({ entryStatus: ALTERNATE, drawDefinition, stage });
-    if (alternateCount < constraints.maxAlternates) return { positionsAvailable: constraints.maxAlternates - alternateCount, ...SUCCESS };
+    if (alternateCount < constraints.maxAlternates)
+      return { positionsAvailable: constraints.maxAlternates - alternateCount, ...SUCCESS };
     return { error: ENTRY_STATUS_NOT_ALLOWED_IN_STAGE };
   }
 

@@ -18,7 +18,7 @@
  * optional (e.g. `tournamentId` for participant topics).
  */
 
-import type { MatchUp, Event, DrawDefinition } from '@Types/tournamentTypes';
+import { MatchUp, Event, DrawDefinition } from '@Types/tournamentTypes';
 
 // ============================================================================
 // Identity envelope

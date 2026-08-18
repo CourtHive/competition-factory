@@ -11,9 +11,9 @@
  * - CAPACITY: Demand vs available court-hours
  */
 
-import type { AvailabilityEngine } from '@Assemblies/engines/availability/AvailabilityEngine';
-import type { DayId } from './types';
-import type { DayPlan } from './planState';
+import { AvailabilityEngine } from '@Assemblies/engines/availability/AvailabilityEngine';
+import { DayId } from './types';
+import { DayPlan } from './planState';
 
 // ============================================================================
 // Types

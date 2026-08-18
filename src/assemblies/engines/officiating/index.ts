@@ -45,7 +45,7 @@ import { OFFICIAL_RECORD_EXISTS } from '@Constants/officiatingConstants';
 import { SUCCESS } from '@Constants/resultConstants';
 
 // Types
-import type { OfficialRecord, OfficialRecords, OfficiatingDirectives } from '@Types/officiatingTypes';
+import { OfficialRecord, OfficialRecords, OfficiatingDirectives } from '@Types/officiatingTypes';
 
 function resolveRecord(officialRecordId?: string): OfficialRecord | undefined {
   return getOfficialRecord(officialRecordId ?? getActiveOfficialRecordId());

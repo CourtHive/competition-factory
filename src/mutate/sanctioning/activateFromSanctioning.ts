@@ -7,7 +7,7 @@ import { MISSING_SANCTIONING_RECORD, ACTIVE } from '@Constants/sanctioningConsta
 import { SUCCESS } from '@Constants/resultConstants';
 
 // types
-import type {
+import {
   SanctioningRecord,
   SanctioningPolicy,
   ComplianceRecord,
@@ -15,7 +15,7 @@ import type {
   VenueProposal,
   EventProposal,
 } from '@Types/sanctioningTypes';
-import type { Tournament, Event, Venue, UnifiedEventID } from '@Types/tournamentTypes';
+import { Tournament, Event, Venue, UnifiedEventID } from '@Types/tournamentTypes';
 
 type ActivateFromSanctioningArgs = {
   sanctioningRecord: SanctioningRecord;

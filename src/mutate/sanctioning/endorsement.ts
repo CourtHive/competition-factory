@@ -4,7 +4,7 @@ import { INVALID_VALUES } from '@Constants/errorConditionConstants';
 import { SUCCESS } from '@Constants/resultConstants';
 
 // Types
-import type { SanctioningRecord, PersonReference, Endorsement } from '@Types/sanctioningTypes';
+import { SanctioningRecord, PersonReference, Endorsement } from '@Types/sanctioningTypes';
 
 // Sync the convenience `endorsement` field with the first entry in the `endorsements` array
 function syncEndorsement(record: SanctioningRecord) {
@@ -82,7 +82,12 @@ type EndorseApplicationArgs = {
   conditions?: string[];
 };
 
-export function endorseApplication({ sanctioningRecord, endorserId, endorserNotes, conditions }: EndorseApplicationArgs) {
+export function endorseApplication({
+  sanctioningRecord,
+  endorserId,
+  endorserNotes,
+  conditions,
+}: EndorseApplicationArgs) {
   if (!sanctioningRecord) return { error: MISSING_SANCTIONING_RECORD };
 
   const endorsement = findEndorsement(sanctioningRecord, endorserId);

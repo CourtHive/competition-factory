@@ -7,9 +7,9 @@
 import { describe, it, expect } from 'vitest';
 import {
   BLOCK_TYPES,
-  type VenueDayTimeline,
-  type RailSegment,
-  type BlockType,
+  VenueDayTimeline,
+  RailSegment,
+  BlockType,
 } from '@Assemblies/governors/availabilityGovernor/types';
 import {
   railsToDateAvailability,
@@ -20,9 +20,9 @@ import {
   validateDateAvailability,
   mergeOverlappingAvailability,
   calculateCourtHours,
-  type TodsDateAvailability,
-  type SchedulingSelection,
-  type TodsVenue,
+  TodsDateAvailability,
+  SchedulingSelection,
+  TodsVenue,
 } from '@Assemblies/governors/availabilityGovernor/bridge';
 import { HydratedVenue } from 'tods-competition-factory';
 
