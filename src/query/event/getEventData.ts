@@ -40,6 +40,7 @@ type GetEventDataArgs = {
   drawsProfile?: PayloadProfileUnion;
   participantFilters?: any;
   participantsVersion?: string;
+  withParticipantsVersion?: boolean;
   contextProfile?: any;
   eventId?: string;
   status?: string;
@@ -307,10 +308,15 @@ export function getEventData(params: GetEventDataArgs): {
   eventData.eventInfo.publishState = eventPublishState;
   eventData.eventInfo.published = eventPublishState?.status?.published;
 
-  // ADDITIVE: the stamp always rides the response; omission happens only when the caller PROVES it
-  // already holds this exact set. `participantsVersion` absent from params → unchanged behaviour,
-  // which is the ClubSpark constraint (their deployed pattern must not move).
-  const version = computeParticipantsVersion(tournamentParticipants);
+  // OPT-IN. Hashing the participant set costs ~18 ms of an ~89 ms five-event build (~20%), and every
+  // caller would pay it for a handshake almost none of them use. So the stamp is computed only when
+  // it can actually be used: the caller either supplied a version to check, or asked for one.
+  //
+  // Deliberately NOT a separate "enable the feature" flag divorced from the parameters — supplying a
+  // version implies wanting the comparison, and a caller that had to set two things to get one
+  // behaviour would eventually set only one and silently get the slow-and-useless combination.
+  const versionRequested = params.withParticipantsVersion || params.participantsVersion !== undefined;
+  const version = versionRequested ? computeParticipantsVersion(tournamentParticipants) : undefined;
   const clientHoldsCurrentSet = !!params.participantsVersion && params.participantsVersion === version;
 
   return {
@@ -319,6 +325,9 @@ export function getEventData(params: GetEventDataArgs): {
     // A mismatch or absence sends participants, exactly as today. Only an EXACT match omits them, so
     // the failure direction is "sent bytes that were not needed" rather than a blank bracket.
     participants: clientHoldsCurrentSet ? undefined : tournamentParticipants,
-    participantsVersion: version,
+    // Conditional spread, not `participantsVersion: version`. An explicitly-undefined key still shows
+    // up in Object.keys, so the unasked-for case would carry a key it never had before — a shape
+    // change, however invisible to JSON.stringify.
+    ...(version !== undefined && { participantsVersion: version }),
   };
 }
