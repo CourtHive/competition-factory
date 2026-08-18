@@ -95,8 +95,9 @@ describe('keyed notice de-dup preserves identity', () => {
   });
 
   it('the identity field list matches NoticeIdentity — no drift', async () => {
-    // Same guard style as the TopicPayloadMap key check: a field added to the interface but not to
-    // the runtime list would silently stop being preserved.
+    // The list is typed `(keyof NoticeIdentity)[]`, so a field REMOVED from the interface is already
+    // a compile error. This catches the other direction: a field ADDED to the interface and not to
+    // the list would silently stop being preserved, and types cannot see that.
     const fs = await import('fs');
     const path = await import('path');
 
@@ -104,11 +105,27 @@ describe('keyed notice de-dup preserves identity', () => {
     const body = types.slice(types.indexOf('export interface NoticeIdentity'));
     const declared = [...body.slice(0, body.indexOf('\n}')).matchAll(/^\s{2}(\w+)\??:/gm)].map((m) => m[1]);
 
-    const src = fs.readFileSync(path.resolve(__dirname, '../../global/state/syncGlobalState.ts'), 'utf8');
-    const listBody = src.slice(src.indexOf('const NOTICE_IDENTITY_FIELDS'));
-    const runtime = [...listBody.slice(0, listBody.indexOf(']')).matchAll(/'(\w+)'/g)].map((m) => m[1]);
+    const src = fs.readFileSync(path.resolve(__dirname, '../../global/state/noticeIdentity.ts'), 'utf8');
+    // slice from the ARRAY LITERAL, not the declaration: the type annotation
+    // `(keyof NoticeIdentity)[]` contains a `]` of its own and would truncate the match to nothing.
+    const decl = src.slice(src.indexOf('const NOTICE_IDENTITY_FIELDS'));
+    const listBody = decl.slice(decl.indexOf('= ['), decl.indexOf('];') + 1);
+    const runtime = [...listBody.matchAll(/'(\w+)'/g)].map((m) => m[1]);
 
     expect(declared.length).toBeGreaterThan(3);
+    expect(runtime.length).toBeGreaterThan(3); // the parser found something — not a vacuous pass
     expect(runtime.sort()).toEqual(declared.sort());
+  });
+
+  it('is exported publicly so other providers use THIS implementation, not a copy', async () => {
+    // competition-factory-server reimplements the notice buffer for per-request async isolation. It
+    // must be able to import the helper rather than hand-copy it; a copy is how the two drift.
+    const globalStateModule: any = await import('@Global/state/globalState');
+    expect(typeof globalStateModule.preserveNoticeIdentity).toEqual('function');
+    expect(Array.isArray(globalStateModule.NOTICE_IDENTITY_FIELDS)).toEqual(true);
+
+    // and it behaves through the public path, not just the internal one
+    const merged = globalStateModule.preserveNoticeIdentity({ matchUp: {} }, { eventId: 'e1' });
+    expect(merged.eventId).toEqual('e1');
   });
 });

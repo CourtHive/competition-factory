@@ -1,3 +1,4 @@
+export { preserveNoticeIdentity, NOTICE_IDENTITY_FIELDS } from './noticeIdentity';
 import { isFunction, isObject } from '@Tools/objects';
 import syncGlobalState from './syncGlobalState';
 import { intersection } from '@Tools/arrays';

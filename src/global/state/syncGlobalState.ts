@@ -1,3 +1,4 @@
+import { preserveNoticeIdentity } from './noticeIdentity';
 import {
   CallListenerArgs,
   DeleteNoticeArgs,
@@ -152,52 +153,6 @@ export function cycleMutationStatus() {
   return status;
 }
 
-/**
- * Identity fields carried on a notice ENVELOPE. Mirrors `NoticeIdentity` in `forge/topicTypes.ts`;
- * conformance is asserted in `tests/global/noticeIdentityPreservation.test.ts` so the two cannot drift.
- */
-const NOTICE_IDENTITY_FIELDS = [
-  'tournamentId',
-  'eventId',
-  'drawId',
-  'structureId',
-  'originOrganisationId',
-  'originTournamentId',
-  'originEventId',
-  'originDrawId',
-] as const;
-
-/**
- * Carry identity forward when a keyed notice supersedes an earlier one.
- *
- * WHY THIS IS SOUND: for a given topic+key, identity is INVARIANT. A matchUp does not change which
- * structure, draw or event it belongs to; a draw does not migrate between events. So filling a field
- * the newer payload left undefined can only restore the value it would have carried — never override
- * a differing one, because a differing one cannot exist.
- *
- * WHY IT IS NEEDED: de-dup keeps the LAST writer wholesale. Generating one draw fires ~12
- * `MODIFY_DRAW_DEFINITION` emissions for the same drawId; measured, eight consecutive ones carry
- * eventId and tournamentId and the final one carries NEITHER — so the delivered notice was the only
- * unroutable one in the batch. Identity the system fully knew was destroyed by the transport.
- *
- * This also removes a silent fragility: `MODIFY_MATCHUP` is keyed on matchUpId, so the identity fixes
- * in 6.28.0/6.28.1 were correct only because the last emitter happened to carry identity. A future
- * emission added later in the chain would have quietly undone them.
- */
-function preserveIdentity(payload: any, superseded: any): any {
-  if (!superseded || typeof payload !== 'object' || Array.isArray(payload)) return payload;
-
-  let restored: any;
-  for (const field of NOTICE_IDENTITY_FIELDS) {
-    if (payload[field] === undefined && superseded[field] !== undefined) {
-      // copy lazily: an unmodified payload must stay the caller's own object
-      restored ??= { ...payload };
-      restored[field] = superseded[field];
-    }
-  }
-  return restored ?? payload;
-}
-
 export function addNotice({ topic, payload, key }: Notice, isGlobalSubscription?: boolean) {
   if (typeof topic !== 'string' || typeof payload !== 'object') return;
   // if there is a notice then the state has been modified, regardless of whether there is a subscription
@@ -211,7 +166,7 @@ export function addNotice({ topic, payload, key }: Notice, isGlobalSubscription?
     for (const notice of syncGlobalState.notices) {
       if (notice.topic === topic && notice.key === key) {
         // superseded — but its identity is still true of this key, so do not discard it
-        outgoing = preserveIdentity(outgoing, notice.payload);
+        outgoing = preserveNoticeIdentity(outgoing, notice.payload);
       } else {
         retained.push(notice);
       }
