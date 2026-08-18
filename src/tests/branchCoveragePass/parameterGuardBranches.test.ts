@@ -1,8 +1,8 @@
-import { setFirstClassOrTimeItem } from '@Mutate/timeItems/setFirstClassOrTimeItem';
 import { resolveDraftPositions } from '@Mutate/drawDefinitions/draft/resolveDraftPositions';
 import { setFirstClassOrExtension } from '@Mutate/extensions/setFirstClassOrExtension';
-import { seedWithdrawalCascade } from '@Mutate/drawDefinitions/seedWithdrawalCascade';
 import { setState, setTournamentRecord } from '@Assemblies/engines/parts/stateMethods';
+import { seedWithdrawalCascade } from '@Mutate/drawDefinitions/seedWithdrawalCascade';
+import { setFirstClassOrTimeItem } from '@Mutate/timeItems/setFirstClassOrTimeItem';
 import mocksEngine from '@Assemblies/engines/mock';
 import { describe, expect, it } from 'vitest';
 
@@ -64,7 +64,7 @@ describe('setFirstClassOrExtension — parameter guards', () => {
 
   it('control: a well-formed call still succeeds', () => {
     const element: any = {};
-    const result: any = setFirstClassOrExtension({ element, attribute: 'tier', name: 'tier', value: 'GOLD' });
+    let result: any = setFirstClassOrExtension({ element, attribute: 'tier', name: 'tier', value: 'GOLD' });
     expect(result.success).toEqual(true);
   });
 });
@@ -97,7 +97,7 @@ describe('setFirstClassOrTimeItem — parameter guards', () => {
 
   it('control: a well-formed call still succeeds and writes the schedule attribute', () => {
     const element: any = {};
-    const result: any = setFirstClassOrTimeItem({
+    let result: any = setFirstClassOrTimeItem({
       element,
       attribute: 'scheduledTime',
       itemType: 'SCHEDULE.ASSIGNMENT.TIME',
@@ -133,7 +133,7 @@ describe('stateMethods — record-shape guards', () => {
     // `setTournamentRecords` does not return a result envelope, so the assertion
     // is "no rejection" rather than a success shape. Without this control the
     // INVALID_RECORDS cases above would pass even if setState rejected everything.
-    const result: any = setState({ 'tid-1': { tournamentId: 'tid-1' } });
+    let result: any = setState({ 'tid-1': { tournamentId: 'tid-1' } });
     expect(result?.error).toBeUndefined();
   });
 });
@@ -144,12 +144,12 @@ describe('seedWithdrawalCascade — parameter guards', () => {
   });
 
   it('returns INVALID_VALUES when no structureId can be resolved', () => {
-    const result: any = (seedWithdrawalCascade as any)({ drawDefinition: { structures: [] }, drawPosition: 1 });
+    let result: any = (seedWithdrawalCascade as any)({ drawDefinition: { structures: [] }, drawPosition: 1 });
     expect(result.error).toEqual(INVALID_VALUES);
   });
 
   it('returns INVALID_VALUES when the structureId resolves to no structure', () => {
-    const result: any = (seedWithdrawalCascade as any)({
+    let result: any = (seedWithdrawalCascade as any)({
       drawDefinition: { drawId: 'd', structures: [] },
       structureId: 'no-such-structure',
       drawPosition: 1,
@@ -167,7 +167,7 @@ describe('seedWithdrawalCascade — parameter guards', () => {
     const drawDefinition = tournamentRecord.events[0].drawDefinitions[0];
     const structureId = drawDefinition.structures[0].structureId;
 
-    const result: any = (seedWithdrawalCascade as any)({ drawDefinition, structureId, drawPosition: 999 });
+    let result: any = (seedWithdrawalCascade as any)({ drawDefinition, structureId, drawPosition: 999 });
     expect(result.error).toEqual(INVALID_VALUES);
   });
 });
@@ -178,13 +178,13 @@ describe('resolveDraftPositions — parameter guards', () => {
   });
 
   it('returns NOT_FOUND when the drawDefinition carries no draftState', () => {
-    const result: any = (resolveDraftPositions as any)({ drawDefinition: { drawId: 'd', structures: [] } });
+    let result: any = (resolveDraftPositions as any)({ drawDefinition: { drawId: 'd', structures: [] } });
     expect(result.error).toEqual(NOT_FOUND);
     expect(result.info).toContain('No active draft');
   });
 
   it('returns INVALID_VALUES when the draft is already complete', () => {
-    const result: any = (resolveDraftPositions as any)({
+    let result: any = (resolveDraftPositions as any)({
       drawDefinition: { drawId: 'd', structures: [], draftState: { status: 'COMPLETED' } },
     });
     expect(result.error).toEqual(INVALID_VALUES);
@@ -192,7 +192,7 @@ describe('resolveDraftPositions — parameter guards', () => {
   });
 
   it('returns NOT_FOUND when the draftState names a structure the draw does not have', () => {
-    const result: any = (resolveDraftPositions as any)({
+    let result: any = (resolveDraftPositions as any)({
       drawDefinition: { drawId: 'd', structures: [], draftState: { status: 'ACTIVE', structureId: 'missing' } },
     });
     expect(result.error).toEqual(NOT_FOUND);
