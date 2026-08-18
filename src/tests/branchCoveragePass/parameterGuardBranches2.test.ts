@@ -2,9 +2,9 @@ import { generateDrawMaticRound } from '@Assemblies/generators/drawDefinitions/d
 import { getTieMatchUpContext } from '@Query/hierarchical/tieFormats/getTieMatchUpContext';
 import { setGroupLeafOrExtension } from '@Mutate/extensions/setGroupLeafOrExtension';
 import { addPracticeRegistration } from '@Mutate/practice/addPracticeRegistration';
+import { afterEach, describe, expect, it } from 'vitest';
 import mocksEngine from '@Assemblies/engines/mock';
 import tournamentEngine from '@Engines/syncEngine';
-import { afterEach, describe, expect, it } from 'vitest';
 import {
   addNotice,
   getSaveDrawDeletions,
@@ -110,7 +110,7 @@ describe('setGroupLeafOrExtension — parameter guards', () => {
 
   it('control: a well-formed call succeeds', () => {
     const element: any = {};
-    const result: any = setGroupLeafOrExtension({
+    let result: any = setGroupLeafOrExtension({
       element,
       groupAttribute: 'schedule',
       leafAttribute: 'scheduledTime',
@@ -159,7 +159,7 @@ describe('addPracticeRegistration — parameter guards', () => {
 
   it.each(guardCases)('rejects with INVALID_VALUES when %s', (_label, override) => {
     const s = seeded();
-    const result: any = addPracticeRegistration({
+    let result: any = addPracticeRegistration({
       tournamentRecord: s.tournamentRecord,
       courtId: s.courtId,
       participantId: s.participantId,
@@ -171,7 +171,7 @@ describe('addPracticeRegistration — parameter guards', () => {
 
   it('control: the same call with every parameter present succeeds', () => {
     const s = seeded();
-    const result: any = addPracticeRegistration({
+    let result: any = addPracticeRegistration({
       tournamentRecord: s.tournamentRecord,
       courtId: s.courtId,
       participantId: s.participantId,
@@ -191,7 +191,7 @@ describe('getTieMatchUpContext — parameter guards', () => {
   });
 
   it('returns EVENT_NOT_FOUND without an event', () => {
-    const result: any = (getTieMatchUpContext as any)({ tournamentRecord: {}, drawDefinition: { drawId: 'd' } });
+    let result: any = (getTieMatchUpContext as any)({ tournamentRecord: {}, drawDefinition: { drawId: 'd' } });
     expect(result.error).toEqual(EVENT_NOT_FOUND);
   });
 });
@@ -202,12 +202,12 @@ describe('generateDrawMaticRound — parameter guards', () => {
   });
 
   it('returns STRUCTURE_NOT_FOUND when neither structure nor structureId is supplied', () => {
-    const result: any = (generateDrawMaticRound as any)({ drawDefinition: { drawId: 'd', structures: [] } });
+    let result: any = (generateDrawMaticRound as any)({ drawDefinition: { drawId: 'd', structures: [] } });
     expect(result.error).toEqual(STRUCTURE_NOT_FOUND);
   });
 
   it('returns MISSING_PARTICIPANT_IDS when the structure resolves but no participants are given', () => {
-    const result: any = (generateDrawMaticRound as any)({
+    let result: any = (generateDrawMaticRound as any)({
       drawDefinition: { drawId: 'd', structures: [] },
       structure: { structureId: 's', matchUps: [] },
       participantIds: [],
