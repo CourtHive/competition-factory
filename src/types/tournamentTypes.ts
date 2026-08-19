@@ -1451,6 +1451,14 @@ export interface Contact {
   updatedAt?: Date | string;
 }
 
+/**
+ * The canonical participant-role vocabulary. `src/constants/participantRoleValues.ts` is GENERATED from
+ * this enum (`pnpm gen:enum-constants`), so the runtime consts cannot drift from it — they did once, when
+ * the const module carried SCOREKEEPER/TIMEKEEPER and this enum did not, leaving two roles that existed at
+ * runtime and could not be expressed by any type-safe consumer.
+ *
+ * Member notes live here rather than beside the consts, because the consts are now generated output.
+ */
 export enum ParticipantRoleEnum {
   ADMINISTRATION = 'ADMINISTRATION',
   CAPTAIN = 'CAPTAIN',
@@ -1459,14 +1467,31 @@ export enum ParticipantRoleEnum {
   DIRECTOR = 'DIRECTOR',
   HOSPITALITY = 'HOSPITALITY',
   MEDIA = 'MEDIA',
+  /**
+   * The umbrella role for doctors / paramedics / on-call medical staff. TRAINER and PHYSIO are
+   * deliberately separate members because team rosters distinguish them: a strength-and-conditioning
+   * TRAINER runs warm-ups and recovery, a PHYSIO handles rehab and soft-tissue work, and MEDICAL covers
+   * the qualified physician overseeing the program. Collapsing them would lose roster-level information
+   * the import wizard already carries.
+   */
   MEDICAL = 'MEDICAL',
   OFFICIAL = 'OFFICIAL',
   OTHER = 'OTHER',
   PHYSIO = 'PHYSIO',
+  /**
+   * A participant approved to keep score for matchUps (crowd-scoring nomination). Carried as a primary
+   * role for a dedicated scorekeeper, or — more commonly — as a `participantRoleResponsibility` on a
+   * competitor/official who may also keep score. Aligns with the existing INTENNSE scorekeeper workflow.
+   */
   SCOREKEEPER = 'SCOREKEEPER',
   SECURITY = 'SECURITY',
   STRINGER = 'STRINGER',
   SUPERVISOR = 'SUPERVISOR',
+  /**
+   * A participant responsible for the match clock. Becomes relevant for timed matchUpFormats (e.g.
+   * INTENNSE bolt/serve clocks). Role-only today; a per-matchUp `assignMatchUpTimekeeper` mirrors the
+   * scorekeeper mutation when timed formats need a nominated timekeeper.
+   */
   TIMEKEEPER = 'TIMEKEEPER',
   TRAINER = 'TRAINER',
   TRANSPORT = 'TRANSPORT',

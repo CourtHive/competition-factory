@@ -8,9 +8,14 @@
  * member. The hand-authored `<name>Constants.ts` re-exports these and adds its
  * semantic helper arrays/objects (which reference the primitives).
  *
- * Only the four dedicated 1:1 mirrors are generated; bucket modules
+ * Only the dedicated 1:1 mirrors are generated; bucket modules
  * (drawDefinition/participant/gender) are grab-bags, not 1:1, and stay hand-authored
  * under the runtime + compile-time conformance guards (enumConstConformance).
+ *
+ * participantRoles joined this list after it drifted: it was a 1:1 mirror maintained BY HAND, so its
+ * consts ran ahead of the enum (SCOREKEEPER/TIMEKEEPER existed as consts and not as enum members) and
+ * two live roles became inexpressible for any type-safe consumer. Generation removes the failure mode
+ * rather than guarding it after the fact.
  *
  * Regenerate via `pnpm gen:enum-constants`. CI runs `pnpm check:enum-constants`
  * which re-runs this with --check and fails on any diff.
@@ -31,6 +36,7 @@ const MIRRORS = [
   { enumName: 'SurfaceCategoryEnum', out: 'src/constants/surfaceValues.ts' },
   { enumName: 'WeekdayEnum', out: 'src/constants/weekdayValues.ts' },
   { enumName: 'BookingTypeEnum', out: 'src/constants/bookingTypeValues.ts' },
+  { enumName: 'ParticipantRoleEnum', out: 'src/constants/participantRoleValues.ts' },
 ];
 
 // Parse a string enum's `MEMBER = 'value'` members, in declaration order.
