@@ -1,5 +1,13 @@
 # Changelog
 
+## [6.29.1](https://github.com/CourtHive/competition-factory/compare/v6.29.0...v6.29.1) (2026-08-21)
+
+
+### Bug Fixes
+
+* **query:** apply participant privacy policy at every emission boundary ([#4676](https://github.com/CourtHive/competition-factory/issues/4676)) ([a767023](https://github.com/CourtHive/competition-factory/commit/a7670239c3345c121ca9fa1898a55654ffe6ffff))
+* **types:** express all 19 participant roles — add SCOREKEEPER + TIMEKEEPER to ParticipantRoleEnum ([#4674](https://github.com/CourtHive/competition-factory/issues/4674)) ([2376dae](https://github.com/CourtHive/competition-factory/commit/2376daea2d06ce721e38c5f42aead97d15e72fd9))
+
 ## [6.29.0](https://github.com/CourtHive/competition-factory/compare/v6.28.1...v6.29.0) (2026-08-18)
 
 
