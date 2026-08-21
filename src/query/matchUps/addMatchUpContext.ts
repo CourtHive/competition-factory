@@ -215,6 +215,7 @@ export function addMatchUpContext({
 
   const collectionAssignmentDetail = collectionId
     ? getCollectionAssignment({
+        participantTemplate: appliedPolicies?.[POLICY_TYPE_PARTICIPANT]?.participant,
         tournamentParticipants,
         positionAssignments,
         collectionPosition,
@@ -516,16 +517,18 @@ function hydrateSides({
   event,
 }) {
   const participantAttributes = appliedPolicies?.[POLICY_TYPE_PARTICIPANT];
-  const getMappedParticipant = (participantId) => {
+  const participantTemplate = participantAttributes?.participant;
+  // A privacy policy carries a SEPARATE `individualParticipants` sub-template, which may be stricter
+  // than the top-level one. Judging nested individuals by the top-level template is invisible while
+  // the two happen to be identical — as they are in POLICY_PRIVACY_DEFAULT — and silently wrong the
+  // moment a provider tightens one of them.
+  const individualsTemplate = participantTemplate?.individualParticipants;
+  const filterWith = (template) => (participantId) => {
     const participant = participantMap?.[participantId]?.participant;
-    return (
-      participant &&
-      attributeFilter({
-        template: participantAttributes?.participant,
-        source: participant,
-      })
-    );
+    return participant && attributeFilter({ template, source: participant });
   };
+  const getMappedParticipant = filterWith(participantTemplate);
+  const getMappedIndividual = filterWith(individualsTemplate);
 
   matchUpWithContext.sides.filter(Boolean).forEach((side) => {
     hydrateSideParticipant({
@@ -540,20 +543,27 @@ function hydrateSides({
       event,
     });
 
-    if (side?.participant?.individualParticipantIds?.length && !side.participant.individualParticipants?.length) {
+    // A policy that names no `individualParticipants` sub-template denies the attribute outright —
+    // `attributeFilter` copies only what it names — so nothing may be attached here either.
+    const individualsDenied = !!participantTemplate && !individualsTemplate;
+
+    if (
+      side?.participant?.individualParticipantIds?.length &&
+      !side.participant.individualParticipants?.length &&
+      !individualsDenied
+    ) {
       const individualParticipants = side.participant.individualParticipantIds.map((participantId) => {
-        return (
-          getMappedParticipant(participantId) ||
+        const found =
+          getMappedIndividual(participantId) ||
           (tournamentParticipants
             ? findParticipant({
-                policyDefinitions: appliedPolicies,
                 tournamentParticipants,
                 internalUse: true,
                 contextProfile,
                 participantId,
               })
-            : undefined)
-        );
+            : undefined);
+        return individualsTemplate && found ? attributeFilter({ template: individualsTemplate, source: found }) : found;
       });
       if (hydrateParticipants !== false) Object.assign(side.participant, { individualParticipants });
     }
