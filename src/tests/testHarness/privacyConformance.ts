@@ -84,9 +84,9 @@ function deepEqual(a: unknown, b: unknown): boolean {
   }
   if (isObject(a) && isObject(b)) {
     const aKeys = Object.keys(a as object);
-    const bKeys = Object.keys(b as object);
-    if (aKeys.length !== bKeys.length) return false;
-    return aKeys.every((key) => bKeys.includes(key) && deepEqual(a?.[key], b?.[key]));
+    const bKeys = new Set(Object.keys(b as object));
+    if (aKeys.length !== bKeys.size) return false;
+    return aKeys.every((key) => bKeys.has(key) && deepEqual(a?.[key], b?.[key]));
   }
   return false;
 }

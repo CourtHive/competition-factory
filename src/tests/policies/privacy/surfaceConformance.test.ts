@@ -11,16 +11,17 @@
  * response that contained no participants proves nothing.
  */
 
+import { generatePrivacyFixture, SINGLES_DRAW_ID } from '@Tests/testHarness/privacyFixture';
+import { uncoveredDeniedPaths } from '@Tests/testHarness/privacySaturation';
+import { describe, expect, it, test } from 'vitest';
+import tournamentEngine from '@Engines/syncEngine';
 import {
   analysePolicyConformance,
   describeViolations,
   participantTemplate,
 } from '@Tests/testHarness/privacyConformance';
-import { generatePrivacyFixture, SINGLES_DRAW_ID } from '@Tests/testHarness/privacyFixture';
-import { uncoveredDeniedPaths } from '@Tests/testHarness/privacySaturation';
-import tournamentEngine from '@Engines/syncEngine';
-import { describe, expect, it, test } from 'vitest';
 
+// constants and types
 import POLICY_PRIVACY_DEFAULT from '@Fixtures/policies/POLICY_PRIVACY_DEFAULT';
 import { POLICY_TYPE_PARTICIPANT } from '@Constants/policyConstants';
 

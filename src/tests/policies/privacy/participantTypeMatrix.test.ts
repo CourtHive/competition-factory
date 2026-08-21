@@ -13,8 +13,9 @@ import { generatePrivacyFixture, GROUP_PARTICIPANT_ID } from '@Tests/testHarness
 import tournamentEngine from '@Engines/syncEngine';
 import { describe, expect, it } from 'vitest';
 
-import POLICY_PRIVACY_DEFAULT from '@Fixtures/policies/POLICY_PRIVACY_DEFAULT';
+// constants and types
 import { GROUP, INDIVIDUAL, PAIR, TEAM } from '@Constants/participantConstants';
+import POLICY_PRIVACY_DEFAULT from '@Fixtures/policies/POLICY_PRIVACY_DEFAULT';
 import { POLICY_TYPE_PARTICIPANT } from '@Constants/policyConstants';
 
 const fixture = generatePrivacyFixture();

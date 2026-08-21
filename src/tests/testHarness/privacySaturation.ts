@@ -19,6 +19,7 @@
 
 import { isObject } from '@Tools/objects';
 
+// constants and types
 import type { AttributeTemplate } from './privacyConformance';
 
 /** Attributes saturated on every participant, whatever its participantType. */

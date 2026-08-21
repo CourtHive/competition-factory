@@ -7,6 +7,10 @@
  * treatment: it must fail when the fixture stops holding a value for something the policy denies.
  */
 
+import { uncoveredDeniedPaths, templateDeniedPaths } from '@Tests/testHarness/privacySaturation';
+import { generatePrivacyFixture } from '@Tests/testHarness/privacyFixture';
+import tournamentEngine from '@Engines/syncEngine';
+import { describe, expect, it } from 'vitest';
 import {
   collectUnpermittedAttributes,
   analysePolicyConformance,
@@ -15,11 +19,8 @@ import {
   deriveForbiddenData,
   participantTemplate,
 } from '@Tests/testHarness/privacyConformance';
-import { uncoveredDeniedPaths, templateDeniedPaths } from '@Tests/testHarness/privacySaturation';
-import { generatePrivacyFixture } from '@Tests/testHarness/privacyFixture';
-import tournamentEngine from '@Engines/syncEngine';
-import { describe, expect, it } from 'vitest';
 
+// constants and types
 import POLICY_PRIVACY_DEFAULT from '@Fixtures/policies/POLICY_PRIVACY_DEFAULT';
 import { POLICY_TYPE_PARTICIPANT } from '@Constants/policyConstants';
 

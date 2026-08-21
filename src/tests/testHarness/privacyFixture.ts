@@ -15,9 +15,9 @@ import mocksEngine from '@Assemblies/engines/mock';
 import tournamentEngine from '@Engines/syncEngine';
 
 // constants and types
-import { DOUBLES, SINGLES, TEAM } from '@Constants/eventConstants';
-import { GROUP, INDIVIDUAL } from '@Constants/participantConstants';
 import { COMPETITOR, OFFICIAL, OTHER } from '@Constants/participantRoles';
+import { GROUP, INDIVIDUAL } from '@Constants/participantConstants';
+import { DOUBLES, SINGLES, TEAM } from '@Constants/eventConstants';
 
 export const SINGLES_DRAW_ID = 'privacy-singles-draw';
 export const DOUBLES_DRAW_ID = 'privacy-doubles-draw';
