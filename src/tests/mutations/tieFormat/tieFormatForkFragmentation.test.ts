@@ -250,7 +250,7 @@ describe('shared tieFormat does not fragment on removeCollectionDefinition', () 
     const teamMatchUps = structure.matchUps.filter((m: any) => m.tieMatchUps);
     expect(teamMatchUps.length).toBeGreaterThan(1);
 
-    const privateFormat = JSON.parse(JSON.stringify(event.tieFormats[0]));
+    const privateFormat = structuredClone(event.tieFormats[0]);
     privateFormat.tieFormatId = 'private-tf';
     event.tieFormats.push(privateFormat);
     teamMatchUps[0].tieFormatId = 'private-tf';

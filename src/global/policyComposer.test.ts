@@ -54,7 +54,7 @@ describe('policyComposer.extend', () => {
   });
 
   it('does NOT mutate the inputs', () => {
-    const before = JSON.parse(JSON.stringify(stockUstaSeeding));
+    const before = structuredClone(stockUstaSeeding);
     policyComposer(POLICY_TYPE_SEEDING).extend(stockUstaSeeding).set('policyName', 'MUTATED').build();
     expect(stockUstaSeeding).toEqual(before);
   });

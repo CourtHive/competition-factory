@@ -1,3 +1,4 @@
+import { applyParticipantPrivacy, getParticipantPrivacyTemplate } from '../participants/participantPrivacy';
 import { hydrateParticipants } from '../participants/hydrateParticipants';
 import { getAppliedPolicies } from '../extensions/getAppliedPolicies';
 import { getContextContent } from '../hierarchical/getContextContent';
@@ -100,5 +101,16 @@ export function tournamentMatchUps(params: GetMatchUpsArgs): GroupsMatchUpsResul
     { matchUpsCount: 0 },
   );
 
-  return { ...eventsDrawMatchUpsResult, groupInfo, participants };
+  // Emission boundary. `participants` above is the hydrated, UNFILTERED array that context assembly
+  // needs (scale values read `timeItems`, participant resolution reads `personId`); the copy that
+  // leaves the engine is the one a supplied privacy policy governs. `getCompetitionMatchUps` folds
+  // this array into `mappedParticipants`, which `competitionScheduleMatchUps` returns to public
+  // callers, so an unfiltered array here is an unfiltered public payload.
+  const template = getParticipantPrivacyTemplate(policyDefinitions);
+
+  return {
+    ...eventsDrawMatchUpsResult,
+    participants: applyParticipantPrivacy({ participants, template }),
+    groupInfo,
+  };
 }
