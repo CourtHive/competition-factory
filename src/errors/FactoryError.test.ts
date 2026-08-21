@@ -58,6 +58,9 @@ describe('FactoryError', () => {
 
   it('serializes to the legacy envelope shape via toJSON', () => {
     const err = new MissingTournamentRecordError({ info: 'no state loaded' });
+    // A genuine JSON serialization round-trip: the point is to exercise toJSON, which structuredClone
+    // does not call.
+    // eslint-disable-next-line no-restricted-syntax
     expect(JSON.parse(JSON.stringify({ error: err }))).toEqual({
       error: {
         code: 'ERR_MISSING_TOURNAMENT',
@@ -69,6 +72,8 @@ describe('FactoryError', () => {
 
   it('omits info from JSON projection when absent', () => {
     const err = new InvalidValuesError();
+    // JSON serialization round-trip, not a deep copy.
+    // eslint-disable-next-line no-restricted-syntax
     expect(JSON.parse(JSON.stringify(err))).toEqual({
       code: 'ERR_INVALID_VALUES',
       message: 'Invalid values',

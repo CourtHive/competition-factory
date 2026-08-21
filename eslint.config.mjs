@@ -50,6 +50,21 @@ export default [
       'no-unused-vars': 'off',
       'no-unassigned-vars': 'warn',
       'no-useless-assignment': 'warn',
+      // Ban `JSON.parse(JSON.stringify(x))` as a deep-copy idiom. It silently drops `undefined`,
+      // functions, `Date`/`Map`/`Set` and throws on cycles — and it was the idiom in use where a
+      // shared privacy-policy fixture needed copying, next to three call sites that copied nothing at
+      // all and mutated it in place. Machine-enforced because prose could not hold it.
+      // Genuinely testing JSON serialization (a `toJSON` round-trip) is a different thing: disable the
+      // rule on that line with a reason.
+      'no-restricted-syntax': [
+        'error',
+        {
+          selector:
+            "CallExpression[callee.object.name='JSON'][callee.property.name='parse'] > CallExpression[callee.object.name='JSON'][callee.property.name='stringify']",
+          message:
+            'Use structuredClone() to deep-copy — JSON.parse(JSON.stringify(x)) drops undefined/functions/Date/Map/Set and throws on cycles. For tournamentRecords use tools.makeDeepCopy, which carries factory extension semantics.',
+        },
+      ],
       'sonarjs/cognitive-complexity': ['warn', 30],
       'sonarjs/no-all-duplicated-branches': 'warn',
       'sonarjs/no-collapsible-if': 'warn',
