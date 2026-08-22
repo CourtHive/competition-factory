@@ -11,6 +11,7 @@ import { makeDeepCopy } from '@Tools/makeDeepCopy';
 // constants and types
 import {
   ADMINISTRATION,
+  COMPETITOR,
   DIRECTOR,
   HOSPITALITY,
   MEDIA,
@@ -227,8 +228,19 @@ export function getTournamentInfo(params?: {
   }
 
   if (withMatchUpStats) {
+    // Count competitors, not people.
+    //
+    // Staff, officials and coaches are INDIVIDUAL participants too, so a tournament with 32 players and
+    // 8 officials reported 40 — a number displayed beside a draw size and read as "how many players are
+    // in this tournament". The same file publishes `tournamentContacts` from those very staff records,
+    // so the two outputs disagreed about what the staff were.
+    //
+    // "Has a role and it is not COMPETITOR" rather than "is COMPETITOR", matching the entry gate in
+    // `addEventEntries`: most records carry no `participantRole` at all, and those are players.
     const individualParticipantCount =
-      tournamentRecord.participants?.filter((p) => p.participantType === INDIVIDUAL).length ?? 0;
+      tournamentRecord.participants?.filter(
+        (p) => p.participantType === INDIVIDUAL && (!p.participantRole || p.participantRole === COMPETITOR),
+      ).length ?? 0;
     const teamParticipantCount = tournamentRecord.participants?.filter((p) => p.participantType === TEAM).length ?? 0;
     const eventCount = tournamentRecord.events?.length ?? 0;
 

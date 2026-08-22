@@ -18,6 +18,19 @@ tournamentEngine.addEventEntries({
 });
 ```
 
+## Role Eligibility
+
+Only competitors compete. A participant carrying a `participantRole` other than `COMPETITOR` — `OFFICIAL`,
+`COACH`, `PHYSIO`, `TRANSPORT` and the rest of the staff roles — is refused entry with
+`INVALID_PARTICIPANT_IDS`, whatever their `participantType`. Staff and officials are `INDIVIDUAL`
+participants like players are, so without this gate nothing prevented a referee being entered into a draw.
+
+A participant with **no** `participantRole` at all is still accepted: records written before the role was
+universally present carry none, and those are players.
+
+The same rule shapes `getTournamentInfo`'s `individualParticipantCount`, which counts competitors rather
+than people.
+
 ## Category Validation
 
 When adding entries to events with category constraints (age ranges, rating requirements), you can optionally enforce validation to ensure participants meet eligibility criteria.

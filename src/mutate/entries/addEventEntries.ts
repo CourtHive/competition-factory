@@ -39,6 +39,7 @@ import { PolicyDefinitions, ResultType } from '@Types/factoryTypes';
 import { ROUND_TARGET } from '@Constants/extensionConstants';
 import { DOUBLES, SINGLES } from '@Constants/matchUpTypes';
 import { MAIN } from '@Constants/drawDefinitionConstants';
+import { COMPETITOR } from '@Constants/participantRoles';
 import { SUCCESS } from '@Constants/resultConstants';
 import { unique } from '@Tools/arrays';
 import {
@@ -174,6 +175,19 @@ function getTypedParticipantIdsHelper({
     tournamentRecord?.participants
       ?.filter((participant) => {
         if (!participantIds.includes(participant.participantId)) return false;
+
+        // Only competitors compete.
+        //
+        // Every eligibility predicate below gates on `participantType` and none consulted
+        // `participantRole`, so an OFFICIAL, a COACH, a PHYSIO or a TRANSPORT driver was as enterable
+        // into a draw as a player — they are all INDIVIDUAL participants. Nothing prevented a referee
+        // being drawn against a competitor.
+        //
+        // Phrased as "has a role, and it is not COMPETITOR" rather than "is COMPETITOR" on purpose: PAIR
+        // participants and older records may carry no `participantRole` at all, and rejecting those
+        // would break entry for existing tournaments. The hole being closed is a participant carrying a
+        // NON-competitor role; an absent role stays permitted.
+        if (participant.participantRole && participant.participantRole !== COMPETITOR) return false;
 
         if (isValidSinglesParticipant(participant, event, entryStatus)) {
           return isValidSinglesGender(participant, event, genderEnforced, mismatchedGender);
