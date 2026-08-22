@@ -8,6 +8,14 @@ export const ANACHRONISM = {
   message: 'Chronological error; time violation.',
   code: 'ANACHRONISM',
 };
+// Assigning a BYE to a drawPosition whose matchUp already holds a court/time is
+// ambiguous: the operator may be mid-swap and want the placement kept, or may want
+// the slot released. Rather than guess, the position-action path refuses until the
+// caller states which, via `preserveScheduling: true | false`.
+export const MATCHUP_HAS_SCHEDULING = {
+  message: 'MatchUp has scheduling information; specify preserveScheduling.',
+  code: 'ERR_MATCHUP_HAS_SCHEDULING',
+};
 export const DUPLICATE_ENTRY = {
   message: 'Duplicate entry',
   code: 'DUPLICATE_ENTRY',
@@ -991,6 +999,7 @@ export const errorConditionConstants = {
   INVALID_WINNING_SIDE,
   LUCKY_DRAW_BYE_LIMIT,
   MATCHUPS_COMPLETED_OUTSIDE_DATES,
+  MATCHUP_HAS_SCHEDULING,
   MATCHUP_NOT_FOUND,
   METHOD_NOT_FOUND,
   MUTATION_LOCKED,

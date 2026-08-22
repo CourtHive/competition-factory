@@ -98,6 +98,7 @@ export function attemptToSetMatchUpStatus(params) {
     (nonDirecting && clearScore()) ||
     (isBYE &&
       attemptToSetMatchUpStatusBYE({
+        preserveScheduling: params.preserveScheduling,
         tournamentRecord,
         drawDefinition,
         structure,

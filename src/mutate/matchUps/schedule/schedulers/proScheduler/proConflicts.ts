@@ -6,6 +6,7 @@ import { ensureInt } from '@Tools/ensureInt';
 
 // Constants and types
 import { ErrorType, MISSING_CONTEXT, MISSING_MATCHUPS } from '@Constants/errorConditionConstants';
+import { BYE } from '@Constants/matchUpStatusConstants';
 import { Tournament } from '@Types/tournamentTypes';
 import { HydratedMatchUp } from '@Types/hydrated';
 import {
@@ -19,6 +20,7 @@ import {
   CONFLICT_PARTICIPANTS,
   CONFLICT_POTENTIAL_PARTICIPANTS,
   CONFLICT_COURT_DOUBLE_BOOKING,
+  CONFLICT_BYE_SCHEDULED,
   CONFLICT_POSITION_LINK,
 } from '@Constants/scheduleConstants';
 
@@ -33,8 +35,7 @@ export function proConflicts({
   tournamentRecords,
   matchUps,
 }: ProConflictsArgs):
-  | { error: ErrorType; info?: any }
-  | { courtIssues: { [key: string]: any }; rowIssues: { [key: string]: any } } {
+  { error: ErrorType; info?: any } | { courtIssues: { [key: string]: any }; rowIssues: { [key: string]: any } } {
   if (!validMatchUps(matchUps)) return { error: MISSING_MATCHUPS };
   if (matchUps.some(({ matchUpId, hasContext }) => matchUpId && !hasContext)) {
     return {
@@ -285,6 +286,15 @@ export function proConflicts({
       }
 
       // WARNINGS Section
+      // A BYE holding a court. Assigning a BYE deliberately PRESERVES scheduling
+      // (a director may be mid-swap), so this is not a defect to be auto-corrected
+      // — but a court slot that cannot be played on should be visible rather than
+      // silently absorbed. Annotated last-but-one in severity so a genuine
+      // double-booking or participant conflict on the same matchUp still wins.
+      if (mappedMatchUps[matchUpId].matchUpStatus === BYE && mappedMatchUps[matchUpId].schedule?.courtId) {
+        annotate(matchUpId, SCHEDULE_WARNING, CONFLICT_BYE_SCHEDULED, []);
+      }
+
       if (participantConflicts[matchUpId]?.[SCHEDULE_WARNING]) {
         annotate(matchUpId, SCHEDULE_WARNING, CONFLICT_PARTICIPANTS, participantConflicts[matchUpId][SCHEDULE_WARNING]);
       }

@@ -1505,6 +1505,53 @@ This also governs `bulkScheduleMatchUps`, which delegates to
 primitive does **not** clear grid position; use `addMatchUpScheduleItems` (the path
 TMX and integrations use) for date changes.
 
+### Assigning a BYE preserves scheduling
+
+A tournament director may schedule an entire event and then swap participants around,
+placing byes temporarily or permanently. The engine therefore **never discards scheduling
+on its own**: a matchUp that becomes a BYE keeps its court, courtOrder and times.
+
+`assignDrawPositionBye` (and `setMatchUpStatus` with `matchUpStatus: 'BYE'`) accepts
+`preserveScheduling`:
+
+| value       | behaviour                                                                                                                                                                                                                                                                               |
+| ----------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `true`      | keep the placement                                                                                                                                                                                                                                                                      |
+| `false`     | release `allocatedCourts`, `courtId`, `venueId`, `courtAnnotation`, `courtOrder`, `scheduledDate`, `scheduledTime`, `timeModifiers` — on both `matchUp.schedule` and legacy `timeItems`. Actual-play timestamps (`startTime` / `stopTime` / `resumeTime` / `endTime`) are never touched |
+| `undefined` | preserve — **except** on an operator position-action against a matchUp that already holds scheduling, which returns `MATCHUP_HAS_SCHEDULING`                                                                                                                                            |
+
+```js
+engine.assignDrawPositionBye({ drawId, structureId, drawPosition, isPositionAction: true });
+// → { error: MATCHUP_HAS_SCHEDULING } when that drawPosition's matchUp holds a court or a time
+
+engine.assignDrawPositionBye({ drawId, structureId, drawPosition, preserveScheduling: false });
+// → { success: true }, court released
+```
+
+The refusal is deliberately scoped to `isPositionAction` — the flag the engine's own
+`positionActions` payload carries, i.e. an action an operator chose. Engine-internal callers
+(`directLoser` while a score is being entered, `doubleExitAdvancement`, `positionSwap`, draw
+generation, and this function's own BYE cascade) never receive it and take the preserving
+default, so entering a score can never hard-fail because the draw happened to be scheduled.
+An explicit `preserveScheduling: false` propagates through the cascade: one operator decision
+covers every matchUp that BYE reaches.
+
+### A BYE that holds a court is shown, not hidden
+
+BYE matchUps are excluded from `competitionScheduleMatchUps` by default. Pass
+**`courtByeMatchUps: true`** to include the ones holding a `courtId`, so they occupy a cell on
+the schedule grid. `proConflicts` annotates them `CONFLICT_BYE_SCHEDULED` at `SCHEDULE_WARNING`
+severity — a real double-booking or participant conflict on the same matchUp still outranks it.
+
+This is what keeps a preserved placement honest. Before it, a byed matchUp kept its court and
+disappeared from every schedule surface at once: the slot read as free, the next matchUp was
+dropped onto it, and `proConflicts` reported a `courtDoubleBooking` naming a partner that had no
+cell to click through to (production, 2026-08-22). Making the occupant visible — rather than
+deleting the director's placement — is the fix.
+
+Byes holding only a date/time occupy no cell and are not included; the WARNING tracks court
+occupancy specifically.
+
 ---
 
 ## Auto-captured `scoredTime`
