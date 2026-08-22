@@ -609,6 +609,8 @@ const { eventData } = engine.getEventData({
   usePublishState, // optional - filter out draws which are not published; enforces embargo timestamps
   contextProfile, // optional: { inferGender: true, withCompetitiveness: true, withScaleValues: true, exclude: ['attribute', 'to', 'exclude']}
   drawsProfile, // optional: 'FULL' (default) | 'STUBS' — how much of each draw to return
+  withParticipantsVersion, // optional boolean; return a participantsVersion stamp
+  participantsVersion, // optional string; a stamp previously received, to be checked
   eventId,
 });
 const { drawsData, venuesData, eventInfo, tournamentInfo } = eventData;
@@ -643,6 +645,28 @@ A stub carries:
 `participantPlacements`, `drawActive` and `structures` are **absent** from a stub: they cannot be derived without the structure assembly this profile exists to skip. Request `FULL`, or fetch the draw individually, when they are needed.
 
 `drawsProfile` is purely additive — omitting it is byte-identical to `FULL`. An unrecognised value returns `INVALID_VALUES` rather than falling back, so a typo cannot silently return the full payload.
+
+### participantsVersion
+
+A conditional-fetch handshake for the `participants` array, in the spirit of an HTTP `ETag`. A client that already holds the current participant set can be told so instead of being sent it again.
+
+```js
+// first call — ask for a stamp
+const first = engine.getEventData({ eventId, withParticipantsVersion: true });
+// first.participants        → the full array
+// first.participantsVersion → e.g. 'a3f9…'
+
+// later calls — send the stamp back
+const next = engine.getEventData({ eventId, participantsVersion: first.participantsVersion });
+// next.participants === undefined   when the set is unchanged
+// next.participants === [...]       when it has changed (and a fresh version accompanies it)
+```
+
+Only an **exact** match omits `participants`. A mismatch, an absent stamp, or a stale one all send the array exactly as before, so the failure direction is "sent bytes that were not needed" rather than a blank bracket.
+
+**Opt-in, deliberately.** Hashing the participant set costs roughly 18 ms of an ~89 ms five-event build (~20%), so the stamp is computed only when it can be used — when the caller either supplied a version to check or asked for one with `withParticipantsVersion`. There is no separate enabling flag: supplying a version implies wanting the comparison, and a two-things-to-set design eventually gets one of them set, silently selecting the slow-and-useless combination.
+
+`participantsVersion` is present on the response **only** when it was computed. It is a conditional key rather than an explicitly-`undefined` one, so a caller that did not ask sees the response shape it has always seen.
 
 **See**: [Embargo](../concepts/publishing/publishing-embargo) for details on how embargo timestamps work.
 
@@ -2258,8 +2282,29 @@ const {
 
   registrationProfile,
   parentOrganisation, // { organisationId, organisationName, organisationAbbreviation }
+  tournamentContacts, // staff whose contacts are marked public — see below
 } = tournamentInfo;
 ```
+
+### tournamentContacts
+
+The tournament's publishable personnel: participants holding a staff role, carrying the contact details they consented to publish.
+
+```js
+const { tournamentInfo } = engine.getTournamentInfo({
+  policyDefinitions, // optional — override the bundled POLICY_PRIVACY_STAFF
+});
+
+tournamentInfo.tournamentContacts;
+// [{ participantId, participantName, participantRole, participantRoleResponsibilities,
+//    person: { contacts: [{ name, mobileTelephone, emailAddress, isPublic: true }] } }]
+```
+
+Two gates decide what appears — the staff **role** list, and `Contact.isPublic === true` on each individual contact. Appearing in the role list publishes nothing on its own, and absent or `false` both withhold. This subtree is filtered by the bundled `POLICY_PRIVACY_STAFF` rather than by a caller's participant policy; `policyDefinitions` replaces it where a provider needs different attributes. See [Staff contacts](../policies/participantPolicy#staff-contacts) for the role list and the reasoning.
+
+### Counts
+
+With `withMatchUpStats: true`, `individualParticipantCount` counts **competitors** — individuals whose `participantRole` is `COMPETITOR` or absent — rather than every INDIVIDUAL participant. Staff and officials are INDIVIDUAL participants too, so counting people would report a tournament of 32 players and 8 officials as 40, beside a draw size.
 
 `tournamentInfo.eventInfo` carries one projection per event (filtered to published events when
 `usePublishState` is set). Alongside the event's own attributes it includes two format fields:

@@ -92,6 +92,24 @@ This is a tested property. A conformance harness (`src/tests/mutations/notificat
 
 These topics are additive; existing subscribers are unaffected.
 
+## The MODIFY_MATCHUP envelope
+
+`tournamentId`, `eventId`, `drawId` and `structureId` ride the notice **envelope**, alongside the `matchUp` itself:
+
+```js
+[topicConstants.MODIFY_MATCHUP]: (payload) => {
+  payload.forEach(({ matchUp, tournamentId, eventId, drawId, structureId }) => {
+    // route or evict without resolving the matchUp first
+  });
+};
+```
+
+A subscriber that only needs to know *which* event or structure changed — cache eviction, fan-out routing, a read-model projection — should not have to hydrate the matchUp to find out.
+
+`eventId` and `structureId` are populated best-effort rather than being required of every call site. A stored matchUp carries no `structureId` (only an inContext one does), so a notice emitted from a mutation that holds only a `drawDefinition` resolves it from the draw. Likewise a caller that supplies `event` rather than `eventId` still produces a populated `eventId`. Both are also populated for **propagated** matchUps — the downstream matchUps a result advances into — so a subscriber sees the same attribution on the matchUp a winner moves to as on the one that was scored.
+
+Notices additionally carry a flattened sanctioning origin — `originOrganisationId`, `originTournamentId`, `originEventId`, `originDrawId` — absent in the ordinary single-sanction case. The most specific grain wins: an origin declared on the draw takes precedence over one declared on the event, so a flight that models a draw but no event still carries attribution.
+
 ## Typed event bus (`engine.on / once / off / waitFor`)
 
 The forge namespace provides a multi-subscriber ergonomic surface on top of `setSubscriptions`. Handlers receive **one payload per call** (the bus iterates the underlying notice array for you), supports unsubscribe by returned closure, and a Promise-based `waitFor` for tests.

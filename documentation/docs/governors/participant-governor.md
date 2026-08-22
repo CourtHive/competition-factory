@@ -481,6 +481,25 @@ engine.modifyParticipant({
 });
 ```
 
+### Writing contacts
+
+`person.contacts` (and `participant.contacts`) is **replaced**, not merged — deliberately, so that removing a contact is expressible. Read the existing array, change it, and send the whole thing back; sending only the contact you edited deletes the rest. Omitting the key leaves the stored list untouched, and `[]` clears it. See [Contact Information](../concepts/participants#contact-information).
+
+### PARTICIPANT_NAME_DERIVED_FROM_PERSON
+
+A supplied `participantName` can be superseded by a derived one — from `person` for an INDIVIDUAL, or from the individuals of a PAIR. That precedence is intended, but returning plain success while silently dropping a value the caller passed makes a partial no-op indistinguishable from a full success. So when it happens the response carries an `info`:
+
+```js
+const result = engine.modifyParticipant({
+  participant: { participantId, participantName: 'Ignored', person: { standardGivenName: 'Roger', standardFamilyName: 'Federer' } },
+});
+// result.success → true
+// result.info    → PARTICIPANT_NAME_DERIVED_FROM_PERSON
+// the stored participantName is 'Roger Federer'
+```
+
+The key is **conditional**: callers that did not hit the precedence see the response shape they always have, so nothing needs to start checking for it.
+
 ---
 
 ## modifyParticipantName
