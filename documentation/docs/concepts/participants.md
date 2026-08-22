@@ -26,7 +26,7 @@ The most basic participant type representing a single player or competitor.
 type IndividualParticipant = {
   participantId: string;
   participantType: 'INDIVIDUAL';
-  participantRole: 'COMPETITOR' | 'ALTERNATE' | 'OFFICIAL';
+  participantRole: 'COMPETITOR' | 'OFFICIAL' | 'DIRECTOR'; // see Participant Roles below
   participantOtherName?: string; // Nickname / display name
   person: {
     personId: string;
