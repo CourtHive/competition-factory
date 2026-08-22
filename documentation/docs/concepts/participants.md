@@ -26,7 +26,7 @@ The most basic participant type representing a single player or competitor.
 type IndividualParticipant = {
   participantId: string;
   participantType: 'INDIVIDUAL';
-  participantRole: 'COMPETITOR' | 'ALTERNATE' | 'OFFICIAL';
+  participantRole: 'COMPETITOR' | 'OFFICIAL' | 'DIRECTOR'; // see Participant Roles below
   participantOtherName?: string; // Nickname / display name
   person: {
     personId: string;
@@ -168,6 +168,10 @@ Participants can have different roles within a tournament:
 | **COACH**          | Player coach                                                                              |
 | **ADMINISTRATION** | Administrative staff                                                                      |
 | **MEDICAL**        | Medical personnel: doctors, physiotherapists, trainers                                    |
+| **PHYSIO**         | Physiotherapist                                                                           |
+| **TRAINER**        | Athletic trainer                                                                          |
+| **SCOREKEEPER**    | Records the score of a matchUp                                                            |
+| **TIMEKEEPER**     | Manages match timing: warm-up, changeovers, shot clock                                    |
 | **MEDIA**          | Press, broadcasters, photographers                                                        |
 | **SECURITY**       | Security personnel                                                                        |
 | **HOSPITALITY**    | Player lounge, catering, accommodation liaison                                            |
@@ -485,6 +489,78 @@ tournamentEngine.toggleParticipantCheckInState({
   matchUpId: 'matchup-456',
 });
 ```
+
+## Contact Information
+
+Contacts live on `participant.contacts` and on `participant.person.contacts`, and are written through
+`modifyParticipant`. The array is **replaced**, not merged — editing one contact means reading the
+existing array, changing it, and sending the whole thing back. Sending only the contact you edited
+deletes the others; omitting `contacts` entirely leaves them untouched, and `[]` clears them.
+
+**API Reference:** [modifyParticipant](/docs/governors/participant-governor#modifyparticipant)
+
+```js
+tournamentEngine.modifyParticipant({
+  participant: {
+    participantId: 'player-123',
+    person: {
+      contacts: [
+        { name: 'Ana Rivas', mobileTelephone: '+33 6 00 00 00 00', relationship: 'GUARDIAN' },
+        { name: 'own mobile', mobileTelephone: '+33 6 11 11 11 11', relationship: 'SELF', isPublic: true },
+      ],
+    },
+  },
+});
+```
+
+### relationship
+
+`Contact.relationship` says **whose number this is**. A minor's contact is routinely a parent, a guardian
+or a travelling chaperone, and without it "Ana Rivas, +33…" is ambiguous between the competitor's own
+mobile and somebody else's — the distinction that decides who a director may ring at 9pm.
+
+| Value         | Meaning                                   |
+| ------------- | ----------------------------------------- |
+| **SELF**      | The person's own contact                  |
+| **PARENT**    | A parent                                  |
+| **GUARDIAN**  | A legal guardian                          |
+| **CHAPERONE** | A travelling chaperone or team supervisor |
+| **EMERGENCY** | An emergency contact                      |
+| **OTHER**     | Any relationship not covered above        |
+
+`relationship` is optional; a contact without one is accepted unchanged.
+
+A parent or guardian is an attribute of a person's contact details — **not a Participant**. Modelling
+them as participants would make them draw-enterable, count them among the tournament's competitors, and
+give them a ranking identity, because those paths gate on `participantType`.
+
+### isPublic
+
+`Contact.isPublic` records consent on the **contact** — "this contact may be shared publicly". It is not
+a promise about any particular surface. `getTournamentInfo` publishes only contacts explicitly marked
+`isPublic === true`, and only for staff roles; absent and `false` both withhold.
+
+### Contacts for a grouping
+
+`Participant.contactParticipantIds` designates which members hold contact information for a TEAM or
+GROUP — "who do I call about this group". It is a **pointer** to members, not details copied onto the
+grouping: a copy is a snapshot that goes stale on a rename or a number change.
+
+```js
+tournamentEngine.modifyParticipant({
+  participant: {
+    participantId: 'group-123',
+    contactParticipantIds: ['player-123'],
+  },
+});
+```
+
+Every id must appear in the grouping's `individualParticipantIds`. A pointer to a non-member is stale
+rather than authoritative, so it is rejected on write with `INVALID_PARTICIPANT_IDS` instead of being
+tolerated and filtered on every read. Membership is validated against the state the participant will
+have **after** the call, so "add these members and make one of them the contact" works as a single
+mutation. Deleting a participant prunes them from both `individualParticipantIds` and
+`contactParticipantIds`.
 
 ## Privacy and Data Protection
 

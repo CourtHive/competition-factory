@@ -14,7 +14,11 @@ import { coercedSex } from '@Helpers/coercedSex';
 import { isString } from '@Tools/objects';
 
 // constants
-import { CANNOT_MODIFY_PARTICIPANT_TYPE, INVALID_DATE } from '@Constants/errorConditionConstants';
+import {
+  CANNOT_MODIFY_PARTICIPANT_TYPE,
+  INVALID_DATE,
+  INVALID_PARTICIPANT_IDS,
+} from '@Constants/errorConditionConstants';
 import { GROUP, INDIVIDUAL, PAIR, participantTypes } from '@Constants/participantConstants';
 import { PARTICIPANT_NAME_DERIVED_FROM_PERSON } from '@Constants/infoConstants';
 import { TOURNAMENT_RECORD, PARTICIPANT } from '@Constants/attributeConstants';
@@ -44,6 +48,7 @@ export function modifyParticipant(params) {
 
   const {
     participantRoleResponsibilities,
+    contactParticipantIds,
     individualParticipantIds,
     participantOtherName,
     participantName,
@@ -78,6 +83,20 @@ export function modifyParticipant(params) {
       newValues,
     });
   }
+  // Designated contact people for a grouping. Validated against the membership the participant will
+  // HAVE after this call — `newValues.individualParticipantIds` when membership is being changed in the
+  // same mutation, the existing list otherwise. Validating against the stale list would reject a
+  // legitimate "add these members and make one of them the contact" in a single call.
+  //
+  // A pointer to a non-member is stale rather than authoritative, so it is refused on write instead of
+  // being tolerated and filtered on every read.
+  if (Array.isArray(contactParticipantIds)) {
+    const membership = newValues.individualParticipantIds ?? existingParticipant.individualParticipantIds ?? [];
+    const invalid = contactParticipantIds.filter((participantId) => !membership.includes(participantId));
+    if (invalid.length) return { error: INVALID_PARTICIPANT_IDS, invalid };
+    newValues.contactParticipantIds = contactParticipantIds;
+  }
+
   if (Object.keys(participantRoles).includes(participantRole)) newValues.participantRole = participantRole;
   if (Object.keys(participantTypes).includes(participantType)) newValues.participantType = participantType;
 

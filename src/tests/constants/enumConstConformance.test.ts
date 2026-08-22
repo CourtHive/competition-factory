@@ -184,6 +184,11 @@ const ENUM_ONLY = [
   // PracticeRegistrationStatusEnum.CONFIRMED.
   'PracticeRegistrationStatusEnum',
   'BallTypeEnum',
+  // Genuinely enum-only: the relationship vocabulary describes a Contact and has no domain-constant twin
+  // for callers to destructure. Recorded here as a deliberate decision rather than by omission — the
+  // previous ParticipantRoleEnum entry sat in this list on the FALSE premise that it had no twin, which
+  // is how SCOREKEEPER and TIMEKEEPER stayed inexpressible for months.
+  'ContactRelationshipEnum',
   'CountryCodeEnum',
   'CourtPositionEnum',
   'DrawTypeEnum',

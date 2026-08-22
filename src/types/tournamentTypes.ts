@@ -1408,6 +1408,16 @@ export type OnlineResourceTypeUnion = `${OnlineResourceTypeEnum}`;
 
 export interface Participant {
   contacts?: Contact[];
+  /**
+   * Members who hold contact information for this grouping — "who do I call about this group".
+   * Only relevant when participantType is TEAM or GROUP, and entirely optional.
+   *
+   * A POINTER to members rather than contact details copied onto the grouping. A copy is a snapshot:
+   * rename the person or change their number and the group keeps advertising the old one. Entries must
+   * appear in `individualParticipantIds` — a pointer to a non-member is stale rather than authoritative,
+   * so it is rejected on write rather than tolerated on read.
+   */
+  contactParticipantIds?: string[];
   createdAt?: Date | string;
   extensions?: Extension[];
   homeVenueIds?: string[]; // only releveant when participantType is TEAM
@@ -1436,6 +1446,35 @@ export interface Participant {
   useOtherName?: boolean;
 }
 
+/**
+ * Whose number this is.
+ *
+ * A minor's contact is routinely a parent, a guardian or a travelling chaperone, and a `Contact` could
+ * previously carry only a `name` — leaving "Ana Rivas, +33…" ambiguous between the competitor's own
+ * mobile and somebody else's. That distinction decides who a director may ring at 9pm.
+ *
+ * An enum rather than a free string, deliberately. `participantRoleResponsibilities` is the cautionary
+ * case: an unvalidated `string[]` that already carries four incompatible dialects in-tree ('Home',
+ * 'CLUB', 'SCOREKEEPER', 'Captain'). A vocabulary with no enum becomes several vocabularies.
+ *
+ * SELF earns its place: without it, "the competitor's own mobile" and "an unlabelled number" are the
+ * same state.
+ *
+ * Note what this is NOT. A parent or guardian is an attribute of a person's contact details, not a
+ * Participant. Modelling them as participants would put them inside `addEventEntries` (which gates on
+ * participantType and would make them draw-enterable), the tournament's player counts, and rankings
+ * ingest — none of which consult `participantRole`.
+ */
+export enum ContactRelationshipEnum {
+  CHAPERONE = 'CHAPERONE',
+  EMERGENCY = 'EMERGENCY',
+  GUARDIAN = 'GUARDIAN',
+  OTHER = 'OTHER',
+  PARENT = 'PARENT',
+  SELF = 'SELF',
+}
+export type ContactRelationshipUnion = `${ContactRelationshipEnum}`;
+
 export interface Contact {
   createdAt?: Date | string;
   emailAddress?: string;
@@ -1446,6 +1485,8 @@ export interface Contact {
   mobileTelephone?: string;
   name?: string;
   notes?: string;
+  /** Whose contact this is — the person themselves, or a parent / guardian / chaperone acting for them. */
+  relationship?: ContactRelationshipUnion;
   telephone?: string;
   timeItems?: TimeItem[];
   updatedAt?: Date | string;
