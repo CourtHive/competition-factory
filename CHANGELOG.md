@@ -1,5 +1,25 @@
 # Changelog
 
+## [6.30.0](https://github.com/CourtHive/competition-factory/compare/v6.29.1...v6.30.0) (2026-08-22)
+
+
+### Features
+
+* **scheduling:** preserve scheduling when a BYE is assigned ([#4681](https://github.com/CourtHive/competition-factory/issues/4681)) ([e113125](https://github.com/CourtHive/competition-factory/commit/e113125c5ffaf3c539f719e8ae4e747b01befd14))
+* **types:** contact relationship and grouping contact pointers ([#4683](https://github.com/CourtHive/competition-factory/issues/4683)) ([23fd695](https://github.com/CourtHive/competition-factory/commit/23fd69528ebe9e8e68d04457b1a7240af58e1af9))
+
+
+### Bug Fixes
+
+* **entries:** gate event entries and tournament counts on the competitor role ([#4684](https://github.com/CourtHive/competition-factory/issues/4684)) ([237f13e](https://github.com/CourtHive/competition-factory/commit/237f13e48d569766b573fe1facd89f693267b5ba))
+* **privacy:** publish staff contact details, stop excluding the tournament director ([#4680](https://github.com/CourtHive/competition-factory/issues/4680)) ([15373b6](https://github.com/CourtHive/competition-factory/commit/15373b6fc1b80b7a02ff7a34c1a1f3db2068cb3c))
+* **scheduling:** stop discarding the categoryType resolved from an event ([#4686](https://github.com/CourtHive/competition-factory/issues/4686)) ([75996a0](https://github.com/CourtHive/competition-factory/commit/75996a0a69c68a6bc3cdd82b3a89cb7bb3766580))
+
+
+### Documentation
+
+* backfill the six public changes shipped since the last docs publish ([#4685](https://github.com/CourtHive/competition-factory/issues/4685)) ([176060b](https://github.com/CourtHive/competition-factory/commit/176060bc63ed84b6ad9ae93bb32f58e0ae80a645))
+
 ## [6.29.1](https://github.com/CourtHive/competition-factory/compare/v6.29.0...v6.29.1) (2026-08-21)
 
 
