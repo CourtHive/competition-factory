@@ -14,6 +14,13 @@ function seededMatchUps() {
   mocksEngine.generateTournamentRecord({
     drawProfiles: [{ drawSize: 16, category: { ratingType: WTN } }],
     completeAllMatchUps: true,
+    // `nonRandom: 1` pins the generated scores. Without it the competitiveness bands
+    // are random, and this file's own tripwire — `nonZeroBands > 1` — fails on the runs
+    // where all 15 completed matchUps happen to land in a single band. Measured at
+    // 1 failure in 40 sequential runs on master (2026-08-22), which is enough to abort
+    // `verify:coverage` before it writes its summary. Same failure class the sibling
+    // `inferredGender.test.ts` documents.
+    nonRandom: 1,
     setState: true,
   });
 
