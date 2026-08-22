@@ -26,6 +26,7 @@ import { POLICY_RANKING_POINTS_WTA } from './POLICY_RANKING_POINTS_WTA';
 import { POLICY_ROUND_NAMING_DEFAULT } from './POLICY_ROUND_NAMING_DEFAULT';
 import { POLICY_SCHEDULING_DEFAULT } from './POLICY_SCHEDULING_DEFAULT';
 import { POLICY_PRIVACY_DEFAULT } from './POLICY_PRIVACY_DEFAULT';
+import { POLICY_PRIVACY_STAFF } from './POLICY_PRIVACY_STAFF';
 
 import { POLICY_OFFICIATING_CONFLICT_OF_INTEREST_ITF } from './POLICY_OFFICIATING_CONFLICT_OF_INTEREST';
 import { POLICY_OFFICIATING_CONFLICT_OF_INTEREST } from './POLICY_OFFICIATING_CONFLICT_OF_INTEREST';
@@ -57,6 +58,10 @@ export const policies = {
   POLICY_POSITION_ACTIONS_UNRESTRICTED,
 
   POLICY_PRIVACY_DEFAULT,
+  // Exported so a provider can reference or extend the staff/tournamentContacts policy. It was
+  // previously unreachable — hardcoded inside getTournamentInfo with no export and no caller override,
+  // so "providers author their own privacy policies" was not true on this path.
+  POLICY_PRIVACY_STAFF,
 
   POLICY_RANKING_POINTS_ITF_JUNIOR,
   POLICY_RANKING_POINTS_ITF_WTT,

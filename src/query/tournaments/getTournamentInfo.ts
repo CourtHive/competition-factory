@@ -9,27 +9,98 @@ import { definedAttributes } from '@Tools/definedAttributes';
 import { makeDeepCopy } from '@Tools/makeDeepCopy';
 
 // constants and types
-import { ADMINISTRATION, MEDIA, MEDICAL, OFFICIAL, SECURITY } from '@Constants/participantRoles';
+import {
+  ADMINISTRATION,
+  DIRECTOR,
+  HOSPITALITY,
+  MEDIA,
+  MEDICAL,
+  OFFICIAL,
+  PHYSIO,
+  SECURITY,
+  STRINGER,
+  SUPERVISOR,
+  TRAINER,
+  TRANSPORT,
+} from '@Constants/participantRoles';
 import { ErrorType, MISSING_TOURNAMENT_RECORD } from '@Constants/errorConditionConstants';
 import { completedMatchUpStatuses, BYE } from '@Constants/matchUpStatusConstants';
 import { TOURNAMENT_IMAGE_RESOURCE_NAME } from '@Constants/tournamentConstants';
 import POLICY_PRIVACY_STAFF from '@Fixtures/policies/POLICY_PRIVACY_STAFF';
+import { ParticipantRoleUnion, Tournament } from '@Types/tournamentTypes';
 import { INDIVIDUAL, TEAM } from '@Constants/participantConstants';
 import { SUCCESS } from '@Constants/resultConstants';
-import { Tournament } from '@Types/tournamentTypes';
+
+/**
+ * Roles whose holders appear in `tournamentContacts`.
+ *
+ * DIRECTOR was absent, which meant the **tournament director** — the single person a competitor most
+ * needs to reach — was excluded from the tournament's contact list by role, before any question about
+ * contact details arose. SUPERVISOR joined it, and CA added the on-site service roles a competitor
+ * genuinely needs to reach during an event: PHYSIO, TRAINER, STRINGER, TRANSPORT, HOSPITALITY.
+ *
+ * Still excluded: COACH, CAPTAIN, VOLUNTEER, SCOREKEEPER, TIMEKEEPER, OTHER. A coach or captain is
+ * affiliated with a competitor rather than with the tournament, and publishing them would turn the
+ * tournament's contact list into a roster.
+ *
+ * This is the set for the bundled policy. A provider supplying its own `policyDefinitions` shapes which
+ * ATTRIBUTES are published; this list decides WHO is considered staff at all. Note that appearing here
+ * publishes nothing on its own — each contact still has to be marked `isPublic`.
+ */
+const STAFF_CONTACT_ROLES = [
+  ADMINISTRATION,
+  DIRECTOR,
+  HOSPITALITY,
+  MEDIA,
+  MEDICAL,
+  OFFICIAL,
+  PHYSIO,
+  SECURITY,
+  STRINGER,
+  SUPERVISOR,
+  TRAINER,
+  TRANSPORT,
+] as ParticipantRoleUnion[];
+
+/**
+ * Keep only contacts explicitly marked `isPublic === true`.
+ *
+ * Runs AFTER the privacy policy has shaped which attributes survive, and is deliberately a predicate
+ * rather than part of the policy template. A template array acts as an allow-list, but `attributeFilter`
+ * only evaluates it for keys the source object actually carries (`attributeFilter.ts:49-51`) — so a
+ * contact with no `isPublic` is never examined and passes. That is fail-OPEN, and since nothing in the
+ * ecosystem writes the flag today, every existing contact would publish.
+ *
+ * Strict equality is the point: absent and `false` both withhold. Opting in has to be deliberate.
+ */
+function publishableContacts(participant: any): any {
+  const filterContacts = (contacts: any) =>
+    Array.isArray(contacts) ? contacts.filter((contact) => contact?.isPublic === true) : contacts;
+
+  if (!participant?.contacts && !participant?.person?.contacts) return participant;
+
+  return {
+    ...participant,
+    ...(participant.contacts ? { contacts: filterContacts(participant.contacts) } : {}),
+    ...(participant.person?.contacts
+      ? { person: { ...participant.person, contacts: filterContacts(participant.person.contacts) } }
+      : {}),
+  };
+}
 
 export function getTournamentInfo(params?: {
   withStructureDetails?: boolean;
   tournamentRecord: Tournament;
   withMatchUpStats?: boolean;
   usePublishState?: boolean;
+  policyDefinitions?: any;
   withVenueData?: boolean;
 }): {
   tournamentInfo?: any;
   eventInfo?: any[];
   error?: ErrorType;
 } {
-  const { tournamentRecord, withMatchUpStats, withStructureDetails, withVenueData } = params ?? {};
+  const { tournamentRecord, withMatchUpStats, withStructureDetails, withVenueData, policyDefinitions } = params ?? {};
   if (!tournamentRecord) return { error: MISSING_TOURNAMENT_RECORD };
 
   const extractTournamentInfo = ({
@@ -93,12 +164,12 @@ export function getTournamentInfo(params?: {
   }
 
   const participantResult = getParticipants({
-    participantFilters: { participantRoles: [ADMINISTRATION, OFFICIAL, MEDIA, MEDICAL, SECURITY] },
-    policyDefinitions: POLICY_PRIVACY_STAFF,
+    participantFilters: { participantRoles: STAFF_CONTACT_ROLES },
+    policyDefinitions: policyDefinitions ?? POLICY_PRIVACY_STAFF,
     tournamentRecord,
   });
 
-  const tournamentContacts = participantResult?.participants ?? [];
+  const tournamentContacts = (participantResult?.participants ?? []).map(publishableContacts);
   if (tournamentContacts) tournamentInfo.tournamentContacts = tournamentContacts;
 
   const imageUrl = tournamentRecord?.onlineResources?.find(
