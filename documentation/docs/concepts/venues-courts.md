@@ -125,6 +125,7 @@ A **court** represents an individual playing surface within a venue. Courts have
 
   // Court attributes
   altitude?: number;            // Elevation in meters
+  discipline?: string;          // The sport this court is for — see Court Discipline below
   surfaceType?: string;         // 'HARD', 'CLAY', 'GRASS', 'CARPET', etc.
   surfaceCategory?: string;     // 'INDOOR', 'OUTDOOR', 'COVERED'
   courtDimensions?: string;     // Dimensions description
@@ -144,6 +145,28 @@ A **court** represents an individual playing surface within a venue. Courts have
   }>;
 }
 ```
+
+### Court Discipline
+
+`court.discipline` says what sport a court **is** for. CODES is sport-agnostic, and a venue can hold a mix — three padel courts beside eight tennis courts, or a beach-volleyball pit.
+
+```js
+tournamentEngine.modifyVenue({
+  venueId: 'venue-uuid',
+  modifications: {
+    courts: [{ courtId: 'court-uuid', courtName: 'Padel 1', discipline: 'PADEL' }],
+  },
+});
+```
+
+The curated vocabulary is `TENNIS`, `BEACH_TENNIS`, `WHEELCHAIR_TENNIS`, `PADEL`, `PICKLEBALL`, `VOLLEYBALL`, `BEACH_VOLLEYBALL` — but the type is deliberately **open** and accepts any string, so a new sport needs no factory release. Normalize incoming values with `normalizeDiscipline`, and constrain them to a fixed list with the `allowedDisciplines` policy where a provider requires one.
+
+Two things it deliberately does not do:
+
+- **Absent means unspecified, not `TENNIS`.** A court nobody has declared a discipline for is not evidence that it is a tennis court, and defaulting it would invent data.
+- **It is not a list of capabilities.** A physical surface can serve several sports — a tennis court with pickleball lines, or a portable net dropped onto it. That is a court _capability_ and is deliberately not modelled here, because this field says what the court **is**: it is what makes a dedicated pickleball court distinguishable from a tennis court that sometimes hosts pickleball. Repurposing it to mean "can also host" turns one physical slab into two schedulable courts.
+
+`Event.discipline` uses the same open vocabulary.
 
 ### Creating Courts
 
