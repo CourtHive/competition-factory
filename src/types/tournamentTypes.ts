@@ -1463,7 +1463,7 @@ export interface Participant {
  * Note what this is NOT. A parent or guardian is an attribute of a person's contact details, not a
  * Participant. Modelling them as participants would put them inside `addEventEntries` (which gates on
  * participantType and would make them draw-enterable), the tournament's player counts, and rankings
- * ingest — none of which consult `participantRole`. See planning/CODES_CONTACT_MODEL.md.
+ * ingest — none of which consult `participantRole`.
  */
 export enum ContactRelationshipEnum {
   CHAPERONE = 'CHAPERONE',
