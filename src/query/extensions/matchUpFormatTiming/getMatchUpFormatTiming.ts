@@ -91,7 +91,15 @@ export function getMatchUpFormatTiming({
     ...scheduleTiming,
     policy: policyWithFallback,
     matchUpFormat,
-    categoryType,
+    // `scheduleTiming.categoryType` is already resolved — `getScheduleTiming`
+    // derives it from `event.category.categoryType ?? subType` when the caller
+    // supplied an event rather than an explicit value. Listing the *parameter*
+    // here unconditionally overwrote that with `undefined`, so passing an event
+    // resolved recovery as if the event had no category at all: a JUNIOR
+    // doubles event took the ADULT figure (30) instead of its own (60).
+    // An explicitly-passed categoryType still wins, which is why this is `??`
+    // rather than a plain removal of the key.
+    categoryType: categoryType ?? scheduleTiming.categoryType,
     defaultTiming,
   };
 

@@ -22,7 +22,11 @@ type GetEventMatchUpFormatTimingArgs = {
 export function getEventMatchUpFormatTiming({
   tournamentRecord,
   matchUpFormats, // optional - can be retrieved from policy
-  categoryType, // optional - categoryType is not part of event attributes
+  // optional - falls back to the event's own category when not passed. The
+  // previous comment here claimed categoryType "is not part of event
+  // attributes", which is false (`Category.categoryType`) and is the likely
+  // origin of the clobber this pairs with.
+  categoryType,
   event,
 }: GetEventMatchUpFormatTimingArgs): {
   eventMatchUpFormatTiming?: any;
@@ -75,6 +79,7 @@ export function getEventMatchUpFormatTiming({
   }
   const { eventType, eventId, category } = event;
   const categoryName = category?.categoryName ?? category?.ageCategoryCode ?? eventId;
+  const resolvedCategoryType = categoryType ?? category?.categoryType ?? category?.subType;
 
   if (!eventId) return { error: MISSING_EVENT };
 
@@ -83,7 +88,7 @@ export function getEventMatchUpFormatTiming({
       tournamentRecord,
       matchUpFormat,
       categoryName,
-      categoryType,
+      categoryType: resolvedCategoryType,
       eventType,
       event,
     });
