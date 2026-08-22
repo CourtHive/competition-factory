@@ -21,7 +21,7 @@
     "@mdx-js/react": "^3.1.1",
     "@types/react": "19.2.18",
     "clsx": "2.1.1",
-    "courthive-components": "3.14.1",
+    "courthive-components": "3.14.3",
     "leaflet": "^1.9.4",
     "react": "^19.2.6",
     "react-dom": "^19.2.6",

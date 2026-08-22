@@ -35,8 +35,8 @@ importers:
         specifier: 2.1.1
         version: 2.1.1
       courthive-components:
-        specifier: 3.14.1
-        version: 3.14.1(@tiptap/pm@3.30.1)(leaflet@1.9.4)(tods-competition-factory@6.29.0)
+        specifier: 3.14.3
+        version: 3.14.3(@tiptap/pm@3.30.1)(leaflet@1.9.4)(tods-competition-factory@6.29.0)
       leaflet:
         specifier: ^1.9.4
         version: 1.9.4
@@ -2451,8 +2451,8 @@ packages:
       typescript:
         optional: true
 
-  courthive-components@3.14.1:
-    resolution: {integrity: sha512-kNctTU3iKce/bAUrN8g1mF2/BnE7Ne+WfHFMFVgx2NrBwBuCFF4nEQyo4Qq/ESoxXWRQcoiLVgIDOvlO8jYgiw==}
+  courthive-components@3.14.3:
+    resolution: {integrity: sha512-4Vl4aBRYhpy60Ajck4Zx5FnY2Ldn7StQ4bcc4scChP5AXAjCkjgk9innYktQCdj7rP4vqyyr9YOTIYe6ioqbvw==}
     engines: {node: '>=22'}
     peerDependencies:
       leaflet: ^1.9.4
@@ -9254,7 +9254,7 @@ snapshots:
       parse-json: 5.2.0
       path-type: 4.0.0
 
-  courthive-components@3.14.1(@tiptap/pm@3.30.1)(leaflet@1.9.4)(tods-competition-factory@6.29.0):
+  courthive-components@3.14.3(@tiptap/pm@3.30.1)(leaflet@1.9.4)(tods-competition-factory@6.29.0):
     dependencies:
       '@tiptap/core': 3.30.1(@tiptap/pm@3.30.1)
       '@tiptap/extension-color': 3.30.1(@tiptap/extension-text-style@3.30.1(@tiptap/core@3.30.1(@tiptap/pm@3.30.1)))
