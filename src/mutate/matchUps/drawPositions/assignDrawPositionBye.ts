@@ -2,6 +2,7 @@ import { addPositionActionTelemetry } from '@Mutate/drawDefinitions/positionGove
 import { modifyMatchUpNotice, modifyPositionAssignmentsNotice } from '@Mutate/notifications/drawNotifications';
 import { getStructureDrawPositionProfiles } from '@Query/structure/getStructureDrawPositionProfiles';
 import { getAllStructureMatchUps } from '@Query/matchUps/getAllStructureMatchUps';
+import { matchUpHoldsScheduling, releaseByeScheduling } from '@Mutate/matchUps/schedule/byeScheduling';
 import { getInitialRoundNumber } from '@Query/matchUps/getInitialRoundNumber';
 import { getPositionAssignments } from '@Query/drawDefinition/positionsGetter';
 import { getAppliedPolicies } from '@Query/extensions/getAppliedPolicies';
@@ -28,6 +29,7 @@ import {
   DRAW_POSITION_ACTIVE,
   DRAW_POSITION_ASSIGNED,
   LUCKY_DRAW_BYE_LIMIT,
+  MATCHUP_HAS_SCHEDULING,
   MISSING_DRAW_DEFINITION,
   STRUCTURE_NOT_FOUND,
 } from '@Constants/errorConditionConstants';
@@ -66,6 +68,7 @@ import {
 
 type AssignDrawPositionByeArgs = {
   provisionalPositioning?: boolean;
+  preserveScheduling?: boolean;
   tournamentRecord?: Tournament;
   drawDefinition: DrawDefinition;
   isPositionAction?: boolean;
@@ -79,6 +82,7 @@ type AssignDrawPositionByeArgs = {
 
 export function assignDrawPositionBye({
   provisionalPositioning,
+  preserveScheduling,
   isPositionAction,
   tournamentRecord,
   drawDefinition,
@@ -168,6 +172,33 @@ export function assignDrawPositionBye({
     structure,
   });
 
+  // ############ Scheduling is the operator's, not ours ############
+  // A director may schedule a whole event and then swap participants around,
+  // placing byes temporarily or permanently. Silently wiping the surrounding plan
+  // to keep a conflict detector quiet destroys careful work — so a BYE KEEPS its
+  // placement unless the caller says otherwise, and a court-holding BYE is
+  // rendered in the grid and flagged CONFLICT_BYE_SCHEDULED (WARNING) instead.
+  //
+  // When the caller is an operator position-action and the target already holds
+  // scheduling, the intent is genuinely ambiguous — keep the slot mid-swap, or give
+  // it back? Refuse rather than guess; TMX catches this and asks. The gate is scoped
+  // to `isPositionAction` on purpose: 10 of this function's 14 call sites are
+  // engine-internal (directLoser during SCORE ENTRY, doubleExitAdvancement,
+  // positionSwap, draw generation, this function's own recursion) and must never
+  // start hard-failing on a scheduled draw. They take the non-destructive default.
+  const byeTargets = byeTargetMatchUps({ structure, matchUps, drawPosition });
+  if (
+    isPositionAction &&
+    preserveScheduling === undefined &&
+    byeTargets.some((m) => matchUpHoldsScheduling({ matchUp: m }))
+  ) {
+    return decorateResult({
+      info: 'assigning a BYE to a scheduled matchUp requires preserveScheduling: true | false',
+      result: { error: MATCHUP_HAS_SCHEDULING },
+      stack,
+    });
+  }
+
   // modifies the structure's positionAssignments
   // applies to both ELIMINATION and ROUND_ROBIN structures
   positionAssignments?.forEach((assignment) => {
@@ -183,6 +214,7 @@ export function assignDrawPositionBye({
 
   if (structure.structureType === CONTAINER) {
     assignRoundRobinBYE({
+      preserveScheduling,
       tournamentRecord,
       drawDefinition,
       drawPosition,
@@ -225,7 +257,7 @@ export function assignDrawPositionBye({
     ? roundMatchUps?.[roundNumber].find(({ drawPositions }) => drawPositions?.includes(drawPosition))
     : undefined;
 
-  matchUp && setMatchUpStatusBYE({ tournamentRecord, drawDefinition, matchUp, event });
+  matchUp && setMatchUpStatusBYE({ preserveScheduling, tournamentRecord, drawDefinition, matchUp, event });
 
   const drawPositionToAdvance = matchUp?.drawPositions?.find((position) => position !== drawPosition);
 
@@ -234,6 +266,7 @@ export function assignDrawPositionBye({
       matchUpId: matchUp.matchUpId,
       inContextDrawMatchUps,
       drawPositionToAdvance,
+      preserveScheduling,
       tournamentRecord,
       drawDefinition,
       matchUpsMap,
@@ -259,6 +292,39 @@ export function assignDrawPositionBye({
   });
 }
 
+/**
+ * The matchUps this BYE assignment will set to `BYE` status directly.
+ *
+ * ROUND_ROBIN (CONTAINER): every matchUp in the group containing the drawPosition.
+ * ELIMINATION: the single matchUp at the drawPosition's furthest advancement — the
+ * same one the main body picks for BYE-advancement. Derived from `matchUp.drawPositions`
+ * and so is safe to compute BEFORE positionAssignments are mutated, which is what lets
+ * the ambiguity gate refuse without leaving a half-applied change behind.
+ *
+ * Does NOT include matchUps a BYE later cascades into; those take the caller's decision
+ * (see advanceWinner) rather than re-opening the question mid-cascade.
+ */
+function byeTargetMatchUps({
+  structure,
+  matchUps,
+  drawPosition,
+}: {
+  matchUps?: MatchUp[];
+  structure: Structure;
+  drawPosition: number;
+}): MatchUp[] {
+  const containing = (matchUps ?? []).filter((matchUp) => matchUp.drawPositions?.includes(drawPosition));
+  if (structure.structureType === CONTAINER) return containing;
+
+  const furthestRoundNumber = containing.reduce(
+    (furthest: number | undefined, matchUp) =>
+      matchUp.roundNumber && (!furthest || matchUp.roundNumber > furthest) ? matchUp.roundNumber : furthest,
+    undefined,
+  );
+  const target = containing.find((matchUp) => matchUp.roundNumber === furthestRoundNumber);
+  return target ? [target] : [];
+}
+
 function successNotice({
   assignedParticipantId,
   isPositionAction,
@@ -282,18 +348,31 @@ function successNotice({
 }
 
 type SetMatchUpStatusByeArgs = {
+  preserveScheduling?: boolean;
   tournamentRecord?: Tournament;
   drawDefinition?: DrawDefinition;
   eventId?: string;
   matchUp: MatchUp;
   event?: Event;
 };
-function setMatchUpStatusBYE({ tournamentRecord, drawDefinition, eventId, matchUp, event }: SetMatchUpStatusByeArgs) {
+function setMatchUpStatusBYE({
+  preserveScheduling,
+  tournamentRecord,
+  drawDefinition,
+  eventId,
+  matchUp,
+  event,
+}: SetMatchUpStatusByeArgs) {
   Object.assign(matchUp, {
     matchUpStatus: BYE,
     score: undefined,
     winningSide: undefined,
   });
+
+  // ONLY on an explicit release. `undefined` preserves — see the gate in
+  // assignDrawPositionBye. Folded in before the notice below so the release ships
+  // with the same modifyMatchUpNotice rather than emitting a second one.
+  if (preserveScheduling === false) releaseByeScheduling({ matchUp });
 
   modifyMatchUpNotice({
     tournamentId: tournamentRecord?.tournamentId,
@@ -306,6 +385,7 @@ function setMatchUpStatusBYE({ tournamentRecord, drawDefinition, eventId, matchU
 }
 
 type AssignRoundRobinByeArgs = {
+  preserveScheduling?: boolean;
   tournamentRecord?: Tournament;
   drawDefinition: DrawDefinition;
   drawPosition: number;
@@ -314,6 +394,7 @@ type AssignRoundRobinByeArgs = {
 };
 
 function assignRoundRobinBYE({
+  preserveScheduling,
   tournamentRecord,
   drawDefinition,
   drawPosition,
@@ -324,6 +405,7 @@ function assignRoundRobinBYE({
     if (matchUp.drawPositions?.includes(drawPosition)) {
       setMatchUpStatusBYE({
         eventId: event?.eventId,
+        preserveScheduling,
         tournamentRecord,
         drawDefinition,
         matchUp,
@@ -337,6 +419,7 @@ function assignRoundRobinBYE({
 type AdvanceDrawPositionType = {
   inContextDrawMatchUps: HydratedMatchUp[];
   drawPositionToAdvance: number;
+  preserveScheduling?: boolean;
   tournamentRecord?: Tournament;
   drawDefinition: DrawDefinition;
   matchUpsMap: MatchUpsMap;
@@ -346,6 +429,7 @@ type AdvanceDrawPositionType = {
 export function advanceDrawPosition({
   drawPositionToAdvance,
   inContextDrawMatchUps,
+  preserveScheduling,
   tournamentRecord,
   drawDefinition,
   matchUpsMap,
@@ -394,6 +478,7 @@ export function advanceDrawPosition({
     advanceWinner({
       drawPositionToAdvance,
       inContextDrawMatchUps,
+      preserveScheduling,
       tournamentRecord,
       drawDefinition,
       winnerMatchUp,
@@ -411,6 +496,7 @@ export function advanceDrawPosition({
       const result = assignDrawPositionBye({
         structureId: loserTargetLink.target.structureId,
         drawPosition: loserTargetDrawPosition,
+        preserveScheduling,
         tournamentRecord,
         drawDefinition,
         event,
@@ -419,6 +505,7 @@ export function advanceDrawPosition({
     } else {
       assignFedDrawPositionBye({
         loserTargetDrawPosition,
+        preserveScheduling,
         tournamentRecord,
         loserTargetLink,
         drawDefinition,
@@ -435,6 +522,7 @@ export function advanceDrawPosition({
 function advanceWinner({
   drawPositionToAdvance,
   inContextDrawMatchUps,
+  preserveScheduling,
   tournamentRecord,
   drawDefinition,
   winnerMatchUp,
@@ -531,6 +619,13 @@ function advanceWinner({
     drawPositions,
   });
 
+  // The cascade carries the operator's decision rather than re-opening the question
+  // per matchUp: an explicit release applies to everything this BYE reaches, and the
+  // default (undefined / true) leaves downstream placements alone.
+  if (matchUpStatus === BYE && preserveScheduling === false) {
+    releaseByeScheduling({ matchUp: noContextWinnerMatchUp });
+  }
+
   const changedDrawPosition = noContextWinnerMatchUp.drawPositions.find(
     (position) => !twoDrawPositions.includes(position),
   );
@@ -569,6 +664,7 @@ function advanceWinner({
         drawPositionToAdvance: advancingDrawPosition,
         matchUpId: winnerMatchUp.matchUpId,
         inContextDrawMatchUps,
+        preserveScheduling,
         tournamentRecord,
         drawDefinition,
         matchUpsMap,
@@ -577,6 +673,7 @@ function advanceWinner({
       if (loserMatchUp.feedRound) {
         assignFedDrawPositionBye({
           loserTargetDrawPosition,
+          preserveScheduling,
           tournamentRecord,
           loserTargetLink,
           drawDefinition,
@@ -592,6 +689,7 @@ function advanceWinner({
         const result = assignDrawPositionBye({
           structureId: loserTargetLink.target.structureId,
           drawPosition: targetDrawPosition,
+          preserveScheduling,
           tournamentRecord,
           drawDefinition,
           event,
@@ -657,6 +755,7 @@ function resolvePropagatedExitOnAdvance({
 
 type AssignFedDrawPositionByeType = {
   loserTargetDrawPosition: number;
+  preserveScheduling?: boolean;
   tournamentRecord?: Tournament;
   drawDefinition: DrawDefinition;
   loserMatchUp: HydratedMatchUp;
@@ -667,6 +766,7 @@ type AssignFedDrawPositionByeType = {
 
 function assignFedDrawPositionBye({
   loserTargetDrawPosition,
+  preserveScheduling,
   tournamentRecord,
   loserTargetLink,
   drawDefinition,
@@ -689,6 +789,7 @@ function assignFedDrawPositionBye({
     const result = assignDrawPositionBye({
       structureId: loserTargetLink.target.structureId,
       drawPosition: loserTargetDrawPosition,
+      preserveScheduling,
       tournamentRecord,
       drawDefinition,
       event,

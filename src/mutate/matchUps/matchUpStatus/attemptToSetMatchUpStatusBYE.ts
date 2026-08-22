@@ -1,4 +1,5 @@
 import { structureAssignedDrawPositions } from '@Query/drawDefinition/positionsGetter';
+import { releaseByeScheduling } from '@Mutate/matchUps/schedule/byeScheduling';
 import { modifyMatchUpNotice } from '../../notifications/drawNotifications';
 import { decorateResult } from '@Functions/global/decorateResult';
 
@@ -6,7 +7,14 @@ import { BYE } from '@Constants/matchUpStatusConstants';
 import { SUCCESS } from '@Constants/resultConstants';
 import { INVALID_MATCHUP_STATUS, INVALID_MATCHUP_STATUS_BYE } from '@Constants/errorConditionConstants';
 
-export function attemptToSetMatchUpStatusBYE({ tournamentRecord, drawDefinition, structure, matchUp, event }) {
+export function attemptToSetMatchUpStatusBYE({
+  preserveScheduling,
+  tournamentRecord,
+  drawDefinition,
+  structure,
+  matchUp,
+  event,
+}) {
   const stack = 'attemptToSetMatchUpStatusBYE';
   if (matchUp?.winningSide) {
     return decorateResult({
@@ -31,6 +39,9 @@ export function attemptToSetMatchUpStatusBYE({ tournamentRecord, drawDefinition,
   if (matchUpIncludesBye) {
     matchUp.matchUpStatus = BYE;
     matchUp.matchUpStatusCodes = [];
+    // Preserve by default: a director may be mid-swap and the surrounding schedule is
+    // theirs. Only an explicit `preserveScheduling: false` gives the slot back.
+    if (preserveScheduling === false) releaseByeScheduling({ matchUp });
     modifyMatchUpNotice({
       tournamentId: tournamentRecord?.tournamentId,
       context: stack,

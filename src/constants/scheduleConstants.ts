@@ -9,6 +9,10 @@ export const CONFLICT_POTENTIAL_PARTICIPANTS = 'potentialParticipantConflict';
 export const CONFLICT_MATCHUP_ORDER = 'matchUpConflict';
 export const CONFLICT_COURT_DOUBLE_BOOKING = 'courtDoubleBooking';
 export const CONFLICT_POSITION_LINK = 'positionLinkConflict';
+// A BYE holding a court. Not an error and not a conflict — the placement may be
+// deliberate while a director swaps participants around — but a slot that cannot
+// be played on is worth surfacing, so it is annotated at WARNING severity.
+export const CONFLICT_BYE_SCHEDULED = 'byeScheduledOnCourt';
 export const SCHEDULE_ISSUE_IDS = 'ISSUE_IDS';
 export const SCHEDULE_CONFLICT = 'CONFLICT';
 export const SCHEDULE_WARNING = 'WARNING';
@@ -34,6 +38,7 @@ export const scheduleConstants = {
   CONFLICT_POTENTIAL_PARTICIPANTS,
   CONFLICT_COURT_DOUBLE_BOOKING,
   CONFLICT_POSITION_LINK,
+  CONFLICT_BYE_SCHEDULED,
   SCHEDULE_ISSUE_IDS,
   SCHEDULE_CONFLICT,
   SCHEDULE_WARNING,
