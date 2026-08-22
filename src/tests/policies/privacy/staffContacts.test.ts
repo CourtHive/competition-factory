@@ -48,9 +48,16 @@ describe('tournamentContacts', () => {
     expect(describeViolations(analysis)).toEqual([]);
   });
 
-  it('carries participantRoleResponsibilities, which the competitor policy denies and the staff policy permits', () => {
-    // The single, deliberate divergence between the two policies on this surface. Naming it here means
-    // a future change that removes it fails a test rather than passing silently.
+  it('carries exactly the attributes the staff policy permits and the competitor policy denies', () => {
+    // The deliberate divergences between the two policies on this surface. Naming them here means a
+    // change to the set fails a test rather than passing silently — which is what happened when
+    // `person.contacts` was permitted (2026-08-22): this assertion went red and had to be widened
+    // on purpose rather than by accident.
+    //
+    //   participantRoleResponsibilities — a contact without a role is not a contact.
+    //   person.contacts                 — `tournamentContacts` previously published names and roles
+    //                                     and NO way to reach anyone. Which contacts appear is gated
+    //                                     on `Contact.isPublic === true` in getTournamentInfo.
     const withResponsibilities = contacts().filter((c: any) => c.participantRoleResponsibilities !== undefined);
     expect(withResponsibilities.length).toBeGreaterThan(0);
 
@@ -60,7 +67,7 @@ describe('tournamentContacts', () => {
       node: contacts(),
     });
     expect(new Set(describeViolations(analysis).map((violation) => violation.split(' @ ')[0]))).toEqual(
-      new Set(['participantRoleResponsibilities']),
+      new Set(['participantRoleResponsibilities', 'person.contacts']),
     );
   });
 
