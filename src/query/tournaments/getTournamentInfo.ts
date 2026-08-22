@@ -9,7 +9,20 @@ import { definedAttributes } from '@Tools/definedAttributes';
 import { makeDeepCopy } from '@Tools/makeDeepCopy';
 
 // constants and types
-import { ADMINISTRATION, DIRECTOR, MEDIA, MEDICAL, OFFICIAL, SECURITY, SUPERVISOR } from '@Constants/participantRoles';
+import {
+  ADMINISTRATION,
+  DIRECTOR,
+  HOSPITALITY,
+  MEDIA,
+  MEDICAL,
+  OFFICIAL,
+  PHYSIO,
+  SECURITY,
+  STRINGER,
+  SUPERVISOR,
+  TRAINER,
+  TRANSPORT,
+} from '@Constants/participantRoles';
 import { ErrorType, MISSING_TOURNAMENT_RECORD } from '@Constants/errorConditionConstants';
 import { completedMatchUpStatuses, BYE } from '@Constants/matchUpStatusConstants';
 import { TOURNAMENT_IMAGE_RESOURCE_NAME } from '@Constants/tournamentConstants';
@@ -21,21 +34,32 @@ import { SUCCESS } from '@Constants/resultConstants';
 /**
  * Roles whose holders appear in `tournamentContacts`.
  *
- * DIRECTOR and SUPERVISOR were absent, which meant the **tournament director** — the single person a
- * competitor most needs to reach — was excluded from the tournament's contact list by role, before any
- * question about contact details arose.
+ * DIRECTOR was absent, which meant the **tournament director** — the single person a competitor most
+ * needs to reach — was excluded from the tournament's contact list by role, before any question about
+ * contact details arose. SUPERVISOR joined it, and CA added the on-site service roles a competitor
+ * genuinely needs to reach during an event: PHYSIO, TRAINER, STRINGER, TRANSPORT, HOSPITALITY.
+ *
+ * Still excluded: COACH, CAPTAIN, VOLUNTEER, SCOREKEEPER, TIMEKEEPER, OTHER. A coach or captain is
+ * affiliated with a competitor rather than with the tournament, and publishing them would turn the
+ * tournament's contact list into a roster.
  *
  * This is the set for the bundled policy. A provider supplying its own `policyDefinitions` shapes which
- * ATTRIBUTES are published; this list decides WHO is considered staff at all.
+ * ATTRIBUTES are published; this list decides WHO is considered staff at all. Note that appearing here
+ * publishes nothing on its own — each contact still has to be marked `isPublic`.
  */
 const STAFF_CONTACT_ROLES = [
   ADMINISTRATION,
   DIRECTOR,
+  HOSPITALITY,
   MEDIA,
   MEDICAL,
   OFFICIAL,
+  PHYSIO,
   SECURITY,
+  STRINGER,
   SUPERVISOR,
+  TRAINER,
+  TRANSPORT,
 ] as ParticipantRoleUnion[];
 
 /**

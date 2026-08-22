@@ -184,7 +184,18 @@ function isClearRequest(value) {
 function updatePerson({ updateParticipantName, existingParticipant, newValues, person }) {
   const newPersonValues: any = {};
   const clearedKeys: string[] = [];
-  const { standardFamilyName, standardGivenName, nationalityCode, personId, birthDate, tennisId, sex } = person;
+  const { standardFamilyName, standardGivenName, nationalityCode, personId, birthDate, tennisId, sex, contacts } =
+    person;
+
+  // `person.contacts` had no write path anywhere in the factory — declared on the type, readable, and
+  // impossible to persist. That made `Contact.isPublic` inert by construction: nothing could set it, so
+  // the publication gate on `tournamentContacts` had nothing to gate on.
+  //
+  // Replace-whole-array, not merge: a contact list is edited as a list (add a number, remove one, flip
+  // one to public), and a merge would make removal unexpressible. Consistent with the "consumers send
+  // the whole person object" contract above — omitting `contacts` leaves the existing list untouched,
+  // while `[]` clears it.
+  if (Array.isArray(contacts)) newPersonValues.contacts = contacts;
   const canonicalSex = coercedSex(sex);
   if (canonicalSex) newPersonValues.sex = canonicalSex;
 
