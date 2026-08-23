@@ -63,7 +63,8 @@ it('resolves a GROUP directive only when idCollections is supplied — the omitt
   });
   const resolved = Object.values(withCollections)[0] as string[];
   expect(resolved).toBeDefined();
-  expect([...resolved].sort()).toEqual([...memberIds].sort());
+  const byId = (a: string, b: string) => a.localeCompare(b);
+  expect([...resolved].sort(byId)).toEqual([...memberIds].sort(byId));
 });
 
 /**
