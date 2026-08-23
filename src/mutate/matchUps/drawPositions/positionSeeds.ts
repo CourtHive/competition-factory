@@ -7,10 +7,11 @@ import { findStructure } from '@Acquire/findStructure';
 import { generateRange } from '@Tools/arrays';
 
 // constants and types
-import { PolicyDefinitions, SeedBlock, SeedingProfile, MatchUpsMap } from '@Types/factoryTypes';
+import { PolicyDefinitions, SeedBlock, SeedingProfile, MatchUpsMap, IdCollections } from '@Types/factoryTypes';
 import { ErrorType, MISSING_DRAW_POSITION } from '@Constants/errorConditionConstants';
 import { DrawDefinition, Event, Structure, Tournament } from '@Types/tournamentTypes';
 import { HydratedMatchUp, HydratedParticipant } from '@Types/hydrated';
+import { GROUP, PAIR, TEAM } from '@Constants/participantConstants';
 import { SUCCESS } from '@Constants/resultConstants';
 
 type PositionSeedBlocksArgs = {
@@ -184,10 +185,37 @@ function reorderSeedsForAvoidance({
   policyAttributes: any[];
   participants: any[];
 }) {
+  // `idCollections` is REQUIRED for the `directive` rules — groups, teams and pairs.
+  //
+  // `getAttributeGrouping.ts` resolves a `directive` policy purely from `idCollections[directive]`,
+  // so omitting it made every directive-based avoidance rule a silent no-op **for seeded players**:
+  // `getAttributeGroupings` returned `{}`, no conflict groups were found, and this function returned
+  // early. Measured directly — the same call with `idCollections` returns the group and its members,
+  // without it returns `{}`.
+  //
+  // The consequence was the wrong way round from what an operator would guess: a TD who grouped a
+  // coach's stable and ticked "Groups" got avoidance for the unseeded members and silence for the
+  // seeds — the players most likely to share a coach, and the ones placed first.
+  //
+  // Built exactly as `randomUnseededSeparation` builds it, from the same `participants` array, so the
+  // seeded and unseeded halves of avoidance cannot drift apart.
+  const idCollections: IdCollections = {
+    groupParticipants: participants
+      .filter((participant) => participant.participantType === GROUP)
+      .map((participant) => participant.participantId),
+    teamParticipants: participants
+      .filter((participant) => participant.participantType === TEAM)
+      .map((participant) => participant.participantId),
+    pairParticipants: participants
+      .filter((participant) => participant.participantType === PAIR)
+      .map((participant) => participant.participantId),
+  };
+
   // Build attribute groupings: { "USA": ["p1", "p5"], "GBR": ["p2"] }
   const groupingsResult = getAttributeGroupings({
     targetParticipantIds: unplacedSeedParticipantIds,
     policyAttributes,
+    idCollections,
     participants,
   });
   if ('error' in groupingsResult) return;
