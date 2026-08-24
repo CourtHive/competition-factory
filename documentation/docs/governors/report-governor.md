@@ -68,24 +68,28 @@ const byCategory = Object.groupBy(ready, (r) => r.category);
 
 **Registered Reports:**
 
-| Report ID                        | Name                   | Category     | Requires            |
-| -------------------------------- | ---------------------- | ------------ | ------------------- |
-| `entries.entryStatus`            | Entry Status Report    | Entries      | Events              |
-| `structure.drawReport`           | Draw Structure Report  | Draws        | Events              |
-| `matchUp.results`                | Match Results          | MatchUps     | Completed draws     |
-| `matchUp.statusSummary`          | MatchUp Status Summary | MatchUps     | Completed draws     |
-| `matchUp.competitiveness`        | Match Competitiveness  | MatchUps     | Completed draws     |
-| `participant.results`            | Participant Results    | Participants | Completed draws     |
-| `participant.seedingPerformance` | Seeding Performance    | Participants | Seeded participants |
-| `participant.teamStats`          | Team Statistics        | Participants | Team participants   |
-| `venue.utilization`              | Venue Utilization      | Scheduling   | Venues              |
-| `scheduling.callTimingVariance`  | Call Timing Variance   | Scheduling   | Venues              |
-| `audit.mutationLog`              | Mutation Log           | Audit        | Server audit trail  |
-| `audit.drawRevisions`            | Draw Revision History  | Audit        | Server audit trail  |
-| `audit.schedulingChurn`          | Scheduling Churn       | Audit        | Server audit trail  |
-| `audit.positionChanges`          | Position Changes       | Audit        | Server audit trail  |
+| Report ID                        | Name                      | Category     | Requires            |
+| -------------------------------- | ------------------------- | ------------ | ------------------- |
+| `entries.entryStatus`            | Entry Status Report       | Entries      | Events              |
+| `structure.drawReport`           | Draw Structure Report     | Draws        | Events              |
+| `matchUp.results`                | Match Results             | MatchUps     | Completed draws     |
+| `matchUp.statusSummary`          | MatchUp Status Summary    | MatchUps     | Completed draws     |
+| `matchUp.competitiveness`        | Match Competitiveness     | MatchUps     | Completed draws     |
+| `participant.results`            | Participant Results       | Participants | Completed draws     |
+| `participant.seedingPerformance` | Seeding Performance       | Participants | Seeded participants |
+| `participant.teamStats`          | Team Statistics           | Participants | Team participants   |
+| `venue.utilization`              | Venue Utilization         | Scheduling   | Venues              |
+| `scheduling.callTimingVariance`  | Call Timing Variance      | Scheduling   | Venues              |
+| `participant.recoveryTime`       | Participant Recovery Time | Scheduling   | Scheduled matchUps  |
+| `participant.experience`         | Participant Experience    | Participants | Scheduled matchUps  |
+| `audit.mutationLog`              | Mutation Log              | Audit        | Server audit trail  |
+| `audit.drawRevisions`            | Draw Revision History     | Audit        | Server audit trail  |
+| `audit.schedulingChurn`          | Scheduling Churn          | Audit        | Server audit trail  |
+| `audit.positionChanges`          | Position Changes          | Audit        | Server audit trail  |
 
 Reports with `source: 'server'` require data from the server audit trail and cannot be generated from the tournament record alone.
+
+"Scheduled matchUps" means at least one matchUp carries a `scheduledTime`, `startTime`, or `calledAt`. Without one of those anchors every matchUp is undatable and the two timeline reports would return zero rows, so `computableNow` is `false` rather than producing an empty table.
 
 ---
 
@@ -186,6 +190,45 @@ const json = JSON.stringify(result, null, 2);
 // Only column keys should be rendered in UI; extra fields are for CSV/JSON export
 ```
 
+**Report-specific parameters:**
+
+Most reports take no parameters. The two timeline reports — [Participant Recovery Time](#participant-recovery-time-report) and [Participant Experience](#participant-experience-report) — accept these:
+
+```ts
+{
+  timeZone?: string;            // IANA zone, e.g. 'America/New_York' — preferred
+  utcOffsetMinutes?: number;    // venue offset from UTC (local = UTC + offset); default 0
+  policyDefinitions?: PolicyDefinitions;  // evaluate against a policy not attached to the record
+  asOfMs?: number;              // ignore matchUps starting after this instant
+}
+```
+
+:::warning Prefer `timeZone` over `utcOffsetMinutes`
+`utcOffsetMinutes` is the offset at **one** moment. Applied to a tournament that spans a daylight-saving transition it is wrong by an hour on the far side of it — silently, in a report whose entire subject is minutes. A participant finishing 22:00 and starting 08:00 across a spring-forward actually rested **nine** hours; a fixed offset reports ten.
+
+Supplying an IANA `timeZone` resolves the offset per instant instead. `utcOffsetMinutes` remains the fallback when no zone is given or the zone is not recognised, so existing callers are unaffected and an unknown zone degrades to previous behaviour rather than throwing.
+:::
+
+`policyDefinitions` answers "what would this tournament look like under a _different_ scheduling policy" without mutating the record. It follows the usual precedence — a supplied policy wins over the one attached to the tournament.
+
+**Row identifiers not present in `columns`:**
+
+Several reports emit ids that are deliberately absent from `columns`. Consumers hide them, but they are what lets a table resolve the participant behind a displayed name — to open a participant card — or navigate from a row to its matchUp, and they survive to CSV/JSON export.
+
+| Report                          | Identifier fields                                                                                                   |
+| ------------------------------- | ------------------------------------------------------------------------------------------------------------------- |
+| `structure.drawReport`          | `winningParticipantId`                                                                                              |
+| `matchUp.results`               | `side1ParticipantId`, `side2ParticipantId`, `winningParticipantId`, `eventId`, `drawId`, `structureId`, `matchUpId` |
+| `matchUp.competitiveness`       | `side1ParticipantId`, `side2ParticipantId`, `eventId`, `drawId`, `structureId`, `matchUpId`                         |
+| `scheduling.callTimingVariance` | `side1ParticipantId`, `side2ParticipantId`, `eventId`, `drawId`, `structureId`, `matchUpId`                         |
+| `participant.teamStats`         | `participantId`                                                                                                     |
+| `participant.recoveryTime`      | `participantId`, `eventId`, `drawId`, `structureId`, `matchUpId`                                                    |
+| `participant.experience`        | `participantId`                                                                                                     |
+
+A doubles side yields its **PAIR** id; a consumer hydrates individuals from that, so a partner can still be opened individually. `structure.drawReport` is the exception — it resolves to the **individual the row actually names**, because the report is person-oriented throughout and its winner column already shows only the first individual of a pair. An id resolving to the PAIR would disagree with the name displayed beside it.
+
+Where no value can be determined — an undecided structure winner, a side with no participant — the field is an empty string rather than a guess.
+
 **Error handling:**
 
 ```js
@@ -256,6 +299,162 @@ result.rows.slice(0, 5).forEach((r) => {
 ```
 
 The report is listed (`computableNow: true`) whenever the tournament has venues; rows populate once matchUps are called to court. Until then the report is empty and `summary.scheduledButUncalled` reflects scheduled matchUps still awaiting a call.
+
+---
+
+## Participant Recovery Time Report
+
+`reportId: 'participant.recoveryTime'` — one row per **individual participant per matchUp played**, in chronological order, across every day of the tournament.
+
+The live schedule Inspector scopes its rest analysis to a single calendar day by design, which makes overnight turnaround invisible — and the overnight rule carries the largest figure in the rulebook. Spanning days is the point of this report.
+
+**Columns:**
+
+| Key                        | Title          | Meaning                                             |
+| -------------------------- | -------------- | --------------------------------------------------- |
+| `participantName`          | Participant    | The individual, not the entry                       |
+| `scheduledDate`            | Date           | Venue-local date                                    |
+| `matchNumber`              | #              | Ordinal within that participant's day               |
+| `eventName` / `roundName`  | Event / Round  | Where the matchUp sits                              |
+| `startTime` / `finishTime` | Start / Finish | Venue-local wall clock                              |
+| `durationMinutes`          | On Court       | Time on court                                       |
+| `durationSource`           | Duration From  | Which rung produced `durationMinutes`               |
+| `recoveryReceived`         | Recovery       | Minutes since the previous matchUp **the same day** |
+| `recoveryRequired`         | Required       | What the policy required after that matchUp         |
+| `recoveryDeficit`          | Deficit        | `required - received`, floored at 0                 |
+| `overnightReceived`        | Overnight      | Minutes since the **previous day's** last finish    |
+| `overnightRequired`        | Overnight Req  | Overnight minimum for the participant's category    |
+| `waitMinutes`              | Wait           | Planned `scheduledTime` → actual `calledAt`         |
+| `finishSource`             | Finish From    | Which rung produced `finishTime`                    |
+
+**Same-day and cross-day gaps are scoped separately.** A same-day gap is measured against `recoveryMinutes`; a cross-day gap against `overnightMinutes`. Measuring one against the other would manufacture a huge surplus or deficit on every first matchUp of the day.
+
+Recovery is a property of the matchUp just **completed** — the scheduler reads it the same way. When a participant crosses singles ↔ doubles, the previous matchUp's `typeChangeRecoveryMinutes` applies instead, which is generally the larger figure.
+
+**Provenance: an inferred number must never read as a measured one.**
+
+`finishSource`, strongest rung first:
+
+| Value           | Derived from                                       |
+| --------------- | -------------------------------------------------- |
+| `endTime`       | An explicit end time                               |
+| `scoredTime`    | When a score was first entered                     |
+| `startTime`     | Start + the policy's `averageMinutes` (projection) |
+| `calledAt`      | Call to court + `averageMinutes` (projection)      |
+| `scheduledTime` | Planned time + `averageMinutes` (projection)       |
+
+`scoredTime` carries the load in practice rather than `endTime`: clients write an end time only on an explicit operator action, while the factory auto-captures `scoredTime` on the first meaningful score. A late-entered score pushes the anchor _after_ the true finish, so recovery is understated — the conservative direction, reporting a player as less rested rather than more. `scoredTime` is bounded to twelve hours past the start; beyond that it is treated as a later correction rather than a finish, and the ladder falls through to a projection.
+
+`durationSource`:
+
+| Value        | Derived from                                                  |
+| ------------ | ------------------------------------------------------------- |
+| `measured`   | Start → end                                                   |
+| `scoredTime` | Start → score entry                                           |
+| `calledAt`   | Call to court → score entry                                   |
+| `estimated`  | The policy's `averageMinutes` — **not an observation at all** |
+
+**Which matchUps count.** Walkovers, double walkovers, and cancellations are excluded — charging a participant full recovery and estimated court time for a matchUp they never played would corrupt every figure downstream. A default is included only when it carries a score, because a default with a score was played up to the point of the default and one without is a no-show; nothing else in the record distinguishes them.
+
+Rows are sorted worst experience first — largest deficit, then longest wait — because an operator opening this report is looking for who was treated worst, not for row one.
+
+**Summary:**
+
+```ts
+{
+  appearances: number;                  // rows, i.e. individual-matchUp pairs
+  participants: number;
+  shortRecoveryCount: number;           // rows with a deficit above zero
+  worstRecoveryDeficit: number;
+  estimatedDurationCount: number;
+  estimatedDurationPercentage: number;  // how much of this report is prediction
+  utcOffsetMinutes: number;
+  timeZone?: string;
+}
+```
+
+`estimatedDurationPercentage` is not decoration. Without it, an average built mostly from estimates reads as a finding.
+
+**Example:**
+
+```js
+const result = tournamentEngine.generateReport({
+  reportId: 'participant.recoveryTime',
+  parameters: { timeZone: 'America/New_York' },
+});
+
+console.log(`${result.summary.shortRecoveryCount} short rests`);
+console.log(`${result.summary.estimatedDurationPercentage}% of durations are estimates`);
+
+result.rows.slice(0, 5).forEach((r) => {
+  console.log(`${r.participantName} ${r.scheduledDate}: got ${r.recoveryReceived}, needed ${r.recoveryRequired}`);
+});
+```
+
+---
+
+## Participant Experience Report
+
+`reportId: 'participant.experience'` — one row per **individual participant**, rolled up across the whole tournament. Built on the same timeline core as the recovery report, so the two can never disagree.
+
+**Columns:**
+
+| Key                    | Title         | Meaning                                                    |
+| ---------------------- | ------------- | ---------------------------------------------------------- |
+| `participantName`      | Participant   |                                                            |
+| `daysPlayed`           | Days          | Distinct days played                                       |
+| `matchesPlayed`        | Matches       |                                                            |
+| `busiestDayMatches`    | Busiest Day   | Most matchUps in a single day                              |
+| `courtMinutes`         | On Court      | Total time on court                                        |
+| `estimatedPct`         | Estimated %   | Share of this participant's durations that are projections |
+| `shortRecoveryCount`   | Short Rests   | Same-day gaps below requirement                            |
+| `worstRecoveryDeficit` | Worst Deficit |                                                            |
+| `shortOvernightCount`  | Short Nights  | Nights below the overnight minimum                         |
+| `worstOvernight`       | Worst Night   | Shortest overnight turnaround received                     |
+| `meanWaitMinutes`      | Mean Wait     | Undefined rather than zero when nothing was called         |
+| `maxWaitMinutes`       | Max Wait      |                                                            |
+| `longestDayMinutes`    | Longest Day   | First **expected** time → last finish                      |
+
+`longestDayMinutes` is anchored to when the participant was first _expected_, not when they first played. Being told 09:00 and first walking on at 20:00 is eleven hours of the experience that a first-start anchor erases.
+
+Wait is reported as mean and max rather than a standard deviation: a participant consistently called 15 minutes late had a predictable tournament and one swinging −30/+180 had a chaotic one at the same mean, and operators read minutes rather than sigma.
+
+:::info Deliberately not a composite score
+There is no weighted "experience index". One would invent an authority the data does not have and launder estimated durations into a single confident number. These are sortable counts; the operator decides what "worst" means. If a band is ever wanted, derive it from `worstRecoveryDeficit` alone — the one quantity with a rulebook behind it.
+:::
+
+**Summary:**
+
+```ts
+{
+  participants: number;
+  appearances: number;
+  participantsWithShortRecovery: number;
+  participantsWithShortOvernight: number;
+  estimatedDurationPercentage: number;
+  utcOffsetMinutes: number;
+  timeZone?: string;
+}
+```
+
+**Example:**
+
+```js
+const result = tournamentEngine.generateReport({
+  reportId: 'participant.experience',
+  parameters: { timeZone: 'America/New_York' },
+});
+
+console.log(`${result.summary.participantsWithShortOvernight} participants had a short night`);
+
+// Who had the hardest tournament
+const worst = [...result.rows].sort((a, b) => b.worstRecoveryDeficit - a.worstRecoveryDeficit)[0];
+console.log(`${worst.participantName}: ${worst.matchesPlayed} matches over ${worst.daysPlayed} days`);
+```
+
+:::tip Overnight requires a configured rule
+`overnightRequired`, `shortOvernightCount`, and `worstOvernight` depend on `defaultTimes.overnightTimes` in the scheduling policy. Where no rule is configured for a participant's category — adult play carries no equivalent to the junior twelve-hour rule — the requirement is absent and nothing is flagged. Absent means **"no rule configured"**, which a consumer must report rather than substituting a figure of its own. See [Scheduling Policy](/docs/policies/scheduling#overnight-recovery).
+:::
 
 ---
 
@@ -785,6 +984,25 @@ reports.flightReports.forEach((flight) => {
 - Finishing position ranges indicate placement (e.g., winner: 1, loser: 2 for finals)
 - Custom extensions can be extracted using extensionProfiles accessor patterns
 - Reports include only structures that have been generated (excludes planned but not created)
+
+**Identifying the winner:**
+
+`structureReports` identifies a winner by `winningPersonId` — a **person** id — alongside `winningTeamId` for team structures. A person id cannot be passed to `getParticipants`, so it does not on its own answer "which participant is this".
+
+The wrapped `structure.drawReport` row therefore also carries `winningParticipantId`, resolved from whichever of the two is present, and it is what a consumer should use to open a participant card:
+
+```js
+const result = tournamentEngine.generateReport({ reportId: 'structure.drawReport' });
+
+const row = result.rows[0];
+if (row.winningParticipantId) {
+  const { participants } = tournamentEngine.getParticipants({
+    participantFilters: { participantIds: [row.winningParticipantId] },
+  });
+}
+```
+
+It resolves to the **individual the row names**, not to the pair — see the identifier table under [`generateReport`](#generatereport) — and is an empty string when no winner has been decided, rather than a guess.
 
 ---
 
