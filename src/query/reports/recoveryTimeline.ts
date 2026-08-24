@@ -38,6 +38,7 @@
  */
 
 import { getMatchUpFormatTiming } from '@Query/extensions/matchUpFormatTiming/getMatchUpFormatTiming';
+import { zonedWallClockToMs, zonedParts } from '@Tools/zonedTime';
 import { allTournamentMatchUps } from '@Query/matchUps/getAllTournamentMatchUps';
 import { getParticipants } from '@Query/participants/getParticipants';
 
@@ -80,15 +81,21 @@ export function wasPlayed(matchUp: any): boolean {
   return true;
 }
 
+/**
+ * The venue frame every conversion in this module runs through.
+ *
+ * A bare `utcOffsetMinutes` is the offset at ONE moment, so a tournament that
+ * spans a DST change converts an hour wrong on the far side of it — silently,
+ * in a report whose entire subject is minutes. Supplying an IANA `timeZone`
+ * resolves the offset per instant instead. Both are carried because the offset
+ * path stays correct for the great majority of tournaments and remains the
+ * fallback when a zone is absent or unrecognised.
+ */
+type VenueFrame = { utcOffsetMinutes: number; timeZone?: string };
+
 /** `YYYY-MM-DD` + `HH:MM` venue-local → UTC ms. Null when either part is missing or malformed. */
-function wallClockToMs(date?: string, time?: string, utcOffsetMinutes = 0): number | null {
-  if (!date || !time) return null;
-  const match = /^(\d{1,2}):(\d{2})/.exec(time);
-  if (!match) return null;
-  const base = Date.parse(`${date}T00:00:00.000Z`);
-  if (Number.isNaN(base)) return null;
-  const wallClockMinutes = Number(match[1]) * 60 + Number(match[2]);
-  return base + (wallClockMinutes - utcOffsetMinutes) * MS_PER_MINUTE;
+function wallClockToMs(date: string | undefined, time: string | undefined, frame: VenueFrame): number | null {
+  return zonedWallClockToMs({ ...frame, date, time });
 }
 
 /** UTC ISO instant → UTC ms. Null when absent or unparseable. */
@@ -99,25 +106,20 @@ function isoToMs(iso?: string): number | null {
 }
 
 /** UTC ms → venue-local calendar date + wall clock. */
-function localParts(ms: number, utcOffsetMinutes: number): { date: string; time: string } {
-  const shifted = new Date(ms + utcOffsetMinutes * MS_PER_MINUTE);
-  const pad = (n: number) => String(n).padStart(2, '0');
-  return {
-    date: `${shifted.getUTCFullYear()}-${pad(shifted.getUTCMonth() + 1)}-${pad(shifted.getUTCDate())}`,
-    time: `${pad(shifted.getUTCHours())}:${pad(shifted.getUTCMinutes())}`,
-  };
+function localParts(ms: number, frame: VenueFrame): { date: string; time: string } {
+  return zonedParts({ ...frame, ms });
 }
 
 /**
  * When the matchUp began, strongest rung first: an operator-recorded start, the
  * moment it was called to court, then the plan.
  */
-function resolveStart(schedule: any, utcOffsetMinutes: number): { ms: number; source: string } | null {
-  const started = wallClockToMs(schedule?.scheduledDate, schedule?.startTime, utcOffsetMinutes);
+function resolveStart(schedule: any, frame: VenueFrame): { ms: number; source: string } | null {
+  const started = wallClockToMs(schedule?.scheduledDate, schedule?.startTime, frame);
   if (started !== null) return { ms: started, source: 'startTime' };
   const called = isoToMs(schedule?.calledAt);
   if (called !== null) return { ms: called, source: 'calledAt' };
-  const planned = wallClockToMs(schedule?.scheduledDate, schedule?.scheduledTime, utcOffsetMinutes);
+  const planned = wallClockToMs(schedule?.scheduledDate, schedule?.scheduledTime, frame);
   if (planned !== null) return { ms: planned, source: 'scheduledTime' };
   return null;
 }
@@ -135,17 +137,17 @@ function resolveFinish(
   schedule: any,
   averageMinutes: number,
   startMs: number | null,
-  utcOffsetMinutes: number,
+  frame: VenueFrame,
 ): { ms: number; source: FinishSource } | null {
   // `endDate` is sparse and only present when the matchUp crossed midnight.
-  const ended = wallClockToMs(schedule?.endDate ?? schedule?.scheduledDate, schedule?.endTime, utcOffsetMinutes);
+  const ended = wallClockToMs(schedule?.endDate ?? schedule?.scheduledDate, schedule?.endTime, frame);
   if (ended !== null) return { ms: ended, source: 'endTime' };
 
   const scored = isoToMs(schedule?.scoredTime);
   if (scored !== null) return { ms: scored, source: 'scoredTime' };
 
   const projected = averageMinutes * MS_PER_MINUTE;
-  const startedMs = wallClockToMs(schedule?.scheduledDate, schedule?.startTime, utcOffsetMinutes);
+  const startedMs = wallClockToMs(schedule?.scheduledDate, schedule?.startTime, frame);
   if (startedMs !== null) return { ms: startedMs + projected, source: 'startTime' };
 
   const called = isoToMs(schedule?.calledAt);
@@ -163,10 +165,10 @@ function resolveFinish(
 function resolveDuration(
   schedule: any,
   averageMinutes: number,
-  utcOffsetMinutes: number,
+  frame: VenueFrame,
 ): { minutes: number; source: DurationSource } {
-  const startedMs = wallClockToMs(schedule?.scheduledDate, schedule?.startTime, utcOffsetMinutes);
-  const endedMs = wallClockToMs(schedule?.endDate ?? schedule?.scheduledDate, schedule?.endTime, utcOffsetMinutes);
+  const startedMs = wallClockToMs(schedule?.scheduledDate, schedule?.startTime, frame);
+  const endedMs = wallClockToMs(schedule?.endDate ?? schedule?.scheduledDate, schedule?.endTime, frame);
   const scoredMs = isoToMs(schedule?.scoredTime);
   const calledMs = isoToMs(schedule?.calledAt);
 
@@ -221,6 +223,8 @@ type BuildArgs = {
   policyDefinitions?: any;
   utcOffsetMinutes?: number;
   tournamentRecord: Tournament;
+  /** IANA zone identifier; when supplied it wins over `utcOffsetMinutes` and is DST-correct. */
+  timeZone?: string;
   /** Bound for an in-progress tournament; caller-supplied, never read from a clock here. */
   asOfMs?: number;
 };
@@ -234,6 +238,7 @@ export function buildRecoveryTimeline({
   policyDefinitions,
   utcOffsetMinutes = 0,
   tournamentRecord,
+  timeZone,
   asOfMs,
 }: BuildArgs): {
   byParticipant: Map<string, TimelineAppearance[]>;
@@ -241,6 +246,7 @@ export function buildRecoveryTimeline({
   estimatedCount: number;
   totalCount: number;
 } {
+  const frame: VenueFrame = { utcOffsetMinutes, timeZone };
   const { matchUps } = allTournamentMatchUps({ tournamentRecord, inContext: true });
   const { participants } = getParticipants({ tournamentRecord, withIndividualParticipants: true });
 
@@ -258,8 +264,8 @@ export function buildRecoveryTimeline({
 
   for (const matchUp of (matchUps ?? []) as any[]) {
     const appearances = appearancesForMatchUp({
-      utcOffsetMinutes,
       eventNames,
+      frame,
       drawNames,
       timingFor,
       matchUp,
@@ -326,12 +332,12 @@ function makeTimingResolver({ tournamentRecord, policyDefinitions, eventsById }:
 
 /** Every individual appearance a single matchUp contributes, or an empty list. */
 function appearancesForMatchUp({
-  utcOffsetMinutes,
   eventNames,
   drawNames,
   timingFor,
   matchUp,
   asOfMs,
+  frame,
 }: any): TimelineAppearance[] {
   if (!wasPlayed(matchUp)) return [];
 
@@ -339,12 +345,12 @@ function appearancesForMatchUp({
   const baseTiming = timingFor(matchUp);
   const averageMinutes = baseTiming?.averageMinutes ?? 90;
 
-  const start = resolveStart(schedule, utcOffsetMinutes);
+  const start = resolveStart(schedule, frame);
   if (!start) return []; // genuinely undatable — excluded rather than guessed at
   if (asOfMs !== undefined && start.ms > asOfMs) return [];
 
-  const duration = resolveDuration(schedule, averageMinutes, utcOffsetMinutes);
-  const finish = resolveFinish(schedule, averageMinutes, start.ms, utcOffsetMinutes);
+  const duration = resolveDuration(schedule, averageMinutes, frame);
+  const finish = resolveFinish(schedule, averageMinutes, start.ms, frame);
   if (!finish) return [];
 
   // A measured or proxied duration may key a `byPlayedMinutes` band; an estimated
@@ -359,11 +365,11 @@ function appearancesForMatchUp({
   ].filter(Boolean);
 
   return individualIds.map((participantId: string) => ({
-    scheduledMs: wallClockToMs(schedule.scheduledDate, schedule.scheduledTime, utcOffsetMinutes) ?? undefined,
+    scheduledMs: wallClockToMs(schedule.scheduledDate, schedule.scheduledTime, frame) ?? undefined,
     roundName: matchUp.roundName ?? (matchUp.roundNumber ? `R${matchUp.roundNumber}` : ''),
     recoveryFromPlayedMinutes: !!timing?.recoveryFromPlayedMinutes,
     typeChangeRecoveryMinutes: timing?.typeChangeRecoveryMinutes ?? 0,
-    scheduledDate: localParts(start.ms, utcOffsetMinutes).date,
+    scheduledDate: localParts(start.ms, frame).date,
     calledMs: isoToMs(schedule.calledAt) ?? undefined,
     overnightMinutes: timing?.overnightMinutes,
     recoveryMinutes: timing?.recoveryMinutes ?? 0,
@@ -385,3 +391,4 @@ function appearancesForMatchUp({
 }
 
 export { MS_PER_MINUTE, MINUTES_PER_DAY, localParts };
+export type { VenueFrame };

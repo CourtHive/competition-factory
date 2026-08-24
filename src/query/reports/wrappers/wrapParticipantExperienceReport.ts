@@ -7,7 +7,7 @@ import { ReportResult } from '@Types/reportTypes';
 
 type WrapArgs = {
   tournamentRecord: Tournament;
-  parameters?: { utcOffsetMinutes?: number; policyDefinitions?: any; asOfMs?: number };
+  parameters?: { utcOffsetMinutes?: number; timeZone?: string; policyDefinitions?: any; asOfMs?: number };
 };
 
 const minutesBetween = (fromMs: number, toMs: number) => Math.round((toMs - fromMs) / MS_PER_MINUTE);
@@ -77,11 +77,13 @@ export function wrapParticipantExperienceReport({
   parameters,
 }: WrapArgs): ReportResult | { error: any } {
   const utcOffsetMinutes = parameters?.utcOffsetMinutes ?? 0;
+  const timeZone = parameters?.timeZone;
   const { byParticipant, participantNameMap, estimatedCount, totalCount } = buildRecoveryTimeline({
     policyDefinitions: parameters?.policyDefinitions,
     asOfMs: parameters?.asOfMs,
     utcOffsetMinutes,
     tournamentRecord,
+    timeZone,
   });
 
   if (!totalCount) return { error: 'No played matchUps with resolvable times' };
@@ -193,6 +195,7 @@ export function wrapParticipantExperienceReport({
       participantsWithShortOvernight: rows.filter((row) => row.shortOvernightCount > 0).length,
       estimatedDurationPercentage: totalCount ? Math.round((estimatedCount / totalCount) * 100) : 0,
       utcOffsetMinutes,
+      timeZone,
     },
   };
 }

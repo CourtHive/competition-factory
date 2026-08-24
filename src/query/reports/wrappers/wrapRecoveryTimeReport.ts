@@ -7,7 +7,7 @@ import { ReportResult } from '@Types/reportTypes';
 
 type WrapArgs = {
   tournamentRecord: Tournament;
-  parameters?: { utcOffsetMinutes?: number; policyDefinitions?: any; asOfMs?: number };
+  parameters?: { utcOffsetMinutes?: number; timeZone?: string; policyDefinitions?: any; asOfMs?: number };
 };
 
 /** Signed minutes between two instants, rounded to whole minutes. */
@@ -51,11 +51,13 @@ function requiredAfter(previous: TimelineAppearance, next: TimelineAppearance): 
  */
 export function wrapRecoveryTimeReport({ tournamentRecord, parameters }: WrapArgs): ReportResult | { error: any } {
   const utcOffsetMinutes = parameters?.utcOffsetMinutes ?? 0;
+  const timeZone = parameters?.timeZone;
   const { byParticipant, participantNameMap, estimatedCount, totalCount } = buildRecoveryTimeline({
     policyDefinitions: parameters?.policyDefinitions,
     asOfMs: parameters?.asOfMs,
     utcOffsetMinutes,
     tournamentRecord,
+    timeZone,
   });
 
   if (!totalCount) return { error: 'No played matchUps with resolvable times' };
@@ -79,6 +81,7 @@ export function wrapRecoveryTimeReport({ tournamentRecord, parameters }: WrapArg
     { key: 'finishSource', title: 'Finish From', type: 'string' as const, fitData: true, headerWordWrap: true },
   ];
 
+  const frame = { utcOffsetMinutes, timeZone };
   const rows: Record<string, any>[] = [];
 
   for (const [participantId, appearances] of byParticipant) {
@@ -131,8 +134,8 @@ export function wrapRecoveryTimeReport({ tournamentRecord, parameters }: WrapArg
         eventName: appearance.eventName,
         drawName: appearance.drawName,
         roundName: appearance.roundName,
-        startTime: localParts(appearance.startMs, utcOffsetMinutes).time,
-        finishTime: localParts(appearance.finishMs, utcOffsetMinutes).time,
+        startTime: localParts(appearance.startMs, frame).time,
+        finishTime: localParts(appearance.finishMs, frame).time,
         durationMinutes: appearance.durationMinutes,
         durationSource: appearance.durationSource,
         recoveryReceived,
@@ -176,6 +179,7 @@ export function wrapRecoveryTimeReport({ tournamentRecord, parameters }: WrapArg
       estimatedDurationCount: estimatedCount,
       estimatedDurationPercentage: totalCount ? Math.round((estimatedCount / totalCount) * 100) : 0,
       utcOffsetMinutes,
+      timeZone,
     },
   };
 }

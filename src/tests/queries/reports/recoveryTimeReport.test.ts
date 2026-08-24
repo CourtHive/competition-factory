@@ -233,3 +233,79 @@ describe('Participant Experience report', () => {
     expect(row.shortOvernightCount).toEqual(0);
   });
 });
+
+describe('DST', () => {
+  /**
+   * A tournament straddling the US spring-forward (2026-03-08). The clock jumps
+   * 02:00 → 03:00, so 22:00 on the 7th to 08:00 on the 8th is NINE hours
+   * elapsed, not ten. A single `utcOffsetMinutes` cannot express both sides of
+   * the change and reports ten — a silent 60-minute error in a report whose
+   * entire subject is minutes.
+   */
+  const SAT = '2026-03-07';
+  const SUN = '2026-03-08';
+  const NY = 'America/New_York';
+
+  function seedAcrossTransition() {
+    mocksEngine.generateTournamentRecord({
+      drawProfiles: [{ drawSize: 4, eventName: 'Singles', matchUpFormat: 'SET3-S:6/TB7' }],
+      completeAllMatchUps: true,
+      startDate: SAT,
+      endDate: SUN,
+      setState: true,
+      nonRandom: 1,
+    });
+    const matchUps = tournamentEngine.allTournamentMatchUps({}).matchUps ?? [];
+    const first: any = matchUps.find((m: any) => m.roundNumber === 1);
+    const final: any = matchUps.find((m: any) => m.roundNumber === 2);
+    const winnerId = first.sides.find((s: any) => s.sideNumber === first.winningSide)?.participantId;
+
+    const place = (matchUp: any, scheduledDate: string, startTime: string, endTime?: string) => {
+      tournamentEngine.addMatchUpScheduledDate({
+        matchUpId: matchUp.matchUpId,
+        drawId: matchUp.drawId,
+        scheduledDate,
+      });
+      tournamentEngine.addMatchUpStartTime({ drawId: matchUp.drawId, matchUpId: matchUp.matchUpId, startTime });
+      if (endTime)
+        tournamentEngine.addMatchUpEndTime({ drawId: matchUp.drawId, matchUpId: matchUp.matchUpId, endTime });
+    };
+
+    place(first, SAT, '20:00', '22:00');
+    place(final, SUN, '08:00');
+    return { winnerId };
+  }
+
+  const overnightFor = (winnerId: string, parameters: any) => {
+    const result: any = tournamentEngine.generateReport({ reportId: PARTICIPANT_RECOVERY_REPORT, parameters });
+    return result.rows.find((r: any) => r.participantId === winnerId && r.scheduledDate === SUN)?.overnightReceived;
+  };
+
+  it('measures the true elapsed turnaround across a spring-forward when given a zone', () => {
+    const { winnerId } = seedAcrossTransition();
+    // 22:00 EST → 08:00 EDT is nine hours of actual rest.
+    expect(overnightFor(winnerId, { timeZone: NY })).toEqual(9 * 60);
+  });
+
+  it('is wrong by exactly the DST hour when given only a fixed offset', () => {
+    const { winnerId } = seedAcrossTransition();
+    // The failure this parameter exists to fix, pinned so it cannot regress
+    // unnoticed: a fixed EST offset reports ten hours for a nine-hour night.
+    expect(overnightFor(winnerId, { utcOffsetMinutes: -300 })).toEqual(10 * 60);
+  });
+
+  it('reports venue-local clock times per instant on both sides of the change', () => {
+    const { winnerId } = seedAcrossTransition();
+    const result: any = tournamentEngine.generateReport({
+      reportId: PARTICIPANT_RECOVERY_REPORT,
+      parameters: { timeZone: NY },
+    });
+    const saturday = result.rows.find((r: any) => r.participantId === winnerId && r.scheduledDate === SAT);
+    const sunday = result.rows.find((r: any) => r.participantId === winnerId && r.scheduledDate === SUN);
+    // The operator saw these clock faces; both must read back unchanged even
+    // though the two instants sit in different offsets.
+    expect(saturday.startTime).toEqual('20:00');
+    expect(saturday.finishTime).toEqual('22:00');
+    expect(sunday.startTime).toEqual('08:00');
+  });
+});
