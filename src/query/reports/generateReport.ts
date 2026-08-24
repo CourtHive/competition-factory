@@ -1,8 +1,10 @@
-import { wrapCallTimingVarianceReport } from './wrappers/wrapCallTimingVarianceReport';
+import { wrapParticipantExperienceReport } from './wrappers/wrapParticipantExperienceReport';
 import { wrapSeedingPerformanceReport } from './wrappers/wrapSeedingPerformanceReport';
 import { wrapParticipantResultsReport } from './wrappers/wrapParticipantResultsReport';
+import { wrapCallTimingVarianceReport } from './wrappers/wrapCallTimingVarianceReport';
 import { wrapCompetitivenessReport } from './wrappers/wrapCompetitivenessReport';
 import { wrapMatchUpStatusReport } from './wrappers/wrapMatchUpStatusReport';
+import { wrapRecoveryTimeReport } from './wrappers/wrapRecoveryTimeReport';
 import { wrapMatchResultsReport } from './wrappers/wrapMatchResultsReport';
 import { wrapEntryStatusReport } from './wrappers/wrapEntryStatusReport';
 import { wrapParticipantStats } from './wrappers/wrapParticipantStats';
@@ -17,6 +19,8 @@ import { ReportResult } from '@Types/reportTypes';
 import {
   CALL_TIMING_VARIANCE_REPORT,
   COMPETITIVENESS_REPORT,
+  PARTICIPANT_EXPERIENCE_REPORT,
+  PARTICIPANT_RECOVERY_REPORT,
   ENTRY_STATUS_REPORT,
   MATCH_RESULTS_REPORT,
   MATCHUP_STATUS_REPORT,
@@ -48,6 +52,8 @@ const wrapperMap: Record<string, (args: WrapperArgs) => ReportResult | { error: 
   [PARTICIPANT_STATS_REPORT]: wrapParticipantStats,
   [VENUE_UTILIZATION_REPORT]: wrapVenuesReport,
   [CALL_TIMING_VARIANCE_REPORT]: wrapCallTimingVarianceReport,
+  [PARTICIPANT_RECOVERY_REPORT]: wrapRecoveryTimeReport,
+  [PARTICIPANT_EXPERIENCE_REPORT]: wrapParticipantExperienceReport,
 };
 
 export function generateReport({

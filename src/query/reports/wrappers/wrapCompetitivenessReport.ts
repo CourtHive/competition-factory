@@ -35,6 +35,12 @@ export function wrapCompetitivenessReport({
       const profile: any = getMatchUpCompetitiveProfile({ matchUp: m, tournamentRecord });
 
       return {
+        structureId: m.structureId,
+        matchUpId: m.matchUpId,
+        eventId: m.eventId,
+        drawId: m.drawId,
+        ...sideIds(m),
+
         roundName: m.roundName ?? `R${m.roundNumber ?? ''}`,
         side1: m.sides?.[0]?.participant?.participantName ?? '',
         side2: m.sides?.[1]?.participant?.participantName ?? '',
@@ -49,5 +55,20 @@ export function wrapCompetitivenessReport({
     generatedAt: new Date().toISOString(),
     columns,
     rows,
+  };
+}
+
+/**
+ * Side participant ids alongside the display names.
+ *
+ * Not displayed as columns — consumers hide them — but they are what lets a table
+ * resolve the participant behind a name and open a participant card, and they
+ * survive to CSV/JSON export. A doubles side yields its PAIR id; the consumer
+ * hydrates individuals from that, so a partner can be opened individually.
+ */
+function sideIds(matchUp: any) {
+  return {
+    side1ParticipantId: matchUp?.sides?.[0]?.participantId ?? matchUp?.sides?.[0]?.participant?.participantId ?? '',
+    side2ParticipantId: matchUp?.sides?.[1]?.participantId ?? matchUp?.sides?.[1]?.participant?.participantId ?? '',
   };
 }
