@@ -1,5 +1,19 @@
 # Changelog
 
+## [6.31.0](https://github.com/CourtHive/competition-factory/compare/v6.30.0...v6.31.0) (2026-08-24)
+
+
+### Features
+
+* **reports:** recovery time + participant experience, policy overnight/duration axes ([#4692](https://github.com/CourtHive/competition-factory/issues/4692)) ([f9c834a](https://github.com/CourtHive/competition-factory/commit/f9c834afdb1a0fd28741a2f8f671b54dd42a16a3))
+
+
+### Bug Fixes
+
+* **avoidance:** supply idCollections when separating seeded participants ([#4688](https://github.com/CourtHive/competition-factory/issues/4688)) ([b007e29](https://github.com/CourtHive/competition-factory/commit/b007e29faf2fd8bcf1e1e2343268d9b5c0d7a085))
+* **participants:** stop createGroupParticipant emitting a duplicate notice ([#4687](https://github.com/CourtHive/competition-factory/issues/4687)) ([3064f5e](https://github.com/CourtHive/competition-factory/commit/3064f5e7638927327b77245726a222d25ae2feac))
+* **reports:** emit a resolvable winner id from the draw structure report ([#4693](https://github.com/CourtHive/competition-factory/issues/4693)) ([805b0c6](https://github.com/CourtHive/competition-factory/commit/805b0c6f1eb21361eaa9cdae6f287f7c2147dbef))
+
 ## [6.30.0](https://github.com/CourtHive/competition-factory/compare/v6.29.1...v6.30.0) (2026-08-22)
 
 
