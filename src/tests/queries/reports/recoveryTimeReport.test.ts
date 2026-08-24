@@ -220,7 +220,10 @@ describe('Participant Experience report', () => {
       rollup.rows.filter((r: any) => r.shortRecoveryCount > 0).map((r: any) => r.participantId),
     );
     // Both derive from one core; a divergence means the roll-up drifted.
-    expect([...shortInRollup].sort()).toEqual([...shortInLog].sort());
+    // Explicit comparator: a bare `.sort()` coerces to string and orders wrong
+    // without saying so — house rule.
+    const ordered = (ids: Set<string>) => [...ids].sort((a, b) => a.localeCompare(b));
+    expect(ordered(shortInRollup)).toEqual(ordered(shortInLog));
   });
 
   it('does not count a short night when no overnight rule is configured', () => {

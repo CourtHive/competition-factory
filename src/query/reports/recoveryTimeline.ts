@@ -38,15 +38,30 @@
  */
 
 import { getMatchUpFormatTiming } from '@Query/extensions/matchUpFormatTiming/getMatchUpFormatTiming';
-import { zonedWallClockToMs, zonedParts } from '@Tools/zonedTime';
 import { allTournamentMatchUps } from '@Query/matchUps/getAllTournamentMatchUps';
 import { getParticipants } from '@Query/participants/getParticipants';
+import { zonedWallClockToMs, zonedParts } from '@Tools/zonedTime';
 
 import { DOUBLES_MATCHUP } from '@Constants/matchUpTypes';
 import { Tournament } from '@Types/tournamentTypes';
 
 const MS_PER_MINUTE = 60_000;
 const MINUTES_PER_DAY = 1440;
+
+/**
+ * How long after its start a matchUp's finish may plausibly land.
+ *
+ * `scoredTime` is stamped when the score is *entered*, not when play ended. That
+ * is usually within minutes of the finish, which is why it is the workhorse rung
+ * — but a score entered the next morning, or corrected days later, is not a
+ * finish proxy at all. Unbounded, such a stamp yields a matchUp that "ran" for
+ * three days, an absurd duration, and a day span to match.
+ *
+ * Twelve hours comfortably covers any real match including long weather
+ * suspensions, while excluding next-day entry. Past it the ladder falls through
+ * to a projection from the start, which is wrong by minutes rather than by days.
+ */
+const MAX_PLAUSIBLE_MATCH_MINUTES = 12 * 60;
 
 /** Which rung of the finish ladder produced a matchUp's end anchor. */
 export type FinishSource = 'endTime' | 'scoredTime' | 'startTime' | 'calledAt' | 'scheduledTime';
@@ -98,6 +113,19 @@ function wallClockToMs(date: string | undefined, time: string | undefined, frame
   return zonedWallClockToMs({ ...frame, date, time });
 }
 
+/**
+ * Whether a candidate finish sits a plausible distance after a known start.
+ *
+ * Guards the score-entry rungs against a stamp that records bookkeeping rather
+ * than play. Returns false when there is no start to measure against, so an
+ * unanchored score never becomes a duration.
+ */
+function isPlausibleFinish(finishMs: number, startMs: number | null): boolean {
+  if (startMs === null) return false;
+  const elapsed = finishMs - startMs;
+  return elapsed > 0 && elapsed <= MAX_PLAUSIBLE_MATCH_MINUTES * MS_PER_MINUTE;
+}
+
 /** UTC ISO instant → UTC ms. Null when absent or unparseable. */
 function isoToMs(iso?: string): number | null {
   if (!iso) return null;
@@ -143,11 +171,14 @@ function resolveFinish(
   const ended = wallClockToMs(schedule?.endDate ?? schedule?.scheduledDate, schedule?.endTime, frame);
   if (ended !== null) return { ms: ended, source: 'endTime' };
 
-  const scored = isoToMs(schedule?.scoredTime);
-  if (scored !== null) return { ms: scored, source: 'scoredTime' };
-
   const projected = averageMinutes * MS_PER_MINUTE;
   const startedMs = wallClockToMs(schedule?.scheduledDate, schedule?.startTime, frame);
+
+  const scored = isoToMs(schedule?.scoredTime);
+  if (scored !== null && isPlausibleFinish(scored, startedMs ?? startMs)) {
+    return { ms: scored, source: 'scoredTime' };
+  }
+
   if (startedMs !== null) return { ms: startedMs + projected, source: 'startTime' };
 
   const called = isoToMs(schedule?.calledAt);
@@ -175,10 +206,10 @@ function resolveDuration(
   if (startedMs !== null && endedMs !== null && endedMs > startedMs) {
     return { minutes: Math.round((endedMs - startedMs) / MS_PER_MINUTE), source: 'measured' };
   }
-  if (startedMs !== null && scoredMs !== null && scoredMs > startedMs) {
+  if (startedMs !== null && scoredMs !== null && isPlausibleFinish(scoredMs, startedMs)) {
     return { minutes: Math.round((scoredMs - startedMs) / MS_PER_MINUTE), source: 'scoredTime' };
   }
-  if (calledMs !== null && scoredMs !== null && scoredMs > calledMs) {
+  if (calledMs !== null && scoredMs !== null && isPlausibleFinish(scoredMs, calledMs)) {
     return { minutes: Math.round((scoredMs - calledMs) / MS_PER_MINUTE), source: 'calledAt' };
   }
   return { minutes: averageMinutes, source: 'estimated' };

@@ -1,9 +1,9 @@
 import { isMatchUpEventType } from '@Helpers/matchUpEventTypes/isMatchUpEventType';
 import { getMatchUpFormatRecoveryTimes } from './getMatchUpFormatRecoveryTimes';
-import { getOvernightRecoveryTimes } from './getOvernightRecoveryTimes';
-import { getBandedRecoveryMinutes } from './getBandedRecoveryMinutes';
 import { parse as parseMatchUpFormat } from '@Helpers/matchUpFormatCode/parse';
 import { getMatchUpFormatAverageTimes } from './getMatchUpFormatAverageTimes';
+import { getOvernightRecoveryTimes } from './getOvernightRecoveryTimes';
+import { getBandedRecoveryMinutes } from './getBandedRecoveryMinutes';
 import { getScheduleTiming } from './getScheduleTiming';
 
 // constants, types and fixtures
@@ -11,9 +11,9 @@ import { POLICY_SCHEDULING_DEFAULT } from '@Fixtures/policies/POLICY_SCHEDULING_
 import { DOUBLES_SINGLES, SINGLES_DOUBLES } from '@Constants/scheduleConstants';
 import { MISSING_TOURNAMENT_RECORD } from '@Constants/errorConditionConstants';
 import { Event, Tournament, EventTypeUnion } from '@Types/tournamentTypes';
+import { PolicyDefinitions, ResultType } from '@Types/factoryTypes';
 import { POLICY_TYPE_SCHEDULING } from '@Constants/policyConstants';
 import { SINGLES_EVENT } from '@Constants/eventConstants';
-import { PolicyDefinitions, ResultType } from '@Types/factoryTypes';
 
 type GetMatchUpFormatTimingArgs = {
   policyDefinitions?: PolicyDefinitions;

@@ -33,6 +33,32 @@ function seed({ doubles = false }: { doubles?: boolean } = {}) {
   return { matchUps };
 }
 
+/**
+ * Set `schedule.scoredTime` directly on the stored matchUp.
+ *
+ * There is no public setter: the factory auto-captures it as `new Date()` on
+ * first scoring (`setMatchUpState.ts:535`). Tests that need a *specific* stamp —
+ * to exercise the plausibility bound in either direction — have to write it on
+ * the record and set the state back, since `getTournament` hands out a copy.
+ */
+function setScoredTime(matchUpId: string, scoredTime: string) {
+  const record: any = tournamentEngine.getTournament().tournamentRecord;
+  for (const event of record.events ?? []) {
+    for (const drawDefinition of event.drawDefinitions ?? []) {
+      for (const structure of drawDefinition.structures ?? []) {
+        for (const matchUp of structure.matchUps ?? []) {
+          if (matchUp.matchUpId === matchUpId) {
+            matchUp.schedule = { ...matchUp.schedule, scoredTime };
+            tournamentEngine.setState(record);
+            return true;
+          }
+        }
+      }
+    }
+  }
+  return false;
+}
+
 const timelineFor = (utcOffsetMinutes = 0, asOfMs?: number) =>
   buildRecoveryTimeline({
     tournamentRecord: tournamentEngine.getTournament().tournamentRecord as any,
@@ -84,12 +110,15 @@ describe('finish and duration ladders', () => {
       startTime: '09:00',
     });
 
+    // Entered 75 minutes after the start — a normal same-session entry.
+    expect(setScoredTime(target.matchUpId, `${DATE}T10:15:00.000Z`)).toBe(true);
+
     const appearance = allAppearances(timelineFor()).find((a) => a.matchUpId === target.matchUpId);
     expect(appearance).toBeTruthy();
-    // mocksEngine scores every matchUp, so the factory stamped scoredTime.
     expect(appearance!.finishSource).toEqual('scoredTime');
     // Duration is start → scoredTime, a proxy rather than the format average.
     expect(appearance!.durationSource).toEqual('scoredTime');
+    expect(appearance!.durationMinutes).toEqual(75);
   });
 
   it('projects from scheduledTime when nothing else is recorded, and says the duration is estimated', () => {
@@ -195,5 +224,61 @@ describe('doubles', () => {
     // which is what makes same-day singles+doubles load visible at all.
     expect(appearances.length).toEqual(4);
     expect(new Set(appearances.map((a) => a.participantId)).size).toEqual(4);
+  });
+});
+
+describe('late-entered scores', () => {
+  /**
+   * `scoredTime` records when the score was ENTERED, not when play ended. Usually
+   * within minutes — which is why it is the workhorse rung — but a score entered
+   * the next morning or corrected days later is not a finish proxy at all.
+   * Unbounded it produced a matchUp that "ran" for three days.
+   */
+  it('rejects a score stamped implausibly long after the start and projects instead', () => {
+    const { matchUps } = seed();
+    const target: any = matchUps[0];
+    tournamentEngine.addMatchUpScheduledDate({
+      matchUpId: target.matchUpId,
+      drawId: target.drawId,
+      scheduledDate: DATE,
+    });
+    tournamentEngine.addMatchUpStartTime({
+      matchUpId: target.matchUpId,
+      drawId: target.drawId,
+      startTime: '09:00',
+    });
+
+    // mocksEngine stamps scoredTime at the real clock, which is nowhere near the
+    // fabricated 2026-08-20 start — exactly the late-entry shape.
+    const appearance = allAppearances(timelineFor()).find((a) => a.matchUpId === target.matchUpId);
+    expect(appearance).toBeTruthy();
+    expect(appearance!.finishSource).toEqual('startTime');
+    expect(appearance!.durationSource).toEqual('estimated');
+    // Projected from the start by the format average, wrong by minutes rather
+    // than by days.
+    expect(appearance!.finishMs - appearance!.startMs).toEqual(appearance!.averageMinutes * 60_000);
+  });
+
+  it('still accepts a score stamped within the plausible window', () => {
+    const { matchUps } = seed();
+    const target: any = matchUps[0];
+    tournamentEngine.addMatchUpScheduledDate({
+      matchUpId: target.matchUpId,
+      drawId: target.drawId,
+      scheduledDate: DATE,
+    });
+    tournamentEngine.addMatchUpStartTime({
+      matchUpId: target.matchUpId,
+      drawId: target.drawId,
+      startTime: '09:00',
+    });
+    // Entered 100 minutes after the start — a normal same-session entry. The
+    // control that proves the bound is not simply rejecting every score.
+    expect(setScoredTime(target.matchUpId, `${DATE}T10:40:00.000Z`)).toBe(true);
+
+    const appearance = allAppearances(timelineFor()).find((a) => a.matchUpId === target.matchUpId);
+    expect(appearance!.finishSource).toEqual('scoredTime');
+    expect(appearance!.durationSource).toEqual('scoredTime');
+    expect(appearance!.durationMinutes).toEqual(100);
   });
 });

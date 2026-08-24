@@ -1,5 +1,5 @@
-import { getMatchUpFormatTiming } from '@Query/extensions/matchUpFormatTiming/getMatchUpFormatTiming';
 import { getBandedRecoveryMinutes } from '@Query/extensions/matchUpFormatTiming/getBandedRecoveryMinutes';
+import { getMatchUpFormatTiming } from '@Query/extensions/matchUpFormatTiming/getMatchUpFormatTiming';
 import mocksEngine from '@Assemblies/engines/mock';
 import { describe, expect, it } from 'vitest';
 
