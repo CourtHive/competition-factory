@@ -1080,10 +1080,14 @@ Requires an array of `matchUpFormats` either be defined in scoring policy that i
 ```js
 const { eventMatchUpFormatTiming } = engine.getEventMatchUpFormatTiming({
   matchUpFormats, // optional - can be retrieved from policy
-  categoryType, // optional - categoryType is not part of CODES or event attributes, but can be defined in a policy
+  categoryType, // optional - falls back to the event's category when not supplied
   eventId,
 });
 ```
+
+**Category resolution.** When `categoryType` is not supplied it is resolved from the event — `event.category.categoryType`, falling back to `event.category.subType`. An explicitly-passed value still wins.
+
+This matters because timing figures are category-dependent: `POLICY_SCHEDULING_DEFAULT` gives ADULT and WHEELCHAIR doubles 30 minutes of recovery and JUNIOR doubles 60. Callers that relied on the previous behaviour — where an unsupplied `categoryType` meant the event's category was ignored — will now see junior figures for junior events.
 
 ---
 
@@ -1314,16 +1318,37 @@ const { matchUpFormat, structureDefaultMatchUpFormat, drawDefaultMatchUpFormat, 
 Searches for policy definitions or extensions to determine the `averageMinutes` and `recoveryMinutes` for a given `matchUpFormat`. Extensions are considered to be overrides of policy definitions.
 
 ```js
-const { averageMinutes, recoveryMinutes } = engine.getMatchUpFormatTiming({
-  defaultAverageMinutes, // optional setting if no matching definition found
-  defaultRecoveryMinutes, // optional setting if no matching definition found
-  matchUpFormat,
-  categoryName, // optional
-  categoryType, // optional
-  eventType, // optional - defaults to SINGLES; SINGLES, DOUBLES
-  eventId, // optional - prioritizes policy definition attached to event before tournament record
-});
+const { averageMinutes, recoveryMinutes, typeChangeRecoveryMinutes, overnightMinutes, recoveryFromPlayedMinutes } =
+  engine.getMatchUpFormatTiming({
+    defaultAverageMinutes, // optional setting if no matching definition found
+    defaultRecoveryMinutes, // optional setting if no matching definition found
+    matchUpFormat,
+    categoryName, // optional
+    categoryType, // optional
+    eventType, // optional - defaults to SINGLES; SINGLES, DOUBLES
+    eventId, // optional - prioritizes policy definition attached to event before tournament record
+    policyDefinitions, // optional - evaluate against a policy not attached to the record
+    playedMinutes, // optional - measured duration of the previous matchUp; keys byPlayedMinutes bands
+  });
 ```
+
+**Returns:**
+
+| Field                       | Meaning                                                                                     |
+| --------------------------- | ------------------------------------------------------------------------------------------- |
+| `averageMinutes`            | Expected duration for the format                                                            |
+| `recoveryMinutes`           | Rest required after a matchUp of this format                                                |
+| `typeChangeRecoveryMinutes` | Rest required when the participant crosses singles ↔ doubles                                |
+| `overnightMinutes`          | Minimum rest across a day boundary; `undefined` when no rule is configured                  |
+| `recoveryFromPlayedMinutes` | `true` when `recoveryMinutes` came from a `byPlayedMinutes` band rather than the flat table |
+
+`policyDefinitions` supplies a scheduling policy in place of whatever is attached to the tournamentRecord, following the same `policyDefinitions ?? appliedPolicies` precedence used across the query surface. It lets a caller ask "what would this look like under a different policy" without mutating the record. Omitted, resolution is exactly as before.
+
+`playedMinutes` selects a [`byPlayedMinutes`](/docs/policies/scheduling#duration-banded-recovery) band. It is opt-in on **both** sides — the policy must author bands and the caller must supply a duration it actually **measured**. Applied to an estimated duration the banding would be circular, since the estimate is `averageMinutes` drawn from the very policy being consulted. No scheduler call site supplies it, so scheduling behaviour is unchanged by construction.
+
+:::caution `overnightMinutes` absent means "no rule"
+`undefined` is not zero. Adult play carries no equivalent to the junior twelve-hour overnight rule, so an absent value must be reported as _unconstrained_ rather than substituted with a figure of the caller's own. This matches the contract `getMatchUpDailyLimits` already has.
+:::
 
 ---
 

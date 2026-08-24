@@ -401,13 +401,17 @@ const { matchUps } = engine.getCompetitionMatchUps({
 
 ## getEventMatchUpFormatTiming
 
-Returns format timing configuration for an event.
+Returns format timing configuration for an event. When `categoryType` is not supplied it is resolved from the event's own category.
 
 ```js
-const { timing } = engine.getEventMatchUpFormatTiming({
+const { eventMatchUpFormatTiming } = engine.getEventMatchUpFormatTiming({
   eventId, // required
+  matchUpFormats, // optional - can be retrieved from policy
+  categoryType, // optional - falls back to the event's category when not supplied
 });
 ```
+
+See [queryGovernor.getEventMatchUpFormatTiming](/docs/governors/query-governor#geteventmatchupformattiming) for category resolution details.
 
 ---
 
@@ -502,10 +506,18 @@ const { matchUpFormat } = engine.getMatchUpFormat({
 Returns timing parameters for a matchUp format.
 
 ```js
-const { timing } = engine.getMatchUpFormatTiming({
-  matchUpFormat, // required
-});
+const { averageMinutes, recoveryMinutes, typeChangeRecoveryMinutes, overnightMinutes, recoveryFromPlayedMinutes } =
+  engine.getMatchUpFormatTiming({
+    matchUpFormat, // required
+    eventType, // optional - defaults to SINGLES
+    categoryName, // optional
+    categoryType, // optional
+    policyDefinitions, // optional - evaluate against a policy not attached to the record
+    playedMinutes, // optional - measured duration; keys byPlayedMinutes bands
+  });
 ```
+
+See [queryGovernor.getMatchUpFormatTiming](/docs/governors/query-governor#getmatchupformattiming) for the full parameter and return reference.
 
 ---
 
