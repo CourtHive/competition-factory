@@ -26,7 +26,11 @@ export function wrapParticipantStats({
     { key: 'tiebreaksLost', title: 'TBs Lost', type: 'number' as const },
   ];
 
+  // `participantId` is not a displayed column — consumers hide it — but it is
+  // what lets a table resolve the full participant and open a participant card,
+  // and it survives to CSV/JSON export. `getParticipantStats` already carries it.
   const rows = (result.allParticipantStats ?? []).map((stat: any) => ({
+    participantId: stat.participantId ?? '',
     participantName: stat.participantName ?? '',
     matchUpsWon: stat.matchUps?.[0] ?? 0,
     matchUpsLost: stat.matchUps?.[1] ?? 0,

@@ -89,6 +89,14 @@ describe('generateReport', () => {
     expect(result.reportId).toBe(PARTICIPANT_STATS_REPORT);
     expect(Array.isArray(result.columns)).toBe(true);
     expect(Array.isArray(result.rows)).toBe(true);
+
+    // Every row carries participantId even though no column displays it: it is
+    // what lets a consumer resolve the participant and open a participant card,
+    // and it survives to CSV/JSON export. Asserted non-empty rather than merely
+    // present, since `?? ''` would satisfy a key-existence check.
+    expect(result.rows.length).toBeGreaterThan(0);
+    for (const row of result.rows) expect(row.participantId).toBeTruthy();
+    expect(result.columns.some((column: any) => column.key === 'participantId')).toBe(false);
   });
 
   it('returns error for unknown reportId', () => {

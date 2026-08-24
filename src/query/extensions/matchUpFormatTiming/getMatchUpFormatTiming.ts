@@ -11,9 +11,10 @@ import { MISSING_TOURNAMENT_RECORD } from '@Constants/errorConditionConstants';
 import { Event, Tournament, EventTypeUnion } from '@Types/tournamentTypes';
 import { POLICY_TYPE_SCHEDULING } from '@Constants/policyConstants';
 import { SINGLES_EVENT } from '@Constants/eventConstants';
-import { ResultType } from '@Types/factoryTypes';
+import { PolicyDefinitions, ResultType } from '@Types/factoryTypes';
 
 type GetMatchUpFormatTimingArgs = {
+  policyDefinitions?: PolicyDefinitions;
   defaultRecoveryMinutes?: number;
   defaultAverageMinutes?: number;
   tournamentRecord: Tournament;
@@ -27,6 +28,7 @@ type GetMatchUpFormatTimingArgs = {
 export function getMatchUpFormatTiming({
   defaultAverageMinutes = 90,
   defaultRecoveryMinutes = 0,
+  policyDefinitions,
   tournamentRecord,
   matchUpFormat,
   categoryName,
@@ -59,6 +61,7 @@ export function getMatchUpFormatTiming({
   };
 
   const { scheduleTiming } = getScheduleTiming({
+    policyDefinitions,
     tournamentRecord,
     categoryName,
     categoryType,
