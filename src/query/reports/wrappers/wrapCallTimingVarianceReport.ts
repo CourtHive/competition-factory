@@ -95,6 +95,10 @@ function buildRow(
     drawId: matchUp.drawId,
     structureId: matchUp.structureId,
     eventId: matchUp.eventId,
+    // Side ids alongside the composite `matchUp` label, so a consumer can reach
+    // the participants behind "A vs B".
+    side1ParticipantId: matchUp?.sides?.[0]?.participantId ?? matchUp?.sides?.[0]?.participant?.participantId ?? '',
+    side2ParticipantId: matchUp?.sides?.[1]?.participantId ?? matchUp?.sides?.[1]?.participant?.participantId ?? '',
     eventName: eventNameMap[matchUp.eventId] || matchUp.eventId || '',
     drawName: drawNameMap[matchUp.drawId] || matchUp.drawId || '',
     roundName: matchUp.roundName ?? (matchUp.roundNumber ? `R${matchUp.roundNumber}` : ''),

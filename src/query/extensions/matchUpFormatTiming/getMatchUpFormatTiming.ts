@@ -1,5 +1,7 @@
 import { isMatchUpEventType } from '@Helpers/matchUpEventTypes/isMatchUpEventType';
 import { getMatchUpFormatRecoveryTimes } from './getMatchUpFormatRecoveryTimes';
+import { getOvernightRecoveryTimes } from './getOvernightRecoveryTimes';
+import { getBandedRecoveryMinutes } from './getBandedRecoveryMinutes';
 import { parse as parseMatchUpFormat } from '@Helpers/matchUpFormatCode/parse';
 import { getMatchUpFormatAverageTimes } from './getMatchUpFormatAverageTimes';
 import { getScheduleTiming } from './getScheduleTiming';
@@ -15,6 +17,7 @@ import { PolicyDefinitions, ResultType } from '@Types/factoryTypes';
 
 type GetMatchUpFormatTimingArgs = {
   policyDefinitions?: PolicyDefinitions;
+  playedMinutes?: number;
   defaultRecoveryMinutes?: number;
   defaultAverageMinutes?: number;
   tournamentRecord: Tournament;
@@ -30,6 +33,7 @@ export function getMatchUpFormatTiming({
   defaultRecoveryMinutes = 0,
   policyDefinitions,
   tournamentRecord,
+  playedMinutes,
   matchUpFormat,
   categoryName,
   categoryType,
@@ -106,7 +110,7 @@ export function getMatchUpFormatTiming({
     defaultTiming,
   };
 
-  return matchUpFormatTimes({ eventType, timingDetails });
+  return matchUpFormatTimes({ eventType, timingDetails, playedMinutes });
 }
 
 function deriveTimedDefaultMinutes(parsed: ReturnType<typeof parseMatchUpFormat>): number | undefined {
@@ -133,12 +137,16 @@ function deriveTimedDefaultMinutes(parsed: ReturnType<typeof parseMatchUpFormat>
 
 type MatchUpFormatTimesArgs = {
   eventType: EventTypeUnion;
+  playedMinutes?: number;
   timingDetails: any;
 };
-export function matchUpFormatTimes({ timingDetails, eventType }: MatchUpFormatTimesArgs): ResultType & {
+export function matchUpFormatTimes({ timingDetails, playedMinutes, eventType }: MatchUpFormatTimesArgs): ResultType & {
   typeChangeRecoveryMinutes?: number;
   recoveryMinutes?: number;
+  overnightMinutes?: number;
   averageMinutes?: number;
+  /** True when `recoveryMinutes` came from a `byPlayedMinutes` band rather than the flat table. */
+  recoveryFromPlayedMinutes?: boolean;
 } {
   const averageTimes = getMatchUpFormatAverageTimes(timingDetails);
   const averageKeys = Object.keys(averageTimes?.minutes ?? {});
@@ -153,9 +161,18 @@ export function matchUpFormatTimes({ timingDetails, eventType }: MatchUpFormatTi
   });
 
   const recoveryKeys = Object.keys(recoveryTimes?.minutes ?? {});
-  const recoveryMinutes =
+  const flatRecoveryMinutes =
     recoveryTimes?.minutes &&
     ((recoveryKeys?.includes(eventType) && recoveryTimes.minutes[eventType]) || recoveryTimes.minutes.default);
+
+  // A duration band wins over the flat figure, but only when the policy authors
+  // one AND the caller measured a duration to key it on. Absent either, this is
+  // undefined and resolution is exactly what it was.
+  const bandedMinutes = getBandedRecoveryMinutes({
+    byPlayedMinutes: recoveryTimes?.byPlayedMinutes,
+    playedMinutes,
+  });
+  const recoveryMinutes = bandedMinutes ?? flatRecoveryMinutes;
 
   const formatChangeKey = isMatchUpEventType(SINGLES_EVENT)(eventType) ? SINGLES_DOUBLES : DOUBLES_SINGLES;
 
@@ -163,5 +180,20 @@ export function matchUpFormatTimes({ timingDetails, eventType }: MatchUpFormatTi
     recoveryTimes?.minutes &&
     ((recoveryKeys?.includes(formatChangeKey) && recoveryTimes.minutes[formatChangeKey]) || recoveryMinutes);
 
-  return { averageMinutes, recoveryMinutes, typeChangeRecoveryMinutes };
+  // Overnight is a property of the day boundary rather than of the format, so it
+  // is resolved independently of averageMinutes. Stays undefined when no policy
+  // configures it — callers must read that as "no rule", not as zero.
+  const overnightTimes = getOvernightRecoveryTimes(timingDetails);
+  const overnightKeys = Object.keys(overnightTimes?.minutes ?? {});
+  const overnightMinutes =
+    overnightTimes?.minutes &&
+    ((overnightKeys?.includes(eventType) && overnightTimes.minutes[eventType]) || overnightTimes.minutes.default);
+
+  return {
+    recoveryFromPlayedMinutes: bandedMinutes !== undefined,
+    typeChangeRecoveryMinutes,
+    overnightMinutes,
+    recoveryMinutes,
+    averageMinutes,
+  };
 }

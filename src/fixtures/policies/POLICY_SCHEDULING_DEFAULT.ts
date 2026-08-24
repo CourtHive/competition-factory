@@ -16,6 +16,12 @@ export const POLICY_SCHEDULING_DEFAULT = {
     defaultTimes: {
       averageTimes: [{ categoryNames: [], minutes: { default: 90 } }],
       recoveryTimes: [{ minutes: { [DOUBLES]: 30, default: 60 } }],
+      // Minimum rest between the last matchUp of one day and the first of the
+      // next. USTA Friend at Court states 12 hours for junior divisions; adult
+      // play carries no equivalent constraint, hence the unconstrained
+      // catch-all rather than a single flat figure. Zero means "no rule",
+      // which is what a consumer must report rather than inventing one.
+      overnightTimes: [{ categoryTypes: [JUNIOR], minutes: { default: 720 } }, { minutes: { default: 0 } }],
     },
     defaultDailyLimits: {
       [SINGLES]: 2,
