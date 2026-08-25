@@ -1,5 +1,28 @@
 # Changelog
 
+## [6.32.0](https://github.com/CourtHive/competition-factory/compare/v6.31.0...v6.32.0) (2026-08-25)
+
+
+### Features
+
+* **analysis:** report extensions that no reader will ever see ([#4702](https://github.com/CourtHive/competition-factory/issues/4702)) ([298e92f](https://github.com/CourtHive/competition-factory/commit/298e92fe2b31c291a366b8850d6d85ae08d2bc21))
+
+
+### Bug Fixes
+
+* **schedule:** addMatchUpScheduleItems covers calledAt, and names what it will not write ([#4705](https://github.com/CourtHive/competition-factory/issues/4705)) ([e3fb375](https://github.com/CourtHive/competition-factory/commit/e3fb37526daa218c18c39cb82ac91ce53538b0ff))
+* **schedule:** suppress time modifiers once a matchUp's start is settled ([#4701](https://github.com/CourtHive/competition-factory/issues/4701)) ([f3dd619](https://github.com/CourtHive/competition-factory/commit/f3dd619bebfb1d3f8cd78f6eb0ab61a473a869ba))
+
+
+### Documentation
+
+* capture the eight changes shipped since the last docs publish ([#4694](https://github.com/CourtHive/competition-factory/issues/4694)) ([9efe1ba](https://github.com/CourtHive/competition-factory/commit/9efe1ba493c469c506cec507cdc7803e6421e6d9))
+* correct the three stale facts in the documentation README ([#4696](https://github.com/CourtHive/competition-factory/issues/4696)) ([d5b9d12](https://github.com/CourtHive/competition-factory/commit/d5b9d1239f82cd60bf5882751bbfa977e545d266))
+* cover the three user-facing changes queued for 6.32.0, and pin the published components ([#4706](https://github.com/CourtHive/competition-factory/issues/4706)) ([ced6362](https://github.com/CourtHive/competition-factory/commit/ced6362a3af789a5d2bafdf110b5e81799b72645))
+* make pnpm lint:md green ([#4698](https://github.com/CourtHive/competition-factory/issues/4698)) ([21e0322](https://github.com/CourtHive/competition-factory/commit/21e0322f67603d128faf736f6acf90586f6822c8))
+* **reports:** mark the factory copy of wasPlayed authoritative, and correct a stale claim ([#4707](https://github.com/CourtHive/competition-factory/issues/4707)) ([209d31d](https://github.com/CourtHive/competition-factory/commit/209d31d04fc1d3df93dc6976ededce15ebf8f28a))
+* state the matchUpDailyLimits no-limit contract, and fix three wrong examples ([#4697](https://github.com/CourtHive/competition-factory/issues/4697)) ([a568968](https://github.com/CourtHive/competition-factory/commit/a5689680d0aef31662e18bbd0880b22539ab3727))
+
 ## [6.31.0](https://github.com/CourtHive/competition-factory/compare/v6.30.0...v6.31.0) (2026-08-24)
 
 
