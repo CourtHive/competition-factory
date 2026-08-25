@@ -104,7 +104,7 @@ These topics are additive; existing subscribers are unaffected.
 };
 ```
 
-A subscriber that only needs to know *which* event or structure changed — cache eviction, fan-out routing, a read-model projection — should not have to hydrate the matchUp to find out.
+A subscriber that only needs to know _which_ event or structure changed — cache eviction, fan-out routing, a read-model projection — should not have to hydrate the matchUp to find out.
 
 `eventId` and `structureId` are populated best-effort rather than being required of every call site. A stored matchUp carries no `structureId` (only an inContext one does), so a notice emitted from a mutation that holds only a `drawDefinition` resolves it from the draw. Likewise a caller that supplies `event` rather than `eventId` still produces a populated `eventId`. Both are also populated for **propagated** matchUps — the downstream matchUps a result advances into — so a subscriber sees the same attribution on the matchUp a winner moves to as on the one that was scored.
 

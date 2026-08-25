@@ -19,7 +19,7 @@ In 5.x and earlier, `generateDynamicRatings` with `considerGames: true` normalis
 
 Ratings computed with `considerGames: true` **will change** as a result. The new values are correct; the old ones were not.
 
-### What to do
+### What to do — dynamic ratings
 
 - **If you never set `considerGames: true`** (the default is `false`) — nothing changes. You are not affected.
 - **If you do set `considerGames: true`** — there is no code change. Re-run `generateDynamicRatings` and **re-baseline** any stored rating values against the new output. Do not attempt to reconcile old and new values numerically; treat the pre-6.0.0 values as incorrect and replace them.
@@ -37,7 +37,7 @@ const { modifications } = scaleEngine.generateDynamicRatings({
 
 `modifyParticipant` previously read and wrote a non-canonical lowercase `person.birthdate`. In 6.0.0 it reads and writes the canonical camelCase **`person.birthDate`**, matching the rest of the factory type surface.
 
-### What to do
+### What to do — `person.birthDate`
 
 Rename every read and write of the lowercase field:
 
