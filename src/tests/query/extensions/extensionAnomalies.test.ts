@@ -5,6 +5,7 @@ import mocksEngine from '@Assemblies/engines/mock';
 import { expect, describe, it } from 'vitest';
 
 // constants and types
+import { DRAW_DEFINITION, EVENT, STRUCTURE, TOURNAMENT_RECORD, VENUE } from '@Constants/attributeConstants';
 import { POLICY_TYPE_AVOIDANCE } from '@Constants/policyConstants';
 import { APPLIED_POLICIES } from '@Constants/extensionConstants';
 
@@ -48,7 +49,7 @@ describe('getExtensionAnomalies', () => {
 
     const anomalies = getExtensionAnomalies({ tournamentRecord: record });
     expect(anomalies.length).toEqual(1);
-    expect(anomalies[0].elementType).toEqual('TOURNAMENT');
+    expect(anomalies[0].elementType).toEqual(TOURNAMENT_RECORD);
     expect(anomalies[0].duplicateNames).toEqual([{ name: APPLIED_POLICIES, occurrences: 2 }]);
 
     // The consequence, asserted rather than assumed: the SECOND value is the one nobody reads.
@@ -79,10 +80,10 @@ describe('getExtensionAnomalies', () => {
     const anomalies = getExtensionAnomalies({ tournamentRecord: record });
     const byType = Object.fromEntries(anomalies.map((a) => [a.elementType, a]));
 
-    expect(byType.EVENT?.elementId).toEqual(event.eventId);
-    expect(byType.DRAW_DEFINITION?.elementId).toEqual(drawDefinition.drawId);
-    expect(byType.STRUCTURE?.elementId).toEqual(structure.structureId);
-    expect(byType.VENUE?.elementId).toEqual(venue.venueId);
+    expect(byType[EVENT]?.elementId).toEqual(event.eventId);
+    expect(byType[DRAW_DEFINITION]?.elementId).toEqual(drawDefinition.drawId);
+    expect(byType[STRUCTURE]?.elementId).toEqual(structure.structureId);
+    expect(byType[VENUE]?.elementId).toEqual(venue.venueId);
   });
 
   it('is quiet on a clean record — three occurrences of DIFFERENT names are not an anomaly', () => {

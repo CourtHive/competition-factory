@@ -1,3 +1,11 @@
+import {
+  DRAW_DEFINITION,
+  EVENT,
+  PARTICIPANT,
+  STRUCTURE,
+  TOURNAMENT_RECORD,
+  VENUE,
+} from '@Constants/attributeConstants';
 import { Tournament } from '@Types/tournamentTypes';
 
 /**
@@ -17,13 +25,23 @@ import { Tournament } from '@Types/tournamentTypes';
  * a wildly disproportionate response to a duplicate flag on one venue.
  */
 
-type ElementType = 'TOURNAMENT' | 'EVENT' | 'DRAW_DEFINITION' | 'STRUCTURE' | 'PARTICIPANT' | 'VENUE';
+/**
+ * Reuses the canonical element vocabulary in `attributeConstants` rather than inventing a parallel
+ * set of literals — these are the same names the rest of the factory uses for these elements.
+ */
+type ElementType =
+  | typeof TOURNAMENT_RECORD
+  | typeof DRAW_DEFINITION
+  | typeof PARTICIPANT
+  | typeof STRUCTURE
+  | typeof EVENT
+  | typeof VENUE;
 
 export type ExtensionAnomaly = {
   /** Names occurring more than once; every occurrence after the first is unreachable. */
   duplicateNames: { name: string; occurrences: number }[];
   elementType: ElementType;
-  /** Absent for TOURNAMENT, which is identified by the record itself. */
+  /** Absent for the tournamentRecord itself, which the caller already holds. */
   elementId?: string;
 };
 
@@ -52,19 +70,18 @@ export function getExtensionAnomalies({ tournamentRecord }: { tournamentRecord: 
     if (duplicateNames.length) anomalies.push({ duplicateNames, elementType, ...(elementId && { elementId }) });
   };
 
-  consider(tournamentRecord, 'TOURNAMENT');
+  consider(tournamentRecord, TOURNAMENT_RECORD);
 
   for (const participant of tournamentRecord?.participants ?? [])
-    consider(participant, 'PARTICIPANT', participant?.participantId);
+    consider(participant, PARTICIPANT, participant?.participantId);
 
-  for (const venue of tournamentRecord?.venues ?? []) consider(venue, 'VENUE', venue?.venueId);
+  for (const venue of tournamentRecord?.venues ?? []) consider(venue, VENUE, venue?.venueId);
 
   for (const event of tournamentRecord?.events ?? []) {
-    consider(event, 'EVENT', event?.eventId);
+    consider(event, EVENT, event?.eventId);
     for (const drawDefinition of event?.drawDefinitions ?? []) {
-      consider(drawDefinition, 'DRAW_DEFINITION', drawDefinition?.drawId);
-      for (const structure of drawDefinition?.structures ?? [])
-        consider(structure, 'STRUCTURE', structure?.structureId);
+      consider(drawDefinition, DRAW_DEFINITION, drawDefinition?.drawId);
+      for (const structure of drawDefinition?.structures ?? []) consider(structure, STRUCTURE, structure?.structureId);
     }
   }
 
