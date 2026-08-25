@@ -1,3 +1,4 @@
+import { Tournament } from '@Types/tournamentTypes';
 import {
   DRAW_DEFINITION,
   EVENT,
@@ -6,7 +7,6 @@ import {
   TOURNAMENT_RECORD,
   VENUE,
 } from '@Constants/attributeConstants';
-import { Tournament } from '@Types/tournamentTypes';
 
 /**
  * Extensions that will be silently ignored because something earlier holds the same `name`.
