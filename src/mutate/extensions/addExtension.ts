@@ -59,6 +59,20 @@ export function addExtension(params?: AddExtensionArgs): {
     params.extension.createdAt ??= new Date().toISOString();
   }
 
+  // ── Invariant: AT MOST ONE extension per `name`, per element ──
+  //
+  // Find-and-replace, push only when absent. This is what MAINTAINS the invariant, and readers
+  // depend on it: `getAppliedPolicies` and friends resolve an extension with `.find()`, which
+  // returns the FIRST match. Writer and reader therefore agree by construction.
+  //
+  // Nothing ENFORCES the invariant, though — it is upheld here rather than validated on the way in.
+  // A record assembled outside this API (hand-built fixture, importer, classic-converter, legacy
+  // storage) can carry two extensions of the same name, and every `.find()` reader will silently
+  // use the first and ignore the second. That is quiet data loss on a path nothing checks, which is
+  // why `analyzeTournament` reports duplicates as `extensionAnomalies` rather than anyone throwing.
+  //
+  // If you are here because a policy you attached "did not take effect", the cause is more likely a
+  // duplicate already on the element than anything wrong with this function.
   const existingExtension = params.element.extensions.find(({ name }) => name === params.extension.name);
   if (existingExtension) {
     existingExtension.value = params.extension.value;
