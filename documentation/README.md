@@ -1,6 +1,6 @@
 # Website
 
-This website is built using [Docusaurus 2](https://v2.docusaurus.io/), a modern static website generator.
+This website is built using [Docusaurus](https://docusaurus.io/), a modern static website generator.
 
 ## Installation
 
@@ -14,7 +14,7 @@ pnpm install
 pnpm start
 ```
 
-This command starts a local development server and open up a browser window. Most changes are reflected live without having to restart the server.
+This command starts a local development server on port 3030 and opens a browser window. Most changes are reflected live without having to restart the server.
 
 ## Build
 
@@ -26,8 +26,18 @@ This command generates static content into the `build` directory and can be serv
 
 ## Deployment
 
+From the repository root:
+
 ```console
-GIT_USER=CourtHive USE_SSH=true pnpm deploy
+pnpm docs:publish
 ```
 
-If you are using GitHub pages for hosting, this command is a convenient way to build the website and push to the `gh-pages` branch.
+That is the canonical form and the one to reach for — it wraps the underlying command, so there are no environment variables to remember:
+
+```console
+cd documentation && GIT_USER=CourtHive USE_SSH=true pnpm docpub
+```
+
+Either builds the website and pushes it to the `gh-pages` branch, which is what GitHub Pages serves. Note the script is `docpub`, not `deploy`.
+
+This README is not part of the built site, so changing it does not require a republish.
