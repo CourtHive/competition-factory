@@ -105,6 +105,34 @@ const { analysis } = engine.analyzeTournament();
 
 **Returns:** Tournament-level metrics including events, participants, draws, and matchUps.
 
+### `extensionAnomalies`
+
+From **6.32.0**, the analysis reports extensions that no reader will ever see.
+
+An extension after the first of a given `name` is **unreachable** — every reader
+resolves with `.find()` — so the attached policy, timing override or flag simply never
+takes effect, with no error and no signal.
+
+```js
+const { analysis } = engine.analyzeTournament();
+analysis.extensionAnomalies;
+// [{ element: 'venue', elementId: 'venue-1', name: 'scheduleTiming', count: 3 }]
+```
+
+Present **only when there is something to report**, matching how
+`missingParticipantIds` behaves — so its absence is the ordinary case, not a
+failure to look.
+
+Records built through the factory cannot reach this state: `addExtension` maintains
+one-per-name (it replaces in place and pushes only when absent) and `attachPolicies`
+guards again per `policyType`. The invariant is upheld by the writer rather than
+validated on the way in, which is precisely why records assembled **outside** the API
+— hand-built fixtures, importers, `classic-converter`, legacy storage — can carry
+duplicates that vanish silently. This reports them rather than throwing: the condition
+is rare and always upstream of the factory.
+
+`analyzeDraws` reports the same anomalies for draw-level extensions.
+
 ---
 
 ## copyTournamentRecord

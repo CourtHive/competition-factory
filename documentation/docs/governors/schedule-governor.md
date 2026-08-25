@@ -1456,15 +1456,85 @@ engine.addMatchUpScheduleItems({
     venueId, // optional — assigned venue
     courtOrder, // optional — order on court
     homeParticipantId, // optional — home team participant
+    calledAt, // optional — ISO instant; call to court. `null` clears
     courtIds, // optional — for TEAM matchUps, allocate courts
     allocatedCourts, // optional — alias for courtIds; accepts the read-side shape
   },
   removePriorValues, // optional boolean — clear existing schedule timeItems first
   checkChronology, // optional boolean — defaults to true; validate time ordering
   errorOnAnachronism, // optional boolean — return error on chronological violations
+  errorOnUnknownAttributes, // optional boolean — error instead of warning on attributes that will not be written
   proConflictDetection, // optional boolean — detect pro scheduling conflicts
   disableNotice, // optional boolean — suppress modification notices
 });
+```
+
+### `calledAt`
+
+`calledAt` is an **actual-play** attribute and sits with `startTime` / `stopTime` /
+`resumeTime` / `endTime` — none of which a [schedule lock](#setmatchupschedulelock)
+guards, so a pinned matchUp can still be called to court, started, suspended and
+completed.
+
+Its `undefined` handling differs from `setMatchUpCalledAt`
+**deliberately**. Called directly, that method reads `undefined` as _clear_. Here an
+omitted key destructures to `undefined` too, so honouring that reading would make
+every partial schedule write silently wipe a call-to-court:
+
+```js
+engine.addMatchUpScheduleItems({ matchUpId, drawId, schedule: { calledAt: isoInstant } });
+
+// later, a re-time that says nothing about calledAt — the call survives
+engine.addMatchUpScheduleItems({ matchUpId, drawId, schedule: { scheduledTime: '15:00' } });
+
+// explicit clear
+engine.addMatchUpScheduleItems({ matchUpId, drawId, schedule: { calledAt: null } });
+```
+
+### Attributes that will not be written are reported
+
+The method writes the attributes it recognises and, before 6.32.0, silently ignored
+everything else while still returning `{ success: true }`. Two real attributes were
+lost that way — `allocatedCourts` (see below) and `calledAt`.
+
+Incoming keys are now sorted three ways:
+
+| bucket            | attributes                                                                                                                                                                                                                 | behaviour              |
+| ----------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------- |
+| **written**       | `scheduledDate`, `scheduledTime`, `startTime`, `stopTime`, `resumeTime`, `endTime`, `calledAt`, `courtId`, `courtIds`, `allocatedCourts`, `venueId`, `courtOrder`, `courtAnnotation`, `timeModifiers`, `homeParticipantId` | applied                |
+| **derived**       | `isoDateString`, `milliseconds`, `time`, `venueName`, `venueAbbreviation`, `courtName`, `averageMinutes`, `recoveryMinutes`, `timeAfterRecovery`, `typeChangeRecoveryMinutes`, `typeChangeTimeAfterRecovery`, `endDate`    | ignored silently       |
+| **anything else** | `lock`, `official`, `scorekeeper`, `timekeeper`, `scoredTime`, misspellings                                                                                                                                                | returned in `warnings` |
+
+The **derived** bucket exists so that read-modify-write keeps working: a hydrated
+schedule carries a dozen keys the caller cannot omit and cannot influence, and
+warning about those would make every round-trip noisy.
+
+```js
+const { warnings } = engine.addMatchUpScheduleItems({
+  matchUpId,
+  drawId,
+  schedule: { scheduledDate, official: personId },
+});
+// warnings → [{ code: 'UNWRITABLE_SCHEDULE_ATTRIBUTES', attributes: ['official'] }]
+```
+
+`lock` is in the reported bucket on purpose — silently discarding a director's pin is
+the worst of these to discover later. Assign officials through the
+[officiating governor](./officiating-governor) and pin with
+[`setMatchUpScheduleLock`](#setmatchupschedulelock).
+
+Warnings rather than errors, because callers round-trip locked and scored matchUps
+today. Pass `errorOnUnknownAttributes: true` to make it a hard error instead — the
+same escalation `errorOnAnachronism` provides for chronology:
+
+```js
+const result = engine.addMatchUpScheduleItems({
+  matchUpId,
+  drawId,
+  errorOnUnknownAttributes: true,
+  schedule: { scheduledDate, nonsense: true },
+});
+// result.error → UNWRITABLE_SCHEDULE_ATTRIBUTES; nothing is written
 ```
 
 ### Court allocation: `courtIds` in, `allocatedCourts` out
@@ -1580,6 +1650,55 @@ Behavior:
 This is engine-generated state, not an input: it is treated as read-only by
 consumers and reflects the engine's own capture, not a value supplied by the
 caller.
+
+---
+
+## `timeModifiers` are suppressed once a matchUp's start is settled
+
+A `FOLLOWED_BY` or `AFTER_REST` / `NOT_BEFORE` annotation is a promise about **when a
+matchUp may begin**. Once that question is settled the annotation is not merely
+redundant — on a published order of play it is misinformation, telling a player and a
+referee that a match is waiting on something that has already happened.
+
+From **6.32.0**, hydration omits `schedule.timeModifiers` once either of two local
+signals says the start is settled:
+
+- **Called to court** — `schedule.calledAt` is present. A match that has been called
+  _is_ on court; "followed by" is moot for it whatever else on that court did or did
+  not finish.
+- **Any score at all** — a single game is enough, and the partial case is the one that
+  matters: that is the state a live match sits in for an hour while the annotation
+  goes on claiming it has not begun. A completed status settles it too, walkovers
+  included.
+
+### Suppressed, never cleared
+
+The stored value is untouched. That is what makes the behaviour reversible without a
+rule of its own:
+
+```js
+engine.addMatchUpScheduleItems({ matchUpId, drawId, schedule: { timeModifiers: ['FOLLOWED_BY'] } });
+
+engine.setMatchUpStatus({ matchUpId, drawId, outcome }); // any score
+engine.findMatchUp({ matchUpId, inContext: true }).matchUp.schedule.timeModifiers; // undefined
+
+engine.setMatchUpStatus({ matchUpId, drawId, outcome: { score: undefined, winningSide: undefined } });
+engine.findMatchUp({ matchUpId, inContext: true }).matchUp.schedule.timeModifiers; // ['FOLLOWED_BY']
+```
+
+Consequences worth knowing:
+
+- **Read-side only.** The write path reads storage directly, so adding and removing
+  modifiers still operates on the real value — a UI that renders annotation controls
+  from a _hydrated_ matchUp will show none on a settled matchUp, which is intended.
+- **Subscribers get it for free.** Score entry and `setMatchUpCalledAt` already emit
+  notices, and subscribers receive matchUps through hydration, so no new notice type
+  and no new mutation are involved.
+- **Publishing inherits it.** Embargo and `scheduleVisibilityFilters` are applied to
+  the hydrated schedule, downstream of this.
+- **The record still carries the value.** A TODS export will contain a
+  `timeModifiers` entry that no longer displays anywhere. That is the price of not
+  destroying an operator's stated intent.
 
 ---
 
