@@ -5,9 +5,9 @@ import mocksEngine from '@Assemblies/engines/mock';
 import { expect, describe, it } from 'vitest';
 
 // constants and types
+import { GROUP, INDIVIDUAL } from '@Constants/participantConstants';
 import { POLICY_TYPE_AVOIDANCE } from '@Constants/policyConstants';
 import { APPLIED_POLICIES } from '@Constants/extensionConstants';
-import { GROUP, INDIVIDUAL } from '@Constants/participantConstants';
 import { MAIN } from '@Constants/drawDefinitionConstants';
 
 /**
