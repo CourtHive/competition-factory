@@ -20,6 +20,7 @@ import { assignMatchUpVenue } from '@Mutate/matchUps/schedule/assignMatchUpVenue
 import { allTournamentMatchUps } from '@Query/matchUps/getAllTournamentMatchUps';
 import { addMatchUpTimeItem } from '@Mutate/timeItems/matchUps/matchUpTimeItems';
 import { getMatchUpDependencies } from '@Query/matchUps/getMatchUpDependencies';
+import { setMatchUpCalledAt } from '@Mutate/matchUps/schedule/setMatchUpCalledAt';
 import { modifyMatchUpNotice } from '@Mutate/notifications/drawNotifications';
 import { scheduledMatchUpDate } from '@Query/matchUp/scheduledMatchUpDate';
 import { getParticipants } from '@Query/participants/getParticipants';
@@ -62,6 +63,7 @@ import {
   INVALID_END_TIME,
   INVALID_TIME,
   ANACHRONISM,
+  UNWRITABLE_SCHEDULE_ATTRIBUTES,
   INVALID_VALUES,
   ErrorType,
   MISSING_TOURNAMENT_RECORD,
@@ -101,11 +103,35 @@ function applyScheduleTiming({
   stopTime,
   resumeTime,
   endTime,
+  calledAt,
   matchUpId,
   matchUp,
   event,
   stack,
 }) {
+  // `calledAt` is an actual-play attribute and belongs with the four below it,
+  // not with placement: the schedule lock deliberately does not guard any of
+  // them, so a pinned matchUp can still be called, started, suspended and
+  // completed.
+  //
+  // The guard is `!== undefined`, matching every sibling, and that is a
+  // DELIBERATE narrowing of `setMatchUpCalledAt`'s own contract. Called
+  // directly, that method reads `undefined` as "clear". Here an absent key
+  // destructures to `undefined` too, so honouring that reading would make every
+  // partial schedule write silently wipe a call-to-court. `null` remains the
+  // explicit clear, which is what a caller round-tripping a schedule object
+  // would send anyway.
+  if (calledAt !== undefined) {
+    const result = setMatchUpCalledAt({
+      disableNotice: true,
+      tournamentRecord,
+      drawDefinition,
+      matchUpId,
+      calledAt,
+      event,
+    });
+    if (result?.error) return decorateResult({ result, stack, context: { calledAt } });
+  }
   if (scheduledDate !== undefined) {
     const result = addMatchUpScheduledDate({
       disableNotice: true,
@@ -309,12 +335,110 @@ function unassignGridPosition({ tournamentRecords, tournamentRecord, drawDefinit
   assignMatchUpVenue({ ...shared, tournamentRecords, venueId: undefined });
 }
 
+/**
+ * Every attribute this facade actually writes.
+ *
+ * Kept as an explicit set rather than derived from the destructure so that
+ * adding a key to one and forgetting the other is a test failure rather than a
+ * silent no-op — which is the exact defect this guard exists to close.
+ */
+const WRITABLE_SCHEDULE_ATTRIBUTES = new Set([
+  'allocatedCourts',
+  'calledAt',
+  'courtAnnotation',
+  'courtId',
+  'courtIds',
+  'courtOrder',
+  'endTime',
+  'homeParticipantId',
+  'resumeTime',
+  'scheduledDate',
+  'scheduledTime',
+  'startTime',
+  'stopTime',
+  'timeModifiers',
+  'venueId',
+]);
+
+/**
+ * Hydrator output that a caller can only ever be echoing back, never setting.
+ *
+ * Reading a matchUp's schedule and writing it back is a supported pattern — it
+ * is what the `courtIds` / `allocatedCourts` accommodation above exists to
+ * protect — and a hydrated schedule carries fourteen keys this facade does not
+ * write. Warning about these would make every round-trip noisy for values the
+ * caller had no way to omit and no ability to influence, so they are dropped in
+ * silence, deliberately.
+ */
+const DERIVED_SCHEDULE_ATTRIBUTES = new Set([
+  'averageMinutes',
+  'courtName',
+  'endDate',
+  'isoDateString',
+  'milliseconds',
+  'recoveryMinutes',
+  'time',
+  'timeAfterRecovery',
+  'typeChangeRecoveryMinutes',
+  'typeChangeTimeAfterRecovery',
+  'venueAbbreviation',
+  'venueName',
+]);
+
+/**
+ * Attributes this facade ignores, reported rather than dropped in silence.
+ *
+ * The dangerous class is NOT the typo — it is the **real attribute this function
+ * does not happen to write**. `calledAt` was one: hydrated, storable, accepted
+ * without complaint and never written, so a caller got `{ success: true }` and
+ * no call-to-court. `allocatedCourts` was another, fixed in place above. A guard
+ * that only caught unrecognised names would have caught neither, because both
+ * are names the hydrator emits.
+ *
+ * So anything neither written nor purely derived is named back to the caller —
+ * `lock` most of all, since silently discarding a director's pin is the worst of
+ * these to discover later. Warnings, not errors, because callers in the field
+ * round-trip locked and scored matchUps today and breaking them to make a point
+ * about hygiene would be the wrong trade; `errorOnUnknownAttributes` escalates
+ * per call, mirroring how `errorOnAnachronism` escalates ANACHRONISM.
+ */
+function unwritableScheduleAttributes(schedule: any): string[] {
+  return Object.keys(schedule ?? {}).filter(
+    (key) =>
+      schedule[key] !== undefined && !WRITABLE_SCHEDULE_ATTRIBUTES.has(key) && !DERIVED_SCHEDULE_ATTRIBUTES.has(key),
+  );
+}
+
+/** The unwritable attributes, plus the error to return if this caller asked to be stopped by them. */
+function checkUnwritableAttributes(schedule: any, errorOnUnknownAttributes: boolean, stack: string) {
+  const unwritable = unwritableScheduleAttributes(schedule);
+  if (!unwritable.length || !errorOnUnknownAttributes) return { unwritable };
+  return {
+    unwritable,
+    error: decorateResult({
+      result: { error: UNWRITABLE_SCHEDULE_ATTRIBUTES },
+      info: `not written: ${unwritable.join(', ')}`,
+      stack,
+    }),
+  };
+}
+
+/** Success, carrying whatever the call has to say for itself. */
+function scheduleItemsResult(warning: any, unwritable: string[]) {
+  const warnings = [
+    ...(warning ? [warning] : []),
+    ...(unwritable.length ? [{ ...UNWRITABLE_SCHEDULE_ATTRIBUTES, attributes: unwritable }] : []),
+  ];
+  return warnings.length ? { ...SUCCESS, warnings } : { ...SUCCESS };
+}
+
 type AddMatchUpScheduleItemsArgs = {
   inContextMatchUps?: HydratedMatchUp[];
   drawMatchUps?: HydratedMatchUp[];
   overrideScheduleLock?: boolean;
   proConflictDetection?: boolean;
   drawDefinition: DrawDefinition;
+  errorOnUnknownAttributes?: boolean;
   errorOnAnachronism?: boolean;
   removePriorValues?: boolean;
   checkChronology?: boolean;
@@ -347,6 +471,7 @@ export function addMatchUpScheduleItems(params: AddMatchUpScheduleItemsArgs): {
 
   let { matchUpDependencies, inContextMatchUps } = params;
   const {
+    errorOnUnknownAttributes = false,
     proConflictDetection = false,
     errorOnAnachronism = false,
     checkChronology = true,
@@ -386,8 +511,14 @@ export function addMatchUpScheduleItems(params: AddMatchUpScheduleItemsArgs): {
     }
   }
 
+  // Reported before anything is written, so a caller learns what will be ignored
+  // even when a later step errors out.
+  const { unwritable, error: unwritableError } = checkUnwritableAttributes(schedule, errorOnUnknownAttributes, stack);
+  if (unwritableError) return unwritableError;
+
   const {
     endTime,
+    calledAt,
     courtId,
     courtAnnotation,
     courtOrder,
@@ -465,6 +596,7 @@ export function addMatchUpScheduleItems(params: AddMatchUpScheduleItemsArgs): {
     stopTime,
     resumeTime,
     endTime,
+    calledAt,
     matchUpId,
     matchUp,
     event,
@@ -513,7 +645,7 @@ export function addMatchUpScheduleItems(params: AddMatchUpScheduleItemsArgs): {
     });
   }
 
-  return warning ? { ...SUCCESS, warnings: [warning] } : { ...SUCCESS };
+  return scheduleItemsResult(warning, unwritable);
 }
 
 function checkScheduleConflicts({

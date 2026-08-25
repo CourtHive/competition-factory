@@ -8,6 +8,14 @@ export const ANACHRONISM = {
   message: 'Chronological error; time violation.',
   code: 'ANACHRONISM',
 };
+// A schedule attribute that was accepted but not written. Reported rather than
+// thrown because reading a schedule and writing it back is a supported pattern;
+// `errorOnUnknownAttributes` escalates it, exactly as `errorOnAnachronism` does
+// for ANACHRONISM.
+export const UNWRITABLE_SCHEDULE_ATTRIBUTES = {
+  message: 'Schedule attributes accepted but not written.',
+  code: 'UNWRITABLE_SCHEDULE_ATTRIBUTES',
+};
 // Assigning a BYE to a drawPosition whose matchUp already holds a court/time is
 // ambiguous: the operator may be mid-swap and want the placement kept, or may want
 // the slot released. Rather than guess, the position-action path refuses until the
@@ -907,6 +915,7 @@ export const CAPACITY_EXCEEDED = {
 
 export const errorConditionConstants = {
   ANACHRONISM,
+  UNWRITABLE_SCHEDULE_ATTRIBUTES,
   BOOKING_NOT_FOUND,
   CANNOT_CHANGE_WINNING_SIDE,
   CAPACITY_EXCEEDED,
