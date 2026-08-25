@@ -26,8 +26,18 @@ This command generates static content into the `build` directory and can be serv
 
 ## Deployment
 
+From the repository root:
+
 ```console
-GIT_USER=CourtHive USE_SSH=true pnpm docpub
+pnpm docs:publish
 ```
 
-If you are using GitHub pages for hosting, this command is a convenient way to build the website and push to the `gh-pages` branch.
+That is the canonical form and the one to reach for — it wraps the underlying command, so there are no environment variables to remember:
+
+```console
+cd documentation && GIT_USER=CourtHive USE_SSH=true pnpm docpub
+```
+
+Either builds the website and pushes it to the `gh-pages` branch, which is what GitHub Pages serves. Note the script is `docpub`, not `deploy`.
+
+This README is not part of the built site, so changing it does not require a republish.
