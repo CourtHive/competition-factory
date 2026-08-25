@@ -78,8 +78,24 @@ export type DurationSource = 'measured' | 'scoredTime' | 'calledAt' | 'estimated
  * default, so reusing it charges a player full recovery, a daily ordinal and
  * estimated court time for a matchUp they never played.
  *
- * `CANCELLED` is present here and absent from the TMX set only because it falls
- * outside that module's domain — a cancelled matchUp plainly put nobody on court.
+ * ── THIS COPY IS AUTHORITATIVE (decided 2026-08-25) ──
+ *
+ * The predicate exists in two places: here and TMX `participantRest.ts`. They were
+ * briefly out of step — `CANCELLED` was added here first — and TMX has since adopted
+ * it, so the two sets are now IDENTICAL. Neither copy had been marked as the source
+ * of truth, which is what allowed the drift.
+ *
+ * **Change this one first.** A change here is a change to what the whole ecosystem
+ * counts as "played"; TMX follows. If you find the two disagreeing again, the factory
+ * is right by default and the divergence is the bug.
+ *
+ * One divergence IS deliberate and should not be "fixed": TMX's finish-anchor
+ * plausibility check tolerates a missing start, because a draw-view score entry
+ * leaves no start while its stamp is the only evidence the match happened. The
+ * equivalent here (`isPlausibleFinish`) returns false without a start, because it
+ * computes a DURATION and cannot measure one from nothing. Same idea, different
+ * question — do not align them.
+ *
  * `RETIRED` and `ABANDONED` are deliberately absent from this set: both mean time
  * was spent on court.
  */
