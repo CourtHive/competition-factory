@@ -50,7 +50,7 @@ the id is the entire payload, and an entry without one carries no identity at al
 **Independent of the event grain.** A record acquired wholesale from one organisation can
 still carry events sanctioned by others, so neither flag can be inferred from the other.
 
-### Writing
+### Writing — tournament grain
 
 ```js
 // upsert — the copy-back case, where an id is acquired after the record exists
@@ -102,7 +102,7 @@ Every id attribute is independently optional for exactly that reason: populate o
 grains the origin actually models. An origin that does model events supplies `eventId`
 too.
 
-### Writing
+### Writing — draw grain
 
 ```js
 engine.addDrawOtherId({
