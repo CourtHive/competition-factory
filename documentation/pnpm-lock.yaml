@@ -35,8 +35,8 @@ importers:
         specifier: 2.1.1
         version: 2.1.1
       courthive-components:
-        specifier: 3.14.3
-        version: 3.14.3(@tiptap/pm@3.30.2)(leaflet@1.9.4)(tods-competition-factory@6.30.0)
+        specifier: 3.14.4
+        version: 3.14.4(@tiptap/pm@3.30.2)(leaflet@1.9.4)(tods-competition-factory@6.30.0)
       leaflet:
         specifier: ^1.9.4
         version: 1.9.4
@@ -2461,8 +2461,8 @@ packages:
       typescript:
         optional: true
 
-  courthive-components@3.14.3:
-    resolution: {integrity: sha512-4Vl4aBRYhpy60Ajck4Zx5FnY2Ldn7StQ4bcc4scChP5AXAjCkjgk9innYktQCdj7rP4vqyyr9YOTIYe6ioqbvw==}
+  courthive-components@3.14.4:
+    resolution: {integrity: sha512-SajkfKmPRIIswm5E92aVmfBl8QUcgEJ7BbjP3b5JiZUuuL+zDt+OX2S/TkT6h5YtrAKex41J+fauLCgslEicNw==}
     engines: {node: '>=22'}
     peerDependencies:
       leaflet: ^1.9.4
@@ -2724,8 +2724,8 @@ packages:
     resolution: {integrity: sha512-e1U46jVP+w7Iut8Jt8ri1YsPOvFpg46k+K8TpCb0P+zjCkjkPnV7WzfDJzMHy1LnA+wj5pLT1wjO901gLXeEhA==}
     engines: {node: '>=12'}
 
-  dayjs@1.11.21:
-    resolution: {integrity: sha512-98IT+HOahAisibz/yjKbzuOBwYcjJ7BCLPzARyHiyEBmRz4fatF+KPJszEHXsGYjUG234aH/cOjW1wwTbKUZlA==}
+  dayjs@1.11.23:
+    resolution: {integrity: sha512-QDTCU0M0MxR3hQfnlDJfwekQiaanm1ubOD231u73WBckQ/fsamwRLiE2GBz6D3a/xF1NgfiDLJjXBa1hYOYTtQ==}
 
   debounce@1.2.1:
     resolution: {integrity: sha512-XRRe6Glud4rd/ZGQfiV1ruXSfbvfJedlV9Y6zOlP+2K04vBYiJEte6stfFkCP03aMnY5tsipamumUjL14fofug==}
@@ -9265,7 +9265,7 @@ snapshots:
       parse-json: 5.2.0
       path-type: 4.0.0
 
-  courthive-components@3.14.3(@tiptap/pm@3.30.2)(leaflet@1.9.4)(tods-competition-factory@6.30.0):
+  courthive-components@3.14.4(@tiptap/pm@3.30.2)(leaflet@1.9.4)(tods-competition-factory@6.30.0):
     dependencies:
       '@tiptap/core': 3.30.2(@tiptap/pm@3.30.2)
       '@tiptap/extension-color': 3.30.2(@tiptap/extension-text-style@3.30.2(@tiptap/core@3.30.2(@tiptap/pm@3.30.2)))
@@ -9278,7 +9278,7 @@ snapshots:
       class-variance-authority: 0.7.1
       classnames: 2.5.1
       d3: 7.9.0
-      dayjs: 1.11.21
+      dayjs: 1.11.23
       focus-trap: 8.2.2
       timepicker-ui: 4.4.0
       tippy.js: 6.3.7
@@ -9590,7 +9590,7 @@ snapshots:
       d3-transition: 3.0.1(d3-selection@3.0.0)
       d3-zoom: 3.0.0
 
-  dayjs@1.11.21: {}
+  dayjs@1.11.23: {}
 
   debounce@1.2.1: {}
 
