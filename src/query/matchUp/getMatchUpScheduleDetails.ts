@@ -46,6 +46,31 @@ type GetMatchUpScheduleDetailsArgs = {
   publishStatus?: any;
   event?: Event;
 };
+/**
+ * Whether a matchUp's start is still an open question.
+ *
+ * A `FOLLOWED_BY` or `AFTER_REST` / `NOT_BEFORE` annotation is a promise about
+ * *when this matchUp may begin*. Once that is settled the annotation is not
+ * merely redundant — on a published order of play it is misinformation, telling
+ * a player and a referee that a match is waiting on something that has already
+ * happened.
+ *
+ * Two settling signals, both local to the matchUp:
+ *
+ *   - **Called to court.** A match that has been called IS on court; "followed
+ *     by" is moot for it whatever else on that court did or did not finish.
+ *   - **Any score at all.** A single game is enough, and the partial case is the
+ *     one that matters: that is the state a live match sits in for an hour while
+ *     the annotation goes on claiming it has not begun. A completed status
+ *     settles it too, walkovers included — resolved is resolved.
+ */
+function startIsSettled(matchUp: any): boolean {
+  if (matchUp?.schedule?.calledAt) return true;
+  if (matchUp?.matchUpStatus && completedMatchUpStatuses.includes(matchUp.matchUpStatus)) return true;
+  if (matchUp?.winningSide) return true;
+  return !!matchUp?.score?.sets?.length;
+}
+
 export function getMatchUpScheduleDetails(params: GetMatchUpScheduleDetailsArgs) {
   let event = params.event;
   let matchUpType: any = params.matchUpType;
@@ -186,7 +211,18 @@ function buildFullSchedule({
   const courtAnnotation = firstClass.courtAnnotation ?? timeItemMap.get(COURT_ANNOTATION);
   const allocatedCourts = firstClass.allocatedCourts ?? timeItemMap.get(ALLOCATE_COURTS);
   const scheduledTime = firstClass.scheduledTime ?? timeItemMap.get(SCHEDULED_TIME);
-  const timeModifiers = firstClass.timeModifiers ?? timeItemMap.get(TIME_MODIFIERS);
+  // SUPPRESSED, never cleared: the stored value is the operator's stated intent
+  // and stays exactly where they put it. Hiding it here rather than deleting it
+  // on score entry means the reverse case needs no rule of its own — remove the
+  // score and the annotation is simply visible again, because the condition that
+  // hid it has lapsed. It also means no score-entry path can forget: hydration is
+  // downstream of the draw view, the schedule, the relay and every import.
+  //
+  // Read-side only. The write path (`matchUpTimeModifiers`, used by
+  // `mutate/matchUps/schedule/scheduledTime.ts`) reads storage directly, so
+  // adding and removing modifiers still operates on the real value.
+  const storedTimeModifiers = firstClass.timeModifiers ?? timeItemMap.get(TIME_MODIFIERS);
+  const timeModifiers = startIsSettled(matchUp) ? undefined : storedTimeModifiers;
   let scheduledDate = firstClass.scheduledDate ?? timeItemMap.get(SCHEDULED_DATE);
   const endDate = firstClass.endDate ?? timeItemMap.get(END_DATE);
   const official = firstClass.official ?? timeItemMap.get(ASSIGN_OFFICIAL);
