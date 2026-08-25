@@ -1402,12 +1402,25 @@ const { competitiveBands } = engine.getMatchUpsStats({
 
 ## getMatchUpDailyLimits
 
-Returns player daily match limits for singles/doubles/total matches.
+Returns the tournament-wide daily match limits for singles/doubles/total matches.
 
 ```js
-const { matchUpDailyLimits } = tournamentId.getMatchUpDailyLimits();
-const { DOUBLES, SINGLES, total } = matchUpDailyLimits;
+const { matchUpDailyLimits } = engine.getMatchUpDailyLimits({
+  tournamentId, // optional - select one tournament in a multi-tournament context
+});
+
+// `matchUpDailyLimits` is undefined when no scheduling policy is attached
+const { DOUBLES, SINGLES, total } = matchUpDailyLimits ?? {};
 ```
+
+:::caution `undefined` means "no limit configured"
+Unlike its sibling `getMatchUpFormatTiming`, this method does **not** fall back to
+`POLICY_SCHEDULING_DEFAULT`. An unpoliced tournament returns `undefined` rather than the fixture's
+`{ SINGLES: 2, DOUBLES: 2, total: 3 }`, and a consumer must report that as _no limit configured_
+rather than substituting one — inventing a constraint would make the scheduler refuse placements
+under a rule the tournament never adopted. Rationale and the full asymmetry in
+[Scheduling Policy → Retrieving Daily Limits](/docs/policies/scheduling#retrieving-daily-limits).
+:::
 
 ---
 

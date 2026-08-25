@@ -409,13 +409,40 @@ const participantLimitsPolicy = {
 ### Retrieving Daily Limits
 
 ```js
-const { matchUpDailyLimits } = tournamentEngine.getMatchUpDailyLimits({
-  participantId: 'player-id',
-});
+const { matchUpDailyLimits } = tournamentEngine.getMatchUpDailyLimits();
 
 console.log(matchUpDailyLimits);
-// { SINGLES: 2, DOUBLES: 2, total: 3 }
+// { SINGLES: 2, DOUBLES: 2, total: 3 }   — when a scheduling policy is attached
+// undefined                              — when none is
 ```
+
+The method returns the **tournament-wide** limits and takes no `participantId`; per-participant
+overrides live in the policy's `matchUpDailyLimits` array and are applied by the scheduler, not
+returned here. In a multi-tournament context it accepts an optional `tournamentId`.
+
+:::caution `undefined` means "no limit configured" — do not substitute your own
+
+`getMatchUpDailyLimits` resolves `tournamentDailyLimits || policy.defaultDailyLimits` and **does not
+fall back to `POLICY_SCHEDULING_DEFAULT`**. A tournament with no scheduling policy attached therefore
+gets `undefined`, not `{ SINGLES: 2, DOUBLES: 2, total: 3 }` — even though that is what the fixture
+would have supplied.
+
+**This is deliberate, and it is an asymmetry with its own sibling.** `getMatchUpFormatTiming` _does_
+substitute the fixture, so the same unpoliced tournament gets real per-format averages and recovery
+times while getting no daily limits at all.
+
+The distinction is between an estimate and a rule. An average match duration is a **guess at a
+quantity** — substituting one makes a schedule approximately right instead of flatly wrong. A daily
+limit is a **constraint** — substituting one would make the scheduler refuse to place a
+participant's third matchUp, enforcing a rule the tournament never adopted. A default is not a
+detection.
+
+So a consumer must render "no limit configured" rather than defaulting to 3. TMX's Inspector rest
+rows do this correctly: they report the ordinal ("match #3 today") and omit the limit clause entirely
+when none is configured.
+
+The same contract governs [`overnightMinutes`](#overnight-recovery).
+:::
 
 ---
 

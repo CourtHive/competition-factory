@@ -441,11 +441,14 @@ const { contextIds } = engine.getMatchUpContextIds({
 
 ## getMatchUpDailyLimits
 
-Returns daily participation limits for matchUps.
+Returns daily participation limits for matchUps. `undefined` when no scheduling policy is attached.
 
 ```js
-const { limits } = engine.getMatchUpDailyLimits();
+const { matchUpDailyLimits } = engine.getMatchUpDailyLimits();
 ```
+
+See [queryGovernor.getMatchUpDailyLimits](/docs/governors/query-governor#getmatchupdailylimits) for
+the `undefined`-means-no-limit contract.
 
 ---
 
