@@ -89,6 +89,20 @@ export type DurationSource = 'measured' | 'scoredTime' | 'calledAt' | 'estimated
  * counts as "played"; TMX follows. If you find the two disagreeing again, the factory
  * is right by default and the divergence is the bug.
  *
+ * **And TMX now checks.** `TMX/src/pages/tournament/tabs/scheduleViews/wasPlayedConformance.test.ts`
+ * runs the Participant Recovery report over one matchUp per status and asserts its own
+ * copy reaches the same verdict this one does. So a change here that TMX has not
+ * followed does not drift quietly for a release — it turns that suite red on the next
+ * factory bump, which is the whole reason it exists: this paragraph asked the next
+ * editor to keep the two in step, and asking is what failed the first time.
+ *
+ * Two things that suite pins, worth knowing before editing the sets below. A
+ * `DOUBLE_DEFAULT` never reaches the score-discriminated branch in practice —
+ * `setMatchUpStatus` keeps the status and drops the sets, so it answers `false`
+ * whatever the caller passed. And the verdict is asserted through a non-UTC venue
+ * zone, because whether a matchUp was played is a property of its status and score
+ * and must never acquire a dependency on the clock.
+ *
  * One divergence IS deliberate and should not be "fixed": TMX's finish-anchor
  * plausibility check tolerates a missing start, because a draw-view score entry
  * leaves no start while its stamp is the only evidence the match happened. The
