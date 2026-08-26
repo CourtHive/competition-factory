@@ -1,5 +1,22 @@
 # Changelog
 
+## [6.33.0](https://github.com/CourtHive/competition-factory/compare/v6.32.0...v6.33.0) (2026-08-26)
+
+
+### Features
+
+* **codes:** make "being sanctioned" expressible ([#4710](https://github.com/CourtHive/competition-factory/issues/4710)) ([204fa32](https://github.com/CourtHive/competition-factory/commit/204fa323faf274a833a73fd078424e852329dae0))
+
+
+### Bug Fixes
+
+* **codes:** give prize money a unit, an event home, and a defined comparison ([#4711](https://github.com/CourtHive/competition-factory/issues/4711)) ([16197b6](https://github.com/CourtHive/competition-factory/commit/16197b6e2c7b73756c8c5f999dacd28043c16d9a))
+
+
+### Documentation
+
+* **reports:** record that TMX now enforces the wasPlayed agreement ([#4708](https://github.com/CourtHive/competition-factory/issues/4708)) ([8658ccf](https://github.com/CourtHive/competition-factory/commit/8658ccfe5006d73fa9b81fe433ec4fc26b45ac6f))
+
 ## [6.32.0](https://github.com/CourtHive/competition-factory/compare/v6.31.0...v6.32.0) (2026-08-25)
 
 
