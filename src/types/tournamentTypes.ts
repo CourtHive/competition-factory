@@ -107,6 +107,15 @@ export interface Event {
   eventLevel?: TournamentLevelUnion;
   eventName?: string;
   /**
+   * Prize money offered for this event.
+   *
+   * The counterpart to `Tournament.totalPrizeMoney`. Its absence was a real gap: `EventProposal`
+   * has carried `prizeMoney` all along, so an applicant could propose event-level prize money that
+   * activation then dropped for want of anywhere to put it — and the mocks documentation worked
+   * around it with an ad-hoc extension.
+   */
+  prizeMoney?: PrizeMoney[];
+  /**
    * Event-grain sanction. Grade is genuinely per-event in several federations — one tournament
    * routinely carries different categories for different age groups — mirroring `eventTier`.
    * Where absent, the tournament's `sanction` applies.
@@ -1853,10 +1862,20 @@ export interface RegistrationEntryFee {
   extensions?: Extension[];
 }
 
-export interface PrizeMoney {
-  amount: number;
+/**
+ * An award of prize money — a {@link MonetaryAmount} with provenance.
+ *
+ * Extends `MonetaryAmount` rather than redeclaring `amount`/`currencyCode` so there is exactly ONE
+ * money shape in CODES. That also means prize money now states its `unit`, which it previously did
+ * not: `{ amount: 4000, currencyCode: 'USD' }` was readable as either $40.00 or $4,000 with nothing
+ * to choose between them.
+ *
+ * A `PrizeMoney[]` may legitimately mix currencies (an event offering awards in two markets), so
+ * consumers MUST NOT sum `amount` across the array without first grouping by `currencyCode` and
+ * `unit` — the sum is otherwise meaningless.
+ */
+export interface PrizeMoney extends MonetaryAmount {
   createdAt?: Date | string;
-  currencyCode: string;
   extensions?: Extension[];
   isMock?: boolean;
   notes?: string;
@@ -2313,9 +2332,8 @@ export type CurrencyUnitUnion = `${CurrencyUnitEnum}`;
  * would reintroduce exactly the ambiguity this type exists to remove, since the omitted case is
  * indistinguishable from the unconsidered one.
  *
- * NOTE: `PrizeMoney` carries `amount` + `currencyCode` with no unit and therefore has this
- * ambiguity today. It is left alone here — changing its meaning would be a breaking change to
- * existing records — but new monetary fields should use this type.
+ * `PrizeMoney` extends this, so prize money states its unit too. Every monetary field in CODES
+ * should be built on this type rather than redeclaring an amount and a currency.
  */
 export interface MonetaryAmount {
   amount: number;

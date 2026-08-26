@@ -329,8 +329,8 @@ interface SanctioningTier {
   allowedMatchUpFormats?: string[]; // matchUpFormatCodes
 
   // Financial constraints
-  minimumPrizeMoney?: number;
-  maximumPrizeMoney?: number;
+  minimumPrizeMoney?: MonetaryAmount; // e.g. { amount: 15000, currencyCode: 'USD', unit: 'MAJOR' }
+  maximumPrizeMoney?: MonetaryAmount;
   currencyCode?: string;
   sanctionFeePercent?: number; // BWF model: % of prize fund
   sanctionFeeFixed?: number; // fixed fee model

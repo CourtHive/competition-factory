@@ -1,3 +1,4 @@
+import { sumAgainstBound, describeAmount } from './comparePrizeMoney';
 // Constants
 import { MISSING_SANCTIONING_POLICY, MISSING_PROPOSAL } from '@Constants/sanctioningConstants';
 import { SUCCESS } from '@Constants/resultConstants';
@@ -24,18 +25,19 @@ export function getEligibleTiers({ proposal, sanctioningPolicy }: GetEligibleTie
   const tierEligibilities: TierEligibility[] = sanctioningPolicy.tiers.map((tier) => {
     const reasons: string[] = [];
 
-    // Prize money check
-    if (tier.minimumPrizeMoney !== undefined && proposal.totalPrizeMoney?.length) {
-      const total = proposal.totalPrizeMoney.reduce((s, pm) => s + pm.amount, 0);
-      if (total < tier.minimumPrizeMoney) {
-        reasons.push(`Prize money ${total} below minimum ${tier.minimumPrizeMoney}`);
+    // Prize money check. Only amounts denominated as the bound is are summed — the previous
+    // implementation added across currencies and compared to a unitless number.
+    if (tier.minimumPrizeMoney && proposal.totalPrizeMoney?.length) {
+      const { comparable } = sumAgainstBound(proposal.totalPrizeMoney, tier.minimumPrizeMoney);
+      if (comparable < tier.minimumPrizeMoney.amount) {
+        reasons.push(`Prize money ${comparable} below minimum ${describeAmount(tier.minimumPrizeMoney)}`);
       }
     }
 
-    if (tier.maximumPrizeMoney !== undefined && proposal.totalPrizeMoney?.length) {
-      const total = proposal.totalPrizeMoney.reduce((s, pm) => s + pm.amount, 0);
-      if (total > tier.maximumPrizeMoney) {
-        reasons.push(`Prize money ${total} above maximum ${tier.maximumPrizeMoney}`);
+    if (tier.maximumPrizeMoney && proposal.totalPrizeMoney?.length) {
+      const { comparable } = sumAgainstBound(proposal.totalPrizeMoney, tier.maximumPrizeMoney);
+      if (comparable > tier.maximumPrizeMoney.amount) {
+        reasons.push(`Prize money ${comparable} above maximum ${describeAmount(tier.maximumPrizeMoney)}`);
       }
     }
 

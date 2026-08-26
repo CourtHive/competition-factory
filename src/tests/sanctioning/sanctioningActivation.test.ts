@@ -22,7 +22,7 @@ const testProposal: TournamentProposal = {
   surfaceCategory: 'HARD',
   indoorOutdoor: 'OUTDOOR',
   localTimeZone: 'America/New_York',
-  totalPrizeMoney: [{ amount: 25000, currencyCode: 'USD' }],
+  totalPrizeMoney: [{ amount: 25000, currencyCode: 'USD', unit: 'MAJOR' }],
   events: [
     {
       eventName: "Men's Singles",

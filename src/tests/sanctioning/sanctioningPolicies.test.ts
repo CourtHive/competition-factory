@@ -76,7 +76,7 @@ describe('Policy Fixtures — Engine Integration', () => {
       hostCountryCode: 'USA',
       surfaceCategory: 'HARD',
       indoorOutdoor: 'OUTDOOR',
-      totalPrizeMoney: [{ amount: 50000, currencyCode: 'USD' }],
+      totalPrizeMoney: [{ amount: 50000, currencyCode: 'USD', unit: 'MAJOR' }],
       venues: [{ venueName: 'Cary Tennis Park', numberOfCourts: 12 }],
       tournamentDirector: { personName: 'Alice', role: 'Tournament Director' },
       referee: { personName: 'Bob', role: 'Referee', certificationLevel: 'Bronze Badge' },

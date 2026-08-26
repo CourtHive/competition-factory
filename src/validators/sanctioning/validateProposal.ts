@@ -1,3 +1,4 @@
+import { sumAgainstBound, describeAmount } from '@Query/sanctioning/comparePrizeMoney';
 import { isDisciplineAllowed } from '@Helpers/coercedDiscipline';
 import { coercedGender } from '@Helpers/coercedGender';
 
@@ -131,21 +132,41 @@ function validateTierConstraints({
 
 function validatePrizeMoney(proposal: TournamentProposal, tier: SanctioningTier, issues: ValidationIssue[]) {
   if (!proposal.totalPrizeMoney?.length) return;
-  const totalAmount = proposal.totalPrizeMoney.reduce((sum, pm) => sum + pm.amount, 0);
 
-  if (tier.minimumPrizeMoney !== undefined && totalAmount < tier.minimumPrizeMoney) {
+  const bound = tier.minimumPrizeMoney ?? tier.maximumPrizeMoney;
+  if (!bound) return;
+
+  // Only amounts denominated as the bound is are summed. Prize money in another currency is
+  // surfaced rather than folded into the total or quietly ignored: the tier rule genuinely cannot
+  // be evaluated against it, and staying silent would read as "the rule passed".
+  const { incomparable } = sumAgainstBound(proposal.totalPrizeMoney, bound);
+  if (incomparable.length) {
     issues.push({
       field: 'totalPrizeMoney',
-      message: `Minimum prize money for ${tier.tierName}: ${tier.minimumPrizeMoney}; proposed: ${totalAmount}`,
+      message: `Prize money in ${incomparable.join(', ')} cannot be compared against ${tier.tierName} bounds in ${bound.currencyCode} (${bound.unit})`,
       severity: 'error',
     });
   }
-  if (tier.maximumPrizeMoney !== undefined && totalAmount > tier.maximumPrizeMoney) {
-    issues.push({
-      field: 'totalPrizeMoney',
-      message: `Maximum prize money for ${tier.tierName}: ${tier.maximumPrizeMoney}; proposed: ${totalAmount}`,
-      severity: 'error',
-    });
+
+  if (tier.minimumPrizeMoney) {
+    const { comparable } = sumAgainstBound(proposal.totalPrizeMoney, tier.minimumPrizeMoney);
+    if (comparable < tier.minimumPrizeMoney.amount) {
+      issues.push({
+        field: 'totalPrizeMoney',
+        message: `Minimum prize money for ${tier.tierName}: ${describeAmount(tier.minimumPrizeMoney)}; proposed: ${comparable}`,
+        severity: 'error',
+      });
+    }
+  }
+  if (tier.maximumPrizeMoney) {
+    const { comparable } = sumAgainstBound(proposal.totalPrizeMoney, tier.maximumPrizeMoney);
+    if (comparable > tier.maximumPrizeMoney.amount) {
+      issues.push({
+        field: 'totalPrizeMoney',
+        message: `Maximum prize money for ${tier.tierName}: ${describeAmount(tier.maximumPrizeMoney)}; proposed: ${comparable}`,
+        severity: 'error',
+      });
+    }
   }
 }
 

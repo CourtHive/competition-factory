@@ -121,9 +121,12 @@ reader assuming whole units is off by 100× with nothing in the record to signal
 exponent is currency-specific (USD 2, JPY 0, KWD 3), which is why the currency must travel with the
 unit for `MINOR` to be resolvable.
 
-> `PrizeMoney` predates this and carries `amount` + `currencyCode` with no unit, so it retains the
-> ambiguity. It is intentionally left alone — changing its meaning would break existing records —
-> but new monetary fields should use `MonetaryAmount`.
+> `PrizeMoney` extends `MonetaryAmount`, so prize money states its unit too — there is exactly one
+> money shape in CODES. A `PrizeMoney[]` may legitimately mix currencies, so **never sum `amount`
+> across the array** without grouping by `currencyCode` and `unit` first; the total is otherwise
+> denominated in nothing. Tier bounds (`minimumPrizeMoney` / `maximumPrizeMoney`) are
+> `MonetaryAmount` for the same reason, and the validator reports amounts it cannot compare rather
+> than folding them in.
 
 **`sanctions`** (plural, on `Tournament`) carries additional sanctions where a competition is
 approved by more than one body. Dual sanctioning is common: an international-grade event usually

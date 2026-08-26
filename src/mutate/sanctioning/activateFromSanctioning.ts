@@ -289,6 +289,11 @@ export function activateFromSanctioning({
         entries: [],
       };
 
+      // Event-level prize money reaches the activated event. `EventProposal.prizeMoney` has always
+      // existed, but `Event` had no counterpart, so a proposal naming prize money per event had it
+      // dropped here — silently, since nothing errored.
+      if (ep.prizeMoney?.length) event.prizeMoney = ep.prizeMoney.map((pm) => ({ ...pm }));
+
       // Carry sanctioning constraints
       if (ep.allowedDrawTypes?.length) event.allowedDrawTypes = [...ep.allowedDrawTypes];
       else if (ep.drawType) event.allowedDrawTypes = [ep.drawType];

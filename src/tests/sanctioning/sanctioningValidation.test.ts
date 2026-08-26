@@ -35,7 +35,7 @@ const baseProposal: TournamentProposal = {
   tournamentDirector: { personName: 'Alice Director', role: 'Tournament Director' },
   referee: { personName: 'Bob Referee', role: 'Referee' },
   venues: [{ venueName: 'Main Courts', numberOfCourts: 8 }],
-  totalPrizeMoney: [{ amount: 20000, currencyCode: 'USD' }],
+  totalPrizeMoney: [{ amount: 20000, currencyCode: 'USD', unit: 'MAJOR' }],
 };
 
 function createTestRecord(proposalOverrides?: Partial<TournamentProposal>, sanctioningTier?: TierClassification) {
@@ -78,7 +78,7 @@ describe('Policy Validation — validateProposal', () => {
   });
 
   it('flags insufficient prize money for tier', () => {
-    createTestRecord({ totalPrizeMoney: [{ amount: 1000, currencyCode: 'USD' }] });
+    createTestRecord({ totalPrizeMoney: [{ amount: 1000, currencyCode: 'USD', unit: 'MAJOR' }] });
     let result: any = sanctioningEngine.validateProposal({
       sanctioningPolicy: POLICY_SANCTIONING_GENERIC,
       sanctioningTier: { system: 'GENERIC', value: 'Level 3' },
@@ -260,7 +260,7 @@ describe('Eligible Tiers', () => {
   it('excludes tiers where draw size is not allowed', () => {
     createTestRecord({
       events: [{ eventName: 'Singles', eventType: 'SINGLES', drawSize: 8 }],
-      totalPrizeMoney: [{ amount: 100, currencyCode: 'USD' }],
+      totalPrizeMoney: [{ amount: 100, currencyCode: 'USD', unit: 'MAJOR' }],
     });
     let result: any = sanctioningEngine.getEligibleTiers({
       sanctioningPolicy: POLICY_SANCTIONING_GENERIC,
@@ -273,7 +273,7 @@ describe('Eligible Tiers', () => {
   });
 
   it('excludes tiers where prize money is insufficient', () => {
-    createTestRecord({ totalPrizeMoney: [{ amount: 1000, currencyCode: 'USD' }] });
+    createTestRecord({ totalPrizeMoney: [{ amount: 1000, currencyCode: 'USD', unit: 'MAJOR' }] });
     let result: any = sanctioningEngine.getEligibleTiers({
       sanctioningPolicy: POLICY_SANCTIONING_GENERIC,
     });

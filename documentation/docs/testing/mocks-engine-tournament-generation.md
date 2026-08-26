@@ -488,6 +488,11 @@ const { tournamentRecord } = mocksEngine.generateTournamentRecord({
 
 ### Event Extensions
 
+Extensions carry data CODES has no first-class home for. This example used to demonstrate a
+`prizeMoney` extension, which is no longer the right shape — `Event.prizeMoney` is a first-class
+`PrizeMoney[]` field, and a monetary amount states its unit (see
+[Sanctioning](../codes/sanctioning#the-rest-of-the-record)):
+
 ```js
 const { tournamentRecord } = mocksEngine.generateTournamentRecord({
   eventProfiles: [
@@ -495,8 +500,8 @@ const { tournamentRecord } = mocksEngine.generateTournamentRecord({
       eventName: 'Singles',
       eventExtensions: [
         {
-          name: 'prizeMoney',
-          value: { currency: 'USD', total: 50000 },
+          name: 'sponsorTier',
+          value: { tier: 'PLATINUM', activationDeadline: '2026-05-01' },
         },
       ],
       drawProfiles: [{ drawSize: 32 }],
@@ -504,6 +509,13 @@ const { tournamentRecord } = mocksEngine.generateTournamentRecord({
   ],
 });
 ```
+
+:::tip
+Reach for an extension only when nothing in CODES models the thing. Prize money is the cautionary
+example: because `Event` had no prize-money field, an ad-hoc `{ currency, total }` extension grew up
+beside `PrizeMoney`'s `{ amount, currencyCode }` — two shapes for one concept, neither of which said
+whether the number was dollars or cents.
+:::
 
 ### Event-Level Participant Profiles
 
@@ -793,12 +805,8 @@ const { tournamentRecord } = mocksEngine.generateTournamentRecord({
     {
       eventName: 'Singles',
       policyDefinitions: {
-        scoring: {
-          /* scoring policy */
-        },
-        avoidance: {
-          /* avoidance policy */
-        },
+        scoring: {/* scoring policy */},
+        avoidance: {/* avoidance policy */},
       },
       drawProfiles: [{ drawSize: 32 }],
     },

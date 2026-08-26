@@ -7,6 +7,7 @@ import type {
   Extension,
   GenderUnion,
   IndoorOutdoorUnion,
+  MonetaryAmount,
   Organisation,
   PrizeMoney,
   RegistrationProfile,
@@ -514,8 +515,16 @@ export interface SanctioningTier {
 
   allowedMatchUpFormats?: string[];
 
-  minimumPrizeMoney?: number;
-  maximumPrizeMoney?: number;
+  /**
+   * Prize-money bounds for the tier.
+   *
+   * `MonetaryAmount` rather than a bare number because the comparison is otherwise undefined: a
+   * bound of `15000` could be $15,000 or $150.00, and could be in any currency. Stating both makes
+   * the check well-formed and lets a validator refuse to compare across currencies rather than
+   * producing a confident wrong answer.
+   */
+  minimumPrizeMoney?: MonetaryAmount;
+  maximumPrizeMoney?: MonetaryAmount;
   currencyCode?: string;
   sanctionFeePercent?: number;
   sanctionFeeFixed?: number;
