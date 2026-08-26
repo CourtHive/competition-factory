@@ -25,6 +25,15 @@ export interface Tournament {
   processCodes?: string[];
   promotionalName?: string;
   registrationProfile?: RegistrationProfile;
+  /**
+   * What a governing body decided about this competition — see `TournamentSanction`.
+   * Supersedes the binary `processCodes: ['SANCTIONED']` marker, which cannot express a
+   * decision, an authority chain, or what the sanction confers. `processCodes` is left in
+   * place for existing consumers.
+   */
+  sanction?: TournamentSanction;
+  /** Additional sanctions where a competition is approved by more than one body. */
+  sanctions?: TournamentSanction[];
   // CODES first-class group leaf: previously stored as separate
   // `schedulingProfile`, `scheduleLimits`, and `scheduleTiming` extensions.
   scheduling?: {
@@ -97,6 +106,12 @@ export interface Event {
   eventId: string;
   eventLevel?: TournamentLevelUnion;
   eventName?: string;
+  /**
+   * Event-grain sanction. Grade is genuinely per-event in several federations — one tournament
+   * routinely carries different categories for different age groups — mirroring `eventTier`.
+   * Where absent, the tournament's `sanction` applies.
+   */
+  sanction?: TournamentSanction;
   eventOrder?: number;
   // CODES first-class: this event's identity in OTHER organisations' systems, one entry
   // per organisation. The entry flagged `isOrigin` is the sanctioning source the event
@@ -2164,3 +2179,280 @@ export enum WeekdayEnum {
   SUN = 'SUN',
 }
 export type WeekdayUnion = `${WeekdayEnum}`;
+
+// ---------------------------------------------------------------------------
+// Sanction INSTANCE model — "being sanctioned"
+// ---------------------------------------------------------------------------
+//
+// Everything above models BECOMING sanctioned: `SanctioningRecord` is the application, held by
+// AMS, that a governing body decides on. What follows models BEING sanctioned — the decision as an
+// attribute of the competition itself, which travels with the tournamentRecord.
+//
+// That attribute used to be `processCodes: ['SANCTIONED']`, a bare string in an array. Real
+// federation data does not fit a boolean. Three axes are involved, and every system observed
+// conflates at least two of them:
+//
+//   decision       did the application succeed?              USTA: `sanctionStatus: APPROVED`
+//   recognition    what does the body ASSERT about the event? USA Swimming: SANCTIONED|APPROVED|OBSERVED
+//   classification what competitive grade is conferred?       USTA: `level`, with `isRanking`
+//
+// Keeping them apart is what makes USTA's real data expressible: its tournaments are
+// simultaneously `sanctionStatus: "APPROVED"` and `level: "Unsanctioned"` — approved to run by the
+// district, conferring no ranking status. Under one axis that reads as a contradiction; under
+// three it is decision=APPROVED, recognition=UNSANCTIONED, classification=absent.
+
+/**
+ * Outcome of the sanctioning decision — the workflow axis.
+ *
+ * Distinct from {@link SanctioningStatusEnum}, which tracks an application through review. This is
+ * what the competition ended up with, including outcomes an application-side state machine has no
+ * reason to model: authority-initiated `REVOKED`/`SUSPENDED`/`DOWNGRADED` are routine annual
+ * outcomes at several federations, and are NOT `WITHDRAWN` — withdrawal is applicant-initiated.
+ */
+export enum SanctionDecisionEnum {
+  /** applied for, not yet decided */
+  PENDING = 'PENDING',
+  APPROVED = 'APPROVED',
+  /** approved subject to conditions not yet met */
+  CONDITIONAL = 'CONDITIONAL',
+  DENIED = 'DENIED',
+  /** applicant-initiated */
+  WITHDRAWN = 'WITHDRAWN',
+  /** authority-initiated, after approval */
+  REVOKED = 'REVOKED',
+  /** authority-initiated, temporary */
+  SUSPENDED = 'SUSPENDED',
+  /** lapsed rather than decided against */
+  EXPIRED = 'EXPIRED',
+  /** approved, but at a lower classification than applied for */
+  DOWNGRADED = 'DOWNGRADED',
+}
+export type SanctionDecisionUnion = `${SanctionDecisionEnum}`;
+
+/**
+ * What the governing body asserts about the competition — the recognition axis.
+ *
+ * Modelled on USA Swimming Article 202, which is the most explicit published vocabulary found:
+ * each value implies a different enforced rule subset, a different participant-eligibility rule, a
+ * different issuing authority and a different downstream consequence. A boolean collapses all four.
+ */
+export enum RecognitionEnum {
+  /** the body's own competition, under the whole of its rulebook */
+  SANCTIONED = 'SANCTIONED',
+  /** run by someone else, under an enumerated SUBSET of the body's rules; mixed eligibility */
+  APPROVED = 'APPROVED',
+  /** run under another body's rules; spot-verified so results may still count */
+  OBSERVED = 'OBSERVED',
+  /** another body's competition accepted wholesale by reference (e.g. USA Swimming ← NCAA) */
+  RECOGNISED = 'RECOGNISED',
+  /** permitted to use the body's marks/programme without competitive standing */
+  LICENSED = 'LICENSED',
+  /** known to the body and explicitly outside its competitive structure */
+  UNSANCTIONED = 'UNSANCTIONED',
+}
+export type RecognitionUnion = `${RecognitionEnum}`;
+
+/**
+ * Where a body sits in a governance hierarchy.
+ *
+ * Deliberately broader than {@link TournamentLevelEnum} (which is the ORGANISATIONAL SCOPE of a
+ * competition) because the chain that approves an event is not the same thing as the reach of the
+ * event. Observed chains vary in depth from 1 to 5 and do not always cascade: some federations
+ * approve only at the regional tier, and at least one requires JOINT approval by two co-equal
+ * bodies, so `approvalChain` must not be assumed to be a strict containment ladder.
+ */
+export enum AuthorityRoleEnum {
+  INTERNATIONAL = 'INTERNATIONAL',
+  NATIONAL = 'NATIONAL',
+  ZONE = 'ZONE',
+  SECTION = 'SECTION',
+  REGION = 'REGION',
+  PROVINCE = 'PROVINCE',
+  STATE = 'STATE',
+  COUNTY = 'COUNTY',
+  DISTRICT = 'DISTRICT',
+  LEAGUE = 'LEAGUE',
+  CONFERENCE = 'CONFERENCE',
+  CLUB = 'CLUB',
+  /** the organisation running the competition, when it is itself part of the chain */
+  PROVIDER = 'PROVIDER',
+}
+export type AuthorityRoleUnion = `${AuthorityRoleEnum}`;
+
+/** How hard a ruleset bites. Three independent policy systems converged on these three values. */
+export enum SanctionEnforcementEnum {
+  /** non-compliance blocks */
+  ENFORCE = 'ENFORCE',
+  /** non-compliance is recorded, the competition still counts */
+  AUDIT = 'AUDIT',
+  /** non-compliance is surfaced to the organiser only */
+  WARN = 'WARN',
+}
+export type SanctionEnforcementUnion = `${SanctionEnforcementEnum}`;
+
+/**
+ * Whether a monetary `amount` is expressed in the currency's smallest unit or in whole units.
+ *
+ * Stated explicitly rather than assumed, because the assumption is silently wrong half the time and
+ * the error is invisible: a federation reporting a 4000 sanction fee means 40.00 USD, and a reader
+ * assuming whole units is off by 100× with nothing to signal it. The minor-unit exponent is
+ * currency-specific (USD 2, JPY 0, KWD 3), so `currencyCode` is what makes `MINOR` resolvable.
+ */
+export enum CurrencyUnitEnum {
+  /** the currency's smallest unit — `{ amount: 4000, currencyCode: 'USD', unit: 'MINOR' }` is $40.00 */
+  MINOR = 'MINOR',
+  /** whole currency units — `{ amount: 40, currencyCode: 'USD', unit: 'MAJOR' }` is $40.00 */
+  MAJOR = 'MAJOR',
+}
+export type CurrencyUnitUnion = `${CurrencyUnitEnum}`;
+
+/**
+ * An amount of money that cannot be stated ambiguously.
+ *
+ * All three fields are required together by construction. That is the point: an optional `unit`
+ * would reintroduce exactly the ambiguity this type exists to remove, since the omitted case is
+ * indistinguishable from the unconsidered one.
+ *
+ * NOTE: `PrizeMoney` carries `amount` + `currencyCode` with no unit and therefore has this
+ * ambiguity today. It is left alone here — changing its meaning would be a breaking change to
+ * existing records — but new monetary fields should use this type.
+ */
+export interface MonetaryAmount {
+  amount: number;
+  currencyCode: string;
+  unit: CurrencyUnitUnion;
+}
+
+/** Shape of a levy. Federations charge flat, per-entry, percentage, and capped-per-entry fees. */
+export enum SanctionFeeKindEnum {
+  /** paid by the organiser to the authority for the sanction itself */
+  SANCTION = 'SANCTION',
+  /** per-player levy passed to the authority (USTA "head tax") */
+  HEAD_TAX = 'HEAD_TAX',
+  /** surcharge for applying after a deadline */
+  LATE = 'LATE',
+  /** what a competitor pays to enter */
+  ENTRY = 'ENTRY',
+}
+export type SanctionFeeKindUnion = `${SanctionFeeKindEnum}`;
+
+/** A body in the approval chain. Only `organisationId` OR `organisationName` need be known. */
+export interface SanctioningAuthority {
+  organisationAbbreviation?: string;
+  organisationName?: string;
+  organisationId?: string;
+  role?: AuthorityRoleUnion;
+  /** the authority's own code for its territory, where it publishes one (USTA section '070') */
+  regionCode?: string;
+  extensions?: Extension[];
+}
+
+/**
+ * A levy attached to the sanction.
+ *
+ * `amount` and `percentage` are not exclusive: a head tax is commonly `{fixedFee, percentageFee}`,
+ * and at least one federation charges per-entry with an absolute cap, which needs all three of
+ * `amount`, `perParticipant` and `maximumAmount`.
+ */
+export interface SanctionFee {
+  feeKind?: SanctionFeeKindUnion;
+  /** the levy itself — currency and unit travel with the amount, so it cannot be misread */
+  fee?: MonetaryAmount;
+  /** proportional levy, where a body charges a percentage instead of or alongside a fixed amount */
+  percentage?: number;
+  /** `fee` is charged per competitor rather than per competition */
+  perParticipant?: boolean;
+  /** cap on the total when `perParticipant` is set */
+  maximum?: MonetaryAmount;
+  /** draw stage or event the fee applies to, where a federation prices them separately */
+  appliesTo?: string;
+  note?: string;
+}
+
+/** What the sanction actually buys. None of these is derivable from the classification. */
+export interface SanctionConferral {
+  /** results count toward the authority's ranking lists (USTA `isRanking`, ITA `isConferenceMatch`) */
+  rankingEligible?: boolean;
+  /** which points profile applies, when the authority runs more than one */
+  rankingPointsProfile?: string;
+  /** results may set records */
+  recordEligible?: boolean;
+  /** times/results are "official" for qualification purposes even if not ranked */
+  officialResults?: boolean;
+  /** the sanction carries the authority's liability cover — the reason many organisers apply */
+  insured?: boolean;
+  extensions?: Extension[];
+}
+
+/**
+ * The rulebook in force, pinned to an edition.
+ *
+ * Pinning is not optional. Governing-body rulebooks are annual, and a sanction granted under one
+ * edition must not silently re-validate against the next. `appliedRules` exists because a body may
+ * enforce only an enumerated SUBSET of its rules at lower recognition levels.
+ */
+export interface SanctionRuleset {
+  rulesetId?: string;
+  /** e.g. '2026' — the edition in force when the decision was made */
+  edition?: string;
+  enforcement?: SanctionEnforcementUnion;
+  /** identifiers of the specific rules enforced, when only a subset applies */
+  appliedRules?: string[];
+  extensions?: Extension[];
+}
+
+/** Provenance of the decision — who decided, when, and whether it can be appealed. */
+export interface SanctionDecisionRecord {
+  decidedAt?: string;
+  decidedByPersonId?: string;
+  decidedByName?: string;
+  /** false where the denial rested on a rule the appeal body cannot overturn */
+  appealable?: boolean;
+  reason?: string;
+  note?: string;
+}
+
+/** An identifier the authority issues for the competition (USTA `identificationCode`, '26-80173'). */
+export interface SanctionIdentifier {
+  organisationId?: string;
+  identifier: string;
+  /** what kind of identifier this is, where an authority issues more than one */
+  identifierType?: string;
+}
+
+/**
+ * A governing body's decision about a competition, as an attribute of that competition.
+ *
+ * Attach to `Tournament.sanction` for the common case. `Event.sanction` exists because grade is
+ * genuinely event-grain in several federations — one tournament routinely carries different
+ * categories for different age groups — mirroring the existing `tournamentTier`/`eventTier` pair.
+ * Where an event carries no sanction of its own, the tournament's applies.
+ *
+ * Multiple sanctions are expressed as multiple entries in `Tournament.sanctions`; `sanction` is the
+ * primary. Dual sanctioning is real (an international-grade event usually also carries national
+ * approval, and one federation requires two co-equal approvals), so consumers must not assume a
+ * single authority.
+ */
+export interface TournamentSanction {
+  /** the workflow outcome */
+  decision?: SanctionDecisionUnion;
+  /** what the authority asserts about the competition */
+  recognition?: RecognitionUnion;
+  /** the grade conferred — reuses the CODES tier shape, so 'Unsanctioned' is expressible */
+  classification?: TierClassification;
+  /** the body whose decision this is — the terminal approver */
+  authority?: SanctioningAuthority;
+  /** the resolved chain, ordered broadest → narrowest. Not necessarily a containment ladder. */
+  approvalChain?: SanctioningAuthority[];
+  decisionRecord?: SanctionDecisionRecord;
+  confers?: SanctionConferral;
+  ruleset?: SanctionRuleset;
+  /** link back to the application this decision came from, where one is held */
+  sanctioningId?: string;
+  identifiers?: SanctionIdentifier[];
+  fees?: SanctionFee[];
+  /** the window in which the application was accepted, where the authority publishes one */
+  submissionWindow?: { from?: string; to?: string; timeZone?: string };
+  extensions?: Extension[];
+  timeItems?: TimeItem[];
+}

@@ -8,7 +8,7 @@
  *
  * Regenerate:   pnpm gen:enum-exports
  * Drift guard:  pnpm check:enum-exports
- * Covers 63 enums across 4 modules.
+ * Covers 69 enums across 4 modules.
  */
 
 export { SportEnum } from './competitionFormat';
@@ -31,12 +31,14 @@ export { EndorsementStatusEnum } from './sanctioningTypes';
 export { SanctioningRelationshipEnum } from './sanctioningTypes';
 export { SanctioningStatusEnum } from './sanctioningTypes';
 export { AddressTypeEnum } from './tournamentTypes';
+export { AuthorityRoleEnum } from './tournamentTypes';
 export { BallTypeEnum } from './tournamentTypes';
 export { BookingTypeEnum } from './tournamentTypes';
 export { CategoryEnum } from './tournamentTypes';
 export { ContactRelationshipEnum } from './tournamentTypes';
 export { CountryCodeEnum } from './tournamentTypes';
 export { CourtPositionEnum } from './tournamentTypes';
+export { CurrencyUnitEnum } from './tournamentTypes';
 export { DisciplineEnum } from './tournamentTypes';
 export { DrawStatusEnum } from './tournamentTypes';
 export { DrawTypeEnum } from './tournamentTypes';
@@ -58,6 +60,10 @@ export { PlayingDoubleHandCodeEnum } from './tournamentTypes';
 export { PlayingHandCodeEnum } from './tournamentTypes';
 export { PositioningProfileEnum } from './tournamentTypes';
 export { PracticeRegistrationStatusEnum } from './tournamentTypes';
+export { RecognitionEnum } from './tournamentTypes';
+export { SanctionDecisionEnum } from './tournamentTypes';
+export { SanctionEnforcementEnum } from './tournamentTypes';
+export { SanctionFeeKindEnum } from './tournamentTypes';
 export { SeedingProfileEnum } from './tournamentTypes';
 export { SexEnum } from './tournamentTypes';
 export { ShotDetailEnum } from './tournamentTypes';
