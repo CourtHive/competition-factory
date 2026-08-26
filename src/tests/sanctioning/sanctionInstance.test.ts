@@ -3,7 +3,8 @@ import { expect, it, describe } from 'vitest';
 
 // constants
 import { APPROVED } from '@Constants/sanctioningConstants';
-import { SanctionDecisionEnum, RecognitionEnum } from '@Types/tournamentTypes';
+import { SanctionDecisionEnum, RecognitionEnum, CurrencyUnitEnum } from '@Types/tournamentTypes';
+import type { SanctionFee } from '@Types/tournamentTypes';
 
 /**
  * `Tournament.sanction` — the sanction INSTANCE model.
@@ -169,5 +170,39 @@ describe('Tournament.sanction on activation', () => {
     expect(sanction.classification).toBeUndefined();
     // governingBodyId alone is still enough to name an authority
     expect(sanction.authority).toEqual({ organisationId: 'gb-1' });
+  });
+});
+
+/**
+ * A federation reporting a sanction fee of 4000 means 40.00 USD. A reader assuming whole units is
+ * off by 100× with nothing in the record to signal it, so the unit is carried explicitly and
+ * travels with the amount rather than being an optional sibling that can go missing.
+ */
+describe('SanctionFee monetary units', () => {
+  it('states amount, currency and unit together so a fee cannot be misread', () => {
+    const fee: SanctionFee = {
+      feeKind: 'SANCTION',
+      fee: { amount: 4000, currencyCode: 'USD', unit: CurrencyUnitEnum.MINOR },
+    };
+
+    expect(fee.fee?.unit).toEqual('MINOR');
+    // 4000 minor units of a 2-exponent currency is 40.00 — resolvable only because the
+    // currency is present alongside the unit
+    expect(fee.fee?.amount).toEqual(4000);
+    expect(fee.fee?.currencyCode).toEqual('USD');
+  });
+
+  it('expresses a per-entry fee with a cap as two complete amounts', () => {
+    const fee: SanctionFee = {
+      feeKind: 'HEAD_TAX',
+      perParticipant: true,
+      fee: { amount: 400, currencyCode: 'USD', unit: CurrencyUnitEnum.MINOR },
+      maximum: { amount: 10000, currencyCode: 'USD', unit: CurrencyUnitEnum.MINOR },
+    };
+
+    // $4.00 per entrant, capped at $100.00 — neither figure can be read at the wrong scale
+    expect(fee.fee?.amount).toEqual(400);
+    expect(fee.maximum?.amount).toEqual(10000);
+    expect(fee.maximum?.unit).toEqual(fee.fee?.unit);
   });
 });

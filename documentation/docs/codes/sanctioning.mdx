@@ -83,7 +83,14 @@ tournamentRecord.sanction = {
   ruleset: { rulesetId: 'POLICY_SANCTIONING_USTA', edition: '2026.1', enforcement: 'ENFORCE' },
 
   identifiers: [{ identifier: '26-80173' }],
-  fees: [{ feeKind: 'HEAD_TAX', perParticipant: true, amount: 4, maximumAmount: 100, currencyCode: 'USD' }],
+  fees: [
+    {
+      feeKind: 'HEAD_TAX',
+      perParticipant: true,
+      fee: { amount: 400, currencyCode: 'USD', unit: 'MINOR' }, // $4.00 per entrant
+      maximum: { amount: 10000, currencyCode: 'USD', unit: 'MINOR' }, // capped at $100.00
+    },
+  ],
   submissionWindow: { from: '2026-01-07', to: '2026-02-01', timeZone: 'America/New_York' },
   sanctioningId: '…',
 };
@@ -106,6 +113,17 @@ insurance are independent of grade, and insurance is often the _reason_ an organ
 **`fees` is a list, and fee shapes vary.** Flat, percentage, per-entry, and per-entry-with-a-cap all
 occur — sometimes in one federation — and some bodies price draw stages separately, which is what
 `appliesTo` is for.
+
+**A monetary amount always states its unit.** `MonetaryAmount` requires `amount`, `currencyCode` and
+`unit` together, so `{ amount: 4000, currencyCode: 'USD', unit: 'MINOR' }` unambiguously means
+$40.00. This is deliberately not an optional flag: a federation reporting `4000` means 40.00, and a
+reader assuming whole units is off by 100× with nothing in the record to signal it. The minor-unit
+exponent is currency-specific (USD 2, JPY 0, KWD 3), which is why the currency must travel with the
+unit for `MINOR` to be resolvable.
+
+> `PrizeMoney` predates this and carries `amount` + `currencyCode` with no unit, so it retains the
+> ambiguity. It is intentionally left alone — changing its meaning would break existing records —
+> but new monetary fields should use `MonetaryAmount`.
 
 **`sanctions`** (plural, on `Tournament`) carries additional sanctions where a competition is
 approved by more than one body. Dual sanctioning is common: an international-grade event usually

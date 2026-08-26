@@ -2290,6 +2290,39 @@ export enum SanctionEnforcementEnum {
 }
 export type SanctionEnforcementUnion = `${SanctionEnforcementEnum}`;
 
+/**
+ * Whether a monetary `amount` is expressed in the currency's smallest unit or in whole units.
+ *
+ * Stated explicitly rather than assumed, because the assumption is silently wrong half the time and
+ * the error is invisible: a federation reporting a 4000 sanction fee means 40.00 USD, and a reader
+ * assuming whole units is off by 100× with nothing to signal it. The minor-unit exponent is
+ * currency-specific (USD 2, JPY 0, KWD 3), so `currencyCode` is what makes `MINOR` resolvable.
+ */
+export enum CurrencyUnitEnum {
+  /** the currency's smallest unit — `{ amount: 4000, currencyCode: 'USD', unit: 'MINOR' }` is $40.00 */
+  MINOR = 'MINOR',
+  /** whole currency units — `{ amount: 40, currencyCode: 'USD', unit: 'MAJOR' }` is $40.00 */
+  MAJOR = 'MAJOR',
+}
+export type CurrencyUnitUnion = `${CurrencyUnitEnum}`;
+
+/**
+ * An amount of money that cannot be stated ambiguously.
+ *
+ * All three fields are required together by construction. That is the point: an optional `unit`
+ * would reintroduce exactly the ambiguity this type exists to remove, since the omitted case is
+ * indistinguishable from the unconsidered one.
+ *
+ * NOTE: `PrizeMoney` carries `amount` + `currencyCode` with no unit and therefore has this
+ * ambiguity today. It is left alone here — changing its meaning would be a breaking change to
+ * existing records — but new monetary fields should use this type.
+ */
+export interface MonetaryAmount {
+  amount: number;
+  currencyCode: string;
+  unit: CurrencyUnitUnion;
+}
+
 /** Shape of a levy. Federations charge flat, per-entry, percentage, and capped-per-entry fees. */
 export enum SanctionFeeKindEnum {
   /** paid by the organiser to the authority for the sanction itself */
@@ -2323,13 +2356,14 @@ export interface SanctioningAuthority {
  */
 export interface SanctionFee {
   feeKind?: SanctionFeeKindUnion;
-  currencyCode?: string;
-  amount?: number;
+  /** the levy itself — currency and unit travel with the amount, so it cannot be misread */
+  fee?: MonetaryAmount;
+  /** proportional levy, where a body charges a percentage instead of or alongside a fixed amount */
   percentage?: number;
-  /** `amount` is charged per competitor rather than per competition */
+  /** `fee` is charged per competitor rather than per competition */
   perParticipant?: boolean;
   /** cap on the total when `perParticipant` is set */
-  maximumAmount?: number;
+  maximum?: MonetaryAmount;
   /** draw stage or event the fee applies to, where a federation prices them separately */
   appliesTo?: string;
   note?: string;

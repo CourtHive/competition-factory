@@ -225,6 +225,9 @@ const ENUM_ONLY = [
   'AuthorityRoleEnum',
   'SanctionEnforcementEnum',
   'SanctionFeeKindEnum',
+  // currency UNIT (minor vs whole) is a representation concern with no const-module twin — the
+  // currencies themselves are ISO 4217 strings, not a factory vocabulary
+  'CurrencyUnitEnum',
   'WheelchairClassEnum',
   'WinReasonEnum',
 ];
