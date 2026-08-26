@@ -50,7 +50,7 @@ describe('Scenario: ITF W50 Full Lifecycle (Brazil)', () => {
     surfaceCategory: 'CLAY',
     indoorOutdoor: 'OUTDOOR',
     localTimeZone: 'America/Sao_Paulo',
-    totalPrizeMoney: [{ amount: 50000, currencyCode: 'USD' }],
+    totalPrizeMoney: [{ amount: 50000, currencyCode: 'USD', unit: 'MAJOR' }],
     venues: [{ venueName: 'Jurerê Tennis Club', numberOfCourts: 8, surfaceCategory: 'CLAY' }],
     tournamentDirector: { personName: 'Carlos Mendes', role: 'Tournament Director' },
     referee: { personName: 'Ana Souza', role: 'Referee', certificationLevel: 'Bronze Badge' },
@@ -276,7 +276,7 @@ describe('Scenario: Conditional Approval — BWF Prize Money Confirmation', () =
         proposedStartDate: '2028-09-01',
         proposedEndDate: '2028-09-07',
         hostCountryCode: 'IDN',
-        totalPrizeMoney: [{ amount: 25000, currencyCode: 'USD' }],
+        totalPrizeMoney: [{ amount: 25000, currencyCode: 'USD', unit: 'MAJOR' }],
         events: [
           { eventName: "Men's Singles", eventType: 'SINGLES', gender: 'MALE', drawSize: 32 },
           { eventName: "Women's Singles", eventType: 'SINGLES', gender: 'FEMALE', drawSize: 32 },

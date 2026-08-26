@@ -143,9 +143,11 @@ describe('validateProposal — maximumPrizeMoney', () => {
     const policy: SanctioningPolicy = {
       ...basePolicy,
       requireInsurance: false,
-      tiers: [{ tierName: 'Capped', tierLevel: 1, maximumPrizeMoney: 5000 }],
+      tiers: [
+        { tierName: 'Capped', tierLevel: 1, maximumPrizeMoney: { amount: 5000, currencyCode: 'USD', unit: 'MAJOR' } },
+      ],
     };
-    const proposal = minimalProposal({ totalPrizeMoney: [{ amount: 6000, currencyCode: 'USD' }] });
+    const proposal = minimalProposal({ totalPrizeMoney: [{ amount: 6000, currencyCode: 'USD', unit: 'MAJOR' }] });
     let result: any = validateProposal({
       proposal,
       sanctioningPolicy: policy,
@@ -306,7 +308,7 @@ describe('getCompleteness — policy requirement checks', () => {
 describe('getCompleteness — isPresent edge cases', () => {
   it('treats 0 as present for numeric fields', () => {
     const record = makeRecord({
-      proposal: minimalProposal({ totalPrizeMoney: [{ amount: 0, currencyCode: 'USD' }] }),
+      proposal: minimalProposal({ totalPrizeMoney: [{ amount: 0, currencyCode: 'USD', unit: 'MAJOR' }] }),
     });
     let result: any = getCompleteness({ sanctioningRecord: record });
     expect(result.completeness.missingFields).not.toContain('proposal.totalPrizeMoney');
@@ -336,11 +338,11 @@ describe('getEligibleTiers — maximumPrizeMoney', () => {
     const policy: SanctioningPolicy = {
       ...basePolicy,
       tiers: [
-        { tierName: 'Low', tierLevel: 1, maximumPrizeMoney: 3000 },
-        { tierName: 'High', tierLevel: 2, maximumPrizeMoney: 50000 },
+        { tierName: 'Low', tierLevel: 1, maximumPrizeMoney: { amount: 3000, currencyCode: 'USD', unit: 'MAJOR' } },
+        { tierName: 'High', tierLevel: 2, maximumPrizeMoney: { amount: 50000, currencyCode: 'USD', unit: 'MAJOR' } },
       ],
     };
-    const proposal = minimalProposal({ totalPrizeMoney: [{ amount: 10000, currencyCode: 'USD' }] });
+    const proposal = minimalProposal({ totalPrizeMoney: [{ amount: 10000, currencyCode: 'USD', unit: 'MAJOR' }] });
     let result: any = getEligibleTiers({ proposal, sanctioningPolicy: policy });
     expect(result.success).toBe(true);
     const low = result.tierEligibilities.find((t: any) => t.tierName === 'Low');
@@ -393,7 +395,7 @@ describe('Engine resolution — explicit sanctioningId and proposal in params', 
       proposal: minimalProposal(),
     });
     const overrideProposal = minimalProposal({
-      totalPrizeMoney: [{ amount: 1, currencyCode: 'USD' }],
+      totalPrizeMoney: [{ amount: 1, currencyCode: 'USD', unit: 'MAJOR' }],
       events: [{ eventName: 'S', eventType: 'SINGLES', drawSize: 8 }],
     });
     let result: any = sanctioningEngine.getEligibleTiers({

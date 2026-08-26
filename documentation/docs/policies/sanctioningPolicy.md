@@ -8,13 +8,13 @@ A **sanctioning policy** defines what a governing body requires at each sanction
 
 ```ts
 interface SanctioningPolicy {
-  policyName: string;           // Human-readable name
-  policyVersion: string;        // e.g., "2026.1"
-  effectiveDate: string;        // ISO 8601 — when this version takes effect
-  supersededDate?: string;      // When replaced by a newer version
-  governingBodyId: string;      // Which body this policy belongs to
+  policyName: string; // Human-readable name
+  policyVersion: string; // e.g., "2026.1"
+  effectiveDate: string; // ISO 8601 — when this version takes effect
+  supersededDate?: string; // When replaced by a newer version
+  governingBodyId: string; // Which body this policy belongs to
 
-  tiers: SanctioningTier[];     // Tier definitions with constraints
+  tiers: SanctioningTier[]; // Tier definitions with constraints
 
   // Global requirements
   requireEndorsement?: boolean;
@@ -43,8 +43,8 @@ Each tier within a policy defines constraints for events sanctioned at that leve
 
 ```ts
 interface SanctioningTier {
-  tierName: string;                 // e.g., "W50", "Level 3"
-  tierLevel: number;                // Numeric ordering
+  tierName: string; // e.g., "W50", "Level 3"
+  tierLevel: number; // Numeric ordering
 
   // Event constraints
   allowedEventTypes?: EventTypeUnion[];
@@ -60,8 +60,8 @@ interface SanctioningTier {
   allowedMatchUpFormats?: string[];
 
   // Financial
-  minimumPrizeMoney?: number;
-  maximumPrizeMoney?: number;
+  minimumPrizeMoney?: MonetaryAmount; // e.g. { amount: 15000, currencyCode: 'USD', unit: 'MAJOR' }
+  maximumPrizeMoney?: MonetaryAmount;
   sanctionFeePercent?: number;
   sanctionFeeFixed?: number;
 
@@ -83,7 +83,7 @@ interface SanctioningTier {
   prerequisiteEventCount?: number;
 
   // Timing
-  minimumLeadWeeks?: number;        // Overrides global
+  minimumLeadWeeks?: number; // Overrides global
 }
 ```
 
@@ -93,9 +93,9 @@ Controls what modifications are permitted after approval:
 
 ```ts
 interface AmendmentRules {
-  substantialChangeFields?: string[];       // Dot-path patterns; wildcards: "events.*.drawSize"
-  noChangeWindowWeeks?: number;             // Hard freeze before event
-  substantialChangeWindowWeeks?: number;    // Substantial changes need review
+  substantialChangeFields?: string[]; // Dot-path patterns; wildcards: "events.*.drawSize"
+  noChangeWindowWeeks?: number; // Hard freeze before event
+  substantialChangeWindowWeeks?: number; // Substantial changes need review
   prizeMoneyIncrease?: 'ALLOWED' | 'REQUIRES_REVIEW' | 'PROHIBITED';
   prizeMoneyDecrease?: 'ALLOWED' | 'REQUIRES_REVIEW' | 'PROHIBITED';
   lateChangePenalty?: boolean;
