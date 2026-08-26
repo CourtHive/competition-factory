@@ -15,7 +15,15 @@ import type {
   VenueProposal,
   EventProposal,
 } from '@Types/sanctioningTypes';
-import type { Tournament, Event, Venue, UnifiedEventID } from '@Types/tournamentTypes';
+import type {
+  SanctioningAuthority,
+  TournamentSanction,
+  UnifiedEventID,
+  Tournament,
+  Venue,
+  Event,
+} from '@Types/tournamentTypes';
+import { SanctionDecisionEnum, RecognitionEnum } from '@Types/tournamentTypes';
 
 type ActivateFromSanctioningArgs = {
   sanctioningRecord: SanctioningRecord;
@@ -107,6 +115,79 @@ function resolveVenues(venues: Venue[] | undefined, proposalVenues: VenueProposa
  * exists precisely to let one record carry events sanctioned elsewhere, so reading one for
  * the other is the mistake this field exists to prevent.
  */
+/**
+ * Project the approved application onto the competition as a `TournamentSanction`.
+ *
+ * This is the bridge between the two halves of the sanctioning domain: `SanctioningRecord` is the
+ * application (AMS-held, discarded once decided), while `TournamentSanction` is the decision as an
+ * attribute that travels with the record. Before this existed the projection was
+ * `processCodes: ['SANCTIONED']` and everything else the application knew — who approved it, when,
+ * under which rulebook edition, and whether it confers ranking status — was dropped on activation.
+ *
+ * `recognition` is SANCTIONED here because that is what activation means: this body ran the
+ * competition under its own rules. Records INGESTED from a federation may legitimately carry
+ * APPROVED / OBSERVED / UNSANCTIONED instead, which is why the field is not a constant.
+ */
+function buildSanction(sanctioningRecord: SanctioningRecord): TournamentSanction {
+  const { governingBody, governingBodyId, sanctioningTier, policyVersion, sanctioningPolicy } = sanctioningRecord;
+
+  const authority: SanctioningAuthority | undefined =
+    governingBodyId || governingBody
+      ? {
+          ...(governingBodyId ? { organisationId: governingBodyId } : {}),
+          ...(governingBody?.organisationName ? { organisationName: governingBody.organisationName } : {}),
+          ...(governingBody?.organisationAbbreviation
+            ? { organisationAbbreviation: governingBody.organisationAbbreviation }
+            : {}),
+        }
+      : undefined;
+
+  // The endorsement chain IS the approval chain, in the order the endorsements were required.
+  // Only endorsed links are included — a pending or declined endorser did not approve anything.
+  // `endorsementLevel` is the required ORDER (1 = first), so it — not array position — is what
+  // orders the chain. Endorsements without a level sort last rather than being dropped.
+  const approvalChain: SanctioningAuthority[] = (sanctioningRecord.endorsements ?? [])
+    .filter((endorsement) => endorsement?.status === 'ENDORSED' && endorsement.endorserId)
+    .slice()
+    .sort((a, b) => (a.endorsementLevel ?? Number.MAX_SAFE_INTEGER) - (b.endorsementLevel ?? Number.MAX_SAFE_INTEGER))
+    .map((endorsement) => ({
+      organisationId: endorsement.endorserId,
+      ...(endorsement.endorserName ? { organisationName: endorsement.endorserName } : {}),
+    }));
+
+  return {
+    decision: SanctionDecisionEnum.APPROVED,
+    recognition: RecognitionEnum.SANCTIONED,
+    ...(sanctioningTier ? { classification: { ...sanctioningTier } } : {}),
+    ...(authority ? { authority } : {}),
+    ...(approvalChain.length ? { approvalChain } : {}),
+    ...(sanctioningRecord.approvedAt || sanctioningRecord.reviewer
+      ? {
+          decisionRecord: {
+            ...(sanctioningRecord.approvedAt ? { decidedAt: sanctioningRecord.approvedAt } : {}),
+            ...(sanctioningRecord.reviewer?.reviewerName
+              ? { decidedByName: sanctioningRecord.reviewer.reviewerName }
+              : {}),
+            ...(sanctioningRecord.reviewer?.reviewerId
+              ? { decidedByPersonId: sanctioningRecord.reviewer.reviewerId }
+              : {}),
+          },
+        }
+      : {}),
+    // Pin the rulebook edition the decision was made under. Governing-body policies are annual;
+    // re-validating a granted sanction against a later edition is a real hazard.
+    ...(sanctioningPolicy || policyVersion
+      ? {
+          ruleset: {
+            ...(sanctioningPolicy ? { rulesetId: sanctioningPolicy } : {}),
+            ...(policyVersion ? { edition: policyVersion } : {}),
+          },
+        }
+      : {}),
+    sanctioningId: sanctioningRecord.sanctioningId,
+  };
+}
+
 function resolveEventOtherIds(
   ep: EventProposal,
   eventId: string,
@@ -173,7 +254,11 @@ export function activateFromSanctioning({
     totalPrizeMoney: proposal.totalPrizeMoney,
     registrationProfile: proposal.registrationProfile,
     tournamentStatus: 'ACTIVE',
+    // Retained for consumers that still read it. It is a boolean marker and cannot carry the
+    // decision, the authority chain, or what the sanction confers — `sanction` below is the
+    // richer expression of the same fact, and new consumers should read that.
     processCodes: ['SANCTIONED'],
+    sanction: buildSanction(sanctioningRecord),
 
     // Governance
     parentOrganisationId: sanctioningRecord.governingBodyId,

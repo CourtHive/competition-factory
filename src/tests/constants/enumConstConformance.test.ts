@@ -214,6 +214,17 @@ const ENUM_ONLY = [
   // tier MOVEMENT is a derived vocabulary (promotion/relegation between seasons) with no
   // const-module twin — the tier systems themselves are free-form federation strings
   'TierMovementEnum',
+  // The sanction INSTANCE vocabularies. `sanctioningConstants` is the state machine for the
+  // sanctioning APPLICATION (DRAFT → SUBMITTED → … → CLOSED); these describe the DECISION as an
+  // attribute of the competition, which is a different vocabulary with deliberately different
+  // values — e.g. authority-initiated REVOKED/SUSPENDED, which an application state machine has no
+  // reason to model. Mirroring them onto that const module would fuse two vocabularies whose whole
+  // point is that they are distinct.
+  'SanctionDecisionEnum',
+  'RecognitionEnum',
+  'AuthorityRoleEnum',
+  'SanctionEnforcementEnum',
+  'SanctionFeeKindEnum',
   'WheelchairClassEnum',
   'WinReasonEnum',
 ];

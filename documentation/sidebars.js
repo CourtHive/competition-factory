@@ -432,7 +432,7 @@ module.exports = {
         {
           type: 'category',
           label: 'Codes',
-          items: ['codes/age-category', 'codes/matchup-format'],
+          items: ['codes/age-category', 'codes/matchup-format', 'codes/sanctioning'],
         },
       ],
     },
