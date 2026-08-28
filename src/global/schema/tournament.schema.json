@@ -204,7 +204,8 @@
         }
       },
       "required": ["tournamentId"],
-      "additionalProperties": true
+      "additionalProperties": true,
+      "$comment": "OPEN, and this is a KNOWN GAP rather than a decision — closing it is blocked, not declined. Measured 2026-08-28 against the 16 TODS fixtures: 13 records carry `venueIds`, 6 carry `deleted`, and `dualMatchMetadata`, `associatedOrganisations`, `rootOrganisationId`, `tournamentExternalId` and a nested `tournamentRecord` each appear. Closing this definition today fails 14 of 16 fixtures. Each undeclared field must first be resolved as either a real CODES concept (declare it in `types/tournamentTypes.ts` AND here) or as legacy data (correct the fixtures), after which this should become `false` to match the other 51."
     },
     "Extension": {
       "type": "object",
@@ -218,7 +219,8 @@
         "value": {}
       },
       "required": ["name", "value"],
-      "additionalProperties": true
+      "additionalProperties": true,
+      "$comment": "OPEN, deliberately and permanently. Extensions are CODES' escape hatch: `value` is unconstrained by design, and callers attach their own keys. This is the one exception that is not a backlog item."
     },
     "TimeItem": {
       "type": "object",
@@ -2508,7 +2510,9 @@
         "notes": {
           "type": "string"
         }
-      }
+      },
+      "$comment": "OPEN, and this is a KNOWN GAP rather than a decision — closing it is blocked, not declined. Measured 2026-08-28 against the 16 TODS fixtures: records carry `createdAt`, `updatedAt` and a nested `parentOrganisation`. Closing this definition today fails 14 of 16 fixtures. Each undeclared field must first be resolved as either a real CODES concept (declare it in `types/tournamentTypes.ts` AND here) or as legacy data (correct the fixtures), after which this should become `false` to match the other 51.",
+      "additionalProperties": true
     },
     "Participant": {
       "type": "object",
@@ -3559,7 +3563,8 @@
         }
       },
       "required": ["venueId"],
-      "additionalProperties": true
+      "additionalProperties": true,
+      "$comment": "OPEN, and this is a KNOWN GAP rather than a decision — closing it is blocked, not declined. Measured 2026-08-28 against the 16 TODS fixtures: 7 records carry `parentOrganisation`, which `Venue` does not declare. Closing this definition today fails 14 of 16 fixtures. Each undeclared field must first be resolved as either a real CODES concept (declare it in `types/tournamentTypes.ts` AND here) or as legacy data (correct the fixtures), after which this should become `false` to match the other 51."
     },
     "Court": {
       "type": "object",
@@ -3835,5 +3840,6 @@
       "required": ["amount", "currencyCode", "unit", "finishingPosition"],
       "additionalProperties": false
     }
-  }
+  },
+  "$comment": "CONVENTION: every object definition states `additionalProperties` EXPLICITLY, and the default is `false`. 51 of 55 definitions are closed. A closed definition is what makes a CODES field added to the TypeScript types but never mirrored here a LOUD failure rather than a silent one — the drift fixed in #4718 went unnoticed for exactly this reason on the open definitions. Four definitions are open; each carries a `$comment` saying why. `codesSchemaConvention.test.ts` enforces both halves: no definition may omit the keyword, and the open set may not grow without updating that test."
 }
