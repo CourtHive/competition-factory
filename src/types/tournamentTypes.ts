@@ -22,6 +22,18 @@ export interface Tournament {
   parentOrganisationId?: string;
   parentOrganisation?: Organisation;
   participants?: Participant[];
+  /**
+   * What each finishing position was worth, where an authority publishes ONE ladder for the whole
+   * competition rather than one per event. The counterpart to `totalPrizeMoney`, at the same
+   * grain: without it a reader can find the total at tournament level but must go to the events
+   * for the shape, and for a single-event competition there are no events to go to.
+   *
+   * NOT an aggregation of `Event.prizeMoneyAwards`. A ladder cannot be summed or merged across
+   * events — see `PrizeMoneyAward` — so this holds only what the source itself stated at
+   * tournament grain. Where an event carries its own ladder, the event's ladder governs that
+   * event; this one never overrides it.
+   */
+  prizeMoneyAwards?: PrizeMoneyAward[];
   processCodes?: string[];
   promotionalName?: string;
   registrationProfile?: RegistrationProfile;
@@ -115,6 +127,14 @@ export interface Event {
    * around it with an ad-hoc extension.
    */
   prizeMoney?: PrizeMoney[];
+  /**
+   * What each finishing position in this event was worth — the ladder behind `prizeMoney`.
+   *
+   * Event grain because that is the grain ladders are published at. A main draw, its qualifying,
+   * and a smaller-draw event in the same tournament each carry their own — different rung counts
+   * at different draw sizes, none of them derivable from another.
+   */
+  prizeMoneyAwards?: PrizeMoneyAward[];
   /**
    * Event-grain sanction. Grade is genuinely per-event in several federations — one tournament
    * routinely carries different categories for different age groups — mirroring `eventTier`.
@@ -1875,12 +1895,86 @@ export interface RegistrationEntryFee {
  * `unit` — the sum is otherwise meaningless.
  */
 export interface PrizeMoney extends MonetaryAmount {
+  /**
+   * Never set. Declared as `never` so a {@link PrizeMoneyAward}`[]` — a ladder, where every entry
+   * carries a `finishingPosition` — cannot be passed where a list of TOTALS is expected. Without
+   * it TypeScript's structural typing accepts the substitution silently, and `sumAgainstBound`
+   * returns a confident, correctly-denominated, wrong number. See `PrizeMoneyAward`.
+   */
+  finishingPosition?: never;
   createdAt?: Date | string;
   extensions?: Extension[];
   isMock?: boolean;
   notes?: string;
   timeItems?: TimeItem[];
   updatedAt?: Date | string;
+}
+
+/**
+ * What ONE finishing position was worth.
+ *
+ * `PrizeMoney` states a total; a `PrizeMoneyAward[]` states the ladder that produced it.
+ * Competitions commonly award money the way they award ranking points — by how far you got — and
+ * CODES could previously record only the sum, or drop the ladder entirely. A single tournament
+ * routinely carries several ladders that are not derivable from one another: a main draw, its
+ * qualifying, and smaller-draw events each publish their own.
+ *
+ * `finishingPosition` carries the SAME semantics as `finishingPositionRanges` in the
+ * ranking-points policies (`AwardProfile`, `types/rankingTypes.ts`): the MAXIMUM finishing position
+ * of the range the award covers. In a 128 draw the first-round losers finish 65th-128th, so their
+ * rung is `128`; semi-finalists finish 3rd-4th, so theirs is `4`. A Grand Slam singles ladder
+ * therefore lands on 1, 2, 4, 8, 16, 32, 64, 128 — the exact keys `grandSlamSingles` already uses
+ * in `POLICY_RANKING_POINTS_ATP`, because they describe the same eight outcomes. That is the point
+ * of reusing the key: "R16 was worth 200 points and 480,000" becomes one join rather than two
+ * vocabularies.
+ *
+ * Position rather than round, for the reason the points policies chose it: round-robins,
+ * consolations and playoffs have no clean "round you lost in", so a round-keyed model cannot
+ * express them at all.
+ *
+ * ## `roundCode` is NOT `finishingPosition`, and they run in opposite directions
+ *
+ * A "Round 1" rung is what a first-round LOSER received — the LAST finishing position, not the
+ * first. Code that maps round one to position one inverts the whole ladder and pays the champion
+ * the qualifier's cheque, with nothing in the data to signal it. Nor is the mapping fixed: the same
+ * round code is position 128 in a 128 draw and position 16 in a 16 draw, so a round number means
+ * nothing without the draw size. That is precisely why the position is what gets stored — and why
+ * `roundName` / `roundCode` are kept beside it, so the conversion stays auditable instead of lost.
+ *
+ * The top rung is not always position 1, either. A qualifying ladder's last rung is what the losers
+ * of the final qualifying round received; the players who came through are paid from the MAIN
+ * draw's ladder, so a qualifying ladder may carry no rung at position 1 at all.
+ *
+ * ## A ladder is not a list of totals — never sum one
+ *
+ * Each rung is what ONE competitor at that position received. A tournament's outlay is the sum of
+ * `amount x (competitors finishing in that range)`. For a 128 draw whose eight rungs run 140,000 /
+ * 190,000 / 290,000 / 480,000 / 780,000 / 1,450,000 / 2,800,000 / 5,500,000, adding the rungs gives
+ * 11,630,000 while the actual outlay is 37,840,000 — the naive figure is not the purse, nor
+ * anything else. This is why awards get their own field instead of being folded into `prizeMoney`.
+ *
+ * That is enforced rather than merely documented. `PrizeMoney` declares `finishingPosition?: never`
+ * for this single purpose, so passing a ladder where a list of totals is expected is a compile
+ * error — structural typing would otherwise accept the substitution in silence, and
+ * `sumAgainstBound` would return a confident, wrong, correctly-denominated number.
+ *
+ * As with `PrizeMoney`, `unit` is required and load-bearing. Publishers disagree on scale and on
+ * formatting: whole units as a comma-formatted STRING (which `Number()`s to `NaN`), whole units as
+ * an integer, and minor units as an integer all occur. Parsing is the producer's job; declaring the
+ * scale is this type's.
+ */
+export interface PrizeMoneyAward extends MonetaryAmount {
+  /**
+   * Maximum finishing position of the range this award covers — `1` winner, `2` finalist,
+   * `4` semi-finalist, `128` first-round loser in a 128 draw. A position, never a round number.
+   */
+  finishingPosition: number;
+  /** the authority's own label for the rung, where it publishes one (`'Quarter-Finals'`) */
+  roundName?: string;
+  /** the authority's own code for the rung, where it publishes one (`'Q'`, `'W'`, `'1'`) */
+  roundCode?: string;
+  extensions?: Extension[];
+  notes?: string;
 }
 
 export interface UnifiedTournamentID {

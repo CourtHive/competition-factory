@@ -128,6 +128,23 @@ unit for `MINOR` to be resolvable.
 > `MonetaryAmount` for the same reason, and the validator reports amounts it cannot compare rather
 > than folding them in.
 
+**A total is not a schedule.** `totalPrizeMoney` and `Event.prizeMoney` say what was offered;
+`prizeMoneyAwards` (on `Event`, and on `Tournament` where a body publishes one ladder for the whole
+competition) says what each finishing position was worth — the Grand Slam model of per-round
+payouts, generalised. Competitions commonly award money the way they award ranking points, by how
+far you got, so `PrizeMoneyAward.finishingPosition` reuses the key `finishingPositionRanges` already
+uses in the ranking-points policies, and "R16 was worth 200 points and 480,000" becomes one join
+rather than two vocabularies.
+
+> Two traps. **A `roundCode` is not a finishing position and the two run in opposite directions** —
+> a "Round 1" rung is what a first-round _loser_ received, the _last_ position, and which position
+> that is depends on the draw size (128 in a 128 draw, 16 in a 16 draw). **A ladder is never
+> summed.** Each rung is what one competitor received, so the outlay is
+> `amount × competitors finishing in that range`; adding the rungs understates a 128-draw purse
+> threefold. This is why awards are a separate field from `prizeMoney`, and why `PrizeMoney`
+> declares `finishingPosition?: never` — passing a ladder where a list of totals is expected is a
+> compile error rather than a silently wrong sum.
+
 **`sanctions`** (plural, on `Tournament`) carries additional sanctions where a competition is
 approved by more than one body. Dual sanctioning is common: an international-grade event usually
 also carries national approval.
