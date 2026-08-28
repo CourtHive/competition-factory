@@ -31,13 +31,23 @@ const schema = JSON.parse(
 const validate = ajv.compile(schema);
 
 const sourcePath = './src/tests/testHarness';
-const filenames: any[] = fs.readdirSync(sourcePath).filter(
-  (filename) => filename.indexOf('.tods.json') > 0 && filename.indexOf('.8') === undefined, // we don't want to validate TODS v0.8
-);
+// `.includes`, not `indexOf(...) === undefined`. `indexOf` returns a NUMBER, so the old
+// `filename.indexOf('.8') === undefined` was always false and `filenames` was always EMPTY —
+// `it.each([])` registers no tests and vitest does not complain, so this suite reported green
+// while validating none of the 16 TODS files. The read path below was wrong too
+// (`src/global/testHarness`, which does not exist), so either bug alone was fatal.
+const filenames: any[] = fs
+  .readdirSync(sourcePath)
+  .filter((filename) => filename.includes('.tods.json') && !filename.includes('.8')); // TODS v0.8 is not validated
+
+// Guard the guard: if the glob ever goes empty again, fail loudly instead of silently passing.
+it('finds TODS files to validate', () => {
+  expect(filenames.length).toBeGreaterThan(0);
+});
 
 it.each(filenames)('can validate all tods files in testHarness directory', (filename) => {
   const data = JSON.parse(
-    fs.readFileSync(`./src/global/testHarness/${filename}`, {
+    fs.readFileSync(`${sourcePath}/${filename}`, {
       encoding: 'utf8',
     }),
   );
