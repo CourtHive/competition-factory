@@ -159,6 +159,48 @@
           "items": {
             "$ref": "#/definitions/Venue"
           }
+        },
+        "activeDates": {
+          "type": "array",
+          "items": {
+            "type": ["string", "object"]
+          }
+        },
+        "factory": {
+          "type": "object"
+        },
+        "linkedTournamentIds": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "prizeMoneyAwards": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/PrizeMoneyAward"
+          }
+        },
+        "sanction": {
+          "type": "object"
+        },
+        "sanctions": {
+          "type": "array",
+          "items": {
+            "type": "object"
+          }
+        },
+        "scheduling": {
+          "type": "object"
+        },
+        "tournamentTier": {
+          "type": "object"
+        },
+        "weekdays": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
         }
       },
       "required": ["tournamentId"],
@@ -206,7 +248,9 @@
     "Event": {
       "type": "object",
       "properties": {
-        "flightProfile": { "type": "object" },
+        "flightProfile": {
+          "type": "object"
+        },
         "createdAt": {
           "type": ["string", "object"],
           "format": "date-time"
@@ -346,6 +390,45 @@
         },
         "wheelchairClass": {
           "$ref": "#/definitions/WheelchairClassEnum"
+        },
+        "activeDates": {
+          "type": "array",
+          "items": {
+            "type": ["string", "object"]
+          }
+        },
+        "competitionFormat": {
+          "type": "string"
+        },
+        "prizeMoney": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/PrizeMoney"
+          }
+        },
+        "prizeMoneyAwards": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/PrizeMoneyAward"
+          }
+        },
+        "sanction": {
+          "type": "object"
+        },
+        "eventOtherIds": {
+          "type": "array",
+          "items": {
+            "type": "object"
+          }
+        },
+        "eventTier": {
+          "type": "object"
+        },
+        "weekdays": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
         }
       },
       "required": ["eventId"],
@@ -496,10 +579,18 @@
     "DrawDefinition": {
       "type": "object",
       "properties": {
-        "flightProfile": { "type": "object" },
-        "lineUps": { "type": "object" },
-        "draftState": { "type": "object" },
-        "competitionState": { "type": "object" },
+        "flightProfile": {
+          "type": "object"
+        },
+        "lineUps": {
+          "type": "object"
+        },
+        "draftState": {
+          "type": "object"
+        },
+        "competitionState": {
+          "type": "object"
+        },
         "createdAt": {
           "type": ["string", "object"],
           "format": "date-time"
@@ -633,7 +724,9 @@
     "Entry": {
       "type": "object",
       "properties": {
-        "roundTarget": { "type": "integer" },
+        "roundTarget": {
+          "type": "integer"
+        },
         "createdAt": {
           "type": ["string", "object"],
           "format": "date-time"
@@ -888,8 +981,12 @@
     "MatchUp": {
       "type": "object",
       "properties": {
-        "delegatedOutcome": { "type": "object" },
-        "disableAutoCalc": { "type": "boolean" },
+        "delegatedOutcome": {
+          "type": "object"
+        },
+        "disableAutoCalc": {
+          "type": "boolean"
+        },
         "createdAt": {
           "type": ["string", "object"],
           "format": "date-time"
@@ -1823,7 +1920,9 @@
     "Structure": {
       "type": "object",
       "properties": {
-        "roundTarget": { "type": "integer" },
+        "roundTarget": {
+          "type": "integer"
+        },
         "createdAt": {
           "type": ["string", "object"],
           "format": "date-time"
@@ -1942,9 +2041,15 @@
     "PositionAssignment": {
       "type": "object",
       "properties": {
-        "tally": { "type": "object" },
-        "subOrder": { "type": "integer" },
-        "disableLinks": { "type": "boolean" },
+        "tally": {
+          "type": "object"
+        },
+        "subOrder": {
+          "type": "integer"
+        },
+        "disableLinks": {
+          "type": "boolean"
+        },
         "createdAt": {
           "type": ["string", "object"],
           "format": "date-time"
@@ -3149,20 +3254,36 @@
     "LogisticsOption": {
       "type": "object",
       "properties": {
-        "address": { "type": "string" },
-        "description": { "type": "string" },
-        "email": { "type": "string" },
+        "address": {
+          "type": "string"
+        },
+        "description": {
+          "type": "string"
+        },
+        "email": {
+          "type": "string"
+        },
         "extensions": {
           "type": "array",
           "items": {
             "$ref": "#/definitions/Extension"
           }
         },
-        "name": { "type": "string" },
-        "notes": { "type": "string" },
-        "phone": { "type": "string" },
-        "priceRange": { "type": "string" },
-        "url": { "type": "string" }
+        "name": {
+          "type": "string"
+        },
+        "notes": {
+          "type": "string"
+        },
+        "phone": {
+          "type": "string"
+        },
+        "priceRange": {
+          "type": "string"
+        },
+        "url": {
+          "type": "string"
+        }
       },
       "required": ["name"],
       "additionalProperties": false
@@ -3170,11 +3291,21 @@
     "SocialEvent": {
       "type": "object",
       "properties": {
-        "date": { "type": "string" },
-        "description": { "type": "string" },
-        "location": { "type": "string" },
-        "name": { "type": "string" },
-        "time": { "type": "string" }
+        "date": {
+          "type": "string"
+        },
+        "description": {
+          "type": "string"
+        },
+        "location": {
+          "type": "string"
+        },
+        "name": {
+          "type": "string"
+        },
+        "time": {
+          "type": "string"
+        }
       },
       "required": ["name"],
       "additionalProperties": false
@@ -3182,10 +3313,18 @@
     "Sponsor": {
       "type": "object",
       "properties": {
-        "logoUrl": { "type": "string" },
-        "name": { "type": "string" },
-        "tier": { "type": "string" },
-        "websiteUrl": { "type": "string" }
+        "logoUrl": {
+          "type": "string"
+        },
+        "name": {
+          "type": "string"
+        },
+        "tier": {
+          "type": "string"
+        },
+        "websiteUrl": {
+          "type": "string"
+        }
       },
       "required": ["name"],
       "additionalProperties": false
@@ -3193,9 +3332,15 @@
     "DocumentLink": {
       "type": "object",
       "properties": {
-        "description": { "type": "string" },
-        "name": { "type": "string" },
-        "url": { "type": "string" }
+        "description": {
+          "type": "string"
+        },
+        "name": {
+          "type": "string"
+        },
+        "url": {
+          "type": "string"
+        }
       },
       "required": ["name"],
       "additionalProperties": false
@@ -3203,9 +3348,15 @@
     "RegistrationEntryFee": {
       "type": "object",
       "properties": {
-        "amount": { "type": "number" },
-        "category": { "type": "string" },
-        "currencyCode": { "type": "string" },
+        "amount": {
+          "type": "number"
+        },
+        "category": {
+          "type": "string"
+        },
+        "currencyCode": {
+          "type": "string"
+        },
         "eventType": {
           "type": "string",
           "enum": ["SINGLES", "DOUBLES", "TEAM", "HYBRID"]
@@ -3254,9 +3405,13 @@
         },
         "currencyCode": {
           "type": "string"
+        },
+        "unit": {
+          "type": "string",
+          "enum": ["MINOR", "MAJOR"]
         }
       },
-      "required": ["amount", "currencyCode"],
+      "required": ["amount", "currencyCode", "unit"],
       "additionalProperties": false
     },
     "UnifiedTournamentId": {
@@ -3409,8 +3564,12 @@
     "Court": {
       "type": "object",
       "properties": {
-        "disabled": { "type": "boolean" },
-        "discipline": { "$ref": "#/definitions/DisciplineEnum" },
+        "disabled": {
+          "type": "boolean"
+        },
+        "discipline": {
+          "$ref": "#/definitions/DisciplineEnum"
+        },
         "createdAt": {
           "type": ["string", "object"],
           "format": "date-time"
@@ -3639,6 +3798,41 @@
         }
       },
       "required": ["organisationId", "venueId"],
+      "additionalProperties": false
+    },
+    "PrizeMoneyAward": {
+      "type": "object",
+      "properties": {
+        "amount": {
+          "type": "number"
+        },
+        "currencyCode": {
+          "type": "string"
+        },
+        "unit": {
+          "type": "string",
+          "enum": ["MINOR", "MAJOR"]
+        },
+        "finishingPosition": {
+          "type": "number"
+        },
+        "roundName": {
+          "type": "string"
+        },
+        "roundCode": {
+          "type": "string"
+        },
+        "notes": {
+          "type": "string"
+        },
+        "extensions": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/Extension"
+          }
+        }
+      },
+      "required": ["amount", "currencyCode", "unit", "finishingPosition"],
       "additionalProperties": false
     }
   }
