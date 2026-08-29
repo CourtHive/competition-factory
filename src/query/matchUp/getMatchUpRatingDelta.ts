@@ -1,3 +1,4 @@
+import { resolveScaleValueNumber } from '@Query/scales/resolveScaleValue';
 import { signedRatingDelta } from './resolveDeltaBand';
 import ratingsParameters from '@Fixtures/ratings/ratingsParameters';
 
@@ -48,8 +49,10 @@ function scaleValueForParticipant({
   const rating = participant?.ratings?.[type]?.find((entry: any) => entry.scaleName === scaleName);
   const ranking = participant?.rankings?.[type]?.find((entry: any) => entry.scaleName === scaleName);
   const scaleValue = (rating ?? ranking)?.scaleValue;
-  const value = valueAccessor ? scaleValue?.[valueAccessor] : scaleValue;
-  return typeof value === 'number' && Number.isFinite(value) ? value : undefined;
+  // A `typeof === 'number'` gate here rejected every ingested rating, which are
+  // stored as strings, and the caller treats `undefined` as "missing data, not a
+  // caller mistake" — so a fully rated draw reported no deltas and raised nothing.
+  return resolveScaleValueNumber(scaleValue, { accessor: valueAccessor, scaleName });
 }
 
 /**

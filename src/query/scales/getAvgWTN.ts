@@ -1,5 +1,7 @@
+import { resolveScaleValueNumber, hasScaleValueNumber } from './resolveScaleValue';
 import { getDetailsWTN } from './getDetailsWTN';
 
+import { WTN } from '@Constants/ratingConstants';
 import { HydratedMatchUp } from '@Types/hydrated';
 
 type GetAvgWTNArgs = {
@@ -27,17 +29,22 @@ export function getAvgWTN({ eventType, matchUps, eventId, drawId }: GetAvgWTNArg
       return participants;
     }, {});
   const eventParticipants = Object.values(mappedParticipants);
+  // `getDetailsWTN` returns the value exactly as stored, which for ingested
+  // records is a STRING. Accumulating those with `+=` concatenates instead of
+  // adding ('0' + '4.13' + '5.20' -> '04.135.20'), so avgWTN came out NaN for
+  // any field of two or more rated players — and that NaN reaches published
+  // structure reports via structureReport.ts. Normalize once, here.
   const wtnRatings = eventParticipants
     .map((participant) => getDetailsWTN({ participant, eventType }))
-    .filter(({ wtnRating }) => wtnRating);
+    .filter(({ wtnRating }) => hasScaleValueNumber(wtnRating, { scaleName: WTN }));
 
   const pctNoRating = ((eventParticipants.length - wtnRatings.length) / eventParticipants.length) * 100;
 
   const wtnTotals = wtnRatings.reduce(
     (totals, wtnDetails) => {
       const { wtnRating, confidence } = wtnDetails;
-      totals.totalWTN += wtnRating;
-      totals.totalConfidence += confidence;
+      totals.totalWTN += resolveScaleValueNumber(wtnRating, { scaleName: WTN }) ?? 0;
+      totals.totalConfidence += resolveScaleValueNumber(confidence) ?? 0;
       return totals;
     },
     { totalWTN: 0, totalConfidence: 0 },

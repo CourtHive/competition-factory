@@ -883,6 +883,38 @@ const scaleAttributes = {
 };
 ```
 
+## Reading a scale value as a number
+
+Scale values are not consistently numeric across data sources, and getting the
+coercion wrong is silent rather than loud. Use the exported helper rather than
+writing the extraction by hand:
+
+```js
+import { resolveScaleValueNumber, hasScaleValueNumber } from 'tods-competition-factory';
+
+resolveScaleValueNumber({ utrRating: '12.48' }, { scaleName: 'UTR' }); // 12.48
+resolveScaleValueNumber({ utrRating: '' }, { scaleName: 'UTR' }); // undefined
+resolveScaleValueNumber(0); // 0
+```
+
+Three properties matter, and each corresponds to a defect this helper exists to
+prevent:
+
+- **Values may be strings.** Ingested records commonly store `'12.48'` rather
+  than `12.48`, so a `typeof value === 'number'` test silently discards every
+  real rating while passing every generated fixture.
+- **An empty string is not zero.** Records carry `''` for a participant with no
+  rating on that scale. `Number('')` is `0`, and `0` on a scale declared
+  `[1, 16]` is below the floor — an invented rating rather than a missing one.
+  Always coerce with `Number.parseFloat` plus a `NaN` guard.
+- **Zero is a legitimate rating.** `PSA`, `SQUASH_LEVELS`, `ITTF` and `BWF` all
+  declare `0` inside their valid range. Truthiness tests (`if (value)`,
+  `value || fallback`) therefore erase a real competitor — use
+  `hasScaleValueNumber` to ask whether a value is present.
+
+The helper returns `undefined` rather than a fallback; choosing a default is the
+caller's decision and belongs where its consequences are visible.
+
 ## Related Documentation
 
 - **[Accessors](./accessors)** - Accessing nested scale values
