@@ -27,7 +27,7 @@ import {
   getParticipantName,
   validateParticipantAge,
   validateParticipantRating,
-} from '@Mutate/entries/categoryValidation';
+} from '@Query/entries/categoryValidation';
 
 // constants
 import { INDIVIDUAL, PAIR } from '@Constants/participantConstants';
