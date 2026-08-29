@@ -3,7 +3,7 @@ import { addNotes, removeNotes } from '../base/addRemoveNotes';
 import { addNotice } from '@Global/state/globalState';
 
 // constants
-import { INVALID_TIME_ZONE, TOURNAMENT_CATEGORY_IN_USE } from '@Constants/errorConditionConstants';
+import { INVALID_TIME_ZONE, INVALID_VALUES, TOURNAMENT_CATEGORY_IN_USE } from '@Constants/errorConditionConstants';
 import { MODIFY_TOURNAMENT_DETAIL } from '@Constants/topicConstants';
 import { TOURNAMENT_RECORD } from '@Constants/attributeConstants';
 import { SUCCESS } from '@Constants/resultConstants';
@@ -160,9 +160,36 @@ export function setTournamentTier({ tournamentRecord, tournamentTier }) {
   return { ...SUCCESS };
 }
 
+/**
+ * Reject an entry fee that cannot be read at a known scale.
+ *
+ * `setRegistrationProfile` previously merged whatever object it was handed with no validation of any
+ * kind, so a fee with no `unit` — the exact ambiguity `MonetaryAmount` exists to remove — was stored
+ * without complaint and read back 100× wrong by any consumer that assumed whole units.
+ *
+ * Deliberately narrow. It checks the fields whose absence makes the amount UNREADABLE and nothing
+ * else: this is a previously ungated path, and a validator that fails closed on shapes callers have
+ * always been allowed to write would be a worse defect than the one it fixes.
+ *
+ * NOT the only write path, and deliberately so. `activateFromSanctioning` assigns
+ * `registrationProfile: proposal.registrationProfile` straight onto the record without coming
+ * through here, so a proposal authored before `unit` existed still activates. That hole is left
+ * open on purpose: an application mid-flight is the worst place to fail closed, and the read side
+ * (`resolveEntryFee`) reports such a fee as indeterminate rather than rendering it wrong. Close it
+ * when proposals are known to carry units.
+ */
+function invalidEntryFee(entryFees: any): boolean {
+  if (!Array.isArray(entryFees)) return false;
+  return entryFees.some(
+    (fee) => fee && typeof fee === 'object' && typeof fee.amount === 'number' && (!fee.currencyCode || !fee.unit),
+  );
+}
+
 export function setRegistrationProfile({ tournamentRecord, registrationProfile }) {
   const paramsCheck = requireParams({ tournamentRecord }, [TOURNAMENT_RECORD]);
   if (paramsCheck.error) return paramsCheck;
+
+  if (invalidEntryFee(registrationProfile?.entryFees)) return { error: INVALID_VALUES };
 
   if (registrationProfile && typeof registrationProfile === 'object') {
     tournamentRecord.registrationProfile = {

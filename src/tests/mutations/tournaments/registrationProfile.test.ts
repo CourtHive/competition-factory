@@ -89,12 +89,15 @@ describe('registrationProfile', () => {
     expect(registrationProfile?.socialEvents?.[0].name).toBe('Welcome Dinner');
   });
 
+  // `unit` is required since RegistrationEntryFee began extending MonetaryAmount: an amount with no
+  // stated scale is readable at two scales 100x apart. The fixture below states it; the assertions
+  // are unchanged apart from the added round-trip check on `unit` itself.
   it('sets entry fees', () => {
     let result: any = tournamentEngine.setRegistrationProfile({
       registrationProfile: {
         entryFees: [
-          { amount: 50, currencyCode: 'USD', eventType: 'SINGLES' },
-          { amount: 75, currencyCode: 'USD', eventType: 'DOUBLES' },
+          { amount: 50, currencyCode: 'USD', unit: 'MAJOR', eventType: 'SINGLES' },
+          { amount: 75, currencyCode: 'USD', unit: 'MAJOR', eventType: 'DOUBLES' },
         ],
       },
     });
@@ -103,7 +106,15 @@ describe('registrationProfile', () => {
     let { registrationProfile } = tournamentEngine.getRegistrationProfile();
     expect(registrationProfile?.entryFees).toHaveLength(2);
     expect(registrationProfile?.entryFees?.[0].amount).toBe(50);
+    expect(registrationProfile?.entryFees?.[0].unit).toBe('MAJOR');
     expect(registrationProfile?.entryFees?.[1].eventType).toBe('DOUBLES');
+  });
+
+  it('refuses an entry fee whose scale is unstated', () => {
+    const result: any = tournamentEngine.setRegistrationProfile({
+      registrationProfile: { entryFees: [{ amount: 50, currencyCode: 'USD' }] },
+    });
+    expect(result.error).toBeDefined();
   });
 
   it('sets regulations and sponsors', () => {

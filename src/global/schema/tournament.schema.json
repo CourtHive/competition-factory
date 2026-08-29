@@ -2498,9 +2498,6 @@
         "organisationType": {
           "$ref": "#/definitions/OrganisationTypeEnum"
         },
-        "role": {
-          "$ref": "#/definitions/AuthorityRoleEnum"
-        },
         "onlineResources": {
           "type": "array",
           "items": {
@@ -2968,24 +2965,6 @@
       "type": "string",
       "enum": ["HOME", "MAIL", "RESIDENTIAL", "VENUE", "WORK", "PRIMARY"]
     },
-    "AuthorityRoleEnum": {
-      "type": "string",
-      "enum": [
-        "INTERNATIONAL",
-        "NATIONAL",
-        "ZONE",
-        "SECTION",
-        "REGION",
-        "PROVINCE",
-        "STATE",
-        "COUNTY",
-        "DISTRICT",
-        "LEAGUE",
-        "CONFERENCE",
-        "CLUB",
-        "PROVIDER"
-      ]
-    },
     "BiographicalInformation": {
       "type": "object",
       "properties": {
@@ -3382,15 +3361,28 @@
         "amount": {
           "type": "number"
         },
-        "category": {
+        "currencyCode": {
           "type": "string"
         },
-        "currencyCode": {
+        "unit": {
+          "type": "string",
+          "enum": ["MINOR", "MAJOR"]
+        },
+        "eventId": {
+          "type": "string"
+        },
+        "category": {
           "type": "string"
         },
         "eventType": {
           "type": "string",
           "enum": ["SINGLES", "DOUBLES", "TEAM", "HYBRID"]
+        },
+        "appliesFrom": {
+          "type": "string"
+        },
+        "appliesTo": {
+          "type": "string"
         },
         "extensions": {
           "type": "array",
@@ -3399,7 +3391,7 @@
           }
         }
       },
-      "required": ["amount", "currencyCode"],
+      "required": ["amount", "currencyCode", "unit"],
       "additionalProperties": false
     },
     "PrizeMoney": {

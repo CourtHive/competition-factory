@@ -511,6 +511,7 @@ import type { resetScorecard } from '@Mutate/matchUps/resetScorecard';
 import type { addOnlineResource } from '@Mutate/base/addOnlineResource';
 import type { addVenueOtherId } from '@Mutate/venues/addVenueOtherId';
 import type { publicFindParticipant } from '@Acquire/publicFindParticipant';
+import type { getEntryFeeRange, isIndeterminateFee, resolveEntryFee } from '@Query/entries/resolveEntryFee';
 import type { getMatchUpsMap } from '@Query/matchUps/getMatchUpsMap';
 import type { setEventDisplay } from '@Mutate/events/setEventDisplay';
 import type { setSubOrder } from '@Mutate/structures/setSubOrder';
@@ -842,6 +843,7 @@ export interface MethodSignatures {
   getEligibleEvents: EngineMethod<typeof getEligibleEvents>;
   getEligibleVoluntaryConsolationParticipants: EngineMethod<typeof getEligibleVoluntaryConsolationParticipants>;
   getEntriesAndSeedsCount: EngineMethod<typeof getEntriesAndSeedsCount>;
+  getEntryFeeRange: EngineMethod<typeof getEntryFeeRange>;
   getEntryStatusReports: EngineMethod<typeof getEntryStatusReports>;
   getEpisodes: EngineMethod<typeof getEpisodes>;
   getEvaluations: EngineMethod<typeof getEvaluations>;
@@ -974,6 +976,7 @@ export interface MethodSignatures {
   isComplete: EngineMethod<typeof isComplete>;
   isCompletedStructure: EngineMethod<typeof isCompletedStructure>;
   isEmbargoed: EngineMethod<typeof isEmbargoed>;
+  isIndeterminateFee: EngineMethod<typeof isIndeterminateFee>;
   isScheduleLocked: EngineMethod<typeof isScheduleLocked>;
   isValid: EngineMethod<typeof isValidMatchUpFormat>;
   isValidForQualifying: EngineMethod<typeof isValidForQualifying>;
@@ -1103,6 +1106,7 @@ export interface MethodSignatures {
   resetTieFormat: EngineMethod<typeof resetTieFormat>;
   resetVoluntaryConsolationStructure: EngineMethod<typeof resetVoluntaryConsolationStructure>;
   resolveDraftPositions: EngineMethod<typeof resolveDraftPositions>;
+  resolveEntryFee: EngineMethod<typeof resolveEntryFee>;
   resolvePointValue: EngineMethod<typeof resolvePointValue>;
   reverseScore: EngineMethod<typeof reverseScore>;
   scaledTeamAssignment: EngineMethod<typeof scaledTeamAssignment>;

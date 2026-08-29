@@ -273,6 +273,7 @@ export type FactoryEngineMethod =
   | 'getEligibleEvents'
   | 'getEligibleVoluntaryConsolationParticipants'
   | 'getEntriesAndSeedsCount'
+  | 'getEntryFeeRange'
   | 'getEntryStatusReports'
   | 'getEpisodes'
   | 'getEvaluations'
@@ -416,6 +417,7 @@ export type FactoryEngineMethod =
   | 'isComplete'
   | 'isCompletedStructure'
   | 'isEmbargoed'
+  | 'isIndeterminateFee'
   | 'isScheduleLocked'
   | 'isValid'
   | 'isValidForQualifying'
@@ -560,6 +562,7 @@ export type FactoryEngineMethod =
   | 'resetVoluntaryConsolationStructure'
   | 'resolveCourtId'
   | 'resolveDraftPositions'
+  | 'resolveEntryFee'
   | 'resolvePointValue'
   | 'resolveStatus'
   | 'resolveVenueId'
@@ -943,6 +946,7 @@ export const FACTORY_ENGINE_METHODS: readonly FactoryEngineMethod[] = [
   'getEligibleEvents',
   'getEligibleVoluntaryConsolationParticipants',
   'getEntriesAndSeedsCount',
+  'getEntryFeeRange',
   'getEntryStatusReports',
   'getEpisodes',
   'getEvaluations',
@@ -1086,6 +1090,7 @@ export const FACTORY_ENGINE_METHODS: readonly FactoryEngineMethod[] = [
   'isComplete',
   'isCompletedStructure',
   'isEmbargoed',
+  'isIndeterminateFee',
   'isScheduleLocked',
   'isValid',
   'isValidForQualifying',
@@ -1230,6 +1235,7 @@ export const FACTORY_ENGINE_METHODS: readonly FactoryEngineMethod[] = [
   'resetVoluntaryConsolationStructure',
   'resolveCourtId',
   'resolveDraftPositions',
+  'resolveEntryFee',
   'resolvePointValue',
   'resolveStatus',
   'resolveVenueId',

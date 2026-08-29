@@ -103,23 +103,40 @@ export interface Organisation {
   organisationId: string;
   notes?: string;
   /**
-   * What KIND of body this is — authority, section, district, provider, club.
+   * What KIND of body this is — a national association, a school, a club.
    *
-   * `parentOrganisationId` gives the shape of a hierarchy but says nothing about what sits at each
-   * node, so a captured chain (National → Section → District → the club running the event) arrives
-   * as four indistinguishable organisations. Consumers were left inferring role from position, which
-   * fails on the chains that are not strict containment ladders — some bodies approve only at the
-   * regional tier, and at least one federation requires JOINT approval by two co-equal bodies.
+   * INTRINSIC to the organisation, and deliberately distinct from {@link SanctioningAuthority.role},
+   * which is POSITIONAL: what part a body plays in one particular approval chain. A school is a
+   * SCHOOL wherever it appears, and may occupy a CLUB-level rung in one federation's hierarchy and
+   * no rung at all in another's. Collapsing the two would make a body's identity depend on which
+   * chain you happened to read it from.
    *
-   * Reuses {@link AuthorityRoleEnum} rather than minting a parallel vocabulary. That enum was added
-   * for `SanctioningAuthority.role`, which closed this question INSIDE a sanction while leaving
-   * `Organisation` itself untyped — so the same body could state its role when it appeared in an
-   * approval chain and not when it appeared as `parentOrganisation`.
+   * Not a new vocabulary. `organisationType` has been declared in `tournament.schema.json` and
+   * documented on the public docs site all along; the TypeScript types were the only one of the
+   * three declarations missing it. This closes that gap rather than opening a fourth.
    *
-   * Optional and never inferred: an organisation whose role nobody recorded is unknown, not a CLUB.
+   * Optional and never inferred: an organisation whose type nobody recorded is unknown, not a CLUB.
    */
-  role?: AuthorityRoleUnion;
+  organisationType?: OrganisationTypeUnion;
 }
+
+/**
+ * What kind of body an {@link Organisation} is.
+ *
+ * Values mirror `OrganisationTypeEnum` in `tournament.schema.json`, which predates this type — the
+ * enum is being brought INTO TypeScript, not invented here, so the values are taken as given rather
+ * than improved. `OTHER` exists because the list is not exhaustive over every governing structure.
+ */
+export enum OrganisationTypeEnum {
+  NATIONAL_ASSOCIATION = 'NATIONAL_ASSOCIATION',
+  SCHOOL = 'SCHOOL',
+  SECTION = 'SECTION',
+  AREA = 'AREA',
+  DISTRICT = 'DISTRICT',
+  CLUB = 'CLUB',
+  OTHER = 'OTHER',
+}
+export type OrganisationTypeUnion = `${OrganisationTypeEnum}`;
 
 export interface Event {
   activeDates?: Date[] | string[]; // dates from startDate to endDate on which the tournament is active
@@ -1912,11 +1929,43 @@ export interface DocumentLink {
   url?: string;
 }
 
-export interface RegistrationEntryFee {
-  amount: number;
+/**
+ * What a competitor pays to enter.
+ *
+ * Extends {@link MonetaryAmount}, so `unit` is required and the amount cannot be read at the wrong
+ * scale. It previously carried a bare `amount` + `currencyCode`, which is the exact ambiguity
+ * `MonetaryAmount` was introduced to remove: a federation stating a `6000` entry fee means $60.00,
+ * and a reader assuming whole units is out by 100× with nothing in the record to signal it. That
+ * was not hypothetical — two captured federation surfaces state this same field at different
+ * scales, one in minor units and one in major.
+ *
+ * NOT a {@link SanctionFee}. A sanction fee is a levy the governing body collects from the
+ * organiser; this is the organiser's price to a competitor. Different payer, different setter,
+ * different lifecycle. `SanctionFeeKindEnum.ENTRY` exists for an authority-collected per-entry levy
+ * and is not a home for this.
+ *
+ * ## Which events a fee applies to
+ *
+ * Three selectors, most specific first: `eventId` > `category` > `eventType`. All are optional, and
+ * a fee with none applies to the whole tournament. `eventType` alone cannot distinguish a $75
+ * over-35 doubles from a $95 open doubles when both are on the same tournament, which is why
+ * `eventId` exists; `eventType` and `category` are kept because organisers genuinely do price "all
+ * doubles" once without enumerating events.
+ */
+export interface RegistrationEntryFee extends MonetaryAmount {
+  /** the specific event this fee buys entry to — the most specific selector */
+  eventId?: string;
   category?: string;
-  currencyCode: string;
   eventType?: EventTypeUnion;
+  /**
+   * Window in which this price is the one charged, for early-bird and late-entry pricing.
+   *
+   * Without it, an early rate and a late rate are two records with no stated relationship, and a
+   * consumer computing "what does this cost" has no way to exclude the one that has expired. Both
+   * ends optional: an early-bird rate with no `appliesFrom` has simply always been available.
+   */
+  appliesFrom?: string;
+  appliesTo?: string;
   extensions?: Extension[];
 }
 
