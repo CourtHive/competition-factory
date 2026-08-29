@@ -1,3 +1,4 @@
+import { resolveScaleValueNumber } from '@Query/scales/resolveScaleValue';
 import { checkRequiredParameters } from '@Helpers/parameters/checkRequiredParameters';
 import { addDynamicRatings } from '@Mutate/participants/scaleItems/addDynamicRatings';
 import { getParticipantScaleItem } from '@Query/participant/getParticipantScaleItem';
@@ -222,9 +223,14 @@ function resolveParticipantScaleItem({
 
   let resolvedScaleItem = dynamicScaleItem ?? scaleItem;
   if (!dynamicScaleItem && scaleItem && isEloNative) {
-    const sv = scaleItem.scaleValue;
-    const sourceRating = sourceAccessor && typeof sv === 'object' ? sv[sourceAccessor] : sv;
-    if (sourceRating != null) {
+    // `sourceRating != null` admitted the empty string that real records carry
+    // for an unrated player, and `('' - 1) * 3000 / 15` is -200 — an ELO 200
+    // points below the declared floor, written back as the participant's rating.
+    const sourceRating = resolveScaleValueNumber(scaleItem.scaleValue, {
+      accessor: sourceAccessor,
+      scaleName: ratingType,
+    });
+    if (sourceRating !== undefined) {
       resolvedScaleItem = {
         ...scaleItem,
         scaleName: outputScaleName,
@@ -264,9 +270,11 @@ function resolveSourceDynamicItem({
 
   if (!sourceItem) return undefined;
 
-  const sv = sourceItem.scaleValue;
-  const sourceRating = sourceAccessor && typeof sv === 'object' ? sv[sourceAccessor] : sv;
-  if (sourceRating != null) {
+  const sourceRating = resolveScaleValueNumber(sourceItem.scaleValue, {
+    accessor: sourceAccessor,
+    scaleName: ratingType,
+  });
+  if (sourceRating !== undefined) {
     return {
       ...sourceItem,
       scaleName: outputScaleName,

@@ -112,6 +112,13 @@ export type { DisciplineProfile } from './fixtures/disciplines/disciplineProfile
 // PURE STATS — usable without an engine instance.
 export { computeRatingDistributionStats } from './query/formatWizard/distributionStats';
 
+// SCALE VALUES — the single implementation of "turn a scaleValue into a number".
+// Exported because consumers were each writing their own and disagreeing: real
+// records store ratings as strings ('12.48'), carry '' for an unrated player,
+// and legitimately carry 0 on scales whose range includes it. Getting any of
+// those three wrong is silent and produces a fabricated or missing rating.
+export { resolveScaleValueNumber, hasScaleValueNumber } from './query/scales/resolveScaleValue';
+
 // READ MODEL — the TODS→SQL-rows builder toolkit (single source for cast() +
 // the CFS incremental producer). See query/readModel/index.ts.
 export * as readModel from './query/readModel';

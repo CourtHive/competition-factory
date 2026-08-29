@@ -1,3 +1,4 @@
+import { resolveScaleValueNumber } from '@Query/scales/resolveScaleValue';
 import { isMatchUpEventType } from '@Helpers/matchUpEventTypes/isMatchUpEventType';
 import { allTournamentMatchUps } from '@Query/matchUps/getAllTournamentMatchUps';
 import { checkScoreHasValue } from '@Query/matchUp/checkScoreHasValue';
@@ -243,8 +244,16 @@ function getSideValues({
           if (exclude) exclusionValues.push(exclusionValue);
           scaleValues.push(scaleValue);
 
-          if (pValue && !Number.isNaN(Number(value))) {
-            value += pValue;
+          // `value` started at 0 and `+=` was applied to the RAW value. With
+          // string ratings that concatenates: 0 + '12.48' -> '012.48', then
+          // + '11.20' -> '012.4811.20' -> NaN. One individual per side survived
+          // by accident; every DOUBLES matchUp — two individuals — produced NaN,
+          // so the whole doubles predictive-accuracy result was garbage. The old
+          // guard tested the accumulator rather than the incoming value, so it
+          // never fired. Resolve each contribution to a number before adding.
+          const numericValue = resolveScaleValueNumber(pValue, { accessor: valueAccessor, scaleName });
+          if (numericValue !== undefined && value !== undefined) {
+            value += numericValue;
           } else {
             value = undefined;
           }
