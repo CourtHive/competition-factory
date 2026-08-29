@@ -10,6 +10,7 @@ import type {
   MonetaryAmount,
   Organisation,
   PrizeMoney,
+  RegistrationEntryFee,
   RegistrationProfile,
   SurfaceCategoryUnion,
   TieFormat,
@@ -247,7 +248,14 @@ export interface TournamentProposal {
   // Financial
   totalPrizeMoney?: PrizeMoney[];
   entryFees?: EntryFee[];
-  sanctionFee?: PrizeMoney;
+  /**
+   * The levy the authority charges to sanction the competition.
+   *
+   * A {@link MonetaryAmount}, not `PrizeMoney`. `PrizeMoney` is an AWARD with provenance — money
+   * paid OUT to competitors — and it happened to carry the right primitive fields, which is why the
+   * mismatch went unnoticed. A sanction fee is money paid IN by the organiser.
+   */
+  sanctionFee?: MonetaryAmount;
 
   // Personnel
   officials?: OfficialProposal[];
@@ -346,13 +354,15 @@ export interface Coordinates {
   longitude: number;
 }
 
-export interface EntryFee {
-  amount: number;
-  currencyCode: string;
-  eventType?: EventTypeUnion;
-  category?: string;
-  extensions?: Extension[];
-}
+/**
+ * @deprecated Use {@link RegistrationEntryFee}, which this now aliases.
+ *
+ * `EntryFee` was a byte-identical duplicate of `RegistrationEntryFee` — same five fields, same
+ * meaning, two declarations. Retained as an alias rather than deleted because it is a PUBLIC export
+ * of this package: removing it would fail `verify:surface` and would not be a minor release.
+ * Remove in the next major if still unused.
+ */
+export type EntryFee = RegistrationEntryFee;
 
 export interface OfficialProposal {
   role: string;

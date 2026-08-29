@@ -228,6 +228,12 @@ const ENUM_ONLY = [
   // currency UNIT (minor vs whole) is a representation concern with no const-module twin — the
   // currencies themselves are ISO 4217 strings, not a factory vocabulary
   'CurrencyUnitEnum',
+  // what an Organisation IS (a school, a club, a national association), as distinct from
+  // AuthorityRoleEnum above, which is what part a body PLAYS in one approval chain. Brought into
+  // TypeScript from tournament.schema.json, where it was already declared; no const-module twin
+  // exists and minting one would create a second SECTION/DISTRICT/CLUB vocabulary beside the
+  // authority-role one.
+  'OrganisationTypeEnum',
   'WheelchairClassEnum',
   'WinReasonEnum',
 ];
