@@ -10,11 +10,20 @@ import { NATIVE } from '@Constants/schemaWriteModeConstants';
 const ISO_A = '2026-05-27T13:58:42.000Z';
 const ISO_B = '2026-05-27T14:05:00.000Z';
 
+// The stamps above are fixed, so the tournament they are written to has to be
+// running on that date: `setMatchUpCalledAt` refuses a call to court that
+// precedes `startDate`, and a mock left on its default (today) would put these
+// stamps months before the tournament opened.
+const START_DATE = '2026-05-27';
+const END_DATE = '2026-05-29';
+
 function seedTournament() {
   const result = mocksEngine.generateTournamentRecord({
+    drawProfiles: [{ participantsCount: 8, drawSize: 8 }],
+    startDate: START_DATE,
+    endDate: END_DATE,
     inContext: true,
     setState: true,
-    drawProfiles: [{ participantsCount: 8, drawSize: 8 }],
   });
   const drawId = result.drawIds[0];
   const eventId = result.eventIds[0];
