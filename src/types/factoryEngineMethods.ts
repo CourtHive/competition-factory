@@ -270,6 +270,7 @@ export type FactoryEngineMethod =
   | 'getDrawParticipantRepresentativeIds'
   | 'getDrawStructures'
   | 'getDrawTypeCoercion'
+  | 'getEligibleEvents'
   | 'getEligibleVoluntaryConsolationParticipants'
   | 'getEntriesAndSeedsCount'
   | 'getEntryStatusReports'
@@ -317,6 +318,7 @@ export type FactoryEngineMethod =
   | 'getOfficialConflicts'
   | 'getOfficialEligibility'
   | 'getPairedParticipant'
+  | 'getParticipantEligibility'
   | 'getParticipantEventDetails'
   | 'getParticipantIdFinishingPositions'
   | 'getParticipantMembership'
@@ -938,6 +940,7 @@ export const FACTORY_ENGINE_METHODS: readonly FactoryEngineMethod[] = [
   'getDrawParticipantRepresentativeIds',
   'getDrawStructures',
   'getDrawTypeCoercion',
+  'getEligibleEvents',
   'getEligibleVoluntaryConsolationParticipants',
   'getEntriesAndSeedsCount',
   'getEntryStatusReports',
@@ -985,6 +988,7 @@ export const FACTORY_ENGINE_METHODS: readonly FactoryEngineMethod[] = [
   'getOfficialConflicts',
   'getOfficialEligibility',
   'getPairedParticipant',
+  'getParticipantEligibility',
   'getParticipantEventDetails',
   'getParticipantIdFinishingPositions',
   'getParticipantMembership',

@@ -1,9 +1,3 @@
-import {
-  CategoryRejection,
-  getEventDateRange,
-  getParticipantName,
-  validateParticipantCategory,
-} from './categoryValidation';
 import { isMatchUpEventType } from '@Helpers/matchUpEventTypes/isMatchUpEventType';
 import { getAppliedPolicies } from '@Query/extensions/getAppliedPolicies';
 import { addDrawEntries } from '@Mutate/drawDefinitions/addDrawEntries';
@@ -19,6 +13,13 @@ import { isUngrouped } from '@Query/entries/isUngrouped';
 import { coercedGender } from '@Helpers/coercedGender';
 import { isMixed } from '@Validators/isMixed';
 import { isAny } from '@Validators/isAny';
+
+import {
+  CategoryRejection,
+  getEventDateRange,
+  getParticipantName,
+  validateParticipantCategory,
+} from '@Query/entries/categoryValidation';
 
 // constants and types
 import {

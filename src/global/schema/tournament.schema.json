@@ -530,6 +530,12 @@
         "categoryType": {
           "type": "string"
         },
+        "combinedRatingMax": {
+          "type": "number"
+        },
+        "combinedRatingMin": {
+          "type": "number"
+        },
         "ratingMax": {
           "type": "number"
         },
@@ -2492,6 +2498,9 @@
         "organisationType": {
           "$ref": "#/definitions/OrganisationTypeEnum"
         },
+        "role": {
+          "$ref": "#/definitions/AuthorityRoleEnum"
+        },
         "onlineResources": {
           "type": "array",
           "items": {
@@ -2958,6 +2967,24 @@
     "AddressTypeEnum": {
       "type": "string",
       "enum": ["HOME", "MAIL", "RESIDENTIAL", "VENUE", "WORK", "PRIMARY"]
+    },
+    "AuthorityRoleEnum": {
+      "type": "string",
+      "enum": [
+        "INTERNATIONAL",
+        "NATIONAL",
+        "ZONE",
+        "SECTION",
+        "REGION",
+        "PROVINCE",
+        "STATE",
+        "COUNTY",
+        "DISTRICT",
+        "LEAGUE",
+        "CONFERENCE",
+        "CLUB",
+        "PROVIDER"
+      ]
     },
     "BiographicalInformation": {
       "type": "object",

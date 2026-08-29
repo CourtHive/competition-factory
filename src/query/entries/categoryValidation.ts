@@ -17,6 +17,17 @@ export interface RejectionReason {
   type: 'age' | 'rating';
   reason: string;
   details: AgeRejectionDetails | RatingRejectionDetails;
+  /**
+   * The data needed to decide was ABSENT — this is not a finding that the participant breaches a
+   * rule. A missing birthDate and an age outside the category range are both "not valid" to
+   * `addEventEntries`, which rejects either way, but they are opposite answers to a person asking
+   * whether they may enter: one is "no", the other is "nobody can tell yet".
+   *
+   * Consumed by {@link getParticipantEligibility}, which reports `indeterminate` rather than
+   * `eligible: false` when every reason carries this flag. Entry behaviour is deliberately
+   * unchanged — see that function.
+   */
+  indeterminate?: boolean;
 }
 
 export interface AgeRejectionDetails {
@@ -105,6 +116,17 @@ function isCombinedAgeCategory(category: Category): boolean {
 }
 
 /**
+ * Whether the category bounds the SUM of a pair's ratings rather than an individual's.
+ *
+ * The rating counterpart to {@link isCombinedAgeCategory}. Combined age announces itself through an
+ * `ageCategoryCode` (`C50-70`); combined rating has no code convention, so it is stated explicitly
+ * with `combinedRatingMin`/`combinedRatingMax`.
+ */
+function isCombinedRatingCategory(category: Category): boolean {
+  return category.combinedRatingMin !== undefined || category.combinedRatingMax !== undefined;
+}
+
+/**
  * Validate participant age against category constraints
  * Participant must be valid throughout the entire event period
  *
@@ -115,7 +137,7 @@ export function validateParticipantAge(
   category: Category,
   startDate: string,
   endDate: string,
-): { valid: boolean; reason?: string; details?: any } {
+): { valid: boolean; indeterminate?: boolean; reason?: string; details?: any } {
   // Skip validation for combined age categories (these are for pairs/teams, not individuals)
   if (isCombinedAgeCategory(category)) {
     return { valid: true };
@@ -147,6 +169,7 @@ export function validateParticipantAge(
   if (!birthDate && birthYear === undefined) {
     return {
       valid: false,
+      indeterminate: true,
       reason: 'Missing birthDate or birthYear',
       details: {
         requiredMin: effectiveAgeMin,
@@ -220,7 +243,17 @@ export function validateParticipantRating(
   category: Category,
   event: Event,
   tournamentRecord?: Tournament,
-): { valid: boolean; reason?: string; details?: any } {
+): { valid: boolean; indeterminate?: boolean; reason?: string; details?: any } {
+  // A combined bound constrains the PAIR, not either half of it, so an individual cannot be
+  // measured against it — a combined-7.0 category would otherwise reject the 4.0 half of a legal
+  // 3.0 + 4.0 pair. Skipped for the same reason combined AGE categories are skipped above.
+  //
+  // Only when no individual bound is also stated: a federation may legitimately cap the pair at 7.0
+  // AND bar anyone above 5.0 on their own, and that individual bound is still enforceable here.
+  if (isCombinedRatingCategory(category) && category.ratingMin === undefined && category.ratingMax === undefined) {
+    return { valid: true };
+  }
+
   // No rating restrictions
   if (!category.ratingMin && !category.ratingMax) {
     return { valid: true };
@@ -246,6 +279,7 @@ export function validateParticipantRating(
   if (!scaleItem?.scaleValue) {
     return {
       valid: false,
+      indeterminate: true,
       reason: `Missing ${category.ratingType} rating`,
       details: {
         ratingType: category.ratingType,
@@ -265,6 +299,7 @@ export function validateParticipantRating(
     if (extractedValue === undefined) {
       return {
         valid: false,
+        indeterminate: true,
         reason: `Cannot extract rating value from ${category.ratingType} scale item`,
         details: {
           ratingType: category.ratingType,
@@ -353,6 +388,7 @@ export function validateParticipantCategory(
         type: 'age',
         reason: ageValidation.reason!,
         details: ageValidation.details ?? {},
+        ...(ageValidation.indeterminate ? { indeterminate: true } : {}),
       });
     }
 
@@ -361,6 +397,7 @@ export function validateParticipantCategory(
         type: 'rating',
         reason: ratingValidation.reason!,
         details: ratingValidation.details ?? {},
+        ...(ratingValidation.indeterminate ? { indeterminate: true } : {}),
       });
     }
 

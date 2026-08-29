@@ -296,6 +296,7 @@ import type { bulkUpdatePublishedEventIds } from '@Query/event/bulkUpdatePublish
 import type { createOfficialRecord } from '@Mutate/officiating/createOfficialRecord';
 import type { deleteFlightAndFlightDraw } from '@Mutate/events/deleteFlightAndFlightDraw';
 import type { getCompetitionFormat } from '@Query/hierarchical/getCompetitionFormat';
+import type { getEligibleEvents, getParticipantEligibility } from '@Query/entries/getParticipantEligibility';
 import type { getEvaluationTemplate } from '@Query/officiating/getEvaluationTemplate';
 import type { getMatchUpScheduleDetails } from '@Query/matchUp/getMatchUpScheduleDetails';
 import type { getParticipantIdFinishingPositions } from '@Query/drawDefinition/finishingPositions';
@@ -838,6 +839,7 @@ export interface MethodSignatures {
   getDrawParticipantRepresentativeIds: EngineMethod<typeof getDrawParticipantRepresentativeIds>;
   getDrawStructures: EngineMethod<typeof getDrawStructures>;
   getDrawTypeCoercion: EngineMethod<typeof getDrawTypeCoercion>;
+  getEligibleEvents: EngineMethod<typeof getEligibleEvents>;
   getEligibleVoluntaryConsolationParticipants: EngineMethod<typeof getEligibleVoluntaryConsolationParticipants>;
   getEntriesAndSeedsCount: EngineMethod<typeof getEntriesAndSeedsCount>;
   getEntryStatusReports: EngineMethod<typeof getEntryStatusReports>;
@@ -884,6 +886,7 @@ export interface MethodSignatures {
   getOfficialConflicts: EngineMethod<typeof getOfficialConflicts>;
   getOfficialEligibility: EngineMethod<typeof getOfficialEligibility>;
   getPairedParticipant: EngineMethod<typeof getPairedParticipant>;
+  getParticipantEligibility: EngineMethod<typeof getParticipantEligibility>;
   getParticipantEventDetails: EngineMethod<typeof getParticipantEventDetails>;
   getParticipantIdFinishingPositions: EngineMethod<typeof getParticipantIdFinishingPositions>;
   getParticipantMembership: EngineMethod<typeof getParticipantMembership>;

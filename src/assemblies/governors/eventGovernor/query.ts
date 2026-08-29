@@ -1,3 +1,4 @@
+export { getParticipantEligibility, getEligibleEvents } from '@Query/entries/getParticipantEligibility';
 export { getCategoryAgeDetails } from '@Query/event/getCategoryAgeDetails';
 export { getEventStructures } from '@Query/structure/structureGetter';
 export { getEventProperties } from '@Query/event/getEventProperties';

@@ -102,6 +102,23 @@ export interface Organisation {
   organisationName: string;
   organisationId: string;
   notes?: string;
+  /**
+   * What KIND of body this is — authority, section, district, provider, club.
+   *
+   * `parentOrganisationId` gives the shape of a hierarchy but says nothing about what sits at each
+   * node, so a captured chain (National → Section → District → the club running the event) arrives
+   * as four indistinguishable organisations. Consumers were left inferring role from position, which
+   * fails on the chains that are not strict containment ladders — some bodies approve only at the
+   * regional tier, and at least one federation requires JOINT approval by two co-equal bodies.
+   *
+   * Reuses {@link AuthorityRoleEnum} rather than minting a parallel vocabulary. That enum was added
+   * for `SanctioningAuthority.role`, which closed this question INSIDE a sanction while leaving
+   * `Organisation` itself untyped — so the same body could state its role when it appeared in an
+   * approval chain and not when it appeared as `parentOrganisation`.
+   *
+   * Optional and never inferred: an organisation whose role nobody recorded is unknown, not a CLUB.
+   */
+  role?: AuthorityRoleUnion;
 }
 
 export interface Event {
@@ -214,6 +231,27 @@ export interface Category {
   ratingMax?: number;
   ratingMin?: number;
   ratingType?: string;
+  /**
+   * Bounds on the SUM of a pair's ratings, for events priced as a combined band —
+   * "NTRP 7.0 combined doubles", where a 3.0 and a 4.0 may enter together.
+   *
+   * Distinct from `ratingMin`/`ratingMax`, which bound an INDIVIDUAL. Modelling a combined event
+   * with `ratingMax: 7.0` does not merely lose information, it produces a wrong answer: the
+   * individual check rejects the 4.0 half of a legal 3.0 + 4.0 pair. `validateParticipantRating`
+   * therefore skips individual rating validation whenever a combined bound is stated, mirroring the
+   * skip already applied to combined AGE categories (`ageCategoryCode` matching `C##-##`).
+   *
+   * Both may legitimately be present: a federation can cap the pair at 7.0 *and* bar anyone above
+   * 5.0 individually. Where both are set the individual bounds still apply — the skip is keyed on
+   * `ratingType` being absent from the individual pair, not on the combined bound existing. See
+   * `validateParticipantRating`.
+   *
+   * NOT enforced at pair grain yet. Nothing sums a pair's ratings and compares it to these bounds;
+   * that belongs at entry time where both partners are known. Stating the bound is what stops the
+   * wrong rejection — enforcing it is a later change, deliberately not smuggled in here.
+   */
+  combinedRatingMax?: number;
+  combinedRatingMin?: number;
   subType?: string;
   timeItems?: TimeItem[];
   type?: CategoryUnion;
