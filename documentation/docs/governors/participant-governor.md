@@ -435,16 +435,38 @@ const {
 
 ## getScaleValues
 
-Returns all scale values (rankings/ratings) for participants.
+Resolves one participant's scale timeItems into ratings, rankings and seedings.
 
 ```js
-const { scaleValues } = engine.getScaleValues({
-  tournamentRecord, // required
-  scaleAttributes, // optional - filter to specific scale
+const { ratings, rankings, seedings } = engine.getScaleValues({
+  participant, // required
 });
 ```
 
-**Purpose:** Get all ratings/rankings across all participants.
+Each of `ratings` / `rankings` / `seedings` is keyed by event type
+(`SINGLES`, `DOUBLES`, `TEAM`), and **each event type holds an ARRAY** with one
+entry per distinct `scaleName` — a participant may hold WTN and UTR at once:
+
+```js
+// { scaleName, scaleDate, scaleValue }
+const wtn = ratings.SINGLES?.find(({ scaleName }) => scaleName === 'WTN');
+const rating = wtn?.scaleValue?.wtnRating;
+```
+
+Within a single `scaleName` the entry is the **latest** value, so "current" is
+resolved for you. Across scale names nothing is: the set of rating and ranking
+scales is open — any number of scales, from any number of bodies, including ones
+not yet invented — so the array has no canonical order and never will.
+
+:::warning
+**Address entries by `scaleName`, never by index.** `ratings.SINGLES[0]` is the
+scale you want only for as long as it is the only one present; the day a second
+appears, `[0]` returns a different rating system's number in the same shape and
+nothing throws.
+:::
+
+**Purpose:** Read a participant's current value for a given scale, with the date
+it was recorded.
 
 ---
 
@@ -491,7 +513,11 @@ A supplied `participantName` can be superseded by a derived one — from `person
 
 ```js
 const result = engine.modifyParticipant({
-  participant: { participantId, participantName: 'Ignored', person: { standardGivenName: 'Roger', standardFamilyName: 'Federer' } },
+  participant: {
+    participantId,
+    participantName: 'Ignored',
+    person: { standardGivenName: 'Roger', standardFamilyName: 'Federer' },
+  },
 });
 // result.success → true
 // result.info    → PARTICIPANT_NAME_DERIVED_FROM_PERSON
