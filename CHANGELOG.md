@@ -1,5 +1,27 @@
 # Changelog
 
+## [6.34.0](https://github.com/CourtHive/competition-factory/compare/v6.33.0...v6.34.0) (2026-08-30)
+
+
+### Features
+
+* **codes:** give an event its own registration window and entry capacity ([#4727](https://github.com/CourtHive/competition-factory/issues/4727)) ([c7a6474](https://github.com/CourtHive/competition-factory/commit/c7a64745fffdf5659a495f29e35696d0262bf286))
+* **codes:** give prize money a finishing-position shape ([#4716](https://github.com/CourtHive/competition-factory/issues/4716)) ([920993b](https://github.com/CourtHive/competition-factory/commit/920993bcee8f33ad916d1caee53efe9252e16eff))
+
+
+### Bug Fixes
+
+* **codes:** give the entry fee a unit and an event, and type what an organisation is ([#4724](https://github.com/CourtHive/competition-factory/issues/4724)) ([5f72c6f](https://github.com/CourtHive/competition-factory/commit/5f72c6fbc0c11b47cae218bc8149e6259cc74085))
+* **codes:** revive the dead schema validator and bring the schema back to the types ([#4718](https://github.com/CourtHive/competition-factory/issues/4718)) ([99057e5](https://github.com/CourtHive/competition-factory/commit/99057e599acd5dbfb8348be8a504af1a4a028d72))
+* **entries:** make eligibility askable, and stop rejecting legal combined-rating pairs ([#4722](https://github.com/CourtHive/competition-factory/issues/4722)) ([3fbc842](https://github.com/CourtHive/competition-factory/commit/3fbc84219a43b0650ebdad90409a8260aa40c5b2))
+* **scales:** centralize scale-value resolution and repair six silent defects ([#4721](https://github.com/CourtHive/competition-factory/issues/4721)) ([2765812](https://github.com/CourtHive/competition-factory/commit/276581269de52f039d50c9363ff3e95bb07e451b))
+* **scheduling:** refuse a calledAt that precedes the tournament startDate ([#4723](https://github.com/CourtHive/competition-factory/issues/4723)) ([3426879](https://github.com/CourtHive/competition-factory/commit/3426879b6134edd01642c24c1a7e3a43d4ff8655))
+
+
+### Documentation
+
+* **codes:** state the schema's additionalProperties convention, and enforce it ([#4719](https://github.com/CourtHive/competition-factory/issues/4719)) ([8753b30](https://github.com/CourtHive/competition-factory/commit/8753b3025d9812d6b308a0557bdfbaa2f8d93301))
+
 ## [6.33.0](https://github.com/CourtHive/competition-factory/compare/v6.32.0...v6.33.0) (2026-08-26)
 
 
