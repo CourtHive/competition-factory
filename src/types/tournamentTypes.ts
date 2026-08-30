@@ -170,6 +170,14 @@ export interface Event {
    */
   prizeMoneyAwards?: PrizeMoneyAward[];
   /**
+   * Registration windows, fees and entry URL for THIS event, where they differ from the
+   * tournament's. Resolve with `getEffectiveRegistrationProfile`, which merges field by field —
+   * an event that overrides only `entriesClose` still inherits the tournament's `entryUrl`.
+   */
+  registrationProfile?: EventRegistration;
+  /** how this event accepts entries, and how many — see {@link EventEntryProfile} */
+  entryProfile?: EventEntryProfile;
+  /**
    * Event-grain sanction. Grade is genuinely per-event in several federations — one tournament
    * routinely carries different categories for different age groups — mirroring `eventTier`.
    * Where absent, the tournament's `sanction` applies.
@@ -1890,6 +1898,73 @@ export interface RegistrationProfile {
   notes?: string;
   timeItems?: TimeItem[];
 }
+
+/**
+ * Registration facts that genuinely differ between events of the same tournament.
+ *
+ * Deliberately NOT the full {@link RegistrationProfile}. That type carries `accommodation`,
+ * `transportation`, `hospitality`, `sponsors`, `dressCode`, `socialEvents` and `codeOfConduct`,
+ * which are tournament-wide by nature — a tournament does not run one hotel block for the over-35s
+ * and another for the juniors. Putting the full profile on `Event` would ASSERT that all of them
+ * are overridable per event, and would make the field-level cascade unenforceable because most of
+ * its fields can never legitimately differ. Six fields, so the wrong data is inexpressible rather
+ * than merely discouraged.
+ *
+ * Resolve with `getEffectiveRegistrationProfile` — never by reading this directly. See that
+ * function for why the obvious fallback is wrong.
+ */
+export interface EventRegistration {
+  entriesOpen?: Date | string;
+  entriesClose?: Date | string;
+  withdrawalDeadline?: Date | string;
+  /** fees for THIS event; each entry still states its own `unit` — see {@link RegistrationEntryFee} */
+  entryFees?: RegistrationEntryFee[];
+  entryUrl?: string;
+  eligibilityNotes?: string;
+  extensions?: Extension[];
+}
+
+/**
+ * How an event accepts entries, and how many.
+ *
+ * Event-grain for a structural reason rather than a presentational one: events within a single
+ * `tournamentRecord` can carry DIFFERENT SANCTIONING BODIES (`Event.sanction`, and
+ * `eventOtherIds[].isOrigin` at the identity grain), so a limit set by body A must not be expressed
+ * at a grain body B shares.
+ *
+ * There is a second, different question this does NOT answer: what the whole competition can
+ * physically schedule and play, given courts, days and daily match limits. The sum of individually
+ * valid `entriesLimit` values can exceed that. It is an acceptance rule here; feasibility is the
+ * scheduler's to report, and is deliberately not stored — two statements of one fact drift.
+ */
+export interface EventEntryProfile {
+  /** how many entries the event will accept */
+  entriesLimit?: number;
+  /** intended draw size before a `drawDefinition` exists to carry one */
+  targetDrawSize?: number;
+  selectionProcess?: SelectionProcessUnion;
+  /**
+   * WHICH scale orders acceptance — 'WTN', 'NTRP', a federation ranking list.
+   *
+   * `TOP_DOWN_BY_RANKING` alone is under-specified: two events sorting by different scales accept
+   * different players. Organisers currently state this in the tournament TITLE, after an asterisk
+   * ("*top down by ranking", "*top down by WTN"), which is the evidence that it needs a field.
+   */
+  selectionScaleName?: string;
+  wildcardCount?: number;
+  waitlistEnabled?: boolean;
+  extensions?: Extension[];
+}
+
+/** How an event chooses which entries to accept when it is over-subscribed. */
+export enum SelectionProcessEnum {
+  FIRST_COME_FIRST_SERVED = 'FIRST_COME_FIRST_SERVED',
+  TOP_DOWN_BY_RANKING = 'TOP_DOWN_BY_RANKING',
+  TOP_DOWN_BY_RATING = 'TOP_DOWN_BY_RATING',
+  MANUAL = 'MANUAL',
+  LOTTERY = 'LOTTERY',
+}
+export type SelectionProcessUnion = `${SelectionProcessEnum}`;
 
 export interface LogisticsSection {
   notes?: string;

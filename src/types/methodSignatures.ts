@@ -185,6 +185,10 @@ import type { generateCourts } from '../assemblies/generators/venues/generateCou
 import type { generateEventsFromTieFormat } from '@Generators/events/generateEventsFromTieFormat';
 import type { generateStatCrew } from '@Generators/tournamentRecords/generateStatCrew';
 import type { getCompetitionParticipants } from '@Query/participants/getCompetitionParticipants';
+import type {
+  getEffectiveRegistrationProfile,
+  getEventEntryFees,
+} from '@Query/entries/getEffectiveRegistrationProfile';
 import type { getMatchUpFormatVariance } from '@Query/drawDefinition/getMatchUpFormatVariance';
 import type { getMatchUpOfficialConflicts } from '@Query/officiating/getMatchUpOfficialConflicts';
 import type { getParticipantEventDetails } from '@Query/participants/getParticipantEventDetails';
@@ -840,6 +844,7 @@ export interface MethodSignatures {
   getDrawParticipantRepresentativeIds: EngineMethod<typeof getDrawParticipantRepresentativeIds>;
   getDrawStructures: EngineMethod<typeof getDrawStructures>;
   getDrawTypeCoercion: EngineMethod<typeof getDrawTypeCoercion>;
+  getEffectiveRegistrationProfile: EngineMethod<typeof getEffectiveRegistrationProfile>;
   getEligibleEvents: EngineMethod<typeof getEligibleEvents>;
   getEligibleVoluntaryConsolationParticipants: EngineMethod<typeof getEligibleVoluntaryConsolationParticipants>;
   getEntriesAndSeedsCount: EngineMethod<typeof getEntriesAndSeedsCount>;
@@ -852,6 +857,7 @@ export interface MethodSignatures {
   getEvent: EngineMethod<typeof getEvent>;
   getEventCompleteness: EngineMethod<typeof getEventCompleteness>;
   getEventData: EngineMethod<typeof getEventData>;
+  getEventEntryFees: EngineMethod<typeof getEventEntryFees>;
   getEventInconsistencies: EngineMethod<typeof getEventInconsistencies>;
   getEventMatchUpFormatTiming: EngineMethod<typeof getEventMatchUpFormatTiming>;
   getEventProperties: EngineMethod<typeof getEventProperties>;
