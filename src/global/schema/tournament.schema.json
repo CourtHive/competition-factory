@@ -207,6 +207,76 @@
       "additionalProperties": true,
       "$comment": "OPEN, and this is a KNOWN GAP rather than a decision — closing it is blocked, not declined. Measured 2026-08-28 against the 16 TODS fixtures: 13 records carry `venueIds`, 6 carry `deleted`, and `dualMatchMetadata`, `associatedOrganisations`, `rootOrganisationId`, `tournamentExternalId` and a nested `tournamentRecord` each appear. Closing this definition today fails 14 of 16 fixtures. Each undeclared field must first be resolved as either a real CODES concept (declare it in `types/tournamentTypes.ts` AND here) or as legacy data (correct the fixtures), after which this should become `false` to match the other 51."
     },
+    "EventRegistration": {
+      "type": "object",
+      "properties": {
+        "entriesOpen": {
+          "type": ["string", "object"],
+          "format": "date-time"
+        },
+        "entriesClose": {
+          "type": ["string", "object"],
+          "format": "date-time"
+        },
+        "withdrawalDeadline": {
+          "type": ["string", "object"],
+          "format": "date-time"
+        },
+        "entryFees": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/RegistrationEntryFee"
+          }
+        },
+        "entryUrl": {
+          "type": "string"
+        },
+        "eligibilityNotes": {
+          "type": "string"
+        },
+        "extensions": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/Extension"
+          }
+        }
+      },
+      "additionalProperties": false
+    },
+    "EventEntryProfile": {
+      "type": "object",
+      "properties": {
+        "entriesLimit": {
+          "type": "number"
+        },
+        "targetDrawSize": {
+          "type": "number"
+        },
+        "selectionProcess": {
+          "$ref": "#/definitions/SelectionProcessEnum"
+        },
+        "selectionScaleName": {
+          "type": "string"
+        },
+        "wildcardCount": {
+          "type": "number"
+        },
+        "waitlistEnabled": {
+          "type": "boolean"
+        },
+        "extensions": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/Extension"
+          }
+        }
+      },
+      "additionalProperties": false
+    },
+    "SelectionProcessEnum": {
+      "type": "string",
+      "enum": ["FIRST_COME_FIRST_SERVED", "TOP_DOWN_BY_RANKING", "TOP_DOWN_BY_RATING", "MANUAL", "LOTTERY"]
+    },
     "Extension": {
       "type": "object",
       "properties": {
@@ -250,6 +320,12 @@
     "Event": {
       "type": "object",
       "properties": {
+        "registrationProfile": {
+          "$ref": "#/definitions/EventRegistration"
+        },
+        "entryProfile": {
+          "$ref": "#/definitions/EventEntryProfile"
+        },
         "flightProfile": {
           "type": "object"
         },
