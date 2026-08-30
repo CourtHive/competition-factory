@@ -240,7 +240,12 @@ export function randomUnseededSeparation({
     }
   }
 
-  return { ...SUCCESS };
+  // Report residual conflicts rather than swallowing them. The candidate applied above is the
+  // lowest-conflict one generated, but "lowest" can still be non-zero when the repair loop in
+  // generatePositioningCandidate runs out of options. Returning bare SUCCESS meant
+  // automatedPositioning's `if (result.conflicts)` never fired, so a same-group first-round
+  // pairing shipped as `{ success: true, conflicts: {} }` with no way for a caller to notice.
+  return candidate.conflicts ? { ...SUCCESS, conflicts: candidate.conflicts } : { ...SUCCESS };
 }
 
 function roundRobinParticipantGroups(params) {
