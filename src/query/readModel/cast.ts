@@ -10,6 +10,7 @@ import {
   resolveSchedulingProfile,
   seedRow,
   structureRow,
+  tournamentDiscoveryRow,
   tournamentRow,
   venueRow,
   MatchUpRowContext,
@@ -135,6 +136,7 @@ export function cast(params?: CastArgs): { error?: ErrorType; success?: boolean;
     ...SUCCESS,
     rows: {
       tournaments: [tournamentRow(tournamentRecord)],
+      tournament_discovery: [tournamentDiscoveryRow(tournamentRecord)],
       events,
       draws,
       structures,
