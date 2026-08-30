@@ -1,3 +1,4 @@
+import { generatePairParticipantName } from '@Functions/participants/generatePairParticipantName';
 import { findTournamentParticipant } from '@Acquire/findTournamentParticipant';
 import { addIndividualParticipantIds } from './addIndividualParticipantIds';
 import { getParticipants } from '@Query/participants/getParticipants';
@@ -173,23 +174,10 @@ function updateIndividualParticipantIds({
 
   if (existingParticipant.participantType === participantTypes.PAIR && updateParticipantName) {
     newValues.participantName = generatePairParticipantName({
+      individualParticipantIds: newValues.individualParticipantIds,
       individualParticipants,
-      newValues,
     });
   }
-}
-
-function generatePairParticipantName({ individualParticipants, newValues }) {
-  const individualParticipantIds = newValues.individualParticipantIds;
-  let participantName = individualParticipants
-    .filter(({ participantId }) => individualParticipantIds.includes(participantId))
-    .map((p) => p.person?.standardFamilyName || p.participantOtherName || p.participantName || '')
-    .filter(Boolean)
-    .sort()
-    .join('/');
-
-  if (individualParticipantIds.length === 1) participantName += '/Unknown';
-  return participantName;
 }
 
 // An explicit empty string means "clear this field". `undefined` must keep meaning "leave

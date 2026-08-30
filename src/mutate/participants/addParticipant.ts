@@ -1,3 +1,4 @@
+import { generatePairParticipantName } from '@Functions/participants/generatePairParticipantName';
 import { decorateResult } from '@Functions/global/decorateResult';
 import { definedAttributes } from '@Tools/definedAttributes';
 import { normalizeGender } from '@Helpers/coercedGender';
@@ -130,13 +131,7 @@ function validatePairParticipant({
       participant.individualParticipantIds?.includes(tp.participantId),
     );
 
-    let participantName = individualParticipants
-      .map((p) => p.person?.standardFamilyName || p.participantOtherName || p.participantName || '')
-      .filter(Boolean)
-      .join('/');
-    if (individualParticipants.length === 1) participantName += '/Unknown';
-
-    participant.participantName = participantName;
+    participant.participantName = generatePairParticipantName({ individualParticipants });
   }
 
   return undefined;
