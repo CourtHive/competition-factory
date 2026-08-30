@@ -145,6 +145,13 @@
         "tournamentStatus": {
           "$ref": "#/definitions/TournamentStatusEnum"
         },
+        "cancelledAt": {
+          "type": ["string", "object"],
+          "format": "date-time"
+        },
+        "cancellationReason": {
+          "type": "string"
+        },
         "tournamentName": {
           "type": "string"
         },
@@ -206,6 +213,39 @@
       "required": ["tournamentId"],
       "additionalProperties": true,
       "$comment": "OPEN, and this is a KNOWN GAP rather than a decision — closing it is blocked, not declined. Measured 2026-08-28 against the 16 TODS fixtures: 13 records carry `venueIds`, 6 carry `deleted`, and `dualMatchMetadata`, `associatedOrganisations`, `rootOrganisationId`, `tournamentExternalId` and a nested `tournamentRecord` each appear. Closing this definition today fails 14 of 16 fixtures. Each undeclared field must first be resolved as either a real CODES concept (declare it in `types/tournamentTypes.ts` AND here) or as legacy data (correct the fixtures), after which this should become `false` to match the other 51."
+    },
+    "EntryRestrictionEnum": {
+      "type": "string",
+      "enum": ["RESIDENCY", "MEMBERSHIP", "RANKING_FLOOR", "CLEARANCE", "INVITATION", "OTHER"]
+    },
+    "EntryRestriction": {
+      "$comment": "A condition on WHO may enter, beyond age/gender/rating. Advisory in v1: CODES holds no section roster or membership register, so `evaluable` defaults to undecidable and getParticipantEligibility reports indeterminate rather than guessing.",
+      "type": "object",
+      "properties": {
+        "type": {
+          "$ref": "#/definitions/EntryRestrictionEnum"
+        },
+        "organisationId": {
+          "type": "string"
+        },
+        "membershipCategory": {
+          "type": "string"
+        },
+        "description": {
+          "type": "string"
+        },
+        "evaluable": {
+          "type": "boolean"
+        },
+        "extensions": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/Extension"
+          }
+        }
+      },
+      "required": ["type"],
+      "additionalProperties": false
     },
     "EventRegistration": {
       "type": "object",
@@ -341,6 +381,19 @@
         },
         "entryProfile": {
           "$ref": "#/definitions/EventEntryProfile"
+        },
+        "entryRestrictions": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/EntryRestriction"
+          }
+        },
+        "cancelledAt": {
+          "type": ["string", "object"],
+          "format": "date-time"
+        },
+        "cancellationReason": {
+          "type": "string"
         },
         "flightProfile": {
           "type": "object"
