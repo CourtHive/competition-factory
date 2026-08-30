@@ -28,6 +28,92 @@ export interface ReadModelTournamentRow {
   origin_tournament_id: string | null;
 }
 
+/**
+ * One row per tournament, denormalised for FACETED DISCOVERY — "what can I play, near me, that I
+ * am eligible for".
+ *
+ * **The first aggregate row in the projection.** Every other `ReadModel*Row` is 1:1 with a source
+ * object; this one summarises a tournament AND its events, because the questions it answers are
+ * asked of the tournament while the answers live on the events. That is a deliberate denormalisation
+ * and it is the reason the CONSUMER side needs an invalidation rule the other tables do not: an
+ * event changing dirties its tournament's row.
+ *
+ * `cast()` is a pure whole-record projection, so it produces this correctly whether the consumer
+ * maintains it incrementally or rebuilds it per tournament. That question is deliberately left open
+ * here rather than prejudged.
+ *
+ * ## What is NOT here, and why
+ *
+ * **No `registration_state`.** "open" / "closing within a week" / "closed" is a function of NOW, and
+ * `cast()` is pure — no I/O, no clock. Storing it would bake a timestamp into a row that nothing
+ * re-runs on a schedule, so it would be wrong from the moment it was written. The dates are emitted
+ * instead and the state is a READ-time derivation. This mirrors the call already made for
+ * visibility, where `published` + `embargo` are stored and gated at read time "never a stale stored
+ * boolean".
+ *
+ * ## Why `cast()` does not emit this yet
+ *
+ * Emitting it made SEVEN notice-conformance scenarios fail, and the failures are the finding rather
+ * than an obstacle: `deleteEvents`, `addVenue`, `modifyVenue`, `setTournamentDates` (widen AND
+ * shrink), `deleteVenue` and `setTournamentTier` each CHANGE a discovery row while emitting notices
+ * scoped to an event or a venue — never to the tournament. The conformance harness therefore
+ * measured the invalidation set for this row before anyone had to design it.
+ *
+ * That is the aggregate problem made concrete: the notice model attributes a projected row to the
+ * entity that changed, and this row belongs to no single entity. Wiring it needs either
+ * tournament-scoped notices on those six mutations or a consumer that rebuilds the row when any
+ * member changes — a behaviour decision, not a projection detail, and one that belongs with the CFS
+ * half of A9.
+ *
+ * The type and `tournamentDiscoveryRow()` ship now so the CFS and courthive-query work can be built
+ * against a real shape instead of a proposed one.
+ */
+export interface ReadModelTournamentDiscoveryRow {
+  tournament_id: string;
+  provider_id: string | null;
+  // dates are duplicated from `tournaments` deliberately: date range is the hottest facet, and a
+  // discovery index that has to join to filter on it is not an index.
+  start_date: string | null;
+  end_date: string | null;
+  // Geo, from the primary venue. `Address.latitude`/`longitude` are typed `string | number` in
+  // CODES, so both are coerced to number here — a read model that stores two representations of a
+  // coordinate cannot be indexed on it.
+  latitude: number | null;
+  longitude: number | null;
+  venue_name: string | null;
+  city: string | null;
+  state: string | null;
+  country_code: string | null;
+  // Sanction, flattened. `level_*` comes from `sanction.classification`, falling back to
+  // `tournamentTier` — the same tier shape, one grain up.
+  level_system: string | null;
+  level_value: string | null;
+  recognition: string | null;
+  decision: string | null;
+  ranking_eligible: boolean | null;
+  // Registration window as FACTS. See the note above on why no state is stored.
+  entries_open: string | null;
+  entries_close: string | null;
+  /**
+   * Fee range across the tournament's events.
+   *
+   * NULL — all four columns — when ANY contributing fee cannot be placed on a scale, or when fees
+   * span more than one denomination. A partial range is a wrong answer wearing a number, and a
+   * min/max computed across currencies compares figures that are not comparable.
+   */
+  fee_min: number | null;
+  fee_max: number | null;
+  fee_currency: string | null;
+  fee_unit: string | null;
+  // Facet aggregates over the events.
+  event_count: number;
+  category_types: string[];
+  genders: string[];
+  age_codes: string[];
+  rating_types: string[];
+  cancelled_at: string | null;
+}
+
 export interface ReadModelParticipantPublishRow {
   tournament_id: string;
   published: boolean;
@@ -235,4 +321,9 @@ export interface ReadModelRows {
   entries: ReadModelEntryRow[];
   venues: ReadModelVenueRow[];
   tournament_venues: ReadModelTournamentVenueRow[];
+  /**
+   * NOT YET EMITTED BY `cast()` — see {@link ReadModelTournamentDiscoveryRow}. Optional so the row
+   * shape can be consumed and built against before the projection wiring exists.
+   */
+  tournament_discovery?: ReadModelTournamentDiscoveryRow[];
 }
