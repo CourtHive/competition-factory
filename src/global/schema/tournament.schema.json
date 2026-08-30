@@ -182,19 +182,19 @@
           }
         },
         "sanction": {
-          "type": "object"
+          "$ref": "#/definitions/TournamentSanction"
         },
         "sanctions": {
           "type": "array",
           "items": {
-            "type": "object"
+            "$ref": "#/definitions/TournamentSanction"
           }
         },
         "scheduling": {
           "type": "object"
         },
         "tournamentTier": {
-          "type": "object"
+          "$ref": "#/definitions/TierClassification"
         },
         "weekdays": {
           "type": "array",
@@ -291,6 +291,22 @@
       "required": ["name", "value"],
       "additionalProperties": true,
       "$comment": "OPEN, deliberately and permanently. Extensions are CODES' escape hatch: `value` is unconstrained by design, and callers attach their own keys. This is the one exception that is not a backlog item."
+    },
+    "TierClassification": {
+      "type": "object",
+      "properties": {
+        "system": {
+          "type": "string"
+        },
+        "value": {
+          "type": "string"
+        },
+        "numericRank": {
+          "type": "number"
+        }
+      },
+      "required": ["system", "value"],
+      "additionalProperties": false
     },
     "TimeItem": {
       "type": "object",
@@ -491,7 +507,7 @@
           }
         },
         "sanction": {
-          "type": "object"
+          "$ref": "#/definitions/TournamentSanction"
         },
         "eventOtherIds": {
           "type": "array",
@@ -500,7 +516,7 @@
           }
         },
         "eventTier": {
-          "type": "object"
+          "$ref": "#/definitions/TierClassification"
         },
         "weekdays": {
           "type": "array",
@@ -3374,6 +3390,277 @@
       "required": ["name"],
       "additionalProperties": false
     },
+    "SanctionDecisionEnum": {
+      "type": "string",
+      "enum": [
+        "PENDING",
+        "APPROVED",
+        "CONDITIONAL",
+        "DENIED",
+        "WITHDRAWN",
+        "REVOKED",
+        "SUSPENDED",
+        "EXPIRED",
+        "DOWNGRADED"
+      ]
+    },
+    "RecognitionEnum": {
+      "type": "string",
+      "enum": ["SANCTIONED", "APPROVED", "OBSERVED", "RECOGNISED", "LICENSED", "UNSANCTIONED"]
+    },
+    "AuthorityRoleEnum": {
+      "type": "string",
+      "enum": [
+        "INTERNATIONAL",
+        "NATIONAL",
+        "ZONE",
+        "SECTION",
+        "REGION",
+        "PROVINCE",
+        "STATE",
+        "COUNTY",
+        "DISTRICT",
+        "LEAGUE",
+        "CONFERENCE",
+        "CLUB",
+        "PROVIDER"
+      ]
+    },
+    "SanctionEnforcementEnum": {
+      "type": "string",
+      "enum": ["ENFORCE", "AUDIT", "WARN"]
+    },
+    "SanctionFeeKindEnum": {
+      "type": "string",
+      "enum": ["SANCTION", "HEAD_TAX", "LATE", "ENTRY"]
+    },
+    "SanctioningAuthority": {
+      "type": "object",
+      "properties": {
+        "organisationAbbreviation": {
+          "type": "string"
+        },
+        "organisationName": {
+          "type": "string"
+        },
+        "organisationId": {
+          "type": "string"
+        },
+        "role": {
+          "$ref": "#/definitions/AuthorityRoleEnum"
+        },
+        "regionCode": {
+          "type": "string"
+        },
+        "extensions": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/Extension"
+          }
+        }
+      },
+      "additionalProperties": false
+    },
+    "SanctionFee": {
+      "type": "object",
+      "properties": {
+        "feeKind": {
+          "$ref": "#/definitions/SanctionFeeKindEnum"
+        },
+        "fee": {
+          "$ref": "#/definitions/MonetaryAmount"
+        },
+        "percentage": {
+          "type": "number"
+        },
+        "perParticipant": {
+          "type": "boolean"
+        },
+        "maximum": {
+          "$ref": "#/definitions/MonetaryAmount"
+        },
+        "appliesTo": {
+          "type": "string"
+        },
+        "note": {
+          "type": "string"
+        }
+      },
+      "additionalProperties": false
+    },
+    "SanctionConferral": {
+      "type": "object",
+      "properties": {
+        "rankingEligible": {
+          "type": "boolean"
+        },
+        "rankingPointsProfile": {
+          "type": "string"
+        },
+        "recordEligible": {
+          "type": "boolean"
+        },
+        "officialResults": {
+          "type": "boolean"
+        },
+        "insured": {
+          "type": "boolean"
+        },
+        "extensions": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/Extension"
+          }
+        }
+      },
+      "additionalProperties": false
+    },
+    "SanctionRuleset": {
+      "type": "object",
+      "properties": {
+        "rulesetId": {
+          "type": "string"
+        },
+        "edition": {
+          "type": "string"
+        },
+        "enforcement": {
+          "$ref": "#/definitions/SanctionEnforcementEnum"
+        },
+        "appliedRules": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "extensions": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/Extension"
+          }
+        }
+      },
+      "additionalProperties": false
+    },
+    "SanctionDecisionRecord": {
+      "type": "object",
+      "properties": {
+        "decidedAt": {
+          "type": "string"
+        },
+        "decidedByPersonId": {
+          "type": "string"
+        },
+        "decidedByName": {
+          "type": "string"
+        },
+        "appealable": {
+          "type": "boolean"
+        },
+        "reason": {
+          "type": "string"
+        },
+        "note": {
+          "type": "string"
+        }
+      },
+      "additionalProperties": false
+    },
+    "SanctionIdentifier": {
+      "type": "object",
+      "properties": {
+        "organisationId": {
+          "type": "string"
+        },
+        "identifier": {
+          "type": "string"
+        },
+        "identifierType": {
+          "type": "string"
+        }
+      },
+      "required": ["identifier"],
+      "additionalProperties": false
+    },
+    "SanctionSubmissionWindow": {
+      "type": "object",
+      "properties": {
+        "from": {
+          "type": "string"
+        },
+        "to": {
+          "type": "string"
+        },
+        "timeZone": {
+          "type": "string"
+        }
+      },
+      "additionalProperties": false
+    },
+    "TournamentSanction": {
+      "$comment": "What a governing body DECIDED about a competition — the instance model from #4710. Three orthogonal axes: decision (did the application succeed), recognition (what the body asserts), classification (what grade is conferred). Before this definition existed the property was declared {\"type\": \"object\"}, so a record carrying decision: 'BANANA' validated.",
+      "type": "object",
+      "properties": {
+        "decision": {
+          "$ref": "#/definitions/SanctionDecisionEnum"
+        },
+        "recognition": {
+          "$ref": "#/definitions/RecognitionEnum"
+        },
+        "classification": {
+          "$ref": "#/definitions/TierClassification"
+        },
+        "authority": {
+          "$ref": "#/definitions/SanctioningAuthority"
+        },
+        "approvalChain": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/SanctioningAuthority"
+          }
+        },
+        "decisionRecord": {
+          "$ref": "#/definitions/SanctionDecisionRecord"
+        },
+        "confers": {
+          "$ref": "#/definitions/SanctionConferral"
+        },
+        "ruleset": {
+          "$ref": "#/definitions/SanctionRuleset"
+        },
+        "sanctioningId": {
+          "type": "string"
+        },
+        "identifiers": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/SanctionIdentifier"
+          }
+        },
+        "fees": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/SanctionFee"
+          }
+        },
+        "submissionWindow": {
+          "$ref": "#/definitions/SanctionSubmissionWindow"
+        },
+        "timeItems": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/TimeItem"
+          }
+        },
+        "extensions": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/Extension"
+          }
+        }
+      },
+      "additionalProperties": false
+    },
     "SocialEvent": {
       "type": "object",
       "properties": {
@@ -3465,6 +3752,27 @@
           "items": {
             "$ref": "#/definitions/Extension"
           }
+        }
+      },
+      "required": ["amount", "currencyCode", "unit"],
+      "additionalProperties": false
+    },
+    "CurrencyUnitEnum": {
+      "type": "string",
+      "enum": ["MINOR", "MAJOR"]
+    },
+    "MonetaryAmount": {
+      "$comment": "All three fields are required together: an amount with no stated scale is readable at two scales 100x apart. NOTE this definition is $ref'd where a whole VALUE is a monetary amount (SanctionFee.fee, SanctionFee.maximum). It is deliberately NOT composed into PrizeMoney, PrizeMoneyAward or RegistrationEntryFee via allOf, even though those extend it in TypeScript: `allOf` + `additionalProperties: false` REJECTS the inherited fields, because additionalProperties only sees the properties declared alongside it. Those three inline the triple instead. Verified against ajv before choosing.",
+      "type": "object",
+      "properties": {
+        "amount": {
+          "type": "number"
+        },
+        "currencyCode": {
+          "type": "string"
+        },
+        "unit": {
+          "$ref": "#/definitions/CurrencyUnitEnum"
         }
       },
       "required": ["amount", "currencyCode", "unit"],
