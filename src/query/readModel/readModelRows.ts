@@ -1,11 +1,14 @@
+import { getEffectiveRegistrationProfile } from '@Query/entries/getEffectiveRegistrationProfile';
 import { getTournamentPublishStatus } from '@Query/tournaments/getTournamentPublishStatus';
 import { SCHEDULING_PROFILE } from '@Constants/extensionConstants';
+import { getEntryFeeRange } from '@Query/entries/resolveEntryFee';
 import { LINK_UNRESOLVED, resolvePersonLink } from './personRule';
 import { findExtension } from '@Acquire/findExtension';
 
 // types
 import { UnifiedDrawID, UnifiedEventID, UnifiedTournamentID } from '@Types/tournamentTypes';
 import {
+  ReadModelTournamentDiscoveryRow,
   ReadModelTournamentRow,
   ReadModelCompetitorRow,
   ReadModelMatchUpRow,
@@ -57,6 +60,78 @@ export function tournamentRow(record: any): ReadModelTournamentRow {
     published: !!(pubStatus?.orderOfPlay?.published || pubStatus?.participants?.published),
     origin_organisation_id: origin?.organisationId ?? null,
     origin_tournament_id: origin?.tournamentId ?? null,
+  };
+}
+
+/** Coordinates arrive as `string | number` in CODES. A read model that stores both cannot index. */
+function toNumber(value: any): number | null {
+  if (value === null || value === undefined || value === '') return null;
+  const n = typeof value === 'number' ? value : Number(value);
+  return Number.isFinite(n) ? n : null;
+}
+
+/** Sorted, de-duplicated, empties dropped — a facet list is a set, and a stable one. */
+function facet(values: (string | undefined | null)[]): string[] {
+  return [...new Set(values.filter((v): v is string => !!v))].sort((a, b) => a.localeCompare(b));
+}
+
+/**
+ * One denormalised row per tournament, for faceted discovery.
+ *
+ * Aggregates over the tournament AND its events — see {@link ReadModelTournamentDiscoveryRow} for
+ * why that makes it the first row of its kind here, and for why no `registration_state` is stored.
+ *
+ * Reuses `getEntryFeeRange` and `getEffectiveRegistrationProfile` rather than re-deriving them: a
+ * second implementation of "which fees apply and can they be compared" would drift from the first,
+ * and the first is the one with the unit rules in it.
+ */
+export function tournamentDiscoveryRow(record: any): ReadModelTournamentDiscoveryRow {
+  const events: any[] = record?.events ?? [];
+  const sanction: any = record?.sanction ?? {};
+  const classification: any = sanction.classification ?? record?.tournamentTier ?? {};
+
+  const primaryVenue: any = record?.venues?.find((v: any) => v?.isPrimary) ?? record?.venues?.[0];
+  const address: any = primaryVenue?.addresses?.[0] ?? {};
+
+  const registration: any = getEffectiveRegistrationProfile({ tournamentRecord: record });
+
+  // Every fee the tournament states, event-level included. The range refuses to span
+  // denominations, so a mixed-currency tournament reports no range rather than a wrong one.
+  const allFees = [
+    ...(registration?.entryFees ?? []),
+    ...events.flatMap((e) => e?.registrationProfile?.entryFees ?? []),
+  ];
+  const range: any = getEntryFeeRange(allFees);
+  const comparable = range && !range.incomparable?.length && !range.indeterminate?.length;
+
+  return {
+    tournament_id: record?.tournamentId,
+    provider_id: record?.parentOrganisation?.organisationId ?? null,
+    start_date: record?.startDate ?? null,
+    end_date: record?.endDate ?? null,
+    latitude: toNumber(address.latitude),
+    longitude: toNumber(address.longitude),
+    venue_name: primaryVenue?.venueName ?? null,
+    city: address.city ?? record?.city ?? null,
+    state: address.state ?? null,
+    country_code: address.countryCode ?? record?.hostCountryCode ?? null,
+    level_system: classification.system ?? null,
+    level_value: classification.value ?? null,
+    recognition: sanction.recognition ?? null,
+    decision: sanction.decision ?? null,
+    ranking_eligible: sanction.confers?.rankingEligible ?? null,
+    entries_open: registration?.entriesOpen ?? null,
+    entries_close: registration?.entriesClose ?? null,
+    fee_min: comparable ? range.min.amount : null,
+    fee_max: comparable ? range.max.amount : null,
+    fee_currency: comparable ? range.min.currencyCode : null,
+    fee_unit: comparable ? range.min.unit : null,
+    event_count: events.length,
+    category_types: facet(events.map((e) => e?.category?.categoryType)),
+    genders: facet(events.map((e) => e?.gender)),
+    age_codes: facet(events.map((e) => e?.category?.ageCategoryCode)),
+    rating_types: facet(events.map((e) => e?.category?.ratingType)),
+    cancelled_at: record?.cancelledAt ?? null,
   };
 }
 
