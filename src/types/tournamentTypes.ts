@@ -75,6 +75,17 @@ export interface Tournament {
   tournamentOtherIds?: UnifiedTournamentID[];
   tournamentRank?: string;
   tournamentStatus?: TournamentStatusUnion;
+  /**
+   * When the competition was cancelled.
+   *
+   * `TournamentStatusEnum.CANCELLED` says THAT it was; this says when, and `cancellationReason`
+   * says why. A discovery surface has to strike a cancelled tournament through rather than drop it,
+   * because somebody entered it and needs to see what happened.
+   *
+   * Unrelated to `PracticeRegistration.cancelledAt`, which is a different object's own lifecycle.
+   */
+  cancelledAt?: Date | string;
+  cancellationReason?: string;
   tournamentTier?: TierClassification;
   updatedAt?: Date | string;
   venues?: Venue[];
@@ -177,6 +188,18 @@ export interface Event {
   registrationProfile?: EventRegistration;
   /** how this event accepts entries, and how many — see {@link EventEntryProfile} */
   entryProfile?: EventEntryProfile;
+  /**
+   * Conditions on WHO may enter this event, beyond what `category` and `gender` express.
+   *
+   * Where a governing body's level name encodes one — "Level 4 Closed" meaning closed to the
+   * section — the grade belongs in `sanction.classification` and the rule belongs here. Welding
+   * them into one string makes the grade unsortable and the rule unreadable.
+   */
+  entryRestrictions?: EntryRestriction[];
+  /** when this event was cancelled — the *when* behind a CANCELLED status */
+  cancelledAt?: Date | string;
+  /** why this event was cancelled, for a consumer that must explain it to an entrant */
+  cancellationReason?: string;
   /**
    * Event-grain sanction. Grade is genuinely per-event in several federations — one tournament
    * routinely carries different categories for different age groups — mirroring `eventTier`.
@@ -1955,6 +1978,74 @@ export interface EventEntryProfile {
   waitlistEnabled?: boolean;
   extensions?: Extension[];
 }
+
+/**
+ * A condition on WHO may enter, beyond the age / gender / rating that {@link Category} already
+ * carries.
+ *
+ * Evidenced by two federations independently. One gates on residency — a level whose name ends
+ * "Closed" is open only to competitors of the sanctioning section, which is why its grade and its
+ * eligibility rule are currently welded into one facet string. The other gates on membership:
+ * "required to compete in all Summer Series tournaments", where the membership is bought from the
+ * organisation running the event.
+ *
+ * **Advisory in v1, and that is deliberate.** CODES does not hold the section rosters or membership
+ * registers these resolve against, so most restrictions cannot be evaluated here — see `evaluable`.
+ * A restriction that ANNOUNCES itself is strictly more useful than one that stays silent, because
+ * silence is indistinguishable from "no restriction". That is the same reasoning `#4711` applied to
+ * a validator that cannot evaluate a rule.
+ */
+export interface EntryRestriction {
+  type: EntryRestrictionUnion;
+  /**
+   * Whose territory, roster or register the restriction resolves against.
+   *
+   * Required in practice for MEMBERSHIP and RESIDENCY and meaningless without it: "members only" is
+   * not a rule until it says whose members. A membership of the organisation running the event and
+   * a membership of its national body are different gates.
+   */
+  organisationId?: string;
+  /**
+   * WHICH membership, where an organisation sells more than one that confers different rights.
+   *
+   * One federation's player membership gates entry while its team membership does not, so naming
+   * the organisation alone is not enough to decide whether a given competitor satisfies this.
+   */
+  membershipCategory?: string;
+  /** free text for what a consumer should tell a competitor — not parsed */
+  description?: string;
+  /**
+   * Whether this can be decided from the record alone.
+   *
+   * Defaults to FALSE in effect: a restriction with no explicit `evaluable: true` is treated as
+   * undecidable by {@link getParticipantEligibility}, which reports `indeterminate` rather than
+   * guessing. Optimism here would be a confident wrong answer about whether someone may play.
+   */
+  evaluable?: boolean;
+  extensions?: Extension[];
+}
+
+/**
+ * Kinds of entry restriction.
+ *
+ * Open in spirit — governing bodies invent gates — but enumerated so a consumer can branch on the
+ * common ones rather than parse `description`.
+ */
+export enum EntryRestrictionEnum {
+  /** competitor must be of the stated organisation's territory */
+  RESIDENCY = 'RESIDENCY',
+  /** competitor must hold a membership of the stated organisation */
+  MEMBERSHIP = 'MEMBERSHIP',
+  /** competitor must hold a ranking or rating at or above a threshold */
+  RANKING_FLOOR = 'RANKING_FLOOR',
+  /** competitor must hold a current safeguarding / background clearance */
+  CLEARANCE = 'CLEARANCE',
+  /** entry is by invitation of the organiser */
+  INVITATION = 'INVITATION',
+  /** stated by the organiser and not one of the above */
+  OTHER = 'OTHER',
+}
+export type EntryRestrictionUnion = `${EntryRestrictionEnum}`;
 
 /** How an event chooses which entries to accept when it is over-subscribed. */
 export enum SelectionProcessEnum {

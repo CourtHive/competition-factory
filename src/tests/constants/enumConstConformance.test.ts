@@ -228,6 +228,11 @@ const ENUM_ONLY = [
   // currency UNIT (minor vs whole) is a representation concern with no const-module twin — the
   // currencies themselves are ISO 4217 strings, not a factory vocabulary
   'CurrencyUnitEnum',
+  // kinds of entry restriction (residency, membership, clearance…). No const-module twin: this is
+  // an EVENT-CONFIGURATION vocabulary consumed as a typed field, and its members name gates that
+  // resolve against rosters and registers CODES does not hold — there is nothing for a constants
+  // module to carry beyond the strings themselves.
+  'EntryRestrictionEnum',
   // how an over-subscribed event chooses whom to accept. No const-module twin: the values are an
   // EVENT-CONFIGURATION vocabulary consumed as a typed field, and the same strings already appear in
   // captured federation records as `selectionProcessConstraints` — the authority's permitted SET,

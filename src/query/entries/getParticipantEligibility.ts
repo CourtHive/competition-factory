@@ -3,12 +3,19 @@ import { getEventDateRange, validateParticipantCategory } from '@Query/entries/c
 // constants and types
 import { MISSING_PARTICIPANT, MISSING_EVENT } from '@Constants/errorConditionConstants';
 import type { RejectionReason } from '@Query/entries/categoryValidation';
-import type { Event, Participant, Tournament } from '@Types/tournamentTypes';
+import type { EntryRestriction, Event, Participant, Tournament } from '@Types/tournamentTypes';
 import type { ResultType } from '@Types/factoryTypes';
 
 export interface ParticipantEligibility {
   /** the participant satisfies every category rule that could be evaluated */
   eligible: boolean;
+  /**
+   * Restrictions that could not be decided from the record — residency, membership, clearance.
+   *
+   * Surfaced rather than swallowed so a consumer can say "this event is closed to your section —
+   * check with the organiser" instead of either a flat no or a misleading yes.
+   */
+  undeterminedRestrictions?: EntryRestriction[];
   /**
    * At least one rule could NOT be evaluated because the data it needs is absent — an unknown
    * birthDate, an unrecorded rating. Distinct from `eligible: false`, which asserts a rule is
@@ -16,6 +23,18 @@ export interface ParticipantEligibility {
    */
   indeterminate: boolean;
   rejectionReasons: RejectionReason[];
+}
+
+/**
+ * Restrictions this record cannot settle.
+ *
+ * **Absence of `evaluable: true` means undecidable, not satisfied.** CODES holds no section roster
+ * and no membership register, so a RESIDENCY or MEMBERSHIP gate is normally undecidable here — and
+ * defaulting the other way would answer "yes, you may enter" on a rule nothing checked. A producer
+ * that HAS resolved a restriction sets `evaluable: true` explicitly and takes responsibility for it.
+ */
+function undeterminedRestrictions(restrictions?: EntryRestriction[]): EntryRestriction[] {
+  return (restrictions ?? []).filter((restriction) => restriction && restriction.evaluable !== true);
 }
 
 /**
@@ -47,8 +66,17 @@ export function getParticipantEligibility(params: {
   if (!participant?.participantId) return { error: MISSING_PARTICIPANT };
   if (!event?.eventId) return { error: MISSING_EVENT };
 
-  // An event with no category restricts nobody. Not a silent pass: there is genuinely no rule.
-  if (!event.category) return { eligible: true, indeterminate: false, rejectionReasons: [] };
+  // Entry restrictions are evaluated whether or not a category exists: an open-age event can still
+  // be closed to a section. Collected first so the no-category path below cannot skip them.
+  const undetermined = undeterminedRestrictions(event.entryRestrictions);
+
+  // An event with no category restricts nobody on age or rating. Not a silent pass — there is
+  // genuinely no such rule — but a restriction may still make the answer undecidable.
+  if (!event.category) {
+    return undetermined.length
+      ? { eligible: false, indeterminate: true, rejectionReasons: [], undeterminedRestrictions: undetermined }
+      : { eligible: true, indeterminate: false, rejectionReasons: [] };
+  }
 
   const dateRange = getEventDateRange(event, tournamentRecord);
   if ('error' in dateRange) return { error: dateRange.error };
@@ -62,7 +90,13 @@ export function getParticipantEligibility(params: {
     tournamentRecord,
   );
 
-  if (!rejection) return { eligible: true, indeterminate: false, rejectionReasons: [] };
+  if (!rejection) {
+    // Every category rule passed. An undecidable restriction still prevents a clean yes — saying
+    // "eligible" here would assert something the record cannot support.
+    return undetermined.length
+      ? { eligible: false, indeterminate: true, rejectionReasons: [], undeterminedRestrictions: undetermined }
+      : { eligible: true, indeterminate: false, rejectionReasons: [] };
+  }
 
   const rejectionReasons = rejection.rejectionReasons;
 
@@ -71,7 +105,12 @@ export function getParticipantEligibility(params: {
   // breach that was established on other grounds.
   const indeterminate = rejectionReasons.length > 0 && rejectionReasons.every((reason) => reason.indeterminate);
 
-  return { eligible: false, indeterminate, rejectionReasons };
+  return {
+    eligible: false,
+    indeterminate,
+    rejectionReasons,
+    ...(undetermined.length ? { undeterminedRestrictions: undetermined } : {}),
+  };
 }
 
 export interface EventEligibility extends ParticipantEligibility {
