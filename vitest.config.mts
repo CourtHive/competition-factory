@@ -1,9 +1,14 @@
 /**
  * NOTE: Vite natively resolves tsconfig paths via resolve.tsconfigPaths.
  * Aliases are still needed for test files.
+ *
+ * This is the main suite. The `src/server` Nest specs are a separate project —
+ * see vitest.server.config.mts.
  */
 
 import { configDefaults, defineConfig } from 'vitest/config';
+
+import { testFileAliases } from './vitest.aliases.mjs';
 
 export default defineConfig({
   test: {
@@ -84,24 +89,6 @@ export default defineConfig({
   resolve: {
     tsconfigPaths: true, // native Vite tsconfig paths resolution for source files
     // necessary for vitest to resolve tsconfig paths in test.ts files
-    alias: {
-      '@Generators': new URL('./src/assemblies/generators', import.meta.url).pathname,
-      '@Assemblies': new URL('./src/assemblies', import.meta.url).pathname,
-      '@Engines': new URL('./src/tests/engines', import.meta.url).pathname, // test engines
-      '@Validators': new URL('./src/validators', import.meta.url).pathname,
-      '@Constants': new URL('./src/constants', import.meta.url).pathname,
-      '@Functions': new URL('./src/functions', import.meta.url).pathname,
-      '@Fixtures': new URL('./src/fixtures', import.meta.url).pathname,
-      '@Forge': new URL('./src/forge', import.meta.url).pathname,
-      '@Acquire': new URL('./src/acquire', import.meta.url).pathname,
-      '@Helpers': new URL('./src/helpers', import.meta.url).pathname,
-      '@Global': new URL('./src/global', import.meta.url).pathname,
-      '@Mutate': new URL('./src/mutate', import.meta.url).pathname,
-      '@Server': new URL('./src/server', import.meta.url).pathname,
-      '@Query': new URL('./src/query', import.meta.url).pathname,
-      '@Tests': new URL('./src/tests', import.meta.url).pathname,
-      '@Tools': new URL('./src/tools', import.meta.url).pathname,
-      '@Types': new URL('./src/types', import.meta.url).pathname,
-    },
+    alias: testFileAliases,
   },
 });

@@ -1,6 +1,7 @@
 import { generateTournamentRecord } from '../../../data/fileSystem/generateTournamentRecord';
 import { removeTournamentRecords } from '../../../data/fileSystem/removeTournamentRecords';
 import { executionQueue } from './executionQueue';
+import { describe, expect, it } from 'vitest';
 
 import { errorConditionConstants } from '@Constants/errorConditionConstants';
 

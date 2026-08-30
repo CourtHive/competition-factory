@@ -1,4 +1,5 @@
 import { UsersModule } from './providers/users/users.module';
+import { beforeAll, describe, expect, it } from 'vitest';
 import { Test, TestingModule } from '@nestjs/testing';
 import { AppController } from './app.controller';
 import { AuthModule } from './auth/auth.module';
