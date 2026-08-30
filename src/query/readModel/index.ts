@@ -12,6 +12,7 @@ export type { MatchUpPublishState } from './readModelPublish';
 export { isFactoryUuid, resolvePersonLink, LINK_PROVIDER_ID, LINK_UNRESOLVED } from './personRule';
 export type { PersonLink } from './personRule';
 export {
+  tournamentDiscoveryRow,
   tournamentRow,
   tournamentOrigin,
   eventRow,
@@ -39,6 +40,7 @@ export type {
   CourtRowContext,
 } from './readModelRows';
 export type {
+  ReadModelTournamentDiscoveryRow,
   ReadModelEventRow,
   ReadModelSeedRow,
   ReadModelDrawRow,
