@@ -106,6 +106,7 @@ export function getTournamentInfo(params?: {
 
   const extractTournamentInfo = ({
     tournamentId,
+    tournamentLevel,
     tournamentRank,
     tournamentStatus,
     tournamentTier,
@@ -130,6 +131,7 @@ export function getTournamentInfo(params?: {
     updatedAt,
   }: Tournament) => ({
     tournamentId,
+    tournamentLevel,
     tournamentRank,
     tournamentStatus,
     tournamentTier,

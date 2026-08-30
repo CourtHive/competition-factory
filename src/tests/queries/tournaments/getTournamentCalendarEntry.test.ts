@@ -26,6 +26,27 @@ describe('getTournamentCalendarEntry', () => {
     expect(result.tournament.endDate).toBe('2026-05-12');
   });
 
+  test('carries tournamentLevel through to the calendar entry, alongside the other classifiers', () => {
+    // The producer landed before the projection did, so the value survived the save and then stopped
+    // at `extractTournamentInfo` — populated on the record, absent from every calendar built from it.
+    // Asserting on the ENTRY rather than on the projection is the point: the calendar is the consumer.
+    const record = build();
+    record.tournamentLevel = 'INTERNATIONAL';
+    record.tournamentTier = 'ELITE';
+
+    let result: any = getTournamentCalendarEntry({ tournamentRecord: record });
+    expect(result.tournament.tournamentLevel).toBe('INTERNATIONAL');
+    // Its neighbours already made this trip; the new field must not arrive at their expense.
+    expect(result.tournament.tournamentTier).toBe('ELITE');
+  });
+
+  test('omits tournamentLevel when the record does not state one', () => {
+    // An unstated level must not become a default. `undefined` here is the honest answer, and it is
+    // what distinguishes "this tournament declares no level" from any particular level.
+    let result: any = getTournamentCalendarEntry({ tournamentRecord: build() });
+    expect(result.tournament.tournamentLevel).toBeUndefined();
+  });
+
   test('flattens a URL tournamentImage into tournamentImageURL', () => {
     const record = build([
       { name: 'tournamentImage', resourceType: 'URL', resourceSubType: 'IMAGE', identifier: 'https://cdn/x.png' },
