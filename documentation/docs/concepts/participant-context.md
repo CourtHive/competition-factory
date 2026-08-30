@@ -208,14 +208,30 @@ const { participants } = tournamentEngine.getParticipants({
 });
 
 participants.forEach((p) => {
-  if (p.rankings?.SINGLES) {
-    console.log(`${p.person.standardFamilyName}: Rank ${p.rankings.SINGLES.ranking}`);
+  // `rankings.SINGLES` and `ratings.SINGLES` are ARRAYS, with one entry per
+  // distinct scaleName — a participant may hold WTN and UTR and NTRP at once.
+  // Address entries by `scaleName`, never by position: the set of scales is
+  // open, so the array has no canonical order and index [0] is only the scale
+  // you want for as long as it is the only one present.
+  const ranking = p.rankings?.SINGLES?.find(({ scaleName }) => scaleName === 'U18');
+  if (ranking) {
+    console.log(`${p.person.standardFamilyName}: Rank ${ranking.scaleValue}`);
   }
-  if (p.ratings?.SINGLES) {
-    console.log(`  Rating: ${p.ratings.SINGLES.rating}`);
+
+  // Each entry is `{ scaleName, scaleDate, scaleValue }`. For a multi-property
+  // scale, `scaleValue` is an object — WTN carries `wtnRating` and `confidence`.
+  // `scaleDate` reflects the timeItem's `itemDate` and may be undefined.
+  const rating = p.ratings?.SINGLES?.find(({ scaleName }) => scaleName === 'WTN');
+  if (rating) {
+    console.log(`  Rating: ${rating.scaleValue.wtnRating}, confidence ${rating.scaleValue.confidence}`);
   }
 });
 ```
+
+:::note
+`scaleName` may carry a modifier suffix (`WTN.<modifier>`), so match with
+`startsWith` where modifiers are in play.
+:::
 
 **Converts timeItems like:**
 

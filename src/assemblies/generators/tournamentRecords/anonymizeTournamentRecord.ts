@@ -1,3 +1,4 @@
+import { generatePairParticipantName } from '@Functions/participants/generatePairParticipantName';
 import { postalCodeMocks, stateMocks, cityMocks } from '../mocks/address';
 import { extractDate, formatDate } from '@Tools/dateTime';
 import { generatePersons } from '../mocks/generatePersons';
@@ -464,16 +465,4 @@ function anonymizeExtensionIds({ tournamentRecord, idMap }) {
       request.personId = idMap[request.personId];
     });
   }
-}
-
-function generatePairParticipantName({ individualParticipantIds, individualParticipants }) {
-  let participantName = individualParticipants
-    .filter(({ participantId }) => individualParticipantIds.includes(participantId))
-    .map((p) => p.person?.standardFamilyName || p.participantOtherName || p.participantName || '')
-    .filter(Boolean)
-    .sort()
-    .join('/');
-
-  if (individualParticipantIds.length === 1) participantName += '/Unknown';
-  return participantName;
 }
