@@ -49,7 +49,29 @@ import {
 } from '@Constants/topicConstants';
 
 export type EntityKind =
-  'tournament' | 'participant' | 'event' | 'drawDefinition' | 'structure' | 'matchUp' | 'entries' | 'venue';
+  | 'tournament'
+  | 'participant'
+  | 'event'
+  | 'drawDefinition'
+  | 'structure'
+  | 'matchUp'
+  | 'entries'
+  | 'venue'
+  /**
+   * A row that summarises a tournament AND its contents, belonging to no single entity.
+   *
+   * Every other kind names the object a projected row is 1:1 with, and coverage asks "did a notice
+   * fire for THAT object". An aggregate has no such object: `tournament_discovery` changes when an
+   * event, a venue, a date or a tier changes, and those mutations correctly announce the event or
+   * the venue — never the tournament. Attributing the row to `tournament` therefore reported seven
+   * false violations, which is the oracle applying a 1:1 assumption to a row that is not 1:1.
+   *
+   * Coverage for this kind is "the mutation announced SOMETHING", because that is exactly what the
+   * consumer keys off: CFS rebuilds the row for every tournament its intent batch touched, and
+   * intents are derived from notices. A mutation that changes an aggregate row and emits NO notice
+   * is still a violation — that is the failure this kind must keep catching, and it is falsified.
+   */
+  | 'tournamentAggregate';
 export type ChangeType = 'added' | 'modified' | 'removed';
 export type CapturedNotice = { topic: string; payload: any };
 export type EntityChange = { kind: EntityKind; id: string; change: ChangeType };
@@ -68,6 +90,9 @@ const INCIDENTAL_KEYS = new Set(['updatedAt', 'createdAt', 'timeStamp', 'process
  */
 export const entityTopicSpec: Record<EntityKind, Partial<Record<ChangeType, string[]>>> = {
   tournament: { modified: [MODIFY_TOURNAMENT_DETAIL] },
+  // No topic list: an aggregate is not covered by naming ONE topic, because the mutations that move
+  // it announce whichever event or venue changed. Coverage is decided in isEntityCovered instead.
+  tournamentAggregate: {},
   participant: { added: [ADD_PARTICIPANTS], modified: [MODIFY_PARTICIPANTS], removed: [DELETE_PARTICIPANTS] },
   matchUp: {
     added: [ADD_MATCHUPS],
@@ -180,6 +205,10 @@ function structureCovered(change: EntityChange, noticed: Set<string>, parentage:
  * under any draw notice, and — for removals — an ancestor delete notice.
  */
 function isEntityCovered(change: EntityChange, noticed: Set<string>, parentage: Parentage): boolean {
+  // An aggregate row is covered when the mutation announced anything at all. See EntityKind.
+  // Deliberately NOT `noticed.has('tournament:<id>')`: the mutations that move this row announce
+  // the event or venue that changed, which is the correct signal and the one the consumer uses.
+  if (change.kind === 'tournamentAggregate') return noticed.size > 0;
   if (change.kind === 'entries') return entriesCovered(change, noticed);
   if (noticed.has(`${change.kind}:${change.id}`)) return true;
   if (change.kind === 'structure') return structureCovered(change, noticed, parentage);
@@ -243,6 +272,10 @@ function collectMatchUps(structure: any, out: Map<string, any>): void {
 export function collectEntities(record: any): EntityMaps {
   const maps: EntityMaps = {
     tournament: new Map(),
+    // Never populated by structural collection: an aggregate has no source object to collect. It
+    // is diffed as a cast() ROW, not as a record entity, so the map exists only to satisfy the
+    // exhaustive EntityKind record.
+    tournamentAggregate: new Map(),
     participant: new Map(),
     event: new Map(),
     drawDefinition: new Map(),
@@ -434,6 +467,9 @@ const CAST_TABLE_OWNER: Record<string, { kind: EntityKind; idOf: (row: Row) => s
   order_of_play: { kind: 'tournament', idOf: (r) => r.tournament_id },
   participant_publish: { kind: 'tournament', idOf: (r) => r.tournament_id },
   scheduling_profile: { kind: 'tournament', idOf: (r) => r.tournament_id },
+  // The only aggregate. Summarises the tournament AND its events, so it is attributed to a kind
+  // whose coverage rule matches how it actually changes — see EntityKind.tournamentAggregate.
+  tournament_discovery: { kind: 'tournamentAggregate', idOf: (r) => r.tournament_id },
 };
 
 /** The cast() tables the fidelity oracle knows how to attribute — for the drift guard. */

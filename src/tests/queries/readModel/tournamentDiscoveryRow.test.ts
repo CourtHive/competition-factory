@@ -145,21 +145,27 @@ describe('tournamentDiscoveryRow', () => {
 });
 
 /**
- * `cast()` does NOT emit this row yet, deliberately.
+ * `cast()` now emits the row. The deferral in #4741 is lifted.
  *
- * Emitting it failed seven notice-conformance scenarios — deleteEvents, addVenue, modifyVenue,
- * setTournamentDates (widen and shrink), deleteVenue and setTournamentTier all change a discovery
- * row while emitting notices scoped to an event or venue, never the tournament. That is the
- * aggregate-invalidation problem, and resolving it is a behaviour decision belonging with the CFS
- * half of A9. This test pins the current state so the deferral is explicit rather than forgotten.
+ * What unblocked it was not wiring but a modelling correction: the conformance oracle attributed
+ * every projected row to ONE source object, and an aggregate has none. `tournament_discovery` is
+ * registered under the `tournamentAggregate` kind, whose coverage rule matches how the row actually
+ * changes — the mutations that move it announce the event or the venue that changed, never the
+ * tournament.
  */
-describe('cast() emission is deliberately deferred', () => {
-  it('does not yet emit tournament_discovery, and still emits every existing table', () => {
+describe('cast() emits the discovery row', () => {
+  it('produces exactly one row per tournament, alongside every existing table', () => {
     const result: any = cast({ tournamentRecord: record });
     expect(result.success).toBe(true);
-    expect(result.rows.tournament_discovery).toBeUndefined();
+    expect(result.rows.tournament_discovery).toHaveLength(1);
+    expect(result.rows.tournament_discovery[0].tournament_id).toBe('t1');
     for (const table of ['tournaments', 'events', 'match_ups', 'entries', 'venues']) {
       expect(result.rows[table]).toBeDefined();
     }
+  });
+
+  it('the emitted row equals the builder — cast() adds no second derivation', () => {
+    const result: any = cast({ tournamentRecord: record });
+    expect(result.rows.tournament_discovery[0]).toEqual(tournamentDiscoveryRow(record));
   });
 });
