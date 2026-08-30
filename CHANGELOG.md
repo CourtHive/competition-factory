@@ -1,5 +1,24 @@
 # Changelog
 
+## [6.35.0](https://github.com/CourtHive/competition-factory/compare/v6.34.0...v6.35.0) (2026-08-30)
+
+
+### Features
+
+* **codes:** say who may enter an event, and when a competition was cancelled ([#4740](https://github.com/CourtHive/competition-factory/issues/4740)) ([a53f648](https://github.com/CourtHive/competition-factory/commit/a53f64833cd1c924e50ea9b1100a3a9867ac8475))
+* **read-model:** a discovery row shape, and the invalidation set that defers its emission ([#4741](https://github.com/CourtHive/competition-factory/issues/4741)) ([81e0248](https://github.com/CourtHive/competition-factory/commit/81e0248dfdaba5c3d26007b6e35be0e39f6edb4a))
+* **tools:** buildFromSources in the factory, with link repair for third-party draws ([#4739](https://github.com/CourtHive/competition-factory/issues/4739)) ([0d8176d](https://github.com/CourtHive/competition-factory/commit/0d8176d6a7c0293e2ad0504aff08e122d4205d6b))
+
+
+### Bug Fixes
+
+* **avoidance:** check the pair a swapped participant lands in, not the one it leaves ([#4736](https://github.com/CourtHive/competition-factory/issues/4736)) ([17c4d86](https://github.com/CourtHive/competition-factory/commit/17c4d86269c48fc53c632d58abcd8e7f7f8cb046))
+* **codes:** make the schema say something about a sanction ([#4738](https://github.com/CourtHive/competition-factory/issues/4738)) ([37a309a](https://github.com/CourtHive/competition-factory/commit/37a309a307d55627758acece99bd5af8c4d85110))
+* **participants:** correct the getScaleValues return type and unify PAIR naming ([#4730](https://github.com/CourtHive/competition-factory/issues/4730)) ([27c1589](https://github.com/CourtHive/competition-factory/commit/27c158916e48aefe89a57533419013d75d73df62))
+* **read-model:** export the discovery row builder so a consumer can reach it ([#4742](https://github.com/CourtHive/competition-factory/issues/4742)) ([f99ad00](https://github.com/CourtHive/competition-factory/commit/f99ad00c7461b6843a03fba035976ac2a3d392d4))
+* **scales:** keep the ratings governor attached through tree shaking ([#4735](https://github.com/CourtHive/competition-factory/issues/4735)) ([5616069](https://github.com/CourtHive/competition-factory/commit/5616069ec429ae4c07af3825e93334fbe455d8f2))
+* **sorters:** pin stringSort's collator so ordering does not depend on the host ([#4731](https://github.com/CourtHive/competition-factory/issues/4731)) ([e3119d2](https://github.com/CourtHive/competition-factory/commit/e3119d215134af30c48a38b3464324bd27caf0e9))
+
 ## [6.34.0](https://github.com/CourtHive/competition-factory/compare/v6.33.0...v6.34.0) (2026-08-30)
 
 
