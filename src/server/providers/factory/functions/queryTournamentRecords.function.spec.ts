@@ -1,6 +1,7 @@
 import { generateTournamentRecord } from '../../../data/fileSystem/generateTournamentRecord';
 import { removeTournamentRecords } from '../../../data/fileSystem/removeTournamentRecords';
 import { queryTournamentRecords } from './queryTournamentRecords';
+import { describe, expect, it } from 'vitest';
 
 // Unique ID to avoid file-level race with executionQueue spec
 const TEST_ID = 'test-queryTournamentRecords';

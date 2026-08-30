@@ -60,7 +60,7 @@ jobs:
       # NOTE: vitest + jest-server are intentionally NOT run here as
       # explicit steps. `npm publish` below invokes `prepublishOnly`
       # (= `pinst --disable && pnpm verify`), and the `verify` script
-      # already runs verify:coverage (vitest) + verify:server (jest)
+      # already runs verify:coverage + verify:server (both vitest)
       # along with the rest of the verification suite. Running them
       # again here was duplicating ~9 min of test time per release.
       # The PR-time `verify.yml` workflow remains the first line of

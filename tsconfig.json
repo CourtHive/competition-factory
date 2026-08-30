@@ -1,13 +1,12 @@
 {
   // NOTE: tsconfig.base.json is the single source of truth for compilerOptions
-  // (including `paths`). jest reads it directly via Node `require()`, which does
-  // NOT follow `extends`, so `paths` must live on disk in tsconfig.base.json.
+  // (including `paths`), which is why they live there rather than here.
   //
   // This file extends it and only overrides what differs for `tsc --noEmit`:
   // excluding tests/specs/dist so the build typecheck doesn't try to load them.
   //
-  // When adding a new path alias, edit tsconfig.base.json — both tsc and jest
-  // will see it. No edits required here.
+  // When adding a new path alias, edit tsconfig.base.json — and mirror it in
+  // vitest.aliases.mts, which is what the two test projects resolve against.
   "extends": "./tsconfig.base.json",
   "exclude": ["dist", "src/**/*.test.ts", "src/**/scratch/**", "**/*tsconfig*/**", "src/**/*.spec.ts"]
 }
