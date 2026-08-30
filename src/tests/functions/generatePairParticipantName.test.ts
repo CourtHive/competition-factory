@@ -49,8 +49,14 @@ describe('collation is locale-aware, not code-unit order', () => {
       generatePairParticipantName({ individualParticipants: [member('p1', a, MALE), member('p2', b, MALE)] }),
     ).toEqual(expectation);
 
-    // and a bare sort would NOT produce it — pins why the collator is there
-    expect([a, b].sort().join('/')).not.toEqual(expectation);
+    // and UTF-16 code-unit order would NOT produce it — pins why the collator
+    // is there. Spelled as an explicit comparator rather than a bare `.sort()`,
+    // which the standards forbid even when demonstrating its behaviour.
+    const codeUnitOrder = (x: string, y: string) => {
+      if (x < y) return -1;
+      return x > y ? 1 : 0;
+    };
+    expect([a, b].sort(codeUnitOrder).join('/')).not.toEqual(expectation);
   });
 
   it('does not disturb pairs a bare sort already ordered correctly', () => {

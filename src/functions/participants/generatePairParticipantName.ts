@@ -57,10 +57,14 @@ export function generatePairParticipantName({
   individualParticipantIds,
   individualParticipants,
 }: GeneratePairParticipantNameArgs): string {
+  // Set rather than Array#includes for the membership test, per the standards:
+  // built once here instead of re-scanned per member.
+  const memberIds = Array.isArray(individualParticipantIds) ? new Set(individualParticipantIds) : undefined;
+
   const members = (individualParticipants ?? []).filter((member) => {
-    if (!Array.isArray(individualParticipantIds)) return true;
+    if (!memberIds) return true;
     const participantId = member?.participantId;
-    return typeof participantId === 'string' && individualParticipantIds.includes(participantId);
+    return typeof participantId === 'string' && memberIds.has(participantId);
   });
 
   const named = members.filter((member) => !!memberName(member));
