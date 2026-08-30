@@ -54,6 +54,21 @@ export interface BuildTournamentRecordArgs {
   eventDataDocs?: any[];
   matchUpDocs?: any[];
   participantDocs?: any[];
+  /**
+   * Optional collector for matchUps that could not be placed. Passed in rather than returned so this
+   * function's shape stays exactly what it was — callers assembling a record by hand are not broken
+   * by a new wrapper, and one that wants the report opts in by handing over an array.
+   */
+  unplaced?: UnplacedMatchUp[];
+}
+
+/** A matchUp the assembler could not place, and enough identity to find it in the source. */
+export interface UnplacedMatchUp {
+  matchUpId?: string;
+  eventId?: string;
+  drawId?: string;
+  /** the structureId it named — which no structure in that draw carries */
+  structureId?: string;
 }
 
 export interface BuildFromSourcesResult {
@@ -69,6 +84,11 @@ export interface BuildFromSourcesResult {
    * can inspect this and decide.
    */
   inferredLinks: { drawId?: string; inferred: any[]; issues: string[] }[];
+  /**
+   * matchUps that named a structure the draw does not contain. Empty in the ordinary case. Reported
+   * rather than dropped: a shorter draw with no complaint is the hardest loss to notice.
+   */
+  unplacedMatchUps: UnplacedMatchUp[];
 }
 
 // ----------------------------------------------------------------- wrappers
@@ -571,14 +591,30 @@ function buildDrawDefinitionFromMatchUps(drawId, matchUps) {
   return { ...drawShell, structures: groupStructures };
 }
 
-function augmentDrawWithMatchUps(drawDef, matchUps) {
+/**
+ * Returns the matchUps it could NOT place.
+ *
+ * `insertMatchUpIntoStructure` reports whether it found a home; this used to compute that result and
+ * discard it, so a matchUp whose `structureId` names no structure in the draw vanished with nothing
+ * said. That is the hardest kind of loss to notice — no error, no empty structure, and a matchUp
+ * count that still looks plausible. The draw is simply smaller than it should be.
+ *
+ * Deliberately does NOT invent a structure to hold them: that would trade a silent drop for a silent
+ * fabrication, which is no better and harder to unpick later. The module's convention is to report
+ * what it could not handle (`unknownCount`, `inferredLinks`); this now follows it.
+ */
+function augmentDrawWithMatchUps(drawDef, matchUps): any[] {
   const seen = collectSeenMatchUpIds(drawDef);
+  const unplaced: any[] = [];
   for (const m of matchUps) {
     if (seen.has(m.matchUpId)) continue;
     if (insertMatchUpIntoStructure(drawDef, m)) {
       seen.add(m.matchUpId);
+    } else {
+      unplaced.push(m);
     }
   }
+  return unplaced;
 }
 
 function collectSeenMatchUpIds(drawDef) {
@@ -602,11 +638,26 @@ function insertMatchUpIntoStructure(drawDef, m) {
 }
 
 // ----------------------------------------------------------- event building
-function buildEvents({ eventDataDocs, matchUps }) {
+function buildEvents({
+  eventDataDocs,
+  matchUps,
+  unplaced,
+}: {
+  eventDataDocs: any[];
+  matchUps: any[];
+  unplaced?: UnplacedMatchUp[];
+}) {
   const events = new Map();
   seedEventsFromTournamentInfo(events, eventDataDocs);
   ingestDrawsDataIntoEvents(events, eventDataDocs);
-  if (matchUps.length > 0) ingestMatchUpsIntoEvents(events, matchUps);
+  if (matchUps.length > 0) {
+    // NOT `unplaced?.push(...ingest(...))` — optional chaining short-circuits the WHOLE expression,
+    // so with no collector the ingest itself never runs and every matchUp silently disappears. The
+    // ported contract suite caught it immediately, which is the argument for porting the tests with
+    // the code.
+    const unplacedHere = ingestMatchUpsIntoEvents(events, matchUps);
+    if (unplaced) unplaced.push(...unplacedHere);
+  }
   for (const event of events.values()) {
     for (const drawDef of event.drawDefinitions) {
       deriveDrawEntries(drawDef);
@@ -642,19 +693,23 @@ function ingestDrawsDataIntoEvents(events, eventDataDocs) {
   }
 }
 
-function ingestMatchUpsIntoEvents(events, matchUps) {
+function ingestMatchUpsIntoEvents(events, matchUps): UnplacedMatchUp[] {
+  const unplaced: UnplacedMatchUp[] = [];
   const grouped = groupMatchUpsByEventAndDraw(matchUps);
   for (const [eventId, drawMap] of grouped) {
     const event = ensureEvent(events, eventId, drawMap);
     for (const [drawId, mList] of drawMap) {
       const existing = event.drawDefinitions.find((d) => d.drawId === drawId);
       if (existing) {
-        augmentDrawWithMatchUps(existing, mList);
+        for (const m of augmentDrawWithMatchUps(existing, mList)) {
+          unplaced.push({ matchUpId: m?.matchUpId, eventId, drawId, structureId: m?.structureId });
+        }
       } else {
         event.drawDefinitions.push(buildDrawDefinitionFromMatchUps(drawId, mList));
       }
     }
   }
+  return unplaced;
 }
 
 function groupMatchUpsByEventAndDraw(matchUps) {
@@ -794,12 +849,15 @@ export function buildTournamentRecord({
   eventDataDocs = [],
   matchUpDocs = [],
   participantDocs = [],
+  unplaced,
 }: BuildTournamentRecordArgs = {}) {
   const record: Record<string, any> = buildTournamentMetadata(eventDataDocs, matchUpDocs);
   const participants = mergeParticipants({ participantDocs, eventDataDocs, matchUps: matchUpDocs });
   const venues = buildVenues(eventDataDocs);
   const events =
-    eventDataDocs.length > 0 || matchUpDocs.length > 0 ? buildEvents({ eventDataDocs, matchUps: matchUpDocs }) : [];
+    eventDataDocs.length > 0 || matchUpDocs.length > 0
+      ? buildEvents({ eventDataDocs, matchUps: matchUpDocs, unplaced })
+      : [];
 
   if (participants.length > 0) record.participants = participants;
   if (venues.length > 0) record.venues = venues;
@@ -832,9 +890,10 @@ export function buildFromSources(sources?: any[]): BuildFromSourcesResult {
     else unknownCount += 1;
   }
 
-  const record = buildTournamentRecord({ eventDataDocs, matchUpDocs, participantDocs });
+  const unplacedMatchUps: UnplacedMatchUp[] = [];
+  const record = buildTournamentRecord({ eventDataDocs, matchUpDocs, participantDocs, unplaced: unplacedMatchUps });
   // Repair before returning: a reconstructed draw that cannot be read is not a usable result, and
   // the caller should not have to know to ask.
   const inferredLinks = repairDrawLinks(record);
-  return { record, classification, unknownCount, inferredLinks };
+  return { record, classification, unknownCount, inferredLinks, unplacedMatchUps };
 }

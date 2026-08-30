@@ -177,16 +177,15 @@ describe('buildFromSources — malformed and partial input', () => {
   });
 
   /**
-   * ⚠️ DOCUMENTS A DATA-LOSS BEHAVIOUR, it does not endorse one.
+   * INVERTED 2026-08-30. This test previously asserted the DROP and named it pre-existing: a matchUp
+   * whose `structureId` matched no structure vanished, because `augmentDrawWithMatchUps` computed
+   * `insertMatchUpIntoStructure`'s result and discarded it. It is kept rather than deleted because
+   * it is the record of what changed — the behaviour is now REPORTED.
    *
-   * `augmentDrawWithMatchUps` inserts a matchUp only into an EXISTING structure whose structureId
-   * matches. When none does, `insertMatchUpIntoStructure` returns false and the matchUp is dropped —
-   * `placed` is computed and discarded, so nothing is reported. Ported verbatim and asserted as-is
-   * rather than changed, because a port whose behaviour shifts cannot be verified by the suite it
-   * came with. Raised as a follow-up: it is the same silent-drop family as the link loss that
-   * prompted this move.
+   * Note what it still does NOT do: no structure is invented to hold the orphan. Trading a silent
+   * drop for a silent fabrication would be no better and harder to unpick.
    */
-  it('DROPS a matchUp whose structureId matches no structure in the draw (pre-existing)', () => {
+  it('REPORTS a matchUp whose structureId matches no structure, rather than dropping it silently', () => {
     const result: any = buildFromSources([
       {
         tournamentPublicEventData: {
@@ -214,17 +213,48 @@ describe('buildFromSources — malformed and partial input', () => {
     ]);
 
     const draw = result.record.events[0].drawDefinitions.find((d: any) => d.drawId === 'd1');
-    const ids: string[] = [];
+    const placed: string[] = [];
     const walk = (structures: any[] = []) => {
       for (const s of structures) {
-        for (const m of s.matchUps ?? []) ids.push(m.matchUpId);
+        for (const m of s.matchUps ?? []) placed.push(m.matchUpId);
         walk(s.structures);
       }
     };
     walk(draw.structures);
-    expect(ids).toContain('m1');
-    // m2 is gone, and nothing in the result says so. That is the finding.
-    expect(ids).not.toContain('m2');
+
+    expect(placed).toContain('m1');
+    expect(placed).not.toContain('m2');
+
+    // The change: m2 is still not in the draw, but it is no longer invisible.
+    expect(result.unplacedMatchUps).toHaveLength(1);
+    expect(result.unplacedMatchUps[0]).toMatchObject({
+      matchUpId: 'm2',
+      eventId: 'e1',
+      drawId: 'd1',
+      structureId: 'no-such-structure',
+    });
+  });
+
+  it('reports an empty unplaced list when every matchUp finds a home', () => {
+    // The negative half: a report that is never empty is as useless as one that is never populated.
+    const result: any = buildFromSources([
+      {
+        tournamentPublicEventData: {
+          eventData: {
+            eventInfo: { eventId: 'e1', eventName: 'E', eventType: 'SINGLES' },
+            drawsData: [{ drawId: 'd1', drawName: 'Main', structures: [{ structureId: 's1', matchUps: [] }] }],
+          },
+        },
+      },
+      {
+        tournamentMatchUps: {
+          dateMatchUps: [
+            { matchUpId: 'm1', eventId: 'e1', drawId: 'd1', structureId: 's1', roundNumber: 1, sides: [] },
+          ],
+        },
+      },
+    ]);
+    expect(result.unplacedMatchUps).toEqual([]);
   });
 
   it('ignores a matchUp with no eventId rather than inventing one', () => {
