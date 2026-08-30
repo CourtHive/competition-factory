@@ -17,6 +17,11 @@
       "allowedVersions": "!/^11\\.12\\.0$/"
     },
     {
+      "description": "Every @nestjs/* package must move together. @nestjs/swagger@11 imports @nestjs/common/interfaces, which @nestjs/common@12 no longer exports, so a nest-monorepo major on its own is red no matter what — the swagger and jwt bumps have to arrive in the same PR. Grouping them also keeps the ESM-only v12 line from landing piecemeal.",
+      "matchPackageNames": ["@nestjs/**"],
+      "groupName": "nest"
+    },
+    {
       "matchPackageNames": ["tods-competition-factory"],
       "matchFileNames": ["documentation/**"],
       "semanticCommitType": "chore"
