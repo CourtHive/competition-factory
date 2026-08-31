@@ -84,6 +84,18 @@ export interface ReadModelTournamentDiscoveryRow {
   city: string | null;
   state: string | null;
   country_code: string | null;
+  /**
+   * ORGANISATIONAL SCOPE — how far the competition reaches: CLUB, DISTRICT, REGIONAL, NATIONAL,
+   * INTERNATIONAL.
+   *
+   * A DIFFERENT question from `level_system`/`level_value` below, which carry the competitive GRADE
+   * (`{system: 'USTA', value: 'Level 5 Open'}`). "Show me national events" and "show me Level 5
+   * events" are separate facets, and a row that flattened both into one could answer neither
+   * reliably. `#4710` makes the same distinction in the other direction, noting `AuthorityRoleEnum`
+   * is "deliberately broader than TournamentLevelEnum (which is the ORGANISATIONAL SCOPE of a
+   * competition)".
+   */
+  tournament_level: string | null;
   // Sanction, flattened. `level_*` comes from `sanction.classification`, falling back to
   // `tournamentTier` — the same tier shape, one grain up.
   level_system: string | null;
