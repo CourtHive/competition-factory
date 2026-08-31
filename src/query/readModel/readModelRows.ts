@@ -664,21 +664,59 @@ function buildPersonIndex(participants: any[]): Map<string, string | undefined> 
   return index;
 }
 
+/**
+ * participantId → the id an organisation ISSUED for that TEAM, plus the issuing body.
+ *
+ * Read from `participantOtherIds`, which CODES documents for exactly this ("entry per organisation
+ * … this works for PAIR and TEAM"), and NEVER from `participantId`. A participantId is
+ * tournament-local: the same programme carries a different one in every record it appears in, so a
+ * season keyed on it would be exactly one fixture long — plausible-looking, and wrong with nothing
+ * to signal it. A TEAM stating no issued id contributes no team identity; that is a recorded gap,
+ * and inventing one from the local id produces precisely the wrong answer just described.
+ *
+ * Where a team is issued ids by two bodies, the FIRST is taken and its `organisation_id` recorded
+ * alongside, so a consumer can tell which body's id space a row belongs to. One row per entry means
+ * there is nowhere to put a second; a consumer needing every issuing body should read
+ * `getParticipation`, which emits one entry per (body, team).
+ */
+function buildTeamIssuedIndex(participants: any[]): Map<string, { teamId: string; organisationId: string | null }> {
+  const index = new Map<string, { teamId: string; organisationId: string | null }>();
+  for (const participant of participants) {
+    if (participant?.participantType !== TEAM) continue;
+    const participantId = participant?.participantId;
+    if (!participantId) continue;
+    for (const issued of participant.participantOtherIds ?? []) {
+      if (!issued?.participantId) continue;
+      index.set(participantId, { teamId: issued.participantId, organisationId: issued.organisationId ?? null });
+      break;
+    }
+  }
+  return index;
+}
+
 /** Project the entries fact for one tournament: every event entry (accepted,
  *  alternate, withdrawn, un-drawn) → an `entries` row, person resolved per the
- *  person rule. */
+ *  person rule.
+ *
+ *  TEAM entries additionally carry the team's ISSUED id, which is what makes "this programme's
+ *  season" answerable from entries alone. That matters because a fixture reaches the entries fact
+ *  the moment it is entered, whereas the competitor fact requires projected matchUps — so a dual
+ *  with no matchUps yet, or none published, is invisible to a competitor-derived read. */
 export function entryRows(record: any): ReadModelEntryRow[] {
   const tournamentId = record?.tournamentId;
   const providerId = record?.parentOrganisation?.organisationId ?? null;
   if (!tournamentId) return [];
 
-  const personByParticipantId = buildPersonIndex(record?.participants ?? []);
+  const participants = record?.participants ?? [];
+  const personByParticipantId = buildPersonIndex(participants);
+  const teamIssuedByParticipantId = buildTeamIssuedIndex(participants);
   const rows: ReadModelEntryRow[] = [];
   for (const event of record?.events ?? []) {
     for (const entry of event?.entries ?? []) {
       const participantId = entry?.participantId;
       if (!participantId) continue;
       const link = resolvePersonLink(participantId, personByParticipantId.get(participantId));
+      const issued = teamIssuedByParticipantId.get(participantId);
       rows.push({
         tournament_id: tournamentId,
         event_id: event?.eventId ?? null,
@@ -686,6 +724,8 @@ export function entryRows(record: any): ReadModelEntryRow[] {
         person_id: link.personId,
         provider_id: providerId,
         entry_status: entry?.entryStatus ?? null,
+        team_id: issued?.teamId ?? null,
+        organisation_id: issued?.organisationId ?? null,
       });
     }
   }

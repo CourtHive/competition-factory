@@ -181,6 +181,16 @@ export interface ReadModelCompetitorRow {
   individual_participant_id: string | null;
   person_id: string | null; // canonical; NULL when synthetic/unresolved
   link_source: string; // providerId | unresolved
+  /**
+   * ⚠️ A DIFFERENT RULE FROM {@link ReadModelEntryRow.team_id}, and the two must not be assumed
+   * interchangeable. This one is `participant.teamId ?? participantId`, so it falls back to a
+   * TOURNAMENT-LOCAL id when a record states no durable team identity; the entry row's is the
+   * ISSUED id from `participantOtherIds` and is `null` rather than local when none is stated.
+   *
+   * They coincide wherever a producer happens to set `participantId` to the issued id — which the
+   * college-dual corpus does — and diverge everywhere else. Reconciling them is deliberately not
+   * part of the entries work; treat this field as the pre-existing id space until it is.
+   */
   team_id: string | null;
   provider_id: string | null;
   participant_name: string | null;
@@ -193,6 +203,22 @@ export interface ReadModelEntryRow {
   person_id: string | null;
   provider_id: string | null;
   entry_status: string | null;
+  /**
+   * For a TEAM entry, the id an organisation ISSUED for that team — the durable identity, taken
+   * from `participantOtherIds`. `null` for every other participantType, and for a TEAM stating no
+   * issued id.
+   *
+   * NOT `participant_id`, which is tournament-local: keyed on that, a programme would look like a
+   * different competitor in every record and its season would be exactly one fixture long. Also NOT
+   * the rule `ReadModelCompetitorRow.team_id` uses (`participant.teamId ?? participantId`), which
+   * falls back to that local id — see the note on {@link ReadModelCompetitorRow}.
+   */
+  team_id: string | null;
+  /**
+   * The organisation that issued `team_id`. A subjectId is unique only WITHIN its issuing body, so
+   * a consumer indexing one body's ids must be able to say which body it means.
+   */
+  organisation_id: string | null;
 }
 
 export interface ReadModelEventRow {
