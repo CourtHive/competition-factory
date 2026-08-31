@@ -1,5 +1,12 @@
 # Changelog
 
+## [6.37.0](https://github.com/CourtHive/competition-factory/compare/v6.36.0...v6.37.0) (2026-08-31)
+
+
+### Features
+
+* **read-model:** carry a TEAM entry's issued identity on the entries fact ([#4751](https://github.com/CourtHive/competition-factory/issues/4751)) ([070bbba](https://github.com/CourtHive/competition-factory/commit/070bbba6f9426b9f331a0cd22f4f25fc0f6e7fd4))
+
 ## [6.36.0](https://github.com/CourtHive/competition-factory/compare/v6.35.0...v6.36.0) (2026-08-31)
 
 
