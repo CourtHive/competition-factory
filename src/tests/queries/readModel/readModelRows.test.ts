@@ -691,4 +691,72 @@ describe('entryRows', () => {
     expect(p2.entry_status).toBeNull();
     expect(p2.person_id).toBeNull();
   });
+
+  // A TEAM entry has to reach the read side carrying an identity that survives the record it is in.
+  // These four cases are the whole contract, and the second is the one that matters: a fallback to
+  // `participantId` would satisfy every other assertion here while giving each programme a season
+  // exactly one fixture long.
+  it("carries a TEAM entry's ISSUED id and the body that issued it", () => {
+    const rows = entryRows({
+      tournamentId: 't1',
+      parentOrganisation: { organisationId: 'PROV' },
+      participants: [
+        {
+          participantId: 'local-a',
+          participantType: 'TEAM',
+          participantOtherIds: [{ organisationId: 'ITA', participantId: 'ITA-TEAM-1' }],
+        },
+      ],
+      events: [{ eventId: 'dual', entries: [{ participantId: 'local-a', entryStatus: 'ACCEPTED' }] }],
+    });
+    expect(rows).toHaveLength(1);
+    expect(rows[0].team_id).toEqual('ITA-TEAM-1');
+    expect(rows[0].organisation_id).toEqual('ITA');
+    // The local id is still carried, and is still NOT the identity.
+    expect(rows[0].participant_id).toEqual('local-a');
+  });
+
+  it('leaves team_id NULL for a TEAM stating no issued id — never the tournament-local id', () => {
+    const rows = entryRows({
+      tournamentId: 't1',
+      participants: [{ participantId: 'local-a', participantType: 'TEAM' }],
+      events: [{ eventId: 'dual', entries: [{ participantId: 'local-a' }] }],
+    });
+    expect(rows[0].team_id).toBeNull();
+    expect(rows[0].organisation_id).toBeNull();
+  });
+
+  it('leaves team_id NULL for a non-TEAM entry even when it states otherIds', () => {
+    const rows = entryRows({
+      tournamentId: 't1',
+      participants: [
+        {
+          participantId: 'p1',
+          participantType: 'INDIVIDUAL',
+          participantOtherIds: [{ organisationId: 'ITA', participantId: 'SHOULD-NOT-APPEAR' }],
+        },
+      ],
+      events: [{ eventId: 'e1', entries: [{ participantId: 'p1' }] }],
+    });
+    expect(rows[0].team_id).toBeNull();
+  });
+
+  it('takes the first issuing body and records which one it was', () => {
+    const rows = entryRows({
+      tournamentId: 't1',
+      participants: [
+        {
+          participantId: 'local-a',
+          participantType: 'TEAM',
+          participantOtherIds: [
+            { organisationId: 'ITA', participantId: 'ITA-1' },
+            { organisationId: 'NCAA', participantId: 'NCAA-9' },
+          ],
+        },
+      ],
+      events: [{ eventId: 'dual', entries: [{ participantId: 'local-a' }] }],
+    });
+    expect(rows[0].team_id).toEqual('ITA-1');
+    expect(rows[0].organisation_id).toEqual('ITA');
+  });
 });
