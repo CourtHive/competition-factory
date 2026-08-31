@@ -115,6 +115,9 @@ export function tournamentDiscoveryRow(record: any): ReadModelTournamentDiscover
     city: address.city ?? record?.city ?? null,
     state: address.state ?? null,
     country_code: address.countryCode ?? record?.hostCountryCode ?? null,
+    // Scope, not grade — see the row type. Never defaulted: an unstated level is unknown, and a
+    // discovery facet that invented one would silently narrow every search that used it.
+    tournament_level: record?.tournamentLevel ?? null,
     level_system: classification.system ?? null,
     level_value: classification.value ?? null,
     recognition: sanction.recognition ?? null,

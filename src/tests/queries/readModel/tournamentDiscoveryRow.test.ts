@@ -19,6 +19,7 @@ const record: any = {
   endDate: '2026-08-03',
   parentOrganisation: { organisationId: 'prov-1' },
   hostCountryCode: 'USA',
+  tournamentLevel: 'NATIONAL',
   cancelledAt: null,
   sanction: {
     decision: 'APPROVED',
@@ -59,6 +60,19 @@ describe('tournamentDiscoveryRow', () => {
     expect(row.recognition).toBe('UNSANCTIONED');
     expect(row.decision).toBe('APPROVED');
     expect(row.ranking_eligible).toBe(false);
+  });
+
+  it('carries the organisational SCOPE separately from the competitive grade', () => {
+    // Two different facets: "show me national events" vs "show me Level 5 events".
+    const row: any = tournamentDiscoveryRow(record);
+    expect(row.tournament_level).toBe('NATIONAL');
+    expect(row.level_value).toBe('Level 5 Open');
+  });
+
+  it('does not invent a level when the record states none', () => {
+    // A discovery facet that acquired a default would silently narrow every search using it.
+    const { tournamentLevel, ...noLevel }: any = record;
+    expect(tournamentDiscoveryRow(noLevel).tournament_level).toBeNull();
   });
 
   it('falls back to tournamentTier when no sanction classification is stated', () => {
