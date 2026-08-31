@@ -334,6 +334,7 @@ export type FactoryEngineMethod =
   | 'getParticipantSignInStatus'
   | 'getParticipantStats'
   | 'getParticipantTimeItem'
+  | 'getParticipation'
   | 'getPersonRequests'
   | 'getPolicyDefinitions'
   | 'getPositionAssignments'
@@ -1009,6 +1010,7 @@ export const FACTORY_ENGINE_METHODS: readonly FactoryEngineMethod[] = [
   'getParticipantSignInStatus',
   'getParticipantStats',
   'getParticipantTimeItem',
+  'getParticipation',
   'getPersonRequests',
   'getPolicyDefinitions',
   'getPositionAssignments',

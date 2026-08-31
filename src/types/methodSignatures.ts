@@ -409,6 +409,7 @@ import type { getAppliedPolicies, getPolicyDefinitions } from '@Query/extensions
 import type { getEventInconsistencies } from '@Query/event/getEventInconsistencies';
 import type { getMatchUpFormat } from '@Query/hierarchical/getMatchUpFormat';
 import type { getMatchUpRatingDelta } from '@Query/matchUp/getMatchUpRatingDelta';
+import type { getParticipation } from '@Query/participants/getParticipation';
 import type { getRounds } from '@Query/matchUps/scheduling/getRounds';
 import type { getTournamentInfo } from '@Query/tournaments/getTournamentInfo';
 import type { hydrateTournamentRecord } from '@Mutate/base/hydrateTournamentRecord';
@@ -907,6 +908,7 @@ export interface MethodSignatures {
   getParticipantSignInStatus: EngineMethod<typeof getParticipantSignInStatus>;
   getParticipantStats: EngineMethod<typeof getParticipantStats>;
   getParticipantTimeItem: EngineMethod<typeof getParticipantTimeItem>;
+  getParticipation: EngineMethod<typeof getParticipation>;
   getPersonRequests: EngineMethod<typeof getPersonRequests>;
   getPolicyDefinitions: EngineMethod<typeof getPolicyDefinitions>;
   getPositionAssignments: EngineMethod<typeof getPositionAssignments>;
