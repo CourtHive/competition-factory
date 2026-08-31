@@ -1,5 +1,15 @@
 # Changelog
 
+## [6.36.0](https://github.com/CourtHive/competition-factory/compare/v6.35.0...v6.36.0) (2026-08-31)
+
+
+### Features
+
+* **query:** getParticipation — what a record says about who took part ([#4750](https://github.com/CourtHive/competition-factory/issues/4750)) ([f6ba26b](https://github.com/CourtHive/competition-factory/commit/f6ba26b8d286eaee4cd2f6881c290f0441c67a40))
+* **query:** project tournamentLevel, so it reaches the calendar entry ([#4746](https://github.com/CourtHive/competition-factory/issues/4746)) ([c068323](https://github.com/CourtHive/competition-factory/commit/c068323f641ee904c158dfe9539654bb66178982))
+* **read-model:** carry organisational scope on the discovery row, distinct from grade ([#4747](https://github.com/CourtHive/competition-factory/issues/4747)) ([cbd6e38](https://github.com/CourtHive/competition-factory/commit/cbd6e383558d0151ed17a01b1a2e1350462f58da))
+* **read-model:** cast() emits the discovery row, via an aggregate attribution kind ([#4743](https://github.com/CourtHive/competition-factory/issues/4743)) ([52e0135](https://github.com/CourtHive/competition-factory/commit/52e013587341b81fc1bac426ef3fc6acba3ae86f))
+
 ## [6.35.0](https://github.com/CourtHive/competition-factory/compare/v6.34.0...v6.35.0) (2026-08-30)
 
 
