@@ -1,14 +1,12 @@
-import type { MandatoryRule } from '@Types/rankingTypes';
-
-type PointAward = Record<string, any>;
+import type { RankingListAward, MandatoryRule } from '@Types/rankingTypes';
 
 export type ScoredAward = {
-  award: PointAward;
+  award: RankingListAward;
   value: number;
 };
 
 type ProcessBucketResultsArgs = {
-  awards: PointAward[];
+  awards: RankingListAward[];
   pointComponents: string[];
   bestOfCount: number;
   maxResultsPerLevel?: Record<number, number>;

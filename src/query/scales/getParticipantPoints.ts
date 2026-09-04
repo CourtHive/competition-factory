@@ -1,42 +1,15 @@
+import { DEFAULT_POINT_COMPONENTS } from '@Constants/rankingConstants';
 import { processBucketResults } from './processBucketResults';
-import type { MandatoryRule } from '@Types/rankingTypes';
-
-type PointAward = Record<string, any>;
-
-type CountingBucket = {
-  bucketName: string;
-  eventTypes?: string[];
-  pointComponents: string[];
-  bestOfCount: number;
-  maxResultsPerLevel?: Record<number, number>;
-  mandatoryRules?: MandatoryRule[];
-};
-
-type AggregationRules = {
-  countingBuckets?: CountingBucket[];
-  maxResultsPerLevel?: Record<number, number>;
-  bestOfCount?: number;
-};
-
-type BucketBreakdown = {
-  bucketName: string;
-  countingResults: PointAward[];
-  droppedResults: PointAward[];
-  bucketTotal: number;
-};
+import type { RankingListBucketBreakdown, RankingListAward, AggregationRules } from '@Types/rankingTypes';
 
 type GetParticipantPointsArgs = {
-  pointAwards: PointAward[];
+  pointAwards: RankingListAward[];
   personId: string;
   aggregationRules?: AggregationRules;
 };
 
-export function getParticipantPoints({
-  pointAwards,
-  personId,
-  aggregationRules = {},
-}: GetParticipantPointsArgs): {
-  buckets: BucketBreakdown[];
+export function getParticipantPoints({ pointAwards, personId, aggregationRules = {} }: GetParticipantPointsArgs): {
+  buckets: RankingListBucketBreakdown[];
   totalPoints: number;
 } {
   const { countingBuckets, maxResultsPerLevel, bestOfCount } = aggregationRules;
@@ -45,11 +18,17 @@ export function getParticipantPoints({
   const awards = pointAwards.filter((a) => a.personId === personId);
 
   if (countingBuckets?.length) {
-    const buckets: BucketBreakdown[] = [];
+    const buckets: RankingListBucketBreakdown[] = [];
     let totalPoints = 0;
 
-    for (const bucket of countingBuckets) {
-      const { bucketName, eventTypes, pointComponents, bestOfCount: bucketBestOf, maxResultsPerLevel: bucketMaxPerLevel, mandatoryRules } = bucket;
+    for (const [bucketIndex, bucket] of countingBuckets.entries()) {
+      const { eventTypes, maxResultsPerLevel: bucketMaxPerLevel, mandatoryRules } = bucket;
+
+      // Same positional fallback generateRankingList uses, so a bucket is
+      // labelled identically whichever of the two reports on it.
+      const bucketName = bucket.bucketName ?? `bucket-${bucketIndex}`;
+      const pointComponents = bucket.pointComponents ?? DEFAULT_POINT_COMPONENTS;
+      const bucketBestOf = bucket.bestOfCount ?? 0;
 
       let bucketAwards = awards;
       if (eventTypes?.length) {
@@ -80,7 +59,7 @@ export function getParticipantPoints({
   // No buckets — single "All" bucket
   const { counting, dropped, bucketTotal } = processBucketResults({
     awards,
-    pointComponents: ['points', 'qualityWinPoints'],
+    pointComponents: DEFAULT_POINT_COMPONENTS,
     bestOfCount: bestOfCount || 0,
     maxResultsPerLevel,
   });

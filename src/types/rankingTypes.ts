@@ -537,9 +537,10 @@ export interface CountingBucket {
   eventTypes?: EventTypeUnion[];
 
   /**
-   * Which components of PointAward to sum for this bucket.
-   * Valid values: 'positionPoints', 'perWinPoints', 'bonusPoints', 'qualityWinPoints'
-   * If omitted, sums the total `points` field (all components).
+   * Which components of an award to sum for this bucket.
+   * See {@link PointComponent} for the vocabulary and for why `'points'`
+   * must not be mixed with the granular components.
+   * If omitted, defaults to `['points', 'qualityWinPoints']`.
    */
   pointComponents?: PointComponent[];
 
@@ -580,7 +581,20 @@ export interface MandatoryRule {
   bestOfCount?: number;
 }
 
-export type PointComponent = 'positionPoints' | 'perWinPoints' | 'bonusPoints' | 'qualityWinPoints';
+/**
+ * A summable component of an award.
+ *
+ * `'points'` is the award's own pre-summed total rather than a fifth granular
+ * component, and it is a legitimate bucket component: `generateRankingList`
+ * and `getParticipantPoints` both default to `['points', 'qualityWinPoints']`
+ * when a policy declares none. That pairing does not double-count — a
+ * quality-win bonus is emitted as its OWN award carrying `qualityWinPoints`
+ * and no `points`, so the two names address disjoint award populations.
+ *
+ * Do not, however, mix `'points'` with the granular components in one bucket:
+ * there it would count the same award's total twice.
+ */
+export type PointComponent = 'points' | 'positionPoints' | 'perWinPoints' | 'bonusPoints' | 'qualityWinPoints';
 
 export type DoublesAttribution = 'fullToEach' | 'splitEven' | 'teamOnly';
 
@@ -649,24 +663,74 @@ export interface PointAward {
 
 // ─── Ranking List Output ─────────────────────────────────────────────
 
+/**
+ * An award as it flows THROUGH list aggregation — deliberately permissive,
+ * and named so that the looseness is explicit rather than accidental.
+ *
+ * Three different producers feed the same array, and only the first of them
+ * mints a nominal {@link PointAward}:
+ *
+ * - `getTournamentPointAwards` — mints strict `PointAward`s.
+ * - A consumer's own storage — a ranking service that persists awards and
+ *   later projects the rows back into award shape is matching structurally,
+ *   not nominally.
+ * - `generateRankingList` itself — `categoryAggregation` carry rules
+ *   synthesise awards annotated with `carriedFromRule` and
+ *   `subjectToBucketLimits`, which are aggregation-time markers rather than
+ *   properties of the underlying result.
+ *
+ * Components are also indexed by name off `pointComponents` in policy config,
+ * so the type has to stay index-accessible.
+ *
+ * Prefer {@link PointAward} anywhere an award is being *produced*.
+ */
+export type RankingListAward = Record<string, any>;
+
+/** Per-bucket detail for one participant, when the policy defines countingBuckets. */
+export interface RankingListBucketBreakdown {
+  /** The bucket's `bucketName`, or `bucket-<index>` when the policy left it unnamed. */
+  bucketName: string;
+  bucketTotal: number;
+  countingResults: RankingListAward[];
+  droppedResults: RankingListAward[];
+}
+
+/**
+ * One participant's row in a generated ranking list.
+ *
+ * This interface is the single declaration of the shape `generateRankingList`
+ * returns; the implementation imports it rather than restating it. It
+ * previously disagreed with what the function actually emitted (`participantId`
+ * / a numeric `countingResults` / `tournamentResults` / `tiebreakValues`, none
+ * of which were ever produced), and because both declarations reached the
+ * published `.d.ts` a consumer resolved one or the other by import path.
+ */
 export interface RankingListEntry {
   rank: number;
-  participantId: string;
-  personId?: string;
+
+  /** Ranking lists are person-keyed: awards aggregate across a person's participantIds. */
+  personId: string;
 
   totalPoints: number;
-  countingResults: number;
 
-  /** Per-bucket breakdown (when countingBuckets defined) */
+  /** Whether the entry clears `AggregationRules.minCountableResults`. */
+  meetsMinimum: boolean;
+
+  /** The awards that contributed to `totalPoints`. */
+  countingResults: RankingListAward[];
+
+  /** Awards excluded by a best-of-N or per-level cap. Retained for auditing. */
+  droppedResults: RankingListAward[];
+
+  /**
+   * Per-bucket totals keyed by bucket name — the summary form of
+   * `bucketBreakdown`, for consumers that persist or display totals without
+   * the underlying awards. Present whenever `bucketBreakdown` is.
+   */
   bucketTotals?: Record<string, number>;
 
-  tournamentResults: PointAward[];
-
-  // Tiebreaker metadata (for deterministic ordering)
-  tiebreakValues?: Record<TiebreakCriterion, number>;
-
-  // Whether this entry meets minimum requirements
-  meetsMinimum: boolean;
+  /** Full per-bucket detail. Present when the policy defines countingBuckets. */
+  bucketBreakdown?: RankingListBucketBreakdown[];
 }
 
 // ─── Supporting Types ────────────────────────────────────────────────

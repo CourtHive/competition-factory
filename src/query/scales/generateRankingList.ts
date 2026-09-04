@@ -1,38 +1,22 @@
 import { processBucketResults, type ScoredAward } from './processBucketResults';
+import { DEFAULT_POINT_COMPONENTS } from '@Constants/rankingConstants';
 import type {
+  RankingListBucketBreakdown,
   CategoryAggregationRule,
-  CategoryScope,
-  DoublesAttribution,
-  MandatoryRule,
-  PointComponent,
-  PointPoolModel,
-  SourceFilter,
   TiebreakCriterion,
+  AggregationRules,
+  RankingListAward,
+  RankingListEntry,
+  PointComponent,
+  CountingBucket,
+  PointPoolModel,
+  CategoryScope,
+  SourceFilter,
 } from '@Types/rankingTypes';
 
-type PointAward = Record<string, any>;
-
-type CountingBucket = {
-  bucketName: string;
-  eventTypes?: string[];
-  pointComponents: string[];
-  bestOfCount: number;
-  maxResultsPerLevel?: Record<number, number>;
-  mandatoryRules?: MandatoryRule[];
-};
-
-type AggregationRules = {
-  rollingPeriodDays?: number;
-  separateByGender?: boolean;
-  perCategory?: boolean;
-  countingBuckets?: CountingBucket[];
-  tiebreakCriteria?: TiebreakCriterion[];
-  minCountableResults?: number;
-  maxResultsPerLevel?: Record<number, number>;
-  bestOfCount?: number;
-  doublesAttribution?: DoublesAttribution;
-  categoryAggregation?: CategoryAggregationRule[];
-};
+// Re-exported so deep importers of this module keep resolving the type; it is
+// the same declaration `@Types/rankingTypes` exports, not a second one.
+export type { RankingListEntry, RankingListAward };
 
 type CategoryFilter = {
   ageCategoryCodes?: string[];
@@ -40,23 +24,8 @@ type CategoryFilter = {
   eventTypes?: string[];
 };
 
-export type RankingListEntry = {
-  personId: string;
-  totalPoints: number;
-  rank: number;
-  meetsMinimum: boolean;
-  countingResults: PointAward[];
-  droppedResults: PointAward[];
-  bucketBreakdown?: {
-    bucketName: string;
-    countingResults: PointAward[];
-    droppedResults: PointAward[];
-    bucketTotal: number;
-  }[];
-};
-
 type GenerateRankingListArgs = {
-  pointAwards: PointAward[];
+  pointAwards: RankingListAward[];
   aggregationRules?: AggregationRules;
   categoryFilter?: CategoryFilter;
   asOfDate?: string;
@@ -92,7 +61,7 @@ export function generateRankingList({
 
   // Carried contributions from categoryAggregation rules whose target matches
   // the categoryFilter. Skipped entirely under shared-pool model.
-  const carriedByPerson: Record<string, PointAward[]> =
+  const carriedByPerson: Record<string, RankingListAward[]> =
     pointPoolModel === 'shared'
       ? {}
       : expandCarriedContributions({
@@ -133,11 +102,11 @@ export function generateRankingList({
 }
 
 function filterAwards(
-  pointAwards: PointAward[],
+  pointAwards: RankingListAward[],
   categoryFilter: CategoryFilter | undefined,
   rollingPeriodDays: number | undefined,
   asOfDate: string | undefined,
-): PointAward[] {
+): RankingListAward[] {
   let filtered = pointAwards;
 
   if (categoryFilter) {
@@ -167,8 +136,8 @@ function filterAwards(
   return filtered;
 }
 
-function groupByPerson(filtered: PointAward[]): Record<string, PointAward[]> {
-  const byPerson: Record<string, PointAward[]> = {};
+function groupByPerson(filtered: RankingListAward[]): Record<string, RankingListAward[]> {
+  const byPerson: Record<string, RankingListAward[]> = {};
   for (const award of filtered) {
     const key = award.personId;
     if (!key) continue;
@@ -187,13 +156,13 @@ function expandCarriedContributions({
   rollingPeriodDays,
   asOfDate,
 }: {
-  pointAwards: PointAward[];
+  pointAwards: RankingListAward[];
   rules: CategoryAggregationRule[];
   categoryFilter: CategoryFilter | undefined;
   rollingPeriodDays: number | undefined;
   asOfDate: string | undefined;
-}): Record<string, PointAward[]> {
-  const carriedByPerson: Record<string, PointAward[]> = {};
+}): Record<string, RankingListAward[]> {
+  const carriedByPerson: Record<string, RankingListAward[]> = {};
   if (!rules.length) return carriedByPerson;
 
   for (const rule of rules) {
@@ -208,7 +177,7 @@ function expandCarriedContributions({
     const inWindow = applyRollingWindow(sourceAwards, rollingPeriodDays, asOfDate);
 
     // Group, multiply, cap per (personId, rule).
-    const perPersonForRule: Record<string, PointAward[]> = {};
+    const perPersonForRule: Record<string, RankingListAward[]> = {};
     for (const award of inWindow) {
       const personId = award.personId;
       if (!personId) continue;
@@ -243,7 +212,7 @@ function ruleTargetMatchesFilter(target: CategoryScope, categoryFilter: Category
   return genderOverlap;
 }
 
-function awardMatchesScope(award: PointAward, source: CategoryScope): boolean {
+function awardMatchesScope(award: RankingListAward, source: CategoryScope): boolean {
   if (source.ageCategoryCodes?.length) {
     const code = award.category?.ageCategoryCode;
     if (!code || !source.ageCategoryCodes.includes(code)) return false;
@@ -263,7 +232,7 @@ function awardMatchesScope(award: PointAward, source: CategoryScope): boolean {
   return true;
 }
 
-function sourceFilterDisqualifies(award: PointAward, filters: SourceFilter[] | undefined): boolean {
+function sourceFilterDisqualifies(award: RankingListAward, filters: SourceFilter[] | undefined): boolean {
   if (!filters?.length) return false;
   return filters.some((f) => {
     if (f.levels?.length && award.level !== undefined && f.levels.includes(award.level)) return true;
@@ -276,10 +245,10 @@ function sourceFilterDisqualifies(award: PointAward, filters: SourceFilter[] | u
 }
 
 function applyRollingWindow(
-  awards: PointAward[],
+  awards: RankingListAward[],
   rollingPeriodDays: number | undefined,
   asOfDate: string | undefined,
-): PointAward[] {
+): RankingListAward[] {
   if (!rollingPeriodDays || !asOfDate) return awards;
   const cutoff = new Date(asOfDate);
   cutoff.setDate(cutoff.getDate() - rollingPeriodDays);
@@ -287,7 +256,7 @@ function applyRollingWindow(
   return awards.filter((a) => !a.endDate || new Date(a.endDate).getTime() >= cutoffTime);
 }
 
-function buildCarriedAward(source: PointAward, rule: CategoryAggregationRule): PointAward {
+function buildCarriedAward(source: RankingListAward, rule: CategoryAggregationRule): RankingListAward {
   // rerateTo is deferred — needs AwardProfile lookup. Multiplier path only here.
   const multiplier = rule.multiplier ?? 1;
   const components: PointComponent[] = rule.carryComponents ?? [
@@ -297,7 +266,7 @@ function buildCarriedAward(source: PointAward, rule: CategoryAggregationRule): P
     'bonusPoints',
   ];
 
-  const carried: PointAward = {
+  const carried: RankingListAward = {
     ...source,
     carriedFromRule: rule.ruleName,
     subjectToBucketLimits: rule.subjectToBucketLimits ?? true,
@@ -331,8 +300,8 @@ function applyParticipationGating({
   rules,
   categoryFilter,
 }: {
-  nativeByPerson: Record<string, PointAward[]>;
-  carriedByPerson: Record<string, PointAward[]>;
+  nativeByPerson: Record<string, RankingListAward[]>;
+  carriedByPerson: Record<string, RankingListAward[]>;
   rules: CategoryAggregationRule[];
   categoryFilter: CategoryFilter | undefined;
 }): string[] {
@@ -372,25 +341,27 @@ function computePersonEntry({
   maxResultsPerLevel: Record<number, number> | undefined;
   bestOfCount: number | undefined;
   personId: string;
-  awards: PointAward[];
+  awards: RankingListAward[];
 }): RankingListEntry {
   let totalPoints = 0;
-  let allCountingResults: PointAward[] = [];
-  let allDroppedResults: PointAward[] = [];
-  let bucketBreakdown: RankingListEntry['bucketBreakdown'];
+  let allCountingResults: RankingListAward[] = [];
+  let allDroppedResults: RankingListAward[] = [];
+  let bucketBreakdown: RankingListBucketBreakdown[] | undefined;
+  let bucketTotals: Record<string, number> | undefined;
 
   if (countingBuckets?.length) {
     bucketBreakdown = [];
+    bucketTotals = {};
 
-    for (const bucket of countingBuckets) {
-      const {
-        bucketName,
-        eventTypes,
-        pointComponents,
-        bestOfCount: bucketBestOf,
-        maxResultsPerLevel: bucketMaxPerLevel,
-        mandatoryRules,
-      } = bucket;
+    for (const [bucketIndex, bucket] of countingBuckets.entries()) {
+      const { eventTypes, maxResultsPerLevel: bucketMaxPerLevel, mandatoryRules } = bucket;
+
+      // `bucketName` is optional on the policy. Fall back to a positional label
+      // so `bucketTotals` never carries an `undefined` key and both views of
+      // the bucket agree on what to call it.
+      const bucketName = bucket.bucketName ?? `bucket-${bucketIndex}`;
+      const pointComponents = bucket.pointComponents ?? DEFAULT_POINT_COMPONENTS;
+      const bucketBestOf = bucket.bestOfCount ?? 0;
 
       let bucketAwards = awards;
       if (eventTypes?.length) {
@@ -421,8 +392,7 @@ function computePersonEntry({
 
       const subTotal = limitedTotal + additiveTotal;
       totalPoints += subTotal;
-      allCountingResults.push(...counting.map((sa) => sa.award));
-      allCountingResults.push(...additiveScored.map((sa) => sa.award));
+      allCountingResults.push(...counting.map((sa) => sa.award), ...additiveScored.map((sa) => sa.award));
       allDroppedResults.push(...dropped.map((sa) => sa.award));
 
       bucketBreakdown.push({
@@ -431,6 +401,11 @@ function computePersonEntry({
         droppedResults: dropped.map((sa) => sa.award),
         bucketTotal: subTotal,
       });
+
+      // Accumulate rather than assign: two buckets sharing a name is a policy
+      // error, but summing keeps the reported total truthful instead of
+      // silently discarding one of them.
+      bucketTotals[bucketName] = (bucketTotals[bucketName] ?? 0) + subTotal;
     }
   } else {
     const bucketLimited = awards.filter((a) => a.subjectToBucketLimits !== false);
@@ -438,14 +413,14 @@ function computePersonEntry({
 
     const { counting, dropped, bucketTotal } = processBucketResults({
       awards: bucketLimited,
-      pointComponents: ['points', 'qualityWinPoints'],
+      pointComponents: DEFAULT_POINT_COMPONENTS,
       bestOfCount: bestOfCount || 0,
       maxResultsPerLevel,
     });
 
     const additiveScored: ScoredAward[] = additive.map((a) => ({
       award: a,
-      value: sumComponents(a, ['points', 'qualityWinPoints']),
+      value: sumComponents(a, DEFAULT_POINT_COMPONENTS),
     }));
     const additiveTotal = additiveScored.reduce((s, sa) => s + sa.value, 0);
 
@@ -464,10 +439,11 @@ function computePersonEntry({
   };
 
   if (bucketBreakdown) entry.bucketBreakdown = bucketBreakdown;
+  if (bucketTotals) entry.bucketTotals = bucketTotals;
   return entry;
 }
 
-function sumComponents(award: PointAward, components: string[] | undefined): number {
+function sumComponents(award: RankingListAward, components: string[] | undefined): number {
   const list = components ?? ['points'];
   let value = 0;
   for (const c of list) {
