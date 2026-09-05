@@ -1,5 +1,13 @@
 # Changelog
 
+## [6.37.1](https://github.com/CourtHive/competition-factory/compare/v6.37.0...v6.37.1) (2026-09-05)
+
+
+### Bug Fixes
+
+* **scales:** getParticipantPoints was ignoring subjectToBucketLimits ([#4758](https://github.com/CourtHive/competition-factory/issues/4758)) ([0344861](https://github.com/CourtHive/competition-factory/commit/03448618352a06be526601fba33fca46d15e6de1))
+* **scales:** one RankingListEntry, and emit the bucketTotals it promises ([#4756](https://github.com/CourtHive/competition-factory/issues/4756)) ([d76d9f6](https://github.com/CourtHive/competition-factory/commit/d76d9f611a006dd41c9f6dfddf02530de1eaee5e))
+
 ## [6.37.0](https://github.com/CourtHive/competition-factory/compare/v6.36.0...v6.37.0) (2026-08-31)
 
 
