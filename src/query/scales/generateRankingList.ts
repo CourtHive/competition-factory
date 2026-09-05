@@ -1,4 +1,4 @@
-import { processBucketResults, type ScoredAward } from './processBucketResults';
+import { processBucketResults } from './processBucketResults';
 import { DEFAULT_POINT_COMPONENTS } from '@Constants/rankingConstants';
 import type {
   RankingListBucketBreakdown,
@@ -368,36 +368,26 @@ function computePersonEntry({
         bucketAwards = bucketAwards.filter((a) => a.eventType && eventTypes.includes(a.eventType));
       }
 
-      // Split bucket-limited (default) vs additive (subjectToBucketLimits=false).
-      const bucketLimited = bucketAwards.filter((a) => a.subjectToBucketLimits !== false);
-      const additive = bucketAwards.filter((a) => a.subjectToBucketLimits === false);
-
+      // processBucketResults owns the bucket-limited vs additive split.
       const {
         counting,
         dropped,
-        bucketTotal: limitedTotal,
+        bucketTotal: subTotal,
       } = processBucketResults({
-        awards: bucketLimited,
+        awards: bucketAwards,
         pointComponents,
         bestOfCount: bucketBestOf,
         maxResultsPerLevel: bucketMaxPerLevel,
         mandatoryRules,
       });
 
-      const additiveScored: ScoredAward[] = additive.map((a) => ({
-        award: a,
-        value: sumComponents(a, pointComponents),
-      }));
-      const additiveTotal = additiveScored.reduce((s, sa) => s + sa.value, 0);
-
-      const subTotal = limitedTotal + additiveTotal;
       totalPoints += subTotal;
-      allCountingResults.push(...counting.map((sa) => sa.award), ...additiveScored.map((sa) => sa.award));
+      allCountingResults.push(...counting.map((sa) => sa.award));
       allDroppedResults.push(...dropped.map((sa) => sa.award));
 
       bucketBreakdown.push({
         bucketName,
-        countingResults: [...counting.map((sa) => sa.award), ...additiveScored.map((sa) => sa.award)],
+        countingResults: counting.map((sa) => sa.award),
         droppedResults: dropped.map((sa) => sa.award),
         bucketTotal: subTotal,
       });
@@ -408,24 +398,15 @@ function computePersonEntry({
       bucketTotals[bucketName] = (bucketTotals[bucketName] ?? 0) + subTotal;
     }
   } else {
-    const bucketLimited = awards.filter((a) => a.subjectToBucketLimits !== false);
-    const additive = awards.filter((a) => a.subjectToBucketLimits === false);
-
     const { counting, dropped, bucketTotal } = processBucketResults({
-      awards: bucketLimited,
+      awards,
       pointComponents: DEFAULT_POINT_COMPONENTS,
       bestOfCount: bestOfCount || 0,
       maxResultsPerLevel,
     });
 
-    const additiveScored: ScoredAward[] = additive.map((a) => ({
-      award: a,
-      value: sumComponents(a, DEFAULT_POINT_COMPONENTS),
-    }));
-    const additiveTotal = additiveScored.reduce((s, sa) => s + sa.value, 0);
-
-    totalPoints = bucketTotal + additiveTotal;
-    allCountingResults = [...counting.map((sa) => sa.award), ...additiveScored.map((sa) => sa.award)];
+    totalPoints = bucketTotal;
+    allCountingResults = counting.map((sa) => sa.award);
     allDroppedResults = dropped.map((sa) => sa.award);
   }
 
@@ -441,15 +422,6 @@ function computePersonEntry({
   if (bucketBreakdown) entry.bucketBreakdown = bucketBreakdown;
   if (bucketTotals) entry.bucketTotals = bucketTotals;
   return entry;
-}
-
-function sumComponents(award: RankingListAward, components: string[] | undefined): number {
-  const list = components ?? ['points'];
-  let value = 0;
-  for (const c of list) {
-    if (typeof award[c] === 'number') value += award[c];
-  }
-  return value;
 }
 
 function sortAndRankEntries(entries: RankingListEntry[], tiebreakCriteria: TiebreakCriterion[] | string[]) {
