@@ -217,9 +217,7 @@ function buildPositionDependencies({ positionLinks, sourceStructureIdMap, positi
 function gatherAllDrawIds(allTournamentRecords) {
   return allTournamentRecords?.length
     ? (allTournamentRecords
-        .map(({ events = [] }) =>
-          events.map(({ drawDefinitions = [] }) => drawDefinitions.map(({ drawId }) => drawId)),
-        )
+        .map(({ events = [] }) => events.map(({ drawDefinitions = [] }) => drawDefinitions.map(({ drawId }) => drawId)))
         .flat(Infinity) as string[])
     : [];
 }

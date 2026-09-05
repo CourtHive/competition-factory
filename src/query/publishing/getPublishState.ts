@@ -126,7 +126,13 @@ function buildEventPublishState({ publishState, tournamentRecord }) {
   return { publishedEventIds, tournamentPublished };
 }
 
-function buildTournamentPublishState({ publishState, tournamentRecord, tournamentPublished, publishedEventIds, embargoes }) {
+function buildTournamentPublishState({
+  publishState,
+  tournamentRecord,
+  tournamentPublished,
+  publishedEventIds,
+  embargoes,
+}) {
   const pubStatus: any = getTournamentPublishStatus({ tournamentRecord });
   publishState.tournament = pubStatus ?? {};
   if (pubStatus?.orderOfPlay?.published || pubStatus?.participants?.published) tournamentPublished = true;

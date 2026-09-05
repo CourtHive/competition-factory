@@ -281,9 +281,7 @@ describe('Phase 1: Single Elimination exit status clearing', () => {
             },
           },
           drawSize: 8,
-          outcomes: [
-            { roundNumber: 1, roundPosition: 1, scoreString: '6-1 6-2', winningSide: 1 },
-          ],
+          outcomes: [{ roundNumber: 1, roundPosition: 1, scoreString: '6-1 6-2', winningSide: 1 }],
         },
       ],
     });
@@ -333,9 +331,7 @@ describe('Phase 1: Single Elimination exit status clearing', () => {
 // ─────────────────────────────────────────────────────────────
 describe('Phase 2: FMLC cross-structure exit status clearing', () => {
   test('2.1 Clear DOUBLE_WALKOVER in Main R1 — consolation WALKOVER removed', () => {
-    const {
-      tournamentRecord,
-    } = mocksEngine.generateTournamentRecord({
+    const { tournamentRecord } = mocksEngine.generateTournamentRecord({
       drawProfiles: [
         {
           drawType: FIRST_MATCH_LOSER_CONSOLATION,

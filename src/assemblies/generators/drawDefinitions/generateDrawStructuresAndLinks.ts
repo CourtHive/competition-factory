@@ -114,7 +114,11 @@ export function generateDrawStructuresAndLinks(params: GenerateDrawStructuresAnd
     return qualifyingResult;
   }
 
-  const { qualifyingDrawPositionsCount, qualifyingDetails, qualifiersCount: derivedQualifiersCount } = qualifyingResult || {
+  const {
+    qualifyingDrawPositionsCount,
+    qualifyingDetails,
+    qualifiersCount: derivedQualifiersCount,
+  } = qualifyingResult || {
     qualifyingDrawPositionsCount: existingQualifyingDrawPositionsCount,
     qualifiersCount: existingQualifiersCount,
   };

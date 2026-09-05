@@ -3,7 +3,6 @@
 export const validDateString = /^\d{4}-(0[1-9]|1[0-2])-(0[1-9]|[1-2]\d|3[0-1])$/;
 export const validTimeString = /^((0\d|1\d|2[0-3]):[0-5]\d(:[0-5]\d)?)([.,]\d{3})?$/;
 
- 
 export const dateValidation =
   /^(\d{4}-(0[1-9]|1[0-2])-(0[1-9]|[1-2]\d|3[0-1]))([ T](0\d|1\d|2[0-3]):[0-5]\d(:[0-5]\d)?)?([.,]\d{3})?Z?$/;
 export const timeValidation =

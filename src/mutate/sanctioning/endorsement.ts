@@ -82,7 +82,12 @@ type EndorseApplicationArgs = {
   conditions?: string[];
 };
 
-export function endorseApplication({ sanctioningRecord, endorserId, endorserNotes, conditions }: EndorseApplicationArgs) {
+export function endorseApplication({
+  sanctioningRecord,
+  endorserId,
+  endorserNotes,
+  conditions,
+}: EndorseApplicationArgs) {
   if (!sanctioningRecord) return { error: MISSING_SANCTIONING_RECORD };
 
   const endorsement = findEndorsement(sanctioningRecord, endorserId);

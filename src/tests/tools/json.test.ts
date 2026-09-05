@@ -89,7 +89,7 @@ describe('JSON2CSV', () => {
       { name: 'Bob', age: 30 },
     ];
     const result = JSON2CSV(data);
-    
+
     expect(result).toContain('"name"');
     expect(result).toContain('"age"');
     expect(result).toContain('"Alice"');
@@ -110,7 +110,7 @@ describe('JSON2CSV', () => {
       columnAccessors: ['name', 'age'],
     };
     const result = JSON2CSV(data, config);
-    
+
     expect(result).toContain('Alice');
     expect(result).not.toContain('secret');
   });
@@ -121,7 +121,7 @@ describe('JSON2CSV', () => {
       delimiter: "'",
     };
     const result = JSON2CSV(data, config);
-    
+
     expect(result).toContain("'name'");
     expect(result).toContain("'Alice'");
   });
@@ -132,29 +132,26 @@ describe('JSON2CSV', () => {
       columnJoiner: ';',
     };
     const result = JSON2CSV(data, config);
-    
+
     expect(result).toContain(';');
   });
 
   test('handles custom row joiner', () => {
-    const data = [
-      { name: 'Alice' },
-      { name: 'Bob' },
-    ];
+    const data = [{ name: 'Alice' }, { name: 'Bob' }];
     const config = {
       rowJoiner: '||',
     };
     const result = JSON2CSV(data, config);
-    
+
     expect(result).toContain('||');
   });
 
   test('handles includeHeaderRow option', () => {
     const data = [{ name: 'Alice' }];
-    
+
     const withHeader = JSON2CSV(data, { includeHeaderRow: true });
     expect(withHeader).toContain('name');
-    
+
     const withoutHeader = JSON2CSV(data, { includeHeaderRow: false });
     expect(withoutHeader).not.toContain('"name"');
     expect(withoutHeader).toContain('Alice');
@@ -166,7 +163,7 @@ describe('JSON2CSV', () => {
       { name: 'Bob', age: 30 },
     ];
     const result = JSON2CSV(data, { onlyHeaderRow: true });
-    
+
     expect(Array.isArray(result)).toBe(true);
     expect(result).toHaveLength(1);
     expect(result[0]).toContain('name');
@@ -178,7 +175,7 @@ describe('JSON2CSV', () => {
       columnMap: { oldName: 'newName' },
     };
     const result = JSON2CSV(data, config);
-    
+
     expect(result).toContain('newName');
   });
 
@@ -188,7 +185,7 @@ describe('JSON2CSV', () => {
       context: { tournament: 'Wimbledon' },
     };
     const result = JSON2CSV(data, config);
-    
+
     expect(result).toContain('tournament');
     expect(result).toContain('Wimbledon');
   });
@@ -199,7 +196,7 @@ describe('JSON2CSV', () => {
       { name: 'Bob', age: 30 },
     ];
     const result = JSON2CSV(data, { returnTransformedJSON: true });
-    
+
     expect(Array.isArray(result)).toBe(true);
     expect(result.length).toBeGreaterThan(0);
   });
@@ -213,7 +210,7 @@ describe('JSON2CSV', () => {
       removeEmptyColumns: true,
     };
     const result = JSON2CSV(data, config);
-    
+
     // Empty column should be removed
     expect(result).toContain('name');
   });
@@ -226,7 +223,7 @@ describe('JSON2CSV', () => {
       },
     };
     const result = JSON2CSV(data, config);
-    
+
     expect(result).toContain('active');
   });
 
@@ -238,14 +235,12 @@ describe('JSON2CSV', () => {
       },
     };
     const result = JSON2CSV(data, config);
-    
+
     expect(result).toContain('10');
   });
 
   test('handles columnTransform', () => {
-    const data = [
-      { firstName: 'Alice', lastName: 'Smith' },
-    ];
+    const data = [{ firstName: 'Alice', lastName: 'Smith' }];
     const config = {
       columnTransform: {
         fullName: ['firstName', 'lastName'],
@@ -253,7 +248,7 @@ describe('JSON2CSV', () => {
       includeTransformAccessors: true,
     };
     const result = JSON2CSV(data, config);
-    
+
     expect(result).toContain('fullName');
   });
 
@@ -267,14 +262,14 @@ describe('JSON2CSV', () => {
       },
     ];
     const result = JSON2CSV(data);
-    
+
     expect(result).toContain('person.name');
     expect(result).toContain('person.age');
   });
 
   test('returns error for invalid config types', () => {
     const data = [{ name: 'Alice' }];
-    
+
     const result1 = JSON2CSV(data, 'invalid' as any);
     expect(result1.error).toBeDefined();
   });
@@ -290,14 +285,14 @@ describe('JSON2CSV', () => {
       sortOrder: ['a', 'b', 'c'],
     };
     const result = JSON2CSV(data, config);
-    
+
     // Check that columns appear in sorted order
     const lines = result.split('\r\n');
     const header = lines[0];
     const aIndex = header.indexOf('"a"');
     const bIndex = header.indexOf('"b"');
     const cIndex = header.indexOf('"c"');
-    
+
     expect(aIndex).toBeLessThan(bIndex);
     expect(bIndex).toBeLessThan(cIndex);
   });
@@ -314,7 +309,7 @@ describe('JSON2CSV', () => {
       keyJoiner: '_',
     };
     const result = JSON2CSV(data, config);
-    
+
     expect(result).toContain('person_name');
   });
 });

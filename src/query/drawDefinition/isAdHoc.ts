@@ -20,8 +20,5 @@ export function isAdHoc({ structure }: IsAdHocArgs): boolean {
     return structure?.finishingPosition === WIN_RATIO;
   }
 
-  return (
-    !structure?.structures &&
-    (!matchUps.length || (!hasRoundPosition && !hasDrawPosition))
-  );
+  return !structure?.structures && (!matchUps.length || (!hasRoundPosition && !hasDrawPosition));
 }

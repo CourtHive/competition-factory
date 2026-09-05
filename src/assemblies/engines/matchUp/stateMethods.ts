@@ -21,9 +21,7 @@ export function setState(value: MatchUpArg, deepCopyOption = true) {
     matchUpId = value.matchUpId;
     keyedMatchUps[matchUpId] = deepCopyOption ? makeDeepCopy(value) : value;
   } else {
-    const items: MatchUpArg[] = Array.isArray(value)
-      ? [...value].reverse()
-      : (Object.values(value) as MatchUpArg[]);
+    const items: MatchUpArg[] = Array.isArray(value) ? [...value].reverse() : (Object.values(value) as MatchUpArg[]);
     storeMatchUpItems(items, deepCopyOption);
   }
 

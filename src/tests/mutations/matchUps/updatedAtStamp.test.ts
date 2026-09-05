@@ -81,9 +81,7 @@ describe('matchUp.updatedAt — stamped on every mutation', () => {
 
     expect(typeof firstAfter.updatedAt).toBe('string');
     expect(typeof secondAfter.updatedAt).toBe('string');
-    expect(new Date(secondAfter.updatedAt).getTime()).toBeGreaterThanOrEqual(
-      new Date(firstAfter.updatedAt).getTime(),
-    );
+    expect(new Date(secondAfter.updatedAt).getTime()).toBeGreaterThanOrEqual(new Date(firstAfter.updatedAt).getTime());
   });
 
   it('updatedAt flows through hydration (tournamentMatchUps view)', () => {

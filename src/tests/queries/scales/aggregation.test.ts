@@ -376,11 +376,11 @@ describe('mandatory counting', () => {
 
   it('multiple mandatory rules targeting different level groups', () => {
     const awards = [
-      makeAward({ personId: 'p1', eventType: SINGLES, positionPoints: 10, level: 1 }),   // GS
-      makeAward({ personId: 'p1', eventType: SINGLES, positionPoints: 50, level: 3 }),   // ATP 1000
-      makeAward({ personId: 'p1', eventType: SINGLES, positionPoints: 500, level: 5 }),  // ATP 500
-      makeAward({ personId: 'p1', eventType: SINGLES, positionPoints: 400, level: 5 }),  // ATP 500
-      makeAward({ personId: 'p1', eventType: SINGLES, positionPoints: 300, level: 7 }),  // ATP 250
+      makeAward({ personId: 'p1', eventType: SINGLES, positionPoints: 10, level: 1 }), // GS
+      makeAward({ personId: 'p1', eventType: SINGLES, positionPoints: 50, level: 3 }), // ATP 1000
+      makeAward({ personId: 'p1', eventType: SINGLES, positionPoints: 500, level: 5 }), // ATP 500
+      makeAward({ personId: 'p1', eventType: SINGLES, positionPoints: 400, level: 5 }), // ATP 500
+      makeAward({ personId: 'p1', eventType: SINGLES, positionPoints: 300, level: 7 }), // ATP 250
     ];
 
     const result = generateRankingList({
@@ -478,7 +478,7 @@ describe('mandatory counting', () => {
 
   it('applies both mandatory and maxResultsPerLevel correctly', () => {
     const awards = [
-      makeAward({ personId: 'p1', eventType: SINGLES, positionPoints: 10, level: 1 }),   // GS mandatory
+      makeAward({ personId: 'p1', eventType: SINGLES, positionPoints: 10, level: 1 }), // GS mandatory
       makeAward({ personId: 'p1', eventType: SINGLES, positionPoints: 300, level: 7 }),
       makeAward({ personId: 'p1', eventType: SINGLES, positionPoints: 250, level: 7 }),
       makeAward({ personId: 'p1', eventType: SINGLES, positionPoints: 200, level: 7 }), // capped by maxPerLevel
@@ -517,7 +517,7 @@ describe('mandatory counting', () => {
     const awards = [
       makeAward({ personId: 'p1', eventType: SINGLES, positionPoints: 500, level: 5 }),
       makeAward({ personId: 'p1', eventType: SINGLES, positionPoints: 400, level: 5 }),
-      makeAward({ personId: 'p1', eventType: SINGLES, positionPoints: 10, level: 1 }),   // GS mandatory
+      makeAward({ personId: 'p1', eventType: SINGLES, positionPoints: 10, level: 1 }), // GS mandatory
       makeAward({ personId: 'p2', eventType: SINGLES, positionPoints: 900, level: 5 }),
     ];
 
@@ -546,14 +546,14 @@ describe('mandatory counting', () => {
   it('mixed mandatory and optional — correct slot filling', () => {
     // bestOfCount=6, 2 mandatory GS + 1 mandatory ATP1000 = 3 mandatory, 3 optional slots
     const awards = [
-      makeAward({ personId: 'p1', eventType: SINGLES, positionPoints: 2000, level: 1 }),  // GS W
-      makeAward({ personId: 'p1', eventType: SINGLES, positionPoints: 10, level: 1 }),    // GS R128
-      makeAward({ personId: 'p1', eventType: SINGLES, positionPoints: 50, level: 3 }),    // ATP 1000
-      makeAward({ personId: 'p1', eventType: SINGLES, positionPoints: 500, level: 5 }),   // ATP 500
-      makeAward({ personId: 'p1', eventType: SINGLES, positionPoints: 400, level: 5 }),   // ATP 500
-      makeAward({ personId: 'p1', eventType: SINGLES, positionPoints: 300, level: 7 }),   // ATP 250
-      makeAward({ personId: 'p1', eventType: SINGLES, positionPoints: 200, level: 7 }),   // ATP 250
-      makeAward({ personId: 'p1', eventType: SINGLES, positionPoints: 100, level: 7 }),   // ATP 250
+      makeAward({ personId: 'p1', eventType: SINGLES, positionPoints: 2000, level: 1 }), // GS W
+      makeAward({ personId: 'p1', eventType: SINGLES, positionPoints: 10, level: 1 }), // GS R128
+      makeAward({ personId: 'p1', eventType: SINGLES, positionPoints: 50, level: 3 }), // ATP 1000
+      makeAward({ personId: 'p1', eventType: SINGLES, positionPoints: 500, level: 5 }), // ATP 500
+      makeAward({ personId: 'p1', eventType: SINGLES, positionPoints: 400, level: 5 }), // ATP 500
+      makeAward({ personId: 'p1', eventType: SINGLES, positionPoints: 300, level: 7 }), // ATP 250
+      makeAward({ personId: 'p1', eventType: SINGLES, positionPoints: 200, level: 7 }), // ATP 250
+      makeAward({ personId: 'p1', eventType: SINGLES, positionPoints: 100, level: 7 }), // ATP 250
     ];
 
     const result = generateRankingList({

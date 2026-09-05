@@ -104,7 +104,7 @@ function buildSetsForIncompleteScore({ lastSet, sets, analysis }) {
   }
   let newSets;
   if (analysis.isTimedSet) {
-    newSets = lastSet.side1Score ? sets : sets?.slice(0, -1) ?? [];
+    newSets = lastSet.side1Score ? sets : (sets?.slice(0, -1) ?? []);
     newSets[sets.length - 1] = lastSet;
   } else {
     newSets = sets?.slice(0, -1) ?? [];

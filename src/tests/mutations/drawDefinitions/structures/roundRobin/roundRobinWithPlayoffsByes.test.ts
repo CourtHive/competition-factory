@@ -4,7 +4,13 @@ import tournamentEngine from '@Engines/syncEngine';
 import mocksEngine from '@Assemblies/engines/mock';
 import { expect, it } from 'vitest';
 
-import { MAIN, PLAY_OFF, POSITION, ROUND_ROBIN_WITH_PLAYOFF, SINGLE_ELIMINATION } from '@Constants/drawDefinitionConstants';
+import {
+  MAIN,
+  PLAY_OFF,
+  POSITION,
+  ROUND_ROBIN_WITH_PLAYOFF,
+  SINGLE_ELIMINATION,
+} from '@Constants/drawDefinitionConstants';
 
 it('can generate Playoffs for Round Robins when BYEs are present (1)', () => {
   const drawId = 'rr-playoffs-byes-1';

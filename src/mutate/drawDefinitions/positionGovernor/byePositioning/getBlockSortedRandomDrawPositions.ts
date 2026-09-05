@@ -72,7 +72,13 @@ export function getBlockSortedRandomDrawPositions({
   return blockSortedRandom;
 }
 
-function processSeedBlock(seedBlock: SeedBlock, byesToPlace: number, drawPositions: number[], strictOrder: number[], rng: () => number) {
+function processSeedBlock(
+  seedBlock: SeedBlock,
+  byesToPlace: number,
+  drawPositions: number[],
+  strictOrder: number[],
+  rng: () => number,
+) {
   const leftToPlace = byesToPlace - drawPositions.length;
   if (leftToPlace > seedBlock.drawPositions.length) {
     drawPositions.push(...seedBlock.drawPositions);
@@ -82,7 +88,12 @@ function processSeedBlock(seedBlock: SeedBlock, byesToPlace: number, drawPositio
   }
 }
 
-function placeDrawPositions(nestedDrawPositions: any[], drawPositions: number[], strictOrder: number[], rng: () => number) {
+function placeDrawPositions(
+  nestedDrawPositions: any[],
+  drawPositions: number[],
+  strictOrder: number[],
+  rng: () => number,
+) {
   let drawPosition: number | undefined;
   let desiredPosition = strictOrder[drawPositions.length];
   while ((drawPosition = popFromLargerSide(nestedDrawPositions, desiredPosition, rng))) {
@@ -118,7 +129,9 @@ function handleNestedArray(arr, desiredPosition, rng) {
 
     return popFromLargerSide(arr[Math.round(rng())], desiredPosition, rng);
   }
-  return side1 < side2 ? popFromLargerSide(arr[1], desiredPosition, rng) : popFromLargerSide(arr[0], desiredPosition, rng);
+  return side1 < side2
+    ? popFromLargerSide(arr[1], desiredPosition, rng)
+    : popFromLargerSide(arr[0], desiredPosition, rng);
 }
 
 function nestArray(arr) {

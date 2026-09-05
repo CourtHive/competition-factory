@@ -24,10 +24,9 @@ type GetDrawCompositionConstraintsArgs = {
  * extension on the tournament record. Returns undefined when no sanctioning
  * constraints exist (unsanctioned draws are unconstrained).
  */
-export function getDrawCompositionConstraints({
-  tournamentRecord,
-  event,
-}: GetDrawCompositionConstraintsArgs): { constraints?: DrawCompositionConstraints } {
+export function getDrawCompositionConstraints({ tournamentRecord, event }: GetDrawCompositionConstraintsArgs): {
+  constraints?: DrawCompositionConstraints;
+} {
   if (!tournamentRecord) return {};
 
   const { extension } = findExtension({

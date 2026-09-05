@@ -20,9 +20,7 @@ export function placeQualifier(params): ResultType & { qualifierPlaced?: boolean
     return { ...SUCCESS, qualifierPlaced: undefined };
   }
 
-  const winningQualifierId = inContextMatchUp.sides.find(
-    ({ sideNumber }) => sideNumber === winningSide,
-  )?.participantId;
+  const winningQualifierId = inContextMatchUp.sides.find(({ sideNumber }) => sideNumber === winningSide)?.participantId;
 
   const mainDrawTargetMatchUp = findMainDrawTarget({
     inContextDrawMatchUps,

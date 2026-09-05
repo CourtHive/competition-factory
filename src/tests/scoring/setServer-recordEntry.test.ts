@@ -44,9 +44,7 @@ describe('setServer recordEntry option', () => {
       matchUpFormat: 'SET2XA-S:T10',
       competitionFormat: {
         matchUpFormat: 'SET2XA-S:T10',
-        pointMultipliers: [
-          { condition: { results: ['Winner'] }, value: 2 },
-        ],
+        pointMultipliers: [{ condition: { results: ['Winner'] }, value: 2 }],
       },
     });
 

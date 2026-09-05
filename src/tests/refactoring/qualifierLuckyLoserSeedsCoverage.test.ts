@@ -162,9 +162,7 @@ describe('assignDrawPositionQualifier full coverage', () => {
     const mainStructure = drawDefinition.structures.find((s) => s.stage === MAIN);
 
     // Find an unassigned position (no participantId, no bye, no qualifier)
-    const emptyAssignment = mainStructure?.positionAssignments?.find(
-      (a) => !a.participantId && !a.bye && !a.qualifier,
-    );
+    const emptyAssignment = mainStructure?.positionAssignments?.find((a) => !a.participantId && !a.bye && !a.qualifier);
 
     if (emptyAssignment) {
       // With isPositionAction = true to exercise telemetry branch
@@ -202,9 +200,7 @@ describe('assignDrawPositionQualifier full coverage', () => {
     const { drawDefinition } = tournamentEngine.getEvent({ drawId });
     const mainStructure = drawDefinition.structures.find((s) => s.stage === MAIN);
 
-    const emptyAssignment = mainStructure?.positionAssignments?.find(
-      (a) => !a.participantId && !a.bye && !a.qualifier,
-    );
+    const emptyAssignment = mainStructure?.positionAssignments?.find((a) => !a.participantId && !a.bye && !a.qualifier);
 
     if (emptyAssignment) {
       let result: any = assignDrawPositionQualifier({
@@ -237,9 +233,7 @@ describe('assignDrawPositionQualifier full coverage', () => {
       expect(result.success).toBe(true);
 
       // Verify the position now has qualifier = true
-      const updated = mainStructure?.positionAssignments?.find(
-        (a) => a.drawPosition === filledAssignment.drawPosition,
-      );
+      const updated = mainStructure?.positionAssignments?.find((a) => a.drawPosition === filledAssignment.drawPosition);
       expect(updated?.qualifier).toBe(true);
     }
   });
@@ -290,9 +284,7 @@ describe('assignDrawPositionQualifier full coverage', () => {
     const { drawDefinition, event } = tournamentEngine.getEvent({ drawId });
     const mainStructure = drawDefinition.structures.find((s) => s.stage === MAIN);
 
-    const emptyAssignment = mainStructure?.positionAssignments?.find(
-      (a) => !a.participantId && !a.bye && !a.qualifier,
-    );
+    const emptyAssignment = mainStructure?.positionAssignments?.find((a) => !a.participantId && !a.bye && !a.qualifier);
 
     if (emptyAssignment) {
       let result: any = assignDrawPositionQualifier({
@@ -352,9 +344,7 @@ describe('luckyLoserDrawPositionAssignment full coverage', () => {
       const { participants } = tournamentEngine.getParticipants();
       const currentDraw = tournamentEngine.getEvent({ drawId }).drawDefinition;
       const currentStructure = currentDraw.structures.find((s) => s.stage === MAIN);
-      const drawPids = currentStructure.positionAssignments
-        .filter((a) => a.participantId)
-        .map((a) => a.participantId);
+      const drawPids = currentStructure.positionAssignments.filter((a) => a.participantId).map((a) => a.participantId);
       const luckyLoserPid = participants.find((p) => !drawPids.includes(p.participantId))?.participantId;
 
       if (luckyLoserPid) {
@@ -398,9 +388,7 @@ describe('luckyLoserDrawPositionAssignment full coverage', () => {
         const drawParticipantIds = mainStructure.positionAssignments
           .filter((a) => a.participantId)
           .map((a) => a.participantId);
-        const availableParticipant = participants.find(
-          (p) => !drawParticipantIds.includes(p.participantId),
-        );
+        const availableParticipant = participants.find((p) => !drawParticipantIds.includes(p.participantId));
 
         if (availableParticipant) {
           let result: any = luckyLoserDrawPositionAssignment({
@@ -431,9 +419,7 @@ describe('luckyLoserDrawPositionAssignment full coverage', () => {
     const drawParticipantIds = mainStructure.positionAssignments
       .filter((a) => a.participantId)
       .map((a) => a.participantId);
-    const outsideParticipant = participants.find(
-      (p) => !drawParticipantIds.includes(p.participantId),
-    );
+    const outsideParticipant = participants.find((p) => !drawParticipantIds.includes(p.participantId));
 
     if (filledAssignment && outsideParticipant) {
       // This exercises the positionAssignment?.participantId branch in positionParticipantAction
@@ -469,9 +455,7 @@ describe('positionSeedBlocks full coverage', () => {
     expect(structure.seedAssignments.length).toBeGreaterThanOrEqual(4);
 
     // Verify seeded participants are in position assignments
-    const seededParticipantIds = structure.seedAssignments
-      .filter((a) => a.participantId)
-      .map((a) => a.participantId);
+    const seededParticipantIds = structure.seedAssignments.filter((a) => a.participantId).map((a) => a.participantId);
 
     for (const pid of seededParticipantIds) {
       const assignment = structure.positionAssignments.find((a) => a.participantId === pid);
@@ -830,9 +814,7 @@ describe('lucky loser integration flow', () => {
       const { participants } = tournamentEngine.getParticipants();
       const currentDraw = tournamentEngine.getEvent({ drawId }).drawDefinition;
       const currentStructure = currentDraw.structures.find((s) => s.stage === MAIN);
-      const drawPids = currentStructure.positionAssignments
-        .filter((a) => a.participantId)
-        .map((a) => a.participantId);
+      const drawPids = currentStructure.positionAssignments.filter((a) => a.participantId).map((a) => a.participantId);
       const luckyLoserPid = participants.find((p) => !drawPids.includes(p.participantId))?.participantId;
 
       if (luckyLoserPid) {

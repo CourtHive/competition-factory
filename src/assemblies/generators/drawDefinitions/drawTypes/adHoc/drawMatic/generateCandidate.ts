@@ -87,7 +87,6 @@ export function generateCandidate({
 
           if (
             value < lowCandidateValue ||
-             
             (value === lowCandidateValue && Math.round(rng())) // randomize if equivalent values
           ) {
             lowCandidateValue = value;

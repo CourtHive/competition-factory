@@ -11,13 +11,12 @@ test('voluntaryConsolation with allEntries considers all entered participants', 
   });
 
   // allEntries: true, requirePlay: false, requireLoss: false triggers the considerEntered path
-  const { eligibleParticipants, losingParticipantIds } =
-    tournamentEngine.getEligibleVoluntaryConsolationParticipants({
-      requirePlay: false,
-      requireLoss: false,
-      allEntries: true,
-      drawId,
-    });
+  const { eligibleParticipants, losingParticipantIds } = tournamentEngine.getEligibleVoluntaryConsolationParticipants({
+    requirePlay: false,
+    requireLoss: false,
+    allEntries: true,
+    drawId,
+  });
 
   // All 16 entered participants should be eligible (no matches played)
   expect(eligibleParticipants.length).toEqual(16);

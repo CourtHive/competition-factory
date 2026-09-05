@@ -58,9 +58,7 @@ export function prepareStage(params): ResultType & {
   if (!doPositioning && isAdHocType(params.drawType) && structure?.positionAssignments?.length) {
     const qualifiersCount = params.qualifiersCount || 0;
     if (qualifiersCount > 0) {
-      const unfilled = structure.positionAssignments.filter(
-        (a) => !a.participantId && !a.qualifier && !a.bye,
-      );
+      const unfilled = structure.positionAssignments.filter((a) => !a.participantId && !a.qualifier && !a.bye);
       for (let i = 0; i < qualifiersCount && i < unfilled.length; i++) {
         unfilled[i].qualifier = true;
       }

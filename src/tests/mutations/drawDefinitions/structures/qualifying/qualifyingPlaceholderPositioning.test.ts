@@ -413,14 +413,16 @@ describe('qualifying placeholder positioning: TMX two-step flow', () => {
     expect(eventData.eventData?.drawsData?.length).toBeGreaterThan(0);
 
     // Step 2: Generate qualifying structure
-    const qualDrawEntries = tournamentEngine.getEvent({ eventId }).event.entries.filter(
-      (e: any) => e.entryStage === QUALIFYING && e.entryStatus === DIRECT_ACCEPTANCE,
-    );
+    const qualDrawEntries = tournamentEngine
+      .getEvent({ eventId })
+      .event.entries.filter((e: any) => e.entryStage === QUALIFYING && e.entryStatus === DIRECT_ACCEPTANCE);
 
     const qualGenResult = tournamentEngine.generateDrawDefinition({
       drawEntries: qualDrawEntries,
       qualifyingProfiles: [
-        { structureProfiles: [{ qualifyingPositions: qualifiersCount, drawSize: qualifyingDrawSize, stageSequence: 1 }] },
+        {
+          structureProfiles: [{ qualifyingPositions: qualifiersCount, drawSize: qualifyingDrawSize, stageSequence: 1 }],
+        },
       ],
       automated: true,
       drawSize,
@@ -433,7 +435,11 @@ describe('qualifying placeholder positioning: TMX two-step flow', () => {
     // drawType must be preserved as SWISS
     expect(qualGenResult.drawDefinition.drawType).toEqual(SWISS);
 
-    tournamentEngine.addDrawDefinition({ eventId, drawDefinition: qualGenResult.drawDefinition, allowReplacement: true });
+    tournamentEngine.addDrawDefinition({
+      eventId,
+      drawDefinition: qualGenResult.drawDefinition,
+      allowReplacement: true,
+    });
 
     // Qualifying structure should have matchUps with roundPosition and drawPositions
     ({ drawDefinition } = tournamentEngine.getEvent({ drawId }));
