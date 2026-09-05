@@ -1,4 +1,9 @@
-import { INVALID_OFFICIATING_STATUS_TRANSITION, CERTIFICATION_NOT_FOUND, MISSING_OFFICIAL_RECORD, CERTIFICATION_EXPIRED } from '@Constants/officiatingConstants';
+import {
+  INVALID_OFFICIATING_STATUS_TRANSITION,
+  CERTIFICATION_NOT_FOUND,
+  MISSING_OFFICIAL_RECORD,
+  CERTIFICATION_EXPIRED,
+} from '@Constants/officiatingConstants';
 import { validateOfficiatingStatusTransition } from '@Validators/officiating/validateOfficiatingStatusTransition';
 import { validateCertification } from '@Validators/officiating/validateCertification';
 import { INVALID_VALUES } from '@Constants/errorConditionConstants';

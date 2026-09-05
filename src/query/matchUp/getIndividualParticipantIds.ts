@@ -6,7 +6,7 @@ export function getIndividualParticipantIds(matchUp) {
     ? matchUp.potentialParticipants
         .flat()
         .map((participant) => {
-          return matchUpType === DOUBLES ? participant?.individualParticipantIds ?? [] : participant.participantId;
+          return matchUpType === DOUBLES ? (participant?.individualParticipantIds ?? []) : participant.participantId;
         })
         .flat()
     : [];

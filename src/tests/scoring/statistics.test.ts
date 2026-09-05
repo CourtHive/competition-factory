@@ -45,9 +45,7 @@ function generateMatchPoints(): PointWithMetadata[] {
   // Game 3: Player 0 holds serve (2 winners, 1 unforced error by opponent, 1 ace)
   points.push(makePoint({ winner: 0, server: 0, index: idx++, set: 0, game: 2, result: 'Winner', serve: 1 }));
   points.push(makePoint({ winner: 0, server: 0, index: idx++, set: 0, game: 2, result: 'Winner', serve: 1 }));
-  points.push(
-    makePoint({ winner: 0, server: 0, index: idx++, set: 0, game: 2, result: 'Unforced Error', serve: 2 }),
-  );
+  points.push(makePoint({ winner: 0, server: 0, index: idx++, set: 0, game: 2, result: 'Unforced Error', serve: 2 }));
   points.push(makePoint({ winner: 0, server: 0, index: idx++, set: 0, game: 2, result: 'Ace', serve: 1, code: 'A' }));
 
   // Game 4: Player 1 broken (1 double fault, 2 forced errors, 1 return winner)
@@ -88,9 +86,7 @@ function generateMatchPoints(): PointWithMetadata[] {
       code: 'R',
     }),
   );
-  points.push(
-    makePoint({ winner: 0, server: 1, index: idx, set: 0, game: 3, result: 'Forced Error', serve: 1 }),
-  );
+  points.push(makePoint({ winner: 0, server: 1, index: idx, set: 0, game: 3, result: 'Forced Error', serve: 1 }));
 
   return points;
 }
@@ -305,7 +301,11 @@ describe('counters', () => {
     });
 
     it('filters by set when setFilter is specified', () => {
-      const points = [makePoint({ winner: 0, set: 0 }), makePoint({ winner: 0, set: 1 }), makePoint({ winner: 1, set: 0 })];
+      const points = [
+        makePoint({ winner: 0, set: 0 }),
+        makePoint({ winner: 0, set: 1 }),
+        makePoint({ winner: 1, set: 0 }),
+      ];
       const counters = buildCounters(points, { setFilter: 0 });
       expect(counters.teams[0].pointsWon.length).toBe(1);
       expect(counters.teams[1].pointsWon.length).toBe(1);
@@ -318,10 +318,7 @@ describe('counters', () => {
     });
 
     it('tracks serve stats for the server', () => {
-      const points = [
-        makePoint({ winner: 0, server: 0, serve: 1 }),
-        makePoint({ winner: 1, server: 0, serve: 2 }),
-      ];
+      const points = [makePoint({ winner: 0, server: 0, serve: 1 }), makePoint({ winner: 1, server: 0, serve: 2 })];
       const counters = buildCounters(points);
       expect(counters.teams[0].pointsServed.length).toBe(2);
       expect(counters.teams[0].serves1stIn.length).toBe(1);
@@ -412,19 +409,13 @@ describe('counters', () => {
     });
 
     it('reuses existing array for multiple 2nd serve points', () => {
-      const points = [
-        makePoint({ winner: 0, server: 0, serve: 2 }),
-        makePoint({ winner: 1, server: 0, serve: 2 }),
-      ];
+      const points = [makePoint({ winner: 0, server: 0, serve: 2 }), makePoint({ winner: 1, server: 0, serve: 2 })];
       const counters = buildCounters(points);
       expect(counters.teams[0].serves2ndIn.length).toBe(2);
     });
 
     it('reuses existing array for multiple hand breakdown points', () => {
-      const points = [
-        makePoint({ winner: 0, hand: 'Forehand' }),
-        makePoint({ winner: 0, hand: 'Forehand' }),
-      ];
+      const points = [makePoint({ winner: 0, hand: 'Forehand' }), makePoint({ winner: 0, hand: 'Forehand' })];
       const counters = buildCounters(points);
       expect(counters.teams[0]['Forehand'].length).toBe(2);
     });
@@ -450,10 +441,7 @@ describe('counters', () => {
     });
 
     it('aggregates categories across teams', () => {
-      const points = [
-        makePoint({ winner: 0, result: 'Ace' }),
-        makePoint({ winner: 1, result: 'Ace' }),
-      ];
+      const points = [makePoint({ winner: 0, result: 'Ace' }), makePoint({ winner: 1, result: 'Ace' })];
       const counters = buildCounters(points);
       const summary = getCountersSummary(counters);
       expect(summary.byCategory['aces']).toBe(2);
@@ -668,10 +656,7 @@ describe('standalone', () => {
     });
 
     it('applies setFilter option', () => {
-      const points = [
-        makePoint({ winner: 0, set: 0 }),
-        makePoint({ winner: 0, set: 1 }),
-      ];
+      const points = [makePoint({ winner: 0, set: 0 }), makePoint({ winner: 0, set: 1 })];
       const stats = calculateMatchStatistics({} as any, points, { setFilter: 0 });
       expect(stats.summary!.totalPoints).toBe(1);
     });
@@ -695,11 +680,7 @@ describe('standalone', () => {
     it('context tracks game/set from initial state', () => {
       // enrichPoint overrides set/game with context values, so raw set/game
       // are replaced. The transitions track based on enriched values.
-      const raw = [
-        { code: 'A' },
-        { code: 'D' },
-        { code: 'S' },
-      ];
+      const raw = [{ code: 'A' }, { code: 'D' }, { code: 'S' }];
       const enriched = enrichPointHistory(raw);
       // All points share the same initial context
       expect(enriched[0].game).toBe(0);
@@ -740,10 +721,7 @@ describe('standalone', () => {
     });
 
     it('applies setFilter option', () => {
-      const points = [
-        makePoint({ winner: 0, set: 0, result: 'Ace' }),
-        makePoint({ winner: 0, set: 1, result: 'Ace' }),
-      ];
+      const points = [makePoint({ winner: 0, set: 0, result: 'Ace' }), makePoint({ winner: 0, set: 1, result: 'Ace' })];
       const quick = getQuickStats(points, { setFilter: 0 });
       expect(quick.aces[0]).toBe(1);
     });
@@ -797,10 +775,7 @@ describe('toStatObjects', () => {
   });
 
   it('excludes serve breakdown when only 1st serves present', () => {
-    const points = [
-      makePoint({ winner: 0, server: 0, serve: 1 }),
-      makePoint({ winner: 1, server: 1, serve: 1 }),
-    ];
+    const points = [makePoint({ winner: 0, server: 0, serve: 1 }), makePoint({ winner: 1, server: 1, serve: 1 })];
     const stats = calculateMatchStatistics({} as any, points);
     const objects = toStatObjects(stats);
     const names = objects.map((o) => o.name);

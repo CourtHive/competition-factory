@@ -265,7 +265,7 @@ describe('matchUpFormatGovernor - Documentation Examples', () => {
         expect(parsed).toBeDefined();
 
         const stringified = matchUpFormatGovernor.stringify(parsed);
-        
+
         // T20G will stringify as T20 (G is optional/default)
         if (format === 'T20G') {
           expect(stringified).toBe('T20');

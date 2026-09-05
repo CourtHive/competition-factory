@@ -1,6 +1,6 @@
 /**
  * Tests for preserveSideOrder parameter in generateOutcomeFromScoreString
- * 
+ *
  * Tests that the new preserveSideOrder parameter allows UIs to preserve
  * the exact side order that users enter, rather than normalizing to winner-first
  */
@@ -53,7 +53,7 @@ describe('generateOutcomeFromScoreString - preserveSideOrder parameter', () => {
       expect(outcome.score.sets[0].side2Score).toBe(6);
       expect(outcome.score.sets[1].side1Score).toBe(4);
       expect(outcome.score.sets[1].side2Score).toBe(6);
-      
+
       // winningSide still calculated correctly (side 2 won)
       expect(outcome.winningSide).toBe(2);
     });

@@ -126,8 +126,11 @@ export function generateDrawMaticRound(params: GenerateDrawMaticRoundArgs): Resu
 
   // Competition policy overrides legacy dynamicRatings
   const { competitionPolicy } = getCompetitionPolicy({ tournamentRecord, drawDefinition, event });
-  const { competitionState } = competitionPolicy ? getCompetitionState({ drawDefinition }) : { competitionState: undefined };
-  const useCompetitionRatings = competitionPolicy && competitionState && competitionPolicy.pairingPolicy.ratingSource === 'DYNAMIC_FORM';
+  const { competitionState } = competitionPolicy
+    ? getCompetitionState({ drawDefinition })
+    : { competitionState: undefined };
+  const useCompetitionRatings =
+    competitionPolicy && competitionState && competitionPolicy.pairingPolicy.ratingSource === 'DYNAMIC_FORM';
 
   if (useCompetitionRatings) {
     // Use dynamic form ratings from competition state instead of legacy dynamic ratings

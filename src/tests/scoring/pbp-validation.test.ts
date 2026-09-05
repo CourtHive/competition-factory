@@ -5,20 +5,20 @@
  * This is the core pbp-validator functionality
  */
 
-import { describe, test, expect } from "vitest";
+import { describe, test, expect } from 'vitest';
 import {
   validateMatchUp,
   validateSet,
   getSetScoreString,
   createMatchUp,
   addPoint,
-} from "@Assemblies/governors/scoreGovernor";
+} from '@Assemblies/governors/scoreGovernor';
 
-describe("PBP Validation", () => {
-  describe("validateMatchUp", () => {
-    test("should validate a simple match", () => {
+describe('PBP Validation', () => {
+  describe('validateMatchUp', () => {
+    test('should validate a simple match', () => {
       // Create matchUp with points
-      let matchUp = createMatchUp({ matchUpFormat: "SET3-S:6/TB7" });
+      let matchUp = createMatchUp({ matchUpFormat: 'SET3-S:6/TB7' });
 
       // Play a complete set 6-0
       for (let g = 0; g < 6; g++) {
@@ -41,8 +41,8 @@ describe("PBP Validation", () => {
       expect(result.actual.sets[0]!.side1Score).toBe(6);
     });
 
-    test("should detect score mismatch", () => {
-      let matchUp = createMatchUp({ matchUpFormat: "SET3-S:6/TB7" });
+    test('should detect score mismatch', () => {
+      let matchUp = createMatchUp({ matchUpFormat: 'SET3-S:6/TB7' });
 
       // Play 6-0
       for (let g = 0; g < 6; g++) {
@@ -61,11 +61,11 @@ describe("PBP Validation", () => {
 
       expect(result.isValid).toBe(false);
       expect(result.errors.length).toBeGreaterThan(0);
-      expect(result.errors[0]).toContain("side2Score");
+      expect(result.errors[0]).toContain('side2Score');
     });
 
-    test("should validate tiebreak scores", () => {
-      let matchUp = createMatchUp({ matchUpFormat: "SET3-S:6/TB7" });
+    test('should validate tiebreak scores', () => {
+      let matchUp = createMatchUp({ matchUpFormat: 'SET3-S:6/TB7' });
 
       // Play to 6-6
       for (let g = 0; g < 5; g++) {
@@ -118,8 +118,8 @@ describe("PBP Validation", () => {
     // Real-world validation: 2,465/2,465 ATP matches passing (100%) ✅
   });
 
-  describe("validateSet", () => {
-    test("should validate a single set", () => {
+  describe('validateSet', () => {
+    test('should validate a single set', () => {
       // Create points for 6-0 set
       const points: Array<{ winner: number }> = [];
       for (let g = 0; g < 6; g++) {
@@ -130,7 +130,7 @@ describe("PBP Validation", () => {
 
       const result = validateSet({
         points,
-        matchUpFormat: "SET3-S:6/TB7",
+        matchUpFormat: 'SET3-S:6/TB7',
         expectedGames: [6, 0],
       });
 
@@ -138,7 +138,7 @@ describe("PBP Validation", () => {
       expect(result.actual.sets[0]?.side1Score).toBe(6);
     });
 
-    test("should validate set with tiebreak", () => {
+    test('should validate set with tiebreak', () => {
       const points: Array<{ winner: number }> = [];
 
       // 6-6 in games
@@ -166,7 +166,7 @@ describe("PBP Validation", () => {
 
       const result = validateSet({
         points,
-        matchUpFormat: "SET3-S:6/TB7",
+        matchUpFormat: 'SET3-S:6/TB7',
         expectedGames: [7, 6],
         expectedTiebreak: [7, 3],
       });
@@ -176,18 +176,18 @@ describe("PBP Validation", () => {
     });
   });
 
-  describe("getSetScoreString", () => {
-    test("should format regular set score", () => {
+  describe('getSetScoreString', () => {
+    test('should format regular set score', () => {
       const scoreString = getSetScoreString({
         setNumber: 1,
         side1Score: 6,
         side2Score: 4,
       });
 
-      expect(scoreString).toBe("6-4");
+      expect(scoreString).toBe('6-4');
     });
 
-    test("should format tiebreak score", () => {
+    test('should format tiebreak score', () => {
       const scoreString = getSetScoreString({
         setNumber: 1,
         side1Score: 7,
@@ -196,10 +196,10 @@ describe("PBP Validation", () => {
         side2TiebreakScore: 5,
       });
 
-      expect(scoreString).toBe("7-6(5)");
+      expect(scoreString).toBe('7-6(5)');
     });
 
-    test("should format reverse tiebreak score", () => {
+    test('should format reverse tiebreak score', () => {
       const scoreString = getSetScoreString({
         setNumber: 1,
         side1Score: 6,
@@ -208,18 +208,18 @@ describe("PBP Validation", () => {
         side2TiebreakScore: 7,
       });
 
-      expect(scoreString).toBe("6(4)-7");
+      expect(scoreString).toBe('6(4)-7');
     });
   });
 
-  describe("PBP Workflow", () => {
-    test("should support full pbp-validator workflow", () => {
+  describe('PBP Workflow', () => {
+    test('should support full pbp-validator workflow', () => {
       // Simulate pbp-validator input: matchUp with points
       const matchUp = {
-        matchUpId: "test-match",
-        matchUpFormat: "SET3-S:6/TB7",
-        matchUpStatus: "COMPLETED" as const,
-        matchUpType: "SINGLES" as const,
+        matchUpId: 'test-match',
+        matchUpFormat: 'SET3-S:6/TB7',
+        matchUpStatus: 'COMPLETED' as const,
+        matchUpType: 'SINGLES' as const,
         sides: [{ sideNumber: 1 }, { sideNumber: 2 }],
         score: {
           sets: [],
@@ -239,14 +239,14 @@ describe("PBP Validation", () => {
         },
         history: {
           points: [
-            { pointNumber: 1, winner: 0 as const, timestamp: "" },
-            { pointNumber: 2, winner: 0 as const, timestamp: "" },
-            { pointNumber: 3, winner: 0 as const, timestamp: "" },
-            { pointNumber: 4, winner: 0 as const, timestamp: "" },
-            { pointNumber: 5, winner: 1 as const, timestamp: "" },
-            { pointNumber: 6, winner: 1 as const, timestamp: "" },
-            { pointNumber: 7, winner: 1 as const, timestamp: "" },
-            { pointNumber: 8, winner: 1 as const, timestamp: "" },
+            { pointNumber: 1, winner: 0 as const, timestamp: '' },
+            { pointNumber: 2, winner: 0 as const, timestamp: '' },
+            { pointNumber: 3, winner: 0 as const, timestamp: '' },
+            { pointNumber: 4, winner: 0 as const, timestamp: '' },
+            { pointNumber: 5, winner: 1 as const, timestamp: '' },
+            { pointNumber: 6, winner: 1 as const, timestamp: '' },
+            { pointNumber: 7, winner: 1 as const, timestamp: '' },
+            { pointNumber: 8, winner: 1 as const, timestamp: '' },
           ],
         },
       };

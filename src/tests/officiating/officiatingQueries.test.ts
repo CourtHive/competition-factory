@@ -42,8 +42,24 @@ describe('getEvaluations', () => {
   it('returns all evaluations with no filters', () => {
     const record = makeRecord({
       evaluations: [
-        { evaluationId: 'e1', evaluatorPersonId: 'ev1', subjectPersonId: 'p1', evaluationDate: '2025-06-01', overallRating: 4, status: 'APPROVED', scores: [] },
-        { evaluationId: 'e2', evaluatorPersonId: 'ev2', subjectPersonId: 'p1', evaluationDate: '2025-07-01', overallRating: 3, status: 'DRAFT', scores: [] },
+        {
+          evaluationId: 'e1',
+          evaluatorPersonId: 'ev1',
+          subjectPersonId: 'p1',
+          evaluationDate: '2025-06-01',
+          overallRating: 4,
+          status: 'APPROVED',
+          scores: [],
+        },
+        {
+          evaluationId: 'e2',
+          evaluatorPersonId: 'ev2',
+          subjectPersonId: 'p1',
+          evaluationDate: '2025-07-01',
+          overallRating: 3,
+          status: 'DRAFT',
+          scores: [],
+        },
       ],
     });
     let result: any = getEvaluations({ officialRecord: record });
@@ -54,8 +70,24 @@ describe('getEvaluations', () => {
   it('filters by evaluatorPersonId', () => {
     const record = makeRecord({
       evaluations: [
-        { evaluationId: 'e1', evaluatorPersonId: 'ev1', subjectPersonId: 'p1', evaluationDate: '2025-06-01', overallRating: 4, status: 'APPROVED', scores: [] },
-        { evaluationId: 'e2', evaluatorPersonId: 'ev2', subjectPersonId: 'p1', evaluationDate: '2025-07-01', overallRating: 3, status: 'APPROVED', scores: [] },
+        {
+          evaluationId: 'e1',
+          evaluatorPersonId: 'ev1',
+          subjectPersonId: 'p1',
+          evaluationDate: '2025-06-01',
+          overallRating: 4,
+          status: 'APPROVED',
+          scores: [],
+        },
+        {
+          evaluationId: 'e2',
+          evaluatorPersonId: 'ev2',
+          subjectPersonId: 'p1',
+          evaluationDate: '2025-07-01',
+          overallRating: 3,
+          status: 'APPROVED',
+          scores: [],
+        },
       ],
     });
     let result: any = getEvaluations({ officialRecord: record, evaluatorPersonId: 'ev1' });
@@ -66,12 +98,47 @@ describe('getEvaluations', () => {
   it('filters by status, tournamentId, and policyName simultaneously', () => {
     const record = makeRecord({
       evaluations: [
-        { evaluationId: 'e1', evaluatorPersonId: 'ev1', subjectPersonId: 'p1', evaluationDate: '2025-06-01', overallRating: 4, status: 'APPROVED', tournamentId: 't1', policyName: 'POL_A', scores: [] },
-        { evaluationId: 'e2', evaluatorPersonId: 'ev1', subjectPersonId: 'p1', evaluationDate: '2025-07-01', overallRating: 3, status: 'DRAFT', tournamentId: 't1', policyName: 'POL_A', scores: [] },
-        { evaluationId: 'e3', evaluatorPersonId: 'ev1', subjectPersonId: 'p1', evaluationDate: '2025-08-01', overallRating: 5, status: 'APPROVED', tournamentId: 't2', policyName: 'POL_A', scores: [] },
+        {
+          evaluationId: 'e1',
+          evaluatorPersonId: 'ev1',
+          subjectPersonId: 'p1',
+          evaluationDate: '2025-06-01',
+          overallRating: 4,
+          status: 'APPROVED',
+          tournamentId: 't1',
+          policyName: 'POL_A',
+          scores: [],
+        },
+        {
+          evaluationId: 'e2',
+          evaluatorPersonId: 'ev1',
+          subjectPersonId: 'p1',
+          evaluationDate: '2025-07-01',
+          overallRating: 3,
+          status: 'DRAFT',
+          tournamentId: 't1',
+          policyName: 'POL_A',
+          scores: [],
+        },
+        {
+          evaluationId: 'e3',
+          evaluatorPersonId: 'ev1',
+          subjectPersonId: 'p1',
+          evaluationDate: '2025-08-01',
+          overallRating: 5,
+          status: 'APPROVED',
+          tournamentId: 't2',
+          policyName: 'POL_A',
+          scores: [],
+        },
       ],
     });
-    let result: any = getEvaluations({ officialRecord: record, status: 'APPROVED', tournamentId: 't1', policyName: 'POL_A' });
+    let result: any = getEvaluations({
+      officialRecord: record,
+      status: 'APPROVED',
+      tournamentId: 't1',
+      policyName: 'POL_A',
+    });
     expect(result.evaluations).toHaveLength(1);
     expect(result.evaluations[0].evaluationId).toBe('e1');
   });
@@ -79,7 +146,15 @@ describe('getEvaluations', () => {
   it('returns empty array when no evaluations match filters', () => {
     const record = makeRecord({
       evaluations: [
-        { evaluationId: 'e1', evaluatorPersonId: 'ev1', subjectPersonId: 'p1', evaluationDate: '2025-06-01', overallRating: 4, status: 'APPROVED', scores: [] },
+        {
+          evaluationId: 'e1',
+          evaluatorPersonId: 'ev1',
+          subjectPersonId: 'p1',
+          evaluationDate: '2025-06-01',
+          overallRating: 4,
+          status: 'APPROVED',
+          scores: [],
+        },
       ],
     });
     let result: any = getEvaluations({ officialRecord: record, status: 'DRAFT' });
@@ -100,8 +175,20 @@ describe('getOfficialCertifications', () => {
   it('returns all certifications with no filters', () => {
     const record = makeRecord({
       certifications: [
-        { certificationId: 'c1', personId: 'p1', organisationId: 'org1', certificationFamily: 'UMPIRE', status: 'ACTIVE' },
-        { certificationId: 'c2', personId: 'p1', organisationId: 'org2', certificationFamily: 'REFEREE', status: 'EXPIRED' },
+        {
+          certificationId: 'c1',
+          personId: 'p1',
+          organisationId: 'org1',
+          certificationFamily: 'UMPIRE',
+          status: 'ACTIVE',
+        },
+        {
+          certificationId: 'c2',
+          personId: 'p1',
+          organisationId: 'org2',
+          certificationFamily: 'REFEREE',
+          status: 'EXPIRED',
+        },
       ],
     });
     let result: any = getOfficialCertifications({ officialRecord: record });
@@ -112,9 +199,30 @@ describe('getOfficialCertifications', () => {
   it('filters by certificationFamily, certificationLevel, organisationId, and activeOnly', () => {
     const record = makeRecord({
       certifications: [
-        { certificationId: 'c1', personId: 'p1', organisationId: 'org1', certificationFamily: 'UMPIRE', certificationLevel: 'WHITE_BADGE', status: 'ACTIVE' },
-        { certificationId: 'c2', personId: 'p1', organisationId: 'org1', certificationFamily: 'UMPIRE', certificationLevel: 'BRONZE_BADGE', status: 'EXPIRED' },
-        { certificationId: 'c3', personId: 'p1', organisationId: 'org2', certificationFamily: 'UMPIRE', certificationLevel: 'WHITE_BADGE', status: 'ACTIVE' },
+        {
+          certificationId: 'c1',
+          personId: 'p1',
+          organisationId: 'org1',
+          certificationFamily: 'UMPIRE',
+          certificationLevel: 'WHITE_BADGE',
+          status: 'ACTIVE',
+        },
+        {
+          certificationId: 'c2',
+          personId: 'p1',
+          organisationId: 'org1',
+          certificationFamily: 'UMPIRE',
+          certificationLevel: 'BRONZE_BADGE',
+          status: 'EXPIRED',
+        },
+        {
+          certificationId: 'c3',
+          personId: 'p1',
+          organisationId: 'org2',
+          certificationFamily: 'UMPIRE',
+          certificationLevel: 'WHITE_BADGE',
+          status: 'ACTIVE',
+        },
       ],
     });
     let result: any = getOfficialCertifications({
@@ -141,8 +249,22 @@ describe('getOfficialAssignments', () => {
   it('returns all assignments with no filters', () => {
     const record = makeRecord({
       assignments: [
-        { assignmentId: 'a1', personId: 'p1', tournamentId: 't1', roleSubtype: 'CHAIR_UMPIRE', status: 'PROPOSED', assignedDate: '2025-01-01' },
-        { assignmentId: 'a2', personId: 'p1', tournamentId: 't2', roleSubtype: 'REFEREE', status: 'COMPLETED', assignedDate: '2025-02-01' },
+        {
+          assignmentId: 'a1',
+          personId: 'p1',
+          tournamentId: 't1',
+          roleSubtype: 'CHAIR_UMPIRE',
+          status: 'PROPOSED',
+          assignedDate: '2025-01-01',
+        },
+        {
+          assignmentId: 'a2',
+          personId: 'p1',
+          tournamentId: 't2',
+          roleSubtype: 'REFEREE',
+          status: 'COMPLETED',
+          assignedDate: '2025-02-01',
+        },
       ],
     });
     let result: any = getOfficialAssignments({ officialRecord: record });
@@ -153,12 +275,38 @@ describe('getOfficialAssignments', () => {
   it('filters by tournamentId, roleSubtype, and status', () => {
     const record = makeRecord({
       assignments: [
-        { assignmentId: 'a1', personId: 'p1', tournamentId: 't1', roleSubtype: 'CHAIR_UMPIRE', status: 'COMPLETED', assignedDate: '2025-01-01' },
-        { assignmentId: 'a2', personId: 'p1', tournamentId: 't1', roleSubtype: 'REFEREE', status: 'COMPLETED', assignedDate: '2025-02-01' },
-        { assignmentId: 'a3', personId: 'p1', tournamentId: 't2', roleSubtype: 'CHAIR_UMPIRE', status: 'PROPOSED', assignedDate: '2025-03-01' },
+        {
+          assignmentId: 'a1',
+          personId: 'p1',
+          tournamentId: 't1',
+          roleSubtype: 'CHAIR_UMPIRE',
+          status: 'COMPLETED',
+          assignedDate: '2025-01-01',
+        },
+        {
+          assignmentId: 'a2',
+          personId: 'p1',
+          tournamentId: 't1',
+          roleSubtype: 'REFEREE',
+          status: 'COMPLETED',
+          assignedDate: '2025-02-01',
+        },
+        {
+          assignmentId: 'a3',
+          personId: 'p1',
+          tournamentId: 't2',
+          roleSubtype: 'CHAIR_UMPIRE',
+          status: 'PROPOSED',
+          assignedDate: '2025-03-01',
+        },
       ],
     });
-    let result: any = getOfficialAssignments({ officialRecord: record, tournamentId: 't1', roleSubtype: 'CHAIR_UMPIRE', status: 'COMPLETED' });
+    let result: any = getOfficialAssignments({
+      officialRecord: record,
+      tournamentId: 't1',
+      roleSubtype: 'CHAIR_UMPIRE',
+      status: 'COMPLETED',
+    });
     expect(result.assignments).toHaveLength(1);
     expect(result.assignments[0].assignmentId).toBe('a1');
   });
@@ -184,7 +332,15 @@ describe('getEvaluationSummary', () => {
   it('returns zero summary when no approved evaluations exist and approvedOnly is true', () => {
     const record = makeRecord({
       evaluations: [
-        { evaluationId: 'e1', evaluatorPersonId: 'ev1', subjectPersonId: 'p1', evaluationDate: '2025-06-01', overallRating: 5, status: 'DRAFT', scores: [] },
+        {
+          evaluationId: 'e1',
+          evaluatorPersonId: 'ev1',
+          subjectPersonId: 'p1',
+          evaluationDate: '2025-06-01',
+          overallRating: 5,
+          status: 'DRAFT',
+          scores: [],
+        },
       ],
     });
     let result: any = getEvaluationSummary({ officialRecord: record });
@@ -195,8 +351,24 @@ describe('getEvaluationSummary', () => {
   it('includes non-approved evaluations when approvedOnly is false', () => {
     const record = makeRecord({
       evaluations: [
-        { evaluationId: 'e1', evaluatorPersonId: 'ev1', subjectPersonId: 'p1', evaluationDate: '2025-06-01', overallRating: 4, status: 'DRAFT', scores: [] },
-        { evaluationId: 'e2', evaluatorPersonId: 'ev2', subjectPersonId: 'p1', evaluationDate: '2025-07-01', overallRating: 2, status: 'SUBMITTED', scores: [] },
+        {
+          evaluationId: 'e1',
+          evaluatorPersonId: 'ev1',
+          subjectPersonId: 'p1',
+          evaluationDate: '2025-06-01',
+          overallRating: 4,
+          status: 'DRAFT',
+          scores: [],
+        },
+        {
+          evaluationId: 'e2',
+          evaluatorPersonId: 'ev2',
+          subjectPersonId: 'p1',
+          evaluationDate: '2025-07-01',
+          overallRating: 2,
+          status: 'SUBMITTED',
+          scores: [],
+        },
       ],
     });
     let result: any = getEvaluationSummary({ officialRecord: record, approvedOnly: false });
@@ -209,9 +381,33 @@ describe('getEvaluationSummary', () => {
   it('computes average and latest from approved evaluations', () => {
     const record = makeRecord({
       evaluations: [
-        { evaluationId: 'e1', evaluatorPersonId: 'ev1', subjectPersonId: 'p1', evaluationDate: '2025-01-01', overallRating: 4, status: 'APPROVED', scores: [] },
-        { evaluationId: 'e2', evaluatorPersonId: 'ev2', subjectPersonId: 'p1', evaluationDate: '2025-06-01', overallRating: 3, status: 'APPROVED', scores: [] },
-        { evaluationId: 'e3', evaluatorPersonId: 'ev3', subjectPersonId: 'p1', evaluationDate: '2025-03-01', overallRating: 5, status: 'DRAFT', scores: [] },
+        {
+          evaluationId: 'e1',
+          evaluatorPersonId: 'ev1',
+          subjectPersonId: 'p1',
+          evaluationDate: '2025-01-01',
+          overallRating: 4,
+          status: 'APPROVED',
+          scores: [],
+        },
+        {
+          evaluationId: 'e2',
+          evaluatorPersonId: 'ev2',
+          subjectPersonId: 'p1',
+          evaluationDate: '2025-06-01',
+          overallRating: 3,
+          status: 'APPROVED',
+          scores: [],
+        },
+        {
+          evaluationId: 'e3',
+          evaluatorPersonId: 'ev3',
+          subjectPersonId: 'p1',
+          evaluationDate: '2025-03-01',
+          overallRating: 5,
+          status: 'DRAFT',
+          scores: [],
+        },
       ],
     });
     let result: any = getEvaluationSummary({ officialRecord: record });
@@ -274,9 +470,7 @@ describe('getEvaluationSummary', () => {
           overallRating: 2,
           status: 'APPROVED',
           policyName: policy.policyName,
-          scores: [
-            { criterionId: 'rules_knowledge', sectionId: 'pre_match', value: 2 },
-          ],
+          scores: [{ criterionId: 'rules_knowledge', sectionId: 'pre_match', value: 2 }],
         },
       ],
     });
@@ -288,7 +482,16 @@ describe('getEvaluationSummary', () => {
     const record = makeRecord({
       evaluationPolicies: [],
       evaluations: [
-        { evaluationId: 'e1', evaluatorPersonId: 'ev1', subjectPersonId: 'p1', evaluationDate: '2025-06-01', overallRating: 4, status: 'APPROVED', policyName: 'NONEXISTENT', scores: [] },
+        {
+          evaluationId: 'e1',
+          evaluatorPersonId: 'ev1',
+          subjectPersonId: 'p1',
+          evaluationDate: '2025-06-01',
+          overallRating: 4,
+          status: 'APPROVED',
+          policyName: 'NONEXISTENT',
+          scores: [],
+        },
       ],
     });
     let result: any = getEvaluationSummary({ officialRecord: record, policyName: 'NONEXISTENT' });
@@ -366,10 +569,22 @@ describe('getOfficialEligibility', () => {
   it('eligible when active cert exists with no suspension', () => {
     const record = makeRecord({
       certifications: [
-        { certificationId: 'c1', personId: 'p1', organisationId: 'org1', certificationFamily: 'UMPIRE', status: 'ACTIVE', validFrom: '2025-01-01', validUntil: '2027-12-31' },
+        {
+          certificationId: 'c1',
+          personId: 'p1',
+          organisationId: 'org1',
+          certificationFamily: 'UMPIRE',
+          status: 'ACTIVE',
+          validFrom: '2025-01-01',
+          validUntil: '2027-12-31',
+        },
       ],
     });
-    let result: any = getOfficialEligibility({ officialRecord: record, certificationFamily: 'UMPIRE', asOfDate: '2026-06-01' });
+    let result: any = getOfficialEligibility({
+      officialRecord: record,
+      certificationFamily: 'UMPIRE',
+      asOfDate: '2026-06-01',
+    });
     expect(result.eligible).toBe(true);
     expect(result.reasons).toHaveLength(0);
   });
@@ -377,20 +592,33 @@ describe('getOfficialEligibility', () => {
   it('not eligible when suspended', () => {
     const record = makeRecord({
       certifications: [
-        { certificationId: 'c1', personId: 'p1', organisationId: 'org1', certificationFamily: 'UMPIRE', status: 'ACTIVE' },
+        {
+          certificationId: 'c1',
+          personId: 'p1',
+          organisationId: 'org1',
+          certificationFamily: 'UMPIRE',
+          status: 'ACTIVE',
+        },
       ],
-      suspensions: [
-        { suspensionId: 's1', personId: 'p1', suspendedFrom: '2026-01-01', suspendedUntil: '2026-12-31' },
-      ],
+      suspensions: [{ suspensionId: 's1', personId: 'p1', suspendedFrom: '2026-01-01', suspendedUntil: '2026-12-31' }],
     });
-    let result: any = getOfficialEligibility({ officialRecord: record, certificationFamily: 'UMPIRE', asOfDate: '2026-06-01' });
+    let result: any = getOfficialEligibility({
+      officialRecord: record,
+      certificationFamily: 'UMPIRE',
+      asOfDate: '2026-06-01',
+    });
     expect(result.eligible).toBe(false);
     expect(result.reasons).toContain('Official has active suspension(s)');
   });
 
   it('not eligible when no matching certification', () => {
     const record = makeRecord();
-    let result: any = getOfficialEligibility({ officialRecord: record, certificationFamily: 'UMPIRE', certificationLevel: 'GOLD_BADGE', asOfDate: '2026-01-01' });
+    let result: any = getOfficialEligibility({
+      officialRecord: record,
+      certificationFamily: 'UMPIRE',
+      certificationLevel: 'GOLD_BADGE',
+      asOfDate: '2026-01-01',
+    });
     expect(result.eligible).toBe(false);
     expect(result.reasons.some((r: string) => r.includes('No active UMPIRE GOLD_BADGE certification'))).toBe(true);
   });
@@ -398,10 +626,21 @@ describe('getOfficialEligibility', () => {
   it('not eligible when matching cert is expired', () => {
     const record = makeRecord({
       certifications: [
-        { certificationId: 'c1', personId: 'p1', organisationId: 'org1', certificationFamily: 'UMPIRE', status: 'ACTIVE', validUntil: '2020-12-31' },
+        {
+          certificationId: 'c1',
+          personId: 'p1',
+          organisationId: 'org1',
+          certificationFamily: 'UMPIRE',
+          status: 'ACTIVE',
+          validUntil: '2020-12-31',
+        },
       ],
     });
-    let result: any = getOfficialEligibility({ officialRecord: record, certificationFamily: 'UMPIRE', asOfDate: '2026-01-01' });
+    let result: any = getOfficialEligibility({
+      officialRecord: record,
+      certificationFamily: 'UMPIRE',
+      asOfDate: '2026-01-01',
+    });
     expect(result.eligible).toBe(false);
     expect(result.reasons).toContain('Matching certification(s) are expired or not yet valid');
   });
@@ -409,10 +648,21 @@ describe('getOfficialEligibility', () => {
   it('not eligible when cert is not yet valid', () => {
     const record = makeRecord({
       certifications: [
-        { certificationId: 'c1', personId: 'p1', organisationId: 'org1', certificationFamily: 'UMPIRE', status: 'ACTIVE', validFrom: '2028-01-01' },
+        {
+          certificationId: 'c1',
+          personId: 'p1',
+          organisationId: 'org1',
+          certificationFamily: 'UMPIRE',
+          status: 'ACTIVE',
+          validFrom: '2028-01-01',
+        },
       ],
     });
-    let result: any = getOfficialEligibility({ officialRecord: record, certificationFamily: 'UMPIRE', asOfDate: '2026-01-01' });
+    let result: any = getOfficialEligibility({
+      officialRecord: record,
+      certificationFamily: 'UMPIRE',
+      asOfDate: '2026-01-01',
+    });
     expect(result.eligible).toBe(false);
     expect(result.reasons).toContain('Matching certification(s) are expired or not yet valid');
   });
@@ -420,10 +670,21 @@ describe('getOfficialEligibility', () => {
   it('filters certifications by organisationId', () => {
     const record = makeRecord({
       certifications: [
-        { certificationId: 'c1', personId: 'p1', organisationId: 'org-other', certificationFamily: 'UMPIRE', status: 'ACTIVE' },
+        {
+          certificationId: 'c1',
+          personId: 'p1',
+          organisationId: 'org-other',
+          certificationFamily: 'UMPIRE',
+          status: 'ACTIVE',
+        },
       ],
     });
-    let result: any = getOfficialEligibility({ officialRecord: record, certificationFamily: 'UMPIRE', organisationId: 'org1', asOfDate: '2026-01-01' });
+    let result: any = getOfficialEligibility({
+      officialRecord: record,
+      certificationFamily: 'UMPIRE',
+      organisationId: 'org1',
+      asOfDate: '2026-01-01',
+    });
     expect(result.eligible).toBe(false);
     expect(result.reasons.some((r: string) => r.includes('No active UMPIRE certification'))).toBe(true);
   });
@@ -431,7 +692,14 @@ describe('getOfficialEligibility', () => {
   it('checks minimumAssignments requirement', () => {
     const record = makeRecord({
       certifications: [
-        { certificationId: 'c1', personId: 'p1', organisationId: 'org1', certificationFamily: 'UMPIRE', certificationLevel: 'BRONZE_BADGE', status: 'ACTIVE' },
+        {
+          certificationId: 'c1',
+          personId: 'p1',
+          organisationId: 'org1',
+          certificationFamily: 'UMPIRE',
+          certificationLevel: 'BRONZE_BADGE',
+          status: 'ACTIVE',
+        },
       ],
       certificationRequirements: [
         {
@@ -444,10 +712,22 @@ describe('getOfficialEligibility', () => {
         },
       ],
       assignments: [
-        { assignmentId: 'a1', personId: 'p1', tournamentId: 't1', roleSubtype: 'CHAIR_UMPIRE', status: 'COMPLETED', assignedDate: '2025-01-01' },
+        {
+          assignmentId: 'a1',
+          personId: 'p1',
+          tournamentId: 't1',
+          roleSubtype: 'CHAIR_UMPIRE',
+          status: 'COMPLETED',
+          assignedDate: '2025-01-01',
+        },
       ],
     });
-    let result: any = getOfficialEligibility({ officialRecord: record, certificationFamily: 'UMPIRE', certificationLevel: 'BRONZE_BADGE', asOfDate: '2026-01-01' });
+    let result: any = getOfficialEligibility({
+      officialRecord: record,
+      certificationFamily: 'UMPIRE',
+      certificationLevel: 'BRONZE_BADGE',
+      asOfDate: '2026-01-01',
+    });
     expect(result.eligible).toBe(false);
     expect(result.reasons.some((r: string) => r.includes('Insufficient completed assignments: 1/10'))).toBe(true);
   });
@@ -455,7 +735,14 @@ describe('getOfficialEligibility', () => {
   it('checks minimumEvaluationScore requirement — no approved evaluations', () => {
     const record = makeRecord({
       certifications: [
-        { certificationId: 'c1', personId: 'p1', organisationId: 'org1', certificationFamily: 'UMPIRE', certificationLevel: 'SILVER_BADGE', status: 'ACTIVE' },
+        {
+          certificationId: 'c1',
+          personId: 'p1',
+          organisationId: 'org1',
+          certificationFamily: 'UMPIRE',
+          certificationLevel: 'SILVER_BADGE',
+          status: 'ACTIVE',
+        },
       ],
       certificationRequirements: [
         {
@@ -468,7 +755,12 @@ describe('getOfficialEligibility', () => {
         },
       ],
     });
-    let result: any = getOfficialEligibility({ officialRecord: record, certificationFamily: 'UMPIRE', certificationLevel: 'SILVER_BADGE', asOfDate: '2026-01-01' });
+    let result: any = getOfficialEligibility({
+      officialRecord: record,
+      certificationFamily: 'UMPIRE',
+      certificationLevel: 'SILVER_BADGE',
+      asOfDate: '2026-01-01',
+    });
     expect(result.eligible).toBe(false);
     expect(result.reasons).toContain('No approved evaluations');
   });
@@ -476,7 +768,14 @@ describe('getOfficialEligibility', () => {
   it('checks minimumEvaluationScore requirement — score below minimum', () => {
     const record = makeRecord({
       certifications: [
-        { certificationId: 'c1', personId: 'p1', organisationId: 'org1', certificationFamily: 'UMPIRE', certificationLevel: 'SILVER_BADGE', status: 'ACTIVE' },
+        {
+          certificationId: 'c1',
+          personId: 'p1',
+          organisationId: 'org1',
+          certificationFamily: 'UMPIRE',
+          certificationLevel: 'SILVER_BADGE',
+          status: 'ACTIVE',
+        },
       ],
       certificationRequirements: [
         {
@@ -489,10 +788,23 @@ describe('getOfficialEligibility', () => {
         },
       ],
       evaluations: [
-        { evaluationId: 'e1', evaluatorPersonId: 'ev1', subjectPersonId: 'p1', evaluationDate: '2025-06-01', overallRating: 3, status: 'APPROVED', scores: [] },
+        {
+          evaluationId: 'e1',
+          evaluatorPersonId: 'ev1',
+          subjectPersonId: 'p1',
+          evaluationDate: '2025-06-01',
+          overallRating: 3,
+          status: 'APPROVED',
+          scores: [],
+        },
       ],
     });
-    let result: any = getOfficialEligibility({ officialRecord: record, certificationFamily: 'UMPIRE', certificationLevel: 'SILVER_BADGE', asOfDate: '2026-01-01' });
+    let result: any = getOfficialEligibility({
+      officialRecord: record,
+      certificationFamily: 'UMPIRE',
+      certificationLevel: 'SILVER_BADGE',
+      asOfDate: '2026-01-01',
+    });
     expect(result.eligible).toBe(false);
     expect(result.reasons.some((r: string) => r.includes('below minimum'))).toBe(true);
   });
@@ -500,7 +812,14 @@ describe('getOfficialEligibility', () => {
   it('checks prerequisiteLevels requirement', () => {
     const record = makeRecord({
       certifications: [
-        { certificationId: 'c1', personId: 'p1', organisationId: 'org1', certificationFamily: 'UMPIRE', certificationLevel: 'GOLD_BADGE', status: 'ACTIVE' },
+        {
+          certificationId: 'c1',
+          personId: 'p1',
+          organisationId: 'org1',
+          certificationFamily: 'UMPIRE',
+          certificationLevel: 'GOLD_BADGE',
+          status: 'ACTIVE',
+        },
       ],
       certificationRequirements: [
         {
@@ -513,7 +832,12 @@ describe('getOfficialEligibility', () => {
         },
       ],
     });
-    let result: any = getOfficialEligibility({ officialRecord: record, certificationFamily: 'UMPIRE', certificationLevel: 'GOLD_BADGE', asOfDate: '2026-01-01' });
+    let result: any = getOfficialEligibility({
+      officialRecord: record,
+      certificationFamily: 'UMPIRE',
+      certificationLevel: 'GOLD_BADGE',
+      asOfDate: '2026-01-01',
+    });
     expect(result.eligible).toBe(false);
     expect(result.reasons).toContain('Missing prerequisite certification level: SILVER_BADGE');
   });
@@ -521,8 +845,22 @@ describe('getOfficialEligibility', () => {
   it('satisfies prerequisiteLevels when an expired prereq cert exists', () => {
     const record = makeRecord({
       certifications: [
-        { certificationId: 'c1', personId: 'p1', organisationId: 'org1', certificationFamily: 'UMPIRE', certificationLevel: 'GOLD_BADGE', status: 'ACTIVE' },
-        { certificationId: 'c2', personId: 'p1', organisationId: 'org1', certificationFamily: 'UMPIRE', certificationLevel: 'SILVER_BADGE', status: 'EXPIRED' },
+        {
+          certificationId: 'c1',
+          personId: 'p1',
+          organisationId: 'org1',
+          certificationFamily: 'UMPIRE',
+          certificationLevel: 'GOLD_BADGE',
+          status: 'ACTIVE',
+        },
+        {
+          certificationId: 'c2',
+          personId: 'p1',
+          organisationId: 'org1',
+          certificationFamily: 'UMPIRE',
+          certificationLevel: 'SILVER_BADGE',
+          status: 'EXPIRED',
+        },
       ],
       certificationRequirements: [
         {
@@ -535,7 +873,12 @@ describe('getOfficialEligibility', () => {
         },
       ],
     });
-    let result: any = getOfficialEligibility({ officialRecord: record, certificationFamily: 'UMPIRE', certificationLevel: 'GOLD_BADGE', asOfDate: '2026-01-01' });
+    let result: any = getOfficialEligibility({
+      officialRecord: record,
+      certificationFamily: 'UMPIRE',
+      certificationLevel: 'GOLD_BADGE',
+      asOfDate: '2026-01-01',
+    });
     expect(result.reasons.every((r: string) => !r.includes('prerequisite'))).toBe(true);
   });
 });

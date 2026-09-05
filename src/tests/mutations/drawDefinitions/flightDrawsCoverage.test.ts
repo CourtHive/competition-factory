@@ -5,10 +5,7 @@ import { expect, test } from 'vitest';
 import { ROUND_ROBIN_WITH_PLAYOFF } from '@Constants/drawDefinitionConstants';
 
 test('generate tournament with flights and seeding covers seedsCount path', () => {
-  const {
-    drawIds,
-    tournamentRecord,
-  } = mocksEngine.generateTournamentRecord({
+  const { drawIds, tournamentRecord } = mocksEngine.generateTournamentRecord({
     eventProfiles: [
       {
         eventName: 'Seeded Event',

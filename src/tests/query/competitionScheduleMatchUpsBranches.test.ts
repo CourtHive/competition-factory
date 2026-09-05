@@ -112,20 +112,22 @@ describe('competitionScheduleMatchUps - uncovered branches', () => {
     const courts = venue.courts || [];
 
     // Schedule matchUps
-    matchUps.filter((m) => m.roundNumber === 1).forEach((matchUp, i) => {
-      if (courts[i]) {
-        tournamentEngine.addMatchUpScheduleItems({
-          matchUpId: matchUp.matchUpId,
-          drawId: matchUp.drawId,
-          schedule: {
-            scheduledDate: startDate,
-            scheduledTime: `${startDate}T${10 + i}:00`,
-            courtId: courts[i].courtId,
-            venueId: venue.venueId,
-          },
-        });
-      }
-    });
+    matchUps
+      .filter((m) => m.roundNumber === 1)
+      .forEach((matchUp, i) => {
+        if (courts[i]) {
+          tournamentEngine.addMatchUpScheduleItems({
+            matchUpId: matchUp.matchUpId,
+            drawId: matchUp.drawId,
+            schedule: {
+              scheduledDate: startDate,
+              scheduledTime: `${startDate}T${10 + i}:00`,
+              courtId: courts[i].courtId,
+              venueId: venue.venueId,
+            },
+          });
+        }
+      });
 
     const resultSorted = tournamentEngine.competitionScheduleMatchUps({
       matchUpFilters: { scheduledDate: startDate },

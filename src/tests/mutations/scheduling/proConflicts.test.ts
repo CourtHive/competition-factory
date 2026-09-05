@@ -749,18 +749,14 @@ describe('proConflicts - Comprehensive Conflict Detection', () => {
     // Without flag: no CONFLICT_POSITION_LINK
     const resultNoFlag = tournamentEngine.proConflicts({ matchUps });
     const allIssuesNoFlag = Object.values(resultNoFlag.rowIssues).flat() as any[];
-    const positionLinkIssuesNoFlag = allIssuesNoFlag.filter(
-      (issue) => issue.issueType === CONFLICT_POSITION_LINK,
-    );
+    const positionLinkIssuesNoFlag = allIssuesNoFlag.filter((issue) => issue.issueType === CONFLICT_POSITION_LINK);
     expect(positionLinkIssuesNoFlag.length).toEqual(0);
 
     // With flag: should detect position link warnings for the playoff matchUp
     // whose RR source matchUps are not on the grid
     const resultWithFlag = tournamentEngine.proConflicts({ matchUps, useDeepDependencies: true });
     const allIssuesWithFlag = Object.values(resultWithFlag.rowIssues).flat() as any[];
-    const positionLinkIssues = allIssuesWithFlag.filter(
-      (issue) => issue.issueType === CONFLICT_POSITION_LINK,
-    );
+    const positionLinkIssues = allIssuesWithFlag.filter((issue) => issue.issueType === CONFLICT_POSITION_LINK);
 
     // The playoff matchUp depends on RR matchUps via position links,
     // and those RR matchUps are not scheduled, so we should get a warning

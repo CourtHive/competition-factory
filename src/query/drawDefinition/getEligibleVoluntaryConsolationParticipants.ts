@@ -93,14 +93,15 @@ export function getEligibleVoluntaryConsolationParticipants({
     event,
   });
 
-  const { participantMatchUps, losingParticipants, matchUpParticipants, participantWins } =
-    buildParticipantMatchUpData({
+  const { participantMatchUps, losingParticipants, matchUpParticipants, participantWins } = buildParticipantMatchUpData(
+    {
       excludedMatchUpStatuses: resolvedPolicy.excludedMatchUpStatuses,
       finishingRoundLimit: resolvedPolicy.finishingRoundLimit,
       roundNumberLimit: resolvedPolicy.roundNumberLimit,
       requirePlay: resolvedPolicy.requirePlay,
       matchUps,
-    });
+    },
+  );
 
   const losingParticipantIds = Object.keys(losingParticipants);
 
@@ -140,7 +141,6 @@ export function getEligibleVoluntaryConsolationParticipants({
 
   return { eligibleParticipants, losingParticipantIds, ...SUCCESS };
 }
-
 
 function isParticipantEligible({
   voluntaryConsolationEntryIds,
@@ -295,8 +295,7 @@ function processMatchUpSides({
       if (matchUp.matchUpStatus === DOUBLE_WALKOVER && !requirePlay) {
         losingParticipants[participantId] = side.participant;
         if (!participantMatchUps[participantId]) participantMatchUps[participantId] = 0;
-        if (!matchUp.matchUpStatus || !excludedSet.has(matchUp.matchUpStatus))
-          participantMatchUps[participantId] += 1;
+        if (!matchUp.matchUpStatus || !excludedSet.has(matchUp.matchUpStatus)) participantMatchUps[participantId] += 1;
       }
     }
   });
@@ -305,8 +304,7 @@ function processMatchUpSides({
     const participantId = losingSide.participant.participantId;
     losingParticipants[participantId] = losingSide.participant;
     if (!participantMatchUps[participantId]) participantMatchUps[participantId] = 0;
-    if (matchUp.matchUpStatus && !excludedSet.has(matchUp.matchUpStatus))
-      participantMatchUps[participantId] += 1;
+    if (matchUp.matchUpStatus && !excludedSet.has(matchUp.matchUpStatus)) participantMatchUps[participantId] += 1;
   }
 
   if (winningSide?.participant) {
@@ -314,8 +312,7 @@ function processMatchUpSides({
     if (!participantWins[participantId]) participantWins[participantId] = 0;
     participantWins[participantId] += 1;
     if (!participantMatchUps[participantId]) participantMatchUps[participantId] = 0;
-    if (matchUp.matchUpStatus && !excludedSet.has(matchUp.matchUpStatus))
-      participantMatchUps[participantId] += 1;
+    if (matchUp.matchUpStatus && !excludedSet.has(matchUp.matchUpStatus)) participantMatchUps[participantId] += 1;
   }
 }
 

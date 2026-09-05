@@ -134,9 +134,7 @@ test('modifyCollectionDefinition on a TEAM draw modifies the tie format', () => 
 
   // Verify the modification took effect
   const { drawDefinition } = tournamentEngine.getEvent({ drawId });
-  const definition = drawDefinition.tieFormat.collectionDefinitions.find(
-    (cd) => cd.collectionId === collectionId,
-  );
+  const definition = drawDefinition.tieFormat.collectionDefinitions.find((cd) => cd.collectionId === collectionId);
   expect(definition.collectionName).toEqual('Modified Doubles');
 
   // Modify matchUpValue - exercises value modification path

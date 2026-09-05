@@ -14,8 +14,16 @@ import { countries } from '@Fixtures/countryData';
 
 export function generatePersons(params?) {
   let count = params?.count || 1;
-  const { personExtensions, consideredDate, isMock = true, gendersCount, personData, random, category, sex } =
-    params ?? {};
+  const {
+    personExtensions,
+    consideredDate,
+    isMock = true,
+    gendersCount,
+    personData,
+    random,
+    category,
+    sex,
+  } = params ?? {};
   if (Number.isNaN(Number(count))) return { error: INVALID_VALUES };
 
   const maleCount = gendersCount?.[MALE] || (isMale(sex) && count) || 0;
@@ -110,7 +118,8 @@ export function generatePersons(params?) {
     generateRange(0, count - shuffledPersons.length).forEach(() => {
       const personSex = sex || randomMember([MALE, FEMALE], random);
       const nationalityCode = randomMember(nationalityCodes, random);
-      const firstName = personSex === MALE ? randomMember(maleFirstNames, random) : randomMember(femaleFirstNames, random);
+      const firstName =
+        personSex === MALE ? randomMember(maleFirstNames, random) : randomMember(femaleFirstNames, random);
       const lastName = personSex === MALE ? randomMember(maleLastNames, random) : randomMember(femaleLastNames, random);
       const person = {
         firstName,

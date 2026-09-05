@@ -84,12 +84,17 @@ export function getPairedPreviousMatchUpIsDoubleExit(params) {
   pushGlobalLog({
     method: 'getPairedPreviousMatchUpIsDoubleExit',
     color: pairedPreviousMatchUpIsDoubleExit ? 'brightred' : 'brightgreen',
-    keyColors: { pairedMatchUpId: 'brightcyan', isDoubleExit: pairedPreviousMatchUpIsDoubleExit ? 'brightred' : 'brightgreen' },
+    keyColors: {
+      pairedMatchUpId: 'brightcyan',
+      isDoubleExit: pairedPreviousMatchUpIsDoubleExit ? 'brightred' : 'brightgreen',
+    },
     sourceRoundPosition,
     offset,
     pairedRoundPosition,
     pairedMatchUpId: pairedPreviousMatchUp?.matchUpId,
-    pairedRound: pairedPreviousMatchUp ? [pairedPreviousMatchUp.roundNumber, pairedPreviousMatchUp.roundPosition] : undefined,
+    pairedRound: pairedPreviousMatchUp
+      ? [pairedPreviousMatchUp.roundNumber, pairedPreviousMatchUp.roundPosition]
+      : undefined,
     pairedStatus: pairedPreviousMatchUpStatus,
     isDoubleExit: pairedPreviousMatchUpIsDoubleExit,
   });

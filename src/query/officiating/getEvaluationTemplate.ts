@@ -12,11 +12,7 @@ type GetEvaluationTemplateArgs = {
   evaluationPolicy?: EvaluationPolicy;
 };
 
-export function getEvaluationTemplate({
-  officialRecord,
-  policyName,
-  evaluationPolicy,
-}: GetEvaluationTemplateArgs): {
+export function getEvaluationTemplate({ officialRecord, policyName, evaluationPolicy }: GetEvaluationTemplateArgs): {
   error?: any;
   success?: boolean;
   fields?: EvaluationFormField[];
