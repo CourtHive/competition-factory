@@ -276,9 +276,7 @@ function processPairParticipants({
   addPartner,
   eventId,
 }) {
-  individualParticipantIds.forEach(
-    (id) => participantMap[id] && addMatchUp(id, opponentParticipantId),
-  );
+  individualParticipantIds.forEach((id) => participantMap[id] && addMatchUp(id, opponentParticipantId));
   individualParticipantIds.forEach((id, i) => {
     const partnerParticipantId = individualParticipantIds[1 - i];
     const participant = participantMap[id];

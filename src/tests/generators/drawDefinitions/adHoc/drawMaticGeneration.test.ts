@@ -6,7 +6,12 @@ import mocksEngine from '@Assemblies/engines/mock';
 import { expect, it, test } from 'vitest';
 
 // constants
-import { EXISTING_MATCHUP_ID, INVALID_DRAW_DEFINITION, INVALID_VALUES, MISSING_PARTICIPANT_IDS } from '@Constants/errorConditionConstants';
+import {
+  EXISTING_MATCHUP_ID,
+  INVALID_DRAW_DEFINITION,
+  INVALID_VALUES,
+  MISSING_PARTICIPANT_IDS,
+} from '@Constants/errorConditionConstants';
 import { INDIVIDUAL, PAIR } from '@Constants/participantConstants';
 import { DOUBLES, SINGLES } from '@Constants/eventConstants';
 import { AD_HOC } from '@Constants/drawDefinitionConstants';

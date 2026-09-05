@@ -328,9 +328,7 @@ describe('modifyCollectionDefinition additional branch coverage', () => {
 
     // use the first collection (Singles) which has no gender set
     const { event } = tournamentEngine.getEvent({ drawId });
-    const targetCollection = event.tieFormat.collectionDefinitions.find(
-      (def) => def.matchUpType === SINGLES_MATCHUP,
-    );
+    const targetCollection = event.tieFormat.collectionDefinitions.find((def) => def.matchUpType === SINGLES_MATCHUP);
     expect(targetCollection).toBeDefined();
     const collectionId = targetCollection.collectionId;
 

@@ -14,13 +14,11 @@ export function noNulls(arr) {
 export function shuffleArray(arr, random?: () => number) {
   if (!Array.isArray(arr)) return [];
   const rng = random ?? Math.random;
-  return (
-    arr
+  return arr
 
-      .map((a) => [rng(), a])
-      .sort((a, b) => a[0] - b[0])
-      .map((a) => a[1])
-  );
+    .map((a) => [rng(), a])
+    .sort((a, b) => a[0] - b[0])
+    .map((a) => a[1]);
 }
 
 export function numericSortValue(v) {
@@ -66,12 +64,10 @@ export function uniqueValues(arr) {
 }
 export function randomPop(array, random?: () => number) {
   return Array.isArray(array) && array.length
-    ?
-      array.splice(Math.floor((random ?? Math.random)() * array.length), 1)[0]
+    ? array.splice(Math.floor((random ?? Math.random)() * array.length), 1)[0]
     : undefined;
 }
 export function randomMember(arr, random?: () => number) {
-
   const index = Math.floor((random ?? Math.random)() * arr.length);
   return arr[index];
 }

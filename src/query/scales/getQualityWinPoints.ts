@@ -167,9 +167,7 @@ function evaluateMatchUpForQualityWin({
 
   if (!opponentRank) return undefined;
 
-  const matchingRange = rankingRanges.find(
-    (r) => opponentRank >= r.rankRange[0] && opponentRank <= r.rankRange[1],
-  );
+  const matchingRange = rankingRanges.find((r) => opponentRank >= r.rankRange[0] && opponentRank <= r.rankRange[1]);
 
   if (!matchingRange) return undefined;
 

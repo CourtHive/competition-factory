@@ -96,6 +96,14 @@ jobs:
       - name: verify:lint
         run: pnpm verify:lint
 
+      # Scoped to the TS/JS sources the repo actually keeps formatted. The
+      # .tods.json fixtures under src/tests are deliberately OUT of scope:
+      # reformatting them is a ~40k-line diff across large test corpora and
+      # buries their blame for no benefit. Narrowed `format` to match, so
+      # `pnpm format` and this gate can never disagree about the target set.
+      - name: verify:format
+        run: pnpm verify:format
+
       - name: verify:attr-audit
         run: pnpm verify:attr-audit
 

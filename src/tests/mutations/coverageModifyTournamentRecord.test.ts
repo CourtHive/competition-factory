@@ -125,9 +125,7 @@ describe('modifyTournamentRecord coverage - schedulingProfile with autoSchedule'
 
 describe('modifyTournamentRecord coverage - eventId targeting', () => {
   it('targets an existing event by eventId and adds draws with DOUBLES type', () => {
-    const eventProfiles: any[] = [
-      { eventName: 'Doubles A', eventType: DOUBLES, gender: MALE },
-    ];
+    const eventProfiles: any[] = [{ eventName: 'Doubles A', eventType: DOUBLES, gender: MALE }];
     const { tournamentRecord, eventIds } = mocksEngine.generateTournamentRecord({
       participantsProfile: { participantsCount: 0 },
       eventProfiles,
@@ -215,9 +213,7 @@ describe('modifyTournamentRecord coverage - eventIndex targeting and gender prop
 
 describe('modifyTournamentRecord coverage - mixed existing and new events', () => {
   it('handles a mix of existing events (by eventId) and new events in one call', () => {
-    const eventProfiles: any[] = [
-      { eventName: 'Existing Singles', eventType: SINGLES, gender: MALE },
-    ];
+    const eventProfiles: any[] = [{ eventName: 'Existing Singles', eventType: SINGLES, gender: MALE }];
     const { tournamentRecord, eventIds } = mocksEngine.generateTournamentRecord({
       participantsProfile: { participantsCount: 0 },
       eventProfiles,

@@ -1,6 +1,6 @@
 /**
  * Tests for validateSetScore with NoAD property from parsed sets
- * 
+ *
  * Tests the fix where validateSetScore checks set.NoAD property
  * that was set by parseScoreString, not just the format's NoAD
  */
@@ -84,7 +84,7 @@ describe('validateSetScore - NoAD property from parseScoreString', () => {
 
     it('should accept 1-0 for all sets in SET3-S:TB1NOAD', () => {
       const format = 'SET3-S:TB1NOAD';
-      
+
       for (let setNumber = 1; setNumber <= 3; setNumber++) {
         const set = {
           side1Score: setNumber % 2 === 1 ? 1 : 0,
@@ -175,7 +175,7 @@ describe('validateSetScore - NoAD property from parseScoreString', () => {
       // Note: This will only work if the format itself has NoAD in tiebreakSet
       // For now, this documents the expected behavior
       const result = validateSetScore(set, format, false, false);
-      
+
       // The format parser should set NoAD on the format
       // If not, this will fail and that's okay - it shows we need format-level support
       expect(result.isValid).toBe(true);
@@ -276,7 +276,7 @@ describe('validateSetScore - Integration with parseScoreString flow', () => {
       },
     ];
 
-    parsedSets.forEach(set => {
+    parsedSets.forEach((set) => {
       const result = validateSetScore(set, format, false, false);
       expect(result.isValid).toBe(true);
     });

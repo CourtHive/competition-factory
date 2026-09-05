@@ -127,9 +127,7 @@ describe('removeCollectionDefinition branch coverage', () => {
     }).matchUps;
 
     const nonTargetCollection = event.tieFormat.collectionDefinitions[1];
-    const tieMatchUp = matchUps[0].tieMatchUps.find(
-      (m) => m.collectionId === nonTargetCollection.collectionId,
-    );
+    const tieMatchUp = matchUps[0].tieMatchUps.find((m) => m.collectionId === nonTargetCollection.collectionId);
 
     let result: any = tournamentEngine.setMatchUpStatus({
       matchUpId: tieMatchUp.matchUpId,
@@ -258,9 +256,7 @@ describe('modifyCollectionDefinition branch coverage', () => {
     tournamentEngine.setState(tournamentRecord);
 
     const { event } = tournamentEngine.getEvent({ drawId });
-    const singlesCollection = event.tieFormat.collectionDefinitions.find(
-      (cd) => cd.matchUpType === 'SINGLES',
-    );
+    const singlesCollection = event.tieFormat.collectionDefinitions.find((cd) => cd.matchUpType === 'SINGLES');
 
     let result: any = tournamentEngine.modifyCollectionDefinition({
       collectionId: singlesCollection.collectionId,

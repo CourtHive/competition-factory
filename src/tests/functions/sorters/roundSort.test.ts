@@ -5,9 +5,33 @@ import { QUALIFYING, MAIN, CONSOLATION } from '@Constants/drawDefinitionConstant
 describe('roundSort', () => {
   it('sorts by eventName first', () => {
     const rounds = [
-      { eventName: 'Event C', eventId: 'e1', stage: MAIN, matchUpsCount: 4, stageSequence: 1, roundNumber: 1, minFinishingSum: 2 },
-      { eventName: 'Event A', eventId: 'e2', stage: MAIN, matchUpsCount: 4, stageSequence: 1, roundNumber: 1, minFinishingSum: 2 },
-      { eventName: 'Event B', eventId: 'e3', stage: MAIN, matchUpsCount: 4, stageSequence: 1, roundNumber: 1, minFinishingSum: 2 },
+      {
+        eventName: 'Event C',
+        eventId: 'e1',
+        stage: MAIN,
+        matchUpsCount: 4,
+        stageSequence: 1,
+        roundNumber: 1,
+        minFinishingSum: 2,
+      },
+      {
+        eventName: 'Event A',
+        eventId: 'e2',
+        stage: MAIN,
+        matchUpsCount: 4,
+        stageSequence: 1,
+        roundNumber: 1,
+        minFinishingSum: 2,
+      },
+      {
+        eventName: 'Event B',
+        eventId: 'e3',
+        stage: MAIN,
+        matchUpsCount: 4,
+        stageSequence: 1,
+        roundNumber: 1,
+        minFinishingSum: 2,
+      },
     ];
 
     rounds.sort(roundSort);
@@ -19,9 +43,33 @@ describe('roundSort', () => {
 
   it('sorts by eventId when eventName is equal', () => {
     const rounds = [
-      { eventName: 'Event A', eventId: 'e3', stage: MAIN, matchUpsCount: 4, stageSequence: 1, roundNumber: 1, minFinishingSum: 2 },
-      { eventName: 'Event A', eventId: 'e1', stage: MAIN, matchUpsCount: 4, stageSequence: 1, roundNumber: 1, minFinishingSum: 2 },
-      { eventName: 'Event A', eventId: 'e2', stage: MAIN, matchUpsCount: 4, stageSequence: 1, roundNumber: 1, minFinishingSum: 2 },
+      {
+        eventName: 'Event A',
+        eventId: 'e3',
+        stage: MAIN,
+        matchUpsCount: 4,
+        stageSequence: 1,
+        roundNumber: 1,
+        minFinishingSum: 2,
+      },
+      {
+        eventName: 'Event A',
+        eventId: 'e1',
+        stage: MAIN,
+        matchUpsCount: 4,
+        stageSequence: 1,
+        roundNumber: 1,
+        minFinishingSum: 2,
+      },
+      {
+        eventName: 'Event A',
+        eventId: 'e2',
+        stage: MAIN,
+        matchUpsCount: 4,
+        stageSequence: 1,
+        roundNumber: 1,
+        minFinishingSum: 2,
+      },
     ];
 
     rounds.sort(roundSort);
@@ -33,9 +81,33 @@ describe('roundSort', () => {
 
   it('sorts by stage when eventName and eventId are equal', () => {
     const rounds = [
-      { eventName: 'Event A', eventId: 'e1', stage: CONSOLATION, matchUpsCount: 4, stageSequence: 1, roundNumber: 1, minFinishingSum: 2 },
-      { eventName: 'Event A', eventId: 'e1', stage: QUALIFYING, matchUpsCount: 4, stageSequence: 1, roundNumber: 1, minFinishingSum: 2 },
-      { eventName: 'Event A', eventId: 'e1', stage: MAIN, matchUpsCount: 4, stageSequence: 1, roundNumber: 1, minFinishingSum: 2 },
+      {
+        eventName: 'Event A',
+        eventId: 'e1',
+        stage: CONSOLATION,
+        matchUpsCount: 4,
+        stageSequence: 1,
+        roundNumber: 1,
+        minFinishingSum: 2,
+      },
+      {
+        eventName: 'Event A',
+        eventId: 'e1',
+        stage: QUALIFYING,
+        matchUpsCount: 4,
+        stageSequence: 1,
+        roundNumber: 1,
+        minFinishingSum: 2,
+      },
+      {
+        eventName: 'Event A',
+        eventId: 'e1',
+        stage: MAIN,
+        matchUpsCount: 4,
+        stageSequence: 1,
+        roundNumber: 1,
+        minFinishingSum: 2,
+      },
     ];
 
     rounds.sort(roundSort);
@@ -47,9 +119,33 @@ describe('roundSort', () => {
 
   it('sorts by matchUpsCount (descending) when earlier fields are equal', () => {
     const rounds = [
-      { eventName: 'Event A', eventId: 'e1', stage: MAIN, matchUpsCount: 2, stageSequence: 1, roundNumber: 1, minFinishingSum: 2 },
-      { eventName: 'Event A', eventId: 'e1', stage: MAIN, matchUpsCount: 8, stageSequence: 1, roundNumber: 1, minFinishingSum: 2 },
-      { eventName: 'Event A', eventId: 'e1', stage: MAIN, matchUpsCount: 4, stageSequence: 1, roundNumber: 1, minFinishingSum: 2 },
+      {
+        eventName: 'Event A',
+        eventId: 'e1',
+        stage: MAIN,
+        matchUpsCount: 2,
+        stageSequence: 1,
+        roundNumber: 1,
+        minFinishingSum: 2,
+      },
+      {
+        eventName: 'Event A',
+        eventId: 'e1',
+        stage: MAIN,
+        matchUpsCount: 8,
+        stageSequence: 1,
+        roundNumber: 1,
+        minFinishingSum: 2,
+      },
+      {
+        eventName: 'Event A',
+        eventId: 'e1',
+        stage: MAIN,
+        matchUpsCount: 4,
+        stageSequence: 1,
+        roundNumber: 1,
+        minFinishingSum: 2,
+      },
     ];
 
     rounds.sort(roundSort);
@@ -62,9 +158,33 @@ describe('roundSort', () => {
 
   it('sorts by stageSequence-roundNumber-minFinishingSum composite', () => {
     const rounds = [
-      { eventName: 'Event A', eventId: 'e1', stage: MAIN, matchUpsCount: 4, stageSequence: 2, roundNumber: 1, minFinishingSum: 2 },
-      { eventName: 'Event A', eventId: 'e1', stage: MAIN, matchUpsCount: 4, stageSequence: 1, roundNumber: 2, minFinishingSum: 2 },
-      { eventName: 'Event A', eventId: 'e1', stage: MAIN, matchUpsCount: 4, stageSequence: 1, roundNumber: 1, minFinishingSum: 4 },
+      {
+        eventName: 'Event A',
+        eventId: 'e1',
+        stage: MAIN,
+        matchUpsCount: 4,
+        stageSequence: 2,
+        roundNumber: 1,
+        minFinishingSum: 2,
+      },
+      {
+        eventName: 'Event A',
+        eventId: 'e1',
+        stage: MAIN,
+        matchUpsCount: 4,
+        stageSequence: 1,
+        roundNumber: 2,
+        minFinishingSum: 2,
+      },
+      {
+        eventName: 'Event A',
+        eventId: 'e1',
+        stage: MAIN,
+        matchUpsCount: 4,
+        stageSequence: 1,
+        roundNumber: 1,
+        minFinishingSum: 4,
+      },
     ];
 
     rounds.sort(roundSort);
@@ -78,7 +198,15 @@ describe('roundSort', () => {
   it('handles missing stage', () => {
     const rounds = [
       { eventName: 'Event A', eventId: 'e1', matchUpsCount: 4, stageSequence: 1, roundNumber: 1, minFinishingSum: 2 },
-      { eventName: 'Event A', eventId: 'e1', stage: MAIN, matchUpsCount: 4, stageSequence: 1, roundNumber: 1, minFinishingSum: 2 },
+      {
+        eventName: 'Event A',
+        eventId: 'e1',
+        stage: MAIN,
+        matchUpsCount: 4,
+        stageSequence: 1,
+        roundNumber: 1,
+        minFinishingSum: 2,
+      },
     ];
 
     rounds.sort(roundSort);
@@ -89,7 +217,15 @@ describe('roundSort', () => {
 
   it('handles missing matchUpsCount', () => {
     const rounds = [
-      { eventName: 'Event A', eventId: 'e1', stage: MAIN, matchUpsCount: 4, stageSequence: 1, roundNumber: 1, minFinishingSum: 2 },
+      {
+        eventName: 'Event A',
+        eventId: 'e1',
+        stage: MAIN,
+        matchUpsCount: 4,
+        stageSequence: 1,
+        roundNumber: 1,
+        minFinishingSum: 2,
+      },
       { eventName: 'Event A', eventId: 'e1', stage: MAIN, stageSequence: 1, roundNumber: 1, minFinishingSum: 2 },
     ];
 
@@ -101,8 +237,24 @@ describe('roundSort', () => {
 
   it('handles null values', () => {
     const rounds = [
-      { eventName: 'Event A', eventId: 'e1', stage: null, matchUpsCount: 4, stageSequence: 1, roundNumber: 1, minFinishingSum: 2 },
-      { eventName: 'Event A', eventId: 'e1', stage: MAIN, matchUpsCount: 4, stageSequence: 1, roundNumber: 1, minFinishingSum: 2 },
+      {
+        eventName: 'Event A',
+        eventId: 'e1',
+        stage: null,
+        matchUpsCount: 4,
+        stageSequence: 1,
+        roundNumber: 1,
+        minFinishingSum: 2,
+      },
+      {
+        eventName: 'Event A',
+        eventId: 'e1',
+        stage: MAIN,
+        matchUpsCount: 4,
+        stageSequence: 1,
+        roundNumber: 1,
+        minFinishingSum: 2,
+      },
     ];
 
     rounds.sort(roundSort);
@@ -113,7 +265,15 @@ describe('roundSort', () => {
 
   it('handles undefined stageSequence', () => {
     const rounds = [
-      { eventName: 'Event A', eventId: 'e1', stage: MAIN, matchUpsCount: 4, stageSequence: 2, roundNumber: 1, minFinishingSum: 2 },
+      {
+        eventName: 'Event A',
+        eventId: 'e1',
+        stage: MAIN,
+        matchUpsCount: 4,
+        stageSequence: 2,
+        roundNumber: 1,
+        minFinishingSum: 2,
+      },
       { eventName: 'Event A', eventId: 'e1', stage: MAIN, matchUpsCount: 4, roundNumber: 1, minFinishingSum: 2 },
     ];
 
@@ -125,7 +285,15 @@ describe('roundSort', () => {
 
   it('handles undefined roundNumber', () => {
     const rounds = [
-      { eventName: 'Event A', eventId: 'e1', stage: MAIN, matchUpsCount: 4, stageSequence: 1, roundNumber: 2, minFinishingSum: 2 },
+      {
+        eventName: 'Event A',
+        eventId: 'e1',
+        stage: MAIN,
+        matchUpsCount: 4,
+        stageSequence: 1,
+        roundNumber: 2,
+        minFinishingSum: 2,
+      },
       { eventName: 'Event A', eventId: 'e1', stage: MAIN, matchUpsCount: 4, stageSequence: 1, minFinishingSum: 2 },
     ];
 
@@ -137,7 +305,15 @@ describe('roundSort', () => {
 
   it('handles undefined minFinishingSum', () => {
     const rounds = [
-      { eventName: 'Event A', eventId: 'e1', stage: MAIN, matchUpsCount: 4, stageSequence: 1, roundNumber: 1, minFinishingSum: 2 },
+      {
+        eventName: 'Event A',
+        eventId: 'e1',
+        stage: MAIN,
+        matchUpsCount: 4,
+        stageSequence: 1,
+        roundNumber: 1,
+        minFinishingSum: 2,
+      },
       { eventName: 'Event A', eventId: 'e1', stage: MAIN, matchUpsCount: 4, stageSequence: 1, roundNumber: 1 },
     ];
 
@@ -148,14 +324,14 @@ describe('roundSort', () => {
   });
 
   it('returns 0 for identical rounds', () => {
-    const round = { 
-      eventName: 'Event A', 
-      eventId: 'e1', 
-      stage: MAIN, 
-      matchUpsCount: 4, 
-      stageSequence: 1, 
-      roundNumber: 1, 
-      minFinishingSum: 2 
+    const round = {
+      eventName: 'Event A',
+      eventId: 'e1',
+      stage: MAIN,
+      matchUpsCount: 4,
+      stageSequence: 1,
+      roundNumber: 1,
+      minFinishingSum: 2,
     };
 
     expect(roundSort(round, round)).toBe(0);
@@ -175,8 +351,24 @@ describe('roundSort', () => {
 
   it('handles negative values', () => {
     const rounds = [
-      { eventName: 'Event A', eventId: 'e1', stage: MAIN, matchUpsCount: 4, stageSequence: -1, roundNumber: 1, minFinishingSum: 2 },
-      { eventName: 'Event A', eventId: 'e1', stage: MAIN, matchUpsCount: 4, stageSequence: 1, roundNumber: 1, minFinishingSum: 2 },
+      {
+        eventName: 'Event A',
+        eventId: 'e1',
+        stage: MAIN,
+        matchUpsCount: 4,
+        stageSequence: -1,
+        roundNumber: 1,
+        minFinishingSum: 2,
+      },
+      {
+        eventName: 'Event A',
+        eventId: 'e1',
+        stage: MAIN,
+        matchUpsCount: 4,
+        stageSequence: 1,
+        roundNumber: 1,
+        minFinishingSum: 2,
+      },
     ];
 
     rounds.sort(roundSort);
@@ -187,8 +379,24 @@ describe('roundSort', () => {
 
   it('handles zero values', () => {
     const rounds = [
-      { eventName: 'Event A', eventId: 'e1', stage: MAIN, matchUpsCount: 0, stageSequence: 0, roundNumber: 0, minFinishingSum: 0 },
-      { eventName: 'Event A', eventId: 'e1', stage: MAIN, matchUpsCount: 4, stageSequence: 1, roundNumber: 1, minFinishingSum: 2 },
+      {
+        eventName: 'Event A',
+        eventId: 'e1',
+        stage: MAIN,
+        matchUpsCount: 0,
+        stageSequence: 0,
+        roundNumber: 0,
+        minFinishingSum: 0,
+      },
+      {
+        eventName: 'Event A',
+        eventId: 'e1',
+        stage: MAIN,
+        matchUpsCount: 4,
+        stageSequence: 1,
+        roundNumber: 1,
+        minFinishingSum: 2,
+      },
     ];
 
     rounds.sort(roundSort);
@@ -200,11 +408,51 @@ describe('roundSort', () => {
 
   it('handles complex sorting scenario', () => {
     const rounds = [
-      { eventName: 'Event B', eventId: 'e1', stage: MAIN, matchUpsCount: 4, stageSequence: 1, roundNumber: 1, minFinishingSum: 2 },
-      { eventName: 'Event A', eventId: 'e2', stage: CONSOLATION, matchUpsCount: 2, stageSequence: 1, roundNumber: 2, minFinishingSum: 3 },
-      { eventName: 'Event A', eventId: 'e1', stage: MAIN, matchUpsCount: 8, stageSequence: 2, roundNumber: 1, minFinishingSum: 2 },
-      { eventName: 'Event A', eventId: 'e1', stage: MAIN, matchUpsCount: 8, stageSequence: 1, roundNumber: 2, minFinishingSum: 4 },
-      { eventName: 'Event A', eventId: 'e1', stage: QUALIFYING, matchUpsCount: 4, stageSequence: 1, roundNumber: 1, minFinishingSum: 2 },
+      {
+        eventName: 'Event B',
+        eventId: 'e1',
+        stage: MAIN,
+        matchUpsCount: 4,
+        stageSequence: 1,
+        roundNumber: 1,
+        minFinishingSum: 2,
+      },
+      {
+        eventName: 'Event A',
+        eventId: 'e2',
+        stage: CONSOLATION,
+        matchUpsCount: 2,
+        stageSequence: 1,
+        roundNumber: 2,
+        minFinishingSum: 3,
+      },
+      {
+        eventName: 'Event A',
+        eventId: 'e1',
+        stage: MAIN,
+        matchUpsCount: 8,
+        stageSequence: 2,
+        roundNumber: 1,
+        minFinishingSum: 2,
+      },
+      {
+        eventName: 'Event A',
+        eventId: 'e1',
+        stage: MAIN,
+        matchUpsCount: 8,
+        stageSequence: 1,
+        roundNumber: 2,
+        minFinishingSum: 4,
+      },
+      {
+        eventName: 'Event A',
+        eventId: 'e1',
+        stage: QUALIFYING,
+        matchUpsCount: 4,
+        stageSequence: 1,
+        roundNumber: 1,
+        minFinishingSum: 2,
+      },
     ];
 
     rounds.sort(roundSort);

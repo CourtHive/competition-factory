@@ -259,7 +259,9 @@ describe('ATP 2026 Ranking Points Values', () => {
       participation: { participationOrder: 1, rankingStage: MAIN },
       level: 9,
     });
-    expect(awardProfile.finishingPositionRanges[1]).toEqual({ level: { 9: 175, 10: 125, 11: 100, 12: 75, 13: 50, 14: 25, 15: 15 } });
+    expect(awardProfile.finishingPositionRanges[1]).toEqual({
+      level: { 9: 175, 10: 125, 11: 100, 12: 75, 13: 50, 14: 25, 15: 15 },
+    });
   });
 
   it('Qualifying singles values are level-keyed', () => {

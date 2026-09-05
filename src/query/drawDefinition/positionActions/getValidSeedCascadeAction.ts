@@ -59,9 +59,9 @@ export function getValidSeedCascadeAction({
   if (seedBlockIndex < 0 || seedBlockIndex >= validSeedBlocks.length - 1) return {};
 
   // Check lower blocks for any assigned seeds
-  const hasLowerSeeds = validSeedBlocks.slice(seedBlockIndex + 1).some((block) =>
-    seedAssignments.some((s) => block.seedNumbers.includes(s.seedNumber) && s.participantId),
-  );
+  const hasLowerSeeds = validSeedBlocks
+    .slice(seedBlockIndex + 1)
+    .some((block) => seedAssignments.some((s) => block.seedNumbers.includes(s.seedNumber) && s.participantId));
   if (!hasLowerSeeds) return {};
 
   return {

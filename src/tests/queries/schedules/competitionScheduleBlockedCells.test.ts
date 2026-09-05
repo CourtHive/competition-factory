@@ -239,5 +239,4 @@ describe('competitionScheduleMatchUps with blocked cells', () => {
     expect(scheduleResult.rows).toBeUndefined();
     expect(scheduleResult.courtsData).toBeDefined();
   });
-
 });

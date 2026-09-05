@@ -184,6 +184,5 @@ describe('calculatePressureRatings', () => {
 
       expect(Object.keys(participantResults)).toHaveLength(0);
     });
-
   });
 });

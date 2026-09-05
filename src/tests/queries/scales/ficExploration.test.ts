@@ -79,9 +79,7 @@ describe('FIC ranking points', () => {
     expect(personPointEntries.length).toEqual(32);
 
     // Champion should get 1000 points
-    const championAwards = personPointEntries.find(([, awards]) =>
-      awards.some((a: any) => a.positionPoints === 1000),
-    );
+    const championAwards = personPointEntries.find(([, awards]) => awards.some((a: any) => a.positionPoints === 1000));
     expect(championAwards).toBeDefined();
   });
 
@@ -203,9 +201,7 @@ describe('FIC ranking points', () => {
 
     // Most participants won't have accessor 1 or 2, so they should get per-win points
     const personPointEntries = Object.entries(result.personPoints as Record<string, any[]>);
-    const perWinAwards = personPointEntries.filter(([, awards]) =>
-      (awards as any[]).some((a) => a.perWinPoints > 0),
-    );
+    const perWinAwards = personPointEntries.filter(([, awards]) => (awards as any[]).some((a) => a.perWinPoints > 0));
 
     // At least some participants should have per-win points
     expect(perWinAwards.length).toBeGreaterThan(0);

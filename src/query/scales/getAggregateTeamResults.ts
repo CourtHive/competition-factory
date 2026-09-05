@@ -106,7 +106,15 @@ function tallyMatchUpResults({ getTeamParticipant, initializeResults, increment,
   return { individualResults, teamResults };
 }
 
-function tallySide({ side, matchUp, getTeamParticipant, initializeResults, increment, individualResults, teamResults }) {
+function tallySide({
+  side,
+  matchUp,
+  getTeamParticipant,
+  initializeResults,
+  increment,
+  individualResults,
+  teamResults,
+}) {
   const teamParticipant = getTeamParticipant(side.participant);
   const teamParticipantId = teamParticipant?.participantId;
   const participantId = side.participant?.participantId;

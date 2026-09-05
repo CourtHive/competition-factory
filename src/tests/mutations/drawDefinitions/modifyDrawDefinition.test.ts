@@ -266,9 +266,7 @@ it('skips drawDefinition block when drawDefinition is absent but flight exists',
 
 it('skips flight extension block when no flight exists but drawDefinition is present', () => {
   // Call the function directly to cover the false branch of `if (flight)` at line 51
-  const {
-    tournamentRecord,
-  } = mocksEngine.generateTournamentRecord({
+  const { tournamentRecord } = mocksEngine.generateTournamentRecord({
     drawProfiles: [{ drawSize: 4 }],
   });
 

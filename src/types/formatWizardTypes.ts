@@ -102,11 +102,7 @@ export type FlightStructure = {
 };
 
 export type PlanWarning =
-  | 'MIXED_GENDER_VARIANT'
-  | 'COLLAPSED_CATEGORY'
-  | 'WITHDRAWAL_RISK'
-  | 'OVER_CAPACITY'
-  | 'BELOW_FLOOR';
+  'MIXED_GENDER_VARIANT' | 'COLLAPSED_CATEGORY' | 'WITHDRAWAL_RISK' | 'OVER_CAPACITY' | 'BELOW_FLOOR';
 
 export type RankedPlanAggregate = {
   minMatchesPerPlayer: number;

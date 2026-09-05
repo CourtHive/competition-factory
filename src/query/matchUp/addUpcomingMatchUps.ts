@@ -46,20 +46,18 @@ function addRoundRobinSidesTo({ inContextMatchUp, structure, drawPositions }) {
   const { roundMatchUps } = getRoundMatchUps({ matchUps });
 
   if (nextRoundNumber && roundMatchUps?.[nextRoundNumber]) {
-    const sidesTo = [...drawPositions]
-      .sort(numericSort)
-      .map((drawPosition, index) => {
-        const nextRoundMatchUp = roundMatchUps[nextRoundNumber].find((matchUp) =>
-          matchUp.drawPositions?.includes(drawPosition),
-        );
-        return {
-          matchUpId: nextRoundMatchUp?.matchUpId,
-          roundNumber: nextRoundNumber,
-          schedule: nextRoundMatchUp?.schedule,
-          sideNumber: index + 1,
-          structureName: structure.structureName,
-        };
-      });
+    const sidesTo = [...drawPositions].sort(numericSort).map((drawPosition, index) => {
+      const nextRoundMatchUp = roundMatchUps[nextRoundNumber].find((matchUp) =>
+        matchUp.drawPositions?.includes(drawPosition),
+      );
+      return {
+        matchUpId: nextRoundMatchUp?.matchUpId,
+        roundNumber: nextRoundNumber,
+        schedule: nextRoundMatchUp?.schedule,
+        sideNumber: index + 1,
+        structureName: structure.structureName,
+      };
+    });
     Object.assign(inContextMatchUp, { sidesTo });
   }
 }

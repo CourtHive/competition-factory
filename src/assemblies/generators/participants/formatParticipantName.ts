@@ -23,7 +23,7 @@ export function formatParticipantName({ participantMap, participant, formats }) 
           const hasPersonName = person?.standardGivenName || person?.standardFamilyName;
           return hasPersonName
             ? formatPersonName({ person, personFormat })
-            : (individual?.participantOtherName || individual?.participantName || '');
+            : individual?.participantOtherName || individual?.participantName || '';
         })
         .filter(Boolean)
         .join(doublesJoiner ?? '/');

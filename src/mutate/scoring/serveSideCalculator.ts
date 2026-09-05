@@ -65,10 +65,7 @@ function getActiveSet(matchUp: MatchUp): SetScore | undefined {
  * INTENNSE rule: "serve is always from the deuce side when the aggregate score
  * is even, and always from the ad side when the aggregate score is odd"
  */
-function inferAggregateSide(
-  matchUp: MatchUp,
-  currentSet: SetScore | undefined,
-): 'deuce' | 'ad' {
+function inferAggregateSide(matchUp: MatchUp, currentSet: SetScore | undefined): 'deuce' | 'ad' {
   // Sum all scores across all completed sets
   let aggregateTotal = 0;
   for (const set of matchUp.score.sets) {

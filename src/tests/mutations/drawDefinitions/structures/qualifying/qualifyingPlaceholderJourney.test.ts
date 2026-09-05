@@ -62,9 +62,7 @@ describe('two-step qualifying journey: MAIN first, qualifying later', () => {
 
     // Step 2: Add qualifying entries
     const { participants } = tournamentEngine.getParticipants();
-    const enteredIds = new Set(
-      tournamentEngine.getEvent({ drawId }).event.entries.map((e: any) => e.participantId),
-    );
+    const enteredIds = new Set(tournamentEngine.getEvent({ drawId }).event.entries.map((e: any) => e.participantId));
     const qualifyingParticipantIds = participants
       .map((p: any) => p.participantId)
       .filter((id: string) => !enteredIds.has(id))
@@ -84,9 +82,7 @@ describe('two-step qualifying journey: MAIN first, qualifying later', () => {
 
     result = tournamentEngine.generateDrawDefinition({
       drawEntries,
-      qualifyingProfiles: [
-        { structureProfiles: [{ stageSequence: 1, drawSize: 16, qualifyingPositions: 4 }] },
-      ],
+      qualifyingProfiles: [{ structureProfiles: [{ stageSequence: 1, drawSize: 16, qualifyingPositions: 4 }] }],
       drawSize: 32,
       eventId,
       drawId,
@@ -131,7 +127,9 @@ describe('two-step qualifying journey: MAIN first, qualifying later', () => {
     });
     expect(result.success).toEqual(true);
 
-    const { drawIds: [drawId] } = result;
+    const {
+      drawIds: [drawId],
+    } = result;
     tournamentEngine.setState(result.tournamentRecord);
 
     const { drawDefinition } = tournamentEngine.getEvent({ drawId });

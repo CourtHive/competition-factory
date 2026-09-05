@@ -144,9 +144,8 @@ export function parseScoreString({ tiebreakTo = 7, scoreString = '', matchUpForm
   }
 
   function parseSet({ set, setNumber }: ParseSetArgs): ParsedSetString {
-     
     const inParentheses = /\(([^)]+)\)/;
-     
+
     const inBrackets = /\[([^\]]+)\]/;
     const tiebreak = inParentheses.exec(set);
     const bracketed = inBrackets.exec(set);

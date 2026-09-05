@@ -31,7 +31,6 @@ export const getRandomQualifierList = ({ drawDefinition, random }: GetRandomQual
     qualifierPositions: { drawPosition: number; qualifier: boolean }[];
   } = structureAssignedDrawPositions({ structure: mainStructure });
 
-   
   const rng = random ?? Math.random;
   return generateRange(0, qualifierPositions.length).sort(() => rng() - 0.5);
 };

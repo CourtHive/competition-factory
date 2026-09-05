@@ -8,7 +8,14 @@ import mocksEngine from '@Assemblies/engines/mock';
 import tournamentEngine from '@Engines/syncEngine';
 import { expect, it, describe } from 'vitest';
 
-import { DEFAULTED, DOUBLE_WALKOVER, IN_PROGRESS, SUSPENDED, TO_BE_PLAYED, WALKOVER } from '@Constants/matchUpStatusConstants';
+import {
+  DEFAULTED,
+  DOUBLE_WALKOVER,
+  IN_PROGRESS,
+  SUSPENDED,
+  TO_BE_PLAYED,
+  WALKOVER,
+} from '@Constants/matchUpStatusConstants';
 import { TEAM_EVENT } from '@Constants/eventConstants';
 
 describe('modifyMatchUpScore coverage', () => {

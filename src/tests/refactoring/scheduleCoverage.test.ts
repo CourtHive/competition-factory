@@ -1060,9 +1060,7 @@ describe('bulkUpdateCourtAssignments coverage', () => {
 
     let result: any = tournamentEngine.bulkUpdateCourtAssignments({
       courtDayDate: startDate,
-      courtAssignments: [
-        { tournamentId: 'nonexistent-tournament', matchUpId: matchUps[0].matchUpId, courtId, drawId },
-      ],
+      courtAssignments: [{ tournamentId: 'nonexistent-tournament', matchUpId: matchUps[0].matchUpId, courtId, drawId }],
     });
     expect(result.error).toBeDefined();
   });

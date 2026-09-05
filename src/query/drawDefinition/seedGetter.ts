@@ -360,7 +360,8 @@ export function isValidSeedPosition({
 }
 
 export function getNextSeedBlock(params) {
-  const { provisionalPositioning, drawDefinition, seedingProfile, seedBlockInfo, structureId, randomize, random } = params;
+  const { provisionalPositioning, drawDefinition, seedingProfile, seedBlockInfo, structureId, randomize, random } =
+    params;
 
   const { structure } = findStructure({ drawDefinition, structureId });
   const { seedAssignments } = getStructureSeedAssignments({

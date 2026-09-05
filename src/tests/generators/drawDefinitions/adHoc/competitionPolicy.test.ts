@@ -70,7 +70,9 @@ function generateTournamentWithRatings({
 
 function completeMatchUps({ drawId, roundNumber, scores }: { drawId: string; roundNumber: number; scores?: string[] }) {
   const { matchUps } = tournamentEngine.allTournamentMatchUps();
-  const roundMatchUps = matchUps.filter((m: any) => m.roundNumber === roundNumber && !m.winningSide && m.drawId === drawId);
+  const roundMatchUps = matchUps.filter(
+    (m: any) => m.roundNumber === roundNumber && !m.winningSide && m.drawId === drawId,
+  );
 
   for (let i = 0; i < roundMatchUps.length; i++) {
     const scoreString = scores?.[i] ?? '6-3';
@@ -187,9 +189,7 @@ describe('deriveCountables', () => {
   test('handles tiebreak sets', () => {
     const matchUp = {
       score: {
-        sets: [
-          { side1Score: 7, side2Score: 6, winningSide: 1, side1TiebreakScore: 7, side2TiebreakScore: 3 },
-        ],
+        sets: [{ side1Score: 7, side2Score: 6, winningSide: 1, side1TiebreakScore: 7, side2TiebreakScore: 3 }],
       },
       winningSide: 1,
     } as any;

@@ -9,7 +9,16 @@ import mocksEngine from '@Assemblies/engines/mock';
 import { describe, test, expect } from 'vitest';
 
 // constants
-import { FIRST_MATCH_LOSER_CONSOLATION, ADAPTIVE, LOSER, LUCKY_DRAW, MAIN, PLAY_OFF, TOP_DOWN, CONSOLATION } from '@Constants/drawDefinitionConstants';
+import {
+  FIRST_MATCH_LOSER_CONSOLATION,
+  ADAPTIVE,
+  LOSER,
+  LUCKY_DRAW,
+  MAIN,
+  PLAY_OFF,
+  TOP_DOWN,
+  CONSOLATION,
+} from '@Constants/drawDefinitionConstants';
 import { LUCKY_PARTICIPANT } from '@Constants/positionActionConstants';
 import { MISSING_DRAW_DEFINITION, INVALID_VALUES } from '@Constants/errorConditionConstants';
 import { BYE, COMPLETED } from '@Constants/matchUpStatusConstants';
@@ -519,9 +528,7 @@ describe('getLuckyDrawRoundStatus edge cases', () => {
         structures: [
           {
             structureId: 'auto-resolved',
-            matchUps: [
-              { roundNumber: 1, roundPosition: 1, drawPositions: [1, 2], matchUpId: 'mu-1' },
-            ],
+            matchUps: [{ roundNumber: 1, roundPosition: 1, drawPositions: [1, 2], matchUpId: 'mu-1' }],
             positionAssignments: [
               { drawPosition: 1, participantId: 'p1' },
               { drawPosition: 2, participantId: 'p2' },
@@ -542,18 +549,30 @@ describe('getLuckyDrawRoundStatus edge cases', () => {
           structureId: 's1',
           matchUps: [
             {
-              roundNumber: 1, roundPosition: 1, drawPositions: [1, 2], matchUpId: 'mu-1',
-              matchUpStatus: COMPLETED, winningSide: 1,
+              roundNumber: 1,
+              roundPosition: 1,
+              drawPositions: [1, 2],
+              matchUpId: 'mu-1',
+              matchUpStatus: COMPLETED,
+              winningSide: 1,
               score: { sets: [{ side1Score: 6, side2Score: 3, winningSide: 1, setNumber: 1 }] },
             },
             {
-              roundNumber: 1, roundPosition: 2, drawPositions: [3, 4], matchUpId: 'mu-2',
-              matchUpStatus: COMPLETED, winningSide: 1,
+              roundNumber: 1,
+              roundPosition: 2,
+              drawPositions: [3, 4],
+              matchUpId: 'mu-2',
+              matchUpStatus: COMPLETED,
+              winningSide: 1,
               score: { sets: [{ side1Score: 6, side2Score: 4, winningSide: 1, setNumber: 1 }] },
             },
             {
-              roundNumber: 1, roundPosition: 3, drawPositions: [5, 6], matchUpId: 'mu-3',
-              matchUpStatus: COMPLETED, winningSide: 1,
+              roundNumber: 1,
+              roundPosition: 3,
+              drawPositions: [5, 6],
+              matchUpId: 'mu-3',
+              matchUpStatus: COMPLETED,
+              winningSide: 1,
               score: { sets: [{ side1Score: 6, side2Score: 2, winningSide: 1, setNumber: 1 }] },
             },
             { roundNumber: 2, roundPosition: 1, drawPositions: [], matchUpId: 'mu-4' },
@@ -604,25 +623,43 @@ describe('getLuckyDrawRoundStatus edge cases', () => {
           structureId: 's1',
           matchUps: [
             {
-              roundNumber: 1, roundPosition: 1, drawPositions: [1, 2], matchUpId: 'mu-1',
-              matchUpStatus: COMPLETED, winningSide: 1,
+              roundNumber: 1,
+              roundPosition: 1,
+              drawPositions: [1, 2],
+              matchUpId: 'mu-1',
+              matchUpStatus: COMPLETED,
+              winningSide: 1,
               score: { sets: [{ side1Score: 6, side2Score: 3, winningSide: 1, setNumber: 1 }] },
             },
             {
-              roundNumber: 1, roundPosition: 2, drawPositions: [3, 4], matchUpId: 'mu-2',
-              matchUpStatus: COMPLETED, winningSide: 1,
+              roundNumber: 1,
+              roundPosition: 2,
+              drawPositions: [3, 4],
+              matchUpId: 'mu-2',
+              matchUpStatus: COMPLETED,
+              winningSide: 1,
               score: { sets: [{ side1Score: 6, side2Score: 4, winningSide: 1, setNumber: 1 }] },
             },
             {
-              roundNumber: 1, roundPosition: 3, drawPositions: [5, 6], matchUpId: 'mu-3',
-              matchUpStatus: COMPLETED, winningSide: 1,
+              roundNumber: 1,
+              roundPosition: 3,
+              drawPositions: [5, 6],
+              matchUpId: 'mu-3',
+              matchUpStatus: COMPLETED,
+              winningSide: 1,
               score: { sets: [{ side1Score: 6, side2Score: 2, winningSide: 1, setNumber: 1 }] },
             },
             {
-              roundNumber: 2, roundPosition: 1, drawPositions: [0, null], matchUpId: 'mu-4',
+              roundNumber: 2,
+              roundPosition: 1,
+              drawPositions: [0, null],
+              matchUpId: 'mu-4',
             },
             {
-              roundNumber: 2, roundPosition: 2, drawPositions: [], matchUpId: 'mu-5',
+              roundNumber: 2,
+              roundPosition: 2,
+              drawPositions: [],
+              matchUpId: 'mu-5',
             },
           ],
           positionAssignments: [
@@ -652,19 +689,31 @@ describe('getLuckyDrawRoundStatus edge cases', () => {
           structureId: 's1',
           matchUps: [
             {
-              roundNumber: 1, roundPosition: 1, drawPositions: [1, 2], matchUpId: 'mu-1',
-              matchUpStatus: COMPLETED, winningSide: 1,
+              roundNumber: 1,
+              roundPosition: 1,
+              drawPositions: [1, 2],
+              matchUpId: 'mu-1',
+              matchUpStatus: COMPLETED,
+              winningSide: 1,
               score: { sets: [{ side1Score: 6, side2Score: 3, winningSide: 1, setNumber: 1 }] },
               // no sides[] property — exercises drawPositions fallback
             },
             {
-              roundNumber: 1, roundPosition: 2, drawPositions: [3, 4], matchUpId: 'mu-2',
-              matchUpStatus: COMPLETED, winningSide: 1,
+              roundNumber: 1,
+              roundPosition: 2,
+              drawPositions: [3, 4],
+              matchUpId: 'mu-2',
+              matchUpStatus: COMPLETED,
+              winningSide: 1,
               score: { sets: [{ side1Score: 6, side2Score: 4, winningSide: 1, setNumber: 1 }] },
             },
             {
-              roundNumber: 1, roundPosition: 3, drawPositions: [5, 6], matchUpId: 'mu-3',
-              matchUpStatus: COMPLETED, winningSide: 1,
+              roundNumber: 1,
+              roundPosition: 3,
+              drawPositions: [5, 6],
+              matchUpId: 'mu-3',
+              matchUpStatus: COMPLETED,
+              winningSide: 1,
               score: { sets: [{ side1Score: 6, side2Score: 2, winningSide: 1, setNumber: 1 }] },
             },
             { roundNumber: 2, roundPosition: 1, drawPositions: [], matchUpId: 'mu-4' },
@@ -701,44 +750,76 @@ describe('getLuckyDrawRoundStatus edge cases', () => {
           matchUps: [
             // Round 1: 5 matchUps (pre-feed)
             {
-              roundNumber: 1, roundPosition: 1, drawPositions: [1, 2], matchUpId: 'mu-r1-1',
-              matchUpStatus: COMPLETED, winningSide: 1,
+              roundNumber: 1,
+              roundPosition: 1,
+              drawPositions: [1, 2],
+              matchUpId: 'mu-r1-1',
+              matchUpStatus: COMPLETED,
+              winningSide: 1,
               score: { sets: [{ side1Score: 6, side2Score: 4, winningSide: 1, setNumber: 1 }] },
             },
             {
-              roundNumber: 1, roundPosition: 2, drawPositions: [3, 4], matchUpId: 'mu-r1-2',
-              matchUpStatus: COMPLETED, winningSide: 1,
+              roundNumber: 1,
+              roundPosition: 2,
+              drawPositions: [3, 4],
+              matchUpId: 'mu-r1-2',
+              matchUpStatus: COMPLETED,
+              winningSide: 1,
               score: { sets: [{ side1Score: 6, side2Score: 1, winningSide: 1, setNumber: 1 }] },
             },
             {
-              roundNumber: 1, roundPosition: 3, drawPositions: [5, 6], matchUpId: 'mu-r1-3',
-              matchUpStatus: COMPLETED, winningSide: 1,
+              roundNumber: 1,
+              roundPosition: 3,
+              drawPositions: [5, 6],
+              matchUpId: 'mu-r1-3',
+              matchUpStatus: COMPLETED,
+              winningSide: 1,
               score: { sets: [{ side1Score: 6, side2Score: 3, winningSide: 1, setNumber: 1 }] },
             },
             {
-              roundNumber: 1, roundPosition: 4, drawPositions: [7, 8], matchUpId: 'mu-r1-4',
-              matchUpStatus: COMPLETED, winningSide: 2,
+              roundNumber: 1,
+              roundPosition: 4,
+              drawPositions: [7, 8],
+              matchUpId: 'mu-r1-4',
+              matchUpStatus: COMPLETED,
+              winningSide: 2,
               score: { sets: [{ side1Score: 3, side2Score: 6, winningSide: 2, setNumber: 1 }] },
             },
             {
-              roundNumber: 1, roundPosition: 5, drawPositions: [9, 10], matchUpId: 'mu-r1-5',
-              matchUpStatus: COMPLETED, winningSide: 1,
+              roundNumber: 1,
+              roundPosition: 5,
+              drawPositions: [9, 10],
+              matchUpId: 'mu-r1-5',
+              matchUpStatus: COMPLETED,
+              winningSide: 1,
               score: { sets: [{ side1Score: 6, side2Score: 2, winningSide: 1, setNumber: 1 }] },
             },
             // Round 2: 3 matchUps (pre-feed) — participants advanced from R1
             {
-              roundNumber: 2, roundPosition: 1, drawPositions: [11, 12], matchUpId: 'mu-r2-1',
-              matchUpStatus: COMPLETED, winningSide: 1,
+              roundNumber: 2,
+              roundPosition: 1,
+              drawPositions: [11, 12],
+              matchUpId: 'mu-r2-1',
+              matchUpStatus: COMPLETED,
+              winningSide: 1,
               score: { sets: [{ side1Score: 6, side2Score: 4, winningSide: 1, setNumber: 1 }] },
             },
             {
-              roundNumber: 2, roundPosition: 2, drawPositions: [13, 14], matchUpId: 'mu-r2-2',
-              matchUpStatus: COMPLETED, winningSide: 1,
+              roundNumber: 2,
+              roundPosition: 2,
+              drawPositions: [13, 14],
+              matchUpId: 'mu-r2-2',
+              matchUpStatus: COMPLETED,
+              winningSide: 1,
               score: { sets: [{ side1Score: 6, side2Score: 2, winningSide: 1, setNumber: 1 }] },
             },
             {
-              roundNumber: 2, roundPosition: 3, drawPositions: [15, 16], matchUpId: 'mu-r2-3',
-              matchUpStatus: COMPLETED, winningSide: 1,
+              roundNumber: 2,
+              roundPosition: 3,
+              drawPositions: [15, 16],
+              matchUpId: 'mu-r2-3',
+              matchUpStatus: COMPLETED,
+              winningSide: 1,
               score: { sets: [{ side1Score: 6, side2Score: 3, winningSide: 1, setNumber: 1 }] },
             },
             // Round 3: 2 matchUps
@@ -788,8 +869,12 @@ describe('getLuckyDrawRoundStatus edge cases', () => {
           structureId: 's1',
           matchUps: [
             {
-              roundNumber: 1, roundPosition: 1, drawPositions: [1, 2], matchUpId: 'mu-1',
-              matchUpStatus: COMPLETED, winningSide: 1,
+              roundNumber: 1,
+              roundPosition: 1,
+              drawPositions: [1, 2],
+              matchUpId: 'mu-1',
+              matchUpStatus: COMPLETED,
+              winningSide: 1,
               score: {
                 sets: [
                   { side1Score: 6, side2Score: 4, winningSide: 1, setNumber: 1 },
@@ -798,8 +883,12 @@ describe('getLuckyDrawRoundStatus edge cases', () => {
               },
             },
             {
-              roundNumber: 1, roundPosition: 2, drawPositions: [3, 4], matchUpId: 'mu-2',
-              matchUpStatus: COMPLETED, winningSide: 1,
+              roundNumber: 1,
+              roundPosition: 2,
+              drawPositions: [3, 4],
+              matchUpId: 'mu-2',
+              matchUpStatus: COMPLETED,
+              winningSide: 1,
               score: {
                 sets: [
                   { side1Score: 6, side2Score: 4, winningSide: 1, setNumber: 1 },
@@ -809,8 +898,12 @@ describe('getLuckyDrawRoundStatus edge cases', () => {
               },
             },
             {
-              roundNumber: 1, roundPosition: 3, drawPositions: [5, 6], matchUpId: 'mu-3',
-              matchUpStatus: COMPLETED, winningSide: 1,
+              roundNumber: 1,
+              roundPosition: 3,
+              drawPositions: [5, 6],
+              matchUpId: 'mu-3',
+              matchUpStatus: COMPLETED,
+              winningSide: 1,
               score: { sets: [{ side1Score: 6, side2Score: 0, winningSide: 1, setNumber: 1 }] },
             },
             { roundNumber: 2, roundPosition: 1, drawPositions: [], matchUpId: 'mu-4' },
@@ -851,16 +944,28 @@ describe('getLuckyDrawRoundStatus edge cases', () => {
           structureId: 's1',
           matchUps: [
             {
-              roundNumber: 1, roundPosition: 1, drawPositions: [1, 2], matchUpId: 'mu-1',
-              matchUpStatus: COMPLETED, winningSide: 1,
+              roundNumber: 1,
+              roundPosition: 1,
+              drawPositions: [1, 2],
+              matchUpId: 'mu-1',
+              matchUpStatus: COMPLETED,
+              winningSide: 1,
             },
             {
-              roundNumber: 1, roundPosition: 2, drawPositions: [3, 4], matchUpId: 'mu-2',
-              matchUpStatus: COMPLETED, winningSide: 1,
+              roundNumber: 1,
+              roundPosition: 2,
+              drawPositions: [3, 4],
+              matchUpId: 'mu-2',
+              matchUpStatus: COMPLETED,
+              winningSide: 1,
             },
             {
-              roundNumber: 1, roundPosition: 3, drawPositions: [5, 6], matchUpId: 'mu-3',
-              matchUpStatus: COMPLETED, winningSide: 1,
+              roundNumber: 1,
+              roundPosition: 3,
+              drawPositions: [5, 6],
+              matchUpId: 'mu-3',
+              matchUpStatus: COMPLETED,
+              winningSide: 1,
             },
             { roundNumber: 2, roundPosition: 1, drawPositions: [], matchUpId: 'mu-4' },
             { roundNumber: 2, roundPosition: 2, drawPositions: [], matchUpId: 'mu-5' },
@@ -876,9 +981,7 @@ describe('getLuckyDrawRoundStatus edge cases', () => {
         },
         {
           structureId: 's2',
-          matchUps: [
-            { roundNumber: 1, roundPosition: 1, drawPositions: [1, 2], matchUpId: 'po-1' },
-          ],
+          matchUps: [{ roundNumber: 1, roundPosition: 1, drawPositions: [1, 2], matchUpId: 'po-1' }],
           positionAssignments: [],
         },
       ],
@@ -1031,13 +1134,17 @@ describe('luckyDrawAdvancement — additional coverage', () => {
       stageSequence: 2,
       matchUps: [
         {
-          roundNumber: 1, roundPosition: 1,
-          drawPositions: [1, 2], matchUpId: 'po-m1',
+          roundNumber: 1,
+          roundPosition: 1,
+          drawPositions: [1, 2],
+          matchUpId: 'po-m1',
           matchUpStatus: 'TO_BE_PLAYED',
         },
         {
-          roundNumber: 1, roundPosition: 2,
-          drawPositions: [3, 4], matchUpId: 'po-m2',
+          roundNumber: 1,
+          roundPosition: 2,
+          drawPositions: [3, 4],
+          matchUpId: 'po-m2',
           matchUpStatus: 'TO_BE_PLAYED',
         },
       ],
@@ -1112,13 +1219,17 @@ describe('luckyDrawAdvancement — additional coverage', () => {
       stageSequence: 2,
       matchUps: [
         {
-          roundNumber: 1, roundPosition: 1,
-          drawPositions: [1, 2], matchUpId: 'bu-m1',
+          roundNumber: 1,
+          roundPosition: 1,
+          drawPositions: [1, 2],
+          matchUpId: 'bu-m1',
           matchUpStatus: 'TO_BE_PLAYED',
         },
         {
-          roundNumber: 1, roundPosition: 2,
-          drawPositions: [3, 4], matchUpId: 'bu-m2',
+          roundNumber: 1,
+          roundPosition: 2,
+          drawPositions: [3, 4],
+          matchUpId: 'bu-m2',
           matchUpStatus: 'TO_BE_PLAYED',
         },
       ],
@@ -1346,9 +1457,8 @@ describe('getValidLuckyLosersAction via FMLC consolation positionActions', () =>
     expect(assignedPositions.length).toBeGreaterThan(0);
 
     // Check positionActions on an unassigned or assigned position
-    const targetPosition = unassignedPositions.length > 0
-      ? unassignedPositions[0].drawPosition
-      : assignedPositions[0].drawPosition;
+    const targetPosition =
+      unassignedPositions.length > 0 ? unassignedPositions[0].drawPosition : assignedPositions[0].drawPosition;
 
     result = tournamentEngine.positionActions({
       structureId: consolationStructure.structureId,
@@ -1405,24 +1515,36 @@ describe('getValidLuckyLosersAction via FMLC consolation positionActions', () =>
           structureId: 'source-struct',
           matchUps: [
             {
-              roundNumber: 1, roundPosition: 1, drawPositions: [1, 2], matchUpId: 'src-r1-m1',
-              winningSide: 1, matchUpStatus: COMPLETED,
+              roundNumber: 1,
+              roundPosition: 1,
+              drawPositions: [1, 2],
+              matchUpId: 'src-r1-m1',
+              winningSide: 1,
+              matchUpStatus: COMPLETED,
               sides: [
                 { sideNumber: 1, participantId: 'p1' },
                 { sideNumber: 2, participantId: 'p2' },
               ],
             },
             {
-              roundNumber: 1, roundPosition: 2, drawPositions: [3, 4], matchUpId: 'src-r1-m2',
-              winningSide: 1, matchUpStatus: COMPLETED,
+              roundNumber: 1,
+              roundPosition: 2,
+              drawPositions: [3, 4],
+              matchUpId: 'src-r1-m2',
+              winningSide: 1,
+              matchUpStatus: COMPLETED,
               sides: [
                 { sideNumber: 1, participantId: 'p3' },
                 { sideNumber: 2, participantId: 'p4' },
               ],
             },
             {
-              roundNumber: 2, roundPosition: 1, drawPositions: [5, 6], matchUpId: 'src-r2-m1',
-              winningSide: 1, matchUpStatus: COMPLETED,
+              roundNumber: 2,
+              roundPosition: 1,
+              drawPositions: [5, 6],
+              matchUpId: 'src-r2-m1',
+              winningSide: 1,
+              matchUpStatus: COMPLETED,
               sides: [
                 { sideNumber: 1, participantId: 'p5' },
                 { sideNumber: 2, participantId: 'p6' },
@@ -1440,9 +1562,7 @@ describe('getValidLuckyLosersAction via FMLC consolation positionActions', () =>
         },
         {
           structureId: 'target-struct',
-          matchUps: [
-            { roundNumber: 1, roundPosition: 1, drawPositions: [1, 2], matchUpId: 'tgt-r1-m1' },
-          ],
+          matchUps: [{ roundNumber: 1, roundPosition: 1, drawPositions: [1, 2], matchUpId: 'tgt-r1-m1' }],
           positionAssignments: [],
         },
       ],
@@ -1478,9 +1598,7 @@ describe('getValidLuckyLosersAction via FMLC consolation positionActions', () =>
 
   test('getValidLuckyLosersAction excludes already-assigned participants', () => {
     const drawDefinition: any = {
-      entries: [
-        { participantId: 'p2', entryPosition: 5 },
-      ],
+      entries: [{ participantId: 'p2', entryPosition: 5 }],
       links: [
         {
           linkType: LOSER,
@@ -1493,16 +1611,24 @@ describe('getValidLuckyLosersAction via FMLC consolation positionActions', () =>
           structureId: 'source-struct',
           matchUps: [
             {
-              roundNumber: 1, roundPosition: 1, drawPositions: [1, 2], matchUpId: 'src-m1',
-              winningSide: 1, matchUpStatus: COMPLETED,
+              roundNumber: 1,
+              roundPosition: 1,
+              drawPositions: [1, 2],
+              matchUpId: 'src-m1',
+              winningSide: 1,
+              matchUpStatus: COMPLETED,
               sides: [
                 { sideNumber: 1, participantId: 'p1' },
                 { sideNumber: 2, participantId: 'p2' },
               ],
             },
             {
-              roundNumber: 1, roundPosition: 2, drawPositions: [3, 4], matchUpId: 'src-m2',
-              winningSide: 1, matchUpStatus: COMPLETED,
+              roundNumber: 1,
+              roundPosition: 2,
+              drawPositions: [3, 4],
+              matchUpId: 'src-m2',
+              winningSide: 1,
+              matchUpStatus: COMPLETED,
               sides: [
                 { sideNumber: 1, participantId: 'p3' },
                 { sideNumber: 2, participantId: 'p4' },
@@ -1514,9 +1640,7 @@ describe('getValidLuckyLosersAction via FMLC consolation positionActions', () =>
         {
           structureId: 'target-struct',
           matchUps: [],
-          positionAssignments: [
-            { drawPosition: 1, participantId: 'p2' },
-          ],
+          positionAssignments: [{ drawPosition: 1, participantId: 'p2' }],
         },
       ],
     };
@@ -1543,9 +1667,7 @@ describe('getValidLuckyLosersAction via FMLC consolation positionActions', () =>
     expect(result.validLuckyLosersAction.availableLuckyLoserParticipantIds).not.toContain('p2');
 
     // Check entryPosition is populated from drawDefinition.entries
-    const luckyLoser = result.validLuckyLosersAction.availableLuckyLosers.find(
-      (l: any) => l.participantId === 'p4',
-    );
+    const luckyLoser = result.validLuckyLosersAction.availableLuckyLosers.find((l: any) => l.participantId === 'p4');
     expect(luckyLoser).toBeDefined();
   });
 });
@@ -1563,18 +1685,29 @@ describe('getLuckyDrawRoundStatus — BYE-advanced and additional branches', () 
           structureId: 's1',
           matchUps: [
             {
-              roundNumber: 1, roundPosition: 1, drawPositions: [1, 2], matchUpId: 'mu-1',
-              matchUpStatus: COMPLETED, winningSide: 1,
+              roundNumber: 1,
+              roundPosition: 1,
+              drawPositions: [1, 2],
+              matchUpId: 'mu-1',
+              matchUpStatus: COMPLETED,
+              winningSide: 1,
               score: { sets: [{ side1Score: 6, side2Score: 3, winningSide: 1, setNumber: 1 }] },
             },
             {
-              roundNumber: 1, roundPosition: 2, drawPositions: [3, 4], matchUpId: 'mu-2',
-              matchUpStatus: COMPLETED, winningSide: 1,
+              roundNumber: 1,
+              roundPosition: 2,
+              drawPositions: [3, 4],
+              matchUpId: 'mu-2',
+              matchUpStatus: COMPLETED,
+              winningSide: 1,
               score: { sets: [{ side1Score: 6, side2Score: 4, winningSide: 1, setNumber: 1 }] },
             },
             {
               // BYE matchUp — participant at dp 5 advances automatically
-              roundNumber: 1, roundPosition: 3, drawPositions: [5, 6], matchUpId: 'mu-3',
+              roundNumber: 1,
+              roundPosition: 3,
+              drawPositions: [5, 6],
+              matchUpId: 'mu-3',
               matchUpStatus: BYE,
             },
             { roundNumber: 2, roundPosition: 1, drawPositions: [], matchUpId: 'mu-4' },
@@ -1628,22 +1761,38 @@ describe('getLuckyDrawRoundStatus — BYE-advanced and additional branches', () 
           structureId: 's1',
           matchUps: [
             {
-              roundNumber: 1, roundPosition: 1, drawPositions: [1, 2], matchUpId: 'mu-1',
-              matchUpStatus: COMPLETED, winningSide: 1,
+              roundNumber: 1,
+              roundPosition: 1,
+              drawPositions: [1, 2],
+              matchUpId: 'mu-1',
+              matchUpStatus: COMPLETED,
+              winningSide: 1,
               score: { sets: [{ side1Score: 6, side2Score: 3, winningSide: 1, setNumber: 1 }] },
               sides: [
                 { sideNumber: 1, participantId: 'hydrated-p1', participant: { participantName: 'Hydrated Alice' } },
-                { sideNumber: 2, participantId: 'hydrated-p2', participant: { participantName: 'Hydrated Bob', participantId: 'hydrated-p2' } },
+                {
+                  sideNumber: 2,
+                  participantId: 'hydrated-p2',
+                  participant: { participantName: 'Hydrated Bob', participantId: 'hydrated-p2' },
+                },
               ],
             },
             {
-              roundNumber: 1, roundPosition: 2, drawPositions: [3, 4], matchUpId: 'mu-2',
-              matchUpStatus: COMPLETED, winningSide: 1,
+              roundNumber: 1,
+              roundPosition: 2,
+              drawPositions: [3, 4],
+              matchUpId: 'mu-2',
+              matchUpStatus: COMPLETED,
+              winningSide: 1,
               score: { sets: [{ side1Score: 6, side2Score: 4, winningSide: 1, setNumber: 1 }] },
             },
             {
-              roundNumber: 1, roundPosition: 3, drawPositions: [5, 6], matchUpId: 'mu-3',
-              matchUpStatus: COMPLETED, winningSide: 1,
+              roundNumber: 1,
+              roundPosition: 3,
+              drawPositions: [5, 6],
+              matchUpId: 'mu-3',
+              matchUpStatus: COMPLETED,
+              winningSide: 1,
               score: { sets: [{ side1Score: 6, side2Score: 2, winningSide: 1, setNumber: 1 }] },
             },
             { roundNumber: 2, roundPosition: 1, drawPositions: [], matchUpId: 'mu-4' },
@@ -1679,8 +1828,12 @@ describe('getLuckyDrawRoundStatus — BYE-advanced and additional branches', () 
           structureId: 's1',
           matchUps: [
             {
-              roundNumber: 1, roundPosition: 1, drawPositions: [1, 2], matchUpId: 'mu-1',
-              matchUpStatus: COMPLETED, winningSide: 1,
+              roundNumber: 1,
+              roundPosition: 1,
+              drawPositions: [1, 2],
+              matchUpId: 'mu-1',
+              matchUpStatus: COMPLETED,
+              winningSide: 1,
               score: { sets: [{ side1Score: 6, side2Score: 3, winningSide: 1, setNumber: 1 }] },
               sides: [
                 { sideNumber: 1, participant: { participantId: 'nested-p1', participantName: 'Nested Alice' } },
@@ -1688,13 +1841,21 @@ describe('getLuckyDrawRoundStatus — BYE-advanced and additional branches', () 
               ],
             },
             {
-              roundNumber: 1, roundPosition: 2, drawPositions: [3, 4], matchUpId: 'mu-2',
-              matchUpStatus: COMPLETED, winningSide: 1,
+              roundNumber: 1,
+              roundPosition: 2,
+              drawPositions: [3, 4],
+              matchUpId: 'mu-2',
+              matchUpStatus: COMPLETED,
+              winningSide: 1,
               score: { sets: [{ side1Score: 6, side2Score: 4, winningSide: 1, setNumber: 1 }] },
             },
             {
-              roundNumber: 1, roundPosition: 3, drawPositions: [5, 6], matchUpId: 'mu-3',
-              matchUpStatus: COMPLETED, winningSide: 1,
+              roundNumber: 1,
+              roundPosition: 3,
+              drawPositions: [5, 6],
+              matchUpId: 'mu-3',
+              matchUpStatus: COMPLETED,
+              winningSide: 1,
               score: { sets: [{ side1Score: 6, side2Score: 2, winningSide: 1, setNumber: 1 }] },
             },
             { roundNumber: 2, roundPosition: 1, drawPositions: [], matchUpId: 'mu-4' },
@@ -1732,45 +1893,77 @@ describe('getLuckyDrawRoundStatus — BYE-advanced and additional branches', () 
           matchUps: [
             // Round 1: 5 matchUps (pre-feed)
             {
-              roundNumber: 1, roundPosition: 1, drawPositions: [1, 2], matchUpId: 'mu-r1-1',
-              matchUpStatus: COMPLETED, winningSide: 1,
+              roundNumber: 1,
+              roundPosition: 1,
+              drawPositions: [1, 2],
+              matchUpId: 'mu-r1-1',
+              matchUpStatus: COMPLETED,
+              winningSide: 1,
               score: { sets: [{ side1Score: 6, side2Score: 4, winningSide: 1, setNumber: 1 }] },
             },
             {
-              roundNumber: 1, roundPosition: 2, drawPositions: [3, 4], matchUpId: 'mu-r1-2',
-              matchUpStatus: COMPLETED, winningSide: 1,
+              roundNumber: 1,
+              roundPosition: 2,
+              drawPositions: [3, 4],
+              matchUpId: 'mu-r1-2',
+              matchUpStatus: COMPLETED,
+              winningSide: 1,
               score: { sets: [{ side1Score: 6, side2Score: 1, winningSide: 1, setNumber: 1 }] },
             },
             {
-              roundNumber: 1, roundPosition: 3, drawPositions: [5, 6], matchUpId: 'mu-r1-3',
-              matchUpStatus: COMPLETED, winningSide: 1,
+              roundNumber: 1,
+              roundPosition: 3,
+              drawPositions: [5, 6],
+              matchUpId: 'mu-r1-3',
+              matchUpStatus: COMPLETED,
+              winningSide: 1,
               score: { sets: [{ side1Score: 6, side2Score: 3, winningSide: 1, setNumber: 1 }] },
             },
             {
-              roundNumber: 1, roundPosition: 4, drawPositions: [7, 8], matchUpId: 'mu-r1-4',
-              matchUpStatus: COMPLETED, winningSide: 1,
+              roundNumber: 1,
+              roundPosition: 4,
+              drawPositions: [7, 8],
+              matchUpId: 'mu-r1-4',
+              matchUpStatus: COMPLETED,
+              winningSide: 1,
               score: { sets: [{ side1Score: 6, side2Score: 2, winningSide: 1, setNumber: 1 }] },
             },
             {
-              roundNumber: 1, roundPosition: 5, drawPositions: [9, 10], matchUpId: 'mu-r1-5',
-              matchUpStatus: COMPLETED, winningSide: 1,
+              roundNumber: 1,
+              roundPosition: 5,
+              drawPositions: [9, 10],
+              matchUpId: 'mu-r1-5',
+              matchUpStatus: COMPLETED,
+              winningSide: 1,
               score: { sets: [{ side1Score: 6, side2Score: 0, winningSide: 1, setNumber: 1 }] },
             },
             // Round 2: 3 matchUps (pre-feed) — p1 won R1 and now plays in R2
             // Include participants from R1 so they have multi-round history
             {
-              roundNumber: 2, roundPosition: 1, drawPositions: [11, 12], matchUpId: 'mu-r2-1',
-              matchUpStatus: COMPLETED, winningSide: 1,
+              roundNumber: 2,
+              roundPosition: 1,
+              drawPositions: [11, 12],
+              matchUpId: 'mu-r2-1',
+              matchUpStatus: COMPLETED,
+              winningSide: 1,
               score: { sets: [{ side1Score: 6, side2Score: 4, winningSide: 1, setNumber: 1 }] },
             },
             {
-              roundNumber: 2, roundPosition: 2, drawPositions: [13, 14], matchUpId: 'mu-r2-2',
-              matchUpStatus: COMPLETED, winningSide: 1,
+              roundNumber: 2,
+              roundPosition: 2,
+              drawPositions: [13, 14],
+              matchUpId: 'mu-r2-2',
+              matchUpStatus: COMPLETED,
+              winningSide: 1,
               score: { sets: [{ side1Score: 6, side2Score: 3, winningSide: 1, setNumber: 1 }] },
             },
             {
-              roundNumber: 2, roundPosition: 3, drawPositions: [15, 16], matchUpId: 'mu-r2-3',
-              matchUpStatus: COMPLETED, winningSide: 1,
+              roundNumber: 2,
+              roundPosition: 3,
+              drawPositions: [15, 16],
+              matchUpId: 'mu-r2-3',
+              matchUpStatus: COMPLETED,
+              winningSide: 1,
               score: { sets: [{ side1Score: 6, side2Score: 1, winningSide: 1, setNumber: 1 }] },
             },
             // Round 3
@@ -1834,16 +2027,28 @@ describe('getLuckyDrawRoundStatus — BYE-advanced and additional branches', () 
           structureId: 's1',
           matchUps: [
             {
-              roundNumber: 1, roundPosition: 1, drawPositions: [1, 2], matchUpId: 'mu-1',
-              matchUpStatus: COMPLETED, winningSide: 1,
+              roundNumber: 1,
+              roundPosition: 1,
+              drawPositions: [1, 2],
+              matchUpId: 'mu-1',
+              matchUpStatus: COMPLETED,
+              winningSide: 1,
             },
             {
-              roundNumber: 1, roundPosition: 2, drawPositions: [3, 4], matchUpId: 'mu-2',
-              matchUpStatus: COMPLETED, winningSide: 1,
+              roundNumber: 1,
+              roundPosition: 2,
+              drawPositions: [3, 4],
+              matchUpId: 'mu-2',
+              matchUpStatus: COMPLETED,
+              winningSide: 1,
             },
             {
-              roundNumber: 1, roundPosition: 3, drawPositions: [5, 6], matchUpId: 'mu-3',
-              matchUpStatus: COMPLETED, winningSide: 1,
+              roundNumber: 1,
+              roundPosition: 3,
+              drawPositions: [5, 6],
+              matchUpId: 'mu-3',
+              matchUpStatus: COMPLETED,
+              winningSide: 1,
             },
             { roundNumber: 2, roundPosition: 1, drawPositions: [], matchUpId: 'mu-4' },
             { roundNumber: 2, roundPosition: 2, drawPositions: [], matchUpId: 'mu-5' },
@@ -1859,12 +2064,8 @@ describe('getLuckyDrawRoundStatus — BYE-advanced and additional branches', () 
         },
         {
           structureId: 's2',
-          matchUps: [
-            { roundNumber: 1, roundPosition: 1, drawPositions: [1, 2], matchUpId: 'po-1' },
-          ],
-          positionAssignments: [
-            { drawPosition: 1, participantId: 'loser-placed-1' },
-          ],
+          matchUps: [{ roundNumber: 1, roundPosition: 1, drawPositions: [1, 2], matchUpId: 'po-1' }],
+          positionAssignments: [{ drawPosition: 1, participantId: 'loser-placed-1' }],
         },
       ],
     };
@@ -1936,9 +2137,7 @@ describe('luckyDrawAdvancement — deeper branch coverage', () => {
 
   test('pre-feed round without participantId returns MISSING_PARTICIPANT_ID', () => {
     const completedScore = {
-      sets: [
-        { side1Score: 6, side2Score: 3, winningSide: 1, setNumber: 1 },
-      ],
+      sets: [{ side1Score: 6, side2Score: 3, winningSide: 1, setNumber: 1 }],
     };
 
     const drawDefinition: any = {
@@ -1948,16 +2147,31 @@ describe('luckyDrawAdvancement — deeper branch coverage', () => {
           structureId: 's1',
           matchUps: [
             {
-              roundNumber: 1, roundPosition: 1, drawPositions: [1, 2], matchUpId: 'mu-1',
-              matchUpStatus: COMPLETED, winningSide: 1, score: completedScore,
+              roundNumber: 1,
+              roundPosition: 1,
+              drawPositions: [1, 2],
+              matchUpId: 'mu-1',
+              matchUpStatus: COMPLETED,
+              winningSide: 1,
+              score: completedScore,
             },
             {
-              roundNumber: 1, roundPosition: 2, drawPositions: [3, 4], matchUpId: 'mu-2',
-              matchUpStatus: COMPLETED, winningSide: 1, score: completedScore,
+              roundNumber: 1,
+              roundPosition: 2,
+              drawPositions: [3, 4],
+              matchUpId: 'mu-2',
+              matchUpStatus: COMPLETED,
+              winningSide: 1,
+              score: completedScore,
             },
             {
-              roundNumber: 1, roundPosition: 3, drawPositions: [5, 6], matchUpId: 'mu-3',
-              matchUpStatus: COMPLETED, winningSide: 1, score: completedScore,
+              roundNumber: 1,
+              roundPosition: 3,
+              drawPositions: [5, 6],
+              matchUpId: 'mu-3',
+              matchUpStatus: COMPLETED,
+              winningSide: 1,
+              score: completedScore,
             },
             { roundNumber: 2, roundPosition: 1, drawPositions: [], matchUpId: 'mu-4' },
             { roundNumber: 2, roundPosition: 2, drawPositions: [], matchUpId: 'mu-5' },
@@ -1984,9 +2198,7 @@ describe('luckyDrawAdvancement — deeper branch coverage', () => {
 
   test('pre-feed round with ineligible participantId returns error', () => {
     const completedScore = {
-      sets: [
-        { side1Score: 6, side2Score: 3, winningSide: 1, setNumber: 1 },
-      ],
+      sets: [{ side1Score: 6, side2Score: 3, winningSide: 1, setNumber: 1 }],
     };
 
     const drawDefinition: any = {
@@ -1996,16 +2208,31 @@ describe('luckyDrawAdvancement — deeper branch coverage', () => {
           structureId: 's1',
           matchUps: [
             {
-              roundNumber: 1, roundPosition: 1, drawPositions: [1, 2], matchUpId: 'mu-1',
-              matchUpStatus: COMPLETED, winningSide: 1, score: completedScore,
+              roundNumber: 1,
+              roundPosition: 1,
+              drawPositions: [1, 2],
+              matchUpId: 'mu-1',
+              matchUpStatus: COMPLETED,
+              winningSide: 1,
+              score: completedScore,
             },
             {
-              roundNumber: 1, roundPosition: 2, drawPositions: [3, 4], matchUpId: 'mu-2',
-              matchUpStatus: COMPLETED, winningSide: 1, score: completedScore,
+              roundNumber: 1,
+              roundPosition: 2,
+              drawPositions: [3, 4],
+              matchUpId: 'mu-2',
+              matchUpStatus: COMPLETED,
+              winningSide: 1,
+              score: completedScore,
             },
             {
-              roundNumber: 1, roundPosition: 3, drawPositions: [5, 6], matchUpId: 'mu-3',
-              matchUpStatus: COMPLETED, winningSide: 1, score: completedScore,
+              roundNumber: 1,
+              roundPosition: 3,
+              drawPositions: [5, 6],
+              matchUpId: 'mu-3',
+              matchUpStatus: COMPLETED,
+              winningSide: 1,
+              score: completedScore,
             },
             { roundNumber: 2, roundPosition: 1, drawPositions: [], matchUpId: 'mu-4' },
             { roundNumber: 2, roundPosition: 2, drawPositions: [], matchUpId: 'mu-5' },
@@ -2088,9 +2315,7 @@ describe('luckyDrawAdvancement — deeper branch coverage', () => {
   test('non-pre-feed round advancement does not require participantId', () => {
     // drawSize=8 is power-of-2, so all rounds have even matchUp counts (non-pre-feed)
     const completedScore = {
-      sets: [
-        { side1Score: 6, side2Score: 3, winningSide: 1, setNumber: 1 },
-      ],
+      sets: [{ side1Score: 6, side2Score: 3, winningSide: 1, setNumber: 1 }],
     };
 
     const drawDefinition: any = {
@@ -2100,20 +2325,40 @@ describe('luckyDrawAdvancement — deeper branch coverage', () => {
           structureId: 's1',
           matchUps: [
             {
-              roundNumber: 1, roundPosition: 1, drawPositions: [1, 2], matchUpId: 'mu-1',
-              matchUpStatus: COMPLETED, winningSide: 1, score: completedScore,
+              roundNumber: 1,
+              roundPosition: 1,
+              drawPositions: [1, 2],
+              matchUpId: 'mu-1',
+              matchUpStatus: COMPLETED,
+              winningSide: 1,
+              score: completedScore,
             },
             {
-              roundNumber: 1, roundPosition: 2, drawPositions: [3, 4], matchUpId: 'mu-2',
-              matchUpStatus: COMPLETED, winningSide: 1, score: completedScore,
+              roundNumber: 1,
+              roundPosition: 2,
+              drawPositions: [3, 4],
+              matchUpId: 'mu-2',
+              matchUpStatus: COMPLETED,
+              winningSide: 1,
+              score: completedScore,
             },
             {
-              roundNumber: 1, roundPosition: 3, drawPositions: [5, 6], matchUpId: 'mu-3',
-              matchUpStatus: COMPLETED, winningSide: 1, score: completedScore,
+              roundNumber: 1,
+              roundPosition: 3,
+              drawPositions: [5, 6],
+              matchUpId: 'mu-3',
+              matchUpStatus: COMPLETED,
+              winningSide: 1,
+              score: completedScore,
             },
             {
-              roundNumber: 1, roundPosition: 4, drawPositions: [7, 8], matchUpId: 'mu-4',
-              matchUpStatus: COMPLETED, winningSide: 1, score: completedScore,
+              roundNumber: 1,
+              roundPosition: 4,
+              drawPositions: [7, 8],
+              matchUpId: 'mu-4',
+              matchUpStatus: COMPLETED,
+              winningSide: 1,
+              score: completedScore,
             },
             { roundNumber: 2, roundPosition: 1, drawPositions: [], matchUpId: 'mu-5' },
             { roundNumber: 2, roundPosition: 2, drawPositions: [], matchUpId: 'mu-6' },
@@ -2151,9 +2396,7 @@ describe('luckyDrawAdvancement — deeper branch coverage', () => {
 
   test('placeDiscardedLosers with WIN_RATIO ad-hoc target structure succeeds without placing', () => {
     const completedScore = {
-      sets: [
-        { side1Score: 6, side2Score: 3, winningSide: 2, setNumber: 1 },
-      ],
+      sets: [{ side1Score: 6, side2Score: 3, winningSide: 2, setNumber: 1 }],
     };
 
     const drawDefinition: any = {
@@ -2172,16 +2415,31 @@ describe('luckyDrawAdvancement — deeper branch coverage', () => {
           stageSequence: 1,
           matchUps: [
             {
-              roundNumber: 1, roundPosition: 1, drawPositions: [1, 2], matchUpId: 'r1-m1',
-              matchUpStatus: COMPLETED, winningSide: 2, score: completedScore,
+              roundNumber: 1,
+              roundPosition: 1,
+              drawPositions: [1, 2],
+              matchUpId: 'r1-m1',
+              matchUpStatus: COMPLETED,
+              winningSide: 2,
+              score: completedScore,
             },
             {
-              roundNumber: 1, roundPosition: 2, drawPositions: [3, 4], matchUpId: 'r1-m2',
-              matchUpStatus: COMPLETED, winningSide: 2, score: completedScore,
+              roundNumber: 1,
+              roundPosition: 2,
+              drawPositions: [3, 4],
+              matchUpId: 'r1-m2',
+              matchUpStatus: COMPLETED,
+              winningSide: 2,
+              score: completedScore,
             },
             {
-              roundNumber: 1, roundPosition: 3, drawPositions: [5, 6], matchUpId: 'r1-m3',
-              matchUpStatus: COMPLETED, winningSide: 2, score: completedScore,
+              roundNumber: 1,
+              roundPosition: 3,
+              drawPositions: [5, 6],
+              matchUpId: 'r1-m3',
+              matchUpStatus: COMPLETED,
+              winningSide: 2,
+              score: completedScore,
             },
             { roundNumber: 2, roundPosition: 1, drawPositions: [], matchUpId: 'r2-m1' },
             { roundNumber: 2, roundPosition: 2, drawPositions: [], matchUpId: 'r2-m2' },

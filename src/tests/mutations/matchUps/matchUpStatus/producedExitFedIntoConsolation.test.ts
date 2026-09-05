@@ -40,7 +40,8 @@ it('properly handles produced Exit fed into consolation structure', () => {
   // SECOND: find the CONSOLATION matchUp and confirm the presence of the produced BYE
   matchUps = tournamentEngine.allTournamentMatchUps().matchUps;
   targetMatchUp = matchUps.find(
-    ({matchUpId, matchUpStatus, stage}) => matchUpId === targetMatchUp.loserMatchUpId && matchUpStatus === BYE && stage === CONSOLATION
+    ({ matchUpId, matchUpStatus, stage }) =>
+      matchUpId === targetMatchUp.loserMatchUpId && matchUpStatus === BYE && stage === CONSOLATION,
   );
 
   // NOTE: whether the MAIN matchUp was in the Top Half or Bottom Half effects location in CONSOLATION

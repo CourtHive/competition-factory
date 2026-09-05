@@ -32,9 +32,7 @@ test('getParticipantStats with withCompetitiveProfiles covers competitiveness pa
   expect(result.relevantMatchUps.length).toBeGreaterThan(0);
 
   // Verify competitiveness data is populated for at least some participants
-  const statsWithCompetitiveness = result.allParticipantStats.filter(
-    (s) => Object.keys(s.competitiveness).length > 0,
-  );
+  const statsWithCompetitiveness = result.allParticipantStats.filter((s) => Object.keys(s.competitiveness).length > 0);
   expect(statsWithCompetitiveness.length).toBeGreaterThan(0);
 
   // Verify competitiveness ratios are calculated (covers lines 333-341)

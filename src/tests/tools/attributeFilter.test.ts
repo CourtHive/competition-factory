@@ -335,7 +335,7 @@ it('handles empty string vs null vs undefined differences', () => {
     zero: 0,
     falsy: false,
   };
-  
+
   const template = {
     emptyStr: true,
     nullVal: true,
@@ -343,7 +343,7 @@ it('handles empty string vs null vs undefined differences', () => {
     zero: true,
     falsy: true,
   };
-  
+
   const result = attributeFilter({ source, template });
   expect(result.emptyStr).toBe('');
   expect(result.nullVal).toBeNull();
@@ -364,7 +364,7 @@ it('handles deeply nested object paths', () => {
       },
     },
   };
-  
+
   const template = {
     a: {
       b: {
@@ -376,7 +376,7 @@ it('handles deeply nested object paths', () => {
       },
     },
   };
-  
+
   const result = attributeFilter({ source, template });
   expect(result.a.b.c.d.value).toBe('deep');
 });
@@ -386,12 +386,12 @@ it('handles empty arrays', () => {
     emptyArray: [],
     filledArray: [1, 2, 3],
   };
-  
+
   const template = {
     emptyArray: true,
     filledArray: true,
   };
-  
+
   const result = attributeFilter({ source, template });
   expect(result.emptyArray).toEqual([]);
   expect(result.filledArray).toEqual([1, 2, 3]);
@@ -404,7 +404,7 @@ it('handles complex nested arrays', () => {
       { id: 2, name: 'Item 2', secret: 'classified' },
     ],
   };
-  
+
   const template = {
     items: {
       id: true,
@@ -412,7 +412,7 @@ it('handles complex nested arrays', () => {
       secret: false,
     },
   };
-  
+
   const result = attributeFilter({ source, template });
   expect(result.items).toHaveLength(2);
   expect(result.items[0].secret).toBeUndefined();

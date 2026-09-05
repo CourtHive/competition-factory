@@ -112,14 +112,7 @@ export function generateFlightDrawDefinitions({
   return { ...SUCCESS, drawIds };
 }
 
-function applySeeding({
-  drawParticipantIds,
-  seedingScaleName,
-  tournamentRecord,
-  seedsCount,
-  startDate,
-  eventType,
-}) {
+function applySeeding({ drawParticipantIds, seedingScaleName, tournamentRecord, seedsCount, startDate, eventType }) {
   if (!tournamentRecord || !seedsCount || seedsCount > drawParticipantIds.length) return;
 
   const scaleValues = generateRange(1, seedsCount + 1);

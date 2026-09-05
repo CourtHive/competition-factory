@@ -516,10 +516,7 @@ function advanceByeMatchUps({ inContextDrawMatchUps, sourceStructureId, tourname
     });
     const {
       targetLinks: { loserTargetLink },
-      targetMatchUps: {
-        loserMatchUpDrawPositionIndex,
-        loserMatchUp,
-      },
+      targetMatchUps: { loserMatchUpDrawPositionIndex, loserMatchUp },
     } = targetData;
 
     if (loserTargetLink && loserMatchUp) {

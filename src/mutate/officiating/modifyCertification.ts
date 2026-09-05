@@ -17,11 +17,11 @@ type ModifyCertificationArgs = {
   >;
 };
 
-export function modifyCertification({
-  officialRecord,
-  certificationId,
-  updates,
-}: ModifyCertificationArgs): { error?: any; certification?: OfficialCertification; success?: boolean } {
+export function modifyCertification({ officialRecord, certificationId, updates }: ModifyCertificationArgs): {
+  error?: any;
+  certification?: OfficialCertification;
+  success?: boolean;
+} {
   if (!officialRecord) return { error: MISSING_OFFICIAL_RECORD };
   if (!certificationId) return { error: INVALID_VALUES, context: { message: 'Missing certificationId' } } as any;
 

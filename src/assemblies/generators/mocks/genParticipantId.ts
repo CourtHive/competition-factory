@@ -1,7 +1,13 @@
 import { isString } from '@Tools/objects';
 import { UUID } from '@Tools/UUID';
 
-export function genParticipantId({ idPrefix, participantType, index, uuids, random }: {
+export function genParticipantId({
+  idPrefix,
+  participantType,
+  index,
+  uuids,
+  random,
+}: {
   participantType?: string;
   random?: () => number;
   idPrefix?: string;

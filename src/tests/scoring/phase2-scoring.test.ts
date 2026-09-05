@@ -736,7 +736,7 @@ describe('Phase 2 - editPoint with entries', () => {
 
     // Entry data should also be updated
     const entries = engine.getState().history?.entries;
-    const pointEntries = entries!.filter(e => e.type === 'point');
+    const pointEntries = entries!.filter((e) => e.type === 'point');
     expect(pointEntries[1].data.winner).toBe(1);
   });
 });
