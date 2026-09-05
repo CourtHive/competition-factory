@@ -179,3 +179,82 @@ describe('RankingListEntry shape', () => {
     expect(p1.droppedResults[0].points).toEqual(400);
   });
 });
+
+// The two functions are the list view and the per-participant view of the SAME
+// computation, so they must agree. They did not: `generateRankingList` split
+// bucket-limit-exempt awards out and summed them on top, and
+// `getParticipantPoints` ignored the flag, reporting 500 where the list said 550.
+// The split now lives in processBucketResults, which both call.
+describe('generateRankingList / getParticipantPoints parity', () => {
+  const additiveAwards = [
+    makeAward({ personId: 'p1', points: 500 }),
+    makeAward({ personId: 'p1', points: 400 }),
+    makeAward({ personId: 'p1', points: 50, subjectToBucketLimits: false }),
+  ];
+
+  function bothTotals(aggregationRules: any) {
+    const list: any = generateRankingList({ pointAwards: additiveAwards, aggregationRules });
+    const single: any = getParticipantPoints({ pointAwards: additiveAwards, personId: 'p1', aggregationRules });
+    return { list: list.find((e: any) => e.personId === 'p1').totalPoints, single: single.totalPoints };
+  }
+
+  it('agrees on an additive award with no counting buckets', () => {
+    const { list, single } = bothTotals({ bestOfCount: 1 });
+    expect(list).toEqual(550);
+    expect(single).toEqual(list);
+  });
+
+  it('agrees on an additive award inside a counting bucket', () => {
+    const { list, single } = bothTotals({
+      countingBuckets: [{ bucketName: 'All', pointComponents: ['points'], bestOfCount: 1 }],
+    });
+    expect(list).toEqual(550);
+    expect(single).toEqual(list);
+  });
+
+  it('agrees when mandatory rules select the counted awards', () => {
+    const awards = [
+      makeAward({ personId: 'p1', points: 500, level: 1 }),
+      makeAward({ personId: 'p1', points: 400, level: 3 }),
+      makeAward({ personId: 'p1', points: 50, level: 3, subjectToBucketLimits: false }),
+    ];
+    const aggregationRules: any = {
+      countingBuckets: [
+        {
+          bucketName: 'All',
+          pointComponents: ['points'],
+          bestOfCount: 1,
+          mandatoryRules: [{ ruleName: 'Slams', levels: [1] }],
+        },
+      ],
+    };
+    const list: any = generateRankingList({ pointAwards: awards, aggregationRules });
+    const single: any = getParticipantPoints({ pointAwards: awards, personId: 'p1', aggregationRules });
+
+    expect(list.find((e: any) => e.personId === 'p1').totalPoints).toEqual(550);
+    expect(single.totalPoints).toEqual(550);
+  });
+
+  it('never drops a bucket-limit-exempt award, in either view', () => {
+    const aggregationRules = { bestOfCount: 1 };
+    const list: any = generateRankingList({ pointAwards: additiveAwards, aggregationRules });
+    const single: any = getParticipantPoints({ pointAwards: additiveAwards, personId: 'p1', aggregationRules });
+    const p1 = list.find((e: any) => e.personId === 'p1');
+
+    const exempt = (a: any) => a.subjectToBucketLimits === false;
+    expect(p1.countingResults.filter(exempt)).toHaveLength(1);
+    expect(p1.droppedResults.filter(exempt)).toHaveLength(0);
+    expect(single.buckets[0].countingResults.filter(exempt)).toHaveLength(1);
+    expect(single.buckets[0].droppedResults.filter(exempt)).toHaveLength(0);
+  });
+
+  it('control — with no exempt award the two already agreed, and still do', () => {
+    const plain = [makeAward({ personId: 'p1', points: 500 }), makeAward({ personId: 'p1', points: 400 })];
+    const aggregationRules = { bestOfCount: 1 };
+    const list: any = generateRankingList({ pointAwards: plain, aggregationRules });
+    const single: any = getParticipantPoints({ pointAwards: plain, personId: 'p1', aggregationRules });
+
+    expect(list.find((e: any) => e.personId === 'p1').totalPoints).toEqual(500);
+    expect(single.totalPoints).toEqual(500);
+  });
+});

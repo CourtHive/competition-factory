@@ -24,14 +24,24 @@ export function processBucketResults({
   dropped: ScoredAward[];
   bucketTotal: number;
 } {
-  // 1. Score each award by summing pointComponents
-  const scoredAwards: ScoredAward[] = awards.map((a) => {
+  // 1. Score each award by summing pointComponents, and split off the awards
+  //    that are exempt from this bucket's limits.
+  //
+  //    A categoryAggregation rule with `subjectToBucketLimits: false` says its
+  //    carried contribution sums ON TOP of the cap rather than competing for a
+  //    slot. That split belongs here, in the helper all three callers share:
+  //    `generateRankingList` used to do it inline (twice) and
+  //    `getParticipantPoints` did not do it at all, so the two reported
+  //    different totals for the same awards.
+  const scoredAwards: ScoredAward[] = [];
+  const additive: ScoredAward[] = [];
+  for (const award of awards) {
     let value = 0;
     for (const component of pointComponents) {
-      value += typeof a[component] === 'number' ? a[component] : 0;
+      value += typeof award[component] === 'number' ? award[component] : 0;
     }
-    return { award: a, value };
-  });
+    (award.subjectToBucketLimits === false ? additive : scoredAwards).push({ award, value });
+  }
 
   // 2. Sort descending by score
   scoredAwards.sort((a, b) => b.value - a.value);
@@ -59,7 +69,7 @@ export function processBucketResults({
 
   // 4. Mandatory selection + optional fill
   if (mandatoryRules?.length) {
-    return processMandatory(capped, levelDropped, bestOfCount, mandatoryRules);
+    return withAdditive(processMandatory(capped, levelDropped, bestOfCount, mandatoryRules), additive);
   }
 
   // No mandatory rules — standard bestOfCount
@@ -67,7 +77,25 @@ export function processBucketResults({
   const dropped = [...(bestOfCount > 0 ? capped.slice(bestOfCount) : []), ...levelDropped];
   const bucketTotal = counting.reduce((sum, sa) => sum + sa.value, 0);
 
-  return { counting, dropped, bucketTotal };
+  return withAdditive({ counting, dropped, bucketTotal }, additive);
+}
+
+/**
+ * Fold the bucket-limit-exempt awards back in: they always count, are never
+ * dropped, and their value is added to the total. Appended after the selected
+ * awards so the order callers already observed is unchanged.
+ */
+function withAdditive(
+  result: { counting: ScoredAward[]; dropped: ScoredAward[]; bucketTotal: number },
+  additive: ScoredAward[],
+): { counting: ScoredAward[]; dropped: ScoredAward[]; bucketTotal: number } {
+  if (!additive.length) return result;
+
+  return {
+    counting: [...result.counting, ...additive],
+    dropped: result.dropped,
+    bucketTotal: result.bucketTotal + additive.reduce((sum, sa) => sum + sa.value, 0),
+  };
 }
 
 function processMandatory(
