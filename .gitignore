@@ -24,7 +24,9 @@ package-lock.json
 
 # Builds
 *.tsbuildinfo
-/html
+# vitest 5 writes every artifact (html reporter, blob, attachments) under .vitest;
+# it used to write the html reporter to /html
+.vitest
 dist
 
 # IDEs and editors and OS files

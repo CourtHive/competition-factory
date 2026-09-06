@@ -64,15 +64,17 @@ function fail(msg) {
  * failure mode this script exists to make visible — `scripts/verify/README.md`
  * said the branch floor was 83 for the three months after it became 85.
  *
- * The per-file block (`'src/**': { perFile: true, … }`) is skipped: only the
- * first, unkeyed `thresholds` entries are global.
+ * The per-file block (`perFile: { statements: 50, … }`) is skipped: only the
+ * entries before it are global. Everything from the first `perFile` onwards is
+ * dropped, which covers both the vitest 5 object form and the `'src/**': {
+ * perFile: true, … }` glob group it replaced.
  */
 function readThresholds() {
   if (!existsSync(CONFIG)) fail(`missing ${CONFIG}`);
   const src = readFileSync(CONFIG, 'utf8');
   const block = src.slice(src.indexOf('thresholds: {'));
   const perFileAt = block.indexOf('perFile');
-  const globalBlock = perFileAt === -1 ? block : block.slice(0, block.lastIndexOf('{', perFileAt));
+  const globalBlock = perFileAt === -1 ? block : block.slice(0, perFileAt);
 
   const thresholds = {};
   for (const metric of METRICS) {
