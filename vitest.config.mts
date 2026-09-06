@@ -15,6 +15,10 @@ export default defineConfig({
     testTimeout: 30000, // 30 seconds for slow tests
     onConsoleLog: () => {},
     environment: 'node',
+    // Persist transformed modules under node_modules/.vitest-cache so a rerun skips
+    // the transform pass. Transform was ~30% of tracked time on a cold local run.
+    // The cache lives inside node_modules, so a reinstall invalidates it.
+    fsModuleCache: true,
     include: ['src/**/*.test.{js,mjs,cjs,ts,mts,cts,jsx,tsx}'],
     // Untracked scratch tests are excluded from coverage but were still running
     // and exercising production code — inflating local % above CI's. Excluding
@@ -71,13 +75,21 @@ export default defineConfig({
       //    50% floor and the 70% target. Lifting them is incremental work —
       //    see scripts/verify/ if you want to gate a tighter floor for new
       //    files only.
+      //
+      //    The floor was expressed as a `'src/**/*.{...}'` glob group carrying
+      //    `perFile: true` until the 2026-09-06 vitest 5 upgrade. It never ran:
+      //    vitest 4 read `perFile` only off the TOP-LEVEL thresholds object
+      //    (`this.options.thresholds?.perFile`), so a `perFile` nested inside a
+      //    glob group was ignored and the group was scored as an aggregate —
+      //    which the 95% global already passed. Vitest 5 resolves `perFile` per
+      //    group and supports the object form below, which states the two tiers
+      //    without a glob and cannot be silently downgraded to an aggregate.
       thresholds: {
         statements: 95,
         functions: 95,
         branches: 85,
         lines: 95,
-        'src/**/*.{ts,mts,cts,js,mjs,cjs}': {
-          perFile: true,
+        perFile: {
           statements: 50,
           functions: 50,
           branches: 50,
