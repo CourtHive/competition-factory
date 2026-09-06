@@ -1,5 +1,18 @@
 # Changelog
 
+## [6.37.2](https://github.com/CourtHive/competition-factory/compare/v6.37.1...v6.37.2) (2026-09-06)
+
+
+### Bug Fixes
+
+* **scales:** populate PointAward.category.gender from the event ([#4766](https://github.com/CourtHive/competition-factory/issues/4766)) ([3fc2cb1](https://github.com/CourtHive/competition-factory/commit/3fc2cb133defe31b7047671767ed63e5311b342a))
+
+
+### Documentation
+
+* cover the 23 commits that shipped since the 2026-08-25 deploy ([#4764](https://github.com/CourtHive/competition-factory/issues/4764)) ([d40ae7a](https://github.com/CourtHive/competition-factory/commit/d40ae7aadf70a0086f0c88e1201081b435623cf3))
+* **scales:** cover bucketTotals, the 'points' component, and exempt awards ([#4762](https://github.com/CourtHive/competition-factory/issues/4762)) ([2856ee7](https://github.com/CourtHive/competition-factory/commit/2856ee7af27895f24d6d6f0ac8ce1d1787ae6239))
+
 ## [6.37.1](https://github.com/CourtHive/competition-factory/compare/v6.37.0...v6.37.1) (2026-09-06)
 
 
