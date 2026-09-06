@@ -293,6 +293,25 @@ const { events } = engine.generateEventsFromTieFormat({
 
 ---
 
+## getEligibleEvents
+
+Which of a set of events a participant may enter. The bulk form of `getParticipantEligibility` — asking per event means re-resolving the participant and the tournament for each one.
+
+```js
+const { eventEligibility } = engine.getEligibleEvents({
+  participant,
+  events, // Event[]
+  tournamentRecord, // optional
+});
+// eventEligibility: [{ eventId, eligible, indeterminate, rejectionReasons }]
+```
+
+Events that cannot be evaluated at all — no resolvable date range, for instance — are returned as `indeterminate`, **never dropped**. A silently shortened list is indistinguishable from one where those events were checked and found ineligible.
+
+See [Entry Eligibility](../concepts/events/entry-eligibility.md).
+
+---
+
 ## getEvent
 
 Returns a single event object with optional context and drawDefinition.
@@ -362,6 +381,34 @@ const { flightProfile } = engine.getFlightProfile({ eventId });
 ```
 
 **Purpose:** Access flight configuration for events split into multiple draws.
+
+---
+
+## getParticipantEligibility
+
+Whether a participant may enter an event — **asked, rather than attempted**.
+
+```js
+const { eligible, indeterminate, rejectionReasons, undeterminedRestrictions } = engine.getParticipantEligibility({
+  participant,
+  event,
+  tournamentRecord, // optional
+});
+```
+
+The predicate itself is not new — `validateParticipantCategory` has evaluated age at both event ends, handled exact-DOB and calendar-year conventions, and expanded `ageCategoryCode` since it was written. It was reachable only through `addEventEntries`, so the one way to learn whether someone could enter was to try to enter them. A discovery surface evaluating one person against thousands of events cannot use a mutation.
+
+Read-only: emits no notices and mutates nothing.
+
+**`indeterminate` is not `eligible: false`.** The first says a rule could not be evaluated (an unknown `birthDate`, an unrecorded rating); the second says a rule was **breached**. Indeterminate applies only when nothing was actually breached — a participant both over the age limit and missing a rating is ineligible, full stop.
+
+:::note
+
+This does **not** change who gets entered. `addEventEntries` keeps its behaviour exactly: a participant whose `birthDate` is unknown is still filtered out of the entry list there, while here the same participant reports `indeterminate`. "We cannot tell" is correctly a refusal when writing an entry and correctly not a refusal when answering a question.
+
+:::
+
+`undeterminedRestrictions` carries `entryRestrictions` the record cannot settle — residency, membership, clearance — so a consumer can say "this event is closed to your section, check with the organiser" instead of a flat no or a misleading yes. See [Entry Eligibility](../concepts/events/entry-eligibility.md).
 
 ---
 

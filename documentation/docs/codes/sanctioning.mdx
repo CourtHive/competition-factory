@@ -172,6 +172,20 @@ uses "Approved" as the name of a delivery-model subtype rather than a status. CO
 _sanction_ consistently for approval; when surfacing these values to a federation's own users,
 translate to that federation's vocabulary rather than assuming the word travels.
 
+## Schema coverage
+
+`tournament.schema.json` — the [third declaration of CODES](../data-standards.md#the-json-schema) —
+now expresses the sanction shape rather than leaving it unstated. `TournamentSanction` and its parts
+are defined there: `decision`, `recognition`, `classification`, `authority`, `approvalChain`,
+`decisionRecord`, `confers`, `ruleset`, `sanctioningId`, `identifiers`, `fees` and
+`submissionWindow` — plus the `AuthorityRoleEnum` and `SanctionFeeKindEnum` vocabularies, and
+`SanctionRuleset` (`rulesetId`, `edition`, `enforcement`, `appliedRules`). Fees are built on the
+shared `MonetaryAmount`, so a levy states its `currencyCode` and `unit` like every other money value
+in CODES.
+
+A schema that says nothing about a field validates nothing about it. Until this was declared, a
+record could carry a malformed `sanction` and pass.
+
 ## Policy and constraints
 
 What a governing body _permits_ — allowed formats, fee bounds, submission windows, and which
