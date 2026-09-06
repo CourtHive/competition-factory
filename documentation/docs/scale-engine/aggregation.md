@@ -67,6 +67,14 @@ const rankingList = generateRankingList({
 
 Counting buckets define how awards are grouped and counted. Each bucket filters awards by `eventTypes` and extracts point values from `pointComponents`:
 
+Valid `pointComponents` are `positionPoints`, `perWinPoints`, `bonusPoints`,
+`qualityWinPoints`, and `points`. The last is the award's own pre-summed total rather
+than a fifth granular component — it is what a bucket sums when the policy names no
+`pointComponents` at all (the default is `['points', 'qualityWinPoints']`). That pair
+does not double-count, because a quality-win bonus is emitted as its **own** award
+carrying `qualityWinPoints` and no `points`. Do not mix `'points'` with the granular
+components in one bucket, though: there it would count the same award's total twice.
+
 ```js
 aggregationRules: {
   countingBuckets: [
@@ -247,6 +255,7 @@ Tied entries that remain unresolved after all criteria share the same rank.
   meetsMinimum: boolean;           // false if below minCountableResults
   countingResults: PointAward[];   // results that count toward total
   droppedResults: PointAward[];    // results excluded by bestOfCount or level cap
+  bucketTotals?: Record<string, number>;  // per-bucket totals keyed by bucketName
   bucketBreakdown?: [{             // present when countingBuckets are used
     bucketName: string;
     countingResults: PointAward[];
@@ -256,9 +265,32 @@ Tied entries that remain unresolved after all criteria share the same rank.
 }
 ```
 
+`bucketTotals` is the summary view of `bucketBreakdown` — the same numbers keyed by
+bucket name, for consumers that persist or display totals without the underlying
+awards. It is present whenever `bucketBreakdown` is. A bucket the policy left unnamed
+is keyed by position (`bucket-0`, `bucket-1`, …) in both views, and two buckets sharing
+a name are summed rather than one overwriting the other.
+
+## Awards Exempt From Bucket Limits
+
+A `categoryAggregation` rule carrying `subjectToBucketLimits: false` contributes **on top
+of** the bucket's `bestOfCount` cap rather than competing for a slot. Such an award always
+counts, is never dropped, and its value is added to the bucket total:
+
+```js
+// 500 + 400 + 50(exempt), bestOfCount: 1  ->  totalPoints 550
+//   the 500 wins the single slot, the 400 is dropped, the exempt 50 is added on top
+```
+
+`generateRankingList` and `getParticipantPoints` both honour this. They did not always
+agree — `getParticipantPoints` ignored the flag and under-reported, which is fixed as of
+6.37.1 by moving the split into the helper both call.
+
 ## Per-Participant Breakdown
 
-Use `getParticipantPoints` to inspect a single participant's counting/dropped breakdown:
+Use `getParticipantPoints` to inspect a single participant's counting/dropped breakdown.
+It is the per-participant view of exactly the computation `generateRankingList` performs,
+so the two agree on totals for the same awards and rules:
 
 ```js
 import { getParticipantPoints } from 'tods-competition-factory';

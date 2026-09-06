@@ -108,29 +108,19 @@ const POLICY_RANKING_POINTS_TE_HYBRID = {
       {
         profileName: 'TE Circuit (16U/18U)',
         // matches TE-circuit events; no authority override → TENNIS_EUROPE
-        finishingPositionRanges: {
-          /* TE point values */
-        },
+        finishingPositionRanges: {/* TE point values */},
       },
       {
         profileName: 'ITF Junior crossover',
         pointsAuthority: ITF_JUNIOR, // override for ITF events
-        levels: [
-          /* ITF Jr levels */
-        ],
-        finishingPositionRanges: {
-          /* ITF point values */
-        },
+        levels: [/* ITF Jr levels */],
+        finishingPositionRanges: {/* ITF point values */},
       },
       {
         profileName: 'ATP crossover',
         pointsAuthority: ATP, // override for ATP events
-        levels: [
-          /* ATP levels */
-        ],
-        finishingPositionRanges: {
-          /* ATP point values */
-        },
+        levels: [/* ATP levels */],
+        finishingPositionRanges: {/* ATP point values */},
       },
     ],
   },
@@ -204,7 +194,8 @@ awardProfiles: [
   // Scope — determines when this profile applies
   eventTypes: ['SINGLES'],              // SINGLES, DOUBLES, TEAM
   drawTypes: ['SINGLE_ELIMINATION', 'FEED_IN_CHAMPIONSHIP'],
-  drawSizes: [32, 64],                 // exact draw sizes
+  drawSizes: [32, 64],                 // exact draw sizes (preferred)
+  drawSize: 32,                        // single exact draw size; see note below
   maxDrawSize: 128,                    // or a maximum
   levels: [1, 2, 3],                   // tournament levels
   maxLevel: 5,                         // or a maximum
@@ -262,6 +253,13 @@ awardProfiles: [
   requireWinFirstRound: true,
 }
 ```
+
+> **`drawSize` vs `drawSizes`.** Both are honoured, and `drawSizes: [32]` says the same
+> thing as `drawSize: 32`. Prefer the plural: only `drawSizes` participates in
+> [specificity scoring](/docs/scale-engine/ranking-points-pipeline#profile-selection).
+> A profile narrowed by the singular `drawSize` scores zero for it, so it ties with a
+> catch-all profile and the tie is broken by declaration order — which is rarely what
+> a policy author intends.
 
 ## Position Value Resolution
 
