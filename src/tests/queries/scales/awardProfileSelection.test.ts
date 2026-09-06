@@ -336,3 +336,43 @@ describe('profileName in output', () => {
     expect(withProfileName.length).toEqual(0);
   });
 });
+
+// `AwardProfileScope.drawSize` (singular, exact match) was read by matchesProfile
+// but undeclared on the type, so a policy could set it and have it honoured while
+// the type said it did not exist. Now declared — these pin the behaviour that
+// justified declaring it rather than deleting the clause.
+describe('AwardProfileScope drawSize', () => {
+  const exact = { profileName: 'Exactly 32', drawSize: 32, finishingPositionRanges: { 1: 999 } };
+  const catchAll = { profileName: 'Any', finishingPositionRanges: { 1: 10 } };
+
+  it('matches a profile whose exact drawSize equals the draw', () => {
+    const { awardProfile }: any = getAwardProfile({ awardProfiles: [exact, catchAll], drawSize: 32 });
+    expect(awardProfile.profileName).toEqual('Exactly 32');
+  });
+
+  it('excludes the profile when the draw size differs', () => {
+    const { awardProfile }: any = getAwardProfile({ awardProfiles: [exact, catchAll], drawSize: 64 });
+    expect(awardProfile.profileName).toEqual('Any');
+  });
+
+  it('excludes the profile when the draw size is absent', () => {
+    const { awardProfile }: any = getAwardProfile({ awardProfiles: [exact, catchAll] });
+    expect(awardProfile.profileName).toEqual('Any');
+  });
+
+  it('does NOT contribute to specificity, so a catch-all declared first beats it', () => {
+    // Both match a 32 draw. `drawSize` is absent from PROFILE_SCOPE_FIELDS, so the
+    // narrower profile scores 0 exactly like the catch-all, and the array-order
+    // tie-break awards it to whichever came first. Pinned deliberately: this is
+    // current behaviour, and it is a wart — `drawSizes: [32]` DOES score, so the
+    // two spellings of the same constraint rank differently.
+    const { awardProfile }: any = getAwardProfile({ awardProfiles: [catchAll, exact], drawSize: 32 });
+    expect(awardProfile.profileName).toEqual('Any');
+  });
+
+  it('drawSizes, by contrast, does score and wins against a catch-all declared first', () => {
+    const viaList = { profileName: 'viaList', drawSizes: [32], finishingPositionRanges: { 1: 2 } };
+    const { awardProfile }: any = getAwardProfile({ awardProfiles: [catchAll, viaList], drawSize: 32 });
+    expect(awardProfile.profileName).toEqual('viaList');
+  });
+});

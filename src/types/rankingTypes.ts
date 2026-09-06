@@ -129,6 +129,18 @@ export interface AwardProfileScope {
   eventTypes?: EventTypeUnion[];
   drawTypes?: string[];
   drawSizes?: number[];
+
+  /**
+   * Exact draw-size match. Honoured by `getAwardProfile` alongside `drawSizes`
+   * and `maxDrawSize`, and declared here because it was already being read —
+   * a policy could set it and have it matched while the type denied it existed.
+   *
+   * `drawSizes: [64]` expresses the same thing and is the preferred form. Note
+   * that this field is NOT in `PROFILE_SCOPE_FIELDS`, so unlike `drawSizes` it
+   * contributes nothing to specificity scoring when two profiles tie.
+   */
+  drawSize?: number;
+
   maxDrawSize?: number;
   stages?: string[];
   stageSequences?: number[];
