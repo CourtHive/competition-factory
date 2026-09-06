@@ -38,6 +38,39 @@ function calculateBonusPoints(primaryAwardProfile, bestFinishingPosition, level)
   return bonusPoints;
 }
 
+/**
+ * The category snapshot an award carries — what the event WAS when the points
+ * were earned.
+ *
+ * `gender` is part of that snapshot and lives on the EVENT, not inside
+ * `event.category`. Assigning `event.category` verbatim therefore dropped it:
+ * `PointAward.category.gender` was declared in `rankingTypes.ts` and never
+ * populated by anything, so a consumer reading the documented field correctly
+ * got `undefined`. Measured downstream on 2026-09-06 —
+ * `courthive-rankings.point_awards.gender` was NULL on all 3,552 production
+ * rows, and every gendered ranking list it generated came out empty because
+ * `WHERE gender = 'MALE'` never matches a NULL.
+ *
+ * Most events have no `category` object at all (123 of 129 in that corpus), so
+ * the snapshot has to be CREATED when gender is the only thing known about the
+ * category, not merged into an object that is assumed to exist.
+ *
+ * An explicit `category.gender` wins over the event's own: it is the more
+ * specific statement, and an event that says both should be taken at its
+ * narrower word.
+ *
+ * The value is recorded as the event declares it, including `ANY`. Whether an
+ * `ANY` event counts toward a gendered ranking list is an aggregation policy
+ * question and is deliberately NOT decided here — the engine's job is to record
+ * what the event was. Recording it faithfully is what makes the choice
+ * expressible downstream without re-deriving every award.
+ */
+function resolveAwardCategory(category, gender) {
+  if (!gender) return category;
+  if (category?.gender) return category;
+  return { ...(category ?? {}), gender };
+}
+
 function resolveLineValue(levelValue, collectionPosition) {
   if (typeof levelValue === 'object' && levelValue.line) {
     if (levelValue.limit && collectionPosition > levelValue.limit) return undefined;
@@ -55,6 +88,8 @@ function awardLinePointsToWinningSide({
   personPoints,
   pointsAuthority,
   eventType,
+  category,
+  gender,
   drawId,
 }) {
   const { collectionPosition } = tieMatchUp;
@@ -72,11 +107,16 @@ function awardLinePointsToWinningSide({
       if (!personId) continue;
 
       if (!personPoints[personId]) personPoints[personId] = [];
+      // Carries the same category snapshot as every other award. A team line
+      // award that omitted it would reach a gendered ranking list with a NULL
+      // gender and be filtered out of it — the identical defect, just confined
+      // to team events.
       personPoints[personId].push({
         linePoints: lineValue,
         collectionPosition,
         pointsAuthority,
         eventType,
+        category: resolveAwardCategory(category, gender),
         drawId,
       });
     }
@@ -96,6 +136,8 @@ function calculateTeamLinePoints({
   personPoints,
   pointsAuthority,
   eventType,
+  category,
+  gender,
   drawId,
 }) {
   if (participantType !== TEAM_PARTICIPANT || !awardProfile || !levelValue) return;
@@ -123,6 +165,8 @@ function calculateTeamLinePoints({
         personPoints,
         pointsAuthority,
         eventType,
+        category,
+        gender,
         drawId,
       });
     }
@@ -515,6 +559,7 @@ function calculateDrawPoints({
         eventType,
         drawId,
         category,
+        gender,
         drawType,
         startDate,
         endDate,
@@ -634,6 +679,8 @@ function processAllParticipations({
         personPoints,
         pointsAuthority: awardProfile.pointsAuthority ?? pointsAuthority,
         eventType,
+        category,
+        gender,
         drawId,
       });
     }
@@ -647,6 +694,7 @@ function buildAndDistributeAward({
   eventType,
   drawId,
   category,
+  gender,
   drawType,
   startDate,
   endDate,
@@ -677,7 +725,7 @@ function buildAndDistributeAward({
     eventType,
     drawId,
     points,
-    category,
+    category: resolveAwardCategory(category, gender),
     drawType,
     startDate,
     endDate,
