@@ -57,6 +57,14 @@ Profiles are scored by counting their populated scope fields. A profile that spe
 
 **Priority override:** If any matching profile has an explicit `priority` number, the highest priority wins regardless of specificity score.
 
+**An absent value never matches.** A profile that declares a filter does **not** match an event lacking that field at all — a profile scoped to `ratingTypes: ['WTN']` does not match an event with no `ratingType`, rather than matching it vacuously. This applies to every array-valued scope field above, and is long-standing behaviour rather than a new rule.
+
+:::note
+
+`matchesProfile` reads a singular `profile.drawSize` as well as `drawSizes`. Nothing in the factory's own fixtures sets it, but ranking policies are runtime data loaded from a policy service, so an external policy can set it and have it honoured — it is declared on `AwardProfileScope` for that reason. See [`drawSize` vs `drawSizes`](/docs/policies/rankingPolicy#full-profile) for why the plural is preferred.
+
+:::
+
 ### CategoryScope Matching
 
 The `category` field on an `awardProfile` uses `CategoryScope` to match against the event's competitive context:

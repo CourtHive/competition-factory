@@ -135,6 +135,25 @@ The **Competition Factory** provides:
 
 All factory operations preserve CODES compliance, ensuring that tournament records remain portable, accessible, and standards-compliant throughout their lifecycle.
 
+### The JSON Schema
+
+`src/global/schema/tournament.schema.json` is the **third declaration of CODES**, after the TypeScript types and these docs. It is held in the repository and exercised by the test suite; it is not part of the published package, whose surface is `dist`.
+
+Because it is a third declaration it can drift from the other two, and drift here is consequential in both directions: a closed definition turns a CODES field added to the types but not mirrored in the schema into a loud validation failure, while an open one hides it.
+
+**Strictness is a stated convention, not an accident.** Of the 68 object definitions, **64 declare `additionalProperties: false`**. Four are deliberately open:
+
+| definition | why it is open |
+| --- | --- |
+| `Extension` | extensions carry caller-defined payloads by design |
+| `Tournament` | permissive pending the undeclared fields real records still carry |
+| `Venue` | as above |
+| `Organisation` | as above |
+
+Closing the three record-shaped definitions is **blocked rather than declined**: measured against the TODS fixtures, making them strict fails most of them and exposes undeclared fields carried by real records — `venueIds`, `deleted`, `Venue.parentOrganisation`, `Organisation.createdAt` / `updatedAt`, and others. Each needs a decision about whether it belongs in CODES before the definition can be closed around it.
+
+A producer writing CODES records should treat `additionalProperties: false` as the expected case and not rely on the four open definitions staying open.
+
 ## Related Documentation
 
 - **[Introduction](./)** - Overview of Competition Factory architecture

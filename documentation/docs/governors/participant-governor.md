@@ -433,6 +433,47 @@ const {
 
 ---
 
+## getParticipation
+
+Derive what a `tournamentRecord` asserts about **who took part** — the rows a participation index is built from, without loading anything but this record.
+
+```js
+const entries = engine.getParticipation({ tournamentRecord });
+```
+
+```ts
+interface ParticipationEntry {
+  subjectType: 'TEAM' | 'PERSON'; // the grain the subject is identified at
+  subjectId: string; // the id an organisation ISSUED — stable across tournamentRecords
+  organisationId?: string; // the body that issued it; two may both number the same competitor
+  participantId: string; // this record's own id — tournament-local, never a subject key
+  tournamentId: string;
+  tournamentName?: string;
+  startDate?: string;
+  endDate?: string;
+  eventCount: number;
+  providerId?: string;
+}
+```
+
+The counterpart to [`getTournamentCalendarEntry`](./query-governor.md#gettournamentcalendarentry). A calendar entry answers _what does this provider own_; participation answers _what did this competitor take part in_. They are different relations and a calendar cannot express the second: a record lives in exactly **one** provider's calendar, while a team fixture belongs to the seasons of **both** sides, so ownership can only ever name one of them.
+
+That is also why participation reads both sides of every fixture and needs no notion of a host — useful, because a source stating who hosted is the exception rather than the rule.
+
+### Subject identity comes from the issued id, never from `participantId`
+
+A `participantId` is tournament-local: the same competitor carries a different one in every record it appears in. Keyed on that, a competitor's history would be exactly **one entry long per record** — plausible-looking, and wrong in a way nothing errors on.
+
+The subject is therefore read from `participantOtherIds` (TEAM) and `person.personOtherIds` (PERSON), which carry the issuing organisation's own id and are stable by construction.
+
+**A competitor stating no issued id contributes no entry.** That is a recorded gap — this record does not say who the competitor is in any durable sense — and manufacturing one from the local id would produce precisely the wrong answer above. Callers wanting to detect the gap can compare the entry count against the competitors they expected.
+
+A competitor issued ids by two organisations yields **one entry per organisation**, which is correct: each is a distinct claim about identity, and a consumer indexes whichever body it speaks for.
+
+Pure: reads only the record. Storage keys, timestamps and server-specific projections are the caller's concern.
+
+---
+
 ## getScaleValues
 
 Resolves one participant's scale timeItems into ratings, rankings and seedings.

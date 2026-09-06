@@ -1624,6 +1624,40 @@ occupancy specifically.
 
 ---
 
+## setMatchUpCalledAt
+
+Sets or clears `matchUp.schedule.calledAt` — the ISO instant captured when a tournament director deliberately places a matchUp on the TMX active strip, signalling that it is imminent.
+
+```js
+engine.setMatchUpCalledAt({
+  matchUpId, // required
+  drawId, // required
+  calledAt, // ISO timestamp; `null` or `undefined` CLEARS the previous value
+  disableNotice, // optional boolean
+});
+```
+
+Called directly, `undefined` reads as **clear**. That differs deliberately from [`addMatchUpScheduleItems`](#calledat), where an omitted key must not wipe a call to court.
+
+### A `calledAt` before the tournament starts is refused
+
+Calling a match to court is a physical act at the venue, so it cannot happen before the venue opens. `addMatchUpScheduledDate` already refuses a `scheduledDate` outside the tournament's range; a `calledAt` predating `startDate` is the same class of impossibility and was previously accepted without complaint.
+
+**The check needs a time zone to be correct.** `startDate` is a bare venue-local calendar day while `calledAt` is a UTC instant, and comparing them without a zone compares two different things. In Sydney (UTC+10) a 09:00 call on opening day is 23:00 UTC on the **previous** day, so a naive UTC-day comparison would reject a perfectly legitimate call — the opposite of the failure being fixed, and worse, because it blocks the running desk.
+
+So the venue's zone resolves the instant to its real local day, via the same `localTimeZone` the rest of the venue time frame already depends on.
+
+**Without a resolvable zone the guard weakens rather than guesses.** Many tournaments carry neither a `localTimeZone` nor a venue address, and there is then no exact answer to "which local day was that?" — only a bound. The furthest-ahead zone in use is UTC+14 (Kiritimati), so local midnight opening the tournament can be no earlier than `startDate 00:00 UTC − 14h`:
+
+- an instant before that bound is before the start in **every** zone that exists, and is refused;
+- an instant after it is opening day **somewhere**, and is admitted.
+
+That is the most the check can soundly say without a zone. It is deliberately weaker than the zoned form — an evening-before call in New York is caught only when the tournament names its zone — because refusing a real call stops play, which is by far the worse of the two failures.
+
+`endDate` is **not** guarded. A match called near midnight on the final day legitimately runs past it, and the last day's play routinely spills over; there is no equivalent impossibility on that side.
+
+---
+
 ## Auto-captured `scoredTime`
 
 `matchUp.schedule.scoredTime` is a first-class ISO-8601 timestamp that the engine

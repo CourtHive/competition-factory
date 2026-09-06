@@ -427,6 +427,28 @@ tournamentEngine.generateDrawDefinition({
 });
 ```
 
+## Playoff avoidance is synthesised, not configured
+
+Playoff draws fed by round-robin groups get an avoidance policy **automatically**. `positionUnseededParticipants` builds it from each entry's `groupingValue` whenever the stage is `PLAY_OFF`, with no `policyDefinitions` required.
+
+So _"no first-round pair holds two participants from the same group"_ is a guarantee the engine makes, not a coincidence of the draw.
+
+## Residual conflicts are reported
+
+Automated positioning tries candidate arrangements and swaps participants to resolve conflicts. It cannot always succeed — four groups landing as A1-A2, B1-B2, C1-C2, D1-D2 leave no conflict-free first round to reach.
+
+The candidate applied is the lowest-conflict one generated, but "lowest" can still be non-zero when the repair loop runs out of options. When that happens `automatedPositioning` reports what is left under `conflicts.unseededConflicts` rather than returning a bare success:
+
+```js
+const { conflicts } = engine.automatedPositioning({ drawId, structureId });
+
+if (conflicts?.unseededConflicts) {
+  // the draw was positioned, but the avoidance guarantee could not be met in full
+}
+```
+
+An absent `conflicts.unseededConflicts` means the arrangement satisfied the policy. A same-group opening match previously shipped as `{ success: true, conflicts: {} }` with no way for a caller to notice, which left an intermittent test failure as the only available symptom.
+
 ## Related Documentation
 
 - **[Accessors](/docs/concepts/accessors)** - Complete accessor syntax and usage

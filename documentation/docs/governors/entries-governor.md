@@ -206,6 +206,25 @@ engine.destroyPairEntry({
 
 ---
 
+## getEffectiveRegistrationProfile
+
+The registration facts that actually apply to an event, merging the event's `registrationProfile` over the tournament's **field by field**.
+
+```js
+const { entriesOpen, entriesClose, withdrawalDeadline, entryFees, entryUrl, eligibilityNotes } =
+  engine.getEffectiveRegistrationProfile({ event, tournamentRecord });
+```
+
+**The field-by-field cascade is the whole reason this function exists.** The obvious implementation — `event.registrationProfile ?? tournamentRecord.registrationProfile` — is wrong in a way that looks right: an event overriding only `entriesClose` would silently lose the tournament's `entryUrl`, `entryFees` and every other field, because the whole object was replaced rather than merged. The failure is invisible at the call site and shows up as a missing registration link on one division.
+
+Every reader of a registration window should come through here rather than reaching for the fallback itself.
+
+Only the six overridable fields are returned; the tournament's logistics, sponsors and dress code are not event-scoped concepts and are read from `tournamentRecord.registrationProfile` directly. An `undefined` value on the event does **not** override — absent means "not stated here", never "explicitly nothing" — while a `null` is preserved, so a producer can still say "this event has no entry URL" when it means it.
+
+See [Registration Profile](../concepts/registration-profile.md#event-grain-overrides).
+
+---
+
 ## getEntriesAndSeedsCount
 
 Calculates the number of seeds allowed for a draw based on entries count and seeding policy.
@@ -256,6 +275,40 @@ console.log(`${stageEntries.length} entries, ${seedsCount} seeds allowed`);
 - Respects seeding policy limits
 - Returns stage-specific entries (MAIN vs QUALIFYING)
 - Used internally by `generateDrawDefinition`
+
+---
+
+## getEntryFeeRange
+
+The lowest and highest of a set of fees — or nothing, when they cannot honestly be compared.
+
+```js
+const range = engine.getEntryFeeRange(fees);
+// { min: { amount, currencyCode, unit }, max: { ... }, indeterminate: [], incomparable: [] }
+```
+
+A displayed price range ("$30–$155") is only meaningful if every contributing fee is denominated identically. Comparing across currencies picks the smaller **number** rather than the smaller **value**: 40 EUR "beats" 45 USD on arithmetic that means nothing.
+
+So the range is computed only over the single most common `currencyCode`/`unit` pair — the largest group, so one stray currency does not suppress an otherwise usable range — and everything else is **reported rather than folded in or dropped**:
+
+- `indeterminate` — fees that could not be resolved at all, present so a caller can disclose rather than hide them.
+- `incomparable` — the distinct `currencyCode`/`unit` pairs found beyond the one the range is denominated in.
+
+Returns `undefined` when no fee can be resolved at all, so the caller renders nothing rather than a zero.
+
+---
+
+## getEventEntryFees
+
+The entry fees that apply to an event, narrowed by each fee's own selectors.
+
+```js
+const fees = engine.getEventEntryFees({ event, tournamentRecord });
+```
+
+A tournament-grain fee list can carry entries for several events, so "the fees on this record" is not the same question as "the fees for this event". Selectors are matched **most-specific first**: `eventId` > `category` > `eventType`. A fee with **no** selector applies to every event — that is how a single tournament-wide price is stated.
+
+Only the most specific tier that matched is returned, rather than everything that matched: a fee keyed to this exact `eventId` supersedes a blanket "all doubles" price, and returning both would leave the caller to re-derive precedence and get it wrong. Fees selecting a _different_ event are excluded rather than returned as a fallback.
 
 ---
 
@@ -409,6 +462,26 @@ const result = engine.removeEventEntries({
 ```
 
 **Purpose:** Removes entries from event and optionally from draws.
+
+---
+
+## resolveEntryFee
+
+Read a stored entry fee, refusing to guess its scale.
+
+```js
+const resolved = engine.resolveEntryFee(fee);
+// { amount, currencyCode, unit }
+// or { indeterminate: true, reason: 'no unit — scale unknown' }
+
+if (engine.isIndeterminateFee(resolved)) renderFeeOnRequest(resolved.reason);
+```
+
+`unit` is required on `RegistrationEntryFee` by construction, but records written before it existed still arrive over the wire without one, and a stored record is not a compile-time object. This is the read-side counterpart to that requirement: **writes are strict, reads are tolerant, and the tolerance takes the shape of an explicit "cannot tell" rather than an assumption.**
+
+**The unit is never inferred from magnitude.** "6000 is obviously minor units" is wrong on a real ¥6000 entry and on a genuine $6,000 pro-am, and both exist. A consumer receiving `indeterminate` should render "fee on request" or similar — anything but a figure that might be out by 100×. An absent `currencyCode` is likewise unknown, not the reader's own; defaulting it invents data.
+
+`isIndeterminateFee` is the type guard that narrows the union.
 
 ---
 

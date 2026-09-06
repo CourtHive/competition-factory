@@ -105,6 +105,7 @@ These are the only faithful representation of a non-standard topology: the stand
 const { rows } = engine.cast();
 // rows: {
 //   tournaments,            // one row: id, name, provider_id, dates, city, published (OoP-or-participants)
+//   tournament_discovery,   // one row: the faceted-discovery aggregate (geo, level, fees, facets)
 //   events,                 // one row/event: name, type, gender, category, matchUpFormat, dates, published
 //   draws,                  // one row/draw: name, type, matchUpFormat
 //   structures,             // one row/top-level structure: name, stage, stageSequence, type, matchUpFormat
@@ -123,6 +124,16 @@ const { rows } = engine.cast();
 
 **`events.published` resolves through the same cascade as the matchUps** — it is not a truthiness test on the event's `PUBLISH.STATUS.PUBLIC` envelope. `unPublishEvent` leaves that envelope in place with undefined-valued keys, so a truthiness (or even a non-empty) test reports an unpublished event as published while its matchUps correctly report `false`. `readModel.isEventPublished` resolves it at **draw** granularity — an event whose draw publishes only selected structures is still a published event — and treats **seeding as an independent publish surface**: `publishEventSeeding` writes `seeding: { published: true }` with no draw detail at all, and an event with published seeding is published even when no draw is.
 
+**`tournament_discovery` is the one aggregate row in the projection.** Every other table is 1:1 with a source object; this one summarises a tournament _and_ its events, so an event changing dirties its tournament's row. It is attributed through a distinct `tournamentAggregate` entity kind whose coverage rule is "the mutation announced something", because a row that belongs to no single entity cannot be attributed to one. See [Tournament Discovery](../concepts/tournament-discovery.md).
+
+**`entries` carries a TEAM entry's issued identity**, in `team_id` + `organisation_id`. `team_id` is the id an organisation **issued** for that team, taken from `participantOtherIds` — `null` for every other `participantType`, and for a TEAM stating no issued id. It is deliberately **not** `participant_id`, which is tournament-local: keyed on that, a programme would look like a different competitor in every record and its season would be exactly one fixture long. `organisation_id` names the body that issued it, because a subjectId is unique only _within_ its issuing body.
+
+:::warning
+
+`entries.team_id` and `match_up_competitors.team_id` follow **different rules and must not be assumed interchangeable.** The competitors column is `participant.teamId ?? participantId`, so it falls back to a tournament-local id when a record states no durable identity; the entries column is the issued id and is `null` rather than local when none is stated. They coincide wherever a producer happens to set `participantId` to the issued id — which the college-dual corpus does — and diverge everywhere else.
+
+:::
+
 `match_up_competitors.person_id` is populated only for a **real canonical person** — a `personId` that is not equal to the `participantId` and is not a factory `UUID()` (i.e. a provider/federation id such as a UTR id, `link_source: 'providerId'`); synthetic/local participants are left `NULL` (`link_source: 'unresolved'`). `venue.facilityId` is a canonical first-class attribute that **defaults to `venueId`**.
 
 Callable on the engine (injects the loaded `tournamentRecord`) or via `queryGovernor.cast({ tournamentRecord })` (the server / rebuild-pipeline call pattern).
@@ -140,7 +151,9 @@ import { readModel } from 'tods-competition-factory';
 | Export                                     | Purpose                                                                                                                                                                                                                             |
 | ------------------------------------------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `cast`                                     | Full-tournament projection (the same function documented above).                                                                                                                                                                    |
-| `tournamentRow` / `venueRow` / `entryRows` | Row builders for the `tournaments`, `venues`/`tournament_venues`, and `entries` tables.                                                                                                                                             |
+| `tournamentRow` / `venueRow` / `entryRows` | Row builders for the `tournaments`, `venues`/`tournament_venues`, and `entries` tables. `entryRows` carries a TEAM entry's issued `team_id` + `organisation_id` — see the warning above.                                                |
+| `tournamentDiscoveryRow`                   | Row builder for the `tournament_discovery` table — the faceted-discovery aggregate over a tournament and its events. The only builder that is not 1:1 with a source object; see [Tournament Discovery](../concepts/tournament-discovery.md). |
+| `applyProgressionEdges`                    | Stamps `winnerMatchUpId` / `loserMatchUpId` onto already-flattened in-context matchUps, **deriving** them from the draw's links and topology (`addGoesTo`) for records that never stored them — older records and non-factory TODS files. Without it such a draw projects `NULL` and cannot distinguish "no loser feed" from "never recorded". Pure with respect to the record; costs 1.16×–1.43× a plain flatten, so call it only where projected edges are needed. |
 | `eventRow` / `seedRow`                     | Row builders for the `events` table (one row/event) and the `seeds` table (one row per participant-holding seed assignment; caller supplies the structure context via `SeedRowContext`).                                            |
 | `drawRow` / `structureRow`                 | Row builders for the `draws` table (one row/draw) and the `structures` table (one row per top-level structure; context via `StructureRowContext`). Nested round-robin group sub-structures are not projected.                       |
 | `courtRow`                                 | Row builder for the `courts` table (one row per court of a placed venue; context via `CourtRowContext`).                                                                                                                            |
@@ -2292,6 +2305,8 @@ const { searchText, tournamentId, providerId, tournament } = engine.getTournamen
 // tournament: { ...getTournamentInfo projection, startDate, endDate, tournamentName, tournamentImageURL }
 ```
 
+Because the entry spreads the `getTournamentInfo` projection, a field must be projected there to reach a calendar at all — `tournamentLevel` was populated at rest and absent from every calendar built from it until the projection carried it. An unstated level stays `undefined` and must not acquire a default.
+
 ---
 
 ## getTournamentInfo
@@ -2304,6 +2319,7 @@ Returns tournament attributes. Used to attach details to publishing payload by `
 const { tournamentInfo } = getTournamentInfo({ tournamentRecord });
 const {
   tournamentId,
+  tournamentLevel, // organisational SCOPE (CLUB … INTERNATIONAL); undefined when unstated — never defaulted
   tournamentRank,
 
   formalName,

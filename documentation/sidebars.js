@@ -34,7 +34,7 @@ module.exports = {
         {
           type: 'category',
           label: 'Tournament Setup',
-          items: ['concepts/registration-profile', 'concepts/tournament-tier'],
+          items: ['concepts/registration-profile', 'concepts/tournament-tier', 'concepts/tournament-discovery'],
         },
         {
           type: 'category',
@@ -60,6 +60,7 @@ module.exports = {
             'concepts/events/entries',
             'concepts/events/flights',
             'concepts/events/event-origin',
+            'concepts/events/entry-eligibility',
           ],
         },
         {
@@ -397,6 +398,7 @@ module.exports = {
         'tools/make-deep-copy',
         'tools/structure-sort',
         'tools/json-to-csv',
+        'tools/build-from-sources',
         'tools/tools-api',
       ],
     },
