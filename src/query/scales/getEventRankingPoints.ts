@@ -6,12 +6,13 @@ import { policyRegistry } from '@Global/policyRegistry';
 import { POLICY_TYPE_RANKING_POINTS } from '@Constants/policyConstants';
 import { PolicyDefinitions } from '@Types/factoryTypes';
 import { SUCCESS } from '@Constants/resultConstants';
-import { Tournament } from '@Types/tournamentTypes';
+import { EventTypeUnion, Tournament } from '@Types/tournamentTypes';
 import { DOUBLES } from '@Constants/eventConstants';
 import {
   MISSING_EVENT,
   MISSING_POLICY_DEFINITION,
   MISSING_TOURNAMENT_RECORD,
+  type ErrorType,
 } from '@Constants/errorConditionConstants';
 
 type GetEventRankingPointsArgs = {
@@ -21,6 +22,34 @@ type GetEventRankingPointsArgs = {
   eventId: string;
   level?: number;
 };
+
+/**
+ * Declared rather than inferred, because the inferred union was not stable.
+ *
+ * When TypeScript builds a union from these two object literals it may or may
+ * not add `error?: undefined` to the success branch, and which it does varied
+ * between builds of identical source — one line of churn in every published
+ * `.d.ts`. Stating the type pins it.
+ *
+ * `error?: undefined` is retained deliberately: it is what lets a caller
+ * destructure `error` off the result without first narrowing the union, which
+ * is how every consumer of this shape is written.
+ *
+ * The error branch is `ErrorType`, not any one constant: this function returns
+ * MISSING_TOURNAMENT_RECORD, MISSING_EVENT and MISSING_POLICY_DEFINITION, and
+ * naming a single one of them would compile (they share a shape) while telling
+ * the reader something untrue.
+ */
+type GetEventRankingPointsResult =
+  | { error: ErrorType }
+  | {
+      success: boolean;
+      eventAwards: any[];
+      eventName: string | undefined;
+      eventType: EventTypeUnion | undefined;
+      isDoubles: boolean;
+      error?: undefined;
+    };
 
 /**
  * Generates ranking points scoped to a single event.
@@ -37,7 +66,7 @@ export function getEventRankingPoints({
   policyName,
   eventId,
   level,
-}: GetEventRankingPointsArgs) {
+}: GetEventRankingPointsArgs): GetEventRankingPointsResult {
   if (!tournamentRecord) return { error: MISSING_TOURNAMENT_RECORD };
   if (!eventId) return { error: MISSING_EVENT };
 
