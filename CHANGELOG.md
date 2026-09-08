@@ -1,5 +1,17 @@
 # Changelog
 
+## [6.38.0](https://github.com/CourtHive/competition-factory/compare/v6.37.2...v6.38.0) (2026-09-08)
+
+
+### Features
+
+* **readModel:** export the column manifest as runtime data ([#4774](https://github.com/CourtHive/competition-factory/issues/4774)) ([4733fa1](https://github.com/CourtHive/competition-factory/commit/4733fa138340ce1cb6ce36d01725ed5fa5596886))
+
+
+### Bug Fixes
+
+* **scales:** rank drawSize and drawSizes identically for profile specificity ([#4772](https://github.com/CourtHive/competition-factory/issues/4772)) ([5a8f737](https://github.com/CourtHive/competition-factory/commit/5a8f73783347ca9d87d8726fe2bcfad0cbf432f0))
+
 ## [6.37.2](https://github.com/CourtHive/competition-factory/compare/v6.37.1...v6.37.2) (2026-09-06)
 
 
