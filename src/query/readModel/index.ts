@@ -3,6 +3,7 @@
 // so both paths emit byte-identical rows. Exposed on the package as
 // `readModel` (`import { readModel } from 'tods-competition-factory'`).
 
+export { READ_MODEL_COLUMNS, READ_MODEL_TABLES } from './readModelColumns';
 export { cast } from './cast';
 export { getEventPublishStatus } from '@Query/event/getEventPublishStatus';
 export { getTournamentPublishStatus } from '@Query/tournaments/getTournamentPublishStatus';
