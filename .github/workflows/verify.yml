@@ -57,6 +57,32 @@ jobs:
     steps:
       - uses: actions/checkout@v7
 
+      # A pnpm that does not match this repo's `packageManager` pin writes an `@pnpm/exe` block
+      # into the lockfile; a pnpm that DOES match strips it out again. Committed, it makes every
+      # correctly-provisioned checkout permanently dirty and drowns real work in `git status`. It was
+      # cleaned out of six repos on 2026-09-08 and reappeared in two working trees the same
+      # afternoon, so the committed state needs a guard rather than vigilance.
+      #
+      # The pattern excludes `@pnpm/exe.<platform>` — those are legitimate optional deps of `pnpm`
+      # itself and every clean lockfile holds 24 of them, so the obvious grep fails every repo.
+      - name: Lockfiles must not carry an @pnpm/exe block
+        run: |
+          locks=$(git ls-files '*pnpm-lock.yaml')
+          if [ -z "$locks" ]; then
+            echo "::error::no tracked pnpm-lock.yaml found — this check would pass vacuously"
+            exit 1
+          fi
+          bad=0
+          while IFS= read -r f; do
+            if grep -qE "@pnpm/exe[^.]" "$f"; then
+              echo "::error file=$f::$f carries an @pnpm/exe block, written only by a pnpm that does not match this repo's packageManager pin. Reinstall with the pinned pnpm and commit the lockfile."
+              bad=1
+            fi
+          done <<LOCKS
+          $locks
+          LOCKS
+          exit $bad
+
       - uses: actions/setup-node@v7
         with:
           node-version: ${{ matrix.node-version }}
