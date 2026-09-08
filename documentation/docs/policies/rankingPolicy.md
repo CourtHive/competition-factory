@@ -254,12 +254,15 @@ awardProfiles: [
 }
 ```
 
-> **`drawSize` vs `drawSizes`.** Both are honoured, and `drawSizes: [32]` says the same
-> thing as `drawSize: 32`. Prefer the plural: only `drawSizes` participates in
-> [specificity scoring](/docs/scale-engine/ranking-points-pipeline#profile-selection).
-> A profile narrowed by the singular `drawSize` scores zero for it, so it ties with a
-> catch-all profile and the tie is broken by declaration order — which is rarely what
-> a policy author intends.
+> **`drawSize` vs `drawSizes`.** Both are honoured, they say the same thing, and they
+> now rank the same: each contributes one point of
+> [specificity](/docs/scale-engine/ranking-points-pipeline#profile-selection), so which
+> spelling a policy author reaches for no longer decides which profile is selected.
+> `drawSizes` remains the preferred form because it also expresses a set (`[32, 64]`).
+>
+> This is a change: the singular previously scored zero, so a profile narrowed by
+> `drawSize` tied with a catch-all and the tie fell to declaration order. A policy that
+> relied on losing that tie now selects the narrower profile instead.
 
 ## Position Value Resolution
 

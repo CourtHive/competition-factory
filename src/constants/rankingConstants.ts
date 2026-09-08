@@ -34,6 +34,7 @@ export const PROFILE_SCOPE_FIELDS = [
   'eventTypes',
   'drawTypes',
   'drawSizes',
+  'drawSize',
   'maxDrawSize',
   'stages',
   'stageSequences',

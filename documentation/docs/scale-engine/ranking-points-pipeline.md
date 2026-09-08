@@ -39,21 +39,22 @@ Profiles are scored by counting their populated scope fields. A profile that spe
 
 **Scored fields** (1 point each):
 
-| Field                | Matches Against                             |
-| -------------------- | ------------------------------------------- |
-| `eventTypes`         | `event.eventType`                           |
-| `drawTypes`          | `drawDefinition.drawType`                   |
-| `drawSizes`          | `drawDefinition.drawSize`                   |
-| `maxDrawSize`        | `drawDefinition.drawSize <= maxDrawSize`    |
-| `stages`             | `structureParticipation.rankingStage`       |
-| `stageSequences`     | `structureParticipation.stageSequence`      |
-| `levels`             | `level` parameter                           |
-| `maxLevel`           | `level <= maxLevel`                         |
-| `flights`            | `structureParticipation.flightNumber`       |
-| `maxFlightNumber`    | `flightNumber <= maxFlightNumber`           |
-| `participationOrder` | `structureParticipation.participationOrder` |
-| `dateRanges`         | `startDate`/`endDate` within range          |
-| `category.*`         | Each populated CategoryScope field          |
+| Field                | Matches Against                                  |
+| -------------------- | ------------------------------------------------ |
+| `eventTypes`         | `event.eventType`                                |
+| `drawTypes`          | `drawDefinition.drawType`                        |
+| `drawSizes`          | `drawDefinition.drawSize`                        |
+| `drawSize`           | `drawDefinition.drawSize` (exact)                |
+| `maxDrawSize`        | `drawDefinition.drawSize <= maxDrawSize`         |
+| `stages`             | `structureParticipation.rankingStage`            |
+| `stageSequences`     | scored, but **not** currently matched — see note |
+| `levels`             | `level` parameter                                |
+| `maxLevel`           | `level <= maxLevel`                              |
+| `flights`            | `structureParticipation.flightNumber`            |
+| `maxFlightNumber`    | `flightNumber <= maxFlightNumber`                |
+| `participationOrder` | `structureParticipation.participationOrder`      |
+| `dateRanges`         | `startDate`/`endDate` within range               |
+| `category.*`         | Each populated CategoryScope field               |
 
 **Priority override:** If any matching profile has an explicit `priority` number, the highest priority wins regardless of specificity score.
 
@@ -61,7 +62,16 @@ Profiles are scored by counting their populated scope fields. A profile that spe
 
 :::note
 
-`matchesProfile` reads a singular `profile.drawSize` as well as `drawSizes`. Nothing in the factory's own fixtures sets it, but ranking policies are runtime data loaded from a policy service, so an external policy can set it and have it honoured — it is declared on `AwardProfileScope` for that reason. See [`drawSize` vs `drawSizes`](/docs/policies/rankingPolicy#full-profile) for why the plural is preferred.
+`matchesProfile` reads a singular `profile.drawSize` as well as `drawSizes`. Nothing in the factory's own fixtures sets it, but ranking policies are runtime data loaded from a policy service, so an external policy can set it and have it honoured — it is declared on `AwardProfileScope` for that reason. Both spellings score one point of specificity; see [`drawSize` vs `drawSizes`](/docs/policies/rankingPolicy#full-profile).
+
+:::
+
+:::caution
+
+`stageSequences` is the mirror case, and it is **not** resolved. It is scored — a profile declaring it
+gains a point and wins ties — but `matchesProfile` never reads it, so it narrows nothing: such a profile
+applies to every stage sequence while outranking a catch-all. `stages` is matched; `stageSequences` is
+not. Prefer `stages` until this is settled, and do not rely on `stageSequences` to restrict a profile.
 
 :::
 
