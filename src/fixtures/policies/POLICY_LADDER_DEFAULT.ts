@@ -19,6 +19,10 @@ export const POLICY_LADDER_DEFAULT = {
     ordering: RANK,
     movement: SWAP,
     challengeRange: 3,
+
+    acceptanceDays: 5,
+    playByDays: 14,
+    declineForfeitsPosition: false,
   },
 };
 

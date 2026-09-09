@@ -35,3 +35,22 @@ export type LadderMovement = (typeof ladderMovements)[number];
 export const ANY = 'ANY';
 
 export const ladderConstants = { ANY, INSERTION, RANK, RATING, SWAP } as const;
+
+/**
+ * The lifecycle of a challenge, as observed rather than stored.
+ *
+ * `PENDING` and `EXPIRED` are the SAME stored matchUp — `CHALLENGED` — distinguished only by the
+ * instant you ask. Storing "expired" would mean something has to run at the moment of expiry, and
+ * nothing does; deriving it means the answer is correct whenever it is asked.
+ */
+export const PENDING = 'PENDING';
+export const EXPIRED = 'EXPIRED';
+export const ACCEPTED = 'ACCEPTED';
+export const DECLINED = 'DECLINED';
+export const challengeStates = [PENDING, EXPIRED, ACCEPTED, DECLINED] as const;
+export type ChallengeState = (typeof challengeStates)[number];
+
+/** `timeItem.itemType` values recording what happened to a challenge, and when. */
+export const CHALLENGE_ISSUED = 'ladder.challenge.issued';
+export const CHALLENGE_ACCEPTED = 'ladder.challenge.accepted';
+export const CHALLENGE_DECLINED = 'ladder.challenge.declined';

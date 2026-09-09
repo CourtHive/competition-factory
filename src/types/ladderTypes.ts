@@ -25,6 +25,19 @@ export type LadderPolicy = {
    * band — not yet modelled, and deliberately not faked with a position count.)
    */
   challengeRange?: number | 'ANY';
+
+  /** Days the defender has to accept before the challenge expires. */
+  acceptanceDays?: number;
+
+  /** Days to complete the match once accepted. */
+  playByDays?: number;
+
+  /**
+   * Whether declining costs the defender their position. Clubs differ, and the difference is the
+   * whole character of the ladder: forfeit-on-decline makes it combative, free declines make it
+   * social.
+   */
+  declineForfeitsPosition?: boolean;
 };
 
 /** Where a ladder policy sits when attached to an event, draw or tournament. */
