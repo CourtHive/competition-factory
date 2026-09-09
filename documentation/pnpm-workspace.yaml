@@ -42,6 +42,13 @@ overrides:
   webpackbar: '7.0.0'
   fast-uri: '^4.0.0'
   brace-expansion: '>=5.0.8'
+  js-yaml@4: '>=4.3.2' # GHSA-2883-xcg3-v3hh (CPU DoS). The `@4` selector scopes which requests
+  #                      are rewritten, not a ceiling — the open floor lands on 5.x, which the
+  #                      advisory does not cover.
+  svgo@3: '>=3.3.5' # GHSA-w27v-7q3p-w38r (removeScripts bypass). Ranges are <2.8.4, <3.3.5
+  #                   and <4.1.0, so every line is affected; the open floor lands docusaurus
+  #                   on 4.1.0, which is patched. Docs build verified green on it.
+  '@tiptap/core': '>=3.30.5' # GHSA-j95f-988m-3j2f (quadratic ReDoS in markdown attr parsing)
 
 allowBuilds:
   core-js: true
