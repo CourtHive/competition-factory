@@ -78,12 +78,18 @@ export function swapWinnerLoser(params) {
   // for each subsequent structure swap drawPosition assignments (where applicable)
   subsequentStructures.forEach((structure) => {
     const { positionAssignments } = getPositionAssignments({ structure });
-    const existingWinnerAssignment = positionAssignments?.find(
-      ({ participantId }) => participantId === existingWinnerParticipantId,
-    );
-    const existingLoserAssignment = positionAssignments?.find(
-      ({ participantId }) => participantId === existingLoserParticipantId,
-    );
+    // Both lookups are guarded on the id being present. When a side holds no participant — which
+    // is the normal state after a double exit — the id is undefined, and an unguarded
+    // `participantId === undefined` matches the first UNOCCUPIED assignment instead of matching
+    // nothing. Measured: a COMPASS back-draw BYE placed by a double-walkover cascade was selected
+    // that way and had a participant written onto it, leaving an assignment that was both
+    // `bye: true` and assigned — a combination the two flags are meant to exclude.
+    const existingWinnerAssignment = existingWinnerParticipantId
+      ? positionAssignments?.find(({ participantId }) => participantId === existingWinnerParticipantId)
+      : undefined;
+    const existingLoserAssignment = existingLoserParticipantId
+      ? positionAssignments?.find(({ participantId }) => participantId === existingLoserParticipantId)
+      : undefined;
 
     if (existingWinnerAssignment) existingWinnerAssignment.participantId = existingLoserParticipantId;
     if (existingLoserAssignment) existingLoserAssignment.participantId = existingWinnerParticipantId;
