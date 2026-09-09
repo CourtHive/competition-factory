@@ -40,7 +40,7 @@
 import { getMatchUpFormatTiming } from '@Query/extensions/matchUpFormatTiming/getMatchUpFormatTiming';
 import { allTournamentMatchUps } from '@Query/matchUps/getAllTournamentMatchUps';
 import { getParticipants } from '@Query/participants/getParticipants';
-import { zonedWallClockToMs, zonedParts } from '@Tools/zonedTime';
+import { zonedWallClockToMs, zonedParts } from '@Tools/zonedDateTime';
 
 import { DOUBLES_MATCHUP } from '@Constants/matchUpTypes';
 import { Tournament } from '@Types/tournamentTypes';
@@ -140,7 +140,7 @@ type VenueFrame = { utcOffsetMinutes: number; timeZone?: string };
 
 /** `YYYY-MM-DD` + `HH:MM` venue-local → UTC ms. Null when either part is missing or malformed. */
 function wallClockToMs(date: string | undefined, time: string | undefined, frame: VenueFrame): number | null {
-  return zonedWallClockToMs({ ...frame, date, time });
+  return zonedWallClockToMs({ ...frame, date, time })?.ms ?? null;
 }
 
 /**
@@ -163,9 +163,15 @@ function isoToMs(iso?: string): number | null {
   return Number.isNaN(ms) ? null : ms;
 }
 
-/** UTC ms → venue-local calendar date + wall clock. */
+/**
+ * UTC ms → venue-local calendar date + wall clock.
+ *
+ * The frame is validated once at the report boundary, so a refusal here can only
+ * mean a non-finite instant, which the rungs have already excluded.
+ */
 function localParts(ms: number, frame: VenueFrame): { date: string; time: string } {
-  return zonedParts({ ...frame, ms });
+  const parts = zonedParts({ ...frame, ms });
+  return parts ? { date: parts.date, time: parts.time } : { date: '', time: '' };
 }
 
 /**

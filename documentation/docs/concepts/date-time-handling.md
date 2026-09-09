@@ -135,6 +135,9 @@ tools.timeZone.getTimeZoneOffsetMinutes('America/New_York', new Date('2024-06-15
 
 // Fixed offset (no DST)
 tools.timeZone.getTimeZoneOffsetMinutes('Asia/Kolkata'); // 330 (UTC+5:30, always)
+
+// An unrecognised or absent zone is `undefined`, never a substituted 0
+tools.timeZone.getTimeZoneOffsetMinutes('Not/A/Zone'); // undefined
 ```
 
 ### Converting Between Wall-Clock Time and UTC
