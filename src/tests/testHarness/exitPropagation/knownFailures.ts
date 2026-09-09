@@ -33,13 +33,6 @@ const DOUBLE_EXIT_PARTIAL_MUTATION =
   'error code at one of ~12 failure paths downstream of the first write; the partial mutation is ' +
   'untouched. See Mentat/planning/EXIT_PROPAGATION_ASSESSMENT.md §4.';
 
-const DOUBLE_EXIT_DROPPED_PROGRESSION =
-  'DOUBLE_ELIMINATION double exit at drawSize 16: getDrawInconsistencies reports DROPPED_PROGRESSION ' +
-  '— a loser eligible to feed the linked target structure is absent from it. Found by this matrix, ' +
-  'not previously recorded. Same draw type and status class as the drawSize-8 entries above, so ' +
-  'likely the same root cause surfacing later in the cascade. See ' +
-  'Mentat/planning/EXIT_PROPAGATION_ASSESSMENT.md §7.';
-
 const DOUBLE_EXIT_NOT_REVERSIBLE =
   'Applying a double exit is not reversible. After apply-then-clear, a matchUp that was BYE before ' +
   'the double walkover comes back TO_BE_PLAYED. The BYE-provenance work (db4c925f5) addressed the ' +
@@ -113,13 +106,6 @@ export const KNOWN_FAILURES: QuarantineEntry[] = [
       key: doubleEliminationCell(8, exitStatus, propagate),
       properties: ['ERROR_IMPLIES_NO_MUTATION'],
       reference: DOUBLE_EXIT_PARTIAL_MUTATION,
-    })),
-  ),
-  ...['DOUBLE_WALKOVER', 'DOUBLE_DEFAULT'].flatMap((exitStatus) =>
-    [true, false].map((propagate) => ({
-      key: doubleEliminationCell(16, exitStatus, propagate),
-      properties: ['DRAW_INCONSISTENCY'],
-      reference: DOUBLE_EXIT_DROPPED_PROGRESSION,
     })),
   ),
   ...ACTION_DISAGREEMENT_CELLS.map((cell) => ({
