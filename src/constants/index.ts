@@ -51,7 +51,7 @@ export {
   directingMatchUpStatuses,
   matchUpStatusConstants,
   nonDirectingMatchUpStatuses,
-  particicipantsRequiredMatchUpStatuses,
+  participantsRequiredMatchUpStatuses,
   recoveryTimeRequiredMatchUpStatuses,
   upcomingMatchUpStatuses,
   validMatchUpStatuses,

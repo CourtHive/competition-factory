@@ -58,7 +58,7 @@ import {
   DOUBLE_WALKOVER,
   IN_PROGRESS,
   INCOMPLETE,
-  particicipantsRequiredMatchUpStatuses,
+  participantsRequiredMatchUpStatuses,
   SUSPENDED,
   TO_BE_PLAYED,
   validMatchUpStatuses,
@@ -793,7 +793,7 @@ function checkParticipants({
   ) {
     return { ...SUCCESS };
   }
-  if (matchUpStatus && particicipantsRequiredMatchUpStatuses.includes(matchUpStatus) && !requiredParticipants) {
+  if (matchUpStatus && participantsRequiredMatchUpStatuses.includes(matchUpStatus) && !requiredParticipants) {
     return decorateResult({
       info: 'matchUpStatus requires assigned participants',
       context: { matchUpStatus, requiredParticipants },
