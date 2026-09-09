@@ -38,7 +38,9 @@ const DOUBLE_EXIT_DRAWPOSITION_RESIDUE =
   '[1, null] before, absent after. The apply does not touch that matchUp at all (measured), so the ' +
   'clear over-removes: it strips a drawPosition the cascade never placed. Distinct from the ' +
   'matchUp-status residue fixed by consulting positionAssignment.bye in removeDoubleExit, and from ' +
-  'the matchUpStatusCodes residue below. See Mentat/planning/EXIT_PROPAGATION_ASSESSMENT.md, E1.';
+  'the matchUpStatusCodes residue below. DECIDED (2026-09-09, CA): the unwind will RE-DERIVE the ' +
+  'correct value from current state rather than blanking it, and no source identity is added to the ' +
+  'schema. Not yet implemented. See Mentat/planning/EXIT_PROPAGATION_ASSESSMENT.md, E1.';
 
 const DOUBLE_EXIT_STATUS_CODES_RESIDUE =
   'FIRST_ROUND_LOSER_CONSOLATION: apply-then-clear wipes matchUpStatusCodes that were present ' +
@@ -47,7 +49,10 @@ const DOUBLE_EXIT_STATUS_CODES_RESIDUE =
   'clear then writes matchUpStatusCodes: [] unconditionally rather than restoring the codes that ' +
   'pre-dated the cascade. matchUpStatus itself is restored correctly — only the provenance is lost, ' +
   'so exitProducedByPropagation reads false for a matchUp that IS propagation-produced. Same ' +
-  'family as the hard-coded empty codes in advanceByeAdvancedDrawPosition. See ' +
+  'family as the hard-coded empty codes in advanceByeAdvancedDrawPosition. DECIDED (2026-09-09, CA): ' +
+  'RE-DERIVE the codes on unwind from the current upstream state instead of writing []. Source ' +
+  'identity is deliberately NOT added to matchUpStatusCodes — they are published on every matchUp, ' +
+  'so the published surface stays fixed. Not yet implemented. See ' +
   'Mentat/planning/EXIT_PROPAGATION_ASSESSMENT.md, E1.';
 
 /**
