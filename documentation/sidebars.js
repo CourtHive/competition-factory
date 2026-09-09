@@ -447,7 +447,14 @@ module.exports = {
         {
           type: 'category',
           label: 'Migration Guides',
-          items: ['migration-6.0.0', 'migration-5.0.0', 'migration-4.0.0', 'migration-3.0.0', 'migration'],
+          items: [
+            'migration-7.0.0',
+            'migration-6.0.0',
+            'migration-5.0.0',
+            'migration-4.0.0',
+            'migration-3.0.0',
+            'migration',
+          ],
         },
       ],
     },

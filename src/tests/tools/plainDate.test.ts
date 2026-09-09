@@ -70,3 +70,17 @@ test('the legacy dateTime surface delegates to plainDate rather than duplicating
   expect(dateTime.sameDay).toBe(plainDate.sameDay);
   expect(dateTime.formatDate).toBe(plainDate.formatDate);
 });
+
+test('isDateInPast compares a calendar day against now', () => {
+  expect(plainDate.isDateInPast('2020-01-01')).toEqual(true);
+  expect(plainDate.isDateInPast('2999-01-01')).toEqual(false);
+});
+
+test('localizeDate renders a calendar day in a locale, and refuses a non-date', () => {
+  const localized = plainDate.localizeDate('2026-01-15T12:00:00Z', undefined, 'en-US');
+  // Default localization is weekday + long month + numeric day and year. Asserting
+  // the parts rather than the exact string keeps this stable across ICU revisions.
+  expect(localized).toContain('2026');
+  expect(localized).toContain('January');
+  expect(plainDate.localizeDate('not-a-date', undefined, 'en-US')).toBeUndefined();
+});
