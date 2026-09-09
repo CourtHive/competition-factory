@@ -750,6 +750,12 @@ export enum MatchUpStatusEnum {
   AWAITING_RESULT = 'AWAITING_RESULT',
   BYE = 'BYE',
   CANCELLED = 'CANCELLED',
+  /**
+   * A challenge issued by one participant against another and not yet played. Valid ONLY in a
+   * LADDER drawType, and enforced as such — see `matchUpStatusScopes`. Unlike every other status
+   * here, it describes a fixture a PARTICIPANT created rather than one a draw produced.
+   */
+  CHALLENGED = 'CHALLENGED',
   COMPLETED = 'COMPLETED',
   DEAD_RUBBER = 'DEAD_RUBBER',
   DEFAULTED = 'DEFAULTED',

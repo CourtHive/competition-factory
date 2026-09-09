@@ -315,6 +315,10 @@ export const INVALID_MATCHUP_STATUS = {
   message: 'Invalid matchUpStatus',
   code: 'ERR_INVALID_MATCHUP_STATUS',
 };
+export const MATCHUP_STATUS_OUT_OF_SCOPE = {
+  message: 'matchUpStatus is not valid in this context',
+  code: 'ERR_MATCHUP_STATUS_OUT_OF_SCOPE',
+};
 export const INVALID_TIE_FORMAT = {
   message: 'Invalid tieFormat',
   code: 'ERR_INVALID_TIE_FORMAT',

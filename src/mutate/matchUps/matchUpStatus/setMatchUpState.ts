@@ -17,6 +17,7 @@ import { isActiveDownstream } from '@Query/drawDefinition/isActiveDownstream';
 import { getAppliedPolicies } from '@Query/extensions/getAppliedPolicies';
 import { checkScoreHasValue } from '@Query/matchUp/checkScoreHasValue';
 import { getAllDrawMatchUps } from '@Query/matchUps/drawMatchUps';
+import { getMatchUpStatusScopeViolation } from '@Query/matchUps/getMatchUpStatusScopeViolation';
 import { decorateResult } from '@Functions/global/decorateResult';
 import { positionTargets } from '@Query/matchUp/positionTargets';
 import { getMatchUpsMap } from '@Query/matchUps/getMatchUpsMap';
@@ -42,6 +43,7 @@ import {
   INVALID_MATCHUP_STATUS,
   INVALID_VALUES,
   MATCHUP_NOT_FOUND,
+  MATCHUP_STATUS_OUT_OF_SCOPE,
   MISSING_DRAW_DEFINITION,
   NO_VALID_ACTIONS,
   PROPAGATED_EXITS_DOWNSTREAM,
@@ -379,6 +381,19 @@ function validateMatchUpStateInputs({ drawDefinition, matchUpStatus, winningSide
     return decorateResult({
       result: { error: INVALID_MATCHUP_STATUS },
       info: 'matchUpStatus does not exist',
+      stack: 'setMatchUpStatus',
+    });
+  }
+
+  // A status can exist and still be meaningless here. CHALLENGED describes a fixture a participant
+  // created, which only a LADDER produces; setting it in an elimination draw asserts something the
+  // draw cannot express. Unscoped statuses — nearly all of them — return undefined and are
+  // unaffected. See `matchUpStatusScopes`.
+  const scopeViolation = getMatchUpStatusScopeViolation({ drawType: drawDefinition?.drawType, matchUpStatus });
+  if (scopeViolation) {
+    return decorateResult({
+      result: { error: MATCHUP_STATUS_OUT_OF_SCOPE },
+      info: scopeViolation,
       stack: 'setMatchUpStatus',
     });
   }
