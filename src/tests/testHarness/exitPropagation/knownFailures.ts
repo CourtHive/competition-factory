@@ -33,13 +33,22 @@ const DOUBLE_EXIT_PARTIAL_MUTATION =
   'error code at one of ~12 failure paths downstream of the first write; the partial mutation is ' +
   'untouched. See Mentat/planning/EXIT_PROPAGATION_ASSESSMENT.md §4.';
 
-const DOUBLE_EXIT_NOT_REVERSIBLE =
-  'Applying a double exit is not reversible. After apply-then-clear, a matchUp that was BYE before ' +
-  'the double walkover comes back TO_BE_PLAYED. The BYE-provenance work (db4c925f5) addressed the ' +
-  'positionAssignment side of this; the residue that remains is on the matchUp STATUS, which is a ' +
-  'separate mechanism and is not yet characterised. Every failing cell is a double exit and both ' +
-  'double-exit statuses fail identically in each — systematic, not noise. See ' +
-  'Mentat/planning/EXIT_PROPAGATION_ASSESSMENT.md §3 class B.';
+const DOUBLE_EXIT_DRAWPOSITION_RESIDUE =
+  'DOUBLE_ELIMINATION 8/7: apply-then-clear leaves a Main matchUp with its drawPositions REMOVED — ' +
+  '[1, null] before, absent after. The apply does not touch that matchUp at all (measured), so the ' +
+  'clear over-removes: it strips a drawPosition the cascade never placed. Distinct from the ' +
+  'matchUp-status residue fixed by consulting positionAssignment.bye in removeDoubleExit, and from ' +
+  'the matchUpStatusCodes residue below. See Mentat/planning/EXIT_PROPAGATION_ASSESSMENT.md, E1.';
+
+const DOUBLE_EXIT_STATUS_CODES_RESIDUE =
+  'FIRST_ROUND_LOSER_CONSOLATION: apply-then-clear wipes matchUpStatusCodes that were present ' +
+  'BEFORE the double exit. The matchUp carried [WALKOVER/prev DOUBLE_WALKOVER side 1, ' +
+  'TO_BE_PLAYED side 2]; the apply escalated it to DOUBLE_WALKOVER with both sides WALKOVER; the ' +
+  'clear then writes matchUpStatusCodes: [] unconditionally rather than restoring the codes that ' +
+  'pre-dated the cascade. matchUpStatus itself is restored correctly — only the provenance is lost, ' +
+  'so exitProducedByPropagation reads false for a matchUp that IS propagation-produced. Same ' +
+  'family as the hard-coded empty codes in advanceByeAdvancedDrawPosition. See ' +
+  'Mentat/planning/EXIT_PROPAGATION_ASSESSMENT.md, E1.';
 
 /**
  * Cells failing the relational properties, as [cell-without-status, properties].
@@ -50,17 +59,16 @@ const DOUBLE_EXIT_NOT_REVERSIBLE =
  *
  * IDEMPOTENT_REAPPLY was removed from every cell that carried it when the idempotence guard landed
  * in `attemptToSetMatchUpStatus` — 14 entries, deleted because the reverse guard demanded it.
+ *
+ * The DO_UNDO_IDENTITY list was 9 cells and is now 3. Diffing the round trip structurally showed
+ * the residue was never ONE mechanism: 6 cells lost a matchUp's BYE status (fixed — removeDoubleExit
+ * now reads positionAssignment.bye rather than a matchUpStatus the cascade has already overwritten),
+ * 1 loses drawPositions and 2 lose matchUpStatusCodes. Each survivor carries its own reference.
  */
-const DOUBLE_EXIT_PROPERTY_CELLS: [string, string[]][] = [
-  ['DOUBLE_ELIMINATION 8/7', ['DO_UNDO_IDENTITY']],
-  ['FIRST_MATCH_LOSER_CONSOLATION 8/8', ['DO_UNDO_IDENTITY']],
-  ['FIRST_MATCH_LOSER_CONSOLATION 16/16', ['DO_UNDO_IDENTITY']],
-  ['FIRST_MATCH_LOSER_CONSOLATION 16/15', ['DO_UNDO_IDENTITY']],
-  ['FIRST_ROUND_LOSER_CONSOLATION 8/8', ['DO_UNDO_IDENTITY']],
-  ['FIRST_ROUND_LOSER_CONSOLATION 16/16', ['DO_UNDO_IDENTITY']],
-  ['MODIFIED_FEED_IN_CHAMPIONSHIP 16/15', ['DO_UNDO_IDENTITY']],
-  ['FEED_IN_CHAMPIONSHIP 16/15', ['DO_UNDO_IDENTITY']],
-  ['CURTIS_CONSOLATION 16/15', ['DO_UNDO_IDENTITY']],
+const DOUBLE_EXIT_PROPERTY_CELLS: [string, string[], string][] = [
+  ['DOUBLE_ELIMINATION 8/7', ['DO_UNDO_IDENTITY'], DOUBLE_EXIT_DRAWPOSITION_RESIDUE],
+  ['FIRST_ROUND_LOSER_CONSOLATION 8/8', ['DO_UNDO_IDENTITY'], DOUBLE_EXIT_STATUS_CODES_RESIDUE],
+  ['FIRST_ROUND_LOSER_CONSOLATION 16/16', ['DO_UNDO_IDENTITY'], DOUBLE_EXIT_STATUS_CODES_RESIDUE],
 ];
 
 const ACTION_MUTATION_DISAGREEMENT =
@@ -113,11 +121,11 @@ export const KNOWN_FAILURES: QuarantineEntry[] = [
     properties: ['ACTION_MUTATION_AGREEMENT'],
     reference: ACTION_MUTATION_DISAGREEMENT,
   })),
-  ...DOUBLE_EXIT_PROPERTY_CELLS.flatMap(([cell, properties]) =>
+  ...DOUBLE_EXIT_PROPERTY_CELLS.flatMap(([cell, properties, reference]) =>
     ['DOUBLE_WALKOVER', 'DOUBLE_DEFAULT'].map((exitStatus) => ({
       key: `properties ${cell} ${exitStatus}`,
       properties: properties as string[],
-      reference: DOUBLE_EXIT_NOT_REVERSIBLE,
+      reference: reference as string,
     })),
   ),
 ];

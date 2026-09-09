@@ -265,6 +265,8 @@ export function conditionallyRemoveDrawPosition(params) {
   const matchUpStatus = getMatchUpStatus({
     pairedPreviousDoubleExit,
     noContextTargetMatchUp,
+    drawDefinition,
+    targetMatchUp,
   });
 
   const removeScore = !pairedPreviousDoubleExit;
@@ -289,10 +291,44 @@ export function conditionallyRemoveDrawPosition(params) {
   return { ...SUCCESS };
 }
 
-function getMatchUpStatus({ pairedPreviousDoubleExit, noContextTargetMatchUp }) {
+/**
+ * Does a drawPosition of this matchUp carry a BYE assignment?
+ *
+ * The positionAssignment is the DURABLE record; the matchUp's own `matchUpStatus` is not, because
+ * by the time the unwind reaches here the cascade has already overwritten a BYE matchUp with the
+ * exit it propagated (measured: `BYE` -> `WALKOVER` on apply). Asking the status therefore asks a
+ * field the cascade has clobbered, while the assignment still says `bye: true`.
+ *
+ * This is the same rule `advanceWinner` applies when it places a matchUp:
+ * `drawPositionIsBye || pairedDrawPositionIsBye ? BYE : TO_BE_PLAYED`.
+ */
+function targetDrawPositionIsBye({ drawDefinition, noContextTargetMatchUp, targetMatchUp }): boolean {
+  const drawPositions = noContextTargetMatchUp?.drawPositions?.filter(Boolean) ?? [];
+  // structureId comes from the IN-CONTEXT matchUp: a no-context matchUp does not carry one, and
+  // reading it there silently yields undefined -> no structure -> a false negative.
+  const structureId = targetMatchUp?.structureId;
+  if (!drawPositions.length || !structureId) return false;
+
+  const { structure: targetStructure } = findStructure({ drawDefinition, structureId });
+  return !!targetStructure?.positionAssignments?.some(
+    (assignment) => drawPositions.includes(assignment.drawPosition) && assignment.bye,
+  );
+}
+
+function getMatchUpStatus({ pairedPreviousDoubleExit, noContextTargetMatchUp, drawDefinition, targetMatchUp }) {
   if (noContextTargetMatchUp.matchUpStatus === BYE) return BYE;
-  if (!pairedPreviousDoubleExit) return TO_BE_PLAYED;
-  return [DOUBLE_DEFAULT, DEFAULTED].includes(noContextTargetMatchUp?.matchUpStatus) ? DEFAULTED : WALKOVER;
+  // A still-live paired double exit keeps its produced exit; that decision is unchanged and is
+  // checked BEFORE the assignment, because a BYE-held drawPosition legitimately carries a
+  // propagated exit while one is outstanding (measured: a Consolation matchUp reads DEFAULTED on a
+  // BYE drawPosition mid-cascade, and must stay that way).
+  if (pairedPreviousDoubleExit) {
+    return [DOUBLE_DEFAULT, DEFAULTED].includes(noContextTargetMatchUp?.matchUpStatus) ? DEFAULTED : WALKOVER;
+  }
+  // Otherwise the unwind is complete and the matchUp reverts. `matchUpStatus` above can already
+  // have been overwritten by the cascade being unwound (measured: BYE -> WALKOVER on apply), so it
+  // cannot answer "was this a BYE?". The positionAssignment is the durable record and still can.
+  if (targetDrawPositionIsBye({ drawDefinition, noContextTargetMatchUp, targetMatchUp })) return BYE;
+  return TO_BE_PLAYED;
 }
 
 /**
