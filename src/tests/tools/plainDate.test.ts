@@ -57,7 +57,7 @@ it('validates ISO date strings without accepting arbitrary text', () => {
 
 test('the plainDate bundle carries no zone-resolving member', () => {
   // The intent boundary is the point of the module: anything that needs an
-  // offset belongs in timeZone/zonedTime, not here.
+  // offset belongs in timeZone/zonedDateTime, not here.
   const keys = Object.keys(plainDate);
   expect(keys.length).toBeGreaterThan(0);
   expect(keys.filter((key) => /zone|utc|offset|instant/i.test(key))).toEqual([]);

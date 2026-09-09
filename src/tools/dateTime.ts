@@ -3,7 +3,7 @@
  *
  * The calendar intents this file used to conflate now live in dedicated modules:
  * `@Tools/plainDate` (a calendar day), `@Tools/plainTime` (a wall clock), and
- * `@Tools/timeZone` / `@Tools/zonedTime` (an offset-resolved moment). Those are
+ * `@Tools/timeZone` / `@Tools/zonedDateTime` (an offset-resolved moment). Those are
  * the modules to reach for in new code — they say which intent is meant, which
  * this file's flat namespace never could.
  *

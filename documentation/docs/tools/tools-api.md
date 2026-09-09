@@ -387,7 +387,14 @@ tools.timeZone.getTimeZoneOffsetMinutes('America/New_York', new Date('2024-06-15
 
 tools.timeZone.getTimeZoneOffsetMinutes('UTC'); // 0
 tools.timeZone.getTimeZoneOffsetMinutes('Asia/Kolkata'); // 330 (UTC+5:30)
+
+// An unrecognised or absent zone is `undefined` — never a substituted 0, and
+// never the offset of whichever machine happens to be running.
+tools.timeZone.getTimeZoneOffsetMinutes('Not/A/Zone'); // undefined
+tools.timeZone.getTimeZoneOffsetMinutes(); // undefined
 ```
+
+**Returns:** offset in minutes, or `undefined` when the zone is absent or unrecognised.
 
 ### wallClockToUTC
 
@@ -405,6 +412,12 @@ tools.timeZone.wallClockToUTC('2024-01-15', '03:00', 'America/New_York');
 // Invalid timezone returns error
 tools.timeZone.wallClockToUTC('2024-06-20', '03:00', 'Invalid/Zone');
 // Result: { error: INVALID_TIME_ZONE }
+
+// A malformed date and a malformed time are different errors
+tools.timeZone.wallClockToUTC('not-a-date', '03:00', 'America/New_York');
+// Result: { error: INVALID_DATE }
+tools.timeZone.wallClockToUTC('2024-06-20', 'noon', 'America/New_York');
+// Result: { error: INVALID_TIME }
 ```
 
 | Parameter  | Type     | Description                            |
@@ -413,7 +426,8 @@ tools.timeZone.wallClockToUTC('2024-06-20', '03:00', 'Invalid/Zone');
 | `time`     | `string` | Wall-clock time in `HH:MM` format      |
 | `timeZone` | `string` | IANA timezone identifier               |
 
-**Returns:** UTC ISO string (ending in `Z`) or `{ error: INVALID_TIME_ZONE }`.
+**Returns:** UTC ISO string (ending in `Z`), or `{ error }` carrying `INVALID_TIME_ZONE`,
+`INVALID_DATE` or `INVALID_TIME`.
 
 ### utcToWallClock
 
@@ -430,6 +444,10 @@ tools.timeZone.utcToWallClock('2024-06-21T03:00:00.000Z', 'America/New_York');
 // Invalid timezone returns error
 tools.timeZone.utcToWallClock('2024-06-20T07:00:00.000Z', 'Invalid/Zone');
 // Result: { error: INVALID_TIME_ZONE }
+
+// An unparseable instant is refused rather than throwing
+tools.timeZone.utcToWallClock('garbage', 'America/New_York');
+// Result: { error: INVALID_DATE }
 ```
 
 | Parameter  | Type     | Description                  |
@@ -437,7 +455,8 @@ tools.timeZone.utcToWallClock('2024-06-20T07:00:00.000Z', 'Invalid/Zone');
 | `utcIso`   | `string` | UTC ISO 8601 datetime string |
 | `timeZone` | `string` | IANA timezone identifier     |
 
-**Returns:** `{ date: string, time: string }` or `{ error: INVALID_TIME_ZONE }`.
+**Returns:** `{ date: string, time: string }`, or `{ error }` carrying `INVALID_TIME_ZONE`
+or `INVALID_DATE`.
 
 ### toEmbargoUTC
 
@@ -462,7 +481,56 @@ engine.publishEvent({
 | `time`     | `string` | Wall-clock time in `HH:MM` format      |
 | `timeZone` | `string` | IANA timezone identifier               |
 
-**Returns:** UTC ISO string (ending in `Z`) or `{ error: INVALID_TIME_ZONE }`.
+**Returns:** UTC ISO string (ending in `Z`), or `{ error }` carrying `INVALID_TIME_ZONE`,
+`INVALID_DATE` or `INVALID_TIME`.
+
+---
+
+## tools.zonedDateTime
+
+`tools.timeZone` is a thin adapter; `tools.zonedDateTime` is the implementation beneath it and the
+zoned member of the calendar-intent set (`plainDate`, `plainTime`, `zonedDateTime`). Reach for it when
+you need the raw epoch-millisecond form, or when you need to know **which frame** a conversion used.
+
+```js
+import { tools } from 'tods-competition-factory';
+
+// Which frame did this conversion actually use?
+tools.zonedDateTime.zonedWallClockToMs({ date: '2026-07-15', time: '09:00', timeZone: 'America/New_York' });
+// { ms: 1784725200000, source: 'zone' }
+
+// No zone: the caller's own offset frame, and it says so.
+tools.zonedDateTime.zonedWallClockToMs({ date: '2026-07-15', time: '09:00', utcOffsetMinutes: -240 });
+// { ms: 1784725200000, source: 'offset' }
+
+// A zone the system cannot honour is REFUSED, not silently replaced.
+tools.zonedDateTime.zonedWallClockToMs({
+  date: '2026-07-15',
+  time: '09:00',
+  utcOffsetMinutes: -240,
+  timeZone: 'Not/AZone',
+});
+// null
+
+tools.zonedDateTime.zonedParts({ ms: 1784725200000, timeZone: 'America/New_York' });
+// { date: '2026-07-15', time: '09:00', source: 'zone' }
+
+tools.zonedDateTime.offsetMinutesAt(1784725200000, 'America/New_York'); // -240
+tools.zonedDateTime.isZone('America/New_York'); // true — cached, so repeat checks are free
+```
+
+### The frame rule
+
+| `timeZone`            | result                                      | `source`   |
+| --------------------- | ------------------------------------------- | ---------- |
+| absent                | the caller's `utcOffsetMinutes` (default 0) | `'offset'` |
+| present, unrecognised | `null` — refused                            | —          |
+| present, recognised   | resolved **per instant**, DST-correct       | `'zone'`   |
+
+A caller that supplies no zone has declared its own frame, which is legitimate — most tournaments
+carry no zone. A caller that supplies a zone the system cannot honour has made a config error;
+substituting a different frame turns a 90-minute recovery figure into a 330-minute one that still
+reads as measured. `source` is returned so the difference is visible in the value rather than assumed.
 
 ---
 

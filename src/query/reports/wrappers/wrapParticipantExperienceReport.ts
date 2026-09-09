@@ -1,3 +1,5 @@
+import { INVALID_TIME_ZONE } from '@Constants/errorConditionConstants';
+import { isValidIANATimeZone } from '@Tools/timeZone';
 import { buildRecoveryTimeline, MS_PER_MINUTE, TimelineAppearance } from '../recoveryTimeline';
 
 // Constants and Types
@@ -78,6 +80,10 @@ export function wrapParticipantExperienceReport({
 }: WrapArgs): ReportResult | { error: any } {
   const utcOffsetMinutes = parameters?.utcOffsetMinutes ?? 0;
   const timeZone = parameters?.timeZone;
+  // A zone the system cannot honour is a config error, not a reason to
+  // silently report every venue-local time as UTC — that turns a 90-minute
+  // recovery into 330 and still stamps it `measured`.
+  if (timeZone && !isValidIANATimeZone(timeZone)) return { error: INVALID_TIME_ZONE };
   const { byParticipant, participantNameMap, estimatedCount, totalCount } = buildRecoveryTimeline({
     policyDefinitions: parameters?.policyDefinitions,
     asOfMs: parameters?.asOfMs,

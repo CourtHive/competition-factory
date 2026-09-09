@@ -3,7 +3,7 @@ import { modifyMatchUpNotice } from '@Mutate/notifications/drawNotifications';
 import { decorateResult } from '@Functions/global/decorateResult';
 import { findDrawMatchUp } from '@Acquire/findDrawMatchUp';
 import { extractDate } from '@Tools/dateTime';
-import { zonedParts } from '@Tools/zonedTime';
+import { zonedParts } from '@Tools/zonedDateTime';
 
 // constants and types
 import { DrawDefinition, Event, Tournament } from '@Types/tournamentTypes';
@@ -84,7 +84,10 @@ function calledBeforeTournamentStart({
   if (Number.isNaN(ms)) return false; // rejected separately; never silently skipped
 
   const { timeZone } = getTournamentTimeZone({ tournamentRecord });
-  if (timeZone) return zonedParts({ ms, timeZone }).date < startDate;
+  const parts = timeZone ? zonedParts({ ms, timeZone }) : undefined;
+  // A refused zone falls through to the offset-free bound below rather than
+  // converting against a frame the caller did not ask for.
+  if (parts) return parts.date < startDate;
 
   return ms < Date.parse(`${startDate}T00:00:00.000Z`) - MAX_ZONE_OFFSET_AHEAD_MS;
 }

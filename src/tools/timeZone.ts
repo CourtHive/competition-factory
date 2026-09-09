@@ -1,103 +1,67 @@
-import { INVALID_TIME_ZONE } from '@Constants/errorConditionConstants';
+/**
+ * Public zoned-conversion surface — a thin adapter, with no arithmetic of its own.
+ *
+ * Every conversion here delegates to `@Tools/zonedDateTime`, which is the single
+ * implementation. This module exists to keep the published `tools.timeZone`
+ * names, shapes and error contract stable; it must never grow a second copy of
+ * the offset arithmetic. `zonedDateTime.test.ts` asserts that by identity.
+ *
+ * Failure is a value, never a throw and never a substituted number. An
+ * unrecognised zone, a malformed date and a malformed time are three different
+ * errors and are reported as three different errors.
+ */
+
+import { INVALID_TIME_ZONE, INVALID_DATE, INVALID_TIME } from '@Constants/errorConditionConstants';
+import { zonedWallClockToMs, offsetMinutesAt, zonedParts, isZone } from '@Tools/zonedDateTime';
 import { isValidEmbargoDate } from '@Tools/dateTime';
 
+type ZoneError = { error: typeof INVALID_TIME_ZONE | typeof INVALID_DATE | typeof INVALID_TIME };
+
 export function isValidIANATimeZone(timeZone: string): boolean {
-  if (!timeZone || typeof timeZone !== 'string') return false;
-  try {
-    Intl.DateTimeFormat(undefined, { timeZone });
-    return true;
-  } catch {
-    return false;
-  }
+  return isZone(timeZone);
 }
 
-export function getTimeZoneOffsetMinutes(timeZone: string, date?: Date): number {
-  const d = date ?? new Date();
-  const formatter = new Intl.DateTimeFormat('en-US', {
-    timeZone,
-    timeZoneName: 'longOffset',
-  });
-
-  const parts = formatter.formatToParts(d);
-  const tzPart = parts.find((p) => p.type === 'timeZoneName');
-  const offsetStr = tzPart?.value ?? '';
-
-  // Format is "GMT" (for UTC) or "GMT+HH:MM" / "GMT-HH:MM"
-  if (offsetStr === 'GMT') return 0;
-
-  const match = offsetStr.match(/GMT([+-])(\d{2}):(\d{2})/);
-  if (!match) return 0;
-
-  const sign = match[1] === '+' ? 1 : -1;
-  const hours = Number.parseInt(match[2], 10);
-  const minutes = Number.parseInt(match[3], 10);
-  return sign * (hours * 60 + minutes);
+/**
+ * The zone's offset from UTC in minutes, at `date` (default now).
+ *
+ * `undefined` when the zone is absent or unrecognised. It previously threw a
+ * `RangeError` for an unrecognised zone, and returned the HOST machine's offset
+ * when the zone was omitted — the same call answering differently on two servers.
+ */
+export function getTimeZoneOffsetMinutes(timeZone: string, date?: Date): number | undefined {
+  return offsetMinutesAt((date ?? new Date()).getTime(), timeZone);
 }
 
-export function wallClockToUTC(
-  date: string,
-  time: string,
-  timeZone: string,
-): string | { error: typeof INVALID_TIME_ZONE } {
-  if (!isValidIANATimeZone(timeZone)) return { error: INVALID_TIME_ZONE };
+/** Venue-local `YYYY-MM-DD` + `HH:MM` → UTC ISO instant. */
+export function wallClockToUTC(date: string, time: string, timeZone: string): string | ZoneError {
+  if (!isZone(timeZone)) return { error: INVALID_TIME_ZONE };
 
-  const [hours, minutes] = time.split(':').map(Number);
-  const [year, month, day] = date.split('-').map(Number);
-
-  // Build a UTC date assuming the wall-clock values are in UTC, then adjust by offset
-  const utcGuess = new Date(Date.UTC(year, month - 1, day, hours, minutes, 0, 0));
-
-  // Get the offset at this approximate time
-  const offsetMinutes = getTimeZoneOffsetMinutes(timeZone, utcGuess);
-
-  // Wall clock = UTC + offset, so UTC = wall clock - offset
-  const utcMs = utcGuess.getTime() - offsetMinutes * 60 * 1000;
-
-  // Verify: the offset might differ at the actual UTC time (DST edge cases)
-  const utcDate = new Date(utcMs);
-  const verifyOffset = getTimeZoneOffsetMinutes(timeZone, utcDate);
-
-  if (verifyOffset !== offsetMinutes) {
-    // Re-adjust with the corrected offset
-    const correctedMs = utcGuess.getTime() - verifyOffset * 60 * 1000;
-    return new Date(correctedMs).toISOString();
+  const result = zonedWallClockToMs({ date, time, timeZone });
+  if (!result) {
+    // The zone is known good, so the failure is the date or the time. Re-run the
+    // time against a date known to be valid to find out which.
+    const timeIsValid = zonedWallClockToMs({ date: '2000-01-01', time, timeZone }) !== null;
+    return { error: timeIsValid ? INVALID_DATE : INVALID_TIME };
   }
 
-  return utcDate.toISOString();
+  return new Date(result.ms).toISOString();
 }
 
-export function utcToWallClock(
-  utcIso: string,
-  timeZone: string,
-): { date: string; time: string } | { error: typeof INVALID_TIME_ZONE } {
-  if (!isValidIANATimeZone(timeZone)) return { error: INVALID_TIME_ZONE };
+/** UTC ISO instant → venue-local calendar date + wall clock. */
+export function utcToWallClock(utcIso: string, timeZone: string): { date: string; time: string } | ZoneError {
+  if (!isZone(timeZone)) return { error: INVALID_TIME_ZONE };
 
-  const d = new Date(utcIso);
-  const formatter = new Intl.DateTimeFormat('en-CA', {
-    timeZone,
-    year: 'numeric',
-    month: '2-digit',
-    day: '2-digit',
-    hour: '2-digit',
-    minute: '2-digit',
-    hour12: false,
-  });
+  const ms = typeof utcIso === 'string' ? Date.parse(utcIso) : Number.NaN;
+  if (Number.isNaN(ms)) return { error: INVALID_DATE };
 
-  const parts = formatter.formatToParts(d);
-  const get = (type: string) => parts.find((p) => p.type === type)?.value ?? '';
+  const parts = zonedParts({ ms, timeZone });
+  if (!parts) return { error: INVALID_DATE };
 
-  const dateStr = `${get('year')}-${get('month')}-${get('day')}`;
-  const hour = get('hour') === '24' ? '00' : get('hour');
-  const timeStr = `${hour}:${get('minute')}`;
-
-  return { date: dateStr, time: timeStr };
+  return { date: parts.date, time: parts.time };
 }
 
-export function toEmbargoUTC(
-  date: string,
-  time: string,
-  timeZone: string,
-): string | { error: typeof INVALID_TIME_ZONE } {
+/** Venue-local embargo date + time → the UTC instant an embargo is stored as. */
+export function toEmbargoUTC(date: string, time: string, timeZone: string): string | ZoneError {
   const result = wallClockToUTC(date, time, timeZone);
   if (typeof result !== 'string') return result;
 

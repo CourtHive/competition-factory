@@ -12,7 +12,7 @@
  * operations later without any caller changing.
  *
  * Siblings: `plainTime` (a wall clock with no day), and — for anything that
- * needs an offset or an absolute moment — `timeZone` / `zonedTime`.
+ * needs an offset or an absolute moment — `timeZone` / `zonedDateTime`.
  */
 
 import { dateValidation, validDateString } from '@Validators/regex';

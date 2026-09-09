@@ -11,7 +11,7 @@
  * presentation concern rather than an arithmetic one.
  *
  * Siblings: `plainDate` (a calendar day with no clock), and — for anything that
- * needs an offset or an absolute moment — `timeZone` / `zonedTime`.
+ * needs an offset or an absolute moment — `timeZone` / `zonedDateTime`.
  */
 
 import { isISODateString, extractDate } from '@Tools/plainDate';

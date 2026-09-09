@@ -53,6 +53,9 @@ export { constantToString } from '@Tools/strings';
 export { numericSort } from '@Tools/sorting';
 export { UUID, UUIDS } from '@Tools/UUID';
 export { timeZone } from '@Tools/timeZone';
+// The zoned intent, completing plainDate / plainTime / zonedDateTime. `timeZone`
+// is a thin adapter over this module and holds no arithmetic of its own.
+export { zonedDateTime } from '@Tools/zonedDateTime';
 
 export {
   allNumeric,
