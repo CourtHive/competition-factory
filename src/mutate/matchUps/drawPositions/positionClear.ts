@@ -137,6 +137,10 @@ export function drawPositionRemovals({
       delete assignment.participantId;
       delete assignment.qualifier;
       delete assignment.bye;
+      // A BYE removed by ANY route — cascade unwind, a position action, or a hand edit — takes
+      // its provenance marker with it. A marker outliving the BYE it describes would make the
+      // next propagated BYE at this drawPosition look already-accounted-for.
+      delete assignment.byeFromPropagation;
       return true;
     }
     return undefined;

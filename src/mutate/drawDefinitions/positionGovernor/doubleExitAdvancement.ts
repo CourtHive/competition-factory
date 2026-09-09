@@ -665,6 +665,9 @@ function advanceByeToLoserMatchUp(params) {
   if (!structure) return { error: MISSING_STRUCTURE };
 
   return assignDrawPositionBye({
+    // this cascade is placing the BYE, so it says so rather than leaving assignDrawPositionBye to
+    // infer it from upstream statuses it cannot classify
+    byeFromPropagation: true,
     drawPosition: loserTargetDrawPosition,
     tournamentRecord,
     drawDefinition,

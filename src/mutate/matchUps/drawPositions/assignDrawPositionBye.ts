@@ -67,6 +67,18 @@ import {
  */
 
 type AssignDrawPositionByeArgs = {
+  /**
+   * Set by a propagation cascade that KNOWS it is placing this BYE.
+   *
+   * Passed rather than re-derived. The local `hasPropagatedStatus` below tests upstream matchUps
+   * with `isExit`, which excludes DOUBLE_WALKOVER and DOUBLE_DEFAULT — so it is false in exactly
+   * the double-exit case that most needs the marker. Measured: every BYE placed by a COMPASS
+   * double-walkover cascade arrived with `hasPropagatedStatus === false`.
+   *
+   * A boolean rather than a source id, because the id is not reliably in scope at the cascade's
+   * call site and the FACT is what removal needs. The id is recorded when available.
+   */
+  byeFromPropagation?: boolean;
   provisionalPositioning?: boolean;
   preserveScheduling?: boolean;
   tournamentRecord?: Tournament;
@@ -81,6 +93,7 @@ type AssignDrawPositionByeArgs = {
 };
 
 export function assignDrawPositionBye({
+  byeFromPropagation,
   provisionalPositioning,
   preserveScheduling,
   isPositionAction,
@@ -209,6 +222,26 @@ export function assignDrawPositionBye({
       if (hasPropagatedStatus) {
         assignment.participantId = undefined;
       }
+
+      // Record WHO placed this BYE.
+      //
+      // Removal previously had to infer this from topology — `removeDoubleExit` asked whether the
+      // matchUp was a BYE sitting on a feed round or in round 1 and concluded it must have placed
+      // it. That is a structural proxy of exactly the kind that produced #4778, and it cannot tell
+      // a BYE the cascade created from one that was already there, so unwinding over-cleared.
+      //
+      // The marker is authoritative when present. It is deliberately NOT written for a BYE that
+      // arrives any other way, so its absence continues to mean "unknown" for draws stored before
+      // this existed.
+      if (byeFromPropagation ?? hasPropagatedStatus) {
+        // the marker records the FACT and nothing else: a stored matchUpId would be a reference
+        // that can dangle when the source is removed, and nothing consumes it.
+        assignment.byeFromPropagation = true;
+      } else {
+        // A BYE placed by any other route must not inherit a stale marker from a previous
+        // propagated BYE that occupied this drawPosition.
+        delete assignment.byeFromPropagation;
+      }
     }
   });
 
@@ -263,6 +296,9 @@ export function assignDrawPositionBye({
 
   if (matchUp && drawPositionToAdvance) {
     const result = advanceDrawPosition({
+      // the cascade continues through here, so the provenance travels with it — without this the
+      // BYEs placed further down the chain arrive unmarked (measured: 4 of COMPASS's 8)
+      byeFromPropagation,
       matchUpId: matchUp.matchUpId,
       inContextDrawMatchUps,
       drawPositionToAdvance,
@@ -417,6 +453,7 @@ function assignRoundRobinBYE({
 // Looks to see whether a given matchUp has a winnerMatchup or a loserMatchUp
 // and if so advances the appropriate drawPosition into the targetMatchUp
 type AdvanceDrawPositionType = {
+  byeFromPropagation?: boolean;
   inContextDrawMatchUps: HydratedMatchUp[];
   drawPositionToAdvance: number;
   preserveScheduling?: boolean;
@@ -427,6 +464,7 @@ type AdvanceDrawPositionType = {
   event?: Event;
 };
 export function advanceDrawPosition({
+  byeFromPropagation,
   drawPositionToAdvance,
   inContextDrawMatchUps,
   preserveScheduling,
@@ -476,6 +514,7 @@ export function advanceDrawPosition({
   if (winnerMatchUp && winnerMatchUp.structureId === structure?.structureId && (!isLuckyDraw || !isPreFeedRound)) {
     // NOTE: error conditions are ignored
     advanceWinner({
+      byeFromPropagation,
       drawPositionToAdvance,
       inContextDrawMatchUps,
       preserveScheduling,
@@ -494,6 +533,7 @@ export function advanceDrawPosition({
 
     if (roundNumber === 1) {
       const result = assignDrawPositionBye({
+        byeFromPropagation,
         structureId: loserTargetLink.target.structureId,
         drawPosition: loserTargetDrawPosition,
         preserveScheduling,
@@ -504,6 +544,7 @@ export function advanceDrawPosition({
       if (result.error) return result;
     } else {
       assignFedDrawPositionBye({
+        byeFromPropagation,
         loserTargetDrawPosition,
         preserveScheduling,
         tournamentRecord,
@@ -520,6 +561,7 @@ export function advanceDrawPosition({
 }
 
 function advanceWinner({
+  byeFromPropagation,
   drawPositionToAdvance,
   inContextDrawMatchUps,
   preserveScheduling,
@@ -672,6 +714,7 @@ function advanceWinner({
     } else if (drawPositionIsBye && loserTargetLink && loserMatchUp) {
       if (loserMatchUp.feedRound) {
         assignFedDrawPositionBye({
+          byeFromPropagation,
           loserTargetDrawPosition,
           preserveScheduling,
           tournamentRecord,
@@ -687,6 +730,7 @@ function advanceWinner({
         const targetDrawPosition = loserMatchUp.drawPositions[targetDrawPositionIndex];
 
         const result = assignDrawPositionBye({
+          byeFromPropagation,
           structureId: loserTargetLink.target.structureId,
           drawPosition: targetDrawPosition,
           preserveScheduling,
@@ -754,6 +798,7 @@ function resolvePropagatedExitOnAdvance({
 }
 
 type AssignFedDrawPositionByeType = {
+  byeFromPropagation?: boolean;
   loserTargetDrawPosition: number;
   preserveScheduling?: boolean;
   tournamentRecord?: Tournament;
@@ -765,6 +810,7 @@ type AssignFedDrawPositionByeType = {
 };
 
 function assignFedDrawPositionBye({
+  byeFromPropagation,
   loserTargetDrawPosition,
   preserveScheduling,
   tournamentRecord,
@@ -787,6 +833,7 @@ function assignFedDrawPositionBye({
   });
   if (initialRoundNumber === roundNumber) {
     const result = assignDrawPositionBye({
+      byeFromPropagation,
       structureId: loserTargetLink.target.structureId,
       drawPosition: loserTargetDrawPosition,
       preserveScheduling,

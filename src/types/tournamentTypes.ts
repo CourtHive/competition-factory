@@ -1173,6 +1173,19 @@ export interface PositionAssignment {
   tally?: TallyResult;
   // CODES first-class: previously stored as `subOrder` extension
   subOrder?: number;
+  /**
+   * true when `bye` on this assignment was placed by an exit-propagation cascade rather than by
+   * draw generation or by hand. `removeDoubleExit` consults it instead of inferring provenance
+   * from topology, and every site that clears `bye` clears this in the same statement.
+   *
+   * Named to stay clear of the `doubleExitPropagateBye` progression POLICY, which decides whether
+   * a cascade should place a BYE at all. This records that one did.
+   *
+   * First-class rather than an extension because `removeExtensions: true` is a supported option
+   * on getState/getTournament — an extension marker is destroyed by a routine deep copy, and its
+   * loss would be silent, reverting removal to the inference this replaces.
+   */
+  byeFromPropagation?: boolean;
   timeItems?: TimeItem[];
   updatedAt?: Date | string;
 }

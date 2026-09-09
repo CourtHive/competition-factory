@@ -68,8 +68,29 @@ export function removeDoubleExit(params) {
     });
   }
 
-  const byePropagatedToLoserMatchUp =
-    loserMatchUp?.matchUpStatus === BYE && (loserMatchUp?.feedRound || loserMatchUp?.roundNumber === 1);
+  // Did this cascade place the BYE that is sitting on the loserMatchUp?
+  //
+  // `assignDrawPositionBye` records the answer on the positionAssignment as `byeFromPropagation`, and
+  // that record is authoritative — including when it is absent, which is the case the previous
+  // inference could not express.
+  //
+  // What it replaced:
+  //     loserMatchUp?.matchUpStatus === BYE && (loserMatchUp?.feedRound || loserMatchUp?.roundNumber === 1)
+  //
+  // "it is a BYE and it sits on a feed round or in round 1, therefore I placed it" — a structural
+  // proxy of exactly the kind that produced #4778. It cannot distinguish a BYE this cascade
+  // created from one that was already there, so unwinding over-cleared: an FMLC consolation BYE
+  // placed by `propagateConsolationBye` (which fires when the first-round matchUps completed
+  // NORMALLY) satisfies it and was claimed.
+  //
+  // A draw persisted before `byeFromPropagation` existed carries no marker, so unwinding a double
+  // exit in one will not remove the BYEs its cascade placed. That is a DECISION, not an oversight:
+  // no backfill is being pursued on pre-existing tournaments/events/draws/structures. Behaviour is
+  // correct for anything this engine touches and inert for stored draws that predate it.
+  const byeProvenance = findPropagatedBye({ drawDefinition, loserMatchUp, loserTargetDrawPosition });
+
+  const byePropagatedToLoserMatchUp = loserMatchUp?.matchUpStatus === BYE && !!byeProvenance;
+
   const isFMLC = targetData?.targetLinks?.loserTargetLink?.linkCondition === FIRST_MATCHUP;
 
   if (byePropagatedToLoserMatchUp && isFMLC) {
@@ -272,4 +293,19 @@ function getMatchUpStatus({ pairedPreviousDoubleExit, noContextTargetMatchUp }) 
   if (noContextTargetMatchUp.matchUpStatus === BYE) return BYE;
   if (!pairedPreviousDoubleExit) return TO_BE_PLAYED;
   return [DOUBLE_DEFAULT, DEFAULTED].includes(noContextTargetMatchUp?.matchUpStatus) ? DEFAULTED : WALKOVER;
+}
+
+/**
+ * The `byeFromPropagation` marker on the loser target's positionAssignment.
+ *
+ * Returns undefined both when the drawPosition carries no BYE and when the BYE carries no marker;
+ * the caller treats those alike, since neither is a positive statement that this cascade placed it.
+ */
+function findPropagatedBye({ drawDefinition, loserMatchUp, loserTargetDrawPosition }): any {
+  if (!loserMatchUp?.structureId || loserTargetDrawPosition === undefined) return undefined;
+  const { structure } = findStructure({ drawDefinition, structureId: loserMatchUp.structureId });
+  const assignment = structure?.positionAssignments?.find(
+    (candidate) => candidate.drawPosition === loserTargetDrawPosition,
+  );
+  return assignment?.bye ? assignment.byeFromPropagation : undefined;
 }
