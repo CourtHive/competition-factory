@@ -330,9 +330,13 @@ function conditionallyAdvanceDrawPosition(params) {
     walkoverWinningSide,
   });
 
-  const inContextPairedPreviousMatchUp = inContextDrawMatchUps.find(
-    (candidate) => candidate.matchUpId === pairedPreviousMatchUp.matchUpId,
-  );
+  // a fed target round has no paired previous matchUp within this structure: its other
+  // side arrives over a feed link from another structure. sourceSideNumber is then
+  // derived by inferSourceSideNumber's feedRound branch, so undefined is expected here,
+  // not exceptional.
+  const inContextPairedPreviousMatchUp = pairedPreviousMatchUp
+    ? inContextDrawMatchUps.find((candidate) => candidate.matchUpId === pairedPreviousMatchUp.matchUpId)
+    : undefined;
 
   const sourceSideNumber = inferSourceSideNumber({
     inContextPairedPreviousMatchUp,
