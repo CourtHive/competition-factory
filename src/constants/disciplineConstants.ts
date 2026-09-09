@@ -1,12 +1,12 @@
 export const WHEELCHAIR_TENNIS = 'WHEELCHAIR_TENNIS';
 export const BEACH_VOLLEYBALL = 'BEACH_VOLLEYBALL';
-export const BADMINTON = 'BADMINTON';
 export const BEACH_TENNIS = 'BEACH_TENNIS';
 export const VOLLEYBALL = 'VOLLEYBALL';
 export const PICKLEBALL = 'PICKLEBALL';
+export const BADMINTON = 'BADMINTON';
 export const SQUASH = 'SQUASH';
-export const PADEL = 'PADEL';
 export const TENNIS = 'TENNIS';
+export const PADEL = 'PADEL';
 
 // Curated KNOWN discipline vocabulary. `discipline` is an OPEN, sport-agnostic vocabulary
 // (see planning/DISCIPLINE_EXTENSIBILITY.md) — DisciplineUnion accepts any string — but this
