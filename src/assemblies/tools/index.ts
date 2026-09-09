@@ -17,6 +17,11 @@ export {
 } from '@Query/matchUp/resolveDeltaBand';
 export { hasAttributeValues, createMap, generateHashCode, undefinedToNull } from '@Tools/objects';
 export { generateDateRange, dateTime, isValidEmbargoDate } from '@Tools/dateTime';
+// Calendar intents, named. `dateTime` conflates a calendar day, a wall clock and
+// an instant in one flat namespace; these say which is meant. Same behaviour —
+// `dateTime` re-exports from them — so callers can move one call site at a time.
+export { plainDate } from '@Tools/plainDate';
+export { plainTime } from '@Tools/plainTime';
 export { matchUpChronologicalSort } from '@Functions/sorters/matchUpChronologicalSort';
 export { matchUpScheduleSort } from '@Functions/sorters/matchUpScheduleSorter';
 export { structureSort } from '../../functions/sorters/structureSort';
