@@ -6,6 +6,8 @@ import {
   TENNIS,
   BEACH_TENNIS,
   WHEELCHAIR_TENNIS,
+  SQUASH,
+  BADMINTON,
 } from '@Constants/disciplineConstants';
 
 // Guards the DisciplineUnion source of truth: the type is derived from `disciplines`
@@ -26,6 +28,14 @@ test('disciplines tuple and disciplineConstants stay consistent', () => {
 
   // the core racquet disciplines are always present in the known set
   for (const discipline of [TENNIS, BEACH_TENNIS, WHEELCHAIR_TENNIS]) {
+    expect(disciplines).toContain(discipline);
+  }
+
+  // SQUASH and BADMINTON are known, not merely accepted. The vocabulary is open, so any string
+  // already validated — but the matchUpFormat grammar parses and round-trips both sports' scoring,
+  // and a discipline the engine can actually score belongs in the set that drives autocomplete,
+  // normalization and near-match typo defense.
+  for (const discipline of [SQUASH, BADMINTON]) {
     expect(disciplines).toContain(discipline);
   }
 });

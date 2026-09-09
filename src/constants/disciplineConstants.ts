@@ -1,8 +1,10 @@
 export const WHEELCHAIR_TENNIS = 'WHEELCHAIR_TENNIS';
 export const BEACH_VOLLEYBALL = 'BEACH_VOLLEYBALL';
+export const BADMINTON = 'BADMINTON';
 export const BEACH_TENNIS = 'BEACH_TENNIS';
 export const VOLLEYBALL = 'VOLLEYBALL';
 export const PICKLEBALL = 'PICKLEBALL';
+export const SQUASH = 'SQUASH';
 export const PADEL = 'PADEL';
 export const TENNIS = 'TENNIS';
 
@@ -10,14 +12,18 @@ export const TENNIS = 'TENNIS';
 // (see planning/DISCIPLINE_EXTENSIBILITY.md) — DisciplineUnion accepts any string — but this
 // tuple is the canonical known set used for autocomplete, normalization, and attr-audit
 // near-match typo defense. Includes the racquet disciplines the published schema already
-// enumerates (TENNIS, BEACH_TENNIS, WHEELCHAIR_TENNIS, PADEL, PICKLEBALL) plus first-class
-// non-racquet additions (VOLLEYBALL, BEACH_VOLLEYBALL). Extend as new sports gain support.
+// enumerates (TENNIS, BEACH_TENNIS, WHEELCHAIR_TENNIS, PADEL, PICKLEBALL), SQUASH and BADMINTON —
+// whose scoring the matchUpFormat grammar already parses and round-trips, so leaving them out of
+// the known set only cost autocomplete and typo defense — plus first-class non-racquet additions
+// (VOLLEYBALL, BEACH_VOLLEYBALL). Extend as new sports gain support.
 export const disciplines = [
   TENNIS,
   BEACH_TENNIS,
   WHEELCHAIR_TENNIS,
   PADEL,
   PICKLEBALL,
+  SQUASH,
+  BADMINTON,
   VOLLEYBALL,
   BEACH_VOLLEYBALL,
 ] as const;
@@ -28,6 +34,8 @@ export const disciplineConstants = {
   BEACH_TENNIS,
   VOLLEYBALL,
   PICKLEBALL,
+  BADMINTON,
+  SQUASH,
   PADEL,
   TENNIS,
 } as const;

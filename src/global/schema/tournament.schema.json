@@ -725,6 +725,8 @@
         "WHEELCHAIR_TENNIS",
         "PADEL",
         "PICKLEBALL",
+        "SQUASH",
+        "BADMINTON",
         "VOLLEYBALL",
         "BEACH_VOLLEYBALL"
       ]
