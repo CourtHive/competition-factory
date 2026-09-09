@@ -32,7 +32,7 @@ export const recoveryTimeRequiredMatchUpStatuses: MatchUpStatusUnion[] = [
   SUSPENDED,
 ];
 
-export const particicipantsRequiredMatchUpStatuses: MatchUpStatusUnion[] = [
+export const participantsRequiredMatchUpStatuses: MatchUpStatusUnion[] = [
   AWAITING_RESULT,
   COMPLETED,
   DEFAULTED,

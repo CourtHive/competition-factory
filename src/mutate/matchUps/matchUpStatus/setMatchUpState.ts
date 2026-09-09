@@ -58,7 +58,7 @@ import {
   DOUBLE_WALKOVER,
   IN_PROGRESS,
   INCOMPLETE,
-  particicipantsRequiredMatchUpStatuses,
+  participantsRequiredMatchUpStatuses,
   SUSPENDED,
   TO_BE_PLAYED,
   validMatchUpStatuses,
@@ -808,9 +808,7 @@ function checkParticipants({
   //
   // Two checks for one condition, one lenient and early, one strict and late, with mutations in
   // between. Making the early one cover the same ground is what keeps the rejection atomic.
-  const directingOutcome = matchUpStatus
-    ? particicipantsRequiredMatchUpStatuses.includes(matchUpStatus)
-    : !!winningSide;
+  const directingOutcome = matchUpStatus ? participantsRequiredMatchUpStatuses.includes(matchUpStatus) : !!winningSide;
 
   if (directingOutcome && !requiredParticipants) {
     return decorateResult({
