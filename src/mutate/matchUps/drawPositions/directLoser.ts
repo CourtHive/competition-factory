@@ -251,6 +251,19 @@ function placeLoser({
     return { ...SUCCESS };
   }
 
+  // There is no loser to direct.
+  //
+  // This is the normal shape of a PENDING propagated exit: a WALKOVER recorded on a matchUp whose
+  // other side is still empty, awaiting whoever falls through from an earlier round. Nothing can
+  // be placed into the consolation yet, and nothing should be — `progressExitStatus` re-propagates
+  // once the slot fills.
+  //
+  // Both errors below describe a placement that FAILED; neither describes one that was never
+  // attempted. Returning one here reported failure for correct behaviour, and did so after
+  // `directParticipants` had already written the source matchUp's status and advanced the winner —
+  // an error over mutated state, which is the shape the sweep reports as ERROR_IMPLIES_NO_MUTATION.
+  if (!loserParticipantId) return { ...SUCCESS };
+
   const error = !targetDrawPositionIsUnfilled ? DRAW_POSITION_OCCUPIED : INVALID_DRAW_POSITION;
   return {
     context: { loserDrawPosition, loserTargetLink, targetDrawPositionIsUnfilled },
