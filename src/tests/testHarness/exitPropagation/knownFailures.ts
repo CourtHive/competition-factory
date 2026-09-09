@@ -41,14 +41,11 @@ const DOUBLE_EXIT_DROPPED_PROGRESSION =
   'Mentat/planning/EXIT_PROPAGATION_ASSESSMENT.md §7.';
 
 const DOUBLE_EXIT_NOT_REVERSIBLE =
-  'Applying a double exit is neither reversible nor idempotent. DO_UNDO_IDENTITY: after apply-then-' +
-  'clear, a matchUp that was BYE before the double walkover comes back TO_BE_PLAYED — the removal ' +
-  'path cannot distinguish a BYE it created (setMatchUpStatus.md rule 2) from one that already ' +
-  'existed, so it over-clears. IDEMPOTENT_REAPPLY: re-applying the identical double exit mutates ' +
-  'the draw a second time. Consistent with the add and remove paths using different pairing ' +
-  'arithmetic (getPairedPreviousMatchUpIsDoubleExit anchors on roundNumber-1, getPairedPreviousMatchUp ' +
-  'on roundNumber) and with removeDoubleExit having no iteration bound. Every failing cell is a ' +
-  'double exit and the two statuses fail identically in each — a systematic defect, not noise. See ' +
+  'Applying a double exit is not reversible. After apply-then-clear, a matchUp that was BYE before ' +
+  'the double walkover comes back TO_BE_PLAYED. The BYE-provenance work (db4c925f5) addressed the ' +
+  'positionAssignment side of this; the residue that remains is on the matchUp STATUS, which is a ' +
+  'separate mechanism and is not yet characterised. Every failing cell is a double exit and both ' +
+  'double-exit statuses fail identically in each — systematic, not noise. See ' +
   'Mentat/planning/EXIT_PROPAGATION_ASSESSMENT.md §3 class B.';
 
 /**
@@ -57,22 +54,20 @@ const DOUBLE_EXIT_NOT_REVERSIBLE =
  * Listed explicitly rather than derived: the point of the registry is that adding a cell is a
  * deliberate act with a reference attached, and a pattern-matched rule would silently absorb new
  * failures as the matrix grows.
+ *
+ * IDEMPOTENT_REAPPLY was removed from every cell that carried it when the idempotence guard landed
+ * in `attemptToSetMatchUpStatus` — 14 entries, deleted because the reverse guard demanded it.
  */
 const DOUBLE_EXIT_PROPERTY_CELLS: [string, string[]][] = [
-  ['SINGLE_ELIMINATION 16/15', ['IDEMPOTENT_REAPPLY']],
-  ['DOUBLE_ELIMINATION 8/8', ['IDEMPOTENT_REAPPLY']],
   ['DOUBLE_ELIMINATION 8/7', ['DO_UNDO_IDENTITY']],
-  ['DOUBLE_ELIMINATION 16/15', ['IDEMPOTENT_REAPPLY']],
   ['FIRST_MATCH_LOSER_CONSOLATION 8/8', ['DO_UNDO_IDENTITY']],
   ['FIRST_MATCH_LOSER_CONSOLATION 16/16', ['DO_UNDO_IDENTITY']],
   ['FIRST_MATCH_LOSER_CONSOLATION 16/15', ['DO_UNDO_IDENTITY']],
-  ['FIRST_ROUND_LOSER_CONSOLATION 8/8', ['IDEMPOTENT_REAPPLY', 'DO_UNDO_IDENTITY']],
-  ['FIRST_ROUND_LOSER_CONSOLATION 16/16', ['IDEMPOTENT_REAPPLY', 'DO_UNDO_IDENTITY']],
+  ['FIRST_ROUND_LOSER_CONSOLATION 8/8', ['DO_UNDO_IDENTITY']],
+  ['FIRST_ROUND_LOSER_CONSOLATION 16/16', ['DO_UNDO_IDENTITY']],
   ['MODIFIED_FEED_IN_CHAMPIONSHIP 16/15', ['DO_UNDO_IDENTITY']],
   ['FEED_IN_CHAMPIONSHIP 16/15', ['DO_UNDO_IDENTITY']],
   ['CURTIS_CONSOLATION 16/15', ['DO_UNDO_IDENTITY']],
-  ['COMPASS 16/15', ['IDEMPOTENT_REAPPLY']],
-  ['OLYMPIC 16/15', ['IDEMPOTENT_REAPPLY']],
 ];
 
 const ACTION_MUTATION_DISAGREEMENT =
