@@ -54,3 +54,6 @@ export type ChallengeState = (typeof challengeStates)[number];
 export const CHALLENGE_ISSUED = 'ladder.challenge.issued';
 export const CHALLENGE_ACCEPTED = 'ladder.challenge.accepted';
 export const CHALLENGE_DECLINED = 'ladder.challenge.declined';
+
+/** An operator removed a participant by hand — see `removeLadderParticipant`. */
+export const LADDER_PARTICIPANT_REMOVED = 'ladder.participant.removed';
