@@ -394,6 +394,8 @@ QualityWinProfile
 QualityWinRange
 QueryFacade
 QueueMethod
+READ_MODEL_COLUMNS
+READ_MODEL_TABLES
 REPORT_CATEGORIES
 REPORT_SOURCE
 RailSegment
@@ -1234,7 +1236,6 @@ parseCSV
 parseMCPPoint
 parseMatchUpFormat
 parseScoreString
-particicipantsRequiredMatchUpStatuses
 participantConstants
 participantGovernor
 participantPublishRow
@@ -1242,6 +1243,7 @@ participantRoles
 participantScaleItem
 participantScheduledMatchUps
 participantTypes
+participantsRequiredMatchUpStatuses
 pbpValidator
 penaltyConstants
 pointParser

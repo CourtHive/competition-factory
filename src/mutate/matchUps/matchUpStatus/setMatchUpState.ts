@@ -58,7 +58,7 @@ import {
   DOUBLE_WALKOVER,
   IN_PROGRESS,
   INCOMPLETE,
-  particicipantsRequiredMatchUpStatuses,
+  participantsRequiredMatchUpStatuses,
   SUSPENDED,
   TO_BE_PLAYED,
   validMatchUpStatuses,
@@ -252,6 +252,7 @@ export function setMatchUpState(params: SetMatchUpStateArgs): any {
     appliedPolicies,
     drawDefinition,
     matchUpStatus,
+    winningSide,
     structure,
     matchUp,
   });
@@ -761,6 +762,7 @@ function checkParticipants({
   appliedPolicies,
   drawDefinition,
   matchUpStatus,
+  winningSide,
   structure,
   matchUp,
 }) {
@@ -793,7 +795,22 @@ function checkParticipants({
   ) {
     return { ...SUCCESS };
   }
-  if (matchUpStatus && particicipantsRequiredMatchUpStatuses.includes(matchUpStatus) && !requiredParticipants) {
+  // A bare `{ winningSide }` with no matchUpStatus requires participants just as much as an
+  // explicit COMPLETED does — declaring a winner IS a directing action.
+  //
+  // Without this the check simply did not run for such an outcome, and the equivalent test in
+  // `attemptToModifyScore` (`validToScore`) caught it instead — but that runs LATER, after
+  // `noDownstreamDependencies` has already unwound an existing double exit via `removeDoubleExit`,
+  // or `attemptToSetWinningSide` has already called `removeDirectedParticipants`. The result was a
+  // rejected mutation that had nonetheless destroyed the previous result: measured on
+  // MODIFIED_FEED_IN_CHAMPIONSHIP 8/6, a pending propagated exit (WALKOVER, winningSide 1, second
+  // side an empty feed slot) was left TO_BE_PLAYED by a call that returned ERR_MISSING_ASSIGNMENTS.
+  //
+  // Two checks for one condition, one lenient and early, one strict and late, with mutations in
+  // between. Making the early one cover the same ground is what keeps the rejection atomic.
+  const directingOutcome = matchUpStatus ? participantsRequiredMatchUpStatuses.includes(matchUpStatus) : !!winningSide;
+
+  if (directingOutcome && !requiredParticipants) {
     return decorateResult({
       info: 'matchUpStatus requires assigned participants',
       context: { matchUpStatus, requiredParticipants },

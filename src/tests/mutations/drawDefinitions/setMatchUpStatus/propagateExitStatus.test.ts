@@ -1082,3 +1082,101 @@ test('FMLC real-match fall-through: winningSide and exit code follow the partici
   expect(exit.matchUpStatusCodes?.[loserSide.sideNumber - 1]).toEqual('W1');
   expect(exit.matchUpStatusCodes?.[winnerSide.sideNumber - 1] || '').toEqual('');
 });
+// COMPASS back draws are fed only at round 1 and halve thereafter, so no round is a
+// feedRound. A propagated exit that advances through back-draw BYEs therefore comes to
+// rest as a PENDING exit (empty winning slot) on a natural round.
+test('COMPASS: a pending exit on a non-feed back-draw round does not block scoring the matchUp that feeds it', () => {
+  const drawId = 'drawId';
+  mocksEngine.generateTournamentRecord({
+    drawProfiles: [{ drawId, drawSize: 16, participantsCount: 10, drawType: COMPASS, idPrefix: 'm' }],
+    setState: true,
+  });
+
+  const drawMatchUps = () => tournamentEngine.allDrawMatchUps({ drawId, inContext: true }).matchUps;
+
+  // 16 drawPositions / 10 participants leaves exactly two contested East round 1 matchUps
+  const contested = drawMatchUps().filter(
+    (m) => m.structureName === 'East' && m.roundNumber === 1 && m.sides.filter((s) => s.participant).length === 2,
+  );
+  expect(contested.length).toEqual(2);
+  const [exitMatchUp, feederMatchUp] = contested;
+  const retiredParticipantId = exitMatchUp.sides.find((s) => s.sideNumber === 2).participantId;
+
+  let result = tournamentEngine.setMatchUpStatus({
+    outcome: { matchUpStatus: RETIRED, winningSide: 1, matchUpStatusCodes: ['RJ'] },
+    matchUpId: exitMatchUp.matchUpId,
+    propagateExitStatus: true,
+    drawId,
+  });
+  expect(result.success).toEqual(true);
+
+  // the retiring participant advanced through two West BYEs, depositing a pending exit
+  const pendingExit = drawMatchUps().find(
+    (m) =>
+      m.matchUpStatus === WALKOVER &&
+      m.winningSide &&
+      !m.sides.find((s) => s.sideNumber === m.winningSide)?.participant,
+  );
+  expect(pendingExit).toBeDefined();
+  expect(pendingExit.structureName).toEqual('West');
+  expect(pendingExit.feedRound).toBeFalsy();
+  expect(pendingExit.sides.find((s) => s.sideNumber !== pendingExit.winningSide).participantId).toEqual(
+    retiredParticipantId,
+  );
+
+  // the loser of the second contested matchUp is the participant who will fall through
+  // into that empty winning slot; scoring it must be allowed
+  const fallThroughParticipantId = feederMatchUp.sides.find((s) => s.sideNumber === 2).participantId;
+  const { outcome } = mocksEngine.generateOutcomeFromScoreString({ scoreString: '6-3 6-3', winningSide: 1 });
+  result = tournamentEngine.setMatchUpStatus({ matchUpId: feederMatchUp.matchUpId, outcome, drawId });
+  expect(result.success).toEqual(true);
+
+  // and the pending exit auto-resolves onto the participant who fell through
+  const resolved = drawMatchUps().find((m) => m.matchUpId === pendingExit.matchUpId);
+  expect(resolved.matchUpStatus).toEqual(WALKOVER);
+  expect(resolved.sides.find((s) => s.sideNumber === resolved.winningSide).participantId).toEqual(
+    fallThroughParticipantId,
+  );
+  expect(resolved.sides.find((s) => s.sideNumber !== resolved.winningSide).participantId).toEqual(retiredParticipantId);
+});
+
+test('COMPASS: once the back-draw exit has RESOLVED, resetting the fall-through source is still blocked', () => {
+  const drawId = 'drawId';
+  mocksEngine.generateTournamentRecord({
+    drawProfiles: [{ drawId, drawSize: 16, participantsCount: 10, drawType: COMPASS, idPrefix: 'm' }],
+    setState: true,
+  });
+
+  const drawMatchUps = () => tournamentEngine.allDrawMatchUps({ drawId, inContext: true }).matchUps;
+  const contested = drawMatchUps().filter(
+    (m) => m.structureName === 'East' && m.roundNumber === 1 && m.sides.filter((s) => s.participant).length === 2,
+  );
+  const [exitMatchUp, feederMatchUp] = contested;
+
+  let result = tournamentEngine.setMatchUpStatus({
+    outcome: { matchUpStatus: RETIRED, winningSide: 1, matchUpStatusCodes: ['RJ'] },
+    matchUpId: exitMatchUp.matchUpId,
+    propagateExitStatus: true,
+    drawId,
+  });
+  expect(result.success).toEqual(true);
+
+  const { outcome } = mocksEngine.generateOutcomeFromScoreString({ scoreString: '6-3 6-3', winningSide: 1 });
+  result = tournamentEngine.setMatchUpStatus({ matchUpId: feederMatchUp.matchUpId, outcome, drawId });
+  expect(result.success).toEqual(true);
+
+  // the exit is now resolved downstream, so the source may no longer be cleared or flipped
+  result = tournamentEngine.setMatchUpStatus({
+    outcome: { score: { scoreStringSide1: '', scoreStringSide2: '' }, matchUpStatus: TO_BE_PLAYED },
+    matchUpId: feederMatchUp.matchUpId,
+    drawId,
+  });
+  expect(result.success).not.toEqual(true);
+
+  result = tournamentEngine.setMatchUpStatus({
+    matchUpId: feederMatchUp.matchUpId,
+    outcome: { winningSide: 2 },
+    drawId,
+  });
+  expect(result.success).not.toEqual(true);
+});
