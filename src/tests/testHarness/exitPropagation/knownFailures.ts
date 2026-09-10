@@ -68,46 +68,7 @@ const DOUBLE_EXIT_PROPERTY_CELLS: [string, string[], string][] = [
   ['FIRST_ROUND_LOSER_CONSOLATION 16/16', ['DO_UNDO_IDENTITY'], DOUBLE_EXIT_STATUS_CODES_RESIDUE],
 ];
 
-const ACTION_MUTATION_DISAGREEMENT =
-  'matchUpActions offers SCORE on a decided matchUp, but clearing that matchUp is refused with ' +
-  'ERR_PROPAGATED_EXITS_DOWNSTREAM — so the UI presents a control the engine rejects when used. ' +
-  'Root cause is a verified single-line divergence: setMatchUpState gates the clear on BOTH ' +
-  'hasPropagatedExitDownstream and isActiveDownstream (setMatchUpState.ts:189-195), while ' +
-  'matchUpActions consults isActiveDownstream alone (matchUpActions.ts:272,284). 64 instances ' +
-  'across 7 draw types, single WALKOVER only. Nothing throws and no state is corrupted, which is ' +
-  'why no crash-or-consistency oracle would surface it. Fix is to give matchUpActions the same ' +
-  'gate; see Mentat/planning/EXIT_PROPAGATION_ASSESSMENT.md §5 phase 2.';
-
-/** Cells where matchUpActions and setMatchUpStatus disagree, as drawType + size/participants. */
-const ACTION_DISAGREEMENT_CELLS = [
-  'DOUBLE_ELIMINATION 8/8',
-  'DOUBLE_ELIMINATION 8/7',
-  'DOUBLE_ELIMINATION 16/16',
-  'DOUBLE_ELIMINATION 16/15',
-  'FIRST_MATCH_LOSER_CONSOLATION 8/7',
-  'FIRST_MATCH_LOSER_CONSOLATION 16/15',
-  'FIRST_ROUND_LOSER_CONSOLATION 8/7',
-  'FIRST_ROUND_LOSER_CONSOLATION 16/15',
-  'FEED_IN_CHAMPIONSHIP 8/7',
-  'FEED_IN_CHAMPIONSHIP 16/15',
-  'CURTIS_CONSOLATION 8/8',
-  'CURTIS_CONSOLATION 16/15',
-  'COMPASS 8/8',
-  'COMPASS 8/7',
-  'COMPASS 16/16',
-  'COMPASS 16/15',
-  'OLYMPIC 8/8',
-  'OLYMPIC 8/7',
-  'OLYMPIC 16/16',
-  'OLYMPIC 16/15',
-];
-
 export const KNOWN_FAILURES: QuarantineEntry[] = [
-  ...ACTION_DISAGREEMENT_CELLS.map((cell) => ({
-    key: `agreement ${cell} WALKOVER`,
-    properties: ['ACTION_MUTATION_AGREEMENT'],
-    reference: ACTION_MUTATION_DISAGREEMENT,
-  })),
   ...DOUBLE_EXIT_PROPERTY_CELLS.flatMap(([cell, properties, reference]) =>
     ['DOUBLE_WALKOVER', 'DOUBLE_DEFAULT'].map((exitStatus) => ({
       key: `properties ${cell} ${exitStatus}`,
