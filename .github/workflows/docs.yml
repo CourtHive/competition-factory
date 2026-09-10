@@ -1,0 +1,81 @@
+name: Docs
+
+# Builds the Docusaurus site so a broken docs build fails at PR time instead of at
+# `pnpm docs:publish`.
+#
+# Until this existed, `documentation/` was covered by NOTHING: a grep for "documentation"
+# across .github/workflows/ returned no hits, and `verify.yml` cannot cover it even
+# incidentally — `documentation/` is its own pnpm install root (its own package.json,
+# pnpm-lock.yaml and pnpm-workspace.yaml, and it is not a member of the root workspace),
+# so `pnpm install --frozen-lockfile` at the repo root never installs Docusaurus at all.
+#
+# Deliberately a SEPARATE workflow rather than a 17th step in `verify`:
+#   - `verify` already runs 17-22 minutes; docs breakage should not queue behind coverage.
+#   - the install roots differ, so it would need its own install + cache inside one job anyway.
+#   - path filtering keeps it off PRs that do not touch docs, instead of taxing every PR.
+#
+# The two failure modes this catches are different mechanisms, and only one of them needed
+# a config change:
+#   - a bad `sidebars.js` document id fails the build on its own (config validation), so it
+#     is caught here regardless of link settings;
+#   - a broken link in prose only fails because `onBrokenLinks`/`onBrokenMarkdownLinks` were
+#     moved from 'warn' to 'throw'. Under 'warn' the build exits 0 with broken links in it,
+#     which would have made this job report clean for a broken site.
+# Both were verified by planting each defect and watching this build go red.
+
+on:
+  pull_request:
+    paths:
+      - 'documentation/**'
+      - '.github/workflows/docs.yml'
+  push:
+    branches: [master]
+    paths:
+      - 'documentation/**'
+      - '.github/workflows/docs.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+env:
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    name: docs site build
+
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 24
+
+      # pnpm via corepack, driven by `packageManager` in package.json. The repo's
+      # allowed-actions policy blocks third-party actions, so no pnpm/action-setup.
+      - run: corepack enable
+
+      - name: Resolve pnpm store path
+        run: echo "PNPM_STORE_PATH=$(pnpm store path --silent)" >> "$GITHUB_ENV"
+
+      # Keyed on documentation/pnpm-lock.yaml specifically: the docs tree is a
+      # different dependency graph from the root, and sharing the root's key would
+      # thrash both caches.
+      - uses: actions/cache@v6
+        with:
+          path: ${{ env.PNPM_STORE_PATH }}
+          key: ${{ runner.os }}-docs-pnpm-${{ hashFiles('documentation/pnpm-lock.yaml') }}
+          restore-keys: |
+            ${{ runner.os }}-docs-pnpm-
+
+      - name: install (documentation)
+        working-directory: documentation
+        run: pnpm install --frozen-lockfile
+
+      # `docusaurus build` is the whole gate. It fails on an unresolvable sidebar id and —
+      # since onBrokenLinks is 'throw' — on any broken internal link.
+      - name: build the docs site
+        working-directory: documentation
+        run: pnpm build
