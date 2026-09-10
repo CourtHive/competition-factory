@@ -1,3 +1,4 @@
+import { resolveLadderStructure } from '@Query/ladder/resolveLadderContext';
 import { participantScaleItem } from '@Query/participant/participantScaleItem';
 import { getLadderPolicy, getLadderOrdering } from '@Query/ladder/getLadderPolicy';
 import ratingsParameters from '@Fixtures/ratings/ratingsParameters';
@@ -10,7 +11,9 @@ import { RANK, RATING } from '@Constants/ladderConstants';
 type StandingArgs = {
   tournamentRecord?: any;
   drawDefinition: any;
-  structure: any;
+  /** Optional: resolved from `drawDefinition` when absent, so an engine caller can pass `drawId`. */
+  structure?: any;
+  structureId?: string;
   event?: any;
 };
 
@@ -44,7 +47,8 @@ function readScale({ participant, scaleName, scaleAccessor, eventType }: any) {
  * a rating-ordered ladder without every member holding a current published rating.
  */
 export function getLadderStanding(params: StandingArgs): LadderStanding {
-  const { structure, tournamentRecord } = params;
+  const { tournamentRecord } = params;
+  const structure = resolveLadderStructure(params);
   const assignments = (structure?.positionAssignments ?? []).filter((a: any) => a.participantId);
 
   if (getLadderOrdering(params) !== RATING) {

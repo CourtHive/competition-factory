@@ -1,3 +1,4 @@
+import { resolveLadderStructure } from '@Query/ladder/resolveLadderContext';
 import { getLadderMovement, getLadderOrdering, getLadderPolicy } from '@Query/ladder/getLadderPolicy';
 import { isLadder } from '@Query/drawDefinition/isLadder';
 
@@ -36,7 +37,9 @@ type MovementArgs = {
   challengerParticipantId?: string;
   tournamentRecord?: any;
   drawDefinition: any;
-  structure: any;
+  /** Optional: resolved from `drawDefinition` when absent, so an engine caller can pass `drawId`. */
+  structure?: any;
+  structureId?: string;
   event?: any;
 };
 
@@ -48,7 +51,8 @@ type MovementArgs = {
  * left to the call site. A caller cannot assert a win it has not evidenced.
  */
 function resolveTrigger(params: MovementArgs): any {
-  const { trigger, structure, matchUpId } = params;
+  const { trigger, matchUpId } = params;
+  const structure = resolveLadderStructure(params);
 
   if (trigger === FORFEIT) {
     const { challengerParticipantId, defenderParticipantId } = params;
@@ -98,7 +102,8 @@ function resolveTrigger(params: MovementArgs): any {
  * return is why `getLadderOrdering` had to exist before any of this was written.
  */
 export function applyLadderMovement(params: MovementArgs): ResultType & { moved?: boolean; ratingsUpdated?: boolean } {
-  const { appliedAt, drawDefinition, structure } = params;
+  const { appliedAt, drawDefinition } = params;
+  const structure = resolveLadderStructure(params);
 
   if (typeof drawDefinition !== 'object') return { error: MISSING_DRAW_DEFINITION };
   if (!isLadder(drawDefinition.drawType)) return { error: INVALID_VALUES, info: 'requires a LADDER drawType' };

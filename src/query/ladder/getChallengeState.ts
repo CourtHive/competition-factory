@@ -1,3 +1,6 @@
+import { resolveLadderMatchUp } from '@Query/ladder/resolveLadderContext';
+import { getLadderPolicy } from '@Query/ladder/getLadderPolicy';
+
 import { CHALLENGE_ACCEPTED, CHALLENGE_DECLINED, CHALLENGE_ISSUED } from '@Constants/ladderConstants';
 import { ACCEPTED, DECLINED, EXPIRED, PENDING } from '@Constants/ladderConstants';
 import type { ChallengeState } from '@Constants/ladderConstants';
@@ -6,8 +9,14 @@ import type { LadderPolicy } from '@Types/ladderTypes';
 type ChallengeStateArgs = {
   /** The instant to evaluate against. REQUIRED — see below. */
   asOf: string;
-  policy: LadderPolicy;
-  matchUp: any;
+  /** Optional: resolved from `drawDefinition` when absent, so an engine caller can pass `drawId`. */
+  policy?: LadderPolicy;
+  matchUp?: any;
+  matchUpId?: string;
+  tournamentRecord?: any;
+  drawDefinition?: any;
+  structure?: any;
+  event?: any;
 };
 
 const itemDateOf = (matchUp: any, itemType: string): string | undefined =>
@@ -33,10 +42,13 @@ export function addDaysIso(iso: string, days: number): string {
  * bury a conversion the factory's Temporal migration will have to find. The caller supplies the
  * instant; this stays pure.
  */
-export function getChallengeState({ matchUp, policy, asOf }: ChallengeStateArgs): {
+export function getChallengeState(params: ChallengeStateArgs): {
   state: ChallengeState;
   expiresAt?: string;
 } {
+  const { asOf } = params;
+  const matchUp = params.matchUp ?? resolveLadderMatchUp(params).matchUp;
+  const policy = params.policy ?? getLadderPolicy(params);
   if (itemDateOf(matchUp, CHALLENGE_DECLINED)) return { state: DECLINED };
   if (itemDateOf(matchUp, CHALLENGE_ACCEPTED)) return { state: ACCEPTED };
 
