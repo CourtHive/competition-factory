@@ -1,4 +1,11 @@
-import type { LadderMovement, LadderOrdering, ResultValidation } from '@Constants/ladderConstants';
+import type {
+  LadderMovement,
+  LadderOrdering,
+  LapseConsequence,
+  LapseKind,
+  LapseWindow,
+  ResultValidation,
+} from '@Constants/ladderConstants';
 
 /**
  * The rules that make a ladder a ladder. Every field varies by club — see
@@ -60,8 +67,39 @@ export type LadderPolicy = {
    * Whether declining costs the defender their position. Clubs differ, and the difference is the
    * whole character of the ladder: forfeit-on-decline makes it combative, free declines make it
    * social.
+   *
+   * SUGAR for `lapsePolicy: { allowance: 0, consequence: FORFEIT_POSITION }`. Kept so the simple
+   * case stays simple; `lapsePolicy` wins where both are set.
    */
   declineForfeitsPosition?: boolean;
+
+  /**
+   * Declining, ignoring a challenge and not turning up are ONE mechanism, not three — they are the
+   * same offence from the challenger's side, and clubs already treat them that way.
+   *
+   * Counted only when a challenge RESOLVES (D8), never by a background sweep. A consequence of that
+   * choice: "inactivity" here means unresponsive to challenges, never "has not played". A
+   * participant nobody challenges never lapses — see `removeLadderParticipant` for the manual route.
+   */
+  lapsePolicy?: LapsePolicy;
+};
+
+export type LapsePolicy = {
+  /** Free lapses before the consequence applies. */
+  allowance?: number;
+  window?: LapseWindow;
+  /** Days counted back when `window` is `ROLLING`. */
+  windowDays?: number;
+  /**
+   * Which failures count. DEFAULT: all three.
+   *
+   * Omitting `EXPIRY` makes the whole policy avoidable — a defender simply never answers, and
+   * nothing is recorded against them.
+   */
+  countsAsLapse?: LapseKind[];
+  consequence?: LapseConsequence;
+  /** Positions dropped when `consequence` is `DROP`. */
+  dropPositions?: number;
 };
 
 /** Where a ladder policy sits when attached to an event, draw or tournament. */

@@ -84,3 +84,27 @@ export const RESULT = 'RESULT';
 export const FORFEIT = 'FORFEIT';
 export const movementTriggers = [RESULT, FORFEIT] as const;
 export type MovementTrigger = (typeof movementTriggers)[number];
+
+/**
+ * Ways of failing the people below you. Declining, ignoring and not turning up are the same
+ * offence from the challenger's side, which is why they share one counter.
+ */
+export const DECLINE = 'DECLINE';
+export const EXPIRY = 'EXPIRY';
+export const UNPLAYED = 'UNPLAYED';
+export const lapseKinds = [DECLINE, EXPIRY, UNPLAYED] as const;
+export type LapseKind = (typeof lapseKinds)[number];
+
+/** How far back lapses are counted. */
+export const SEASON = 'SEASON';
+export const ROLLING = 'ROLLING';
+export const CONSECUTIVE = 'CONSECUTIVE';
+export const lapseWindows = [SEASON, ROLLING, CONSECUTIVE] as const;
+export type LapseWindow = (typeof lapseWindows)[number];
+
+/** What crossing the allowance costs. */
+export const FORFEIT_POSITION = 'FORFEIT_POSITION';
+export const DROP = 'DROP';
+export const REMOVE = 'REMOVE';
+export const lapseConsequences = [FORFEIT_POSITION, DROP, REMOVE] as const;
+export type LapseConsequence = (typeof lapseConsequences)[number];
