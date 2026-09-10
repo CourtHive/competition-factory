@@ -6,6 +6,7 @@ import mocksEngine from '@Assemblies/engines/mock';
 import tournamentEngine from '@Engines/syncEngine';
 
 import { INVALID_MATCHUP, MISSING_MATCHUPS, MISSING_MATCHUP } from '@Constants/errorConditionConstants';
+import { ROUND_ROBIN } from '@Constants/drawDefinitionConstants';
 import { COMPLETED } from '@Constants/matchUpStatusConstants';
 
 /**
@@ -97,6 +98,27 @@ describe('engine methods refuse rather than answer when their object param is ab
       { matchUpId: 'm1', winningSide: 1, sides: [{ sideNumber: 1, participantId: 'p1' }], score: { sets: [] } },
     ];
     expect(getParticipantResults({ matchUps: oneSided }).error).toEqual(INVALID_MATCHUP);
+  });
+
+  test('an UNPLAYED stored matchUp is refused, where it used to throw an uncaught TypeError', () => {
+    // The gap the first version of this guard left. Scoping it to `winningSide` covered the decided
+    // path (getSideId) but not the undecided one (processScore), so the SAME input — stored,
+    // non-hydrated matchUps — refused once a draw had been played and CRASHED while it had not:
+    //
+    //   TypeError: Cannot read properties of undefined (reading 'forEach')
+    //     at processScore -> processNoWinnerMatchUp -> getParticipantResults
+    const { tournamentRecord } = mocksEngine.generateTournamentRecord({
+      drawProfiles: [{ drawSize: 4, drawType: ROUND_ROBIN }], // nothing played
+      setState: true,
+    });
+    const draw = tournamentRecord.events[0].drawDefinitions[0];
+    const stored = draw.structures[0].structures?.[0]?.matchUps ?? draw.structures[0].matchUps;
+    expect(stored.length).toBeGreaterThan(0);
+    expect(stored.some((matchUp: any) => matchUp.winningSide)).toEqual(false); // the control
+    expect(stored.some((matchUp: any) => matchUp.sides)).toEqual(false);
+
+    const result: any = getParticipantResults({ matchUps: stored });
+    expect(result.error).toEqual(INVALID_MATCHUP);
   });
 
   test('a matchUp with NO winner is not refused — nothing reads a side from it', () => {

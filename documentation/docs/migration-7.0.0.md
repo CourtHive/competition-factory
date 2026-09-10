@@ -21,7 +21,7 @@ feature tour and the full list of 7.0.0 additions, see [What's New in 7.0.0](./w
 | `timeZone` conversions return an error instead of throwing or guessing                   | Anyone calling `wallClockToUTC`, `utcToWallClock`, `toEmbargoUTC` | See §4            |
 | `getTimeZoneOffsetMinutes` now returns `number \| undefined`                             | Anyone reading a zone offset                                      | See §4            |
 | `checkMatchUpIsComplete` / `getParticipantResults` refuse an absent object param          | Callers passing `matchUpId` / `drawId` and reading the result     | See §5            |
-| `getParticipantResults` refuses a matchUp that claims a winner but carries no `sides`      | Callers passing STORED (non-hydrated) matchUps                    | See §5            |
+| `getParticipantResults` refuses any matchUp carrying no `sides`                            | Callers passing STORED (non-hydrated) matchUps                    | See §5            |
 
 ## 1. `participantsRequiredMatchUpStatuses` — a spelling fix
 
@@ -201,9 +201,27 @@ getParticipantResults({ matchUps: storedMatchUps }); // BEFORE: { 'foo': {…} }
 
 Two `console.log` calls shipped alongside it. Both are gone.
 
-The check is scoped to matchUps that claim a `winningSide`, since that is the only path that reads a
-side — a pending or BYE matchUp carries no participantIds and still tallies to nothing, unchanged.
-It requires **both** side indices, because the winner is read from index 0 and the loser from index 1.
+The check requires **every** matchUp to carry both sides, played or not, and it requires **both**
+indices because the winner is read from index 0 and the loser from index 1.
+
+It is not scoped to `winningSide`, and that matters. Both code paths read `sides[].participantId` — a
+decided matchUp through `getSideId`, an undecided one through `processScore` — so scoping to the
+decided path left the same input with two different failure modes separated only by how far the draw
+had progressed:
+
+```js
+getParticipantResults({ matchUps: storedMatchUps }); // draw played     -> { error: INVALID_MATCHUP }
+getParticipantResults({ matchUps: storedMatchUps }); // not yet played  -> uncaught TypeError
+```
+
+A matchUp that legitimately has no participants yet still carries its sides — an unplayed in-context
+matchUp has `sides` with `drawPosition` and no `participantId`, and tallies to nothing exactly as
+before. What is refused is a matchUp with no sides at all, which only a stored record has.
+
+The refusal is **all-or-nothing**: one unusable matchUp refuses the whole call rather than being
+skipped. Skipping would return a tally silently missing matches, which is the failure this exists to
+prevent rather than a milder form of it. An **empty** array remains a valid question with an empty
+answer.
 
 **What to do:** pass in-context matchUps — `allDrawMatchUps`, `allStructureMatchUps`,
 `allTournamentMatchUps` all return them. If you were reading a `foo` key out of the result, that was
