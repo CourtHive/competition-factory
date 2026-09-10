@@ -18,6 +18,11 @@ and `drawPosition` reads as **rank**, where 1 is the top.
 Ask `isLadder(drawType)` wherever that difference matters. `isAdHocType(drawType)` is true for a
 ladder and answers a different question — whether the structure has bracket geometry.
 
+Every example below is a `tournamentEngine` call taking `drawId`. The engine resolves the
+drawDefinition, the ladder's structure, and — where one is named — the matchUp, so a caller never
+holds any of them. Passing a `drawDefinition` or `structure` explicitly still works and wins over
+resolution.
+
 ## What a ladder is made of
 
 | piece        | where it lives                                                 |
@@ -39,11 +44,11 @@ arrives from a draw, which is why eligibility is enforced when the challenge is 
 when a draw is generated — nothing upstream decided these two would meet.
 
 ```js
-const { matchUpId } = issueChallenge({
+const { matchUpId } = tournamentEngine.issueChallenge({
   challengerParticipantId: 'p9',
   defenderParticipantId: 'p7',
   issuedAt: '2026-03-01T10:00:00.000Z',
-  drawDefinition,
+  drawId,
 });
 ```
 
@@ -80,9 +85,9 @@ different facts, and conflating them would let one participant reorder the ladde
 a win nobody contradicted.
 
 ```js
-submitResult({ participantId: 'p9', outcome: { winningSide: 1 }, submittedAt, drawDefinition, matchUpId });
+tournamentEngine.submitResult({ participantId: 'p9', outcome: { winningSide: 1 }, submittedAt, matchUpId, drawId });
 // score is recorded; matchUpStatus becomes AWAITING_RESULT
-confirmResult({ participantId: 'p7', confirmedAt, drawDefinition, matchUpId });
+tournamentEngine.confirmResult({ participantId: 'p7', confirmedAt, matchUpId, drawId });
 // matchUpStatus becomes COMPLETED — and only now can the standing move
 ```
 
@@ -106,7 +111,7 @@ writes cannot diverge between paths.
 It takes a **trigger** rather than an outcome, and derives the rest:
 
 ```js
-applyLadderMovement({ trigger: 'RESULT', matchUpId, drawDefinition, structure, appliedAt });
+tournamentEngine.applyLadderMovement({ trigger: 'RESULT', matchUpId, appliedAt, drawId });
 ```
 
 | trigger   | requires                                                                                                                                      |
@@ -148,7 +153,7 @@ Under `RATING`, `positionAssignments` becomes a projection rather than the sourc
 rather than assuming `positionAssignments`.
 
 ```js
-const standing = getLadderStanding({ tournamentRecord, drawDefinition, structure });
+const standing = tournamentEngine.getLadderStanding({ drawId });
 // [{ position: 1, participantId: 'p3', ratingValue: 12.5 }, …]
 ```
 
@@ -185,7 +190,7 @@ worth knowing: _inactivity_ here means unresponsive to challenges, never "has no
 participant nobody challenges never lapses.
 
 ```js
-const { count, exceeded, consequence } = getLapses({ participantId, asOf, structure, drawDefinition });
+const { count, exceeded, consequence } = tournamentEngine.getLapses({ participantId, asOf, drawId });
 ```
 
 Windows: `SEASON` counts everything, `ROLLING` forgets beyond `windowDays`, and `CONSECUTIVE` is
@@ -204,7 +209,7 @@ Because a participant nobody challenges never lapses, there is no automatic rout
 has left the club, is injured for the season, or has died. `removeLadderParticipant` is that route:
 
 ```js
-removeLadderParticipant({ participantId, reason: 'left the club', removedAt, drawDefinition });
+tournamentEngine.removeLadderParticipant({ participantId, reason: 'left the club', removedAt, drawId });
 ```
 
 It closes the ladder up beneath them — a ladder with a hole in it is not a ranking — and records the
@@ -251,7 +256,7 @@ because absent is not "best". Direction is honoured here as everywhere: on a WTN
 number seats higher.
 
 ```js
-addLadderParticipant({ participantId, addedAt, drawDefinition, tournamentRecord });
+tournamentEngine.addLadderParticipant({ participantId, addedAt, drawId });
 ```
 
 Under `RATING` ordering placement is moot — the participant is appended and `getLadderStanding`
@@ -273,7 +278,7 @@ standing re-derives.
 **External.** Ratings belong to a provider. An operator refreshes them in bulk:
 
 ```js
-refreshLadderRatings({ ratings: { [participantId]: 12.4 }, refreshedAt, drawDefinition, tournamentRecord });
+tournamentEngine.refreshLadderRatings({ ratings: { [participantId]: 12.4 }, refreshedAt, drawId });
 ```
 
 Between refreshes the standing **holds still**, and that is not a block on play: a participant

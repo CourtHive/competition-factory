@@ -445,6 +445,7 @@ module.exports = {
       type: 'category',
       label: 'Release Notes & Migration',
       items: [
+        'whats-new-7.0.0',
         'whats-new-6.0.0',
         'whats-new-5.0.0',
         {

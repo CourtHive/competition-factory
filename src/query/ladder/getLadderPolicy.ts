@@ -53,16 +53,17 @@ export function getLadderMovement(params: LadderPolicyArgs): LadderMovement {
  * A challenge is upward only — challenging someone below you is not a ladder move — and bounded by
  * the policy's range. `ANY` permits anyone above.
  */
-export function isChallengeInRange({
-  defenderPosition,
-  challengerPosition,
-  policy,
-}: {
-  defenderPosition: number;
-  challengerPosition: number;
-  policy: LadderPolicy;
-}): boolean {
+export function isChallengeInRange(
+  params: LadderPolicyArgs & {
+    defenderPosition: number;
+    challengerPosition: number;
+    /** Optional: resolved from `drawDefinition` when absent, so an engine caller can pass `drawId`. */
+    policy?: LadderPolicy;
+  },
+): boolean {
+  const { defenderPosition, challengerPosition } = params;
   if (!(defenderPosition < challengerPosition)) return false; // upward only; equal is not a challenge
+  const policy = params.policy ?? getLadderPolicy(params);
   const range = policy.challengeRange ?? DEFAULTS.challengeRange;
   if (range === 'ANY') return true;
   return typeof range === 'number' && challengerPosition - defenderPosition <= range;

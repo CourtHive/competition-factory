@@ -3,6 +3,7 @@ export * as drawsGovernor from './drawsGovernor';
 export * as entriesGovernor from './entriesGovernor';
 export * as eventGovernor from './eventGovernor';
 export * as generationGovernor from './generationGovernor';
+export * as ladderGovernor from './ladderGovernor';
 export * as matchUpFormatGovernor from './matchUpFormatGovernor';
 export * as matchUpGovernor from './matchUpGovernor';
 export * as mocksGovernor from './mocksGovernor';

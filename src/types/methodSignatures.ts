@@ -358,6 +358,7 @@ import type { getTournamentPointAwards } from '@Query/scales/getTournamentPointA
 import type { mergeParticipants } from '@Mutate/participants/mergeParticipants';
 import type { modifyDrawName } from '@Mutate/drawDefinitions/modifyDrawName';
 import type { modifyParticipant } from '@Mutate/participants/modifyParticipant';
+import type { removeLadderParticipant } from '@Mutate/ladder/removeLadderParticipant';
 import type { removeMatchUpOutcome } from '@Generators/mocks/removeMatchUpOutcome';
 import type { removeRoundMatchUps } from '@Mutate/structures/removeRoundMatchUps';
 import type {
@@ -423,6 +424,7 @@ import type { removeSuspension } from '@Mutate/officiating/removeSuspension';
 import type { stringify } from '@Helpers/matchUpFormatCode/stringify';
 import type { validateScheduleScenario } from '@Validators/validateScheduleScenario';
 import type { addAdHocMatchUps } from '@Mutate/structures/addAdHocMatchUps';
+import type { addLadderParticipant } from '@Mutate/ladder/addLadderParticipant';
 import type { addParticipant } from '@Mutate/participants/addParticipant';
 import type { allEventMatchUps } from '@Query/matchUps/getAllEventMatchUps';
 import type { calculateWinCriteria } from '@Query/matchUp/calculateWinCriteria';
@@ -440,10 +442,12 @@ import type { getTournamentIds } from '@Query/tournaments/getTournamentIds';
 import type { inferServeSide } from '@Mutate/scoring/serveSideCalculator';
 import type { linkTournaments, unlinkTournament, unlinkTournaments } from '@Mutate/tournaments/tournamentLinks';
 import type { modifyEntriesStatus } from '@Mutate/entries/modifyEntriesStatus';
+import type { refreshLadderRatings } from '@Mutate/ladder/refreshLadderRatings';
 import type { addCourtGridBooking } from '@Mutate/venues/addCourtGridBooking';
 import type { addEventEntryPairs } from '@Mutate/entries/addEventEntryPairs';
 import type { allDrawMatchUps } from '@Query/matchUps/getAllDrawMatchUps';
 import type { applyDerivedRankings } from '@Query/scales/applyDerivedRankings';
+import type { applyLadderMovement } from '@Mutate/ladder/applyLadderMovement';
 import type { assignOfficial } from '@Mutate/officiating/assignOfficial';
 import type { assignSeedPositions } from '@Mutate/events/assignSeedPositions';
 import type { attachFlightProfile } from '@Mutate/events/attachFlightProfile';
@@ -454,10 +458,12 @@ import type { getCategoryAgeDetails } from '@Query/event/getCategoryAgeDetails';
 import type { getEventPublishStatus } from '@Query/event/getEventPublishStatus';
 import type { getMaxEntryPosition } from '@Query/entries/getMaxEntryPosition';
 import type { getParticipantPoints } from '@Query/scales/getParticipantPoints';
+import type { getResultAttestation } from '@Query/ladder/getResultAttestation';
 import type { getTierMovement } from '@Query/tournaments/getTierMovement';
 import type { modifyEventEntries } from '@Mutate/entries/modifyEventEntries';
 import type { removeEventEntries } from '@Mutate/entries/removeEventEntries';
 import type { removeExtension } from '@Mutate/extensions/removeExtension';
+import type { acceptChallenge, declineChallenge } from '@Mutate/ladder/respondToChallenge';
 import type { addEvaluation } from '@Mutate/officiating/addEvaluation';
 import type { addSuspension } from '@Mutate/officiating/addSuspension';
 import type { buildReportContext } from '@Query/reports/buildReportContext';
@@ -507,7 +513,9 @@ import type { analyzeDraws } from '@Query/tournaments/analyzeDraws';
 import type { categoryCanContain } from '@Query/event/categoryCanContain';
 import type { drawMatchUps } from '@Query/matchUps/getDrawMatchUps';
 import type { getAllowedDrawTypes, getAllowedMatchUpFormats } from '@Query/tournaments/allowedTypes';
+import type { getChallengeState } from '@Query/ladder/getChallengeState';
 import type { getEventProperties } from '@Query/event/getEventProperties';
+import type { getLadderStanding } from '@Query/ladder/getLadderStanding';
 import type { getParticipantSignInStatus } from '@Query/participant/signInStatus';
 import type { isScheduleLocked, matchUpScheduleLocked } from '@Query/matchUp/isScheduleLocked';
 import type { publishEvent } from '@Mutate/publishing/publishEvent';
@@ -542,11 +550,18 @@ import type { createMatchUp } from '@Mutate/scoring/createMatchUp';
 import type { generateReport } from '@Query/reports/generateReport';
 import type { getAwardProfile } from '@Query/scales/getAwardProfile';
 import type { getFlightProfile } from '@Query/event/getFlightProfile';
+import type {
+  getLadderMovement,
+  getLadderOrdering,
+  getLadderPolicy,
+  isChallengeInRange,
+} from '@Query/ladder/getLadderPolicy';
 import type { getMatchUpType } from '@Query/matchUp/getMatchUpType';
 import type { getScaledEntries } from '@Query/event/getScaledEntries';
 import type { hasLuckyRounds } from '@Query/drawDefinition/isLucky';
 import type { isAdHoc } from '@Query/drawDefinition/isAdHoc';
 import type { isEmbargoed, isVisiblyPublished } from '@Query/publishing/isEmbargoed';
+import type { issueChallenge } from '@Mutate/ladder/issueChallenge';
 import type { removeSeeding } from '@Mutate/entries/removeSeeding';
 import type { validateTieFormat } from '@Validators/validateTieFormat';
 import type { disableCourts } from '@Mutate/venues/disableCourts';
@@ -560,6 +575,7 @@ import type { setEventDates, setEventEndDate, setEventStartDate } from '@Mutate/
 import type { validateCategory } from '@Validators/validateCategory';
 import type { addNotes, removeNotes } from '@Mutate/base/addRemoveNotes';
 import type { analyzeScore } from '@Query/matchUp/analyzeScore';
+import type { confirmResult, disputeResult, submitResult } from '@Mutate/ladder/reportResult';
 import type { enableCourts } from '@Mutate/venues/enableCourts';
 import type { enableVenues } from '@Mutate/venues/enableVenues';
 import type { publicFindDrawDefinition } from '@Acquire/findDrawDefinition';
@@ -589,6 +605,7 @@ import type { addVenue } from '@Mutate/venues/addVenue';
 import type { findVenue, publicFindVenue } from '@Query/venues/findVenue';
 import type { getCourts } from '@Query/venues/getCourts';
 import type { getEvents } from '@Query/events/getEvents';
+import type { getLapses } from '@Query/ladder/getLapses';
 import type { getScore } from '@Query/scoring/getScore';
 import type { parseScoreString } from '@Tools/parseScoreString';
 import type { publicFindCourt } from '@Query/venues/findCourt';
@@ -610,6 +627,7 @@ import type { credits } from '@Fixtures/credits';
 
 export interface MethodSignatures {
   abandonTournamentMatchUps: EngineMethod<typeof abandonTournamentMatchUps>;
+  acceptChallenge: EngineMethod<typeof acceptChallenge>;
   addAdHocMatchUps: EngineMethod<typeof addAdHocMatchUps>;
   addCertification: EngineMethod<typeof addCertification>;
   addCertificationRequirement: EngineMethod<typeof addCertificationRequirement>;
@@ -637,6 +655,7 @@ export interface MethodSignatures {
   addFlight: EngineMethod<typeof addFlight>;
   addGoesTo: EngineMethod<typeof addGoesTo>;
   addIndividualParticipantIds: EngineMethod<typeof addIndividualParticipantIds>;
+  addLadderParticipant: EngineMethod<typeof addLadderParticipant>;
   addLinkedConsolationStructure: EngineMethod<typeof addLinkedConsolationStructure>;
   addMatchUpCourtOrder: EngineMethod<typeof addMatchUpCourtOrder>;
   addMatchUpEndTime: EngineMethod<typeof addMatchUpEndTime>;
@@ -690,6 +709,7 @@ export interface MethodSignatures {
   analyzeTournament: EngineMethod<typeof analyzeTournament>;
   anonymizeTournamentRecord: EngineMethod<typeof anonymizeTournamentRecord>;
   applyDerivedRankings: EngineMethod<typeof applyDerivedRankings>;
+  applyLadderMovement: EngineMethod<typeof applyLadderMovement>;
   applyLineUps: EngineMethod<typeof applyLineUps>;
   applyScheduleScenario: EngineMethod<typeof applyScheduleScenario>;
   applyTournamentRankingPoints: EngineMethod<typeof applyTournamentRankingPoints>;
@@ -739,6 +759,7 @@ export interface MethodSignatures {
   compareTieFormats: EngineMethod<typeof compareTieFormats>;
   competitionScheduleMatchUps: EngineMethod<typeof competitionScheduleMatchUps>;
   completeDrawMatchUps: EngineMethod<typeof completeDrawMatchUps>;
+  confirmResult: EngineMethod<typeof confirmResult>;
   copyTournamentRecord: EngineMethod<typeof copyTournamentRecord>;
   courtGridRows: EngineMethod<typeof courtGridRows>;
   createGroupParticipant: EngineMethod<typeof createGroupParticipant>;
@@ -747,6 +768,7 @@ export interface MethodSignatures {
   createTeamsFromParticipantAttributes: EngineMethod<typeof createTeamsFromParticipantAttributes>;
   createTournamentRecord: EngineMethod<typeof createTournamentRecord>;
   credits: EngineMethod<typeof credits>;
+  declineChallenge: EngineMethod<typeof declineChallenge>;
   deduceMatchUpFormat: EngineMethod<typeof deduceMatchUpFormat>;
   deleteAdHocMatchUps: EngineMethod<typeof deleteAdHocMatchUps>;
   deleteCourt: EngineMethod<typeof deleteCourt>;
@@ -763,6 +785,7 @@ export interface MethodSignatures {
   disableCourts: EngineMethod<typeof disableCourts>;
   disableTieAutoCalc: EngineMethod<typeof disableTieAutoCalc>;
   disableVenues: EngineMethod<typeof disableVenues>;
+  disputeResult: EngineMethod<typeof disputeResult>;
   drawMatchUps: EngineMethod<typeof drawMatchUps>;
   drawMatic: EngineMethod<typeof drawMatic>;
   enableCourts: EngineMethod<typeof enableCourts>;
@@ -823,6 +846,7 @@ export interface MethodSignatures {
   getAwardPoints: EngineMethod<typeof getAwardPoints>;
   getAwardProfile: EngineMethod<typeof getAwardProfile>;
   getCategoryAgeDetails: EngineMethod<typeof getCategoryAgeDetails>;
+  getChallengeState: EngineMethod<typeof getChallengeState>;
   getCheckedInParticipantIds: EngineMethod<typeof getCheckedInParticipantIds>;
   getCompetitionDateRange: EngineMethod<typeof getCompetitionDateRange>;
   getCompetitionFormat: EngineMethod<typeof getCompetitionFormat>;
@@ -869,6 +893,11 @@ export interface MethodSignatures {
   getEventTimeItem: EngineMethod<typeof getEventTimeItem>;
   getFlightProfile: EngineMethod<typeof getFlightProfile>;
   getHomeParticipantId: EngineMethod<typeof getHomeParticipantId>;
+  getLadderMovement: EngineMethod<typeof getLadderMovement>;
+  getLadderOrdering: EngineMethod<typeof getLadderOrdering>;
+  getLadderPolicy: EngineMethod<typeof getLadderPolicy>;
+  getLadderStanding: EngineMethod<typeof getLadderStanding>;
+  getLapses: EngineMethod<typeof getLapses>;
   getLinkedTournamentIds: EngineMethod<typeof getLinkedTournamentIds>;
   getLuckyDrawRoundStatus: EngineMethod<typeof getLuckyDrawRoundStatus>;
   getMatchUpCompetitiveProfile: EngineMethod<typeof getMatchUpCompetitiveProfile>;
@@ -921,6 +950,7 @@ export interface MethodSignatures {
   getQuickStats: EngineMethod<typeof getQuickStats>;
   getRandomQualifierList: EngineMethod<typeof getRandomQualifierList>;
   getRegistrationProfile: EngineMethod<typeof getRegistrationProfile>;
+  getResultAttestation: EngineMethod<typeof getResultAttestation>;
   getRoundMatchUps: EngineMethod<typeof getRoundMatchUps>;
   getRounds: EngineMethod<typeof getRounds>;
   getRoundVisibilityState: EngineMethod<typeof getRoundVisibilityState>;
@@ -981,11 +1011,13 @@ export interface MethodSignatures {
   initializeDraft: EngineMethod<typeof initializeDraft>;
   isAdHoc: EngineMethod<typeof isAdHoc>;
   isAggregateFormat: EngineMethod<typeof isAggregateFormat>;
+  isChallengeInRange: EngineMethod<typeof isChallengeInRange>;
   isComplete: EngineMethod<typeof isComplete>;
   isCompletedStructure: EngineMethod<typeof isCompletedStructure>;
   isEmbargoed: EngineMethod<typeof isEmbargoed>;
   isIndeterminateFee: EngineMethod<typeof isIndeterminateFee>;
   isScheduleLocked: EngineMethod<typeof isScheduleLocked>;
+  issueChallenge: EngineMethod<typeof issueChallenge>;
   isValid: EngineMethod<typeof isValidMatchUpFormat>;
   isValidForQualifying: EngineMethod<typeof isValidForQualifying>;
   isValidMatchUpFormat: EngineMethod<typeof isValidMatchUpFormat>;
@@ -1058,6 +1090,7 @@ export interface MethodSignatures {
   queryOfficialRecord: EngineMethod<typeof queryOfficialRecord>;
   rebaseScheduleScenario: EngineMethod<typeof rebaseScheduleScenario>;
   refreshEventDrawOrder: EngineMethod<typeof refreshEventDrawOrder>;
+  refreshLadderRatings: EngineMethod<typeof refreshLadderRatings>;
   regenerateParticipantNames: EngineMethod<typeof regenerateParticipantNames>;
   remapDrawDefinitionMatchUpIds: EngineMethod<typeof remapDrawDefinitionMatchUpIds>;
   removeCertification: EngineMethod<typeof removeCertification>;
@@ -1075,6 +1108,7 @@ export interface MethodSignatures {
   removeEventMatchUpFormatTiming: EngineMethod<typeof removeEventMatchUpFormatTiming>;
   removeExtension: EngineMethod<typeof removeExtension>;
   removeIndividualParticipantIds: EngineMethod<typeof removeIndividualParticipantIds>;
+  removeLadderParticipant: EngineMethod<typeof removeLadderParticipant>;
   removeMatchUpCourtAssignment: EngineMethod<typeof removeMatchUpCourtAssignment>;
   removeMatchUpOutcome: EngineMethod<typeof removeMatchUpOutcome>;
   removeMatchUpScorekeeper: EngineMethod<typeof removeMatchUpScorekeeper>;
@@ -1164,6 +1198,7 @@ export interface MethodSignatures {
   shotSplitter: EngineMethod<typeof shotSplitter>;
   stringify: EngineMethod<typeof stringify>;
   stringifyMatchUpFormat: EngineMethod<typeof stringify>;
+  submitResult: EngineMethod<typeof submitResult>;
   substituteParticipant: EngineMethod<typeof substituteParticipant>;
   suggestFormatPlans: EngineMethod<typeof suggestFormatPlans>;
   swapAdHocRounds: EngineMethod<typeof swapAdHocRounds>;

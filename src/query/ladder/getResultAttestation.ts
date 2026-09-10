@@ -1,3 +1,6 @@
+import { resolveLadderMatchUp } from '@Query/ladder/resolveLadderContext';
+import { getLadderPolicy } from '@Query/ladder/getLadderPolicy';
+
 import {
   EITHER,
   OPERATOR,
@@ -8,7 +11,16 @@ import {
 } from '@Constants/ladderConstants';
 import type { LadderPolicy } from '@Types/ladderTypes';
 
-type AttestationArgs = { matchUp: any; policy: LadderPolicy };
+type AttestationArgs = {
+  matchUp?: any;
+  /** Optional: resolved from `drawDefinition` when absent, so an engine caller can pass `drawId`. */
+  policy?: LadderPolicy;
+  matchUpId?: string;
+  tournamentRecord?: any;
+  drawDefinition?: any;
+  structure?: any;
+  event?: any;
+};
 
 export type Attestation = {
   /** True only when the policy's validation requirement is satisfied. */
@@ -37,7 +49,9 @@ const latest = (matchUp: any, itemType: string) =>
  * Peer acceptance and operator validation are the SAME transition with a different attestor; the
  * policy decides which attestors count.
  */
-export function getResultAttestation({ matchUp, policy }: AttestationArgs): Attestation {
+export function getResultAttestation(params: AttestationArgs): Attestation {
+  const matchUp = params.matchUp ?? resolveLadderMatchUp(params).matchUp;
+  const policy = params.policy ?? getLadderPolicy(params);
   const submitted = latest(matchUp, RESULT_SUBMITTED);
   const confirmed = latest(matchUp, RESULT_CONFIRMED);
   const disputed = latest(matchUp, RESULT_DISPUTED);

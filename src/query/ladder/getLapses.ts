@@ -1,3 +1,4 @@
+import { resolveLadderStructure } from '@Query/ladder/resolveLadderContext';
 import { getChallengeState } from '@Query/ladder/getChallengeState';
 import { addDaysIso } from '@Query/ladder/getChallengeState';
 import { getLadderPolicy } from '@Query/ladder/getLadderPolicy';
@@ -14,7 +15,9 @@ type LapsesArgs = {
   participantId: string;
   tournamentRecord?: any;
   drawDefinition?: any;
-  structure: any;
+  /** Optional: resolved from `drawDefinition` when absent, so an engine caller can pass `drawId`. */
+  structure?: any;
+  structureId?: string;
   event?: any;
 };
 
@@ -54,7 +57,8 @@ function effectiveLapsePolicy(policy: LadderPolicy): LapsePolicy {
  * defender simply never answers, and nothing is recorded against them.
  */
 export function getLapses(params: LapsesArgs): Lapses {
-  const { asOf, participantId, structure } = params;
+  const { asOf, participantId } = params;
+  const structure = resolveLadderStructure(params);
   const policy = getLadderPolicy(params);
   const lapsePolicy = effectiveLapsePolicy(policy);
   const kinds: LapseKind[] = lapsePolicy.countsAsLapse ?? [DECLINE, EXPIRY, UNPLAYED];

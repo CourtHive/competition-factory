@@ -6,6 +6,7 @@
  */
 export type FactoryEngineMethod =
   | 'abandonTournamentMatchUps'
+  | 'acceptChallenge'
   | 'addAdHocMatchUps'
   | 'addCertification'
   | 'addCertificationRequirement'
@@ -33,6 +34,7 @@ export type FactoryEngineMethod =
   | 'addFlight'
   | 'addGoesTo'
   | 'addIndividualParticipantIds'
+  | 'addLadderParticipant'
   | 'addLinkedConsolationStructure'
   | 'addMatchUpCourtOrder'
   | 'addMatchUpEndTime'
@@ -87,6 +89,7 @@ export type FactoryEngineMethod =
   | 'anonymizeTournamentRecord'
   | 'applyAvailabilityToTournamentRecord'
   | 'applyDerivedRankings'
+  | 'applyLadderMovement'
   | 'applyLineUps'
   | 'applyScheduleScenario'
   | 'applyTournamentRankingPoints'
@@ -146,6 +149,7 @@ export type FactoryEngineMethod =
   | 'competitionScheduleMatchUps'
   | 'completeDrawMatchUps'
   | 'computePlanItemId'
+  | 'confirmResult'
   | 'copyTournamentRecord'
   | 'courtDayKey'
   | 'courtGridRows'
@@ -157,6 +161,7 @@ export type FactoryEngineMethod =
   | 'createTeamsFromParticipantAttributes'
   | 'createTournamentRecord'
   | 'credits'
+  | 'declineChallenge'
   | 'deduceMatchUpFormat'
   | 'deleteAdHocMatchUps'
   | 'deleteCourt'
@@ -176,6 +181,7 @@ export type FactoryEngineMethod =
   | 'disableCourts'
   | 'disableTieAutoCalc'
   | 'disableVenues'
+  | 'disputeResult'
   | 'drawMatchUps'
   | 'drawMatic'
   | 'dryRun'
@@ -247,6 +253,7 @@ export type FactoryEngineMethod =
   | 'getAwardPoints'
   | 'getAwardProfile'
   | 'getCategoryAgeDetails'
+  | 'getChallengeState'
   | 'getCheckedInParticipantIds'
   | 'getCompetitionDateRange'
   | 'getCompetitionFormat'
@@ -295,6 +302,11 @@ export type FactoryEngineMethod =
   | 'getFlightProfile'
   | 'getHighestSeverity'
   | 'getHomeParticipantId'
+  | 'getLadderMovement'
+  | 'getLadderOrdering'
+  | 'getLadderPolicy'
+  | 'getLadderStanding'
+  | 'getLapses'
   | 'getLinkedTournamentIds'
   | 'getLuckyDrawRoundStatus'
   | 'getMatchUpCompetitiveProfile'
@@ -347,6 +359,7 @@ export type FactoryEngineMethod =
   | 'getQuickStats'
   | 'getRandomQualifierList'
   | 'getRegistrationProfile'
+  | 'getResultAttestation'
   | 'getRoundMatchUps'
   | 'getRounds'
   | 'getRoundVisibilityState'
@@ -417,11 +430,13 @@ export type FactoryEngineMethod =
   | 'intervalsOverlap'
   | 'isAdHoc'
   | 'isAggregateFormat'
+  | 'isChallengeInRange'
   | 'isComplete'
   | 'isCompletedStructure'
   | 'isEmbargoed'
   | 'isIndeterminateFee'
   | 'isScheduleLocked'
+  | 'issueChallenge'
   | 'isValid'
   | 'isValidForQualifying'
   | 'isValidMatchUpFormat'
@@ -505,6 +520,7 @@ export type FactoryEngineMethod =
   | 'rangesOverlap'
   | 'rebaseScheduleScenario'
   | 'refreshEventDrawOrder'
+  | 'refreshLadderRatings'
   | 'regenerateParticipantNames'
   | 'remapDrawDefinitionMatchUpIds'
   | 'removeCertification'
@@ -522,6 +538,7 @@ export type FactoryEngineMethod =
   | 'removeEventMatchUpFormatTiming'
   | 'removeExtension'
   | 'removeIndividualParticipantIds'
+  | 'removeLadderParticipant'
   | 'removeMatchUpCourtAssignment'
   | 'removeMatchUpOutcome'
   | 'removeMatchUpScorekeeper'
@@ -628,6 +645,7 @@ export type FactoryEngineMethod =
   | 'sortEdges'
   | 'stringify'
   | 'stringifyMatchUpFormat'
+  | 'submitResult'
   | 'substituteParticipant'
   | 'suggestFormatPlans'
   | 'swapAdHocRounds'
@@ -682,6 +700,7 @@ export type FactoryEngineMethod =
 
 export const FACTORY_ENGINE_METHODS: readonly FactoryEngineMethod[] = [
   'abandonTournamentMatchUps',
+  'acceptChallenge',
   'addAdHocMatchUps',
   'addCertification',
   'addCertificationRequirement',
@@ -709,6 +728,7 @@ export const FACTORY_ENGINE_METHODS: readonly FactoryEngineMethod[] = [
   'addFlight',
   'addGoesTo',
   'addIndividualParticipantIds',
+  'addLadderParticipant',
   'addLinkedConsolationStructure',
   'addMatchUpCourtOrder',
   'addMatchUpEndTime',
@@ -763,6 +783,7 @@ export const FACTORY_ENGINE_METHODS: readonly FactoryEngineMethod[] = [
   'anonymizeTournamentRecord',
   'applyAvailabilityToTournamentRecord',
   'applyDerivedRankings',
+  'applyLadderMovement',
   'applyLineUps',
   'applyScheduleScenario',
   'applyTournamentRankingPoints',
@@ -822,6 +843,7 @@ export const FACTORY_ENGINE_METHODS: readonly FactoryEngineMethod[] = [
   'competitionScheduleMatchUps',
   'completeDrawMatchUps',
   'computePlanItemId',
+  'confirmResult',
   'copyTournamentRecord',
   'courtDayKey',
   'courtGridRows',
@@ -833,6 +855,7 @@ export const FACTORY_ENGINE_METHODS: readonly FactoryEngineMethod[] = [
   'createTeamsFromParticipantAttributes',
   'createTournamentRecord',
   'credits',
+  'declineChallenge',
   'deduceMatchUpFormat',
   'deleteAdHocMatchUps',
   'deleteCourt',
@@ -852,6 +875,7 @@ export const FACTORY_ENGINE_METHODS: readonly FactoryEngineMethod[] = [
   'disableCourts',
   'disableTieAutoCalc',
   'disableVenues',
+  'disputeResult',
   'drawMatchUps',
   'drawMatic',
   'dryRun',
@@ -923,6 +947,7 @@ export const FACTORY_ENGINE_METHODS: readonly FactoryEngineMethod[] = [
   'getAwardPoints',
   'getAwardProfile',
   'getCategoryAgeDetails',
+  'getChallengeState',
   'getCheckedInParticipantIds',
   'getCompetitionDateRange',
   'getCompetitionFormat',
@@ -971,6 +996,11 @@ export const FACTORY_ENGINE_METHODS: readonly FactoryEngineMethod[] = [
   'getFlightProfile',
   'getHighestSeverity',
   'getHomeParticipantId',
+  'getLadderMovement',
+  'getLadderOrdering',
+  'getLadderPolicy',
+  'getLadderStanding',
+  'getLapses',
   'getLinkedTournamentIds',
   'getLuckyDrawRoundStatus',
   'getMatchUpCompetitiveProfile',
@@ -1023,6 +1053,7 @@ export const FACTORY_ENGINE_METHODS: readonly FactoryEngineMethod[] = [
   'getQuickStats',
   'getRandomQualifierList',
   'getRegistrationProfile',
+  'getResultAttestation',
   'getRoundMatchUps',
   'getRounds',
   'getRoundVisibilityState',
@@ -1093,11 +1124,13 @@ export const FACTORY_ENGINE_METHODS: readonly FactoryEngineMethod[] = [
   'intervalsOverlap',
   'isAdHoc',
   'isAggregateFormat',
+  'isChallengeInRange',
   'isComplete',
   'isCompletedStructure',
   'isEmbargoed',
   'isIndeterminateFee',
   'isScheduleLocked',
+  'issueChallenge',
   'isValid',
   'isValidForQualifying',
   'isValidMatchUpFormat',
@@ -1181,6 +1214,7 @@ export const FACTORY_ENGINE_METHODS: readonly FactoryEngineMethod[] = [
   'rangesOverlap',
   'rebaseScheduleScenario',
   'refreshEventDrawOrder',
+  'refreshLadderRatings',
   'regenerateParticipantNames',
   'remapDrawDefinitionMatchUpIds',
   'removeCertification',
@@ -1198,6 +1232,7 @@ export const FACTORY_ENGINE_METHODS: readonly FactoryEngineMethod[] = [
   'removeEventMatchUpFormatTiming',
   'removeExtension',
   'removeIndividualParticipantIds',
+  'removeLadderParticipant',
   'removeMatchUpCourtAssignment',
   'removeMatchUpOutcome',
   'removeMatchUpScorekeeper',
@@ -1304,6 +1339,7 @@ export const FACTORY_ENGINE_METHODS: readonly FactoryEngineMethod[] = [
   'sortEdges',
   'stringify',
   'stringifyMatchUpFormat',
+  'submitResult',
   'substituteParticipant',
   'suggestFormatPlans',
   'swapAdHocRounds',
