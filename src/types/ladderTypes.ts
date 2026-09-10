@@ -20,6 +20,22 @@ export type LadderPolicy = {
   movement?: LadderMovement;
 
   /**
+   * Which rating orders the standing under `RATING` ordering — `UTR`, `WTN`, `ELO` and so on.
+   * Whether a higher or lower value is better comes from `ratingsParameters[ratingType].ascending`,
+   * never from an assumption here: WTN and BWF are lower-is-better while UTR and ELO are not.
+   */
+  ratingType?: string;
+
+  /**
+   * Derive the rating within the ladder rather than reading a published one.
+   *
+   * The known rating supplies each participant's STARTING position and the factory moves it from
+   * there on results — the same `<scaleName>.DYNAMIC` pattern DrawMatic uses, so a club can run a
+   * rating-ordered ladder without every member holding a current published rating.
+   */
+  dynamicRating?: boolean;
+
+  /**
    * How far above a participant may challenge. A number counts POSITIONS under `RANK` ordering; the
    * literal `ANY` permits challenging anyone above. (Under `RATING` a range would mean a rating
    * band — not yet modelled, and deliberately not faked with a position count.)
