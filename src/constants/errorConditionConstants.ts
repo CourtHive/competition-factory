@@ -315,6 +315,10 @@ export const INVALID_MATCHUP_STATUS = {
   message: 'Invalid matchUpStatus',
   code: 'ERR_INVALID_MATCHUP_STATUS',
 };
+export const RESULT_NOT_VALIDATED = {
+  message: 'Result has not been validated',
+  code: 'ERR_RESULT_NOT_VALIDATED',
+};
 export const MATCHUP_STATUS_OUT_OF_SCOPE = {
   message: 'matchUpStatus is not valid in this context',
   code: 'ERR_MATCHUP_STATUS_OUT_OF_SCOPE',

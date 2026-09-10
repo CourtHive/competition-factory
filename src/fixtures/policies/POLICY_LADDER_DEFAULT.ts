@@ -9,7 +9,7 @@
  * `getLadderOrdering`.
  */
 import { POLICY_TYPE_LADDER } from '@Constants/policyConstants';
-import { RANK, SWAP } from '@Constants/ladderConstants';
+import { EITHER, RANK, SWAP } from '@Constants/ladderConstants';
 
 export const POLICY_LADDER_DEFAULT = {
   [POLICY_TYPE_LADDER]: {
@@ -19,6 +19,8 @@ export const POLICY_LADDER_DEFAULT = {
     ordering: RANK,
     movement: SWAP,
     challengeRange: 3,
+
+    resultValidation: EITHER,
 
     acceptanceDays: 5,
     playByDays: 14,

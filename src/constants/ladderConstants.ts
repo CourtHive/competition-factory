@@ -57,3 +57,30 @@ export const CHALLENGE_DECLINED = 'ladder.challenge.declined';
 
 /** An operator removed a participant by hand — see `removeLadderParticipant`. */
 export const LADDER_PARTICIPANT_REMOVED = 'ladder.participant.removed';
+
+/**
+ * Who may turn a submitted score into a result.
+ *
+ * `PEER` — the opponent accepting IS the validation.
+ * `OPERATOR` — only a tournament director may validate.
+ * `EITHER` — whichever comes first.
+ */
+export const PEER = 'PEER';
+export const OPERATOR = 'OPERATOR';
+export const EITHER = 'EITHER';
+export const resultValidations = [PEER, OPERATOR, EITHER] as const;
+export type ResultValidation = (typeof resultValidations)[number];
+
+/** `timeItem.itemType` values recording who said what about a score. */
+export const RESULT_SUBMITTED = 'ladder.result.submitted';
+export const RESULT_CONFIRMED = 'ladder.result.confirmed';
+export const RESULT_DISPUTED = 'ladder.result.disputed';
+
+/**
+ * Why a standing moved. A movement must name its trigger, so that "a score exists" can never be
+ * mistaken for "a result was agreed".
+ */
+export const RESULT = 'RESULT';
+export const FORFEIT = 'FORFEIT';
+export const movementTriggers = [RESULT, FORFEIT] as const;
+export type MovementTrigger = (typeof movementTriggers)[number];

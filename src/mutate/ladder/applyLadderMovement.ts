@@ -1,25 +1,87 @@
 import { setParticipantScaleItem } from '@Mutate/participants/scaleItems/addScaleItems';
-import { getLadderMovement, getLadderOrdering } from '@Query/ladder/getLadderPolicy';
+import { getLadderMovement, getLadderOrdering, getLadderPolicy } from '@Query/ladder/getLadderPolicy';
 import { isLadder } from '@Query/drawDefinition/isLadder';
 
-import { INSERTION, RANK } from '@Constants/ladderConstants';
+import { getResultAttestation } from '@Query/ladder/getResultAttestation';
+
+import { FORFEIT, INSERTION, RANK, movementTriggers } from '@Constants/ladderConstants';
+import type { MovementTrigger } from '@Constants/ladderConstants';
+import { COMPLETED } from '@Constants/matchUpStatusConstants';
 import { RANKING } from '@Constants/scaleConstants';
 import { SUCCESS } from '@Constants/resultConstants';
 import { ResultType } from '@Types/factoryTypes';
-import { INVALID_VALUES, MISSING_DRAW_DEFINITION, PARTICIPANT_NOT_FOUND } from '@Constants/errorConditionConstants';
+import {
+  INVALID_VALUES,
+  MATCHUP_NOT_FOUND,
+  MISSING_DRAW_DEFINITION,
+  PARTICIPANT_NOT_FOUND,
+  RESULT_NOT_VALIDATED,
+} from '@Constants/errorConditionConstants';
 
 type MovementArgs = {
   /** The instant the movement took effect — the scaleDate of the resulting standing. */
   appliedAt: string;
-  defenderParticipantId: string;
-  challengerParticipantId: string;
-  /** True when the challenger takes the defender's position — a win, or a forfeited decline. */
-  challengerPrevails: boolean;
+  /**
+   * WHY the standing is moving, and the reason this is not a boolean.
+   *
+   * `RESULT` requires an attested result and derives everything from the matchUp. `FORFEIT` is a
+   * declined challenge with no score at all. Naming the trigger is what stops "a score exists" being
+   * mistaken for "a result was agreed" — see `getResultAttestation`.
+   */
+  trigger: MovementTrigger;
+  /** Required for `RESULT`: the matchUp is the evidence, not the caller's assertion. */
+  matchUpId?: string;
+  /** Required for `FORFEIT`, which has no matchUp result to read participants from. */
+  defenderParticipantId?: string;
+  challengerParticipantId?: string;
   tournamentRecord?: any;
   drawDefinition: any;
   structure: any;
   event?: any;
 };
+
+/**
+ * Resolves who moves and whether they may, from the trigger.
+ *
+ * The RESULT path deliberately takes NO caller opinion about the outcome: challenger, defender and
+ * who prevailed all come off the matchUp, and the attestation gate is consulted here rather than
+ * left to the call site. A caller cannot assert a win it has not evidenced.
+ */
+function resolveTrigger(params: MovementArgs): any {
+  const { trigger, structure, matchUpId } = params;
+
+  if (trigger === FORFEIT) {
+    const { challengerParticipantId, defenderParticipantId } = params;
+    if (!challengerParticipantId || !defenderParticipantId) {
+      return { error: INVALID_VALUES, info: 'FORFEIT requires challenger and defender participantIds' };
+    }
+    // A forfeit is the defender declining; the challenger takes the position by definition.
+    return { challengerParticipantId, defenderParticipantId, challengerPrevails: true };
+  }
+
+  if (!matchUpId) return { error: INVALID_VALUES, info: 'RESULT requires a matchUpId' };
+  const matchUp = structure?.matchUps?.find((m: any) => m.matchUpId === matchUpId);
+  if (!matchUp) return { error: MATCHUP_NOT_FOUND };
+  if (matchUp.matchUpStatus !== COMPLETED) {
+    return { error: INVALID_VALUES, info: `matchUp is ${matchUp.matchUpStatus}, not ${COMPLETED}` };
+  }
+  if (![1, 2].includes(matchUp.winningSide)) return { error: INVALID_VALUES, info: 'matchUp has no winningSide' };
+
+  const policy = getLadderPolicy(params);
+  const attestation = getResultAttestation({ matchUp, policy });
+  if (!attestation.validated) {
+    // THE GATE. A provisional score must never move a standing: on a published ladder with
+    // self-reporting members, that is one player reordering the ladder unilaterally.
+    return { error: RESULT_NOT_VALIDATED, info: attestation.reason };
+  }
+
+  // side 1 is the challenger — issueChallenge writes it that way.
+  const challengerParticipantId = matchUp.sides?.[0]?.participantId;
+  const defenderParticipantId = matchUp.sides?.[1]?.participantId;
+  if (!challengerParticipantId || !defenderParticipantId) return { error: PARTICIPANT_NOT_FOUND };
+
+  return { challengerParticipantId, defenderParticipantId, challengerPrevails: matchUp.winningSide === 1 };
+}
 
 /**
  * Rearranges the standing after a challenge resolves, and mirrors the result to dated scale items.
@@ -32,12 +94,18 @@ type MovementArgs = {
  * return is why `getLadderOrdering` had to exist before any of this was written.
  */
 export function applyLadderMovement(params: MovementArgs): ResultType & { moved?: boolean } {
-  const { appliedAt, defenderParticipantId, challengerParticipantId, challengerPrevails } = params;
-  const { drawDefinition, structure } = params;
+  const { appliedAt, drawDefinition, structure } = params;
 
   if (typeof drawDefinition !== 'object') return { error: MISSING_DRAW_DEFINITION };
   if (!isLadder(drawDefinition.drawType)) return { error: INVALID_VALUES, info: 'requires a LADDER drawType' };
   if (!appliedAt) return { error: INVALID_VALUES, info: 'appliedAt is required' };
+  if (!movementTriggers.includes(params.trigger)) {
+    return { error: INVALID_VALUES, info: `trigger must be one of ${movementTriggers.join(' | ')}` };
+  }
+
+  const resolved = resolveTrigger(params);
+  if (resolved.error) return resolved;
+  const { challengerParticipantId, defenderParticipantId, challengerPrevails } = resolved;
 
   if (getLadderOrdering({ ...params }) !== RANK) {
     // Not a failure — a RATING ladder has no movement machinery by design.

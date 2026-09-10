@@ -1,4 +1,4 @@
-import type { LadderMovement, LadderOrdering } from '@Constants/ladderConstants';
+import type { LadderMovement, LadderOrdering, ResultValidation } from '@Constants/ladderConstants';
 
 /**
  * The rules that make a ladder a ladder. Every field varies by club — see
@@ -41,6 +41,14 @@ export type LadderPolicy = {
    * band — not yet modelled, and deliberately not faked with a position count.)
    */
   challengeRange?: number | 'ANY';
+
+  /**
+   * Who may validate a submitted score. Defaults to `EITHER`.
+   *
+   * On a published ladder members report their own results, so this decides whether the opponent's
+   * acceptance suffices or a tournament director must sign off.
+   */
+  resultValidation?: ResultValidation;
 
   /** Days the defender has to accept before the challenge expires. */
   acceptanceDays?: number;
