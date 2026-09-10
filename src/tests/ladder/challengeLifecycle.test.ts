@@ -5,8 +5,8 @@ import { getChallengeState } from '@Query/ladder/getChallengeState';
 import { issueChallenge } from '@Mutate/ladder/issueChallenge';
 
 import { ACCEPTED, DECLINED, EXPIRED, PENDING } from '@Constants/ladderConstants';
-import { CHALLENGED, TO_BE_PLAYED } from '@Constants/matchUpStatusConstants';
 import { LADDER, SINGLE_ELIMINATION } from '@Constants/drawDefinitionConstants';
+import { CHALLENGED, TO_BE_PLAYED } from '@Constants/matchUpStatusConstants';
 
 const ISSUED = '2026-03-01T10:00:00.000Z';
 const policy = { acceptanceDays: 5, challengeRange: 3 };

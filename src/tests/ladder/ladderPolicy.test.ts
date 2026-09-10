@@ -1,16 +1,16 @@
 import { expect, test, describe } from 'vitest';
 
+import { POLICY_LADDER_DEFAULT } from '@Fixtures/policies/POLICY_LADDER_DEFAULT';
+import mocksEngine from '@Assemblies/engines/mock';
 import {
   getLadderMovement,
   getLadderOrdering,
   getLadderPolicy,
   isChallengeInRange,
 } from '@Query/ladder/getLadderPolicy';
-import { POLICY_LADDER_DEFAULT } from '@Fixtures/policies/POLICY_LADDER_DEFAULT';
-import mocksEngine from '@Assemblies/engines/mock';
 
-import { POLICY_TYPE_LADDER } from '@Constants/policyConstants';
 import { ANY, INSERTION, RANK, RATING, SWAP } from '@Constants/ladderConstants';
+import { POLICY_TYPE_LADDER } from '@Constants/policyConstants';
 
 describe('POLICY_LADDER defaults', () => {
   test('an unconfigured ladder runs on defaults rather than erroring', () => {

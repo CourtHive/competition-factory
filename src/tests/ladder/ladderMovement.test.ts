@@ -3,6 +3,10 @@ import { expect, test, describe } from 'vitest';
 import { removeLadderParticipant } from '@Mutate/ladder/removeLadderParticipant';
 import { applyLadderMovement } from '@Mutate/ladder/applyLadderMovement';
 
+import { CHALLENGED, COMPLETED } from '@Constants/matchUpStatusConstants';
+import { RESULT_NOT_VALIDATED } from '@Constants/errorConditionConstants';
+import { POLICY_TYPE_LADDER } from '@Constants/policyConstants';
+import { LADDER } from '@Constants/drawDefinitionConstants';
 import {
   FORFEIT,
   INSERTION,
@@ -15,10 +19,6 @@ import {
   RESULT_SUBMITTED,
   SWAP,
 } from '@Constants/ladderConstants';
-import { CHALLENGED, COMPLETED } from '@Constants/matchUpStatusConstants';
-import { RESULT_NOT_VALIDATED } from '@Constants/errorConditionConstants';
-import { POLICY_TYPE_LADDER } from '@Constants/policyConstants';
-import { LADDER } from '@Constants/drawDefinitionConstants';
 
 const AT = '2026-03-10T09:00:00.000Z';
 

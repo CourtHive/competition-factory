@@ -1,6 +1,6 @@
 import { setParticipantScaleItem } from '@Mutate/participants/scaleItems/addScaleItems';
-import { RANKING } from '@Constants/scaleConstants';
 import { SINGLES_EVENT } from '@Constants/eventConstants';
+import { RANKING } from '@Constants/scaleConstants';
 
 /**
  * Writes each changed rank as a dated `ScaleItem`, which is what makes a ladder's history queryable

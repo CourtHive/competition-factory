@@ -3,11 +3,11 @@ import { getLadderOrdering } from '@Query/ladder/getLadderPolicy';
 import { addTimeItem } from '@Mutate/timeItems/addTimeItem';
 import { isLadder } from '@Query/drawDefinition/isLadder';
 
-import { LADDER_PARTICIPANT_REMOVED, RANK } from '@Constants/ladderConstants';
-import { RANKING } from '@Constants/scaleConstants';
-import { SUCCESS } from '@Constants/resultConstants';
-import { ResultType } from '@Types/factoryTypes';
 import { INVALID_VALUES, MISSING_DRAW_DEFINITION, PARTICIPANT_NOT_FOUND } from '@Constants/errorConditionConstants';
+import { LADDER_PARTICIPANT_REMOVED, RANK } from '@Constants/ladderConstants';
+import { SUCCESS } from '@Constants/resultConstants';
+import { RANKING } from '@Constants/scaleConstants';
+import { ResultType } from '@Types/factoryTypes';
 
 type RemoveArgs = {
   /** Why — recorded, because a manual override with no reason is indistinguishable from a mistake. */

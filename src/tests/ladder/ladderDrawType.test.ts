@@ -6,10 +6,10 @@ import { isLadder } from '@Query/drawDefinition/isLadder';
 import mocksEngine from '@Assemblies/engines/mock';
 import tournamentEngine from '@Engines/syncEngine';
 
-import { matchUpStatusScopes } from '@Constants/matchUpStatusScopes';
-import { MATCHUP_STATUS_OUT_OF_SCOPE } from '@Constants/errorConditionConstants';
 import { AD_HOC, LADDER, SINGLE_ELIMINATION } from '@Constants/drawDefinitionConstants';
 import { CHALLENGED, COMPLETED, TO_BE_PLAYED } from '@Constants/matchUpStatusConstants';
+import { MATCHUP_STATUS_OUT_OF_SCOPE } from '@Constants/errorConditionConstants';
+import { matchUpStatusScopes } from '@Constants/matchUpStatusScopes';
 import {
   nonDirectingMatchUpStatuses,
   participantsRequiredMatchUpStatuses,

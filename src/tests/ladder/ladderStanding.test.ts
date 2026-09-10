@@ -3,10 +3,10 @@ import { expect, test, describe } from 'vitest';
 import { getLadderStanding } from '@Query/ladder/getLadderStanding';
 
 import { DYNAMIC, RATING as RATING_SCALE, SCALE } from '@Constants/scaleConstants';
-import { ELO, UTR, WTN } from '@Constants/ratingConstants';
 import { POLICY_TYPE_LADDER } from '@Constants/policyConstants';
-import { RANK, RATING } from '@Constants/ladderConstants';
 import { LADDER } from '@Constants/drawDefinitionConstants';
+import { ELO, UTR, WTN } from '@Constants/ratingConstants';
+import { RANK, RATING } from '@Constants/ladderConstants';
 import { SINGLES_EVENT } from '@Constants/eventConstants';
 
 // A scale item lives on the participant as a timeItem keyed

@@ -3,8 +3,8 @@ import { expect, test, describe } from 'vitest';
 import mocksEngine from '@Assemblies/engines/mock';
 import tournamentEngine from '@Engines/syncEngine';
 
-import { LADDER } from '@Constants/drawDefinitionConstants';
 import { ACCEPTED, PENDING, RESULT } from '@Constants/ladderConstants';
+import { LADDER } from '@Constants/drawDefinitionConstants';
 
 /**
  * The ladder lifecycle exists to be driven from OUTSIDE the factory.

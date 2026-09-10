@@ -1,16 +1,16 @@
-import { mirrorStandingToScale } from '@Mutate/ladder/mirrorStandingToScale';
-import { participantScaleItem } from '@Query/participant/participantScaleItem';
 import { getLadderOrdering, getLadderPolicy } from '@Query/ladder/getLadderPolicy';
+import { participantScaleItem } from '@Query/participant/participantScaleItem';
+import { mirrorStandingToScale } from '@Mutate/ladder/mirrorStandingToScale';
 import ratingsParameters from '@Fixtures/ratings/ratingsParameters';
 import { isLadder } from '@Query/drawDefinition/isLadder';
 import { isObject } from '@Tools/objects';
 
-import { BOTTOM, RANK } from '@Constants/ladderConstants';
+import { EXISTING_PARTICIPANT, INVALID_VALUES, MISSING_DRAW_DEFINITION } from '@Constants/errorConditionConstants';
 import { DYNAMIC, RATING as RATING_SCALE } from '@Constants/scaleConstants';
+import { BOTTOM, RANK } from '@Constants/ladderConstants';
 import { SINGLES_EVENT } from '@Constants/eventConstants';
 import { SUCCESS } from '@Constants/resultConstants';
 import { ResultType } from '@Types/factoryTypes';
-import { EXISTING_PARTICIPANT, INVALID_VALUES, MISSING_DRAW_DEFINITION } from '@Constants/errorConditionConstants';
 
 type AddArgs = {
   /** The instant of joining — the scaleDate of any positions this shifts. */
