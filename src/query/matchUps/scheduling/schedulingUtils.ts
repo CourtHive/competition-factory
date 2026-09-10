@@ -58,12 +58,12 @@ export function getRoundTiming({ round, matchUps, events, tournamentRecords }) {
 
 export function getFinishingPositionDetails(matchUps) {
   return (matchUps ?? []).reduce(
-    (foo, matchUp) => {
+    (best, matchUp) => {
       const sum = (matchUp.finishingPositionRange?.winner ?? []).reduce((a, b) => a + b, 0);
       const winnerFinishingPositionRange = (matchUp.finishingPositionRange?.winner ?? []).join('-') || '';
-      return !foo.minFinishingSum || sum < foo.minFinishingSum
+      return !best.minFinishingSum || sum < best.minFinishingSum
         ? { minFinishingSum: sum, winnerFinishingPositionRange }
-        : foo;
+        : best;
     },
     { minFinishingSum: 0, winnerFinishingPositionRange: '' },
   );

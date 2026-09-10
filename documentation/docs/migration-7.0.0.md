@@ -21,6 +21,7 @@ feature tour and the full list of 7.0.0 additions, see [What's New in 7.0.0](./w
 | `timeZone` conversions return an error instead of throwing or guessing                   | Anyone calling `wallClockToUTC`, `utcToWallClock`, `toEmbargoUTC` | See §4            |
 | `getTimeZoneOffsetMinutes` now returns `number \| undefined`                             | Anyone reading a zone offset                                      | See §4            |
 | `checkMatchUpIsComplete` / `getParticipantResults` refuse an absent object param          | Callers passing `matchUpId` / `drawId` and reading the result     | See §5            |
+| `getParticipantResults` refuses a matchUp that claims a winner but carries no `sides`      | Callers passing STORED (non-hydrated) matchUps                    | See §5            |
 
 ## 1. `participantsRequiredMatchUpStatuses` — a spelling fix
 
@@ -183,6 +184,30 @@ safe. It would be believed.
 
 An **empty** array is still a valid question with an empty answer. The guard is on the argument being
 absent, not on it being empty, so a draw with no matchUps tallies to nothing exactly as before.
+
+### Stored matchUps are refused too, and this one replaces a fabricated participant
+
+`getParticipantResults` attributes every result through `sides[].participantId`. A **stored** matchUp
+has `drawPositions` and no participant sides, so there is nothing to attribute to.
+
+Until 7.0.0 the helper that reads a side returned the **literal string `'foo'`** when `sides` was
+absent — and `'foo'` is a participantId as far as everything downstream is concerned. A round robin
+tallied from stored matchUps therefore returned results keyed `foo` rather than failing:
+
+```js
+getParticipantResults({ matchUps: inContextMatchUps }); // { 'p1': {…}, 'p2': {…}, 'p3': {…}, 'p4': {…} }
+getParticipantResults({ matchUps: storedMatchUps }); // BEFORE: { 'foo': {…} }   AFTER: { error: INVALID_MATCHUP }
+```
+
+Two `console.log` calls shipped alongside it. Both are gone.
+
+The check is scoped to matchUps that claim a `winningSide`, since that is the only path that reads a
+side — a pending or BYE matchUp carries no participantIds and still tallies to nothing, unchanged.
+It requires **both** side indices, because the winner is read from index 0 and the loser from index 1.
+
+**What to do:** pass in-context matchUps — `allDrawMatchUps`, `allStructureMatchUps`,
+`allTournamentMatchUps` all return them. If you were reading a `foo` key out of the result, that was
+never a participant.
 
 ### Two behaviours that did NOT change
 
