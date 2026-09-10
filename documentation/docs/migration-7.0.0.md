@@ -20,6 +20,7 @@ feature tour and the full list of 7.0.0 additions, see [What's New in 7.0.0](./w
 | A rejected `setMatchUpStatus` no longer alters the draw                                  | Callers with compensating logic after an error                    | See §3            |
 | `timeZone` conversions return an error instead of throwing or guessing                   | Anyone calling `wallClockToUTC`, `utcToWallClock`, `toEmbargoUTC` | See §4            |
 | `getTimeZoneOffsetMinutes` now returns `number \| undefined`                             | Anyone reading a zone offset                                      | See §4            |
+| `checkMatchUpIsComplete` / `getParticipantResults` refuse an absent object param          | Callers passing `matchUpId` / `drawId` and reading the result     | See §5            |
 
 ## 1. `participantsRequiredMatchUpStatuses` — a spelling fix
 
@@ -139,7 +140,62 @@ a plausible-looking number will now receive an error instead.
 `source` is returned rather than logged, so a caller can see which frame it got rather than having
 to infer it.
 
-## 5. Non-breaking additions worth knowing
+## 5. Two queries refuse an absent object param instead of answering
+
+`checkMatchUpIsComplete` takes a **matchUp object**; `getParticipantResults` takes an **array of
+in-context matchUps**. Neither takes an id.
+
+`paramsMiddleware` resolves `drawId` into a `drawDefinition` and stops there — it does not resolve
+`matchUpId` into a matchUp, and it does not gather matchUps. So the engine-idiomatic call supplied
+no object at all, and both functions answered anyway:
+
+```js
+// BEFORE 7.0.0 — both of these are wrong, and neither says so
+tournamentEngine.checkMatchUpIsComplete({ matchUpId, drawId }); // false, for a COMPLETED matchUp
+tournamentEngine.getParticipantResults({ drawId }); // { participantResults: {} }, for a played draw
+```
+
+Both now return an error — `ERR_MISSING_MATCHUP` and `ERR_MISSING_MATCHUPS`.
+
+`checkMatchUpIsComplete` additionally requires the object to carry a `matchUpId`, which is what
+distinguishes a matchUp from an arbitrary object. It does **not** require a hydrated matchUp —
+`matchUpStatus` and `winningSide` are both on the stored record.
+
+### Why this was worth breaking
+
+`checkMatchUpIsComplete` returns a **boolean that callers branch on**. There was no error to notice
+and no `undefined` to guard, and the wrong answer — `false`, "not complete" — is the one that looks
+safe. It would be believed.
+
+### What to do about the refusal
+
+**Pass the object.** If you hold only ids, resolve them first:
+
+```diff
+- const complete = tournamentEngine.checkMatchUpIsComplete({ matchUpId, drawId });
++ const { matchUp } = tournamentEngine.findMatchUp({ matchUpId, drawId });
++ const complete = tournamentEngine.checkMatchUpIsComplete({ matchUp });
+
+- const { participantResults } = tournamentEngine.getParticipantResults({ drawId });
++ const { matchUps } = tournamentEngine.allDrawMatchUps({ drawId });
++ const { participantResults } = tournamentEngine.getParticipantResults({ matchUps });
+```
+
+An **empty** array is still a valid question with an empty answer. The guard is on the argument being
+absent, not on it being empty, so a draw with no matchUps tallies to nothing exactly as before.
+
+### Two behaviours that did NOT change
+
+`checkMatchUpIsComplete` still returns `true`, the `winningSide` (`1` | `2`), **or `undefined`** — it
+was never a clean boolean, and the `undefined` is load-bearing: `tallyParticipantResults`
+distinguishes "not complete" from "no answer" with `?? matchUp.matchUpType === TEAM`. Normalising it
+to `false` would silently drop incomplete TEAM matchUps from the round-robin tally.
+
+And because the refusal is an **object**, it is **truthy**. Do not call `checkMatchUpIsComplete`
+inside a `.filter()` or `.every()` over an array that can hold a falsy entry without guarding the
+entry first — a refusal would read as "complete". Every caller inside the factory guards.
+
+## 6. Non-breaking additions worth knowing
 
 `plainDate`, `plainTime` and `zonedDateTime` are new published exports, completing the calendar
 intent set. `zonedTime` was never published, so its rename is not a breaking change.

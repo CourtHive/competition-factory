@@ -1,4 +1,4 @@
-import { checkMatchUpIsComplete } from '@Query/matchUp/checkMatchUpIsComplete';
+import { matchUpCompletion } from '@Query/matchUp/checkMatchUpIsComplete';
 import { decorateResult } from '@Functions/global/decorateResult';
 import { getParticipantResults } from './getParticipantResults';
 import { getDevContext } from '@Global/state/globalState';
@@ -60,27 +60,31 @@ export function tallyParticipantResults({
     relevantMatchUps.length && unique(relevantMatchUps.flatMap(({ drawPositions }) => drawPositions)).length;
 
   const bracketComplete =
-    relevantMatchUps.filter((matchUp) => checkMatchUpIsComplete({ matchUp })).length === relevantMatchUps.length;
+    relevantMatchUps.filter((matchUp) => matchUpCompletion(matchUp)).length === relevantMatchUps.length;
   // if bracket is incomplete don't use expected matchUps perPlayer for calculating
   if (!bracketComplete) perPlayer = 0;
 
   const completedTieMatchUps = matchUps.every(
     ({ matchUpType, tieMatchUps }) =>
-      matchUpType === TEAM && tieMatchUps?.every((matchUp) => checkMatchUpIsComplete({ matchUp })),
+      matchUpType === TEAM && tieMatchUps?.every((matchUp) => matchUpCompletion(matchUp)),
   );
 
   const tallyPolicy = policyDefinitions?.[POLICY_TYPE_ROUND_ROBIN_TALLY];
 
   const consideredMatchUps = matchUps.filter(
-    (matchUp) => checkMatchUpIsComplete({ matchUp }) ?? matchUp.matchUpType === TEAM,
+    (matchUp) => matchUp && (matchUpCompletion(matchUp) ?? matchUp.matchUpType === TEAM),
   );
-  const { participantResults } = getParticipantResults({
+  const participantResultsOutcome: any = getParticipantResults({
     matchUps: consideredMatchUps,
     pressureRating,
     matchUpFormat,
     tallyPolicy,
     perPlayer,
   });
+  // `consideredMatchUps` is always an array here, so this cannot fire today — it is propagated
+  // rather than asserted so a future caller change surfaces as an error instead of an empty tally.
+  if (participantResultsOutcome.error) return participantResultsOutcome;
+  const { participantResults } = participantResultsOutcome;
 
   let report, order;
 

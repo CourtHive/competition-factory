@@ -6,7 +6,7 @@ import { NamingEntry, generatePlayoffStructures } from './drawTypes/playoffStruc
 import { directParticipants } from '@Mutate/matchUps/drawPositions/directParticipants';
 import { resolveTieFormat } from '@Query/hierarchical/tieFormats/resolveTieFormat';
 import { getAllStructureMatchUps } from '@Query/matchUps/getAllStructureMatchUps';
-import { checkMatchUpIsComplete } from '@Query/matchUp/checkMatchUpIsComplete';
+import { matchUpCompletion } from '@Query/matchUp/checkMatchUpIsComplete';
 import { isLuckyBasedDraw } from '@Query/drawDefinition/isLuckyBasedDraw';
 import { getSourceRounds } from '@Query/drawDefinition/getSourceRounds';
 import { getAllDrawMatchUps } from '@Query/matchUps/drawMatchUps';
@@ -475,7 +475,7 @@ function advanceCompletedMatchUps({
   event,
 }) {
   const completedMatchUps = inContextDrawMatchUps?.filter(
-    (matchUp) => checkMatchUpIsComplete({ matchUp }) && matchUp.structureId === sourceStructureId,
+    (matchUp) => matchUpCompletion(matchUp) && matchUp.structureId === sourceStructureId,
   );
 
   completedMatchUps?.forEach((matchUp) => {
