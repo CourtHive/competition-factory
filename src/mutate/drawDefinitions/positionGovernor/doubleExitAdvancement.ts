@@ -544,6 +544,29 @@ function advanceFromTarget({
       });
     }
 
+    // A winner target in ANOTHER structure has its OWN drawPosition space. The Decider of a
+    // DOUBLE_ELIMINATION holds drawPositions 1 and 2; handing it a Main-draw position is not an
+    // occupied slot but a FOREIGN one, and `assignMatchUpDrawPosition` has no way to say so — it
+    // reports "drawPosition already assigned", and it reports it AFTER this cascade has written
+    // four structures. Measured on DOUBLE_ELIMINATION 8/8: target Decider r1p1, existing
+    // drawPositions [1, 2], requested drawPosition 3.
+    //
+    // Cross-structure progression is the link's job, so it goes through directWinner like any
+    // other linked advancement rather than through a raw drawPosition assignment.
+    if (nextWinnerMatchUp.structureId !== targetMatchUp.structureId) {
+      directExitWinnerAcrossLink({
+        sourceStructureId: targetMatchUp.structureId,
+        sourceMatchUp: noContextTargetMatchUp,
+        drawPositionToAdvance,
+        inContextDrawMatchUps,
+        drawDefinition,
+        matchUpsMap,
+        targetData,
+        params,
+      });
+      return decorateResult({ result: { ...SUCCESS }, stack });
+    }
+
     return assignMatchUpDrawPosition({
       matchUpId: nextWinnerMatchUp.matchUpId,
       drawPosition: drawPositionToAdvance,

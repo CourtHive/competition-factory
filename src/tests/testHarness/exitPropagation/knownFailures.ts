@@ -25,14 +25,6 @@ export type QuarantineEntry = {
   reference: string;
 };
 
-const DOUBLE_EXIT_PARTIAL_MUTATION =
-  'DOUBLE_ELIMINATION double exit: setMatchUpStatus returns ERR_EXISTING_POSITION_ASSIGNMENT after ' +
-  'writing four structures (backdraw final, main final, a BYE into the Decider, and a position ' +
-  'assignment), and the call is not idempotent — a retry errors AND mutates again. On master the ' +
-  'same sequence throws the #4779 TypeError instead, so #4779 converted the crash into a clean ' +
-  'error code at one of ~12 failure paths downstream of the first write; the partial mutation is ' +
-  'untouched. See Mentat/planning/EXIT_PROPAGATION_ASSESSMENT.md §4.';
-
 const DOUBLE_EXIT_DRAWPOSITION_RESIDUE =
   'DOUBLE_ELIMINATION 8/7: apply-then-clear leaves a Main matchUp with its drawPositions REMOVED — ' +
   '[1, null] before, absent after. The apply does not touch that matchUp at all (measured), so the ' +
@@ -110,17 +102,7 @@ const ACTION_DISAGREEMENT_CELLS = [
   'OLYMPIC 16/15',
 ];
 
-const doubleEliminationCell = (drawSize: number, exitStatus: string, propagate: boolean) =>
-  `matrix DOUBLE_ELIMINATION ${drawSize}/${drawSize} ${exitStatus} propagate=${propagate}`;
-
 export const KNOWN_FAILURES: QuarantineEntry[] = [
-  ...['DOUBLE_WALKOVER', 'DOUBLE_DEFAULT'].flatMap((exitStatus) =>
-    [true, false].map((propagate) => ({
-      key: doubleEliminationCell(8, exitStatus, propagate),
-      properties: ['ERROR_IMPLIES_NO_MUTATION'],
-      reference: DOUBLE_EXIT_PARTIAL_MUTATION,
-    })),
-  ),
   ...ACTION_DISAGREEMENT_CELLS.map((cell) => ({
     key: `agreement ${cell} WALKOVER`,
     properties: ['ACTION_MUTATION_AGREEMENT'],
