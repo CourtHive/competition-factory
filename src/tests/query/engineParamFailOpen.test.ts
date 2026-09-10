@@ -1,11 +1,11 @@
 import { expect, test, describe } from 'vitest';
 
-import { getParticipantResults } from '@Query/matchUps/roundRobinTally/getParticipantResults';
 import { checkMatchUpIsComplete, matchUpCompletion } from '@Query/matchUp/checkMatchUpIsComplete';
+import { getParticipantResults } from '@Query/matchUps/roundRobinTally/getParticipantResults';
 import mocksEngine from '@Assemblies/engines/mock';
 import tournamentEngine from '@Engines/syncEngine';
 
-import { MISSING_MATCHUPS, MISSING_MATCHUP } from '@Constants/errorConditionConstants';
+import { INVALID_MATCHUP, MISSING_MATCHUPS, MISSING_MATCHUP } from '@Constants/errorConditionConstants';
 import { COMPLETED } from '@Constants/matchUpStatusConstants';
 
 /**
@@ -77,6 +77,45 @@ describe('engine methods refuse rather than answer when their object param is ab
     // error branches (undefined in one file, false in another). Two copies of a safety guard is how
     // they end up disagreeing — the recurring shape of the whole exit-propagation workstream.
     expect(typeof matchUpCompletion).toEqual('function');
+  });
+
+  test('a matchUp claiming a winner with no sides is REFUSED, not attributed to a participant named foo', () => {
+    // From 2021 until 7.0.0 `getSideId` returned the literal string 'foo' when `sides` was absent —
+    // a participantId as far as everything downstream is concerned. A round robin tallied from
+    // STORED (non-hydrated) matchUps keyed every result to `foo` rather than failing.
+    const storedShape: any = [{ matchUpId: 'm1', winningSide: 1, drawPositions: [1, 2], score: { sets: [] } }];
+    const result: any = getParticipantResults({ matchUps: storedShape });
+
+    expect(result.error).toEqual(INVALID_MATCHUP);
+    expect(Object.keys(result.participantResults ?? {})).not.toContain('foo');
+  });
+
+  test('...and so is one whose sides array is short of the losing index', () => {
+    // getWinningSideId reads index 0, getLosingSideId reads index 1 — the second `getSideId` branch.
+    // A guard on `!sides` alone would let this through to the same fabrication.
+    const oneSided: any = [
+      { matchUpId: 'm1', winningSide: 1, sides: [{ sideNumber: 1, participantId: 'p1' }], score: { sets: [] } },
+    ];
+    expect(getParticipantResults({ matchUps: oneSided }).error).toEqual(INVALID_MATCHUP);
+  });
+
+  test('a matchUp with NO winner is not refused — nothing reads a side from it', () => {
+    // The guard is scoped to `winningSide`, because that is the only path into getSideId. A pending
+    // matchUp legitimately carries sides with no participantId yet and must still tally to nothing.
+    const noWinner: any = [
+      {
+        matchUpId: 'm1',
+        matchUpStatus: 'TO_BE_PLAYED',
+        sides: [
+          { sideNumber: 1, drawPosition: 1 },
+          { sideNumber: 2, drawPosition: 2 },
+        ],
+        score: { sets: [] },
+      },
+    ];
+    const result: any = getParticipantResults({ matchUps: noWinner });
+    expect(result.error).toBeUndefined();
+    expect(result.participantResults).toEqual({});
   });
 
   test('an empty matchUps array is a valid question with an empty answer, not a refusal', () => {

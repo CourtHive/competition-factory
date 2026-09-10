@@ -8,7 +8,7 @@ import { isExit } from '@Validators/isExit';
 
 // constants and types
 import { completedMatchUpStatuses, DEFAULTED, RETIRED, WALKOVER } from '@Constants/matchUpStatusConstants';
-import { MISSING_MATCHUPS } from '@Constants/errorConditionConstants';
+import { INVALID_MATCHUP, MISSING_MATCHUPS } from '@Constants/errorConditionConstants';
 import { DOUBLES, SINGLES } from '@Constants/matchUpTypes';
 import { HydratedMatchUp } from '@Types/hydrated';
 
@@ -39,6 +39,20 @@ export function getParticipantResults({
   // Results are attributed through `sides[].participantId`, which only an IN-CONTEXT matchUp
   // carries; a stored matchUp has `drawPositions` and would tally to nothing for the same reason.
   if (!Array.isArray(matchUps)) return { error: MISSING_MATCHUPS };
+
+  // A matchUp that claims a winner but carries no `sides` is incoherent, not empty. Results are
+  // attributed through `sides[].participantId` — which only an IN-CONTEXT matchUp has — so a stored
+  // matchUp reaches `getSideId` with nothing to read. Both indices are required because
+  // getWinningSideId and getLosingSideId read index 0 and index 1 respectively.
+  const incoherent = matchUps.some(
+    (matchUp: any) => matchUp?.winningSide && !(matchUp.sides?.[0] && matchUp.sides?.[1]),
+  );
+  if (incoherent) {
+    return {
+      error: INVALID_MATCHUP,
+      info: 'a matchUp claims a winningSide but carries no sides; in-context matchUps are required',
+    };
+  }
 
   const participantResults = {};
 
@@ -339,17 +353,19 @@ function getLosingSideId(matchUp) {
   return getSideId(matchUp, loserIndex);
 }
 
+/**
+ * The participantId on one side of a decided matchUp.
+ *
+ * Returned `'foo'` — a literal string — when `sides` or the indexed side was absent, from 2021
+ * until 7.0.0. That is a participantId as far as everything downstream is concerned, so a tally run
+ * over stored (non-hydrated) matchUps keyed every result to a participant named `foo` rather than
+ * failing. Two `console.log` calls shipped with it.
+ *
+ * The caller now refuses that input up front, so this returning `undefined` is unreachable defence
+ * rather than a fallback anyone should rely on.
+ */
 function getSideId(matchUp, index) {
-  if (!matchUp?.sides) {
-    console.log('no sides:', { matchUp });
-    return 'foo';
-  }
-  const Side = matchUp.sides[index];
-  if (!Side) {
-    console.log('No Side', { matchUp, index });
-    return 'foo';
-  }
-  return Side.participantId;
+  return matchUp?.sides?.[index]?.participantId;
 }
 
 function checkInitializeParticipant(participantResults, participantId) {
