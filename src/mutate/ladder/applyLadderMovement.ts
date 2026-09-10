@@ -62,17 +62,21 @@ function resolveTrigger(params: MovementArgs): any {
   if (!matchUpId) return { error: INVALID_VALUES, info: 'RESULT requires a matchUpId' };
   const matchUp = structure?.matchUps?.find((m: any) => m.matchUpId === matchUpId);
   if (!matchUp) return { error: MATCHUP_NOT_FOUND };
-  if (matchUp.matchUpStatus !== COMPLETED) {
-    return { error: INVALID_VALUES, info: `matchUp is ${matchUp.matchUpStatus}, not ${COMPLETED}` };
-  }
   if (![1, 2].includes(matchUp.winningSide)) return { error: INVALID_VALUES, info: 'matchUp has no winningSide' };
 
+  // THE GATE, and it speaks FIRST. A provisional score must never move a standing: on a published
+  // ladder with self-reporting members, that is one player reordering the ladder unilaterally.
+  //
+  // Asked before the status check on purpose. An AWAITING_RESULT matchUp fails both, but "not
+  // COMPLETED" merely restates the symptom while the attestation reason names the cause — whether
+  // the score is unconfirmed, self-confirmed, disputed, or short of the policy's requirement.
   const policy = getLadderPolicy(params);
   const attestation = getResultAttestation({ matchUp, policy });
-  if (!attestation.validated) {
-    // THE GATE. A provisional score must never move a standing: on a published ladder with
-    // self-reporting members, that is one player reordering the ladder unilaterally.
-    return { error: RESULT_NOT_VALIDATED, info: attestation.reason };
+  if (!attestation.validated) return { error: RESULT_NOT_VALIDATED, info: attestation.reason };
+
+  // Attested but not COMPLETED means the record disagrees with itself — refuse rather than proceed.
+  if (matchUp.matchUpStatus !== COMPLETED) {
+    return { error: INVALID_VALUES, info: `matchUp is ${matchUp.matchUpStatus}, not ${COMPLETED}` };
   }
 
   // side 1 is the challenger — issueChallenge writes it that way.
