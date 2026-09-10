@@ -22,11 +22,28 @@ type CheckMatchUpIsCompleteArgs = { matchUp?: any };
  * complete" from "no answer" with `?? matchUp.matchUpType === TEAM`. Normalising to `false` would
  * silently drop incomplete TEAM matchUps from the round-robin tally.
  *
- * ⚠️ AND THE ERROR IS AN OBJECT, therefore TRUTHY. Never call this inside a `.filter()` or
- * `.every()` over an array that can hold a falsy entry without guarding the entry first — a refusal
- * would read as "complete". Every internal caller guards.
+ * ⚠️ AND THE ERROR IS AN OBJECT, therefore TRUTHY. Inside a `.filter()` or `.every()` a refusal
+ * would read as "complete" — fail-open in the opposite direction, and worse than the defect this
+ * guard exists to close. Predicate callers must use `matchUpCompletion` below rather than guarding
+ * at each site: three hand-rolled guards is how two of them end up disagreeing.
  */
 export function checkMatchUpIsComplete({ matchUp }: CheckMatchUpIsCompleteArgs) {
   if (typeof matchUp !== 'object' || matchUp === null || !matchUp.matchUpId) return { error: MISSING_MATCHUP };
   return completedMatchUpStatuses.includes(matchUp.matchUpStatus) || matchUp.winningSide;
+}
+
+/**
+ * The predicate-safe form, for iteration over an array that may hold a falsy or id-less entry.
+ *
+ * Returns exactly what `checkMatchUpIsComplete` returns for a real matchUp — `true`, the
+ * `winningSide` (1 | 2), or `undefined` — and maps a refusal to `undefined` rather than letting a
+ * truthy `{ error }` read as "complete".
+ *
+ * `undefined` rather than `false` is deliberate and load-bearing: `tallyParticipantResults`
+ * separates "not complete" from "no answer" with `?? matchUp.matchUpType === TEAM`.
+ */
+export function matchUpCompletion(matchUp: any) {
+  if (!matchUp) return undefined;
+  const result: any = checkMatchUpIsComplete({ matchUp });
+  return result?.error ? undefined : result;
 }

@@ -1,6 +1,6 @@
 import { structureAssignedDrawPositions } from '@Query/drawDefinition/positionsGetter';
 import { getAllStructureMatchUps } from '@Query/matchUps/getAllStructureMatchUps';
-import { checkMatchUpIsComplete } from '@Query/matchUp/checkMatchUpIsComplete';
+import { matchUpCompletion } from '@Query/matchUp/checkMatchUpIsComplete';
 import { findStructure } from '@Acquire/findStructure';
 
 // constants and types
@@ -172,8 +172,7 @@ export function getStructureMatchUps({
         (collectionSidesAssigned || (drawPositionsFilled && (!requireParticipants || drawPositionsAssigned)));
 
       if (isByeMatchUp) return byeMatchUps.push(matchUp);
-      const completeResult: any = checkMatchUpIsComplete({ matchUp });
-      if (!completeResult?.error && completeResult) return completedMatchUps.push(matchUp);
+      if (matchUpCompletion(matchUp)) return completedMatchUps.push(matchUp);
       if (isUpcomingMatchUp) return upcomingMatchUps.push(matchUp);
       return pendingMatchUps.push(matchUp);
     });

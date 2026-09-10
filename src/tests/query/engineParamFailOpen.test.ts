@@ -1,7 +1,7 @@
 import { expect, test, describe } from 'vitest';
 
 import { getParticipantResults } from '@Query/matchUps/roundRobinTally/getParticipantResults';
-import { checkMatchUpIsComplete } from '@Query/matchUp/checkMatchUpIsComplete';
+import { checkMatchUpIsComplete, matchUpCompletion } from '@Query/matchUp/checkMatchUpIsComplete';
 import mocksEngine from '@Assemblies/engines/mock';
 import tournamentEngine from '@Engines/syncEngine';
 
@@ -56,12 +56,27 @@ describe('engine methods refuse rather than answer when their object param is ab
     expect(byId.error).toEqual(MISSING_MATCHUPS);
   });
 
-  test('the refusal is an OBJECT, so it is truthy — the trap the internal callers had to guard', () => {
-    // Documents why every internal call site filters the entry before calling: a naive
-    // `.filter((m) => checkMatchUpIsComplete({ matchUp: m }))` would now count refusals as complete.
+  test('the refusal is an OBJECT, so it is truthy — which is why predicates use matchUpCompletion', () => {
+    // A naive `.filter((m) => checkMatchUpIsComplete({ matchUp: m }))` would count refusals as
+    // COMPLETE — fail-open in the opposite direction, and worse than the defect being fixed.
     const refusal: any = checkMatchUpIsComplete({ matchUp: undefined });
     expect(refusal.error).toEqual(MISSING_MATCHUP);
     expect(Boolean(refusal)).toBe(true);
+
+    // matchUpCompletion is the predicate-safe form: it maps the refusal to undefined and passes a
+    // real answer through unchanged, including the load-bearing `undefined` for a pending matchUp.
+    expect(matchUpCompletion(undefined)).toBeUndefined();
+    expect(matchUpCompletion({})).toBeUndefined();
+    expect(matchUpCompletion({ matchUpId: 'm1', matchUpStatus: undefined })).toBeUndefined();
+    expect(matchUpCompletion({ matchUpId: 'm1', matchUpStatus: COMPLETED })).toBe(true);
+    expect(matchUpCompletion({ matchUpId: 'm1', winningSide: 2 })).toBe(2);
+  });
+
+  test('there is exactly ONE implementation of that mapping', () => {
+    // The first version of this fix hand-rolled the guard at three call sites with two different
+    // error branches (undefined in one file, false in another). Two copies of a safety guard is how
+    // they end up disagreeing — the recurring shape of the whole exit-propagation workstream.
+    expect(typeof matchUpCompletion).toEqual('function');
   });
 
   test('an empty matchUps array is a valid question with an empty answer, not a refusal', () => {

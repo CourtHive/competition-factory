@@ -1,4 +1,4 @@
-import { checkMatchUpIsComplete } from '@Query/matchUp/checkMatchUpIsComplete';
+import { matchUpCompletion } from '@Query/matchUp/checkMatchUpIsComplete';
 import { decorateResult } from '@Functions/global/decorateResult';
 import { getParticipantResults } from './getParticipantResults';
 import { getDevContext } from '@Global/state/globalState';
@@ -54,36 +54,25 @@ export function tallyParticipantResults({
     });
   }
 
-  // `checkMatchUpIsComplete` refuses a non-matchUp with a TRUTHY `{ error }`, and the filter on the
-  // next line proves `matchUps` can hold a falsy entry. This maps a refusal back to `undefined` and
-  // otherwise passes the answer through UNCHANGED — `true`, or the `winningSide` (1 | 2), or
-  // `undefined`. All three matter: callers below rely on truthiness, and the `?? TEAM` fallback
-  // relies on `undefined` specifically.
-  const completeOrUndefined = (matchUp: any) => {
-    if (!matchUp) return undefined;
-    const result: any = checkMatchUpIsComplete({ matchUp });
-    return result?.error ? undefined : result;
-  };
-
   const relevantMatchUps = matchUps.filter((matchUp) => matchUp && matchUp.matchUpStatus !== BYE);
 
   const participantsCount =
     relevantMatchUps.length && unique(relevantMatchUps.flatMap(({ drawPositions }) => drawPositions)).length;
 
   const bracketComplete =
-    relevantMatchUps.filter((matchUp) => completeOrUndefined(matchUp)).length === relevantMatchUps.length;
+    relevantMatchUps.filter((matchUp) => matchUpCompletion(matchUp)).length === relevantMatchUps.length;
   // if bracket is incomplete don't use expected matchUps perPlayer for calculating
   if (!bracketComplete) perPlayer = 0;
 
   const completedTieMatchUps = matchUps.every(
     ({ matchUpType, tieMatchUps }) =>
-      matchUpType === TEAM && tieMatchUps?.every((matchUp) => completeOrUndefined(matchUp)),
+      matchUpType === TEAM && tieMatchUps?.every((matchUp) => matchUpCompletion(matchUp)),
   );
 
   const tallyPolicy = policyDefinitions?.[POLICY_TYPE_ROUND_ROBIN_TALLY];
 
   const consideredMatchUps = matchUps.filter(
-    (matchUp) => matchUp && (completeOrUndefined(matchUp) ?? matchUp.matchUpType === TEAM),
+    (matchUp) => matchUp && (matchUpCompletion(matchUp) ?? matchUp.matchUpType === TEAM),
   );
   const participantResultsOutcome: any = getParticipantResults({
     matchUps: consideredMatchUps,
