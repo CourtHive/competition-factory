@@ -56,7 +56,7 @@ Both now return `ERR_MISSING_MATCHUP` / `ERR_MISSING_MATCHUPS`. It was worth bre
 
 An **empty** array is still a valid question with an empty answer; the guard is on the argument being absent, not empty.
 
-`getParticipantResults` also refuses a **stored** (non-hydrated) matchUp that claims a winner. Results are attributed through `sides[].participantId`, and until 7.0.0 the helper that reads a side returned the literal string `'foo'` when `sides` was absent — so a round robin tallied from stored matchUps returned results keyed `foo` rather than failing. That sentinel, and the two `console.log` calls beside it, are gone.
+`getParticipantResults` also refuses any **stored** (non-hydrated) matchUp — one carrying no `sides` at all. Results are attributed through `sides[].participantId`, and until 7.0.0 the helper that reads a side returned the literal string `'foo'` when `sides` was absent — so a round robin tallied from stored matchUps returned results keyed `foo` rather than failing. That sentinel, and the two `console.log` calls beside it, are gone.
 
 → [migration §5](./migration-7.0.0#5-two-queries-refuse-an-absent-object-param-instead-of-answering).
 

@@ -40,17 +40,24 @@ export function getParticipantResults({
   // carries; a stored matchUp has `drawPositions` and would tally to nothing for the same reason.
   if (!Array.isArray(matchUps)) return { error: MISSING_MATCHUPS };
 
-  // A matchUp that claims a winner but carries no `sides` is incoherent, not empty. Results are
-  // attributed through `sides[].participantId` — which only an IN-CONTEXT matchUp has — so a stored
-  // matchUp reaches `getSideId` with nothing to read. Both indices are required because
-  // getWinningSideId and getLosingSideId read index 0 and index 1 respectively.
-  const incoherent = matchUps.some(
-    (matchUp: any) => matchUp?.winningSide && !(matchUp.sides?.[0] && matchUp.sides?.[1]),
-  );
-  if (incoherent) {
+  // EVERY matchUp must carry both sides, whether or not it has been played.
+  //
+  // `sides[].participantId` is the only thing a tally can attribute to, and BOTH code paths read it:
+  // a decided matchUp through `getSideId`, and an undecided one through `processScore`. Scoping this
+  // to `winningSide` — as it was when first added — closed only the first, so the SAME input (stored,
+  // non-hydrated matchUps) refused once a draw had been played and threw an uncaught TypeError while
+  // it had not. One input class must not have two failure modes separated only by progress.
+  //
+  // Both indices, because getWinningSideId reads index 0 and getLosingSideId reads index 1.
+  //
+  // All-or-nothing is deliberate: skipping the offending matchUps would return a tally silently
+  // missing matches, which is the failure this guard exists to prevent rather than a milder form of
+  // it. An EMPTY array is still a valid question — the guard is on matchUps present but unusable.
+  const unusable = matchUps.some((matchUp: any) => matchUp && !(matchUp.sides?.[0] && matchUp.sides?.[1]));
+  if (unusable) {
     return {
       error: INVALID_MATCHUP,
-      info: 'a matchUp claims a winningSide but carries no sides; in-context matchUps are required',
+      info: 'a matchUp carries no sides to attribute results to; in-context matchUps are required',
     };
   }
 
