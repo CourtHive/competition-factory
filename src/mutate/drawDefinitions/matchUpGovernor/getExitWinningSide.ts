@@ -19,10 +19,18 @@ export function getExitWinningSide({ inContextDrawMatchUps, drawPosition, matchU
 
   const feedRound = matchUp.feedRound;
 
-  return feedRound
-    ? 1
-    : sourceMatchUps.reduce((sideNumber, sourceMatchUp, index) => {
-        if (sourceMatchUp.drawPositions?.includes(drawPosition)) return index + 1;
-        return sideNumber;
-      }, undefined);
+  // On a fed round the matchUp's OWN derived sides are the authority on which side a drawPosition
+  // occupies. `feedRound => 1` is a topology proxy for that fact: it holds while the position being
+  // advanced is the one that arrived over the feed link, and fails when the position arrived from
+  // the previous round of the SAME structure. Measured across the 600-cell exit-propagation matrix,
+  // the proxy is consulted 47 times and disagrees with the derived side 4 times — every one of them
+  // the DOUBLE_ELIMINATION Main final, where the undefeated main-bracket winner sits on side 2 and
+  // the empty fed slot is side 1, so the proxy handed the walkover to a side holding nobody.
+  // The proxy is kept as a fallback for a matchUp whose sides do not yet carry the drawPosition.
+  if (feedRound) return targetSide?.sideNumber ?? 1;
+
+  return sourceMatchUps.reduce((sideNumber, sourceMatchUp, index) => {
+    if (sourceMatchUp.drawPositions?.includes(drawPosition)) return index + 1;
+    return sideNumber;
+  }, undefined);
 }

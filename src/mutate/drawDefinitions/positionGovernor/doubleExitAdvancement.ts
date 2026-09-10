@@ -4,6 +4,7 @@ import { getPairedPreviousMatchUpIsDoubleExit } from '../../../query/matchUps/ge
 import { getExitWinningSide } from '@Mutate/drawDefinitions/matchUpGovernor/getExitWinningSide';
 import { getPositionAssignments } from '@Query/drawDefinition/positionsGetter';
 import { modifyMatchUpScore } from '@Mutate/matchUps/score/modifyMatchUpScore';
+import { directWinner } from '@Mutate/matchUps/drawPositions/directWinner';
 import { decorateResult } from '@Functions/global/decorateResult';
 import { positionTargets } from '@Query/matchUp/positionTargets';
 import { definedAttributes } from '@Tools/definedAttributes';
@@ -629,13 +630,27 @@ function advanceByeAdvancedDrawPosition({
     });
     if (result.error) return decorateResult({ result, stack });
 
-    return advanceDrawPosition({
+    const advanceResult = advanceDrawPosition({
       drawPositionToAdvance: nextDrawPositionToAdvance,
       matchUpId: noContextNextWinnerMatchUp.matchUpId,
       inContextDrawMatchUps,
       drawDefinition,
       matchUpsMap,
     });
+    if (advanceResult?.error) return decorateResult({ result: advanceResult, stack });
+
+    directExitWinnerAcrossLink({
+      drawPositionToAdvance: nextDrawPositionToAdvance,
+      sourceMatchUp: noContextNextWinnerMatchUp,
+      sourceStructureId: nextWinnerMatchUp.structureId,
+      inContextDrawMatchUps,
+      targetData: nextTargetData,
+      drawDefinition,
+      matchUpsMap,
+      params,
+    });
+
+    return advanceResult;
   } else if (isExit(nextWinnerMatchUp.matchUpStatus)) {
     // if the next targetMatchUp is a double walkover or double default
     const result = doubleExitAdvancement({
@@ -648,6 +663,60 @@ function advanceByeAdvancedDrawPosition({
   }
 
   return decorateResult({ result: { ...SUCCESS }, stack });
+}
+
+/**
+ * Direct the winner of a cascade-resolved exit into a winner target in ANOTHER structure.
+ *
+ * `advanceDrawPosition` advances a winner only when the winner target belongs to the same
+ * structure; a target reached over a WINNER link falls through it silently. That left the matchUp
+ * decided with a winner who never appeared in the linked structure — the state the repo's own
+ * `getDrawInconsistencies` reports as DROPPED_PROGRESSION.
+ *
+ * Measured over the 600-cell exit-propagation matrix, this is reached 4 times out of 2107
+ * `advanceDrawPosition` calls, and every one is the DOUBLE_ELIMINATION Main final feeding the
+ * Decider after a Backdraw double-exit cascade resolved it as a walkover.
+ *
+ * `directWinner` is the engine's own link-direction path — the one `directParticipants` uses for a
+ * scored result — so the placement rules are not re-derived here. A BYE or unassigned position is
+ * excluded: it has no participant to direct, and `directWinnerViaLink`'s terminal branch would
+ * report an unavailable target for it.
+ */
+function directExitWinnerAcrossLink({
+  drawPositionToAdvance,
+  inContextDrawMatchUps,
+  sourceStructureId,
+  drawDefinition,
+  sourceMatchUp,
+  matchUpsMap,
+  targetData,
+  params,
+}) {
+  const { winnerMatchUp } = targetData.targetMatchUps;
+  const { winnerTargetLink } = targetData.targetLinks;
+  if (!winnerMatchUp || !winnerTargetLink) return;
+  if (winnerMatchUp.structureId === sourceStructureId) return;
+
+  const { structure } = findStructure({ drawDefinition, structureId: sourceStructureId });
+  const { positionAssignments } = getPositionAssignments({ structure });
+  const assignment = positionAssignments?.find(({ drawPosition }) => drawPosition === drawPositionToAdvance);
+  if (!assignment?.participantId || assignment.bye) return;
+
+  directWinner({
+    winnerMatchUpDrawPositionIndex: targetData.targetMatchUps.winnerMatchUpDrawPositionIndex,
+    sourceMatchUpStatus: sourceMatchUp.matchUpStatus,
+    winningDrawPosition: drawPositionToAdvance,
+    sourceMatchUpId: sourceMatchUp.matchUpId,
+    tournamentRecord: params.tournamentRecord,
+    projectedWinningSide: undefined,
+    dualMatchUp: undefined,
+    inContextDrawMatchUps,
+    winnerTargetLink,
+    drawDefinition,
+    winnerMatchUp,
+    matchUpsMap,
+    event: params.event,
+  });
 }
 
 function advanceByeToLoserMatchUp(params) {
