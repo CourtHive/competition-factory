@@ -7,11 +7,13 @@ tools). It catalogues the breaking changes in 7.0.0 and the exact steps to adopt
 
 ## Breaking changes at a glance
 
-| Change                                                                                              | Who is affected                        | Action required        |
-| --------------------------------------------------------------------------------------------------- | -------------------------------------- | ---------------------- |
-| `particicipantsRequiredMatchUpStatuses` renamed to `participantsRequiredMatchUpStatuses`            | Anyone importing that constant by name | Rename the import      |
-| `tools.timeZone.getTimeZoneOffsetMinutes` now returns `number \| undefined`                         | Anyone reading a zone offset           | Handle `undefined`     |
-| `wallClockToUTC` / `utcToWallClock` / `toEmbargoUTC` return `{ error }` where they previously threw | Anyone wrapping these in `try`/`catch` | Check the return value |
+| Change                                                                                   | Who is affected                                                   | Action required   |
+| ---------------------------------------------------------------------------------------- | ----------------------------------------------------------------- | ----------------- |
+| `particicipantsRequiredMatchUpStatuses` renamed to `participantsRequiredMatchUpStatuses` | Anyone importing that constant by name                            | Rename the import |
+| Re-applying an identical double exit is now a no-op                                      | Callers relying on re-application to re-run propagation           | See §2            |
+| A rejected `setMatchUpStatus` no longer alters the draw                                  | Callers with compensating logic after an error                    | See §3            |
+| `timeZone` conversions return an error instead of throwing or guessing                   | Anyone calling `wallClockToUTC`, `utcToWallClock`, `toEmbargoUTC` | See §4            |
+| `getTimeZoneOffsetMinutes` now returns `number \| undefined`                             | Anyone reading a zone offset                                      | See §4            |
 
 ## 1. `participantsRequiredMatchUpStatuses` — a spelling fix
 
@@ -34,18 +36,75 @@ and it is consumed internally by `setMatchUpState`.
 indefinitely, which is the thing this release exists to fix. A survey of the CourtHive ecosystem
 found no consumer importing the old name, so the practical migration cost is zero.
 
-## 2. `tools.timeZone` — failures are values, not throws
+## 2. Re-applying a double exit is now idempotent
 
-The zoned conversion helpers had two implementations in the factory: a public one (`tools.timeZone`)
-and an internal one that carried every live conversion. They were **numerically identical** on valid
-input — a sweep of 420,480 wall clocks across 12 zones and every day of 2026 found zero disagreements,
-including both DST boundaries — but they disagreed entirely on how they failed. 7.0.0 consolidates them
-onto one implementation, now also exported as
-[`tools.zonedDateTime`](/docs/tools/tools-api#toolszoneddatetime).
+Sending the identical double-exit outcome twice now returns success and writes nothing the second
+time. Previously the second call re-ran the propagation cascade — which read its own earlier work as
+a _second_ source exiting into the same target, escalated the produced `WALKOVER` to a
+`DOUBLE_WALKOVER`, and cascaded a round further. Both calls reported success, so a client retry or a
+double-click corrupted the draw progressively and silently.
 
-Nothing changes for a call that succeeds. What changes is what a _failing_ call does.
+### What to do about re-application
 
-### `getTimeZoneOffsetMinutes` returns `number | undefined`
+Nothing, for almost everyone — this removes a corruption path. A genuine _change_ still propagates:
+`DOUBLE_WALKOVER` to `DOUBLE_DEFAULT` is a change, not a repeat.
+
+The one behaviour that is gone is **re-application as an accidental repair**. If a draw was somehow
+left with the status set but the advancement missing, re-sending the same outcome used to nudge it.
+It no longer will. That state is reported by `getDrawInconsistencies` as `WINNER_NOT_ADVANCED` or
+`DROPPED_PROGRESSION`; repair it deliberately rather than by sending a duplicate request.
+
+## 3. A rejected mutation leaves the draw unchanged
+
+`setMatchUpStatus` now validates a bare `{ winningSide }` outcome **before** any removal runs. If the
+call is refused, the draw is byte-identical to what it was.
+
+Previously such an outcome skipped the early participant check — it carries no `matchUpStatus` — and
+was caught later, after `removeDoubleExit` or `removeDirectedParticipants` had already unwound the
+existing result. A rejected call could therefore **destroy a recorded result**: a pending propagated
+exit could be left `TO_BE_PLAYED` by a request that returned an error.
+
+### What to do about compensating logic
+
+If you have compensating logic that re-reads or repairs state after an error from
+`setMatchUpStatus`, it is no longer needed. The error itself is unchanged in kind; what changed is
+that it now arrives over untouched data.
+
+Note the error _code_ for this case moved from `ERR_MISSING_ASSIGNMENTS` to
+`ERR_INVALID_MATCHUP_STATUS`, since the rejection now comes from the participant check rather than
+from the later score-modification guard. Match on behaviour rather than on that specific code.
+
+## 4. Time-zone conversions refuse rather than throw or guess
+
+The zoned calendar intent had two implementations. `timeZone.ts` was published; `zonedTime.ts` was
+internal and carried every live conversion in the repo. On valid input the two were numerically
+identical — 420,480 wall clocks across 12 zones and every day of 2026, plus all 418 IANA zones from
+1970 onward, produced zero disagreements. DST was never the difference.
+
+The difference was failure handling, and each was fail-open on a different axis. `timeZone.ts`
+**threw an uncaught `RangeError`** from functions typed `string | { error }` — for an unrecognised
+zone, and for seven of eight malformed date/time inputs — and omitting the zone returned the _host
+machine's_ offset, so the same published call answered differently on a New York server and a London
+one. `zonedTime.ts` never threw, but silently substituted the caller's offset for an unrecognised
+zone.
+
+`zonedDateTime` is now the single implementation and `timeZone` is an adapter over it with no
+arithmetic of its own. Three inputs now get three answers, and never a substituted number:
+
+| Input             | Result                                                   |
+| ----------------- | -------------------------------------------------------- |
+| zone absent       | the caller's `utcOffsetMinutes`, with `source: 'offset'` |
+| zone unrecognised | refused — `{ error: INVALID_TIME_ZONE }`                 |
+| zone recognised   | resolved per instant, with `source: 'zone'`              |
+
+Malformed input is likewise reported rather than thrown: `{ error: INVALID_DATE }` or
+`{ error: INVALID_TIME }`.
+
+### `getTimeZoneOffsetMinutes` also changes shape
+
+It now returns `number | undefined` rather than `number`. Previously it **threw** an uncaught
+`RangeError` for an unrecognised zone, and returned the _host machine's_ offset when called with no
+zone at all. Neither behaviour was documented or tested, so no correct caller can have depended on it.
 
 ```diff
 - const offset = tools.timeZone.getTimeZoneOffsetMinutes(timeZone);
@@ -53,43 +112,33 @@ Nothing changes for a call that succeeds. What changes is what a _failing_ call 
 + if (offset === undefined) return; // unrecognised or absent zone
 ```
 
-Previously it **threw an uncaught `RangeError`** for an unrecognised zone, from a function typed
-`number`. Worse, calling it with no zone at all returned **the host machine's UTC offset**, so the same
-call answered differently on a server in New York and one in London. Neither behaviour was documented
-or tested, so no correct caller can have depended on it.
+This is the one change in this section that alters a published **type**, so a TypeScript consumer
+sees it at compile time rather than discovering it at runtime.
 
-### Three functions return `{ error }` instead of throwing
+### What to do about the error return
 
-`wallClockToUTC`, `utcToWallClock` and `toEmbargoUTC` are typed
-`string | { error: … }`, but a malformed date or time escaped as a `RangeError` rather than the error
-object the signature promised. They now return one, and distinguish the cause:
+**Handle the error return.** These functions were always typed as returning `string | { error }`, so
+correctly-typed callers already branch on it — but any caller that relied on a `try/catch` around a
+throw will no longer see an exception, and any caller that passed an unrecognised zone and received
+a plausible-looking number will now receive an error instead.
 
-```js
-tools.timeZone.wallClockToUTC('2026-06-20', '03:00', 'Invalid/Zone'); // { error: INVALID_TIME_ZONE }
-tools.timeZone.wallClockToUTC('not-a-date', '03:00', 'America/New_York'); // { error: INVALID_DATE }
-tools.timeZone.wallClockToUTC('2026-06-20', 'noon', 'America/New_York'); // { error: INVALID_TIME }
+```diff
+- try {
+-   const utc = wallClockToUTC(date, time, timeZone);
+- } catch (err) { /* unreachable now */ }
++ const utc = wallClockToUTC(date, time, timeZone);
++ if (typeof utc !== 'string') return utc;   // { error: INVALID_TIME_ZONE | INVALID_DATE | INVALID_TIME }
 ```
 
-### What to do about the throws
+`source` is returned rather than logged, so a caller can see which frame it got rather than having
+to infer it.
 
-If you wrapped any of these in a `try`/`catch`, the `catch` is now dead code — check the return value
-instead. If you did not wrap them, you had an unhandled crash path and now have a value to branch on.
+## 5. Non-breaking additions worth knowing
 
-A survey of the CourtHive ecosystem found **zero** consumers of `tools.timeZone`, so the practical
-migration cost is zero. The change is released as breaking because the published types change, not
-because a known consumer breaks.
+`plainDate`, `plainTime` and `zonedDateTime` are new published exports, completing the calendar
+intent set. `zonedTime` was never published, so its rename is not a breaking change.
 
-### An unrecognised zone is now refused, not substituted
-
-The internal implementation used to fall back to a caller-supplied fixed offset when it did not
-recognise a zone. That silently answered in a different frame: in the recovery-time report it turned a
-90-minute figure into 330 minutes, still labelled as measured. A zone the system cannot honour is now
-refused everywhere.
-
-`tools.zonedDateTime` makes the frame explicit rather than leaving it to be assumed:
-
-| `timeZone`            | result                                      | `source`   |
-| --------------------- | ------------------------------------------- | ---------- |
-| absent                | the caller's `utcOffsetMinutes` (default 0) | `'offset'` |
-| present, unrecognised | refused                                     | —          |
-| present, recognised   | resolved per instant                        | `'zone'`   |
+`PositionAssignment.byeFromPropagation` is a new optional boolean recording that a BYE was placed by
+an exit cascade rather than by draw generation or by hand. It is visible in stored tournament
+records and in anything that round-trips `positionAssignments`. See
+[Exit Propagation](/docs/concepts/exit-propagation#bye-provenance-byefrompropagation).
