@@ -11,14 +11,21 @@ module.exports = {
   // under the default. `true` re-bases them under the current page (404s);
   // `false` switches to flat .html output so the slash target has no folder.
   // Silencing the warning would require rewriting those relative links repo-wide.
-  onBrokenLinks: 'warn',
+  //
+  // onBrokenLinks is 'throw' so the CI docs job can actually fail. Under 'warn' the build
+  // still exits 0 with broken links in it, which makes a "docs build" gate report clean for a
+  // site that is broken — a check that cannot report dirty is not a check. Verified at the time
+  // of the change: the site builds clean under 'throw', so this fails only on NEW breakage.
+  onBrokenLinks: 'throw',
   favicon: 'img/favicon.ico',
   organizationName: 'CourtHive',
   projectName: 'competition-factory',
   markdown: {
     mermaid: true,
     hooks: {
-      onBrokenMarkdownLinks: 'warn',
+      // 'throw' for the same reason as onBrokenLinks above: a markdown link to a file that does
+      // not exist is a defect, and warning about it lets it ship.
+      onBrokenMarkdownLinks: 'throw',
     },
   },
   themeConfig: {
