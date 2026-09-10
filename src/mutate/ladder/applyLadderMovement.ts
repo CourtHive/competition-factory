@@ -2,9 +2,10 @@ import { getLadderMovement, getLadderOrdering, getLadderPolicy } from '@Query/la
 import { isLadder } from '@Query/drawDefinition/isLadder';
 
 import { mirrorStandingToScale } from '@Mutate/ladder/mirrorStandingToScale';
+import { generateDynamicRatings } from '@Generators/scales/generateDynamicRatings';
 import { getResultAttestation } from '@Query/ladder/getResultAttestation';
 
-import { FORFEIT, INSERTION, RANK, movementTriggers } from '@Constants/ladderConstants';
+import { FORFEIT, INSERTION, RANK, RESULT, movementTriggers } from '@Constants/ladderConstants';
 import type { MovementTrigger } from '@Constants/ladderConstants';
 import { COMPLETED } from '@Constants/matchUpStatusConstants';
 import { SUCCESS } from '@Constants/resultConstants';
@@ -96,7 +97,7 @@ function resolveTrigger(params: MovementArgs): any {
  * scale, `positionAssignments` is a projection, and there is no movement to apply. That early
  * return is why `getLadderOrdering` had to exist before any of this was written.
  */
-export function applyLadderMovement(params: MovementArgs): ResultType & { moved?: boolean } {
+export function applyLadderMovement(params: MovementArgs): ResultType & { moved?: boolean; ratingsUpdated?: boolean } {
   const { appliedAt, drawDefinition, structure } = params;
 
   if (typeof drawDefinition !== 'object') return { error: MISSING_DRAW_DEFINITION };
@@ -111,7 +112,27 @@ export function applyLadderMovement(params: MovementArgs): ResultType & { moved?
   const { challengerParticipantId, defenderParticipantId, challengerPrevails } = resolved;
 
   if (getLadderOrdering({ ...params }) !== RANK) {
-    // Not a failure — a RATING ladder has no movement machinery by design.
+    // A RATING ladder has no positional movement by design — the ordering IS the scale, and
+    // getLadderStanding re-derives it. What moves instead is the RATING.
+    //
+    // With `dynamicRating` (the default for a rating ladder) the factory computes it from the
+    // result. WITHOUT it the ratings are external — a provider's, not ours — so nothing here
+    // changes and the standing holds until an operator refreshes them. Play continues either way:
+    // a participant awaiting an external refresh may still challenge and be challenged; only their
+    // POSITION is unaffected until the refresh lands.
+    const policy = getLadderPolicy(params);
+    if (policy.dynamicRating && params.trigger === RESULT && params.matchUpId) {
+      const ratingResult = generateDynamicRatings({
+        updateParticipantRatings: true,
+        matchUpIds: [params.matchUpId],
+        ratingType: policy.ratingType,
+        drawDefinition: params.drawDefinition,
+        tournamentRecord: params.tournamentRecord,
+        asDynamic: true,
+      });
+      if (ratingResult.error) return ratingResult;
+      return { ...SUCCESS, moved: false, ratingsUpdated: true };
+    }
     return { ...SUCCESS, moved: false };
   }
 

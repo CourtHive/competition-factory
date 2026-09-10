@@ -108,3 +108,9 @@ export const DROP = 'DROP';
 export const REMOVE = 'REMOVE';
 export const lapseConsequences = [FORFEIT_POSITION, DROP, REMOVE] as const;
 export type LapseConsequence = (typeof lapseConsequences)[number];
+
+/** Where a new participant joins the ladder. */
+export const BOTTOM = 'BOTTOM';
+export const BY_RATING = 'BY_RATING';
+export const entryPlacements = [BOTTOM, BY_RATING] as const;
+export type EntryPlacement = (typeof entryPlacements)[number];

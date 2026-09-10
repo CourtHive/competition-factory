@@ -237,11 +237,54 @@ override part of it. **An absent policy is not an error** — a ladder with no p
 defaults, which is the common case rather than a misconfiguration. `declineForfeitsPosition: true`
 remains as sugar for `{ allowance: 0, consequence: 'FORFEIT_POSITION' }`.
 
+## Joining a ladder
+
+`entryPlacement` decides where a newcomer lands.
+
+`BOTTOM` is the default and the conservative choice: joining costs nobody anything, and the newcomer
+earns their way up by challenging.
+
+`BY_RATING` seats them where their rating says they belong. Fairer to a strong newcomer, but on a
+`RANK` ladder it is a real intervention — every position beneath them shifts down, and those
+positions were earned by challenge. An unrated participant under `BY_RATING` goes to the **bottom**,
+because absent is not "best". Direction is honoured here as everywhere: on a WTN ladder a lower
+number seats higher.
+
+```js
+addLadderParticipant({ participantId, addedAt, drawDefinition, tournamentRecord });
+```
+
+Under `RATING` ordering placement is moot — the participant is appended and `getLadderStanding`
+sorts them correctly on the next read.
+
+## Ratings on a rating-ordered ladder
+
+**The factory does not fetch ratings.** UTR, WTN and DUPR are other people's systems with their own
+credentials and terms; retrieving values is an operator's job and belongs in an ingest adapter, not
+in a competition engine.
+
+That leaves two modes, and the default is the first:
+
+**Dynamic (the default).** The factory computes the rating from ladder results, seeding from each
+participant's published rating as a starting position. A validated result updates the
+`<ratingType>.DYNAMIC` scale via the same `generateDynamicRatings` machinery DrawMatic uses, and the
+standing re-derives.
+
+**External.** Ratings belong to a provider. An operator refreshes them in bulk:
+
+```js
+refreshLadderRatings({ ratings: { [participantId]: 12.4 }, refreshedAt, drawDefinition, tournamentRecord });
+```
+
+Between refreshes the standing **holds still**, and that is not a block on play: a participant
+awaiting new values may challenge and be challenged exactly as normal — only their _position_ is
+unaffected until the refresh lands, at which point the whole standing re-derives at once.
+
+A partial refresh is the normal case, because a provider will not have a value for everyone;
+participants absent from the map are left as they were rather than cleared. A rating for someone not
+seated on the ladder is reported back in `skipped` rather than written quietly.
+
 ## Not yet built
 
 - **Dispute resolution.** A disputed result is blocked from moving the ladder, but nothing resolves
   it.
-- **`RATING` movement.** The ordering derives a standing; nothing yet updates a dynamic rating from
-  a ladder result.
-- **Entry placement.** New participants are seated by the caller; `entryPlacement` (bottom, or by
-  rating) is designed but not implemented.

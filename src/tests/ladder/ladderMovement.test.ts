@@ -270,3 +270,43 @@ describe('FORFEIT — the one trigger with no score to attest', () => {
     expect(result.error).toBeDefined();
   });
 });
+
+describe('history mirroring actually writes — the silent failure guard', () => {
+  test('a move records a dated RANKING scale item per changed position', () => {
+    // A scaleItem without eventType fails isValidScaleItem, and setParticipantScaleItem returns the
+    // error rather than throwing — so a caller ignoring the result mirrors NOTHING while appearing
+    // to work. An earlier version of mirrorStandingToScale did exactly that.
+    const { drawDefinition, structure } = ladder({ ordering: RANK, movement: SWAP });
+    playedMatchUp({ structure, challenger: 'p4', defender: 'p2' });
+    const tournamentRecord: any = {
+      tournamentId: 't1',
+      participants: [1, 2, 3, 4, 5].map((n) => ({
+        participantId: `p${n}`,
+        participantType: 'INDIVIDUAL',
+        timeItems: [],
+      })),
+    };
+
+    const result: any = applyLadderMovement({
+      trigger: RESULT,
+      matchUpId: 'm1',
+      tournamentRecord,
+      drawDefinition,
+      structure,
+      appliedAt: AT,
+    });
+    expect(result.moved).toEqual(true);
+
+    const scaleItemsFor = (participantId: string) =>
+      tournamentRecord.participants
+        .find((p: any) => p.participantId === participantId)
+        .timeItems.filter((item: any) => item.itemType.includes('d1'));
+
+    // SWAP moves exactly two, and each gets its new rank recorded against the applied instant.
+    expect(scaleItemsFor('p4')).toHaveLength(1);
+    expect(scaleItemsFor('p2')).toHaveLength(1);
+    expect(scaleItemsFor('p4')[0].itemValue).toEqual(2);
+    expect(scaleItemsFor('p2')[0].itemValue).toEqual(4);
+    expect(scaleItemsFor('p1')).toHaveLength(0); // untouched participants get no entry
+  });
+});

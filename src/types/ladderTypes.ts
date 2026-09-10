@@ -1,4 +1,5 @@
 import type {
+  EntryPlacement,
   LadderMovement,
   LadderOrdering,
   LapseConsequence,
@@ -48,6 +49,15 @@ export type LadderPolicy = {
    * band — not yet modelled, and deliberately not faked with a position count.)
    */
   challengeRange?: number | 'ANY';
+
+  /**
+   * Where a new participant joins. Defaults to `BOTTOM`.
+   *
+   * `BY_RATING` seats them where their rating says they belong, which is fairer to a strong
+   * newcomer but displaces everyone beneath — and on a `RANK` ladder that is a real intervention,
+   * since those positions were earned by challenge.
+   */
+  entryPlacement?: EntryPlacement;
 
   /**
    * Who may validate a submitted score. Defaults to `EITHER`.
