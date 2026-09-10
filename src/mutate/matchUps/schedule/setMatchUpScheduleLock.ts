@@ -50,7 +50,7 @@ const LOCKABLE_ATTRIBUTES = new Set<string>(SCHEDULE_LOCK_ATTRIBUTES);
  *    tournament grain.
  *
  * This is a CODES first-class attribute — no legacy timeItem mirror, no
- * LEGACY/DUAL/NATIVE branching.
+ * LEGACY/BRIDGE/NATIVE branching.
  */
 export function setMatchUpScheduleLock(params: SetMatchUpScheduleLockArgs) {
   const stack = 'setMatchUpScheduleLock';

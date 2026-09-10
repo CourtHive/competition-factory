@@ -28,8 +28,8 @@ import {
   SCHEDULED_TIME,
 } from '@Constants/timeItemConstants';
 
-// Schedule-placement timeItem types (LEGACY / DUAL) and their first-class
-// `matchUp.schedule.*` counterparts (NATIVE / DUAL). Kept in lockstep so an
+// Schedule-placement timeItem types (LEGACY / BRIDGE) and their first-class
+// `matchUp.schedule.*` counterparts (NATIVE / BRIDGE). Kept in lockstep so an
 // unschedule clears the same placement regardless of the record's write mode.
 const SCHEDULE_ITEM_TYPES = new Set([
   ALLOCATE_COURTS,
@@ -162,13 +162,13 @@ function clearSchedules({
         continue;
       }
       let modified = false;
-      // LEGACY / DUAL records store schedule data as timeItems — strip them.
+      // LEGACY / BRIDGE records store schedule data as timeItems — strip them.
       matchUp.timeItems = (matchUp.timeItems ?? []).filter((timeItem) => {
         const preserve = timeItem?.itemType && !SCHEDULE_ITEM_TYPES.has(timeItem?.itemType);
         if (!preserve) modified = true;
         return preserve;
       });
-      // NATIVE / DUAL records store schedule data as first-class `matchUp.schedule.*`
+      // NATIVE / BRIDGE records store schedule data as first-class `matchUp.schedule.*`
       // attributes (CODES Phase 2) with no timeItem mirror. Without clearing these the
       // unschedule is a no-op in production NATIVE mode — the divergence that surfaced
       // as SCHEDULE_NOT_CLEARED when a date change tried to force-unschedule matchUps.

@@ -13,7 +13,7 @@ type FirstClassOrTimeItemArgs = {
  * Returns the first-class schedule attribute when defined, otherwise falls
  * back to the latest timeItem with the matching `itemType`. Used everywhere
  * a former schedule-timeItem is read so that records written in any mode
- * (NATIVE, DUAL, LEGACY) read identically.
+ * (NATIVE, BRIDGE, LEGACY) read identically.
  *
  * Mirrors {@link firstClassOrExtension} for the timeItems plumbing.
  */

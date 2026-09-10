@@ -191,7 +191,7 @@ function resetMatchUpScore({ matchUp, isLuckyDraw, removeAssignments, roundNumbe
   }
 }
 
-// first-class schedule attributes (NATIVE / DUAL) matching the schedule timeItem types below —
+// first-class schedule attributes (NATIVE / BRIDGE) matching the schedule timeItem types below —
 // no timeItem mirror, so resetting the draw must clear these directly or the placement persists.
 const SCHEDULE_FIRST_CLASS_ATTRS = [
   'allocatedCourts',

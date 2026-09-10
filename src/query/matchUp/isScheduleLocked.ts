@@ -47,7 +47,7 @@ const REQUEST_KEY_TO_ATTRIBUTE: Record<string, ScheduleLockAttribute> = {
   venueId: 'venueId',
 };
 
-// LEGACY / DUAL records keep placement in `timeItems[]` rather than first-class
+// LEGACY / BRIDGE records keep placement in `timeItems[]` rather than first-class
 // `schedule.*`. The predicate reads BOTH surfaces so a lock behaves identically
 // in every schemaWriteMode — a first-class-only read would make locks silently
 // inert in LEGACY, which is the exact divergence that made unscheduling a no-op

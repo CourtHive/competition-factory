@@ -204,7 +204,7 @@ function buildFullSchedule({
   }
 
   // CODES: prefer first-class `matchUp.schedule.*` attributes; fall back to
-  // the legacy timeItem entry. Records written in NATIVE / DUAL / LEGACY all
+  // the legacy timeItem entry. Records written in NATIVE / BRIDGE / LEGACY all
   // hydrate to the same shape.
   const firstClass = matchUp.schedule ?? {};
   const homeParticipantId = firstClass.homeParticipantId ?? timeItemMap.get(HOME_PARTICIPANT_ID);

@@ -22,7 +22,7 @@ import { setSchemaWriteMode } from '@Global/state/globalState';
 import { findExtension } from '@Acquire/findExtension';
 
 // constants and types
-import { DUAL, LEGACY, NATIVE, SchemaWriteMode } from '@Constants/schemaWriteModeConstants';
+import { BRIDGE, LEGACY, NATIVE, SchemaWriteMode } from '@Constants/schemaWriteModeConstants';
 import {
   COMPETITION_STATE,
   DELEGATED_OUTCOME,
@@ -48,7 +48,7 @@ const promotions: Promotion[] = [
   { name: COMPETITION_STATE, attribute: 'competitionState', value: { roundStates: {} } },
 ];
 
-describe.each([NATIVE, DUAL, LEGACY] as SchemaWriteMode[])('flat scalar routing (mode=%s)', (mode) => {
+describe.each([NATIVE, BRIDGE, LEGACY] as SchemaWriteMode[])('flat scalar routing (mode=%s)', (mode) => {
   it.each(promotions)('$attribute', ({ name, attribute, value }) => {
     setSchemaWriteMode(mode);
     const element: any = {};
@@ -58,7 +58,7 @@ describe.each([NATIVE, DUAL, LEGACY] as SchemaWriteMode[])('flat scalar routing 
     if (mode === NATIVE) {
       expect(element[attribute]).toEqual(value);
       expect(ext).toBeUndefined();
-    } else if (mode === DUAL) {
+    } else if (mode === BRIDGE) {
       expect(element[attribute]).toEqual(value);
       expect(ext?.value).toEqual(value);
     } else {
@@ -70,7 +70,7 @@ describe.each([NATIVE, DUAL, LEGACY] as SchemaWriteMode[])('flat scalar routing 
 
 describe('Read symmetry', () => {
   it.each(promotions)('mode-agnostic read for $attribute', ({ name, attribute, value }) => {
-    for (const mode of [NATIVE, DUAL, LEGACY] as SchemaWriteMode[]) {
+    for (const mode of [NATIVE, BRIDGE, LEGACY] as SchemaWriteMode[]) {
       setSchemaWriteMode(mode);
       const element: any = {};
       setFirstClassOrExtension({ element, attribute, name, value });
@@ -81,7 +81,7 @@ describe('Read symmetry', () => {
 
 describe('Undefined-value removal', () => {
   it.each(promotions)('clears both surfaces for $attribute', ({ name, attribute, value }) => {
-    setSchemaWriteMode(DUAL);
+    setSchemaWriteMode(BRIDGE);
     const element: any = {};
     setFirstClassOrExtension({ element, attribute, name, value });
     expect(element[attribute]).toEqual(value);

@@ -66,7 +66,7 @@ function validateParams(params?: SetFirstClassOrTimeItemArgs): { error?: ErrorTy
  * - NATIVE: write `element[scheduleObject][attribute] = value`; strip any
  *   stale timeItem with the matching `itemType` so reads stay consistent.
  *   When `value` is `undefined`, also remove the first-class field.
- * - DUAL: write the first-class attribute AND keep the legacy timeItem
+ * - BRIDGE: write the first-class attribute AND keep the legacy timeItem
  *   append (back-compat for consumers reading `timeItems[]` directly).
  * - LEGACY: only call `addTimeItem` — preserves pre-CODES behavior.
  *
@@ -98,7 +98,7 @@ export function setFirstClassOrTimeItem(params?: SetFirstClassOrTimeItemArgs): {
 
   if (!writeLegacyEnabled()) return { ...SUCCESS };
 
-  // LEGACY (or DUAL legacy branch): always delegate to addTimeItem so that
+  // LEGACY (or BRIDGE legacy branch): always delegate to addTimeItem so that
   // its `removePriorValues` / `duplicateValues` semantics — including the
   // undefined-value-push behavior — match pre-CODES exactly.
   const result = appendLegacyTimeItem({

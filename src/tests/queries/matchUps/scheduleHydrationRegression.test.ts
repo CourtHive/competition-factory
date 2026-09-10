@@ -17,7 +17,7 @@ import mocksEngine from '@Assemblies/engines/mock';
 import tournamentEngine from '@Engines/syncEngine';
 import { describe, expect, it } from 'vitest';
 
-import { NATIVE, DUAL, LEGACY, SchemaWriteMode } from '@Constants/schemaWriteModeConstants';
+import { NATIVE, BRIDGE, LEGACY, SchemaWriteMode } from '@Constants/schemaWriteModeConstants';
 
 function scheduleOneMatchUp(opts: { startDate: string }) {
   const venueProfiles = [
@@ -220,7 +220,7 @@ describe('competitionScheduleMatchUps — public API shape', () => {
  * Under LEGACY mode the source `matchUp.schedule` is undefined, so the
  * hydrated schedule from the second spread survived — which is what the
  * default vitest setup pins, and what the rest of this test file
- * exercises. Under NATIVE (production default) and DUAL the source
+ * exercises. Under NATIVE (production default) and BRIDGE the source
  * `matchUp.schedule` is non-empty, so the third spread fully replaced
  * the hydrated `schedule` — losing every derived field (`venueName`,
  * `courtName`, `venueAbbreviation`, `isoDateString`, `milliseconds`,
@@ -233,7 +233,7 @@ describe('competitionScheduleMatchUps — public API shape', () => {
  * behaviour under all three schema-write modes so the bug can't recur on
  * a future shape promotion.
  */
-describe.each([NATIVE, DUAL, LEGACY] as SchemaWriteMode[])(
+describe.each([NATIVE, BRIDGE, LEGACY] as SchemaWriteMode[])(
   'schedule hydration survives matchUp.schedule first-class clobber (mode=%s)',
   (mode) => {
     it('keeps venueName + courtName on dateMatchUps[].schedule', () => {

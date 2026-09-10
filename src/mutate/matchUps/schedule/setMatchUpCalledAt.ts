@@ -107,7 +107,7 @@ function calledBeforeTournamentStart({
  *  - Distinct from `scheduledTime` (plan), `courtId` (place), and the
  *    `START_TIME` timeItem (actually started). May coexist with all of them.
  *  - This is a CODES 5.0.0 NEW first-class attribute — no legacy timeItem
- *    mirror, no LEGACY/DUAL/NATIVE branching. The attribute is always
+ *    mirror, no LEGACY/BRIDGE/NATIVE branching. The attribute is always
  *    written to `matchUp.schedule.calledAt`.
  *  - A call to court cannot predate the tournament's first day. See
  *    `calledBeforeTournamentStart`.

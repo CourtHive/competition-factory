@@ -46,7 +46,7 @@ function stripExtensionByName(element: any, name: string) {
  * Mode semantics match {@link setFirstClassOrExtension}:
  * - NATIVE: write the nested attribute; strip stale legacy extension; if
  *   the group becomes empty, the group object is removed entirely.
- * - DUAL: write both.
+ * - BRIDGE: write both.
  * - LEGACY: write only the extension.
  *
  * Read with `firstClassOrGroupLeafOrExtension` (or a per-site equivalent).
