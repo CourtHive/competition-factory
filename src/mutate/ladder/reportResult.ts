@@ -97,9 +97,9 @@ export function confirmResult(
   // Ask the attestation gate rather than assuming this confirmation was sufficient: the policy may
   // demand an operator, and self-confirmation is never enough.
   const attestation = getResultAttestation({ matchUp, policy: getLadderPolicy({ ...params, structure }) });
-  if (attestation.validated) matchUp.matchUpStatus = COMPLETED;
+  if (attestation.attested) matchUp.matchUpStatus = COMPLETED;
 
-  return { ...SUCCESS, ...(attestation.validated ? {} : { info: attestation.reason }) };
+  return { ...SUCCESS, ...(attestation.attested ? {} : { info: attestation.reason }) };
 }
 
 /**

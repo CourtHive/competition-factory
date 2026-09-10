@@ -72,7 +72,7 @@ function resolveTrigger(params: MovementArgs): any {
   // the score is unconfirmed, self-confirmed, disputed, or short of the policy's requirement.
   const policy = getLadderPolicy(params);
   const attestation = getResultAttestation({ matchUp, policy });
-  if (!attestation.validated) return { error: RESULT_NOT_VALIDATED, info: attestation.reason };
+  if (!attestation.attested) return { error: RESULT_NOT_VALIDATED, info: attestation.reason };
 
   // Attested but not COMPLETED means the record disagrees with itself — refuse rather than proceed.
   if (matchUp.matchUpStatus !== COMPLETED) {

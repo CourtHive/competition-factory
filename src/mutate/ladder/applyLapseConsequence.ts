@@ -72,7 +72,7 @@ export function applyLapseConsequence(
   }
 
   if (lapses.consequence === DROP) {
-    const result = dropPositions({ ...params, positions: lapses.dropPositions ?? 1 });
+    const result = dropPositions({ ...params, dropBy: lapses.dropPositions ?? 1 });
     return result.error ? result : shared;
   }
 
@@ -87,7 +87,7 @@ export function applyLapseConsequence(
  * because a policy of "drop 5" on a 3-person ladder is clumsy configuration, not a failure state.
  */
 function dropPositions(params: any): ResultType {
-  const { participantId, structure, positions } = params;
+  const { participantId, structure, dropBy } = params;
   if (getLadderOrdering(params) !== RANK) return { ...SUCCESS }; // a RATING standing is derived
 
   const assignments = structure?.positionAssignments ?? [];
@@ -96,7 +96,7 @@ function dropPositions(params: any): ResultType {
 
   const from = target.drawPosition;
   const lowest = Math.max(...assignments.map((a: any) => a.drawPosition));
-  const to = Math.min(from + positions, lowest);
+  const to = Math.min(from + dropBy, lowest);
   if (to === from) return { ...SUCCESS };
 
   const touched: any[] = [];

@@ -12,10 +12,10 @@ type AttestationArgs = { matchUp: any; policy: LadderPolicy };
 
 export type Attestation = {
   /** True only when the policy's validation requirement is satisfied. */
-  validated: boolean;
+  attested: boolean;
   submittedBy?: string;
   confirmedBy?: string;
-  /** Set when someone has contested the submitted score — neither validated nor rejected. */
+  /** Set when someone has contested the submitted score — neither attested nor rejected. */
   disputed: boolean;
   reason?: string;
 };
@@ -50,23 +50,23 @@ export function getResultAttestation({ matchUp, policy }: AttestationArgs): Atte
   // dispute standing alone leaves the result unvalidated, which is the point of tracking it.
   const disputeStands = !!disputed && (!confirmed || String(disputed.itemDate) > String(confirmed.itemDate));
   if (disputeStands) {
-    return { validated: false, disputed: true, submittedBy, reason: 'result is disputed' };
+    return { attested: false, disputed: true, submittedBy, reason: 'result is disputed' };
   }
 
-  if (!submitted) return { validated: false, disputed: false, reason: 'no score has been submitted' };
-  if (!confirmed) return { validated: false, disputed: false, submittedBy, reason: 'submitted score is unconfirmed' };
+  if (!submitted) return { attested: false, disputed: false, reason: 'no score has been submitted' };
+  if (!confirmed) return { attested: false, disputed: false, submittedBy, reason: 'submitted score is unconfirmed' };
 
   const requirement = policy.resultValidation ?? EITHER;
   // A submitter cannot confirm their own score under any policy — that is the whole exposure.
   if (confirmedBy && submittedBy && confirmedBy === submittedBy && !confirmedByOperator) {
-    return { validated: false, disputed: false, submittedBy, reason: 'a participant cannot confirm their own score' };
+    return { attested: false, disputed: false, submittedBy, reason: 'a participant cannot confirm their own score' };
   }
   if (requirement === OPERATOR && !confirmedByOperator) {
-    return { validated: false, disputed: false, submittedBy, confirmedBy, reason: 'operator validation is required' };
+    return { attested: false, disputed: false, submittedBy, confirmedBy, reason: 'operator validation is required' };
   }
   if (requirement === PEER && confirmedByOperator && !confirmedBy) {
-    return { validated: false, disputed: false, submittedBy, reason: 'peer confirmation is required' };
+    return { attested: false, disputed: false, submittedBy, reason: 'peer confirmation is required' };
   }
 
-  return { validated: true, disputed: false, submittedBy, confirmedBy };
+  return { attested: true, disputed: false, submittedBy, confirmedBy };
 }

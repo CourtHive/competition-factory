@@ -209,7 +209,7 @@ describe('the attestation GATE — a provisional score must not move a standing'
   });
 
   test('a DISPUTE blocks the move even after a confirmation', () => {
-    // Neither validated nor rejected — D9. What matters here is that it does not move the ladder.
+    // Neither attested nor rejected — D9. What matters here is that it does not move the ladder.
     const { drawDefinition, structure } = ladder();
     const matchUp = playedMatchUp({ structure, challenger: 'p4', defender: 'p2' });
     matchUp.timeItems.push({
