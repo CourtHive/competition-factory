@@ -7,6 +7,7 @@ import { ASSIGN_PARTICIPANT } from '@Constants/positionActionConstants';
 import { SINGLES_MATCHUP } from '@Constants/matchUpTypes';
 import { LINEUPS } from '@Constants/extensionConstants';
 import {
+  CLEAR_SCORE,
   END,
   PENALTY,
   REFEREE,
@@ -129,5 +130,5 @@ it('can substitute an individual participant in a TEAM tieMatchUp', () => {
     drawId,
   });
   validActions = result.validActions.map(({ type }) => type);
-  expect(validActions).toEqual([REFEREE, SCHEDULE, PENALTY, STATUS, SCORE, START, END, SUBSTITUTION]);
+  expect(validActions).toEqual([REFEREE, SCHEDULE, PENALTY, STATUS, SCORE, START, END, CLEAR_SCORE, SUBSTITUTION]);
 });

@@ -19,7 +19,7 @@ import {
   OLYMPIC,
 } from '@Constants/drawDefinitionConstants';
 import { DOUBLE_WALKOVER, DOUBLE_DEFAULT, TO_BE_PLAYED, WALKOVER } from '@Constants/matchUpStatusConstants';
-import { SCORE } from '@Constants/matchUpActionConstants';
+import { CLEAR_SCORE } from '@Constants/matchUpActionConstants';
 
 /**
  * Agreement oracles: two derivations of the same question must not disagree.
@@ -30,11 +30,18 @@ import { SCORE } from '@Constants/matchUpActionConstants';
  * for "this exit is pending" while `isActiveMatchUp` answered the same question with a plain
  * winner-assigned check, and nothing asserted that the two agreed.
  *
- * ACTION_MUTATION_AGREEMENT is the one that pays off today. `matchUpActions` decides whether to
- * offer SCORE from `isActiveDownstream` alone (matchUpActions.ts:272,284), while
- * `setMatchUpState` gates the same mutation on `hasPropagatedExitDownstream` AS WELL
- * (setMatchUpState.ts:189-195). Whatever the UI offers, the engine must accept — otherwise a
- * scorer is shown a control that fails when used.
+ * ACTION_MUTATION_AGREEMENT is the one that pays off today. Whatever the UI offers, the engine
+ * must accept — otherwise a scorer is shown a control that fails when used.
+ *
+ * This oracle originally probed SCORE, on the theory that offering SCORE implied the clear would
+ * be accepted. Measurement refuted the premise rather than the property: SCORING a decided matchUp
+ * SUCCEEDS everywhere (0 refusals across 96 cells) and only the CLEAR is refused. SCORE was never
+ * the removability signal, so asserting on it was asserting the wrong pairing.
+ *
+ * CLEAR_SCORE is that signal — emitted by `matchUpActions` only when the clear will succeed,
+ * gated on the same `hasPropagatedExitDownstream` that `setMatchUpState` applies on its
+ * isClearScore branch. The property is unchanged and now points at the action that carries it:
+ * if CLEAR_SCORE is offered, clearing must not be refused downstream.
  */
 
 const DRAW_TYPES = [
@@ -115,8 +122,8 @@ test.for(MATRIX)('agreement: $drawType $drawSize/$participantsCount $exitStatus'
     tournamentEngine.setState(baseline);
 
     const { validActions }: any = tournamentEngine.matchUpActions({ matchUpId: candidate.matchUpId, drawId });
-    const offersScore = (validActions ?? []).some((action: any) => action.type === SCORE);
-    if (!offersScore) continue;
+    const offersClear = (validActions ?? []).some((action: any) => action.type === CLEAR_SCORE);
+    if (!offersClear) continue;
 
     const result: any = tournamentEngine.setMatchUpStatus({
       matchUpId: candidate.matchUpId,
@@ -127,7 +134,7 @@ test.for(MATRIX)('agreement: $drawType $drawSize/$participantsCount $exitStatus'
       failures.push({
         property: 'ACTION_MUTATION_AGREEMENT',
         matchUpId: candidate.matchUpId,
-        detail: `matchUpActions offered SCORE on a decided matchUp but clearing it was refused with ${result.error.code}`,
+        detail: `matchUpActions offered CLEAR_SCORE but clearing was refused with ${result.error.code}`,
       });
     }
   }
