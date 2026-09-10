@@ -2,8 +2,14 @@
 title: Migration 6.x to 7.0.0
 ---
 
+Version 7.0.0 of the Competition Factory is a **major** release driven by breaking changes in three
+areas — exit propagation, time-zone conversion, and one constant rename. The headline _feature_, the
+[LADDER draw type](./whats-new-7.0.0#the-headline-feature--the-ladder-draw-type), is purely additive
+and requires no migration.
+
 This document is for **consumers** of the factory (TMX, courthive-components, the server, downstream
-tools). It catalogues the breaking changes in 7.0.0 and the exact steps to adopt them.
+tools). It catalogues the breaking changes in 7.0.0 and the exact steps to adopt them. For the
+feature tour and the full list of 7.0.0 additions, see [What's New in 7.0.0](./whats-new-7.0.0).
 
 ## Breaking changes at a glance
 
@@ -137,6 +143,12 @@ to infer it.
 
 `plainDate`, `plainTime` and `zonedDateTime` are new published exports, completing the calendar
 intent set. `zonedTime` was never published, so its rename is not a breaking change.
+
+The `LADDER` drawType is generatable and its lifecycle is on the engine as eighteen new methods —
+`issueChallenge`, `acceptChallenge`, `declineChallenge`, `submitResult`, `confirmResult`,
+`disputeResult`, `applyLadderMovement`, `addLadderParticipant`, `removeLadderParticipant`,
+`refreshLadderRatings`, and eight `get*` queries. All are additive; see
+[What's New in 7.0.0](./whats-new-7.0.0#driving-a-ladder).
 
 `PositionAssignment.byeFromPropagation` is a new optional boolean recording that a BYE was placed by
 an exit cascade rather than by draw generation or by hand. It is visible in stored tournament
