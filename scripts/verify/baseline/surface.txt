@@ -633,6 +633,7 @@ WizardFlight
 WizardGovernance
 WizardParticipant
 abandonTournamentMatchUps
+acceptChallenge
 actionMethodConstants
 activeMatchUpStatuses
 adHocPositionSwap
@@ -663,6 +664,7 @@ addFinishingRounds
 addFlight
 addGoesTo
 addIndividualParticipantIds
+addLadderParticipant
 addLinkedConsolationStructure
 addMatchUpCourtOrder
 addMatchUpEndTime
@@ -719,6 +721,7 @@ analyzeTournament
 anonymizeTournamentRecord
 applyAvailabilityToTournamentRecord
 applyDerivedRankings
+applyLadderMovement
 applyLineUps
 applyProgressionEdges
 applyScheduleScenario
@@ -753,7 +756,6 @@ bandFromBoundaries
 blockDurationEvaluator
 bookingTypeConstants
 buildDayRange
-buildDrawHierarchy
 buildEdges
 buildFromSources
 buildReportContext
@@ -803,6 +805,7 @@ completeDrawMatchUps
 completedMatchUpStatuses
 computePlanItemId
 computeRatingDistributionStats
+confirmResult
 constantToString
 constructFactoryError
 copyTournamentRecord
@@ -825,6 +828,7 @@ cycleMutationStatus
 dateTime
 dayBoundaryEvaluator
 dayStateConstants
+declineChallenge
 deduceMatchUpFormat
 deepCopyEnabled
 default
@@ -854,6 +858,7 @@ disableTieAutoCalc
 disableVenues
 disciplineConstants
 displayConstants
+disputeResult
 drawDefinitionConstants
 drawMatchUps
 drawMatic
@@ -955,6 +960,7 @@ getAvailableReports
 getAwardPoints
 getAwardProfile
 getCategoryAgeDetails
+getChallengeState
 getCheckedInParticipantIds
 getCompetitionDateRange
 getCompetitionFormat
@@ -1003,6 +1009,11 @@ getEvents
 getFlightProfile
 getHighestSeverity
 getHomeParticipantId
+getLadderMovement
+getLadderOrdering
+getLadderPolicy
+getLadderStanding
+getLapses
 getLinkedTournamentIds
 getLuckyDrawRoundStatus
 getMatchUpCompetitiveProfile
@@ -1059,6 +1070,7 @@ getQualityWinPoints
 getQuickStats
 getRandomQualifierList
 getRegistrationProfile
+getResultAttestation
 getRoundMatchUps
 getRoundVisibilityState
 getRounds
@@ -1141,6 +1153,7 @@ intersection
 intervalsOverlap
 isAdHoc
 isAggregateFormat
+isChallengeInRange
 isComplete
 isCompletedStructure
 isConvertableInteger
@@ -1157,9 +1170,11 @@ isValidEmbargoDate
 isValidForQualifying
 isValidMatchUpFormat
 isVisiblyPublished
+issueChallenge
 iterateDayTicks
 keyValueConstants
 keyValueScore
+ladderGovernor
 lightingEvaluator
 linkTournaments
 luckyDrawAdvancement
@@ -1246,6 +1261,8 @@ participantTypes
 participantsRequiredMatchUpStatuses
 pbpValidator
 penaltyConstants
+plainDate
+plainTime
 pointParser
 pointsAuthorityConstants
 policyComposer
@@ -1289,6 +1306,7 @@ readModel
 rebaseScheduleScenario
 recoveryTimeRequiredMatchUpStatuses
 refreshEventDrawOrder
+refreshLadderRatings
 regenerateParticipantNames
 registerSuggestions
 remapDrawDefinitionMatchUpIds
@@ -1307,6 +1325,7 @@ removeEventExtension
 removeEventMatchUpFormatTiming
 removeExtension
 removeIndividualParticipantIds
+removeLadderParticipant
 removeMatchUpCourtAssignment
 removeMatchUpOutcome
 removeMatchUpScorekeeper
@@ -1449,6 +1468,7 @@ stringifyMatchUpFormat
 structureRow
 structureSort
 subSort
+submitResult
 substituteParticipant
 suggestFormatPlans
 surfaceConstants
@@ -1533,3 +1553,4 @@ weekdayConstants
 withdrawParticipantAtDrawPosition
 writeLegacyEnabled
 writeNativeEnabled
+zonedDateTime

@@ -6,7 +6,6 @@ import { getAllStructureMatchUps } from '@Query/matchUps/getAllStructureMatchUps
 import { getNumericSeedValue } from '@Query/drawDefinition/getNumericSeedValue';
 import { chunkArray, generateRange } from '@Tools/arrays';
 import { findStructure } from '@Acquire/findStructure';
-import { verifyDrawHierarchy } from './verifyDrawHierarchy';
 import { expect } from 'vitest';
 
 import { STRUCTURE_NOT_FOUND } from '@Constants/errorConditionConstants';
@@ -19,7 +18,6 @@ export function verifyStructure(params) {
     expectedSeedValuesWithBye,
     expectedByeAssignments,
     expectedSeedsWithByes,
-    hierarchyVerification,
     drawDefinition,
     expectedSeeds,
     structureId,
@@ -65,7 +63,6 @@ export function verifyStructure(params) {
     inContext: true,
     structure,
   });
-  if (hierarchyVerification) verifyDrawHierarchy({ matchUps, hierarchyVerification });
   if (expectedRoundMatchUpsCounts) {
     expectedRoundMatchUpsCounts.forEach((expectation, index) => {
       const roundNumber = index + 1;

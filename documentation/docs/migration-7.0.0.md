@@ -22,6 +22,7 @@ feature tour and the full list of 7.0.0 additions, see [What's New in 7.0.0](./w
 | `getTimeZoneOffsetMinutes` now returns `number \| undefined`                             | Anyone reading a zone offset                                      | See §4            |
 | `checkMatchUpIsComplete` / `getParticipantResults` refuse an absent object param          | Callers passing `matchUpId` / `drawId` and reading the result     | See §5            |
 | `getParticipantResults` refuses any matchUp carrying no `sides`                            | Callers passing STORED (non-hydrated) matchUps                    | See §5            |
+| `buildDrawHierarchy` is removed                                                            | Anyone calling it (no consumer was found in any CourtHive repo)   | See §6            |
 
 ## 1. `participantsRequiredMatchUpStatuses` — a spelling fix
 
@@ -238,7 +239,32 @@ And because the refusal is an **object**, it is **truthy**. Do not call `checkMa
 inside a `.filter()` or `.every()` over an array that can hold a falsy entry without guarding the
 entry first — a refusal would read as "complete". Every caller inside the factory guards.
 
-## 6. Non-breaking additions worth knowing
+## 6. `buildDrawHierarchy` is removed
+
+`buildDrawHierarchy` turned a flat `matchUps` array into a nested parent/children tree, and its
+companion `collapseHierarchy` toggled `children` / `_children` on a node — the shape early **D3**
+expected for a collapsible tree layout. It is how TMX rendered draw structures years ago.
+
+It is removed rather than deprecated because **nothing consumed it**. Measured across
+`scoringVisualizations`, `epixodic`, TMX, `courthive-public`, `courthive-components`,
+`CourtHive.com` and `courthive-arena` — 1,809 source files, of which 310 reference the factory — the
+sweep returned zero matches. The factory's own documentation never mentioned it, and inside the
+factory the only references were type plumbing and the governor export: there was no internal caller.
+
+`collapseHierarchy` went with it. It was exported from the same module but never published through a
+governor, so it was never part of the engine surface.
+
+### What to do about the removal
+
+**If you were calling it, you have a renderer we could not find, and we would like to know.** The
+implementation and its full test suite are preserved verbatim at
+`Mentat/deprecated/factory/buildDrawHierarchy/`, so restoring it is a copy rather than an
+archaeology exercise.
+
+Before restoring, consider whether you want _that_ shape. It is a 2018-era D3 contract; a renderer
+written today is more likely to want `getRoundMatchUps` or the draw's own structure/link graph.
+
+## 7. Non-breaking additions worth knowing
 
 `plainDate`, `plainTime` and `zonedDateTime` are new published exports, completing the calendar
 intent set. `zonedTime` was never published, so its rename is not a breaking change.
