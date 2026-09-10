@@ -1,13 +1,12 @@
-import { setParticipantScaleItem } from '@Mutate/participants/scaleItems/addScaleItems';
 import { getLadderMovement, getLadderOrdering, getLadderPolicy } from '@Query/ladder/getLadderPolicy';
 import { isLadder } from '@Query/drawDefinition/isLadder';
 
+import { mirrorStandingToScale } from '@Mutate/ladder/mirrorStandingToScale';
 import { getResultAttestation } from '@Query/ladder/getResultAttestation';
 
 import { FORFEIT, INSERTION, RANK, movementTriggers } from '@Constants/ladderConstants';
 import type { MovementTrigger } from '@Constants/ladderConstants';
 import { COMPLETED } from '@Constants/matchUpStatusConstants';
-import { RANKING } from '@Constants/scaleConstants';
 import { SUCCESS } from '@Constants/resultConstants';
 import { ResultType } from '@Types/factoryTypes';
 import {
@@ -152,30 +151,6 @@ export function applyLadderMovement(params: MovementArgs): ResultType & { moved?
     touched.push(challenger, defender);
   }
 
-  mirrorToScale({ ...params, touched });
+  mirrorStandingToScale({ ...params, touched });
   return { ...SUCCESS, moved: true };
-}
-
-/**
- * Writes each changed rank as a dated `ScaleItem`, which is what makes a ladder's history queryable
- * without inventing a second store: "where was I in March" becomes an ordinary scale lookup.
- *
- * Deliberately a side-effect of the position mutation rather than a separate call, so the snapshot
- * and the series cannot drift apart.
- */
-function mirrorToScale({ tournamentRecord, drawDefinition, appliedAt, touched }: any): void {
-  if (!tournamentRecord) return; // positions still move; only the history needs a record to live in
-  for (const assignment of touched) {
-    if (!assignment.participantId) continue;
-    setParticipantScaleItem({
-      scaleItem: {
-        scaleType: RANKING,
-        scaleName: drawDefinition.drawId,
-        scaleValue: assignment.drawPosition,
-        scaleDate: appliedAt,
-      },
-      participantId: assignment.participantId,
-      tournamentRecord,
-    });
-  }
 }

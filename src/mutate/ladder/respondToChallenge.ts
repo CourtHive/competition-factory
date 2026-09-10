@@ -1,3 +1,4 @@
+import { applyLapseConsequence } from '@Mutate/ladder/applyLapseConsequence';
 import { getChallengeState } from '@Query/ladder/getChallengeState';
 import { getLadderPolicy } from '@Query/ladder/getLadderPolicy';
 import { addTimeItem } from '@Mutate/timeItems/addTimeItem';
@@ -64,12 +65,16 @@ export function acceptChallenge(params: RespondArgs): ResultType {
 /**
  * The defender declines.
  *
- * What that COSTS is a policy question, not a factory one — `declineForfeitsPosition` decides
- * whether the position moves. This records the decline and reports the consequence; applying the
- * position change belongs with the rest of the movement machinery (step 5), so that every path
- * that moves a standing goes through one place.
+ * The decline is RECORDED FIRST and the lapse evaluated after, so that this decline is among the
+ * ones counted. That ordering is the whole reason a threshold policy works: evaluating before
+ * recording would always be one behind, and a defender would get one free decline forever.
+ *
+ * This is the moment D8 names — a challenge resolving — so it is where a lapse consequence is
+ * applied. Nothing sweeps in the background looking for offenders.
  */
-export function declineChallenge(params: RespondArgs): ResultType & { forfeitsPosition?: boolean } {
+export function declineChallenge(
+  params: RespondArgs,
+): ResultType & { applied?: boolean; consequence?: string; lapseCount?: number } {
   const resolved: any = resolve(params);
   if (resolved.error) return resolved;
   const { matchUp, structure } = resolved;
@@ -87,5 +92,21 @@ export function declineChallenge(params: RespondArgs): ResultType & { forfeitsPo
     element: matchUp,
   });
 
-  return { ...SUCCESS, forfeitsPosition: !!policy.declineForfeitsPosition };
+  // The challenger of THIS challenge is who a forfeited position goes to — only the challenge in
+  // front of us knows that, which is why the consequence is applied here rather than anywhere else.
+  const consequence = applyLapseConsequence({
+    challengerParticipantId: matchUp.sides?.[0]?.participantId,
+    participantId: matchUp.sides?.[1]?.participantId,
+    appliedAt: params.respondedAt,
+    ...params,
+    structure,
+  });
+  if (consequence.error) return consequence;
+
+  return {
+    ...SUCCESS,
+    applied: !!consequence.applied,
+    ...(consequence.consequence ? { consequence: consequence.consequence } : {}),
+    lapseCount: consequence.count,
+  };
 }

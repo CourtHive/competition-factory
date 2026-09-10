@@ -115,15 +115,15 @@ describe('responding', () => {
     expect(drawDefinition.structures[0].matchUps[0].matchUpStatus).toEqual(CHALLENGED);
   });
 
-  test('declining reports the policy consequence rather than applying it', () => {
-    // Position movement belongs with the rest of the movement machinery, so every path that moves a
-    // standing goes through one place.
+  test('declining records the decline and evaluates the lapse', () => {
+    // Under the shipped default there is no consequence at all, so nothing is applied — a club may
+    // count without punishing.
     const drawDefinition = ladder();
     const { matchUpId } = issue(drawDefinition, 'p4', 'p1');
     const result: any = declineChallenge({ drawDefinition, matchUpId, respondedAt: '2026-03-02T10:00:00.000Z' });
 
     expect(result.error).toBeUndefined();
-    expect(result.forfeitsPosition).toEqual(false); // the shipped default
+    expect(result.applied).toEqual(false);
     const matchUp = drawDefinition.structures[0].matchUps[0];
     expect(getChallengeState({ matchUp, policy, asOf: '2026-03-02T10:00:00.000Z' }).state).toEqual(DECLINED);
   });
