@@ -90,6 +90,7 @@ module.exports = {
                 'concepts/draw-types/lucky-draw',
                 'concepts/draw-types/adaptive',
                 'concepts/draw-types/swiss',
+                'concepts/draw-types/ladder',
               ],
             },
             'concepts/draw-links',

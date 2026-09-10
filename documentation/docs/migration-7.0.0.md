@@ -142,3 +142,36 @@ intent set. `zonedTime` was never published, so its rename is not a breaking cha
 an exit cascade rather than by draw generation or by hand. It is visible in stored tournament
 records and in anything that round-trips `positionAssignments`. See
 [Exit Propagation](/docs/concepts/exit-propagation#bye-provenance-byefrompropagation).
+
+The remaining additions require no migration. They are listed because a sufficiently exhaustive
+TypeScript consumer will notice them.
+
+### `MatchUpStatusEnum` gains `CHALLENGED`
+
+A challenge issued on a `LADDER` draw and not yet answered. If you `switch` over `MatchUpStatusEnum`
+with no `default` and rely on exhaustiveness checking, that switch is now non-exhaustive and will
+fail to compile until the case is added.
+
+`CHALLENGED` is **scoped**: it is valid only in a `LADDER` drawType, and `setMatchUpStatus` returns
+`ERR_MATCHUP_STATUS_OUT_OF_SCOPE` if it is used anywhere else. It is the first status whose context
+is enforced rather than conventional — `DEAD_RUBBER`, meaningful only inside a team tie, is still
+scoped by convention alone.
+
+It appears in `validMatchUpStatuses`, `participantsRequiredMatchUpStatuses`,
+`nonDirectingMatchUpStatuses` and **`upcomingMatchUpStatuses`**. That last one widens the meaning of
+"upcoming" from _will happen_ to _is expected to happen_, since a challenge may be declined or
+expire — deliberate, because a challenge missing from every upcoming-match view is invisible to the
+people who must act on it.
+
+### `LADDER` joins the draw types
+
+See [Ladder](./concepts/draw-types/ladder). `isAdHocType('LADDER')` is `true` — a ladder shares the
+`AD_HOC` structure shape — so any code branching on `isAdHocType` will now include ladders. Use
+`isLadder` where the difference matters: an `AD_HOC` draw's `positionAssignments` are a roster, a
+ladder's are an ordered standing.
+
+### `DisciplineEnum` gains `SQUASH` and `BADMINTON`
+
+Same exhaustiveness note as above. The `matchUpFormat` grammar already parsed and round-tripped both
+sports' scoring; they were simply missing from the curated vocabulary that drives autocomplete and
+typo defense.
