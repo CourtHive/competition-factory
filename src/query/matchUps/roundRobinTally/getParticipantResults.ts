@@ -8,6 +8,7 @@ import { isExit } from '@Validators/isExit';
 
 // constants and types
 import { completedMatchUpStatuses, DEFAULTED, RETIRED, WALKOVER } from '@Constants/matchUpStatusConstants';
+import { MISSING_MATCHUPS } from '@Constants/errorConditionConstants';
 import { DOUBLES, SINGLES } from '@Constants/matchUpTypes';
 import { HydratedMatchUp } from '@Types/hydrated';
 
@@ -30,6 +31,15 @@ export function getParticipantResults({
   perPlayer,
   matchUps,
 }: GetParticipantResultsArgs) {
+  // TAKES AN ARRAY OF IN-CONTEXT MATCHUPS, not a drawId. `paramsMiddleware` resolves `drawId` into a
+  // `drawDefinition` and stops; it does not gather matchUps. An engine caller writing
+  // `getParticipantResults({ drawId })` therefore supplied no matchUps at all, and this answered
+  // `{ participantResults: {} }` — an empty tally for a fully-played draw, with no error to notice.
+  //
+  // Results are attributed through `sides[].participantId`, which only an IN-CONTEXT matchUp
+  // carries; a stored matchUp has `drawPositions` and would tally to nothing for the same reason.
+  if (!Array.isArray(matchUps)) return { error: MISSING_MATCHUPS };
+
   const participantResults = {};
 
   const excludeMatchUpStatuses = tallyPolicy?.excludeMatchUpStatuses ?? [];

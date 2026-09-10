@@ -172,7 +172,8 @@ export function getStructureMatchUps({
         (collectionSidesAssigned || (drawPositionsFilled && (!requireParticipants || drawPositionsAssigned)));
 
       if (isByeMatchUp) return byeMatchUps.push(matchUp);
-      if (checkMatchUpIsComplete({ matchUp })) return completedMatchUps.push(matchUp);
+      const completeResult: any = checkMatchUpIsComplete({ matchUp });
+      if (!completeResult?.error && completeResult) return completedMatchUps.push(matchUp);
       if (isUpcomingMatchUp) return upcomingMatchUps.push(matchUp);
       return pendingMatchUps.push(matchUp);
     });

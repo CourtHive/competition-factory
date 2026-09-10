@@ -2,15 +2,15 @@
 title: What's New in 7.0.0
 ---
 
-Version 7.0.0 of the Competition Factory ships **three areas of breaking change** — exit propagation, time-zone conversion, and one constant rename — and one headline feature: the **LADDER draw type**, a continuous challenge-driven competition with an enforced `CHALLENGED` status, an attestation gate on self-reported results, `RANK` or `RATING` ordering, and eighteen new engine methods to drive it.
+Version 7.0.0 of the Competition Factory ships **four areas of breaking change** — exit propagation, time-zone conversion, two queries that now refuse an absent argument, and one constant rename — and one headline feature: the **LADDER draw type**, a continuous challenge-driven competition with an enforced `CHALLENGED` status, an attestation gate on self-reported results, `RANK` or `RATING` ordering, and eighteen new engine methods to drive it.
 
-For upgrade mechanics — the five breaking-change rows and the exact steps to adopt them — see the [6.x to 7.0.0 migration guide](./migration-7.0.0).
+For upgrade mechanics — the six breaking-change rows and the exact steps to adopt them — see the [6.x to 7.0.0 migration guide](./migration-7.0.0).
 
 For the full per-commit changelog see [CHANGELOG.md](https://github.com/CourtHive/competition-factory/blob/master/CHANGELOG.md).
 
 ## The headline changes
 
-Three changes break the surface and need consumer attention. All are covered in detail in the [migration guide](./migration-7.0.0).
+Four changes break the surface and need consumer attention. All are covered in detail in the [migration guide](./migration-7.0.0).
 
 ### 1. Exit propagation is idempotent, atomic, and correct
 
@@ -42,7 +42,23 @@ The difference was failure handling, and each was fail-open on a different axis.
 
 → [migration §4](./migration-7.0.0#4-time-zone-conversions-refuse-rather-than-throw-or-guess), [tools.zonedDateTime](./tools/tools-api#toolszoneddatetime).
 
-### 3. `participantsRequiredMatchUpStatuses` — a spelling fix
+### 3. Two queries refuse an absent object param instead of answering
+
+`checkMatchUpIsComplete` takes a matchUp **object**; `getParticipantResults` takes an **array** of in-context matchUps. Neither takes an id — and `paramsMiddleware` resolves `drawId` into a `drawDefinition` but does not resolve `matchUpId` into a matchUp or gather matchUps. So the engine-idiomatic call supplied nothing, and both answered anyway:
+
+```js
+// before 7.0.0 — both wrong, neither says so
+tournamentEngine.checkMatchUpIsComplete({ matchUpId, drawId }); // false, for a COMPLETED matchUp
+tournamentEngine.getParticipantResults({ drawId }); // {}, for a fully-played draw
+```
+
+Both now return `ERR_MISSING_MATCHUP` / `ERR_MISSING_MATCHUPS`. It was worth breaking because `checkMatchUpIsComplete` returns a **boolean a caller branches on** — no error to notice, no `undefined` to guard, and the wrong answer is the safe-looking one.
+
+An **empty** array is still a valid question with an empty answer; the guard is on the argument being absent, not empty.
+
+→ [migration §5](./migration-7.0.0#5-two-queries-refuse-an-absent-object-param-instead-of-answering).
+
+### 4. `participantsRequiredMatchUpStatuses` — a spelling fix
 
 The exported constant was misspelled `particicipantsRequiredMatchUpStatuses` (an extra `ici`) since it was introduced. Rename the import; the value, the type and the semantics are identical. No deprecated alias is provided, and a survey of the CourtHive ecosystem found no consumer importing the old name.
 
@@ -139,14 +155,15 @@ Dispute _resolution_ is not built: a disputed result is blocked from moving the 
 
 ## Upgrading checklist
 
-1. **Read [the migration guide](./migration-7.0.0)** for the five breaking-change rows.
+1. **Read [the migration guide](./migration-7.0.0)** for the six breaking-change rows.
 2. **Rename `particicipantsRequiredMatchUpStatuses`** to `participantsRequiredMatchUpStatuses` at every import site.
 3. **Handle the error return** from `wallClockToUTC`, `utcToWallClock` and `toEmbargoUTC`, and branch on `undefined` from `getTimeZoneOffsetMinutes`. Remove any `try`/`catch` that was there to catch a throw.
 4. **Delete compensating logic** that re-read or repaired state after a `setMatchUpStatus` error — a rejected call no longer alters the draw. Note the error code for the bare-`{ winningSide }` case moved from `ERR_MISSING_ASSIGNMENTS` to `ERR_INVALID_MATCHUP_STATUS`; match on behaviour rather than on that code.
 5. **Stop relying on re-application as repair.** Re-sending an identical double exit no longer nudges a draw whose advancement is missing. Detect that state with `getDrawInconsistencies` and repair it deliberately.
 6. **Add cases for `CHALLENGED` and for `SQUASH` / `BADMINTON`** if you `switch` exhaustively over `MatchUpStatusEnum` or `DisciplineEnum` with no `default`.
-7. **Check any branch on `isAdHocType`** — it now includes `LADDER`. Use `isLadder` where a roster and a standing must be told apart.
-8. **Adopt the ladder at your own pace** — the draw type and its eighteen engine methods are purely additive; no action is required to keep existing code working.
+7. **Pass objects, not ids, to `checkMatchUpIsComplete` and `getParticipantResults`** — resolve with `findMatchUp` / `allDrawMatchUps` first. Both now refuse an absent argument rather than answering `false` / empty.
+8. **Check any branch on `isAdHocType`** — it now includes `LADDER`. Use `isLadder` where a roster and a standing must be told apart.
+9. **Adopt the ladder at your own pace** — the draw type and its eighteen engine methods are purely additive; no action is required to keep existing code working.
 
 ## Where to go from here
 

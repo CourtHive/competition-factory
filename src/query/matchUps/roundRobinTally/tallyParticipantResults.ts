@@ -54,33 +54,48 @@ export function tallyParticipantResults({
     });
   }
 
+  // `checkMatchUpIsComplete` refuses a non-matchUp with a TRUTHY `{ error }`, and the filter on the
+  // next line proves `matchUps` can hold a falsy entry. This maps a refusal back to `undefined` and
+  // otherwise passes the answer through UNCHANGED — `true`, or the `winningSide` (1 | 2), or
+  // `undefined`. All three matter: callers below rely on truthiness, and the `?? TEAM` fallback
+  // relies on `undefined` specifically.
+  const completeOrUndefined = (matchUp: any) => {
+    if (!matchUp) return undefined;
+    const result: any = checkMatchUpIsComplete({ matchUp });
+    return result?.error ? undefined : result;
+  };
+
   const relevantMatchUps = matchUps.filter((matchUp) => matchUp && matchUp.matchUpStatus !== BYE);
 
   const participantsCount =
     relevantMatchUps.length && unique(relevantMatchUps.flatMap(({ drawPositions }) => drawPositions)).length;
 
   const bracketComplete =
-    relevantMatchUps.filter((matchUp) => checkMatchUpIsComplete({ matchUp })).length === relevantMatchUps.length;
+    relevantMatchUps.filter((matchUp) => completeOrUndefined(matchUp)).length === relevantMatchUps.length;
   // if bracket is incomplete don't use expected matchUps perPlayer for calculating
   if (!bracketComplete) perPlayer = 0;
 
   const completedTieMatchUps = matchUps.every(
     ({ matchUpType, tieMatchUps }) =>
-      matchUpType === TEAM && tieMatchUps?.every((matchUp) => checkMatchUpIsComplete({ matchUp })),
+      matchUpType === TEAM && tieMatchUps?.every((matchUp) => completeOrUndefined(matchUp)),
   );
 
   const tallyPolicy = policyDefinitions?.[POLICY_TYPE_ROUND_ROBIN_TALLY];
 
   const consideredMatchUps = matchUps.filter(
-    (matchUp) => checkMatchUpIsComplete({ matchUp }) ?? matchUp.matchUpType === TEAM,
+    (matchUp) => matchUp && (completeOrUndefined(matchUp) ?? matchUp.matchUpType === TEAM),
   );
-  const { participantResults } = getParticipantResults({
+  const participantResultsOutcome: any = getParticipantResults({
     matchUps: consideredMatchUps,
     pressureRating,
     matchUpFormat,
     tallyPolicy,
     perPlayer,
   });
+  // `consideredMatchUps` is always an array here, so this cannot fire today — it is propagated
+  // rather than asserted so a future caller change surfaces as an error instead of an empty tally.
+  if (participantResultsOutcome.error) return participantResultsOutcome;
+  const { participantResults } = participantResultsOutcome;
 
   let report, order;
 

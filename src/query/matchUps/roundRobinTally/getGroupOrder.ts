@@ -212,13 +212,17 @@ function processAttribute({
   matchUps,
   reversed, // reverses default which is greatest to least
 }) {
-  const { participantResults } = getParticipantResults({
+  const participantResultsOutcome: any = getParticipantResults({
     participantIds: idsFilter && participantIds,
     groupingTotal: groupTotals && attribute,
     matchUpFormat,
     tallyPolicy,
     matchUps,
   });
+  // Untyped params here, so tsc does not force this the way it does in tallyParticipantResults —
+  // propagated explicitly for the same reason: an absent `matchUps` must not read as an empty group.
+  if (participantResultsOutcome.error) return participantResultsOutcome;
+  const { participantResults } = participantResultsOutcome;
 
   const groups = getGroups({
     participantResults,

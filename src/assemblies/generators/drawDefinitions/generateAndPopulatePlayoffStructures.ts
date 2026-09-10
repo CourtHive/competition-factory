@@ -474,8 +474,14 @@ function advanceCompletedMatchUps({
   structure,
   event,
 }) {
+  // The refusal `{ error }` is truthy, so a falsy or id-less entry must be excluded BEFORE the call
+  // rather than relying on its return being falsy. Truthiness of a real answer is unchanged.
+  const isComplete = (matchUp: any) => {
+    const result: any = matchUp && checkMatchUpIsComplete({ matchUp });
+    return result?.error ? false : result;
+  };
   const completedMatchUps = inContextDrawMatchUps?.filter(
-    (matchUp) => checkMatchUpIsComplete({ matchUp }) && matchUp.structureId === sourceStructureId,
+    (matchUp) => isComplete(matchUp) && matchUp.structureId === sourceStructureId,
   );
 
   completedMatchUps?.forEach((matchUp) => {

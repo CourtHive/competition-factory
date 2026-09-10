@@ -8,6 +8,7 @@ import { addFlight } from '@Mutate/events/addFlight';
 // Query
 import { querySanctioningRecord } from '@Query/sanctioning/getSanctioningRecord';
 import { checkMatchUpIsComplete } from '@Query/matchUp/checkMatchUpIsComplete';
+import { MISSING_MATCHUP } from '@Constants/errorConditionConstants';
 import { getScaleValues } from '@Query/participant/getScaleValues';
 
 // Validators
@@ -201,24 +202,36 @@ describe('publicFindCourt', () => {
 // MatchUp Governor
 // ----------------------------------------------------------------
 describe('checkMatchUpIsComplete', () => {
-  it('returns false when matchUp is undefined', () => {
-    expect(checkMatchUpIsComplete({ matchUp: undefined })).toBe(false);
+  const matchUpId = 'm1';
+
+  it('REFUSES when no matchUp is supplied', () => {
+    // Previously `false` — a confident wrong answer to a question that was never asked, and the
+    // shape an engine caller hits when they pass `{ matchUpId, drawId }` expecting resolution.
+    expect(checkMatchUpIsComplete({ matchUp: undefined })).toEqual({ error: MISSING_MATCHUP });
+  });
+
+  it('REFUSES a non-matchUp object rather than answering about it', () => {
+    expect(checkMatchUpIsComplete({ matchUp: {} })).toEqual({ error: MISSING_MATCHUP });
+    expect(checkMatchUpIsComplete({ matchUp: { matchUpStatus: COMPLETED } })).toEqual({ error: MISSING_MATCHUP });
   });
 
   it('returns truthy when matchUp has winningSide', () => {
-    expect(checkMatchUpIsComplete({ matchUp: { winningSide: 1 } })).toBeTruthy();
+    expect(checkMatchUpIsComplete({ matchUp: { matchUpId, winningSide: 1 } })).toBeTruthy();
   });
 
   it('returns true when matchUp has COMPLETED status', () => {
-    expect(checkMatchUpIsComplete({ matchUp: { matchUpStatus: COMPLETED } })).toBe(true);
+    expect(checkMatchUpIsComplete({ matchUp: { matchUpId, matchUpStatus: COMPLETED } })).toBe(true);
   });
 
   it('returns true when matchUp has RETIRED status', () => {
-    expect(checkMatchUpIsComplete({ matchUp: { matchUpStatus: RETIRED } })).toBe(true);
+    expect(checkMatchUpIsComplete({ matchUp: { matchUpId, matchUpStatus: RETIRED } })).toBe(true);
   });
 
-  it('returns falsy for pending matchUp', () => {
-    expect(checkMatchUpIsComplete({ matchUp: { matchUpStatus: undefined } })).toBeFalsy();
+  it('returns UNDEFINED, not false, for a pending matchUp', () => {
+    // Load-bearing: tallyParticipantResults distinguishes "not complete" from "no answer" with
+    // `?? matchUp.matchUpType === TEAM`. Normalising this to `false` drops incomplete TEAM
+    // matchUps from the round-robin tally.
+    expect(checkMatchUpIsComplete({ matchUp: { matchUpId, matchUpStatus: undefined } })).toBeUndefined();
   });
 });
 
