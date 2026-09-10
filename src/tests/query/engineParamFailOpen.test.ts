@@ -1,7 +1,7 @@
 import { expect, test, describe } from 'vitest';
 
-import { getParticipantResults } from '@Query/matchUps/roundRobinTally/getParticipantResults';
 import { checkMatchUpIsComplete, matchUpCompletion } from '@Query/matchUp/checkMatchUpIsComplete';
+import { getParticipantResults } from '@Query/matchUps/roundRobinTally/getParticipantResults';
 import mocksEngine from '@Assemblies/engines/mock';
 import tournamentEngine from '@Engines/syncEngine';
 
