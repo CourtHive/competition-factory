@@ -2,9 +2,9 @@ import { expect, test, describe } from 'vitest';
 
 import { getLapses } from '@Query/ladder/getLapses';
 
-import { CHALLENGE_ACCEPTED, CHALLENGE_DECLINED } from '@Constants/ladderConstants';
 import { CONSECUTIVE, DECLINE, DROP, EXPIRY, FORFEIT_POSITION, ROLLING, UNPLAYED } from '@Constants/ladderConstants';
 import { CHALLENGED, COMPLETED, TO_BE_PLAYED } from '@Constants/matchUpStatusConstants';
+import { CHALLENGE_ACCEPTED, CHALLENGE_DECLINED } from '@Constants/ladderConstants';
 import { POLICY_TYPE_LADDER } from '@Constants/policyConstants';
 import { LADDER } from '@Constants/drawDefinitionConstants';
 

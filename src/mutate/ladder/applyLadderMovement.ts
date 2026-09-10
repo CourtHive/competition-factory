@@ -1,9 +1,9 @@
-import { resolveLadderStructure } from '@Query/ladder/resolveLadderContext';
 import { getLadderMovement, getLadderOrdering, getLadderPolicy } from '@Query/ladder/getLadderPolicy';
+import { resolveLadderStructure } from '@Query/ladder/resolveLadderContext';
 import { isLadder } from '@Query/drawDefinition/isLadder';
 
-import { mirrorStandingToScale } from '@Mutate/ladder/mirrorStandingToScale';
 import { generateDynamicRatings } from '@Generators/scales/generateDynamicRatings';
+import { mirrorStandingToScale } from '@Mutate/ladder/mirrorStandingToScale';
 import { getResultAttestation } from '@Query/ladder/getResultAttestation';
 
 import { FORFEIT, INSERTION, RANK, RESULT, movementTriggers } from '@Constants/ladderConstants';

@@ -1,6 +1,7 @@
 import { resolveLadderMatchUp } from '@Query/ladder/resolveLadderContext';
 import { getLadderPolicy } from '@Query/ladder/getLadderPolicy';
 
+import type { LadderPolicy } from '@Types/ladderTypes';
 import {
   EITHER,
   OPERATOR,
@@ -9,7 +10,6 @@ import {
   RESULT_DISPUTED,
   RESULT_SUBMITTED,
 } from '@Constants/ladderConstants';
-import type { LadderPolicy } from '@Types/ladderTypes';
 
 type AttestationArgs = {
   matchUp?: any;

@@ -1,14 +1,14 @@
-import { mirrorStandingToScale } from '@Mutate/ladder/mirrorStandingToScale';
 import { removeLadderParticipant } from '@Mutate/ladder/removeLadderParticipant';
+import { mirrorStandingToScale } from '@Mutate/ladder/mirrorStandingToScale';
 import { applyLadderMovement } from '@Mutate/ladder/applyLadderMovement';
 import { getLadderOrdering } from '@Query/ladder/getLadderPolicy';
 import { getLapses } from '@Query/ladder/getLapses';
 
 import { DROP, FORFEIT, FORFEIT_POSITION, RANK, REMOVE } from '@Constants/ladderConstants';
+import { INVALID_VALUES, PARTICIPANT_NOT_FOUND } from '@Constants/errorConditionConstants';
 import type { LapseConsequence } from '@Constants/ladderConstants';
 import { SUCCESS } from '@Constants/resultConstants';
 import { ResultType } from '@Types/factoryTypes';
-import { INVALID_VALUES, PARTICIPANT_NOT_FOUND } from '@Constants/errorConditionConstants';
 
 type ConsequenceArgs = {
   /** The instant the consequence takes effect, and the instant lapses are counted at. */

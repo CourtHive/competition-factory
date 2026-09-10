@@ -1,20 +1,20 @@
 import { expect, test, describe } from 'vitest';
 
-import { acceptChallenge, declineChallenge } from '@Mutate/ladder/respondToChallenge';
 import { confirmResult, disputeResult, submitResult } from '@Mutate/ladder/reportResult';
+import { acceptChallenge, declineChallenge } from '@Mutate/ladder/respondToChallenge';
 import { removeLadderParticipant } from '@Mutate/ladder/removeLadderParticipant';
-import { addLadderParticipant } from '@Mutate/ladder/addLadderParticipant';
 import { applyLapseConsequence } from '@Mutate/ladder/applyLapseConsequence';
+import { mirrorStandingToScale } from '@Mutate/ladder/mirrorStandingToScale';
+import { addLadderParticipant } from '@Mutate/ladder/addLadderParticipant';
 import { refreshLadderRatings } from '@Mutate/ladder/refreshLadderRatings';
 import { applyLadderMovement } from '@Mutate/ladder/applyLadderMovement';
-import { mirrorStandingToScale } from '@Mutate/ladder/mirrorStandingToScale';
-import { issueChallenge } from '@Mutate/ladder/issueChallenge';
 import { getChallengeState } from '@Query/ladder/getChallengeState';
+import { issueChallenge } from '@Mutate/ladder/issueChallenge';
 
 import { FORFEIT, FORFEIT_POSITION, RANK, RATING, RESULT, SWAP } from '@Constants/ladderConstants';
+import { LADDER, SINGLE_ELIMINATION } from '@Constants/drawDefinitionConstants';
 import { CHALLENGED, COMPLETED } from '@Constants/matchUpStatusConstants';
 import { POLICY_TYPE_LADDER } from '@Constants/policyConstants';
-import { LADDER, SINGLE_ELIMINATION } from '@Constants/drawDefinitionConstants';
 import { UTR } from '@Constants/ratingConstants';
 
 const AT = '2026-04-01T00:00:00.000Z';

@@ -1,9 +1,9 @@
-import { getPolicyDefinitions } from '@Query/extensions/getAppliedPolicies';
 import { POLICY_LADDER_DEFAULT } from '@Fixtures/policies/POLICY_LADDER_DEFAULT';
+import { getPolicyDefinitions } from '@Query/extensions/getAppliedPolicies';
 
+import type { LadderMovement, LadderOrdering } from '@Constants/ladderConstants';
 import { POLICY_TYPE_LADDER } from '@Constants/policyConstants';
 import { RANK, SWAP } from '@Constants/ladderConstants';
-import type { LadderMovement, LadderOrdering } from '@Constants/ladderConstants';
 import type { LadderPolicy } from '@Types/ladderTypes';
 
 type LadderPolicyArgs = {

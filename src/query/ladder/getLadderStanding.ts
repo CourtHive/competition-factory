@@ -1,6 +1,6 @@
-import { resolveLadderStructure } from '@Query/ladder/resolveLadderContext';
-import { participantScaleItem } from '@Query/participant/participantScaleItem';
 import { getLadderPolicy, getLadderOrdering } from '@Query/ladder/getLadderPolicy';
+import { participantScaleItem } from '@Query/participant/participantScaleItem';
+import { resolveLadderStructure } from '@Query/ladder/resolveLadderContext';
 import ratingsParameters from '@Fixtures/ratings/ratingsParameters';
 import { isObject } from '@Tools/objects';
 

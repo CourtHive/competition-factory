@@ -1,11 +1,10 @@
+import { addDaysIso, getChallengeState } from '@Query/ladder/getChallengeState';
 import { resolveLadderStructure } from '@Query/ladder/resolveLadderContext';
-import { getChallengeState } from '@Query/ladder/getChallengeState';
-import { addDaysIso } from '@Query/ladder/getChallengeState';
 import { getLadderPolicy } from '@Query/ladder/getLadderPolicy';
 
-import { CHALLENGE_ACCEPTED, CHALLENGE_DECLINED, CHALLENGE_ISSUED } from '@Constants/ladderConstants';
 import { CONSECUTIVE, DECLINE, EXPIRY, FORFEIT_POSITION, ROLLING, UNPLAYED } from '@Constants/ladderConstants';
 import { AWAITING_RESULT, CHALLENGED, COMPLETED, TO_BE_PLAYED } from '@Constants/matchUpStatusConstants';
+import { CHALLENGE_ACCEPTED, CHALLENGE_DECLINED, CHALLENGE_ISSUED } from '@Constants/ladderConstants';
 import type { LapseConsequence, LapseKind } from '@Constants/ladderConstants';
 import type { LadderPolicy, LapsePolicy } from '@Types/ladderTypes';
 

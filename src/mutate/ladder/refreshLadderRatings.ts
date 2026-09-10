@@ -3,12 +3,12 @@ import { getLadderOrdering, getLadderPolicy } from '@Query/ladder/getLadderPolic
 import ratingsParameters from '@Fixtures/ratings/ratingsParameters';
 import { isLadder } from '@Query/drawDefinition/isLadder';
 
+import { INVALID_VALUES, MISSING_DRAW_DEFINITION, MISSING_TOURNAMENT_RECORD } from '@Constants/errorConditionConstants';
 import { RATING as RATING_ORDERING } from '@Constants/ladderConstants';
 import { RATING as RATING_SCALE } from '@Constants/scaleConstants';
 import { SINGLES_EVENT } from '@Constants/eventConstants';
 import { SUCCESS } from '@Constants/resultConstants';
 import { ResultType } from '@Types/factoryTypes';
-import { INVALID_VALUES, MISSING_DRAW_DEFINITION, MISSING_TOURNAMENT_RECORD } from '@Constants/errorConditionConstants';
 
 type RefreshArgs = {
   /** `{ participantId: ratingValue }` — supplied by the caller, not fetched here. */

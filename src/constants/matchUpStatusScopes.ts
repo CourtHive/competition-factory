@@ -1,6 +1,6 @@
+import type { MatchUpStatusUnion } from '@Types/tournamentTypes';
 import { LADDER } from './drawDefinitionConstants';
 import { CHALLENGED } from './matchUpStatusValues';
-import type { MatchUpStatusUnion } from '@Types/tournamentTypes';
 
 /**
  * Where a matchUpStatus is allowed to be used.
