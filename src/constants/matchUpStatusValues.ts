@@ -8,6 +8,7 @@ export const ABANDONED = 'ABANDONED';
 export const AWAITING_RESULT = 'AWAITING_RESULT';
 export const BYE = 'BYE';
 export const CANCELLED = 'CANCELLED';
+export const CHALLENGED = 'CHALLENGED';
 export const COMPLETED = 'COMPLETED';
 export const DEAD_RUBBER = 'DEAD_RUBBER';
 export const DEFAULTED = 'DEFAULTED';

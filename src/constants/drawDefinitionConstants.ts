@@ -60,6 +60,7 @@ export const FIRST_MATCHUP = 'FIRST_MATCHUP'; // condition for valididty of link
 // draw types
 // NOTE: PLAY_OFF (underscore) is a STAGE type (see validStages). PLAYOFF (no underscore) is a DRAW TYPE.
 export const AD_HOC = 'AD_HOC';
+export const LADDER = 'LADDER';
 export const FLEX_ROUNDS = 'AD_HOC';
 export const FEED_IN = 'FEED_IN';
 export const COMPASS = 'COMPASS';
@@ -157,6 +158,7 @@ export const MULTI_STRUCTURE_DRAWS = [
 export const generatedDrawTypes = [
   AD_HOC,
   ADAPTIVE,
+  LADDER,
   COMPASS,
   CURTIS,
   DOUBLE_ELIMINATION,

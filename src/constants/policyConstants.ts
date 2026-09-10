@@ -12,6 +12,7 @@ export const POLICY_TYPE_AVOIDANCE = 'avoidance';
 export const POLICY_TYPE_PRIVACY = 'participant';
 export const POLICY_TYPE_DISPLAY = 'display'; // storage for client type displays, e.g. { public: {}, admin: {} }
 export const POLICY_TYPE_SCORING = 'scoring';
+export const POLICY_TYPE_LADDER = 'ladder';
 export const POLICY_TYPE_SEEDING = 'seeding';
 export const POLICY_TYPE_FEED_IN = 'feedIn';
 export const POLICY_TYPE_SANCTIONING = 'sanctioning';

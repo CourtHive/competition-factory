@@ -3,6 +3,7 @@ import {
   AWAITING_RESULT,
   BYE,
   CANCELLED,
+  CHALLENGED,
   COMPLETED,
   DEAD_RUBBER,
   DEFAULTED,
@@ -34,6 +35,9 @@ export const recoveryTimeRequiredMatchUpStatuses: MatchUpStatusUnion[] = [
 
 export const participantsRequiredMatchUpStatuses: MatchUpStatusUnion[] = [
   AWAITING_RESULT,
+  // a challenge names both participants at the moment it is issued — that is what makes it a
+  // challenge rather than an intention
+  CHALLENGED,
   COMPLETED,
   DEFAULTED,
   DOUBLE_WALKOVER,
@@ -50,6 +54,7 @@ export const validMatchUpStatuses: MatchUpStatusUnion[] = [
   AWAITING_RESULT,
   BYE,
   CANCELLED,
+  CHALLENGED,
   COMPLETED,
   DEAD_RUBBER,
   DEFAULTED,
@@ -78,6 +83,7 @@ export const nonDirectingMatchUpStatuses: (MatchUpStatusUnion | undefined)[] = [
   ABANDONED,
   AWAITING_RESULT,
   CANCELLED,
+  CHALLENGED,
   DEAD_RUBBER,
   IN_PROGRESS,
   INCOMPLETE,
@@ -110,13 +116,23 @@ export const activeMatchUpStatuses: MatchUpStatusUnion[] = [
   WALKOVER,
 ];
 
-export const upcomingMatchUpStatuses: MatchUpStatusUnion[] = [IN_PROGRESS, INCOMPLETE, SUSPENDED, TO_BE_PLAYED];
+// CHALLENGED widens this group's meaning from "will happen" to "is expected to happen": a challenge
+// can be declined or expire and never become a match. That is the deliberate trade — a challenge
+// absent from every upcoming-match view is invisible to exactly the people who must act on it.
+export const upcomingMatchUpStatuses: MatchUpStatusUnion[] = [
+  CHALLENGED,
+  IN_PROGRESS,
+  INCOMPLETE,
+  SUSPENDED,
+  TO_BE_PLAYED,
+];
 
 export const matchUpStatusConstants = {
   ABANDONED,
   AWAITING_RESULT,
   BYE,
   CANCELLED,
+  CHALLENGED,
   COMPLETED,
   DEAD_RUBBER,
   DEFAULTED,
