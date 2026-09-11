@@ -1,6 +1,7 @@
 import { OUTCOME_DEFAULT, OUTCOME_RETIREMENT, OUTCOME_WALKOVER } from '@Helpers/keyValueScore/constants';
 import { writeNativeEnabled } from '@Global/state/globalState';
 import { definedAttributes } from '@Tools/definedAttributes';
+import { isAnyExit } from '@Validators/isExit';
 
 // constants and types
 import { MatchUp, SideExitProvenance, SideExitProvenanceEntry } from '@Types/tournamentTypes';
@@ -158,6 +159,30 @@ export function setSideExitProvenance({
  */
 export function clearSideExitProvenance(matchUp?: MatchUp): void {
   if (matchUp) delete matchUp.sideExitProvenance;
+}
+
+/**
+ * Clear provenance ONLY when the matchUp is no longer an exit.
+ *
+ * `clearSideExitProvenance` is unconditional, which is right where the caller has just collapsed the
+ * status — clearing a position, or writing a BYE. It is WRONG as an opportunistic clear, and it was
+ * being used as one.
+ *
+ * `attemptToModifyScore` coerces an absent `matchUpStatusCodes` to `[]`, so `[]` means both "blank
+ * the codes" and "the caller supplied none". Reading the second as the first wipes provenance off a
+ * matchUp that is still the exit that provenance describes. Measured 2026-09-11 across the draws
+ * behind the 21 triaged sweep seeds: **63 clears, 51 of them leaving the matchUp still an exit** —
+ * `removeDirectedLoser` 38, `applyPositionToMatchUp` 9, `applyScoreAndStatus` 10. Those matchUps end
+ * up as exits with no marker at all, so `exitProducedByPropagation` reads false and the detectors
+ * that exclude a propagation-produced exit fire on legitimate ones.
+ *
+ * `isAnyExit`, not `isExit` — the double exits are precisely the statuses that stamp provenance.
+ *
+ * See Mentat/planning/SWEEP_20260911_DISCOVERY.md.
+ */
+export function clearResolvedSideExitProvenance(matchUp?: MatchUp): void {
+  if (!matchUp || isAnyExit(matchUp.matchUpStatus)) return;
+  clearSideExitProvenance(matchUp);
 }
 
 /**

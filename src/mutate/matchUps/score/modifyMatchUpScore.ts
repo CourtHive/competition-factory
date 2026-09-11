@@ -2,7 +2,8 @@ import { updateAssignmentParticipantResults } from '@Mutate/drawDefinitions/matc
 import { processCompetitionMatchUp } from '@Mutate/drawDefinitions/competition/processCompetitionMatchUp';
 import { modifyMatchUpNotice, updateInContextMatchUp } from '@Mutate/notifications/drawNotifications';
 import { getCompetitionPolicy } from '@Query/drawDefinition/competition/getCompetitionPolicy';
-import { clearSideExitProvenance } from '@Mutate/matchUps/matchUpStatus/sideExitProvenance';
+import { clearResolvedSideExitProvenance } from '@Mutate/matchUps/matchUpStatus/sideExitProvenance';
+import { isAnyExit } from '@Validators/isExit';
 import { getAllStructureMatchUps } from '@Query/matchUps/getAllStructureMatchUps';
 import { getAppliedPolicies } from '@Query/extensions/getAppliedPolicies';
 import { checkScoreHasValue } from '@Query/matchUp/checkScoreHasValue';
@@ -234,7 +235,16 @@ function applyScoreAndStatus({
 }) {
   const walkoverStatuses = new Set([WALKOVER, DOUBLE_WALKOVER]);
   if ((matchUpStatus && walkoverStatuses.has(matchUpStatus)) || removeScore) {
+    // `toBePlayed` is the UNWOUND-matchUp fixture, so it blanks `sideExitProvenance` along with the
+    // score. Here it is being used to clear the SCORE — a walkover has none — while the very next
+    // lines set an exit status on the same matchUp. Letting the reset take the provenance with it
+    // makes the field depend on which exit status is being written: the set above covers WALKOVER
+    // and DOUBLE_WALKOVER but not DEFAULTED or DOUBLE_DEFAULT, so a walkover lost its provenance and
+    // an otherwise identical default kept it. That asymmetry is what `doubleExitStatusParity`
+    // reports for FIRST_ROUND_LOSER_CONSOLATION 16/16.
+    const survivingProvenance = isAnyExit(matchUpStatus) ? matchUp.sideExitProvenance : undefined;
     Object.assign(matchUp, { ...toBePlayed });
+    if (survivingProvenance) matchUp.sideExitProvenance = survivingProvenance;
   } else if (score) {
     matchUp.score = score;
   }
@@ -242,9 +252,11 @@ function applyScoreAndStatus({
   if (matchUpStatus) matchUp.matchUpStatus = matchUpStatus;
   if (matchUpFormat) matchUp.matchUpFormat = matchUpFormat;
   if (matchUpStatusCodes) matchUp.matchUpStatusCodes = matchUpStatusCodes;
-  // blanking the codes unwinds the exit they described; provenance describes the same exit and
-  // must not outlive them, or the matchUp never returns to its pre-exit state
-  if (matchUpStatusCodes && !matchUpStatusCodes.length) clearSideExitProvenance(matchUp);
+  // Blanking the codes unwinds the exit they described — but ONLY when the write also resolved the
+  // status. `attemptToModifyScore` coerces an absent `matchUpStatusCodes` to `[]`, so an empty array
+  // here means either "blank them" or "the caller supplied none", and the second must not wipe the
+  // provenance of an exit that is still standing.
+  if (matchUpStatusCodes && !matchUpStatusCodes.length) clearResolvedSideExitProvenance(matchUp);
   if (winningSide) matchUp.winningSide = winningSide;
   if (removeWinningSide) matchUp.winningSide = undefined;
 }
