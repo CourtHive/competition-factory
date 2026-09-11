@@ -77,6 +77,89 @@ console.log(analysis.isComplete); // boolean
 
 ---
 
+## calculatePointsTo
+
+How many points each side still needs, at the current score.
+
+**Takes positional arguments**, not a params object — it predates the destructured convention and
+`scoreGovernor` re-exports it unchanged. Calling it through an engine (`engine.calculatePointsTo({…})`)
+passes the params object as `matchUp` and yields nothing useful; import the governor instead.
+
+```js
+import { scoreGovernor } from 'tods-competition-factory';
+
+const formatStructure = scoreGovernor.parseMatchUpFormat('SET3-S:6/TB7');
+
+const needed = scoreGovernor.calculatePointsTo(
+  matchUp, // ScoringEngine.getState() — reads `matchUp.score.sets`
+  formatStructure,
+  'standard', // 'standard' | 'tiebreakOnly' | 'matchTiebreak' | 'timed'
+  formatStructure.setFormat,
+  0, // server: 0 | 1 | undefined
+);
+```
+
+Returns **`PointsToDecoration | undefined`** — a published type, so a consumer should import it
+rather than redeclare the shape:
+
+```ts
+import type { PointsToDecoration } from 'tods-competition-factory';
+```
+
+| field | meaning |
+| ----- | ------- |
+| `pointsToGame` | `[number, number]` — minimum points each side needs to win the current game |
+| `pointsToSet` | `[number, number]` — minimum points each side needs to win the current set |
+| `pointsToMatch` | `[number, number]` — minimum points each side needs to win the match |
+| `gamesToSet` | `[number, number]` — games each side needs to win the current set |
+| `isBreakpoint` | `boolean` — the receiver is one point from winning the game |
+
+"Minimum" assumes the side wins every subsequent point.
+
+`undefined` is returned for a **timed** set and when `activeSetFormat` is absent — neither has a
+point structure to count against. That is a legitimate answer, not a failure.
+
+**Most callers do not need this function directly.** `ScoringEngine.getEpisodes()` already runs it
+per point and exposes the result as `episode.needed` — see
+[getEpisodes](#getepisodes-and-episodeneeded) below.
+
+---
+
+## inferServeSide
+
+Which court side the serve comes from, at the current score. Also positional.
+
+```js
+const side = scoreGovernor.inferServeSide(matchUp, formatStructure, 'standard');
+// 'deuce' | 'ad' | undefined
+```
+
+The rule is parity, and what is counted depends on the format: total points in the game for standard
+tennis, aggregate score for aggregate formats such as INTENNSE, total tiebreak points inside a
+tiebreak. A **timed** set returns `undefined` — there is no countable point structure to take a
+parity of.
+
+---
+
+## getEpisodes and EpisodeNeeded
+
+`ScoringEngine.getEpisodes()` returns one `Episode` per point, enriched with game, set and match
+context. **`episode.needed` is `calculatePointsTo`'s output**, computed per point:
+
+```js
+const engine = new scoreGovernor.ScoringEngine({ matchUpFormat: 'SET3-S:6/TB7' });
+engine.addPoint({ winner: 0 });
+
+const episodes = engine.getEpisodes();
+episodes[0].needed; // { pointsToGame, pointsToSet, pointsToMatch, gamesToSet }
+```
+
+`Episode`, `EpisodeNeeded` and `EpisodePoint` are all published types. **This is the contract a
+points-to visualization should build against** — a renderer plotting "points needed to win the set"
+is plotting `episode.needed.pointsToSet`.
+
+---
+
 ## checkScoreHasValue
 
 Checks if a score object contains any actual scoring data.

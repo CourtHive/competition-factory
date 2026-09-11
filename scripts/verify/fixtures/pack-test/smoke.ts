@@ -7,6 +7,15 @@
  * published artifact — caught here, before users hit it.
  */
 
+import type {
+  Episode,
+  EpisodeGame,
+  EpisodeNeeded,
+  EpisodePoint,
+  EpisodeSet,
+  PointsToDecoration,
+} from 'tods-competition-factory';
+
 import {
   tournamentEngine,
   syncEngine,
@@ -114,5 +123,27 @@ void forge;
 void factoryConstants;
 void topicConstants;
 void factoryVersion;
+
+// --- scoring types a visualization consumer imports ---
+//
+// These are declared deep in the tree and were reachable only through the `scoreGovernor` namespace,
+// which cannot be used in a named type import. `scoringVisualizations` redeclared the Episode shape
+// locally for exactly that reason and the copy drifted. Asserting them HERE — against the installed
+// tarball, under `moduleResolution: bundler`, which is what that consumer uses — is the only check
+// that reproduces how a consumer actually resolves them.
+type SmokeNeeded = EpisodeNeeded;
+type SmokeEpisode = Episode;
+type SmokeGame = EpisodeGame;
+type SmokeSet = EpisodeSet;
+type SmokePoint = EpisodePoint;
+type SmokePointsTo = PointsToDecoration;
+
+// `needed` on an Episode must BE the EpisodeNeeded type, not a look-alike.
+const neededIsEpisodeNeeded: SmokeNeeded = {} as SmokeEpisode['needed'];
+// `pointsToMatch` is the field a hand-written copy of this shape kept missing.
+const carriesPointsToMatch: SmokePointsTo['pointsToMatch'] = [0, 0];
+
+export type { SmokeGame, SmokeSet, SmokePoint };
+export { neededIsEpisodeNeeded, carriesPointsToMatch };
 
 console.log('verify:pack — smoke imports compiled');

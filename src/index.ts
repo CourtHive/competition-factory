@@ -148,5 +148,17 @@ export * from './types/enumExports';
 
 // Statistics types (top-level convenience re-exports)
 export type { StatObject, MatchStatistics, StatCounters, StatisticsOptions } from './query/scoring/statistics/types';
+
+// Episode + points-to types (top-level convenience re-exports).
+//
+// These were reachable only through the `scoreGovernor` namespace, which a consumer cannot use in a
+// named type import — so `import type { EpisodeNeeded } from 'tods-competition-factory'` failed while
+// `StatObject` (re-exported above) succeeded. scoringVisualizations redeclared the Episode shape
+// locally for exactly that reason, and the copy drifted: it has no `pointsToMatch`.
+//
+// `episode.needed` is what a points-to visualization renders, so the type it renders against has to
+// be importable.
+export type { Episode, EpisodeGame, EpisodeNeeded, EpisodePoint, EpisodeSet } from './types/scoring/types';
+export type { PointsToDecoration } from './mutate/scoring/pointsToCalculator';
 export { toStatObjects } from './query/scoring/statistics/toStatObjects';
 export { calculateMatchStatistics } from './query/scoring/statistics/standalone';

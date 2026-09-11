@@ -36,6 +36,26 @@ Episodes are the primary data source for building point-by-point visualizations.
 
 The ScoringEngine enables several categories of match visualization:
 
+### Points Needed — use `episode.needed`, do not recompute it
+
+`getEpisodes()` already carries, per point, how many points each side needs to win the current game,
+set and match. A chart plotting "points to win the set" is plotting `episode.needed.pointsToSet`.
+
+```js
+const episodes = engine.getEpisodes();
+const pointsToSet = episodes.map((episode) => episode.needed.pointsToSet); // [number, number][]
+```
+
+`Episode`, `EpisodeNeeded` and `PointsToDecoration` are **published types**. Import them rather than
+redeclaring the shape locally — a redeclared copy cannot be told when the factory's gains a field,
+and `pointsToMatch` is the one most often missing from hand-written copies:
+
+```ts
+import type { Episode, EpisodeNeeded } from 'tods-competition-factory';
+```
+
+→ [calculatePointsTo](../governors/score-governor#calculatepointsto), which computes it.
+
 ### Point Progression
 
 Visualize the flow of a match as a tree or Sankey diagram showing probability at each branching point. Each node represents a score state, and branches show outcomes.
