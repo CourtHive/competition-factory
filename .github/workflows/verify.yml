@@ -56,6 +56,11 @@ jobs:
 
     steps:
       - uses: actions/checkout@v7
+        with:
+          # verify:migration-coverage diffs against the last release TAG. A shallow checkout has
+          # neither the tag nor the history, and the check errors rather than passing quietly — so
+          # this is a precondition, not a nicety.
+          fetch-depth: 0
 
       # A pnpm that does not match this repo's `packageManager` pin writes an `@pnpm/exe` block
       # into the lockfile; a pnpm that DOES match strips it out again. Committed, it makes every
