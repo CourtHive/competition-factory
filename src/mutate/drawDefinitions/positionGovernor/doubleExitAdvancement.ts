@@ -7,6 +7,7 @@ import { modifyMatchUpScore } from '@Mutate/matchUps/score/modifyMatchUpScore';
 import { directWinner } from '@Mutate/matchUps/drawPositions/directWinner';
 import { decorateResult } from '@Functions/global/decorateResult';
 import { positionTargets } from '@Query/matchUp/positionTargets';
+import { buildSideExitProvenance, setSideExitProvenance } from '@Mutate/matchUps/matchUpStatus/sideExitProvenance';
 import { definedAttributes } from '@Tools/definedAttributes';
 import { pushGlobalLog } from '@Functions/global/globalLog';
 import { findStructure } from '@Acquire/findStructure';
@@ -357,6 +358,17 @@ function conditionallyAdvanceDrawPosition(params) {
     sourceSideNumber,
   });
 
+  // CODES first-class: the same facts, keyed by sideNumber and attributed to their source.
+  // Written alongside the legacy array, not instead of it — see sideExitProvenance.ts on why the
+  // legacy write is not yet gated on writeLegacyEnabled().
+  const sideExitProvenance = buildSideExitProvenance({
+    pairedMatchUpId: pairedPreviousMatchUp?.matchUpId,
+    sourceMatchUpId: sourceMatchUp?.matchUpId,
+    pairedMatchUpStatus,
+    sourceMatchUpStatus,
+    sourceSideNumber,
+  });
+
   logAdvancement(stack, {
     color: 'brightgreen',
     keyColors: { matchUpStatus: 'brightcyan', winningSide: 'brightyellow' },
@@ -378,6 +390,8 @@ function conditionallyAdvanceDrawPosition(params) {
     matchUpStatus,
   });
   if (result.error) return decorateResult({ result, stack });
+
+  setSideExitProvenance({ matchUp: noContextTargetMatchUp, provenance: sideExitProvenance });
 
   return advanceFromTarget({
     pairedPreviousMatchUpIsDoubleExit,

@@ -1,3 +1,4 @@
+import { clearSideExitProvenance } from '@Mutate/matchUps/matchUpStatus/sideExitProvenance';
 import { structureAssignedDrawPositions } from '@Query/drawDefinition/positionsGetter';
 import { releaseByeScheduling } from '@Mutate/matchUps/schedule/byeScheduling';
 import { modifyMatchUpNotice } from '../../notifications/drawNotifications';
@@ -39,6 +40,7 @@ export function attemptToSetMatchUpStatusBYE({
   if (matchUpIncludesBye) {
     matchUp.matchUpStatus = BYE;
     matchUp.matchUpStatusCodes = [];
+    clearSideExitProvenance(matchUp);
     // Preserve by default: a director may be mid-swap and the surrounding schedule is
     // theirs. Only an explicit `preserveScheduling: false` gives the slot back.
     if (preserveScheduling === false) releaseByeScheduling({ matchUp });

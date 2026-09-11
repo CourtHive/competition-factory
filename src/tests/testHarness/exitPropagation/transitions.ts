@@ -111,6 +111,10 @@ export function projectDraw(drawDefinition: any): any {
           matchUp.winningSide ?? null,
           canonicalDrawPositions(matchUp.drawPositions),
           blankToNull(matchUp.matchUpStatusCodes),
+          // sideExitProvenance is projected too: a field the projection cannot see is a field the
+          // properties cannot police, and an unobserved addition would look residue-free while
+          // leaving state behind on every unwind.
+          blankToNull(matchUp.sideExitProvenance),
           blankToNull(matchUp.score),
         ]),
       });

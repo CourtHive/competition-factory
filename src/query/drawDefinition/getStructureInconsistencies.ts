@@ -1,3 +1,4 @@
+import { exitProducedByPropagation as sharedExitProducedByPropagation } from '@Mutate/matchUps/matchUpStatus/sideExitProvenance';
 import { finalize, Inconsistency } from '@Query/integrity/inconsistency';
 import { getAllDrawMatchUps } from '@Query/matchUps/drawMatchUps';
 import { isExit } from '@Validators/isExit';
@@ -118,9 +119,11 @@ function codeString(code: any): string | undefined {
 // onto one of its status codes — the marker it writes when a downstream slot resolves to a
 // WALKOVER/DEFAULTED because an upstream double-exit (or fed exit) delivered no participant.
 // Such an exit legitimately has an empty losing slot and must NOT be flagged as an orphan.
-export function exitProducedByPropagation(matchUpStatusCodes: any): boolean {
-  if (!Array.isArray(matchUpStatusCodes)) return false;
-  return matchUpStatusCodes.some((code) => typeof code === 'object' && code?.previousMatchUpStatus);
+export function exitProducedByPropagation(matchUp: any): boolean {
+  // One reader for both schemas: prefers `sideExitProvenance`, falls back to the provenance shape
+  // inside the legacy `matchUpStatusCodes`. Callers pass the matchUp, not the array, so the native
+  // field is consultable at all.
+  return sharedExitProducedByPropagation({ matchUp });
 }
 
 // A positionAssignment is "occupied" if it names a participant, a bye, or a (pending)
@@ -277,7 +280,7 @@ export function getStructureInconsistencies(
       loserSide?.drawPosition &&
       !loserSide.participantId &&
       !loserSide.bye &&
-      !exitProducedByPropagation(matchUpStatusCodes)
+      !exitProducedByPropagation(matchUp)
     ) {
       inconsistencies.push({
         ...base,

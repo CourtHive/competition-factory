@@ -104,13 +104,37 @@ const anonymize = (projection: any[]): any => {
     return `p${labels.get(participantId)}`;
   };
 
+  // matchUpIds get the same treatment, for the same reason: `sideExitProvenance` carries a
+  // `sourceMatchUpId`, and the two runs generate different ids for the corresponding matchUp. Without
+  // relabelling, every cell carrying provenance would differ on identity alone and this oracle would
+  // report a behavioural difference that is not one.
+  const matchUpLabels = new Map<string, number>();
+  const matchUpLabel = (matchUpId: string) => {
+    if (!matchUpLabels.has(matchUpId)) matchUpLabels.set(matchUpId, matchUpLabels.size);
+    return `m${matchUpLabels.get(matchUpId)}`;
+  };
+  for (const structure of projection) {
+    for (const [matchUpId] of structure.matchUps ?? []) if (matchUpId) matchUpLabel(matchUpId);
+  }
+
+  const relabelIds = (value: any): any => {
+    if (Array.isArray(value)) return value.map(relabelIds);
+    if (!value || typeof value !== 'object') return value;
+    return Object.fromEntries(
+      Object.entries(value).map(([key, entry]) => [
+        key,
+        key === 'sourceMatchUpId' && typeof entry === 'string' ? matchUpLabel(entry) : relabelIds(entry),
+      ]),
+    );
+  };
+
   return projection.map((structure: any, structureIndex: number) => ({
     structureIndex,
     positionAssignments: (structure.positionAssignments ?? []).map((assignment: any) => ({
       ...assignment,
       participantId: assignment.participantId ? label(assignment.participantId) : undefined,
     })),
-    matchUps: structure.matchUps.map(([, ...rest]: any[]) => rest),
+    matchUps: structure.matchUps.map(([, ...rest]: any[]) => rest.map(relabelIds)),
   }));
 };
 

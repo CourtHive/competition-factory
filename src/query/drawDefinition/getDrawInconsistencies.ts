@@ -147,7 +147,7 @@ function droppedProgressionForLink(
 
   const inconsistencies: any[] = [];
   for (const matchUp of roundMatchUps) {
-    if (exitProducedByPropagation(matchUp.matchUpStatusCodes)) continue;
+    if (exitProducedByPropagation(matchUp)) continue;
     const loserSideNumber = matchUp.winningSide === 1 ? 2 : 1;
     const sideNumber = isLoserLink ? loserSideNumber : matchUp.winningSide;
     const side = (matchUp.sides ?? []).find((candidate) => candidate.sideNumber === sideNumber);

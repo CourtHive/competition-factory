@@ -277,7 +277,17 @@ test('can propagate a default to a consolation match with already the result of 
   //consolation match should result in a DOUBLE_WALKOVER
   let loserMatchUp = matchUps?.find((mU) => mU.matchUpId === matchUp?.loserMatchUpId);
   expect(loserMatchUp?.matchUpStatus).toEqual(DOUBLE_WALKOVER);
-  expect(loserMatchUp?.matchUpStatusCodes).toEqual(['WO', 'DM']);
+
+  // Was ['WO', 'DM'], which asserted that a DEFAULT is recorded as a WALKOVER. Index 0 carries the
+  // code for the side that exited via matchUp-1-1's DOUBLE_DEFAULT, so 'DEF' is the truthful code;
+  // the old value came from a coercion that mapped EVERY object-shaped element to OUTCOME_WALKOVER
+  // (measured: of 50 provenance elements reaching it, 13 were BYE and 9 DEFAULTED).
+  //
+  // NOTE the divergence this exposes rather than creates: matchUpStatus is still DOUBLE_WALKOVER
+  // because progressExitStatus RULE 4 hardcodes it, while doubleExitAdvancement preserves
+  // DOUBLE_DEFAULT. Two producers, two conventions — documented in doubleExitStatusParity.test.ts.
+  // Fixing the STATUS half is a separate change; this one makes the CODE stop lying.
+  expect(loserMatchUp?.matchUpStatusCodes).toEqual(['DEF', 'DM']);
 });
 
 test('can propagate an exit status and progress the already existing opponent in the back draw match', () => {
