@@ -6,7 +6,7 @@ import { findExtension } from '@Acquire/findExtension';
 import mocksEngine from '@Assemblies/engines/mock';
 
 // constants and types
-import { DUAL, LEGACY, NATIVE } from '@Constants/schemaWriteModeConstants';
+import { BRIDGE, LEGACY, NATIVE } from '@Constants/schemaWriteModeConstants';
 import { LINKED_TOURNAMENTS } from '@Constants/extensionConstants';
 
 function loadTwoTournaments() {
@@ -65,8 +65,8 @@ describe('linkedTournamentIds — schemaWriteMode shadow writes', () => {
     expect(extension?.value?.tournamentIds.length).toEqual(2);
   });
 
-  it('DUAL mode writes both surfaces', () => {
-    setSchemaWriteMode(DUAL);
+  it('BRIDGE mode writes both surfaces', () => {
+    setSchemaWriteMode(BRIDGE);
     const { tournamentIdA } = loadTwoTournaments();
 
     competitionEngine.linkTournaments();
@@ -90,8 +90,8 @@ describe('linkedTournamentIds — schemaWriteMode shadow writes', () => {
     expect(linkedTournamentIds[tournamentIdB]).toEqual([tournamentIdA]);
   });
 
-  it('unlinkTournament removes the id from both surfaces (DUAL)', () => {
-    setSchemaWriteMode(DUAL);
+  it('unlinkTournament removes the id from both surfaces (BRIDGE)', () => {
+    setSchemaWriteMode(BRIDGE);
     const { tournamentIdA, tournamentIdB } = loadTwoTournaments();
     const { tournamentRecord: c } = mocksEngine.generateTournamentRecord();
     competitionEngine.setTournamentRecord(c);
@@ -113,7 +113,7 @@ describe('linkedTournamentIds — schemaWriteMode shadow writes', () => {
   });
 
   it('unlinkTournaments clears both surfaces', () => {
-    setSchemaWriteMode(DUAL);
+    setSchemaWriteMode(BRIDGE);
     const { tournamentIdA } = loadTwoTournaments();
     competitionEngine.linkTournaments();
     competitionEngine.unlinkTournaments();

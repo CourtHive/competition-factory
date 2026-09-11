@@ -5,7 +5,7 @@ import tournamentEngine from '@Engines/syncEngine';
 import { expect, it } from 'vitest';
 
 /**
- * Behavioral scheduling coverage across NATIVE / DUAL / LEGACY. These assert *behavior* via engine
+ * Behavioral scheduling coverage across NATIVE / BRIDGE / LEGACY. These assert *behavior* via engine
  * queries (does scheduling place matchUps, are they date/court-queryable), NOT the storage shape —
  * so one body holds in every writeMode. Storage-shape specifics live in the NATIVE specs
  * (scheduleFirstClassStorage) + their legacyMode-scoped LEGACY counterparts.

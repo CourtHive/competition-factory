@@ -17,7 +17,7 @@ import tournamentEngine from '../engines/syncEngine';
 import mocksEngine from '@Assemblies/engines/mock';
 
 // constants and types
-import { DUAL, LEGACY, NATIVE, SchemaWriteMode } from '@Constants/schemaWriteModeConstants';
+import { BRIDGE, LEGACY, NATIVE, SchemaWriteMode } from '@Constants/schemaWriteModeConstants';
 import { ROUND_ROBIN } from '@Constants/drawDefinitionConstants';
 import { TALLY } from '@Constants/extensionConstants';
 import { SINGLES } from '@Constants/eventConstants';
@@ -92,9 +92,9 @@ describe('LEGACY mode — tally', () => {
   });
 });
 
-describe('DUAL mode — tally', () => {
+describe('BRIDGE mode — tally', () => {
   it('writes tally to both the first-class attribute and the legacy extension', () => {
-    const { positionAssignments } = buildCompletedRRTournament(DUAL);
+    const { positionAssignments } = buildCompletedRRTournament(BRIDGE);
     const dualWrites = positionAssignments.filter(
       (pa: any) => pa.tally && findExtension({ element: pa, name: TALLY }).extension !== undefined,
     );
@@ -108,7 +108,7 @@ describe('DUAL mode — tally', () => {
 });
 
 describe('Read symmetry — firstClassOrExtension yields equivalent tallies in every mode', () => {
-  it.each([NATIVE, DUAL, LEGACY] as SchemaWriteMode[])('mode=%s', (mode) => {
+  it.each([NATIVE, BRIDGE, LEGACY] as SchemaWriteMode[])('mode=%s', (mode) => {
     const { positionAssignments } = buildCompletedRRTournament(mode);
 
     const collected = positionAssignments

@@ -199,7 +199,7 @@ type MigrateTournamentRecordArgs = {
  *
  * Use this when upgrading historical records that were written by a
  * factory < 5.0.0 (LEGACY-style storage). After running, the record reads
- * identically under NATIVE / DUAL / LEGACY engine write modes.
+ * identically under NATIVE / BRIDGE / LEGACY engine write modes.
  */
 function applyFlatPromotions(element: any, promotions: ExtensionPromotion[], clearLegacy: boolean): number {
   let n = 0;

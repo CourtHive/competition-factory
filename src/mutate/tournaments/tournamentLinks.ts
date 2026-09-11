@@ -17,7 +17,7 @@ import { INVALID_VALUES, MISSING_TOURNAMENT_ID, MISSING_TOURNAMENT_RECORDS } fro
  *
  * NATIVE writes the flat `record.linkedTournamentIds` first-class attribute
  * and strips any legacy extension. LEGACY writes the legacy wrapper
- * extension `{tournamentIds: []}` and strips any first-class field. DUAL
+ * extension `{tournamentIds: []}` and strips any first-class field. BRIDGE
  * writes both. When `tournamentIds` is empty, both surfaces are cleared.
  */
 function writeRecordLinkedTournamentIds(tournamentRecord: any, tournamentIds: string[]): void {
@@ -113,7 +113,7 @@ export function unlinkTournament({ tournamentRecords, tournamentId }: UnlinkTour
     const tournamentRecord = tournamentRecords[currentTournamentId];
 
     // CODES: mode-agnostic read so 5.0.0 NATIVE-written records,
-    // pre-CODES extension-only records, and DUAL records all unlink correctly.
+    // pre-CODES extension-only records, and BRIDGE records all unlink correctly.
     const linkedTournamentIds = getRecordLinkedTournamentIds(tournamentRecord);
 
     // if there are no tournamentIds, or the only link is self, or this is

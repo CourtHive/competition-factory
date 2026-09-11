@@ -39,7 +39,7 @@ describe('getTally — mode-agnostic positionAssignment.tally read', () => {
     expect(result.tally).toEqual(TALLY_VALUE);
   });
 
-  it('first-class wins when both are present (DUAL-written record)', () => {
+  it('first-class wins when both are present (BRIDGE-written record)', () => {
     setSchemaWriteMode(NATIVE);
     const result: any = tournamentEngine.getTally({
       positionAssignment: {

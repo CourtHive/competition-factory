@@ -5,7 +5,7 @@ import tournamentEngine from '@Engines/syncEngine';
 import { afterEach, expect, it } from 'vitest';
 
 import { MATCHUPS_SCHEDULED_OUTSIDE_DATES } from '@Constants/errorConditionConstants';
-import { DUAL, LEGACY, NATIVE } from '@Constants/schemaWriteModeConstants';
+import { BRIDGE, LEGACY, NATIVE } from '@Constants/schemaWriteModeConstants';
 
 /**
  * Write-mode parity for unscheduling.
@@ -16,7 +16,7 @@ import { DUAL, LEGACY, NATIVE } from '@Constants/schemaWriteModeConstants';
  * `matchUp.schedule.*` with no timeItem mirror. `clearScheduledMatchUps` used to
  * only strip timeItems, so unscheduling was a silent no-op in NATIVE — a date
  * change that force-unscheduled a matchUp returned SCHEDULE_NOT_CLEARED and left
- * the placement intact. These tests exercise NATIVE and DUAL explicitly so the
+ * the placement intact. These tests exercise NATIVE and BRIDGE explicitly so the
  * regression can't hide behind the LEGACY-pinned suite again.
  */
 
@@ -59,7 +59,7 @@ function rawMatchUp(tournamentRecord: any, matchUpId: string) {
   return undefined;
 }
 
-it.each([NATIVE, DUAL, LEGACY])('clearScheduledMatchUps clears the placement in %s write mode', (mode) => {
+it.each([NATIVE, BRIDGE, LEGACY])('clearScheduledMatchUps clears the placement in %s write mode', (mode) => {
   const { matchUpId } = scheduleOutOfRange(mode);
   // operate on (and assert against) the same record instance the function mutates
   const tournamentRecord = tournamentEngine.getTournament().tournamentRecord;
@@ -77,7 +77,7 @@ it.each([NATIVE, DUAL, LEGACY])('clearScheduledMatchUps clears the placement in 
   expect(scheduleTimeItems.length).toEqual(0);
 });
 
-it.each([NATIVE, DUAL, LEGACY])(
+it.each([NATIVE, BRIDGE, LEGACY])(
   'setTournamentDates force-unschedules an out-of-range matchUp in %s write mode',
   (mode) => {
     const { matchUpId } = scheduleOutOfRange(mode);

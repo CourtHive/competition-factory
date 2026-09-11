@@ -1,7 +1,7 @@
 import { afterEach, beforeEach, describe } from 'vitest';
 
 import { setSchemaWriteMode } from '@Global/state/globalState';
-import { DUAL, LEGACY, NATIVE, SchemaWriteMode } from '@Constants/schemaWriteModeConstants';
+import { BRIDGE, LEGACY, NATIVE, SchemaWriteMode } from '@Constants/schemaWriteModeConstants';
 
 /**
  * Run a block of *behavioral* specs under multiple schemaWriteModes.
@@ -24,7 +24,7 @@ import { DUAL, LEGACY, NATIVE, SchemaWriteMode } from '@Constants/schemaWriteMod
  */
 export function writeModeMatrix(
   build: (mode: SchemaWriteMode) => void,
-  modes: SchemaWriteMode[] = [NATIVE, DUAL, LEGACY],
+  modes: SchemaWriteMode[] = [NATIVE, BRIDGE, LEGACY],
 ): void {
   for (const mode of modes) {
     describe(`[writeMode: ${mode}]`, () => {

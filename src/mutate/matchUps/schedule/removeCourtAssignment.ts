@@ -52,7 +52,7 @@ export function removeCourtAssignment({
 
   let modified = false;
 
-  // LEGACY / DUAL: court assignment lives in timeItems
+  // LEGACY / BRIDGE: court assignment lives in timeItems
   if (matchUp.timeItems) {
     const hasCourtAssignment = matchUp.timeItems.find((candidate) =>
       [ASSIGN_COURT, ALLOCATE_COURTS].includes(candidate.itemType),
@@ -66,7 +66,7 @@ export function removeCourtAssignment({
     }
   }
 
-  // NATIVE / DUAL: court assignment is first-class schedule.courtId / schedule.allocatedCourts,
+  // NATIVE / BRIDGE: court assignment is first-class schedule.courtId / schedule.allocatedCourts,
   // with no timeItem mirror — without this, deleteCourt left the court assigned in NATIVE.
   if (matchUp.schedule && typeof matchUp.schedule === 'object') {
     if (matchUp.schedule.courtId !== undefined) {

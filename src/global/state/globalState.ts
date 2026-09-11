@@ -4,7 +4,7 @@ import { intersection } from '@Tools/arrays';
 import { isNumeric } from '@Tools/math';
 
 // constants and types
-import { DUAL, LEGACY, NATIVE, SchemaWriteMode, schemaWriteModes } from '@Constants/schemaWriteModeConstants';
+import { BRIDGE, LEGACY, NATIVE, SchemaWriteMode, schemaWriteModes } from '@Constants/schemaWriteModeConstants';
 import { TournamentRecords, ResultType } from '@Types/factoryTypes';
 import { SUCCESS } from '@Constants/resultConstants';
 import {
@@ -246,11 +246,11 @@ export function getSchemaWriteMode(): SchemaWriteMode {
 }
 
 export function writeNativeEnabled(): boolean {
-  return globalState.schemaWriteMode === NATIVE || globalState.schemaWriteMode === DUAL;
+  return globalState.schemaWriteMode === NATIVE || globalState.schemaWriteMode === BRIDGE;
 }
 
 export function writeLegacyEnabled(): boolean {
-  return globalState.schemaWriteMode === LEGACY || globalState.schemaWriteMode === DUAL;
+  return globalState.schemaWriteMode === LEGACY || globalState.schemaWriteMode === BRIDGE;
 }
 
 export function setSaveDrawDeletions(flag?: boolean): { success?: boolean; error?: ErrorType } {

@@ -13,17 +13,17 @@ import { setSchemaWriteMode } from '@Global/state/globalState';
 import { findExtension } from '@Acquire/findExtension';
 
 // constants and types
-import { DUAL, LEGACY, NATIVE, SchemaWriteMode } from '@Constants/schemaWriteModeConstants';
+import { BRIDGE, LEGACY, NATIVE, SchemaWriteMode } from '@Constants/schemaWriteModeConstants';
 import { FLIGHT_PROFILE, LINEUPS } from '@Constants/extensionConstants';
 
-describe.each([NATIVE, DUAL, LEGACY] as SchemaWriteMode[])('flightProfile + lineUps routing (mode=%s)', (mode) => {
+describe.each([NATIVE, BRIDGE, LEGACY] as SchemaWriteMode[])('flightProfile + lineUps routing (mode=%s)', (mode) => {
   function assertSurfaces(element: any, attribute: string, name: string, expected: any) {
     const firstClass = element[attribute];
     const ext = findExtension({ element, name }).extension;
     if (mode === NATIVE) {
       expect(firstClass).toEqual(expected);
       expect(ext).toBeUndefined();
-    } else if (mode === DUAL) {
+    } else if (mode === BRIDGE) {
       expect(firstClass).toEqual(expected);
       expect(ext?.value).toEqual(expected);
     } else {
@@ -75,7 +75,7 @@ describe.each([NATIVE, DUAL, LEGACY] as SchemaWriteMode[])('flightProfile + line
 });
 
 describe('Read symmetry — firstClassOrExtension', () => {
-  it.each([NATIVE, DUAL, LEGACY] as SchemaWriteMode[])('mode=%s reads flightProfile', (mode) => {
+  it.each([NATIVE, BRIDGE, LEGACY] as SchemaWriteMode[])('mode=%s reads flightProfile', (mode) => {
     setSchemaWriteMode(mode);
     const event: any = { eventId: 'e1' };
     const profile = { flights: [{ drawId: 'd1', flightNumber: 1 }] };
@@ -85,7 +85,7 @@ describe('Read symmetry — firstClassOrExtension', () => {
     );
   });
 
-  it.each([NATIVE, DUAL, LEGACY] as SchemaWriteMode[])('mode=%s reads lineUps', (mode) => {
+  it.each([NATIVE, BRIDGE, LEGACY] as SchemaWriteMode[])('mode=%s reads lineUps', (mode) => {
     setSchemaWriteMode(mode);
     const drawDefinition: any = { drawId: 'd1' };
     const lineUps = { 'team-1': [{ participantId: 'p1' }] };

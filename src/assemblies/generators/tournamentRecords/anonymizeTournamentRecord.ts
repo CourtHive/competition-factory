@@ -245,7 +245,7 @@ function anonymizeEvents({ tournamentRecord, filterExtensions, idMap }) {
     if (Array.isArray(event.flightProfile?.flights)) {
       anonymizeFlightProfileFlights(event.flightProfile, idMap);
     }
-    // also anonymize the legacy extension form so DUAL / LEGACY records remain consistent
+    // also anonymize the legacy extension form so BRIDGE / LEGACY records remain consistent
     const { extension: flightProfileExt } = findExtension({ name: FLIGHT_PROFILE, element: event });
     if (Array.isArray(flightProfileExt?.value?.flights)) {
       anonymizeFlightProfileFlights(flightProfileExt.value, idMap);

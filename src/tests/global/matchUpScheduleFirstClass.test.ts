@@ -5,7 +5,7 @@
  * ASSIGN_OFFICIAL) on matchUps.
  *
  * Verifies that the schedule writers behave consistently across NATIVE,
- * DUAL, and LEGACY modes and that buildFullSchedule reads them
+ * BRIDGE, and LEGACY modes and that buildFullSchedule reads them
  * symmetrically through the hydration shim. Lifecycle items
  * (START_TIME / STOP_TIME / RESUME_TIME / END_TIME) remain as timeItems —
  * matchUpDuration() depends on the ordered history — and are not exercised
@@ -22,7 +22,7 @@ import { getTimeItem } from '@Query/base/timeItems';
 import mocksEngine from '@Assemblies/engines/mock';
 
 // constants and types
-import { DUAL, LEGACY, NATIVE, SchemaWriteMode } from '@Constants/schemaWriteModeConstants';
+import { BRIDGE, LEGACY, NATIVE, SchemaWriteMode } from '@Constants/schemaWriteModeConstants';
 import { SINGLES } from '@Constants/eventConstants';
 import { ASSIGN_COURT, ASSIGN_VENUE, COURT_ORDER, SCHEDULED_DATE, SCHEDULED_TIME } from '@Constants/timeItemConstants';
 
@@ -53,14 +53,14 @@ function rawMatchUp(drawId: string, matchUpId: string) {
   return undefined;
 }
 
-describe.each([NATIVE, DUAL, LEGACY] as SchemaWriteMode[])('matchUp.schedule.* end-to-end (mode=%s)', (mode) => {
+describe.each([NATIVE, BRIDGE, LEGACY] as SchemaWriteMode[])('matchUp.schedule.* end-to-end (mode=%s)', (mode) => {
   function assertSurfaces(rawMu: any, attribute: string, itemType: string, expected: any) {
     const firstClass = rawMu.schedule?.[attribute];
     const ti = (rawMu.timeItems ?? []).find((t: any) => t?.itemType === itemType);
     if (mode === NATIVE) {
       expect(firstClass).toEqual(expected);
       expect(ti).toBeUndefined();
-    } else if (mode === DUAL) {
+    } else if (mode === BRIDGE) {
       expect(firstClass).toEqual(expected);
       expect(ti?.itemValue).toEqual(expected);
     } else {
@@ -130,7 +130,7 @@ describe.each([NATIVE, DUAL, LEGACY] as SchemaWriteMode[])('matchUp.schedule.* e
 });
 
 describe('Hydration shim — buildFullSchedule reads first-class then timeItem', () => {
-  it.each([NATIVE, DUAL, LEGACY] as SchemaWriteMode[])(
+  it.each([NATIVE, BRIDGE, LEGACY] as SchemaWriteMode[])(
     'mode=%s produces the same hydrated matchUp.schedule.scheduledDate',
     (mode) => {
       setSchemaWriteMode(mode);
@@ -171,13 +171,13 @@ describe('NATIVE invariant — schedule timeItems are stripped on first-class wr
 });
 
 describe('clearMatchUpSchedule wipes both surfaces', () => {
-  it('removes the timeItem AND the first-class attribute (DUAL fixture)', () => {
-    setSchemaWriteMode(DUAL);
+  it('removes the timeItem AND the first-class attribute (BRIDGE fixture)', () => {
+    setSchemaWriteMode(BRIDGE);
     const { drawId, matchUpId } = setupSingleMatchUpTournament();
     tournamentEngine.addMatchUpScheduledDate({ drawId, matchUpId, scheduledDate: '2026-01-05' });
     tournamentEngine.addMatchUpCourtOrder({ drawId, matchUpId, courtOrder: 2 });
 
-    // DUAL wrote both
+    // BRIDGE wrote both
     const before = rawMatchUp(drawId, matchUpId);
     expect(before.schedule?.scheduledDate).toEqual('2026-01-05');
     expect(before.schedule?.courtOrder).toEqual(2);

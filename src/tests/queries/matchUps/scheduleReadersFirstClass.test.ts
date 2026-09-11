@@ -23,7 +23,7 @@ import {
  * suite is pinned to LEGACY — so these readers were silently timeItem-only and under-returned in
  * production (schedule filters/reports returning nothing). This mode-independent spec constructs
  * each representation directly and asserts the contract: prefer first-class, fall back to the
- * legacy timeItem, first-class wins when both are present (DUAL).
+ * legacy timeItem, first-class wins when both are present (BRIDGE).
  *
  * See planning/NATIVE_WRITEMODE_COVERAGE.md.
  */
@@ -91,7 +91,7 @@ describe('schedule readers resolve first-class with timeItem fallback', () => {
     expect(result[attr]).toEqual(legacy);
   });
 
-  it.each(readers)('$name — first-class wins when both present (DUAL)', ({ fn, attr, itemType, fc, legacy }) => {
+  it.each(readers)('$name — first-class wins when both present (BRIDGE)', ({ fn, attr, itemType, fc, legacy }) => {
     const result: any = fn({
       matchUp: { schedule: { [attr]: fc }, timeItems: [{ itemType, itemValue: legacy }] },
     } as any);

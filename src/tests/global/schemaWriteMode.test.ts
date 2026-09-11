@@ -6,7 +6,7 @@ import { firstClassOrExtension } from '@Acquire/firstClassOrExtension';
 import tournamentEngine from '../engines/syncEngine';
 
 // constants and types
-import { DUAL, LEGACY, NATIVE } from '@Constants/schemaWriteModeConstants';
+import { BRIDGE, LEGACY, NATIVE } from '@Constants/schemaWriteModeConstants';
 
 const TALLY_NAME = 'tally';
 const TALLY_VALUE = { wins: 2, losses: 1 };
@@ -18,9 +18,9 @@ it('engine exposes schemaWriteMode setter + getter', () => {
   expect(native.success).toEqual(true);
   expect(tournamentEngine.getSchemaWriteMode()).toEqual(NATIVE);
 
-  const dual = tournamentEngine.schemaWriteMode(DUAL);
+  const dual = tournamentEngine.schemaWriteMode(BRIDGE);
   expect(dual.success).toEqual(true);
-  expect(tournamentEngine.getSchemaWriteMode()).toEqual(DUAL);
+  expect(tournamentEngine.getSchemaWriteMode()).toEqual(BRIDGE);
 
   const legacy = tournamentEngine.schemaWriteMode(LEGACY);
   expect(legacy.success).toEqual(true);
@@ -81,9 +81,9 @@ describe('NATIVE mode', () => {
   });
 });
 
-describe('DUAL mode', () => {
+describe('BRIDGE mode', () => {
   it('writes both the first-class attribute and the legacy extension', () => {
-    setSchemaWriteMode(DUAL);
+    setSchemaWriteMode(BRIDGE);
     const element: any = {};
 
     setFirstClassOrExtension({
@@ -165,8 +165,8 @@ describe('NATIVE → LEGACY round-trip read symmetry', () => {
     expect(firstClassOrExtension({ element, attribute: 'tally', name: TALLY_NAME })).toEqual(TALLY_VALUE);
   });
 
-  it('DUAL write is readable through firstClassOrExtension and prefers first-class', () => {
-    setSchemaWriteMode(DUAL);
+  it('BRIDGE write is readable through firstClassOrExtension and prefers first-class', () => {
+    setSchemaWriteMode(BRIDGE);
     const element: any = {};
     setFirstClassOrExtension({
       element,

@@ -23,7 +23,7 @@ type SetFirstClassOrExtensionArgs = {
  *
  * - NATIVE: write `element[attribute] = value`; remove any stale legacy
  *   extension of the same name so reads stay consistent
- * - DUAL: write the first-class attribute first, then mirror to the legacy
+ * - BRIDGE: write the first-class attribute first, then mirror to the legacy
  *   extension (back-compat for consumers that still read `_name`)
  * - LEGACY: write only the extension; do not touch the first-class
  *   attribute (preserves pre-CODES write behavior)

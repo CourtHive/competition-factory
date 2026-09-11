@@ -93,7 +93,7 @@ export function noDownstreamDependencies(params) {
     return scoreModification(params);
   }
 
-  // if matchUpStatus is being changed for a DUAL MATCH and the new status is CANCELLED or ABANDONED
+  // if matchUpStatus is being changed for a BRIDGE MATCH and the new status is CANCELLED or ABANDONED
   // then winningSide of the dualMatchUp should be changed. This boolean triggers that logic in attemptToSetWinningSide
   const triggerDualWinningSide = [CANCELLED, ABANDONED].includes(matchUpStatus) && params.dualWinningSideChange;
 

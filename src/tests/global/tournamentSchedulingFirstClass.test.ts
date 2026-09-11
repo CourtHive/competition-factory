@@ -19,7 +19,7 @@ import { setSchemaWriteMode } from '@Global/state/globalState';
 import { findExtension } from '@Acquire/findExtension';
 
 // constants and types
-import { DUAL, LEGACY, NATIVE, SchemaWriteMode } from '@Constants/schemaWriteModeConstants';
+import { BRIDGE, LEGACY, NATIVE, SchemaWriteMode } from '@Constants/schemaWriteModeConstants';
 import { SCHEDULE_LIMITS, SCHEDULE_TIMING, SCHEDULING_PROFILE } from '@Constants/extensionConstants';
 
 type Promotion = { name: string; leaf: string; value: any };
@@ -34,7 +34,7 @@ const promotions: Promotion[] = [
   },
 ];
 
-describe.each([NATIVE, DUAL, LEGACY] as SchemaWriteMode[])('scheduling group-leaf routing (mode=%s)', (mode) => {
+describe.each([NATIVE, BRIDGE, LEGACY] as SchemaWriteMode[])('scheduling group-leaf routing (mode=%s)', (mode) => {
   it.each(promotions)('$leaf routes correctly', ({ name, leaf, value }) => {
     setSchemaWriteMode(mode);
     const tournamentRecord: any = { tournamentId: 't1' };
@@ -52,7 +52,7 @@ describe.each([NATIVE, DUAL, LEGACY] as SchemaWriteMode[])('scheduling group-lea
     if (mode === NATIVE) {
       expect(fc).toEqual(value);
       expect(ext).toBeUndefined();
-    } else if (mode === DUAL) {
+    } else if (mode === BRIDGE) {
       expect(fc).toEqual(value);
       expect(ext?.value).toEqual(value);
     } else {
@@ -64,7 +64,7 @@ describe.each([NATIVE, DUAL, LEGACY] as SchemaWriteMode[])('scheduling group-lea
 
 describe('Read symmetry — firstClassGroupLeafOrExtension', () => {
   it.each(promotions)('mode-agnostic read for $leaf', ({ name, leaf, value }) => {
-    for (const mode of [NATIVE, DUAL, LEGACY] as SchemaWriteMode[]) {
+    for (const mode of [NATIVE, BRIDGE, LEGACY] as SchemaWriteMode[]) {
       setSchemaWriteMode(mode);
       const tournamentRecord: any = { tournamentId: 't1' };
       setGroupLeafOrExtension({
