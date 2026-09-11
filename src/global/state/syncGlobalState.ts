@@ -1,4 +1,3 @@
-import { pushGlobalLog } from '@Functions/global/globalLog';
 import { preserveNoticeIdentity } from './noticeIdentity';
 import {
   CallListenerArgs,
@@ -225,8 +224,12 @@ export function handleCaughtError({ engineName, methodName, params, err }: Handl
     error = err.message;
   }
 
-  pushGlobalLog({
-    method: 'syncGlobalState',
+  // Engine-level error sink, like globalState's own. It must NOT route through pushGlobalLog:
+  // globalLog imports getDevContext from globalState, and globalState imports THIS module, so that
+  // edge closes a cycle (globalState -> syncGlobalState -> globalLog -> globalState) which rollup
+  // reports on every build.
+  // eslint-disable-next-line no-console
+  console.log('ERROR', {
     tournamentId: getTournamentId(),
     params: JSON.stringify(params),
     engine: engineName,
