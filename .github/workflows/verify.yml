@@ -162,5 +162,11 @@ jobs:
       - name: verify:surface
         run: pnpm verify:surface
 
+      # Needs dist, so it sits after verify:build. Checks that every import the docs tell a
+      # reader to write actually resolves against the BUILT package — the documentation tests
+      # import by module path and so cannot see a public-surface break.
+      - name: verify:docs-imports
+        run: pnpm verify:docs-imports
+
       - name: verify:pack
         run: pnpm verify:pack

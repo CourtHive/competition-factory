@@ -95,7 +95,8 @@ The **NICKNAME** action sets `participantOtherName` on the participant. When pre
 ## Default Policy
 
 ```js
-import { POLICY_POSITION_ACTIONS_DEFAULT } from 'tods-competition-factory';
+import { fixtures } from 'tods-competition-factory';
+const { POLICY_POSITION_ACTIONS_DEFAULT } = fixtures.policies;
 
 // Default policy:
 // - All actions enabled for QUALIFYING and MAIN stage 1
@@ -138,7 +139,8 @@ import { POLICY_POSITION_ACTIONS_DEFAULT } from 'tods-competition-factory';
 ### 1. Default Policy
 
 ```js
-import { POLICY_POSITION_ACTIONS_DEFAULT } from 'tods-competition-factory';
+import { fixtures } from 'tods-competition-factory';
+const { POLICY_POSITION_ACTIONS_DEFAULT } = fixtures.policies;
 
 // Standard behavior - actions enabled for main structures, limited for consolations
 tournamentEngine.attachPolicies({
@@ -149,7 +151,8 @@ tournamentEngine.attachPolicies({
 ### 2. No Movement Policy
 
 ```js
-import { POLICY_POSITION_ACTIONS_NO_MOVEMENT } from 'tods-competition-factory';
+import { fixtures } from 'tods-competition-factory';
+const { POLICY_POSITION_ACTIONS_NO_MOVEMENT } = fixtures.policies;
 
 // Only allow seeding and metadata changes - no participant movement
 // Useful for: Locked draws, seeding-only phases
@@ -169,7 +172,8 @@ import { POLICY_POSITION_ACTIONS_NO_MOVEMENT } from 'tods-competition-factory';
 ### 3. Disabled Policy
 
 ```js
-import { POLICY_POSITION_ACTIONS_DISABLED } from 'tods-competition-factory';
+import { fixtures } from 'tods-competition-factory';
+const { POLICY_POSITION_ACTIONS_DISABLED } = fixtures.policies;
 
 // Completely disable all position actions
 // Useful for: Published draws, live tournaments
@@ -184,7 +188,8 @@ import { POLICY_POSITION_ACTIONS_DISABLED } from 'tods-competition-factory';
 ### 4. Unrestricted Policy
 
 ```js
-import { POLICY_POSITION_ACTIONS_UNRESTRICTED } from 'tods-competition-factory';
+import { fixtures } from 'tods-competition-factory';
+const { POLICY_POSITION_ACTIONS_UNRESTRICTED } = fixtures.policies;
 
 // Allow all actions everywhere, even when positions are active
 // Useful for: Testing, emergency modifications, flexible club tournaments
@@ -209,7 +214,8 @@ import { POLICY_POSITION_ACTIONS_UNRESTRICTED } from 'tods-competition-factory';
 ### Disable All Position Actions
 
 ```js
-import { POLICY_TYPE_POSITION_ACTIONS } from 'tods-competition-factory';
+import { policyConstants } from 'tods-competition-factory';
+const { POLICY_TYPE_POSITION_ACTIONS } = policyConstants;
 
 // Completely lock down draw - no position changes allowed
 const lockedDrawPolicy = {
@@ -726,7 +732,8 @@ it('restricts actions for active draw positions', () => {
 ### Test 3: Verify Custom Policy
 
 ```js
-import { POLICY_TYPE_POSITION_ACTIONS } from 'tods-competition-factory';
+import { policyConstants } from 'tods-competition-factory';
+const { POLICY_TYPE_POSITION_ACTIONS } = policyConstants;
 
 it('respects custom policy definitions', () => {
   const { drawIds, tournamentRecord } = mocksEngine.generateTournamentRecord({
@@ -770,7 +777,8 @@ it('respects custom policy definitions', () => {
 ### Test 4: Verify Disabled Policy
 
 ```js
-import { POLICY_POSITION_ACTIONS_DISABLED } from 'tods-competition-factory';
+import { fixtures } from 'tods-competition-factory';
+const { POLICY_POSITION_ACTIONS_DISABLED } = fixtures.policies;
 
 it('disabled policy returns no actions', () => {
   const { drawIds, tournamentRecord } = mocksEngine.generateTournamentRecord({

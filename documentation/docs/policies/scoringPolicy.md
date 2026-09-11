@@ -84,7 +84,8 @@ The **Scoring Policy** (`POLICY_TYPE_SCORING`) controls scoring requirements, fo
 ## Default Scoring Policy
 
 ```js
-import { POLICY_SCORING_DEFAULT } from 'tods-competition-factory';
+import { fixtures } from 'tods-competition-factory';
+const { POLICY_SCORING_DEFAULT } = fixtures.policies;
 
 // Defaults:
 // {
@@ -127,7 +128,8 @@ import { POLICY_SCORING_DEFAULT } from 'tods-competition-factory';
 ### Default Matchup Format
 
 ```js
-import { POLICY_TYPE_SCORING } from 'tods-competition-factory';
+import { policyConstants } from 'tods-competition-factory';
+const { POLICY_TYPE_SCORING } = policyConstants;
 
 // Set tournament-wide default format
 const defaultFormatPolicy = {
@@ -264,7 +266,8 @@ const flexibleDeletionPolicy = {
 ### Limit Available Formats (USTA Example)
 
 ```js
-import { POLICY_SCORING_USTA } from 'tods-competition-factory';
+import { fixtures } from 'tods-competition-factory';
+const { POLICY_SCORING_USTA } = fixtures.policies;
 
 // USTA policy includes approved formats only
 const ustaPolicy = {
@@ -389,7 +392,8 @@ const stageSpecificPolicy = {
 ### USTA Status Codes (Comprehensive)
 
 ```js
-import { POLICY_SCORING_USTA } from 'tods-competition-factory';
+import { fixtures } from 'tods-competition-factory';
+const { POLICY_SCORING_USTA } = fixtures.policies;
 
 // USTA policy includes detailed status codes:
 const ustaStatusCodes = {
@@ -581,7 +585,8 @@ const propagationPolicy = {
 ### USTA Tournament
 
 ```js
-import { POLICY_SCORING_USTA } from 'tods-competition-factory';
+import { fixtures } from 'tods-competition-factory';
+const { POLICY_SCORING_USTA } = fixtures.policies;
 
 // Use complete USTA policy
 tournamentEngine.attachPolicies({

@@ -235,7 +235,8 @@ Three preset policies are provided as starting points.
 Standard DrawMatic competition. No pressure tracking. Rankings based on wins with point differential as primary tiebreak.
 
 ```ts
-import { POLICY_COMPETITION_STANDARD } from 'tods-competition-factory';
+import { fixtures } from 'tods-competition-factory';
+const { POLICY_COMPETITION_STANDARD } = fixtures.policies;
 ```
 
 | Setting         | Value                                                       |
@@ -252,7 +253,8 @@ import { POLICY_COMPETITION_STANDARD } from 'tods-competition-factory';
 DrawMatic competition with full pressure tracking. Rankings based on cumulative overperformance.
 
 ```ts
-import { POLICY_COMPETITION_PRESSURE } from 'tods-competition-factory';
+import { fixtures } from 'tods-competition-factory';
+const { POLICY_COMPETITION_PRESSURE } = fixtures.policies;
 ```
 
 | Setting         | Value                                                                   |
@@ -269,7 +271,8 @@ import { POLICY_COMPETITION_PRESSURE } from 'tods-competition-factory';
 Swiss-system competition with pressure tracking. Rankings based on wins with chess-style tiebreaks.
 
 ```ts
-import { POLICY_COMPETITION_SWISS } from 'tods-competition-factory';
+import { fixtures } from 'tods-competition-factory';
+const { POLICY_COMPETITION_SWISS } = fixtures.policies;
 ```
 
 | Setting         | Value                                                             |
@@ -341,7 +344,8 @@ The leaderboard provides a ranked view of all participants:
 ### Attach a Policy
 
 ```ts
-import { tournamentEngine, POLICY_COMPETITION_PRESSURE } from 'tods-competition-factory';
+import { fixtures, tournamentEngine } from 'tods-competition-factory';
+const { POLICY_COMPETITION_PRESSURE } = fixtures.policies;
 
 tournamentEngine.attachPolicies({
   policyDefinitions: POLICY_COMPETITION_PRESSURE,

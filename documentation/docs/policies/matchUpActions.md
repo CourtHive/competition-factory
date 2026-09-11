@@ -90,7 +90,8 @@ The following actions can be controlled by this policy:
 ## Default Policy
 
 ```js
-import { POLICY_MATCHUP_ACTIONS_DEFAULT } from 'tods-competition-factory';
+import { fixtures } from 'tods-competition-factory';
+const { POLICY_MATCHUP_ACTIONS_DEFAULT } = fixtures.policies;
 
 // Default policy:
 // - All actions enabled for all structures
@@ -135,7 +136,8 @@ import { POLICY_MATCHUP_ACTIONS_DEFAULT } from 'tods-competition-factory';
 ### Enable All MatchUp Actions
 
 ```js
-import { POLICY_TYPE_MATCHUP_ACTIONS } from 'tods-competition-factory';
+import { policyConstants } from 'tods-competition-factory';
+const { POLICY_TYPE_MATCHUP_ACTIONS } = policyConstants;
 
 // Allow all matchUp actions without restrictions
 const openPolicy = {
@@ -788,7 +790,8 @@ it('returns isByeMatchUp for BYE matchUps', () => {
 ### Test 4: Verify Gender Enforcement
 
 ```js
-import { POLICY_TYPE_MATCHUP_ACTIONS } from 'tods-competition-factory';
+import { policyConstants } from 'tods-competition-factory';
+const { POLICY_TYPE_MATCHUP_ACTIONS } = policyConstants;
 
 it('enforces gender restrictions', () => {
   // Create team event with gendered positions
@@ -821,7 +824,8 @@ it('enforces gender restrictions', () => {
 ### Test 5: Verify Custom Policy
 
 ```js
-import { POLICY_TYPE_MATCHUP_ACTIONS } from 'tods-competition-factory';
+import { policyConstants } from 'tods-competition-factory';
+const { POLICY_TYPE_MATCHUP_ACTIONS } = policyConstants;
 
 it('respects custom action restrictions', () => {
   const { drawIds, tournamentRecord } = mocksEngine.generateTournamentRecord({

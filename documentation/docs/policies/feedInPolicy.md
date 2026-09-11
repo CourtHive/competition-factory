@@ -51,7 +51,8 @@ When `false` (default):
 **Examples:**
 
 ```javascript
-import { POLICY_TYPE_FEED_IN } from 'tods-competition-factory';
+import { policyConstants } from 'tods-competition-factory';
+const { POLICY_TYPE_FEED_IN } = policyConstants;
 
 // Standard feed-in (default) - works for all draw sizes
 const standardFeedIn = {
@@ -235,7 +236,9 @@ In a MAIN structure with 64 participants in the first round, 32 participants wil
 This example is sufficient to cover MAIN draw sizes up to 128. This is because the fifth element of the roundGroupedOrder array corresponds to the eighth round of a CONSOLATION structure. With a 128 MAIN structure, fed rounds contain 64, 32, 16, 8, 4 and 2 participants.
 
 ```javascript
-import { TOP_DOWN, BOTTOM_UP, POLICY_TYPE_FEED_IN } from 'tods-competition-factory';
+import { drawDefinitionConstants, policyConstants } from 'tods-competition-factory';
+const { BOTTOM_UP, TOP_DOWN } = drawDefinitionConstants;
+const { POLICY_TYPE_FEED_IN } = policyConstants;
 
 const feedPolicy = {
   [POLICY_TYPE_FEED_IN]: {
@@ -256,7 +259,9 @@ const feedPolicy = {
 **256-Draw Example (Professional Tournament):**
 
 ```javascript
-import { TOP_DOWN, BOTTOM_UP, POLICY_TYPE_FEED_IN } from 'tods-competition-factory';
+import { drawDefinitionConstants, policyConstants } from 'tods-competition-factory';
+const { BOTTOM_UP, TOP_DOWN } = drawDefinitionConstants;
+const { POLICY_TYPE_FEED_IN } = policyConstants;
 
 const pro256FeedPolicy = {
   [POLICY_TYPE_FEED_IN]: {
@@ -324,7 +329,9 @@ Round 4: BOTTOM_UP   (even)
 **Examples:**
 
 ```javascript
-import { TOP_DOWN, BOTTOM_UP, POLICY_TYPE_FEED_IN } from 'tods-competition-factory';
+import { drawDefinitionConstants, policyConstants } from 'tods-competition-factory';
+const { BOTTOM_UP, TOP_DOWN } = drawDefinitionConstants;
+const { POLICY_TYPE_FEED_IN } = policyConstants;
 
 // Simple 32-draw
 const feedPolicy32 = {
@@ -488,8 +495,10 @@ Use defaults when:
 ### Basic Usage - Standard Feed-In Championship
 
 ```javascript
-import tournamentEngine from 'tods-competition-factory';
-import { FEED_IN_CHAMPIONSHIP, POLICY_TYPE_FEED_IN, TOP_DOWN, BOTTOM_UP } from 'tods-competition-factory';
+import { tournamentEngine } from 'tods-competition-factory';
+import { drawDefinitionConstants, policyConstants } from 'tods-competition-factory';
+const { BOTTOM_UP, FEED_IN_CHAMPIONSHIP, TOP_DOWN } = drawDefinitionConstants;
+const { POLICY_TYPE_FEED_IN } = policyConstants;
 
 // Create feed-in policy
 const feedPolicy = {
@@ -512,7 +521,9 @@ tournamentEngine.generateDrawDefinition({
 ### FMLC (First Match Loser Consolation)
 
 ```javascript
-import { FIRST_MATCH_LOSER_CONSOLATION, POLICY_TYPE_FEED_IN } from 'tods-competition-factory';
+import { drawDefinitionConstants, policyConstants } from 'tods-competition-factory';
+const { FIRST_MATCH_LOSER_CONSOLATION } = drawDefinitionConstants;
+const { POLICY_TYPE_FEED_IN } = policyConstants;
 
 // FMLC policy - feed from main final
 const fmlcPolicy = {
@@ -538,7 +549,9 @@ tournamentEngine.generateDrawDefinition({
 ### 64-Draw with Custom Grouping
 
 ```javascript
-import { FEED_IN_CHAMPIONSHIP, POLICY_TYPE_FEED_IN, TOP_DOWN, BOTTOM_UP } from 'tods-competition-factory';
+import { drawDefinitionConstants, policyConstants } from 'tods-competition-factory';
+const { BOTTOM_UP, FEED_IN_CHAMPIONSHIP, TOP_DOWN } = drawDefinitionConstants;
+const { POLICY_TYPE_FEED_IN } = policyConstants;
 
 const custom64FeedPolicy = {
   [POLICY_TYPE_FEED_IN]: {
@@ -571,7 +584,9 @@ tournamentEngine.generateDrawDefinition({
 ### 128-Draw Professional Tournament
 
 ```javascript
-import { FEED_IN_CHAMPIONSHIP, POLICY_TYPE_FEED_IN, TOP_DOWN, BOTTOM_UP } from 'tods-competition-factory';
+import { drawDefinitionConstants, policyConstants } from 'tods-competition-factory';
+const { BOTTOM_UP, FEED_IN_CHAMPIONSHIP, TOP_DOWN } = drawDefinitionConstants;
+const { POLICY_TYPE_FEED_IN } = policyConstants;
 
 const pro128FeedPolicy = {
   [POLICY_TYPE_FEED_IN]: {
@@ -599,7 +614,9 @@ tournamentEngine.generateDrawDefinition({
 ### 256-Draw with Complex Grouping
 
 ```javascript
-import { FEED_IN_CHAMPIONSHIP, POLICY_TYPE_FEED_IN, TOP_DOWN, BOTTOM_UP } from 'tods-competition-factory';
+import { drawDefinitionConstants, policyConstants } from 'tods-competition-factory';
+const { BOTTOM_UP, FEED_IN_CHAMPIONSHIP, TOP_DOWN } = drawDefinitionConstants;
+const { POLICY_TYPE_FEED_IN } = policyConstants;
 
 const pro256FeedPolicy = {
   [POLICY_TYPE_FEED_IN]: {
@@ -627,7 +644,9 @@ tournamentEngine.generateDrawDefinition({
 ### Feed-In to Specific Round
 
 ```javascript
-import { FEED_IN_CHAMPIONSHIP_TO_SF, POLICY_TYPE_FEED_IN, TOP_DOWN, BOTTOM_UP } from 'tods-competition-factory';
+import { drawDefinitionConstants, policyConstants } from 'tods-competition-factory';
+const { BOTTOM_UP, FEED_IN_CHAMPIONSHIP_TO_SF, TOP_DOWN } = drawDefinitionConstants;
+const { POLICY_TYPE_FEED_IN } = policyConstants;
 
 // Feed-in only up to semifinals
 const feedToSFPolicy = {
@@ -657,14 +676,10 @@ tournamentEngine.generateDrawDefinition({
 ### Using with Other Policies
 
 ```javascript
-import {
-  FEED_IN_CHAMPIONSHIP,
-  POLICY_TYPE_FEED_IN,
-  POLICY_TYPE_SEEDING,
-  POLICY_SEEDING_ITF,
-  TOP_DOWN,
-  BOTTOM_UP,
-} from 'tods-competition-factory';
+import { drawDefinitionConstants, fixtures, policyConstants } from 'tods-competition-factory';
+const { BOTTOM_UP, FEED_IN_CHAMPIONSHIP, TOP_DOWN } = drawDefinitionConstants;
+const { POLICY_TYPE_FEED_IN, POLICY_TYPE_SEEDING } = policyConstants;
+const { POLICY_SEEDING_ITF } = fixtures.policies;
 
 // Combine feed-in with seeding policy
 const combinedPolicies = {
@@ -691,15 +706,10 @@ tournamentEngine.generateDrawDefinition({
 ### Scenario 1: Professional 64-Draw Feed-In Championship
 
 ```javascript
-import tournamentEngine from 'tods-competition-factory';
-import {
-  FEED_IN_CHAMPIONSHIP,
-  POLICY_TYPE_FEED_IN,
-  POLICY_TYPE_SEEDING,
-  SEPARATE,
-  TOP_DOWN,
-  BOTTOM_UP
-} from 'tods-competition-factory';
+import { tournamentEngine } from 'tods-competition-factory';
+import { drawDefinitionConstants, policyConstants } from 'tods-competition-factory';
+const { BOTTOM_UP, FEED_IN_CHAMPIONSHIP, SEPARATE, TOP_DOWN } = drawDefinitionConstants;
+const { POLICY_TYPE_FEED_IN, POLICY_TYPE_SEEDING } = policyConstants;
 
 // Setup: Professional tournament with 64 players
 const players = [...]; // 64 professional players
@@ -770,11 +780,9 @@ const { drawId } = tournamentEngine.generateDrawDefinition({
 ### Scenario 2: Club Tournament FMLC (First MATCH Losers Get Second Chance)
 
 ```javascript
-import {
-  FIRST_MATCH_LOSER_CONSOLATION,
-  POLICY_TYPE_SEEDING,
-  CLUSTER
-} from 'tods-competition-factory';
+import { drawDefinitionConstants, policyConstants } from 'tods-competition-factory';
+const { CLUSTER, FIRST_MATCH_LOSER_CONSOLATION } = drawDefinitionConstants;
+const { POLICY_TYPE_SEEDING } = policyConstants;
 
 // 14 club players (16 draw with 2 BYEs)
 const clubPlayers = [...]; // 14 players
@@ -842,14 +850,9 @@ const { drawId } = tournamentEngine.generateDrawDefinition({
 ### Scenario 3: College Conference Championship (128 Draw)
 
 ```javascript
-import {
-  FEED_IN_CHAMPIONSHIP,
-  POLICY_TYPE_FEED_IN,
-  POLICY_TYPE_SEEDING,
-  SEPARATE,
-  TOP_DOWN,
-  BOTTOM_UP
-} from 'tods-competition-factory';
+import { drawDefinitionConstants, policyConstants } from 'tods-competition-factory';
+const { BOTTOM_UP, FEED_IN_CHAMPIONSHIP, SEPARATE, TOP_DOWN } = drawDefinitionConstants;
+const { POLICY_TYPE_FEED_IN, POLICY_TYPE_SEEDING } = policyConstants;
 
 // 128 college players from conference
 const collegePlayers = [...]; // 128 players
@@ -917,14 +920,9 @@ const { drawId } = tournamentEngine.generateDrawDefinition({
 ### Scenario 4: Club Tournament Feed-In (32 Draw)
 
 ```javascript
-import {
-  FEED_IN_CHAMPIONSHIP,
-  POLICY_TYPE_FEED_IN,
-  POLICY_TYPE_SEEDING,
-  CLUSTER,
-  TOP_DOWN,
-  BOTTOM_UP,
-} from 'tods-competition-factory';
+import { drawDefinitionConstants, policyConstants } from 'tods-competition-factory';
+const { BOTTOM_UP, CLUSTER, FEED_IN_CHAMPIONSHIP, TOP_DOWN } = drawDefinitionConstants;
+const { POLICY_TYPE_FEED_IN, POLICY_TYPE_SEEDING } = policyConstants;
 
 // 28 club members
 const clubMembers = [
@@ -1178,13 +1176,10 @@ Feed-in policy works with:
 **Example Integration:**
 
 ```javascript
-import {
-  FEED_IN_CHAMPIONSHIP,
-  POLICY_SEEDING_ITF,
-  POLICY_TYPE_FEED_IN,
-  TOP_DOWN,
-  BOTTOM_UP,
-} from 'tods-competition-factory';
+import { drawDefinitionConstants, fixtures, policyConstants } from 'tods-competition-factory';
+const { BOTTOM_UP, FEED_IN_CHAMPIONSHIP, TOP_DOWN } = drawDefinitionConstants;
+const { POLICY_SEEDING_ITF } = fixtures.policies;
+const { POLICY_TYPE_FEED_IN } = policyConstants;
 
 const fullPolicies = {
   ...POLICY_SEEDING_ITF,
@@ -1207,13 +1202,15 @@ tournamentEngine.generateDrawDefinition({
 
 ### Query Methods
 
-#### `getStructureLinks()`
+#### `getStructureLinks()` (internal)
 
-Retrieves links between structures.
+Retrieves links between structures. **Not part of the public surface** — reachable by module path
+inside the factory, but exported neither as a root name nor through any governor, so a package
+consumer cannot call it. Described here because it explains how feed arms connect; if you need it
+from a consumer, that is a request to export it.
 
 ```javascript
-import { getStructureLinks } from 'tods-competition-factory';
-
+// Shape only — not importable from the package.
 const { links } = getStructureLinks({
   drawDefinition,
   structureId: mainStructureId,

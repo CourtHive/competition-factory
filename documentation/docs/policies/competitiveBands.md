@@ -134,7 +134,8 @@ const result = tournamentEngine.attachPolicies({
 ### Custom Competitive Bands
 
 ```js
-import { POLICY_TYPE_COMPETITIVE_BANDS } from 'tods-competition-factory';
+import { policyConstants } from 'tods-competition-factory';
+const { POLICY_TYPE_COMPETITIVE_BANDS } = policyConstants;
 
 // Stricter definition of "decisive"
 const strictBands = {
@@ -447,7 +448,8 @@ Adding `deltaBands` to a policy changes nothing about the three realized bands. 
 `deltaBands` is a list, not a fixed shape. **N entries produce N bands**, and the final entry omits its bound to catch the remainder:
 
 ```js
-import { POLICY_TYPE_COMPETITIVE_BANDS } from 'tods-competition-factory';
+import { policyConstants } from 'tods-competition-factory';
+const { POLICY_TYPE_COMPETITIVE_BANDS } = policyConstants;
 
 const policy = {
   [POLICY_TYPE_COMPETITIVE_BANDS]: {
