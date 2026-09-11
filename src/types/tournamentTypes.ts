@@ -687,6 +687,28 @@ export interface ScheduleScenario {
   placements: ScenarioPlacement[];
 }
 
+/**
+ * Why an exit sits on one side of a matchUp, recorded per side.
+ *
+ * `matchUpStatusCodes` conflated unrelated things: the scoring policy's code vocabulary, propagation
+ * provenance stamped per side, and codes wrapped as `{ code }`. The provenance moves here, where
+ * `sideNumber` is a KEY rather than an array index, the element shape is fixed, and
+ * `sourceMatchUpId` makes an entry attributable to the exit that produced it.
+ *
+ * See Mentat/planning/MATCHUP_STATUS_CODES_PER_SIDE.md.
+ */
+export type SideExitProvenanceEntry = {
+  /** the status this side was given as a result of the upstream exit, e.g. WALKOVER / DEFAULTED */
+  matchUpStatus?: MatchUpStatusUnion;
+  /** the upstream status that produced it, e.g. DOUBLE_WALKOVER / DOUBLE_DEFAULT / BYE */
+  previousMatchUpStatus?: MatchUpStatusUnion;
+  /** the matchUp whose exit produced this entry; the identity the unwind lacks today */
+  sourceMatchUpId?: string;
+};
+
+/** Keyed by sideNumber (1 | 2). Serialises as `{ "1": {...}, "2": {...} }`. */
+export type SideExitProvenance = Record<number, SideExitProvenanceEntry>;
+
 export interface MatchUp {
   collectionId?: string;
   collectionPosition?: number;
@@ -718,6 +740,9 @@ export interface MatchUp {
   // CODES first-class: previously stored as schedule-related timeItems
   schedule?: MatchUpSchedule;
   score?: Score;
+  // CODES first-class: per-side provenance for an exit PRODUCED by propagation.
+  // Keyed by sideNumber, so there is no positional padding and no polymorphism.
+  sideExitProvenance?: SideExitProvenance;
   sides?: Side[];
   startDate?: string;
   surfaceCategory?: SurfaceCategoryUnion;

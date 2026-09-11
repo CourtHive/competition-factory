@@ -2,6 +2,7 @@ import { updateAssignmentParticipantResults } from '@Mutate/drawDefinitions/matc
 import { processCompetitionMatchUp } from '@Mutate/drawDefinitions/competition/processCompetitionMatchUp';
 import { modifyMatchUpNotice, updateInContextMatchUp } from '@Mutate/notifications/drawNotifications';
 import { getCompetitionPolicy } from '@Query/drawDefinition/competition/getCompetitionPolicy';
+import { clearSideExitProvenance } from '@Mutate/matchUps/matchUpStatus/sideExitProvenance';
 import { getAllStructureMatchUps } from '@Query/matchUps/getAllStructureMatchUps';
 import { getAppliedPolicies } from '@Query/extensions/getAppliedPolicies';
 import { checkScoreHasValue } from '@Query/matchUp/checkScoreHasValue';
@@ -218,9 +219,6 @@ function resolveDualMatchUpTarget({ isDualMatchUp, drawDefinition, matchUpId, ma
     return undefined;
   }
 
-  if (matchUp.matchUpId !== matchUpId) {
-    console.log('!!!!!');
-  }
   return undefined;
 }
 
@@ -244,6 +242,9 @@ function applyScoreAndStatus({
   if (matchUpStatus) matchUp.matchUpStatus = matchUpStatus;
   if (matchUpFormat) matchUp.matchUpFormat = matchUpFormat;
   if (matchUpStatusCodes) matchUp.matchUpStatusCodes = matchUpStatusCodes;
+  // blanking the codes unwinds the exit they described; provenance describes the same exit and
+  // must not outlive them, or the matchUp never returns to its pre-exit state
+  if (matchUpStatusCodes && !matchUpStatusCodes.length) clearSideExitProvenance(matchUp);
   if (winningSide) matchUp.winningSide = winningSide;
   if (removeWinningSide) matchUp.winningSide = undefined;
 }

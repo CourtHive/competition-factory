@@ -7,7 +7,7 @@ import { isExit } from '@Validators/isExit';
 // constants
 import { DOUBLE_WALKOVER, RETIRED, WALKOVER } from '@Constants/matchUpStatusConstants';
 import { MISSING_MATCHUP } from '@Constants/errorConditionConstants';
-import { OUTCOME_WALKOVER } from '@Helpers/keyValueScore/constants';
+import { exitOutcomeCode } from '@Mutate/matchUps/matchUpStatus/sideExitProvenance';
 import { SUCCESS } from '@Constants/resultConstants';
 
 // matchUpStatusCodes are position-dependent: index 0 maps to side 1, index 1 to
@@ -75,9 +75,10 @@ export function progressExitStatus({
     return decorateResult({ result: { error: MISSING_MATCHUP }, stack });
   }
 
-  // double-WO special codes are stored as objects; normalize to simple strings
-  const statusCodes: string[] =
-    updatedLoserMatchUp.matchUpStatusCodes?.map((sc) => (typeof sc === 'string' ? sc : OUTCOME_WALKOVER)) ?? [];
+  // Object-shaped codes are normalised to their OWN outcome code, not to a walkover.
+  // This previously hardcoded OUTCOME_WALKOVER for every object, which relabelled DEFAULTED and BYE
+  // provenance as walkovers and persisted the result (statusCodes is written back below).
+  const statusCodes: string[] = (updatedLoserMatchUp.matchUpStatusCodes ?? []).map(exitOutcomeCode);
   const loserParticipantSide = updatedLoserMatchUp.sides?.find((s) => s.participantId === loserParticipantId);
 
   let loserMatchUpStatus = carryOverMatchUpStatus;
