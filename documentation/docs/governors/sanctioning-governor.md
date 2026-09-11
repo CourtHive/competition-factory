@@ -3,14 +3,18 @@ title: Sanctioning Governor
 ---
 
 ```js
-import { sanctioningEngine } from 'tods-competition-factory';
+import { governors } from 'tods-competition-factory';
+
+const { sanctioningGovernor } = governors;
 ```
 
-:::caution No standalone governor export
-Unlike the other governors, `sanctioningGovernor` is **not exported** from the package — `sanctioningEngine` is the entire public surface for sanctioning. The function-level descriptions below document what the engine exposes as methods; calling them standalone with a bare `sanctioningRecord` is not available to consumers.
-:::
+The **sanctioningGovernor** re-exports all sanctioning mutation and query functions for use outside the sanctioning engine. While the `sanctioningEngine` provides a complete stateful API, the governor exports individual functions that can be called directly with a `sanctioningRecord` parameter.
 
-While `sanctioningEngine` provides a complete stateful API, the sections below describe each operation it performs.
+:::note Reachable since 7.x
+The governor was implemented but never registered in the governors index, so none of its methods
+reached any engine and nothing here could be imported. Registering it added 35 methods to the engine
+surface. If you tried to use this page before 7.x and could not, that is why.
+:::
 
 For full engine documentation including state management, executionQueue, and workflow examples, see [Sanctioning Engine](../engines/sanctioning-engine.md).
 

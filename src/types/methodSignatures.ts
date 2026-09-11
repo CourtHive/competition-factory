@@ -162,6 +162,7 @@ import type { generateOutcomeFromScoreString } from '@Generators/mocks/generateO
 import type { qualifierDrawPositionAssignment } from '@Mutate/matchUps/drawPositions/positionQualifier';
 import type { resetQualifyingStructure } from '@Mutate/drawDefinitions/resetQualifyingStructure';
 import type { setMatchUpScheduleLock } from '@Mutate/matchUps/schedule/setMatchUpScheduleLock';
+import type { validateStatusTransition } from '@Validators/sanctioning/validateStatusTransition';
 import type { addCertificationRequirement } from '@Mutate/officiating/addCertificationRequirement';
 import type { applyScheduleScenario } from '@Mutate/matchUps/schedule/applyScheduleScenario';
 import type { getAssignedParticipantIds } from '@Query/drawDefinition/getAssignedParticipantIds';
@@ -234,6 +235,7 @@ import type { modifyCollectionDefinition } from '@Mutate/tieFormat/modifyCollect
 import type { modifyDrawDefinition } from '@Mutate/drawDefinitions/modifyDrawDefinition';
 import type { modifyPairAssignment } from '@Mutate/drawDefinitions/modifyPairAssignment';
 import type { modifyPenalty } from '@Mutate/participants/penalties/modifyPenalty';
+import type { openProposalRegistration } from '@Mutate/sanctioning/openProposalRegistration';
 import type { orderCollectionDefinitions } from '@Mutate/tieFormat/orderCollectionDefinitions';
 import type { participantScheduledMatchUps } from '@Query/matchUps/participantScheduledMatchUps';
 import type { removeCollectionDefinition } from '@Mutate/tieFormat/removeCollectionDefinition';
@@ -242,9 +244,11 @@ import type { removePenalty } from '@Mutate/participants/penalties/removePenalty
 import type { resetMatchUpLineUps } from '@Mutate/matchUps/lineUps/resetMatchUpLineUps';
 import type { setMatchUpCalledAt } from '@Mutate/matchUps/schedule/setMatchUpCalledAt';
 import type { updateTieMatchUpScore } from '@Mutate/matchUps/score/updateTieMatchUpScore';
+import type { activateFromSanctioning } from '@Mutate/sanctioning/activateFromSanctioning';
 import type { applyTournamentRankingPoints } from '@Mutate/scales/applyTournamentRankingPoints';
 import type { competitionScheduleMatchUps } from '@Query/matchUps/competitionScheduleMatchUps';
 import type { createGroupParticipant } from '@Mutate/participants/createGroupParticipant';
+import type { createSanctioningRecord } from '@Mutate/sanctioning/createSanctioningRecord';
 import type { getCompetitionPenalties } from '@Query/participants/getCompetitionPenalties';
 import type { getMatchUpCompetitiveProfile } from '@Query/matchUp/getMatchUpCompetitiveProfile';
 import type { getParticipantSchedules } from '@Query/participants/getParticipantSchedules';
@@ -264,6 +268,7 @@ import type { addParticipantOtherId } from '@Mutate/participants/addParticipantO
 import type { assignDrawPosition } from '@Mutate/drawDefinitions/assignDrawPosition';
 import type { attachPolicies } from '@Mutate/extensions/policies/attachPolicies';
 import type { generateTournamentRecord } from '@Generators/mocks/generateTournamentRecord';
+import type { getAvailableTransitions } from '@Query/sanctioning/getAvailableTransitions';
 import type { getCompetitionDateRange } from '@Query/tournaments/getCompetitionDateRange';
 import type { getParticipantScaleItem } from '@Query/participant/getParticipantScaleItem';
 import type { getSwissChart } from '@Query/drawDefinitions/swiss/getSwissChart';
@@ -296,6 +301,7 @@ import type {
   attachStructures,
 } from '@Mutate/drawDefinitions/attachStructures';
 import type { bulkUpdatePublishedEventIds } from '@Query/event/bulkUpdatePublishedEventIds';
+import type { conditionallyApprove } from '@Mutate/sanctioning/conditionallyApprove';
 import type { createOfficialRecord } from '@Mutate/officiating/createOfficialRecord';
 import type { deleteFlightAndFlightDraw } from '@Mutate/events/deleteFlightAndFlightDraw';
 import type { getCompetitionFormat } from '@Query/hierarchical/getCompetitionFormat';
@@ -311,12 +317,14 @@ import type { setOrderOfFinish } from '@Mutate/drawDefinitions/setOrderOfFinish'
 import type { tieFormatGenderValidityCheck } from '@Validators/tieFormatGenderValidityCheck';
 import type { updateTeamLineUp } from '@Mutate/drawDefinitions/updateTeamLineUp';
 import type { validateCollectionDefinition } from '@Validators/validateCollectionDefinition';
+import type { validateProposal } from '@Validators/sanctioning/validateProposal';
 import type { addEvaluationPolicy } from '@Mutate/officiating/addEvaluationPolicy';
 import type { addMatchUpScheduledTime } from '@Mutate/matchUps/schedule/scheduledTime';
 import type { autoSeeding } from '@Generators/drawDefinitions/autoSeeding';
 import type { deleteParticipants } from '@Mutate/participants/deleteParticipants';
 import type { generateEventWithDraw } from '@Generators/mocks/generateEventWithDraw';
 import type { getAllStructureMatchUps } from '@Query/matchUps/getAllStructureMatchUps';
+import type { getCalendarConflicts } from '@Query/sanctioning/getCalendarConflicts';
 import type { getEvaluationSummary } from '@Query/officiating/getEvaluationSummary';
 import type { getMatchUpDailyLimits } from '@Query/extensions/getMatchUpDailyLimits';
 import type { getOfficialConflicts } from '@Query/officiating/getOfficialConflicts';
@@ -325,11 +333,16 @@ import type { getPositionAssignments } from '@Query/structure/getPositionAssignm
 import type { getTournamentPersons } from '@Query/tournaments/getTournamentPersons';
 import type { modifyCertification } from '@Mutate/officiating/modifyCertification';
 import type { participantScaleItem } from '@Query/participant/participantScaleItem';
+import type { querySanctioningRecord } from '@Query/sanctioning/getSanctioningRecord';
 import type { removeCertification } from '@Mutate/officiating/removeCertification';
 import type { removeCollectionGroup } from '@Mutate/tieFormat/removeCollectionGroup';
+import type { removeEventProposal } from '@Mutate/sanctioning/removeEventProposal';
+import type { requestModification } from '@Mutate/sanctioning/requestModification';
 import type { setTournamentStatus } from '@Mutate/tournaments/setTournamentStatus';
 import type { toStatObjects } from '@Query/scoring/statistics/toStatObjects';
 import type { unPublishParticipants } from '@Mutate/timeItems/unPublishParticipants';
+import type { updateEventProposal } from '@Mutate/sanctioning/updateEventProposal';
+import type { withdrawApplication } from '@Mutate/sanctioning/withdrawApplication';
 import type {
   addDrawDefinitionExtension,
   addEventExtension,
@@ -343,6 +356,7 @@ import type {
 import type { addDrawEntries } from '@Mutate/drawDefinitions/addDrawEntries';
 import type { addTournamentOtherId, setTournamentOtherIds } from '@Mutate/tournaments/tournamentOtherIds';
 import type { allPlayoffPositionsFilled, isCompletedStructure } from '@Query/drawDefinition/structureActions';
+import type { approveApplication } from '@Mutate/sanctioning/approveApplication';
 import type { bulkMatchUpStatusUpdate } from '@Mutate/events/bulkMatchUpStatusUpdate';
 import type { completeDrawMatchUps } from '@Generators/mocks/completeDrawMatchUps';
 import type { deleteAdHocMatchUps } from '@Mutate/structures/deleteAdHocMatchUps';
@@ -385,8 +399,10 @@ import type { getCompetitiveProfile } from '@Query/matchUps/getCompetitiveProfil
 import type { getPredictiveAccuracy } from '@Query/matchUps/getPredictiveAccuracy';
 import type { getSchedulingProfile, setSchedulingProfile } from '@Mutate/tournaments/schedulingProfile';
 import type { publishParticipants } from '@Mutate/timeItems/publishParticipants';
+import type { rejectApplication } from '@Mutate/sanctioning/rejectApplication';
 import type { removeCourtGridBooking } from '@Mutate/venues/removeCourtGridBooking';
 import type { resetAdHocMatchUps } from '@Mutate/structures/resetAdHocMatchUps';
+import type { reviewApplication } from '@Mutate/sanctioning/reviewApplication';
 import type {
   setRegistrationProfile,
   setTournamentCategories,
@@ -395,11 +411,13 @@ import type {
   setTournamentNotes,
   setTournamentTier,
 } from '@Mutate/tournaments/tournamentDetails';
+import type { submitApplication } from '@Mutate/sanctioning/submitApplication';
 import type { tournamentMatchUps } from '@Query/matchUps/getTournamentMatchUps';
 import type { validateSchedulingProfile } from '@Validators/validateSchedulingProfile';
 import type { addCertification } from '@Mutate/officiating/addCertification';
 import type { addCollectionGroup } from '@Mutate/tieFormat/addCollectionGroup';
 import type { addDrawOtherId, setDrawOtherIds } from '@Mutate/drawDefinitions/drawOtherIds';
+import type { addEventProposal } from '@Mutate/sanctioning/addEventProposal';
 import type { addParticipants } from '@Mutate/participants/addParticipants';
 import type { analyzeTournament } from '@Query/tournaments/analyzeTournament';
 import type { calculateMatchStatistics, enrichPointHistory, getQuickStats } from '@Query/scoring/statistics/standalone';
@@ -428,6 +446,7 @@ import type { addParticipant } from '@Mutate/participants/addParticipant';
 import type { allEventMatchUps } from '@Query/matchUps/getAllEventMatchUps';
 import type { calculateWinCriteria } from '@Query/matchUp/calculateWinCriteria';
 import type { getCompetitionVenues, getVenuesAndCourts } from '@Query/venues/venuesAndCourtsGetter';
+import type { getEligibleTiers } from '@Query/sanctioning/getEligibleTiers';
 import type { getEventRankingPoints } from '@Query/scales/getEventRankingPoints';
 import type { getHomeParticipantId } from '@Query/matchUp/getHomeParticipantId';
 import type { getMatchUpContextIds } from '@Query/matchUp/getMatchUpContextIds';
@@ -436,6 +455,7 @@ import type { getParticipants } from '@Query/participants/getParticipants';
 import type { getSeedingThresholds } from '@Query/drawDefinition/getSeedBlocks';
 import type { getSeedsCount } from '@Query/drawDefinition/getSeedsCount';
 import type { getSetScoreString, validateMatchUp, validateSet } from '@Validators/scoring/validateMatchUp';
+import type { getStatusHistory } from '@Query/sanctioning/getStatusHistory';
 import type { getTeamLineUp } from '@Query/drawDefinition/getTeamLineUp';
 import type { getTournamentIds } from '@Query/tournaments/getTournamentIds';
 import type { inferServeSide } from '@Mutate/scoring/serveSideCalculator';
@@ -454,6 +474,7 @@ import type { calculatePointsTo } from '@Mutate/scoring/pointsToCalculator';
 import type { deduceMatchUpFormat } from '@Query/scoring/deduceMatchUpFormat';
 import type { getAvailableReports } from '@Query/reports/getAvailableReports';
 import type { getCategoryAgeDetails } from '@Query/event/getCategoryAgeDetails';
+import type { getCompleteness } from '@Query/sanctioning/getCompleteness';
 import type { getEventPublishStatus } from '@Query/event/getEventPublishStatus';
 import type { getMaxEntryPosition } from '@Query/entries/getMaxEntryPosition';
 import type { getParticipantPoints } from '@Query/scales/getParticipantPoints';
@@ -462,8 +483,10 @@ import type { getTierMovement } from '@Query/tournaments/getTierMovement';
 import type { modifyEventEntries } from '@Mutate/entries/modifyEventEntries';
 import type { removeEventEntries } from '@Mutate/entries/removeEventEntries';
 import type { removeExtension } from '@Mutate/extensions/removeExtension';
+import type { updateProposal } from '@Mutate/sanctioning/updateProposal';
 import type { acceptChallenge, declineChallenge } from '@Mutate/ladder/respondToChallenge';
 import type { addEvaluation } from '@Mutate/officiating/addEvaluation';
+import type { addReviewNote } from '@Mutate/sanctioning/addReviewNote';
 import type { addSuspension } from '@Mutate/officiating/addSuspension';
 import type { buildReportContext } from '@Query/reports/buildReportContext';
 import type { checkScoreHasValue } from '@Query/matchUp/checkScoreHasValue';
@@ -477,6 +500,7 @@ import type { getPublishState } from '@Query/publishing/getPublishState';
 import type { getQualityWinPoints } from '@Query/scales/getQualityWinPoints';
 import type { getScaleValues } from '@Query/participant/getScaleValues';
 import type { getTournamentPoints } from '@Query/scales/getTournamentPoints';
+import type { meetCondition } from '@Mutate/sanctioning/meetCondition';
 import type { modifyTieFormat } from '@Mutate/tieFormat/modifyTieFormat';
 import type { removeOnlineResource } from '@Mutate/base/removeOnlineResource';
 import type { removeScaleValues } from '@Mutate/entries/removeScaleValues';
@@ -497,6 +521,7 @@ import type { getRoundMatchUps } from '@Query/matchUps/getRoundMatchUps';
 import type { getStructureReports } from '@Query/structure/structureReport';
 import type { getTieFormat } from '@Query/hierarchical/getTieFormat';
 import type { isValidMatchUpFormat } from '@Validators/isValidMatchUpFormat';
+import type { isValidSeedPosition } from '@Query/drawDefinition/seedGetter';
 import type { modifyCourtAvailability } from '@Mutate/venues/courtAvailability';
 import type { parse } from '@Helpers/matchUpFormatCode/parse';
 import type { pbpValidator } from '@Validators/scoring/pbpValidator';
@@ -510,6 +535,7 @@ import type { addExtension } from '@Mutate/extensions/addExtension';
 import type { addPersons } from '@Mutate/participants/addPersons';
 import type { analyzeDraws } from '@Query/tournaments/analyzeDraws';
 import type { categoryCanContain } from '@Query/event/categoryCanContain';
+import type { declineEndorsement, endorseApplication, requestEndorsement } from '@Mutate/sanctioning/endorsement';
 import type { drawMatchUps } from '@Query/matchUps/getDrawMatchUps';
 import type { getAllowedDrawTypes, getAllowedMatchUpFormats } from '@Query/tournaments/allowedTypes';
 import type { getChallengeState } from '@Query/ladder/getChallengeState';
@@ -522,9 +548,19 @@ import type { publishEventSeeding, unPublishEventSeeding } from '@Mutate/publish
 import type { resetScorecard } from '@Mutate/matchUps/resetScorecard';
 import type { addOnlineResource } from '@Mutate/base/addOnlineResource';
 import type { addVenueOtherId } from '@Mutate/venues/addVenueOtherId';
+import type {
+  checkComplianceDeadlines,
+  closeApplication,
+  flagComplianceIssues,
+  submitComplianceItem,
+  transitionToPostEvent,
+  verifyComplianceItem,
+  waiveComplianceItem,
+} from '@Mutate/sanctioning/compliance';
 import type { publicFindParticipant } from '@Acquire/publicFindParticipant';
 import type { getEntryFeeRange, isIndeterminateFee, resolveEntryFee } from '@Query/entries/resolveEntryFee';
 import type { getMatchUpsMap } from '@Query/matchUps/getMatchUpsMap';
+import type { proposeAmendment, reviewAmendment } from '@Mutate/sanctioning/amendments';
 import type { setEventDisplay } from '@Mutate/events/setEventDisplay';
 import type { setSubOrder } from '@Mutate/structures/setSubOrder';
 import type { validateLineUp } from '@Validators/validateTeamLineUp';
@@ -627,6 +663,7 @@ import type { credits } from '@Fixtures/credits';
 export interface MethodSignatures {
   abandonTournamentMatchUps: EngineMethod<typeof abandonTournamentMatchUps>;
   acceptChallenge: EngineMethod<typeof acceptChallenge>;
+  activateFromSanctioning: EngineMethod<typeof activateFromSanctioning>;
   addAdHocMatchUps: EngineMethod<typeof addAdHocMatchUps>;
   addCertification: EngineMethod<typeof addCertification>;
   addCertificationRequirement: EngineMethod<typeof addCertificationRequirement>;
@@ -648,6 +685,7 @@ export interface MethodSignatures {
   addEventEntries: EngineMethod<typeof addEventEntries>;
   addEventEntryPairs: EngineMethod<typeof addEventEntryPairs>;
   addEventExtension: EngineMethod<typeof addEventExtension>;
+  addEventProposal: EngineMethod<typeof addEventProposal>;
   addEventTimeItem: EngineMethod<typeof addEventTimeItem>;
   addExtension: EngineMethod<typeof addExtension>;
   addFinishingRounds: EngineMethod<typeof addFinishingRounds>;
@@ -681,6 +719,7 @@ export interface MethodSignatures {
   addPoint: EngineMethod<typeof addPoint>;
   addPracticeRegistration: EngineMethod<typeof addPracticeRegistration>;
   addQualifyingStructure: EngineMethod<typeof addQualifyingStructure>;
+  addReviewNote: EngineMethod<typeof addReviewNote>;
   addScheduleScenario: EngineMethod<typeof addScheduleScenario>;
   addSchedulingProfileRound: EngineMethod<typeof addSchedulingProfileRound>;
   addSuspension: EngineMethod<typeof addSuspension>;
@@ -712,6 +751,7 @@ export interface MethodSignatures {
   applyLineUps: EngineMethod<typeof applyLineUps>;
   applyScheduleScenario: EngineMethod<typeof applyScheduleScenario>;
   applyTournamentRankingPoints: EngineMethod<typeof applyTournamentRankingPoints>;
+  approveApplication: EngineMethod<typeof approveApplication>;
   assignDrawPosition: EngineMethod<typeof assignDrawPosition>;
   assignDrawPositionBye: EngineMethod<typeof assignDrawPositionBye>;
   assignMatchUpCourt: EngineMethod<typeof assignMatchUpCourt>;
@@ -745,6 +785,7 @@ export interface MethodSignatures {
   calculateWinCriteria: EngineMethod<typeof calculateWinCriteria>;
   cast: EngineMethod<typeof cast>;
   categoryCanContain: EngineMethod<typeof categoryCanContain>;
+  checkComplianceDeadlines: EngineMethod<typeof checkComplianceDeadlines>;
   checkInParticipant: EngineMethod<typeof checkInParticipant>;
   checkMatchUpIsComplete: EngineMethod<typeof checkMatchUpIsComplete>;
   checkOutParticipant: EngineMethod<typeof checkOutParticipant>;
@@ -754,19 +795,23 @@ export interface MethodSignatures {
   cleanExpiredMutationLocks: EngineMethod<typeof cleanExpiredMutationLocks>;
   clearMatchUpSchedule: EngineMethod<typeof clearMatchUpSchedule>;
   clearScheduledMatchUps: EngineMethod<typeof clearScheduledMatchUps>;
+  closeApplication: EngineMethod<typeof closeApplication>;
   compareTieFormats: EngineMethod<typeof compareTieFormats>;
   competitionScheduleMatchUps: EngineMethod<typeof competitionScheduleMatchUps>;
   completeDrawMatchUps: EngineMethod<typeof completeDrawMatchUps>;
+  conditionallyApprove: EngineMethod<typeof conditionallyApprove>;
   confirmResult: EngineMethod<typeof confirmResult>;
   copyTournamentRecord: EngineMethod<typeof copyTournamentRecord>;
   courtGridRows: EngineMethod<typeof courtGridRows>;
   createGroupParticipant: EngineMethod<typeof createGroupParticipant>;
   createMatchUp: EngineMethod<typeof createMatchUp>;
   createOfficialRecord: EngineMethod<typeof createOfficialRecord>;
+  createSanctioningRecord: EngineMethod<typeof createSanctioningRecord>;
   createTeamsFromParticipantAttributes: EngineMethod<typeof createTeamsFromParticipantAttributes>;
   createTournamentRecord: EngineMethod<typeof createTournamentRecord>;
   credits: EngineMethod<typeof credits>;
   declineChallenge: EngineMethod<typeof declineChallenge>;
+  declineEndorsement: EngineMethod<typeof declineEndorsement>;
   deduceMatchUpFormat: EngineMethod<typeof deduceMatchUpFormat>;
   deleteAdHocMatchUps: EngineMethod<typeof deleteAdHocMatchUps>;
   deleteCourt: EngineMethod<typeof deleteCourt>;
@@ -789,6 +834,7 @@ export interface MethodSignatures {
   enableCourts: EngineMethod<typeof enableCourts>;
   enableTieAutoCalc: EngineMethod<typeof enableTieAutoCalc>;
   enableVenues: EngineMethod<typeof enableVenues>;
+  endorseApplication: EngineMethod<typeof endorseApplication>;
   enrichPointHistory: EngineMethod<typeof enrichPointHistory>;
   eventMatchUps: EngineMethod<typeof eventMatchUps>;
   exportMatchUpJSON: EngineMethod<typeof exportMatchUpJSON>;
@@ -801,6 +847,7 @@ export interface MethodSignatures {
   findParticipant: EngineMethod<typeof publicFindParticipant>;
   findPolicy: EngineMethod<typeof findPolicy>;
   findVenue: EngineMethod<typeof findVenue>;
+  flagComplianceIssues: EngineMethod<typeof flagComplianceIssues>;
   generateAdHocMatchUps: EngineMethod<typeof generateAdHocMatchUps>;
   generateAdHocRounds: EngineMethod<typeof generateAdHocRounds>;
   generateAndPopulatePlayoffStructures: EngineMethod<typeof generateAndPopulatePlayoffStructures>;
@@ -841,8 +888,10 @@ export interface MethodSignatures {
   getAvailableMatchUpsCount: EngineMethod<typeof getAvailableMatchUpsCount>;
   getAvailablePlayoffProfiles: EngineMethod<typeof getAvailablePlayoffProfiles>;
   getAvailableReports: EngineMethod<typeof getAvailableReports>;
+  getAvailableTransitions: EngineMethod<typeof getAvailableTransitions>;
   getAwardPoints: EngineMethod<typeof getAwardPoints>;
   getAwardProfile: EngineMethod<typeof getAwardProfile>;
+  getCalendarConflicts: EngineMethod<typeof getCalendarConflicts>;
   getCategoryAgeDetails: EngineMethod<typeof getCategoryAgeDetails>;
   getChallengeState: EngineMethod<typeof getChallengeState>;
   getCheckedInParticipantIds: EngineMethod<typeof getCheckedInParticipantIds>;
@@ -857,6 +906,7 @@ export interface MethodSignatures {
   getCompetitionState: EngineMethod<typeof getCompetitionState>;
   getCompetitionVenues: EngineMethod<typeof getCompetitionVenues>;
   getCompetitiveProfile: EngineMethod<typeof getCompetitiveProfile>;
+  getCompleteness: EngineMethod<typeof getCompleteness>;
   getCourtInfo: EngineMethod<typeof getCourtInfo>;
   getCourts: EngineMethod<typeof getCourts>;
   getDraftState: EngineMethod<typeof getDraftState>;
@@ -869,6 +919,7 @@ export interface MethodSignatures {
   getDrawTypeCoercion: EngineMethod<typeof getDrawTypeCoercion>;
   getEffectiveRegistrationProfile: EngineMethod<typeof getEffectiveRegistrationProfile>;
   getEligibleEvents: EngineMethod<typeof getEligibleEvents>;
+  getEligibleTiers: EngineMethod<typeof getEligibleTiers>;
   getEligibleVoluntaryConsolationParticipants: EngineMethod<typeof getEligibleVoluntaryConsolationParticipants>;
   getEntriesAndSeedsCount: EngineMethod<typeof getEntriesAndSeedsCount>;
   getEntryFeeRange: EngineMethod<typeof getEntryFeeRange>;
@@ -969,6 +1020,7 @@ export interface MethodSignatures {
   getSeedsCount: EngineMethod<typeof getSeedsCount>;
   getSetComplement: EngineMethod<typeof getSetComplement>;
   getSetScoreString: EngineMethod<typeof getSetScoreString>;
+  getStatusHistory: EngineMethod<typeof getStatusHistory>;
   getStructureCompleteness: EngineMethod<typeof getStructureCompleteness>;
   getStructureData: EngineMethod<typeof getStructureData>;
   getStructureInconsistencies: EngineMethod<typeof getStructureInconsistencies>;
@@ -1019,6 +1071,7 @@ export interface MethodSignatures {
   isValid: EngineMethod<typeof isValidMatchUpFormat>;
   isValidForQualifying: EngineMethod<typeof isValidForQualifying>;
   isValidMatchUpFormat: EngineMethod<typeof isValidMatchUpFormat>;
+  isValidSeedPosition: EngineMethod<typeof isValidSeedPosition>;
   isVisiblyPublished: EngineMethod<typeof isVisiblyPublished>;
   keyValueScore: EngineMethod<typeof keyValueScore>;
   linkTournaments: EngineMethod<typeof linkTournaments>;
@@ -1028,6 +1081,7 @@ export interface MethodSignatures {
   matchUpScheduleChange: EngineMethod<typeof matchUpScheduleChange>;
   matchUpScheduleLocked: EngineMethod<typeof matchUpScheduleLocked>;
   mcpValidator: EngineMethod<typeof mcpValidator>;
+  meetCondition: EngineMethod<typeof meetCondition>;
   mergeFacilitySchedule: EngineMethod<typeof mergeFacilitySchedule>;
   mergeParticipants: EngineMethod<typeof mergeParticipants>;
   migrateTournamentRecord: EngineMethod<typeof migrateTournamentRecord>;
@@ -1056,6 +1110,7 @@ export interface MethodSignatures {
   modifyTieFormat: EngineMethod<typeof modifyTieFormat>;
   modifyTournamentRecord: EngineMethod<typeof modifyTournamentRecord>;
   modifyVenue: EngineMethod<typeof modifyVenue>;
+  openProposalRegistration: EngineMethod<typeof openProposalRegistration>;
   orderCollectionDefinitions: EngineMethod<typeof orderCollectionDefinitions>;
   parse: EngineMethod<typeof parse>;
   parseCSV: EngineMethod<typeof parseCSV>;
@@ -1076,6 +1131,7 @@ export interface MethodSignatures {
   proConflicts: EngineMethod<typeof proConflicts>;
   promoteAlternate: EngineMethod<typeof promoteAlternate>;
   promoteAlternates: EngineMethod<typeof promoteAlternates>;
+  proposeAmendment: EngineMethod<typeof proposeAmendment>;
   pruneDrawDefinition: EngineMethod<typeof pruneDrawDefinition>;
   publicFindCourt: EngineMethod<typeof publicFindCourt>;
   publicFindVenue: EngineMethod<typeof publicFindVenue>;
@@ -1086,10 +1142,12 @@ export interface MethodSignatures {
   qualifierDrawPositionAssignment: EngineMethod<typeof qualifierDrawPositionAssignment>;
   qualifierProgression: EngineMethod<typeof qualifierProgression>;
   queryOfficialRecord: EngineMethod<typeof queryOfficialRecord>;
+  querySanctioningRecord: EngineMethod<typeof querySanctioningRecord>;
   rebaseScheduleScenario: EngineMethod<typeof rebaseScheduleScenario>;
   refreshEventDrawOrder: EngineMethod<typeof refreshEventDrawOrder>;
   refreshLadderRatings: EngineMethod<typeof refreshLadderRatings>;
   regenerateParticipantNames: EngineMethod<typeof regenerateParticipantNames>;
+  rejectApplication: EngineMethod<typeof rejectApplication>;
   remapDrawDefinitionMatchUpIds: EngineMethod<typeof remapDrawDefinitionMatchUpIds>;
   removeCertification: EngineMethod<typeof removeCertification>;
   removeCollectionDefinition: EngineMethod<typeof removeCollectionDefinition>;
@@ -1104,6 +1162,7 @@ export interface MethodSignatures {
   removeEventEntries: EngineMethod<typeof removeEventEntries>;
   removeEventExtension: EngineMethod<typeof removeEventExtension>;
   removeEventMatchUpFormatTiming: EngineMethod<typeof removeEventMatchUpFormatTiming>;
+  removeEventProposal: EngineMethod<typeof removeEventProposal>;
   removeExtension: EngineMethod<typeof removeExtension>;
   removeIndividualParticipantIds: EngineMethod<typeof removeIndividualParticipantIds>;
   removeLadderParticipant: EngineMethod<typeof removeLadderParticipant>;
@@ -1137,6 +1196,8 @@ export interface MethodSignatures {
   renameStructures: EngineMethod<typeof renameStructures>;
   reorderUpcomingMatchUps: EngineMethod<typeof reorderUpcomingMatchUps>;
   replaceTieMatchUpParticipantId: EngineMethod<typeof replaceTieMatchUpParticipantId>;
+  requestEndorsement: EngineMethod<typeof requestEndorsement>;
+  requestModification: EngineMethod<typeof requestModification>;
   resetAdHocMatchUps: EngineMethod<typeof resetAdHocMatchUps>;
   resetCompetitionState: EngineMethod<typeof resetCompetitionState>;
   resetDrawDefinition: EngineMethod<typeof resetDrawDefinition>;
@@ -1149,6 +1210,8 @@ export interface MethodSignatures {
   resolveEntryFee: EngineMethod<typeof resolveEntryFee>;
   resolvePointValue: EngineMethod<typeof resolvePointValue>;
   reverseScore: EngineMethod<typeof reverseScore>;
+  reviewAmendment: EngineMethod<typeof reviewAmendment>;
+  reviewApplication: EngineMethod<typeof reviewApplication>;
   scaledTeamAssignment: EngineMethod<typeof scaledTeamAssignment>;
   scheduleMatchUps: EngineMethod<typeof scheduleMatchUps>;
   scheduleProfileGrid: EngineMethod<typeof scheduleProfileGrid>;
@@ -1196,6 +1259,8 @@ export interface MethodSignatures {
   shotSplitter: EngineMethod<typeof shotSplitter>;
   stringify: EngineMethod<typeof stringify>;
   stringifyMatchUpFormat: EngineMethod<typeof stringify>;
+  submitApplication: EngineMethod<typeof submitApplication>;
+  submitComplianceItem: EngineMethod<typeof submitComplianceItem>;
   submitResult: EngineMethod<typeof submitResult>;
   substituteParticipant: EngineMethod<typeof substituteParticipant>;
   suggestFormatPlans: EngineMethod<typeof suggestFormatPlans>;
@@ -1209,6 +1274,7 @@ export interface MethodSignatures {
   transitionAssignmentStatus: EngineMethod<typeof transitionAssignmentStatus>;
   transitionCertificationStatus: EngineMethod<typeof transitionCertificationStatus>;
   transitionEvaluationStatus: EngineMethod<typeof transitionEvaluationStatus>;
+  transitionToPostEvent: EngineMethod<typeof transitionToPostEvent>;
   unlinkTournament: EngineMethod<typeof unlinkTournament>;
   unlinkTournaments: EngineMethod<typeof unlinkTournaments>;
   unPublishEvent: EngineMethod<typeof unPublishEvent>;
@@ -1216,8 +1282,10 @@ export interface MethodSignatures {
   unPublishOrderOfPlay: EngineMethod<typeof unPublishOrderOfPlay>;
   unPublishParticipants: EngineMethod<typeof unPublishParticipants>;
   updateDrawIdsOrder: EngineMethod<typeof updateDrawIdsOrder>;
+  updateEventProposal: EngineMethod<typeof updateEventProposal>;
   updateParticipantResults: EngineMethod<typeof updateParticipantResults>;
   updatePracticeRegistration: EngineMethod<typeof updatePracticeRegistration>;
+  updateProposal: EngineMethod<typeof updateProposal>;
   updateScheduleScenario: EngineMethod<typeof updateScheduleScenario>;
   updateTeamLineUp: EngineMethod<typeof updateTeamLineUp>;
   updateTieMatchUpScore: EngineMethod<typeof updateTieMatchUpScore>;
@@ -1230,14 +1298,19 @@ export interface MethodSignatures {
   validateMCPMatch: EngineMethod<typeof validateMCPMatch>;
   validateOfficiatingStatusTransition: EngineMethod<typeof validateOfficiatingStatusTransition>;
   validatePlayoffGroups: EngineMethod<typeof validatePlayoffGroups>;
+  validateProposal: EngineMethod<typeof validateProposal>;
   validateScheduleScenario: EngineMethod<typeof validateScheduleScenario>;
   validateSchedulingProfile: EngineMethod<typeof validateSchedulingProfile>;
   validateScore: EngineMethod<typeof validateScore>;
   validateSet: EngineMethod<typeof validateSet>;
   validateSetScore: EngineMethod<typeof validateSetScore>;
+  validateStatusTransition: EngineMethod<typeof validateStatusTransition>;
   validateTieFormat: EngineMethod<typeof validateTieFormat>;
   validMatchUp: EngineMethod<typeof validMatchUp>;
   validMatchUps: EngineMethod<typeof validMatchUps>;
+  verifyComplianceItem: EngineMethod<typeof verifyComplianceItem>;
   version: EngineMethod<typeof factoryVersion>;
+  waiveComplianceItem: EngineMethod<typeof waiveComplianceItem>;
+  withdrawApplication: EngineMethod<typeof withdrawApplication>;
   withdrawParticipantAtDrawPosition: EngineMethod<typeof withdrawParticipantAtDrawPosition>;
 }

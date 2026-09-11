@@ -13,6 +13,7 @@ export * as publishingGovernor from './publishingGovernor';
 export * as queryGovernor from './queryGovernor';
 export * as rankingGovernor from './rankingGovernor';
 export * as reportGovernor from './reportGovernor';
+export * as sanctioningGovernor from './sanctioningGovernor';
 export * as scheduleGovernor from './scheduleGovernor';
 export * as scoreGovernor from './scoreGovernor';
 export * as tieFormatGovernor from './tieFormatGovernor';

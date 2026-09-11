@@ -7,6 +7,7 @@
 export type FactoryEngineMethod =
   | 'abandonTournamentMatchUps'
   | 'acceptChallenge'
+  | 'activateFromSanctioning'
   | 'addAdHocMatchUps'
   | 'addCertification'
   | 'addCertificationRequirement'
@@ -28,6 +29,7 @@ export type FactoryEngineMethod =
   | 'addEventEntries'
   | 'addEventEntryPairs'
   | 'addEventExtension'
+  | 'addEventProposal'
   | 'addEventTimeItem'
   | 'addExtension'
   | 'addFinishingRounds'
@@ -61,6 +63,7 @@ export type FactoryEngineMethod =
   | 'addPoint'
   | 'addPracticeRegistration'
   | 'addQualifyingStructure'
+  | 'addReviewNote'
   | 'addScheduleScenario'
   | 'addSchedulingProfileRound'
   | 'addSuspension'
@@ -93,6 +96,7 @@ export type FactoryEngineMethod =
   | 'applyLineUps'
   | 'applyScheduleScenario'
   | 'applyTournamentRankingPoints'
+  | 'approveApplication'
   | 'assignDrawPosition'
   | 'assignDrawPositionBye'
   | 'assignMatchUpCourt'
@@ -132,6 +136,7 @@ export type FactoryEngineMethod =
   | 'calculateWinCriteria'
   | 'cast'
   | 'categoryCanContain'
+  | 'checkComplianceDeadlines'
   | 'checkInParticipant'
   | 'checkMatchUpIsComplete'
   | 'checkOutParticipant'
@@ -143,11 +148,13 @@ export type FactoryEngineMethod =
   | 'cleanExpiredMutationLocks'
   | 'clearMatchUpSchedule'
   | 'clearScheduledMatchUps'
+  | 'closeApplication'
   | 'compareCapacityCurves'
   | 'compareTieFormats'
   | 'competitionScheduleMatchUps'
   | 'completeDrawMatchUps'
   | 'computePlanItemId'
+  | 'conditionallyApprove'
   | 'confirmResult'
   | 'copyTournamentRecord'
   | 'courtDayKey'
@@ -157,10 +164,12 @@ export type FactoryEngineMethod =
   | 'createGroupParticipant'
   | 'createMatchUp'
   | 'createOfficialRecord'
+  | 'createSanctioningRecord'
   | 'createTeamsFromParticipantAttributes'
   | 'createTournamentRecord'
   | 'credits'
   | 'declineChallenge'
+  | 'declineEndorsement'
   | 'deduceMatchUpFormat'
   | 'deleteAdHocMatchUps'
   | 'deleteCourt'
@@ -187,6 +196,7 @@ export type FactoryEngineMethod =
   | 'enableCourts'
   | 'enableTieAutoCalc'
   | 'enableVenues'
+  | 'endorseApplication'
   | 'enrichPointHistory'
   | 'EvaluatorRegistry'
   | 'eventMatchUps'
@@ -206,6 +216,7 @@ export type FactoryEngineMethod =
   | 'findParticipant'
   | 'findPolicy'
   | 'findVenue'
+  | 'flagComplianceIssues'
   | 'formatConflicts'
   | 'generateAdHocMatchUps'
   | 'generateAdHocRounds'
@@ -249,8 +260,10 @@ export type FactoryEngineMethod =
   | 'getAvailableMatchUpsCount'
   | 'getAvailablePlayoffProfiles'
   | 'getAvailableReports'
+  | 'getAvailableTransitions'
   | 'getAwardPoints'
   | 'getAwardProfile'
+  | 'getCalendarConflicts'
   | 'getCategoryAgeDetails'
   | 'getChallengeState'
   | 'getCheckedInParticipantIds'
@@ -265,6 +278,7 @@ export type FactoryEngineMethod =
   | 'getCompetitionState'
   | 'getCompetitionVenues'
   | 'getCompetitiveProfile'
+  | 'getCompleteness'
   | 'getCourtInfo'
   | 'getCourts'
   | 'getDevContext'
@@ -278,6 +292,7 @@ export type FactoryEngineMethod =
   | 'getDrawTypeCoercion'
   | 'getEffectiveRegistrationProfile'
   | 'getEligibleEvents'
+  | 'getEligibleTiers'
   | 'getEligibleVoluntaryConsolationParticipants'
   | 'getEntriesAndSeedsCount'
   | 'getEntryFeeRange'
@@ -382,6 +397,7 @@ export type FactoryEngineMethod =
   | 'getSetComplement'
   | 'getSetScoreString'
   | 'getState'
+  | 'getStatusHistory'
   | 'getStructureCompleteness'
   | 'getStructureData'
   | 'getStructureInconsistencies'
@@ -439,6 +455,7 @@ export type FactoryEngineMethod =
   | 'isValid'
   | 'isValidForQualifying'
   | 'isValidMatchUpFormat'
+  | 'isValidSeedPosition'
   | 'isVisiblyPublished'
   | 'iterateDayTicks'
   | 'keyValueScore'
@@ -449,6 +466,7 @@ export type FactoryEngineMethod =
   | 'matchUpScheduleChange'
   | 'matchUpScheduleLocked'
   | 'mcpValidator'
+  | 'meetCondition'
   | 'mergeAdjacentSegments'
   | 'mergeFacilitySchedule'
   | 'mergeOverlappingAvailability'
@@ -484,6 +502,7 @@ export type FactoryEngineMethod =
   | 'off'
   | 'on'
   | 'once'
+  | 'openProposalRegistration'
   | 'orderCollectionDefinitions'
   | 'overlappingRange'
   | 'parse'
@@ -505,6 +524,7 @@ export type FactoryEngineMethod =
   | 'proConflicts'
   | 'promoteAlternate'
   | 'promoteAlternates'
+  | 'proposeAmendment'
   | 'pruneDrawDefinition'
   | 'publicFindCourt'
   | 'publicFindVenue'
@@ -515,12 +535,14 @@ export type FactoryEngineMethod =
   | 'qualifierDrawPositionAssignment'
   | 'qualifierProgression'
   | 'queryOfficialRecord'
+  | 'querySanctioningRecord'
   | 'railsToDateAvailability'
   | 'rangesOverlap'
   | 'rebaseScheduleScenario'
   | 'refreshEventDrawOrder'
   | 'refreshLadderRatings'
   | 'regenerateParticipantNames'
+  | 'rejectApplication'
   | 'remapDrawDefinitionMatchUpIds'
   | 'removeCertification'
   | 'removeCollectionDefinition'
@@ -535,6 +557,7 @@ export type FactoryEngineMethod =
   | 'removeEventEntries'
   | 'removeEventExtension'
   | 'removeEventMatchUpFormatTiming'
+  | 'removeEventProposal'
   | 'removeExtension'
   | 'removeIndividualParticipantIds'
   | 'removeLadderParticipant'
@@ -570,6 +593,8 @@ export type FactoryEngineMethod =
   | 'renameStructures'
   | 'reorderUpcomingMatchUps'
   | 'replaceTieMatchUpParticipantId'
+  | 'requestEndorsement'
+  | 'requestModification'
   | 'reset'
   | 'resetAdHocMatchUps'
   | 'resetCompetitionState'
@@ -586,6 +611,8 @@ export type FactoryEngineMethod =
   | 'resolveStatus'
   | 'resolveVenueId'
   | 'reverseScore'
+  | 'reviewAmendment'
+  | 'reviewApplication'
   | 'runValidationPipeline'
   | 'sampleCapacityCurve'
   | 'saveDrawDeletions'
@@ -644,6 +671,8 @@ export type FactoryEngineMethod =
   | 'sortEdges'
   | 'stringify'
   | 'stringifyMatchUpFormat'
+  | 'submitApplication'
+  | 'submitComplianceItem'
   | 'submitResult'
   | 'substituteParticipant'
   | 'suggestFormatPlans'
@@ -659,6 +688,7 @@ export type FactoryEngineMethod =
   | 'transitionAssignmentStatus'
   | 'transitionCertificationStatus'
   | 'transitionEvaluationStatus'
+  | 'transitionToPostEvent'
   | 'unlinkTournament'
   | 'unlinkTournaments'
   | 'unPublishEvent'
@@ -666,8 +696,10 @@ export type FactoryEngineMethod =
   | 'unPublishOrderOfPlay'
   | 'unPublishParticipants'
   | 'updateDrawIdsOrder'
+  | 'updateEventProposal'
   | 'updateParticipantResults'
   | 'updatePracticeRegistration'
+  | 'updateProposal'
   | 'updateScheduleScenario'
   | 'updateTeamLineUp'
   | 'updateTieMatchUpScore'
@@ -681,6 +713,7 @@ export type FactoryEngineMethod =
   | 'validateMCPMatch'
   | 'validateOfficiatingStatusTransition'
   | 'validatePlayoffGroups'
+  | 'validateProposal'
   | 'validateScheduleScenario'
   | 'validateSchedulingProfile'
   | 'validateSchedulingProfileFormat'
@@ -688,18 +721,23 @@ export type FactoryEngineMethod =
   | 'validateSegments'
   | 'validateSet'
   | 'validateSetScore'
+  | 'validateStatusTransition'
   | 'validateTieFormat'
   | 'validMatchUp'
   | 'validMatchUps'
   | 'venueDayKey'
   | 'venueKey'
+  | 'verifyComplianceItem'
   | 'version'
   | 'waitFor'
+  | 'waiveComplianceItem'
+  | 'withdrawApplication'
   | 'withdrawParticipantAtDrawPosition';
 
 export const FACTORY_ENGINE_METHODS: readonly FactoryEngineMethod[] = [
   'abandonTournamentMatchUps',
   'acceptChallenge',
+  'activateFromSanctioning',
   'addAdHocMatchUps',
   'addCertification',
   'addCertificationRequirement',
@@ -721,6 +759,7 @@ export const FACTORY_ENGINE_METHODS: readonly FactoryEngineMethod[] = [
   'addEventEntries',
   'addEventEntryPairs',
   'addEventExtension',
+  'addEventProposal',
   'addEventTimeItem',
   'addExtension',
   'addFinishingRounds',
@@ -754,6 +793,7 @@ export const FACTORY_ENGINE_METHODS: readonly FactoryEngineMethod[] = [
   'addPoint',
   'addPracticeRegistration',
   'addQualifyingStructure',
+  'addReviewNote',
   'addScheduleScenario',
   'addSchedulingProfileRound',
   'addSuspension',
@@ -786,6 +826,7 @@ export const FACTORY_ENGINE_METHODS: readonly FactoryEngineMethod[] = [
   'applyLineUps',
   'applyScheduleScenario',
   'applyTournamentRankingPoints',
+  'approveApplication',
   'assignDrawPosition',
   'assignDrawPositionBye',
   'assignMatchUpCourt',
@@ -825,6 +866,7 @@ export const FACTORY_ENGINE_METHODS: readonly FactoryEngineMethod[] = [
   'calculateWinCriteria',
   'cast',
   'categoryCanContain',
+  'checkComplianceDeadlines',
   'checkInParticipant',
   'checkMatchUpIsComplete',
   'checkOutParticipant',
@@ -836,11 +878,13 @@ export const FACTORY_ENGINE_METHODS: readonly FactoryEngineMethod[] = [
   'cleanExpiredMutationLocks',
   'clearMatchUpSchedule',
   'clearScheduledMatchUps',
+  'closeApplication',
   'compareCapacityCurves',
   'compareTieFormats',
   'competitionScheduleMatchUps',
   'completeDrawMatchUps',
   'computePlanItemId',
+  'conditionallyApprove',
   'confirmResult',
   'copyTournamentRecord',
   'courtDayKey',
@@ -850,10 +894,12 @@ export const FACTORY_ENGINE_METHODS: readonly FactoryEngineMethod[] = [
   'createGroupParticipant',
   'createMatchUp',
   'createOfficialRecord',
+  'createSanctioningRecord',
   'createTeamsFromParticipantAttributes',
   'createTournamentRecord',
   'credits',
   'declineChallenge',
+  'declineEndorsement',
   'deduceMatchUpFormat',
   'deleteAdHocMatchUps',
   'deleteCourt',
@@ -880,6 +926,7 @@ export const FACTORY_ENGINE_METHODS: readonly FactoryEngineMethod[] = [
   'enableCourts',
   'enableTieAutoCalc',
   'enableVenues',
+  'endorseApplication',
   'enrichPointHistory',
   'EvaluatorRegistry',
   'eventMatchUps',
@@ -899,6 +946,7 @@ export const FACTORY_ENGINE_METHODS: readonly FactoryEngineMethod[] = [
   'findParticipant',
   'findPolicy',
   'findVenue',
+  'flagComplianceIssues',
   'formatConflicts',
   'generateAdHocMatchUps',
   'generateAdHocRounds',
@@ -942,8 +990,10 @@ export const FACTORY_ENGINE_METHODS: readonly FactoryEngineMethod[] = [
   'getAvailableMatchUpsCount',
   'getAvailablePlayoffProfiles',
   'getAvailableReports',
+  'getAvailableTransitions',
   'getAwardPoints',
   'getAwardProfile',
+  'getCalendarConflicts',
   'getCategoryAgeDetails',
   'getChallengeState',
   'getCheckedInParticipantIds',
@@ -958,6 +1008,7 @@ export const FACTORY_ENGINE_METHODS: readonly FactoryEngineMethod[] = [
   'getCompetitionState',
   'getCompetitionVenues',
   'getCompetitiveProfile',
+  'getCompleteness',
   'getCourtInfo',
   'getCourts',
   'getDevContext',
@@ -971,6 +1022,7 @@ export const FACTORY_ENGINE_METHODS: readonly FactoryEngineMethod[] = [
   'getDrawTypeCoercion',
   'getEffectiveRegistrationProfile',
   'getEligibleEvents',
+  'getEligibleTiers',
   'getEligibleVoluntaryConsolationParticipants',
   'getEntriesAndSeedsCount',
   'getEntryFeeRange',
@@ -1075,6 +1127,7 @@ export const FACTORY_ENGINE_METHODS: readonly FactoryEngineMethod[] = [
   'getSetComplement',
   'getSetScoreString',
   'getState',
+  'getStatusHistory',
   'getStructureCompleteness',
   'getStructureData',
   'getStructureInconsistencies',
@@ -1132,6 +1185,7 @@ export const FACTORY_ENGINE_METHODS: readonly FactoryEngineMethod[] = [
   'isValid',
   'isValidForQualifying',
   'isValidMatchUpFormat',
+  'isValidSeedPosition',
   'isVisiblyPublished',
   'iterateDayTicks',
   'keyValueScore',
@@ -1142,6 +1196,7 @@ export const FACTORY_ENGINE_METHODS: readonly FactoryEngineMethod[] = [
   'matchUpScheduleChange',
   'matchUpScheduleLocked',
   'mcpValidator',
+  'meetCondition',
   'mergeAdjacentSegments',
   'mergeFacilitySchedule',
   'mergeOverlappingAvailability',
@@ -1177,6 +1232,7 @@ export const FACTORY_ENGINE_METHODS: readonly FactoryEngineMethod[] = [
   'off',
   'on',
   'once',
+  'openProposalRegistration',
   'orderCollectionDefinitions',
   'overlappingRange',
   'parse',
@@ -1198,6 +1254,7 @@ export const FACTORY_ENGINE_METHODS: readonly FactoryEngineMethod[] = [
   'proConflicts',
   'promoteAlternate',
   'promoteAlternates',
+  'proposeAmendment',
   'pruneDrawDefinition',
   'publicFindCourt',
   'publicFindVenue',
@@ -1208,12 +1265,14 @@ export const FACTORY_ENGINE_METHODS: readonly FactoryEngineMethod[] = [
   'qualifierDrawPositionAssignment',
   'qualifierProgression',
   'queryOfficialRecord',
+  'querySanctioningRecord',
   'railsToDateAvailability',
   'rangesOverlap',
   'rebaseScheduleScenario',
   'refreshEventDrawOrder',
   'refreshLadderRatings',
   'regenerateParticipantNames',
+  'rejectApplication',
   'remapDrawDefinitionMatchUpIds',
   'removeCertification',
   'removeCollectionDefinition',
@@ -1228,6 +1287,7 @@ export const FACTORY_ENGINE_METHODS: readonly FactoryEngineMethod[] = [
   'removeEventEntries',
   'removeEventExtension',
   'removeEventMatchUpFormatTiming',
+  'removeEventProposal',
   'removeExtension',
   'removeIndividualParticipantIds',
   'removeLadderParticipant',
@@ -1263,6 +1323,8 @@ export const FACTORY_ENGINE_METHODS: readonly FactoryEngineMethod[] = [
   'renameStructures',
   'reorderUpcomingMatchUps',
   'replaceTieMatchUpParticipantId',
+  'requestEndorsement',
+  'requestModification',
   'reset',
   'resetAdHocMatchUps',
   'resetCompetitionState',
@@ -1279,6 +1341,8 @@ export const FACTORY_ENGINE_METHODS: readonly FactoryEngineMethod[] = [
   'resolveStatus',
   'resolveVenueId',
   'reverseScore',
+  'reviewAmendment',
+  'reviewApplication',
   'runValidationPipeline',
   'sampleCapacityCurve',
   'saveDrawDeletions',
@@ -1337,6 +1401,8 @@ export const FACTORY_ENGINE_METHODS: readonly FactoryEngineMethod[] = [
   'sortEdges',
   'stringify',
   'stringifyMatchUpFormat',
+  'submitApplication',
+  'submitComplianceItem',
   'submitResult',
   'substituteParticipant',
   'suggestFormatPlans',
@@ -1352,6 +1418,7 @@ export const FACTORY_ENGINE_METHODS: readonly FactoryEngineMethod[] = [
   'transitionAssignmentStatus',
   'transitionCertificationStatus',
   'transitionEvaluationStatus',
+  'transitionToPostEvent',
   'unlinkTournament',
   'unlinkTournaments',
   'unPublishEvent',
@@ -1359,8 +1426,10 @@ export const FACTORY_ENGINE_METHODS: readonly FactoryEngineMethod[] = [
   'unPublishOrderOfPlay',
   'unPublishParticipants',
   'updateDrawIdsOrder',
+  'updateEventProposal',
   'updateParticipantResults',
   'updatePracticeRegistration',
+  'updateProposal',
   'updateScheduleScenario',
   'updateTeamLineUp',
   'updateTieMatchUpScore',
@@ -1374,6 +1443,7 @@ export const FACTORY_ENGINE_METHODS: readonly FactoryEngineMethod[] = [
   'validateMCPMatch',
   'validateOfficiatingStatusTransition',
   'validatePlayoffGroups',
+  'validateProposal',
   'validateScheduleScenario',
   'validateSchedulingProfile',
   'validateSchedulingProfileFormat',
@@ -1381,12 +1451,16 @@ export const FACTORY_ENGINE_METHODS: readonly FactoryEngineMethod[] = [
   'validateSegments',
   'validateSet',
   'validateSetScore',
+  'validateStatusTransition',
   'validateTieFormat',
   'validMatchUp',
   'validMatchUps',
   'venueDayKey',
   'venueKey',
+  'verifyComplianceItem',
   'version',
   'waitFor',
+  'waiveComplianceItem',
+  'withdrawApplication',
   'withdrawParticipantAtDrawPosition',
 ] as const;
