@@ -1532,13 +1532,35 @@ tournamentEngine.generateDrawDefinition({
 
 ### Query Methods
 
-:::warning Not part of the public surface
-`getSeedBlocks`, `getValidSeedBlocks` and `isValidSeedPosition` are **internal**. They are reachable
-by module path inside this repository but are exported neither as root names nor through any
-governor, so a package consumer cannot call them. They are described here because they explain how
-seed blocks are derived — not as an API. If you need one of them from a consumer, that is a request
-to export it, not a bug in your import.
+:::info `isValidSeedPosition` is public; the seed-block helpers are not
+`isValidSeedPosition` is on the engine surface as of 7.x — see
+[below](#isvalidseedposition). `getSeedBlocks` and `getValidSeedBlocks` remain **internal**:
+reachable by module path inside this repository, but exported neither as root names nor through a
+governor. They are described here because they explain how seed blocks are derived, not as an API.
 :::
+
+#### `isValidSeedPosition()`
+
+Answers whether a seed may be placed at a given `drawPosition` — the same question the engine asks
+itself in `positionAssignment` before rejecting a hand placement, and in `positionActions` before
+offering `SEED_VALUE` / `REMOVE_SEED`. A client doing manual seed placement should ask this rather
+than re-deriving seed blocks, so that its rules and the engine's cannot drift apart.
+
+```javascript
+import { tournamentEngine } from 'tods-competition-factory';
+
+const valid = tournamentEngine.isValidSeedPosition({
+  appliedPolicies, // optional — read from the drawDefinition when omitted
+  drawDefinition,
+  drawPosition,
+  structureId,
+  seedNumber,
+});
+```
+
+The answer follows the three states of [`validSeedPositions`](#validseedpositions): `{ ignore: true }`
+accepts any position, absence restricts to the union of valid seed blocks, and `{ strict: true }`
+restricts to that seed's own block.
 
 #### `getSeedBlocks()` (internal)
 

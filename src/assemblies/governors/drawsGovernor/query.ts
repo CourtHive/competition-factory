@@ -23,6 +23,9 @@ export { isValidForQualifying } from '@Query/drawDefinition/isValidForQualifying
 export { getPositionAssignments } from '@Query/structure/getPositionAssignments';
 export { getDrawCompleteness } from '@Query/drawDefinition/getDrawCompleteness';
 export { getSeedingThresholds } from '@Query/drawDefinition/getSeedBlocks';
+// Answers 'may this seed be placed at this drawPosition'. Exported because a client doing manual
+// seed placement needs the same answer the engine uses, rather than re-deriving seed blocks.
+export { isValidSeedPosition } from '@Query/drawDefinition/seedGetter';
 export { getSwissChart } from '@Query/drawDefinitions/swiss/getSwissChart';
 export { validatePlayoffGroups } from '@Validators/validatePlayoffGroups';
 export { getDraftState } from '@Query/drawDefinition/draft/getDraftState';
