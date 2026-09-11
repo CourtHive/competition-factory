@@ -199,7 +199,7 @@ try {
   // Multiple operations that must all succeed
   await tournamentEngine.addEvent({ event, rollbackOnError: true });
   await tournamentEngine.generateDrawDefinition({ drawSize: 32, rollbackOnError: true });
-  await tournamentEngine.attachPolicy({ policyDefinitions, rollbackOnError: true });
+  await tournamentEngine.attachPolicies({ policyDefinitions, rollbackOnError: true });
 
   // All succeeded, persist state
   await saveToDatabase(tournamentEngine.getState());

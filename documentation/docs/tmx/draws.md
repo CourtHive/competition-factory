@@ -68,7 +68,7 @@ tournamentEngine.assignSeed({
 });
 
 // Set all seeds at once
-tournamentEngine.setParticipantSeedings({
+tournamentEngine.setParticipantScaleItems({
   eventId,
   participantIds: [...],
   seedAssignments: [
@@ -91,7 +91,7 @@ tournamentEngine.assignDrawPosition({
 });
 
 // Assign to multiple positions
-tournamentEngine.assignDrawPositions({
+tournamentEngine.assignDrawPosition({
   eventId,
   drawId,
   structureId,
@@ -241,7 +241,7 @@ const { drawDefinition } = tournamentEngine.addDrawDefinition({
 });
 
 // 2. Assign seeds
-tournamentEngine.setParticipantSeedings({
+tournamentEngine.setParticipantScaleItems({
   eventId,
   participantIds,
   seedAssignments: [...seeding],
@@ -255,7 +255,7 @@ tournamentEngine.automatedPositioning({
 });
 
 // 4. Position remaining participants
-tournamentEngine.assignDrawPositions({
+tournamentEngine.assignDrawPosition({
   eventId,
   drawId: drawDefinition.drawId,
   assignments: [...unseeded],
@@ -377,7 +377,7 @@ const seedAssignments = unseeded.map((p, i) => ({
   seedValue: `${i + 1}`,
 }));
 
-tournamentEngine.setParticipantSeedings({
+tournamentEngine.setParticipantScaleItems({
   eventId,
   participantIds: unseeded.map((p) => p.participantId),
   seedAssignments,

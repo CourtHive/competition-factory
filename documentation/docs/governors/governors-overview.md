@@ -321,13 +321,13 @@ const { matchUps } = tournamentEngine.allTournamentMatchUps();
 import { policyConstants } from 'tods-competition-factory';
 
 // Attach scheduling policy
-tournamentEngine.attachPolicy({
+tournamentEngine.attachPolicies({
   policyType: policyConstants.POLICY_TYPE_SCHEDULING,
   policyDefinition: { ... }
 });
 
 // Attach seeding policy
-tournamentEngine.attachPolicy({
+tournamentEngine.attachPolicies({
   eventId,
   policyType: policyConstants.POLICY_TYPE_SEEDING,
   policyDefinition: { ... }
@@ -378,6 +378,8 @@ Governor methods typically return:
 ```
 
 **Error Handling**:
+
+<!-- doc-methods:ignore — `someMethod` is an illustrative placeholder -->
 
 ```js
 const result = tournamentEngine.someMethod({ ... });

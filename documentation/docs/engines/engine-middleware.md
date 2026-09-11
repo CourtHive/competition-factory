@@ -27,7 +27,7 @@ tournamentEngine.setState(tournamentRecord);
 
 // Without middleware (manual resolution)
 const { drawDefinition } = tournamentEngine.getEvent({ drawId });
-const { event } = tournamentEngine.findEvent({ drawId: drawDefinition.drawId });
+const { event } = tournamentEngine.getEvent({ drawId: drawDefinition.drawId });
 tournamentEngine.deleteDrawDefinitions({ event, drawIds: [drawId] });
 
 // With middleware (automatic resolution)
@@ -44,7 +44,7 @@ tournamentEngine.getEvent({ drawId }); // ✅ Event automatically resolved
 
 ```js
 // Single ID resolves entire hierarchy
-const { matchUp, event, drawDefinition, structure } = tournamentEngine.getMatchUp({ matchUpId });
+const { matchUp, event, drawDefinition, structure } = tournamentEngine.findMatchUp({ matchUpId });
 // All related objects automatically included
 ```
 
@@ -228,9 +228,11 @@ tournamentEngine.getEvent({
 
 **API Reference:** [getEvent](/docs/governors/query-governor#getevent)
 
+<!-- doc-methods:ignore — `someMethod` is an illustrative placeholder -->
+
 ```js
 // Manually provide resolved objects
-const { event } = tournamentEngine.findEvent({ drawId });
+const { event } = tournamentEngine.getEvent({ drawId });
 const { drawDefinition } = tournamentEngine.getDrawDefinition({ drawId });
 
 tournamentEngine.someOperation({
@@ -309,10 +311,10 @@ const time4 = performance.now();
 
 ```js
 // ❌ Less efficient - more resolution steps
-tournamentEngine.getMatchUp({ matchUpId }); // Resolves full hierarchy
+tournamentEngine.findMatchUp({ matchUpId }); // Resolves full hierarchy
 
 // ✅ More efficient - direct access
-tournamentEngine.getMatchUp({
+tournamentEngine.findMatchUp({
   matchUpId,
   eventId,
   drawId, // Helps narrow down search

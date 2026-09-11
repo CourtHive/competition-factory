@@ -173,5 +173,10 @@ jobs:
       - name: verify:docs-imports
         run: pnpm verify:docs-imports
 
+      # The imports check proves the IMPORT resolves; it says nothing about what is then CALLED. A doc
+      # can import tournamentEngine correctly and invoke a method that has never existed.
+      - name: verify:docs-methods
+        run: pnpm verify:docs-methods
+
       - name: verify:pack
         run: pnpm verify:pack

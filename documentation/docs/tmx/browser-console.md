@@ -32,11 +32,11 @@ Open the browser console (F12 or Cmd+Option+I) while running TMX:
 console.log(dev);
 
 // Available on dev object:
-dev.tournamentEngine  // Tournament engine instance
-dev.competitionEngine // Competition engine instance  
-dev.getTournamentRecord() // Get current tournament
-dev.enableLogging()   // Enable method logging
-dev.disableLogging()  // Disable method logging
+dev.tournamentEngine; // Tournament engine instance
+dev.competitionEngine; // Competition engine instance
+dev.getTournamentRecord(); // Get current tournament
+dev.enableLogging(); // Enable method logging
+dev.disableLogging(); // Disable method logging
 ```
 
 ## Core Functionality
@@ -45,15 +45,15 @@ dev.disableLogging()  // Disable method logging
 
 ```js
 // Tournament engine - main engine for tournament operations
-dev.tournamentEngine
+dev.tournamentEngine;
 
 // Competition engine - for multi-tournament operations
-dev.competitionEngine
+dev.competitionEngine;
 
 // All governor methods available
-dev.tournamentEngine.getEvents()
-dev.tournamentEngine.getParticipants()
-dev.tournamentEngine.getAllEventMatchUps()
+dev.tournamentEngine.getEvents();
+dev.tournamentEngine.getParticipants();
+dev.tournamentEngine.allEventMatchUps();
 ```
 
 ### Tournament Record Access
@@ -109,14 +109,14 @@ const { participants } = dev.tournamentEngine.getParticipants();
 const { drawDefinitions } = dev.tournamentEngine.getDrawDefinitions();
 
 // Inspect event details
-events.forEach(event => {
+events.forEach((event) => {
   console.log(`${event.eventName}: ${event.entries?.length || 0} entries`);
 });
 
 // Check draw status
-drawDefinitions.forEach(draw => {
+drawDefinitions.forEach((draw) => {
   const { matchUps } = dev.tournamentEngine.getAllDrawMatchUps({ drawId: draw.drawId });
-  const completed = matchUps.filter(m => m.matchUpStatus === 'COMPLETED').length;
+  const completed = matchUps.filter((m) => m.matchUpStatus === 'COMPLETED').length;
   console.log(`${draw.drawName}: ${completed}/${matchUps.length} matches complete`);
 });
 ```
@@ -132,9 +132,9 @@ const result = dev.tournamentEngine.addParticipant({
     participantType: 'INDIVIDUAL',
     person: {
       standardGivenName: 'Test',
-      standardFamilyName: 'Player'
-    }
-  }
+      standardFamilyName: 'Player',
+    },
+  },
 });
 
 console.log(result);
@@ -183,14 +183,14 @@ dev.enableLogging();
 
 ```js
 // Get all matches with scores
-const { matchUps } = dev.tournamentEngine.getAllEventMatchUps({ eventId });
-const scored = matchUps.filter(m => m.score);
+const { matchUps } = dev.tournamentEngine.allEventMatchUps({ eventId });
+const scored = matchUps.filter((m) => m.score);
 
 // Analyze results
-const stats = scored.map(m => ({
+const stats = scored.map((m) => ({
   round: m.roundName,
   duration: m.score.sets.length,
-  tiebreaks: m.score.sets.filter(s => s.side1TiebreakScore).length
+  tiebreaks: m.score.sets.filter((s) => s.side1TiebreakScore).length,
 }));
 
 console.table(stats);
@@ -206,17 +206,17 @@ copy(stats);
 const { participants } = dev.tournamentEngine.getParticipants();
 
 // Add all participants to an event
-participants.forEach(p => {
+participants.forEach((p) => {
   dev.tournamentEngine.addEventEntries({
     eventId: 'event-id',
-    participantIds: [p.participantId]
+    participantIds: [p.participantId],
   });
 });
 
 // Or bulk add
 dev.tournamentEngine.addEventEntries({
   eventId: 'event-id',
-  participantIds: participants.map(p => p.participantId)
+  participantIds: participants.map((p) => p.participantId),
 });
 ```
 
@@ -242,18 +242,18 @@ location.reload();
 
 ```js
 // Test different query parameters
-const { matchUps: all } = dev.tournamentEngine.getAllEventMatchUps({ 
-  eventId 
+const { matchUps: all } = dev.tournamentEngine.allEventMatchUps({
+  eventId,
 });
 
-const { matchUps: completed } = dev.tournamentEngine.getAllEventMatchUps({ 
+const { matchUps: completed } = dev.tournamentEngine.allEventMatchUps({
   eventId,
-  matchUpFilters: { matchUpStatuses: ['COMPLETED'] }
+  matchUpFilters: { matchUpStatuses: ['COMPLETED'] },
 });
 
-const { matchUps: ready } = dev.tournamentEngine.getAllEventMatchUps({ 
+const { matchUps: ready } = dev.tournamentEngine.allEventMatchUps({
   eventId,
-  matchUpFilters: { readyToScore: true }
+  matchUpFilters: { readyToScore: true },
 });
 
 console.log(`Total: ${all.length}, Completed: ${completed.length}, Ready: ${ready.length}`);
@@ -266,7 +266,7 @@ console.log(`Total: ${all.length}, Completed: ${completed.length}, Ready: ${read
 ```js
 // Wrap methods to add custom logging
 const original = dev.tournamentEngine.addEvent;
-dev.tournamentEngine.addEvent = function(params) {
+dev.tournamentEngine.addEvent = function (params) {
   console.log('Adding event:', params);
   const result = original.call(this, params);
   console.log('Event added:', result);
@@ -282,7 +282,7 @@ console.time('generateDraw');
 dev.tournamentEngine.generateDrawDefinition({
   eventId,
   drawSize: 128,
-  automated: true
+  automated: true,
 });
 console.timeEnd('generateDraw');
 // Output: generateDraw: 45.2ms
@@ -296,7 +296,7 @@ const { valid, errors } = dev.tournamentEngine.validateTournament();
 
 if (!valid) {
   console.error('Tournament validation errors:', errors);
-  errors.forEach(e => console.log(`- ${e.type}: ${e.message}`));
+  errors.forEach((e) => console.log(`- ${e.type}: ${e.message}`));
 }
 ```
 
@@ -309,14 +309,14 @@ const tournament = dev.getTournamentRecord();
 // Remove sensitive data
 const sanitized = {
   ...tournament,
-  participants: tournament.participants?.map(p => ({
+  participants: tournament.participants?.map((p) => ({
     ...p,
     person: {
       standardGivenName: 'Player',
-      standardFamilyName: p.participantId
+      standardFamilyName: p.participantId,
     },
-    contact: undefined
-  }))
+    contact: undefined,
+  })),
 };
 
 copy(sanitized);
@@ -336,34 +336,34 @@ async function setupTournament() {
         participantType: 'INDIVIDUAL',
         person: {
           standardGivenName: `Player`,
-          standardFamilyName: `${i}`
-        }
-      }
+          standardFamilyName: `${i}`,
+        },
+      },
     });
     participants.push(participant);
   }
-  
+
   // Create event
   const { event } = dev.tournamentEngine.addEvent({
     event: {
       eventName: 'Test Event',
-      eventType: 'SINGLES'
-    }
+      eventType: 'SINGLES',
+    },
   });
-  
+
   // Add entries
   dev.tournamentEngine.addEventEntries({
     eventId: event.eventId,
-    participantIds: participants.map(p => p.participantId)
+    participantIds: participants.map((p) => p.participantId),
   });
-  
+
   // Generate draw
   dev.tournamentEngine.generateDrawDefinition({
     eventId: event.eventId,
     drawSize: 32,
-    automated: true
+    automated: true,
   });
-  
+
   console.log('Tournament setup complete!');
   location.reload(); // Refresh UI
 }
@@ -408,35 +408,39 @@ setupTournament();
 const helpers = {
   // Get current state
   state: () => dev.getTournamentRecord(),
-  
+
   // Count things
   count: () => ({
     participants: dev.tournamentEngine.getParticipants().participants.length,
     events: dev.tournamentEngine.getEvents().events.length,
-    draws: dev.tournamentEngine.getDrawDefinitions().drawDefinitions.length
+    draws: dev.tournamentEngine.getDrawDefinitions().drawDefinitions.length,
   }),
-  
+
   // Export tournament
   export: () => copy(dev.getTournamentRecord()),
-  
+
   // Log all events
   events: () => {
     const { events } = dev.tournamentEngine.getEvents();
-    console.table(events.map(e => ({
-      name: e.eventName,
-      type: e.eventType,
-      entries: e.entries?.length || 0
-    })));
+    console.table(
+      events.map((e) => ({
+        name: e.eventName,
+        type: e.eventType,
+        entries: e.entries?.length || 0,
+      })),
+    );
   },
-  
+
   // Log all participants
   participants: () => {
     const { participants } = dev.tournamentEngine.getParticipants();
-    console.table(participants.map(p => ({
-      name: `${p.person.standardGivenName} ${p.person.standardFamilyName}`,
-      id: p.participantId
-    })));
-  }
+    console.table(
+      participants.map((p) => ({
+        name: `${p.person.standardGivenName} ${p.person.standardFamilyName}`,
+        id: p.participantId,
+      })),
+    );
+  },
 };
 
 // Use helpers
@@ -458,7 +462,7 @@ if (event && event.entries?.length > 0) {
   // Safe to generate draw
   dev.tournamentEngine.generateDrawDefinition({
     eventId: event.eventId,
-    drawSize: 32
+    drawSize: 32,
   });
 } else {
   console.error('Event has no entries');
@@ -466,6 +470,8 @@ if (event && event.entries?.length > 0) {
 ```
 
 ### Error Handling
+
+<!-- doc-methods:ignore — `someMethod` is an illustrative placeholder -->
 
 ```js
 // Wrap calls in try-catch

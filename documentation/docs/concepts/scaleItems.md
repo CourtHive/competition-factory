@@ -287,7 +287,7 @@ Retrieve all scale items for a participant:
 **API Reference:** [getParticipantScaleItem](/docs/governors/query-governor#getparticipantscaleitem)
 
 ```js
-const { participant } = tournamentEngine.getParticipant({
+const { participant } = tournamentEngine.getParticipants({
   participantId: 'player-123',
 });
 
@@ -304,7 +304,7 @@ participant.timeItems?.forEach((timeItem) => {
 Get all ratings, rankings, or seedings:
 
 ```js
-const { participant } = tournamentEngine.getParticipant({
+const { participant } = tournamentEngine.getParticipants({
   participantId: 'player-123',
 });
 

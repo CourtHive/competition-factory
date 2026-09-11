@@ -30,10 +30,10 @@ MatchUp management in TMX includes:
 
 ```js
 // Get all matchUps for an event
-const { matchUps } = tournamentEngine.getAllEventMatchUps({ eventId });
+const { matchUps } = tournamentEngine.allEventMatchUps({ eventId });
 
 // Get matchUps for a draw
-const { matchUps } = tournamentEngine.getMatchUps({
+const { matchUps } = tournamentEngine.allTournamentMatchUps({
   eventId,
   drawId,
 });
@@ -47,7 +47,7 @@ const { matchUps } = tournamentEngine.getRoundMatchUps({
 });
 
 // Get specific matchUp
-const { matchUp } = tournamentEngine.getMatchUp({
+const { matchUp } = tournamentEngine.findMatchUp({
   eventId,
   matchUpId,
 });
@@ -124,13 +124,13 @@ tournamentEngine.setMatchUpStatus({
 
 ```js
 // Set default format for event
-tournamentEngine.setEventMatchUpFormat({
+tournamentEngine.setMatchUpFormat({
   eventId,
   matchUpFormat: 'SET3-S:6/TB7',
 });
 
 // Set format for specific structure
-tournamentEngine.setStructureMatchUpFormat({
+tournamentEngine.setMatchUpFormat({
   eventId,
   drawId,
   structureId,
@@ -250,16 +250,14 @@ tournamentEngine.setMatchUpStatus({
   matchUpId,
   outcome: {
     score: {
-      sets: [
-        /* ... */
-      ],
+      sets: [/* ... */],
     },
     winningSide: 1,
   },
 });
 
 // Check what matchUps are now ready
-const { matchUps } = tournamentEngine.getAllEventMatchUps({
+const { matchUps } = tournamentEngine.allEventMatchUps({
   eventId,
   matchUpFilters: { matchUpStatuses: ['TO_BE_PLAYED'] },
 });
@@ -331,7 +329,7 @@ TMX uses these [courthive-components](https://courthive.github.io/courthive-comp
 
 ```js
 // 1. Get matchUp
-const { matchUp } = tournamentEngine.getMatchUp({
+const { matchUp } = tournamentEngine.findMatchUp({
   eventId,
   matchUpId,
 });
@@ -427,7 +425,7 @@ scores.forEach((s) => {
 
 ```js
 // Remove incorrect score
-tournamentEngine.resetMatchUpLineUp({
+tournamentEngine.resetMatchUpLineUps({
   eventId,
   matchUpId,
 });
@@ -447,7 +445,7 @@ tournamentEngine.setMatchUpStatus({
 
 ```js
 // Get completed matches
-const { completedMatchUps } = tournamentEngine.getAllEventMatchUps({
+const { completedMatchUps } = tournamentEngine.allEventMatchUps({
   eventId,
   matchUpFilters: {
     matchUpStatuses: ['COMPLETED'],
@@ -455,7 +453,7 @@ const { completedMatchUps } = tournamentEngine.getAllEventMatchUps({
 });
 
 // Get matches ready to play
-const { readyMatchUps } = tournamentEngine.getAllEventMatchUps({
+const { readyMatchUps } = tournamentEngine.allEventMatchUps({
   eventId,
   matchUpFilters: {
     matchUpStatuses: ['TO_BE_PLAYED'],
@@ -465,7 +463,7 @@ const { readyMatchUps } = tournamentEngine.getAllEventMatchUps({
 });
 
 // Get matches by round
-const { matchUps } = tournamentEngine.getAllEventMatchUps({
+const { matchUps } = tournamentEngine.allEventMatchUps({
   eventId,
   matchUpFilters: {
     roundNumbers: [1, 2],
