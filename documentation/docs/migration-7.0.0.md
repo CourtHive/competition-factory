@@ -27,6 +27,8 @@ feature tour and the full list of 7.0.0 additions, see [What's New in 7.0.0](./w
 
 ## 1. `participantsRequiredMatchUpStatuses` — a spelling fix
 
+_Shipped in [#4782](https://github.com/CourtHive/competition-factory/pull/4782)._
+
 The exported constant was misspelled **`particicipantsRequiredMatchUpStatuses`** (an extra `ici`)
 since it was introduced. It is a published top-level export, so correcting it is a breaking change
 and 7.0.0 is the first opportunity to make it.
@@ -48,6 +50,8 @@ found no consumer importing the old name, so the practical migration cost is zer
 
 ## 2. Re-applying a double exit is now idempotent
 
+_Shipped in [#4782](https://github.com/CourtHive/competition-factory/pull/4782)._
+
 Sending the identical double-exit outcome twice now returns success and writes nothing the second
 time. Previously the second call re-ran the propagation cascade — which read its own earlier work as
 a _second_ source exiting into the same target, escalated the produced `WALKOVER` to a
@@ -65,6 +69,8 @@ It no longer will. That state is reported by `getDrawInconsistencies` as `WINNER
 `DROPPED_PROGRESSION`; repair it deliberately rather than by sending a duplicate request.
 
 ## 3. A rejected mutation leaves the draw unchanged
+
+_Shipped in [#4782](https://github.com/CourtHive/competition-factory/pull/4782)._
 
 `setMatchUpStatus` now validates a bare `{ winningSide }` outcome **before** any removal runs. If the
 call is refused, the draw is byte-identical to what it was.
@@ -85,6 +91,8 @@ Note the error _code_ for this case moved from `ERR_MISSING_ASSIGNMENTS` to
 from the later score-modification guard. Match on behaviour rather than on that specific code.
 
 ## 4. Time-zone conversions refuse rather than throw or guess
+
+_Shipped in [#4783](https://github.com/CourtHive/competition-factory/pull/4783)._
 
 The zoned calendar intent had two implementations. `timeZone.ts` was published; `zonedTime.ts` was
 internal and carried every live conversion in the repo. On valid input the two were numerically
@@ -144,6 +152,8 @@ a plausible-looking number will now receive an error instead.
 to infer it.
 
 ## 5. Two queries refuse an absent object param instead of answering
+
+_Shipped in [#4796](https://github.com/CourtHive/competition-factory/pull/4796), [#4797](https://github.com/CourtHive/competition-factory/pull/4797), [#4799](https://github.com/CourtHive/competition-factory/pull/4799)._
 
 `checkMatchUpIsComplete` takes a **matchUp object**; `getParticipantResults` takes an **array of
 in-context matchUps**. Neither takes an id.
@@ -242,6 +252,8 @@ entry first — a refusal would read as "complete". Every caller inside the fact
 
 ## 6. `buildDrawHierarchy` is removed
 
+_Shipped in [#4801](https://github.com/CourtHive/competition-factory/pull/4801)._
+
 `buildDrawHierarchy` turned a flat `matchUps` array into a nested parent/children tree, and its
 companion `collapseHierarchy` toggled `children` / `_children` on a node — the shape early **D3**
 expected for a collapsible tree layout. It is how TMX rendered draw structures years ago.
@@ -266,6 +278,8 @@ Before restoring, consider whether you want _that_ shape. It is a 2018-era D3 co
 written today is more likely to want `getRoundMatchUps` or the draw's own structure/link graph.
 
 ## 7. `addFinishingRounds` refuses an absent `matchUps` array
+
+_Shipped in [#4802](https://github.com/CourtHive/competition-factory/pull/4802)._
 
 `addFinishingRounds` stamps `finishingRound` and `finishingPositionRange` onto matchUps. It takes a
 **matchUps array**, not a `drawId` — `paramsMiddleware` resolves `drawId` into a `drawDefinition` and
