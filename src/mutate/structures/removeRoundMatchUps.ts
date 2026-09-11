@@ -2,6 +2,7 @@ import { deleteMatchUpsNotice, modifyMatchUpNotice } from '@Mutate/notifications
 import { decorateResult } from '@Functions/global/decorateResult';
 import { requireParams } from '@Helpers/parameters/requireParams';
 import { getMatchUpId } from '@Functions/global/extractors';
+import { pushGlobalLog } from '@Functions/global/globalLog';
 import { isAdHoc } from '@Query/drawDefinition/isAdHoc';
 import { findStructure } from '@Acquire/findStructure';
 import { numericSort } from '@Tools/sorting';
@@ -61,7 +62,7 @@ export function removeRoundMatchUps({
       event,
     });
   } else {
-    console.log('not implemented');
+    pushGlobalLog({ method: 'removeRoundMatchUps', notImplemented: true });
   }
 
   return { ...SUCCESS };

@@ -6,6 +6,7 @@ import { checkScoreHasValue } from '@Query/matchUp/checkScoreHasValue';
 import { getAdHocStructureDetails } from './getAdHocStructureDetails';
 import { getMissingSequenceNumbers, unique } from '@Tools/arrays';
 import { getMatchUpId } from '@Functions/global/extractors';
+import { pushGlobalLog } from '@Functions/global/globalLog';
 import { isAdHoc } from '@Query/drawDefinition/isAdHoc';
 import { xa } from '@Tools/extractAttributes';
 
@@ -137,7 +138,7 @@ export function deleteAdHocMatchUps(params: DeleteAdHocMatchUpsArgs): ResultType
         matchUps,
         event,
       });
-      if (result.error) console.log(result);
+      if (result.error) pushGlobalLog({ method: 'deleteAdHocMatchUps', result });
     }
 
     modifyDrawNotice({

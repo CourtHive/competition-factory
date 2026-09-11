@@ -1014,6 +1014,7 @@ export class AvailabilityEngine {
       try {
         listener(event);
       } catch (error) {
+        // eslint-disable-next-line no-console -- a consumer's own callback threw; silencing it would hide their bug
         console.error('Error in event listener:', error);
       }
     }
@@ -1150,6 +1151,7 @@ export class AvailabilityEngine {
         const conflicts = evaluator.evaluate(ctx, mutations);
         allConflicts.push(...conflicts);
       } catch (error) {
+        // eslint-disable-next-line no-console -- a consumer's own callback threw; silencing it would hide their bug
         console.error(`Error in evaluator ${evaluator.id}:`, error);
       }
     }

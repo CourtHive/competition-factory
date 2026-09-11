@@ -11,6 +11,7 @@ import { getParticipants } from '@Query/participants/getParticipants';
 import { addParticipant } from '@Mutate/participants/addParticipant';
 import { getTeamLineUp } from '@Query/drawDefinition/getTeamLineUp';
 import { decorateResult } from '@Functions/global/decorateResult';
+import { pushGlobalLog } from '@Functions/global/globalLog';
 import { ensureSideLineUps } from './ensureSideLineUps';
 import { overlap } from '@Tools/arrays';
 
@@ -244,7 +245,7 @@ export function assignTieMatchUpParticipantId(
       participantIds: [deletedParticipantId],
       tournamentRecord,
     });
-    if (error) console.log('cleanup');
+    if (error) pushGlobalLog({ method: 'assignTieMatchUpParticipant', stage: 'cleanup', error });
   }
 
   return { ...SUCCESS, modifiedLineUp };

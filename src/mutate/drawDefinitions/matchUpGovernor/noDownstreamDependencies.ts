@@ -8,6 +8,7 @@ import { checkConnectedStructures } from './checkConnectedStructures';
 import { attemptToSetWinningSide } from './attemptToSetWinningSide';
 import { decorateResult } from '@Functions/global/decorateResult';
 import { attemptToModifyScore } from './attemptToModifyScore';
+import { pushGlobalLog } from '@Functions/global/globalLog';
 import { removeDoubleExit } from './removeDoubleExit';
 import { removeQualifier } from './removeQualifier';
 import { isExit } from '@Validators/isExit';
@@ -140,7 +141,7 @@ function scoreModification(params) {
       event,
     });
 
-    if (removeWinningSide) console.log('REMOVE WINNING SIDE');
+    if (removeWinningSide) pushGlobalLog({ method: 'noDownstreamDependencies', action: 'remove winningSide' });
   }
 
   return decorateResult({ result, stack });

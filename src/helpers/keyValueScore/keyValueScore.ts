@@ -2,6 +2,7 @@ import { getMatchUpWinner, removeFromScore, getHighTiebreakValue } from './keyVa
 import { processIncompleteSetScore } from './processIncompleteSetScore';
 import { getLeadingSide } from '@Query/matchUp/checkSetIsComplete';
 import { keyValueTimedSetScore } from './keyValueTimedSetScore';
+import { pushGlobalLog } from '@Functions/global/globalLog';
 import { processTiebreakSet } from './processTiebreakSet';
 import { keyValueSetScore } from './keyValueSetScore';
 import { getScoreAnalysis } from './scoreAnalysis';
@@ -84,7 +85,7 @@ function handleOutcomeKey({ analysis, lowSide, sets, scoreString, matchUpStatus,
   } else if (analysis.isTiebreakEntry || analysis.isIncompleteSetScore) {
     info = 'incomplete set scoreString or tiebreak entry';
   } else {
-    console.log('handle case', { value });
+    pushGlobalLog({ method: 'keyValueScore', issue: 'unhandled case', value });
   }
   return { info, sets, scoreString, matchUpStatus, winningSide, updated };
 }
@@ -451,7 +452,7 @@ function processRemainingBranches({ analysis, auto, lowSide, scoreString, sets, 
       updated,
     } = handleNewSet({ analysis, lowSide, scoreString, sets, value }));
   } else {
-    console.log('error: unknown outcome');
+    pushGlobalLog({ method: 'keyValueScore', error: 'unknown outcome' });
   }
 
   return { info, updated, sets: resultSets, scoreString: resultScore };

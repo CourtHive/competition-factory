@@ -1,6 +1,6 @@
 import { getPositionAssignments } from '../drawDefinition/positionsGetter';
+import { pushGlobalLog } from '@Functions/global/globalLog';
 import { chunkArray, generateRange } from '@Tools/arrays';
-import { getDevContext } from '@Global/state/globalState';
 import { reduceGroupedOrder } from './reduceGroupedOrder';
 import { firstClassOrExtension } from '@Acquire/firstClassOrExtension';
 import { findStructure } from '@Acquire/findStructure';
@@ -97,7 +97,7 @@ export function getTargetMatchUp({
     /*
       RANDOM feed profile selects a random position from available
     */
-    if (getDevContext()) console.log(NOT_IMPLEMENTED, { feedProfile });
+    pushGlobalLog({ method: 'getTargetMatchUp', error: NOT_IMPLEMENTED, feedProfile });
   } else if (feedProfile === DRAW) {
     /*
       calculatedRoundPosition is undetermined for DRAW feedProfile

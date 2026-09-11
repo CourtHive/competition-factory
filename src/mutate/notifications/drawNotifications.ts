@@ -2,6 +2,7 @@ import { getPositionAssignments } from '@Query/drawDefinition/positionsGetter';
 import { addNotice, deleteNotice } from '@Global/state/globalState';
 import { requireParams } from '@Helpers/parameters/requireParams';
 import { drawOrigin, eventOrigin } from '@Query/readModel/readModelRows';
+import { pushGlobalLog } from '@Functions/global/globalLog';
 
 // Constants and types
 import { ErrorType, MISSING_DRAW_DEFINITION, MISSING_MATCHUP } from '@Constants/errorConditionConstants';
@@ -170,7 +171,7 @@ export function modifyMatchUpNotice({
   event,
 }: ModifyMatchUpNoticeArgs) {
   if (!matchUp) {
-    console.log(MISSING_MATCHUP);
+    pushGlobalLog({ method: 'drawNotifications', error: MISSING_MATCHUP });
     return { error: MISSING_MATCHUP };
   }
   // Resolve ONCE and use everywhere. Previously the fallback was applied to this notice's own payload
@@ -254,7 +255,7 @@ export function addDrawNotice({ tournamentId, eventId, drawDefinition }: AddDraw
   error?: ErrorType;
 } {
   if (!drawDefinition) {
-    console.log(MISSING_DRAW_DEFINITION);
+    pushGlobalLog({ method: 'drawNotifications', error: MISSING_DRAW_DEFINITION });
     return { error: MISSING_DRAW_DEFINITION };
   }
   drawUpdatedAt(drawDefinition);

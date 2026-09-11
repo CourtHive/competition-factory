@@ -1,5 +1,6 @@
 import { removeLineUpSubstitutions } from '../../drawDefinitions/removeLineUpSubstitutions';
 import { structureAssignedDrawPositions } from '@Query/drawDefinition/positionsGetter';
+import { pushGlobalLog } from '@Functions/global/globalLog';
 import { assignDrawPosition } from './positionAssignment';
 import { modifyMatchUpNotice } from '../../notifications/drawNotifications';
 import { decorateResult } from '@Functions/global/decorateResult';
@@ -168,7 +169,7 @@ function directWinnerViaLink({
     if (assignResult.error) return decorateResult({ result: assignResult, stack });
   } else if (structure?.stage !== QUALIFYING) {
     const error = 'winner target position unavaiallble';
-    console.log(error);
+    pushGlobalLog({ method: 'directWinner', error });
     decorateResult({ stack, result: { error } });
   }
 

@@ -1,3 +1,4 @@
+import { pushGlobalLog } from '@Functions/global/globalLog';
 import { parse } from '@Helpers/matchUpFormatCode/parse';
 import { analyzeMatchUp } from '@Query/matchUp/analyzeMatchUp';
 import { analyzeSet } from '@Query/matchUp/analyzeSet';
@@ -39,10 +40,10 @@ export function submitScoreChange(params?) {
 
   if (winnerChanged) {
     if (analysis.isLastSetWithValues) {
-      console.log('valid set modification', { modifiedSet });
+      pushGlobalLog({ method: 'submitScoreChange', stage: 'valid set modification', modifiedSet });
     } else {
-      console.log('is NOT last set with values');
-      console.log('winner changed: all subsequent sets must be removed');
+      pushGlobalLog({ method: 'submitScoreChange', stage: 'not the last set with values' });
+      pushGlobalLog({ method: 'submitScoreChange', stage: 'winner changed; subsequent sets must be removed' });
     }
   }
 

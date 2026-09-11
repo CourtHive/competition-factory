@@ -56,6 +56,7 @@ function dispatchPayloads(topic: string, handlers: AnyHandler[], payloads: any[]
       } catch (err) {
         // Isolation: one bad handler must not stop the others.
 
+        // eslint-disable-next-line no-console -- a consumer's own callback threw; silencing it would hide their bug
         console.error(`[engine.on] handler error on topic "${topic}":`, err);
       }
     }

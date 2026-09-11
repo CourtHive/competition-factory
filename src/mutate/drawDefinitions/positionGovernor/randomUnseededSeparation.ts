@@ -8,6 +8,7 @@ import { getAllStructureMatchUps } from '@Query/matchUps/getAllStructureMatchUps
 import { getAttributeGroupings } from '@Query/participants/getAttributeGrouping';
 import { deriveExponent, isPowerOf2, nearestPowerOf2 } from '@Tools/math';
 import { decorateResult } from '@Functions/global/decorateResult';
+import { pushGlobalLog } from '@Functions/global/globalLog';
 import { chunkArray, generateRange } from '@Tools/arrays';
 import { findStructure } from '@Acquire/findStructure';
 import { numericSort } from '@Tools/sorting';
@@ -276,7 +277,7 @@ function eliminationParticipantGroups({ allDrawPositions, roundsToSeparate, matc
   if (fedDrawPositions.length) {
     // This calculation will be based on "{ roundPosition, roundNumber } = matchUp"
     // ...for matchUps which include fedDrawPositions
-    console.log({ fedDrawPositions });
+    pushGlobalLog({ method: 'randomUnseededSeparation', fedDrawPositions });
   }
 
   return { drawPositionGroups: drawPositionPairs, drawPositionChunks };

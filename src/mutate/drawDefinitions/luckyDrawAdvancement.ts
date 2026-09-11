@@ -2,7 +2,7 @@ import { modifyPositionAssignmentsNotice, modifyMatchUpNotice } from '@Mutate/no
 import { getLuckyDrawRoundStatus } from '@Query/drawDefinition/getLuckyDrawRoundStatus';
 import { isLuckyBasedDraw } from '@Query/drawDefinition/isLuckyBasedDraw';
 import { decorateResult } from '@Functions/global/decorateResult';
-import { getDevContext } from '@Global/state/globalState';
+import { pushGlobalLog } from '@Functions/global/globalLog';
 import { isAdHoc } from '@Query/drawDefinition/isAdHoc';
 import { isLucky } from '@Query/drawDefinition/isLucky';
 import { findStructure } from '@Acquire/findStructure';
@@ -329,8 +329,12 @@ function handleDiscardedLosers({
       participantIds: discardedLosers,
       event,
     });
-    if (result?.error && getDevContext()) {
-      console.warn('Failed to place discarded losers in consolidation structure:', result.error);
+    if (result?.error) {
+      pushGlobalLog({
+        method: 'luckyDrawAdvancement',
+        issue: 'failed to place discarded losers in consolidation structure',
+        error: result.error,
+      });
     }
   }
 }
