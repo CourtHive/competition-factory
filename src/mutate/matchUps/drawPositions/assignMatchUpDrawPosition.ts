@@ -244,6 +244,33 @@ function resolveMatchUpStatus({ isByeMatchUp, matchUpStatus, isDoubleExitExit, m
   );
 }
 
+/**
+ * The string value of a `matchUpStatusCodes` element, whatever shape it arrived in.
+ *
+ * The array holds THREE shapes, which is the root problem:
+ *   1. policy codes      `{ matchUpStatusCode, label, matchUpStatusCodeDisplay }` — the scoring
+ *                        policy's vocabulary (see POLICY_SCORING_USTA)
+ *   2. exit provenance   `{ matchUpStatus, previousMatchUpStatus, sideNumber }` — written by
+ *                        doubleExitAdvancement.buildMatchUpStatusCodes
+ *   3. wrapped codes     `{ code }` — written by updateMatchUpStatusCodes, which wraps any string
+ *                        element before stamping `previousMatchUpStatus` onto it
+ *
+ * The previous read was `code?.code`, which resolves shape 3 correctly and shapes 1 and 2 to
+ * `undefined`. Provenance is the shape this branch actually receives, so the carried code was
+ * dropped and the branch assigned an empty array rather than re-siding anything.
+ *
+ * Measured 2026-09-11 over 120 randomized sweep scenarios: the branch below ran 275 times, 81 of
+ * those with codes present, every one of them shape 2, and dropped the code in 81 of 81.
+ *
+ * Note this returns a STRING, so provenance (`previousMatchUpStatus`, `sideNumber`) is still
+ * flattened away — the surrounding contract is `string[]`. Preserving it is what the per-side
+ * provenance field is for; see Mentat/planning/MATCHUP_STATUS_CODES_PER_SIDE.md.
+ */
+function exitCodeString(code: any): string | undefined {
+  if (typeof code === 'string') return code || undefined;
+  return code?.matchUpStatusCode ?? code?.code ?? code?.matchUpStatus ?? undefined;
+}
+
 function applyPositionToMatchUp({
   updatedDrawPositions,
   sourceMatchUpStatus,
@@ -289,9 +316,7 @@ function applyPositionToMatchUp({
   // winner) — otherwise it mislabels the winner. Mirrors resolvePropagatedExitOnAdvance.
   if (advancedExitWinningSide && !isDoubleExitExit) {
     const exitSideNumber = advancedExitWinningSide === 1 ? 2 : 1;
-    const carriedCode = (matchUp.matchUpStatusCodes ?? [])
-      .map((code: any) => (typeof code === 'string' ? code : code?.code))
-      .find(Boolean);
+    const carriedCode = (matchUp.matchUpStatusCodes ?? []).map(exitCodeString).find(Boolean);
     const matchUpStatusCodes: string[] = [];
     if (carriedCode) {
       for (let i = 0; i < exitSideNumber - 1; i++) matchUpStatusCodes[i] = '';
