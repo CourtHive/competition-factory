@@ -11,5 +11,4 @@ export { generateConsolationStructure } from '@Mutate/drawDefinitions/addLinkedC
 export { generateSwissRound } from '@Generators/drawDefinitions/drawTypes/adHoc/swiss/generateSwissRound';
 export { drawMatic } from '@Generators/drawDefinitions/drawTypes/adHoc/drawMatic/drawMatic';
 export { addFinishingRounds } from '@Generators/drawDefinitions/addFinishingRounds';
-export { buildDrawHierarchy } from '@Generators/drawDefinitions/drawHierarchy';
 export { autoSeeding } from '@Generators/drawDefinitions/autoSeeding';

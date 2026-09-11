@@ -109,7 +109,6 @@ export const methodScopeMap: Record<string, MutationLockScope> = {
   generateAdHocRounds: 'DRAWS',
   drawMatic: 'DRAWS',
   addFinishingRounds: 'DRAWS',
-  buildDrawHierarchy: 'DRAWS',
   autoSeeding: 'DRAWS',
 
   // SCORING — matchUpGovernor/mutate (scoring-related)

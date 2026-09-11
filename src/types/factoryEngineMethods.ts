@@ -114,7 +114,6 @@ export type FactoryEngineMethod =
   | 'automatedPositioning'
   | 'autoSeeding'
   | 'buildDayRange'
-  | 'buildDrawHierarchy'
   | 'buildEdges'
   | 'buildReportContext'
   | 'buildSchedulingProfileFromUISelections'
@@ -808,7 +807,6 @@ export const FACTORY_ENGINE_METHODS: readonly FactoryEngineMethod[] = [
   'automatedPositioning',
   'autoSeeding',
   'buildDayRange',
-  'buildDrawHierarchy',
   'buildEdges',
   'buildReportContext',
   'buildSchedulingProfileFromUISelections',

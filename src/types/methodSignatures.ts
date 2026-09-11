@@ -275,7 +275,6 @@ import type { addCollectionDefinition } from '@Mutate/tieFormat/addCollectionDef
 import type { addDrawDefinition } from '@Mutate/drawDefinitions/addDrawDefinition';
 import type { addPenalty } from '@Mutate/participants/penalties/addPenalty';
 import type { allCompetitionMatchUps } from '@Query/matchUps/getAllCompetitionMatchUps';
-import type { buildDrawHierarchy } from '@Generators/drawDefinitions/drawHierarchy';
 import type { getCheckedInParticipantIds } from '@Query/matchUp/getCheckedInParticipantIds';
 import type { getDraftState } from '@Query/drawDefinition/draft/getDraftState';
 import type { getDrawCompleteness } from '@Query/drawDefinition/getDrawCompleteness';
@@ -732,7 +731,6 @@ export interface MethodSignatures {
   automatedPlayoffPositioning: EngineMethod<typeof automatedPlayoffPositioning>;
   automatedPositioning: EngineMethod<typeof automatedPositioning>;
   autoSeeding: EngineMethod<typeof autoSeeding>;
-  buildDrawHierarchy: EngineMethod<typeof buildDrawHierarchy>;
   buildReportContext: EngineMethod<typeof buildReportContext>;
   bulkMatchUpStatusUpdate: EngineMethod<typeof bulkMatchUpStatusUpdate>;
   bulkRescheduleMatchUps: EngineMethod<typeof bulkRescheduleMatchUps>;
