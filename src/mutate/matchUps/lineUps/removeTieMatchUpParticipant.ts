@@ -10,6 +10,7 @@ import { checkScoreHasValue } from '@Query/matchUp/checkScoreHasValue';
 import { getParticipants } from '@Query/participants/getParticipants';
 import { addParticipant } from '@Mutate/participants/addParticipant';
 import { decorateResult } from '@Functions/global/decorateResult';
+import { pushGlobalLog } from '@Functions/global/globalLog';
 import { ensureSideLineUps } from './ensureSideLineUps';
 
 // constants and types
@@ -136,7 +137,7 @@ function modifyOrDeleteUnattachedPair({
       participantIds: [pairParticipantId],
       tournamentRecord,
     });
-    if (result.error) console.log('cleanup', { result });
+    if (result.error) pushGlobalLog({ method: 'removeTieMatchUpParticipant', stage: 'cleanup', result });
   }
   return undefined;
 }

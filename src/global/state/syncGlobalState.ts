@@ -1,3 +1,4 @@
+import { pushGlobalLog } from '@Functions/global/globalLog';
 import { preserveNoticeIdentity } from './noticeIdentity';
 import {
   CallListenerArgs,
@@ -224,7 +225,8 @@ export function handleCaughtError({ engineName, methodName, params, err }: Handl
     error = err.message;
   }
 
-  console.log('ERROR', {
+  pushGlobalLog({
+    method: 'syncGlobalState',
     tournamentId: getTournamentId(),
     params: JSON.stringify(params),
     engine: engineName,

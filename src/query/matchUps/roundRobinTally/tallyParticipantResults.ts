@@ -1,6 +1,7 @@
 import { matchUpCompletion } from '@Query/matchUp/checkMatchUpIsComplete';
 import { decorateResult } from '@Functions/global/decorateResult';
 import { getParticipantResults } from './getParticipantResults';
+import { pushGlobalLog } from '@Functions/global/globalLog';
 import { getDevContext } from '@Global/state/globalState';
 import { validMatchUps } from '@Validators/validMatchUp';
 import { getTallyReport } from './getTallyReport';
@@ -158,7 +159,7 @@ export function tallyParticipantResults({
 
   if (generateReport || getDevContext({ tally: true })) {
     const readable = getTallyReport({ matchUps, report, order });
-    if (getDevContext({ tally: true })) console.log(readable);
+    pushGlobalLog({ method: 'tallyParticipantResults', tally: readable });
     result.readableReport = readable;
   }
 

@@ -8,6 +8,7 @@ import { getAppliedPolicies } from '@Query/extensions/getAppliedPolicies';
 import { getParticipants } from '@Query/participants/getParticipants';
 import { addParticipant } from '@Mutate/participants/addParticipant';
 import { decorateResult } from '@Functions/global/decorateResult';
+import { pushGlobalLog } from '@Functions/global/globalLog';
 import { ensureSideLineUps } from './ensureSideLineUps';
 import { makeDeepCopy } from '@Tools/makeDeepCopy';
 import { unique } from '@Tools/arrays';
@@ -174,7 +175,7 @@ export function replaceTieMatchUpParticipantId(params: ReplaceTieMatchUpParticip
     });
     if (result.error) return decorateResult({ result, stack });
   } else {
-    console.log('team participantId not found');
+    pushGlobalLog({ method: 'replaceTieMatchUpParticipant', issue: 'team participantId not found' });
   }
 
   const { participantAdded, participantRemoved }: any = isDoubles

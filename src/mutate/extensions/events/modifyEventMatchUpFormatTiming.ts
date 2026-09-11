@@ -2,6 +2,7 @@ import { getModifiedMatchUpFormatTiming } from '@Query/extensions/matchUpFormatT
 import { modifyMatchUpFormatTiming } from '../matchUps/modifyMatchUpFormatTiming';
 import { isValidMatchUpFormat } from '@Validators/isValidMatchUpFormat';
 import { requireParams } from '@Helpers/parameters/requireParams';
+import { pushGlobalLog } from '@Functions/global/globalLog';
 import { Event, Tournament } from '@Types/tournamentTypes';
 import { ensureInt } from '@Tools/ensureInt';
 
@@ -44,7 +45,7 @@ export function modifyEventMatchUpFormatTiming(params: ModifyEventMatchUpFormatT
 
   const newTiming = (timing) => {
     if (timing.categoryTypes?.includes(categoryType)) {
-      console.log('encountered:', { categoryType });
+      pushGlobalLog({ method: 'modifyEventMatchUpFormatTiming', categoryType });
     }
     if (timing.categoryNames?.includes(categoryName)) {
       timing.categoryNames = timing.categoryNames.filter((c) => c !== categoryName);

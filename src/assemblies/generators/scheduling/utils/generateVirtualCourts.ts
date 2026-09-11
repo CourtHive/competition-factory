@@ -1,6 +1,7 @@
 import { generateTimeSlots } from '@Assemblies/generators/scheduling/generateTimeSlots';
 import { getCourtDateAvailability } from '@Query/venues/getCourtDateAvailability';
 import { isValidDateString, timeStringMinutes } from '@Tools/dateTime';
+import { pushGlobalLog } from '@Functions/global/globalLog';
 import { makeDeepCopy } from '@Tools/makeDeepCopy';
 
 // constants
@@ -117,7 +118,7 @@ export function generateVirtualCourts(params) {
       const virtualCourt = inProcessCourts.find(({ courtId }) => courtId === bestCourt.courtId);
       virtualCourt?.dateAvailability.bookings.push(booking);
     } else {
-      console.log({ unassignedBooking });
+      pushGlobalLog({ method: 'generateVirtualCourts', unassignedBooking });
     }
   }
 

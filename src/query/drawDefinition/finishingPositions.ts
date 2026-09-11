@@ -1,4 +1,5 @@
 import { getParticipantIdMatchUps } from './participantIdMatchUps';
+import { pushGlobalLog } from '@Functions/global/globalLog';
 
 import { getDevContext } from '@Global/state/globalState';
 
@@ -122,7 +123,8 @@ function containerFinishingPosition({
   const playoffStructure = drawDefinition.structure?.find((structure) => structure.stage === PLAY_OFF);
 
   if (getDevContext())
-    console.log({
+    pushGlobalLog({
+      method: 'finishingPositions',
       drawPositionsCount,
       provisionalOrder,
       bracketsCount,

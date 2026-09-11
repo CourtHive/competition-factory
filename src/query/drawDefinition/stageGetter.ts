@@ -1,3 +1,4 @@
+import { pushGlobalLog } from '@Functions/global/globalLog';
 // Query
 import { getDrawCompositionConstraints } from './getDrawCompositionConstraints';
 import { getBestFinishers } from '@Query/drawDefinition/getBestFinishers';
@@ -101,7 +102,7 @@ export function getStageEntries({
       structureId,
     });
     if (error) {
-      console.log('playoff entries error');
+      pushGlobalLog({ method: 'stageGetter', error: 'playoff entries' });
     }
     return (playoffEntries?.length ? playoffEntries : entries).filter(
       (entry) => !placementGroup || entry.placementGroup === placementGroup,

@@ -1,4 +1,5 @@
 import { getRoundMatchUps } from '@Query/matchUps/getRoundMatchUps';
+import { pushGlobalLog } from '@Functions/global/globalLog';
 import { getDevContext } from '@Global/state/globalState';
 import { validMatchUps } from '@Validators/validMatchUp';
 import { generateRange } from '@Tools/arrays';
@@ -108,7 +109,7 @@ export function addFinishingRounds({
   const devContext = getDevContext({ finishingRound: true });
   matchUps.filter(Boolean).forEach((matchUp) => {
     const roundData = matchUp.roundNumber && roundFinishingData[matchUp.roundNumber];
-    if (devContext && !roundData) console.log({ roundFinishingData, matchUp });
+    if (devContext && !roundData) pushGlobalLog({ method: 'addFinishingRounds', roundFinishingData, matchUp });
     matchUp.finishingRound = roundData?.finishingRound;
     matchUp.finishingPositionRange = roundData?.finishingPositionRange;
   });

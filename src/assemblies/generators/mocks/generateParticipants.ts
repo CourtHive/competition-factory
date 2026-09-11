@@ -2,6 +2,7 @@ import { isNumeric, randomInt, skewedDistribution } from '@Tools/math';
 import { cityMocks, stateMocks, postalCodeMocks } from './address';
 import { generateRange, shuffleArray } from '@Tools/arrays';
 import { definedAttributes } from '@Tools/definedAttributes';
+import { pushGlobalLog } from '@Functions/global/globalLog';
 import { genParticipantId } from './genParticipantId';
 import { isValidDateString } from '@Tools/dateTime';
 import { generateAddress } from './generateAddress';
@@ -260,7 +261,7 @@ export function generateParticipants(params): {
       personNationalityCode;
 
     if (countriesList?.length && !nationalityCode && !personNationalityCode) {
-      console.log('%c Invalid Nationality Code', { participantIndex, country });
+      pushGlobalLog({ method: 'generateParticipants', issue: 'invalid nationality code', participantIndex, country });
     }
     const address = generateAddress({
       ...addressValues,

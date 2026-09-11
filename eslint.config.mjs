@@ -40,7 +40,7 @@ export default [
       '@typescript-eslint/no-use-before-define': 'off',
       '@typescript-eslint/no-useless-escape': 'off',
       'array-callback-return': 'warn',
-      'no-console': 'off',
+      'no-console': 'error',
       'no-debugger': 'error',
       'no-duplicate-imports': 0,
       'no-nested-ternary': 'warn',
@@ -94,6 +94,30 @@ export default [
     rules: {
       'sonarjs/no-duplicate-string': 'off',
       '@typescript-eslint/no-empty-function': 'off',
+    },
+  },
+  {
+    /**
+     * Where `console` is legitimate. Everything else routes through `pushGlobalLog`, which only
+     * records when devContext is on, so a library with no runtime deps stops writing to a
+     * consumer's console.
+     *
+     * - globalLog.ts      — `printGlobalLog` IS the printer
+     * - globalState.ts    — the default log sink, and the fallback when a custom sink throws
+     * - *Validator.ts     — output sits behind a published `debug` option, default false
+     * - src/server/**     — not reachable from src/index.ts and not part of the published bundle
+     */
+    files: [
+      'src/functions/global/globalLog.ts',
+      'src/global/state/globalState.ts',
+      'src/validators/scoring/mcpValidator.ts',
+      'src/validators/scoring/pbpValidator.ts',
+      'src/server/**',
+      'src/tests/**',
+      '**/*.test.ts',
+    ],
+    rules: {
+      'no-console': 'off',
     },
   },
   {

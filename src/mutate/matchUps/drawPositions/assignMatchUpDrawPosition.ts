@@ -12,6 +12,7 @@ import { getAllDrawMatchUps } from '@Query/matchUps/drawMatchUps';
 import { decorateResult } from '@Functions/global/decorateResult';
 import { positionTargets } from '@Query/matchUp/positionTargets';
 import { assignDrawPositionBye } from './assignDrawPositionBye';
+import { pushGlobalLog } from '@Functions/global/globalLog';
 import { isExit } from '@Validators/isExit';
 import { overlap } from '@Tools/arrays';
 
@@ -384,7 +385,10 @@ function advanceDrawPosition({
       } else {
         const { structureId } = winnerMatchUp;
         if (structureId !== structure.structureId) {
-          console.log('winnerMatchUp in different structure... participant is in different targetDrawPosition');
+          pushGlobalLog({
+            method: 'assignMatchUpDrawPosition',
+            issue: 'winnerMatchUp in different structure; participant is in a different targetDrawPosition',
+          });
         }
       }
     }

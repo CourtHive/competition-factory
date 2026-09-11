@@ -2,6 +2,7 @@ import { getPositionedParticipants } from './getPositionedParticipants';
 import { chunkArray, generateRange, randomPop } from '@Tools/arrays';
 import { getParticipantPlacement } from './getParticipantPlacement';
 import { getAvoidanceConflicts } from './getAvoidanceConflicts';
+import { pushGlobalLog } from '@Functions/global/globalLog';
 import { makeDeepCopy } from '@Tools/makeDeepCopy';
 import { getSwapOptions } from './getSwapOptions';
 
@@ -105,7 +106,7 @@ export function generatePositioningCandidate(params: GeneratePositioningCandidat
         swapOptions,
         random,
       });
-      if (result.error) console.log({ result });
+      if (result.error) pushGlobalLog({ method: 'generatePositioningCandidate', result });
 
       positionedParticipants = getPositionedParticipants({
         candidatePositionAssignments,

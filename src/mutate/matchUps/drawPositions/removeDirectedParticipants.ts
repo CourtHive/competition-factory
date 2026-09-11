@@ -247,7 +247,9 @@ export function removeDirectedWinner({
       });
     } else {
       const drawPositionMatchUps = matchUps.filter(({ drawPositions }) => drawPositions.includes(winnerDrawPosition));
-      console.log('not removing from position assignments since instances > 1', {
+      pushGlobalLog({
+        method: 'removeDirectedParticipants',
+        retained: 'position assignment kept: drawPosition instances > 1',
         drawPositionMatchUps,
         winnerTargetLink,
       });
