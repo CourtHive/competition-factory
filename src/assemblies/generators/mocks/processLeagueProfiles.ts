@@ -21,8 +21,20 @@ import { COLLEGE_DEFAULT } from '@Constants/tieFormatConstants';
 import { COMPETITOR } from '@Constants/participantRoles';
 import { TEAM } from '@Constants/participantConstants';
 
+/**
+ * A leagueProfile expresses rounds either as an explicit count, or as DOUBLE_ROUND_ROBIN, or not at all
+ * (defaulting to a single round robin). Each entrant meets every other entrant once over (drawSize - 1)
+ * rounds, so a double round robin is twice that.
+ */
+function deriveLeagueRoundsCount({ roundsCount, drawSize }): number {
+  if (isNumeric(roundsCount)) return roundsCount;
+  if (roundsCount === DOUBLE_ROUND_ROBIN) return (drawSize - 1) * 2;
+  return drawSize - 1;
+}
+
 export function processLeagueProfiles(params): any {
-  const { tournamentRecord, leagueProfiles, eventIds, venueIds, drawIds, allUniqueParticipantIds, random, uuids } = params;
+  const { tournamentRecord, leagueProfiles, eventIds, venueIds, drawIds, allUniqueParticipantIds, random, uuids } =
+    params;
 
   let leaguesCount = 0;
   for (const leagueProfile of leagueProfiles) {
@@ -65,16 +77,21 @@ export function processLeagueProfiles(params): any {
       const teamId = teamProfiles?.[index]?.teamId || uuids?.pop() || UUID(undefined, random);
 
       const consideredDate = leagueProfile.startDate ?? params.startDate;
-      const participants = generateParticipants({
-        ...leagueProfile?.participantsProfile,
-        participantsCount: teamSize,
-        consideredDate,
-        gendersCount,
-        category,
-        gender,
-        random,
-        uuids,
-      }).participants as Participant[];
+      // a team-only league enumerates no individuals: the competition is between TEAMs and the
+      // federation never publishes who played. Generating placeholder persons would invent data.
+      const participants =
+        leagueProfile.individualParticipants === false
+          ? []
+          : (generateParticipants({
+              ...leagueProfile?.participantsProfile,
+              participantsCount: teamSize,
+              consideredDate,
+              gendersCount,
+              category,
+              gender,
+              random,
+              uuids,
+            }).participants as Participant[]);
 
       const individualParticipantIds = participants.map((participant) => participant.participantId);
 
@@ -115,17 +132,23 @@ export function processLeagueProfiles(params): any {
     tournamentRecord.events.push(event);
 
     if (entries.length) {
-      const roundsCount =
-        ((isNumeric(leagueProfile.roundsCount) && leagueProfile.roundsCount) ??
-        leagueProfile.roundsCount === DOUBLE_ROUND_ROBIN)
-          ? (drawSize - 1) * 2
-          : drawSize - 1;
+      // a pairingProfile supplies the schedule itself, so roundsCount is then only an optional
+      // truncation to a partial round robin and the shape validates it
+      const { pairingProfile } = leagueProfile;
+      const roundsCount = pairingProfile
+        ? isNumeric(leagueProfile.roundsCount) && leagueProfile.roundsCount
+        : deriveLeagueRoundsCount({ roundsCount: leagueProfile.roundsCount, drawSize });
+      // a single round robin is (drawSize - 1) rounds; anything beyond that replays pairings,
+      // which drawMatic only permits when enableDoubleRobin is set
+      const enableDoubleRobin = !pairingProfile && roundsCount > drawSize - 1;
       // generate drawDefinition for league
       const result = generateDrawDefinition({
         automated: leagueProfile.automated,
+        roundsCount: roundsCount || undefined,
+        enableDoubleRobin,
         tournamentRecord,
+        pairingProfile,
         drawType: AD_HOC,
-        roundsCount,
         drawSize,
         event,
       });

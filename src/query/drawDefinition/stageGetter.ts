@@ -1,9 +1,10 @@
+import { pushGlobalLog } from '@Functions/global/globalLog';
 // Query
 import { getDrawCompositionConstraints } from './getDrawCompositionConstraints';
 import { getBestFinishers } from '@Query/drawDefinition/getBestFinishers';
 
 // Acquire
-import { findExtension } from '@Acquire/findExtension';
+import { firstClassOrExtension } from '@Acquire/firstClassOrExtension';
 import { findStructure } from '@Acquire/findStructure';
 
 // Helpers
@@ -81,10 +82,7 @@ export function getStageEntries({
 }: GetStageEntriesArgs) {
   const entries =
     drawDefinition.entries?.reduce((entries: any[], entry) => {
-      const entryRoundTarget = findExtension({
-        name: ROUND_TARGET,
-        element: entry,
-      })?.extension?.value;
+      const entryRoundTarget = firstClassOrExtension({ element: entry, attribute: 'roundTarget', name: ROUND_TARGET });
       const stageTarget =
         (stage && entry.entryStage === stage) ||
         (stages?.length && entry.entryStage && stages.includes(entry.entryStage));
@@ -104,7 +102,7 @@ export function getStageEntries({
       structureId,
     });
     if (error) {
-      console.log('playoff entries error');
+      pushGlobalLog({ method: 'stageGetter', error: 'playoff entries' });
     }
     return (playoffEntries?.length ? playoffEntries : entries).filter(
       (entry) => !placementGroup || entry.placementGroup === placementGroup,
@@ -151,10 +149,11 @@ function getPlayoffEntries({ provisionalPositioning, drawDefinition, structureId
           ...positionAssignments
             .map((assignment) => {
               const { participantId } = assignment;
-              const tallied = findExtension({
+              const tallied = firstClassOrExtension({
                 element: assignment,
+                attribute: 'tally',
                 name: TALLY,
-              }).extension?.value;
+              });
 
               return tallied && participantId ? { [participantId]: tallied } : undefined;
             })

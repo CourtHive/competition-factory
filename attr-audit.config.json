@@ -1,0 +1,25 @@
+{
+  "src": ["src"],
+  "exclude": ["/scratch/", "/examples/"],
+  "schema": ["src/global/schema/tournament.schema.json", "src/global/schema/rankingPolicy.schema.json"],
+  "types": ["src/types"],
+  "constants": ["src/constants"],
+  "ignore": [
+    "minute",
+    "weekday",
+    "hour",
+    "second",
+    "month",
+    "year",
+    "day",
+    "era",
+    "timeZoneName",
+    "_children",
+    "_height",
+    "cacheFormatStructure"
+  ],
+  "minCommon": 8,
+  "ratio": 5,
+  "maxSuspect": 3,
+  "allow": []
+}

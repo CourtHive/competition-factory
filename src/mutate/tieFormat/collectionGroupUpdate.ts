@@ -24,6 +24,12 @@ type CollectionGroupUpdateArgs = {
   matchUpId?: string;
   matchUp?: MatchUp;
   eventId?: string;
+  /**
+   * Pool for tieFormat copy-on-write forks in `writeTieFormat`. Separate from any
+   * matchUp-id pool so an `INSUFFICIENT_UUIDS` shortfall is attributable to one
+   * stream. Strict when supplied.
+   */
+  tieFormatUuids?: string[];
   event?: Event;
 };
 export function collectionGroupUpdate({
@@ -39,6 +45,7 @@ export function collectionGroupUpdate({
   matchUpId,
   matchUp,
   eventId,
+  tieFormatUuids,
   event,
 }: CollectionGroupUpdateArgs) {
   // calculate new winCriteria for tieFormat
@@ -78,13 +85,22 @@ export function collectionGroupUpdate({
   if (result.error) return result;
 
   if (eventId && event) {
-    writeTieFormat({ target: event, tieFormat: prunedTieFormat, event });
+    const writeResult = writeTieFormat({ target: event, tieFormat: prunedTieFormat, event, uuids: tieFormatUuids });
+    if (writeResult?.error) return writeResult;
   } else if (matchUpId && matchUp) {
-    writeTieFormat({ target: matchUp, tieFormat: prunedTieFormat, event });
+    const writeResult = writeTieFormat({ target: matchUp, tieFormat: prunedTieFormat, event, uuids: tieFormatUuids });
+    if (writeResult?.error) return writeResult;
   } else if (structure) {
-    writeTieFormat({ target: structure, tieFormat: prunedTieFormat, event });
+    const writeResult = writeTieFormat({ target: structure, tieFormat: prunedTieFormat, event, uuids: tieFormatUuids });
+    if (writeResult?.error) return writeResult;
   } else if (drawDefinition) {
-    writeTieFormat({ target: drawDefinition, tieFormat: prunedTieFormat, event });
+    const writeResult = writeTieFormat({
+      target: drawDefinition,
+      tieFormat: prunedTieFormat,
+      event,
+      uuids: tieFormatUuids,
+    });
+    if (writeResult?.error) return writeResult;
   } else if (!matchUp || !drawDefinition) {
     return { error: MISSING_DRAW_DEFINITION };
   }

@@ -69,6 +69,7 @@ export function resetLineUps({
             tournamentId: tournamentRecord?.tournamentId,
             context: 'resetLineUps',
             eventId: event?.eventId,
+            event,
             drawDefinition,
             matchUp,
           });

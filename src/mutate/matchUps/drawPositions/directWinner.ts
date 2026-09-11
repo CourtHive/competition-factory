@@ -1,5 +1,6 @@
 import { removeLineUpSubstitutions } from '../../drawDefinitions/removeLineUpSubstitutions';
 import { structureAssignedDrawPositions } from '@Query/drawDefinition/positionsGetter';
+import { pushGlobalLog } from '@Functions/global/globalLog';
 import { assignDrawPosition } from './positionAssignment';
 import { modifyMatchUpNotice } from '../../notifications/drawNotifications';
 import { decorateResult } from '@Functions/global/decorateResult';
@@ -54,6 +55,7 @@ export function directWinner({
       sourceMatchUpId,
       drawDefinition,
       matchUpsMap,
+      event,
     });
     if (result.error) return result;
   }
@@ -67,6 +69,7 @@ export function directWinner({
       dualMatchUp,
       matchUpsMap,
       stack,
+      event,
     });
   }
 
@@ -161,18 +164,17 @@ function directWinnerViaLink({
       sourceMatchUpId,
       drawDefinition,
       matchUpsMap,
+      event,
     });
     if (assignResult.error) return decorateResult({ result: assignResult, stack });
   } else if (structure?.stage !== QUALIFYING) {
     const error = 'winner target position unavaiallble';
-    console.log(error);
+    pushGlobalLog({ method: 'directWinner', error });
     decorateResult({ stack, result: { error } });
   }
 
   if (structure?.seedAssignments && structure.structureId !== targetStructureId) {
-    const seedAssignment = structure.seedAssignments.find(
-      ({ participantId }) => participantId === winnerParticipantId,
-    );
+    const seedAssignment = structure.seedAssignments.find(({ participantId }) => participantId === winnerParticipantId);
     const participantId = seedAssignment?.participantId;
     if (seedAssignment && participantId) {
       assignSeed({
@@ -197,6 +199,7 @@ function propagateLineUp({
   dualMatchUp,
   matchUpsMap,
   stack,
+  event,
 }) {
   const side = dualMatchUp.sides?.find((s) => s.sideNumber === projectedWinningSide);
   if (!side?.lineUp) return;
@@ -226,6 +229,7 @@ function propagateLineUp({
       matchUp: targetMatchUp,
       context: stack,
       drawDefinition,
+      event,
     });
   }
 }

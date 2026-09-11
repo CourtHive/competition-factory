@@ -38,5 +38,10 @@ export function matchUpScore(params) {
     scoreStringSide2 = winningSide === 2 ? winnerPerspective : loserPerspective;
   }
 
-  return { score: { sets, scoreStringSide1, scoreStringSide2 } };
+  // DECISION: carry forward every non-derived attribute of the incoming score
+  // WHY: only sets and the two score strings are derived here. Returning just those three made the
+  // returned object look like a complete score while silently dropping anything else the caller had
+  // set — e.g. score.side1PointScore on an in-progress matchUp — so a caller assigning the result
+  // over its own score lost data. Spreading keeps `score` in, `score` out. See competition-factory#4564.
+  return { score: { ...score, sets, scoreStringSide1, scoreStringSide2 } };
 }

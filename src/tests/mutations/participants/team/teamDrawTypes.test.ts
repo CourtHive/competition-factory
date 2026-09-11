@@ -1,3 +1,4 @@
+import { firstClassOrExtension } from '@Acquire/firstClassOrExtension';
 import { setSubscriptions } from '@Global/state/syncGlobalState';
 import { mocksEngine } from '@Assemblies/engines/mock';
 import tournamentEngine from '@Engines/syncEngine';
@@ -254,10 +255,12 @@ it('handles TEAM ROUND_ROBIN tallyParticipants', () => {
     structureId,
   });
 
-  const assignmentsWithTally = positionAssignments.filter(({ extensions }) => extensions);
+  const assignmentsWithTally = positionAssignments.filter((assignment) =>
+    firstClassOrExtension({ element: assignment, attribute: 'tally', name: TALLY }),
+  );
   expect(assignmentsWithTally.length).toEqual(4);
 
   assignmentsWithTally.forEach((assignment) => {
-    expect(assignment.extensions.filter(({ name }) => name === TALLY).length).toEqual(1);
+    expect(firstClassOrExtension({ element: assignment, attribute: 'tally', name: TALLY })).toBeDefined();
   });
 });

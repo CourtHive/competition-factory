@@ -1,3 +1,4 @@
+import { rebuildPairsAsMixed } from './rebuildPairsAsMixed';
 import { generateDrawDefinition } from '../drawDefinitions/generateDrawDefinition/generateDrawDefinition';
 import { automatedPlayoffPositioning } from '@Mutate/drawDefinitions/automatedPlayoffPositioning';
 import { setParticipantScaleItem } from '@Mutate/participants/scaleItems/addScaleItems';
@@ -38,7 +39,7 @@ import { FORMAT_STANDARD } from '@Fixtures/scoring/matchUpFormats';
 import { isAdHocType } from '@Query/drawDefinition/isAdHocType';
 import { COMPLETED } from '@Constants/matchUpStatusConstants';
 import { ALTERNATE } from '@Constants/entryStatusConstants';
-import { FEMALE, MALE } from '@Constants/genderConstants';
+import { ANY, FEMALE, MALE, MIXED } from '@Constants/genderConstants';
 import { COMPETITOR } from '@Constants/participantRoles';
 import { SEEDING } from '@Constants/timeItemConstants';
 import { OBJECT } from '@Constants/attributeConstants';
@@ -70,6 +71,17 @@ function generateEventParticipants({
   let individualParticipantCount = drawParticipantsCount;
   const gendersCount = { [MALE]: 0, [FEMALE]: 0 };
   let teamSize, genders;
+
+  // MIXED DOUBLES: every PAIR must contain one MALE and one FEMALE member.
+  // Without this, generatePersons hands generateParticipants a random mix
+  // and the sequential pair-builder produces same-sex pairs that then fail
+  // checkValidEntries → ERR_INVALID_ENTRIES. Request balanced counts here
+  // and re-pair the generated individuals at the bottom of this function.
+  const isMixedDoubles = eventType === DOUBLES && coercedGender(gender) === MIXED;
+  if (isMixedDoubles) {
+    gendersCount[MALE] = drawParticipantsCount;
+    gendersCount[FEMALE] = drawParticipantsCount;
+  }
 
   if (isHybrid) {
     // HYBRID: half entries are INDIVIDUAL, half are PAIR
@@ -130,6 +142,10 @@ function generateEventParticipants({
 
   // update categoryName **after** generating participants
   if (event.category) event.category.categoryName = categoryName;
+
+  if (isMixedDoubles) {
+    rebuildPairsAsMixed(unique);
+  }
 
   if (tournamentRecord) {
     const result = addParticipants({
@@ -760,6 +776,7 @@ export function generateEventWithDraw(params) {
 
   const {
     allUniqueParticipantIds = [],
+    useExistingParticipants,
     participantsProfile = {},
     matchUpStatusProfile,
     completeAllMatchUps,
@@ -845,14 +862,20 @@ export function generateEventWithDraw(params) {
   });
 
   const uniqueParticipantIds: string[] = [];
+  // `useExistingParticipants` (set by `generateTournamentRecord` when the caller
+  // passed pre-built `participants`) suppresses per-draw participant synthesis
+  // so the supplied pool is used. Filtering by gender / eventType /
+  // participantType still happens downstream via filterConsideredParticipants.
+  // `gender: ANY` is "no gender constraint" — see getParticipantsCount.ts.
   const needsUniqueParticipants =
-    participantsProfile?.participantsCount === 0 ||
-    drawProfile.uniqueParticipants ||
-    qualifyingParticipantsCount ||
-    !tournamentRecord ||
-    gender ||
-    category ||
-    isHybrid;
+    !useExistingParticipants &&
+    (participantsProfile?.participantsCount === 0 ||
+      drawProfile.uniqueParticipants ||
+      qualifyingParticipantsCount ||
+      !tournamentRecord ||
+      (gender && gender !== ANY) ||
+      category ||
+      isHybrid);
 
   if (needsUniqueParticipants) {
     const drawParticipantsCount = (participantsCount || 0) + alternatesCount + qualifyingParticipantsCount;
@@ -1060,7 +1083,17 @@ function filterConsideredParticipants({
 
   const isEventGender = (participant) => {
     if (!drawProfile.gender) return true;
-    if (participant.person?.sex === drawProfile.gender) return true;
+    // `gender: ANY` is a no-op gender constraint — every participant qualifies.
+    // Without this, the literal-equality check below filters everyone out
+    // (no participant has person.sex === 'ANY'), leaving the draw empty.
+    if (coercedGender(drawProfile.gender) === ANY) return true;
+    // `gender: MIXED` on an INDIVIDUAL is meaningless — an individual can't
+    // be mixed-sex. Treat as no constraint at the individual level. (For
+    // PAIR/TEAM events MIXED is the "mixed-sex pair/team" constraint and
+    // remains enforced by member-composition checks elsewhere — at the
+    // generator level, not in this filter.)
+    if (coercedGender(drawProfile.gender) === MIXED && participant.participantType === INDIVIDUAL) return true;
+    if (coercedGender(participant.person?.sex) === coercedGender(drawProfile.gender)) return true;
     return participant.individualParticipantIds?.some((participantId) => {
       const individualParticipant = targetParticipants.find((p) => p.participantId === participantId);
       return individualParticipant && isEventGender(individualParticipant);

@@ -1,6 +1,6 @@
+import { setMatchUpFirstClassOrTimeItem } from '@Mutate/timeItems/matchUps/setMatchUpFirstClassOrTimeItem';
 import { checkRequiredParameters } from '@Helpers/parameters/checkRequiredParameters';
 import { resolveFromParameters } from '@Helpers/parameters/resolveFromParameters';
-import { addMatchUpTimeItem } from '@Mutate/timeItems/matchUps/matchUpTimeItems';
 
 // constants and types
 import { INVALID_PARTICIPANT_ID, MISSING_PARTICIPANT_ID } from '@Constants/errorConditionConstants';
@@ -34,18 +34,15 @@ export function setMatchUpHomeParticipantId(
 
   const { disableNotice, homeParticipantId, removePriorValues, tournamentRecord, drawDefinition, matchUpId } = params;
 
-  const timeItem = {
-    itemType: HOME_PARTICIPANT_ID,
-    itemValue: homeParticipantId,
-  };
-
-  return addMatchUpTimeItem({
+  return setMatchUpFirstClassOrTimeItem({
     duplicateValues: false,
+    attribute: 'homeParticipantId',
+    itemType: HOME_PARTICIPANT_ID,
+    value: homeParticipantId,
     removePriorValues,
     tournamentRecord,
     drawDefinition,
     disableNotice,
     matchUpId,
-    timeItem,
   });
 }

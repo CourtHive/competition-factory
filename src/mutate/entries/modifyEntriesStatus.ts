@@ -1,4 +1,6 @@
+import { modifyEventEntriesNotice, modifyDrawEntriesNotice } from '../notifications/entriesNotifications';
 import { getAssignedParticipantIds } from '@Query/drawDefinition/getAssignedParticipantIds';
+import { modifyEventNotice } from '../notifications/eventNotifications';
 import { modifyDrawNotice } from '../notifications/drawNotifications';
 import { decorateResult } from '@Functions/global/decorateResult';
 import { refreshEntryPositions } from './refreshEntryPositions';
@@ -71,11 +73,19 @@ export function modifyEntriesStatus({
   stage,
   event,
 }: ModifyEntriesStatusArgs) {
-  const validationError = validateModifyParams({ participantIds, drawDefinition, entryStatus, entryStage, extension, event });
+  const validationError = validateModifyParams({
+    participantIds,
+    drawDefinition,
+    entryStatus,
+    entryStage,
+    extension,
+    event,
+  });
   if (validationError) return validationError;
 
   const stack = 'modifyEntriesStatus';
   const modifiedDrawIds: string[] = [];
+  let flightProfileModified = false; // a flight's drawEntries live in event.flightProfile
 
   const assignedParticipantIds = buildAssignedParticipantIds({ event, stage });
   const tournamentParticipants = tournamentRecord?.participants ?? [];
@@ -98,7 +108,10 @@ export function modifyEntriesStatus({
 
   const autoPosition = ({ flight: fl, drawDefinition: dd }) => {
     if (event) event.entries = refreshEntryPositions({ entries: event.entries ?? [] });
-    if (fl) fl.drawEntries = refreshEntryPositions({ entries: fl.drawEntries });
+    if (fl) {
+      fl.drawEntries = refreshEntryPositions({ entries: fl.drawEntries });
+      flightProfileModified = true;
+    }
     if (dd) dd.entries = refreshEntryPositions({ entries: dd.entries });
   };
 
@@ -107,6 +120,7 @@ export function modifyEntriesStatus({
     if (fl) {
       const result = updateEntryStatus(fl.drawEntries);
       if (result.error) return decorateResult({ result, stack: innerStack });
+      flightProfileModified = true;
     }
     if (dd) {
       const result = updateEntryStatus(dd.entries);
@@ -143,24 +157,60 @@ export function modifyEntriesStatus({
     return { error: ENTRY_STATUS_NOT_ALLOWED_FOR_EVENT };
   }
 
+  let eventEntriesModified = false;
   if ((!flight && !drawDefinition) || entryStatus === WITHDRAWN || (eventSync && singleDraw)) {
     const result = updateEntryStatus(event?.entries);
     if (result?.error) return decorateResult({ result, stack });
+    eventEntriesModified = !!event?.entries;
 
     if (entryStatus === WITHDRAWN) {
-      const withdrawnError = withdrawFromAllFlightsAndDraws({ updateEntryStatus, participantIds, flightProfile, event });
+      const withdrawnError = withdrawFromAllFlightsAndDraws({
+        updateEntryStatus,
+        participantIds,
+        flightProfile,
+        event,
+      });
       if (withdrawnError) return decorateResult({ result: { error: withdrawnError }, stack });
     }
   }
 
   if (autoEntryPositions) autoPosition({ flight, drawDefinition });
 
-  for (const dd of event?.drawDefinitions ?? []) {
-    if (modifiedDrawIds.length && !modifiedDrawIds.includes(dd.drawId)) continue;
-    modifyDrawNotice({ tournamentId: tournamentRecord.tournamentId, eventId: event?.eventId, drawDefinition: dd });
-  }
+  dispatchEntriesStatusNotices({
+    tournamentRecord,
+    event,
+    modifiedDrawIds,
+    eventEntriesModified,
+    flightProfileModified,
+  });
 
   return { ...SUCCESS };
+}
+
+// Notices for a status change: MODIFY_DRAW_DEFINITION for each affected draw plus
+// MODIFY_DRAW_ENTRIES for any draw whose entries were updated; MODIFY_EVENT_ENTRIES
+// when event.entries statuses changed; and MODIFY_EVENT when a flight's drawEntries
+// (which live in event.flightProfile) were re-sequenced.
+function dispatchEntriesStatusNotices({
+  tournamentRecord,
+  event,
+  modifiedDrawIds,
+  eventEntriesModified,
+  flightProfileModified,
+}) {
+  const tournamentId = tournamentRecord.tournamentId;
+  const eventId = event?.eventId;
+  for (const dd of event?.drawDefinitions ?? []) {
+    if (modifiedDrawIds.length && !modifiedDrawIds.includes(dd.drawId)) continue;
+    modifyDrawNotice({ tournamentId, eventId, drawDefinition: dd });
+    if (modifiedDrawIds.includes(dd.drawId)) modifyDrawEntriesNotice({ drawDefinition: dd, tournamentId, eventId });
+  }
+  if (eventEntriesModified && event) {
+    modifyEventEntriesNotice({ event, tournamentId });
+  }
+  if (flightProfileModified && event) {
+    modifyEventNotice({ tournamentId, event });
+  }
 }
 
 function validateModifyParams({ participantIds, drawDefinition, entryStatus, entryStage, extension, event }) {
@@ -174,7 +224,12 @@ function validateModifyParams({ participantIds, drawDefinition, entryStatus, ent
   if (!entryStatus && !extension)
     return decorateResult({ result: { error: MISSING_VALUE }, info: 'Missing entryStatus', stack });
   if (extension && !isValidExtension({ extension, requiredAttributes: ['name'] }))
-    return decorateResult({ result: { error: INVALID_VALUES }, info: 'Invalid extension', context: { extension }, stack });
+    return decorateResult({
+      result: { error: INVALID_VALUES },
+      info: 'Invalid extension',
+      context: { extension },
+      stack,
+    });
 
   return undefined;
 }
@@ -182,7 +237,8 @@ function validateModifyParams({ participantIds, drawDefinition, entryStatus, ent
 function buildAssignedParticipantIds({ event, stage }) {
   const assignedParticipantIds: string[] = [];
   event?.drawDefinitions?.forEach((dd) => {
-    const ids = getAssignedParticipantIds({ stages: stage && [stage], drawDefinition: dd }).assignedParticipantIds ?? [];
+    const ids =
+      getAssignedParticipantIds({ stages: stage && [stage], drawDefinition: dd }).assignedParticipantIds ?? [];
     assignedParticipantIds.push(...ids);
   });
   return assignedParticipantIds;
@@ -204,7 +260,15 @@ function isValidEntryStatusForParticipants({ participantIds, tournamentParticipa
   });
 }
 
-function buildUpdateEntryStatus({ assignedParticipantIds, ignoreAssignment, participantIds, entryStatus, entryStage, extension, stage }) {
+function buildUpdateEntryStatus({
+  assignedParticipantIds,
+  ignoreAssignment,
+  participantIds,
+  entryStatus,
+  entryStage,
+  extension,
+  stage,
+}) {
   return (entries?) => {
     const filteredEntries = (entries ?? [])
       .filter((entry: Entry) => !stage || !entry.entryStage || stage === entry.entryStage)
@@ -213,15 +277,27 @@ function buildUpdateEntryStatus({ assignedParticipantIds, ignoreAssignment, part
     const isAssigned = (entry) =>
       entryStatus &&
       assignedParticipantIds.includes(entry.participantId) &&
-      !(EQUIVALENT_ACCEPTANCE_STATUSES.includes(entry.entryStatus) && EQUIVALENT_ACCEPTANCE_STATUSES.includes(entryStatus));
+      !(
+        EQUIVALENT_ACCEPTANCE_STATUSES.includes(entry.entryStatus) &&
+        EQUIVALENT_ACCEPTANCE_STATUSES.includes(entryStatus)
+      );
 
     const success = filteredEntries.every((entry: Entry) => {
       if (isAssigned(entry) && !ignoreAssignment) return false;
-      if (entryStatus) { entry.entryStatus = entryStatus; delete entry.entryPosition; }
-      if (entryStage) { entry.entryStage = entryStage; delete entry.entryPosition; }
+      if (entryStatus) {
+        entry.entryStatus = entryStatus;
+        delete entry.entryPosition;
+      }
+      if (entryStage) {
+        entry.entryStage = entryStage;
+        delete entry.entryPosition;
+      }
       if (extension) {
-        if (extension.value) { addExtension({ element: entry, extension }); }
-        else { removeExtension({ element: entry, name: extension.name }); }
+        if (extension.value) {
+          addExtension({ element: entry, extension });
+        } else {
+          removeExtension({ element: entry, name: extension.name });
+        }
       }
       return true;
     });

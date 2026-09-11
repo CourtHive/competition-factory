@@ -1,4 +1,5 @@
 import { checkRequiredParameters } from '@Helpers/parameters/checkRequiredParameters';
+import { modifyParticipantsNotice } from '@Mutate/notifications/participantNotifications';
 
 // constants and fixtures
 import { EVENT_TYPE, TOURNAMENT_RECORD, VALIDATE } from '@Constants/attributeConstants';
@@ -24,10 +25,20 @@ export function removeRatings(params: {
   const itemType = [SCALE, RATING, params.eventType, ratingType].join('.');
 
   const participants: Participant[] = params.tournamentRecord.participants ?? [];
+  const modifiedParticipants: Participant[] = [];
   for (const participant of participants) {
     if (participant.timeItems) {
+      const before = participant.timeItems.length;
       participant.timeItems = participant.timeItems.filter((timeItem) => timeItem.itemType !== itemType);
+      if (participant.timeItems.length !== before) modifiedParticipants.push(participant);
     }
+  }
+
+  if (modifiedParticipants.length) {
+    modifyParticipantsNotice({
+      tournamentId: params.tournamentRecord.tournamentId,
+      participants: modifiedParticipants,
+    });
   }
 
   return { ...SUCCESS };

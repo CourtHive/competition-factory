@@ -15,6 +15,29 @@ The Competition Factory handles dates and times across several domains: tourname
 | Time-of-day (scheduling)                         | `HH:MM`                | `'14:30'`                |
 | IANA timezone identifiers                        | Region/City            | `'America/New_York'`     |
 
+### Four Questions, Not One
+
+"A date" is four different questions, and answering the wrong one is the most common source of
+off-by-an-hour and off-by-a-day bugs in competition data. The factory names each one:
+
+| Question                     | Type of answer             | Module                | Depends on a zone? |
+| ---------------------------- | -------------------------- | --------------------- | ------------------ |
+| Which calendar day?          | `2026-09-09`               | `tools.plainDate`     | no                 |
+| What time on the clock?      | `14:00`                    | `tools.plainTime`     | no                 |
+| Which moment, at this venue? | day + clock + zone         | `tools.zonedDateTime` | **yes**            |
+| Which absolute instant?      | `2026-09-09T18:00:00.000Z` | ISO string with `Z`   | already resolved   |
+
+The distinction is not academic. A tournament's `startDate` is a calendar day — it does not begin at
+an instant, and asking "what time is `2026-09-09`" has no answer. A `scheduledTime` of `14:00` is a
+wall clock — it is 14:00 at the venue, and which instant that is depends on where the venue is and
+whether daylight saving is in force that week. Mixing the two without an explicit conversion produces
+a figure wrong by the venue's UTC offset, which in a report measured in minutes is worse than showing
+nothing at all.
+
+`tools.dateTime` predates this split and spans the first two questions. It remains fully supported and
+its behaviour is unchanged — it re-exports from the intent modules, so there is exactly one
+implementation of each helper — but new code should reach for the module that names the intent.
+
 ### Where Dates Appear
 
 **Tournament Record:**
@@ -135,6 +158,9 @@ tools.timeZone.getTimeZoneOffsetMinutes('America/New_York', new Date('2024-06-15
 
 // Fixed offset (no DST)
 tools.timeZone.getTimeZoneOffsetMinutes('Asia/Kolkata'); // 330 (UTC+5:30, always)
+
+// An unrecognised or absent zone is `undefined`, never a substituted 0
+tools.timeZone.getTimeZoneOffsetMinutes('Not/A/Zone'); // undefined
 ```
 
 ### Converting Between Wall-Clock Time and UTC
@@ -304,21 +330,55 @@ All temporal records use ISO 8601 format. `createdAt` is auto-generated with tim
 
 See [Time Items](/docs/concepts/timeItems) for the complete temporal data reference.
 
-## Future: Temporal API
+## Temporal API
 
-The factory's zero-dependency approach to date/time handling is built on `Date` and `Intl.DateTimeFormat` — APIs available in every JavaScript runtime. The [TC39 Temporal proposal](https://tc39.es/proposal-temporal/docs/) is expected to reach Stage 4 and ship in major runtimes by 2027, providing first-class support for timezone-aware dates, wall-clock times, and duration arithmetic directly in the language.
+[TC39 Temporal](https://tc39.es/proposal-temporal/docs/) reached **Stage 4 in March 2026** and is part
+of **ES2026**. It provides first-class timezone-aware dates, wall-clock times, and duration arithmetic
+in the language itself.
 
-When Temporal becomes widely available, the factory's timezone utilities will be updated to use `Temporal.ZonedDateTime` and `Temporal.PlainDate` internally, providing:
+| Runtime                       | Native support       |
+| ----------------------------- | -------------------- |
+| Node.js 26+ (official builds) | shipping, unflagged  |
+| Firefox 139+                  | shipping             |
+| Chrome / Edge 144+            | shipping             |
+| Deno 2.7                      | stable               |
+| **Safari / iOS Safari**       | **not yet shipping** |
 
-- More precise DST transition handling at boundary cases
-- Native duration and calendar arithmetic
-- Cleaner API surface without the quirks of the legacy `Date` object
+Safari is the remaining gap, so Temporal is not yet "Baseline". A browser application that must run on
+iOS supplies a polyfill (`temporal-polyfill` or `@js-temporal/polyfill`), which populates
+`globalThis.Temporal`; the factory itself will never bundle one, in keeping with the zero-dependency
+policy.
 
-This transition will be **non-breaking** — the factory's public API (`wallClockToUTC`, `utcToWallClock`, `toEmbargoUTC`, etc.) will remain the same, with Temporal powering the implementation under the hood. The zero-dependency philosophy is maintained: Temporal is a language built-in, not a library.
+:::note Node version is not the whole story
+Whether `Temporal` exists in a given Node build depends on how that build was **compiled**, not only on
+its version number. Check with:
+
+```bash
+node -p "[process.version, typeof Temporal, process.config.variables.v8_enable_temporal_support].join(' | ')"
+# want: v26.x.y | object | 1
+```
+
+Some distributions compile Temporal out. In that case the flag `--harmony-temporal` is accepted but has
+no effect, because the code is absent rather than disabled.
+:::
+
+### What changes when the factory adopts it
+
+The calendar-intent modules were named after Temporal's types deliberately: `plainDate`, `plainTime`
+and `zonedDateTime` map onto `Temporal.PlainDate`, `Temporal.PlainTime` and `Temporal.ZonedDateTime`,
+so adoption becomes a substitution of implementations rather than a redesign of the API.
+
+Signatures stay strings in and strings out, and the wire format does not change — records on disk and
+on the wire remain ISO strings. Two internal things improve:
+
+- The two-pass offset guess that `zonedDateTime` uses to resolve a wall clock is a `Date` workaround.
+  `Temporal.PlainDateTime.from(…).toZonedDateTime(tz, { disambiguation })` does it in one step.
+- The ambiguous hour that a fall-back DST transition repeats is currently settled by a consistent but
+  arbitrary rule. Temporal makes it an explicit `disambiguation` choice.
 
 ## Related Documentation
 
 - **[Time Items](/docs/concepts/timeItems)** — Temporal records on CODES document elements
 - **[Embargo and Scheduled Rounds](/docs/concepts/publishing/publishing-embargo)** — Time-based visibility gates
 - **[Scheduling Overview](/docs/concepts/scheduling-overview)** — Match scheduling concepts
-- **[Tools API](/docs/tools/tools-api)** — Complete function reference for `dateTime` and `timeZone`
+- **[Tools API](/docs/tools/tools-api)** — Complete function reference for `plainDate`, `plainTime`, `zonedDateTime`, `dateTime` and `timeZone`

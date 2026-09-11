@@ -1,8 +1,15 @@
 export { getMatchUpsToSchedule } from '@Mutate/matchUps/schedule/scheduleMatchUps/getMatchUpsToSchedule';
 export { getScheduledRoundsDetails } from '@Query/matchUps/scheduling/getScheduledRoundsDetails';
 export { getSchedulingProfileIssues } from '@Query/matchUps/scheduling/getSchedulingProfileIssues';
+export { isScheduleLocked, matchUpScheduleLocked } from '@Query/matchUp/isScheduleLocked';
+export { getScheduleProjection } from '@Query/facilitySchedule/getScheduleProjection';
+export { mergeFacilitySchedule } from '@Query/facilitySchedule/mergeFacilitySchedule';
 export { getPersonRequests } from '@Query/matchUps/scheduling/getPersonRequests';
 export { getProfileRounds } from '@Query/matchUps/scheduling/getProfileRounds';
+export { getScenarioScheduleProjection } from '@Query/matchUps/scheduling/getScenarioScheduleProjection';
+export { getScheduleScenarioStatus } from '@Query/matchUps/scheduling/scheduleScenarioReconciliation';
+export { getScenarioScheduleView } from '@Query/matchUps/scheduling/getScenarioScheduleView';
+export { getScheduleScenarios, getScheduleScenario } from '@Mutate/tournaments/scheduleScenarios';
 export { getSchedulingProfile } from '@Mutate/tournaments/schedulingProfile';
 export { courtGridRows } from '@Generators/scheduling/courtGridRows';
 export { publicFindCourt } from '@Query/venues/findCourt';

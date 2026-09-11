@@ -1,4 +1,4 @@
-import { getValidSeedBlocks } from '@Query/drawDefinition/seedGetter';
+import { getValidSeedBlocks, isValidSeedPosition } from '@Query/drawDefinition/seedGetter';
 import { getSeedBlocks } from '@Query/drawDefinition/getSeedBlocks';
 import tournamentEngine from '@Engines/syncEngine';
 import mocksEngine from '@Assemblies/engines/mock';
@@ -6,6 +6,7 @@ import { expect, it } from 'vitest';
 
 // Constants
 import { POLICY_TYPE_SEEDING } from '@Constants/policyConstants';
+import { policyComposer } from '@Global/policyComposer';
 import {
   ADJACENT,
   CLUSTER,
@@ -20,7 +21,6 @@ import {
 import { POLICY_SEEDING_BYES } from '@Fixtures/policies/POLICY_SEEDING_BYES';
 import { POLICY_SEEDING_DEFAULT } from '@Fixtures/policies/POLICY_SEEDING_DEFAULT';
 import { POLICY_SEEDING_ITF } from '@Fixtures/policies/POLICY_SEEDING_ITF';
-import { POLICY_SEEDING_NATIONAL } from '@Fixtures/policies/POLICY_SEEDING_NATIONAL';
 
 /**
  * Test suite for Seeding Policy documentation
@@ -119,17 +119,87 @@ it('POLICY_SEEDING_BYES has containerByesIgnoreSeeding', () => {
   expect(policy.drawSizeProgression).toBe(true);
 });
 
-it('POLICY_SEEDING_NATIONAL has simplified structure', () => {
-  const policy: any = POLICY_SEEDING_NATIONAL[POLICY_TYPE_SEEDING];
+/**
+ * These three replace the former `POLICY_SEEDING_NATIONAL has simplified structure`.
+ *
+ * That fixture was ITF seeding with two keys omitted, and the old test asserted only that they were
+ * absent — which said nothing about what absence MEANS. One of the two omissions turned out to do
+ * nothing at all, and the documentation drew the wrong conclusion from the other. Assert the
+ * behavior instead of the shape.
+ */
+it('policyComposer expresses an ITF variant with seed positions enforced', () => {
+  const composed: any = policyComposer(POLICY_TYPE_SEEDING)
+    .extend(POLICY_SEEDING_ITF)
+    .unset('validSeedPositions')
+    .set('policyName', 'ITF SEEDING, POSITIONS ENFORCED')
+    .build();
 
-  expect(policy.policyName).toBe('NATIONAL SEEDING');
-  expect(policy.seedingProfile.positioning).toBe(CLUSTER);
-  expect(policy.drawSizeProgression).toBe(true);
-
-  // National policy does NOT have these (stricter)
+  const policy = composed[POLICY_TYPE_SEEDING];
+  expect(policy.policyName).toBe('ITF SEEDING, POSITIONS ENFORCED');
   expect(policy.validSeedPositions).toBeUndefined();
-  expect(policy.duplicateSeedNumbers).toBeUndefined();
-  expect(policy.containerByesIgnoreSeeding).toBeUndefined();
+  // Everything else is inherited, thresholds included — which is the point of composing rather than
+  // maintaining a near-duplicate fixture.
+  expect(policy.seedingProfile.positioning).toBe(CLUSTER);
+  expect(policy.seedsCountThresholds).toEqual(POLICY_SEEDING_ITF[POLICY_TYPE_SEEDING].seedsCountThresholds);
+  // Immutable: the source fixture is untouched.
+  expect(POLICY_SEEDING_ITF[POLICY_TYPE_SEEDING].validSeedPositions).toEqual({ ignore: true });
+});
+
+it('duplicateSeedNumbers permits duplicates when ABSENT, not just when true', () => {
+  // `seedGetter`: `typeof duplicateSeedNumbers === 'boolean' ? duplicateSeedNumbers : true`.
+  // So omitting the key is identical to setting it true, and only `false` restricts. The docs
+  // previously described an omission as "unique seeds only", which is backwards.
+  const composed: any = policyComposer(POLICY_TYPE_SEEDING)
+    .extend(POLICY_SEEDING_ITF)
+    .unset('duplicateSeedNumbers')
+    .build();
+  expect(composed[POLICY_TYPE_SEEDING].duplicateSeedNumbers).toBeUndefined();
+
+  const restrictive: any = policyComposer(POLICY_TYPE_SEEDING)
+    .extend(POLICY_SEEDING_ITF)
+    .set('duplicateSeedNumbers', false)
+    .build();
+  expect(restrictive[POLICY_TYPE_SEEDING].duplicateSeedNumbers).toBe(false);
+});
+
+it('validSeedPositions.ignore is what lets a seed sit off its seed block', () => {
+  // This is the axis, and it governs MANUAL placement — `isValidSeedPosition` is called from
+  // `positionAssignment` (which rejects with INVALID_DRAW_POSITION_FOR_SEEDING) and from
+  // `positionActions` (which decides whether SEED_VALUE / REMOVE_SEED are offered). It does NOT
+  // decide where automated positioning puts seeds; `seedingProfile.positioning` does that, and USTA
+  // and ITF both specify it — differently.
+  const { tournamentRecord } = mocksEngine.generateTournamentRecord({
+    drawProfiles: [{ drawSize: 32, participantsCount: 32, seedsCount: 8 }],
+  });
+  tournamentEngine.setState(tournamentRecord);
+  const drawId = tournamentRecord.events?.[0]?.drawDefinitions?.[0]?.drawId;
+  const { drawDefinition }: any = tournamentEngine.getEvent({ drawId });
+  const structureId = drawDefinition.structures[0].structureId;
+
+  const { validSeedBlocks } = getValidSeedBlocks({ structure: drawDefinition.structures[0] });
+  const seedBlockPositions: number[] = validSeedBlocks.flatMap((block: any) => block.drawPositions);
+  const offBlockPosition = [...Array(32).keys()]
+    .map((index) => index + 1)
+    .find((drawPosition) => !seedBlockPositions.includes(drawPosition));
+  expect(offBlockPosition).toBeDefined();
+
+  const withIgnore = isValidSeedPosition({
+    appliedPolicies: POLICY_SEEDING_ITF,
+    drawPosition: offBlockPosition as number,
+    drawDefinition,
+    structureId,
+    seedNumber: 1,
+  });
+  expect(withIgnore).toBe(true);
+
+  const enforced = isValidSeedPosition({
+    appliedPolicies: policyComposer(POLICY_TYPE_SEEDING).extend(POLICY_SEEDING_ITF).unset('validSeedPositions').build(),
+    drawPosition: offBlockPosition as number,
+    drawDefinition,
+    structureId,
+    seedNumber: 1,
+  });
+  expect(enforced).toBe(false);
 });
 
 it('SEPARATE positioning maximizes seed separation', () => {
@@ -411,9 +481,6 @@ it('built-in policies have correct positioning patterns', () => {
 
   // BYES: CLUSTER
   expect(POLICY_SEEDING_BYES[POLICY_TYPE_SEEDING].seedingProfile.positioning).toBe(CLUSTER);
-
-  // NATIONAL: CLUSTER
-  expect(POLICY_SEEDING_NATIONAL[POLICY_TYPE_SEEDING].seedingProfile.positioning).toBe(CLUSTER);
 });
 
 it('getValidSeedBlocks respects seeding profile', () => {
@@ -508,7 +575,6 @@ it('all built-in policies use drawSizeProgression', () => {
   expect(POLICY_SEEDING_DEFAULT[POLICY_TYPE_SEEDING].drawSizeProgression).toBe(true);
   expect(POLICY_SEEDING_ITF[POLICY_TYPE_SEEDING].drawSizeProgression).toBe(true);
   expect(POLICY_SEEDING_BYES[POLICY_TYPE_SEEDING].drawSizeProgression).toBe(true);
-  expect(POLICY_SEEDING_NATIONAL[POLICY_TYPE_SEEDING].drawSizeProgression).toBe(true);
 });
 
 it('USTA and ITF have identical thresholds except for 128 draw', () => {

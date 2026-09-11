@@ -2,12 +2,13 @@ import { isLuckyBasedDraw } from '@Query/drawDefinition/isLuckyBasedDraw';
 import { getRoundMatchUps } from '../matchUps/getRoundMatchUps';
 
 // constants and types
-import { DrawDefinition, Structure } from '@Types/tournamentTypes';
-import { HydratedMatchUp } from '@Types/hydrated';
+import { DrawDefinition, MatchUp, Structure } from '@Types/tournamentTypes';
 
 type IsLuckyArgs = {
   drawDefinition?: DrawDefinition;
-  matchUps?: HydratedMatchUp[];
+  // Only inspects base MatchUp fields (`drawPositions`) so the looser type
+  // is honest. The fallback `structure?.matchUps` is also `MatchUp[]`.
+  matchUps?: MatchUp[];
   roundsNotPowerOf2?: boolean;
   structure?: Structure;
 };
@@ -17,7 +18,7 @@ type IsLuckyArgs = {
  * transitions from odd to even, meaning one participant advances without playing.
  * This is the definitive test for a lucky-style structure, regardless of stage.
  */
-export function hasLuckyRounds({ structure, matchUps }: { structure?: Structure; matchUps?: HydratedMatchUp[] }) {
+export function hasLuckyRounds({ structure, matchUps }: { structure?: Structure; matchUps?: MatchUp[] }) {
   matchUps = matchUps ?? structure?.matchUps ?? [];
   const result = getRoundMatchUps({ matchUps });
 

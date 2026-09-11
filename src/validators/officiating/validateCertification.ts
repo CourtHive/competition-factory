@@ -1,5 +1,9 @@
 // Constants
-import { MISSING_OFFICIAL_RECORD, CERTIFICATION_NOT_FOUND, CERTIFICATION_EXPIRED } from '@Constants/officiatingConstants';
+import {
+  MISSING_OFFICIAL_RECORD,
+  CERTIFICATION_NOT_FOUND,
+  CERTIFICATION_EXPIRED,
+} from '@Constants/officiatingConstants';
 import { INVALID_VALUES } from '@Constants/errorConditionConstants';
 import { SUCCESS } from '@Constants/resultConstants';
 
@@ -12,11 +16,7 @@ type ValidateCertificationArgs = {
   asOfDate?: string;
 };
 
-export function validateCertification({
-  officialRecord,
-  certificationId,
-  asOfDate,
-}: ValidateCertificationArgs): {
+export function validateCertification({ officialRecord, certificationId, asOfDate }: ValidateCertificationArgs): {
   error?: any;
   success?: boolean;
   valid?: boolean;

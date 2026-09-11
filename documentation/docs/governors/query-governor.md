@@ -72,6 +72,105 @@ const { matchUps, groupInfo } = engine.allTournamentMatchUps({
 
 ---
 
+## cast
+
+Cast a single `tournamentRecord` into the flattened, query-optimized **read-model row set** (the CQRS read-side that `courthive-query` stores as its `query_*` SQL tables). `cast()` is a **pure** transform (no I/O, no globalState) and is the single, factory-owned source of that shape — shared by the server's incremental projection (on mutation) and the read-model rebuild pipeline, so the two paths stay byte-identical.
+
+Every derived row comes from the factory flattener (`allTournamentMatchUps`, hydrated **inContext**) with `usePublishState: false`, so **all** matchUps are projected. Rows are keyed by **logical** table name (`match_ups`, not `query_match_ups`); the consumer maps logical → physical.
+
+**Publishing & embargo are stored as read-time inputs, never a "visible now" flag.** A projection only refreshes on mutation, so a baked-in visibility boolean would go stale the moment an embargo lifts. Instead each `match_ups` row carries:
+
+- `published` — publish **intent** (embargo-independent), resolved through the **draw → stage → structure** cascade;
+- `embargo` — the effective embargo **release timestamp** (ISO), with draw > stage > structure precedence, or `null`.
+
+Actual visibility is computed at **read time**: `published AND (embargo IS NULL OR embargo <= now())`. This is the only way a refresh-on-mutation projection can be embargo-correct.
+
+RUBBER rows carry `tie_value` — the rubber's weight from the parent tie's `tieFormat` collection (`matchUpValue`, else a per-position profile value, else `collectionValue / matchUpCount`); `NULL` for STANDARD/TIE rows.
+
+TIE rows carry `score_source`, so a consumer can tell **"no line detail exists"** from **"the lines have not been entered yet"** — two states that otherwise project identically (a TIE row with no RUBBER rows beneath it):
+
+- `NULL` — `DERIVED`, the default: the tie score comes from its rubbers, and an empty scorecard means results are still outstanding.
+- `'REPORTED'` — the competition publishes only the team result and the lines are **unpopulated by design**. Such a tie generates no rubbers at all, so a TIE row with zero RUBBER rows is **complete**, not awaiting entry.
+
+`score_source` is `NULL` on STANDARD and RUBBER rows. It comes from the [tieFormat's `scoreSource`](../concepts/tieFormat#score-source--derived-vs-reported), resolved hierarchically, so a federation declares it once on the event and every tie beneath it projects the value.
+
+**Bracket topology.** Each `match_ups` row also carries the draw's shape, so a consumer can render a bracket or answer "where does this winner play next" without re-deriving it:
+
+- `winner_match_up_id` / `loser_match_up_id` — the progression edges, copied from the stored matchUp. `NULL` is meaningful, not missing: a terminal matchUp has no winner target, and `loser_match_up_id` is `NULL` wherever no loser feed exists — which is **every** matchUp of a plain single-elimination draw. They appear wherever a feed does: consolation, playoff attachment, qualifying → main.
+- `round_position` — the matchUp's position within its round; with `round_number` this is a complete bracket coordinate. `NULL` for adHoc and round-robin matchUps, which have no round position.
+
+These are the only faithful representation of a non-standard topology: the standard-bracket derivation (round _r_ position _p_ → round _r+1_ position ⌈_p_/2⌉) does not hold once consolation feeds, playoff attachment or qualifying → main are involved. Rewiring is carried incrementally too — `removeStructure` strips the loser edge from the matchUps that fed a removed structure and dispatches `MODIFY_MATCHUP` for each, so `matchUpResultRow` carries the edges as well as the result columns.
+
+```js
+const { rows } = engine.cast();
+// rows: {
+//   tournaments,            // one row: id, name, provider_id, dates, city, published (OoP-or-participants)
+//   tournament_discovery,   // one row: the faceted-discovery aggregate (geo, level, fees, facets)
+//   events,                 // one row/event: name, type, gender, category, matchUpFormat, dates, published
+//   draws,                  // one row/draw: name, type, matchUpFormat
+//   structures,             // one row/top-level structure: name, stage, stageSequence, type, matchUpFormat
+//   seeds,                  // one row/participant-holding seed assignment (structure_id + seed_number)
+//   match_ups,              // STANDARD | TIE (team container) | RUBBER (nested)
+//   match_up_competitors,   // per-INDIVIDUAL grain; doubles = 2 rows/side; team_id on team/rubber rows
+//   entries,                // participation != matchUps (alternates, withdrawn, un-drawn)
+//   venues,                 // facility_id defaults to venue_id
+//   courts,                 // one row/court: name, indoorOutdoor, surface, lat/long
+//   order_of_play,          // order-of-play PUBLICATION state (published + dates/events + embargo)
+//   scheduling_profile,     // the admin scheduling PLAN, one row/date/venue/round-order
+//   participant_publish,    // participant-list PUBLICATION state (published + embargo)
+//   tournament_venues,      // tournament ↔ venue links
+// }
+```
+
+**`events.published` resolves through the same cascade as the matchUps** — it is not a truthiness test on the event's `PUBLISH.STATUS.PUBLIC` envelope. `unPublishEvent` leaves that envelope in place with undefined-valued keys, so a truthiness (or even a non-empty) test reports an unpublished event as published while its matchUps correctly report `false`. `readModel.isEventPublished` resolves it at **draw** granularity — an event whose draw publishes only selected structures is still a published event — and treats **seeding as an independent publish surface**: `publishEventSeeding` writes `seeding: { published: true }` with no draw detail at all, and an event with published seeding is published even when no draw is.
+
+**`tournament_discovery` is the one aggregate row in the projection.** Every other table is 1:1 with a source object; this one summarises a tournament _and_ its events, so an event changing dirties its tournament's row. It is attributed through a distinct `tournamentAggregate` entity kind whose coverage rule is "the mutation announced something", because a row that belongs to no single entity cannot be attributed to one. See [Tournament Discovery](../concepts/tournament-discovery.md).
+
+**`entries` carries a TEAM entry's issued identity**, in `team_id` + `organisation_id`. `team_id` is the id an organisation **issued** for that team, taken from `participantOtherIds` — `null` for every other `participantType`, and for a TEAM stating no issued id. It is deliberately **not** `participant_id`, which is tournament-local: keyed on that, a programme would look like a different competitor in every record and its season would be exactly one fixture long. `organisation_id` names the body that issued it, because a subjectId is unique only _within_ its issuing body.
+
+:::warning
+
+`entries.team_id` and `match_up_competitors.team_id` follow **different rules and must not be assumed interchangeable.** The competitors column is `participant.teamId ?? participantId`, so it falls back to a tournament-local id when a record states no durable identity; the entries column is the issued id and is `null` rather than local when none is stated. They coincide wherever a producer happens to set `participantId` to the issued id — which the college-dual corpus does — and diverge everywhere else.
+
+:::
+
+`match_up_competitors.person_id` is populated only for a **real canonical person** — a `personId` that is not equal to the `participantId` and is not a factory `UUID()` (i.e. a provider/federation id such as a UTR id, `link_source: 'providerId'`); synthetic/local participants are left `NULL` (`link_source: 'unresolved'`). `venue.facilityId` is a canonical first-class attribute that **defaults to `venueId`**.
+
+Callable on the engine (injects the loaded `tournamentRecord`) or via `queryGovernor.cast({ tournamentRecord })` (the server / rebuild-pipeline call pattern).
+
+---
+
+## readModel (toolkit)
+
+`cast()` is a full-tournament rebuild. The lower-level primitives it composes are also exported as a namespace so an incremental producer (e.g. the CFS server projecting a single draw on mutation) can emit **byte-identical** rows without re-casting the whole record. Both paths must stay identical, so they share this one toolkit — the single source of the read-model shape.
+
+```js
+import { readModel } from 'tods-competition-factory';
+```
+
+| Export                                     | Purpose                                                                                                                                                                                                                             |
+| ------------------------------------------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `cast`                                     | Full-tournament projection (the same function documented above).                                                                                                                                                                    |
+| `tournamentRow` / `venueRow` / `entryRows` | Row builders for the `tournaments`, `venues`/`tournament_venues`, and `entries` tables. `entryRows` carries a TEAM entry's issued `team_id` + `organisation_id` — see the warning above.                                                |
+| `tournamentDiscoveryRow`                   | Row builder for the `tournament_discovery` table — the faceted-discovery aggregate over a tournament and its events. The only builder that is not 1:1 with a source object; see [Tournament Discovery](../concepts/tournament-discovery.md). |
+| `applyProgressionEdges`                    | Stamps `winnerMatchUpId` / `loserMatchUpId` onto already-flattened in-context matchUps, **deriving** them from the draw's links and topology (`addGoesTo`) for records that never stored them — older records and non-factory TODS files. Without it such a draw projects `NULL` and cannot distinguish "no loser feed" from "never recorded". Pure with respect to the record; costs 1.16×–1.43× a plain flatten, so call it only where projected edges are needed. |
+| `eventRow` / `seedRow`                     | Row builders for the `events` table (one row/event) and the `seeds` table (one row per participant-holding seed assignment; caller supplies the structure context via `SeedRowContext`).                                            |
+| `drawRow` / `structureRow`                 | Row builders for the `draws` table (one row/draw) and the `structures` table (one row per top-level structure; context via `StructureRowContext`). Nested round-robin group sub-structures are not projected.                       |
+| `courtRow`                                 | Row builder for the `courts` table (one row per court of a placed venue; context via `CourtRowContext`).                                                                                                                            |
+| `orderOfPlayRow` / `schedulingProfileRows` | Row builders for the `order_of_play` table (the publication state — distinct from per-matchUp scheduling) and the `scheduling_profile` table (the flattened admin plan, one row per date/venue/round).                              |
+| `participantPublishRow`                    | Row builder for the `participant_publish` table (participant-list publication state); the `tournaments` row also carries an aggregate `published` flag (order-of-play OR participants published).                                   |
+| `getTournamentPublishStatus`               | Tournament-level publish status (its `orderOfPlay` / `participants` drive the order_of_play / participant_publish rows + the aggregate `tournaments.published`); the tournament analog of `getEventPublishStatus`.                  |
+| `matchUpRowSet`                            | Builds the `match_ups` / `match_up_competitors` rows for a matchUp set (STANDARD / TIE container / nested RUBBER). Typed by `MatchUpRowContext` → `MatchUpRowSet`.                                                                  |
+| `matchUpResultRow` / `rubberTieValue`      | Slim result-row projection (status / winning side / score / scheduled date) **plus the progression edges**, so a `MODIFY_MATCHUP` that rewires a matchUp does not leave a dangling edge; and the RUBBER `tie_value` weighting rule. |
+| `resolveMatchUpPublishState`               | Resolves a matchUp's `published` intent + effective `embargo` release timestamp via the draw → stage → structure cascade (returns `MatchUpPublishState`).                                                                           |
+| `getEventPublishStatus`                    | Event-level publish status used by the cascade — the raw `PUBLISH.STATUS.PUBLIC` envelope. Do **not** test it for truthiness; see `isEventPublished`.                                                                               |
+| `isEventPublished`                         | Resolves `events.published` from that envelope through the draw-level cascade, including published seeding as an independent surface. Shared by `cast()` and incremental producers so the two cannot diverge.                       |
+| `resolvePersonLink` / `isFactoryUuid`      | Canonical `person_id` resolution — `LINK_PROVIDER_ID` for a real federation/provider id, `LINK_UNRESOLVED` (`NULL`) for synthetic/local participants (returns `PersonLink`).                                                        |
+
+This is an advanced integration surface for read-model producers (`courthive-query`, the CFS incremental projection); most consumers only need `cast()`.
+
+---
+
 ## competitionScheduleMatchUps
 
 Returns scheduled matchUps for a competition, with optional publish-state and embargo filtering. See full documentation in the [MatchUp Governor](./matchup-governor.md#competitionschedulematchups).
@@ -344,6 +443,7 @@ const {
 } = engine.getDrawData({
   allParticipantResults, // optional boolean; include round statistics per structure even for elimination structures
   contextProfile, // optional: { inferGender: true, withCompetitiveness: true, withScaleValues: true, exclude: ['attribute', 'to', 'exclude']}
+  structuresProfile, // optional: 'FULL' (default) | 'STUBS' — how much of each structure to return
   drawId,
 });
 ```
@@ -454,6 +554,60 @@ const { events } = engine.getEvents({
 
 ---
 
+### structuresProfile
+
+The structure-grain counterpart of [`drawsProfile`](#drawsprofile). `STUBS` skips
+`getAllStructureMatchUps` entirely and returns cheap per-structure metadata.
+
+A structure stub carries:
+
+```js
+{
+  structureId, structureName, structureType, stage, stageSequence,
+  finishingPosition, matchUpFormat, display,
+  structureActive,     // boolean - any matchUp played
+  structureCompleted,  // boolean - every matchUp in a completed status
+}
+```
+
+`structureActive` and `structureCompleted` are included because both reduce `matchUpStatus`, which is
+available on the un-hydrated matchUp — so a structure list still renders a status column for free.
+
+**Absent** from a stub: `roundMatchUps`, `roundProfile`, `participantResults`, `seedAssignments`,
+`positionAssignments` and `report`. None can be produced without the assembly this profile exists to skip.
+
+Purely additive — omitting it is byte-identical to `FULL`, and an unrecognised value returns
+`INVALID_VALUES` rather than falling back.
+
+## getStructureData
+
+One structure's data — the drill-in tier of the payload decomposition. A client lists draws with
+[`drawsProfile: 'STUBS'`](#drawsprofile), lists structures with
+[`structuresProfile: 'STUBS'`](#structuresprofile), then fetches exactly the structure it is about to
+render.
+
+```js
+const { structure, drawInfo } = engine.getStructureData({
+  drawId,
+  structureId,
+  // ...accepts the same optional params as getDrawData
+});
+```
+
+> **This narrows the payload, not the computation.** Every draw type measured — single elimination,
+> round robin, compass, Curtis consolation, feed-in championship, and a qualifying-fed draw — resolves
+> to a **single structure group**, because `getStructureGroups` partitions by linkage and a draw's
+> structures are linked by construction. There is no independent group to skip, and assembling one
+> structure in isolation is not available cheaply: within-group values depend on siblings
+> (`sourceStructuresComplete` reads `completedStructures[sourceId]`).
+>
+> The value is a **smaller response** and a **per-structure cache entry** — cache granularity is
+> invalidation granularity, so a score in one structure need not evict another's cached payload.
+
+Returns `STRUCTURE_NOT_FOUND` when the id is not in the draw, and `MISSING_STRUCTURE_ID` when omitted. A
+structure filtered out by publish state yields `structure: undefined` with `success` — a legitimate
+empty result for a public reader rather than an error.
+
 ## getEventData
 
 Returns event information optimized for publishing: `matchUps` have context and separated into rounds for consumption by visualization libraries such as `tods-react-draws`. See examples: [Event Data Payload](../concepts/publishing/publishing-data-subscriptions.md#event-data-payload), [Event Data](../concepts/publishing/publishing-workflows.md#event-data), [Test Publish State](../concepts/publishing/publishing-workflows.md#test-publish-state).
@@ -467,6 +621,9 @@ const { eventData } = engine.getEventData({
   policyDefinitions, // optional
   usePublishState, // optional - filter out draws which are not published; enforces embargo timestamps
   contextProfile, // optional: { inferGender: true, withCompetitiveness: true, withScaleValues: true, exclude: ['attribute', 'to', 'exclude']}
+  drawsProfile, // optional: 'FULL' (default) | 'STUBS' — how much of each draw to return
+  withParticipantsVersion, // optional boolean; return a participantsVersion stamp
+  participantsVersion, // optional string; a stamp previously received, to be checked
   eventId,
 });
 const { drawsData, venuesData, eventInfo, tournamentInfo } = eventData;
@@ -474,9 +631,418 @@ const { drawsData, venuesData, eventInfo, tournamentInfo } = eventData;
 
 When `usePublishState: true`, this method enforces [embargo](../concepts/publishing/publishing-embargo) timestamps — embargoed draws, stages, and structures are filtered from `drawsData` until the embargo passes.
 
+### drawsProfile
+
+Selects how much of each draw is assembled. The axis is monotone containment — `drawInfo ⊃ structures ⊃ roundMatchUps` — so it is one ordinal parameter rather than independent flags.
+
+| value            | returns                                                                       |
+| ---------------- | ----------------------------------------------------------------------------- |
+| `FULL` (default) | every draw hydrated through `getDrawData` — unchanged, pre-existing behaviour |
+| `STUBS`          | cheap per-draw metadata only; structure assembly is skipped entirely          |
+
+`STUBS` is intended for the most common first request — _"what is in this event?"_ — where a client renders a list of draws and only later drills into one. On a Grand-Slam singles event it is roughly **15 KB against 788 KB**.
+
+A stub carries:
+
+```js
+{
+  drawId, drawName, drawType, matchUpFormat, updatedAt, display,
+  drawGenerated,  // boolean - draw has matchUps
+  drawCompleted,  // boolean - every matchUp is in a completed status
+  drawPublished,  // present only when usePublishState
+}
+```
+
+`drawGenerated` and `drawCompleted` are included because both reduce `matchUpStatus`, which is available on the un-hydrated matchUp — so they cost nothing extra and a draw list can still render a status column.
+
+`participantPlacements`, `drawActive` and `structures` are **absent** from a stub: they cannot be derived without the structure assembly this profile exists to skip. Request `FULL`, or fetch the draw individually, when they are needed.
+
+`drawsProfile` is purely additive — omitting it is byte-identical to `FULL`. An unrecognised value returns `INVALID_VALUES` rather than falling back, so a typo cannot silently return the full payload.
+
+### participantsVersion
+
+A conditional-fetch handshake for the `participants` array, in the spirit of an HTTP `ETag`. A client that already holds the current participant set can be told so instead of being sent it again.
+
+```js
+// first call — ask for a stamp
+const first = engine.getEventData({ eventId, withParticipantsVersion: true });
+// first.participants        → the full array
+// first.participantsVersion → e.g. 'a3f9…'
+
+// later calls — send the stamp back
+const next = engine.getEventData({ eventId, participantsVersion: first.participantsVersion });
+// next.participants === undefined   when the set is unchanged
+// next.participants === [...]       when it has changed (and a fresh version accompanies it)
+```
+
+Only an **exact** match omits `participants`. A mismatch, an absent stamp, or a stale one all send the array exactly as before, so the failure direction is "sent bytes that were not needed" rather than a blank bracket.
+
+**Opt-in, deliberately.** Hashing the participant set costs roughly 18 ms of an ~89 ms five-event build (~20%), so the stamp is computed only when it can be used — when the caller either supplied a version to check or asked for one with `withParticipantsVersion`. There is no separate enabling flag: supplying a version implies wanting the comparison, and a two-things-to-set design eventually gets one of them set, silently selecting the slow-and-useless combination.
+
+`participantsVersion` is present on the response **only** when it was computed. It is a conditional key rather than an explicitly-`undefined` one, so a caller that did not ask sees the response shape it has always seen.
+
 **See**: [Embargo](../concepts/publishing/publishing-embargo) for details on how embargo timestamps work.
 
 ---
+
+## getStructureInconsistencies
+
+Read-only audit that scans a draw's structures for internal inconsistencies — decided
+matchUps whose derived fields have drifted out of agreement. Returns `valid` plus an
+`inconsistencies` array (empty when consistent). Intended for tests (assert zero
+inconsistencies after mutations), CI fixture sweeps, and operator-facing audits of a
+loaded tournament.
+
+```js
+const { valid, inconsistencies } = engine.getStructureInconsistencies({
+  drawId, // required — resolved to drawDefinition by the engine
+  structureId, // optional — restrict the scan to a single structure
+});
+// inconsistencies: [{ issueType, message, matchUpId, structureId, winningSide, ... }]
+```
+
+You can also call it directly against a `drawDefinition` object, without loading a
+tournament into the engine — useful when validating records built outside the factory:
+
+```js
+import { drawsGovernor } from 'tods-competition-factory';
+
+const { valid, inconsistencies } = drawsGovernor.getStructureInconsistencies({ drawDefinition });
+```
+
+### Validating hand-built / reconstructed CODES draws
+
+Beyond internal engine regression testing, this method is a **structural conformance check
+for drawDefinitions that were _not_ produced by the factory's own generators**. Third-party
+provisioners and ingest pipelines routinely reconstruct CODES draw structures by hand — for
+example scraping results from an external provider (IONSport) or reconstructing draws from a
+national federation's data (Czech Tennis, ITF, Tennis Europe). Those pipelines have to place
+participants into `positionAssignments`, wire `winnerMatchUpId` / `loserMatchUpId` feeds, and
+set `winningSide` / `matchUpStatus` on each matchUp — exactly the relationships this checker
+audits. Running `getStructureInconsistencies` over a reconstructed `drawDefinition` surfaces
+the common reconstruction defects (an advanced participant that disagrees with `winningSide`,
+a decided matchUp pointing at an empty drawPosition, an exit code on the wrong side, unsorted
+`drawPositions`) as a concrete, machine-readable list of what is missing or wrong — before the
+record is published or fed into ranking / scheduling. It complements `analyzeDraws` /
+`getDrawData` (which describe a draw) by _asserting_ that its decided state is self-consistent.
+
+Checks (each a distinct `issueType`):
+
+- `WINNING_SIDE_WITHOUT_PARTICIPANT` — a non-exit decided matchUp whose winning side
+  holds no participant. Legitimately pending propagated exits (a `WALKOVER`/`DEFAULTED`
+  whose winner slot is still an empty feed) are not flagged.
+- `WINNING_SIDE_ADVANCEMENT_MISMATCH` — the losing-side participant advanced into the
+  `winnerMatchUp` while the winning-side participant did not (the
+  `winningSide`/`drawPositions` drift class).
+- `WINNER_NOT_ADVANCED` — a decided matchUp's winning-side participant is absent from its next
+  matchUp **within the same structure**. Winning advances unconditionally within a structure, so
+  the winner must be present. Cross-structure `winnerMatchUpId` feeds are **excluded** because they
+  are conditional on history — e.g. a `DOUBLE_ELIMINATION` consolation-final winner feeds back into
+  MAIN only if they have lost exactly once; the pointer is present but unused otherwise (the winner
+  mirror of the FMLC loser-feed caveat that makes cross-structure progression a deferred sub-phase).
+- `DRAW_POSITIONS_NOT_SORTED` — a matchUp's `drawPositions` are not stored in ascending
+  order (the sort invariant the engine relies on to derive sides, fed positions, and
+  rendering).
+- `EXIT_CODE_ON_WINNER_SIDE` — on a single `WALKOVER`/`DEFAULTED`, a status code sits on
+  the winning side rather than the exiting (loser) side.
+- `EXIT_WITHOUT_LOSER` — a single `WALKOVER`/`DEFAULTED` with a `winningSide` whose losing
+  side holds a **fed** drawPosition but no participant (an orphaned exit — nobody who walked
+  over). Three legitimate empty-loser cases are excluded: a pending exit (the loser side
+  holds the exit carrier); an exit whose losing slot was never fed because an upstream
+  double-exit produced no advancer; and an exit the engine _produced_ by propagation into a
+  fed-but-empty slot (marked with a `previousMatchUpStatus` provenance code — e.g. a
+  consolation walkover fed a double-walkover void).
+- `DRAW_POSITION_UNASSIGNED` — a decided, non-exit matchUp references a drawPosition whose
+  stored `positionAssignment` holds no participant, bye or qualifier (a phantom position).
+  Evaluated over **stored** structure state (`drawPositions` ↔ `positionAssignments`) rather
+  than inContext sides: inContext derives sides _from_ the assignments, so an empty **losing**
+  slot on an otherwise-decided matchUp silently resolves to a side with no `participantId` and
+  is not surfaced by any inContext check (`WINNING_SIDE_WITHOUT_PARTICIPANT` inspects only the
+  winning side). Exits are excluded because a legitimately pending propagated exit may hold an
+  empty slot. The result carries `phantomPositions` (the offending drawPositions).
+
+The `winningSide`/`drawPositions` and stored-vs-inContext passes are exercised together by a
+CI-style engine-consistency guard (`getStructureInconsistenciesCorpus.test.ts`) that generates
+every supported draw type at sizes 8/16/32/64, seeds each with a mix of
+`WALKOVER`/`DEFAULTED`/`RETIRED`/`DOUBLE_WALKOVER` outcomes, completes it, and asserts zero
+inconsistencies — so the checker doubles as a regression guard on exit-propagation and
+advancement drift across the generators.
+
+### Deferred check: `STALE_EXIT_STATUS`
+
+A proposed check — a single `WALKOVER`/`DEFAULTED` with a `winningSide`, no exit status code,
+and no upstream feeder that is itself an exit (an exit that should have collapsed to
+`TO_BE_PLAYED`) — is intentionally **not** implemented. It cannot be made zero-false-positive
+from stored state: a legitimate direct walkover is stored with empty `matchUpStatusCodes`, has
+a `winningSide`, and has no upstream exit — indistinguishable from the hypothesised stale exit.
+`matchUpStatusCodes` is optional metadata that legitimate walkovers routinely omit, so the
+heuristic would flag the entire codeless-walkover population. A trustworthy version would need
+to re-derive whether the exit is still justified at the mutation boundary that produces it, not
+as a read-only post-hoc scan.
+
+## getStructureCompleteness
+
+The **companion** to `getStructureInconsistencies`. Where the inconsistency checker asks _"is the
+decided state self-consistent?"_, completeness asks _"what is still missing before the draw is
+fully populated and played?"_ — the question a manual position-assignment workflow or a
+third-party CODES reconstruction pipeline needs answered at a publish checkpoint. An unassigned
+drawPosition or an unplayed matchUp is a valid in-progress state, **not** a defect, so it is
+deliberately reported separately from the inconsistency checks (which stay silent for
+in-progress draws).
+
+```js
+const { complete, completeness } = engine.getStructureCompleteness({
+  drawId, // required — resolved to drawDefinition by the engine
+  structureId, // optional — restrict the scan to a single structure
+});
+// complete: true when nothing is outstanding across the scanned structures
+// completeness: {
+//   unassignedPositionCount,   // total empty positionAssignments (no participant/bye/qualifier)
+//   unplayedMatchUpCount,      // total matchUps with no winningSide and no completed status
+//   structures: [{ structureId, structureName, stage, unassignedPositions, unplayedMatchUps }]
+// }
+```
+
+Only structures with something outstanding appear in `completeness.structures`; a fully populated
+and played draw returns `complete: true` with an empty array. A matchUp counts as played when it
+has a `winningSide`, is a `BYE`, or carries a completed status that resolves without a winner
+(`DOUBLE_WALKOVER` / `DOUBLE_DEFAULT` / `CANCELLED` / `ABANDONED` / `DEAD_RUBBER`). Like the
+inconsistency checker it reads stored structure state, so it also runs directly against a
+hand-built `drawDefinition`:
+
+```js
+import { drawsGovernor } from 'tods-competition-factory';
+
+const { complete, completeness } = drawsGovernor.getStructureCompleteness({ drawDefinition });
+```
+
+Pair the two for reconstruction pipelines: `getStructureInconsistencies` proves the decided state
+is correct, `getStructureCompleteness` enumerates what remains to be filled in.
+
+## The integrity query hierarchy (draw / event / tournament)
+
+`getStructureInconsistencies` / `getStructureCompleteness` are the **leaf** of a four-level
+hierarchy that mirrors the data hierarchy. Each higher level fans out to the level below and adds
+checks that are only visible at its own level — relationships the lower level cannot see:
+
+```text
+getTournamentInconsistencies   cross-event checks (identity duplication)
+  └─ getEventInconsistencies    eventType ↔ participantType coherence
+      └─ getDrawInconsistencies  cross-structure LINK integrity
+          └─ getStructureInconsistencies   (leaf)
+```
+
+The `*Completeness` functions compose the same way (`getDrawCompleteness` → `getEventCompleteness`
+→ `getTournamentCompleteness`), rolling up `unassignedPositionCount` / `unplayedMatchUpCount` while
+preserving the per-draw / per-event breakdown.
+
+### Inconsistency envelope
+
+Every inconsistency returned anywhere in the hierarchy carries a common shape:
+
+```js
+// {
+//   issueType,     // the specific check that fired
+//   message,       // human-readable description
+//   severity,      // 'error' | 'warning' | 'info' — route alerts on this
+//   scope,         // 'STRUCTURE' | 'DRAW' | 'EVENT' | 'TOURNAMENT' — where the check lives
+//   tournamentId, eventId, drawId, structureId, matchUpId,  // provenance (stamped as it bubbles up)
+//   fingerprint,   // stable hash of the identity fields — dedup key
+//   ...            // issue-specific detail
+// }
+```
+
+Provenance is **stamped as results bubble up**: a `STRUCTURE`-scoped leaf issue keeps its scope,
+but the draw layer stamps `drawId`, the event layer `eventId`, the tournament layer `tournamentId`,
+recomputing the `fingerprint` at each level so it reflects every id known there. The `fingerprint`
+is a deterministic FNV-1a hash of the identity fields (`issueType` + all ids) — a consumer scanning
+repeatedly can dedup on it (the same defect produces the same fingerprint every scan) and route on
+`severity`. These functions stay **pure** — they return data and know nothing of transport,
+alerting, or storage.
+
+## getDrawInconsistencies
+
+The **draw** layer. Fans out to `getStructureInconsistencies` for every structure of the draw and
+adds the checks that require the whole draw in view — the integrity of the cross-structure `links`:
+
+```js
+const { valid, inconsistencies } = engine.getDrawInconsistencies({ drawId });
+// or, directly against a record built outside the factory:
+import { drawsGovernor } from 'tods-competition-factory';
+const { valid, inconsistencies } = drawsGovernor.getDrawInconsistencies({ drawDefinition });
+```
+
+Draw-level checks (in addition to every structure-level `issueType`):
+
+- `DANGLING_LINK` — a link whose `source` or `target` `structureId` is not a structure in the draw.
+  Detected structurally **before** fan-out, because inContext derivation itself throws on such a
+  draw. (error)
+- `LINK_MISSING_SOURCE_ROUND` — a `WINNER`/`LOSER` link with no `source.roundNumber`; the engine
+  cannot determine which round feeds the target. (error)
+- `SCAN_ERROR` — structure-level derivation threw on this draw (corrupt state the leaf could not
+  read); surfaced rather than allowed to crash the scan. (error)
+- `DROPPED_PROGRESSION` — a `LOSER`- or `WINNER`-linked source matchUp whose feeding participant is
+  **eligible** to feed the target structure yet is absent from its `positionAssignments` — a
+  consolation or feed-back progression that silently failed. The `direction` field records `LOSER`
+  vs `WINNER`. (error)
+
+**Sound progression via the engine's own feed logic.** The link alone over-approximates feeding, so
+`DROPPED_PROGRESSION` reuses the engine's actual positioning logic per direction:
+
+- **`LOSER`** — whether a loser feeds depends on eligibility the link does not encode (a
+  `FIRST_MATCH_LOSER_CONSOLATION` round-2 link feeds only players whose first match _was_ round 2 —
+  zero prior scored wins). The check reuses `isFedLoserEligible`, which shares `getDrawPositionWinCount`
+  with `directLoser` (the mutation-time positioning code), so check and engine cannot diverge.
+- **`WINNER`** — `directWinner` places the winner into any open target position **unconditionally**
+  (verified: zero absent across many completed double-elimination draws), so no predicate is needed.
+  The sole exception is a `QUALIFYING` source, whose winners are placed by a separate deferred
+  qualifier mutation and are therefore not asserted here.
+
+> **Still deferred — qualifier-slot resolution.** Qualifying → main placement (filling
+> `qualifier`-marked positions after the qualifying structure completes) is its own mechanism and a
+> later sub-phase.
+
+## getDrawCompleteness
+
+The **draw** layer of the completeness roll-up. `getStructureCompleteness` already aggregates every
+structure of the draw, so this stamps `drawId` for provenance and is the composition point the event
+layer rolls up.
+
+```js
+const { complete, completeness } = engine.getDrawCompleteness({ drawId });
+// completeness: { drawId, unassignedPositionCount, unplayedMatchUpCount, structures: [...] }
+```
+
+## getEventInconsistencies
+
+The **event** layer. Fans out to `getDrawInconsistencies` for every `drawDefinition` (stamping
+`eventId`) and adds the check only visible at the event level: whether the participantTypes actually
+assigned in the event's draws are consistent with the event's `eventType`.
+
+```js
+const { valid, inconsistencies } = engine.getEventInconsistencies({ eventId });
+```
+
+- `EVENT_PARTICIPANT_TYPE_MISMATCH` — a participant whose `participantType` is inconsistent with the
+  `eventType` is assigned in one of the event's draws (a `DOUBLES` event carrying an `INDIVIDUAL`
+  participant, a `SINGLES` event carrying a `PAIR`, etc.). `HYBRID` events legitimately carry both
+  `INDIVIDUAL` and `PAIR`. Reads stored `positionAssignments` and resolves each participant's type
+  via the participant map. (error)
+
+> The expected participantType is derived by the shared `expectedParticipantType(eventType)` helper —
+> the same single source of truth `checkValidEntries` uses for entry validation. Entries-vs-placed
+> drift and gender/category eligibility are deferred to a later sub-phase.
+
+## getEventCompleteness
+
+The **event** layer of the completeness roll-up: aggregates `getDrawCompleteness` across the event's
+draws, preserving the per-draw breakdown for a director-facing progress view.
+
+```js
+const { complete, completeness } = engine.getEventCompleteness({ eventId });
+// completeness: { eventId, unassignedPositionCount, unplayedMatchUpCount, byDraw: [...] }
+```
+
+## getTournamentInconsistencies
+
+The **top** layer. Fans out to `getEventInconsistencies` for every event (resolving the participant
+map once for reuse, stamping `tournamentId`) and adds the checks only visible tournament-wide:
+
+```js
+const { valid, inconsistencies } = engine.getTournamentInconsistencies();
+```
+
+- `PARTICIPANT_IDENTITY_DUPLICATION` — a single person (`personId`) is represented by more than one
+  distinct `INDIVIDUAL` participant; the classic merged/imported-data defect that silently splits a
+  competitor's results across two identities. (warning)
+
+> Scheduling collisions and date containment are deferred — they require the scheduling model and are
+> a later sub-phase.
+
+## getTournamentCompleteness
+
+The **top** layer of the completeness roll-up: aggregates `getEventCompleteness` across the
+tournament's events, preserving the per-event breakdown.
+
+```js
+const { complete, completeness } = engine.getTournamentCompleteness();
+// completeness: { tournamentId, unassignedPositionCount, unplayedMatchUpCount, byEvent: [...] }
+```
+
+## getTournamentActionableMatchUps
+
+Reports whether a tournament is **effectively complete** — nothing is left to score — which is
+looser than the strict `getTournamentCompleteness` roll-up. Every non-BYE matchUp is classified:
+
+- **decided** — has a `winningSide`, or a terminal `completedMatchUpStatus` (COMPLETED / RETIRED /
+  WALKOVER / DEFAULTED / DOUBLE_* / **ABANDONED** / **CANCELLED** / DEAD_RUBBER).
+- **actionable** — `IN_PROGRESS` / `SUSPENDED`, or `readyToScore` with no winner. The only matchUps
+  that can still be scored, so the only ones that block completion.
+- **pending** — not ready and not decided (waiting on upstream). A pending matchUp whose feeders are
+  terminal-without-advancer (e.g. both abandoned) can never become ready, so it does **not** block.
+
+`effectivelyComplete` is true when there are **no actionable matchUps**. This surfaces the case where
+every ready-to-score matchUp was abandoned as complete, which strict completeness would not.
+
+```js
+const { effectivelyComplete, allDecided, counts, actionableMatchUpIds } = engine.getTournamentActionableMatchUps();
+// counts: { total, decided, actionable, pending }
+// effectivelyComplete === (counts.actionable === 0)
+// allDecided === (counts.actionable === 0 && counts.pending === 0)
+```
+
+## getMatchUpFormatVariance
+
+Reports where a draw's `matchUpFormat` (scoring format) is **not uniform**, grouped by structure
+and round. Two kinds of variance mean very different things to a tournament director, and the query
+separates them:
+
+- **Within-structure** variance — a structure's own matchUps do not all share one format. A round
+  that departs from the structure's dominant format and then a later round that **returns** to it
+  (`revertPattern`) is the fingerprint of an in-tournament format change: e.g. a weather event that
+  shortened a day's matches, then a return to the original format the next day. This is the notable
+  signal.
+- **Cross-structure** variance — different structures use different formats (MAIN plays best-of-3,
+  CONSOLATION plays a match tiebreak). Expected and deliberate; reported informationally, never
+  flagged as within-structure variance.
+
+```js
+const { hasVariance, variance } = engine.getMatchUpFormatVariance({
+  drawId, // required — resolved to drawDefinition by the engine
+  structureId, // optional — restrict the scan to a single structure
+});
+// hasVariance: true when any structure has within-structure variance
+// variance: {
+//   structures: [{
+//     structureId, structureName, stage,
+//     baselineFormat,          // the structure's dominant (most common) format
+//     distinctFormats,         // every format seen in the structure
+//     rounds: [{ roundNumber, formats, differsFromBaseline }],
+//     withinStructureVariance, // true
+//     revertPattern,           // departed from baseline then returned (weather signal)
+//   }],
+//   crossStructureVariance,    // structures use different dominant formats (informational)
+//   crossStructureFormats,     // the distinct dominant formats across structures
+// }
+```
+
+Variance is measured on the **raw `matchUpFormat` string** — nothing is parsed, normalized or
+collapsed. Any difference in the string is a real difference in the format: a change in set count,
+games per set, no-ad, the final-set spec (`-F:TB10` = a match-tiebreak deciding set, shorter if the
+match goes the distance) or the tiebreak trigger point are all deliberate scoring choices. Only
+matchUps that carry format **evidence** participate — an explicit matchUp-level `matchUpFormat` or a
+played result — so a future, unplayed, format-less matchUp (which merely inherits the current
+default) cannot manufacture false variance against rounds that carry stamped formats. Team ties
+(`collectionId` matchUps, which carry a `tieFormat` rather than a `matchUpFormat`) are excluded.
+
+Like the integrity queries it reads stored structure state, so it also runs directly against a
+hand-built `drawDefinition`:
+
+```js
+import { drawsGovernor } from 'tods-competition-factory';
+
+const { hasVariance, variance } = drawsGovernor.getMatchUpFormatVariance({ drawDefinition });
+```
 
 ## getTimeItem
 
@@ -527,10 +1093,14 @@ Requires an array of `matchUpFormats` either be defined in scoring policy that i
 ```js
 const { eventMatchUpFormatTiming } = engine.getEventMatchUpFormatTiming({
   matchUpFormats, // optional - can be retrieved from policy
-  categoryType, // optional - categoryType is not part of CODES or event attributes, but can be defined in a policy
+  categoryType, // optional - falls back to the event's category when not supplied
   eventId,
 });
 ```
+
+**Category resolution.** When `categoryType` is not supplied it is resolved from the event — `event.category.categoryType`, falling back to `event.category.subType`. An explicitly-passed value still wins.
+
+This matters because timing figures are category-dependent: `POLICY_SCHEDULING_DEFAULT` gives ADULT and WHEELCHAIR doubles 30 minutes of recovery and JUNIOR doubles 60. Callers that relied on the previous behaviour — where an unsupplied `categoryType` meant the event's category was ignored — will now see junior figures for junior events.
 
 ---
 
@@ -761,16 +1331,37 @@ const { matchUpFormat, structureDefaultMatchUpFormat, drawDefaultMatchUpFormat, 
 Searches for policy definitions or extensions to determine the `averageMinutes` and `recoveryMinutes` for a given `matchUpFormat`. Extensions are considered to be overrides of policy definitions.
 
 ```js
-const { averageMinutes, recoveryMinutes } = engine.getMatchUpFormatTiming({
-  defaultAverageMinutes, // optional setting if no matching definition found
-  defaultRecoveryMinutes, // optional setting if no matching definition found
-  matchUpFormat,
-  categoryName, // optional
-  categoryType, // optional
-  eventType, // optional - defaults to SINGLES; SINGLES, DOUBLES
-  eventId, // optional - prioritizes policy definition attached to event before tournament record
-});
+const { averageMinutes, recoveryMinutes, typeChangeRecoveryMinutes, overnightMinutes, recoveryFromPlayedMinutes } =
+  engine.getMatchUpFormatTiming({
+    defaultAverageMinutes, // optional setting if no matching definition found
+    defaultRecoveryMinutes, // optional setting if no matching definition found
+    matchUpFormat,
+    categoryName, // optional
+    categoryType, // optional
+    eventType, // optional - defaults to SINGLES; SINGLES, DOUBLES
+    eventId, // optional - prioritizes policy definition attached to event before tournament record
+    policyDefinitions, // optional - evaluate against a policy not attached to the record
+    playedMinutes, // optional - measured duration of the previous matchUp; keys byPlayedMinutes bands
+  });
 ```
+
+**Returns:**
+
+| Field                       | Meaning                                                                                     |
+| --------------------------- | ------------------------------------------------------------------------------------------- |
+| `averageMinutes`            | Expected duration for the format                                                            |
+| `recoveryMinutes`           | Rest required after a matchUp of this format                                                |
+| `typeChangeRecoveryMinutes` | Rest required when the participant crosses singles ↔ doubles                                |
+| `overnightMinutes`          | Minimum rest across a day boundary; `undefined` when no rule is configured                  |
+| `recoveryFromPlayedMinutes` | `true` when `recoveryMinutes` came from a `byPlayedMinutes` band rather than the flat table |
+
+`policyDefinitions` supplies a scheduling policy in place of whatever is attached to the tournamentRecord, following the same `policyDefinitions ?? appliedPolicies` precedence used across the query surface. It lets a caller ask "what would this look like under a different policy" without mutating the record. Omitted, resolution is exactly as before.
+
+`playedMinutes` selects a [`byPlayedMinutes`](/docs/policies/scheduling#duration-banded-recovery) band. It is opt-in on **both** sides — the policy must author bands and the caller must supply a duration it actually **measured**. Applied to an estimated duration the banding would be circular, since the estimate is `averageMinutes` drawn from the very policy being consulted. No scheduler call site supplies it, so scheduling behaviour is unchanged by construction.
+
+:::caution `overnightMinutes` absent means "no rule"
+`undefined` is not zero. Adult play carries no equivalent to the junior twelve-hour overnight rule, so an absent value must be reported as _unconstrained_ rather than substituted with a figure of the caller's own. This matches the contract `getMatchUpDailyLimits` already has.
+:::
 
 ---
 
@@ -824,12 +1415,25 @@ const { competitiveBands } = engine.getMatchUpsStats({
 
 ## getMatchUpDailyLimits
 
-Returns player daily match limits for singles/doubles/total matches.
+Returns the tournament-wide daily match limits for singles/doubles/total matches.
 
 ```js
-const { matchUpDailyLimits } = tournamentId.getMatchUpDailyLimits();
-const { DOUBLES, SINGLES, total } = matchUpDailyLimits;
+const { matchUpDailyLimits } = engine.getMatchUpDailyLimits({
+  tournamentId, // optional - select one tournament in a multi-tournament context
+});
+
+// `matchUpDailyLimits` is undefined when no scheduling policy is attached
+const { DOUBLES, SINGLES, total } = matchUpDailyLimits ?? {};
 ```
+
+:::caution `undefined` means "no limit configured"
+Unlike its sibling `getMatchUpFormatTiming`, this method does **not** fall back to
+`POLICY_SCHEDULING_DEFAULT`. An unpoliced tournament returns `undefined` rather than the fixture's
+`{ SINGLES: 2, DOUBLES: 2, total: 3 }`, and a consumer must report that as _no limit configured_
+rather than substituting one — inventing a constraint would make the scheduler refuse placements
+under a rule the tournament never adopted. Rationale and the full asymmetry in
+[Scheduling Policy → Retrieving Daily Limits](/docs/policies/scheduling#retrieving-daily-limits).
+:::
 
 ---
 
@@ -1175,13 +1779,19 @@ const { accuracy, zoneDistribution } = engine.getPredictiveAccuracy({
   exclusionRule: { valueAccessor: 'confidence', range: [0, 70] }, // exclude low confidence values
 
   zoneMargin: 3, // optional - creates +/- range and report competitiveness distribution
-  zonePct: 20, // optional - precedence over zoneMargin, defaults to 100% of rating range
+  zonePct: 20, // optional - PERCENT of the scale range; takes precedence over zoneMargin, defaults to 100%
 
   valueAccessor: 'wtnRating', // optional if `scaleName` is defined in factory `ratingsParameters`
   ascending: true, // optional - scale goes from low to high with low being the "best"
   scaleName: WTN,
 });
 ```
+
+> **`zonePct` is a percent of the scale's range**, so the resolved margin depends on the scale.
+> WTN spans `|40 - 1| = 39`, so `zonePct: 20` resolves to a margin of **7.8**. The resolved
+> `zoneMargin` is returned alongside the result, so a caller can assert it rather than infer it.
+> (Before a precedence fix, `zonePct` produced a margin **100x too large** — `20` on WTN gave 780,
+> not 7.8 — so figures computed against older builds are not comparable.)
 
 ---
 
@@ -1684,14 +2294,32 @@ const { tournamentRecord } = engine.getTournament();
 
 ---
 
+## getTournamentCalendarEntry
+
+Derives the lightweight **calendar-list entry** for a tournament — the shape a tournaments list renders from without loading full tournament records. It wraps `getTournamentInfo` (so the `tournament` projection already carries `onlineResources`) and flattens the URL tournament image to `tournamentImageURL`. Non-URL images (e.g. court-SVG) are not flattened but remain available in `onlineResources` for the consumer to extract.
+
+Intended as the single source of truth for every calendar surface — a server persists it as a provider-calendar side-effect and a client can derive the identical entry from a local record, so remote and offline lists match. Pure: server-specific projections (e.g. an ownership stamp) are added by the caller.
+
+```js
+const { searchText, tournamentId, providerId, tournament } = engine.getTournamentCalendarEntry({ tournamentRecord });
+// tournament: { ...getTournamentInfo projection, startDate, endDate, tournamentName, tournamentImageURL }
+```
+
+Because the entry spreads the `getTournamentInfo` projection, a field must be projected there to reach a calendar at all — `tournamentLevel` was populated at rest and absent from every calendar built from it until the projection carried it. An unstated level stays `undefined` and must not acquire a default.
+
+---
+
 ## getTournamentInfo
 
 Returns tournament attributes. Used to attach details to publishing payload by `getEventData`.
+
+`parentOrganisation` (the owning provider — `organisationId` / `organisationName` / `organisationAbbreviation`) is included when present. It is public information and lets off-server consumers scope provider-keyed reads/writes (e.g. courthive-public registration against the declarations service) without a mutation-server round-trip. Absent when the tournament has no owning organisation.
 
 ```js
 const { tournamentInfo } = getTournamentInfo({ tournamentRecord });
 const {
   tournamentId,
+  tournamentLevel, // organisational SCOPE (CLUB … INTERNATIONAL); undefined when unstated — never defaulted
   tournamentRank,
 
   formalName,
@@ -1705,8 +2333,57 @@ const {
 
   hostCountryCode,
   tournamentStatus,
+
+  registrationProfile,
+  parentOrganisation, // { organisationId, organisationName, organisationAbbreviation }
+  tournamentContacts, // staff whose contacts are marked public — see below
 } = tournamentInfo;
 ```
+
+### tournamentContacts
+
+The tournament's publishable personnel: participants holding a staff role, carrying the contact details they consented to publish.
+
+```js
+const { tournamentInfo } = engine.getTournamentInfo({
+  policyDefinitions, // optional — override the bundled POLICY_PRIVACY_STAFF
+});
+
+tournamentInfo.tournamentContacts;
+// [{ participantId, participantName, participantRole, participantRoleResponsibilities,
+//    person: { contacts: [{ name, mobileTelephone, emailAddress, isPublic: true }] } }]
+```
+
+Two gates decide what appears — the staff **role** list, and `Contact.isPublic === true` on each individual contact. Appearing in the role list publishes nothing on its own, and absent or `false` both withhold. This subtree is filtered by the bundled `POLICY_PRIVACY_STAFF` rather than by a caller's participant policy; `policyDefinitions` replaces it where a provider needs different attributes. See [Staff contacts](../policies/participantPolicy#staff-contacts) for the role list and the reasoning.
+
+### Counts
+
+With `withMatchUpStats: true`, `individualParticipantCount` counts **competitors** — individuals whose `participantRole` is `COMPETITOR` or absent — rather than every INDIVIDUAL participant. Staff and officials are INDIVIDUAL participants too, so counting people would report a tournament of 32 players and 8 officials as 40, beside a draw size.
+
+`tournamentInfo.eventInfo` carries one projection per event (filtered to published events when
+`usePublishState` is set). Alongside the event's own attributes it includes two format fields:
+
+```js
+const [event] = tournamentInfo.eventInfo;
+
+event.matchUpFormat; // the event's OWN declared code, or undefined
+event.competitionFormat; // the event's OWN competitionFormat, or undefined
+event.matchUpFormats; // every distinct code declared anywhere in the event
+```
+
+`matchUpFormats` is a **survey, not a resolution.** It collects distinct codes from the event, each of its
+drawDefinitions, and their structures (depth-first, recursing because round-robin item structures nest),
+in encounter order. Nothing about the order implies precedence — `competitionFormat` documents the
+effective-format hierarchy as `matchUp > structure > drawDefinition > event`, where specificity flows
+downward, so a caller must not read `matchUpFormats[0]` as "the" format for the event. When draws disagree
+the survey keeps every code, precisely so a caller can tell the event is not uniform. It is omitted when
+nothing declares a format.
+
+The survey exists because a scoring code identifies the **sport** being played, and the sport is a property
+of the whole event however deep the code happens to be stored. In practice codes are declared at
+drawDefinition level far more often than on the event: a live tournament surveyed when this was added
+declared nothing on the event and `SET3-S:6/TB7` on its drawDefinition, so an event-level read alone
+reported no format at all.
 
 ---
 

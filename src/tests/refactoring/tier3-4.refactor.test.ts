@@ -1,7 +1,7 @@
 /**
  * Regression tests for tiers 3-4 refactoring targets:
  * - ScoringEngine.rebuildFromEntries
- * - TemporalEngine.loadBlocksFromTournamentRecord
+ * - AvailabilityEngine.loadBlocksFromTournamentRecord
  * - mcpValidator.validateMCPMatch
  * - mcpParser.shotParser
  * - scheduleItems.addMatchUpScheduleItems
@@ -77,10 +77,10 @@ it('ScoringEngine: rebuild preserves server changes', () => {
 });
 
 // ═══════════════════════════════════════════════════════════════════════════
-// TemporalEngine.loadBlocksFromTournamentRecord
+// AvailabilityEngine.loadBlocksFromTournamentRecord
 // ═══════════════════════════════════════════════════════════════════════════
 
-it('TemporalEngine: loads venue and court availability from tournament record', () => {
+it('AvailabilityEngine: loads venue and court availability from tournament record', () => {
   const startDate = '2024-01-01';
   const endDate = '2024-01-03';
   const venueProfiles = [{ courtsCount: 2, startTime: '09:00', endTime: '17:00' }];
@@ -94,7 +94,7 @@ it('TemporalEngine: loads venue and court availability from tournament record', 
     endDate,
   });
 
-  // TemporalEngine is initialized from tournament record internally
+  // AvailabilityEngine is initialized from tournament record internally
   // We test through the tournamentEngine API
   const { matchUps } = tournamentEngine.allTournamentMatchUps();
   expect(matchUps.length).toEqual(7);

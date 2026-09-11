@@ -1,10 +1,13 @@
 import { addDrawNotice, addMatchUpsNotice } from '../notifications/drawNotifications';
 import tieFormatDefaults from '@Assemblies/generators/templates/tieFormatDefaults';
+import { checkTieFormat } from '@Mutate/tieFormat/checkTieFormat';
+import { makeDeepCopy } from '@Tools/makeDeepCopy';
 import { addEventNotice } from '@Mutate/notifications/eventNotifications';
 import { allEventMatchUps } from '@Query/matchUps/getAllEventMatchUps';
-import { validateTieFormat } from '@Validators/validateTieFormat';
 import { requireParams } from '@Helpers/parameters/requireParams';
+import { normalizeDiscipline } from '@Helpers/coercedDiscipline';
 import { definedAttributes } from '@Tools/definedAttributes';
+import { normalizeGender } from '@Helpers/coercedGender';
 import { getTopics } from '@Global/state/globalState';
 import { UUID } from '@Tools/UUID';
 
@@ -58,10 +61,28 @@ export function addEvent({ suppressNotifications, tournamentRecord, internalUse,
     ...event,
   };
 
+  // normalize accepted TODS short codes (M/F/X/A) to the canonical extended form
+  // so events are stored with a canonical gender at rest
+  if (eventRecord.gender) eventRecord.gender = normalizeGender(eventRecord.gender);
+
+  // discipline is an open vocabulary — normalize casing/separators on write so
+  // 'beach volleyball' and 'BEACH_VOLLEYBALL' are stored identically
+  if (eventRecord.discipline) eventRecord.discipline = normalizeDiscipline(eventRecord.discipline);
+
   if (event.eventType === TEAM_EVENT) {
     if (event.tieFormat) {
-      const result = validateTieFormat({ tieFormat: event.tieFormat });
+      // A supplied tieFormat may carry no collectionIds — the published `fixtures.tieFormats` cannot
+      // hold them, since a collectionId identifies a collection INSTANCE within a record and a shared
+      // fixture would hand every record the same identities. Mint them here so the stored tieFormat is
+      // usable: without ids the generated lines all carry `collectionId: null`, cannot be attributed to
+      // their collection, and the tie never scores.
+      //
+      // On a COPY: `eventRecord` is a shallow spread of `event`, so mutating `event.tieFormat` in place
+      // would stamp ids onto the caller's object — and onto the shared fixture when that is what was
+      // passed.
+      const result = checkTieFormat({ tieFormat: makeDeepCopy(event.tieFormat, false, true) });
       if (result.error) return result;
+      eventRecord.tieFormat = result.tieFormat;
     } else if (event.tieFormatName) {
       if (!tieFormats[event.tieFormatName]) {
         return {

@@ -6,6 +6,7 @@ import { getValidStage } from '@Query/drawDefinition/getValidStage';
 import { getStageSpace } from '@Query/drawDefinition/getStageSpace';
 import { decorateResult } from '@Functions/global/decorateResult';
 import { isValidExtension } from '@Validators/isValidExtension';
+import { setFirstClassOrExtension } from '@Mutate/extensions/setFirstClassOrExtension';
 import { addExtension } from '@Mutate/extensions/addExtension';
 import { isAdHocType } from '@Query/drawDefinition/isAdHocType';
 import { definedAttributes } from '@Tools/definedAttributes';
@@ -153,9 +154,11 @@ export function addDrawEntry(params: AddDrawEntryArgs) {
   }
 
   if (roundTarget) {
-    addExtension({
-      extension: { name: ROUND_TARGET, value: roundTarget },
+    setFirstClassOrExtension({
       element: entry,
+      attribute: 'roundTarget',
+      name: ROUND_TARGET,
+      value: roundTarget,
     });
   }
 
@@ -292,9 +295,11 @@ export function addDrawEntries(params: AddDrawEntriesArgs) {
         addExtension({ element: entry, extension });
       }
       if (roundTarget) {
-        addExtension({
-          extension: { name: ROUND_TARGET, value: roundTarget },
+        setFirstClassOrExtension({
           element: entry,
+          attribute: 'roundTarget',
+          name: ROUND_TARGET,
+          value: roundTarget,
         });
       }
       drawDefinition.entries ??= [];

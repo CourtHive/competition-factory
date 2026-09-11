@@ -98,9 +98,7 @@ it('getParticipantEntries: RR tally-based finishing positions', () => {
   expect(withDraws.length).toBeGreaterThan(0);
 
   // RR draws should have structureParticipation with finishingPositionRange
-  const withStructureParticipation = withDraws.filter((p) =>
-    p.draws.some((d) => d.structureParticipation?.length),
-  );
+  const withStructureParticipation = withDraws.filter((p) => p.draws.some((d) => d.structureParticipation?.length));
   expect(withStructureParticipation.length).toBeGreaterThan(0);
 
   for (const p of withStructureParticipation) {
@@ -220,4 +218,37 @@ it('getParticipantEntries: return shape includes all expected keys', () => {
   if (matchUps) {
     expect(Array.isArray(matchUps)).toBe(true);
   }
+});
+
+// ─── Regression: malformed record without entries arrays ──────────────────
+// Reverse-engineered records (e.g. TMX dev.build from CFS public responses)
+// can land in the engine without drawDefinition.entries or event.entries
+// populated. getParticipants used to crash with
+// "Cannot read properties of undefined (reading 'filter')". Defaults at the
+// destructure sites should now degrade gracefully.
+it('getParticipantEntries: tolerates missing entries arrays on event and drawDefinition', () => {
+  const { tournamentRecord } = mocksEngine.generateTournamentRecord({
+    drawProfiles: [{ drawSize: 8 }],
+  });
+
+  // Strip the entries arrays the way a hand-assembled record might.
+  for (const event of tournamentRecord.events ?? []) {
+    delete event.entries;
+    for (const drawDefinition of event.drawDefinitions ?? []) {
+      delete drawDefinition.entries;
+    }
+  }
+
+  tournamentEngine.setState(tournamentRecord);
+  const eventId = tournamentRecord.events?.[0]?.eventId;
+
+  expect(() =>
+    tournamentEngine.getParticipants({
+      participantFilters: { eventIds: [eventId] },
+      withIndividualParticipants: true,
+      withScaleValues: true,
+      withDraws: true,
+      withISO2: true,
+    }),
+  ).not.toThrow();
 });

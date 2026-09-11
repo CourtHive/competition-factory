@@ -1,3 +1,4 @@
+import { POLICY_RANKING_POINTS_TENNIS_EUROPE } from '@Tests/fixtures/policies/POLICY_RANKING_POINTS_TENNIS_EUROPE';
 import mocksEngine from '@Assemblies/engines/mock';
 import tournamentEngine from '@Engines/syncEngine';
 import { expect, it, describe } from 'vitest';
@@ -13,7 +14,7 @@ const TIER_AWARE_POLICY = {
   [POLICY_TYPE_RANKING_POINTS]: {
     policyName: 'Tier Test Policy',
     tierToLevel: {
-      ITF_JUNIOR: { 'J500': 4, 'J300': 5, 'J200': 6 },
+      ITF_JUNIOR: { J500: 4, J300: 5, J200: 6 },
       ATP: { 'Grand Slam': 1, '1000': 2, '500': 3, '250': 4 },
     },
     awardProfiles: [
@@ -124,5 +125,86 @@ describe('tierToLevel — ranking points auto-resolution', () => {
     });
 
     expect(result.error).toBeUndefined();
+  });
+});
+
+describe('tierToLevel — numericRank fallback', () => {
+  // Level-keyed finishingPositionRanges so a winner produces a real award:
+  // position 1 → 500 at level 2, 60 at level 5.
+  const LEVELED_POLICY = {
+    [POLICY_TYPE_RANKING_POINTS]: {
+      policyName: 'leveled',
+      tierToLevel: { MAPPED: { known: 2 } },
+      awardProfiles: [
+        {
+          profileName: 'leveled',
+          eventTypes: ['SINGLES'],
+          stages: ['MAIN'],
+          category: { ageCategoryCodes: ['U18'] },
+          finishingPositionRanges: { 1: { level: { 2: 500, 5: 60 } } },
+        },
+      ],
+    },
+  };
+
+  function winnerPoints(tier: any): number {
+    mocksEngine.generateTournamentRecord({
+      eventProfiles: [
+        {
+          eventType: 'SINGLES',
+          category: { ageCategoryCode: 'U18' },
+          drawProfiles: [{ drawSize: 8, completionGoal: 8 }],
+        },
+      ],
+      setState: true,
+    });
+    tournamentEngine.setTournamentTier({ tournamentTier: tier });
+    const { tournamentRecord } = tournamentEngine.getTournament();
+    const eventId = tournamentRecord.events[0].eventId;
+    const result: any = tournamentEngine.getEventRankingPoints({ policyDefinitions: LEVELED_POLICY, eventId });
+    expect(result.error).toBeUndefined();
+    return result.eventAwards?.[0]?.points ?? 0;
+  }
+
+  it('falls back to tier.numericRank when the policy declares no mapping', () => {
+    // OTHER is absent from tierToLevel → numericRank 5 → level 5 → 60.
+    expect(winnerPoints({ system: 'OTHER', value: 'x', numericRank: 5 })).toBe(60);
+  });
+
+  it('policy tierToLevel takes precedence over numericRank', () => {
+    // MAPPED.known → level 2 (→ 500), ignoring the bogus numericRank 5.
+    expect(winnerPoints({ system: 'MAPPED', value: 'known', numericRank: 5 })).toBe(500);
+  });
+
+  it('real TENNIS_EUROPE policy (no tierToLevel) resolves via the stamped numericRank', () => {
+    function teWinnerPoints(numericRank: number): number {
+      mocksEngine.generateTournamentRecord({
+        eventProfiles: [
+          {
+            eventType: 'SINGLES',
+            category: { ageCategoryCode: '16U' },
+            drawProfiles: [{ drawSize: 16, completionGoal: 16 }],
+          },
+        ],
+        setState: true,
+      });
+      // The TE policy carries no tierToLevel — the adapter-stamped numericRank is the level.
+      tournamentEngine.setTournamentTier({
+        tournamentTier: { system: 'TENNIS_EUROPE', value: `cat-${numericRank}`, numericRank },
+      });
+      const { tournamentRecord } = tournamentEngine.getTournament();
+      const eventId = tournamentRecord.events[0].eventId;
+      const result: any = tournamentEngine.getEventRankingPoints({
+        policyDefinitions: POLICY_RANKING_POINTS_TENNIS_EUROPE,
+        eventId,
+      });
+      expect(result.error).toBeUndefined();
+      return result.eventAwards?.[0]?.points ?? 0;
+    }
+
+    const superPts = teWinnerPoints(2); // Super Category → level 2
+    const cat3Pts = teWinnerPoints(5); // Category 3 → level 5
+    expect(superPts).toBeGreaterThan(0);
+    expect(superPts).toBeGreaterThan(cat3Pts);
   });
 });

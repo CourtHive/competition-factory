@@ -1,6 +1,6 @@
 import { checkRequiredParameters } from '@Helpers/parameters/checkRequiredParameters';
 import { structureSort } from '@Functions/sorters/structureSort';
-import { findExtension } from '@Acquire/findExtension';
+import { firstClassOrExtension } from '@Acquire/firstClassOrExtension';
 
 // constants and types
 import { MISSING_STRUCTURES, STRUCTURE_NOT_FOUND, MISSING_DRAW_DEFINITION } from '@Constants/errorConditionConstants';
@@ -75,10 +75,7 @@ export function getDrawStructures({
   if (error) return { error, structures: [], stageStructures: {} };
 
   const isRoundTarget = (structure) => {
-    const value = findExtension({
-      element: structure,
-      name: ROUND_TARGET,
-    })?.extension?.value;
+    const value = firstClassOrExtension({ element: structure, attribute: 'roundTarget', name: ROUND_TARGET });
     return !roundTarget || roundTarget === value;
   };
 

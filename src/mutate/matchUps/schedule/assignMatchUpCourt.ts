@@ -1,4 +1,4 @@
-import { addMatchUpTimeItem } from '@Mutate/timeItems/matchUps/matchUpTimeItems';
+import { setMatchUpFirstClassOrTimeItem } from '@Mutate/timeItems/matchUps/setMatchUpFirstClassOrTimeItem';
 import { assignMatchUpVenue } from '@Mutate/matchUps/schedule/assignMatchUpVenue';
 import { findCourt } from '@Query/venues/findCourt';
 
@@ -49,19 +49,16 @@ export function assignMatchUpCourt({
     });
   }
 
-  const timeItem = {
+  return setMatchUpFirstClassOrTimeItem({
+    duplicateValues: false,
+    attribute: 'courtId',
     itemType: ASSIGN_COURT,
     itemDate: courtDayDate,
-    itemValue: courtId,
-  };
-
-  return addMatchUpTimeItem({
-    duplicateValues: false,
+    value: courtId,
     removePriorValues,
     tournamentRecord,
     drawDefinition,
     disableNotice,
     matchUpId,
-    timeItem,
   });
 }

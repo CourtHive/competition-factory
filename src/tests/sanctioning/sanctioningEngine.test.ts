@@ -45,7 +45,7 @@ function createTestRecord(overrides?: any) {
     governingBodyId: 'gov-001',
     applicant: testApplicant,
     proposal: testProposal,
-    sanctioningLevel: 'W50',
+    sanctioningTier: { system: 'ITF', value: 'W50' },
     ...overrides,
   });
 }
@@ -104,7 +104,7 @@ describe('Sanctioning Engine — createSanctioningRecord', () => {
     expect(result.sanctioningRecord.status).toEqual(DRAFT);
     expect(result.sanctioningRecord.version).toEqual(1);
     expect(result.sanctioningRecord.governingBodyId).toEqual('gov-001');
-    expect(result.sanctioningRecord.sanctioningLevel).toEqual('W50');
+    expect(result.sanctioningRecord.sanctioningTier).toEqual({ system: 'ITF', value: 'W50' });
     expect(result.sanctioningRecord.proposal.tournamentName).toEqual('Test Open 2026');
     expect(result.sanctioningRecord.proposal.events).toHaveLength(1);
     expect(result.sanctioningRecord.proposal.events[0].eventProposalId).toBeDefined();

@@ -109,7 +109,7 @@ describe('birthdate validation', () => {
     let result: any = tournamentEngine.modifyParticipant({
       participant: {
         ...participant,
-        person: { ...participant.person, birthdate: 'garbage' },
+        person: { ...participant.person, birthDate: 'garbage' },
       },
     });
     expect(result.error).toEqual(INVALID_DATE);
@@ -131,7 +131,7 @@ describe('birthdate validation', () => {
     let result: any = tournamentEngine.modifyParticipant({
       participant: {
         ...participant,
-        person: { ...participant.person, birthdate: futureDateString },
+        person: { ...participant.person, birthDate: futureDateString },
       },
     });
     expect(result.error).toEqual(INVALID_DATE);
@@ -149,7 +149,7 @@ describe('birthdate validation', () => {
     let result: any = tournamentEngine.modifyParticipant({
       participant: {
         ...participant,
-        person: { ...participant.person, birthdate: '1899-12-31' },
+        person: { ...participant.person, birthDate: '1899-12-31' },
       },
     });
     expect(result.error).toEqual(INVALID_DATE);
@@ -167,16 +167,16 @@ describe('birthdate validation', () => {
     let result: any = tournamentEngine.modifyParticipant({
       participant: {
         ...participant,
-        person: { ...participant.person, birthdate: '2000-06-15' },
+        person: { ...participant.person, birthDate: '2000-06-15' },
       },
     });
     expect(result.success).toEqual(true);
 
-    // Verify it was stored
+    // Verify it was stored under the canonical field
     const { participant: updated } = tournamentEngine.findParticipant({
       participantId: participant.participantId,
     });
-    expect(updated.person.birthdate).toEqual('2000-06-15');
+    expect(updated.person.birthDate).toEqual('2000-06-15');
   });
 });
 

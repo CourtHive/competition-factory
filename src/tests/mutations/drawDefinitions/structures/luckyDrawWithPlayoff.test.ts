@@ -78,15 +78,13 @@ describe('lucky draw with playoff structure — end-to-end', () => {
 
     // At this point, no losers should be placed in the playoff yet
     // (directParticipants skips loser direction for lucky draw pre-feed rounds)
-    const playoffAssignmentsBefore = playoffStructure.positionAssignments?.filter(
-      (a: any) => a.participantId,
-    );
+    const playoffAssignmentsBefore = playoffStructure.positionAssignments?.filter((a: any) => a.participantId);
     expect(playoffAssignmentsBefore?.length || 0).toBe(0);
 
     // 4. Select the lucky participant (first eligible loser = closest match)
     const selectedLoser = round1!.eligibleLosers![0];
-    const discardedLoserIds = round1!.eligibleLosers!
-      .filter((l: any) => l.participantId !== selectedLoser.participantId)
+    const discardedLoserIds = round1!
+      .eligibleLosers!.filter((l: any) => l.participantId !== selectedLoser.participantId)
       .map((l: any) => l.participantId);
     expect(discardedLoserIds.length).toBe(4);
 
@@ -100,9 +98,7 @@ describe('lucky draw with playoff structure — end-to-end', () => {
 
     // 5. Verify discarded losers are placed in the playoff structure
     const { drawDefinition: finalDraw } = tournamentEngine.getEvent({ drawId });
-    const finalPlayoff = finalDraw.structures.find(
-      (s: any) => s.structureId === playoffStructure.structureId,
-    );
+    const finalPlayoff = finalDraw.structures.find((s: any) => s.structureId === playoffStructure.structureId);
     expect(finalPlayoff).toBeDefined();
 
     const playoffAssignments = finalPlayoff.positionAssignments?.filter((a: any) => a.participantId) || [];
@@ -227,9 +223,7 @@ describe('lucky draw with playoff structure — end-to-end', () => {
 
     // 3. Score all round 1 matchUps
     const { matchUps } = tournamentEngine.allTournamentMatchUps();
-    const round1MatchUps = matchUps.filter(
-      (m: any) => m.roundNumber === 1 && m.structureId === mainStructureId,
-    );
+    const round1MatchUps = matchUps.filter((m: any) => m.roundNumber === 1 && m.structureId === mainStructureId);
     expect(round1MatchUps.length).toBe(5);
 
     for (const matchUp of round1MatchUps) {
@@ -253,8 +247,8 @@ describe('lucky draw with playoff structure — end-to-end', () => {
     expect(round1!.eligibleLosers!.length).toBe(5);
 
     const selectedLoser = round1!.eligibleLosers![0];
-    const discardedLoserIds = round1!.eligibleLosers!
-      .filter((l: any) => l.participantId !== selectedLoser.participantId)
+    const discardedLoserIds = round1!
+      .eligibleLosers!.filter((l: any) => l.participantId !== selectedLoser.participantId)
       .map((l: any) => l.participantId);
 
     // 5. Select lucky participant

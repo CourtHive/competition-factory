@@ -98,7 +98,6 @@ describe('isString', () => {
 
   describe('Edge Cases', () => {
     test('should return false for String objects', () => {
-       
       expect(isString(String('hello'))).toBe(true);
     });
 

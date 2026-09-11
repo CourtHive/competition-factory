@@ -1,8 +1,8 @@
 import { assignDrawPosition as assignPosition } from '@Mutate/matchUps/drawPositions/positionAssignment';
 import { resolveDrawPositions } from '@Assemblies/generators/drawDefinitions/drawPositionsResolver';
 import { getPositionAssignments } from '@Query/drawDefinition/positionsGetter';
-import { addExtension } from '@Mutate/extensions/addExtension';
-import { findExtension } from '@Acquire/findExtension';
+import { setFirstClassOrExtension } from '@Mutate/extensions/setFirstClassOrExtension';
+import { firstClassOrExtension } from '@Acquire/firstClassOrExtension';
 import { findStructure } from '@Acquire/findStructure';
 
 // constants and types
@@ -30,11 +30,9 @@ export function resolveDraftPositions({
 }: ResolveDraftPositionsArgs) {
   if (!drawDefinition) return { error: MISSING_DRAW_DEFINITION };
 
-  const { extension } = findExtension({ element: drawDefinition, name: DRAFT_STATE });
-  if (!extension?.value) return { error: NOT_FOUND, info: 'No active draft found' };
-
-  const draftState = extension.value;
-  if (draftState.status === 'COMPLETE') return { error: INVALID_VALUES, info: 'Draft is already complete' };
+  const draftState = firstClassOrExtension({ element: drawDefinition, attribute: 'draftState', name: DRAFT_STATE });
+  if (!draftState) return { error: NOT_FOUND, info: 'No active draft found' };
+  if (draftState.status === 'COMPLETED') return { error: INVALID_VALUES, info: 'Draft is already complete' };
 
   const structureId = draftState.structureId;
   const { structure } = findStructure({ drawDefinition, structureId });
@@ -197,14 +195,16 @@ function applyResolutions({
   // mark COMPLETE only when all tiers are resolved
   const allResolved = draftState.tiers.every((t: any) => t.resolved);
   if (allResolved) {
-    draftState.status = 'COMPLETE';
+    draftState.status = 'COMPLETED';
     draftState.resolvedAt = new Date().toISOString();
     draftState.transparencyReport = transparencyReport;
   }
 
-  addExtension({
+  setFirstClassOrExtension({
     element: drawDefinition,
-    extension: { name: DRAFT_STATE, value: draftState },
+    attribute: 'draftState',
+    name: DRAFT_STATE,
+    value: draftState,
   });
 
   if (errors.length) {

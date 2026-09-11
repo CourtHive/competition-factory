@@ -64,6 +64,7 @@ The convenience method `engine.generateDrawDefinition()` generates the following
 - **[FEED_IN](./draw-types/feed-in)** - Also known as "staggered entry", participants feed into the main structure at specified rounds.
 - **[FIRST_MATCH_LOSER_CONSOLATION](./draw-types/consolation-draws)** - Losers feed into consolation whenever their first loss occurs.
 - **[FIRST_ROUND_LOSER_CONSOLATION](./draw-types/consolation-draws)** - Only first round losers feed into consolation structure.
+- **[LADDER](./draw-types/ladder)** - A continuous, challenge-driven standing. Participants challenge those above them; there are no rounds and no bracket. Ordered by rank or by rating.
 - **[LUCKY_DRAW](./draw-types/lucky-draw)** - Supports any participant count (not just power-of-2). Rounds with an odd number of matchUps produce a "lucky loser" who advances to balance the next round.
 - **[MODIFIED_FEED_IN_CHAMPIONSHIP](./draw-types/consolation-draws)** - First and Second round losers are fed into consolation structure.
 - **[OLYMPIC](./draw-types/olympic)** - Includes up to 4 structures; ensures participants a minimum of 2 matchUps.
@@ -139,10 +140,9 @@ const { drawDefinition } = tournamentEngine.generateDrawDefinition({
 
 The same main draw structure can receive qualifiers at different rounds, with each round's qualifiers coming from different qualifying structures:
 
-```text
-
 **API Reference:** [generateDrawDefinition](/docs/governors/generation-governor#generatedrawdefinition)
 
+```text
 Main Draw Structure (32 positions):
   Round 1 (16 positions):
     ├─ Positions 1-4: Qualifiers from Qualifying A

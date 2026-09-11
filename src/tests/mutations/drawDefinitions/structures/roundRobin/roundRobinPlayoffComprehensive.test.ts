@@ -1,5 +1,5 @@
 import { getPositionAssignments } from '@Query/drawDefinition/positionsGetter';
-import { findExtension } from '@Acquire/findExtension';
+import { firstClassOrExtension } from '@Acquire/firstClassOrExtension';
 import tournamentEngine from '@Engines/syncEngine';
 import mocksEngine from '@Assemblies/engines/mock';
 import { expect, test, describe } from 'vitest';
@@ -76,7 +76,7 @@ function getGroupFinishingPositions(mainStructure: any) {
 
   rrGroups.forEach((group: any) => {
     (group.positionAssignments ?? []).forEach((assignment: any) => {
-      const tally = findExtension({ element: assignment, name: TALLY })?.extension?.value;
+      const tally = firstClassOrExtension({ element: assignment, attribute: 'tally', name: TALLY });
       if (tally?.groupOrder && assignment.participantId) {
         if (!finishingPositionGroups[tally.groupOrder]) finishingPositionGroups[tally.groupOrder] = [];
         finishingPositionGroups[tally.groupOrder].push(assignment.participantId);

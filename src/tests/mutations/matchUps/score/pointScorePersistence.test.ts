@@ -118,9 +118,7 @@ describe('reverseScore preserves point scores', () => {
 describe('setMatchUpStatus preserves point scores', () => {
   test('retains point scores on sets after setMatchUpStatus', () => {
     const drawId = 'drawId';
-    const {
-      tournamentRecord,
-    } = mocksEngine.generateTournamentRecord({
+    const { tournamentRecord } = mocksEngine.generateTournamentRecord({
       drawProfiles: [{ drawId, drawSize: 4, idPrefix: 'm' }],
     });
 

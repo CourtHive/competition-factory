@@ -1,5 +1,4 @@
-import type { RankingListEntry } from './generateRankingList';
-import type { DerivedFilter } from '@Types/rankingTypes';
+import type { RankingListEntry, DerivedFilter } from '@Types/rankingTypes';
 
 /**
  * Per-participant context the filter needs from the consumer.

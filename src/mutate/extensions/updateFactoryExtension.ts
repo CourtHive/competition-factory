@@ -1,22 +1,15 @@
+import { setFirstClassOrExtension } from '@Mutate/extensions/setFirstClassOrExtension';
+import { firstClassOrExtension } from '@Acquire/firstClassOrExtension';
 import { extensionConstants } from '@Constants/extensionConstants';
-import { addExtension } from '@Mutate/extensions/addExtension';
-import { findExtension } from '@Acquire/findExtension';
 
 const { FACTORY } = extensionConstants;
 
 export function updateFactoryExtension({ tournamentRecord, value }) {
-  const { extension } = findExtension({
+  const existing = firstClassOrExtension({ element: tournamentRecord, attribute: 'factory', name: FACTORY });
+  setFirstClassOrExtension({
     element: tournamentRecord,
+    attribute: 'factory',
     name: FACTORY,
+    value: { ...existing, ...value },
   });
-
-  const updatedExtension = {
-    name: FACTORY,
-    value: {
-      ...extension?.value,
-      ...value,
-    },
-  };
-
-  addExtension({ element: tournamentRecord, extension: updatedExtension });
 }

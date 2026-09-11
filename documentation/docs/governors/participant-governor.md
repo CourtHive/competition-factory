@@ -123,6 +123,35 @@ engine.addPersons({
 
 ---
 
+## addPersonOtherId
+
+Upserts a `UnifiedPersonID` entry into the participant's `person.personOtherIds[]` array. Only valid on INDIVIDUAL participants (the ones that have a `person` object).
+
+```js
+engine.addPersonOtherId({
+  participantId, // required
+  organisationId, // required — the federation / registry identifier (string)
+  personId, // required — the externalId issued by that organisation
+});
+```
+
+**Semantics:**
+
+- **Upsert by `organisationId`**: if the participant already has an entry under the given `organisationId`, that entry's `personId` is replaced (and `updatedAt` is stamped). Otherwise a new entry is appended with `createdAt`.
+- **Idempotent**: re-applying the same `(organisationId, personId)` is a no-op. The array does not grow.
+- **Federation-agnostic**: the factory does not validate or interpret `organisationId`. Callers choose what to use — a federation abbreviation (`'USTA'`, `'ITA'`, `'HTS'`, `'CTS'`), a canonical-registry name, anything stable and meaningful within the consuming application.
+
+**Errors:**
+
+- `MISSING_TOURNAMENT_RECORD`, `MISSING_PARTICIPANT_ID` — standard parameter checks.
+- `MISSING_VALUE` — when `organisationId` or `personId` is empty.
+- `PARTICIPANT_NOT_FOUND` — when no participant matches.
+- `INVALID_VALUES` — when the participant is not INDIVIDUAL (has no `person` object). Only INDIVIDUAL participants accept `personOtherIds`.
+
+**Purpose:** Establish a stable, queryable link between a TODS participant and an external identity — a federation member roster, a canonical person registry, or any other identifier-issuing system. The mutation is the write-half of the TODS `personOtherIds` shape; reads use that array directly.
+
+---
+
 ## addPersonRequests
 
 Validates and adds person requests.
@@ -308,6 +337,21 @@ const { schedules } = engine.getParticipantSchedules({
 
 ---
 
+## getParticipantPaymentStatus
+
+Returns the current payment status for a participant — one of `PAID`, `UNPAID`, `PARTIAL`, `WAIVED`, `REFUNDED`, or `undefined` if no payment status has ever been set. See `modifyParticipantsPaymentStatus` for the write side and history semantics.
+
+```js
+const paymentStatus = engine.getParticipantPaymentStatus({
+  participantId, // required
+  tournamentRecord, // required
+});
+```
+
+**Purpose:** Check whether the participant's registration fee has been paid, separately from whether they've physically signed in.
+
+---
+
 ## getParticipantSignInStatus
 
 Returns sign-in status for a participant.
@@ -345,43 +389,43 @@ Returns participants with optional hydration and filtering. This is the primary 
 
 ```js
 const {
-  participants,                 // HydratedParticipant[]
-  participantMap,               // { [participantId]: participantData }
-  matchUps,                     // HydratedMatchUp[] (when withMatchUps)
-  mappedMatchUps,               // matchUps indexed by matchUpId
-  participantIdsWithConflicts,  // participantIds with schedule conflicts
-  eventsPublishStatuses,        // publish statuses keyed by eventId
-  derivedEventInfo,             // derived event metadata
-  derivedDrawInfo,              // derived draw metadata
-  missingParticipantIds,        // participantIds referenced but not found
+  participants, // HydratedParticipant[]
+  participantMap, // { [participantId]: participantData }
+  matchUps, // HydratedMatchUp[] (when withMatchUps)
+  mappedMatchUps, // matchUps indexed by matchUpId
+  participantIdsWithConflicts, // participantIds with schedule conflicts
+  eventsPublishStatuses, // publish statuses keyed by eventId
+  derivedEventInfo, // derived event metadata
+  derivedDrawInfo, // derived draw metadata
+  missingParticipantIds, // participantIds referenced but not found
 } = engine.getParticipants({
-  participantFilters,              // optional — filter criteria object
-  policyDefinitions,               // optional — privacy/display policies
-  scheduleAnalysis,                // optional — schedule conflict detection parameters
-  contextProfile,                  // optional — control context attributes on matchUps
-  contextFilters,                  // optional — filters based on context attributes
-  matchUpFilters,                  // optional — filters for matchUps
+  participantFilters, // optional — filter criteria object
+  policyDefinitions, // optional — privacy/display policies
+  scheduleAnalysis, // optional — schedule conflict detection parameters
+  contextProfile, // optional — control context attributes on matchUps
+  contextFilters, // optional — filters based on context attributes
+  matchUpFilters, // optional — filters for matchUps
 
-  withIndividualParticipants,      // optional boolean or object template — hydrate individualParticipants
-  withPotentialMatchUps,           // optional boolean — include potential upcoming matchUps
-  withRankingProfile,              // optional boolean — include ranking profile (implies withMatchUps/Events/Draws)
-  withScheduleItems,               // optional boolean — include schedule items
-  withSignInStatus,                // optional boolean — include sign-in status
-  withTeamMatchUps,                // optional boolean — include TEAM matchUps
-  withScaleValues,                 // optional boolean — include ratings/rankings
-  usePublishState,                 // optional boolean — filter by publish state
-  withStatistics,                  // optional boolean — include statistical data
-  withOpponents,                   // optional boolean — include opponent data
-  withMatchUps,                    // optional boolean — include matchUp data
-  convertExtensions,               // optional boolean — convert extensions to flat properties
-  withSeeding,                     // optional boolean — include seeding data
-  withEvents,                      // optional boolean — include event entries
-  withDraws,                       // optional boolean — include draw entries
-  withISO2,                        // optional boolean — include ISO2 country codes
-  withIOC,                         // optional boolean — include IOC country codes
-  returnParticipantMap,            // optional boolean — defaults to true
-  returnMatchUps,                  // optional boolean — defaults to true
-  internalUse,                     // optional boolean
+  withIndividualParticipants, // optional boolean or object template — hydrate individualParticipants
+  withPotentialMatchUps, // optional boolean — include potential upcoming matchUps
+  withRankingProfile, // optional boolean — include ranking profile (implies withMatchUps/Events/Draws)
+  withScheduleItems, // optional boolean — include schedule items
+  withSignInStatus, // optional boolean — include sign-in status
+  withTeamMatchUps, // optional boolean — include TEAM matchUps
+  withScaleValues, // optional boolean — include ratings/rankings
+  usePublishState, // optional boolean — filter by publish state
+  withStatistics, // optional boolean — include statistical data
+  withOpponents, // optional boolean — include opponent data
+  withMatchUps, // optional boolean — include matchUp data
+  convertExtensions, // optional boolean — convert extensions to flat properties
+  withSeeding, // optional boolean — include seeding data
+  withEvents, // optional boolean — include event entries
+  withDraws, // optional boolean — include draw entries
+  withISO2, // optional boolean — include ISO2 country codes
+  withIOC, // optional boolean — include IOC country codes
+  returnParticipantMap, // optional boolean — defaults to true
+  returnMatchUps, // optional boolean — defaults to true
+  internalUse, // optional boolean
 });
 ```
 
@@ -389,18 +433,81 @@ const {
 
 ---
 
-## getScaleValues
+## getParticipation
 
-Returns all scale values (rankings/ratings) for participants.
+Derive what a `tournamentRecord` asserts about **who took part** — the rows a participation index is built from, without loading anything but this record.
 
 ```js
-const { scaleValues } = engine.getScaleValues({
-  tournamentRecord, // required
-  scaleAttributes, // optional - filter to specific scale
+const entries = engine.getParticipation({ tournamentRecord });
+```
+
+```ts
+interface ParticipationEntry {
+  subjectType: 'TEAM' | 'PERSON'; // the grain the subject is identified at
+  subjectId: string; // the id an organisation ISSUED — stable across tournamentRecords
+  organisationId?: string; // the body that issued it; two may both number the same competitor
+  participantId: string; // this record's own id — tournament-local, never a subject key
+  tournamentId: string;
+  tournamentName?: string;
+  startDate?: string;
+  endDate?: string;
+  eventCount: number;
+  providerId?: string;
+}
+```
+
+The counterpart to [`getTournamentCalendarEntry`](./query-governor.md#gettournamentcalendarentry). A calendar entry answers _what does this provider own_; participation answers _what did this competitor take part in_. They are different relations and a calendar cannot express the second: a record lives in exactly **one** provider's calendar, while a team fixture belongs to the seasons of **both** sides, so ownership can only ever name one of them.
+
+That is also why participation reads both sides of every fixture and needs no notion of a host — useful, because a source stating who hosted is the exception rather than the rule.
+
+### Subject identity comes from the issued id, never from `participantId`
+
+A `participantId` is tournament-local: the same competitor carries a different one in every record it appears in. Keyed on that, a competitor's history would be exactly **one entry long per record** — plausible-looking, and wrong in a way nothing errors on.
+
+The subject is therefore read from `participantOtherIds` (TEAM) and `person.personOtherIds` (PERSON), which carry the issuing organisation's own id and are stable by construction.
+
+**A competitor stating no issued id contributes no entry.** That is a recorded gap — this record does not say who the competitor is in any durable sense — and manufacturing one from the local id would produce precisely the wrong answer above. Callers wanting to detect the gap can compare the entry count against the competitors they expected.
+
+A competitor issued ids by two organisations yields **one entry per organisation**, which is correct: each is a distinct claim about identity, and a consumer indexes whichever body it speaks for.
+
+Pure: reads only the record. Storage keys, timestamps and server-specific projections are the caller's concern.
+
+---
+
+## getScaleValues
+
+Resolves one participant's scale timeItems into ratings, rankings and seedings.
+
+```js
+const { ratings, rankings, seedings } = engine.getScaleValues({
+  participant, // required
 });
 ```
 
-**Purpose:** Get all ratings/rankings across all participants.
+Each of `ratings` / `rankings` / `seedings` is keyed by event type
+(`SINGLES`, `DOUBLES`, `TEAM`), and **each event type holds an ARRAY** with one
+entry per distinct `scaleName` — a participant may hold WTN and UTR at once:
+
+```js
+// { scaleName, scaleDate, scaleValue }
+const wtn = ratings.SINGLES?.find(({ scaleName }) => scaleName === 'WTN');
+const rating = wtn?.scaleValue?.wtnRating;
+```
+
+Within a single `scaleName` the entry is the **latest** value, so "current" is
+resolved for you. Across scale names nothing is: the set of rating and ranking
+scales is open — any number of scales, from any number of bodies, including ones
+not yet invented — so the array has no canonical order and never will.
+
+:::warning
+**Address entries by `scaleName`, never by index.** `ratings.SINGLES[0]` is the
+scale you want only for as long as it is the only one present; the day a second
+appears, `[0]` returns a different rating system's number in the same shape and
+nothing throws.
+:::
+
+**Purpose:** Read a participant's current value for a given scale, with the date
+it was recorded.
 
 ---
 
@@ -436,6 +543,29 @@ engine.modifyParticipant({
   participant: updatedIndividualParticipant,
 });
 ```
+
+### Writing contacts
+
+`person.contacts` (and `participant.contacts`) is **replaced**, not merged — deliberately, so that removing a contact is expressible. Read the existing array, change it, and send the whole thing back; sending only the contact you edited deletes the rest. Omitting the key leaves the stored list untouched, and `[]` clears it. See [Contact Information](../concepts/participants#contact-information).
+
+### PARTICIPANT_NAME_DERIVED_FROM_PERSON
+
+A supplied `participantName` can be superseded by a derived one — from `person` for an INDIVIDUAL, or from the individuals of a PAIR. That precedence is intended, but returning plain success while silently dropping a value the caller passed makes a partial no-op indistinguishable from a full success. So when it happens the response carries an `info`:
+
+```js
+const result = engine.modifyParticipant({
+  participant: {
+    participantId,
+    participantName: 'Ignored',
+    person: { standardGivenName: 'Roger', standardFamilyName: 'Federer' },
+  },
+});
+// result.success → true
+// result.info    → PARTICIPANT_NAME_DERIVED_FROM_PERSON
+// the stored participantName is 'Roger Federer'
+```
+
+The key is **conditional**: callers that did not hit the precedence see the response shape they always have, so nothing needs to start checking for it.
 
 ---
 
@@ -509,6 +639,37 @@ const { penaltyId } = result;
 const notes = 'Hit ball into spectator';
 const modifications = { notes };
 engine.modifyPenalty({ penaltyId, modifications });
+```
+
+---
+
+## modifyParticipantsPaymentStatus
+
+Modify the payment status of multiple participants, referenced by participantId. Stored as a participant `timeItem` with `itemType: 'PAYMENT_STATUS'`, so successive calls preserve history via `previousItems` on `getTimeItem`. Use this to record registration-fee payment independently of sign-in (which only tells you whether a player physically checked in on tournament day).
+
+Valid `paymentState` values: `PAID`, `UNPAID`, `PARTIAL`, `WAIVED`, `REFUNDED`. `PARTIAL` is intended for doubles or installment scenarios where one component has paid and the other has not; `WAIVED` for comps, sponsorships, or fee waivers; `REFUNDED` for participants who paid but were later refunded.
+
+```js
+import { factoryConstants } from 'tods-competition-factory';
+const { PAID, REFUNDED } = factoryConstants.participantConstants;
+
+engine.modifyParticipantsPaymentStatus({
+  participantIds: ['participantId'],
+  paymentState: PAID,
+});
+
+// Later — issue a refund. PAID stays in previousItems; current becomes REFUNDED.
+engine.modifyParticipantsPaymentStatus({
+  participantIds: ['participantId'],
+  paymentState: REFUNDED,
+});
+```
+
+Read the current value with `getParticipantPaymentStatus`:
+
+```js
+const paymentStatus = engine.getParticipantPaymentStatus({ participantId });
+// → 'PAID' | 'UNPAID' | 'PARTIAL' | 'WAIVED' | 'REFUNDED' | undefined
 ```
 
 ---
@@ -766,10 +927,10 @@ Removes `individualParticipantIds` from a grouping participant (`TEAM` or `GROUP
 
 ```js
 engine.removeIndividualParticipantIds({
-  groupingParticipantId,                // required — participantId of the TEAM or GROUP
-  individualParticipantIds,             // required — array of participantIds to remove
-  addIndividualParticipantsToEvents,    // optional boolean — add removed participants as UNGROUPED event entries
-  suppressErrors,                       // optional boolean — continue on errors (e.g. participant not found in group)
+  groupingParticipantId, // required — participantId of the TEAM or GROUP
+  individualParticipantIds, // required — array of participantIds to remove
+  addIndividualParticipantsToEvents, // optional boolean — add removed participants as UNGROUPED event entries
+  suppressErrors, // optional boolean — continue on errors (e.g. participant not found in group)
 });
 ```
 
@@ -783,10 +944,10 @@ Adds a timeItem to a specific participant. TimeItems store time-based metadata s
 
 ```js
 engine.addParticipantTimeItem({
-  participantId,          // required
-  timeItem,               // required — { itemType, itemValue, ... } time item object
-  removePriorValues,      // optional boolean — remove prior timeItems of the same itemType
-  duplicateValues,        // optional boolean — allow duplicate values
+  participantId, // required
+  timeItem, // required — { itemType, itemValue, ... } time item object
+  removePriorValues, // optional boolean — remove prior timeItems of the same itemType
+  duplicateValues, // optional boolean — allow duplicate values
 });
 ```
 

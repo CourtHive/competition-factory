@@ -1,7 +1,7 @@
 import { getContainedStructures } from '@Query/drawDefinition/getContainedStructures';
 import { getPositionAssignments } from '@Query/drawDefinition/positionsGetter';
+import { firstClassOrExtension } from '@Acquire/firstClassOrExtension';
 import { getStructureLinks } from '@Query/drawDefinition/linkGetter';
-import { findExtension } from '@Acquire/findExtension';
 import { overlap } from '@Tools/arrays';
 
 import { TALLY } from '@Constants/extensionConstants';
@@ -28,8 +28,8 @@ export function getAffectedTargetStructureIds({ drawDefinition, structure, match
   const relevantAssignments = positionAssignments?.filter(({ drawPosition }) => drawPositions?.includes(drawPosition));
 
   const finishingPositions = relevantAssignments?.map((assignment) => {
-    const { extension } = findExtension({ element: assignment, name: TALLY });
-    return extension?.value?.groupOrder;
+    const tally = firstClassOrExtension({ element: assignment, attribute: 'tally', name: TALLY });
+    return tally?.groupOrder;
   });
 
   const { containerStructures } = getContainedStructures({ drawDefinition });

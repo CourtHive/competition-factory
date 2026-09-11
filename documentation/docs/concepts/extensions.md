@@ -653,7 +653,7 @@ Use descriptive, unique names that won't conflict with factory extensions:
 **Broadcast Information**:
 
 ```js
-tournamentEngine.addMatchUpExtension({
+tournamentEngine.addExtension({
   matchUpId: 'match-123',
   drawId: 'draw-456',
   extension: {
@@ -732,7 +732,7 @@ tournamentEngine.addDrawDefinitionExtension({
 });
 
 // Add to matchUp
-tournamentEngine.addMatchUpExtension({
+tournamentEngine.addExtension({
   matchUpId: 'match-456',
   drawId: 'draw-123',
   extension: {
@@ -810,10 +810,9 @@ Choose the appropriate mechanism for your data:
 
 Only one extension with a given name per element:
 
-```js
-
 **API Reference:** [allTournamentMatchUps](/docs/governors/query-governor#alltournamentmatchups)
 
+```js
 // ✓ CORRECT - One extension per name
 {
   extensions: [{ name: 'customData', value: { field1: 'value1', field2: 'value2' } }];

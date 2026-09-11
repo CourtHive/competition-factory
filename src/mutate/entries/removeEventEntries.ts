@@ -1,3 +1,4 @@
+import { modifyDrawEntriesNotice, modifyEventEntriesNotice } from '@Mutate/notifications/entriesNotifications';
 import { getAssignedParticipantIds } from '@Query/drawDefinition/getAssignedParticipantIds';
 import { decorateResult } from '@Functions/global/decorateResult';
 import { refreshEntryPositions } from './refreshEntryPositions';
@@ -23,12 +24,15 @@ type RemoveEventEntriesArgs = {
   tournamentRecord?: Tournament;
   autoEntryPositions?: boolean;
   participantIds: string[];
+  disableNotice?: boolean;
   stage?: StageTypeUnion;
   event: Event;
 };
 export function removeEventEntries({
   autoEntryPositions = true,
   participantIds = [],
+  tournamentRecord,
+  disableNotice,
   entryStatuses,
   stage,
   event,
@@ -110,11 +114,20 @@ export function removeEventEntries({
     flight.drawEntries = (flight.drawEntries ?? []).filter((entry) => !participantIds.includes(entry.participantId));
   });
 
+  const tournamentId = tournamentRecord?.tournamentId;
   event.drawDefinitions?.forEach((drawDefinition) => {
+    const before = (drawDefinition.entries ?? []).length;
     drawDefinition.entries = (drawDefinition.entries ?? []).filter(
       (entry) => !participantIds.includes(entry.participantId),
     );
+    if (!disableNotice && (drawDefinition.entries?.length ?? 0) !== before) {
+      modifyDrawEntriesNotice({ drawDefinition, tournamentId, eventId: event.eventId });
+    }
   });
+
+  // event.entries changed → dispatch MODIFY_EVENT_ENTRIES (draw-scoped changes
+  // already dispatched above). Both mark the record modified for persistence.
+  if (!disableNotice) modifyEventEntriesNotice({ event, tournamentId });
 
   return { ...SUCCESS, participantIdsRemoved };
 }

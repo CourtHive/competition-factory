@@ -7,7 +7,7 @@
 import { UUID } from '@Tools/UUID';
 
 // Import necessary types
-import type { MatchUp, CreateMatchUpOptions, Side, Score } from "@Types/scoring/types";
+import type { MatchUp, CreateMatchUpOptions, Side, Score } from '@Types/scoring/types';
 
 /**
  * Create a new matchUp
@@ -16,16 +16,10 @@ import type { MatchUp, CreateMatchUpOptions, Side, Score } from "@Types/scoring/
  * @returns New matchUp object
  */
 export function createMatchUp(options: CreateMatchUpOptions): MatchUp {
-  const {
-    matchUpId = UUID(),
-    matchUpFormat,
-    participants = [],
-    isDoubles = false,
-    matchUpType,
-  } = options;
+  const { matchUpId = UUID(), matchUpFormat, participants = [], isDoubles = false, matchUpType, occurredAt } = options;
 
   // Determine matchUpType
-  const type = matchUpType || (isDoubles ? "DOUBLES" : "SINGLES");
+  const type = matchUpType || (isDoubles ? 'DOUBLES' : 'SINGLES');
 
   // Create sides from participants
   const sides: Side[] = participants.map((participant, index) => ({
@@ -48,11 +42,11 @@ export function createMatchUp(options: CreateMatchUpOptions): MatchUp {
   const matchUp: MatchUp = {
     matchUpId,
     matchUpFormat,
-    matchUpStatus: "TO_BE_PLAYED",
+    matchUpStatus: 'TO_BE_PLAYED',
     matchUpType: type,
     sides,
     score,
-    createdAt: new Date().toISOString(),
+    createdAt: occurredAt ?? new Date().toISOString(),
   };
 
   return matchUp;

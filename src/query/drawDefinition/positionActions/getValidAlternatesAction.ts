@@ -66,13 +66,16 @@ export function getValidAlternatesAction({
     .filter(Boolean);
 
   const { allPositionedParticipantIds } = getAllPositionedParticipantIds({ drawDefinition });
+  const allPositionedSet = new Set(allPositionedParticipantIds ?? []);
 
-  const assignedParticipantIds = positionAssignments.map((assignment) => assignment.participantId).filter(Boolean);
+  const assignedParticipantIds = new Set(
+    positionAssignments.map((assignment) => assignment.participantId).filter(Boolean),
+  );
 
   const availableDrawEnteredParticipantIds = drawEnteredParticipantIds.filter((participantId) =>
     structure.stage && [QUALIFYING, MAIN, PLAY_OFF].includes(structure.stage)
-      ? !allPositionedParticipantIds?.includes(participantId)
-      : !assignedParticipantIds.includes(participantId),
+      ? !allPositionedSet.has(participantId)
+      : !assignedParticipantIds.has(participantId),
   );
 
   const eventEntries = event?.entries ?? [];
@@ -86,8 +89,8 @@ export function getValidAlternatesAction({
           entry,
         }) &&
         (structure.stage && [QUALIFYING, MAIN, PLAY_OFF].includes(structure.stage)
-          ? !allPositionedParticipantIds?.includes(entry.participantId)
-          : !assignedParticipantIds.includes(entry.participantId)),
+          ? !allPositionedSet.has(entry.participantId)
+          : !assignedParticipantIds.has(entry.participantId)),
     )
     .sort((a, b) => (a.entryPosition ?? Infinity) - (b.entryPosition ?? Infinity))
     .map((entry) => entry.participantId);
@@ -126,9 +129,10 @@ export function getValidAlternatesAction({
     );
   }
 
+  const availableAlternatesSet = new Set(availableAlternatesParticipantIds);
   const availableAlternates = returnParticipants
     ? tournamentParticipants?.filter((participant: Participant) =>
-        availableAlternatesParticipantIds.includes(participant.participantId),
+        availableAlternatesSet.has(participant.participantId),
       )
     : undefined;
   availableAlternates?.forEach((alternate: any) => {

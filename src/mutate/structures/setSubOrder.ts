@@ -1,7 +1,7 @@
 import { updateAssignmentParticipantResults } from '@Mutate/drawDefinitions/matchUpGovernor/updateAssignmentParticipantResults';
+import { setFirstClassOrExtension } from '@Mutate/extensions/setFirstClassOrExtension';
 import { getAllStructureMatchUps } from '@Query/matchUps/getAllStructureMatchUps';
 import { modifyDrawNotice } from '@Mutate/notifications/drawNotifications';
-import { addExtension } from '@Mutate/extensions/addExtension';
 import { findStructure } from '@Acquire/findStructure';
 
 // constants and types
@@ -59,11 +59,14 @@ export function setSubOrder({
 
   const assignment = positionAssignments?.find((assignment) => assignment.drawPosition === drawPosition);
 
-  const extension = {
-    name: SUB_ORDER,
-    value: subOrder,
-  };
-  assignment && addExtension({ element: assignment, extension });
+  if (assignment) {
+    setFirstClassOrExtension({
+      element: assignment,
+      attribute: 'subOrder',
+      name: SUB_ORDER,
+      value: subOrder,
+    });
+  }
 
   const isDualMatchUp =
     event?.eventType === TEAM ||

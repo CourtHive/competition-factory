@@ -3,6 +3,10 @@ export type ReportColumn = {
   title: string;
   type?: 'string' | 'number' | 'boolean' | 'date';
   width?: number;
+  headerWordWrap?: boolean;
+  // Size the column to its content (header + longest value) and do not let it
+  // absorb spare table width — consumers keep other columns flexible instead.
+  fitData?: boolean;
 };
 
 export type ReportDefinition = {

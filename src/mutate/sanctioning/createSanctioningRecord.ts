@@ -7,6 +7,7 @@ import { SUCCESS } from '@Constants/resultConstants';
 
 // Types
 import type { SanctioningRecord, TournamentProposal, Applicant } from '@Types/sanctioningTypes';
+import type { TierClassification } from '@Types/tournamentTypes';
 
 type CreateSanctioningRecordArgs = {
   sanctioningId?: string;
@@ -14,7 +15,7 @@ type CreateSanctioningRecordArgs = {
   applicantProviderId?: string;
   applicant: Applicant;
   proposal: TournamentProposal;
-  sanctioningLevel?: string;
+  sanctioningTier?: TierClassification;
   sanctioningPolicy?: string;
   extensions?: any[];
 };
@@ -25,7 +26,7 @@ export function createSanctioningRecord({
   applicantProviderId,
   applicant,
   proposal,
-  sanctioningLevel,
+  sanctioningTier,
   sanctioningPolicy,
   extensions,
 }: CreateSanctioningRecordArgs): { error?: any; sanctioningRecord?: SanctioningRecord; success?: boolean } {
@@ -59,7 +60,7 @@ export function createSanctioningRecord({
     },
     governingBodyId,
     applicantProviderId,
-    sanctioningLevel,
+    sanctioningTier,
     sanctioningPolicy,
     statusHistory: [
       {

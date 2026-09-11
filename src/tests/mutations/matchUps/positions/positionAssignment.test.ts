@@ -75,8 +75,9 @@ it('can assign SINGLE_ELIMINATION draw drawPositions', () => {
   });
   expect(assignedPositions?.length).toEqual(drawSize);
 
-  // can't assign a player a second time
-  const drawPosition = unassignedPositions?.[0].drawPosition;
+  // can't assign a player a second time to a DIFFERENT position (re-asserting the
+  // SAME position is now an idempotent no-op, so target another participant's slot)
+  const drawPosition = unassignedPositions?.[1].drawPosition;
   result = assignDrawPosition({
     drawDefinition,
     participantId,
@@ -150,9 +151,10 @@ it('can assign ROUND_ROBIN draw drawPositions', () => {
     });
   });
 
-  // can't assign a player a second time
+  // can't assign a player a second time to a DIFFERENT position (re-asserting the
+  // SAME position is now an idempotent no-op, so target another participant's slot)
   const participantId = participantIds[0];
-  const drawPosition = unassignedPositions?.[0].drawPosition;
+  const drawPosition = unassignedPositions?.[1].drawPosition;
   result = assignDrawPosition({
     drawDefinition,
     participantId,

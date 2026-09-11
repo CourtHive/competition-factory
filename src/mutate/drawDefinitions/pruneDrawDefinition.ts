@@ -35,7 +35,7 @@ export function pruneDrawDefinition({
       ({ structureId }) => mainStructure.structureId === structureId,
     );
 
-    const matchUps = (mainStructure.matchUps ?? []).sort((a: any, b: any) => a.roundPosition - b.roundPosition);
+    const matchUps = (mainStructure.matchUps ?? []).toSorted((a: any, b: any) => a.roundPosition - b.roundPosition);
     relevantMatchUps = matchUps.filter(({ roundNumber }) => !structureData.inactiveRounds.includes(roundNumber));
     const relevantMatchUpIds = relevantMatchUps.map(getMatchUpId);
     const deletedMatchUpIds = matchUps.map(getMatchUpId).filter((matchUpId) => !relevantMatchUpIds.includes(matchUpId));

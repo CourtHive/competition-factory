@@ -34,7 +34,7 @@ function createApprovedRecord() {
         governingBodyId: 'gov-001',
         applicant: testApplicant,
         proposal: testProposal,
-        sanctioningLevel: 'Level 2',
+        sanctioningTier: { system: 'GENERIC', value: 'Level 2' },
       },
     },
     { method: 'submitApplication', params: { sanctioningPolicy: testPolicy } },
@@ -283,5 +283,58 @@ describe('Amendment Workflow — Multiple Amendments', () => {
     expect(record.amendments[0].status).toEqual('APPROVED');
     expect(record.amendments[1].status).toEqual('PROPOSED');
     expect(record.proposal.tournamentName).toEqual('Test Open Revised');
+  });
+});
+
+// ---------------------------------------------------------------------------
+// `sanctioningTier` is amendable, and it lives on the RECORD rather than the proposal.
+//
+// It was previously routed at `proposal.sanctioningTier` — a field that was declared but never
+// assigned by any path — so every approved amendment to it wrote a property nothing ever read, and
+// the tier the applicant was actually sanctioned at never moved.
+// ---------------------------------------------------------------------------
+describe('Amendment Workflow — record-level sanctioningTier', () => {
+  beforeEach(() => {
+    sanctioningEngine.reset();
+  });
+
+  const tierChange: ProposalChange[] = [
+    {
+      field: 'sanctioningTier',
+      previousValue: { system: 'GENERIC', value: 'Level 2' },
+      proposedValue: { system: 'GENERIC', value: 'Level 3' },
+      changeType: 'MODIFIED',
+    },
+  ];
+
+  it('applies an approved tier amendment to the record, not the proposal', () => {
+    createApprovedRecord();
+
+    let proposeResult: any = sanctioningEngine.proposeAmendment({ changes: tierChange, sanctioningPolicy: testPolicy });
+    expect(proposeResult.success).toBe(true);
+    // GENERIC lists sanctioningTier in substantialChangeFields, so it needs a review
+    expect(proposeResult.severity).toEqual('SUBSTANTIAL');
+    expect(proposeResult.autoApproved).toBe(false);
+
+    let reviewResult: any = sanctioningEngine.reviewAmendment({
+      amendmentId: proposeResult.amendmentId,
+      approved: true,
+    });
+    expect(reviewResult.success).toBe(true);
+
+    let recordResult: any = sanctioningEngine.getSanctioningRecord();
+    const record = recordResult.sanctioningRecord;
+    expect(record.sanctioningTier).toEqual({ system: 'GENERIC', value: 'Level 3' });
+    expect(record.proposal.sanctioningTier).toBeUndefined();
+  });
+
+  it('leaves the tier untouched when the amendment is rejected', () => {
+    createApprovedRecord();
+
+    let proposeResult: any = sanctioningEngine.proposeAmendment({ changes: tierChange, sanctioningPolicy: testPolicy });
+    sanctioningEngine.reviewAmendment({ amendmentId: proposeResult.amendmentId, approved: false });
+
+    let recordResult: any = sanctioningEngine.getSanctioningRecord();
+    expect(recordResult.sanctioningRecord.sanctioningTier).toEqual({ system: 'GENERIC', value: 'Level 2' });
   });
 });

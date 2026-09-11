@@ -1,0 +1,182 @@
+name: Verify
+
+# Runs the full verification suite on every PR + push to main. The `verify`
+# script is also wired into `prepublishOnly`, so this acts as the canary —
+# any check that fails here will also block publish, but here we catch it
+# at PR time instead of at release-tag time.
+#
+# Ecosystem sweep is intentionally NOT run in CI here — sibling consumer
+# repos aren't checked out. Maintainers run `pnpm verify:ecosystem` locally
+# when needed. CI tests the factory in isolation across the supported Node
+# matrix.
+
+on:
+  pull_request:
+  push:
+    branches: [master]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+# Opt JavaScript actions (e.g. actions/cache) into Node 24 before
+# GitHub's June 16 2026 forced cutover; silences the Node-20 deprecation
+# warning today and de-risks the runner-side migration.
+env:
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+
+jobs:
+  verify:
+    # Skip when the head commit is the release-please bot's release-PR
+    # merge. Release-please PRs touch only CHANGELOG.md, package.json
+    # (version bump), and .release-please-manifest.json — never any
+    # tested source. The same commit was just verified one push ago
+    # when the feature/fix that triggered the release landed on master,
+    # so re-running the full matrix here adds ~9 min × 2 nodes of CI
+    # for no new signal. The subsequent `npm-publish.yml` run (fired
+    # by release-please creating the GitHub release) gates the publish
+    # via prepublishOnly → pnpm verify, so verification still happens
+    # before any artifact ships to npm.
+    #
+    # PR events (which the bot opens before merging) always run — only
+    # the resulting merge push is skipped.
+    if: >
+      github.event_name != 'push' ||
+      !contains(github.event.head_commit.message, 'release-please--branches--')
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        # PRs verify on Node 24 only for fast feedback; pushes to master and
+        # manual (workflow_dispatch) runs verify the full supported matrix
+        # ([22, 24]) before anything lands — so a Node-22 regression is still
+        # caught pre-merge-to-master while `engines: ">=22"` holds.
+        node-version: ${{ github.event_name == 'pull_request' && fromJSON('[24]') || fromJSON('[22, 24]') }}
+    name: verify (node ${{ matrix.node-version }})
+
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          # verify:migration-coverage diffs against the last release TAG. A shallow checkout has
+          # neither the tag nor the history, and the check errors rather than passing quietly — so
+          # this is a precondition, not a nicety.
+          fetch-depth: 0
+
+      # A pnpm that does not match this repo's `packageManager` pin writes an `@pnpm/exe` block
+      # into the lockfile; a pnpm that DOES match strips it out again. Committed, it makes every
+      # correctly-provisioned checkout permanently dirty and drowns real work in `git status`. It was
+      # cleaned out of six repos on 2026-09-08 and reappeared in two working trees the same
+      # afternoon, so the committed state needs a guard rather than vigilance.
+      #
+      # The pattern excludes `@pnpm/exe.<platform>` — those are legitimate optional deps of `pnpm`
+      # itself and every clean lockfile holds 24 of them, so the obvious grep fails every repo.
+      - name: Lockfiles must not carry an @pnpm/exe block
+        run: |
+          locks=$(git ls-files '*pnpm-lock.yaml')
+          if [ -z "$locks" ]; then
+            echo "::error::no tracked pnpm-lock.yaml found — this check would pass vacuously"
+            exit 1
+          fi
+          bad=0
+          while IFS= read -r f; do
+            if grep -qE "@pnpm/exe[^.]" "$f"; then
+              echo "::error file=$f::$f carries an @pnpm/exe block, written only by a pnpm that does not match this repo's packageManager pin. Reinstall with the pinned pnpm and commit the lockfile."
+              bad=1
+            fi
+          done <<LOCKS
+          $locks
+          LOCKS
+          exit $bad
+
+      - uses: actions/setup-node@v7
+        with:
+          node-version: ${{ matrix.node-version }}
+
+      # pnpm via corepack (driven by `packageManager` in package.json). The
+      # repo's allowed-actions policy blocks third-party actions like
+      # pnpm/action-setup, so we avoid them and stay on actions/* only.
+      - run: corepack enable
+
+      - name: Resolve pnpm store path
+        run: echo "PNPM_STORE_PATH=$(pnpm store path --silent)" >> "$GITHUB_ENV"
+
+      - uses: actions/cache@v6
+        with:
+          path: ${{ env.PNPM_STORE_PATH }}
+          key: ${{ runner.os }}-node${{ matrix.node-version }}-pnpm-${{ hashFiles('**/pnpm-lock.yaml') }}
+          restore-keys: |
+            ${{ runner.os }}-node${{ matrix.node-version }}-pnpm-
+
+      - run: pnpm install --frozen-lockfile --ignore-scripts
+
+      # In-CI verify minus the ecosystem sweep (siblings aren't here).
+      # Order: cheap fail-fast → expensive checks last.
+      #
+      # verify:generated runs first: it re-runs the three code generators in
+      # --check mode, so drift between a hand-edited source enum/method and its
+      # generated mirror fails here with an explicit "run `pnpm gen:X`" message
+      # instead of surfacing later as an opaque conformance/type error. Note it
+      # cannot be left to `verify:build` — that invokes rollup directly, and the
+      # `prebuild` hook (which regenerates rather than checks) never fires.
+      - name: verify:generated
+        run: pnpm verify:generated
+
+      - name: verify:types
+        run: pnpm verify:types
+
+      - name: verify:lint
+        run: pnpm verify:lint
+
+      # Scoped to the TS/JS sources the repo actually keeps formatted. The
+      # .tods.json fixtures under src/tests are deliberately OUT of scope:
+      # reformatting them is a ~40k-line diff across large test corpora and
+      # buries their blame for no benefit. Narrowed `format` to match, so
+      # `pnpm format` and this gate can never disagree about the target set.
+      - name: verify:format
+        run: pnpm verify:format
+
+      - name: verify:attr-audit
+        run: pnpm verify:attr-audit
+
+      - name: verify:coverage
+        run: pnpm verify:coverage
+
+      - name: verify:server
+        run: pnpm verify:server
+
+      - name: verify:audit
+        run: pnpm verify:audit
+
+      - name: verify:build
+        run: pnpm verify:build
+
+      - name: verify:publint
+        run: pnpm verify:publint
+
+      - name: verify:runtime
+        run: pnpm verify:runtime
+
+      # Reads dist/esm/index.mjs, so it must follow verify:build. Kept in the
+      # same position as the `verify` chain (runtime → shakeable → bundle-size).
+      - name: verify:shakeable
+        run: pnpm verify:shakeable
+
+      - name: verify:bundle-size
+        run: pnpm verify:bundle-size
+
+      - name: verify:surface
+        run: pnpm verify:surface
+
+      # Needs dist, so it sits after verify:build. Checks that every import the docs tell a
+      # reader to write actually resolves against the BUILT package — the documentation tests
+      # import by module path and so cannot see a public-surface break.
+      - name: verify:docs-imports
+        run: pnpm verify:docs-imports
+
+      # The imports check proves the IMPORT resolves; it says nothing about what is then CALLED. A doc
+      # can import tournamentEngine correctly and invoke a method that has never existed.
+      - name: verify:docs-methods
+        run: pnpm verify:docs-methods
+
+      - name: verify:pack
+        run: pnpm verify:pack

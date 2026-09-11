@@ -14,6 +14,7 @@ export const methodScopeMap: Record<string, MutationLockScope> = {
   toggleParticipantCheckInState: 'SCHEDULING',
   removeMatchUpCourtAssignment: 'SCHEDULING',
   proAutoSchedule: 'SCHEDULING',
+  proColumnResolve: 'SCHEDULING',
   bulkUpdateCourtAssignments: 'SCHEDULING',
   allocateTeamMatchUpCourts: 'SCHEDULING',
   scheduleMatchUps: 'SCHEDULING',
@@ -27,6 +28,7 @@ export const methodScopeMap: Record<string, MutationLockScope> = {
   bulkScheduleMatchUps: 'SCHEDULING',
   scheduleProfileRounds: 'SCHEDULING',
   clearMatchUpSchedule: 'SCHEDULING',
+  setMatchUpScheduleLock: 'SCHEDULING',
   addMatchUpScheduledTime: 'SCHEDULING',
   setMatchUpDailyLimits: 'SCHEDULING',
   assignMatchUpCourt: 'SCHEDULING',
@@ -34,6 +36,11 @@ export const methodScopeMap: Record<string, MutationLockScope> = {
   generateBookings: 'SCHEDULING',
   validateSchedulingProfile: 'SCHEDULING',
   setSchedulingProfile: 'SCHEDULING',
+  addScheduleScenario: 'SCHEDULING',
+  updateScheduleScenario: 'SCHEDULING',
+  removeScheduleScenario: 'SCHEDULING',
+  rebaseScheduleScenario: 'SCHEDULING',
+  applyScheduleScenario: 'SCHEDULING',
   addCourtGridBooking: 'SCHEDULING',
   removeCourtGridBooking: 'SCHEDULING',
   addMatchUpCourtOrder: 'SCHEDULING',
@@ -65,6 +72,8 @@ export const methodScopeMap: Record<string, MutationLockScope> = {
   renameStructures: 'DRAWS',
   assignDrawPositionBye: 'DRAWS',
   addDrawDefinitionTimeItem: 'DRAWS',
+  addDrawOtherId: 'DRAWS',
+  setDrawOtherIds: 'DRAWS',
   removeStructure: 'DRAWS',
   resetQualifyingStructure: 'DRAWS',
   swapDrawPositionAssignments: 'DRAWS',
@@ -83,6 +92,7 @@ export const methodScopeMap: Record<string, MutationLockScope> = {
   addAdHocMatchUps: 'DRAWS',
   modifyDrawName: 'DRAWS',
   setSubOrder: 'DRAWS',
+  updateParticipantResults: 'DRAWS',
   addLinkedConsolationStructure: 'DRAWS',
   attachConsolationStructures: 'DRAWS',
   attachPlayoffStructures: 'DRAWS',
@@ -99,7 +109,6 @@ export const methodScopeMap: Record<string, MutationLockScope> = {
   generateAdHocRounds: 'DRAWS',
   drawMatic: 'DRAWS',
   addFinishingRounds: 'DRAWS',
-  buildDrawHierarchy: 'DRAWS',
   autoSeeding: 'DRAWS',
 
   // SCORING — matchUpGovernor/mutate (scoring-related)
@@ -144,6 +153,7 @@ export const methodScopeMap: Record<string, MutationLockScope> = {
   setParticipantScaleItem: 'PARTICIPANTS',
   modifyIndividualParticipantIds: 'PARTICIPANTS',
   createTeamsFromParticipantAttributes: 'PARTICIPANTS',
+  modifyParticipantsPaymentStatus: 'PARTICIPANTS',
   modifyParticipantsSignInStatus: 'PARTICIPANTS',
   addIndividualParticipantIds: 'PARTICIPANTS',
   modifyParticipantOtherName: 'PARTICIPANTS',
@@ -162,6 +172,8 @@ export const methodScopeMap: Record<string, MutationLockScope> = {
   addPenalty: 'PARTICIPANTS',
   addParticipant: 'PARTICIPANTS',
   addPersons: 'PARTICIPANTS',
+  addPersonOtherId: 'PARTICIPANTS',
+  addParticipantOtherId: 'PARTICIPANTS',
   removeIndividualParticipantIds: 'PARTICIPANTS',
   removeParticipantIdsFromAllTeams: 'PARTICIPANTS',
 
@@ -221,6 +233,7 @@ export const methodScopeMap: Record<string, MutationLockScope> = {
   deleteCourts: 'VENUES',
   modifyCourt: 'VENUES',
   modifyVenue: 'VENUES',
+  addVenueOtherId: 'VENUES',
   addVenue: 'VENUES',
 
   // PUBLISHING — publishingGovernor/mutate
@@ -244,6 +257,8 @@ export const methodScopeMap: Record<string, MutationLockScope> = {
   setTournamentStartDate: 'TOURNAMENT',
   addTournamentExtension: 'TOURNAMENT',
   removeTournamentExtension: 'TOURNAMENT',
+  addTournamentOtherId: 'TOURNAMENT',
+  setTournamentOtherIds: 'TOURNAMENT',
 
   // TIE_FORMAT — tieFormatGovernor/mutate
   modifyCollectionDefinition: 'TIE_FORMAT',

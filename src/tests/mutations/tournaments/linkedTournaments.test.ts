@@ -1,4 +1,5 @@
 import { unlinkTournament } from '@Mutate/tournaments/tournamentLinks';
+import { firstClassOrExtension } from '@Acquire/firstClassOrExtension';
 import competitionEngineSync from '@Engines/syncEngine';
 import mocksEngine from '@Assemblies/engines/mock';
 import { intersection } from '@Tools/arrays';
@@ -161,13 +162,19 @@ test.each([competitionEngineSync])('can set a single tournamentRecord', async (c
   expect(result.success).toEqual(true);
 });
 
-async function getLinkedIds(competitionEngine) {
-  const { extension } = await competitionEngine.findExtension({
+// linkedTournamentIds is first-class `string[]` in NATIVE, a `{ tournamentIds }` extension in LEGACY
+function readLinkedIds(tournamentRecord) {
+  const linked = firstClassOrExtension({
+    element: tournamentRecord,
+    attribute: 'linkedTournamentIds',
     name: LINKED_TOURNAMENTS,
-    discover: true,
   });
+  return Array.isArray(linked) ? linked : linked?.tournamentIds;
+}
 
-  const { tournamentIds } = extension.value;
+async function getLinkedIds(competitionEngine) {
+  const { tournamentRecords } = await competitionEngine.getState();
+  const tournamentIds = readLinkedIds(Object.values(tournamentRecords)[0]);
   return { tournamentIds };
 }
 
@@ -180,11 +187,12 @@ async function checkExtensions({ unlinkedTournamentIds, competitionEngine, tourn
   const { tournamentRecords } = await competitionEngine.getState();
   Object.keys(tournamentRecords).forEach((tournamentId) => {
     const tournamentRecord = tournamentRecords[tournamentId];
+    const linkedIds = readLinkedIds(tournamentRecord);
     if (unlinkedTournamentIds?.includes(tournamentId)) {
-      // unlinked tournaments have no extensions remaining
-      expect(tournamentRecord.extensions.length).toEqual(0);
+      // unlinked tournaments carry no link (first-class removed / extension gone)
+      expect(linkedIds).toBeUndefined();
     } else {
-      expect(tournamentRecord.extensions[0].value.tournamentIds).toEqual(tournamentIds);
+      expect(linkedIds).toEqual(tournamentIds);
     }
   });
 }

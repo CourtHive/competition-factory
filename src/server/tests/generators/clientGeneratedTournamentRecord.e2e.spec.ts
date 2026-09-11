@@ -1,3 +1,4 @@
+import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { mocksEngine } from '@Assemblies/engines/mock';
 import { INestApplication } from '@nestjs/common';
 import { AppModule } from '../../app.module';

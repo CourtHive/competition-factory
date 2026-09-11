@@ -1,0 +1,53 @@
+// Read-model builder toolkit — the single source for TODS → read-model rows,
+// shared by `cast()` (full rebuild) and the CFS incremental producer (per-draw),
+// so both paths emit byte-identical rows. Exposed on the package as
+// `readModel` (`import { readModel } from 'tods-competition-factory'`).
+
+export { READ_MODEL_COLUMNS, READ_MODEL_TABLES } from './readModelColumns';
+export { cast } from './cast';
+export { getEventPublishStatus } from '@Query/event/getEventPublishStatus';
+export { getTournamentPublishStatus } from '@Query/tournaments/getTournamentPublishStatus';
+export { resolveMatchUpPublishState, isEventPublished } from './readModelPublish';
+export { applyProgressionEdges } from './progressionEdges';
+export type { MatchUpPublishState } from './readModelPublish';
+export { isFactoryUuid, resolvePersonLink, LINK_PROVIDER_ID, LINK_UNRESOLVED } from './personRule';
+export type { PersonLink } from './personRule';
+export {
+  tournamentDiscoveryRow,
+  tournamentRow,
+  tournamentOrigin,
+  eventRow,
+  eventOrigin,
+  drawRow,
+  drawOrigin,
+  structureRow,
+  seedRow,
+  venueRow,
+  courtRow,
+  orderOfPlayRow,
+  schedulingProfileRows,
+  resolveSchedulingProfile,
+  participantPublishRow,
+  entryRows,
+  matchUpRowSet,
+  matchUpResultRow,
+  rubberTieValue,
+} from './readModelRows';
+export type {
+  MatchUpRowContext,
+  MatchUpRowSet,
+  SeedRowContext,
+  StructureRowContext,
+  CourtRowContext,
+} from './readModelRows';
+export type {
+  ReadModelTournamentDiscoveryRow,
+  ReadModelEventRow,
+  ReadModelSeedRow,
+  ReadModelDrawRow,
+  ReadModelStructureRow,
+  ReadModelCourtRow,
+  ReadModelOrderOfPlayRow,
+  ReadModelSchedulingProfileRow,
+  ReadModelParticipantPublishRow,
+} from '@Types/readModelTypes';

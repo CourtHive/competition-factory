@@ -2,10 +2,10 @@ import { removeLineUpSubstitutions } from '@Mutate/drawDefinitions/removeLineUpS
 import { assignDrawPositionBye } from '@Mutate/matchUps/drawPositions/assignDrawPositionBye';
 import { assignDrawPosition } from '@Mutate/matchUps/drawPositions/positionAssignment';
 import { structureAssignedDrawPositions } from '@Query/drawDefinition/positionsGetter';
+import { getDrawPositionWinCount } from '@Query/matchUp/getDrawPositionWinCount';
 import { getAllStructureMatchUps } from '@Query/matchUps/getAllStructureMatchUps';
 import { assignSeed } from '@Mutate/drawDefinitions/entryGovernor/seedAssignment';
 import { modifyMatchUpNotice } from '@Mutate/notifications/drawNotifications';
-import { checkScoreHasValue } from '@Query/matchUp/checkScoreHasValue';
 import { decorateResult } from '@Functions/global/decorateResult';
 import { findStructure } from '@Acquire/findStructure';
 import { numericSort } from '@Tools/sorting';
@@ -15,11 +15,7 @@ import { DEFAULTED, RETIRED, WALKOVER } from '@Constants/matchUpStatusConstants'
 import { FIRST_MATCHUP } from '@Constants/drawDefinitionConstants';
 import { SUCCESS } from '@Constants/resultConstants';
 import { ResultType } from '@Types/factoryTypes';
-import {
-  DRAW_POSITION_OCCUPIED,
-  INVALID_DRAW_POSITION,
-  MISSING_PARTICIPANT_ID,
-} from '@Constants/errorConditionConstants';
+import { DRAW_POSITION_OCCUPIED, INVALID_DRAW_POSITION } from '@Constants/errorConditionConstants';
 
 /*
   FIRST_MATCH_LOSER_CONSOLATION linkCondition... check whether it is a participant's first 
@@ -66,18 +62,10 @@ export function directLoser(params): ResultType {
     event,
   });
 
-  const drawPositionMatchUps = sourceMatchUps.filter((matchUp) => matchUp.drawPositions?.includes(loserDrawPosition));
-
-  // in this calculation BYEs and WALKOVERs are not counted as wins
-  // as well as DEFAULTED when there is no score component
-  const loserDrawPositionWins = drawPositionMatchUps.filter((matchUp) => {
-    const drawPositionSide = matchUp.sides.find((side) => side.drawPosition === loserDrawPosition);
-    const unscoredOutcome =
-      matchUp.matchUpStatus === WALKOVER || (matchUp.matchUpStatus === DEFAULTED && !checkScoreHasValue(matchUp));
-    return drawPositionSide?.sideNumber === matchUp.winningSide && !unscoredOutcome;
-  });
-
-  const validForConsolation = loserLinkCondition === FIRST_MATCHUP && loserDrawPositionWins.length === 0;
+  // BYEs and WALKOVERs (and unscored DEFAULTED) are not counted as wins — see getDrawPositionWinCount,
+  // shared with the read-only feed-eligibility integrity check so the two never diverge.
+  const loserDrawPositionWins = getDrawPositionWinCount({ sourceMatchUps, drawPosition: loserDrawPosition });
+  const validForConsolation = loserLinkCondition === FIRST_MATCHUP && loserDrawPositionWins === 0;
 
   const { positionAssignments: sourcePositionAssignments } = structureAssignedDrawPositions({
     structureId: sourceStructureId,
@@ -166,6 +154,7 @@ export function directLoser(params): ResultType {
     dualMatchUp,
     matchUpsMap,
     stack,
+    event,
   });
 
   return decorateResult({ result: { ...SUCCESS }, stack, context });
@@ -193,20 +182,33 @@ function placeLoser({
   matchUpsMap,
   event,
 }) {
+  // There is no loser to place, so placing one is a no-op — not a failure.
+  //
+  // This is the normal shape of a PENDING propagated exit: a WALKOVER or DEFAULTED recorded on a
+  // matchUp whose other side is still an empty feed slot, awaiting whoever falls through from an
+  // earlier round. Nothing can be fed into the consolation yet, and nothing should be —
+  // `progressExitStatus` re-propagates once the slot fills. `directParticipants` already suppresses
+  // WINNER advancement for the same reason (`winnerSlotEmpty`); this is the loser-side equivalent.
+  //
+  // Decided once, at the top, because the two exits below disagreed about it: `assignLoserToTarget`
+  // returned MISSING_PARTICIPANT_ID while the terminal fall-through returned DRAW_POSITION_OCCUPIED
+  // or INVALID_DRAW_POSITION. All three report a failure for correct behaviour, and all three do it
+  // after `directParticipants` has written the source matchUp's status — an error over mutated
+  // state, which is what the sweep reports as ERROR_IMPLIES_NO_MUTATION.
+  if (!loserParticipantId) return { ...SUCCESS };
+
   const assignLoserToTarget = () => {
-    const result = loserParticipantId
-      ? assignDrawPosition({
-          drawPosition: targetMatchUpDrawPosition,
-          participantId: loserParticipantId,
-          structureId: targetStructureId,
-          inContextDrawMatchUps,
-          sourceMatchUpStatus,
-          tournamentRecord,
-          drawDefinition,
-          matchUpsMap,
-          event,
-        })
-      : { error: MISSING_PARTICIPANT_ID };
+    const result = assignDrawPosition({
+      drawPosition: targetMatchUpDrawPosition,
+      participantId: loserParticipantId,
+      structureId: targetStructureId,
+      inContextDrawMatchUps,
+      sourceMatchUpStatus,
+      tournamentRecord,
+      drawDefinition,
+      matchUpsMap,
+      event,
+    });
 
     if (!result.error && validExitToPropagate && propagateExitStatus) {
       return { context: { progressExitStatus: true } };
@@ -227,14 +229,17 @@ function placeLoser({
       drawDefinition,
       event,
     });
-    return decorateResult({ result: decorateResult({ result: byeResult, stack: 'assignLoserPositionBye' }), stack: innerStack });
+    return decorateResult({
+      result: decorateResult({ result: byeResult, stack: 'assignLoserPositionBye' }),
+      stack: innerStack,
+    });
   }
 
   if (isFirstRoundValidDrawPosition) {
     return assignLoserToTarget();
   }
 
-  if (loserParticipantId && (isFeedRound || unfilledTargetMatchUpDrawPositions?.length)) {
+  if (isFeedRound || unfilledTargetMatchUpDrawPositions?.length) {
     unfilledTargetMatchUpDrawPositions.sort(numericSort);
     const fedDrawPosition = unfilledTargetMatchUpDrawPositions[0];
     const result = assignDrawPosition({
@@ -294,6 +299,7 @@ function propagateLoserLineUp({
   dualMatchUp,
   matchUpsMap,
   stack,
+  event,
 }) {
   if (!dualMatchUp || !projectedWinningSide) return;
 
@@ -323,6 +329,7 @@ function propagateLoserLineUp({
       context: stack,
       drawDefinition,
       eventId,
+      event,
     });
   }
 }

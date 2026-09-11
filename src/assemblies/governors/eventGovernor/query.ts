@@ -1,3 +1,4 @@
+export { getParticipantEligibility, getEligibleEvents } from '@Query/entries/getParticipantEligibility';
 export { getCategoryAgeDetails } from '@Query/event/getCategoryAgeDetails';
 export { getEventStructures } from '@Query/structure/structureGetter';
 export { getEventProperties } from '@Query/event/getEventProperties';
@@ -5,5 +6,7 @@ export { categoryCanContain } from '@Query/event/categoryCanContain';
 export { getScaledEntries } from '@Query/event/getScaledEntries';
 export { getFlightProfile } from '@Query/event/getFlightProfile';
 export { getEventTimeItem } from '@Query/base/timeItems';
+export { getEventInconsistencies } from '@Query/event/getEventInconsistencies';
+export { getEventCompleteness } from '@Query/event/getEventCompleteness';
 export { getEvents } from '@Query/events/getEvents';
 export { getEvent } from '@Query/events/getEvent';

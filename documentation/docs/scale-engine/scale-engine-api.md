@@ -16,6 +16,7 @@ The ScaleEngine shares the `syncEngine` singleton. Call `scaleEngine.setState(to
 getTournamentPoints(params?: {
   policyDefinitions?: PolicyDefinitions;
   participantFilters?: ParticipantFilters;
+  policyName?: string;
   level?: number;
 }): {
   success: boolean;
@@ -44,11 +45,12 @@ for (const [personId, awards] of Object.entries(result.personPoints)) {
 
 **Parameters:**
 
-| Parameter            | Type                 | Description                                                                                                                                                                  |
-| -------------------- | -------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `policyDefinitions`  | `PolicyDefinitions`  | Ranking policy. Falls back to tournament-attached policy if not provided                                                                                                     |
-| `participantFilters` | `ParticipantFilters` | Filter which participants to process                                                                                                                                         |
-| `level`              | `number`             | Tournament level (used for level-keyed point values). Required for policies that use level-keyed profiles (ATP, WTA, ITF WTT, USTA Junior). Not needed for the Basic policy. |
+| Parameter            | Type                 | Description                                                                                                                                                                             |
+| -------------------- | -------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `policyDefinitions`  | `PolicyDefinitions`  | Ranking policy. Falls back to tournament-attached policy if not provided.                                                                                                               |
+| `policyName`         | `string`             | Resolved via `policyRegistry.lookup` as a last-resort fallback when neither `policyDefinitions` nor a tournament-attached policy is available. Used for CFS-served federation policies. |
+| `participantFilters` | `ParticipantFilters` | Filter which participants to process                                                                                                                                                    |
+| `level`              | `number`             | Tournament level (used for level-keyed point values). Required for policies that use level-keyed profiles (ATP, WTA, ITF WTT, ITF Junior). Not needed for the Basic policy.             |
 
 **Returns:** `personPoints` keyed by `personId`, `pairPoints` keyed by pair `participantId`, `teamPoints` keyed by team `participantId`. Each value is an array of `PointAward` objects.
 
@@ -65,6 +67,7 @@ See [Ranking Points Pipeline](/docs/scale-engine/ranking-points-pipeline) for ho
 ```ts
 getEventRankingPoints(params: {
   policyDefinitions?: PolicyDefinitions;
+  policyName?: string;
   eventId: string;
   level?: number;
 }): {
@@ -95,11 +98,12 @@ for (const award of result.eventAwards) {
 
 **Parameters:**
 
-| Parameter           | Type                | Description                                                                                    |
-| ------------------- | ------------------- | ---------------------------------------------------------------------------------------------- |
-| `policyDefinitions` | `PolicyDefinitions` | Ranking policy (must include `POLICY_TYPE_RANKING_POINTS`)                                     |
-| `eventId`           | `string`            | Event to scope results to                                                                      |
-| `level`             | `number`            | Tournament level for level-keyed point values. Omit for level-independent policies like Basic. |
+| Parameter           | Type                | Description                                                                                                                                                                             |
+| ------------------- | ------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `policyDefinitions` | `PolicyDefinitions` | Ranking policy (must include `POLICY_TYPE_RANKING_POINTS`)                                                                                                                              |
+| `policyName`        | `string`            | Resolved via `policyRegistry.lookup` as a last-resort fallback when neither `policyDefinitions` nor a tournament-attached policy is available. Used for CFS-served federation policies. |
+| `eventId`           | `string`            | Event to scope results to                                                                                                                                                               |
+| `level`             | `number`            | Tournament level for level-keyed point values. Omit for level-independent policies like Basic.                                                                                          |
 
 **Returns:** `eventAwards` is a flat array sorted by points descending, then by participant name. Each award includes `participantId`, `participantName`, `personId`, `points`, `positionPoints`, `perWinPoints`, `bonusPoints`, `winCount`, `rangeAccessor`, `drawId`, `drawType`, and `eventType`. The response also includes `eventName`, `eventType`, and `isDoubles` for display purposes.
 
@@ -222,7 +226,8 @@ generateRankingList(params: {
 Aggregates point awards from multiple tournaments into a sorted ranking list. This is a pure computation function — it does not access tournament state.
 
 ```js
-import { generateRankingList } from 'tods-competition-factory';
+import { scaleEngine } from 'tods-competition-factory';
+const { generateRankingList } = scaleEngine;
 
 const rankingList = generateRankingList({
   pointAwards: allAwards, // collected from multiple getTournamentPoints calls
@@ -274,7 +279,8 @@ getParticipantPoints(params: {
 Returns a per-participant breakdown showing which results count and which are dropped, organized by bucket.
 
 ```js
-import { getParticipantPoints } from 'tods-competition-factory';
+import { scaleEngine } from 'tods-competition-factory';
+const { getParticipantPoints } = scaleEngine;
 
 const { buckets, totalPoints } = getParticipantPoints({
   pointAwards: allAwards,
@@ -334,19 +340,19 @@ Generates dynamic ELO-style ratings from completed matchUp results. Processes sp
 
 ```js
 const {
-  modifiedScaleValues,   // { [participantId]: newRating }
-  processedMatchUpIds,   // matchUpIds that were processed
-  outputScaleName,       // the scaleName used for output
-  ratingType,            // the rating type used (e.g. 'ELO')
+  modifiedScaleValues, // { [participantId]: newRating }
+  processedMatchUpIds, // matchUpIds that were processed
+  outputScaleName, // the scaleName used for output
+  ratingType, // the rating type used (e.g. 'ELO')
 } = scaleEngine.generateDynamicRatings({
-  matchUpIds,                    // required — array of matchUpIds to process
-  ratingType,                    // optional — defaults to 'ELO'; must be a key in ratingsParameters
-  updateParticipantRatings,      // optional boolean — modify tournament participants with new scaleItems
-  removePriorValues,             // optional boolean — defaults to true; remove prior scaleItems for same scaleName
-  refreshDynamic,                // optional boolean — ignore previously calculated dynamic values
-  considerGames,                 // optional boolean — use games instead of sets for calculation
-  asDynamic,                     // optional boolean — use DYNAMIC scaleName prefix
-  drawDefinition,                // optional — scope to a specific draw (used with refreshDynamic)
+  matchUpIds, // required — array of matchUpIds to process
+  ratingType, // optional — defaults to 'ELO'; must be a key in ratingsParameters
+  updateParticipantRatings, // optional boolean — modify tournament participants with new scaleItems
+  removePriorValues, // optional boolean — defaults to true; remove prior scaleItems for same scaleName
+  refreshDynamic, // optional boolean — ignore previously calculated dynamic values
+  considerGames, // optional boolean — use games instead of sets for calculation
+  asDynamic, // optional boolean — use DYNAMIC scaleName prefix
+  drawDefinition, // optional — scope to a specific draw (used with refreshDynamic)
 });
 ```
 

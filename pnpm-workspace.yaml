@@ -5,3 +5,77 @@ allowBuilds:
   '@swc/core': true
   esbuild: true
   unrs-resolver: true
+
+# pnpm v11 reads project-level settings from pnpm-workspace.yaml (not from
+# .npmrc, which pnpm v11.1.3 no longer merges for non-auth keys).
+#
+# minimumReleaseAge: 1440 (1 day, in minutes) keeps pnpm v11's supply-chain
+#   freshness check active for third-party packages — protects against
+#   typosquat + compromised-publish attacks that rely on installs hitting
+#   a brand-new version within minutes of publish.
+# minimumReleaseAgeExclude exempts every package we publish ourselves so
+#   cross-package CourtHive releases (factory -> components -> TMX cascade,
+#   etc.) don't get blocked by their own freshness — we routinely consume
+#   our own packages within hours of publishing them.
+# verifyDepsBeforeRun: false suppresses the deps-status check that fires
+#   before every `pnpm <script>` invocation. Lockfiles are routinely
+#   briefly stale (mentat-pull-all.sh deletes lockfiles before each
+#   build cycle), so the check is noise.
+minimumReleaseAge: 1440
+minimumReleaseAgeExclude:
+  - 'tods-competition-factory'
+  - 'courthive-*'
+  - '@courthive/*'
+  - 'pdf-factory'
+  - 'scoring-visualizations'
+  - 'tabulator-scorecards'
+  # Renovate security update: esbuild@0.28.1
+  - esbuild@0.28.1
+  # Security override: js-yaml@5.2.2 (GHSA-pm4m-ph32-ghv5) — exempt the freshly
+  # published patch so the freshness guard doesn't block the security fix.
+  - js-yaml@5.2.2
+verifyDepsBeforeRun: false
+
+# Security overrides for transitive (dev-only) dependencies. pnpm v11 reads
+# overrides from pnpm-workspace.yaml; `pnpm.overrides` in package.json is
+# ignored when this file is present.
+# - qs: GHSA-q8mj-m7cp-5q26 (DoS in stringify); patched 6.15.2. Pulled in via
+#   dev/test tooling (body-parser, supertest) only — not a runtime dependency.
+# - form-data: GHSA-hmw2-7cc7-3qxx (CRLF injection); patched 4.0.6. Via supertest/superagent.
+# - multer: GHSA-72gw-mp4g-v24j (DoS via nested field names); patched 2.2.0. Via @nestjs/platform-express.
+# - brace-expansion: two advisories — GHSA-v6h2-p8h4-qcjw (ReDoS via exponential
+#   expansion) and a high DoS via unbounded expansion length (<=5.0.7; patched 5.0.8).
+#   The ONLY consumer in the tree is minimatch (v3/v9/v10), whose expand() usage is
+#   API-stable across brace-expansion majors — so a single global override to the
+#   patched v5 line is safe and avoids the earlier major-scoped `>=` overrides
+#   silently floating (and deduping) onto the vulnerable 5.0.7. Dev tree only.
+# - js-yaml: GHSA-pm4m-ph32-ghv5 (exponential parsing time in flow collections
+#   → DoS); patched 5.2.2. Only the v5 line is vulnerable (via markdownlint-cli2);
+#   3.x/4.x consumers are unaffected.
+# - postcss: GHSA-r28c-9q8g-f849 (path traversal in source-map auto-loading);
+#   patched 8.5.18. Via vitest/vite dev tooling only — not a runtime dependency.
+# - nanoid: GHSA-2v37-7h3g-55p8 (custom generators loop indefinitely when size is
+#   zero -> DoS); patched 3.3.17. Reached only via vitest/vite -> postcss dev
+#   tooling. Caret-bounded to the v3 line on purpose: postcss requires ^3.3.16,
+#   and an unbounded `>=3.3.17` floats straight to nanoid v6 (ESM-only, different
+#   API) while leaving the vulnerable 3.3.16 still resolved elsewhere — observed.
+# - smol-toml: GHSA-7w5x-hrqm-74c2 (DoS via malformed TOML documents); vulnerable
+#   <=1.7.0, patched 1.7.1. Reached only via markdownlint-cli2, a dev-only lint
+#   tool, and the package ships files:[dist] so it cannot reach a consumer.
+#   Caret-bounded to the 1.x line for the same reason as nanoid: an unbounded
+#   floor would be free to float onto a future major.
+overrides:
+  typescript: 6.0.3 # block native TS7 (no classic JS API — crashes tsc/nest/sonarjs); pairs with renovate TS-major block
+  qs: '^6.15.2'
+  form-data: '>=4.0.6'
+  multer: '>=2.3.0' # GHSA-wc9g-mqfw-jrwm / -qfvm-cv95-jqjf / -535w-7cp7-47q4 (DoS x3); was >=2.2.0, which 2.2.0 itself satisfies
+  brace-expansion: '>=5.0.8'
+  js-yaml@4: '>=4.3.2' # GHSA-2883-xcg3-v3hh (CPU DoS on empty merge sources). The `@4` selector
+  #                      scopes this to dependents that ask for 4.x — it is not a ceiling. The
+  #                      floor is open, so those requests consolidate onto the 5.x already in
+  #                      this tree instead of keeping a second copy; 5.x is outside the
+  #                      advisory's ranges (<3.15.2, <4.3.2) and has its own floor below.
+  js-yaml@5: '>=5.2.2'
+  postcss: '>=8.5.18'
+  nanoid: '^3.3.17'
+  smol-toml: '^1.7.1'

@@ -1,7 +1,11 @@
-import { addEventExtension } from '@Mutate/extensions/addRemoveExtensions';
+import { setFirstClassOrExtension } from '@Mutate/extensions/setFirstClassOrExtension';
+import { modifyEventNotice } from '@Mutate/notifications/eventNotifications';
+import { getAppliedPolicies } from '@Query/extensions/getAppliedPolicies';
+import { checkScoreHasValue } from '@Query/matchUp/checkScoreHasValue';
 import { allDrawMatchUps } from '@Query/matchUps/getAllDrawMatchUps';
 import { decorateResult } from '@Functions/global/decorateResult';
 import { getFlightProfile } from '@Query/event/getFlightProfile';
+import { addNotice, hasTopic } from '@Global/state/globalState';
 import { getMatchUpId } from '@Functions/global/extractors';
 import { ensureInt } from '@Tools/ensureInt';
 import {
@@ -14,15 +18,19 @@ import {
 // constants and types
 import { STRUCTURE_SELECTED_STATUSES } from '@Constants/entryStatusConstants';
 import { DrawDefinition, Event, Tournament } from '@Types/tournamentTypes';
+import { DELETE_DRAW_DEFINITIONS } from '@Constants/auditConstants';
 import { FLIGHT_PROFILE } from '@Constants/extensionConstants';
+import { POLICY_TYPE_SCORING } from '@Constants/policyConstants';
 import { SUCCESS } from '@Constants/resultConstants';
 import { ResultType } from '@Types/factoryTypes';
+import { AUDIT } from '@Constants/topicConstants';
 import {
   DRAW_ID_EXISTS,
   INVALID_DRAW_DEFINITION,
   INVALID_VALUES,
   MISSING_DRAW_DEFINITION,
   MISSING_EVENT,
+  SCORES_PRESENT,
 } from '@Constants/errorConditionConstants';
 
 type AddDrawDefinitionArgs = {
@@ -35,6 +43,7 @@ type AddDrawDefinitionArgs = {
   allowReplacement?: boolean;
   checkEntryStatus?: boolean;
   tournamentId?: string;
+  force?: boolean; // permit replacing a draw that has scores present
   event: Event;
 };
 
@@ -50,6 +59,7 @@ export function addDrawDefinition(
     checkEntryStatus, // optional boolean to enable checking that flight.drawEntries match event.entries
     tournamentRecord,
     drawDefinition,
+    force,
     event,
   } = params;
   if (!drawDefinition) return { error: MISSING_DRAW_DEFINITION };
@@ -122,17 +132,14 @@ export function addDrawDefinition(
 
   const flight = flightProfile?.flights?.find((flight) => flight.drawId === drawId);
 
-  let extension;
+  let value;
   if (flight) {
     // if this drawId was defined in a flightProfile...
     // ...update the flight.drawName with the drawName in the drawDefinition
     flight.drawName = drawDefinition.drawName;
-    extension = {
-      name: FLIGHT_PROFILE,
-      value: {
-        ...flightProfile,
-        flights: flightProfile.flights,
-      },
+    value = {
+      ...flightProfile,
+      flights: flightProfile.flights,
     };
 
     const flightNumber = flight.flightNumber;
@@ -150,16 +157,13 @@ export function addDrawDefinition(
       drawName,
       drawId,
     });
-    extension = {
-      name: FLIGHT_PROFILE,
-      value: {
-        ...flightProfile,
-        flights,
-      },
+    value = {
+      ...flightProfile,
+      flights,
     };
   }
 
-  addEventExtension({ event, extension });
+  setFirstClassOrExtension({ element: event, attribute: 'flightProfile', name: FLIGHT_PROFILE, value });
   Object.assign(drawDefinition, { drawOrder });
 
   const existingDrawDefinition = event.drawDefinitions.find((dd) => dd.drawId === drawId);
@@ -168,6 +172,11 @@ export function addDrawDefinition(
 
   if (existingDrawDefinition) {
     if (!allowReplacement) return { error: DRAW_ID_EXISTS };
+    // Refuse to overwrite a draw whose matchUps have scores unless explicitly forced (or the
+    // scoring policy permits it) — mirrors deleteDrawDefinitions so a replace can't silently
+    // wipe completed results. The AUDIT snapshot below still fires when the replace proceeds.
+    if (replacementBlockedByScores({ existingDrawDefinition, tournamentRecord, event, force }))
+      return { error: SCORES_PRESENT };
     replaceExistingDraw({
       existingDrawDefinition,
       suppressNotifications,
@@ -238,6 +247,18 @@ function replaceExistingDraw({
   const existingMatchUpIds: string[] = existingMatchUps?.map(getMatchUpId) ?? [];
   const incomingMatchUps = allDrawMatchUps({ drawDefinition })?.matchUps;
 
+  // Capture a recoverable snapshot of the OUTGOING draw before it is discarded.
+  // Without this a replace is silent data-loss: unlike deleteDrawDefinitions the
+  // replace path emits no AUDIT snapshot, so a populated/scored draw overwritten via
+  // allowReplacement was previously unrecoverable. Reuses the DELETE_DRAW_DEFINITIONS
+  // audit contract so the server's AuditService records it identically
+  // (metadata.deletedDrawSnapshot -> /audit/deleted-draws + restore-draw). Emitted
+  // regardless of suppressNotifications (data-safety, not a UI notice) and gated on the
+  // outgoing draw actually having matchUps so empty-scaffold regenerations stay quiet.
+  if (existingMatchUpIds.length) {
+    dispatchDrawReplacementAudit({ existingDrawDefinition, tournamentId, eventId: eventId ?? event?.eventId });
+  }
+
   if (!suppressNotifications) {
     if (existingMatchUpIds?.length) {
       deleteMatchUpsNotice({
@@ -255,7 +276,30 @@ function replaceExistingDraw({
 
     const structureIds = drawDefinition.structures?.map(({ structureId }) => structureId);
     modifyDrawNotice({ drawDefinition, tournamentId, structureIds, eventId });
+    // the event's flightProfile (a first-class/extension index of draws) is mutated above,
+    // so the event entity itself changed — cover it with MODIFY_EVENT.
+    modifyEventNotice({ tournamentId, event });
   }
+}
+
+function replacementBlockedByScores({ existingDrawDefinition, tournamentRecord, event, force }) {
+  const matchUps = allDrawMatchUps({ drawDefinition: existingDrawDefinition })?.matchUps ?? [];
+  const scoresPresent = matchUps.some(({ score }) => checkScoreHasValue({ score }));
+  if (!scoresPresent) return false;
+  const { appliedPolicies } = getAppliedPolicies({ tournamentRecord, event });
+  const allowReplacementWithScores =
+    force ?? appliedPolicies?.[POLICY_TYPE_SCORING]?.allowDeletionWithScoresPresent?.drawDefinitions;
+  return !allowReplacementWithScores;
+}
+
+function dispatchDrawReplacementAudit({ existingDrawDefinition, tournamentId, eventId }) {
+  // Mirror deleteDrawDefinitions' AUDIT emission so an overwritten draw is recoverable
+  // through the same subscriber path. Only dispatched when a subscriber is present.
+  if (!hasTopic(AUDIT)) return;
+  const auditTrail = [
+    { action: DELETE_DRAW_DEFINITIONS, payload: { drawDefinitions: [existingDrawDefinition], eventId } },
+  ];
+  addNotice({ topic: AUDIT, payload: { tournamentId, detail: auditTrail } });
 }
 
 function addNewDraw({ suppressNotifications, tournamentRecord, drawDefinition, tournamentId, eventId, event }) {
@@ -270,5 +314,8 @@ function addNewDraw({ suppressNotifications, tournamentRecord, drawDefinition, t
       });
 
     addDrawNotice({ drawDefinition, tournamentId, eventId });
+    // adding a draw mutates the event's flightProfile (see setFirstClassOrExtension
+    // above), so the event entity changed too — cover it with MODIFY_EVENT.
+    modifyEventNotice({ tournamentId, event });
   }
 }

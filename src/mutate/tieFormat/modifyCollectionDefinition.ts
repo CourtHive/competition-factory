@@ -5,6 +5,7 @@ import { calculateWinCriteria } from '@Query/matchUp/calculateWinCriteria';
 import { getTieFormat } from '@Query/hierarchical/tieFormats/getTieFormat';
 import { getAppliedPolicies } from '@Query/extensions/getAppliedPolicies';
 import { isValidMatchUpFormat } from '@Validators/isValidMatchUpFormat';
+import { coercedGender, normalizeGender } from '@Helpers/coercedGender';
 import { updateTieFormat } from '@Mutate/tieFormat/updateTieFormat';
 import { decorateResult } from '@Functions/global/decorateResult';
 import { validateTieFormat } from '@Validators/validateTieFormat';
@@ -258,7 +259,7 @@ export function modifyCollectionDefinition({
   });
 
   if (!result.error) {
-    const genderModified = gender && sourceCollectionDefinition.gender !== gender;
+    const genderModified = gender && coercedGender(sourceCollectionDefinition.gender) !== coercedGender(gender);
     if (genderModified) {
       const affectedMatchUps = getAffectedMatchUps({ matchUp, structure, drawDefinition });
       for (const affectedMatchUp of affectedMatchUps) {
@@ -439,9 +440,10 @@ function applyFieldModifications({
     targetCollectionDefinition.category = category;
     modifications.push({ collectionId, category });
   }
-  if (gender && sourceCollectionDefinition.gender !== gender) {
-    targetCollectionDefinition.gender = gender;
-    modifications.push({ collectionId, gender });
+  const canonicalGender = gender && normalizeGender(gender);
+  if (canonicalGender && coercedGender(sourceCollectionDefinition.gender) !== coercedGender(canonicalGender)) {
+    targetCollectionDefinition.gender = canonicalGender;
+    modifications.push({ collectionId, gender: canonicalGender });
   }
 
   return undefined;

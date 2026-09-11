@@ -1,0 +1,384 @@
+import tournamentEngine from '@Engines/syncEngine';
+import mocksEngine from '@Assemblies/engines/mock';
+import { expect, it, describe } from 'vitest';
+import { cast } from '@Query/readModel/cast';
+
+// constants
+import { MISSING_TOURNAMENT_RECORD } from '@Constants/errorConditionConstants';
+
+describe('cast — singles (STANDARD)', () => {
+  const { tournamentRecord } = mocksEngine.generateTournamentRecord({
+    tournamentAttributes: { tournamentId: 't1' },
+    startDate: '2025-01-01',
+    endDate: '2025-01-07',
+    drawProfiles: [{ drawSize: 8, eventName: 'Singles' }],
+    completeAllMatchUps: true,
+    nonRandom: 1,
+  });
+
+  it('projects one tournaments row with provider + dates', () => {
+    const { rows } = cast({ tournamentRecord });
+    expect(rows!.tournaments).toHaveLength(1);
+    expect(rows!.tournaments[0].tournament_id).toEqual('t1');
+    expect(rows!.tournaments[0].start_date).toEqual('2025-01-01');
+    expect(rows!.tournaments[0].end_date).toEqual('2025-01-07');
+  });
+
+  it('projects one events row per event with attributes + a published flag', () => {
+    const { rows } = cast({ tournamentRecord });
+    expect(rows!.events).toHaveLength(1);
+    const event = rows!.events[0];
+    expect(event.event_name).toEqual('Singles');
+    expect(event.event_type).toEqual('SINGLES');
+    expect(event.tournament_id).toEqual('t1');
+    expect(typeof event.published).toEqual('boolean');
+    // event_id joins back to the match_ups' event_id
+    expect(rows!.match_ups.every((m) => m.event_id === event.event_id)).toBe(true);
+  });
+
+  it('flattens every matchUp at STANDARD level, one competitor per assigned side', () => {
+    const { rows } = cast({ tournamentRecord });
+    expect(rows!.match_ups.length).toBeGreaterThan(0);
+    expect(rows!.match_ups.every((m) => m.match_up_level === 'STANDARD')).toBe(true);
+    expect(rows!.match_ups.every((m) => m.parent_match_up_id === null)).toBe(true);
+
+    // singles competitors: index 0, INDIVIDUAL, side id === individual id
+    expect(rows!.match_up_competitors.length).toBeGreaterThan(0);
+    expect(rows!.match_up_competitors.every((c) => c.competitor_index === 0)).toBe(true);
+    expect(rows!.match_up_competitors.every((c) => c.participant_type === 'INDIVIDUAL')).toBe(true);
+    expect(rows!.match_up_competitors.every((c) => c.side_participant_id === c.individual_participant_id)).toBe(true);
+  });
+
+  it('writes a winner-perspective score_string on completed matchUps', () => {
+    const { rows } = cast({ tournamentRecord });
+    const completed = rows!.match_ups.filter((m) => m.winning_side && m.match_up_status === 'COMPLETED');
+    expect(completed.length).toBeGreaterThan(0);
+    expect(completed.every((m) => typeof m.score_string === 'string' && m.score_string.length > 0)).toBe(true);
+  });
+
+  it('leaves person_id NULL / unresolved for synthetic (UUID) participants', () => {
+    const { rows } = cast({ tournamentRecord });
+    expect(rows!.match_up_competitors.every((c) => c.person_id === null && c.link_source === 'unresolved')).toBe(true);
+  });
+});
+
+describe('cast — doubles (per-individual PAIR grain)', () => {
+  const { tournamentRecord } = mocksEngine.generateTournamentRecord({
+    drawProfiles: [{ drawSize: 8, eventType: 'DOUBLES', eventName: 'Dubs' }],
+    nonRandom: 1,
+  });
+
+  it('emits two individual rows per assigned side with the pair as side_participant_id', () => {
+    const { rows } = cast({ tournamentRecord });
+    const pairRows = rows!.match_up_competitors.filter((c) => c.participant_type === 'PAIR');
+    expect(pairRows.length).toBeGreaterThan(0);
+
+    const indices = new Set(pairRows.map((c) => c.competitor_index));
+    expect(indices.has(0)).toBe(true);
+    expect(indices.has(1)).toBe(true);
+
+    // the side (pair) id is distinct from each human's individual id
+    const second = pairRows.find((c) => c.competitor_index === 1)!;
+    expect(second.side_participant_id).toBeTruthy();
+    expect(second.individual_participant_id).toBeTruthy();
+    expect(second.side_participant_id).not.toEqual(second.individual_participant_id);
+    expect(rows!.match_ups.every((m) => m.event_type === 'DOUBLES')).toBe(true);
+  });
+});
+
+describe('cast — team (TIE container + RUBBER nesting)', () => {
+  const { tournamentRecord } = mocksEngine.generateTournamentRecord({
+    drawProfiles: [{ drawSize: 4, eventType: 'TEAM', tieFormatName: 'COLLEGE_DEFAULT', eventName: 'Teams' }],
+    nonRandom: 1,
+  });
+
+  it('produces TIE + RUBBER levels, rubbers parented, team rows carry team_id', () => {
+    const { rows } = cast({ tournamentRecord });
+    const levels = new Set(rows!.match_ups.map((m) => m.match_up_level));
+    expect(levels.has('TIE')).toBe(true);
+    expect(levels.has('RUBBER')).toBe(true);
+
+    const rubbers = rows!.match_ups.filter((m) => m.match_up_level === 'RUBBER');
+    expect(rubbers.length).toBeGreaterThan(0);
+    expect(rubbers.every((r) => typeof r.parent_match_up_id === 'string')).toBe(true);
+
+    const teamRows = rows!.match_up_competitors.filter((c) => c.participant_type === 'TEAM');
+    expect(teamRows.length).toBeGreaterThan(0);
+    expect(teamRows.every((c) => typeof c.team_id === 'string')).toBe(true);
+    // TEAM competitor rows are not resolved to a person
+    expect(teamRows.every((c) => c.person_id === null)).toBe(true);
+  });
+
+  it('projects each rubber exactly once (RUBBER via its TEAM parent, never a duplicate STANDARD)', () => {
+    const { rows } = cast({ tournamentRecord });
+    const ids = rows!.match_ups.map((m) => m.match_up_id);
+    expect(new Set(ids).size).toEqual(ids.length); // no duplicate match_up_id rows
+    // every rubber-carrying id is a RUBBER row, not a top-level STANDARD sibling
+    expect(rows!.match_ups.some((m) => m.match_up_level === 'RUBBER')).toBe(true);
+    expect(rows!.match_ups.filter((m) => m.match_up_level === 'STANDARD')).toHaveLength(0);
+  });
+
+  it('stamps each RUBBER with its tieFormat weight; TIE/STANDARD carry none', () => {
+    const { rows } = cast({ tournamentRecord });
+    const rubbers = rows!.match_ups.filter((m) => m.match_up_level === 'RUBBER');
+    expect(rubbers.every((r) => typeof r.tie_value === 'number')).toBe(true); // COLLEGE_DEFAULT weights
+    expect(rubbers.some((r) => r.tie_value === 1)).toBe(true); // the matchUpValue:1 collection
+    const ties = rows!.match_ups.filter((m) => m.match_up_level === 'TIE');
+    expect(ties.every((m) => m.tie_value === null)).toBe(true);
+  });
+});
+
+describe('cast — embargo (read-time gate inputs, never a stale visible flag)', () => {
+  it('keeps published intent true under a future embargo and stores the release timestamp', () => {
+    const FUTURE = '2999-01-01T00:00:00.000Z';
+    const {
+      tournamentRecord,
+      drawIds: [drawId],
+      eventIds: [eventId],
+    } = mocksEngine.generateTournamentRecord({
+      drawProfiles: [{ drawSize: 8, eventName: 'E1' }],
+      nonRandom: 1,
+    });
+    tournamentEngine.setState(tournamentRecord);
+    tournamentEngine.publishEvent({
+      eventId,
+      drawDetails: { [drawId]: { publishingDetail: { published: true, embargo: FUTURE } } },
+    });
+    const { tournamentRecord: record } = tournamentEngine.getTournament();
+
+    const { rows } = cast({ tournamentRecord: record });
+    expect(rows!.match_ups.length).toBeGreaterThan(0);
+    // intent is published (embargo is NOT collapsed into `published`)...
+    expect(rows!.match_ups.every((m) => m.published === true)).toBe(true);
+    // ...and the raw release timestamp is stored for a read-time gate
+    expect(rows!.match_ups.every((m) => m.embargo === FUTURE)).toBe(true);
+  });
+
+  it('leaves embargo null for an unpublished draw', () => {
+    const { tournamentRecord } = mocksEngine.generateTournamentRecord({
+      drawProfiles: [{ drawSize: 8 }],
+      nonRandom: 1,
+    });
+    const { rows } = cast({ tournamentRecord });
+    expect(rows!.match_ups.every((m) => m.published === false && m.embargo === null)).toBe(true);
+  });
+});
+
+describe('cast — entries fact', () => {
+  it('projects an entries row per event entry', () => {
+    const { tournamentRecord } = mocksEngine.generateTournamentRecord({
+      tournamentAttributes: { tournamentId: 'te' },
+      drawProfiles: [{ drawSize: 8, eventName: 'E1' }],
+      nonRandom: 1,
+    });
+    const { rows } = cast({ tournamentRecord });
+    expect(rows!.entries.length).toBeGreaterThan(0);
+    expect(rows!.entries.every((e) => e.tournament_id === 'te' && e.participant_id)).toBe(true);
+    // entry event_id resolves to the generated event
+    const eventId = tournamentRecord.events![0].eventId;
+    expect(rows!.entries.some((e) => e.event_id === eventId)).toBe(true);
+  });
+});
+
+describe('cast — venues + facility_id default', () => {
+  it('projects venues and links, facility_id defaulting to venue_id', () => {
+    const { tournamentRecord } = mocksEngine.generateTournamentRecord({
+      tournamentAttributes: { tournamentId: 'tv' },
+      drawProfiles: [{ drawSize: 4 }],
+      venueProfiles: [{ venueId: 'v1', venueName: 'Club', courtsCount: 2, idPrefix: 'v1c' }],
+      nonRandom: 1,
+    });
+    const { rows } = cast({ tournamentRecord });
+    expect(rows!.venues).toHaveLength(1);
+    expect(rows!.venues[0].venue_id).toEqual('v1');
+    expect(rows!.venues[0].venue_name).toEqual('Club');
+    expect(rows!.venues[0].facility_id).toEqual('v1');
+    expect(rows!.tournament_venues).toEqual([{ tournament_id: 'tv', venue_id: 'v1' }]);
+  });
+
+  it('uses an explicit facilityId when the venue carries one', () => {
+    const { tournamentRecord } = mocksEngine.generateTournamentRecord({
+      drawProfiles: [{ drawSize: 4 }],
+      venueProfiles: [{ venueId: 'v1', venueName: 'Club', courtsCount: 2, idPrefix: 'v1c' }],
+      nonRandom: 1,
+    });
+    tournamentRecord.venues![0].facilityId = 'fac-9';
+    const { rows } = cast({ tournamentRecord });
+    expect(rows!.venues[0].facility_id).toEqual('fac-9');
+  });
+});
+
+describe('cast — published flag (visibility, not omission)', () => {
+  it('is false for an unpublished draw', () => {
+    const { tournamentRecord } = mocksEngine.generateTournamentRecord({
+      drawProfiles: [{ drawSize: 8 }],
+      nonRandom: 1,
+    });
+    const { rows } = cast({ tournamentRecord });
+    expect(rows!.match_ups.length).toBeGreaterThan(0);
+    expect(rows!.match_ups.every((m) => m.published === false)).toBe(true);
+  });
+
+  it('is true for a published draw (and still projects every matchUp)', () => {
+    const { tournamentRecord } = mocksEngine.generateTournamentRecord({
+      drawProfiles: [{ drawSize: 8, publish: true }],
+      completeAllMatchUps: true,
+      nonRandom: 1,
+    });
+    const { rows } = cast({ tournamentRecord });
+    expect(rows!.match_ups.length).toBeGreaterThan(0);
+    expect(rows!.match_ups.every((m) => m.published === true)).toBe(true);
+  });
+});
+
+describe('cast — order of play + scheduling profile', () => {
+  const { tournamentRecord } = mocksEngine.generateTournamentRecord({
+    tournamentAttributes: { tournamentId: 'tOoP' },
+    drawProfiles: [{ drawSize: 4, eventName: 'Singles' }],
+    venueProfiles: [{ venueId: 'v1', venueName: 'Club', courtsCount: 2, idPrefix: 'v1c' }],
+    nonRandom: 1,
+  });
+  const drawId = tournamentRecord.events[0].drawDefinitions[0].drawId;
+  // publish the order of play (PUBLIC) and set a scheduling plan directly on the record
+  tournamentRecord.timeItems = [
+    {
+      itemType: 'PUBLISH.STATUS',
+      itemValue: {
+        PUBLIC: { orderOfPlay: { published: true, scheduledDates: ['2025-01-05'] }, participants: { published: true } },
+      },
+    },
+  ];
+  (tournamentRecord as any).scheduling = {
+    profile: [
+      {
+        scheduleDate: '2025-01-05',
+        venues: [{ venueId: 'v1', rounds: [{ drawId, winnerFinishingPositionRange: '1-4' }] }],
+      },
+    ],
+  };
+
+  it('projects the published order-of-play state and the flattened scheduling plan', () => {
+    const { rows } = cast({ tournamentRecord });
+    expect(rows!.order_of_play).toEqual([
+      { tournament_id: 'tOoP', published: true, scheduled_dates: ['2025-01-05'], event_ids: null, embargo: null },
+    ]);
+    expect(rows!.scheduling_profile).toHaveLength(1);
+    expect(rows!.scheduling_profile[0]).toMatchObject({
+      tournament_id: 'tOoP',
+      schedule_date: '2025-01-05',
+      venue_id: 'v1',
+      round_order: 0,
+      draw_id: drawId,
+      winner_finishing_position_range: '1-4',
+    });
+    // participant-list publish state + the aggregate tournaments.published flag
+    expect(rows!.participant_publish).toEqual([{ tournament_id: 'tOoP', published: true, embargo: null }]);
+    expect(rows!.tournaments[0].published).toBe(true);
+  });
+
+  it('emits no order_of_play / participant_publish rows and unpublished tournament when nothing is published', () => {
+    const { rows } = cast({ tournamentRecord: { ...tournamentRecord, timeItems: [] } as any });
+    expect(rows!.order_of_play).toEqual([]);
+    expect(rows!.participant_publish).toEqual([]);
+    expect(rows!.tournaments[0].published).toBe(false);
+  });
+});
+
+describe('cast — courts', () => {
+  const { tournamentRecord } = mocksEngine.generateTournamentRecord({
+    tournamentAttributes: { tournamentId: 'tC' },
+    drawProfiles: [{ drawSize: 4, eventName: 'Singles' }],
+    venueProfiles: [{ venueId: 'vC', venueName: 'Club', courtsCount: 3, idPrefix: 'court' }],
+    nonRandom: 1,
+  });
+
+  it('emits one courts row per court, linked to its venue', () => {
+    const { rows } = cast({ tournamentRecord });
+    expect(rows!.courts).toHaveLength(3);
+    expect(rows!.courts.every((c) => c.venue_id === 'vC' && c.tournament_id === 'tC')).toBe(true);
+    expect(rows!.courts.every((c) => c.court_id && c.court_name)).toBe(true);
+    // every court's venue_id joins a venues row
+    const venueIds = new Set(rows!.venues.map((v) => v.venue_id));
+    expect(rows!.courts.every((c) => venueIds.has(c.venue_id))).toBe(true);
+  });
+});
+
+describe('cast — draws + structures', () => {
+  const { tournamentRecord } = mocksEngine.generateTournamentRecord({
+    tournamentAttributes: { tournamentId: 'tD' },
+    drawProfiles: [{ drawSize: 8, drawName: 'Main Draw', eventName: 'Singles' }],
+    nonRandom: 1,
+  });
+
+  it('emits one draws row per draw and one structures row per top-level structure', () => {
+    const { rows } = cast({ tournamentRecord });
+    expect(rows!.draws).toHaveLength(1);
+    expect(rows!.draws[0]).toMatchObject({ tournament_id: 'tD', draw_name: 'Main Draw' });
+    expect(rows!.draws[0].draw_type).toBeTruthy();
+
+    expect(rows!.structures.length).toBeGreaterThan(0);
+    const drawId = rows!.draws[0].draw_id;
+    expect(rows!.structures.every((s) => s.draw_id === drawId)).toBe(true);
+    // a MAIN structure exists and its structure_id joins back to the match_ups
+    const main = rows!.structures.find((s) => s.stage === 'MAIN');
+    expect(main).toBeTruthy();
+    expect(rows!.match_ups.some((m) => m.structure_id === main!.structure_id)).toBe(true);
+  });
+});
+
+describe('cast — seeds', () => {
+  const { tournamentRecord } = mocksEngine.generateTournamentRecord({
+    tournamentAttributes: { tournamentId: 'tS' },
+    drawProfiles: [{ drawSize: 8, seedsCount: 4, eventName: 'Seeded' }],
+    nonRandom: 1,
+  });
+
+  it('emits one seeds row per participant-holding seed assignment', () => {
+    const { rows } = cast({ tournamentRecord });
+    expect(rows!.seeds.length).toBeGreaterThan(0);
+    expect(rows!.seeds.every((s) => s.participant_id && typeof s.seed_number === 'number')).toBe(true);
+    expect(rows!.seeds.every((s) => s.tournament_id === 'tS')).toBe(true);
+    // each seed row's structure joins back to a match_ups structure_id
+    const structureIds = new Set(rows!.match_ups.map((m) => m.structure_id));
+    expect(rows!.seeds.every((s) => structureIds.has(s.structure_id))).toBe(true);
+  });
+});
+
+describe('cast — guard', () => {
+  it('errors (no throw) when tournamentRecord is missing', () => {
+    const result = cast({});
+    expect(result.error).toEqual(MISSING_TOURNAMENT_RECORD);
+    expect(result.rows).toBeUndefined();
+  });
+
+  it('errors (no throw) when called with no arguments', () => {
+    const result = cast(undefined);
+    expect(result.error).toEqual(MISSING_TOURNAMENT_RECORD);
+  });
+});
+
+describe('cast — round-robin nested group structures', () => {
+  it('projects each group sub-structure so every matchUp structure_id resolves (no orphans)', () => {
+    const { tournamentRecord } = mocksEngine.generateTournamentRecord({
+      drawProfiles: [{ drawSize: 8, drawType: 'ROUND_ROBIN', eventName: 'RR' }],
+      nonRandom: 1,
+    });
+    const { rows } = cast({ tournamentRecord });
+    const structureIds = new Set(rows!.structures.map((s: any) => s.structure_id));
+    const matchUpStructureIds = [...new Set(rows!.match_ups.map((s: any) => s.structure_id))];
+
+    // every distinct matchUp structure_id resolves to a structures row (the join fix).
+    expect(matchUpStructureIds.length).toBeGreaterThan(0);
+    expect(matchUpStructureIds.every((id) => structureIds.has(id))).toBe(true);
+
+    // the container is projected AND at least two group ITEM rows point at it.
+    const container = rows!.structures.find((s: any) => s.structure_type === 'CONTAINER');
+    const groups = rows!.structures.filter((s: any) => s.parent_structure_id === container?.structure_id);
+    expect(container).toBeDefined();
+    expect(groups.length).toBeGreaterThanOrEqual(2);
+    // the group rows are exactly the structures the matchUps reference.
+    expect(groups.every((g: any) => matchUpStructureIds.includes(g.structure_id))).toBe(true);
+    // a top-level structure has a null parent.
+    expect(container!.parent_structure_id).toBeNull();
+  });
+});

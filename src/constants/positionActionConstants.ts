@@ -44,6 +44,6 @@ export const positionActionConstants = {
   ASSIGN_BYE,
   SEED_CASCADE,
   SEED_VALUE,
-};
+} as const;
 
 export default positionActionConstants;

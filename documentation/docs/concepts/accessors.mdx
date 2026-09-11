@@ -146,10 +146,9 @@ const { participants: filtered } = tournamentEngine.getParticipants({
 
 Extract numeric values from complex scale items:
 
-```js
-
 **API Reference:** [getParticipants](/docs/governors/query-governor#getparticipants)
 
+```js
 // Complex NTRP scale item
 const scaleItem = {
   scaleType: 'RATING',
@@ -185,10 +184,9 @@ const { scaleItem: retrieved } = tournamentEngine.getParticipantScaleItem({
 
 Define matchUp avoidance based on participant attributes:
 
-```js
-
 **API Reference:** [getParticipantScaleItem](/docs/governors/query-governor#getparticipantscaleitem)
 
+```js
 // Avoid matching participants from same country
 const policyDefinitions = {
   avoidance: {
@@ -214,13 +212,11 @@ tournamentEngine.generateDrawDefinition({
 
 Access properties of individual participants within teams or pairs:
 
-```js
-
-
 **API Reference:** [attachPolicies](/docs/governors/policy-governor#attachpolicies)
 
 **API Reference:** [generateDrawDefinition](/docs/governors/generation-governor#generatedrawdefinition)
 
+```js
 // Get all pairs containing at least one USA player
 const { participants } = tournamentEngine.getParticipants({
   participantFilters: {
@@ -254,10 +250,9 @@ const { participants: teams } = tournamentEngine.getParticipants({
 
 Combine multiple accessor-based filters:
 
-```js
-
 **API Reference:** [getParticipants](/docs/governors/query-governor#getparticipants)
 
+```js
 const { participants } = tournamentEngine.getParticipants({
   participantFilters: {
     accessorValues: [
@@ -275,10 +270,9 @@ const { participants } = tournamentEngine.getParticipants({
 
 Some filter contexts support partial matching:
 
-```js
-
 **API Reference:** [getParticipants](/docs/governors/query-governor#getparticipants)
 
+```js
 // Filter by birth year from full date
 const { participants } = tournamentEngine.getParticipants({
   participantFilters: {
@@ -296,10 +290,9 @@ const { participants } = tournamentEngine.getParticipants({
 
 When accessor path includes arrays, values are extracted from all elements:
 
-```js
-
 **API Reference:** [getParticipants](/docs/governors/query-governor#getparticipants)
 
+```js
 // PAIR participant
 const pair = {
   participantType: 'PAIR',
@@ -401,10 +394,9 @@ const { participants: females } = tournamentEngine.getParticipants({
 
 Filter participants for event entry:
 
-```js
-
 **API Reference:** [getParticipants](/docs/governors/query-governor#getparticipants)
 
+```js
 // Get all junior female players
 const { participants } = tournamentEngine.getParticipants({
   participantFilters: {
@@ -426,13 +418,11 @@ tournamentEngine.addEventEntries({
 
 Create draws avoiding same-nation matchups:
 
-```js
-
-
 **API Reference:** [getParticipants](/docs/governors/query-governor#getparticipants)
 
 **API Reference:** [addEventEntries](/docs/governors/entries-governor#addevententries)
 
+```js
 // Set nationality avoidance policy
 const policyDefinitions = {
   avoidance: {
@@ -457,10 +447,9 @@ tournamentEngine.generateDrawDefinition({
 
 Work with multi-attribute scale values:
 
-```js
-
 **API Reference:** [generateDrawDefinition](/docs/governors/generation-governor#generatedrawdefinition)
 
+```js
 // Set complex scale item
 tournamentEngine.setParticipantScaleItem({
   participantId: 'player-123',
@@ -496,13 +485,11 @@ console.log(scaleItem.scaleValue.combinedRating); // 9.2
 
 Filter team participants by individual member attributes:
 
-```js
-
-
 **API Reference:** [setParticipantScaleItem](/docs/governors/participant-governor#setparticipantscaleitem)
 
 **API Reference:** [getParticipantScaleItem](/docs/governors/query-governor#getparticipantscaleitem)
 
+```js
 // Get teams with at least one member from specific region
 const { participants: regionalTeams } = tournamentEngine.getParticipants({
   participantFilters: {

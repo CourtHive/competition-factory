@@ -1,6 +1,6 @@
 import { getDisabledStatus } from '@Query/extensions/getDisabledStatus';
 import { getInContextCourt } from './getInContextCourt';
-import { findExtension } from '@Acquire/findExtension';
+import { firstClassOrExtension } from '@Acquire/firstClassOrExtension';
 import { makeDeepCopy } from '@Tools/makeDeepCopy';
 
 // constants and types
@@ -23,11 +23,8 @@ type GetVenuesAndCourtsArgs = {
 function shouldIncludeVenue(venue: Venue, venueIds: string[], ignoreDisabled: boolean): boolean {
   if (venueIds.length && !venueIds.includes(venue.venueId)) return false;
   if (ignoreDisabled) {
-    const { extension } = findExtension({
-      name: DISABLED,
-      element: venue,
-    });
-    if (extension?.value) return false;
+    const disabledValue = firstClassOrExtension({ element: venue, attribute: 'disabled', name: DISABLED });
+    if (disabledValue) return false;
   }
   return true;
 }
@@ -58,11 +55,8 @@ function processVenue({
   for (const court of venue.courts ?? []) {
     if (!uniqueCourtIds.includes(court.courtId)) {
       if (ignoreDisabled) {
-        const { extension } = findExtension({
-          name: DISABLED,
-          element: court,
-        });
-        const isDisabled = getDisabledStatus({ extension, dates });
+        const disabledValue = firstClassOrExtension({ element: court, attribute: 'disabled', name: DISABLED });
+        const isDisabled = getDisabledStatus({ disabledValue, dates });
         if (isDisabled) continue;
       }
       const { inContextCourt } = getInContextCourt({
@@ -138,11 +132,8 @@ export function getTournamentVenuesAndCourts({
   const venues = makeDeepCopy(tournamentRecord.venues ?? [], convertExtensions)
     .filter((venue) => {
       if (!ignoreDisabled) return venue;
-      const { extension } = findExtension({
-        name: DISABLED,
-        element: venue,
-      });
-      return !extension?.value && venue;
+      const disabledValue = firstClassOrExtension({ element: venue, attribute: 'disabled', name: DISABLED });
+      return !disabledValue && venue;
     })
     .filter(Boolean);
 
@@ -150,11 +141,8 @@ export function getTournamentVenuesAndCourts({
     const additionalCourts = (venue?.courts ?? [])
       .filter((court) => {
         if (!ignoreDisabled && !dates?.length) return court;
-        const { extension } = findExtension({
-          name: DISABLED,
-          element: court,
-        });
-        return getDisabledStatus({ extension, dates });
+        const disabledValue = firstClassOrExtension({ element: court, attribute: 'disabled', name: DISABLED });
+        return getDisabledStatus({ disabledValue, dates });
       })
       .filter(Boolean)
       .map((court) => {

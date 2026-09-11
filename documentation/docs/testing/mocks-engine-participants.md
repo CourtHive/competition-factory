@@ -390,7 +390,7 @@ const { tournamentRecord } = mocksEngine.generateTournamentRecord({
 ### Adding to Existing Tournament
 
 ```js
-import tournamentEngine from 'tods-competition-factory';
+import { tournamentEngine } from 'tods-competition-factory';
 
 // Generate participants separately
 const { participants } = mocksEngine.generateParticipants({
@@ -426,9 +426,7 @@ const { participants } = mocksEngine.generateParticipants({
 tournamentEngine.setState({ participants });
 tournamentEngine.createTeamsFromParticipantAttributes({
   participantAttribute: 'person.addresses[0].state',
-  uuids: [
-    /* team IDs */
-  ],
+  uuids: [/* team IDs */],
 });
 ```
 
@@ -569,6 +567,168 @@ const { participants } = mocksEngine.generateParticipants({
   ],
 }
 ```
+
+## Pre-built participants (ingest pipelines)
+
+`mocksEngine.generateTournamentRecord` accepts a top-level `participants` array. When supplied, factory uses the caller's participant pool as the entry source instead of synthesizing fresh mocks. This was added for ingest pipelines (e.g. `courthive-ingest`'s federation adapters) where stable provider-issued IDs need to survive through the canonical TODS shape that mocksEngine produces.
+
+### When to use
+
+Use preset participants when you already have a Participant[] list with stable IDs from an upstream source and want factory to lay down the canonical draw shape around them:
+
+- Federation HTML / CSV ingest where each player has a provider-issued ID.
+- Migrating real tournament data into TODS where the IDs come from a legacy system.
+- Property tests that need named participants for assertion clarity.
+
+For pure test fixtures with arbitrary mock data, use `participantsProfile` as before — synthesis is fine and often preferable.
+
+### Minimal example
+
+```js
+const participants = [
+  {
+    participantId: 'CZE1045200',
+    participantType: 'INDIVIDUAL',
+    participantRole: 'COMPETITOR',
+    participantName: 'Černovický Jakub',
+    person: { personId: 'CZE1045200', sex: 'MALE', nationalityCode: 'CZE' },
+  },
+  // ...32 total
+];
+
+const { tournamentRecord, drawIds } = mocksEngine.generateTournamentRecord({
+  tournamentName: 'Real Federation Data',
+  participants,
+  eventProfiles: [
+    {
+      eventName: 'Singles',
+      eventType: 'SINGLES',
+      gender: 'MALE',
+      drawProfiles: [
+        {
+          drawSize: 32,
+          participantsCount: 32,
+          automated: false, // leave positionAssignments empty for manual placement
+          idPrefix: 'main', // deterministic matchUpId: 'main-1-1', 'main-2-1', etc.
+        },
+      ],
+    },
+  ],
+  setState: true,
+});
+```
+
+### Behavior contract
+
+When `participants` is a non-empty array:
+
+- Factory calls `addParticipants` directly with your list.
+- The synthesis path is fully suppressed: `addTournamentParticipants`, `generateEventParticipants`, and per-draw `uniqueDrawParticipants` generation are all skipped.
+- `participantsProfile` synthesis fields (`participantsCount`, `participantType`, `sex`, etc.) are ignored — your pool is authoritative.
+- Event-level filters still apply when selecting from your pool: `gender`, `eventType` (SINGLES → INDIVIDUAL, DOUBLES → PAIR, etc.), `participantType`. Supply participants that satisfy those filters, or the draw will run short on entries.
+- For DOUBLES events, supply pre-formed PAIR participants in the list (see [Participant Types](#participant-types)).
+- **Multiple events spanning different genders in one call are supported.** A single `generateTournamentRecord({ participants })` may define, for example, Boys Singles, Girls Singles, Boys Doubles, and Girls Doubles together: each event selects only its matching-gender participants (PAIRs are matched by their constituents), and participants consumed by one event are not reused by another. A gendered event selects by `event.gender`, not pool order, so a Boys event picks the males even if females appear first in the pool.
+
+### End-to-end ingest pattern
+
+The full pattern — generate canonical shape, then infill positions and outcomes from parsed source data:
+
+```js
+import { mocksEngine, tournamentEngine } from 'tods-competition-factory';
+
+// 1. Build pool from parsed source. Include PAIR participants for DOUBLES.
+const participants = buildParticipantsFromUpstream(parsedData);
+
+// 2. Generate skeleton via mocksEngine. `automated: false` leaves
+//    positionAssignments empty; factory still creates the matchUp graph,
+//    winnerMatchUpId chain, and finishingPositionRange ranges.
+tournamentEngine.reset();
+const { tournamentRecord, drawIds } = mocksEngine.generateTournamentRecord({
+  tournamentName: parsedData.name,
+  startDate: parsedData.startDate,
+  endDate: parsedData.endDate,
+  participants,
+  eventProfiles: [
+    {
+      eventName: 'Singles',
+      eventType: 'SINGLES',
+      gender: 'MALE',
+      drawProfiles: [
+        {
+          drawSize: 32,
+          participantsCount: 32,
+          automated: false,
+          idPrefix: 'main',
+        },
+      ],
+    },
+  ],
+  setState: true,
+});
+
+// 3. Inject R1 positions from parsed bracket.
+const drawId = drawIds[0];
+const drawDef = tournamentRecord.events[0].drawDefinitions[0];
+const structureId = drawDef.structures[0].structureId;
+for (const parsedR1 of parsedData.round1Matches) {
+  const dp1 = parsedR1.roundPosition * 2 - 1;
+  const dp2 = parsedR1.roundPosition * 2;
+  tournamentEngine.assignDrawPosition({
+    drawId,
+    structureId,
+    drawPosition: dp1,
+    participantId: parsedR1.side1Id,
+  });
+  if (parsedR1.side2Id) {
+    tournamentEngine.assignDrawPosition({
+      drawId,
+      structureId,
+      drawPosition: dp2,
+      participantId: parsedR1.side2Id,
+    });
+  } else {
+    // explicit BYE — factory auto-advances the opposing side
+    tournamentEngine.assignDrawPosition({ drawId, structureId, drawPosition: dp2, bye: true });
+  }
+}
+
+// 4. Apply completed-match outcomes in round order so factory's advancement
+//    chain is walked correctly (winner of R1Pn → drawPosition of R2P⌈n/2⌉).
+const matchUps = tournamentRecord.events[0].drawDefinitions[0].structures[0].matchUps;
+const lookup = new Map(matchUps.map((m) => [`${m.roundNumber}-${m.roundPosition}`, m.matchUpId]));
+const ordered = parsedData.completedMatches.sort(
+  (a, b) => a.roundNumber - b.roundNumber || a.roundPosition - b.roundPosition,
+);
+for (const m of ordered) {
+  const matchUpId = lookup.get(`${m.roundNumber}-${m.roundPosition}`);
+  tournamentEngine.setMatchUpStatus({
+    drawId,
+    matchUpId,
+    matchUpStatus: 'COMPLETED',
+    outcome: { winningSide: m.winningSide, scoreString: m.scoreString },
+  });
+}
+
+// 5. Extract the final, populated record.
+const finalRecord = tournamentEngine.getState().tournamentRecords[tournamentRecord.tournamentId];
+```
+
+### QUALIFYING and play-off structures
+
+mocksEngine doesn't accept `stage: 'QUALIFYING'` on a standalone drawProfile — that flow expects qualifying via `qualifyingProfiles` nested in a MAIN drawProfile (which auto-creates a WINNER link). For ingest pipelines that want QUALIFYING as its own drawDefinition (no auto-link), use a separate drawProfile (factory defaults its `structure.stage` to `MAIN`) and **post-stamp** the stage after generation:
+
+```js
+// After generation, before serialization:
+const qualDrawDef = tournamentRecord.events[0].drawDefinitions[1]; // 2nd drawProfile
+qualDrawDef.structures[0].stage = 'QUALIFYING';
+qualDrawDef.drawName = 'Qualifying';
+```
+
+The rankings engine's `stages: [MAIN]` filter then naturally excludes the QUALIFYING-stage participants from MAIN award profiles.
+
+### Reference test
+
+See `src/tests/documentation/presetParticipants.test.ts` for the canonical three-test fixture: SINGLES preset, the assignDrawPosition + setMatchUpStatus chain, and DOUBLES PAIR pre-supply.
 
 ## Tips
 

@@ -16,4 +16,4 @@ export const matchUpTypes = {
   TEAM,
   HYBRID_MATCHUP,
   HYBRID,
-};
+} as const;

@@ -1,3 +1,4 @@
+import { firstClassOrExtension } from '@Acquire/firstClassOrExtension';
 import { mocksEngine } from '@Assemblies/engines/mock';
 import tournamentEngine from '@Engines/syncEngine';
 import queryEngine from '@Engines/queryEngine';
@@ -111,5 +112,8 @@ test('it can allocate courts to a TEAM matchUp', () => {
   expect(result.dateMatchUps[0].schedule.allocatedCourts).toBeUndefined();
 
   result = tournamentEngine.getTournament();
-  expect(result.tournamentRecord.extensions.filter(({ name }) => name === FACTORY).length).toEqual(1);
+  // FACTORY stamp is first-class `factory` in NATIVE, a legacy extension in LEGACY
+  expect(
+    firstClassOrExtension({ element: result.tournamentRecord, attribute: 'factory', name: FACTORY }),
+  ).toBeDefined();
 });

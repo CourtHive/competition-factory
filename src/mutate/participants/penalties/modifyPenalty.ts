@@ -1,10 +1,9 @@
 import { requireParams } from '@Helpers/parameters/requireParams';
-import { addNotice } from '@Global/state/globalState';
+import { modifyParticipantsNotice } from '@Mutate/notifications/participantNotifications';
 
 import penaltyTemplate from '@Assemblies/generators/templates/penaltyTemplate';
 import { TOURNAMENT_RECORD, PENALTY_ID } from '@Constants/attributeConstants';
 import { Participant, Penalty, Tournament } from '@Types/tournamentTypes';
-import { MODIFY_PARTICIPANTS } from '@Constants/topicConstants';
 import { SUCCESS } from '@Constants/resultConstants';
 import {
   PENALTY_NOT_FOUND,
@@ -75,12 +74,9 @@ function penaltyModify({ tournamentRecord, modifications, penaltyId }: ModifyPen
   });
 
   if (updatedPenalty) {
-    addNotice({
-      topic: MODIFY_PARTICIPANTS,
-      payload: {
-        tournamentId: tournamentRecord.tournamentId,
-        participants: modifiedParticipants,
-      },
+    modifyParticipantsNotice({
+      tournamentId: tournamentRecord.tournamentId,
+      participants: modifiedParticipants,
     });
   }
 

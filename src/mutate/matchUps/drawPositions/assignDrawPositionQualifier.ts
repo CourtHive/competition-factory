@@ -101,7 +101,10 @@ export function assignDrawPositionQualifier({
       //this should NEVER be the case for a qualifier position
       if (hasPropagatedStatus) {
         assignment.participantId = undefined;
-        console.log('oddity: invalid participantId on qualifier position cleared');
+        pushGlobalLog({
+          method: 'assignDrawPositionQualifier',
+          issue: 'invalid participantId on qualifier position cleared',
+        });
       }
     }
   });

@@ -232,6 +232,10 @@ export class ScoringEngine {
    * framework proxy wrappers (e.g. Svelte 5 $state) that structuredClone rejects.
    */
   getState(): MatchUp {
+    // Deliberate — see the JSDoc above. structuredClone throws DataCloneError on the framework proxies
+    // this state can hold, so the JSON round-trip is the requirement here, not the default deep-copy
+    // idiom the rule exists to retire.
+    // eslint-disable-next-line no-restricted-syntax
     return JSON.parse(JSON.stringify(this.state));
   }
 
@@ -1106,9 +1110,7 @@ export class ScoringEngine {
     // matching their new positions in history.points.
     const entries = this.state.history?.entries;
     if (entries) {
-      const entryIdx = entries.findIndex(
-        (e) => e.type === 'point' && (e as any).pointIndex === pointIndex,
-      );
+      const entryIdx = entries.findIndex((e) => e.type === 'point' && (e as any).pointIndex === pointIndex);
       if (entryIdx !== -1) entries.splice(entryIdx, 1);
       for (const e of entries) {
         if (e.type === 'point' && (e as any).pointIndex > pointIndex) {

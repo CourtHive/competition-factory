@@ -100,7 +100,14 @@ export function publishEvent(params: PublishEventType): ResultType & { eventData
 
   const drawDetails = buildExistingDrawDetails({ pubStatus, eventDrawIds });
 
-  applyDrawIdPublishState({ drawDetails, eventDrawIds, drawIdsToValidate, drawIdsToRemove, drawIdsToAdd, specifiedDrawIds });
+  applyDrawIdPublishState({
+    drawDetails,
+    eventDrawIds,
+    drawIdsToValidate,
+    drawIdsToRemove,
+    drawIdsToAdd,
+    specifiedDrawIds,
+  });
 
   for (const drawId of eventDrawIds) {
     if (params.drawDetails?.[drawId]) {
@@ -133,7 +140,11 @@ export function publishEvent(params: PublishEventType): ResultType & { eventData
 
   if (notify)
     addNotice({
-      payload: { eventData, tournamentId: tournamentRecord.tournamentId },
+      // eventId is carried on the envelope, NOT only inside eventData.eventInfo. Consumers that need
+      // just the id (cache eviction, fan-out routing) previously had to reach through the whole
+      // payload for it — which is what keeps `eventData` mandatory. See
+      // Mentat/planning/FACTORY_NOTICE_IDENTITY_AUDIT.md.
+      payload: { eventData, eventId: event?.eventId, tournamentId: tournamentRecord.tournamentId },
       topic: PUBLISH_EVENT,
     });
 
@@ -207,7 +218,14 @@ function buildExistingDrawDetails({ pubStatus, eventDrawIds }) {
     }, {});
 }
 
-function applyDrawIdPublishState({ drawDetails, eventDrawIds, drawIdsToValidate, drawIdsToRemove, drawIdsToAdd, specifiedDrawIds }) {
+function applyDrawIdPublishState({
+  drawDetails,
+  eventDrawIds,
+  drawIdsToValidate,
+  drawIdsToRemove,
+  drawIdsToAdd,
+  specifiedDrawIds,
+}) {
   for (const drawId of eventDrawIds) {
     if (!drawIdsToValidate.length || drawIdsToValidate.includes(drawId)) {
       if (drawIdsToRemove?.includes(drawId) || (specifiedDrawIds?.length && !specifiedDrawIds.includes(drawId))) {
@@ -246,7 +264,14 @@ function mergeDrawDetail({ drawDetails, drawId, newDetail, event }) {
   };
 
   if (structureIdsToAdd.length || structureIdsToRemove.length) {
-    const result = applyStructureChanges({ drawDetails, drawId, structureIdsToAdd, structureIdsToRemove, structureDetails, event });
+    const result = applyStructureChanges({
+      drawDetails,
+      drawId,
+      structureIdsToAdd,
+      structureIdsToRemove,
+      structureDetails,
+      event,
+    });
     if (result?.error) return result;
   }
 
@@ -263,14 +288,19 @@ function mergeDrawDetail({ drawDetails, drawId, newDetail, event }) {
   return undefined;
 }
 
-function applyStructureChanges({ drawDetails, drawId, structureIdsToAdd, structureIdsToRemove, structureDetails, event }) {
+function applyStructureChanges({
+  drawDetails,
+  drawId,
+  structureIdsToAdd,
+  structureIdsToRemove,
+  structureDetails,
+  event,
+}) {
   const drawStructureIds = (
     event?.drawDefinitions?.find((drawDefinition) => drawDefinition.drawId === drawId)?.structures ?? []
   ).map(({ structureId }) => structureId);
   const structureIdsToValidate = (structureIdsToAdd ?? []).concat(structureIdsToRemove ?? []);
-  const invalidStructureIds = structureIdsToValidate.filter(
-    (structureId) => !drawStructureIds.includes(structureId),
-  );
+  const invalidStructureIds = structureIdsToValidate.filter((structureId) => !drawStructureIds.includes(structureId));
   if (invalidStructureIds.length) {
     return decorateResult({
       result: { error: STRUCTURE_NOT_FOUND },

@@ -1,4 +1,5 @@
-import { executionAsyncId, createHook } from 'node:async_hooks';
+import { preserveNoticeIdentity } from '@Global/state/noticeIdentity';
+import { AsyncLocalStorage } from 'node:async_hooks';
 import {
   CallListenerArgs,
   GetNoticesArgs,
@@ -12,31 +13,24 @@ import { INVALID_VALUES, MISSING_TOURNAMENT_RECORD, NOT_FOUND } from '@Constants
 import { SUCCESS } from '@Constants/resultConstants';
 
 /**
- * This code enables "global" state for each async execution context.
- * Creates instance state for each async execution context to support multiple concurrent requests.
- * Sample on this page: https://stackabuse.com/using-async-hooks-for-request-context-handling-in-node-js/
+ * Per-async-context "global" state, so concurrent requests each mutate their own
+ * factory engine state instead of sharing one.
+ *
+ * DECISION: AsyncLocalStorage, not `createHook` + `executionAsyncId()` + Map.
+ * WHY: the previous implementation keyed state by `executionAsyncId()` and relied on an
+ * `init` hook copying the parent's entry to each new async resource. That propagation is
+ * call-shape dependent — reproducible plain-Node harnesses using identical await shapes
+ * disagree: one isolates cleanly, another loses state after `await null` AND lets a second
+ * context read the first's state. A per-request boundary that holds in one call shape and
+ * silently leaks in another is the worst failure mode, because it passes tests and leaks in
+ * production. AsyncLocalStorage propagates deterministically across every await shape.
+ * See competition-factory#4564 / Mentat TASKS.md.
  */
 
-const asyncCtxStateMap = new Map();
+const asyncLocalStorage = new AsyncLocalStorage<ImplemtationGlobalStateTypes>();
 
-const asyncHook = createHook({
-  init: (asyncId, _, _triggerAsyncId) => {
-    if (asyncCtxStateMap.has(_triggerAsyncId)) {
-      asyncCtxStateMap.set(asyncId, asyncCtxStateMap.get(_triggerAsyncId));
-    }
-  },
-  destroy: (asyncId) => {
-    if (asyncCtxStateMap.has(asyncId)) {
-      asyncCtxStateMap.delete(asyncId);
-    }
-  },
-});
-
-asyncHook.enable();
-
-function createInstanceState() {
-  const asyncId = executionAsyncId();
-  const instanceState: ImplemtationGlobalStateTypes = {
+function newInstanceState(): ImplemtationGlobalStateTypes {
+  return {
     disableNotifications: false,
     tournamentId: undefined,
     tournamentRecords: {},
@@ -45,23 +39,78 @@ function createInstanceState() {
     notices: [],
     methods: {},
   };
-
-  asyncCtxStateMap.set(asyncId, instanceState);
 }
 
-function getInstanceState() {
-  const asyncTaskId = executionAsyncId();
-  const instanceState = asyncCtxStateMap.get(asyncTaskId);
+/**
+ * Run `fn` with a fresh instance state bound to it and every async context it spawns.
+ * PREFERRED entry point: the store is scoped to the callback, so it cannot outlive the
+ * request or bleed into a sibling. Wrap each request/mutation in this.
+ */
+function runWithInstanceState<T>(fn: () => T): T {
+  return asyncLocalStorage.run(newInstanceState(), fn);
+}
 
-  if (!instanceState) throw new Error(`Can not get instance state for async task ${asyncTaskId}`);
+/**
+ * Bind a fresh instance state to the CURRENT execution context and its descendants.
+ * Back-compat shim for callers that seed and then continue inline rather than inside a
+ * callback. Prefer `runWithInstanceState` — `enterWith` has no scope end, so the store
+ * persists for the remainder of the surrounding context.
+ */
+function createInstanceState() {
+  asyncLocalStorage.enterWith(newInstanceState());
+}
 
-  return instanceState;
+/**
+ * DECISION: lazily bind a NEW state to the current async context; never share, never throw.
+ * WHY: two alternatives were tried and rejected.
+ *   - Falling back to one shared default is fail-open — it IS the defect this replaces (a single
+ *     process-wide state) and it is invisible.
+ *   - Throwing assumes every entry point is statically enumerable. It is not. An earlier revision
+ *     of this file threw, and wiring it into competition-factory-server produced 56 failures
+ *     across 15 suites: `governors.mocksGovernor.generateTournamentRecord()` dispatches notices,
+ *     so a DIRECT governor call touches instance state without going near an engine. Governors are
+ *     not uniformly pure. A strict throw trades a silent correctness bug for a loud outage on a
+ *     call graph that cannot be fully swept.
+ * Lazy creation binds via `enterWith`, so the new state covers the current context AND its
+ * descendants — `setState` → `await` → `getState` stays coherent — while remaining separate from
+ * other context subtrees. The warning keeps it fail-soft rather than silent (A2).
+ *
+ * ⚠️ LIMIT: this is a safety net, NOT isolation. Unwrapped siblings launched from a COMMON parent
+ * context still share, because the first access binds a store to that shared parent which the
+ * sibling then inherits. Wrap every entry point in `runWithInstanceState` — do not rely on the net.
+ * See competition-factory#4564.
+ */
+let implicitContextCount = 0;
+
+function getInstanceState(): ImplemtationGlobalStateTypes {
+  const instanceState = asyncLocalStorage.getStore();
+  if (instanceState) return instanceState;
+
+  implicitContextCount += 1;
+  if (implicitContextCount === 1 || implicitContextCount % 100 === 0) {
+    console.warn(
+      `[asyncGlobalState] engine state accessed outside runWithInstanceState() ` +
+        `(${implicitContextCount} so far) — an implicit per-context state was created. ` +
+        `Wrap the entry point in runWithInstanceState() so the store is scoped to the request.`,
+    );
+  }
+
+  const created = newInstanceState();
+  asyncLocalStorage.enterWith(created);
+  return created;
+}
+
+/** Diagnostic: how many times state was created implicitly rather than via runWithInstanceState. */
+function implicitContextCreations(): number {
+  return implicitContextCount;
 }
 
 export default {
   addNotice,
   callListener,
   createInstanceState,
+  runWithInstanceState,
+  implicitContextCreations,
   cycleMutationStatus,
   deleteNotice,
   deleteNotices,
@@ -69,6 +118,7 @@ export default {
   enableNotifications,
   getMethods,
   getNotices,
+  getPayloads: getNotices, // canonical alias for the deprecated `getNotices`
   getTopics,
   getTournamentId,
   getTournamentRecord,
@@ -194,13 +244,27 @@ function addNotice({ topic, payload, key }: Notice, isGlobalSubscription?: boole
   if (!instanceState.disableNotifications) instanceState.modified = true;
   if (instanceState.disableNotifications || (!instanceState.subscriptions[topic] && !isGlobalSubscription)) return;
 
+  let outgoing = payload;
+
   if (key) {
-    instanceState.notices = instanceState.notices.filter((notice) => !(notice.topic === topic && notice.key === key));
+    const retained: any[] = [];
+    for (const notice of instanceState.notices) {
+      if (notice.topic === topic && notice.key === key) {
+        // Superseded — but its identity is still true of this key, so do not discard it. A later
+        // emission often knows LESS; replacing wholesale used to deliver the only unroutable notice
+        // in a batch. Shared helper, never a local copy: this file is the reference an async provider
+        // gets copied FROM, so a divergent copy here propagates to every implementation derived from it.
+        outgoing = preserveNoticeIdentity(outgoing, notice.payload);
+      } else {
+        retained.push(notice);
+      }
+    }
+    instanceState.notices = retained;
   }
   // NOTE: when backend does not recognize undefined for updates
   // params = undefinedToNull(params) // => see object.js utils
 
-  instanceState.notices.push({ topic, payload, key });
+  instanceState.notices.push({ topic, payload: outgoing, key });
 
   return { ...SUCCESS };
 }
@@ -222,8 +286,12 @@ function deleteNotices() {
 
 function deleteNotice({ key, topic }) {
   const instanceState = getInstanceState();
+  // Delete only notices matching the key AND (when a topic is supplied) that
+  // topic. The prior form `(!topic || topic===) && key!==` deleted every notice
+  // of OTHER topics whenever a topic was passed. No-topic behaviour (purge by
+  // key across all topics) is unchanged. Mirrors syncGlobalState.deleteNotice.
   instanceState.notices = instanceState.notices.filter(
-    (notice) => (!topic || notice.topic === topic) && notice.key !== key,
+    (notice) => !((!topic || notice.topic === topic) && notice.key === key),
   );
 }
 
@@ -233,12 +301,14 @@ function getTopics() {
   return { topics };
 }
 
-async function callListener({ topic, notices }: CallListenerArgs, globalSubscriptions?: any) {
+async function callListener({ topic, payloads, notices }: CallListenerArgs, globalSubscriptions?: any) {
+  // back-compat: accept either `payloads` (canonical) or `notices` (deprecated alias).
+  const data = payloads ?? notices ?? [];
   const instanceState = getInstanceState();
   const method = instanceState.subscriptions[topic];
-  if (method && typeof method === 'function') await method(notices);
+  if (method && typeof method === 'function') await method(data);
   const globalMethod = globalSubscriptions?.[topic];
-  if (globalMethod && typeof globalMethod === 'function') await globalMethod(notices);
+  if (globalMethod && typeof globalMethod === 'function') await globalMethod(data);
 }
 
 export function handleCaughtError({ engineName, methodName, params, err }: HandleCaughtErrorArgs) {

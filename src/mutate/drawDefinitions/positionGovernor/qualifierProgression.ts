@@ -5,10 +5,10 @@ import { checkRequiredParameters } from '@Helpers/parameters/checkRequiredParame
 import { getAllStructureMatchUps } from '@Query/matchUps/getAllStructureMatchUps';
 import { isCompletedStructure } from '@Query/drawDefinition/structureActions';
 import { getAppliedPolicies } from '@Query/extensions/getAppliedPolicies';
+import { firstClassOrExtension } from '@Acquire/firstClassOrExtension';
 import { decorateResult } from '@Functions/global/decorateResult';
 import { mapNumbersToIndexes } from '@Tools/mapNumbersToIndexes';
 import { definedAttributes } from '@Tools/definedAttributes';
-import { findExtension } from '@Acquire/findExtension';
 import { ResultType } from '@Types/factoryTypes';
 import { generateRange } from '@Tools/arrays';
 
@@ -200,12 +200,10 @@ function collectRoundRobinQualifiers({
       positionAssignments
         ?.map((assignment) => {
           const participantId = assignment.participantId;
-          const results = findExtension({ element: assignment, name: TALLY }).extension?.value;
+          const results = firstClassOrExtension({ element: assignment, attribute: 'tally', name: TALLY });
           return results ? { participantId, groupOrder: results?.groupOrder } : {};
         })
-        .filter(
-          ({ groupOrder, participantId }) => groupOrder === 1 && !assignedParticipantIds.includes(participantId),
-        )
+        .filter(({ groupOrder, participantId }) => groupOrder === 1 && !assignedParticipantIds.includes(participantId))
         .map(({ participantId }) => participantId) ?? [];
 
     if (relevantParticipantIds) qualifyingParticipantIds.push(...relevantParticipantIds);

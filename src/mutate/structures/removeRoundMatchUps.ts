@@ -2,6 +2,7 @@ import { deleteMatchUpsNotice, modifyMatchUpNotice } from '@Mutate/notifications
 import { decorateResult } from '@Functions/global/decorateResult';
 import { requireParams } from '@Helpers/parameters/requireParams';
 import { getMatchUpId } from '@Functions/global/extractors';
+import { pushGlobalLog } from '@Functions/global/globalLog';
 import { isAdHoc } from '@Query/drawDefinition/isAdHoc';
 import { findStructure } from '@Acquire/findStructure';
 import { numericSort } from '@Tools/sorting';
@@ -58,9 +59,10 @@ export function removeRoundMatchUps({
       drawDefinition,
       roundNumber,
       structure,
+      event,
     });
   } else {
-    console.log('not implemented');
+    pushGlobalLog({ method: 'removeRoundMatchUps', notImplemented: true });
   }
 
   return { ...SUCCESS };
@@ -73,6 +75,7 @@ function removeAdHocRound({
   roundNumber,
   structure,
   eventId,
+  event,
 }): ResultType & { deletedMatchUpsCount?: number; roundRemoved?: boolean } {
   const matchUps = structure?.matchUps ?? [];
   const deletedTieMatchUpIds: string[] = [];
@@ -121,6 +124,7 @@ function removeAdHocRound({
               tournamentId,
               eventId,
               matchUp,
+              event,
             });
           }
         });

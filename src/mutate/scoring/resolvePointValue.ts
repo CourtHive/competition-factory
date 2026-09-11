@@ -12,10 +12,7 @@ export interface PointMultiplier {
   value: number;
 }
 
-export function resolvePointValue(
-  point: Partial<Point>,
-  multipliers: PointMultiplier[],
-): number {
+export function resolvePointValue(point: Partial<Point>, multipliers: PointMultiplier[]): number {
   if (!multipliers.length) return 1;
 
   for (const { condition, value } of multipliers) {

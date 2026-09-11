@@ -179,6 +179,20 @@ it('correctly calculates high tiebreak values with NOAD', () => {
   });
 });
 
+it('computes high values for no-tiebreak WB1 sets (TYPTI win-by-1)', () => {
+  // setTo=5, no tiebreak, winBy=1: first to 5 wins outright; complement is always 5
+  setScoreTest({ isSide1: true, lowValue: '0', setTo: 5, winBy: 1, expectation: [0, 5] });
+  setScoreTest({ isSide1: false, lowValue: '0', setTo: 5, winBy: 1, expectation: [5, 0] });
+  setScoreTest({ isSide1: true, lowValue: '4', setTo: 5, winBy: 1, expectation: [4, 5] });
+  setScoreTest({ isSide1: false, lowValue: '4', setTo: 5, winBy: 1, expectation: [5, 4] });
+  setScoreTest({ isSide1: true, lowValue: '1', setTo: 5, winBy: 1, expectation: [1, 5] });
+});
+
+it('falls back to advantage (winBy 2) when winBy is omitted on a no-tiebreak set', () => {
+  // setTo=5, no tiebreak, no winBy: default advantage set; low=4 → high=6 (lowValue + 2)
+  setScoreTest({ isSide1: true, lowValue: '4', setTo: 5, expectation: [4, 6] });
+});
+
 function setScoreTest(input) {
   const result = getSetComplement({ ...input });
   expect(result).toEqual(input.expectation);

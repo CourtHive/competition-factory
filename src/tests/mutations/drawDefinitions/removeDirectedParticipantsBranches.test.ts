@@ -78,9 +78,7 @@ describe('removeDirectedParticipants - uncovered branches', () => {
 
       // Verify the winner was removed from semifinal
       ({ matchUps } = tournamentEngine.allTournamentMatchUps());
-      const updatedSemifinal = matchUps.find(
-        (m) => m.matchUpId === semifinal.matchUpId,
-      );
+      const updatedSemifinal = matchUps.find((m) => m.matchUpId === semifinal.matchUpId);
       // The drawPositions should have fewer participants after removal
       expect(updatedSemifinal).toBeDefined();
     }
@@ -157,9 +155,7 @@ describe('removeDirectedParticipants - uncovered branches', () => {
     });
 
     let { matchUps } = tournamentEngine.allTournamentMatchUps();
-    const firstRound = matchUps.find(
-      (m) => m.roundNumber === 1 && m.drawPositions?.every(Boolean),
-    );
+    const firstRound = matchUps.find((m) => m.roundNumber === 1 && m.drawPositions?.every(Boolean));
 
     if (firstRound) {
       const { outcome } = mocksEngine.generateOutcomeFromScoreString({
@@ -259,9 +255,7 @@ describe('removeDirectedParticipants - uncovered branches', () => {
 
     // Remove the qualifying result - exercises cross-structure winner removal
     ({ matchUps } = tournamentEngine.allTournamentMatchUps());
-    const completedQualifying = matchUps.find(
-      (m) => m.stage === 'QUALIFYING' && m.matchUpStatus === COMPLETED,
-    );
+    const completedQualifying = matchUps.find((m) => m.stage === 'QUALIFYING' && m.matchUpStatus === COMPLETED);
     if (completedQualifying) {
       const result = tournamentEngine.setMatchUpStatus({
         matchUpId: completedQualifying.matchUpId,

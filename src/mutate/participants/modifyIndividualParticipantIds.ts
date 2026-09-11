@@ -1,7 +1,8 @@
 import { removeIndividualParticipantIds } from './removeIndividualParticipantIds';
 import { decorateResult } from '@Functions/global/decorateResult';
 import { addIndividualParticipantIds } from './addIndividualParticipantIds';
-import { addNotice, getTopics } from '@Global/state/globalState';
+import { getTopics } from '@Global/state/globalState';
+import { modifyParticipantsNotice } from '@Mutate/notifications/participantNotifications';
 
 import { MODIFY_PARTICIPANTS } from '@Constants/topicConstants';
 import {
@@ -90,12 +91,9 @@ export function modifyIndividualParticipantIds({ individualParticipantIds, group
       ({ participantId }) => participantId === groupingParticipantId,
     );
 
-    addNotice({
-      topic: MODIFY_PARTICIPANTS,
-      payload: {
-        tournamentId: tournamentRecord.tournamentId,
-        participants: [updatedParticipant],
-      },
+    modifyParticipantsNotice({
+      tournamentId: tournamentRecord.tournamentId,
+      participants: [updatedParticipant],
     });
   }
 

@@ -23,6 +23,7 @@
 
 import { MAIN, QUALIFYING, ROUND_ROBIN } from '@Constants/drawDefinitionConstants';
 import { POLICY_TYPE_RANKING_POINTS } from '@Constants/policyConstants';
+import { ITF_JUNIOR } from '@Constants/pointsAuthorityConstants';
 import { SINGLES, DOUBLES } from '@Constants/eventConstants';
 
 // ─── Singles Main Draw Profiles ──────────────────────────────────────────────
@@ -220,6 +221,7 @@ export const POLICY_RANKING_POINTS_ITF_JUNIOR = {
   [POLICY_TYPE_RANKING_POINTS]: {
     policyName: 'ITF World Tennis Tour Juniors',
     policyVersion: '2025.01',
+    pointsAuthority: ITF_JUNIOR,
     validDateRange: { startDate: '2025-01-01' },
 
     awardProfiles,

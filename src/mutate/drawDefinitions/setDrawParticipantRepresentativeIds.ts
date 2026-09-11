@@ -1,11 +1,18 @@
 import { addDrawDefinitionExtension } from '../extensions/addRemoveExtensions';
+import { modifyDrawNotice } from '@Mutate/notifications/drawNotifications';
 import { getParticipantIds } from '@Functions/global/extractors';
 import { intersection } from '@Tools/arrays';
 
 import { PARTICIPANT_REPRESENTATIVES } from '@Constants/extensionConstants';
 import { DRAW_DEFINITION_NOT_FOUND, INVALID_VALUES } from '@Constants/errorConditionConstants';
 
-export function setDrawParticipantRepresentativeIds({ representativeParticipantIds, drawDefinition }) {
+export function setDrawParticipantRepresentativeIds({
+  representativeParticipantIds,
+  drawDefinition,
+  tournamentRecord,
+  disableNotice,
+  event,
+}) {
   if (!drawDefinition) return { error: DRAW_DEFINITION_NOT_FOUND };
   if (!Array.isArray(representativeParticipantIds)) return { error: INVALID_VALUES };
 
@@ -25,5 +32,12 @@ export function setDrawParticipantRepresentativeIds({ representativeParticipantI
     value: representativeParticipantIds,
   };
 
-  return addDrawDefinitionExtension({ drawDefinition, extension });
+  const result = addDrawDefinitionExtension({ drawDefinition, extension });
+  if (result.error) return result;
+
+  if (!disableNotice) {
+    modifyDrawNotice({ drawDefinition, tournamentId: tournamentRecord?.tournamentId, eventId: event?.eventId });
+  }
+
+  return result;
 }

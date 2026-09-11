@@ -1,23 +1,25 @@
+import { checkRequiredParameters } from '@Helpers/parameters/checkRequiredParameters';
 import { getEventPublishStatus } from '@Query/event/getEventPublishStatus';
+import { getDrawIsPublished } from '@Query/publishing/getDrawIsPublished';
 import { getTournamentInfo } from '@Query/tournaments/getTournamentInfo';
+import { participantsVersion as computeParticipantsVersion } from '@Query/participants/participantsVersion';
 import { getParticipants } from '@Query/participants/getParticipants';
 import { getPublishState } from '@Query/publishing/getPublishState';
+import { isVisiblyPublished } from '@Query/publishing/isEmbargoed';
 import { getDrawData } from '@Query/drawDefinition/getDrawData';
 import { isAdHocType } from '@Query/drawDefinition/isAdHocType';
 import { getVenueData } from '@Query/venues/getVenueData';
 import { findExtension } from '@Acquire/findExtension';
 import { isConvertableInteger } from '@Tools/math';
 import { makeDeepCopy } from '@Tools/makeDeepCopy';
-import { generateRange } from '@Tools/arrays';
 import { findEvent } from '@Acquire/findEvent';
+import { generateRange } from '@Tools/arrays';
 
 // constants and types
 import { ParticipantsProfile, PolicyDefinitions, StructureSortConfig } from '@Types/factoryTypes';
-import { checkRequiredParameters } from '@Helpers/parameters/checkRequiredParameters';
-import { EVENT_NOT_FOUND, ErrorType } from '@Constants/errorConditionConstants';
-import { isVisiblyPublished } from '@Query/publishing/isEmbargoed';
-import { getDrawIsPublished } from '@Query/publishing/getDrawIsPublished';
-import { Event, Tournament } from '@Types/tournamentTypes';
+import { EVENT_NOT_FOUND, INVALID_VALUES, ErrorType } from '@Constants/errorConditionConstants';
+import { PayloadProfileEnum, PayloadProfileUnion, Event, Tournament } from '@Types/tournamentTypes';
+import { completedMatchUpStatuses, BYE } from '@Constants/matchUpStatusConstants';
 import { DISPLAY } from '@Constants/extensionConstants';
 import { ANY_OF } from '@Constants/attributeConstants';
 import { PUBLIC } from '@Constants/timeItemConstants';
@@ -35,7 +37,10 @@ type GetEventDataArgs = {
   usePublishState?: boolean;
   refreshResults?: boolean;
   pressureRating?: boolean;
+  drawsProfile?: PayloadProfileUnion;
   participantFilters?: any;
+  participantsVersion?: string;
+  withParticipantsVersion?: boolean;
   contextProfile?: any;
   eventId?: string;
   status?: string;
@@ -44,6 +49,7 @@ type GetEventDataArgs = {
 
 export function getEventData(params: GetEventDataArgs): {
   participants?: HydratedParticipant[];
+  participantsVersion?: string;
   error?: ErrorType;
   success?: boolean;
   eventData?: any;
@@ -56,7 +62,14 @@ export function getEventData(params: GetEventDataArgs): {
     status = PUBLIC,
     contextProfile,
     sortConfig,
+    drawsProfile = PayloadProfileEnum.FULL,
   } = params;
+
+  // Unknown value is an ERROR, never a silent fall-through to FULL: a typo must not quietly return
+  // the 788 KB payload a caller was explicitly trying to avoid.
+  if (!Object.values(PayloadProfileEnum).includes(drawsProfile as PayloadProfileEnum)) {
+    return { error: INVALID_VALUES, context: { drawsProfile } } as any;
+  }
 
   const paramsCheck = checkRequiredParameters(params, [
     { tournamentRecord: true },
@@ -131,55 +144,101 @@ export function getEventData(params: GetEventDataArgs): {
   };
 
   const drawDefinitions = event.drawDefinitions ?? [];
-  const drawsData =
-    !usePublishState || eventPublished
-      ? drawDefinitions
-          .filter(drawFilter)
-          .map((drawDefinition) =>
-            (({ drawInfo, structures }) => {
-              return {
-                ...drawInfo,
-                structures,
-              };
-            })(
-              getDrawData({
-                allParticipantResults: params.allParticipantResults,
-                hydrateParticipants: params.hydrateParticipants,
-                context: { eventId, tournamentId, endDate },
-                pressureRating: params.pressureRating,
-                refreshResults: params.refreshResults,
-                includePositionAssignments,
-                tournamentParticipants,
-                eventPublishState,
-                noDeepCopy: true,
-                policyDefinitions,
-                tournamentRecord,
-                usePublishState,
-                contextProfile,
-                drawDefinition,
-                publishStatus,
-                sortConfig,
-                event,
-              }),
-            ),
+
+  /**
+   * Cheap per-draw metadata — no structure assembly, no participant hydration.
+   *
+   * `drawGenerated` / `drawCompleted` are included because both reduce `matchUpStatus`, which is
+   * first-class on the RAW matchUp, so neither needs hydrated structures. Verified equivalent to the
+   * `getDrawData` values across single-elimination, round-robin and compass draws in every completion
+   * state. The recursion matters: round-robin containers hold their matchUps in nested `structures[]`,
+   * and a flat `structure.matchUps` read reports every such draw as ungenerated.
+   *
+   * `participantPlacements`, `drawActive` and `structures` are deliberately absent — they are
+   * drill-in concerns and cannot be derived without the work this profile exists to skip.
+   */
+  const buildDrawStub = (drawDefinition) => {
+    const { matchUpFormat, updatedAt, drawType, drawName, drawId } = drawDefinition;
+    const leafMatchUps = (function collect(structures) {
+      return (structures ?? []).flatMap((structure) =>
+        structure?.structures?.length ? collect(structure.structures) : (structure?.matchUps ?? []),
+      );
+    })(drawDefinition.structures);
+    const completedStatuses = [...completedMatchUpStatuses, BYE];
+
+    return {
+      matchUpFormat,
+      updatedAt,
+      drawName,
+      drawType,
+      drawId,
+      display: findExtension({ element: drawDefinition, name: DISPLAY }).extension?.value,
+      drawGenerated: leafMatchUps.length > 0,
+      drawCompleted:
+        leafMatchUps.length > 0 && leafMatchUps.every((matchUp) => completedStatuses.includes(matchUp?.matchUpStatus)),
+      drawPublished: usePublishState ? eventPublished && getDrawIsPublished({ publishStatus, drawId }) : undefined,
+    };
+  };
+
+  // Draws are withheld entirely when honouring publish state on an unpublished event; otherwise the
+  // profile selects how much of each draw is assembled. Written as statements rather than a nested
+  // ternary (no-nested-ternary is a hard lint gate in this repo).
+  const drawsVisible = !usePublishState || eventPublished;
+
+  const buildFullDrawsData = () =>
+    drawDefinitions
+      .filter(drawFilter)
+      .map((drawDefinition) =>
+        (({ drawInfo, structures }) => {
+          return {
+            ...drawInfo,
+            structures,
+          };
+        })(
+          getDrawData({
+            allParticipantResults: params.allParticipantResults,
+            hydrateParticipants: params.hydrateParticipants,
+            context: { eventId, tournamentId, endDate },
+            pressureRating: params.pressureRating,
+            refreshResults: params.refreshResults,
+            includePositionAssignments,
+            tournamentParticipants,
+            eventPublishState,
+            noDeepCopy: true,
+            policyDefinitions,
+            tournamentRecord,
+            usePublishState,
+            contextProfile,
+            drawDefinition,
+            publishStatus,
+            sortConfig,
+            event,
+          }),
+        ),
+      )
+      .map(({ structures, ...drawData }) => {
+        const filteredStructures = structures
+          ?.filter(
+            ({ stage, structureId }) =>
+              structureFilter({ structureId, drawId: drawData.drawId }) &&
+              stageFilter({ stage, drawId: drawData.drawId }),
           )
-          .map(({ structures, ...drawData }) => {
-            const filteredStructures = structures
-              ?.filter(
-                ({ stage, structureId }) =>
-                  structureFilter({ structureId, drawId: drawData.drawId }) &&
-                  stageFilter({ stage, drawId: drawData.drawId }),
-              )
-              .map((structure) =>
-                roundLimitMapper({ drawId: drawData.drawId, drawType: drawData.drawType, structure }),
-              );
-            return {
-              ...drawData,
-              structures: filteredStructures,
-            };
-          })
-          .filter((drawData) => drawData.structures?.length)
-      : undefined;
+          .map((structure) => roundLimitMapper({ drawId: drawData.drawId, drawType: drawData.drawType, structure }));
+        return {
+          ...drawData,
+          structures: filteredStructures,
+        };
+      })
+      .filter((drawData) => drawData.structures?.length);
+
+  let drawsData;
+  if (!drawsVisible) {
+    drawsData = undefined;
+  } else if (drawsProfile === PayloadProfileEnum.STUBS) {
+    drawsData = drawDefinitions.filter(drawFilter).map(buildDrawStub);
+  } else {
+    drawsData = buildFullDrawsData();
+  }
 
   const venues = Array.isArray(tournamentRecord.venues) ? tournamentRecord.venues : [];
   const venuesData = venues.map((venue) => {
@@ -199,6 +258,7 @@ export function getEventData(params: GetEventDataArgs): {
     eventLevel,
     surfaceCategory,
     matchUpFormat,
+    competitionFormat,
     category,
     gender,
     startDate,
@@ -213,6 +273,7 @@ export function getEventData(params: GetEventDataArgs): {
       eventLevel,
       surfaceCategory,
       matchUpFormat,
+      competitionFormat,
       category,
       gender,
       startDate,
@@ -221,6 +282,14 @@ export function getEventData(params: GetEventDataArgs): {
       discipline,
     };
   })(event);
+
+  // competitionFormat carries timers/multipliers/penalties that may not yet
+  // be public — strip it when consumers are honoring publish state and the
+  // event is not yet published. Other eventInfo fields are public metadata
+  // and stay regardless. See Mentat/planning/COMPETITION_FORMAT_HYDRATION.md.
+  if (usePublishState && !eventPublished) {
+    delete eventInfo.competitionFormat;
+  }
 
   eventInfo.display = findExtension({
     element: event,
@@ -239,5 +308,26 @@ export function getEventData(params: GetEventDataArgs): {
   eventData.eventInfo.publishState = eventPublishState;
   eventData.eventInfo.published = eventPublishState?.status?.published;
 
-  return { ...SUCCESS, eventData, participants: tournamentParticipants };
+  // OPT-IN. Hashing the participant set costs ~18 ms of an ~89 ms five-event build (~20%), and every
+  // caller would pay it for a handshake almost none of them use. So the stamp is computed only when
+  // it can actually be used: the caller either supplied a version to check, or asked for one.
+  //
+  // Deliberately NOT a separate "enable the feature" flag divorced from the parameters — supplying a
+  // version implies wanting the comparison, and a caller that had to set two things to get one
+  // behaviour would eventually set only one and silently get the slow-and-useless combination.
+  const versionRequested = params.withParticipantsVersion || params.participantsVersion !== undefined;
+  const version = versionRequested ? computeParticipantsVersion(tournamentParticipants) : undefined;
+  const clientHoldsCurrentSet = !!params.participantsVersion && params.participantsVersion === version;
+
+  return {
+    ...SUCCESS,
+    eventData,
+    // A mismatch or absence sends participants, exactly as today. Only an EXACT match omits them, so
+    // the failure direction is "sent bytes that were not needed" rather than a blank bracket.
+    participants: clientHoldsCurrentSet ? undefined : tournamentParticipants,
+    // Conditional spread, not `participantsVersion: version`. An explicitly-undefined key still shows
+    // up in Object.keys, so the unasked-for case would carry a key it never had before — a shape
+    // change, however invisible to JSON.stringify.
+    ...(version !== undefined && { participantsVersion: version }),
+  };
 }

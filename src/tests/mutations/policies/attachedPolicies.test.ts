@@ -1,3 +1,4 @@
+import { firstClassOrExtension } from '@Acquire/firstClassOrExtension';
 import mocksEngine from '@Assemblies/engines/mock';
 import tournamentEngine from '@Engines/syncEngine';
 import { expect, it, test } from 'vitest';
@@ -62,8 +63,9 @@ it('generateDrawDefinition will find seeding policy attached to event', () => {
   expect(tournamentRecord.extensions).toBeUndefined();
 
   const { drawDefinition, event } = tournamentEngine.getEvent({ drawId });
-  expect(event.extensions.length).toEqual(2);
-  expect(event.extensions.map(({ name }) => name).sort()).toEqual([APPLIED_POLICIES, FLIGHT_PROFILE]);
+  // APPLIED_POLICIES stays an extension; FLIGHT_PROFILE is first-class in NATIVE, an extension in LEGACY
+  expect(event.extensions.some(({ name }) => name === APPLIED_POLICIES)).toBe(true);
+  expect(firstClassOrExtension({ element: event, attribute: 'flightProfile', name: FLIGHT_PROFILE })).toBeDefined();
 
   const appliedPolicies = event.extensions.find(({ name }) => name === APPLIED_POLICIES);
   expect(Object.keys(appliedPolicies.value).length).toEqual(2);

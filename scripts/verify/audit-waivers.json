@@ -1,0 +1,30 @@
+{
+  "$comment": [
+    "Advisories verify:audit will not fail on. Every waiver is printed on every run,",
+    "so a waived advisory stays visible rather than becoming a silent exception.",
+    "A waiver that no longer matches an open advisory is a FAILURE, not a no-op —",
+    "stale waivers must be deleted, otherwise the list only ever grows and quietly",
+    "widens what the gate ignores.",
+    "",
+    "Waive only when there is no action available. 'We will get to it' is not a",
+    "waiver; a version bump is."
+  ],
+  "waivers": [
+    {
+      "ghsa": "GHSA-w3rx-r6r6-pgpr",
+      "module": "image-size",
+      "tree": "documentation",
+      "reason": "Transitive via @docusaurus/mdx-loader; build-time image parsing for the docs site only. Not in the package lockfile (package.json ships files:[dist]), so it cannot reach a consumer of tods-competition-factory.",
+      "noFixAvailable": "The advisory names patched_versions >=2.0.3, but image-size has never published 2.0.3 — npm latest is 2.0.2, the vulnerable version. There is nothing to bump to.",
+      "recheck": "Drop this waiver as soon as image-size publishes a release above 2.0.2, or Docusaurus stops depending on it."
+    },
+    {
+      "ghsa": "GHSA-5p2g-fcmc-qvqq",
+      "module": "image-size",
+      "tree": "documentation",
+      "reason": "Same package, same path, same reasoning as GHSA-w3rx-r6r6-pgpr.",
+      "noFixAvailable": "The advisory names patched_versions >=2.0.3, but image-size has never published 2.0.3 — npm latest is 2.0.2, the vulnerable version. There is nothing to bump to.",
+      "recheck": "Drop this waiver as soon as image-size publishes a release above 2.0.2, or Docusaurus stops depending on it."
+    }
+  ]
+}

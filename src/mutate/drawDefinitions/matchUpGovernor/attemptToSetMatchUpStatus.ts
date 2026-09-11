@@ -9,6 +9,7 @@ import { pushGlobalLog } from '@Functions/global/globalLog';
 
 // constants
 import { INVALID_MATCHUP_STATUS, UNRECOGNIZED_MATCHUP_STATUS } from '@Constants/errorConditionConstants';
+import { SUCCESS } from '@Constants/resultConstants';
 import {
   BYE,
   CANCELLED,
@@ -19,11 +20,11 @@ import {
 } from '@Constants/matchUpStatusConstants';
 
 export function attemptToSetMatchUpStatus(params) {
-  const { tournamentRecord, drawDefinition, matchUpStatus, structure, matchUp } = params;
+  const { tournamentRecord, drawDefinition, matchUpStatus, structure, matchUp, event } = params;
 
   const teamRoundRobinContext = !!(
     matchUp.tieMatchUps &&
-    !matchUp.rondPosition &&
+    !matchUp.roundPosition &&
     params.inContextDrawMatchUps.find((icdm) => icdm.matchUpId === matchUp.matchUpId).containerStructureId
   );
 
@@ -41,6 +42,31 @@ export function attemptToSetMatchUpStatus(params) {
   const onlyModifyScore = params.matchUpTieId || (existingWinningSide && directing && !isDoubleExit);
 
   const changeCompletedToDoubleExit = existingWinningSide && isDoubleExit;
+
+  /**
+   * Asking for the state a matchUp is already in is SATISFIED, not repeated.
+   *
+   * Without this, a second identical double-exit call re-runs the whole cascade, and the cascade
+   * reads its own earlier work as someone else's: `conditionallyAdvanceDrawPosition` treats an
+   * exit already sitting on the winner target as evidence that a SECOND source exited into it
+   * (`existingExit`), escalates the produced WALKOVER to a DOUBLE_WALKOVER, and cascades a round
+   * further. Both calls report success, so a client retry or a double-click corrupts the draw
+   * progressively and silently.
+   *
+   * Scoped narrowly and deliberately:
+   *  - only when the requested status EQUALS the current one, so DOUBLE_WALKOVER -> DOUBLE_DEFAULT
+   *    is still a change and still propagates;
+   *  - only for double exits, which carry no score and no winningSide, so there is nothing else
+   *    the caller could be asking to modify;
+   *  - it does NOT fix `existingExit`, which remains correct for two genuinely distinct sources
+   *    exiting into one target.
+   *
+   * This does remove re-application as an accidental repair for a draw whose status was set but
+   * whose advancement is missing. That state is already reported by getDrawInconsistencies
+   * (WINNER_NOT_ADVANCED / DROPPED_PROGRESSION); repairing it should be a deliberate operation,
+   * not a side effect of sending the same request twice.
+   */
+  const alreadyInRequestedDoubleExit = isDoubleExit && matchUp.matchUpStatus === matchUpStatus && !existingWinningSide;
 
   pushGlobalLog({
     method: stack,
@@ -71,6 +97,7 @@ export function attemptToSetMatchUpStatus(params) {
 
   const route =
     (unrecognized && 'unrecognized') ||
+    (alreadyInRequestedDoubleExit && 'alreadyInRequestedDoubleExit_noop') ||
     (onlyModifyScore && 'onlyModifyScore') ||
     (changeCompletedToDoubleExit && 'changeCompletedToDoubleExit') ||
     (existingWinningSide && 'existingWinningSide_removeDirected') ||
@@ -92,16 +119,19 @@ export function attemptToSetMatchUpStatus(params) {
 
   return (
     (unrecognized && { error: UNRECOGNIZED_MATCHUP_STATUS }) ||
+    (alreadyInRequestedDoubleExit && { ...SUCCESS }) ||
     (onlyModifyScore && scoreModification(params)) ||
     (changeCompletedToDoubleExit && removeWinningSideAndSetDoubleExit(params)) ||
     (existingWinningSide && removeDirectedParticipants(params)) ||
     (nonDirecting && clearScore()) ||
     (isBYE &&
       attemptToSetMatchUpStatusBYE({
+        preserveScheduling: params.preserveScheduling,
         tournamentRecord,
         drawDefinition,
         structure,
         matchUp,
+        event,
       })) ||
     (!directing && { error: UNRECOGNIZED_MATCHUP_STATUS }) ||
     (isDoubleExit && modifyScoreAndAdvanceDoubleExit(params)) ||

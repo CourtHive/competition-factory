@@ -33,6 +33,7 @@
 import { MAIN, QUALIFYING, ROUND_ROBIN_WITH_PLAYOFF } from '@Constants/drawDefinitionConstants';
 import { SINGLES, DOUBLES, TEAM_EVENT } from '@Constants/eventConstants';
 import { POLICY_TYPE_RANKING_POINTS } from '@Constants/policyConstants';
+import { ATP } from '@Constants/pointsAuthorityConstants';
 
 // ─── Singles Main Draw Profiles ──────────────────────────────────────────────
 
@@ -392,6 +393,7 @@ export const POLICY_RANKING_POINTS_ATP = {
   [POLICY_TYPE_RANKING_POINTS]: {
     policyName: 'PIF ATP Rankings 2026',
     policyVersion: '2026.01',
+    pointsAuthority: ATP,
     validDateRange: { startDate: '2026-01-01' },
 
     awardProfiles,

@@ -32,8 +32,9 @@ interface GenerateTournamentRecordOptions {
   setState?: boolean; // Auto-load into tournamentEngine (default: false)
 
   // Participants
+  participants?: Participant[]; // Pre-built participant pool (preset mode); skips synthesis when non-empty
   participantsProfile?: {
-    // See Participant Generation docs
+    // Synthesis controls (ignored when `participants` is supplied). See Participant Generation docs.
     participantsCount?: number; // Default: 32
     participantType?: string; // 'INDIVIDUAL', 'PAIR', 'TEAM'
     sex?: string; // 'MALE', 'FEMALE'
@@ -148,6 +149,57 @@ const { tournamentRecord } = mocksEngine.generateTournamentRecord({
   ],
 });
 ```
+
+### Preset Participants (Ingest Mode)
+
+When the caller already has a participant list (e.g. a federation-data ingest
+pipeline that scraped real player IDs from upstream HTML), pass the array
+directly via the top-level `participants` field. Factory uses your pool as
+the entry source instead of synthesizing mocks via `addTournamentParticipants`
+/ `generateEventParticipants`:
+
+```js
+const participants = [
+  // ...Participant[] — INDIVIDUAL and/or PAIR objects with stable provider IDs
+];
+
+const { tournamentRecord } = mocksEngine.generateTournamentRecord({
+  tournamentName: 'Real Federation Data',
+  participants,
+  eventProfiles: [
+    {
+      eventName: 'Singles',
+      eventType: 'SINGLES',
+      gender: 'MALE',
+      drawProfiles: [
+        {
+          drawSize: 32,
+          participantsCount: 32,
+          automated: false, // leave positionAssignments empty for manual placement
+        },
+      ],
+    },
+  ],
+  setState: true,
+});
+```
+
+When `participants` is supplied (non-empty array):
+
+- Factory calls `addParticipants` directly with your list; the synthesis path
+  (`addTournamentParticipants` / `generateEventParticipants` /
+  per-draw `uniqueDrawParticipants`) is suppressed.
+- `participantsProfile` synthesis fields (`participantsCount`,
+  `participantType`, `sex`, etc.) are ignored — your pool is authoritative.
+- `filterConsideredParticipants` still applies event-level filters: `gender`,
+  `eventType`, `participantType`. Supply enough participants that satisfy
+  those filters or the draw will run short on entries.
+- `automated: false` on the drawProfile leaves positionAssignments empty so
+  you can fill them in via `tournamentEngine.assignDrawPosition` with your
+  stable IDs, then walk outcomes via `tournamentEngine.setMatchUpStatus`.
+
+The full ingest pattern — generate skeleton → assign positions → apply outcomes
+— is documented under [Pre-built participants](./mocks-engine-participants.md#pre-built-participants-ingest-pipelines).
 
 ## Using drawProfiles
 
@@ -436,6 +488,11 @@ const { tournamentRecord } = mocksEngine.generateTournamentRecord({
 
 ### Event Extensions
 
+Extensions carry data CODES has no first-class home for. This example used to demonstrate a
+`prizeMoney` extension, which is no longer the right shape — `Event.prizeMoney` is a first-class
+`PrizeMoney[]` field, and a monetary amount states its unit (see
+[Sanctioning](../codes/sanctioning#the-rest-of-the-record)):
+
 ```js
 const { tournamentRecord } = mocksEngine.generateTournamentRecord({
   eventProfiles: [
@@ -443,8 +500,8 @@ const { tournamentRecord } = mocksEngine.generateTournamentRecord({
       eventName: 'Singles',
       eventExtensions: [
         {
-          name: 'prizeMoney',
-          value: { currency: 'USD', total: 50000 },
+          name: 'sponsorTier',
+          value: { tier: 'PLATINUM', activationDeadline: '2026-05-01' },
         },
       ],
       drawProfiles: [{ drawSize: 32 }],
@@ -452,6 +509,13 @@ const { tournamentRecord } = mocksEngine.generateTournamentRecord({
   ],
 });
 ```
+
+:::tip
+Reach for an extension only when nothing in CODES models the thing. Prize money is the cautionary
+example: because `Event` had no prize-money field, an ad-hoc `{ currency, total }` extension grew up
+beside `PrizeMoney`'s `{ amount, currencyCode }` — two shapes for one concept, neither of which said
+whether the number was dollars or cents.
+:::
 
 ### Event-Level Participant Profiles
 
@@ -741,12 +805,8 @@ const { tournamentRecord } = mocksEngine.generateTournamentRecord({
     {
       eventName: 'Singles',
       policyDefinitions: {
-        scoring: {
-          /* scoring policy */
-        },
-        avoidance: {
-          /* avoidance policy */
-        },
+        scoring: {/* scoring policy */},
+        avoidance: {/* avoidance policy */},
       },
       drawProfiles: [{ drawSize: 32 }],
     },

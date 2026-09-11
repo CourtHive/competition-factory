@@ -2,6 +2,8 @@ import { isMatchUpEventType } from '@Helpers/matchUpEventTypes/isMatchUpEventTyp
 import { getMatchUpFormatRecoveryTimes } from './getMatchUpFormatRecoveryTimes';
 import { parse as parseMatchUpFormat } from '@Helpers/matchUpFormatCode/parse';
 import { getMatchUpFormatAverageTimes } from './getMatchUpFormatAverageTimes';
+import { getOvernightRecoveryTimes } from './getOvernightRecoveryTimes';
+import { getBandedRecoveryMinutes } from './getBandedRecoveryMinutes';
 import { getScheduleTiming } from './getScheduleTiming';
 
 // constants, types and fixtures
@@ -9,11 +11,13 @@ import { POLICY_SCHEDULING_DEFAULT } from '@Fixtures/policies/POLICY_SCHEDULING_
 import { DOUBLES_SINGLES, SINGLES_DOUBLES } from '@Constants/scheduleConstants';
 import { MISSING_TOURNAMENT_RECORD } from '@Constants/errorConditionConstants';
 import { Event, Tournament, EventTypeUnion } from '@Types/tournamentTypes';
+import { PolicyDefinitions, ResultType } from '@Types/factoryTypes';
 import { POLICY_TYPE_SCHEDULING } from '@Constants/policyConstants';
 import { SINGLES_EVENT } from '@Constants/eventConstants';
-import { ResultType } from '@Types/factoryTypes';
 
 type GetMatchUpFormatTimingArgs = {
+  policyDefinitions?: PolicyDefinitions;
+  playedMinutes?: number;
   defaultRecoveryMinutes?: number;
   defaultAverageMinutes?: number;
   tournamentRecord: Tournament;
@@ -27,7 +31,9 @@ type GetMatchUpFormatTimingArgs = {
 export function getMatchUpFormatTiming({
   defaultAverageMinutes = 90,
   defaultRecoveryMinutes = 0,
+  policyDefinitions,
   tournamentRecord,
+  playedMinutes,
   matchUpFormat,
   categoryName,
   categoryType,
@@ -59,6 +65,7 @@ export function getMatchUpFormatTiming({
   };
 
   const { scheduleTiming } = getScheduleTiming({
+    policyDefinitions,
     tournamentRecord,
     categoryName,
     categoryType,
@@ -91,11 +98,19 @@ export function getMatchUpFormatTiming({
     ...scheduleTiming,
     policy: policyWithFallback,
     matchUpFormat,
-    categoryType,
+    // `scheduleTiming.categoryType` is already resolved — `getScheduleTiming`
+    // derives it from `event.category.categoryType ?? subType` when the caller
+    // supplied an event rather than an explicit value. Listing the *parameter*
+    // here unconditionally overwrote that with `undefined`, so passing an event
+    // resolved recovery as if the event had no category at all: a JUNIOR
+    // doubles event took the ADULT figure (30) instead of its own (60).
+    // An explicitly-passed categoryType still wins, which is why this is `??`
+    // rather than a plain removal of the key.
+    categoryType: categoryType ?? scheduleTiming.categoryType,
     defaultTiming,
   };
 
-  return matchUpFormatTimes({ eventType, timingDetails });
+  return matchUpFormatTimes({ eventType, timingDetails, playedMinutes });
 }
 
 function deriveTimedDefaultMinutes(parsed: ReturnType<typeof parseMatchUpFormat>): number | undefined {
@@ -122,12 +137,16 @@ function deriveTimedDefaultMinutes(parsed: ReturnType<typeof parseMatchUpFormat>
 
 type MatchUpFormatTimesArgs = {
   eventType: EventTypeUnion;
+  playedMinutes?: number;
   timingDetails: any;
 };
-export function matchUpFormatTimes({ timingDetails, eventType }: MatchUpFormatTimesArgs): ResultType & {
+export function matchUpFormatTimes({ timingDetails, playedMinutes, eventType }: MatchUpFormatTimesArgs): ResultType & {
   typeChangeRecoveryMinutes?: number;
   recoveryMinutes?: number;
+  overnightMinutes?: number;
   averageMinutes?: number;
+  /** True when `recoveryMinutes` came from a `byPlayedMinutes` band rather than the flat table. */
+  recoveryFromPlayedMinutes?: boolean;
 } {
   const averageTimes = getMatchUpFormatAverageTimes(timingDetails);
   const averageKeys = Object.keys(averageTimes?.minutes ?? {});
@@ -142,9 +161,18 @@ export function matchUpFormatTimes({ timingDetails, eventType }: MatchUpFormatTi
   });
 
   const recoveryKeys = Object.keys(recoveryTimes?.minutes ?? {});
-  const recoveryMinutes =
+  const flatRecoveryMinutes =
     recoveryTimes?.minutes &&
     ((recoveryKeys?.includes(eventType) && recoveryTimes.minutes[eventType]) || recoveryTimes.minutes.default);
+
+  // A duration band wins over the flat figure, but only when the policy authors
+  // one AND the caller measured a duration to key it on. Absent either, this is
+  // undefined and resolution is exactly what it was.
+  const bandedMinutes = getBandedRecoveryMinutes({
+    byPlayedMinutes: recoveryTimes?.byPlayedMinutes,
+    playedMinutes,
+  });
+  const recoveryMinutes = bandedMinutes ?? flatRecoveryMinutes;
 
   const formatChangeKey = isMatchUpEventType(SINGLES_EVENT)(eventType) ? SINGLES_DOUBLES : DOUBLES_SINGLES;
 
@@ -152,5 +180,20 @@ export function matchUpFormatTimes({ timingDetails, eventType }: MatchUpFormatTi
     recoveryTimes?.minutes &&
     ((recoveryKeys?.includes(formatChangeKey) && recoveryTimes.minutes[formatChangeKey]) || recoveryMinutes);
 
-  return { averageMinutes, recoveryMinutes, typeChangeRecoveryMinutes };
+  // Overnight is a property of the day boundary rather than of the format, so it
+  // is resolved independently of averageMinutes. Stays undefined when no policy
+  // configures it — callers must read that as "no rule", not as zero.
+  const overnightTimes = getOvernightRecoveryTimes(timingDetails);
+  const overnightKeys = Object.keys(overnightTimes?.minutes ?? {});
+  const overnightMinutes =
+    overnightTimes?.minutes &&
+    ((overnightKeys?.includes(eventType) && overnightTimes.minutes[eventType]) || overnightTimes.minutes.default);
+
+  return {
+    recoveryFromPlayedMinutes: bandedMinutes !== undefined,
+    typeChangeRecoveryMinutes,
+    overnightMinutes,
+    recoveryMinutes,
+    averageMinutes,
+  };
 }

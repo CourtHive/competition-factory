@@ -8,6 +8,7 @@ import { getAllStructureMatchUps } from '@Query/matchUps/getAllStructureMatchUps
 import { getAttributeGroupings } from '@Query/participants/getAttributeGrouping';
 import { deriveExponent, isPowerOf2, nearestPowerOf2 } from '@Tools/math';
 import { decorateResult } from '@Functions/global/decorateResult';
+import { pushGlobalLog } from '@Functions/global/globalLog';
 import { chunkArray, generateRange } from '@Tools/arrays';
 import { findStructure } from '@Acquire/findStructure';
 import { numericSort } from '@Tools/sorting';
@@ -240,7 +241,12 @@ export function randomUnseededSeparation({
     }
   }
 
-  return { ...SUCCESS };
+  // Report residual conflicts rather than swallowing them. The candidate applied above is the
+  // lowest-conflict one generated, but "lowest" can still be non-zero when the repair loop in
+  // generatePositioningCandidate runs out of options. Returning bare SUCCESS meant
+  // automatedPositioning's `if (result.conflicts)` never fired, so a same-group first-round
+  // pairing shipped as `{ success: true, conflicts: {} }` with no way for a caller to notice.
+  return candidate.conflicts ? { ...SUCCESS, conflicts: candidate.conflicts } : { ...SUCCESS };
 }
 
 function roundRobinParticipantGroups(params) {
@@ -271,7 +277,7 @@ function eliminationParticipantGroups({ allDrawPositions, roundsToSeparate, matc
   if (fedDrawPositions.length) {
     // This calculation will be based on "{ roundPosition, roundNumber } = matchUp"
     // ...for matchUps which include fedDrawPositions
-    console.log({ fedDrawPositions });
+    pushGlobalLog({ method: 'randomUnseededSeparation', fedDrawPositions });
   }
 
   return { drawPositionGroups: drawPositionPairs, drawPositionChunks };

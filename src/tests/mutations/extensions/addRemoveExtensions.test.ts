@@ -9,6 +9,7 @@ import {
   removeTournamentExtension,
 } from '@Mutate/extensions/addRemoveExtensions';
 import { generateTournamentRecord } from '@Assemblies/generators/mocks/generateTournamentRecord';
+import { firstClassOrExtension } from '@Acquire/firstClassOrExtension';
 import { removeExtension } from '@Mutate/extensions/removeExtension';
 import { addNotes, removeNotes } from '@Mutate/base/addRemoveNotes';
 import { addExtension } from '@Mutate/extensions/addExtension';
@@ -75,7 +76,9 @@ it('can add and remove extensions from tournamentRecords', () => {
   expect(updatedTournamentRecord.extensions.length).toEqual(1);
 
   let { event, drawDefinition } = tournamentEngine.getEvent({ drawId });
-  expect(event.extensions.length).toEqual(2);
+  // event has the custom extension + FLIGHT_PROFILE (first-class in NATIVE, an extension in LEGACY)
+  expect(event.extensions.some(({ name }) => name === extensionName)).toBe(true);
+  expect(firstClassOrExtension({ element: event, attribute: 'flightProfile', name: 'flightProfile' })).toBeDefined();
 
   // drawDefinition has 1 because of a policy applied during generation
   expect(drawDefinition.extensions.length).toEqual(2);
@@ -124,7 +127,9 @@ it('can add and remove extensions from tournamentRecords', () => {
   expect(result.success).toEqual(true);
 
   ({ event, drawDefinition } = tournamentEngine.getEvent({ drawId }));
-  expect(event.extensions.length).toEqual(2);
+  // event has the custom extension + FLIGHT_PROFILE (first-class in NATIVE, an extension in LEGACY)
+  expect(event.extensions.some(({ name }) => name === extensionName)).toBe(true);
+  expect(firstClassOrExtension({ element: event, attribute: 'flightProfile', name: 'flightProfile' })).toBeDefined();
   // drawDefinition has 1 policy extension + 1 added extension
   expect(drawDefinition.extensions.length).toEqual(2);
 

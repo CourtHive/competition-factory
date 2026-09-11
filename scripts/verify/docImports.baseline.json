@@ -1,0 +1,6 @@
+{
+  "comment": "Documented imports that do not resolve against the built package. Shrink this by fixing them — never grow it to silence a finding. Regenerate: pnpm verify:docs-imports --update-baseline",
+  "generated": "node scripts/verify/docImports.mjs --update-baseline",
+  "count": 0,
+  "entries": []
+}

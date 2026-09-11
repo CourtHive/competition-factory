@@ -7,7 +7,34 @@ import { isExit } from '@Validators/isExit';
 // constants
 import { DOUBLE_WALKOVER, RETIRED, WALKOVER } from '@Constants/matchUpStatusConstants';
 import { MISSING_MATCHUP } from '@Constants/errorConditionConstants';
-import { OUTCOME_WALKOVER } from '@Helpers/keyValueScore/constants';
+import { exitOutcomeCode } from '@Mutate/matchUps/matchUpStatus/sideExitProvenance';
+import { SUCCESS } from '@Constants/resultConstants';
+
+// matchUpStatusCodes are position-dependent: index 0 maps to side 1, index 1 to
+// side 2. Place the carried code at the index of the participant's side, padding
+// leading positions with '' (so a participant on side 2 yields ['', 'W1'], never
+// ['W1'] which would mis-map to the opponent).
+function placeCodeAtSide(statusCodes: string[], sideNumber: number, code?: string) {
+  if (code === undefined) return;
+  const index = sideNumber - 1;
+  for (let i = 0; i < index; i++) if (statusCodes[i] === undefined) statusCodes[i] = '';
+  statusCodes[index] = code;
+}
+
+// After a participant advances through a BYE, find the matchUp they advanced
+// into — the nearest later round in the same structure that now holds them — so
+// the exit status can be re-propagated onto it.
+function findAdvancementMatchUp(inContextMatchUps, currentMatchUp, participantId) {
+  return inContextMatchUps
+    ?.filter(
+      (m) =>
+        m.matchUpId !== currentMatchUp.matchUpId &&
+        m.structureId === currentMatchUp.structureId &&
+        m.roundNumber > currentMatchUp.roundNumber &&
+        m.sides?.some((s) => s.participantId === participantId),
+    )
+    .sort((a, b) => a.roundNumber - b.roundNumber)[0];
+}
 
 export function progressExitStatus({
   sourceMatchUpStatusCodes,
@@ -38,156 +65,89 @@ export function progressExitStatus({
   // RETIRED should not be propagated as an exit status
   const carryOverMatchUpStatus =
     (isExit(sourceMatchUpStatus) && sourceMatchUpStatus !== RETIRED && sourceMatchUpStatus) || WALKOVER;
-  // get the updated inContext match ups so we have all the sides info
-  // existing inContextDrawMatchUps is out of date
-  const inContextMatchUps = getAllDrawMatchUps({
-    inContext: true,
-    drawDefinition,
-    matchUpsMap,
-  })?.matchUps;
+
+  // get the updated inContext matchUps so we have current sides/positions
+  // (the participant has already been fed/advanced by directLoser at this point)
+  const inContextMatchUps = getAllDrawMatchUps({ inContext: true, drawDefinition, matchUpsMap })?.matchUps;
+  const updatedLoserMatchUp = inContextMatchUps?.find((m) => m.matchUpId === loserMatchUp?.matchUpId);
+
+  if (!updatedLoserMatchUp?.matchUpId) {
+    return decorateResult({ result: { error: MISSING_MATCHUP }, stack });
+  }
+
+  // Object-shaped codes are normalised to their OWN outcome code, not to a walkover.
+  // This previously hardcoded OUTCOME_WALKOVER for every object, which relabelled DEFAULTED and BYE
+  // provenance as walkovers and persisted the result (statusCodes is written back below).
+  const statusCodes: string[] = (updatedLoserMatchUp.matchUpStatusCodes ?? []).map(exitOutcomeCode);
+  const loserParticipantSide = updatedLoserMatchUp.sides?.find((s) => s.participantId === loserParticipantId);
 
   let loserMatchUpStatus = carryOverMatchUpStatus;
+  let winningSide: number | undefined = undefined;
 
-  //find the updated loser match up
-  const updatedLoserMatchUp = inContextMatchUps?.find((m) => m.matchUpId === loserMatchUp?.matchUpId);
+  if (loserParticipantSide?.sideNumber) {
+    const opponentSideNumber = loserParticipantSide.sideNumber === 1 ? 2 : 1;
+    const opponentIsBye = updatedLoserMatchUp.sides?.find((s) => s.sideNumber === opponentSideNumber)?.bye;
+    const participantsCount =
+      updatedLoserMatchUp.sides?.reduce((count, s) => (s?.participantId ? count + 1 : count), 0) ?? 0;
+    const sourceCode = sourceMatchUpStatusCodes?.[0];
+
+    // RULE 1 — opponent is a BYE: the participant advances through it (the BYE
+    // cascade has already moved them forward), so this matchUp stays a BYE and we
+    // re-propagate the exit onto wherever the participant landed. NOT a WALKOVER.
+    if (opponentIsBye) {
+      const advancementMatchUp = findAdvancementMatchUp(inContextMatchUps, updatedLoserMatchUp, loserParticipantId);
+      pushGlobalLog({
+        method: stack,
+        color: 'brightcyan',
+        decision: 'BYE_advance_rePropagate',
+        from: updatedLoserMatchUp.matchUpId?.slice(0, 8),
+        to: advancementMatchUp?.matchUpId?.slice(0, 8) ?? 'none',
+      });
+      const context: any = advancementMatchUp
+        ? { progressExitStatus: true, loserMatchUp: advancementMatchUp, loserParticipantId }
+        : { progressExitStatus: true };
+      return decorateResult({ result: { ...SUCCESS }, stack, context });
+    }
+
+    const opponentEmpty = participantsCount === 1 && statusCodes.length === 0;
+    if (opponentEmpty || !isExit(loserMatchUp.matchUpStatus)) {
+      // RULE 2 — opponent slot empty/pending: WALKOVER, the side WITHOUT the exit
+      //          (the empty side that will receive the eventual opponent) wins.
+      // RULE 3 — opponent is a present, non-exited participant: WALKOVER to them.
+      // Both resolve identically: the non-exit (opponent) side is the winner and
+      // the carried code sits on the exiting participant's side.
+      winningSide = opponentSideNumber;
+      placeCodeAtSide(statusCodes, loserParticipantSide.sideNumber, sourceCode);
+    } else {
+      // RULE 4 — opponent has itself already walked over: DOUBLE_WALKOVER.
+      const currentStatusCode = statusCodes[0];
+      statusCodes[loserParticipantSide.sideNumber - 1] = sourceCode as string;
+      statusCodes[opponentSideNumber - 1] = currentStatusCode;
+      loserMatchUpStatus = DOUBLE_WALKOVER;
+      winningSide = undefined;
+    }
+  }
 
   pushGlobalLog({
     method: stack,
-    color: 'magenta',
-    carryOverMatchUpStatus,
-    updatedLoserMatchUpId: updatedLoserMatchUp?.matchUpId,
-    updatedLoserStatus: updatedLoserMatchUp?.matchUpStatus,
-    updatedLoserSides: JSON.stringify(
-      updatedLoserMatchUp?.sides?.map((s) => ({
-        sn: s.sideNumber,
-        pid: s.participantId?.slice(0, 8),
-        bye: s.bye,
-      })),
-    ),
-    updatedLoserDP: JSON.stringify(updatedLoserMatchUp?.drawPositions),
-    existingStatusCodes: JSON.stringify(updatedLoserMatchUp?.matchUpStatusCodes),
+    color: 'brightmagenta',
+    action: 'calling_setMatchUpState',
+    loserMatchUpId: loserMatchUp.matchUpId,
+    finalStatus: loserMatchUpStatus,
+    finalWinningSide: winningSide,
+    finalStatusCodes: JSON.stringify(statusCodes),
   });
 
-  if (updatedLoserMatchUp?.matchUpId && loserMatchUpStatus) {
-    let winningSide: number | undefined = undefined;
-    //get rid of the double walkover special status codes
-    //and replace them with simple string ones
-    //it's a bit of a broad check but I think only double WO will set status codes as objects
-    const statusCodes: string[] =
-      updatedLoserMatchUp.matchUpStatusCodes?.map((sc) => (typeof sc === 'string' ? sc : OUTCOME_WALKOVER)) ?? [];
-    //find the loser participant side in the loser match up
-    const loserParticipantSide = updatedLoserMatchUp.sides?.find((s) => s.participantId === loserParticipantId);
-    //set the original status code to the correct side in the loser match
-    if (loserParticipantSide?.sideNumber) {
-      //find out how many assigned participants are already in the loser match up
-      const participantsCount = updatedLoserMatchUp?.sides?.reduce((count, current) => {
-        return current?.participantId ? count + 1 : count;
-      }, 0);
-
-      pushGlobalLog({
-        method: stack,
-        color: 'brightyellow',
-        keyColors: { decision: 'brightgreen' },
-        loserSideNumber: loserParticipantSide.sideNumber,
-        participantsCount,
-        statusCodesLength: statusCodes.length,
-        existingStatusCodes: JSON.stringify(statusCodes),
-        loserMatchUpIsExit: isExit(loserMatchUp.matchUpStatus),
-        loserMatchUpOriginalStatus: loserMatchUp.matchUpStatus,
-      });
-
-      //if only one participant we need to bring over the status code and
-      //set it as the only one, and assign the empty side as the winner.
-      //We also consider outcomes from a double walkover in the main draw, which
-      //will not bring over a participant but it will bring over the status code.
-      //So we make sure there is only one participant and no existing status codes, otherwise
-      //it should be set as a double walkover.
-      if (participantsCount === 1 && statusCodes.length === 0) {
-        winningSide = loserParticipantSide.sideNumber === 1 ? 2 : 1;
-        //set the original status code from the original status codes
-        //this is flawed a bit, or at least the TDesk ui, as even if there are two participants
-        //for a WO/DEFAULT, the status code is always the first element.
-        statusCodes[0] = sourceMatchUpStatusCodes[0];
-        pushGlobalLog({
-          method: stack,
-          color: 'brightgreen',
-          decision: 'SINGLE_PARTICIPANT_no_existing_codes',
-          winningSide,
-          statusCodes: JSON.stringify(statusCodes),
-        });
-      } else {
-        //there was already a participant in the loser matchup
-        //if the loser match is not already a WO or DEFAULT
-        if (!isExit(loserMatchUp.matchUpStatus)) {
-          //let's set the opponent as the winner
-          winningSide = loserParticipantSide.sideNumber === 1 ? 2 : 1;
-          //we still want to bring over the original status codes
-          statusCodes[0] = sourceMatchUpStatusCodes[0];
-          pushGlobalLog({
-            method: stack,
-            color: 'brightgreen',
-            decision: 'TWO_PARTICIPANTS_not_exit',
-            winningSide,
-            statusCodes: JSON.stringify(statusCodes),
-          });
-        } else {
-          //both participants are either WO or DEFAULT
-
-          //workaround for status codes
-          const currentStatusCode = statusCodes[0];
-          //set the original status code to the correct participant in the loser match up
-          statusCodes[loserParticipantSide.sideNumber - 1] = sourceMatchUpStatusCodes[0];
-          const otherSide = loserParticipantSide.sideNumber === 1 ? 2 : 1;
-          statusCodes[otherSide - 1] = currentStatusCode;
-
-          loserMatchUpStatus = DOUBLE_WALKOVER;
-          winningSide = undefined;
-          pushGlobalLog({
-            method: stack,
-            color: 'brightred',
-            decision: 'BOTH_EXITS_converting_to_DOUBLE_WALKOVER',
-            loserMatchUpStatus,
-            winningSide,
-            statusCodes: JSON.stringify(statusCodes),
-          });
-        }
-      }
-    } else {
-      pushGlobalLog({
-        method: stack,
-        color: 'brightyellow',
-        decision: 'NO_LOSER_PARTICIPANT_SIDE_FOUND',
-        loserParticipantId: loserParticipantId?.slice(0, 8),
-        availableSides: JSON.stringify(
-          updatedLoserMatchUp.sides?.map((s) => ({ sn: s.sideNumber, pid: s.participantId?.slice(0, 8) })),
-        ),
-      });
-    }
-
-    pushGlobalLog({
-      method: stack,
-      color: 'brightmagenta',
-      keyColors: { finalStatus: 'brightgreen', finalWinningSide: 'brightyellow' },
-      action: 'calling_setMatchUpState',
-      loserMatchUpId: loserMatchUp.matchUpId,
-      finalStatus: loserMatchUpStatus,
-      finalWinningSide: winningSide,
-      finalStatusCodes: JSON.stringify(statusCodes),
-    });
-
-    const result = setMatchUpState({
-      matchUpStatus: loserMatchUpStatus,
-      matchUpId: loserMatchUp.matchUpId,
-      matchUpStatusCodes: statusCodes,
-      allowChangePropagation: true,
-      propagateExitStatus,
-      tournamentRecord,
-      drawDefinition,
-      winningSide,
-      event,
-    });
-    return decorateResult({ result, stack, context: { progressExitStatus: true } });
-  }
-
-  return decorateResult({ result: { error: MISSING_MATCHUP }, stack });
+  const result = setMatchUpState({
+    matchUpStatus: loserMatchUpStatus,
+    matchUpId: loserMatchUp.matchUpId,
+    matchUpStatusCodes: statusCodes,
+    allowChangePropagation: true,
+    propagateExitStatus,
+    tournamentRecord,
+    drawDefinition,
+    winningSide,
+    event,
+  });
+  return decorateResult({ result, stack, context: { progressExitStatus: true } });
 }

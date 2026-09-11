@@ -1,5 +1,5 @@
+import { firstClassOrExtension } from '@Acquire/firstClassOrExtension';
 import { getPositionAssignments } from '@Query/drawDefinition/positionsGetter';
-import { findExtension } from '@Acquire/findExtension';
 import tournamentEngine from '@Engines/syncEngine';
 import mocksEngine from '@Assemblies/engines/mock';
 import { expect, test } from 'vitest';
@@ -309,8 +309,8 @@ test('RR_WITH_PLAYOFF drawSize 32 with DOUBLE_WALKOVER/DOUBLE_DEFAULT ties: with
   // Verify ties exist in group 1 tally results
   const tallyResults = g1Assignments
     ?.map((a) => {
-      const { extension } = findExtension({ element: a, name: TALLY });
-      return { drawPosition: a.drawPosition, tally: extension?.value };
+      const tally = firstClassOrExtension({ element: a, attribute: 'tally', name: TALLY });
+      return { drawPosition: a.drawPosition, tally };
     })
     .filter((r) => r.tally);
 
@@ -337,9 +337,7 @@ test('RR_WITH_PLAYOFF drawSize 32 with DOUBLE_WALKOVER/DOUBLE_DEFAULT ties: with
 
   // Tied participants (with same groupOrder) should have the same finishing position range
   // since their ties are unresolved without subOrder
-  const group1ParticipantIds = g1Assignments
-    ?.filter((a) => a.participantId)
-    .map((a) => a.participantId) as string[];
+  const group1ParticipantIds = g1Assignments?.filter((a) => a.participantId).map((a) => a.participantId) as string[];
 
   const group1Ranges = group1ParticipantIds.map((pid) => ({
     participantId: pid,
@@ -350,8 +348,7 @@ test('RR_WITH_PLAYOFF drawSize 32 with DOUBLE_WALKOVER/DOUBLE_DEFAULT ties: with
   // since they have the same groupOrder without subOrder
   const tiedRanges = group1Ranges.filter((r) => {
     const tally = tallyResults?.find(
-      (t) =>
-        g1Assignments?.find((a) => a.drawPosition === t.drawPosition)?.participantId === r.participantId,
+      (t) => g1Assignments?.find((a) => a.drawPosition === t.drawPosition)?.participantId === r.participantId,
     )?.tally;
     return tally?.ties;
   });
@@ -381,13 +378,14 @@ test('RR_WITH_PLAYOFF drawSize 32 with ties resolved by subOrder', () => {
   });
 
   // Find tied participants by checking tally extensions
-  const tiedDrawPositions = g1Assignments
-    ?.map((a) => {
-      const { extension } = findExtension({ element: a, name: TALLY });
-      return { drawPosition: a.drawPosition, participantId: a.participantId, tally: extension?.value };
-    })
-    .filter((r) => r.tally?.ties)
-    .map((r) => r.drawPosition) || [];
+  const tiedDrawPositions =
+    g1Assignments
+      ?.map((a) => {
+        const tally = firstClassOrExtension({ element: a, attribute: 'tally', name: TALLY });
+        return { drawPosition: a.drawPosition, participantId: a.participantId, tally };
+      })
+      .filter((r) => r.tally?.ties)
+      .map((r) => r.drawPosition) || [];
 
   expect(tiedDrawPositions.length).toBeGreaterThanOrEqual(2);
 
@@ -431,13 +429,14 @@ test('RR_WITH_PLAYOFF drawSize 32 with ties resolved by subOrder', () => {
     structure: group2Structure,
   });
 
-  const g2TiedDrawPositions = g2Assignments
-    ?.map((a) => {
-      const { extension } = findExtension({ element: a, name: TALLY });
-      return { drawPosition: a.drawPosition, participantId: a.participantId, tally: extension?.value };
-    })
-    .filter((r) => r.tally?.ties)
-    .map((r) => r.drawPosition) || [];
+  const g2TiedDrawPositions =
+    g2Assignments
+      ?.map((a) => {
+        const tally = firstClassOrExtension({ element: a, attribute: 'tally', name: TALLY });
+        return { drawPosition: a.drawPosition, participantId: a.participantId, tally };
+      })
+      .filter((r) => r.tally?.ties)
+      .map((r) => r.drawPosition) || [];
 
   // Resolve group 2 ties with subOrder
   for (let i = 0; i < g2TiedDrawPositions.length; i++) {
@@ -462,9 +461,7 @@ test('RR_WITH_PLAYOFF drawSize 32 with ties resolved by subOrder', () => {
   const g2AfterRanges = g2ParticipantIds.map((pid) => finalMap[pid]?.draws[drawId]?.finishingPositionRange);
 
   if (g2AfterRanges.length >= 2) {
-    const g2AllSame = g2AfterRanges.every(
-      (r) => r?.[0] === g2AfterRanges[0]?.[0] && r?.[1] === g2AfterRanges[0]?.[1],
-    );
+    const g2AllSame = g2AfterRanges.every((r) => r?.[0] === g2AfterRanges[0]?.[0] && r?.[1] === g2AfterRanges[0]?.[1]);
     expect(g2AllSame).toBe(false);
   }
 

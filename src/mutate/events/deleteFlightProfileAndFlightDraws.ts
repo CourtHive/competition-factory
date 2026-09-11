@@ -1,4 +1,4 @@
-import { removeEventExtension } from '../extensions/addRemoveExtensions';
+import { setFirstClassOrExtension } from '../extensions/setFirstClassOrExtension';
 import { requireParams } from '@Helpers/parameters/requireParams';
 import { getFlightProfile } from '@Query/event/getFlightProfile';
 import { deleteDrawDefinitions } from './deleteDrawDefinitions';
@@ -28,7 +28,12 @@ export function deleteFlightProfileAndFlightDraws({ autoPublish = true, tourname
     });
     if (result.error) return result;
 
-    return removeEventExtension({ event, name: FLIGHT_PROFILE });
+    return setFirstClassOrExtension({
+      element: event,
+      attribute: 'flightProfile',
+      name: FLIGHT_PROFILE,
+      value: undefined,
+    });
   }
 
   return { ...SUCCESS };

@@ -1,5 +1,5 @@
+import { setFirstClassOrExtension } from '@Mutate/extensions/setFirstClassOrExtension';
 import { attachPolicies } from '@Mutate/extensions/policies/attachPolicies';
-import { addEventExtension } from '@Mutate/extensions/addRemoveExtensions';
 import { modifyDrawNotice } from '@Mutate/notifications/drawNotifications';
 import { getFlightProfile } from '@Query/event/getFlightProfile';
 import { modifyDrawName } from './modifyDrawName';
@@ -49,15 +49,12 @@ export function modifyDrawDefinition({
   }
 
   if (flight) {
-    const extension = {
+    setFirstClassOrExtension({
+      element: event,
+      attribute: 'flightProfile',
       name: FLIGHT_PROFILE,
-      value: {
-        ...flightProfile,
-        flights: flightProfile.flights,
-      },
-    };
-
-    addEventExtension({ event, extension });
+      value: { ...flightProfile, flights: flightProfile.flights },
+    });
   }
 
   if (drawDefinition) {

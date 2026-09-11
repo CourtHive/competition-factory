@@ -300,9 +300,7 @@ describe('COMPASS via withPlayoffs — exploration', () => {
     const eventId = 'partialCompass';
 
     mocksEngine.generateTournamentRecord({
-      eventProfiles: [
-        { eventId, eventName: 'Partial COMPASS', participantsProfile: { participantsCount: drawSize } },
-      ],
+      eventProfiles: [{ eventId, eventName: 'Partial COMPASS', participantsProfile: { participantsCount: drawSize } }],
       setState: true,
     });
 

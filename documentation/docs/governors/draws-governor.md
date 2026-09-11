@@ -230,6 +230,13 @@ engine.assignDrawPosition({
 });
 ```
 
+**Idempotent for the same position.** Re-asserting a participant at the `drawPosition` it
+already occupies is a no-op success — not an error — so a bulk re-sync or retry that
+re-pushes an already-positioned draw (e.g. an integration re-sending its full position set)
+does not fail or roll back. Assigning the participant to a **different** position still
+returns `EXISTING_PARTICIPANT_DRAW_POSITION_ASSIGNMENT`; moving a placed participant
+requires clearing the source (or a swap) first.
+
 ---
 
 ## assignDrawPositionBye
@@ -880,24 +887,24 @@ Returns available positioning actions for a draw position. The returned `validAc
 
 ```js
 const {
-  validActions,         // array of action objects
+  validActions, // array of action objects
   isActiveDrawPosition, // boolean — position has active (scored) matchUps
-  hasPositionAssigned,  // boolean — position has a participant or bye assigned
-  isDrawPosition,       // boolean — position exists in the structure
-  isByePosition,        // boolean — position is assigned a bye
+  hasPositionAssigned, // boolean — position has a participant or bye assigned
+  isDrawPosition, // boolean — position exists in the structure
+  isByePosition, // boolean — position is assigned a bye
 } = engine.positionActions({
-  drawPosition,                       // required — the draw position number
-  structureId,                        // required — target structure
-  drawId,                             // required — resolved to drawDefinition by engine
-  policyDefinitions,                  // optional — override position action policies
-  provisionalPositioning,             // optional boolean — honor provisional order from tallies
-  returnParticipants,                 // optional boolean — defaults to true; include participant objects in actions
-  restrictAdHocRoundParticipants,     // optional boolean — defaults to true; disallow same participant in same round
-  tournamentParticipants,             // optional — pre-fetched participants array (optimization)
-  inContextDrawMatchUps,              // optional — pre-fetched inContext matchUps (optimization)
-  matchUpsMap,                        // optional — pre-fetched matchUps map (optimization)
-  matchUpId,                          // optional — for AD_HOC structures, the target matchUp
-  event,                              // optional — resolved by engine
+  drawPosition, // required — the draw position number
+  structureId, // required — target structure
+  drawId, // required — resolved to drawDefinition by engine
+  policyDefinitions, // optional — override position action policies
+  provisionalPositioning, // optional boolean — honor provisional order from tallies
+  returnParticipants, // optional boolean — defaults to true; include participant objects in actions
+  restrictAdHocRoundParticipants, // optional boolean — defaults to true; disallow same participant in same round
+  tournamentParticipants, // optional — pre-fetched participants array (optimization)
+  inContextDrawMatchUps, // optional — pre-fetched inContext matchUps (optimization)
+  matchUpsMap, // optional — pre-fetched matchUps map (optimization)
+  matchUpId, // optional — for AD_HOC structures, the target matchUp
+  event, // optional — resolved by engine
 });
 ```
 
@@ -1073,8 +1080,8 @@ Resets a drawDefinition to its initial state. For all matchUps: removes scores, 
 
 ```js
 engine.resetDrawDefinition({
-  drawId,              // required — resolved to drawDefinition by engine
-  removeScheduling,    // optional boolean — also remove scheduling timeItems (date, time, court, venue)
+  drawId, // required — resolved to drawDefinition by engine
+  removeScheduling, // optional boolean — also remove scheduling timeItems (date, time, court, venue)
 });
 ```
 
@@ -1258,10 +1265,10 @@ Works by assigning virtual drawPositions to next-round matchUps and creating cor
 
 ```js
 engine.luckyDrawAdvancement({
-  roundNumber,    // required — round number that has just completed
-  drawId,         // required — resolved to drawDefinition by engine
-  structureId,    // optional — target structure within the draw
-  participantId,  // optional — the selected lucky loser (required for pre-feed rounds)
+  roundNumber, // required — round number that has just completed
+  drawId, // required — resolved to drawDefinition by engine
+  structureId, // optional — target structure within the draw
+  participantId, // optional — the selected lucky loser (required for pre-feed rounds)
 });
 ```
 
@@ -1273,8 +1280,8 @@ Determines whether a structure contains "lucky rounds" — rounds where the matc
 
 ```js
 const result = engine.hasLuckyRounds({
-  structure,   // optional — structure object with matchUps
-  matchUps,    // optional — array of matchUps (alternative to structure)
+  structure, // optional — structure object with matchUps
+  matchUps, // optional — array of matchUps (alternative to structure)
 });
 // returns boolean
 ```
@@ -1289,8 +1296,8 @@ Returns detailed status for each round of a LUCKY_DRAW, including completion sta
 
 ```js
 const { rounds, consolidationLinks } = engine.getLuckyDrawRoundStatus({
-  drawId,        // required
-  structureId,   // optional — defaults to first LUCKY_DRAW structure
+  drawId, // required
+  structureId, // optional — defaults to first LUCKY_DRAW structure
 });
 ```
 
@@ -1304,9 +1311,9 @@ Adds an extension (custom metadata) to a drawDefinition.
 
 ```js
 engine.addDrawDefinitionExtension({
-  extension,     // required — { name, value } extension object
-  drawId,        // resolved via engine context
-  creationTime,  // optional boolean — stamp creation time on extension
+  extension, // required — { name, value } extension object
+  drawId, // resolved via engine context
+  creationTime, // optional boolean — stamp creation time on extension
 });
 ```
 

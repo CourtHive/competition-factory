@@ -1,9 +1,6 @@
-export const MON = 'MON';
-export const TUE = 'TUE';
-export const WED = 'WED';
-export const THU = 'THU';
-export const FRI = 'FRI';
-export const SAT = 'SAT';
-export const SUN = 'SUN';
+import { MON, TUE, WED, THU, FRI, SAT, SUN } from './weekdayValues';
+
+// primitive weekday consts are generated from WeekdayEnum (see weekdayValues.ts).
+export * from './weekdayValues';
 
 export const weekdayConstants = { MON, TUE, WED, THU, FRI, SAT, SUN };

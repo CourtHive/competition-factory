@@ -12,6 +12,7 @@ import { findParticipant } from '@Acquire/findParticipant';
 import { parse } from '@Helpers/matchUpFormatCode/parse';
 import { isConvertableInteger } from '@Tools/math';
 import { makeDeepCopy } from '@Tools/makeDeepCopy';
+import { extractDate } from '@Tools/dateTime';
 import { unique } from '@Tools/arrays';
 import { getSide } from './getSide';
 
@@ -20,7 +21,7 @@ import { POLICY_TYPE_PARTICIPANT } from '@Constants/policyConstants';
 import { isEmbargoed } from '@Query/publishing/isEmbargoed';
 import { QUALIFYING } from '@Constants/drawDefinitionConstants';
 import { BYE } from '@Constants/matchUpStatusConstants';
-import { MIXED } from '@Constants/genderConstants';
+import { isMixed } from '@Validators/isMixed';
 import { HydratedMatchUp } from '@Types/hydrated';
 import { SINGLES } from '@Constants/matchUpTypes';
 import { TEAM } from '@Constants/eventConstants';
@@ -79,17 +80,38 @@ type AddMatchUpContextArgs = {
 function applyEmbargoFilter({ publishStatus, drawDefinition, structure, matchUp, schedule }) {
   if (!publishStatus || !drawDefinition?.drawId || !structure?.structureId) return schedule;
 
-  const structDetail =
-    publishStatus?.drawDetails?.[drawDefinition.drawId]?.structureDetails?.[structure.structureId];
+  const structDetail = publishStatus?.drawDetails?.[drawDefinition.drawId]?.structureDetails?.[structure.structureId];
   if (!structDetail) return schedule;
 
   const rn = matchUp.roundNumber;
   if (!isConvertableInteger(rn)) return schedule;
 
   const roundDetail = structDetail.scheduledRounds?.[rn!];
-  if (roundDetail && isEmbargoed(roundDetail)) return undefined;
+  if (roundDetail && isEmbargoed(roundDetail)) {
+    // Embargo hides the time/court but the match still appears on its date (its
+    // existence-on-date is already implied by the date-grouped order of play).
+    // Preserve ONLY the date so date filtering / grouping still works — in NATIVE
+    // there is no timeItem fallback, so zeroing the whole schedule made embargoed
+    // rounds vanish from the published OoP. All time/court/venue detail is stripped.
+    const scheduledDate = schedule?.scheduledDate || (schedule?.scheduledTime && extractDate(schedule.scheduledTime));
+    return scheduledDate ? { scheduledDate } : undefined;
+  }
 
   return schedule;
+}
+
+// The hydrated `schedule` already has publish-state redactions applied (embargo +
+// scheduleVisibilityFilters). Take it as authoritative and pull ONLY the source-side first-class
+// fields the hydrator doesn't produce (calledAt / scoredTime). A blind `{ ...sourceSchedule,
+// ...schedule }` spread leaked redacted placement fields in NATIVE, where `sourceSchedule` is the
+// full first-class schedule (in LEGACY it's undefined, so it never did).
+function mergeSourceScheduleFields(schedule, sourceSchedule) {
+  if (!schedule) return schedule;
+  const merged = { ...schedule };
+  for (const key of ['calledAt', 'scoredTime']) {
+    if (sourceSchedule?.[key] !== undefined && merged[key] === undefined) merged[key] = sourceSchedule[key];
+  }
+  return merged;
 }
 
 function resolveProcessCodes({ matchUp, collectionDefinition, structure, drawDefinition, event, tournamentRecord }) {
@@ -193,6 +215,7 @@ export function addMatchUpContext({
 
   const collectionAssignmentDetail = collectionId
     ? getCollectionAssignment({
+        participantTemplate: appliedPolicies?.[POLICY_TYPE_PARTICIPANT]?.participant,
         tournamentParticipants,
         positionAssignments,
         collectionPosition,
@@ -245,6 +268,29 @@ export function addMatchUpContext({
   // order is important here as Round Robin matchUps already have inContext structureId
   const onlyDefined = (obj) => definedAttributes(obj, undefined, true);
 
+  // CODES Phase 2 promoted `matchUp.schedule.*` to first-class. The source
+  // matchUp now carries its own `schedule` object, and a naive spread of
+  // `makeDeepCopy(matchUp)` would *replace* the hydrated `schedule` (with
+  // derived venueName / courtName / venueAbbreviation / isoDateString /
+  // milliseconds / time + any embargo/publishStatus filtering applied) —
+  // losing all the derived fields whenever the source has a non-empty
+  // first-class schedule object.
+  //
+  // Strip schedule from the source spread and merge it onto the hydrated
+  // schedule explicitly. Source-side first-class fields the hydrator
+  // doesn't yet know about (e.g. `calledAt`) come through via the
+  // base layer; hydrated-side derived names + applied filters win where
+  // they overlap.
+  //
+  // Also closes a privacy leak in the embargo path: when
+  // `applyEmbargoFilter` zeroed the hydrated schedule to undefined, the
+  // source schedule used to leak through; now it gets dropped entirely
+  // unless something explicitly merged it back in.
+  const sourceMatchUp = makeDeepCopy(onlyDefined(matchUp), true, true);
+  const sourceSchedule = sourceMatchUp.schedule;
+  delete sourceMatchUp.schedule;
+  const mergedSchedule = mergeSourceScheduleFields(schedule, sourceSchedule);
+
   const matchUpWithContext = {
     ...onlyDefined(context),
     ...onlyDefined({
@@ -276,11 +322,11 @@ export function addMatchUpContext({
       roundName,
       drawName,
       drawType,
-      schedule,
+      schedule: mergedSchedule,
       drawId,
       stage,
     }),
-    ...makeDeepCopy(onlyDefined(matchUp), true, true),
+    ...sourceMatchUp,
   };
 
   if (matchUpFormat && matchUp.score?.scoreStringSide1) {
@@ -459,18 +505,30 @@ function buildMatchUpSides({
   });
 }
 
-function hydrateSides({ tournamentParticipants, hydrateParticipants, positionAssignments, appliedPolicies, drawDefinition, participantMap, contextProfile, matchUpWithContext, event }) {
+function hydrateSides({
+  tournamentParticipants,
+  hydrateParticipants,
+  positionAssignments,
+  appliedPolicies,
+  drawDefinition,
+  participantMap,
+  contextProfile,
+  matchUpWithContext,
+  event,
+}) {
   const participantAttributes = appliedPolicies?.[POLICY_TYPE_PARTICIPANT];
-  const getMappedParticipant = (participantId) => {
+  const participantTemplate = participantAttributes?.participant;
+  // A privacy policy carries a SEPARATE `individualParticipants` sub-template, which may be stricter
+  // than the top-level one. Judging nested individuals by the top-level template is invisible while
+  // the two happen to be identical — as they are in POLICY_PRIVACY_DEFAULT — and silently wrong the
+  // moment a provider tightens one of them.
+  const individualsTemplate = participantTemplate?.individualParticipants;
+  const filterWith = (template) => (participantId) => {
     const participant = participantMap?.[participantId]?.participant;
-    return (
-      participant &&
-      attributeFilter({
-        template: participantAttributes?.participant,
-        source: participant,
-      })
-    );
+    return participant && attributeFilter({ template, source: participant });
   };
+  const getMappedParticipant = filterWith(participantTemplate);
+  const getMappedIndividual = filterWith(individualsTemplate);
 
   matchUpWithContext.sides.filter(Boolean).forEach((side) => {
     hydrateSideParticipant({
@@ -485,27 +543,44 @@ function hydrateSides({ tournamentParticipants, hydrateParticipants, positionAss
       event,
     });
 
-    if (side?.participant?.individualParticipantIds?.length && !side.participant.individualParticipants?.length) {
+    // A policy that names no `individualParticipants` sub-template denies the attribute outright —
+    // `attributeFilter` copies only what it names — so nothing may be attached here either.
+    const individualsDenied = !!participantTemplate && !individualsTemplate;
+
+    if (
+      side?.participant?.individualParticipantIds?.length &&
+      !side.participant.individualParticipants?.length &&
+      !individualsDenied
+    ) {
       const individualParticipants = side.participant.individualParticipantIds.map((participantId) => {
-        return (
-          getMappedParticipant(participantId) ||
+        const found =
+          getMappedIndividual(participantId) ||
           (tournamentParticipants
             ? findParticipant({
-                policyDefinitions: appliedPolicies,
                 tournamentParticipants,
                 internalUse: true,
                 contextProfile,
                 participantId,
               })
-            : undefined)
-        );
+            : undefined);
+        return individualsTemplate && found ? attributeFilter({ template: individualsTemplate, source: found }) : found;
       });
       if (hydrateParticipants !== false) Object.assign(side.participant, { individualParticipants });
     }
   });
 }
 
-function hydrateSideParticipant({ side, getMappedParticipant, tournamentParticipants, hydrateParticipants, positionAssignments, appliedPolicies, drawDefinition, contextProfile, event }) {
+function hydrateSideParticipant({
+  side,
+  getMappedParticipant,
+  tournamentParticipants,
+  hydrateParticipants,
+  positionAssignments,
+  appliedPolicies,
+  drawDefinition,
+  contextProfile,
+  event,
+}) {
   if (!side.participantId) return;
 
   const participant = makeDeepCopy(
@@ -557,7 +632,7 @@ function hydrateSideParticipant({ side, getMappedParticipant, tournamentParticip
 function inferMatchUpGender({ contextProfile, matchUpWithContext }) {
   const inferGender =
     contextProfile?.inferGender &&
-    (!matchUpWithContext.gender || matchUpWithContext.gender === MIXED) &&
+    (!matchUpWithContext.gender || isMixed(matchUpWithContext.gender)) &&
     matchUpWithContext.sides?.length === 2 &&
     matchUpWithContext.matchUpType !== TEAM;
 

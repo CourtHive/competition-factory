@@ -1,4 +1,4 @@
-import { findExtension } from '@Acquire/findExtension';
+import { getRecordLinkedTournamentIds } from '@Acquire/getRecordLinkedTournamentIds';
 import { makeDeepCopy } from '@Tools/makeDeepCopy';
 import {
   getTournamentId,
@@ -11,7 +11,6 @@ import {
 
 // constants and types
 import { INVALID_OBJECT, INVALID_RECORDS, INVALID_VALUES } from '@Constants/errorConditionConstants';
-import { LINKED_TOURNAMENTS } from '@Constants/extensionConstants';
 import { ResultType } from '@Types/factoryTypes';
 
 type GetStateArgs = {
@@ -46,15 +45,17 @@ export function getTournament(params?: GetTournamentArgs) {
 export function removeUnlinkedTournamentRecords(): void {
   const tournamentRecords = getTournamentRecords();
 
-  const { extension } = findExtension({
-    name: LINKED_TOURNAMENTS,
-    tournamentRecords,
-    discover: true,
-  });
+  // CODES: collect linked ids across every record in state (mode-agnostic).
+  // The previous `findExtension({discover:true})` pulled the first matching
+  // extension only — sufficient because `linkTournaments` writes the same
+  // value into every record. The shadow-write equivalent walks each record.
+  const tournamentIds = new Set<string>();
+  for (const record of Object.values(tournamentRecords)) {
+    for (const id of getRecordLinkedTournamentIds(record)) tournamentIds.add(id);
+  }
 
-  const tournamentIds = extension?.value?.tournamentIds ?? [];
   Object.keys(tournamentRecords).forEach((tournamentId) => {
-    if (!tournamentIds.includes(tournamentId)) delete tournamentRecords[tournamentId];
+    if (!tournamentIds.has(tournamentId)) delete tournamentRecords[tournamentId];
   });
 
   return setTournamentRecords(tournamentRecords);

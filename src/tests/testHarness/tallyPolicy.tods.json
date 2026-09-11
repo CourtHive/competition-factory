@@ -158,7 +158,6 @@
                         "loser": [1, 4],
                         "winner": [1, 4]
                       },
-                      "losers": [],
                       "matchUpStatus": "COMPLETED",
                       "matchUpStatusCodes": [],
                       "matchUpType": "DOUBLES",
@@ -167,7 +166,6 @@
                       "sides": [],
                       "tieMatchUps": [],
                       "updatedAt": "2024-10-26T20:18:00.294Z",
-                      "winners": [],
                       "timeItems": [
                         {
                           "createdAt": "2024-10-22T14:30:53.622Z",
@@ -220,7 +218,6 @@
                         "loser": [1, 4],
                         "winner": [1, 4]
                       },
-                      "losers": [],
                       "matchUpStatus": "COMPLETED",
                       "matchUpStatusCodes": [],
                       "matchUpType": "DOUBLES",
@@ -229,7 +226,6 @@
                       "sides": [],
                       "tieMatchUps": [],
                       "updatedAt": "2024-10-26T20:17:48.090Z",
-                      "winners": [],
                       "timeItems": [
                         {
                           "createdAt": "2024-10-22T14:30:59.755Z",
@@ -282,7 +278,6 @@
                         "loser": [1, 4],
                         "winner": [1, 4]
                       },
-                      "losers": [],
                       "matchUpStatus": "COMPLETED",
                       "matchUpStatusCodes": [],
                       "matchUpType": "DOUBLES",
@@ -291,7 +286,6 @@
                       "sides": [],
                       "tieMatchUps": [],
                       "updatedAt": "2024-10-26T21:44:20.922Z",
-                      "winners": [],
                       "timeItems": [
                         {
                           "createdAt": "2024-10-22T14:31:10.251Z",
@@ -344,7 +338,6 @@
                         "loser": [1, 4],
                         "winner": [1, 4]
                       },
-                      "losers": [],
                       "matchUpStatus": "COMPLETED",
                       "matchUpStatusCodes": [],
                       "matchUpType": "DOUBLES",
@@ -353,7 +346,6 @@
                       "sides": [],
                       "tieMatchUps": [],
                       "updatedAt": "2024-10-26T22:59:27.002Z",
-                      "winners": [],
                       "timeItems": [
                         {
                           "createdAt": "2024-10-22T14:31:13.072Z",
@@ -406,7 +398,6 @@
                         "loser": [1, 4],
                         "winner": [1, 4]
                       },
-                      "losers": [],
                       "matchUpStatus": "COMPLETED",
                       "matchUpStatusCodes": [],
                       "matchUpType": "DOUBLES",
@@ -415,7 +406,6 @@
                       "sides": [],
                       "tieMatchUps": [],
                       "updatedAt": "2024-10-26T00:36:02.089Z",
-                      "winners": [],
                       "timeItems": [
                         {
                           "createdAt": "2024-10-22T14:35:18.967Z",
@@ -468,7 +458,6 @@
                         "loser": [1, 4],
                         "winner": [1, 4]
                       },
-                      "losers": [],
                       "matchUpStatus": "COMPLETED",
                       "matchUpStatusCodes": [],
                       "matchUpType": "DOUBLES",
@@ -477,7 +466,6 @@
                       "sides": [],
                       "tieMatchUps": [],
                       "updatedAt": "2024-10-26T00:36:14.065Z",
-                      "winners": [],
                       "timeItems": [
                         {
                           "createdAt": "2024-10-22T14:35:15.892Z",
@@ -771,7 +759,6 @@
       "tennisOfficialIds": [],
       "processCodes": [],
       "weekdays": [],
-      "onlineResources": [],
       "isMock": true
     }
   ],
@@ -4924,11 +4911,9 @@
       }
     }
   ],
-  "registrationProfile": [
-    {
-      "entriesClose": "2024-10-21T00:00:00.000Z"
-    }
-  ],
+  "registrationProfile": {
+    "entriesClose": "2024-10-21T00:00:00.000Z"
+  },
   "season": "a8ead796-829a-4be3-aced-5e5431e04d5d",
   "startDate": "2024-10-25T00:00:00.000Z",
   "totalPrizeMoney": [],

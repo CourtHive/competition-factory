@@ -4,8 +4,8 @@
  */
 import { generateAndPopulatePlayoffStructures } from '@Generators/drawDefinitions/generateAndPopulatePlayoffStructures';
 import { generateVoluntaryConsolation } from '@Generators/drawDefinitions/drawTypes/generateVoluntaryConsolation';
-import { BLOCK_TYPES, type CourtRef } from '@Assemblies/governors/temporalGovernor/types';
-import { TemporalEngine } from '@Assemblies/engines/temporal/TemporalEngine';
+import { BLOCK_TYPES, type CourtRef } from '@Assemblies/governors/availabilityGovernor/types';
+import { AvailabilityEngine } from '@Assemblies/engines/availability/AvailabilityEngine';
 import { getParticipantStats } from '@Query/participant/getParticipantStats';
 import tournamentEngine from '@Engines/syncEngine';
 import mocksEngine from '@Assemblies/engines/mock';
@@ -175,11 +175,11 @@ describe('getParticipantStats: withIndividualStats non-team path', () => {
 });
 
 // ----------------------------------------------------------------
-// 5. TemporalEngine.ts — applyTemplate with existing template,
+// 5. AvailabilityEngine.ts — applyTemplate with existing template,
 //    unindexBlock when other blocks remain, getCourtMeta fallback
 //    Uncovered: lines 864, 1122, 1358, 1434
 // ----------------------------------------------------------------
-describe('TemporalEngine coverage gaps', () => {
+describe('AvailabilityEngine coverage gaps', () => {
   const TEST_TOURNAMENT = 'test-tournament';
   const TEST_VENUE = 'venue-1';
   const COURT_1 = 'court-1';
@@ -203,7 +203,7 @@ describe('TemporalEngine coverage gaps', () => {
   }
 
   it('applyTemplate returns empty result when template exists (line 864)', () => {
-    const engine = new TemporalEngine();
+    const engine = new AvailabilityEngine();
     engine.init(makeBasicRecord(), { tournamentId: TEST_TOURNAMENT });
 
     // Manually populate the private templates map via getTemplates + workaround:
@@ -220,7 +220,7 @@ describe('TemporalEngine coverage gaps', () => {
   });
 
   it('unindexBlock: removing one block when court-day has multiple (line 1122)', () => {
-    const engine = new TemporalEngine();
+    const engine = new AvailabilityEngine();
     engine.init(makeBasicRecord(), { tournamentId: TEST_TOURNAMENT });
 
     const ref = makeCourtRef();
@@ -253,7 +253,7 @@ describe('TemporalEngine coverage gaps', () => {
   });
 
   it('getCourtMeta fallback for unknown court (line 1434)', () => {
-    const engine = new TemporalEngine();
+    const engine = new AvailabilityEngine();
     // Record with no matching court for second venue query
     engine.init(
       {
@@ -277,7 +277,7 @@ describe('TemporalEngine coverage gaps', () => {
   });
 
   it('getFirstAvailableDay returns null when no startDate (line 1358)', () => {
-    const engine = new TemporalEngine();
+    const engine = new AvailabilityEngine();
     engine.init({ tournamentId: TEST_TOURNAMENT } as any, { tournamentId: TEST_TOURNAMENT });
 
     // getDayTimeline triggers getFirstAvailableDay internally through getTournamentDays

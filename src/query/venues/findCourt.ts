@@ -55,7 +55,7 @@ export function findCourt({ tournamentRecords, tournamentRecord, courtId }: Find
       // if court is found in linked tournamentRecords, add venue to original tournamentRecord
       if (result.success) {
         result.venue && addVenue({ tournamentRecord, venue: result.venue });
-        return { ...SUCCESS, court, venue };
+        return { ...SUCCESS, court: result.court, venue: result.venue };
       }
     }
   }

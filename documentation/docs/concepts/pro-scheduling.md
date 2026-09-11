@@ -110,7 +110,7 @@ Match C:
 
 ### ITF Follow By Implementation
 
-The ITF (International Tennis Federation) and many national federations use a standardized follow-by system:
+World Tennis (formerly the ITF) and many national federations use a standardized follow-by system:
 
 ```js
 // ITF-style scheduling
@@ -276,10 +276,9 @@ stadiumSchedule.forEach((schedule) => {
 
 Fixed 2-hour slots for predictability:
 
-```js
-
 **API Reference:** [addExtension](/docs/governors/tournament-governor#addextension)
 
+```js
 {
   slots: ['10:00', '12:00', '14:00', '16:00', '18:00', '20:00'],
   slotDuration: 120  // 2 hours per slot
@@ -601,10 +600,9 @@ rowIssues.forEach((row, rowIndex) => {
 
 #### Conflict Resolution Workflow
 
-```js
-
 **API Reference:** [allCompetitionMatchUps](/docs/governors/matchup-governor#allcompetitionmatchups)
 
+```js
 // 1. Schedule matches
 scheduleMatchesToGrid(matchAssignments);
 
@@ -638,6 +636,32 @@ if (Object.values(recheck.rowIssues).flat().length === 0) {
 }
 ```
 
+### Automatically Resolving Participant Conflicts with proColumnResolve()
+
+Where the workflow above resolves conflicts by hand, `proColumnResolve()` resolves cross-column participant conflicts automatically **without moving any match off its court or changing its clock time**. It re-lays the grid vertically — reassigning `courtOrder` and inserting blank rows — so colliding matchUps land on different rows.
+
+It folds both `participantConflict` and `potentialParticipantConflict` (winner-advancement collisions) into each matchUp's deep dependency participant set, anchors completed matchUps at the top of each column (in play order), keeps in-progress beneath them, orders the to-be-played tail by `scheduledTime`, and preserves progression (every source in a strictly earlier row than the match it feeds).
+
+```js
+const { matchUps } = engine.allCompetitionMatchUps({
+  matchUpFilters: { scheduledDate: '2024-03-20' },
+  nextMatchUps: true,
+  inContext: true,
+});
+
+const { resolved, unresolvable } = engine.proColumnResolve({
+  scheduledDate: '2024-03-20',
+  matchUps,
+});
+
+// `resolved` lists every courtOrder change: { matchUpId, courtId, from, to }
+// `unresolvable` lists what spacing cannot fix, each with a reason:
+//   - 'chronology'       a feeder scheduled at a LATER time than the match it feeds
+//   - 'orderingDeadlock' a same-column ordering cycle broken to make progress
+```
+
+Because every normally-placed row is conflict-free by construction, re-running `proConflicts()` on the result is the canonical confirmation. Court and `scheduledTime` are invariant — only `courtOrder` moves. See [proColumnResolve](/docs/governors/schedule-governor#procolumnresolve) in the Schedule Governor reference.
+
 ### Preventing Conflicts During Scheduling
 
 #### Strategy 1: Pre-validate Before Assignment
@@ -670,10 +694,9 @@ if (canScheduleToSlot('court-1', 2, '2024-03-20', 'match-123')) {
 
 #### Strategy 2: Find Available Slots
 
-```js
-
 **API Reference:** [allCompetitionMatchUps](/docs/governors/matchup-governor#allcompetitionmatchups)
 
+```js
 function findAvailableSlot(courtIds, courtOrder, scheduledDate) {
   const { matchUps } = engine.allCompetitionMatchUps({
     matchUpFilters: { scheduledDate },
@@ -699,10 +722,9 @@ if (availableCourtId) {
 
 #### Strategy 3: Automated Conflict-Free Scheduling
 
-```js
-
 **API Reference:** [allCompetitionMatchUps](/docs/governors/matchup-governor#allcompetitionmatchups)
 
+```js
 // Use proAutoSchedule for conflict-free initial schedule
 const { matchUps } = engine.allCompetitionMatchUps({
   nextMatchUps: true,

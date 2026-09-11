@@ -1,4 +1,4 @@
-import { POLICY_RANKING_POINTS_LTA } from '@Fixtures/policies/POLICY_RANKING_POINTS_LTA';
+import { POLICY_RANKING_POINTS_LTA } from '@Tests/fixtures/policies/POLICY_RANKING_POINTS_LTA';
 import { validateRankingPolicy } from './validatePolicy';
 import { describe, expect, it } from 'vitest';
 

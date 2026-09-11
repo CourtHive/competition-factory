@@ -14,7 +14,6 @@
  * - Historical Grand Slam formats (Wimbledon 2018, 2019; Australian Open 2019)
  */
 
- 
 import { describe, it, expect } from 'vitest';
 import { validateSetScore, validateMatchUpScore } from '@Validators/validateMatchUpScore';
 
@@ -1112,6 +1111,51 @@ describe('validateSetScore - S:5/TB9@4 format (tiebreakAt = setTo - 1)', () => {
     it('should reject 4-2 (winner did not reach setTo)', () => {
       const set = { side1Score: 4, side2Score: 2 };
       const result = validateSetScore(set, s5at4Format);
+      expect(result.isValid).toBe(false);
+      expect(result.error).toContain('reach 5');
+    });
+  });
+});
+
+describe('validateSetScore - WB1 no-tiebreak (TYPTI win-by-1 variant)', () => {
+  const wb1Format = 'SET3-S:5WB1';
+
+  describe('Valid scores', () => {
+    it('should accept 5-0 (winner first to setTo, low at 0)', () => {
+      const set = { side1Score: 5, side2Score: 0 };
+      const result = validateSetScore(set, wb1Format);
+      expect(result.isValid).toBe(true);
+    });
+
+    it('should accept 5-4 (winner at setTo, win-by 1)', () => {
+      const set = { side1Score: 5, side2Score: 4 };
+      const result = validateSetScore(set, wb1Format);
+      expect(result.isValid).toBe(true);
+    });
+
+    it('should accept 4-5 (side 2 wins by 1)', () => {
+      const set = { side1Score: 4, side2Score: 5 };
+      const result = validateSetScore(set, wb1Format);
+      expect(result.isValid).toBe(true);
+    });
+
+    it('should accept 1-5 (side 2 wins with low score, win-by 1)', () => {
+      const set = { side1Score: 1, side2Score: 5 };
+      const result = validateSetScore(set, wb1Format);
+      expect(result.isValid).toBe(true);
+    });
+  });
+
+  describe('Invalid scores', () => {
+    it('should reject 5-5 (no winner, no margin)', () => {
+      const set = { side1Score: 5, side2Score: 5 };
+      const result = validateSetScore(set, wb1Format);
+      expect(result.isValid).toBe(false);
+    });
+
+    it('should reject 4-3 (winner did not reach setTo)', () => {
+      const set = { side1Score: 4, side2Score: 3 };
+      const result = validateSetScore(set, wb1Format);
       expect(result.isValid).toBe(false);
       expect(result.error).toContain('reach 5');
     });

@@ -5,7 +5,8 @@ import { assignDrawPosition } from '@Mutate/matchUps/drawPositions/positionAssig
 import { getAppliedPolicies } from '@Query/extensions/getAppliedPolicies';
 import { getStageEntries } from '@Query/drawDefinition/stageGetter';
 import { decorateResult } from '@Functions/global/decorateResult';
-import { findExtension } from '@Acquire/findExtension';
+import { firstClassOrExtension } from '@Acquire/firstClassOrExtension';
+import { pushGlobalLog } from '@Functions/global/globalLog';
 import { findStructure } from '@Acquire/findStructure';
 import { shuffleArray } from '@Tools/arrays';
 
@@ -50,7 +51,9 @@ export function positionUnseededParticipants({
   const { stage, stageSequence } = structure;
 
   const roundTarget =
-    stage === QUALIFYING ? findExtension({ element: structure, name: ROUND_TARGET })?.extension?.value : undefined;
+    stage === QUALIFYING
+      ? firstClassOrExtension({ element: structure, attribute: 'roundTarget', name: ROUND_TARGET })
+      : undefined;
 
   const entryStatuses = DIRECT_ENTRY_STATUSES;
   const entries = getStageEntries({
@@ -172,7 +175,7 @@ function randomUnseededDistribution({
         structureId,
         event,
       });
-      if (result?.error) console.log('!!!!!', { result });
+      if (result?.error) pushGlobalLog({ method: 'positionUnseededParticipants', result });
       if (result?.error) return decorateResult({ result, stack: 'randomUnseededDistribution' });
     }
   }

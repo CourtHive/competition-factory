@@ -1,4 +1,4 @@
-import { POLICY_RANKING_POINTS_USTA_JUNIOR_2025 } from '@Fixtures/policies/POLICY_RANKING_POINTS_USTA_JUNIOR_2025';
+import { POLICY_RANKING_POINTS_USTA_JUNIOR_2025 } from '@Tests/fixtures/policies/POLICY_RANKING_POINTS_USTA_JUNIOR_2025';
 import { getAwardProfile } from '@Query/scales/getAwardProfile';
 import scaleEngine from '@Engines/scaleEngine';
 import { mocksEngine } from '../../..';

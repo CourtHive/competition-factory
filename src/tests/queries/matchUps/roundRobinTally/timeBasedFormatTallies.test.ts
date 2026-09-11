@@ -1,4 +1,5 @@
 import { tallyParticipantResults } from '@Query/matchUps/roundRobinTally/tallyParticipantResults';
+import { firstClassOrExtension } from '@Acquire/firstClassOrExtension';
 import { getParticipantId } from '@Functions/global/extractors';
 import tournamentEngine from '@Engines/syncEngine';
 import mocksEngine from '@Assemblies/engines/mock';
@@ -6,6 +7,7 @@ import { expect, it } from 'vitest';
 
 // constants
 import { ROUND_ROBIN } from '@Constants/drawDefinitionConstants';
+import { TALLY } from '@Constants/extensionConstants';
 
 it('round robins with timed formats will default to game based when no indicator', () => {
   const { tournamentRecord } = mocksEngine.generateTournamentRecord({
@@ -27,7 +29,7 @@ it('round robins with timed formats will default to game based when no indicator
     drawId,
   }).positionAssignments;
 
-  const p1Result = positionAssignments[0].extensions[0].value;
+  const p1Result = firstClassOrExtension({ element: positionAssignments[0], attribute: 'tally', name: TALLY });
   const { gamesWon, gamesLost, pointsWon, pointsLost } = p1Result;
   expect(gamesWon + gamesLost).toBeGreaterThan(1);
   expect(pointsWon + pointsLost).toEqual(0);
@@ -51,7 +53,7 @@ it('round robins with points based timed formats to tally points not games', () 
     drawId,
   }).positionAssignments;
 
-  const p1Result = positionAssignments[0].extensions[0].value;
+  const p1Result = firstClassOrExtension({ element: positionAssignments[0], attribute: 'tally', name: TALLY });
   const { gamesWon, gamesLost, pointsWon, pointsLost, pointsPct } = p1Result;
   const pct = Math.round((pointsWon / (pointsWon + pointsLost)) * 1000) / 1000;
   expect(pointsPct).toEqual(pct);

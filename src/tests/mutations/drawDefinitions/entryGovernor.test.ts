@@ -99,7 +99,6 @@ it('will not allow duplicate entries', () => {
   result = getNotices({ topic: DATA_ISSUE });
   expect(result.length).toEqual(0);
 
-
   result = addDrawEntry({
     participantId: 'uuid1',
     entryStage: QUALIFYING,

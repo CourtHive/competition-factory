@@ -3,7 +3,12 @@ import mocksEngine from '@Assemblies/engines/mock';
 import { describe, expect, it } from 'vitest';
 
 // constants
-import { PAGE_PLAYOFF, PLAY_OFF, ROUND_ROBIN_WITH_PLAYOFF, SINGLE_ELIMINATION } from '@Constants/drawDefinitionConstants';
+import {
+  PAGE_PLAYOFF,
+  PLAY_OFF,
+  ROUND_ROBIN_WITH_PLAYOFF,
+  SINGLE_ELIMINATION,
+} from '@Constants/drawDefinitionConstants';
 import { COMPLETED, TO_BE_PLAYED } from '@Constants/matchUpStatusConstants';
 import { SINGLES_EVENT } from '@Constants/eventConstants';
 
@@ -258,9 +263,7 @@ describe('PAGE_PLAYOFF draw type', () => {
     // LOSER link: SE final → Q2
     const loserFromSE = result.links?.find(
       (l: any) =>
-        l.linkType === 'LOSER' &&
-        l.source.structureId === mainStructureId &&
-        l.source.roundNumber === mainFinalRound,
+        l.linkType === 'LOSER' && l.source.structureId === mainStructureId && l.source.roundNumber === mainFinalRound,
     );
     expect(loserFromSE?.target.structureId).toEqual(q2.structureId);
 
@@ -277,8 +280,21 @@ describe('PAGE_PLAYOFF draw type', () => {
     expect(q2ToFinal?.target.structureId).toEqual(ppsFinal.structureId);
   });
 
-  // Participant advancement from SE to PAGE_PLAYOFF via POSITION links (tracked in Mentat TASKS.md)
-  it.skip('progresses participants through all PAGE_PLAYOFF structures from SE16', () => {
+  // Attaching a PAGE_PLAYOFF to a COMPLETED single elimination draw produces THREE new structures,
+  // not four: a Page playoff opens 1-v-2, and the SE has already played that match, so the SE final
+  // IS Q1. The three new PLAY_OFF structures are 3-4 Playoff (EL), Playoff Qualifier (Q2) and
+  // Playoff Final (F) — see processPagePlayoffFromElimination.
+  //
+  // This test was skipped for months behind a TODO claiming "advancement via POSITION links needs a
+  // factory fix". That was a misdiagnosis on three counts, all verified 2026-08-06:
+  //   1. it expected 4 structures and looked them up by the STANDALONE generator's names
+  //      (Qualifier 1 / Eliminator / Qualifier 2 / Final) while driving the ATTACH path, so all four
+  //      lookups missed — not just the count assertion it died on;
+  //   2. the elimination path uses LOSER/WINNER links, not POSITION links. POSITION links
+  //      (generatePlayoffLink) are used only by processPagePlayoffFromRR, the round-robin source;
+  //   3. advancement was never broken.
+  // Matching on structureAbbreviation rather than structureName keeps this robust to naming.
+  it('progresses participants from a completed SE16 through the attached PAGE_PLAYOFF structures', () => {
     const drawSize = 16;
     const matchUpFormat = 'SET3-S:6/TB7';
     const {
@@ -292,95 +308,71 @@ describe('PAGE_PLAYOFF draw type', () => {
     const { drawDefinition: dd } = tournamentEngine.getEvent({ drawId });
     const mainStructureId = dd.structures[0].structureId;
 
-    let result: any = tournamentEngine.addPlayoffStructures({
+    const result: any = tournamentEngine.addPlayoffStructures({
       playoffGroups: [{ drawType: PAGE_PLAYOFF, finishingPositions: [1, 2, 3, 4] }],
       structureId: mainStructureId,
       drawId,
     });
-    if (result.error) console.log('ADD ERROR:', JSON.stringify(result, null, 2));
     expect(result.success).toEqual(true);
 
-    // After generation + population, Q1 and Eliminator should have participants placed
-    const { drawDefinition } = tournamentEngine.getEvent({ drawId });
-    const ppsStructures = drawDefinition.structures.filter((s) => s.stage === PLAY_OFF);
-    expect(ppsStructures.length).toEqual(4);
+    const playoffStructures = () => {
+      const { drawDefinition } = tournamentEngine.getEvent({ drawId });
+      return drawDefinition.structures.filter((s) => s.stage === PLAY_OFF);
+    };
+    const byAbbreviation = (abbreviation: string) =>
+      playoffStructures().find((s) => s.structureAbbreviation === abbreviation);
+    const seated = (abbreviation: string) =>
+      (byAbbreviation(abbreviation)?.positionAssignments ?? []).filter((pa) => pa.participantId).length;
 
-    const q1 = ppsStructures.find((s) => s.structureName === 'Qualifier 1');
-    const elim = ppsStructures.find((s) => s.structureName === 'Eliminator');
-    const q2 = ppsStructures.find((s) => s.structureName === 'Qualifier 2');
-    const finalStr = ppsStructures.find((s) => s.structureName === 'Final');
+    // THREE new structures — the SE final serves as Q1
+    expect(playoffStructures().length).toEqual(3);
+    expect(byAbbreviation('EL')).toBeDefined();
+    expect(byAbbreviation('Q2')).toBeDefined();
+    expect(byAbbreviation('F')).toBeDefined();
 
-    // Q1 should have 2 participants (SE finishers 1 and 2)
-    const q1Assigned = q1.positionAssignments.filter((pa) => pa.participantId);
-    expect(q1Assigned.length).toEqual(2);
+    // Generation seeds directly from the completed SE: semifinal losers into the 3-4 Playoff,
+    // the final's loser into the Playoff Qualifier, the final's winner into the Playoff Final.
+    expect(seated('EL')).toEqual(2);
+    expect(seated('Q2')).toEqual(1);
+    expect(seated('F')).toEqual(1);
 
-    // Eliminator should have 2 participants (SE finishers 3 and 4)
-    const elimAssigned = elim.positionAssignments.filter((pa) => pa.participantId);
-    expect(elimAssigned.length).toEqual(2);
+    const scoreStructure = (abbreviation: string) => {
+      const structureId = byAbbreviation(abbreviation)?.structureId;
+      const { matchUps } = tournamentEngine.allTournamentMatchUps();
+      const matchUp = matchUps.find(
+        (m) => m.structureId === structureId && m.sides?.every((side) => side?.participantId),
+      );
+      expect(matchUp, `no fully-populated matchUp in ${abbreviation}`).toBeDefined();
+      const outcome = {
+        score: {
+          sets: [
+            { setNumber: 1, side1Score: 6, side2Score: 3, winningSide: 1 },
+            { setNumber: 2, side1Score: 6, side2Score: 4, winningSide: 1 },
+          ],
+        },
+        matchUpStatus: COMPLETED,
+        winningSide: 1,
+      };
+      const scored: any = tournamentEngine.setMatchUpStatus({ matchUpId: matchUp.matchUpId, outcome, drawId });
+      expect(scored.success).toEqual(true);
+    };
 
-    // Q2 and Final should be empty (waiting for results)
-    const q2Assigned = q2.positionAssignments.filter((pa) => pa.participantId);
-    expect(q2Assigned.length).toEqual(0);
-    const finalAssigned = finalStr.positionAssignments.filter((pa) => pa.participantId);
-    expect(finalAssigned.length).toEqual(0);
+    // EL winner advances into Q2 (WINNER link) — Q2 goes from 1 seat filled to 2
+    scoreStructure('EL');
+    expect(seated('Q2')).toEqual(2);
 
-    // Get the matchUps to score
-    let { matchUps } = tournamentEngine.allTournamentMatchUps();
-    const q1MatchUp = matchUps.find((m) => m.structureName === 'Qualifier 1');
-    const elimMatchUp = matchUps.find((m) => m.structureName === 'Eliminator');
+    // Q2 winner advances into the Playoff Final (WINNER link) — F goes from 1 to 2
+    scoreStructure('Q2');
+    expect(seated('F')).toEqual(2);
 
-    // Score Q1: seed 1 wins
-    result = tournamentEngine.setMatchUpStatus({
-      matchUpId: q1MatchUp.matchUpId,
-      outcome: { winningSide: 1, score: { sets: [{ side1Score: 6, side2Score: 3 }, { side1Score: 6, side2Score: 4 }] } },
-      drawId,
-    });
-    expect(result.success).toEqual(true);
+    scoreStructure('F');
 
-    // Score Eliminator: seed 3 wins (side 1)
-    result = tournamentEngine.setMatchUpStatus({
-      matchUpId: elimMatchUp.matchUpId,
-      outcome: { winningSide: 1, score: { sets: [{ side1Score: 6, side2Score: 2 }, { side1Score: 6, side2Score: 1 }] } },
-      drawId,
-    });
-    expect(result.success).toEqual(true);
-
-    // After Q1 and Eliminator complete, Q2 should have participants
-    ({ matchUps } = tournamentEngine.allTournamentMatchUps());
-    const q2MatchUp = matchUps.find((m) => m.structureName === 'Qualifier 2');
-    expect(q2MatchUp.sides.every((s) => s.participantId)).toEqual(true);
-
-    // Q1 winner should be in Final
-    const finalMatchUp = matchUps.find((m) => m.structureName === 'Final');
-    const finalParticipantIds = finalMatchUp.sides.filter((s) => s.participantId).map((s) => s.participantId);
-    expect(finalParticipantIds.length).toEqual(1); // only Q1 winner so far
-
-    // Score Q2
-    result = tournamentEngine.setMatchUpStatus({
-      matchUpId: q2MatchUp.matchUpId,
-      outcome: { winningSide: 1, score: { sets: [{ side1Score: 7, side2Score: 5 }, { side1Score: 6, side2Score: 3 }] } },
-      drawId,
-    });
-    expect(result.success).toEqual(true);
-
-    // Now Final should have both participants
-    ({ matchUps } = tournamentEngine.allTournamentMatchUps());
-    const updatedFinal = matchUps.find((m) => m.structureName === 'Final');
-    expect(updatedFinal.sides.every((s) => s.participantId)).toEqual(true);
-
-    // Score Final
-    result = tournamentEngine.setMatchUpStatus({
-      matchUpId: updatedFinal.matchUpId,
-      outcome: { winningSide: 1, score: { sets: [{ side1Score: 6, side2Score: 4 }, { side1Score: 6, side2Score: 3 }] } },
-      drawId,
-    });
-    expect(result.success).toEqual(true);
-
-    // All 4 PPS matchUps should be COMPLETED
-    ({ matchUps } = tournamentEngine.allTournamentMatchUps());
-    const ppsMatchUps = matchUps.filter((m) => ['Qualifier 1', 'Eliminator', 'Qualifier 2', 'Final'].includes(m.structureName));
-    expect(ppsMatchUps.length).toEqual(4);
-    expect(ppsMatchUps.every((m) => m.matchUpStatus === COMPLETED)).toEqual(true);
+    // all three attached matchUps completed
+    const { matchUps } = tournamentEngine.allTournamentMatchUps();
+    const playoffIds = new Set(playoffStructures().map((s) => s.structureId));
+    const playoffMatchUps = matchUps.filter((m) => playoffIds.has(m.structureId));
+    expect(playoffMatchUps.length).toEqual(3);
+    expect(playoffMatchUps.every((m) => m.matchUpStatus === COMPLETED)).toEqual(true);
   });
 
   it('RR with PAGE_PLAYOFF playoff generates correct links for 2 groups of 8', () => {

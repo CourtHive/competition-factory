@@ -154,6 +154,7 @@ function validateRegularSetCompletion(
   scoreDiff: number,
   setTo: number,
   tiebreakAt: number | undefined,
+  winBy: number = 2,
 ): { isValid: boolean; error?: string } {
   if (winnerScore < setTo) {
     return {
@@ -164,10 +165,10 @@ function validateRegularSetCompletion(
 
   const isTiebreakWon = tiebreakAt && winnerScore === setTo && loserScore === tiebreakAt && scoreDiff === 1;
 
-  if (scoreDiff < 2 && !isTiebreakWon) {
+  if (scoreDiff < winBy && !isTiebreakWon) {
     return {
       isValid: false,
-      error: `Set must be won by at least 2 games, got ${winnerScore}-${loserScore}`,
+      error: `Set must be won by at least ${winBy} game${winBy === 1 ? '' : 's'}, got ${winnerScore}-${loserScore}`,
     };
   }
 
@@ -246,11 +247,11 @@ function validateIncompleteSet(
 
 function validateRegularSet(
   scores: { side1: number; side2: number; winner: number; loser: number; diff: number },
-  setFormat: { setTo: number | undefined; tiebreakAt: number | undefined },
+  setFormat: { setTo: number | undefined; tiebreakAt: number | undefined; winBy?: number },
   allowIncomplete: boolean | undefined,
 ): { isValid: boolean; error?: string } {
   const { side1: side1Score, side2: side2Score, winner: winnerScore, loser: loserScore, diff: scoreDiff } = scores;
-  const { setTo, tiebreakAt } = setFormat;
+  const { setTo, tiebreakAt, winBy } = setFormat;
   if (setTo && tiebreakAt) {
     const marginValidation = validateTwoGameMargin(side1Score, side2Score, setTo, tiebreakAt);
     if (!marginValidation.isValid) return marginValidation;
@@ -261,7 +262,7 @@ function validateRegularSet(
   }
 
   if (setTo) {
-    return validateRegularSetCompletion(winnerScore, loserScore, scoreDiff, setTo, tiebreakAt);
+    return validateRegularSetCompletion(winnerScore, loserScore, scoreDiff, setTo, tiebreakAt, winBy);
   }
 
   return { isValid: true };
@@ -348,7 +349,7 @@ export function validateSetScore(
 
   return validateRegularSet(
     { side1: side1Score, side2: side2Score, winner: winnerScore, loser: loserScore, diff: scoreDiff },
-    { setTo, tiebreakAt },
+    { setTo, tiebreakAt, winBy: setFormat.winBy },
     allowIncomplete,
   );
 }

@@ -2,6 +2,7 @@ import { deleteNotices, setDevContext, setDeepCopy, getDevContext } from '@Globa
 import { notifySubscribers } from '@Global/state/notifySubscribers';
 import * as mocksGovernor from '@Assemblies/governors/mocksGovernor';
 import { factoryVersion } from '@Functions/global/factoryVersion';
+import { pushGlobalLog } from '@Functions/global/globalLog';
 import { createSeededRandom } from '@Tools/prng';
 
 import { setState } from '@Assemblies/engines/parts/stateMethods';
@@ -75,9 +76,10 @@ export const mocksEngine = (() => {
           } else if (err instanceof Error) {
             error = err.message;
           }
-          console.log('ERROR', {
+          pushGlobalLog({
+            method: 'mocksEngine',
             params: JSON.stringify(params),
-            method,
+            invoked: method,
             error,
           });
         }

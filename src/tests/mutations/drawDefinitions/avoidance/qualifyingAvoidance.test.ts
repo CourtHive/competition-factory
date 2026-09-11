@@ -28,6 +28,10 @@ it('properly handles qualifiers with avoidances', () => {
     participantsProfile: { nationalityCodesCount: 30 },
     policyDefinitions,
     drawProfiles,
+    // Seed the generator so the random nationality distribution + heuristic
+    // avoidance placement are deterministic. Without this the test is flaky:
+    // an unlucky distribution can leave 1 unavoidable avoidance conflict.
+    nonRandom: 1,
   });
   expect(result.success).toEqual(true);
 
@@ -40,14 +44,10 @@ it('properly handles qualifiers with avoidances', () => {
   const { drawDefinition } = tournamentEngine.getEvent({ drawId });
 
   const mainStructure = drawDefinition.structures.find((s) => s.stage === MAIN);
-  expect(
-    mainStructure.positionAssignments.every(
-      ({ participantId, qualifier }) => participantId || qualifier,
-    ),
-  ).toEqual(true);
-  expect(mainStructure.positionAssignments.filter(({ qualifier }) => qualifier).length).toEqual(
-    qualifiersCount,
+  expect(mainStructure.positionAssignments.every(({ participantId, qualifier }) => participantId || qualifier)).toEqual(
+    true,
   );
+  expect(mainStructure.positionAssignments.filter(({ qualifier }) => qualifier).length).toEqual(qualifiersCount);
 
   const mainStructureId = drawDefinition.structures.find((structure) => structure.stage === MAIN).structureId;
 

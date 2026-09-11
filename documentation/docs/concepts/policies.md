@@ -35,4 +35,40 @@ The structure of a **_policyDefinitions_** object is as follows:
 - [Voluntary Consolation Policy](../policies/consolationPolicy.md): Specifies `{ winsLimit, finishingRoundLimit }` for voluntary consolation eligibility
 - [Competitive Bands](../policies/competitiveBands): Determines thresholds for ROUTINE and COMPETITIVE matches in `getCompetitiveProfile`
 - [Draws Policy](/docs/policies/draws): Configures either global or draw-type-specific `drawTypeCoercion`
+- [Ranking Policy](../policies/rankingPolicy): Defines how points are awarded for tournament performance
 - [Print Policy](../policies/printPolicy): Opaque extension slot for per-tournament print artifact composition (interpreted by consumers)
+
+## When does a policy travel with the record?
+
+Policies divide into two delivery models depending on what they affect:
+
+### Attached-to-record (mutation-time)
+
+Any policy whose values shape the **output of a mutation** must be embedded in the `tournamentRecord` (or `event` / `drawDefinition` / `structure`) as an `APPLIED_POLICIES` extension. The standard mutation flow runs each method twice — once on the server, once on the client after server ack — and both runs must consult the same policy bytes. Reading from any other source (process registry, environment, etc.) risks split-brain state.
+
+Mutation-time policies: `MATCHUP_ACTIONS`, `POSITION_ACTIONS`, `AVOIDANCE`, `SEEDING`, `DRAWS`, `FEED_IN`, `COMPETITION`, `PROGRESSION`, `SCHEDULING`, `ROUND_ROBIN_TALLY`, `SANCTIONING`, `SCORING`, `AUDIT`, `VOLUNTARY_CONSOLATION`, `COMPETITIVE_BANDS`, `PARTICIPANT`.
+
+### Registry-served (query-time)
+
+`RANKING_POINTS` and other display-only policies (`ROUND_NAMING`, `DISPLAY`, `PRIVACY`, `PRINT`) are read at query time and don't drive mutations. They can be served via the in-process `policyRegistry`:
+
+```js
+import { policyRegistry, scaleEngine } from 'tods-competition-factory';
+
+// Consumer registers — usually at boot from a GET /policies/catalog response
+policyRegistry.register({
+  policyType: 'rankingPoints',
+  name: 'USTA_JUNIOR_2026',
+  version: '2026.01',
+  definition: /* fetched from CFS */,
+});
+
+// Engines resolve by name when policyDefinitions isn't passed:
+scaleEngine.getTournamentPoints({
+  tournamentRecord,
+  policyName: 'USTA_JUNIOR_2026',
+  level: 1,
+});
+```
+
+The registry is a per-process singleton. Each consumer (TMX, CFS, courthive-rankings) hydrates its own. Federations adopt a policy by POSTing their version to CFS; consumers re-hydrate at next boot. See [POLICY_DELIVERY](https://github.com/CourtHive/Mentat/blob/main/planning/POLICY_DELIVERY.md) for the full architecture.

@@ -8,15 +8,47 @@ import { PARTICIPANT } from '@Constants/attributeConstants';
 import { SUCCESS } from '@Constants/resultConstants';
 import { ResultType } from '@Types/factoryTypes';
 
-type ScaleType = {
+export type ScaleType = {
   scaleName: string;
   scaleDate: string;
   scaleValue: any;
 };
-type ScalesType = {
-  [SINGLES_EVENT]?: ScaleType;
-  [DOUBLES_EVENT]?: ScaleType;
-  [TEAM_EVENT]?: ScaleType;
+
+/**
+ * Scale entries for one participant, grouped by event type.
+ *
+ * **Each event type holds an ARRAY with one entry per distinct `scaleName`** —
+ * a participant may carry WTN and UTR and NTRP simultaneously. Within a single
+ * `scaleName` the entry is the latest value (see `latestScaleItem` below), so
+ * "current" is resolved for you; across scale names nothing is.
+ *
+ * **The array has no canonical order, and never will.** The set of rating and
+ * ranking scales is open — any number of scales, from any number of bodies,
+ * including ones not yet invented — so there is no position to assign. Entries
+ * land in first-appearance order across the participant's `timeItems`, which is
+ * an artefact of iteration and not a contract.
+ *
+ * So **address entries by `scaleName`, never by position**:
+ *
+ * ```ts
+ * // WRONG — [0] is only WTN while WTN is the sole scale present
+ * const wtn = ratings.SINGLES[0].scaleValue.wtnRating;
+ *
+ * // RIGHT — see getDetailsWTN for this pattern in use
+ * const entry = ratings.SINGLES?.find(({ scaleName }) => scaleName === WTN);
+ * ```
+ *
+ * Note that `scaleName` may carry a modifier suffix (`WTN.<modifier>`), built
+ * below from the `itemType` segments — match accordingly where modifiers are in
+ * play.
+ *
+ * This type previously declared a single `ScaleType` per event type while the
+ * implementation built arrays, so anything typed against it read `undefined`.
+ */
+export type ScalesType = {
+  [SINGLES_EVENT]?: ScaleType[];
+  [DOUBLES_EVENT]?: ScaleType[];
+  [TEAM_EVENT]?: ScaleType[];
 };
 
 type ScaleTypes = {

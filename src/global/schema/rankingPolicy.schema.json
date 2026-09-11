@@ -15,6 +15,10 @@
           "type": "string",
           "description": "Version identifier for historical recalculation"
         },
+        "pointsAuthority": {
+          "$ref": "#/definitions/PointsAuthority",
+          "description": "Issuing authority for points awarded under this policy. Stamped onto every emitted PointAward. Overridable per AwardProfile."
+        },
         "validDateRange": {
           "$ref": "#/definitions/DateRange",
           "description": "Date range during which this entire policy is valid"
@@ -79,6 +83,10 @@
         "profileName": {
           "type": "string",
           "description": "Human-readable label for auditing/debugging"
+        },
+        "pointsAuthority": {
+          "$ref": "#/definitions/PointsAuthority",
+          "description": "Issuing authority for awards matched by this profile. Overrides the policy-level pointsAuthority when set. Lets a single federated policy mint awards stamped with whichever body issued them per matched profile."
         },
         "finishingPositionRanges": {
           "type": "object",
@@ -732,6 +740,27 @@
       "type": "string",
       "enum": ["fullToEach", "splitEven", "teamOnly"],
       "description": "How doubles points are attributed to individuals. 'fullToEach': 100% each. 'splitEven': 50% each. 'teamOnly': pair only."
+    },
+
+    "PointsAuthority": {
+      "type": "string",
+      "enum": [
+        "ATP",
+        "WTA",
+        "ITF",
+        "ITF_JUNIOR",
+        "ITF_WHEELCHAIR",
+        "TENNIS_EUROPE",
+        "USTA",
+        "LTA",
+        "FFT",
+        "DTB",
+        "PPA",
+        "BWF",
+        "UTR",
+        "UNSPECIFIED"
+      ],
+      "description": "Closed enum of issuing authorities. Mirrors src/constants/pointsAuthorityConstants.ts."
     },
 
     "PointComponent": {

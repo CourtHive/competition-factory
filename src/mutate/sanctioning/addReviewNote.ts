@@ -13,15 +13,20 @@ type AddReviewNoteArgs = {
   note: string;
   reviewerId?: string;
   reviewerName?: string;
+  noteId?: string;
 };
 
-export function addReviewNote({ sanctioningRecord, note, reviewerId, reviewerName }: AddReviewNoteArgs) {
+export function addReviewNote({ sanctioningRecord, note, reviewerId, reviewerName, noteId }: AddReviewNoteArgs) {
   if (!sanctioningRecord) return { error: MISSING_SANCTIONING_RECORD };
   if (!note) return { error: INVALID_VALUES, context: { message: 'Missing note' } };
 
   sanctioningRecord.reviewNotes ??= [];
   const reviewNote: ReviewNote = {
-    noteId: UUID(),
+    // A caller-supplied id is authoritative. Minting unconditionally would make
+    // this mutation non-replayable: a site server mirrors `{method, params}`
+    // upstream, so an engine-minted id differs between the two instances and
+    // every later mutation referencing it fails to resolve on the cloud.
+    noteId: noteId ?? UUID(),
     reviewerId,
     reviewerName,
     note,

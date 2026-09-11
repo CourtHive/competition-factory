@@ -1,5 +1,8 @@
+import { generatePairParticipantName } from '@Functions/participants/generatePairParticipantName';
 import { decorateResult } from '@Functions/global/decorateResult';
 import { definedAttributes } from '@Tools/definedAttributes';
+import { normalizeGender } from '@Helpers/coercedGender';
+import { coercePersonSex } from '@Helpers/coercedSex';
 import { addNotice } from '@Global/state/globalState';
 import { makeDeepCopy } from '@Tools/makeDeepCopy';
 import { intersection } from '@Tools/arrays';
@@ -128,13 +131,7 @@ function validatePairParticipant({
       participant.individualParticipantIds?.includes(tp.participantId),
     );
 
-    let participantName = individualParticipants
-      .map((p) => p.person?.standardFamilyName || p.participantOtherName || p.participantName || '')
-      .filter(Boolean)
-      .join('/');
-    if (individualParticipants.length === 1) participantName += '/Unknown';
-
-    participant.participantName = participantName;
+    participant.participantName = generatePairParticipantName({ individualParticipants });
   }
 
   return undefined;
@@ -142,6 +139,9 @@ function validatePairParticipant({
 
 function validateTeamGroupParticipant({ participant, tournamentIndividualParticipantIds }) {
   const stack = 'addParticipant';
+
+  // normalize an accepted team gender short code (M/F/X/A) to the canonical extended form
+  if (participant.gender) participant.gender = normalizeGender(participant.gender);
 
   participant.individualParticipantIds ??= [];
   if (participant.individualParticipantIds?.length) {
@@ -204,6 +204,8 @@ export function addParticipant(params: AddParticipantType) {
     }
     if (pairError) return pairError;
   } else if (participantType === INDIVIDUAL) {
+    // normalize accepted sex short codes (F/M/O) to the canonical extended form at rest
+    coercePersonSex(participant.person);
     const hasPersonName = participant.person?.standardFamilyName && participant.person?.standardGivenName;
     const hasAlternateName = participant.participantOtherName || participant.participantName;
     if (!hasPersonName && !hasAlternateName) return { error: MISSING_PERSON_DETAILS };
@@ -211,7 +213,7 @@ export function addParticipant(params: AddParticipantType) {
     if (!participant.participantName) {
       participant.participantName = hasPersonName
         ? `${participant.person.standardGivenName} ${participant.person.standardFamilyName}`
-        : participant.participantOtherName ?? '';
+        : (participant.participantOtherName ?? '');
     }
   } else if (participantType && [TEAM, GROUP].includes(participantType)) {
     const teamError = validateTeamGroupParticipant({ participant, tournamentIndividualParticipantIds });

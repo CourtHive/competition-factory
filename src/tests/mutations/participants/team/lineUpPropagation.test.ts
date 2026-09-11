@@ -1,7 +1,7 @@
 import { generateTeamTournament } from './generateTestTeamTournament';
 import { resetLineUps } from '@Mutate/matchUps/lineUps/resetLineUps';
 import { setSubscriptions } from '@Global/state/globalState';
-import { findExtension } from '@Acquire/findExtension';
+import { firstClassOrExtension } from '@Acquire/firstClassOrExtension';
 import tournamentEngine from '@Engines/syncEngine';
 import { xa } from '@Tools/extractAttributes';
 import { intersection } from '@Tools/arrays';
@@ -125,7 +125,8 @@ it('can propagate and remove lineUps', () => {
   scoreSinglesMatchUps(scoringOutcome);
 
   const getAssignmentsCount = (drawDefinition) =>
-    Object.values(drawDefinition.extensions.find(({ name }) => name === 'lineUps')?.value ?? {}).flat().length;
+    Object.values(firstClassOrExtension({ element: drawDefinition, attribute: 'lineUps', name: LINEUPS }) ?? {}).flat()
+      .length;
 
   let drawDefinition = tournamentEngine.getEvent({ drawId }).drawDefinition;
 
@@ -306,7 +307,7 @@ it('will attach lineUps on score entry', () => {
   tournamentEngine.setState(tournamentRecord);
 
   let drawDefinition = tournamentEngine.getEvent({ drawId }).drawDefinition;
-  let lineUps = findExtension({ element: drawDefinition, name: LINEUPS })?.extension?.value;
+  let lineUps = firstClassOrExtension({ element: drawDefinition, attribute: 'lineUps', name: LINEUPS });
 
   expect(lineUps).toBeUndefined();
 
@@ -321,7 +322,7 @@ it('will attach lineUps on score entry', () => {
   }
 
   drawDefinition = tournamentEngine.getEvent({ drawId }).drawDefinition;
-  lineUps = findExtension({ element: drawDefinition, name: LINEUPS })?.extension?.value;
+  lineUps = firstClassOrExtension({ element: drawDefinition, attribute: 'lineUps', name: LINEUPS });
 
   expect(lineUps).toBeDefined();
 
@@ -378,7 +379,7 @@ it('will propagate lineUps properly in Round Robin structures', () => {
   tournamentEngine.setState(tournamentRecord);
 
   let drawDefinition = tournamentEngine.getEvent({ drawId }).drawDefinition;
-  let lineUps = findExtension({ element: drawDefinition, name: LINEUPS })?.extension?.value;
+  let lineUps = firstClassOrExtension({ element: drawDefinition, attribute: 'lineUps', name: LINEUPS });
   expect(lineUps).toBeUndefined();
 
   let teamMatchUps = tournamentEngine.allTournamentMatchUps({
@@ -405,7 +406,7 @@ it('will propagate lineUps properly in Round Robin structures', () => {
   expect(matchUpIds.length).toEqual(targetPairs.length);
 
   drawDefinition = tournamentEngine.getEvent({ drawId }).drawDefinition;
-  lineUps = findExtension({ element: drawDefinition, name: LINEUPS })?.extension?.value;
+  lineUps = firstClassOrExtension({ element: drawDefinition, attribute: 'lineUps', name: LINEUPS });
   expect(Object.keys(lineUps).length).toEqual(targetPairs.length);
 
   teamMatchUps = tournamentEngine.allTournamentMatchUps({

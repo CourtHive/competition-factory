@@ -5,6 +5,7 @@ export { isEmbargoed, isVisiblyPublished } from '@Query/publishing/isEmbargoed';
 export { getEventPublishStatus } from '@Query/event/getEventPublishStatus';
 export { getPublishState } from '@Query/publishing/getPublishState';
 export { getAllEventData } from '@Query/event/getAllEventData';
+export { getStructureData } from '@Query/drawDefinition/getStructureData';
 export { getDrawData } from '@Query/drawDefinition/getDrawData';
 export { getVenueData } from '@Query/venues/getVenueData';
 export { getCourtInfo } from '@Query/venues/getCourtInfo';

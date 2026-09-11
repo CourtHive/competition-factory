@@ -23,6 +23,7 @@ In team competitions a single "tie" (or "dual match") consists of multiple indiv
 const tieFormat = {
   tieFormatId: 'uuid', // optional — present when centrally stored
   tieFormatName: 'My Format', // optional — human-readable label
+  scoreSource: 'DERIVED', // optional — DERIVED (default) or REPORTED; see Score Source below
   winCriteria: {
     valueGoal: 5, // OR aggregateValue: true
   },
@@ -59,6 +60,70 @@ A `tieFormat` can be attached at four levels within a tournament record:
 | **MatchUp**        | `matchUp.tieFormat`        | Overrides all ancestors for one specific matchUp            |
 
 When the factory resolves the active tieFormat for a matchUp it walks **matchUp → structure → draw → event**, returning the first one found. This means you only need to attach a tieFormat at a lower level when it _differs_ from the ancestor default — for instance, shortening formats for rain-delayed matches.
+
+### Score Source
+
+`scoreSource` states where a TEAM matchUp's score comes from, and resolves through the same hierarchy:
+
+| Value      | Meaning                                                                           |
+| ---------- | --------------------------------------------------------------------------------- |
+| `DERIVED`  | Default. The tie score is computed from the collection matchUps ("lines")         |
+| `REPORTED` | The aggregate result is authoritative and the lines are **unpopulated by design** |
+
+`REPORTED` exists for competitions that publish only the team result — "3–2", or a games aggregate — and
+never the per-line detail. It makes "no line data exists" distinguishable from "lines not entered yet", and
+preserves the reported score and winningSide against recalculation from empty lines. Declared on the event
+tieFormat, it applies to every tie in the event without touching them individually.
+
+See [Score source — derived vs reported](/docs/concepts/tieFormat#score-source--derived-vs-reported) for the
+full semantics and how it differs from [`disableTieAutoCalc`](/docs/governors/matchup-governor#disabletieautocalc).
+
+### Named Tie Formats
+
+Federation formats ship as fixtures (`fixtures.tieFormats.COLLEGE_DEFAULT`, `USTA_COLLEGE`, `COLLEGE_D3`,
+`LAVER_CUP`, …) and are also selectable by name wherever a `tieFormatName` is accepted.
+
+`valueGoal` is the value at which a tie is **clinched**, so for a straightforward format it is the majority
+of the value the format can award — one more than half. The college formats show why the distinction
+matters:
+
+| Fixture           | Structure                                    | Max value | `valueGoal` |
+| ----------------- | -------------------------------------------- | --------- | ----------- |
+| `COLLEGE_DEFAULT` | doubles collection worth 1 point + 6 singles | 7         | 4           |
+| `USTA_COLLEGE`    | same doubles-point structure                 | 7         | 4           |
+| `COLLEGE_D3`      | 3 doubles worth 1 each + 6 singles           | 9         | 5           |
+| `COLLEGE_JUCO`    | same all-nine structure                      | 9         | 5           |
+
+A goal set above the majority does not merely delay the clinch — it can leave a completed tie with **no
+winner at all**. `COLLEGE_DEFAULT` carried `valueGoal: 5` against a seven-point structure until 2026-08-09,
+so a dual won 4-3 reached no goal and produced no winning side.
+
+Not every format is a bare majority: `USTA_OZAKI_CUP` (23 of 36) and `USTA_SECTION_BATTLE` (9 of 13)
+deliberately set a higher bar, and `TEAM_DOUBLES_3_AGGREGATION`, `USTA_TOC` and `USTA_WTT_ITT` use
+`aggregateValue` instead of a goal.
+
+### Collection identity
+
+The published fixtures carry **no `collectionId`** — and cannot. A `collectionId` identifies a collection
+_instance_ within a record, and matchUps reference it; a shared fixture holding one would hand every record
+that used it the same collection identities.
+
+The factory therefore **mints collectionIds when a tieFormat is attached** — on a copy, so the object you
+passed (often the shared fixture itself) is never stamped. Consuming a fixture directly is safe:
+
+```js
+const { event } = engine.addEvent({
+  event: { eventName: 'Dual', eventType: TEAM, tieFormat: fixtures.tieFormats.USTA_COLLEGE },
+});
+// event.tieFormat.collectionDefinitions each carry a freshly minted collectionId
+```
+
+Two records built from the same fixture get **distinct** collection identities, which is the point.
+
+> Before 2026-08-09 this minting did not happen on that path: `addEvent` minted for a `tieFormatName` but
+> only validated a supplied tieFormat object. Lines were then generated with `collectionId: null`, could not
+> be attributed to their collection, and the tie never scored — a completed 4-3 dual stayed `TO_BE_PLAYED`.
+> `validateTieFormat` still reports such a tieFormat valid unless called with `checkCollectionIds: true`.
 
 ### Centralised Storage with `tieFormatId`
 

@@ -2,13 +2,13 @@ import { getAllStructureMatchUps } from '@Query/matchUps/getAllStructureMatchUps
 import { modifyMatchUpScore } from '@Mutate/matchUps/score/modifyMatchUpScore';
 import { getPositionAssignments } from '@Query/drawDefinition/positionsGetter';
 import { modifyMatchUpNotice } from '@Mutate/notifications/drawNotifications';
-import { getDevContext } from '@Global/state/globalState';
+import { pushGlobalLog } from '@Functions/global/globalLog';
 
 /**
  * for FMLC 2nd round matchUps test whether it works if a first loss for both participants
  */
 export function swapWinnerLoser(params) {
-  const { tournamentRecord, inContextMatchUp, structure, drawDefinition } = params;
+  const { tournamentRecord, inContextMatchUp, structure, drawDefinition, event } = params;
   const matchUpRoundNumber = inContextMatchUp.roundNumber;
 
   const existingWinnerSide = inContextMatchUp.sides.find((side) => side.sideNumber === inContextMatchUp.winningSide);
@@ -25,7 +25,7 @@ export function swapWinnerLoser(params) {
       drawPositions?.includes(existingWinnerDrawPosition) && roundNumber > matchUpRoundNumber,
   );
 
-  if (getDevContext({ changeWinner: true })) console.log({ existingWinnerSubsequentMatchUps });
+  pushGlobalLog({ method: 'swapWinnerLoser', existingWinnerSubsequentMatchUps });
 
   // replace new winningSide drawPosition in all subsequent matches in structure
   existingWinnerSubsequentMatchUps.forEach((matchUp) => {
@@ -39,6 +39,7 @@ export function swapWinnerLoser(params) {
       context: stack,
       drawDefinition,
       matchUp,
+      event,
     });
   });
 
@@ -77,12 +78,18 @@ export function swapWinnerLoser(params) {
   // for each subsequent structure swap drawPosition assignments (where applicable)
   subsequentStructures.forEach((structure) => {
     const { positionAssignments } = getPositionAssignments({ structure });
-    const existingWinnerAssignment = positionAssignments?.find(
-      ({ participantId }) => participantId === existingWinnerParticipantId,
-    );
-    const existingLoserAssignment = positionAssignments?.find(
-      ({ participantId }) => participantId === existingLoserParticipantId,
-    );
+    // Both lookups are guarded on the id being present. When a side holds no participant — which
+    // is the normal state after a double exit — the id is undefined, and an unguarded
+    // `participantId === undefined` matches the first UNOCCUPIED assignment instead of matching
+    // nothing. Measured: a COMPASS back-draw BYE placed by a double-walkover cascade was selected
+    // that way and had a participant written onto it, leaving an assignment that was both
+    // `bye: true` and assigned — a combination the two flags are meant to exclude.
+    const existingWinnerAssignment = existingWinnerParticipantId
+      ? positionAssignments?.find(({ participantId }) => participantId === existingWinnerParticipantId)
+      : undefined;
+    const existingLoserAssignment = existingLoserParticipantId
+      ? positionAssignments?.find(({ participantId }) => participantId === existingLoserParticipantId)
+      : undefined;
 
     if (existingWinnerAssignment) existingWinnerAssignment.participantId = existingLoserParticipantId;
     if (existingLoserAssignment) existingLoserAssignment.participantId = existingWinnerParticipantId;

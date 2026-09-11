@@ -1,6 +1,6 @@
 import { getRoundRobinGroupMatchUps, drawPositionsHash, groupRounds } from './roundRobinGroups';
 import { structureTemplate } from '@Generators/templates/structureTemplate';
-import { addExtension } from '@Mutate/extensions/addExtension';
+import { setFirstClassOrExtension } from '@Mutate/extensions/setFirstClassOrExtension';
 import { constantToString } from '@Tools/strings';
 import { generateRange } from '@Tools/arrays';
 import { UUID } from '@Tools/UUID';
@@ -12,7 +12,6 @@ import { BYE, TO_BE_PLAYED } from '@Constants/matchUpStatusConstants';
 import { MatchUp, EventTypeUnion, TieFormat } from '@Types/tournamentTypes';
 import { ROUND_TARGET } from '@Constants/extensionConstants';
 import { SUCCESS } from '@Constants/resultConstants';
-import { HydratedMatchUp } from '@Types/hydrated';
 
 type GenerateRoundRobinArgs = {
   playoffAttributes?: PlayoffAttributes;
@@ -71,7 +70,7 @@ export function generateRoundRobin(params: GenerateRoundRobinArgs) {
   let maxRoundNumber;
 
   const structures = generateRange(1, groupCount + 1).map((structureOrder) => {
-    const matchUps: HydratedMatchUp[] = roundRobinMatchUps({
+    const matchUps: MatchUp[] = roundRobinMatchUps({
       groupSize: groupSize,
       structureOrder,
       matchUpType,
@@ -111,9 +110,11 @@ export function generateRoundRobin(params: GenerateRoundRobinArgs) {
   });
 
   if (roundTarget)
-    addExtension({
-      extension: { name: ROUND_TARGET, value: roundTarget },
+    setFirstClassOrExtension({
       element: structure,
+      attribute: 'roundTarget',
+      name: ROUND_TARGET,
+      value: roundTarget,
     });
 
   return {
@@ -132,7 +133,11 @@ function deriveGroups({ appliedPolicies, structureOptions, drawSize }) {
   }
 
   let groupSize = structureOptions?.groupSize;
-  const groupSizeLimit = structureOptions?.groupSizeLimit || 8;
+  // an explicitly requested groupSize implies a limit at least that large. Without this, a request
+  // for ONE full round robin (groupSize === drawSize, as a league division requires) is silently
+  // regrouped into groups of 8 or fewer — the request is neither honored nor reported.
+  // An explicitly supplied groupSizeLimit still wins.
+  const groupSizeLimit = structureOptions?.groupSizeLimit || Math.max(groupSize ?? 0, 8);
   const { validGroupSizes } = getValidGroupSizes({
     groupSizeLimit,
     drawSize,
@@ -193,7 +198,7 @@ function roundRobinMatchUps({
   idPrefix,
   isMock,
   uuids,
-}: RoundRobinMatchUpsArgs): HydratedMatchUp[] {
+}: RoundRobinMatchUpsArgs): MatchUp[] {
   const drawPositionOffset = (structureOrder - 1) * groupSize;
   const drawPositions = generateRange(1 + drawPositionOffset, groupSize + 1 + drawPositionOffset);
 

@@ -127,6 +127,48 @@ describe('court availability conflict detection', () => {
     expect(result.success).toEqual(true);
   });
 
+  it('ignores completed matchUps when checking new availability against schedule', () => {
+    // Reported by an operator 2026-05-31: an availability change was blocked
+    // because a COMPLETED matchUp's historical scheduledTime fell outside the
+    // new window. Completed play is historical — modifying future availability
+    // should never depend on what already happened.
+    const venueProfiles = [
+      {
+        dateAvailability: [{ date: startDate, startTime: '07:00', endTime: '19:00' }],
+        venueName: 'venue 1',
+        courtsCount: 1,
+        venueId: 'v1',
+      },
+    ];
+    mocksEngine.generateTournamentRecord({
+      completeAllMatchUps: true,
+      drawProfiles: [{ drawSize: 4 }],
+      setState: true,
+      venueProfiles,
+      startDate,
+      endDate,
+    });
+
+    const { rounds } = tournamentEngine.getRounds();
+    const schedulingProfile = [{ scheduleDate: startDate, venues: [{ venueId: 'v1', rounds }] }];
+    tournamentEngine.setSchedulingProfile({ schedulingProfile });
+    tournamentEngine.scheduleProfileRounds({ periodLength: 30 });
+
+    const { courts } = tournamentEngine.getCourts();
+    const courtId = courts[0].courtId;
+
+    // Narrow the window to one hour late in the day — every completed matchUp
+    // sits outside this. Pre-fix this would return SCHEDULE_CONFLICT_*; now it
+    // should succeed because completed matchUps are filtered before the check.
+    const result: any = tournamentEngine.modifyCourtAvailability({
+      dateAvailability: [{ date: startDate, startTime: '18:00', endTime: '19:00' }],
+      courtId,
+    });
+
+    expect(result.success).toEqual(true);
+    expect(result.error).toBeUndefined();
+  });
+
   it('detects conflicts with matchUps scheduled before availability start time', () => {
     const venueProfiles = [
       {

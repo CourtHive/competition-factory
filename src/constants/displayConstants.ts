@@ -8,4 +8,4 @@ export const ADMIN_DISPLAY = 'ADMIN';
 export const displayConstants = {
   PUBLIC_DISPLAY,
   ADMIN_DISPLAY,
-};
+} as const;

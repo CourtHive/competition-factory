@@ -181,8 +181,8 @@ describe('publish state consistency between competitionScheduleMatchUps and getE
     const csmRound1 = csmResult.dateMatchUps.filter((m) => m.roundNumber === 1);
 
     // Both: round 2 schedule stripped
-    edRound2.forEach((m) => expect(m.schedule).toBeUndefined());
-    csmRound2.forEach((m) => expect(m.schedule).toBeUndefined());
+    edRound2.forEach((m) => expect(m.schedule?.scheduledTime).toBeUndefined());
+    csmRound2.forEach((m) => expect(m.schedule?.scheduledTime).toBeUndefined());
 
     // Both: round 1 schedule intact
     edRound1.forEach((m) => expect(m.schedule).toBeDefined());

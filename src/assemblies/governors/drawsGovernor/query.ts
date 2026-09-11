@@ -3,21 +3,29 @@ export { getAvailableMatchUpsCount } from '@Generators/drawDefinitions/drawTypes
 export { getDrawParticipantRepresentativeIds } from '@Query/drawDefinition/getDrawParticipantRepresentativeIds';
 export { getValidGroupSizes } from '@Assemblies/generators/drawDefinitions/drawTypes/roundRobin/roundRobin';
 export { allPlayoffPositionsFilled, isCompletedStructure } from '@Query/drawDefinition/structureActions';
+export { getStructureInconsistencies } from '@Query/drawDefinition/getStructureInconsistencies';
 export { predictDrawCompetitiveBands } from '@Query/drawDefinition/predictDrawCompetitiveBands';
 export { getAvailablePlayoffProfiles } from '@Query/drawDefinition/getAvailablePlayoffProfiles';
 export { getParticipantIdFinishingPositions } from '@Query/drawDefinition/finishingPositions';
-export { getAssignedParticipantIds } from '@Query/drawDefinition/getAssignedParticipantIds';
 export { getStructureSeedAssignments } from '@Query/structure/getStructureSeedAssignments';
+export { getAssignedParticipantIds } from '@Query/drawDefinition/getAssignedParticipantIds';
+export { getStructureCompleteness } from '@Query/drawDefinition/getStructureCompleteness';
+export { getMatchUpFormatVariance } from '@Query/drawDefinition/getMatchUpFormatVariance';
 export { publicFindDrawDefinition as findDrawDefinition } from '@Acquire/findDrawDefinition';
 export { positionActions } from '@Query/drawDefinition/positionActions/positionActions';
 export { getLuckyDrawRoundStatus } from '@Query/drawDefinition/getLuckyDrawRoundStatus';
+export { getDrawInconsistencies } from '@Query/drawDefinition/getDrawInconsistencies';
 export { getDrawTypeCoercion } from '@Generators/drawDefinitions/getDrawTypeCoercion';
 export { getRandomQualifierList } from '@Query/drawDefinition/getRandomQualifierList';
 export { getPositionsPlayedOff } from '@Query/drawDefinition/getPositionsPlayedOff';
 export { getSwissStandings } from '@Query/drawDefinitions/swiss/getSwissStandings';
 export { isValidForQualifying } from '@Query/drawDefinition/isValidForQualifying';
 export { getPositionAssignments } from '@Query/structure/getPositionAssignments';
+export { getDrawCompleteness } from '@Query/drawDefinition/getDrawCompleteness';
 export { getSeedingThresholds } from '@Query/drawDefinition/getSeedBlocks';
+// Answers 'may this seed be placed at this drawPosition'. Exported because a client doing manual
+// seed placement needs the same answer the engine uses, rather than re-deriving seed blocks.
+export { isValidSeedPosition } from '@Query/drawDefinition/seedGetter';
 export { getSwissChart } from '@Query/drawDefinitions/swiss/getSwissChart';
 export { validatePlayoffGroups } from '@Validators/validatePlayoffGroups';
 export { getDraftState } from '@Query/drawDefinition/draft/getDraftState';
@@ -30,3 +38,4 @@ export { hasLuckyRounds } from '@Query/drawDefinition/isLucky';
 export { getDrawStructures } from '@Acquire/findStructure';
 export { isAdHoc } from '@Query/drawDefinition/isAdHoc';
 export { addGoesTo } from '@Query/matchUps/addGoesTo';
+export { getTally } from '@Query/structure/getTally';

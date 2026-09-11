@@ -1,6 +1,7 @@
 import { resolveTournamentRecords } from '@Helpers/parameters/resolveTournamentRecords';
 import { allTournamentMatchUps } from '@Query/matchUps/getAllTournamentMatchUps';
 import { modifyMatchUpNotice } from '@Mutate/notifications/drawNotifications';
+import { matchUpScheduleLocked } from '@Query/matchUp/isScheduleLocked';
 import { allDrawMatchUps } from '@Query/matchUps/getAllDrawMatchUps';
 import { hasSchedule } from '@Query/matchUp/hasSchedule';
 import { findEvent } from '@Acquire/findEvent';
@@ -27,20 +28,49 @@ import {
   SCHEDULED_TIME,
 } from '@Constants/timeItemConstants';
 
+// Schedule-placement timeItem types (LEGACY / BRIDGE) and their first-class
+// `matchUp.schedule.*` counterparts (NATIVE / BRIDGE). Kept in lockstep so an
+// unschedule clears the same placement regardless of the record's write mode.
+const SCHEDULE_ITEM_TYPES = new Set([
+  ALLOCATE_COURTS,
+  ASSIGN_COURT,
+  ASSIGN_VENUE,
+  COURT_ANNOTATION,
+  COURT_ORDER,
+  SCHEDULED_DATE,
+  SCHEDULED_TIME,
+]);
+const SCHEDULE_FIRST_CLASS_ATTRIBUTES = [
+  'allocatedCourts', // ALLOCATE_COURTS
+  'courtId', // ASSIGN_COURT
+  'venueId', // ASSIGN_VENUE
+  'courtAnnotation', // COURT_ANNOTATION
+  'courtOrder', // COURT_ORDER
+  'scheduledDate', // SCHEDULED_DATE
+  'scheduledTime', // SCHEDULED_TIME
+  // first-class only (no timeItem mirror): the "called to court" stamp. A full
+  // unschedule must drop it too — otherwise an unscheduled matchUp keeps a stale
+  // "called" marker with no placement behind it.
+  'calledAt',
+];
+
 type ClearScheduledMatchUpsArgs = {
   ignoreMatchUpStatuses?: MatchUpStatusUnion[];
   tournamentRecords?: TournamentRecords;
+  overrideScheduleLock?: boolean;
   tournamentRecord?: Tournament;
   scheduleAttributes?: string[];
   scheduledDates: string[];
   venueIds?: string[];
 };
 export function clearScheduledMatchUps(params: ClearScheduledMatchUpsArgs): ResultType & {
+  lockedMatchUpIds?: string[];
   clearedScheduleCount?: number;
 } {
   const {
     scheduleAttributes = ['scheduledDate', 'scheduledTime', 'courtOrder'],
     ignoreMatchUpStatuses = completedMatchUpStatuses,
+    overrideScheduleLock,
     scheduledDates,
     venueIds,
   } = params;
@@ -54,10 +84,12 @@ export function clearScheduledMatchUps(params: ClearScheduledMatchUpsArgs): Resu
     : [];
   if (!tournamentIds?.length) return { error: MISSING_TOURNAMENT_RECORDS };
 
+  const lockedMatchUpIds: string[] = [];
   let clearedScheduleCount = 0;
   for (const tournamentId of tournamentIds) {
     const tournamentRecord = tournamentRecords[tournamentId];
     const result = clearSchedules({
+      overrideScheduleLock,
       ignoreMatchUpStatuses,
       scheduleAttributes,
       tournamentRecord,
@@ -65,20 +97,25 @@ export function clearScheduledMatchUps(params: ClearScheduledMatchUpsArgs): Resu
       venueIds,
     });
     if (result.error) return result;
+    if (result.lockedMatchUpIds?.length) lockedMatchUpIds.push(...result.lockedMatchUpIds);
     clearedScheduleCount += result.clearedScheduleCount ?? 0;
   }
 
-  return { ...SUCCESS, clearedScheduleCount };
+  return lockedMatchUpIds.length
+    ? { ...SUCCESS, clearedScheduleCount, lockedMatchUpIds }
+    : { ...SUCCESS, clearedScheduleCount };
 }
 
 function clearSchedules({
   scheduleAttributes = ['scheduledDate', 'scheduledTime', 'courtOrder'],
   ignoreMatchUpStatuses = completedMatchUpStatuses,
+  overrideScheduleLock,
   tournamentRecord,
   scheduledDates,
   venueIds = [],
 }: ClearScheduledMatchUpsArgs): {
   clearedScheduleCount?: number;
+  lockedMatchUpIds?: string[];
   success?: boolean;
   error?: ErrorType;
 } {
@@ -101,7 +138,7 @@ function clearSchedules({
     if (
       (!matchUpStatus || !ignoreMatchUpStatuses.includes(matchUpStatus)) &&
       hasSchedule({ schedule, scheduleAttributes }) &&
-      (!venueIds?.length || venueIds.includes(schedule.venueId))
+      (!venueIds?.length || venueIds.includes(schedule?.venueId ?? ''))
     ) {
       if (!drawMatchUpIds[drawId]) drawMatchUpIds[drawId] = [];
       drawMatchUpIds[drawId].push(matchUpId);
@@ -109,6 +146,7 @@ function clearSchedules({
   });
 
   const tournamentId = tournamentRecord.tournamentId;
+  const lockedMatchUpIds: string[] = [];
   let clearedScheduleCount = 0;
 
   for (const drawId in drawMatchUpIds) {
@@ -117,16 +155,31 @@ function clearSchedules({
       allDrawMatchUps({ drawDefinition, matchUpFilters: { matchUpIds: drawMatchUpIds[drawId] } }).matchUps ?? [];
 
     for (const matchUp of drawMatchUps) {
+      // A director's lock survives a date/venue-scoped clear — the whole point
+      // of pinning the marquee match before rebuilding the day around it.
+      if (!overrideScheduleLock && matchUpScheduleLocked({ matchUp })) {
+        lockedMatchUpIds.push(matchUp.matchUpId);
+        continue;
+      }
       let modified = false;
+      // LEGACY / BRIDGE records store schedule data as timeItems — strip them.
       matchUp.timeItems = (matchUp.timeItems ?? []).filter((timeItem) => {
-        const preserve =
-          timeItem?.itemType &&
-          ![ALLOCATE_COURTS, ASSIGN_COURT, ASSIGN_VENUE, COURT_ANNOTATION, COURT_ORDER, SCHEDULED_DATE, SCHEDULED_TIME].includes(
-            timeItem?.itemType,
-          );
+        const preserve = timeItem?.itemType && !SCHEDULE_ITEM_TYPES.has(timeItem?.itemType);
         if (!preserve) modified = true;
         return preserve;
       });
+      // NATIVE / BRIDGE records store schedule data as first-class `matchUp.schedule.*`
+      // attributes (CODES Phase 2) with no timeItem mirror. Without clearing these the
+      // unschedule is a no-op in production NATIVE mode — the divergence that surfaced
+      // as SCHEDULE_NOT_CLEARED when a date change tried to force-unschedule matchUps.
+      if (matchUp.schedule && typeof matchUp.schedule === 'object') {
+        for (const attribute of SCHEDULE_FIRST_CLASS_ATTRIBUTES) {
+          if (matchUp.schedule[attribute] !== undefined) {
+            delete matchUp.schedule[attribute];
+            modified = true;
+          }
+        }
+      }
       if (modified) {
         modifyMatchUpNotice({
           context: 'clear schedules',
@@ -134,11 +187,14 @@ function clearSchedules({
           drawDefinition,
           tournamentId,
           matchUp,
+          event,
         });
         clearedScheduleCount += 1;
       }
     }
   }
 
-  return { ...SUCCESS, clearedScheduleCount };
+  return lockedMatchUpIds.length
+    ? { ...SUCCESS, clearedScheduleCount, lockedMatchUpIds }
+    : { ...SUCCESS, clearedScheduleCount };
 }

@@ -1,5 +1,5 @@
-import { addExtension } from '@Mutate/extensions/addExtension';
-import { findExtension } from '@Acquire/findExtension';
+import { setFirstClassOrExtension } from '@Mutate/extensions/setFirstClassOrExtension';
+import { firstClassOrExtension } from '@Acquire/firstClassOrExtension';
 
 // constants and types
 import { DrawDefinition, Tournament } from '@Types/tournamentTypes';
@@ -28,13 +28,11 @@ export function setDrawPositionPreferences({
   if (!participantId) return { error: INVALID_PARTICIPANT_ID };
   if (!Array.isArray(preferences)) return { error: INVALID_VALUES };
 
-  const { extension } = findExtension({ element: drawDefinition, name: DRAFT_STATE });
-  if (!extension?.value) return { error: NOT_FOUND, info: 'No active draft found' };
-
-  const draftState = extension.value;
+  const draftState = firstClassOrExtension({ element: drawDefinition, attribute: 'draftState', name: DRAFT_STATE });
+  if (!draftState) return { error: NOT_FOUND, info: 'No active draft found' };
 
   // verify draft is in a state that accepts preferences
-  if (draftState.status === 'COMPLETE') return { error: INVALID_VALUES, info: 'Draft is already complete' };
+  if (draftState.status === 'COMPLETED') return { error: INVALID_VALUES, info: 'Draft is already complete' };
 
   // verify participant is in a tier
   const participantTier = draftState.tiers?.find((tier: any) => tier.participantIds?.includes(participantId));
@@ -60,9 +58,11 @@ export function setDrawPositionPreferences({
     draftState.status = 'COLLECTING_PREFERENCES';
   }
 
-  addExtension({
+  setFirstClassOrExtension({
     element: drawDefinition,
-    extension: { name: DRAFT_STATE, value: draftState },
+    attribute: 'draftState',
+    name: DRAFT_STATE,
+    value: draftState,
   });
 
   return { ...SUCCESS };

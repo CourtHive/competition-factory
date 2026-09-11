@@ -1,6 +1,8 @@
 export const person = {
   addresses: '{\\"type\\":\\"object\\",\\"object\\":\\"address\\",\\"array\\":\\"true\\",\\"required\\":\\"false\\"}',
   birthDate: '{\\"type\\":\\"string\\",\\"required\\":\\"true\\",\\"note\\":\\"\'YYYY-MM-DD\'\\"}',
+  birthYear:
+    '{\\"type\\":\\"number\\",\\"required\\":\\"false\\",\\"note\\":\\"year-precision DOB; age/category falls back to this when birthDate absent\\"}',
   biographicalInformation:
     '{\\"type\\":\\"object\\",\\"object\\":\\"biographicalInformation\\",\\"array\\":\\"true\\",\\"required\\":\\"false\\"}',
   contacts: '{\\"type\\":\\"object\\",\\"object\\":\\"contact\\",\\"array\\":\\"true\\",\\"required\\":\\"false\\"}',

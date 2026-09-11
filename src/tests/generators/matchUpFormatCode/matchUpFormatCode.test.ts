@@ -439,6 +439,68 @@ it('supports -G:3C consecutive game format (TYPTI)', () => {
   expect(isValidMatchUpFormat({ matchUpFormat: format })).toEqual(true);
 });
 
+it('supports WB1 set modifier (sets to N, win-by 1, no tiebreak)', () => {
+  // Plain win-by-1 set: first side to 5 games wins, no tiebreak
+  const format = 'SET3-S:5WB1';
+  const parsed = matchUpFormatCode.parse(format);
+  expect(parsed).toEqual({
+    bestOf: 3,
+    setFormat: { setTo: 5, noTiebreak: true, winBy: 1 },
+  });
+  const stringified = matchUpFormatCode.stringify(parsed);
+  expect(stringified).toEqual(format);
+  expect(isValidMatchUpFormat({ matchUpFormat: format })).toEqual(true);
+});
+
+it('supports TYPTI win-by-1 variant (SET5-S:5WB1-G:3C)', () => {
+  // TYPTI rules where set scores like 1–5, 4–5 are legal (no tiebreak, win-by 1)
+  const format = 'SET5-S:5WB1-G:3C';
+  const parsed = matchUpFormatCode.parse(format);
+  expect(parsed).toEqual({
+    bestOf: 5,
+    setFormat: { setTo: 5, noTiebreak: true, winBy: 1 },
+    gameFormat: { type: 'CONSECUTIVE', count: 3 },
+  });
+  const stringified = matchUpFormatCode.stringify(parsed);
+  expect(stringified).toEqual(format);
+  expect(isValidMatchUpFormat({ matchUpFormat: format })).toEqual(true);
+});
+
+it('supports NOAD + WB1 combined modifier (NOAD before WB)', () => {
+  const format = 'SET3-S:4NOADWB1';
+  const parsed = matchUpFormatCode.parse(format);
+  expect(parsed).toEqual({
+    bestOf: 3,
+    setFormat: { setTo: 4, NoAD: true, noTiebreak: true, winBy: 1 },
+  });
+  const stringified = matchUpFormatCode.stringify(parsed);
+  expect(stringified).toEqual(format);
+  expect(isValidMatchUpFormat({ matchUpFormat: format })).toEqual(true);
+});
+
+it('elides redundant WB2 (default win-by for advantage sets)', () => {
+  // WB2 matches the default win-by for no-tiebreak sets and is not stored on the parsed object
+  const format = 'SET3-S:5WB2';
+  const parsed = matchUpFormatCode.parse(format);
+  expect(parsed).toEqual({
+    bestOf: 3,
+    setFormat: { setTo: 5, noTiebreak: true },
+  });
+  // Canonical stringify drops WB2 since it equals the default
+  const stringified = matchUpFormatCode.stringify(parsed);
+  expect(stringified).toEqual('SET3-S:5');
+});
+
+it('rejects WB modifier when a tiebreak is also specified', () => {
+  expect(matchUpFormatCode.parse('SET3-S:5WB1/TB7')).toBeUndefined();
+  expect(matchUpFormatCode.parse('SET3-S:6/TB7WB1')).toBeUndefined();
+});
+
+it('rejects WB0 and non-canonical ordering (WB before NOAD)', () => {
+  expect(matchUpFormatCode.parse('SET3-S:5WB0')).toBeUndefined();
+  expect(matchUpFormatCode.parse('SET3-S:5WB1NOAD')).toBeUndefined();
+});
+
 it('supports INTENNSE format with match-level aggregate (SET7XA-S:T10P)', () => {
   const format = 'SET7XA-S:T10P';
   const parsed = matchUpFormatCode.parse(format);

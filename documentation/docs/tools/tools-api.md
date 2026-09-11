@@ -305,9 +305,85 @@ tools.isOdd(4); // false
 
 ## Date & Time
 
+Four different questions hide inside "a date", and answering the wrong one is the most common source
+of off-by-an-hour and off-by-a-day bugs in competition data:
+
+| Question                         | Module                                       | Example                                                    |
+| -------------------------------- | -------------------------------------------- | ---------------------------------------------------------- |
+| Which calendar day?              | [`tools.plainDate`](#toolsplaindate)         | `2026-09-09` — the same day in Auckland and Los Angeles    |
+| What time on the clock?          | [`tools.plainTime`](#toolsplaintime)         | `14:00` — not a moment until a day and a zone are supplied |
+| Which actual moment, at a venue? | [`tools.zonedDateTime`](#toolszoneddatetime) | `2026-09-09` + `14:00` + `America/New_York`                |
+| Which absolute instant?          | ISO strings with `Z`                         | `2026-09-09T18:00:00.000Z`                                 |
+
+`tools.dateTime` predates that split and spans the first two. It is fully supported and its behaviour
+is unchanged — it now re-exports from the intent modules, so there is exactly one implementation of
+each helper — but **new code should reach for the module that names the intent**. A reader of
+`plainDate.extractDate(x)` knows no zone was involved; a reader of `dateTime.extractDate(x)` has to go
+and check.
+
+The names are the [TC39 Temporal](https://tc39.es/proposal-temporal/docs/) ones on purpose. When
+`Temporal.PlainDate` and `Temporal.PlainTime` are available on every runtime the factory supports,
+these become one-for-one substitutions rather than a rename.
+
+### tools.plainDate
+
+A calendar day: no clock, no zone. Takes and returns ISO date strings (`YYYY-MM-DD`); `Date` appears
+only as internal arithmetic.
+
+```js
+import { tools } from 'tods-competition-factory';
+
+// The calendar day, whatever the instant was wearing
+tools.plainDate.extractDate('2026-09-09T14:00:00+05:30'); // '2026-09-09'
+tools.plainDate.extractDate('not-a-date'); // '' — never throws
+
+tools.plainDate.generateDateRange('2026-09-09', '2026-09-12');
+// ['2026-09-09', '2026-09-10', '2026-09-11', '2026-09-12']  (inclusive both ends)
+
+tools.plainDate.addDays('2026-09-28', 5); // '2026-10-03'
+tools.plainDate.addWeek('2026-09-09'); // '2026-09-16'
+tools.plainDate.sameDay('2026-09-09T01:00', '2026-09-09T23:00'); // true
+tools.plainDate.isISODateString('tomorrow'); // false
+```
+
+Also available: `formatDate`, `isValidDateString`, `dateStringDaysChange`, `getDateByWeek`,
+`dateFromDay`, `subtractWeek`, `weekdays`, `isDateInPast`, `localizeDate`.
+
+Nothing in `plainDate` resolves an offset. Anything that needs one belongs in
+[`tools.zonedDateTime`](#toolszoneddatetime).
+
+### tools.plainTime
+
+A wall clock: no day, no zone. `14:00` is a `plainTime`; it is not a moment until a day and a zone are
+supplied.
+
+```js
+tools.plainTime.extractTime('2026-09-09T14:00'); // '14:00'
+tools.plainTime.extractTime('2026-09-09'); // undefined — no clock to read
+
+tools.plainTime.timeStringMinutes('14:30'); // 870 — minutes since midnight
+tools.plainTime.dayMinutesToTimeString(870); // '14:30'
+tools.plainTime.dayMinutesToTimeString(1500); // '01:00' — wraps rather than overflowing
+
+tools.plainTime.convertTime('14:00'); // '2:00 PM'
+tools.plainTime.convertTime('2:00 PM', true); // '14:00'
+tools.plainTime.isTimeString('24:00'); // false — no wall clock shows that
+```
+
+Also available: `tidyTime`, `validTimeValue`, `splitTime`, `militaryTime`, `regularTime`, `timeSort`,
+`HHMMSS`.
+
+`timeSort` is a comparator, so pass it to `.sort()` rather than calling it directly:
+
+```js
+['14:00', '09:30', '23:15'].sort(tools.plainTime.timeSort);
+// ['09:30', '14:00', '23:15']
+```
+
 ### dateTime
 
-Object containing date/time utility functions.
+Object containing date/time utility functions. Spans the calendar-day and wall-clock intents; see the
+table above for which module to prefer in new code.
 
 ```js
 // Get ISO date string
@@ -335,7 +411,8 @@ tools.dateTime.isValidEmbargoDate('2024-06-15'); // false — date only
 tools.dateTime.isValidEmbargoDate(42); // false — not a string
 
 // Also available as a standalone import
-import { isValidEmbargoDate } from 'tods-competition-factory';
+import { tools } from 'tods-competition-factory';
+const { isValidEmbargoDate } = tools;
 ```
 
 ### generateDateRange
@@ -387,7 +464,14 @@ tools.timeZone.getTimeZoneOffsetMinutes('America/New_York', new Date('2024-06-15
 
 tools.timeZone.getTimeZoneOffsetMinutes('UTC'); // 0
 tools.timeZone.getTimeZoneOffsetMinutes('Asia/Kolkata'); // 330 (UTC+5:30)
+
+// An unrecognised or absent zone is `undefined` — never a substituted 0, and
+// never the offset of whichever machine happens to be running.
+tools.timeZone.getTimeZoneOffsetMinutes('Not/A/Zone'); // undefined
+tools.timeZone.getTimeZoneOffsetMinutes(); // undefined
 ```
+
+**Returns:** offset in minutes, or `undefined` when the zone is absent or unrecognised.
 
 ### wallClockToUTC
 
@@ -405,6 +489,12 @@ tools.timeZone.wallClockToUTC('2024-01-15', '03:00', 'America/New_York');
 // Invalid timezone returns error
 tools.timeZone.wallClockToUTC('2024-06-20', '03:00', 'Invalid/Zone');
 // Result: { error: INVALID_TIME_ZONE }
+
+// A malformed date and a malformed time are different errors
+tools.timeZone.wallClockToUTC('not-a-date', '03:00', 'America/New_York');
+// Result: { error: INVALID_DATE }
+tools.timeZone.wallClockToUTC('2024-06-20', 'noon', 'America/New_York');
+// Result: { error: INVALID_TIME }
 ```
 
 | Parameter  | Type     | Description                            |
@@ -413,7 +503,8 @@ tools.timeZone.wallClockToUTC('2024-06-20', '03:00', 'Invalid/Zone');
 | `time`     | `string` | Wall-clock time in `HH:MM` format      |
 | `timeZone` | `string` | IANA timezone identifier               |
 
-**Returns:** UTC ISO string (ending in `Z`) or `{ error: INVALID_TIME_ZONE }`.
+**Returns:** UTC ISO string (ending in `Z`), or `{ error }` carrying `INVALID_TIME_ZONE`,
+`INVALID_DATE` or `INVALID_TIME`.
 
 ### utcToWallClock
 
@@ -430,6 +521,10 @@ tools.timeZone.utcToWallClock('2024-06-21T03:00:00.000Z', 'America/New_York');
 // Invalid timezone returns error
 tools.timeZone.utcToWallClock('2024-06-20T07:00:00.000Z', 'Invalid/Zone');
 // Result: { error: INVALID_TIME_ZONE }
+
+// An unparseable instant is refused rather than throwing
+tools.timeZone.utcToWallClock('garbage', 'America/New_York');
+// Result: { error: INVALID_DATE }
 ```
 
 | Parameter  | Type     | Description                  |
@@ -437,7 +532,8 @@ tools.timeZone.utcToWallClock('2024-06-20T07:00:00.000Z', 'Invalid/Zone');
 | `utcIso`   | `string` | UTC ISO 8601 datetime string |
 | `timeZone` | `string` | IANA timezone identifier     |
 
-**Returns:** `{ date: string, time: string }` or `{ error: INVALID_TIME_ZONE }`.
+**Returns:** `{ date: string, time: string }`, or `{ error }` carrying `INVALID_TIME_ZONE`
+or `INVALID_DATE`.
 
 ### toEmbargoUTC
 
@@ -462,7 +558,56 @@ engine.publishEvent({
 | `time`     | `string` | Wall-clock time in `HH:MM` format      |
 | `timeZone` | `string` | IANA timezone identifier               |
 
-**Returns:** UTC ISO string (ending in `Z`) or `{ error: INVALID_TIME_ZONE }`.
+**Returns:** UTC ISO string (ending in `Z`), or `{ error }` carrying `INVALID_TIME_ZONE`,
+`INVALID_DATE` or `INVALID_TIME`.
+
+---
+
+## tools.zonedDateTime
+
+`tools.timeZone` is a thin adapter; `tools.zonedDateTime` is the implementation beneath it and the
+zoned member of the calendar-intent set (`plainDate`, `plainTime`, `zonedDateTime`). Reach for it when
+you need the raw epoch-millisecond form, or when you need to know **which frame** a conversion used.
+
+```js
+import { tools } from 'tods-competition-factory';
+
+// Which frame did this conversion actually use?
+tools.zonedDateTime.zonedWallClockToMs({ date: '2026-07-15', time: '09:00', timeZone: 'America/New_York' });
+// { ms: 1784725200000, source: 'zone' }
+
+// No zone: the caller's own offset frame, and it says so.
+tools.zonedDateTime.zonedWallClockToMs({ date: '2026-07-15', time: '09:00', utcOffsetMinutes: -240 });
+// { ms: 1784725200000, source: 'offset' }
+
+// A zone the system cannot honour is REFUSED, not silently replaced.
+tools.zonedDateTime.zonedWallClockToMs({
+  date: '2026-07-15',
+  time: '09:00',
+  utcOffsetMinutes: -240,
+  timeZone: 'Not/AZone',
+});
+// null
+
+tools.zonedDateTime.zonedParts({ ms: 1784725200000, timeZone: 'America/New_York' });
+// { date: '2026-07-15', time: '09:00', source: 'zone' }
+
+tools.zonedDateTime.offsetMinutesAt(1784725200000, 'America/New_York'); // -240
+tools.zonedDateTime.isZone('America/New_York'); // true — cached, so repeat checks are free
+```
+
+### The frame rule
+
+| `timeZone`            | result                                      | `source`   |
+| --------------------- | ------------------------------------------- | ---------- |
+| absent                | the caller's `utcOffsetMinutes` (default 0) | `'offset'` |
+| present, unrecognised | `null` — refused                            | —          |
+| present, recognised   | resolved **per instant**, DST-correct       | `'zone'`   |
+
+A caller that supplies no zone has declared its own frame, which is legitimate — most tournaments
+carry no zone. A caller that supplies a zone the system cannot honour has made a config error;
+substituting a different frame turns a 90-minute recovery figure into a 330-minute one that still
+reads as measured. `source` is returned so the difference is visible in the value rather than assumed.
 
 ---
 

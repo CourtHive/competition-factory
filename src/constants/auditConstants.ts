@@ -6,6 +6,6 @@ export const auditConstants = {
   AUTO_SCHEDULING_AUDIT,
   DELETE_EVENTS,
   DELETE_DRAW_DEFINITIONS,
-};
+} as const;
 
 export default auditConstants;

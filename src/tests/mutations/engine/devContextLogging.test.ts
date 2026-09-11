@@ -1,4 +1,4 @@
-import { afterAll, describe, it, expect, vi } from 'vitest';
+import { afterAll, beforeEach, describe, it, expect, vi } from 'vitest';
 import tournamentEngine from '@Engines/syncEngine';
 import mocksEngine from '@Assemblies/engines/mock';
 
@@ -9,6 +9,13 @@ import { ELO } from '@Constants/ratingConstants';
 
 describe('should mock console.log', () => {
   const consoleMock = vi.spyOn(console, 'log').mockImplementation(() => undefined);
+
+  // Call counts below are per-test, not cumulative. Vitest 5 clears mock history before
+  // every test (`clearMocks` defaults to true); this makes the expectations independent
+  // of that default, so they hold on both 4.x and 5.x.
+  beforeEach(() => {
+    consoleMock.mockClear();
+  });
 
   afterAll(() => {
     consoleMock.mockReset();
@@ -27,7 +34,7 @@ describe('should mock console.log', () => {
     tournamentEngine.setState(tournamentRecord);
     tournamentEngine.devContext({ errors: true });
     tournamentEngine.getEvent();
-    expect(consoleMock).toHaveBeenCalledTimes(2);
+    expect(consoleMock).toHaveBeenCalledTimes(1);
     expect(consoleMock).toHaveBeenLastCalledWith(
       'sync',
       expect.objectContaining({
@@ -42,19 +49,19 @@ describe('should mock console.log', () => {
     );
     tournamentEngine.devContext({ errors: false });
     tournamentEngine.getEvent();
-    expect(consoleMock).toHaveBeenCalledTimes(2);
+    expect(consoleMock).toHaveBeenCalledTimes(1);
 
     tournamentEngine.devContext({ errors: ['getEvent'] });
     tournamentEngine.getEvent();
-    expect(consoleMock).toHaveBeenCalledTimes(3);
+    expect(consoleMock).toHaveBeenCalledTimes(2);
 
     tournamentEngine.devContext({ result: ['getEvent'] });
     tournamentEngine.getEvent();
-    expect(consoleMock).toHaveBeenCalledTimes(4);
+    expect(consoleMock).toHaveBeenCalledTimes(3);
 
     tournamentEngine.devContext({ result: ['participantScaleItem'] });
     tournamentEngine.getEvent();
-    expect(consoleMock).toHaveBeenCalledTimes(4);
+    expect(consoleMock).toHaveBeenCalledTimes(3);
 
     consoleMock.mockReset();
     expect(consoleMock).toHaveBeenCalledTimes(0);

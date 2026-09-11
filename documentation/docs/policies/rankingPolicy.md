@@ -5,7 +5,8 @@ title: Ranking Policy
 A **Ranking Policy** defines how points are awarded to participants for their tournament performance. It is attached to a tournament or event using the standard [policy system](/docs/concepts/policies) under the key `POLICY_TYPE_RANKING_POINTS`.
 
 ```js
-import { POLICY_TYPE_RANKING_POINTS } from 'tods-competition-factory';
+import { policyConstants } from 'tods-competition-factory';
+const { POLICY_TYPE_RANKING_POINTS } = policyConstants;
 
 const policyDefinitions = {
   [POLICY_TYPE_RANKING_POINTS]: {
@@ -30,11 +31,140 @@ scaleEngine.getTournamentPoints({ policyDefinitions, level: 3 });
 {
   awardProfiles: AwardProfile[];           // How points are awarded per draw/event
   qualityWinProfiles?: QualityWinProfile[]; // Bonus for beating ranked opponents
-  doublesAttribution?: string;              // 'fullToEach' | 'splitEven'
+  doublesAttribution?: string;              // 'fullToEach' | 'splitEven' | 'teamOnly'
   requireWinForPoints?: boolean;            // Global: must win to earn position points
   requireWinFirstRound?: boolean;           // Global: R1 losers need a win for points
+  pointsAuthority?: PointsAuthority;        // Issuing authority (ATP, WTA, ITF, …)
 }
 ```
+
+## Points Authority
+
+`pointsAuthority` declares which body issues the points awarded under a policy.
+Every `PointAward` emitted from the policy carries this value, so downstream
+consumers — most importantly federated rank lists like Tennis Europe's, which
+mix ATP + ITF + TE-internal points into one list — can scope and weight by
+source without re-joining to policy metadata.
+
+The vocabulary is a closed enum exported from `@Constants/pointsAuthorityConstants`:
+
+```ts
+import type { PointsAuthority } from 'tods-competition-factory';
+import { pointsAuthorityConstants, ratingConstants } from 'tods-competition-factory';
+const {
+  ATP,
+  DTB,
+  FFT,
+  ITF,
+  ITF_JUNIOR,
+  ITF_WHEELCHAIR,
+  LTA,
+  POINTS_AUTHORITIES,
+  PPA,
+  TENNIS_EUROPE,
+  UNSPECIFIED,
+  USTA,
+  WTA,
+} = pointsAuthorityConstants;
+const { BWF, UTR } = ratingConstants;
+```
+
+The field is **optional** — policies that don't declare it produce awards with
+`pointsAuthority: undefined`, and downstream consumers (e.g. courthive-rankings)
+default such rows to `'UNSPECIFIED'`. The published CourtHive fixtures declare:
+
+| Policy                             | `pointsAuthority` |
+| ---------------------------------- | ----------------- |
+| `POLICY_RANKING_POINTS_ATP`        | `ATP`             |
+| `POLICY_RANKING_POINTS_WTA`        | `WTA`             |
+| `POLICY_RANKING_POINTS_ITF_WTT`    | `ITF`             |
+| `POLICY_RANKING_POINTS_ITF_JUNIOR` | `ITF_JUNIOR`      |
+| `POLICY_RANKING_POINTS_BASIC`      | _(unset)_         |
+
+The vocabulary intentionally aligns with `TierClassification.system` so a
+tournament's tier-system (`'ATP'`, `'ITF_JUNIOR'`, `'PPA'`, …) lines up with
+the authority of the points it awards.
+
+### Per-AwardProfile override
+
+`AwardProfile.pointsAuthority` is the per-profile override that makes
+federated rank lists possible. When set, it stamps every award the
+profile matches with its own authority — overriding the policy-level
+`pointsAuthority` for that profile only. Resolution rule at award time:
+
+```ts
+award.pointsAuthority = matchedProfile.pointsAuthority ?? policy.pointsAuthority;
+```
+
+The Tennis Europe production rank list aggregates points from three
+issuing authorities into a single weekly list. With per-profile authority,
+the entire list is one policy:
+
+```ts
+const POLICY_RANKING_POINTS_TE_HYBRID = {
+  [POLICY_TYPE_RANKING_POINTS]: {
+    policyName: 'Tennis Europe Hybrid 2026',
+    pointsAuthority: TENNIS_EUROPE, // default for any profile
+    awardProfiles: [
+      {
+        profileName: 'TE Circuit (16U/18U)',
+        // matches TE-circuit events; no authority override → TENNIS_EUROPE
+        finishingPositionRanges: {/* TE point values */},
+      },
+      {
+        profileName: 'ITF Junior crossover',
+        pointsAuthority: ITF_JUNIOR, // override for ITF events
+        levels: [/* ITF Jr levels */],
+        finishingPositionRanges: {/* ITF point values */},
+      },
+      {
+        profileName: 'ATP crossover',
+        pointsAuthority: ATP, // override for ATP events
+        levels: [/* ATP levels */],
+        finishingPositionRanges: {/* ATP point values */},
+      },
+    ],
+  },
+};
+```
+
+Every award emitted under this policy carries the issuing authority of
+whichever profile matched its draw — so courthive-rankings can scope,
+filter, and weight by source authority directly, without splitting the
+rank list across three separate policies.
+
+A working reference fixture lives at
+[`src/tests/fixtures/policies/POLICY_RANKING_POINTS_HYBRID_EXAMPLE.ts`](https://github.com/CourtHive/competition-factory/blob/master/src/tests/fixtures/policies/POLICY_RANKING_POINTS_HYBRID_EXAMPLE.ts).
+It models the three-bucket pattern observed in Tennis Europe's production
+rank list (TE-circuit + ITF Junior crossover + ATP crossover). Point
+values in that fixture are placeholders — copy the file, calibrate the
+ranges against the actual federation rulebook, and adjust the scoping
+(levels, drawSizes, eventTypes) to match the federation's event taxonomy.
+
+The override applies to every award shape emitted from `getTournamentPoints`:
+main awards, doubles-split individual awards (via spread), team
+line-points awards, and quality-win bonus awards. Quality-win bonuses
+inherit the matched profile's authority for the same draw (so a player
+who won an ITF crossover event gets ITF-stamped quality wins, even
+under a TE-Hybrid policy).
+
+### Why a separate field from `policyName`?
+
+`policyName` identifies a specific published rulebook
+(`'PIF ATP Rankings 2026'`); `pointsAuthority` identifies the issuing body.
+Two policies for ATP can coexist (e.g. a 2025 and 2026 version) but both
+share `pointsAuthority: ATP`. Filtering by authority — "include every ATP
+award in the rolling window, regardless of which annual policy was in effect"
+— is impossible from `policyName` alone.
+
+### Authority weighting at aggregation time
+
+The authority weight a federated rank list applies (e.g. Tennis Europe weights
+ITF at `1.0` and TENNIS_EUROPE at `1.0`, while a USTA-internal list might weight
+external authorities at `0.5`) is **not** part of the policy. It belongs to the
+consuming rank list and is applied at aggregation time, downstream of the
+factory. See the [`courthive-rankings`](https://github.com/CourtHive/courthive-rankings)
+`AggregateArgs.authorityWeights` and `AggregateArgs.authorityFilter` inputs.
 
 ## Award Profiles
 
@@ -65,7 +195,8 @@ awardProfiles: [
   // Scope — determines when this profile applies
   eventTypes: ['SINGLES'],              // SINGLES, DOUBLES, TEAM
   drawTypes: ['SINGLE_ELIMINATION', 'FEED_IN_CHAMPIONSHIP'],
-  drawSizes: [32, 64],                 // exact draw sizes
+  drawSizes: [32, 64],                 // exact draw sizes (preferred)
+  drawSize: 32,                        // single exact draw size; see note below
   maxDrawSize: 128,                    // or a maximum
   levels: [1, 2, 3],                   // tournament levels
   maxLevel: 5,                         // or a maximum
@@ -123,6 +254,16 @@ awardProfiles: [
   requireWinFirstRound: true,
 }
 ```
+
+> **`drawSize` vs `drawSizes`.** Both are honoured, they say the same thing, and they
+> now rank the same: each contributes one point of
+> [specificity](/docs/scale-engine/ranking-points-pipeline#profile-selection), so which
+> spelling a policy author reaches for no longer decides which profile is selected.
+> `drawSizes` remains the preferred form because it also expresses a set (`[32, 64]`).
+>
+> This is a change: the singular previously scored zero, so a profile narrowed by
+> `drawSize` tied with a catch-all and the tie fell to declaration order. A policy that
+> relied on losing that tie now selects the narrower profile instead.
 
 ## Position Value Resolution
 
@@ -246,18 +387,50 @@ See [Quality Win Points](/docs/scale-engine/quality-win-points) for detailed doc
 
 ## Doubles Attribution
 
-Controls how pair points flow to individual participant records:
+Declares the **ranking entity** for doubles events — whether the pair
+participant owns the award (and individual rankings ignore the doubles
+result), or each individual owns the award (and the pair is bookkeeping
+for who played together).
 
 ```js
 {
   doublesAttribution: 'fullToEach';
-} // each individual gets 100%
+} // each individual gets the full team value (ATP/WTA convention)
 {
   doublesAttribution: 'splitEven';
-} // each individual gets 50%
+} // each individual gets half the team value
+{
+  doublesAttribution: 'teamOnly';
+} // the pair owns the award; individuals get nothing from doubles
 ```
 
-When not specified, points remain only on the pair record.
+When not specified, the behavior matches `'teamOnly'` — the pair record
+holds the award and individuals are unaffected.
+
+Concretely:
+
+| Mode           | `personPoints`                         | `pairPoints`       |
+| -------------- | -------------------------------------- | ------------------ |
+| `'fullToEach'` | one entry per individual at full value | empty              |
+| `'splitEven'`  | one entry per individual at half value | empty              |
+| `'teamOnly'`   | empty                                  | one entry per pair |
+| _(undefined)_  | empty                                  | one entry per pair |
+
+The two halves of the output map (`personPoints`, `pairPoints`) are
+mutually exclusive for any given doubles draw — exactly one of them
+holds the award. This makes downstream aggregation (federated rank
+lists, individual rankings, team-only ladders) a simple matter of
+reading the right map without having to reconcile pair-vs-individual
+attribution at consume time.
+
+Every shipped pro-tennis policy (ATP, WTA, ITF Junior, ITF WTT, BASIC)
+declares `'fullToEach'` — the dominant convention across pro and amateur
+tennis is that each doubles partner's individual ranking gets the full
+team result. `'splitEven'` is supported for federations that treat the
+team's tournament outcome as a single pot shared between partners.
+`'teamOnly'` (and the legacy default) is for club / pair-tour formats
+where the pair is itself the ranking entity (recurring partnerships,
+team ladders, etc.).
 
 ## Specificity Scoring
 
@@ -438,6 +611,7 @@ Level is **not** the same as `tournamentLevel` in the TODS schema (which describ
 | ATP         | 1 = Grand Slam, 2 = ATP Finals, 8 = ATP 250, 15 = ITF M15 |
 | WTA         | 1 = Grand Slam, 2 = WTA Finals, 5 = WTA 250, 11 = ITF W15 |
 | ITF WTT     | 1 = $25K+H, 2 = $25K, 3 = $15K+H, 4 = $15K                |
+| ITF Junior  | 1 = Grand Slam, 2 = J500, 5 = J100, 9 = J30               |
 | USTA Junior | 1 = National Championships, 7 = Intermediate              |
 
 Policies that require a level will produce **no awards** when called without one (all profiles specify `levels` or `maxLevel`, so no profile matches). The Basic policy has no level-keyed values and produces points regardless of whether a level is passed.
@@ -454,7 +628,7 @@ const {
   POLICY_RANKING_POINTS_ATP,
   POLICY_RANKING_POINTS_WTA,
   POLICY_RANKING_POINTS_ITF_WTT,
-  POLICY_RANKING_POINTS_USTA_JUNIOR,
+  POLICY_RANKING_POINTS_ITF_JUNIOR,
 } = fixtures.policies;
 
 // Basic policy — no level needed
@@ -471,15 +645,41 @@ const atp = scaleEngine.getEventRankingPoints({
 });
 ```
 
-| Fixture                             | Levels                       | Period   | Best-of                  | Notes                                                   |
-| ----------------------------------- | ---------------------------- | -------- | ------------------------ | ------------------------------------------------------- |
-| `POLICY_RANKING_POINTS_BASIC`       | None (level-independent)     | —        | —                        | Simple position-based points, no level required         |
-| `POLICY_RANKING_POINTS_ATP`         | 15 (Grand Slam → ITF M15)    | 52 weeks | Singles: 19, Doubles: 18 | Mandatory counting rules, qualifying points             |
-| `POLICY_RANKING_POINTS_WTA`         | 11 (Grand Slam → ITF W15)    | 52 weeks | Singles: 18, Doubles: 12 | Draw size threshold arrays                              |
-| `POLICY_RANKING_POINTS_ITF_WTT`     | 4 ($25K+H → $15K)            | 52 weeks | 14                       | Qualifying-only system (post-2020, no main draw points) |
-| `POLICY_RANKING_POINTS_USTA_JUNIOR` | 7 (Nationals → Intermediate) | —        | —                        | 8 age categories, per-win with maxCountableMatches      |
+| Fixture                            | Levels                    | Period   | Best-of                  | Notes                                                   |
+| ---------------------------------- | ------------------------- | -------- | ------------------------ | ------------------------------------------------------- |
+| `POLICY_RANKING_POINTS_BASIC`      | None (level-independent)  | —        | —                        | Simple position-based points, no level required         |
+| `POLICY_RANKING_POINTS_ATP`        | 15 (Grand Slam → ITF M15) | 52 weeks | Singles: 19, Doubles: 18 | Mandatory counting rules, qualifying points             |
+| `POLICY_RANKING_POINTS_WTA`        | 11 (Grand Slam → ITF W15) | 52 weeks | Singles: 18, Doubles: 12 | Draw size threshold arrays                              |
+| `POLICY_RANKING_POINTS_ITF_WTT`    | 4 ($25K+H → $15K)         | 52 weeks | 14                       | Qualifying-only system (post-2020, no main draw points) |
+| `POLICY_RANKING_POINTS_ITF_JUNIOR` | 9 (Grand Slam → J30)      | —        | —                        | ITF Junior Circuit with qualifying and consolation      |
 
 These fixtures can be used as-is for preview/backoffice ranking point calculations, or as starting points for custom policies.
+
+### Federation policies served via CFS
+
+As of factory 4.0.0, federation-specific ranking policies (USTA Junior 2025/2026, Tennis Europe, LTA, Tennis Canada, Tennis Australia, ČTS) are no longer bundled. They live in CFS-served storage and reach the embedded factory engine via the [`policyRegistry`](/docs/concepts/policies#registry-served-query-time) at runtime:
+
+```js
+import { policyRegistry, scaleEngine } from 'tods-competition-factory';
+
+// Consumer (CFS, courthive-rankings, etc.) registers at boot, usually
+// from a GET /policies/catalog response:
+policyRegistry.register({
+  policyType: 'rankingPoints',
+  name: 'USTA_JUNIOR_2026',
+  version: '2026.01',
+  definition: /* fetched from CFS */,
+});
+
+// Engine resolves by name when policyDefinitions isn't passed:
+scaleEngine.getTournamentPoints({
+  tournamentRecord,
+  policyName: 'USTA_JUNIOR_2026',
+  level: 1,
+});
+```
+
+See [POLICY_DELIVERY](https://github.com/CourtHive/Mentat/blob/main/planning/POLICY_DELIVERY.md) in the orchestration repo for the full architecture and the per-consumer migration paths (TMX, courthive-rankings, courthive-ingest).
 
 ## Related Documentation
 

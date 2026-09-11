@@ -111,10 +111,9 @@ participants.forEach((p) => {
 
 Add calculated win/loss statistics:
 
-```js
-
 **API Reference:** [getParticipants](/docs/governors/query-governor#getparticipants)
 
+```js
 const { participants } = tournamentEngine.getParticipants({
   withStatistics: true,
 });
@@ -137,10 +136,9 @@ participants.forEach((p) => {
 
 Include information about all opponents faced:
 
-```js
-
 **API Reference:** [getParticipants](/docs/governors/query-governor#getparticipants)
 
+```js
 const { participants } = tournamentEngine.getParticipants({
   withOpponents: true,
   withMatchUps: true, // Often used together
@@ -158,10 +156,9 @@ participants.forEach((p) => {
 
 For PAIR, TEAM, or GROUP participants, expand to include full individual participant details:
 
-```js
-
 **API Reference:** [getParticipants](/docs/governors/query-governor#getparticipants)
 
+```js
 const { participants } = tournamentEngine.getParticipants({
   participantFilters: { participantTypes: ['PAIR'] },
   withIndividualParticipants: true
@@ -203,30 +200,44 @@ const { participants } = tournamentEngine.getParticipants({
 
 Convert timeItems (rankings/ratings) into accessible scale values:
 
-```js
-
 **API Reference:** [getParticipants](/docs/governors/query-governor#getparticipants)
 
+```js
 const { participants } = tournamentEngine.getParticipants({
   withScaleValues: true,
 });
 
 participants.forEach((p) => {
-  if (p.rankings?.SINGLES) {
-    console.log(`${p.person.standardFamilyName}: Rank ${p.rankings.SINGLES.ranking}`);
+  // `rankings.SINGLES` and `ratings.SINGLES` are ARRAYS, with one entry per
+  // distinct scaleName — a participant may hold WTN and UTR and NTRP at once.
+  // Address entries by `scaleName`, never by position: the set of scales is
+  // open, so the array has no canonical order and index [0] is only the scale
+  // you want for as long as it is the only one present.
+  const ranking = p.rankings?.SINGLES?.find(({ scaleName }) => scaleName === 'U18');
+  if (ranking) {
+    console.log(`${p.person.standardFamilyName}: Rank ${ranking.scaleValue}`);
   }
-  if (p.ratings?.SINGLES) {
-    console.log(`  Rating: ${p.ratings.SINGLES.rating}`);
+
+  // Each entry is `{ scaleName, scaleDate, scaleValue }`. For a multi-property
+  // scale, `scaleValue` is an object — WTN carries `wtnRating` and `confidence`.
+  // `scaleDate` reflects the timeItem's `itemDate` and may be undefined.
+  const rating = p.ratings?.SINGLES?.find(({ scaleName }) => scaleName === 'WTN');
+  if (rating) {
+    console.log(`  Rating: ${rating.scaleValue.wtnRating}, confidence ${rating.scaleValue.confidence}`);
   }
 });
 ```
 
-**Converts timeItems like:**
+:::note
+`scaleName` may carry a modifier suffix (`WTN.<modifier>`), so match with
+`startsWith` where modifiers are in play.
+:::
 
-```js
+**Converts timeItems like:**
 
 **API Reference:** [getParticipants](/docs/governors/query-governor#getparticipants)
 
+```js
 // From:
 timeItems: [{
   itemType: 'RANKING.SINGLES',
@@ -276,10 +287,9 @@ if (participant._membershipLevel === 'GOLD') {
 
 Add event and draw information:
 
-```js
-
 **API Reference:** [getParticipants](/docs/governors/query-governor#getparticipants)
 
+```js
 const { participants } = tournamentEngine.getParticipants({
   withEvents: true,
   withDraws: true,
@@ -300,10 +310,9 @@ participants.forEach((p) => {
 
 Detect participants with scheduling conflicts:
 
-```js
-
 **API Reference:** [getParticipants](/docs/governors/query-governor#getparticipants)
 
+```js
 const { participants, participantIdsWithConflicts } = tournamentEngine.getParticipants({
   withMatchUps: true,
   scheduleAnalysis: {
@@ -331,10 +340,9 @@ if (participantIdsWithConflicts.length > 0) {
 
 Retrieve fully enriched participant data for display:
 
-```js
-
 **API Reference:** [getParticipants](/docs/governors/query-governor#getparticipants)
 
+```js
 const { participants } = tournamentEngine.getParticipants({
   participantFilters: {
     participantTypes: ['INDIVIDUAL'],
@@ -412,10 +420,9 @@ const { participants } = tournamentEngine.getParticipants({
 
 For fast lookups without full hydration:
 
-```js
-
 **API Reference:** [getParticipants](/docs/governors/query-governor#getparticipants)
 
+```js
 const {
   participantMap, // Object: { [participantId]: participant }
 } = tournamentEngine.getParticipants({
@@ -432,10 +439,9 @@ const participant = participantMap['player-123'];
 
 Pass additional context to be added to all participants:
 
-```js
-
 **API Reference:** [getParticipants](/docs/governors/query-governor#getparticipants)
 
+```js
 const { participants } = tournamentEngine.getParticipants({
   context: {
     tournamentName: 'US Open 2024',
@@ -454,10 +460,9 @@ participants.forEach((p) => {
 
 ### INDIVIDUAL Hydration
 
-```js
-
 **API Reference:** [getParticipants](/docs/governors/query-governor#getparticipants)
 
+```js
 const { participants } = tournamentEngine.getParticipants({
   participantFilters: { participantTypes: ['INDIVIDUAL'] },
   withMatchUps: true,
@@ -469,10 +474,9 @@ const { participants } = tournamentEngine.getParticipants({
 
 ### PAIR Hydration
 
-```js
-
 **API Reference:** [getParticipants](/docs/governors/query-governor#getparticipants)
 
+```js
 const { participants } = tournamentEngine.getParticipants({
   participantFilters: { participantTypes: ['PAIR'] },
   withIndividualParticipants: true, // Critical for pairs
@@ -488,10 +492,9 @@ const { participants } = tournamentEngine.getParticipants({
 
 ### TEAM Hydration
 
-```js
-
 **API Reference:** [getParticipants](/docs/governors/query-governor#getparticipants)
 
+```js
 const { participants } = tournamentEngine.getParticipants({
   participantFilters: { participantTypes: ['TEAM'] },
   withIndividualParticipants: true, // Shows full roster

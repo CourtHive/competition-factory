@@ -1,6 +1,6 @@
 import { modifyMatchUpNotice } from '../../notifications/drawNotifications';
+import { firstClassOrExtension } from '@Acquire/firstClassOrExtension';
 import { makeDeepCopy } from '@Tools/makeDeepCopy';
-import { findExtension } from '@Acquire/findExtension';
 
 import { LINEUPS } from '@Constants/extensionConstants';
 import { HydratedMatchUp } from '@Types/hydrated';
@@ -31,12 +31,7 @@ export function updateSideLineUp({
   const sideExists =
     drawPositionSideNumber && matchUp.sides?.find((side) => side.sideNumber === drawPositionSideNumber);
 
-  const { extension: existingExtension } = findExtension({
-    element: drawDefinition,
-    name: LINEUPS,
-  });
-
-  const lineUps = existingExtension?.value ?? {};
+  const lineUps = firstClassOrExtension({ element: drawDefinition, attribute: 'lineUps', name: LINEUPS }) ?? {};
   const lineUp = makeDeepCopy(lineUps[teamParticipantId], false, true);
 
   if (sideExists) {
@@ -59,6 +54,7 @@ export function updateSideLineUp({
     tournamentId: tournamentRecord?.tournamentId,
     context: 'updateSidLineUp',
     eventId: event?.eventId,
+    event,
     drawDefinition,
     matchUp,
   });

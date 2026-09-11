@@ -92,7 +92,7 @@ describe('assignDrawPositionBye guards', () => {
     const drawProfiles = [{ drawSize: 8, participantsCount: 6 }];
     const {
       drawIds: [drawId],
-        } = mocksEngine.generateTournamentRecord({ drawProfiles, setState: true });
+    } = mocksEngine.generateTournamentRecord({ drawProfiles, setState: true });
 
     const {
       drawDefinition: {
@@ -235,9 +235,7 @@ describe('assignMatchUpSideParticipant', () => {
   });
 
   it('returns MISSING_MATCHUP_ID when matchUpId not provided', () => {
-    const eventProfiles = [
-      { drawProfiles: [{ drawSize: 4, drawType: AD_HOC, automated: true, roundsCount: 1 }] },
-    ];
+    const eventProfiles = [{ drawProfiles: [{ drawSize: 4, drawType: AD_HOC, automated: true, roundsCount: 1 }] }];
     const {
       drawIds: [drawId],
     } = mocksEngine.generateTournamentRecord({ eventProfiles, setState: true });
@@ -251,9 +249,7 @@ describe('assignMatchUpSideParticipant', () => {
   });
 
   it('returns INVALID_VALUES for invalid sideNumber', () => {
-    const eventProfiles = [
-      { drawProfiles: [{ drawSize: 4, drawType: AD_HOC, automated: true, roundsCount: 1 }] },
-    ];
+    const eventProfiles = [{ drawProfiles: [{ drawSize: 4, drawType: AD_HOC, automated: true, roundsCount: 1 }] }];
     const {
       drawIds: [drawId],
     } = mocksEngine.generateTournamentRecord({ eventProfiles, setState: true });
@@ -288,9 +284,7 @@ describe('assignMatchUpSideParticipant', () => {
   });
 
   it('assigns participant and swaps sides when no sideNumber provided', () => {
-    const eventProfiles = [
-      { drawProfiles: [{ drawSize: 4, drawType: AD_HOC, automated: true, roundsCount: 1 }] },
-    ];
+    const eventProfiles = [{ drawProfiles: [{ drawSize: 4, drawType: AD_HOC, automated: true, roundsCount: 1 }] }];
     const {
       drawIds: [drawId],
     } = mocksEngine.generateTournamentRecord({ eventProfiles, setState: true });
@@ -842,9 +836,7 @@ describe('double exit statuses', () => {
     const drawProfiles = [
       {
         drawSize: 4,
-        outcomes: [
-          { roundNumber: 1, roundPosition: 1, matchUpStatus: DOUBLE_WALKOVER },
-        ],
+        outcomes: [{ roundNumber: 1, roundPosition: 1, matchUpStatus: DOUBLE_WALKOVER }],
       },
     ];
     mocksEngine.generateTournamentRecord({ drawProfiles, setState: true });
@@ -935,7 +927,10 @@ describe('removeDirectedParticipants', () => {
     // remove the first match outcome
     const { matchUps } = tournamentEngine.allTournamentMatchUps();
     const r1Match = matchUps.find(
-      (m) => m.roundNumber === 1 && m.roundPosition === 1 && m.structureId === structures.find((s) => s.stage === MAIN)?.structureId,
+      (m) =>
+        m.roundNumber === 1 &&
+        m.roundPosition === 1 &&
+        m.structureId === structures.find((s) => s.stage === MAIN)?.structureId,
     );
 
     let result: any = tournamentEngine.setMatchUpStatus({
@@ -981,9 +976,7 @@ describe('adHocPositionSwap', () => {
   });
 
   it('returns error when participantIds is not valid', () => {
-    const eventProfiles = [
-      { drawProfiles: [{ drawSize: 4, drawType: AD_HOC, automated: true, roundsCount: 1 }] },
-    ];
+    const eventProfiles = [{ drawProfiles: [{ drawSize: 4, drawType: AD_HOC, automated: true, roundsCount: 1 }] }];
     const {
       drawIds: [drawId],
     } = mocksEngine.generateTournamentRecord({ eventProfiles, setState: true });
@@ -1008,9 +1001,7 @@ describe('adHocPositionSwap', () => {
   });
 
   it('successfully swaps participants in ad hoc draw', () => {
-    const eventProfiles = [
-      { drawProfiles: [{ drawSize: 4, drawType: AD_HOC, automated: true, roundsCount: 1 }] },
-    ];
+    const eventProfiles = [{ drawProfiles: [{ drawSize: 4, drawType: AD_HOC, automated: true, roundsCount: 1 }] }];
     const {
       drawIds: [drawId],
     } = mocksEngine.generateTournamentRecord({ eventProfiles, setState: true });
@@ -1138,9 +1129,7 @@ describe('positionSeeds', () => {
     expect(structure.seedAssignments).toBeDefined();
     expect(structure.seedAssignments.length).toBeGreaterThanOrEqual(2);
 
-    const seededParticipantIds = structure.seedAssignments
-      .filter((a) => a.participantId)
-      .map((a) => a.participantId);
+    const seededParticipantIds = structure.seedAssignments.filter((a) => a.participantId).map((a) => a.participantId);
 
     // each seeded participant should have a position assignment
     for (const pid of seededParticipantIds) {
@@ -1273,9 +1262,7 @@ describe('positionClear bye propagation', () => {
       const participantDP = bm.drawPositions?.find((dp) => !byePositions.includes(dp));
       if (participantDP) {
         // this participant should be in round 2 via bye advancement
-        const r2MatchUp = matchUps.find(
-          (m) => m.roundNumber === 2 && m.drawPositions?.includes(participantDP),
-        );
+        const r2MatchUp = matchUps.find((m) => m.roundNumber === 2 && m.drawPositions?.includes(participantDP));
         expect(r2MatchUp).toBeDefined();
 
         // clear this position
@@ -1324,9 +1311,7 @@ describe('progressExitStatus walkover propagation', () => {
     } = tournamentEngine.getEvent({ drawId });
     const mainStructure = structures.find((s) => s.stage === MAIN);
 
-    const r2MatchUps = matchUps.filter(
-      (m) => m.roundNumber === 2 && m.structureId === mainStructure?.structureId,
-    );
+    const r2MatchUps = matchUps.filter((m) => m.roundNumber === 2 && m.structureId === mainStructure?.structureId);
 
     if (r2MatchUps.length) {
       let result: any = tournamentEngine.setMatchUpStatus({
@@ -1585,15 +1570,12 @@ describe('FMLC bye target link removal', () => {
     const mainId = structures.find((s) => s.stage === MAIN)?.structureId;
 
     // find the matchUp with a bye
-    const byeMatchUp = matchUps.find(
-      (m) => m.matchUpStatus === BYE && m.roundNumber === 1 && m.structureId === mainId,
-    );
+    const byeMatchUp = matchUps.find((m) => m.matchUpStatus === BYE && m.roundNumber === 1 && m.structureId === mainId);
 
     if (byeMatchUp) {
       // find the non-bye matchUp in same round
       const normalMatchUp = matchUps.find(
-        (m) =>
-          m.matchUpStatus === COMPLETED && m.roundNumber === 1 && m.structureId === mainId,
+        (m) => m.matchUpStatus === COMPLETED && m.roundNumber === 1 && m.structureId === mainId,
       );
 
       if (normalMatchUp) {

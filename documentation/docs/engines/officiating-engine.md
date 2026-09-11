@@ -320,6 +320,62 @@ officiatingEngine.addCertificationRequirement({
 
 ---
 
+### Conflict of Interest
+
+Declared relationships that make an official unsuitable for an assignment. Self-declaration is how
+federations administer this — the factory cannot infer that an official coaches a player.
+
+#### addConflictDeclaration / removeConflictDeclaration
+
+```js
+// At least one of personId / participantId / organisationId is REQUIRED — a declaration that
+// identifies nobody can never match a participant.
+officiatingEngine.addConflictDeclaration({
+  officialRecordId,
+  personId: 'person-042',
+  relationship: 'COACH',
+});
+// → { success: true, declaration }
+
+officiatingEngine.removeConflictDeclaration({ officialRecordId, declarationId });
+```
+
+#### getOfficialConflicts
+
+Evaluates the official against a supplied participant list.
+
+```js
+officiatingEngine.getOfficialConflicts({
+  officialRecordId,
+  participants, // the participants to check against
+  nationalityCode, // optional — required for the NATIONALITY rule
+  policyDefinitions, // POLICY_OFFICIATING_CONFLICT_OF_INTEREST or a variant
+});
+// → { success: true, conflicts, blocked }
+```
+
+Rules absent from the policy, or present with `enabled: false`, are not evaluated at all — a policy is
+an allow-list of checks, never a silent partial application.
+
+:::note `getMatchUpOfficialConflicts` lives on `tournamentEngine`, not here
+The per-matchUp variant needs a `tournamentRecord` + `drawDefinition`, which officiating-engine state
+does not hold — this engine is an `OfficialRecord` aggregate. It is exposed on **`tournamentEngine`**,
+which resolves both from its own state:
+
+```js
+tournamentEngine.getMatchUpOfficialConflicts({
+  drawId, // tournamentRecord + drawDefinition resolved from engine state
+  matchUpId,
+  officialRecord, // optional registry record
+  policyDefinitions,
+});
+// → { success, conflicts, blocked, checkedParticipants }
+```
+
+Regression tests assert both halves: that it is absent here, and that it is present and state-resolving
+on `tournamentEngine`.
+:::
+
 ### Evaluation Policies
 
 #### addEvaluationPolicy
@@ -327,7 +383,8 @@ officiatingEngine.addCertificationRequirement({
 Attaches a structured evaluation template to the official record. Two built-in policies are provided as fixtures: `POLICY_OFFICIATING_EVALUATION_CHAIR_UMPIRE` and `POLICY_OFFICIATING_EVALUATION_REFEREE`.
 
 ```js
-import { POLICY_OFFICIATING_EVALUATION_CHAIR_UMPIRE } from 'tods-competition-factory';
+import { fixtures } from 'tods-competition-factory';
+const { POLICY_OFFICIATING_EVALUATION_CHAIR_UMPIRE } = fixtures.policies;
 
 officiatingEngine.addEvaluationPolicy({
   evaluationPolicy: POLICY_OFFICIATING_EVALUATION_CHAIR_UMPIRE,

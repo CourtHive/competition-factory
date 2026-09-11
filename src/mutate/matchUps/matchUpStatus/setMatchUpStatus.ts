@@ -1,9 +1,10 @@
-import { setMatchUpMatchUpFormat } from '@Mutate/matchUps/matchUpFormat/setMatchUpMatchUpFormat';
+import { applyMatchUpFormat } from '@Mutate/matchUps/matchUpFormat/applyMatchUpFormat';
 import { resolveTournamentRecords } from '@Helpers/parameters/resolveTournamentRecords';
 import { checkRequiredParameters } from '@Helpers/parameters/checkRequiredParameters';
 import { setMatchUpState } from '@Mutate/matchUps/matchUpStatus/setMatchUpState';
 import { matchUpScore } from '@Assemblies/generators/matchUps/matchUpScore';
 import { progressExitStatus } from '../drawPositions/progressExitStatus';
+import { getMatchUpFormat } from '@Query/hierarchical/getMatchUpFormat';
 import { decorateResult } from '@Functions/global/decorateResult';
 import { findPolicy } from '@Acquire/findPolicy';
 import { findEvent } from '@Acquire/findEvent';
@@ -71,7 +72,6 @@ export function setMatchUpStatus(params: SetMatchUpStatusArgs) {
 
   const {
     disableScoreValidation,
-    propagateExitStatus,
     policyDefinitions,
     tournamentRecord,
     disableAutoCalc,
@@ -103,6 +103,15 @@ export function setMatchUpStatus(params: SetMatchUpStatusArgs) {
     (policy?.allowChangePropagation !== undefined && policy.allowChangePropagation) ||
     undefined;
 
+  // DECISION: whether an exit status (WALKOVER/DEFAULTED) propagates into the consolation
+  // WHY: gated by the scoring policy so a provider can default it on/off; an explicit
+  // params.propagateExitStatus === true always overrides the policy (same precedence as
+  // allowChangePropagation — an explicit boolean false defers to the policy)
+  const propagateExitStatus =
+    (params.propagateExitStatus !== undefined && params.propagateExitStatus) ||
+    (policy?.propagateExitStatus !== undefined && policy.propagateExitStatus) ||
+    undefined;
+
   const { outcome, setTBlast } = params;
 
   // DECISION: Validate winningSide is 1 or 2 (or undefined)
@@ -116,7 +125,7 @@ export function setMatchUpStatus(params: SetMatchUpStatusArgs) {
   // WHY: Format affects score validation (e.g., number of sets, tiebreak rules)
   // Must be set first to ensure score is validated against correct format
   if (matchUpFormat) {
-    const result = setMatchUpMatchUpFormat({
+    const result = applyMatchUpFormat({
       tournamentRecord,
       drawDefinition,
       matchUpFormat,
@@ -126,15 +135,18 @@ export function setMatchUpStatus(params: SetMatchUpStatusArgs) {
     if (result.error) return result;
   }
 
-  // DECISION: Generate score strings from sets if not already provided
-  // WHY: Allows API to accept either structured sets data OR pre-formatted score strings
-  // This transformation ensures downstream code gets consistent score objects
-  if (outcome?.score?.sets && !outcome.score.scoreStringSide1) {
-    const { score: scoreObject } = matchUpScore({ ...outcome, setTBlast });
-    outcome.score = scoreObject;
-    // DECISION: Filter out empty sets (no scores recorded)
-    // WHY: Prevents invalid/incomplete sets from being saved
-    outcome.score.sets = outcome.score.sets.filter(
+  // DECISION: score strings are DERIVED from score.sets — never accepted from the caller
+  // WHY: validateScore only type-checks scoreStringSide1/scoreStringSide2; nothing compares them to
+  // score.sets. Previously generation was skipped whenever the caller supplied a string, so an
+  // integration that sent its own strings bypassed generation permanently and factory persisted
+  // strings it could never emit and its own parseScoreString could not round-trip — including
+  // set scores present in the string but absent from sets. Regenerating unconditionally makes
+  // score.sets the single source of truth. See competition-factory#4564.
+  if (outcome?.score?.sets) {
+    // DECISION: Filter out empty sets BEFORE generating score strings
+    // WHY: Prevents invalid/incomplete sets from being saved, and filtering afterwards left the
+    // generated string describing a set that had just been removed from score.sets
+    const sets = outcome.score.sets.filter(
       (set) =>
         set.side1Score ||
         set.side2Score ||
@@ -143,6 +155,26 @@ export function setMatchUpStatus(params: SetMatchUpStatusArgs) {
         set.side1PointScore ||
         set.side2PointScore,
     );
+
+    // DECISION: resolve the matchUp's effective format rather than relying on outcome.matchUpFormat
+    // WHY: generateScoreString needs the format to recognize a tiebreak-only deciding set (F:TB10) and
+    // render it as [10-8]. The format usually lives on the matchUp, not on the outcome, so spreading
+    // outcome alone left it undefined and the deciding set rendered as a plain game score.
+    // Resolution failure yields undefined — the same format-less rendering as before, never worse.
+    const formatResult: any = matchUpFormat
+      ? undefined
+      : getMatchUpFormat({ tournamentRecord, drawDefinition, matchUpId, event });
+    const effectiveMatchUpFormat = matchUpFormat ?? formatResult?.matchUpFormat;
+
+    const { score: scoreObject } = matchUpScore({
+      ...outcome,
+      matchUpFormat: effectiveMatchUpFormat,
+      score: { ...outcome.score, sets },
+      setTBlast,
+    });
+    // matchUpScore carries forward every non-derived attribute of the score it was handed
+    // (score.side1PointScore and friends), so assigning its result is not lossy
+    outcome.score = scoreObject;
   }
 
   // DECISION: Delegate to setMatchUpState for core status/score setting logic
@@ -190,7 +222,7 @@ export function setMatchUpStatus(params: SetMatchUpStatusArgs) {
         sourceMatchUpStatusCodes: result.context.sourceMatchUpStatusCodes,
         sourceMatchUpStatus: result.context.sourceMatchUpStatus,
         loserParticipantId: result.context.loserParticipantId,
-        propagateExitStatus: params.propagateExitStatus,
+        propagateExitStatus,
         tournamentRecord: params.tournamentRecord,
         loserMatchUp: result.context.loserMatchUp,
         matchUpsMap: result.context.matchUpsMap,

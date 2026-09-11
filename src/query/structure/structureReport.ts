@@ -75,9 +75,18 @@ export function getStructureReports(params: GetStructureReportsArgs) {
   };
 
   const tournamentStructureData = tournamentRecord?.events?.flatMap(
-    ({ timeItems: eventTimeItems, drawDefinitions = [], extensions, eventType, eventName, eventId, category }) => {
-      const flightProfile = extensions?.find((x) => x.name === FLIGHT_PROFILE);
-      const flightNumbers = flightProfile?.value?.flights?.map((flight) => ({
+    ({
+      timeItems: eventTimeItems,
+      drawDefinitions = [],
+      extensions,
+      eventType,
+      eventName,
+      eventId,
+      category,
+      flightProfile: firstClassFlightProfile,
+    }) => {
+      const flightProfileValue = firstClassFlightProfile ?? extensions?.find((x) => x.name === FLIGHT_PROFILE)?.value;
+      const flightNumbers = flightProfileValue?.flights?.map((flight) => ({
         [flight.drawId]: flight.flightNumber,
       }));
       const flightMap: any = flightNumbers && Object.assign({}, ...flightNumbers);

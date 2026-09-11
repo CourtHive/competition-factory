@@ -1,3 +1,4 @@
+import { getTournamentInfo } from '@Query/tournaments/getTournamentInfo';
 import { setSubscriptions } from '@Global/state/globalState';
 import { dateStringDaysChange } from '@Tools/dateTime';
 import mocksEngine from '@Assemblies/engines/mock';
@@ -253,4 +254,18 @@ test('empty tournament handles dashboard booleans gracefully', () => {
   expect(tournamentInfo.matchUpStats).toEqual({ total: 0, completed: 0, scheduled: 0, percentComplete: 0 });
   expect(tournamentInfo.structures).toEqual([]);
   expect(tournamentInfo.venues).toEqual([]);
+});
+
+test('getTournamentInfo surfaces the owning provider (parentOrganisation)', () => {
+  const { tournamentRecord } = mocksEngine.generateTournamentRecord();
+  tournamentRecord.parentOrganisation = { organisationId: 'BOBOCA', organisationName: 'Boboca Tennis' };
+  const { tournamentInfo } = getTournamentInfo({ tournamentRecord });
+  expect(tournamentInfo.parentOrganisation).toEqual({ organisationId: 'BOBOCA', organisationName: 'Boboca Tennis' });
+});
+
+test('getTournamentInfo omits parentOrganisation when the tournament has none', () => {
+  const { tournamentRecord } = mocksEngine.generateTournamentRecord();
+  delete tournamentRecord.parentOrganisation;
+  const { tournamentInfo } = getTournamentInfo({ tournamentRecord });
+  expect(tournamentInfo.parentOrganisation).toBeUndefined();
 });

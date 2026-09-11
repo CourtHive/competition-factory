@@ -1,9 +1,11 @@
+import { firstClassGroupLeafOrExtension } from '@Mutate/extensions/setGroupLeafOrExtension';
 import mocksEngine from '@Assemblies/engines/mock';
 import tournamentEngine from '@Engines/syncEngine';
 import { expect, test } from 'vitest';
 
 import { FORMAT_STANDARD } from '@Fixtures/scoring/matchUpFormats';
 import { EVENT_NOT_FOUND, MISSING_TOURNAMENT_RECORD } from '@Constants/errorConditionConstants';
+import { SCHEDULE_TIMING } from '@Constants/extensionConstants';
 
 // categoryTypes
 const JUNIOR = 'JUNIOR';
@@ -70,7 +72,13 @@ test.each([tournamentEngine])(
 
     tournamentIds.forEach((tournamentId) => {
       const tournamentRecord = tournamentRecords[tournamentId];
-      expect(tournamentRecord.extensions[0].value.matchUpAverageTimes.length).toEqual(1);
+      const timing = firstClassGroupLeafOrExtension({
+        element: tournamentRecord,
+        groupAttribute: 'scheduling',
+        leafAttribute: 'timing',
+        name: SCHEDULE_TIMING,
+      });
+      expect(timing.matchUpAverageTimes.length).toEqual(1);
       tournamentEngine.setTournamentId(tournamentId);
       result = tournamentEngine.getMatchUpFormatTiming({
         matchUpFormat,

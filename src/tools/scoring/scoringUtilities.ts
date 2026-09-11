@@ -31,8 +31,9 @@ export function extractFormatProperties(parsedFormat: any) {
 
     // Set level
     setThreshold: setFormat?.setTo,
-    setMinDiff: setFormat?.noTiebreak ? 2 : 0,
+    setMinDiff: setFormat?.noTiebreak ? (setFormat.winBy ?? 2) : 0,
     setHasDecider: !!setFormat?.tiebreakFormat || !!setFormat?.tiebreakSet,
+    setWinBy: setFormat?.winBy,
 
     // Tiebreak level
     tiebreakAt: setFormat?.tiebreakAt || setFormat?.setTo,
@@ -54,6 +55,7 @@ export function extractFormatProperties(parsedFormat: any) {
     finalSetTiebreakAt: finalSetFormat?.tiebreakAt,
     finalSetTiebreakTo: finalSetFormat?.tiebreakFormat?.tiebreakTo || finalSetFormat?.tiebreakSet?.tiebreakTo,
     finalSetNoTiebreak: finalSetFormat?.noTiebreak,
+    finalSetWinBy: finalSetFormat?.winBy,
   };
 }
 
@@ -90,7 +92,8 @@ export function getFormatDescription(code: string): string | undefined {
     if (props.finalSetDiffers) {
       desc += ', final set ';
       if (props.finalSetNoTiebreak) {
-        desc += 'by 2 games';
+        const finalWinBy = props.finalSetWinBy ?? 2;
+        desc += `by ${finalWinBy} game${finalWinBy === 1 ? '' : 's'}`;
       } else if (props.finalSetTiebreakTo) {
         desc += `tiebreak to ${props.finalSetTiebreakTo}`;
       }

@@ -158,6 +158,6 @@ console.log(result.plans.slice(0, 5)); // top 5 ranked plans
 ## Related
 
 - **`predictMatchUpCompetitiveBands` / `predictDrawCompetitiveBands`** — the band-distribution predictor consumed by step 5. See the [Competitive Bands Policy](../../policies/competitiveBands.md) page for the prediction model and policy controls.
-- **[Distribution Visualization](./distribution.md)** — the rating-distribution donut/histogram component used alongside the engine output in the wizard UI.
-- **[Example Table](./example.md)** — a worked example showing the full ranked plan table for a sample participant pool.
+- **Distribution Visualization** — the rating-distribution donut/histogram component used alongside the engine output in the wizard UI. _(Stub — landing in Phase 1.B; will re-link once published.)_
+- **Example Table** — a worked example showing the full ranked plan table for a sample participant pool. _(Stub — landing in Phase 1.C; will re-link once published.)_
 - **Format Wizard UI** (TMX) — the deterministic engine here is consumed by a tournament-context page (beta-flagged); UI rendering, the "Under consideration" lane, the per-event scoping, and "Apply Plan" mutations are documented in TMX, not factory.

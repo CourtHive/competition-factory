@@ -1,14 +1,15 @@
+import { setFirstClassOrExtension } from '../extensions/setFirstClassOrExtension';
 import { removeLineUpSubstitutions } from './removeLineUpSubstitutions';
-import { validateLineUp } from '@Validators/validateTeamLineUp';
+import { firstClassOrExtension } from '@Acquire/firstClassOrExtension';
 import { addDrawNotice } from '../notifications/drawNotifications';
-import { findExtension } from '@Acquire/findExtension';
-import { addExtension } from '../extensions/addExtension';
+import { validateLineUp } from '@Validators/validateTeamLineUp';
 
+// constants and types
+import { ErrorType, MISSING_DRAW_DEFINITION, MISSING_PARTICIPANT_ID } from '@Constants/errorConditionConstants';
 import { DrawDefinition, TieFormat } from '@Types/tournamentTypes';
 import { LINEUPS } from '@Constants/extensionConstants';
 import { SUCCESS } from '@Constants/resultConstants';
 import { LineUp } from '@Types/factoryTypes';
-import { ErrorType, MISSING_DRAW_DEFINITION, MISSING_PARTICIPANT_ID } from '@Constants/errorConditionConstants';
 
 // update an extension on the drawDefinition that keeps track of the latest lineUp for all team participantIds
 // each matchUp in the draw will use this as the template on first load and then write lineUp to the matchUp
@@ -31,17 +32,12 @@ export function updateTeamLineUp({ drawDefinition, participantId, tieFormat, lin
   const validation = validateLineUp({ lineUp, tieFormat });
   if (!validation.valid) return validation;
 
-  const { extension: existingExtension } = findExtension({
-    element: drawDefinition,
-    name: LINEUPS,
-  });
+  const existing = firstClassOrExtension({ element: drawDefinition, attribute: 'lineUps', name: LINEUPS });
 
-  const value = existingExtension?.value ?? {};
+  const value = existing ?? {};
   value[participantId] = removeLineUpSubstitutions({ lineUp });
 
-  const extension = { name: LINEUPS, value };
-
-  addExtension({ element: drawDefinition, extension });
+  setFirstClassOrExtension({ element: drawDefinition, attribute: 'lineUps', name: LINEUPS, value });
   addDrawNotice({ drawDefinition });
 
   return { ...SUCCESS };

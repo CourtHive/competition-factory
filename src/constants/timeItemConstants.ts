@@ -9,10 +9,13 @@ export const COURT_ORDER = 'SCHEDULE.COURT.ORDER';
 export const COURT_ANNOTATION = 'SCHEDULE.COURT.ANNOTATION';
 
 export const SCHEDULED_DATE = 'SCHEDULE.DATE';
+export const END_DATE = 'SCHEDULE.DATE.END'; // sparse: written only when a matchUp's END_TIME falls on the day after scheduledDate (crosses midnight)
 export const COMPLETED_DATE = 'COMPLETED.DATE'; // considering adding this timeItem on completed score entry provided date is between tournament startDate/endDate
 
 export const HOME_PARTICIPANT_ID = 'HOME_PARTICIPANT_ID';
 export const ASSIGN_OFFICIAL = 'SCHEDULE.ASSIGNMENT.OFFICIAL';
+export const ASSIGN_SCOREKEEPER = 'SCHEDULE.ASSIGNMENT.SCOREKEEPER';
+export const ASSIGN_TIMEKEEPER = 'SCHEDULE.ASSIGNMENT.TIMEKEEPER';
 export const SCHEDULED_TIME = 'SCHEDULE.TIME.SCHEDULED';
 export const START_TIME = 'SCHEDULE.TIME.START';
 export const STOP_TIME = 'SCHEDULE.TIME.STOP';
@@ -54,6 +57,8 @@ export const timeItemConstants = {
   ALLOCATE_COURTS,
   ASSIGN_COURT,
   ASSIGN_OFFICIAL,
+  ASSIGN_SCOREKEEPER,
+  ASSIGN_TIMEKEEPER,
   ASSIGN_VENUE,
   CHECK_IN,
   CHECK_OUT,
@@ -61,6 +66,7 @@ export const timeItemConstants = {
   COURT_ANNOTATION,
   COURT_ORDER,
   ELIGIBILITY,
+  END_DATE,
   END_TIME,
   FOLLOWED_BY,
   MEDICAL,
@@ -88,4 +94,4 @@ export const timeItemConstants = {
   SUSPENSION,
   TIME_MODIFIERS,
   TO_BE_ANNOUNCED,
-};
+} as const;

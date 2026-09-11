@@ -1,4 +1,5 @@
 import { checkRequiredParameters } from '@Helpers/parameters/checkRequiredParameters';
+import { modifyEventNotice } from '@Mutate/notifications/eventNotifications';
 import { isValidWeekdaysValue } from '@Validators/isValidWeekdaysValue';
 import { requireParams } from '@Helpers/parameters/requireParams';
 import { decorateResult } from '@Functions/global/decorateResult';
@@ -44,6 +45,11 @@ export function setEventStartDate({ tournamentRecord, event, startDate }) {
 
   event.startDate = startDate;
 
+  // event dates are first-class + projected (read-model events row); the standalone
+  // setter must dispatch its own MODIFY_EVENT (setEventDates only fires it from the
+  // wrapper). Deduped by eventId, so the wrapper's redundant notice is harmless.
+  modifyEventNotice({ event, tournamentId: tournamentRecord?.tournamentId });
+
   return { ...SUCCESS };
 }
 
@@ -74,6 +80,10 @@ export function setEventEndDate(params) {
   }
 
   event.endDate = endDate;
+
+  // see setEventStartDate: dispatch MODIFY_EVENT from the standalone setter (deduped by eventId).
+  modifyEventNotice({ event, tournamentId: tournamentRecord?.tournamentId });
+
   return { ...SUCCESS };
 }
 
@@ -138,6 +148,8 @@ export function setEventDates(params: SetEventDatesArgs) {
 
   if (activeDates) event.activeDates = activeDates;
   if (weekdays) event.weekdays = weekdays;
+
+  modifyEventNotice({ event, tournamentId: tournamentRecord?.tournamentId });
 
   return { ...SUCCESS };
 }

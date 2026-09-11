@@ -8,6 +8,22 @@ export const ANACHRONISM = {
   message: 'Chronological error; time violation.',
   code: 'ANACHRONISM',
 };
+// A schedule attribute that was accepted but not written. Reported rather than
+// thrown because reading a schedule and writing it back is a supported pattern;
+// `errorOnUnknownAttributes` escalates it, exactly as `errorOnAnachronism` does
+// for ANACHRONISM.
+export const UNWRITABLE_SCHEDULE_ATTRIBUTES = {
+  message: 'Schedule attributes accepted but not written.',
+  code: 'UNWRITABLE_SCHEDULE_ATTRIBUTES',
+};
+// Assigning a BYE to a drawPosition whose matchUp already holds a court/time is
+// ambiguous: the operator may be mid-swap and want the placement kept, or may want
+// the slot released. Rather than guess, the position-action path refuses until the
+// caller states which, via `preserveScheduling: true | false`.
+export const MATCHUP_HAS_SCHEDULING = {
+  message: 'MatchUp has scheduling information; specify preserveScheduling.',
+  code: 'ERR_MATCHUP_HAS_SCHEDULING',
+};
 export const DUPLICATE_ENTRY = {
   message: 'Duplicate entry',
   code: 'DUPLICATE_ENTRY',
@@ -73,6 +89,18 @@ export const DRAW_POSITION_ASSIGNED = {
 export const SCHEDULE_NOT_CLEARED = {
   message: 'Schedule not cleared',
   code: 'ERR_UNCHANGED_SCHEDULE_NOT_CLEARED',
+};
+export const SCHEDULE_LOCKED = {
+  message: 'matchUp schedule is locked',
+  code: 'ERR_SCHEDULE_LOCKED',
+};
+export const MATCHUPS_SCHEDULED_OUTSIDE_DATES = {
+  message: 'MatchUps are scheduled outside the new tournament dates',
+  code: 'ERR_MATCHUPS_SCHEDULED_OUTSIDE_DATES',
+};
+export const MATCHUPS_COMPLETED_OUTSIDE_DATES = {
+  message: 'Completed matchUps were played outside the new tournament dates',
+  code: 'ERR_MATCHUPS_COMPLETED_OUTSIDE_DATES',
 };
 export const SCHEDULE_CONFLICT_DOUBLE_BOOKING = {
   message: 'Schedule conflict: court slot already occupied',
@@ -287,6 +315,14 @@ export const INVALID_MATCHUP_STATUS = {
   message: 'Invalid matchUpStatus',
   code: 'ERR_INVALID_MATCHUP_STATUS',
 };
+export const RESULT_NOT_VALIDATED = {
+  message: 'Result has not been validated',
+  code: 'ERR_RESULT_NOT_VALIDATED',
+};
+export const MATCHUP_STATUS_OUT_OF_SCOPE = {
+  message: 'matchUpStatus is not valid in this context',
+  code: 'ERR_MATCHUP_STATUS_OUT_OF_SCOPE',
+};
 export const INVALID_TIE_FORMAT = {
   message: 'Invalid tieFormat',
   code: 'ERR_INVALID_TIE_FORMAT',
@@ -448,6 +484,10 @@ export const MISSING_DATE_RANGE = {
 export const INVALID_TIME_ZONE = {
   message: 'Invalid Time Zone',
   code: 'ERR_INVALID_TIME_ZONE',
+};
+export const CONFLICTING_TIME_ZONES = {
+  message: 'Conflicting venue time zones and no tournament localTimeZone is set',
+  code: 'ERR_CONFLICTING_TIME_ZONES',
 };
 export const INVALID_EMBARGO = {
   message: 'Invalid embargo: must be an ISO 8601 datetime with timezone (Z or ±HH:MM offset)',
@@ -621,6 +661,11 @@ export const INSUFFICIENT_DRAW_POSITIONS = {
   code: 'ERR_INSUFFICIENT_DRAW_POSITIONS',
 };
 
+export const INSUFFICIENT_UUIDS = {
+  message: 'Supplied uuids pool exhausted',
+  code: 'ERR_INSUFFICIENT_UUIDS',
+};
+
 export const MISSING_PENALTY_TYPE = {
   message: 'Missing penaltyType',
   code: 'ERR_MISSING_PENALTY_TYPE',
@@ -649,6 +694,14 @@ export const COURT_EXISTS = {
 export const BOOKING_NOT_FOUND = {
   message: 'Booking not found',
   code: 'ERR_NOT_FOUND_BOOKING',
+};
+export const SCHEDULE_SCENARIO_NOT_FOUND = {
+  message: 'Schedule scenario not found',
+  code: 'ERR_NOT_FOUND_SCHEDULE_SCENARIO',
+};
+export const SCHEDULE_SCENARIO_EXISTS = {
+  message: 'Schedule scenario exists',
+  code: 'ERR_EXISTING_SCHEDULE_SCENARIO',
 };
 export const EXISTING_DRAFT = {
   message: 'An active draft already exists for this draw',
@@ -853,11 +906,30 @@ export const SCORES_PRESENT = {
   code: 'ERR_SCORES_PRESENT',
 };
 
+export const TOURNAMENT_CATEGORY_IN_USE = {
+  message: 'Tournament category is referenced by one or more events',
+  code: 'ERR_TOURNAMENT_CATEGORY_IN_USE',
+};
+
+export const REGISTRATION_NOT_FOUND = {
+  message: 'Practice registration not found',
+  code: 'ERR_NOT_FOUND_REGISTRATION',
+};
+
+export const CAPACITY_EXCEEDED = {
+  message: 'Booking capacity exceeded',
+  code: 'ERR_CAPACITY_EXCEEDED',
+};
+
 export const errorConditionConstants = {
   ANACHRONISM,
+  UNWRITABLE_SCHEDULE_ATTRIBUTES,
   BOOKING_NOT_FOUND,
   CANNOT_CHANGE_WINNING_SIDE,
+  CAPACITY_EXCEEDED,
+  REGISTRATION_NOT_FOUND,
   CANNOT_MODIFY_TIEFORMAT,
+  TOURNAMENT_CATEGORY_IN_USE,
   CANNOT_MODIFY_PARTICIPANT_TYPE,
   CANNOT_REMOVE_MAIN_STRUCTURE,
   CANNOT_REMOVE_PARTICIPANTS,
@@ -894,6 +966,7 @@ export const errorConditionConstants = {
   INCOMPATIBLE_MATCHUP_STATUS,
   INCOMPLETE_SOURCE_STRUCTURE,
   INSUFFICIENT_DRAW_POSITIONS,
+  INSUFFICIENT_UUIDS,
   INVALID_ACTION,
   INVALID_ASSIGNMENT,
   INVALID_BOOKINGS,
@@ -942,6 +1015,8 @@ export const errorConditionConstants = {
   INVALID_VALUES,
   INVALID_WINNING_SIDE,
   LUCKY_DRAW_BYE_LIMIT,
+  MATCHUPS_COMPLETED_OUTSIDE_DATES,
+  MATCHUP_HAS_SCHEDULING,
   MATCHUP_NOT_FOUND,
   METHOD_NOT_FOUND,
   MUTATION_LOCKED,
@@ -1024,6 +1099,7 @@ export const errorConditionConstants = {
   PENALTY_NOT_FOUND,
   POLICY_NOT_ATTACHED,
   POLICY_NOT_FOUND,
+  SCHEDULE_LOCKED,
   SCHEDULE_NOT_CLEARED,
   SCHEDULE_CONFLICT_DOUBLE_BOOKING,
   SCHEDULE_CONFLICT_COURT_UNAVAILABLE,
@@ -1041,6 +1117,6 @@ export const errorConditionConstants = {
   UNRECOGNIZED_MATCHUP_STATUS,
   VALUE_UNCHANGED,
   VENUE_EXISTS,
-};
+} as const;
 
 export default errorConditionConstants;

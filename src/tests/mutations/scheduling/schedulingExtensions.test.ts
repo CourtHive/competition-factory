@@ -1,3 +1,4 @@
+import { firstClassGroupLeafOrExtension } from '@Mutate/extensions/setGroupLeafOrExtension';
 import mocksEngine from '@Assemblies/engines/mock';
 import tournamentEngine from '@Engines/syncEngine';
 import { expect, it } from 'vitest';
@@ -117,34 +118,30 @@ it('can modify timing for multiple matchUpFormat codes', () => {
     averageTimes: [{ categoryTypes: [ADULT], minutes: { default: 137 } }],
     matchUpFormat: shortTB10,
   });
-  let { extension } = tournamentEngine.findExtension({
-    name: SCHEDULE_TIMING,
-    discover: true,
-  });
+  // tournament-level timing is first-class `scheduling.timing` in NATIVE, an extension in LEGACY
+  const getTiming = () =>
+    firstClassGroupLeafOrExtension({
+      element: tournamentEngine.getTournament().tournamentRecord,
+      groupAttribute: 'scheduling',
+      leafAttribute: 'timing',
+      name: SCHEDULE_TIMING,
+    });
 
-  expect(extension.value.matchUpAverageTimes.length).toEqual(2);
+  expect(getTiming().matchUpAverageTimes.length).toEqual(2);
 
   tournamentEngine.modifyMatchUpFormatTiming({
     averageTimes: [{ categoryTypes: [ADULT], minutes: { default: 117 } }],
     matchUpFormat: shortTB10,
   });
 
-  ({ extension } = tournamentEngine.findExtension({
-    name: SCHEDULE_TIMING,
-    discover: true,
-  }));
-  expect(extension.value.matchUpAverageTimes.length).toEqual(2);
+  expect(getTiming().matchUpAverageTimes.length).toEqual(2);
 
   tournamentEngine.modifyMatchUpFormatTiming({
     averageTimes: [{ categoryTypes: [ADULT], minutes: { default: 107 } }],
     matchUpFormat: short3TB7,
   });
 
-  ({ extension } = tournamentEngine.findExtension({
-    name: SCHEDULE_TIMING,
-    discover: true,
-  }));
-  expect(extension.value.matchUpAverageTimes.length).toEqual(3);
+  expect(getTiming().matchUpAverageTimes.length).toEqual(3);
 
   let { methods } = tournamentEngine.getMatchUpFormatTimingUpdate();
   expect(methods.length).toEqual(1);
@@ -156,11 +153,12 @@ it('can modify timing for multiple matchUpFormat codes', () => {
     eventId,
   });
 
-  ({ extension } = tournamentEngine.findExtension({
+  // event-level timing remains an extension in all writeModes (only tournament-level is promoted)
+  const { extension } = tournamentEngine.findExtension({
     name: SCHEDULE_TIMING,
     discover: ['event'],
     eventId,
-  }));
+  });
   expect(extension.value.matchUpAverageTimes.length).toEqual(1);
 
   ({ methods } = tournamentEngine.getMatchUpFormatTimingUpdate());

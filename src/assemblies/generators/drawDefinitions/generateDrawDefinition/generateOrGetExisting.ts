@@ -69,13 +69,26 @@ export function generateOrGetExisting(params: GenerateOrGetExisting): ResultType
 
   const entries = params.drawEntries ?? params.eventEntries ?? [];
 
+  // Route to processExistingDrawDefinition when adding qualifying to a draw that
+  // already has a real main structure but no qualifying placeholder. Without
+  // this, generateNewDrawDefinition tries to regenerate the main and collides
+  // with the existing one — surfacing as EXISTING_STAGE (or, when the existing
+  // main lacks matchUps but has qualifier slots, as INVALID_DRAW_SIZE / a
+  // STRUCTURE_NOT_FOUND in prepareStage for the QUALIFYING stage).
+  const addingQualifyingToExistingMain = !!(
+    setUpResult.existingDrawDefinition &&
+    setUpResult.structureId &&
+    !setUpResult.existingQualifyingPlaceholderStructureId &&
+    params.qualifyingProfiles?.length
+  );
+
   const genResult: ResultType & {
     drawDefinition?: DrawDefinition;
     positioningReports?: any[];
     structureId?: string;
     conflicts?: any[];
   } =
-    (setUpResult.existingQualifyingPlaceholderStructureId &&
+    ((setUpResult.existingQualifyingPlaceholderStructureId || addingQualifyingToExistingMain) &&
       processExistingDrawDefinition({ ...params, ...setUpResult })) ||
     generateNewDrawDefinition({ ...params, ...setUpResult, entries });
   if (genResult.error) return decorateResult({ result: genResult, stack });

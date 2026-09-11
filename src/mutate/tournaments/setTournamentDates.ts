@@ -2,6 +2,7 @@ import { clearScheduledMatchUps } from '@Mutate/matchUps/schedule/clearScheduled
 import { checkRequiredParameters } from '@Helpers/parameters/checkRequiredParameters';
 import { allTournamentMatchUps } from '@Query/matchUps/getAllTournamentMatchUps';
 import { updateCourtAvailability } from '@Mutate/venues/updateCourtAvailability';
+import { modifyEventNotice } from '@Mutate/notifications/eventNotifications';
 import { isValidWeekdaysValue } from '@Validators/isValidWeekdaysValue';
 import { definedAttributes } from '@Tools/definedAttributes';
 import { addNotice } from '@Global/state/globalState';
@@ -9,12 +10,19 @@ import { generateDateRange } from '@Tools/dateTime';
 import { dateValidation } from '@Validators/regex';
 
 // constants and types
-import { INVALID_DATE, INVALID_VALUES, SCHEDULE_NOT_CLEARED } from '@Constants/errorConditionConstants';
+import { completedMatchUpStatuses } from '@Constants/matchUpStatusConstants';
 import { MODIFY_TOURNAMENT_DETAIL } from '@Constants/topicConstants';
 import { INVALID, VALIDATE } from '@Constants/attributeConstants';
 import { Tournament, WeekdayUnion } from '@Types/tournamentTypes';
 import { SUCCESS } from '@Constants/resultConstants';
 import { ResultType } from '@Types/factoryTypes';
+import {
+  INVALID_DATE,
+  INVALID_VALUES,
+  MATCHUPS_COMPLETED_OUTSIDE_DATES,
+  MATCHUPS_SCHEDULED_OUTSIDE_DATES,
+  SCHEDULE_NOT_CLEARED,
+} from '@Constants/errorConditionConstants';
 
 type SetTournamentDatesArgs = {
   tournamentRecord: Tournament;
@@ -22,13 +30,24 @@ type SetTournamentDatesArgs = {
   activeDates?: string[];
   startDate?: string;
   endDate?: string;
+  // when true, proceed with the date change and unschedule any matchUps that fall
+  // outside the new range (rather than rejecting with MATCHUPS_SCHEDULED_OUTSIDE_DATES)
+  force?: boolean;
 };
 export function setTournamentDates(params: SetTournamentDatesArgs): ResultType & {
+  // matchUpIds / dates scheduled outside the requested range (populated on the rejection path)
+  outOfRangeMatchUpIds?: string[];
+  outOfRangeDates?: string[];
+  // completed matchUps played outside the requested range — a hard block that force
+  // cannot override (unscheduling would erase the record of when a match was played)
+  completedOutOfRangeMatchUpIds?: string[];
+  completedOutOfRangeDates?: string[];
+  // matchUpIds unscheduled when force: true was used to push past the rejection
   unscheduledMatchUpIds?: string[];
   datesRemoved?: string[];
   datesAdded?: string[];
 } {
-  const { tournamentRecord, startDate, endDate, weekdays } = params;
+  const { tournamentRecord, startDate, endDate, weekdays, force } = params;
   const activeDates = params.activeDates?.filter(Boolean);
 
   const paramsCheck = checkRequiredParameters(params, [
@@ -71,6 +90,58 @@ export function setTournamentDates(params: SetTournamentDatesArgs): ResultType &
     checkScheduling = true;
   }
 
+  // When matchUps are scheduled outside the prospective new range, reject by default
+  // (checked before any mutation so the record is left untouched). With force: true the
+  // caller has explicitly opted in to unscheduling them — defer the clear until after the
+  // new dates are applied.
+  let forcedUnscheduling: { scheduledDates: string[]; matchUpIds: string[] } | undefined;
+  if (checkScheduling) {
+    const prospectiveStart = startDate ?? tournamentRecord.startDate;
+    const prospectiveEnd = endDate ?? tournamentRecord.endDate;
+    const { scheduledDates, matchUpIds, completedDates, completedMatchUpIds } = findMatchUpsScheduledOutsideDates({
+      tournamentRecord,
+      startDate: prospectiveStart,
+      endDate: prospectiveEnd,
+    });
+
+    // Completed matchUps were actually played on those dates, so the tournament range
+    // MUST include them. This is a hard block that force cannot override — unscheduling
+    // a completed matchUp would erase the record of when it was played, and a date on
+    // which a match occurred cannot fall outside the tournament. (Reported separately
+    // from the clearable, non-completed matchUps below so callers never offer an
+    // "unschedule" action that clearScheduledMatchUps would refuse — the divergence
+    // that previously surfaced as a misleading SCHEDULE_NOT_CLEARED error.)
+    if (completedDates.length) {
+      const sorted = completedDates.toSorted((a, b) => a.localeCompare(b));
+      return {
+        error: {
+          ...MATCHUPS_COMPLETED_OUTSIDE_DATES,
+          message: `Cannot change tournament dates: completed matchUps were played outside the new range on ${sorted.join(', ')}`,
+        },
+        info: `${completedMatchUpIds.length} completed matchUp(s) played outside ${prospectiveStart} - ${prospectiveEnd}`,
+        completedOutOfRangeMatchUpIds: completedMatchUpIds,
+        completedOutOfRangeDates: sorted,
+      };
+    }
+
+    if (scheduledDates.length) {
+      const sorted = scheduledDates.toSorted((a, b) => a.localeCompare(b));
+      if (force) {
+        forcedUnscheduling = { scheduledDates: sorted, matchUpIds };
+      } else {
+        return {
+          error: {
+            ...MATCHUPS_SCHEDULED_OUTSIDE_DATES,
+            message: `Cannot change tournament dates with matchUps scheduled outside the new range: ${sorted.join(', ')}`,
+          },
+          info: `${matchUpIds.length} matchUp(s) scheduled outside ${prospectiveStart} - ${prospectiveEnd}`,
+          outOfRangeMatchUpIds: matchUpIds,
+          outOfRangeDates: sorted,
+        };
+      }
+    }
+  }
+
   const initialDateRange = generateDateRange(tournamentRecord.startDate, tournamentRecord.endDate);
   if (startDate) tournamentRecord.startDate = startDate;
   if (endDate) tournamentRecord.endDate = endDate;
@@ -87,7 +158,15 @@ export function setTournamentDates(params: SetTournamentDatesArgs): ResultType &
   }
   if (weekdays) tournamentRecord.weekdays = weekdays;
 
-  const unscheduledMatchUpIds = checkScheduling && removeInvalidScheduling({ tournamentRecord })?.unscheduledMatchUpIds;
+  let unscheduledMatchUpIds: string[] | undefined;
+  if (forcedUnscheduling) {
+    const cleared = clearScheduledMatchUps({
+      scheduledDates: forcedUnscheduling.scheduledDates,
+      tournamentRecord,
+    });
+    if (!cleared.clearedScheduleCount) return { error: SCHEDULE_NOT_CLEARED };
+    unscheduledMatchUpIds = forcedUnscheduling.matchUpIds;
+  }
 
   updateCourtAvailability({ tournamentRecord });
   addNotice({
@@ -102,17 +181,22 @@ export function setTournamentDates(params: SetTournamentDatesArgs): ResultType &
     topic: MODIFY_TOURNAMENT_DETAIL,
   });
 
-  return { ...SUCCESS, unscheduledMatchUpIds, datesAdded, datesRemoved };
+  return { ...SUCCESS, datesAdded, datesRemoved, unscheduledMatchUpIds };
 }
 
 function coerceEventDates({ tournamentRecord, startDate, endDate }) {
   for (const event of tournamentRecord.events ?? []) {
+    const { startDate: priorStart, endDate: priorEnd } = event;
     if (startDate && event.startDate && new Date(event.startDate) < new Date(startDate)) event.startDate = startDate;
     if (endDate && event.startDate && new Date(event.startDate) > new Date(endDate))
       event.startDate = startDate ?? endDate;
     if (endDate && event.endDate && new Date(event.endDate) > new Date(endDate)) event.endDate = endDate;
     if (startDate && event.endDate && new Date(event.endDate) < new Date(startDate))
       event.endDate = endDate ?? startDate;
+    // an event whose dates were coerced inward changed — cover it with MODIFY_EVENT.
+    if (event.startDate !== priorStart || event.endDate !== priorEnd) {
+      modifyEventNotice({ tournamentId: tournamentRecord.tournamentId, event });
+    }
   }
 }
 
@@ -135,7 +219,9 @@ function validateAndApplyActiveDates({ tournamentRecord, activeDates }) {
     const removedSet = new Set(removedDates);
     const conflicting = matchUps.filter((m) => m.schedule?.scheduledDate && removedSet.has(m.schedule.scheduledDate));
     if (conflicting.length) {
-      const dates = [...new Set(conflicting.map((m) => m.schedule!.scheduledDate))].sort();
+      const dates = [...new Set(conflicting.map((m) => m.schedule!.scheduledDate))].sort((a, b) =>
+        (a ?? '').localeCompare(b ?? ''),
+      );
       return {
         error: {
           ...INVALID_VALUES,
@@ -150,44 +236,45 @@ function validateAndApplyActiveDates({ tournamentRecord, activeDates }) {
   return undefined;
 }
 
-export function setTournamentStartDate({ tournamentRecord, startDate }) {
+export function setTournamentStartDate({ tournamentRecord, startDate, force }) {
   if (!startDate) return { error: INVALID_DATE };
-  return setTournamentDates({ tournamentRecord, startDate });
+  return setTournamentDates({ tournamentRecord, startDate, force });
 }
 
-export function setTournamentEndDate({ tournamentRecord, endDate }) {
+export function setTournamentEndDate({ tournamentRecord, endDate, force }) {
   if (!endDate) return { error: INVALID_DATE };
-  return setTournamentDates({ tournamentRecord, endDate });
+  return setTournamentDates({ tournamentRecord, endDate, force });
 }
 
-// unschedule scheduled matchUps that fall outside of tournament dates
-export function removeInvalidScheduling({ tournamentRecord }) {
+// detect scheduled matchUps that fall outside of the given tournament date range.
+// Completed matchUps are reported separately (completedDates/completedMatchUpIds) because
+// they cannot be unscheduled to make room for a date change — a match played on a date
+// forces that date into the tournament range. Non-completed matchUps remain in
+// scheduledDates/matchUpIds and stay clearable via `force`.
+export function findMatchUpsScheduledOutsideDates({ tournamentRecord, startDate, endDate }) {
   const matchUps = allTournamentMatchUps({ tournamentRecord }).matchUps ?? [];
 
-  const startDate = tournamentRecord.startDate && new Date(tournamentRecord.startDate);
-  const endDate = tournamentRecord.endDate && new Date(tournamentRecord.endDate);
+  const start = startDate && new Date(startDate);
+  const end = endDate && new Date(endDate);
 
-  const invalidScheduledDates: string[] = [];
-  const invalidSchedulingMatchUpIds: string[] = [];
+  const scheduledDates: string[] = [];
+  const matchUpIds: string[] = [];
+  const completedDates: string[] = [];
+  const completedMatchUpIds: string[] = [];
   for (const matchUp of matchUps) {
-    const { schedule, matchUpId } = matchUp;
-    if (!schedule) continue;
-    if (schedule.scheduledDate) {
-      const scheduledDate = new Date(schedule.scheduledDate);
-      if ((startDate && scheduledDate < startDate) || (endDate && scheduledDate > endDate)) {
-        invalidSchedulingMatchUpIds.push(matchUpId);
-        if (!invalidScheduledDates.includes(schedule.scheduledDate)) invalidScheduledDates.push(schedule.scheduledDate);
+    const scheduledDate = matchUp.schedule?.scheduledDate;
+    if (!scheduledDate) continue;
+    const date = new Date(scheduledDate);
+    if ((start && date < start) || (end && date > end)) {
+      if (matchUp.matchUpStatus && completedMatchUpStatuses.includes(matchUp.matchUpStatus)) {
+        completedMatchUpIds.push(matchUp.matchUpId);
+        if (!completedDates.includes(scheduledDate)) completedDates.push(scheduledDate);
+      } else {
+        matchUpIds.push(matchUp.matchUpId);
+        if (!scheduledDates.includes(scheduledDate)) scheduledDates.push(scheduledDate);
       }
     }
   }
 
-  if (invalidScheduledDates.length) {
-    const result = clearScheduledMatchUps({
-      scheduledDates: invalidScheduledDates,
-      tournamentRecord,
-    });
-    if (!result.clearedScheduleCount) return { error: SCHEDULE_NOT_CLEARED };
-  }
-
-  return { unscheduledMatchUpIds: invalidSchedulingMatchUpIds };
+  return { scheduledDates, matchUpIds, completedDates, completedMatchUpIds };
 }

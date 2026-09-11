@@ -82,6 +82,75 @@ test.each(mockProfiles)('it can anonymize tournamentRecords', (mockProfile) => {
   expect(intersection(originalFlightEntries, flightEntries).length).toEqual(0);
 });
 
+test('parentOrganisation is deleted by default', () => {
+  const { tournamentRecord } = mocksEngine.generateTournamentRecord({
+    drawProfiles: [{ drawSize: 8 }],
+  });
+  tournamentRecord.parentOrganisation = { organisationId: 'real-provider', organisationName: 'Real Provider Ltd' };
+
+  const result = mocksEngine.anonymizeTournamentRecord({ tournamentRecord });
+  expect(result.success).toEqual(true);
+  expect(tournamentRecord.parentOrganisation).toBeUndefined();
+});
+
+test('parentOrganisation override is attached when provided', () => {
+  const { tournamentRecord } = mocksEngine.generateTournamentRecord({
+    drawProfiles: [{ drawSize: 8 }],
+  });
+  tournamentRecord.parentOrganisation = { organisationId: 'real-provider', organisationName: 'Real Provider Ltd' };
+
+  const mockProvider = { organisationId: 'mock-provider-1', organisationName: 'Mock Provider 1' };
+  const result = mocksEngine.anonymizeTournamentRecord({
+    tournamentRecord,
+    parentOrganisation: mockProvider,
+  });
+  expect(result.success).toEqual(true);
+  expect(tournamentRecord.parentOrganisation).toEqual(mockProvider);
+});
+
+test('multi-tournament pipeline: same real provider maps to same mock provider across records', () => {
+  const realProviderA = { organisationId: 'real-A', organisationName: 'Real A' };
+  const realProviderB = { organisationId: 'real-B', organisationName: 'Real B' };
+
+  const tournaments = [
+    { real: realProviderA },
+    { real: realProviderA },
+    { real: realProviderB },
+    { real: realProviderA },
+  ].map(({ real }) => {
+    const { tournamentRecord } = mocksEngine.generateTournamentRecord({ drawProfiles: [{ drawSize: 8 }] });
+    tournamentRecord.parentOrganisation = real;
+    return tournamentRecord;
+  });
+
+  // Caller-side map keeps one mock provider per real provider id so that
+  // anonymized "tournaments by provider" grouping queries still group correctly.
+  const providerMap = new Map<string, { organisationId: string; organisationName: string }>();
+  let nextMock = 0;
+  for (const tr of tournaments) {
+    const realId = tr.parentOrganisation?.organisationId;
+    if (realId && !providerMap.has(realId)) {
+      nextMock += 1;
+      providerMap.set(realId, { organisationId: `mock-${nextMock}`, organisationName: `Mock ${nextMock}` });
+    }
+    mocksEngine.anonymizeTournamentRecord({
+      tournamentRecord: tr,
+      parentOrganisation: realId ? providerMap.get(realId) : undefined,
+    });
+  }
+
+  const groups = tournaments.reduce<Record<string, number>>((acc, tr) => {
+    const id = tr.parentOrganisation?.organisationId ?? 'none';
+    acc[id] = (acc[id] ?? 0) + 1;
+    return acc;
+  }, {});
+  expect(groups['mock-1']).toEqual(3);
+  expect(groups['mock-2']).toEqual(1);
+  // Real provider ids must not have leaked through.
+  expect(groups['real-A']).toBeUndefined();
+  expect(groups['real-B']).toBeUndefined();
+});
+
 const sourcePath = './src/tests/testHarness';
 const filenames = fs.readdirSync(sourcePath).filter(
   (filename) => filename.indexOf('.tods.json') > 0 && filename.indexOf('.8') > 0, // skip v0.8

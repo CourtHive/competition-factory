@@ -8,6 +8,7 @@ import { isExit } from '@Validators/isExit';
 
 // constants and types
 import { completedMatchUpStatuses, DEFAULTED, RETIRED, WALKOVER } from '@Constants/matchUpStatusConstants';
+import { INVALID_MATCHUP, MISSING_MATCHUPS } from '@Constants/errorConditionConstants';
 import { DOUBLES, SINGLES } from '@Constants/matchUpTypes';
 import { HydratedMatchUp } from '@Types/hydrated';
 
@@ -30,6 +31,36 @@ export function getParticipantResults({
   perPlayer,
   matchUps,
 }: GetParticipantResultsArgs) {
+  // TAKES AN ARRAY OF IN-CONTEXT MATCHUPS, not a drawId. `paramsMiddleware` resolves `drawId` into a
+  // `drawDefinition` and stops; it does not gather matchUps. An engine caller writing
+  // `getParticipantResults({ drawId })` therefore supplied no matchUps at all, and this answered
+  // `{ participantResults: {} }` — an empty tally for a fully-played draw, with no error to notice.
+  //
+  // Results are attributed through `sides[].participantId`, which only an IN-CONTEXT matchUp
+  // carries; a stored matchUp has `drawPositions` and would tally to nothing for the same reason.
+  if (!Array.isArray(matchUps)) return { error: MISSING_MATCHUPS };
+
+  // EVERY matchUp must carry both sides, whether or not it has been played.
+  //
+  // `sides[].participantId` is the only thing a tally can attribute to, and BOTH code paths read it:
+  // a decided matchUp through `getSideId`, and an undecided one through `processScore`. Scoping this
+  // to `winningSide` — as it was when first added — closed only the first, so the SAME input (stored,
+  // non-hydrated matchUps) refused once a draw had been played and threw an uncaught TypeError while
+  // it had not. One input class must not have two failure modes separated only by progress.
+  //
+  // Both indices, because getWinningSideId reads index 0 and getLosingSideId reads index 1.
+  //
+  // All-or-nothing is deliberate: skipping the offending matchUps would return a tally silently
+  // missing matches, which is the failure this guard exists to prevent rather than a milder form of
+  // it. An EMPTY array is still a valid question — the guard is on matchUps present but unusable.
+  const unusable = matchUps.some((matchUp: any) => matchUp && !(matchUp.sides?.[0] && matchUp.sides?.[1]));
+  if (unusable) {
+    return {
+      error: INVALID_MATCHUP,
+      info: 'a matchUp carries no sides to attribute results to; in-context matchUps are required',
+    };
+  }
+
   const participantResults = {};
 
   const excludeMatchUpStatuses = tallyPolicy?.excludeMatchUpStatuses ?? [];
@@ -41,8 +72,10 @@ export function getParticipantResults({
   for (const matchUp of filteredMatchUps ?? []) {
     const { matchUpStatus, tieMatchUps, tieFormat, score, winningSide, sides } = matchUp;
 
+    // first-class (NATIVE) with fallback to the legacy `_disableAutoCalc` hydrated alias (LEGACY)
+    const disableAutoCalc = matchUp.disableAutoCalc ?? matchUp._disableAutoCalc;
     const manualGamesOverride =
-      tieFormat && matchUp._disableAutoCalc && tieFormat.collectionDefinitions.every(({ scoreValue }) => scoreValue);
+      tieFormat && disableAutoCalc && tieFormat.collectionDefinitions.every(({ scoreValue }) => scoreValue);
 
     const winningParticipantId = winningSide && getWinningSideId(matchUp);
     const losingParticipantId = winningSide && getLosingSideId(matchUp);
@@ -131,7 +164,15 @@ function computeTotals({ filteredMatchUps, excludeMatchUpStatuses }) {
   return { totalSets, totalGames };
 }
 
-function processNoWinnerMatchUp({ participantResults, manualGamesOverride, matchUpStatus, tieMatchUps, perPlayer, score, sides }) {
+function processNoWinnerMatchUp({
+  participantResults,
+  manualGamesOverride,
+  matchUpStatus,
+  tieMatchUps,
+  perPlayer,
+  score,
+  sides,
+}) {
   if (matchUpStatus && completedMatchUpStatuses.includes(matchUpStatus)) {
     const participantIdSide1 = getSideId({ sides }, 0);
     const participantIdSide2 = getSideId({ sides }, 1);
@@ -171,12 +212,8 @@ function processNoWinnerMatchUp({ participantResults, manualGamesOverride, match
 }
 
 function tallyTieMatchUpNoWinner({ participantResults, tieMatchUp, sides }) {
-  const tieWinningParticipantId = sides?.find(
-    ({ sideNumber }) => sideNumber === tieMatchUp.winningSide,
-  )?.participantId;
-  const tieLosingParticipantId = sides?.find(
-    ({ sideNumber }) => sideNumber === tieMatchUp.winningSide,
-  )?.participantId;
+  const tieWinningParticipantId = sides?.find(({ sideNumber }) => sideNumber === tieMatchUp.winningSide)?.participantId;
+  const tieLosingParticipantId = sides?.find(({ sideNumber }) => sideNumber === tieMatchUp.winningSide)?.participantId;
   if (tieWinningParticipantId && tieLosingParticipantId) {
     checkInitializeParticipant(participantResults, tieWinningParticipantId);
     checkInitializeParticipant(participantResults, tieLosingParticipantId);
@@ -323,17 +360,19 @@ function getLosingSideId(matchUp) {
   return getSideId(matchUp, loserIndex);
 }
 
+/**
+ * The participantId on one side of a decided matchUp.
+ *
+ * Returned `'foo'` — a literal string — when `sides` or the indexed side was absent, from 2021
+ * until 7.0.0. That is a participantId as far as everything downstream is concerned, so a tally run
+ * over stored (non-hydrated) matchUps keyed every result to a participant named `foo` rather than
+ * failing. Two `console.log` calls shipped with it.
+ *
+ * The caller now refuses that input up front, so this returning `undefined` is unreachable defence
+ * rather than a fallback anyone should rely on.
+ */
 function getSideId(matchUp, index) {
-  if (!matchUp?.sides) {
-    console.log('no sides:', { matchUp });
-    return 'foo';
-  }
-  const Side = matchUp.sides[index];
-  if (!Side) {
-    console.log('No Side', { matchUp, index });
-    return 'foo';
-  }
-  return Side.participantId;
+  return matchUp?.sides?.[index]?.participantId;
 }
 
 function checkInitializeParticipant(participantResults, participantId) {

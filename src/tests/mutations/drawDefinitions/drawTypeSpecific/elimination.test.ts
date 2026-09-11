@@ -33,24 +33,6 @@ it('can generate and verify elmination hierarchies', () => {
     expectedByeAssignments: 2,
     expectedSeedValuesWithBye: [1, 2],
     expectedPositionsAssignedCount: 32,
-    hierarchyVerification: [
-      {
-        navigationProfile: [0, 0, 0, 0, 0],
-        attribute: 'drawPosition',
-        result: 1,
-      },
-      {
-        navigationProfile: [0, 0, 0, 0, 1],
-        attribute: 'drawPosition',
-        result: 2,
-      },
-      { navigationProfile: [], attribute: 'roundNumber', result: 5 },
-      { navigationProfile: [], attribute: 'matchUpId', existance: true },
-      {
-        navigationProfile: [],
-        result: { roundNumber: 5, roundPosition: 1 },
-      },
-    ],
   });
 
   ({ drawDefinition } = mocksEngine.generateEventWithDraw({

@@ -1,3 +1,4 @@
+import { applyParticipantPrivacyToMap } from '@Query/participants/participantPrivacy';
 import { getParticipantEntries } from '@Query/participants/getParticipantEntries';
 import { getMatchUpDependencies } from '@Query/matchUps/getMatchUpDependencies';
 import { filterParticipants } from '@Query/participants/filterParticipants';
@@ -214,8 +215,13 @@ export function getParticipants(params: GetParticipantsArgs): {
     ? filteredParticipants.map((source) => attributeFilter({ source, template }))
     : filteredParticipants;
 
+  // The map is a second emission of the same people. It was returned raw, so a caller that supplied a
+  // privacy policy and spread the whole result — as the public schedule route does — published every
+  // attribute the policy denies, while `participants` beside it was correctly filtered.
+  const emittedParticipantMap = applyParticipantPrivacyToMap({ participantMap, template });
+
   return {
-    participantMap: params.returnParticipantMap !== false ? participantMap : undefined,
+    participantMap: params.returnParticipantMap !== false ? emittedParticipantMap : undefined,
     mappedMatchUps: params.returnMatchUps !== false ? mappedMatchUps : undefined,
     matchUps: params.returnMatchUps !== false ? matchUps : undefined,
     missingParticipantIds: mapResult.missingParticipantIds,

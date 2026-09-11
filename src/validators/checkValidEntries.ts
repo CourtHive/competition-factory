@@ -1,3 +1,4 @@
+import { expectedParticipantType } from '@Query/event/participantTypeForEvent';
 import { getParticipants } from '@Query/participants/getParticipants';
 import { isUngrouped } from '@Query/entries/isUngrouped';
 import { coercedGender } from '@Helpers/coercedGender';
@@ -11,8 +12,8 @@ import { DOUBLES_EVENT, HYBRID_EVENT, TEAM_EVENT } from '@Constants/eventConstan
 import POLICY_MATCHUP_ACTIONS_DEFAULT from '@Fixtures/policies/POLICY_MATCHUP_ACTIONS_DEFAULT';
 import { Entry, Event, Participant, Tournament } from '@Types/tournamentTypes';
 import { POLICY_TYPE_MATCHUP_ACTIONS } from '@Constants/policyConstants';
-import { INDIVIDUAL, PAIR, TEAM } from '@Constants/participantConstants';
 import { ParticipantMap, PolicyDefinitions } from '@Types/factoryTypes';
+import { INDIVIDUAL, PAIR } from '@Constants/participantConstants';
 import { WITHDRAWN } from '@Constants/entryStatusConstants';
 import { SUCCESS } from '@Constants/resultConstants';
 import {
@@ -61,7 +62,7 @@ export function checkValidEntries({
 
   const { eventType, gender: eventGender } = event;
   const isDoubles = eventType === DOUBLES_EVENT;
-  const participantType = (eventType === TEAM_EVENT && TEAM) || (isDoubles && PAIR) || INDIVIDUAL;
+  const participantType = expectedParticipantType(eventType);
 
   const entryStatusMap = Object.assign(
     {},

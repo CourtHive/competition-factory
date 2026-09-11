@@ -1,3 +1,4 @@
+import { modifyEventEntriesNotice, modifyDrawEntriesNotice } from '@Mutate/notifications/entriesNotifications';
 import { requireParams } from '@Helpers/parameters/requireParams';
 import { refreshEntryPositions } from './refreshEntryPositions';
 
@@ -43,15 +44,19 @@ export function setEntryPosition({
   };
 
   if (!skipRefresh) {
+    const tournamentId = tournamentRecord?.tournamentId;
     if (event?.entries) {
       differentiateDuplicates(event);
       event.entries = refreshEntryPositions({ entries: event.entries });
+      // entryPosition values on event.entries changed — cover it.
+      modifyEventEntriesNotice({ event, tournamentId });
     }
     if (drawDefinition?.entries) {
       differentiateDuplicates(drawDefinition);
       drawDefinition.entries = refreshEntryPositions({
         entries: drawDefinition.entries,
       });
+      modifyDrawEntriesNotice({ drawDefinition, tournamentId, eventId: event?.eventId });
     }
   }
 
@@ -76,13 +81,16 @@ export function setEntryPositions({ tournamentRecord, entryPositions, drawDefini
     if (result.error) return result;
   }
 
+  const tournamentId = tournamentRecord?.tournamentId;
   if (event?.entries) {
     event.entries = refreshEntryPositions({ entries: event.entries });
+    modifyEventEntriesNotice({ event, tournamentId });
   }
   if (drawDefinition?.entries) {
     drawDefinition.entries = refreshEntryPositions({
       entries: drawDefinition.entries,
     });
+    modifyDrawEntriesNotice({ drawDefinition, tournamentId, eventId: event?.eventId });
   }
 
   return { ...SUCCESS };

@@ -1,7 +1,8 @@
+import { resolveScaleValueNumber } from '@Query/scales/resolveScaleValue';
 import { getParticipantScaleItem } from '@Query/participant/getParticipantScaleItem';
 import { getPositionAssignments } from '@Query/drawDefinition/positionsGetter';
-import { addExtension } from '@Mutate/extensions/addExtension';
-import { findExtension } from '@Acquire/findExtension';
+import { setFirstClassOrExtension } from '@Mutate/extensions/setFirstClassOrExtension';
+import { firstClassOrExtension } from '@Acquire/firstClassOrExtension';
 import { findStructure } from '@Acquire/findStructure';
 
 // constants and types
@@ -63,8 +64,8 @@ export function initializeDraft({
   if (!structure) return { error: MISSING_STRUCTURE_ID };
 
   // check for existing draft
-  const { extension: existing } = findExtension({ element: drawDefinition, name: DRAFT_STATE });
-  if (existing?.value?.status && existing.value.status !== 'COMPLETE' && !force) {
+  const existing = firstClassOrExtension({ element: drawDefinition, attribute: 'draftState', name: DRAFT_STATE });
+  if (existing?.status && existing.status !== 'COMPLETED' && !force) {
     return { error: EXISTING_DRAFT };
   }
 
@@ -125,9 +126,11 @@ export function initializeDraft({
     unassignedDrawPositions: unassignedPositions,
   };
 
-  addExtension({
+  setFirstClassOrExtension({
     element: drawDefinition,
-    extension: { name: DRAFT_STATE, value: draftState },
+    attribute: 'draftState',
+    name: DRAFT_STATE,
+    value: draftState,
   });
 
   return {
@@ -178,7 +181,13 @@ function sortByTierMethod({
       participantId,
     });
     const raw = scaleItem?.scaleValue;
-    const numeric = resolveNumericScale(raw);
+    // Shared helper rather than a local copy: this file used to carry its own
+    // `resolveNumericScale`, one of eight independent implementations that
+    // disagreed about strings, '' and 0.
+    const numeric = resolveScaleValueNumber(raw, {
+      accessor: scaleAttributes?.accessor,
+      scaleName: scaleAttributes?.scaleName,
+    });
     if (numeric === undefined) {
       withoutScale.push(participantId);
     } else {
@@ -192,33 +201,6 @@ function sortByTierMethod({
 
   // Participants with scale values first (sorted), then those without
   return [...withScale.map((e) => e.participantId), ...withoutScale];
-}
-
-/**
- * Extract a numeric value from a scaleValue that may be a primitive or an object.
- * For object values (e.g. DUPR: { duprRating: 4.5, reliabilityScore: 80 }),
- * the accessor-resolved value is already in scaleValue when scaleAttributes.accessor
- * is provided. If not, we try to find the first numeric property.
- */
-function resolveNumericScale(raw: any): number | undefined {
-  if (raw == null) return undefined;
-  if (typeof raw === 'number') return raw;
-  if (typeof raw === 'string') {
-    const n = Number.parseFloat(raw);
-    return Number.isNaN(n) ? undefined : n;
-  }
-  if (typeof raw === 'object') {
-    // Accessor was already applied by participantScaleItem if available.
-    // Fallback: find the first numeric property value.
-    for (const val of Object.values(raw)) {
-      if (typeof val === 'number') return val;
-      if (typeof val === 'string') {
-        const n = Number.parseFloat(val);
-        if (!Number.isNaN(n)) return n;
-      }
-    }
-  }
-  return undefined;
 }
 
 /**

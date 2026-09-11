@@ -1,9 +1,8 @@
 import { tallyParticipantResults } from '@Query/matchUps/roundRobinTally/tallyParticipantResults';
+import { setFirstClassOrExtension } from '@Mutate/extensions/setFirstClassOrExtension';
 import { getPolicyDefinitions } from '@Query/extensions/getAppliedPolicies';
 import { modifyDrawNotice } from '@Mutate/notifications/drawNotifications';
 import { createSubOrderMap } from '@Query/structure/createSubOrderMap';
-import { removeExtension } from '@Mutate/extensions/removeExtension';
-import { addExtension } from '@Mutate/extensions/addExtension';
 import { validMatchUps } from '@Validators/validMatchUp';
 
 // constants
@@ -49,25 +48,32 @@ export function updateAssignmentParticipantResults({
   positionAssignments.forEach((assignment) => {
     const { participantId } = assignment;
     if (participantIds.includes(participantId)) {
-      const extension = {
+      setFirstClassOrExtension({
         value: participantResults[participantId],
+        element: assignment,
+        attribute: 'tally',
         name: TALLY,
-      };
-      addExtension({ element: assignment, extension });
+      });
       if (!participantResults[participantId].ties) {
-        removeExtension({
+        setFirstClassOrExtension({
           element: assignment,
+          attribute: 'subOrder',
           name: SUB_ORDER,
+          value: undefined,
         });
       }
     } else {
-      removeExtension({
+      setFirstClassOrExtension({
         element: assignment,
+        attribute: 'tally',
         name: TALLY,
+        value: undefined,
       });
-      removeExtension({
+      setFirstClassOrExtension({
         element: assignment,
+        attribute: 'subOrder',
         name: SUB_ORDER,
+        value: undefined,
       });
     }
   });

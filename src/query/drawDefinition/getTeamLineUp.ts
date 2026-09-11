@@ -1,4 +1,4 @@
-import { findExtension } from '@Acquire/findExtension';
+import { firstClassOrExtension } from '@Acquire/firstClassOrExtension';
 
 // constants
 import { MISSING_DRAW_DEFINITION, MISSING_PARTICIPANT_ID } from '@Constants/errorConditionConstants';
@@ -8,12 +8,7 @@ export function getTeamLineUp({ drawDefinition, participantId }) {
   if (typeof drawDefinition !== 'object') return { error: MISSING_DRAW_DEFINITION };
   if (typeof participantId !== 'string') return { error: MISSING_PARTICIPANT_ID };
 
-  const { extension } = findExtension({
-    element: drawDefinition,
-    name: LINEUPS,
-  });
-
-  const lineUps = extension?.value ?? {};
+  const lineUps = firstClassOrExtension({ element: drawDefinition, attribute: 'lineUps', name: LINEUPS }) ?? {};
   const lineUp = lineUps[participantId];
 
   return { lineUp };

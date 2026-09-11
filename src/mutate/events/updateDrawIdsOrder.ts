@@ -1,3 +1,5 @@
+import { modifyEventNotice } from '@Mutate/notifications/eventNotifications';
+import { modifyDrawNotice } from '@Mutate/notifications/drawNotifications';
 import { getFlightProfile } from '@Query/event/getFlightProfile';
 import { intersection, unique } from '@Tools/arrays';
 
@@ -5,7 +7,17 @@ import { intersection, unique } from '@Tools/arrays';
 import { INVALID_VALUES, MISSING_EVENT, MISSING_VALUE } from '@Constants/errorConditionConstants';
 import { SUCCESS } from '@Constants/resultConstants';
 
-export function updateDrawIdsOrder({ event, orderedDrawIdsMap }) {
+export function updateDrawIdsOrder({
+  event,
+  tournamentRecord,
+  disableNotice,
+  orderedDrawIdsMap,
+}: {
+  event?: any;
+  tournamentRecord?: any;
+  disableNotice?: boolean;
+  orderedDrawIdsMap?: any;
+}) {
   if (typeof event !== 'object') return { error: MISSING_EVENT };
   if (!orderedDrawIdsMap) return { error: MISSING_VALUE, info: 'Missing drawIdsOrderMap' };
   if (typeof orderedDrawIdsMap !== 'object')
@@ -31,8 +43,11 @@ export function updateDrawIdsOrder({ event, orderedDrawIdsMap }) {
     if (orderedDrawIds?.length && intersection(drawIds, orderedDrawIds).length !== drawIds.length)
       return { error: INVALID_VALUES, info: 'Missing drawIds' };
 
+    const tournamentId = tournamentRecord?.tournamentId;
     event.drawDefinitions.forEach((drawDefinition) => {
       drawDefinition.drawOrder = orderedDrawIdsMap[drawDefinition.drawId];
+      // drawOrder lives on the drawDefinition → MODIFY_DRAW_DEFINITION covers it
+      if (!disableNotice) modifyDrawNotice({ drawDefinition, tournamentId, eventId: event.eventId });
     });
   }
 
@@ -40,6 +55,11 @@ export function updateDrawIdsOrder({ event, orderedDrawIdsMap }) {
   flightProfile?.flights?.forEach((flight) => {
     flight.flightNumber = orderedDrawIdsMap[flight.drawId];
   });
+
+  // flightProfile (flight ordering) is an event-scoped attribute → MODIFY_EVENT
+  if (!disableNotice && flightProfile?.flights?.length) {
+    modifyEventNotice({ event, tournamentId: tournamentRecord?.tournamentId });
+  }
 
   return { ...SUCCESS };
 }

@@ -38,10 +38,34 @@ test('SWISS drawType generates an AD_HOC-style structure', () => {
 test('computeScoreGroups correctly groups participants by W-L record', () => {
   const participantIds = ['P1', 'P2', 'P3', 'P4', 'P5', 'P6', 'P7', 'P8'];
   const matchUps: any[] = [
-    { matchUpId: 'm1', sides: [{ participantId: 'P1' }, { participantId: 'P8' }], winningSide: 1, matchUpStatus: COMPLETED, roundNumber: 1 },
-    { matchUpId: 'm2', sides: [{ participantId: 'P2' }, { participantId: 'P7' }], winningSide: 1, matchUpStatus: COMPLETED, roundNumber: 1 },
-    { matchUpId: 'm3', sides: [{ participantId: 'P3' }, { participantId: 'P6' }], winningSide: 1, matchUpStatus: COMPLETED, roundNumber: 1 },
-    { matchUpId: 'm4', sides: [{ participantId: 'P4' }, { participantId: 'P5' }], winningSide: 1, matchUpStatus: COMPLETED, roundNumber: 1 },
+    {
+      matchUpId: 'm1',
+      sides: [{ participantId: 'P1' }, { participantId: 'P8' }],
+      winningSide: 1,
+      matchUpStatus: COMPLETED,
+      roundNumber: 1,
+    },
+    {
+      matchUpId: 'm2',
+      sides: [{ participantId: 'P2' }, { participantId: 'P7' }],
+      winningSide: 1,
+      matchUpStatus: COMPLETED,
+      roundNumber: 1,
+    },
+    {
+      matchUpId: 'm3',
+      sides: [{ participantId: 'P3' }, { participantId: 'P6' }],
+      winningSide: 1,
+      matchUpStatus: COMPLETED,
+      roundNumber: 1,
+    },
+    {
+      matchUpId: 'm4',
+      sides: [{ participantId: 'P4' }, { participantId: 'P5' }],
+      winningSide: 1,
+      matchUpStatus: COMPLETED,
+      roundNumber: 1,
+    },
   ];
 
   const { scoreGroups, records } = computeScoreGroups({ participantIds, matchUps });
@@ -87,10 +111,34 @@ test('generateSwissPairings round 2 pairs within score groups', () => {
 
   // after round 1: P1,P2,P3,P4 are 1-0; P5,P6,P7,P8 are 0-1
   const matchUps: any[] = [
-    { matchUpId: 'm1', sides: [{ participantId: 'P1' }, { participantId: 'P5' }], winningSide: 1, matchUpStatus: COMPLETED, roundNumber: 1 },
-    { matchUpId: 'm2', sides: [{ participantId: 'P2' }, { participantId: 'P6' }], winningSide: 1, matchUpStatus: COMPLETED, roundNumber: 1 },
-    { matchUpId: 'm3', sides: [{ participantId: 'P3' }, { participantId: 'P7' }], winningSide: 1, matchUpStatus: COMPLETED, roundNumber: 1 },
-    { matchUpId: 'm4', sides: [{ participantId: 'P4' }, { participantId: 'P8' }], winningSide: 1, matchUpStatus: COMPLETED, roundNumber: 1 },
+    {
+      matchUpId: 'm1',
+      sides: [{ participantId: 'P1' }, { participantId: 'P5' }],
+      winningSide: 1,
+      matchUpStatus: COMPLETED,
+      roundNumber: 1,
+    },
+    {
+      matchUpId: 'm2',
+      sides: [{ participantId: 'P2' }, { participantId: 'P6' }],
+      winningSide: 1,
+      matchUpStatus: COMPLETED,
+      roundNumber: 1,
+    },
+    {
+      matchUpId: 'm3',
+      sides: [{ participantId: 'P3' }, { participantId: 'P7' }],
+      winningSide: 1,
+      matchUpStatus: COMPLETED,
+      roundNumber: 1,
+    },
+    {
+      matchUpId: 'm4',
+      sides: [{ participantId: 'P4' }, { participantId: 'P8' }],
+      winningSide: 1,
+      matchUpStatus: COMPLETED,
+      roundNumber: 1,
+    },
   ];
 
   const { participantIdPairings, scoreGroups } = generateSwissPairings({
@@ -181,14 +229,62 @@ test('three score groups after 2 rounds with 8 participants', () => {
   // round 2: P1>P2, P3>P4, P5>P6, P7>P8
   // after round 2: P1=2-0, P2=1-1, P3=2-0, P4=1-1, P5=1-1, P6=0-2, P7=1-1, P8=0-2
   const matchUps: any[] = [
-    { matchUpId: 'r1m1', sides: [{ participantId: 'P1' }, { participantId: 'P5' }], winningSide: 1, matchUpStatus: COMPLETED, roundNumber: 1 },
-    { matchUpId: 'r1m2', sides: [{ participantId: 'P2' }, { participantId: 'P6' }], winningSide: 1, matchUpStatus: COMPLETED, roundNumber: 1 },
-    { matchUpId: 'r1m3', sides: [{ participantId: 'P3' }, { participantId: 'P7' }], winningSide: 1, matchUpStatus: COMPLETED, roundNumber: 1 },
-    { matchUpId: 'r1m4', sides: [{ participantId: 'P4' }, { participantId: 'P8' }], winningSide: 1, matchUpStatus: COMPLETED, roundNumber: 1 },
-    { matchUpId: 'r2m1', sides: [{ participantId: 'P1' }, { participantId: 'P2' }], winningSide: 1, matchUpStatus: COMPLETED, roundNumber: 2 },
-    { matchUpId: 'r2m2', sides: [{ participantId: 'P3' }, { participantId: 'P4' }], winningSide: 1, matchUpStatus: COMPLETED, roundNumber: 2 },
-    { matchUpId: 'r2m3', sides: [{ participantId: 'P5' }, { participantId: 'P6' }], winningSide: 1, matchUpStatus: COMPLETED, roundNumber: 2 },
-    { matchUpId: 'r2m4', sides: [{ participantId: 'P7' }, { participantId: 'P8' }], winningSide: 1, matchUpStatus: COMPLETED, roundNumber: 2 },
+    {
+      matchUpId: 'r1m1',
+      sides: [{ participantId: 'P1' }, { participantId: 'P5' }],
+      winningSide: 1,
+      matchUpStatus: COMPLETED,
+      roundNumber: 1,
+    },
+    {
+      matchUpId: 'r1m2',
+      sides: [{ participantId: 'P2' }, { participantId: 'P6' }],
+      winningSide: 1,
+      matchUpStatus: COMPLETED,
+      roundNumber: 1,
+    },
+    {
+      matchUpId: 'r1m3',
+      sides: [{ participantId: 'P3' }, { participantId: 'P7' }],
+      winningSide: 1,
+      matchUpStatus: COMPLETED,
+      roundNumber: 1,
+    },
+    {
+      matchUpId: 'r1m4',
+      sides: [{ participantId: 'P4' }, { participantId: 'P8' }],
+      winningSide: 1,
+      matchUpStatus: COMPLETED,
+      roundNumber: 1,
+    },
+    {
+      matchUpId: 'r2m1',
+      sides: [{ participantId: 'P1' }, { participantId: 'P2' }],
+      winningSide: 1,
+      matchUpStatus: COMPLETED,
+      roundNumber: 2,
+    },
+    {
+      matchUpId: 'r2m2',
+      sides: [{ participantId: 'P3' }, { participantId: 'P4' }],
+      winningSide: 1,
+      matchUpStatus: COMPLETED,
+      roundNumber: 2,
+    },
+    {
+      matchUpId: 'r2m3',
+      sides: [{ participantId: 'P5' }, { participantId: 'P6' }],
+      winningSide: 1,
+      matchUpStatus: COMPLETED,
+      roundNumber: 2,
+    },
+    {
+      matchUpId: 'r2m4',
+      sides: [{ participantId: 'P7' }, { participantId: 'P8' }],
+      winningSide: 1,
+      matchUpStatus: COMPLETED,
+      roundNumber: 2,
+    },
   ];
 
   const { scoreGroups } = computeScoreGroups({ participantIds, matchUps });
@@ -211,18 +307,90 @@ test('Buchholz tiebreaker computed correctly', () => {
   // round 2: P1>P2, P3>P4, P5>P6, P7>P8
   // round 3: P1>P3, P2>P5, P4>P7, P6>P8
   const matchUps: any[] = [
-    { matchUpId: 'r1m1', sides: [{ participantId: 'P1' }, { participantId: 'P5' }], winningSide: 1, matchUpStatus: COMPLETED, roundNumber: 1 },
-    { matchUpId: 'r1m2', sides: [{ participantId: 'P2' }, { participantId: 'P6' }], winningSide: 1, matchUpStatus: COMPLETED, roundNumber: 1 },
-    { matchUpId: 'r1m3', sides: [{ participantId: 'P3' }, { participantId: 'P7' }], winningSide: 1, matchUpStatus: COMPLETED, roundNumber: 1 },
-    { matchUpId: 'r1m4', sides: [{ participantId: 'P4' }, { participantId: 'P8' }], winningSide: 1, matchUpStatus: COMPLETED, roundNumber: 1 },
-    { matchUpId: 'r2m1', sides: [{ participantId: 'P1' }, { participantId: 'P2' }], winningSide: 1, matchUpStatus: COMPLETED, roundNumber: 2 },
-    { matchUpId: 'r2m2', sides: [{ participantId: 'P3' }, { participantId: 'P4' }], winningSide: 1, matchUpStatus: COMPLETED, roundNumber: 2 },
-    { matchUpId: 'r2m3', sides: [{ participantId: 'P5' }, { participantId: 'P6' }], winningSide: 1, matchUpStatus: COMPLETED, roundNumber: 2 },
-    { matchUpId: 'r2m4', sides: [{ participantId: 'P7' }, { participantId: 'P8' }], winningSide: 1, matchUpStatus: COMPLETED, roundNumber: 2 },
-    { matchUpId: 'r3m1', sides: [{ participantId: 'P1' }, { participantId: 'P3' }], winningSide: 1, matchUpStatus: COMPLETED, roundNumber: 3 },
-    { matchUpId: 'r3m2', sides: [{ participantId: 'P2' }, { participantId: 'P5' }], winningSide: 1, matchUpStatus: COMPLETED, roundNumber: 3 },
-    { matchUpId: 'r3m3', sides: [{ participantId: 'P4' }, { participantId: 'P7' }], winningSide: 1, matchUpStatus: COMPLETED, roundNumber: 3 },
-    { matchUpId: 'r3m4', sides: [{ participantId: 'P6' }, { participantId: 'P8' }], winningSide: 1, matchUpStatus: COMPLETED, roundNumber: 3 },
+    {
+      matchUpId: 'r1m1',
+      sides: [{ participantId: 'P1' }, { participantId: 'P5' }],
+      winningSide: 1,
+      matchUpStatus: COMPLETED,
+      roundNumber: 1,
+    },
+    {
+      matchUpId: 'r1m2',
+      sides: [{ participantId: 'P2' }, { participantId: 'P6' }],
+      winningSide: 1,
+      matchUpStatus: COMPLETED,
+      roundNumber: 1,
+    },
+    {
+      matchUpId: 'r1m3',
+      sides: [{ participantId: 'P3' }, { participantId: 'P7' }],
+      winningSide: 1,
+      matchUpStatus: COMPLETED,
+      roundNumber: 1,
+    },
+    {
+      matchUpId: 'r1m4',
+      sides: [{ participantId: 'P4' }, { participantId: 'P8' }],
+      winningSide: 1,
+      matchUpStatus: COMPLETED,
+      roundNumber: 1,
+    },
+    {
+      matchUpId: 'r2m1',
+      sides: [{ participantId: 'P1' }, { participantId: 'P2' }],
+      winningSide: 1,
+      matchUpStatus: COMPLETED,
+      roundNumber: 2,
+    },
+    {
+      matchUpId: 'r2m2',
+      sides: [{ participantId: 'P3' }, { participantId: 'P4' }],
+      winningSide: 1,
+      matchUpStatus: COMPLETED,
+      roundNumber: 2,
+    },
+    {
+      matchUpId: 'r2m3',
+      sides: [{ participantId: 'P5' }, { participantId: 'P6' }],
+      winningSide: 1,
+      matchUpStatus: COMPLETED,
+      roundNumber: 2,
+    },
+    {
+      matchUpId: 'r2m4',
+      sides: [{ participantId: 'P7' }, { participantId: 'P8' }],
+      winningSide: 1,
+      matchUpStatus: COMPLETED,
+      roundNumber: 2,
+    },
+    {
+      matchUpId: 'r3m1',
+      sides: [{ participantId: 'P1' }, { participantId: 'P3' }],
+      winningSide: 1,
+      matchUpStatus: COMPLETED,
+      roundNumber: 3,
+    },
+    {
+      matchUpId: 'r3m2',
+      sides: [{ participantId: 'P2' }, { participantId: 'P5' }],
+      winningSide: 1,
+      matchUpStatus: COMPLETED,
+      roundNumber: 3,
+    },
+    {
+      matchUpId: 'r3m3',
+      sides: [{ participantId: 'P4' }, { participantId: 'P7' }],
+      winningSide: 1,
+      matchUpStatus: COMPLETED,
+      roundNumber: 3,
+    },
+    {
+      matchUpId: 'r3m4',
+      sides: [{ participantId: 'P6' }, { participantId: 'P8' }],
+      winningSide: 1,
+      matchUpStatus: COMPLETED,
+      roundNumber: 3,
+    },
   ];
 
   const { records } = computeScoreGroups({ participantIds, matchUps });
@@ -253,7 +421,13 @@ test('Buchholz tiebreaker computed correctly', () => {
 test('progressive score tiebreaker computed correctly', () => {
   const participantIds = ['P1', 'P2'];
   const matchUps: any[] = [
-    { matchUpId: 'r1', sides: [{ participantId: 'P1' }, { participantId: 'P2' }], winningSide: 1, matchUpStatus: COMPLETED, roundNumber: 1 },
+    {
+      matchUpId: 'r1',
+      sides: [{ participantId: 'P1' }, { participantId: 'P2' }],
+      winningSide: 1,
+      matchUpStatus: COMPLETED,
+      roundNumber: 1,
+    },
   ];
 
   const { records } = computeScoreGroups({ participantIds, matchUps });
@@ -330,15 +504,69 @@ test('median Buchholz drops highest and lowest opponent scores', () => {
   const participantIds = ['P1', 'P2', 'P3', 'P4', 'P5', 'P6'];
   // 3 rounds so each player has 3 opponents — median drops top and bottom
   const matchUps: any[] = [
-    { matchUpId: 'r1m1', sides: [{ participantId: 'P1' }, { participantId: 'P4' }], winningSide: 1, matchUpStatus: COMPLETED, roundNumber: 1 },
-    { matchUpId: 'r1m2', sides: [{ participantId: 'P2' }, { participantId: 'P5' }], winningSide: 1, matchUpStatus: COMPLETED, roundNumber: 1 },
-    { matchUpId: 'r1m3', sides: [{ participantId: 'P3' }, { participantId: 'P6' }], winningSide: 1, matchUpStatus: COMPLETED, roundNumber: 1 },
-    { matchUpId: 'r2m1', sides: [{ participantId: 'P1' }, { participantId: 'P2' }], winningSide: 1, matchUpStatus: COMPLETED, roundNumber: 2 },
-    { matchUpId: 'r2m2', sides: [{ participantId: 'P3' }, { participantId: 'P4' }], winningSide: 1, matchUpStatus: COMPLETED, roundNumber: 2 },
-    { matchUpId: 'r2m3', sides: [{ participantId: 'P5' }, { participantId: 'P6' }], winningSide: 1, matchUpStatus: COMPLETED, roundNumber: 2 },
-    { matchUpId: 'r3m1', sides: [{ participantId: 'P1' }, { participantId: 'P3' }], winningSide: 1, matchUpStatus: COMPLETED, roundNumber: 3 },
-    { matchUpId: 'r3m2', sides: [{ participantId: 'P2' }, { participantId: 'P6' }], winningSide: 1, matchUpStatus: COMPLETED, roundNumber: 3 },
-    { matchUpId: 'r3m3', sides: [{ participantId: 'P4' }, { participantId: 'P5' }], winningSide: 1, matchUpStatus: COMPLETED, roundNumber: 3 },
+    {
+      matchUpId: 'r1m1',
+      sides: [{ participantId: 'P1' }, { participantId: 'P4' }],
+      winningSide: 1,
+      matchUpStatus: COMPLETED,
+      roundNumber: 1,
+    },
+    {
+      matchUpId: 'r1m2',
+      sides: [{ participantId: 'P2' }, { participantId: 'P5' }],
+      winningSide: 1,
+      matchUpStatus: COMPLETED,
+      roundNumber: 1,
+    },
+    {
+      matchUpId: 'r1m3',
+      sides: [{ participantId: 'P3' }, { participantId: 'P6' }],
+      winningSide: 1,
+      matchUpStatus: COMPLETED,
+      roundNumber: 1,
+    },
+    {
+      matchUpId: 'r2m1',
+      sides: [{ participantId: 'P1' }, { participantId: 'P2' }],
+      winningSide: 1,
+      matchUpStatus: COMPLETED,
+      roundNumber: 2,
+    },
+    {
+      matchUpId: 'r2m2',
+      sides: [{ participantId: 'P3' }, { participantId: 'P4' }],
+      winningSide: 1,
+      matchUpStatus: COMPLETED,
+      roundNumber: 2,
+    },
+    {
+      matchUpId: 'r2m3',
+      sides: [{ participantId: 'P5' }, { participantId: 'P6' }],
+      winningSide: 1,
+      matchUpStatus: COMPLETED,
+      roundNumber: 2,
+    },
+    {
+      matchUpId: 'r3m1',
+      sides: [{ participantId: 'P1' }, { participantId: 'P3' }],
+      winningSide: 1,
+      matchUpStatus: COMPLETED,
+      roundNumber: 3,
+    },
+    {
+      matchUpId: 'r3m2',
+      sides: [{ participantId: 'P2' }, { participantId: 'P6' }],
+      winningSide: 1,
+      matchUpStatus: COMPLETED,
+      roundNumber: 3,
+    },
+    {
+      matchUpId: 'r3m3',
+      sides: [{ participantId: 'P4' }, { participantId: 'P5' }],
+      winningSide: 1,
+      matchUpStatus: COMPLETED,
+      roundNumber: 3,
+    },
   ];
 
   // After 3 rounds: P1=3-0, P2=2-1, P3=2-1, P4=1-2, P5=1-2, P6=0-3
@@ -377,12 +605,48 @@ test('tiebreaker cascade: Buchholz tie broken by Sonneborn-Berger', () => {
   // P1: 2-1, beat P3(2pts) and P2(1pt), lost to P4(1pt) → Buchholz=4, SB=3
   // P3: 2-1, beat P2(1pt) and P4(1pt), lost to P1(2pts) → Buchholz=4, SB=2
   const matchUps: any[] = [
-    { matchUpId: 'r1m1', sides: [{ participantId: 'P1' }, { participantId: 'P3' }], winningSide: 1, matchUpStatus: COMPLETED, roundNumber: 1 },
-    { matchUpId: 'r1m2', sides: [{ participantId: 'P2' }, { participantId: 'P4' }], winningSide: 1, matchUpStatus: COMPLETED, roundNumber: 1 },
-    { matchUpId: 'r2m1', sides: [{ participantId: 'P3' }, { participantId: 'P2' }], winningSide: 1, matchUpStatus: COMPLETED, roundNumber: 2 },
-    { matchUpId: 'r2m2', sides: [{ participantId: 'P4' }, { participantId: 'P1' }], winningSide: 1, matchUpStatus: COMPLETED, roundNumber: 2 },
-    { matchUpId: 'r3m1', sides: [{ participantId: 'P1' }, { participantId: 'P2' }], winningSide: 1, matchUpStatus: COMPLETED, roundNumber: 3 },
-    { matchUpId: 'r3m2', sides: [{ participantId: 'P3' }, { participantId: 'P4' }], winningSide: 1, matchUpStatus: COMPLETED, roundNumber: 3 },
+    {
+      matchUpId: 'r1m1',
+      sides: [{ participantId: 'P1' }, { participantId: 'P3' }],
+      winningSide: 1,
+      matchUpStatus: COMPLETED,
+      roundNumber: 1,
+    },
+    {
+      matchUpId: 'r1m2',
+      sides: [{ participantId: 'P2' }, { participantId: 'P4' }],
+      winningSide: 1,
+      matchUpStatus: COMPLETED,
+      roundNumber: 1,
+    },
+    {
+      matchUpId: 'r2m1',
+      sides: [{ participantId: 'P3' }, { participantId: 'P2' }],
+      winningSide: 1,
+      matchUpStatus: COMPLETED,
+      roundNumber: 2,
+    },
+    {
+      matchUpId: 'r2m2',
+      sides: [{ participantId: 'P4' }, { participantId: 'P1' }],
+      winningSide: 1,
+      matchUpStatus: COMPLETED,
+      roundNumber: 2,
+    },
+    {
+      matchUpId: 'r3m1',
+      sides: [{ participantId: 'P1' }, { participantId: 'P2' }],
+      winningSide: 1,
+      matchUpStatus: COMPLETED,
+      roundNumber: 3,
+    },
+    {
+      matchUpId: 'r3m2',
+      sides: [{ participantId: 'P3' }, { participantId: 'P4' }],
+      winningSide: 1,
+      matchUpStatus: COMPLETED,
+      roundNumber: 3,
+    },
   ];
 
   const { records } = computeScoreGroups({ participantIds, matchUps });
@@ -409,8 +673,19 @@ test('draws tracked correctly when allowDraws is true', () => {
   const participantIds = ['P1', 'P2', 'P3', 'P4'];
   // simulate one round with draws — no winningSide but matchUpStatus COMPLETED
   const matchUps: any[] = [
-    { matchUpId: 'r1m1', sides: [{ participantId: 'P1' }, { participantId: 'P2' }], matchUpStatus: COMPLETED, roundNumber: 1 },
-    { matchUpId: 'r1m2', sides: [{ participantId: 'P3' }, { participantId: 'P4' }], winningSide: 1, matchUpStatus: COMPLETED, roundNumber: 1 },
+    {
+      matchUpId: 'r1m1',
+      sides: [{ participantId: 'P1' }, { participantId: 'P2' }],
+      matchUpStatus: COMPLETED,
+      roundNumber: 1,
+    },
+    {
+      matchUpId: 'r1m2',
+      sides: [{ participantId: 'P3' }, { participantId: 'P4' }],
+      winningSide: 1,
+      matchUpStatus: COMPLETED,
+      roundNumber: 1,
+    },
   ];
 
   const { scoreGroups, records } = computeScoreGroups({ participantIds, matchUps, allowDraws: true });

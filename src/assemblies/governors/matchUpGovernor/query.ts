@@ -9,6 +9,8 @@ export { participantScheduledMatchUps } from '@Query/matchUps/participantSchedul
 export { getMatchUpDailyLimitsUpdate } from '@Query/extensions/getMatchUpDailyLimitsUpdate';
 export { competitionScheduleMatchUps } from '@Query/matchUps/competitionScheduleMatchUps';
 export { getMatchUpCompetitiveProfile } from '@Query/matchUp/getMatchUpCompetitiveProfile';
+export { getMatchUpRatingDelta } from '@Query/matchUp/getMatchUpRatingDelta';
+export { getCompetitiveProfile } from '@Query/matchUps/getCompetitiveProfile';
 export { getCheckedInParticipantIds } from '@Query/matchUp/getCheckedInParticipantIds';
 export { getMatchUpScheduleDetails } from '@Query/matchUp/getMatchUpScheduleDetails';
 export { matchUpActions } from '@Query/drawDefinition/matchUpActions/matchUpActions';

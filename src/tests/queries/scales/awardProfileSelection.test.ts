@@ -1,5 +1,5 @@
 import { getAwardProfile } from '@Query/scales/getAwardProfile';
-import { POLICY_RANKING_POINTS_USTA_JUNIOR } from '@Fixtures/policies/POLICY_RANKING_POINTS_USTA_JUNIOR';
+import { POLICY_RANKING_POINTS_USTA_JUNIOR } from '@Tests/fixtures/policies/POLICY_RANKING_POINTS_USTA_JUNIOR';
 import scaleEngine from '@Engines/scaleEngine';
 import { mocksEngine } from '../../..';
 import { describe, expect, it, afterEach } from 'vitest';
@@ -334,5 +334,71 @@ describe('profileName in output', () => {
     // Without devContext, profileName should not be present
     const withProfileName = allAwards.filter((a) => a.profileName);
     expect(withProfileName.length).toEqual(0);
+  });
+});
+
+// `AwardProfileScope.drawSize` (singular, exact match) was read by matchesProfile
+// but undeclared on the type, so a policy could set it and have it honoured while
+// the type said it did not exist. Declaring it then exposed a second gap: it was
+// matched but absent from PROFILE_SCOPE_FIELDS, so it narrowed a profile without
+// making it more specific and the two spellings of one constraint ranked
+// differently. Both are closed now — these pin matching AND scoring.
+describe('AwardProfileScope drawSize', () => {
+  const exact = { profileName: 'Exactly 32', drawSize: 32, finishingPositionRanges: { 1: 999 } };
+  const catchAll = { profileName: 'Any', finishingPositionRanges: { 1: 10 } };
+
+  it('matches a profile whose exact drawSize equals the draw', () => {
+    const { awardProfile }: any = getAwardProfile({ awardProfiles: [exact, catchAll], drawSize: 32 });
+    expect(awardProfile.profileName).toEqual('Exactly 32');
+  });
+
+  it('excludes the profile when the draw size differs', () => {
+    const { awardProfile }: any = getAwardProfile({ awardProfiles: [exact, catchAll], drawSize: 64 });
+    expect(awardProfile.profileName).toEqual('Any');
+  });
+
+  it('excludes the profile when the draw size is absent', () => {
+    const { awardProfile }: any = getAwardProfile({ awardProfiles: [exact, catchAll] });
+    expect(awardProfile.profileName).toEqual('Any');
+  });
+
+  it('contributes to specificity, so it beats a catch-all declared first', () => {
+    // Both match a 32 draw, and neither declares a priority, so selection falls to
+    // specificity scoring. `drawSize` is in PROFILE_SCOPE_FIELDS, so the narrower
+    // profile scores 1 against the catch-all's 0 and wins regardless of where it
+    // sits in the array. Declaration order only breaks a genuine tie.
+    const { awardProfile }: any = getAwardProfile({ awardProfiles: [catchAll, exact], drawSize: 32 });
+    expect(awardProfile.profileName).toEqual('Exactly 32');
+  });
+
+  it('drawSizes scores identically and also wins against a catch-all declared first', () => {
+    const viaList = { profileName: 'viaList', drawSizes: [32], finishingPositionRanges: { 1: 2 } };
+    const { awardProfile }: any = getAwardProfile({ awardProfiles: [catchAll, viaList], drawSize: 32 });
+    expect(awardProfile.profileName).toEqual('viaList');
+  });
+
+  it('ranks the singular and the plural spelling identically', () => {
+    // The point of the change: `drawSize: 32` and `drawSizes: [32]` express the same
+    // constraint, so which one a policy author reached for must not decide selection.
+    // Each is put up against the same catch-all in the same array position.
+    const viaSingular = { profileName: 'narrower', drawSize: 32, finishingPositionRanges: { 1: 999 } };
+    const viaPlural = { profileName: 'narrower', drawSizes: [32], finishingPositionRanges: { 1: 999 } };
+
+    const singular: any = getAwardProfile({ awardProfiles: [catchAll, viaSingular], drawSize: 32 });
+    const plural: any = getAwardProfile({ awardProfiles: [catchAll, viaPlural], drawSize: 32 });
+
+    expect(singular.awardProfile.profileName).toEqual(plural.awardProfile.profileName);
+    expect(singular.awardProfile.profileName).toEqual('narrower');
+  });
+
+  it('still loses to a higher explicit priority, which outranks specificity', () => {
+    // Specificity is the fallback, not an override: an explicit priority anywhere in
+    // the matching set decides selection before scoring is consulted at all.
+    const prioritisedCatchAll = { profileName: 'Any', priority: 10, finishingPositionRanges: { 1: 10 } };
+    const { awardProfile }: any = getAwardProfile({
+      awardProfiles: [prioritisedCatchAll, exact],
+      drawSize: 32,
+    });
+    expect(awardProfile.profileName).toEqual('Any');
   });
 });

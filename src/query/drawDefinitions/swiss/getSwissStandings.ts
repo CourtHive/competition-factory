@@ -39,7 +39,7 @@ export function getSwissStandings({
 
   const matchUps = structure.matchUps ?? [];
   const participantIds = (drawDefinition.entries ?? [])
-    .filter((e) => STRUCTURE_SELECTED_STATUSES.includes(e.entryStatus ?? ''))
+    .filter((e) => !!e.entryStatus && STRUCTURE_SELECTED_STATUSES.includes(e.entryStatus))
     .map(getParticipantId)
     .filter(Boolean) as string[];
 

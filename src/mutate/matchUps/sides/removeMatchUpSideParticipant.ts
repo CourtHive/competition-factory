@@ -45,6 +45,7 @@ export function removeMatchUpSideParticipant(params: RemoveMatchUpSideParticipan
     context: 'assignSideParticipant',
     drawDefinition,
     matchUp,
+    event,
   });
 
   return { ...SUCCESS };

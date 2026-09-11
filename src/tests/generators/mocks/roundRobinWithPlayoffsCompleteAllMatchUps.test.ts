@@ -1,12 +1,12 @@
+import tournamentEngine from '@Engines/syncEngine';
 import mocksEngine from '@Assemblies/engines/mock';
 import { instanceCount } from '@Tools/arrays';
-import tournamentEngine from '@Engines/syncEngine';
 import { expect, it } from 'vitest';
 
+import { MAIN, ROUND_ROBIN_WITH_PLAYOFF } from '@Constants/drawDefinitionConstants';
 import { FORMAT_STANDARD } from '@Fixtures/scoring/matchUpFormats';
 import { COMPLETED } from '@Constants/matchUpStatusConstants';
 import { SINGLES } from '@Constants/eventConstants';
-import { MAIN, ROUND_ROBIN_WITH_PLAYOFF } from '@Constants/drawDefinitionConstants';
 
 it('can complete matchUps in playoff structures', () => {
   const structureOptions = { groupSize: 5 };

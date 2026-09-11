@@ -1,3 +1,4 @@
+import { generatePairParticipantName } from '@Functions/participants/generatePairParticipantName';
 import { postalCodeMocks, stateMocks, cityMocks } from '../mocks/address';
 import { extractDate, formatDate } from '@Tools/dateTime';
 import { generatePersons } from '../mocks/generatePersons';
@@ -18,6 +19,7 @@ import { coercedGender } from '@Helpers/coercedGender';
 export function anonymizeTournamentRecord({
   keepExtensions = [],
   anonymizeParticipantNames = true,
+  parentOrganisation,
   tournamentRecord,
   tournamentName,
   personIds = [],
@@ -39,7 +41,14 @@ export function anonymizeTournamentRecord({
 
   const idMap = {};
 
-  anonymizeTournamentHeader({ tournamentRecord, filterExtensions, idMap, tournamentId, tournamentName });
+  anonymizeTournamentHeader({
+    tournamentRecord,
+    filterExtensions,
+    idMap,
+    parentOrganisation,
+    tournamentId,
+    tournamentName,
+  });
   anonymizeParticipantIds({ tournamentRecord, filterExtensions, idMap });
   anonymizeVenues({ tournamentRecord, filterExtensions, idMap });
   anonymizeEvents({ tournamentRecord, filterExtensions, idMap });
@@ -56,7 +65,34 @@ export function anonymizeTournamentRecord({
   return { ...SUCCESS };
 }
 
-function anonymizeTournamentHeader({ tournamentRecord, filterExtensions, idMap, tournamentId, tournamentName }) {
+function anonymizeSchedulingProfileRounds(rounds: any[], idMap: any) {
+  for (const round of rounds) {
+    round.tournamentId = idMap[round.tournamentId];
+    round.structureId = idMap[round.structureId];
+    round.eventId = idMap[round.eventId];
+    round.drawId = idMap[round.drawId];
+  }
+}
+
+function anonymizeFlightProfileFlights(flightProfile: any, idMap: any) {
+  for (const flight of flightProfile.flights) {
+    flight.drawId = idMap[flight.drawId];
+    if (Array.isArray(flight.drawEntries)) {
+      for (const entry of flight.drawEntries) {
+        entry.participantId = idMap[entry.participantId];
+      }
+    }
+  }
+}
+
+function anonymizeTournamentHeader({
+  tournamentRecord,
+  filterExtensions,
+  idMap,
+  parentOrganisation,
+  tournamentId,
+  tournamentName,
+}) {
   tournamentRecord.extensions = filterExtensions(tournamentRecord);
 
   const newTournamentId = tournamentId || UUID();
@@ -67,7 +103,16 @@ function anonymizeTournamentHeader({ tournamentRecord, filterExtensions, idMap, 
   tournamentRecord.tournamentName = tournamentName || `Anonymized: ${formatDate(new Date())}`;
   tournamentRecord.isMock = true;
 
-  delete tournamentRecord.parentOrganisation;
+  // Caller passes a mock provider when multi-tournament anonymization pipelines
+  // need provider grouping to survive (e.g. "all tournaments for provider X"
+  // queries on the anonymized corpus). Keep a map of real → mock provider on
+  // the caller side and pass the consistent mock per real provider. Absent any
+  // mock, drop the field entirely — the real org would leak otherwise.
+  if (parentOrganisation) {
+    tournamentRecord.parentOrganisation = parentOrganisation;
+  } else {
+    delete tournamentRecord.parentOrganisation;
+  }
 }
 
 function anonymizeParticipantIds({ tournamentRecord, filterExtensions, idMap }) {
@@ -196,20 +241,14 @@ function anonymizeEvents({ tournamentRecord, filterExtensions, idMap }) {
       anonymizeDrawDefinition({ drawDefinition, filterExtensions, idMap });
     }
 
-    const { extension: flightProfile } = findExtension({
-      name: FLIGHT_PROFILE,
-      element: event,
-    });
-
-    if (Array.isArray(flightProfile?.value?.flights)) {
-      flightProfile?.value.flights?.forEach((flight) => {
-        flight.drawId = idMap[flight.drawId];
-        if (Array.isArray(flight.drawEntries)) {
-          for (const entry of flight.drawEntries) {
-            entry.participantId = idMap[entry.participantId];
-          }
-        }
-      });
+    // anonymize CODES first-class flightProfile when present
+    if (Array.isArray(event.flightProfile?.flights)) {
+      anonymizeFlightProfileFlights(event.flightProfile, idMap);
+    }
+    // also anonymize the legacy extension form so BRIDGE / LEGACY records remain consistent
+    const { extension: flightProfileExt } = findExtension({ name: FLIGHT_PROFILE, element: event });
+    if (Array.isArray(flightProfileExt?.value?.flights)) {
+      anonymizeFlightProfileFlights(flightProfileExt.value, idMap);
     }
 
     eventCount += 1;
@@ -409,12 +448,11 @@ function anonymizeExtensionIds({ tournamentRecord, idMap }) {
   });
 
   if (Array.isArray(schedulingProfile?.value)) {
-    schedulingProfile?.value.forEach((round) => {
-      round.tournamentId = idMap[round.tournamentId];
-      round.structureId = idMap[round.structureId];
-      round.eventId = idMap[round.eventId];
-      round.drawId = idMap[round.drawId];
-    });
+    anonymizeSchedulingProfileRounds(schedulingProfile.value, idMap);
+  }
+  // CODES: also anonymize the first-class `tournamentRecord.scheduling.profile`
+  if (Array.isArray(tournamentRecord.scheduling?.profile)) {
+    anonymizeSchedulingProfileRounds(tournamentRecord.scheduling.profile, idMap);
   }
 
   const { extension: personRequests } = findExtension({
@@ -427,16 +465,4 @@ function anonymizeExtensionIds({ tournamentRecord, idMap }) {
       request.personId = idMap[request.personId];
     });
   }
-}
-
-function generatePairParticipantName({ individualParticipantIds, individualParticipants }) {
-  let participantName = individualParticipants
-    .filter(({ participantId }) => individualParticipantIds.includes(participantId))
-    .map((p) => p.person?.standardFamilyName || p.participantOtherName || p.participantName || '')
-    .filter(Boolean)
-    .sort()
-    .join('/');
-
-  if (individualParticipantIds.length === 1) participantName += '/Unknown';
-  return participantName;
 }

@@ -1,6 +1,7 @@
 import { structureAssignedDrawPositions } from '@Query/drawDefinition/positionsGetter';
 import { allTournamentMatchUps } from '@Query/matchUps/getAllTournamentMatchUps';
 import { isCompletedStructure } from '@Query/drawDefinition/structureActions';
+import { hasPropagatedExitDownstream } from '@Query/drawDefinition/hasPropagatedExitDownstream';
 import { isActiveDownstream } from '@Query/drawDefinition/isActiveDownstream';
 import { getAppliedPolicies } from '@Query/extensions/getAppliedPolicies';
 import { isDirectingMatchUpStatus } from '@Query/matchUp/checkStatusType';
@@ -22,11 +23,20 @@ import {
 } from '@Query/drawDefinition/positionActions/actionPolicyUtils';
 
 // constants, fixtures and types
-import { END, REFEREE, SCHEDULE, SCHEDULE_METHOD, SCORE, START, STATUS } from '@Constants/matchUpActionConstants';
+import {
+  CLEAR_SCORE,
+  END,
+  REFEREE,
+  SCHEDULE,
+  SCHEDULE_METHOD,
+  SCORE,
+  START,
+  STATUS,
+} from '@Constants/matchUpActionConstants';
 import { POLICY_TYPE_MATCHUP_ACTIONS, POLICY_TYPE_POSITION_ACTIONS } from '@Constants/policyConstants';
 import { MatchUpsMap, PolicyDefinitions, TournamentRecords, ResultType } from '@Types/factoryTypes';
 import POLICY_MATCHUP_ACTIONS_DEFAULT from '@Fixtures/policies/POLICY_MATCHUP_ACTIONS_DEFAULT';
-import { BYE, DOUBLE_DEFAULT, DOUBLE_WALKOVER } from '@Constants/matchUpStatusConstants';
+import { BYE, DOUBLE_DEFAULT, DOUBLE_WALKOVER, TO_BE_PLAYED } from '@Constants/matchUpStatusConstants';
 import { DrawDefinition, Event, Participant, Tournament } from '@Types/tournamentTypes';
 import { ADD_PENALTY, ADD_PENALTY_METHOD } from '@Constants/positionActionConstants';
 import { SUCCESS } from '@Constants/resultConstants';
@@ -105,12 +115,7 @@ export function matchUpActions(params?: MatchUpActionsArgs): ResultType & {
 
   if (!matchUp) return { error: MATCHUP_NOT_FOUND };
 
-  const {
-    appliedPolicies,
-    policyActions,
-    matchUpActionsPolicy,
-    otherFlightEntries,
-  } = resolvePolicies({
+  const { appliedPolicies, policyActions, matchUpActionsPolicy, otherFlightEntries } = resolvePolicies({
     specifiedPolicyDefinitions,
     tournamentRecord,
     drawDefinition,
@@ -135,9 +140,7 @@ export function matchUpActions(params?: MatchUpActionsArgs): ResultType & {
   const side: any = sideNumber && inContextMatchUp?.sides?.find((s) => s.sideNumber === sideNumber);
 
   const matchUpParticipantIds =
-    inContextMatchUp?.sides
-      ?.map((s: any) => s.participantId || s.participant?.participantid)
-      .filter(Boolean) ?? [];
+    inContextMatchUp?.sides?.map((s: any) => s.participantId || s.participant?.participantId).filter(Boolean) ?? [];
 
   const { assignedPositions, allPositionsAssigned } = structureAssignedDrawPositions({ structure });
   const { structureId } = structure ?? {};
@@ -148,20 +151,22 @@ export function matchUpActions(params?: MatchUpActionsArgs): ResultType & {
   const isCollectionMatchUp = Boolean(matchUp.collectionId);
 
   if (isAdHoc({ structure }) && !isCollectionMatchUp) {
-    validActions.push(...adHocMatchUpActions({
-      restrictAdHocRoundParticipants,
-      tournamentParticipants,
-      matchUpParticipantIds,
-      otherFlightEntries,
-      drawDefinition,
-      structureId,
-      sideNumber,
-      matchUpId,
-      structure,
-      matchUp,
-      drawId,
-      event,
-    }));
+    validActions.push(
+      ...adHocMatchUpActions({
+        restrictAdHocRoundParticipants,
+        tournamentParticipants,
+        matchUpParticipantIds,
+        otherFlightEntries,
+        drawDefinition,
+        structureId,
+        sideNumber,
+        matchUpId,
+        structure,
+        matchUp,
+        drawId,
+        event,
+      }),
+    );
   }
 
   const structureIsComplete = isCompletedStructure({ drawDefinition, structure });
@@ -186,6 +191,7 @@ export function matchUpActions(params?: MatchUpActionsArgs): ResultType & {
     enforceGender,
     participantId,
     isDoubleExit,
+    matchUpsMap,
     sideNumber,
     matchUpId,
     structure,
@@ -206,13 +212,7 @@ function resolveDrawDefinition({ tournamentRecord, matchUpId }) {
   return { drawDefinition, event };
 }
 
-function resolvePolicies({
-  specifiedPolicyDefinitions,
-  tournamentRecord,
-  drawDefinition,
-  structure,
-  event,
-}) {
+function resolvePolicies({ specifiedPolicyDefinitions, tournamentRecord, drawDefinition, structure, event }) {
   const appliedPolicies =
     getAppliedPolicies({ tournamentRecord, drawDefinition, structure, event }).appliedPolicies ?? {};
   Object.assign(appliedPolicies, specifiedPolicyDefinitions ?? {});
@@ -262,6 +262,7 @@ function addStandardActions({
   enforceGender,
   participantId,
   isDoubleExit,
+  matchUpsMap,
   sideNumber,
   matchUpId,
   structure,
@@ -336,22 +337,57 @@ function addStandardActions({
     if (isAvailableAction({ policyActions, action: END })) validActions.push({ type: END });
   }
 
+  // CLEAR_SCORE — the affordance for REMOVING an outcome, which SCORE cannot express.
+  //
+  // Clearing is submitted through the same `setMatchUpStatus` method as scoring (an empty outcome),
+  // so SCORE covers two operations while only one of them is refusable: measured across 96 cells,
+  // SCORING a decided matchUp succeeds everywhere and only the CLEAR is refused, with
+  // ERR_PROPAGATED_EXITS_DOWNSTREAM. Nothing in validActions said so, which left a consumer to
+  // discover it by being told no.
+  //
+  // Emitted only when the clear would actually succeed, so its PRESENCE is the permission and a UI
+  // building a removal control has an unambiguous action to reach for rather than inferring one
+  // from SCORE. `hasPropagatedExitDownstream` is the same gate setMatchUpState applies on its
+  // isClearScore branch — consulted here rather than re-derived, which is the divergence that put
+  // these 20 cells in quarantine in the first place.
+  const hasOutcomeToRemove =
+    !!matchUp.winningSide || (!!matchUp.matchUpStatus && matchUp.matchUpStatus !== TO_BE_PLAYED);
+  const clearWouldBeRefused = activeDownstream || hasPropagatedExitDownstream({ targetData, matchUpsMap });
+  if (scoringActive && hasOutcomeToRemove && !clearWouldBeRefused) {
+    validActions.push({
+      info: 'remove the existing outcome',
+      method: SCHEDULE_METHOD,
+      type: CLEAR_SCORE,
+      payload: {
+        drawId,
+        matchUpId,
+        outcome: {
+          matchUpStatus: TO_BE_PLAYED,
+          score: { scoreStringSide1: '', scoreStringSide2: '' },
+          winningSide: undefined,
+        },
+      },
+    });
+  }
+
   if (isCollectionMatchUp && inContextMatchUp) {
-    validActions.push(...collectionMatchUpActions({
-      specifiedPolicyDefinitions,
-      inContextDrawMatchUps,
-      matchUpParticipantIds,
-      matchUpActionsPolicy,
-      inContextMatchUp,
-      policyActions,
-      enforceGender,
-      participantId,
-      sideNumber,
-      matchUpId,
-      matchUp,
-      drawId,
-      side,
-    }));
+    validActions.push(
+      ...collectionMatchUpActions({
+        specifiedPolicyDefinitions,
+        inContextDrawMatchUps,
+        matchUpParticipantIds,
+        matchUpActionsPolicy,
+        inContextMatchUp,
+        policyActions,
+        enforceGender,
+        participantId,
+        sideNumber,
+        matchUpId,
+        matchUp,
+        drawId,
+        side,
+      }),
+    );
   }
 }
 

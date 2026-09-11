@@ -8,7 +8,7 @@ import { computeActualOutput } from '@Generators/scales/competition/actualOutput
 import { expectedScore } from '@Generators/scales/competition/expectedScore';
 
 // Mutate
-import { addExtension } from '@Mutate/extensions/addExtension';
+import { setFirstClassOrExtension } from '@Mutate/extensions/setFirstClassOrExtension';
 
 // Constants
 import { MISSING_DRAW_DEFINITION, MISSING_MATCHUP } from '@Constants/errorConditionConstants';
@@ -128,9 +128,11 @@ export function processCompetitionMatchUp(params: ProcessCompetitionMatchUpArgs)
   });
 
   // Persist updated state
-  addExtension({
+  setFirstClassOrExtension({
     element: drawDefinition,
-    extension: { name: COMPETITION_STATE, value: competitionState },
+    attribute: 'competitionState',
+    name: COMPETITION_STATE,
+    value: competitionState,
   });
 
   return { ...SUCCESS };

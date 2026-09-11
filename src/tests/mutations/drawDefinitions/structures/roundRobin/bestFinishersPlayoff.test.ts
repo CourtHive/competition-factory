@@ -2,7 +2,7 @@ import { generateDrawTypeAndModifyDrawDefinition } from '@Assemblies/generators/
 import { newDrawDefinition } from '@Assemblies/generators/drawDefinitions/newDrawDefinition';
 import { getPositionAssignments } from '@Query/drawDefinition/positionsGetter';
 import { validatePlayoffGroups } from '@Validators/validatePlayoffGroups';
-import { findExtension } from '@Acquire/findExtension';
+import { firstClassOrExtension } from '@Acquire/firstClassOrExtension';
 import mocksEngine from '@Assemblies/engines/mock';
 import tournamentEngine from '@Engines/syncEngine';
 import { expect, it, describe } from 'vitest';
@@ -287,7 +287,7 @@ describe('bestFinishers with mocksEngine — full tournament lifecycle', () => {
     rrGroups.forEach((group) => {
       const assignments = group.positionAssignments ?? [];
       assignments.forEach((assignment) => {
-        const tally = findExtension({ element: assignment, name: TALLY })?.extension?.value;
+        const tally = firstClassOrExtension({ element: assignment, attribute: 'tally', name: TALLY });
         if (tally?.groupOrder === 1 && assignment.participantId) {
           groupWinnerIds.push(assignment.participantId);
         }
@@ -368,7 +368,7 @@ describe('bestFinishers with mocksEngine — full tournament lifecycle', () => {
 
     rrGroups.forEach((group) => {
       (group.positionAssignments ?? []).forEach((assignment) => {
-        const tally = findExtension({ element: assignment, name: TALLY })?.extension?.value;
+        const tally = firstClassOrExtension({ element: assignment, attribute: 'tally', name: TALLY });
         if (tally?.groupOrder === 1 && assignment.participantId) groupWinnerIds.push(assignment.participantId);
         if (tally?.groupOrder === 2 && assignment.participantId) secondPlaceIds.push(assignment.participantId);
       });
@@ -423,7 +423,7 @@ describe('bestFinishers with mocksEngine — full tournament lifecycle', () => {
     const secondPlaceResults: { participantId: string; GEMscore: number }[] = [];
     (mainStructure?.structures ?? []).forEach((group) => {
       (group.positionAssignments ?? []).forEach((assignment) => {
-        const tally = findExtension({ element: assignment, name: TALLY })?.extension?.value;
+        const tally = firstClassOrExtension({ element: assignment, attribute: 'tally', name: TALLY });
         if (tally?.groupOrder === 2 && assignment.participantId) {
           secondPlaceResults.push({
             participantId: assignment.participantId,
@@ -631,7 +631,7 @@ describe('bestFinishers with mocksEngine — full tournament lifecycle', () => {
     const groupWinnerIds: string[] = [];
     (mainStructure?.structures ?? []).forEach((group) => {
       (group.positionAssignments ?? []).forEach((assignment) => {
-        const tally = findExtension({ element: assignment, name: TALLY })?.extension?.value;
+        const tally = firstClassOrExtension({ element: assignment, attribute: 'tally', name: TALLY });
         if (tally?.groupOrder === 1 && assignment.participantId) groupWinnerIds.push(assignment.participantId);
       });
     });

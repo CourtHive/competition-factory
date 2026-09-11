@@ -1,9 +1,11 @@
 export { validateOfficiatingStatusTransition } from '@Validators/officiating/validateOfficiatingStatusTransition';
+export { getMatchUpOfficialConflicts } from '@Query/officiating/getMatchUpOfficialConflicts';
 export { getOfficialCertifications } from '@Query/officiating/getOfficialCertifications';
 export { validateCertification } from '@Validators/officiating/validateCertification';
-export { getEvaluationTemplate } from '@Query/officiating/getEvaluationTemplate';
 export { getOfficialEligibility } from '@Query/officiating/getOfficialEligibility';
 export { getOfficialAssignments } from '@Query/officiating/getOfficialAssignments';
+export { getEvaluationTemplate } from '@Query/officiating/getEvaluationTemplate';
 export { getEvaluationSummary } from '@Query/officiating/getEvaluationSummary';
+export { getOfficialConflicts } from '@Query/officiating/getOfficialConflicts';
 export { queryOfficialRecord } from '@Query/officiating/getOfficialRecord';
 export { getEvaluations } from '@Query/officiating/getEvaluations';

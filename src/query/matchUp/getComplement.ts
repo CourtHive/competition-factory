@@ -6,10 +6,11 @@ type SetComplementArgs = {
   isSide1?: boolean;
   NoAD?: boolean;
   setTo: number;
+  winBy?: number;
 };
 
 export const getSetComplement = (params: SetComplementArgs): number[] | false => {
-  const { isSide1, lowValue, setTo, tiebreakAt, NoAD } = params;
+  const { isSide1, lowValue, setTo, tiebreakAt, NoAD, winBy } = params;
   if (lowValue === undefined) return false;
   let valueAsNumber = ensureInt(lowValue);
 
@@ -23,7 +24,11 @@ export const getSetComplement = (params: SetComplementArgs): number[] | false =>
   }
 
   let calculatedValue;
-  if (NoAD && !tiebreakAt) {
+  // WB1 on a no-tiebreak set: first side to setTo wins; complement is always setTo
+  // (e.g. TYPTI WB1 → 0–5, 4–5).
+  if (!tiebreakAt && winBy === 1) {
+    calculatedValue = setTo;
+  } else if (NoAD && !tiebreakAt) {
     if (valueAsNumber > setTo) {
       calculatedValue = setTo;
     } else {

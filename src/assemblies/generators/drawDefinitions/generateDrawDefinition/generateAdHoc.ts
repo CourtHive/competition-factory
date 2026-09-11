@@ -18,13 +18,21 @@ export function generateAdHoc(params) {
   const participantIds = entries?.map(getParticipantId);
   const matchUpsCount = entries ? Math.floor(entries.length / 2) : 0;
 
-  if (params.automated) {
+  // with no entrants there is nothing to pair: an AD_HOC structure with zero matchUps is the
+  // legitimate result of an empty draw, not an error
+  if (!participantIds?.length) return { ...SUCCESS };
+
+  // a pairingProfile IS the pairing decision, so it supersedes drawMatic's rating-weighted automation
+  if (params.automated && !params.pairingProfile) {
     return automateAdHoc({ ...params, participantIds });
   } else {
     const genResult = generateAdHocRounds({
+      enableDoubleRobin: params.enableDoubleRobin,
+      pairingProfile: params.pairingProfile,
       roundsCount: params.roundsCount,
       drawDefinition,
       matchUpsCount,
+      structureId,
       idPrefix,
       isMock,
       event,

@@ -81,10 +81,12 @@ it('supports pro-scheduling', () => {
     .allTournamentMatchUps({ matchUpFilters: { matchUpIds: byeMatchUpIds } })
     .matchUps.map(xa('schedule'));
 
-  expect(byeMatchUpSchedules).toEqual([
-    { milliseconds: 0, time: '00:00:00' },
-    { milliseconds: 0, time: '00:00:00' },
-    { milliseconds: 0, time: '00:00:00' },
-    { milliseconds: 0, time: '00:00:00' },
-  ]);
+  // byes are ignored by pro-scheduling: none carry a real scheduledTime/venue/court in either
+  // writeMode (LEGACY hydrates an empty `{ milliseconds: 0, time: '00:00:00' }`, NATIVE leaves `{}`)
+  expect(byeMatchUpSchedules.length).toEqual(4);
+  byeMatchUpSchedules.forEach((schedule) => {
+    expect(schedule?.scheduledTime).toBeUndefined();
+    expect(schedule?.venueId).toBeUndefined();
+    expect(schedule?.courtId).toBeUndefined();
+  });
 });

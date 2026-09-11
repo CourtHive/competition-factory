@@ -40,6 +40,7 @@ The **Scoring Policy** (`POLICY_TYPE_SCORING`) controls scoring requirements, fo
 
     // Change propagation
     allowChangePropagation?: boolean;                  // Propagate winningSide changes downstream (default: false)
+    propagateExitStatus?: boolean;                     // Propagate exit status (WALKOVER/DEFAULTED) into the consolation (default: false)
 
     // Stage-specific requirements
     stage?: {
@@ -83,7 +84,8 @@ The **Scoring Policy** (`POLICY_TYPE_SCORING`) controls scoring requirements, fo
 ## Default Scoring Policy
 
 ```js
-import { POLICY_SCORING_DEFAULT } from 'tods-competition-factory';
+import { fixtures } from 'tods-competition-factory';
+const { POLICY_SCORING_DEFAULT } = fixtures.policies;
 
 // Defaults:
 // {
@@ -126,7 +128,8 @@ import { POLICY_SCORING_DEFAULT } from 'tods-competition-factory';
 ### Default Matchup Format
 
 ```js
-import { POLICY_TYPE_SCORING } from 'tods-competition-factory';
+import { policyConstants } from 'tods-competition-factory';
+const { POLICY_TYPE_SCORING } = policyConstants;
 
 // Set tournament-wide default format
 const defaultFormatPolicy = {
@@ -263,7 +266,8 @@ const flexibleDeletionPolicy = {
 ### Limit Available Formats (USTA Example)
 
 ```js
-import { POLICY_SCORING_USTA } from 'tods-competition-factory';
+import { fixtures } from 'tods-competition-factory';
+const { POLICY_SCORING_USTA } = fixtures.policies;
 
 // USTA policy includes approved formats only
 const ustaPolicy = {
@@ -388,7 +392,8 @@ const stageSpecificPolicy = {
 ### USTA Status Codes (Comprehensive)
 
 ```js
-import { POLICY_SCORING_USTA } from 'tods-competition-factory';
+import { fixtures } from 'tods-competition-factory';
+const { POLICY_SCORING_USTA } = fixtures.policies;
 
 // USTA policy includes detailed status codes:
 const ustaStatusCodes = {
@@ -552,6 +557,27 @@ const propagationPolicy = {
 // Recommended: Keep false for manual control
 ```
 
+### Exit-Status Propagation
+
+`propagateExitStatus` controls whether an exit (`WALKOVER` / `DEFAULTED`) applied to a
+matchUp is propagated into the consolation — placing the exiting participant into their
+consolation matchUp with the carried exit status rather than as an ordinary loser.
+
+```js
+const propagationPolicy = {
+  [POLICY_TYPE_SCORING]: {
+    policyName: 'Propagate Exits',
+    propagateExitStatus: true, // exits flow into the consolation by default
+  },
+};
+
+// Resolution precedence (mirrors allowChangePropagation):
+//   setMatchUpStatus({ ..., propagateExitStatus: true })  → always propagates (override)
+//   otherwise the scoring policy's propagateExitStatus is used
+//   POLICY_SCORING_DEFAULT: false   POLICY_SCORING_USTA: true
+// An explicit params boolean `false` defers to the policy (it does not force-off).
+```
+
 ---
 
 ## Real-World Examples
@@ -559,7 +585,8 @@ const propagationPolicy = {
 ### USTA Tournament
 
 ```js
-import { POLICY_SCORING_USTA } from 'tods-competition-factory';
+import { fixtures } from 'tods-competition-factory';
+const { POLICY_SCORING_USTA } = fixtures.policies;
 
 // Use complete USTA policy
 tournamentEngine.attachPolicies({

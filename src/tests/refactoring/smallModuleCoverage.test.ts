@@ -96,10 +96,7 @@ describe('asyncEngine coverage', () => {
   it('executionQueue handles rollbackOnError on method error', async () => {
     const { tournamentRecord } = mocksEngine.generateTournamentRecord();
     await asyncEngine.setState(tournamentRecord);
-    let result: any = await asyncEngine.executionQueue(
-      [{ method: 'toggleParticipantCheckInState' }],
-      true,
-    );
+    let result: any = await asyncEngine.executionQueue([{ method: 'toggleParticipantCheckInState' }], true);
     expect(result.rolledBack).toBe(true);
   });
 

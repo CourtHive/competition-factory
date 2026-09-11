@@ -3,6 +3,8 @@ import mocksEngine from '@Assemblies/engines/mock';
 import tournamentEngine from '@Engines/syncEngine';
 import { expect, it } from 'vitest';
 
+import { MATCHUPS_SCHEDULED_OUTSIDE_DATES } from '@Constants/errorConditionConstants';
+
 it('auto schedules venue if only one venue provided', () => {
   const drawProfiles = [{ drawSize: 16 }, { drawSize: 64 }];
   const venueProfiles = [{ courtsCount: 3 }];
@@ -38,10 +40,13 @@ it('auto schedules venue if only one venue provided', () => {
   expect(upcomingMatchUps[0].schedule.venueId).toEqual(venueIds[0]);
   expect(matchUpIds.includes(matchUpId)).toEqual(true);
 
+  // moving the start date past the scheduled matchUps is blocked (not silently unscheduled)
   startDate = '2020-01-02';
   result = tournamentEngine.setTournamentStartDate({ startDate });
-  expect(result.unscheduledMatchUpIds.length).toEqual(scheduledMatchUpsCount);
+  expect(result.error.code).toEqual(MATCHUPS_SCHEDULED_OUTSIDE_DATES.code);
+  expect(result.outOfRangeMatchUpIds.length).toEqual(scheduledMatchUpsCount);
 
+  // matchUps remain scheduled on the original date
   result = tournamentEngine.competitionScheduleMatchUps({ matchUpFilters });
-  expect(result.dateMatchUps.length).toEqual(0);
+  expect(result.dateMatchUps.length).toEqual(scheduledMatchUpsCount);
 });

@@ -105,6 +105,34 @@ const { analysis } = engine.analyzeTournament();
 
 **Returns:** Tournament-level metrics including events, participants, draws, and matchUps.
 
+### `extensionAnomalies`
+
+From **6.32.0**, the analysis reports extensions that no reader will ever see.
+
+An extension after the first of a given `name` is **unreachable** — every reader
+resolves with `.find()` — so the attached policy, timing override or flag simply never
+takes effect, with no error and no signal.
+
+```js
+const { analysis } = engine.analyzeTournament();
+analysis.extensionAnomalies;
+// [{ element: 'venue', elementId: 'venue-1', name: 'scheduleTiming', count: 3 }]
+```
+
+Present **only when there is something to report**, matching how
+`missingParticipantIds` behaves — so its absence is the ordinary case, not a
+failure to look.
+
+Records built through the factory cannot reach this state: `addExtension` maintains
+one-per-name (it replaces in place and pushes only when absent) and `attachPolicies`
+guards again per `policyType`. The invariant is upheld by the writer rather than
+validated on the way in, which is precisely why records assembled **outside** the API
+— hand-built fixtures, importers, `classic-converter`, legacy storage — can carry
+duplicates that vanish silently. This reports them rather than throwing: the condition
+is rare and always upstream of the factory.
+
+`analyzeDraws` reports the same anomalies for draw-level extensions.
+
 ---
 
 ## copyTournamentRecord
@@ -276,6 +304,23 @@ const { tournamentInfo } = engine.getTournamentInfo();
 If a [primary venue](../concepts/venues-courts.md#primary-venue) is designated and has at least one address, `tournamentInfo.tournamentAddress` will contain that venue's first address. This is always included regardless of the `withVenueData` option.
 
 `tournamentInfo.eventInfo` returns a lightweight summary of each event. Each entry includes an `entriesCount` (the length of `event.entries`) alongside `drawDefinitionCount` and the other event metadata, so calendar admin dashboards can render entry totals without loading the full tournament record. Pass `usePublishState: true` to limit `eventInfo` to events listed in the tournament's published event IDs.
+
+---
+
+## getTournamentTimeZone
+
+Resolves the authoritative IANA time zone for a tournament.
+
+```js
+const { timeZone, inferred, error } = engine.getTournamentTimeZone();
+```
+
+**Resolution order:**
+
+1. `tournamentRecord.localTimeZone` when set — validated as a real IANA zone (`INVALID_TIME_ZONE` if not).
+2. Otherwise inferred from venue addresses — a venue is the physical location, so a single distinct `address.timeZone` across all venues is used and returned with `inferred: true`.
+
+Returns `CONFLICTING_TIME_ZONES` when venues specify different zones and no tournament-level `localTimeZone` is set (the rare border-city case). Returns `{}` (no `timeZone`, no `error`) when no zone can be determined.
 
 ---
 
@@ -489,11 +534,11 @@ engine.setTournamentStatus({ status: CANCELLED });
 
 ## setTournamentDates
 
-Sets the start date, end date, active dates, and/or weekdays for a tournament. Validates that dates are proper `'YYYY-MM-DD'` strings and that `activeDates` fall within the start/end range. If the date range shrinks, matchUps scheduled outside the new range are automatically unscheduled. Event dates are coerced to fit within the new tournament dates.
+Sets the start date, end date, active dates, and/or weekdays for a tournament. Validates that dates are proper `'YYYY-MM-DD'` strings and that `activeDates` fall within the start/end range. Event dates are coerced to fit within the new tournament dates.
 
 ```js
 const {
-  unscheduledMatchUpIds, // matchUpIds that were unscheduled due to date range change
+  unscheduledMatchUpIds, // matchUpIds unscheduled by a force: true date change
   datesRemoved, // dates no longer in the tournament range
   datesAdded, // dates newly in the tournament range
 } = engine.setTournamentDates({
@@ -501,8 +546,18 @@ const {
   endDate, // optional — 'YYYY-MM-DD'
   activeDates, // optional — string[] of 'YYYY-MM-DD' dates within start/end range
   weekdays, // optional — array of weekday constants [MON, TUE, ...]
+  force, // optional boolean — unschedule non-completed matchUps that fall outside the new range
 });
 ```
+
+### Scheduling outside the new range
+
+When the range shrinks so that scheduled matchUps fall outside the new start/end dates, the mutation does **not** silently discard their placement. Behavior depends on whether those matchUps have been played:
+
+- **Non-completed matchUps** — rejected by default with `MATCHUPS_SCHEDULED_OUTSIDE_DATES`. The rejection carries `outOfRangeMatchUpIds` and `outOfRangeDates`. Pass `force: true` to proceed and unschedule them; the returned `unscheduledMatchUpIds` lists what was cleared.
+- **Completed matchUps** — rejected with `MATCHUPS_COMPLETED_OUTSIDE_DATES` and this block **cannot** be overridden by `force`. A match played on a given date forces that date into the tournament range; unscheduling it would erase the record of when it was played. The rejection carries `completedOutOfRangeMatchUpIds` and `completedOutOfRangeDates`. To proceed, either widen the range to include those dates or reschedule/clear the completed matchUps' results first.
+
+When both kinds are present, the completed block takes precedence (there is no partial date change).
 
 ---
 

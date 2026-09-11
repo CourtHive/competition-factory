@@ -1,5 +1,6 @@
 export { requestEndorsement, endorseApplication, declineEndorsement } from '@Mutate/sanctioning/endorsement';
 export { activateFromSanctioning } from '@Mutate/sanctioning/activateFromSanctioning';
+export { openProposalRegistration } from '@Mutate/sanctioning/openProposalRegistration';
 export { createSanctioningRecord } from '@Mutate/sanctioning/createSanctioningRecord';
 export { proposeAmendment, reviewAmendment } from '@Mutate/sanctioning/amendments';
 export { conditionallyApprove } from '@Mutate/sanctioning/conditionallyApprove';

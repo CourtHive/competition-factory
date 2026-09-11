@@ -12,4 +12,4 @@ export const flightConstants = {
   SPLIT_LEVEL_BASED,
   SPLIT_WATERFALL,
   SPLIT_SHUTTLE,
-};
+} as const;

@@ -2,10 +2,17 @@ import { createTournamentRecord } from '@Generators/tournamentRecords/createTour
 import { methodImporter } from '@Assemblies/engines/parts/methodImporter';
 import { processResult } from '@Assemblies/engines/parts/processResult';
 import { factoryVersion } from '@Functions/global/factoryVersion';
+import { buildQueryFacade, buildFacade, createEventBus, inspect, dryRun, explain } from '@Forge/index';
 import {
   setDeepCopy,
   setDevContext,
   getDevContext,
+  setSchemaWriteMode,
+  getSchemaWriteMode,
+  setSaveDrawDeletions,
+  getSaveDrawDeletions,
+  setAuditAuthorityServer,
+  getAuditAuthorityServer,
   removeTournamentRecord,
   setTournamentRecords,
   setTournamentId,
@@ -42,6 +49,21 @@ export function engineStart(engine: FactoryEngine, engineInvoke: any): void {
     return processResult(engine);
   };
   engine.getDevContext = (contextCriteria) => getDevContext(contextCriteria);
+  engine.schemaWriteMode = (mode) => {
+    const result = setSchemaWriteMode(mode);
+    return processResult(engine, result);
+  };
+  engine.getSchemaWriteMode = () => getSchemaWriteMode();
+  engine.saveDrawDeletions = (flag) => {
+    const result = setSaveDrawDeletions(flag);
+    return processResult(engine, result);
+  };
+  engine.getSaveDrawDeletions = () => getSaveDrawDeletions();
+  engine.auditAuthorityServer = (flag) => {
+    const result = setAuditAuthorityServer(flag);
+    return processResult(engine, result);
+  };
+  engine.getAuditAuthorityServer = () => getAuditAuthorityServer();
   engine.newTournamentRecord = (params = {}) => {
     const result = createTournamentRecord(params);
     const tournamentId = result.tournamentId;
@@ -70,4 +92,19 @@ export function engineStart(engine: FactoryEngine, engineInvoke: any): void {
     const result = removeUnlinkedTournamentRecords();
     return processResult(engine, result);
   };
+  // Developer-JOY facades (forge) — see `src/forge/{q,inspect,bus}.ts`.
+  // The query facade is built lazily-wired: it holds a closure over `engine`,
+  // so it picks up governor methods that get added after engineStart returns.
+  engine.q = buildQueryFacade(engine);
+  engine.inspect = () => inspect();
+  // Preview + preflight. Both restore state before returning; subscribers
+  // are NOT notified. See `src/forge/{dryRun,explain}.ts`.
+  engine.dryRun = (directives) => dryRun(engine, directives);
+  engine.explain = (method, params) => explain(engine, method, params);
+  const bus = createEventBus();
+  engine.on = bus.on;
+  engine.once = bus.once;
+  engine.off = bus.off;
+  engine.waitFor = bus.waitFor;
+  engine.build = buildFacade(engine);
 }

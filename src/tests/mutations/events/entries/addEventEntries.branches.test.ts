@@ -1,3 +1,4 @@
+import { firstClassOrExtension } from '@Acquire/firstClassOrExtension';
 import mocksEngine from '@Assemblies/engines/mock';
 import tournamentEngine from '@Engines/syncEngine';
 import { describe, expect, it } from 'vitest';
@@ -135,8 +136,8 @@ describe('addEventEntries - uncovered branch coverage', () => {
 
     const { event } = tournamentEngine.getEvent({ eventId });
     const entry = event.entries.find((e) => e.participantId === participants[0].participantId);
-    const roundTargetExt = entry.extensions?.find((e) => e.name === 'roundTarget');
-    expect(roundTargetExt?.value).toEqual(2);
+    const roundTarget = firstClassOrExtension({ element: entry, attribute: 'roundTarget', name: 'roundTarget' });
+    expect(roundTarget).toEqual(2);
   });
 
   it('adds entry with entryStageSequence', () => {

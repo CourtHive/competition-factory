@@ -1,4 +1,5 @@
 import { getRatingConvertedFromELO, getRatingConvertedToELO } from '@Generators/scales/eloConversions';
+import { resolveScaleValueNumber } from '@Query/scales/resolveScaleValue';
 import { checkRequiredParameters } from '@Helpers/parameters/checkRequiredParameters';
 import ratingsParameters from '@Fixtures/ratings/ratingsParameters';
 
@@ -41,8 +42,17 @@ export function getConvertedRating(params: GetConvertedRatingArgs) {
 
   const sourceRatingType = sourceRatingObject?.scaleName;
 
-  const accessor = ratingsParameters[sourceRatingObject?.scaleName]?.accessor;
-  const sourceRating = (accessor && sourceRatingObject.scaleValue[accessor]) || sourceRatingObject?.scaleValue;
+  // The previous form was `(accessor && scaleValue[accessor]) || scaleValue`.
+  // The `||` made an empty-string rating — which real records carry for a
+  // player with no rating on that scale — fall through to the whole OBJECT.
+  // `{...} - 1` is NaN, NaN survives convertRange, and `parseFloat('NaN') || 0`
+  // then produced 0, which on an inverted scale is `40 - 0` — the WORST possible
+  // WTN, invented silently. The same `||` also swallowed a legitimate 0, which
+  // PSA / SQUASH_LEVELS / ITTF / BWF all declare inside their valid range.
+  const sourceRating = resolveScaleValueNumber(sourceRatingObject?.scaleValue, {
+    scaleName: sourceRatingObject?.scaleName,
+  });
+  if (sourceRating === undefined) return { error: INVALID_VALUES };
   const eloValue = getRatingConvertedToELO({ sourceRatingType, sourceRating });
   const convertedRating = getRatingConvertedFromELO({
     targetRatingType: targetRatingType,

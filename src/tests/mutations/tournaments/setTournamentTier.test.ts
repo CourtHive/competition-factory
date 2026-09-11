@@ -102,4 +102,22 @@ describe('setTournamentTier', () => {
     });
     expect(result.error).toBeDefined();
   });
+
+  // Phase 3 of Mentat/planning/TOURNAMENT_LEVEL_AND_TIER.md: surface the tier
+  // on the tournaments list / card. The list goes through getTournamentInfo
+  // → getCalendarEntry (server-side spread) → courthive-components mapper.
+  // Propagation through getTournamentInfo is the load-bearing piece here —
+  // without it the chip never reaches the client.
+  it('propagates tournamentTier through getTournamentInfo for list / card display', () => {
+    tournamentEngine.setTournamentTier({
+      tournamentTier: { system: 'ITF_JUNIOR', value: 'J500', numericRank: 4 },
+    });
+
+    const { tournamentInfo } = tournamentEngine.getTournamentInfo();
+    expect(tournamentInfo.tournamentTier).toEqual({
+      system: 'ITF_JUNIOR',
+      value: 'J500',
+      numericRank: 4,
+    });
+  });
 });

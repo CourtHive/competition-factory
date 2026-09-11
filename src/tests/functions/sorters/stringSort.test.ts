@@ -64,8 +64,9 @@ describe('stringSort', () => {
   it('handles unicode characters', () => {
     const arr = ['ñ', 'n', 'o'];
     arr.sort(stringSort);
-    // Depends on locale, but should not throw
-    expect(arr).toHaveLength(3);
+    // Order is now determined: the collator is pinned to 'en', which sorts ñ
+    // with n rather than after z the way a Scandinavian locale would.
+    expect(arr).toEqual(['n', 'ñ', 'o']);
   });
 
   it('handles emoji', () => {
@@ -119,13 +120,38 @@ describe('stringSort', () => {
   it('handles strings with accented characters', () => {
     const arr = ['café', 'cafe', 'cafè'];
     arr.sort(stringSort);
-    expect(arr).toHaveLength(3);
+    expect(arr).toEqual(['cafe', 'café', 'cafè']);
   });
 
   it('handles strings with diacritics', () => {
     const arr = ['naïve', 'naive'];
     arr.sort(stringSort);
-    expect(arr).toHaveLength(2);
+    expect(arr).toEqual(['naive', 'naïve']);
+  });
+
+  it('is deterministic across host locales', () => {
+    // The regression this pin exists for: Scandinavian collation files ö/ä/å
+    // after z, English sorts them with o/a. Before the pin, which of these two
+    // orderings you got depended on the machine.
+    const arr = ['Öberg', 'Olsson', 'Zeballos', 'Ärnold'];
+    arr.sort(stringSort);
+    expect(arr).toEqual(['Ärnold', 'Öberg', 'Olsson', 'Zeballos']);
+
+    // and the host-default comparator is NOT guaranteed to agree with it
+    const swedish = [...arr].sort((a, b) => a.localeCompare(b, 'sv'));
+    expect(swedish).toEqual(['Olsson', 'Zeballos', 'Ärnold', 'Öberg']);
+  });
+
+  it('is unchanged for the ASCII identifiers its callers actually sort', () => {
+    // All production callers sort participantId/matchUpId pair keys,
+    // collectionIds and gender constants — every locale agrees on these, which
+    // is why pinning is a no-op at runtime.
+    const ids = ['p9', 'p10', 'p1', 'MALE', 'FEMALE'];
+    const codeUnitOrder = (a: string, b: string) => {
+      if (a < b) return -1;
+      return a > b ? 1 : 0;
+    };
+    expect([...ids].sort(stringSort)).toEqual([...ids].sort(codeUnitOrder));
   });
 
   it('handles empty array', () => {

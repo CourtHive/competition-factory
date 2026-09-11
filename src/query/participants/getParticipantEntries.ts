@@ -156,13 +156,48 @@ export function getParticipantEntries(params) {
 }
 
 function processEvent({
-  convertExtensions, eventsPublishStatuses, derivedEventInfo, derivedDrawInfo, participantMap, getRanking, withOpts, event,
-  getRelevantParticipantIds, withPotentialMatchUps, withRankingProfile, withScheduleItems, scheduleAnalysis,
-  withTeamMatchUps, policyDefinitions, tournamentRecord, withStatistics, rrContainerInfo, rrGroupMatchUps,
-  mappedMatchUps, contextFilters, matchUpFilters, contextProfile, withOpponents, usePublishState,
-  withMatchUps, withSeeding, withEvents, withDraws, matchUps,
+  convertExtensions,
+  eventsPublishStatuses,
+  derivedEventInfo,
+  derivedDrawInfo,
+  participantMap,
+  getRanking,
+  withOpts,
+  event,
+  getRelevantParticipantIds,
+  withPotentialMatchUps,
+  withRankingProfile,
+  withScheduleItems,
+  scheduleAnalysis,
+  withTeamMatchUps,
+  policyDefinitions,
+  tournamentRecord,
+  withStatistics,
+  rrContainerInfo,
+  rrGroupMatchUps,
+  mappedMatchUps,
+  contextFilters,
+  matchUpFilters,
+  contextProfile,
+  withOpponents,
+  usePublishState,
+  withMatchUps,
+  withSeeding,
+  withEvents,
+  withDraws,
+  matchUps,
 }) {
-  const { drawDefinitions = [], extensions = [], wheelchairClass, eventType, eventName, category, entries, eventId, gender } = event;
+  const {
+    drawDefinitions = [],
+    extensions = [],
+    wheelchairClass,
+    eventType,
+    eventName,
+    category,
+    entries = [],
+    eventId,
+    gender,
+  } = event;
 
   const { flightProfile } = getFlightProfile({ event });
   const flights = flightProfile?.flights ?? [];
@@ -172,9 +207,19 @@ function processEvent({
   const publishedSeeding = publishStatuses?.status?.publishedSeeding;
 
   if (withEvents || withSeeding || withRankingProfile) {
-    const extensionConversions = convertExtensions ? Object.assign({}, ...extensionsToAttributes(extensions ?? [])) : {};
+    const extensionConversions = convertExtensions
+      ? Object.assign({}, ...extensionsToAttributes(extensions ?? []))
+      : {};
 
-    derivedEventInfo[eventId] = { ...extensionConversions, wheelchairClass, eventName, eventType, category, eventId, gender };
+    derivedEventInfo[eventId] = {
+      ...extensionConversions,
+      wheelchairClass,
+      eventName,
+      eventType,
+      category,
+      eventId,
+      gender,
+    };
 
     const scaleNames = [category?.categoryName, category?.ageCategoryCode].filter(Boolean);
 
@@ -187,13 +232,28 @@ function processEvent({
       let seedAssignments, seedValue;
       if (withSeeding) {
         const participant = participantMap[participantId].participant;
-        ({ seedAssignments, seedValue } = getEventSeedAssignments({ publishedSeeding, usePublishState, withSeeding, participant, event }));
+        ({ seedAssignments, seedValue } = getEventSeedAssignments({
+          publishedSeeding,
+          usePublishState,
+          withSeeding,
+          participant,
+          event,
+        }));
       }
 
       const addEventEntry = (id: string) => {
         if (participantMap[id]?.events?.[eventId]) return;
         const participant = participantMap[id];
-        processEventEntry({ convertExtensions, seedAssignments, participant, withSeeding, seedValue, eventId, ranking, entry });
+        processEventEntry({
+          convertExtensions,
+          seedAssignments,
+          participant,
+          withSeeding,
+          seedValue,
+          eventId,
+          ranking,
+          entry,
+        });
       };
 
       addEventEntry(participantId);
@@ -208,23 +268,63 @@ function processEvent({
 
     for (const drawId of drawIds) {
       processDrawEntries({
-        drawDefinitions, participantMap, derivedDrawInfo, eventPublishedSeeding, usePublishState,
-        withRankingProfile, withSeeding, withDraws, eventType, category, eventId, flights, drawId, getRanking,
+        drawDefinitions,
+        participantMap,
+        derivedDrawInfo,
+        eventPublishedSeeding,
+        usePublishState,
+        withRankingProfile,
+        withSeeding,
+        withDraws,
+        eventType,
+        category,
+        eventId,
+        flights,
+        drawId,
+        getRanking,
       });
     }
   }
 
-  if (withRankingProfile || scheduleAnalysis || withTeamMatchUps || withStatistics || withOpponents || withMatchUps || withDraws) {
+  if (
+    withRankingProfile ||
+    scheduleAnalysis ||
+    withTeamMatchUps ||
+    withStatistics ||
+    withOpponents ||
+    withMatchUps ||
+    withDraws
+  ) {
     const nextMatchUps = !!scheduleAnalysis || withPotentialMatchUps;
-    const eventMatchUps = allEventMatchUps({
-      afterRecoveryTimes: !!scheduleAnalysis, policyDefinitions, tournamentRecord, inContext: true,
-      participantMap, contextFilters, matchUpFilters, contextProfile, nextMatchUps, event,
-    })?.matchUps ?? [];
+    const eventMatchUps =
+      allEventMatchUps({
+        afterRecoveryTimes: !!scheduleAnalysis,
+        policyDefinitions,
+        tournamentRecord,
+        inContext: true,
+        participantMap,
+        contextFilters,
+        matchUpFilters,
+        contextProfile,
+        nextMatchUps,
+        event,
+      })?.matchUps ?? [];
 
     for (const matchUp of eventMatchUps) {
       processEventMatchUp({
-        getRelevantParticipantIds, withScheduleItems, tournamentRecord, drawDefinitions, scheduleAnalysis,
-        withRankingProfile, rrContainerInfo, rrGroupMatchUps, mappedMatchUps, participantMap, nextMatchUps, withOpts, matchUp,
+        getRelevantParticipantIds,
+        withScheduleItems,
+        tournamentRecord,
+        drawDefinitions,
+        scheduleAnalysis,
+        withRankingProfile,
+        rrContainerInfo,
+        rrGroupMatchUps,
+        mappedMatchUps,
+        participantMap,
+        nextMatchUps,
+        withOpts,
+        matchUp,
       });
     }
 
@@ -272,8 +372,7 @@ function addParticipantDrawEntrySeedings({
 
   const seedValue = mainSeeding || qualifyingSeeding;
   if (seedValue) {
-    if (!participantMap[id].participant.seedings[eventType])
-      participantMap[id].participant.seedings[eventType] = [];
+    if (!participantMap[id].participant.seedings[eventType]) participantMap[id].participant.seedings[eventType] = [];
 
     if (mainSeedingAssignments) {
       participantMap[id].participant.seedings[eventType].push({
@@ -289,8 +388,7 @@ function addParticipantDrawEntrySeedings({
     }
 
     if (seedAssignments) {
-      if (!participantMap[id].events[eventId].seedAssignments)
-        participantMap[id].events[eventId].seedAssignments = {};
+      if (!participantMap[id].events[eventId].seedAssignments) participantMap[id].events[eventId].seedAssignments = {};
 
       Object.keys(seedAssignments).forEach(
         (stage) => (participantMap[id].events[eventId].seedAssignments[stage] = seedAssignments[stage]),
@@ -321,7 +419,7 @@ function processDrawEntries({
   const scaleNames = [category?.categoryName, category?.ageCategoryCode].filter(Boolean);
   const { structures = [], drawOrder, drawName, drawType } = drawDefinition ?? {};
   const flight = flights?.find((flight) => flight.drawId === drawId);
-  const entries = drawDefinition?.entries || flight?.drawEntries;
+  const entries = drawDefinition?.entries || flight?.drawEntries || [];
   const flightNumber = flight?.flightNumber;
 
   const orderedStructureIds = (drawDefinition?.structures ?? [])
@@ -643,9 +741,8 @@ function calculateRRRange({
     return [1, bracketsCount];
   }
   if (bracketsCount > 1 && order && playoffStructure) {
-    const advancingPositions = drawDefinition.links?.find(
-      (link) => link.source.structureId === containerStructureId,
-    )?.source?.finishingPositions;
+    const advancingPositions = drawDefinition.links?.find((link) => link.source.structureId === containerStructureId)
+      ?.source?.finishingPositions;
     if (advancingPositions) {
       const totalAdvancing = advancingPositions.length * bracketsCount;
       if (advancingPositions.includes(order)) {
@@ -766,8 +863,7 @@ function detectScheduleConflicts({ scheduleItems, potentialMatchUps, scheduleAna
 
       const sameDraw = scheduleItem.drawId === consideredItem.drawId;
 
-      const bothPotential =
-        potentialMatchUps[scheduleItem.matchUpId] && potentialMatchUps[consideredItem.matchUpId];
+      const bothPotential = potentialMatchUps[scheduleItem.matchUpId] && potentialMatchUps[consideredItem.matchUpId];
 
       const consideredMinutes = timeStringMinutes(consideredItem.scheduledTime);
       const minutesDifference = Math.abs(consideredMinutes - scheduledMinutes);

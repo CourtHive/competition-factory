@@ -143,7 +143,7 @@ const result = tournamentEngine.addParticipant(params);
 // Fast, no network needed
 const { participants } = tournamentEngine.getParticipants();
 const { events } = tournamentEngine.getEvents();
-const { matchUps } = tournamentEngine.getAllEventMatchUps({ eventId });
+const { matchUps } = tournamentEngine.allEventMatchUps({ eventId });
 
 // Instant response from local state
 ```
@@ -333,7 +333,7 @@ function detectConflict(entry, serverState) {
 
   if (method === 'setMatchUpStatus') {
     // Check if matchUp still exists
-    const { matchUp } = tournamentEngine.getMatchUp({
+    const { matchUp } = tournamentEngine.findMatchUp({
       matchUpId: params.matchUpId,
     });
 

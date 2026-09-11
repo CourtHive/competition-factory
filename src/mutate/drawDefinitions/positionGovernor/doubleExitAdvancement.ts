@@ -4,8 +4,10 @@ import { getPairedPreviousMatchUpIsDoubleExit } from '../../../query/matchUps/ge
 import { getExitWinningSide } from '@Mutate/drawDefinitions/matchUpGovernor/getExitWinningSide';
 import { getPositionAssignments } from '@Query/drawDefinition/positionsGetter';
 import { modifyMatchUpScore } from '@Mutate/matchUps/score/modifyMatchUpScore';
+import { directWinner } from '@Mutate/matchUps/drawPositions/directWinner';
 import { decorateResult } from '@Functions/global/decorateResult';
 import { positionTargets } from '@Query/matchUp/positionTargets';
+import { buildSideExitProvenance, setSideExitProvenance } from '@Mutate/matchUps/matchUpStatus/sideExitProvenance';
 import { definedAttributes } from '@Tools/definedAttributes';
 import { pushGlobalLog } from '@Functions/global/globalLog';
 import { findStructure } from '@Acquire/findStructure';
@@ -148,9 +150,7 @@ function handleLoserMatchUp({
   }
 
   const { feedRound, drawPositions, matchUpId } = loserMatchUp;
-  const walkoverWinningSide: number | undefined = feedRound
-    ? 2
-    : 2 - drawPositions.indexOf(loserTargetDrawPosition);
+  const walkoverWinningSide: number | undefined = feedRound ? 2 : 2 - drawPositions.indexOf(loserTargetDrawPosition);
   logAdvancement(stack, {
     color: 'cyan',
     decision: 'conditionallyAdvanceLoser',
@@ -332,9 +332,13 @@ function conditionallyAdvanceDrawPosition(params) {
     walkoverWinningSide,
   });
 
-  const inContextPairedPreviousMatchUp = inContextDrawMatchUps.find(
-    (candidate) => candidate.matchUpId === pairedPreviousMatchUp.matchUpId,
-  );
+  // a fed target round has no paired previous matchUp within this structure: its other
+  // side arrives over a feed link from another structure. sourceSideNumber is then
+  // derived by inferSourceSideNumber's feedRound branch, so undefined is expected here,
+  // not exceptional.
+  const inContextPairedPreviousMatchUp = pairedPreviousMatchUp
+    ? inContextDrawMatchUps.find((candidate) => candidate.matchUpId === pairedPreviousMatchUp.matchUpId)
+    : undefined;
 
   const sourceSideNumber = inferSourceSideNumber({
     inContextPairedPreviousMatchUp,
@@ -351,6 +355,17 @@ function conditionallyAdvanceDrawPosition(params) {
   const matchUpStatusCodes = buildMatchUpStatusCodes({
     sourceMatchUpStatus,
     pairedMatchUpStatus,
+    sourceSideNumber,
+  });
+
+  // CODES first-class: the same facts, keyed by sideNumber and attributed to their source.
+  // Written alongside the legacy array, not instead of it — see sideExitProvenance.ts on why the
+  // legacy write is not yet gated on writeLegacyEnabled().
+  const sideExitProvenance = buildSideExitProvenance({
+    pairedMatchUpId: pairedPreviousMatchUp?.matchUpId,
+    sourceMatchUpId: sourceMatchUp?.matchUpId,
+    pairedMatchUpStatus,
+    sourceMatchUpStatus,
     sourceSideNumber,
   });
 
@@ -375,6 +390,8 @@ function conditionallyAdvanceDrawPosition(params) {
     matchUpStatus,
   });
   if (result.error) return decorateResult({ result, stack });
+
+  setSideExitProvenance({ matchUp: noContextTargetMatchUp, provenance: sideExitProvenance });
 
   return advanceFromTarget({
     pairedPreviousMatchUpIsDoubleExit,
@@ -541,6 +558,29 @@ function advanceFromTarget({
       });
     }
 
+    // A winner target in ANOTHER structure has its OWN drawPosition space. The Decider of a
+    // DOUBLE_ELIMINATION holds drawPositions 1 and 2; handing it a Main-draw position is not an
+    // occupied slot but a FOREIGN one, and `assignMatchUpDrawPosition` has no way to say so — it
+    // reports "drawPosition already assigned", and it reports it AFTER this cascade has written
+    // four structures. Measured on DOUBLE_ELIMINATION 8/8: target Decider r1p1, existing
+    // drawPositions [1, 2], requested drawPosition 3.
+    //
+    // Cross-structure progression is the link's job, so it goes through directWinner like any
+    // other linked advancement rather than through a raw drawPosition assignment.
+    if (nextWinnerMatchUp.structureId !== targetMatchUp.structureId) {
+      directExitWinnerAcrossLink({
+        sourceStructureId: targetMatchUp.structureId,
+        sourceMatchUp: noContextTargetMatchUp,
+        drawPositionToAdvance,
+        inContextDrawMatchUps,
+        drawDefinition,
+        matchUpsMap,
+        targetData,
+        params,
+      });
+      return decorateResult({ result: { ...SUCCESS }, stack });
+    }
+
     return assignMatchUpDrawPosition({
       matchUpId: nextWinnerMatchUp.matchUpId,
       drawPosition: drawPositionToAdvance,
@@ -549,18 +589,6 @@ function advanceFromTarget({
     });
   } else if (pairedPreviousMatchUpIsDoubleExit) {
     if (!noContextNextWinnerMatchUp) return { error: MISSING_MATCHUP };
-
-    if (nextWinnerMatchUpHasDrawPosition) {
-      const drawPosition = nextWinnerMatchUpDrawPositions[0];
-      const woWinningSide = getExitWinningSide({
-        matchUpId: targetMatchUp.matchUpId,
-        inContextDrawMatchUps,
-        drawPosition,
-      });
-      console.log('existing drawPosition is winningSide', {
-        walkoverWinningSide: woWinningSide,
-      });
-    }
 
     const nextMatchUpStatus = isExit(noContextNextWinnerMatchUp.matchUpStatus) ? EXIT : DOUBLE_EXIT;
 
@@ -639,13 +667,27 @@ function advanceByeAdvancedDrawPosition({
     });
     if (result.error) return decorateResult({ result, stack });
 
-    return advanceDrawPosition({
+    const advanceResult = advanceDrawPosition({
       drawPositionToAdvance: nextDrawPositionToAdvance,
       matchUpId: noContextNextWinnerMatchUp.matchUpId,
       inContextDrawMatchUps,
       drawDefinition,
       matchUpsMap,
     });
+    if (advanceResult?.error) return decorateResult({ result: advanceResult, stack });
+
+    directExitWinnerAcrossLink({
+      drawPositionToAdvance: nextDrawPositionToAdvance,
+      sourceMatchUp: noContextNextWinnerMatchUp,
+      sourceStructureId: nextWinnerMatchUp.structureId,
+      inContextDrawMatchUps,
+      targetData: nextTargetData,
+      drawDefinition,
+      matchUpsMap,
+      params,
+    });
+
+    return advanceResult;
   } else if (isExit(nextWinnerMatchUp.matchUpStatus)) {
     // if the next targetMatchUp is a double walkover or double default
     const result = doubleExitAdvancement({
@@ -658,6 +700,60 @@ function advanceByeAdvancedDrawPosition({
   }
 
   return decorateResult({ result: { ...SUCCESS }, stack });
+}
+
+/**
+ * Direct the winner of a cascade-resolved exit into a winner target in ANOTHER structure.
+ *
+ * `advanceDrawPosition` advances a winner only when the winner target belongs to the same
+ * structure; a target reached over a WINNER link falls through it silently. That left the matchUp
+ * decided with a winner who never appeared in the linked structure — the state the repo's own
+ * `getDrawInconsistencies` reports as DROPPED_PROGRESSION.
+ *
+ * Measured over the 600-cell exit-propagation matrix, this is reached 4 times out of 2107
+ * `advanceDrawPosition` calls, and every one is the DOUBLE_ELIMINATION Main final feeding the
+ * Decider after a Backdraw double-exit cascade resolved it as a walkover.
+ *
+ * `directWinner` is the engine's own link-direction path — the one `directParticipants` uses for a
+ * scored result — so the placement rules are not re-derived here. A BYE or unassigned position is
+ * excluded: it has no participant to direct, and `directWinnerViaLink`'s terminal branch would
+ * report an unavailable target for it.
+ */
+function directExitWinnerAcrossLink({
+  drawPositionToAdvance,
+  inContextDrawMatchUps,
+  sourceStructureId,
+  drawDefinition,
+  sourceMatchUp,
+  matchUpsMap,
+  targetData,
+  params,
+}) {
+  const { winnerMatchUp } = targetData.targetMatchUps;
+  const { winnerTargetLink } = targetData.targetLinks;
+  if (!winnerMatchUp || !winnerTargetLink) return;
+  if (winnerMatchUp.structureId === sourceStructureId) return;
+
+  const { structure } = findStructure({ drawDefinition, structureId: sourceStructureId });
+  const { positionAssignments } = getPositionAssignments({ structure });
+  const assignment = positionAssignments?.find(({ drawPosition }) => drawPosition === drawPositionToAdvance);
+  if (!assignment?.participantId || assignment.bye) return;
+
+  directWinner({
+    winnerMatchUpDrawPositionIndex: targetData.targetMatchUps.winnerMatchUpDrawPositionIndex,
+    sourceMatchUpStatus: sourceMatchUp.matchUpStatus,
+    winningDrawPosition: drawPositionToAdvance,
+    sourceMatchUpId: sourceMatchUp.matchUpId,
+    tournamentRecord: params.tournamentRecord,
+    projectedWinningSide: undefined,
+    dualMatchUp: undefined,
+    inContextDrawMatchUps,
+    winnerTargetLink,
+    drawDefinition,
+    winnerMatchUp,
+    matchUpsMap,
+    event: params.event,
+  });
 }
 
 function advanceByeToLoserMatchUp(params) {
@@ -675,6 +771,9 @@ function advanceByeToLoserMatchUp(params) {
   if (!structure) return { error: MISSING_STRUCTURE };
 
   return assignDrawPositionBye({
+    // this cascade is placing the BYE, so it says so rather than leaving assignDrawPositionBye to
+    // infer it from upstream statuses it cannot classify
+    byeFromPropagation: true,
     drawPosition: loserTargetDrawPosition,
     tournamentRecord,
     drawDefinition,

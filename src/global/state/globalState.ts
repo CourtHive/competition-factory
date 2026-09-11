@@ -4,6 +4,7 @@ import { intersection } from '@Tools/arrays';
 import { isNumeric } from '@Tools/math';
 
 // constants and types
+import { BRIDGE, LEGACY, NATIVE, SchemaWriteMode, schemaWriteModes } from '@Constants/schemaWriteModeConstants';
 import { TournamentRecords, ResultType } from '@Types/factoryTypes';
 import { SUCCESS } from '@Constants/resultConstants';
 import {
@@ -12,6 +13,10 @@ import {
   MISSING_ASYNC_STATE_PROVIDER,
   MISSING_VALUE,
 } from '@Constants/errorConditionConstants';
+
+// Re-exported so any OTHER implementation of the notice buffer — competition-factory-server supplies
+// its own provider for per-request async isolation — calls THIS merge rather than copying it.
+export { preserveNoticeIdentity, NOTICE_IDENTITY_FIELDS } from './noticeIdentity';
 
 export type Notice = {
   topic: string;
@@ -52,6 +57,9 @@ type GlobalStateTypes = {
   globalMethods: { [key: string]: any };
   deepCopyAttributes: DeepCopyType;
   devContext?: DevContextType; // devContext is used to control logging
+  schemaWriteMode: SchemaWriteMode; // controls extension vs first-class write behavior
+  saveDrawDeletions: boolean; // opt-in: persist drawDeletions audit on the record
+  auditAuthorityServer: boolean; // true on server engines — suppresses local audit writes
   timers: timersType; // timers are used to track elapsed time for methods
   deepCopy: boolean;
   globalLog?: any;
@@ -76,6 +84,9 @@ const globalState: GlobalStateTypes = {
     toJSON: [],
   },
   globalMethods: [],
+  schemaWriteMode: NATIVE,
+  saveDrawDeletions: false,
+  auditAuthorityServer: false,
   deepCopy: true,
 };
 
@@ -217,6 +228,59 @@ export function setDevContext(value?: DevContextType) {
   globalState.devContext = value;
 }
 
+export function setSchemaWriteMode(mode?: SchemaWriteMode): {
+  success?: boolean;
+  error?: ErrorType;
+} {
+  if (mode === undefined) {
+    globalState.schemaWriteMode = NATIVE;
+    return { ...SUCCESS };
+  }
+  if (!schemaWriteModes.includes(mode)) return { error: INVALID_VALUES };
+  globalState.schemaWriteMode = mode;
+  return { ...SUCCESS };
+}
+
+export function getSchemaWriteMode(): SchemaWriteMode {
+  return globalState.schemaWriteMode;
+}
+
+export function writeNativeEnabled(): boolean {
+  return globalState.schemaWriteMode === NATIVE || globalState.schemaWriteMode === BRIDGE;
+}
+
+export function writeLegacyEnabled(): boolean {
+  return globalState.schemaWriteMode === LEGACY || globalState.schemaWriteMode === BRIDGE;
+}
+
+export function setSaveDrawDeletions(flag?: boolean): { success?: boolean; error?: ErrorType } {
+  if (flag === undefined) {
+    globalState.saveDrawDeletions = false;
+    return { ...SUCCESS };
+  }
+  if (typeof flag !== 'boolean') return { error: INVALID_VALUES };
+  globalState.saveDrawDeletions = flag;
+  return { ...SUCCESS };
+}
+
+export function getSaveDrawDeletions(): boolean {
+  return globalState.saveDrawDeletions;
+}
+
+export function setAuditAuthorityServer(flag?: boolean): { success?: boolean; error?: ErrorType } {
+  if (flag === undefined) {
+    globalState.auditAuthorityServer = false;
+    return { ...SUCCESS };
+  }
+  if (typeof flag !== 'boolean') return { error: INVALID_VALUES };
+  globalState.auditAuthorityServer = flag;
+  return { ...SUCCESS };
+}
+
+export function getAuditAuthorityServer(): boolean {
+  return globalState.auditAuthorityServer;
+}
+
 export function disableNotifications() {
   _globalStateProvider.disableNotifications();
 }
@@ -299,7 +363,29 @@ export function getMethods(): { [key: string]: any } {
   return { ...globalState.globalMethods, ..._globalStateProvider.getMethods() };
 }
 
-export function getNotices(params: GetNoticesArgs): string[] {
+/**
+ * Returns the buffered payloads for `topic` (one per addNotice call since the
+ * last `deleteNotices`). Despite the historic name, the returned array is NOT
+ * `Notice[]` — each entry is the unwrapped `Notice.payload`. Prefer
+ * `getPayloads` in new code.
+ *
+ * @deprecated Use `getPayloads`.
+ */
+export function getNotices(params: GetNoticesArgs): any[] {
+  return getPayloads(params);
+}
+
+/**
+ * Returns the buffered payloads for `topic`. Each entry is the `payload` field
+ * from a Notice that `addNotice` accumulated since the last `deleteNotices`.
+ *
+ * Falls back to the provider's `getNotices` method when `getPayloads` is not
+ * exposed (back-compat with pre-5.0.0 providers).
+ */
+export function getPayloads(params: GetNoticesArgs): any[] {
+  if (typeof _globalStateProvider.getPayloads === 'function') {
+    return _globalStateProvider.getPayloads(params);
+  }
   return _globalStateProvider.getNotices(params);
 }
 
@@ -323,8 +409,23 @@ export function hasTopic(topic) {
   return getTopics()?.topics?.includes(topic);
 }
 
+/**
+ * Argument shape for the subscription dispatch.
+ *
+ * `payloads` is an array of `payload` values (one per buffered notice for the
+ * topic in this dispatch cycle) — NOT `Notice[]`. Each subscription callback
+ * receives this array as its sole argument; see `callListener` in
+ * `syncGlobalState.ts` for the actual fan-out.
+ *
+ * `notices` is a back-compat alias for `payloads`, retained because external
+ * providers (e.g. competition-factory-server's local async provider) used to
+ * destructure that name. New code should use `payloads`; the deprecated alias
+ * will be removed in a future major.
+ */
 export type CallListenerArgs = {
-  notices: Notice[];
+  payloads: any[];
+  /** @deprecated alias for `payloads`; kept for back-compat with pre-5.0.0 providers. */
+  notices?: any[];
   topic: string;
 };
 export async function callListener(payload) {

@@ -9,4 +9,4 @@ export const scaleConstants = {
   RATING,
   SCALE,
   SEEDING,
-};
+} as const;

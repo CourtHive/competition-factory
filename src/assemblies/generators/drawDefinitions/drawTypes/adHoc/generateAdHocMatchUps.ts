@@ -9,7 +9,7 @@ import { UUID } from '@Tools/UUID';
 
 // constants and types
 import { INVALID_VALUES, MISSING_DRAW_DEFINITION, ErrorType } from '@Constants/errorConditionConstants';
-import { DrawDefinition, Event, MatchUp, Tournament } from '@Types/tournamentTypes';
+import { DrawDefinition, Event, MatchUp, MatchUpStatusUnion, Tournament } from '@Types/tournamentTypes';
 import { TO_BE_PLAYED } from '@Constants/matchUpStatusConstants';
 import { SUCCESS } from '@Constants/resultConstants';
 import { TEAM } from '@Constants/matchUpTypes';
@@ -106,7 +106,9 @@ export function generateAdHocMatchUps(params: GenerateAdHocMatchUpsArgs): {
 
     return {
       roundNumber: nextRoundNumber,
-      matchUpStatus: TO_BE_PLAYED,
+      // object-literal inference widens the literal const to `string`; re-narrow to
+      // the matchUpStatus union so the built matchUp is assignable to MatchUp.
+      matchUpStatus: TO_BE_PLAYED as MatchUpStatusUnion,
       matchUpId,
       sides,
     };

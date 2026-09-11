@@ -13,7 +13,7 @@ import { tieFormatTelemetry } from '@Mutate/tieFormat/tieFormatTelemetry';
 import { allEventMatchUps } from '@Query/matchUps/getAllEventMatchUps';
 import { checkScoreHasValue } from '@Query/matchUp/checkScoreHasValue';
 import { allDrawMatchUps } from '@Query/matchUps/getAllDrawMatchUps';
-import { writeTieFormat } from '@Mutate/tieFormat/writeTieFormat';
+import { requiredForkIds, writeTieFormat } from '@Mutate/tieFormat/writeTieFormat';
 import { validateTieFormat } from '@Validators/validateTieFormat';
 import { definedAttributes } from '@Tools/definedAttributes';
 import { findDrawMatchUp } from '@Acquire/findDrawMatchUp';
@@ -23,10 +23,10 @@ import { DrawDefinition, Event, MatchUp, TieFormat, Tournament } from '@Types/to
 import { COMPLETED, IN_PROGRESS } from '@Constants/matchUpStatusConstants';
 import { decorateResult } from '@Functions/global/decorateResult';
 import { SUCCESS } from '@Constants/resultConstants';
-import { HydratedMatchUp } from '@Types/hydrated';
 import { TEAM } from '@Constants/matchUpTypes';
 import {
   ErrorType,
+  INSUFFICIENT_UUIDS,
   MISSING_DRAW_DEFINITION,
   NOT_FOUND,
   NO_MODIFICATIONS_APPLIED,
@@ -49,6 +49,12 @@ type RemoveCollectionDefinitionArgs = {
   matchUpId?: string;
   matchUp?: MatchUp;
   eventId?: string;
+  /**
+   * Pool for tieFormat copy-on-write forks in `writeTieFormat`. Separate from any
+   * matchUp-id pool so an `INSUFFICIENT_UUIDS` shortfall is attributable to one
+   * stream. Strict when supplied.
+   */
+  tieFormatUuids?: string[];
   event?: Event;
 };
 
@@ -63,9 +69,13 @@ export function removeCollectionDefinition({
   matchUpId,
   eventId,
   matchUp,
+  tieFormatUuids,
   event,
 }: RemoveCollectionDefinitionArgs): {
-  targetMatchUps?: HydratedMatchUp[];
+  // Produced by `filterTargetMatchUps` which returns `MatchUp[]`; the
+  // function doesn't add hydration before returning, so `MatchUp[]` is the
+  // honest type.
+  targetMatchUps?: MatchUp[];
   deletedMatchUpIds?: string[];
   tieFormat?: TieFormat;
   success?: boolean;
@@ -162,18 +172,48 @@ export function removeCollectionDefinition({
     matchUp = clearResult.matchUp;
   }
 
+  // Validate the pool BEFORE mutating anything.
+  //
+  // Reporting an exhausted pool part-way is not enough: `processTargetMatchUp`
+  // splices a matchUp's tieMatchUps BEFORE writing its tieFormat, so a failure at
+  // the write leaves the splice behind. Measured: an empty pool took
+  // tieMatchUp counts from [9,9,9,9,9,9,9] to [6,9,9,9,9,9,9] and still returned
+  // an error. `executionQueue({ rollbackOnError: true })` restores that — and TMX
+  // always sends it — but a direct engine caller has no such protection, so the
+  // mutation should not begin at all when it cannot finish.
+  const requiredIds = requiredForkIds({
+    targets: [...targetMatchUps, resolveWriteTarget({ eventId, event, matchUpId, matchUp, structure, drawDefinition })],
+    event,
+  });
+  if (tieFormatUuids !== undefined && tieFormatUuids.length < requiredIds) {
+    return decorateResult({
+      result: { error: INSUFFICIENT_UUIDS },
+      context: { required: requiredIds, supplied: tieFormatUuids.length },
+      stack,
+    });
+  }
+
+  // ONE fork cache for the whole operation. Every target here is written with the
+  // SAME pruned tieFormat, so without this a shared centralized format fragments
+  // into one identical copy per TEAM matchUp — 1 tieFormat became 4 on a drawSize
+  // 4 event. See writeTieFormat's `forkCache`.
+  const forkCache = new Map<string, any>();
+
   const deletedMatchUpIds: string[] = [];
   for (const targetMatchUp of targetMatchUps) {
-    processTargetMatchUp({
+    const processResult: any = processTargetMatchUp({
       deletedMatchUpIds,
       tournamentRecord,
       drawDefinition,
       collectionId,
+      tieFormatUuids,
+      forkCache,
       tieFormat,
       stack,
       event,
       matchUp: targetMatchUp,
     });
+    if (processResult?.error) return decorateResult({ result: processResult, stack });
     const scoreResult = updateTargetMatchUpScore({
       updateInProgressMatchUps,
       tournamentRecord,
@@ -200,17 +240,20 @@ export function removeCollectionDefinition({
   result = validateTieFormat({ tieFormat: prunedTieFormat });
   if (result.error) return decorateResult({ result, stack });
 
-  if (eventId && event) {
-    writeTieFormat({ target: event, tieFormat: prunedTieFormat, event });
-  } else if (matchUpId && matchUp) {
-    writeTieFormat({ target: matchUp, tieFormat: prunedTieFormat, event });
-  } else if (structure) {
-    writeTieFormat({ target: structure, tieFormat: prunedTieFormat, event });
-  } else if (drawDefinition) {
-    writeTieFormat({ target: drawDefinition, tieFormat: prunedTieFormat, event });
-  } else if (!matchUp || !drawDefinition) {
-    return { error: MISSING_DRAW_DEFINITION };
-  }
+  // Target selection extracted so this function keeps ONE write and ONE error
+  // check. Inlining a write plus an error branch per candidate pushed cognitive
+  // complexity to 38, over the ecosystem's threshold of 30.
+  const writeTarget = resolveWriteTarget({ eventId, event, matchUpId, matchUp, structure, drawDefinition });
+  if (!writeTarget) return { error: MISSING_DRAW_DEFINITION };
+
+  const writeResult = writeTieFormat({
+    target: writeTarget,
+    tieFormat: prunedTieFormat,
+    event,
+    uuids: tieFormatUuids,
+    forkCache,
+  });
+  if (writeResult?.error) return decorateResult({ result: writeResult, stack });
 
   modifyDrawNotice({ drawDefinition, eventId: event?.eventId });
 
@@ -230,6 +273,22 @@ export function removeCollectionDefinition({
     targetMatchUps,
     ...SUCCESS,
   };
+}
+
+/**
+ * The single object the modified tieFormat is written back to, in precedence
+ * order: event, then matchUp, then structure, then drawDefinition.
+ *
+ * Returns undefined when none applies, which the caller reports as
+ * MISSING_DRAW_DEFINITION — preserving the previous behaviour of the if/else
+ * chain this replaces.
+ */
+function resolveWriteTarget({ eventId, event, matchUpId, matchUp, structure, drawDefinition }): any {
+  if (eventId && event) return event;
+  if (matchUpId && matchUp) return matchUp;
+  if (structure) return structure;
+  if (drawDefinition) return drawDefinition;
+  return undefined;
 }
 
 function getScopedMatchUps({ matchUpId, matchUp, structureId, structure, drawDefinition, event }): MatchUp[] {
@@ -302,6 +361,8 @@ function clearCollectionScores({
 function processTargetMatchUp({
   deletedMatchUpIds,
   collectionId,
+  tieFormatUuids,
+  forkCache,
   tieFormat,
   stack,
   event,
@@ -325,16 +386,26 @@ function processTargetMatchUp({
   });
 
   if (matchUp.tieFormat || matchUp.tieFormatId) {
-    writeTieFormat({ target: matchUp, tieFormat: copyTieFormat(tieFormat), event });
+    const writeResult = writeTieFormat({
+      target: matchUp,
+      tieFormat: copyTieFormat(tieFormat),
+      event,
+      uuids: tieFormatUuids,
+      forkCache,
+    });
+    if (writeResult?.error) return writeResult;
   }
 
   modifyMatchUpNotice({
     tournamentId: tournamentRecord?.tournamentId,
     eventId: event?.eventId,
+    event,
     drawDefinition,
     context: stack,
     matchUp,
   });
+
+  return undefined;
 }
 
 function updateTargetMatchUpScore({

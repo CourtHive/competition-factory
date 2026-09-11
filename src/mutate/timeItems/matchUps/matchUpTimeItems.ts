@@ -45,6 +45,7 @@ export function addMatchUpTimeItem({
     modifyMatchUpNotice({
       tournamentId: tournamentRecord?.tournamentId,
       eventId: event?.eventId,
+      event,
       context: 'addTimeItem',
       drawDefinition,
       matchUp,
@@ -72,6 +73,7 @@ export function resetMatchUpTimeItems({
     tournamentId: tournamentRecord?.tournamentId,
     context: 'resetTimeItems',
     eventId: event?.eventId,
+    event,
     drawDefinition,
     matchUp,
   });

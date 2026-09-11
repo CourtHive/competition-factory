@@ -84,7 +84,14 @@ function stepRound(value, step) {
   return Math.round(value * inv) / inv;
 }
 
-export function skewedDistribution(min: number, max: number, skew: number, step?, significantDecimals = 2, random?: () => number) {
+export function skewedDistribution(
+  min: number,
+  max: number,
+  skew: number,
+  step?,
+  significantDecimals = 2,
+  random?: () => number,
+) {
   const rng = random ?? Math.random;
   const u = 1 - rng();
 

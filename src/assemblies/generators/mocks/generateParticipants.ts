@@ -2,6 +2,7 @@ import { isNumeric, randomInt, skewedDistribution } from '@Tools/math';
 import { cityMocks, stateMocks, postalCodeMocks } from './address';
 import { generateRange, shuffleArray } from '@Tools/arrays';
 import { definedAttributes } from '@Tools/definedAttributes';
+import { pushGlobalLog } from '@Functions/global/globalLog';
 import { genParticipantId } from './genParticipantId';
 import { isValidDateString } from '@Tools/dateTime';
 import { generateAddress } from './generateAddress';
@@ -42,6 +43,10 @@ export function generateParticipants(params): {
     nationalityCodeType,
     nationalityCodes,
 
+    // false generates TEAM participants that enumerate NO individuals — the shape of a
+    // federation that publishes teams but no player detail. Ignored for PAIR, which is
+    // defined by its individuals.
+    individualParticipants: enumerateIndividuals,
     participantsCount = 32,
     participantType,
     teamSize = 8,
@@ -87,7 +92,10 @@ export function generateParticipants(params): {
   rankingRange = rankingRange || [1, rankingUpperBound];
   rankingRange[1] += 1; // so that behavior is as expected
 
-  const individualParticipantsCount = participantsCount * ((doubles && 2) || (team && (teamSize ?? 8)) || 1);
+  // a team-only competition enumerates no individuals at all, so no persons are generated for them
+  const teamsOnly = !!team && enumerateIndividuals === false;
+  const sideParticipantsCount = teamsOnly ? 0 : (doubles && 2) || (team && (teamSize ?? 8)) || 1;
+  const individualParticipantsCount = participantsCount * sideParticipantsCount;
 
   const result = generatePersons({
     count: individualParticipantsCount,
@@ -199,7 +207,6 @@ export function generateParticipants(params): {
 
   const teamNames = nameMocks({ count: participantsCount, random }).names;
   const participants = generateRange(0, participantsCount).flatMap((i) => {
-    const sideParticipantsCount = (doubles && 2) || (team && (teamSize ?? 8)) || 1;
     const individualParticipants = generateRange(0, sideParticipantsCount).map((j) => {
       const participantIndex = i * sideParticipantsCount + j;
       return generateIndividualParticipant(participantIndex);
@@ -254,7 +261,7 @@ export function generateParticipants(params): {
       personNationalityCode;
 
     if (countriesList?.length && !nationalityCode && !personNationalityCode) {
-      console.log('%c Invalid Nationality Code', { participantIndex, country });
+      pushGlobalLog({ method: 'generateParticipants', issue: 'invalid nationality code', participantIndex, country });
     }
     const address = generateAddress({
       ...addressValues,

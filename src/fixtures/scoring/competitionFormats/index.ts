@@ -1,7 +1,9 @@
+import PICKLEBALL_STANDARD from './PICKLEBALL_STANDARD.json';
 import INTENNSE_STANDARD from './INTENNSE_STANDARD.json';
 import TENNIS_STANDARD from './TENNIS_STANDARD.json';
 
 export const competitionFormats = {
+  PICKLEBALL_STANDARD,
   INTENNSE_STANDARD,
   TENNIS_STANDARD,
 };

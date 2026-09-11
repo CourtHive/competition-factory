@@ -186,7 +186,8 @@ export function analyzeScore({
       (winningSide && irregularEnding) ||
       (!winningSide &&
         !calculatedWinningSide &&
-        (![COMPLETED, DEFAULTED, RETIRED, WALKOVER].includes(relevantMatchUpStatus) ||
+        (!relevantMatchUpStatus ||
+          ![COMPLETED, DEFAULTED, RETIRED, WALKOVER].includes(relevantMatchUpStatus) ||
           (timed && relevantMatchUpStatus === COMPLETED))))
   );
 

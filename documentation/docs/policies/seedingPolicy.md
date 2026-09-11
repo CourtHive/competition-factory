@@ -6,6 +6,38 @@ The **Seeding Policy** controls how seeds are positioned in draw structures, how
 
 ---
 
+## Reaching the built-in policies
+
+The policy fixtures are reached through the `fixtures` namespace. There are **no** root-level
+`POLICY_*` exports, and no default export:
+
+```javascript
+import { drawDefinitionConstants, fixtures, policyConstants, tournamentEngine } from 'tods-competition-factory';
+
+const { POLICY_SEEDING_DEFAULT, POLICY_SEEDING_ITF, POLICY_SEEDING_BYES } = fixtures.policies;
+const { POLICY_TYPE_SEEDING } = policyConstants;
+const { CLUSTER, SEPARATE, WATERFALL } = drawDefinitionConstants;
+```
+
+<!-- doc-imports:ignore -->
+
+```javascript
+// These do NOT work — each resolves to `undefined`:
+import { fixtures } from 'tods-competition-factory';
+const { POLICY_SEEDING_ITF } = fixtures.policies; // ✗
+import { policyConstants } from 'tods-competition-factory';
+const { POLICY_TYPE_SEEDING } = policyConstants; // ✗
+import { drawDefinitionConstants } from 'tods-competition-factory';
+const { CLUSTER } = drawDefinitionConstants; // ✗
+import { tournamentEngine } from 'tods-competition-factory'; // ✗ no default export
+```
+
+An `undefined` policy fails **silently**: `policyDefinitions: undefined` reads as "no policy
+supplied", so generation falls back to its own defaults and nothing reports an error. A draw that
+looks fine can be seeded by the wrong rules.
+
+---
+
 ## Policy Structure
 
 ```typescript
@@ -26,6 +58,7 @@ The **Seeding Policy** controls how seeds are positioned in draw structures, how
 
     validSeedPositions?: {
       ignore?: boolean;
+      strict?: boolean;
     };
 
     duplicateSeedNumbers?: boolean;
@@ -62,7 +95,7 @@ Provides a descriptive name for the seeding policy, useful for logging, debuggin
 
 **Notes:**
 
-- Used in built-in policies: `'USTA SEEDING'`, `'ITF SEEDING'`, `'SEED_BYES'`, `'NATIONAL SEEDING'`
+- Used in built-in policies: `'USTA SEEDING'`, `'ITF SEEDING'`, `'SEED_BYES'`
 - Purely informational - does not affect behavior
 
 ---
@@ -190,7 +223,8 @@ drawTypes: {
 
 ```javascript
 // USTA style: SEPARATE for elimination, WATERFALL for Round Robin
-import { ROUND_ROBIN, ROUND_ROBIN_WITH_PLAYOFF, SEPARATE, WATERFALL } from 'tods-competition-factory';
+import { drawDefinitionConstants } from 'tods-competition-factory';
+const { ROUND_ROBIN, ROUND_ROBIN_WITH_PLAYOFF, SEPARATE, WATERFALL } = drawDefinitionConstants;
 
 const seedingPolicy = {
   seeding: {
@@ -296,50 +330,42 @@ Controls whether seed positioning uses deterministic (non-random) placement with
 ### `validSeedPositions`
 
 **Type:** `object` (optional)  
-**Purpose:** Controls validation of seed position assignments
+**Purpose:** How much latitude an operator has to place a seed by hand
 
-#### `validSeedPositions.ignore`
+:::caution What this does NOT control
+This does **not** decide where automated positioning puts seeds. That is
+[`seedingProfile.positioning`](#seedingprofile), and both the USTA and ITF policies specify it —
+differently (`SEPARATE` vs `CLUSTER`). `validSeedPositions` is consulted only by
+`isValidSeedPosition`, which is called when **assigning a seeded participant to a drawPosition**
+(rejecting with `INVALID_DRAW_POSITION_FOR_SEEDING`) and when deciding whether the `SEED_VALUE` and
+`REMOVE_SEED` position actions are **offered** at a position.
+:::
 
-**Type:** `boolean` (optional)  
-**Default:** `false`
+There are three states, not two:
 
-When `true`, allows seeds to be placed in any draw position, ignoring standard seed block constraints.
+| setting            | a seed may be placed                                   | used by                                                                      |
+| ------------------ | ------------------------------------------------------ | ---------------------------------------------------------------------------- |
+| `{ ignore: true }` | in **any** draw position                               | `POLICY_SEEDING_DEFAULT` (USTA), `POLICY_SEEDING_ITF`, `POLICY_SEEDING_BYES` |
+| **absent**         | in any position belonging to **some** valid seed block | the default                                                                  |
+| `{ strict: true }` | only in positions of **that seed's own** block         | —                                                                            |
 
-**When `ignore: false` (default):**
-
-- Seeds must be placed in valid seed block positions
-- Seed 1 must be in position 1
-- Seed 2 must be in final position
-- Seed 3-4 must be in their designated block
-- Enforces standard seeding patterns
-
-**When `ignore: true`:**
-
-- Seeds can be placed in any position
-- Manual seed placement is allowed
-- Useful for pre-seeded draws or special tournament formats
-- Bypasses automatic position validation
+The middle row is the one that is easy to get wrong. With the key absent, seed 1 is not pinned to
+position 1 — it may sit anywhere in the union of all seed-block positions. Only `strict: true`
+confines a seed to its own block.
 
 **Examples:**
 
 ```javascript
-// Strict validation (default)
-{
-  validSeedPositions: {
-    ignore: false;
-  }
-}
+import { fixtures } from 'tods-competition-factory';
 
-// Flexible placement
-{
-  validSeedPositions: {
-    ignore: true;
-  }
-}
+const { POLICY_SEEDING_ITF, POLICY_SEEDING_DEFAULT } = fixtures.policies;
+// Both carry validSeedPositions: { ignore: true } — hand placement anywhere.
 
-// ITF and USTA both use flexible placement
-import { POLICY_SEEDING_ITF, POLICY_SEEDING_DEFAULT } from 'tods-competition-factory';
-// Both have: validSeedPositions: { ignore: true }
+// Confine hand placement to seed-block positions by OMITTING the key (see
+// "Composing a variant" below — do not hand-copy a policy to drop one key).
+
+// Confine each seed to its own block:
+const pinned = { seeding: { validSeedPositions: { strict: true } } };
 ```
 
 **Use Cases:**
@@ -365,8 +391,8 @@ const autoSeeding = {
 **Notes:**
 
 - Most professional federations use `ignore: true` for flexibility
-- Set to `false` for strict adherence to seed positioning rules
-- Does not affect which seeds are assigned, only where they can be placed
+- Does not affect which seeds are assigned, nor where automated positioning places them — only
+  whether a given hand placement is accepted, and whether the seed actions are offered
 
 ---
 
@@ -429,7 +455,11 @@ const policy = {
 **Notes:**
 
 - Required for tournaments using rating-based seeding where ties occur
-- Both POLICY_SEEDING_ITF and POLICY_SEEDING_DEFAULT use `true`
+- Both POLICY_SEEDING_ITF and POLICY_SEEDING_DEFAULT set `true`
+- **Absent means `true`, not `false`.** The engine reads
+  `typeof duplicateSeedNumbers === 'boolean' ? duplicateSeedNumbers : true`, so omitting the key is
+  identical to setting it `true`; only an explicit `false` requires unique seed numbers. The
+  built-ins set it explicitly to document intent, not to change behavior
 - Engine handles randomization of duplicate seeds within their blocks
 
 ---
@@ -547,7 +577,8 @@ Controls whether BYEs in container structures (Round Robin with Playoff) respect
 
 ```javascript
 // Round Robin with Playoff - BYEs ignore seeds
-import { ROUND_ROBIN_WITH_PLAYOFF } from 'tods-competition-factory';
+import { drawDefinitionConstants } from 'tods-competition-factory';
+const { ROUND_ROBIN_WITH_PLAYOFF } = drawDefinitionConstants;
 
 const policy = {
   seeding: {
@@ -700,20 +731,24 @@ const clubPolicy = {
 
 ## Built-in Seeding Policies
 
-The factory provides four pre-configured seeding policies used by major tennis federations and tournament types.
+The factory ships three pre-configured seeding policies. A federation whose rules differ from all three should **compose** a variant rather than hand-copy one — see [Composing a variant](#composing-a-variant).
 
 ### Comparison Table
 
-| Attribute                      | USTA (DEFAULT)   | ITF              | BYES            | NATIONAL           |
-| ------------------------------ | ---------------- | ---------------- | --------------- | ------------------ |
-| **policyName**                 | 'USTA SEEDING'   | 'ITF SEEDING'    | 'SEED_BYES'     | 'NATIONAL SEEDING' |
-| **positioning**                | SEPARATE         | CLUSTER          | CLUSTER         | CLUSTER            |
-| **validSeedPositions.ignore**  | `true`           | `true`           | `true`          | (default: false)   |
-| **duplicateSeedNumbers**       | `true`           | `true`           | `true`          | (default: false)   |
-| **drawSizeProgression**        | `true`           | `true`           | `true`          | `true`             |
-| **containerByesIgnoreSeeding** | (default: false) | (default: false) | `true`          | (default: false)   |
-| **drawTypes**                  | WATERFALL for RR | (none)           | (none)          | (none)             |
-| **128-draw threshold**         | 96 participants  | 97 participants  | 97 participants | 97 participants    |
+| Attribute                      | USTA (DEFAULT)   | ITF             | BYES            |
+| ------------------------------ | ---------------- | --------------- | --------------- |
+| **policyName**                 | 'USTA SEEDING'   | 'ITF SEEDING'   | 'SEED_BYES'     |
+| **positioning**                | SEPARATE         | CLUSTER         | CLUSTER         |
+| **validSeedPositions.ignore**  | `true`           | `true`          | `true`          |
+| **duplicateSeedNumbers**       | `true`           | `true`          | `true`          |
+| **drawSizeProgression**        | `true`           | `true`          | `true`          |
+| **containerByesIgnoreSeeding** | (absent)         | (absent)        | `true`          |
+| **drawTypes**                  | WATERFALL for RR | (none)          | (none)          |
+| **128-draw threshold**         | 96 participants  | 97 participants | 97 participants |
+
+All three seed to the same depth: `drawSize / 4` at every threshold. That matters when a national
+rule seeds more deeply — none of the three expresses it, which is what `seedsCountThresholds` and a
+composed variant are for.
 
 ---
 
@@ -726,7 +761,8 @@ The factory provides four pre-configured seeding policies used by major tennis f
 **Full Policy:**
 
 ```javascript
-import { POLICY_SEEDING_DEFAULT } from 'tods-competition-factory';
+import { fixtures } from 'tods-competition-factory';
+const { POLICY_SEEDING_DEFAULT } = fixtures.policies;
 
 // Policy structure:
 {
@@ -772,7 +808,8 @@ import { POLICY_SEEDING_DEFAULT } from 'tods-competition-factory';
 **Full Policy:**
 
 ```javascript
-import { POLICY_SEEDING_ITF } from 'tods-competition-factory';
+import { fixtures } from 'tods-competition-factory';
+const { POLICY_SEEDING_ITF } = fixtures.policies;
 
 // Policy structure:
 {
@@ -817,7 +854,8 @@ import { POLICY_SEEDING_ITF } from 'tods-competition-factory';
 **Full Policy:**
 
 ```javascript
-import { POLICY_SEEDING_BYES } from 'tods-competition-factory';
+import { fixtures } from 'tods-competition-factory';
+const { POLICY_SEEDING_BYES } = fixtures.policies;
 
 // Policy structure:
 {
@@ -849,7 +887,9 @@ import { POLICY_SEEDING_BYES } from 'tods-competition-factory';
 **Use Case:**
 
 ```javascript
-import { POLICY_SEEDING_BYES, ROUND_ROBIN_WITH_PLAYOFF } from 'tods-competition-factory';
+import { drawDefinitionConstants, fixtures } from 'tods-competition-factory';
+const { ROUND_ROBIN_WITH_PLAYOFF } = drawDefinitionConstants;
+const { POLICY_SEEDING_BYES } = fixtures.policies;
 
 tournamentEngine.generateDrawDefinition({
   drawType: ROUND_ROBIN_WITH_PLAYOFF,
@@ -863,59 +903,69 @@ tournamentEngine.generateDrawDefinition({
 
 ---
 
-### POLICY_SEEDING_NATIONAL
+## Composing a variant {#composing-a-variant}
 
-**Purpose:** Simplified national-level seeding policy  
-**Positioning:** CLUSTER  
-**Use Case:** National tournaments, regional play
+`POLICY_SEEDING_NATIONAL` used to sit here. It was removed in 7.x: it was `POLICY_SEEDING_ITF` with
+two keys omitted, one of which (`duplicateSeedNumbers`) does nothing when omitted, so its entire
+distinguishing content was a single absent key. It was never exported, so nothing could import it.
 
-**Full Policy:**
+Express that — or any federation's rules — with [`policyComposer`](../engines/policy-composer), which
+is a root export:
 
 ```javascript
-import { POLICY_SEEDING_NATIONAL } from 'tods-competition-factory';
+import { fixtures, policyComposer, policyConstants } from 'tods-competition-factory';
 
-// Policy structure:
-{
-  seeding: {
-    policyName: 'NATIONAL SEEDING',
-    seedingProfile: { positioning: 'CLUSTER' },
-    drawSizeProgression: true,
-    seedsCountThresholds: [
-      { drawSize: 4,   minimumParticipantCount: 3,   seedsCount: 2 },
-      { drawSize: 16,  minimumParticipantCount: 12,  seedsCount: 4 },
-      { drawSize: 32,  minimumParticipantCount: 24,  seedsCount: 8 },
-      { drawSize: 64,  minimumParticipantCount: 48,  seedsCount: 16 },
-      { drawSize: 128, minimumParticipantCount: 97,  seedsCount: 32 },
-      { drawSize: 256, minimumParticipantCount: 192, seedsCount: 64 }
-    ]
-  }
-}
+const { POLICY_TYPE_SEEDING } = policyConstants;
+const { POLICY_SEEDING_ITF } = fixtures.policies;
+
+// ITF rules, but a seed may not be hand-placed outside a seed block.
+const positionsEnforced = policyComposer(POLICY_TYPE_SEEDING)
+  .extend(POLICY_SEEDING_ITF)
+  .unset('validSeedPositions')
+  .set('policyName', 'ITF SEEDING, POSITIONS ENFORCED')
+  .build();
 ```
 
-**Key Features:**
+### Seeding more deeply than the built-ins
 
-- Simplified policy (fewer attributes)
-- CLUSTER positioning
-- Standard thresholds
-- No `validSeedPositions.ignore` (strict validation)
-- No `duplicateSeedNumbers` (unique seeds only)
+The reason most federations need a variant is **depth** — how many seeds a draw of a given size
+gets. All three built-ins stop at `drawSize / 4`:
 
-**Difference from ITF:**
+```javascript
+// 16 seeds in a 32 draw, where the built-ins allow 8.
+const deepSeeding = policyComposer(POLICY_TYPE_SEEDING)
+  .extend(POLICY_SEEDING_ITF)
+  .set('policyName', 'DEEP SEEDING')
+  .set('seedsCountThresholds', [
+    { drawSize: 4, minimumParticipantCount: 3, seedsCount: 2 },
+    { drawSize: 16, minimumParticipantCount: 12, seedsCount: 8 },
+    { drawSize: 32, minimumParticipantCount: 24, seedsCount: 16 },
+  ])
+  .build();
+```
 
-- More restrictive (no duplicate seeds, strict validation)
-- Otherwise identical thresholds and positioning
+Two things to know when a draw is generated with a deeper policy:
 
----
+- `seedsCountThresholds` is a **maximum**, gated on `minimumParticipantCount`. A 32 draw with 20
+  entries gets the count from the highest threshold whose participant minimum is met.
+- Passing an explicit `seedsCount` above the policy's maximum is clamped back down unless
+  `enforcePolicyLimits: false` is also passed. `drawSize` and the stage's entry count still cap it
+  either way. See [generateDrawDefinition](../governors/generation-governor).
+
+`policyComposer` is immutable — `extend` never mutates the fixture you pass it — so one base composer
+can safely seed several federation variants. `.register({ name, version })` builds and records the
+result in `policyRegistry` in one step.
 
 ## Usage Examples
 
 ### Basic Usage
 
 ```javascript
-import tournamentEngine from 'tods-competition-factory';
+import { tournamentEngine } from 'tods-competition-factory';
 
 // Using built-in USTA policy
-import { POLICY_SEEDING_DEFAULT } from 'tods-competition-factory';
+import { fixtures } from 'tods-competition-factory';
+const { POLICY_SEEDING_DEFAULT } = fixtures.policies;
 
 tournamentEngine.generateDrawDefinition({
   policyDefinitions: POLICY_SEEDING_DEFAULT,
@@ -928,7 +978,9 @@ tournamentEngine.generateDrawDefinition({
 ### Custom Seeding Policy
 
 ```javascript
-import { POLICY_TYPE_SEEDING, SEPARATE } from 'tods-competition-factory';
+import { drawDefinitionConstants, policyConstants } from 'tods-competition-factory';
+const { SEPARATE } = drawDefinitionConstants;
+const { POLICY_TYPE_SEEDING } = policyConstants;
 
 const customSeedingPolicy = {
   [POLICY_TYPE_SEEDING]: {
@@ -958,13 +1010,9 @@ tournamentEngine.generateDrawDefinition({
 ### Mixed Draw Type Seeding
 
 ```javascript
-import {
-  POLICY_TYPE_SEEDING,
-  ROUND_ROBIN,
-  ROUND_ROBIN_WITH_PLAYOFF,
-  SEPARATE,
-  WATERFALL,
-} from 'tods-competition-factory';
+import { drawDefinitionConstants, policyConstants } from 'tods-competition-factory';
+const { ROUND_ROBIN, ROUND_ROBIN_WITH_PLAYOFF, SEPARATE, WATERFALL } = drawDefinitionConstants;
+const { POLICY_TYPE_SEEDING } = policyConstants;
 
 const mixedPolicy = {
   [POLICY_TYPE_SEEDING]: {
@@ -1003,7 +1051,9 @@ tournamentEngine.generateDrawDefinition({
 ### Using ADJACENT (Synonym for CLUSTER)
 
 ```javascript
-import { POLICY_TYPE_SEEDING, ADJACENT } from 'tods-competition-factory';
+import { drawDefinitionConstants, policyConstants } from 'tods-competition-factory';
+const { ADJACENT } = drawDefinitionConstants;
+const { POLICY_TYPE_SEEDING } = policyConstants;
 
 const adjacentSeeding = {
   [POLICY_TYPE_SEEDING]: {
@@ -1048,7 +1098,9 @@ tournamentEngine.generateDrawDefinition({
 ### Qualification Draw Seeding
 
 ```javascript
-import { POLICY_TYPE_SEEDING, CLUSTER, QUALIFYING } from 'tods-competition-factory';
+import { drawDefinitionConstants, policyConstants } from 'tods-competition-factory';
+const { CLUSTER, QUALIFYING } = drawDefinitionConstants;
+const { POLICY_TYPE_SEEDING } = policyConstants;
 
 const qualifyingSeeding = {
   [POLICY_TYPE_SEEDING]: {
@@ -1110,8 +1162,9 @@ const conservativePolicy = {
 ### Scenario 1: USTA Junior Tournament
 
 ```javascript
-import tournamentEngine from 'tods-competition-factory';
-import { POLICY_SEEDING_DEFAULT } from 'tods-competition-factory';
+import { tournamentEngine } from 'tods-competition-factory';
+import { fixtures } from 'tods-competition-factory';
+const { POLICY_SEEDING_DEFAULT } = fixtures.policies;
 
 // Setup
 const players = [
@@ -1163,7 +1216,9 @@ const { drawId } = tournamentEngine.generateDrawDefinition({
 ### Scenario 2: ITF World Tour Event
 
 ```javascript
-import { POLICY_SEEDING_ITF, SINGLE_ELIMINATION } from 'tods-competition-factory';
+import { drawDefinitionConstants, fixtures } from 'tods-competition-factory';
+const { SINGLE_ELIMINATION } = drawDefinitionConstants;
+const { POLICY_SEEDING_ITF } = fixtures.policies;
 
 // 98 players for main draw
 const mainDrawPlayers = [...]; // 98 players
@@ -1212,7 +1267,9 @@ const { drawId: mainDrawId } = tournamentEngine.generateDrawDefinition({
 ### Scenario 3: Club Round Robin with Playoff
 
 ```javascript
-import { POLICY_SEEDING_BYES, ROUND_ROBIN_WITH_PLAYOFF } from 'tods-competition-factory';
+import { drawDefinitionConstants, fixtures } from 'tods-competition-factory';
+const { ROUND_ROBIN_WITH_PLAYOFF } = drawDefinitionConstants;
+const { POLICY_SEEDING_BYES } = fixtures.policies;
 
 // 14 players for club tournament
 const clubPlayers = [
@@ -1254,7 +1311,9 @@ const { drawId } = tournamentEngine.generateDrawDefinition({
 ### Scenario 4: Professional Tournament with Custom Thresholds
 
 ```javascript
-import { POLICY_TYPE_SEEDING, SEPARATE } from 'tods-competition-factory';
+import { drawDefinitionConstants, policyConstants } from 'tods-competition-factory';
+const { SEPARATE } = drawDefinitionConstants;
+const { POLICY_TYPE_SEEDING } = policyConstants;
 
 // ATP 250 style tournament
 const proTournamentPolicy = {
@@ -1450,7 +1509,9 @@ Seeding policy works with:
 Example:
 
 ```javascript
-import { POLICY_SEEDING_ITF, POLICY_TYPE_AVOIDANCE } from 'tods-competition-factory';
+import { fixtures, policyConstants } from 'tods-competition-factory';
+const { POLICY_TYPE_AVOIDANCE } = policyConstants;
+const { POLICY_SEEDING_ITF } = fixtures.policies;
 
 const combinedPolicies = {
   ...POLICY_SEEDING_ITF,
@@ -1471,13 +1532,42 @@ tournamentEngine.generateDrawDefinition({
 
 ### Query Methods
 
-#### `getSeedBlocks()`
+:::info `isValidSeedPosition` is public; the seed-block helpers are not
+`isValidSeedPosition` is on the engine surface as of 7.x — see
+[below](#isvalidseedposition). `getSeedBlocks` and `getValidSeedBlocks` remain **internal**:
+reachable by module path inside this repository, but exported neither as root names nor through a
+governor. They are described here because they explain how seed blocks are derived, not as an API.
+:::
 
-Retrieves valid seed blocks for a draw structure.
+#### `isValidSeedPosition()`
+
+Answers whether a seed may be placed at a given `drawPosition` — the same question the engine asks
+itself in `positionAssignment` before rejecting a hand placement, and in `positionActions` before
+offering `SEED_VALUE` / `REMOVE_SEED`. A client doing manual seed placement should ask this rather
+than re-deriving seed blocks, so that its rules and the engine's cannot drift apart.
 
 ```javascript
-import { getSeedBlocks } from 'tods-competition-factory';
+import { tournamentEngine } from 'tods-competition-factory';
 
+const valid = tournamentEngine.isValidSeedPosition({
+  appliedPolicies, // optional — read from the drawDefinition when omitted
+  drawDefinition,
+  drawPosition,
+  structureId,
+  seedNumber,
+});
+```
+
+The answer follows the three states of [`validSeedPositions`](#validseedpositions): `{ ignore: true }`
+accepts any position, absence restricts to the union of valid seed blocks, and `{ strict: true }`
+restricts to that seed's own block.
+
+#### `getSeedBlocks()` (internal)
+
+Derives seed blocks for a participant count.
+
+```javascript
+// Shape only — not importable from the package.
 const { seedBlocks } = getSeedBlocks({
   participantsCount: 32,
   cluster: true, // CLUSTER/ADJACENT positioning
@@ -1486,11 +1576,12 @@ const { seedBlocks } = getSeedBlocks({
 // Returns: [[1], [32], [16, 17], [8, 9, 24, 25], ...]
 ```
 
-#### `getValidSeedBlocks()`
+#### `getValidSeedBlocks()` (internal)
 
-Gets valid seed blocks for a specific structure with policy applied.
+Seed blocks for a specific structure with the policy applied.
 
 ```javascript
+// Shape only — not importable from the package.
 const { validSeedBlocks } = getValidSeedBlocks({
   structure,
   drawDefinition,
@@ -1711,7 +1802,6 @@ The **Seeding Policy** is one of the most critical tournament policies, controll
 - **POLICY_SEEDING_DEFAULT** - USTA style (SEPARATE positioning)
 - **POLICY_SEEDING_ITF** - ITF style (CLUSTER positioning)
 - **POLICY_SEEDING_BYES** - BYE placement ignores seeding
-- **POLICY_SEEDING_NATIONAL** - Simplified national tournament seeding
 
 The policy ensures fair competitive balance by strategically placing top players throughout the draw, preventing early meetings between the strongest competitors.
 

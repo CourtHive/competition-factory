@@ -275,9 +275,7 @@ function validateTiebreakCondition({
       return { result: false, error: { message: 'tiebreakTo error' } };
     }
 
-    const meetsTiebreakTo = !!(
-      tiebreakTo && sideTiebreakScores?.find((tiebreakScore) => tiebreakScore >= tiebreakTo)
-    );
+    const meetsTiebreakTo = !!(tiebreakTo && sideTiebreakScores?.find((tiebreakScore) => tiebreakScore >= tiebreakTo));
     if (!meetsTiebreakTo) {
       return {
         result: false,

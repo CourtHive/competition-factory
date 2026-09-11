@@ -12,15 +12,16 @@ import { swapWinnerLoser } from '@Mutate/matchUps/drawPositions/swapWinnerLoser'
 import { modifyMatchUpScore } from '@Mutate/matchUps/score/modifyMatchUpScore';
 import { ensureSideLineUps } from '@Mutate/matchUps/lineUps/ensureSideLineUps';
 import { getPositionAssignments } from '@Query/drawDefinition/positionsGetter';
+import { setFirstClassOrExtension } from '@Mutate/extensions/setFirstClassOrExtension';
 import { isActiveDownstream } from '@Query/drawDefinition/isActiveDownstream';
 import { getAppliedPolicies } from '@Query/extensions/getAppliedPolicies';
 import { checkScoreHasValue } from '@Query/matchUp/checkScoreHasValue';
-import { removeExtension } from '@Mutate/extensions/removeExtension';
 import { getAllDrawMatchUps } from '@Query/matchUps/drawMatchUps';
+import { getMatchUpStatusScopeViolation } from '@Query/matchUps/getMatchUpStatusScopeViolation';
 import { decorateResult } from '@Functions/global/decorateResult';
 import { positionTargets } from '@Query/matchUp/positionTargets';
 import { getMatchUpsMap } from '@Query/matchUps/getMatchUpsMap';
-import { addExtension } from '@Mutate/extensions/addExtension';
+import { analyzeMatchUp } from '@Query/matchUp/analyzeMatchUp';
 import { pushGlobalLog } from '@Functions/global/globalLog';
 import { validateScore } from '@Validators/validateScore';
 import { findDrawMatchUp } from '@Acquire/findDrawMatchUp';
@@ -42,6 +43,7 @@ import {
   INVALID_MATCHUP_STATUS,
   INVALID_VALUES,
   MATCHUP_NOT_FOUND,
+  MATCHUP_STATUS_OUT_OF_SCOPE,
   MISSING_DRAW_DEFINITION,
   NO_VALID_ACTIONS,
   PROPAGATED_EXITS_DOWNSTREAM,
@@ -52,15 +54,23 @@ import {
   BYE,
   CANCELLED,
   COMPLETED,
+  completedMatchUpStatuses,
   DEFAULTED,
   DOUBLE_DEFAULT,
   DOUBLE_WALKOVER,
+  IN_PROGRESS,
   INCOMPLETE,
-  particicipantsRequiredMatchUpStatuses,
+  participantsRequiredMatchUpStatuses,
+  SUSPENDED,
   TO_BE_PLAYED,
   validMatchUpStatuses,
   WALKOVER,
 } from '@Constants/matchUpStatusConstants';
+
+// Reverting a validated-COMPLETED matchUp to one of these "still live / paused"
+// statuses (without providing a new outcome) would silently strip its result and
+// un-advance the draw — the class of bug behind stranded LIVE-with-score matches.
+const REVERT_GUARDED_STATUSES = new Set([IN_PROGRESS, SUSPENDED]);
 
 // NOTE: Internal method for setting matchUpStatus or score and winningSide, not to be confused with setMatchUpStatus
 
@@ -115,10 +125,49 @@ export function setMatchUpState(params: SetMatchUpStateArgs): any {
   const validationError = validateMatchUpStateInputs({ drawDefinition, matchUpStatus, winningSide });
   if (validationError) return validationError;
 
-  const resolved = resolveMatchUpAndContext({ tournamentRecord, drawDefinition, matchUpId, event, matchUpStatus, winningSide });
+  const resolved = resolveMatchUpAndContext({
+    tournamentRecord,
+    drawDefinition,
+    matchUpId,
+    event,
+    matchUpStatus,
+    winningSide,
+  });
   if (resolved.error) return resolved;
 
-  const { matchUp, inContextMatchUp, inContextDrawMatchUps, matchUpsMap, structure, isTeam, assignedDrawPositions, matchUpTieId } = resolved;
+  const {
+    matchUp,
+    inContextMatchUp,
+    inContextDrawMatchUps,
+    matchUpsMap,
+    structure,
+    isTeam,
+    assignedDrawPositions,
+    matchUpTieId,
+  } = resolved;
+
+  const revertError = checkCompletedRevertGuard({
+    matchUp,
+    matchUpStatus,
+    winningSide,
+    score,
+    structure,
+    drawDefinition,
+    event,
+  });
+  if (revertError) return revertError;
+
+  const impliedCompletionError = checkImpliedCompletionGuard({
+    matchUpStatus,
+    winningSide,
+    score,
+    isTeam,
+    matchUp,
+    structure,
+    drawDefinition,
+    event,
+  });
+  if (impliedCompletionError) return impliedCompletionError;
 
   const targetData = positionTargets({
     matchUpId: matchUpTieId || matchUpId,
@@ -205,6 +254,7 @@ export function setMatchUpState(params: SetMatchUpStateArgs): any {
     appliedPolicies,
     drawDefinition,
     matchUpStatus,
+    winningSide,
     structure,
     matchUp,
   });
@@ -254,6 +304,73 @@ export function setMatchUpState(params: SetMatchUpStateArgs): any {
   return resolveAndApplyOutcome({ params, isTeam, dualWinningSideChange, activeDownstream, stack });
 }
 
+// Refuse to revert a COMPLETED matchUp that carries a *validated* winning score
+// back to a live status (IN_PROGRESS / SUSPENDED) when no new outcome is supplied.
+// A new winningSide or an applied score is treated as a correction/re-score and is
+// allowed. RETIRED/DEFAULTED (irregular endings whose scores do not validate as a
+// completed outcome) stay reversible. To reopen a completed match, submit a new
+// outcome or clear the result first (removeWinningSide / TO_BE_PLAYED).
+function checkCompletedRevertGuard({ matchUp, matchUpStatus, winningSide, score, structure, drawDefinition, event }) {
+  if (!matchUpStatus || !REVERT_GUARDED_STATUSES.has(matchUpStatus)) return undefined;
+  if (winningSide || checkScoreHasValue({ score })) return undefined;
+  if (matchUp?.matchUpStatus !== COMPLETED || !matchUp?.winningSide) return undefined;
+
+  const matchUpFormat =
+    matchUp.matchUpFormat ?? structure?.matchUpFormat ?? drawDefinition?.matchUpFormat ?? event?.matchUpFormat;
+  const { validMatchUpOutcome } = analyzeMatchUp({ matchUp, matchUpFormat });
+  if (!validMatchUpOutcome) return undefined;
+
+  return decorateResult({
+    result: { error: INCOMPATIBLE_MATCHUP_STATUS },
+    info: 'Cannot revert a COMPLETED matchUp with a validated winning score to a live status; submit a corrected outcome or clear the result first',
+    context: { matchUpStatus, currentMatchUpStatus: matchUp.matchUpStatus },
+    stack: 'setMatchUpStatus',
+  });
+}
+
+// Refuse a submission whose score/winner implies a completed outcome while the
+// requested matchUpStatus is a live/paused status (IN_PROGRESS / SUSPENDED). A
+// decisive score (one that resolves a winner under the matchUpFormat) or an
+// explicit winningSide cannot coexist with "still playing". Excludes TEAM
+// matchUps, whose tie score is auto-calculated. Non-decisive in-progress scores
+// (e.g. a single set won in a best-of-3) remain valid with IN_PROGRESS.
+function checkImpliedCompletionGuard({
+  matchUpStatus,
+  winningSide,
+  score,
+  isTeam,
+  matchUp,
+  structure,
+  drawDefinition,
+  event,
+}) {
+  if (isTeam || !matchUpStatus || !REVERT_GUARDED_STATUSES.has(matchUpStatus)) return undefined;
+  if (!winningSide && !checkScoreHasValue({ score })) return undefined;
+
+  if (winningSide) {
+    return decorateResult({
+      result: { error: INCOMPATIBLE_MATCHUP_STATUS },
+      info: 'A winningSide implies completion and cannot be set with a live matchUpStatus (IN_PROGRESS / SUSPENDED)',
+      context: { matchUpStatus, winningSide },
+      stack: 'setMatchUpStatus',
+    });
+  }
+
+  const matchUpFormat =
+    matchUp?.matchUpFormat ?? structure?.matchUpFormat ?? drawDefinition?.matchUpFormat ?? event?.matchUpFormat;
+  if (!matchUpFormat) return undefined;
+
+  const { calculatedWinningSide } = analyzeMatchUp({ matchUp: { score, matchUpFormat }, matchUpFormat });
+  if (!calculatedWinningSide) return undefined;
+
+  return decorateResult({
+    result: { error: INCOMPATIBLE_MATCHUP_STATUS },
+    info: 'Score implies a completed outcome and cannot be set with a live matchUpStatus (IN_PROGRESS / SUSPENDED)',
+    context: { matchUpStatus, calculatedWinningSide },
+    stack: 'setMatchUpStatus',
+  });
+}
+
 function validateMatchUpStateInputs({ drawDefinition, matchUpStatus, winningSide }) {
   if (!drawDefinition) return { error: MISSING_DRAW_DEFINITION };
 
@@ -264,6 +381,19 @@ function validateMatchUpStateInputs({ drawDefinition, matchUpStatus, winningSide
     return decorateResult({
       result: { error: INVALID_MATCHUP_STATUS },
       info: 'matchUpStatus does not exist',
+      stack: 'setMatchUpStatus',
+    });
+  }
+
+  // A status can exist and still be meaningless here. CHALLENGED describes a fixture a participant
+  // created, which only a LADDER produces; setting it in an elimination draw asserts something the
+  // draw cannot express. Unscoped statuses — nearly all of them — return undefined and are
+  // unaffected. See `matchUpStatusScopes`.
+  const scopeViolation = getMatchUpStatusScopeViolation({ drawType: drawDefinition?.drawType, matchUpStatus });
+  if (scopeViolation) {
+    return decorateResult({
+      result: { error: MATCHUP_STATUS_OUT_OF_SCOPE },
+      info: scopeViolation,
       stack: 'setMatchUpStatus',
     });
   }
@@ -344,7 +474,16 @@ function checkDownstreamCompatibility({ matchUpTieId, activeDownstream, matchUpS
 }
 
 function resolveAndApplyOutcome({ params, isTeam, dualWinningSideChange, activeDownstream, stack }) {
-  const { allowChangePropagation, tournamentRecords, tournamentRecord, drawDefinition, winningSide, matchUpId, matchUpTieId, matchUp } = params;
+  const {
+    allowChangePropagation,
+    tournamentRecords,
+    tournamentRecord,
+    drawDefinition,
+    winningSide,
+    matchUpId,
+    matchUpTieId,
+    matchUp,
+  } = params;
 
   const { schedule } = params;
   if (schedule) {
@@ -364,11 +503,7 @@ function resolveAndApplyOutcome({ params, isTeam, dualWinningSideChange, activeD
   const validWinningSideSwap =
     !isTeam && !dualWinningSideChange && winningSide && matchUp.winningSide && matchUp.winningSide !== winningSide;
 
-  if (
-    allowChangePropagation &&
-    validWinningSideSwap &&
-    matchUp.roundPosition
-  ) {
+  if (allowChangePropagation && validWinningSideSwap && matchUp.roundPosition) {
     return swapWinnerLoser(params);
   }
 
@@ -393,7 +528,30 @@ function resolveAndApplyOutcome({ params, isTeam, dualWinningSideChange, activeD
     result = { error: NO_VALID_ACTIONS };
   }
 
+  if (!result?.error) applyScoredTime({ matchUp });
+
   return decorateResult({ result, stack });
+}
+
+// Auto-capture matchUp.schedule.scoredTime the first time a matchUp becomes
+// "scored" (a score with value, a winningSide, or a completed status). Applied
+// at the convergence point so it covers every apply sub-path. Captured once —
+// later score corrections keep the original timestamp; cleared when the score
+// is removed so a subsequent re-score gets a fresh stamp. A lightweight proxy
+// for when the match actually finished (TD-behavior analytics) when no explicit
+// END_TIME timeItem is recorded; an actual endTime supersedes it at read time.
+function applyScoredTime({ matchUp }) {
+  const isScored =
+    !!matchUp.winningSide ||
+    checkScoreHasValue({ score: matchUp.score }) ||
+    (matchUp.matchUpStatus && completedMatchUpStatuses.includes(matchUp.matchUpStatus));
+
+  if (isScored) {
+    if (!matchUp.schedule) matchUp.schedule = {};
+    if (!matchUp.schedule.scoredTime) matchUp.schedule.scoredTime = new Date().toISOString();
+  } else if (matchUp.schedule?.scoredTime) {
+    delete matchUp.schedule.scoredTime;
+  }
 }
 
 function handleTeamAutoCalc({
@@ -413,9 +571,11 @@ function handleTeamAutoCalc({
   let dualWinningSideChange;
 
   if (disableAutoCalc) {
-    addExtension({
-      extension: { name: DISABLE_AUTO_CALC, value: true },
+    setFirstClassOrExtension({
       element: matchUp,
+      attribute: 'disableAutoCalc',
+      name: DISABLE_AUTO_CALC,
+      value: true,
     });
   } else if (enableAutoCalc) {
     const existingDualMatchUpWinningSide = matchUp.winningSide;
@@ -450,7 +610,12 @@ function handleTeamAutoCalc({
       });
     }
 
-    removeExtension({ name: DISABLE_AUTO_CALC, element: matchUp });
+    setFirstClassOrExtension({
+      element: matchUp,
+      attribute: 'disableAutoCalc',
+      name: DISABLE_AUTO_CALC,
+      value: undefined,
+    });
 
     // setting these parameters will enable noDownStreamDependencies to attemptToSetWinningSide
     Object.assign(params, {
@@ -467,6 +632,7 @@ function handleTeamAutoCalc({
     eventId: event?.eventId,
     dualMatchUp: matchUp,
     drawDefinition,
+    event,
   });
 
   return { dualWinningSideChange };
@@ -535,7 +701,8 @@ function resolveTieMatchUpContext({
 
   const existingDualMatchUpWinningSide = dualMatchUp.winningSide;
   const dualWinningSideChange = projectedWinningSide !== existingDualMatchUpWinningSide;
-  const autoCalcDisabled = dualMatchUp._disableAutoCalc;
+  // first-class (NATIVE) with fallback to the legacy `_disableAutoCalc` hydrated alias (LEGACY)
+  const autoCalcDisabled = dualMatchUp.disableAutoCalc ?? dualMatchUp._disableAutoCalc;
 
   return {
     isCollectionMatchUp: true,
@@ -610,6 +777,7 @@ function checkParticipants({
   appliedPolicies,
   drawDefinition,
   matchUpStatus,
+  winningSide,
   structure,
   matchUp,
 }) {
@@ -642,7 +810,22 @@ function checkParticipants({
   ) {
     return { ...SUCCESS };
   }
-  if (matchUpStatus && particicipantsRequiredMatchUpStatuses.includes(matchUpStatus) && !requiredParticipants) {
+  // A bare `{ winningSide }` with no matchUpStatus requires participants just as much as an
+  // explicit COMPLETED does — declaring a winner IS a directing action.
+  //
+  // Without this the check simply did not run for such an outcome, and the equivalent test in
+  // `attemptToModifyScore` (`validToScore`) caught it instead — but that runs LATER, after
+  // `noDownstreamDependencies` has already unwound an existing double exit via `removeDoubleExit`,
+  // or `attemptToSetWinningSide` has already called `removeDirectedParticipants`. The result was a
+  // rejected mutation that had nonetheless destroyed the previous result: measured on
+  // MODIFIED_FEED_IN_CHAMPIONSHIP 8/6, a pending propagated exit (WALKOVER, winningSide 1, second
+  // side an empty feed slot) was left TO_BE_PLAYED by a call that returned ERR_MISSING_ASSIGNMENTS.
+  //
+  // Two checks for one condition, one lenient and early, one strict and late, with mutations in
+  // between. Making the early one cover the same ground is what keeps the rejection atomic.
+  const directingOutcome = matchUpStatus ? participantsRequiredMatchUpStatuses.includes(matchUpStatus) : !!winningSide;
+
+  if (directingOutcome && !requiredParticipants) {
     return decorateResult({
       info: 'matchUpStatus requires assigned participants',
       context: { matchUpStatus, requiredParticipants },

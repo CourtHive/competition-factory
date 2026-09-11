@@ -71,7 +71,7 @@ export function getUnseededByePositions({
   const notSeedByePosition = (drawPosition) => !seedOrderByePositions.includes(drawPosition);
   const unfilledDrawPosition = (drawPosition) => !filledRelevantDrawPositions?.includes(drawPosition);
   const quarterSeparateBlock = (block) => {
-    const sortedChunked = chunkArray(block.sort(numericSort), Math.ceil(block.length / 4));
+    const sortedChunked = chunkArray(block.toSorted(numericSort), Math.ceil(block.length / 4));
     let filteredChunks = sortedChunked.map((chunk) => chunk.filter(unfilledDrawPosition));
     const drawPositionCount = filteredChunks.flat(Infinity).flat().length;
     const orderedDrawPositions: number[] = [];

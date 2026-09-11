@@ -9,7 +9,9 @@ import {
 } from '@Tools/timeZone';
 
 // constants
-import { INVALID_TIME_ZONE } from '@Constants/errorConditionConstants';
+import { INVALID_TIME_ZONE, INVALID_DATE, INVALID_TIME } from '@Constants/errorConditionConstants';
+
+const NY = 'America/New_York';
 
 describe('isValidIANATimeZone', () => {
   it('accepts America/New_York', () => {
@@ -102,5 +104,45 @@ describe('toEmbargoUTC', () => {
   it('returns error for invalid timezone', () => {
     const result = toEmbargoUTC('2025-06-20', '03:00', 'Invalid/Zone');
     expect(result).toEqual({ error: INVALID_TIME_ZONE });
+  });
+});
+
+describe('failure is a value, never a throw and never a substituted number', () => {
+  // Every case below previously threw an uncaught RangeError out of a function
+  // whose signature promised `string | { error }`, or returned a plausible
+  // number derived from the wrong frame. None of them had a test.
+
+  it('refuses an unrecognised zone instead of throwing', () => {
+    expect(() => getTimeZoneOffsetMinutes('Not/AZone')).not.toThrow();
+    expect(getTimeZoneOffsetMinutes('Not/AZone')).toBeUndefined();
+    expect(wallClockToUTC('2026-07-15', '09:00', 'Not/AZone')).toEqual({ error: INVALID_TIME_ZONE });
+    expect(utcToWallClock('2026-07-15T13:00:00.000Z', 'Not/AZone')).toEqual({ error: INVALID_TIME_ZONE });
+    expect(toEmbargoUTC('2026-07-15', '09:00', 'Not/AZone')).toEqual({ error: INVALID_TIME_ZONE });
+  });
+
+  it('does not read the host machine clock when the zone is omitted', () => {
+    // This returned the offset of whichever server happened to run it, so the
+    // same call answered differently in New York and in London.
+    expect(getTimeZoneOffsetMinutes(undefined as any)).toBeUndefined();
+    expect(getTimeZoneOffsetMinutes('' as any)).toBeUndefined();
+  });
+
+  it('distinguishes a malformed date from a malformed time', () => {
+    expect(wallClockToUTC('not-a-date', '09:00', NY)).toEqual({ error: INVALID_DATE });
+    expect(wallClockToUTC('2026-07-15', 'noon', NY)).toEqual({ error: INVALID_TIME });
+    expect(toEmbargoUTC('not-a-date', '09:00', NY)).toEqual({ error: INVALID_DATE });
+  });
+
+  it('refuses an unparseable instant', () => {
+    expect(utcToWallClock('garbage', NY)).toEqual({ error: INVALID_DATE });
+    expect(utcToWallClock(undefined as any, NY)).toEqual({ error: INVALID_DATE });
+  });
+
+  it('still converts correctly across a DST boundary', () => {
+    // The transition weekend the whole zoned intent exists for, which this
+    // file previously had no case for at all.
+    expect(wallClockToUTC('2026-01-15', '09:00', NY)).toEqual('2026-01-15T14:00:00.000Z');
+    expect(wallClockToUTC('2026-07-15', '09:00', NY)).toEqual('2026-07-15T13:00:00.000Z');
+    expect(utcToWallClock('2026-11-01T05:30:00.000Z', NY)).toEqual({ date: '2026-11-01', time: '01:30' });
   });
 });

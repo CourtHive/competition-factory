@@ -90,7 +90,8 @@ The following actions can be controlled by this policy:
 ## Default Policy
 
 ```js
-import { POLICY_MATCHUP_ACTIONS_DEFAULT } from 'tods-competition-factory';
+import { fixtures } from 'tods-competition-factory';
+const { POLICY_MATCHUP_ACTIONS_DEFAULT } = fixtures.policies;
 
 // Default policy:
 // - All actions enabled for all structures
@@ -135,7 +136,8 @@ import { POLICY_MATCHUP_ACTIONS_DEFAULT } from 'tods-competition-factory';
 ### Enable All MatchUp Actions
 
 ```js
-import { POLICY_TYPE_MATCHUP_ACTIONS } from 'tods-competition-factory';
+import { policyConstants } from 'tods-competition-factory';
+const { POLICY_TYPE_MATCHUP_ACTIONS } = policyConstants;
 
 // Allow all matchUp actions without restrictions
 const openPolicy = {
@@ -252,6 +254,16 @@ const genderedTeamPolicy = {
 // - Assigning MALE participant to FEMALE doubles position
 // - Cross-category assignments
 ```
+
+#### Mixed doubles pairing
+
+When `enforceGender` is active and a collection matchUp's gender is `MIXED`, gender
+enforcement also applies to the **second member** of each pair. Once one participant
+has been assigned to a side, `matchUpActions` offers only opposite-gender participants
+for that side's remaining slot, and `assignTieMatchUpParticipant` rejects a same-gender
+second member with `INVALID_PARTICIPANT` ("Mixed doubles pair requires one participant
+of each gender"). A `MIXED` collection therefore always resolves to one participant of
+each gender per side.
 
 ### Flexible Club Team Event
 
@@ -778,7 +790,8 @@ it('returns isByeMatchUp for BYE matchUps', () => {
 ### Test 4: Verify Gender Enforcement
 
 ```js
-import { POLICY_TYPE_MATCHUP_ACTIONS } from 'tods-competition-factory';
+import { policyConstants } from 'tods-competition-factory';
+const { POLICY_TYPE_MATCHUP_ACTIONS } = policyConstants;
 
 it('enforces gender restrictions', () => {
   // Create team event with gendered positions
@@ -811,7 +824,8 @@ it('enforces gender restrictions', () => {
 ### Test 5: Verify Custom Policy
 
 ```js
-import { POLICY_TYPE_MATCHUP_ACTIONS } from 'tods-competition-factory';
+import { policyConstants } from 'tods-competition-factory';
+const { POLICY_TYPE_MATCHUP_ACTIONS } = policyConstants;
 
 it('respects custom action restrictions', () => {
   const { drawIds, tournamentRecord } = mocksEngine.generateTournamentRecord({

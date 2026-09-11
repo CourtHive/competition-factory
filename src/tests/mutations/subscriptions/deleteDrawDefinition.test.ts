@@ -1,3 +1,4 @@
+import { firstClassOrExtension } from '@Acquire/firstClassOrExtension';
 import { setSubscriptions } from '@Global/state/globalState';
 import mocksEngine from '@Assemblies/engines/mock';
 import tournamentEngine from '@Engines/syncEngine';
@@ -67,8 +68,10 @@ it('can notify subscriber when drawDefinitions are deleted', () => {
   expect(auditTrail.flat(Infinity)[0].detail[0].payload.auditData).toEqual(auditData);
 
   const { event } = tournamentEngine.getEvent({ eventId });
-  // because there is an AUDIT topic no deletedDrawDefinitions extension is added
-  expect(event.extensions.length).toEqual(1);
+  // because there is an AUDIT topic no deletedDrawDefinitions extension is added — only the generated
+  // FLIGHT_PROFILE remains (first-class in NATIVE, an extension in LEGACY)
+  expect(firstClassOrExtension({ element: event, attribute: 'flightProfile', name: 'flightProfile' })).toBeDefined();
+  expect(event.extensions?.some(({ name }) => name === 'deletedDrawDefinitions')).toBeFalsy();
 
   // now test structureReports
   const { eventStructureReports } = tournamentEngine.getStructureReports();

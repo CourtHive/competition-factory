@@ -1,8 +1,7 @@
+import { setFirstClassOrExtension } from '../extensions/setFirstClassOrExtension';
 import { resolveTournamentRecords } from '@Helpers/parameters/resolveTournamentRecords';
 import { checkRequiredParameters } from '@Helpers/parameters/checkRequiredParameters';
-import { removeExtension } from '../extensions/removeExtension';
-import { addExtension } from '../extensions/addExtension';
-import { findExtension } from '@Acquire/findExtension';
+import { firstClassOrExtension } from '@Acquire/firstClassOrExtension';
 
 // constants
 import { COURT_IDS, TOURNAMENT_RECORDS } from '@Constants/attributeConstants';
@@ -29,24 +28,22 @@ function courtsEnable({ tournamentRecord, courtIds, enableAll, dates }) {
     for (const court of venue.courts ?? []) {
       if (enableAll || courtIds?.includes(court.courtId))
         if (Array.isArray(dates)) {
-          const { extension } = findExtension({
-            element: court,
-            name: DISABLED,
-          });
+          const value = firstClassOrExtension({ element: court, attribute: 'disabled', name: DISABLED });
 
-          if (extension) {
-            const value = extension.value;
+          if (value) {
             if (Array.isArray(value.dates)) {
               value.dates = value.dates.filter((date) => !dates.includes(date));
             }
-            addExtension({
-              extension: { name: DISABLED, value },
-              creationTime: false,
+            setFirstClassOrExtension({
               element: court,
+              attribute: 'disabled',
+              name: DISABLED,
+              value,
+              creationTime: false,
             });
           }
         } else {
-          removeExtension({ element: court, name: DISABLED });
+          setFirstClassOrExtension({ element: court, attribute: 'disabled', name: DISABLED, value: undefined });
         }
     }
   }

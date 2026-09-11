@@ -2,13 +2,15 @@ import mocksEngine from '@Assemblies/engines/mock';
 import tournamentEngine from '@Engines/syncEngine';
 import { expect, it, test } from 'vitest';
 
-// Constants and Fixtures
-import { INVALID_VALUES } from '@Constants/errorConditionConstants';
+// constants and types
 import { COMPASS, CURTIS_CONSOLATION } from '@Constants/drawDefinitionConstants';
+import { INVALID_VALUES } from '@Constants/errorConditionConstants';
 import { TEAM } from '@Constants/participantConstants';
 import { DOUBLES } from '@Constants/eventConstants';
-import { countries } from '@Fixtures/countryData';
 import { SINGLES } from '@Constants/matchUpTypes';
+
+// Fixtures
+import { countries } from '@Fixtures/countryData';
 
 it('returns eventData with expected drawsData', () => {
   const drawProfiles = [{ drawSize: 4, drawType: COMPASS }];
@@ -158,6 +160,39 @@ it('returns team information for participants in SINGLES and DOUBLES matchUps in
       });
     });
   expect(iocCount).toBeGreaterThan(0);
+});
+
+// Hydration of `competitionFormat` onto eventInfo lets consumers (e.g. epixodic
+// applying INTENNSE point multipliers) read sport rules through the standard
+// data flow instead of falling back to a sport-detect heuristic.
+// See Mentat/planning/COMPETITION_FORMAT_HYDRATION.md.
+it('hydrates competitionFormat onto eventInfo and gates it on usePublishState', () => {
+  const eventId = 'cf-eid';
+  const { tournamentRecord } = mocksEngine.generateTournamentRecord({
+    drawProfiles: [{ drawSize: 4, eventId, drawType: COMPASS }],
+  });
+
+  // No public mutation exists for setting competitionFormat (planning doc
+  // Phase 2 — TMX editor); the field is on the Event type already so we
+  // splice it into the tournamentRecord before setState.
+  const competitionFormat = { competitionFormatCode: 'INTENNSE_STANDARD' } as any;
+  tournamentRecord.events!.find((e: any) => e.eventId === eventId)!.competitionFormat = competitionFormat;
+  tournamentEngine.setState(tournamentRecord);
+
+  // Default mode — competitionFormat surfaces in eventInfo
+  let { eventData } = tournamentEngine.getEventData({ eventId });
+  expect(eventData.eventInfo.competitionFormat).toEqual(competitionFormat);
+
+  // usePublishState + unpublished — competitionFormat is stripped
+  eventData = tournamentEngine.getEventData({ eventId, usePublishState: true }).eventData;
+  expect(eventData.eventInfo.published).toEqual(false);
+  expect(eventData.eventInfo.competitionFormat).toBeUndefined();
+
+  // usePublishState + published — competitionFormat returns
+  tournamentEngine.publishEvent({ eventId });
+  eventData = tournamentEngine.getEventData({ eventId, usePublishState: true }).eventData;
+  expect(eventData.eventInfo.published).toEqual(true);
+  expect(eventData.eventInfo.competitionFormat).toEqual(competitionFormat);
 });
 
 test('hydrateParticipants: false reduces getEventData payload size', () => {

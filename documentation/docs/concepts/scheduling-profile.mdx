@@ -7,6 +7,7 @@ title: Scheduling Profile
 A **Scheduling Profile** is a declarative configuration that defines which rounds from which events should be scheduled on specific dates and at specific venues. It serves as the blueprint for automated multi-day tournament scheduling, allowing the Garman scheduling algorithm to process rounds across multiple events in a coordinated manner.
 
 **Key Benefits:**
+
 - **Multi-Event Coordination**: Schedule rounds from singles, doubles, and team events together
 - **Venue-Specific Planning**: Assign different events/rounds to different venues
 - **Day-by-Day Control**: Define exactly what gets scheduled each day
@@ -23,34 +24,34 @@ A scheduling profile is an array of date-specific configurations, each containin
 type SchedulingProfile = ScheduleDateProfile[];
 
 type ScheduleDateProfile = {
-  scheduleDate: string;        // ISO date string 'YYYY-MM-DD'
-  venues: VenueProfile[];      // Venue assignments for this date
+  scheduleDate: string; // ISO date string 'YYYY-MM-DD'
+  venues: VenueProfile[]; // Venue assignments for this date
 };
 
 type VenueProfile = {
-  venueId: string;             // UUID of venue
-  rounds: RoundProfile[];      // Rounds to schedule at this venue
+  venueId: string; // UUID of venue
+  rounds: RoundProfile[]; // Rounds to schedule at this venue
 };
 
 type RoundProfile = {
   // Required identifiers
-  tournamentId: string;        // Tournament UUID
-  eventId: string;             // Event UUID
-  drawId: string;              // Draw UUID
-  structureId: string;         // Structure UUID
-  roundNumber: number;         // Round number (1-based)
-  
+  tournamentId: string; // Tournament UUID
+  eventId: string; // Event UUID
+  drawId: string; // Draw UUID
+  structureId: string; // Structure UUID
+  roundNumber: number; // Round number (1-based)
+
   // Optional scheduling controls
-  notBeforeTime?: string;      // 'HH:MM' - earliest start time for this round
+  notBeforeTime?: string; // 'HH:MM' - earliest start time for this round
   roundSegment?: {
-    segmentNumber: number;     // Which segment (1-based)
-    segmentsCount: number;     // Total segments in round
+    segmentNumber: number; // Which segment (1-based)
+    segmentsCount: number; // Total segments in round
   };
-  
+
   // Optional display attributes (not used by scheduling engine)
-  eventName?: string;          // Display name
-  roundName?: string;          // Display name (e.g., 'R16', 'QF', 'SF')
-  sortOrder?: number;          // Display order
+  eventName?: string; // Display name
+  roundName?: string; // Display name (e.g., 'R16', 'QF', 'SF')
+  sortOrder?: number; // Display order
 };
 ```
 
@@ -78,7 +79,7 @@ const schedulingProfile = [
             drawId: 'draw-singles-u18',
             structureId: 'structure-main',
             roundNumber: 1,
-            notBeforeTime: '09:00'
+            notBeforeTime: '09:00',
           },
           {
             tournamentId: 'tournament-123',
@@ -86,11 +87,11 @@ const schedulingProfile = [
             drawId: 'draw-doubles-u18',
             structureId: 'structure-main',
             roundNumber: 1,
-            notBeforeTime: '11:00'
-          }
-        ]
-      }
-    ]
+            notBeforeTime: '11:00',
+          },
+        ],
+      },
+    ],
   },
   // Day 2: Later rounds
   {
@@ -104,18 +105,18 @@ const schedulingProfile = [
             eventId: 'event-singles-u18',
             drawId: 'draw-singles-u18',
             structureId: 'structure-main',
-            roundNumber: 2  // R16
+            roundNumber: 2, // R16
           },
           {
             tournamentId: 'tournament-123',
             eventId: 'event-singles-u18',
             drawId: 'draw-singles-u18',
             structureId: 'structure-main',
-            roundNumber: 3  // QF
-          }
-        ]
-      }
-    ]
+            roundNumber: 3, // QF
+          },
+        ],
+      },
+    ],
   },
   // Day 3: Finals
   {
@@ -129,21 +130,21 @@ const schedulingProfile = [
             eventId: 'event-singles-u18',
             drawId: 'draw-singles-u18',
             structureId: 'structure-main',
-            roundNumber: 4,  // SF
-            notBeforeTime: '10:00'
+            roundNumber: 4, // SF
+            notBeforeTime: '10:00',
           },
           {
             tournamentId: 'tournament-123',
             eventId: 'event-singles-u18',
             drawId: 'draw-singles-u18',
             structureId: 'structure-main',
-            roundNumber: 5,  // Final
-            notBeforeTime: '14:00'
-          }
-        ]
-      }
-    ]
-  }
+            roundNumber: 5, // Final
+            notBeforeTime: '14:00',
+          },
+        ],
+      },
+    ],
+  },
 ];
 
 // Attach to tournament
@@ -170,14 +171,12 @@ const venueId = 'venue-main';
 // Assign rounds to dates
 scheduleDates.forEach((scheduleDate, dayIndex) => {
   const rounds = [];
-  
-  events.forEach(event => {
-    event.drawDefinitions?.forEach(draw => {
-      draw.structures?.forEach(structure => {
-        const maxRound = structure.matchUps?.reduce((max, mu) => 
-          Math.max(max, mu.roundNumber), 0
-        );
-        
+
+  events.forEach((event) => {
+    event.drawDefinitions?.forEach((draw) => {
+      draw.structures?.forEach((structure) => {
+        const maxRound = structure.matchUps?.reduce((max, mu) => Math.max(max, mu.roundNumber), 0);
+
         // Schedule specific rounds on specific days
         if (dayIndex === 0 && [1].includes(structure.roundNumber)) {
           // Day 1: Round 1
@@ -187,7 +186,7 @@ scheduleDates.forEach((scheduleDate, dayIndex) => {
             drawId: draw.drawId,
             structureId: structure.structureId,
             roundNumber: 1,
-            eventName: event.eventName
+            eventName: event.eventName,
           });
         } else if (dayIndex === 1 && maxRound >= 2) {
           // Day 2: Round 2
@@ -197,18 +196,18 @@ scheduleDates.forEach((scheduleDate, dayIndex) => {
             drawId: draw.drawId,
             structureId: structure.structureId,
             roundNumber: 2,
-            eventName: event.eventName
+            eventName: event.eventName,
           });
         }
         // ... more logic
       });
     });
   });
-  
+
   if (rounds.length > 0) {
     schedulingProfile.push({
       scheduleDate,
-      venues: [{ venueId, rounds }]
+      venues: [{ venueId, rounds }],
     });
   }
 });
@@ -225,17 +224,17 @@ Once a profile is configured, use `scheduleProfileRounds()` to automatically sch
 ```js
 // Schedule all rounds defined in the profile
 const result = tournamentEngine.scheduleProfileRounds({
-  periodLength: 30,                          // Scheduling block size in minutes (see note below)
-  checkPotentialRequestConflicts: true       // Consider potential matchUp conflicts
+  periodLength: 30, // Scheduling block size in minutes (see note below)
+  checkPotentialRequestConflicts: true, // Consider potential matchUp conflicts
 });
 
 // Handle results
 const {
-  scheduledDates,           // Array of dates where matches were scheduled
-  scheduledMatchUpIds,      // All successfully scheduled matchUpIds
-  noTimeMatchUpIds,         // MatchUps that couldn't be fit into available time
-  overLimitMatchUpIds,      // MatchUps blocked by daily limits
-  requestConflicts          // Array of { date, conflicts } for participant conflicts
+  scheduledDates, // Array of dates where matches were scheduled
+  scheduledMatchUpIds, // All successfully scheduled matchUpIds
+  noTimeMatchUpIds, // MatchUps that couldn't be fit into available time
+  overLimitMatchUpIds, // MatchUps blocked by daily limits
+  requestConflicts, // Array of { date, conflicts } for participant conflicts
 } = result;
 
 console.log(`Scheduled ${scheduledMatchUpIds.length} matches`);
@@ -245,11 +244,13 @@ console.log(`${overLimitMatchUpIds.length} matches blocked by daily limits`);
 
 :::tip What is periodLength?
 `periodLength` defines the scheduling block size in minutes (default: 30). It controls:
+
 - **Time slot granularity**: Creates time blocks at regular intervals (e.g., 30 minutes = 9:00, 9:30, 10:00, ...)
 - **Match grouping**: Groups matches by duration relative to block size for efficient scheduling
 - **Court utilization**: Smaller blocks (15 min) = finer control; larger blocks (60 min) = simpler but may waste time
 
 **Recommended values:**
+
 - 15 minutes: Short format tournaments (Fast4, no-ad)
 - 30 minutes: Standard tournaments (best of 3 sets) ← Most common
 - 60 minutes: Long format events (best of 5 sets)
@@ -264,8 +265,8 @@ Schedule specific dates from the profile:
 ```js
 // Schedule only specific dates
 const result = tournamentEngine.scheduleProfileRounds({
-  scheduleDates: ['2024-06-15', '2024-06-16'],  // Only these dates
-  periodLength: 30
+  scheduleDates: ['2024-06-15', '2024-06-16'], // Only these dates
+  periodLength: 30,
 });
 ```
 
@@ -276,15 +277,15 @@ Clear existing schedules before applying profile:
 ```js
 // Clear specific dates
 const result = tournamentEngine.scheduleProfileRounds({
-  clearScheduleDates: ['2024-06-15'],  // Clear these dates first
-  scheduleDates: ['2024-06-15'],       // Then reschedule
-  periodLength: 30
+  clearScheduleDates: ['2024-06-15'], // Clear these dates first
+  scheduleDates: ['2024-06-15'], // Then reschedule
+  periodLength: 30,
 });
 
 // Clear ALL dates in profile
 const result = tournamentEngine.scheduleProfileRounds({
-  clearScheduleDates: true,  // Clear all dates in profile
-  periodLength: 30
+  clearScheduleDates: true, // Clear all dates in profile
+  periodLength: 30,
 });
 ```
 
@@ -294,8 +295,8 @@ Preview scheduling without making changes:
 
 ```js
 const result = tournamentEngine.scheduleProfileRounds({
-  dryRun: true,  // Don't actually schedule, just report what would happen
-  periodLength: 30
+  dryRun: true, // Don't actually schedule, just report what would happen
+  periodLength: 30,
 });
 
 console.log('Would schedule:', result.scheduledMatchUpIds.length);
@@ -308,7 +309,7 @@ Validate a profile before applying it:
 
 ```js
 const { valid, error } = tournamentEngine.validateSchedulingProfile({
-  schedulingProfile
+  schedulingProfile,
 });
 
 if (!valid) {
@@ -320,6 +321,7 @@ if (!valid) {
 ```
 
 **Validation Checks:**
+
 - All required fields present (`scheduleDate`, `venueId`, `tournamentId`, `eventId`, `drawId`, `structureId`, `roundNumber`)
 - Valid date formats
 - Referenced IDs exist in tournament
@@ -419,15 +421,15 @@ Order rounds logically within each day:
 rounds: [
   { roundNumber: 1, eventName: 'U18 Singles' },
   { roundNumber: 2, eventName: 'U18 Singles' },
-  { roundNumber: 1, eventName: 'U18 Doubles' }
-]
+  { roundNumber: 1, eventName: 'U18 Doubles' },
+];
 
 // Avoid: Random ordering
 rounds: [
   { roundNumber: 2, eventName: 'U18 Singles' },
   { roundNumber: 1, eventName: 'U18 Doubles' },
-  { roundNumber: 1, eventName: 'U18 Singles' }
-]
+  { roundNumber: 1, eventName: 'U18 Singles' },
+];
 ```
 
 ### 2. Use notBeforeTime
@@ -461,12 +463,12 @@ Distribute matches across available venues:
 // Check court availability before assigning
 const { venues } = tournamentEngine.getVenuesAndCourts();
 
-venues.forEach(venue => {
+venues.forEach((venue) => {
   const courtCount = venue.courts?.length || 0;
-  const availableHours = 8;  // Court availability hours
-  const matchesPerCourt = 6;  // Estimate
+  const availableHours = 8; // Court availability hours
+  const matchesPerCourt = 6; // Estimate
   const capacity = courtCount * matchesPerCourt;
-  
+
   console.log(`${venue.venueName}: ${capacity} matches/day capacity`);
 });
 ```
@@ -507,28 +509,32 @@ Two-day local tournament:
 ```js
 const schedulingProfile = [
   {
-    scheduleDate: '2024-06-15',  // Saturday
-    venues: [{
-      venueId: 'local-club',
-      rounds: [
-        { eventId: 'singles-open', roundNumber: 1 },
-        { eventId: 'singles-open', roundNumber: 2 },
-        { eventId: 'doubles-open', roundNumber: 1 }
-      ]
-    }]
+    scheduleDate: '2024-06-15', // Saturday
+    venues: [
+      {
+        venueId: 'local-club',
+        rounds: [
+          { eventId: 'singles-open', roundNumber: 1 },
+          { eventId: 'singles-open', roundNumber: 2 },
+          { eventId: 'doubles-open', roundNumber: 1 },
+        ],
+      },
+    ],
   },
   {
-    scheduleDate: '2024-06-16',  // Sunday
-    venues: [{
-      venueId: 'local-club',
-      rounds: [
-        { eventId: 'singles-open', roundNumber: 3 },  // SF
-        { eventId: 'singles-open', roundNumber: 4, notBeforeTime: '13:00' },  // Final
-        { eventId: 'doubles-open', roundNumber: 2 },  // SF
-        { eventId: 'doubles-open', roundNumber: 3, notBeforeTime: '15:00' }   // Final
-      ]
-    }]
-  }
+    scheduleDate: '2024-06-16', // Sunday
+    venues: [
+      {
+        venueId: 'local-club',
+        rounds: [
+          { eventId: 'singles-open', roundNumber: 3 }, // SF
+          { eventId: 'singles-open', roundNumber: 4, notBeforeTime: '13:00' }, // Final
+          { eventId: 'doubles-open', roundNumber: 2 }, // SF
+          { eventId: 'doubles-open', roundNumber: 3, notBeforeTime: '15:00' }, // Final
+        ],
+      },
+    ],
+  },
 ];
 ```
 
@@ -539,35 +545,39 @@ Multi-venue, multi-event championship:
 ```js
 const schedulingProfile = [
   // Days 1-3: Qualifying and early rounds
-  ...['2024-07-01', '2024-07-02', '2024-07-03'].map(date => ({
+  ...['2024-07-01', '2024-07-02', '2024-07-03'].map((date) => ({
     scheduleDate: date,
     venues: [
       {
         venueId: 'qualifying-venue',
-        rounds: qualifyingRounds
+        rounds: qualifyingRounds,
       },
       {
         venueId: 'main-venue',
-        rounds: earlyMainDrawRounds
-      }
-    ]
+        rounds: earlyMainDrawRounds,
+      },
+    ],
   })),
   // Days 4-5: Later rounds at main venue only
-  ...['2024-07-04', '2024-07-05'].map(date => ({
+  ...['2024-07-04', '2024-07-05'].map((date) => ({
     scheduleDate: date,
-    venues: [{
-      venueId: 'main-venue',
-      rounds: laterRounds
-    }]
+    venues: [
+      {
+        venueId: 'main-venue',
+        rounds: laterRounds,
+      },
+    ],
   })),
   // Day 6: Finals on center court
   {
     scheduleDate: '2024-07-06',
-    venues: [{
-      venueId: 'center-court',
-      rounds: finalsRounds
-    }]
-  }
+    venues: [
+      {
+        venueId: 'center-court',
+        rounds: finalsRounds,
+      },
+    ],
+  },
 ];
 ```
 
@@ -582,28 +592,30 @@ const schedulingProfile = [];
 // Spread age groups across 4 days
 ageGroups.forEach((ageGroup, dayIndex) => {
   const date = addDays('2024-08-01', dayIndex);
-  
+
   schedulingProfile.push({
     scheduleDate: date,
-    venues: [{
-      venueId: 'youth-center',
-      rounds: [
-        {
-          eventId: `singles-${ageGroup}`,
-          drawId: `draw-singles-${ageGroup}`,
-          structureId: 'main',
-          roundNumber: 1,
-          eventName: `${ageGroup} Singles Round 1`
-        },
-        {
-          eventId: `doubles-${ageGroup}`,
-          drawId: `draw-doubles-${ageGroup}`,
-          structureId: 'main',
-          roundNumber: 1,
-          eventName: `${ageGroup} Doubles Round 1`
-        }
-      ]
-    }]
+    venues: [
+      {
+        venueId: 'youth-center',
+        rounds: [
+          {
+            eventId: `singles-${ageGroup}`,
+            drawId: `draw-singles-${ageGroup}`,
+            structureId: 'main',
+            roundNumber: 1,
+            eventName: `${ageGroup} Singles Round 1`,
+          },
+          {
+            eventId: `doubles-${ageGroup}`,
+            drawId: `draw-doubles-${ageGroup}`,
+            structureId: 'main',
+            roundNumber: 1,
+            eventName: `${ageGroup} Doubles Round 1`,
+          },
+        ],
+      },
+    ],
   });
 });
 ```
@@ -615,7 +627,7 @@ Get the current profile from tournament record:
 ```js
 // Get as extension
 const { extension } = tournamentEngine.findExtension({
-  name: 'schedulingProfile'
+  name: 'schedulingProfile',
 });
 
 const schedulingProfile = extension?.value;
@@ -636,17 +648,16 @@ schedulingProfile.forEach(({ scheduleDate, venues }) => {
 
 Profiles work alongside scheduling policies:
 
-```js
-
 **API Reference:** [findExtension](/docs/governors/query-governor#findextension)
 
+```js
 // Set policy for recovery times and daily limits
 tournamentEngine.attachPolicies({
-  policyDefinitions: POLICY_SCHEDULING_DEFAULT
+  policyDefinitions: POLICY_SCHEDULING_DEFAULT,
 });
 
 tournamentEngine.setMatchUpDailyLimits({
-  dailyLimits: { SINGLES: 2, DOUBLES: 1, total: 3 }
+  dailyLimits: { SINGLES: 2, DOUBLES: 1, total: 3 },
 });
 
 // Then use profile for round-by-round scheduling
@@ -659,13 +670,12 @@ tournamentEngine.scheduleProfileRounds({ periodLength: 30 });
 
 For professional tournaments with grid scheduling:
 
-```js
-
 **API Reference:** [attachPolicies](/docs/governors/policy-governor#attachpolicies)
 
+```js
 const result = tournamentEngine.scheduleProfileRounds({
-  pro: true,  // Use grid scheduling instead of Garman
-  periodLength: 30
+  pro: true, // Use grid scheduling instead of Garman
+  periodLength: 30,
 });
 // Uses court-specific grid placement
 ```

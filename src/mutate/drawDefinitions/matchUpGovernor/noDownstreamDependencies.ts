@@ -8,6 +8,7 @@ import { checkConnectedStructures } from './checkConnectedStructures';
 import { attemptToSetWinningSide } from './attemptToSetWinningSide';
 import { decorateResult } from '@Functions/global/decorateResult';
 import { attemptToModifyScore } from './attemptToModifyScore';
+import { pushGlobalLog } from '@Functions/global/globalLog';
 import { removeDoubleExit } from './removeDoubleExit';
 import { removeQualifier } from './removeQualifier';
 import { isExit } from '@Validators/isExit';
@@ -60,8 +61,9 @@ export function noDownstreamDependencies(params) {
     let connectedStructures;
     const { structure, drawDefinition, dualMatchUp, disableAutoCalc } = params;
 
-    // disableAutoCalc means the score is being set manually
-    if (dualMatchUp?._disableAutoCalc && disableAutoCalc !== false) {
+    // disableAutoCalc means the score is being set manually; read first-class (NATIVE) with
+    // fallback to the legacy `_disableAutoCalc` hydrated alias (LEGACY writeMode)
+    if ((dualMatchUp?.disableAutoCalc ?? dualMatchUp?._disableAutoCalc) && disableAutoCalc !== false) {
       return attemptToModifyScore({ ...params, removeWinningSide });
     }
 
@@ -92,7 +94,7 @@ export function noDownstreamDependencies(params) {
     return scoreModification(params);
   }
 
-  // if matchUpStatus is being changed for a DUAL MATCH and the new status is CANCELLED or ABANDONED
+  // if matchUpStatus is being changed for a BRIDGE MATCH and the new status is CANCELLED or ABANDONED
   // then winningSide of the dualMatchUp should be changed. This boolean triggers that logic in attemptToSetWinningSide
   const triggerDualWinningSide = [CANCELLED, ABANDONED].includes(matchUpStatus) && params.dualWinningSideChange;
 
@@ -139,7 +141,7 @@ function scoreModification(params) {
       event,
     });
 
-    if (removeWinningSide) console.log('REMOVE WINNING SIDE');
+    if (removeWinningSide) pushGlobalLog({ method: 'noDownstreamDependencies', action: 'remove winningSide' });
   }
 
   return decorateResult({ result, stack });

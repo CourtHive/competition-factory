@@ -1,8 +1,8 @@
+import { firstClassGroupLeafOrExtension } from '@Mutate/extensions/setGroupLeafOrExtension';
 import { getCompetitionDateRange } from '@Query/tournaments/getCompetitionDateRange';
 import { setSchedulingProfile } from '@Mutate/tournaments/schedulingProfile';
 import { decorateResult } from '@Functions/global/decorateResult';
 import { isValidDateString, sameDay } from '@Tools/dateTime';
-import { findExtension } from '@Acquire/findExtension';
 import { isObject } from '@Tools/objects';
 
 // constants
@@ -16,13 +16,18 @@ export function addSchedulingProfileRound({ tournamentRecords, scheduleDate, ven
   }
   const stack = 'addSchedulingProfileRound';
 
-  const { extension } = findExtension({
-    name: SCHEDULING_PROFILE,
-    tournamentRecords,
-    discover: true,
-  });
-
-  const schedulingProfile = extension?.value ?? [];
+  // CODES: prefer first-class scheduling.profile on any record; fall back to legacy extension
+  const schedulingProfile =
+    Object.values(tournamentRecords ?? {})
+      .map((record: any) =>
+        firstClassGroupLeafOrExtension({
+          element: record,
+          groupAttribute: 'scheduling',
+          leafAttribute: 'profile',
+          name: SCHEDULING_PROFILE,
+        }),
+      )
+      .find((p) => p !== undefined) ?? [];
   let dateProfile = schedulingProfile.find((dateProfile) => sameDay(scheduleDate, dateProfile.scheduleDate));
 
   if (!dateProfile) {

@@ -1,3 +1,4 @@
+import { firstClassGroupLeafOrExtension, setGroupLeafOrExtension } from '../setGroupLeafOrExtension';
 import { addExtension } from '../addExtension';
 import { findExtension } from '@Acquire/findExtension';
 import { findEvent } from '@Acquire/findEvent';
@@ -67,20 +68,26 @@ function modifyTiming({ tournamentRecord, recoveryTimes, matchUpFormat, averageT
     });
     addExtension({ element: event, extension: { name, value } });
   } else {
-    const { extension } = findExtension({
-      element: tournamentRecord,
-      name,
-    });
-    const tournamentScheduling = extension?.value ?? {};
+    // CODES: tournament-level SCHEDULE_TIMING → tournamentRecord.scheduling.timing
+    const tournamentScheduling =
+      firstClassGroupLeafOrExtension({
+        element: tournamentRecord,
+        groupAttribute: 'scheduling',
+        leafAttribute: 'timing',
+        name,
+      }) ?? {};
     const value = modifyScheduling({
       ...tournamentScheduling,
       matchUpFormat,
       averageTimes,
       recoveryTimes,
     });
-    addExtension({
-      extension: { name, value },
+    setGroupLeafOrExtension({
       element: tournamentRecord,
+      groupAttribute: 'scheduling',
+      leafAttribute: 'timing',
+      name,
+      value,
     });
   }
 

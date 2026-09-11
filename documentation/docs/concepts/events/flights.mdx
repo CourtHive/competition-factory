@@ -104,16 +104,13 @@ flightProfile.flights.forEach((flight) => {
 
 ### Delete Individual Flight
 
-```js
-
-
-
 **API Reference:** [getFlightProfile](/docs/governors/query-governor#getflightprofile)
 
 **API Reference:** [generateDrawDefinition](/docs/governors/generation-governor#generatedrawdefinition)
 
 **API Reference:** [addDrawDefinition](/docs/governors/event-governor#adddrawdefinition)
 
+```js
 tournamentEngine.deleteFlightAndFlightDraw({
   drawId: flight.drawId,
   eventId,
@@ -122,20 +119,18 @@ tournamentEngine.deleteFlightAndFlightDraw({
 
 ### Delete Entire Flight Profile
 
-```js
-
 **API Reference:** [deleteFlightAndFlightDraw](/docs/governors/event-governor#deleteflightandflightdraw)
 
+```js
 // Removes profile and all associated draws
 tournamentEngine.deleteFlightProfileAndFlightDraws({ eventId });
 ```
 
 ### Update Existing Profile
 
-```js
-
 **API Reference:** [deleteFlightProfileAndFlightDraws](/docs/governors/event-governor#deleteflightprofileandflightdraws)
 
+```js
 // Generate new profile with deleteExisting flag
 const { flightProfile } = tournamentEngine.generateFlightProfile({
   deleteExisting: true, // Remove previous profile
@@ -146,10 +141,9 @@ const { flightProfile } = tournamentEngine.generateFlightProfile({
 
 ## Complete Example
 
-```js
-
 **API Reference:** [generateFlightProfile](/docs/governors/generation-governor#generateflightprofile)
 
+```js
 import { tournamentEngine } from 'tods-competition-factory';
 
 // 1. Create event
@@ -216,11 +210,6 @@ When using `scaleAttributes`, participants without ratings/rankings are randomly
 
 ### Specifying Rating Systems
 
-```js
-
-
-
-
 **API Reference:** [addEventEntries](/docs/governors/entries-governor#addevententries)
 
 **API Reference:** [generateFlightProfile](/docs/governors/generation-governor#generateflightprofile)
@@ -229,6 +218,7 @@ When using `scaleAttributes`, participants without ratings/rankings are randomly
 
 **API Reference:** [addDrawDefinition](/docs/governors/event-governor#adddrawdefinition)
 
+```js
 scaleAttributes: {
   scaleType: 'RATING',
   eventType: 'SINGLES',

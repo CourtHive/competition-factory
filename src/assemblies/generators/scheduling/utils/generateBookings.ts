@@ -66,11 +66,12 @@ export function generateBookings({
 
   dateScheduledMatchUps ??= matchUps?.filter((matchUp) => {
     const schedule = matchUp.schedule;
-    return hasSchedule({ schedule }) && (!scheduleDate || matchUp.schedule.scheduledDate === scheduleDate);
+    return hasSchedule({ schedule }) && (!scheduleDate || schedule?.scheduledDate === scheduleDate);
   });
 
   const relevantMatchUps = dateScheduledMatchUps?.filter(
-    (matchUp) => (!venueIds.length || venueIds.includes(matchUp.schedule.venueId)) && matchUp.matchUpStatus !== BYE,
+    (matchUp) =>
+      (!venueIds.length || venueIds.includes(matchUp.schedule?.venueId ?? '')) && matchUp.matchUpStatus !== BYE,
   );
 
   const bookings = relevantMatchUps
@@ -86,8 +87,8 @@ export function generateBookings({
         timingDetails,
         eventType,
       });
-      const { courtId, venueId } = schedule;
-      const startTime = extractTime(schedule.scheduledTime);
+      const { courtId, venueId } = schedule ?? {};
+      const startTime = extractTime(schedule?.scheduledTime);
       const endTime = addMinutesToTimeString(startTime, averageMinutes);
       return {
         recoveryMinutes,

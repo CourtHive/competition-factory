@@ -1,6 +1,6 @@
 import { generateTeamTournament } from './generateTestTeamTournament';
 import { getParticipantId } from '@Functions/global/extractors';
-import { findExtension } from '@Acquire/findExtension';
+import { firstClassOrExtension } from '@Acquire/firstClassOrExtension';
 import mocksEngine from '@Assemblies/engines/mock';
 import tournamentEngine from '@Engines/syncEngine';
 import { intersection } from '@Tools/arrays';
@@ -543,11 +543,7 @@ it('handles pair dependencies across draws', () => {
     event: { drawDefinitions },
   } = tournamentEngine.getEvent({ eventId }));
 
-  const { extension } = findExtension({
-    element: drawDefinitions[0],
-    name: LINEUPS,
-  });
-  const lineUps = extension?.value;
+  const lineUps = firstClassOrExtension({ element: drawDefinitions[0], attribute: 'lineUps', name: LINEUPS });
   const lineUpMap = Object.assign(
     {},
     ...Object.keys(lineUps).map((pid) => ({

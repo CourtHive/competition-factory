@@ -91,7 +91,7 @@ Creates a new sanctioning record in `DRAFT` status. Automatically assigns UUIDs 
   governingBodyId: string;         // required — which body sanctions this
   applicant: Applicant;            // required — who is applying
   proposal: TournamentProposal;    // required — what tournament is proposed
-  sanctioningLevel?: string;       // e.g., "W50", "Level 3"
+  sanctioningTier?: TierClassification; // { system, value } — e.g. { system: 'ITF', value: 'W50' }
   sanctioningPolicy?: string;      // policy name to validate against
 }
 ```
@@ -115,7 +115,7 @@ const result = sanctioningEngine.createSanctioningRecord({
       { eventName: "Women's Singles", eventType: 'SINGLES', gender: 'FEMALE', drawSize: 32 },
     ],
   },
-  sanctioningLevel: 'Level 3',
+  sanctioningTier: { system: 'USTA', value: 'Level 3' },
 });
 ```
 
@@ -249,17 +249,44 @@ sanctioningEngine.submitApplication({ sanctioningPolicy });
 
 ## Tournament Generation
 
+### openProposalRegistration
+
+Opens public registration on a proposal **before** it is activated into a `tournamentRecord`. This lets people register against a proposal that has not yet become a tournament — for example a public site rendering a registration page during the approval window.
+
+It assigns a `tournamentId` to the proposal (minting one if none is supplied), gives each proposed event a stable `eventId`, merges any supplied `registrationProfile` fields, and opens `entriesOpen` when no explicit value is present. [`activateFromSanctioning`](#activatefromsanctioning) later reuses these same ids, so registrations collected now survive activation.
+
+Registration can be (re)opened from any non-terminal status; only `REJECTED`, `WITHDRAWN`, and `CLOSED` are rejected. Stricter workflow gating (e.g. requiring approval first) is left to the consuming service.
+
+```js
+const { tournamentId, registrationProfile } = sanctioningEngine.openProposalRegistration({
+  registrationProfile: { entriesOpen: '2026-05-01' },
+});
+// tournamentId is now stable on the proposal and reused at activation
+```
+
+---
+
 ### activateFromSanctioning
 
-When a sanctioning record is `APPROVED`, this method generates a constrained `tournamentRecord` and transitions the sanctioning to `ACTIVE`.
+When a sanctioning record is `APPROVED`, this method generates a constrained `tournamentRecord` and transitions the sanctioning to `ACTIVE`. It reuses any `tournamentId` and per-event `eventId`s already assigned by [`openProposalRegistration`](#openproposalregistration) so pre-activation registrations remain valid; otherwise new ids are minted.
 
 The generated tournament carries:
 
 - Events with `allowedDrawTypes` from event proposals
 - `processCodes: ['SANCTIONED']`
 - `parentOrganisationId` from the governing body
+- `tournamentTier` — the record's `sanctioningTier`, assigned natively (both are a `TierClassification`)
 - Sanctioning ID stored as an extension
 - A compliance checklist generated from the policy's `postEventRequirements`
+
+Because the tier lands on the native `tournamentTier` field, ranking policies resolve a level for a
+sanctioned tournament through the usual `tierToLevel[system][value]` path, with no translation step.
+
+:::note
+`sanctioningId` is the only extension activation writes. A redundant `sanctioningTier` extension was
+written alongside `tournamentTier` for one release (6.24.0) and was removed in 6.25.0 — read
+`tournamentTier`.
+:::
 
 ```js
 const { tournamentRecord } = sanctioningEngine.activateFromSanctioning({
@@ -361,7 +388,7 @@ Validates the proposal against a sanctioning policy and optional tier. Returns s
 ```js
 const { valid, errors, warnings, issues } = sanctioningEngine.validateProposal({
   sanctioningPolicy,
-  sanctioningTier: 'Level 3',
+  sanctioningTier: { system: 'USTA', value: 'Level 3' }, // optional — defaults from the record
 });
 ```
 

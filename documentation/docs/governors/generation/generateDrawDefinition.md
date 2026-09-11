@@ -29,16 +29,32 @@ const { drawDefinition, success } = engine.generateDrawDefinition({
 
 ### Draw Structure
 
-| Parameter       | Type             | Default               | Description                                                              |
-| --------------- | ---------------- | --------------------- | ------------------------------------------------------------------------ |
-| `drawSize`      | `number`         | derived from entries  | Number of positions in the first-round structure                         |
-| `drawType`      | `DrawTypeUnion`  | `SINGLE_ELIMINATION`  | Type of draw to generate (see [Draw Types](/docs/concepts/draw-types))   |
-| `drawName`      | `string`         | derived from drawType | Custom name for the draw                                                 |
-| `drawId`        | `string`         | auto-generated        | Explicit draw ID                                                         |
-| `matchUpType`   | `EventTypeUnion` | from event            | `SINGLES`, `DOUBLES`, or `TEAM`                                          |
-| `matchUpFormat` | `string`         | from policy/event     | Default [matchUpFormatCode](/docs/codes/matchup-format) for all matchUps |
-| `roundsCount`   | `number`         | —                     | For AD_HOC draws, number of rounds to pre-generate                       |
-| `structureName` | `string`         | —                     | Custom name for the main structure                                       |
+| Parameter       | Type             | Default               | Description                                                                                                                                 |
+| --------------- | ---------------- | --------------------- | ------------------------------------------------------------------------------------------------------------------------------------------- |
+| `drawSize`      | `number`         | derived from entries  | Number of positions in the first-round structure                                                                                            |
+| `drawType`      | `DrawTypeUnion`  | `SINGLE_ELIMINATION`  | Type of draw to generate (see [Draw Types](/docs/concepts/draw-types))                                                                      |
+| `drawName`      | `string`         | derived from drawType | Custom name for the draw                                                                                                                    |
+| `drawId`        | `string`         | auto-generated        | Explicit draw ID                                                                                                                            |
+| `matchUpType`   | `EventTypeUnion` | from event            | `SINGLES`, `DOUBLES`, or `TEAM`                                                                                                             |
+| `matchUpFormat` | `string`         | from policy/event     | Default [matchUpFormatCode](/docs/codes/matchup-format) for all matchUps                                                                    |
+| `roundsCount`   | `number`         | —                     | For AD_HOC draws, number of rounds to pre-generate. Alongside a `pairingProfile` it instead truncates the schedule to a partial round robin |
+| `structureName` | `string`         | —                     | Custom name for the main structure                                                                                                          |
+
+### AD_HOC round generation
+
+| Parameter           | Type             | Default | Description                                                                                                                                                                          |
+| ------------------- | ---------------- | ------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `pairingProfile`    | `PairingProfile` | —       | Apply a pairing **shape** to round generation: `{ shape: ROUND_ROBIN, encounters, mirrored }`. See [Round Robin Pairing](/docs/concepts/draw-types/round-robin-pairing)              |
+| `enableDoubleRobin` | `boolean`        | `false` | Permit a `roundsCount` of up to `(entrants - 1) × 2`, replaying pairings a second time. Applies to DrawMatic pairing; a `pairingProfile` expresses repeats with `encounters` instead |
+| `drawMatic`         | `DrawMaticArgs`  | —       | Rating-weighted pairing options. See [DrawMatic](/docs/governors/generation/drawMatic)                                                                                               |
+
+`pairingProfile` supersedes `automated` for pairing purposes: a shape _is_ the pairing decision, so DrawMatic
+is not consulted when one is supplied. A `pairingProfile` also supplies its own schedule length, so
+`roundsCount` is optional when using one.
+
+An AD_HOC draw generated with no entrants produces a structure with no matchUps — that is the legitimate
+result of an empty draw, not an error. Errors raised during round generation (for example a `roundsCount`
+larger than the entrants can pair) are returned to the caller rather than leaving a silently empty draw.
 
 ### Entries and Seeding
 
@@ -253,6 +269,30 @@ const { drawDefinition } = engine.generateDrawDefinition({
 });
 // Targeted matchUps get external IDs; untargeted matchUps get generated UUIDs
 ```
+
+## Replacing an existing draw (recovery)
+
+Calling `generateDrawDefinition` (or `addDrawDefinition`) again with an **existing `drawId`**
+and `allowReplacement: true` overwrites the current draw with the newly generated one — this
+is how a regenerate/reset flow reshapes a draw in place.
+
+If the **outgoing** draw has matchUps, the replace now emits a recoverable **`AUDIT`
+snapshot** of that draw before it is discarded, using the same `DELETE_DRAW_DEFINITIONS`
+contract as [`deleteDrawDefinitions`](/docs/governors/event-governor). A subscriber (notably
+the server's `AuditService`) records it as `metadata.deletedDrawSnapshot`, so an
+overwritten scored draw is recoverable via `/audit/deleted-draws` and `restore-draw` rather
+than being lost silently. Empty-scaffold regenerations (no matchUps on the outgoing draw)
+do not emit a snapshot.
+
+> Replacing a draw that carries scores is destructive. Prefer
+> [`deleteDrawDefinitions`](/docs/governors/event-governor) (which refuses on `SCORES_PRESENT`
+> unless forced) when the intent is to remove a draw, and confirm intent in the UI before
+> regenerating over completed matchUps.
+
+For recovering draws that were overwritten **before** this snapshot behavior existed — or to
+rebuild from the full mutation history — the `Mentat/tools/draw-recovery` utility replays the
+`audit_log` generation payload plus the recorded `assignDrawPosition`/`setMatchUpStatus`
+events through the engine to reconstruct a schema-valid `drawDefinition`.
 
 ## Related
 

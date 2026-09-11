@@ -1,6 +1,7 @@
 import { MAIN, QUALIFYING } from '@Constants/drawDefinitionConstants';
+import { isAny } from '@Validators/isAny';
 
-export function getStageParticipantsCount({ drawProfiles, category, gender }) {
+export function getStageParticipantsCount({ drawProfiles, category, gender, useExistingParticipants = false }) {
   const uniqueParticipantsCount = {};
   const stageParticipantsCount = drawProfiles?.reduce((stageParticipantsCount, drawProfile) => {
     const {
@@ -14,7 +15,15 @@ export function getStageParticipantsCount({ drawProfiles, category, gender }) {
     if (!Object.keys(stageParticipantsCount).includes(stage)) stageParticipantsCount[stage] = 0;
 
     const stageCount = (participantsCount || drawSize) - qualifyingPositions;
-    const requiresUniqueParticipants = uniqueParticipants || gender || category || stage === QUALIFYING;
+    // When the caller passed pre-built participants to generateTournamentRecord,
+    // the pool already exists in tournamentRecord.participants. Skipping the
+    // "unique stage" branch keeps the synthesis path (generateEventParticipants)
+    // inert; filterConsideredParticipants still applies gender / eventType /
+    // participantType filters on the supplied pool.
+    // `gender: ANY` is "no gender constraint" — see getParticipantsCount.ts.
+    const requiresUniqueParticipants =
+      !useExistingParticipants &&
+      (uniqueParticipants || (gender && !isAny(gender)) || category || stage === QUALIFYING);
 
     if (requiresUniqueParticipants) {
       if (!Object.keys(uniqueParticipantsCount).includes(stage)) uniqueParticipantsCount[stage] = 0;

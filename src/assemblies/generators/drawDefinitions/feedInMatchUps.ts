@@ -1,4 +1,5 @@
 import { generateRange, instanceCount } from '@Tools/arrays';
+import { pushGlobalLog } from '@Functions/global/globalLog';
 import { addFinishingRounds } from './addFinishingRounds';
 import { nearestPowerOf2 } from '@Tools/math';
 import { buildFeedRound } from './buildFeedRound';
@@ -156,7 +157,8 @@ export function feedInMatchUps(params: FeedInMatchUpsArgs) {
   }
 
   // because roundNumber was incremented at the end of the while loop
-  if (roundsCount !== roundNumber - 1) console.log('ERROR');
+  if (roundsCount !== roundNumber - 1)
+    pushGlobalLog({ method: 'feedInMatchUps', error: 'roundsCount does not match roundNumber' });
 
   // if this is a feed-in consolation then finishing drawPositions must be offset ...
   // ... by the number of drawPositions which will be fed into the consolation draw
@@ -165,7 +167,8 @@ export function feedInMatchUps(params: FeedInMatchUpsArgs) {
   const consolationFinish = baseDrawSize - positionsFed;
   const modifiedFinishingPositionOffset = isConsolation ? consolationFinish : finishingPositionOffset;
 
-  matchUps = addFinishingRounds({
+  // mutates `matchUps` in place and returns the same reference; the assignment was a no-op
+  addFinishingRounds({
     finishingPositionOffset: modifiedFinishingPositionOffset,
     positionsFed,
     roundsCount,

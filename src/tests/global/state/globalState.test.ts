@@ -475,7 +475,7 @@ describe('globalState', () => {
     it('calls listener', async () => {
       const mockCallback = vi.fn();
       setSubscriptions({ subscriptions: { TEST: mockCallback } });
-      await callListener({ topic: 'TEST', notices: [{ data: 'test' }] });
+      await callListener({ topic: 'TEST', payloads: [{ data: 'test' }] });
       // Should not throw
       expect(true).toBe(true);
     });

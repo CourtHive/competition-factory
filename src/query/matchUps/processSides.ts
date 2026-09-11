@@ -1,5 +1,6 @@
 import { addStructureParticipation } from '@Query/matchUps/addStructureParticipation';
 import { addScheduleItem } from '@Query/matchUps/addScheduleItem';
+import { pushGlobalLog } from '@Functions/global/globalLog';
 
 // constants
 import { PAIR, TEAM_PARTICIPANT } from '@Constants/participantConstants';
@@ -276,9 +277,7 @@ function processPairParticipants({
   addPartner,
   eventId,
 }) {
-  individualParticipantIds.forEach(
-    (id) => participantMap[id] && addMatchUp(id, opponentParticipantId),
-  );
+  individualParticipantIds.forEach((id) => participantMap[id] && addMatchUp(id, opponentParticipantId));
   individualParticipantIds.forEach((id, i) => {
     const partnerParticipantId = individualParticipantIds[1 - i];
     const participant = participantMap[id];
@@ -299,7 +298,7 @@ function processPairParticipants({
             }),
         );
       } else {
-        console.log('Missing teamEntry', { eventId, teamParticipantId });
+        pushGlobalLog({ method: 'processSides', issue: 'missing teamEntry', eventId, teamParticipantId });
       }
     }
   }

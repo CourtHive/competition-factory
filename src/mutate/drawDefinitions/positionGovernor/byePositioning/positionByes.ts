@@ -3,7 +3,7 @@ import { isLuckyBasedDraw } from '@Query/drawDefinition/isLuckyBasedDraw';
 import { getSeedOrderByePositions } from './getSeedOrderedByePositions';
 import { getUnseededByePositions } from './getUnseededByePositions';
 import { getByesData } from '@Query/drawDefinition/getByesData';
-import { getDevContext } from '@Global/state/globalState';
+import { pushGlobalLog } from '@Functions/global/globalLog';
 import { findStructure } from '@Acquire/findStructure';
 import { shuffleArray } from '@Tools/arrays';
 
@@ -141,7 +141,7 @@ export function positionByes({
 
   if (ignoreSeededByes) {
     byePositions = shuffleArray(byePositions, random);
-    if (getDevContext({ ignoreSeededByes })) console.log({ byePositions });
+    pushGlobalLog({ method: 'positionByes', byePositions });
   }
 
   // then take only the number of required byes

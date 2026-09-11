@@ -1,4 +1,4 @@
-import { addMatchUpTimeItem } from '@Mutate/timeItems/matchUps/matchUpTimeItems';
+import { setMatchUpFirstClassOrTimeItem } from '@Mutate/timeItems/matchUps/setMatchUpFirstClassOrTimeItem';
 import { findVenue } from '@Query/venues/findVenue';
 
 // constants and types
@@ -36,18 +36,15 @@ export function assignMatchUpVenue({
     if (result.error) return result;
   }
 
-  const timeItem = {
-    itemType: ASSIGN_VENUE,
-    itemValue: venueId,
-  };
-
-  return addMatchUpTimeItem({
+  return setMatchUpFirstClassOrTimeItem({
     duplicateValues: false,
+    attribute: 'venueId',
+    itemType: ASSIGN_VENUE,
+    value: venueId,
     removePriorValues,
     tournamentRecord,
     drawDefinition,
     disableNotice,
     matchUpId,
-    timeItem,
   });
 }

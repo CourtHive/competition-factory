@@ -1,4 +1,4 @@
-import { findExtension } from '@Acquire/findExtension';
+import { firstClassOrExtension } from '@Acquire/firstClassOrExtension';
 import { instanceCount } from '@Tools/arrays';
 import { ensureInt } from '@Tools/ensureInt';
 import { xa } from '@Tools/extractAttributes';
@@ -11,11 +11,13 @@ export function createSubOrderMap({ positionAssignments }) {
   const subOrderArray = (positionAssignments ?? [])
     .filter(xa(PARTICIPANT_ID))
     .map((assignment) => {
-      const { extension } = findExtension({
-        element: assignment,
-        name: SUB_ORDER,
-      });
-      const value = ensureInt(extension?.value);
+      const value = ensureInt(
+        firstClassOrExtension({
+          element: assignment,
+          attribute: 'subOrder',
+          name: SUB_ORDER,
+        }),
+      );
       const subOrder = !isNaN(value) && value;
       return subOrder && { participantId: assignment.participantId, subOrder };
     })

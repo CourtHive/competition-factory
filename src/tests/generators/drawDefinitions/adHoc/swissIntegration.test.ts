@@ -320,3 +320,40 @@ test('Swiss draw interoperates with existing scoring mutations', () => {
   expect(winners.length).toEqual(2);
   expect(losers.length).toEqual(2);
 });
+
+// Odd participant count forces a bye each round AND creates odd-sized
+// score groups in R2+ that trigger selectFloater() — the lowest-rated
+// player gets floated down to the next score group. Covers swissPairing
+// lines 79-83 (floating trigger) + selectFloater body.
+test('7-team Swiss exercises bye selection + selectFloater across rounds', () => {
+  const drawSize = 7;
+  const {
+    drawIds: [drawId],
+  } = mocksEngine.generateTournamentRecord({
+    participantsProfile: { idPrefix: 'P' },
+    drawProfiles: [
+      {
+        matchUpFormat: MATCH_UP_FORMAT,
+        drawType: SWISS,
+        automated: false,
+        eventType: SINGLES_EVENT,
+        drawSize,
+      },
+    ],
+    setState: true,
+  });
+
+  // Round 1: 3 matches + 1 bye = 4 "match slots", one of which is a bye.
+  let r1: any = tournamentEngine.generateSwissRound({ drawId });
+  expect(r1.success).toEqual(true);
+  expect(r1.matchUps.length).toEqual(3);
+
+  tournamentEngine.addAdHocMatchUps({ drawId, structureId: r1.structureId ?? undefined, matchUps: r1.matchUps });
+  completeAllRoundMatchUps({ drawId, roundNumber: 1 });
+
+  // Round 2: now 3 winners + 3 losers + 1 bye-haver. Score groups will be
+  // odd-sized — the floating branch fires.
+  let r2: any = tournamentEngine.generateSwissRound({ drawId });
+  expect(r2.success).toEqual(true);
+  expect(r2.matchUps.length).toEqual(3);
+});

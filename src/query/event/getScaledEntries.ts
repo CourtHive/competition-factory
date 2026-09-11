@@ -1,3 +1,4 @@
+import { resolveScaleValueNumber, hasScaleValueNumber } from '@Query/scales/resolveScaleValue';
 import { getParticipantScaleItem } from '@Query/participant/getParticipantScaleItem';
 
 // constants and types
@@ -53,9 +54,18 @@ export function getScaledEntries({
     })
     .filter((scaledEntry) => {
       const scaleValue = scaledEntry.scaleValue;
-      // if a custom sort method is not provided, filter out entries with non-float values
-      if (!scaleSortMethod && (Number.isNaN(scaleValue) || !Number.parseFloat(scaleValue))) return false;
-      return scaleValue;
+      if (scaleSortMethod) return scaleValue;
+      // Was: `Number.isNaN(scaleValue) || !Number.parseFloat(scaleValue)`.
+      // Two defects. `!Number.parseFloat(v)` is a TRUTHINESS test, so a
+      // legitimate 0 was dropped — and PSA / SQUASH_LEVELS / ITTF / BWF all
+      // declare 0 inside their valid range, so a player on zero points could
+      // never be seeded. And an object-valued scaleValue (the shape returned
+      // when no accessor is supplied) parsed to NaN, silently emptying the
+      // whole result rather than reporting anything.
+      return hasScaleValueNumber(scaleValue, {
+        accessor: processingAttributes?.accessor,
+        scaleName: processingAttributes?.scaleName,
+      });
     })
     .sort(
       scaleSortMethod ||
@@ -75,6 +85,13 @@ export function getScaledEntries({
   }
 
   function scaleItemValue(scaleItem) {
-    return Number.parseFloat(scaleItem.scaleValue || (sortDescending ? -1 : 1e5));
+    // `scaleItem.scaleValue || fallback` would map a legitimate 0 to the
+    // fallback and sort that player to the wrong end; resolve first, then
+    // apply the fallback only when there is genuinely no value.
+    const resolved = resolveScaleValueNumber(scaleItem?.scaleValue, {
+      accessor: processingAttributes?.accessor,
+      scaleName: processingAttributes?.scaleName,
+    });
+    return resolved ?? (sortDescending ? -1 : 1e5);
   }
 }

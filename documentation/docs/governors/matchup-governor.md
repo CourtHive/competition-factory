@@ -6,6 +6,28 @@ title: matchUp Governor
 import { matchUpGovernor } from 'tods-competition-factory';
 ```
 
+## abandonTournamentMatchUps
+
+Bulk "end the tournament": sets every still-playable matchUp to `ABANDONED`. Intended for tournaments whose draws cannot be completed (for example, rain) — rather than leaving unplayed matchUps as `TO_BE_PLAYED`, a director marks them `ABANDONED` in a single call.
+
+Selection is driven by the derived `readyToScore` state: a matchUp with assigned participants on **both** sides, no `winningSide`, and an active structure. As a result BYEs, already-decided matchUps (`COMPLETED`, `WALKOVER`, `RETIRED`, …), already-terminal matchUps (`ABANDONED`, `CANCELLED`), and empty downstream rounds (no participants yet) are never touched. `ABANDONED` is a non-directing status, so no participant is advanced.
+
+This mutates matchUps only — it does **not** change event or tournament status. TEAM container matchUps and tie collection matchUps are out of scope.
+
+```js
+const { abandoned, matchUpIds } = engine.abandonTournamentMatchUps({
+  eventIds, // optional - restrict to these events
+  drawIds, // optional - restrict to these draws
+  requireNoScore, // optional - default true; when true, in-progress matchUps that already
+  // have a partial score are left untouched. Set false to also abandon
+  // started-but-unfinished matchUps.
+});
+// abandoned: number of matchUps set to ABANDONED
+// matchUpIds: ids of the matchUps that were abandoned
+```
+
+---
+
 ## allCompetitionMatchUps
 
 Returns all matchUps from all tournaments in a competition. See examples in [Using proConflicts() for Analysis](../concepts/pro-scheduling.md#using-proconflicts-for-analysis).
@@ -243,6 +265,11 @@ Disable default behavior of auto calculating TEAM matchUp scores.
 engine.disableTieAutoCalc({ drawId, matchUpId });
 ```
 
+This is a **per-matchUp** override — "this particular tie's score was entered by hand" — and is cleared when
+the score is removed. To state that an entire competition publishes only team results and never line detail,
+declare [`scoreSource: REPORTED`](/docs/concepts/tieFormat#score-source--derived-vs-reported) on the
+tieFormat instead: it is inherited by every tie under it and carries no per-matchUp state.
+
 ---
 
 ## enableTieAutoCalc
@@ -302,19 +329,19 @@ Finds a matchUp by `matchUpId`. If `drawId` is not provided, performs a brute-fo
 
 ```js
 const {
-  matchUp,            // HydratedMatchUp — the found matchUp
-  structure,          // Structure — containing structure (convenience)
-  drawDefinition,     // DrawDefinition — containing draw (convenience)
+  matchUp, // HydratedMatchUp — the found matchUp
+  structure, // Structure — containing structure (convenience)
+  drawDefinition, // DrawDefinition — containing draw (convenience)
 } = engine.findMatchUp({
-  matchUpId,                // required — matchUp to find
-  drawId,                   // optional — narrows search scope; auto-resolved if omitted
-  eventId,                  // optional — narrows search scope
-  inContext,                // optional boolean — hydrate matchUp with context (drawId, structureId, participants, etc.)
-  nextMatchUps,             // optional boolean — include winnerTo and loserTo matchUp details
-  afterRecoveryTimes,       // optional boolean — include recovery time calculations
-  participantsProfile,      // optional — control participant hydration (see getParticipants())
-  contextProfile,           // optional — control which context attributes are included
-  contextContent,           // optional — pre-computed context content (optimization)
+  matchUpId, // required — matchUp to find
+  drawId, // optional — narrows search scope; auto-resolved if omitted
+  eventId, // optional — narrows search scope
+  inContext, // optional boolean — hydrate matchUp with context (drawId, structureId, participants, etc.)
+  nextMatchUps, // optional boolean — include winnerTo and loserTo matchUp details
+  afterRecoveryTimes, // optional boolean — include recovery time calculations
+  participantsProfile, // optional — control participant hydration (see getParticipants())
+  contextProfile, // optional — control which context attributes are included
+  contextContent, // optional — pre-computed context content (optimization)
 });
 ```
 
@@ -374,13 +401,17 @@ const { matchUps } = engine.getCompetitionMatchUps({
 
 ## getEventMatchUpFormatTiming
 
-Returns format timing configuration for an event.
+Returns format timing configuration for an event. When `categoryType` is not supplied it is resolved from the event's own category.
 
 ```js
-const { timing } = engine.getEventMatchUpFormatTiming({
+const { eventMatchUpFormatTiming } = engine.getEventMatchUpFormatTiming({
   eventId, // required
+  matchUpFormats, // optional - can be retrieved from policy
+  categoryType, // optional - falls back to the event's category when not supplied
 });
 ```
+
+See [queryGovernor.getEventMatchUpFormatTiming](/docs/governors/query-governor#geteventmatchupformattiming) for category resolution details.
 
 ---
 
@@ -410,11 +441,14 @@ const { contextIds } = engine.getMatchUpContextIds({
 
 ## getMatchUpDailyLimits
 
-Returns daily participation limits for matchUps.
+Returns daily participation limits for matchUps. `undefined` when no scheduling policy is attached.
 
 ```js
-const { limits } = engine.getMatchUpDailyLimits();
+const { matchUpDailyLimits } = engine.getMatchUpDailyLimits();
 ```
+
+See [queryGovernor.getMatchUpDailyLimits](/docs/governors/query-governor#getmatchupdailylimits) for
+the `undefined`-means-no-limit contract.
 
 ---
 
@@ -475,10 +509,18 @@ const { matchUpFormat } = engine.getMatchUpFormat({
 Returns timing parameters for a matchUp format.
 
 ```js
-const { timing } = engine.getMatchUpFormatTiming({
-  matchUpFormat, // required
-});
+const { averageMinutes, recoveryMinutes, typeChangeRecoveryMinutes, overnightMinutes, recoveryFromPlayedMinutes } =
+  engine.getMatchUpFormatTiming({
+    matchUpFormat, // required
+    eventType, // optional - defaults to SINGLES
+    categoryName, // optional
+    categoryType, // optional
+    policyDefinitions, // optional - evaluate against a policy not attached to the record
+    playedMinutes, // optional - measured duration; keys byPlayedMinutes bands
+  });
 ```
+
+See [queryGovernor.getMatchUpFormatTiming](/docs/governors/query-governor#getmatchupformattiming) for the full parameter and return reference.
 
 ---
 
@@ -622,21 +664,21 @@ Returns available actions for a matchUp. The returned `validActions` array conta
 
 ```js
 const {
-  validActions,          // array of action objects
-  structureIsComplete,   // boolean — all matchUps in the structure are complete
-  isDoubleExit,          // boolean — matchUp has DOUBLE_WALKOVER or DOUBLE_DEFAULT
-  isByeMatchUp,          // boolean — matchUp involves a BYE
+  validActions, // array of action objects
+  structureIsComplete, // boolean — all matchUps in the structure are complete
+  isDoubleExit, // boolean — matchUp has DOUBLE_WALKOVER or DOUBLE_DEFAULT
+  isByeMatchUp, // boolean — matchUp involves a BYE
 } = engine.matchUpActions({
-  matchUpId,                          // required — target matchUp
-  drawId,                             // optional — resolved by engine; auto-resolved via brute force if omitted
-  policyDefinitions,                  // optional — override matchUp action policies
-  sideNumber,                         // optional — restrict actions to a specific side (1 or 2)
-  participantId,                      // optional — scope actions to a specific participant
-  enforceGender,                      // optional boolean — enforce gender restrictions for tie matchUp assignments
-  restrictAdHocRoundParticipants,     // optional boolean — defaults to true; prevent same participant in same round
-  tournamentParticipants,             // optional — pre-fetched participants (optimization)
-  inContextDrawMatchUps,              // optional — pre-fetched inContext matchUps (optimization)
-  matchUpsMap,                        // optional — pre-fetched matchUps map (optimization)
+  matchUpId, // required — target matchUp
+  drawId, // optional — resolved by engine; auto-resolved via brute force if omitted
+  policyDefinitions, // optional — override matchUp action policies
+  sideNumber, // optional — restrict actions to a specific side (1 or 2)
+  participantId, // optional — scope actions to a specific participant
+  enforceGender, // optional boolean — enforce gender restrictions for tie matchUp assignments
+  restrictAdHocRoundParticipants, // optional boolean — defaults to true; prevent same participant in same round
+  tournamentParticipants, // optional — pre-fetched participants (optimization)
+  inContextDrawMatchUps, // optional — pre-fetched inContext matchUps (optimization)
+  matchUpsMap, // optional — pre-fetched matchUps map (optimization)
 });
 ```
 
@@ -773,10 +815,10 @@ Validates that the matchUp is `{ matchUpType: TEAM }` and that there are no acti
 
 ```js
 engine.resetScorecard({
-  matchUpId,       // required — must be a TEAM matchUp
-  drawId,          // required — resolved to drawDefinition by engine
-  tiebreakReset,   // optional boolean — check for added tiebreak collectionDefinition and reset tieFormat
-  matchUpStatus,   // optional — set a specific matchUpStatus after reset
+  matchUpId, // required — must be a TEAM matchUp
+  drawId, // required — resolved to drawDefinition by engine
+  tiebreakReset, // optional boolean — check for added tiebreak collectionDefinition and reset tieFormat
+  matchUpStatus, // optional — set a specific matchUpStatus after reset
 });
 ```
 
@@ -799,13 +841,20 @@ engine.resetTieFormat({
 
 ## setDelegatedOutcome
 
-Sets a delegated outcome for a matchUp (e.g., referee decision).
+Sets a delegated outcome for a matchUp (e.g., referee decision, or a crowd-sourced
+score the tournament director has accepted as provisional).
+
+The `outcome` is the canonical outcome shape. Its `score` may be supplied either
+as pre-derived per-side strings (`{ scoreStringSide1, scoreStringSide2 }`) or as a
+canonical `{ sets }` array. When only `sets` is supplied, the per-side score
+strings are derived internally via `generateScoreString`, so callers never have to
+round-trip the score into strings.
 
 ```js
 engine.setDelegatedOutcome({
   matchUpId, // required
   drawId, // required
-  outcome, // required - outcome object
+  outcome, // required - { score: { sets } | { scoreStringSide1, scoreStringSide2 }, winningSide?, matchUpStatus? }
 });
 ```
 
@@ -867,41 +916,106 @@ Sets either matchUpStatus or score and winningSide; values to be set are passed 
 
 ```js
 const outcome = {
-  matchUpStatus,       // optional — e.g. COMPLETED, RETIRED, WALKOVER, DEFAULTED, DOUBLE_WALKOVER
-  matchUpStatusCodes,  // optional — array of status code strings
-  winningSide,         // optional — 1 or 2
-  score,               // optional — { sets, scoreStringSide1, scoreStringSide2 }
-  matchUpFormat,       // optional — override matchUpFormat for this matchUp
+  matchUpStatus, // optional — e.g. COMPLETED, RETIRED, WALKOVER, DEFAULTED, DOUBLE_WALKOVER
+  matchUpStatusCodes, // optional — array of status code strings
+  winningSide, // optional — 1 or 2
+  score, // optional — { sets } — see note; per-side strings are derived, not accepted
+  matchUpFormat, // optional — override matchUpFormat for this matchUp
 };
 
 engine.setMatchUpStatus({
-  matchUpId,                    // required
-  drawId,                       // required — resolved to drawDefinition by engine
-  outcome,                      // optional — score/status/winningSide object
+  matchUpId, // required
+  drawId, // required — resolved to drawDefinition by engine
+  outcome, // optional — score/status/winningSide object
 
-  matchUpFormat,                // optional — set matchUpFormat before applying score (validated against)
-  disableScoreValidation,       // optional boolean — skip score validation
-  allowChangePropagation,       // optional boolean — allow winner/loser swap to propagate through structures
-  propagateExitStatus,          // optional boolean — propagate exit status (WALKOVER, etc.) to consolation matchUps
-  disableAutoCalc,              // optional boolean — applies only to TEAM matchUps
-  enableAutoCalc,               // optional boolean — applies only to TEAM matchUps
-  setTBlast,                    // optional boolean — when true, tiebreak score appears last in set score string
-  policyDefinitions,            // optional — scoring policies
-  tournamentId,                 // optional — for multi-tournament operations
-  eventId,                      // optional — helps resolve drawDefinition
-  notes,                        // optional — add note (string) to matchUp object
+  matchUpFormat, // optional — set matchUpFormat before applying score (validated against)
+  disableScoreValidation, // optional boolean — skip score validation
+  allowChangePropagation, // optional boolean — allow winner/loser swap to propagate through structures
+  propagateExitStatus, // optional boolean — propagate exit status (WALKOVER, etc.) to consolation matchUps
+  disableAutoCalc, // optional boolean — applies only to TEAM matchUps
+  enableAutoCalc, // optional boolean — applies only to TEAM matchUps
+  setTBlast, // optional boolean — when true, tiebreak score appears last in set score string
+  policyDefinitions, // optional — scoring policies
+  tournamentId, // optional — for multi-tournament operations
+  eventId, // optional — helps resolve drawDefinition
+  notes, // optional — add note (string) to matchUp object
 
-  schedule: {                   // optional — set schedule items alongside status
-    courtIds,                   // optional — applies only to TEAM matchUps => creates .allocatedCourts
-    courtId,                    // optional — requires scheduledDate
-    venueId,                    // optional
-    scheduledDate,              // optional
-    scheduledTime,              // optional
-    startTime,                  // optional
-    endTime,                    // optional
+  schedule: {
+    // optional — set schedule items alongside status
+    courtIds, // optional — applies only to TEAM matchUps => creates .allocatedCourts
+    courtId, // optional — requires scheduledDate
+    venueId, // optional
+    scheduledDate, // optional
+    scheduledTime, // optional
+    startTime, // optional
+    endTime, // optional
   },
 });
 ```
+
+### Score strings are derived, never trusted
+
+`score.sets` is the source of truth. `scoreStringSide1` / `scoreStringSide2` are
+**regenerated from `sets` on every call**, and any strings supplied by the caller are
+discarded rather than persisted.
+
+Previously generation was skipped whenever the caller supplied its own strings, so a
+client could persist strings the factory would never emit and its own `parseScoreString`
+could not round-trip — including set scores present in the string but absent from `sets`.
+Callers that hand-author score strings should stop doing so; send `sets` and read the
+derived strings back.
+
+Two consequences worth knowing:
+
+- The matchUp's **effective** `matchUpFormat` is resolved via `getMatchUpFormat` rather
+  than read off `outcome.matchUpFormat`, which is usually absent. Without it a
+  tiebreak-only deciding set (`F:TB10`) rendered as a plain game score instead of
+  `[10-8]`.
+- The derived score object is **merged into** `outcome.score` rather than replacing it,
+  so non-derived attributes such as `score.side1PointScore` survive.
+
+### Reversing a propagated exit
+
+A propagated exit can advance through a consolation BYE into a later matchUp that then
+**resolves** — a real participant falls through into the empty winner slot and advances
+onward. Once that has happened the downstream consolation matchUp is active, and the
+standard active-downstream rule applies: **the source result cannot be reset** to
+`TO_BE_PLAYED` until the resolving consolation matchUps are undone first. This holds
+whether you attempt to reset the exit source itself or the later fall-through completion,
+and for both `WALKOVER` and `DEFAULTED` exits.
+
+`isActiveDownstream` looks **past** the fed FMLC BYE the exit advanced through, so the
+resolved walkover is correctly detected as active rather than being masked by the BYE. A
+still-**pending** propagated exit (its winning side is an empty feed slot, nothing has
+fallen through yet) is not active, so the source result can still be reset while pending.
+
+### Reverting a completed matchUp to a live status
+
+A `COMPLETED` matchUp whose score **validates as a completed outcome** (a decisive
+`winningSide` backed by valid completed sets) cannot be reverted directly to a "still
+live" status — `IN_PROGRESS` or `SUSPENDED` — when no new outcome is supplied. Such a
+call returns `INCOMPATIBLE_MATCHUP_STATUS`. This guards against a completed result being
+silently stripped and the draw un-advanced (e.g. an upstream client re-asserting
+`IN_PROGRESS` on already-finished matches).
+
+The guard is deliberately narrow:
+
+- **Allowed** — submitting a new `outcome` (a corrected score / `winningSide`), which is a
+  re-score rather than a bare downgrade.
+- **Allowed** — reverting `RETIRED` / `DEFAULTED` (irregular endings whose incomplete
+  scores do not validate as a completed outcome) to `IN_PROGRESS`.
+- **Blocked** — a bare `{ matchUpStatus: IN_PROGRESS }` (or `SUSPENDED`) on a validated
+  `COMPLETED` matchUp.
+
+To reopen a completed match, submit a new outcome or clear the result first (e.g.
+`removeWinningSide`, or reset to `TO_BE_PLAYED`).
+
+The inverse is also rejected: a **single submission** whose score/winner _implies_
+completion cannot carry a live status. Passing an explicit `winningSide`, or a score
+that resolves a winner under the matchUpFormat (e.g. `6-2 6-3` in a best-of-3), together
+with `matchUpStatus: IN_PROGRESS` (or `SUSPENDED`) returns `INCOMPATIBLE_MATCHUP_STATUS`.
+A non-decisive in-progress score (e.g. a single set won in a best-of-3) is unaffected.
+TEAM matchUps are excluded (their tie score is auto-calculated).
 
 ---
 

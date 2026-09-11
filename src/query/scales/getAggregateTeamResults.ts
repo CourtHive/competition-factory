@@ -1,5 +1,6 @@
 import { checkRequiredParameters } from '@Helpers/parameters/checkRequiredParameters';
 import { getParticipants } from '@Query/participants/getParticipants';
+import { pushGlobalLog } from '@Functions/global/globalLog';
 import { parse } from '@Helpers/matchUpFormatCode/parse';
 
 // Constants
@@ -39,7 +40,11 @@ export function getAggregateTeamResults(params: GetAggregateTeamResultsArgs) {
   for (const participant of participants ?? []) {
     if (participant.participantType === TEAM_PARTICIPANT) continue;
     if (participant.draws?.[0]?.drawId === 'draw-0-3') {
-      console.log(participant.participantType, participant.draws[0].finishingPositionRange);
+      pushGlobalLog({
+        method: 'getAggregateTeamResults',
+        participantType: participant.participantType,
+        finishingPositionRange: participant.draws[0].finishingPositionRange,
+      });
     }
     const teamParticipant = getTeamParticipant(participant);
     if (!teamParticipant) continue;
@@ -106,7 +111,15 @@ function tallyMatchUpResults({ getTeamParticipant, initializeResults, increment,
   return { individualResults, teamResults };
 }
 
-function tallySide({ side, matchUp, getTeamParticipant, initializeResults, increment, individualResults, teamResults }) {
+function tallySide({
+  side,
+  matchUp,
+  getTeamParticipant,
+  initializeResults,
+  increment,
+  individualResults,
+  teamResults,
+}) {
   const teamParticipant = getTeamParticipant(side.participant);
   const teamParticipantId = teamParticipant?.participantId;
   const participantId = side.participant?.participantId;

@@ -2,16 +2,15 @@ import { addDrawNotice, modifyMatchUpNotice } from '@Mutate/notifications/drawNo
 import { checkScoreHasValue } from '@Query/matchUp/checkScoreHasValue';
 import { getParticipants } from '@Query/participants/getParticipants';
 import { allDrawMatchUps } from '@Query/matchUps/getAllDrawMatchUps';
+import { setFirstClassOrExtension } from '@Mutate/extensions/setFirstClassOrExtension';
+import { firstClassOrExtension } from '@Acquire/firstClassOrExtension';
 import { addEventEntries } from '@Mutate/entries/addEventEntries';
 import { decorateResult } from '@Functions/global/decorateResult';
-import { addExtension } from '@Mutate/extensions/addExtension';
-import { addNotice } from '@Global/state/globalState';
-import { findExtension } from '@Acquire/findExtension';
+import { modifyParticipantsNotice } from '@Mutate/notifications/participantNotifications';
 
 // constants and types
 import { Participant, ParticipantRoleUnion, Tournament } from '@Types/tournamentTypes';
 import { GROUP, TEAM, TEAM_PARTICIPANT } from '@Constants/participantConstants';
-import { MODIFY_PARTICIPANTS } from '@Constants/topicConstants';
 import { UNGROUPED } from '@Constants/entryStatusConstants';
 import { COMPETITOR } from '@Constants/participantRoles';
 import { LINEUPS } from '@Constants/extensionConstants';
@@ -95,12 +94,9 @@ export function removeIndividualParticipantIds({
   }
 
   if (removed) {
-    addNotice({
-      topic: MODIFY_PARTICIPANTS,
-      payload: {
-        tournamentId: tournamentRecord.tournamentId,
-        participants: [groupingParticipant],
-      },
+    modifyParticipantsNotice({
+      tournamentId: tournamentRecord.tournamentId,
+      participants: [groupingParticipant],
     });
   }
 
@@ -217,25 +213,22 @@ function purgeParticipantFromLineUps({ groupingParticipantId, tournamentRecord, 
   for (const event of tournamentRecord.events ?? []) {
     for (const drawDefinition of event.drawDefinitions ?? []) {
       purgeFromDrawLineUp({ drawDefinition, groupingParticipantId, participantId });
-      purgeFromMatchUpLineUps({ drawDefinition, tournamentRecord, participantId });
+      purgeFromMatchUpLineUps({ drawDefinition, tournamentRecord, participantId, event });
     }
   }
 }
 
 function purgeFromDrawLineUp({ drawDefinition, groupingParticipantId, participantId }) {
-  const { extension } = findExtension({
-    element: drawDefinition,
-    name: LINEUPS,
-  });
-  const lineUp = extension?.value[groupingParticipantId];
-  if (extension && lineUp) {
-    extension.value[groupingParticipantId] = lineUp.filter((assignment) => assignment.participantId !== participantId);
-    addExtension({ element: drawDefinition, extension });
+  const lineUps = firstClassOrExtension({ element: drawDefinition, attribute: 'lineUps', name: LINEUPS });
+  const lineUp = lineUps?.[groupingParticipantId];
+  if (lineUps && lineUp) {
+    lineUps[groupingParticipantId] = lineUp.filter((assignment) => assignment.participantId !== participantId);
+    setFirstClassOrExtension({ element: drawDefinition, attribute: 'lineUps', name: LINEUPS, value: lineUps });
     addDrawNotice({ drawDefinition });
   }
 }
 
-function purgeFromMatchUpLineUps({ drawDefinition, tournamentRecord, participantId }) {
+function purgeFromMatchUpLineUps({ drawDefinition, tournamentRecord, participantId, event }) {
   const matchUps = allDrawMatchUps({ drawDefinition, inContext: false }).matchUps ?? [];
 
   for (const matchUp of matchUps) {
@@ -248,6 +241,7 @@ function purgeFromMatchUpLineUps({ drawDefinition, tournamentRecord, participant
           tournamentId: tournamentRecord?.tournamentId,
           drawDefinition,
           matchUp,
+          event,
         });
       }
     }

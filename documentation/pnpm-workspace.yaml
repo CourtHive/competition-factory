@@ -1,10 +1,59 @@
 packages: []
 
+# Supply-chain freshness: keep a 1-day floor for third-party packages but
+# exempt every CourtHive-published package so cross-repo release cascades
+# (factory -> components -> docs consuming both) don't trip the policy.
+# Mirrors the root pnpm-workspace.yaml — documentation is its own pnpm
+# context so the setting has to be duplicated here.
+minimumReleaseAge: 1440
+minimumReleaseAgeExclude:
+  - 'tods-competition-factory'
+  - 'courthive-*'
+  - '@courthive/*'
+  - 'pdf-factory'
+  - 'scoring-visualizations'
+  - 'tabulator-scorecards'
+
+# Security overrides for transitive deps of the Docusaurus docs build (not
+# part of the published package). pnpm v11 reads overrides from here, not from
+# `pnpm.overrides` in package.json when this workspace file is present.
+# - serialize-javascript: GHSA-5c6j-r48x-rmvq (RCE, high) + GHSA-qj8w-gfj5-8c6v
+#   (DoS); patched 7.0.5.
+# - uuid: GHSA-w5hq-g745-h8pq (missing buffer bounds check); patched >= 11.1.1.
+# - fast-uri: GHSA-v2hh-gcrm-f6hx (host confusion via literal backslash
+#   authority delimiter, high); patched 3.1.4. Transitive via ajv (^3.0.1).
+# - brace-expansion: high DoS via unbounded expansion length (<=5.0.7; patched
+#   5.0.8). Sole consumer is minimatch (via docusaurus -> serve-handler), whose
+#   expand() usage is API-stable across majors, so a global bump to the patched
+#   v5 line is safe. Mirrors the root workspace override.
+# NOTE: image-size (GHSA-5p2g-fcmc-qvqq + ICNS parser DoS, <=2.0.2) has NO fix
+#   published — 2.0.2 IS latest, and the advisory's 'patched >=2.0.3' does not
+#   exist on npm yet. Reached via @docusaurus/mdx-loader; build-time only, and
+#   this site is private. Nothing to override until upstream ships 2.0.3.
+# - nanoid: GHSA-2v37-7h3g-55p8 (custom generators loop indefinitely when size
+#   is zero -> DoS); patched 3.3.17. Docusaurus dev/build tooling only; this
+#   site is private and ships no package. Caret-bounded to v3 for the same
+#   reason as the root workspace: an unbounded range floats to nanoid v6,
+#   which postcss cannot consume.
+overrides:
+  nanoid: '^3.3.17'
+  serialize-javascript: '^7.0.5'
+  uuid: '^14.0.0'
+  webpackbar: '7.0.0'
+  fast-uri: '^4.0.0'
+  brace-expansion: '>=5.0.8'
+  js-yaml@4: '>=4.3.2' # GHSA-2883-xcg3-v3hh (CPU DoS). The `@4` selector scopes which requests
+  #                      are rewritten, not a ceiling — the open floor lands on 5.x, which the
+  #                      advisory does not cover.
+  svgo@3: '>=3.3.5' # GHSA-w27v-7q3p-w38r (removeScripts bypass). Ranges are <2.8.4, <3.3.5
+  #                   and <4.1.0, so every line is affected; the open floor lands docusaurus
+  #                   on 4.1.0, which is patched. Docs build verified green on it.
+  '@tiptap/core': '>=3.30.5' # GHSA-j95f-988m-3j2f (quadratic ReDoS in markdown attr parsing)
+
 allowBuilds:
   core-js: true
+  esbuild: true
 
 ignoredBuiltDependencies:
-  - core-js
   - core-js-pure
-  - esbuild
   - puppeteer

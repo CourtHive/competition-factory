@@ -13,12 +13,14 @@ import { DrawDefinition, Tournament } from '@Types/tournamentTypes';
 import { SUCCESS } from '@Constants/resultConstants';
 
 type SetOrderOfFinishArgs = {
+  /** Supplied so notices can carry the sanctioning origin; resolved by paramsMiddleware. */
+  event?: any;
   finishingOrder: { matchUpId: string; orderOfFinish: number }[];
   tournamentRecord: Tournament;
   drawDefinition: DrawDefinition;
 };
 
-export function setOrderOfFinish({ tournamentRecord, drawDefinition, finishingOrder }: SetOrderOfFinishArgs) {
+export function setOrderOfFinish({ tournamentRecord, drawDefinition, finishingOrder, event }: SetOrderOfFinishArgs) {
   if (!drawDefinition) return { error: MISSING_DRAW_DEFINITION };
   const stack = 'setOrderOfFinish';
 
@@ -147,6 +149,7 @@ export function setOrderOfFinish({ tournamentRecord, drawDefinition, finishingOr
         context: 'setOrderOfFinish',
         drawDefinition,
         matchUp,
+        event,
       });
     });
   }

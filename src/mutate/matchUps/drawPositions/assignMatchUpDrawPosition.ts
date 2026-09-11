@@ -3,7 +3,9 @@ import { getUpdatedDrawPositions } from '@Mutate/drawDefinitions/matchUpGovernor
 import { updateMatchUpStatusCodes } from '@Mutate/drawDefinitions/matchUpGovernor/matchUpStatusCodes';
 import { getExitWinningSide } from '@Mutate/drawDefinitions/matchUpGovernor/getExitWinningSide';
 import { getMappedStructureMatchUps, getMatchUpsMap } from '@Query/matchUps/getMatchUpsMap';
+import { clearSideExitProvenance } from '@Mutate/matchUps/matchUpStatus/sideExitProvenance';
 import { getPositionAssignments } from '@Query/drawDefinition/positionsGetter';
+import { getInitialRoundNumber } from '@Query/matchUps/getInitialRoundNumber';
 import { updateSideLineUp } from '@Mutate/matchUps/lineUps/updateSideLineUp';
 import { modifyMatchUpNotice } from '@Mutate/notifications/drawNotifications';
 import { isLuckyBasedDraw } from '@Query/drawDefinition/isLuckyBasedDraw';
@@ -11,6 +13,7 @@ import { getAllDrawMatchUps } from '@Query/matchUps/drawMatchUps';
 import { decorateResult } from '@Functions/global/decorateResult';
 import { positionTargets } from '@Query/matchUp/positionTargets';
 import { assignDrawPositionBye } from './assignDrawPositionBye';
+import { pushGlobalLog } from '@Functions/global/globalLog';
 import { isExit } from '@Validators/isExit';
 import { overlap } from '@Tools/arrays';
 
@@ -99,6 +102,38 @@ export function assignMatchUpDrawPosition({
   //are we going to a match already marked as a WO becuase it was propagated from the main draw?
   const isPropagatedExit = !!(isExit(matchUp?.matchUpStatus) && matchUp?.winningSide);
 
+  // A drawPosition slot can already be present in this matchUp's drawPositions
+  // (e.g. pre-seeded by a consolation BYE feed) while the underlying
+  // positionAssignment is only now being filled by a participant ADVANCING from an
+  // earlier round. In that case positionAdded is false, so applyPositionToMatchUp —
+  // and the modifyMatchUp notice it emits — is skipped, and the matchUp mutates
+  // silently (only a structure-level modifyPositionAssignments notice fires).
+  // Detect the newly-occupied slot so the per-matchUp notice still fires; otherwise
+  // consumers that render from modifyMatchUp don't update until a full reload.
+  const drawPositionParticipantId = positionAssignments?.find(
+    (assignment) => assignment.drawPosition === drawPosition,
+  )?.participantId;
+  const previousSideParticipantId = inContextMatchUp?.sides?.find(
+    (side) => side.drawPosition === drawPosition,
+  )?.participantId;
+  // Restrict to advancement targets: a matchUp in a LATER round than where this
+  // drawPosition first appears. Initial-round placement (filling pre-allocated
+  // first-round slots) is already announced via applyPositionToMatchUp and must
+  // not be re-noticed here.
+  const slotFilledByParticipant =
+    !positionAdded && !!drawPositionParticipantId && drawPositionParticipantId !== previousSideParticipantId;
+  const { initialRoundNumber } = slotFilledByParticipant
+    ? getInitialRoundNumber({
+        matchUps: getMappedStructureMatchUps({ structureId: structure.structureId, matchUpsMap }),
+        drawPosition,
+      })
+    : { initialRoundNumber: undefined };
+  const slotNewlyOccupied =
+    slotFilledByParticipant &&
+    !!matchUp?.roundNumber &&
+    !!initialRoundNumber &&
+    matchUp.roundNumber > initialRoundNumber;
+
   if (matchUp && positionAdded) {
     applyPositionToMatchUp({
       updatedDrawPositions,
@@ -115,6 +150,16 @@ export function assignMatchUpDrawPosition({
       matchUpId,
       matchUp,
       stack,
+      event,
+    });
+  } else if (matchUp && positionAssigned && slotNewlyOccupied) {
+    modifyMatchUpNotice({
+      tournamentId: tournamentRecord?.tournamentId,
+      eventId: inContextMatchUp?.eventId,
+      context: stack,
+      drawDefinition,
+      matchUp,
+      event,
     });
   }
 
@@ -133,6 +178,7 @@ export function assignMatchUpDrawPosition({
   const isLuckyDraw = isLuckyBasedDraw(drawDefinition?.drawType);
 
   const advanceResult = advanceDrawPosition({
+    event,
     inContextDrawMatchUps: resolvedInContextDrawMatchUps,
     positionAssigned,
     isPropagatedExit,
@@ -200,6 +246,33 @@ function resolveMatchUpStatus({ isByeMatchUp, matchUpStatus, isDoubleExitExit, m
   );
 }
 
+/**
+ * The string value of a `matchUpStatusCodes` element, whatever shape it arrived in.
+ *
+ * The array holds THREE shapes, which is the root problem:
+ *   1. policy codes      `{ matchUpStatusCode, label, matchUpStatusCodeDisplay }` — the scoring
+ *                        policy's vocabulary (see POLICY_SCORING_USTA)
+ *   2. exit provenance   `{ matchUpStatus, previousMatchUpStatus, sideNumber }` — written by
+ *                        doubleExitAdvancement.buildMatchUpStatusCodes
+ *   3. wrapped codes     `{ code }` — written by updateMatchUpStatusCodes, which wraps any string
+ *                        element before stamping `previousMatchUpStatus` onto it
+ *
+ * The previous read was `code?.code`, which resolves shape 3 correctly and shapes 1 and 2 to
+ * `undefined`. Provenance is the shape this branch actually receives, so the carried code was
+ * dropped and the branch assigned an empty array rather than re-siding anything.
+ *
+ * Measured 2026-09-11 over 120 randomized sweep scenarios: the branch below ran 275 times, 81 of
+ * those with codes present, every one of them shape 2, and dropped the code in 81 of 81.
+ *
+ * Note this returns a STRING, so provenance (`previousMatchUpStatus`, `sideNumber`) is still
+ * flattened away — the surrounding contract is `string[]`. Preserving it is what the per-side
+ * provenance field is for; see Mentat/planning/MATCHUP_STATUS_CODES_PER_SIDE.md.
+ */
+function exitCodeString(code: any): string | undefined {
+  if (typeof code === 'string') return code || undefined;
+  return code?.matchUpStatusCode ?? code?.code ?? code?.matchUpStatus ?? undefined;
+}
+
 function applyPositionToMatchUp({
   updatedDrawPositions,
   sourceMatchUpStatus,
@@ -215,6 +288,7 @@ function applyPositionToMatchUp({
   matchUpId,
   matchUp,
   stack,
+  event,
 }) {
   // necessary to refresh inContextDrawMatchUps after mutation
   const refreshedMatchUps =
@@ -223,6 +297,12 @@ function applyPositionToMatchUp({
       drawDefinition,
       matchUpsMap,
     }).matchUps ?? [];
+  // A participant advancing into a PENDING propagated exit fills its empty WINNER slot
+  // (progressExitStatus set winningSide to the empty side). drawPositions is then
+  // re-sorted, so the winning side is the side the advancing participant now occupies
+  // in updatedDrawPositions — NOT the pre-sort winningSide (which, after the sort, can
+  // point at the exiting/loser side). Mirrors resolvePropagatedExitOnAdvance (BYE path).
+  const advancedExitWinningSide = isPropagatedExit ? updatedDrawPositions.indexOf(drawPosition) + 1 : undefined;
   const exitWinningSide =
     (isDoubleExitExit &&
       getExitWinningSide({
@@ -230,12 +310,24 @@ function applyPositionToMatchUp({
         drawPosition,
         matchUpId,
       })) ||
-    //if the match is already marked as a WO with a winning side
-    //we keep the winning side
-    (isPropagatedExit && matchUp.winningSide) ||
+    advancedExitWinningSide ||
     undefined;
 
-  if (matchUp?.matchUpStatusCodes) {
+  // Advancing into a single pending propagated exit re-orders the sides, so the carried
+  // exit code must follow the EXITING participant to its new side (opposite the advancing
+  // winner) — otherwise it mislabels the winner. Mirrors resolvePropagatedExitOnAdvance.
+  if (advancedExitWinningSide && !isDoubleExitExit) {
+    const exitSideNumber = advancedExitWinningSide === 1 ? 2 : 1;
+    const carriedCode = (matchUp.matchUpStatusCodes ?? []).map(exitCodeString).find(Boolean);
+    const matchUpStatusCodes: string[] = [];
+    if (carriedCode) {
+      for (let i = 0; i < exitSideNumber - 1; i++) matchUpStatusCodes[i] = '';
+      matchUpStatusCodes[exitSideNumber - 1] = carriedCode;
+    }
+    matchUp.matchUpStatusCodes = matchUpStatusCodes;
+    // nothing carried means the exit this matchUp recorded is gone; its provenance goes with it
+    if (!matchUpStatusCodes.length) clearSideExitProvenance(matchUp);
+  } else if (matchUp?.matchUpStatusCodes) {
     updateMatchUpStatusCodes({
       inContextDrawMatchUps: refreshedMatchUps,
       sourceMatchUpStatus,
@@ -259,6 +351,7 @@ function applyPositionToMatchUp({
     context: stack,
     drawDefinition,
     matchUp,
+    event,
   });
 }
 
@@ -277,11 +370,13 @@ function advanceDrawPosition({
   matchUpsMap,
   matchUp,
   structure,
+  event,
 }) {
   if (positionAssigned && isByeMatchUp && !isLuckyDraw) {
     if (winnerMatchUp) {
       if ([BYE, DOUBLE_WALKOVER, DOUBLE_DEFAULT].includes(matchUpStatus)) {
         const result = assignMatchUpDrawPosition({
+          event,
           matchUpId: winnerMatchUp.matchUpId,
           inContextDrawMatchUps,
           tournamentRecord,
@@ -293,13 +388,17 @@ function advanceDrawPosition({
       } else {
         const { structureId } = winnerMatchUp;
         if (structureId !== structure.structureId) {
-          console.log('winnerMatchUp in different structure... participant is in different targetDrawPosition');
+          pushGlobalLog({
+            method: 'assignMatchUpDrawPosition',
+            issue: 'winnerMatchUp in different structure; participant is in a different targetDrawPosition',
+          });
         }
       }
     }
   } else if (positionAssigned && isPropagatedExit) {
     if (winnerMatchUp) {
       const result = assignMatchUpDrawPosition({
+        event,
         matchUpId: winnerMatchUp.matchUpId,
         inContextDrawMatchUps,
         tournamentRecord,
@@ -319,6 +418,7 @@ function advanceDrawPosition({
 
     if (pairedPreviousMatchUpIsDoubleExit) {
       const result = assignMatchUpDrawPosition({
+        event,
         matchUpId: winnerMatchUp.matchUpId,
         inContextDrawMatchUps,
         tournamentRecord,
@@ -391,9 +491,7 @@ function propagateConsolationBye({
   const firstRoundMatchUps = structureMatchUps.filter(
     ({ drawPositions, roundNumber }) => roundNumber === 1 && overlap(drawPositions, updatedDrawPositions),
   );
-  const byePropagation = firstRoundMatchUps.every(({ matchUpStatus }) =>
-    [COMPLETED, RETIRED].includes(matchUpStatus),
-  );
+  const byePropagation = firstRoundMatchUps.every(({ matchUpStatus }) => [COMPLETED, RETIRED].includes(matchUpStatus));
   if (byePropagation && loserMatchUp) {
     const { structureId } = loserMatchUp;
     const result = assignDrawPositionBye({

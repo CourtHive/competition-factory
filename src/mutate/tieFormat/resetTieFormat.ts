@@ -140,6 +140,7 @@ export function resetTieFormat(params: ResetTieFormatArgs): ResultType & {
     modifyMatchUpNotice({
       structureId: structure?.structureId,
       eventId: event?.eventId,
+      event,
       context: stack,
       drawDefinition,
       tournamentId,

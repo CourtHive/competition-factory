@@ -3,16 +3,19 @@ import { callListener, getNotices, getTopics } from './globalState';
 import {
   ADD_DRAW_DEFINITION,
   ADD_MATCHUPS,
+  DELETE_EVENT,
   DELETE_PARTICIPANTS,
   DELETE_VENUE,
   DELETED_DRAW_IDS,
   DELETED_MATCHUP_IDS,
   MODIFY_DRAW_DEFINITION,
   MODIFY_DRAW_ENTRIES,
+  MODIFY_EVENT,
   MODIFY_EVENT_ENTRIES,
   MODIFY_MATCHUP,
   MODIFY_PARTICIPANTS,
   MODIFY_POSITION_ASSIGNMENTS,
+  MODIFY_SCHEDULING_PROFILE,
   MODIFY_SEED_ASSIGNMENTS,
   MODIFY_VENUE,
   UNPUBLISH_EVENT_SEEDING,
@@ -36,13 +39,17 @@ export function notifySubscribers(params?: NotifySubscribersArgs) {
   const { topics } = getTopics();
 
   for (const topic of [...topics].sort(topicSort)) {
-    const notices = getNotices({ topic });
-    if (notices?.length) callListener({ topic, notices });
+    const payloads = getNotices({ topic });
+    // Pass both `payloads` (canonical) and `notices` (deprecated alias) so that
+    // legacy providers destructuring `notices` continue to work pre-removal.
+    if (payloads?.length) callListener({ topic, payloads, notices: payloads });
   }
 
   if (mutationStatus && timeStamp && topics.includes(MUTATIONS)) {
+    const mutationPayloads = [{ tournamentId, directives, timeStamp }];
     callListener({
-      notices: [{ tournamentId, directives, timeStamp }],
+      payloads: mutationPayloads,
+      notices: mutationPayloads,
       topic: MUTATIONS,
     });
   }
@@ -55,13 +62,15 @@ export async function notifySubscribersAsync(params?: NotifySubscribersArgs) {
   for (const topic of [...topics].sort(topicSort)) {
     // only tested with packaged version of factory
     // won't show up in test coverage
-    const notices = getNotices({ topic });
-    if (notices) await callListener({ topic, notices });
+    const payloads = getNotices({ topic });
+    if (payloads) await callListener({ topic, payloads, notices: payloads });
   }
 
   if (mutationStatus && timeStamp && topics.includes(MUTATIONS)) {
+    const mutationPayloads = [{ tournamentId, directives, timeStamp }];
     callListener({
-      notices: [{ tournamentId, directives, timeStamp }],
+      payloads: mutationPayloads,
+      notices: mutationPayloads,
       topic: MUTATIONS,
     });
   }
@@ -72,9 +81,11 @@ const topicValues = {
   [UNPUBLISH_EVENT]: 5,
   [UNPUBLISH_ORDER_OF_PLAY]: 5,
   [MODIFY_SEED_ASSIGNMENTS]: 5,
+  [MODIFY_SCHEDULING_PROFILE]: 5,
   [MODIFY_POSITION_ASSIGNMENTS]: 5,
   [MODIFY_DRAW_DEFINITION]: 5,
   [MODIFY_DRAW_ENTRIES]: 5,
+  [MODIFY_EVENT]: 5,
   [MODIFY_EVENT_ENTRIES]: 5,
   [UNPUBLISH_TOURNAMENT]: 1,
   [MODIFY_MATCHUP]: 1,
@@ -85,6 +96,7 @@ const topicValues = {
   [DELETE_PARTICIPANTS]: 4,
   [DELETE_VENUE]: 4,
   [DELETED_DRAW_IDS]: 4,
+  [DELETE_EVENT]: 4,
   [ADD_MATCHUPS]: 3,
   [ADD_DRAW_DEFINITION]: 2,
 };

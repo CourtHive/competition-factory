@@ -1,4 +1,4 @@
-import { POLICY_RANKING_POINTS_TENNIS_CANADA } from '@Fixtures/policies/POLICY_RANKING_POINTS_TENNIS_CANADA';
+import { POLICY_RANKING_POINTS_TENNIS_CANADA } from '@Tests/fixtures/policies/POLICY_RANKING_POINTS_TENNIS_CANADA';
 import { validateRankingPolicy } from './validatePolicy';
 import { describe, expect, it } from 'vitest';
 

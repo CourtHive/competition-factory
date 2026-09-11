@@ -36,25 +36,82 @@ Key structural differences from standard elimination:
 
 The schematic below shows a 25-participant lucky draw structure. Pre-feed rounds (where a lucky loser is selected) are highlighted — these are rounds with an odd number of matchUps where the tournament director must select one loser to advance.
 
-<BrowserOnly>{() => (
-  <TopologyViewer height={280} initialState={{
-    drawName: 'Lucky Draw (drawSize 25)',
-    nodes: [
-      { id: 'main', structureName: 'Main Draw', stage: 'MAIN', structureType: 'LUCKY_DRAW', drawSize: 25, position: { x: 40, y: 40 } },
-    ],
-    edges: [],
-  }} />
-)}</BrowserOnly>
+<BrowserOnly>
+  {() => (
+    <TopologyViewer
+      height={280}
+      initialState={{
+        drawName: 'Lucky Draw (drawSize 25)',
+        nodes: [
+          {
+            id: 'main',
+            structureName: 'Main Draw',
+            stage: 'MAIN',
+            structureType: 'LUCKY_DRAW',
+            drawSize: 25,
+            position: { x: 40, y: 40 },
+          },
+        ],
+        edges: [],
+      }}
+    />
+  )}
+</BrowserOnly>
 
 <div style={{ marginTop: '2rem' }} />
 
-| Round   | Participants | MatchUps | Pre-feed? | Lucky loser advances? |
-| ------- | ------------ | -------- | --------- | --------------------- |
-| Round 1 | 26 (25 + 1 BYE) | 13   | Yes       | Yes -- 1 of 13 losers |
-| Round 2 | 14           | 7        | Yes       | Yes -- 1 of 7 losers  |
-| Round 3 | 8            | 4        | No        | No                    |
-| Round 4 | 4            | 2        | No        | No                    |
-| Final   | 2            | 1        | --        | --                    |
+| Round   | Participants    | MatchUps | Pre-feed? | Lucky loser advances? |
+| ------- | --------------- | -------- | --------- | --------------------- |
+| Round 1 | 26 (25 + 1 BYE) | 13       | Yes       | Yes -- 1 of 13 losers |
+| Round 2 | 14              | 7        | Yes       | Yes -- 1 of 7 losers  |
+| Round 3 | 8               | 4        | No        | No                    |
+| Round 4 | 4               | 2        | No        | No                    |
+| Final   | 2               | 1        | --        | --                    |
+
+## Explicit Round Profile
+
+By default, a lucky draw's per-round matchUp counts follow a deterministic ceil-halving cascade (e.g., drawSize 40 → `[20, 10, 5, 3, 2, 1]`). Pass an optional `roundProfile` to `generateDrawDefinition` to specify the cascade explicitly — useful when you want a tighter compression than ceil-halving, or when scheduling and broadcast constraints prefer fixed per-round sizes.
+
+```js
+engine.generateDrawDefinition({
+  roundProfile: [20, 12, 8, 4, 2, 1],
+  drawType: 'LUCKY_DRAW',
+  drawSize: 40,
+});
+```
+
+For the profile above (drawSize 40, 6 rounds):
+
+| Transition | Winners | Next round slots | Lucky losers needed |
+| ---------- | ------- | ---------------- | ------------------- |
+| R1 → R2    | 20      | 24 (12 × 2)      | **4**               |
+| R2 → R3    | 12      | 16 (8 × 2)       | **4**               |
+| R3 → R4    | 8       | 8 (4 × 2)        | 0                   |
+| R4 → R5    | 4       | 4 (2 × 2)        | 0                   |
+| R5 → R6    | 2       | 2 (1 × 2)        | 0                   |
+
+`getLuckyDrawRoundStatus` surfaces the per-round count as `requiredLuckyLoserCount`, and `luckyDrawAdvancement` accepts `participantIds: string[]` for transitions where more than one lucky loser is required.
+
+### Constraints
+
+The profile must satisfy:
+
+- **`roundProfile[0] * 2 === drawSize`** — the first round's slot count equals the participant pool.
+- **`roundProfile[n+1] * 2 >= roundProfile[n]`** for every transition — no winner-dropping. The next round must have at least enough slots to accommodate all winners from the previous round.
+- **Last entry === 1** — the final round is a single matchUp.
+- **drawSize must be even.** Odd draw sizes still work through the default ceil-halving cascade (with a BYE), but explicit profiles require an even pool.
+
+When a profile is provided, the factory persists it on the structure as a `customRoundProfile` extension so later queries (`getLuckyDrawRoundStatus`, `luckyDrawAdvancement`) can derive the required LL count per transition. Omit the parameter to fall back to the standard ceil-halving cascade.
+
+### Lucky-loser placement with multiple LL
+
+When more than one LL advances into a single transition, the placement algorithm scores each candidate slot against three constraints:
+
+1. **Hard preference for a different half** from the LL's defeating winner — preserves the "don't replay your conqueror" property of the single-LL case.
+2. **Soft preference for a different quarter** — keeps the LL away from a tight rematch path.
+3. **Distribution across halves** — when multiple LL feed into the same round, the algorithm prefers spreading them out rather than clustering all picks into one half of the bracket.
+
+This is best-effort: in tight brackets with high LL counts the algorithm may not satisfy every preference, but the half-avoidance constraint takes precedence over quarter and distribution.
 
 ## Pre-Feed Rounds and Lucky Loser Selection
 
@@ -84,8 +141,8 @@ The `getLuckyDrawRoundStatus` method accepts a `cumulativeMargin` boolean parame
 
 ```js
 const { drawDefinition } = engine.generateDrawDefinition({
-  drawSize: 11,
   drawType: 'LUCKY_DRAW',
+  drawSize: 11,
 });
 ```
 
@@ -121,38 +178,51 @@ const preFeedRound = rounds.find((r) => r.needsLuckySelection);
 
 The returned `rounds` array contains objects with the following properties:
 
-| Property                   | Type      | Description                                                                                  |
-| -------------------------- | --------- | -------------------------------------------------------------------------------------------- |
-| `roundNumber`              | `number`  | The round number                                                                             |
-| `matchUpsCount`            | `number`  | Total matchUps in this round                                                                 |
-| `completedCount`           | `number`  | Number of completed matchUps                                                                 |
-| `isComplete`               | `boolean` | Whether all matchUps in the round are complete                                               |
-| `isPreFeedRound`           | `boolean` | Whether this round has an odd number of matchUps (not final round)                           |
-| `needsLuckySelection`      | `boolean` | Whether this round is complete, is a pre-feed round, and the next round has an open position |
-| `nextRoundHasOpenPosition` | `boolean` | Whether the subsequent round has an unfilled draw position                                   |
-| `eligibleLosers`           | `array`   | Ranked list of losers (only present when `needsLuckySelection` is true)                      |
+| Property                   | Type      | Description                                                                                                                                                 |
+| -------------------------- | --------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `roundNumber`              | `number`  | The round number                                                                                                                                            |
+| `matchUpsCount`            | `number`  | Total matchUps in this round                                                                                                                                |
+| `completedCount`           | `number`  | Number of completed matchUps                                                                                                                                |
+| `isComplete`               | `boolean` | Whether all matchUps in the round are complete                                                                                                              |
+| `isPreFeedRound`           | `boolean` | Whether this round has an odd number of matchUps (not final round)                                                                                          |
+| `needsLuckySelection`      | `boolean` | Whether this round is complete, is a pre-feed round, and the next round has an open position                                                                |
+| `nextRoundHasOpenPosition` | `boolean` | Whether the subsequent round has an unfilled draw position                                                                                                  |
+| `requiredLuckyLoserCount`  | `number`  | Number of lucky losers this round contributes to the next round (1 for default cascade; 0+ derived from the explicit `roundProfile` extension when present) |
+| `eligibleLosers`           | `array`   | Ranked list of losers (only present when `needsLuckySelection` is true)                                                                                     |
 
 Each entry in `eligibleLosers` contains:
 
-| Property           | Type     | Description                                                               |
-| ------------------ | -------- | ------------------------------------------------------------------------- |
-| `participantId`    | `string` | The losing participant's ID                                               |
-| `participantName`  | `string` | The losing participant's name                                             |
-| `matchUpId`        | `string` | The matchUp in which they lost                                            |
-| `scoreString`      | `string` | The score of the matchUp                                                  |
+| Property           | Type     | Description                                                                    |
+| ------------------ | -------- | ------------------------------------------------------------------------------ |
+| `participantId`    | `string` | The losing participant's ID                                                    |
+| `participantName`  | `string` | The losing participant's name                                                  |
+| `matchUpId`        | `string` | The matchUp in which they lost                                                 |
+| `scoreString`      | `string` | The score of the matchUp                                                       |
 | `margin`           | `number` | Margin of defeat (0-1, higher = closer match; excluded for walkovers/defaults) |
-| `gameDifferential` | `number` | Difference in games won between winner and loser                          |
-| `setsWonByLoser`   | `number` | Number of sets won by the losing participant                              |
+| `gameDifferential` | `number` | Difference in games won between winner and loser                               |
+| `setsWonByLoser`   | `number` | Number of sets won by the losing participant                                   |
 
 ### Advancing a Lucky Loser
 
-After reviewing the eligible losers, advance the selected participant:
+After reviewing the eligible losers, advance the selected participant. For single-LL transitions (the default ceil-halving cascade), pass a scalar `participantId`:
 
 ```js
 engine.luckyDrawAdvancement({
-  drawId,
   participantId: preFeedRound.eligibleLosers[0].participantId,
   roundNumber: preFeedRound.roundNumber,
+  drawId,
+});
+```
+
+For multi-LL transitions (when an explicit `roundProfile` requires more than one LL into the next round), pass `participantIds` — the length must equal `round.requiredLuckyLoserCount`:
+
+```js
+engine.luckyDrawAdvancement({
+  participantIds: preFeedRound.eligibleLosers
+    .slice(0, preFeedRound.requiredLuckyLoserCount)
+    .map((l) => l.participantId),
+  roundNumber: preFeedRound.roundNumber,
+  drawId,
 });
 ```
 
@@ -160,8 +230,8 @@ The `luckyDrawAdvancement` method:
 
 - Validates that the draw is a lucky draw.
 - Verifies the specified round is a pre-feed round that needs selection.
-- Confirms the participant is an eligible loser from that round.
-- Places the participant into the open draw position in the next round.
+- Confirms each provided participant is an eligible loser from that round, with no duplicates, and that the count matches `requiredLuckyLoserCount`.
+- Places each participant into an open draw position in the next round using the half/quarter-avoidance placement algorithm described above.
 
 An optional `selectionBasis` parameter (`'MARGIN'`, `'RANDOM'`, or `'MANUAL'`) can be provided for telemetry purposes.
 
@@ -176,8 +246,8 @@ const {
   gameRatio, // Loser games / total games (undefined if no game data)
   pointRatio, // Loser points / total points (undefined if no point data)
   gameDifferential, // Winner games - loser games
-  setsWonByLoser,
   setsWonByWinner,
+  setsWonByLoser,
 } = engine.calculateMatchUpMargin({ matchUpId });
 ```
 
@@ -186,10 +256,10 @@ const {
 ```js
 // 1. Generate a lucky draw for 11 participants
 engine.generateDrawDefinition({
-  drawSize: 11,
   drawType: 'LUCKY_DRAW',
-  eventId,
   drawName: 'Main Draw',
+  drawSize: 11,
+  eventId,
 });
 
 // 2. After Round 1 completes (6 matchUps, odd count = pre-feed round),
@@ -206,9 +276,9 @@ if (preFeedRound) {
   // 3. Tournament director selects a lucky loser (here, the one with narrowest margin)
   const selected = preFeedRound.eligibleLosers[0];
   engine.luckyDrawAdvancement({
-    drawId,
     participantId: selected.participantId,
     roundNumber: preFeedRound.roundNumber,
+    drawId,
   });
 }
 ```

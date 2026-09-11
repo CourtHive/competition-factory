@@ -1,9 +1,10 @@
 import { numericSort } from '@Tools/sorting';
 
-import { HydratedMatchUp } from '@Types/hydrated';
+import { MatchUp } from '@Types/tournamentTypes';
 
 type GetInitialRoundNumberArgs = {
-  matchUps?: HydratedMatchUp[];
+  // Only inspects base fields (`drawPositions`, `roundNumber`).
+  matchUps?: MatchUp[];
   drawPosition: number;
 };
 export function getInitialRoundNumber({ drawPosition, matchUps = [] }: GetInitialRoundNumberArgs) {

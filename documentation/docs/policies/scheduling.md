@@ -50,6 +50,20 @@ The **Scheduling Policy** (`POLICY_TYPE_SCHEDULING`) controls scheduling behavio
           DOUBLES?: number;
           TEAM?: number;
         };
+        byPlayedMinutes?: Array<{                 // Recovery banded by measured duration
+          upTo?: number;                          // Band ceiling; omit for the catch-all
+          minutes: number;
+        }>;
+      }>;
+      overnightTimes?: Array<{                    // Rest across a day boundary
+        categoryNames?: string[];
+        categoryTypes?: string[];                 // 12 hours is a JUNIOR rule
+        minutes: {
+          default: number;                        // 0 means "no rule"
+          SINGLES?: number;
+          DOUBLES?: number;
+          TEAM?: number;
+        };
       }>;
     };
 
@@ -108,7 +122,8 @@ The **Scheduling Policy** (`POLICY_TYPE_SCHEDULING`) controls scheduling behavio
 
 ```js
 import { tournamentEngine } from 'tods-competition-factory';
-import { POLICY_SCHEDULING_DEFAULT } from 'tods-competition-factory';
+import { fixtures } from 'tods-competition-factory';
+const { POLICY_SCHEDULING_DEFAULT } = fixtures.policies;
 
 tournamentEngine.setState(tournamentRecord);
 
@@ -127,7 +142,8 @@ const result = tournamentEngine.attachPolicies({
 ### Custom Scheduling Policy
 
 ```js
-import { POLICY_TYPE_SCHEDULING } from 'tods-competition-factory';
+import { policyConstants } from 'tods-competition-factory';
+const { POLICY_TYPE_SCHEDULING } = policyConstants;
 
 const customSchedulingPolicy = {
   [POLICY_TYPE_SCHEDULING]: {
@@ -395,13 +411,40 @@ const participantLimitsPolicy = {
 ### Retrieving Daily Limits
 
 ```js
-const { matchUpDailyLimits } = tournamentEngine.getMatchUpDailyLimits({
-  participantId: 'player-id',
-});
+const { matchUpDailyLimits } = tournamentEngine.getMatchUpDailyLimits();
 
 console.log(matchUpDailyLimits);
-// { SINGLES: 2, DOUBLES: 2, total: 3 }
+// { SINGLES: 2, DOUBLES: 2, total: 3 }   — when a scheduling policy is attached
+// undefined                              — when none is
 ```
+
+The method returns the **tournament-wide** limits and takes no `participantId`; per-participant
+overrides live in the policy's `matchUpDailyLimits` array and are applied by the scheduler, not
+returned here. In a multi-tournament context it accepts an optional `tournamentId`.
+
+:::caution `undefined` means "no limit configured" — do not substitute your own
+
+`getMatchUpDailyLimits` resolves `tournamentDailyLimits || policy.defaultDailyLimits` and **does not
+fall back to `POLICY_SCHEDULING_DEFAULT`**. A tournament with no scheduling policy attached therefore
+gets `undefined`, not `{ SINGLES: 2, DOUBLES: 2, total: 3 }` — even though that is what the fixture
+would have supplied.
+
+**This is deliberate, and it is an asymmetry with its own sibling.** `getMatchUpFormatTiming` _does_
+substitute the fixture, so the same unpoliced tournament gets real per-format averages and recovery
+times while getting no daily limits at all.
+
+The distinction is between an estimate and a rule. An average match duration is a **guess at a
+quantity** — substituting one makes a schedule approximately right instead of flatly wrong. A daily
+limit is a **constraint** — substituting one would make the scheduler refuse to place a
+participant's third matchUp, enforcing a rule the tournament never adopted. A default is not a
+detection.
+
+So a consumer must render "no limit configured" rather than defaulting to 3. TMX's Inspector rest
+rows do this correctly: they report the ordinal ("match #3 today") and omit the limit clause entirely
+when none is configured.
+
+The same contract governs [`overnightMinutes`](#overnight-recovery).
+:::
 
 ---
 
@@ -443,6 +486,72 @@ const timing = tournamentEngine.getMatchUpFormatTiming({
 console.log(timing.averageMinutes); // 90 (from defaultTimes)
 console.log(timing.recoveryMinutes); // 60 (from defaultTimes)
 ```
+
+### Evaluate Against a Policy That Is Not Attached
+
+`policyDefinitions` substitutes a scheduling policy for whatever is attached to the tournamentRecord, so a caller can ask "what would this tournament look like under a different policy" without mutating it. A supplied policy wins; omitted, resolution is exactly as before.
+
+```js
+const timing = tournamentEngine.getMatchUpFormatTiming({
+  matchUpFormat: 'SET3-S:6/TB7',
+  eventType: 'DOUBLES',
+  policyDefinitions: strictJuniorSchedulingPolicy, // not attached to the record
+});
+```
+
+This is what the [Participant Recovery Time](/docs/governors/report-governor#participant-recovery-time-report) and [Participant Experience](/docs/governors/report-governor#participant-experience-report) reports use to evaluate a completed tournament against a policy other than the one it ran under.
+
+---
+
+## Overnight Recovery
+
+`defaultTimes.overnightTimes` sets the minimum rest between the **last matchUp of one day and the first of the next**. It differs from `recoveryTimes` in two ways that matter:
+
+1. **It is not per-format.** An overnight rule is a property of the day boundary, not of what was played — the USTA _Friend at Court_ states it as a flat 12 hours for junior divisions regardless of format. So there is no `matchUpFormat` axis.
+2. **It is category-dependent.** The 12-hour figure is a _junior_ rule; adult play carries no equivalent constraint. That is why the default policy pairs a JUNIOR entry with an unconstrained catch-all rather than stating one flat figure.
+
+```js
+defaultTimes: {
+  overnightTimes: [
+    { categoryTypes: ['JUNIOR'], minutes: { default: 720 } }, // 12 hours
+    { minutes: { default: 0 } },                              // everyone else: no rule
+  ],
+}
+```
+
+Precedence mirrors recovery: event scheduling extension → tournament scheduling → the attached or supplied policy → the caller's default.
+
+:::caution Absent means "no rule", not zero
+Where nothing is configured, `getMatchUpFormatTiming` returns `overnightMinutes: undefined`. A consumer must report that as _unconstrained_ rather than substituting a figure of its own — the same contract `getMatchUpDailyLimits` already has. Reports built on it flag nothing for a category with no rule, which is the correct outcome, not a gap.
+:::
+
+## Duration-Banded Recovery
+
+Some sanctioning bodies scale rest by how long the previous matchUp **actually ran** rather than by its format. The long-standing USTA table gives 30 minutes after a match under an hour, an hour after one to one-and-a-half, and ninety minutes beyond that. Expressed as an ordered band list on a recovery-times entry:
+
+```js
+recoveryTimes: [
+  {
+    categoryTypes: ['JUNIOR'],
+    minutes: { default: 60 },
+    byPlayedMinutes: [
+      { upTo: 60, minutes: 30 },
+      { upTo: 90, minutes: 60 },
+      { minutes: 90 }, // catch-all — no `upTo`
+    ],
+  },
+];
+```
+
+Bands may be authored in any order; the catch-all always sorts last. A matched band overrides the flat `minutes` figure, and `getMatchUpFormatTiming` reports `recoveryFromPlayedMinutes: true` when it did.
+
+:::info Opt-in on both sides
+A band applies only when the policy authors `byPlayedMinutes` **and** the caller supplies a `playedMinutes` it actually measured.
+
+Applied to an _estimated_ duration the banding is circular: the estimate is `averageMinutes`, drawn from the very policy being consulted, so the band would be selected by the number the policy already predicted.
+
+No scheduler call site supplies `playedMinutes`, and none can — recovery is resolved once per matchUpFormat cohort and fanned out to every matchUp in it, one level coarser than the per-instance quantity a band needs. **Scheduling behaviour is therefore unchanged by construction rather than behind a feature flag.** The report layer is the intended consumer, where every duration is retrospective and its provenance is known per row.
+:::
 
 ---
 
@@ -577,7 +686,8 @@ tournamentEngine.setMatchUpDailyLimits({
 The factory provides `POLICY_SCHEDULING_DEFAULT` with reasonable defaults:
 
 ```js
-import { POLICY_SCHEDULING_DEFAULT } from 'tods-competition-factory';
+import { fixtures } from 'tods-competition-factory';
+const { POLICY_SCHEDULING_DEFAULT } = fixtures.policies;
 
 // Defaults include:
 // - 90 minutes average for standard matches
@@ -585,6 +695,7 @@ import { POLICY_SCHEDULING_DEFAULT } from 'tods-competition-factory';
 // - 30 minutes recovery for doubles adults
 // - 60 minutes recovery for all juniors
 // - 120 minutes for wheelchair matches
+// - 12 hours overnight recovery for juniors; no overnight rule for adults
 // - 2 singles + 2 doubles per day, max 3 total
 // - Specific times for 20+ common formats
 ```

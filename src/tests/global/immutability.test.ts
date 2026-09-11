@@ -1,3 +1,4 @@
+import { firstClassOrExtension } from '@Acquire/firstClassOrExtension';
 import tournamentEngine from '@Tests/engines/syncEngine';
 import { dateStringDaysChange } from '@Tools/dateTime';
 import mocksEngine from '@Assemblies/engines/mock';
@@ -20,8 +21,13 @@ test('setting deepCopy option to false will allow source objects to be modified'
   expect(result.success).toEqual(true);
 
   let tournament = tournamentEngine.getTournament().tournamentRecord;
-  expect(tournament.extensions).not.toBeUndefined();
-  const factoryTimeStamp = tournament.extensions.find((extension) => extension.name === FACTORY).value.timeStamp;
+  // FACTORY stamp is first-class `factory` in NATIVE, a legacy extension in LEGACY
+  expect(firstClassOrExtension({ element: tournament, attribute: 'factory', name: FACTORY })).not.toBeUndefined();
+  const factoryTimeStamp = firstClassOrExtension({
+    element: tournament,
+    attribute: 'factory',
+    name: FACTORY,
+  }).timeStamp;
 
   const { tournamentInfo } = tournamentEngine.getTournamentInfo();
   expect(tournamentInfo.startDate).toEqual(newStartDate);
@@ -31,7 +37,7 @@ test('setting deepCopy option to false will allow source objects to be modified'
   const dates = tournamentEngine.getCompetitionDateRange();
   expect(dates.endDate).toEqual(endDate);
 
-  expect(tournamentRecord.extensions).not.toBeUndefined();
+  expect(firstClassOrExtension({ element: tournamentRecord, attribute: 'factory', name: FACTORY })).not.toBeUndefined();
 
   result = tournamentEngine.devContext(true).addExtension({
     extension: { name: 'test', value: 'test' },
@@ -41,10 +47,14 @@ test('setting deepCopy option to false will allow source objects to be modified'
 
   const extensionNames = new Set(tournamentRecord.extensions.map(({ name }) => name));
   expect(extensionNames.has('test')).toEqual(true);
-  expect(extensionNames.has(FACTORY)).toEqual(true);
+  expect(firstClassOrExtension({ element: tournamentRecord, attribute: 'factory', name: FACTORY })).toBeDefined();
 
   tournament = tournamentEngine.getTournament().tournamentRecord;
-  let latestFactoryTimeStamp = tournament.extensions.find((extension) => extension.name === FACTORY).value.timeStamp;
+  let latestFactoryTimeStamp = firstClassOrExtension({
+    element: tournament,
+    attribute: 'factory',
+    name: FACTORY,
+  }).timeStamp;
   expect(factoryTimeStamp).toEqual(latestFactoryTimeStamp);
 
   setTimeout(() => {
@@ -55,7 +65,11 @@ test('setting deepCopy option to false will allow source objects to be modified'
     expect(result.success).toEqual(true);
 
     tournament = tournamentEngine.getTournament().tournamentRecord;
-    latestFactoryTimeStamp = tournament.extensions.find((extension) => extension.name === FACTORY).value.timeStamp;
+    latestFactoryTimeStamp = firstClassOrExtension({
+      element: tournament,
+      attribute: 'factory',
+      name: FACTORY,
+    }).timeStamp;
     expect(factoryTimeStamp).not.toEqual(latestFactoryTimeStamp);
   }, 5);
 });

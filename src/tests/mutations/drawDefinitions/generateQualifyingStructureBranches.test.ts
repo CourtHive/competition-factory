@@ -1,3 +1,4 @@
+import { firstClassOrExtension } from '@Acquire/firstClassOrExtension';
 import mocksEngine from '@Assemblies/engines/mock';
 import tournamentEngine from '@Engines/syncEngine';
 import { expect, it, describe } from 'vitest';
@@ -232,8 +233,10 @@ describe('generateQualifyingStructure - uncovered branches', () => {
     });
     expect(result.success).toEqual(true);
     expect(result.structure).toBeDefined();
-    // roundTarget should be stored as extension on structure
-    expect(result.structure.extensions?.some((ext) => ext.name === 'roundTarget')).toEqual(true);
+    // roundTarget is first-class in NATIVE, a legacy extension in LEGACY
+    expect(
+      firstClassOrExtension({ element: result.structure, attribute: 'roundTarget', name: 'roundTarget' }),
+    ).toBeDefined();
   });
 
   it('generates qualifying structure targeting a qualifying structure (pre-qualifying)', () => {

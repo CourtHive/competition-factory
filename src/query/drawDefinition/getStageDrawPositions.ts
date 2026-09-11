@@ -13,7 +13,10 @@ export function getStageDrawPositionsCount({ stage, drawDefinition, stageSequenc
   if (structures?.length) {
     return structures.reduce((total: number, s: any) => {
       if (s.structureType === CONTAINER) {
-        return total + (s.structures?.reduce((sum: number, sub: any) => sum + (sub.positionAssignments?.length ?? 0), 0) ?? 0);
+        return (
+          total +
+          (s.structures?.reduce((sum: number, sub: any) => sum + (sub.positionAssignments?.length ?? 0), 0) ?? 0)
+        );
       }
       return total + (s.positionAssignments?.length ?? 0);
     }, 0);

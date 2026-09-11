@@ -10,6 +10,7 @@ import { Tournament } from '@Types/tournamentTypes';
 import { SUCCESS } from '@Constants/resultConstants';
 import {
   MISSING_SCHEDULE,
+  SCHEDULE_LOCKED,
   MISSING_MATCHUP_IDS,
   MISSING_TOURNAMENT_RECORD,
   ErrorType,
@@ -18,6 +19,7 @@ import {
 type BulkScheduleMachUpsArgs = {
   tournamentRecords?: { [key: string]: Tournament };
   scheduleCompletedMatchUps?: boolean;
+  overrideScheduleLock?: boolean;
   tournamentRecord?: Tournament;
   scheduleByeMatchUps?: boolean;
   errorOnAnachronism?: boolean;
@@ -34,6 +36,7 @@ export function bulkScheduleTournamentMatchUps({
   scheduleByeMatchUps = false,
   errorOnAnachronism = false,
   checkChronology = true,
+  overrideScheduleLock,
   matchUpDependencies,
   removePriorValues,
   tournamentRecords,
@@ -42,6 +45,7 @@ export function bulkScheduleTournamentMatchUps({
   matchUpIds,
   schedule,
 }: BulkScheduleMachUpsArgs): {
+  lockedMatchUpIds?: string[];
   error?: ErrorType;
   scheduled?: number;
   warnings?: any[];
@@ -52,6 +56,7 @@ export function bulkScheduleTournamentMatchUps({
   if (!matchUpDetails && (!schedule || typeof schedule !== 'object')) return { error: MISSING_SCHEDULE };
 
   let inContextMatchUps;
+  const lockedMatchUpIds: string[] = [];
   const warnings: any[] = [];
   let scheduled = 0;
 
@@ -114,6 +119,7 @@ export function bulkScheduleTournamentMatchUps({
       const matchUpSchedule = matchUpDetails?.find((details) => details.matchUpId === matchUpId)?.schedule || schedule;
       const result = addMatchUpScheduleItems({
         schedule: matchUpSchedule,
+        overrideScheduleLock,
         matchUpDependencies,
         errorOnAnachronism,
         removePriorValues,
@@ -127,9 +133,21 @@ export function bulkScheduleTournamentMatchUps({
       });
       if (result?.warnings?.length) warnings.push(...result.warnings);
       if (result?.success) scheduled += 1;
+      // A locked matchUp is SKIPPED, never fatal: one pinned marquee match must
+      // not abort a Clear or a bulk re-schedule of the other 200. Reported back
+      // so the caller can say what it preserved.
+      if (result.error === SCHEDULE_LOCKED) {
+        lockedMatchUpIds.push(matchUpId);
+        continue;
+      }
       if (result.error) return result;
     }
   }
 
-  return warnings.length ? { ...SUCCESS, scheduled, warnings } : { ...SUCCESS, scheduled };
+  return {
+    ...SUCCESS,
+    ...(warnings.length ? { warnings } : {}),
+    ...(lockedMatchUpIds.length ? { lockedMatchUpIds } : {}),
+    scheduled,
+  };
 }

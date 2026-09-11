@@ -38,6 +38,6 @@ export const tieFormatConstants = {
   USTA_TOC,
   USTA_WTT_ITT,
   USTA_ZONAL,
-};
+} as const;
 
 export default tieFormatConstants;

@@ -1,9 +1,8 @@
-import { findExtension } from '@Acquire/findExtension';
+import { getRecordLinkedTournamentIds } from '@Acquire/getRecordLinkedTournamentIds';
 
 // constants and types
 import { MISSING_TOURNAMENT_RECORDS } from '@Constants/errorConditionConstants';
 import { TournamentRecords, ResultType } from '@Types/factoryTypes';
-import { LINKED_TOURNAMENTS } from '@Constants/extensionConstants';
 
 export function getLinkedTournamentIds({
   tournamentRecords,
@@ -19,12 +18,9 @@ export function getLinkedTournamentIds({
       const tournamentRecord = tournamentRecords[tournamentId];
       const touranmentId = tournamentRecord?.tournamentId;
 
-      const { extension } = findExtension({
-        element: tournamentRecord,
-        name: LINKED_TOURNAMENTS,
-      });
-
-      const tournamentIds = (extension?.value?.tournamentIds ?? []).filter(
+      // CODES: mode-agnostic read of `record.linkedTournamentIds` (first-class)
+      // with extension fallback (legacy `{tournamentIds: []}` wrapper shape).
+      const tournamentIds = getRecordLinkedTournamentIds(tournamentRecord).filter(
         (currentTournamentId) => currentTournamentId !== touranmentId,
       );
 

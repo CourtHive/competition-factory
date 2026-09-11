@@ -8,6 +8,7 @@ import { getAppliedPolicies } from '@Query/extensions/getAppliedPolicies';
 import { getParticipants } from '@Query/participants/getParticipants';
 import { addParticipant } from '@Mutate/participants/addParticipant';
 import { decorateResult } from '@Functions/global/decorateResult';
+import { pushGlobalLog } from '@Functions/global/globalLog';
 import { ensureSideLineUps } from './ensureSideLineUps';
 import { makeDeepCopy } from '@Tools/makeDeepCopy';
 import { unique } from '@Tools/arrays';
@@ -110,6 +111,7 @@ export function replaceTieMatchUpParticipantId(params: ReplaceTieMatchUpParticip
     inContextDualMatchUp,
     drawDefinition,
     dualMatchUp,
+    event,
   });
 
   const dualMatchUpSide = dualMatchUp?.sides?.find(({ sideNumber }) => sideNumber === side.sideNumber);
@@ -173,7 +175,7 @@ export function replaceTieMatchUpParticipantId(params: ReplaceTieMatchUpParticip
     });
     if (result.error) return decorateResult({ result, stack });
   } else {
-    console.log('team participantId not found');
+    pushGlobalLog({ method: 'replaceTieMatchUpParticipant', issue: 'team participantId not found' });
   }
 
   const { participantAdded, participantRemoved }: any = isDoubles
@@ -193,6 +195,7 @@ export function replaceTieMatchUpParticipantId(params: ReplaceTieMatchUpParticip
     tieMatchUp,
     stack,
     side,
+    event,
   });
 
   if (dualMatchUp) {
@@ -201,6 +204,7 @@ export function replaceTieMatchUpParticipantId(params: ReplaceTieMatchUpParticip
       matchUp: dualMatchUp,
       context: stack,
       drawDefinition,
+      event,
     });
   }
 
@@ -384,6 +388,7 @@ function handleProcessCodes({
   tieMatchUp,
   stack,
   side,
+  event,
 }) {
   if (substitution || side.substitutions?.length === 1) {
     if (substitution) {
@@ -405,6 +410,7 @@ function handleProcessCodes({
         matchUp: tieMatchUp,
         context: stack,
         drawDefinition,
+        event,
       });
     }
   }

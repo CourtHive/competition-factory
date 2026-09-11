@@ -69,19 +69,21 @@ When the root is `SET` (the default), it is omitted from the parsed object. Non-
 
 The `-S:` section describes how each segment is scored:
 
-| Pattern                   | Description                               | Example                              |
-| ------------------------- | ----------------------------------------- | ------------------------------------ |
-| `{games}`                 | Games to win set                          | `-S:6` (first to 6, no tiebreak)     |
-| `{games}/TB{points}`      | Games with tiebreak                       | `-S:6/TB7` (tiebreak to 7 at 6-6)    |
-| `{games}/TB{points}@{at}` | Tiebreak at specific count                | `-S:4/TB5@3` (TB at 3-3)             |
-| `{games}NOAD`             | No-advantage games                        | `-S:6NOAD` (no deuce)                |
-| `TB{points}`              | Tiebreak-only set                         | `-S:TB11` (first to 11, win by 2)    |
-| `TB{points}NOAD`          | No-deuce tiebreak set                     | `-S:TB15NOAD`                        |
-| `TB{points}@{modifier}`   | Tiebreak with modifier                    | `-S:TB21@RALLY`                      |
-| `T{minutes}`              | Timed set (games-based)                   | `-S:T20`                             |
-| `T{minutes}P`             | Timed set (points-based)                  | `-S:T10P`                            |
-| `T{minutes}G`             | Timed set (games-based, explicit)         | `-S:T10G` (same as `-S:T10`)         |
-| `O{outs}`                 | Outs-based segment (baseball/wiffle ball) | `-S:O3` (3 outs per team per inning) |
+| Pattern                   | Description                               | Example                                           |
+| ------------------------- | ----------------------------------------- | ------------------------------------------------- |
+| `{games}`                 | Games to win set                          | `-S:6` (first to 6, no tiebreak)                  |
+| `{games}/TB{points}`      | Games with tiebreak                       | `-S:6/TB7` (tiebreak to 7 at 6-6)                 |
+| `{games}/TB{points}@{at}` | Tiebreak at specific count                | `-S:4/TB5@3` (TB at 3-3)                          |
+| `{games}NOAD`             | No-advantage games                        | `-S:6NOAD` (no deuce)                             |
+| `{games}WB{n}`            | Win-by override (no-tiebreak sets only)   | `-S:5WB1` (first to 5 wins, e.g. TYPTI: 4–5, 1–5) |
+| `{games}NOADWB{n}`        | NoAD games + win-by override              | `-S:4NOADWB1`                                     |
+| `TB{points}`              | Tiebreak-only set                         | `-S:TB11` (first to 11, win by 2)                 |
+| `TB{points}NOAD`          | No-deuce tiebreak set                     | `-S:TB15NOAD`                                     |
+| `TB{points}@{modifier}`   | Tiebreak with modifier                    | `-S:TB21@RALLY`                                   |
+| `T{minutes}`              | Timed set (games-based)                   | `-S:T20`                                          |
+| `T{minutes}P`             | Timed set (points-based)                  | `-S:T10P`                                         |
+| `T{minutes}G`             | Timed set (games-based, explicit)         | `-S:T10G` (same as `-S:T10`)                      |
+| `O{outs}`                 | Outs-based segment (baseball/wiffle ball) | `-S:O3` (3 outs per team per inning)              |
 
 ### Game Format Specification (`-G:`)
 
@@ -252,6 +254,19 @@ engine.setMatchUpStatus({
 | MLP (Major League Pickleball) | `SET5-S:TB21@RALLY-F:TB15@RALLY` | 4 games to 21, 5th to 15  |
 | Single game tiebreaker        | `SET1-S:TB11@RALLY`              | MLP singles format        |
 
+A pickleball game is a **tiebreak set** — a race to a target with no games beneath it. Two tokens carry
+the rules that differ between pickleball variants:
+
+- **`@RALLY`** — rally scoring: every rally scores a point regardless of who served. It is
+  scoring-significant, not cosmetic: the scoring engine skips server derivation under it. Absent the
+  modifier the format is traditional **side-out** scoring, where only the serving side can score.
+- **`NOAD`** — sudden death at the target (win by 1). Absent it, a game continues past the target until a
+  side leads by two.
+
+Named presets for these are published as `fixtures.matchUpFormats.FORMAT_PICKLEBALL*`, and
+`fixtures.competitionFormats.PICKLEBALL_STANDARD` carries the parts a format code cannot express —
+server rule, timeouts, penalties, and the sport's point vocabulary (including non-volley-zone faults).
+
 #### Padel
 
 | Format                      | Code                         | Notes                 |
@@ -394,3 +409,38 @@ When `NOAD` is applied to a tiebreak format (e.g., `SET3-S:6/TB7@5-F:TB10NOAD`):
 ### Implementation Note
 
 This implementation supports `tiebreakSet.NoAD` to enable recreational formats, but developers should be aware this is an extension beyond the CODES specification. When interoperating with other CODES-compliant systems, tiebreak `NOAD` notation may not be recognized or may be interpreted differently.
+
+## Win-By Override (`WB{n}` on No-Tiebreak Sets)
+
+The `WB{n}` modifier overrides the default game-margin required to win a set when no tiebreak is configured. It is only accepted on standard sets that omit a tiebreak (`/TB…`); pairing it with a tiebreak is rejected as syntactically invalid.
+
+### Default Behavior
+
+- Sets that omit a tiebreak (e.g., `-S:6`) are advantage sets — a side must win by **two** games (`6-4`, `7-5`, `8-6`, …). This is the implicit default and produces `winBy = 2`.
+- The `WB{n}` modifier overrides the implicit win-by, so the parsed `setFormat.winBy` reflects the explicit value.
+
+### `WB1` — First Past the Post
+
+`WB1` means **the first side to reach `setTo` games wins outright**, regardless of margin.
+
+| Format             | Parsed setFormat                                       | Example legal scores |
+| ------------------ | ------------------------------------------------------ | -------------------- |
+| `SET3-S:5WB1`      | `{ setTo: 5, noTiebreak: true, winBy: 1 }`             | 5–0, 5–4, 4–5, 1–5   |
+| `SET5-S:5WB1-G:3C` | TYPTI win-by-1 variant: 3 consecutive points per game  | 5–4, 4–5, 1–5        |
+| `SET3-S:4NOADWB1`  | `{ setTo: 4, NoAD: true, noTiebreak: true, winBy: 1 }` | NoAD games, fast set |
+
+### Canonical Stringify
+
+- `WB2` is the implicit default and is **elided** during stringify (`SET3-S:5WB2` round-trips to `SET3-S:5`).
+- Only `winBy` values that differ from the default (typically `WB1`) appear in canonical output.
+- Modifier ordering is canonical: `{games}` → `NOAD` → `WB{n}`. The parser rejects `WB`-before-`NOAD` to keep canonical form unambiguous.
+
+### Use Case: TYPTI Win-By-1 Rules
+
+In TYPTI rule variants where a set is won by reaching the target game count without any margin requirement, use the `WB1` modifier alongside the existing `-G:{n}C` consecutive-points game format:
+
+```
+SET5-S:5WB1-G:3C
+```
+
+This expresses: best of 5 sets, sets to 5 games (first to 5 wins, e.g. `1–5`, `4–5`, `5–4`), 3 consecutive points per game.

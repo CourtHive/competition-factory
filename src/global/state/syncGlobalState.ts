@@ -1,3 +1,4 @@
+import { preserveNoticeIdentity } from './noticeIdentity';
 import {
   CallListenerArgs,
   DeleteNoticeArgs,
@@ -37,6 +38,7 @@ export default {
   enableNotifications,
   getMethods,
   getNotices,
+  getPayloads: getNotices, // canonical alias for the deprecated `getNotices`
   getTopics,
   getTournamentId,
   getTournamentRecord,
@@ -157,13 +159,22 @@ export function addNotice({ topic, payload, key }: Notice, isGlobalSubscription?
   if (!syncGlobalState.disableNotifications) syncGlobalState.modified = true;
   if (syncGlobalState.disableNotifications || (!syncGlobalState.subscriptions[topic] && !isGlobalSubscription)) return;
 
+  let outgoing = payload;
+
   if (key) {
-    syncGlobalState.notices = syncGlobalState.notices.filter(
-      (notice) => !(notice.topic === topic && notice.key === key),
-    );
+    const retained: any[] = [];
+    for (const notice of syncGlobalState.notices) {
+      if (notice.topic === topic && notice.key === key) {
+        // superseded — but its identity is still true of this key, so do not discard it
+        outgoing = preserveNoticeIdentity(outgoing, notice.payload);
+      } else {
+        retained.push(notice);
+      }
+    }
+    syncGlobalState.notices = retained;
   }
 
-  syncGlobalState.notices.push({ topic, payload, key });
+  syncGlobalState.notices.push({ topic, payload: outgoing, key });
 
   return { ...SUCCESS };
 }
@@ -181,8 +192,13 @@ export function deleteNotices() {
 }
 
 export function deleteNotice({ topic, key }: DeleteNoticeArgs) {
+  // Delete only notices matching the key AND (when a topic is supplied) that
+  // topic. The prior form `(!topic || topic===) && key!==` deleted every notice
+  // of OTHER topics whenever a topic was passed — a footgun for any caller that
+  // scopes a purge by topic. No-topic behaviour (purge by key across all topics)
+  // is unchanged.
   syncGlobalState.notices = syncGlobalState.notices.filter(
-    (notice) => (!topic || notice.topic === topic) && notice.key !== key,
+    (notice) => !((!topic || notice.topic === topic) && notice.key === key),
   );
 }
 
@@ -191,11 +207,13 @@ export function getTopics(): { topics: string[] } {
   return { topics };
 }
 
-export function callListener({ topic, notices }: CallListenerArgs, globalSubscriptions?: any) {
+export function callListener({ topic, payloads, notices }: CallListenerArgs, globalSubscriptions?: any) {
+  // back-compat: accept either `payloads` (canonical) or `notices` (deprecated alias).
+  const data = payloads ?? notices ?? [];
   const method = syncGlobalState.subscriptions[topic];
-  if (method && typeof method === 'function') method(notices);
+  if (method && typeof method === 'function') method(data);
   const globalMethod = globalSubscriptions?.[topic];
-  if (globalMethod && typeof globalMethod === 'function') globalMethod(notices);
+  if (globalMethod && typeof globalMethod === 'function') globalMethod(data);
 }
 
 export function handleCaughtError({ engineName, methodName, params, err }: HandleCaughtErrorArgs) {
@@ -206,6 +224,11 @@ export function handleCaughtError({ engineName, methodName, params, err }: Handl
     error = err.message;
   }
 
+  // Engine-level error sink, like globalState's own. It must NOT route through pushGlobalLog:
+  // globalLog imports getDevContext from globalState, and globalState imports THIS module, so that
+  // edge closes a cycle (globalState -> syncGlobalState -> globalLog -> globalState) which rollup
+  // reports on every build.
+  // eslint-disable-next-line no-console
   console.log('ERROR', {
     tournamentId: getTournamentId(),
     params: JSON.stringify(params),

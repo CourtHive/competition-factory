@@ -1,3 +1,4 @@
+import { resolveScaleValueNumber } from '@Query/scales/resolveScaleValue';
 import { isMatchUpEventType } from '@Helpers/matchUpEventTypes/isMatchUpEventType';
 import { allTournamentMatchUps } from '@Query/matchUps/getAllTournamentMatchUps';
 import { checkScoreHasValue } from '@Query/matchUp/checkScoreHasValue';
@@ -66,9 +67,12 @@ export function getPredictiveAccuracy(params: getPredictiveAccuracyArgs) {
     ? Math.abs(scaleProfile.range[0] - scaleProfile.range[1])
     : 0;
 
+  // `zonePct` is a PERCENT of the scale's range. The parentheses here were previously misplaced —
+  // `(zonePct ?? 0 / 100)` parses as `zonePct ?? (0 / 100)` because `/` binds tighter than `??`, so the
+  // division never applied and the margin came out 100x too large (zonePct: 20 on WTN gave 780, not 7.8).
   const zoneMargin =
     isConvertableInteger(zonePct) && ratingsRangeDifference
-      ? (zonePct ?? 0 / 100) * ratingsRangeDifference
+      ? ((zonePct ?? 0) / 100) * ratingsRangeDifference
       : (params.zoneMargin ?? ratingsRangeDifference);
 
   const contextProfile = { withScaleValues: true, withCompetitiveness: true };
@@ -176,6 +180,7 @@ export function getPredictiveAccuracy(params: getPredictiveAccuracyArgs) {
     ...SUCCESS,
     relevantMatchUps,
     zoneDistribution,
+    zoneMargin, // returned so callers (and tests) can assert the resolved margin, not just infer it
     zoneData,
     accuracy,
     nonZone,
@@ -239,8 +244,16 @@ function getSideValues({
           if (exclude) exclusionValues.push(exclusionValue);
           scaleValues.push(scaleValue);
 
-          if (pValue && !Number.isNaN(Number(value))) {
-            value += pValue;
+          // `value` started at 0 and `+=` was applied to the RAW value. With
+          // string ratings that concatenates: 0 + '12.48' -> '012.48', then
+          // + '11.20' -> '012.4811.20' -> NaN. One individual per side survived
+          // by accident; every DOUBLES matchUp — two individuals — produced NaN,
+          // so the whole doubles predictive-accuracy result was garbage. The old
+          // guard tested the accumulator rather than the incoming value, so it
+          // never fired. Resolve each contribution to a number before adding.
+          const numericValue = resolveScaleValueNumber(pValue, { accessor: valueAccessor, scaleName });
+          if (numericValue !== undefined && value !== undefined) {
+            value += numericValue;
           } else {
             value = undefined;
           }

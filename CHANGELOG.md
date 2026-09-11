@@ -1,156 +1,1207 @@
 # Changelog
 
-## [3.7.0](https://github.com/CourtHive/competition-factory/compare/v3.6.0...v3.7.0) (2026-05-18)
+## [6.38.0](https://github.com/CourtHive/competition-factory/compare/v6.37.2...v6.38.0) (2026-09-08)
 
 
 ### Features
 
-* **fixtures:** encode per-federation ranking policies (Phase 0 PR 0.5) ([362cb03](https://github.com/CourtHive/competition-factory/commit/362cb03f1d62dd5c0b12f9e9c9fd65aba114e8bd))
-* **query:** expose computeRatingDistributionStats as a top-level export ([13a5dbc](https://github.com/CourtHive/competition-factory/commit/13a5dbcbe60f72e782989bbe935dd46d3b90a6ea))
-* **ranking:** add applyDerivedRankings for filtered sub-rankings ([fa3e439](https://github.com/CourtHive/competition-factory/commit/fa3e4399a007afbe40f4b196903609519c9f8669))
-* **ranking:** add pointPoolModel, categoryAggregation, derivedRankings types ([050eed0](https://github.com/CourtHive/competition-factory/commit/050eed0df645d945d27d2adc245257fd88835e98))
-* **ranking:** add scaleEngine.getTournamentPointAwards() pipeline entry ([3da33ae](https://github.com/CourtHive/competition-factory/commit/3da33aed44a8ce91c82015c0783739f5b021ea35))
-* **ranking:** interpret categoryAggregation in generateRankingList ([8fcf3e3](https://github.com/CourtHive/competition-factory/commit/8fcf3e34b9641c3f791ed3c1cfcea19e9e24f83f))
+* **readModel:** export the column manifest as runtime data ([#4774](https://github.com/CourtHive/competition-factory/issues/4774)) ([4733fa1](https://github.com/CourtHive/competition-factory/commit/4733fa138340ce1cb6ce36d01725ed5fa5596886))
+
+
+### Bug Fixes
+
+* **scales:** rank drawSize and drawSizes identically for profile specificity ([#4772](https://github.com/CourtHive/competition-factory/issues/4772)) ([5a8f737](https://github.com/CourtHive/competition-factory/commit/5a8f73783347ca9d87d8726fe2bcfad0cbf432f0))
+
+## [6.37.2](https://github.com/CourtHive/competition-factory/compare/v6.37.1...v6.37.2) (2026-09-06)
+
+
+### Bug Fixes
+
+* **scales:** populate PointAward.category.gender from the event ([#4766](https://github.com/CourtHive/competition-factory/issues/4766)) ([3fc2cb1](https://github.com/CourtHive/competition-factory/commit/3fc2cb133defe31b7047671767ed63e5311b342a))
+
+
+### Documentation
+
+* cover the 23 commits that shipped since the 2026-08-25 deploy ([#4764](https://github.com/CourtHive/competition-factory/issues/4764)) ([d40ae7a](https://github.com/CourtHive/competition-factory/commit/d40ae7aadf70a0086f0c88e1201081b435623cf3))
+* **scales:** cover bucketTotals, the 'points' component, and exempt awards ([#4762](https://github.com/CourtHive/competition-factory/issues/4762)) ([2856ee7](https://github.com/CourtHive/competition-factory/commit/2856ee7af27895f24d6d6f0ac8ce1d1787ae6239))
+
+## [6.37.1](https://github.com/CourtHive/competition-factory/compare/v6.37.0...v6.37.1) (2026-09-06)
+
+
+### Bug Fixes
+
+* **scales:** getParticipantPoints was ignoring subjectToBucketLimits ([#4758](https://github.com/CourtHive/competition-factory/issues/4758)) ([0344861](https://github.com/CourtHive/competition-factory/commit/03448618352a06be526601fba33fca46d15e6de1))
+* **scales:** one RankingListEntry, and emit the bucketTotals it promises ([#4756](https://github.com/CourtHive/competition-factory/issues/4756)) ([d76d9f6](https://github.com/CourtHive/competition-factory/commit/d76d9f611a006dd41c9f6dfddf02530de1eaee5e))
+* **scales:** type getAwardProfile, and stop two .d.ts declarations drifting ([#4761](https://github.com/CourtHive/competition-factory/issues/4761)) ([e50e90b](https://github.com/CourtHive/competition-factory/commit/e50e90bdef4089ae7352e93ccbf0e4f86707444f))
+
+## [6.37.0](https://github.com/CourtHive/competition-factory/compare/v6.36.0...v6.37.0) (2026-08-31)
+
+
+### Features
+
+* **read-model:** carry a TEAM entry's issued identity on the entries fact ([#4751](https://github.com/CourtHive/competition-factory/issues/4751)) ([070bbba](https://github.com/CourtHive/competition-factory/commit/070bbba6f9426b9f331a0cd22f4f25fc0f6e7fd4))
+
+## [6.36.0](https://github.com/CourtHive/competition-factory/compare/v6.35.0...v6.36.0) (2026-08-31)
+
+
+### Features
+
+* **query:** getParticipation — what a record says about who took part ([#4750](https://github.com/CourtHive/competition-factory/issues/4750)) ([f6ba26b](https://github.com/CourtHive/competition-factory/commit/f6ba26b8d286eaee4cd2f6881c290f0441c67a40))
+* **query:** project tournamentLevel, so it reaches the calendar entry ([#4746](https://github.com/CourtHive/competition-factory/issues/4746)) ([c068323](https://github.com/CourtHive/competition-factory/commit/c068323f641ee904c158dfe9539654bb66178982))
+* **read-model:** carry organisational scope on the discovery row, distinct from grade ([#4747](https://github.com/CourtHive/competition-factory/issues/4747)) ([cbd6e38](https://github.com/CourtHive/competition-factory/commit/cbd6e383558d0151ed17a01b1a2e1350462f58da))
+* **read-model:** cast() emits the discovery row, via an aggregate attribution kind ([#4743](https://github.com/CourtHive/competition-factory/issues/4743)) ([52e0135](https://github.com/CourtHive/competition-factory/commit/52e013587341b81fc1bac426ef3fc6acba3ae86f))
+
+## [6.35.0](https://github.com/CourtHive/competition-factory/compare/v6.34.0...v6.35.0) (2026-08-30)
+
+
+### Features
+
+* **codes:** say who may enter an event, and when a competition was cancelled ([#4740](https://github.com/CourtHive/competition-factory/issues/4740)) ([a53f648](https://github.com/CourtHive/competition-factory/commit/a53f64833cd1c924e50ea9b1100a3a9867ac8475))
+* **read-model:** a discovery row shape, and the invalidation set that defers its emission ([#4741](https://github.com/CourtHive/competition-factory/issues/4741)) ([81e0248](https://github.com/CourtHive/competition-factory/commit/81e0248dfdaba5c3d26007b6e35be0e39f6edb4a))
+* **tools:** buildFromSources in the factory, with link repair for third-party draws ([#4739](https://github.com/CourtHive/competition-factory/issues/4739)) ([0d8176d](https://github.com/CourtHive/competition-factory/commit/0d8176d6a7c0293e2ad0504aff08e122d4205d6b))
+
+
+### Bug Fixes
+
+* **avoidance:** check the pair a swapped participant lands in, not the one it leaves ([#4736](https://github.com/CourtHive/competition-factory/issues/4736)) ([17c4d86](https://github.com/CourtHive/competition-factory/commit/17c4d86269c48fc53c632d58abcd8e7f7f8cb046))
+* **codes:** make the schema say something about a sanction ([#4738](https://github.com/CourtHive/competition-factory/issues/4738)) ([37a309a](https://github.com/CourtHive/competition-factory/commit/37a309a307d55627758acece99bd5af8c4d85110))
+* **participants:** correct the getScaleValues return type and unify PAIR naming ([#4730](https://github.com/CourtHive/competition-factory/issues/4730)) ([27c1589](https://github.com/CourtHive/competition-factory/commit/27c158916e48aefe89a57533419013d75d73df62))
+* **read-model:** export the discovery row builder so a consumer can reach it ([#4742](https://github.com/CourtHive/competition-factory/issues/4742)) ([f99ad00](https://github.com/CourtHive/competition-factory/commit/f99ad00c7461b6843a03fba035976ac2a3d392d4))
+* **scales:** keep the ratings governor attached through tree shaking ([#4735](https://github.com/CourtHive/competition-factory/issues/4735)) ([5616069](https://github.com/CourtHive/competition-factory/commit/5616069ec429ae4c07af3825e93334fbe455d8f2))
+* **sorters:** pin stringSort's collator so ordering does not depend on the host ([#4731](https://github.com/CourtHive/competition-factory/issues/4731)) ([e3119d2](https://github.com/CourtHive/competition-factory/commit/e3119d215134af30c48a38b3464324bd27caf0e9))
+
+## [6.34.0](https://github.com/CourtHive/competition-factory/compare/v6.33.0...v6.34.0) (2026-08-30)
+
+
+### Features
+
+* **codes:** give an event its own registration window and entry capacity ([#4727](https://github.com/CourtHive/competition-factory/issues/4727)) ([c7a6474](https://github.com/CourtHive/competition-factory/commit/c7a64745fffdf5659a495f29e35696d0262bf286))
+* **codes:** give prize money a finishing-position shape ([#4716](https://github.com/CourtHive/competition-factory/issues/4716)) ([920993b](https://github.com/CourtHive/competition-factory/commit/920993bcee8f33ad916d1caee53efe9252e16eff))
+
+
+### Bug Fixes
+
+* **codes:** give the entry fee a unit and an event, and type what an organisation is ([#4724](https://github.com/CourtHive/competition-factory/issues/4724)) ([5f72c6f](https://github.com/CourtHive/competition-factory/commit/5f72c6fbc0c11b47cae218bc8149e6259cc74085))
+* **codes:** revive the dead schema validator and bring the schema back to the types ([#4718](https://github.com/CourtHive/competition-factory/issues/4718)) ([99057e5](https://github.com/CourtHive/competition-factory/commit/99057e599acd5dbfb8348be8a504af1a4a028d72))
+* **entries:** make eligibility askable, and stop rejecting legal combined-rating pairs ([#4722](https://github.com/CourtHive/competition-factory/issues/4722)) ([3fbc842](https://github.com/CourtHive/competition-factory/commit/3fbc84219a43b0650ebdad90409a8260aa40c5b2))
+* **scales:** centralize scale-value resolution and repair six silent defects ([#4721](https://github.com/CourtHive/competition-factory/issues/4721)) ([2765812](https://github.com/CourtHive/competition-factory/commit/276581269de52f039d50c9363ff3e95bb07e451b))
+* **scheduling:** refuse a calledAt that precedes the tournament startDate ([#4723](https://github.com/CourtHive/competition-factory/issues/4723)) ([3426879](https://github.com/CourtHive/competition-factory/commit/3426879b6134edd01642c24c1a7e3a43d4ff8655))
+
+
+### Documentation
+
+* **codes:** state the schema's additionalProperties convention, and enforce it ([#4719](https://github.com/CourtHive/competition-factory/issues/4719)) ([8753b30](https://github.com/CourtHive/competition-factory/commit/8753b3025d9812d6b308a0557bdfbaa2f8d93301))
+
+## [6.33.0](https://github.com/CourtHive/competition-factory/compare/v6.32.0...v6.33.0) (2026-08-26)
+
+
+### Features
+
+* **codes:** make "being sanctioned" expressible ([#4710](https://github.com/CourtHive/competition-factory/issues/4710)) ([204fa32](https://github.com/CourtHive/competition-factory/commit/204fa323faf274a833a73fd078424e852329dae0))
+
+
+### Bug Fixes
+
+* **codes:** give prize money a unit, an event home, and a defined comparison ([#4711](https://github.com/CourtHive/competition-factory/issues/4711)) ([16197b6](https://github.com/CourtHive/competition-factory/commit/16197b6e2c7b73756c8c5f999dacd28043c16d9a))
+
+
+### Documentation
+
+* **reports:** record that TMX now enforces the wasPlayed agreement ([#4708](https://github.com/CourtHive/competition-factory/issues/4708)) ([8658ccf](https://github.com/CourtHive/competition-factory/commit/8658ccfe5006d73fa9b81fe433ec4fc26b45ac6f))
+
+## [6.32.0](https://github.com/CourtHive/competition-factory/compare/v6.31.0...v6.32.0) (2026-08-25)
+
+
+### Features
+
+* **analysis:** report extensions that no reader will ever see ([#4702](https://github.com/CourtHive/competition-factory/issues/4702)) ([298e92f](https://github.com/CourtHive/competition-factory/commit/298e92fe2b31c291a366b8850d6d85ae08d2bc21))
+
+
+### Bug Fixes
+
+* **schedule:** addMatchUpScheduleItems covers calledAt, and names what it will not write ([#4705](https://github.com/CourtHive/competition-factory/issues/4705)) ([e3fb375](https://github.com/CourtHive/competition-factory/commit/e3fb37526daa218c18c39cb82ac91ce53538b0ff))
+* **schedule:** suppress time modifiers once a matchUp's start is settled ([#4701](https://github.com/CourtHive/competition-factory/issues/4701)) ([f3dd619](https://github.com/CourtHive/competition-factory/commit/f3dd619bebfb1d3f8cd78f6eb0ab61a473a869ba))
+
+
+### Documentation
+
+* capture the eight changes shipped since the last docs publish ([#4694](https://github.com/CourtHive/competition-factory/issues/4694)) ([9efe1ba](https://github.com/CourtHive/competition-factory/commit/9efe1ba493c469c506cec507cdc7803e6421e6d9))
+* correct the three stale facts in the documentation README ([#4696](https://github.com/CourtHive/competition-factory/issues/4696)) ([d5b9d12](https://github.com/CourtHive/competition-factory/commit/d5b9d1239f82cd60bf5882751bbfa977e545d266))
+* cover the three user-facing changes queued for 6.32.0, and pin the published components ([#4706](https://github.com/CourtHive/competition-factory/issues/4706)) ([ced6362](https://github.com/CourtHive/competition-factory/commit/ced6362a3af789a5d2bafdf110b5e81799b72645))
+* make pnpm lint:md green ([#4698](https://github.com/CourtHive/competition-factory/issues/4698)) ([21e0322](https://github.com/CourtHive/competition-factory/commit/21e0322f67603d128faf736f6acf90586f6822c8))
+* **reports:** mark the factory copy of wasPlayed authoritative, and correct a stale claim ([#4707](https://github.com/CourtHive/competition-factory/issues/4707)) ([209d31d](https://github.com/CourtHive/competition-factory/commit/209d31d04fc1d3df93dc6976ededce15ebf8f28a))
+* state the matchUpDailyLimits no-limit contract, and fix three wrong examples ([#4697](https://github.com/CourtHive/competition-factory/issues/4697)) ([a568968](https://github.com/CourtHive/competition-factory/commit/a5689680d0aef31662e18bbd0880b22539ab3727))
+
+## [6.31.0](https://github.com/CourtHive/competition-factory/compare/v6.30.0...v6.31.0) (2026-08-24)
+
+
+### Features
+
+* **reports:** recovery time + participant experience, policy overnight/duration axes ([#4692](https://github.com/CourtHive/competition-factory/issues/4692)) ([f9c834a](https://github.com/CourtHive/competition-factory/commit/f9c834afdb1a0fd28741a2f8f671b54dd42a16a3))
+
+
+### Bug Fixes
+
+* **avoidance:** supply idCollections when separating seeded participants ([#4688](https://github.com/CourtHive/competition-factory/issues/4688)) ([b007e29](https://github.com/CourtHive/competition-factory/commit/b007e29faf2fd8bcf1e1e2343268d9b5c0d7a085))
+* **participants:** stop createGroupParticipant emitting a duplicate notice ([#4687](https://github.com/CourtHive/competition-factory/issues/4687)) ([3064f5e](https://github.com/CourtHive/competition-factory/commit/3064f5e7638927327b77245726a222d25ae2feac))
+* **reports:** emit a resolvable winner id from the draw structure report ([#4693](https://github.com/CourtHive/competition-factory/issues/4693)) ([805b0c6](https://github.com/CourtHive/competition-factory/commit/805b0c6f1eb21361eaa9cdae6f287f7c2147dbef))
+
+## [6.30.0](https://github.com/CourtHive/competition-factory/compare/v6.29.1...v6.30.0) (2026-08-22)
+
+
+### Features
+
+* **scheduling:** preserve scheduling when a BYE is assigned ([#4681](https://github.com/CourtHive/competition-factory/issues/4681)) ([e113125](https://github.com/CourtHive/competition-factory/commit/e113125c5ffaf3c539f719e8ae4e747b01befd14))
+* **types:** contact relationship and grouping contact pointers ([#4683](https://github.com/CourtHive/competition-factory/issues/4683)) ([23fd695](https://github.com/CourtHive/competition-factory/commit/23fd69528ebe9e8e68d04457b1a7240af58e1af9))
+
+
+### Bug Fixes
+
+* **entries:** gate event entries and tournament counts on the competitor role ([#4684](https://github.com/CourtHive/competition-factory/issues/4684)) ([237f13e](https://github.com/CourtHive/competition-factory/commit/237f13e48d569766b573fe1facd89f693267b5ba))
+* **privacy:** publish staff contact details, stop excluding the tournament director ([#4680](https://github.com/CourtHive/competition-factory/issues/4680)) ([15373b6](https://github.com/CourtHive/competition-factory/commit/15373b6fc1b80b7a02ff7a34c1a1f3db2068cb3c))
+* **scheduling:** stop discarding the categoryType resolved from an event ([#4686](https://github.com/CourtHive/competition-factory/issues/4686)) ([75996a0](https://github.com/CourtHive/competition-factory/commit/75996a0a69c68a6bc3cdd82b3a89cb7bb3766580))
+
+
+### Documentation
+
+* backfill the six public changes shipped since the last docs publish ([#4685](https://github.com/CourtHive/competition-factory/issues/4685)) ([176060b](https://github.com/CourtHive/competition-factory/commit/176060bc63ed84b6ad9ae93bb32f58e0ae80a645))
+
+## [6.29.1](https://github.com/CourtHive/competition-factory/compare/v6.29.0...v6.29.1) (2026-08-21)
+
+
+### Bug Fixes
+
+* **query:** apply participant privacy policy at every emission boundary ([#4676](https://github.com/CourtHive/competition-factory/issues/4676)) ([a767023](https://github.com/CourtHive/competition-factory/commit/a7670239c3345c121ca9fa1898a55654ffe6ffff))
+* **types:** express all 19 participant roles — add SCOREKEEPER + TIMEKEEPER to ParticipantRoleEnum ([#4674](https://github.com/CourtHive/competition-factory/issues/4674)) ([2376dae](https://github.com/CourtHive/competition-factory/commit/2376daea2d06ce721e38c5f42aead97d15e72fd9))
+
+## [6.29.0](https://github.com/CourtHive/competition-factory/compare/v6.28.1...v6.29.0) (2026-08-18)
+
+
+### Features
+
+* **forge:** tag dryRun dev-log lines and surface their cost ([#4659](https://github.com/CourtHive/competition-factory/issues/4659)) ([fdeac52](https://github.com/CourtHive/competition-factory/commit/fdeac521e14d97f26a6cdd3d2c78c0a86cd67246))
+* **participants:** surface when participantName is superseded by the derived name ([#4667](https://github.com/CourtHive/competition-factory/issues/4667)) ([5e38544](https://github.com/CourtHive/competition-factory/commit/5e385440092f7413afcd0eb515abf41f409c8d85))
+* **query:** participantsVersion handshake on getEventData ([#4664](https://github.com/CourtHive/competition-factory/issues/4664)) ([59b95cc](https://github.com/CourtHive/competition-factory/commit/59b95cc60c2523feaaae9c0f8901d98dd8b1e283))
+* **venues:** add discipline to Court ([#4662](https://github.com/CourtHive/competition-factory/issues/4662)) ([1a70240](https://github.com/CourtHive/competition-factory/commit/1a70240c7f310fbf1e8746b63db69cf7ac5996cb))
+* **verify:** report coverage headroom in items, and budget the delta ([#4666](https://github.com/CourtHive/competition-factory/issues/4666)) ([4954668](https://github.com/CourtHive/competition-factory/commit/49546681a5ff1498dbdb596f2a2437911db7d592))
+
+
+### Bug Fixes
+
+* **notices:** keyed de-dup no longer destroys identity it already had ([#4657](https://github.com/CourtHive/competition-factory/issues/4657)) ([98d0fb3](https://github.com/CourtHive/competition-factory/commit/98d0fb3051591710ea872c20e68376933803c29c))
+* **verify:** audit every lockfile, not just the package's ([#4663](https://github.com/CourtHive/competition-factory/issues/4663)) ([6cb6a55](https://github.com/CourtHive/competition-factory/commit/6cb6a55d97512a9c9fef14a0ce72dd1c754b50cc))
+
+
+### Performance
+
+* **query:** make participantsVersion opt-in ([#4665](https://github.com/CourtHive/competition-factory/issues/4665)) ([2b1027d](https://github.com/CourtHive/competition-factory/commit/2b1027dceeba892c9e28c1365d38f40fc89c2d11))
+
+
+### Documentation
+
+* **matchUps:** drop the rename history from applyMatchUpFormat ([#4654](https://github.com/CourtHive/competition-factory/issues/4654)) ([192701f](https://github.com/CourtHive/competition-factory/commit/192701f4c5729d18befa9a72f5e0518a5a409979))
+
+## [6.28.1](https://github.com/CourtHive/competition-factory/compare/v6.28.0...v6.28.1) (2026-08-17)
+
+
+### Bug Fixes
+
+* **notifications:** apply the eventId fallback to the draw notice too ([#4651](https://github.com/CourtHive/competition-factory/issues/4651)) ([e056de5](https://github.com/CourtHive/competition-factory/commit/e056de5c2bcac5e39d1dcafe256a0e04208c7e73))
+* **notifications:** carry eventId on notices for PROPAGATED matchUps ([#4649](https://github.com/CourtHive/competition-factory/issues/4649)) ([e55d47b](https://github.com/CourtHive/competition-factory/commit/e55d47bc0de98eb2f2bf48773f8aee5d645a2852))
+
+## [6.28.0](https://github.com/CourtHive/competition-factory/compare/v6.27.0...v6.28.0) (2026-08-17)
+
+
+### Features
+
+* **notifications:** populate structureId on MODIFY_MATCHUP notices ([#4647](https://github.com/CourtHive/competition-factory/issues/4647)) ([d827910](https://github.com/CourtHive/competition-factory/commit/d827910b02ab14aa77c44307f8f3a5284a6ac820))
+
+## [6.27.0](https://github.com/CourtHive/competition-factory/compare/v6.26.0...v6.27.0) (2026-08-17)
+
+
+### Features
+
+* **codes:** add participantOtherIds and stamp the event sanctioning origin ([#4620](https://github.com/CourtHive/competition-factory/issues/4620)) ([d5608b8](https://github.com/CourtHive/competition-factory/commit/d5608b86cd89fd254c45be79de4eda30e5cf9aed))
+* **codes:** implement the tournament and draw grains of the Unified*ID family ([#4636](https://github.com/CourtHive/competition-factory/issues/4636)) ([90a1f93](https://github.com/CourtHive/competition-factory/commit/90a1f93586644a0c24676ac9bad42399da8ea1fb))
+* **mutate:** honour origin-supplied identity and timestamps ([#4621](https://github.com/CourtHive/competition-factory/issues/4621)) ([a9c46e4](https://github.com/CourtHive/competition-factory/commit/a9c46e4520675e7d001da587a5bd0bf7fd323ebd))
+* **mutate:** thread a separate tieFormatUuids pool to writeTieFormat ([#4622](https://github.com/CourtHive/competition-factory/issues/4622)) ([153cc35](https://github.com/CourtHive/competition-factory/commit/153cc35607d830aa48a5259dcf9e52e405a0fddd))
+* **notifications:** carry event identity on the notice envelope ([#4630](https://github.com/CourtHive/competition-factory/issues/4630)) ([1ec60de](https://github.com/CourtHive/competition-factory/commit/1ec60de44a81653ec913c6af3f59b1f2099fd3f2))
+* **notifications:** carry the sanctioning origin on MODIFY_MATCHUP ([#4632](https://github.com/CourtHive/competition-factory/issues/4632)) ([a199812](https://github.com/CourtHive/competition-factory/commit/a199812b74afd32ecaf9575fbc500e64068d6aaa))
+* **notifications:** resolve notice origin at the draw grain ([#4641](https://github.com/CourtHive/competition-factory/issues/4641)) ([c0d388a](https://github.com/CourtHive/competition-factory/commit/c0d388ab7f2722384897d0050b1e9e53e05ee0bd))
+* **notifications:** thread event to 20 more matchUp notice emitters ([#4634](https://github.com/CourtHive/competition-factory/issues/4634)) ([cfae29f](https://github.com/CourtHive/competition-factory/commit/cfae29fad9ad66920e2abda87b5a037d10fc22d1))
+* **notifications:** thread event to the remaining schedule and tie notice emitters ([#4635](https://github.com/CourtHive/competition-factory/issues/4635)) ([d5ac4e3](https://github.com/CourtHive/competition-factory/commit/d5ac4e3fd3018c6b55389f68a249bc36607adb16))
+* **query:** add drawsProfile STUBS to getEventData ([#4629](https://github.com/CourtHive/competition-factory/issues/4629)) ([f37bad1](https://github.com/CourtHive/competition-factory/commit/f37bad1d6213ae0fc5ab2bfc3bdca35e07efe1c5))
+* **query:** add getStructureData ([#4646](https://github.com/CourtHive/competition-factory/issues/4646)) ([e9092bc](https://github.com/CourtHive/competition-factory/commit/e9092bc77d73507749b6e02346c9c09be9354783))
+* **query:** add structuresProfile STUBS to getDrawData ([#4643](https://github.com/CourtHive/competition-factory/issues/4643)) ([f5336d9](https://github.com/CourtHive/competition-factory/commit/f5336d9bdc14faf18e8a8aa3c017ae7bc32bc0e7))
+* **query:** survey matchUpFormats across an event, project competitionFormat ([#4615](https://github.com/CourtHive/competition-factory/issues/4615)) ([2b76dc4](https://github.com/CourtHive/competition-factory/commit/2b76dc4acc340b2ee98fae18b77ae35dbfb2adfd))
+* **read-model:** scope competitors by tournament and project event origin ([#4616](https://github.com/CourtHive/competition-factory/issues/4616)) ([82f99d0](https://github.com/CourtHive/competition-factory/commit/82f99d0fcebc9799bc085f2f152ca97e945152ce))
+* **scheduling:** isScheduleLocked as a query, by ids or by matchUp ([#4638](https://github.com/CourtHive/competition-factory/issues/4638)) ([56fb88a](https://github.com/CourtHive/competition-factory/commit/56fb88a6444cd3f371d3724cb6c6fb5368c289c8))
+* **scheduling:** schedule locks pin a matchUp placement against bulk clears ([#4633](https://github.com/CourtHive/competition-factory/issues/4633)) ([31d8168](https://github.com/CourtHive/competition-factory/commit/31d8168ddada44e8bd99ed1ae6d40a40f879a40e))
+
+
+### Bug Fixes
+
+* **forge:** guard TopicPayloadMap against real addNotice payloads ([#4631](https://github.com/CourtHive/competition-factory/issues/4631)) ([9b2c96c](https://github.com/CourtHive/competition-factory/commit/9b2c96cb80f5e38bb63003eff87bec1bd2645fae))
+* **officiating:** one conflict-input set forwarded by every route, with a conformance guard ([#4617](https://github.com/CourtHive/competition-factory/issues/4617)) ([6e2ea13](https://github.com/CourtHive/competition-factory/commit/6e2ea13ede629edafe2b300e7e677374347df699))
+* **query:** resolve centralized tieFormats when hydrating from ensureSideLineUps ([#4623](https://github.com/CourtHive/competition-factory/issues/4623)) ([0a85937](https://github.com/CourtHive/competition-factory/commit/0a85937e576f45f3fce9f06f47cb22e2024c5212))
+* **scheduling:** accept allocatedCourts as an alias for courtIds ([#4642](https://github.com/CourtHive/competition-factory/issues/4642)) ([06c712b](https://github.com/CourtHive/competition-factory/commit/06c712b2deb5625ed635460c1d0287c5cdefbf17))
+* **tieFormat:** propagate errors from updateTieFormat's nested helpers ([#4628](https://github.com/CourtHive/competition-factory/issues/4628)) ([181ff65](https://github.com/CourtHive/competition-factory/commit/181ff65c593e5030b03daafa3fff5e0959aea6f2))
+* **tieFormat:** stop a shared tieFormat fragmenting into identical copies ([#4626](https://github.com/CourtHive/competition-factory/issues/4626)) ([6697921](https://github.com/CourtHive/competition-factory/commit/6697921f16b699052c4f2f8a61f1621175b49726))
+* **tsconfig:** drop the DOM lib — factory is not a DOM consumer ([#4637](https://github.com/CourtHive/competition-factory/issues/4637)) ([91903e3](https://github.com/CourtHive/competition-factory/commit/91903e39ea652cade5ddf0625992a4f54d56cc77))
+* **types:** Address latitude/longitude accept string or number ([#4619](https://github.com/CourtHive/competition-factory/issues/4619)) ([15dfecd](https://github.com/CourtHive/competition-factory/commit/15dfecd923ba9e498b03d7bdaaee2dc7a5a5ecfa))
+* **types:** declare Extension.createdAt, which runtime has always written ([#4627](https://github.com/CourtHive/competition-factory/issues/4627)) ([ac05014](https://github.com/CourtHive/competition-factory/commit/ac05014c43939a923b130d632897b9b7fd4daf85))
+
+## [6.26.0](https://github.com/CourtHive/competition-factory/compare/v6.25.0...v6.26.0) (2026-08-15)
+
+
+### Features
+
+* **officiating:** tournament-scoped conflict declarations via GROUP participants ([#4612](https://github.com/CourtHive/competition-factory/issues/4612)) ([8d46c65](https://github.com/CourtHive/competition-factory/commit/8d46c6547e316eb6b8746b299dd92bc1eb879256))
+
+
+### Bug Fixes
+
+* **officiating:** expose conflict-of-interest methods on officiatingEngine ([#4611](https://github.com/CourtHive/competition-factory/issues/4611)) ([992b24c](https://github.com/CourtHive/competition-factory/commit/992b24c00f1be412d0f465874f5f0af0b4b539b4))
+
+## [6.25.0](https://github.com/CourtHive/competition-factory/compare/v6.24.0...v6.25.0) (2026-08-15)
+
+
+### Features
+
+* **officiating:** policy-driven conflict-of-interest checks for official assignment (both routes) ([#4609](https://github.com/CourtHive/competition-factory/issues/4609)) ([d5379a1](https://github.com/CourtHive/competition-factory/commit/d5379a1bcfc3ee74e131da21b49eb1f14440a0e8))
+* **sanctioning:** retire the redundant sanctioningTier extension ([#4608](https://github.com/CourtHive/competition-factory/issues/4608)) ([2c138dc](https://github.com/CourtHive/competition-factory/commit/2c138dc0e0ca469e0a16bd3768b136550132bfc3))
+
+## [6.24.0](https://github.com/CourtHive/competition-factory/compare/v6.23.0...v6.24.0) (2026-08-14)
+
+
+### Features
+
+* **sanctioning:** unify sanctioningLevel and sanctioningTier on one TierClassification ([#4606](https://github.com/CourtHive/competition-factory/issues/4606)) ([a816fb3](https://github.com/CourtHive/competition-factory/commit/a816fb32cc4a6b333064b5baa72d8c1de44da8f0))
+
+## [6.23.0](https://github.com/CourtHive/competition-factory/compare/v6.22.2...v6.23.0) (2026-08-14)
+
+
+### Features
+
+* **query:** policy-shaped delta bands — a signed competitive-exposure axis ([#4602](https://github.com/CourtHive/competition-factory/issues/4602)) ([d099251](https://github.com/CourtHive/competition-factory/commit/d0992519e49ebbb6242031206ce7e6b1ccd0cc1d))
+
+
+### Bug Fixes
+
+* **query:** zonePct margin was 100x too large ([#4601](https://github.com/CourtHive/competition-factory/issues/4601)) ([03b5f8d](https://github.com/CourtHive/competition-factory/commit/03b5f8de6790d9a80cc40d81c58a475768892d27))
+
+## [6.22.2](https://github.com/CourtHive/competition-factory/compare/v6.22.1...v6.22.2) (2026-08-13)
+
+
+### Bug Fixes
+
+* **participants:** let an empty string clear birthDate and nationalityCode ([#4599](https://github.com/CourtHive/competition-factory/issues/4599)) ([0387768](https://github.com/CourtHive/competition-factory/commit/0387768dd75d0f8cf4c93bfd29935a5b8851d3fc))
+
+## [6.22.1](https://github.com/CourtHive/competition-factory/compare/v6.22.0...v6.22.1) (2026-08-13)
+
+
+### Bug Fixes
+
+* **fixtures:** resolve alpha-3 and IOC codes before building a country flag ([#4597](https://github.com/CourtHive/competition-factory/issues/4597)) ([f58873f](https://github.com/CourtHive/competition-factory/commit/f58873f0bca4f317c29ef50610240021e245fbee))
+
+## [6.22.0](https://github.com/CourtHive/competition-factory/compare/v6.21.0...v6.22.0) (2026-08-12)
+
+
+### Features
+
+* **sanctioning:** materialize venues when activating a sanctioned tournament ([#4594](https://github.com/CourtHive/competition-factory/issues/4594)) ([08d18fd](https://github.com/CourtHive/competition-factory/commit/08d18fd0c854155178f8a385da7488a99469553c))
+
+## [6.21.0](https://github.com/CourtHive/competition-factory/compare/v6.20.0...v6.21.0) (2026-08-10)
+
+
+### Features
+
+* **fixtures:** pickleball matchUpFormat presets and competitionFormat profile ([838e62c](https://github.com/CourtHive/competition-factory/commit/838e62cd80f7f74e352df4a564de70d144b9cc44))
+* **generators:** round generation with a pairing shape ([9b7948c](https://github.com/CourtHive/competition-factory/commit/9b7948cda4a3a7cf40d9cadc325d9768e401bdd3))
+* **mocks:** generate team competitions that enumerate no individuals ([c963f1a](https://github.com/CourtHive/competition-factory/commit/c963f1a7c69e0b06e0c9232f40b5100d6116cea6))
+* **query:** derive tier movement between seasons ([62a5601](https://github.com/CourtHive/competition-factory/commit/62a56015ee287e02f058d692bc9e384f870083a9))
+* **readModel:** derive progression edges rather than only reading stored ones ([972f642](https://github.com/CourtHive/competition-factory/commit/972f64284b15eeaf51e63c9c46d52e122ce0ea09))
+* **tieFormat:** scoreSource distinguishes a reported aggregate from unentered lines ([fdbcf18](https://github.com/CourtHive/competition-factory/commit/fdbcf187d1ca6058b09bddaddbaee3b2db60f067))
+* **tieFormat:** suppress line generation and project scoreSource to the read model ([687410a](https://github.com/CourtHive/competition-factory/commit/687410a05965167635ad238b21a21684ef4998a6))
+
+
+### Bug Fixes
+
+* **fixtures:** college default tieFormat clinches at four, not five ([fbd6fa4](https://github.com/CourtHive/competition-factory/commit/fbd6fa4a350e8610d32f577854cf269e6fd933ea))
+* **generators:** surface ad-hoc generation errors and honor explicit round and group requests ([8cea27f](https://github.com/CourtHive/competition-factory/commit/8cea27f8f05396731616b705d2b51d1c531e8213))
+* **query:** addGoesTo threw when given matchUps without a matchUpsMap ([46e02d1](https://github.com/CourtHive/competition-factory/commit/46e02d14e0289ff7e64adb54f5af93358f050889))
+* **tieFormat:** mint collectionIds so published fixtures are usable ([#4586](https://github.com/CourtHive/competition-factory/issues/4586)) ([577756b](https://github.com/CourtHive/competition-factory/commit/577756b732c21403abaac1512c2e4b9036ab7832))
+
+
+### Documentation
+
+* **generation:** round robin pairing shapes and ad-hoc generation semantics ([ef1ba11](https://github.com/CourtHive/competition-factory/commit/ef1ba112d4b2ef8cfde0022f3d293930068434f2))
+
+## [6.20.0](https://github.com/CourtHive/competition-factory/compare/v6.19.0...v6.20.0) (2026-08-09)
+
+
+### Features
+
+* **readModel:** project draw-progression edges and notice their rewiring ([e602852](https://github.com/CourtHive/competition-factory/commit/e6028522b6ef88fdf7607d58fca862a5b88849af))
+* **readModel:** project round_position on match_ups ([17f8868](https://github.com/CourtHive/competition-factory/commit/17f8868626d05feca8ae996359af1c641309bc2f))
+* **venues:** add addVenueOtherId mutation for UnifiedVenueID capture ([#4583](https://github.com/CourtHive/competition-factory/issues/4583)) ([a85ec20](https://github.com/CourtHive/competition-factory/commit/a85ec20399e16f42d4115430526e019650235487))
+
+
+### Bug Fixes
+
+* **deps:** override nanoid to the patched 3.x line ([36d24ec](https://github.com/CourtHive/competition-factory/commit/36d24ec2ec953b3a4f6b386779108d76fbd417c7))
+* **deps:** patch nanoid in the documentation project ([bb4b1b3](https://github.com/CourtHive/competition-factory/commit/bb4b1b32f4ca420174ce757e74b68073cb6fa57a))
+* **readModel:** carry progression edges on the slim matchUp result row ([3643ce3](https://github.com/CourtHive/competition-factory/commit/3643ce332446c96b95e3cdb59de51463a277c111))
+* **readModel:** resolve events.published through the publish cascade ([da08abc](https://github.com/CourtHive/competition-factory/commit/da08abc79e467c1363654891ff86da17d34faa7e))
+* **readModel:** treat published seeding as an independent event publish surface ([d225eb2](https://github.com/CourtHive/competition-factory/commit/d225eb2e371e0e4e4626963bc384ab1fb45a0751))
+
+
+### Documentation
+
+* document the 6.20.0 read-model and venue surfaces ([d757050](https://github.com/CourtHive/competition-factory/commit/d757050bbf551ba152d91e9ba626c6cda82041c0))
+
+## [6.19.0](https://github.com/CourtHive/competition-factory/compare/v6.18.0...v6.19.0) (2026-08-07)
+
+
+### Features
+
+* **types:** every exported Union is now enum-backed ([#4576](https://github.com/CourtHive/competition-factory/issues/4576)) ([beacef3](https://github.com/CourtHive/competition-factory/commit/beacef3f8672f12829ef5e5b694debaaed1178cb))
+
+
+### Bug Fixes
+
+* **readModel:** round_segment silently deleted every segmented round ([#4579](https://github.com/CourtHive/competition-factory/issues/4579)) ([421a128](https://github.com/CourtHive/competition-factory/commit/421a128eda14e423e5a6d388baea155c1795095c))
+* **tests:** close four proven holes in the conformance guards ([#4578](https://github.com/CourtHive/competition-factory/issues/4578)) ([da71b23](https://github.com/CourtHive/competition-factory/commit/da71b238eaf6302bf2314615f3eabf2791debe09))
+* **types:** generate the enum value-exports instead of maintaining them by hand ([#4577](https://github.com/CourtHive/competition-factory/issues/4577)) ([718b9fa](https://github.com/CourtHive/competition-factory/commit/718b9facad5d3894b72d655b8031aec9c0b64b61))
+* **types:** stop constant objects widening; close the union/enum gaps ([#4575](https://github.com/CourtHive/competition-factory/issues/4575)) ([6db9d15](https://github.com/CourtHive/competition-factory/commit/6db9d1555bdab2231f2c9221feadd697b014a76b))
+
+
+### Documentation
+
+* document availability disabled courts, booking-type mapping and the missing constant groups ([c0049eb](https://github.com/CourtHive/competition-factory/commit/c0049eb2acc52bd192a5b138d658e5c32b18d76a))
+* keep Block Interface under Block Types ([9a083f0](https://github.com/CourtHive/competition-factory/commit/9a083f02e12f9f31c6e33f14e1e572d02f690a6b))
+* stop using the invalid 'EVENT' bookingType in venues examples ([6c34699](https://github.com/CourtHive/competition-factory/commit/6c34699ac121003bf2bee3e19a6a25dbf9b299b5))
+
+## [6.18.0](https://github.com/CourtHive/competition-factory/compare/v6.17.0...v6.18.0) (2026-08-07)
+
+
+### Features
+
+* **codes:** add BookingTypeEnum and the DRYING court booking type ([d7accfa](https://github.com/CourtHive/competition-factory/commit/d7accfa55146be9b818dd726719f811e2e0d011c))
+* **codes:** add BookingTypeEnum and the DRYING court booking type ([7864740](https://github.com/CourtHive/competition-factory/commit/786474012cf63b8470a4dce01d9bd842aaddde31))
+* **constants:** expose action method names via actionMethodConstants ([26b00a0](https://github.com/CourtHive/competition-factory/commit/26b00a0ce3f3397188416456b272feade902d0ec))
+* **constants:** expose action method names via actionMethodConstants ([a8a460c](https://github.com/CourtHive/competition-factory/commit/a8a460ce380a54fd5be61c47fe9c7ae94bccf46f))
+* **constants:** rename availabilityConstants to dayStateConstants ([0d67e37](https://github.com/CourtHive/competition-factory/commit/0d67e370b4284b492a4ff9162a49a1cb29c9280f))
+* **constants:** rename availabilityConstants to dayStateConstants ([66c6634](https://github.com/CourtHive/competition-factory/commit/66c6634c5d9be4cd507d3bc3af454bfd387cf831))
+
+
+### Bug Fixes
+
+* **availability:** honour disabled courts and stop mislabelling unmapped booking types ([5b47c98](https://github.com/CourtHive/competition-factory/commit/5b47c986dae6efd09ea45a732d273bbfdb72e09a))
+* **availability:** honour disabled courts and stop mislabelling unmapped booking types ([c982378](https://github.com/CourtHive/competition-factory/commit/c982378880ce8a0f75a1d5bd0fb97504e8044705))
+* **constants:** export REGISTERED on entryStatusConstants; guard the exported objects ([0d8e812](https://github.com/CourtHive/competition-factory/commit/0d8e812e23a87b087150135d92977ca37086c89d))
+* **constants:** export REGISTERED on entryStatusConstants; guard the exported objects ([ca4cc2b](https://github.com/CourtHive/competition-factory/commit/ca4cc2b79bf632ba8548965fe28683339e5f6fe2))
+* **constants:** ground actionMethodConstants in engine-method validity ([656b35b](https://github.com/CourtHive/competition-factory/commit/656b35ba0026d901a9a99e9b420be7f2acd2658b))
+* **constants:** ground actionMethodConstants in engine-method validity ([4ad919f](https://github.com/CourtHive/competition-factory/commit/4ad919f3130d17d61d3f3b95773230e80658c570))
+* **score:** derive score strings from sets instead of trusting the caller ([277341b](https://github.com/CourtHive/competition-factory/commit/277341b3d2ea4c7fabca9bce7e8f7ade417efeac)), closes [#4564](https://github.com/CourtHive/competition-factory/issues/4564)
+* **score:** matchUpScore carries forward non-derived score attributes ([#4566](https://github.com/CourtHive/competition-factory/issues/4566)) ([1e913a7](https://github.com/CourtHive/competition-factory/commit/1e913a7a9af9a6f5e4881f44a796f7cece7c4bd6)), closes [#4564](https://github.com/CourtHive/competition-factory/issues/4564)
+* **state:** async state provider isolation — AsyncLocalStorage, fail-closed, un-skip example ([#4567](https://github.com/CourtHive/competition-factory/issues/4567)) ([e585d95](https://github.com/CourtHive/competition-factory/commit/e585d9549c4995ddd8ba76c764d272ac049d2071))
+* **state:** lazily bind a per-context state instead of throwing ([#4570](https://github.com/CourtHive/competition-factory/issues/4570)) ([55a020a](https://github.com/CourtHive/competition-factory/commit/55a020aca65206e3dfe1252b01ff597a3c3f8630)), closes [#4564](https://github.com/CourtHive/competition-factory/issues/4564)
+
+
+### Documentation
+
+* **enums:** add BookingTypeEnum to the catalogue ([215921f](https://github.com/CourtHive/competition-factory/commit/215921f155d533cd550d5f317fe592d0b6f13ae8))
+* **enums:** add BookingTypeEnum to the catalogue ([564a964](https://github.com/CourtHive/competition-factory/commit/564a964170284c9e7388a5cc312a83180b1e3096))
+* **enums:** correct the curated matchUpStatus sets example ([b33a26b](https://github.com/CourtHive/competition-factory/commit/b33a26b7b60610c854700614b770ba8420173cfb))
+* **enums:** correct the curated matchUpStatus sets example ([c1d9c76](https://github.com/CourtHive/competition-factory/commit/c1d9c76f31e13c30058b9ab4d39c1d328366341d))
+* refresh for 6.18.0 and unbreak injected API Reference markers ([be36fa8](https://github.com/CourtHive/competition-factory/commit/be36fa8b31f38f72afee0150076da615976f8307))
+
+## [6.17.0](https://github.com/CourtHive/competition-factory/compare/v6.16.0...v6.17.0) (2026-08-05)
+
+
+### Features
+
+* **constants:** codegen enum-mirror const values from the enums (single source / Layer 3) ([66cb37f](https://github.com/CourtHive/competition-factory/commit/66cb37f60b35a8d3384e5a649bd3bd05affd0342))
+* **constants:** codegen the enum-mirror const values from the enums (single source) ([0df5b8a](https://github.com/CourtHive/competition-factory/commit/0df5b8a5f6734ce7697fa5f364cfc03149c16a9e))
+
+
+### Documentation
+
+* document the runtime-exported enums; add missing verify:shakeable CI step ([e335a08](https://github.com/CourtHive/competition-factory/commit/e335a08f85ead572a4234582e210ba156a2ab982))
+
+## [6.16.0](https://github.com/CourtHive/competition-factory/compare/v6.15.0...v6.16.0) (2026-08-05)
+
+
+### Features
+
+* **types:** value-export domain enums + enum/const conformance guard ([7d07cf1](https://github.com/CourtHive/competition-factory/commit/7d07cf18631a59960da421c85e2346a2855123bb))
+* **types:** value-export domain enums + enum/const conformance guard ([d2d780f](https://github.com/CourtHive/competition-factory/commit/d2d780f3e3793e2ccd3ed9b5ddc35567675f09c3))
+
+## [6.15.0](https://github.com/CourtHive/competition-factory/compare/v6.14.1...v6.15.0) (2026-08-04)
+
+
+### Features
+
+* add courts table + courtRow builder to the read-model cast() ([e891cce](https://github.com/CourtHive/competition-factory/commit/e891ccec44c6bd34af131474625c0d965804c03c))
+* add draws + structures tables + row builders to the read-model cast() ([5c6e9ad](https://github.com/CourtHive/competition-factory/commit/5c6e9ad539438fb932071b251bf8c4a9431c3ba3))
+* add events table + eventRow builder to the read-model cast() ([1b8335c](https://github.com/CourtHive/competition-factory/commit/1b8335cd298add96d1af77f8a9ed24781f94eda1))
+* add MODIFY_EVENT / DELETE_EVENT topics and wire event mutations (notice gap C2) ([938714f](https://github.com/CourtHive/competition-factory/commit/938714f0d314019ff33544607afdd12f1028bd6e))
+* add order-of-play + scheduling-profile read-model tables (un-silence the profile) ([5108438](https://github.com/CourtHive/competition-factory/commit/5108438ca165b9a199b14505dd9b322dd0cc0a2e))
+* add participant-publish table + tournaments.published to the read-model cast() ([f261e8f](https://github.com/CourtHive/competition-factory/commit/f261e8f6d6c33d843db4e1142f45bb374eabe75e))
+* add seeds table + seedRow builder to the read-model cast() ([107f230](https://github.com/CourtHive/competition-factory/commit/107f230fed4893da2b139c2722e5a82889e3feed))
+* **read-model:** project nested round-robin group structures ([056e2eb](https://github.com/CourtHive/competition-factory/commit/056e2ebafff17bd4b77ad419b9af60361345deeb))
+* **read-model:** project nested round-robin group structures (fix orphaned structure_id join) ([2384bf9](https://github.com/CourtHive/competition-factory/commit/2384bf91c9b220de9c97c1445e773ca20a53950f))
+
+
+### Bug Fixes
+
+* cover silent draw-entry and flightProfile changes (Tier-2 batch 13) ([714a12f](https://github.com/CourtHive/competition-factory/commit/714a12fcccceeb9f8b3d9b0aa1b10e482cec5cca))
+* deliver draw-delete notices and scope topic-keyed deleteNotice ([56fc112](https://github.com/CourtHive/competition-factory/commit/56fc1122a4a07dd9f0fa0e7c47a0c23dd678e697))
+* dispatch draw notices for silent draw mutations (notice gap C1/C4) ([ac4b2ed](https://github.com/CourtHive/competition-factory/commit/ac4b2ed9b55095c60ce62037850e1d5a703caace))
+* dispatch MODIFY_DRAW_DEFINITION on renameStructures (notice gap C1) ([438f86f](https://github.com/CourtHive/competition-factory/commit/438f86fdf764fdb672343af850ad26d06c7ea060))
+* dispatch MODIFY_EVENT for silent event coercions (Tier-2 batch 10) ([70e19ba](https://github.com/CourtHive/competition-factory/commit/70e19bad6c1857015a82c8c540e2b3daa197d028))
+* dispatch MODIFY_EVENT when addDrawDefinition mutates flightProfile (Tier-2 batch 6) ([e3a6e64](https://github.com/CourtHive/competition-factory/commit/e3a6e642b82d32392e680ddb8688fe9c4f67586e))
+* dispatch MODIFY_EVENT when deleteDrawDefinitions prunes flightProfile (Tier-2 batch 7) ([d316491](https://github.com/CourtHive/competition-factory/commit/d31649103e14e090fd2014186e646958d1bcf96f))
+* dispatch MODIFY_EVENT when setMatchUpFormat sets event.matchUpFormat (Tier-2 batch 9) ([32e4261](https://github.com/CourtHive/competition-factory/commit/32e426130ad6b68f4ab1cdb1ebaeeb83b52f23d2))
+* dispatch MODIFY_EVENT_ENTRIES / MODIFY_DRAW_ENTRIES on entry mutations (notice gap C3) ([0309b3e](https://github.com/CourtHive/competition-factory/commit/0309b3eccf66d4c3674341a4c2e9facd0114c71f))
+* dispatch MODIFY_EVENT_ENTRIES for silent entries mutations (Tier-2 batch 11) ([6a4d45b](https://github.com/CourtHive/competition-factory/commit/6a4d45b010fdc1a1f7e06ad9b7f33e347d9485b7))
+* dispatch MODIFY_EVENT_ENTRIES when modifyEventEntries rebuilds entries (Tier-2 batch 12) ([f6eade7](https://github.com/CourtHive/competition-factory/commit/f6eade7fcbf48417270053aa3495ac0838b90ba9))
+* dispatch MODIFY_MATCHUP on setDelegatedOutcome (notice gap C1) ([64556de](https://github.com/CourtHive/competition-factory/commit/64556de1383b4f052ad8bfe693df8d0ef8112b91))
+* dispatch MODIFY_PARTICIPANTS on addParticipantTimeItem (notice gap WS-A) ([2e91ef9](https://github.com/CourtHive/competition-factory/commit/2e91ef9150d5a8e3a588addd77dd3ea978afabb4))
+* dispatch MODIFY_PARTICIPANTS on removeParticipantsScaleItems (notice gap WS-A) ([cd06fc0](https://github.com/CourtHive/competition-factory/commit/cd06fc0f522722cf7e414577652de7e222f2241e))
+* dispatch notices for silent event/flight mutations (notice gap C2 tail) ([fcb6765](https://github.com/CourtHive/competition-factory/commit/fcb6765206455cc2fe0c0456fb7d1330240a71a7))
+* dispatch participant/entries notices for silent mutations (notice gap WS-A) ([7fde954](https://github.com/CourtHive/competition-factory/commit/7fde95490c07bd85261aed8dbdd77a14e829ba28))
+* **events:** dispatch a modify-event notice from the standalone event-date setters ([ae15d3e](https://github.com/CourtHive/competition-factory/commit/ae15d3e4ca12961e20e883a85c934f1f239eaca4))
+* **events:** dispatch modify-event notice from standalone event-date setters ([e36aff2](https://github.com/CourtHive/competition-factory/commit/e36aff2ff838831d0a078a4eb87880b8d1eccf1b))
+* **read-model:** legacy drawIds publish shape ([#5](https://github.com/CourtHive/competition-factory/issues/5)) + shared scheduling-profile reader ([#6](https://github.com/CourtHive/competition-factory/issues/6)) ([cd58c84](https://github.com/CourtHive/competition-factory/commit/cd58c8402a7fdf73a832fab6c623dcb9f6d10478))
+* **read-model:** match_up_format + schedule_embargo columns, derive scheduled_date ([ee1c9ef](https://github.com/CourtHive/competition-factory/commit/ee1c9ef137243ad867dd958147a9310bc7074bcd))
+* **read-model:** match_up_format + schedule_embargo columns, derive scheduled_date ([#9](https://github.com/CourtHive/competition-factory/issues/9)/[#10](https://github.com/CourtHive/competition-factory/issues/10)/[#11](https://github.com/CourtHive/competition-factory/issues/11)) ([e2c440d](https://github.com/CourtHive/competition-factory/commit/e2c440d0fc9e57a7fd17a1439cf5c99c2e32fbe3))
+* **read-model:** max-of-levels embargo + roundLimit gating (disclosure fixes) ([3fdad01](https://github.com/CourtHive/competition-factory/commit/3fdad0104b6a5cf2dc195680695c1dc6be9b5f5c))
+* **read-model:** max-of-levels embargo + roundLimit gating in resolveMatchUpPublishState ([a815188](https://github.com/CourtHive/competition-factory/commit/a815188cd2a3939c1286fe36f82573d1b4ede83b))
+* **read-model:** resolve legacy drawIds publish shape + share the scheduling-profile reader ([017e33f](https://github.com/CourtHive/competition-factory/commit/017e33f7a32e5e1f554e23f995a2b20129e82776))
+
+
+### Documentation
+
+* add courts to the cast() read-model row set and readModel toolkit ([07999b4](https://github.com/CourtHive/competition-factory/commit/07999b47ebdf6a97a888dbd4201b9cd504d3ac98))
+* add draws + structures to the cast() read-model row set and readModel toolkit ([eb01132](https://github.com/CourtHive/competition-factory/commit/eb01132a0f5adb5f8a450c7fc720c657ad33f4a6))
+* add participant_publish + tournaments.published to the read-model row set ([2232929](https://github.com/CourtHive/competition-factory/commit/223292915c36365d0ee6f8dd4325945a02645b51))
+* add publish-participants + unpublish-tournament to the subscriptions example ([7fb2948](https://github.com/CourtHive/competition-factory/commit/7fb294884df6857726418c795aa09a6d12328f9d))
+* document MODIFY_SCHEDULING_PROFILE topic + order_of_play/scheduling_profile read-model tables ([d028573](https://github.com/CourtHive/competition-factory/commit/d0285737f72ab721599d0d5ef6de237e469e82e2))
+* document notice completeness, event/entry topics, and events/seeds read-model tables ([be5ba1a](https://github.com/CourtHive/competition-factory/commit/be5ba1a956ee816563006a46b9d60c650b069666))
+
+## [6.14.1](https://github.com/CourtHive/competition-factory/compare/v6.14.0...v6.14.1) (2026-08-02)
+
+
+### Bug Fixes
+
+* **reports:** floor cross-day pre-stages to 0 in call-timing variance ([4497f52](https://github.com/CourtHive/competition-factory/commit/4497f522888912e6575e6926d2936bf05ab21269))
+
+## [6.14.0](https://github.com/CourtHive/competition-factory/compare/v6.13.3...v6.14.0) (2026-08-01)
+
+
+### Features
+
+* accept gender/sex short codes and normalize to canonical on write ([56d6728](https://github.com/CourtHive/competition-factory/commit/56d6728b72eb4665a64342d92795f1aa20439b5d))
+* extend gender/sex short-code handling to reads, Team, collection defs ([6c51105](https://github.com/CourtHive/competition-factory/commit/6c51105a0fc073026de0acdf9982229cf7a75ff1))
+* **types:** make event.discipline an open, sport-agnostic vocabulary ([d351a21](https://github.com/CourtHive/competition-factory/commit/d351a21d76a4e67033783cebef884b4ef1018591))
+
+
+### Bug Fixes
+
+* **mutate:** make assignDrawPosition idempotent for same participant+position ([2c69ac5](https://github.com/CourtHive/competition-factory/commit/2c69ac5e8317021ad0bb6fe9d3f4e11f0b731af6))
+* **types:** correct BallTypeEnum/WinReasonEnum member key casing ([6876c0d](https://github.com/CourtHive/competition-factory/commit/6876c0d3a91ace00f5ac47941ecbe3a5cd8eb7cc))
+* **types:** correct CourtPositionEnum/TournamentLevelEnum member key casing ([bb61d0e](https://github.com/CourtHive/competition-factory/commit/bb61d0e6507f9b610cd668e6c4fc576185fa5e3c))
+* **types:** derive DisciplineUnion from disciplineConstants ([74c7b09](https://github.com/CourtHive/competition-factory/commit/74c7b09b3ea74b128fb4c45a2313072e9be4b78d))
+* **types:** derive IndoorOutdoorUnion from venueConstants ([4d03208](https://github.com/CourtHive/competition-factory/commit/4d0320808c065fbe0fbeafd2df6265d58f93d4dc))
+* **types:** export DisciplineProfile + type discipline params as DisciplineUnion ([89de2f4](https://github.com/CourtHive/competition-factory/commit/89de2f46886addf74f9a34da333ada0af0c03aac))
+* **types:** normalize CountryCodeEnum member keys to match ISO-code values ([2961fab](https://github.com/CourtHive/competition-factory/commit/2961fab0cc227ec7ee72d6096313f34757db7aa4))
+
+
+### Documentation
+
+* correct coverage branches threshold (85, not 83) ([806c833](https://github.com/CourtHive/competition-factory/commit/806c8331c8a63115fde5af07e9ddcc36069d8c3d))
+* cover assignDrawPosition idempotency + gender/sex short codes on reads ([69fb69b](https://github.com/CourtHive/competition-factory/commit/69fb69be63437e82662dc137c92baba104ac68c3))
+* document discipline as an open, sport-agnostic vocabulary ([9a5ef0f](https://github.com/CourtHive/competition-factory/commit/9a5ef0f9c0941dd368c85da73d698f6645d67b9c))
+* document gender/sex short codes + normalize-on-write vocab ([52403a0](https://github.com/CourtHive/competition-factory/commit/52403a0505c03ef7e8cfac1f5336664004204cae))
+* enumerate discipline + indoorOutdoor enum values ([09fedaa](https://github.com/CourtHive/competition-factory/commit/09fedaa975ac2d21322b23ffb28aa8c45b1e3aa7))
+
+## [6.13.3](https://github.com/CourtHive/competition-factory/compare/v6.13.2...v6.13.3) (2026-07-30)
+
+
+### Bug Fixes
+
+* **types:** correct DrawTypeEnum key capitalization typos ([fcb9a92](https://github.com/CourtHive/competition-factory/commit/fcb9a92fff0c2527363d7fd563b434c538839856))
+
+## [6.13.2](https://github.com/CourtHive/competition-factory/compare/v6.13.1...v6.13.2) (2026-07-29)
+
+
+### Bug Fixes
+
+* **readModel:** resolve non-UUID personId even when it equals participantId ([ec13ade](https://github.com/CourtHive/competition-factory/commit/ec13ade17ba5074a408d628ab8b659fa62cd2c5a))
+
+## [6.13.1](https://github.com/CourtHive/competition-factory/compare/v6.13.0...v6.13.1) (2026-07-29)
+
+
+### Bug Fixes
+
+* correct SOCIAL_MEDIA enum member name in OnlineResourceTypeEnum ([e3a8d1b](https://github.com/CourtHive/competition-factory/commit/e3a8d1b51a7d62c224fdc1fb1436553eacf5d38b))
+* correct SOCIAL_MEDIA enum member name in OnlineResourceTypeEnum ([48468a8](https://github.com/CourtHive/competition-factory/commit/48468a8984069697e8900b8943b2580fa51d604a))
+* override brace-expansion to &gt;=5.0.8 to clear high audit advisory ([f684137](https://github.com/CourtHive/competition-factory/commit/f68413753dd8b59e31ba38e2518a6364870e8baa))
+* override brace-expansion to &gt;=5.0.8 to clear high audit advisory ([e80586b](https://github.com/CourtHive/competition-factory/commit/e80586b0ab9ef55b8bebe2d8be884fb189030043))
+
+
+### Documentation
+
+* **query:** document readModel builder toolkit namespace ([9f25939](https://github.com/CourtHive/competition-factory/commit/9f25939ebdeb6525ce1f5a3142875c43aaa0c456))
+* **schedule:** drop TMX/phase reference in schedule-scenarios note ([c9e43ff](https://github.com/CourtHive/competition-factory/commit/c9e43ff6dd9609b3526a99f0b853ac6d51f6a128))
+
+## [6.13.0](https://github.com/CourtHive/competition-factory/compare/v6.12.0...v6.13.0) (2026-07-24)
+
+
+### Features
+
+* **schedule:** getScenarioScheduleView grid-ready overlay — phase 1.x ([2a0059f](https://github.com/CourtHive/competition-factory/commit/2a0059f3ea60256f728259c80ff781f08fdc973b))
+
+## [6.12.0](https://github.com/CourtHive/competition-factory/compare/v6.11.0...v6.12.0) (2026-07-24)
+
+
+### Features
+
+* **query:** add cast() read-model projection + canonical Venue.facilityId ([a0204e7](https://github.com/CourtHive/competition-factory/commit/a0204e78eb8468934b842a949d7854ab6dec7047))
+* **query:** embargo-aware publish cascade + tie_value in cast() ([c8bfb86](https://github.com/CourtHive/competition-factory/commit/c8bfb86f8e08464ad8955e651a1cf594c2c5a019))
+* **query:** export readModel builder toolkit as the single projection source ([5a01ebe](https://github.com/CourtHive/competition-factory/commit/5a01ebec6e51929dadec2691b4a9a800882d7713))
+* **schedule:** add schedule scenarios (contingency plans) — phase 0 ([8b5ba5d](https://github.com/CourtHive/competition-factory/commit/8b5ba5d4314793058727119dfb2c88dbb7718da5))
+* **schedule:** scenario projection + drift reconciliation — phase 1 ([7d28516](https://github.com/CourtHive/competition-factory/commit/7d285169fe40af2d279a54fea67bf9e5ea4b126e))
+
+
+### Bug Fixes
+
+* **deps:** patch fast-uri to 3.1.4 (host confusion advisory) ([c4633ef](https://github.com/CourtHive/competition-factory/commit/c4633ef5ce94ffdeb6951be9160f6c5f36d6a451))
+* **deps:** restore @types/jest for verify:server jest specs ([cbf7ed3](https://github.com/CourtHive/competition-factory/commit/cbf7ed36ac469a3eea265f7ab8a0b939368473b1))
+* **query:** cast() must not double-project team rubbers ([a43cf6d](https://github.com/CourtHive/competition-factory/commit/a43cf6d687a5ba2241005de449ac7fd199bad31e))
+
+
+### Documentation
+
+* **sanctioning:** document openProposalRegistration + tournamentId reuse ([7da2d16](https://github.com/CourtHive/competition-factory/commit/7da2d16750abab761f962b49672cf6eff5b98f43))
+
+## [6.11.0](https://github.com/CourtHive/competition-factory/compare/v6.10.0...v6.11.0) (2026-07-21)
+
+
+### Features
+
+* **sanctioning:** thread stable eventId from proposal through activation ([c9cbbea](https://github.com/CourtHive/competition-factory/commit/c9cbbeaaea082dfca7bb8ae032cf417977849144))
+
+## [6.10.0](https://github.com/CourtHive/competition-factory/compare/v6.9.0...v6.10.0) (2026-07-20)
+
+
+### Features
+
+* **query:** expose parentOrganisation on getTournamentInfo ([52b43f7](https://github.com/CourtHive/competition-factory/commit/52b43f795676b5440c7eb8bc7ce805c9dd1aa4ef))
+* **scheduling:** add matchUp scorekeeper/timekeeper assignment + participant roles ([6cb8088](https://github.com/CourtHive/competition-factory/commit/6cb8088a6fa76865fd0fd0f7c029471c0006de4b))
+
+## [6.9.0](https://github.com/CourtHive/competition-factory/compare/v6.8.1...v6.9.0) (2026-07-19)
+
+
+### Features
+
+* **declarations:** availability payload types + translateAvailabilityToPersonRequests ([2e2dd3b](https://github.com/CourtHive/competition-factory/commit/2e2dd3b122bc4238ab83f126420b979a4fe4daeb))
+* **sanctioning:** openProposalRegistration mutation ([261eab3](https://github.com/CourtHive/competition-factory/commit/261eab3f2df479e92018545c5ed5d41b02bdc797))
+* **sanctioning:** pre-assignable tournamentId on the proposal ([d7e2307](https://github.com/CourtHive/competition-factory/commit/d7e23075810aee1c2f4d71831fc759ed149e9045))
+
+## [6.8.1](https://github.com/CourtHive/competition-factory/compare/v6.8.0...v6.8.1) (2026-07-15)
+
+
+### Documentation
+
+* **engines:** document the Declaration Engine toolkit + injection principle ([882f54f](https://github.com/CourtHive/competition-factory/commit/882f54f0c4d6de646cad3608c9d2d2dc98aff9b7))
+
+## [6.8.0](https://github.com/CourtHive/competition-factory/compare/v6.7.0...v6.8.0) (2026-07-15)
+
+
+### Features
+
+* **scheduling:** record cross-midnight match end via sparse END_DATE ([4636db9](https://github.com/CourtHive/competition-factory/commit/4636db9013a9019cef2ecc330cdecb265c8f2957))
+* **tournaments:** add getTournamentTimeZone resolver ([166ac32](https://github.com/CourtHive/competition-factory/commit/166ac3222431422d42d63dd39bdad37fc2f681a2))
+
+
+### Bug Fixes
+
+* **scheduling:** compare scheduled dates by calendar day in matchUpScheduleSort ([adb25ab](https://github.com/CourtHive/competition-factory/commit/adb25ab90d6412ec497bffb3ddbf9ceaab76ae40))
+
+
+### Documentation
+
+* **config:** revert explicit trailingSlash — it breaks relative doc links ([d01af59](https://github.com/CourtHive/competition-factory/commit/d01af590e797ca32eaba30c20fcda6d451274ef0))
+* **config:** set explicit trailingSlash true for github pages ([8b4bcae](https://github.com/CourtHive/competition-factory/commit/8b4bcae5a1f7b507aac989c3e6badfac8e92d62f))
+
+## [6.7.0](https://github.com/CourtHive/competition-factory/compare/v6.6.0...v6.7.0) (2026-07-13)
+
+
+### Features
+
+* **mutations:** refuse to replace a draw with scores present unless forced ([daf2cab](https://github.com/CourtHive/competition-factory/commit/daf2cabc182b42b206aa6ced836138c6cb241936))
+* **mutations:** snapshot the outgoing draw when a replace overwrites a populated draw ([6dff34c](https://github.com/CourtHive/competition-factory/commit/6dff34cff6858b38abee07bb344972a2748b9b47))
+
+## [6.6.0](https://github.com/CourtHive/competition-factory/compare/v6.5.0...v6.6.0) (2026-07-13)
+
+
+### Features
+
+* **query:** add getTournamentCalendarEntry deriver ([#4491](https://github.com/CourtHive/competition-factory/issues/4491)) ([df26eac](https://github.com/CourtHive/competition-factory/commit/df26eac7c53b15145103c9b5abd2f36af57c0e6b))
+* **scheduling:** shared-facility schedule projection + merge transforms ([#4487](https://github.com/CourtHive/competition-factory/issues/4487)) ([4f170c0](https://github.com/CourtHive/competition-factory/commit/4f170c013a530e534e0da323b129cbc75b1bc3a6))
+
+
+### Bug Fixes
+
+* **deps:** pin typescript to 6.0.3 to block native ts7 ([37e1d2f](https://github.com/CourtHive/competition-factory/commit/37e1d2f76c6ff9897e9935c6a94e21633f1539ac))
+
+## [6.5.0](https://github.com/CourtHive/competition-factory/compare/v6.4.0...v6.5.0) (2026-07-07)
+
+
+### Features
+
+* add getTournamentActionableMatchUps completeness query ([a273cf1](https://github.com/CourtHive/competition-factory/commit/a273cf1672102be91370d35578f18d56d19963f7))
+
+## [6.4.0](https://github.com/CourtHive/competition-factory/compare/v6.3.0...v6.4.0) (2026-07-07)
+
+
+### Features
+
+* **reports:** venue-first columns and recency sort for call timing variance ([217626a](https://github.com/CourtHive/competition-factory/commit/217626affd066f99eee4aa02c70acc6dc775b5b0))
+
+
+### Bug Fixes
+
+* guard matchUpStatus transitions against silent result loss ([b3cf55f](https://github.com/CourtHive/competition-factory/commit/b3cf55f4390bc3150e3f0874ff9456262ec36eee))
+
+## [6.3.0](https://github.com/CourtHive/competition-factory/compare/v6.2.0...v6.3.0) (2026-07-06)
+
+
+### Features
+
+* **scheduling:** add proColumnResolve court-preserving conflict resolver ([e8d78f0](https://github.com/CourtHive/competition-factory/commit/e8d78f0bb57315105d4de4720f7987a85ac3e58a))
+
+
+### Bug Fixes
+
+* canonicalize draw/draft status to COMPLETED and harden status unions ([880ed5a](https://github.com/CourtHive/competition-factory/commit/880ed5a32dc32d4668b412923355364c34f51d04))
+* correct schedule-time-resume typo dropping resumed matchUp duration ([9e29c6b](https://github.com/CourtHive/competition-factory/commit/9e29c6b2523f407f9acb635f19e27e9a356b7ebf))
+
+## [6.2.0](https://github.com/CourtHive/competition-factory/compare/v6.1.2...v6.2.0) (2026-07-05)
+
+
+### Features
+
+* **reports:** carry matchUp/draw/structure ids in call-timing variance rows ([535f980](https://github.com/CourtHive/competition-factory/commit/535f980a5c3e7024fbb95af1526d23089b90c31c))
+
+## [6.1.2](https://github.com/CourtHive/competition-factory/compare/v6.1.1...v6.1.2) (2026-07-05)
+
+
+### Bug Fixes
+
+* **scheduling:** clear grid position when a matchup is re-dated ([b1eab0a](https://github.com/CourtHive/competition-factory/commit/b1eab0a1c1fbd8645c16279e86c3a2bf52d616db))
+
+## [6.1.1](https://github.com/CourtHive/competition-factory/compare/v6.1.0...v6.1.1) (2026-07-04)
+
+
+### Bug Fixes
+
+* **reports:** compute call timing variance at whole-minute resolution ([74a4e16](https://github.com/CourtHive/competition-factory/commit/74a4e16ceb3289bd4fc90b2febc46bce2b0be6e4))
+
+## [6.1.0](https://github.com/CourtHive/competition-factory/compare/v6.0.2...v6.1.0) (2026-07-04)
+
+
+### Features
+
+* **reports:** add call timing variance report ([aeddd77](https://github.com/CourtHive/competition-factory/commit/aeddd770804736c7a88bb826b846476ea934b1bc))
+
+## [6.0.2](https://github.com/CourtHive/competition-factory/compare/v6.0.1...v6.0.2) (2026-07-04)
+
+
+### Bug Fixes
+
+* **extensions:** emit sync-update methods for promoted timing/limits in native writeMode ([14c0a44](https://github.com/CourtHive/competition-factory/commit/14c0a44bf48bebea61dbb8a4adad9d869965ebc5))
+* **query:** make schedule readers first-class-aware (CODES Phase 2) ([f3b86d8](https://github.com/CourtHive/competition-factory/commit/f3b86d8f3bf8bf3ef91b44fd66efd04c9c791571))
+* **schedule:** clear first-class schedule on court removal + draw reset ([76b46f9](https://github.com/CourtHive/competition-factory/commit/76b46f904c83633209effb9501d9d37a140da949))
+* **schedule:** clear first-class schedule on force-unschedule ([2e4ab75](https://github.com/CourtHive/competition-factory/commit/2e4ab75eb12d3de5ed839078d6da136b5d1609ed))
+* **schedule:** embargoed rounds keep their date in native writeMode ([90d1665](https://github.com/CourtHive/competition-factory/commit/90d1665a84b4ce614439ad5ba9458e4c4676d0d8))
+* **schedule:** remove team court assignment first-class-aware ([42b3b92](https://github.com/CourtHive/competition-factory/commit/42b3b927228ebd6d50c708e2d27e91d0121b2c33))
+* **schema:** allow codes-promoted first-class attributes in tournament schema ([e08d0fc](https://github.com/CourtHive/competition-factory/commit/e08d0fcda1fe66959606174641e61e5de925f911))
+* **scoring:** read disableAutoCalc first-class in native writeMode ([a4d60c1](https://github.com/CourtHive/competition-factory/commit/a4d60c106465ab201a1e8d87115e7e1b80e55fe6))
+
+
+### Performance
+
+* **query:** use Set membership for alternates/adHoc participant lookups ([d96bc0f](https://github.com/CourtHive/competition-factory/commit/d96bc0f4e4f49f4c5c5b4bd1879b50189bc7b30c))
+* **query:** use Set membership for matchUp-filter ID lookups ([16d4ab0](https://github.com/CourtHive/competition-factory/commit/16d4ab0875b26d2ada7e0972221856708b1c3001))
+* **query:** use Set membership for participant-filter ID lookups ([8516809](https://github.com/CourtHive/competition-factory/commit/85168092b81a99485a8a75f5c9596dc272356deb))
+
+
+### Documentation
+
+* add 6.0.0 release notes and migration guide ([3cadbed](https://github.com/CourtHive/competition-factory/commit/3cadbed9bfdb4815e3659e4c88279f728d2e272a))
+
+## [6.0.1](https://github.com/CourtHive/competition-factory/compare/v6.0.0...v6.0.1) (2026-07-02)
+
+
+### Documentation
+
+* curate 6.0.0 changelog release notes ([52f2141](https://github.com/CourtHive/competition-factory/commit/52f2141b5c7b351925cd2c99f721b76bb11958ca))
+* **query-governor:** document getMatchUpFormatVariance ([934d534](https://github.com/CourtHive/competition-factory/commit/934d53422e00b9c9c859f997831d9d00e82cb938))
+
+## [6.0.0](https://github.com/CourtHive/competition-factory/compare/v5.9.0...v6.0.0) (2026-07-02)
+
+This is a **major** release. The version bump is driven by two breaking changes to rating
+computation and participant birth-date storage (below). The headline _feature_ is a new
+**data-integrity query hierarchy** that scans a tournament for contradictory state at the structure,
+draw, event, and tournament levels.
+
+### ⚠ BREAKING CHANGES
+
+- **scales:** `generateDynamicRatings({ considerGames: true })` now normalises by the true maximum countable games (`bestOf * setTo`) rather than the previous ~1. Ratings computed with `considerGames: true` will change — the new values are correct, the old ones were not. Only callers that opted into `considerGames: true` are affected; re-baseline against the new values (no code change required). ([49b518e](https://github.com/CourtHive/competition-factory/commit/49b518eb5797b7c520abd1da1a9c66b099ff2ca8))
+- **participants:** `modifyParticipant` now reads and writes the canonical `person.birthDate` (camelCase) instead of the previous non-canonical `person.birthdate`. Callers reading or writing the lowercase field must switch to `person.birthDate`. ([36fe9c5](https://github.com/CourtHive/competition-factory/commit/36fe9c5052b0776cbb758335a3a0cc6409753c53))
+
+### Features
+
+- **query — data-integrity query hierarchy (draw/event/tournament):** a read-only integrity surface that answers _"is this tournament's decided state self-consistent?"_ without loading a full engine — useful at publish checkpoints, in CI, and when validating draw records reconstructed by hand (third-party ingest). Every finding carries `severity`, `scope`, provenance ids, and a stable dedup `fingerprint`.
+  - `getStructureInconsistencies` / `getStructureCompleteness` (leaf) — decided-state invariants and outstanding-work reporting; adds `DRAW_POSITION_UNASSIGNED` (stored-state phantom position) and `WINNER_NOT_ADVANCED` (winner absent from its next matchUp within the structure), plus a CI corpus sweep across every draw type × sizes 8/16/32/64.
+  - `getDrawInconsistencies` / `getDrawCompleteness` — cross-structure **link** integrity (`DANGLING_LINK`, `LINK_MISSING_SOURCE_ROUND`) and **progression** (`DROPPED_PROGRESSION`): a loser or winner _eligible_ to feed a linked target structure but absent from it. Eligibility reuses the engine's own feed logic (`getDrawPositionWinCount`, shared with the mutation path), so first-match-loser-consolation and double-elimination feed-back are handled correctly. ([71f457c](https://github.com/CourtHive/competition-factory/commit/71f457c679dea4740f71063695869b7479871157), [d494b5a](https://github.com/CourtHive/competition-factory/commit/d494b5a067a2eaf42d3f59ff3beaca15b78b63f2))
+  - `getEventInconsistencies` / `getEventCompleteness` — `eventType` ↔ `participantType` coherence.
+  - `getTournamentInconsistencies` / `getTournamentCompleteness` — cross-event checks (a person represented by two distinct **individual** participants; a person legitimately appearing across multiple pair/team groupings is not flagged). ([33e8b01](https://github.com/CourtHive/competition-factory/commit/33e8b013bac4855e908c6c520678dbe3e77dc573), [bed00cd](https://github.com/CourtHive/competition-factory/commit/bed00cd566ad66db9783de7e3463b6fab35f984c), [4e53697](https://github.com/CourtHive/competition-factory/commit/4e536971bf3b4e90f777cfaef03ec3858e46f38a))
+- **query:** `getMatchUpFormatVariance` — report matchUpFormat variance across a draw's structures; round-robin group structures are now correctly exempt from the ascending-drawPositions-sort inconsistency check (Berger round-pairing order is legitimate). ([0132a04](https://github.com/CourtHive/competition-factory/commit/0132a04ed0ab7b5c64a03b4f061870ddfb5a0244))
+- `abandonTournamentMatchUps` — bulk-abandon still-playable matchUps. ([f092322](https://github.com/CourtHive/competition-factory/commit/f092322373e572ac9ad11653a49661334dac753b))
+
+### Bug Fixes
+
+- **exit propagation:** a cluster of fixes to how WALKOVER/DEFAULTED statuses cascade through consolation byes and unwind on removal — re-derive winningSide/exit codes on advancement, clear stale codes when a pending propagated exit is removed, block reset of a source whose exit resolved downstream, gate `propagateExitStatus` by scoring policy. ([97fc07b](https://github.com/CourtHive/competition-factory/commit/97fc07b12619349a25e62c118d2e0c7349e06707), [bca7d11](https://github.com/CourtHive/competition-factory/commit/bca7d113e6c83cf9750f3dc92688dc4ad2190162), [cf091d7](https://github.com/CourtHive/competition-factory/commit/cf091d73e3015909801951a060e222155dbb0d9e), [44ac5b2](https://github.com/CourtHive/competition-factory/commit/44ac5b2791a48a3806dc0b016f7d4bb5a49b4171), [b49f4aa](https://github.com/CourtHive/competition-factory/commit/b49f4aa3841fa1f60d23fce85ec97f072ddcac94), [241cac9](https://github.com/CourtHive/competition-factory/commit/241cac99759879bfa7e66da3df593905e819fc88))
+- **matchUps / events:** enforce mixed-doubles second-participant gender; age-check individual members of PAIR/TEAM entries; block un-assigning participants from completed ad-hoc matchUps. ([68d7834](https://github.com/CourtHive/competition-factory/commit/68d7834391bb916d615ef78571646b54370db5fd), [ce24d5d](https://github.com/CourtHive/competition-factory/commit/ce24d5d3796b268b4e2cccf88f659938e6fdd8aa), [88f2ba2](https://github.com/CourtHive/competition-factory/commit/88f2ba2017f9518bf20c52e3c557f43df9e7c19b))
+- **tieFormat:** preserve existing `collectionGroups` when adding a group. ([bb6cfde](https://github.com/CourtHive/competition-factory/commit/bb6cfde857bd61893d56533ca2a84b13b4b8d5b7))
+- **schedule:** dedupe venue-data lookups by the correct `venueId`. ([618efd9](https://github.com/CourtHive/competition-factory/commit/618efd9e11cf3fcfbe0efb15fc58650b94c14b19))
+- Various `matchUps` / `participants` reference and canonicalisation fixes. ([61de73b](https://github.com/CourtHive/competition-factory/commit/61de73b50cf15e531bc4448dc79c971f2e08ed41), [b37564d](https://github.com/CourtHive/competition-factory/commit/b37564d2871a13462c32f862c868cecee1900900), [7e22bf3](https://github.com/CourtHive/competition-factory/commit/7e22bf3ee3733ee2de21ea8097dd0a71bd23a81b), [61012e3](https://github.com/CourtHive/competition-factory/commit/61012e371d5847fa22ce3f0ef8a4590b52425937))
+
+### Upgrading
+
+Bump `tods-competition-factory` to `^6.0.0` in every consumer (TMX, competition-factory-server, courthive-public, courthive-components, rankings). Re-baseline any `considerGames: true` rating output and migrate `person.birthdate` → `person.birthDate`. The integrity query hierarchy is purely additive — no action required to adopt it.
+
+## [5.9.0](https://github.com/CourtHive/competition-factory/compare/v5.8.0...v5.9.0) (2026-06-29)
+
+### Features
+
+- **matchUps:** setDelegatedOutcome accepts canonical outcome ([2d068db](https://github.com/CourtHive/competition-factory/commit/2d068db5858991e15370cc0c146388f8045ff991))
+
+## [5.8.0](https://github.com/CourtHive/competition-factory/compare/v5.7.1...v5.8.0) (2026-06-28)
+
+### Features
+
+- **setTournamentDates:** block changes that orphan scheduled matchUps; add force override ([03f8f84](https://github.com/CourtHive/competition-factory/commit/03f8f84874e7c984f8d6457613d6a5eb58bb2378))
+
+### Documentation
+
+- pnpm install allowed (npm still blocked) ([7440e94](https://github.com/CourtHive/competition-factory/commit/7440e944cad1bbec852f92f5a4e1ccc918662732))
+
+## [5.7.1](https://github.com/CourtHive/competition-factory/compare/v5.7.0...v5.7.1) (2026-06-23)
+
+### Bug Fixes
+
+- **deps:** update courthive-components to 3.4.4 in documentation ([7efaaf3](https://github.com/CourtHive/competition-factory/commit/7efaaf336241f36cab1494de5e9616223e2b00c5))
+- FMLC walkover propagated against a consolation BYE advances the WO player ([#4455](https://github.com/CourtHive/competition-factory/issues/4455)) ([7ca7973](https://github.com/CourtHive/competition-factory/commit/7ca7973679f327960d8a3f3631754ed9547fd8fc))
+- guard getExitWinningSide against bye positions and drop dead double-exit code ([#4456](https://github.com/CourtHive/competition-factory/issues/4456)) ([92eae1e](https://github.com/CourtHive/competition-factory/commit/92eae1e377fd3ad0dd3fc336d76381722b2ea277))
+
+## [5.7.0](https://github.com/CourtHive/competition-factory/compare/v5.6.0...v5.7.0) (2026-06-23)
+
+### Features
+
+- **schedule:** auto-capture matchUp.schedule.scoredTime on first score ([#4451](https://github.com/CourtHive/competition-factory/issues/4451)) ([b330ced](https://github.com/CourtHive/competition-factory/commit/b330ced061cc73a6b939aa328fc66526be9a7eee))
+
+## [5.6.0](https://github.com/CourtHive/competition-factory/compare/v5.5.0...v5.6.0) (2026-06-13)
+
+### Features
+
+- **anonymize:** attach mock parentOrganisation when provided ([d6c4f2e](https://github.com/CourtHive/competition-factory/commit/d6c4f2e0a5dd12850c11cb6ba25cac1cc75bd614))
+
+### Bug Fixes
+
+- **participants:** default entries to [] so getParticipants survives sparse records ([3f0c31f](https://github.com/CourtHive/competition-factory/commit/3f0c31f0a63b85b97df12019d3fc2d2e242d67ac))
+
+## [5.5.0](https://github.com/CourtHive/competition-factory/compare/v5.4.0...v5.5.0) (2026-06-12)
+
+### Features
+
+- **structures:** add updateParticipantResults mutation ([9ae4f8c](https://github.com/CourtHive/competition-factory/commit/9ae4f8ce49e052c526de7fbcbef829a67edfd451))
+
+### Bug Fixes
+
+- **docs:** bump tods-competition-factory caret to 5.4.0 ([d2d4e9f](https://github.com/CourtHive/competition-factory/commit/d2d4e9f1a6e40ef4c0a2d8a128a1caef018766cf))
+- **test:** cast partial mappedMatchUps literals in coverageBranchTargets ([e0fcbfd](https://github.com/CourtHive/competition-factory/commit/e0fcbfd7e30dd1e1dfe516c8a908744376f28128))
+- **test:** move `any` annotation onto mappedMatchUps binding instead of literal ([2fbb781](https://github.com/CourtHive/competition-factory/commit/2fbb7814696303798cc1437737460cbd2cf67b3a))
+
+### Documentation
+
+- **format-wizard:** unlink stub references until distribution + example publish ([6652b2d](https://github.com/CourtHive/competition-factory/commit/6652b2de45a9ba574bb10ff1a2316da2c8df51fd))
+- **sidebar:** regroup State Engines, Concepts, Governors; consolidate syntax ([8ed8d00](https://github.com/CourtHive/competition-factory/commit/8ed8d0089496ac1c2cf1ac895eca9fc8ed0332ca))
+
+## [5.4.0](https://github.com/CourtHive/competition-factory/compare/v5.3.0...v5.4.0) (2026-06-08)
+
+### Features
+
+- **query:** propagate tournamentTier through getTournamentInfo ([baa7d42](https://github.com/CourtHive/competition-factory/commit/baa7d4272275de281bd66d3ed55878765b38804d))
+
+### Bug Fixes
+
+- **docs:** bump tods-competition-factory caret to 5.3.0 ([25d54de](https://github.com/CourtHive/competition-factory/commit/25d54de6ccab162527a2a19ce7ad9e1357fb23d0))
+
+## [5.3.0](https://github.com/CourtHive/competition-factory/compare/v5.2.5...v5.3.0) (2026-06-08)
+
+### Features
+
+- **mutate:** modifyEvent accepts competitionFormat in eventUpdates ([41dffee](https://github.com/CourtHive/competition-factory/commit/41dffee7ec63d5c3cb63dd12a2b49f127ad6048d))
+- **query:** hydrate competitionFormat onto eventInfo in getEventData ([cd189c8](https://github.com/CourtHive/competition-factory/commit/cd189c81102c3eeab4dfd55ccb3d7b4df9d0e940))
+- **sync:** port nonRandom middleware from mocksEngine to syncEngine ([#4428](https://github.com/CourtHive/competition-factory/issues/4428)) ([1f1c65b](https://github.com/CourtHive/competition-factory/commit/1f1c65b65210546427aea6cdf92996e2ff1cf485))
+
+## [5.2.5](https://github.com/CourtHive/competition-factory/compare/v5.2.4...v5.2.5) (2026-06-07)
+
+### Bug Fixes
+
+- **query:** preserve hydrated schedule under NATIVE mode (matchUp.schedule clobber) ([#4423](https://github.com/CourtHive/competition-factory/issues/4423)) ([8847e2e](https://github.com/CourtHive/competition-factory/commit/8847e2eaa2da5b49234cb3d1d8db967a0723042e))
+
+## [5.2.4](https://github.com/CourtHive/competition-factory/compare/v5.2.3...v5.2.4) (2026-06-04)
+
+### Bug Fixes
+
+- **mocksEngine:** generate balanced M+F PAIRs for MIXED DOUBLES ([576d9b1](https://github.com/CourtHive/competition-factory/commit/576d9b12c5bb1b3393ee2ba2c304e5fe75af54ad))
+- **mocksEngine:** treat gender:ANY as no-op constraint when synthesizing draws ([05fe8a5](https://github.com/CourtHive/competition-factory/commit/05fe8a5bb96b4893f4f11953785c4ea8de90806b))
+- **mocksEngine:** treat gender:MIXED on SINGLES as no individual-level constraint ([7feabdc](https://github.com/CourtHive/competition-factory/commit/7feabdc0885a7eeedac8165935e26d1a54afc0ef))
+- **scales:** make doublesAttribution a single-owner choice — pair OR individuals, never both ([d92d1a0](https://github.com/CourtHive/competition-factory/commit/d92d1a0de2dea3e790b923bb8a4127a0973a39ef))
+
+### Documentation
+
+- **scale-engine:** align doubles attribution page with single-owner contract ([d60f224](https://github.com/CourtHive/competition-factory/commit/d60f22425060326377adb9a644784c1bd7a7fe99))
+
+## [5.2.3](https://github.com/CourtHive/competition-factory/compare/v5.2.2...v5.2.3) (2026-06-03)
+
+### Bug Fixes
+
+- **generate-draw-definition:** support adding qualifying to existing main + cross-stage drawEntries ([7fab28d](https://github.com/CourtHive/competition-factory/commit/7fab28d09b534cff0f66b5d35c1c8e1b1c1665b6))
+
+## [5.2.2](https://github.com/CourtHive/competition-factory/compare/v5.2.1...v5.2.2) (2026-06-02)
+
+### Documentation
+
+- **readme:** availability-engine rename, pnpm, current test count ([16a9f86](https://github.com/CourtHive/competition-factory/commit/16a9f86036d6fe67a247fbedd9112026e0510794))
+- **verify:** reflect 11-check chain + opt-in verify:ecosystem ([0f7a8b2](https://github.com/CourtHive/competition-factory/commit/0f7a8b2f1a047bad33ce6f7593723fa58c4522c0))
+
+## [5.2.1](https://github.com/CourtHive/competition-factory/compare/v5.2.0...v5.2.1) (2026-06-02)
+
+### Bug Fixes
+
+- **release:** cut 5.2.1 to re-trigger publish ([706a628](https://github.com/CourtHive/competition-factory/commit/706a628ad60f7cf958a0d1c8ce36e7d93d72eebb))
+
+## [5.2.0](https://github.com/CourtHive/competition-factory/compare/v5.1.0...v5.2.0) (2026-06-02)
+
+### Features
+
+- **lucky-draw:** customLuckyDraw generator with explicit roundProfile ([cc4bd23](https://github.com/CourtHive/competition-factory/commit/cc4bd23dad6baf5ac9085b8d53fe59f585f698a9))
+
+## [5.1.0](https://github.com/CourtHive/competition-factory/compare/v5.0.0...v5.1.0) (2026-06-01)
+
+### Features
+
+- **engines:** export competitionEngineAsync + tournamentEngineAsync from public index ([08ae91b](https://github.com/CourtHive/competition-factory/commit/08ae91b53baea28cffe477474bfa1687065b2c87))
+- **practice:** add practice court registration governor ([08abdf9](https://github.com/CourtHive/competition-factory/commit/08abdf9516047a484c25daad2f188c62b6b8e44b))
+- **practice:** register setPracticeDefaultCapacity in engine method lists ([d00f2ec](https://github.com/CourtHive/competition-factory/commit/d00f2ec2f51707bd5a2e7a06065437a324d4d334))
+- **practice:** setPracticeDefaultCapacity tournament-wide setting ([480499b](https://github.com/CourtHive/competition-factory/commit/480499b98405f5a576166a6b8bf30d49d7cceec9))
+
+### Bug Fixes
+
+- **modifyCourtAvailability:** ignore completed matchUps in conflict check ([5ca4cad](https://github.com/CourtHive/competition-factory/commit/5ca4cad0fed153561e1b2ea24e57268a27eed7f0))
+
+## [5.0.0](https://github.com/CourtHive/competition-factory/compare/v4.2.0...v5.0.0) (2026-05-31)
+
+### ⚠ BREAKING CHANGES
+
+- **types:** tournamentEngine / competitionEngine typed by default
+- rename TemporalEngine to AvailabilityEngine for 5.0.0
+- drawDeletions opt-in + server-authoritative gating (CODES Phase 6)
+- in NATIVE mode (default) consumers reading raw `tournamentRecord.extensions[]` for `SCHEDULING_PROFILE`, `SCHEDULE_LIMITS`, or tournament-level `SCHEDULE_TIMING` will find nothing. Read `tournamentRecord.scheduling.profile / .dailyLimits / .timing` directly, or use `firstClassGroupLeafOrExtension` for mode-agnostic reads, or set `engine.schemaWriteMode('legacy'|'dual')`.
+- in NATIVE mode (default) consumers reading raw `.extensions[]` for any of the 8 promoted names will find nothing. Migrate to reading the first-class attribute, or set `engine.schemaWriteMode('legacy'|'dual')` at startup.
+- in NATIVE mode (default) consumers reading raw `event.extensions[]` for `flightProfile` or `drawDefinition.extensions[]` for `lineUps` will find nothing. Read `event.flightProfile` and `drawDefinition.lineUps` directly, or use `firstClassOrExtension` for mode-agnostic reads, or set `engine.schemaWriteMode('legacy'|'dual')`.
+- in NATIVE mode consumers reading raw matchUp.timeItems[] for SCHEDULED_DATE / SCHEDULED_TIME / ASSIGN_COURT / ASSIGN_VENUE / COURT_ORDER / COURT_ANNOTATION / ALLOCATE_COURTS / TIME_MODIFIERS / HOME_PARTICIPANT_ID / ASSIGN_OFFICIAL must migrate to reading `matchUp.schedule.<attribute>` (already the canonical hydrated shape) or switch the engine to LEGACY/DUAL mode.
+- in NATIVE mode (default) consumers reading the round-robin tally must access `positionAssignment.tally.*` or use `firstClassOrExtension` — the legacy `findExtension({element, name: 'tally'})` lookup returns `undefined` because no extension is written. Same for `subOrder`. Consumers needing the old behavior must set `engine.schemaWriteMode('legacy')` or `'dual'`.
+- engine default write behavior switches to NATIVE for v5.0.0. Consumers that rely on the legacy `_name` flattened attributes on read are unaffected (hydration shim continues to work); consumers that read raw `element.extensions[]` for tracked internal extensions must call `engine.schemaWriteMode('legacy')` or `'dual'`, or migrate to reading the first-class attribute.
+
+### Features
+
+- CODES Phase 7 — migrateTournamentRecord upgrade utility ([d8801bd](https://github.com/CourtHive/competition-factory/commit/d8801bd7f1eb2f221778ac975469ee928a27e90b))
+- drawDeletions opt-in + server-authoritative gating (CODES Phase 6) ([a671b7b](https://github.com/CourtHive/competition-factory/commit/a671b7b3d2a146ca86daf5a01ace3bc6d9c14787))
+- engine.q unwrap facade + engine.inspect — developer-JOY prototypes ([7bd9c59](https://github.com/CourtHive/competition-factory/commit/7bd9c5976f76543cbaae48cf616362f107853534))
+- engine.q unwrap facade + engine.inspect (developer-JOY prototypes) ([2b555df](https://github.com/CourtHive/competition-factory/commit/2b555dfa370e58050327a4bc6585c02bf52bc719))
+- **errors:** factoryError class hierarchy with cause + suggestions ([#7](https://github.com/CourtHive/competition-factory/issues/7)) ([6025279](https://github.com/CourtHive/competition-factory/commit/6025279caa4de502c7279dce156007124441d166))
+- **forge,errors:** unwrapOr + seeded default suggestions ([16ce0e4](https://github.com/CourtHive/competition-factory/commit/16ce0e476e38b1590fb3544b761749e6658eeaca))
+- **forge:** dryRun + explain + RFC 6902 jsonPatch generator ([#3](https://github.com/CourtHive/competition-factory/issues/3), [#12](https://github.com/CourtHive/competition-factory/issues/12)) ([56d02a5](https://github.com/CourtHive/competition-factory/commit/56d02a5297d30188fd5ad7009aa352ceca67a7a9))
+- **forge:** expose enforceGender/enforceCategory on builder entries ([e31f887](https://github.com/CourtHive/competition-factory/commit/e31f8873e960f085aae6226847ab2e5fc7332f0d))
+- **forge:** fluent builders engine.build.event/participant ([#6](https://github.com/CourtHive/competition-factory/issues/6)) ([077093a](https://github.com/CourtHive/competition-factory/commit/077093ad08f865b1948bfd5c1855385a2308bab9))
+- **forge:** typed event bus engine.on/once/off/waitFor ([#5](https://github.com/CourtHive/competition-factory/issues/5)) ([fed19b7](https://github.com/CourtHive/competition-factory/commit/fed19b71e88b47aba30b7ea10487b0fb649adcb6))
+- **forge:** unwrap(result) — throwing companion to engine.q.\* ([#2](https://github.com/CourtHive/competition-factory/issues/2) throw) ([c80d0d3](https://github.com/CourtHive/competition-factory/commit/c80d0d328e50d51f54165a0c9da533d2beb941b1))
+- getTally engine query for mode-agnostic positionAssignment.tally read ([5c68df0](https://github.com/CourtHive/competition-factory/commit/5c68df07bef29e121cb306cc828d0f8cf6623025))
+- getTally engine query for mode-agnostic positionAssignment.tally read ([6e17689](https://github.com/CourtHive/competition-factory/commit/6e17689cb93cc1849ef63796939ecbdabfc64855))
+- introduce schemaWriteMode flag (CODES Phase 0) ([bc82bf1](https://github.com/CourtHive/competition-factory/commit/bc82bf1198c9524a8ad4c1258047ae8640551502))
+- introduce tournamentRecord.scheduling group leaf (CODES Phase 5) ([ed118c8](https://github.com/CourtHive/competition-factory/commit/ed118c8dde6892cb0e0012f2639d8ab77ed2c219))
+- linkedTournamentIds mode-aware writers + readers (CODES Phase 7 follow-up) ([e6daf32](https://github.com/CourtHive/competition-factory/commit/e6daf32aa9480548e620c7efbd809be943439031))
+- linkedTournamentIds mode-aware writers + readers (CODES Phase 7 follow-up) ([ff93866](https://github.com/CourtHive/competition-factory/commit/ff93866858b2c74c8e902feeb9976ea5579880b0))
+- matchUp.schedule.calledAt + setMatchUpCalledAt mutation ([809574f](https://github.com/CourtHive/competition-factory/commit/809574f478e50bad4da93dc15d2b216dd3cbbf7e))
+- matchUp.schedule.calledAt + setMatchUpCalledAt mutation ([3ed498f](https://github.com/CourtHive/competition-factory/commit/3ed498f5ec496b6ee1db04c7de278b58e968001d))
+- **matchUpFormat:** add WB&lt;n&gt; win-by modifier for no-tiebreak sets ([9b4b9bc](https://github.com/CourtHive/competition-factory/commit/9b4b9bc619d0f990decb2a669120d275fe27a646))
+- migrateTournamentRecord one-shot CODES upgrade utility (Phase 7) ([6f8ea48](https://github.com/CourtHive/competition-factory/commit/6f8ea485738962775a14510f51561bf8d6578043))
+- **participantRoles:** add TRAINER and PHYSIO as distinct roles ([bb13b73](https://github.com/CourtHive/competition-factory/commit/bb13b7383973076a8a27ae5b5e2b2dd32bc2bcae))
+- **participants:** add addPersonOtherId mutation (HiveID PR-K) ([54846e2](https://github.com/CourtHive/competition-factory/commit/54846e2bbe50fdb0d9dcb96ddc50f49683dcfb90))
+- **policy:** policyComposer — fluent merger over PolicyDefinition shapes ([60e8d47](https://github.com/CourtHive/competition-factory/commit/60e8d471e647f9dc247dcf86898f547145f2649b))
+- promote flat scalar / object extensions (CODES Phase 4) ([a6aa8a6](https://github.com/CourtHive/competition-factory/commit/a6aa8a6a4e6d8af3526a5d0208f024f4a3a19680))
+- promote flightProfile + lineUps to first-class (CODES Phase 3) ([d62dc6c](https://github.com/CourtHive/competition-factory/commit/d62dc6cd9f0bb0d9bcb0c4d2b092cc7b4917494c))
+- promote matchUp.schedule.\* to first-class attributes (CODES Phase 2) ([8619066](https://github.com/CourtHive/competition-factory/commit/86190665b5b715fd00115f35545d6fc7d0b43cef))
+- promote tally + subOrder to first-class on PositionAssignment (CODES Phase 1) ([d6891f8](https://github.com/CourtHive/competition-factory/commit/d6891f8ddb586ec9405dfca90a24085fabca684e))
+- **types:** drawDefinition.flightNumber as first-class field ([b1766ca](https://github.com/CourtHive/competition-factory/commit/b1766cac58d1c982ce676ac5d75c10ec3fff9e95))
+- **types:** engineMethod wrapper relaxes engine call shape ([18fe209](https://github.com/CourtHive/competition-factory/commit/18fe20970f5aa069dfcb5b8ae48037584e5b04c2))
+- **types:** expand MethodSignatures to ~90% of engine surface ([eb2a049](https://github.com/CourtHive/competition-factory/commit/eb2a049ec1ac6664a08f8fe7a25f5d499f8cd474))
+- **types:** per-method typed signatures v1 (joy [#1](https://github.com/CourtHive/competition-factory/issues/1)) ([dbb1ea6](https://github.com/CourtHive/competition-factory/commit/dbb1ea6774a731687cbbc88c72784205c2c3f8d8))
+- **types:** tournamentEngine / competitionEngine typed by default ([6905911](https://github.com/CourtHive/competition-factory/commit/6905911204508b94214a3a9ad5c6a2fb612b70e0))
+- **verify:** close three gaps; replace agadoo with publint ([c3f5fe9](https://github.com/CourtHive/competition-factory/commit/c3f5fe9bfab91490980ad73be7601c018ec5a6c5))
+- **verify:** full pre-publish verification suite + CI gate ([76258f5](https://github.com/CourtHive/competition-factory/commit/76258f510d8ea7a13637951e7f15b76848625d0f))
+
+### Bug Fixes
+
+- **matchUpFormat:** honor setFormat.winBy in validator + smart complement ([b811d8e](https://github.com/CourtHive/competition-factory/commit/b811d8e9a0cc558e0f7f03481ded5a9767cdf428))
+- **matchUpFormat:** stringify WB regardless of explicit noTiebreak flag ([5a2b80e](https://github.com/CourtHive/competition-factory/commit/5a2b80e6d2bd8becbefe53cf12ba0867de72e053))
+- **schedule:** scheduledMatchUpDate reads first-class with timeItem fallback ([86357c0](https://github.com/CourtHive/competition-factory/commit/86357c0f4ffb07057c8106229172071ab384d77c))
+- **schedule:** scheduledMatchUpDate reads first-class with timeItem fallback ([0fb661b](https://github.com/CourtHive/competition-factory/commit/0fb661bc8ccdc73439119ca584efd3bf15b6f997))
+- **test:server:** add @Forge alias to tsconfig.base.json ([6caff47](https://github.com/CourtHive/competition-factory/commit/6caff473bb9ae4ea6036909ea6768433e9b0b0fe))
+- **types:** engineMethod must not distribute over `T | undefined` ([9630176](https://github.com/CourtHive/competition-factory/commit/9630176016ffa16cb7f3a1c8859099868da3d90f))
+- **types:** hydratedMatchUp parent-context fields as required + audit 13 sites ([c9cae63](https://github.com/CourtHive/competition-factory/commit/c9cae6322fa882965cb962a1c21d534b9d5e48fa))
+
+### Documentation
+
+- :memo: doc update ([477961f](https://github.com/CourtHive/competition-factory/commit/477961fe4e1435441e824deddf3fd87618cd6114))
+- :memo: doc update ([3ff43a7](https://github.com/CourtHive/competition-factory/commit/3ff43a73e2cd8005ba4671b2e6ed1f2a66d98af3))
+- 4.x to 5.0.0 consumer migration guide ([0195df5](https://github.com/CourtHive/competition-factory/commit/0195df5c162c15e3657388997dec1d6caea48010))
+- 4.x to 5.0.0 consumer migration guide ([4d5c581](https://github.com/CourtHive/competition-factory/commit/4d5c581bff91827bcbcbc5c2ed25b38bd8419dd1))
+- **5.0.0:** whats-new showcase + JOY feature pages ([c720843](https://github.com/CourtHive/competition-factory/commit/c7208436514ae73a3d367bd4c5ce312537fc585f))
+- **concepts:** add Provider Theming page ([4c5e4b8](https://github.com/CourtHive/competition-factory/commit/4c5e4b87d7d566dc03adb10f0dc66b763260b542))
+- **engines:** backfill pages for engine.q and engine.inspect ([766f0c7](https://github.com/CourtHive/competition-factory/commit/766f0c71fe3a54d711cac3f652521622fab8fecb))
+- expand linkedTournamentIds migration explanation ([30e462e](https://github.com/CourtHive/competition-factory/commit/30e462e69260f13be655e339d6725a09ce175081))
+- **migration:** add 2.x to 3.x and 3.x to 4.x migration pages ([cd2cd6e](https://github.com/CourtHive/competition-factory/commit/cd2cd6e32de59389c3d8a4cb05e1db0ec3db8c92))
+- **migration:** typed engine default + Untyped opt-out top-line in 5.0.0 ([b019425](https://github.com/CourtHive/competition-factory/commit/b019425124ac08dd3bdc3d28fd7b247561cc53e5))
+- remove Provider Theming page — belongs in CFS docs, not factory ([f020a99](https://github.com/CourtHive/competition-factory/commit/f020a99b4278e843a8b3bee570c94f065823171a))
+
+### Refactor
+
+- rename TemporalEngine to AvailabilityEngine for 5.0.0 ([0a36534](https://github.com/CourtHive/competition-factory/commit/0a365347eb43d0b02eea970a4ab406f1d35d1453))
+
+## [4.2.0](https://github.com/CourtHive/competition-factory/compare/v4.1.1...v4.2.0) (2026-05-24)
+
+### Features
+
+- **participants:** optional Person.birthYear with age/category fallback (CODES) ([#4374](https://github.com/CourtHive/competition-factory/issues/4374)) ([58698d2](https://github.com/CourtHive/competition-factory/commit/58698d26e68cf90ab2ff7ff24f9bd228016122f2))
+- **scales:** fall back to tier.numericRank when a policy declares no tierToLevel ([#4373](https://github.com/CourtHive/competition-factory/issues/4373)) ([40582fa](https://github.com/CourtHive/competition-factory/commit/40582fa029e5d8469c5efaa1b526e987964e1a5a))
+
+### Documentation
+
+- correct site url to courthive.github.io ([#4370](https://github.com/CourtHive/competition-factory/issues/4370)) ([42016fb](https://github.com/CourtHive/competition-factory/commit/42016fb9fd2414204c76fbabd650de43a011c534))
+
+## [4.1.1](https://github.com/CourtHive/competition-factory/compare/v4.1.0...v4.1.1) (2026-05-24)
+
+### Bug Fixes
+
+- **mocks:** gender-filter preset participants across multi-gender events ([a03929f](https://github.com/CourtHive/competition-factory/commit/a03929fd0e06a1baa82231e3177e128e9675516f))
+- **scheduling:** base court-grid row floor on unplaced matchUps only ([747e641](https://github.com/CourtHive/competition-factory/commit/747e6412c04ad9e6abe3742a7498aa027395f8f2))
+
+### Documentation
+
+- :memo: doc update ([8959bea](https://github.com/CourtHive/competition-factory/commit/8959bea9d9e6a95d477845a8d52d5abceef89e86))
+
+## [4.1.0](https://github.com/CourtHive/competition-factory/compare/v4.0.0...v4.1.0) (2026-05-21)
+
+### Features
+
+- **policies:** add pointsAuthority on ranking policies and emitted awards ([b02f50b](https://github.com/CourtHive/competition-factory/commit/b02f50b94e299ac7d49ae39db583961e0760666e))
+- **policies:** hybrid example fixture + stage field on emitted awards ([fc02f06](https://github.com/CourtHive/competition-factory/commit/fc02f06338f690718ecb8f01c13f6040b50c265a))
+- **policies:** per-AwardProfile pointsAuthority override ([1bbbc9c](https://github.com/CourtHive/competition-factory/commit/1bbbc9cc537894093a3390a952d2e8f943b755ea))
+
+### Bug Fixes
+
+- **deps:** update dependency tods-competition-factory to v4.0.0 ([da2ee74](https://github.com/CourtHive/competition-factory/commit/da2ee74828c103ef3f3e4eaa495c9bd93b5b55ac))
+- **tests:** make seedAvoidance.test.ts non-flaky ([aac8483](https://github.com/CourtHive/competition-factory/commit/aac848331aeea9e4681de9881b721fa34fdc0dbe))
+
+## [4.0.0](https://github.com/CourtHive/competition-factory/compare/v3.9.0...v4.0.0) (2026-05-20)
+
+### ⚠ BREAKING CHANGES
+
+- **policies:** the following policies are no longer exported from `tods-competition-factory`:
+
+### Features
+
+- **policies:** cts article 21 qualifying-stage award profiles ([#4360](https://github.com/CourtHive/competition-factory/issues/4360)) ([32d87ed](https://github.com/CourtHive/competition-factory/commit/32d87ed11520fef0996cc0439aeb428b64a141e5))
+- **policies:** export policyRegistry from public api ([5ce8ad2](https://github.com/CourtHive/competition-factory/commit/5ce8ad237168ba507698e5609686336337d31770))
+- **policies:** introduce policyRegistry as engine indirection point ([6705367](https://github.com/CourtHive/competition-factory/commit/67053672fd88aae33306d200533a9f971d0e0989))
+- **policies:** remove federation ranking-point fixtures from bundle ([1f8ea0c](https://github.com/CourtHive/competition-factory/commit/1f8ea0cc07f192f7c0db8b90db4b1d4c58cd0e55))
+- **tournaments:** reject orphaning setTournamentCategories ([b607f8a](https://github.com/CourtHive/competition-factory/commit/b607f8aba730c5d3ee88f7986cf2f6cde38b3891))
+
+### Documentation
+
+- **policies:** align ranking docs with 4.0.0 fixture set ([aaef9d7](https://github.com/CourtHive/competition-factory/commit/aaef9d7601393828fe805c43f8bb8b9b2bd89e00))
+
+## [3.9.0](https://github.com/CourtHive/competition-factory/compare/v3.8.0...v3.9.0) (2026-05-19)
+
+### Features
+
+- **mocks:** support preset participants in generateTournamentRecord ([e8ab280](https://github.com/CourtHive/competition-factory/commit/e8ab28015ca6bc7f6cbf5d790f2076a4cd830f80))
+- **participants:** add PAYMENT_STATUS as a participant timeItem ([6dd9fb2](https://github.com/CourtHive/competition-factory/commit/6dd9fb280c5d7ecae5e570945f262c63cd51895a))
+- **policies:** encode CTS Tabulka IV — 21 categories × singles+doubles ([c6cff55](https://github.com/CourtHive/competition-factory/commit/c6cff55d25192af439fa6859a6fd626ddfe74065))
+
+### Documentation
+
+- **mocks:** expand preset participants documentation ([cd0791d](https://github.com/CourtHive/competition-factory/commit/cd0791d6f2da2c003bbd227b7151205192f62853))
+
+## [3.8.0](https://github.com/CourtHive/competition-factory/compare/v3.7.0...v3.8.0) (2026-05-18)
+
+### Features
+
+- **types:** expose FactoryEngineTyped to catch unregistered method calls ([8aa1cc7](https://github.com/CourtHive/competition-factory/commit/8aa1cc7f6dbbe96be2355b106bee8872053f6e7c))
+
+### Bug Fixes
+
+- **types:** allow multi-arg methods in FactoryEngineTyped ([be1bcdf](https://github.com/CourtHive/competition-factory/commit/be1bcdfb0732d2a271ae16c2bec7cec42faf14f7))
+
+## [3.7.0](https://github.com/CourtHive/competition-factory/compare/v3.6.0...v3.7.0) (2026-05-18)
+
+### Features
+
+- **fixtures:** encode per-federation ranking policies (Phase 0 PR 0.5) ([362cb03](https://github.com/CourtHive/competition-factory/commit/362cb03f1d62dd5c0b12f9e9c9fd65aba114e8bd))
+- **query:** expose computeRatingDistributionStats as a top-level export ([13a5dbc](https://github.com/CourtHive/competition-factory/commit/13a5dbcbe60f72e782989bbe935dd46d3b90a6ea))
+- **ranking:** add applyDerivedRankings for filtered sub-rankings ([fa3e439](https://github.com/CourtHive/competition-factory/commit/fa3e4399a007afbe40f4b196903609519c9f8669))
+- **ranking:** add pointPoolModel, categoryAggregation, derivedRankings types ([050eed0](https://github.com/CourtHive/competition-factory/commit/050eed0df645d945d27d2adc245257fd88835e98))
+- **ranking:** add scaleEngine.getTournamentPointAwards() pipeline entry ([3da33ae](https://github.com/CourtHive/competition-factory/commit/3da33aed44a8ce91c82015c0783739f5b021ea35))
+- **ranking:** interpret categoryAggregation in generateRankingList ([8fcf3e3](https://github.com/CourtHive/competition-factory/commit/8fcf3e34b9641c3f791ed3c1cfcea19e9e24f83f))
 
 ## [3.6.0](https://github.com/CourtHive/competition-factory/compare/v3.5.0...v3.6.0) (2026-05-16)
 
-
 ### Features
 
-* **query:** emit registrationProfile on getTournamentInfo ([ffc63ed](https://github.com/CourtHive/competition-factory/commit/ffc63eddb8554158cc1fea048295456a111e3503))
-* **scheduling:** explain-why payloads for over-limit + recovery-deferred jinn refusals ([49d5530](https://github.com/CourtHive/competition-factory/commit/49d55301431b92c3edfcdb5f8b37eb4c7b674077))
+- **query:** emit registrationProfile on getTournamentInfo ([ffc63ed](https://github.com/CourtHive/competition-factory/commit/ffc63eddb8554158cc1fea048295456a111e3503))
+- **scheduling:** explain-why payloads for over-limit + recovery-deferred jinn refusals ([49d5530](https://github.com/CourtHive/competition-factory/commit/49d55301431b92c3edfcdb5f8b37eb4c7b674077))
 
 ## [3.5.0](https://github.com/CourtHive/competition-factory/compare/v3.4.4...v3.5.0) (2026-05-14)
 
-
 ### Features
 
-* **scheduling:** opt-in daily-limit enforcement in pro scheduler ([8eb14f9](https://github.com/CourtHive/competition-factory/commit/8eb14f9115a618dd80b765218606937ee489c4db))
-
+- **scheduling:** opt-in daily-limit enforcement in pro scheduler ([8eb14f9](https://github.com/CourtHive/competition-factory/commit/8eb14f9115a618dd80b765218606937ee489c4db))
 
 ### Bug Fixes
 
-* **scheduling:** exclude completed matchUps from pro-scheduler grid placement ([10ef2f8](https://github.com/CourtHive/competition-factory/commit/10ef2f8737ded49435c139c7fa46bbeaddce2a29))
-* **scheduling:** pro scheduler walks earlier scheduled times first ([eb55666](https://github.com/CourtHive/competition-factory/commit/eb556669806e89181f2a3ef70b34fd598677ac6a))
+- **scheduling:** exclude completed matchUps from pro-scheduler grid placement ([10ef2f8](https://github.com/CourtHive/competition-factory/commit/10ef2f8737ded49435c139c7fa46bbeaddce2a29))
+- **scheduling:** pro scheduler walks earlier scheduled times first ([eb55666](https://github.com/CourtHive/competition-factory/commit/eb556669806e89181f2a3ef70b34fd598677ac6a))
 
 ## [3.4.4](https://github.com/CourtHive/competition-factory/compare/v3.4.3...v3.4.4) (2026-05-12)
 
-
 ### Bug Fixes
 
-* **scheduling:** exclude historical/orphan matchUps from daily-limit budget ([2e5d085](https://github.com/CourtHive/competition-factory/commit/2e5d0851b6a6d8bef01056b3da3fd545c9310cd4))
+- **scheduling:** exclude historical/orphan matchUps from daily-limit budget ([2e5d085](https://github.com/CourtHive/competition-factory/commit/2e5d0851b6a6d8bef01056b3da3fd545c9310cd4))
 
 ## [3.4.3](https://github.com/CourtHive/competition-factory/compare/v3.4.2...v3.4.3) (2026-05-12)
 
-
 ### Bug Fixes
 
-* **scheduling:** default to POLICY_SCHEDULING_DEFAULT + parse timed formats ([bc37974](https://github.com/CourtHive/competition-factory/commit/bc3797498c4472834ab5bbec0741e22f82c02237))
-
+- **scheduling:** default to POLICY_SCHEDULING_DEFAULT + parse timed formats ([bc37974](https://github.com/CourtHive/competition-factory/commit/bc3797498c4472834ab5bbec0741e22f82c02237))
 
 ### Documentation
 
-* **policies:** document withCompetitiveness + inContext:false path ([596995b](https://github.com/CourtHive/competition-factory/commit/596995b567a46856bbeb43ad96d607a234114919))
+- **policies:** document withCompetitiveness + inContext:false path ([596995b](https://github.com/CourtHive/competition-factory/commit/596995b567a46856bbeb43ad96d607a234114919))
 
 ## [3.4.2](https://github.com/CourtHive/competition-factory/compare/v3.4.1...v3.4.2) (2026-05-09)
 
-
 ### Bug Fixes
 
-* **.npmrc:** rename confirmModulesPurge to confirm-modules-purge ([7bd7e5d](https://github.com/CourtHive/competition-factory/commit/7bd7e5d80de6d65dcd1763f7cd3e1082c8932248))
-* **documentation:** unblock pnpm 11 install + Docusaurus build ([eeb9009](https://github.com/CourtHive/competition-factory/commit/eeb9009398c8f6257aca2b70f0226b3b43672aed))
+- **.npmrc:** rename confirmModulesPurge to confirm-modules-purge ([7bd7e5d](https://github.com/CourtHive/competition-factory/commit/7bd7e5d80de6d65dcd1763f7cd3e1082c8932248))
+- **documentation:** unblock pnpm 11 install + Docusaurus build ([eeb9009](https://github.com/CourtHive/competition-factory/commit/eeb9009398c8f6257aca2b70f0226b3b43672aed))
 
 ## [3.4.1](https://github.com/CourtHive/competition-factory/compare/v3.4.0...v3.4.1) (2026-05-06)
 
-
 ### Bug Fixes
 
-* **query:** correct polarity in getPredictiveAccuracy ([16815ad](https://github.com/CourtHive/competition-factory/commit/16815ad31d6edaf24f55e799aad401e6caabd97e))
-* **query:** correct tiebreak polarity in getCompetitionLeaderboard + cover gaps ([334679b](https://github.com/CourtHive/competition-factory/commit/334679b6505045b541cacee75fe403049b5d7e59))
+- **query:** correct polarity in getPredictiveAccuracy ([16815ad](https://github.com/CourtHive/competition-factory/commit/16815ad31d6edaf24f55e799aad401e6caabd97e))
+- **query:** correct tiebreak polarity in getCompetitionLeaderboard + cover gaps ([334679b](https://github.com/CourtHive/competition-factory/commit/334679b6505045b541cacee75fe403049b5d7e59))
 
 ## [3.4.0](https://github.com/CourtHive/competition-factory/compare/v3.3.1...v3.4.0) (2026-05-05)
 
-
 ### Features
 
-* **format-wizard:** integer match counts, FEED_IN, voluntary consolation, flighting caps ([0cd61da](https://github.com/CourtHive/competition-factory/commit/0cd61daf0fb38a7a55def807d3c36aa8feaab131))
-* **query:** :sparkles: enrich matchUps with competitiveProfile without inContext hydration ([997730c](https://github.com/CourtHive/competition-factory/commit/997730c24967166edf8361652ebb235bad5d1df7))
-* **query:** predictCompetitiveBands for level-based format wizard ([b512280](https://github.com/CourtHive/competition-factory/commit/b51228091e593aad5e70a35410a9c3d8df18d8b4))
-* **query:** suggestFormatPlans engine for level-based format wizard ([557eed2](https://github.com/CourtHive/competition-factory/commit/557eed2c170e046db730c07a2d81647083a90fc5))
-
+- **format-wizard:** integer match counts, FEED_IN, voluntary consolation, flighting caps ([0cd61da](https://github.com/CourtHive/competition-factory/commit/0cd61daf0fb38a7a55def807d3c36aa8feaab131))
+- **query:** :sparkles: enrich matchUps with competitiveProfile without inContext hydration ([997730c](https://github.com/CourtHive/competition-factory/commit/997730c24967166edf8361652ebb235bad5d1df7))
+- **query:** predictCompetitiveBands for level-based format wizard ([b512280](https://github.com/CourtHive/competition-factory/commit/b51228091e593aad5e70a35410a9c3d8df18d8b4))
+- **query:** suggestFormatPlans engine for level-based format wizard ([557eed2](https://github.com/CourtHive/competition-factory/commit/557eed2c170e046db730c07a2d81647083a90fc5))
 
 ### Bug Fixes
 
-* **scheduler:** persist scheduledDate separately in jinnScheduler ([22af38c](https://github.com/CourtHive/competition-factory/commit/22af38cf88db9b4de16a0f3d02d3c3a1e5c69af5))
-
+- **scheduler:** persist scheduledDate separately in jinnScheduler ([22af38c](https://github.com/CourtHive/competition-factory/commit/22af38cf88db9b4de16a0f3d02d3c3a1e5c69af5))
 
 ### Documentation
 
-* **format-wizard:** introduce concept category with engine doc + stubs ([9ee9de9](https://github.com/CourtHive/competition-factory/commit/9ee9de951d49aea85d6e3669bf907bad171c2f70))
+- **format-wizard:** introduce concept category with engine doc + stubs ([9ee9de9](https://github.com/CourtHive/competition-factory/commit/9ee9de951d49aea85d6e3669bf907bad171c2f70))
 
 ## [3.3.1](https://github.com/CourtHive/competition-factory/compare/v3.3.0...v3.3.1) (2026-05-03)
 
-
 ### Bug Fixes
 
-* **reports:** handle walkover outcomes in competitiveness Spread % ([5b9078c](https://github.com/CourtHive/competition-factory/commit/5b9078c870b7fc64501e0d6598dd7bf11a1c8ddf))
+- **reports:** handle walkover outcomes in competitiveness Spread % ([5b9078c](https://github.com/CourtHive/competition-factory/commit/5b9078c870b7fc64501e0d6598dd7bf11a1c8ddf))
 
 ## [3.3.0](https://github.com/CourtHive/competition-factory/compare/v3.2.3...v3.3.0) (2026-05-02)
 
-
 ### Features
 
-* **constants:** add POLICY_TYPE_PRINT + default fixture ([cde627e](https://github.com/CourtHive/competition-factory/commit/cde627e6e60473f25514dcd77feb769669bbcca5))
-
+- **constants:** add POLICY_TYPE_PRINT + default fixture ([cde627e](https://github.com/CourtHive/competition-factory/commit/cde627e6e60473f25514dcd77feb769669bbcca5))
 
 ### Bug Fixes
 
-* **deps:** update dependency courthive-components to v1.1.1 ([#4292](https://github.com/CourtHive/competition-factory/issues/4292)) ([3149f75](https://github.com/CourtHive/competition-factory/commit/3149f75d4705a7abee5ab9cfbe85c88d0470fa74))
-* **deps:** update docusaurus monorepo to v3.10.1 ([#4290](https://github.com/CourtHive/competition-factory/issues/4290)) ([e0c1fc9](https://github.com/CourtHive/competition-factory/commit/e0c1fc963e5b9f7d393f17c6a4c74d287d45c8cc))
-
+- **deps:** update dependency courthive-components to v1.1.1 ([#4292](https://github.com/CourtHive/competition-factory/issues/4292)) ([3149f75](https://github.com/CourtHive/competition-factory/commit/3149f75d4705a7abee5ab9cfbe85c88d0470fa74))
+- **deps:** update docusaurus monorepo to v3.10.1 ([#4290](https://github.com/CourtHive/competition-factory/issues/4290)) ([e0c1fc9](https://github.com/CourtHive/competition-factory/commit/e0c1fc963e5b9f7d393f17c6a4c74d287d45c8cc))
 
 ### Documentation
 
-* **policies:** add Print Policy reference page ([2021dcb](https://github.com/CourtHive/competition-factory/commit/2021dcb5bc0c286677004e2ff6f9a8c01b098a92))
-* **policies:** rewrite Print Policy to stand alone ([d9a52c9](https://github.com/CourtHive/competition-factory/commit/d9a52c97fa52b9b5151bf3c04cb192bc12c3adbd))
-* scrub external repo references for standalone factory docs ([4f7bf1e](https://github.com/CourtHive/competition-factory/commit/4f7bf1e5da74b86b60715f9cb48da4cd5d286bd8))
+- **policies:** add Print Policy reference page ([2021dcb](https://github.com/CourtHive/competition-factory/commit/2021dcb5bc0c286677004e2ff6f9a8c01b098a92))
+- **policies:** rewrite Print Policy to stand alone ([d9a52c9](https://github.com/CourtHive/competition-factory/commit/d9a52c97fa52b9b5151bf3c04cb192bc12c3adbd))
+- scrub external repo references for standalone factory docs ([4f7bf1e](https://github.com/CourtHive/competition-factory/commit/4f7bf1e5da74b86b60715f9cb48da4cd5d286bd8))
 
 ## [3.2.3](https://github.com/CourtHive/competition-factory/compare/v3.2.2...v3.2.3) (2026-04-30)
 
-
 ### Bug Fixes
 
-* **deps:** update dependency tods-competition-factory to v3.2.2 ([a3e1c58](https://github.com/CourtHive/competition-factory/commit/a3e1c5893c580308d0d3ad46b7f4e870b04e5cac))
+- **deps:** update dependency tods-competition-factory to v3.2.2 ([a3e1c58](https://github.com/CourtHive/competition-factory/commit/a3e1c5893c580308d0d3ad46b7f4e870b04e5cac))
 
 ## [3.2.2](https://github.com/CourtHive/competition-factory/compare/v3.2.1...v3.2.2) (2026-04-29)
 
-
 ### Bug Fixes
 
-* **deps:** update dependency tods-competition-factory to v3.2.1 ([2b276cd](https://github.com/CourtHive/competition-factory/commit/2b276cdc8631678e31c56a2e03abf868f301b74c))
+- **deps:** update dependency tods-competition-factory to v3.2.1 ([2b276cd](https://github.com/CourtHive/competition-factory/commit/2b276cdc8631678e31c56a2e03abf868f301b74c))
 
 ## [3.2.1](https://github.com/CourtHive/competition-factory/compare/v3.2.0...v3.2.1) (2026-04-29)
 
-
 ### Bug Fixes
 
-* **scheduling:** clear COURT.ORDER timeItem on empty-string + removePriorValues ([17a2d9b](https://github.com/CourtHive/competition-factory/commit/17a2d9b70f9ffffc44172e905f0adaa020ad902a))
+- **scheduling:** clear COURT.ORDER timeItem on empty-string + removePriorValues ([17a2d9b](https://github.com/CourtHive/competition-factory/commit/17a2d9b70f9ffffc44172e905f0adaa020ad902a))
 
 ## [3.2.0](https://github.com/CourtHive/competition-factory/compare/v3.1.5...v3.2.0) (2026-04-28)
 
-
 ### Features
 
-* **scheduling:** add courtIds filter to scheduleProfileRounds + scheduleProfileGrid ([756da06](https://github.com/CourtHive/competition-factory/commit/756da063f668ee8d05d83a2f3f3fff45b4ccc4bb))
+- **scheduling:** add courtIds filter to scheduleProfileRounds + scheduleProfileGrid ([756da06](https://github.com/CourtHive/competition-factory/commit/756da063f668ee8d05d83a2f3f3fff45b4ccc4bb))
 
 ## [3.1.5](https://github.com/CourtHive/competition-factory/compare/v3.1.4...v3.1.5) (2026-04-27)
 
-
 ### Bug Fixes
 
-* **deps:** update dependency tods-competition-factory to v3.1.4 ([714f9cb](https://github.com/CourtHive/competition-factory/commit/714f9cba71c00284244e733d7d538f44c927450a))
-
+- **deps:** update dependency tods-competition-factory to v3.1.4 ([714f9cb](https://github.com/CourtHive/competition-factory/commit/714f9cba71c00284244e733d7d538f44c927450a))
 
 ### Maintenance
 
-* cut 3.1.5 to validate release-please pipeline ([022b97f](https://github.com/CourtHive/competition-factory/commit/022b97f0f9697f033816eb5aa0ac0b015fd19289))
+- cut 3.1.5 to validate release-please pipeline ([022b97f](https://github.com/CourtHive/competition-factory/commit/022b97f0f9697f033816eb5aa0ac0b015fd19289))

@@ -3,7 +3,8 @@ export const tournament = {
   events: '{\\"type\\":\\"object\\",\\"object\\":\\"event\\",\\"array\\":\\"true\\",\\"required\\":\\"false\\"}',
   formalName: '{\\"type\\":\\"string\\",\\"required\\":\\"false\\"}',
   hostCountryCode: '{\\"type\\":\\"enum\\",\\"enum\\": \\"ISO3166-3\\",\\"required\\":\\"false\\"}',
-  indoorOutdoor: '{\\"type\\":\\"enum\\",\\"enum\\": \\"\\",\\"required\\":\\"false\\"}',
+  indoorOutdoor:
+    '{\\"type\\":\\"enum\\",\\"enum\\": \\"\\",\\"required\\":\\"false\\",\\"note\\":\\"INDOOR, OUTDOOR, or MIXED\\"}',
   localTimeZone: '{\\"type\\":\\"string\\",\\"required\\":\\"false\\"}',
   matchUps: '{\\"type\\":\\"object\\",\\"object\\":\\"matchUp\\",\\"array\\":\\"true\\",\\"required\\":\\"false\\"}',
   onlineResources:

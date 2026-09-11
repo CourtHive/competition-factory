@@ -1,3 +1,4 @@
+import { firstClassOrExtension } from '@Acquire/firstClassOrExtension';
 import tournamentEngine from '@Engines/syncEngine';
 import mocksEngine from '@Assemblies/engines/mock';
 import { expect, it } from 'vitest';
@@ -8,9 +9,8 @@ import { TALLY } from '@Constants/extensionConstants';
 import { RETIRED, WALKOVER } from '@Constants/matchUpStatusConstants';
 
 function getDrawPositionTally({ positionAssignments, drawPosition }) {
-  return positionAssignments
-    .find((assignment) => assignment.drawPosition === drawPosition)
-    .extensions.find(({ name }) => name === TALLY)?.value;
+  const assignment = positionAssignments.find((assignment) => assignment.drawPosition === drawPosition);
+  return firstClassOrExtension({ element: assignment, attribute: 'tally', name: TALLY });
 }
 
 it('properly interprets tallyPolicies', () => {

@@ -6,6 +6,8 @@ export const participant = {
     '{\\"type\\":\\"object\\",\\"object\\":\\"onlineResource\\",\\"array\\":\\"true\\",\\"required\\":\\"false\\"}',
   participantId: '{\\"type\\":\\"string\\",\\"required\\":\\"true\\"}',
   participantName: '{\\"type\\":\\"string\\",\\"required\\":\\"false\\"}',
+  participantOtherIds:
+    '{\\"type\\":\\"object\\",\\"array\\":\\"true\\",\\"required\\":\\"false\\",\\"note\\":\\"this participant\'s identity in other organisations\' systems; unlike person.personOtherIds it works for PAIR and TEAM participants, which carry no person\\"}',
   participantOtherName: '{\\"type\\":\\"string\\",\\"required\\":\\"false\\"}',
   participantRole:
     '{\\"type\\":\\"enum\\",\\"enum\\": \\"\\",\\"required\\":\\"false\\",\\"note\\":\\"ADMINISTRATION, CAPTAIN, COACH, COMPETITOR, DIRECTOR, HOSPITALITY, MEDIA, MEDICAL, OFFICIAL, OTHER, SECURITY, STRINGER, SUPERVISOR, TRANSPORT, VOLUNTEER\\"}',

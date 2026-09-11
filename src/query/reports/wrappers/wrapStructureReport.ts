@@ -28,12 +28,21 @@ export function wrapStructureReport({
     }
   }
 
-  // Build participant name lookup
+  // Build participant lookups, keyed by BOTH participantId and personId because
+  // a structure report identifies its winner by `winningPersonId`.
+  //
+  // The name map alone cannot answer "which participant is this" — it points two
+  // different ids at the same string. The parallel id map is what lets a consumer
+  // resolve the winner and open a participant card. `winningTeamId` is already a
+  // participantId (TEAM participants), so it maps to itself.
   const participantNameMap: Record<string, string> = {};
+  const participantIdMap: Record<string, string> = {};
   for (const p of tournamentRecord.participants ?? []) {
     participantNameMap[p.participantId] = p.participantName ?? '';
+    participantIdMap[p.participantId] = p.participantId;
     if (p.person?.personId) {
       participantNameMap[p.person.personId] = p.participantName ?? '';
+      participantIdMap[p.person.personId] = p.participantId;
     }
   }
 
@@ -51,8 +60,13 @@ export function wrapStructureReport({
   const rows = (result.structureReports ?? []).map((report: any) => {
     // Resolve winner name from personId or teamId
     const winnerName = participantNameMap[report.winningPersonId] || participantNameMap[report.winningTeamId] || '';
+    const winningParticipantId =
+      participantIdMap[report.winningPersonId] || participantIdMap[report.winningTeamId] || '';
 
     return {
+      // Not a displayed column — consumers hide it — but it is what lets a table
+      // open the winner's participant card, and it survives to CSV/JSON export.
+      winningParticipantId,
       eventId: report.eventId ?? '',
       eventName: eventNameMap[report.eventId] || '',
       drawId: report.drawId ?? '',

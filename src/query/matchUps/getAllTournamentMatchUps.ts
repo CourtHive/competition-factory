@@ -91,8 +91,13 @@ export function allTournamentMatchUps(params?: GetMatchUpsArgs): ResultType & {
         }).matchUps ?? []
       );
     })
-    // NOTE: matchUps on the tournamentRecord have no drawPositions; all data apart from participant context must be present
-    .concat(...(tournamentRecord.matchUps ?? []));
+    // NOTE: matchUps on the tournamentRecord have no drawPositions and no
+    // structureId/drawId/eventId/tournamentId (they're standalone matchUps,
+    // not inside a structure). The cast acknowledges that the merged array
+    // is a mix of HydratedMatchUp[] (from the per-event hydration above)
+    // and base MatchUp[]; downstream consumers that rely on hydrated fields
+    // must check `matchUp.structureId` first.
+    .concat(...((tournamentRecord.matchUps ?? []) as HydratedMatchUp[]));
 
   return { matchUps };
 }

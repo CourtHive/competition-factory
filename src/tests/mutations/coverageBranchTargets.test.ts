@@ -59,7 +59,12 @@ describe('headToHead branch coverage', () => {
       },
     ] as any;
 
-    const mappedMatchUps = {
+    // Partial HydratedMatchUp shape — participantHeadToHead only reads
+    // score/winningSide/matchUpFormat/matchUpStatus, so the other fields
+    // (structureId, drawId, eventId, tournamentId) are intentionally omitted.
+    // `: any` on the binding (rather than `as any` on the literal) avoids
+    // both the missing-properties error and the "unnecessary assertion" lint.
+    const mappedMatchUps: any = {
       [matchUpId]: {
         matchUpId,
         matchUpStatus: DEFAULTED,
@@ -104,7 +109,8 @@ describe('headToHead branch coverage', () => {
       },
     ] as any;
 
-    const mappedMatchUps = {
+    // Partial HydratedMatchUp shape (see note above).
+    const mappedMatchUps: any = {
       [matchUpId]: {
         matchUpId,
         matchUpStatus: COMPLETED,
@@ -149,7 +155,8 @@ describe('headToHead branch coverage', () => {
       },
     ] as any;
 
-    const mappedMatchUps = {
+    // Partial HydratedMatchUp shape (see note above).
+    const mappedMatchUps: any = {
       m1: {
         matchUpId: 'm1',
         matchUpStatus: COMPLETED,
@@ -212,7 +219,8 @@ describe('headToHead branch coverage', () => {
       },
     ] as any;
 
-    const mappedMatchUps = {
+    // Partial HydratedMatchUp shape (see note above).
+    const mappedMatchUps: any = {
       m1: { matchUpId: 'm1', matchUpStatus: COMPLETED, winningSide: 1, score: {}, matchUpFormat: 'SET3-S:6/TB7' },
       m2: { matchUpId: 'm2', matchUpStatus: COMPLETED, winningSide: 1, score: {}, matchUpFormat: 'SET3-S:6/TB7' },
     };

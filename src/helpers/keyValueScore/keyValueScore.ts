@@ -2,6 +2,7 @@ import { getMatchUpWinner, removeFromScore, getHighTiebreakValue } from './keyVa
 import { processIncompleteSetScore } from './processIncompleteSetScore';
 import { getLeadingSide } from '@Query/matchUp/checkSetIsComplete';
 import { keyValueTimedSetScore } from './keyValueTimedSetScore';
+import { pushGlobalLog } from '@Functions/global/globalLog';
 import { processTiebreakSet } from './processTiebreakSet';
 import { keyValueSetScore } from './keyValueSetScore';
 import { getScoreAnalysis } from './scoreAnalysis';
@@ -84,7 +85,7 @@ function handleOutcomeKey({ analysis, lowSide, sets, scoreString, matchUpStatus,
   } else if (analysis.isTiebreakEntry || analysis.isIncompleteSetScore) {
     info = 'incomplete set scoreString or tiebreak entry';
   } else {
-    console.log('handle case', { value });
+    pushGlobalLog({ method: 'keyValueScore', issue: 'unhandled case', value });
   }
   return { info, sets, scoreString, matchUpStatus, winningSide, updated };
 }
@@ -244,7 +245,14 @@ export function keyValueScore(params) {
   ({ value, scoreString } = normalizeValueAndScore({ analysis, value, scoreString, isShifted }));
 
   const branchResult: any = processBranch({
-    analysis, lowSide, sets, scoreString, matchUpStatus, winningSide, value, auto,
+    analysis,
+    lowSide,
+    sets,
+    scoreString,
+    matchUpStatus,
+    winningSide,
+    value,
+    auto,
   });
 
   if (branchResult.earlyReturn) {
@@ -301,22 +309,65 @@ function processBranch({ analysis, lowSide, sets, scoreString, matchUpStatus, wi
   let resultWinner = winningSide;
 
   if (analysis.isTimedSet) {
-    ({ info, sets: resultSets, scoreString: resultScore, updated, matchUpStatus: resultStatus, winningSide: resultWinner } = keyValueTimedSetScore({
-      analysis, lowSide, scoreString, sets, matchUpStatus, winningSide, value,
+    ({
+      info,
+      sets: resultSets,
+      scoreString: resultScore,
+      updated,
+      matchUpStatus: resultStatus,
+      winningSide: resultWinner,
+    } = keyValueTimedSetScore({
+      analysis,
+      lowSide,
+      scoreString,
+      sets,
+      matchUpStatus,
+      winningSide,
+      value,
     }));
   } else if (OUTCOMEKEYS.includes(value)) {
-    ({ info, sets: resultSets, scoreString: resultScore, matchUpStatus: resultStatus, winningSide: resultWinner, updated } = handleOutcomeKey({
-      analysis, lowSide, sets, scoreString, matchUpStatus, winningSide, value,
+    ({
+      info,
+      sets: resultSets,
+      scoreString: resultScore,
+      matchUpStatus: resultStatus,
+      winningSide: resultWinner,
+      updated,
+    } = handleOutcomeKey({
+      analysis,
+      lowSide,
+      sets,
+      scoreString,
+      matchUpStatus,
+      winningSide,
+      value,
     }));
   } else if (value === BACKSPACE) {
-    ({ scoreString: resultScore, sets: resultSets, updated, matchUpStatus: resultStatus, winningSide: resultWinner } = handleBackspace({
-      analysis, scoreString, sets, lowSide,
+    ({
+      scoreString: resultScore,
+      sets: resultSets,
+      updated,
+      matchUpStatus: resultStatus,
+      winningSide: resultWinner,
+    } = handleBackspace({
+      analysis,
+      scoreString,
+      sets,
+      lowSide,
     }));
   } else if (analysis.hasOutcome) {
     info = 'has outcome';
   } else if (value === SCORE_JOINER && !analysis.isMatchTiebreakEntry) {
-    ({ scoreString: resultScore, sets: resultSets, updated, matchUpStatus: resultStatus } = handleScoreJoiner({
-      analysis, scoreString, sets, lowSide,
+    ({
+      scoreString: resultScore,
+      sets: resultSets,
+      updated,
+      matchUpStatus: resultStatus,
+    } = handleScoreJoiner({
+      analysis,
+      scoreString,
+      sets,
+      lowSide,
     }));
   } else if (value === MATCH_TIEBREAK_JOINER && analysis.isMatchTiebreakEntry && !analysis.isSetTiebreakEntry) {
     ({ info, scoreString: resultScore, updated } = handleMatchTiebreakJoiner({ analysis, scoreString }));
@@ -325,12 +376,29 @@ function processBranch({ analysis, lowSide, sets, scoreString, matchUpStatus, wi
   } else if (winningSide) {
     return { earlyReturn: true, updated: false, info: 'matchUp is complete' };
   } else {
-    ({ info, updated, sets: resultSets, scoreString: resultScore } = processRemainingBranches({
-      analysis, auto, lowSide, scoreString, sets, value,
+    ({
+      info,
+      updated,
+      sets: resultSets,
+      scoreString: resultScore,
+    } = processRemainingBranches({
+      analysis,
+      auto,
+      lowSide,
+      scoreString,
+      sets,
+      value,
     }));
   }
 
-  return { info, updated, sets: resultSets, scoreString: resultScore, matchUpStatus: resultStatus, winningSide: resultWinner };
+  return {
+    info,
+    updated,
+    sets: resultSets,
+    scoreString: resultScore,
+    matchUpStatus: resultStatus,
+    winningSide: resultWinner,
+  };
 }
 
 function processRemainingBranches({ analysis, auto, lowSide, scoreString, sets, value }) {
@@ -340,8 +408,15 @@ function processRemainingBranches({ analysis, auto, lowSide, scoreString, sets, 
 
   if (analysis.isIncompleteSetScore) {
     if (analysis.isNumericValue) {
-      ({ sets: resultSets, scoreString: resultScore, updated } = processIncompleteSetScore({
-        analysis, scoreString, sets, value,
+      ({
+        sets: resultSets,
+        scoreString: resultScore,
+        updated,
+      } = processIncompleteSetScore({
+        analysis,
+        scoreString,
+        sets,
+        value,
       }));
     }
   } else if (analysis.isInvalidMatchTiebreakValue) {
@@ -351,8 +426,18 @@ function processRemainingBranches({ analysis, auto, lowSide, scoreString, sets, 
   } else if (analysis.isTiebreakCloser) {
     ({ scoreString: resultScore, sets: resultSets, updated } = handleTiebreakCloser({ analysis, scoreString, sets }));
   } else if (analysis.isTiebreakSetValue) {
-    ({ info, scoreString: resultScore, sets: resultSets, updated } = processTiebreakSet({
-      analysis, auto, lowSide, scoreString, sets, value,
+    ({
+      info,
+      scoreString: resultScore,
+      sets: resultSets,
+      updated,
+    } = processTiebreakSet({
+      analysis,
+      auto,
+      lowSide,
+      scoreString,
+      sets,
+      value,
     }));
   } else if (analysis.isSetTiebreakEntry) {
     ({ info, scoreString: resultScore, updated } = handleSetTiebreakEntry({ analysis, scoreString, value }));
@@ -361,9 +446,13 @@ function processRemainingBranches({ analysis, auto, lowSide, scoreString, sets, 
   } else if (analysis.isGameScoreEntry) {
     info = 'game scoreString entry';
   } else if (analysis.lastSetIsComplete || !sets.length) {
-    ({ scoreString: resultScore, sets: resultSets, updated } = handleNewSet({ analysis, lowSide, scoreString, sets, value }));
+    ({
+      scoreString: resultScore,
+      sets: resultSets,
+      updated,
+    } = handleNewSet({ analysis, lowSide, scoreString, sets, value }));
   } else {
-    console.log('error: unknown outcome');
+    pushGlobalLog({ method: 'keyValueScore', error: 'unknown outcome' });
   }
 
   return { info, updated, sets: resultSets, scoreString: resultScore };

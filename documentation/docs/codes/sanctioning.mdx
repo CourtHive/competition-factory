@@ -1,0 +1,194 @@
+---
+title: Sanctioning
+---
+
+CODES models sanctioning in two halves, and keeping them apart is the point.
+
+|                           | what it is                                                           | where it lives                                          |
+| ------------------------- | -------------------------------------------------------------------- | ------------------------------------------------------- |
+| **`SanctioningRecord`**   | _becoming_ sanctioned — the application a governing body decides on  | held by the sanctioning service; discarded once decided |
+| **`Tournament.sanction`** | _being_ sanctioned — the decision as an attribute of the competition | travels with the `tournamentRecord`                     |
+
+The application side has always been rich. The competition side used to be a single string:
+`processCodes: ['SANCTIONED']`. That marker survives for existing consumers, but it is a boolean,
+and real federation data does not fit one.
+
+## Three axes
+
+Every governing body surveyed conflates at least two of these. CODES separates them.
+
+| axis               | question it answers                          | field                     |
+| ------------------ | -------------------------------------------- | ------------------------- |
+| **decision**       | did the application succeed?                 | `sanction.decision`       |
+| **recognition**    | what does the body _assert_ about the event? | `sanction.recognition`    |
+| **classification** | what competitive grade is conferred?         | `sanction.classification` |
+
+The separation is what makes real data expressible. A USTA tournament is routinely **both**
+`sanctionStatus: "APPROVED"` **and** `level: "Unsanctioned"` — approved to run by its district,
+conferring no ranking status. Under one axis that reads as a contradiction. Under three it is:
+
+```js
+{
+  decision: 'APPROVED',          // the district approved the application
+  recognition: 'UNSANCTIONED',   // but asserts no competitive standing
+  classification: undefined,     // so no grade is conferred
+}
+```
+
+### `decision` — the workflow outcome
+
+`PENDING` · `APPROVED` · `CONDITIONAL` · `DENIED` · `WITHDRAWN` · `REVOKED` · `SUSPENDED` ·
+`EXPIRED` · `DOWNGRADED`
+
+Distinct from `SanctioningStatusEnum`, which tracks an application through review. Note
+`WITHDRAWN` is **applicant**-initiated, while `REVOKED` / `SUSPENDED` / `DOWNGRADED` are
+**authority**-initiated after approval — routine annual outcomes at several federations, and not
+expressible as withdrawal.
+
+### `recognition` — what the body asserts
+
+`SANCTIONED` · `APPROVED` · `OBSERVED` · `RECOGNISED` · `LICENSED` · `UNSANCTIONED`
+
+Modelled on USA Swimming Article 202, the most explicit published vocabulary found. Each value
+implies a different enforced rule subset, a different participant-eligibility rule, a different
+issuing authority and a different downstream consequence:
+
+- **`SANCTIONED`** — the body's own competition, under the whole of its rulebook, members only.
+- **`APPROVED`** — run by someone else under an enumerated _subset_ of the body's rules; members
+  and non-members may compete; results still count.
+- **`OBSERVED`** — run under _another_ body's rules, with a handful of checkpoints verified so
+  individual results can still be recognised.
+- **`RECOGNISED`** — another body's competition accepted wholesale by reference.
+- **`LICENSED`** — permitted to use the body's marks or programme without competitive standing.
+- **`UNSANCTIONED`** — known to the body and explicitly outside its competitive structure.
+
+### `classification` — the grade conferred
+
+A [`TierClassification`](../types/typedefs) — `{ system, value, numericRank? }` — the same shape as
+`tournamentTier`, so federation vocabularies (`Category 1`, `A`, `J300`, `B-1`) need no translation.
+
+## The rest of the record
+
+```js
+tournamentRecord.sanction = {
+  decision: 'APPROVED',
+  recognition: 'SANCTIONED',
+  classification: { system: 'USTA', value: 'Level 5', numericRank: 3 },
+
+  authority: { organisationId: '…', organisationName: 'Georgia', role: 'DISTRICT', regionCode: '034' },
+  approvalChain: [/* ordered broadest → narrowest */],
+
+  decisionRecord: { decidedAt: '2026-03-14T10:00:00.000Z', decidedByName: 'A. Reviewer', appealable: true },
+  confers: { rankingEligible: true, recordEligible: false, insured: true },
+  ruleset: { rulesetId: 'POLICY_SANCTIONING_USTA', edition: '2026.1', enforcement: 'ENFORCE' },
+
+  identifiers: [{ identifier: '26-80173' }],
+  fees: [
+    {
+      feeKind: 'HEAD_TAX',
+      perParticipant: true,
+      fee: { amount: 400, currencyCode: 'USD', unit: 'MINOR' }, // $4.00 per entrant
+      maximum: { amount: 10000, currencyCode: 'USD', unit: 'MINOR' }, // capped at $100.00
+    },
+  ],
+  submissionWindow: { from: '2026-01-07', to: '2026-02-01', timeZone: 'America/New_York' },
+  sanctioningId: '…',
+};
+```
+
+A few of these earn their place for reasons that are not obvious:
+
+**`approvalChain` is not always a containment ladder.** Chains observed run 1–5 deep, and several
+federations do not cascade at all — some approve only at the regional tier, and at least one
+requires _joint_ approval by two co-equal bodies. Order it broadest → narrowest where a hierarchy
+exists; do not assume one.
+
+**`ruleset.edition` is not optional in spirit.** Governing-body rulebooks are annual. A sanction
+granted under one edition must not silently re-validate against the next. `appliedRules` exists
+because a body may enforce only a named subset of its rules at lower recognition levels.
+
+**`confers` is not derivable from `classification`.** Ranking eligibility, record eligibility and
+insurance are independent of grade, and insurance is often the _reason_ an organiser applies.
+
+**`fees` is a list, and fee shapes vary.** Flat, percentage, per-entry, and per-entry-with-a-cap all
+occur — sometimes in one federation — and some bodies price draw stages separately, which is what
+`appliesTo` is for.
+
+**A monetary amount always states its unit.** `MonetaryAmount` requires `amount`, `currencyCode` and
+`unit` together, so `{ amount: 4000, currencyCode: 'USD', unit: 'MINOR' }` unambiguously means
+$40.00. This is deliberately not an optional flag: a federation reporting `4000` means 40.00, and a
+reader assuming whole units is off by 100× with nothing in the record to signal it. The minor-unit
+exponent is currency-specific (USD 2, JPY 0, KWD 3), which is why the currency must travel with the
+unit for `MINOR` to be resolvable.
+
+> `PrizeMoney` extends `MonetaryAmount`, so prize money states its unit too — there is exactly one
+> money shape in CODES. A `PrizeMoney[]` may legitimately mix currencies, so **never sum `amount`
+> across the array** without grouping by `currencyCode` and `unit` first; the total is otherwise
+> denominated in nothing. Tier bounds (`minimumPrizeMoney` / `maximumPrizeMoney`) are
+> `MonetaryAmount` for the same reason, and the validator reports amounts it cannot compare rather
+> than folding them in.
+
+**A total is not a schedule.** `totalPrizeMoney` and `Event.prizeMoney` say what was offered;
+`prizeMoneyAwards` (on `Event`, and on `Tournament` where a body publishes one ladder for the whole
+competition) says what each finishing position was worth — the Grand Slam model of per-round
+payouts, generalised. Competitions commonly award money the way they award ranking points, by how
+far you got, so `PrizeMoneyAward.finishingPosition` reuses the key `finishingPositionRanges` already
+uses in the ranking-points policies, and "R16 was worth 200 points and 480,000" becomes one join
+rather than two vocabularies.
+
+> Two traps. **A `roundCode` is not a finishing position and the two run in opposite directions** —
+> a "Round 1" rung is what a first-round _loser_ received, the _last_ position, and which position
+> that is depends on the draw size (128 in a 128 draw, 16 in a 16 draw). **A ladder is never
+> summed.** Each rung is what one competitor received, so the outlay is
+> `amount × competitors finishing in that range`; adding the rungs understates a 128-draw purse
+> threefold. This is why awards are a separate field from `prizeMoney`, and why `PrizeMoney`
+> declares `finishingPosition?: never` — passing a ladder where a list of totals is expected is a
+> compile error rather than a silently wrong sum.
+
+**`sanctions`** (plural, on `Tournament`) carries additional sanctions where a competition is
+approved by more than one body. Dual sanctioning is common: an international-grade event usually
+also carries national approval.
+
+## Event grain
+
+`Event.sanction` exists because grade is genuinely per-event in several federations — one
+tournament routinely carries different categories for different age groups. This mirrors the
+existing `tournamentTier` / `eventTier` pair. Where an event carries no sanction of its own, the
+tournament's applies.
+
+## Activation
+
+`sanctioningEngine.activateFromSanctioning()` projects an approved application onto the competition,
+populating `sanction` from the record: the governing body becomes `authority`, endorsements become
+`approvalChain` (ordered by `endorsementLevel`, not array position, and including only endorsers
+that actually endorsed), the reviewer and approval date become `decisionRecord`, and the policy and
+its version become `ruleset`.
+
+## A naming caution
+
+"Sanction" is not universal. Most federations use it for approval, but at least one uses it in its
+regulations to mean a **disciplinary penalty** or a per-player fee — never approval — and another
+uses "Approved" as the name of a delivery-model subtype rather than a status. CODES uses
+_sanction_ consistently for approval; when surfacing these values to a federation's own users,
+translate to that federation's vocabulary rather than assuming the word travels.
+
+## Schema coverage
+
+`tournament.schema.json` — the [third declaration of CODES](../data-standards.md#the-json-schema) —
+now expresses the sanction shape rather than leaving it unstated. `TournamentSanction` and its parts
+are defined there: `decision`, `recognition`, `classification`, `authority`, `approvalChain`,
+`decisionRecord`, `confers`, `ruleset`, `sanctioningId`, `identifiers`, `fees` and
+`submissionWindow` — plus the `AuthorityRoleEnum` and `SanctionFeeKindEnum` vocabularies, and
+`SanctionRuleset` (`rulesetId`, `edition`, `enforcement`, `appliedRules`). Fees are built on the
+shared `MonetaryAmount`, so a levy states its `currencyCode` and `unit` like every other money value
+in CODES.
+
+A schema that says nothing about a field validates nothing about it. Until this was declared, a
+record could carry a malformed `sanction` and pass.
+
+## Policy and constraints
+
+What a governing body _permits_ — allowed formats, fee bounds, submission windows, and which
+fields an organiser may not override — is the **policy layer**, and it lives outside CODES in the
+ingest tier, where it is exercised against real captured federation data. CODES models the
+decision; the policy layer models the rulebook that produced it.

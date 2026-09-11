@@ -1,6 +1,7 @@
 import { modifyDrawNotice, modifyMatchUpNotice } from '@Mutate/notifications/drawNotifications';
 import { getAllStructureMatchUps } from '@Query/matchUps/getAllStructureMatchUps';
 import { copyTieFormat } from '@Query/hierarchical/tieFormats/copyTieFormat';
+import { modifyEventNotice } from '@Mutate/notifications/eventNotifications';
 import { decorateResult } from '@Functions/global/decorateResult';
 import { getTieFormat } from '@Query/hierarchical/getTieFormat';
 import { findDrawMatchUp } from '@Acquire/findDrawMatchUp';
@@ -83,6 +84,7 @@ export function orderCollectionDefinitions({
     modifyMatchUpNotice({
       tournamentId: tournamentRecord?.tournamentId,
       eventId: event?.eventId,
+      event,
       drawDefinition,
       matchUp,
     });
@@ -98,6 +100,7 @@ export function orderCollectionDefinitions({
         drawDefinition,
         structure,
         orderMap,
+        event,
       });
       modifyDrawNotice({
         drawDefinition,
@@ -147,7 +150,11 @@ function updateEventTieFormat({
     tieFormat: event.tieFormat,
     orderMap,
   });
-  if (!structureIds?.length) event.tieFormat = updatedFormat;
+  if (!structureIds?.length) {
+    event.tieFormat = updatedFormat;
+    // event.tieFormat is a first-class event attribute — cover the change.
+    modifyEventNotice({ tournamentId: tournamentRecord?.tournamentId, event });
+  }
 
   for (const drawDefinition of event.drawDefinitions ?? []) {
     updateDrawTieFormat({
@@ -198,13 +205,14 @@ function updateDrawTieFormat({
       drawDefinition,
       structure,
       orderMap,
+      event,
     });
     modifiedStructureIds.push(structure.structureId);
   }
   modifyDrawNotice({ drawDefinition, structureIds: modifiedStructureIds });
 }
 
-function updateStructureMatchUps({ tournamentRecord, drawDefinition, structure, orderMap, eventId }) {
+function updateStructureMatchUps({ tournamentRecord, drawDefinition, structure, orderMap, eventId, event }) {
   const matchUps = getAllStructureMatchUps({
     matchUpFilters: { matchUpTypes: [TEAM] },
     structure,
@@ -221,6 +229,7 @@ function updateStructureMatchUps({ tournamentRecord, drawDefinition, structure, 
         drawDefinition,
         eventId,
         matchUp,
+        event,
       });
     }
   }

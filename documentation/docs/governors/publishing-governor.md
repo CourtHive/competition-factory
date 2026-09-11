@@ -604,7 +604,7 @@ engine.publishEvent({
 #### Publish by Stage
 
 ```js
-import { stageConstants } from 'tods-competition-factory';
+import { drawDefinitionConstants } from 'tods-competition-factory';
 
 engine.publishEvent({
   eventId,

@@ -23,8 +23,9 @@
  */
 
 import { QUALIFYING, SINGLE_ELIMINATION } from '@Constants/drawDefinitionConstants';
-import { SINGLES, DOUBLES } from '@Constants/eventConstants';
 import { POLICY_TYPE_RANKING_POINTS } from '@Constants/policyConstants';
+import { SINGLES, DOUBLES } from '@Constants/eventConstants';
+import { ITF } from '@Constants/pointsAuthorityConstants';
 
 // ─── Award Profiles ──────────────────────────────────────────────────────────
 
@@ -106,6 +107,7 @@ export const POLICY_RANKING_POINTS_ITF_WTT = {
   [POLICY_TYPE_RANKING_POINTS]: {
     policyName: 'ITF World Tennis Tour 2020',
     policyVersion: '2020.01',
+    pointsAuthority: ITF,
     validDateRange: { startDate: '2020-01-01' },
 
     awardProfiles,

@@ -8,6 +8,7 @@ import { generateRoundRobin } from './drawTypes/roundRobin/roundRobin';
 import { generateAdaptiveStructures } from './drawTypes/adaptiveDraw';
 import structureTemplate from '../templates/structureTemplate';
 import { generatePagePlayoff } from './drawTypes/pagePlayoff';
+import { customLuckyDraw } from './drawTypes/customLuckyDraw';
 import { feedInChampionship } from './drawTypes/feedInChamp';
 import { treeMatchUps } from './drawTypes/eliminationTree';
 import { constantToString } from '@Tools/strings';
@@ -20,7 +21,7 @@ import { ErrorType } from '@Constants/errorConditionConstants';
 import { SUCCESS } from '@Constants/resultConstants';
 // prettier-ignore
 import {
-  MAIN, PLAY_OFF, FICQF, FICSF, MFIC, AD_HOC, CURTIS, FICR16, COMPASS,
+  MAIN, PLAY_OFF, FICQF, FICSF, MFIC, AD_HOC, CURTIS, FICR16, COMPASS, LADDER,
   PAGE_PLAYOFF, PLAYOFF, OLYMPIC, FEED_IN, ROUND_ROBIN,
   COMPASS_ATTRIBUTES, OLYMPIC_ATTRIBUTES, ADAPTIVE_ATTRIBUTES, ADAPTIVE, SWISS,
   SINGLE_ELIMINATION, DOUBLE_ELIMINATION,
@@ -79,6 +80,30 @@ export function getGenerators(params): { generators?: any; error?: ErrorType } {
 
       return { structures: [structure], links: [], ...SUCCESS };
     },
+    [LADDER]: () => {
+      const structure = structureTemplate({
+        finishingPosition: WIN_RATIO,
+        stageSequence,
+        structureName,
+        matchUps: [],
+        matchUpType,
+        structureId,
+        stage,
+      });
+
+      // A ladder generates NO matchUps — every one is created later by `issueChallenge` — and NO
+      // positionAssignments either, which is where it parts company with SWISS above.
+      //
+      // A ladder drawPosition is a RANK, not a slot. Pre-creating `drawSize` empty positions the
+      // way SWISS does would put phantom ranks 1..n at the TOP of the standing and seat the first
+      // real member below all of them, because `addLadderParticipant` appends after the highest
+      // existing position. Rank 1 would belong to nobody.
+      //
+      // So the standing starts empty and members are seated by `addLadderParticipant`, which is
+      // also the only thing that can rank them: `drawSize` and entry order are not a ranking.
+
+      return { structures: [structure], links: [], ...SUCCESS };
+    },
     [SWISS]: () => {
       const structure = structureTemplate({
         finishingPosition: WIN_RATIO,
@@ -98,6 +123,31 @@ export function getGenerators(params): { generators?: any; error?: ErrorType } {
       return { structures: [structure], links: [], ...SUCCESS };
     },
     [LUCKY_DRAW]: () => {
+      // An explicit per-round matchUp-count profile turns the default
+      // ceil-halving cascade into the deterministic variant. The profile
+      // is persisted as a structure extension so advancement-time queries
+      // can derive `requiredLuckyLoserCount` per transition. When absent,
+      // the standard halving generator runs unchanged.
+      if (params.roundProfile) {
+        const { matchUps, roundProfile, error, info } = customLuckyDraw(params);
+        if (error) return { error, info };
+
+        const structure = structureTemplate({
+          stageSequence,
+          structureName,
+          matchUpType,
+          structureId,
+          matchUps,
+          stage,
+        });
+
+        if (roundProfile) {
+          structure.extensions = [{ name: 'customRoundProfile', value: roundProfile }];
+        }
+
+        return { structures: [structure], links: [], ...SUCCESS };
+      }
+
       const { matchUps } = luckyDraw(params);
       const structure = structureTemplate({
         stageSequence,

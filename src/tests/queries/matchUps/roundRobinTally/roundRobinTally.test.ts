@@ -1,7 +1,7 @@
 import { tallyParticipantResults } from '@Query/matchUps/roundRobinTally/tallyParticipantResults';
 import { getPositionAssignments } from '@Query/drawDefinition/positionsGetter';
+import { firstClassOrExtension } from '@Acquire/firstClassOrExtension';
 import { toBePlayed } from '@Fixtures/scoring/outcomes/toBePlayed';
-import { findExtension } from '@Acquire/findExtension';
 import tournamentEngine from '@Engines/syncEngine';
 import mocksEngine from '@Assemblies/engines/mock';
 import { intersection } from '@Tools/arrays';
@@ -355,10 +355,7 @@ it('properly orders round robin participants; drawSize: 5, SET3-S:4/TB7-F:TB7', 
   // and the eventData payload that is intended for presentation
   expectations.forEach(({ drawPosition, expectation }) => {
     const assignment = positionAssignments?.find((assignment) => assignment.drawPosition === drawPosition);
-    const participantResult = findExtension({
-      element: assignment,
-      name: TALLY,
-    }).extension?.value;
+    const participantResult = firstClassOrExtension({ element: assignment, attribute: 'tally', name: TALLY });
     const eventParticipantResult = participantResults.find(
       (result) => result.drawPosition === drawPosition,
     ).participantResult;
@@ -452,9 +449,8 @@ it('RR Format Standard tally test', () => {
 });
 
 function getDrawPositionTally({ positionAssignments, drawPosition }) {
-  return positionAssignments
-    .find((assignment) => assignment.drawPosition === drawPosition)
-    .extensions.find(({ name }) => name === TALLY)?.value;
+  const assignment = positionAssignments.find((assignment) => assignment.drawPosition === drawPosition);
+  return firstClassOrExtension({ element: assignment, attribute: 'tally', name: TALLY });
 }
 
 it('recognize when participants are tied with position order', () => {
@@ -544,10 +540,7 @@ it('recognize when participants are tied with position order', () => {
   positionAssignments?.forEach((assignment) => {
     const { drawPosition } = assignment;
     const result = participantResults.find((result) => result.drawPosition === drawPosition).participantResult;
-    const participantResult = findExtension({
-      element: assignment,
-      name: TALLY,
-    }).extension?.value;
+    const participantResult = firstClassOrExtension({ element: assignment, attribute: 'tally', name: TALLY });
 
     const { ties, matchUpsWon, matchUpsLost, setsWon, setsLost, gamesWon, gamesLost, groupOrder, rankOrder } =
       participantResult;
@@ -615,20 +608,14 @@ it('recognize when participants are tied with position order', () => {
     structure,
   }));
 
-  const tally = findExtension({
-    element: positionAssignments?.[0],
-    name: TALLY,
-  }).extension?.value;
+  const tally = firstClassOrExtension({ element: positionAssignments?.[0], attribute: 'tally', name: TALLY });
   expect(tally.subOrder).toEqual(participantResults[0].participantResult.subOrder);
 
   const groupOrders: any[] = [];
   positionAssignments?.forEach((assignment) => {
     const { drawPosition } = assignment;
     const result = participantResults.find((result) => result.drawPosition === drawPosition).participantResult;
-    const participantResult = findExtension({
-      element: assignment,
-      name: TALLY,
-    }).extension?.value;
+    const participantResult = firstClassOrExtension({ element: assignment, attribute: 'tally', name: TALLY });
 
     const { ties, matchUpsWon, matchUpsLost, setsWon, setsLost, gamesWon, gamesLost, groupOrder, rankOrder } =
       participantResult;
@@ -737,10 +724,7 @@ it('properly handles walkovers in calculating participant positions', () => {
   ];
 
   positionAssignments?.forEach((assignment, i) => {
-    const participantResult = findExtension({
-      element: assignment,
-      name: TALLY,
-    }).extension?.value;
+    const participantResult = firstClassOrExtension({ element: assignment, attribute: 'tally', name: TALLY });
 
     expect(assignment.drawPosition).toEqual(i + 1);
     const expectation = expectations[i];
@@ -841,10 +825,7 @@ it('properly handles DEFAULTS in calculating participant positions', () => {
   ];
 
   positionAssignments?.forEach((assignment, i) => {
-    const participantResult = findExtension({
-      element: assignment,
-      name: TALLY,
-    }).extension?.value;
+    const participantResult = firstClassOrExtension({ element: assignment, attribute: 'tally', name: TALLY });
 
     expect(assignment.drawPosition).toEqual(i + 1);
     const expectation = expectations[i];
@@ -944,10 +925,7 @@ it('recognize when TEAM participants are tied with position order', () => {
   positionAssignments?.forEach((assignment) => {
     const { drawPosition } = assignment;
     const result = participantResults.find((result) => result.drawPosition === drawPosition).participantResult;
-    const participantResult = findExtension({
-      element: assignment,
-      name: TALLY,
-    }).extension?.value;
+    const participantResult = firstClassOrExtension({ element: assignment, attribute: 'tally', name: TALLY });
 
     // check that the results in eventData are equivalent
     expect(result).toEqual(participantResult);
@@ -1000,9 +978,6 @@ it('recognize when TEAM participants are tied with position order', () => {
     structure,
   }));
 
-  const tally = findExtension({
-    element: positionAssignments?.[0],
-    name: TALLY,
-  }).extension?.value;
+  const tally = firstClassOrExtension({ element: positionAssignments?.[0], attribute: 'tally', name: TALLY });
   expect(tally.subOrder).toEqual(participantResults[0].participantResult.subOrder);
 });

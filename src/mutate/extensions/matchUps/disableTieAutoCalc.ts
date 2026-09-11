@@ -1,4 +1,4 @@
-import { addExtension } from '../addExtension';
+import { setFirstClassOrExtension } from '../setFirstClassOrExtension';
 import { findDrawMatchUp } from '@Acquire/findDrawMatchUp';
 
 import { MISSING_DRAW_DEFINITION } from '@Constants/errorConditionConstants';
@@ -13,8 +13,10 @@ export function disableTieAutoCalc({ drawDefinition, matchUpId, event }) {
     event,
   });
 
-  return addExtension({
-    extension: { name: DISABLE_AUTO_CALC, value: true },
+  return setFirstClassOrExtension({
     element: matchUp,
+    attribute: 'disableAutoCalc',
+    name: DISABLE_AUTO_CALC,
+    value: true,
   });
 }

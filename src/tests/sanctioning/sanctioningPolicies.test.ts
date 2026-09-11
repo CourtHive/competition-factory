@@ -76,7 +76,7 @@ describe('Policy Fixtures — Engine Integration', () => {
       hostCountryCode: 'USA',
       surfaceCategory: 'HARD',
       indoorOutdoor: 'OUTDOOR',
-      totalPrizeMoney: [{ amount: 50000, currencyCode: 'USD' }],
+      totalPrizeMoney: [{ amount: 50000, currencyCode: 'USD', unit: 'MAJOR' }],
       venues: [{ venueName: 'Cary Tennis Park', numberOfCourts: 12 }],
       tournamentDirector: { personName: 'Alice', role: 'Tournament Director' },
       referee: { personName: 'Bob', role: 'Referee', certificationLevel: 'Bronze Badge' },
@@ -116,7 +116,7 @@ describe('Policy Fixtures — Engine Integration', () => {
 
     let result: any = sanctioningEngine.validateProposal({
       sanctioningPolicy: POLICY_SANCTIONING_ITF,
-      sanctioningTier: 'W50',
+      sanctioningTier: { system: 'ITF', value: 'W50' },
     });
     expect(result.success).toBe(true);
     expect(result.valid).toBe(true);
@@ -137,7 +137,7 @@ describe('Policy Fixtures — Engine Integration', () => {
 
     let result: any = sanctioningEngine.validateProposal({
       sanctioningPolicy: POLICY_SANCTIONING_ITF,
-      sanctioningTier: 'W50',
+      sanctioningTier: { system: 'ITF', value: 'W50' },
     });
     const genderIssue = result.errors.find((i: any) => i.field.includes('gender'));
     expect(genderIssue).toBeDefined();

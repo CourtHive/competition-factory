@@ -132,8 +132,7 @@ function buildEventScaleValues({ eventCopies, scaleEventType, tournamentRecord, 
     eventsMap[eventId].ratingsStats = computeRatingsStats(eventsMap[eventId].ratings);
 
     const processedDrawIds: string[] = [];
-    const ignoreDrawId = (drawId) =>
-      (drawIds?.length && drawIds.includes(drawId)) || processedDrawIds.includes(drawId);
+    const ignoreDrawId = (drawId) => (drawIds?.length && drawIds.includes(drawId)) || processedDrawIds.includes(drawId);
 
     for (const drawDefinition of event.drawDefinitions ?? []) {
       const drawId: string = drawDefinition.drawId;

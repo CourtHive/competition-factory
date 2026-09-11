@@ -50,7 +50,9 @@ export function qualifyingGeneration(params): ResultType & { qualifyingConflicts
   } else if (structureId && generateQualifyingPlaceholder) {
     // Check if the placeholder was already created by generateNewDrawDefinition
     // (which creates it early so positioning can account for qualifier positions)
-    const existingPlaceholder = drawDefinition.structures?.find((s: any) => s.stage === QUALIFYING && !s.matchUps?.length);
+    const existingPlaceholder = drawDefinition.structures?.find(
+      (s: any) => s.stage === QUALIFYING && !s.matchUps?.length,
+    );
     if (!existingPlaceholder) {
       const qualifyingStructure = structureTemplate({
         structureName: constantToString(QUALIFYING),
@@ -107,7 +109,7 @@ function processQualifyingProfiles({
       });
 
     roundTarget = roundTargetProfile.roundTarget || roundTarget;
-    const sortedStructureProfiles = roundTargetProfile.structureProfiles?.sort(sequenceSort) ?? [];
+    const sortedStructureProfiles = roundTargetProfile.structureProfiles?.toSorted(sequenceSort) ?? [];
 
     let sequence = 1;
     for (const structureProfile of sortedStructureProfiles) {

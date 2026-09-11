@@ -1,4 +1,5 @@
 import { removeLineUpSubstitutions } from '@Mutate/drawDefinitions/removeLineUpSubstitutions';
+import { firstClassOrExtension } from '@Acquire/firstClassOrExtension';
 import { generateTeamTournament } from '../participants/team/generateTestTeamTournament';
 import { checkScoreHasValue } from '@Query/matchUp/checkScoreHasValue';
 import { validateLineUp } from '@Validators/validateTeamLineUp';
@@ -23,6 +24,7 @@ import {
   MISSING_PARTICIPANT_ID,
 } from '@Constants/errorConditionConstants';
 import {
+  CLEAR_SCORE,
   END,
   PENALTY,
   REFEREE,
@@ -119,8 +121,8 @@ it('can substitute an individual participant in a TEAM tieMatchUp', () => {
   tournamentEngine.setState(tournamentRecord);
 
   let { drawDefinition } = tournamentEngine.getEvent({ drawId });
-  let lineUpExtension = drawDefinition.extensions.find(({ name }) => name === LINEUPS);
-  expect(lineUpExtension).toBeUndefined();
+  let lineUps = firstClassOrExtension({ element: drawDefinition, attribute: 'lineUps', name: LINEUPS });
+  expect(lineUps).toBeUndefined();
 
   const { participants: teamParticipants } = tournamentEngine.getParticipants({
     participantFilters: { participantTypes: [TEAM_PARTICIPANT] },
@@ -137,8 +139,8 @@ it('can substitute an individual participant in a TEAM tieMatchUp', () => {
   });
 
   drawDefinition = tournamentEngine.getEvent({ drawId }).drawDefinition;
-  lineUpExtension = drawDefinition.extensions.find(({ name }) => name === LINEUPS);
-  expect(lineUpExtension).not.toBeUndefined();
+  lineUps = firstClassOrExtension({ element: drawDefinition, attribute: 'lineUps', name: LINEUPS });
+  expect(lineUps).not.toBeUndefined();
 
   const { participants: pairParticipants } = tournamentEngine.getParticipants({
     participantFilters: { participantTypes: [PAIR] },
@@ -215,7 +217,7 @@ it('can substitute an individual participant in a TEAM tieMatchUp', () => {
   validActions = result.validActions.map(({ type }) => type);
 
   // since there is a score removing is not allowed
-  expect(validActions).toEqual([REFEREE, SCHEDULE, PENALTY, STATUS, SCORE, START, END, SUBSTITUTION]);
+  expect(validActions).toEqual([REFEREE, SCHEDULE, PENALTY, STATUS, SCORE, START, END, CLEAR_SCORE, SUBSTITUTION]);
 
   result = tournamentEngine.matchUpActions({
     matchUpId: singlesMatchUpId,
@@ -234,6 +236,7 @@ it('can substitute an individual participant in a TEAM tieMatchUp', () => {
     SCORE,
     START,
     END,
+    CLEAR_SCORE,
     REPLACE_PARTICIPANT,
     SUBSTITUTION,
   ]);
@@ -287,7 +290,7 @@ it('can substitute an individual participant in a TEAM tieMatchUp', () => {
   });
   validActions = result.validActions.map(({ type }) => type);
 
-  expect(validActions).toEqual([REFEREE, SCHEDULE, PENALTY, STATUS, SCORE, START, END, SUBSTITUTION]);
+  expect(validActions).toEqual([REFEREE, SCHEDULE, PENALTY, STATUS, SCORE, START, END, CLEAR_SCORE, SUBSTITUTION]);
 
   let substitutionAction = result.validActions.find(({ type }) => type === SUBSTITUTION);
 
@@ -320,6 +323,7 @@ it('can substitute an individual participant in a TEAM tieMatchUp', () => {
     SCORE,
     START,
     END,
+    CLEAR_SCORE,
     REPLACE_PARTICIPANT,
     SUBSTITUTION,
   ]);
@@ -470,6 +474,7 @@ it('can substitute an individual participant in a TEAM tieMatchUp', () => {
     SCORE,
     START,
     END,
+    CLEAR_SCORE,
     REMOVE_PARTICIPANT,
     REPLACE_PARTICIPANT,
     REMOVE_SUBSTITUTION,
@@ -488,6 +493,7 @@ it('can substitute an individual participant in a TEAM tieMatchUp', () => {
     SCORE,
     START,
     END,
+    CLEAR_SCORE,
     // REMOVE_PARTICIPANT, // this option is not available for the side that has no substitution!
     REPLACE_PARTICIPANT,
   ]);
@@ -518,6 +524,7 @@ it('can substitute an individual participant in a TEAM tieMatchUp', () => {
     SCORE,
     START,
     END,
+    CLEAR_SCORE,
     REMOVE_PARTICIPANT,
     REPLACE_PARTICIPANT,
     REMOVE_SUBSTITUTION,
@@ -539,7 +546,7 @@ it('can substitute an individual participant in a TEAM tieMatchUp', () => {
   });
   validActions = result.validActions.map(({ type }) => type);
 
-  expect(validActions).toEqual([REFEREE, PENALTY, SCORE, START, END, REPLACE_PARTICIPANT]);
+  expect(validActions).toEqual([REFEREE, PENALTY, SCORE, START, END, CLEAR_SCORE, REPLACE_PARTICIPANT]);
 
   // if there are no substitutions then processCodes should be removed
   targetMatchUp = tournamentEngine.allTournamentMatchUps({
@@ -592,8 +599,8 @@ it('can substitute a single individual participant in a TEAM tieMatchUp when onl
   tournamentEngine.setState(tournamentRecord);
 
   let { drawDefinition } = tournamentEngine.getEvent({ drawId });
-  let lineUpExtension = drawDefinition.extensions.find(({ name }) => name === LINEUPS);
-  expect(lineUpExtension).toBeUndefined();
+  let lineUps = firstClassOrExtension({ element: drawDefinition, attribute: 'lineUps', name: LINEUPS });
+  expect(lineUps).toBeUndefined();
 
   const { participants: teamParticipants } = tournamentEngine.getParticipants({
     participantFilters: { participantTypes: [TEAM_PARTICIPANT] },
@@ -636,8 +643,8 @@ it('can substitute a single individual participant in a TEAM tieMatchUp when onl
   });
 
   drawDefinition = tournamentEngine.getEvent({ drawId }).drawDefinition;
-  lineUpExtension = drawDefinition.extensions.find(({ name }) => name === LINEUPS);
-  expect(lineUpExtension).not.toBeUndefined();
+  lineUps = firstClassOrExtension({ element: drawDefinition, attribute: 'lineUps', name: LINEUPS });
+  expect(lineUps).not.toBeUndefined();
 
   result = tournamentEngine.matchUpActions({
     policyDefinitions: {

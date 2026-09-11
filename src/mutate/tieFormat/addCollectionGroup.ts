@@ -71,7 +71,7 @@ export function addCollectionGroup({
     }
   });
 
-  tieFormat.collectionGroups = [...(tieFormat.collecitonGroups ?? []), groupDefinition];
+  tieFormat.collectionGroups = [...(tieFormat.collectionGroups ?? []), groupDefinition];
 
   return collectionGroupUpdate({
     updateInProgressMatchUps,

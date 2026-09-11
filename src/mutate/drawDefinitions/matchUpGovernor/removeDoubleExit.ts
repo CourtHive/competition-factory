@@ -68,8 +68,29 @@ export function removeDoubleExit(params) {
     });
   }
 
-  const byePropagatedToLoserMatchUp =
-    loserMatchUp?.matchUpStatus === BYE && (loserMatchUp?.feedRound || loserMatchUp?.roundNumber === 1);
+  // Did this cascade place the BYE that is sitting on the loserMatchUp?
+  //
+  // `assignDrawPositionBye` records the answer on the positionAssignment as `byeFromPropagation`, and
+  // that record is authoritative — including when it is absent, which is the case the previous
+  // inference could not express.
+  //
+  // What it replaced:
+  //     loserMatchUp?.matchUpStatus === BYE && (loserMatchUp?.feedRound || loserMatchUp?.roundNumber === 1)
+  //
+  // "it is a BYE and it sits on a feed round or in round 1, therefore I placed it" — a structural
+  // proxy of exactly the kind that produced #4778. It cannot distinguish a BYE this cascade
+  // created from one that was already there, so unwinding over-cleared: an FMLC consolation BYE
+  // placed by `propagateConsolationBye` (which fires when the first-round matchUps completed
+  // NORMALLY) satisfies it and was claimed.
+  //
+  // A draw persisted before `byeFromPropagation` existed carries no marker, so unwinding a double
+  // exit in one will not remove the BYEs its cascade placed. That is a DECISION, not an oversight:
+  // no backfill is being pursued on pre-existing tournaments/events/draws/structures. Behaviour is
+  // correct for anything this engine touches and inert for stored draws that predate it.
+  const byeProvenance = findPropagatedBye({ drawDefinition, loserMatchUp, loserTargetDrawPosition });
+
+  const byePropagatedToLoserMatchUp = loserMatchUp?.matchUpStatus === BYE && !!byeProvenance;
+
   const isFMLC = targetData?.targetLinks?.loserTargetLink?.linkCondition === FIRST_MATCHUP;
 
   if (byePropagatedToLoserMatchUp && isFMLC) {
@@ -78,7 +99,10 @@ export function removeDoubleExit(params) {
       ({ roundNumber, structureId }) => structureId === matchUp.structureId && roundNumber === 1,
     );
     const roundPositions = roundMatchUps.map(({ roundPosition }) => roundPosition);
-    const pairedPositions = chunkArray(roundPositions.sort((a, b) => a - b), 2).find((chunk) => chunk.includes(matchUp.roundPosition));
+    const pairedPositions = chunkArray(
+      roundPositions.toSorted((a, b) => a - b),
+      2,
+    ).find((chunk) => chunk.includes(matchUp.roundPosition));
     const pairedMatchUpStatuses = roundMatchUps
       .filter(({ roundPosition }) => pairedPositions.includes(roundPosition))
       ?.map(({ matchUpStatus }) => matchUpStatus);
@@ -241,6 +265,8 @@ export function conditionallyRemoveDrawPosition(params) {
   const matchUpStatus = getMatchUpStatus({
     pairedPreviousDoubleExit,
     noContextTargetMatchUp,
+    drawDefinition,
+    targetMatchUp,
   });
 
   const removeScore = !pairedPreviousDoubleExit;
@@ -265,8 +291,57 @@ export function conditionallyRemoveDrawPosition(params) {
   return { ...SUCCESS };
 }
 
-function getMatchUpStatus({ pairedPreviousDoubleExit, noContextTargetMatchUp }) {
+/**
+ * Does a drawPosition of this matchUp carry a BYE assignment?
+ *
+ * The positionAssignment is the DURABLE record; the matchUp's own `matchUpStatus` is not, because
+ * by the time the unwind reaches here the cascade has already overwritten a BYE matchUp with the
+ * exit it propagated (measured: `BYE` -> `WALKOVER` on apply). Asking the status therefore asks a
+ * field the cascade has clobbered, while the assignment still says `bye: true`.
+ *
+ * This is the same rule `advanceWinner` applies when it places a matchUp:
+ * `drawPositionIsBye || pairedDrawPositionIsBye ? BYE : TO_BE_PLAYED`.
+ */
+function targetDrawPositionIsBye({ drawDefinition, noContextTargetMatchUp, targetMatchUp }): boolean {
+  const drawPositions = noContextTargetMatchUp?.drawPositions?.filter(Boolean) ?? [];
+  // structureId comes from the IN-CONTEXT matchUp: a no-context matchUp does not carry one, and
+  // reading it there silently yields undefined -> no structure -> a false negative.
+  const structureId = targetMatchUp?.structureId;
+  if (!drawPositions.length || !structureId) return false;
+
+  const { structure: targetStructure } = findStructure({ drawDefinition, structureId });
+  return !!targetStructure?.positionAssignments?.some(
+    (assignment) => drawPositions.includes(assignment.drawPosition) && assignment.bye,
+  );
+}
+
+function getMatchUpStatus({ pairedPreviousDoubleExit, noContextTargetMatchUp, drawDefinition, targetMatchUp }) {
   if (noContextTargetMatchUp.matchUpStatus === BYE) return BYE;
-  if (!pairedPreviousDoubleExit) return TO_BE_PLAYED;
-  return [DOUBLE_DEFAULT, DEFAULTED].includes(noContextTargetMatchUp?.matchUpStatus) ? DEFAULTED : WALKOVER;
+  // A still-live paired double exit keeps its produced exit; that decision is unchanged and is
+  // checked BEFORE the assignment, because a BYE-held drawPosition legitimately carries a
+  // propagated exit while one is outstanding (measured: a Consolation matchUp reads DEFAULTED on a
+  // BYE drawPosition mid-cascade, and must stay that way).
+  if (pairedPreviousDoubleExit) {
+    return [DOUBLE_DEFAULT, DEFAULTED].includes(noContextTargetMatchUp?.matchUpStatus) ? DEFAULTED : WALKOVER;
+  }
+  // Otherwise the unwind is complete and the matchUp reverts. `matchUpStatus` above can already
+  // have been overwritten by the cascade being unwound (measured: BYE -> WALKOVER on apply), so it
+  // cannot answer "was this a BYE?". The positionAssignment is the durable record and still can.
+  if (targetDrawPositionIsBye({ drawDefinition, noContextTargetMatchUp, targetMatchUp })) return BYE;
+  return TO_BE_PLAYED;
+}
+
+/**
+ * The `byeFromPropagation` marker on the loser target's positionAssignment.
+ *
+ * Returns undefined both when the drawPosition carries no BYE and when the BYE carries no marker;
+ * the caller treats those alike, since neither is a positive statement that this cascade placed it.
+ */
+function findPropagatedBye({ drawDefinition, loserMatchUp, loserTargetDrawPosition }): any {
+  if (!loserMatchUp?.structureId || loserTargetDrawPosition === undefined) return undefined;
+  const { structure } = findStructure({ drawDefinition, structureId: loserMatchUp.structureId });
+  const assignment = structure?.positionAssignments?.find(
+    (candidate) => candidate.drawPosition === loserTargetDrawPosition,
+  );
+  return assignment?.bye ? assignment.byeFromPropagation : undefined;
 }

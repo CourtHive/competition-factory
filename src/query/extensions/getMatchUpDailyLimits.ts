@@ -1,5 +1,5 @@
+import { firstClassGroupLeafOrExtension } from '@Mutate/extensions/setGroupLeafOrExtension';
 import { checkRequiredParameters } from '@Helpers/parameters/checkRequiredParameters';
-import { findExtension } from '@Acquire/findExtension';
 
 // constants and types
 import { MISSING_TOURNAMENT_RECORDS } from '@Constants/errorConditionConstants';
@@ -49,12 +49,14 @@ export function getDailyLimit(params): ResultType & {
     tournamentRecord,
   });
 
-  const { extension } = findExtension({
+  const limitsValue = firstClassGroupLeafOrExtension({
     element: tournamentRecord,
+    groupAttribute: 'scheduling',
+    leafAttribute: 'dailyLimits',
     name: SCHEDULE_LIMITS,
   });
 
-  const tournamentDailyLimits = extension?.value?.dailyLimits;
+  const tournamentDailyLimits = limitsValue?.dailyLimits;
   const policyDailyLimits = policy?.defaultDailyLimits;
 
   return { matchUpDailyLimits: tournamentDailyLimits || policyDailyLimits };

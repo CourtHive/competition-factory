@@ -11,9 +11,10 @@ type RequestModificationArgs = {
   sanctioningRecord: SanctioningRecord;
   requestedBy?: string;
   note?: string;
+  noteId?: string;
 };
 
-export function requestModification({ sanctioningRecord, requestedBy, note }: RequestModificationArgs) {
+export function requestModification({ sanctioningRecord, requestedBy, note, noteId }: RequestModificationArgs) {
   if (!sanctioningRecord) return { error: MISSING_SANCTIONING_RECORD };
 
   const result = transitionStatus({
@@ -27,7 +28,8 @@ export function requestModification({ sanctioningRecord, requestedBy, note }: Re
   if (note) {
     sanctioningRecord.reviewNotes ??= [];
     const reviewNote: ReviewNote = {
-      noteId: UUID(),
+      // Caller-supplied id wins — see addReviewNote for why this is not cosmetic.
+      noteId: noteId ?? UUID(),
       reviewerId: requestedBy,
       note,
       createdAt: sanctioningRecord.updatedAt,

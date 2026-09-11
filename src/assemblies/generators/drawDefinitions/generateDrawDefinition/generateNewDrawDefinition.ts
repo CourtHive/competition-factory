@@ -66,9 +66,7 @@ export function generateNewDrawDefinition(params): ResultType & {
   )?.structureId;
   const existingQualifyingLink =
     mainStructureId &&
-    drawDefinition?.links?.some(
-      (l: any) => l.target?.structureId === mainStructureId && l.source?.structureId,
-    );
+    drawDefinition?.links?.some((l: any) => l.target?.structureId === mainStructureId && l.source?.structureId);
   if (
     qualifyingPlaceholder &&
     !qualifyingProfiles?.length &&
@@ -119,8 +117,13 @@ export function generateNewDrawDefinition(params): ResultType & {
   const structureId = structureResult.structureId;
   if (structureResult.conflicts) conflicts = structureResult.conflicts;
 
-  if (isAdHocType(drawType) && params.roundsCount) {
-    generateAdHoc({ ...params, drawDefinition, structureId });
+  // a pairingProfile supplies its own schedule length, so it does not require an explicit roundsCount
+  if (isAdHocType(drawType) && (params.roundsCount || params.pairingProfile)) {
+    // propagate: without this every error raised beneath generateAdHoc — notably drawMatic's
+    // 'Not enough participants for roundsCount' — is discarded and the caller receives a
+    // well-formed drawDefinition containing zero matchUps and no error
+    const adHocResult = generateAdHoc({ ...params, drawDefinition, structureId });
+    if (adHocResult?.error) return adHocResult;
   }
 
   return { drawDefinition, positioningReports, conflicts, structureId };
@@ -132,21 +135,33 @@ function addEntries(params) {
   for (const entry of entries) {
     // safeguard: never add WITHDRAWN entries to draw definition
     if (entry.entryStatus === WITHDRAWN) continue;
-    // if drawEntries and entryStage !== stage ignore (allow qualifying entries when qualifyingOnly)
-    if (drawEntries && entry.entryStage && entry.entryStage !== MAIN && !(qualifyingOnly && entry.entryStage === QUALIFYING)) continue;
+
+    // Cross-stage drawEntries are recorded on the draw with their original
+    // entryStage. The factory's positioning step (prepareStage) filters
+    // by stage so QUALIFYING entries passed alongside a MAIN flow won't
+    // be placed in the main structure — they just travel with the draw
+    // so that a later "Generate qualifying" step can use them without
+    // requiring a separate addEventEntries round-trip.
+    const isCrossStage = !!(
+      drawEntries &&
+      entry.entryStage &&
+      entry.entryStage !== MAIN &&
+      !(qualifyingOnly && entry.entryStage === QUALIFYING)
+    );
 
     const entryData = {
       ...entry,
-      ignoreStageSpace: ignoreStageSpace ?? isAdHocType(drawType),
+      ignoreStageSpace: ignoreStageSpace ?? (isCrossStage || isAdHocType(drawType)),
       entryStage: entry.entryStage ?? MAIN,
       event: params.event,
       drawDefinition,
       drawType,
     };
     const result = addDrawEntry(entryData);
-    if (drawEntries && result.error) {
-      // only report errors with drawEntries
-      // if entries are taken from event.entries assume stageSpace is not available
+    if (drawEntries && !isCrossStage && result.error) {
+      // only report errors with drawEntries for the active stage; cross-stage
+      // entries failing to attach (e.g. existing-participant on a previously
+      // populated draw) shouldn't block the primary generation step.
       return result;
     }
   }

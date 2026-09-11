@@ -9,7 +9,7 @@ import { intersection } from '@Tools/arrays';
 
 // Constants
 import { ARRAY, ERROR, OF_TYPE, TOURNAMENT_RECORD } from '@Constants/attributeConstants';
-import { PAIR, TEAM as participantTeam } from '@Constants/participantConstants';
+import { GROUP, PAIR, TEAM as participantTeam } from '@Constants/participantConstants';
 import { DELETE_PARTICIPANTS } from '@Constants/topicConstants';
 import { UNGROUPED } from '@Constants/entryStatusConstants';
 import { SUCCESS } from '@Constants/resultConstants';
@@ -104,15 +104,31 @@ export function deleteParticipants(params: DeleteParticipantsArgs): {
       (participant.participantType === PAIR &&
         participant.individualParticipantIds?.some((id) => participantIds.includes(id)));
 
-    // remove deleted individualParticipantIds from TEAMs
+    // Remove deleted individuals from every grouping that referenced them — TEAM *and* GROUP.
+    //
+    // GROUP was missing, so a deleted participant stayed in every group they belonged to. Those dangling
+    // ids are not inert: they reach draw avoidance (`addParticipantGroupings`), SHARED_GROUPING conflict
+    // evaluation, `membersCount`, and the public participants payload. The sibling path
+    // `removeParticipantIdsFromAllTeams` does not cover it either — its role filter defaults to
+    // COMPETITOR, and a GROUP carries OTHER or a relationship role, so it skips them.
+    //
+    // `contactParticipantIds` is pruned alongside, or a grouping would keep pointing at a deleted
+    // participant as its contact person.
     if (
       !participantToRemove &&
-      participant.participantType === TEAM &&
-      participant.individualParticipantIds?.some((id) => participantIds.includes(id))
+      participant.participantType &&
+      [participantTeam, GROUP].includes(participant.participantType)
     ) {
-      participant.individualParticipantIds = participant.individualParticipantIds.filter(
-        (id) => !participantIds.includes(id),
-      );
+      if (participant.individualParticipantIds?.some((id) => participantIds.includes(id))) {
+        participant.individualParticipantIds = participant.individualParticipantIds.filter(
+          (id) => !participantIds.includes(id),
+        );
+      }
+      if (participant.contactParticipantIds?.some((id) => participantIds.includes(id))) {
+        participant.contactParticipantIds = participant.contactParticipantIds.filter(
+          (id) => !participantIds.includes(id),
+        );
+      }
     }
 
     if (

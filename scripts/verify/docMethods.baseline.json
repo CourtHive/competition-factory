@@ -1,0 +1,33 @@
+{
+  "comment": "Documented engine calls that do not exist on the engine. Shrink this by fixing them — never grow it to silence a finding. Regenerate: pnpm verify:docs-methods --update-baseline",
+  "generated": "node scripts/verify/docMethods.mjs --update-baseline",
+  "count": 26,
+  "entries": [
+    "[\"documentation/docs/concepts/draw-links.mdx\",\"tournamentEngine.generateStructure()\"]",
+    "[\"documentation/docs/concepts/venues-courts.md\",\"tournamentEngine.getCourt()\"]",
+    "[\"documentation/docs/concepts/venues-courts.md\",\"tournamentEngine.getCourtMatchUps()\"]",
+    "[\"documentation/docs/engines/state-engines.mdx\",\"askEngine.getParticipants()\"]",
+    "[\"documentation/docs/governors/score-governor.md\",\"mocksEngine.parseScoreString()\"]",
+    "[\"documentation/docs/policies/seedingPolicy.md\",\"tournamentEngine.assignSeed()\"]",
+    "[\"documentation/docs/policies/seedingPolicy.md\",\"tournamentEngine.clearDrawSeeding()\"]",
+    "[\"documentation/docs/testing/testing-overview.md\",\"tournamentEngine.getDrawPositions()\"]",
+    "[\"documentation/docs/tmx/browser-console.md\",\"tournamentEngine.getDrawDefinitions()\"]",
+    "[\"documentation/docs/tmx/browser-console.md\",\"tournamentEngine.validateTournament()\"]",
+    "[\"documentation/docs/tmx/draws.md\",\"tournamentEngine.assignLuckyLoser()\"]",
+    "[\"documentation/docs/tmx/draws.md\",\"tournamentEngine.assignSeed()\"]",
+    "[\"documentation/docs/tmx/draws.md\",\"tournamentEngine.checkDrawValidity()\"]",
+    "[\"documentation/docs/tmx/draws.md\",\"tournamentEngine.getDrawDefinition()\"]",
+    "[\"documentation/docs/tmx/draws.md\",\"tournamentEngine.getEventDraws()\"]",
+    "[\"documentation/docs/tmx/draws.md\",\"tournamentEngine.getEventEntries()\"]",
+    "[\"documentation/docs/tmx/draws.md\",\"tournamentEngine.getLuckyLoserAvailability()\"]",
+    "[\"documentation/docs/tmx/events-categories.md\",\"tournamentEngine.setEventFlightProfile()\"]",
+    "[\"documentation/docs/tmx/events-categories.md\",\"tournamentEngine.setEventPublishingDetail()\"]",
+    "[\"documentation/docs/tmx/events-categories.md\",\"tournamentEngine.setEventPublishState()\"]",
+    "[\"documentation/docs/tmx/matchups.md\",\"tournamentEngine.getParticipantMatchUps()\"]",
+    "[\"documentation/docs/tmx/participants.md\",\"tournamentEngine.addParticipantContact()\"]",
+    "[\"documentation/docs/tmx/participants.md\",\"tournamentEngine.searchParticipants()\"]",
+    "[\"documentation/docs/tmx/venues-scheduling.md\",\"tournamentEngine.autoSchedule()\"]",
+    "[\"documentation/docs/tmx/venues-scheduling.md\",\"tournamentEngine.getCourtMatchUps()\"]",
+    "[\"documentation/docs/tmx/venues-scheduling.md\",\"tournamentEngine.removeMatchUpSchedule()\"]"
+  ]
+}

@@ -571,7 +571,6 @@ function processFeedInPlayoff({
   });
 }
 
-
 function processPagePlayoff({
   finishingPositionTargets,
   participantsInDraw,
@@ -597,17 +596,36 @@ function processPagePlayoff({
 
   if (isEliminationSource) {
     return processPagePlayoffFromElimination({
-      finishingPositionTargets, sourceStructureId, drawDefinition, playoffGroup, structures, params, links,
+      finishingPositionTargets,
+      sourceStructureId,
+      drawDefinition,
+      playoffGroup,
+      structures,
+      params,
+      links,
     });
   }
 
   return processPagePlayoffFromRR({
-    finishingPositionTargets, sourceStructureId, finishingPositions, playoffGroup, structures, params, links, stack,
+    finishingPositionTargets,
+    sourceStructureId,
+    finishingPositions,
+    playoffGroup,
+    structures,
+    params,
+    links,
+    stack,
   });
 }
 
 function processPagePlayoffFromElimination({
-  finishingPositionTargets, sourceStructureId, drawDefinition, playoffGroup, structures, params, links,
+  finishingPositionTargets,
+  sourceStructureId,
+  drawDefinition,
+  playoffGroup,
+  structures,
+  params,
+  links,
 }) {
   const structureName = playoffGroup.structureName;
   const { matchUpType, isMock, uuids, idPrefix, finishingPositionOffset = 0 } = params;
@@ -616,34 +634,55 @@ function processPagePlayoffFromElimination({
   const { matchUps: elimMatchUps } = treeMatchUps({
     finishingPositionOffset: finishingPositionOffset + 2,
     idPrefix: idPrefix && `${idPrefix}-el`,
-    drawSize: 2, matchUpType, isMock, uuids,
+    drawSize: 2,
+    matchUpType,
+    isMock,
+    uuids,
   });
   const elimStructure = structureTemplate({
     structureName: structureName ? `${structureName} 3-4 Playoff` : '3-4 Playoff',
-    structureAbbreviation: 'EL', structureId: uuids?.pop(),
-    matchUps: elimMatchUps, stageSequence: 1, matchUpType, stage,
+    structureAbbreviation: 'EL',
+    structureId: uuids?.pop(),
+    matchUps: elimMatchUps,
+    stageSequence: 1,
+    matchUpType,
+    stage,
   });
 
   const { matchUps: q2MatchUps } = treeMatchUps({
     finishingPositionOffset: finishingPositionOffset + 1,
     idPrefix: idPrefix && `${idPrefix}-q2`,
-    drawSize: 2, matchUpType, isMock, uuids,
+    drawSize: 2,
+    matchUpType,
+    isMock,
+    uuids,
   });
   const q2Structure = structureTemplate({
     structureName: structureName ? `${structureName} Playoff Qualifier` : 'Playoff Qualifier',
-    structureAbbreviation: 'Q2', structureId: uuids?.pop(),
-    matchUps: q2MatchUps, stageSequence: 2, matchUpType, stage,
+    structureAbbreviation: 'Q2',
+    structureId: uuids?.pop(),
+    matchUps: q2MatchUps,
+    stageSequence: 2,
+    matchUpType,
+    stage,
   });
 
   const { matchUps: finalMatchUps } = treeMatchUps({
     finishingPositionOffset,
     idPrefix: idPrefix && `${idPrefix}-fi`,
-    drawSize: 2, matchUpType, isMock, uuids,
+    drawSize: 2,
+    matchUpType,
+    isMock,
+    uuids,
   });
   const finalStructure = structureTemplate({
     structureName: structureName ? `${structureName} Final` : 'Playoff Final',
-    structureAbbreviation: 'F', structureId: uuids?.pop(),
-    matchUps: finalMatchUps, stageSequence: 3, matchUpType, stage,
+    structureAbbreviation: 'F',
+    structureId: uuids?.pop(),
+    matchUps: finalMatchUps,
+    stageSequence: 3,
+    matchUpType,
+    stage,
   });
 
   structures.push(elimStructure, q2Structure, finalStructure);
@@ -655,11 +694,31 @@ function processPagePlayoffFromElimination({
   const semifinalRoundNumber = finalRoundNumber - 1;
 
   links.push(
-    { linkType: LOSER, source: { structureId: sourceStructureId, roundNumber: semifinalRoundNumber }, target: { feedProfile: TOP_DOWN, roundNumber: 1, structureId: elimStructure.structureId } },
-    { linkType: WINNER, source: { structureId: sourceStructureId, roundNumber: finalRoundNumber }, target: { feedProfile: TOP_DOWN, roundNumber: 1, structureId: finalStructure.structureId } },
-    { linkType: LOSER, source: { structureId: sourceStructureId, roundNumber: finalRoundNumber }, target: { feedProfile: TOP_DOWN, roundNumber: 1, structureId: q2Structure.structureId } },
-    { linkType: WINNER, source: { structureId: elimStructure.structureId, roundNumber: 1 }, target: { feedProfile: TOP_DOWN, roundNumber: 1, structureId: q2Structure.structureId } },
-    { linkType: WINNER, source: { structureId: q2Structure.structureId, roundNumber: 1 }, target: { feedProfile: TOP_DOWN, roundNumber: 1, structureId: finalStructure.structureId } },
+    {
+      linkType: LOSER,
+      source: { structureId: sourceStructureId, roundNumber: semifinalRoundNumber },
+      target: { feedProfile: TOP_DOWN, roundNumber: 1, structureId: elimStructure.structureId },
+    },
+    {
+      linkType: WINNER,
+      source: { structureId: sourceStructureId, roundNumber: finalRoundNumber },
+      target: { feedProfile: TOP_DOWN, roundNumber: 1, structureId: finalStructure.structureId },
+    },
+    {
+      linkType: LOSER,
+      source: { structureId: sourceStructureId, roundNumber: finalRoundNumber },
+      target: { feedProfile: TOP_DOWN, roundNumber: 1, structureId: q2Structure.structureId },
+    },
+    {
+      linkType: WINNER,
+      source: { structureId: elimStructure.structureId, roundNumber: 1 },
+      target: { feedProfile: TOP_DOWN, roundNumber: 1, structureId: q2Structure.structureId },
+    },
+    {
+      linkType: WINNER,
+      source: { structureId: q2Structure.structureId, roundNumber: 1 },
+      target: { feedProfile: TOP_DOWN, roundNumber: 1, structureId: finalStructure.structureId },
+    },
   );
 
   finishingPositionTargets.push({ structureId: elimStructure.structureId, finishingPositions: [3, 4] });
@@ -667,7 +726,14 @@ function processPagePlayoffFromElimination({
 }
 
 function processPagePlayoffFromRR({
-  finishingPositionTargets, sourceStructureId, finishingPositions, playoffGroup, structures, params, links, stack,
+  finishingPositionTargets,
+  sourceStructureId,
+  finishingPositions,
+  playoffGroup,
+  structures,
+  params,
+  links,
+  stack,
 }) {
   const pagePlayoffResult = generatePagePlayoff({ ...params, structureName: playoffGroup.structureName });
   if (pagePlayoffResult.error) return decorateResult({ result: pagePlayoffResult, stack });
@@ -683,8 +749,16 @@ function processPagePlayoffFromRR({
     const q1Positions = finishingPositions.slice(0, half);
     const elimPositions = finishingPositions.slice(half);
     links.push(
-      generatePlayoffLink({ playoffStructureId: q1Structure.structureId, finishingPositions: q1Positions, sourceStructureId }),
-      generatePlayoffLink({ playoffStructureId: elimStructure.structureId, finishingPositions: elimPositions, sourceStructureId }),
+      generatePlayoffLink({
+        playoffStructureId: q1Structure.structureId,
+        finishingPositions: q1Positions,
+        sourceStructureId,
+      }),
+      generatePlayoffLink({
+        playoffStructureId: elimStructure.structureId,
+        finishingPositions: elimPositions,
+        sourceStructureId,
+      }),
     );
     finishingPositionTargets.push(
       { structureId: q1Structure.structureId, finishingPositions: q1Positions },

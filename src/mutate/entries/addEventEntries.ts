@@ -1,10 +1,11 @@
-import { CategoryRejection, getEventDateRange, getParticipantName, validateParticipantCategory } from './categoryValidation';
 import { isMatchUpEventType } from '@Helpers/matchUpEventTypes/isMatchUpEventType';
 import { getAppliedPolicies } from '@Query/extensions/getAppliedPolicies';
 import { addDrawEntries } from '@Mutate/drawDefinitions/addDrawEntries';
 import { decorateResult } from '@Functions/global/decorateResult';
 import { refreshEntryPositions } from './refreshEntryPositions';
 import { isValidExtension } from '@Validators/isValidExtension';
+import { modifyEventEntriesNotice } from '@Mutate/notifications/entriesNotifications';
+import { setFirstClassOrExtension } from '@Mutate/extensions/setFirstClassOrExtension';
 import { addExtension } from '@Mutate/extensions/addExtension';
 import { definedAttributes } from '@Tools/definedAttributes';
 import { removeEventEntries } from './removeEventEntries';
@@ -13,8 +14,23 @@ import { coercedGender } from '@Helpers/coercedGender';
 import { isMixed } from '@Validators/isMixed';
 import { isAny } from '@Validators/isAny';
 
+import {
+  CategoryRejection,
+  getEventDateRange,
+  getParticipantName,
+  validateParticipantCategory,
+} from '@Query/entries/categoryValidation';
+
 // constants and types
-import { DrawDefinition, EntryStatusUnion, Event, Extension, Participant, StageTypeUnion, Tournament } from '@Types/tournamentTypes';
+import {
+  DrawDefinition,
+  EntryStatusUnion,
+  Event,
+  Extension,
+  Participant,
+  StageTypeUnion,
+  Tournament,
+} from '@Types/tournamentTypes';
 import POLICY_MATCHUP_ACTIONS_DEFAULT from '@Fixtures/policies/POLICY_MATCHUP_ACTIONS_DEFAULT';
 import { DOUBLES_EVENT, HYBRID_EVENT, TEAM_EVENT } from '@Constants/eventConstants';
 import { INDIVIDUAL, PAIR, TEAM } from '@Constants/participantConstants';
@@ -24,6 +40,7 @@ import { PolicyDefinitions, ResultType } from '@Types/factoryTypes';
 import { ROUND_TARGET } from '@Constants/extensionConstants';
 import { DOUBLES, SINGLES } from '@Constants/matchUpTypes';
 import { MAIN } from '@Constants/drawDefinitionConstants';
+import { COMPETITOR } from '@Constants/participantRoles';
 import { SUCCESS } from '@Constants/resultConstants';
 import { unique } from '@Tools/arrays';
 import {
@@ -160,6 +177,19 @@ function getTypedParticipantIdsHelper({
       ?.filter((participant) => {
         if (!participantIds.includes(participant.participantId)) return false;
 
+        // Only competitors compete.
+        //
+        // Every eligibility predicate below gates on `participantType` and none consulted
+        // `participantRole`, so an OFFICIAL, a COACH, a PHYSIO or a TRANSPORT driver was as enterable
+        // into a draw as a player — they are all INDIVIDUAL participants. Nothing prevented a referee
+        // being drawn against a competitor.
+        //
+        // Phrased as "has a role, and it is not COMPETITOR" rather than "is COMPETITOR" on purpose: PAIR
+        // participants and older records may carry no `participantRole` at all, and rejecting those
+        // would break entry for existing tournaments. The hole being closed is a participant carrying a
+        // NON-competitor role; an absent role stays permitted.
+        if (participant.participantRole && participant.participantRole !== COMPETITOR) return false;
+
         if (isValidSinglesParticipant(participant, event, entryStatus)) {
           return isValidSinglesGender(participant, event, genderEnforced, mismatchedGender);
         }
@@ -195,7 +225,14 @@ function validateCompoundParticipantCategory(
     const individualParticipant = tournamentRecord.participants?.find((p) => p.participantId === individualId);
     if (!individualParticipant) continue;
 
-    const rejection = validateParticipantCategory(individualParticipant, event.category!, event, startDate, endDate, tournamentRecord);
+    const rejection = validateParticipantCategory(
+      individualParticipant,
+      event.category!,
+      event,
+      startDate,
+      endDate,
+      tournamentRecord,
+    );
     if (rejection) individualRejections.push(rejection);
   }
 
@@ -331,9 +368,11 @@ function createEntriesHelper({
       }
 
       if (roundTarget) {
-        addExtension({
-          extension: { name: ROUND_TARGET, value: roundTarget },
+        setFirstClassOrExtension({
           element: entry,
+          attribute: 'roundTarget',
+          name: ROUND_TARGET,
+          value: roundTarget,
         });
       }
       if (entryStageSequence) entry.entryStageSequence = entryStageSequence;
@@ -577,6 +616,12 @@ export function addEventEntries(params: AddEventEntriesArgs): ResultType {
 
   const addedEntriesCount = addedParticipantIdEntries.length;
   const removedEntriesCount = removedEntries.length;
+
+  // event.entries changed → dispatch MODIFY_EVENT_ENTRIES so projections and the
+  // record's modified flag reflect the roster change.
+  if (addedEntriesCount || removedEntriesCount) {
+    modifyEventEntriesNotice({ event, tournamentId: tournamentRecord?.tournamentId });
+  }
 
   return decorateResult({
     result: {

@@ -386,9 +386,7 @@ describe('proConflicts - input validation and uncovered branches', () => {
     }));
 
     // Find a round-1 matchUp and its winner matchUp, put winner on different court
-    const round1Match = matchUps.find(
-      (m) => m.roundNumber === 1 && m.winnerMatchUpId && m.schedule?.courtOrder,
-    );
+    const round1Match = matchUps.find((m) => m.roundNumber === 1 && m.winnerMatchUpId && m.schedule?.courtOrder);
 
     if (round1Match) {
       const winnerMatch = matchUps.find((m) => m.matchUpId === round1Match.winnerMatchUpId);

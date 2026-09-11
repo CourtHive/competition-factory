@@ -1,22 +1,32 @@
 import { getMatchUpDependencies } from '../matchUps/getMatchUpDependencies';
 import { allTournamentMatchUps } from '../matchUps/getAllTournamentMatchUps';
 
+import { INVALID_OBJECT, MISSING_TOURNAMENT_RECORD } from '@Constants/errorConditionConstants';
+import { PolicyDefinitions } from '@Types/factoryTypes';
 import { Tournament } from '@Types/tournamentTypes';
 import { SUCCESS } from '@Constants/resultConstants';
-import { INVALID_OBJECT, MISSING_TOURNAMENT_RECORD } from '@Constants/errorConditionConstants';
 
 type GetParticipantSchedulesArgs = {
+  policyDefinitions?: PolicyDefinitions;
   tournamentRecord: Tournament;
   participantFilters?: any;
 };
-export function getParticipantSchedules({ participantFilters = {}, tournamentRecord }: GetParticipantSchedulesArgs) {
+export function getParticipantSchedules({
+  participantFilters = {},
+  policyDefinitions,
+  tournamentRecord,
+}: GetParticipantSchedulesArgs) {
   if (!tournamentRecord) return { error: MISSING_TOURNAMENT_RECORD };
 
   if (typeof participantFilters !== 'object') return { error: INVALID_OBJECT, context: { participantFilters } };
 
   const contextFilters = { eventIds: participantFilters.eventIds };
+  // Every participant this surface emits is read off a hydrated `side.participant`, so threading the
+  // policy into matchUp hydration is what governs the whole response — the schedules, the matchUps
+  // they carry, and the `sides[].participant` inside those.
   const matchUps =
     allTournamentMatchUps({
+      policyDefinitions,
       tournamentRecord,
       contextFilters,
     }).matchUps ?? [];

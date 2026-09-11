@@ -15,7 +15,16 @@ import { PAIR } from '@Constants/participantConstants';
 import { ResultType } from '@Types/factoryTypes';
 
 export function removeDrawPositionAssignment(params): ResultType & { participantId?: string } {
-  const { tournamentRecord, replaceWithBye, drawDefinition, destroyPair, entryStatus, matchUpsMap, drawId } = params;
+  const {
+    tournamentRecord,
+    preserveScheduling,
+    replaceWithBye,
+    drawDefinition,
+    destroyPair,
+    entryStatus,
+    matchUpsMap,
+    drawId,
+  } = params;
 
   const stack = 'removeDrawPositionAssignment';
 
@@ -71,6 +80,11 @@ export function removeDrawPositionAssignment(params): ResultType & { participant
 
   if (replaceWithBye) {
     const result = assignDrawPositionBye({
+      // Forwarded, not defaulted: `undefined` keeps the placement, matching the
+      // BYE-assignment default. This path does not set `isPositionAction`, so the
+      // ambiguity gate never fires here — removing a participant must not hard-fail
+      // because the seat happened to be scheduled.
+      preserveScheduling,
       tournamentRecord,
       drawDefinition,
       drawPosition,

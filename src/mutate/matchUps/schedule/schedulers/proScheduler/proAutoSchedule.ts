@@ -146,6 +146,7 @@ export function proAutoSchedule({
 
       if (verdict.canPlace && matchUp) {
         const court = row.availableCourts.shift();
+        matchUp.schedule ??= {};
         Object.assign(matchUp.schedule, court.schedule);
         Object.assign(court, matchUp);
         scheduled.push(matchUp);

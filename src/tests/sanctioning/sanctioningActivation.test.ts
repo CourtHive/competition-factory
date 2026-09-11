@@ -22,7 +22,7 @@ const testProposal: TournamentProposal = {
   surfaceCategory: 'HARD',
   indoorOutdoor: 'OUTDOOR',
   localTimeZone: 'America/New_York',
-  totalPrizeMoney: [{ amount: 25000, currencyCode: 'USD' }],
+  totalPrizeMoney: [{ amount: 25000, currencyCode: 'USD', unit: 'MAJOR' }],
   events: [
     {
       eventName: "Men's Singles",
@@ -58,7 +58,7 @@ function createApprovedRecord() {
         governingBodyId: 'gov-001',
         applicant: testApplicant,
         proposal: testProposal,
-        sanctioningLevel: 'Level 2',
+        sanctioningTier: { system: 'GENERIC', value: 'Level 2' },
       },
     },
     { method: 'submitApplication', params: { sanctioningPolicy: testPolicy } },
@@ -121,10 +121,54 @@ describe('Activation — Tournament Generation', () => {
     const sanctioningExt = tr.extensions.find((e: any) => e.name === 'sanctioningId');
     expect(sanctioningExt).toBeDefined();
     expect(sanctioningExt.value).toBeDefined();
+  });
 
-    const tierExt = tr.extensions.find((e: any) => e.name === 'sanctioningTier');
-    expect(tierExt).toBeDefined();
-    expect(tierExt.value).toEqual('Level 2');
+  // Inverted in phase 4. 6.24.0 wrote a `sanctioningTier` extension alongside the native
+  // `tournamentTier` for exactly one release, so anything reading it had a transition window.
+  // Nothing was: no reader existed in the ecosystem and no production tournament carried it.
+  // The tier's only home is now the native field — a canonical value with a native home must not
+  // also arrive as a CODES escape-hatch extension.
+  it('no longer writes a redundant sanctioningTier extension', () => {
+    createApprovedRecord();
+    let result: any = sanctioningEngine.activateFromSanctioning({ sanctioningPolicy: testPolicy });
+    const tr = result.tournamentRecord;
+
+    expect(tr.extensions.find((e: any) => e.name === 'sanctioningTier')).toBeUndefined();
+    // ...while the tier itself is still present, natively
+    expect(tr.tournamentTier).toEqual({ system: 'GENERIC', value: 'Level 2' });
+    // sanctioningId is the ONLY extension activation writes
+    expect(tr.extensions.map((e: any) => e.name)).toEqual(['sanctioningId']);
+  });
+
+  // The regression this suite previously had no coverage for: the sanctioned tier used to reach the
+  // tournament ONLY as a name/value extension, so a tournament born from sanctioning
+  // had no `tournamentTier` and `getEventRankingPoints` resolved no level for it — even when the
+  // applicant had explicitly chosen a tier.
+  it('sets NATIVE tournamentTier from the sanctioning record', () => {
+    createApprovedRecord();
+    let result: any = sanctioningEngine.activateFromSanctioning({ sanctioningPolicy: testPolicy });
+    const tr = result.tournamentRecord;
+
+    expect(tr.tournamentTier).toEqual({ system: 'GENERIC', value: 'Level 2' });
+  });
+
+  // Sanctioning stores { system, value } only. A sanctioning policy's `tierLevel` runs OPPOSITE to
+  // `numericRank` ("lower = more prestigious"), so deriving one from the other would invert prestige
+  // in getEventRankingPoints and getTierMovement. Absent is correct — both callers handle it.
+  it('does not invent a numericRank on the activated tournamentTier', () => {
+    createApprovedRecord();
+    let result: any = sanctioningEngine.activateFromSanctioning({ sanctioningPolicy: testPolicy });
+
+    expect(result.tournamentRecord.tournamentTier.numericRank).toBeUndefined();
+  });
+
+  it('copies the tier rather than aliasing the sanctioning record', () => {
+    createApprovedRecord();
+    let result: any = sanctioningEngine.activateFromSanctioning({ sanctioningPolicy: testPolicy });
+    result.tournamentRecord.tournamentTier.value = 'MUTATED';
+
+    let recordResult: any = sanctioningEngine.getSanctioningRecord();
+    expect(recordResult.sanctioningRecord.sanctioningTier.value).toEqual('Level 2');
   });
 
   it('transitions sanctioning record to ACTIVE status', () => {
@@ -196,6 +240,42 @@ describe('Activation — Tournament Generation', () => {
   });
 });
 
+describe('Activation — pre-assigned tournamentId (registration before the record)', () => {
+  beforeEach(() => {
+    sanctioningEngine.reset();
+  });
+
+  it('reuses the proposal.tournamentId assigned at open-registration', () => {
+    const preassigned = 'pre-assigned-tid-123';
+    sanctioningEngine.executionQueue([
+      {
+        method: 'createSanctioningRecord',
+        params: {
+          governingBodyId: 'gov-001',
+          applicant: testApplicant,
+          proposal: { ...testProposal, tournamentId: preassigned },
+          sanctioningTier: { system: 'GENERIC', value: 'Level 2' },
+        },
+      },
+      { method: 'submitApplication', params: { sanctioningPolicy: testPolicy } },
+      { method: 'reviewApplication', params: {} },
+      { method: 'approveApplication', params: {} },
+    ]);
+
+    let result: any = sanctioningEngine.activateFromSanctioning({ sanctioningPolicy: testPolicy });
+    expect(result.success).toBe(true);
+    expect(result.tournamentRecord.tournamentId).toEqual(preassigned);
+  });
+
+  it('mints a fresh tournamentId when the proposal has none (back-compat)', () => {
+    createApprovedRecord(); // testProposal carries no tournamentId
+    let result: any = sanctioningEngine.activateFromSanctioning({ sanctioningPolicy: testPolicy });
+    expect(result.success).toBe(true);
+    expect(result.tournamentRecord.tournamentId).toBeDefined();
+    expect(result.tournamentRecord.tournamentId).not.toEqual('pre-assigned-tid-123');
+  });
+});
+
 describe('Full Lifecycle — End-to-End', () => {
   beforeEach(() => {
     sanctioningEngine.reset();
@@ -209,7 +289,7 @@ describe('Full Lifecycle — End-to-End', () => {
           governingBodyId: 'gov-001',
           applicant: testApplicant,
           proposal: testProposal,
-          sanctioningLevel: 'Level 2',
+          sanctioningTier: { system: 'GENERIC', value: 'Level 2' },
         },
       },
       { method: 'submitApplication', params: { sanctioningPolicy: testPolicy } },
@@ -234,5 +314,88 @@ describe('Full Lifecycle — End-to-End', () => {
     // Status history should show full chain
     let history: any = sanctioningEngine.getStatusHistory();
     expect(history.statusHistory.length).toBeGreaterThanOrEqual(5);
+  });
+});
+
+// The sanctioned tournamentId/eventId must survive activation as the event's ORIGIN, so an
+// integration layer can address results back to the body that sanctioned them. See
+// Mentat planning/SANCTIONING_ACTIVATION_AND_EVENTID_THREADING.md Part 3d.
+describe('Activation — event sanctioning origin (eventOtherIds)', () => {
+  beforeEach(() => {
+    sanctioningEngine.reset();
+  });
+
+  it('stamps the governing body as the origin when the proposal names none', () => {
+    createApprovedRecord();
+    const result: any = sanctioningEngine.activateFromSanctioning({ sanctioningPolicy: testPolicy });
+    const tr = result.tournamentRecord;
+
+    for (const event of tr.events) {
+      const origin = event.eventOtherIds?.find((otherId: any) => otherId.isOrigin);
+      expect(origin).toBeDefined();
+      expect(origin.organisationId).toEqual('gov-001');
+      // the ORIGIN's eventId is this event's id, and its tournamentId is the SANCTIONED one
+      expect(origin.eventId).toEqual(event.eventId);
+      expect(Object.hasOwn(origin, 'tournamentId')).toBe(true);
+    }
+  });
+
+  it('preserves a FOREIGN origin supplied on the proposal instead of overwriting it', () => {
+    const foreignOrigin = {
+      organisationId: 'ITA',
+      uniqueOrganisationName: 'Intercollegiate Tennis Association',
+      tournamentId: 'ita-4471',
+      eventId: 'ita-ev-9',
+      isOrigin: true,
+    };
+    const foreignProposal: TournamentProposal = {
+      ...testProposal,
+      events: [{ ...testProposal.events[0], eventOtherIds: [foreignOrigin] }],
+    };
+
+    sanctioningEngine.executionQueue([
+      {
+        method: 'createSanctioningRecord',
+        params: { governingBodyId: 'gov-001', applicant: testApplicant, proposal: foreignProposal },
+      },
+      { method: 'submitApplication', params: { sanctioningPolicy: testPolicy } },
+      { method: 'reviewApplication', params: {} },
+      { method: 'approveApplication', params: {} },
+    ]);
+
+    const result: any = sanctioningEngine.activateFromSanctioning({ sanctioningPolicy: testPolicy });
+    const event = result.tournamentRecord.events[0];
+
+    // exactly one origin, and it is THEIRS — not overwritten by the sanctioning body
+    const origins = event.eventOtherIds.filter((otherId: any) => otherId.isOrigin);
+    expect(origins).toHaveLength(1);
+    expect(origins[0]).toEqual(foreignOrigin);
+    // the foreign tournamentId is NOT the carrying record's — that independence is the point
+    expect(origins[0].tournamentId).not.toEqual(result.tournamentRecord.tournamentId);
+  });
+
+  it('keeps non-origin entries and appends the stamp alongside them', () => {
+    const copyBack = { organisationId: 'USTA', tournamentId: 'usta-88', eventId: 'usta-ev-2' };
+    const proposal: TournamentProposal = {
+      ...testProposal,
+      events: [{ ...testProposal.events[0], eventOtherIds: [copyBack] }],
+    };
+
+    sanctioningEngine.executionQueue([
+      {
+        method: 'createSanctioningRecord',
+        params: { governingBodyId: 'gov-001', applicant: testApplicant, proposal },
+      },
+      { method: 'submitApplication', params: { sanctioningPolicy: testPolicy } },
+      { method: 'reviewApplication', params: {} },
+      { method: 'approveApplication', params: {} },
+    ]);
+
+    const result: any = sanctioningEngine.activateFromSanctioning({ sanctioningPolicy: testPolicy });
+    const event = result.tournamentRecord.events[0];
+
+    expect(event.eventOtherIds).toHaveLength(2);
+    expect(event.eventOtherIds.filter((o: any) => o.isOrigin)).toHaveLength(1);
+    expect(event.eventOtherIds).toContainEqual(copyBack); // the USTA entry survives untouched
   });
 });

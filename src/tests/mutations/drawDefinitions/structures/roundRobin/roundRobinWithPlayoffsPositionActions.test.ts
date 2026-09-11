@@ -1,5 +1,6 @@
 import { generateMatchUpOutcome } from '@Tests/helpers/generateMatchUpOutcome';
 import { getPositionAssignments } from '@Query/drawDefinition/positionsGetter';
+import { firstClassOrExtension } from '@Acquire/firstClassOrExtension';
 import { setsValues } from './roundRobinSetsValues';
 import mocksEngine from '@Assemblies/engines/mock';
 import tournamentEngine from '@Engines/syncEngine';
@@ -7,16 +8,28 @@ import { intersection } from '@Tools/arrays';
 import { expect, it } from 'vitest';
 
 import { MAIN, PLAY_OFF, POSITION, WATERFALL, ROUND_ROBIN_WITH_PLAYOFF } from '@Constants/drawDefinitionConstants';
+import POLICY_SEEDING_ITF from '@Fixtures/policies/POLICY_SEEDING_ITF';
+import { POLICY_TYPE_SEEDING } from '@Constants/policyConstants';
+import { policyComposer } from '@Global/policyComposer';
 import POLICY_POSITION_ACTIONS_UNRESTRICTED from '@Fixtures/policies/POLICY_POSITION_ACTIONS_UNRESTRICTED';
 import { ASSIGN_BYE, ASSIGN_PARTICIPANT, REMOVE_ASSIGNMENT } from '@Constants/positionActionConstants';
-import POLICY_SEEDING_NATIONAL from '@Fixtures/policies/POLICY_SEEDING_NATIONAL';
 import POLICY_SEEDING_DEFAULT from '@Fixtures/policies/POLICY_SEEDING_DEFAULT';
 import { FORMAT_STANDARD } from '@Fixtures/scoring/matchUpFormats';
 import { toBePlayed } from '@Fixtures/scoring/outcomes/toBePlayed';
 import { LUCKY_LOSER } from '@Constants/entryStatusConstants';
+import { TALLY } from '@Constants/extensionConstants';
 import { SINGLES } from '@Constants/eventConstants';
 
 const goldFlight = 'Gold Flight';
+
+// `POLICY_SEEDING_NATIONAL` used to supply this. It was ITF seeding with one key omitted, and the
+// composer says so in a way a fixture never could: leaving `validSeedPositions` unset is what keeps
+// manual seed placement inside a valid seed block.
+const SEEDING_POSITIONS_ENFORCED = policyComposer(POLICY_TYPE_SEEDING)
+  .extend(POLICY_SEEDING_ITF)
+  .unset('validSeedPositions')
+  .set('policyName', 'ITF SEEDING, POSITIONS ENFORCED')
+  .build();
 
 it('disables placement actions for Round Robin Playoffs until all groups are complete', () => {
   const drawSize = 16;
@@ -212,8 +225,9 @@ it('Playoff drawPosition assignment includes group winners who lost no matchUps'
   });
 
   const firstAssignment = positionAssignments?.[0];
-  expect(firstAssignment?.extensions?.[0].value.matchUpsWon).toEqual(3);
-  expect(firstAssignment?.extensions?.[0].value.matchUpsLost).toEqual(0);
+  const firstTally = firstClassOrExtension({ element: firstAssignment, attribute: 'tally', name: TALLY });
+  expect(firstTally.matchUpsWon).toEqual(3);
+  expect(firstTally.matchUpsLost).toEqual(0);
   const participantId = firstAssignment?.participantId;
 
   const structureId = playoffStructureIds[0];
@@ -396,7 +410,7 @@ it('Playoff drawPosition assignment includes group winners who lost no matchUps'
   let drawPosition = 1;
   const policyDefinitions = {
     ...POLICY_POSITION_ACTIONS_UNRESTRICTED,
-    ...POLICY_SEEDING_NATIONAL,
+    ...SEEDING_POSITIONS_ENFORCED,
   };
   result = tournamentEngine.positionActions({
     structureId: playoffStructureIds[0],

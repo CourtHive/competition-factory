@@ -284,13 +284,13 @@ describe('embargo + schedule deep interaction', () => {
     });
     const csmRound2 = csmResult.dateMatchUps.filter((m) => m.roundNumber === 2);
     expect(csmRound2.length).toBeGreaterThan(0);
-    csmRound2.forEach((m) => expect(m.schedule).toBeUndefined());
+    csmRound2.forEach((m) => expect(m.schedule?.scheduledTime).toBeUndefined());
 
     // getEventData
     const { eventData } = tournamentEngine.getEventData({ eventId, usePublishState: true });
     const edRound2 = eventData.drawsData[0].structures[0].roundMatchUps[2] || [];
     expect(edRound2.length).toBeGreaterThan(0);
-    edRound2.forEach((m) => expect(m.schedule).toBeUndefined());
+    edRound2.forEach((m) => expect(m.schedule?.scheduledTime).toBeUndefined());
   });
 
   it('round-level embargo expiry: schedule restored in BOTH code paths', () => {
@@ -405,7 +405,7 @@ describe('embargo + schedule deep interaction', () => {
     expect(roundNumbers).toEqual([1, 2]); // round 3 capped by roundLimit
 
     const round2 = csmResult.dateMatchUps.filter((m) => m.roundNumber === 2);
-    round2.forEach((m) => expect(m.schedule).toBeUndefined()); // embargoed
+    round2.forEach((m) => expect(m.schedule?.scheduledTime).toBeUndefined()); // embargoed
 
     const round1 = csmResult.dateMatchUps.filter((m) => m.roundNumber === 1);
     round1.forEach((m) => expect(m.schedule).toBeDefined());

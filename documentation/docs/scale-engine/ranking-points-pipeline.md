@@ -39,23 +39,41 @@ Profiles are scored by counting their populated scope fields. A profile that spe
 
 **Scored fields** (1 point each):
 
-| Field                | Matches Against                             |
-| -------------------- | ------------------------------------------- |
-| `eventTypes`         | `event.eventType`                           |
-| `drawTypes`          | `drawDefinition.drawType`                   |
-| `drawSizes`          | `drawDefinition.drawSize`                   |
-| `maxDrawSize`        | `drawDefinition.drawSize <= maxDrawSize`    |
-| `stages`             | `structureParticipation.rankingStage`       |
-| `stageSequences`     | `structureParticipation.stageSequence`      |
-| `levels`             | `level` parameter                           |
-| `maxLevel`           | `level <= maxLevel`                         |
-| `flights`            | `structureParticipation.flightNumber`       |
-| `maxFlightNumber`    | `flightNumber <= maxFlightNumber`           |
-| `participationOrder` | `structureParticipation.participationOrder` |
-| `dateRanges`         | `startDate`/`endDate` within range          |
-| `category.*`         | Each populated CategoryScope field          |
+| Field                | Matches Against                                  |
+| -------------------- | ------------------------------------------------ |
+| `eventTypes`         | `event.eventType`                                |
+| `drawTypes`          | `drawDefinition.drawType`                        |
+| `drawSizes`          | `drawDefinition.drawSize`                        |
+| `drawSize`           | `drawDefinition.drawSize` (exact)                |
+| `maxDrawSize`        | `drawDefinition.drawSize <= maxDrawSize`         |
+| `stages`             | `structureParticipation.rankingStage`            |
+| `stageSequences`     | scored, but **not** currently matched — see note |
+| `levels`             | `level` parameter                                |
+| `maxLevel`           | `level <= maxLevel`                              |
+| `flights`            | `structureParticipation.flightNumber`            |
+| `maxFlightNumber`    | `flightNumber <= maxFlightNumber`                |
+| `participationOrder` | `structureParticipation.participationOrder`      |
+| `dateRanges`         | `startDate`/`endDate` within range               |
+| `category.*`         | Each populated CategoryScope field               |
 
 **Priority override:** If any matching profile has an explicit `priority` number, the highest priority wins regardless of specificity score.
+
+**An absent value never matches.** A profile that declares a filter does **not** match an event lacking that field at all — a profile scoped to `ratingTypes: ['WTN']` does not match an event with no `ratingType`, rather than matching it vacuously. This applies to every array-valued scope field above, and is long-standing behaviour rather than a new rule.
+
+:::note
+
+`matchesProfile` reads a singular `profile.drawSize` as well as `drawSizes`. Nothing in the factory's own fixtures sets it, but ranking policies are runtime data loaded from a policy service, so an external policy can set it and have it honoured — it is declared on `AwardProfileScope` for that reason. Both spellings score one point of specificity; see [`drawSize` vs `drawSizes`](/docs/policies/rankingPolicy#full-profile).
+
+:::
+
+:::caution
+
+`stageSequences` is the mirror case, and it is **not** resolved. It is scored — a profile declaring it
+gains a point and wins ties — but `matchesProfile` never reads it, so it narrows nothing: such a profile
+applies to every stage sequence while outranking a catch-all. `stages` is matched; `stageSequences` is
+not. Prefer `stages` until this is settled, and do not rely on `stageSequences` to restrict a profile.
+
+:::
 
 ### CategoryScope Matching
 
@@ -206,19 +224,36 @@ The `bestFinishingPosition` is `Math.min(finishingPositionRange)` — the best p
 
 ## Doubles Attribution
 
-Controls how pair (doubles) points flow to individual participants:
+Declares the **ranking entity** for doubles events — whether each
+individual owns the award (and the pair is bookkeeping for who played
+together) or the pair owns the award (and individual rankings ignore
+the doubles result). The output maps `personPoints` and `pairPoints`
+are mutually exclusive for any given doubles draw: exactly one of them
+holds the award.
 
 ```js
 rankingPolicy: {
-  doublesAttribution: 'fullToEach', // or 'splitEven'
+  doublesAttribution: 'fullToEach', // 'splitEven' | 'teamOnly'
 }
 ```
 
-| Mode           | Effect                                                     |
-| -------------- | ---------------------------------------------------------- |
-| `'fullToEach'` | Each individual receives 100% of pair points               |
-| `'splitEven'`  | Each individual receives 50% of pair points (rounded)      |
-| Not set        | Points only on pair record, not distributed to individuals |
+| Mode           | `personPoints` (per individual) | `pairPoints` (per pair) |
+| -------------- | ------------------------------- | ----------------------- |
+| `'fullToEach'` | full value                      | empty                   |
+| `'splitEven'`  | half value (rounded)            | empty                   |
+| `'teamOnly'`   | empty                           | one entry               |
+| _Not set_      | empty                           | one entry               |
+
+Every shipped pro-tennis policy (ATP, WTA, ITF Junior, ITF WTT, BASIC)
+declares `'fullToEach'` — the dominant convention is that each
+doubles partner's individual ranking gets the full team result.
+`'splitEven'` is the half-share alternative, used by federations that
+treat a team result as a single pot shared between partners.
+`'teamOnly'` (and the legacy default, _Not set_) is for pair-tour /
+club-team formats where the pair itself is the ranking entity.
+
+See [Ranking Policy → Doubles Attribution](/docs/policies/rankingPolicy#doubles-attribution)
+for examples and the per-mode output shape.
 
 ## PointAward Output
 
@@ -239,8 +274,17 @@ Each award in `personPoints` contains a granular breakdown:
   level: 3,
   startDate: '2025-06-01',
   endDate: '2025-06-07',
+  pointsAuthority: 'ATP',    // copied from policy.pointsAuthority (optional)
 }
 ```
+
+The `pointsAuthority` field is copied from the source policy at award time
+(see [Ranking Policy → Points Authority](/docs/policies/rankingPolicy#points-authority)).
+It rides through every emitted award shape — main awards, doubles-split
+individual awards, quality-win awards, and team line-points awards — so
+federated ranking generators can scope and weight by source authority without
+re-joining to policy metadata. The field is `undefined` when the source policy
+did not declare a `pointsAuthority`.
 
 ## Related Documentation
 

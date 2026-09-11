@@ -84,6 +84,34 @@ function createExport({ input, folder, packageName, cjs, esm }) {
 
 const cjsExports = [{ input: srcIndex, cjs: true }].map(createExport);
 
+// Tree-shakeable ESM build: preserveModules keeps one output file per source
+// module (mirroring src/ under dist/esm/) instead of a single flattened
+// bundle, so downstream bundlers can eliminate everything a consumer does not
+// import. Paired with `"sideEffects": false` in package.json. This is the
+// artifact `exports.import` / `module` resolve to. Sourcemaps are omitted here
+// (per-module maps would add ~1200 files to the tarball for little value —
+// consumers generate their own maps when they re-bundle).
+const esmExport = [
+  {
+    input: srcIndex,
+    plugins: [
+      typescript({ tsconfig: './tsconfig.json', declaration: false, sourceMap: false, outDir: `${distPath}/esm` }),
+      nodeResolve(),
+      commonjs(),
+      json(),
+    ],
+    output: {
+      dir: `${distPath}/esm`,
+      format: 'es',
+      preserveModules: true,
+      preserveModulesRoot: 'src',
+      entryFileNames: '[name].mjs',
+      exports: 'named',
+      sourcemap: false,
+    },
+  },
+];
+
 const engineTypes = [
   {
     input: srcIndex,
@@ -102,4 +130,4 @@ const engineTypes = [
   },
 ];
 
-export default [...cjsExports, ...engineTypes];
+export default [...cjsExports, ...esmExport, ...engineTypes];

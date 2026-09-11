@@ -1,5 +1,6 @@
 export { auditConstants } from './auditConstants';
 export { competitionFormatConstants } from './competitionFormatConstants';
+export { disciplineConstants } from './disciplineConstants';
 export { drawDefinitionConstants } from './drawDefinitionConstants';
 export { displayConstants } from './displayConstants';
 export { entryStatusConstants } from './entryStatusConstants';
@@ -15,12 +16,19 @@ export { participantConstants, participantTypes } from './participantConstants';
 export { participantRoles } from './participantRoles';
 export { penaltyConstants } from './penaltyConstants';
 export { policyConstants } from './policyConstants';
+export { pointsAuthorityConstants } from './pointsAuthorityConstants';
+export type { PointsAuthority } from './pointsAuthorityConstants';
 export { positionActionConstants } from './positionActionConstants';
 export { rankingConstants } from './rankingConstants';
 export { ratingConstants } from './ratingConstants';
 export { requestConstants } from './requestConstants';
+export { dayStateConstants } from './dayStateConstants';
+// @deprecated — renamed to dayStateConstants; kept so the rename is non-breaking
+export { availabilityConstants } from './dayStateConstants';
 export { resourceContants } from './resourceConstants';
 export { resultConstants } from './resultConstants';
+export { actionMethodConstants } from './actionMethodConstants';
+export { bookingTypeConstants } from './bookingTypeConstants';
 export { scaleConstants } from './scaleConstants';
 export { scheduleConstants } from './scheduleConstants';
 export { sortingConstants } from './sortingConstants';
@@ -43,7 +51,7 @@ export {
   directingMatchUpStatuses,
   matchUpStatusConstants,
   nonDirectingMatchUpStatuses,
-  particicipantsRequiredMatchUpStatuses,
+  participantsRequiredMatchUpStatuses,
   recoveryTimeRequiredMatchUpStatuses,
   upcomingMatchUpStatuses,
   validMatchUpStatuses,

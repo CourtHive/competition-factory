@@ -1,4 +1,5 @@
 import { findMatchupFormatAverageTimes, findMatchupFormatRecoveryTimes } from '@Acquire/findMatchUpFormatTimes';
+import { firstClassGroupLeafOrExtension } from '@Mutate/extensions/setGroupLeafOrExtension';
 import { checkRequiredParameters } from '@Helpers/parameters/checkRequiredParameters';
 import { isValidMatchUpFormat } from '@Validators/isValidMatchUpFormat';
 import { findExtension } from '@Acquire/findExtension';
@@ -39,11 +40,13 @@ export function getModifiedMatchUpFormatTiming(params: GetModifiedMatchUpFormatT
   });
   const eventScheduling = eventExtension?.value;
 
-  const { extension: tournamentExtension } = findExtension({
+  // CODES: tournament-level timing is now `tournamentRecord.scheduling.timing`
+  const tournamentScheduling = firstClassGroupLeafOrExtension({
     element: tournamentRecord,
+    groupAttribute: 'scheduling',
+    leafAttribute: 'timing',
     name: SCHEDULE_TIMING,
   });
-  const tournamentScheduling = tournamentExtension?.value;
 
   const eventAverageTimes =
     eventScheduling?.matchUpAverageTimes &&

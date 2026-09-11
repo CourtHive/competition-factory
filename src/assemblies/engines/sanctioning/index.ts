@@ -1,5 +1,6 @@
 import { requestEndorsement, endorseApplication, declineEndorsement } from '@Mutate/sanctioning/endorsement';
 import { activateFromSanctioning } from '@Mutate/sanctioning/activateFromSanctioning';
+import { openProposalRegistration } from '@Mutate/sanctioning/openProposalRegistration';
 import { createSanctioningRecord } from '@Mutate/sanctioning/createSanctioningRecord';
 import { getAvailableTransitions } from '@Query/sanctioning/getAvailableTransitions';
 import { proposeAmendment, reviewAmendment } from '@Mutate/sanctioning/amendments';
@@ -23,6 +24,8 @@ import { updateProposal } from '@Mutate/sanctioning/updateProposal';
 import { addReviewNote } from '@Mutate/sanctioning/addReviewNote';
 import { meetCondition } from '@Mutate/sanctioning/meetCondition';
 import { factoryVersion } from '@Functions/global/factoryVersion';
+import { executeDeclarationQueue } from '@Functions/declaration/executeDeclarationQueue';
+import { registerCreatedRecord } from '@Functions/declaration/registerCreatedRecord';
 import { makeDeepCopy } from '@Tools/makeDeepCopy';
 import {
   getSanctioningRecords,
@@ -47,7 +50,6 @@ import {
 
 // constants
 import { SANCTIONING_RECORD_EXISTS } from '@Constants/sanctioningConstants';
-import { INVALID_VALUES } from '@Constants/errorConditionConstants';
 import { SUCCESS } from '@Constants/resultConstants';
 
 // types
@@ -95,19 +97,16 @@ export const sanctioningEngine = (() => {
     // -----------------------------------------------------------------------
     // Mutations
     // -----------------------------------------------------------------------
-    createSanctioningRecord: (params: any) => {
-      const result = createSanctioningRecord(params);
-      if (result.error) return result;
-      const { sanctioningRecord } = result;
-      if (!sanctioningRecord) return result;
-
-      const existing = getSanctioningRecord(sanctioningRecord.sanctioningId);
-      if (existing) return { error: SANCTIONING_RECORD_EXISTS };
-
-      setSanctioningRecord(sanctioningRecord);
-      setActiveSanctioningId(sanctioningRecord.sanctioningId);
-      return result;
-    },
+    createSanctioningRecord: (params: any) =>
+      registerCreatedRecord({
+        result: createSanctioningRecord(params),
+        recordKey: 'sanctioningRecord',
+        idKey: 'sanctioningId',
+        getRecord: getSanctioningRecord,
+        setRecord: setSanctioningRecord,
+        setActiveId: setActiveSanctioningId,
+        existsError: SANCTIONING_RECORD_EXISTS,
+      }),
 
     updateProposal: (params: any) => {
       const sanctioningRecord = params.sanctioningRecord ?? resolveRecord(params.sanctioningId);
@@ -196,6 +195,11 @@ export const sanctioningEngine = (() => {
       return activateFromSanctioning({ ...params, sanctioningRecord });
     },
 
+    openProposalRegistration: (params: any) => {
+      const sanctioningRecord = params.sanctioningRecord ?? resolveRecord(params.sanctioningId);
+      return openProposalRegistration({ ...params, sanctioningRecord });
+    },
+
     proposeAmendment: (params: any) => {
       const sanctioningRecord = params.sanctioningRecord ?? resolveRecord(params.sanctioningId);
       return proposeAmendment({ ...params, sanctioningRecord });
@@ -274,7 +278,15 @@ export const sanctioningEngine = (() => {
     validateProposal: (params: any) => {
       const sanctioningRecord = params?.sanctioningRecord ?? resolveRecord(params?.sanctioningId);
       const proposal = params.proposal ?? sanctioningRecord?.proposal;
-      return validateProposal({ proposal, ...params });
+      // The tier MUST default from the record the same way the proposal does. Without this, a caller
+      // that has a sanctioningId and validates against it gets `sanctioningTier: undefined`, the tier
+      // lookup misses, and every tier-specific rule — allowed draw types and sizes, qualifying,
+      // minimum prize money, gender and event-type limits — silently does not run, leaving only the
+      // global requirements. It validated clean and enforced almost nothing.
+      const sanctioningTier = params.sanctioningTier ?? sanctioningRecord?.sanctioningTier;
+      // Defaults come AFTER the spread: a params key present-but-undefined would otherwise overwrite
+      // the value just resolved from the record, which is the very failure this block exists to fix.
+      return validateProposal({ ...params, proposal, sanctioningTier });
     },
 
     getCalendarConflicts: (params: any) => {
@@ -285,49 +297,14 @@ export const sanctioningEngine = (() => {
     // -----------------------------------------------------------------------
     // Execution Queue
     // -----------------------------------------------------------------------
-    executionQueue: (directives: SanctioningDirectives, rollbackOnError?: boolean) => {
-      if (!Array.isArray(directives))
-        return { error: INVALID_VALUES, context: { message: 'directives must be an array' } };
-
-      const snapshot = rollbackOnError ? makeDeepCopy(getSanctioningRecords(), false, true) : undefined;
-
-      const results: any[] = [];
-      for (const directive of directives) {
-        if (typeof directive !== 'object')
-          return { error: INVALID_VALUES, context: { message: 'directive must be an object' } };
-
-        const { method: methodName, pipe } = directive;
-        const params: any = directive.params ? { ...directive.params } : {};
-
-        const method = (engine as any)[methodName];
-        if (!method) {
-          if (snapshot) setSanctioningRecords(snapshot);
-          return {
-            error: INVALID_VALUES,
-            context: { message: `Method not found: ${methodName}` },
-            rolledBack: !!snapshot,
-          };
-        }
-
-        if (pipe && results.length) {
-          const lastResult = results.at(-1);
-          for (const pipeKey of Object.keys(pipe)) {
-            if (lastResult[pipeKey] !== undefined) params[pipeKey] = lastResult[pipeKey];
-          }
-        }
-
-        const result = method(params);
-        if (result?.error) {
-          if (snapshot) setSanctioningRecords(snapshot);
-          return { ...result, rolledBack: !!snapshot };
-        }
-
-        results.push({ ...result, methodName });
-      }
-
-      const success = results.every((r) => r.success);
-      return { success, results };
-    },
+    executionQueue: (directives: SanctioningDirectives, rollbackOnError?: boolean) =>
+      executeDeclarationQueue({
+        engine,
+        directives,
+        rollbackOnError,
+        getRecords: getSanctioningRecords,
+        setRecords: setSanctioningRecords,
+      }),
   };
 
   return engine;

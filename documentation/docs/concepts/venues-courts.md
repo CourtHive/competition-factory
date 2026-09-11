@@ -18,6 +18,12 @@ A **venue** represents a physical location that contains one or more courts. Ven
   venueName: string;            // Display name
   venueAbbreviation?: string;   // Short name for schedules
 
+  // Canonical cross-tournament facility identity. Defaults to `venueId` — a venue
+  // is its own facility unless several record-level venues are deduped to one
+  // physical facility (courthive-facilities). Read into the read-model
+  // `facility_id` by `cast()`; the join key for "tournaments at this facility".
+  facilityId?: string;
+
   // Location information
   address?: {
     addressLine1?: string;
@@ -81,10 +87,9 @@ console.log(venue.venueId); // Generated UUID
 
 ### Modifying Venues
 
-```js
-
 **API Reference:** [addVenue](/docs/governors/venue-governor#addvenue)
 
+```js
 // Update venue properties
 tournamentEngine.modifyVenue({
   venueId: 'venue-uuid',
@@ -108,12 +113,11 @@ A **court** represents an individual playing surface within a venue. Courts have
 
 ### Court Properties
 
-```ts
-
 **API Reference:** [modifyVenue](/docs/governors/venue-governor#modifyvenue)
 
 **API Reference:** [deleteVenues](/docs/governors/venue-governor#deletevenues)
 
+```ts
 {
   courtId: string;              // Unique identifier (UUID)
   courtName: string;            // Display name (e.g., 'Court 1', 'Centre Court')
@@ -121,6 +125,7 @@ A **court** represents an individual playing surface within a venue. Courts have
 
   // Court attributes
   altitude?: number;            // Elevation in meters
+  discipline?: string;          // The sport this court is for — see Court Discipline below
   surfaceType?: string;         // 'HARD', 'CLAY', 'GRASS', 'CARPET', etc.
   surfaceCategory?: string;     // 'INDOOR', 'OUTDOOR', 'COVERED'
   courtDimensions?: string;     // Dimensions description
@@ -140,6 +145,28 @@ A **court** represents an individual playing surface within a venue. Courts have
   }>;
 }
 ```
+
+### Court Discipline
+
+`court.discipline` says what sport a court **is** for. CODES is sport-agnostic, and a venue can hold a mix — three padel courts beside eight tennis courts, or a beach-volleyball pit.
+
+```js
+tournamentEngine.modifyVenue({
+  venueId: 'venue-uuid',
+  modifications: {
+    courts: [{ courtId: 'court-uuid', courtName: 'Padel 1', discipline: 'PADEL' }],
+  },
+});
+```
+
+The curated vocabulary is `TENNIS`, `BEACH_TENNIS`, `WHEELCHAIR_TENNIS`, `PADEL`, `PICKLEBALL`, `VOLLEYBALL`, `BEACH_VOLLEYBALL` — but the type is deliberately **open** and accepts any string, so a new sport needs no factory release. Normalize incoming values with `normalizeDiscipline`, and constrain them to a fixed list with the `allowedDisciplines` policy where a provider requires one.
+
+Two things it deliberately does not do:
+
+- **Absent means unspecified, not `TENNIS`.** A court nobody has declared a discipline for is not evidence that it is a tennis court, and defaulting it would invent data.
+- **It is not a list of capabilities.** A physical surface can serve several sports — a tennis court with pickleball lines, or a portable net dropped onto it. That is a court _capability_ and is deliberately not modelled here, because this field says what the court **is**: it is what makes a dedicated pickleball court distinguishable from a tennis court that sometimes hosts pickleball. Repurposing it to mean "can also host" turns one physical slab into two schedulable courts.
+
+`Event.discipline` uses the same open vocabulary.
 
 ### Creating Courts
 
@@ -176,10 +203,9 @@ console.log(courts.map((c) => c.courtId)); // Generated UUIDs
 
 ### Modifying Courts
 
-```js
-
 **API Reference:** [addCourts](/docs/governors/venue-governor#addcourts)
 
+```js
 // Update court properties
 tournamentEngine.modifyCourt({
   courtId: 'court-uuid',
@@ -212,10 +238,9 @@ tournamentEngine.deleteCourts({
 
 ### Basic Structure
 
-```ts
-
 **API Reference:** [modifyCourt](/docs/governors/venue-governor#modifycourt)
 
+```ts
 type DateAvailability = {
   date?: string; // ISO date (YYYY-MM-DD) - optional
   startTime?: string; // HH:MM format
@@ -226,10 +251,31 @@ type DateAvailability = {
 type Booking = {
   startTime: string; // HH:MM format
   endTime: string; // HH:MM format
-  bookingType?: string; // 'PRACTICE', 'MAINTENANCE', 'EVENT', etc.
+  bookingType?: BookingType; // see below
   notes?: string;
 };
 ```
+
+`bookingType` is a closed vocabulary, exported as
+[`bookingTypeConstants`](../constants.mdx) and typed by `BookingTypeEnum`:
+
+| Value         | Meaning                                  |
+| ------------- | ---------------------------------------- |
+| `SCHEDULED`   | Tournament match scheduled here          |
+| `PRACTICE`    | Practice time                            |
+| `MAINTENANCE` | Planned court maintenance or cleaning    |
+| `DRYING`      | Surface drying after rain — reactive     |
+| `RESERVED`    | Reserved for recreational/paying players |
+| `BLOCKED`     | Generic unavailable, reason unspecified  |
+| `CLOSED`      | Outside open hours, or explicitly closed |
+
+`DRYING` is deliberately distinct from `MAINTENANCE` — maintenance is planned work that
+can usually be deferred, drying is weather-driven and cannot be, and the AvailabilityEngine
+ranks drying higher when the two overlap.
+
+An unrecognised value does not throw: the AvailabilityEngine treats it as `BLOCKED` and
+preserves the original string on `Block.reason`. See
+[Court bookings → block types](../availability-engine/block-types-and-algorithms.md#court-bookings--block-types).
 
 ### Default Availability
 
@@ -257,10 +303,9 @@ tournamentEngine.addCourts({
 
 When `date` **is specified**, the availability applies only to that date:
 
-```js
-
 **API Reference:** [addCourts](/docs/governors/venue-governor#addcourts)
 
+```js
 // Different hours on different days
 const dateAvailability = [
   // Default availability (all days)
@@ -335,7 +380,7 @@ The scheduling engine will **not schedule matches** during booked times.
 
 ```js
 // Add or modify date availability
-tournamentEngine.modifyCourtDateAvailability({
+tournamentEngine.modifyCourtAvailability({
   courtId: 'court-uuid',
   dateAvailability: [
     {
@@ -346,7 +391,7 @@ tournamentEngine.modifyCourtDateAvailability({
         {
           startTime: '14:00',
           endTime: '15:00',
-          bookingType: 'EVENT',
+          bookingType: 'BLOCKED',
           notes: 'Trophy presentation ceremony',
         },
       ],
@@ -664,12 +709,11 @@ tournamentEngine.addCourts({
 
 ### Scheduling Across Venues
 
-```js
-
 **API Reference:** [addVenue](/docs/governors/venue-governor#addvenue)
 
 **API Reference:** [addCourts](/docs/governors/venue-governor#addcourts)
 
+```js
 // Schedule early rounds at practice venue
 tournamentEngine.scheduleMatchUps({
   venueId: practiceVenue.venue.venueId,
@@ -751,10 +795,9 @@ Common surface types:
 
 Courts with lighting can host evening matches:
 
-```js
-
 **API Reference:** [addVenue](/docs/governors/venue-governor#addvenue)
 
+```js
 {
   courtName: 'Court 1',
   lighting: true,
@@ -907,7 +950,7 @@ Link to court/venue information:
     {
       startTime: '17:00',
       endTime: '17:30',
-      bookingType: 'EVENT',
+      bookingType: 'BLOCKED',
       notes: 'Opening ceremony for finals'
     }
   ]
@@ -923,7 +966,7 @@ Link to court/venue information:
 const { venues } = tournamentEngine.getVenuesAndCourts();
 
 // Get specific venue with courts
-const { venue } = tournamentEngine.getVenue({
+const { venue } = tournamentEngine.findVenue({
   venueId: 'venue-uuid',
 });
 

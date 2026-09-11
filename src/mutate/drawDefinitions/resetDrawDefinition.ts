@@ -23,7 +23,7 @@ import {
   COURT_ORDER,
 } from '@Constants/timeItemConstants';
 
-export function resetDrawDefinition({ tournamentRecord, removeScheduling, removeAssignments, drawDefinition }) {
+export function resetDrawDefinition({ tournamentRecord, removeScheduling, removeAssignments, drawDefinition, event }) {
   if (!drawDefinition) return { error: MISSING_DRAW_DEFINITION };
 
   const isLuckyDraw = isLuckyBasedDraw(drawDefinition.drawType);
@@ -50,6 +50,7 @@ export function resetDrawDefinition({ tournamentRecord, removeScheduling, remove
       matchUpsMap,
       structure,
       removeAssignments,
+      event,
     });
   }
 
@@ -61,6 +62,8 @@ export function resetDrawDefinition({ tournamentRecord, removeScheduling, remove
   drawDefinition.extensions = drawDefinition.extensions.filter(
     (extension) => extension.name !== POSITION_ACTIONS && extension.name !== DRAFT_STATE,
   );
+  // CODES: also wipe the first-class draftState if present
+  delete drawDefinition.draftState;
 
   const structureIds = (drawDefinition.structures ?? []).map(({ structureId }) => structureId);
 
@@ -133,6 +136,7 @@ function resetStructureMatchUps({
   isLuckyDraw,
   matchUpsMap,
   structure,
+  event,
 }) {
   const { matchUps: inContextMatchUps, isRoundRobin } = getAllStructureMatchUps({
     afterRecoveryTimes: false,
@@ -158,6 +162,7 @@ function resetStructureMatchUps({
       context: 'resetDrawDefinition',
       drawDefinition,
       matchUp,
+      event,
     });
   }
 }
@@ -186,6 +191,20 @@ function resetMatchUpScore({ matchUp, isLuckyDraw, removeAssignments, roundNumbe
   }
 }
 
+// first-class schedule attributes (NATIVE / BRIDGE) matching the schedule timeItem types below —
+// no timeItem mirror, so resetting the draw must clear these directly or the placement persists.
+const SCHEDULE_FIRST_CLASS_ATTRS = [
+  'allocatedCourts',
+  'courtId',
+  'venueId',
+  'official',
+  'courtAnnotation',
+  'scheduledDate',
+  'scheduledTime',
+  'courtOrder',
+  'calledAt',
+];
+
 function resetMatchUpScheduling({ matchUp, removeScheduling }) {
   if (removeScheduling) {
     delete matchUp.timeItems;
@@ -204,5 +223,9 @@ function resetMatchUpScheduling({ matchUp, removeScheduling }) {
           COURT_ORDER,
         ].includes(timeItem.itemType),
     );
+  }
+
+  if (matchUp.schedule && typeof matchUp.schedule === 'object') {
+    for (const attribute of SCHEDULE_FIRST_CLASS_ATTRS) delete matchUp.schedule[attribute];
   }
 }

@@ -2,6 +2,7 @@ import { modifyRoundRobinMatchUpsStatus } from '@Mutate/matchUps/matchUpStatus/m
 import { getPositionAssignments, structureAssignedDrawPositions } from '@Query/drawDefinition/positionsGetter';
 import { modifyPositionAssignmentsNotice, modifyMatchUpNotice } from '@Mutate/notifications/drawNotifications';
 import { getStructureDrawPositionProfiles } from '@Query/structure/getStructureDrawPositionProfiles';
+import { clearSideExitProvenance } from '@Mutate/matchUps/matchUpStatus/sideExitProvenance';
 import { getAllStructureMatchUps } from '@Query/matchUps/getAllStructureMatchUps';
 import { getInitialRoundNumber } from '@Query/matchUps/getInitialRoundNumber';
 import { getRoundMatchUps } from '@Query/matchUps/getRoundMatchUps';
@@ -12,7 +13,6 @@ import { getMatchUpsMap } from '@Query/matchUps/getMatchUpsMap';
 import { pushGlobalLog } from '@Functions/global/globalLog';
 import { findStructure } from '@Acquire/findStructure';
 import { ensureInt } from '@Tools/ensureInt';
-import { isExit } from '@Validators/isExit';
 import { overlap } from '@Tools/arrays';
 
 // constants and types
@@ -138,6 +138,10 @@ export function drawPositionRemovals({
       delete assignment.participantId;
       delete assignment.qualifier;
       delete assignment.bye;
+      // A BYE removed by ANY route — cascade unwind, a position action, or a hand edit — takes
+      // its provenance marker with it. A marker outliving the BYE it describes would make the
+      // next propagated BYE at this drawPosition look already-accounted-for.
+      delete assignment.byeFromPropagation;
       return true;
     }
     return undefined;
@@ -150,6 +154,7 @@ export function drawPositionRemovals({
       drawDefinition,
       matchUpsMap,
       structure,
+      event,
     });
     return { drawPositionCleared, ...SUCCESS };
   }
@@ -466,6 +471,7 @@ function handleTeamPositionRemoval({
       eventId: event?.eventId,
       matchUp: targetMatchUp,
       drawDefinition,
+      event,
     });
   }
 }
@@ -487,17 +493,17 @@ function updateMatchUpStatusAfterRemoval({
   );
   const matchUpContainsBye = matchUpAssignments.filter((assignment) => assignment.bye).length;
 
-  const newMatchUpStatus =
-    (matchUpContainsBye && BYE) ||
-    (targetMatchUp.matchUpStatus && isExit(targetMatchUp.matchUpStatus) && targetMatchUp.matcHUpStatus) ||
-    TO_BE_PLAYED;
-
-  targetMatchUp.matchUpStatus = newMatchUpStatus;
-
-  // if the matchUpStatus is WALKOVER then it is DOUBLE_WALKOVER produced
-  // if the matchUpStatus is DEFAULTED then it is DOUBLE_DEFAULT produced
-  // ... and the winningSide must be removed
-  if (targetMatchUp.matchUpStatus && isExit(targetMatchUp.matchUpStatus)) targetMatchUp.winningSide = undefined;
+  // Collapse to BYE (when a BYE remains) or TO_BE_PLAYED. Exit-status REDUCTION on
+  // removal (DOUBLE_WALKOVER -> WALKOVER) lives elsewhere — removeDoubleExit and the
+  // sibling removeSubsequentRoundsParticipant. What CAN reach here is the removal of a
+  // still-pending propagated exit (its exit participant is cleared while its winner slot
+  // is still empty): the matchUp collapses to TO_BE_PLAYED, so drop the leftover
+  // winningSide and carried exit codes — neither a BYE nor a TO_BE_PLAYED matchUp is
+  // decided.
+  targetMatchUp.matchUpStatus = (matchUpContainsBye && BYE) || TO_BE_PLAYED;
+  targetMatchUp.winningSide = undefined;
+  if (targetMatchUp.matchUpStatusCodes?.length) targetMatchUp.matchUpStatusCodes = [];
+  clearSideExitProvenance(targetMatchUp);
 
   const removedDrawPosition = initialDrawPositions?.find(
     (position) => !targetMatchUp.drawPositions?.includes(position),
@@ -522,6 +528,7 @@ function updateMatchUpStatusAfterRemoval({
       eventId: event?.eventId,
       matchUp: targetMatchUp,
       drawDefinition,
+      event,
     });
   }
 

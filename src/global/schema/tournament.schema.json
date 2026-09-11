@@ -145,6 +145,13 @@
         "tournamentStatus": {
           "$ref": "#/definitions/TournamentStatusEnum"
         },
+        "cancelledAt": {
+          "type": ["string", "object"],
+          "format": "date-time"
+        },
+        "cancellationReason": {
+          "type": "string"
+        },
         "tournamentName": {
           "type": "string"
         },
@@ -159,10 +166,156 @@
           "items": {
             "$ref": "#/definitions/Venue"
           }
+        },
+        "activeDates": {
+          "type": "array",
+          "items": {
+            "type": ["string", "object"]
+          }
+        },
+        "factory": {
+          "type": "object"
+        },
+        "linkedTournamentIds": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "prizeMoneyAwards": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/PrizeMoneyAward"
+          }
+        },
+        "sanction": {
+          "$ref": "#/definitions/TournamentSanction"
+        },
+        "sanctions": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/TournamentSanction"
+          }
+        },
+        "scheduling": {
+          "type": "object"
+        },
+        "tournamentTier": {
+          "$ref": "#/definitions/TierClassification"
+        },
+        "weekdays": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
         }
       },
       "required": ["tournamentId"],
-      "additionalProperties": true
+      "additionalProperties": true,
+      "$comment": "OPEN, and this is a KNOWN GAP rather than a decision — closing it is blocked, not declined. Measured 2026-08-28 against the 16 TODS fixtures: 13 records carry `venueIds`, 6 carry `deleted`, and `dualMatchMetadata`, `associatedOrganisations`, `rootOrganisationId`, `tournamentExternalId` and a nested `tournamentRecord` each appear. Closing this definition today fails 14 of 16 fixtures. Each undeclared field must first be resolved as either a real CODES concept (declare it in `types/tournamentTypes.ts` AND here) or as legacy data (correct the fixtures), after which this should become `false` to match the other 51."
+    },
+    "EntryRestrictionEnum": {
+      "type": "string",
+      "enum": ["RESIDENCY", "MEMBERSHIP", "RANKING_FLOOR", "CLEARANCE", "INVITATION", "OTHER"]
+    },
+    "EntryRestriction": {
+      "$comment": "A condition on WHO may enter, beyond age/gender/rating. Advisory in v1: CODES holds no section roster or membership register, so `evaluable` defaults to undecidable and getParticipantEligibility reports indeterminate rather than guessing.",
+      "type": "object",
+      "properties": {
+        "type": {
+          "$ref": "#/definitions/EntryRestrictionEnum"
+        },
+        "organisationId": {
+          "type": "string"
+        },
+        "membershipCategory": {
+          "type": "string"
+        },
+        "description": {
+          "type": "string"
+        },
+        "evaluable": {
+          "type": "boolean"
+        },
+        "extensions": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/Extension"
+          }
+        }
+      },
+      "required": ["type"],
+      "additionalProperties": false
+    },
+    "EventRegistration": {
+      "type": "object",
+      "properties": {
+        "entriesOpen": {
+          "type": ["string", "object"],
+          "format": "date-time"
+        },
+        "entriesClose": {
+          "type": ["string", "object"],
+          "format": "date-time"
+        },
+        "withdrawalDeadline": {
+          "type": ["string", "object"],
+          "format": "date-time"
+        },
+        "entryFees": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/RegistrationEntryFee"
+          }
+        },
+        "entryUrl": {
+          "type": "string"
+        },
+        "eligibilityNotes": {
+          "type": "string"
+        },
+        "extensions": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/Extension"
+          }
+        }
+      },
+      "additionalProperties": false
+    },
+    "EventEntryProfile": {
+      "type": "object",
+      "properties": {
+        "entriesLimit": {
+          "type": "number"
+        },
+        "targetDrawSize": {
+          "type": "number"
+        },
+        "selectionProcess": {
+          "$ref": "#/definitions/SelectionProcessEnum"
+        },
+        "selectionScaleName": {
+          "type": "string"
+        },
+        "wildcardCount": {
+          "type": "number"
+        },
+        "waitlistEnabled": {
+          "type": "boolean"
+        },
+        "extensions": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/Extension"
+          }
+        }
+      },
+      "additionalProperties": false
+    },
+    "SelectionProcessEnum": {
+      "type": "string",
+      "enum": ["FIRST_COME_FIRST_SERVED", "TOP_DOWN_BY_RANKING", "TOP_DOWN_BY_RATING", "MANUAL", "LOTTERY"]
     },
     "Extension": {
       "type": "object",
@@ -176,7 +329,24 @@
         "value": {}
       },
       "required": ["name", "value"],
-      "additionalProperties": true
+      "additionalProperties": true,
+      "$comment": "OPEN, deliberately and permanently. Extensions are CODES' escape hatch: `value` is unconstrained by design, and callers attach their own keys. This is the one exception that is not a backlog item."
+    },
+    "TierClassification": {
+      "type": "object",
+      "properties": {
+        "system": {
+          "type": "string"
+        },
+        "value": {
+          "type": "string"
+        },
+        "numericRank": {
+          "type": "number"
+        }
+      },
+      "required": ["system", "value"],
+      "additionalProperties": false
     },
     "TimeItem": {
       "type": "object",
@@ -206,6 +376,28 @@
     "Event": {
       "type": "object",
       "properties": {
+        "registrationProfile": {
+          "$ref": "#/definitions/EventRegistration"
+        },
+        "entryProfile": {
+          "$ref": "#/definitions/EventEntryProfile"
+        },
+        "entryRestrictions": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/EntryRestriction"
+          }
+        },
+        "cancelledAt": {
+          "type": ["string", "object"],
+          "format": "date-time"
+        },
+        "cancellationReason": {
+          "type": "string"
+        },
+        "flightProfile": {
+          "type": "object"
+        },
         "createdAt": {
           "type": ["string", "object"],
           "format": "date-time"
@@ -345,6 +537,45 @@
         },
         "wheelchairClass": {
           "$ref": "#/definitions/WheelchairClassEnum"
+        },
+        "activeDates": {
+          "type": "array",
+          "items": {
+            "type": ["string", "object"]
+          }
+        },
+        "competitionFormat": {
+          "type": "string"
+        },
+        "prizeMoney": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/PrizeMoney"
+          }
+        },
+        "prizeMoneyAwards": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/PrizeMoneyAward"
+          }
+        },
+        "sanction": {
+          "$ref": "#/definitions/TournamentSanction"
+        },
+        "eventOtherIds": {
+          "type": "array",
+          "items": {
+            "type": "object"
+          }
+        },
+        "eventTier": {
+          "$ref": "#/definitions/TierClassification"
+        },
+        "weekdays": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
         }
       },
       "required": ["eventId"],
@@ -444,6 +675,12 @@
         "categoryType": {
           "type": "string"
         },
+        "combinedRatingMax": {
+          "type": "number"
+        },
+        "combinedRatingMin": {
+          "type": "number"
+        },
         "ratingMax": {
           "type": "number"
         },
@@ -481,11 +718,34 @@
     },
     "DisciplineEnum": {
       "type": "string",
-      "enum": ["BEACH_TENNIS", "PADEL", "PICKLEBALL", "TENNIS", "WHEELCHAIR_TENNIS"]
+      "description": "Sport/discipline. Open, sport-agnostic vocabulary — any well-formed value is accepted so new sports need no schema release (see disciplineConstants / planning/DISCIPLINE_EXTENSIBILITY.md). Constrain via the allowedDisciplines policy where a fixed list is required. Known values are listed in examples.",
+      "examples": [
+        "TENNIS",
+        "BEACH_TENNIS",
+        "WHEELCHAIR_TENNIS",
+        "PADEL",
+        "PICKLEBALL",
+        "SQUASH",
+        "BADMINTON",
+        "VOLLEYBALL",
+        "BEACH_VOLLEYBALL"
+      ]
     },
     "DrawDefinition": {
       "type": "object",
       "properties": {
+        "flightProfile": {
+          "type": "object"
+        },
+        "lineUps": {
+          "type": "object"
+        },
+        "draftState": {
+          "type": "object"
+        },
+        "competitionState": {
+          "type": "object"
+        },
         "createdAt": {
           "type": ["string", "object"],
           "format": "date-time"
@@ -614,11 +874,14 @@
     },
     "DrawStatusEnum": {
       "type": "string",
-      "enum": ["COMPLETE", "IN_PROGRESS", "TO_BE_PLAYED"]
+      "enum": ["COMPLETED", "IN_PROGRESS", "TO_BE_PLAYED"]
     },
     "Entry": {
       "type": "object",
       "properties": {
+        "roundTarget": {
+          "type": "integer"
+        },
         "createdAt": {
           "type": ["string", "object"],
           "format": "date-time"
@@ -873,6 +1136,12 @@
     "MatchUp": {
       "type": "object",
       "properties": {
+        "delegatedOutcome": {
+          "type": "object"
+        },
+        "disableAutoCalc": {
+          "type": "boolean"
+        },
         "createdAt": {
           "type": ["string", "object"],
           "format": "date-time"
@@ -1806,6 +2075,9 @@
     "Structure": {
       "type": "object",
       "properties": {
+        "roundTarget": {
+          "type": "integer"
+        },
         "createdAt": {
           "type": ["string", "object"],
           "format": "date-time"
@@ -1924,6 +2196,15 @@
     "PositionAssignment": {
       "type": "object",
       "properties": {
+        "tally": {
+          "type": "object"
+        },
+        "subOrder": {
+          "type": "integer"
+        },
+        "disableLinks": {
+          "type": "boolean"
+        },
         "createdAt": {
           "type": ["string", "object"],
           "format": "date-time"
@@ -2382,7 +2663,9 @@
         "notes": {
           "type": "string"
         }
-      }
+      },
+      "$comment": "OPEN, and this is a KNOWN GAP rather than a decision — closing it is blocked, not declined. Measured 2026-08-28 against the 16 TODS fixtures: records carry `createdAt`, `updatedAt` and a nested `parentOrganisation`. Closing this definition today fails 14 of 16 fixtures. Each undeclared field must first be resolved as either a real CODES concept (declare it in `types/tournamentTypes.ts` AND here) or as legacy data (correct the fixtures), after which this should become `false` to match the other 51.",
+      "additionalProperties": true
     },
     "Participant": {
       "type": "object",
@@ -2675,6 +2958,11 @@
               "format": "date"
             }
           ]
+        },
+        "birthYear": {
+          "type": "integer",
+          "minimum": 1900,
+          "maximum": 2200
         },
         "contacts": {
           "type": "array",
@@ -3123,66 +3411,101 @@
     "LogisticsOption": {
       "type": "object",
       "properties": {
-        "address": { "type": "string" },
-        "description": { "type": "string" },
-        "email": { "type": "string" },
+        "address": {
+          "type": "string"
+        },
+        "description": {
+          "type": "string"
+        },
+        "email": {
+          "type": "string"
+        },
         "extensions": {
           "type": "array",
           "items": {
             "$ref": "#/definitions/Extension"
           }
         },
-        "name": { "type": "string" },
-        "notes": { "type": "string" },
-        "phone": { "type": "string" },
-        "priceRange": { "type": "string" },
-        "url": { "type": "string" }
+        "name": {
+          "type": "string"
+        },
+        "notes": {
+          "type": "string"
+        },
+        "phone": {
+          "type": "string"
+        },
+        "priceRange": {
+          "type": "string"
+        },
+        "url": {
+          "type": "string"
+        }
       },
       "required": ["name"],
       "additionalProperties": false
     },
-    "SocialEvent": {
-      "type": "object",
-      "properties": {
-        "date": { "type": "string" },
-        "description": { "type": "string" },
-        "location": { "type": "string" },
-        "name": { "type": "string" },
-        "time": { "type": "string" }
-      },
-      "required": ["name"],
-      "additionalProperties": false
+    "SanctionDecisionEnum": {
+      "type": "string",
+      "enum": [
+        "PENDING",
+        "APPROVED",
+        "CONDITIONAL",
+        "DENIED",
+        "WITHDRAWN",
+        "REVOKED",
+        "SUSPENDED",
+        "EXPIRED",
+        "DOWNGRADED"
+      ]
     },
-    "Sponsor": {
-      "type": "object",
-      "properties": {
-        "logoUrl": { "type": "string" },
-        "name": { "type": "string" },
-        "tier": { "type": "string" },
-        "websiteUrl": { "type": "string" }
-      },
-      "required": ["name"],
-      "additionalProperties": false
+    "RecognitionEnum": {
+      "type": "string",
+      "enum": ["SANCTIONED", "APPROVED", "OBSERVED", "RECOGNISED", "LICENSED", "UNSANCTIONED"]
     },
-    "DocumentLink": {
-      "type": "object",
-      "properties": {
-        "description": { "type": "string" },
-        "name": { "type": "string" },
-        "url": { "type": "string" }
-      },
-      "required": ["name"],
-      "additionalProperties": false
+    "AuthorityRoleEnum": {
+      "type": "string",
+      "enum": [
+        "INTERNATIONAL",
+        "NATIONAL",
+        "ZONE",
+        "SECTION",
+        "REGION",
+        "PROVINCE",
+        "STATE",
+        "COUNTY",
+        "DISTRICT",
+        "LEAGUE",
+        "CONFERENCE",
+        "CLUB",
+        "PROVIDER"
+      ]
     },
-    "RegistrationEntryFee": {
+    "SanctionEnforcementEnum": {
+      "type": "string",
+      "enum": ["ENFORCE", "AUDIT", "WARN"]
+    },
+    "SanctionFeeKindEnum": {
+      "type": "string",
+      "enum": ["SANCTION", "HEAD_TAX", "LATE", "ENTRY"]
+    },
+    "SanctioningAuthority": {
       "type": "object",
       "properties": {
-        "amount": { "type": "number" },
-        "category": { "type": "string" },
-        "currencyCode": { "type": "string" },
-        "eventType": {
-          "type": "string",
-          "enum": ["SINGLES", "DOUBLES", "TEAM", "HYBRID"]
+        "organisationAbbreviation": {
+          "type": "string"
+        },
+        "organisationName": {
+          "type": "string"
+        },
+        "organisationId": {
+          "type": "string"
+        },
+        "role": {
+          "$ref": "#/definitions/AuthorityRoleEnum"
+        },
+        "regionCode": {
+          "type": "string"
         },
         "extensions": {
           "type": "array",
@@ -3191,7 +3514,323 @@
           }
         }
       },
-      "required": ["amount", "currencyCode"],
+      "additionalProperties": false
+    },
+    "SanctionFee": {
+      "type": "object",
+      "properties": {
+        "feeKind": {
+          "$ref": "#/definitions/SanctionFeeKindEnum"
+        },
+        "fee": {
+          "$ref": "#/definitions/MonetaryAmount"
+        },
+        "percentage": {
+          "type": "number"
+        },
+        "perParticipant": {
+          "type": "boolean"
+        },
+        "maximum": {
+          "$ref": "#/definitions/MonetaryAmount"
+        },
+        "appliesTo": {
+          "type": "string"
+        },
+        "note": {
+          "type": "string"
+        }
+      },
+      "additionalProperties": false
+    },
+    "SanctionConferral": {
+      "type": "object",
+      "properties": {
+        "rankingEligible": {
+          "type": "boolean"
+        },
+        "rankingPointsProfile": {
+          "type": "string"
+        },
+        "recordEligible": {
+          "type": "boolean"
+        },
+        "officialResults": {
+          "type": "boolean"
+        },
+        "insured": {
+          "type": "boolean"
+        },
+        "extensions": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/Extension"
+          }
+        }
+      },
+      "additionalProperties": false
+    },
+    "SanctionRuleset": {
+      "type": "object",
+      "properties": {
+        "rulesetId": {
+          "type": "string"
+        },
+        "edition": {
+          "type": "string"
+        },
+        "enforcement": {
+          "$ref": "#/definitions/SanctionEnforcementEnum"
+        },
+        "appliedRules": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "extensions": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/Extension"
+          }
+        }
+      },
+      "additionalProperties": false
+    },
+    "SanctionDecisionRecord": {
+      "type": "object",
+      "properties": {
+        "decidedAt": {
+          "type": "string"
+        },
+        "decidedByPersonId": {
+          "type": "string"
+        },
+        "decidedByName": {
+          "type": "string"
+        },
+        "appealable": {
+          "type": "boolean"
+        },
+        "reason": {
+          "type": "string"
+        },
+        "note": {
+          "type": "string"
+        }
+      },
+      "additionalProperties": false
+    },
+    "SanctionIdentifier": {
+      "type": "object",
+      "properties": {
+        "organisationId": {
+          "type": "string"
+        },
+        "identifier": {
+          "type": "string"
+        },
+        "identifierType": {
+          "type": "string"
+        }
+      },
+      "required": ["identifier"],
+      "additionalProperties": false
+    },
+    "SanctionSubmissionWindow": {
+      "type": "object",
+      "properties": {
+        "from": {
+          "type": "string"
+        },
+        "to": {
+          "type": "string"
+        },
+        "timeZone": {
+          "type": "string"
+        }
+      },
+      "additionalProperties": false
+    },
+    "TournamentSanction": {
+      "$comment": "What a governing body DECIDED about a competition — the instance model from #4710. Three orthogonal axes: decision (did the application succeed), recognition (what the body asserts), classification (what grade is conferred). Before this definition existed the property was declared {\"type\": \"object\"}, so a record carrying decision: 'BANANA' validated.",
+      "type": "object",
+      "properties": {
+        "decision": {
+          "$ref": "#/definitions/SanctionDecisionEnum"
+        },
+        "recognition": {
+          "$ref": "#/definitions/RecognitionEnum"
+        },
+        "classification": {
+          "$ref": "#/definitions/TierClassification"
+        },
+        "authority": {
+          "$ref": "#/definitions/SanctioningAuthority"
+        },
+        "approvalChain": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/SanctioningAuthority"
+          }
+        },
+        "decisionRecord": {
+          "$ref": "#/definitions/SanctionDecisionRecord"
+        },
+        "confers": {
+          "$ref": "#/definitions/SanctionConferral"
+        },
+        "ruleset": {
+          "$ref": "#/definitions/SanctionRuleset"
+        },
+        "sanctioningId": {
+          "type": "string"
+        },
+        "identifiers": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/SanctionIdentifier"
+          }
+        },
+        "fees": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/SanctionFee"
+          }
+        },
+        "submissionWindow": {
+          "$ref": "#/definitions/SanctionSubmissionWindow"
+        },
+        "timeItems": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/TimeItem"
+          }
+        },
+        "extensions": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/Extension"
+          }
+        }
+      },
+      "additionalProperties": false
+    },
+    "SocialEvent": {
+      "type": "object",
+      "properties": {
+        "date": {
+          "type": "string"
+        },
+        "description": {
+          "type": "string"
+        },
+        "location": {
+          "type": "string"
+        },
+        "name": {
+          "type": "string"
+        },
+        "time": {
+          "type": "string"
+        }
+      },
+      "required": ["name"],
+      "additionalProperties": false
+    },
+    "Sponsor": {
+      "type": "object",
+      "properties": {
+        "logoUrl": {
+          "type": "string"
+        },
+        "name": {
+          "type": "string"
+        },
+        "tier": {
+          "type": "string"
+        },
+        "websiteUrl": {
+          "type": "string"
+        }
+      },
+      "required": ["name"],
+      "additionalProperties": false
+    },
+    "DocumentLink": {
+      "type": "object",
+      "properties": {
+        "description": {
+          "type": "string"
+        },
+        "name": {
+          "type": "string"
+        },
+        "url": {
+          "type": "string"
+        }
+      },
+      "required": ["name"],
+      "additionalProperties": false
+    },
+    "RegistrationEntryFee": {
+      "type": "object",
+      "properties": {
+        "amount": {
+          "type": "number"
+        },
+        "currencyCode": {
+          "type": "string"
+        },
+        "unit": {
+          "type": "string",
+          "enum": ["MINOR", "MAJOR"]
+        },
+        "eventId": {
+          "type": "string"
+        },
+        "category": {
+          "type": "string"
+        },
+        "eventType": {
+          "type": "string",
+          "enum": ["SINGLES", "DOUBLES", "TEAM", "HYBRID"]
+        },
+        "appliesFrom": {
+          "type": "string"
+        },
+        "appliesTo": {
+          "type": "string"
+        },
+        "extensions": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/Extension"
+          }
+        }
+      },
+      "required": ["amount", "currencyCode", "unit"],
+      "additionalProperties": false
+    },
+    "CurrencyUnitEnum": {
+      "type": "string",
+      "enum": ["MINOR", "MAJOR"]
+    },
+    "MonetaryAmount": {
+      "$comment": "All three fields are required together: an amount with no stated scale is readable at two scales 100x apart. NOTE this definition is $ref'd where a whole VALUE is a monetary amount (SanctionFee.fee, SanctionFee.maximum). It is deliberately NOT composed into PrizeMoney, PrizeMoneyAward or RegistrationEntryFee via allOf, even though those extend it in TypeScript: `allOf` + `additionalProperties: false` REJECTS the inherited fields, because additionalProperties only sees the properties declared alongside it. Those three inline the triple instead. Verified against ajv before choosing.",
+      "type": "object",
+      "properties": {
+        "amount": {
+          "type": "number"
+        },
+        "currencyCode": {
+          "type": "string"
+        },
+        "unit": {
+          "$ref": "#/definitions/CurrencyUnitEnum"
+        }
+      },
+      "required": ["amount", "currencyCode", "unit"],
       "additionalProperties": false
     },
     "PrizeMoney": {
@@ -3228,9 +3867,13 @@
         },
         "currencyCode": {
           "type": "string"
+        },
+        "unit": {
+          "type": "string",
+          "enum": ["MINOR", "MAJOR"]
         }
       },
-      "required": ["amount", "currencyCode"],
+      "required": ["amount", "currencyCode", "unit"],
       "additionalProperties": false
     },
     "UnifiedTournamentId": {
@@ -3352,6 +3995,9 @@
         "venueName": {
           "type": "string"
         },
+        "facilityId": {
+          "type": "string"
+        },
         "venueOtherIds": {
           "type": "array",
           "items": {
@@ -3375,11 +4021,18 @@
         }
       },
       "required": ["venueId"],
-      "additionalProperties": true
+      "additionalProperties": true,
+      "$comment": "OPEN, and this is a KNOWN GAP rather than a decision — closing it is blocked, not declined. Measured 2026-08-28 against the 16 TODS fixtures: 7 records carry `parentOrganisation`, which `Venue` does not declare. Closing this definition today fails 14 of 16 fixtures. Each undeclared field must first be resolved as either a real CODES concept (declare it in `types/tournamentTypes.ts` AND here) or as legacy data (correct the fixtures), after which this should become `false` to match the other 51."
     },
     "Court": {
       "type": "object",
       "properties": {
+        "disabled": {
+          "type": "boolean"
+        },
+        "discipline": {
+          "$ref": "#/definitions/DisciplineEnum"
+        },
         "createdAt": {
           "type": ["string", "object"],
           "format": "date-time"
@@ -3609,6 +4262,42 @@
       },
       "required": ["organisationId", "venueId"],
       "additionalProperties": false
+    },
+    "PrizeMoneyAward": {
+      "type": "object",
+      "properties": {
+        "amount": {
+          "type": "number"
+        },
+        "currencyCode": {
+          "type": "string"
+        },
+        "unit": {
+          "type": "string",
+          "enum": ["MINOR", "MAJOR"]
+        },
+        "finishingPosition": {
+          "type": "number"
+        },
+        "roundName": {
+          "type": "string"
+        },
+        "roundCode": {
+          "type": "string"
+        },
+        "notes": {
+          "type": "string"
+        },
+        "extensions": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/Extension"
+          }
+        }
+      },
+      "required": ["amount", "currencyCode", "unit", "finishingPosition"],
+      "additionalProperties": false
     }
-  }
+  },
+  "$comment": "CONVENTION: every object definition states `additionalProperties` EXPLICITLY, and the default is `false`. 51 of 55 definitions are closed. A closed definition is what makes a CODES field added to the TypeScript types but never mirrored here a LOUD failure rather than a silent one — the drift fixed in #4718 went unnoticed for exactly this reason on the open definitions. Four definitions are open; each carries a `$comment` saying why. `codesSchemaConvention.test.ts` enforces both halves: no definition may omit the keyword, and the open set may not grow without updating that test."
 }

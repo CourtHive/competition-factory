@@ -7,6 +7,7 @@ import { findCourt } from '../../query/venues/findCourt';
 import { addNotice } from '@Global/state/globalState';
 import { startTimeSort } from '@Validators/time';
 
+import { completedMatchUpStatuses } from '@Constants/matchUpStatusConstants';
 import { ErrorType, SCHEDULE_CONFLICT_COURT_UNAVAILABLE } from '@Constants/errorConditionConstants';
 import { TOURNAMENT_RECORD, COURT_ID } from '@Constants/attributeConstants';
 import { POLICY_TYPE_SCHEDULING } from '@Constants/policyConstants';
@@ -66,8 +67,13 @@ export function modifyCourtAvailability({
     const allowModificationWhenMatchUpsScheduled =
       force ?? appliedPolicies?.[POLICY_TYPE_SCHEDULING]?.allowDeletionWithScoresPresent?.courts;
 
-    // Check each scheduled matchUp against the new availability windows
+    // Check each scheduled matchUp against the new availability windows.
+    // Completed matchUps are historical — their schedule reflects what
+    // already happened, not future commitments. Modifying court availability
+    // should never be blocked by play that has already concluded.
     const matchUpsWithInvalidScheduling = courtMatchUps.filter((matchUp) => {
+      if (matchUp.matchUpStatus && completedMatchUpStatuses.includes(matchUp.matchUpStatus)) return false;
+      if (matchUp.winningSide) return false;
       const { scheduledDate, scheduledTime } = matchUp.schedule ?? {};
       if (!scheduledDate || !scheduledTime) return false;
 

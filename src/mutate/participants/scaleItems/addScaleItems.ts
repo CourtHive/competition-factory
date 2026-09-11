@@ -4,6 +4,7 @@ import { participantScaleItem } from '@Query/participant/participantScaleItem';
 import { decorateResult } from '@Functions/global/decorateResult';
 import { requireParams } from '@Helpers/parameters/requireParams';
 import { addNotice, getTopics } from '@Global/state/globalState';
+import { modifyParticipantsNotice } from '@Mutate/notifications/participantNotifications';
 import { definedAttributes } from '@Tools/definedAttributes';
 import { isValidDateString } from '@Tools/dateTime';
 import { findEvent } from '@Acquire/findEvent';
@@ -59,12 +60,9 @@ export function setParticipantScaleItem(params: SetParticipantScaleItemArgs) {
 
       const { topics } = getTopics();
       if (topics.includes(MODIFY_PARTICIPANTS)) {
-        addNotice({
-          topic: MODIFY_PARTICIPANTS,
-          payload: {
-            tournamentId: tournamentRecord.tournamentId,
-            participants: [participant],
-          },
+        modifyParticipantsNotice({
+          tournamentId: tournamentRecord.tournamentId,
+          participants: [participant],
         });
       }
     }
@@ -113,12 +111,9 @@ export function setParticipantScaleItems(params: SetParticipantScaleItemsArgs) {
   const info = modificationsApplied ? undefined : NO_MODIFICATIONS_APPLIED;
   const { topics } = getTopics();
   if (topics.includes(MODIFY_PARTICIPANTS) && modificationsApplied) {
-    addNotice({
-      topic: MODIFY_PARTICIPANTS,
-      payload: {
-        tournamentId: tournamentRecord.tournamentId,
-        participants: modifiedParticipants,
-      },
+    modifyParticipantsNotice({
+      tournamentId: tournamentRecord.tournamentId,
+      participants: modifiedParticipants,
     });
   }
 
@@ -156,7 +151,19 @@ export function addParticipantScaleItem({ removePriorValues, participant, scaleI
 
   if (!validScaleItem) return { error: INVALID_SCALE_ITEM };
 
-  const createdAt = new Date().toISOString();
+  // Honour a `createdAt` already on the caller's scaleItem rather than stamping
+  // over it. No new parameter is needed here — the caller already supplies the
+  // object, so this is the same shape as `participantId ??= UUID()`.
+  //
+  // This is the ordering case that matters most: `participantScaleItem` and
+  // `getScaleValues` sort a participant's scale timeItems by `createdAt` to
+  // resolve the CURRENT rating. A rating recorded at a venue and synced later
+  // must carry its own time or it sorts as though it happened at sync time —
+  // and would wrongly supersede a rating actually set after it.
+  //
+  // Distinct from `scaleItem.scaleDate`, which is the date the rating APPLIES
+  // to; `createdAt` is when it was recorded.
+  const createdAt = scaleItem.createdAt ?? new Date().toISOString();
   participant.timeItems ??= [];
 
   const { scaleItem: existingScaleItem } = participantScaleItem({

@@ -1,4 +1,4 @@
-import { POLICY_RANKING_POINTS_TENNIS_EUROPE } from '@Fixtures/policies/POLICY_RANKING_POINTS_TENNIS_EUROPE';
+import { POLICY_RANKING_POINTS_TENNIS_EUROPE } from '@Tests/fixtures/policies/POLICY_RANKING_POINTS_TENNIS_EUROPE';
 import { validateRankingPolicy } from './validatePolicy';
 import { describe, expect, it } from 'vitest';
 

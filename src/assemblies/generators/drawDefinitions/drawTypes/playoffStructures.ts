@@ -174,7 +174,7 @@ export function generatePlayoffStructures(params: GeneratePlayoffStructuresArgs)
     });
 
     if (structure.structureId && targetStructureId) {
-      const link = {
+      const link: DrawLink = {
         linkType: LOSER,
         source: {
           roundNumber,

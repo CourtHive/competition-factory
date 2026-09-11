@@ -3,10 +3,18 @@ title: Sanctioning Governor
 ---
 
 ```js
-import { sanctioningGovernor } from 'tods-competition-factory';
+import { governors } from 'tods-competition-factory';
+
+const { sanctioningGovernor } = governors;
 ```
 
 The **sanctioningGovernor** re-exports all sanctioning mutation and query functions for use outside the sanctioning engine. While the `sanctioningEngine` provides a complete stateful API, the governor exports individual functions that can be called directly with a `sanctioningRecord` parameter.
+
+:::note Reachable since 7.x
+The governor was implemented but never registered in the governors index, so none of its methods
+reached any engine and nothing here could be imported. Registering it added 35 methods to the engine
+surface. If you tried to use this page before 7.x and could not, that is why.
+:::
 
 For full engine documentation including state management, executionQueue, and workflow examples, see [Sanctioning Engine](../engines/sanctioning-engine.md).
 
@@ -23,7 +31,7 @@ Creates a new `SanctioningRecord` in `DRAFT` status.
   governingBodyId: string;
   applicant: Applicant;
   proposal: TournamentProposal;
-  sanctioningLevel?: string;
+  sanctioningTier?: TierClassification;
   sanctioningPolicy?: string;
 }
 ```
@@ -37,7 +45,10 @@ Creates a new `SanctioningRecord` in `DRAFT` status.
 Updates proposal fields on a record in editable status (`DRAFT` or `MODIFICATION_REQUESTED`).
 
 ```ts
-{ sanctioningRecord: SanctioningRecord; updates: Partial<TournamentProposal> }
+{
+  sanctioningRecord: SanctioningRecord;
+  updates: Partial<TournamentProposal>;
+}
 ```
 
 ---
@@ -48,14 +59,24 @@ CRUD operations for event proposals within a sanctioning record.
 
 ```ts
 // Add
-{ sanctioningRecord; eventProposal: EventProposal }
+{
+  sanctioningRecord;
+  eventProposal: EventProposal;
+}
 // Returns: { success, eventProposalId }
 
 // Remove
-{ sanctioningRecord; eventProposalId: string }
+{
+  sanctioningRecord;
+  eventProposalId: string;
+}
 
 // Update
-{ sanctioningRecord; eventProposalId: string; updates: Partial<EventProposal> }
+{
+  sanctioningRecord;
+  eventProposalId: string;
+  updates: Partial<EventProposal>;
+}
 ```
 
 ---
@@ -169,13 +190,38 @@ Adds a review note to the record.
 
 ---
 
-### activateFromSanctioning
+### openProposalRegistration
 
-Generates a `tournamentRecord` from an `APPROVED` sanctioning record and transitions to `ACTIVE`.
+Opens (or adjusts) public registration on a proposal **before** a `tournamentRecord` exists. Assigns a `tournamentId` to the proposal (minting one if absent) so a public site can render a registration page against a not-yet-activated proposal, and gives each proposed event a stable `eventId`. Merges any supplied `registrationProfile` fields and ensures `entriesOpen` is set (opening now when no explicit value is present). Gated only against terminal statuses (`REJECTED`, `WITHDRAWN`, `CLOSED`); stricter workflow/policy is enforced by the consuming service.
 
 ```ts
-{ sanctioningRecord; sanctioningPolicy?: SanctioningPolicy }
+{ sanctioningRecord; tournamentId?: string; registrationProfile?: Partial<RegistrationProfile> }
 ```
+
+**Returns:** `{ success, tournamentId, registrationProfile }`
+
+---
+
+### activateFromSanctioning
+
+Generates a `tournamentRecord` from an `APPROVED` sanctioning record and transitions to `ACTIVE`. Reuses the `tournamentId` and per-event `eventId`s already assigned by [`openProposalRegistration`](#openproposalregistration) — so registrations collected before activation remain valid — otherwise mints new ids.
+
+```ts
+{ sanctioningRecord; sanctioningPolicy?: SanctioningPolicy; venues?: Venue[] }
+```
+
+**Venues.** Pass `venues` to materialize canonical venues onto the generated `tournamentRecord` —
+typically pulled by the caller from a facility registry for the facility the sanctioning record was
+attached to. They are **supplied, not resolved**: the factory has no runtime dependencies and no
+service awareness, so resolution belongs to the caller and materialization to the engine. A canonical
+venue carries `facilityId` and typed `courts`, so the activated tournament inherits one
+cross-tournament identity for the place it is played at instead of a re-entered venue.
+
+When no `venues` are supplied, `proposal.venues` (`VenueProposal[]`) is materialized instead. That is
+a fallback: a proposal venue is what an applicant typed, so it has no canonical identity — its
+`facilityId` defaults to its own `venueId` — and `numberOfCourts` is deliberately **not** expanded
+into placeholder courts, which would fabricate identities to be reconciled against a registry later.
+Supplied `venues` always win over the proposal description.
 
 **Returns:** `{ success, tournamentRecord }`
 
@@ -258,7 +304,9 @@ Transitions to `CLOSED` (terminal).
 Returns a deep copy of the sanctioning record.
 
 ```ts
-{ sanctioningRecord }
+{
+  sanctioningRecord;
+}
 ```
 
 ---
@@ -268,7 +316,9 @@ Returns a deep copy of the sanctioning record.
 Returns valid status transitions for the record's current status.
 
 ```ts
-{ sanctioningRecord }
+{
+  sanctioningRecord;
+}
 ```
 
 **Returns:** `{ success, availableTransitions: SanctioningStatus[] }`
@@ -280,7 +330,9 @@ Returns valid status transitions for the record's current status.
 Returns the full status transition history.
 
 ```ts
-{ sanctioningRecord }
+{
+  sanctioningRecord;
+}
 ```
 
 **Returns:** `{ success, statusHistory: StatusTransition[] }`
@@ -304,7 +356,10 @@ Returns a completeness score (0-100%) with missing fields.
 Returns which policy tiers the proposal qualifies for.
 
 ```ts
-{ proposal: TournamentProposal; sanctioningPolicy: SanctioningPolicy }
+{
+  proposal: TournamentProposal;
+  sanctioningPolicy: SanctioningPolicy;
+}
 ```
 
 **Returns:** `{ success, eligibleTiers, tierEligibilities }`
@@ -316,7 +371,10 @@ Returns which policy tiers the proposal qualifies for.
 Detects scheduling conflicts using injected calendar context.
 
 ```ts
-{ sanctioningRecord; calendarContext: CalendarContext }
+{
+  sanctioningRecord;
+  calendarContext: CalendarContext;
+}
 ```
 
 **Returns:** `{ success, conflicts, errors, warnings, hasConflicts }`
@@ -330,7 +388,7 @@ Conflict types: `PROXIMITY`, `SAME_WEEK`, `BLACKOUT`, `MAX_EVENTS_PER_WEEK`
 Validates proposal against policy and optional tier constraints.
 
 ```ts
-{ proposal: TournamentProposal; sanctioningPolicy: SanctioningPolicy; sanctioningTier?: string }
+{ proposal: TournamentProposal; sanctioningPolicy: SanctioningPolicy; sanctioningTier?: TierClassification }
 ```
 
 **Returns:** `{ success, valid, issues, errors, warnings }`
@@ -344,7 +402,10 @@ Checks: insurance, safety plan, medical plan, anti-corruption, safeguarding, lea
 Validates whether a status transition is allowed.
 
 ```ts
-{ fromStatus: SanctioningStatus; toStatus: SanctioningStatus }
+{
+  fromStatus: SanctioningStatus;
+  toStatus: SanctioningStatus;
+}
 ```
 
 **Returns:** `{ success, valid }` or `{ error }` with valid targets in context.

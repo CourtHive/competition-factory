@@ -37,7 +37,12 @@ export function getParticipantsCount({ participantsProfile, eventProfiles, drawP
   }) => {
     const isDoubles = eventType === DOUBLES;
     const isTeam = eventType === TEAM;
-    const requiresUniqueParticipants = Boolean(uniqueParticipants || stage === QUALIFYING || category || gender);
+    // `gender: ANY` is a sentinel for "no gender constraint" — treat it the
+    // same as an unset gender so it doesn't trigger per-draw unique-pool
+    // synthesis on top of any caller-supplied participantsProfile.
+    const requiresUniqueParticipants = Boolean(
+      uniqueParticipants || stage === QUALIFYING || category || (gender && gender !== ANY),
+    );
 
     if (isTeam) {
       largestTeamDraw = Math.max(largestTeamDraw, drawSize + alternatesCount);

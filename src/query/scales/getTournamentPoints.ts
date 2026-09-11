@@ -5,6 +5,7 @@ import { getTargetElement } from '@Query/scales/getTargetElement';
 import { getAwardProfile } from '@Query/scales/getAwardProfile';
 import { getAwardPoints } from '@Query/scales/getAwardPoints';
 import { getDevContext } from '@Global/state/globalState';
+import { policyRegistry } from '@Global/policyRegistry';
 import { unique } from '@Tools/arrays';
 
 // constants and types
@@ -13,9 +14,9 @@ import { ParticipantFilters, PolicyDefinitions } from '@Types/factoryTypes';
 import { PAIR, TEAM_PARTICIPANT } from '@Constants/participantConstants';
 import { POLICY_TYPE_RANKING_POINTS } from '@Constants/policyConstants';
 import { QUALIFYING } from '@Constants/drawDefinitionConstants';
-import { TEAM_EVENT } from '@Constants/eventConstants';
+import { DOUBLES, TEAM_EVENT } from '@Constants/eventConstants';
 import { SUCCESS } from '@Constants/resultConstants';
-import { SPLIT_EVEN } from '@Constants/rankingConstants';
+import { SPLIT_EVEN, TEAM_ONLY } from '@Constants/rankingConstants';
 import { Tournament } from '@Types/tournamentTypes';
 
 function calculateBonusPoints(primaryAwardProfile, bestFinishingPosition, level) {
@@ -37,6 +38,39 @@ function calculateBonusPoints(primaryAwardProfile, bestFinishingPosition, level)
   return bonusPoints;
 }
 
+/**
+ * The category snapshot an award carries — what the event WAS when the points
+ * were earned.
+ *
+ * `gender` is part of that snapshot and lives on the EVENT, not inside
+ * `event.category`. Assigning `event.category` verbatim therefore dropped it:
+ * `PointAward.category.gender` was declared in `rankingTypes.ts` and never
+ * populated by anything, so a consumer reading the documented field correctly
+ * got `undefined`. Measured downstream on 2026-09-06 —
+ * `courthive-rankings.point_awards.gender` was NULL on all 3,552 production
+ * rows, and every gendered ranking list it generated came out empty because
+ * `WHERE gender = 'MALE'` never matches a NULL.
+ *
+ * Most events have no `category` object at all (123 of 129 in that corpus), so
+ * the snapshot has to be CREATED when gender is the only thing known about the
+ * category, not merged into an object that is assumed to exist.
+ *
+ * An explicit `category.gender` wins over the event's own: it is the more
+ * specific statement, and an event that says both should be taken at its
+ * narrower word.
+ *
+ * The value is recorded as the event declares it, including `ANY`. Whether an
+ * `ANY` event counts toward a gendered ranking list is an aggregation policy
+ * question and is deliberately NOT decided here — the engine's job is to record
+ * what the event was. Recording it faithfully is what makes the choice
+ * expressible downstream without re-deriving every award.
+ */
+function resolveAwardCategory(category, gender) {
+  if (!gender) return category;
+  if (category?.gender) return category;
+  return { ...(category ?? {}), gender };
+}
+
 function resolveLineValue(levelValue, collectionPosition) {
   if (typeof levelValue === 'object' && levelValue.line) {
     if (levelValue.limit && collectionPosition > levelValue.limit) return undefined;
@@ -52,7 +86,10 @@ function awardLinePointsToWinningSide({
   participantIndividualIdsMap,
   participantPersonMap,
   personPoints,
+  pointsAuthority,
   eventType,
+  category,
+  gender,
   drawId,
 }) {
   const { collectionPosition } = tieMatchUp;
@@ -70,10 +107,16 @@ function awardLinePointsToWinningSide({
       if (!personId) continue;
 
       if (!personPoints[personId]) personPoints[personId] = [];
+      // Carries the same category snapshot as every other award. A team line
+      // award that omitted it would reach a gendered ranking list with a NULL
+      // gender and be filtered out of it — the identical defect, just confined
+      // to team events.
       personPoints[personId].push({
         linePoints: lineValue,
         collectionPosition,
+        pointsAuthority,
         eventType,
+        category: resolveAwardCategory(category, gender),
         drawId,
       });
     }
@@ -91,7 +134,10 @@ function calculateTeamLinePoints({
   participantIndividualIdsMap,
   participantPersonMap,
   personPoints,
+  pointsAuthority,
   eventType,
+  category,
+  gender,
   drawId,
 }) {
   if (participantType !== TEAM_PARTICIPANT || !awardProfile || !levelValue) return;
@@ -117,7 +163,10 @@ function calculateTeamLinePoints({
         participantIndividualIdsMap,
         participantPersonMap,
         personPoints,
+        pointsAuthority,
         eventType,
+        category,
+        gender,
         drawId,
       });
     }
@@ -134,6 +183,7 @@ function calculateQualityWinPoints({
   tournamentRecord,
   level,
   personPoints,
+  pointsAuthority,
   eventType,
 }) {
   if (!qualityWinProfiles?.length || !participant.matchUps) return;
@@ -168,6 +218,7 @@ function calculateQualityWinPoints({
       personPoints[personId].push({
         qualityWinPoints,
         qualityWins,
+        pointsAuthority,
         eventType,
         drawId,
       });
@@ -195,12 +246,7 @@ function resolvePositionPoints({ awardProfile, participation, level, drawSize })
     accessor = participantWon ? 1 : Math.pow(2, participation.finishingRound);
   }
 
-  const {
-    finishingPositionPoints = {},
-    finishingPositionRanges,
-    finishingRound,
-    flights,
-  } = awardProfile;
+  const { finishingPositionPoints = {}, finishingPositionRanges, finishingRound, flights } = awardProfile;
 
   const participationOrders = finishingPositionPoints.participationOrders;
   const isValidOrder = !participationOrders || participationOrders.includes(participationOrder);
@@ -293,29 +339,41 @@ function distributeAward({
   if (personId) {
     if (!personPoints[personId]) personPoints[personId] = [];
     personPoints[personId].push(award);
-  } else if (participantType === PAIR) {
-    if (!pairPoints[participantId]) pairPoints[participantId] = [];
-    pairPoints[participantId].push(award);
+    return;
+  }
 
-    if (doublesAttribution) {
-      const multiplier = doublesAttribution === SPLIT_EVEN ? 0.5 : 1;
-      const individualIds = participantIndividualIdsMap[participantId] ?? [];
-      for (const indId of individualIds) {
-        const indPersonId = participantPersonMap[indId];
-        if (!indPersonId) continue;
-        const individualAward = {
-          ...award,
-          points: Math.round(award.points * multiplier),
-          positionPoints: Math.round(award.positionPoints * multiplier),
-          perWinPoints: Math.round(award.perWinPoints * multiplier),
-          bonusPoints: Math.round(award.bonusPoints * multiplier),
-          doublesParticipantId: participantId,
-        };
-        if (!personPoints[indPersonId]) personPoints[indPersonId] = [];
-        personPoints[indPersonId].push(individualAward);
-      }
+  if (participantType === PAIR) {
+    // The pair "owns" the award only when the policy treats the pair as
+    // the ranking entity — either `teamOnly` (explicit pair ranking) or
+    // no doublesAttribution declared at all (legacy default). Under
+    // `fullToEach` and `splitEven` the per-individual rankings are the
+    // target; the pair is bookkeeping for who played together and gets
+    // nothing of its own.
+    if (!doublesAttribution || doublesAttribution === TEAM_ONLY) {
+      if (!pairPoints[participantId]) pairPoints[participantId] = [];
+      pairPoints[participantId].push(award);
+      return;
     }
-  } else if (participantType === TEAM_PARTICIPANT) {
+
+    const multiplier = doublesAttribution === SPLIT_EVEN ? 0.5 : 1;
+    const individualIds = participantIndividualIdsMap[participantId] ?? [];
+    for (const indId of individualIds) {
+      const indPersonId = participantPersonMap[indId];
+      if (!indPersonId) continue;
+      const individualAward = {
+        ...award,
+        points: Math.round(award.points * multiplier),
+        positionPoints: Math.round(award.positionPoints * multiplier),
+        perWinPoints: Math.round(award.perWinPoints * multiplier),
+        bonusPoints: Math.round(award.bonusPoints * multiplier),
+      };
+      if (!personPoints[indPersonId]) personPoints[indPersonId] = [];
+      personPoints[indPersonId].push(individualAward);
+    }
+    return;
+  }
+
+  if (participantType === TEAM_PARTICIPANT) {
     if (!teamPoints[participantId]) teamPoints[participantId] = [];
     teamPoints[participantId].push(award);
   }
@@ -366,7 +424,10 @@ function processParticipation({
     if (!drawSize) return { awardProfile, skip: true };
 
     if (awardProfile.profileName) accum.profileName = awardProfile.profileName;
-    accum.primaryAwardProfile ??= awardProfile;
+    if (accum.primaryAwardProfile === undefined) {
+      accum.primaryAwardProfile = awardProfile;
+      accum.rankingStage = rankingStage;
+    }
 
     accum.maxCountable = resolveMaxCountable(awardProfile, level, accum.maxCountable);
 
@@ -380,8 +441,7 @@ function processParticipation({
     const firstRound = accessor && rankingStage !== QUALIFYING && finishingPositionRange?.includes(drawSize);
 
     if (awardProfile.requireWinForPoints !== undefined) accum.requireWin = awardProfile.requireWinForPoints;
-    if (awardProfile.requireWinFirstRound !== undefined)
-      accum.requireWinFirstRound = awardProfile.requireWinFirstRound;
+    if (awardProfile.requireWinFirstRound !== undefined) accum.requireWinFirstRound = awardProfile.requireWinFirstRound;
 
     if (firstRound && accum.requireWinFirstRound !== undefined) {
       accum.requireWin = accum.requireWinFirstRound;
@@ -392,6 +452,7 @@ function processParticipation({
       accum.positionPoints = awardPoints;
       accum.rangeAccessor = accessor;
       accum.primaryAwardProfile = awardProfile;
+      accum.rankingStage = rankingStage;
     }
 
     if (!awardPoints) {
@@ -427,6 +488,7 @@ function calculateDrawPoints({
   teamPoints,
   participantPersonMap,
   participantIndividualIdsMap,
+  pointsAuthority,
   level,
   devContext,
   tournamentRecord,
@@ -440,6 +502,19 @@ function calculateDrawPoints({
   const endDate = draw.endDate || eventInfo.endDate || tournamentRecord.endDate;
 
   if (eventType === TEAM_EVENT && participantType !== TEAM_PARTICIPANT) {
+    return;
+  }
+
+  // Mirror of the TEAM_EVENT guard above for DOUBLES: the PAIR
+  // participant is the canonical processing path for every doubles
+  // event regardless of policy mode. distributeAward's PAIR branch
+  // routes the resulting award to either personPoints (fullToEach,
+  // splitEven) or pairPoints (teamOnly, no attribution declared)
+  // based on policy. The individual's own draw participation would
+  // otherwise emit a duplicate per-personId award; under modes that
+  // route to pairPoints it would also leak individual awards that
+  // the policy explicitly didn't ask for.
+  if (eventType === DOUBLES && participantType !== PAIR) {
     return;
   }
 
@@ -468,6 +543,7 @@ function calculateDrawPoints({
       participantIndividualIdsMap,
       participantPersonMap,
       personPoints,
+      pointsAuthority,
       drawId,
     });
 
@@ -483,6 +559,7 @@ function calculateDrawPoints({
         eventType,
         drawId,
         category,
+        gender,
         drawType,
         startDate,
         endDate,
@@ -497,9 +574,13 @@ function calculateDrawPoints({
         doublesAttribution,
         participantIndividualIdsMap,
         participantPersonMap,
+        pointsAuthority,
       });
     }
 
+    // Quality-win bonuses are part of the same draw context as the
+    // primary award, so they inherit the matched profile's authority
+    // and only fall back to the policy default when no profile matched.
     calculateQualityWinPoints({
       qualityWinProfiles,
       participant,
@@ -510,6 +591,7 @@ function calculateDrawPoints({
       tournamentRecord,
       level,
       personPoints,
+      pointsAuthority: accum.primaryAwardProfile?.pointsAuthority ?? pointsAuthority,
       eventType,
     });
   }
@@ -524,6 +606,12 @@ function buildAccumulator({ initialRequireWinFirstRound, requireWinForPoints }) 
     maxCountable: undefined as number | undefined,
     rangeAccessor: undefined as any,
     profileName: undefined as any,
+    // rankingStage of the participation that contributed positionPoints —
+    // tracked so emitted awards can be disambiguated by stage. Without it,
+    // a Q-final loser (accessor rewritten to 2) and a MAIN finalist (max
+    // finishingPositionRange = 2) share rangeAccessor=2 and downstream
+    // consumers can't tell them apart.
+    rankingStage: undefined as string | undefined,
     totalWinsCount: 0,
     positionPoints: 0,
     perWinPoints: 0,
@@ -551,6 +639,7 @@ function processAllParticipations({
   participantIndividualIdsMap,
   participantPersonMap,
   personPoints,
+  pointsAuthority,
   drawId,
 }) {
   for (const participation of structureParticipation) {
@@ -588,7 +677,10 @@ function processAllParticipations({
         participantIndividualIdsMap,
         participantPersonMap,
         personPoints,
+        pointsAuthority: awardProfile.pointsAuthority ?? pointsAuthority,
         eventType,
+        category,
+        gender,
         drawId,
       });
     }
@@ -602,6 +694,7 @@ function buildAndDistributeAward({
   eventType,
   drawId,
   category,
+  gender,
   drawType,
   startDate,
   endDate,
@@ -616,17 +709,23 @@ function buildAndDistributeAward({
   doublesAttribution,
   participantIndividualIdsMap,
   participantPersonMap,
+  pointsAuthority,
 }) {
+  // Profile authority wins over policy authority; falls back to the
+  // policy default (or undefined) when no profile overrides.
+  const effectiveAuthority = accum.primaryAwardProfile?.pointsAuthority ?? pointsAuthority;
   const award: Record<string, any> = {
     winCount: accum.totalWinsCount,
     positionPoints: accum.positionPoints,
     rangeAccessor: accum.rangeAccessor,
     perWinPoints: accum.perWinPoints,
     bonusPoints,
+    pointsAuthority: effectiveAuthority,
+    stage: accum.rankingStage,
     eventType,
     drawId,
     points,
-    category,
+    category: resolveAwardCategory(category, gender),
     drawType,
     startDate,
     endDate,
@@ -653,12 +752,14 @@ type GetTournamentPointsArgs = {
   participantFilters?: ParticipantFilters;
   policyDefinitions?: PolicyDefinitions;
   tournamentRecord: Tournament;
+  policyName?: string;
   level?: number;
 };
 export function getTournamentPoints({
   participantFilters,
   policyDefinitions,
   tournamentRecord,
+  policyName,
   level,
 }: GetTournamentPointsArgs) {
   if (!tournamentRecord) return { error: MISSING_TOURNAMENT_RECORD };
@@ -670,8 +771,11 @@ export function getTournamentPoints({
     tournamentRecord,
   });
 
-  const pointsPolicy =
+  const explicitOrAttached =
     policyDefinitions?.[POLICY_TYPE_RANKING_POINTS] ?? attachedPolicies?.[POLICY_TYPE_RANKING_POINTS];
+  const pointsPolicy =
+    explicitOrAttached ??
+    (policyName ? policyRegistry.lookup({ policyType: POLICY_TYPE_RANKING_POINTS, name: policyName }) : undefined);
   if (!pointsPolicy) return { error: MISSING_POLICY_DEFINITION };
 
   const awardProfiles = pointsPolicy.awardProfiles;
@@ -679,6 +783,7 @@ export function getTournamentPoints({
   const requireWinForPoints = pointsPolicy.requireWinForPoints;
   const doublesAttribution = pointsPolicy.doublesAttribution;
   const qualityWinProfiles = pointsPolicy.qualityWinProfiles;
+  const pointsAuthority = pointsPolicy.pointsAuthority;
 
   const { participants, derivedEventInfo, derivedDrawInfo, mappedMatchUps } = getParticipants({
     withRankingProfile: true,
@@ -726,6 +831,7 @@ export function getTournamentPoints({
         teamPoints,
         participantPersonMap,
         participantIndividualIdsMap,
+        pointsAuthority,
         level,
         devContext,
         tournamentRecord,

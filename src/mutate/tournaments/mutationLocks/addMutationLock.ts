@@ -96,6 +96,10 @@ export function addMutationLock(params: AddMutationLockArgs): {
     return { error: MUTATION_LOCK_EXISTS };
   }
 
+  // DELIBERATELY unconditional, unlike the caller-supplied-id convention applied
+  // across mutate/ in 2026-08. A lockId identifies an ephemeral operational
+  // claim, not tournament data — it is not replayed, mirrored, or referenced by
+  // any later mutation, so there is nothing for a caller to keep stable.
   const lockId = UUID();
   const newLock: MutationLock = {
     lockId,

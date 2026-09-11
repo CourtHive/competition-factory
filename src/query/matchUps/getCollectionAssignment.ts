@@ -1,6 +1,7 @@
 import { getCollectionPositionAssignments } from '@Query/hierarchical/tieFormats/getCollectionPositionAssignments';
 import { getPairedParticipant } from '@Query/participant/getPairedParticipant';
 import { getTeamLineUp } from '@Query/drawDefinition/getTeamLineUp';
+import { attributeFilter } from '@Tools/attributeFilter';
 
 // constants and types
 import { DrawDefinition, Participant, PositionAssignment } from '@Types/tournamentTypes';
@@ -10,6 +11,8 @@ import { DOUBLES } from '@Constants/matchUpTypes';
 type GetDrawPositionCollectionAssignmentArgs = {
   positionAssignments: PositionAssignment[];
   tournamentParticipants?: Participant[];
+  /** `participant` template of a supplied participant privacy policy; undefined means no filtering. */
+  participantTemplate?: any;
   participantMap?: ParticipantMap;
   drawDefinition?: DrawDefinition;
   collectionPosition?: number;
@@ -30,6 +33,7 @@ type TeamCollectionAssignment = {
 export function getCollectionAssignment({
   tournamentParticipants,
   positionAssignments,
+  participantTemplate,
   collectionPosition,
   drawPositions = [],
   participantMap,
@@ -43,7 +47,18 @@ export function getCollectionAssignment({
 } {
   if (!collectionId || !collectionPosition) return {};
 
-  const getAssignment = ({ attribute, lineUp, teamParticipant }) => {
+  // `teamParticipant` lands on `sides[].teamParticipant` of every tie matchUp. Two of the three ways
+  // it is resolved below reach straight into the RAW participant (`participantMap`, then a scan of
+  // `tournamentParticipants`), so without this it carried `penalties`, `timeItems` and everything else
+  // the policy denies — on the same hydrated matchUps whose `sides[].participant` was filtered
+  // correctly beside it.
+  const filterTeamParticipant = (teamParticipant) =>
+    participantTemplate && teamParticipant
+      ? attributeFilter({ source: teamParticipant, template: participantTemplate })
+      : teamParticipant;
+
+  const getAssignment = ({ attribute, lineUp, teamParticipant: rawTeamParticipant }) => {
+    const teamParticipant = filterTeamParticipant(rawTeamParticipant);
     const { assignedParticipantIds, substitutions } = getCollectionPositionAssignments({
       collectionPosition,
       collectionId,

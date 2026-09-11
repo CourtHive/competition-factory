@@ -1,9 +1,12 @@
 import { getRoundMatchUps } from '@Query/matchUps/getRoundMatchUps';
+import { pushGlobalLog } from '@Functions/global/globalLog';
 import { getDevContext } from '@Global/state/globalState';
 import { validMatchUps } from '@Validators/validMatchUp';
 import { generateRange } from '@Tools/arrays';
 import { xa } from '@Tools/extractAttributes';
 
+import { MISSING_MATCHUPS } from '@Constants/errorConditionConstants';
+import { ResultType } from '@Types/factoryTypes';
 import { MatchUp } from '@Types/tournamentTypes';
 
 type AddFinishingRoundsArgs = {
@@ -17,6 +20,19 @@ type AddFinishingRoundsArgs = {
   fmlc?: boolean;
 };
 
+/**
+ * Stamps `finishingRound` and `finishingPositionRange` onto every matchUp in `matchUps`.
+ *
+ * MUTATES IN PLACE and returns the SAME array reference. Callers may therefore ignore the return
+ * value entirely — `courthive-rankings` does exactly that when backfilling externally-authored
+ * records, and the generators inside the factory do the same in effect.
+ *
+ * TAKES A MATCHUPS ARRAY, not a drawId. `paramsMiddleware` resolves `drawId` into a
+ * `drawDefinition` and stops there; it does not gather matchUps. An engine caller writing
+ * `addFinishingRounds({ drawId })` therefore supplies nothing, and this used to answer `[]` — which
+ * is worse here than elsewhere, because the shape a caller naturally writes is
+ * `matchUps = addFinishingRounds({ matchUps })`, and an empty return SILENTLY REPLACES their list.
+ */
 export function addFinishingRounds({
   finishingPositionOffset = 0,
   finishingPositionLimit,
@@ -26,8 +42,8 @@ export function addFinishingRounds({
   matchUps,
   lucky,
   fmlc,
-}: AddFinishingRoundsArgs): MatchUp[] {
-  if (!validMatchUps(matchUps)) return [];
+}: AddFinishingRoundsArgs): MatchUp[] | ResultType {
+  if (!validMatchUps(matchUps)) return { error: MISSING_MATCHUPS };
 
   const { roundProfile, roundNumbers = [] } = getRoundMatchUps({
     interpolate: true, // for structures which do not contain a final round of one matchUps (structure winner)
@@ -93,7 +109,7 @@ export function addFinishingRounds({
   const devContext = getDevContext({ finishingRound: true });
   matchUps.filter(Boolean).forEach((matchUp) => {
     const roundData = matchUp.roundNumber && roundFinishingData[matchUp.roundNumber];
-    if (devContext && !roundData) console.log({ roundFinishingData, matchUp });
+    if (devContext && !roundData) pushGlobalLog({ method: 'addFinishingRounds', roundFinishingData, matchUp });
     matchUp.finishingRound = roundData?.finishingRound;
     matchUp.finishingPositionRange = roundData?.finishingPositionRange;
   });

@@ -98,9 +98,7 @@ it('generates points for lines in team matchUps', () => {
   }).participants;
 
   const participantsWithLineData = individualParticipants.filter((p) =>
-    p.draws?.some((d) =>
-      d.structureParticipation?.some((sp) => sp.lineParticipation?.length),
-    ),
+    p.draws?.some((d) => d.structureParticipation?.some((sp) => sp.lineParticipation?.length)),
   );
   expect(participantsWithLineData.length).toBeGreaterThan(0);
 

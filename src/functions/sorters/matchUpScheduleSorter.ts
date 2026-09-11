@@ -1,6 +1,6 @@
 import { dateTime } from '@Tools/dateTime';
 
-const { extractTime, timeStringMinutes } = dateTime;
+const { extractDate, extractTime, timeStringMinutes } = dateTime;
 
 export function matchUpScheduleSort(a: any, b: any): number {
   const scheduleA = a.schedule ?? {};
@@ -17,7 +17,11 @@ export function matchUpScheduleSort(a: any, b: any): number {
         return timeA - timeB;
       }
     }
-    return new Date(scheduleA.scheduledDate).getTime() - new Date(scheduleB.scheduledDate).getTime();
+    // Lexical compare on the calendar-day portion — timezone-free and immune to the
+    // `new Date('YYYY-MM-DD')` (UTC-midnight) vs `new Date('YYYY-MM-DDTHH:MM')` (local)
+    // parse-mode mismatch that could flip ordering across midnight. Explicit 'en' locale
+    // keeps the ordering byte-stable across machines.
+    return extractDate(scheduleA.scheduledDate).localeCompare(extractDate(scheduleB.scheduledDate), 'en');
   }
   return 0;
 }

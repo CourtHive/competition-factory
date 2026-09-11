@@ -333,7 +333,7 @@ describe('syncGlobalState', () => {
           },
         },
       });
-      callListener({ topic: 'TEST', notices: [{ data: 'test' }] } as any);
+      callListener({ topic: 'TEST', payloads: [{ data: 'test' }] } as any);
       expect(called).toBe(true);
     });
 
@@ -344,13 +344,13 @@ describe('syncGlobalState', () => {
           called = true;
         },
       };
-      callListener({ topic: 'TEST', notices: [{ data: 'test' }] } as any, globalSubscriptions);
+      callListener({ topic: 'TEST', payloads: [{ data: 'test' }] } as any, globalSubscriptions);
       expect(called).toBe(true);
     });
 
     it('handles non-function subscription', () => {
       setSubscriptions({ subscriptions: { TEST: 'not a function' } as any });
-      callListener({ topic: 'TEST', notices: [] });
+      callListener({ topic: 'TEST', payloads: [] });
       // Should not throw
       expect(true).toBe(true);
     });

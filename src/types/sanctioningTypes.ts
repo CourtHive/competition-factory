@@ -7,13 +7,17 @@ import type {
   Extension,
   GenderUnion,
   IndoorOutdoorUnion,
+  MonetaryAmount,
   Organisation,
   PrizeMoney,
+  RegistrationEntryFee,
   RegistrationProfile,
   SurfaceCategoryUnion,
   TieFormat,
+  TierClassification,
   TimeItem,
   TournamentLevelUnion,
+  UnifiedEventID,
   WheelchairClassUnion,
 } from './tournamentTypes';
 
@@ -82,8 +86,7 @@ export const SanctioningRelationshipEnum = {
   INDEPENDENT: 'INDEPENDENT',
 } as const;
 
-export type SanctioningRelationship =
-  (typeof SanctioningRelationshipEnum)[keyof typeof SanctioningRelationshipEnum];
+export type SanctioningRelationship = (typeof SanctioningRelationshipEnum)[keyof typeof SanctioningRelationshipEnum];
 
 export const AmendmentSeverityEnum = {
   MINOR: 'MINOR',
@@ -110,8 +113,8 @@ export interface SanctioningRecord {
 
   // Who
   applicant: Applicant;
-  endorsement?: Endorsement;        // convenience accessor — first endorsement (backward compat)
-  endorsements?: Endorsement[];     // full multi-level endorsement chain
+  endorsement?: Endorsement; // convenience accessor — first endorsement (backward compat)
+  endorsements?: Endorsement[]; // full multi-level endorsement chain
   reviewer?: Reviewer;
 
   // What
@@ -120,7 +123,19 @@ export interface SanctioningRecord {
   // Governance
   governingBodyId: string;
   governingBody?: Organisation;
-  sanctioningLevel?: string;
+  /**
+   * The federation grade applied for, e.g. `{ system: 'ITF', value: 'W50' }`.
+   *
+   * Structured as a {@link TierClassification} — the same type a tournament's `tournamentTier` uses —
+   * so `activateFromSanctioning` assigns it across rather than mapping, and ranking-points resolution
+   * (`tierToLevel[system][value]`) works on a sanctioned tournament with no translation layer.
+   *
+   * `numericRank` is deliberately NOT populated by sanctioning. A sanctioning policy's `tierLevel`
+   * runs OPPOSITE to `numericRank` ("lower = more prestigious"): in the ITF ladder M15/W15 is
+   * `tierLevel: 1` and is the BOTTOM rung. Deriving one from the other would invert prestige in both
+   * `getEventRankingPoints` and `getTierMovement`; an absent value is already handled by both.
+   */
+  sanctioningTier?: TierClassification;
 
   // Provider (the operator/club that owns this application)
   applicantProviderId?: string;
@@ -181,8 +196,8 @@ export interface Endorsement {
   endorserNotes?: string;
   endorserContact?: PersonReference;
   conditions?: string[];
-  endorsementLevel?: number;            // 1 = first required, 2 = second, etc.
-  prerequisiteEndorserId?: string;      // must be endorsed before this one can proceed
+  endorsementLevel?: number; // 1 = first required, 2 = second, etc.
+  prerequisiteEndorserId?: string; // must be endorsed before this one can proceed
   extensions?: Extension[];
 }
 
@@ -210,8 +225,12 @@ export interface TournamentProposal {
   promotionalName?: string;
 
   // Classification
+  //
+  // The sanctioned tier is NOT here: it lives on the SanctioningRecord as `sanctioningTier`, which is
+  // the single home. A proposal-level copy was declared here and never assigned by any path, production
+  // or test, while the amendment machinery listed it as amendable — so amendments wrote a field nothing
+  // read. If a per-proposal tier is genuinely wanted later, add it back deliberately, with a writer.
   tournamentLevel?: TournamentLevelUnion;
-  sanctioningTier?: string;
   discipline?: DisciplineUnion;
 
   // When & Where
@@ -229,7 +248,14 @@ export interface TournamentProposal {
   // Financial
   totalPrizeMoney?: PrizeMoney[];
   entryFees?: EntryFee[];
-  sanctionFee?: PrizeMoney;
+  /**
+   * The levy the authority charges to sanction the competition.
+   *
+   * A {@link MonetaryAmount}, not `PrizeMoney`. `PrizeMoney` is an AWARD with provenance — money
+   * paid OUT to competitors — and it happened to carry the right primitive fields, which is why the
+   * mismatch went unnoticed. A sanction fee is money paid IN by the organiser.
+   */
+  sanctionFee?: MonetaryAmount;
 
   // Personnel
   officials?: OfficialProposal[];
@@ -244,6 +270,14 @@ export interface TournamentProposal {
   safeguardingCompliance?: boolean;
 
   // Registration
+  /**
+   * Tournament id assigned at open-registration — BEFORE the tournamentRecord exists — so
+   * public registration (courthive-public) can reference the tournament by id and people can
+   * register/onboard against a proposal that has not yet been activated.
+   * `activateFromSanctioning` reuses this id (falling back to a fresh UUID) when it materializes
+   * the tournamentRecord. See planning/PUBLIC_REGISTRATION_AND_ONBOARDING.md.
+   */
+  tournamentId?: string;
   registrationProfile?: RegistrationProfile;
 
   // Calendar
@@ -255,6 +289,10 @@ export interface TournamentProposal {
 
 export interface EventProposal {
   eventProposalId?: string;
+  // Stable eventId assigned at open-registration (openProposalRegistration) and REUSED by
+  // activateFromSanctioning, so a registration keyed to this event survives activation as an
+  // id-join rather than a fragile event-name match. Mirrors proposal.tournamentId reuse.
+  eventId?: string;
   eventName: string;
   eventType: EventTypeUnion;
   gender?: GenderUnion;
@@ -281,6 +319,19 @@ export interface EventProposal {
   // Wheelchair
   wheelchairClass?: WheelchairClassUnion;
 
+  /**
+   * The event's identity in OTHER organisations' systems, carried INBOUND on the proposal
+   * and copied onto the activated event by `activateFromSanctioning`. Mirrors the
+   * record-side `Event.eventOtherIds` exactly, so a sanction originating outside this
+   * ecosystem keeps its own tournamentId/eventId through activation and an integration
+   * layer can address results back to it.
+   *
+   * An entry flagged `isOrigin` names the sanctioning source. When the proposal supplies
+   * none, activation stamps the sanctioning body's own identity as the origin — so a
+   * locally sanctioned tournament is queryable by origin on the same terms.
+   */
+  eventOtherIds?: UnifiedEventID[];
+
   extensions?: Extension[];
 }
 
@@ -303,13 +354,15 @@ export interface Coordinates {
   longitude: number;
 }
 
-export interface EntryFee {
-  amount: number;
-  currencyCode: string;
-  eventType?: EventTypeUnion;
-  category?: string;
-  extensions?: Extension[];
-}
+/**
+ * @deprecated Use {@link RegistrationEntryFee}, which this now aliases.
+ *
+ * `EntryFee` was a byte-identical duplicate of `RegistrationEntryFee` — same five fields, same
+ * meaning, two declarations. Retained as an alias rather than deleted because it is a PUBLIC export
+ * of this package: removing it would fail `verify:surface` and would not be a minor release.
+ * Remove in the next major if still unused.
+ */
+export type EntryFee = RegistrationEntryFee;
 
 export interface OfficialProposal {
   role: string;
@@ -437,7 +490,7 @@ export interface SanctioningPolicy {
   transitionGuards?: TransitionGuard[];
 
   requireEndorsement?: boolean;
-  requiredEndorsementCount?: number;     // default 1 when requireEndorsement is true
+  requiredEndorsementCount?: number; // default 1 when requireEndorsement is true
   requireInsurance?: boolean;
   requireSafetyPlan?: boolean;
   requireMedicalPlan?: boolean;
@@ -472,8 +525,16 @@ export interface SanctioningTier {
 
   allowedMatchUpFormats?: string[];
 
-  minimumPrizeMoney?: number;
-  maximumPrizeMoney?: number;
+  /**
+   * Prize-money bounds for the tier.
+   *
+   * `MonetaryAmount` rather than a bare number because the comparison is otherwise undefined: a
+   * bound of `15000` could be $15,000 or $150.00, and could be in any currency. Stating both makes
+   * the check well-formed and lets a validator refuse to compare across currencies rather than
+   * producing a confident wrong answer.
+   */
+  minimumPrizeMoney?: MonetaryAmount;
+  maximumPrizeMoney?: MonetaryAmount;
   currencyCode?: string;
   sanctionFeePercent?: number;
   sanctionFeeFixed?: number;
@@ -520,7 +581,7 @@ export interface CalendarEvent {
   tournamentName?: string;
   startDate: string;
   endDate: string;
-  sanctioningTier?: string;
+  sanctioningTier?: TierClassification;
   calendarSection?: string;
   countryCode?: CountryCodeUnion;
   coordinates?: Coordinates;
@@ -561,19 +622,15 @@ export interface PostEventRequirement {
 }
 
 export type TransitionGuardType =
-  | 'ENDORSEMENT_REQUIRED'
-  | 'PROPOSAL_VALID'
-  | 'ALL_CONDITIONS_MET'
-  | 'COMPLIANCE_COMPLETE'
-  | 'CUSTOM';
+  'ENDORSEMENT_REQUIRED' | 'PROPOSAL_VALID' | 'ALL_CONDITIONS_MET' | 'COMPLIANCE_COMPLETE' | 'CUSTOM';
 
 export interface TransitionGuard {
   from: SanctioningStatus;
   to: SanctioningStatus;
   guard: TransitionGuardType;
-  customGuardField?: string;         // dot-path field that must be truthy (for CUSTOM guard)
-  message?: string;                  // error message when guard fails
-  tiers?: string[];                  // only apply to specific tiers
+  customGuardField?: string; // dot-path field that must be truthy (for CUSTOM guard)
+  message?: string; // error message when guard fails
+  tiers?: string[]; // only apply to specific tiers
 }
 
 // ---------------------------------------------------------------------------

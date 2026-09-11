@@ -55,7 +55,9 @@ export function processAlreadyScheduledMatchUps({
           matchUpId: matchUp.matchUpId,
         });
       return (
-        !isByeMatchUp && hasSchedule({ schedule }) && (!scheduleDate || matchUp.schedule.scheduledDate === scheduleDate)
+        !isByeMatchUp &&
+        hasSchedule({ schedule }) &&
+        (!scheduleDate || matchUp.schedule?.scheduledDate === scheduleDate)
       );
     });
 

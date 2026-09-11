@@ -1,5 +1,5 @@
+import { setFirstClassOrExtension } from '../extensions/setFirstClassOrExtension';
 import { checkRequiredParameters } from '@Helpers/parameters/checkRequiredParameters';
-import { addExtension } from '../extensions/addExtension';
 
 // constants
 import { TOURNAMENT_RECORDS, VENUE_IDS } from '@Constants/attributeConstants';
@@ -31,13 +31,12 @@ export function disableVenues(params: DisableVenuesArgs) {
 function venuesDisable({ tournamentRecord, venueIds }) {
   for (const venue of tournamentRecord.venues ?? []) {
     if (venueIds?.includes(venue.venueId)) {
-      const result = addExtension({
-        creationTime: false,
+      const result = setFirstClassOrExtension({
         element: venue,
-        extension: {
-          name: DISABLED,
-          value: true,
-        },
+        attribute: 'disabled',
+        name: DISABLED,
+        value: true,
+        creationTime: false,
       });
       if (result.error) return result;
     }

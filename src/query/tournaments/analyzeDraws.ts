@@ -34,8 +34,12 @@ export function analyzeDraws({ tournamentRecord }): {
 
   const eventsMap = {};
 
-  const eventDraws = tournamentRecord.events
-    ?.flatMap((event: any) => {
+  // `?? []` rather than `events?.flatMap(...)`: the optional chain guarded this expression and left
+  // `eventDraws` undefined, which the unguarded `.forEach` on the next line then threw on. A
+  // tournament with no events is ordinary — one that has been created but not yet built out — and
+  // analysis of it should return empty, not crash.
+  const eventDraws = (tournamentRecord.events ?? [])
+    .flatMap((event: any) => {
       const eventId = event.eventId;
       eventsMap[eventId] = event;
       return (event?.drawDefinitions ?? []).map((drawDefinition: any) => ({

@@ -1,15 +1,11 @@
-import { POLICY_RANKING_POINTS_USTA_JUNIOR } from '@Fixtures/policies/POLICY_RANKING_POINTS_USTA_JUNIOR';
+import { POLICY_RANKING_POINTS_USTA_JUNIOR } from '@Tests/fixtures/policies/POLICY_RANKING_POINTS_USTA_JUNIOR';
 import scaleEngine from '@Engines/scaleEngine';
 import { mocksEngine } from '../../..';
 import { describe, expect, it } from 'vitest';
 
 import { POLICY_TYPE_RANKING_POINTS } from '@Constants/policyConstants';
 import { DOUBLES } from '@Constants/eventConstants';
-import {
-  COMPASS,
-  ROUND_ROBIN,
-  SINGLE_ELIMINATION,
-} from '@Constants/drawDefinitionConstants';
+import { COMPASS, ROUND_ROBIN, SINGLE_ELIMINATION } from '@Constants/drawDefinitionConstants';
 
 const policyDefinitions = POLICY_RANKING_POINTS_USTA_JUNIOR;
 
@@ -199,21 +195,16 @@ describe('doublesAttribution', () => {
     const result = scaleEngine.getTournamentPoints({ policyDefinitions: customPolicy, level: 1 });
     expect(result.success).toEqual(true);
 
-    // With fullToEach, pair awards should also appear in personPoints
-    const pairIds = Object.keys(result.pairPoints);
-    expect(pairIds.length).toBeGreaterThan(0);
-
-    // Individual person points should also have entries from doubles
+    // fullToEach: individuals are the ranking entity. Each person in
+    // the winning pair gets the full champion value (500); the pair
+    // is bookkeeping and gets nothing of its own.
+    expect(Object.keys(result.pairPoints)).toHaveLength(0);
     const personIds = Object.keys(result.personPoints);
     expect(personIds.length).toBeGreaterThan(0);
 
-    // Each person in the winning pair should get the full champion points (500)
     const allPersonAwards = Object.values(result.personPoints).flat() as any[];
-    const doublesAwards = allPersonAwards.filter((a: any) => a.doublesParticipantId);
-    expect(doublesAwards.length).toBeGreaterThan(0);
-
-    const maxDoublesPoints = Math.max(...doublesAwards.map((a: any) => a.points));
-    expect(maxDoublesPoints).toEqual(500); // full points
+    const maxDoublesPoints = Math.max(...allPersonAwards.map((a) => a.points));
+    expect(maxDoublesPoints).toEqual(500);
   });
 
   it('splitEven: attributes half points to each individual in a pair', () => {
@@ -245,11 +236,13 @@ describe('doublesAttribution', () => {
     const result = scaleEngine.getTournamentPoints({ policyDefinitions: customPolicy, level: 1 });
     expect(result.success).toEqual(true);
 
+    // splitEven: individuals are the ranking entity at half value;
+    // pair gets nothing of its own.
+    expect(Object.keys(result.pairPoints)).toHaveLength(0);
     const allPersonAwards = Object.values(result.personPoints).flat() as any[];
-    const doublesAwards = allPersonAwards.filter((a: any) => a.doublesParticipantId);
-    expect(doublesAwards.length).toBeGreaterThan(0);
+    expect(allPersonAwards.length).toBeGreaterThan(0);
 
-    const maxDoublesPoints = Math.max(...doublesAwards.map((a: any) => a.points));
+    const maxDoublesPoints = Math.max(...allPersonAwards.map((a) => a.points));
     expect(maxDoublesPoints).toEqual(250); // half of 500
   });
 
@@ -282,14 +275,13 @@ describe('doublesAttribution', () => {
     const result = scaleEngine.getTournamentPoints({ policyDefinitions: customPolicy, level: 1 });
     expect(result.success).toEqual(true);
 
-    // Pair points should exist
+    // Pair owns the award by default (legacy / teamOnly-equivalent).
     const pairIds = Object.keys(result.pairPoints);
     expect(pairIds.length).toBeGreaterThan(0);
 
-    // Without doublesAttribution, no individual personPoints from doubles
+    // Individuals get nothing from doubles draws when no attribution declared.
     const allPersonAwards = Object.values(result.personPoints).flat() as any[];
-    const doublesAwards = allPersonAwards.filter((a: any) => a.doublesParticipantId);
-    expect(doublesAwards.length).toEqual(0);
+    expect(allPersonAwards).toHaveLength(0);
   });
 });
 

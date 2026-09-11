@@ -31,6 +31,7 @@ type SetFormat = {
   based?: string;
   NoAD?: boolean;
   setTo?: number;
+  winBy?: number;
   outs?: number;
 };
 
@@ -293,10 +294,16 @@ function parseOutsBasedSet(setFormatString: string): SetFormatResult {
 }
 
 function parseStandardSetFormat(formatstring: string, setFormatString: string): SetFormat | false {
-  const parts = /^[FS]:(\d+)([A-Za-z]*)/.exec(formatstring);
+  // Modifier tail: optional NOAD (alpha) followed by optional WB<digit+> (win-by override),
+  // anchored by '/', '@', or end-of-string so unknown trailing tokens fall through to existing
+  // validation. Canonical ordering is NOAD before WB; WB-then-NOAD is rejected.
+  const parts = /^[FS]:(\d+)([A-Za-z]*?)(WB(\d+))?(?=[/@]|$)/.exec(formatstring);
   const NoAD = (parts && isNoAD(parts[2])) || false;
   const validNoAD = !parts?.[2] || NoAD;
   const setTo = parts ? getNumber(parts[1]) : undefined;
+  const winByRaw = parts?.[4];
+  const winBy = winByRaw ? getNumber(winByRaw) : undefined;
+  const validWinBy = winBy === undefined || winBy >= 1;
 
   const tiebreakAtValue = parseTiebreakAt(setFormatString);
   const validTiebreakAt = tiebreakAtValue !== false;
@@ -305,9 +312,12 @@ function parseStandardSetFormat(formatstring: string, setFormatString: string): 
   const tiebreakFormat = parseTiebreakFormat(setFormatString.split('/')[1]);
   const validTiebreak = tiebreakFormat !== false;
 
-  if (!setTo || !validNoAD || !validTiebreak || !validTiebreakAt) return false;
+  if (!setTo || !validNoAD || !validTiebreak || !validTiebreakAt || !validWinBy) return false;
 
-  return buildSetFormatResult(setTo, NoAD, tiebreakFormat, tiebreakAt);
+  // WB only meaningful when there is no tiebreak — reject conflicting combos
+  if (winBy !== undefined && tiebreakFormat) return false;
+
+  return buildSetFormatResult(setTo, NoAD, tiebreakFormat, tiebreakAt, winBy);
 }
 
 function buildSetFormatResult(
@@ -315,6 +325,7 @@ function buildSetFormatResult(
   NoAD: boolean,
   tiebreakFormat: TiebreakFormat | undefined,
   tiebreakAt: string | number | undefined,
+  winBy: number | undefined,
 ): SetFormat {
   const result: SetFormat = { setTo };
   if (NoAD) result.NoAD = true;
@@ -324,6 +335,8 @@ function buildSetFormatResult(
     result.tiebreakAt = tiebreakAt;
   } else {
     result.noTiebreak = true;
+    // winBy stored only when it differs from the noTiebreak default (advantage set, win-by 2)
+    if (winBy !== undefined && winBy !== 2) result.winBy = winBy;
   }
 
   return result;

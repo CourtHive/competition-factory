@@ -91,13 +91,18 @@ function stringifySet(setObject, preserveRedundant) {
     const setToValue = getNumber(setObject.setTo);
     if (setToValue) {
       const NoAD = (setObject.NoAD && NOAD) || '';
+      const winByValue = getNumber(setObject.winBy);
       const setTiebreakValue = tiebreakFormat(setObject.tiebreakFormat);
       const setTiebreakCode = (setTiebreakValue && `/${setTiebreakValue}`) || '';
+      // WB modifier is only meaningful when there is no tiebreak; emit when winBy
+      // differs from the no-tiebreak default of 2. Works for both explicit
+      // `noTiebreak: true` shapes and shapes that simply omit `tiebreakFormat`.
+      const winByCode = winByValue && winByValue !== 2 && !setTiebreakValue ? `WB${winByValue}` : '';
       const tiebreakAtValue = getNumber(setObject.tiebreakAt);
       const tiebreakAtCode =
         (tiebreakAtValue && (tiebreakAtValue !== setToValue || preserveRedundant) && `@${tiebreakAtValue}`) || '';
       if (setTiebreakValue !== false) {
-        return `${setToValue}${NoAD}${setTiebreakCode}${tiebreakAtCode}`;
+        return `${setToValue}${NoAD}${winByCode}${setTiebreakCode}${tiebreakAtCode}`;
       }
     }
   }

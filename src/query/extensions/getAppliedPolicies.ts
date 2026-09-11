@@ -38,6 +38,16 @@ export function getAppliedPolicies({
 
   function extractAppliedPolicies(params) {
     const extensions = params?.extensions;
+    // `.find()` takes the FIRST extension of this name, which is correct because `addExtension`
+    // maintains at most one per name per element — it replaces in place and pushes only when
+    // absent, and `attachPolicies` goes through it (guarding again per policyType with
+    // EXISTING_POLICY_TYPE unless `allowReplacement`). Writer and reader agree by construction.
+    //
+    // This is NOT a fail-open, and it has been mistaken for one: a dropped duplicate is not
+    // systematically more permissive — the surviving FIRST extension may be stricter or looser than
+    // the one ignored. The real exposure is narrower: the invariant is convention rather than
+    // enforcement, so a record built outside the API can carry duplicates whose later entries
+    // vanish without error. `analyzeTournament` reports those as `extensionAnomalies`.
     const extensionPolicies = extensions?.find((extension) => extension.name === APPLIED_POLICIES)?.value;
     if (extensionPolicies) {
       for (const key of Object.keys(extensionPolicies))

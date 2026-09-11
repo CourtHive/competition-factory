@@ -26,9 +26,10 @@
  *     PositionValue array form with drawSize threshold conditions
  */
 
+import { POLICY_TYPE_RANKING_POINTS } from '@Constants/policyConstants';
 import { MAIN, QUALIFYING } from '@Constants/drawDefinitionConstants';
 import { SINGLES, DOUBLES } from '@Constants/eventConstants';
-import { POLICY_TYPE_RANKING_POINTS } from '@Constants/policyConstants';
+import { WTA } from '@Constants/pointsAuthorityConstants';
 
 // ─── Singles Main Draw Profiles ──────────────────────────────────────────────
 
@@ -426,6 +427,7 @@ export const POLICY_RANKING_POINTS_WTA = {
   [POLICY_TYPE_RANKING_POINTS]: {
     policyName: 'PIF WTA Rankings 2026',
     policyVersion: '2026.01',
+    pointsAuthority: WTA,
     validDateRange: { startDate: '2026-01-01' },
 
     awardProfiles,

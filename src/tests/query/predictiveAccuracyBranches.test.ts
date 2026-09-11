@@ -228,12 +228,27 @@ test('getPredictiveAccuracy with zonePct', () => {
     setState: true,
   });
 
+  // zonePct is a PERCENT of the scale range: WTN spans |40 - 1| = 39, so 20% === a margin of 7.8.
+  // Asserting the resolved margin (and the equivalence with the explicit form) rather than only
+  // `success`: the previous version passed both before and after a 100x precedence bug, because it
+  // never looked at a value.
   const result = tournamentEngine.getPredictiveAccuracy({
     matchUpType: SINGLES,
     scaleName: 'WTN',
     zonePct: 20,
   });
   expect(result.success).toBe(true);
+  expect(result.zoneMargin).toBeCloseTo(7.8, 6);
+
+  const explicit = tournamentEngine.getPredictiveAccuracy({
+    matchUpType: SINGLES,
+    scaleName: 'WTN',
+    zoneMargin: 7.8,
+  });
+  expect(explicit.zoneMargin).toBeCloseTo(7.8, 6);
+  // the percent form and the equivalent absolute form must select the same matchUps
+  expect(result.zoneData?.length).toEqual(explicit.zoneData?.length);
+  expect(result.nonZone).toEqual(explicit.nonZone);
 });
 
 test('getPredictiveAccuracy with exclusionRule', () => {

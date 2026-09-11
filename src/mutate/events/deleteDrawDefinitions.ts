@@ -1,14 +1,15 @@
 import { deleteDrawNotice, deleteMatchUpsNotice } from '../notifications/drawNotifications';
-import { getPositionAssignments } from '@Query/structure/getPositionAssignments';
 import { checkAndUpdateSchedulingProfile } from '../tournaments/schedulingProfile';
+import { setFirstClassOrExtension } from '../extensions/setFirstClassOrExtension';
+import { getPositionAssignments } from '@Query/structure/getPositionAssignments';
 import { getEventPublishStatus } from '@Query/event/getEventPublishStatus';
 import { getAppliedPolicies } from '@Query/extensions/getAppliedPolicies';
+import { modifyEventNotice } from '../notifications/eventNotifications';
 import { checkScoreHasValue } from '@Query/matchUp/checkScoreHasValue';
 import { modifyEventPublishStatus } from './modifyEventPublishStatus';
-import { addEventExtension } from '../extensions/addRemoveExtensions';
 import { allDrawMatchUps } from '@Query/matchUps/getAllDrawMatchUps';
 import { decorateResult } from '@Functions/global/decorateResult';
-import { addNotice, hasTopic } from '@Global/state/globalState';
+import { addNotice, getAuditAuthorityServer, getSaveDrawDeletions, hasTopic } from '@Global/state/globalState';
 import { getFlightProfile } from '@Query/event/getFlightProfile';
 import { addTimeItem } from '@Mutate/timeItems/addTimeItem';
 import { definedAttributes } from '@Tools/definedAttributes';
@@ -200,13 +201,15 @@ export function deleteDrawDefinitions(params: DeleteDrawDefinitionArgs) {
 
   event.drawDefinitions = filteredDrawDefinitions;
 
+  let eventModified = false;
   if (flightProfile) {
-    const extension = {
+    setFirstClassOrExtension({
+      element: event,
+      attribute: 'flightProfile',
       name: FLIGHT_PROFILE,
       value: flightProfile,
-    };
-
-    addEventExtension({ event, extension });
+    });
+    eventModified = true;
   }
 
   // cleanup references to drawId in schedulingProfile extension
@@ -227,15 +230,14 @@ export function deleteDrawDefinitions(params: DeleteDrawDefinitionArgs) {
   }
 
   if (auditTrail.length) {
-    if (hasTopic(AUDIT)) {
-      const tournamentId = tournamentRecord.tournamentId;
-      addNotice({ topic: AUDIT, payload: { tournamentId, detail: auditTrail } });
-      const result = getTimeItem({ element: event, itemType: DRAW_DELETIONS });
-      const itemValue = (result?.timeItem?.itemValue || 0) + 1;
-      addTimeItem({ element: event, timeItem: { itemType: DRAW_DELETIONS, itemValue }, removePriorValues: true });
-    } else {
-      addDrawDeletionTelemetry({ appliedPolicies, event, deletedDrawsDetail, auditData });
-    }
+    dispatchDrawDeletionAudit({
+      tournamentId: tournamentRecord.tournamentId,
+      deletedDrawsDetail,
+      appliedPolicies,
+      auditTrail,
+      auditData,
+      event,
+    });
   }
   if (matchUpIds.length) {
     deleteMatchUpsNotice({
@@ -245,6 +247,10 @@ export function deleteDrawDefinitions(params: DeleteDrawDefinitionArgs) {
   }
 
   drawIds.forEach((drawId) => deleteDrawNotice({ drawId }));
+
+  // the deleted draws' flightProfile entries were pruned from the event above, so
+  // the event entity changed — cover it with MODIFY_EVENT (symmetric to addDrawDefinition).
+  if (eventModified) modifyEventNotice({ tournamentId: tournamentRecord?.tournamentId, event });
 
   if (autoPublish && publishedDrawsDeleted) {
     const result = publishEvent({
@@ -258,6 +264,33 @@ export function deleteDrawDefinitions(params: DeleteDrawDefinitionArgs) {
   }
 
   return { ...SUCCESS };
+}
+
+function dispatchDrawDeletionAudit({
+  tournamentId,
+  deletedDrawsDetail,
+  appliedPolicies,
+  auditTrail,
+  auditData,
+  event,
+}) {
+  // Always dispatch the AUDIT notice so subscribers (notably the server's
+  // AuditService when auditAuthorityServer is set) can capture the detail.
+  const subscribed = hasTopic(AUDIT);
+  if (subscribed) {
+    addNotice({ topic: AUDIT, payload: { tournamentId, detail: auditTrail } });
+  }
+  // Suppress all local writes when the server is the audit authority or
+  // saveDrawDeletions is off (default in 5.0.0).
+  if (getAuditAuthorityServer() || !getSaveDrawDeletions()) return;
+
+  if (subscribed) {
+    const result = getTimeItem({ element: event, itemType: DRAW_DELETIONS });
+    const itemValue = (result?.timeItem?.itemValue || 0) + 1;
+    addTimeItem({ element: event, timeItem: { itemType: DRAW_DELETIONS, itemValue }, removePriorValues: true });
+  } else {
+    addDrawDeletionTelemetry({ appliedPolicies, event, deletedDrawsDetail, auditData });
+  }
 }
 
 function addDrawDeletionTelemetry({ appliedPolicies, event, deletedDrawsDetail, auditData }) {

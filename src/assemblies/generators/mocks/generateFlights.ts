@@ -1,10 +1,12 @@
 import { generateFlight } from './generateFlight';
 
 import { MAIN, QUALIFYING } from '@Constants/drawDefinitionConstants';
+import { ANY } from '@Constants/genderConstants';
 import { SUCCESS } from '@Constants/resultConstants';
 
 export function generateFlights({
   uniqueDrawParticipants,
+  useExistingParticipants = false,
   autoEntryPositions,
   stageParticipants,
   tournamentRecord,
@@ -18,12 +20,19 @@ export function generateFlights({
     const { qualifyingPositions = 0, uniqueParticipants, stage = MAIN, drawSize = 0 } = drawProfile;
 
     const entriesCount = drawSize - qualifyingPositions;
-    const requiresUniqueParticipants = uniqueParticipants || gender || category || stage === QUALIFYING;
+    // Mirror getStageParticipantsCount: when caller passed preset participants
+    // to generateTournamentRecord, pull from stageParticipants (the supplied
+    // pool) rather than from uniqueDrawParticipants (which is empty because
+    // event-level synthesis was skipped).
+    // `gender: ANY` means "no gender constraint" — see getParticipantsCount.ts.
+    const requiresUniqueParticipants =
+      !useExistingParticipants &&
+      (uniqueParticipants || (gender && gender !== ANY) || category || stage === QUALIFYING);
 
     // if a drawProfile has specified uniqueParticipants...
     const drawParticipants = requiresUniqueParticipants
       ? uniqueDrawParticipants.slice(uniqueParticipantsIndex, uniqueParticipantsIndex + entriesCount)
-      : stageParticipants[stage || MAIN] ?? [];
+      : (stageParticipants[stage || MAIN] ?? []);
 
     if (requiresUniqueParticipants) uniqueParticipantsIndex += entriesCount;
 

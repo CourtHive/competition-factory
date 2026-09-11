@@ -6,13 +6,14 @@ import { NamingEntry, generatePlayoffStructures } from './drawTypes/playoffStruc
 import { directParticipants } from '@Mutate/matchUps/drawPositions/directParticipants';
 import { resolveTieFormat } from '@Query/hierarchical/tieFormats/resolveTieFormat';
 import { getAllStructureMatchUps } from '@Query/matchUps/getAllStructureMatchUps';
-import { checkMatchUpIsComplete } from '@Query/matchUp/checkMatchUpIsComplete';
+import { matchUpCompletion } from '@Query/matchUp/checkMatchUpIsComplete';
 import { isLuckyBasedDraw } from '@Query/drawDefinition/isLuckyBasedDraw';
 import { getSourceRounds } from '@Query/drawDefinition/getSourceRounds';
 import { getAllDrawMatchUps } from '@Query/matchUps/drawMatchUps';
 import { decorateResult } from '@Functions/global/decorateResult';
 import { positionTargets } from '@Query/matchUp/positionTargets';
 import { getMatchUpId } from '@Functions/global/extractors';
+import { pushGlobalLog } from '@Functions/global/globalLog';
 import { addGoesTo } from '@Query/matchUps/addGoesTo';
 import { findStructure } from '@Acquire/findStructure';
 import { generateTieMatchUps } from './tieMatchUps';
@@ -475,7 +476,7 @@ function advanceCompletedMatchUps({
   event,
 }) {
   const completedMatchUps = inContextDrawMatchUps?.filter(
-    (matchUp) => checkMatchUpIsComplete({ matchUp }) && matchUp.structureId === sourceStructureId,
+    (matchUp) => matchUpCompletion(matchUp) && matchUp.structureId === sourceStructureId,
   );
 
   completedMatchUps?.forEach((matchUp) => {
@@ -498,7 +499,7 @@ function advanceCompletedMatchUps({
       score,
       event,
     });
-    if (result.error) console.log(result.error);
+    if (result.error) pushGlobalLog({ method: 'generateAndPopulatePlayoffStructures', error: result.error });
   });
 }
 
@@ -516,10 +517,7 @@ function advanceByeMatchUps({ inContextDrawMatchUps, sourceStructureId, tourname
     });
     const {
       targetLinks: { loserTargetLink },
-      targetMatchUps: {
-        loserMatchUpDrawPositionIndex,
-        loserMatchUp,
-      },
+      targetMatchUps: { loserMatchUpDrawPositionIndex, loserMatchUp },
     } = targetData;
 
     if (loserTargetLink && loserMatchUp) {
@@ -533,7 +531,7 @@ function advanceByeMatchUps({ inContextDrawMatchUps, sourceStructureId, tourname
         drawDefinition,
         event,
       });
-      if (result.error) console.log(result.error);
+      if (result.error) pushGlobalLog({ method: 'generateAndPopulatePlayoffStructures', error: result.error });
     }
   });
 }

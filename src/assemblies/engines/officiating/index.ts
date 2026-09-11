@@ -2,7 +2,10 @@ import { transitionCertificationStatus } from '@Mutate/officiating/transitionCer
 import { transitionEvaluationStatus } from '@Mutate/officiating/transitionEvaluationStatus';
 import { transitionAssignmentStatus } from '@Mutate/officiating/transitionAssignmentStatus';
 import { addCertificationRequirement } from '@Mutate/officiating/addCertificationRequirement';
+import { removeConflictDeclaration } from '@Mutate/officiating/removeConflictDeclaration';
 import { removeOfficialAssignment } from '@Mutate/officiating/removeOfficialAssignment';
+import { addConflictDeclaration } from '@Mutate/officiating/addConflictDeclaration';
+import { getOfficialConflicts } from '@Query/officiating/getOfficialConflicts';
 import { getOfficialCertifications } from '@Query/officiating/getOfficialCertifications';
 import { validateCertification } from '@Validators/officiating/validateCertification';
 import { getOfficialAssignments } from '@Query/officiating/getOfficialAssignments';
@@ -23,6 +26,8 @@ import { factoryVersion } from '@Functions/global/factoryVersion';
 import { addEvaluation } from '@Mutate/officiating/addEvaluation';
 import { addSuspension } from '@Mutate/officiating/addSuspension';
 import { assignOfficial } from '@Mutate/officiating/assignOfficial';
+import { executeDeclarationQueue } from '@Functions/declaration/executeDeclarationQueue';
+import { registerCreatedRecord } from '@Functions/declaration/registerCreatedRecord';
 import { makeDeepCopy } from '@Tools/makeDeepCopy';
 import {
   getOfficialRecords,
@@ -37,7 +42,6 @@ import {
 
 // Constants
 import { OFFICIAL_RECORD_EXISTS } from '@Constants/officiatingConstants';
-import { INVALID_VALUES } from '@Constants/errorConditionConstants';
 import { SUCCESS } from '@Constants/resultConstants';
 
 // Types
@@ -85,19 +89,16 @@ export const officiatingEngine = (() => {
     // -----------------------------------------------------------------------
     // Mutations
     // -----------------------------------------------------------------------
-    createOfficialRecord: (params: any) => {
-      const result = createOfficialRecord(params);
-      if (result.error) return result;
-      const { officialRecord } = result;
-      if (!officialRecord) return result;
-
-      const existing = getOfficialRecord(officialRecord.officialRecordId);
-      if (existing) return { error: OFFICIAL_RECORD_EXISTS };
-
-      setOfficialRecord(officialRecord);
-      setActiveOfficialRecordId(officialRecord.officialRecordId);
-      return result;
-    },
+    createOfficialRecord: (params: any) =>
+      registerCreatedRecord({
+        result: createOfficialRecord(params),
+        recordKey: 'officialRecord',
+        idKey: 'officialRecordId',
+        getRecord: getOfficialRecord,
+        setRecord: setOfficialRecord,
+        setActiveId: setActiveOfficialRecordId,
+        existsError: OFFICIAL_RECORD_EXISTS,
+      }),
 
     // --- Certifications ---
     addCertification: (params: any) => {
@@ -174,6 +175,26 @@ export const officiatingEngine = (() => {
       return removeSuspension({ ...params, officialRecord });
     },
 
+    // --- Conflict of Interest ---
+    // NOTE: `getMatchUpOfficialConflicts` is deliberately NOT exposed here — it belongs on
+    // `tournamentEngine`, where it already is. It needs a tournamentRecord + drawDefinition, which
+    // this engine's state does not hold (this is an OfficialRecord aggregate); tournamentEngine
+    // resolves both from its own state given a drawId. Do not "complete the set" by adding it here.
+    addConflictDeclaration: (params: any) => {
+      const officialRecord = params.officialRecord ?? resolveRecord(params.officialRecordId);
+      return addConflictDeclaration({ ...params, officialRecord });
+    },
+
+    removeConflictDeclaration: (params: any) => {
+      const officialRecord = params.officialRecord ?? resolveRecord(params.officialRecordId);
+      return removeConflictDeclaration({ ...params, officialRecord });
+    },
+
+    getOfficialConflicts: (params: any) => {
+      const officialRecord = params?.officialRecord ?? resolveRecord(params?.officialRecordId);
+      return getOfficialConflicts({ ...params, officialRecord: officialRecord as OfficialRecord });
+    },
+
     // --- Evaluation Policies ---
     addEvaluationPolicy: (params: any) => {
       const officialRecord = params.officialRecord ?? resolveRecord(params.officialRecordId);
@@ -226,49 +247,14 @@ export const officiatingEngine = (() => {
     // -----------------------------------------------------------------------
     // Execution Queue
     // -----------------------------------------------------------------------
-    executionQueue: (directives: OfficiatingDirectives, rollbackOnError?: boolean) => {
-      if (!Array.isArray(directives))
-        return { error: INVALID_VALUES, context: { message: 'directives must be an array' } };
-
-      const snapshot = rollbackOnError ? makeDeepCopy(getOfficialRecords(), false, true) : undefined;
-
-      const results: any[] = [];
-      for (const directive of directives) {
-        if (typeof directive !== 'object')
-          return { error: INVALID_VALUES, context: { message: 'directive must be an object' } };
-
-        const { method: methodName, pipe } = directive;
-        const params: any = directive.params ? { ...directive.params } : {};
-
-        const method = (engine as any)[methodName];
-        if (!method) {
-          if (snapshot) setOfficialRecords(snapshot);
-          return {
-            error: INVALID_VALUES,
-            context: { message: `Method not found: ${methodName}` },
-            rolledBack: !!snapshot,
-          };
-        }
-
-        if (pipe && results.length) {
-          const lastResult = results.at(-1);
-          for (const pipeKey of Object.keys(pipe)) {
-            if (lastResult[pipeKey] !== undefined) params[pipeKey] = lastResult[pipeKey];
-          }
-        }
-
-        const result = method(params);
-        if (result?.error) {
-          if (snapshot) setOfficialRecords(snapshot);
-          return { ...result, rolledBack: !!snapshot };
-        }
-
-        results.push({ ...result, methodName });
-      }
-
-      const success = results.every((r) => r.success);
-      return { success, results };
-    },
+    executionQueue: (directives: OfficiatingDirectives, rollbackOnError?: boolean) =>
+      executeDeclarationQueue({
+        engine,
+        directives,
+        rollbackOnError,
+        getRecords: getOfficialRecords,
+        setRecords: setOfficialRecords,
+      }),
   };
 
   return engine;

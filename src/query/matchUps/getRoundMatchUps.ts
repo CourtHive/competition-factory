@@ -10,11 +10,17 @@ import { isPowerOf2 } from '@Tools/math';
 import { ErrorType, INVALID_VALUES } from '@Constants/errorConditionConstants';
 import { SUCCESS } from '@Constants/resultConstants';
 import { HydratedMatchUp } from '@Types/hydrated';
+import { MatchUp } from '@Types/tournamentTypes';
 import { RoundProfile } from '@Types/factoryTypes';
 import { TEAM } from '@Constants/matchUpTypes';
 
 type GetRoundMatchUpsArgs = {
-  matchUps?: HydratedMatchUp[];
+  // Accepts either base `MatchUp` (e.g. drafted but not yet hydrated) or
+  // `HydratedMatchUp` — the function only inspects base fields
+  // (`roundNumber`, `matchUpType`, `roundPosition`, `roundName`,
+  // `finishingRound`, `abbreviatedRoundName`) so the looser type is
+  // honest about what's required.
+  matchUps?: MatchUp[];
   interpolate?: boolean;
 };
 
@@ -52,7 +58,7 @@ export function getRoundMatchUps({ matchUps = [], interpolate }: GetRoundMatchUp
       const consideredMatchUps = hasTeamMatchUps
         ? roundMatchUps.filter(({ matchUpType }) => matchUpType === TEAM)
         : roundMatchUps;
-      const getSorted = (items) => items.sort((a, b) => numericSort(a.roundPosition, b.roundPosition));
+      const getSorted = (items) => items.toSorted((a, b) => numericSort(a.roundPosition, b.roundPosition));
       return {
         [roundNumber]: getSorted(consideredMatchUps),
       };
@@ -64,7 +70,10 @@ export function getRoundMatchUps({ matchUps = [], interpolate }: GetRoundMatchUp
       typeof matchUp.roundNumber === 'string' ? ensureInt(matchUp.roundNumber) : (matchUp.roundNumber as number);
     if (!mapping[roundNumber])
       mapping[roundNumber] = definedAttributes({
-        abbreviatedRoundName: matchUp.abbreviatedRoundName,
+        // `abbreviatedRoundName` lives on HydratedMatchUp (added by
+        // `addMatchUpContext`), not on base MatchUp. Tolerated as
+        // `undefined` when the input wasn't hydrated.
+        abbreviatedRoundName: (matchUp as HydratedMatchUp).abbreviatedRoundName,
         finishingRound: matchUp.finishingRound,
         roundName: matchUp.roundName,
       });
@@ -139,7 +148,7 @@ export function getRoundMatchUps({ matchUps = [], interpolate }: GetRoundMatchUp
     roundProfile[roundNumber].finishingPositionRange = roundMatchUps[roundNumber]?.[0]?.finishingPositionRange;
 
     if (roundNumber === 1 || !roundProfile[roundNumber - 1]) {
-      const orderedDrawPositions = currentRoundDrawPositions.sort(numericSort);
+      const orderedDrawPositions = currentRoundDrawPositions.toSorted(numericSort);
       const pairedDrawPositions = chunkArray(orderedDrawPositions, 2);
       roundProfile[roundNumber].drawPositions = orderedDrawPositions;
       roundProfile[roundNumber].pairedDrawPositions = pairedDrawPositions;

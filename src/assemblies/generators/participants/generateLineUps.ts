@@ -1,3 +1,4 @@
+import { resolveScaleValueNumber } from '@Query/scales/resolveScaleValue';
 import { isMatchUpEventType } from '@Helpers/matchUpEventTypes/isMatchUpEventType';
 import { resolveTieFormat } from '@Query/hierarchical/tieFormats/resolveTieFormat';
 import { getPairedParticipant } from '@Query/participant/getPairedParticipant';
@@ -5,9 +6,8 @@ import { getParticipants } from '@Query/participants/getParticipants';
 import { addParticipant } from '@Mutate/participants/addParticipant';
 import { validateTieFormat } from '@Validators/validateTieFormat';
 import { getParticipantId } from '@Functions/global/extractors';
-import { addExtension } from '@Mutate/extensions/addExtension';
+import { setFirstClassOrExtension } from '@Mutate/extensions/setFirstClassOrExtension';
 import { generateRange } from '@Tools/arrays';
-import { isNumeric } from '@Tools/math';
 
 // constants and types
 import { CollectionAssignment, DrawDefinition, Event, TieFormat, Tournament } from '@Types/tournamentTypes';
@@ -102,11 +102,14 @@ export function generateLineUps(params: GenerateLineUpsArgs): ResultType & {
 
     if (Array.isArray(matchUpTypeScales)) {
       const scaleValue = matchUpTypeScales.find((scale) => scale.scaleName === scaleName)?.scaleValue;
-      if (isNumeric(scaleValue)) {
-        return scaleValue;
-      } else if (accessor && typeof scaleValue === 'object') return scaleValue[accessor];
+      // Returned the raw accessor value, so an unrated player's '' reached the
+      // comparator, where `'' - 11.2` coerces to 0 and floats them to the top of
+      // an ascending lineup. Resolve, then fall back explicitly.
+      const resolved = resolveScaleValueNumber(scaleValue, { accessor, scaleName });
+      if (resolved !== undefined) return resolved;
     }
-    return 0;
+    // No usable value: sink rather than lead, in either sort direction.
+    return sortOrder === DESCENDING ? Number.NEGATIVE_INFINITY : Number.POSITIVE_INFINITY;
   };
 
   const sortMethod = (a, b, matchUpType) => {
@@ -120,10 +123,10 @@ export function generateLineUps(params: GenerateLineUpsArgs): ResultType & {
   const participantIdPairs: string[][] = [];
   const collectionDefinitions = tieFormat?.collectionDefinitions ?? [];
   for (const teamParticipant of teamParticipants) {
-    const singlesSort = teamParticipant.individualParticipants?.sort(singlesScaleSort) ?? [];
+    const singlesSort = teamParticipant.individualParticipants?.toSorted(singlesScaleSort) ?? [];
     const doublesSort = singlesOnly
       ? singlesSort
-      : (teamParticipant.individualParticipants?.sort(doublesScaleSort) ?? []);
+      : (teamParticipant.individualParticipants?.toSorted(doublesScaleSort) ?? []);
 
     const participantAssignments: { [key: string]: CollectionAssignment[] } = {};
     for (const collectionDefinition of collectionDefinitions) {
@@ -192,8 +195,7 @@ export function generateLineUps(params: GenerateLineUpsArgs): ResultType & {
         tournamentRecord,
       });
     }
-    const extension = { name: LINEUPS, value: lineUps };
-    addExtension({ element: drawDefinition, extension });
+    setFirstClassOrExtension({ element: drawDefinition, attribute: 'lineUps', name: LINEUPS, value: lineUps });
   }
 
   return { ...SUCCESS, lineUps, participantsToAdd };

@@ -28,8 +28,6 @@ describe('addDrawEntries coverage', () => {
   it('handles VOLUNTARY_CONSOLATION stage duplicate detection', () => {
     const drawDefinition: DrawDefinition = newDrawDefinition({ drawId: 'test' });
 
-
-
     // First add to VC stage
     addDrawEntries({
       drawDefinition,

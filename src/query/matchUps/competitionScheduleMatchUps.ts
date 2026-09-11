@@ -22,6 +22,7 @@ type CompetitionScheduleMatchUpsArgs = {
   tournamentRecords: TournamentRecords;
   policyDefinitions?: PolicyDefinitions;
   courtCompletedMatchUps?: boolean;
+  courtByeMatchUps?: boolean;
   alwaysReturnCompleted?: boolean;
   contextFilters?: MatchUpFilters;
   matchUpFilters?: MatchUpFilters;
@@ -55,6 +56,7 @@ export function competitionScheduleMatchUps(params: CompetitionScheduleMatchUpsA
   const {
     sortDateMatchUps = true,
     courtCompletedMatchUps,
+    courtByeMatchUps,
     alwaysReturnCompleted,
     activeTournamentId,
     tournamentRecords,
@@ -121,14 +123,39 @@ export function competitionScheduleMatchUps(params: CompetitionScheduleMatchUpsA
 
   applyCompletedExclusion(params, alwaysReturnCompleted);
 
-  const { completedMatchUps, upcomingMatchUps, pendingMatchUps, abandonedMatchUps, groupInfo, mappedParticipants } =
-    getCompetitionMatchUps({
-      ...params,
-      matchUpFilters: params.matchUpFilters,
-      contextFilters: params.contextFilters,
-    });
+  const {
+    completedMatchUps,
+    upcomingMatchUps,
+    pendingMatchUps,
+    abandonedMatchUps,
+    byeMatchUps,
+    groupInfo,
+    mappedParticipants,
+  } = getCompetitionMatchUps({
+    ...params,
+    matchUpFilters: params.matchUpFilters,
+    contextFilters: params.contextFilters,
+  });
 
   let relevantMatchUps = [...(upcomingMatchUps ?? []), ...(pendingMatchUps ?? [])];
+
+  // BYE matchUps are bucketed out of the schedule by default — there are tens of
+  // thousands of them and none are played. But a BYE that HOLDS A COURT is a
+  // different animal: assigning a BYE deliberately preserves scheduling (a director
+  // may be mid-swap), so the slot really is taken, and hiding it produced exactly the
+  // failure this option exists to prevent — an invisible occupant that the operator
+  // then double-books, reported as a conflict against a cell that was never drawn.
+  //
+  // Opt-in, and narrowed to court-holders: a date/time-only BYE occupies no grid cell,
+  // and publishing surfaces (`usePublishState`) must not start emitting byes.
+  if (courtByeMatchUps && byeMatchUps?.length) {
+    const scheduledDate = params.matchUpFilters?.scheduledDate;
+    relevantMatchUps = relevantMatchUps.concat(
+      byeMatchUps.filter(
+        (matchUp) => matchUp.schedule?.courtId && (!scheduledDate || matchUp.schedule?.scheduledDate === scheduledDate),
+      ),
+    );
+  }
 
   if (detailsMap && (!publishedDrawIds?.length || Object.keys(detailsMap).length)) {
     relevantMatchUps = relevantMatchUps.filter((matchUp) => filterByPublishState(matchUp, detailsMap));
@@ -162,8 +189,16 @@ export function competitionScheduleMatchUps(params: CompetitionScheduleMatchUpsA
 
   if (withCourtGridRows) {
     const scheduledDate = params.matchUpFilters?.scheduledDate;
+    // Only dated matchUps NOT yet assigned to a court need a spare landing row
+    // in the grid. Court-assigned matchUps already occupy a cell at their
+    // courtOrder (and courtGridRows floors rows at the highest courtOrder), so
+    // counting them here would pad the grid with empty trailing rows — one per
+    // pending matchUp — well beyond the busiest court's order.
+    const unplacedMatchUpsCount = dateMatchUps.filter(
+      (matchUp) => !matchUp.schedule?.courtId && !matchUp.schedule?.allocatedCourts?.length,
+    ).length;
     const { rows, courtPrefix } = courtGridRows({
-      minRowsCount: Math.max(minCourtGridRows || 0, dateMatchUps.length || 0),
+      minRowsCount: Math.max(minCourtGridRows || 0, unplacedMatchUpsCount),
       scheduledDate,
       courtsData,
     });
@@ -209,7 +244,11 @@ function applyPublishedEventIdFilter(params, publishedOrderOfPlay) {
   }
 }
 
-function applyPublishedScheduledDatesFilter(params, publishedOrderOfPlay, { allCompletedMatchUps, alwaysReturnCompleted, venues }) {
+function applyPublishedScheduledDatesFilter(
+  params,
+  publishedOrderOfPlay,
+  { allCompletedMatchUps, alwaysReturnCompleted, venues },
+) {
   if (!publishedOrderOfPlay?.scheduledDates?.length) return undefined;
 
   params.matchUpFilters ??= {};
@@ -218,8 +257,7 @@ function applyPublishedScheduledDatesFilter(params, publishedOrderOfPlay, { allC
     params.matchUpFilters.scheduledDates = [params.matchUpFilters.scheduledDate];
   }
 
-  const hadCallerDates =
-    params.matchUpFilters.scheduledDates && params.matchUpFilters.scheduledDates.length > 0;
+  const hadCallerDates = params.matchUpFilters.scheduledDates && params.matchUpFilters.scheduledDates.length > 0;
 
   if (params.matchUpFilters.scheduledDates) {
     if (params.matchUpFilters.scheduledDates.length) {
@@ -266,9 +304,7 @@ function filterByPublishState(matchUp, detailsMap) {
 
   const stageKeys = Object.keys(detailsMap[drawId].stageDetails ?? {});
   if (stageKeys.length) {
-    const unpublishedStages = stageKeys.filter(
-      (stage) => !isVisiblyPublished(detailsMap[drawId].stageDetails[stage]),
-    );
+    const unpublishedStages = stageKeys.filter((stage) => !isVisiblyPublished(detailsMap[drawId].stageDetails[stage]));
     const publishedStages = stageKeys.filter((stage) => isVisiblyPublished(detailsMap[drawId].stageDetails[stage]));
     if (unpublishedStages.length && unpublishedStages.includes(stage)) return false;
     if (publishedStages.length && publishedStages.includes(stage)) return true;
@@ -286,9 +322,7 @@ function filterByPublishState(matchUp, detailsMap) {
     if (unpublishedStructureIds.length && unpublishedStructureIds.includes(structureId)) return false;
     if (publishedStructureIds.length && publishedStructureIds.includes(structureId)) return true;
     return (
-      unpublishedStructureIds.length &&
-      !unpublishedStructureIds.includes(structureId) &&
-      !publishedStructureIds.length
+      unpublishedStructureIds.length && !unpublishedStructureIds.includes(structureId) && !publishedStructureIds.length
     );
   }
 

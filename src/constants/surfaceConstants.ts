@@ -1,8 +1,7 @@
-export const CLAY = 'CLAY';
-export const HARD = 'HARD';
-export const GRASS = 'GRASS';
-export const CARPET = 'CARPET';
-export const ARTIFICIAL = 'ARTIFICIAL';
+import { CLAY, HARD, GRASS, CARPET, ARTIFICIAL } from './surfaceValues';
+
+// primitive surface consts are generated from SurfaceCategoryEnum (see surfaceValues.ts).
+export * from './surfaceValues';
 
 export const surfaceConstants = {
   CLAY,
@@ -10,6 +9,6 @@ export const surfaceConstants = {
   GRASS,
   CARPET,
   ARTIFICIAL,
-};
+} as const;
 
 export default surfaceConstants;

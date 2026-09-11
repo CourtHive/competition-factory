@@ -409,9 +409,7 @@ describe('removeTieMatchUpParticipantId coverage', () => {
 
     // the pair should now have only 1 individual
     doublesMatchUp = getMatchUp(doublesMatchUpId);
-    const side1 = doublesMatchUp.sides.find((side) =>
-      side.participant?.individualParticipantIds?.length,
-    );
+    const side1 = doublesMatchUp.sides.find((side) => side.participant?.individualParticipantIds?.length);
     if (side1) {
       expect(side1.participant.individualParticipantIds).not.toContain(firstTeamIndividual);
     }
@@ -450,9 +448,7 @@ describe('removeTieMatchUpParticipantId coverage', () => {
     const firstTeamMatchUp = teamMatchUps.find(
       ({ stageSequence, roundNumber }) => stageSequence === 1 && roundNumber === 1,
     );
-    const singlesMatchUps = firstTeamMatchUp.tieMatchUps.filter(
-      ({ matchUpType }) => matchUpType === SINGLES,
-    );
+    const singlesMatchUps = firstTeamMatchUp.tieMatchUps.filter(({ matchUpType }) => matchUpType === SINGLES);
     const targetSingles = singlesMatchUps[0];
     const tieMatchUpId = targetSingles.matchUpId;
 
@@ -671,9 +667,7 @@ describe('removeTieMatchUpParticipantId coverage', () => {
     expect(result.success).toEqual(true);
 
     // the modifiedLineUp should reflect the removal
-    const removedAssignment = result.modifiedLineUp.find(
-      (entry) => entry.participantId === individualParticipantId,
-    );
+    const removedAssignment = result.modifiedLineUp.find((entry) => entry.participantId === individualParticipantId);
     if (removedAssignment) {
       expect(removedAssignment.collectionAssignments.length).toEqual(0);
     }

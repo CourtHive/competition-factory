@@ -30,6 +30,9 @@ import { resolvePointValue } from './resolvePointValue';
 import type { PointMultiplier } from './resolvePointValue';
 import { isObject } from '@Tools/objects';
 
+// constants
+import { RALLY } from '@Constants/matchUpFormatConstants';
+
 /**
  * Config for addPoint — optional multiplier support
  */
@@ -95,9 +98,7 @@ export function addPoint(matchUp: MatchUp, options: AddPointOptions, config?: Ad
     isDecidingSet && formatStructure.finalSetFormat ? formatStructure.finalSetFormat : formatStructure.setFormat;
 
   // Detect rally scoring (skip auto server derivation)
-  const isRallyScoring = !!(
-    activeSetFormat?.tiebreakSet?.modifier === 'RALLY' || activeSetFormat?.modifier === 'RALLY'
-  );
+  const isRallyScoring = !!(activeSetFormat?.tiebreakSet?.modifier === RALLY || activeSetFormat?.modifier === RALLY);
 
   // Derive server if not provided and not rally scoring
   if (server === undefined && !isRallyScoring) {

@@ -44,8 +44,10 @@ export function processExistingDrawDefinition(params): ResultType & {
   drawDefinition.structures = drawDefinition.structures?.filter(
     ({ structureId }) => structureId !== existingQualifyingPlaceholderStructureId,
   );
+  const surviving = new Set((drawDefinition.structures ?? []).map((s: any) => s.structureId));
   drawDefinition.links = drawDefinition.links?.filter(
-    ({ source }) => source.structureId !== existingQualifyingPlaceholderStructureId,
+    ({ source }) =>
+      source.structureId !== existingQualifyingPlaceholderStructureId && surviving.has(source.structureId),
   );
 
   const { qualifyingDrawPositionsCount, qualifyingDetails } = qualifyingResult ?? {};

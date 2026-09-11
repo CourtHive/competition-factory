@@ -74,6 +74,8 @@ export function setPositionAssignments({
             assignment.qualifier = true;
             delete assignment.participantId;
             delete assignment.bye;
+            // the BYE is gone, so its provenance marker goes with it — see positionClear
+            delete assignment.byeFromPropagation;
           }
         });
       } else if (participantId) {

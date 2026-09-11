@@ -18,9 +18,9 @@ import { intersection } from '@Tools/arrays';
 import { BYE, COMPLETED, DOUBLE_DEFAULT, DOUBLE_WALKOVER } from '@Constants/matchUpStatusConstants';
 import { MAIN, PLAY_OFF, QUALIFYING, WIN_RATIO } from '@Constants/drawDefinitionConstants';
 import { ErrorType, MISSING_DRAW_DEFINITION } from '@Constants/errorConditionConstants';
+import { setFirstClassOrExtension } from '@Mutate/extensions/setFirstClassOrExtension';
 import { addParticipants } from '@Mutate/participants/addParticipants';
 import { DOUBLES, SINGLES, TEAM } from '@Constants/matchUpTypes';
-import { addExtension } from '@Mutate/extensions/addExtension';
 import { LINEUPS } from '@Constants/extensionConstants';
 import { ASCENDING } from '@Constants/sortingConstants';
 import { SUCCESS } from '@Constants/resultConstants';
@@ -45,8 +45,7 @@ function assignParticipantsToDualMatchUps({ firstRoundDualMatchUps, event, tourn
     if (result.error) return result;
     const { lineUps, participantsToAdd } = result;
     addParticipants({ tournamentRecord, participants: participantsToAdd });
-    const extension = { name: LINEUPS, value: lineUps };
-    addExtension({ element: drawDefinition, extension });
+    setFirstClassOrExtension({ element: drawDefinition, attribute: 'lineUps', name: LINEUPS, value: lineUps });
     return undefined;
   }
   const structureId = firstRoundDualMatchUps[0]?.structureId;
@@ -268,7 +267,11 @@ export function completeDrawMatchUps(params): {
   const maxPasses = 10;
   let passCount = 0;
   let previousCompleted = -1;
-  while (completedCount.value > previousCompleted && (completionGoal === undefined || completedCount.value < completionGoal) && passCount < maxPasses) {
+  while (
+    completedCount.value > previousCompleted &&
+    (completionGoal === undefined || completedCount.value < completionGoal) &&
+    passCount < maxPasses
+  ) {
     passCount++;
     previousCompleted = completedCount.value;
 

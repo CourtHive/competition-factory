@@ -696,7 +696,12 @@ describe('scheduledRounds publishing', () => {
     // Round 2 matchUps should have schedule STRIPPED
     const round2 = roundMatchUps[2] || [];
     expect(round2.length).toBeGreaterThan(0);
-    round2.forEach((m) => expect(m.schedule).toBeUndefined());
+    round2.forEach((m) => {
+      // embargo hides time/court but keeps the date (existence-on-date is already implied)
+      expect(m.schedule?.scheduledDate).toBeDefined();
+      expect(m.schedule?.scheduledTime).toBeUndefined();
+      expect(m.schedule?.courtId).toBeUndefined();
+    });
 
     // Round 3 (unlisted in scheduledRounds) should still have schedule
     const round3 = roundMatchUps[3] || [];
@@ -753,7 +758,12 @@ describe('scheduledRounds publishing', () => {
     let { eventData } = tournamentEngine.getEventData({ eventId, usePublishState: true });
     let round2 = eventData.drawsData[0].structures[0].roundMatchUps[2] || [];
     expect(round2.length).toBeGreaterThan(0);
-    round2.forEach((m) => expect(m.schedule).toBeUndefined());
+    round2.forEach((m) => {
+      // embargo hides time/court but keeps the date (existence-on-date is already implied)
+      expect(m.schedule?.scheduledDate).toBeDefined();
+      expect(m.schedule?.scheduledTime).toBeUndefined();
+      expect(m.schedule?.courtId).toBeUndefined();
+    });
 
     // Advance time past the embargo
     vi.setSystemTime(new Date(AFTER_EMBARGO).getTime());
@@ -812,7 +822,12 @@ describe('scheduledRounds publishing', () => {
     // Round 1: schedule stripped (embargoed)
     const round1 = roundMatchUps[1] || [];
     expect(round1.length).toBeGreaterThan(0);
-    round1.forEach((m) => expect(m.schedule).toBeUndefined());
+    round1.forEach((m) => {
+      // embargo hides time/court but keeps the date (existence-on-date is already implied)
+      expect(m.schedule?.scheduledDate).toBeDefined();
+      expect(m.schedule?.scheduledTime).toBeUndefined();
+      expect(m.schedule?.courtId).toBeUndefined();
+    });
 
     // Round 2: not embargoed, so schedule should NOT be stripped
     const round2 = roundMatchUps[2] || [];
@@ -935,8 +950,9 @@ describe('scheduledRounds publishing', () => {
     const csmRound1 = result.dateMatchUps.filter((m) => m.roundNumber === 1);
 
     // Both paths should agree: round 2 schedule stripped, round 1 schedule intact
-    edRound2.forEach((m) => expect(m.schedule).toBeUndefined());
-    csmRound2.forEach((m) => expect(m.schedule).toBeUndefined());
+    // embargo hides time/court but keeps the date (existence-on-date is already implied)
+    edRound2.forEach((m) => expect(m.schedule?.scheduledTime).toBeUndefined());
+    csmRound2.forEach((m) => expect(m.schedule?.scheduledTime).toBeUndefined());
 
     edRound1.forEach((m) => expect(m.schedule).toBeDefined());
     csmRound1.forEach((m) => expect(m.schedule).toBeDefined());

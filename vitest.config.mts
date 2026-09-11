@@ -1,16 +1,35 @@
 /**
  * NOTE: Vite natively resolves tsconfig paths via resolve.tsconfigPaths.
  * Aliases are still needed for test files.
+ *
+ * This is the main suite. The `src/server` Nest specs are a separate project —
+ * see vitest.server.config.mts.
  */
 
 import { configDefaults, defineConfig } from 'vitest/config';
+
+import { testFileAliases } from './vitest.aliases.mjs';
 
 export default defineConfig({
   test: {
     testTimeout: 30000, // 30 seconds for slow tests
     onConsoleLog: () => {},
     environment: 'node',
+    // Persist transformed modules under node_modules/.vitest-cache so a rerun skips
+    // the transform pass. Transform was ~30% of tracked time on a cold local run.
+    // The cache lives inside node_modules, so a reinstall invalidates it.
+    fsModuleCache: true,
     include: ['src/**/*.test.{js,mjs,cjs,ts,mts,cts,jsx,tsx}'],
+    // Untracked scratch tests are excluded from coverage but were still running
+    // and exercising production code — inflating local % above CI's. Excluding
+    // them from the runner makes local match CI.
+    exclude: [...configDefaults.exclude, '**/scratch/**'],
+    // Default pinned to NATIVE (production parity) as of the 2026-07-03 writeMode flip. The whole
+    // suite passes under NATIVE; the former `*.native.test.*` first-class-storage siblings are now
+    // ordinary specs that run under this default. Legacy-shape storage specs opt back into LEGACY via
+    // the `legacyMode()` helper; behavioral specs cover all modes via `writeModeMatrix`.
+    // setSchemaWriteModeLegacy.ts is retained for the legacyMode() helper.
+    setupFiles: ['./src/tests/testHarness/setSchemaWriteModeNative.ts'],
     coverage: {
       reporter: ['html', 'json-summary'],
       include: ['src/**/*.{js,mjs,cjs,ts,mts,cts,jsx,tsx}'],
@@ -23,46 +42,65 @@ export default defineConfig({
         '**/examples/**',
         '**/scratch/**',
         '**/server/**',
-        'src/forge/**',
+        // src/forge is no longer "incubation" — it hosts production-accessible
+        // engine surface (engine.q, engine.inspect, engine.on, engine.build).
+        // Subject to the 95/95/85/95 thresholds like everything else.
         '**/types/**',
         '**/*.json',
         // deprecated code and data - excluded from coverage
         'src/mutate/score/staticScoreChange/**',
         'src/mutate/matchUps/score/history/**',
         'src/tests/testHarness/**',
+        // notice-conformance harness is test infrastructure (like testHarness/**),
+        // exercised incrementally as the D-scenarios sweep grows — not product code.
+        'src/tests/mutations/notifications/noticeConformance/harness.ts',
         'src/assemblies/governors/**',
         'src/assemblies/tools/**',
         'src/fixtures/data/**',
       ],
       provider: 'v8',
+      // Two-tier coverage gates:
+      //
+      // 1. GLOBAL AGGREGATE — applied across the whole report. Current state
+      //    after the 2026-05-30 coverage push is 95.15 / 86.76 / 97.9 / 97.55
+      //    (stmts / branches / funcs / lines). These thresholds lock in the
+      //    progress without leaving more headroom than the observed ~0.03%
+      //    v8 drift on Node 24.
+      //
+      // 2. PER-FILE FLOOR — every individual src file must clear these.
+      //    Catches egregious individual-file regressions (a brand-new
+      //    untested file would fail at 0%, no matter how high the aggregate
+      //    is). The long-term per-file target is 70% branches / 90% statements;
+      //    several files in the legacy coverage backlog still sit between the
+      //    50% floor and the 70% target. Lifting them is incremental work —
+      //    see scripts/verify/ if you want to gate a tighter floor for new
+      //    files only.
+      //
+      //    The floor was expressed as a `'src/**/*.{...}'` glob group carrying
+      //    `perFile: true` until the 2026-09-06 vitest 5 upgrade. It never ran:
+      //    vitest 4 read `perFile` only off the TOP-LEVEL thresholds object
+      //    (`this.options.thresholds?.perFile`), so a `perFile` nested inside a
+      //    glob group was ignored and the group was scored as an aggregate —
+      //    which the 95% global already passed. Vitest 5 resolves `perFile` per
+      //    group and supports the object form below, which states the two tiers
+      //    without a glob and cannot be silently downgraded to an aggregate.
       thresholds: {
         statements: 95,
         functions: 95,
-        branches: 83,
+        branches: 85,
         lines: 95,
+        perFile: {
+          statements: 50,
+          functions: 50,
+          branches: 50,
+          lines: 50,
+        },
       },
     },
   },
   resolve: {
     tsconfigPaths: true, // native Vite tsconfig paths resolution for source files
     // necessary for vitest to resolve tsconfig paths in test.ts files
-    alias: {
-      '@Generators': new URL('./src/assemblies/generators', import.meta.url).pathname,
-      '@Assemblies': new URL('./src/assemblies', import.meta.url).pathname,
-      '@Engines': new URL('./src/tests/engines', import.meta.url).pathname, // test engines
-      '@Validators': new URL('./src/validators', import.meta.url).pathname,
-      '@Constants': new URL('./src/constants', import.meta.url).pathname,
-      '@Functions': new URL('./src/functions', import.meta.url).pathname,
-      '@Fixtures': new URL('./src/fixtures', import.meta.url).pathname,
-      '@Acquire': new URL('./src/acquire', import.meta.url).pathname,
-      '@Helpers': new URL('./src/helpers', import.meta.url).pathname,
-      '@Global': new URL('./src/global', import.meta.url).pathname,
-      '@Mutate': new URL('./src/mutate', import.meta.url).pathname,
-      '@Server': new URL('./src/server', import.meta.url).pathname,
-      '@Query': new URL('./src/query', import.meta.url).pathname,
-      '@Tests': new URL('./src/tests', import.meta.url).pathname,
-      '@Tools': new URL('./src/tools', import.meta.url).pathname,
-      '@Types': new URL('./src/types', import.meta.url).pathname,
-    },
+    alias: testFileAliases,
   },
 });

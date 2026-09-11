@@ -17,8 +17,11 @@ export function addDrawDefinitionTimeItem({ drawDefinition, timeItem }) {
   if (!validTimeItem) return { error: INVALID_TIME_ITEM };
 
   drawDefinition.timeItems ??= [];
-  const createdAt = new Date().toISOString();
-  Object.assign(timeItem, { createdAt });
+  // Honour a `createdAt` already on the caller's timeItem rather than stamping
+  // over it — same convention as `addTimeItem`. timeItem `createdAt` is an
+  // ordering key, so an entry recorded at a venue and synced later must keep its
+  // own time. Inert when nothing is supplied.
+  timeItem.createdAt ??= new Date().toISOString();
   drawDefinition.timeItems.push(timeItem);
 
   addDrawNotice({ drawDefinition });

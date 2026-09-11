@@ -148,6 +148,97 @@ engine.assignMatchUpCourt({
 
 ---
 
+### assignMatchUpScorekeeper
+
+Nominates a tournament participant as the official **scorekeeper** of a matchUp.
+The nominee must be an `INDIVIDUAL` participant in the tournament; unlike an
+official there is no role restriction — a competitor may also be nominated to
+keep score. Stored the same way as court/official assignments (a
+`SCHEDULE.ASSIGNMENT.SCOREKEEPER` first-class value surfaced as
+`matchUp.schedule.scorekeeper`). Not cleared by rescheduling.
+
+```js
+engine.assignMatchUpScorekeeper({
+  matchUpId, // required
+  drawId, // required
+  participantId, // required - an INDIVIDUAL participant in the tournament
+  disableNotice, // optional boolean - suppress notifications
+});
+```
+
+Clear a nomination with `removeMatchUpScorekeeper`:
+
+```js
+engine.removeMatchUpScorekeeper({ matchUpId, drawId });
+```
+
+A participant may instead (or additionally) be approved to keep score for **any**
+matchUp by carrying the `SCOREKEEPER` role in `participantRoleResponsibilities`
+(set via `modifyParticipant`), which is filterable via `getParticipants`:
+
+```js
+engine.modifyParticipant({
+  participant: { participantId, participantRoleResponsibilities: ['SCOREKEEPER'] },
+});
+```
+
+---
+
+### assignMatchUpTimekeeper
+
+Assigns a tournament participant as the **timekeeper** of a matchUp — relevant
+for timed `matchUpFormat`s (e.g. INTENNSE bolt/serve clocks). Same participant
+rule and storage as the scorekeeper (a `SCHEDULE.ASSIGNMENT.TIMEKEEPER`
+first-class value surfaced as `matchUp.schedule.timekeeper`). Not cleared by
+rescheduling. The `TIMEKEEPER` role is also available as a
+`participantRoleResponsibility`.
+
+```js
+engine.assignMatchUpTimekeeper({
+  matchUpId, // required
+  drawId, // required
+  participantId, // required - an INDIVIDUAL participant in the tournament
+  disableNotice, // optional boolean - suppress notifications
+});
+
+engine.removeMatchUpTimekeeper({ matchUpId, drawId });
+```
+
+---
+
+### setMatchUpScheduleLock
+
+Pins a matchUp's **placement** so bulk and automated scheduling cannot move it —
+the marquee match that must keep centre court at 19:00 while the rest of the day
+is rebuilt around it. Stored first-class as `matchUp.schedule.lock`. Presence of
+the object is the lock; `attributes` narrows it to specific placement fields.
+
+Guards placement only: `startTime` / `stopTime` / `resumeTime` / `endTime` stay
+writable so a pinned matchUp can still be played. Every placement mutation
+accepts `overrideScheduleLock: true` for callers that have confirmed the move
+with the operator; an override moves the placement but never removes the lock.
+The lock goes inert (it is not deleted) once the matchUp completes, or while it
+has no placement to guard.
+
+See [Schedule Locks](../concepts/schedule-locks.mdx) for the full model.
+
+```js
+engine.setMatchUpScheduleLock({
+  matchUpId, // required
+  drawId, // required
+  lock, // required - a ScheduleLock object, or null to unlock
+  disableNotice, // optional boolean - suppress notifications
+});
+
+// pin only the clock time; the court stays free to move
+engine.setMatchUpScheduleLock({ matchUpId, drawId, lock: { attributes: ['scheduledTime'] } });
+
+// unlock
+engine.setMatchUpScheduleLock({ matchUpId, drawId, lock: null });
+```
+
+---
+
 ## Automated Scheduling Methods
 
 ### scheduleMatchUps
@@ -711,6 +802,32 @@ const { times } = engine.calculateScheduleTimes({
 
 ---
 
+### isScheduleLocked
+
+Whether a matchUp's placement is pinned by a director. Accepts the matchUp
+either way round — `{ matchUpId, drawId }` when only ids are in hand, or
+`{ matchUp }` when it isn't (the cheap form: a table rendering hundreds of rows
+should not resolve each one by id).
+
+Returns the lock alongside the verdict so a caller can show _why_ a matchUp is
+pinned without a second lookup. `scheduleLocked` is `false` — with `lock` still
+returned — when a lock exists but is inert: the matchUp completed, or there is
+no placement left to guard. See [Schedule Locks](../concepts/schedule-locks.mdx).
+
+```js
+engine.isScheduleLocked({ matchUpId, drawId });
+// → { success: true, scheduleLocked: true, lock: { reason: 'featured' } }
+
+engine.isScheduleLocked({ matchUp });
+engine.isScheduleLocked({ matchUp, attributes: ['courtId'] }); // narrow to one placement field
+```
+
+`scheduleGovernor.matchUpScheduleLocked({ matchUp })` is the bare predicate
+behind it — a plain boolean with no result envelope, used by the factory's own
+enforcement. Consumers should prefer `isScheduleLocked`.
+
+---
+
 ### courtGridRows
 
 Returns court grid data for pro scheduling visualization.
@@ -920,6 +1037,33 @@ const { conflicts } = engine.proConflicts({
 
 ---
 
+### proColumnResolve
+
+Court-preserving, `scheduledTime`-preserving conflict resolver. Where `proAutoSchedule` may reassign courts, `proColumnResolve` re-lays the grid **vertically only**: a matchUp never changes its `courtId` or its `scheduledTime` — only its `courtOrder` (row) changes, and blank rows are inserted to space colliding matchUps onto different rows.
+
+It removes cross-column participant collisions — the same participant, or the same **potential** participant (winner advancement), appearing in two cells of the same row — by folding both `CONFLICT_PARTICIPANTS` and `CONFLICT_POTENTIAL_PARTICIPANTS` into each matchUp's deep dependency participant set.
+
+Per-column ordering: completed matchUps are anchored at the top (in play order), in-progress beneath them, and to-be-played below in `scheduledTime` order (which also repairs a director's time-inversions). Every dependency source is placed in a strictly earlier row than the match it feeds.
+
+```js
+const { resolved, unresolvable } = engine.proColumnResolve({
+  scheduledDate, // required
+  matchUps, // required — { inContext: true, nextMatchUps: true }
+  courtIds, // optional — restrict to specific courts
+});
+```
+
+Returns:
+
+- `resolved` — matchUps whose `courtOrder` changed: `{ matchUpId, courtId, from, to }`
+- `unresolvable` — matchUps that cannot be deconflicted by spacing, each with a `reason`:
+  - `chronology` — a director scheduled a feeder at a **later** clock time than the match it feeds (physically impossible; times are never changed)
+  - `orderingDeadlock` — a same-column ordering cycle that had to be broken to make progress
+
+Confirm the result by re-running `proConflicts` — every normally-placed row is conflict-free by construction.
+
+---
+
 ### publicFindCourt
 
 Finds a court with privacy policies applied for public APIs.
@@ -1102,6 +1246,134 @@ engine.setSchedulingProfile({ schedulingProfile });
 
 ---
 
+## Schedule Scenario Methods
+
+Named alternate ("contingency") scheduling plans stored first-class on `tournamentRecord.scheduling.scenarios`. See **[Schedule Scenarios](../concepts/schedule-scenarios)** for the full concept.
+
+### addScheduleScenario
+
+Creates an alternate scheduling plan. `scenarioName` is required; `scenarioId` is generated when omitted. The scenario is validated before it is stored.
+
+```js
+const { scenarioId } = engine.addScheduleScenario({
+  scenario: {
+    scenarioName, // required
+    scheduledDates, // optional - ISO 'YYYY-MM-DD' dates the plan re-plans
+    placements, // ScenarioPlacement[] — a bulkScheduleMatchUps matchUpDetails payload
+  },
+});
+```
+
+---
+
+### getScheduleScenarios / getScheduleScenario
+
+Reads stored scenarios.
+
+```js
+engine.getScheduleScenarios(); // → { scenarios: ScheduleScenario[] }
+engine.getScheduleScenario({ scenarioId }); // → { scenario } | { error }
+```
+
+---
+
+### updateScheduleScenario
+
+Merges `updates` over an existing scenario (preserving `scenarioId`) and re-validates.
+
+```js
+engine.updateScheduleScenario({
+  scenarioId, // required
+  updates, // Partial<ScheduleScenario>
+});
+```
+
+---
+
+### removeScheduleScenario
+
+```js
+engine.removeScheduleScenario({ scenarioId });
+```
+
+---
+
+### applyScheduleScenario
+
+Commits a scenario's placements as the official schedule via `bulkScheduleMatchUps`. **Skips completed matchUps** by default; `removePriorValues` defaults to `true`. The scenario is left in place after commit.
+
+```js
+const result = engine.applyScheduleScenario({
+  scenarioId, // required
+  removePriorValues, // optional - default true
+  scheduleCompletedMatchUps, // optional - default false
+});
+// → { success: true, applied: <matchUps scheduled>, ... }
+```
+
+---
+
+### validateScheduleScenario
+
+Shape + light referential validation for a scenario object (used internally by add/update).
+
+```js
+engine.validateScheduleScenario({ scenario }); // → { valid: boolean, error?, info? }
+```
+
+---
+
+### getScenarioScheduleProjection
+
+The unofficial "Plan mode" overlay — the official schedule with a scenario's placements laid on top, without writing to any matchUp. Cells are tagged `official` / `planned`; conflicts come from `mergeFacilitySchedule`.
+
+```js
+const { scheduleCells, grid, conflicts, plannedMatchUpIds, skippedCompletedMatchUpIds } =
+  engine.getScenarioScheduleProjection({
+    scenarioId, // required
+    venueIds, // optional - restrict to these venues
+  });
+```
+
+---
+
+### getScheduleScenarioStatus
+
+Reconciles a scenario against current state so a client can alert when a plan is out of date and preview what a commit would do.
+
+```js
+engine.getScheduleScenarioStatus({ scenarioId });
+// → { outOfDate, currentHash, basedOnHash, completedMatchUpIds, missingMatchUpIds, applicableMatchUpIds }
+```
+
+---
+
+### getScenarioScheduleView
+
+Grid-ready projection for a client "Plan mode" — returns the same shape as `competitionScheduleMatchUps` (`dateMatchUps` / `rows` / `courtsData` / `courtPrefix`) with the scenario's placements laid on top, so the client renders the plan through its existing grid path. The overlay is applied to a **throwaway deep copy**; the real records / engine state are never mutated.
+
+```js
+const view = engine.getScenarioScheduleView({
+  scenarioId, // required
+  matchUpFilters, // e.g. { scheduledDate }
+  withCourtGridRows, // default true
+  minCourtGridRows,
+});
+// → { dateMatchUps, rows, courtsData, courtPrefix, plannedMatchUpIds, skippedCompletedMatchUpIds, ... }
+```
+
+---
+
+### rebaseScheduleScenario
+
+Re-anchors a scenario's drift baseline (`basedOnHash`) to the official schedule as it stands now — the explicit "I've reconciled, this plan is current" action.
+
+```js
+engine.rebaseScheduleScenario({ scenarioId });
+```
+
+---
+
 ### setMatchUpDailyLimits
 
 Sets daily limits for participant matchUp participation.
@@ -1184,15 +1456,283 @@ engine.addMatchUpScheduleItems({
     venueId, // optional — assigned venue
     courtOrder, // optional — order on court
     homeParticipantId, // optional — home team participant
+    calledAt, // optional — ISO instant; call to court. `null` clears
     courtIds, // optional — for TEAM matchUps, allocate courts
+    allocatedCourts, // optional — alias for courtIds; accepts the read-side shape
   },
   removePriorValues, // optional boolean — clear existing schedule timeItems first
   checkChronology, // optional boolean — defaults to true; validate time ordering
   errorOnAnachronism, // optional boolean — return error on chronological violations
+  errorOnUnknownAttributes, // optional boolean — error instead of warning on attributes that will not be written
   proConflictDetection, // optional boolean — detect pro scheduling conflicts
   disableNotice, // optional boolean — suppress modification notices
 });
 ```
+
+### `calledAt`
+
+`calledAt` is an **actual-play** attribute and sits with `startTime` / `stopTime` /
+`resumeTime` / `endTime` — none of which a [schedule lock](#setmatchupschedulelock)
+guards, so a pinned matchUp can still be called to court, started, suspended and
+completed.
+
+Its `undefined` handling differs from `setMatchUpCalledAt`
+**deliberately**. Called directly, that method reads `undefined` as _clear_. Here an
+omitted key destructures to `undefined` too, so honouring that reading would make
+every partial schedule write silently wipe a call-to-court:
+
+```js
+engine.addMatchUpScheduleItems({ matchUpId, drawId, schedule: { calledAt: isoInstant } });
+
+// later, a re-time that says nothing about calledAt — the call survives
+engine.addMatchUpScheduleItems({ matchUpId, drawId, schedule: { scheduledTime: '15:00' } });
+
+// explicit clear
+engine.addMatchUpScheduleItems({ matchUpId, drawId, schedule: { calledAt: null } });
+```
+
+### Attributes that will not be written are reported
+
+The method writes the attributes it recognises and, before 6.32.0, silently ignored
+everything else while still returning `{ success: true }`. Two real attributes were
+lost that way — `allocatedCourts` (see below) and `calledAt`.
+
+Incoming keys are now sorted three ways:
+
+| bucket            | attributes                                                                                                                                                                                                                 | behaviour              |
+| ----------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------- |
+| **written**       | `scheduledDate`, `scheduledTime`, `startTime`, `stopTime`, `resumeTime`, `endTime`, `calledAt`, `courtId`, `courtIds`, `allocatedCourts`, `venueId`, `courtOrder`, `courtAnnotation`, `timeModifiers`, `homeParticipantId` | applied                |
+| **derived**       | `isoDateString`, `milliseconds`, `time`, `venueName`, `venueAbbreviation`, `courtName`, `averageMinutes`, `recoveryMinutes`, `timeAfterRecovery`, `typeChangeRecoveryMinutes`, `typeChangeTimeAfterRecovery`, `endDate`    | ignored silently       |
+| **anything else** | `lock`, `official`, `scorekeeper`, `timekeeper`, `scoredTime`, misspellings                                                                                                                                                | returned in `warnings` |
+
+The **derived** bucket exists so that read-modify-write keeps working: a hydrated
+schedule carries a dozen keys the caller cannot omit and cannot influence, and
+warning about those would make every round-trip noisy.
+
+```js
+const { warnings } = engine.addMatchUpScheduleItems({
+  matchUpId,
+  drawId,
+  schedule: { scheduledDate, official: personId },
+});
+// warnings → [{ code: 'UNWRITABLE_SCHEDULE_ATTRIBUTES', attributes: ['official'] }]
+```
+
+`lock` is in the reported bucket on purpose — silently discarding a director's pin is
+the worst of these to discover later. Assign officials through the
+[officiating governor](./officiating-governor) and pin with
+[`setMatchUpScheduleLock`](#setmatchupschedulelock).
+
+Warnings rather than errors, because callers round-trip locked and scored matchUps
+today. Pass `errorOnUnknownAttributes: true` to make it a hard error instead — the
+same escalation `errorOnAnachronism` provides for chronology:
+
+```js
+const result = engine.addMatchUpScheduleItems({
+  matchUpId,
+  drawId,
+  errorOnUnknownAttributes: true,
+  schedule: { scheduledDate, nonsense: true },
+});
+// result.error → UNWRITABLE_SCHEDULE_ATTRIBUTES; nothing is written
+```
+
+### Court allocation: `courtIds` in, `allocatedCourts` out
+
+A TEAM matchUp's court allocation is **written** as bare `courtIds` and **read back** as
+`schedule.allocatedCourts` — court objects (`{ courtId, venueId }`, hydrated with `courtName` /
+`venueName`). Because the write path originally destructured only `courtIds`, a schedule object read
+off one matchUp and applied to another silently carried no allocation: the unrecognised key was
+ignored, with no error and no warning.
+
+`allocatedCourts` is now accepted as an alias, in either shape:
+
+```js
+engine.addMatchUpScheduleItems({ matchUpId, drawId, schedule: { allocatedCourts: [courtIdA, courtIdB] } });
+engine.addMatchUpScheduleItems({ matchUpId, drawId, schedule: { ...anotherMatchUp.schedule } }); // round-trips
+```
+
+An explicit `courtIds` wins when a caller supplies both. A non-array `allocatedCourts` is ignored
+rather than treated as an error, since it cannot have come from a read.
+
+### Grid position is cleared on a date change
+
+`courtOrder`, `courtId`, and `venueId` describe a matchUp's position on **one
+specific day's** schedule grid. When a call changes `scheduledDate` to a different
+day and does **not** supply an explicit `courtOrder`/`courtId`/`venueId` in the
+same `schedule` object, the engine clears those stale grid-position attributes so
+the matchUp does not inherit the prior day's row on its new day.
+
+- A date-only re-date (e.g. `schedule: { scheduledDate, scheduledTime }`) returns
+  the matchUp to the unplaced pool for the new day — it keeps its date and time but
+  is no longer pinned to a court or row.
+- Re-applying the **same** date leaves the existing grid position untouched.
+- Supplying an explicit `courtOrder` (and/or `courtId`/`venueId`) alongside the new
+  date is honored verbatim — a deliberate "move to a new day and row" is respected.
+
+This also governs `bulkScheduleMatchUps`, which delegates to
+`addMatchUpScheduleItems` per matchUp. The lower-level `addMatchUpScheduledDate`
+primitive does **not** clear grid position; use `addMatchUpScheduleItems` (the path
+TMX and integrations use) for date changes.
+
+### Assigning a BYE preserves scheduling
+
+A tournament director may schedule an entire event and then swap participants around,
+placing byes temporarily or permanently. The engine therefore **never discards scheduling
+on its own**: a matchUp that becomes a BYE keeps its court, courtOrder and times.
+
+`assignDrawPositionBye` (and `setMatchUpStatus` with `matchUpStatus: 'BYE'`) accepts
+`preserveScheduling`:
+
+| value       | behaviour                                                                                                                                                                                                                                                                               |
+| ----------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `true`      | keep the placement                                                                                                                                                                                                                                                                      |
+| `false`     | release `allocatedCourts`, `courtId`, `venueId`, `courtAnnotation`, `courtOrder`, `scheduledDate`, `scheduledTime`, `timeModifiers` — on both `matchUp.schedule` and legacy `timeItems`. Actual-play timestamps (`startTime` / `stopTime` / `resumeTime` / `endTime`) are never touched |
+| `undefined` | preserve — **except** on an operator position-action against a matchUp that already holds scheduling, which returns `MATCHUP_HAS_SCHEDULING`                                                                                                                                            |
+
+```js
+engine.assignDrawPositionBye({ drawId, structureId, drawPosition, isPositionAction: true });
+// → { error: MATCHUP_HAS_SCHEDULING } when that drawPosition's matchUp holds a court or a time
+
+engine.assignDrawPositionBye({ drawId, structureId, drawPosition, preserveScheduling: false });
+// → { success: true }, court released
+```
+
+The refusal is deliberately scoped to `isPositionAction` — the flag the engine's own
+`positionActions` payload carries, i.e. an action an operator chose. Engine-internal callers
+(`directLoser` while a score is being entered, `doubleExitAdvancement`, `positionSwap`, draw
+generation, and this function's own BYE cascade) never receive it and take the preserving
+default, so entering a score can never hard-fail because the draw happened to be scheduled.
+An explicit `preserveScheduling: false` propagates through the cascade: one operator decision
+covers every matchUp that BYE reaches.
+
+### A BYE that holds a court is shown, not hidden
+
+BYE matchUps are excluded from `competitionScheduleMatchUps` by default. Pass
+**`courtByeMatchUps: true`** to include the ones holding a `courtId`, so they occupy a cell on
+the schedule grid. `proConflicts` annotates them `CONFLICT_BYE_SCHEDULED` at `SCHEDULE_WARNING`
+severity — a real double-booking or participant conflict on the same matchUp still outranks it.
+
+This is what keeps a preserved placement honest. Before it, a byed matchUp kept its court and
+disappeared from every schedule surface at once: the slot read as free, the next matchUp was
+dropped onto it, and `proConflicts` reported a `courtDoubleBooking` naming a partner that had no
+cell to click through to (production, 2026-08-22). Making the occupant visible — rather than
+deleting the director's placement — is the fix.
+
+Byes holding only a date/time occupy no cell and are not included; the WARNING tracks court
+occupancy specifically.
+
+---
+
+## setMatchUpCalledAt
+
+Sets or clears `matchUp.schedule.calledAt` — the ISO instant captured when a tournament director deliberately places a matchUp on the TMX active strip, signalling that it is imminent.
+
+```js
+engine.setMatchUpCalledAt({
+  matchUpId, // required
+  drawId, // required
+  calledAt, // ISO timestamp; `null` or `undefined` CLEARS the previous value
+  disableNotice, // optional boolean
+});
+```
+
+Called directly, `undefined` reads as **clear**. That differs deliberately from [`addMatchUpScheduleItems`](#calledat), where an omitted key must not wipe a call to court.
+
+### A `calledAt` before the tournament starts is refused
+
+Calling a match to court is a physical act at the venue, so it cannot happen before the venue opens. `addMatchUpScheduledDate` already refuses a `scheduledDate` outside the tournament's range; a `calledAt` predating `startDate` is the same class of impossibility and was previously accepted without complaint.
+
+**The check needs a time zone to be correct.** `startDate` is a bare venue-local calendar day while `calledAt` is a UTC instant, and comparing them without a zone compares two different things. In Sydney (UTC+10) a 09:00 call on opening day is 23:00 UTC on the **previous** day, so a naive UTC-day comparison would reject a perfectly legitimate call — the opposite of the failure being fixed, and worse, because it blocks the running desk.
+
+So the venue's zone resolves the instant to its real local day, via the same `localTimeZone` the rest of the venue time frame already depends on.
+
+**Without a resolvable zone the guard weakens rather than guesses.** Many tournaments carry neither a `localTimeZone` nor a venue address, and there is then no exact answer to "which local day was that?" — only a bound. The furthest-ahead zone in use is UTC+14 (Kiritimati), so local midnight opening the tournament can be no earlier than `startDate 00:00 UTC − 14h`:
+
+- an instant before that bound is before the start in **every** zone that exists, and is refused;
+- an instant after it is opening day **somewhere**, and is admitted.
+
+That is the most the check can soundly say without a zone. It is deliberately weaker than the zoned form — an evening-before call in New York is caught only when the tournament names its zone — because refusing a real call stops play, which is by far the worse of the two failures.
+
+`endDate` is **not** guarded. A match called near midnight on the final day legitimately runs past it, and the last day's play routinely spills over; there is no equivalent impossibility on that side.
+
+---
+
+## Auto-captured `scoredTime`
+
+`matchUp.schedule.scoredTime` is a first-class ISO-8601 timestamp that the engine
+captures **automatically** the first time a matchUp becomes scored — that is, when
+a score with value, a `winningSide`, or a completed `matchUpStatus` is applied via
+`setMatchUpStatus`. No caller action is required.
+
+Behavior:
+
+- **Captured once.** The first scored mutation stamps the timestamp; later score
+  corrections preserve the original value (it records when the result first
+  entered the system, not the latest edit).
+- **Cleared on removal.** If the score is removed (the matchUp is reset to
+  `TO_BE_PLAYED`), `scoredTime` is deleted, so a subsequent re-score gets a fresh
+  stamp.
+- **Proxy for completion time.** It is a lightweight stand-in for "when did this
+  match actually finish" when no explicit `END_TIME` time-item was recorded —
+  useful for analytics on tournament-director behaviour (how promptly results are
+  entered). An actual `endTime`, when present, supersedes it.
+- **No legacy mirror.** Like `calledAt`, `scoredTime` is a CODES-native schedule
+  attribute with no legacy time-item equivalent — it is always read from and
+  written to `matchUp.schedule.scoredTime`.
+
+This is engine-generated state, not an input: it is treated as read-only by
+consumers and reflects the engine's own capture, not a value supplied by the
+caller.
+
+---
+
+## `timeModifiers` are suppressed once a matchUp's start is settled
+
+A `FOLLOWED_BY` or `AFTER_REST` / `NOT_BEFORE` annotation is a promise about **when a
+matchUp may begin**. Once that question is settled the annotation is not merely
+redundant — on a published order of play it is misinformation, telling a player and a
+referee that a match is waiting on something that has already happened.
+
+From **6.32.0**, hydration omits `schedule.timeModifiers` once either of two local
+signals says the start is settled:
+
+- **Called to court** — `schedule.calledAt` is present. A match that has been called
+  _is_ on court; "followed by" is moot for it whatever else on that court did or did
+  not finish.
+- **Any score at all** — a single game is enough, and the partial case is the one that
+  matters: that is the state a live match sits in for an hour while the annotation
+  goes on claiming it has not begun. A completed status settles it too, walkovers
+  included.
+
+### Suppressed, never cleared
+
+The stored value is untouched. That is what makes the behaviour reversible without a
+rule of its own:
+
+```js
+engine.addMatchUpScheduleItems({ matchUpId, drawId, schedule: { timeModifiers: ['FOLLOWED_BY'] } });
+
+engine.setMatchUpStatus({ matchUpId, drawId, outcome }); // any score
+engine.findMatchUp({ matchUpId, inContext: true }).matchUp.schedule.timeModifiers; // undefined
+
+engine.setMatchUpStatus({ matchUpId, drawId, outcome: { score: undefined, winningSide: undefined } });
+engine.findMatchUp({ matchUpId, inContext: true }).matchUp.schedule.timeModifiers; // ['FOLLOWED_BY']
+```
+
+Consequences worth knowing:
+
+- **Read-side only.** The write path reads storage directly, so adding and removing
+  modifiers still operates on the real value — a UI that renders annotation controls
+  from a _hydrated_ matchUp will show none on a settled matchUp, which is intended.
+- **Subscribers get it for free.** Score entry and `setMatchUpCalledAt` already emit
+  notices, and subscribers receive matchUps through hydration, so no new notice type
+  and no new mutation are involved.
+- **Publishing inherits it.** Embargo and `scheduleVisibilityFilters` are applied to
+  the hydrated schedule, downstream of this.
+- **The record still carries the value.** A TODS export will contain a
+  `timeModifiers` entry that no longer displays anywhere. That is the price of not
+  destroying an operator's stated intent.
 
 ---
 

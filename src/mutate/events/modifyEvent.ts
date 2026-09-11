@@ -1,25 +1,36 @@
 import { getObjectTieFormat } from '@Query/hierarchical/tieFormats/getObjectTieFormat';
 import { checkRequiredParameters } from '@Helpers/parameters/checkRequiredParameters';
 import { getCategoryAgeDetails } from '@Query/event/getCategoryAgeDetails';
+import { modifyEventNotice } from '@Mutate/notifications/eventNotifications';
 import { allEventMatchUps } from '@Query/matchUps/getAllEventMatchUps';
 import { getParticipants } from '@Query/participants/getParticipants';
 import { categoryCanContain } from '@Query/event/categoryCanContain';
 import { decorateResult } from '@Functions/global/decorateResult';
-import { validateCategory } from '@Validators/validateCategory';
 import { getFlightProfile } from '@Query/event/getFlightProfile';
+import { validateCategory } from '@Validators/validateCategory';
+import { normalizeGender } from '@Helpers/coercedGender';
 import { setEventDates } from './setEventDates';
 import { isMixed } from '@Validators/isMixed';
 import { isAny } from '@Validators/isAny';
 import { unique } from '@Tools/arrays';
 
 // constants and types
-import { Category, Event, Tournament, EventTypeUnion, GenderUnion, TieFormat } from '@Types/tournamentTypes';
 import { ALTERNATE, STRUCTURE_SELECTED_STATUSES } from '@Constants/entryStatusConstants';
 import { DOUBLES, HYBRID, SINGLES, TEAM } from '@Constants/eventConstants';
 import { INDIVIDUAL, PAIR } from '@Constants/participantConstants';
+import { competitionFormat } from '@Types/competitionFormat';
 import { OBJECT } from '@Constants/attributeConstants';
 import { SUCCESS } from '@Constants/resultConstants';
 import { ResultType } from '@Types/factoryTypes';
+import {
+  Category,
+  Event,
+  Tournament,
+  EventTypeUnion,
+  GenderUnion,
+  TieFormat,
+  UnifiedEventID,
+} from '@Types/tournamentTypes';
 import {
   CATEGORY_MISMATCH,
   INVALID_CATEGORY,
@@ -37,6 +48,16 @@ type ModifyEventArgs = {
     endDate?: string;
     category?: Category;
     eventName?: string;
+    // The event's identity in other organisations' systems; the entry flagged `isOrigin`
+    // is the sanctioning source. Pass an array to replace the whole set (the natural
+    // grain — a caller reconciling against a sanctioning body holds the full list), or
+    // null to clear it. Mirrors the competitionFormat null-clears convention below.
+    eventOtherIds?: UnifiedEventID[] | null;
+    // Set to a competitionFormat object to attach sport rules (timers,
+    // multipliers, penalties) to the event. Pass null to clear an existing
+    // value. Hierarchical resolution lets drawDefinition/structure overrides
+    // win at lower scopes. See @Types/competitionFormat.
+    competitionFormat?: competitionFormat | null;
   };
   eventId: string;
   event: Event;
@@ -51,6 +72,10 @@ export function modifyEvent(params: ModifyEventArgs): ResultType {
 
   const { eventUpdates, event } = params;
   const stack = 'modifyEvent';
+
+  // normalize accepted TODS short codes (M/F/X/A) to the canonical extended form
+  // before validation + persistence, so records stay canonical at rest
+  if (eventUpdates.gender) eventUpdates.gender = normalizeGender(eventUpdates.gender);
 
   const enteredParticipants = getEnteredParticipants(params);
   const participantsProfile = getParticipantsProfile({ enteredParticipants });
@@ -74,6 +99,26 @@ export function modifyEvent(params: ModifyEventArgs): ResultType {
   if (eventUpdates.eventType) event.eventType = eventUpdates.eventType;
   if (eventUpdates.eventName) event.eventName = eventUpdates.eventName;
   if (eventUpdates.gender) event.gender = eventUpdates.gender;
+
+  if (eventUpdates.competitionFormat !== undefined) {
+    if (eventUpdates.competitionFormat === null) {
+      delete event.competitionFormat;
+    } else {
+      event.competitionFormat = eventUpdates.competitionFormat;
+    }
+  }
+
+  if (eventUpdates.eventOtherIds !== undefined) {
+    if (eventUpdates.eventOtherIds === null) {
+      delete event.eventOtherIds;
+    } else {
+      event.eventOtherIds = eventUpdates.eventOtherIds;
+    }
+  }
+
+  // event attributes changed → dispatch MODIFY_EVENT (deduped by eventId with any
+  // notice fired by an internal setEventDates call).
+  modifyEventNotice({ event, tournamentId: params.tournamentRecord?.tournamentId });
 
   return { ...SUCCESS };
 }
@@ -117,8 +162,8 @@ function checkTeamCategory(params) {
 function checkParticipantAges(params, category) {
   const startDate = params.eventUpdates.startDate || params.event.startDate || params.tournamentRecord.startDate;
   const endDate = params.eventUpdates.endDate || params.event.endDate || params.tournamentRecord.endDate;
-  const individualParticpants = params.enteredParticipants.flatMap((p) =>
-    p.participantType === INDIVIDUAL ? [p] : (p.individualParticpants ?? []),
+  const individualParticipants = params.enteredParticipants.flatMap((p) =>
+    p.participantType === INDIVIDUAL ? [p] : (p.individualParticipants ?? []),
   );
 
   const startAgeDetails = getCategoryAgeDetails({ category, consideredDate: startDate });
@@ -130,12 +175,15 @@ function checkParticipantAges(params, category) {
     endAgeDetails?.ageMinDate ||
     endAgeDetails?.ageMaxDate
   ) {
-    for (const individualParticipant of individualParticpants) {
+    for (const individualParticipant of individualParticipants) {
       const birthDate = individualParticipant.person?.birthDate;
-      if (!birthDate) {
+      const birthYear = individualParticipant.person?.birthYear;
+      if (!birthDate && birthYear === undefined) {
         return decorateResult({ result: { error: MISSING_BIRTH_DATE }, stack: params.stack });
       }
-      const birthTime = new Date(birthDate).getTime();
+      // birthDate authoritative; for a year-precision birthYear use a mid-year
+      // representative date (minimises error against the date-boundary checks).
+      const birthTime = new Date(birthDate ?? `${birthYear}-07-01`).getTime();
 
       const startCheck = checkAgeAgainstDetails(birthTime, startAgeDetails, params.stack);
       if (startCheck) return startCheck;
@@ -200,7 +248,7 @@ function getParticipantsProfile({ enteredParticipants }) {
   const enteredParticipantTypes = enteredParticipants.reduce((types: any[], participant) => {
     const genders = participant.person?.sex
       ? [participant.person.sex]
-      : participant.individualParticpants?.map((p) => p.person?.sex) ?? [];
+      : (participant.individualParticipants?.map((p) => p.person?.sex) ?? []);
     genderAccumulator.push(...genders);
     return types.includes(participant.participantType) ? types : types.concat(participant.participantType);
   }, []);
@@ -229,8 +277,7 @@ function checkGenderUpdates({ noFlightsNoDraws, enteredParticipantGenders, event
 }
 
 function checkEventType({ enteredParticipantTypes, eventUpdates, stack }) {
-  const hasMixedTypes =
-    enteredParticipantTypes.includes(INDIVIDUAL) && enteredParticipantTypes.includes(PAIR);
+  const hasMixedTypes = enteredParticipantTypes.includes(INDIVIDUAL) && enteredParticipantTypes.includes(PAIR);
   const validEventTypes = (hasMixedTypes && [HYBRID]) ||
     (enteredParticipantTypes.includes(TEAM) && [TEAM]) ||
     (enteredParticipantTypes.includes(INDIVIDUAL) && [SINGLES, HYBRID]) ||

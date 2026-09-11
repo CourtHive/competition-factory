@@ -1,5 +1,5 @@
+import { setFirstClassOrExtension } from '@Mutate/extensions/setFirstClassOrExtension';
 import { deleteDrawDefinitions } from '@Mutate/events/deleteDrawDefinitions';
-import { addEventExtension } from '@Mutate/extensions/addRemoveExtensions';
 import { requireParams } from '@Helpers/parameters/requireParams';
 import { getFlightProfile } from '@Query/event/getFlightProfile';
 import { refreshEventDrawOrder } from './refreshEventDrawOrder';
@@ -22,15 +22,12 @@ export function deleteFlightAndFlightDraw({ autoPublish = true, tournamentRecord
         return flight.drawId !== drawId;
       });
 
-      const extension = {
+      setFirstClassOrExtension({
+        element: event,
+        attribute: 'flightProfile',
         name: FLIGHT_PROFILE,
-        value: {
-          ...flightProfile,
-          flights,
-        },
-      };
-
-      addEventExtension({ event, extension });
+        value: { ...flightProfile, flights },
+      });
     }
   }
 

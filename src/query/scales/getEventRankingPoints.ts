@@ -1,24 +1,55 @@
 import { getTournamentPoints } from '@Query/scales/getTournamentPoints';
 import { getParticipants } from '@Query/participants/getParticipants';
+import { policyRegistry } from '@Global/policyRegistry';
 
 // constants and types
 import { POLICY_TYPE_RANKING_POINTS } from '@Constants/policyConstants';
 import { PolicyDefinitions } from '@Types/factoryTypes';
 import { SUCCESS } from '@Constants/resultConstants';
-import { Tournament } from '@Types/tournamentTypes';
+import { EventTypeUnion, Tournament } from '@Types/tournamentTypes';
 import { DOUBLES } from '@Constants/eventConstants';
 import {
   MISSING_EVENT,
   MISSING_POLICY_DEFINITION,
   MISSING_TOURNAMENT_RECORD,
+  type ErrorType,
 } from '@Constants/errorConditionConstants';
 
 type GetEventRankingPointsArgs = {
   policyDefinitions?: PolicyDefinitions;
   tournamentRecord: Tournament;
+  policyName?: string;
   eventId: string;
   level?: number;
 };
+
+/**
+ * Declared rather than inferred, because the inferred union was not stable.
+ *
+ * When TypeScript builds a union from these two object literals it may or may
+ * not add `error?: undefined` to the success branch, and which it does varied
+ * between builds of identical source — one line of churn in every published
+ * `.d.ts`. Stating the type pins it.
+ *
+ * `error?: undefined` is retained deliberately: it is what lets a caller
+ * destructure `error` off the result without first narrowing the union, which
+ * is how every consumer of this shape is written.
+ *
+ * The error branch is `ErrorType`, not any one constant: this function returns
+ * MISSING_TOURNAMENT_RECORD, MISSING_EVENT and MISSING_POLICY_DEFINITION, and
+ * naming a single one of them would compile (they share a shape) while telling
+ * the reader something untrue.
+ */
+type GetEventRankingPointsResult =
+  | { error: ErrorType }
+  | {
+      success: boolean;
+      eventAwards: any[];
+      eventName: string | undefined;
+      eventType: EventTypeUnion | undefined;
+      isDoubles: boolean;
+      error?: undefined;
+    };
 
 /**
  * Generates ranking points scoped to a single event.
@@ -32,32 +63,33 @@ type GetEventRankingPointsArgs = {
 export function getEventRankingPoints({
   policyDefinitions,
   tournamentRecord,
+  policyName,
   eventId,
   level,
-}: GetEventRankingPointsArgs) {
+}: GetEventRankingPointsArgs): GetEventRankingPointsResult {
   if (!tournamentRecord) return { error: MISSING_TOURNAMENT_RECORD };
   if (!eventId) return { error: MISSING_EVENT };
 
   const event = tournamentRecord.events?.find((e) => e.eventId === eventId);
   if (!event) return { error: MISSING_EVENT };
 
-  if (!policyDefinitions?.[POLICY_TYPE_RANKING_POINTS]) {
+  const pointsPolicy =
+    policyDefinitions?.[POLICY_TYPE_RANKING_POINTS] ??
+    (policyName ? policyRegistry.lookup({ policyType: POLICY_TYPE_RANKING_POINTS, name: policyName }) : undefined);
+  if (!pointsPolicy) {
     return { error: MISSING_POLICY_DEFINITION };
   }
 
   // Auto-resolve numeric level from tier if not explicitly passed.
   // eventTier overrides tournamentTier.
-  const resolvedLevel =
-    level ??
-    resolveLevelFromTier(
-      event.eventTier ?? tournamentRecord.tournamentTier,
-      policyDefinitions?.[POLICY_TYPE_RANKING_POINTS],
-    );
+  const resolvedLevel = level ?? resolveLevelFromTier(event.eventTier ?? tournamentRecord.tournamentTier, pointsPolicy);
+
+  const effectivePolicyDefinitions = policyDefinitions ?? { [POLICY_TYPE_RANKING_POINTS]: pointsPolicy };
 
   const result = getTournamentPoints({
     participantFilters: { eventIds: [eventId] },
+    policyDefinitions: effectivePolicyDefinitions,
     level: resolvedLevel,
-    policyDefinitions,
     tournamentRecord,
   });
 
@@ -127,12 +159,18 @@ function collectPersonAwards({ personPoints, personToParticipant, eventDrawIds, 
 }
 
 /**
- * Resolve a numeric ranking level from a TierClassification using the
- * policy's tierToLevel mapping. Returns undefined if no match.
+ * Resolve a numeric ranking level from a TierClassification. Prefer the policy's
+ * `tierToLevel[system][value]` mapping; fall back to the tier's own
+ * `numericRank` when the policy declares no mapping for that system/value. This
+ * lets a federation that stamps the level directly on the tier (e.g. an ingest
+ * adapter setting `numericRank` to the resolved level) drive ranking points
+ * without every policy enumerating that federation's categories. Returns
+ * undefined when neither source yields a level.
  */
 function resolveLevelFromTier(tier: any, policy: any): number | undefined {
-  if (!tier?.system || !tier?.value || !policy?.tierToLevel) return undefined;
-  return policy.tierToLevel[tier.system]?.[tier.value];
+  if (!tier?.system || !tier?.value) return undefined;
+  const mapped = policy?.tierToLevel?.[tier.system]?.[tier.value];
+  return mapped ?? tier.numericRank;
 }
 
 function collectLookupAwards({ points, participantLookup, eventDrawIds, eventAwards }) {

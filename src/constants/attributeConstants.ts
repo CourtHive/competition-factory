@@ -37,6 +37,7 @@ export const UUIDS = 'uuids';
 export const PENALTY_TYPE = 'penaltyType';
 export const PENALTY_ID = 'penaltyId';
 export const VENUE_ID = 'venueId';
+export const VENUE = 'venue';
 export const STAGE = 'stage';
 
 export const AVERAGE_MATCHUP_MINUTES = 'averageMatchUpMinutes';

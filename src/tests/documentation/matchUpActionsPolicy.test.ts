@@ -5,7 +5,7 @@
 
 import tournamentEngine from '@Engines/syncEngine';
 import mocksEngine from '@Assemblies/engines/mock';
-import { expect, it, describe } from 'vitest';
+import { expect, it, describe, afterEach } from 'vitest';
 
 // Import relevant constants
 import { END, PENALTY, REFEREE, SCHEDULE, SCORE, START, STATUS, SUBSTITUTION } from '@Constants/matchUpActionConstants';
@@ -15,6 +15,18 @@ import { POLICY_TYPE_MATCHUP_ACTIONS } from '@Constants/policyConstants';
 import { MAIN } from '@Constants/drawDefinitionConstants';
 
 describe('MatchUp Actions Policy Documentation Tests', () => {
+  // Tests in this file call `tournamentEngine.attachPolicies(...)` with
+  // restrictive matchUpActions policies (e.g. enabledActions: [SCHEDULE])
+  // that disable ASSIGN_PARTICIPANT. tournamentEngine is a module-level
+  // singleton, so without an explicit restore the policy leaks into any
+  // subsequent test file that runs in the same vitest worker (CI fail
+  // on genderedCollectionPositionAssignment.test.ts, run 26812805317).
+  // Re-attach the canonical default after every test to keep the worker
+  // clean for whatever runs next.
+  afterEach(() => {
+    tournamentEngine.attachPolicies({ policyDefinitions: POLICY_MATCHUP_ACTIONS_DEFAULT });
+  });
+
   describe('Available MatchUp Action Types', () => {
     it('verifies all 7 core action types are available', () => {
       const { drawIds, tournamentRecord } = mocksEngine.generateTournamentRecord({
@@ -25,11 +37,11 @@ describe('MatchUp Actions Policy Documentation Tests', () => {
       tournamentEngine.setState(tournamentRecord);
       const [drawId] = drawIds;
 
-      const { matchUps } = tournamentEngine.allDrawMatchUps({ 
+      const { matchUps } = tournamentEngine.allDrawMatchUps({
         drawId,
-        inContext: true
+        inContext: true,
       });
-      
+
       const readyMatchUp = matchUps.find(
         (m) => m.matchUpStatus === TO_BE_PLAYED && m.sides?.length === 2 && m.sides.every((s) => s.participantId),
       );
@@ -99,11 +111,11 @@ describe('MatchUp Actions Policy Documentation Tests', () => {
       tournamentEngine.setState(tournamentRecord);
       const [drawId] = drawIds;
 
-      const { matchUps } = tournamentEngine.allDrawMatchUps({ 
+      const { matchUps } = tournamentEngine.allDrawMatchUps({
         drawId,
-        inContext: true
+        inContext: true,
       });
-      
+
       const readyMatchUp = matchUps.find(
         (m) => m.matchUpStatus === TO_BE_PLAYED && m.sides?.length === 2 && m.sides.every((s) => s.participantId),
       );
@@ -184,11 +196,11 @@ describe('MatchUp Actions Policy Documentation Tests', () => {
       tournamentEngine.setState(tournamentRecord);
       const [drawId] = drawIds;
 
-      const { matchUps } = tournamentEngine.allDrawMatchUps({ 
+      const { matchUps } = tournamentEngine.allDrawMatchUps({
         drawId,
-        inContext: true
+        inContext: true,
       });
-      
+
       const readyMatchUp = matchUps.find(
         (m) => m.matchUpStatus === TO_BE_PLAYED && m.sides?.length === 2 && m.sides.every((s) => s.participantId),
       );
@@ -523,11 +535,11 @@ describe('MatchUp Actions Policy Documentation Tests', () => {
       tournamentEngine.setState(tournamentRecord);
       const [drawId] = drawIds;
 
-      const { matchUps } = tournamentEngine.allDrawMatchUps({ 
+      const { matchUps } = tournamentEngine.allDrawMatchUps({
         drawId,
-        inContext: true
+        inContext: true,
       });
-      
+
       const readyMatchUp = matchUps.find(
         (m) => m.matchUpStatus === TO_BE_PLAYED && m.sides?.length === 2 && m.sides.every((s) => s.participantId),
       );
@@ -564,11 +576,11 @@ describe('MatchUp Actions Policy Documentation Tests', () => {
       tournamentEngine.setState(tournamentRecord);
       const [drawId] = drawIds;
 
-      const { matchUps } = tournamentEngine.allDrawMatchUps({ 
+      const { matchUps } = tournamentEngine.allDrawMatchUps({
         drawId,
-        inContext: true
+        inContext: true,
       });
-      
+
       const readyMatchUp = matchUps.find(
         (m) => m.matchUpStatus === TO_BE_PLAYED && m.sides?.length === 2 && m.sides.every((s) => s.participantId),
       );
@@ -582,7 +594,7 @@ describe('MatchUp Actions Policy Documentation Tests', () => {
 
       const scoreAction = validActions.find((a) => a.type === SCORE);
       expect(scoreAction).toBeDefined();
-      
+
       const { method, payload } = scoreAction;
 
       // Add outcome
@@ -626,7 +638,7 @@ describe('MatchUp Actions Policy Documentation Tests', () => {
       expect(scheduleAction).toHaveProperty('type');
       expect(scheduleAction).toHaveProperty('payload');
       expect(scheduleAction.type).toBe(SCHEDULE);
-      
+
       // SCHEDULE actions may have method property
       if (scheduleAction.method) {
         expect(typeof tournamentEngine[scheduleAction.method]).toBe('function');
@@ -644,9 +656,9 @@ describe('MatchUp Actions Policy Documentation Tests', () => {
       tournamentEngine.setState(tournamentRecord);
       const [drawId] = drawIds;
 
-      const { matchUps } = tournamentEngine.allDrawMatchUps({ 
+      const { matchUps } = tournamentEngine.allDrawMatchUps({
         drawId,
-        inContext: true
+        inContext: true,
       });
 
       // Before completion
@@ -659,14 +671,14 @@ describe('MatchUp Actions Policy Documentation Tests', () => {
 
       // Complete all matchUps in order
       const sortedMatchUps = matchUps.sort((a, b) => a.roundNumber - b.roundNumber);
-      
+
       for (const matchUp of sortedMatchUps) {
         if (matchUp.matchUpStatus === TO_BE_PLAYED) {
           const { matchUp: currentMatchUp } = tournamentEngine.findMatchUp({
             matchUpId: matchUp.matchUpId,
             drawId,
           });
-          
+
           if (currentMatchUp.sides?.length === 2 && currentMatchUp.sides.every((s) => s.participantId)) {
             tournamentEngine.setMatchUpStatus({
               matchUpId: matchUp.matchUpId,
@@ -679,7 +691,9 @@ describe('MatchUp Actions Policy Documentation Tests', () => {
 
       // After completion - check final matchUp
       const { matchUps: finalMatchUps } = tournamentEngine.allDrawMatchUps({ drawId });
-      const finalMatchUp = finalMatchUps.find((m) => m.roundNumber === Math.max(...finalMatchUps.map((mu) => mu.roundNumber)));
+      const finalMatchUp = finalMatchUps.find(
+        (m) => m.roundNumber === Math.max(...finalMatchUps.map((mu) => mu.roundNumber)),
+      );
 
       const { structureIsComplete: afterComplete } = tournamentEngine.matchUpActions({
         matchUpId: finalMatchUp.matchUpId,

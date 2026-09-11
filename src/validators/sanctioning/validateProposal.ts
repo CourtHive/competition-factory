@@ -1,15 +1,20 @@
+import { sumAgainstBound, describeAmount } from '@Query/sanctioning/comparePrizeMoney';
+import { isDisciplineAllowed } from '@Helpers/coercedDiscipline';
+import { coercedGender } from '@Helpers/coercedGender';
+
 // Constants
 import { MISSING_SANCTIONING_POLICY, MISSING_PROPOSAL } from '@Constants/sanctioningConstants';
 import { SUCCESS } from '@Constants/resultConstants';
 
 // Types
-import type {
+import {
   TournamentProposal,
   SanctioningPolicy,
   SanctioningTier,
   PersonnelRole,
   PersonReference,
 } from '@Types/sanctioningTypes';
+import { TierClassification } from '@Types/tournamentTypes';
 
 export type ValidationIssue = {
   field: string;
@@ -20,7 +25,12 @@ export type ValidationIssue = {
 type ValidateProposalArgs = {
   proposal: TournamentProposal;
   sanctioningPolicy: SanctioningPolicy;
-  sanctioningTier?: string;
+  /**
+   * The tier being applied for. Normally defaulted from the sanctioning record by the engine, so a
+   * caller holding only a `sanctioningId` still gets the tier-specific rules — see the engine's
+   * `validateProposal` wiring.
+   */
+  sanctioningTier?: TierClassification;
 };
 
 export function validateProposal({ proposal, sanctioningPolicy, sanctioningTier }: ValidateProposalArgs) {
@@ -28,7 +38,11 @@ export function validateProposal({ proposal, sanctioningPolicy, sanctioningTier 
   if (!sanctioningPolicy) return { error: MISSING_SANCTIONING_POLICY };
 
   const issues: ValidationIssue[] = [];
-  const tier = sanctioningTier ? sanctioningPolicy.tiers.find((t) => t.tierName === sanctioningTier) : undefined;
+  // A policy's tiers are named rungs on one federation's ladder, so the tier's `value` is what
+  // identifies the rung; `system` says whose ladder it is.
+  const tier = sanctioningTier?.value
+    ? sanctioningPolicy.tiers.find((t) => t.tierName === sanctioningTier.value)
+    : undefined;
 
   // --- Global policy requirements ---
   if (sanctioningPolicy.requireInsurance && !proposal.insuranceCertificate) {
@@ -118,21 +132,41 @@ function validateTierConstraints({
 
 function validatePrizeMoney(proposal: TournamentProposal, tier: SanctioningTier, issues: ValidationIssue[]) {
   if (!proposal.totalPrizeMoney?.length) return;
-  const totalAmount = proposal.totalPrizeMoney.reduce((sum, pm) => sum + pm.amount, 0);
 
-  if (tier.minimumPrizeMoney !== undefined && totalAmount < tier.minimumPrizeMoney) {
+  const bound = tier.minimumPrizeMoney ?? tier.maximumPrizeMoney;
+  if (!bound) return;
+
+  // Only amounts denominated as the bound is are summed. Prize money in another currency is
+  // surfaced rather than folded into the total or quietly ignored: the tier rule genuinely cannot
+  // be evaluated against it, and staying silent would read as "the rule passed".
+  const { incomparable } = sumAgainstBound(proposal.totalPrizeMoney, bound);
+  if (incomparable.length) {
     issues.push({
       field: 'totalPrizeMoney',
-      message: `Minimum prize money for ${tier.tierName}: ${tier.minimumPrizeMoney}; proposed: ${totalAmount}`,
+      message: `Prize money in ${incomparable.join(', ')} cannot be compared against ${tier.tierName} bounds in ${bound.currencyCode} (${bound.unit})`,
       severity: 'error',
     });
   }
-  if (tier.maximumPrizeMoney !== undefined && totalAmount > tier.maximumPrizeMoney) {
-    issues.push({
-      field: 'totalPrizeMoney',
-      message: `Maximum prize money for ${tier.tierName}: ${tier.maximumPrizeMoney}; proposed: ${totalAmount}`,
-      severity: 'error',
-    });
+
+  if (tier.minimumPrizeMoney) {
+    const { comparable } = sumAgainstBound(proposal.totalPrizeMoney, tier.minimumPrizeMoney);
+    if (comparable < tier.minimumPrizeMoney.amount) {
+      issues.push({
+        field: 'totalPrizeMoney',
+        message: `Minimum prize money for ${tier.tierName}: ${describeAmount(tier.minimumPrizeMoney)}; proposed: ${comparable}`,
+        severity: 'error',
+      });
+    }
+  }
+  if (tier.maximumPrizeMoney) {
+    const { comparable } = sumAgainstBound(proposal.totalPrizeMoney, tier.maximumPrizeMoney);
+    if (comparable > tier.maximumPrizeMoney.amount) {
+      issues.push({
+        field: 'totalPrizeMoney',
+        message: `Maximum prize money for ${tier.tierName}: ${describeAmount(tier.maximumPrizeMoney)}; proposed: ${comparable}`,
+        severity: 'error',
+      });
+    }
   }
 }
 
@@ -153,19 +187,58 @@ function validateEventConstraints(event, index: number, tier: SanctioningTier, i
   const tierName = tier.tierName;
 
   if (tier.allowedEventTypes?.length && !tier.allowedEventTypes.includes(event.eventType)) {
-    issues.push({ field: `${prefix}.eventType`, message: `Event type '${event.eventType}' not allowed for tier ${tierName}`, severity: 'error' });
+    issues.push({
+      field: `${prefix}.eventType`,
+      message: `Event type '${event.eventType}' not allowed for tier ${tierName}`,
+      severity: 'error',
+    });
   }
   if (tier.allowedDrawTypes?.length && event.drawType && !tier.allowedDrawTypes.includes(event.drawType)) {
-    issues.push({ field: `${prefix}.drawType`, message: `Draw type '${event.drawType}' not allowed for tier ${tierName}`, severity: 'error' });
+    issues.push({
+      field: `${prefix}.drawType`,
+      message: `Draw type '${event.drawType}' not allowed for tier ${tierName}`,
+      severity: 'error',
+    });
   }
   if (tier.allowedDrawSizes?.length && event.drawSize && !tier.allowedDrawSizes.includes(event.drawSize)) {
-    issues.push({ field: `${prefix}.drawSize`, message: `Draw size ${event.drawSize} not allowed for tier ${tierName}; allowed: ${tier.allowedDrawSizes.join(', ')}`, severity: 'error' });
+    issues.push({
+      field: `${prefix}.drawSize`,
+      message: `Draw size ${event.drawSize} not allowed for tier ${tierName}; allowed: ${tier.allowedDrawSizes.join(', ')}`,
+      severity: 'error',
+    });
   }
-  if (tier.allowedMatchUpFormats?.length && event.matchUpFormat && !tier.allowedMatchUpFormats.includes(event.matchUpFormat)) {
-    issues.push({ field: `${prefix}.matchUpFormat`, message: `Match format '${event.matchUpFormat}' not allowed for tier ${tierName}`, severity: 'error' });
+  if (
+    tier.allowedMatchUpFormats?.length &&
+    event.matchUpFormat &&
+    !tier.allowedMatchUpFormats.includes(event.matchUpFormat)
+  ) {
+    issues.push({
+      field: `${prefix}.matchUpFormat`,
+      message: `Match format '${event.matchUpFormat}' not allowed for tier ${tierName}`,
+      severity: 'error',
+    });
   }
-  if (tier.allowedGenders?.length && event.gender && !tier.allowedGenders.includes(event.gender)) {
-    issues.push({ field: `${prefix}.gender`, message: `Gender '${event.gender}' not allowed for tier ${tierName}`, severity: 'error' });
+  if (
+    tier.allowedGenders?.length &&
+    event.gender &&
+    !new Set(tier.allowedGenders.map(coercedGender)).has(coercedGender(event.gender))
+  ) {
+    issues.push({
+      field: `${prefix}.gender`,
+      message: `Gender '${event.gender}' not allowed for tier ${tierName}`,
+      severity: 'error',
+    });
+  }
+  if (
+    tier.allowedDisciplines?.length &&
+    event.discipline &&
+    !isDisciplineAllowed(event.discipline, tier.allowedDisciplines)
+  ) {
+    issues.push({
+      field: `${prefix}.discipline`,
+      message: `Discipline '${event.discipline}' not allowed for tier ${tierName}`,
+      severity: 'error',
+    });
   }
 
   validateQualifyingConstraints(event, prefix, tier, issues);

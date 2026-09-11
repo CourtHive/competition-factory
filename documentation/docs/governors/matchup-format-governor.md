@@ -69,6 +69,7 @@ matchUpFormatCode: string; // CODES format code (e.g., "SET3-S:6/TB7")
     };
     noTiebreak?: boolean;    // Set has no tiebreak
     NoAD?: boolean;          // No-advantage games (no deuce)
+    winBy?: number;          // Game-margin override on no-tiebreak sets (WB1); elided when 2 (default)
     timed?: boolean;         // Is this a timed set?
     minutes?: number;        // Minutes for timed set
     based?: string;          // Scoring basis: 'G' (games), 'P' (points)

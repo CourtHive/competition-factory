@@ -20,6 +20,7 @@ export { attachQualifyingStructure } from '@Mutate/drawDefinitions/attachQualify
 export { renameStructures } from '@Mutate/drawDefinitions/structureGovernor/renameStructures';
 export { assignDrawPositionBye } from '@Mutate/matchUps/drawPositions/assignDrawPositionBye';
 export { addDrawDefinitionTimeItem } from '@Mutate/drawDefinitions/addDrawDefinitionTimeItem';
+export { addDrawOtherId, setDrawOtherIds } from '@Mutate/drawDefinitions/drawOtherIds';
 export { resolveDraftPositions } from '@Mutate/drawDefinitions/draft/resolveDraftPositions';
 
 export { resetQualifyingStructure } from '@Mutate/drawDefinitions/resetQualifyingStructure';
@@ -43,6 +44,7 @@ export { updateTeamLineUp } from '@Mutate/drawDefinitions/updateTeamLineUp';
 export { addAdHocMatchUps } from '@Mutate/structures/addAdHocMatchUps';
 export { modifyDrawName } from '@Mutate/drawDefinitions/modifyDrawName';
 export { setSubOrder } from '@Mutate/structures/setSubOrder';
+export { updateParticipantResults } from '@Mutate/structures/updateParticipantResults';
 export {
   attachConsolationStructures,
   attachPlayoffStructures,

@@ -12,4 +12,4 @@ export const swissConstants = {
   RATING_BASED,
   SCORE_GROUP,
   SONNEBORN_BERGER,
-};
+} as const;

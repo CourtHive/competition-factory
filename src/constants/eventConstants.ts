@@ -22,4 +22,4 @@ export const eventConstants = {
   SINGLES_EVENT,
   TEAM_EVENT,
   TEAM,
-};
+} as const;

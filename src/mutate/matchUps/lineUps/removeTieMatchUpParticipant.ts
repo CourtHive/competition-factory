@@ -10,6 +10,7 @@ import { checkScoreHasValue } from '@Query/matchUp/checkScoreHasValue';
 import { getParticipants } from '@Query/participants/getParticipants';
 import { addParticipant } from '@Mutate/participants/addParticipant';
 import { decorateResult } from '@Functions/global/decorateResult';
+import { pushGlobalLog } from '@Functions/global/globalLog';
 import { ensureSideLineUps } from './ensureSideLineUps';
 
 // constants and types
@@ -38,6 +39,7 @@ function removeSubstitutionProcessCodes({
   tieMatchUp,
   stack,
   side,
+  event,
 }) {
   const otherSide: any = inContextTieMatchUp?.sides?.find((s) => s.sideNumber !== side.sideNumber);
   if (!otherSide?.substitutions?.length && tieMatchUp?.processCodes?.length) {
@@ -51,6 +53,7 @@ function removeSubstitutionProcessCodes({
       matchUp: tieMatchUp,
       context: stack,
       drawDefinition,
+      event,
     });
   }
 }
@@ -114,7 +117,13 @@ function handleDoublesPairModification({
   return undefined;
 }
 
-function modifyOrDeleteUnattachedPair({ individualParticipantIds, pairParticipantId, tournamentRecord, pairParticipant, stack }) {
+function modifyOrDeleteUnattachedPair({
+  individualParticipantIds,
+  pairParticipantId,
+  tournamentRecord,
+  pairParticipant,
+  stack,
+}) {
   if (individualParticipantIds.length) {
     pairParticipant.individualParticipantIds = individualParticipantIds;
     const result = modifyParticipant({
@@ -128,7 +137,7 @@ function modifyOrDeleteUnattachedPair({ individualParticipantIds, pairParticipan
       participantIds: [pairParticipantId],
       tournamentRecord,
     });
-    if (result.error) console.log('cleanup', { result });
+    if (result.error) pushGlobalLog({ method: 'removeTieMatchUpParticipant', stage: 'cleanup', result });
   }
   return undefined;
 }
@@ -246,6 +255,7 @@ export function removeTieMatchUpParticipantId(
     inContextDualMatchUp,
     drawDefinition,
     dualMatchUp,
+    event,
   });
 
   let dualMatchUpSide = dualMatchUp.sides?.find(({ sideNumber }) => sideNumber === side.sideNumber);
@@ -311,6 +321,7 @@ export function removeTieMatchUpParticipantId(
       tieMatchUp,
       stack,
       side,
+      event,
     });
   }
 
@@ -319,6 +330,7 @@ export function removeTieMatchUpParticipantId(
     matchUp: dualMatchUp,
     context: stack,
     drawDefinition,
+    event,
   });
 
   return { ...SUCCESS, modifiedLineUp };

@@ -95,4 +95,3 @@ it('will fail without ranking point policy definition', () => {
   result = scaleEngine.getTournamentPoints();
   expect(result.success).toEqual(true);
 });
-

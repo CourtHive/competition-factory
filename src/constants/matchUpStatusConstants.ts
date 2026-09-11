@@ -1,21 +1,29 @@
-export const ABANDONED: any = 'ABANDONED';
-export const AWAITING_RESULT: any = 'AWAITING_RESULT';
-export const BYE: any = 'BYE';
-export const CANCELLED: any = 'CANCELLED';
-export const COMPLETED: any = 'COMPLETED';
-export const DEAD_RUBBER: any = 'DEAD_RUBBER';
-export const DEFAULTED: any = 'DEFAULTED';
-export const DOUBLE_DEFAULT: any = 'DOUBLE_DEFAULT';
-export const DOUBLE_WALKOVER: any = 'DOUBLE_WALKOVER';
-export const IN_PROGRESS: any = 'IN_PROGRESS';
-export const INCOMPLETE: any = 'INCOMPLETE';
-export const NOT_PLAYED: any = 'NOT_PLAYED';
-export const RETIRED: any = 'RETIRED';
-export const SUSPENDED: any = 'SUSPENDED';
-export const TO_BE_PLAYED: any = 'TO_BE_PLAYED';
-export const WALKOVER: any = 'WALKOVER';
+import {
+  ABANDONED,
+  AWAITING_RESULT,
+  BYE,
+  CANCELLED,
+  CHALLENGED,
+  COMPLETED,
+  DEAD_RUBBER,
+  DEFAULTED,
+  DOUBLE_DEFAULT,
+  DOUBLE_WALKOVER,
+  IN_PROGRESS,
+  INCOMPLETE,
+  NOT_PLAYED,
+  RETIRED,
+  SUSPENDED,
+  TO_BE_PLAYED,
+  WALKOVER,
+} from './matchUpStatusValues';
+import type { MatchUpStatusUnion } from '@Types/tournamentTypes';
 
-export const recoveryTimeRequiredMatchUpStatuses = [
+// primitive matchUp-status consts are generated from MatchUpStatusEnum (see
+// matchUpStatusValues.ts); the semantic groupings below are hand-authored.
+export * from './matchUpStatusValues';
+
+export const recoveryTimeRequiredMatchUpStatuses: MatchUpStatusUnion[] = [
   AWAITING_RESULT,
   COMPLETED,
   DEFAULTED,
@@ -25,8 +33,11 @@ export const recoveryTimeRequiredMatchUpStatuses = [
   SUSPENDED,
 ];
 
-export const particicipantsRequiredMatchUpStatuses = [
+export const participantsRequiredMatchUpStatuses: MatchUpStatusUnion[] = [
   AWAITING_RESULT,
+  // a challenge names both participants at the moment it is issued — that is what makes it a
+  // challenge rather than an intention
+  CHALLENGED,
   COMPLETED,
   DEFAULTED,
   DOUBLE_WALKOVER,
@@ -38,11 +49,12 @@ export const particicipantsRequiredMatchUpStatuses = [
   WALKOVER,
 ];
 
-export const validMatchUpStatuses = [
+export const validMatchUpStatuses: MatchUpStatusUnion[] = [
   ABANDONED,
   AWAITING_RESULT,
   BYE,
   CANCELLED,
+  CHALLENGED,
   COMPLETED,
   DEAD_RUBBER,
   DEFAULTED,
@@ -57,7 +69,7 @@ export const validMatchUpStatuses = [
   WALKOVER,
 ];
 
-export const directingMatchUpStatuses = [
+export const directingMatchUpStatuses: MatchUpStatusUnion[] = [
   BYE,
   DOUBLE_WALKOVER, // directing because of a produced WALKOVER
   DOUBLE_DEFAULT, // directing because of a produced WALKOVER
@@ -67,10 +79,11 @@ export const directingMatchUpStatuses = [
   WALKOVER,
 ];
 
-export const nonDirectingMatchUpStatuses = [
+export const nonDirectingMatchUpStatuses: (MatchUpStatusUnion | undefined)[] = [
   ABANDONED,
   AWAITING_RESULT,
   CANCELLED,
+  CHALLENGED,
   DEAD_RUBBER,
   IN_PROGRESS,
   INCOMPLETE,
@@ -80,7 +93,7 @@ export const nonDirectingMatchUpStatuses = [
   undefined,
 ];
 
-export const completedMatchUpStatuses = [
+export const completedMatchUpStatuses: MatchUpStatusUnion[] = [
   CANCELLED,
   ABANDONED,
   COMPLETED,
@@ -92,7 +105,7 @@ export const completedMatchUpStatuses = [
   WALKOVER,
 ];
 
-export const activeMatchUpStatuses = [
+export const activeMatchUpStatuses: MatchUpStatusUnion[] = [
   ABANDONED,
   COMPLETED,
   DEFAULTED,
@@ -103,13 +116,23 @@ export const activeMatchUpStatuses = [
   WALKOVER,
 ];
 
-export const upcomingMatchUpStatuses = [IN_PROGRESS, INCOMPLETE, SUSPENDED, TO_BE_PLAYED];
+// CHALLENGED widens this group's meaning from "will happen" to "is expected to happen": a challenge
+// can be declined or expire and never become a match. That is the deliberate trade — a challenge
+// absent from every upcoming-match view is invisible to exactly the people who must act on it.
+export const upcomingMatchUpStatuses: MatchUpStatusUnion[] = [
+  CHALLENGED,
+  IN_PROGRESS,
+  INCOMPLETE,
+  SUSPENDED,
+  TO_BE_PLAYED,
+];
 
 export const matchUpStatusConstants = {
   ABANDONED,
   AWAITING_RESULT,
   BYE,
   CANCELLED,
+  CHALLENGED,
   COMPLETED,
   DEAD_RUBBER,
   DEFAULTED,
@@ -122,4 +145,4 @@ export const matchUpStatusConstants = {
   SUSPENDED,
   TO_BE_PLAYED,
   WALKOVER,
-};
+} as const;

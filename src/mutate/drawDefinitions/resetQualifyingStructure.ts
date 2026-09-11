@@ -30,7 +30,8 @@ export function resetQualifyingStructure({
   if (!structure) return { error: STRUCTURE_NOT_FOUND };
 
   const scoresPresent = structure.matchUps?.some(
-    ({ matchUpStatus, score }) => checkScoreHasValue({ score }) ?? completedMatchUpStatuses.includes(matchUpStatus),
+    ({ matchUpStatus, score }) =>
+      checkScoreHasValue({ score }) ?? (!!matchUpStatus && completedMatchUpStatuses.includes(matchUpStatus)),
   );
   if (scoresPresent) return { error: SCORES_PRESENT };
 

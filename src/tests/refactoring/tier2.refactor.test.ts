@@ -10,7 +10,12 @@ import mocksEngine from '@Assemblies/engines/mock';
 import tournamentEngine from '@Engines/syncEngine';
 import { expect, it } from 'vitest';
 
-import { FIRST_MATCH_LOSER_CONSOLATION, LUCKY_DRAW, MAIN, ROUND_ROBIN_WITH_PLAYOFF } from '@Constants/drawDefinitionConstants';
+import {
+  FIRST_MATCH_LOSER_CONSOLATION,
+  LUCKY_DRAW,
+  MAIN,
+  ROUND_ROBIN_WITH_PLAYOFF,
+} from '@Constants/drawDefinitionConstants';
 import { DOUBLE_WALKOVER, TO_BE_PLAYED } from '@Constants/matchUpStatusConstants';
 import { DOUBLES } from '@Constants/eventConstants';
 
@@ -59,7 +64,9 @@ it('generateEventWithDraw: doubles event generates pair participants', () => {
 
 it('generateEventWithDraw: RR with playoff generates structures', () => {
   const drawProfiles = [{ drawSize: 8, drawType: ROUND_ROBIN_WITH_PLAYOFF }];
-  const { drawIds: [drawId] } = mocksEngine.generateTournamentRecord({
+  const {
+    drawIds: [drawId],
+  } = mocksEngine.generateTournamentRecord({
     setState: true,
     drawProfiles,
   });
@@ -71,7 +78,9 @@ it('generateEventWithDraw: RR with playoff generates structures', () => {
 
 it('generateEventWithDraw: seeding is applied', () => {
   const drawProfiles = [{ drawSize: 16, seedsCount: 4 }];
-  const { drawIds: [drawId] } = mocksEngine.generateTournamentRecord({
+  const {
+    drawIds: [drawId],
+  } = mocksEngine.generateTournamentRecord({
     setState: true,
     drawProfiles,
   });
@@ -82,10 +91,12 @@ it('generateEventWithDraw: seeding is applied', () => {
 });
 
 it('generateEventWithDraw: qualifying profiles', () => {
-  const drawProfiles = [{
-    drawSize: 8,
-    qualifyingProfiles: [{ roundTarget: 1, structureProfiles: [{ qualifyingPositions: 2, drawSize: 4 }] }],
-  }];
+  const drawProfiles = [
+    {
+      drawSize: 8,
+      qualifyingProfiles: [{ roundTarget: 1, structureProfiles: [{ qualifyingPositions: 2, drawSize: 4 }] }],
+    },
+  ];
   mocksEngine.generateTournamentRecord({
     setState: true,
     drawProfiles,

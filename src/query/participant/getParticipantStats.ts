@@ -331,7 +331,15 @@ function populateTeamSides({
 const STATS_ATTRIBUTES = ['tiebreaks', 'matchUps', 'points', 'games', 'sets'];
 const COMPETITIVENESS_ATTRIBUTES = ['competitive', 'routine', 'decisive'];
 
-function accumulateTallies({ tallies, sideParticipantIds, participantDetails, competitiveness, matchUpStatus, winningSide, initStats }) {
+function accumulateTallies({
+  tallies,
+  sideParticipantIds,
+  participantDetails,
+  competitiveness,
+  matchUpStatus,
+  winningSide,
+  initStats,
+}) {
   sideParticipantIds.forEach((ids, index) => {
     for (const id of ids) {
       const participantName = participantDetails.get(id)?.participantName;
@@ -415,7 +423,7 @@ function computeRanks(participantStats: Map<string, StatCounters>, ratio: Map<st
     for (const attr of STATS_ATTRIBUTES) {
       const accessor = `${attr}Ratio`;
       if (typeof stats[accessor] === 'number') {
-        const index = ratio.get(accessor)?.sort(highLowSort).indexOf(stats[accessor]);
+        const index = ratio.get(accessor)?.toSorted(highLowSort).indexOf(stats[accessor]);
         if (typeof index === 'number' && index >= 0) {
           const rankAccessor = `${attr}Rank`;
           stats[rankAccessor] = index + 1;

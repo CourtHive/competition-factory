@@ -5,13 +5,14 @@ import { addTournamentParticipants } from './addTournamentParticipants';
 import { generateEventWithFlights } from './generateEventWithFlights';
 import { generateScheduledRounds } from './generateScheduledRounds';
 import { formatDate, isValidDateString } from '@Tools/dateTime';
+import { addParticipants } from '@Mutate/participants/addParticipants';
 import { generateEventWithDraw } from './generateEventWithDraw';
 import { cycleMutationStatus } from '@Global/state/globalState';
 import { isValidExtension } from '@Validators/isValidExtension';
 import { generateVenues } from '@Mutate/venues/generateVenues';
 import { processLeagueProfiles } from './processLeagueProfiles';
 import { definedAttributes } from '@Tools/definedAttributes';
-import { Extension } from '@Types/tournamentTypes';
+import { Extension, Participant } from '@Types/tournamentTypes';
 import { addEvent } from '@Mutate/events/addEvent';
 import { randomPop } from '@Tools/arrays';
 
@@ -34,6 +35,12 @@ const mockTournamentNames = [
 ];
 
 type GenerateTournamentRecordArgs = {
+  // Pre-built participants supplied by the caller. When non-empty, factory
+  // adds them directly to the tournament instead of synthesizing mocks via
+  // `addTournamentParticipants` / `generateEventParticipants`. Used by
+  // ingest pipelines (courthive-ingest's federation adapters) where stable
+  // provider-issued IDs need to be preserved through the generated shape.
+  participants?: Participant[];
   participantsProfile?: ParticipantsProfile;
   scheduleCompletedMatchUps?: boolean;
   tournamentExtensions?: Extension[];
@@ -102,15 +109,28 @@ export function generateTournamentRecord(params: GenerateTournamentRecordArgs) {
     }
   }
 
-  const needsParticipants =
-    !params?.leagueProfiles?.length ||
-    params.eventProfiles?.length ||
-    params.drawProfiles?.length ||
-    params.participantsProfile;
+  // Caller-supplied participants are loaded directly and short-circuit the
+  // synthesis path. Downstream `generateEventWithFlights` /
+  // `generateEventWithDraw` / `getStageParticipantsCount` receive the same
+  // flag so they skip per-event / per-draw participant generation and pull
+  // entries from the existing tournament pool (still filtered by event
+  // gender, eventType, participantType).
+  const useExistingParticipants = Boolean(params?.participants?.length);
 
-  if (needsParticipants) {
-    const result = addTournamentParticipants({ tournamentRecord, ...params });
-    if (!result.success) return result;
+  if (useExistingParticipants) {
+    const result = addParticipants({ tournamentRecord, participants: params.participants });
+    if (result.error) return result;
+  } else {
+    const needsParticipants =
+      !params?.leagueProfiles?.length ||
+      params.eventProfiles?.length ||
+      params.drawProfiles?.length ||
+      params.participantsProfile;
+
+    if (needsParticipants) {
+      const result = addTournamentParticipants({ tournamentRecord, ...params });
+      if (!result.success) return result;
+    }
   }
 
   const allUniqueParticipantIds: string[] = [],
@@ -119,6 +139,7 @@ export function generateTournamentRecord(params: GenerateTournamentRecordArgs) {
 
   const profilesResult = processAllProfiles({
     allUniqueParticipantIds,
+    useExistingParticipants,
     ratingsParameters,
     tournamentRecord,
     params,
@@ -251,6 +272,7 @@ function resolveDates(startDate, endDate) {
 
 function processAllProfiles({
   allUniqueParticipantIds,
+  useExistingParticipants,
   ratingsParameters,
   tournamentRecord,
   params,
@@ -273,6 +295,7 @@ function processAllProfiles({
   if (params.drawProfiles) {
     const result = processDrawProfiles({
       allUniqueParticipantIds,
+      useExistingParticipants,
       ratingsParameters,
       tournamentRecord,
       ...params,
@@ -285,6 +308,7 @@ function processAllProfiles({
   if (params.eventProfiles) {
     const result = processEventProfiles({
       allUniqueParticipantIds,
+      useExistingParticipants,
       ratingsParameters,
       tournamentRecord,
       ...params,

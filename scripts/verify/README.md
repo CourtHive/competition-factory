@@ -1,0 +1,96 @@
+# Factory verification suite
+
+`pnpm verify` is the gate before every publish. It chains 11 checks that together cover compile, runtime, dist integrity, and security awareness. If any link in the chain fails, the suite exits non-zero and `prepublishOnly` blocks the release.
+
+A 12th check, `verify:ecosystem`, runs downstream consumer tests against the in-tree factory but is **not** part of the chained `verify` script — it depends on sibling repos being checked out on disk, which isn't the case on CI runners. Run it explicitly (`pnpm verify:ecosystem`) when working locally, or use `pnpm verify:all` (= `pnpm verify && pnpm verify:ecosystem`) for the full sweep.
+
+## What each check catches
+
+| Step                       | Catches                                                                                                                                                                           | Cost   |
+| -------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------ |
+| `verify:types`             | type errors anywhere in `src`                                                                                                                                                     | ~3 s   |
+| `verify:lint`              | style + cognitive-complexity violations; zero-warnings rule                                                                                                                       | ~5 s   |
+| `verify:coverage`          | regressions below `95/95/85/95` statements/functions/branches/lines                                                                                                               | ~100 s |
+| `verify:coverage-headroom` | a change spending more than 25 items of margin before the coverage floor; always prints headroom per metric                                                                       | ~0 s   |
+| `verify:server`            | NestJS-style server specs (`pnpm test:server` — vitest, `vitest.server.config.mts`)                                                                                               | ~7 s   |
+| `verify:audit`             | high or critical `pnpm audit` advisories in **every** lockfile (package + `documentation/`), minus entries in `audit-waivers.json`; a waiver matching no open advisory also fails | ~10 s  |
+| `verify:build`             | the full prod build produces `dist/` (run after the above so a tiny lint/type fix re-runs the cheap stuff first)                                                                  | ~13 s  |
+| `verify:publint`           | `publint --strict --level warning` — package.json `exports` correctness, per-format type declarations, `sideEffects` / `type` hints, tarball contents match `files` field         | ~6 s   |
+| `verify:runtime`           | "compiles but doesn't run" — CJS + ESM smoke against the built dist                                                                                                               | ~3 s   |
+| `verify:bundle-size`       | a file in `dist/` grew beyond +10 % vs baseline                                                                                                                                   | ~1 s   |
+| `verify:surface`           | a public export was removed (breaking) or signature drifted                                                                                                                       | ~1 s   |
+| `verify:pack`              | the published `.d.ts` references an internal path that didn't get packed; runtime `require()` smoke after `npm install` of the tarball                                            | ~30 s  |
+
+Total: ~3 minutes warm. The chain is ordered so cheap fail-fast checks run first.
+
+`verify:ecosystem` (~60 s) sits outside the chain and is documented in [Opt-in checks](#opt-in-checks) below.
+
+## When to run
+
+| Situation                                       | Command                                                                                      |
+| ----------------------------------------------- | -------------------------------------------------------------------------------------------- |
+| Quick sanity during a session                   | `pnpm check-types && pnpm lint`                                                              |
+| Before a commit that touches the public surface | `pnpm verify:types && pnpm verify:surface && pnpm verify:pack`                               |
+| Before publish (anything)                       | `pnpm verify` — happens automatically via `prepublishOnly`                                   |
+| Investigating a regression                      | `pnpm verify:ecosystem --only=TMX,courthive-public` (single repo at a time)                  |
+| Updating a baseline after intentional changes   | `pnpm verify:surface -- --update-baseline` or `pnpm verify:bundle-size -- --update-baseline` |
+
+## Baselines
+
+Three artifacts live under `scripts/verify/baseline/`:
+
+- **`surface.txt`** — sorted list of every public export name. Surface drift is computed by set diff against this file. Regenerate after intentional surface changes with `pnpm verify:surface -- --update-baseline`.
+- **`bundle-size.json`** — `{ rawBytes, gzipBytes }` per published file. Growth-budget is +10 % per file by default; override with `--budget=N` (decimal).
+- **`coverage-headroom.json`** — items of margin per metric before the coverage floor. A change may spend 25 by default (`--budget=N`); accept a new margin with `node scripts/verify/coverage-headroom.mjs --update-baseline`. Percentages hide how close the floor is — 95.09 % against a 95 floor was **39 statements** out of 43,284 — so this tracks the number in items.
+
+Both baselines are tracked in git so the budget travels with the code.
+
+## Modes worth knowing
+
+### `verify:surface` against npm
+
+By default the baseline is the local `surface.txt`. To compare against a real published version:
+
+```sh
+node scripts/verify/surface.mjs --baseline=npm           # vs @latest
+node scripts/verify/surface.mjs --baseline=npm@4.2.0     # vs a specific tag
+```
+
+This is the right mode for "did my upcoming release break a previously published surface?"
+
+### `verify:pack` debugging
+
+If a packaged-tarball failure isn't immediately reproducible:
+
+```sh
+VERIFY_PACK_KEEP=1 pnpm verify:pack
+```
+
+leaves the staged directory in `/tmp` so you can inspect what was actually installed + what `tsc` saw.
+
+## Opt-in checks
+
+### `verify:ecosystem`
+
+Walks sibling consumer repos (TMX, courthive-components, pdf-factory, …) and runs each one's test suite against the in-tree factory build. Only meaningful when the siblings are checked out next to `factory/` on disk; on a CI runner all consumers report "missing" and the script no-ops. Kept out of the chained `verify` script for that reason.
+
+```sh
+pnpm verify:ecosystem
+pnpm verify:all                                          # = verify + verify:ecosystem
+node scripts/verify/ecosystem.mjs --only=TMX,courthive-public
+node scripts/verify/ecosystem.mjs --skip=tidyScore
+node scripts/verify/ecosystem.mjs --build-factory        # rebuild dist before sweeping
+```
+
+## CI
+
+`.github/workflows/verify.yml` runs the 11-step chain on every PR + push to master, across the Node version matrix declared in `package.json#engines.node`. The job is skipped on release-please merge commits (CHANGELOG/version-only changes that don't need re-verification). The surface and bundle-size baselines participate in the same diff so updates are reviewable.
+
+`.github/workflows/npm-publish.yml` runs `lint` + `check-types` + `build` at tag-time, then `npm publish` triggers `prepublishOnly` (= `pinst --disable && pnpm verify`) which re-runs the 11-step chain against the exact tagged commit before anything ships to npm.
+
+## Adding a new check
+
+1. Add a script at `scripts/verify/<name>.mjs`. Follow the convention: `[verify:<name>] ${msg}` for logs, exit 1 on failure with a clear "what to do" line.
+2. Wire it into `package.json#scripts` as `verify:<name>` and append to the `verify` chain.
+3. Document it in the table at the top of this file.
+4. If it introduces a baseline file, save it under `scripts/verify/baseline/` and add a `--update-baseline` flag for intentional changes.

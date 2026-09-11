@@ -10,11 +10,7 @@ import { COLLEGE_D3, USTA_BREWER_CUP } from '@Constants/tieFormatConstants';
 import { POLICY_TYPE_SCORING } from '@Constants/policyConstants';
 import { DELETED_MATCHUP_IDS } from '@Constants/topicConstants';
 import { TEAM } from '@Constants/eventConstants';
-import {
-  INVALID_VALUES,
-  MISSING_TOURNAMENT_RECORD,
-  NOT_FOUND,
-} from '@Constants/errorConditionConstants';
+import { INVALID_VALUES, MISSING_TOURNAMENT_RECORD, NOT_FOUND } from '@Constants/errorConditionConstants';
 
 const scoringPolicy = {
   [POLICY_TYPE_SCORING]: { requireParticipantsForScoring: false },
@@ -319,7 +315,7 @@ describe('modifyTieFormat branch coverage', () => {
     const tieFormat = tieFormatResult.tieFormat;
 
     // Create modified format with different name on a collection
-    const modifiedTieFormat = JSON.parse(JSON.stringify(tieFormat));
+    const modifiedTieFormat = structuredClone(tieFormat);
     modifiedTieFormat.collectionDefinitions[0].collectionName = 'Renamed Singles';
     // Don't set tieFormatName — should trigger removal
     delete modifiedTieFormat.tieFormatName;

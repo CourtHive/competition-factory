@@ -1,14 +1,13 @@
-import { latestVisibleTimeItemValue } from '@Query/matchUp/latestVisibleTimeItemValue';
+import { allocateTeamMatchUpCourts } from '@Mutate/matchUps/schedule/allocateTeamMatchUpCourts';
+import { matchUpAllocatedCourts } from '@Query/matchUp/courtAllocations';
 import { checkRequiredParameters } from '@Helpers/parameters/checkRequiredParameters';
 import { assignMatchUpCourt } from '@Mutate/matchUps/schedule/assignMatchUpCourt';
-import { addMatchUpTimeItem } from '@Mutate/timeItems/matchUps/matchUpTimeItems';
 import { findDrawDefinition } from '@Acquire/findDrawDefinition';
 import { findDrawMatchUp } from '@Acquire/findDrawMatchUp';
 
 // contstants
 import { MISSING_DRAW_DEFINITION, MISSING_TOURNAMENT_RECORD } from '@Constants/errorConditionConstants';
 import { TOURNAMENT_RECORDS } from '@Constants/attributeConstants';
-import { ALLOCATE_COURTS } from '@Constants/timeItemConstants';
 import { TEAM_MATCHUP } from '@Constants/matchUpTypes';
 
 export function removeMatchUpCourtAssignment(params) {
@@ -29,21 +28,23 @@ export function removeMatchUpCourtAssignment(params) {
   if (result.error) return result;
 
   if (result?.matchUp?.matchUpType === TEAM_MATCHUP) {
-    const { itemValue: allocatedCourts } = latestVisibleTimeItemValue({
-      timeItems: result.matchUp.timeItems ?? [],
-      itemType: ALLOCATE_COURTS,
-    });
+    // Read the current allocation first-class-aware (NATIVE stores schedule.allocatedCourts with
+    // no timeItem mirror), then rewrite the remaining courts through the mode-aware allocation
+    // writer. The prior path read + wrote timeItems only, so in NATIVE it crashed on
+    // `undefined.filter` and never updated the first-class value.
+    const { allocatedCourts } = matchUpAllocatedCourts({ matchUp: result.matchUp });
+    const remainingCourtIds = courtId
+      ? (allocatedCourts ?? []).filter((court) => court.courtId !== courtId).map((court) => court.courtId)
+      : [];
 
-    const itemValue = courtId && allocatedCourts.filter((court) => court.courtId !== courtId);
-
-    const timeItem = { itemType: ALLOCATE_COURTS, itemValue };
-    return addMatchUpTimeItem({
-      duplicateValues: false,
+    return allocateTeamMatchUpCourts({
+      // empty → undefined clears the allocation entirely (removes the last / all courts)
+      courtIds: remainingCourtIds.length ? remainingCourtIds : undefined,
       removePriorValues,
+      tournamentRecords,
       tournamentRecord,
       drawDefinition,
       matchUpId,
-      timeItem,
     });
   } else {
     return assignMatchUpCourt({

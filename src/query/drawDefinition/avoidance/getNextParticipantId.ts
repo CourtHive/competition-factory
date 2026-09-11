@@ -31,11 +31,15 @@ export function getNextParticipantId({
   );
   const largestSizedGroupings = Object.keys(groupings).filter((key) => groupings[key].length === largestGroupSize);
 
-  const randomGroupKey = largestFirst ? randomMember(largestSizedGroupings, random) : randomMember(Object.keys(groupings), random);
+  const randomGroupKey = largestFirst
+    ? randomMember(largestSizedGroupings, random)
+    : randomMember(Object.keys(groupings), random);
 
   groupKey = useSpecifiedGroupKey && groupings[groupKey]?.length ? groupKey : randomGroupKey;
 
   const participantId =
-    groupKey && groupings[groupKey] ? randomMember(groupings[groupKey], random) : randomMember(targetParticipantIds, random);
+    groupKey && groupings[groupKey]
+      ? randomMember(groupings[groupKey], random)
+      : randomMember(targetParticipantIds, random);
   return { participantId, groupKey };
 }

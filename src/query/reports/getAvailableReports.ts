@@ -4,12 +4,15 @@ import { ReportAvailability } from '@Types/reportTypes';
 import { Tournament } from '@Types/tournamentTypes';
 
 import {
+  CALL_TIMING_VARIANCE_REPORT,
   COMPETITIVENESS_REPORT,
   DRAW_REVISIONS_REPORT,
   ENTRY_STATUS_REPORT,
   MATCH_RESULTS_REPORT,
   MATCHUP_STATUS_REPORT,
   MUTATION_LOG_REPORT,
+  PARTICIPANT_EXPERIENCE_REPORT,
+  PARTICIPANT_RECOVERY_REPORT,
   PARTICIPANT_RESULTS_REPORT,
   PARTICIPANT_STATS_REPORT,
   POSITION_CHANGES_REPORT,
@@ -77,6 +80,24 @@ const REPORT_REGISTRY = [
     category: REPORT_CATEGORIES.SCHEDULING,
   },
   {
+    reportId: CALL_TIMING_VARIANCE_REPORT,
+    name: 'Call Timing Variance',
+    description: 'Planned scheduled time vs actual called-to-court time — how far behind matches are running',
+    category: REPORT_CATEGORIES.SCHEDULING,
+  },
+  {
+    reportId: PARTICIPANT_RECOVERY_REPORT,
+    name: 'Participant Recovery Time',
+    description: 'Per-participant recovery between matchUps, time on court, and waiting — across every day played',
+    category: REPORT_CATEGORIES.SCHEDULING,
+  },
+  {
+    reportId: PARTICIPANT_EXPERIENCE_REPORT,
+    name: 'Participant Experience',
+    description: 'Whole-tournament summary of each participant’s experience of time — rests, nights, waits, load',
+    category: REPORT_CATEGORIES.PARTICIPANTS,
+  },
+  {
     reportId: MUTATION_LOG_REPORT,
     name: 'Mutation Log',
     description: 'Chronological log of all server mutations with user attribution',
@@ -130,6 +151,16 @@ export function getAvailableReports({
   const hasTeamParticipants = (tournamentRecord.participants ?? []).some(
     (p: any) => p.participantType === TEAM_PARTICIPANT,
   );
+  // Recovery needs a start anchor of some kind — an explicit start, a call to
+  // court, or at minimum a planned time. Without any of those, every matchUp is
+  // undatable and both reports would return zero rows.
+  const hasScheduledMatchUps = (tournamentRecord.events ?? []).some((e: any) =>
+    (e.drawDefinitions ?? []).some((d: any) =>
+      (d.structures ?? []).some((s: any) =>
+        (s.matchUps ?? []).some((m: any) => m.schedule?.scheduledTime || m.schedule?.startTime || m.schedule?.calledAt),
+      ),
+    ),
+  );
 
   const computableMap: Record<string, boolean> = {
     [ENTRY_STATUS_REPORT]: hasEvents,
@@ -141,6 +172,9 @@ export function getAvailableReports({
     [SEEDING_PERFORMANCE_REPORT]: hasSeededParticipants,
     [PARTICIPANT_STATS_REPORT]: hasTeamParticipants,
     [VENUE_UTILIZATION_REPORT]: hasVenues,
+    [CALL_TIMING_VARIANCE_REPORT]: hasVenues,
+    [PARTICIPANT_RECOVERY_REPORT]: hasScheduledMatchUps,
+    [PARTICIPANT_EXPERIENCE_REPORT]: hasScheduledMatchUps,
     // Audit reports are always listed; TMX checks server connectivity
     [MUTATION_LOG_REPORT]: true,
     [DRAW_REVISIONS_REPORT]: true,

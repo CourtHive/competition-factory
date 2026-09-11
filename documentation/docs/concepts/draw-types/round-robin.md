@@ -57,6 +57,28 @@ const { drawDefinition } = engine.generateDrawDefinition({
 });
 ```
 
+### Group size and its limit
+
+`structureOptions.groupSizeLimit` bounds the group sizes considered valid for a draw size, and defaults to 8. An explicitly requested `groupSize` **raises that default to accommodate it**, so a single full round
+robin over every entrant is expressed by asking for it:
+
+```js
+const { drawDefinition } = engine.generateDrawDefinition({
+  drawSize: 12,
+  drawType: 'ROUND_ROBIN',
+  structureOptions: {
+    groupSize: 12, // ONE group of 12 — no groupSizeLimit needed
+  },
+});
+```
+
+An explicitly supplied `groupSizeLimit` still wins over the one implied by `groupSize`. A `groupSize` that
+is _structurally_ impossible for the draw size (5 into a draw of 12, which cannot divide evenly) is coerced
+to the nearest workable size.
+
+For a league — one division, no groups, optionally playing each opponent more than once — apply a
+[round robin pairing shape](./round-robin-pairing) to an `AD_HOC` draw instead.
+
 ## Related
 
 - [Round Robin with Playoff](./round-robin-with-playoff) -- Round robin groups followed by knockout playoffs

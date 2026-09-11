@@ -41,6 +41,7 @@ export function updateTargetTeamMatchUps({
         tournamentId: tournamentRecord?.tournamentId,
         context: 'updateTargetTeamMatchUps',
         eventId: event?.eventId,
+        event,
         matchUp: targetMatchUp,
         drawDefinition,
       });

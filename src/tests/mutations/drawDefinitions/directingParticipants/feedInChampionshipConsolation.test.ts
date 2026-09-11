@@ -21,7 +21,7 @@ it('propagates a double wo as a bye for a feed in consolation match', () => {
       participantsCount: 32,
       eventType: SINGLES,
       idPrefix: 'm',
-      drawSize: 32  ,
+      drawSize: 32,
       outcomes: [
         {
           roundPosition: 1,
@@ -60,7 +60,7 @@ it('propagates a double wo as a bye for a feed in consolation match', () => {
 
   let result = tournamentEngine.setState(tournamentRecord);
   expect(result.success).toEqual(true);
-  
+
   result = tournamentEngine.setMatchUpStatus({
     matchUpId: 'm-2-1',
     outcome: { matchUpStatus: DOUBLE_WALKOVER },
@@ -68,13 +68,11 @@ it('propagates a double wo as a bye for a feed in consolation match', () => {
   });
   expect(result.success).toEqual(true);
 
-
   let { completedMatchUps, byeMatchUps } = tournamentEngine.tournamentMatchUps();
 
-  const doubleWOMatch = completedMatchUps.find(m => m.matchUpId === 'm-2-1')
-  expect(doubleWOMatch?.matchUpStatus).toEqual(DOUBLE_WALKOVER)
+  const doubleWOMatch = completedMatchUps.find((m) => m.matchUpId === 'm-2-1');
+  expect(doubleWOMatch?.matchUpStatus).toEqual(DOUBLE_WALKOVER);
 
-  
   //the consolation match that does not receive a player out of the double walkover
   //is then set as a BYE
   const feedInConsolationMatchCR16 = byeMatchUps.find((m) => m.matchUpId === 'm-c-2-8');
@@ -84,5 +82,4 @@ it('propagates a double wo as a bye for a feed in consolation match', () => {
   //the Main Draw Quarter final is set as a BYE
   const feedInConsolationMatchCQF = byeMatchUps.find((m) => m.matchUpId === 'm-c-4-1');
   expect(feedInConsolationMatchCQF?.matchUpStatus).toEqual(BYE);
-
 });

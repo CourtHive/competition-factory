@@ -1,6 +1,7 @@
 {
   "$schema": "https://docs.renovatebot.com/renovate-schema.json",
   "extends": ["config:recommended", ":semanticCommits"],
+  "minimumReleaseAge": "3 days",
   "rebaseWhen": "behind-base-branch",
   "prConcurrentLimit": 5,
   "prHourlyLimit": 2,
@@ -10,6 +11,16 @@
     "schedule": ["before 6am on monday"]
   },
   "packageRules": [
+    {
+      "description": "pnpm 11.12.0 self-installer regression breaks pnpm/action-setup in CI (integrity/undefined crash). Skip only that version; other pnpm updates allowed.",
+      "matchPackageNames": ["pnpm"],
+      "allowedVersions": "!/^11\\.12\\.0$/"
+    },
+    {
+      "description": "Every @nestjs/* package must move together. @nestjs/swagger@11 imports @nestjs/common/interfaces, which @nestjs/common@12 no longer exports, so a nest-monorepo major on its own is red no matter what — the swagger and jwt bumps have to arrive in the same PR. Grouping them also keeps the ESM-only v12 line from landing piecemeal.",
+      "matchPackageNames": ["@nestjs/**"],
+      "groupName": "nest"
+    },
     {
       "matchPackageNames": ["tods-competition-factory"],
       "matchFileNames": ["documentation/**"],
@@ -24,6 +35,18 @@
       "matchDepTypes": ["devDependencies"],
       "groupName": "dev dependencies (non-major)",
       "schedule": ["before 6am on monday"]
+    },
+    {
+      "description": "Block TypeScript major bumps. TS7 ships the native (Go) compiler, whose JS API shim lacks getParsedCommandLineOfConfigFile \u2014 nest/tsc-based build toolchains crash on it. Re-enable deliberately once the toolchain supports TS7.",
+      "matchPackageNames": ["typescript"],
+      "matchUpdateTypes": ["major"],
+      "enabled": false
+    },
+    {
+      "description": "Block nanoid major bumps. nanoid is present only as a transitive dev dependency (vitest -> vite -> postcss), and postcss requires ^3.3.16 while nanoid v6 is ESM-only (\"type\": \"module\", engines node ^22||^24||>=26) \u2014 a major bump makes postcss unloadable. The pnpm-workspace override pins ^3.3.17 purely to carry the GHSA-2v37-7h3g-55p8 patch inside the v3 line; renovate must not retarget it.",
+      "matchPackageNames": ["nanoid"],
+      "matchUpdateTypes": ["major"],
+      "enabled": false
     }
   ]
 }

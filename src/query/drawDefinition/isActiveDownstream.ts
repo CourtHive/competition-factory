@@ -10,7 +10,18 @@ export function isActiveDownstream(params) {
   const { inContextDrawMatchUps, targetData, drawDefinition, relevantLink } = params;
 
   const fmlcBYE = relevantLink?.linkCondition === FIRST_MATCHUP && targetData?.matchUp?.matchUpStatus === BYE;
-  if (fmlcBYE) return false;
+  if (fmlcBYE) {
+    // A fed FMLC BYE is normally inert. EXCEPTION: a propagated exit can advance THROUGH
+    // this BYE into a downstream walkover that has since been RESOLVED — a real
+    // participant fell through into the empty winner slot and advanced. That downstream
+    // is genuinely active, so do NOT short-circuit; fall through to the recursion.
+    const byeWinnerMatchUp = targetData?.targetMatchUps?.winnerMatchUp;
+    const byeWinnerResolvedExit =
+      byeWinnerMatchUp?.winningSide &&
+      isExit(byeWinnerMatchUp.matchUpStatus) &&
+      !!byeWinnerMatchUp.sides?.find((s: any) => s?.sideNumber === byeWinnerMatchUp.winningSide)?.participant;
+    if (!byeWinnerResolvedExit) return false;
+  }
 
   const {
     targetMatchUps: { loserMatchUp, winnerMatchUp },
@@ -42,6 +53,19 @@ export function isActiveDownstream(params) {
 
   const winnerDrawPositionsCount = winnerMatchUp?.drawPositions?.filter(Boolean).length || 0;
 
+  // A propagated exit whose winning side has been RESOLVED — a real participant fell
+  // through into the empty winner slot and advanced — is genuinely active and must
+  // block. Only a PENDING/produced exit (empty winner slot) is excluded below. This
+  // mirrors the winnerAssigned check in isActiveMatchUp.
+  // NOTE: a normally scored exit always has a participant on its winning side
+  // (checkParticipants requires two participants unless propagateExitStatus), so an
+  // exit with an unoccupied winning side can only be a pending propagated exit. The
+  // cascade can deposit one on a natural (non-feed) round -- e.g. a COMPASS back draw,
+  // where the exit advances through BYEs into a round that halves -- so this must not
+  // be conditioned on feedRound.
+  const winnerSideResolved = !!winnerMatchUp?.sides?.find((s: any) => s?.sideNumber === winnerMatchUp.winningSide)
+    ?.participant;
+
   // if a winnerMatchUp contains a WALKOVER and its source matchUps have no winningSides it cannot be considered active
   // unless one of its downstream matchUps is active
   if (
@@ -49,7 +73,7 @@ export function isActiveDownstream(params) {
     ((loserMatchUp?.winningSide && !loserMatchUpExit) ||
       (winnerMatchUp?.winningSide &&
         winnerDrawPositionsCount === 2 &&
-        (!winnerMatchUp.feedRound || !isExit(winnerMatchUp?.matchUpStatus))))
+        (!isExit(winnerMatchUp?.matchUpStatus) || winnerSideResolved)))
   ) {
     return true;
   }

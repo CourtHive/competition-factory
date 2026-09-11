@@ -212,7 +212,7 @@ describe('Draft Positioning - Full Lifecycle', () => {
 
     // verify draft state is COMPLETE
     const { draftState } = tournamentEngine.getDraftState({ drawId });
-    expect(draftState.status).toBe('COMPLETE');
+    expect(draftState.status).toBe('COMPLETED');
     expect(draftState.resolvedAt).toBeDefined();
   });
 
@@ -304,7 +304,7 @@ describe('Draft Positioning - Full Lifecycle', () => {
 
     // draft state should NOT be COMPLETE
     const { draftState } = tournamentEngine.getDraftState({ drawId });
-    expect(draftState.status).not.toBe('COMPLETE');
+    expect(draftState.status).not.toBe('COMPLETED');
   });
 
   it('getDraftState returns summary statistics', () => {
@@ -506,7 +506,7 @@ describe('Draft Positioning - Full Lifecycle', () => {
 
     // draft should NOT be complete yet
     const { draftState: afterTier0 } = tournamentEngine.getDraftState({ drawId });
-    expect(afterTier0.status).not.toBe('COMPLETE');
+    expect(afterTier0.status).not.toBe('COMPLETED');
     expect(afterTier0.tiers[0].resolved).toBe(true);
     expect(afterTier0.tiers[1].resolved).toBe(false);
 
@@ -540,7 +540,7 @@ describe('Draft Positioning - Full Lifecycle', () => {
 
     const { draftState: afterTier1 } = tournamentEngine.getDraftState({ drawId });
     expect(afterTier1.tiers[1].resolved).toBe(true);
-    expect(afterTier1.status).not.toBe('COMPLETE');
+    expect(afterTier1.status).not.toBe('COMPLETED');
 
     // submit and resolve tier 2 — should mark draft COMPLETE
     for (const participantId of initResult.tiers[2].participantIds) {
@@ -552,7 +552,7 @@ describe('Draft Positioning - Full Lifecycle', () => {
     expect(tier2Result.success).toBe(true);
 
     const { draftState: final } = tournamentEngine.getDraftState({ drawId });
-    expect(final.status).toBe('COMPLETE');
+    expect(final.status).toBe('COMPLETED');
     expect(final.tiers.every((t: any) => t.resolved)).toBe(true);
   });
 
