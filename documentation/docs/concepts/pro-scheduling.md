@@ -110,7 +110,7 @@ Match C:
 
 ### ITF Follow By Implementation
 
-The ITF (International Tennis Federation) and many national federations use a standardized follow-by system:
+World Tennis (formerly the ITF) and many national federations use a standardized follow-by system:
 
 ```js
 // ITF-style scheduling
