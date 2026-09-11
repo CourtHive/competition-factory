@@ -1,4 +1,5 @@
 import { includesMatchUpStatuses } from '@Mutate/drawDefinitions/matchUpGovernor/includesMatchUpStatuses';
+import { clearSideExitProvenance } from '@Mutate/matchUps/matchUpStatus/sideExitProvenance';
 import { removeSubsequentRoundsParticipant } from './removeSubsequentRoundsParticipant';
 import { structureAssignedDrawPositions } from '@Query/drawDefinition/positionsGetter';
 import { updateTieMatchUpScore } from '@Mutate/matchUps/score/updateTieMatchUpScore';
@@ -320,6 +321,10 @@ function removeDirectedLoser({
     //In case the loser matchup was not a double WO we jsut remove the status codes.
     const targetMatchUp = matchUpsMap?.drawMatchUps?.find(({ matchUpId }) => matchUpId === loserMatchUp.matchUpId);
     targetMatchUp.matchUpStatusCodes = sourceMatchUpStatus === DOUBLE_WALKOVER ? ['WO', 'WO'] : [];
+    // the codes here are rewritten wholesale for the exit that remains, so any provenance stamped
+    // for the exit being removed is stale. Provenance and codes describe the same exit; they die
+    // together or the matchUp keeps a reason for something that no longer exists.
+    clearSideExitProvenance(targetMatchUp);
   }
 
   // remove participant from seedAssignments

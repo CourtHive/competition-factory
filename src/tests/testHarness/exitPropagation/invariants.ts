@@ -39,6 +39,19 @@ function matchUpInvariants(matchUp: any): InvariantViolation[] {
   const { matchUpStatus, matchUpId, winningSide, score } = matchUp;
   const record = (rule: string, detail: string) => violations.push({ rule, matchUpId, detail });
 
+  // Provenance and the legacy codes describe the SAME exit, so they must live and die together.
+  // Every site that blanks `matchUpStatusCodes` is unwinding the exit those codes described; if
+  // provenance survives that, the matchUp keeps a reason for an exit that no longer exists — a
+  // do/undo residue that the projection would otherwise only catch in the cells it happens to reach.
+  const codes = matchUp.matchUpStatusCodes;
+  const provenance = matchUp.sideExitProvenance;
+  if (provenance && Object.keys(provenance).length && Array.isArray(codes) && !codes.length) {
+    record(
+      'PROVENANCE_OUTLIVES_CODES',
+      `sideExitProvenance ${JSON.stringify(provenance)} survives an emptied matchUpStatusCodes`,
+    );
+  }
+
   if (winningSide !== undefined && winningSide !== null && ![1, 2].includes(winningSide)) {
     record('WINNING_SIDE_DOMAIN', `winningSide is ${JSON.stringify(winningSide)}, expected 1, 2 or absent`);
   }
