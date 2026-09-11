@@ -111,7 +111,8 @@ export function customLuckyDraw(params: CustomLuckyDrawParams): CustomLuckyDrawR
 
   const roundsCount = roundNumber - 1;
 
-  matchUps = addFinishingRounds({
+  // mutates `matchUps` in place and returns the same reference; the assignment was a no-op
+  addFinishingRounds({
     finishingPositionOffset,
     lucky: true,
     roundsCount,
