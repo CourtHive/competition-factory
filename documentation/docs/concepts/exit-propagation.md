@@ -93,6 +93,45 @@ other route clears any marker left behind rather than inheriting it.
 Consumers do not normally need to read it. It is documented because it is visible in stored
 tournament records and in anything that round-trips `positionAssignments`.
 
+## Exit provenance: `sideExitProvenance`
+
+When propagation produces an exit in a downstream matchUp, each side of that matchUp gets there for a
+reason — one side because an upstream double exit delivered nobody, the other because of whatever
+happened in its own feeder. `matchUp.sideExitProvenance` records those reasons, keyed by side.
+
+```js
+{
+  1: { matchUpStatus: 'WALKOVER',  previousMatchUpStatus: 'DOUBLE_WALKOVER', sourceMatchUpId: '…' },
+  2: { matchUpStatus: 'DEFAULTED', previousMatchUpStatus: 'DOUBLE_DEFAULT',  sourceMatchUpId: '…' },
+}
+```
+
+`previousMatchUpStatus` is the upstream status that caused it; `matchUpStatus` is what this side was
+given as a result; `sourceMatchUpId` identifies the matchUp whose exit produced the entry.
+
+### Why not `matchUpStatusCodes`
+
+Because that array already holds three unrelated element shapes — the scoring policy's code
+vocabulary, this provenance, and codes wrapped as `{ code }` — and provenance was **positional**
+inside it: a side was an array _index_, padded with `''`. That made an entry impossible to address,
+impossible to attribute to the exit that produced it, and easy for any reader assuming a string to
+flatten. Keying by `sideNumber` removes the padding and the ambiguity together.
+
+### Why this one carries a matchUpId when `byeFromPropagation` refuses to
+
+The BYE marker is a boolean on purpose: a stored reference can dangle once its source is removed, and
+nothing needed the identity. Provenance is the opposite case — unwinding one exit while another
+still stands requires knowing _which_ entry belongs to the exit being removed, and that is precisely
+what a boolean cannot say.
+
+The dangling risk is answered by symmetry rather than by omission: provenance is cleared at every
+site that blanks `matchUpStatusCodes`, and that clear is deliberately **not** gated on the schema
+write mode. The write mode decides whether the field is written; it must never decide whether stale
+state is removed.
+
+Consumers do not normally need to read it. It is documented because it is visible in stored
+tournament records.
+
 ## Guarantees
 
 These hold as of 7.0.0 and are enforced by the

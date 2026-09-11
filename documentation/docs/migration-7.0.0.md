@@ -20,10 +20,10 @@ feature tour and the full list of 7.0.0 additions, see [What's New in 7.0.0](./w
 | A rejected `setMatchUpStatus` no longer alters the draw                                  | Callers with compensating logic after an error                    | See §3            |
 | `timeZone` conversions return an error instead of throwing or guessing                   | Anyone calling `wallClockToUTC`, `utcToWallClock`, `toEmbargoUTC` | See §4            |
 | `getTimeZoneOffsetMinutes` now returns `number \| undefined`                             | Anyone reading a zone offset                                      | See §4            |
-| `checkMatchUpIsComplete` / `getParticipantResults` refuse an absent object param          | Callers passing `matchUpId` / `drawId` and reading the result     | See §5            |
-| `getParticipantResults` refuses any matchUp carrying no `sides`                            | Callers passing STORED (non-hydrated) matchUps                    | See §5            |
-| `buildDrawHierarchy` is removed                                                            | Anyone calling it (no consumer was found in any CourtHive repo)   | See §6            |
-| `addFinishingRounds` refuses an absent `matchUps` array                                    | Callers relying on the empty-array return                         | See §7            |
+| `checkMatchUpIsComplete` / `getParticipantResults` refuse an absent object param         | Callers passing `matchUpId` / `drawId` and reading the result     | See §5            |
+| `getParticipantResults` refuses any matchUp carrying no `sides`                          | Callers passing STORED (non-hydrated) matchUps                    | See §5            |
+| `buildDrawHierarchy` is removed                                                          | Anyone calling it (no consumer was found in any CourtHive repo)   | See §6            |
+| `addFinishingRounds` refuses an absent `matchUps` array                                  | Callers relying on the empty-array return                         | See §7            |
 
 ## 1. `participantsRequiredMatchUpStatuses` — a spelling fix
 
@@ -323,6 +323,31 @@ The `LADDER` drawType is generatable and its lifecycle is on the engine as eight
 an exit cascade rather than by draw generation or by hand. It is visible in stored tournament
 records and in anything that round-trips `positionAssignments`. See
 [Exit Propagation](/docs/concepts/exit-propagation#bye-provenance-byefrompropagation).
+
+`matchUp.sideExitProvenance` is a new optional per-side record of why an exit sits on a side —
+`previousMatchUpStatus` (the upstream status that caused it), `matchUpStatus` (what this side was
+given), and `sourceMatchUpId`. It is keyed by `sideNumber`. Propagation provenance previously lived
+positionally inside `matchUpStatusCodes`, beside two unrelated element shapes; it still does, so this
+is purely additive. It is visible in stored tournament records. See
+[Exit provenance](/docs/concepts/exit-propagation#exit-provenance-sideexitprovenance).
+
+### `matchUpStatusCodes` values can change: exits are no longer relabelled as walkovers
+
+This one is additive in **shape** but visible in **values**, so it is called out rather than left in
+the list below.
+
+A normalization in the propagation path mapped every object-shaped element of `matchUpStatusCodes` to
+the walkover code `WO`. Measured across randomized scenarios, of the 50 provenance elements that
+reached it, **13 were BYEs and 9 were defaults** — 44% of what it rewrote was not a walkover, and the
+rewritten value was persisted.
+
+Each element now resolves to its own outcome code: a default yields `DEF`, a retirement `RET`, and a
+BYE contributes **no code** rather than becoming a walkover.
+
+**What to do:** if you read `matchUpStatusCodes` and branch on `WO`, re-check those branches. A
+matchUp whose code array previously read `['WO', 'DM']` may now read `['DEF', 'DM']` — the second
+element is unchanged; the first now tells the truth about the upstream exit. Nothing about the
+`matchUpStatus` itself changed.
 
 The remaining additions require no migration. They are listed because a sufficiently exhaustive
 TypeScript consumer will notice them.
