@@ -707,6 +707,15 @@ export type GenerateDrawDefinitionArgs = {
     structureId?: string;
   };
   enforceMinimumDrawSize?: boolean;
+  /**
+   * Defaults to `true`. When `true`, a requested `seedsCount` is clamped down to the maximum the
+   * active seeding policy's `seedsCountThresholds` allow for the draw size and participant count.
+   * Set `false` to let an explicit `seedsCount` stand above that threshold — an operator override
+   * of the policy, not of the structure. The structural limits still apply either way:
+   * `seedsCount` is capped at the stage's entry count and at `drawSize`, and exceeding the
+   * structure's position count raises `SEEDSCOUNT_GREATER_THAN_DRAW_SIZE`.
+   */
+  enforcePolicyLimits?: boolean;
   ignoreAllowedDrawTypes?: boolean;
   qualifyingPlaceholder?: boolean;
   considerEventEntries?: boolean; // defaults to true; look for entries in event.entries when drawEntries not provided
