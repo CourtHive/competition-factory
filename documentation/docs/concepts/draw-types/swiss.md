@@ -146,7 +146,8 @@ Standings are sorted by **points** (wins = 1, draws = 0.5, losses = 0) with tieb
 Tiebreaker constants are exported from `swissConstants`:
 
 ```js
-import { BUCHHOLZ, MEDIAN_BUCHHOLZ, SONNEBORN_BERGER, PROGRESSIVE_SCORE } from 'tods-competition-factory';
+import { factoryConstants } from 'tods-competition-factory';
+const { BUCHHOLZ, MEDIAN_BUCHHOLZ, PROGRESSIVE_SCORE, SONNEBORN_BERGER } = factoryConstants.swissConstants;
 ```
 
 ### SwissStanding Shape

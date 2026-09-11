@@ -75,7 +75,7 @@ This creates:
 ### Working with the Generated Draw
 
 ```js
-import tournamentEngine from 'tods-competition-factory';
+import { tournamentEngine } from 'tods-competition-factory';
 
 const { tournamentRecord, drawIds } = mocksEngine.generateTournamentRecord({
   drawProfiles: [{ drawSize: 16 }],
@@ -325,7 +325,7 @@ const result = tournamentEngine.proAutoSchedule({
 
 ```js
 import { mocksEngine } from 'tods-competition-factory';
-import tournamentEngine from 'tods-competition-factory';
+import { tournamentEngine } from 'tods-competition-factory';
 import { expect, it, describe } from 'vitest';
 
 describe('Competition Management', () => {

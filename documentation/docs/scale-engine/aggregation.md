@@ -38,7 +38,8 @@ The aggregation layer combines point awards from multiple tournaments into ranki
 ## Typical Pipeline
 
 ```js
-import { generateRankingList } from 'tods-competition-factory';
+import { scaleEngine } from 'tods-competition-factory';
+const { generateRankingList } = scaleEngine;
 
 // Step 1: Collect awards from multiple tournaments
 const allAwards = [];
@@ -293,7 +294,8 @@ It is the per-participant view of exactly the computation `generateRankingList` 
 so the two agree on totals for the same awards and rules:
 
 ```js
-import { getParticipantPoints } from 'tods-competition-factory';
+import { scaleEngine } from 'tods-competition-factory';
+const { getParticipantPoints } = scaleEngine;
 
 const { buckets, totalPoints } = getParticipantPoints({
   pointAwards: allAwards,

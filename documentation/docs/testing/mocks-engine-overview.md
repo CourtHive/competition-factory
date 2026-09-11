@@ -85,7 +85,7 @@ The mocksEngine works seamlessly with other factory engines:
 
 ```js
 import { mocksEngine } from 'tods-competition-factory';
-import tournamentEngine from 'tods-competition-factory';
+import { tournamentEngine } from 'tods-competition-factory';
 
 // Generate tournament
 const { tournamentRecord } = mocksEngine.generateTournamentRecord();
@@ -142,7 +142,7 @@ Here's a complete test scenario demonstrating mocksEngine power:
 
 ```js
 import { mocksEngine } from 'tods-competition-factory';
-import tournamentEngine from 'tods-competition-factory';
+import { tournamentEngine } from 'tods-competition-factory';
 import { expect, test } from 'vitest';
 
 test('generate and manipulate tournament', () => {

@@ -10,24 +10,25 @@ Logging can be configured and enabled in **globalState** directly or by calling 
 By default factory engines will log to the console. It is possible to define a custom logging function:
 
 ```js
-import { globalState: { setGlobalLog } } from 'tods-competition-factory'
+import { globalState } from 'tods-competition-factory';
+const { setGlobalLog } = globalState;
 
 function customLoggingFunction({ log }) {
-  console.log('log:', log)
+  console.log('log:', log);
 }
 
-setGlobalLog(customLoggingFunction)
+setGlobalLog(customLoggingFunction);
 ```
 
 ## Logging Configuration
 
 ```js
-import { globalState: { setDevContext } } from 'tods-competition-factory'
+import { globalState } from 'tods-competition-factory';
+const { setDevContext } = globalState;
 setDevContext({ perf: true, params: true, results: true, errors: true });
 
 // - or -
 askEngine.devContext({ perf: true, params: true, results: true, errors: true });
-
 ```
 
 ## Logged Details

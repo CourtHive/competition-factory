@@ -39,9 +39,7 @@ policyRegistry.register({
   policyType: POLICY_TYPE_RANKING_POINTS,
   name: 'USTA_JUNIOR_2026',
   version: '2026', // optional — versions stack; latest wins on unversioned lookup
-  definition: {
-    /* … */
-  },
+  definition: {/* … */},
 });
 
 // Query-time lookup happens inside the engine — no consumer call needed:
@@ -127,7 +125,15 @@ A new query category targeting level-based format selection. See `Format Wizard`
 
 ### Typed engine (3.8) — preview of 5.0.0 default
 
-`FactoryEngineTyped` is exposed as an optional cast for catching unregistered method calls at compile time:
+`FactoryEngineTyped` was exposed as an optional cast for catching unregistered method calls at compile time:
+
+:::note Obsolete since 5.0.0
+The cast is no longer needed or available — `tournamentEngine` and `competitionEngine` carry this type
+by default, and `FactoryEngineTyped` is not exported. The snippet below records the 3.8/4.x form for
+readers migrating from that era.
+:::
+
+<!-- doc-imports:ignore — records a 3.8-era API that no longer exists -->
 
 ```ts
 import { tournamentEngine, FactoryEngineTyped } from 'tods-competition-factory';

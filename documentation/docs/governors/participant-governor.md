@@ -650,7 +650,8 @@ Modify the payment status of multiple participants, referenced by participantId.
 Valid `paymentState` values: `PAID`, `UNPAID`, `PARTIAL`, `WAIVED`, `REFUNDED`. `PARTIAL` is intended for doubles or installment scenarios where one component has paid and the other has not; `WAIVED` for comps, sponsorships, or fee waivers; `REFUNDED` for participants who paid but were later refunded.
 
 ```js
-import { PAID, REFUNDED } from 'tods-competition-factory';
+import { factoryConstants } from 'tods-competition-factory';
+const { PAID, REFUNDED } = factoryConstants.participantConstants;
 
 engine.modifyParticipantsPaymentStatus({
   participantIds: ['participantId'],

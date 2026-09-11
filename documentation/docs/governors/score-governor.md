@@ -396,7 +396,8 @@ const {
 The following methods are available on `ScoringEngine` instances, not as standalone `scoreGovernor` exports. The `ScoringEngine` class is re-exported from the scoreGovernor for convenience.
 
 ```js
-import { ScoringEngine } from 'tods-competition-factory';
+import { scoreGovernor } from 'tods-competition-factory';
+const { ScoringEngine } = scoreGovernor;
 
 const engine = new ScoringEngine({ matchUpFormat });
 ```

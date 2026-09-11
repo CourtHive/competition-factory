@@ -52,7 +52,8 @@ const result = scaleEngine.applyTournamentRankingPoints({
 });
 
 // Aggregate across multiple tournaments
-import { generateRankingList } from 'tods-competition-factory';
+import { scaleEngine } from 'tods-competition-factory';
+const { generateRankingList } = scaleEngine;
 
 const rankingList = generateRankingList({
   pointAwards: allTournamentAwards, // collected from multiple tournaments

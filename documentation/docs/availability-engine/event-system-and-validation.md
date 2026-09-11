@@ -122,7 +122,8 @@ interface EngineConflict {
 Pass evaluators during initialization:
 
 ```js
-import { AvailabilityEngine, defaultEvaluators } from 'tods-competition-factory';
+import { AvailabilityEngine, availability } from 'tods-competition-factory';
+const { defaultEvaluators } = availability;
 
 const engine = new AvailabilityEngine();
 engine.init(tournamentRecord, {
@@ -133,7 +134,8 @@ engine.init(tournamentRecord, {
 Or pick specific evaluators:
 
 ```js
-import { courtOverlapEvaluator, dayBoundaryEvaluator, blockDurationEvaluator } from 'tods-competition-factory';
+import { availability } from 'tods-competition-factory';
+const { blockDurationEvaluator, courtOverlapEvaluator, dayBoundaryEvaluator } = availability;
 
 engine.init(tournamentRecord, {
   conflictEvaluators: [courtOverlapEvaluator, dayBoundaryEvaluator, blockDurationEvaluator],
@@ -206,7 +208,8 @@ The validation pipeline operates on plan state created via `addPlanItem()`, `upd
 ### Running the Pipeline
 
 ```ts
-import { runValidationPipeline } from 'tods-competition-factory';
+import { availability } from 'tods-competition-factory';
+const { runValidationPipeline } = availability;
 
 const result = runValidationPipeline({
   engine, // AvailabilityEngine instance

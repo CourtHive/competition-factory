@@ -29,7 +29,8 @@ The **ScoringEngine** is a stateful mutation engine for point-by-point match sco
 ## Basic Usage
 
 ```js
-import { ScoringEngine } from 'tods-competition-factory';
+import { scoreGovernor } from 'tods-competition-factory';
+const { ScoringEngine } = scoreGovernor;
 
 // Create engine with standard tennis format
 const engine = new ScoringEngine({ matchUpFormat: 'SET3-S:6/TB7' });

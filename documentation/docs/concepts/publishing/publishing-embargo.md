@@ -259,7 +259,7 @@ Embargoes are evaluated at query time — there is no background process. When t
 A typical tournament workflow using embargoes:
 
 ```js
-import { stageConstants } from 'tods-competition-factory';
+import { drawDefinitionConstants } from 'tods-competition-factory';
 
 // 1. Monday: Publish qualifying draw immediately, embargo main draw until Wednesday 9am
 engine.publishEvent({
