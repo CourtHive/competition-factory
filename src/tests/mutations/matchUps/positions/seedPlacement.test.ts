@@ -13,7 +13,9 @@ import { expect, it } from 'vitest';
 import { getNextSeedBlock, getValidSeedBlocks } from '@Query/drawDefinition/seedGetter';
 import { findStructure, getDrawStructures } from '@Acquire/findStructure';
 
-import SEEDING_NATIONAL from '@Fixtures/policies/POLICY_SEEDING_NATIONAL';
+import POLICY_SEEDING_ITF from '@Fixtures/policies/POLICY_SEEDING_ITF';
+import { POLICY_TYPE_SEEDING } from '@Constants/policyConstants';
+import { policyComposer } from '@Global/policyComposer';
 import SEEDING_USTA from '@Fixtures/policies/POLICY_SEEDING_DEFAULT';
 import SEEDING_ITF from '@Fixtures/policies/POLICY_SEEDING_ITF';
 import { EntryStatusUnion } from '@Types/tournamentTypes';
@@ -21,6 +23,15 @@ import { MAIN } from '@Constants/drawDefinitionConstants';
 import { ERROR } from '@Constants/resultConstants';
 import { INVALID_VALUES, MISSING_STRUCTURE_ID, STRUCTURE_NOT_FOUND } from '@Constants/errorConditionConstants';
 import { DIRECT_ACCEPTANCE, WILDCARD } from '@Constants/entryStatusConstants';
+
+// `POLICY_SEEDING_NATIONAL` used to supply this. It was ITF seeding with one key omitted, and the
+// composer says so in a way a fixture never could: leaving `validSeedPositions` unset is what keeps
+// manual seed placement inside a valid seed block.
+const SEEDING_POSITIONS_ENFORCED = policyComposer(POLICY_TYPE_SEEDING)
+  .extend(POLICY_SEEDING_ITF)
+  .unset('validSeedPositions')
+  .set('policyName', 'ITF SEEDING, POSITIONS ENFORCED')
+  .build();
 
 it('can define seedAssignments', () => {
   const drawSize = 8;
@@ -201,7 +212,7 @@ it('can assign seedNumbers and drawPositions to seeded participants', () => {
 
   const { drawDefinition } = mocksEngine.generateEventWithDraw({
     drawProfile: {
-      policyDefinitions: SEEDING_NATIONAL,
+      policyDefinitions: SEEDING_POSITIONS_ENFORCED,
       enforcePolicyLimits: false,
       automated: false,
       seedsCount,

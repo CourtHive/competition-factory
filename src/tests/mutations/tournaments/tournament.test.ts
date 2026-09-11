@@ -1,15 +1,26 @@
 import { getStructureSeedAssignments } from '@Query/structure/getStructureSeedAssignments';
+import POLICY_SEEDING_ITF from '@Fixtures/policies/POLICY_SEEDING_ITF';
+import { POLICY_TYPE_SEEDING } from '@Constants/policyConstants';
+import { policyComposer } from '@Global/policyComposer';
 import { getAppliedPolicies } from '@Query/extensions/getAppliedPolicies';
 import { parseScoreString } from '@Tools/parseScoreString';
 import mocksEngine from '@Assemblies/engines/mock';
 import tournamentEngine from '@Engines/syncEngine';
 import { expect, it } from 'vitest';
 
-import POLICY_SEEDING_NATIONAL from '@Fixtures/policies/POLICY_SEEDING_NATIONAL';
 import { MISSING_ASSIGNMENTS } from '@Constants/errorConditionConstants';
 import { eventConstants } from '@Constants/eventConstants';
 
 const { SINGLES } = eventConstants;
+
+// `POLICY_SEEDING_NATIONAL` used to supply this. It was ITF seeding with one key omitted, and the
+// composer says so in a way a fixture never could: leaving `validSeedPositions` unset is what keeps
+// manual seed placement inside a valid seed block.
+const SEEDING_POSITIONS_ENFORCED = policyComposer(POLICY_TYPE_SEEDING)
+  .extend(POLICY_SEEDING_ITF)
+  .unset('validSeedPositions')
+  .set('policyName', 'ITF SEEDING, POSITIONS ENFORCED')
+  .build();
 
 it('can generate a tournament with events and draws', () => {
   const { tournamentRecord } = mocksEngine.generateTournamentRecord({
@@ -35,7 +46,7 @@ it('can generate a tournament with events and draws', () => {
   expect(result.success).toEqual(true);
 
   const values = {
-    policyDefinitions: { ...POLICY_SEEDING_NATIONAL },
+    policyDefinitions: { ...SEEDING_POSITIONS_ENFORCED },
     event: eventResult,
     automated: true,
     seedsCount: 8,
@@ -49,7 +60,7 @@ it('can generate a tournament with events and draws', () => {
   expect(result.success).toEqual(true);
 
   const { appliedPolicies } = getAppliedPolicies({ drawDefinition });
-  expect(appliedPolicies?.seeding?.policyName).toEqual('NATIONAL SEEDING');
+  expect(appliedPolicies?.seeding?.policyName).toEqual('ITF SEEDING, POSITIONS ENFORCED');
 
   // find main structureId more intelligently
   const mainStructureId = drawDefinition.structures[0].structureId;
