@@ -74,7 +74,8 @@ type PolicyDefinitions = {
 
 ```js
 import { tournamentEngine } from 'tods-competition-factory';
-import { POLICY_TYPE_SEEDING, POLICY_TYPE_SCORING } from 'tods-competition-factory';
+import { policyConstants } from 'tods-competition-factory';
+const { POLICY_TYPE_SCORING, POLICY_TYPE_SEEDING } = policyConstants;
 
 tournamentEngine.setState(tournamentRecord);
 
@@ -228,7 +229,8 @@ The method searches in order: structure → draw → event → tournament, retur
 
 ```js
 import { tournamentEngine } from 'tods-competition-factory';
-import { POLICY_TYPE_SEEDING } from 'tods-competition-factory';
+import { policyConstants } from 'tods-competition-factory';
+const { POLICY_TYPE_SEEDING } = policyConstants;
 
 tournamentEngine.setState(tournamentRecord);
 
@@ -360,7 +362,8 @@ Removes a specific policy type from tournaments, events, or draws. If removing t
 
 ```js
 import { tournamentEngine } from 'tods-competition-factory';
-import { POLICY_TYPE_SEEDING, POLICY_TYPE_SCORING } from 'tods-competition-factory';
+import { policyConstants } from 'tods-competition-factory';
+const { POLICY_TYPE_SCORING, POLICY_TYPE_SEEDING } = policyConstants;
 
 tournamentEngine.setState(tournamentRecord);
 

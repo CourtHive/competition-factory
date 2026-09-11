@@ -33,11 +33,11 @@ The **Progression Policy** (`POLICY_TYPE_PROGRESSION`) controls automated behavi
 **Attributes:**
 
 - **doubleExitPropagateBye**: When `true`, a BYE propagates to loser position instead of producing a WALKOVER in double-exit structures. Significant for providers who don't award ranking points for first-round walkovers.
-  
+
 - **autoPlaceQualifiers**: When `true`, qualifiers are randomly assigned to qualifier positions in the main draw when qualifying completes.
-  
+
 - **autoReplaceQualifiers**: When `true`, placed qualifiers will be replaced in target structures if the qualifying matchUp's `winningSide` is changed.
-  
+
 - **autoRemoveQualifiers**: When `true`, placed qualifiers will be removed from target structures if the qualifying matchUp's `winningSide` is removed.
 
 ---
@@ -45,7 +45,8 @@ The **Progression Policy** (`POLICY_TYPE_PROGRESSION`) controls automated behavi
 ## Default Policy
 
 ```js
-import { POLICY_PROGRESSION_DEFAULT } from 'tods-competition-factory';
+import { fixtures } from 'tods-competition-factory';
+const { POLICY_PROGRESSION_DEFAULT } = fixtures.policies;
 
 // Defaults:
 // {
@@ -72,8 +73,8 @@ import { POLICY_PROGRESSION_DEFAULT } from 'tods-competition-factory';
 const standardPolicy = {
   [POLICY_TYPE_PROGRESSION]: {
     policyName: 'Standard Progression',
-    doubleExitPropagateBye: false  // Default
-  }
+    doubleExitPropagateBye: false, // Default
+  },
 };
 ```
 
@@ -87,12 +88,12 @@ const standardPolicy = {
 const byePropagationPolicy = {
   [POLICY_TYPE_PROGRESSION]: {
     policyName: 'BYE Propagation',
-    doubleExitPropagateBye: true  // BYE instead of WALKOVER
-  }
+    doubleExitPropagateBye: true, // BYE instead of WALKOVER
+  },
 };
 
 tournamentEngine.attachPolicies({
-  policyDefinitions: byePropagationPolicy
+  policyDefinitions: byePropagationPolicy,
 });
 ```
 
@@ -112,8 +113,8 @@ tournamentEngine.attachPolicies({
 // Default: tournament directors manually place qualifiers
 const manualPlacement = {
   [POLICY_TYPE_PROGRESSION]: {
-    autoPlaceQualifiers: false  // Default
-  }
+    autoPlaceQualifiers: false, // Default
+  },
 };
 
 // Manual placement workflow:
@@ -129,12 +130,12 @@ const manualPlacement = {
 const autoPlacement = {
   [POLICY_TYPE_PROGRESSION]: {
     policyName: 'Auto Qualifier Placement',
-    autoPlaceQualifiers: true  // Automatic random assignment
-  }
+    autoPlaceQualifiers: true, // Automatic random assignment
+  },
 };
 
 tournamentEngine.attachPolicies({
-  policyDefinitions: autoPlacement
+  policyDefinitions: autoPlacement,
 });
 
 // Automatic workflow:
@@ -160,9 +161,9 @@ tournamentEngine.attachPolicies({
 const replacementPolicy = {
   [POLICY_TYPE_PROGRESSION]: {
     policyName: 'Auto Replacement',
-    autoPlaceQualifiers: true,      // Enable automatic placement
-    autoReplaceQualifiers: true     // Replace if outcome changes
-  }
+    autoPlaceQualifiers: true, // Enable automatic placement
+    autoReplaceQualifiers: true, // Replace if outcome changes
+  },
 };
 
 // Scenario:
@@ -178,8 +179,8 @@ const removalPolicy = {
   [POLICY_TYPE_PROGRESSION]: {
     policyName: 'Auto Removal',
     autoPlaceQualifiers: true,
-    autoRemoveQualifiers: true      // Remove if winningSide cleared
-  }
+    autoRemoveQualifiers: true, // Remove if winningSide cleared
+  },
 };
 
 // Scenario:
@@ -194,14 +195,14 @@ const removalPolicy = {
 const fullAutomation = {
   [POLICY_TYPE_PROGRESSION]: {
     policyName: 'Full Qualifier Automation',
-    autoPlaceQualifiers: true,      // Auto-place when qualifying completes
-    autoReplaceQualifiers: true,    // Replace if winningSide changes
-    autoRemoveQualifiers: true      // Remove if winningSide cleared
-  }
+    autoPlaceQualifiers: true, // Auto-place when qualifying completes
+    autoReplaceQualifiers: true, // Replace if winningSide changes
+    autoRemoveQualifiers: true, // Remove if winningSide cleared
+  },
 };
 
 tournamentEngine.attachPolicies({
-  policyDefinitions: fullAutomation
+  policyDefinitions: fullAutomation,
 });
 ```
 
@@ -212,19 +213,20 @@ tournamentEngine.attachPolicies({
 ### ITF Event With BYE Propagation
 
 ```js
-import { POLICY_TYPE_PROGRESSION } from 'tods-competition-factory';
+import { policyConstants } from 'tods-competition-factory';
+const { POLICY_TYPE_PROGRESSION } = policyConstants;
 
 // ITF rules: first-round walkovers don't award ranking points
 const itfProgressionPolicy = {
   [POLICY_TYPE_PROGRESSION]: {
     policyName: 'ITF Progression',
-    doubleExitPropagateBye: true,   // Use BYEs instead of walkovers
-    autoPlaceQualifiers: false      // Manual qualifier placement (ITF standard)
-  }
+    doubleExitPropagateBye: true, // Use BYEs instead of walkovers
+    autoPlaceQualifiers: false, // Manual qualifier placement (ITF standard)
+  },
 };
 
 tournamentEngine.attachPolicies({
-  policyDefinitions: itfProgressionPolicy
+  policyDefinitions: itfProgressionPolicy,
 });
 ```
 
@@ -238,8 +240,8 @@ const automatedProgressionPolicy = {
     doubleExitPropagateBye: false,
     autoPlaceQualifiers: true,
     autoReplaceQualifiers: true,
-    autoRemoveQualifiers: true
-  }
+    autoRemoveQualifiers: true,
+  },
 };
 
 // Benefits:
@@ -256,11 +258,11 @@ const automatedProgressionPolicy = {
 const manualControlPolicy = {
   [POLICY_TYPE_PROGRESSION]: {
     policyName: 'Manual Control',
-    doubleExitPropagateBye: false,      // Standard walkovers
-    autoPlaceQualifiers: false,         // Manual placement
-    autoReplaceQualifiers: false,       // Manual replacement
-    autoRemoveQualifiers: false         // Manual removal
-  }
+    doubleExitPropagateBye: false, // Standard walkovers
+    autoPlaceQualifiers: false, // Manual placement
+    autoReplaceQualifiers: false, // Manual replacement
+    autoRemoveQualifiers: false, // Manual removal
+  },
 };
 
 // Use when:
@@ -282,19 +284,19 @@ tournamentEngine.attachPolicies({
   policyDefinitions: {
     [POLICY_TYPE_PROGRESSION]: {
       autoPlaceQualifiers: true,
-      autoReplaceQualifiers: true
-    }
+      autoReplaceQualifiers: true,
+    },
   },
-  eventId: 'singles-event-id'
+  eventId: 'singles-event-id',
 });
 
 tournamentEngine.attachPolicies({
   policyDefinitions: {
     [POLICY_TYPE_PROGRESSION]: {
-      autoPlaceQualifiers: false  // Manual for doubles
-    }
+      autoPlaceQualifiers: false, // Manual for doubles
+    },
   },
-  eventId: 'doubles-event-id'
+  eventId: 'doubles-event-id',
 });
 ```
 

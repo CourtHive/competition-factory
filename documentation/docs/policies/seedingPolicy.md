@@ -19,12 +19,17 @@ const { POLICY_TYPE_SEEDING } = policyConstants;
 const { CLUSTER, SEPARATE, WATERFALL } = drawDefinitionConstants;
 ```
 
+<!-- doc-imports:ignore -->
+
 ```javascript
 // These do NOT work — each resolves to `undefined`:
-import { POLICY_SEEDING_ITF } from 'tods-competition-factory'; // ✗
-import { POLICY_TYPE_SEEDING } from 'tods-competition-factory'; // ✗
-import { CLUSTER } from 'tods-competition-factory'; // ✗
-import tournamentEngine from 'tods-competition-factory'; // ✗ no default export
+import { fixtures } from 'tods-competition-factory';
+const { POLICY_SEEDING_ITF } = fixtures.policies; // ✗
+import { policyConstants } from 'tods-competition-factory';
+const { POLICY_TYPE_SEEDING } = policyConstants; // ✗
+import { drawDefinitionConstants } from 'tods-competition-factory';
+const { CLUSTER } = drawDefinitionConstants; // ✗
+import { tournamentEngine } from 'tods-competition-factory'; // ✗ no default export
 ```
 
 An `undefined` policy fails **silently**: `policyDefinitions: undefined` reads as "no policy
