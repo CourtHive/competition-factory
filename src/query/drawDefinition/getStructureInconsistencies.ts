@@ -91,6 +91,24 @@ type GetStructureInconsistenciesArgs = {
   event?: Event;
 };
 
+/**
+ * String value of a `matchUpStatusCodes` element, for the EXIT_CODE_ON_WINNER_SIDE check below.
+ *
+ * Deliberately narrow. The array holds three shapes — policy codes (`matchUpStatusCode`), exit
+ * provenance (`matchUpStatus`/`previousMatchUpStatus`/`sideNumber`), and codes wrapped as `{ code }`
+ * by `updateMatchUpStatusCodes` — and this reads only strings and that last wrapper. It is left
+ * rather than widened, because widening it is measurably wrong:
+ *
+ * EXIT_CODE_ON_WINNER_SIDE means "an exit code sits on the winner's side rather than the loser's".
+ * That is a rule about POLICY codes, which belong to the match and land on the exiting side.
+ * Provenance is written to BOTH sides by `buildMatchUpStatusCodes`, so index `winningSide - 1` is
+ * always occupied for a propagation-produced matchUp and the rule cannot hold for it. Measured
+ * 2026-09-10: teaching this function to read object elements produced 717 findings, all false
+ * positives, and broke two named negative-control tests.
+ *
+ * The fix is the tenant split, not a wider read — once the array holds policy codes only, this
+ * rule is correct as written. See Mentat/planning/MATCHUP_STATUS_CODES_PER_SIDE.md.
+ */
 function codeString(code: any): string | undefined {
   const value = typeof code === 'string' ? code : code?.code;
   return value || undefined;
