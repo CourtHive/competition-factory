@@ -222,6 +222,7 @@ export function setMatchUpStatus(params: SetMatchUpStatusArgs) {
         sourceMatchUpStatusCodes: result.context.sourceMatchUpStatusCodes,
         sourceMatchUpStatus: result.context.sourceMatchUpStatus,
         loserParticipantId: result.context.loserParticipantId,
+        sourceMatchUpId: result.context.sourceMatchUpId,
         propagateExitStatus,
         tournamentRecord: params.tournamentRecord,
         loserMatchUp: result.context.loserMatchUp,
