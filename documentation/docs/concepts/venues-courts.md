@@ -380,7 +380,7 @@ The scheduling engine will **not schedule matches** during booked times.
 
 ```js
 // Add or modify date availability
-tournamentEngine.modifyCourtDateAvailability({
+tournamentEngine.modifyCourtAvailability({
   courtId: 'court-uuid',
   dateAvailability: [
     {
@@ -966,7 +966,7 @@ Link to court/venue information:
 const { venues } = tournamentEngine.getVenuesAndCourts();
 
 // Get specific venue with courts
-const { venue } = tournamentEngine.getVenue({
+const { venue } = tournamentEngine.findVenue({
   venueId: 'venue-uuid',
 });
 

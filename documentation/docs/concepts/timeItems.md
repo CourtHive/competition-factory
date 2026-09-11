@@ -382,7 +382,7 @@ if (timeItem) {
 **API Reference:** [getTimeItem](/docs/governors/query-governor#gettimeitem)
 
 ```js
-const { participant } = tournamentEngine.getParticipant({
+const { participant } = tournamentEngine.getParticipants({
   participantId: 'player-123',
 });
 

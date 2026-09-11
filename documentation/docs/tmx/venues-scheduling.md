@@ -114,7 +114,7 @@ const { venues } = tournamentEngine.getVenuesAndCourts();
 const { courts } = tournamentEngine.getCourts({ venueId });
 
 // Get scheduled matchUps
-const { dateMatchUps } = tournamentEngine.getScheduledMatchUps({
+const { dateMatchUps } = tournamentEngine.competitionScheduleMatchUps({
   scheduledDate: '2024-06-15',
 });
 
@@ -211,7 +211,7 @@ const slots = [
 ```js
 // Assign matches across courts evenly
 const courts = await tournamentEngine.getCourts({ venueId });
-const matchUps = await tournamentEngine.getAllEventMatchUps({ eventId });
+const matchUps = await tournamentEngine.allEventMatchUps({ eventId });
 
 let courtIndex = 0;
 matchUps.forEach((matchUp) => {
@@ -225,7 +225,7 @@ matchUps.forEach((matchUp) => {
 
 ```js
 // Schedule round 1 on day 1, round 2 on day 2, etc.
-const { matchUps } = tournamentEngine.getAllEventMatchUps({ eventId });
+const { matchUps } = tournamentEngine.allEventMatchUps({ eventId });
 
 const byRound = matchUps.reduce((acc, m) => {
   const round = m.roundNumber;
@@ -328,7 +328,7 @@ const { venue } = tournamentEngine.addVenue({
 });
 
 // 2. Get matchUps to schedule
-const { matchUps } = tournamentEngine.getAllEventMatchUps({
+const { matchUps } = tournamentEngine.allEventMatchUps({
   eventId,
   matchUpFilters: {
     matchUpStatuses: ['TO_BE_PLAYED'],
@@ -375,7 +375,7 @@ tournamentEngine.bulkScheduleMatchUps({ scheduleAttributes });
 
 ```js
 // Get all matches for a date
-const { dateMatchUps } = tournamentEngine.getScheduledMatchUps({
+const { dateMatchUps } = tournamentEngine.competitionScheduleMatchUps({
   scheduledDate: '2024-06-15',
 });
 

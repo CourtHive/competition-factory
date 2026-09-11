@@ -41,7 +41,7 @@ tournamentEngine.addEvent({
 });
 
 // Create multiple events
-tournamentEngine.addEvents({
+tournamentEngine.addEvent({
   events: [
     { eventName: "Men's Singles", eventType: 'SINGLES', gender: 'MALE' },
     { eventName: "Women's Singles", eventType: 'SINGLES', gender: 'FEMALE' },
@@ -81,7 +81,7 @@ tournamentEngine.addEventEntries({
 });
 
 // Remove entries
-tournamentEngine.destroyEventEntries({
+tournamentEngine.modifyEventEntries({
   eventId,
   participantIds: [id1],
 });
@@ -286,7 +286,7 @@ const events = ageCategories.flatMap((cat) => [
   },
 ]);
 
-tournamentEngine.addEvents({ events });
+tournamentEngine.addEvent({ events });
 ```
 
 ### Auto-Assignment by Category
