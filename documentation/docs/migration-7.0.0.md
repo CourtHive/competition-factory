@@ -23,6 +23,7 @@ feature tour and the full list of 7.0.0 additions, see [What's New in 7.0.0](./w
 | `checkMatchUpIsComplete` / `getParticipantResults` refuse an absent object param          | Callers passing `matchUpId` / `drawId` and reading the result     | See §5            |
 | `getParticipantResults` refuses any matchUp carrying no `sides`                            | Callers passing STORED (non-hydrated) matchUps                    | See §5            |
 | `buildDrawHierarchy` is removed                                                            | Anyone calling it (no consumer was found in any CourtHive repo)   | See §6            |
+| `addFinishingRounds` refuses an absent `matchUps` array                                    | Callers relying on the empty-array return                         | See §7            |
 
 ## 1. `participantsRequiredMatchUpStatuses` — a spelling fix
 
@@ -264,7 +265,36 @@ archaeology exercise.
 Before restoring, consider whether you want _that_ shape. It is a 2018-era D3 contract; a renderer
 written today is more likely to want `getRoundMatchUps` or the draw's own structure/link graph.
 
-## 7. Non-breaking additions worth knowing
+## 7. `addFinishingRounds` refuses an absent `matchUps` array
+
+`addFinishingRounds` stamps `finishingRound` and `finishingPositionRange` onto matchUps. It takes a
+**matchUps array**, not a `drawId` — `paramsMiddleware` resolves `drawId` into a `drawDefinition` and
+stops there; it does not gather matchUps.
+
+Given nothing usable it returned `[]`. That is worse here than in §5, because the shape a caller
+naturally writes is an assignment:
+
+```js
+// BEFORE 7.0.0 — silently replaces your matchUps with an empty array
+matchUps = tournamentEngine.addFinishingRounds({ drawId });
+```
+
+It now returns `{ error: MISSING_MATCHUPS }`.
+
+### What to do about it
+
+Nothing, for the normal usage. **This function mutates its matchUps in place and returns the same
+array reference**, so the return value carries no information the caller does not already hold:
+
+```js
+tournamentEngine.addFinishingRounds({ matchUps }); // matchUps are stamped; the return is the same array
+```
+
+If you assign from it, branch on the error, or drop the assignment — either is correct.
+
+Valid input behaves exactly as before. An **empty** array is valid and stamps nothing.
+
+## 8. Non-breaking additions worth knowing
 
 `plainDate`, `plainTime` and `zonedDateTime` are new published exports, completing the calendar
 intent set. `zonedTime` was never published, so its rename is not a breaking change.

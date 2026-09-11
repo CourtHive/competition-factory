@@ -76,7 +76,8 @@ export function luckyDraw(params) {
 
   const roundsCount = roundNumber - 1; // because roundNumber was incremented at the end of the while loop
 
-  matchUps = addFinishingRounds({
+  // mutates `matchUps` in place and returns the same reference; the assignment was a no-op
+  addFinishingRounds({
     finishingPositionOffset,
     lucky: true,
     roundsCount,

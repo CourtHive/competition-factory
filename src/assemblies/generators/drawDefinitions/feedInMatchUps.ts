@@ -165,7 +165,8 @@ export function feedInMatchUps(params: FeedInMatchUpsArgs) {
   const consolationFinish = baseDrawSize - positionsFed;
   const modifiedFinishingPositionOffset = isConsolation ? consolationFinish : finishingPositionOffset;
 
-  matchUps = addFinishingRounds({
+  // mutates `matchUps` in place and returns the same reference; the assignment was a no-op
+  addFinishingRounds({
     finishingPositionOffset: modifiedFinishingPositionOffset,
     positionsFed,
     roundsCount,

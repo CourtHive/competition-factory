@@ -5,6 +5,7 @@ import { generateDrawStructuresAndLinks } from '@Generators/drawDefinitions/gene
 import { getDrawTypeCoercion } from '@Generators/drawDefinitions/getDrawTypeCoercion';
 import { addFinishingRounds } from '@Generators/drawDefinitions/addFinishingRounds';
 import { newDrawDefinition } from '@Generators/drawDefinitions/newDrawDefinition';
+import { MISSING_MATCHUPS } from '@Constants/errorConditionConstants';
 
 // Query
 import { isAdHoc } from '@Query/drawDefinition/isAdHoc';
@@ -45,9 +46,34 @@ describe('addFinishingRounds', () => {
     expect(finalMatchUp?.finishingRound).toBe(1);
   });
 
-  it('returns empty array for invalid matchUps input', () => {
+  it('REFUSES invalid matchUps input rather than returning an empty array', () => {
+    // `[]` was the fail-open: the shape a caller naturally writes is
+    // `matchUps = addFinishingRounds({ matchUps })`, so an empty return silently replaced their list.
     let result: any = addFinishingRounds({ matchUps: undefined as any });
-    expect(result).toEqual([]);
+    expect(result.error).toEqual(MISSING_MATCHUPS);
+
+    // the engine-idiomatic call, which supplies no matchUps at all
+    result = addFinishingRounds({ drawId: 'd1' } as any);
+    expect(result.error).toEqual(MISSING_MATCHUPS);
+  });
+
+  it('mutates in place and returns the SAME reference — the contract consumers rely on', () => {
+    // courthive-rankings calls this for its side effect and ignores the return, backfilling
+    // finishingPositionRange on externally-authored records. The four generators inside the factory
+    // reassign from the return, which is a no-op for the same reason. Both depend on this.
+    const {
+      drawIds: [drawId],
+    } = mocksEngine.generateTournamentRecord({ drawProfiles: [{ drawSize: 8 }], setState: true });
+    const { drawDefinition } = tournamentEngine.getEvent({ drawId });
+    const matchUps = drawDefinition.structures[0].matchUps;
+    matchUps.forEach((matchUp: any) => {
+      delete matchUp.finishingPositionRange;
+      delete matchUp.finishingRound;
+    });
+
+    const result: any = addFinishingRounds({ matchUps });
+    expect(result).toBe(matchUps); // same reference, not a copy
+    expect(matchUps.every((matchUp: any) => matchUp.finishingPositionRange)).toEqual(true);
   });
 });
 
