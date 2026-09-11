@@ -1,11 +1,12 @@
 import { modifyDrawNotice, modifyMatchUpNotice } from '@Mutate/notifications/drawNotifications';
+import { removeExtension } from '@Mutate/extensions/removeExtension';
 import { getAllStructureMatchUps } from '@Query/matchUps/getAllStructureMatchUps';
 import { isLuckyBasedDraw } from '@Query/drawDefinition/isLuckyBasedDraw';
 import { getMatchUpsMap } from '@Query/matchUps/getMatchUpsMap';
 
 // constants and types
 import { MAIN, QUALIFYING, VOLUNTARY_CONSOLATION } from '@Constants/drawDefinitionConstants';
-import { DRAFT_STATE, POSITION_ACTIONS } from '@Constants/extensionConstants';
+import { DISABLE_LINKS, DRAFT_STATE, POSITION_ACTIONS } from '@Constants/extensionConstants';
 import { MISSING_DRAW_DEFINITION } from '@Constants/errorConditionConstants';
 import { toBePlayed } from '@Fixtures/scoring/outcomes/toBePlayed';
 import { BYE } from '@Constants/matchUpStatusConstants';
@@ -64,6 +65,24 @@ export function resetDrawDefinition({ tournamentRecord, removeScheduling, remove
   );
   // CODES: also wipe the first-class draftState if present
   delete drawDefinition.draftState;
+
+  // `disableLinks` marks a drawPosition whose assignment was cleared BY HAND, so link positioning
+  // must not feed it again. A reset returns the draw to its pre-play state, which makes that marker
+  // both meaningless and harmful: `getTargetMatchUp` returns `disabledDrawPosition` for such a
+  // position, so a stale flag silently blocks progression through it for the life of the draw.
+  //
+  // Cleared for EVERY structure, after the per-stage branches above, because those branches reach
+  // assignments by different routes — the lucky-draw playoff path replaces the array wholesale, the
+  // non-lucky path maps over it deleting only `participantId`, and VOLUNTARY_CONSOLATION has its own
+  // reset. A single pass is easier to prove complete than three.
+  for (const structure of drawDefinition.structures ?? []) {
+    for (const assignment of structure.positionAssignments ?? []) {
+      // not gated on the schema write mode: the mode decides whether an attribute is WRITTEN, and
+      // must never decide whether stale state is removed. Both representations go.
+      delete assignment.disableLinks;
+      if (Array.isArray(assignment.extensions)) removeExtension({ element: assignment, name: DISABLE_LINKS });
+    }
+  }
 
   const structureIds = (drawDefinition.structures ?? []).map(({ structureId }) => structureId);
 
