@@ -40,6 +40,32 @@ title: Data Standards
 
 The **Competition Factory** began as an implementation of the **[Tennis Open Data Standards (TODS)](https://itftennis.atlassian.net/wiki/spaces/TODS/overview)**, an ITF-led initiative to create a vendor-independent, JSON-based document format for tennis competition data. TODS provided the foundational data model — tournaments, events, draws, matchUps, participants, scoring, venues, and scheduling — and the factory fully supports TODS-compliant documents.
 
+### A note on the ITF and World Tennis {#world-tennis}
+
+The International Tennis Federation **rebranded as World Tennis**: its trading name changed on
+1 January 2026, with the new brand rolling out through summer 2026. It follows World Athletics,
+World Aquatics and World Rugby in dropping an acronym-based identity.
+
+Nothing in the factory's API changes because of this, deliberately:
+
+|                                                                               |                                                                                                                                                                                                         |
+| ----------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `POLICY_SEEDING_ITF`, `POLICY_SANCTIONING_ITF`, `POLICY_RANKING_POINTS_ITF_*` | **unchanged** — renaming an export is a breaking change with no functional benefit                                                                                                                      |
+| `ITF_JUNIOR`, `ITF_WHEELCHAIR`, `ITF_CHAIR` and peers                         | **unchanged** — enum values                                                                                                                                                                             |
+| `policyName: 'ITF SEEDING'`                                                   | **unchanged** — it is _data_. It is written into `appliedPolicies` on tournament records and consumers match attached policies on it, so changing the string would orphan every policy already attached |
+| `governingBodyId: 'itf'`                                                      | **unchanged** — persisted on `SanctioningRecord`                                                                                                                                                        |
+| `ITF W15`, `ITF M25`, `ITF J500`                                              | **unchanged** — tournament level codes in active use                                                                                                                                                    |
+
+Two things are easy to conflate and worth stating plainly:
+
+- **"World Tennis Tour" is a circuit, not the organisation.** It predates the rebrand.
+  `POLICY_RANKING_POINTS_ITF_WTT` is about that circuit. "World Tennis" alone is the governing body.
+- **TODS remains an ITF-published standard.** It was released under that name and is frozen at 0.8;
+  the factory cites it as origin rather than as a live authority. See [CODES](#codes) below.
+
+Documentation prose refers to the organisation as **World Tennis (formerly the ITF)** on first
+mention, and to circuits, certifications and level codes by the names they actually carry.
+
 ### From TODS to CODES {#codes}
 
 As the **Competition Factory** was deployed across more sports it was proven that the underlying data structures are not tennis-specific. The core concepts of participants, events, draws, matchUps, and scoring translate naturally across any sport that organizes bracket-based or round-robin competitions. The [matchUpFormat](/docs/codes/matchup-format) code capabilities were extended to support the scoring needs of almost all imaginable sports.
@@ -143,12 +169,12 @@ Because it is a third declaration it can drift from the other two, and drift her
 
 **Strictness is a stated convention, not an accident.** Of the 68 object definitions, **64 declare `additionalProperties: false`**. Four are deliberately open:
 
-| definition | why it is open |
-| --- | --- |
-| `Extension` | extensions carry caller-defined payloads by design |
-| `Tournament` | permissive pending the undeclared fields real records still carry |
-| `Venue` | as above |
-| `Organisation` | as above |
+| definition     | why it is open                                                    |
+| -------------- | ----------------------------------------------------------------- |
+| `Extension`    | extensions carry caller-defined payloads by design                |
+| `Tournament`   | permissive pending the undeclared fields real records still carry |
+| `Venue`        | as above                                                          |
+| `Organisation` | as above                                                          |
 
 Closing the three record-shaped definitions is **blocked rather than declined**: measured against the TODS fixtures, making them strict fails most of them and exposes undeclared fields carried by real records — `venueIds`, `deleted`, `Venue.parentOrganisation`, `Organisation.createdAt` / `updatedAt`, and others. Each needs a decision about whether it belongs in CODES before the definition can be closed around it.
 

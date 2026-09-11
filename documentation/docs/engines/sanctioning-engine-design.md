@@ -1,5 +1,13 @@
 # Sanctioning Engine — Design & Implementation Plan
 
+:::note Naming
+The organisation is referred to as **World Tennis (formerly the ITF)** — it rebranded on
+1 January 2026. `ITF` persists deliberately wherever it names a **policy**
+(`POLICY_SANCTIONING_ITF`), a **stored value** (`governingBodyId: 'itf'`), a **level code**
+(`ITF W15`), or a **circuit** (World Tennis Tour). See
+[the ITF and World Tennis](../data-standards#world-tennis).
+:::
+
 ## 1. Overview
 
 The Sanctioning Engine is a **state engine** that manages the lifecycle of a **sanctioning application** — the propositional object that defines what a tournament organizer intends to run, subject to approval by a governing body. The approved sanctioning object becomes the seed from which a `tournamentRecord` is generated, carrying forward all constraints (allowed categories, matchUpFormats, drawTypes, draw sizes, officials requirements, etc.) as enforceable policy.
@@ -59,7 +67,7 @@ DRAFT → SUBMITTED → UNDER_REVIEW → APPROVED | CONDITIONALLY_APPROVED | REJ
 2. National Association endorses application
 3. Application submitted to ITF (16-21 weeks before tournament week depending on level)
 4. ITF reviews — grants, refuses, grants with conditions, or downgrades
-5. Tournament appears on ITF calendar
+5. Tournament appears on the World Tennis (formerly the ITF) calendar
 6. Post-event: results reporting, financial reconciliation, compliance review
 
 **Level-driven requirements (ITF example):**
@@ -696,7 +704,7 @@ Every state transition is recorded:
 
 Real-world dual/multi-sanctioning takes three distinct forms:
 
-1. **Hierarchical (ITF + National Federation):** Not true dual-sanctioning. The national federation is the intermediary — it endorses and submits to the ITF. One application flows upward. The national sanction is the primary instrument; ITF points flow through a memorandum of understanding. USTA Level 1-3 tournaments that carry ITF ranking points operate under an MOU where USTA regulations take precedence except where they conflict with ITF tour regulations.
+1. **Hierarchical (ITF + National Federation):** Not true dual-sanctioning. The national federation is the intermediary — it endorses and submits to World Tennis. One application flows upward. The national sanction is the primary instrument; ITF points flow through a memorandum of understanding. USTA Level 1-3 tournaments that carry ITF ranking points operate under an MOU where USTA regulations take precedence except where they conflict with ITF tour regulations.
 
 2. **Parallel tours (ATP + WTA combined events):** Indian Wells, Miami, Madrid, Rome etc. carry **separate sanctions from each tour**. The tournament owner negotiates a Tournament Agreement with each tour independently. Each tour maintains independent ranking, regulatory, and sanctioning frameworks. These are effectively two tournaments sharing a venue and brand.
 
@@ -743,7 +751,7 @@ The factory's existing scheduling system (AvailabilityEngine, scheduleGovernor) 
 
 Calendar conflict detection for sanctioning requires knowledge of **all sanctioned events across a region and season** — data that no single client or tournament record holds. This is fundamentally a cross-record query.
 
-The USTA "Serve Tennis" platform and BWF's sanctioning portal both handle calendar conflict detection server-side, where the full calendar is available. The ITF similarly maintains a centralized calendar. No sport handles calendar conflicts client-side.
+The USTA "Serve Tennis" platform and BWF's sanctioning portal both handle calendar conflict detection server-side, where the full calendar is available. World Tennis similarly maintains a centralized calendar. No sport handles calendar conflicts client-side.
 
 **Recommendation: Hybrid — engine provides the algorithm, server injects the data.**
 
@@ -789,7 +797,7 @@ interface CalendarEvent {
 
 **Research findings:**
 
-In the ITF system, the national federation endorsement is **substantive, not a rubber stamp**. The national association is "ultimately responsible for the proper organisation and running" of the tournament. It must be "fully appraised of the proposed Tournament site and organisation" and satisfied that requirements are met before endorsing. A national federation can effectively veto an application by refusing to submit it — tournaments not sanctioned by the relevant national association are not considered for ITF calendar inclusion.
+In the World Tennis system, the national federation endorsement is **substantive, not a rubber stamp**. The national association is "ultimately responsible for the proper organisation and running" of the tournament. It must be "fully appraised of the proposed Tournament site and organisation" and satisfied that requirements are met before endorsing. A national federation can effectively veto an application by refusing to submit it — tournaments not sanctioned by the relevant national association are not considered for World Tennis calendar inclusion.
 
 However, the endorsement is **embedded in the application process** rather than tracked as a separate document. The national association submits the application on behalf of the organizer — the submission itself is the endorsement act. There is no separate "endorsement certificate" that exists independently.
 
@@ -842,7 +850,7 @@ Post-event compliance across sports breaks into three categories of increasing s
 
 1. **Mandatory reporting with deadlines** (universal): Results submission (24h for World Athletics, 72h for USA Swimming, 14 days for USATT), incident reports (48h for USATF), financial reconciliation (prize money paid out, sanction fees settled).
 
-2. **Structured checklists** (some sports): USATF requires a Post-Event Report Form that must be completed before new sanctions are granted. USA Swimming requires pool measurement forms, record applications, backup result files. ITF requires the Supervisor's report covering all aspects of play.
+2. **Structured checklists** (some sports): USATF requires a Post-Event Report Form that must be completed before new sanctions are granted. USA Swimming requires pool measurement forms, record applications, backup result files. World Tennis requires the Supervisor's report covering all aspects of play.
 
 3. **Financial compliance** (ITF, BWF): ITF requires a security deposit equal to full prize money, returned only after all prizes are paid. BWF sanction fee (10% of prize fund) is due within 3 weeks of tournament end.
 
@@ -973,7 +981,7 @@ interface SanctioningRecord {
 
 Real-world modification handling is remarkably consistent across sports:
 
-- **ITF**: Cannot cancel, postpone, or make substantial changes less than 9 weeks before the tournament. Violations subject to fines up to $5,000, forfeiture of fees, and denial of future applications. The ITF can downgrade a tournament application up to the entry deadline.
+- **ITF**: Cannot cancel, postpone, or make substantial changes less than 9 weeks before the tournament. Violations subject to fines up to $5,000, forfeiture of fees, and denial of future applications. World Tennis can downgrade a tournament application up to the entry deadline.
 - **BWF**: Graduated timeline — prize money can increase anytime but cannot decrease; changes fewer than 15 days before the event for high-level events are referred to the Disciplinary Committee; tournament level cannot change fewer than 90 days before.
 - **USTA**: Draw size, formats, and match formats are determined at the time of sanction approval. Play cannot continue past the last sanctioned day without prior written approval. Changes handled through direct communication, not a formal re-application.
 - **USATF**: Postponements within the same calendar year are handled by email with no additional fee. Postponements to the next year require cancellation and re-application.

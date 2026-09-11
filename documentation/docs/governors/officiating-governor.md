@@ -354,7 +354,7 @@ policy is an allow-list of checks, never a silent partial application.
 
 `POLICY_OFFICIATING_CONFLICT_OF_INTEREST` (default) blocks on `SAME_PERSON` and `DECLARED_RELATIONSHIP`,
 warns on `ORGANISATION`, and leaves `NATIONALITY` **disabled**. Shared nationality is disqualifying at
-ITF-level international events and meaningless at national ones, where every official necessarily shares
+international events at World Tennis (formerly the ITF) level and meaningless at national ones, where every official necessarily shares
 the players' nationality — enabling it by default would make the check noise at most events.
 
 `POLICY_OFFICIATING_CONFLICT_OF_INTEREST_ITF` enables all four rules at `BLOCK`.

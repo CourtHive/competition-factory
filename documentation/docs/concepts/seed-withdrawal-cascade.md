@@ -113,7 +113,7 @@ The `vacatedDrawPosition` in the result tells the tournament director which posi
 
 ## Timing Constraints
 
-Per ITF/ATP/WTA regulations:
+Per World Tennis (formerly the ITF), ATP and WTA regulations:
 
 - **Before order of play released**: Full cascade applies — seeds move into higher seed positions
 - **After order of play released**: No cascade — the vacancy is filled directly by an alternate or lucky loser using the standard `withdrawParticipantAtDrawPosition` action
