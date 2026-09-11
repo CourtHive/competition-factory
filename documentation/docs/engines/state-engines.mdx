@@ -45,7 +45,8 @@ Mutation engines can submit a queue of functions to be executed in sequence.
 For each of the following examples `askEngine` and the `getParticipants` method are first imported from the factory.
 
 ```js
-import { askEngine, participantGovernor: { getParticipants } } from 'tods-competition-factory';
+import { askEngine, participantGovernor } from 'tods-competition-factory';
+const { getParticipants } = participantGovernor;
 
 // load a tournamentRecord into state
 askEngine.setState(tournamentRecord);

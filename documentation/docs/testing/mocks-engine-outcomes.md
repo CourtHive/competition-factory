@@ -276,7 +276,7 @@ const { outcome } = mocksEngine.generateOutcomeFromScoreString({
 ### Direct Application
 
 ```js
-import tournamentEngine from 'tods-competition-factory';
+import { tournamentEngine } from 'tods-competition-factory';
 
 const { outcome } = mocksEngine.generateOutcome({
   matchUpFormat: 'SET3-S:6/TB7',

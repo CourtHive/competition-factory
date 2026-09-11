@@ -43,7 +43,7 @@ engine.publishEvent({
 Publish only specific stages within a draw:
 
 ```js
-import { stageConstants } from 'tods-competition-factory';
+import { drawDefinitionConstants } from 'tods-competition-factory';
 const { QUALIFYING, MAIN } = stageConstants;
 
 // Publish only qualifying stage

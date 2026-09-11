@@ -83,6 +83,8 @@ That exception is the reason to reference `SexEnum.FEMALE_ABBR` rather than hard
 Each vocabulary also has a `*Union` type — `MatchUpStatusUnion`, `DrawTypeUnion`, `WeekdayUnion`. These are **types**,
 not runtime values, and importing one as a value will fail:
 
+<!-- doc-imports:ignore — the second line is deliberately the broken form -->
+
 ```ts
 import type { MatchUpStatusUnion } from 'tods-competition-factory'; // ✅
 import { MatchUpStatusUnion } from 'tods-competition-factory'; // ❌ not a runtime export

@@ -251,20 +251,23 @@ interface CapacityStats {
 const curve = engine.getCapacityCurve('2026-06-15');
 
 // Compute statistics
-import { calculateCapacityStats } from 'tods-competition-factory';
+import { availability } from 'tods-competition-factory';
+const { calculateCapacityStats } = availability;
 const stats = calculateCapacityStats(curve);
 console.log(`Peak: ${stats.peakAvailable} courts at ${stats.peakTime}`);
 console.log(`Utilization: ${stats.utilizationPercent}%`);
 
 // Filter to a time window
-import { filterCapacityCurve } from 'tods-competition-factory';
+import { availability } from 'tods-competition-factory';
+const { filterCapacityCurve } = availability;
 const morning = filterCapacityCurve(curve, {
   start: '2026-06-15T08:00:00',
   end: '2026-06-15T12:00:00',
 });
 
 // Compare before/after
-import { compareCapacityCurves } from 'tods-competition-factory';
+import { availability } from 'tods-competition-factory';
+const { compareCapacityCurves } = availability;
 const diffs = compareCapacityCurves(baselineCurve, modifiedCurve);
 ```
 
@@ -313,7 +316,8 @@ clampDragToCollisions(
 This is the primary function used during interactive block creation (paint mode). Given an anchor point (where the drag started) and a cursor position (where the drag currently is), it computes the largest valid time range that doesn't overlap any existing blocks:
 
 ```js
-import { clampDragToCollisions } from 'tods-competition-factory';
+import { availability } from 'tods-competition-factory';
+const { clampDragToCollisions } = availability;
 
 // User started dragging at 09:00, cursor is now at 11:00
 // But there's a block from 10:00-10:30

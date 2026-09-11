@@ -449,23 +449,15 @@ import { scheduleGovernor, publishingGovernor, matchUpGovernor } from 'tods-comp
 ### Use in Custom Engines
 
 ```js
-import { defineEngine } from 'tods-competition-factory';
-import {
-  tournamentGovernor,
-  matchUpGovernor,
-  scheduleGovernor
-} from 'tods-competition-factory';
+import { governors, syncEngine } from 'tods-competition-factory';
 
-const myEngine = defineEngine({
-  governors: [
-    tournamentGovernor,
-    matchUpGovernor,
-    scheduleGovernor
-  ]
-});
+// An engine imports the governors it needs; there is no separate engine factory.
+syncEngine.importMethods(governors.tournamentGovernor);
+syncEngine.importMethods(governors.matchUpGovernor);
+syncEngine.importMethods(governors.scheduleGovernor);
 
-myEngine.setState(tournamentRecord);
-myEngine.scheduleMatchUps({ ... });
+syncEngine.setState(tournamentRecord);
+syncEngine.scheduleMatchUps({/* ... */});
 ```
 
 **See**: [Custom Engines](/docs/engines/custom-engines) for detailed examples.

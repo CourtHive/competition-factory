@@ -36,7 +36,8 @@ Source System                Factory Generation              Remap
 ### Standalone Function
 
 ```js
-import { remapDrawDefinitionMatchUpIds } from 'tods-competition-factory';
+import { tournamentEngine } from 'tods-competition-factory';
+const { remapDrawDefinitionMatchUpIds } = tournamentEngine;
 
 const result = remapDrawDefinitionMatchUpIds({
   drawDefinition,

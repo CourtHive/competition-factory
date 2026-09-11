@@ -86,7 +86,9 @@ function codeBlocks(lines) {
 function packageImports(body) {
   const source = body.join('\n');
   const found = [];
-  const re = new RegExp(String.raw`import\s+([\s\S]*?)\s+from\s+['"]${PACKAGE_SPECIFIER}['"]`, 'g');
+  // The `import` keyword must begin a line. Without that anchor the match can start inside a comment
+  // — `// Also available as a standalone import` — and read the following real import as the clause.
+  const re = new RegExp(String.raw`(?:^|\n)[ \t]*import\s+([\s\S]*?)\s+from\s+['"]${PACKAGE_SPECIFIER}['"]`, 'g');
   let match;
   while ((match = re.exec(source)) !== null) {
     const clause = match[1].trim();
@@ -124,7 +126,10 @@ function bindings(clause) {
   const beforeBrace = clause.split('{')[0].trim().replace(/,$/, '').trim();
   if (beforeBrace) {
     if (/^\*\s+as\s+/.test(beforeBrace)) namespaced = true;
-    else if (beforeBrace) hasDefault = true;
+    // A default binding is ONE identifier. Anything else means the regex started inside prose that
+    // happens to contain the word "import" — `// Or import specific constant groups` followed by a
+    // real import read as a default binding named "specific constant groups".
+    else if (/^[A-Za-z_$][\w$]*$/.test(beforeBrace)) hasDefault = true;
   }
   return { named, hasDefault, namespaced };
 }
