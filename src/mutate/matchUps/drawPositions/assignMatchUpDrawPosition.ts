@@ -3,7 +3,7 @@ import { getUpdatedDrawPositions } from '@Mutate/drawDefinitions/matchUpGovernor
 import { updateMatchUpStatusCodes } from '@Mutate/drawDefinitions/matchUpGovernor/matchUpStatusCodes';
 import { getExitWinningSide } from '@Mutate/drawDefinitions/matchUpGovernor/getExitWinningSide';
 import { getMappedStructureMatchUps, getMatchUpsMap } from '@Query/matchUps/getMatchUpsMap';
-import { clearSideExitProvenance } from '@Mutate/matchUps/matchUpStatus/sideExitProvenance';
+import { clearResolvedSideExitProvenance } from '@Mutate/matchUps/matchUpStatus/sideExitProvenance';
 import { getPositionAssignments } from '@Query/drawDefinition/positionsGetter';
 import { getInitialRoundNumber } from '@Query/matchUps/getInitialRoundNumber';
 import { updateSideLineUp } from '@Mutate/matchUps/lineUps/updateSideLineUp';
@@ -325,8 +325,9 @@ function applyPositionToMatchUp({
       matchUpStatusCodes[exitSideNumber - 1] = carriedCode;
     }
     matchUp.matchUpStatusCodes = matchUpStatusCodes;
-    // nothing carried means the exit this matchUp recorded is gone; its provenance goes with it
-    if (!matchUpStatusCodes.length) clearSideExitProvenance(matchUp);
+    // Nothing carried means the exit this matchUp recorded is gone — unless the status says
+    // otherwise, in which case the provenance is still describing a live exit.
+    if (!matchUpStatusCodes.length) clearResolvedSideExitProvenance(matchUp);
   } else if (matchUp?.matchUpStatusCodes) {
     updateMatchUpStatusCodes({
       inContextDrawMatchUps: refreshedMatchUps,
