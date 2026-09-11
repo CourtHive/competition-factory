@@ -5,7 +5,8 @@ title: migrateTournamentRecord
 One-shot helper that walks an entire `tournamentRecord` and promotes every legacy `extensions[]` envelope and schedule `timeItems[]` entry the **CODES** initiative has promoted to first-class attributes. The output is a record shaped for the v5.0.0 default (`schemaWriteMode: 'native'`).
 
 ```ts
-import { migrateTournamentRecord } from 'tods-competition-factory';
+import { tournamentEngine } from 'tods-competition-factory';
+const { migrateTournamentRecord } = tournamentEngine;
 
 const { tournamentRecord: legacy } = await loadLegacyRecord();
 const { promoted, totalPromoted } = migrateTournamentRecord({ tournamentRecord: legacy });

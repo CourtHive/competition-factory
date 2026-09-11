@@ -23,7 +23,8 @@ For comprehensive details on scheduling policy structure, examples, and advanced
 ### Attach Default Policy
 
 ```js
-import { tournamentEngine, POLICY_SCHEDULING_DEFAULT } from 'tods-competition-factory';
+import { fixtures, tournamentEngine } from 'tods-competition-factory';
+const { POLICY_SCHEDULING_DEFAULT } = fixtures.policies;
 
 tournamentEngine.setState(tournamentRecord);
 tournamentEngine.attachPolicies({

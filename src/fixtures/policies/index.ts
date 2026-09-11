@@ -1,3 +1,13 @@
+import { POLICY_DRAWS_DEFAULT } from './POLICY_DRAWS_DEFAULT';
+import { POLICY_MATCHUP_ACTIONS_DEFAULT } from './POLICY_MATCHUP_ACTIONS_DEFAULT';
+import { POLICY_PROGRESSION_DEFAULT } from './POLICY_PROGRESSION_DEFAULT';
+import { POLICY_ROUND_ROBIN_TALLY_DEFAULT } from './POLICY_ROUND_ROBIN_TALLY_DEFAULT';
+import { POLICY_ROUND_ROBIN_TALLY_JTT } from './POLICY_ROUND_ROBIN_TALLY_JTT';
+import { POLICY_ROUND_ROBIN_TALLY_TOC } from './POLICY_ROUND_ROBIN_TALLY_TOC';
+import { POLICY_SANCTIONING_GENERIC } from './POLICY_SANCTIONING_GENERIC';
+import { POLICY_SANCTIONING_ITF } from './POLICY_SANCTIONING_ITF';
+import { POLICY_SANCTIONING_USTA } from './POLICY_SANCTIONING_USTA';
+
 import { POLICY_AVOIDANCE_COUNTRY } from './POLICY_AVOIDANCE_COUNTRY';
 
 import { POLICY_COMPETITIVE_BANDS_DEFAULT } from './POLICY_COMPETITIVE_BANDS_DEFAULT';
@@ -88,6 +98,23 @@ export const policies = {
 
   POLICY_OFFICIATING_CONFLICT_OF_INTEREST,
   POLICY_OFFICIATING_CONFLICT_OF_INTEREST_ITF,
+
+  // Exported 7.x. Each of these was documented as importable while being reachable by no public
+  // path, so every example that used one silently produced `undefined` — which a policy parameter
+  // reads as "none supplied", falling back to defaults without an error. See scripts/verify/docImports.mjs.
+  POLICY_DRAWS_DEFAULT,
+  POLICY_MATCHUP_ACTIONS_DEFAULT,
+  POLICY_PROGRESSION_DEFAULT,
+
+  POLICY_ROUND_ROBIN_TALLY_DEFAULT,
+  POLICY_ROUND_ROBIN_TALLY_JTT,
+  POLICY_ROUND_ROBIN_TALLY_TOC,
+
+  // Sanctioning policies keyed by governing body — the reference copies a consumer needs to see what
+  // a body actually requires, rather than re-deriving it.
+  POLICY_SANCTIONING_GENERIC,
+  POLICY_SANCTIONING_ITF,
+  POLICY_SANCTIONING_USTA,
 
   POLICY_PRINT_DEFAULT,
 };

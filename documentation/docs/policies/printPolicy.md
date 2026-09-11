@@ -59,7 +59,8 @@ per-print-type entries. Consumers attach this as a baseline before
 layering in tournament-specific entries.
 
 ```ts
-import { POLICY_PRINT_DEFAULT } from 'tods-competition-factory';
+import { fixtures } from 'tods-competition-factory';
+const { POLICY_PRINT_DEFAULT } = fixtures.policies;
 
 POLICY_PRINT_DEFAULT;
 // → { print: { policyName: 'Default Print Configuration' } }
@@ -94,7 +95,8 @@ reads the tournament's `extensions` for `POLICY_TYPE_PRINT`.
 ## Reading the Policy
 
 ```ts
-import { tournamentEngine, POLICY_TYPE_PRINT } from 'tods-competition-factory';
+import { policyConstants, tournamentEngine } from 'tods-competition-factory';
+const { POLICY_TYPE_PRINT } = policyConstants;
 
 const { tournamentRecord } = tournamentEngine.getState();
 const printExtension = tournamentRecord.extensions?.find((e) => e.name === POLICY_TYPE_PRINT);

@@ -392,9 +392,9 @@ When working with tournament records directly, context can be passed:
 **API Reference:** [allTournamentMatchUps](/docs/governors/query-governor#alltournamentmatchups)
 
 ```js
-import { getMatchUps } from 'tods-competition-factory';
+import { tournamentEngine } from 'tods-competition-factory';
 
-const matchUps = getMatchUps({
+const { matchUps } = tournamentEngine.allTournamentMatchUps({
   tournamentRecord,
   inContext: true,
   context: {

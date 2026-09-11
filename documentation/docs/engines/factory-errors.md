@@ -75,7 +75,8 @@ class FactoryError extends Error {
 `error.suggestions` is a getter that resolves at read time against a small registry. The lookup is by `code` and may consult `context` for code-specific hints:
 
 ```ts
-import { getSuggestions, registerSuggestions } from 'tods-competition-factory';
+import { errors, registerSuggestions } from 'tods-competition-factory';
+const { getSuggestions } = errors;
 
 getSuggestions('ERR_MISSING_TOURNAMENT');
 // [

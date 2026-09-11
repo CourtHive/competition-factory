@@ -42,7 +42,8 @@ The temporal grid is an interactive calendar-style editor that uses [vis-timelin
 ### Initialization Pattern
 
 ```js
-import { AvailabilityEngine, defaultEvaluators } from 'tods-competition-factory';
+import { AvailabilityEngine, availability } from 'tods-competition-factory';
+const { defaultEvaluators } = availability;
 
 // 1. Create and initialize the engine
 const engine = new AvailabilityEngine();
@@ -166,7 +167,8 @@ const chartData = curve.points.map((pt) => ({
 }));
 
 // Compute summary statistics
-import { calculateCapacityStats } from 'tods-competition-factory';
+import { availability } from 'tods-competition-factory';
+const { calculateCapacityStats } = availability;
 const stats = calculateCapacityStats(curve);
 // { peakAvailable: 8, utilizationPercent: 72.5, ... }
 ```
@@ -176,10 +178,12 @@ const stats = calculateCapacityStats(curve);
 After editing, write engine state back to the tournament record:
 
 ```js
-import { applyTemporalAvailabilityToTournamentRecord } from 'tods-competition-factory';
+import { availability } from 'tods-competition-factory';
+
+const { applyAvailabilityToTournamentRecord } = availability;
 
 const timelines = engine.getDayTimeline(day);
-const updatedRecord = applyTemporalAvailabilityToTournamentRecord({
+const updatedRecord = applyAvailabilityToTournamentRecord({
   tournamentRecord,
   timelines,
   engine,
@@ -268,7 +272,8 @@ for (const item of dayPlan.items) {
 When the user is done building the plan, convert it to a factory scheduling profile:
 
 ```js
-import { buildSchedulingProfileFromUISelections, validateSchedulingProfileFormat } from 'tods-competition-factory';
+import { availability } from 'tods-competition-factory';
+const { buildSchedulingProfileFromUISelections, validateSchedulingProfileFormat } = availability;
 
 // Convert plan items to scheduling selections
 const allPlans = engine.getAllPlans();
@@ -326,7 +331,8 @@ renderPreviewOverlay(preview.previewRails);
 
 // Show capacity impact
 if (preview.capacityImpact) {
-  import { compareCapacityCurves } from 'tods-competition-factory';
+  import { availability } from 'tods-competition-factory';
+  const { compareCapacityCurves } = availability;
   const currentCurve = engine.getCapacityCurve('2026-06-15');
   const diffs = compareCapacityCurves(currentCurve, preview.capacityImpact);
   renderCapacityDiff(diffs);

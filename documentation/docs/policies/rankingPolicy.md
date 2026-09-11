@@ -5,7 +5,8 @@ title: Ranking Policy
 A **Ranking Policy** defines how points are awarded to participants for their tournament performance. It is attached to a tournament or event using the standard [policy system](/docs/concepts/policies) under the key `POLICY_TYPE_RANKING_POINTS`.
 
 ```js
-import { POLICY_TYPE_RANKING_POINTS } from 'tods-competition-factory';
+import { policyConstants } from 'tods-competition-factory';
+const { POLICY_TYPE_RANKING_POINTS } = policyConstants;
 
 const policyDefinitions = {
   [POLICY_TYPE_RANKING_POINTS]: {
@@ -48,24 +49,24 @@ source without re-joining to policy metadata.
 The vocabulary is a closed enum exported from `@Constants/pointsAuthorityConstants`:
 
 ```ts
-import {
+import type { PointsAuthority } from 'tods-competition-factory';
+import { pointsAuthorityConstants, ratingConstants } from 'tods-competition-factory';
+const {
   ATP,
-  WTA,
+  DTB,
+  FFT,
   ITF,
   ITF_JUNIOR,
   ITF_WHEELCHAIR,
-  TENNIS_EUROPE,
-  USTA,
   LTA,
-  FFT,
-  DTB,
-  PPA,
-  BWF,
-  UTR,
-  UNSPECIFIED,
   POINTS_AUTHORITIES,
-  type PointsAuthority,
-} from 'tods-competition-factory';
+  PPA,
+  TENNIS_EUROPE,
+  UNSPECIFIED,
+  USTA,
+  WTA,
+} = pointsAuthorityConstants;
+const { BWF, UTR } = ratingConstants;
 ```
 
 The field is **optional** — policies that don't declare it produce awards with

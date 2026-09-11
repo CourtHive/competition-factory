@@ -49,7 +49,7 @@ engine.publishEvent({
 Publish qualifying first, main draw later:
 
 ```js
-import { stageConstants } from 'tods-competition-factory';
+import { drawDefinitionConstants } from 'tods-competition-factory';
 
 // Publish qualifying only
 engine.publishEvent({

@@ -383,7 +383,8 @@ on `tournamentEngine`.
 Attaches a structured evaluation template to the official record. Two built-in policies are provided as fixtures: `POLICY_OFFICIATING_EVALUATION_CHAIR_UMPIRE` and `POLICY_OFFICIATING_EVALUATION_REFEREE`.
 
 ```js
-import { POLICY_OFFICIATING_EVALUATION_CHAIR_UMPIRE } from 'tods-competition-factory';
+import { fixtures } from 'tods-competition-factory';
+const { POLICY_OFFICIATING_EVALUATION_CHAIR_UMPIRE } = fixtures.policies;
 
 officiatingEngine.addEvaluationPolicy({
   evaluationPolicy: POLICY_OFFICIATING_EVALUATION_CHAIR_UMPIRE,

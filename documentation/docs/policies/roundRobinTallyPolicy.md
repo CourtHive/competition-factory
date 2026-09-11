@@ -265,7 +265,8 @@ type RoundRobinTallyPolicy = {
 **Standard tiebreaking procedure:**
 
 ```javascript
-import { POLICY_ROUND_ROBIN_TALLY_DEFAULT } from 'tods-competition-factory';
+import { fixtures } from 'tods-competition-factory';
+const { POLICY_ROUND_ROBIN_TALLY_DEFAULT } = fixtures.policies;
 
 const policy = POLICY_ROUND_ROBIN_TALLY_DEFAULT[POLICY_TYPE_ROUND_ROBIN_TALLY];
 // {
@@ -310,7 +311,8 @@ const policy = POLICY_ROUND_ROBIN_TALLY_DEFAULT[POLICY_TYPE_ROUND_ROBIN_TALLY];
 **Junior Team Tennis format:**
 
 ```javascript
-import { POLICY_ROUND_ROBIN_TALLY_JTT } from 'tods-competition-factory';
+import { fixtures } from 'tods-competition-factory';
+const { POLICY_ROUND_ROBIN_TALLY_JTT } = fixtures.policies;
 
 // {
 //   policyName: 'JTT Round Robin Tally',
@@ -338,7 +340,8 @@ import { POLICY_ROUND_ROBIN_TALLY_JTT } from 'tods-competition-factory';
 **Tournament of Champions format:**
 
 ```javascript
-import { POLICY_ROUND_ROBIN_TALLY_TOC } from 'tods-competition-factory';
+import { fixtures } from 'tods-competition-factory';
+const { POLICY_ROUND_ROBIN_TALLY_TOC } = fixtures.policies;
 
 // {
 //   policyName: 'TOC Round Robin Tally',
@@ -826,7 +829,9 @@ participantResults: {
 ### Example 1: Standard Tournament
 
 ```javascript
-import { POLICY_TYPE_ROUND_ROBIN_TALLY, POLICY_ROUND_ROBIN_TALLY_DEFAULT } from 'tods-competition-factory';
+import { fixtures, policyConstants } from 'tods-competition-factory';
+const { POLICY_TYPE_ROUND_ROBIN_TALLY } = policyConstants;
+const { POLICY_ROUND_ROBIN_TALLY_DEFAULT } = fixtures.policies;
 
 const tournament = {
   policyDefinitions: POLICY_ROUND_ROBIN_TALLY_DEFAULT,
@@ -1119,7 +1124,8 @@ const tournamentPolicy = {
 Calculate participant results and group order based on the round robin tally policy.
 
 ```javascript
-import { tallyParticipantResults } from 'tods-competition-factory';
+import { competitionEngine } from 'tods-competition-factory';
+const { tallyParticipantResults } = competitionEngine;
 
 const { participantResults, order, report, readableReport } = tallyParticipantResults({
   matchUps, // Array of matchUps

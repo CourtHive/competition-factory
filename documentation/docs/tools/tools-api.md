@@ -411,7 +411,8 @@ tools.dateTime.isValidEmbargoDate('2024-06-15'); // false — date only
 tools.dateTime.isValidEmbargoDate(42); // false — not a string
 
 // Also available as a standalone import
-import { isValidEmbargoDate } from 'tods-competition-factory';
+import { tools } from 'tods-competition-factory';
+const { isValidEmbargoDate } = tools;
 ```
 
 ### generateDateRange

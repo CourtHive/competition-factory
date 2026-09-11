@@ -84,28 +84,31 @@ Mutation engines emit notifications for state changes, enabling reactive updates
 ### Subscribing to Notifications
 
 ```js
-import { tournamentEngine, addNotification } from 'tods-competition-factory';
+import { globalState, tournamentEngine } from 'tods-competition-factory';
 
-// Subscribe to specific notification topics
-addNotification({
-  topic: 'addMatchUps',
-  payload: (payload) => {
-    console.log('MatchUps added:', payload.matchUps);
+const { setSubscriptions } = globalState;
+
+// One call registers a map of topic -> handler. Each handler receives the notice ARRAY for its
+// topic, and runs after the engine method completes rather than during it.
+setSubscriptions({
+  addMatchUps: (payload) => {
+    console.log('MatchUps added:', payload);
     // Update UI, trigger webhooks, etc.
   },
-});
-
-addNotification({
-  topic: 'modifyMatchUp',
-  payload: (payload) => {
-    console.log('MatchUp modified:', payload.matchUp);
+  modifyMatchUp: (payload) => {
+    console.log('MatchUp modified:', payload);
   },
 });
 
-// Now mutations trigger notifications
+// Now mutations notify subscribers
 tournamentEngine.generateDrawDefinition({/* ... */});
-// Triggers 'addMatchUps' notification
+// Triggers the addMatchUps subscription
 ```
+
+:::tip
+For multiple handlers per topic, unsubscribe closures and a promise-based `waitFor`, use the typed
+event bus — `engine.on / once / off / waitFor`. See [Subscriptions](./subscriptions).
+:::
 
 ### Common Notification Topics
 
@@ -121,13 +124,14 @@ tournamentEngine.generateDrawDefinition({/* ... */});
 **API Reference:** [generateDrawDefinition](/docs/governors/generation-governor#generatedrawdefinition)
 
 ```js
-import { tournamentEngine, addNotification } from 'tods-competition-factory';
+import { globalState, tournamentEngine } from 'tods-competition-factory';
 import { broadcastToWebSocketClients } from './websocket';
 
+const { setSubscriptions } = globalState;
+
 // Broadcast score changes to connected clients
-addNotification({
-  topic: 'modifyMatchUp',
-  payload: (payload) => {
+setSubscriptions({
+  modifyMatchUp: (payload) => {
     if (payload.matchUp.score) {
       broadcastToWebSocketClients({
         type: 'SCORE_UPDATE',

@@ -226,7 +226,8 @@ generateRankingList(params: {
 Aggregates point awards from multiple tournaments into a sorted ranking list. This is a pure computation function — it does not access tournament state.
 
 ```js
-import { generateRankingList } from 'tods-competition-factory';
+import { scaleEngine } from 'tods-competition-factory';
+const { generateRankingList } = scaleEngine;
 
 const rankingList = generateRankingList({
   pointAwards: allAwards, // collected from multiple getTournamentPoints calls
@@ -278,7 +279,8 @@ getParticipantPoints(params: {
 Returns a per-participant breakdown showing which results count and which are dropped, organized by bucket.
 
 ```js
-import { getParticipantPoints } from 'tods-competition-factory';
+import { scaleEngine } from 'tods-competition-factory';
+const { getParticipantPoints } = scaleEngine;
 
 const { buckets, totalPoints } = getParticipantPoints({
   pointAwards: allAwards,

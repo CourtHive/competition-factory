@@ -42,7 +42,8 @@ The **Draws Policy** (`POLICY_TYPE_DRAWS`) controls draw type coercion rules, in
 ## Default Policy
 
 ```js
-import { POLICY_DRAWS_DEFAULT } from 'tods-competition-factory';
+import { fixtures } from 'tods-competition-factory';
+const { POLICY_DRAWS_DEFAULT } = fixtures.policies;
 
 // Default: Empty policy (coercion enabled with system defaults)
 // {
@@ -59,7 +60,8 @@ import { POLICY_DRAWS_DEFAULT } from 'tods-competition-factory';
 ### Disable All Coercion
 
 ```js
-import { POLICY_TYPE_DRAWS } from 'tods-competition-factory';
+import { policyConstants } from 'tods-competition-factory';
+const { POLICY_TYPE_DRAWS } = policyConstants;
 
 // Prevent any automatic draw type changes
 const noCoercionPolicy = {
@@ -369,16 +371,17 @@ tournamentEngine.attachPolicies({
 ## Draw Type Constants
 
 ```js
-import {
-  SINGLE_ELIMINATION,
-  DOUBLE_ELIMINATION,
-  ROUND_ROBIN,
-  ROUND_ROBIN_WITH_PLAYOFF,
+import { DrawTypeEnum, drawDefinitionConstants } from 'tods-competition-factory';
+const {
   COMPASS,
+  DOUBLE_ELIMINATION,
   FEED_IN,
   MODIFIED_FEED_IN_CHAMPIONSHIP,
-  CURTIS_CONSOLATION,
-} from 'tods-competition-factory';
+  ROUND_ROBIN,
+  ROUND_ROBIN_WITH_PLAYOFF,
+  SINGLE_ELIMINATION,
+} = drawDefinitionConstants;
+const { CURTIS_CONSOLATION } = DrawTypeEnum;
 
 // Use constants in policy configuration
 const policy = {

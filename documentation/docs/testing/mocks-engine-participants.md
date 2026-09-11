@@ -390,7 +390,7 @@ const { tournamentRecord } = mocksEngine.generateTournamentRecord({
 ### Adding to Existing Tournament
 
 ```js
-import tournamentEngine from 'tods-competition-factory';
+import { tournamentEngine } from 'tods-competition-factory';
 
 // Generate participants separately
 const { participants } = mocksEngine.generateParticipants({
@@ -426,9 +426,7 @@ const { participants } = mocksEngine.generateParticipants({
 tournamentEngine.setState({ participants });
 tournamentEngine.createTeamsFromParticipantAttributes({
   participantAttribute: 'person.addresses[0].state',
-  uuids: [
-    /* team IDs */
-  ],
+  uuids: [/* team IDs */],
 });
 ```
 

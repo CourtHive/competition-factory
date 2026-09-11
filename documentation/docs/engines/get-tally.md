@@ -5,7 +5,8 @@ title: getTally
 `getTally({ positionAssignment })` is a mode-agnostic reader for the round-robin tally stored on a `PositionAssignment`. Callers should never branch on `schemaWriteMode` — use this helper.
 
 ```ts
-import { getTally } from 'tods-competition-factory';
+import { queryGovernor } from 'tods-competition-factory';
+const { getTally } = queryGovernor;
 
 const { tally } = getTally({ positionAssignment });
 // works in both native (5.0.0 default) and legacy modes

@@ -122,7 +122,8 @@ The **Scheduling Policy** (`POLICY_TYPE_SCHEDULING`) controls scheduling behavio
 
 ```js
 import { tournamentEngine } from 'tods-competition-factory';
-import { POLICY_SCHEDULING_DEFAULT } from 'tods-competition-factory';
+import { fixtures } from 'tods-competition-factory';
+const { POLICY_SCHEDULING_DEFAULT } = fixtures.policies;
 
 tournamentEngine.setState(tournamentRecord);
 
@@ -141,7 +142,8 @@ const result = tournamentEngine.attachPolicies({
 ### Custom Scheduling Policy
 
 ```js
-import { POLICY_TYPE_SCHEDULING } from 'tods-competition-factory';
+import { policyConstants } from 'tods-competition-factory';
+const { POLICY_TYPE_SCHEDULING } = policyConstants;
 
 const customSchedulingPolicy = {
   [POLICY_TYPE_SCHEDULING]: {
@@ -684,7 +686,8 @@ tournamentEngine.setMatchUpDailyLimits({
 The factory provides `POLICY_SCHEDULING_DEFAULT` with reasonable defaults:
 
 ```js
-import { POLICY_SCHEDULING_DEFAULT } from 'tods-competition-factory';
+import { fixtures } from 'tods-competition-factory';
+const { POLICY_SCHEDULING_DEFAULT } = fixtures.policies;
 
 // Defaults include:
 // - 90 minutes average for standard matches
