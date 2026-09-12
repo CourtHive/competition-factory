@@ -273,15 +273,14 @@ export type SeedsCountThreshold = {
  * 2. `drawTypes[drawType]` — a per-drawType override;
  * 3. the profile itself.
  *
- * The bare-string form is legacy but live: `getSeedPattern` and `structureTemplate`
- * both accept a positioning string where a profile object is expected.
+ * This is the OBJECT form — what a policy editor holds and mutates. The legacy bare-string
+ * form is expressed on {@link SeedingPolicy.seedingProfile}, not here: `getSeedPattern` and
+ * `structureTemplate` both accept a positioning string where a profile object is expected.
  */
-export type PolicySeedingProfile =
-  | SeedingProfileUnion
-  | (SeedingProfile & {
-      /** Per-drawType overrides, keyed by drawType. Consulted BEFORE the outer profile. */
-      drawTypes?: { [drawType: string]: SeedingProfile | SeedingProfileUnion };
-    });
+export type PolicySeedingProfile = SeedingProfile & {
+  /** Per-drawType overrides, keyed by drawType. Consulted BEFORE the outer profile. */
+  drawTypes?: { [drawType: string]: SeedingProfile | SeedingProfileUnion };
+};
 
 /**
  * A SEEDING policy, as the factory actually reads it.
@@ -297,7 +296,8 @@ export type PolicySeedingProfile =
 export type SeedingPolicy = {
   seedsCountThresholds?: SeedsCountThreshold[];
   validSeedPositions?: { ignore?: boolean; strict?: boolean };
-  seedingProfile?: PolicySeedingProfile;
+  /** The object form, or the legacy bare positioning string the readers still honour. */
+  seedingProfile?: PolicySeedingProfile | SeedingProfileUnion;
   containerByesIgnoreSeeding?: boolean;
   duplicateSeedNumbers?: boolean;
   drawSizeProgression?: boolean;
