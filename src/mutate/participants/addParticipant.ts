@@ -1,9 +1,11 @@
 import { generatePairParticipantName } from '@Functions/participants/generatePairParticipantName';
+import { normalizePersonNames } from '@Helpers/normalizedPersonName';
 import { decorateResult } from '@Functions/global/decorateResult';
 import { definedAttributes } from '@Tools/definedAttributes';
 import { normalizeGender } from '@Helpers/coercedGender';
 import { coercePersonSex } from '@Helpers/coercedSex';
 import { addNotice } from '@Global/state/globalState';
+import { collapseWhitespace } from '@Tools/strings';
 import { makeDeepCopy } from '@Tools/makeDeepCopy';
 import { intersection } from '@Tools/arrays';
 import { UUID } from '@Tools/UUID';
@@ -184,6 +186,11 @@ export function addParticipant(params: AddParticipantType) {
   const baseError = validateBaseParticipant(participant, tournamentRecord);
   if (baseError) return decorateResult({ result: baseError, stack });
 
+  // A caller-supplied name gets the same whitespace guarantee as a composed one.
+  // Same reason, one layer up: whatever is stored here is what a search compares
+  // against later, and an interior double space makes that comparison lie.
+  if (participant.participantName) participant.participantName = collapseWhitespace(participant.participantName);
+
   const { participantType } = participant;
   const tournamentParticipants = tournamentRecord.participants ?? [];
   const tournamentIndividualParticipantIds = tournamentParticipants
@@ -206,6 +213,9 @@ export function addParticipant(params: AddParticipantType) {
   } else if (participantType === INDIVIDUAL) {
     // normalize accepted sex short codes (F/M/O) to the canonical extended form at rest
     coercePersonSex(participant.person);
+    // and collapse whitespace runs in the names participantName is composed from,
+    // so a trailing space in a given name cannot produce 'Michael  Livson'
+    normalizePersonNames(participant.person);
     const hasPersonName = participant.person?.standardFamilyName && participant.person?.standardGivenName;
     const hasAlternateName = participant.participantOtherName || participant.participantName;
     if (!hasPersonName && !hasAlternateName) return { error: MISSING_PERSON_DETAILS };

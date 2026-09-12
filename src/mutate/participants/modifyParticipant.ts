@@ -8,6 +8,7 @@ import { participantRoles } from '@Constants/participantRoles';
 import { definedAttributes } from '@Tools/definedAttributes';
 import { modifyParticipantsNotice } from '@Mutate/notifications/participantNotifications';
 import { isValidDateString } from '@Tools/dateTime';
+import { collapseWhitespace } from '@Tools/strings';
 import { makeDeepCopy } from '@Tools/makeDeepCopy';
 import { countries } from '@Fixtures/countryData';
 import { addParticipant } from './addParticipant';
@@ -70,7 +71,8 @@ export function modifyParticipant(params) {
   if (onlineResources) newValues.onlineResources = onlineResources;
 
   if (participantOtherName !== undefined) newValues.participantOtherName = participantOtherName || undefined;
-  const suppliedParticipantName = participantName && isString(participantName) ? participantName : undefined;
+  const suppliedParticipantName =
+    participantName && isString(participantName) ? collapseWhitespace(participantName) : undefined;
   if (suppliedParticipantName) newValues.participantName = suppliedParticipantName;
 
   if (Array.isArray(individualParticipantIds)) {
@@ -191,8 +193,16 @@ function isClearRequest(value) {
 function updatePerson({ updateParticipantName, existingParticipant, newValues, person }) {
   const newPersonValues: any = {};
   const clearedKeys: string[] = [];
-  const { standardFamilyName, standardGivenName, nationalityCode, personId, birthDate, tennisId, sex, contacts } =
-    person;
+  const { nationalityCode, personId, birthDate, tennisId, sex, contacts } = person;
+
+  // Names are whitespace-normalized before they are measured or stored. Before, a
+  // trailing space in a given-name field survived to compose 'Michael  Livson' —
+  // a participantName that renders correctly (HTML collapses the run) and fails
+  // every string comparison made against it afterwards, which is how it hid.
+  // Normalizing ahead of the length check also stops ' A ' from passing a test
+  // that the value actually persisted ('A') would fail.
+  const standardFamilyName = collapseWhitespace(person.standardFamilyName);
+  const standardGivenName = collapseWhitespace(person.standardGivenName);
 
   // `person.contacts` had no write path anywhere in the factory — declared on the type, readable, and
   // impossible to persist. That made `Contact.isPublic` inert by construction: nothing could set it, so
@@ -215,19 +225,26 @@ function updatePerson({ updateParticipantName, existingParticipant, newValues, p
     newPersonValues.nationalityCode = nationalityCode;
   }
 
-  if (standardFamilyName && typeof isString(standardFamilyName) && standardFamilyName.length > 1) {
+  if (standardFamilyName && isString(standardFamilyName) && standardFamilyName.length > 1) {
     newPersonValues.standardFamilyName = standardFamilyName;
     personNameModified = true;
   }
 
-  if (standardGivenName && typeof isString(standardGivenName) && standardGivenName.length > 1) {
+  if (standardGivenName && isString(standardGivenName) && standardGivenName.length > 1) {
     newPersonValues.standardGivenName = standardGivenName;
     personNameModified = true;
   }
 
   if (personNameModified && updateParticipantName) {
-    const givenName = newPersonValues.standardGivenName || existingParticipant.person?.standardGivenName;
-    const familyName = newPersonValues.standardFamilyName || existingParticipant.person?.standardFamilyName;
+    // Collapsed on the existing values too, not only the incoming ones: a record
+    // that already carries 'Michael ' would otherwise re-compose the double space
+    // whenever the OTHER name is the one being edited.
+    const givenName = collapseWhitespace(
+      newPersonValues.standardGivenName || existingParticipant.person?.standardGivenName,
+    );
+    const familyName = collapseWhitespace(
+      newPersonValues.standardFamilyName || existingParticipant.person?.standardFamilyName,
+    );
     if (givenName && familyName) {
       newValues.participantName = `${givenName} ${familyName}`;
     } else {
