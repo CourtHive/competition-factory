@@ -7,16 +7,20 @@ import { modifyMatchUpScore } from '@Mutate/matchUps/score/modifyMatchUpScore';
 import { directWinner } from '@Mutate/matchUps/drawPositions/directWinner';
 import { decorateResult } from '@Functions/global/decorateResult';
 import { positionTargets } from '@Query/matchUp/positionTargets';
-import { buildSideExitProvenance, setSideExitProvenance } from '@Mutate/matchUps/matchUpStatus/sideExitProvenance';
 import { definedAttributes } from '@Tools/definedAttributes';
 import { pushGlobalLog } from '@Functions/global/globalLog';
 import { findStructure } from '@Acquire/findStructure';
 import { isDoubleExit, isExit } from '@Validators/isExit';
 import { overlap } from '@Tools/arrays';
+import {
+  buildSideExitProvenance,
+  setSideExitProvenance,
+  producedExitStatus,
+} from '@Mutate/matchUps/matchUpStatus/sideExitProvenance';
 
 // constants
 import { DRAW_POSITION_ASSIGNED, MISSING_MATCHUP, MISSING_STRUCTURE } from '@Constants/errorConditionConstants';
-import { BYE, DEFAULTED, DOUBLE_DEFAULT, DOUBLE_WALKOVER, WALKOVER } from '@Constants/matchUpStatusConstants';
+import { BYE, DOUBLE_DEFAULT, DOUBLE_WALKOVER } from '@Constants/matchUpStatusConstants';
 import { CONTAINER } from '@Constants/drawDefinitionConstants';
 import { SUCCESS } from '@Constants/resultConstants';
 
@@ -173,7 +177,11 @@ function handleLoserMatchUp({
 
 function handleEmptyExitLoser({ loserMatchUp, matchUpsMap, params, stack }) {
   const DOUBLE_EXIT = params.matchUpStatus === DOUBLE_DEFAULT ? DOUBLE_DEFAULT : DOUBLE_WALKOVER;
-  const EXIT = params.matchUpStatus === DOUBLE_DEFAULT ? DEFAULTED : WALKOVER;
+  // What the double exit PRODUCES. CA ruling 2026-09-12: a double exit of either flavour produces a
+  // WALKOVER, unattributable to any upstream individual — so this is `producedExitStatus`, not a
+  // third inline copy of the mapping. It previously read `=== DOUBLE_DEFAULT ? DEFAULTED : WALKOVER`
+  // at both sites, which stamped a default on a matchUp nobody played.
+  const EXIT = producedExitStatus(params.matchUpStatus) as string;
 
   const noContextLoserMatchUp = matchUpsMap.drawMatchUps.find(
     (matchUp) => matchUp.matchUpId === loserMatchUp.matchUpId,
@@ -216,7 +224,11 @@ function conditionallyAdvanceDrawPosition(params) {
   const structure = drawDefinition.structures.find(({ structureId }) => structureId === targetMatchUp.structureId);
 
   const DOUBLE_EXIT = params.matchUpStatus === DOUBLE_DEFAULT ? DOUBLE_DEFAULT : DOUBLE_WALKOVER;
-  const EXIT = params.matchUpStatus === DOUBLE_DEFAULT ? DEFAULTED : WALKOVER;
+  // What the double exit PRODUCES. CA ruling 2026-09-12: a double exit of either flavour produces a
+  // WALKOVER, unattributable to any upstream individual — so this is `producedExitStatus`, not a
+  // third inline copy of the mapping. It previously read `=== DOUBLE_DEFAULT ? DEFAULTED : WALKOVER`
+  // at both sites, which stamped a default on a matchUp nobody played.
+  const EXIT = producedExitStatus(params.matchUpStatus) as string;
 
   const stack = 'conditionallyAdvanceDrawPosition';
 
@@ -462,12 +474,12 @@ function buildMatchUpStatusCodes({ sourceMatchUpStatus, pairedMatchUpStatus, sou
   if (sourceSideNumber === 1) {
     matchUpStatusCodes = [
       {
-        matchUpStatus: producedMatchUpStatus(sourceMatchUpStatus),
+        matchUpStatus: producedExitStatus(sourceMatchUpStatus),
         previousMatchUpStatus: sourceMatchUpStatus,
         sideNumber: 1,
       },
       {
-        matchUpStatus: producedMatchUpStatus(pairedMatchUpStatus),
+        matchUpStatus: producedExitStatus(pairedMatchUpStatus),
         previousMatchUpStatus: pairedMatchUpStatus,
         sideNumber: 2,
       },
@@ -475,12 +487,12 @@ function buildMatchUpStatusCodes({ sourceMatchUpStatus, pairedMatchUpStatus, sou
   } else if (sourceSideNumber === 2) {
     matchUpStatusCodes = [
       {
-        matchUpStatus: producedMatchUpStatus(pairedMatchUpStatus),
+        matchUpStatus: producedExitStatus(pairedMatchUpStatus),
         previousMatchUpStatus: pairedMatchUpStatus,
         sideNumber: 1,
       },
       {
-        matchUpStatus: producedMatchUpStatus(sourceMatchUpStatus),
+        matchUpStatus: producedExitStatus(sourceMatchUpStatus),
         previousMatchUpStatus: sourceMatchUpStatus,
         sideNumber: 2,
       },
@@ -785,10 +797,4 @@ function advanceByeToLoserMatchUp(params) {
     loserMatchUp,
     event,
   });
-}
-
-function producedMatchUpStatus(previousMatchUpStatus) {
-  if (previousMatchUpStatus === DOUBLE_WALKOVER) return WALKOVER;
-  if (previousMatchUpStatus === DOUBLE_DEFAULT) return DEFAULTED;
-  return previousMatchUpStatus;
 }
