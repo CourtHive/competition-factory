@@ -27,11 +27,53 @@ import { DOUBLE_WALKOVER, DOUBLE_DEFAULT, DEFAULTED, RETIRED, WALKOVER } from '@
  * See Mentat/planning/MATCHUP_STATUS_CODES_PER_SIDE.md.
  */
 
-/** DOUBLE_WALKOVER produces WALKOVER downstream, DOUBLE_DEFAULT produces DEFAULTED. */
+/**
+ * What a matchUp PRODUCES downstream, given the status that produced it.
+ *
+ * A UNIFORM double exit produces its own flavour: `DOUBLE_WALKOVER` produces `WALKOVER`,
+ * `DOUBLE_DEFAULT` produces `DEFAULTED`. CA, 2026-09-12: *"a DOUBLE_DEFAULT producing a side record
+ * DEF sounds right, the same as a DOUBLE_WALKOVER producing a WO / WALKOVER sounds right."*
+ *
+ * The unattributed case is a MIXED convergence, and it is decided upstream of this function by
+ * `collapseDoubleExitStatus` — when two exits of differing origin meet, the converged matchUp is a
+ * `DOUBLE_WALKOVER`, so what it produces here is a `WALKOVER`. CA: *"a WALKOVER and a DEFAULT would
+ * produce a WALKOVER, not a DEF."* That is where the "not attributable to any upstream individual"
+ * rule lives; this mapping stays a faithful per-flavour projection.
+ */
 export function producedExitStatus(previousMatchUpStatus?: string): string | undefined {
   if (previousMatchUpStatus === DOUBLE_WALKOVER) return WALKOVER;
   if (previousMatchUpStatus === DOUBLE_DEFAULT) return DEFAULTED;
   return previousMatchUpStatus;
+}
+
+/**
+ * The status for a matchUp where two exits MEET, from the exits each side carried.
+ *
+ * CA, 2026-09-12: *"a WALKOVER and a DEFAULT would produce a WALKOVER, not a DEF… and a
+ * DOUBLE_WALKOVER and a DOUBLE_DEFAULT producing a WALKOVER and a DEFAULT would produce a
+ * WALKOVER."* So a convergence is `DOUBLE_DEFAULT` only when EVERY side's exit is default-flavoured;
+ * any mixture collapses to `DOUBLE_WALKOVER`.
+ *
+ * The asymmetry is deliberate and is about not attributing a ruling to someone it was not made
+ * about. `DOUBLE_DEFAULT` propagates `DEFAULTED` onward (see `producedExitStatus`), and a default is
+ * a referee's finding against a named player. In a mixed convergence one side merely failed to
+ * appear, so the weaker claim — "did not play" — is the only one true of both, and it is the one
+ * that must survive the collapse into a single field. Choosing the stronger claim would put a `DEF`
+ * badge beside an innocent participant's name: `courthive-components`
+ * `renderParticipant.ts:113`/`:48` render this matchUp-level status per PARTICIPANT via
+ * `renderStatusPill`.
+ *
+ * `RETIRED` is not default-flavoured, which matches `carryOverMatchUpStatus`'s existing decision to
+ * carry a retirement forward as a `WALKOVER`.
+ *
+ * Takes the statuses as ARGUMENTS rather than reading provenance: provenance writes are gated on
+ * `writeNativeEnabled()`, so under LEGACY mode there would be nothing to read.
+ */
+export function collapseDoubleExitStatus(sideStatuses: (string | undefined)[]): string {
+  const known = sideStatuses.filter(Boolean);
+  if (!known.length) return DOUBLE_WALKOVER;
+  const isDefaultFlavoured = (status?: string) => status === DEFAULTED || status === DOUBLE_DEFAULT;
+  return known.every(isDefaultFlavoured) ? DOUBLE_DEFAULT : DOUBLE_WALKOVER;
 }
 
 type BuildArgs = {

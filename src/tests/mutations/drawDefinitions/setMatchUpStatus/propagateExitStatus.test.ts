@@ -234,7 +234,7 @@ test.for([
   },
 );
 
-test('can propagate a default to a consolation match with already the result of a double default, resulting in a DOUBLE_WALKOVER', () => {
+test('can propagate a default to a consolation match with already the result of a double default, resulting in a DOUBLE_DEFAULT', () => {
   const idPrefix = 'matchUp';
   const drawId = 'drawId';
   mocksEngine.generateTournamentRecord({
@@ -274,19 +274,23 @@ test('can propagate a default to a consolation match with already the result of 
   expect(matchUp?.matchUpStatus).toEqual(DEFAULTED);
   expect(matchUp?.readyToScore).toEqual(false);
   expect(matchUp?.winningSide).toEqual(2);
-  //consolation match should result in a DOUBLE_WALKOVER
+  // BOTH sides of this convergence originate in a default — the upstream DOUBLE_DEFAULT and the
+  // arriving DEFAULTED — so the consolation matchUp is a DOUBLE_DEFAULT.
+  //
+  // This is the STATUS half the comment below said was "a separate change". It was asserting
+  // DOUBLE_WALKOVER while asserting default-flavoured codes on the same matchUp, because RULE 4
+  // hardcoded the status. RULE 4 now derives it with `collapseDoubleExitStatus`, so the two halves
+  // of this record finally agree. A MIXED convergence still collapses to DOUBLE_WALKOVER.
   let loserMatchUp = matchUps?.find((mU) => mU.matchUpId === matchUp?.loserMatchUpId);
-  expect(loserMatchUp?.matchUpStatus).toEqual(DOUBLE_WALKOVER);
+  expect(loserMatchUp?.matchUpStatus).toEqual(DOUBLE_DEFAULT);
 
   // Was ['WO', 'DM'], which asserted that a DEFAULT is recorded as a WALKOVER. Index 0 carries the
   // code for the side that exited via matchUp-1-1's DOUBLE_DEFAULT, so 'DEF' is the truthful code;
   // the old value came from a coercion that mapped EVERY object-shaped element to OUTCOME_WALKOVER
   // (measured: of 50 provenance elements reaching it, 13 were BYE and 9 DEFAULTED).
   //
-  // NOTE the divergence this exposes rather than creates: matchUpStatus is still DOUBLE_WALKOVER
-  // because progressExitStatus RULE 4 hardcodes it, while doubleExitAdvancement preserves
-  // DOUBLE_DEFAULT. Two producers, two conventions — documented in doubleExitStatusParity.test.ts.
-  // Fixing the STATUS half is a separate change; this one makes the CODE stop lying.
+  // The divergence this NOTE used to describe — matchUpStatus saying DOUBLE_WALKOVER while the
+  // codes said default — is now closed: RULE 4 derives the flavour instead of hardcoding it.
   expect(loserMatchUp?.matchUpStatusCodes).toEqual(['DEF', 'DM']);
 });
 

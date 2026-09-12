@@ -804,7 +804,14 @@ function checkParticipants({
     matchUpStatus &&
     //we want to allow wo, default and double walkover inn the consolation draw
     //to have only one particpiant when they are caused by an exit propagation
-    [WALKOVER, DEFAULTED, DOUBLE_WALKOVER].includes(matchUpStatus) &&
+    //
+    // DOUBLE_DEFAULT was missing from this list while DOUBLE_WALKOVER was present, so a
+    // single-participant propagated DOUBLE_DEFAULT fell through to the participants-required
+    // validation and was refused. Measured: reachable, 1 occurrence over the 600-seed sweep window,
+    // and the probable mechanism behind an earlier experiment in which writing DOUBLE_DEFAULT at
+    // progressExitStatus RULE 4 produced a single DEFAULTED *with* a winningSide. This file already
+    // used the correct pair at line 454.
+    [WALKOVER, DEFAULTED, DOUBLE_WALKOVER, DOUBLE_DEFAULT].includes(matchUpStatus) &&
     participantsCount === 1 &&
     propagateExitStatus
   ) {
