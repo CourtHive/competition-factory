@@ -23,6 +23,8 @@ import {
   ParticipantRoleUnion,
   MatchUpStatusUnion,
   DrawTypeUnion,
+  SeedingProfileUnion,
+  MatchUpSchedule,
   TieFormat,
   Structure,
   MatchUp,
@@ -240,7 +242,11 @@ export type SeedBlock = {
 
 export type SeedingProfile = {
   groupSeedingThreshold?: number;
-  positioning?: string;
+  /**
+   * Seeding pattern for a seed block. `ADJACENT` is a synonym for `CLUSTER`.
+   * Unrelated to `PositioningProfileEnum`, which governs a different concern.
+   */
+  positioning?: SeedingProfileUnion;
   nonRandom?: boolean;
 };
 
@@ -565,6 +571,16 @@ export type PlayoffAttributes = {
 };
 
 /**
+ * A structure-naming map keyed by finishing-position range (e.g. `'1-4'`).
+ *
+ * {@link PlayoffAttributes} with an optional `structureId`, which pins the generated
+ * structure's id rather than letting the generator mint one.
+ */
+export type NamingEntry = {
+  [key: string]: { name: string; abbreviation: string; structureId?: string };
+};
+
+/**
  * Arguments for playoff structure generation within generateDrawDefinition().
  *
  * All fields except `roundPlayoffs` are passed directly to addPlayoffStructures().
@@ -596,7 +612,7 @@ export type WithPlayoffsArgs = {
   playoffAttributes?: PlayoffAttributes;
   playoffStructureNameBase?: string;
   addNameBaseToAttributeName?: boolean;
-  finishingPositionNaming?: any;
+  finishingPositionNaming?: NamingEntry;
   finishingPositionLimit?: number;
   playoffPositions?: number[];
   roundOffsetLimit?: number;
@@ -824,6 +840,6 @@ export type Tally = [number, number];
 export type ScheduledMatchUpArgs = {
   visibilityThreshold?: string;
   timeStamp?: string;
-  schedule?: any;
+  schedule?: MatchUpSchedule;
   matchUp: any;
 };

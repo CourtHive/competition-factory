@@ -1,0 +1,25 @@
+{
+  "_comment": [
+    "Enumerated request-shape typing debt, checked by `pnpm check:request-shapes`.",
+    "Every entry is a field the guard WOULD flag, kept with a reason rather than typed today.",
+    "An entry that matches nothing FAILS the check \u2014 pay the debt, delete the line.",
+    "Adding an entry is a deliberate act: prefer typing the field."
+  ],
+  "allow": {
+    "GetMatchUpsArgs.publishStatus": "The publish-state object's shape has never been authored \u2014 readers reach for .drawIds, .drawDetails and .displaySettings ad hoc (getDrawIsPublished.ts, getMatchUpScheduleDetails.ts:151). Typing it means inventing the shape, not recording it. Blocked on a PublishState type; see FACTORY_REQUEST_SHAPE_TYPING.md.",
+    "GetDrawDataArgs.publishStatus": "Same unauthored shape as GetMatchUpsArgs.publishStatus, and the same blocker.",
+    "GetDrawDataArgs.status": "Genuinely OPEN by design \u2014 a publish-state channel key, PUBLIC unless a provider uses a private one. The guard's registry infers from the field NAME, and `status` is polysemous across the domain (Person.status is a bare string, PracticeRegistration.status is PracticeRegistrationStatusUnion); the union it suggests here is the wrong one. This entry records a deliberate non-fix, not deferred work.",
+    "GenerateDrawDefinitionArgs.qualifyingProfiles": "Archaeology, not typing. The shape is assembled across generateEventWithDraw.ts, generateDrawStructuresAndLinks.ts and qualifyingGeneration.ts with roundTarget/structureProfiles nesting that no single site declares. Needs a reading pass before a type can be honest.",
+    "ScheduledMatchUpArgs.matchUp": "Reached for both MatchUp and HydratedMatchUp, and callers pass partially-assembled records mid-hydration. MatchUp | HydratedMatchUp is close but unverified against every call site.",
+    "StructureProfile.stage": "StageTypeUnion is the right union and this is the strongest remaining candidate. Held back only because StructureProfile is nested in drawProfiles/qualifyingProfiles across mocksEngine and generateDrawDefinition, so the break is wide; PointAward.stage (rankingTypes.ts:632) carries the same debt and should move with it.",
+    "TransitionRecordStatusArgs.record": "Deliberately generic \u2014 the function transitions a status on ANY record in ANY collection, keyed by collectionKey/idKey. A narrower type would defeat its purpose.",
+    "CallListenerArgs.payloads": "Subscription payloads are topic-shaped and provider-defined; the factory does not constrain what a subscriber receives.",
+    "CallListenerArgs.notices": "Deprecated back-compat alias for payloads, slated for removal in a future major. Typing a field on its way out is wasted motion.",
+    "HandleCaughtErrorArgs.params": "The arbitrary argument object of whichever engine method threw.",
+    "HandleCaughtErrorArgs.err": "A caught value. TypeScript types `catch` bindings as `unknown` or `any` by design and this is that value.",
+    "AddCourtsArgs.courtTimings": "Per-court timing overrides whose shape is read positionally against courtNames; unauthored, and the mocks surface is the only producer.",
+    "BuildTournamentRecordArgs.eventDataDocs": "Raw provider documents from an external source system. The builder's contract is that it accepts whatever the source emits.",
+    "BuildTournamentRecordArgs.matchUpDocs": "Raw provider documents; see eventDataDocs.",
+    "BuildTournamentRecordArgs.participantDocs": "Raw provider documents; see eventDataDocs."
+  }
+}
