@@ -12,10 +12,15 @@ import { validateTieFormat } from '@Validators/validateTieFormat';
 import { writeTieFormat } from '@Mutate/tieFormat/writeTieFormat';
 import { definedAttributes } from '@Tools/definedAttributes';
 import { validUpdate } from '@Validators/validUpdate';
-import { UUID } from '@Tools/UUID';
+import { takeUUID } from '@Tools/UUID';
 
 // constants and types
-import { CANNOT_MODIFY_TIEFORMAT, DUPLICATE_VALUE, MISSING_DRAW_DEFINITION } from '@Constants/errorConditionConstants';
+import {
+  CANNOT_MODIFY_TIEFORMAT,
+  DUPLICATE_VALUE,
+  INSUFFICIENT_UUIDS,
+  MISSING_DRAW_DEFINITION,
+} from '@Constants/errorConditionConstants';
 import { POLICY_TYPE_MATCHUP_ACTIONS } from '@Constants/policyConstants';
 import { PolicyDefinitions, ResultType } from '@Types/factoryTypes';
 import { SUCCESS } from '@Constants/resultConstants';
@@ -54,13 +59,16 @@ type AddCollectionDefinitionArgs = {
   eventId?: string;
   uuids?: string[];
   /**
-   * Pool for tieFormat copy-on-write forks in `writeTieFormat`, SEPARATE from
-   * `uuids` (which feeds matchUp id minting).
+   * Pool for tieFormat identities — copy-on-write forks in `writeTieFormat`, and the
+   * `collectionId` minted for a definition that arrives without one. SEPARATE from `uuids`, which
+   * feeds matchUp id minting.
    *
-   * Two pools rather than one so a shortfall is attributable: sharing a pool
-   * couples two unrelated id streams, and `INSUFFICIENT_UUIDS` could not say
-   * which one ran short. Strict when supplied — an exhausted pool signals that
-   * this replay needed a different number of ids than the origin did.
+   * Two pools rather than one so a shortfall is attributable: sharing a pool with the matchUp
+   * stream couples two unrelated id streams, and `INSUFFICIENT_UUIDS` could not say which ran
+   * short. A collectionId belongs on THIS side of that line — it identifies a collection within the
+   * tieFormat, the same container the forks describe — so it draws here rather than from a third
+   * pool. Strict when supplied: an exhausted pool signals that this replay needed a different
+   * number of ids than the origin did.
    */
   tieFormatUuids?: string[];
   event?: Event;
@@ -149,7 +157,13 @@ export function addCollectionDefinition({
         result: { error: DUPLICATE_VALUE },
       });
   } else {
-    collectionDefinition.collectionId = UUID();
+    // Drawn from `tieFormatUuids` so a mutation executed on both client and server mints the same
+    // id. Without a pool this called `UUID()` on each side and the two copies of the record
+    // diverged silently — see `checkTieFormat`. `takeUUID` returns INSUFFICIENT_UUIDS rather than a
+    // fresh id when a supplied pool runs out, so a shortfall surfaces as a conflict.
+    const { uuid, error: uuidError } = takeUUID({ uuids: tieFormatUuids });
+    if (uuidError || !uuid) return decorateResult({ result: { error: uuidError ?? INSUFFICIENT_UUIDS }, stack });
+    collectionDefinition.collectionId = uuid;
   }
 
   tieFormat.collectionDefinitions.push(collectionDefinition);

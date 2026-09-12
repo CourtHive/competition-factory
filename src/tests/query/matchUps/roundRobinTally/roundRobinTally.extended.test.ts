@@ -238,7 +238,7 @@ describe('Round Robin Tally - Extended Coverage', () => {
 
       const result = tallyParticipantResults({
         matchUps,
-        pressureRating: 'true',
+        pressureRating: true,
       });
 
       Object.values(result.participantResults).forEach((pr: any) => {
