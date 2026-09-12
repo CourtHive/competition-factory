@@ -1,13 +1,18 @@
 import { setMatchUpState } from '@Mutate/matchUps/matchUpStatus/setMatchUpState';
 import { decorateResult } from '@Functions/global/decorateResult';
 import { getAllDrawMatchUps } from '@Query/matchUps/drawMatchUps';
+import { getMatchUpsMap } from '@Query/matchUps/getMatchUpsMap';
 import { pushGlobalLog } from '@Functions/global/globalLog';
 import { isExit } from '@Validators/isExit';
+import {
+  buildCarriedExitProvenance,
+  mergeSideExitProvenance,
+  exitOutcomeCode,
+} from '@Mutate/matchUps/matchUpStatus/sideExitProvenance';
 
 // constants
 import { DOUBLE_WALKOVER, RETIRED, WALKOVER } from '@Constants/matchUpStatusConstants';
 import { MISSING_MATCHUP } from '@Constants/errorConditionConstants';
-import { exitOutcomeCode } from '@Mutate/matchUps/matchUpStatus/sideExitProvenance';
 import { SUCCESS } from '@Constants/resultConstants';
 
 // matchUpStatusCodes are position-dependent: index 0 maps to side 1, index 1 to
@@ -41,6 +46,7 @@ export function progressExitStatus({
   propagateExitStatus,
   sourceMatchUpStatus,
   loserParticipantId,
+  sourceMatchUpId,
   tournamentRecord,
   drawDefinition,
   loserMatchUp,
@@ -83,6 +89,10 @@ export function progressExitStatus({
 
   let loserMatchUpStatus = carryOverMatchUpStatus;
   let winningSide: number | undefined = undefined;
+  // CODES first-class: the side that EXITED, attributed to the matchUp whose result produced the
+  // exit. Written alongside the legacy string codes, exactly as doubleExitAdvancement does — see
+  // sideExitProvenance.ts on why the legacy write is not yet gated.
+  let exitProvenance;
 
   if (loserParticipantSide?.sideNumber) {
     const opponentSideNumber = loserParticipantSide.sideNumber === 1 ? 2 : 1;
@@ -108,6 +118,17 @@ export function progressExitStatus({
         : { progressExitStatus: true };
       return decorateResult({ result: { ...SUCCESS }, stack, context });
     }
+
+    // RULES 2, 3 and 4 all describe the same fact about this side — it holds a participant who
+    // EXITED upstream — so the provenance is built once. RULE 4 additionally leaves the opponent's
+    // entry, stamped by the earlier propagation, untouched: the write below merges rather than
+    // replaces.
+    exitProvenance = buildCarriedExitProvenance({
+      exitingSideNumber: loserParticipantSide.sideNumber,
+      previousMatchUpStatus: sourceMatchUpStatus,
+      matchUpStatus: carryOverMatchUpStatus,
+      sourceMatchUpId,
+    });
 
     const opponentEmpty = participantsCount === 1 && statusCodes.length === 0;
     if (opponentEmpty || !isExit(loserMatchUp.matchUpStatus)) {
@@ -149,5 +170,17 @@ export function progressExitStatus({
     winningSide,
     event,
   });
+  if (!result.error) {
+    // stamped AFTER the state write: setMatchUpState clears provenance wherever it blanks the codes
+    // the provenance describes (#4816), so writing first would be undone.
+    // The map is rebuilt here rather than reusing the `matchUpsMap` threaded through the
+    // propagation context: that one predates the `setMatchUpState` above, and the objects it holds
+    // can be detached from `drawDefinition.structures` by the time the write returns. Measured —
+    // stamping onto the context map wrote to an object no subsequent read could see.
+    const drawMatchUps = getMatchUpsMap({ drawDefinition })?.drawMatchUps ?? [];
+    const noContextLoserMatchUp = drawMatchUps.find((m) => m.matchUpId === loserMatchUp.matchUpId);
+    mergeSideExitProvenance({ matchUp: noContextLoserMatchUp, provenance: exitProvenance });
+  }
+
   return decorateResult({ result, stack, context: { progressExitStatus: true } });
 }

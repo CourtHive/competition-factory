@@ -334,6 +334,7 @@ export type FactoryEngineMethod =
   | 'getMatchUpFormatVariance'
   | 'getMatchUpOfficialConflicts'
   | 'getMatchUpRatingDelta'
+  | 'getMatchUpReadiness'
   | 'getMatchUpScheduleDetails'
   | 'getMatchUpsMap'
   | 'getMatchUpsStats'
@@ -353,6 +354,7 @@ export type FactoryEngineMethod =
   | 'getParticipantMembership'
   | 'getParticipantPaymentStatus'
   | 'getParticipantPoints'
+  | 'getParticipantRest'
   | 'getParticipantResults'
   | 'getParticipants'
   | 'getParticipantScaleItem'
@@ -472,6 +474,7 @@ export type FactoryEngineMethod =
   | 'mergeOverlappingAvailability'
   | 'mergeParticipants'
   | 'migrateTournamentRecord'
+  | 'mintCollectionIds'
   | 'minutesToHhmm'
   | 'modifyCertification'
   | 'modifyCollectionDefinition'
@@ -1064,6 +1067,7 @@ export const FACTORY_ENGINE_METHODS: readonly FactoryEngineMethod[] = [
   'getMatchUpFormatVariance',
   'getMatchUpOfficialConflicts',
   'getMatchUpRatingDelta',
+  'getMatchUpReadiness',
   'getMatchUpScheduleDetails',
   'getMatchUpsMap',
   'getMatchUpsStats',
@@ -1083,6 +1087,7 @@ export const FACTORY_ENGINE_METHODS: readonly FactoryEngineMethod[] = [
   'getParticipantMembership',
   'getParticipantPaymentStatus',
   'getParticipantPoints',
+  'getParticipantRest',
   'getParticipantResults',
   'getParticipants',
   'getParticipantScaleItem',
@@ -1202,6 +1207,7 @@ export const FACTORY_ENGINE_METHODS: readonly FactoryEngineMethod[] = [
   'mergeOverlappingAvailability',
   'mergeParticipants',
   'migrateTournamentRecord',
+  'mintCollectionIds',
   'minutesToHhmm',
   'modifyCertification',
   'modifyCollectionDefinition',

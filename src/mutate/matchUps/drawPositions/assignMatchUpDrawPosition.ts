@@ -3,7 +3,7 @@ import { getUpdatedDrawPositions } from '@Mutate/drawDefinitions/matchUpGovernor
 import { updateMatchUpStatusCodes } from '@Mutate/drawDefinitions/matchUpGovernor/matchUpStatusCodes';
 import { getExitWinningSide } from '@Mutate/drawDefinitions/matchUpGovernor/getExitWinningSide';
 import { getMappedStructureMatchUps, getMatchUpsMap } from '@Query/matchUps/getMatchUpsMap';
-import { clearSideExitProvenance } from '@Mutate/matchUps/matchUpStatus/sideExitProvenance';
+import { clearResolvedSideExitProvenance } from '@Mutate/matchUps/matchUpStatus/sideExitProvenance';
 import { getPositionAssignments } from '@Query/drawDefinition/positionsGetter';
 import { getInitialRoundNumber } from '@Query/matchUps/getInitialRoundNumber';
 import { updateSideLineUp } from '@Mutate/matchUps/lineUps/updateSideLineUp';
@@ -325,8 +325,9 @@ function applyPositionToMatchUp({
       matchUpStatusCodes[exitSideNumber - 1] = carriedCode;
     }
     matchUp.matchUpStatusCodes = matchUpStatusCodes;
-    // nothing carried means the exit this matchUp recorded is gone; its provenance goes with it
-    if (!matchUpStatusCodes.length) clearSideExitProvenance(matchUp);
+    // Nothing carried means the exit this matchUp recorded is gone — unless the status says
+    // otherwise, in which case the provenance is still describing a live exit.
+    if (!matchUpStatusCodes.length) clearResolvedSideExitProvenance(matchUp);
   } else if (matchUp?.matchUpStatusCodes) {
     updateMatchUpStatusCodes({
       inContextDrawMatchUps: refreshedMatchUps,
@@ -355,79 +356,96 @@ function applyPositionToMatchUp({
   });
 }
 
-function advanceDrawPosition({
+/**
+ * Whether a participant arriving at a PENDING propagated exit landed on the EXITING side.
+ *
+ * A participant arriving at such a matchUp advances out of it only if they arrived on the WINNING
+ * side — that is the documented resolution, the exit resolving onto whoever falls through into the
+ * empty winner slot. `advanceDrawPosition` was advancing the arriving drawPosition unconditionally,
+ * and a participant can also arrive on the exiting side.
+ *
+ * That happens whenever an upstream result is RE-SCORED: the consolation seat is vacated and
+ * re-filled with the new loser, and by then the matchUp is already a propagated exit. The first fill
+ * does not trip it — at that point `progressExitStatus` has not yet turned the matchUp into one.
+ *
+ * The consequence is `WINNING_SIDE_ADVANCEMENT_MISMATCH`: the LOSER of the consolation walkover sits
+ * in the next round and the winner is dropped from the draw. Measured on FEED_IN_CHAMPIONSHIP 8/8 —
+ * the advancing position was 6 while the matchUp's winningSide pointed at 7.
+ *
+ * Deliberately narrow: it reports true only when the winning drawPosition is KNOWN and differs, so a
+ * pending exit that has no winningSide yet advances exactly as before.
+ */
+function arrivesOnExitingSide(matchUp: any, drawPosition: number): boolean {
+  const winningDrawPosition = matchUp?.winningSide ? matchUp?.drawPositions?.[matchUp.winningSide - 1] : undefined;
+  return !!winningDrawPosition && winningDrawPosition !== drawPosition;
+}
+
+/**
+ * Place `drawPosition` into the winnerMatchUp. All three advancement branches below make the same
+ * call; only the condition differs, so the call lives in one place.
+ */
+function advanceIntoWinnerMatchUp({
   inContextDrawMatchUps,
-  positionAssigned,
-  isPropagatedExit,
   tournamentRecord,
-  inContextMatchUp,
   drawDefinition,
-  matchUpStatus,
   winnerMatchUp,
   drawPosition,
-  isByeMatchUp,
-  isLuckyDraw,
   matchUpsMap,
-  matchUp,
-  structure,
   event,
 }) {
+  const result = assignMatchUpDrawPosition({
+    matchUpId: winnerMatchUp.matchUpId,
+    inContextDrawMatchUps,
+    tournamentRecord,
+    drawDefinition,
+    drawPosition,
+    matchUpsMap,
+    event,
+  });
+  return result.error ? result : undefined;
+}
+
+function advanceDrawPosition(params) {
+  const {
+    positionAssigned,
+    isPropagatedExit,
+    inContextMatchUp,
+    matchUpStatus,
+    winnerMatchUp,
+    drawPosition,
+    isByeMatchUp,
+    isLuckyDraw,
+    matchUpsMap,
+    matchUp,
+    structure,
+  } = params;
+
+  if (!winnerMatchUp) return undefined;
+
   if (positionAssigned && isByeMatchUp && !isLuckyDraw) {
-    if (winnerMatchUp) {
-      if ([BYE, DOUBLE_WALKOVER, DOUBLE_DEFAULT].includes(matchUpStatus)) {
-        const result = assignMatchUpDrawPosition({
-          event,
-          matchUpId: winnerMatchUp.matchUpId,
-          inContextDrawMatchUps,
-          tournamentRecord,
-          drawDefinition,
-          drawPosition,
-          matchUpsMap,
-        });
-        if (result.error) return result;
-      } else {
-        const { structureId } = winnerMatchUp;
-        if (structureId !== structure.structureId) {
-          pushGlobalLog({
-            method: 'assignMatchUpDrawPosition',
-            issue: 'winnerMatchUp in different structure; participant is in a different targetDrawPosition',
-          });
-        }
-      }
-    }
-  } else if (positionAssigned && isPropagatedExit) {
-    if (winnerMatchUp) {
-      const result = assignMatchUpDrawPosition({
-        event,
-        matchUpId: winnerMatchUp.matchUpId,
-        inContextDrawMatchUps,
-        tournamentRecord,
-        drawDefinition,
-        drawPosition,
-        matchUpsMap,
+    if ([BYE, DOUBLE_WALKOVER, DOUBLE_DEFAULT].includes(matchUpStatus)) return advanceIntoWinnerMatchUp(params);
+    if (winnerMatchUp.structureId !== structure.structureId) {
+      pushGlobalLog({
+        method: 'assignMatchUpDrawPosition',
+        issue: 'winnerMatchUp in different structure; participant is in a different targetDrawPosition',
       });
-      if (result.error) return result;
     }
-  } else if (winnerMatchUp && inContextMatchUp && !inContextMatchUp.feedRound) {
+    return undefined;
+  }
+
+  if (positionAssigned && isPropagatedExit) {
+    // a participant arriving on the EXITING side of a pending propagated exit has not won it
+    return arrivesOnExitingSide(matchUp, drawPosition) ? undefined : advanceIntoWinnerMatchUp(params);
+  }
+
+  if (inContextMatchUp && !inContextMatchUp.feedRound) {
     const { pairedPreviousMatchUpIsDoubleExit } = getPairedPreviousMatchUpIsDoubleExit({
       targetMatchUp: matchUp,
       drawPosition,
       matchUpsMap,
       structure,
     });
-
-    if (pairedPreviousMatchUpIsDoubleExit) {
-      const result = assignMatchUpDrawPosition({
-        event,
-        matchUpId: winnerMatchUp.matchUpId,
-        inContextDrawMatchUps,
-        tournamentRecord,
-        drawDefinition,
-        drawPosition,
-        matchUpsMap,
-      });
-      if (result.error) return result;
-    }
+    if (pairedPreviousMatchUpIsDoubleExit) return advanceIntoWinnerMatchUp(params);
   }
 
   return undefined;

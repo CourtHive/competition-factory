@@ -1,6 +1,7 @@
 export { modifyCollectionDefinition } from '@Mutate/tieFormat/modifyCollectionDefinition';
 export { orderCollectionDefinitions } from '@Mutate/tieFormat/orderCollectionDefinitions';
 export { removeCollectionDefinition } from '@Mutate/tieFormat/removeCollectionDefinition';
+export { checkTieFormat as mintCollectionIds } from '@Mutate/tieFormat/checkTieFormat';
 export { addCollectionDefinition } from '@Mutate/tieFormat/addCollectionDefinition';
 export { removeCollectionGroup } from '@Mutate/tieFormat/removeCollectionGroup';
 export { aggregateTieFormats } from '@Mutate/tieFormat/aggregateTieFormats';

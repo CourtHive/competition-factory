@@ -2,8 +2,8 @@
 title: Migration 6.x to 7.0.0
 ---
 
-Version 7.0.0 of the Competition Factory is a **major** release driven by breaking changes in three
-areas — exit propagation, time-zone conversion, and one constant rename. The headline _feature_, the
+Version 7.0.0 of the Competition Factory is a **major** release driven by breaking changes in four
+areas — exit propagation, time-zone conversion, tieFormat validation, and one constant rename. The headline _feature_, the
 [LADDER draw type](./whats-new-7.0.0#the-headline-feature--the-ladder-draw-type), is purely additive
 and requires no migration.
 
@@ -13,17 +13,19 @@ feature tour and the full list of 7.0.0 additions, see [What's New in 7.0.0](./w
 
 ## Breaking changes at a glance
 
-| Change                                                                                   | Who is affected                                                   | Action required   |
-| ---------------------------------------------------------------------------------------- | ----------------------------------------------------------------- | ----------------- |
-| `particicipantsRequiredMatchUpStatuses` renamed to `participantsRequiredMatchUpStatuses` | Anyone importing that constant by name                            | Rename the import |
-| Re-applying an identical double exit is now a no-op                                      | Callers relying on re-application to re-run propagation           | See §2            |
-| A rejected `setMatchUpStatus` no longer alters the draw                                  | Callers with compensating logic after an error                    | See §3            |
-| `timeZone` conversions return an error instead of throwing or guessing                   | Anyone calling `wallClockToUTC`, `utcToWallClock`, `toEmbargoUTC` | See §4            |
-| `getTimeZoneOffsetMinutes` now returns `number \| undefined`                             | Anyone reading a zone offset                                      | See §4            |
-| `checkMatchUpIsComplete` / `getParticipantResults` refuse an absent object param         | Callers passing `matchUpId` / `drawId` and reading the result     | See §5            |
-| `getParticipantResults` refuses any matchUp carrying no `sides`                          | Callers passing STORED (non-hydrated) matchUps                    | See §5            |
-| `buildDrawHierarchy` is removed                                                          | Anyone calling it (no consumer was found in any CourtHive repo)   | See §6            |
-| `addFinishingRounds` refuses an absent `matchUps` array                                  | Callers relying on the empty-array return                         | See §7            |
+| Change                                                                                   | Who is affected                                                           | Action required   |
+| ---------------------------------------------------------------------------------------- | ------------------------------------------------------------------------- | ----------------- |
+| `particicipantsRequiredMatchUpStatuses` renamed to `participantsRequiredMatchUpStatuses` | Anyone importing that constant by name                                    | Rename the import |
+| Re-applying an identical double exit is now a no-op                                      | Callers relying on re-application to re-run propagation                   | See §2            |
+| A rejected bare `{ winningSide }` no longer unwinds the existing result                  | Callers matching on `ERR_MISSING_ASSIGNMENTS` for this case               | See §3            |
+| `timeZone` conversions return an error instead of throwing or guessing                   | Anyone calling `wallClockToUTC`, `utcToWallClock`, `toEmbargoUTC`         | See §4            |
+| `getTimeZoneOffsetMinutes` now returns `number \| undefined`                             | Anyone reading a zone offset                                              | See §4            |
+| `checkMatchUpIsComplete` / `getParticipantResults` refuse an absent object param         | Callers passing `matchUpId` / `drawId` and reading the result             | See §5            |
+| `getParticipantResults` refuses any matchUp carrying no `sides`                          | Callers passing STORED (non-hydrated) matchUps                            | See §5            |
+| `buildDrawHierarchy` is removed                                                          | Anyone calling it (no consumer was found in any CourtHive repo)           | See §6            |
+| `addFinishingRounds` refuses an absent `matchUps` array                                  | Callers relying on the empty-array return                                 | See §7            |
+| `validateTieFormat` enforces `collectionId` by default                                   | Anyone validating a hand-written or published tieFormat directly          | See §8            |
+| `pressureRating` is typed `boolean`, not `string`                                        | TypeScript callers of `tallyParticipantResults` / `getParticipantResults` | See §9            |
 
 ## 1. `participantsRequiredMatchUpStatuses` — a spelling fix
 
@@ -66,29 +68,30 @@ Nothing, for almost everyone — this removes a corruption path. A genuine _chan
 The one behaviour that is gone is **re-application as an accidental repair**. If a draw was somehow
 left with the status set but the advancement missing, re-sending the same outcome used to nudge it.
 It no longer will. That state is reported by `getDrawInconsistencies` as `WINNER_NOT_ADVANCED` or
-`DROPPED_PROGRESSION`; repair it deliberately rather than by sending a duplicate request.
+`DROPPED_PROGRESSION`.
 
-## 3. A rejected mutation leaves the draw unchanged
+## 3. A rejected bare `{ winningSide }` no longer unwinds the existing result
 
 _Shipped in [#4782](https://github.com/CourtHive/competition-factory/pull/4782)._
 
-`setMatchUpStatus` now validates a bare `{ winningSide }` outcome **before** any removal runs. If the
-call is refused, the draw is byte-identical to what it was.
-
+`setMatchUpStatus` now validates a bare `{ winningSide }` outcome **before** any removal runs.
 Previously such an outcome skipped the early participant check — it carries no `matchUpStatus` — and
 was caught later, after `removeDoubleExit` or `removeDirectedParticipants` had already unwound the
 existing result. A rejected call could therefore **destroy a recorded result**: a pending propagated
 exit could be left `TO_BE_PLAYED` by a request that returned an error.
 
-### What to do about compensating logic
+The only interface change is the error _code_ for this case, which moved from
+`ERR_MISSING_ASSIGNMENTS` to `ERR_INVALID_MATCHUP_STATUS` — the rejection now comes from the
+participant check rather than from the later score-modification guard. Match on behaviour rather
+than on that specific code.
 
-If you have compensating logic that re-reads or repairs state after an error from
-`setMatchUpStatus`, it is no longer needed. The error itself is unchanged in kind; what changed is
-that it now arrives over untouched data.
-
-Note the error _code_ for this case moved from `ERR_MISSING_ASSIGNMENTS` to
-`ERR_INVALID_MATCHUP_STATUS`, since the rejection now comes from the participant check rather than
-from the later score-modification guard. Match on behaviour rather than on that specific code.
+:::note This fix is scoped to that one outcome shape
+It does **not** mean every rejected mutation leaves the draw untouched. A direct `setMatchUpStatus`
+that fails part-way through a propagation cascade can still return an error over changed state —
+measured on 2026-09-11 at 78 of 600 randomized scenarios. Callers that need all-or-nothing should
+go through `executionQueue` with `rollbackOnError: true`, which snapshots and restores; that is what
+TMX and competition-factory-server do on every mutation.
+:::
 
 ## 4. Time-zone conversions refuse rather than throw or guess
 
@@ -308,7 +311,83 @@ If you assign from it, branch on the error, or drop the assignment — either is
 
 Valid input behaves exactly as before. An **empty** array is valid and stamps nothing.
 
-## 8. Non-breaking additions worth knowing
+## 8. `validateTieFormat` enforces `collectionId` by default
+
+_Shipped in [#4825](https://github.com/CourtHive/competition-factory/pull/4825)._
+
+`validateTieFormat` used to report an id-less tieFormat **valid**, so a consumer validating directly
+got a false all-clear — while every generated line carried `collectionId: null`, could not be
+attributed to its collection, and the tie never scored. The detector existed and was switched off.
+
+It now enforces. A published `fixtures.tieFormats.*` object carries no collectionIds — it cannot,
+since a `collectionId` identifies a collection _instance_ within a record — so validating one
+directly, or passing one to an API that validates at the door such as `generateEventsFromTieFormat`,
+is now refused with `ERR_INVALID_TIE_FORMAT`.
+
+### What changed for draw generation: nothing
+
+`generateDrawDefinition` and `addEvent` still accept a published fixture untouched. They mint the
+ids internally, and validation now runs **after** that mint rather than before it.
+
+### Minting, and why you must supply the UUIDs
+
+`mintCollectionIds` is published on the tieFormat governor:
+
+```js
+const uuids = tools.UUIDS(tieFormat.collectionDefinitions.length);
+tournamentEngine.mintCollectionIds({ tieFormat, uuids });
+```
+
+**Supply `uuids` whenever the same mutation runs in more than one place.** A client that executes
+against a server and then re-applies the same methods locally will otherwise mint a different
+`collectionId` on each side for the same collection, and the two copies of the record diverge
+silently. Generate the pool once, send it with the mutation, and both executions mint identically.
+Omitting `uuids` still mints — that is the pre-7.0.0 behaviour — but only do so where the call runs
+exactly once.
+
+If a supplied pool runs out, the result is `ERR_INSUFFICIENT_UUIDS` rather than a freshly minted id,
+so a shortfall surfaces as a conflict instead of becoming a permanent mismatch.
+
+### Validating before the ids exist
+
+Pass `checkCollectionIds: false` where validation legitimately runs before the mint — that is what
+the factory's own pre-mint call sites do.
+
+_Shipped in [#4825](https://github.com/CourtHive/competition-factory/pull/4825)._
+
+## 9. `pressureRating` is a boolean
+
+_Shipped in [#4825](https://github.com/CourtHive/competition-factory/pull/4825)._
+
+`tallyParticipantResults` and `getParticipantResults` declared `pressureRating?: string` while every
+caller passed a boolean and the only use is `if (pressureRating)`. The declaration was wrong, not the
+usage. It is now `boolean`.
+
+Runtime behaviour is unchanged — a truthy string behaved identically. Only TypeScript callers who
+declared the value as a `string` need to change, and only in their own types.
+
+## 10. `usePublishState` honours discrete structure publishing
+
+_Shipped in [#4827](https://github.com/CourtHive/competition-factory/pull/4827)._
+
+`getDrawData({ usePublishState: true })` now **omits** a structure whose publishing detail says it is
+not published, or that is embargoed. It previously returned every structure of a published draw
+regardless — the filter ended in `|| true`, so the `isVisiblyPublished` call it contained could never
+affect the result and discrete structure publishing was not honoured at all.
+
+A structure with **no** publishing detail is unaffected: it is still returned. That is the legacy
+shape — publish status predates discrete structure publishing — and it is now pinned by a test.
+
+### What to expect
+
+A consumer reading publish-state-filtered draw data may see **fewer** structures than before, for
+draws where a structure was explicitly unpublished or embargoed. That is the intended behaviour
+arriving for the first time, not a loss: those structures were being served despite being marked
+hidden.
+
+An unpublished **draw** is unchanged — it returned no structures before and returns none now.
+
+## 11. Non-breaking additions worth knowing
 
 `plainDate`, `plainTime` and `zonedDateTime` are new published exports, completing the calendar
 intent set. `zonedTime` was never published, so its rename is not a breaking change.

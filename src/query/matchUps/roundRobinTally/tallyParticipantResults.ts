@@ -18,7 +18,12 @@ import { TEAM } from '@Constants/matchUpTypes';
 type TallyParticipantResultsArgs = {
   policyDefinitions?: PolicyDefinitions;
   generateReport?: boolean;
-  pressureRating?: string;
+  /**
+   * A FLAG, not a value. Declared `string` until 7.0.0 while every caller passed a boolean and the
+   * only use is `if (pressureRating)`. Corrected rather than widened: a type that says `string`
+   * about a truthiness switch misleads every consumer reading the `.d.ts`.
+   */
+  pressureRating?: boolean;
   matchUpFormat?: string;
   perPlayer?: number;
   subOrderMap?: any;

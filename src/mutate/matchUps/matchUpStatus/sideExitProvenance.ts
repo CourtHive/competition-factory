@@ -1,6 +1,7 @@
 import { OUTCOME_DEFAULT, OUTCOME_RETIREMENT, OUTCOME_WALKOVER } from '@Helpers/keyValueScore/constants';
 import { writeNativeEnabled } from '@Global/state/globalState';
 import { definedAttributes } from '@Tools/definedAttributes';
+import { isAnyExit } from '@Validators/isExit';
 
 // constants and types
 import { MatchUp, SideExitProvenance, SideExitProvenanceEntry } from '@Types/tournamentTypes';
@@ -74,6 +75,64 @@ export function buildSideExitProvenance(params: BuildArgs): SideExitProvenance |
   return Object.keys(provenance).length ? provenance : undefined;
 }
 
+/**
+ * Provenance for the ONE side that exited, when an exit is CARRIED into a fed matchUp.
+ *
+ * `buildSideExitProvenance` above describes a target fed by a DOUBLE exit, where both sides are
+ * accounted for by a single call. A carried exit is the other half of the propagation story:
+ * `directLoser` feeds one exiting participant into a consolation slot and `progressExitStatus`
+ * stamps the status onto that matchUp. Only that participant's side has a provenance — the
+ * opponent arrived by winning, not by exiting, and giving them an entry would misattribute the
+ * exit.
+ *
+ * Without this, a carried exit is marked ONLY by a string in `matchUpStatusCodes`, which carries no
+ * `previousMatchUpStatus`, so `exitProducedByPropagation` reads false and every detector that
+ * excludes propagation-produced exits (`EXIT_WITHOUT_LOSER`, `DROPPED_PROGRESSION`) fires on a
+ * legitimate pending exit. Measured 2026-09-11: 13 of the 27 offending matchUps behind the sweep's
+ * 21 triaged seeds are this shape.
+ */
+export function buildCarriedExitProvenance({
+  previousMatchUpStatus,
+  exitingSideNumber,
+  sourceMatchUpId,
+  matchUpStatus,
+}: {
+  previousMatchUpStatus?: string;
+  exitingSideNumber?: number;
+  sourceMatchUpId?: string;
+  matchUpStatus?: string;
+}): SideExitProvenance | undefined {
+  if (exitingSideNumber !== 1 && exitingSideNumber !== 2) return undefined;
+
+  const entry = definedAttributes({
+    matchUpStatus: producedExitStatus(matchUpStatus),
+    previousMatchUpStatus,
+    sourceMatchUpId,
+  }) as SideExitProvenanceEntry;
+
+  return Object.keys(entry).length ? { [exitingSideNumber]: entry } : undefined;
+}
+
+/**
+ * Merge one side's provenance into whatever the matchUp already carries.
+ *
+ * `setSideExitProvenance` REPLACES, which is correct for a double exit: one call describes both
+ * sides. A carried exit describes one side at a time and can reach a matchUp whose OTHER side was
+ * stamped by an earlier propagation — `progressExitStatus` RULE 4, where two carried exits meet and
+ * become a DOUBLE_WALKOVER. Replacing there would discard a still-true entry.
+ */
+export function mergeSideExitProvenance({
+  provenance,
+  matchUp,
+}: {
+  provenance?: SideExitProvenance;
+  matchUp?: MatchUp;
+}): void {
+  if (!matchUp || !writeNativeEnabled()) return;
+  if (!provenance || !Object.keys(provenance).length) return;
+  matchUp.sideExitProvenance = { ...(matchUp.sideExitProvenance ?? {}), ...provenance };
+}
+
 /** Write provenance onto a matchUp, honouring the schema write mode. */
 export function setSideExitProvenance({
   provenance,
@@ -100,6 +159,30 @@ export function setSideExitProvenance({
  */
 export function clearSideExitProvenance(matchUp?: MatchUp): void {
   if (matchUp) delete matchUp.sideExitProvenance;
+}
+
+/**
+ * Clear provenance ONLY when the matchUp is no longer an exit.
+ *
+ * `clearSideExitProvenance` is unconditional, which is right where the caller has just collapsed the
+ * status — clearing a position, or writing a BYE. It is WRONG as an opportunistic clear, and it was
+ * being used as one.
+ *
+ * `attemptToModifyScore` coerces an absent `matchUpStatusCodes` to `[]`, so `[]` means both "blank
+ * the codes" and "the caller supplied none". Reading the second as the first wipes provenance off a
+ * matchUp that is still the exit that provenance describes. Measured 2026-09-11 across the draws
+ * behind the 21 triaged sweep seeds: **63 clears, 51 of them leaving the matchUp still an exit** —
+ * `removeDirectedLoser` 38, `applyPositionToMatchUp` 9, `applyScoreAndStatus` 10. Those matchUps end
+ * up as exits with no marker at all, so `exitProducedByPropagation` reads false and the detectors
+ * that exclude a propagation-produced exit fire on legitimate ones.
+ *
+ * `isAnyExit`, not `isExit` — the double exits are precisely the statuses that stamp provenance.
+ *
+ * See Mentat/planning/SWEEP_20260911_DISCOVERY.md.
+ */
+export function clearResolvedSideExitProvenance(matchUp?: MatchUp): void {
+  if (!matchUp || isAnyExit(matchUp.matchUpStatus)) return;
+  clearSideExitProvenance(matchUp);
 }
 
 /**

@@ -1,6 +1,7 @@
 import { includesMatchUpStatuses } from '@Mutate/drawDefinitions/matchUpGovernor/includesMatchUpStatuses';
-import { clearSideExitProvenance } from '@Mutate/matchUps/matchUpStatus/sideExitProvenance';
+import { clearResolvedSideExitProvenance } from '@Mutate/matchUps/matchUpStatus/sideExitProvenance';
 import { removeSubsequentRoundsParticipant } from './removeSubsequentRoundsParticipant';
+import { releaseAdvancedDrawPosition } from './releaseAdvancedDrawPosition';
 import { structureAssignedDrawPositions } from '@Query/drawDefinition/positionsGetter';
 import { updateTieMatchUpScore } from '@Mutate/matchUps/score/updateTieMatchUpScore';
 import { getAllStructureMatchUps } from '@Query/matchUps/getAllStructureMatchUps';
@@ -307,11 +308,42 @@ function removeDirectedLoser({
   const relevantDrawPosition = positionAssignments?.find(
     (assignment) => assignment.participantId === loserParticipantId,
   )?.drawPosition;
+  const clearedDrawPositions: number[] = [];
   positionAssignments?.forEach((assignment) => {
     if (assignment.participantId === loserParticipantId) {
       delete assignment.participantId;
+      clearedDrawPositions.push(assignment.drawPosition);
     }
   });
+
+  // Emptying the assignment above leaves the drawPosition behind in every target-structure matchUp
+  // the participant had ADVANCED into, which blocks that slot against the next arrival. Its twin
+  // `removeDirectedWinner` has always stripped — through `removeSubsequentRoundsParticipant`, which
+  // also collapses status and codes — and only the loser direction did not. That asymmetry was the
+  // largest single producer of the refusal cluster (72 of 87 stale slots measured over the 600-seed
+  // sweep window).
+  //
+  // The loser direction takes the NARROW form deliberately: reusing
+  // `removeSubsequentRoundsParticipant` here also rewrote matchUpStatus, winningSide and
+  // matchUpStatusCodes on the released matchUps, and that was measurably wider than the defect —
+  // it flipped a recorded winningSide on a re-score and broke a BYE unwind. Releasing the slot is
+  // the whole fix; see releaseAdvancedDrawPosition for the two scopes that keep it safe.
+  //
+  // Every position the loop above emptied is released, not just the first: the deletion is keyed on
+  // participantId, and a participant fed back into a draw holds more than one.
+  if (loserMatchUp?.roundNumber) {
+    for (const drawPosition of clearedDrawPositions) {
+      releaseAdvancedDrawPosition({
+        fromRoundNumber: loserMatchUp.roundNumber,
+        tournamentRecord,
+        drawDefinition,
+        drawPosition,
+        matchUpsMap,
+        structureId,
+        event,
+      });
+    }
+  }
 
   if (sourceMatchUpId && sourceMatchUpStatus) {
     //It could be that the loser match up was already a double walkover with one propagated
@@ -321,10 +353,10 @@ function removeDirectedLoser({
     //In case the loser matchup was not a double WO we jsut remove the status codes.
     const targetMatchUp = matchUpsMap?.drawMatchUps?.find(({ matchUpId }) => matchUpId === loserMatchUp.matchUpId);
     targetMatchUp.matchUpStatusCodes = sourceMatchUpStatus === DOUBLE_WALKOVER ? ['WO', 'WO'] : [];
-    // the codes here are rewritten wholesale for the exit that remains, so any provenance stamped
-    // for the exit being removed is stale. Provenance and codes describe the same exit; they die
-    // together or the matchUp keeps a reason for something that no longer exists.
-    clearSideExitProvenance(targetMatchUp);
+    // The codes are rewritten wholesale here, so provenance stamped for the exit being removed is
+    // stale — but only once the status itself has resolved. While the matchUp is still an exit the
+    // provenance still describes it, and clearing it leaves an exit with no marker at all.
+    clearResolvedSideExitProvenance(targetMatchUp);
   }
 
   // remove participant from seedAssignments

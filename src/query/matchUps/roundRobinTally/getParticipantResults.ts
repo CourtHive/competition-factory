@@ -15,7 +15,7 @@ import { HydratedMatchUp } from '@Types/hydrated';
 type GetParticipantResultsArgs = {
   matchUps: HydratedMatchUp[];
   participantIds?: string[];
-  pressureRating?: string;
+  pressureRating?: boolean;
   groupingTotal?: string; // attribute being processed for group totals
   matchUpFormat?: string;
   perPlayer?: number;

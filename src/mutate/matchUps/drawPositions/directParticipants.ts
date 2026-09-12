@@ -196,8 +196,9 @@ function processDrawPositionDirecting({
     });
     if (result.context?.progressExitStatus) {
       Object.assign(context, result.context, {
-        sourceMatchUpStatus: sourceStatus,
         sourceMatchUpStatusCodes: matchUpStatusCodes ?? [],
+        sourceMatchUpStatus: sourceStatus,
+        sourceMatchUpId: matchUpId,
         loserMatchUp,
         matchUpsMap,
       });

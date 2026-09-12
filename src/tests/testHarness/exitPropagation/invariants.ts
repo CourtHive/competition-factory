@@ -1,4 +1,5 @@
 import { DOUBLE_DEFAULT, DOUBLE_WALKOVER, COMPLETED, BYE } from '@Constants/matchUpStatusConstants';
+import { isAnyExit } from '@Validators/isExit';
 
 /**
  * Structural invariants over a draw, asserted after every mutation.
@@ -39,16 +40,26 @@ function matchUpInvariants(matchUp: any): InvariantViolation[] {
   const { matchUpStatus, matchUpId, winningSide, score } = matchUp;
   const record = (rule: string, detail: string) => violations.push({ rule, matchUpId, detail });
 
-  // Provenance and the legacy codes describe the SAME exit, so they must live and die together.
-  // Every site that blanks `matchUpStatusCodes` is unwinding the exit those codes described; if
-  // provenance survives that, the matchUp keeps a reason for an exit that no longer exists — a
-  // do/undo residue that the projection would otherwise only catch in the cells it happens to reach.
+  // Provenance must not outlive the exit it describes — but an emptied `matchUpStatusCodes` is NOT
+  // sufficient evidence that the exit is gone.
+  //
+  // This rule originally read "codes and provenance live and die together", which #4823 showed to be
+  // too strict: `attemptToModifyScore` coerces an absent `matchUpStatusCodes` to `[]`, so `[]` means
+  // either "blank them" or "the caller supplied none". A matchUp can therefore be an exit still, with
+  // provenance that legitimately stands, and an empty codes array. Measured there: 63 clears, 51 of
+  // them leaving the matchUp still an exit.
+  //
+  // The residue this exists to catch is the OTHER case — a matchUp that is no longer an exit at all,
+  // still carrying a reason for one. `isAnyExit`, not `isExit`, because the double exits are
+  // precisely the statuses that stamp provenance.
   const codes = matchUp.matchUpStatusCodes;
   const provenance = matchUp.sideExitProvenance;
-  if (provenance && Object.keys(provenance).length && Array.isArray(codes) && !codes.length) {
+  const stillAnExit = isAnyExit(matchUpStatus);
+  if (provenance && Object.keys(provenance).length && Array.isArray(codes) && !codes.length && !stillAnExit) {
     record(
-      'PROVENANCE_OUTLIVES_CODES',
-      `sideExitProvenance ${JSON.stringify(provenance)} survives an emptied matchUpStatusCodes`,
+      'PROVENANCE_OUTLIVES_EXIT',
+      `sideExitProvenance ${JSON.stringify(provenance)} survives on a matchUp that is no longer an exit ` +
+        `(matchUpStatus ${matchUpStatus}), with matchUpStatusCodes emptied`,
     );
   }
 
