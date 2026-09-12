@@ -390,7 +390,7 @@ An unpublished **draw** is unchanged — it returned no structures before and re
 
 ## 11. Three request-shape fields gain real types
 
-_Shipped in [#PENDING](https://github.com/CourtHive/competition-factory/pull/PENDING)._
+_Shipped in [#4839](https://github.com/CourtHive/competition-factory/pull/4839)._
 
 The factory types its **domain** data rigorously — `EventTypeUnion`, `DrawTypeUnion` and friends are
 closed unions, value-exported, and guarded against drift. That rigour historically stopped at the
