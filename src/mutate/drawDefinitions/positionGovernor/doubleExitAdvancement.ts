@@ -7,16 +7,16 @@ import { modifyMatchUpScore } from '@Mutate/matchUps/score/modifyMatchUpScore';
 import { directWinner } from '@Mutate/matchUps/drawPositions/directWinner';
 import { decorateResult } from '@Functions/global/decorateResult';
 import { positionTargets } from '@Query/matchUp/positionTargets';
-import {
-  buildSideExitProvenance,
-  setSideExitProvenance,
-  producedExitStatus,
-} from '@Mutate/matchUps/matchUpStatus/sideExitProvenance';
 import { definedAttributes } from '@Tools/definedAttributes';
 import { pushGlobalLog } from '@Functions/global/globalLog';
 import { findStructure } from '@Acquire/findStructure';
 import { isDoubleExit, isExit } from '@Validators/isExit';
 import { overlap } from '@Tools/arrays';
+import {
+  buildSideExitProvenance,
+  setSideExitProvenance,
+  producedExitStatus,
+} from '@Mutate/matchUps/matchUpStatus/sideExitProvenance';
 
 // constants
 import { DRAW_POSITION_ASSIGNED, MISSING_MATCHUP, MISSING_STRUCTURE } from '@Constants/errorConditionConstants';
