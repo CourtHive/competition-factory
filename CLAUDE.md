@@ -6,6 +6,18 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 Before doing anything else, read `../Mentat/CLAUDE.md`, `../Mentat/TASKS.md`, `../Mentat/standards/coding-standards.md`, and every file in `../Mentat/in-flight/`. Mentat is the orchestration layer for the entire CourtHive ecosystem; its standards override per-repo conventions when they conflict. If you are about to start **building** (not just planning), you must claim a surface in `../Mentat/in-flight/` and run the air-traffic-control conflict check first. See the parent `../CLAUDE.md` "Mentat Orchestration" section for the full protocol.
 
+## Branching — cut from `dev`, not `master` (CA, 2026-09-12)
+
+`dev` is this repo's integration branch. **Branch from `origin/dev` and open PRs against `dev`.**
+`master` advances only at checkpoints, by merging `dev` into it — which is also when release-please
+cuts a release, since it triggers on `push` to `master` alone.
+
+`verify.yml` uses a bare `pull_request:` trigger, so a PR into `dev` still runs the full verify
+gate. Land work by PR: a direct push to `dev` gets no push-triggered run.
+
+Full rationale and the CI/release compatibility table:
+`../Mentat/standards/coding-standards.md` § "Branch off `dev`, not `master`".
+
 ## Project Overview
 
 `tods-competition-factory` is the shared business-logic engine for the CourtHive ecosystem. It is published as an npm package with no runtime dependencies and is consumed by TMX (client PWA), competition-factory-server (NestJS backend), courthive-components, scoring-visualizations, and epixodic.
