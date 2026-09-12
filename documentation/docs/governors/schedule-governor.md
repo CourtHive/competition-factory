@@ -1736,6 +1736,54 @@ Consequences worth knowing:
 
 ---
 
+## Readiness and rest queries
+
+Two read-only queries answer, for **one** matchUp, what conflict reporting answers for a whole day.
+Both were built in TMX behind a relocation seam and moved here in 7.x, so the payload shapes are
+unchanged from the client analyses they replace.
+
+### getMatchUpReadiness
+
+Can this placement happen at the time it is scheduled for? Anchored on the matchUp's own
+`scheduledTime`; declines to evaluate when there is not one.
+
+```js
+const { readiness } = tournamentEngine.getMatchUpReadiness({ matchUpId });
+```
+
+| parameter   | type              | notes                                                           |
+| ----------- | ----------------- | --------------------------------------------------------------- |
+| `matchUpId` | string            | **required**                                                    |
+| `matchUps`  | HydratedMatchUp[] | optional; supply hydrated matchUps to avoid a second resolution |
+
+Returns `{ readiness }`, either `{ evaluated: false, reason }` — `unknownMatchUp`, `bye`,
+`completed`, `notScheduled`, `noTime` — or `{ evaluated: true, findings }`. Each finding carries a
+`kind` of `overlap`, `dependency`, `recovery` or `undetermined`, a `severity`, the participants and
+matchUps involved, and a `notBefore` clock when the blocker can be projected. Findings are ordered
+strongest-first.
+
+### getParticipantRest
+
+How long has each individual in this matchUp actually had off, and is it enough?
+
+```js
+const { rest } = tournamentEngine.getParticipantRest({ matchUpId, asOf: new Date().toISOString() });
+```
+
+| parameter          | type              | notes                                                                      |
+| ------------------ | ----------------- | -------------------------------------------------------------------------- |
+| `matchUpId`        | string            | **required**                                                               |
+| `asOf`             | ISO string        | **required** — the factory holds no clock; the caller supplies the instant |
+| `scheduledDate`    | `YYYY-MM-DD`      | the day to measure; defaults to the matchUp's own                          |
+| `timeZone`         | IANA zone         | defaults to the tournament's `localTimeZone`; DST-correct                  |
+| `utcOffsetMinutes` | number            | fixed-offset fallback when no zone is available                            |
+| `matchUps`         | HydratedMatchUp[] | optional; as above                                                         |
+
+Returns `{ rest }`, either `{ evaluated: false, reason }` — adding `noAsOf` and `noDay` to the list
+above — or `{ evaluated: true, asOf, scheduledDate, rows }`, one row per individual, ordered
+worst-first. Every row names the ladder rung its anchor came from, so an inferred figure never reads
+as a measured one.
+
 ## Related Documentation
 
 - **[Scheduling Overview](../concepts/scheduling-overview)** - Core scheduling concepts

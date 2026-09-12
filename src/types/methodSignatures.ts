@@ -192,6 +192,7 @@ import type {
 } from '@Query/entries/getEffectiveRegistrationProfile';
 import type { getMatchUpFormatVariance } from '@Query/drawDefinition/getMatchUpFormatVariance';
 import type { getMatchUpOfficialConflicts } from '@Query/officiating/getMatchUpOfficialConflicts';
+import type { getMatchUpReadiness } from '@Query/matchUps/scheduling/getMatchUpReadiness';
 import type { getParticipantEventDetails } from '@Query/participants/getParticipantEventDetails';
 import type { getStructureCompleteness } from '@Query/drawDefinition/getStructureCompleteness';
 import type { getSwissStandings } from '@Query/drawDefinitions/swiss/getSwissStandings';
@@ -204,6 +205,7 @@ import type { generateBookings } from '@Generators/scheduling/utils/generateBook
 import type { getApplicableAwardProfileLevels } from '@Query/scales/getApplicableAwardProfileLevels';
 import type { getLuckyDrawRoundStatus } from '@Query/drawDefinition/getLuckyDrawRoundStatus';
 import type { getMatchUpDailyLimitsUpdate } from '@Query/extensions/getMatchUpDailyLimitsUpdate';
+import type { getParticipantRest } from '@Query/matchUps/scheduling/getParticipantRest';
 import type { getScheduleProjection } from '@Query/facilitySchedule/getScheduleProjection';
 import type { getTournamentCalendarEntry } from '@Query/tournaments/getTournamentCalendarEntry';
 import type { getTournamentPublishStatus } from '@Query/tournaments/getTournamentPublishStatus';
@@ -961,6 +963,7 @@ export interface MethodSignatures {
   getMatchUpFormatVariance: EngineMethod<typeof getMatchUpFormatVariance>;
   getMatchUpOfficialConflicts: EngineMethod<typeof getMatchUpOfficialConflicts>;
   getMatchUpRatingDelta: EngineMethod<typeof getMatchUpRatingDelta>;
+  getMatchUpReadiness: EngineMethod<typeof getMatchUpReadiness>;
   getMatchUpScheduleDetails: EngineMethod<typeof getMatchUpScheduleDetails>;
   getMatchUpsMap: EngineMethod<typeof getMatchUpsMap>;
   getMatchUpsStats: EngineMethod<typeof getMatchUpsStats>;
@@ -980,6 +983,7 @@ export interface MethodSignatures {
   getParticipantMembership: EngineMethod<typeof getParticipantMembership>;
   getParticipantPaymentStatus: EngineMethod<typeof getParticipantPaymentStatus>;
   getParticipantPoints: EngineMethod<typeof getParticipantPoints>;
+  getParticipantRest: EngineMethod<typeof getParticipantRest>;
   getParticipantResults: EngineMethod<typeof getParticipantResults>;
   getParticipants: EngineMethod<typeof getParticipants>;
   getParticipantScaleItem: EngineMethod<typeof getParticipantScaleItem>;
