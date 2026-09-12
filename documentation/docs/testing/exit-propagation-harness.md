@@ -13,14 +13,15 @@ It exists because the pipeline's failure mode is not the one coverage measures.
 five draw types. Every path ran; the predicate was wrong. Coverage measures whether code ran, not
 whether the result was right.
 
-## The four suites
+## The five suites
 
 | Suite                            | What it does                                                                                                                                                                              |
 | -------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `exitPropagationMatrix.test.ts`  | 600 cells: draw type × drawSize × participantsCount × exit status × `propagateExitStatus`. Plants an exit through the real mutation path, then drives the draw forward deterministically. |
 | `transitionProperties.test.ts`   | do/undo identity, idempotence, monotonicity — properties of a _mutation_, not of a state.                                                                                                 |
 | `derivationAgreement.test.ts`    | asserts that `matchUpActions` and `setMatchUpStatus` agree about what is permitted.                                                                                                       |
-| `doubleExitStatusParity.test.ts` | runs the same draw and schedule twice, once per double-exit status, and asserts the results are identical after renaming the vocabulary.                                                  |
+| `doubleExitStatusParity.test.ts` | runs the same draw and schedule twice, once per double-exit status, and asserts the results are identical after renaming the vocabulary. See the caution below for what it cannot see.    |
+| `entryOrderInvariance.test.ts`   | applies the same pair of double exits in both orders across eight draw types and asserts the record is identical — the property the renaming oracle above is structurally blind to.       |
 
 Helpers live in `src/tests/testHarness/exitPropagation/`, which is excluded from coverage as test
 infrastructure.
@@ -43,6 +44,21 @@ misconception from the code under test.
 the same concept. You do not need to decide which is right to assert that they must agree. The
 double-exit parity oracle is one: `DOUBLE_WALKOVER` and `DOUBLE_DEFAULT` differ only in the status
 they produce downstream, so the same schedule must yield the same bracket after renaming.
+
+:::caution The parity oracle cannot see a defect that forces the two statuses to converge
+It renames `DOUBLE_DEFAULT` to `DOUBLE_WALKOVER` and `DEFAULTED` to `WALKOVER` before comparing its
+two runs, so any bug producing exactly that convergence is invisible to it — and one was: the
+convergence flavour was hardcoded to `DOUBLE_WALKOVER`, relabelling a default-on-default pair, while
+the parity suite stayed green throughout.
+
+It is also blind for a second, independent reason. Its driver applies a **single** exit status per
+run, so it never constructs a matchUp where a walkover and a default meet. Only the randomized sweep
+mixes statuses within one draw, which is why that whole class went unnoticed.
+
+**A green parity suite is not evidence about the difference between the two statuses.** Gate that
+class on a within-run property instead — comparing two fields of one record, or the same pair of
+outcomes applied in both orders, as `entryOrderInvariance.test.ts` does.
+:::
 
 A reference implementation of bracket semantics is deliberately **not** part of this. For the
 feed-profile and FMLC draw types it would re-derive the same assumptions from the same mental model

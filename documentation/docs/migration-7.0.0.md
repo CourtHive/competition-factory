@@ -425,8 +425,30 @@ BYE contributes **no code** rather than becoming a walkover.
 
 **What to do:** if you read `matchUpStatusCodes` and branch on `WO`, re-check those branches. A
 matchUp whose code array previously read `['WO', 'DM']` may now read `['DEF', 'DM']` — the second
-element is unchanged; the first now tells the truth about the upstream exit. Nothing about the
-`matchUpStatus` itself changed.
+element is unchanged; the first now tells the truth about the upstream exit.
+
+### The `matchUpStatus` of a convergence can change too
+
+An earlier revision of this section said nothing about `matchUpStatus` changed. That was true when it
+was written and is no longer: the status half has since been corrected as well, so the two halves of
+such a record finally agree.
+
+Where two exits converge on one matchUp, which double exit it becomes is now derived from **both**
+sides' origins rather than from whichever result was entered last:
+
+- both sides originating in a default → `DOUBLE_DEFAULT`
+- any other combination, including a default meeting a walkover → `DOUBLE_WALKOVER`
+
+Two consequences are visible to a consumer. A convergence of two defaults that previously read
+`DOUBLE_WALKOVER` now reads `DOUBLE_DEFAULT` — and, via `producedExitStatus`, feeds a `DEFAULTED`
+rather than a `WALKOVER` downstream. And the stored value no longer depends on the order the two
+results were entered: measured across eight draw types, entering the same pair the other way round
+previously produced a different record in 28 of 32 combinations.
+
+**What to do:** if you branch on `DOUBLE_WALKOVER` by equality, prefer asking whether the status is a
+double exit at all — `[DOUBLE_WALKOVER, DOUBLE_DEFAULT].includes(status)`. Three sites inside the
+factory made exactly that mistake and took the wrong branch for a `DOUBLE_DEFAULT`; the same shape is
+likely in consumer code that predates `DOUBLE_DEFAULT`.
 
 The remaining additions require no migration. They are listed because a sufficiently exhaustive
 TypeScript consumer will notice them.
