@@ -1,5 +1,70 @@
 # Changelog
 
+## [7.0.0](https://github.com/CourtHive/competition-factory/compare/v6.38.0...v7.0.0) (2026-09-12)
+
+
+### ⚠ BREAKING CHANGES
+
+* **publishing:** getDrawData with { usePublishState: true } now omits a structure whose publishing detail says it is not published, or that is embargoed. It previously returned every structure of a published draw regardless. A structure with no publishing detail is unaffected.
+* **validators:** validateTieFormat enforces collectionId by default. A hand-written or published tieFormat validated directly, or passed to an API that validates at the door such as generateEventsFromTieFormat, is refused with ERR_INVALID_TIE_FORMAT. Mint first with tieFormatGovernor.mintCollectionIds({ tieFormat, uuids }), or pass checkCollectionIds: false where validation runs before the ids exist. Draw generation and addEvent still accept a published fixture untouched.
+* **draws:** `addFinishingRounds` returns `{ error: MISSING_MATCHUPS }` rather than `[]` when `matchUps` is not a valid array. Valid input is unchanged, and because the function mutates in place and returns the same reference, callers may ignore the return entirely. Documented as §7 of the 7.0.0 migration guide.
+* **draws:** `buildDrawHierarchy` is no longer exported. No consumer was found in any CourtHive repo. The implementation and its tests are preserved at Mentat/deprecated/factory/buildDrawHierarchy/; see §6 of the 7.0.0 migration guide.
+* **query:** `getParticipantResults` returns `{ error: INVALID_MATCHUP }` for ANY matchUp carrying no `sides`, not only one claiming a `winningSide`. In practice this is stored matchUps passed where in-context ones are required; it replaces an uncaught TypeError for the unplayed case.
+* **query:** `getParticipantResults` returns `{ error: INVALID_MATCHUP }` for a matchUp that claims a `winningSide` but carries no usable `sides` — in practice, stored matchUps passed where in-context ones are required. Callers reading a `foo` key out of the result were never reading a participant. Documented in §5 of the 7.0.0 migration guide.
+* **query:** `checkMatchUpIsComplete` returns `{ error: MISSING_MATCHUP }` rather than `false` when no valid matchUp is supplied, and `getParticipantResults` returns `{ error: MISSING_MATCHUPS }` rather than an empty tally when `matchUps` is not an array. Callers passing ids must resolve to objects first via `findMatchUp` / `allDrawMatchUps`. Documented as §5 of the 7.0.0 migration guide.
+* **tools:** behavioural, not a surface removal. timeZone.ts conversions now refuse an unrecognised zone instead of throwing an uncaught RangeError or substituting the host machine's offset.
+* **propagation:** the published export particicipantsRequiredMatchUpStatuses (an extra 'ici') is renamed to participantsRequiredMatchUpStatuses. Value, type and semantics are unchanged. No deprecated alias is provided; a survey of the CourtHive ecosystem found no consumer importing the old name.
+
+### Features
+
+* **actions:** say whether an outcome can be removed, with a CLEAR_SCORE action ([#4795](https://github.com/CourtHive/competition-factory/issues/4795)) ([eac49a6](https://github.com/CourtHive/competition-factory/commit/eac49a6bcd168be496cef6ae02a7577c1df1a09a))
+* **codes:** give exit provenance its own per-side field, and stop relabelling exits as walkovers ([#4810](https://github.com/CourtHive/competition-factory/issues/4810)) ([ac0bc9f](https://github.com/CourtHive/competition-factory/commit/ac0bc9f5efb5e81b27e87c13988860e056f36106))
+* **disciplines:** add SQUASH and BADMINTON to the known vocabulary ([#4780](https://github.com/CourtHive/competition-factory/issues/4780)) ([a105a70](https://github.com/CourtHive/competition-factory/commit/a105a704671a1f58d12feb2dbde4dbd7f187a26c))
+* **draws:** remove buildDrawHierarchy, preserved in Mentat ([#4801](https://github.com/CourtHive/competition-factory/issues/4801)) ([a698dc6](https://github.com/CourtHive/competition-factory/commit/a698dc671508b9b598a94ed8ff639d8a58f69901))
+* **governors:** register sanctioningGovernor, export isValidSeedPosition ([#4809](https://github.com/CourtHive/competition-factory/issues/4809)) ([3a909c4](https://github.com/CourtHive/competition-factory/commit/3a909c498f9628a575cf768a45f8dc29a23599b0))
+* **ladder:** add the LADDER drawType and a scope-enforced CHALLENGED status ([#4787](https://github.com/CourtHive/competition-factory/issues/4787)) ([0503b77](https://github.com/CourtHive/competition-factory/commit/0503b7715fec9c665f7c7bb7c089e962ad12ba9b))
+* **ladder:** put the challenge lifecycle on the engine, and document 7.0.0 ([#4793](https://github.com/CourtHive/competition-factory/issues/4793)) ([23f6e24](https://github.com/CourtHive/competition-factory/commit/23f6e242af7c5459063d79f41228748646a2824b))
+* **scheduling:** getMatchUpReadiness and getParticipantRest ([#4828](https://github.com/CourtHive/competition-factory/issues/4828)) ([89ea8c7](https://github.com/CourtHive/competition-factory/commit/89ea8c7540b07bffcf7c51356703674085bf4e6f))
+* **scoring:** export the episode + points-to types, and document what renders them ([#4815](https://github.com/CourtHive/competition-factory/issues/4815)) ([e2dfbd1](https://github.com/CourtHive/competition-factory/commit/e2dfbd17d300f4bed4e69ce0176f852a60518dad))
+* **tools:** one zoned implementation, and a refusal instead of a wrong number ([#4783](https://github.com/CourtHive/competition-factory/issues/4783)) ([97dc74f](https://github.com/CourtHive/competition-factory/commit/97dc74fd6a557a28332880cdb52ec5dd85b30958))
+* **types:** declare enforcePolicyLimits on GenerateDrawDefinitionArgs ([#4798](https://github.com/CourtHive/competition-factory/issues/4798)) ([087d368](https://github.com/CourtHive/competition-factory/commit/087d368954437f4cab42f3cd3a4c39fcd3f4ede4))
+* **validators:** enforce collectionId in validateTieFormat, and type getDrawData ([#4825](https://github.com/CourtHive/competition-factory/issues/4825)) ([30bdb82](https://github.com/CourtHive/competition-factory/commit/30bdb820a7a50bbd5b6e216c345c1b09ec2de615))
+
+
+### Bug Fixes
+
+* **codes:** clear exit provenance wherever the codes it describes are blanked ([#4816](https://github.com/CourtHive/competition-factory/issues/4816)) ([85ef98c](https://github.com/CourtHive/competition-factory/commit/85ef98cf62a52d21f6ca4320eba1de12895ad63e))
+* **codes:** keep exit provenance while the exit it describes is still standing ([#4823](https://github.com/CourtHive/competition-factory/issues/4823)) ([608f1ab](https://github.com/CourtHive/competition-factory/commit/608f1aba0485bc4c0389e75f7376acacf16c7191))
+* **codes:** record exit provenance when an exit is carried into a fed matchUp ([#4820](https://github.com/CourtHive/competition-factory/issues/4820)) ([671a66b](https://github.com/CourtHive/competition-factory/commit/671a66b4ca66deed466474c0bc7b71836f2daf4b))
+* **deps:** raise security floors for multer, js-yaml, svgo and tiptap ([#4776](https://github.com/CourtHive/competition-factory/issues/4776)) ([8bc3862](https://github.com/CourtHive/competition-factory/commit/8bc3862fcf22f4c92f229619fce4e85f092b1a99))
+* **docs:** make every documented import resolve, and gate it ([#4808](https://github.com/CourtHive/competition-factory/issues/4808)) ([81070d8](https://github.com/CourtHive/competition-factory/commit/81070d897b7f154468ebbd8f5cb0673e42d17e32))
+* **draws:** a double exit with an unfilled side must not read as active ([#4829](https://github.com/CourtHive/competition-factory/issues/4829)) ([db51b58](https://github.com/CourtHive/competition-factory/commit/db51b58b1d6ccd622c98e02bf43fe4f4272e839f))
+* **draws:** addFinishingRounds refuses an absent matchUps array ([#4802](https://github.com/CourtHive/competition-factory/issues/4802)) ([bbc84b6](https://github.com/CourtHive/competition-factory/commit/bbc84b63b171855d336df09a5e66f96c13f5c17a))
+* **draws:** carry the exit code onto the exiting side instead of dropping it ([#4807](https://github.com/CourtHive/competition-factory/issues/4807)) ([460b0ee](https://github.com/CourtHive/competition-factory/commit/460b0ee6db93b90f5f1ebb4c8bd25dbff711252d))
+* **draws:** do not advance a participant who arrived on the exiting side of a pending exit ([#4822](https://github.com/CourtHive/competition-factory/issues/4822)) ([dc5571b](https://github.com/CourtHive/competition-factory/commit/dc5571b662ab29a0a13f9bf2f23fbad84034a183))
+* **draws:** resetDrawDefinition clears disableLinks, which was silently dropping a participant ([#4821](https://github.com/CourtHive/competition-factory/issues/4821)) ([da34dd0](https://github.com/CourtHive/competition-factory/commit/da34dd05f6d3a1cad4a788e06c83faf63bc11401))
+* **draws:** the loser unwind must release the drawPosition it empties ([#4826](https://github.com/CourtHive/competition-factory/issues/4826)) ([a054719](https://github.com/CourtHive/competition-factory/commit/a05471975058068c70e01f1f3d644e7f0c537b1a))
+* **harness:** narrow PROVENANCE_OUTLIVES_CODES, which contradicted [#4823](https://github.com/CourtHive/competition-factory/issues/4823) ([#4824](https://github.com/CourtHive/competition-factory/issues/4824)) ([9173b94](https://github.com/CourtHive/competition-factory/commit/9173b94536abcbe8f9a12d830f20efe8e90d57c2))
+* **logging:** keep syncGlobalState on console, it closed a module cycle ([#4818](https://github.com/CourtHive/competition-factory/issues/4818)) ([4f3a8f8](https://github.com/CourtHive/competition-factory/commit/4f3a8f88cde6adf5aa498974c70eaff0df52906a))
+* **policies:** delete POLICY_SEEDING_NATIONAL, export BYES, make the seeding docs true ([#4803](https://github.com/CourtHive/competition-factory/issues/4803)) ([25d3b26](https://github.com/CourtHive/competition-factory/commit/25d3b26eada83190ea65a383fc8aa67fe335939b))
+* **propagation:** a foreign drawPosition, reported as an occupied one, after four writes ([#4791](https://github.com/CourtHive/competition-factory/issues/4791)) ([1bcaecc](https://github.com/CourtHive/competition-factory/commit/1bcaecc08d76af34475d9a03574469ab37678e1c))
+* **propagation:** six exit-propagation defects, the harness that found them, and a constants rename ([#4782](https://github.com/CourtHive/competition-factory/issues/4782)) ([aef4317](https://github.com/CourtHive/competition-factory/commit/aef4317c1c3474a736b2c46ac9cf1fd72a313795))
+* **propagation:** the unwind asked a field the cascade had already overwritten ([#4789](https://github.com/CourtHive/competition-factory/issues/4789)) ([da16299](https://github.com/CourtHive/competition-factory/commit/da1629931c65ed9c1521188c137df7b31d82c83e))
+* **propagation:** the walkover went to the empty side, and the winner never reached the Decider ([#4788](https://github.com/CourtHive/competition-factory/issues/4788)) ([b939a0b](https://github.com/CourtHive/competition-factory/commit/b939a0b4b0b81678004bdd46eaae7851bff9fa51))
+* **publishing:** honour discrete structure publishing, and pool the collectionId mint ([#4827](https://github.com/CourtHive/competition-factory/issues/4827)) ([#4827](https://github.com/CourtHive/competition-factory/issues/4827)) ([7f96bd8](https://github.com/CourtHive/competition-factory/commit/7f96bd8dd8eddc4f10167ded605ea3b6d7d2d210))
+* **query:** refuse an absent matchUp or matchUps instead of answering about it ([#4796](https://github.com/CourtHive/competition-factory/issues/4796)) ([5f527c3](https://github.com/CourtHive/competition-factory/commit/5f527c3e50edb1d26024ba0d57eaddff75d8f015))
+* **query:** require sides on every matchUp, not only on decided ones ([#4799](https://github.com/CourtHive/competition-factory/issues/4799)) ([8e7c69b](https://github.com/CourtHive/competition-factory/commit/8e7c69bfa0fedfd1b0a8e758d16b2b5f3f823c31))
+* **query:** stop returning a participant named 'foo', and refuse the input that produced it ([#4797](https://github.com/CourtHive/competition-factory/issues/4797)) ([7a65bb0](https://github.com/CourtHive/competition-factory/commit/7a65bb06a5f01c79da4123fcfec1884ed2d2942d))
+
+
+### Documentation
+
+* **7.0.0:** document sideExitProvenance, and that exit codes are no longer relabelled ([#4812](https://github.com/CourtHive/competition-factory/issues/4812)) ([b43644b](https://github.com/CourtHive/competition-factory/commit/b43644b90bc769398081d1d7655b6e78a4193efd))
+* exit propagation, the harness that guards it, and the 7.0.0 changes ([#4785](https://github.com/CourtHive/competition-factory/issues/4785)) ([d0a395b](https://github.com/CourtHive/competition-factory/commit/d0a395bc21ce7fe821d65562f8cfc9d188a8581a))
+* name the four calendar intents, and complete the 7.0.0 migration guide ([#4786](https://github.com/CourtHive/competition-factory/issues/4786)) ([a5ed1e4](https://github.com/CourtHive/competition-factory/commit/a5ed1e4727e89a2add52f30f15a3e7b14803643a))
+* record the ITF rebrand to World Tennis, and what deliberately does not change ([#4805](https://github.com/CourtHive/competition-factory/issues/4805)) ([39920c0](https://github.com/CourtHive/competition-factory/commit/39920c0f25b6ffc49c517591624502800264c940))
+* **site:** bring the landing-page stats up to date ([#4819](https://github.com/CourtHive/competition-factory/issues/4819)) ([79ae724](https://github.com/CourtHive/competition-factory/commit/79ae724227dcf82992f70afda1406ea2a9e402f4))
+
 ## [6.38.0](https://github.com/CourtHive/competition-factory/compare/v6.37.2...v6.38.0) (2026-09-08)
 
 
