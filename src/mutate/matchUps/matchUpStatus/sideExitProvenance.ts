@@ -5,7 +5,14 @@ import { isAnyExit } from '@Validators/isExit';
 
 // constants and types
 import { MatchUp, SideExitProvenance, SideExitProvenanceEntry } from '@Types/tournamentTypes';
-import { DOUBLE_WALKOVER, DOUBLE_DEFAULT, DEFAULTED, RETIRED, WALKOVER } from '@Constants/matchUpStatusConstants';
+import {
+  DOUBLE_WALKOVER,
+  DOUBLE_DEFAULT,
+  TO_BE_PLAYED,
+  DEFAULTED,
+  RETIRED,
+  WALKOVER,
+} from '@Constants/matchUpStatusConstants';
 
 /**
  * Paired writer/reader for `matchUp.sideExitProvenance`.
@@ -96,17 +103,37 @@ export function buildSideExitProvenance(params: BuildArgs): SideExitProvenance |
   if (sourceSideNumber !== 1 && sourceSideNumber !== 2) return undefined;
 
   const pairedSideNumber = sourceSideNumber === 1 ? 2 : 1;
+  // An entry records where a side CAME FROM — it exited upstream, or it won and advanced. What it
+  // must never record is a side that has not been decided at all.
+  //
+  // The paired previous matchUp is frequently still `TO_BE_PLAYED` when this runs, because the other
+  // feeder has not been played yet, and that was stamped as
+  // `{ matchUpStatus: TO_BE_PLAYED, previousMatchUpStatus: TO_BE_PLAYED }` — provenance asserting an
+  // origin for a side that has none. It matters because `exitProducedByPropagation` reads the mere
+  // PRESENCE of provenance, so an undecided side read as propagation-produced.
+  //
+  // A COMPLETED origin IS recorded, deliberately: `sideExitProvenance.test.ts` pins a double exit
+  // meeting a played win, and that opponent's origin is a real fact.
+  const isDecided = (status?: string) => !!status && status !== TO_BE_PLAYED;
   const provenance: SideExitProvenance = {
-    [sourceSideNumber]: definedAttributes({
-      matchUpStatus: producedExitStatus(sourceMatchUpStatus),
-      previousMatchUpStatus: sourceMatchUpStatus,
-      sourceMatchUpId,
-    }) as SideExitProvenanceEntry,
-    [pairedSideNumber]: definedAttributes({
-      matchUpStatus: producedExitStatus(pairedMatchUpStatus),
-      previousMatchUpStatus: pairedMatchUpStatus,
-      sourceMatchUpId: pairedMatchUpId,
-    }) as SideExitProvenanceEntry,
+    ...(isDecided(sourceMatchUpStatus)
+      ? {
+          [sourceSideNumber]: definedAttributes({
+            matchUpStatus: producedExitStatus(sourceMatchUpStatus),
+            previousMatchUpStatus: sourceMatchUpStatus,
+            sourceMatchUpId,
+          }) as SideExitProvenanceEntry,
+        }
+      : {}),
+    ...(isDecided(pairedMatchUpStatus)
+      ? {
+          [pairedSideNumber]: definedAttributes({
+            matchUpStatus: producedExitStatus(pairedMatchUpStatus),
+            previousMatchUpStatus: pairedMatchUpStatus,
+            sourceMatchUpId: pairedMatchUpId,
+          }) as SideExitProvenanceEntry,
+        }
+      : {}),
   };
 
   // an entry with nothing in it is noise; drop it rather than persist an empty object
@@ -233,6 +260,17 @@ export function clearResolvedSideExitProvenance(matchUp?: MatchUp): void {
  * The fallback exists so a record written before this field — or by a LEGACY-mode writer — still
  * answers. It reads only the provenance SHAPE out of `matchUpStatusCodes`; policy codes and
  * `{ code }` wrappers are not provenance and are ignored.
+ *
+ * NATIVE WINS WHOLE, deliberately, and this was tried the other way. Merging per side looks
+ * strictly more informative — it would recover a side the half-written native field omits — but
+ * measured on the consolation convergence path the legacy array is BOTH order-dependent and
+ * self-inconsistent there: one order stores `{ matchUpStatus: DEFAULTED, previousMatchUpStatus:
+ * DOUBLE_WALKOVER }`, a walkover origin producing a default. Merging imported that corruption into
+ * a field which was correct, so the native record is kept intact instead.
+ *
+ * The consequence is a real limit rather than a fix: where the native field is single-sided, this
+ * returns one side. Completing it means fixing the WRITER to record both origins, which is the
+ * `matchUpStatusCodes`-becomes-a-projection work — see MATCHUP_STATUS_CODES_PER_SIDE.md.
  */
 export function getSideExitProvenance({ matchUp }: { matchUp?: MatchUp }): SideExitProvenance | undefined {
   const native = matchUp?.sideExitProvenance;
