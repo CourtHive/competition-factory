@@ -22,7 +22,11 @@ type ValidateTieFormatArgs = {
 export function validateTieFormat(params: ValidateTieFormatArgs): ResultType {
   const checkCategory = !!(params?.enforceCategory !== false && params?.category);
   const checkGender = !!(params?.enforceGender !== false && params?.gender);
-  const checkCollectionIds = params?.checkCollectionIds;
+  // DEFAULT ENFORCES. An id-less tieFormat used to be reported valid, so a consumer validating
+  // directly got a false all-clear while every generated line carried `collectionId: null` and the
+  // tie never scored. Opt out with `checkCollectionIds: false` where validation legitimately runs
+  // BEFORE ids are minted — `checkTieFormat` is the one such caller.
+  const checkCollectionIds = params?.checkCollectionIds !== false;
   const tieFormat = params?.tieFormat;
   const event = params?.event;
 

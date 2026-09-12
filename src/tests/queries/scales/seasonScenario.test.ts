@@ -95,6 +95,11 @@ it.each(scenarios.slice(1))('can aggregate team scores across SINGLES/DOUBLES ev
     setState: true,
   });
 
+  // Since 7.0.0 `validateTieFormat` enforces collectionIds, and `generateEventsFromTieFormat`
+  // validates its `tieFormat` param at the door. A hand-written tieFormat carries none, so it is
+  // minted first — the same two lines a consumer writes after upgrading.
+  tournamentEngine.mintCollectionIds({ tieFormat });
+
   const result = tournamentEngine.generateEventsFromTieFormat({
     uuids: ['e-1', 'e-2', 'e-3'], // used for eventIds to facilitate testing
     addEntriesFromTeams: true,

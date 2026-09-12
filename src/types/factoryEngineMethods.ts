@@ -472,6 +472,7 @@ export type FactoryEngineMethod =
   | 'mergeOverlappingAvailability'
   | 'mergeParticipants'
   | 'migrateTournamentRecord'
+  | 'mintCollectionIds'
   | 'minutesToHhmm'
   | 'modifyCertification'
   | 'modifyCollectionDefinition'
@@ -1202,6 +1203,7 @@ export const FACTORY_ENGINE_METHODS: readonly FactoryEngineMethod[] = [
   'mergeOverlappingAvailability',
   'mergeParticipants',
   'migrateTournamentRecord',
+  'mintCollectionIds',
   'minutesToHhmm',
   'modifyCertification',
   'modifyCollectionDefinition',

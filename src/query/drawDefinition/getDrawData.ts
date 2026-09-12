@@ -11,10 +11,11 @@ import { createSubOrderMap } from '@Query/structure/createSubOrderMap';
 import { getPublishState } from '@Query/publishing/getPublishState';
 import { structureSort } from '@Functions/sorters/structureSort';
 import { findStructure } from '@Acquire/findStructure';
-import { PayloadProfileEnum } from '@Types/tournamentTypes';
+import { DrawDefinition, Event, Participant, PayloadProfileEnum, Tournament } from '@Types/tournamentTypes';
 import { findExtension } from '@Acquire/findExtension';
 import { makeDeepCopy } from '@Tools/makeDeepCopy';
 import { xa } from '@Tools/extractAttributes';
+import type { ContextProfile, ParticipantsProfile, PolicyDefinitions, StructureSortConfig } from '@Types/factoryTypes';
 
 // constants and types
 import {
@@ -43,8 +44,49 @@ import {
   WALKOVER,
 } from '@Constants/matchUpStatusConstants';
 
+/**
+ * Arguments for {@link getDrawData}.
+ *
+ * Added in 7.0.0. This is a published query that previously had **no argument type at all**, so a
+ * consumer got no completion, no compile-time check on a misspelled key, and no signal that
+ * `structuresProfile` is a closed set. The rigour already existed in this file — `PayloadProfileEnum`
+ * is a closed union and an unknown value is an error rather than a silent fall-through to the full
+ * payload — it simply stopped at the function boundary.
+ *
+ * `tournamentRecord` is optional rather than required: `drawDefinition` is the only hard requirement
+ * (its absence returns `MISSING_DRAW_DEFINITION`), and the other inputs enrich the result.
+ */
+export type GetDrawDataArgs = {
+  /** when true, `eventPublishedState` or `event` must also be provided */
+  usePublishState?: boolean;
+  includePositionAssignments?: boolean;
+  tournamentParticipants?: Participant[];
+  policyDefinitions?: PolicyDefinitions;
+  /** defaults to `PayloadProfileEnum.FULL`; an unrecognised value is `INVALID_VALUES`, never a fall-through */
+  structuresProfile?: PayloadProfileEnum;
+  sortConfig?: StructureSortConfig;
+  contextProfile?: ContextProfile;
+  drawDefinition: DrawDefinition;
+  tournamentRecord?: Tournament;
+  /** a flag, forwarded to `tallyParticipantResults` */
+  pressureRating?: boolean;
+  refreshResults?: boolean;
+  context?: { [key: string]: any };
+  /** pre-resolved, to avoid re-deriving it per draw when a caller already has it */
+  eventPublishState?: { status?: { [key: string]: any } };
+  participantsProfile?: ParticipantsProfile;
+  allParticipantResults?: boolean;
+  hydrateParticipants?: boolean;
+  publishStatus?: any;
+  noDeepCopy?: boolean;
+  inContext?: boolean;
+  /** publish-state key; `PUBLIC` unless a provider uses a private channel */
+  status?: string;
+  event?: Event;
+};
+
 // NOTE: if { usePublishState: true } then { eventPublishedState } or { event } must be provided
-export function getDrawData(params): {
+export function getDrawData(params: GetDrawDataArgs): {
   structures?: any[];
   success?: boolean;
   error?: ErrorType;

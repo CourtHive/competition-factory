@@ -197,10 +197,13 @@ it('cal enforce gender in collectionDefinitions', () => {
   };
   tieFormat.collectionDefinitions.push(collectionDefinition);
 
-  result = validateTieFormat({ tieFormat });
+  // `checkCollectionIds: false` — the definition pushed above carries no collectionId, which is
+  // incidental to what this test asserts. Since 7.0.0 the check is ON by default, so without the
+  // opt-out these two lines would fail on ids rather than exercise gender enforcement.
+  result = validateTieFormat({ tieFormat, checkCollectionIds: false });
   expect(result.valid).toEqual(true);
 
-  result = validateTieFormat({ tieFormat, enforceGender: true });
+  result = validateTieFormat({ tieFormat, enforceGender: true, checkCollectionIds: false });
   expect(result.valid).toEqual(true);
 
   result = validateTieFormat({

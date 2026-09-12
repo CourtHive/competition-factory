@@ -33,6 +33,7 @@ import {
 } from '@Types/tournamentTypes';
 
 type GenerateDrawTypeAndModify = {
+  uuids?: string[];
   policyDefinitions?: PolicyDefinitions;
   appliedPolicies?: PolicyDefinitions;
   finishingPositionLimit?: number;
@@ -88,7 +89,9 @@ export function generateDrawTypeAndModifyDrawDefinition(params: GenerateDrawType
   // generated line carries `collectionId: null`, cannot be attributed to its collection, and the tie
   // never scores. Safe to mint in place: `copyTieFormat` above already detached this from the caller.
   if (tieFormat) {
-    const collectionIdResult = checkTieFormat({ tieFormat });
+    // `params.uuids` is threaded in so the mint is identical on client and server — see
+    // checkTieFormat's note. Without a pool it still mints, which is the pre-7.0.0 behaviour.
+    const collectionIdResult = checkTieFormat({ tieFormat, uuids: params.uuids });
     if (collectionIdResult.error) return collectionIdResult;
   }
   matchUpType = matchUpType ?? (drawDefinition.matchUpType || SINGLES);
