@@ -57,7 +57,7 @@ import {
  * (its absence returns `MISSING_DRAW_DEFINITION`), and the other inputs enrich the result.
  */
 export type GetDrawDataArgs = {
-  /** when true, `eventPublishedState` or `event` must also be provided */
+  /** when true, `eventPublishState` or `event` must also be provided */
   usePublishState?: boolean;
   includePositionAssignments?: boolean;
   tournamentParticipants?: Participant[];
@@ -85,7 +85,7 @@ export type GetDrawDataArgs = {
   event?: Event;
 };
 
-// NOTE: if { usePublishState: true } then { eventPublishedState } or { event } must be provided
+// NOTE: if { usePublishState: true } then { eventPublishState } or { event } must be provided
 export function getDrawData(params: GetDrawDataArgs): {
   structures?: any[];
   success?: boolean;
@@ -343,11 +343,19 @@ export function getDrawData(params: GetDrawDataArgs): {
     return structures;
   });
 
-  // to support legacy publish status which did not support discrete structure publishing...
-  // ...default to true when no structureDetails are found
-  const structures = groupedStructures
-    .flat()
-    .filter((structure) => !usePublishState || isVisiblyPublished(structureDetails?.[structure?.structureId]) || true);
+  // Legacy publish status carried no discrete structure publishing, so a structure with NO
+  // structureDetail defaults to visible. One that HAS a detail is judged by it.
+  //
+  // This read `... || isVisiblyPublished(...) || true`, which is unconditionally true — the
+  // `isVisiblyPublished` call was dead and discrete structure publishing was not honoured at all.
+  // Measured before the fix on a published COMPASS 16 with one structure marked
+  // `{ published: false }`: all 8 structures were returned, while `isVisiblyPublished` correctly
+  // reported that structure invisible. The predicate had the right answer and discarded it.
+  const structures = groupedStructures.flat().filter((structure) => {
+    if (!usePublishState) return true;
+    const structureDetail = structureDetails?.[structure?.structureId];
+    return structureDetail ? isVisiblyPublished(structureDetail) : true;
+  });
 
   drawInfo.drawActive = drawActive;
   drawInfo.participantPlacements = participantPlacements;

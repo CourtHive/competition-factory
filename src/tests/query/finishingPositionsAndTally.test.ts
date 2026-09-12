@@ -206,7 +206,7 @@ test('calculatePressureRatings via tallyParticipantResults with ELO-rated partic
   // Call tallyParticipantResults with pressureRating to trigger calculatePressureRatings
   const result = tallyParticipantResults({
     matchUps: groupMatchUps,
-    pressureRating: 'true',
+    pressureRating: true,
   });
 
   expect(result.participantResults).toBeDefined();

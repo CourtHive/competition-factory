@@ -313,6 +313,8 @@ Valid input behaves exactly as before. An **empty** array is valid and stamps no
 
 ## 8. `validateTieFormat` enforces `collectionId` by default
 
+_Shipped in [#4825](https://github.com/CourtHive/competition-factory/pull/4825)._
+
 `validateTieFormat` used to report an id-less tieFormat **valid**, so a consumer validating directly
 got a false all-clear — while every generated line carried `collectionId: null`, could not be
 attributed to its collection, and the tie never scored. The detector existed and was switched off.
@@ -353,6 +355,8 @@ the factory's own pre-mint call sites do.
 
 ## 9. `pressureRating` is a boolean
 
+_Shipped in [#4825](https://github.com/CourtHive/competition-factory/pull/4825)._
+
 `tallyParticipantResults` and `getParticipantResults` declared `pressureRating?: string` while every
 caller passed a boolean and the only use is `if (pressureRating)`. The declaration was wrong, not the
 usage. It is now `boolean`.
@@ -360,7 +364,28 @@ usage. It is now `boolean`.
 Runtime behaviour is unchanged — a truthy string behaved identically. Only TypeScript callers who
 declared the value as a `string` need to change, and only in their own types.
 
-## 10. Non-breaking additions worth knowing
+## 10. `usePublishState` honours discrete structure publishing
+
+_Shipped in [#4827](https://github.com/CourtHive/competition-factory/pull/4827)._
+
+`getDrawData({ usePublishState: true })` now **omits** a structure whose publishing detail says it is
+not published, or that is embargoed. It previously returned every structure of a published draw
+regardless — the filter ended in `|| true`, so the `isVisiblyPublished` call it contained could never
+affect the result and discrete structure publishing was not honoured at all.
+
+A structure with **no** publishing detail is unaffected: it is still returned. That is the legacy
+shape — publish status predates discrete structure publishing — and it is now pinned by a test.
+
+### What to expect
+
+A consumer reading publish-state-filtered draw data may see **fewer** structures than before, for
+draws where a structure was explicitly unpublished or embargoed. That is the intended behaviour
+arriving for the first time, not a loss: those structures were being served despite being marked
+hidden.
+
+An unpublished **draw** is unchanged — it returned no structures before and returns none now.
+
+## 11. Non-breaking additions worth knowing
 
 `plainDate`, `plainTime` and `zonedDateTime` are new published exports, completing the calendar
 intent set. `zonedTime` was never published, so its rename is not a breaking change.

@@ -21,12 +21,20 @@ import { ADD_MATCHUPS } from '@Constants/topicConstants';
 import { SUCCESS } from '@Constants/resultConstants';
 
 type AddEventArgs = {
+  /**
+   * Pool for minting `collectionId`s onto an id-less `event.tieFormat`.
+   *
+   * Supply it whenever the same mutation runs in more than one place — a client that re-applies a
+   * mutation after the server acknowledges it otherwise mints a different id on each side for the
+   * same collection, and the two copies of the record diverge silently. See `checkTieFormat`.
+   */
+  uuids?: string[];
   suppressNotifications?: boolean;
   tournamentRecord: Tournament;
   internalUse?: boolean;
   event: any; // any because eventId need not be present
 };
-export function addEvent({ suppressNotifications, tournamentRecord, internalUse, event }: AddEventArgs): {
+export function addEvent({ suppressNotifications, tournamentRecord, internalUse, uuids, event }: AddEventArgs): {
   context?: { [key: string]: any };
   error?: ErrorType;
   event?: Event;
@@ -80,7 +88,7 @@ export function addEvent({ suppressNotifications, tournamentRecord, internalUse,
       // On a COPY: `eventRecord` is a shallow spread of `event`, so mutating `event.tieFormat` in place
       // would stamp ids onto the caller's object — and onto the shared fixture when that is what was
       // passed.
-      const result = checkTieFormat({ tieFormat: makeDeepCopy(event.tieFormat, false, true) });
+      const result = checkTieFormat({ tieFormat: makeDeepCopy(event.tieFormat, false, true), uuids });
       if (result.error) return result;
       eventRecord.tieFormat = result.tieFormat;
     } else if (event.tieFormatName) {
