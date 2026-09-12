@@ -13,14 +13,15 @@ import { findStructure } from '@Acquire/findStructure';
 import { isDoubleExit, isExit } from '@Validators/isExit';
 import { overlap } from '@Tools/arrays';
 import {
+  collapseDoubleExitStatus,
   buildSideExitProvenance,
-  setSideExitProvenance,
+  mergeSideExitProvenance,
   producedExitStatus,
 } from '@Mutate/matchUps/matchUpStatus/sideExitProvenance';
 
 // constants
 import { DRAW_POSITION_ASSIGNED, MISSING_MATCHUP, MISSING_STRUCTURE } from '@Constants/errorConditionConstants';
-import { BYE, DOUBLE_DEFAULT, DOUBLE_WALKOVER } from '@Constants/matchUpStatusConstants';
+import { BYE } from '@Constants/matchUpStatusConstants';
 import { CONTAINER } from '@Constants/drawDefinitionConstants';
 import { SUCCESS } from '@Constants/resultConstants';
 
@@ -176,11 +177,27 @@ function handleLoserMatchUp({
 }
 
 function handleEmptyExitLoser({ loserMatchUp, matchUpsMap, params, stack }) {
-  const DOUBLE_EXIT = params.matchUpStatus === DOUBLE_DEFAULT ? DOUBLE_DEFAULT : DOUBLE_WALKOVER;
-  // What the double exit PRODUCES. CA ruling 2026-09-12: a double exit of either flavour produces a
-  // WALKOVER, unattributable to any upstream individual — so this is `producedExitStatus`, not a
-  // third inline copy of the mapping. It previously read `=== DOUBLE_DEFAULT ? DEFAULTED : WALKOVER`
-  // at both sites, which stamped a default on a matchUp nobody played.
+  // WHICH double exit this convergence becomes, from BOTH origins rather than the arriving one
+  // alone. `loserMatchUp` already carries the exit produced by the first arrival, which IS the other
+  // side's origin.
+  //
+  // Reading only `params.matchUpStatus` made the stored status a function of ENTRY ORDER: measured
+  // on SINGLE_ELIMINATION 8 and 16, the same two feeders give DOUBLE_DEFAULT one way and
+  // DOUBLE_WALKOVER the other, while the per-side facts are identical in both.
+  //
+  // Passing the target's PRODUCED exit beside the arriving RAW status is sound because
+  // `producedExitStatus` preserves the flavour family — DOUBLE_DEFAULT produces DEFAULTED, both
+  // default-flavoured — so the collapse classifies them the same either way.
+  const DOUBLE_EXIT = collapseDoubleExitStatus([params.matchUpStatus, loserMatchUp?.matchUpStatus]);
+  // What the double exit PRODUCES, through the single implementation rather than another inline copy
+  // of the mapping — it read `=== DOUBLE_DEFAULT ? DEFAULTED : WALKOVER` at both sites, two of four
+  // independent derivations of one rule.
+  //
+  // A UNIFORM double exit produces its own flavour: DOUBLE_DEFAULT produces DEFAULTED. The
+  // unattributed WALKOVER belongs to the MIXED case and is decided by `collapseDoubleExitStatus`
+  // choosing DOUBLE_WALKOVER for the convergence, not here. (An earlier revision of this comment
+  // said either flavour produces a WALKOVER; that over-read the ruling and the code was reverted
+  // while the comment was not.)
   const EXIT = producedExitStatus(params.matchUpStatus) as string;
 
   const noContextLoserMatchUp = matchUpsMap.drawMatchUps.find(
@@ -223,11 +240,15 @@ function conditionallyAdvanceDrawPosition(params) {
 
   const structure = drawDefinition.structures.find(({ structureId }) => structureId === targetMatchUp.structureId);
 
-  const DOUBLE_EXIT = params.matchUpStatus === DOUBLE_DEFAULT ? DOUBLE_DEFAULT : DOUBLE_WALKOVER;
-  // What the double exit PRODUCES. CA ruling 2026-09-12: a double exit of either flavour produces a
-  // WALKOVER, unattributable to any upstream individual — so this is `producedExitStatus`, not a
-  // third inline copy of the mapping. It previously read `=== DOUBLE_DEFAULT ? DEFAULTED : WALKOVER`
-  // at both sites, which stamped a default on a matchUp nobody played.
+  // What the double exit PRODUCES, through the single implementation rather than another inline copy
+  // of the mapping — it read `=== DOUBLE_DEFAULT ? DEFAULTED : WALKOVER` at both sites, two of four
+  // independent derivations of one rule.
+  //
+  // A UNIFORM double exit produces its own flavour: DOUBLE_DEFAULT produces DEFAULTED. The
+  // unattributed WALKOVER belongs to the MIXED case and is decided by `collapseDoubleExitStatus`
+  // choosing DOUBLE_WALKOVER for the convergence, not here. (An earlier revision of this comment
+  // said either flavour produces a WALKOVER; that over-read the ruling and the code was reverted
+  // while the comment was not.)
   const EXIT = producedExitStatus(params.matchUpStatus) as string;
 
   const stack = 'conditionallyAdvanceDrawPosition';
@@ -259,7 +280,6 @@ function conditionallyAdvanceDrawPosition(params) {
     sameStructure,
     paramMatchUpStatus: params.matchUpStatus,
     EXIT,
-    DOUBLE_EXIT,
   });
 
   // ensure targetMatchUp.drawPositions does not contain sourceMatchUp.drawPositions
@@ -334,6 +354,11 @@ function conditionallyAdvanceDrawPosition(params) {
   // assign the WALKOVER status to targetMatchUp
   const existingExit = isExit(noContextTargetMatchUp.matchUpStatus) && !drawPositions.length;
 
+  // Derived HERE, not at the top of the function, because this is where the other origin is known:
+  // `existingExit` means the target already carries the exit the first arrival produced. See
+  // handleEmptyExitLoser for the order-dependence measurement this removes.
+  const DOUBLE_EXIT = collapseDoubleExitStatus([params.matchUpStatus, noContextTargetMatchUp.matchUpStatus]);
+
   const matchUpStatus = existingExit ? DOUBLE_EXIT : EXIT;
 
   logAdvancement(stack, {
@@ -406,7 +431,10 @@ function conditionallyAdvanceDrawPosition(params) {
   });
   if (result.error) return decorateResult({ result, stack });
 
-  setSideExitProvenance({ matchUp: noContextTargetMatchUp, provenance: sideExitProvenance });
+  // ACCUMULATE, not replace: one side's origin can arrive before the other's, so a write that knows
+  // only its own side must not wipe an origin recorded earlier. CA, 2026-09-12: *"provenance is
+  // provenance… where did the sides come from. One origin can arrive before the other."*
+  mergeSideExitProvenance({ matchUp: noContextTargetMatchUp, provenance: sideExitProvenance });
 
   return advanceFromTarget({
     pairedPreviousMatchUpIsDoubleExit,
