@@ -412,9 +412,64 @@ if (validation.errors.length > 0) {
 }
 ```
 
+## Per-matchUp answers: readiness and rest
+
+Conflict reporting above answers _"where does this schedule disagree with itself"_, across a whole
+day. Two queries answer the narrower question a director asks with one match in hand.
+
+### `getMatchUpReadiness` — can this placement happen at the time it is scheduled for?
+
+Anchored on the matchUp's own `scheduledTime`, and skipped entirely when it has none. Findings are
+ordered strongest-first, so the head is the headline:
+
+```js
+const { readiness } = tournamentEngine.getMatchUpReadiness({ matchUpId });
+
+if (readiness.evaluated) {
+  for (const finding of readiness.findings) {
+    // kind: 'overlap' | 'dependency' | 'recovery' | 'undetermined'
+    console.log(finding.kind, finding.participantNames, finding.notBefore);
+  }
+} else {
+  // 'unknownMatchUp' | 'bye' | 'completed' | 'notScheduled' | 'noTime'
+  console.log('not evaluated:', readiness.reason);
+}
+```
+
+`overlap` and `recovery` never both fire for the same participant: being on court elsewhere already
+implies the recovery window is violated, so the stronger finding wins.
+
+### `getParticipantRest` — how long has each player actually had off?
+
+Anchored on **`asOf`**, an ISO instant the caller supplies. The factory holds no clock, so this is
+required; it is the same caller-supplied wall-clock idiom as `calledAt`.
+
+```js
+const { rest } = tournamentEngine.getParticipantRest({
+  asOf: new Date().toISOString(),
+  matchUpId,
+});
+
+for (const row of rest.rows) {
+  // status: 'onCourt' | 'resting' | 'rested' | 'none'
+  console.log(row.participantName, row.status, row.restMinutes, row.source);
+}
+```
+
+Because rest is measured rather than assumed, every row reports **which rung** produced its anchor —
+`endTime` (recorded), `scoredTime` (a proxy), or `startTime` / `calledAt` / `scheduledTime`
+(projected from a start plus the format average). A row whose ladder was entirely in the future
+carries `anchorUnreliable` rather than a measured-looking zero, and a row for a player still out
+there carries `onCourt` with no `restMinutes` at all.
+
+Rest is scoped to one day — the matchUp's own `scheduledDate`, or a `scheduledDate` the caller names
+for a matchUp that has not been scheduled yet. For the whole-tournament, across-days view, see the
+Participant Recovery report, which spans overnight turnaround this deliberately does not.
+
 ## Related Documentation
 
 - **[Scheduling Overview](./scheduling-overview)** - Understanding scheduling workflows
 - **[Scheduling Policy](./scheduling-policy)** - Configuring recovery times and daily limits
 - **[Automated Scheduling](./automated-scheduling)** - How conflicts are prevented during auto-scheduling
 - **[Query Governor](/docs/governors/query-governor)** - API reference for getParticipants method
+- **[Schedule Governor](/docs/governors/schedule-governor)** - API reference for getMatchUpReadiness and getParticipantRest

@@ -353,6 +353,8 @@ so a shortfall surfaces as a conflict instead of becoming a permanent mismatch.
 Pass `checkCollectionIds: false` where validation legitimately runs before the mint — that is what
 the factory's own pre-mint call sites do.
 
+_Shipped in [#4825](https://github.com/CourtHive/competition-factory/pull/4825)._
+
 ## 9. `pressureRating` is a boolean
 
 _Shipped in [#4825](https://github.com/CourtHive/competition-factory/pull/4825)._
