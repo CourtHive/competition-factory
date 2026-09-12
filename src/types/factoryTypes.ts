@@ -250,6 +250,60 @@ export type SeedingProfile = {
   nonRandom?: boolean;
 };
 
+/**
+ * One row of a seeding policy's `seedsCountThresholds`.
+ *
+ * With `drawSizeProgression` the largest threshold at or below the draw size applies;
+ * without it, only an exact `drawSize` match does.
+ */
+export type SeedsCountThreshold = {
+  minimumParticipantCount: number;
+  seedsCount: number;
+  drawSize: number;
+};
+
+/**
+ * The `seedingProfile` as it appears in a SEEDING **policy** — a superset of
+ * {@link SeedingProfile}, which is the profile as it applies to a single draw.
+ *
+ * A policy may express the profile three ways, and `validateAndDeriveDrawValues`
+ * resolves them in this order:
+ *
+ * 1. an explicit `seedingProfile` param on the draw-generation call;
+ * 2. `drawTypes[drawType]` — a per-drawType override;
+ * 3. the profile itself.
+ *
+ * The bare-string form is legacy but live: `getSeedPattern` and `structureTemplate`
+ * both accept a positioning string where a profile object is expected.
+ */
+export type PolicySeedingProfile =
+  | SeedingProfileUnion
+  | (SeedingProfile & {
+      /** Per-drawType overrides, keyed by drawType. Consulted BEFORE the outer profile. */
+      drawTypes?: { [drawType: string]: SeedingProfile | SeedingProfileUnion };
+    });
+
+/**
+ * A SEEDING policy, as the factory actually reads it.
+ *
+ * This shape was previously undeclared — `PolicyDefinitions` types every policy as
+ * `{ [key: string]: any }`, so `seedingProfile.drawTypes` was read by
+ * `validateAndDeriveDrawValues` without any type describing it. Consumers that needed
+ * the shape had to hand-write a mirror, which is how a mirror comes to drift.
+ *
+ * Declared but deliberately NOT wired into {@link PolicyDefinitions}: narrowing that
+ * index signature would be a consumer-build break, and is a separate decision.
+ */
+export type SeedingPolicy = {
+  seedsCountThresholds?: SeedsCountThreshold[];
+  validSeedPositions?: { ignore?: boolean; strict?: boolean };
+  seedingProfile?: PolicySeedingProfile;
+  containerByesIgnoreSeeding?: boolean;
+  duplicateSeedNumbers?: boolean;
+  drawSizeProgression?: boolean;
+  policyName?: string;
+};
+
 export type ScaleAttributes = {
   eventType?: EventTypeUnion;
   scaleName?: string;

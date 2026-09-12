@@ -1,4 +1,6 @@
 import { POLICY_TYPE_SEEDING } from '@Constants/policyConstants';
+
+import type { SeedingPolicy } from '@Types/factoryTypes';
 import { CLUSTER } from '@Constants/drawDefinitionConstants';
 
 export const POLICY_SEEDING_BYES = {
@@ -19,6 +21,6 @@ export const POLICY_SEEDING_BYES = {
       { drawSize: 256, minimumParticipantCount: 192, seedsCount: 64 },
     ],
   },
-};
+} satisfies { [POLICY_TYPE_SEEDING]: SeedingPolicy };
 
 export default POLICY_SEEDING_BYES;
