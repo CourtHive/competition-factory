@@ -63,7 +63,11 @@ export function getDrawFormat(params): ResultType & { tieFormat?: TieFormat; mat
   }
 
   if (tieFormat) {
+    // `checkCollectionIds: false` because this resolves WHICH tieFormat to use and runs before
+    // `generateDrawTypeAndModifyDrawDefinition` mints ids onto it. The shape is validated here; the
+    // id check belongs after the mint, where it now runs. The same reasoning gates `checkTieFormat`.
     const result = validateTieFormat({
+      checkCollectionIds: false,
       gender: event?.gender,
       enforceGender,
       tieFormat,

@@ -522,6 +522,7 @@ import type { getStructureReports } from '@Query/structure/structureReport';
 import type { getTieFormat } from '@Query/hierarchical/getTieFormat';
 import type { isValidMatchUpFormat } from '@Validators/isValidMatchUpFormat';
 import type { isValidSeedPosition } from '@Query/drawDefinition/seedGetter';
+import type { checkTieFormat } from '@Mutate/tieFormat/checkTieFormat';
 import type { modifyCourtAvailability } from '@Mutate/venues/courtAvailability';
 import type { parse } from '@Helpers/matchUpFormatCode/parse';
 import type { pbpValidator } from '@Validators/scoring/pbpValidator';
@@ -1085,6 +1086,7 @@ export interface MethodSignatures {
   mergeFacilitySchedule: EngineMethod<typeof mergeFacilitySchedule>;
   mergeParticipants: EngineMethod<typeof mergeParticipants>;
   migrateTournamentRecord: EngineMethod<typeof migrateTournamentRecord>;
+  mintCollectionIds: EngineMethod<typeof checkTieFormat>;
   modifyCertification: EngineMethod<typeof modifyCertification>;
   modifyCollectionDefinition: EngineMethod<typeof modifyCollectionDefinition>;
   modifyCourt: EngineMethod<typeof modifyCourt>;

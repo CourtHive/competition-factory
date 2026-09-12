@@ -55,7 +55,13 @@ export function validateCollectionDefinition({
   } = collectionDefinition;
 
   if (checkCollectionIds && typeof collectionId !== 'string') {
-    errors.push(`collectionId is not type string: ${collectionId}`);
+    // A published `fixtures.tieFormats.*` object carries no collectionIds — it cannot, since a
+    // collectionId identifies a collection INSTANCE within a record. Say so, rather than leaving the
+    // caller to infer it from a type complaint.
+    errors.push(
+      `collectionId is not type string: ${collectionId}. ` +
+        'Mint collectionIds before validating — a published tieFormat fixture carries none.',
+    );
   }
   if (typeof matchUpCount !== 'number') {
     errors.push(`matchUpCount is not type number: ${matchUpCount}`);
