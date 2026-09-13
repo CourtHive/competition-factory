@@ -1,4 +1,4 @@
-import { exitProducedByPropagation as sharedExitProducedByPropagation } from '@Mutate/matchUps/matchUpStatus/sideExitProvenance';
+import { isPropagatedExit as sharedIsPropagatedExit } from '@Mutate/matchUps/matchUpStatus/sideExitProvenance';
 import { finalize, Inconsistency } from '@Query/integrity/inconsistency';
 import { getAllDrawMatchUps } from '@Query/matchUps/drawMatchUps';
 import { isExit } from '@Validators/isExit';
@@ -116,16 +116,24 @@ function codeString(code: any): string | undefined {
   return value || undefined;
 }
 
-// An exit is "produced by propagation" when the engine stamped a `previousMatchUpStatus`
-// onto one of its status codes — the marker it writes when a downstream slot resolves to a
-// WALKOVER/DEFAULTED because an upstream double-exit (or fed exit) delivered no participant.
-// Such an exit legitimately has an empty losing slot and must NOT be flagged as an orphan.
-export function exitProducedByPropagation(matchUp: any): boolean {
+// An exit is "produced by propagation" when the cascade stamped provenance on it — the marker it
+// writes when a downstream slot resolves to a WALKOVER/DEFAULTED because an upstream double-exit
+// (or fed exit) delivered no participant. Such an exit legitimately has an empty losing slot and
+// must NOT be flagged as an orphan.
+//
+// POSITIONAL WRAPPER, deliberately. The shared predicate takes `{ matchUp }`; the detectors in this
+// file and in `getDrawInconsistencies` pass the matchUp positionally. An agent reported this as a
+// dead call with a mismatched signature; it is neither — it is re-exported and used at two live
+// sites, and it discriminates correctly. Verify before "fixing" it.
+export function isPropagatedExit(matchUp: any): boolean {
   // One reader for both schemas: prefers `sideExitProvenance`, falls back to the provenance shape
   // inside the legacy `matchUpStatusCodes`. Callers pass the matchUp, not the array, so the native
   // field is consultable at all.
-  return sharedExitProducedByPropagation({ matchUp });
+  return sharedIsPropagatedExit({ matchUp });
 }
+
+/** @deprecated Use {@link isPropagatedExit}. */
+export const exitProducedByPropagation = isPropagatedExit;
 
 // A positionAssignment is "occupied" if it names a participant, a bye, or a (pending)
 // qualifier. An empty assignment referenced by a decided non-exit matchUp is a phantom.
@@ -281,7 +289,7 @@ export function getStructureInconsistencies(
       loserSide?.drawPosition &&
       !loserSide.participantId &&
       !loserSide.bye &&
-      !exitProducedByPropagation(matchUp)
+      !isPropagatedExit(matchUp)
     ) {
       inconsistencies.push({
         ...base,
