@@ -14,7 +14,7 @@ import { processLeagueProfiles } from './processLeagueProfiles';
 import { definedAttributes } from '@Tools/definedAttributes';
 import { Extension, Participant } from '@Types/tournamentTypes';
 import { addEvent } from '@Mutate/events/addEvent';
-import { randomPop } from '@Tools/arrays';
+import { randomMember } from '@Tools/arrays';
 
 // constants and fixtures
 import { INVALID_DATE, INVALID_VALUES } from '@Constants/errorConditionConstants';
@@ -22,6 +22,20 @@ import { ParticipantsProfile, PolicyDefinitions } from '@Types/factoryTypes';
 import defaultRatingsParameters from '@Fixtures/ratings/ratingsParameters';
 import { SUCCESS } from '@Constants/resultConstants';
 
+// SELECTED WITH `randomMember`, NEVER `randomPop`. `randomPop` SPLICES, and this array is a
+// module-level constant — so popping from it permanently consumed one name per call and, after the
+// ninth `generateTournamentRecord` in a process, left it empty.
+//
+// An empty array makes `randomPop` return `undefined` WITHOUT drawing, so from the tenth call the
+// shared seeded RNG was one draw out of step for the rest of the process. `nonRandom` then no longer
+// determined the result: the same seed produced different participants, different BYE placement and
+// a different draw depending only on how many tournaments had been generated before it.
+//
+// Measured before the fix: draws consumed per call 8970, 8970, … (nine times), then 8969 forever;
+// the first participant changed from "Ursula Escher" to "Ursula Yates" and a BYE moved from
+// drawPosition 23 to 10. In the exit-propagation sweep this made three of thirty-one failing seeds
+// unreproducible in isolation, which is why per-seed attribution in that census could not be
+// trusted. See `mockTournamentNameReuse.test.ts`.
 const mockTournamentNames = [
   'Generated Tournament',
   'CourtHive Challenge',
@@ -65,7 +79,7 @@ type GenerateTournamentRecordArgs = {
 export function generateTournamentRecord(params: GenerateTournamentRecordArgs) {
   let { startDate, endDate } = params ?? {};
   const {
-    tournamentName = randomPop(mockTournamentNames, params?.random),
+    tournamentName = randomMember(mockTournamentNames, params?.random),
     ratingsParameters = defaultRatingsParameters,
     tournamentExtensions,
     policyDefinitions,
