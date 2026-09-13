@@ -27,6 +27,7 @@ feature tour and the full list of 7.0.0 additions, see [What's New in 7.0.0](./w
 | `validateTieFormat` enforces `collectionId` by default                                            | Anyone validating a hand-written or published tieFormat directly          | See §8            |
 | `pressureRating` is typed `boolean`, not `string`                                                 | TypeScript callers of `tallyParticipantResults` / `getParticipantResults` | See §9            |
 | Three request-shape fields gain real types (`positioning`, `finishingPositionNaming`, `schedule`) | TypeScript callers passing these loosely                                  | See §11           |
+| The SEEDING policy is typed, and two `stage` fields become `StageTypeUnion`                       | TypeScript callers with a wrong-typed seeding-policy field                | See §11           |
 
 ## 1. `participantsRequiredMatchUpStatuses` — a spelling fix
 
@@ -458,6 +459,55 @@ In practice, nothing. `MatchUpSchedule` carries an `[key: string]: any` index si
 are still accepted and excess-property checking does not fire. What the type now rejects is a
 **non-object** — `schedule: 'someString'` or `schedule: 42` — which never worked at runtime either.
 This is the mildest of the three changes; it is listed because it is still a signature change.
+
+### The SEEDING policy is typed — known fields enforced, unknown fields still accepted
+
+`PolicyDefinitions` types every policy as `{ [key: string]: any }`, so the SEEDING policy's shape was
+never declared — even though `validateAndDeriveDrawValues` reads `seedingProfile.drawTypes`, a field
+the factory's own `SeedingProfile` type does not have. The factory read a field its own type did not
+declare, which is why downstream consumers hand-wrote mirrors of the shape.
+
+`SeedingPolicy`, `PolicySeedingProfile` and `SeedsCountThreshold` are now declared and exported, and
+`PolicyDefinitions` narrows its `seeding` key to `SeedingPolicy` **by intersection**:
+
+```ts
+export type PolicyDefinitions = {
+  [key in ValidPolicyTypes]?: { [key: string]: any };
+} & {
+  [POLICY_TYPE_SEEDING]?: SeedingPolicy;
+};
+```
+
+That intersection is deliberate and is what keeps this safe. Because the first arm keeps its
+`{ [key: string]: any }` index signature:
+
+- a policy carrying **extra or provider-specific fields still compiles** — excess-property checking
+  does not fire, so a custom seeding policy is not broken;
+- the fields the factory **does** declare are now type-checked, so
+  `seedingProfile: { positioning: 'TOP_DOWN' }` is rejected — `TOP_DOWN` belongs to
+  `PositioningProfileEnum`, which has nothing to do with seeding.
+
+One consequence worth stating plainly: **a misspelled field is NOT caught** through
+`PolicyDefinitions`, precisely because unknown keys remain legal. To get that check, annotate the
+policy itself — `satisfies SeedingPolicy` — which is what the factory's own `POLICY_SEEDING_*`
+fixtures now do.
+
+#### What to do about seeding policies
+
+Nothing, unless a declared field carries the wrong type. Every stock policy shape — including the
+per-drawType override form — was compiled against the new type unchanged.
+
+### Two `stage` fields become `StageTypeUnion`
+
+`StructureProfile.stage` / `.rootStage` (returned by `getStructureGroups`) and `PointAward.stage`
+(produced by the ranking-points engine) were `string`. Both are **results** the factory produces, and
+both are populated from `structure.stage`, which is already `StageTypeUnion` — so the declared type
+was simply wider than anything the factory ever put there.
+
+#### What to do about `stage`
+
+Nothing. Reading a narrower type where you expected `string` is safe. Only code that **writes** a
+non-stage string back into one of these result objects is affected.
 
 ### The new gate: `pnpm check:request-shapes`
 

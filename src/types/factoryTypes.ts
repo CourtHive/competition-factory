@@ -2,7 +2,7 @@ import { DOUBLES_EVENT, SINGLES_EVENT, TEAM_EVENT } from '@Constants/eventConsta
 import { SignedInStatusUnion } from '@Constants/participantConstants';
 import { HydratedMatchUp, HydratedParticipant } from './hydrated';
 import { ErrorType } from '@Constants/errorConditionConstants';
-import { ValidPolicyTypes } from '@Constants/policyConstants';
+import { ValidPolicyTypes, POLICY_TYPE_SEEDING } from '@Constants/policyConstants';
 import type { FactoryEngineMethod } from './factoryEngineMethods';
 import type { MethodSignatures } from './methodSignatures';
 import {
@@ -335,6 +335,8 @@ export type FlightProfile = {
 
 export type PolicyDefinitions = {
   [key in ValidPolicyTypes]?: { [key: string]: any };
+} & {
+  [POLICY_TYPE_SEEDING]?: SeedingPolicy;
 };
 
 export type QueueMethod = {
@@ -687,8 +689,8 @@ export type StructureProfile = {
   progeny?: string[];
   sources: string[];
   targets: string[];
-  rootStage?: string;
-  stage?: string;
+  rootStage?: StageTypeUnion;
+  stage?: StageTypeUnion;
 };
 
 export type IdCollections = {

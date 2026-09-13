@@ -1,5 +1,5 @@
 import type { PointsAuthority } from '../constants/pointsAuthorityConstants';
-import type { EventTypeUnion } from './tournamentTypes';
+import type { EventTypeUnion, StageTypeUnion } from './tournamentTypes';
 
 // ─── Top-Level Policy ────────────────────────────────────────────────
 
@@ -629,7 +629,7 @@ export interface PointAward {
   structureId?: string;
   eventType: string;
   drawType?: string;
-  stage?: string;
+  stage?: StageTypeUnion;
   stageSequence?: number;
 
   // Category snapshot (what category was the event when points were earned)
