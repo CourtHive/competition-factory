@@ -102,8 +102,9 @@ type GetStructureInconsistenciesArgs = {
  *
  * EXIT_CODE_ON_WINNER_SIDE means "an exit code sits on the winner's side rather than the loser's".
  * That is a rule about POLICY codes, which belong to the match and land on the exiting side.
- * Provenance is written to BOTH sides by `buildMatchUpStatusCodes`, so index `winningSide - 1` is
- * always occupied for a propagation-produced matchUp and the rule cannot hold for it. Measured
+ * Provenance describes BOTH sides, and `projectExitStatusCodes` emits both slots, so index
+ * `winningSide - 1` is always occupied for a propagation-produced matchUp and the rule cannot hold
+ * for it. Measured
  * 2026-09-10: teaching this function to read object elements produced 717 findings, all false
  * positives, and broke two named negative-control tests.
  *
