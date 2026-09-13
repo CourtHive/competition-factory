@@ -1,3 +1,4 @@
+import { producedExitStatus } from '@Mutate/matchUps/matchUpStatus/sideExitProvenance';
 import { setSubscriptions } from '@Global/state/globalState';
 import tournamentEngine from '@Engines/syncEngine';
 import mocksEngine from '@Assemblies/engines/mock';
@@ -25,24 +26,70 @@ import { DOUBLE_DEFAULT, DOUBLE_WALKOVER } from '@Constants/matchUpStatusConstan
  * Both sites now derive it with `collapseDoubleExitStatus` from BOTH origins, the second of which is
  * the exit the first arrival already produced on the target.
  *
- * WHAT THIS ASSERTS, and what it deliberately does not:
+ * WHAT THIS ASSERTS. Three properties, each on its own assertion so a failure says which:
  *
- *  - ASSERTED: the converged `matchUpStatus` and `winningSide`, across every structure the pair
- *    touches. This is what the fix addresses and what a tournament director sees.
- *  - NOT ASSERTED: the per-side record. Measured on the consolation convergence path, the native
- *    `sideExitProvenance` is correct in both orders but SINGLE-SIDED — and which side it holds
- *    depends on entry order — while the legacy `matchUpStatusCodes` array is both order-dependent
- *    and self-inconsistent there, one order storing
- *    `{ matchUpStatus: DEFAULTED, previousMatchUpStatus: DOUBLE_WALKOVER }`: a walkover origin
- *    producing a default. Asserting either would pin a defect. Completing the per-side record means
- *    fixing the WRITER to record both origins, which is the `matchUpStatusCodes`-becomes-a-
- *    projection work in MATCHUP_STATUS_CODES_PER_SIDE.md.
+ *  1. STATUS — the converged `matchUpStatus` and `winningSide`, across every structure the pair
+ *     touches. This is what a tournament director sees.
+ *  2. PER-SIDE RECORD — `sideExitProvenance` and its projection `matchUpStatusCodes`, per side.
+ *     Measured before the projection landed: **24 of these same 32 cells differed** on this
+ *     property while passing property 1. On the consolation convergence path the native provenance
+ *     was correct but SINGLE-SIDED, holding only the FIRST arrival's origin, because the second
+ *     arrival (`handleEmptyExitLoser`) wrote the legacy array and no provenance at all. Which side
+ *     survived was therefore a function of entry order.
+ *  3. SELF-CONSISTENCY — within any one record, `matchUpStatus` must be what `previousMatchUpStatus`
+ *     produces. The same site hand-built `{ matchUpStatus: <the arriving exit>,
+ *     previousMatchUpStatus: <the target's CONVERGED status> }`, which in the mixed pair stored a
+ *     walkover origin producing a default. That is not a fact about either side, and it is
+ *     order-dependent in its own right: the other entry order stored the opposite.
+ *
+ * Properties 2 and 3 are gated here rather than in `doubleExitStatusParity`, which cannot see this
+ * class twice over: `asWalkoverVocabulary` renames DOUBLE_DEFAULT to DOUBLE_WALKOVER and DEFAULTED
+ * to WALKOVER before comparing, and its driver applies a single `exitOutcome` per run, so the
+ * in-suite matrix cannot construct a mixed pair at all.
  *
  * Generated ids are excluded: each run builds a fresh tournament, so any id differs by construction.
  * An earlier version of this measurement compared `sourceMatchUpId` and reported 32 of 32 differing
  * — including uniform pairs, which cannot differ by flavour — and that impossible result is how the
  * flaw in the measurement surfaced.
  */
+
+// provenance is keyed by sideNumber; the legacy codes array is positional. Both are rendered per
+// side so a difference names the side rather than an index.
+function sideRecord(matchUp: any): string {
+  const codes = matchUp.matchUpStatusCodes ?? [];
+  return [1, 2]
+    .map((sideNumber) => {
+      const entry = matchUp.sideExitProvenance?.[sideNumber];
+      const code = codes[sideNumber - 1];
+      const provenance = entry ? `${entry.previousMatchUpStatus}>${entry.matchUpStatus}` : '-';
+      const projected =
+        code && typeof code === 'object' ? `${code.previousMatchUpStatus ?? '-'}>${code.matchUpStatus ?? '-'}` : '-';
+      return `s${sideNumber}(${provenance}|${projected})`;
+    })
+    .join(' ');
+}
+
+// an origin and what it produced are a PAIR; a record where they disagree describes no side
+function inconsistentPairs(matchUp: any): string[] {
+  const entries = [1, 2].flatMap((sideNumber) => {
+    const provenance = matchUp.sideExitProvenance?.[sideNumber];
+    const code = matchUp.matchUpStatusCodes?.[sideNumber - 1];
+    return [
+      ...(provenance ? [{ label: `provenance s${sideNumber}`, ...provenance }] : []),
+      ...(code && typeof code === 'object' && code.previousMatchUpStatus
+        ? [{ label: `code s${sideNumber}`, ...code }]
+        : []),
+    ];
+  });
+
+  return entries
+    .filter((entry: any) => entry.matchUpStatus !== producedExitStatus(entry.previousMatchUpStatus))
+    .map(
+      (entry: any) =>
+        `${matchUp.structureName}|r${matchUp.roundNumber}p${matchUp.roundPosition}|${entry.label}|` +
+        `${entry.previousMatchUpStatus} produced ${entry.matchUpStatus}`,
+    );
+}
 
 function playInOrder({ drawType, drawSize, statuses, order }: any) {
   const drawId = `order-${drawType}-${drawSize}-${statuses.join('')}-${order.join('')}`;
@@ -71,14 +118,25 @@ function playInOrder({ drawType, drawSize, statuses, order }: any) {
     expect(result.error).toBeUndefined();
   }
 
-  return tournamentEngine
-    .allDrawMatchUps({ inContext: true, drawId })
-    .matchUps.filter((matchUp: any) => matchUp.matchUpStatus && matchUp.matchUpStatus !== 'TO_BE_PLAYED')
-    .map(
-      (matchUp: any) =>
-        `${matchUp.structureName}|r${matchUp.roundNumber}p${matchUp.roundPosition}|${matchUp.matchUpStatus}|ws=${matchUp.winningSide}`,
-    )
-    .sort();
+  const matchUps = tournamentEngine.allDrawMatchUps({ inContext: true, drawId }).matchUps;
+
+  return {
+    status: matchUps
+      .filter((matchUp: any) => matchUp.matchUpStatus && matchUp.matchUpStatus !== 'TO_BE_PLAYED')
+      .map(
+        (matchUp: any) =>
+          `${matchUp.structureName}|r${matchUp.roundNumber}p${matchUp.roundPosition}|${matchUp.matchUpStatus}|ws=${matchUp.winningSide}`,
+      )
+      .sort((a: string, b: string) => a.localeCompare(b)),
+    perSide: matchUps
+      .filter((matchUp: any) => matchUp.sideExitProvenance || matchUp.matchUpStatusCodes?.length)
+      .map(
+        (matchUp: any) =>
+          `${matchUp.structureName}|r${matchUp.roundNumber}p${matchUp.roundPosition}|${sideRecord(matchUp)}`,
+      )
+      .sort((a: string, b: string) => a.localeCompare(b)),
+    inconsistent: matchUps.flatMap(inconsistentPairs).sort((a: string, b: string) => a.localeCompare(b)),
+  };
 }
 
 it.each([
@@ -100,9 +158,13 @@ it.each([
   ]) {
     const forward = playInOrder({ drawType, drawSize, statuses, order: [0, 1] });
     const reversed = playInOrder({ drawType, drawSize, statuses, order: [1, 0] });
+    const cell = `${drawType}/${drawSize} ${statuses.join('+')}`;
 
     // the control: the pair must actually have produced propagated state, or this passes vacuously
-    expect(forward.length, `${statuses.join('+')} produced no decided matchUps`).toBeGreaterThan(0);
-    expect(reversed, `${drawType}/${drawSize} ${statuses.join('+')} depends on entry order`).toEqual(forward);
+    expect(forward.status.length, `${statuses.join('+')} produced no decided matchUps`).toBeGreaterThan(0);
+    expect(reversed.status, `${cell} status depends on entry order`).toEqual(forward.status);
+    expect(reversed.perSide, `${cell} per-side record depends on entry order`).toEqual(forward.perSide);
+    expect(forward.inconsistent, `${cell} forward: an origin producing a status it does not`).toEqual([]);
+    expect(reversed.inconsistent, `${cell} reversed: an origin producing a status it does not`).toEqual([]);
   }
 });

@@ -262,15 +262,16 @@ export function clearResolvedSideExitProvenance(matchUp?: MatchUp): void {
  * `{ code }` wrappers are not provenance and are ignored.
  *
  * NATIVE WINS WHOLE, deliberately, and this was tried the other way. Merging per side looks
- * strictly more informative — it would recover a side the half-written native field omits — but
- * measured on the consolation convergence path the legacy array is BOTH order-dependent and
- * self-inconsistent there: one order stores `{ matchUpStatus: DEFAULTED, previousMatchUpStatus:
- * DOUBLE_WALKOVER }`, a walkover origin producing a default. Merging imported that corruption into
- * a field which was correct, so the native record is kept intact instead.
+ * strictly more informative — it would recover a side the half-written native field omits — but at
+ * the time it was measured the legacy array was BOTH order-dependent and self-inconsistent on the
+ * consolation convergence path: one entry order stored `{ matchUpStatus: DEFAULTED,
+ * previousMatchUpStatus: DOUBLE_WALKOVER }`, a walkover origin producing a default. Merging imported
+ * that corruption into a field which was correct.
  *
- * The consequence is a real limit rather than a fix: where the native field is single-sided, this
- * returns one side. Completing it means fixing the WRITER to record both origins, which is the
- * `matchUpStatusCodes`-becomes-a-projection work — see MATCHUP_STATUS_CODES_PER_SIDE.md.
+ * That corruption is gone at the source — `doubleExitAdvancement` now GENERATES the array from
+ * provenance rather than hand-building it, so the two cannot disagree — but native-wins-whole
+ * remains the right rule: a record written before the projection landed still carries the old shape,
+ * and native is the only structure with an authoritative side key.
  */
 export function getSideExitProvenance({ matchUp }: { matchUp?: MatchUp }): SideExitProvenance | undefined {
   const native = matchUp?.sideExitProvenance;
@@ -293,6 +294,51 @@ export function getSideExitProvenance({ matchUp }: { matchUp?: MatchUp }): SideE
   });
 
   return Object.keys(derived).length ? derived : undefined;
+}
+
+/**
+ * The legacy `matchUpStatusCodes` array, GENERATED from provenance.
+ *
+ * CA, 2026-09-11: *"I don't think we can reasonably build our propagation logic on LEGACY
+ * matchUpStatusCodes… we shouldn't try."* The destination that follows from it is that propagation
+ * reads and writes `sideExitProvenance` and the legacy array becomes a PROJECTION of it — not a
+ * structure anyone parses to decide behaviour.
+ *
+ * Why a projection removes a whole class of defect rather than one instance of it. The propagation
+ * writers used to build the two structures INDEPENDENTLY from whatever each site happened to have in
+ * scope, so they could disagree, and did:
+ *
+ *  - `handleEmptyExitLoser` wrote `{ matchUpStatus: <the arriving exit>, previousMatchUpStatus: <the
+ *    CONVERGED status of the target> }` at side 1 — a walkover origin recorded as producing a
+ *    default in the mixed case, which is not a fact about either side.
+ *  - the same site replaced the array wholesale while provenance ACCUMULATED, so the earlier
+ *    arrival's entry survived in one structure and was overwritten in the other.
+ *
+ * Both are impossible once one structure is a function of the other. Order-invariance and internal
+ * consistency are inherited rather than separately maintained.
+ *
+ * SHAPE. Positional, index 0 = side 1, and BOTH slots are always emitted once there is any
+ * provenance at all — which is what the previous builder did and is not cosmetic. A side with no
+ * origin yet gets a bare `{ sideNumber }`, and that stub is a RESERVED SLOT, not noise:
+ * `updateMatchUpStatusCodes` is the site that learns a side's origin late, and it stamps by mapping
+ * over the elements that already exist. Drop the stub and the origin it learns has nowhere to land —
+ * measured, as two suite failures, when this projection first padded with `''` instead.
+ *
+ * `sourceMatchUpId` is deliberately NOT projected. CA decided 2026-09-09 not to add source identity
+ * to `matchUpStatusCodes`, which ships on every matchUp; the identity lives in `sideExitProvenance`,
+ * whose contents were ours to define from the start.
+ */
+export function projectExitStatusCodes(provenance?: SideExitProvenance): any[] {
+  const hasProvenance = [1, 2].some((sideNumber) => provenance?.[sideNumber]);
+  if (!hasProvenance) return [];
+
+  return [1, 2].map((sideNumber) =>
+    definedAttributes({
+      previousMatchUpStatus: provenance?.[sideNumber]?.previousMatchUpStatus,
+      matchUpStatus: provenance?.[sideNumber]?.matchUpStatus,
+      sideNumber,
+    }),
+  );
 }
 
 /** Whether this matchUp's exit was PRODUCED by upstream propagation rather than played. */

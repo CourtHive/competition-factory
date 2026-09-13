@@ -7,15 +7,17 @@ import { modifyMatchUpScore } from '@Mutate/matchUps/score/modifyMatchUpScore';
 import { directWinner } from '@Mutate/matchUps/drawPositions/directWinner';
 import { decorateResult } from '@Functions/global/decorateResult';
 import { positionTargets } from '@Query/matchUp/positionTargets';
-import { definedAttributes } from '@Tools/definedAttributes';
 import { pushGlobalLog } from '@Functions/global/globalLog';
 import { findStructure } from '@Acquire/findStructure';
 import { isDoubleExit, isExit } from '@Validators/isExit';
 import { overlap } from '@Tools/arrays';
 import {
+  buildCarriedExitProvenance,
   collapseDoubleExitStatus,
+  projectExitStatusCodes,
   buildSideExitProvenance,
   mergeSideExitProvenance,
+  getSideExitProvenance,
   producedExitStatus,
 } from '@Mutate/matchUps/matchUpStatus/sideExitProvenance';
 
@@ -145,7 +147,7 @@ function handleLoserMatchUp({
   }
 
   if (loserMatchUpIsEmptyExit) {
-    return handleEmptyExitLoser({ loserMatchUp, matchUpsMap, params, stack });
+    return handleEmptyExitLoser({ loserTargetDrawPosition, sourceMatchUp, loserMatchUp, matchUpsMap, params, stack });
   }
 
   if (loserMatchUpIsDoubleExit) {
@@ -176,7 +178,7 @@ function handleLoserMatchUp({
   });
 }
 
-function handleEmptyExitLoser({ loserMatchUp, matchUpsMap, params, stack }) {
+function handleEmptyExitLoser({ loserTargetDrawPosition, sourceMatchUp, loserMatchUp, matchUpsMap, params, stack }) {
   // WHICH double exit this convergence becomes, from BOTH origins rather than the arriving one
   // alone. `loserMatchUp` already carries the exit produced by the first arrival, which IS the other
   // side's origin.
@@ -189,16 +191,6 @@ function handleEmptyExitLoser({ loserMatchUp, matchUpsMap, params, stack }) {
   // `producedExitStatus` preserves the flavour family — DOUBLE_DEFAULT produces DEFAULTED, both
   // default-flavoured — so the collapse classifies them the same either way.
   const DOUBLE_EXIT = collapseDoubleExitStatus([params.matchUpStatus, loserMatchUp?.matchUpStatus]);
-  // What the double exit PRODUCES, through the single implementation rather than another inline copy
-  // of the mapping — it read `=== DOUBLE_DEFAULT ? DEFAULTED : WALKOVER` at both sites, two of four
-  // independent derivations of one rule.
-  //
-  // A UNIFORM double exit produces its own flavour: DOUBLE_DEFAULT produces DEFAULTED. The
-  // unattributed WALKOVER belongs to the MIXED case and is decided by `collapseDoubleExitStatus`
-  // choosing DOUBLE_WALKOVER for the convergence, not here. (An earlier revision of this comment
-  // said either flavour produces a WALKOVER; that over-read the ruling and the code was reverted
-  // while the comment was not.)
-  const EXIT = producedExitStatus(params.matchUpStatus) as string;
 
   const noContextLoserMatchUp = matchUpsMap.drawMatchUps.find(
     (matchUp) => matchUp.matchUpId === loserMatchUp.matchUpId,
@@ -213,12 +205,40 @@ function handleEmptyExitLoser({ loserMatchUp, matchUpsMap, params, stack }) {
   });
 
   if (noContextLoserMatchUp) {
-    const matchUpStatusCodes = [
-      { matchUpStatus: EXIT, previousMatchUpStatus: DOUBLE_EXIT, sideNumber: 1 },
-      { matchUpStatus: EXIT, previousMatchUpStatus: params.matchUpStatus, sideNumber: 2 },
-    ].map((code) => definedAttributes(code));
+    // This is the SECOND arrival at a convergence: the target already carries the exit the first
+    // arrival produced, and — measured over the exit-propagation suite, 222 of 223 firings — already
+    // carries that side's provenance. Recording the arriving side and projecting the codes from the
+    // union is what makes the pair order-invariant.
+    //
+    // The arriving side is where the cascade is directing this loser. `loserTargetDrawPosition` names
+    // that drawPosition and the target's `drawPositions` are in side order, which is the same
+    // derivation the sibling non-empty branch uses for `walkoverWinningSide`. Measured across those
+    // 223 firings it resolves to a valid side every time, and to the side the existing provenance
+    // does NOT hold in every case but one — a re-score of the same side, where replacing is right.
+    const exitingSideNumber = (loserMatchUp.drawPositions ?? []).indexOf(loserTargetDrawPosition) + 1;
+    const arrivingProvenance = buildCarriedExitProvenance({
+      previousMatchUpStatus: params.matchUpStatus,
+      sourceMatchUpId: sourceMatchUp?.matchUpId,
+      matchUpStatus: params.matchUpStatus,
+      exitingSideNumber,
+    });
+    // `getSideExitProvenance` rather than the raw field so the union still finds the first arrival's
+    // origin under LEGACY write mode, where nothing writes the native field.
+    const provenance = {
+      ...(getSideExitProvenance({ matchUp: noContextLoserMatchUp }) ?? {}),
+      ...(arrivingProvenance ?? {}),
+    };
 
-    return modifyMatchUpScore({
+    // GENERATED, not hand-built. The previous pair was `[{ matchUpStatus: EXIT, previousMatchUpStatus:
+    // DOUBLE_EXIT, sideNumber: 1 }, { matchUpStatus: EXIT, previousMatchUpStatus: params.matchUpStatus,
+    // sideNumber: 2 }]`, which was wrong in three ways at once: side 1's `previousMatchUpStatus` was
+    // the target's own COLLAPSED status rather than an origin, both sides took the ARRIVING exit's
+    // produced status, and the write replaced an array whose other entry was still true. In the mixed
+    // case that stored `{ matchUpStatus: DEFAULTED, previousMatchUpStatus: DOUBLE_WALKOVER }` — a
+    // walkover origin producing a default — and it stored the opposite in the opposite entry order.
+    const matchUpStatusCodes = projectExitStatusCodes(provenance);
+
+    const result = modifyMatchUpScore({
       ...params,
       matchUp: noContextLoserMatchUp,
       matchUpId: loserMatchUp.matchUpId,
@@ -228,6 +248,10 @@ function handleEmptyExitLoser({ loserMatchUp, matchUpsMap, params, stack }) {
       removeScore: true,
       context: stack,
     });
+    if (result.error) return result;
+
+    mergeSideExitProvenance({ matchUp: noContextLoserMatchUp, provenance });
+    return result;
   }
 
   return { ...SUCCESS };
@@ -392,22 +416,29 @@ function conditionallyAdvanceDrawPosition(params) {
   const sourceMatchUpStatus = params.matchUpStatus;
   const pairedMatchUpStatus = pairedPreviousMatchUp?.matchUpStatus;
 
-  const matchUpStatusCodes = buildMatchUpStatusCodes({
-    sourceMatchUpStatus,
-    pairedMatchUpStatus,
-    sourceSideNumber,
-  });
-
-  // CODES first-class: the same facts, keyed by sideNumber and attributed to their source.
-  // Written alongside the legacy array, not instead of it — see sideExitProvenance.ts on why the
-  // legacy write is not yet gated on writeLegacyEnabled().
-  const sideExitProvenance = buildSideExitProvenance({
+  // CODES first-class: the facts, keyed by sideNumber and attributed to their source.
+  const newProvenance = buildSideExitProvenance({
     pairedMatchUpId: pairedPreviousMatchUp?.matchUpId,
     sourceMatchUpId: sourceMatchUp?.matchUpId,
     pairedMatchUpStatus,
     sourceMatchUpStatus,
     sourceSideNumber,
   });
+
+  // Provenance ACCUMULATES — one side's origin can arrive before the other's — so the union of what
+  // the target already holds and what this write establishes is the record, and the legacy array is
+  // its projection. `getSideExitProvenance` rather than the raw field so the union still finds an
+  // earlier origin under LEGACY write mode, where nothing writes the native field.
+  const provenance = {
+    ...(getSideExitProvenance({ matchUp: noContextTargetMatchUp }) ?? {}),
+    ...(newProvenance ?? {}),
+  };
+
+  // A PROJECTION of provenance, replacing a second, independent derivation of the same facts. Where
+  // this write establishes no provenance at all — `sourceSideNumber` unknown, so neither structure
+  // can attribute anything — the array is blanked exactly as the previous builder blanked it, rather
+  // than re-projecting state this write knows nothing about.
+  const matchUpStatusCodes = newProvenance ? projectExitStatusCodes(provenance) : [];
 
   logAdvancement(stack, {
     color: 'brightgreen',
@@ -434,7 +465,7 @@ function conditionallyAdvanceDrawPosition(params) {
   // ACCUMULATE, not replace: one side's origin can arrive before the other's, so a write that knows
   // only its own side must not wipe an origin recorded earlier. CA, 2026-09-12: *"provenance is
   // provenance… where did the sides come from. One origin can arrive before the other."*
-  mergeSideExitProvenance({ matchUp: noContextTargetMatchUp, provenance: sideExitProvenance });
+  mergeSideExitProvenance({ matchUp: noContextTargetMatchUp, provenance: newProvenance });
 
   return advanceFromTarget({
     pairedPreviousMatchUpIsDoubleExit,
@@ -494,42 +525,6 @@ function inferSourceSideNumber({
   });
 
   return sourceSideNumber;
-}
-
-function buildMatchUpStatusCodes({ sourceMatchUpStatus, pairedMatchUpStatus, sourceSideNumber }) {
-  let matchUpStatusCodes: any[] = [];
-
-  if (sourceSideNumber === 1) {
-    matchUpStatusCodes = [
-      {
-        matchUpStatus: producedExitStatus(sourceMatchUpStatus),
-        previousMatchUpStatus: sourceMatchUpStatus,
-        sideNumber: 1,
-      },
-      {
-        matchUpStatus: producedExitStatus(pairedMatchUpStatus),
-        previousMatchUpStatus: pairedMatchUpStatus,
-        sideNumber: 2,
-      },
-    ];
-  } else if (sourceSideNumber === 2) {
-    matchUpStatusCodes = [
-      {
-        matchUpStatus: producedExitStatus(pairedMatchUpStatus),
-        previousMatchUpStatus: pairedMatchUpStatus,
-        sideNumber: 1,
-      },
-      {
-        matchUpStatus: producedExitStatus(sourceMatchUpStatus),
-        previousMatchUpStatus: sourceMatchUpStatus,
-        sideNumber: 2,
-      },
-    ];
-  }
-
-  if (matchUpStatusCodes.length) matchUpStatusCodes = matchUpStatusCodes.map((code) => definedAttributes(code));
-
-  return matchUpStatusCodes;
 }
 
 function advanceFromTarget({
