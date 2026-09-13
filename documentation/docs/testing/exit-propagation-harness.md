@@ -109,6 +109,45 @@ Read the counts carefully: a fingerprint is (draw type + property + schedule sha
 **finer** than "distinct defect". Many fingerprints are the same root cause reached by different
 schedules. It measures reachability and diversity, not bug count.
 
+## The seed-level census
+
+`census.test.ts` is inert unless `CENSUS=1`. It answers a different question from the sweep, and the
+two numbers are **not comparable**.
+
+```sh
+CENSUS=1 SEED_START=9000001 SEED_COUNT=600 OUT=/tmp/census.jsonl \
+  npx vitest run src/tests/mutations/exitPropagation/census.test.ts
+```
+
+The sweep shrinks each finding and then deduplicates on its fingerprint, so a seed that fails with a
+shape already claimed in that worker writes nothing — its output is a list of distinct **shapes**.
+The census does neither: one row per **failing seed**, the unshrunk first failure, no dedup.
+
+That is what a before/after measurement needs. "Sixteen closed, one new" is a statement about seeds,
+and a deduplicated file cannot support it. Every census figure quoted in this area's history is this
+measurement rather than the sweep's.
+
+### Frozen schedules, for an honest A/B
+
+`generateSchedule` walks the **live** draw and picks among matchUps that currently hold two
+participants — so it calls the engine under test. A fix therefore changes the schedules themselves,
+and a naive before/after mixes defect closure with schedule drift. Emit once, replay on both trees:
+
+```sh
+CENSUS=1 … SCHEDULES_OUT=/tmp/schedules.jsonl …   # emit only, no replay
+CENSUS=1 … SCHEDULES_IN=/tmp/schedules.jsonl  …   # replay those exact steps
+```
+
+### Per-seed attribution has a prerequisite
+
+A census is only meaningful if a seed's outcome depends on that seed alone. Until `randomPop` stopped
+consuming the module-level pool of nine mock tournament names, it did not: from the tenth
+`generateTournamentRecord` in a process the seeded RNG ran one draw out of step, and `nonRandom`
+stopped determining the tournament. Three failing seeds then could not be reproduced in isolation.
+
+If a seed ever again fails in a run but not alone, suspect that class first — the guard is
+`src/tests/mocks/mockTournamentNameReuse.test.ts`.
+
 ## Traps worth knowing before you extend this
 
 Each of these cost real time and produced confident, wholly incorrect results.
