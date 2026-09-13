@@ -83,6 +83,7 @@ type SetMatchUpStateArgs = {
   disableScoreValidation?: boolean;
   projectedWinningSide?: number;
   propagateExitStatus?: boolean;
+  propagateRetirementAsExit?: boolean;
   matchUpStatusCodes?: string[];
   tournamentRecord?: Tournament;
   drawDefinition: DrawDefinition;
