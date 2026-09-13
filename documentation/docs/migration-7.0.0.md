@@ -89,10 +89,9 @@ than on that specific code.
 
 :::note This fix is scoped to that one outcome shape
 It does **not** mean every rejected mutation leaves the draw untouched. A direct `setMatchUpStatus`
-that fails part-way through a propagation cascade can still return an error over changed state —
-measured on 2026-09-11 at 78 of 600 randomized scenarios. Callers that need all-or-nothing should
-go through `executionQueue` with `rollbackOnError: true`, which snapshots and restores; that is what
-TMX and competition-factory-server do on every mutation.
+that fails part-way through a propagation cascade can still return an error over changed state.
+Callers that need all-or-nothing should go through `executionQueue` with `rollbackOnError: true`,
+which snapshots and restores; that is what TMX and competition-factory-server do on every mutation.
 :::
 
 ## 4. Time-zone conversions refuse rather than throw or guess
@@ -533,7 +532,8 @@ intent set. `zonedTime` was never published, so its rename is not a breaking cha
 The `LADDER` drawType is generatable and its lifecycle is on the engine as eighteen new methods —
 `issueChallenge`, `acceptChallenge`, `declineChallenge`, `submitResult`, `confirmResult`,
 `disputeResult`, `applyLadderMovement`, `addLadderParticipant`, `removeLadderParticipant`,
-`refreshLadderRatings`, and eight `get*` queries. All are additive; see
+`refreshLadderRatings`, seven `get*` queries and the `isChallengeInRange` predicate. All are
+additive; see
 [What's New in 7.0.0](./whats-new-7.0.0#driving-a-ladder).
 
 `PositionAssignment.byeFromPropagation` is a new optional boolean recording that a BYE was placed by
