@@ -14,6 +14,20 @@ import { AD_HOC, LADDER, SWISS } from '@Constants/drawDefinitionConstants';
  */
 const AD_HOC_TYPES = new Set([AD_HOC, LADDER, SWISS]);
 
-export function isAdHocType(drawType?: string): boolean {
+/** A bare drawType, or the engine's object param carrying one. */
+export type DrawTypeArg = string | { drawType?: string };
+
+/**
+ * Accepts either a bare `drawType` or the engine's object param, because it is reachable both ways
+ * and answering the wrong question silently is the failure this release exists to remove.
+ *
+ * Every engine method takes an object, so `engine.isAdHocType({ drawType })` arrives here as an object
+ * while an internal caller passes the string directly. Before this accepted both, the engine path
+ * resolved `drawType` to `undefined` and returned **false** — a confident wrong answer on a boolean
+ * callers branch on, which is precisely the §5 fail-open class 7.0.0 closed for
+ * `checkMatchUpIsComplete`.
+ */
+export function isAdHocType(arg?: DrawTypeArg): boolean {
+  const drawType = typeof arg === 'string' ? arg : arg?.drawType;
   return !!drawType && AD_HOC_TYPES.has(drawType);
 }

@@ -174,7 +174,10 @@ Dispute _resolution_ is not built: a disputed result is blocked from moving the 
 5. **Stop relying on re-application as repair.** Re-sending an identical double exit no longer nudges a draw whose advancement is missing. Detect that state with `getDrawInconsistencies` and repair it deliberately.
 6. **Add cases for `CHALLENGED` and for `SQUASH` / `BADMINTON`** if you `switch` exhaustively over `MatchUpStatusEnum` or `DisciplineEnum` with no `default`.
 7. **Pass objects, not ids, to `checkMatchUpIsComplete` and `getParticipantResults`** — resolve with `findMatchUp` / `allDrawMatchUps` first. Both now refuse an absent argument rather than answering `false` / empty.
-8. **Check any branch on `isAdHocType`** — it now includes `LADDER`. Use `isLadder` where a roster and a standing must be told apart.
+8. **Check any branch on `isAdHocType`** — it now includes `LADDER`. Use `isLadder` where the
+   difference matters. **Both are newly published on `drawsGovernor`** (`engine.isAdHocType({ drawType })`,
+   `engine.isLadder({ drawType })`); neither was reachable before 7.0.0, so this step is newly
+   followable rather than newly relevant.
 9. **Adopt the ladder at your own pace** — the draw type and its eighteen engine methods are purely additive; no action is required to keep existing code working.
 
 ## Where to go from here
