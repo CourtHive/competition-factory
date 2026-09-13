@@ -77,10 +77,32 @@ if (!existsSync(join(ROOT, guidePath))) {
 }
 const guide = readFileSync(join(ROOT, guidePath), 'utf8');
 
+/**
+ * The PR this run belongs to, when it is a `pull_request` build.
+ *
+ * WHY THIS EXISTS, and it is a defect this gate caused rather than found. A breaking commit on an
+ * OPEN pr carries no `(#NNNN)` — GitHub appends that on squash-merge — so the `unreferenced` check
+ * below could not pass before merge, and the only way to make CI green was to type the number into
+ * the subject by hand. The squash then appended a second one, and release-please emitted BOTH:
+ *
+ *   fix(scoring)!: take back the exits a matchUp produced … (#4855) (#4855)
+ *
+ * shipping a doubled reference into the published 7.0.0 changelog. Measured 2026-09-13: #4827,
+ * #4855 and #4858 all carry it, by three different sessions, which makes it the gate's behaviour
+ * rather than anyone's slip.
+ *
+ * On a `pull_request` build GitHub sets `GITHUB_REF` to `refs/pull/<N>/merge`, so the number is
+ * already available and does not need to be in the subject. An un-numbered breaking commit in such a
+ * build is exactly one the open PR is adding, so attributing it to that PR is not a guess.
+ */
+const prFromEnv = process.env.GITHUB_REF?.match(/^refs\/pull\/(\d+)\/merge$/)?.[1];
+
 const missing = [];
 const unreferenced = [];
 for (const commit of breaking) {
-  const pr = commit.subject.match(/\(#(\d+)\)\s*$/)?.[1];
+  // `?? prFromEnv` and NOT `||` — a subject that already carries the number always wins, so a
+  // merged commit is still checked against its own PR rather than the build's.
+  const pr = commit.subject.match(/\(#(\d+)\)\s*$/)?.[1] ?? prFromEnv;
   if (!pr) {
     unreferenced.push(commit);
     continue;
@@ -91,6 +113,12 @@ for (const commit of breaking) {
 if (unreferenced.length) {
   process.stderr.write(`\n[verify:migration-coverage] ${unreferenced.length} breaking commit(s) carry no (#PR):\n`);
   for (const c of unreferenced) process.stderr.write(`  ${c.sha}  ${c.subject}\n`);
+  process.stderr.write(
+    `\n  On a pull_request build the number is read from GITHUB_REF, so it does NOT belong in the\n` +
+      `  commit subject — the squash-merge appends it and you get "(#1234) (#1234)" in the changelog.\n` +
+      `  Running locally there is no PR yet: reference the number in the guide once the PR is open,\n` +
+      `  and let CI do the matching.\n`,
+  );
 }
 if (missing.length) {
   process.stderr.write(
@@ -104,7 +132,8 @@ if (missing.length || unreferenced.length) {
     `\nA breaking change that is not in the migration guide ships undocumented. The CHANGELOG does not\n` +
       `cover for it: it is generated from BREAKING CHANGE footers, and a PR carrying several breaking\n` +
       `changes under one footer produces one entry.\n\n` +
-      `Add a section to ${guidePath} referencing the PR number, e.g. "(#1234)".\n`,
+      `Add a section to ${guidePath} referencing the PR number, e.g. "(#1234)". Do NOT add the\n` +
+      `number to the commit subject — the squash-merge appends it.\n`,
   );
   process.exit(1);
 }
