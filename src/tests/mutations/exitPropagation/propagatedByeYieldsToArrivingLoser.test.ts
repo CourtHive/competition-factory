@@ -4,8 +4,19 @@ import tournamentEngine from '@Engines/syncEngine';
 import mocksEngine from '@Assemblies/engines/mock';
 import { expect, it } from 'vitest';
 
-import { DEFAULTED, DOUBLE_DEFAULT, DOUBLE_WALKOVER, WALKOVER } from '@Constants/matchUpStatusConstants';
-import { FEED_IN_CHAMPIONSHIP, FEED_IN_CHAMPIONSHIP_TO_SF } from '@Constants/drawDefinitionConstants';
+import {
+  DEFAULTED,
+  DOUBLE_DEFAULT,
+  DOUBLE_WALKOVER,
+  RETIRED,
+  TO_BE_PLAYED,
+  WALKOVER,
+} from '@Constants/matchUpStatusConstants';
+import {
+  DOUBLE_ELIMINATION,
+  FEED_IN_CHAMPIONSHIP,
+  FEED_IN_CHAMPIONSHIP_TO_SF,
+} from '@Constants/drawDefinitionConstants';
 
 /**
  * A drawPosition holding a BYE that the cascade itself placed is AVAILABLE to an arriving loser.
@@ -45,7 +56,7 @@ function target({ structureName, roundNumber, roundPosition }: any) {
 
 it.each([
   {
-    scenario: 'a DOUBLE_WALKOVER upstream of a re-scored final in a FEED_IN_CHAMPIONSHIP of 8',
+    scenario: 'a consolation DOUBLE_WALKOVER upstream of a re-scored final in a FEED_IN_CHAMPIONSHIP of 8',
     drawType: FEED_IN_CHAMPIONSHIP,
     participantsCount: 4,
     drawSize: 8,
@@ -55,28 +66,48 @@ it.each([
       { structureName: 'Main', roundNumber: 2, roundPosition: 1, outcome: { winningSide: 1 } },
       { structureName: 'Main', roundNumber: 2, roundPosition: 2, outcome: { matchUpStatus: WALKOVER, winningSide: 2 } },
       { structureName: 'Main', roundNumber: 3, roundPosition: 1, outcome: { matchUpStatus: DOUBLE_WALKOVER } },
-      {
-        structureName: 'Main',
-        roundNumber: 2,
-        roundPosition: 2,
-        outcome: { matchUpStatus: DEFAULTED, winningSide: 1 },
-      },
+      { structureName: 'Consolation', roundNumber: 3, roundPosition: 1, outcome: { matchUpStatus: DOUBLE_WALKOVER } },
       { structureName: 'Main', roundNumber: 3, roundPosition: 1, outcome: { winningSide: 2 } },
     ],
   },
   {
-    scenario: 'a DOUBLE_DEFAULT re-scored to a WALKOVER in a FEED_IN_CHAMPIONSHIP of 8',
-    drawType: FEED_IN_CHAMPIONSHIP,
-    participantsCount: 8,
-    drawSize: 8,
+    scenario: 'a consolation DOUBLE_WALKOVER beside a main DOUBLE_DEFAULT in a FEED_IN_CHAMPIONSHIP_TO_SF of 16',
+    drawType: FEED_IN_CHAMPIONSHIP_TO_SF,
+    participantsCount: 16,
+    drawSize: 16,
     propagateExitStatus: true,
-    seed: 9000600,
+    seed: 9000572,
     steps: [
-      { structureName: 'Main', roundNumber: 1, roundPosition: 4, outcome: { matchUpStatus: WALKOVER, winningSide: 2 } },
-      { structureName: 'Main', roundNumber: 1, roundPosition: 3, outcome: { matchUpStatus: WALKOVER, winningSide: 1 } },
-      { structureName: 'Main', roundNumber: 2, roundPosition: 2, outcome: { matchUpStatus: DOUBLE_DEFAULT } },
+      { structureName: 'Main', roundNumber: 1, roundPosition: 5, outcome: { winningSide: 1 } },
+      { structureName: 'Main', roundNumber: 2, roundPosition: 3, outcome: { matchUpStatus: DOUBLE_DEFAULT } },
       { structureName: 'Main', roundNumber: 1, roundPosition: 4, outcome: { winningSide: 1 } },
-      { structureName: 'Main', roundNumber: 2, roundPosition: 2, outcome: { matchUpStatus: WALKOVER, winningSide: 2 } },
+      { structureName: 'Consolation', roundNumber: 1, roundPosition: 2, outcome: { matchUpStatus: DOUBLE_WALKOVER } },
+      { structureName: 'Main', roundNumber: 2, roundPosition: 3, outcome: { matchUpStatus: WALKOVER, winningSide: 2 } },
+    ],
+  },
+  {
+    scenario: 'a RETIRED re-score of a DOUBLE_WALKOVER in a DOUBLE_ELIMINATION of 16',
+    drawType: DOUBLE_ELIMINATION,
+    participantsCount: 15,
+    drawSize: 16,
+    propagateExitStatus: true,
+    seed: 9000595,
+    steps: [
+      { structureName: 'Main', roundNumber: 1, roundPosition: 2, outcome: { winningSide: 2 } },
+      { structureName: 'Main', roundNumber: 1, roundPosition: 7, outcome: { matchUpStatus: DOUBLE_WALKOVER } },
+      {
+        structureName: 'Main',
+        roundNumber: 1,
+        roundPosition: 8,
+        outcome: { matchUpStatus: RETIRED, winningSide: 1, score: { sets: [{ side1Score: 6, side2Score: 3 }] } },
+      },
+      { structureName: 'Main', roundNumber: 2, roundPosition: 1, outcome: { matchUpStatus: DOUBLE_WALKOVER } },
+      {
+        structureName: 'Main',
+        roundNumber: 2,
+        roundPosition: 1,
+        outcome: { matchUpStatus: RETIRED, winningSide: 1, score: { sets: [{ side1Score: 6, side2Score: 3 }] } },
+      },
     ],
   },
   {
@@ -114,6 +145,21 @@ it.each([
       },
       { structureName: 'Main', roundNumber: 2, roundPosition: 3, outcome: { winningSide: 1 } },
       { structureName: 'Main', roundNumber: 2, roundPosition: 4, outcome: { matchUpStatus: DOUBLE_WALKOVER } },
+      // This case's defect manifests at its LAST step, so the sequence has to reach it. The r2p4
+      // double exit above is natively recorded with two real participants and now blocks the r1p7
+      // unwind that crosses it, so it is cleared first — the order a director would follow. Pinning
+      // the refusal instead was measured to leave the tail invalid; reordering was measured to drop
+      // this file's control from 4 RED to 2.
+      {
+        structureName: 'Main',
+        roundNumber: 2,
+        roundPosition: 4,
+        outcome: {
+          score: { scoreStringSide1: '', scoreStringSide2: '' },
+          matchUpStatus: TO_BE_PLAYED,
+          winningSide: undefined,
+        },
+      },
       { structureName: 'Main', roundNumber: 1, roundPosition: 7, outcome: { matchUpStatus: DOUBLE_DEFAULT } },
       { structureName: 'Main', roundNumber: 3, roundPosition: 2, outcome: { winningSide: 1 } },
     ],
@@ -137,10 +183,8 @@ it.each([
       propagateExitStatus,
       drawId: DRAW_ID,
     });
-    expect(
-      result.error,
-      `step ${index + 1} (${step.structureName} r${step.roundNumber}p${step.roundPosition})`,
-    ).toBeUndefined();
+    const where = `step ${index + 1} (${step.structureName} r${step.roundNumber}p${step.roundPosition})`;
+    expect(result.error?.code, where).toBeUndefined();
   }
 });
 

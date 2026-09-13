@@ -1,5 +1,6 @@
+import { getSideExitProvenance } from '@Mutate/matchUps/matchUpStatus/sideExitProvenance';
 import { positionTargets } from '@Query/matchUp/positionTargets';
-import { isExit } from '@Validators/isExit';
+import { isDoubleExit, isExit } from '@Validators/isExit';
 
 // constants
 import { FIRST_MATCHUP } from '@Constants/drawDefinitionConstants';
@@ -53,6 +54,39 @@ export function isActiveDownstream(params) {
 
   const winnerDrawPositionsCount = winnerMatchUp?.drawPositions?.filter(Boolean).length || 0;
 
+  /**
+   * A double exit that was EARNED here — not carried here — is active, and both tests below are
+   * blind to it BY CONSTRUCTION.
+   *
+   * `DOUBLE_WALKOVER` and `DOUBLE_DEFAULT` never carry a `winningSide`, because neither side
+   * advances. Each test below opens with `matchUp?.winningSide`, so no double exit could ever
+   * satisfy either one however real it was.
+   *
+   * Two conditions separate a real result from a derived one, and BOTH are needed:
+   *
+   *  1. **Two occupied sides.** A double exit with one occupant or none is the PENDING shape the
+   *     cascade deposits ahead of an arrival. It must stay inert — that is the invariant
+   *     `pendingDoubleExitNotActive.test.ts` pins, and widening to it re-blocks everything the
+   *     carve-outs below exist to unblock.
+   *  2. **At least one side NOT carried by propagation.** A convergence — two propagated exits
+   *     arriving from different sources and collapsing into a double exit — has two occupants who
+   *     never played it, and `sideExitProvenance` records BOTH sides as carried. Such a matchUp is
+   *     wholly derived from upstream, so unwinding that upstream must remain permitted and this
+   *     guard must stay transparent to it. Measured in `pendingDoubleExitNotActive.test.ts`: a
+   *     Backdraw convergence with provenance on both sides, alongside a natively-recorded
+   *     Consolation double exit with none.
+   *
+   * The distinction is the general one this guard already needs everywhere: a status blocks only
+   * when it was earned at this matchUp, never when it was propagated into it.
+   */
+  const contestedDoubleExit = (candidate: any) => {
+    if (!isDoubleExit(candidate?.matchUpStatus)) return false;
+    const occupiedSides = (candidate?.sides ?? []).filter((side: any) => side?.participant);
+    if (occupiedSides.length !== 2) return false;
+    const provenance = getSideExitProvenance({ matchUp: candidate });
+    return !occupiedSides.every((side: any) => provenance?.[side.sideNumber]);
+  };
+
   // A propagated exit whose winning side has been RESOLVED — a real participant fell
   // through into the empty winner slot and advanced — is genuinely active and must
   // block. Only a PENDING/produced exit (empty winner slot) is excluded below. This
@@ -68,6 +102,10 @@ export function isActiveDownstream(params) {
 
   // if a winnerMatchUp contains a WALKOVER and its source matchUps have no winningSides it cannot be considered active
   // unless one of its downstream matchUps is active
+  if (contestedDoubleExit(loserMatchUp) || contestedDoubleExit(winnerMatchUp)) {
+    return true;
+  }
+
   if (
     !isLoserMatchUpWalkoverWithOnePlayer &&
     ((loserMatchUp?.winningSide && !loserMatchUpExit) ||
