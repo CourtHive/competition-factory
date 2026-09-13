@@ -5,7 +5,14 @@ import { isAnyExit } from '@Validators/isExit';
 
 // constants and types
 import { MatchUp, SideExitProvenance, SideExitProvenanceEntry } from '@Types/tournamentTypes';
-import { DOUBLE_WALKOVER, DOUBLE_DEFAULT, DEFAULTED, RETIRED, WALKOVER } from '@Constants/matchUpStatusConstants';
+import {
+  DOUBLE_WALKOVER,
+  DOUBLE_DEFAULT,
+  TO_BE_PLAYED,
+  DEFAULTED,
+  RETIRED,
+  WALKOVER,
+} from '@Constants/matchUpStatusConstants';
 
 /**
  * Paired writer/reader for `matchUp.sideExitProvenance`.
@@ -27,11 +34,53 @@ import { DOUBLE_WALKOVER, DOUBLE_DEFAULT, DEFAULTED, RETIRED, WALKOVER } from '@
  * See Mentat/planning/MATCHUP_STATUS_CODES_PER_SIDE.md.
  */
 
-/** DOUBLE_WALKOVER produces WALKOVER downstream, DOUBLE_DEFAULT produces DEFAULTED. */
+/**
+ * What a matchUp PRODUCES downstream, given the status that produced it.
+ *
+ * A UNIFORM double exit produces its own flavour: `DOUBLE_WALKOVER` produces `WALKOVER`,
+ * `DOUBLE_DEFAULT` produces `DEFAULTED`. CA, 2026-09-12: *"a DOUBLE_DEFAULT producing a side record
+ * DEF sounds right, the same as a DOUBLE_WALKOVER producing a WO / WALKOVER sounds right."*
+ *
+ * The unattributed case is a MIXED convergence, and it is decided upstream of this function by
+ * `collapseDoubleExitStatus` — when two exits of differing origin meet, the converged matchUp is a
+ * `DOUBLE_WALKOVER`, so what it produces here is a `WALKOVER`. CA: *"a WALKOVER and a DEFAULT would
+ * produce a WALKOVER, not a DEF."* That is where the "not attributable to any upstream individual"
+ * rule lives; this mapping stays a faithful per-flavour projection.
+ */
 export function producedExitStatus(previousMatchUpStatus?: string): string | undefined {
   if (previousMatchUpStatus === DOUBLE_WALKOVER) return WALKOVER;
   if (previousMatchUpStatus === DOUBLE_DEFAULT) return DEFAULTED;
   return previousMatchUpStatus;
+}
+
+/**
+ * The status for a matchUp where two exits MEET, from the exits each side carried.
+ *
+ * CA, 2026-09-12: *"a WALKOVER and a DEFAULT would produce a WALKOVER, not a DEF… and a
+ * DOUBLE_WALKOVER and a DOUBLE_DEFAULT producing a WALKOVER and a DEFAULT would produce a
+ * WALKOVER."* So a convergence is `DOUBLE_DEFAULT` only when EVERY side's exit is default-flavoured;
+ * any mixture collapses to `DOUBLE_WALKOVER`.
+ *
+ * The asymmetry is deliberate and is about not attributing a ruling to someone it was not made
+ * about. `DOUBLE_DEFAULT` propagates `DEFAULTED` onward (see `producedExitStatus`), and a default is
+ * a referee's finding against a named player. In a mixed convergence one side merely failed to
+ * appear, so the weaker claim — "did not play" — is the only one true of both, and it is the one
+ * that must survive the collapse into a single field. Choosing the stronger claim would put a `DEF`
+ * badge beside an innocent participant's name: `courthive-components`
+ * `renderParticipant.ts:113`/`:48` render this matchUp-level status per PARTICIPANT via
+ * `renderStatusPill`.
+ *
+ * `RETIRED` is not default-flavoured, which matches `carryOverMatchUpStatus`'s existing decision to
+ * carry a retirement forward as a `WALKOVER`.
+ *
+ * Takes the statuses as ARGUMENTS rather than reading provenance: provenance writes are gated on
+ * `writeNativeEnabled()`, so under LEGACY mode there would be nothing to read.
+ */
+export function collapseDoubleExitStatus(sideStatuses: (string | undefined)[]): string {
+  const known = sideStatuses.filter(Boolean);
+  if (!known.length) return DOUBLE_WALKOVER;
+  const isDefaultFlavoured = (status?: string) => status === DEFAULTED || status === DOUBLE_DEFAULT;
+  return known.every(isDefaultFlavoured) ? DOUBLE_DEFAULT : DOUBLE_WALKOVER;
 }
 
 type BuildArgs = {
@@ -54,17 +103,37 @@ export function buildSideExitProvenance(params: BuildArgs): SideExitProvenance |
   if (sourceSideNumber !== 1 && sourceSideNumber !== 2) return undefined;
 
   const pairedSideNumber = sourceSideNumber === 1 ? 2 : 1;
+  // An entry records where a side CAME FROM — it exited upstream, or it won and advanced. What it
+  // must never record is a side that has not been decided at all.
+  //
+  // The paired previous matchUp is frequently still `TO_BE_PLAYED` when this runs, because the other
+  // feeder has not been played yet, and that was stamped as
+  // `{ matchUpStatus: TO_BE_PLAYED, previousMatchUpStatus: TO_BE_PLAYED }` — provenance asserting an
+  // origin for a side that has none. It matters because `exitProducedByPropagation` reads the mere
+  // PRESENCE of provenance, so an undecided side read as propagation-produced.
+  //
+  // A COMPLETED origin IS recorded, deliberately: `sideExitProvenance.test.ts` pins a double exit
+  // meeting a played win, and that opponent's origin is a real fact.
+  const isDecided = (status?: string) => !!status && status !== TO_BE_PLAYED;
   const provenance: SideExitProvenance = {
-    [sourceSideNumber]: definedAttributes({
-      matchUpStatus: producedExitStatus(sourceMatchUpStatus),
-      previousMatchUpStatus: sourceMatchUpStatus,
-      sourceMatchUpId,
-    }) as SideExitProvenanceEntry,
-    [pairedSideNumber]: definedAttributes({
-      matchUpStatus: producedExitStatus(pairedMatchUpStatus),
-      previousMatchUpStatus: pairedMatchUpStatus,
-      sourceMatchUpId: pairedMatchUpId,
-    }) as SideExitProvenanceEntry,
+    ...(isDecided(sourceMatchUpStatus)
+      ? {
+          [sourceSideNumber]: definedAttributes({
+            matchUpStatus: producedExitStatus(sourceMatchUpStatus),
+            previousMatchUpStatus: sourceMatchUpStatus,
+            sourceMatchUpId,
+          }) as SideExitProvenanceEntry,
+        }
+      : {}),
+    ...(isDecided(pairedMatchUpStatus)
+      ? {
+          [pairedSideNumber]: definedAttributes({
+            matchUpStatus: producedExitStatus(pairedMatchUpStatus),
+            previousMatchUpStatus: pairedMatchUpStatus,
+            sourceMatchUpId: pairedMatchUpId,
+          }) as SideExitProvenanceEntry,
+        }
+      : {}),
   };
 
   // an entry with nothing in it is noise; drop it rather than persist an empty object
@@ -191,6 +260,18 @@ export function clearResolvedSideExitProvenance(matchUp?: MatchUp): void {
  * The fallback exists so a record written before this field — or by a LEGACY-mode writer — still
  * answers. It reads only the provenance SHAPE out of `matchUpStatusCodes`; policy codes and
  * `{ code }` wrappers are not provenance and are ignored.
+ *
+ * NATIVE WINS WHOLE, deliberately, and this was tried the other way. Merging per side looks
+ * strictly more informative — it would recover a side the half-written native field omits — but at
+ * the time it was measured the legacy array was BOTH order-dependent and self-inconsistent on the
+ * consolation convergence path: one entry order stored `{ matchUpStatus: DEFAULTED,
+ * previousMatchUpStatus: DOUBLE_WALKOVER }`, a walkover origin producing a default. Merging imported
+ * that corruption into a field which was correct.
+ *
+ * That corruption is gone at the source — `doubleExitAdvancement` now GENERATES the array from
+ * provenance rather than hand-building it, so the two cannot disagree — but native-wins-whole
+ * remains the right rule: a record written before the projection landed still carries the old shape,
+ * and native is the only structure with an authoritative side key.
  */
 export function getSideExitProvenance({ matchUp }: { matchUp?: MatchUp }): SideExitProvenance | undefined {
   const native = matchUp?.sideExitProvenance;
@@ -213,6 +294,51 @@ export function getSideExitProvenance({ matchUp }: { matchUp?: MatchUp }): SideE
   });
 
   return Object.keys(derived).length ? derived : undefined;
+}
+
+/**
+ * The legacy `matchUpStatusCodes` array, GENERATED from provenance.
+ *
+ * CA, 2026-09-11: *"I don't think we can reasonably build our propagation logic on LEGACY
+ * matchUpStatusCodes… we shouldn't try."* The destination that follows from it is that propagation
+ * reads and writes `sideExitProvenance` and the legacy array becomes a PROJECTION of it — not a
+ * structure anyone parses to decide behaviour.
+ *
+ * Why a projection removes a whole class of defect rather than one instance of it. The propagation
+ * writers used to build the two structures INDEPENDENTLY from whatever each site happened to have in
+ * scope, so they could disagree, and did:
+ *
+ *  - `handleEmptyExitLoser` wrote `{ matchUpStatus: <the arriving exit>, previousMatchUpStatus: <the
+ *    CONVERGED status of the target> }` at side 1 — a walkover origin recorded as producing a
+ *    default in the mixed case, which is not a fact about either side.
+ *  - the same site replaced the array wholesale while provenance ACCUMULATED, so the earlier
+ *    arrival's entry survived in one structure and was overwritten in the other.
+ *
+ * Both are impossible once one structure is a function of the other. Order-invariance and internal
+ * consistency are inherited rather than separately maintained.
+ *
+ * SHAPE. Positional, index 0 = side 1, and BOTH slots are always emitted once there is any
+ * provenance at all — which is what the previous builder did and is not cosmetic. A side with no
+ * origin yet gets a bare `{ sideNumber }`, and that stub is a RESERVED SLOT, not noise:
+ * `updateMatchUpStatusCodes` is the site that learns a side's origin late, and it stamps by mapping
+ * over the elements that already exist. Drop the stub and the origin it learns has nowhere to land —
+ * measured, as two suite failures, when this projection first padded with `''` instead.
+ *
+ * `sourceMatchUpId` is deliberately NOT projected. CA decided 2026-09-09 not to add source identity
+ * to `matchUpStatusCodes`, which ships on every matchUp; the identity lives in `sideExitProvenance`,
+ * whose contents were ours to define from the start.
+ */
+export function projectExitStatusCodes(provenance?: SideExitProvenance): any[] {
+  const hasProvenance = [1, 2].some((sideNumber) => provenance?.[sideNumber]);
+  if (!hasProvenance) return [];
+
+  return [1, 2].map((sideNumber) =>
+    definedAttributes({
+      previousMatchUpStatus: provenance?.[sideNumber]?.previousMatchUpStatus,
+      matchUpStatus: provenance?.[sideNumber]?.matchUpStatus,
+      sideNumber,
+    }),
+  );
 }
 
 /** Whether this matchUp's exit was PRODUCED by upstream propagation rather than played. */

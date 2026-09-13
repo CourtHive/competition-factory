@@ -6,20 +6,21 @@ A 12th check, `verify:ecosystem`, runs downstream consumer tests against the in-
 
 ## What each check catches
 
-| Step                       | Catches                                                                                                                                                                           | Cost   |
-| -------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------ |
-| `verify:types`             | type errors anywhere in `src`                                                                                                                                                     | ~3 s   |
-| `verify:lint`              | style + cognitive-complexity violations; zero-warnings rule                                                                                                                       | ~5 s   |
-| `verify:coverage`          | regressions below `95/95/85/95` statements/functions/branches/lines                                                                                                               | ~100 s |
-| `verify:coverage-headroom` | a change spending more than 25 items of margin before the coverage floor; always prints headroom per metric                                                                       | ~0 s   |
-| `verify:server`            | NestJS-style server specs (`pnpm test:server` — vitest, `vitest.server.config.mts`)                                                                                               | ~7 s   |
-| `verify:audit`             | high or critical `pnpm audit` advisories in **every** lockfile (package + `documentation/`), minus entries in `audit-waivers.json`; a waiver matching no open advisory also fails | ~10 s  |
-| `verify:build`             | the full prod build produces `dist/` (run after the above so a tiny lint/type fix re-runs the cheap stuff first)                                                                  | ~13 s  |
-| `verify:publint`           | `publint --strict --level warning` — package.json `exports` correctness, per-format type declarations, `sideEffects` / `type` hints, tarball contents match `files` field         | ~6 s   |
-| `verify:runtime`           | "compiles but doesn't run" — CJS + ESM smoke against the built dist                                                                                                               | ~3 s   |
-| `verify:bundle-size`       | a file in `dist/` grew beyond +10 % vs baseline                                                                                                                                   | ~1 s   |
-| `verify:surface`           | a public export was removed (breaking) or signature drifted                                                                                                                       | ~1 s   |
-| `verify:pack`              | the published `.d.ts` references an internal path that didn't get packed; runtime `require()` smoke after `npm install` of the tarball                                            | ~30 s  |
+| Step                       | Catches                                                                                                                                                                                                    | Cost   |
+| -------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------ |
+| `verify:generated`         | a generated module (enum exports/constants, engine methods, method signatures) is stale; and `check:request-shapes` — a request shape reaching for bare `any` or bare `string` where a closed union exists | ~2 s   |
+| `verify:types`             | type errors anywhere in `src`                                                                                                                                                                              | ~3 s   |
+| `verify:lint`              | style + cognitive-complexity violations; zero-warnings rule                                                                                                                                                | ~5 s   |
+| `verify:coverage`          | regressions below `95/95/85/95` statements/functions/branches/lines                                                                                                                                        | ~100 s |
+| `verify:coverage-headroom` | a change spending more than 25 items of margin before the coverage floor; always prints headroom per metric                                                                                                | ~0 s   |
+| `verify:server`            | NestJS-style server specs (`pnpm test:server` — vitest, `vitest.server.config.mts`)                                                                                                                        | ~7 s   |
+| `verify:audit`             | high or critical `pnpm audit` advisories in **every** lockfile (package + `documentation/`), minus entries in `audit-waivers.json`; a waiver matching no open advisory also fails                          | ~10 s  |
+| `verify:build`             | the full prod build produces `dist/` (run after the above so a tiny lint/type fix re-runs the cheap stuff first)                                                                                           | ~13 s  |
+| `verify:publint`           | `publint --strict --level warning` — package.json `exports` correctness, per-format type declarations, `sideEffects` / `type` hints, tarball contents match `files` field                                  | ~6 s   |
+| `verify:runtime`           | "compiles but doesn't run" — CJS + ESM smoke against the built dist                                                                                                                                        | ~3 s   |
+| `verify:bundle-size`       | a file in `dist/` grew beyond +10 % vs baseline                                                                                                                                                            | ~1 s   |
+| `verify:surface`           | a public export was removed (breaking) or signature drifted                                                                                                                                                | ~1 s   |
+| `verify:pack`              | the published `.d.ts` references an internal path that didn't get packed; runtime `require()` smoke after `npm install` of the tarball                                                                     | ~30 s  |
 
 Total: ~3 minutes warm. The chain is ordered so cheap fail-fast checks run first.
 
@@ -94,3 +95,33 @@ node scripts/verify/ecosystem.mjs --build-factory        # rebuild dist before s
 2. Wire it into `package.json#scripts` as `verify:<name>` and append to the `verify` chain.
 3. Document it in the table at the top of this file.
 4. If it introduces a baseline file, save it under `scripts/verify/baseline/` and add a `--update-baseline` flag for intentional changes.
+
+## `check:request-shapes` — the request-shape typing guard
+
+Part of `verify:generated`. The factory types its DOMAIN data rigorously; this asserts the same of
+its REQUEST shapes — exported types named `*Args`, plus the `*Profile` sub-objects they nest.
+
+Two rules:
+
+1. **no bare `any`** — an index signature to `any` is the deliberate open-map idiom and is exempt;
+2. **no bare `string`** where a closed union already types a field of that name elsewhere under
+   `src/types/`.
+
+The union registry is **derived** from how the types already annotate each field, not hand-listed, so
+a new enum is covered automatically. A field name claimed by two different closed unions is dropped
+rather than arbitrated — `status` means one thing on a practice registration and another as a
+publish-state key, and a union that is wrong is worse than no union.
+
+What rule 2 does **not** cover: a field is protected only if some other declaration names it with a
+closed union. `SeedingProfile.positioning` is the only site naming `positioning`, so a regression
+there to `string` would take its own source of protection with it. Rule 1 still covers it against
+`any`. Closing that gap would need a hand-maintained field-to-union list — the exact artifact whose
+drift motivated `check:enum-exports`.
+
+**The allowlist is half the point.** `requestShapes.allow.json` enumerates every field that cannot be
+typed today with a one-line reason, so the debt is countable instead of invisible. An entry matching
+nothing **fails** the run, the same stale-waiver rule `verify:audit` applies to advisories.
+
+`pnpm check:request-shapes:self-test` asserts that both rules and the polysemy rule actually FIRE,
+and runs immediately before the real check in `verify:generated`. A guard measured at zero that has
+never been shown to fail is indistinguishable from a scan that matches nothing.

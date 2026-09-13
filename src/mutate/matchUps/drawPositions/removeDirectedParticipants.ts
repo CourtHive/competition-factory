@@ -1,6 +1,7 @@
 import { includesMatchUpStatuses } from '@Mutate/drawDefinitions/matchUpGovernor/includesMatchUpStatuses';
 import { clearResolvedSideExitProvenance } from '@Mutate/matchUps/matchUpStatus/sideExitProvenance';
 import { removeSubsequentRoundsParticipant } from './removeSubsequentRoundsParticipant';
+import { removeOnwardLoserPlacements } from './removeOnwardLoserPlacements';
 import { releaseAdvancedDrawPosition } from './releaseAdvancedDrawPosition';
 import { structureAssignedDrawPositions } from '@Query/drawDefinition/positionsGetter';
 import { updateTieMatchUpScore } from '@Mutate/matchUps/score/updateTieMatchUpScore';
@@ -343,6 +344,20 @@ function removeDirectedLoser({
         event,
       });
     }
+  }
+
+  // The removal above is ONE link deep. Where the target structure itself feeds a further structure
+  // — COMPASS and OLYMPIC, and no other sweep draw type — the participant has already been directed
+  // onward from it, and that placement is orphaned the moment they leave. Scoped to placements that
+  // are INERT for them; see removeOnwardLoserPlacements for why a blanket cascade is not safe.
+  if (clearedDrawPositions.length) {
+    removeOnwardLoserPlacements({
+      participantId: loserParticipantId,
+      tournamentRecord,
+      drawDefinition,
+      matchUpsMap,
+      structureId,
+    });
   }
 
   if (sourceMatchUpId && sourceMatchUpStatus) {

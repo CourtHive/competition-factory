@@ -18,3 +18,16 @@ export function isExit(matchUpStatus: any): boolean {
 export function isAnyExit(matchUpStatus: any): boolean {
   return isExit(matchUpStatus) || [DOUBLE_WALKOVER, DOUBLE_DEFAULT].includes(matchUpStatus);
 }
+
+/**
+ * A DOUBLE exit — neither side advances, and the statuses that stamp exit provenance.
+ *
+ * The third member of this family, added because its absence was being filled by
+ * `=== DOUBLE_WALKOVER` at sites that meant "is this a double exit". Measured over the 600-seed
+ * sweep window, a `DOUBLE_DEFAULT` reaches three such sites and takes the wrong branch at each:
+ * `noDownstreamDependencies` 1303 times, `hasPropagatedExitDownstream` 161, `doubleExitAdvancement`
+ * 14. That asymmetry is the drift `doubleExitStatusParity` exists to police.
+ */
+export function isDoubleExit(matchUpStatus: any): boolean {
+  return [DOUBLE_WALKOVER, DOUBLE_DEFAULT].includes(matchUpStatus);
+}

@@ -132,6 +132,14 @@ describe('getParticipantRest — the ladder and the interval', () => {
         { drawSize: 4, drawType: SINGLE_ELIMINATION, eventName: 'B', uniqueParticipants: false },
       ],
       endDate: '2026-09-15',
+      // `uniqueParticipants: false` shares a field across the two draws, which is the point of the
+      // scenario — but without a seed it also randomises WHICH participants are shared. The final
+      // assertion reads `rows[0]`, and two `onCourt` rows tie: `deficitMinutes` returns 0 for
+      // `onCourt` by design and `toSorted` is stable, so tied rows keep side order. Whether
+      // `live.sides[0]`'s participant lands on side 1 or side 2 of `other` was therefore decided by
+      // the random draw, and the assertion failed 3 runs in 12. The query is deterministic; it was
+      // the data that was under-specified.
+      nonRandom: 1,
       setState: true,
       startDate,
     });

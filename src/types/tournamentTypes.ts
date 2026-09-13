@@ -548,7 +548,17 @@ export enum PayloadProfileEnum {
 }
 export type PayloadProfileUnion = `${PayloadProfileEnum}`;
 
+/**
+ * How seeds are distributed across the draw positions of a seed block.
+ *
+ * `ADJACENT` is a runtime synonym for `CLUSTER` and is honoured wherever `CLUSTER` is
+ * (`generateBlockPattern`, `getContainerBlocks`); it is a member here so the union that
+ * types `SeedingProfile.positioning` accepts every value the factory actually acts on.
+ *
+ * Distinct from {@link PositioningProfileEnum}, which is unrelated to seeding.
+ */
 export enum SeedingProfileEnum {
+  ADJACENT = 'ADJACENT',
   CLUSTER = 'CLUSTER',
   SEPARATE = 'SEPARATE',
   WATERFALL = 'WATERFALL',

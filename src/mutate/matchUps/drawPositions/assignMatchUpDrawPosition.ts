@@ -252,8 +252,8 @@ function resolveMatchUpStatus({ isByeMatchUp, matchUpStatus, isDoubleExitExit, m
  * The array holds THREE shapes, which is the root problem:
  *   1. policy codes      `{ matchUpStatusCode, label, matchUpStatusCodeDisplay }` — the scoring
  *                        policy's vocabulary (see POLICY_SCORING_USTA)
- *   2. exit provenance   `{ matchUpStatus, previousMatchUpStatus, sideNumber }` — written by
- *                        doubleExitAdvancement.buildMatchUpStatusCodes
+ *   2. exit provenance   `{ matchUpStatus, previousMatchUpStatus, sideNumber }` — projected from
+ *                        `sideExitProvenance` by `projectExitStatusCodes`
  *   3. wrapped codes     `{ code }` — written by updateMatchUpStatusCodes, which wraps any string
  *                        element before stamping `previousMatchUpStatus` onto it
  *

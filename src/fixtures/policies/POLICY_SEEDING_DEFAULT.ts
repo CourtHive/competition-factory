@@ -1,6 +1,8 @@
 import { ROUND_ROBIN, ROUND_ROBIN_WITH_PLAYOFF, SEPARATE, WATERFALL } from '@Constants/drawDefinitionConstants';
 import { POLICY_TYPE_SEEDING } from '@Constants/policyConstants';
 
+import type { SeedingPolicy } from '@Types/factoryTypes';
+
 export const POLICY_SEEDING_DEFAULT = {
   [POLICY_TYPE_SEEDING]: {
     validSeedPositions: { ignore: true },
@@ -24,6 +26,6 @@ export const POLICY_SEEDING_DEFAULT = {
       { drawSize: 256, minimumParticipantCount: 192, seedsCount: 64 },
     ],
   },
-};
+} satisfies { [POLICY_TYPE_SEEDING]: SeedingPolicy };
 
 export default POLICY_SEEDING_DEFAULT;

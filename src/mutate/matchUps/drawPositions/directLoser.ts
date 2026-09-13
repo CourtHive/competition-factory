@@ -99,16 +99,35 @@ export function directLoser(params): ResultType {
     return { ...SUCCESS, stack };
   }
 
-  const unfilledTargetMatchUpDrawPositions = targetMatchUpPositionAssignments
+  // A drawPosition is AVAILABLE to a directed loser when it holds nobody — or when it holds a BYE
+  // that this cascade placed.
+  //
+  // A propagated BYE is a placeholder the cascade put there itself, and the arriving loser is what
+  // it was holding the slot for. Counting it as filled made `placeLoser` fall through to
+  // `DRAW_POSITION_OCCUPIED` — an error describing a participant conflict that does not exist.
+  // Measured over the 600-seed sweep window: the fall-through is reached 56 times, always with
+  // `DRAW_POSITION_OCCUPIED` and always with no unfilled position at all, and in **41 of those 56**
+  // the target drawPosition holds a BYE marked `byeFromPropagation`. The remaining 15 hold a real
+  // participant, where the refusal is truthful and is left alone.
+  //
+  // `assignDrawPosition` already clears a BYE before assigning (see the `containsBye` branch in
+  // positionAssignment.ts), so the placement it was refusing is one it knows how to perform.
+  //
+  // `byeFromPropagation` is the authoritative marker, and consulting it is the point: it exists so
+  // that removal does not have to infer "did the cascade place this BYE" from topology. An unmarked
+  // BYE is NOT treated as available — it may be a structural BYE that legitimately owns the slot,
+  // and overwriting it would be the over-clearing that marker was introduced to end.
+  const availableTargetMatchUpDrawPositions = targetMatchUpPositionAssignments
     ?.filter((assignment) => {
       const inTarget = targetMatchUpDrawPositions.includes(assignment.drawPosition);
       const unfilled = !assignment.participantId && !assignment.bye && !assignment.qualifier;
-      return inTarget && unfilled;
+      const holdsPropagatedBye = !!assignment.bye && !!assignment.byeFromPropagation;
+      return inTarget && (unfilled || holdsPropagatedBye);
     })
     .map((assignment) => assignment.drawPosition);
 
-  const targetDrawPositionIsUnfilled = unfilledTargetMatchUpDrawPositions?.includes(targetMatchUpDrawPosition);
-  const isFeedRound = loserTargetLink.target.roundNumber > 1 && unfilledTargetMatchUpDrawPositions?.length;
+  const targetDrawPositionIsUnfilled = availableTargetMatchUpDrawPositions?.includes(targetMatchUpDrawPosition);
+  const isFeedRound = loserTargetLink.target.roundNumber > 1 && availableTargetMatchUpDrawPositions?.length;
   const isFirstRoundValidDrawPosition = loserTargetLink.target.roundNumber === 1 && targetDrawPositionIsUnfilled;
 
   const placementResult: any = placeLoser({
@@ -116,7 +135,7 @@ export function directLoser(params): ResultType {
     isFirstRoundValidDrawPosition,
     loserParticipantId,
     isFeedRound,
-    unfilledTargetMatchUpDrawPositions,
+    availableTargetMatchUpDrawPositions,
     targetDrawPositionIsUnfilled,
     validForConsolation,
     targetMatchUpDrawPosition,
@@ -165,7 +184,7 @@ function placeLoser({
   isFirstRoundValidDrawPosition,
   loserParticipantId,
   isFeedRound,
-  unfilledTargetMatchUpDrawPositions,
+  availableTargetMatchUpDrawPositions,
   targetDrawPositionIsUnfilled,
   validForConsolation,
   targetMatchUpDrawPosition,
@@ -239,9 +258,9 @@ function placeLoser({
     return assignLoserToTarget();
   }
 
-  if (isFeedRound || unfilledTargetMatchUpDrawPositions?.length) {
-    unfilledTargetMatchUpDrawPositions.sort(numericSort);
-    const fedDrawPosition = unfilledTargetMatchUpDrawPositions[0];
+  if (isFeedRound || availableTargetMatchUpDrawPositions?.length) {
+    availableTargetMatchUpDrawPositions.sort(numericSort);
+    const fedDrawPosition = availableTargetMatchUpDrawPositions[0];
     const result = assignDrawPosition({
       participantId: loserParticipantId,
       structureId: targetStructureId,

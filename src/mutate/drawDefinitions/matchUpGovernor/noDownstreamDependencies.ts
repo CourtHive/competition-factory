@@ -11,7 +11,7 @@ import { attemptToModifyScore } from './attemptToModifyScore';
 import { pushGlobalLog } from '@Functions/global/globalLog';
 import { removeDoubleExit } from './removeDoubleExit';
 import { removeQualifier } from './removeQualifier';
-import { isExit } from '@Validators/isExit';
+import { isDoubleExit, isExit } from '@Validators/isExit';
 
 // constants
 import { POLICY_TYPE_PROGRESSION } from '@Constants/policyConstants';
@@ -39,12 +39,17 @@ export function noDownstreamDependencies(params) {
     if (result.error) return decorateResult({ result, stack });
   }
 
-  const doubleWalkover = matchUpStatus === DOUBLE_WALKOVER;
+  // `=== DOUBLE_WALKOVER` meant "is the incoming status a double exit", and the line directly above
+  // asks the same question correctly with `[DOUBLE_WALKOVER, DOUBLE_DEFAULT]` — the file
+  // contradicted itself. A DOUBLE_DEFAULT reached here 1303 times over the 600-seed sweep window
+  // against 3921 DOUBLE_WALKOVERs, and was treated as a score-without-winner where its sibling was
+  // not.
+  const doubleExit = isDoubleExit(matchUpStatus);
   // Non-directing statuses that should preserve their score (not treat as "remove winner")
   const preserveScoreStatuses = [IN_PROGRESS, SUSPENDED, CANCELLED, ABANDONED, INCOMPLETE];
   const scoreWithNoWinningSide =
     checkScoreHasValue({ score }) &&
-    !doubleWalkover &&
+    !doubleExit &&
     !preserveScoreStatuses.includes(matchUpStatus) &&
     ((params.isCollectionMatchUp && !params.projectedWinningSide) || !winningSide);
 

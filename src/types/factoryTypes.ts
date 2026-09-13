@@ -1,8 +1,8 @@
 import { DOUBLES_EVENT, SINGLES_EVENT, TEAM_EVENT } from '@Constants/eventConstants';
+import { ValidPolicyTypes, POLICY_TYPE_SEEDING } from '@Constants/policyConstants';
 import { SignedInStatusUnion } from '@Constants/participantConstants';
 import { HydratedMatchUp, HydratedParticipant } from './hydrated';
 import { ErrorType } from '@Constants/errorConditionConstants';
-import { ValidPolicyTypes } from '@Constants/policyConstants';
 import type { FactoryEngineMethod } from './factoryEngineMethods';
 import type { MethodSignatures } from './methodSignatures';
 import {
@@ -23,6 +23,8 @@ import {
   ParticipantRoleUnion,
   MatchUpStatusUnion,
   DrawTypeUnion,
+  SeedingProfileUnion,
+  MatchUpSchedule,
   TieFormat,
   Structure,
   MatchUp,
@@ -240,8 +242,66 @@ export type SeedBlock = {
 
 export type SeedingProfile = {
   groupSeedingThreshold?: number;
-  positioning?: string;
+  /**
+   * Seeding pattern for a seed block. `ADJACENT` is a synonym for `CLUSTER`.
+   * Unrelated to `PositioningProfileEnum`, which governs a different concern.
+   */
+  positioning?: SeedingProfileUnion;
   nonRandom?: boolean;
+};
+
+/**
+ * One row of a seeding policy's `seedsCountThresholds`.
+ *
+ * With `drawSizeProgression` the largest threshold at or below the draw size applies;
+ * without it, only an exact `drawSize` match does.
+ */
+export type SeedsCountThreshold = {
+  minimumParticipantCount: number;
+  seedsCount: number;
+  drawSize: number;
+};
+
+/**
+ * The `seedingProfile` as it appears in a SEEDING **policy** — a superset of
+ * {@link SeedingProfile}, which is the profile as it applies to a single draw.
+ *
+ * A policy may express the profile three ways, and `validateAndDeriveDrawValues`
+ * resolves them in this order:
+ *
+ * 1. an explicit `seedingProfile` param on the draw-generation call;
+ * 2. `drawTypes[drawType]` — a per-drawType override;
+ * 3. the profile itself.
+ *
+ * This is the OBJECT form — what a policy editor holds and mutates. The legacy bare-string
+ * form is expressed on {@link SeedingPolicy.seedingProfile}, not here: `getSeedPattern` and
+ * `structureTemplate` both accept a positioning string where a profile object is expected.
+ */
+export type PolicySeedingProfile = SeedingProfile & {
+  /** Per-drawType overrides, keyed by drawType. Consulted BEFORE the outer profile. */
+  drawTypes?: { [drawType: string]: SeedingProfile | SeedingProfileUnion };
+};
+
+/**
+ * A SEEDING policy, as the factory actually reads it.
+ *
+ * This shape was previously undeclared — `PolicyDefinitions` types every policy as
+ * `{ [key: string]: any }`, so `seedingProfile.drawTypes` was read by
+ * `validateAndDeriveDrawValues` without any type describing it. Consumers that needed
+ * the shape had to hand-write a mirror, which is how a mirror comes to drift.
+ *
+ * Declared but deliberately NOT wired into {@link PolicyDefinitions}: narrowing that
+ * index signature would be a consumer-build break, and is a separate decision.
+ */
+export type SeedingPolicy = {
+  seedsCountThresholds?: SeedsCountThreshold[];
+  validSeedPositions?: { ignore?: boolean; strict?: boolean };
+  /** The object form, or the legacy bare positioning string the readers still honour. */
+  seedingProfile?: PolicySeedingProfile | SeedingProfileUnion;
+  containerByesIgnoreSeeding?: boolean;
+  duplicateSeedNumbers?: boolean;
+  drawSizeProgression?: boolean;
+  policyName?: string;
 };
 
 export type ScaleAttributes = {
@@ -275,6 +335,8 @@ export type FlightProfile = {
 
 export type PolicyDefinitions = {
   [key in ValidPolicyTypes]?: { [key: string]: any };
+} & {
+  [POLICY_TYPE_SEEDING]?: SeedingPolicy;
 };
 
 export type QueueMethod = {
@@ -565,6 +627,16 @@ export type PlayoffAttributes = {
 };
 
 /**
+ * A structure-naming map keyed by finishing-position range (e.g. `'1-4'`).
+ *
+ * {@link PlayoffAttributes} with an optional `structureId`, which pins the generated
+ * structure's id rather than letting the generator mint one.
+ */
+export type NamingEntry = {
+  [key: string]: { name: string; abbreviation: string; structureId?: string };
+};
+
+/**
  * Arguments for playoff structure generation within generateDrawDefinition().
  *
  * All fields except `roundPlayoffs` are passed directly to addPlayoffStructures().
@@ -596,7 +668,7 @@ export type WithPlayoffsArgs = {
   playoffAttributes?: PlayoffAttributes;
   playoffStructureNameBase?: string;
   addNameBaseToAttributeName?: boolean;
-  finishingPositionNaming?: any;
+  finishingPositionNaming?: NamingEntry;
   finishingPositionLimit?: number;
   playoffPositions?: number[];
   roundOffsetLimit?: number;
@@ -617,8 +689,8 @@ export type StructureProfile = {
   progeny?: string[];
   sources: string[];
   targets: string[];
-  rootStage?: string;
-  stage?: string;
+  rootStage?: StageTypeUnion;
+  stage?: StageTypeUnion;
 };
 
 export type IdCollections = {
@@ -824,6 +896,6 @@ export type Tally = [number, number];
 export type ScheduledMatchUpArgs = {
   visibilityThreshold?: string;
   timeStamp?: string;
-  schedule?: any;
+  schedule?: MatchUpSchedule;
   matchUp: any;
 };

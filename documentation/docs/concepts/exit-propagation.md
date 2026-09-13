@@ -109,6 +109,21 @@ happened in its own feeder. `matchUp.sideExitProvenance` records those reasons, 
 `previousMatchUpStatus` is the upstream status that caused it; `matchUpStatus` is what this side was
 given as a result; `sourceMatchUpId` identifies the matchUp whose exit produced the entry.
 
+Two properties follow from what provenance _is_ — a record of where each side came from:
+
+- **An entry is never `TO_BE_PLAYED`.** A side that has not been decided has no origin, so it gets no
+  entry rather than one naming a status that is not an outcome. This matters because readers test the
+  mere _presence_ of provenance to ask whether an exit was produced by propagation.
+- **Origins accumulate.** One side's origin can become known before the other's — the second feeder
+  may not have been played yet — so a write that knows only its own side adds to the record instead
+  of replacing it.
+
+**A known limit, since the field is visible in stored records.** On a consolation convergence the
+stored entry can be present for only one of the two sides; the entries that _are_ there are correct.
+Completing it is the work of making `matchUpStatusCodes` a projection of this field rather than a
+parallel record — see [migration §11](/docs/migration-7.0.0#11-non-breaking-additions-worth-knowing).
+Read the field per side and treat a missing side as unknown rather than as absent-of-exit.
+
 ### Why not `matchUpStatusCodes`
 
 Because that array already holds three unrelated element shapes — the scoring policy's code
@@ -150,14 +165,58 @@ A client retry or a double-click corrupted the draw progressively and silently.
 A genuine _change_ still propagates. `DOUBLE_WALKOVER` to `DOUBLE_DEFAULT` is a change, not a
 repeat.
 
-### A rejected mutation does not alter the draw
+### A rejected mutation does not alter the draw when you ask for that
 
-If `setMatchUpStatus` returns an error, the draw is unchanged. In particular, a rejected call cannot
-destroy a result that was already recorded — including a pending propagated exit.
+A rejected call cannot destroy a result that was already recorded, including a pending propagated
+exit. The specific defect behind this guarantee is closed: a bare `{ winningSide }` outcome is now
+validated _before_ any removal runs, where it used to skip the early participant check and be caught
+only after the existing result had been unwound.
 
-If you are writing a client, this means an error response needs no compensating action. It does
+**The general guarantee is opt-in, and this is worth being precise about.** Pass
+`rollbackOnError: true` and a refused mutation leaves the draw byte-identical: the engine snapshots
+before the call and restores on error, and the queued notices are discarded with it, so subscribers
+are not told about changes that were undone. Measured over a 600-seed randomized sweep, every case
+where the default call returned an error _after_ changing the draw left it unchanged with the flag —
+45 of 45.
+
+Without the flag, a mid-cascade refusal can still return an error over a partially changed draw. The
+remaining cases are position-assignment refusals raised deep in the cascade and they are being
+closed one root cause at a time, but the honest statement today is that atomicity is something you
+request rather than something every path provides.
+
+`executionQueue` snapshots for the whole queue, so TMX and competition-factory-server — which pass
+`rollbackOnError: true` on every mutation — already have this. A consumer calling `setMatchUpStatus`
+directly should pass it.
+
+If you are writing a client, an error response with the flag needs no compensating action. It does
 **not** mean every rejection is a no-op for your UI: the request was refused, and the reason in the
 error is worth surfacing.
+
+### Which double exit a convergence becomes does not depend on entry order
+
+Two exits can converge on one matchUp — each side arriving because its own feeder produced nobody.
+The matchUp becomes a double exit, and **which** one is derived from both sides' origins, not from
+whichever result was entered last.
+
+- both sides originating in a default → `DOUBLE_DEFAULT`
+- any other combination, including a default meeting a walkover → `DOUBLE_WALKOVER`
+
+A mixture takes the weaker claim deliberately. A default is a referee's ruling against a named
+player; in a mixed convergence one side merely failed to appear, and the collapsed status is a single
+field shared by both sides — so it states only what is true of both. The per-side origins are kept
+separately in [`sideExitProvenance`](#exit-provenance-sideexitprovenance).
+
+This did not always hold. The flavour used to be read from the arriving source alone, which made the
+stored `matchUpStatus` a function of the order an operator entered the two results: measured across
+eight draw types, entering the same two outcomes the other way round produced a different record in
+28 of 32 combinations.
+
+### What a double exit produces downstream keeps its flavour
+
+A `DOUBLE_WALKOVER` produces a `WALKOVER` in the matchUp it feeds; a `DOUBLE_DEFAULT` produces a
+`DEFAULTED`. A mixed convergence is a `DOUBLE_WALKOVER` by the rule above, so it produces a
+`WALKOVER` — and that walkover is not attributable to any one upstream participant, which is the
+point of choosing the weaker label.
 
 ### Nothing to do is success, not failure
 
