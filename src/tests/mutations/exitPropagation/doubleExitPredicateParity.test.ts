@@ -5,7 +5,7 @@ import mocksEngine from '@Assemblies/engines/mock';
 import { expect, it } from 'vitest';
 
 import { FEED_IN_CHAMPIONSHIP, FIRST_MATCH_LOSER_CONSOLATION } from '@Constants/drawDefinitionConstants';
-import { DOUBLE_DEFAULT, DOUBLE_WALKOVER } from '@Constants/matchUpStatusConstants';
+import { DOUBLE_DEFAULT, DOUBLE_WALKOVER, TO_BE_PLAYED } from '@Constants/matchUpStatusConstants';
 
 /**
  * `DOUBLE_DEFAULT` must take the same propagation branches as `DOUBLE_WALKOVER`.
@@ -55,6 +55,20 @@ it.each([
         roundNumber: 1,
         roundPosition: 1,
         outcome: { matchUpStatus: DOUBLE_DEFAULT },
+      },
+      // A natively-recorded double exit with two real participants now blocks an upstream unwind —
+      // it is a genuine result, and `isActiveDownstream` was blind to it because a double exit
+      // carries no `winningSide`. Cleared first here, as a director would, so the predicate parity
+      // this file is about is still what the remaining steps exercise.
+      {
+        structureName: 'Consolation',
+        roundNumber: 1,
+        roundPosition: 1,
+        outcome: {
+          score: { scoreStringSide1: '', scoreStringSide2: '' },
+          matchUpStatus: TO_BE_PLAYED,
+          winningSide: undefined,
+        },
       },
       { structureName: 'Main', roundNumber: 1, roundPosition: 2, outcome: { matchUpStatus: DOUBLE_WALKOVER } },
       { structureName: 'Main', roundNumber: 1, roundPosition: 3, outcome: { matchUpStatus: DOUBLE_WALKOVER } },

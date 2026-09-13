@@ -4,7 +4,7 @@ import tournamentEngine from '@Engines/syncEngine';
 import mocksEngine from '@Assemblies/engines/mock';
 import { expect, it } from 'vitest';
 
-import { CURTIS_CONSOLATION, DOUBLE_ELIMINATION, OLYMPIC } from '@Constants/drawDefinitionConstants';
+import { DOUBLE_ELIMINATION, OLYMPIC } from '@Constants/drawDefinitionConstants';
 import { DEFAULTED, DOUBLE_DEFAULT, DOUBLE_WALKOVER, WALKOVER } from '@Constants/matchUpStatusConstants';
 
 /**
@@ -70,28 +70,27 @@ it.each([
     ],
   },
   {
-    scenario: 'a DOUBLE_WALKOVER upstream of a consolation double exit in a CURTIS_CONSOLATION',
-    drawType: CURTIS_CONSOLATION,
-    participantsCount: 13,
-    drawSize: 16,
-    propagateExitStatus: false,
-    seed: 9000218,
+    scenario: 'a DOUBLE_DEFAULT re-score of a propagated WALKOVER in a DOUBLE_ELIMINATION of 32',
+    drawType: DOUBLE_ELIMINATION,
+    participantsCount: 27,
+    drawSize: 32,
+    propagateExitStatus: true,
+    seed: 9000068,
     steps: [
-      { structureName: 'Main', roundNumber: 1, roundPosition: 7, outcome: { winningSide: 1 } },
+      { structureName: 'Main', roundNumber: 1, roundPosition: 2, outcome: { winningSide: 1 } },
+      {
+        structureName: 'Main',
+        roundNumber: 2,
+        roundPosition: 1,
+        outcome: { matchUpStatus: WALKOVER, winningSide: 1 },
+      },
       {
         structureName: 'Main',
         roundNumber: 1,
-        roundPosition: 2,
+        roundPosition: 15,
         outcome: { matchUpStatus: WALKOVER, winningSide: 2 },
       },
-      { structureName: 'Main', roundNumber: 2, roundPosition: 4, outcome: { winningSide: 2 } },
-      {
-        structureName: 'Consolation 1',
-        roundNumber: 2,
-        roundPosition: 1,
-        outcome: { matchUpStatus: DOUBLE_WALKOVER },
-      },
-      { structureName: 'Main', roundNumber: 2, roundPosition: 4, outcome: { matchUpStatus: DOUBLE_WALKOVER } },
+      { structureName: 'Main', roundNumber: 2, roundPosition: 1, outcome: { matchUpStatus: DOUBLE_DEFAULT } },
     ],
   },
   {
