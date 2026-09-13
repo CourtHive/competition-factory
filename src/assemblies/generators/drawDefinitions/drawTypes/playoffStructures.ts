@@ -7,10 +7,12 @@ import { LOSER, MAIN, TOP_DOWN } from '@Constants/drawDefinitionConstants';
 import { ErrorType } from '@Constants/errorConditionConstants';
 import { SUCCESS } from '@Constants/resultConstants';
 import { DrawDefinition, DrawLink, MatchUp, Structure } from '@Types/tournamentTypes';
+import type { NamingEntry } from '@Types/factoryTypes';
 
-export type NamingEntry = {
-  [key: string]: { name: string; abbreviation: string; structureId?: string };
-};
+// Declared in @Types/factoryTypes so the PUBLIC request shape that uses it
+// (WithPlayoffsArgs.finishingPositionNaming) can reference a public type.
+// Re-exported here because this module has always been its import site.
+export type { NamingEntry };
 
 type GeneratePlayoffStructuresArgs = {
   addNameBaseToAttributeName?: boolean;

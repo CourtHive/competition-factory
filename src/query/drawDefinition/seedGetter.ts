@@ -12,8 +12,8 @@ import { findStructure } from '@Acquire/findStructure';
 // constants and types
 import { ADJACENT, CLUSTER, CONTAINER, QUALIFYING, WATERFALL } from '@Constants/drawDefinitionConstants';
 import { INVALID_SEED_POSITION, MISSING_STRUCTURE } from '@Constants/errorConditionConstants';
+import { SeedingProfileUnion, DrawDefinition, Structure } from '@Types/tournamentTypes';
 import { PolicyDefinitions, SeedBlock, SeedingProfile } from '@Types/factoryTypes';
-import { DrawDefinition, Structure } from '@Types/tournamentTypes';
 
 /**
  * A seedBlock is an object pairing an array of drawPositions with an array of seedNumbers { drawPositions: [], seedNumbers: []}
@@ -28,7 +28,8 @@ type GetValidSeedBlocksArgs = {
   appliedPolicies?: PolicyDefinitions;
   provisionalPositioning?: boolean;
   drawDefinition?: DrawDefinition;
-  seedingProfile?: SeedingProfile;
+  /** Accepts the policy's bare-string form too; `getSeedPattern` narrows it. */
+  seedingProfile?: SeedingProfile | SeedingProfileUnion;
   returnAllProxies?: boolean;
   allPositions?: boolean;
   structure: Structure;
@@ -86,7 +87,16 @@ export function getValidSeedBlocks({
   const firstRoundDrawPositions = uniqueDrawPositionsByRound.pop() ?? [];
   const firstRoundDrawPositionOffset = (firstRoundDrawPositions && Math.min(...firstRoundDrawPositions) - 1) || 0;
 
-  seedingProfile = seedingProfile ?? appliedPolicies?.seeding?.seedingProfile;
+  // The policy may express the profile as a bare positioning string (`getSeedPattern` and
+  // `structureTemplate` both honour it). Normalising once makes the declared type honest —
+  // the parameter accepts both forms, so the code should not pretend it only sees an object.
+  //
+  // This is type correctness, NOT a behaviour fix. `'WATERFALL'?.nonRandom` is `undefined`
+  // rather than a crash, and the string form carries no `nonRandom` to lose, so `undefined`
+  // was already the semantically correct answer.
+  const policyProfile = seedingProfile ?? appliedPolicies?.seeding?.seedingProfile;
+  const resolvedProfile: SeedingProfile | undefined =
+    typeof policyProfile === 'string' ? { positioning: policyProfile } : policyProfile;
   const baseDrawSize = firstRoundDrawPositions?.length || 0;
 
   // firstRoundDrawPositions have been popped
@@ -121,7 +131,7 @@ export function getValidSeedBlocks({
     const chunkSize = firstRoundDrawPositions.length / seedingBlocksCount;
 
     if (!isFeedIn) {
-      const positioning = getSeedPattern(seedingProfile);
+      const positioning = getSeedPattern(resolvedProfile);
       const drawPositionChunks = chunkArray(firstRoundDrawPositions, chunkSize);
       let groupNumber = 1;
       const seedGroups = generateRange(0, drawPositionChunks[0].length).map(() => {
@@ -132,7 +142,7 @@ export function getValidSeedBlocks({
 
       ({ validSeedBlocks } = getSeedBlockPattern({
         drawPositionBlocks: drawPositionChunks,
-        nonRandom: seedingProfile?.nonRandom,
+        nonRandom: resolvedProfile?.nonRandom,
         positioning,
         seedGroups,
         random,
@@ -140,8 +150,8 @@ export function getValidSeedBlocks({
     }
   } else if (isContainer) {
     const result = getContainerBlocks({
-      nonRandom: seedingProfile?.nonRandom,
-      seedingProfile,
+      nonRandom: resolvedProfile?.nonRandom,
+      seedingProfile: resolvedProfile,
       structure,
       random,
     });
@@ -166,7 +176,7 @@ export function getValidSeedBlocks({
       drawPositionOffset: firstRoundDrawPositionOffset,
       seedNumberOffset: fedSeedNumberOffset,
       seedCountGoal: firstRoundSeedsCount,
-      seedingProfile,
+      seedingProfile: resolvedProfile,
       baseDrawSize,
     });
     blocks.forEach((block) => validSeedBlocks.push(block));

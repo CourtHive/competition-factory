@@ -13,19 +13,21 @@ feature tour and the full list of 7.0.0 additions, see [What's New in 7.0.0](./w
 
 ## Breaking changes at a glance
 
-| Change                                                                                   | Who is affected                                                           | Action required   |
-| ---------------------------------------------------------------------------------------- | ------------------------------------------------------------------------- | ----------------- |
-| `particicipantsRequiredMatchUpStatuses` renamed to `participantsRequiredMatchUpStatuses` | Anyone importing that constant by name                                    | Rename the import |
-| Re-applying an identical double exit is now a no-op                                      | Callers relying on re-application to re-run propagation                   | See §2            |
-| A rejected bare `{ winningSide }` no longer unwinds the existing result                  | Callers matching on `ERR_MISSING_ASSIGNMENTS` for this case               | See §3            |
-| `timeZone` conversions return an error instead of throwing or guessing                   | Anyone calling `wallClockToUTC`, `utcToWallClock`, `toEmbargoUTC`         | See §4            |
-| `getTimeZoneOffsetMinutes` now returns `number \| undefined`                             | Anyone reading a zone offset                                              | See §4            |
-| `checkMatchUpIsComplete` / `getParticipantResults` refuse an absent object param         | Callers passing `matchUpId` / `drawId` and reading the result             | See §5            |
-| `getParticipantResults` refuses any matchUp carrying no `sides`                          | Callers passing STORED (non-hydrated) matchUps                            | See §5            |
-| `buildDrawHierarchy` is removed                                                          | Anyone calling it (no consumer was found in any CourtHive repo)           | See §6            |
-| `addFinishingRounds` refuses an absent `matchUps` array                                  | Callers relying on the empty-array return                                 | See §7            |
-| `validateTieFormat` enforces `collectionId` by default                                   | Anyone validating a hand-written or published tieFormat directly          | See §8            |
-| `pressureRating` is typed `boolean`, not `string`                                        | TypeScript callers of `tallyParticipantResults` / `getParticipantResults` | See §9            |
+| Change                                                                                            | Who is affected                                                           | Action required   |
+| ------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------- | ----------------- |
+| `particicipantsRequiredMatchUpStatuses` renamed to `participantsRequiredMatchUpStatuses`          | Anyone importing that constant by name                                    | Rename the import |
+| Re-applying an identical double exit is now a no-op                                               | Callers relying on re-application to re-run propagation                   | See §2            |
+| A rejected bare `{ winningSide }` no longer unwinds the existing result                           | Callers matching on `ERR_MISSING_ASSIGNMENTS` for this case               | See §3            |
+| `timeZone` conversions return an error instead of throwing or guessing                            | Anyone calling `wallClockToUTC`, `utcToWallClock`, `toEmbargoUTC`         | See §4            |
+| `getTimeZoneOffsetMinutes` now returns `number \| undefined`                                      | Anyone reading a zone offset                                              | See §4            |
+| `checkMatchUpIsComplete` / `getParticipantResults` refuse an absent object param                  | Callers passing `matchUpId` / `drawId` and reading the result             | See §5            |
+| `getParticipantResults` refuses any matchUp carrying no `sides`                                   | Callers passing STORED (non-hydrated) matchUps                            | See §5            |
+| `buildDrawHierarchy` is removed                                                                   | Anyone calling it (no consumer was found in any CourtHive repo)           | See §6            |
+| `addFinishingRounds` refuses an absent `matchUps` array                                           | Callers relying on the empty-array return                                 | See §7            |
+| `validateTieFormat` enforces `collectionId` by default                                            | Anyone validating a hand-written or published tieFormat directly          | See §8            |
+| `pressureRating` is typed `boolean`, not `string`                                                 | TypeScript callers of `tallyParticipantResults` / `getParticipantResults` | See §9            |
+| Three request-shape fields gain real types (`positioning`, `finishingPositionNaming`, `schedule`) | TypeScript callers passing these loosely                                  | See §11           |
+| The SEEDING policy is typed, and two `stage` fields become `StageTypeUnion`                       | TypeScript callers with a wrong-typed seeding-policy field                | See §11           |
 
 ## 1. `participantsRequiredMatchUpStatuses` — a spelling fix
 
@@ -387,7 +389,143 @@ hidden.
 
 An unpublished **draw** is unchanged — it returned no structures before and returns none now.
 
-## 11. Non-breaking additions worth knowing
+## 11. Three request-shape fields gain real types
+
+_Shipped in [#4839](https://github.com/CourtHive/competition-factory/pull/4839)._
+
+The factory types its **domain** data rigorously — `EventTypeUnion`, `DrawTypeUnion` and friends are
+closed unions, value-exported, and guarded against drift. That rigour historically stopped at the
+function boundary: request shapes reached for `any` and for bare `string` even where a closed union
+for that exact field already existed. Three of those are now typed. **No runtime behaviour changes** —
+every value that worked before still works; only the compile-time contract narrows.
+
+A new CI gate, `pnpm check:request-shapes`, keeps the rest from decaying further and enumerates the
+debt that remains.
+
+### `SeedingProfile.positioning` is now `SeedingProfileUnion`
+
+```diff
+- positioning?: string;
++ positioning?: SeedingProfileUnion;   // 'ADJACENT' | 'CLUSTER' | 'SEPARATE' | 'WATERFALL'
+```
+
+`SeedingProfileEnum` also **gains `ADJACENT`**, which it had been missing. `ADJACENT` is a synonym
+for `CLUSTER` and has always been honoured at runtime (`generateBlockPattern`, `getContainerBlocks`);
+it was exported as a constant and from `drawDefinitionConstants`, but not as an enum member. Adding
+it means the closed union accepts every value the factory actually acts on.
+
+Note that this field is the **seeding** pattern. It is unrelated to `PositioningProfileEnum`
+(`DRAW` / `RANDOM` / `TOP_DOWN` / `BOTTOM_UP` / `LOSS_POSITION` / `WATERFALL`), which governs a
+different concern despite the overlapping name.
+
+#### What to do about `positioning`
+
+Nothing, if you pass one of the four values. A TypeScript build that passes any other string will now
+fail — that string was already ignored by the seeding logic, so the failure is the type catching
+something that never worked.
+
+### `WithPlayoffsArgs.finishingPositionNaming` is now `NamingEntry`
+
+```diff
+- finishingPositionNaming?: any;
++ finishingPositionNaming?: NamingEntry;
+```
+
+`NamingEntry` is `{ [finishingPositionRange: string]: { name: string; abbreviation: string; structureId?: string } }`
+— exactly what `generatePlayoffStructures` and `addPlayoffStructures` have always asserted
+internally. It is now declared in the public types and re-exported from its original module, so
+consumers can name it.
+
+#### What to do about `finishingPositionNaming`
+
+Ensure each entry carries both `name` and `abbreviation`. An entry supplying only one of them
+compiled before and produced a structure with an `undefined` name.
+
+### `ScheduledMatchUpArgs.schedule` is now `MatchUpSchedule`
+
+```diff
+- schedule?: any;
++ schedule?: MatchUpSchedule;
+```
+
+Affects `matchUpCourtOrder`, `matchUpTimeModifiers`, `matchUpAssignedVenueId`, `scheduledMatchUpDate`
+and `getHomeParticipantId`. `MatchUpSchedule` is the already-published shape of `matchUp.schedule`,
+which is where every caller sources the value. No consumer in the CourtHive ecosystem calls any of
+these five functions — measured across 17 repos on 2026-09-12.
+
+#### What to do about `schedule`
+
+In practice, nothing. `MatchUpSchedule` carries an `[key: string]: any` index signature, so extra keys
+are still accepted and excess-property checking does not fire. What the type now rejects is a
+**non-object** — `schedule: 'someString'` or `schedule: 42` — which never worked at runtime either.
+This is the mildest of the three changes; it is listed because it is still a signature change.
+
+### The SEEDING policy is typed — known fields enforced, unknown fields still accepted
+
+`PolicyDefinitions` types every policy as `{ [key: string]: any }`, so the SEEDING policy's shape was
+never declared — even though `validateAndDeriveDrawValues` reads `seedingProfile.drawTypes`, a field
+the factory's own `SeedingProfile` type does not have. The factory read a field its own type did not
+declare, which is why downstream consumers hand-wrote mirrors of the shape.
+
+`SeedingPolicy`, `PolicySeedingProfile` and `SeedsCountThreshold` are now declared and exported, and
+`PolicyDefinitions` narrows its `seeding` key to `SeedingPolicy` **by intersection**:
+
+```ts
+export type PolicyDefinitions = {
+  [key in ValidPolicyTypes]?: { [key: string]: any };
+} & {
+  [POLICY_TYPE_SEEDING]?: SeedingPolicy;
+};
+```
+
+That intersection is deliberate and is what keeps this safe. Because the first arm keeps its
+`{ [key: string]: any }` index signature:
+
+- a policy carrying **extra or provider-specific fields still compiles** — excess-property checking
+  does not fire, so a custom seeding policy is not broken;
+- the fields the factory **does** declare are now type-checked, so
+  `seedingProfile: { positioning: 'TOP_DOWN' }` is rejected — `TOP_DOWN` belongs to
+  `PositioningProfileEnum`, which has nothing to do with seeding.
+
+One consequence worth stating plainly: **a misspelled field is NOT caught** through
+`PolicyDefinitions`, precisely because unknown keys remain legal. To get that check, annotate the
+policy itself — `satisfies SeedingPolicy` — which is what the factory's own `POLICY_SEEDING_*`
+fixtures now do.
+
+#### What to do about seeding policies
+
+Nothing, unless a declared field carries the wrong type. Every stock policy shape — including the
+per-drawType override form — was compiled against the new type unchanged.
+
+### Two `stage` fields become `StageTypeUnion`
+
+`StructureProfile.stage` / `.rootStage` (returned by `getStructureGroups`) and `PointAward.stage`
+(produced by the ranking-points engine) were `string`. Both are **results** the factory produces, and
+both are populated from `structure.stage`, which is already `StageTypeUnion` — so the declared type
+was simply wider than anything the factory ever put there.
+
+#### What to do about `stage`
+
+Nothing. Reading a narrower type where you expected `string` is safe. Only code that **writes** a
+non-stage string back into one of these result objects is affected.
+
+### The new gate: `pnpm check:request-shapes`
+
+Wired into `verify:generated`, so it runs on every PR. Two rules over request shapes (exported types
+named `*Args`, plus the `*Profile` sub-objects they nest):
+
+1. **no bare `any`** — an index signature to `any` is the deliberate open-map idiom and is exempt;
+2. **no bare `string`** where a closed union already types a field of that name elsewhere.
+
+The union registry is **derived**, not hand-listed, so a new enum is covered automatically and a
+field name claimed by two different unions is dropped rather than arbitrated. Fields that cannot be
+typed today live in `scripts/verify/requestShapes.allow.json` with a one-line reason each, and an
+allowlist entry that matches nothing fails the run — so the debt is counted, not hidden.
+
+This affects consumers only in that a future major will type more of these fields. Nothing in the
+allowlist changes behaviour in 7.0.0.
+
+## 12. Non-breaking additions worth knowing
 
 `plainDate`, `plainTime` and `zonedDateTime` are new published exports, completing the calendar
 intent set. `zonedTime` was never published, so its rename is not a breaking change.
