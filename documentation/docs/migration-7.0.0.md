@@ -634,10 +634,22 @@ people who must act on it.
 
 ### `LADDER` joins the draw types
 
-See [Ladder](./concepts/draw-types/ladder). `isAdHocType('LADDER')` is `true` — a ladder shares the
-`AD_HOC` structure shape — so any code branching on `isAdHocType` will now include ladders. Use
+See [Ladder](./concepts/draw-types/ladder). `isAdHocType` now returns `true` for `LADDER` — a ladder
+shares the `AD_HOC` structure shape — so any code branching on it will include ladders. Use
 `isLadder` where the difference matters: an `AD_HOC` draw's `positionAssignments` are a roster, a
 ladder's are an ordered standing.
+
+**Both are newly published on `drawsGovernor`, and were not reachable before 7.0.0.** Earlier drafts
+of this guide named them anyway, which made the advice unfollowable — corrected here rather than left
+as a footnote, because a migration step nobody can take is worse than no step at all:
+
+```js
+engine.isAdHocType({ drawType }); // AD_HOC | SWISS | LADDER
+engine.isLadder({ drawType }); // LADDER only
+```
+
+Do not reach for the similarly-named `isAdHoc({ structure })` instead: it takes a **structure** and
+inspects its matchUps for bracket geometry, and knows nothing about `drawType`.
 
 ### `DisciplineEnum` gains `SQUASH` and `BADMINTON`
 
