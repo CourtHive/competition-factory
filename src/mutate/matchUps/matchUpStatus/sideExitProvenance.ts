@@ -262,15 +262,16 @@ export function clearResolvedSideExitProvenance(matchUp?: MatchUp): void {
  * `{ code }` wrappers are not provenance and are ignored.
  *
  * NATIVE WINS WHOLE, deliberately, and this was tried the other way. Merging per side looks
- * strictly more informative — it would recover a side the half-written native field omits — but
- * measured on the consolation convergence path the legacy array is BOTH order-dependent and
- * self-inconsistent there: one order stores `{ matchUpStatus: DEFAULTED, previousMatchUpStatus:
- * DOUBLE_WALKOVER }`, a walkover origin producing a default. Merging imported that corruption into
- * a field which was correct, so the native record is kept intact instead.
+ * strictly more informative — it would recover a side the half-written native field omits — but at
+ * the time it was measured the legacy array was BOTH order-dependent and self-inconsistent on the
+ * consolation convergence path: one entry order stored `{ matchUpStatus: DEFAULTED,
+ * previousMatchUpStatus: DOUBLE_WALKOVER }`, a walkover origin producing a default. Merging imported
+ * that corruption into a field which was correct.
  *
- * The consequence is a real limit rather than a fix: where the native field is single-sided, this
- * returns one side. Completing it means fixing the WRITER to record both origins, which is the
- * `matchUpStatusCodes`-becomes-a-projection work — see MATCHUP_STATUS_CODES_PER_SIDE.md.
+ * That corruption is gone at the source — `doubleExitAdvancement` now GENERATES the array from
+ * provenance rather than hand-building it, so the two cannot disagree — but native-wins-whole
+ * remains the right rule: a record written before the projection landed still carries the old shape,
+ * and native is the only structure with an authoritative side key.
  */
 export function getSideExitProvenance({ matchUp }: { matchUp?: MatchUp }): SideExitProvenance | undefined {
   const native = matchUp?.sideExitProvenance;
