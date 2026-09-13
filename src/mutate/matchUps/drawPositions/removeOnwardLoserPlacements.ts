@@ -12,7 +12,7 @@ import { LOSER } from '@Constants/drawDefinitionConstants';
 import type { MatchUpsMap } from '@Types/factoryTypes';
 import { SUCCESS } from '@Constants/resultConstants';
 
-const UNDECIDED_STATUSES: (string | undefined)[] = [undefined, TO_BE_PLAYED, BYE];
+const UNDECIDED_STATUSES = new Set<string | undefined>([undefined, TO_BE_PLAYED, BYE]);
 
 type RemoveOnwardLoserPlacementsArgs = {
   tournamentRecord?: Tournament;
@@ -32,7 +32,7 @@ function placementIsInert({ structureMatchUps, drawPosition }: { structureMatchU
   return structureMatchUps
     .filter((matchUp) => matchUp.drawPositions?.includes(drawPosition))
     .every((matchUp) => {
-      if (!matchUp.winningSide && UNDECIDED_STATUSES.includes(matchUp.matchUpStatus)) return true;
+      if (!matchUp.winningSide && UNDECIDED_STATUSES.has(matchUp.matchUpStatus)) return true;
       if (!isAnyExit(matchUp.matchUpStatus)) return false;
       const sideNumber = (matchUp.drawPositions ?? []).indexOf(drawPosition) + 1;
       return !!getSideExitProvenance({ matchUp })?.[sideNumber];
