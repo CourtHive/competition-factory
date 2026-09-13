@@ -1,7 +1,7 @@
 import { POLICY_TYPE_SEEDING } from '@Constants/policyConstants';
+import { CLUSTER } from '@Constants/drawDefinitionConstants';
 
 import type { SeedingPolicy } from '@Types/factoryTypes';
-import { CLUSTER } from '@Constants/drawDefinitionConstants';
 
 export const POLICY_SEEDING_ITF = {
   [POLICY_TYPE_SEEDING]: {

@@ -1,8 +1,8 @@
 import { DOUBLES_EVENT, SINGLES_EVENT, TEAM_EVENT } from '@Constants/eventConstants';
+import { ValidPolicyTypes, POLICY_TYPE_SEEDING } from '@Constants/policyConstants';
 import { SignedInStatusUnion } from '@Constants/participantConstants';
 import { HydratedMatchUp, HydratedParticipant } from './hydrated';
 import { ErrorType } from '@Constants/errorConditionConstants';
-import { ValidPolicyTypes, POLICY_TYPE_SEEDING } from '@Constants/policyConstants';
 import type { FactoryEngineMethod } from './factoryEngineMethods';
 import type { MethodSignatures } from './methodSignatures';
 import {

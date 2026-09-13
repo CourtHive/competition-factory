@@ -12,8 +12,8 @@ import { findStructure } from '@Acquire/findStructure';
 // constants and types
 import { ADJACENT, CLUSTER, CONTAINER, QUALIFYING, WATERFALL } from '@Constants/drawDefinitionConstants';
 import { INVALID_SEED_POSITION, MISSING_STRUCTURE } from '@Constants/errorConditionConstants';
-import { PolicyDefinitions, SeedBlock, SeedingProfile } from '@Types/factoryTypes';
 import { SeedingProfileUnion, DrawDefinition, Structure } from '@Types/tournamentTypes';
+import { PolicyDefinitions, SeedBlock, SeedingProfile } from '@Types/factoryTypes';
 
 /**
  * A seedBlock is an object pairing an array of drawPositions with an array of seedNumbers { drawPositions: [], seedNumbers: []}
