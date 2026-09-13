@@ -550,6 +550,8 @@ of consumers.
 
 ## 11b. A retirement no longer carries into the consolation by default
 
+_Shipped in [#4852](https://github.com/CourtHive/competition-factory/pull/4852)._
+
 **A retiree is out of a MATCH, not out of the EVENT, unless the governing policy says so.**
 
 Previously, with `propagateExitStatus: true`, a `RETIRED` result carried a `WALKOVER` into the
