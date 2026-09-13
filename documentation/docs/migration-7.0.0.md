@@ -630,6 +630,39 @@ driven by the action rather than by the error needs no change.
 choice a federation could reasonably want: it left a walkover attributed to a match that no longer
 recorded one, and awarded it to whoever happened to arrive next.
 
+## 11d. An exit cannot be awarded to a drawPosition nobody holds
+
+_Shipped in [#4858](https://github.com/CourtHive/competition-factory/pull/4858)._
+
+`checkParticipants` waives the two-participant requirement for a one-sided exit, because the
+propagation cascade needs it: a carried exit is awarded to the side **without** the exit, and that
+side is empty until the opponent arrives. The waiver tested `propagateExitStatus` — a request flag
+any caller can set — so a **directly entered** `WALKOVER` or `DEFAULTED` could be awarded to a
+drawPosition whose `positionAssignment` held nobody, and the draw recorded a walkover won by no one.
+
+The rule is now about **which kind of empty** the winning side is:
+
+| winning side | awardable |
+| ------------------------------------------------------------ | --------- |
+| holds a participant, a bye or a qualifier | yes |
+| holds **no `drawPosition`** — an unfilled feed slot awaiting its arrival | yes |
+| holds a `drawPosition` whose assignment is present and **vacant** | **no** — `ERR_INVALID_MATCHUP_STATUS` |
+
+**Who is affected.** Only callers using `propagateExitStatus` (or a policy that sets it, such as
+`POLICY_SCORING_USTA`) AND submitting an exit whose `winningSide` names a claimed-but-empty seat.
+With exit propagation off, the identical call was already refused, so nothing changes. Exits written
+by the cascade itself are unaffected — `progressExitStatus` now identifies itself explicitly rather
+than relying on the flag.
+
+**If you hit this**, the outcome you want is almost certainly the same exit awarded to the side that
+holds the participant. There is deliberately no flag to restore the old behaviour: the previous state
+had no reading, and the engine already refused a bare `{ winningSide }` on the same slot.
+
+**Unchanged, and deliberately so:** an exit whose winning side is a **BYE** is still accepted.
+Whether a player can lose a walkover to an opponent who does not exist is a rules question, of the
+same kind as [11b](#11b-a-retirement-no-longer-carries-into-the-consolation-by-default), and it is
+not decided here.
+
 ## 12. Non-breaking additions worth knowing
 
 `plainDate`, `plainTime` and `zonedDateTime` are new published exports, completing the calendar

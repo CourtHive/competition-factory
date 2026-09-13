@@ -184,6 +184,13 @@ export function progressExitStatus({
     matchUpId: loserMatchUp.matchUpId,
     matchUpStatusCodes: statusCodes,
     allowChangePropagation: true,
+    // THE CASCADE IDENTIFIES ITSELF. `checkParticipants` waives the two-participant requirement for
+    // a one-sided exit, and until now it waived it on `propagateExitStatus` — a REQUEST FLAG any
+    // caller can set — so a directly-entered WALKOVER could be awarded to an empty side and was.
+    // This is the only propagation caller of `setMatchUpState`, so the waiver belongs to it by name.
+    // RULE 2 above is why the waiver has to exist at all: the side WITHOUT the exit wins, and that
+    // side is empty until the opponent arrives.
+    propagatingExit: true,
     propagateExitStatus,
     tournamentRecord,
     drawDefinition,
