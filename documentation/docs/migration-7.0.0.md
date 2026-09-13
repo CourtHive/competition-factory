@@ -524,6 +524,30 @@ allowlist entry that matches nothing fails the run — so the debt is counted, n
 This affects consumers only in that a future major will type more of these fields. Nothing in the
 allowlist changes behaviour in 7.0.0.
 
+## 11a. [#4847](https://github.com/CourtHive/competition-factory/pull/4847) carries no breaking change
+
+Listed only because `verify:migration-coverage` requires every commit it reads as breaking to appear
+here, and this one is a false positive with an instructive cause.
+
+[#4847](https://github.com/CourtHive/competition-factory/pull/4847) adds a test file and a
+documentation section — `census.test.ts`, inert unless `CENSUS=1`. It changes no runtime code and no
+public surface.
+
+It reads as breaking because its **squash commit body absorbed other PRs' `BREAKING CHANGE:`
+footers**. The PR was opened against `dev`; `dev` was then deleted as a side effect of the first
+`dev`→`master` checkpoint merge (the repo had `delete_branch_on_merge` enabled, and the checkpoint PR
+has `dev` as its head branch). GitHub retargets open PRs whose base branch is deleted, so #4847's
+base silently became `master`, its commit list expanded from one commit to every commit on the branch
+not yet on `master`, and the squash concatenated all of their bodies — footers included.
+
+The breaking changes those footers describe are real and are documented above, at
+[§11](#11-three-request-shape-fields-gain-real-types) and elsewhere; none of them belongs to #4847.
+
+Both repository settings were corrected on 2026-09-13 — `allow_merge_commit: true` so a checkpoint
+merges as a merge commit, and `delete_branch_on_merge: false` so `dev` survives one. The rationale is
+recorded in `Mentat/standards/coding-standards.md` under the branch strategy. No action is required
+of consumers.
+
 ## 12. Non-breaking additions worth knowing
 
 `plainDate`, `plainTime` and `zonedDateTime` are new published exports, completing the calendar
