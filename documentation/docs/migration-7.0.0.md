@@ -524,6 +524,41 @@ allowlist entry that matches nothing fails the run — so the debt is counted, n
 This affects consumers only in that a future major will type more of these fields. Nothing in the
 allowlist changes behaviour in 7.0.0.
 
+## 11b. A retirement no longer carries into the consolation by default
+
+**A retiree is out of a MATCH, not out of the EVENT, unless the governing policy says so.**
+
+Previously, with `propagateExitStatus: true`, a `RETIRED` result carried a `WALKOVER` into the
+retiring player's consolation matchUp — the opponent won it before an opponent even existed. The
+engine was answering a rules question on a federation's behalf.
+
+That is now the scoring-policy setting `propagateRetirementAsExit`, defaulting to `false`:
+
+| value                   | the retiring player's consolation matchUp                            |
+| ----------------------- | -------------------------------------------------------------------- |
+| `false` _(new default)_ | left `TO_BE_PLAYED` — an ordinary loser, who may still play          |
+| `true`                  | a `WALKOVER` to the opponent — the retiree's participation has ended |
+
+Placement is unchanged: the retiring player is directed to the linked structure either way, exactly
+as any other loser is. Only what happens to them **on arrival** differs.
+
+**Who is affected.** Only callers passing `propagateExitStatus: true` (or setting it in policy) AND
+relying on a retirement carrying onward. With `propagateExitStatus` off — the factory default —
+nothing changes. `POLICY_SCORING_USTA` sets `propagateRetirementAsExit: true` explicitly, so its
+observable behaviour is unchanged.
+
+**To restore the old behaviour**, set it in your scoring policy:
+
+```js
+policyDefinitions: {
+  [POLICY_TYPE_SCORING]: { propagateExitStatus: true, propagateRetirementAsExit: true },
+}
+```
+
+or pass `propagateRetirementAsExit: true` per call. An explicit `false` wins from either source —
+unlike `propagateExitStatus`, which resolves as `param || policy || undefined` and so cannot express
+one.
+
 ## 12. Non-breaking additions worth knowing
 
 `plainDate`, `plainTime` and `zonedDateTime` are new published exports, completing the calendar

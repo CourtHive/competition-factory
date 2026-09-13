@@ -27,6 +27,7 @@ type SetMatchUpStatusArgs = {
   disableScoreValidation?: boolean;
   allowChangePropagation?: boolean;
   propagateExitStatus?: boolean;
+  propagateRetirementAsExit?: boolean;
   tournamentRecord: Tournament;
   drawDefinition: DrawDefinition;
   disableAutoCalc?: boolean;
@@ -112,6 +113,15 @@ export function setMatchUpStatus(params: SetMatchUpStatusArgs) {
     (policy?.propagateExitStatus !== undefined && policy.propagateExitStatus) ||
     undefined;
 
+  // DECISION: whether a RETIREMENT is one of the exits that propagates.
+  // WHY: a rules question rather than an engineering one — see POLICY_SCORING_DEFAULT. Precedence
+  // differs deliberately from the pair above: those use `x || y || undefined`, which cannot express
+  // an explicit `false` (it falls through to the next source). Turning retirement propagation OFF is
+  // the whole point of this setting, so an explicit `false` from either params or policy must win.
+  // Absent both, it defaults to FALSE: a retiree is out of a MATCH, not out of the EVENT, unless the
+  // governing policy says so.
+  const propagateRetirementAsExit = params.propagateRetirementAsExit ?? policy?.propagateRetirementAsExit ?? false;
+
   const { outcome, setTBlast } = params;
 
   // DECISION: Validate winningSide is 1 or 2 (or undefined)
@@ -188,6 +198,7 @@ export function setMatchUpStatus(params: SetMatchUpStatusArgs) {
     disableScoreValidation,
     score: outcome?.score,
     propagateExitStatus,
+    propagateRetirementAsExit,
     tournamentRecords,
     policyDefinitions,
     tournamentRecord,

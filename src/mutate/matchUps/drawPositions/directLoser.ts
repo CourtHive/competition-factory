@@ -22,6 +22,7 @@ import { DRAW_POSITION_OCCUPIED, INVALID_DRAW_POSITION } from '@Constants/errorC
 */
 export function directLoser(params): ResultType {
   const {
+    propagateRetirementAsExit,
     loserMatchUpDrawPositionIndex,
     inContextDrawMatchUps,
     projectedWinningSide,
@@ -92,8 +93,22 @@ export function directLoser(params): ResultType {
     (assignment) => assignment.participantId && loserParticipantId && assignment.participantId === loserParticipantId,
   );
 
-  const validExitToPropagate =
-    propagateExitStatus && [RETIRED, WALKOVER, DEFAULTED].includes(sourceMatchUpStatus || '');
+  // Which exits carry into the consolation.
+  //
+  // WALKOVER and DEFAULTED always do, when `propagateExitStatus` is on. RETIRED is a policy
+  // decision — `propagateRetirementAsExit`, defaulting to TRUE, which is the engine's long-standing
+  // behaviour. A retirement is a completed match with a score and a winner, so whether the retiring
+  // player is treated as unable to continue (their consolation match becomes a walkover for the
+  // opponent) or as an ordinary loser who may still play differs by governing body.
+  //
+  // THIS IS THE GATE, and it is the only one. `progressExitStatus` also names RETIRED —
+  // `(isExit(status) && status !== RETIRED && status) || WALKOVER` — but that runs AFTER the
+  // decision to propagate has been taken, so it can only choose the LABEL the exit carries, never
+  // suppress it. Measured: with RETIRED removed here, a retirement leaves the consolation matchUp
+  // TO_BE_PLAYED in 6 of 6 loser-linked draw types; with it present under `propagateExitStatus`, the
+  // consolation matchUp is written WALKOVER to the opponent before an opponent even exists.
+  const propagatingExits = propagateRetirementAsExit ? [RETIRED, WALKOVER, DEFAULTED] : [WALKOVER, DEFAULTED];
+  const validExitToPropagate = propagateExitStatus && propagatingExits.includes(sourceMatchUpStatus || '');
 
   if (loserAlreadyDirected) {
     return { ...SUCCESS, stack };

@@ -75,6 +75,7 @@ export function directParticipants(params): ResultType {
   }
 
   return processDrawPositionDirecting({
+    propagateRetirementAsExit: params.propagateRetirementAsExit,
     matchUpStatusIsValid,
     inContextDrawMatchUps,
     projectedWinningSide,
@@ -98,6 +99,7 @@ export function directParticipants(params): ResultType {
 }
 
 function processDrawPositionDirecting({
+  propagateRetirementAsExit,
   matchUpStatusIsValid,
   inContextDrawMatchUps,
   projectedWinningSide,
@@ -178,6 +180,7 @@ function processDrawPositionDirecting({
     const result = directLoser({
       sourceMatchUpStatus: sourceStatus,
       sourceMatchUpStatusCodes: matchUpStatusCodes ?? [],
+      propagateRetirementAsExit,
       sourceWinningSide: winningSide,
       loserMatchUpDrawPositionIndex,
       sourceMatchUpId: matchUpId,
