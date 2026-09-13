@@ -115,6 +115,16 @@ const OUTCOMES: { weight: number; outcome: any }[] = [
 ];
 const TOTAL_WEIGHT = OUTCOMES.reduce((sum, entry) => sum + entry.weight, 0);
 
+/**
+ * How many matchUps the relational properties are sampled on, per seed.
+ *
+ * These properties MUTATE — each applies an outcome and then clears it — so every extra sample costs
+ * a forward-and-back round trip. Three is a deliberate compromise: it covers more than the single
+ * arbitrary first-undecided matchUp the block used to take, without turning the relational block
+ * into the dominant cost of a run.
+ */
+const RELATIONAL_SAMPLES = 3;
+
 function pickOutcome(random: () => number): any {
   let roll = random() * TOTAL_WEIGHT;
   for (const entry of OUTCOMES) {
@@ -231,23 +241,49 @@ export function replay(config: ScenarioConfig, steps: Step[], drawId: string): P
   const integrity = checkIntegrity(drawId, '-');
   if (integrity.length) return integrity[0];
 
-  // relational properties, each on the state the schedule produced
-  const next = getDrawMatchUps(drawId).find(
+  // Relational properties, each on the state the schedule produced.
+  //
+  // WIDENED 2026-09-13. This block used to take the FIRST undecided matchUp and apply exactly one
+  // outcome — `DOUBLE_WALKOVER` — so across a 600-seed run the round trip was sampled once per seed,
+  // in one transition shape, against ~18,000 forward mutations. Every undoability defect the harness
+  // had ever caught was a double exit, which is unsurprising given a double exit was the only thing
+  // it ever undid. A retirement, a walkover and a plain win were never round-tripped at all.
+  //
+  // Now: several candidate matchUps, and the outcome sampled from the SAME weighted alphabet the
+  // schedule uses — so whatever the pipeline branches on is also what gets undone. Sampling stays
+  // deterministic per seed (`rng` derived from the config seed), so a finding still reproduces.
+  const candidates = getDrawMatchUps(drawId).filter(
     (matchUp: any) =>
       !matchUp.winningSide &&
       (!matchUp.matchUpStatus || matchUp.matchUpStatus === TO_BE_PLAYED) &&
       (matchUp.sides ?? []).filter((side: any) => side?.participantId).length === 2,
   );
-  if (!next) return null;
+  if (!candidates.length) return null;
 
-  const params = {
-    propagateExitStatus: config.propagateExitStatus,
-    outcome: { matchUpStatus: DOUBLE_WALKOVER },
-    matchUpId: next.matchUpId,
-    drawId,
-  };
-  const relational = [...checkMonotonicity(params), ...checkIdempotence(params), ...checkDoUndoIdentity(params)];
-  return relational[0] ?? null;
+  // The first probe is ALWAYS `DOUBLE_WALKOVER`, on the first candidate — the exact pair this block
+  // used before. Sampling instead of adding was measured to LOSE detections: three seeds stopped
+  // reporting `MONOTONIC_DECISION` because the guaranteed double-exit probe had been replaced rather
+  // than supplemented. Widening coverage must be strictly additive, or it is a regression wearing a
+  // larger alphabet.
+  const relationalRandom = rng(config.seed ^ 0x5bf03635);
+  const probes = candidates
+    .slice(0, RELATIONAL_SAMPLES)
+    .map((candidate: any, index: number) => ({
+      outcome: index === 0 ? { matchUpStatus: DOUBLE_WALKOVER } : pickOutcome(relationalRandom),
+      candidate,
+    }));
+
+  for (const { candidate, outcome } of probes) {
+    const params = {
+      propagateExitStatus: config.propagateExitStatus,
+      outcome,
+      matchUpId: candidate.matchUpId,
+      drawId,
+    };
+    const relational = [...checkMonotonicity(params), ...checkIdempotence(params), ...checkDoUndoIdentity(params)];
+    if (relational.length) return relational[0];
+  }
+  return null;
 }
 
 /**
