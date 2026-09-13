@@ -266,12 +266,10 @@ export function replay(config: ScenarioConfig, steps: Step[], drawId: string): P
   // than supplemented. Widening coverage must be strictly additive, or it is a regression wearing a
   // larger alphabet.
   const relationalRandom = rng(config.seed ^ 0x5bf03635);
-  const probes = candidates
-    .slice(0, RELATIONAL_SAMPLES)
-    .map((candidate: any, index: number) => ({
-      outcome: index === 0 ? { matchUpStatus: DOUBLE_WALKOVER } : pickOutcome(relationalRandom),
-      candidate,
-    }));
+  const probes = candidates.slice(0, RELATIONAL_SAMPLES).map((candidate: any, index: number) => ({
+    outcome: index === 0 ? { matchUpStatus: DOUBLE_WALKOVER } : pickOutcome(relationalRandom),
+    candidate,
+  }));
 
   for (const { candidate, outcome } of probes) {
     const params = {
