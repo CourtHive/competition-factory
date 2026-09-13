@@ -19,7 +19,7 @@
     "@docusaurus/core": "3.10.2",
     "@docusaurus/preset-classic": "3.10.2",
     "@mdx-js/react": "^3.1.1",
-    "@types/react": "19.2.18",
+    "@types/react": "19.3.0",
     "clsx": "2.1.1",
     "courthive-components": "4.1.1",
     "leaflet": "^1.9.4",
