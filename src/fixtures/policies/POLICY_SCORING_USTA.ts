@@ -11,6 +11,9 @@ export const POLICY_SCORING_USTA = {
     requireAllPositionsAssigned: false,
     // exit statuses (WALKOVER/DEFAULTED) propagate into the consolation by default
     propagateExitStatus: true,
+    // and a RETIREMENT propagates with them — stated explicitly rather than inherited, because this
+    // is the policy under which it is observable: with propagateExitStatus off it cannot arise.
+    propagateRetirementAsExit: true,
     stage: {
       [MAIN]: {
         stageSequence: {

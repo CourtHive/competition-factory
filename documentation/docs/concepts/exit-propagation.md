@@ -227,9 +227,42 @@ success.
 
 ## Statuses that do not propagate
 
-- **`RETIRED`** is an exit for the purpose of activity checks, but it is **not** carried into a
-  consolation structure — a retirement is a completed match with a winner, so the loser is directed
-  normally.
+- **`RETIRED`** is an exit for the purpose of activity checks. Whether it is **carried into a
+  consolation structure is decided by policy**, not by the engine — see
+  `propagateRetirementAsExit` below.
+
+  This paragraph previously stated flatly that a retirement is never carried onward. That was never
+  what the code did, and it is not a question the engine should answer: a retirement is a completed
+  match with a score and a winner, and whether the retiring player is then treated as unable to
+  continue differs by governing body and by event.
+
+### `propagateRetirementAsExit`
+
+A scoring-policy setting, effective only when `propagateExitStatus` is also on.
+
+| value              | effect on the retiring player's consolation matchUp                         |
+| ------------------ | --------------------------------------------------------------------------- |
+| `true` _(default)_ | a `WALKOVER` to the opponent — the retiree is treated as unable to continue |
+| `false`            | left `TO_BE_PLAYED` — the retiree is an ordinary loser who may still play   |
+
+Placement is identical either way: the retiring player is directed to the linked structure in both
+cases, as any other loser is. Only what happens to them **on arrival** differs.
+
+This **does** change behaviour for a caller passing `propagateExitStatus: true` under the default
+policy: a retirement used to carry onward there. That is the point — it is the one place the engine
+was answering a rules question on a federation's behalf. `POLICY_SCORING_USTA` sets it `true`
+explicitly, so its observable behaviour is unchanged. A provider with `propagateExitStatus` off —
+the factory default — is unaffected either way.
+
+An explicit `false` wins from either params or policy. That differs from `propagateExitStatus`
+itself, which resolves as `param || policy || undefined` and therefore cannot express an explicit
+`false`; suppressing retirement propagation is the whole purpose of this setting, so it resolves
+with `??`.
+
+The single gate is `validExitToPropagate` in `directLoser.ts`. `progressExitStatus` also names
+`RETIRED`, but it runs after the decision to propagate has been taken, so it can only choose the
+label the exit carries — it cannot suppress one.
+
 - **`BYE`** is not an exit. It is an absence of an opponent, and it propagates by advancing the
   participant who has no one to play.
 

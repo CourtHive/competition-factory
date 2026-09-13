@@ -524,6 +524,145 @@ allowlist entry that matches nothing fails the run — so the debt is counted, n
 This affects consumers only in that a future major will type more of these fields. Nothing in the
 allowlist changes behaviour in 7.0.0.
 
+## 11a. [#4847](https://github.com/CourtHive/competition-factory/pull/4847) carries no breaking change
+
+Listed only because `verify:migration-coverage` requires every commit it reads as breaking to appear
+here, and this one is a false positive with an instructive cause.
+
+[#4847](https://github.com/CourtHive/competition-factory/pull/4847) adds a test file and a
+documentation section — `census.test.ts`, inert unless `CENSUS=1`. It changes no runtime code and no
+public surface.
+
+It reads as breaking because its **squash commit body absorbed other PRs' `BREAKING CHANGE:`
+footers**. The PR was opened against `dev`; `dev` was then deleted as a side effect of the first
+`dev`→`master` checkpoint merge (the repo had `delete_branch_on_merge` enabled, and the checkpoint PR
+has `dev` as its head branch). GitHub retargets open PRs whose base branch is deleted, so #4847's
+base silently became `master`, its commit list expanded from one commit to every commit on the branch
+not yet on `master`, and the squash concatenated all of their bodies — footers included.
+
+The breaking changes those footers describe are real and are documented above, at
+[§11](#11-three-request-shape-fields-gain-real-types) and elsewhere; none of them belongs to #4847.
+
+Both repository settings were corrected on 2026-09-13 — `allow_merge_commit: true` so a checkpoint
+merges as a merge commit, and `delete_branch_on_merge: false` so `dev` survives one. The rationale is
+recorded in `Mentat/standards/coding-standards.md` under the branch strategy. No action is required
+of consumers.
+
+## 11b. A retirement no longer carries into the consolation by default
+
+_Shipped in [#4852](https://github.com/CourtHive/competition-factory/pull/4852)._
+
+**A retiree is out of a MATCH, not out of the EVENT, unless the governing policy says so.**
+
+Previously, with `propagateExitStatus: true`, a `RETIRED` result carried a `WALKOVER` into the
+retiring player's consolation matchUp — the opponent won it before an opponent even existed. The
+engine was answering a rules question on a federation's behalf.
+
+That is now the scoring-policy setting `propagateRetirementAsExit`, defaulting to `false`:
+
+| value                   | the retiring player's consolation matchUp                            |
+| ----------------------- | -------------------------------------------------------------------- |
+| `false` _(new default)_ | left `TO_BE_PLAYED` — an ordinary loser, who may still play          |
+| `true`                  | a `WALKOVER` to the opponent — the retiree's participation has ended |
+
+Placement is unchanged: the retiring player is directed to the linked structure either way, exactly
+as any other loser is. Only what happens to them **on arrival** differs.
+
+**Who is affected.** Only callers passing `propagateExitStatus: true` (or setting it in policy) AND
+relying on a retirement carrying onward. With `propagateExitStatus` off — the factory default —
+nothing changes. `POLICY_SCORING_USTA` sets `propagateRetirementAsExit: true` explicitly, so its
+observable behaviour is unchanged.
+
+**To restore the old behaviour**, set it in your scoring policy:
+
+```js
+policyDefinitions: {
+  [POLICY_TYPE_SCORING]: { propagateExitStatus: true, propagateRetirementAsExit: true },
+}
+```
+
+or pass `propagateRetirementAsExit: true` per call. An explicit `false` wins from either source —
+unlike `propagateExitStatus`, which resolves as `param || policy || undefined` and so cannot express
+one.
+
+## 11c. Removing a result now takes back the exits it produced
+
+_Shipped in [#4855](https://github.com/CourtHive/competition-factory/pull/4855)._
+
+The companion to [11b](#11b-a-retirement-no-longer-carries-into-the-consolation-by-default): once a
+governing policy decides that a retirement propagates, a tournament director must be able to
+**un-decide** it.
+
+Previously an exit that propagated into a consolation was never taken back. Two consequences:
+
+1. **The clear was refused.** Measured across 5 loser-linked draw types × `RETIRED` / `WALKOVER` /
+   `DEFAULTED`, entering the outcome succeeded in 15 of 15 cases and clearing it failed in 15 of 15
+   with `ERR_PROPAGATED_EXITS_DOWNSTREAM`. This was never retirement-specific — a walkover and a
+   default were refused identically.
+2. **A re-score left a phantom.** Re-scoring a walkover to a completed result left the consolation
+   matchUp `WALKOVER` with a `winningSide`, its provenance naming a source that was no longer an
+   exit, while its occupant had been swapped for the new loser. The next participant to arrive won a
+   walkover nobody had played. `getDrawInconsistencies` did not report it.
+
+Both are now correct: `setMatchUpStatus` withdraws every exit the matchUp produced, following
+`sideExitProvenance.sourceMatchUpId` to a fixpoint — so a COMPASS chain three structures deep unwinds
+in one operation — and releases any advancement those exits had granted.
+
+**Who is affected.** Only callers using `propagateExitStatus` (or a policy that sets it, such as
+`POLICY_SCORING_USTA`). With exit propagation off — the factory default — nothing propagates, so
+nothing is withdrawn and behaviour is unchanged.
+
+**What changes for a caller who does use it:**
+
+| before                                                       | after                                                            |
+| ------------------------------------------------------------ | ---------------------------------------------------------------- |
+| clearing the source of a propagated exit → `ERR_PROPAGATED_EXITS_DOWNSTREAM` | succeeds, and the draw returns to its prior state |
+| re-scoring it → the old produced exit survived                | the old produced exit is withdrawn before the new one is written  |
+
+One refusal is preserved but **reports a different code**. Where the consolation matchUp holds a
+second participant arriving from an unrelated matchUp, the clear is still refused — that exit does
+not rest on the matchUp being cleared alone — but it now surfaces as
+`ERR_INCOMPATIBLE_MATCHUP_STATUS` rather than `ERR_PROPAGATED_EXITS_DOWNSTREAM`. If you branch on
+that code, match on both. `matchUpActions` withholds `CLEAR_SCORE` in either case, so an interface
+driven by the action rather than by the error needs no change.
+
+**There is no flag to restore the old behaviour**, deliberately. The previous state was not a policy
+choice a federation could reasonably want: it left a walkover attributed to a match that no longer
+recorded one, and awarded it to whoever happened to arrive next.
+
+## 11d. An exit cannot be awarded to a drawPosition nobody holds
+
+_Shipped in [#4858](https://github.com/CourtHive/competition-factory/pull/4858)._
+
+`checkParticipants` waives the two-participant requirement for a one-sided exit, because the
+propagation cascade needs it: a carried exit is awarded to the side **without** the exit, and that
+side is empty until the opponent arrives. The waiver tested `propagateExitStatus` — a request flag
+any caller can set — so a **directly entered** `WALKOVER` or `DEFAULTED` could be awarded to a
+drawPosition whose `positionAssignment` held nobody, and the draw recorded a walkover won by no one.
+
+The rule is now about **which kind of empty** the winning side is:
+
+| winning side | awardable |
+| ------------------------------------------------------------ | --------- |
+| holds a participant, a bye or a qualifier | yes |
+| holds **no `drawPosition`** — an unfilled feed slot awaiting its arrival | yes |
+| holds a `drawPosition` whose assignment is present and **vacant** | **no** — `ERR_INVALID_MATCHUP_STATUS` |
+
+**Who is affected.** Only callers using `propagateExitStatus` (or a policy that sets it, such as
+`POLICY_SCORING_USTA`) AND submitting an exit whose `winningSide` names a claimed-but-empty seat.
+With exit propagation off, the identical call was already refused, so nothing changes. Exits written
+by the cascade itself are unaffected — `progressExitStatus` now identifies itself explicitly rather
+than relying on the flag.
+
+**If you hit this**, the outcome you want is almost certainly the same exit awarded to the side that
+holds the participant. There is deliberately no flag to restore the old behaviour: the previous state
+had no reading, and the engine already refused a bare `{ winningSide }` on the same slot.
+
+**Unchanged, and deliberately so:** an exit whose winning side is a **BYE** is still accepted.
+Whether a player can lose a walkover to an opponent who does not exist is a rules question, of the
+same kind as [11b](#11b-a-retirement-no-longer-carries-into-the-consolation-by-default), and it is
+not decided here.
+
 ## 12. Non-breaking additions worth knowing
 
 `plainDate`, `plainTime` and `zonedDateTime` are new published exports, completing the calendar
@@ -610,10 +749,22 @@ people who must act on it.
 
 ### `LADDER` joins the draw types
 
-See [Ladder](./concepts/draw-types/ladder). `isAdHocType('LADDER')` is `true` — a ladder shares the
-`AD_HOC` structure shape — so any code branching on `isAdHocType` will now include ladders. Use
+See [Ladder](./concepts/draw-types/ladder). `isAdHocType` now returns `true` for `LADDER` — a ladder
+shares the `AD_HOC` structure shape — so any code branching on it will include ladders. Use
 `isLadder` where the difference matters: an `AD_HOC` draw's `positionAssignments` are a roster, a
 ladder's are an ordered standing.
+
+**Both are newly published on `drawsGovernor`, and were not reachable before 7.0.0.** Earlier drafts
+of this guide named them anyway, which made the advice unfollowable — corrected here rather than left
+as a footnote, because a migration step nobody can take is worse than no step at all:
+
+```js
+engine.isAdHocType({ drawType }); // AD_HOC | SWISS | LADDER
+engine.isLadder({ drawType }); // LADDER only
+```
+
+Do not reach for the similarly-named `isAdHoc({ structure })` instead: it takes a **structure** and
+inspects its matchUps for bracket geometry, and knows nothing about `drawType`.
 
 ### `DisciplineEnum` gains `SQUASH` and `BADMINTON`
 

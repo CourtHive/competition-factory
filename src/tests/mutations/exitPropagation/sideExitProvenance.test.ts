@@ -1,6 +1,6 @@
 import {
   buildSideExitProvenance,
-  exitProducedByPropagation,
+  isPropagatedExit,
   getSideExitProvenance,
   producedExitStatus,
   setSideExitProvenance,
@@ -71,7 +71,7 @@ it('reads provenance from the legacy array when the native field is absent', () 
   const provenance: any = getSideExitProvenance({ matchUp: legacyOnly });
   expect(provenance[1].previousMatchUpStatus).toEqual(DOUBLE_WALKOVER);
   expect(provenance[2].previousMatchUpStatus).toEqual(DOUBLE_DEFAULT);
-  expect(exitProducedByPropagation({ matchUp: legacyOnly })).toEqual(true);
+  expect(isPropagatedExit({ matchUp: legacyOnly })).toEqual(true);
 });
 
 it('ignores the policy and wrapped element shapes, which are not provenance', () => {
@@ -80,7 +80,7 @@ it('ignores the policy and wrapped element shapes, which are not provenance', ()
     matchUpStatusCodes: [{ matchUpStatusCode: 'OA', label: 'Abandoned match' }, { code: 'WO' }, 'WO', ''],
   };
   expect(getSideExitProvenance({ matchUp: notProvenance })).toBeUndefined();
-  expect(exitProducedByPropagation({ matchUp: notProvenance })).toEqual(false);
+  expect(isPropagatedExit({ matchUp: notProvenance })).toEqual(false);
 });
 
 it('prefers the native field over the legacy array when both are present', () => {

@@ -83,6 +83,9 @@ type SetMatchUpStateArgs = {
   disableScoreValidation?: boolean;
   projectedWinningSide?: number;
   propagateExitStatus?: boolean;
+  /** set ONLY by `progressExitStatus` — see `checkParticipants` */
+  propagatingExit?: boolean;
+  propagateRetirementAsExit?: boolean;
   matchUpStatusCodes?: string[];
   tournamentRecord?: Tournament;
   drawDefinition: DrawDefinition;
@@ -248,6 +251,7 @@ export function setMatchUpState(params: SetMatchUpStateArgs): any {
   if (isObject(params.policyDefinitions)) Object.assign(appliedPolicies, params.policyDefinitions);
 
   const participantCheck = checkParticipants({
+    propagatingExit: params.propagatingExit,
     assignedDrawPositions,
     propagateExitStatus,
     inContextMatchUp,
@@ -770,11 +774,59 @@ function applyMatchUpValues(params) {
   return result;
 }
 
+/**
+ * Whether a single exit may be AWARDED to its `winningSide`.
+ *
+ * The waiver this serves lets a one-sided exit through, and it has to, because the cascade writes
+ * exactly that shape: `progressExitStatus` RULE 2 awards a carried exit to the side WITHOUT the
+ * exit, and that side is empty until the opponent arrives. An "the winner must hold a participant"
+ * rule would forbid the engine's own output.
+ *
+ * So the question is not whether the winning side is empty. It is **which kind of empty**, and the
+ * two are distinguishable:
+ *
+ *  - an UNFILLED FEED SLOT carries no `drawPosition` at all. Nobody is there yet and nobody is
+ *    claimed to be. This is the pending-exit shape, and it is legitimate — measured across the
+ *    sequences `propagatedByeYieldsToArrivingLoser` pins, where a director re-scores a double exit
+ *    down to a single walkover before the opposing feed has arrived.
+ *  - a PHANTOM carries a `drawPosition` whose `positionAssignment` exists and holds nobody — no
+ *    participant, no bye, no qualifier. The matchUp is claiming a seat that is empty.
+ *
+ * Only the second is refused. Measured 2026-09-13 at sweep seed 9000140 step 29: a Consolation
+ * matchUp with `drawPositions [19, 20]`, side 1 holding position 19 whose assignment was vacant, was
+ * recorded `WALKOVER winningSide: 1` and ACCEPTED — a walkover won by nobody, with
+ * `getDrawInconsistencies` reporting `valid`.
+ *
+ * The consistency argument is what settles it. At the SAME matchUp three steps earlier, a bare
+ * `{ winningSide: 1 }` was already refused with ERR_INVALID_MATCHUP_STATUS, because a directing
+ * outcome requires assigned participants. The waiver was letting an exit status do what a plain
+ * result could not, on the same slot, in the same draw.
+ *
+ * A BYE on the winning side is allowed, deliberately and narrowly. Whether a player can lose a
+ * walkover to an opponent who does not exist is a rules question of exactly the kind
+ * `propagateRetirementAsExit` exists to stop the engine answering on its own, and three committed
+ * tests construct that state on purpose. It is not decided here.
+ */
+function exitAwardable({ positionAssignments, inContextMatchUp, winningSide }): boolean {
+  const winnerSide = (inContextMatchUp?.sides ?? []).find((side: any) => side?.sideNumber === winningSide);
+  if (winnerSide?.participantId || winnerSide?.bye || winnerSide?.qualifier) return true;
+
+  // no drawPosition claimed: an unfilled feed slot, awaiting its arrival
+  if (winnerSide?.drawPosition === undefined) return true;
+
+  const assignment = positionAssignments?.find((entry: any) => entry.drawPosition === winnerSide.drawPosition);
+  // an assignment that does not exist is not a phantom either — nothing is being claimed
+  if (!assignment) return true;
+
+  return !!(assignment.participantId || assignment.bye || assignment.qualifier);
+}
+
 function checkParticipants({
   assignedDrawPositions,
   propagateExitStatus,
   inContextMatchUp,
   appliedPolicies,
+  propagatingExit,
   drawDefinition,
   matchUpStatus,
   winningSide,
@@ -791,6 +843,16 @@ function checkParticipants({
         structureId: structure?.structureId,
         drawDefinition,
       }).positionAssignments;
+
+  // `positionAssignments` above is deliberately empty when the matchUp carries its own sides — the
+  // `requiredParticipants` branch below only needs it in the other case. `exitAwardable` needs the
+  // real assignments either way, to tell an unfilled feed slot from a seat that is claimed and
+  // vacant, so it is read separately rather than by widening the one above and changing what
+  // `requiredParticipants` sees.
+  const allAssignments = getPositionAssignments({
+    structureId: structure?.structureId,
+    drawDefinition,
+  }).positionAssignments;
 
   const requiredParticipants =
     (participantsCount && participantsCount === 2) ||
@@ -813,7 +875,26 @@ function checkParticipants({
     // used the correct pair at line 454.
     [WALKOVER, DEFAULTED, DOUBLE_WALKOVER, DOUBLE_DEFAULT].includes(matchUpStatus) &&
     participantsCount === 1 &&
-    propagateExitStatus
+    propagateExitStatus &&
+    // WHO the single exit is awarded to, and it is not a formality.
+    //
+    // The waiver above tested `propagateExitStatus` alone — a REQUEST FLAG any caller can set — even
+    // though its own comment says it is for exits "caused by an exit propagation". So a TD entering
+    // `{ matchUpStatus: WALKOVER, winningSide: <the empty side> }` on a half-filled consolation
+    // matchUp was ACCEPTED, and the draw then recorded a walkover won by nobody. Measured
+    // 2026-09-13 in FIRST_MATCH_LOSER_CONSOLATION for both WALKOVER and DEFAULTED, with
+    // `getDrawInconsistencies` reporting `valid` throughout; with `propagateExitStatus` off the
+    // identical call is refused with ERR_INVALID_MATCHUP_STATUS, which is the engine's own position
+    // on it.
+    //
+    // The cascade genuinely needs the empty side to win — `progressExitStatus` RULE 2 awards the
+    // matchUp to the side WITHOUT the exit, and that side is empty until the opponent arrives — so
+    // it identifies itself with `propagatingExit` rather than being inferred from the flag. A
+    // DIRECT entry gets the waiver only when the side it awards the exit to is not a PHANTOM — a
+    // drawPosition whose assignment holds nobody. See exitAwardable.
+    (propagatingExit ||
+      !winningSide ||
+      exitAwardable({ positionAssignments: allAssignments, inContextMatchUp, winningSide }))
   ) {
     return { ...SUCCESS };
   }

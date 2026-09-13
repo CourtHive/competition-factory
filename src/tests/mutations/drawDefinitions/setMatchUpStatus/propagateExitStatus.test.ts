@@ -74,6 +74,12 @@ test.for([
   let result = tournamentEngine.setMatchUpStatus({
     outcome,
     propagateExitStatus: true,
+    // A RETIREMENT only carries onward when the governing policy says a retiree is out of the EVENT
+    // rather than merely out of the MATCH (CA, 2026-09-13). This table includes a RETIRED row, and
+    // it is exercising the propagating arm, so it asks for it explicitly. The default arm — a
+    // retiring player directed as an ordinary loser — is covered by
+    // `retirementPropagationPolicy.test.ts`, in both directions with two-way controls.
+    propagateRetirementAsExit: true,
     matchUpId,
     drawId,
   });
@@ -1118,6 +1124,10 @@ test('COMPASS: a pending exit on a non-feed back-draw round does not block scori
 
   let result = tournamentEngine.setMatchUpStatus({
     outcome: { matchUpStatus: RETIRED, winningSide: 1, matchUpStatusCodes: ['RJ'] },
+    // the subject here is the PENDING EXIT on a non-feed back-draw round, not the retirement default
+    // — the retirement is only the vehicle that deposits one. Retirement propagation is policy-gated
+    // (CA, 2026-09-13) and defaults OFF, so this asks for it to keep testing what it was written for.
+    propagateRetirementAsExit: true,
     matchUpId: exitMatchUp.matchUpId,
     propagateExitStatus: true,
     drawId,
@@ -1169,6 +1179,10 @@ test('COMPASS: once the back-draw exit has RESOLVED, resetting the fall-through 
 
   let result = tournamentEngine.setMatchUpStatus({
     outcome: { matchUpStatus: RETIRED, winningSide: 1, matchUpStatusCodes: ['RJ'] },
+    // the subject here is the PENDING EXIT on a non-feed back-draw round, not the retirement default
+    // — the retirement is only the vehicle that deposits one. Retirement propagation is policy-gated
+    // (CA, 2026-09-13) and defaults OFF, so this asks for it to keep testing what it was written for.
+    propagateRetirementAsExit: true,
     matchUpId: exitMatchUp.matchUpId,
     propagateExitStatus: true,
     drawId,

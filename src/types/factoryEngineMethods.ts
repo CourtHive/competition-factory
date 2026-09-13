@@ -446,12 +446,14 @@ export type FactoryEngineMethod =
   | 'inspect'
   | 'intervalsOverlap'
   | 'isAdHoc'
+  | 'isAdHocType'
   | 'isAggregateFormat'
   | 'isChallengeInRange'
   | 'isComplete'
   | 'isCompletedStructure'
   | 'isEmbargoed'
   | 'isIndeterminateFee'
+  | 'isLadder'
   | 'isScheduleLocked'
   | 'issueChallenge'
   | 'isValid'
@@ -1179,12 +1181,14 @@ export const FACTORY_ENGINE_METHODS: readonly FactoryEngineMethod[] = [
   'inspect',
   'intervalsOverlap',
   'isAdHoc',
+  'isAdHocType',
   'isAggregateFormat',
   'isChallengeInRange',
   'isComplete',
   'isCompletedStructure',
   'isEmbargoed',
   'isIndeterminateFee',
+  'isLadder',
   'isScheduleLocked',
   'issueChallenge',
   'isValid',

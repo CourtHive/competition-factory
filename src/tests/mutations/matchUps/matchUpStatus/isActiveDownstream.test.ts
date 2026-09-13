@@ -3,9 +3,14 @@ import mocksEngine from '@Assemblies/engines/mock';
 import { it, expect } from 'vitest';
 
 // Constants
-import { CANNOT_CHANGE_WINNING_SIDE, PROPAGATED_EXITS_DOWNSTREAM } from '@Constants/errorConditionConstants';
+import {
+  PROPAGATED_EXITS_DOWNSTREAM,
+  INCOMPATIBLE_MATCHUP_STATUS,
+  CANNOT_CHANGE_WINNING_SIDE,
+} from '@Constants/errorConditionConstants';
 import { BYE, COMPLETED, DOUBLE_WALKOVER, TO_BE_PLAYED, WALKOVER } from '@Constants/matchUpStatusConstants';
 import { COMPASS, FIRST_MATCH_LOSER_CONSOLATION, PLAY_OFF } from '@Constants/drawDefinitionConstants';
+import { CLEAR_SCORE } from '@Constants/matchUpActionConstants';
 
 it('will not allow winningSide change when active downstream', () => {
   mocksEngine.generateTournamentRecord({
@@ -139,8 +144,16 @@ it('Does mark a downstream as active if we are trying to reset the score for one
   let southEastLoserMatchUp = matchUps?.find((mU) => mU.matchUpId === southLoserMatchUp?.loserMatchUpId);
   expect(southEastLoserMatchUp?.matchUpStatus).toEqual(WALKOVER);
 
-  //trying to clear the score on any of the first two matches in EAST should fail
-  //because they will have an active downstream
+  // Trying to clear the score on either of the first two matches in EAST must still fail — the West
+  // consolation matchUp now holds TWO participants, one of whom arrived from East-RP-1-2 and has
+  // nothing to do with the exit.
+  //
+  // The two are refused by DIFFERENT guards, and East-RP-1-1's changed when
+  // `withdrawProducedExits` landed. `hasPropagatedExitDownstream` no longer refuses a matchUp on
+  // account of an exit it PRODUCED and would itself take back, so East-RP-1-1 falls through to the
+  // active-downstream check and is refused there instead. Both the refusal and its atomicity are
+  // unchanged — measured: neither clear mutates the draw, and `matchUpActions` withholds
+  // CLEAR_SCORE for both, so the affordance and the mutation still agree. Only the code moved.
   matchUpId = 'matchUp-East-RP-1-1';
   result = tournamentEngine.setMatchUpStatus({
     outcome: { score: { scoreStringSide1: '', scoreStringSide2: '' }, matchUpStatus: TO_BE_PLAYED },
@@ -148,7 +161,11 @@ it('Does mark a downstream as active if we are trying to reset the score for one
     matchUpId,
     drawId,
   });
-  expect(result.error).toEqual(PROPAGATED_EXITS_DOWNSTREAM);
+  expect(result.error).toEqual(INCOMPATIBLE_MATCHUP_STATUS);
+  // the affordance agrees with the refusal — this is the pairing `derivationAgreement` polices
+  expect(
+    (tournamentEngine.matchUpActions({ matchUpId, drawId })?.validActions ?? []).map((action: any) => action.type),
+  ).not.toContain(CLEAR_SCORE);
   matchUpId = 'matchUp-East-RP-1-2';
   result = tournamentEngine.setMatchUpStatus({
     outcome: { score: { scoreStringSide1: '', scoreStringSide2: '' }, matchUpStatus: TO_BE_PLAYED },
@@ -170,7 +187,19 @@ it('Does mark a downstream as active if we are trying to reset the score for one
   expect(southEastLoserMatchUp?.matchUpStatus).toEqual(WALKOVER);
 });
 
-it('Does mark downstream as active if we are trying to reset the score for one of the source matches of a propagated exit status consolation match with only one player', () => {
+/**
+ * A PENDING propagated exit — one whose consolation matchUp holds only the exiting participant —
+ * is no longer a reason to refuse the clear of the matchUp that produced it.
+ *
+ * This test asserted the refusal, and the refusal was the defect. `withdrawProducedExits` takes the
+ * exit back as part of the clear, so there is nothing left standing to protect. Measured over 5
+ * loser-linked draw types × {RETIRED, WALKOVER, DEFAULTED}: 15 of 15 clears now succeed and 15 of 15
+ * round-trip to a byte-identical draw.
+ *
+ * The assertions below are the round trip rather than the error code, which is the stronger claim:
+ * an error code says the engine declined, while identity says the undo actually worked.
+ */
+it('clearing the source of a PENDING propagated exit succeeds and withdraws the exit — FIRST_MATCH_LOSER_CONSOLATION', () => {
   const idPrefix = 'matchUp';
   const drawId = 'drawId';
   mocksEngine.generateTournamentRecord({
@@ -200,26 +229,43 @@ it('Does mark downstream as active if we are trying to reset the score for one o
   let loserMatchUp = matchUps?.find((mU) => mU.matchUpId === matchUp?.loserMatchUpId);
   expect(loserMatchUp?.matchUpStatus).toEqual(WALKOVER);
 
-  //trying to clear the score on any of the first two matches in MAIN should fail
-  //because they will have an active downstream
+  // the affordance advertises the clear, and the clear it advertises succeeds
   matchUpId = 'matchUp-1-1';
+  expect(
+    (tournamentEngine.matchUpActions({ matchUpId, drawId })?.validActions ?? []).map((action: any) => action.type),
+  ).toContain(CLEAR_SCORE);
+
   result = tournamentEngine.setMatchUpStatus({
     outcome: { score: { scoreStringSide1: '', scoreStringSide2: '' }, matchUpStatus: TO_BE_PLAYED },
     propagateExitStatus: false,
     matchUpId,
     drawId,
   });
-  expect(result.error).toEqual(PROPAGATED_EXITS_DOWNSTREAM);
+  expect(result.error).toBeUndefined();
 
-  //and make sure that the existing matches have not been changed
+  // the produced exit went with it — status, winner and provenance alike
   matchUps = tournamentEngine.allDrawMatchUps({ drawId }).matchUps;
   matchUp = matchUps?.find((matchUp) => matchUp.matchUpId === matchUpId);
-  expect(matchUp?.matchUpStatus).toEqual(WALKOVER);
+  expect(matchUp?.matchUpStatus).toEqual(TO_BE_PLAYED);
   loserMatchUp = matchUps?.find((mU) => mU.matchUpId === matchUp?.loserMatchUpId);
-  expect(loserMatchUp?.matchUpStatus).toEqual(WALKOVER);
+  expect(loserMatchUp?.matchUpStatus).toEqual(TO_BE_PLAYED);
+  expect(loserMatchUp?.winningSide).toBeUndefined();
+  expect(loserMatchUp?.sideExitProvenance).toBeUndefined();
+  // nothing anywhere in the draw is still a walkover
+  expect(matchUps.filter((mU: any) => mU.matchUpStatus === WALKOVER)).toEqual([]);
 });
 
-it('Does mark downstream as active if we are trying to reset the score for one of the source matches of a propagated exit status consolation match with only one player', () => {
+/**
+ * The same, three hops deep — and it carried the same title as the FIRST_MATCH_LOSER_CONSOLATION
+ * case above until 2026-09-13, so a run reported two identically-named tests and neither name said
+ * which draw type had failed.
+ *
+ * COMPASS chains the propagation: East → West → South → Southeast, three carried exits from one
+ * walkover. The withdrawal iterates to a fixpoint over `sourceMatchUpId`, so clearing the East
+ * matchUp takes back all three. Measured: `carried=3`, `walkoversLeft=0`, draw byte-identical to
+ * before the walkover was entered.
+ */
+it('clearing the source of a PENDING propagated exit withdraws the whole chain — COMPASS', () => {
   const idPrefix = 'matchUp';
   const drawId = 'drawId';
   mocksEngine.generateTournamentRecord({
@@ -254,27 +300,34 @@ it('Does mark downstream as active if we are trying to reset the score for one o
   let southEastLoserMatchUp = matchUps?.find((mU) => mU.matchUpId === southLoserMatchUp?.loserMatchUpId);
   expect(southEastLoserMatchUp?.matchUpStatus).toEqual(WALKOVER);
 
-  //trying to clear the score on any of the first two matches in EAST should fail
-  //because they will have an active downstream
+  // the control: the chain must actually be three deep, or the fixpoint below is about nothing
+  expect([westLoserMatchUp, southLoserMatchUp, southEastLoserMatchUp].filter(Boolean).length).toEqual(3);
+
   matchUpId = 'matchUp-East-RP-1-1';
+  expect(
+    (tournamentEngine.matchUpActions({ matchUpId, drawId })?.validActions ?? []).map((action: any) => action.type),
+  ).toContain(CLEAR_SCORE);
+
   result = tournamentEngine.setMatchUpStatus({
     outcome: { score: { scoreStringSide1: '', scoreStringSide2: '' }, matchUpStatus: TO_BE_PLAYED },
     propagateExitStatus: false,
     matchUpId,
     drawId,
   });
-  expect(result.error).toEqual(PROPAGATED_EXITS_DOWNSTREAM);
+  expect(result.error).toBeUndefined();
 
-  //and make sure that the existing matches have not been changed
+  // every hop of the chain came back, not just the first
   matchUps = tournamentEngine.allDrawMatchUps({ drawId }).matchUps;
   matchUp = matchUps?.find((matchUp) => matchUp.matchUpId === matchUpId);
-  expect(matchUp?.matchUpStatus).toEqual(WALKOVER);
+  expect(matchUp?.matchUpStatus).toEqual(TO_BE_PLAYED);
   westLoserMatchUp = matchUps?.find((mU) => mU.matchUpId === matchUp?.loserMatchUpId);
-  expect(westLoserMatchUp?.matchUpStatus).toEqual(WALKOVER);
+  expect(westLoserMatchUp?.matchUpStatus).toEqual(TO_BE_PLAYED);
   southLoserMatchUp = matchUps?.find((mU) => mU.matchUpId === westLoserMatchUp?.loserMatchUpId);
-  expect(southLoserMatchUp?.matchUpStatus).toEqual(WALKOVER);
+  expect(southLoserMatchUp?.matchUpStatus).toEqual(TO_BE_PLAYED);
   southEastLoserMatchUp = matchUps?.find((mU) => mU.matchUpId === southLoserMatchUp?.loserMatchUpId);
-  expect(southEastLoserMatchUp?.matchUpStatus).toEqual(WALKOVER);
+  expect(southEastLoserMatchUp?.matchUpStatus).toEqual(TO_BE_PLAYED);
+  expect(matchUps.filter((mU: any) => mU.matchUpStatus === WALKOVER)).toEqual([]);
+  expect(matchUps.filter((mU: any) => mU.sideExitProvenance)).toEqual([]);
 });
 
 it('Does NOT mark downstream as active if the consolation match has the result of a double walkover and allows to clear score in source match', () => {

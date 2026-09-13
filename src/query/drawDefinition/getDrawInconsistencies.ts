@@ -1,10 +1,7 @@
 import { finalize, Inconsistency } from '@Query/integrity/inconsistency';
 import { isFedLoserEligible } from '@Query/matchUp/isFedLoserEligible';
 import { getAllDrawMatchUps } from '@Query/matchUps/drawMatchUps';
-import {
-  exitProducedByPropagation,
-  getStructureInconsistencies,
-} from '@Query/drawDefinition/getStructureInconsistencies';
+import { getStructureInconsistencies, isPropagatedExit } from '@Query/drawDefinition/getStructureInconsistencies';
 
 // constants and types
 import { DrawDefinition, Event, Structure, Tournament } from '@Types/tournamentTypes';
@@ -147,7 +144,7 @@ function droppedProgressionForLink(
 
   const inconsistencies: any[] = [];
   for (const matchUp of roundMatchUps) {
-    if (exitProducedByPropagation(matchUp)) continue;
+    if (isPropagatedExit(matchUp)) continue;
     const loserSideNumber = matchUp.winningSide === 1 ? 2 : 1;
     const sideNumber = isLoserLink ? loserSideNumber : matchUp.winningSide;
     const side = (matchUp.sides ?? []).find((candidate) => candidate.sideNumber === sideNumber);

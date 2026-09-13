@@ -805,6 +805,50 @@ const { isAdHoc } = engine.isAdHoc({
 
 **Returns:** Boolean indicating adhoc structure.
 
+:::tip Three similar names, three different questions
+`isAdHoc` asks about a **structure** — does it carry bracket geometry. `isAdHocType` and `isLadder`
+ask about a **drawType** string. Reach for the one whose input you actually hold.
+:::
+
+## isAdHocType
+
+Whether a `drawType` has the **AD_HOC structure shape**: matchUps carrying neither `roundPosition`
+nor `drawPosition`, so nothing is derived from bracket geometry. `AD_HOC`, `SWISS` and — since
+7.0.0 — `LADDER`.
+
+```js
+const isAdHoc = engine.isAdHocType({ drawType }); // AD_HOC | SWISS | LADDER -> true
+```
+
+Also callable directly, which is how the factory's own generators use it:
+
+```js
+import { governors } from 'tods-competition-factory';
+governors.drawsGovernor.isAdHocType(drawType); // a bare string is accepted too
+```
+
+**Returns:** `boolean`.
+
+This is the predicate that decides whether a draw needs a `drawSize`, whether stage capacity
+applies, and whether rounds generate without an explicit `roundsCount`. **A ladder qualifies on that
+definition and gets all of it for free**, which is why `LADDER` joined the set rather than being
+special-cased.
+
+## isLadder
+
+Whether a `drawType` is specifically `LADDER`.
+
+```js
+const isLadder = engine.isLadder({ drawType });
+```
+
+**Returns:** `boolean`.
+
+**Use this rather than `isAdHocType` wherever the difference matters.** A ladder shares the AD_HOC
+structure _shape_ but not its meaning: an `AD_HOC` draw's `positionAssignments` are a **roster**,
+while a ladder's are an **ordered standing** and `drawPosition` is read as rank. Code that treats
+the two alike will render a ladder's standing as though the order were arbitrary.
+
 ---
 
 ## isCompletedStructure

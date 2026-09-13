@@ -1,5 +1,4 @@
 import { includesMatchUpStatuses } from '@Mutate/drawDefinitions/matchUpGovernor/includesMatchUpStatuses';
-import { clearResolvedSideExitProvenance } from '@Mutate/matchUps/matchUpStatus/sideExitProvenance';
 import { removeSubsequentRoundsParticipant } from './removeSubsequentRoundsParticipant';
 import { removeOnwardLoserPlacements } from './removeOnwardLoserPlacements';
 import { releaseAdvancedDrawPosition } from './releaseAdvancedDrawPosition';
@@ -14,6 +13,10 @@ import { isAdHoc } from '@Query/drawDefinition/isAdHoc';
 import { findStructure } from '@Acquire/findStructure';
 import { clearDrawPosition } from './positionClear';
 import { instanceCount } from '@Tools/arrays';
+import {
+  clearResolvedSideExitProvenance,
+  withdrawProducedExits,
+} from '@Mutate/matchUps/matchUpStatus/sideExitProvenance';
 
 // constants and types
 import { ErrorType, MISSING_DRAW_POSITIONS, STRUCTURE_NOT_FOUND } from '@Constants/errorConditionConstants';
@@ -107,6 +110,66 @@ export function removeDirectedParticipants(params): {
     ) ?? {};
 
   const drawPositionMatchUps = sourceMatchUps.filter((matchUp) => matchUp.drawPositions?.includes(loserDrawPosition));
+
+  // Take back the exits THIS matchUp produced — BEFORE the link-directed removals below.
+  //
+  // The removals below are link-directed: they walk loserTargetLink/winnerTargetLink and undo one
+  // hop. A propagated exit is not confined to one hop — `progressExitStatus` re-propagates through
+  // a BYE onto wherever the participant landed, and a produced exit can itself produce another
+  // downstream — so the withdrawal is keyed on `sideExitProvenance.sourceMatchUpId` and iterates,
+  // rather than re-walking the links. See withdrawProducedExits for why identity rather than status
+  // is the discriminator.
+  //
+  // ORDER: this runs FIRST, and that was measured. `removeDirectedLoser` calls
+  // `removeOnwardLoserPlacements`, which only releases a placement that is INERT for its
+  // participant — and a placement sitting under a still-standing produced exit does not look inert.
+  // Withdrawing afterwards left the onward placement behind: seed 9000418 (COMPASS 32/30), three
+  // steps, a walkover re-scored to a DEFAULTED with the winning side flipped. The old loser stayed
+  // in the South structure, so the NEW loser of the West matchUp had nowhere to be directed and the
+  // draw reported DROPPED_PROGRESSION. Reverting the derived state first makes those placements
+  // inert, which is what `removeOnwardLoserPlacements` is already looking for.
+  const withdrawnExits = withdrawProducedExits({
+    mappedMatchUps: matchUpsMap?.mappedMatchUps,
+    sourceMatchUpId: matchUpId,
+  });
+  for (const withdrawnExit of withdrawnExits) {
+    // A RESOLVED produced exit had a winner, and that winner has already advanced. The exit is no
+    // longer happening, so the advancement it granted must come back with it — otherwise the slot
+    // stays occupied and the next arrival is refused with ERR_EXISTING_POSITION_ASSIGNMENT after
+    // the mutation has already written. `releaseAdvancedDrawPosition` is the same narrow release
+    // `removeDirectedLoser` uses, and its own two scopes keep it off positions that are
+    // load-bearing. A PENDING produced exit — the common shape, with an empty winner slot — has no
+    // winningSide here and so releases nothing.
+    if (withdrawnExit.winnerDrawPosition !== undefined && withdrawnExit.roundNumber !== undefined) {
+      releaseAdvancedDrawPosition({
+        // `+ 1` — from the round AFTER the withdrawn matchUp, never from the matchUp itself. The
+        // winner still belongs in it: they arrived there by winning an earlier round, and that has
+        // not changed. Only what they won ON arrival has been taken back. Releasing from its own
+        // round nulls a position the matchUp legitimately holds, which `transitionProperties`
+        // catches as DO_UNDO_IDENTITY residue — `[1,4]` becoming `[1,null]` in a
+        // MODIFIED_FEED_IN_CHAMPIONSHIP 8/7. `removeDirectedLoser` passes the target's own round
+        // because there the participant is leaving the structure entirely; here they are not.
+        fromRoundNumber: withdrawnExit.roundNumber + 1,
+        drawPosition: withdrawnExit.winnerDrawPosition,
+        structureId: withdrawnExit.structureId,
+        tournamentRecord,
+        drawDefinition,
+        matchUpsMap,
+        event,
+      });
+    }
+
+    const withdrawnMatchUp = matchUpsMap?.drawMatchUps?.find((m) => m.matchUpId === withdrawnExit.matchUpId);
+    if (!withdrawnMatchUp) continue;
+    modifyMatchUpNotice({
+      tournamentId: tournamentRecord?.tournamentId,
+      context: 'withdrawProducedExits',
+      eventId: event?.eventId,
+      matchUp: withdrawnMatchUp,
+      drawDefinition,
+      event,
+    });
+  }
 
   if (winnerMatchUp) {
     removeDirectedWinner({

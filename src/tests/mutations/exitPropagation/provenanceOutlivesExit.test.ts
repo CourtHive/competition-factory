@@ -14,7 +14,7 @@ import { DOUBLE_WALKOVER, DOUBLE_DEFAULT, DEFAULTED, WALKOVER } from '@Constants
  * across the draws behind the 21 triaged sweep seeds: **63 clears, 51 of them leaving the matchUp
  * still an exit** — `removeDirectedLoser` 38, `applyPositionToMatchUp` 9, `applyScoreAndStatus` 10.
  *
- * Such a matchUp is an exit with no marker at all, so `exitProducedByPropagation` reads false and
+ * Such a matchUp is an exit with no marker at all, so `isPropagatedExit` reads false and
  * `EXIT_WITHOUT_LOSER` / `DROPPED_PROGRESSION` fire on a legitimate pending exit.
  *
  * These are sweep seeds rather than hand-built draws on purpose. A grid of 1,512 deterministic
