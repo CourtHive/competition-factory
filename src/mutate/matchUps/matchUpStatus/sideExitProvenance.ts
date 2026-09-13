@@ -347,6 +347,31 @@ export function exitProducedByPropagation({ matchUp }: { matchUp?: MatchUp }): b
 }
 
 /**
+ * Whether this matchUp's exit is WHOLLY produced by one named source.
+ *
+ * The question a guard on an undo has to ask. `exitProducedByPropagation` answers "was this derived
+ * at all", which is enough to exempt a matchUp from a detector but not enough to decide whether a
+ * particular clear may proceed: the clear can only take back what its own matchUp produced, so an
+ * exit that ALSO rests on some other source must still block it.
+ *
+ * EVERY entry must name the source, not merely one of them. The convergence `progressExitStatus`
+ * RULE 4 creates has two carried exits from different upstreams meeting in one matchUp; withdrawing
+ * one of them leaves the matchUp an exit on the strength of the other, so the clear would not
+ * restore the prior state and must be refused as it always was.
+ *
+ * An exit with NO provenance returns false — it was played, and nothing upstream is entitled to take
+ * it back.
+ */
+export function exitProducedBy({ sourceMatchUpId, matchUp }: { sourceMatchUpId?: string; matchUp?: MatchUp }): boolean {
+  if (!sourceMatchUpId) return false;
+  const provenance = getSideExitProvenance({ matchUp });
+  if (!provenance) return false;
+
+  const entries = [1, 2].map((sideNumber) => provenance[sideNumber]).filter(Boolean);
+  return entries.length > 0 && entries.every((entry: any) => entry.sourceMatchUpId === sourceMatchUpId);
+}
+
+/**
  * The outcome code a `matchUpStatusCodes` element should contribute, whatever shape it arrived in.
  *
  * Replaces a coercion that mapped EVERY object element to `OUTCOME_WALKOVER`. Measured over 120
@@ -375,4 +400,156 @@ export function exitOutcomeCode(element: any): string {
   if (status === DEFAULTED || status === DOUBLE_DEFAULT) return OUTCOME_DEFAULT;
   if (status === RETIRED) return OUTCOME_RETIREMENT;
   return '';
+}
+
+/**
+ * Withdraw the exits a matchUp PRODUCED, when that matchUp's own result is removed or replaced.
+ *
+ * This is the inverse of `progressExitStatus` and `doubleExitAdvancement`, and until now it did not
+ * exist. Those two write an exit onto a downstream matchUp and stamp `sourceMatchUpId` on the side
+ * that carries it; nothing read that stamp back to take the exit away. `removeDirectedLoser`
+ * removed the PARTICIPANT from the target's position assignment and rewrote `matchUpStatusCodes`,
+ * but left `matchUpStatus` and `winningSide` exactly as the cascade had written them — so the
+ * consolation matchUp stayed a WALKOVER, awarded to a side that no longer had an opponent.
+ *
+ * WHY THAT WENT UNSEEN. `hasPropagatedExitDownstream` refuses the clear outright
+ * (`ERR_PROPAGATED_EXITS_DOWNSTREAM`), so the broken unwind was never reached from the TD-facing
+ * path. Measured 2026-09-13 over 5 loser-linked draw types × {RETIRED, WALKOVER, DEFAULTED}: the
+ * apply succeeds in 15 of 15 and the clear is refused in 15 of 15. Suppressing the refusal alone —
+ * the "just make the predicate ask about provenance" fix — permits the clear in all 15 and leaves
+ * residue in all 15. **The refusal is load-bearing**: it was standing in for an unwind the engine
+ * could not perform. So the unwind comes first and the predicate second.
+ *
+ * IDENTITY, NOT STATUS. A produced exit is identified by `sourceMatchUpId` matching the matchUp
+ * whose result is going away — never by its status, which is indistinguishable from a walkover that
+ * was played. This is the whole reason `sideExitProvenance` carries source identity; see
+ * {@link isPropagatedExit}.
+ *
+ * IT CASCADES, because propagation does. A produced exit can itself propagate: B's exit is stamped
+ * with A as its source, and the exit B produces at C is stamped with B. Withdrawing A's exit at B
+ * therefore makes C's exit sourceless too, so the withdrawal iterates to a fixpoint over the
+ * frontier of matchUps it has just reset. Bounded by the number of matchUps in the draw, which is
+ * also the longest possible chain.
+ *
+ * WHAT IT WILL NOT TOUCH. A matchUp with no provenance was PLAYED, and its status is a record of
+ * something that happened rather than something derived; it is left alone however it looks. A side
+ * whose provenance names a DIFFERENT source is likewise left alone — that exit is still true — and
+ * a matchUp retaining such a side keeps its exit status, with only the withdrawn side's entry
+ * dropped. That is the convergence case `progressExitStatus` RULE 4 creates, where two carried
+ * exits meet.
+ *
+ * IT DOES NOT RELEASE THE ADVANCEMENT ITSELF, and that omission was measured before it was fixed.
+ * A resolved produced exit has a winner who has already advanced into later rounds; resetting the
+ * status without pulling that advancement back leaves a participant sitting in a slot they no longer
+ * earned, and the next arrival is refused with `ERR_EXISTING_POSITION_ASSIGNMENT` — *after* the
+ * mutation has already written, which is an `ERROR_IMPLIES_NO_MUTATION` atomicity violation.
+ * Measured over the 600-seed frozen-schedule census: doing only the status reset moved
+ * `ERR_ACTIVE_DRAW_POSITION` from 13 to 9 while moving `ERR_EXISTING_POSITION_ASSIGNMENT` from 5 to
+ * 9 — one atomicity class traded for another, which is the signature of a half-finished unwind.
+ * So each fully-withdrawn matchUp is reported with the drawPosition that needs releasing, and the
+ * caller — which owns the structure-level mutation vocabulary — performs the release.
+ *
+ * Returns one record per matchUp it reset, so a caller can release and emit notices for exactly
+ * those.
+ */
+export type WithdrawnExit = {
+  /** the winner's drawPosition, which advanced out of the exit and must be released */
+  winnerDrawPosition?: number;
+  roundNumber?: number;
+  structureId: string;
+  matchUpId: string;
+};
+
+/**
+ * Withdraw one matchUp's entries, if any of them name a source in `sources`.
+ *
+ * Extracted so `withdrawProducedExits` stays inside the cognitive-complexity budget; it is the
+ * whole per-matchUp decision. Returns the withdrawal record when the matchUp reverted to undecided,
+ * and `undefined` when it either kept an exit from another source or had nothing to withdraw.
+ */
+function withdrawFromMatchUp(matchUp: MatchUp, sources: Set<string>, structureId: string): WithdrawnExit | undefined {
+  const provenance = getSideExitProvenance({ matchUp });
+  if (!provenance) return undefined;
+
+  const retained: SideExitProvenance = {};
+  let removedAny = false;
+  for (const sideNumber of [1, 2] as const) {
+    const entry = provenance[sideNumber];
+    if (!entry) continue;
+    if (entry.sourceMatchUpId && sources.has(entry.sourceMatchUpId)) removedAny = true;
+    else retained[sideNumber] = entry;
+  }
+  if (!removedAny) return undefined;
+
+  if (Object.keys(retained).length) {
+    // A side carried here by a DIFFERENT source is still true, so the matchUp remains an exit and
+    // only the withdrawn side's entry is dropped.
+    //
+    // `matchUpStatusCodes` is deliberately NOT rewritten from the retained provenance here.
+    // `projectExitStatusCodes` is a projection of provenance alone, and the legacy array is not only
+    // that: it also carries the scoring policy's vocabulary and `{ code }` wrappers, and it carries
+    // provenance shapes the native builder refuses to stamp — `buildSideExitProvenance` rejects a
+    // `TO_BE_PLAYED` origin as undecided, while a legacy record may hold one. Rewriting wholesale
+    // therefore DELETES elements that were never this function's to remove; measured as
+    // `sourceMatchUpStatus.test.ts` losing a `previousMatchUpStatus: TO_BE_PLAYED` element that no
+    // withdrawal had touched.
+    setSideExitProvenance({ provenance: retained, matchUp });
+    return undefined;
+  }
+
+  // Nothing derived remains: the matchUp reverts to undecided, which is the state it was in before
+  // the cascade reached it. Blanking the codes is safe HERE and only here — the matchUp is no longer
+  // an exit at all, so no element of that array can still be describing one. It is the same blanking
+  // `removeDirectedLoser` already performs one link away.
+  //
+  // The winner's position is read BEFORE `winningSide` is deleted, because it is the index of the
+  // side that was about to advance out of an exit that is no longer happening.
+  const winnerDrawPosition = matchUp.winningSide ? matchUp.drawPositions?.[matchUp.winningSide - 1] : undefined;
+  clearSideExitProvenance(matchUp);
+  matchUp.matchUpStatusCodes = [];
+  matchUp.matchUpStatus = TO_BE_PLAYED;
+  delete matchUp.winningSide;
+
+  return {
+    roundNumber: matchUp.roundNumber,
+    matchUpId: matchUp.matchUpId,
+    winnerDrawPosition,
+    structureId,
+  };
+}
+
+export function withdrawProducedExits({
+  mappedMatchUps,
+  sourceMatchUpId,
+}: {
+  mappedMatchUps?: { [structureId: string]: { matchUps: MatchUp[] } };
+  sourceMatchUpId?: string;
+}): WithdrawnExit[] {
+  if (!sourceMatchUpId || !mappedMatchUps) return [];
+
+  const structureEntries = Object.entries(mappedMatchUps);
+  const matchUpCount = structureEntries.reduce((count, [, value]) => count + (value?.matchUps?.length ?? 0), 0);
+
+  const withdrawn: WithdrawnExit[] = [];
+  let frontier = [sourceMatchUpId];
+  // the chain cannot be longer than the draw, so this is a fixpoint with a structural bound rather
+  // than a `while (true)` that trusts the data to terminate
+  let guard = matchUpCount + 1;
+
+  while (frontier.length && guard-- > 0) {
+    const sources = new Set(frontier);
+    frontier = [];
+
+    for (const [structureId, structureMatchUps] of structureEntries) {
+      for (const matchUp of structureMatchUps?.matchUps ?? []) {
+        const record = withdrawFromMatchUp(matchUp, sources, structureId);
+        if (!record) continue;
+        withdrawn.push(record);
+        // whatever THIS matchUp produced is now sourceless too
+        frontier.push(record.matchUpId);
+      }
+    }
+  }
+
+  return withdrawn;
 }

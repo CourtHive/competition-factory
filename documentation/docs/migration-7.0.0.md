@@ -585,6 +585,51 @@ or pass `propagateRetirementAsExit: true` per call. An explicit `false` wins fro
 unlike `propagateExitStatus`, which resolves as `param || policy || undefined` and so cannot express
 one.
 
+## 11c. Removing a result now takes back the exits it produced
+
+_Shipped in [#4855](https://github.com/CourtHive/competition-factory/pull/4855)._
+
+The companion to [11b](#11b-a-retirement-no-longer-carries-into-the-consolation-by-default): once a
+governing policy decides that a retirement propagates, a tournament director must be able to
+**un-decide** it.
+
+Previously an exit that propagated into a consolation was never taken back. Two consequences:
+
+1. **The clear was refused.** Measured across 5 loser-linked draw types × `RETIRED` / `WALKOVER` /
+   `DEFAULTED`, entering the outcome succeeded in 15 of 15 cases and clearing it failed in 15 of 15
+   with `ERR_PROPAGATED_EXITS_DOWNSTREAM`. This was never retirement-specific — a walkover and a
+   default were refused identically.
+2. **A re-score left a phantom.** Re-scoring a walkover to a completed result left the consolation
+   matchUp `WALKOVER` with a `winningSide`, its provenance naming a source that was no longer an
+   exit, while its occupant had been swapped for the new loser. The next participant to arrive won a
+   walkover nobody had played. `getDrawInconsistencies` did not report it.
+
+Both are now correct: `setMatchUpStatus` withdraws every exit the matchUp produced, following
+`sideExitProvenance.sourceMatchUpId` to a fixpoint — so a COMPASS chain three structures deep unwinds
+in one operation — and releases any advancement those exits had granted.
+
+**Who is affected.** Only callers using `propagateExitStatus` (or a policy that sets it, such as
+`POLICY_SCORING_USTA`). With exit propagation off — the factory default — nothing propagates, so
+nothing is withdrawn and behaviour is unchanged.
+
+**What changes for a caller who does use it:**
+
+| before                                                       | after                                                            |
+| ------------------------------------------------------------ | ---------------------------------------------------------------- |
+| clearing the source of a propagated exit → `ERR_PROPAGATED_EXITS_DOWNSTREAM` | succeeds, and the draw returns to its prior state |
+| re-scoring it → the old produced exit survived                | the old produced exit is withdrawn before the new one is written  |
+
+One refusal is preserved but **reports a different code**. Where the consolation matchUp holds a
+second participant arriving from an unrelated matchUp, the clear is still refused — that exit does
+not rest on the matchUp being cleared alone — but it now surfaces as
+`ERR_INCOMPATIBLE_MATCHUP_STATUS` rather than `ERR_PROPAGATED_EXITS_DOWNSTREAM`. If you branch on
+that code, match on both. `matchUpActions` withholds `CLEAR_SCORE` in either case, so an interface
+driven by the action rather than by the error needs no change.
+
+**There is no flag to restore the old behaviour**, deliberately. The previous state was not a policy
+choice a federation could reasonably want: it left a walkover attributed to a match that no longer
+recorded one, and awarded it to whoever happened to arrive next.
+
 ## 12. Non-breaking additions worth knowing
 
 `plainDate`, `plainTime` and `zonedDateTime` are new published exports, completing the calendar
