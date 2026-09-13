@@ -39,8 +39,16 @@ import { POLICY_TYPE_SCORING } from '@Constants/policyConstants';
  *
  * ## Default
  *
- * TRUE — the engine's long-standing behaviour, so nothing moves for anyone who has not opted out.
- * `propagateExitStatus.test.ts` pins that behaviour and all 27 of its assertions are unchanged.
+ * FALSE — a retiree is out of a MATCH, not out of the EVENT, unless the governing policy says so.
+ *
+ * That is the BREAKING arm, which is why this ships with migration §11b. It changes behaviour for a
+ * caller passing `propagateExitStatus: true` under the default policy, where a retirement used to
+ * carry onward. `POLICY_SCORING_USTA` sets it `true` explicitly, so its observable behaviour is
+ * unchanged, and with `propagateExitStatus` off — the factory default — nothing changes either way.
+ *
+ * Three cases in `propagateExitStatus.test.ts` were re-authored to ask for
+ * `propagateRetirementAsExit: true` rather than relying on the old default. They keep full detection
+ * power: forcing retirement propagation off makes all three go RED.
  * Note the precedence differs from `propagateExitStatus`, which resolves with `x || y || undefined`
  * and therefore cannot express an explicit `false`. Turning retirement propagation OFF is the entire
  * purpose of this setting, so it resolves with `??` and an explicit `false` wins from either params

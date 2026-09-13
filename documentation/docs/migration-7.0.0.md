@@ -583,7 +583,6 @@ or pass `propagateRetirementAsExit: true` per call. An explicit `false` wins fro
 unlike `propagateExitStatus`, which resolves as `param || policy || undefined` and so cannot express
 one.
 
-
 ## 12. Non-breaking additions worth knowing
 
 `plainDate`, `plainTime` and `zonedDateTime` are new published exports, completing the calendar

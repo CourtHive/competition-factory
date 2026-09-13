@@ -96,10 +96,10 @@ export function directLoser(params): ResultType {
   // Which exits carry into the consolation.
   //
   // WALKOVER and DEFAULTED always do, when `propagateExitStatus` is on. RETIRED is a policy
-  // decision — `propagateRetirementAsExit`, defaulting to TRUE, which is the engine's long-standing
-  // behaviour. A retirement is a completed match with a score and a winner, so whether the retiring
-  // player is treated as unable to continue (their consolation match becomes a walkover for the
-  // opponent) or as an ordinary loser who may still play differs by governing body.
+  // decision — `propagateRetirementAsExit`, defaulting to FALSE: a retiree is out of a MATCH, not
+  // out of the EVENT, unless the governing policy says so. A retirement is a completed match with a
+  // score and a winner; a governing body whose rules end a retiree's participation sets the policy
+  // true, and the opponent in the connected structure then receives a walkover.
   //
   // THIS IS THE GATE, and it is the only one. `progressExitStatus` also names RETIRED —
   // `(isExit(status) && status !== RETIRED && status) || WALKOVER` — but that runs AFTER the
