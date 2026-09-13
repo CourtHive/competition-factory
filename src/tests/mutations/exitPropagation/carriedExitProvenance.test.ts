@@ -15,7 +15,7 @@ import { WALKOVER } from '@Constants/matchUpStatusConstants';
  * Before this, only `doubleExitAdvancement` wrote provenance. An exit carried into a consolation by
  * `directLoser`/`progressExitStatus` was marked by a status code string at best, and by NOTHING when
  * the source matchUp carried no codes of its own — which is the normal shape of a
- * directly-recorded walkover. `exitProducedByPropagation` reads provenance, so those exits looked
+ * directly-recorded walkover. `isPropagatedExit` reads provenance, so those exits looked
  * un-propagated, and every detector that excludes a propagation-produced exit fired on a legitimate
  * one: `EXIT_WITHOUT_LOSER` and `DROPPED_PROGRESSION` both.
  *

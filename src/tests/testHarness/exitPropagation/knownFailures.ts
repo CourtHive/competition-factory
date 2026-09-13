@@ -40,7 +40,7 @@ const DOUBLE_EXIT_STATUS_CODES_RESIDUE =
   'TO_BE_PLAYED side 2]; the apply escalated it to DOUBLE_WALKOVER with both sides WALKOVER; the ' +
   'clear then writes matchUpStatusCodes: [] unconditionally rather than restoring the codes that ' +
   'pre-dated the cascade. matchUpStatus itself is restored correctly — only the provenance is lost, ' +
-  'so exitProducedByPropagation reads false for a matchUp that IS propagation-produced. Same ' +
+  'so isPropagatedExit reads false for a matchUp that IS propagation-produced. Same ' +
   'family as the hard-coded empty codes in advanceByeAdvancedDrawPosition. DECIDED (2026-09-09, CA): ' +
   'RE-DERIVE the codes on unwind from the current upstream state instead of writing []. Source ' +
   'identity is deliberately NOT added to matchUpStatusCodes — they are published on every matchUp, ' +

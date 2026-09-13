@@ -109,7 +109,7 @@ export function buildSideExitProvenance(params: BuildArgs): SideExitProvenance |
   // The paired previous matchUp is frequently still `TO_BE_PLAYED` when this runs, because the other
   // feeder has not been played yet, and that was stamped as
   // `{ matchUpStatus: TO_BE_PLAYED, previousMatchUpStatus: TO_BE_PLAYED }` — provenance asserting an
-  // origin for a side that has none. It matters because `exitProducedByPropagation` reads the mere
+  // origin for a side that has none. It matters because `isPropagatedExit` reads the mere
   // PRESENCE of provenance, so an undecided side read as propagation-produced.
   //
   // A COMPLETED origin IS recorded, deliberately: `sideExitProvenance.test.ts` pins a double exit
@@ -155,7 +155,7 @@ export function buildSideExitProvenance(params: BuildArgs): SideExitProvenance |
  * exit.
  *
  * Without this, a carried exit is marked ONLY by a string in `matchUpStatusCodes`, which carries no
- * `previousMatchUpStatus`, so `exitProducedByPropagation` reads false and every detector that
+ * `previousMatchUpStatus`, so `isPropagatedExit` reads false and every detector that
  * excludes propagation-produced exits (`EXIT_WITHOUT_LOSER`, `DROPPED_PROGRESSION`) fires on a
  * legitimate pending exit. Measured 2026-09-11: 13 of the 27 offending matchUps behind the sweep's
  * 21 triaged seeds are this shape.
@@ -242,7 +242,7 @@ export function clearSideExitProvenance(matchUp?: MatchUp): void {
  * matchUp that is still the exit that provenance describes. Measured 2026-09-11 across the draws
  * behind the 21 triaged sweep seeds: **63 clears, 51 of them leaving the matchUp still an exit** —
  * `removeDirectedLoser` 38, `applyPositionToMatchUp` 9, `applyScoreAndStatus` 10. Those matchUps end
- * up as exits with no marker at all, so `exitProducedByPropagation` reads false and the detectors
+ * up as exits with no marker at all, so `isPropagatedExit` reads false and the detectors
  * that exclude a propagation-produced exit fire on legitimate ones.
  *
  * `isAnyExit`, not `isExit` — the double exits are precisely the statuses that stamp provenance.
@@ -341,15 +341,42 @@ export function projectExitStatusCodes(provenance?: SideExitProvenance): any[] {
   );
 }
 
-/** Whether this matchUp's exit was PRODUCED by upstream propagation rather than played. */
-export function exitProducedByPropagation({ matchUp }: { matchUp?: MatchUp }): boolean {
+/**
+ * Whether this matchUp's exit was PRODUCED by upstream propagation rather than played.
+ *
+ * **A PROVENANCE test, and the counterpart to `isExit`, which is a STATUS test.** CA asked for the
+ * split by name, 2026-09-13, for the reason `isDoubleExit` was split out before it: readers reach
+ * for the predicate whose name is nearest, and `isExit` is nearest to everything.
+ *
+ * The two answer different questions and the difference is not cosmetic. `isExit(status)` is true of
+ * any `WALKOVER`, `DEFAULTED` or `RETIRED` **however it arose** — one a referee recorded and one the
+ * cascade wrote are indistinguishable to it. Every rule that exempts "a pending propagated exit"
+ * from a detector, or refuses a mutation "because there is a propagated exit downstream", means THIS
+ * predicate and cannot be expressed by that one. `hasPropagatedExitDownstream` spelled its question
+ * with `isExit` and refused every undo of an exit the clear would itself have removed — 15 of 15
+ * cells across 5 draw types, measured 2026-09-13.
+ *
+ * The discriminator is `sideExitProvenance`: the cascade stamps it, nothing else does. A matchUp
+ * with none was PLAYED.
+ *
+ * When the question is narrower — "was it produced by THIS matchUp", which is what an undo has to
+ * ask — use {@link exitProducedBy}, which additionally requires every side to name that source.
+ */
+export function isPropagatedExit({ matchUp }: { matchUp?: MatchUp }): boolean {
   return !!getSideExitProvenance({ matchUp });
 }
 
 /**
+ * @deprecated Use {@link isPropagatedExit}. Retained for one release so an external caller that
+ * reached for the old name is not broken silently; it has always been a re-export of the same
+ * function, never a second implementation.
+ */
+export const exitProducedByPropagation = isPropagatedExit;
+
+/**
  * Whether this matchUp's exit is WHOLLY produced by one named source.
  *
- * The question a guard on an undo has to ask. `exitProducedByPropagation` answers "was this derived
+ * The question a guard on an undo has to ask. `isPropagatedExit` answers "was this derived
  * at all", which is enough to exempt a matchUp from a detector but not enough to decide whether a
  * particular clear may proceed: the clear can only take back what its own matchUp produced, so an
  * exit that ALSO rests on some other source must still block it.
