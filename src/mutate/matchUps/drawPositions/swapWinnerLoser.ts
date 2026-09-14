@@ -36,12 +36,29 @@ export function swapWinnerLoser(params) {
 
   pushGlobalLog({ method: 'swapWinnerLoser', existingWinnerSubsequentMatchUps });
 
-  // replace new winningSide drawPosition in all subsequent matches in structure
+  /**
+   * Replace the advancing drawPosition in every subsequent matchUp — AND RE-SORT.
+   *
+   * `drawPositions` within a matchUp are stored ASCENDING. That is not a cosmetic convention: it is
+   * the binding between a side and its position. `getOrderedDrawPositions` states it under a
+   * "DO NOT CHANGE" banner — *"when both present, drawPositions are always sorted numerically …
+   * { sideNumber: 1 } always goes to the lower drawPosition"* — and readers index on it, including
+   * `drawPositions[winningSide - 1]`.
+   *
+   * A positional `map` REPLACES IN PLACE and therefore cannot preserve the order. Measured on census
+   * seed 9000012 (DOUBLE_ELIMINATION 8/7): flipping `Backdraw|2|2` rewrote a round-3 matchUp holding
+   * [4, 5] to [7, 5], and `getStructureInconsistencies` reported `DRAW_POSITIONS_NOT_SORTED` — 25
+   * such findings across two 600-seed windows, all of them downstream of this one line.
+   *
+   * ANY rewrite of `drawPositions` must re-sort. Do not remove the sort below, and do not add another
+   * positional rewrite without one.
+   */
   existingWinnerSubsequentMatchUps.forEach((matchUp) => {
-    matchUp.drawPositions =
+    matchUp.drawPositions = (
       matchUp.drawPositions?.map((drawPosition) =>
         drawPosition === existingWinnerDrawPosition ? existingLoserDrawPosition : drawPosition,
-      ) ?? [];
+      ) ?? []
+    ).sort((a, b) => (typeof a === 'number' && typeof b === 'number' ? a - b : 0));
     modifyMatchUpNotice({
       tournamentId: tournamentRecord?.tournamentId,
       eventId: params.event?.eventId,
