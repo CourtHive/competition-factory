@@ -1,16 +1,16 @@
 import { isMatchUpEventType } from '@Helpers/matchUpEventTypes/isMatchUpEventType';
 import { addParticipants } from '@Mutate/participants/addParticipants';
 import { getParticipantId } from '@Functions/global/extractors';
-import { rebuildPairsAsMixed } from './rebuildPairsAsMixed';
 import { generateParticipants } from './generateParticipants';
+import { rebuildPairsAsMixed } from './rebuildPairsAsMixed';
 import { coercedGender } from '@Helpers/coercedGender';
 import { isGendered } from '@Validators/isGendered';
 
 // constants and types
 import { MAIN, QUALIFYING } from '@Constants/drawDefinitionConstants';
 import { INDIVIDUAL, PAIR } from '@Constants/participantConstants';
-import { DOUBLES, SINGLES } from '@Constants/eventConstants';
 import { MALE, FEMALE, MIXED } from '@Constants/genderConstants';
+import { DOUBLES, SINGLES } from '@Constants/eventConstants';
 import { Participant } from '@Types/tournamentTypes';
 
 export function generateEventParticipants(params) {

@@ -2,7 +2,7 @@ import { checkAndUpdateSchedulingProfile } from '@Mutate/tournaments/schedulingP
 import { checkRequiredParameters } from '@Helpers/parameters/checkRequiredParameters';
 import { deleteEventsNotice } from '@Mutate/notifications/eventNotifications';
 import { deleteDrawNotice } from '@Mutate/notifications/drawNotifications';
-import { addTournamentTimeItem } from '../timeItems/addTimeItem';
+import { addTournamentTimeItem } from '@Mutate/timeItems/addTimeItem';
 import { addNotice, hasTopic } from '@Global/state/globalState';
 
 // constants

@@ -6,15 +6,16 @@
  * INVALID_PARTICIPANT for PAIR in SINGLES, DOUBLES pair modification branches,
  * substitution process code removal, and successful removal with modifiedLineUp.
  */
-import { generateTeamTournament } from '../mutations/participants/team/generateTestTeamTournament';
+import { generateTeamTournament } from '@Tests/mutations/participants/team/generateTestTeamTournament';
 import { getParticipantId } from '@Functions/global/extractors';
 import mocksEngine from '@Assemblies/engines/mock';
 import tournamentEngine from '@Engines/syncEngine';
 import { expect, it, describe } from 'vitest';
 
+// constants
 import { COMPLETED, TO_BE_PLAYED } from '@Constants/matchUpStatusConstants';
-import { POLICY_TYPE_SCORING } from '@Constants/policyConstants';
 import { DOUBLES, SINGLES, TEAM } from '@Constants/matchUpTypes';
+import { POLICY_TYPE_SCORING } from '@Constants/policyConstants';
 import { PAIR } from '@Constants/participantConstants';
 import {
   EXISTING_OUTCOME,

@@ -1,5 +1,5 @@
-import { requireParams } from '@Helpers/parameters/requireParams';
 import { modifyParticipantsNotice } from '@Mutate/notifications/participantNotifications';
+import { requireParams } from '@Helpers/parameters/requireParams';
 
 import penaltyTemplate from '@Assemblies/generators/templates/penaltyTemplate';
 import { TOURNAMENT_RECORD, PENALTY_ID } from '@Constants/attributeConstants';

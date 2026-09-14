@@ -1,8 +1,9 @@
 import { generateDrawTypeAndModifyDrawDefinition } from '@Assemblies/generators/drawDefinitions/generateDrawTypeAndModifyDrawDefinition';
-import { getPositionsPlayedOff } from '@Query/drawDefinition/getPositionsPlayedOff';
 import { newDrawDefinition } from '@Assemblies/generators/drawDefinitions/newDrawDefinition';
+import { getPositionsPlayedOff } from '@Query/drawDefinition/getPositionsPlayedOff';
 import { expect, it } from 'vitest';
 
+// constants and types
 import { FIRST_MATCH_LOSER_CONSOLATION } from '@Constants/drawDefinitionConstants';
 import { DrawDefinition } from '@Types/tournamentTypes';
 

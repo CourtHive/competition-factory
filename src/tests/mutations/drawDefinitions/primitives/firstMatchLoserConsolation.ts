@@ -8,7 +8,7 @@ import { attachPolicies } from '@Mutate/extensions/policies/attachPolicies';
 import { getDrawStructures } from '@Acquire/findStructure';
 import { generateRange } from '@Tools/arrays';
 
-// Constants and Fixtures
+// constants and fixtures
 import { MAIN, FIRST_MATCH_LOSER_CONSOLATION, CONSOLATION } from '@Constants/drawDefinitionConstants';
 import SEEDING_POLICY from '@Fixtures/policies/POLICY_SEEDING_ITF';
 

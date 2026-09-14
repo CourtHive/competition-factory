@@ -1,9 +1,10 @@
-import { modifyEventPublishStatus } from '../events/modifyEventPublishStatus';
+import { modifyEventPublishStatus } from '@Mutate/events/modifyEventPublishStatus';
 import { getEventPublishStatus } from '@Query/event/getEventPublishStatus';
 import { requireParams } from '@Helpers/parameters/requireParams';
 import { definedAttributes } from '@Tools/definedAttributes';
 import { addNotice } from '@Global/state/globalState';
 
+// constants
 import { PUBLISH_EVENT_SEEDING, UNPUBLISH_EVENT_SEEDING } from '@Constants/topicConstants';
 import { TOURNAMENT_RECORD, EVENT } from '@Constants/attributeConstants';
 import { PUBLIC } from '@Constants/timeItemConstants';

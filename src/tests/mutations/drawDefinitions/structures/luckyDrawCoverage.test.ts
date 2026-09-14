@@ -1,14 +1,17 @@
-import { generateAdaptiveStructures } from '@Generators/drawDefinitions/drawTypes/adaptiveDraw';
-import { luckyDrawAdvancement } from '@Mutate/drawDefinitions/luckyDrawAdvancement';
-import { luckyDraw, luckyRoundProfiles } from '@Generators/drawDefinitions/drawTypes/luckyDraw';
 import { getValidLuckyLosersAction } from '@Query/drawDefinition/positionActions/getValidLuckyLoserAction';
+import { generateAdaptiveStructures } from '@Generators/drawDefinitions/drawTypes/adaptiveDraw';
+import { luckyDraw, luckyRoundProfiles } from '@Generators/drawDefinitions/drawTypes/luckyDraw';
 import { getLuckyDrawRoundStatus } from '@Query/drawDefinition/getLuckyDrawRoundStatus';
+import { luckyDrawAdvancement } from '@Mutate/drawDefinitions/luckyDrawAdvancement';
 import { isLucky } from '@Query/drawDefinition/isLucky';
-import tournamentEngine from '@Engines/syncEngine';
 import mocksEngine from '@Assemblies/engines/mock';
+import tournamentEngine from '@Engines/syncEngine';
 import { describe, test, expect } from 'vitest';
 
 // constants
+import { MISSING_DRAW_DEFINITION, INVALID_VALUES } from '@Constants/errorConditionConstants';
+import { LUCKY_PARTICIPANT } from '@Constants/positionActionConstants';
+import { BYE, COMPLETED } from '@Constants/matchUpStatusConstants';
 import {
   FIRST_MATCH_LOSER_CONSOLATION,
   ADAPTIVE,
@@ -19,9 +22,6 @@ import {
   TOP_DOWN,
   CONSOLATION,
 } from '@Constants/drawDefinitionConstants';
-import { LUCKY_PARTICIPANT } from '@Constants/positionActionConstants';
-import { MISSING_DRAW_DEFINITION, INVALID_VALUES } from '@Constants/errorConditionConstants';
-import { BYE, COMPLETED } from '@Constants/matchUpStatusConstants';
 
 // ──────────────────────────────────────────────────────────────────────────────
 // luckyDraw generator — uncovered branches

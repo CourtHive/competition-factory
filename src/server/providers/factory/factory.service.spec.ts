@@ -1,8 +1,8 @@
-import { beforeAll, describe, expect, it } from 'vitest';
+import { UsersModule } from '@Server/providers/users/users.module';
 import { FactoryController } from './factory.controller';
+import { beforeAll, describe, expect, it } from 'vitest';
 import { Test, TestingModule } from '@nestjs/testing';
-import { UsersModule } from '../users/users.module';
-import { AuthModule } from '../../auth/auth.module';
+import { AuthModule } from '@Server/auth/auth.module';
 import { FactoryService } from './factory.service';
 
 describe('AppService', () => {

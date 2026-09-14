@@ -6,8 +6,8 @@
  *   3. Qualifying: completing qualifying matchUp falls through to "qualifiers not auto-directed" (lines 111-117)
  *   4. Qualifying with seeds: exercises seed propagation path (lines 121-136)
  */
-import tournamentEngine from '@Engines/syncEngine';
 import mocksEngine from '@Assemblies/engines/mock';
+import tournamentEngine from '@Engines/syncEngine';
 import { expect, it, describe } from 'vitest';
 
 // constants

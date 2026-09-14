@@ -1,5 +1,5 @@
-import { Penalty, Tournament } from '@Types/tournamentTypes';
 import { ErrorType, MISSING_TOURNAMENT_RECORD } from '@Constants/errorConditionConstants';
+import { Penalty, Tournament } from '@Types/tournamentTypes';
 
 type GetTournamentPenaltiesArgs = {
   tournamentRecord: Tournament;

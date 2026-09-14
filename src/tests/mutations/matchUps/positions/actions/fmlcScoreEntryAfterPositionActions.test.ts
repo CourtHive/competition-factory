@@ -1,8 +1,9 @@
-import tournamentEngine from '@Engines/syncEngine';
+import { replaceWithBye, getOrderedDrawPositionPairs } from '@Tests/mutations/drawDefinitions/testingUtilities';
 import mocksEngine from '@Assemblies/engines/mock';
+import tournamentEngine from '@Engines/syncEngine';
 import { expect, it } from 'vitest';
-import { replaceWithBye, getOrderedDrawPositionPairs } from '../../../drawDefinitions/testingUtilities';
 
+// constants and fixtures
 import POLICY_POSITION_ACTIONS_UNRESTRICTED from '@Fixtures/policies/POLICY_POSITION_ACTIONS_UNRESTRICTED';
 import { FIRST_MATCH_LOSER_CONSOLATION } from '@Constants/drawDefinitionConstants';
 

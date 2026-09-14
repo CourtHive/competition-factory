@@ -1,11 +1,12 @@
-import { getEliminationDrawSize } from '../participants/getEliminationDrawSize';
+import { getEliminationDrawSize } from '@Query/participants/getEliminationDrawSize';
+import { getStageEntries } from '@Query/drawDefinition/getStageEntries';
+import { getSeedsCount } from '@Query/drawDefinition/getSeedsCount';
 import { decorateResult } from '@Functions/global/decorateResult';
-import { getStageEntries } from '../drawDefinition/getStageEntries';
-import { getSeedsCount } from '../drawDefinition/getSeedsCount';
 
-import { PolicyDefinitions } from '@Types/factoryTypes';
-import { ErrorType, MISSING_EVENT } from '@Constants/errorConditionConstants';
+// constants and types
 import { DrawDefinition, Event, Entry, StageTypeUnion } from '@Types/tournamentTypes';
+import { ErrorType, MISSING_EVENT } from '@Constants/errorConditionConstants';
+import { PolicyDefinitions } from '@Types/factoryTypes';
 
 type GetEntriesAndSeedsCountArgs = {
   policyDefinitions: PolicyDefinitions;

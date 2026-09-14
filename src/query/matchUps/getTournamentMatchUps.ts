@@ -1,8 +1,8 @@
-import { applyParticipantPrivacy, getParticipantPrivacyTemplate } from '../participants/participantPrivacy';
-import { hydrateParticipants } from '../participants/hydrateParticipants';
-import { getAppliedPolicies } from '../extensions/getAppliedPolicies';
-import { getContextContent } from '../hierarchical/getContextContent';
-import { getFlightProfile } from '../event/getFlightProfile';
+import { applyParticipantPrivacy, getParticipantPrivacyTemplate } from '@Query/participants/participantPrivacy';
+import { hydrateParticipants } from '@Query/participants/hydrateParticipants';
+import { getAppliedPolicies } from '@Query/extensions/getAppliedPolicies';
+import { getContextContent } from '@Query/hierarchical/getContextContent';
+import { getFlightProfile } from '@Query/event/getFlightProfile';
 
 // Constants and types
 import { MISSING_TOURNAMENT_RECORD } from '@Constants/errorConditionConstants';

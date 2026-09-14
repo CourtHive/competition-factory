@@ -1,13 +1,14 @@
-import structureTemplate from '../../templates/structureTemplate';
-import { generateRange } from '@Tools/arrays';
-import { feedInMatchUps } from '../feedInMatchUps';
+import { feedInMatchUps } from '@Generators/drawDefinitions/feedInMatchUps';
+import structureTemplate from '@Generators/templates/structureTemplate';
 import { treeMatchUps } from './eliminationTree';
+import { generateRange } from '@Tools/arrays';
 
+// constants and types
+import { DrawDefinition, DrawLink, MatchUp, Structure } from '@Types/tournamentTypes';
 import { LOSER, MAIN, TOP_DOWN } from '@Constants/drawDefinitionConstants';
 import { ErrorType } from '@Constants/errorConditionConstants';
-import { SUCCESS } from '@Constants/resultConstants';
-import { DrawDefinition, DrawLink, MatchUp, Structure } from '@Types/tournamentTypes';
 import type { NamingEntry } from '@Types/factoryTypes';
+import { SUCCESS } from '@Constants/resultConstants';
 
 // Declared in @Types/factoryTypes so the PUBLIC request shape that uses it
 // (WithPlayoffsArgs.finishingPositionNaming) can reference a public type.

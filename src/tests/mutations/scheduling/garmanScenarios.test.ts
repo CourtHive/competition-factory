@@ -1,12 +1,13 @@
-import { hasSchedule } from '@Query/matchUp/hasSchedule';
+import garman from '@Assemblies/generators/scheduling/garman/garman';
 import { getParticipantId } from '@Functions/global/extractors';
+import { hasSchedule } from '@Query/matchUp/hasSchedule';
 import { intersection, unique } from '@Tools/arrays';
 import mocksEngine from '@Assemblies/engines/mock';
-import { extractTime } from '@Tools/dateTime';
 import tournamentEngine from '@Engines/syncEngine';
-import garman from '@Assemblies/generators/scheduling/garman/garman';
+import { extractTime } from '@Tools/dateTime';
 import { expect, it } from 'vitest';
 
+// constants and fixtures
 import POLICY_SCHEDULING_DEFAULT from '@Fixtures/policies/POLICY_SCHEDULING_DEFAULT';
 import { BYE } from '@Constants/matchUpStatusConstants';
 

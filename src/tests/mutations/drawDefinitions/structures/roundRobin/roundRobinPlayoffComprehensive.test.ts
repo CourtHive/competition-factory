@@ -1,15 +1,15 @@
 import { getPositionAssignments } from '@Query/drawDefinition/positionsGetter';
 import { firstClassOrExtension } from '@Acquire/firstClassOrExtension';
-import tournamentEngine from '@Engines/syncEngine';
 import mocksEngine from '@Assemblies/engines/mock';
+import tournamentEngine from '@Engines/syncEngine';
 import { expect, test, describe } from 'vitest';
 
-// constants
+// constants and fixtures
 import { FORMAT_STANDARD } from '@Fixtures/scoring/matchUpFormats';
 import { COMPLETED } from '@Constants/matchUpStatusConstants';
 import { TALLY } from '@Constants/extensionConstants';
-import { SINGLES } from '@Constants/eventConstants';
 import { GEM_SCORE } from '@Constants/tallyConstants';
+import { SINGLES } from '@Constants/eventConstants';
 import {
   AD_HOC,
   COMPASS,

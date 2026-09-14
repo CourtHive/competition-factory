@@ -1,5 +1,6 @@
 import { participantScaleItem } from './participantScaleItem';
 
+// constants
 import { SEEDING } from '@Constants/scaleConstants';
 
 export function getSeedValue({ participant, drawId, event }) {

@@ -1,9 +1,11 @@
-import { removeIndividualParticipantIds } from './removeIndividualParticipantIds';
-import { decorateResult } from '@Functions/global/decorateResult';
-import { addIndividualParticipantIds } from './addIndividualParticipantIds';
-import { getTopics } from '@Global/state/globalState';
 import { modifyParticipantsNotice } from '@Mutate/notifications/participantNotifications';
+import { removeIndividualParticipantIds } from './removeIndividualParticipantIds';
+import { addIndividualParticipantIds } from './addIndividualParticipantIds';
+import { decorateResult } from '@Functions/global/decorateResult';
+import { getTopics } from '@Global/state/globalState';
 
+// constants
+import { GROUP, INDIVIDUAL, TEAM } from '@Constants/participantConstants';
 import { MODIFY_PARTICIPANTS } from '@Constants/topicConstants';
 import {
   INVALID_PARTICIPANT_IDS,
@@ -12,7 +14,6 @@ import {
   MISSING_VALUE,
   PARTICIPANT_NOT_FOUND,
 } from '@Constants/errorConditionConstants';
-import { GROUP, INDIVIDUAL, TEAM } from '@Constants/participantConstants';
 
 /**
  *

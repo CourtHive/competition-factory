@@ -1,6 +1,7 @@
 import { checkErrorAtomicity, checkInvariants, getDrawMatchUps, observeMutation } from './transitions';
 import type { PropertyFailure } from './transitions';
 
+// constants
 import { TO_BE_PLAYED } from '@Constants/matchUpStatusConstants';
 
 /**

@@ -1,11 +1,12 @@
 import tournamentEngine from '@Engines/syncEngine';
 import scaleEngine from '@Engines/scaleEngine';
-import { mocksEngine } from '../../..';
 import { describe, expect, it } from 'vitest';
+import { mocksEngine } from '../../..';
 
+// constants
+import { SINGLE_ELIMINATION } from '@Constants/drawDefinitionConstants';
 import { POLICY_TYPE_RANKING_POINTS } from '@Constants/policyConstants';
 import { SINGLES } from '@Constants/eventConstants';
-import { SINGLE_ELIMINATION } from '@Constants/drawDefinitionConstants';
 import { RANKING } from '@Constants/scaleConstants';
 
 // Helper to set ranking scaleItems on all participants

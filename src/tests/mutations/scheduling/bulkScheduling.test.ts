@@ -1,4 +1,4 @@
-import { visualizeScheduledMatchUps } from '../../testHarness/testUtilities/visualizeScheduledMatchUps';
+import { visualizeScheduledMatchUps } from '@Tests/testHarness/testUtilities/visualizeScheduledMatchUps';
 import { getStructureRoundProfile } from '@Query/structure/getStructureRoundProfile';
 import { getRoundMatchUps } from '@Query/matchUps/getRoundMatchUps';
 import { getMatchUpIds } from '@Functions/global/extractors';
@@ -6,6 +6,7 @@ import mocksEngine from '@Assemblies/engines/mock';
 import tournamentEngine from '@Engines/syncEngine';
 import { expect, it, test } from 'vitest';
 
+// constants and fixtures
 import POLICY_SCHEDULING_DEFAULT from '@Fixtures/policies/POLICY_SCHEDULING_DEFAULT';
 import SEEDING_ITF_POLICY from '@Fixtures/policies/POLICY_SEEDING_ITF';
 import { SINGLES_EVENT } from '@Constants/eventConstants';

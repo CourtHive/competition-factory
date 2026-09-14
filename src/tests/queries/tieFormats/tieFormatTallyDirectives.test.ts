@@ -1,5 +1,5 @@
-import tournamentEngine from '@Engines/syncEngine';
 import tournamentRecord from './tieFormatTallyDirectives.tods.json';
+import tournamentEngine from '@Engines/syncEngine';
 import { expect, it } from 'vitest';
 
 it('can can determine scorecard winner using tallyDirectives', () => {

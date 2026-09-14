@@ -1,12 +1,13 @@
-import { getOrderedDrawPositionPairs } from '../../drawDefinitions/testingUtilities';
+import { getOrderedDrawPositionPairs } from '@Tests/mutations/drawDefinitions/testingUtilities';
 import { getRoundMatchUps } from '@Query/matchUps/getRoundMatchUps';
 import { setSubscriptions } from '@Global/state/globalState';
 import mocksEngine from '@Assemblies/engines/mock';
 import tournamentEngine from '@Engines/syncEngine';
 import { expect, it, test } from 'vitest';
 
-import { MODIFY_MATCHUP } from '@Constants/topicConstants';
+// constants
 import { BYE, DOUBLE_WALKOVER, WALKOVER } from '@Constants/matchUpStatusConstants';
+import { MODIFY_MATCHUP } from '@Constants/topicConstants';
 
 const getTarget = ({ matchUps, roundNumber, roundPosition }) =>
   matchUps.find((matchUp) => matchUp.roundNumber === roundNumber && matchUp.roundPosition === roundPosition);

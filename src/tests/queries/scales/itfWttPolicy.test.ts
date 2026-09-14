@@ -2,9 +2,10 @@ import { POLICY_RANKING_POINTS_ITF_WTT } from '@Fixtures/policies/POLICY_RANKING
 import { getAwardProfile } from '@Query/scales/getAwardProfile';
 import { describe, expect, it } from 'vitest';
 
+// constants
+import { QUALIFYING, SINGLE_ELIMINATION } from '@Constants/drawDefinitionConstants';
 import { POLICY_TYPE_RANKING_POINTS } from '@Constants/policyConstants';
 import { SINGLES, DOUBLES } from '@Constants/eventConstants';
-import { QUALIFYING, SINGLE_ELIMINATION } from '@Constants/drawDefinitionConstants';
 
 const policyDefinitions = POLICY_RANKING_POINTS_ITF_WTT;
 const policy = policyDefinitions[POLICY_TYPE_RANKING_POINTS];

@@ -1,11 +1,12 @@
 import { generateDrawTypeAndModifyDrawDefinition } from '@Assemblies/generators/drawDefinitions/generateDrawTypeAndModifyDrawDefinition';
 import { treeMatchUps } from '@Assemblies/generators/drawDefinitions/drawTypes/eliminationTree';
-import { validDrawPositions } from '@Validators/validDrawPositions';
-import { DrawDefinition } from '@Types/tournamentTypes';
-import { structureSort } from '@Functions/sorters/structureSort';
 import { newDrawDefinition } from '@Assemblies/generators/drawDefinitions/newDrawDefinition';
+import { validDrawPositions } from '@Validators/validDrawPositions';
+import { structureSort } from '@Functions/sorters/structureSort';
+import { DrawDefinition } from '@Types/tournamentTypes';
 import { expect, it } from 'vitest';
 
+// constants
 import { ERROR } from '@Constants/resultConstants';
 import {
   MAIN,

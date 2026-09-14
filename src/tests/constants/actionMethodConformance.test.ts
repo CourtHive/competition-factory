@@ -21,12 +21,13 @@
  * do not: nothing in the ecosystem branches on `action.method` — consumers forward
  * it verbatim, and branching keys off `action.type`, which was always exported.
  */
-import { describe, expect, it } from 'vitest';
-import ts from 'typescript';
 import { readFileSync, readdirSync, statSync } from 'node:fs';
+import { describe, expect, it } from 'vitest';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import ts from 'typescript';
 
+// constants
 import { actionMethodConstants } from '@Constants/actionMethodConstants';
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '../../..');

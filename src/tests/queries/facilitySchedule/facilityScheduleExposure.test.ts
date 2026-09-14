@@ -1,6 +1,6 @@
 import * as queryGovernor from '@Assemblies/governors/queryGovernor';
-import tournamentEngine from '@Engines/syncEngine';
 import mocksEngine from '@Assemblies/engines/mock';
+import tournamentEngine from '@Engines/syncEngine';
 import { expect, it, describe } from 'vitest';
 
 // The transforms must be reachable both on the engine (client: getScheduleProjection injects the

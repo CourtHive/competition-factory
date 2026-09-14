@@ -2,10 +2,10 @@ import { calculateMatchUpMargin } from '@Query/matchUp/calculateMatchUpMargin';
 import { isLuckyBasedDraw } from '@Query/drawDefinition/isLuckyBasedDraw';
 import { getRoundMatchUps } from '@Query/matchUps/getRoundMatchUps';
 import { isLucky } from '@Query/drawDefinition/isLucky';
-import { findStructure } from '@Acquire/findStructure';
 import { findExtension } from '@Acquire/findExtension';
+import { findStructure } from '@Acquire/findStructure';
 
-// constants
+// constants and types
 import { ErrorType, INVALID_VALUES, MISSING_DRAW_DEFINITION } from '@Constants/errorConditionConstants';
 import { BYE, completedMatchUpStatuses } from '@Constants/matchUpStatusConstants';
 import { DrawDefinition, Tournament } from '@Types/tournamentTypes';

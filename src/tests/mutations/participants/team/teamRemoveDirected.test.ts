@@ -1,12 +1,13 @@
-import { toBePlayed } from '@Fixtures/scoring/outcomes/toBePlayed';
 import { generateTeamTournament } from './generateTestTeamTournament';
+import { toBePlayed } from '@Fixtures/scoring/outcomes/toBePlayed';
 import { setDevContext } from '@Global/state/globalState';
 import mocksEngine from '@Assemblies/engines/mock';
 import tournamentEngine from '@Engines/syncEngine';
 import { expect, it } from 'vitest';
 
-import { SINGLES, TEAM } from '@Constants/matchUpTypes';
+// constants
 import { COMPLETED, IN_PROGRESS } from '@Constants/matchUpStatusConstants';
+import { SINGLES, TEAM } from '@Constants/matchUpTypes';
 
 const getMatchUp = (id, inContext?) => {
   const {

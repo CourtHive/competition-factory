@@ -1,10 +1,11 @@
+import { addSchedulingProfileRound } from '@Mutate/matchUps/schedule/addSchedulingProfileRound';
 import { getContainedStructures } from '@Query/drawDefinition/getContainedStructures';
 import { allTournamentMatchUps } from '@Query/matchUps/getAllTournamentMatchUps';
-import { addSchedulingProfileRound } from '@Mutate/matchUps/schedule/addSchedulingProfileRound';
 import { intersection, unique } from '@Tools/arrays';
 
-import { Tournament } from '@Types/tournamentTypes';
+// constants and types
 import { ErrorType, INVALID_VALUES } from '@Constants/errorConditionConstants';
+import { Tournament } from '@Types/tournamentTypes';
 
 type GenerateSchedulingProfileArgs = {
   tournamentRecord: Tournament;

@@ -1,3 +1,5 @@
+import { sanctioningEngine } from '@Assemblies/engines/sanctioning';
+import { beforeEach, describe, expect, it } from 'vitest';
 import {
   setSanctioningMethods,
   getSanctioningMethods,
@@ -5,14 +7,12 @@ import {
   setSanctioningRecord,
   resetSanctioningState,
 } from '@Assemblies/engines/sanctioning/sanctioningState';
-import { sanctioningEngine } from '@Assemblies/engines/sanctioning';
-import { beforeEach, describe, expect, it } from 'vitest';
 
-// Constants
+// constants
 import { DRAFT, SUBMITTED, WITHDRAWN } from '@Constants/sanctioningConstants';
 import { INVALID_VALUES } from '@Constants/errorConditionConstants';
 
-// Types
+// types
 import type { EventProposal, TournamentProposal, Applicant } from '@Types/sanctioningTypes';
 
 const testApplicant: Applicant = {

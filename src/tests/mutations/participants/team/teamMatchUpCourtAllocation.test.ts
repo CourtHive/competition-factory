@@ -7,8 +7,8 @@ import { expect, test } from 'vitest';
 
 // constants
 import { FACTORY } from '@Constants/extensionConstants';
-import { TEAM_MATCHUP } from '@Constants/matchUpTypes';
 import { TEAM_EVENT } from '@Constants/eventConstants';
+import { TEAM_MATCHUP } from '@Constants/matchUpTypes';
 
 test('it can allocate courts to a TEAM matchUp', () => {
   const { tournamentRecord } = mocksEngine.generateTournamentRecord({

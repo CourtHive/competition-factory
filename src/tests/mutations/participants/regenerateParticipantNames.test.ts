@@ -3,6 +3,7 @@ import tournamentEngine from '@Engines/syncEngine';
 import { generateRange } from '@Tools/arrays';
 import { expect, it } from 'vitest';
 
+// constants and fixtures
 import { INDIVIDUAL, PAIR, TEAM_PARTICIPANT } from '@Constants/participantConstants';
 import { DOUBLES_EVENT, TEAM_EVENT } from '@Constants/eventConstants';
 import names from '@Fixtures/data/names.json';

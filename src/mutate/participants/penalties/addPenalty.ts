@@ -1,8 +1,8 @@
+import { modifyParticipantsNotice } from '@Mutate/notifications/participantNotifications';
 import { getParticipants } from '@Query/participants/getParticipants';
 import { requireParams } from '@Helpers/parameters/requireParams';
 import { getParticipantId } from '@Functions/global/extractors';
 import { addExtension } from '@Mutate/extensions/addExtension';
-import { modifyParticipantsNotice } from '@Mutate/notifications/participantNotifications';
 
 // constants and types
 import { MISSING_PARTICIPANT_ID, PARTICIPANT_NOT_FOUND, ErrorType } from '@Constants/errorConditionConstants';

@@ -1,6 +1,6 @@
 import { addPositionActionTelemetry } from '@Mutate/drawDefinitions/positionGovernor/addPositionActionTelemetry';
-import { modifyPositionAssignmentsNotice } from '@Mutate/notifications/drawNotifications';
 import { getStructureDrawPositionProfiles } from '@Query/structure/getStructureDrawPositionProfiles';
+import { modifyPositionAssignmentsNotice } from '@Mutate/notifications/drawNotifications';
 import { getPositionAssignments } from '@Query/drawDefinition/positionsGetter';
 import { getAppliedPolicies } from '@Query/extensions/getAppliedPolicies';
 import { decorateResult } from '@Functions/global/decorateResult';

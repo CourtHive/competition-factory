@@ -1,6 +1,7 @@
-import { validTimePeriod } from './time';
 import { dateValidation, timeValidation } from './regex';
+import { validTimePeriod } from './time';
 
+// constants
 import {
   INVALID_DATE,
   INVALID_TIME,

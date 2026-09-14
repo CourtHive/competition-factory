@@ -1,13 +1,14 @@
-import { placeQualifier } from '@Mutate/drawDefinitions/matchUpGovernor/placeQualifier';
 import { removeQualifier } from '@Mutate/drawDefinitions/matchUpGovernor/removeQualifier';
+import { placeQualifier } from '@Mutate/drawDefinitions/matchUpGovernor/placeQualifier';
 import { toBePlayed } from '@Fixtures/scoring/outcomes/toBePlayed';
-import tournamentEngine from '@Engines/syncEngine';
 import mocksEngine from '@Assemblies/engines/mock';
+import tournamentEngine from '@Engines/syncEngine';
 import { expect, it, describe } from 'vitest';
 
+// constants
 import { STRUCTURE_NOT_FOUND } from '@Constants/errorConditionConstants';
-import { POLICY_TYPE_PROGRESSION } from '@Constants/policyConstants';
 import { MAIN, QUALIFYING } from '@Constants/drawDefinitionConstants';
+import { POLICY_TYPE_PROGRESSION } from '@Constants/policyConstants';
 import { COMPLETED } from '@Constants/matchUpStatusConstants';
 
 // ---------------------------------------------------------------------------

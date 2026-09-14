@@ -1,8 +1,9 @@
 import { resolveScaleValueNumber, hasScaleValueNumber } from './resolveScaleValue';
 import { getDetailsWTN } from './getDetailsWTN';
 
-import { WTN } from '@Constants/ratingConstants';
+// constants and types
 import { HydratedMatchUp } from '@Types/hydrated';
+import { WTN } from '@Constants/ratingConstants';
 
 type GetAvgWTNArgs = {
   matchUps: HydratedMatchUp[];

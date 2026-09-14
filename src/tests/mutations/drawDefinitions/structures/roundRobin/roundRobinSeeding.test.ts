@@ -1,9 +1,10 @@
 import { getStructureSeedAssignments } from '@Query/structure/getStructureSeedAssignments';
-import { chunkArray, unique } from '@Tools/arrays';
 import mocksEngine from '@Assemblies/engines/mock';
 import tournamentEngine from '@Engines/syncEngine';
+import { chunkArray, unique } from '@Tools/arrays';
 import { it, expect } from 'vitest';
 
+// constants and fixtures
 import POLICY_SEEDING_DEFAULT from '@Fixtures/policies/POLICY_SEEDING_DEFAULT';
 import { ROUND_ROBIN } from '@Constants/drawDefinitionConstants';
 

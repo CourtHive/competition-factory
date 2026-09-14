@@ -1,5 +1,5 @@
-import { generateTournamentRecord } from '../../../data/fileSystem/generateTournamentRecord';
-import { removeTournamentRecords } from '../../../data/fileSystem/removeTournamentRecords';
+import { generateTournamentRecord } from '@Server/data/fileSystem/generateTournamentRecord';
+import { removeTournamentRecords } from '@Server/data/fileSystem/removeTournamentRecords';
 import { queryTournamentRecords } from './queryTournamentRecords';
 import { describe, expect, it } from 'vitest';
 

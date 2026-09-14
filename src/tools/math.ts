@@ -1,5 +1,5 @@
-import { numericSort } from './sorting';
 import { ensureInt } from './ensureInt';
+import { numericSort } from './sorting';
 import { isString } from './objects';
 
 export function isPowerOf2(n?) {

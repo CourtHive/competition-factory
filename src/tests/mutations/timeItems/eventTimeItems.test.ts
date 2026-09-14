@@ -2,9 +2,10 @@ import mocksEngine from '@Assemblies/engines/mock';
 import tournamentEngine from '@Engines/syncEngine';
 import { expect, it } from 'vitest';
 
-import { SINGLES } from '@Constants/eventConstants';
+// constants
 import { INVALID_TIME_ITEM, MISSING_TIME_ITEM, NOT_FOUND } from '@Constants/errorConditionConstants';
 import { RETRIEVAL } from '@Constants/timeItemConstants';
+import { SINGLES } from '@Constants/eventConstants';
 
 it('can add and read timeItems from events', () => {
   const { tournamentRecord } = mocksEngine.generateTournamentRecord({

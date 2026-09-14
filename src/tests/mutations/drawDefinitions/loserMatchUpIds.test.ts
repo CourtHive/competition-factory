@@ -5,6 +5,7 @@ import mocksEngine from '@Assemblies/engines/mock';
 import { instanceCount } from '@Tools/arrays';
 import { expect, test } from 'vitest';
 
+// constants
 import { FEED_IN_CHAMPIONSHIP_TO_R16, MAIN } from '@Constants/drawDefinitionConstants';
 import { TEAM_EVENT } from '@Constants/eventConstants';
 

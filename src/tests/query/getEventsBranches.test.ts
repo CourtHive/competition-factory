@@ -1,7 +1,8 @@
-import tournamentEngine from '@Engines/syncEngine';
 import mocksEngine from '@Assemblies/engines/mock';
+import tournamentEngine from '@Engines/syncEngine';
 import { expect, test } from 'vitest';
 
+// constants
 import { DOUBLES, SINGLES } from '@Constants/eventConstants';
 
 test('getEvents with no tournamentRecord returns error', () => {

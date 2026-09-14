@@ -1,4 +1,4 @@
-import { getPositionAssignments as positionAssignments } from '../drawDefinition/positionsGetter';
+import { getPositionAssignments as positionAssignments } from '@Query/drawDefinition/positionsGetter';
 
 // constants and types
 import { DrawDefinition, Structure, Tournament } from '@Types/tournamentTypes';

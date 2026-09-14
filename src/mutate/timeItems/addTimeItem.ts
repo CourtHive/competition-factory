@@ -1,11 +1,11 @@
+import { modifyParticipantsNotice } from '@Mutate/notifications/participantNotifications';
 import { findTournamentParticipant } from '@Acquire/findTournamentParticipant';
 import { deriveElement } from '@Query/base/deriveElement';
 import { getTimeItemValues } from './getTimeItemValues';
 import { addNotice } from '@Global/state/globalState';
-import { modifyParticipantsNotice } from '@Mutate/notifications/participantNotifications';
+import { getTimeItem } from '@Query/base/timeItems';
 import { isValidDateString } from '@Tools/dateTime';
 import { isObject, isString } from '@Tools/objects';
-import { getTimeItem } from '@Query/base/timeItems';
 
 // constants and types
 import { DrawDefinition, Event, TimeItem, Tournament } from '@Types/tournamentTypes';

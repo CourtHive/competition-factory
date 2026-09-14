@@ -2,8 +2,8 @@
  * Bulk branch-coverage tests (batch 5) for 14 files with uncovered branches.
  * Each describe block targets specific uncovered conditional paths.
  */
-import { getPlayoffStructures, getEventStructures, getTournamentStructures } from '@Query/structure/structureGetter';
 import { setTournamentName, setTournamentNotes, setTournamentCategories } from '@Mutate/tournaments/tournamentDetails';
+import { getPlayoffStructures, getEventStructures, getTournamentStructures } from '@Query/structure/structureGetter';
 import { modifyEventMatchUpFormatTiming } from '@Mutate/extensions/events/modifyEventMatchUpFormatTiming';
 import { positionQualifiers, getQualifiersData } from '@Mutate/matchUps/drawPositions/positionQualifiers';
 import { publishEventSeeding, unPublishEventSeeding } from '@Mutate/publishing/eventSeeding';
@@ -11,8 +11,8 @@ import { getMatchUpParticipantIds } from '@Query/matchUp/getMatchUpParticipantId
 import { resolveFromParameters } from '@Helpers/parameters/resolveFromParameters';
 import { getProfileRounds } from '@Query/matchUps/scheduling/getProfileRounds';
 import { resetTieFormat } from '@Mutate/tieFormat/resetTieFormat';
-import tournamentEngine from '@Engines/syncEngine';
 import mocksEngine from '@Assemblies/engines/mock';
+import tournamentEngine from '@Engines/syncEngine';
 import { expect, it, describe } from 'vitest';
 import {
   structureActions,
@@ -20,11 +20,11 @@ import {
   allPlayoffPositionsFilled,
 } from '@Query/drawDefinition/structureActions';
 
-// constants
+// constants and fixtures
 import { MAIN, CONSOLATION } from '@Constants/drawDefinitionConstants';
-import { FORMAT_STANDARD } from '@Fixtures/scoring/matchUpFormats';
-import { INDIVIDUAL, PAIR } from '@Constants/participantConstants';
 import { MATCHUP, STRUCTURE } from '@Constants/attributeConstants';
+import { INDIVIDUAL, PAIR } from '@Constants/participantConstants';
+import { FORMAT_STANDARD } from '@Fixtures/scoring/matchUpFormats';
 import {
   INVALID_MATCHUP,
   INVALID_STAGE,

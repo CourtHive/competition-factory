@@ -1,11 +1,12 @@
+import { addMinutesToTimeString, extractTime } from '@Tools/dateTime';
 import { processNextMatchUps } from './processNextMatchUps';
 import { ensureInt } from '@Tools/ensureInt';
 import {
   addParticipantPotentialRecovery,
   checkParticipantProfileInitialization,
 } from './checkParticipantProfileInitialization';
-import { addMinutesToTimeString, extractTime } from '@Tools/dateTime';
 
+// types
 import { HydratedMatchUp } from '@Types/hydrated';
 
 type UpdateTimeAfterRecoveryArgs = {

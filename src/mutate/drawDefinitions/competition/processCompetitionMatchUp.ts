@@ -10,12 +10,12 @@ import { expectedScore } from '@Generators/scales/competition/expectedScore';
 // Mutate
 import { setFirstClassOrExtension } from '@Mutate/extensions/setFirstClassOrExtension';
 
-// Constants
+// constants
 import { MISSING_DRAW_DEFINITION, MISSING_MATCHUP } from '@Constants/errorConditionConstants';
 import { COMPETITION_STATE } from '@Constants/extensionConstants';
 import { SUCCESS } from '@Constants/resultConstants';
 
-// Types
+// types
 import type { DrawDefinition, Event, MatchUp, Tournament } from '@Types/tournamentTypes';
 import type { ResultType } from '@Types/factoryTypes';
 

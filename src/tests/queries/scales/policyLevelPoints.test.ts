@@ -7,8 +7,8 @@
  * for main-draw-only tournaments.
  */
 import { expect, it, describe, beforeEach } from 'vitest';
-import tournamentEngine from '@Engines/syncEngine';
 import mocksEngine from '@Assemblies/engines/mock';
+import tournamentEngine from '@Engines/syncEngine';
 
 // constants and fixtures
 import { POLICY_RANKING_POINTS_USTA_JUNIOR } from '@Tests/fixtures/policies/POLICY_RANKING_POINTS_USTA_JUNIOR';

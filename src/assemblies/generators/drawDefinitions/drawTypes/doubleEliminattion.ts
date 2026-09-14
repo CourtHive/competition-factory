@@ -1,9 +1,10 @@
-import { doubleEliminationLinks } from '../links/doubleEliminationLinks';
-import { structureTemplate } from '../../templates/structureTemplate';
+import { doubleEliminationLinks } from '@Generators/drawDefinitions/links/doubleEliminationLinks';
+import { feedInMatchUps } from '@Generators/drawDefinitions/feedInMatchUps';
+import { structureTemplate } from '@Generators/templates/structureTemplate';
 import { constantToString } from '@Tools/strings';
-import { feedInMatchUps } from '../feedInMatchUps';
 import { treeMatchUps } from './eliminationTree';
 
+// constants and types
 import { MAIN, BACKDRAW, DECIDER, CONSOLATION, PLAY_OFF } from '@Constants/drawDefinitionConstants';
 import { SUCCESS } from '@Constants/resultConstants';
 import { Structure } from '@Types/tournamentTypes';

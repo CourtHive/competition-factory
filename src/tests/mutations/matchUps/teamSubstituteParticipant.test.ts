@@ -1,18 +1,18 @@
+import { generateTeamTournament } from '@Tests/mutations/participants/team/generateTestTeamTournament';
 import { removeLineUpSubstitutions } from '@Mutate/drawDefinitions/removeLineUpSubstitutions';
 import { firstClassOrExtension } from '@Acquire/firstClassOrExtension';
-import { generateTeamTournament } from '../participants/team/generateTestTeamTournament';
 import { checkScoreHasValue } from '@Query/matchUp/checkScoreHasValue';
 import { validateLineUp } from '@Validators/validateTeamLineUp';
-import tournamentEngine from '@Engines/syncEngine';
 import mocksEngine from '@Assemblies/engines/mock';
+import tournamentEngine from '@Engines/syncEngine';
 import { intersection } from '@Tools/arrays';
 import { expect, it } from 'vitest';
 
-// constants
+// constants and fixtures
 import POLICY_MATCHUP_ACTIONS_DEFAULT from '@Fixtures/policies/POLICY_MATCHUP_ACTIONS_DEFAULT';
 import { DOUBLES_MATCHUP, SINGLES_MATCHUP, TEAM_MATCHUP } from '@Constants/matchUpTypes';
-import { POLICY_TYPE_MATCHUP_ACTIONS } from '@Constants/policyConstants';
 import { PAIR, TEAM_PARTICIPANT } from '@Constants/participantConstants';
+import { POLICY_TYPE_MATCHUP_ACTIONS } from '@Constants/policyConstants';
 import { ASSIGN_PARTICIPANT } from '@Constants/positionActionConstants';
 import { IN_PROGRESS } from '@Constants/matchUpStatusConstants';
 import { LINEUPS } from '@Constants/extensionConstants';

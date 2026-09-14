@@ -1,3 +1,7 @@
+import { setSchemaWriteMode } from '@Global/state/globalState';
+import mocksEngine from '@Assemblies/engines/mock';
+import tournamentEngine from '@Engines/syncEngine';
+import { afterEach, expect, it } from 'vitest';
 import {
   buildSideExitProvenance,
   isPropagatedExit,
@@ -6,10 +10,6 @@ import {
   setSideExitProvenance,
   exitOutcomeCode,
 } from '@Mutate/matchUps/matchUpStatus/sideExitProvenance';
-import { setSchemaWriteMode } from '@Global/state/globalState';
-import mocksEngine from '@Assemblies/engines/mock';
-import tournamentEngine from '@Engines/syncEngine';
-import { afterEach, expect, it } from 'vitest';
 
 // constants
 import { BYE, DEFAULTED, DOUBLE_DEFAULT, DOUBLE_WALKOVER, RETIRED, WALKOVER } from '@Constants/matchUpStatusConstants';

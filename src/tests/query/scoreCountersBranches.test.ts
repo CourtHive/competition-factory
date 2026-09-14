@@ -1,6 +1,7 @@
 import { countSets, countGames, countPoints } from '@Query/matchUps/roundRobinTally/scoreCounters';
 import { expect, test } from 'vitest';
 
+// constants
 import { DEFAULTED, RETIRED, WALKOVER } from '@Constants/matchUpStatusConstants';
 
 test('countSets with DEFAULTED and setsCreditForDefaults', () => {

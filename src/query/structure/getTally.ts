@@ -1,6 +1,6 @@
 import { firstClassOrExtension } from '@Acquire/firstClassOrExtension';
 
-// constants and types
+// constants
 import { MISSING_POSITION_ASSIGNMENTS, NOT_FOUND } from '@Constants/errorConditionConstants';
 import { TALLY } from '@Constants/extensionConstants';
 

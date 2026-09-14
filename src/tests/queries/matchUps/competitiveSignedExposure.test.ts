@@ -5,11 +5,11 @@ import { describe, expect, it } from 'vitest';
 
 // constants and fixtures
 import { ANCHOR, COMPETITIVE, DECISIVE, DOWN, EVEN, ROUTINE, STRETCH, UP } from '@Constants/statsConstants';
+import POLICY_COMPETITIVE_BANDS_DEFAULT from '@Fixtures/policies/POLICY_COMPETITIVE_BANDS_DEFAULT';
 import { INVALID_POLICY_DEFINITION, MISSING_VALUE } from '@Constants/errorConditionConstants';
 import { POLICY_TYPE_COMPETITIVE_BANDS } from '@Constants/policyConstants';
 import { DOUBLES, SINGLES } from '@Constants/matchUpTypes';
 import { UTR, WTN } from '@Constants/ratingConstants';
-import POLICY_COMPETITIVE_BANDS_DEFAULT from '@Fixtures/policies/POLICY_COMPETITIVE_BANDS_DEFAULT';
 
 const DEFAULT_POLICY = POLICY_COMPETITIVE_BANDS_DEFAULT;
 const REALIZED_ONLY_POLICY = {

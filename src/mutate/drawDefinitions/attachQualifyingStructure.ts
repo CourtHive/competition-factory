@@ -11,6 +11,7 @@ import { DRAW_DEFINITION, OBJECT, OF_TYPE, STRUCTURE, TOURNAMENT_RECORD } from '
 import { DrawDefinition, DrawLink, Structure } from '@Types/tournamentTypes';
 import { MISSING_TARGET_LINK } from '@Constants/errorConditionConstants';
 
+// constants
 import { ERROR, SUCCESS } from '@Constants/resultConstants';
 
 export function attachQualifyingStructure(params) {

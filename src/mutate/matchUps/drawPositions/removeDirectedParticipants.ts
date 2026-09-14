@@ -1,12 +1,12 @@
 import { includesMatchUpStatuses } from '@Mutate/drawDefinitions/matchUpGovernor/includesMatchUpStatuses';
 import { removeSubsequentRoundsParticipant } from './removeSubsequentRoundsParticipant';
-import { removeOnwardLoserPlacements } from './removeOnwardLoserPlacements';
-import { releaseAdvancedDrawPosition } from './releaseAdvancedDrawPosition';
 import { structureAssignedDrawPositions } from '@Query/drawDefinition/positionsGetter';
 import { updateTieMatchUpScore } from '@Mutate/matchUps/score/updateTieMatchUpScore';
 import { getAllStructureMatchUps } from '@Query/matchUps/getAllStructureMatchUps';
 import { modifyMatchUpScore } from '@Mutate/matchUps/score/modifyMatchUpScore';
 import { modifyMatchUpNotice } from '@Mutate/notifications/drawNotifications';
+import { releaseAdvancedDrawPosition } from './releaseAdvancedDrawPosition';
+import { removeOnwardLoserPlacements } from './removeOnwardLoserPlacements';
 import { decorateResult } from '@Functions/global/decorateResult';
 import { pushGlobalLog } from '@Functions/global/globalLog';
 import { isAdHoc } from '@Query/drawDefinition/isAdHoc';
@@ -21,11 +21,11 @@ import {
 // constants and types
 import { ErrorType, MISSING_DRAW_POSITIONS, STRUCTURE_NOT_FOUND } from '@Constants/errorConditionConstants';
 import { DrawDefinition, DrawLink, Event, Tournament } from '@Types/tournamentTypes';
-import { FIRST_MATCHUP } from '@Constants/drawDefinitionConstants';
 import { DOUBLE_WALKOVER, TO_BE_PLAYED } from '@Constants/matchUpStatusConstants';
+import { FIRST_MATCHUP } from '@Constants/drawDefinitionConstants';
 import { SUCCESS } from '@Constants/resultConstants';
-import { HydratedMatchUp } from '@Types/hydrated';
 import { MatchUpsMap } from '@Types/factoryTypes';
+import { HydratedMatchUp } from '@Types/hydrated';
 
 export function removeDirectedParticipants(params): {
   tieMatchUpResult?: any;

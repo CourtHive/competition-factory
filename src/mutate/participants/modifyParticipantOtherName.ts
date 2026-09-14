@@ -1,7 +1,7 @@
+import { modifyParticipantsNotice } from '@Mutate/notifications/participantNotifications';
 import { findTournamentParticipant } from '@Acquire/findTournamentParticipant';
 import { requireParams } from '@Helpers/parameters/requireParams';
 import { getTopics } from '@Global/state/globalState';
-import { modifyParticipantsNotice } from '@Mutate/notifications/participantNotifications';
 
 // constants
 import { TOURNAMENT_RECORD, PARTICIPANT_ID } from '@Constants/attributeConstants';

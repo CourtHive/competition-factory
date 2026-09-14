@@ -1,10 +1,10 @@
-import { checkRequiredParameters } from '@Helpers/parameters/checkRequiredParameters';
 import { structureAssignedDrawPositions } from '@Query/drawDefinition/positionsGetter';
+import { checkRequiredParameters } from '@Helpers/parameters/checkRequiredParameters';
 import { decorateResult } from '@Functions/global/decorateResult';
 import { DrawDefinition } from '@Types/tournamentTypes';
 import { generateRange } from '@Tools/arrays';
 
-// Constants
+// constants
 import { MISSING_MAIN_STRUCTURE } from '@Constants/errorConditionConstants';
 import { DRAW_DEFINITION } from '@Constants/attributeConstants';
 import { MAIN } from '@Constants/drawDefinitionConstants';

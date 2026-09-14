@@ -1,11 +1,11 @@
 import { UUID } from '@Tools/UUID';
 
-// Constants
+// constants
 import { INVALID_VALUES } from '@Constants/errorConditionConstants';
 import { DRAFT } from '@Constants/sanctioningConstants';
 import { SUCCESS } from '@Constants/resultConstants';
 
-// Types
+// types
 import type { SanctioningRecord, TournamentProposal, Applicant } from '@Types/sanctioningTypes';
 import type { TierClassification } from '@Types/tournamentTypes';
 

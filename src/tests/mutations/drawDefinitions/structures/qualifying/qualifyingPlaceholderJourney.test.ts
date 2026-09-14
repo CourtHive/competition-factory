@@ -1,11 +1,11 @@
 // Engines
-import tournamentEngine from '@Engines/syncEngine';
 import mocksEngine from '@Assemblies/engines/mock';
+import tournamentEngine from '@Engines/syncEngine';
 
 // Testing
 import { expect, it, describe } from 'vitest';
 
-// Constants
+// constants
 import { MAIN, QUALIFYING } from '@Constants/drawDefinitionConstants';
 import { DIRECT_ACCEPTANCE } from '@Constants/entryStatusConstants';
 

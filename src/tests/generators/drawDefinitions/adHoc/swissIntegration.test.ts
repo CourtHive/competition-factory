@@ -1,11 +1,12 @@
 import { generateOutcomeFromScoreString } from '@Assemblies/generators/mocks/generateOutcomeFromScoreString';
-import tournamentEngine from '@Engines/syncEngine';
 import mocksEngine from '@Assemblies/engines/mock';
+import tournamentEngine from '@Engines/syncEngine';
 import { unique } from '@Tools/arrays';
 import { expect, test } from 'vitest';
 
-import { SINGLES_EVENT } from '@Constants/eventConstants';
+// constants
 import { SWISS } from '@Constants/drawDefinitionConstants';
+import { SINGLES_EVENT } from '@Constants/eventConstants';
 
 function completeAllRoundMatchUps({ drawId, roundNumber }) {
   const { matchUps } = tournamentEngine.allTournamentMatchUps();

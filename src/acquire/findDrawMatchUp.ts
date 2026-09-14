@@ -2,8 +2,8 @@ import { checkRequiredParameters } from '@Helpers/parameters/checkRequiredParame
 import { getAllStructureMatchUps } from '@Query/matchUps/getAllStructureMatchUps';
 import { getContextContent } from '@Query/hierarchical/getContextContent';
 import { getMatchUp } from '@Query/matchUps/getMatchUpFromMatchUps';
-import { makeDeepCopy } from '@Tools/makeDeepCopy';
 import { getDrawStructures } from './findStructure';
+import { makeDeepCopy } from '@Tools/makeDeepCopy';
 
 // constants and types
 import { ContextContent, ContextProfile, MatchUpsMap, ParticipantsProfile } from '@Types/factoryTypes';

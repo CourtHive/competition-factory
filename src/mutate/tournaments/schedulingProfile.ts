@@ -1,10 +1,11 @@
-import { firstClassGroupLeafOrExtension, setGroupLeafOrExtension } from '../extensions/setGroupLeafOrExtension';
+import { firstClassGroupLeafOrExtension, setGroupLeafOrExtension } from '@Mutate/extensions/setGroupLeafOrExtension';
 import { getUpdatedSchedulingProfile } from '@Query/matchUps/scheduling/getUpdatedSchedulingProfile';
 import { validateSchedulingProfile } from '@Validators/validateSchedulingProfile';
-import { getCompetitionVenues } from '@Query/venues/venuesAndCourtsGetter';
 import { getEventIdsAndDrawIds } from '@Query/tournaments/getEventIdsAndDrawIds';
+import { getCompetitionVenues } from '@Query/venues/venuesAndCourtsGetter';
 import { addNotice } from '@Global/state/globalState';
 
+// constants and types
 import { ErrorType, MISSING_TOURNAMENT_RECORDS } from '@Constants/errorConditionConstants';
 import { MODIFY_SCHEDULING_PROFILE } from '@Constants/topicConstants';
 import { SCHEDULING_PROFILE } from '@Constants/extensionConstants';

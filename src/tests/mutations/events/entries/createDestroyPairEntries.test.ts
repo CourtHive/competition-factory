@@ -1,10 +1,10 @@
 import { isUngrouped } from '@Query/entries/isUngrouped';
-import { chunkArray, unique } from '@Tools/arrays';
 import mocksEngine from '@Assemblies/engines/mock';
 import tournamentEngine from '@Engines/syncEngine';
+import { chunkArray, unique } from '@Tools/arrays';
 import { expect, it } from 'vitest';
 
-// constants
+// constants and fixtures
 import { DOUBLES, SINGLES, TEAM } from '@Constants/eventConstants';
 import { INDIVIDUAL, PAIR } from '@Constants/participantConstants';
 import { FORMAT_STANDARD } from '@Fixtures/scoring/matchUpFormats';

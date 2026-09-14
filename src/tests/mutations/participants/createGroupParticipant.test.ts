@@ -4,9 +4,10 @@ import mocksEngine from '@Assemblies/engines/mock';
 import tournamentEngine from '@Engines/syncEngine';
 import { expect, it } from 'vitest';
 
+// constants
 import { GROUP, INDIVIDUAL } from '@Constants/participantConstants';
-import { COMPETITOR } from '@Constants/participantRoles';
 import { ADD_PARTICIPANTS } from '@Constants/topicConstants';
+import { COMPETITOR } from '@Constants/participantRoles';
 
 it('can create group participants', () => {
   const { tournamentRecord } = mocksEngine.generateTournamentRecord();

@@ -6,8 +6,9 @@ import { findPolicy } from '@Acquire/findPolicy';
 
 // constants and types
 import { ErrorType, INVALID_VALUES } from '@Constants/errorConditionConstants';
-import { POLICY_TYPE_COMPETITIVE_BANDS } from '@Constants/policyConstants';
 import { PredictionModel } from '@Query/matchUp/competitiveBandsPrediction';
+import { POLICY_TYPE_COMPETITIVE_BANDS } from '@Constants/policyConstants';
+import { Tournament } from '@Types/tournamentTypes';
 import {
   RankedPlan,
   RatingDistributionStats,
@@ -17,7 +18,6 @@ import {
   WizardGovernance,
   WizardParticipant,
 } from '@Types/formatWizardTypes';
-import { Tournament } from '@Types/tournamentTypes';
 
 // Fixtures
 import POLICY_COMPETITIVE_BANDS_DEFAULT from '@Fixtures/policies/POLICY_COMPETITIVE_BANDS_DEFAULT';

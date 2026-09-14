@@ -4,8 +4,8 @@ import queryEngine from '@Engines/queryEngine';
 import { expect, it } from 'vitest';
 
 // constants
-import { TEAM_MATCHUP } from '@Constants/matchUpTypes';
 import { TEAM_EVENT } from '@Constants/eventConstants';
+import { TEAM_MATCHUP } from '@Constants/matchUpTypes';
 
 // Coverage/regression: getMatchUpScheduleDetails cached venue data on the correct
 // venueId but tested cache presence with the misspelled allocatedCourt.venueid

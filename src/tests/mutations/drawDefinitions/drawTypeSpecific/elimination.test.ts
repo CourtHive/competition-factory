@@ -1,10 +1,10 @@
+import { verifyMatchUps, verifySideNumbers } from '@Tests/mutations/drawDefinitions/primitives/verifyMatchUps';
+import { verifyStructure } from '@Tests/mutations/drawDefinitions/primitives/verifyStructure';
 import { getParticipantIdMatchUps } from '@Query/drawDefinition/participantIdMatchUps';
-import { verifyStructure } from '../primitives/verifyStructure';
+import { generateRange, instanceCount, unique } from '@Tools/arrays';
 import mocksEngine from '@Assemblies/engines/mock';
 import tournamentEngine from '@Engines/syncEngine';
 import { expect, it } from 'vitest';
-import { verifyMatchUps, verifySideNumbers } from '../primitives/verifyMatchUps';
-import { generateRange, instanceCount, unique } from '@Tools/arrays';
 
 it('can generate and verify elmination hierarchies', () => {
   let structureId, drawDefinition;

@@ -4,12 +4,12 @@ import { getStageParticipants } from '@Query/drawDefinition/getStageParticipants
 import { generateFlightDrawDefinitions } from './generateFlightDrawDefinitions';
 import { attachPolicies } from '@Mutate/extensions/policies/attachPolicies';
 import { generateEventParticipants } from './generateEventParticipants';
+import tieFormatDefaults from '@Generators/templates/tieFormatDefaults';
 import { addEventEntries } from '@Mutate/entries/addEventEntries';
 import { addEventTimeItem } from '@Mutate/timeItems/addTimeItem';
 import { getParticipantId } from '@Functions/global/extractors';
 import { isValidExtension } from '@Validators/isValidExtension';
 import { publishEvent } from '@Mutate/publishing/publishEvent';
-import tieFormatDefaults from '../templates/tieFormatDefaults';
 import { generateFlights } from './generateFlights';
 import { addEvent } from '@Mutate/events/addEvent';
 import { UUID } from '@Tools/UUID';

@@ -3,9 +3,10 @@ import mocksEngine from '@Assemblies/engines/mock';
 import tournamentEngine from '@Engines/syncEngine';
 import { expect, it } from 'vitest';
 
+// constants
 import { GROUP, INDIVIDUAL } from '@Constants/participantConstants';
-import { MODIFY_PARTICIPANTS } from '@Constants/topicConstants';
 import { COMPETITOR, OTHER } from '@Constants/participantRoles';
+import { MODIFY_PARTICIPANTS } from '@Constants/topicConstants';
 import { TEAM } from '@Constants/eventConstants';
 import {
   INVALID_PARTICIPANT_IDS,

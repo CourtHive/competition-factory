@@ -3,7 +3,7 @@ import { describe, expect, it } from 'vitest';
 import { setSchemaWriteMode } from '@Global/state/globalState';
 import tournamentEngine from '@Engines/syncEngine';
 
-// constants and types
+// constants
 import { LEGACY, NATIVE } from '@Constants/schemaWriteModeConstants';
 
 const TALLY_VALUE = { groupOrder: 1, rankOrder: 2, MPctSum: 0.5 };

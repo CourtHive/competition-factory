@@ -1,7 +1,7 @@
-import { setMatchUpState } from '../../matchUps/matchUpStatus/setMatchUpState';
+import { setMatchUpState } from '@Mutate/matchUps/matchUpStatus/setMatchUpState';
 import { findDrawMatchUp } from '@Acquire/findDrawMatchUp';
 
-// Constants
+// constants
 import { INVALID_MATCHUP, MISSING_DRAW_DEFINITION } from '@Constants/errorConditionConstants';
 import { TEAM_MATCHUP } from '@Constants/matchUpTypes';
 

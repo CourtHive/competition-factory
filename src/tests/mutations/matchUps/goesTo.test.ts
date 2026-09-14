@@ -1,10 +1,11 @@
-import tournamentEngine from '@Engines/syncEngine';
 import mocksEngine from '@Assemblies/engines/mock';
+import tournamentEngine from '@Engines/syncEngine';
 import { expect, it } from 'vitest';
 
+// constants
+import { CONSOLATION, FEED_IN_CHAMPIONSHIP, MAIN } from '@Constants/drawDefinitionConstants';
 import { SINGLES } from '@Constants/eventConstants';
 import { MALE } from '@Constants/genderConstants';
-import { CONSOLATION, FEED_IN_CHAMPIONSHIP, MAIN } from '@Constants/drawDefinitionConstants';
 
 it('accurately determines winnerMatchUpId and loserMatchUpId for FIC matchUps', () => {
   const participantsProfile = {

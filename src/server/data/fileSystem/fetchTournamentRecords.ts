@@ -1,7 +1,7 @@
 import { findTournamentRecord } from './findTournamentRecord';
 
 // constants
-import { errorConditionConstants } from '../../../constants';
+import { errorConditionConstants } from '@Constants/index';
 import { SUCCESS } from '@Constants/resultConstants';
 
 errorConditionConstants;

@@ -1,9 +1,10 @@
 import { POLICY_RANKING_POINTS_HYBRID_EXAMPLE } from '@Tests/fixtures/policies/POLICY_RANKING_POINTS_HYBRID_EXAMPLE';
+import { validateRankingPolicy } from './validatePolicy';
 import mocksEngine from '@Assemblies/engines/mock';
 import tournamentEngine from '@Engines/syncEngine';
-import { validateRankingPolicy } from './validatePolicy';
 import { describe, expect, it } from 'vitest';
 
+// constants
 import { ATP, ITF_JUNIOR, TENNIS_EUROPE } from '@Constants/pointsAuthorityConstants';
 import { SINGLE_ELIMINATION } from '@Constants/drawDefinitionConstants';
 

@@ -1,21 +1,21 @@
-import COLLEGE_D3 from './COLLEGE_D3.json';
-import COLLEGE_DEFAULT from './COLLEGE_DEFAULT.json';
-import COLLEGE_JUCO from './COLLEGE_JUCO.json';
-import DOMINANT_DUO from './DOMINANT_DUO.json';
-import DOMINANT_DUO_MIXED from './DOMINANT_DUO_MIXED.json';
-import LAVER_CUP from './LAVER_CUP.json';
 import TEAM_DOUBLES_3_AGGREGATION from './TEAM_DOUBLES_3_AGGREGATION.json';
+import USTA_GOLD_TEAM_CHALLENGE from './USTA_GOLD_TEAM_CHALLENGE.json';
+import USTA_SOUTHERN_LEVEL_5 from './USTA_SOUTHERN_LEVEL_5.json';
+import USTA_INTERSECTIONAL from './USTA_INTERSECTIONAL.json';
+import USTA_SECTION_BATTLE from './USTA_SECTION_BATTLE.json';
+import DOMINANT_DUO_MIXED from './DOMINANT_DUO_MIXED.json';
+import COLLEGE_DEFAULT from './COLLEGE_DEFAULT.json';
 import USTA_BREWER_CUP from './USTA_BREWER_CUP.json';
 import USTA_OZAKI_CUP from './USTA_OZAKI_CUP.json';
+import COLLEGE_JUCO from './COLLEGE_JUCO.json';
+import DOMINANT_DUO from './DOMINANT_DUO.json';
 import USTA_COLLEGE from './USTA_COLLEGE.json';
-import USTA_GOLD_TEAM_CHALLENGE from './USTA_GOLD_TEAM_CHALLENGE.json';
-import USTA_INTERSECTIONAL from './USTA_INTERSECTIONAL.json';
 import USTA_LEVEL_1 from './USTA_LEVEL_1.json';
-import USTA_SECTION_BATTLE from './USTA_SECTION_BATTLE.json';
-import USTA_SOUTHERN_LEVEL_5 from './USTA_SOUTHERN_LEVEL_5.json';
-import USTA_TOC from './USTA_TOC.json';
 import USTA_WTT_ITT from './USTA_WTT_ITT.json';
+import COLLEGE_D3 from './COLLEGE_D3.json';
 import USTA_ZONAL from './USTA_ZONAL.json';
+import LAVER_CUP from './LAVER_CUP.json';
+import USTA_TOC from './USTA_TOC.json';
 
 export const tieFormats = {
   COLLEGE_D3,

@@ -4,7 +4,7 @@ import tournamentEngine from '@Engines/syncEngine';
 import { chunkArray } from '@Tools/arrays';
 import { expect, test } from 'vitest';
 
-// Constants
+// constants
 import { TO_BE_PLAYED } from '@Constants/matchUpStatusConstants';
 import { SINGLES_EVENT } from '@Constants/eventConstants';
 import { MALE } from '@Constants/genderConstants';

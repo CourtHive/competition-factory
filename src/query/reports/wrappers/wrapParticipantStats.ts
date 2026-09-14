@@ -1,6 +1,6 @@
 import { getParticipantStats } from '@Query/participant/getParticipantStats';
 
-// Constants and Types
+// constants and types
 import { PARTICIPANT_STATS_REPORT } from '@Constants/reportConstants';
 import { Tournament } from '@Types/tournamentTypes';
 import { ReportResult } from '@Types/reportTypes';

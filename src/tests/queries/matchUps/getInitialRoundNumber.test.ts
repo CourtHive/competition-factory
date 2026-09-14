@@ -1,9 +1,10 @@
 import { getInitialRoundNumber } from '@Query/matchUps/getInitialRoundNumber';
 import mocksEngine from '@Assemblies/engines/mock';
-import { generateRange } from '@Tools/arrays';
 import tournamentEngine from '@Engines/syncEngine';
+import { generateRange } from '@Tools/arrays';
 import { expect, it } from 'vitest';
 
+// constants
 import { ROUND_ROBIN } from '@Constants/drawDefinitionConstants';
 
 it('can accurately determine initialRoundNumber', () => {

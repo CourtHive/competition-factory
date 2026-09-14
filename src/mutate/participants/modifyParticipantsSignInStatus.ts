@@ -1,15 +1,16 @@
-import { addParticipantTimeItem } from '../timeItems/addTimeItem';
-import { requireParams } from '@Helpers/parameters/requireParams';
-import { getTopics } from '@Global/state/globalState';
 import { modifyParticipantsNotice } from '@Mutate/notifications/participantNotifications';
+import { addParticipantTimeItem } from '@Mutate/timeItems/addTimeItem';
+import { requireParams } from '@Helpers/parameters/requireParams';
 import { getParticipantId } from '@Functions/global/extractors';
+import { getTopics } from '@Global/state/globalState';
 
+// constants and types
 import { INVALID_VALUES, MISSING_PARTICIPANTS, MISSING_VALUE } from '@Constants/errorConditionConstants';
 import { SIGNED_IN, SIGNED_OUT, SIGN_IN_STATUS } from '@Constants/participantConstants';
 import { TOURNAMENT_RECORD } from '@Constants/attributeConstants';
 import { MODIFY_PARTICIPANTS } from '@Constants/topicConstants';
-import { Participant } from '@Types/tournamentTypes';
 import { SUCCESS } from '@Constants/resultConstants';
+import { Participant } from '@Types/tournamentTypes';
 
 /**
  * `occurredAt` — ISO string recording when the sign-in actually HAPPENED, as

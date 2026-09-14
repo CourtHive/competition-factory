@@ -1,8 +1,8 @@
 import { checkRequiredParameters } from '@Helpers/parameters/checkRequiredParameters';
 import { modifyEventNotice } from '@Mutate/notifications/eventNotifications';
 import { isValidWeekdaysValue } from '@Validators/isValidWeekdaysValue';
-import { requireParams } from '@Helpers/parameters/requireParams';
 import { decorateResult } from '@Functions/global/decorateResult';
+import { requireParams } from '@Helpers/parameters/requireParams';
 import { dateValidation } from '@Validators/regex';
 import { extractDate } from '@Tools/dateTime';
 

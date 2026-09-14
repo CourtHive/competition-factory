@@ -1,8 +1,9 @@
-import { getMatchUpIds } from '@Functions/global/extractors';
-import tournamentEngine from '@Engines/syncEngine';
-import mocksEngine from '@Assemblies/engines/mock';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { getMatchUpIds } from '@Functions/global/extractors';
+import mocksEngine from '@Assemblies/engines/mock';
+import tournamentEngine from '@Engines/syncEngine';
 
+// constants
 import { AD_HOC, SINGLE_ELIMINATION } from '@Constants/drawDefinitionConstants';
 import { SINGLES_EVENT } from '@Constants/eventConstants';
 

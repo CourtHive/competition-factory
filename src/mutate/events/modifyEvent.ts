@@ -1,7 +1,7 @@
 import { getObjectTieFormat } from '@Query/hierarchical/tieFormats/getObjectTieFormat';
 import { checkRequiredParameters } from '@Helpers/parameters/checkRequiredParameters';
-import { getCategoryAgeDetails } from '@Query/event/getCategoryAgeDetails';
 import { modifyEventNotice } from '@Mutate/notifications/eventNotifications';
+import { getCategoryAgeDetails } from '@Query/event/getCategoryAgeDetails';
 import { allEventMatchUps } from '@Query/matchUps/getAllEventMatchUps';
 import { getParticipants } from '@Query/participants/getParticipants';
 import { categoryCanContain } from '@Query/event/categoryCanContain';
@@ -23,6 +23,13 @@ import { OBJECT } from '@Constants/attributeConstants';
 import { SUCCESS } from '@Constants/resultConstants';
 import { ResultType } from '@Types/factoryTypes';
 import {
+  CATEGORY_MISMATCH,
+  INVALID_CATEGORY,
+  INVALID_EVENT_TYPE,
+  INVALID_GENDER,
+  MISSING_BIRTH_DATE,
+} from '@Constants/errorConditionConstants';
+import {
   Category,
   Event,
   Tournament,
@@ -31,13 +38,6 @@ import {
   TieFormat,
   UnifiedEventID,
 } from '@Types/tournamentTypes';
-import {
-  CATEGORY_MISMATCH,
-  INVALID_CATEGORY,
-  INVALID_EVENT_TYPE,
-  INVALID_GENDER,
-  MISSING_BIRTH_DATE,
-} from '@Constants/errorConditionConstants';
 
 type ModifyEventArgs = {
   tournamentRecord: Tournament;

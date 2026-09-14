@@ -39,17 +39,17 @@
  * the browser's zone cancels on both sides and no instant is ever converted.
  * That is what lets this run in the factory unchanged.
  */
-import { allTournamentMatchUps } from '@Query/matchUps/getAllTournamentMatchUps';
 import { checkRequiredParameters } from '@Helpers/parameters/checkRequiredParameters';
+import { allTournamentMatchUps } from '@Query/matchUps/getAllTournamentMatchUps';
 import { makeTimingResolver, SchedulingTiming } from './schedulingTiming';
 
 // constants and types
 import { MISSING_MATCHUP_ID } from '@Constants/errorConditionConstants';
 import { TOURNAMENT_RECORD } from '@Constants/attributeConstants';
+import { BYE } from '@Constants/matchUpStatusConstants';
 import { Tournament } from '@Types/tournamentTypes';
 import { HydratedMatchUp } from '@Types/hydrated';
 import { ResultType } from '@Types/factoryTypes';
-import { BYE } from '@Constants/matchUpStatusConstants';
 
 export type ReadinessKind = 'undetermined' | 'dependency' | 'recovery' | 'overlap';
 export type ReadinessSeverity = 'WARN' | 'INFO';

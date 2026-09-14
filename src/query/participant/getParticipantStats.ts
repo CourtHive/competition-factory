@@ -10,11 +10,11 @@ import { isObject } from '@Tools/objects';
 // constants and types
 import { ParticipantTypeUnion, Tournament } from '@Types/tournamentTypes';
 import { TEAM_PARTICIPANT } from '@Constants/participantConstants';
-import { HydratedMatchUp } from '@Types/hydrated';
-import { ResultType, Tally } from '@Types/factoryTypes';
 import { BYE } from '@Constants/matchUpStatusConstants';
+import { ResultType, Tally } from '@Types/factoryTypes';
 import { TEAM_MATCHUP } from '@Constants/matchUpTypes';
 import { SUCCESS } from '@Constants/resultConstants';
+import { HydratedMatchUp } from '@Types/hydrated';
 import {
   INVALID_MATCHUP,
   INVALID_PARTICIPANT_IDS,

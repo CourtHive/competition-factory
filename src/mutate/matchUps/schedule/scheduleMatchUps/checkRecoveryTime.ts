@@ -1,8 +1,8 @@
+import { addMinutesToTimeString, extractTime, minutesDifference, timeToDate } from '@Tools/dateTime';
 import { checkParticipantProfileInitialization } from './checkParticipantProfileInitialization';
 import { analyzeScheduleOverlap } from './analyzeScheduleOverlap';
-import { ensureInt } from '@Tools/ensureInt';
-import { addMinutesToTimeString, extractTime, minutesDifference, timeToDate } from '@Tools/dateTime';
 import { HydratedMatchUp } from '@Types/hydrated';
+import { ensureInt } from '@Tools/ensureInt';
 
 type CheckRecoveryTimeArgs = {
   individualParticipantProfiles: { [key: string]: any };

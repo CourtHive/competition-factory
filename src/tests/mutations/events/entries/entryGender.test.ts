@@ -2,6 +2,7 @@ import mocksEngine from '@Assemblies/engines/mock';
 import tournamentEngine from '@Engines/syncEngine';
 import { expect, it } from 'vitest';
 
+// constants
 import { ANY, FEMALE, MALE, MIXED } from '@Constants/genderConstants';
 
 it('supports adding MALE/FEMALE to ANY and MIXED gender events', () => {

@@ -1,6 +1,6 @@
 import { computeRatingDistributionStats } from './distributionStats';
 
-// constants and types
+// types
 import { FlightingStrategy, WizardFlight, WizardParticipant } from '@Types/formatWizardTypes';
 
 const EQUAL_COUNT_VARIANTS = [2, 3, 4, 6];

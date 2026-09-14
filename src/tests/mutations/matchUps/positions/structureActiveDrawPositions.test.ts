@@ -1,9 +1,10 @@
 import { getStructureDrawPositionProfiles } from '@Query/structure/getStructureDrawPositionProfiles';
 import mocksEngine from '@Assemblies/engines/mock';
-import { numericSort } from '@Tools/sorting';
 import tournamentEngine from '@Engines/syncEngine';
+import { numericSort } from '@Tools/sorting';
 import { expect, it } from 'vitest';
 
+// constants
 import { BYE, COMPLETED } from '@Constants/matchUpStatusConstants';
 
 it('correctly identifies active drawPositions', () => {

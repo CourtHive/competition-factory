@@ -1,20 +1,14 @@
 import { checkRequiredParameters } from '@Helpers/parameters/checkRequiredParameters';
-import { getAppliedPolicies } from '@Query/extensions/getAppliedPolicies';
 import { modifyDrawNotice } from '@Mutate/notifications/drawNotifications';
+import { getAppliedPolicies } from '@Query/extensions/getAppliedPolicies';
 import { addExtension } from '@Mutate/extensions/addExtension';
 
 // constants and types
 import { PolicyDefinitions, TournamentRecords, ResultType } from '@Types/factoryTypes';
 import { DrawDefinition, Event, Tournament } from '@Types/tournamentTypes';
 import { APPLIED_POLICIES } from '@Constants/extensionConstants';
-import { isObject, isString } from '@Tools/objects';
 import { SUCCESS } from '@Constants/resultConstants';
-import {
-  EXISTING_POLICY_TYPE,
-  INVALID_VALUES,
-  MISSING_POLICY_DEFINITION,
-  MISSING_TOURNAMENT_RECORD,
-} from '@Constants/errorConditionConstants';
+import { isObject, isString } from '@Tools/objects';
 import {
   DRAW_DEFINITION,
   EVENT,
@@ -22,6 +16,12 @@ import {
   TOURNAMENT_RECORD,
   TOURNAMENT_RECORDS,
 } from '@Constants/attributeConstants';
+import {
+  EXISTING_POLICY_TYPE,
+  INVALID_VALUES,
+  MISSING_POLICY_DEFINITION,
+  MISSING_TOURNAMENT_RECORD,
+} from '@Constants/errorConditionConstants';
 
 type AttachPoliciesArgs = {
   tournamentRecords?: TournamentRecords;

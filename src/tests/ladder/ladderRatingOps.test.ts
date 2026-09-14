@@ -4,6 +4,7 @@ import { addLadderParticipant } from '@Mutate/ladder/addLadderParticipant';
 import { refreshLadderRatings } from '@Mutate/ladder/refreshLadderRatings';
 import { getLadderStanding } from '@Query/ladder/getLadderStanding';
 
+// constants
 import { BY_RATING, RANK, RATING, SWAP } from '@Constants/ladderConstants';
 import { RATING as RATING_SCALE, SCALE } from '@Constants/scaleConstants';
 import { POLICY_TYPE_LADDER } from '@Constants/policyConstants';

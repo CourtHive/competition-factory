@@ -2,10 +2,10 @@ import { getTieMatchUpContext } from '@Query/hierarchical/tieFormats/getTieMatch
 import { removeCollectionAssignments } from '@Mutate/events/removeCollectionAssignments';
 import { isMatchUpEventType } from '@Helpers/matchUpEventTypes/isMatchUpEventType';
 import { getPairedParticipant } from '@Query/participant/getPairedParticipant';
-import { deleteParticipants } from '@Mutate/participants/deleteParticipants';
 import { modifyMatchUpNotice } from '@Mutate/notifications/drawNotifications';
-import { modifyParticipant } from '@Mutate/participants/modifyParticipant';
+import { deleteParticipants } from '@Mutate/participants/deleteParticipants';
 import { updateTeamLineUp } from '@Mutate/drawDefinitions/updateTeamLineUp';
+import { modifyParticipant } from '@Mutate/participants/modifyParticipant';
 import { getAppliedPolicies } from '@Query/extensions/getAppliedPolicies';
 import { getParticipants } from '@Query/participants/getParticipants';
 import { addParticipant } from '@Mutate/participants/addParticipant';
@@ -23,7 +23,10 @@ import { POLICY_TYPE_MATCHUP_ACTIONS } from '@Constants/policyConstants';
 import { INDIVIDUAL, PAIR } from '@Constants/participantConstants';
 import { DOUBLES, SINGLES } from '@Constants/matchUpTypes';
 import { COMPETITOR } from '@Constants/participantRoles';
+import { coercedGender } from '@Helpers/coercedGender';
 import { SUCCESS } from '@Constants/resultConstants';
+import { isGendered } from '@Validators/isGendered';
+import { isMixed } from '@Validators/isMixed';
 import {
   INVALID_PARTICIPANT,
   INVALID_PARTICIPANT_TYPE,
@@ -34,9 +37,6 @@ import {
   PARTICIPANT_NOT_FOUND,
   TEAM_NOT_FOUND,
 } from '@Constants/errorConditionConstants';
-import { isGendered } from '@Validators/isGendered';
-import { coercedGender } from '@Helpers/coercedGender';
-import { isMixed } from '@Validators/isMixed';
 
 type AssignMatchUpSideParticipantIdArgs = {
   policyDefinitions?: PolicyDefinitions;

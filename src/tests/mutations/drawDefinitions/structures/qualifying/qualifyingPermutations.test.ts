@@ -4,6 +4,7 @@ import tournamentEngine from '@Engines/syncEngine';
 import { chunkArray } from '@Tools/arrays';
 import { expect, it } from 'vitest';
 
+// constants
 import { QUALIFYING } from '@Constants/drawDefinitionConstants';
 import { RATING, SEEDING } from '@Constants/scaleConstants';
 import { SINGLES } from '@Constants/eventConstants';

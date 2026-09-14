@@ -1,6 +1,7 @@
 import { modifyDrawEntriesNotice, modifyEventEntriesNotice } from '@Mutate/notifications/entriesNotifications';
 import { getFlightProfile } from '@Query/event/getFlightProfile';
 
+// constants
 import { SUCCESS } from '@Constants/resultConstants';
 import { TEAM } from '@Constants/eventConstants';
 

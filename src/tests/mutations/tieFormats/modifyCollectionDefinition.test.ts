@@ -1,8 +1,10 @@
-import { xa } from '@Tools/extractAttributes';
-import tournamentEngine from '@Engines/syncEngine';
 import mocksEngine from '@Assemblies/engines/mock';
+import tournamentEngine from '@Engines/syncEngine';
+import { xa } from '@Tools/extractAttributes';
 import { expect, it } from 'vitest';
 
+// constants
+import { DOUBLES_MATCHUP, SINGLES_MATCHUP } from '@Constants/matchUpTypes';
 import { TIE_FORMAT_MODIFICATIONS } from '@Constants/extensionConstants';
 import { TO_BE_PLAYED } from '@Constants/matchUpStatusConstants';
 import { COLLEGE_D3 } from '@Constants/tieFormatConstants';
@@ -14,7 +16,6 @@ import {
   NOT_FOUND,
   NOT_IMPLEMENTED,
 } from '@Constants/errorConditionConstants';
-import { DOUBLES_MATCHUP, SINGLES_MATCHUP } from '@Constants/matchUpTypes';
 
 it('can modify collectionDefinitions for a tieFormat on a drawDefinition', () => {
   const policyDefinitions = { audit: { [TIE_FORMAT_MODIFICATIONS]: true } };

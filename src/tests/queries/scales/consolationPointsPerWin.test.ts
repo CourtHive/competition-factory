@@ -4,8 +4,9 @@ import { mocksEngine } from '../../..';
 import { expect, it } from 'vitest';
 import fs from 'fs';
 
-import { POLICY_TYPE_RANKING_POINTS } from '@Constants/policyConstants';
+// constants
 import { CURTIS_CONSOLATION } from '@Constants/drawDefinitionConstants';
+import { POLICY_TYPE_RANKING_POINTS } from '@Constants/policyConstants';
 import { SINGLES } from '@Constants/eventConstants';
 
 const awardProfiles = [

@@ -3,6 +3,7 @@ import { getDrawMatchUps } from '@Tests/testHarness/exitPropagation/transitions'
 import { setSubscriptions } from '@Global/state/globalState';
 import { expect, it } from 'vitest';
 
+// constants
 import { DOUBLE_WALKOVER, DOUBLE_DEFAULT, DEFAULTED, WALKOVER } from '@Constants/matchUpStatusConstants';
 
 /**

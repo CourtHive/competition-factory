@@ -2,8 +2,8 @@ import { addParticipantGroupings } from '@Query/drawDefinition/avoidance/addPart
 import { addIndividualParticipants } from '@Query/participants/addIndividualParticipants';
 import { addNationalityCode } from '@Query/participants/addNationalityCode';
 import { getScaleValues } from '@Query/participant/getScaleValues';
+import { getTimeItem } from '@Query/base/timeItems';
 import { makeDeepCopy } from '@Tools/makeDeepCopy';
-import { getTimeItem } from '../base/timeItems';
 import { isObject } from '@Tools/objects';
 
 // constants and types

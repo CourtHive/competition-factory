@@ -1,10 +1,11 @@
-import { getMatchUpParticipantIds } from '@Query/matchUp/getMatchUpParticipantIds';
 import { getCheckedInParticipantIds } from '@Query/matchUp/getCheckedInParticipantIds';
+import { getMatchUpParticipantIds } from '@Query/matchUp/getMatchUpParticipantIds';
 
 import mocksEngine from '@Assemblies/engines/mock';
 import tournamentEngine from '@Engines/syncEngine';
 import { expect, it } from 'vitest';
 
+// constants
 import { ELIMINATION } from '@Constants/drawDefinitionConstants';
 import { PAIR } from '@Constants/participantConstants';
 import { SUCCESS } from '@Constants/resultConstants';

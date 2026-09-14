@@ -2,20 +2,20 @@ import { removeLineUpSubstitutions } from '@Mutate/drawDefinitions/removeLineUpS
 import { assignDrawPositionBye } from '@Mutate/matchUps/drawPositions/assignDrawPositionBye';
 import { assignDrawPosition } from '@Mutate/matchUps/drawPositions/positionAssignment';
 import { structureAssignedDrawPositions } from '@Query/drawDefinition/positionsGetter';
-import { getDrawPositionWinCount } from '@Query/matchUp/getDrawPositionWinCount';
-import { getAllStructureMatchUps } from '@Query/matchUps/getAllStructureMatchUps';
 import { assignSeed } from '@Mutate/drawDefinitions/entryGovernor/seedAssignment';
+import { getAllStructureMatchUps } from '@Query/matchUps/getAllStructureMatchUps';
+import { getDrawPositionWinCount } from '@Query/matchUp/getDrawPositionWinCount';
 import { modifyMatchUpNotice } from '@Mutate/notifications/drawNotifications';
 import { decorateResult } from '@Functions/global/decorateResult';
 import { findStructure } from '@Acquire/findStructure';
 import { numericSort } from '@Tools/sorting';
 
-// constants
+// constants and types
+import { DRAW_POSITION_OCCUPIED, INVALID_DRAW_POSITION } from '@Constants/errorConditionConstants';
 import { DEFAULTED, RETIRED, WALKOVER } from '@Constants/matchUpStatusConstants';
 import { FIRST_MATCHUP } from '@Constants/drawDefinitionConstants';
 import { SUCCESS } from '@Constants/resultConstants';
 import { ResultType } from '@Types/factoryTypes';
-import { DRAW_POSITION_OCCUPIED, INVALID_DRAW_POSITION } from '@Constants/errorConditionConstants';
 
 /*
   FIRST_MATCH_LOSER_CONSOLATION linkCondition... check whether it is a participant's first 

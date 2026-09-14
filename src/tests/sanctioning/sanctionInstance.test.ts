@@ -1,9 +1,9 @@
 import { activateFromSanctioning } from '@Mutate/sanctioning/activateFromSanctioning';
 import { expect, it, describe } from 'vitest';
 
-// constants
-import { APPROVED } from '@Constants/sanctioningConstants';
+// constants and types
 import { SanctionDecisionEnum, RecognitionEnum, CurrencyUnitEnum } from '@Types/tournamentTypes';
+import { APPROVED } from '@Constants/sanctioningConstants';
 import type { SanctionFee } from '@Types/tournamentTypes';
 
 /**

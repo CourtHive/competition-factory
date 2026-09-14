@@ -1,6 +1,7 @@
-import tournamentEngine from '@Engines/syncEngine';
 import { describe, it, expect, beforeEach } from 'vitest';
+import tournamentEngine from '@Engines/syncEngine';
 
+// constants
 import { INVALID_TIME_ZONE } from '@Constants/errorConditionConstants';
 
 const currentZone = () => tournamentEngine.getTournament().tournamentRecord.localTimeZone;

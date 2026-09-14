@@ -1,7 +1,7 @@
-import { updatePracticeRegistration } from '@Mutate/practice/updatePracticeRegistration';
 import { removePracticeRegistration } from '@Mutate/practice/removePracticeRegistration';
-import { detectParticipantConflicts } from '@Mutate/practice/detectConflicts';
+import { updatePracticeRegistration } from '@Mutate/practice/updatePracticeRegistration';
 import { addPracticeRegistration } from '@Mutate/practice/addPracticeRegistration';
+import { detectParticipantConflicts } from '@Mutate/practice/detectConflicts';
 import { findPracticeBooking } from '@Mutate/practice/findPracticeBooking';
 import mocksEngine from '@Assemblies/engines/mock';
 import tournamentEngine from '@Engines/syncEngine';
@@ -9,9 +9,9 @@ import { describe, expect, it } from 'vitest';
 
 // constants and types
 import { PracticeRegistrationStatusEnum } from '@Types/tournamentTypes';
-import * as factoryEnums from '@Types/enumExports';
 import { COMPLETED } from '@Constants/matchUpStatusConstants';
 import { PRACTICE } from '@Constants/scheduleConstants';
+import * as factoryEnums from '@Types/enumExports';
 import {
   BOOKING_NOT_FOUND,
   CAPACITY_EXCEEDED,

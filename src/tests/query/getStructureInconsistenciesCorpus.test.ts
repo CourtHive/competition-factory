@@ -5,6 +5,7 @@ import mocksEngine from '@Assemblies/engines/mock';
 import { expect, test } from 'vitest';
 
 // constants
+import { DOUBLE_WALKOVER, DEFAULTED, WALKOVER, RETIRED } from '@Constants/matchUpStatusConstants';
 import {
   MODIFIED_FEED_IN_CHAMPIONSHIP,
   FIRST_MATCH_LOSER_CONSOLATION,
@@ -18,7 +19,6 @@ import {
   COMPASS,
   OLYMPIC,
 } from '@Constants/drawDefinitionConstants';
-import { DOUBLE_WALKOVER, DEFAULTED, WALKOVER, RETIRED } from '@Constants/matchUpStatusConstants';
 
 // CI-style engine-consistency regression guard.
 //

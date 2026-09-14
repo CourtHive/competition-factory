@@ -2,7 +2,7 @@ import { dateStringDaysChange, extractDate, isValidDateString, zeroPad } from '@
 import { definedAttributes } from '@Tools/definedAttributes';
 import { isNumeric } from '@Tools/math';
 
-// Constants and types
+// constants and types
 import { INVALID_CATEGORY, INVALID_DATE } from '@Constants/errorConditionConstants';
 import { Category } from '@Types/tournamentTypes';
 

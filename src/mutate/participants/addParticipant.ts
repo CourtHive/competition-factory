@@ -3,13 +3,14 @@ import { normalizePersonNames } from '@Helpers/normalizedPersonName';
 import { decorateResult } from '@Functions/global/decorateResult';
 import { definedAttributes } from '@Tools/definedAttributes';
 import { normalizeGender } from '@Helpers/coercedGender';
-import { coercePersonSex } from '@Helpers/coercedSex';
 import { addNotice } from '@Global/state/globalState';
+import { coercePersonSex } from '@Helpers/coercedSex';
 import { collapseWhitespace } from '@Tools/strings';
 import { makeDeepCopy } from '@Tools/makeDeepCopy';
 import { intersection } from '@Tools/arrays';
 import { UUID } from '@Tools/UUID';
 
+// constants and types
 import { GROUP, INDIVIDUAL, PAIR, participantTypes, TEAM } from '@Constants/participantConstants';
 import { ADD_PARTICIPANTS } from '@Constants/topicConstants';
 import { TournamentRecords } from '@Types/factoryTypes';

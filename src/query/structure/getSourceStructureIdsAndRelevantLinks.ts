@@ -1,4 +1,4 @@
-import { getStructureLinks } from '../drawDefinition/linkGetter';
+import { getStructureLinks } from '@Query/drawDefinition/linkGetter';
 import { DrawDefinition } from '@Types/tournamentTypes';
 import { findStructure } from '@Acquire/findStructure';
 

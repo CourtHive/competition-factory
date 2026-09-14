@@ -2,7 +2,7 @@ import { mocksEngine } from '@Assemblies/engines/mock';
 import tournamentEngine from '@Engines/syncEngine';
 import { expect, it, describe } from 'vitest';
 
-// Constants
+// constants
 import { SCHEDULE_CONFLICT_DOUBLE_BOOKING } from '@Constants/errorConditionConstants';
 import { ROUND_ROBIN_WITH_PLAYOFF } from '@Constants/drawDefinitionConstants';
 import { DOUBLES, SINGLES } from '@Constants/eventConstants';

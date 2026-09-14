@@ -1,15 +1,15 @@
 import { isMatchUpEventType } from '@Helpers/matchUpEventTypes/isMatchUpEventType';
 import { checkScoreHasValue } from '@Query/matchUp/checkScoreHasValue';
 import { getMatchUpId } from '@Functions/global/extractors';
-import { tournamentEngine } from '@Engines/syncEngine';
 import { mocksEngine } from '@Assemblies/engines/mock';
+import { tournamentEngine } from '@Engines/syncEngine';
 import { it, expect, vi } from 'vitest';
 
 // constants
 import { AD_HOC, SINGLE_ELIMINATION } from '@Constants/drawDefinitionConstants';
 import { POLICY_TYPE_SCORING } from '@Constants/policyConstants';
-import { DOMINANT_DUO } from '@Constants/tieFormatConstants';
 import { DEFAULTED } from '@Constants/matchUpStatusConstants';
+import { DOMINANT_DUO } from '@Constants/tieFormatConstants';
 import { SINGLES, TEAM } from '@Constants/eventConstants';
 import {
   INVALID_STRUCTURE,

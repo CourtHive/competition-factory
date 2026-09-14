@@ -1,6 +1,6 @@
 import { UUID } from '@Tools/UUID';
 
-// Constants
+// constants
 import { INVALID_VALUES } from '@Constants/errorConditionConstants';
 import { SUCCESS } from '@Constants/resultConstants';
 import {
@@ -10,7 +10,7 @@ import {
   PROPOSAL_NOT_EDITABLE,
 } from '@Constants/sanctioningConstants';
 
-// Types
+// types
 import type { SanctioningRecord, EventProposal } from '@Types/sanctioningTypes';
 
 type AddEventProposalArgs = {

@@ -1,6 +1,7 @@
 import { enterValues, scoreMatchUp } from './primitives';
 import { expect, it } from 'vitest';
 
+// Fixtures
 import { FORMAT_STANDARD_NOAD } from '@Fixtures/scoring/matchUpFormats';
 
 it('handles set scoring with NoAD', () => {

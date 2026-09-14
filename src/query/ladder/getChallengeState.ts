@@ -1,6 +1,7 @@
 import { resolveLadderMatchUp } from '@Query/ladder/resolveLadderContext';
 import { getLadderPolicy } from '@Query/ladder/getLadderPolicy';
 
+// constants and types
 import { CHALLENGE_ACCEPTED, CHALLENGE_DECLINED, CHALLENGE_ISSUED } from '@Constants/ladderConstants';
 import { ACCEPTED, DECLINED, EXPIRED, PENDING } from '@Constants/ladderConstants';
 import type { ChallengeState } from '@Constants/ladderConstants';

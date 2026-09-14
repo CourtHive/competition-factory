@@ -1,11 +1,11 @@
 import { isAggregateFormat } from '@Helpers/matchUpFormatCode/isAggregateFormat';
-import { generateScoreString } from '../matchUps/generateScoreString';
+import { generateScoreString } from '@Generators/matchUps/generateScoreString';
 import { toBePlayed } from '@Fixtures/scoring/outcomes/toBePlayed';
 import { definedAttributes } from '@Tools/definedAttributes';
 import { parseScoreString } from '@Tools/parseScoreString';
 import { parse } from '@Helpers/matchUpFormatCode/parse';
 
-// Constants
+// constants
 import { INVALID_VALUES } from '@Constants/errorConditionConstants';
 
 function inferWinningSideFromAggregate(neutralParsedSets) {

@@ -20,8 +20,8 @@ import { describe, expect, it } from 'vitest';
 // constants
 import { MATCH_RESULTS_REPORT } from '@Constants/reportConstants';
 import { COMPLETED } from '@Constants/matchUpStatusConstants';
-import { SINGLES_EVENT } from '@Constants/eventConstants';
 import { MAIN } from '@Constants/drawDefinitionConstants';
+import { SINGLES_EVENT } from '@Constants/eventConstants';
 
 const sparseTournament: any = {
   tournamentId: 'sparse-match-results',

@@ -1,5 +1,5 @@
-import { expect, test } from 'vitest';
 import { getDateTimeBoundary } from '@Generators/scheduling/utils/getTimeBoundary';
+import { expect, test } from 'vitest';
 
 test('time boundaries for startTime / endTime correctly deduced', () => {
   const date = '2023-09-18';

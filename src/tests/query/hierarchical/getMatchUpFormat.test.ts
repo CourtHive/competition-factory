@@ -1,8 +1,8 @@
-import { describe, expect, it } from 'vitest';
 import { getMatchUpFormat } from '@Query/hierarchical/getMatchUpFormat';
+import { MISSING_DRAW_ID } from '@Constants/errorConditionConstants';
 import mocksEngine from '@Assemblies/engines/mock';
 import tournamentEngine from '@Engines/syncEngine';
-import { MISSING_DRAW_ID } from '@Constants/errorConditionConstants';
+import { describe, expect, it } from 'vitest';
 
 describe('getMatchUpFormat', () => {
   it('returns matchUpFormat from matchUp', () => {

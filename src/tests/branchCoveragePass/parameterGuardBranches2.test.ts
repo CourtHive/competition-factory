@@ -14,7 +14,7 @@ import {
   setSaveDrawDeletions,
 } from '@Global/state/globalState';
 
-// constants and types
+// constants
 import { PRACTICE } from '@Constants/scheduleConstants';
 import {
   EVENT_NOT_FOUND,

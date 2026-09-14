@@ -3,11 +3,11 @@ import { getParticipantIdFinishingPositions } from '@Query/drawDefinition/finish
 import { getSourceDrawPositionRanges } from '@Query/matchUps/getSourceDrawPositionRanges';
 import { countSets, countGames } from '@Query/matchUps/roundRobinTally/scoreCounters';
 import { generateOutcome } from '@Assemblies/generators/mocks/generateOutcome';
-import tournamentEngine from '@Engines/syncEngine';
 import mocksEngine from '@Assemblies/engines/mock';
+import tournamentEngine from '@Engines/syncEngine';
 import { expect, it, describe } from 'vitest';
 
-// constants
+// constants and fixtures
 import { DEFAULTED, RETIRED, WALKOVER, SUSPENDED, INCOMPLETE } from '@Constants/matchUpStatusConstants';
 import { INVALID_VALUES } from '@Constants/errorConditionConstants';
 import { FORMAT_STANDARD } from '@Fixtures/scoring/matchUpFormats';

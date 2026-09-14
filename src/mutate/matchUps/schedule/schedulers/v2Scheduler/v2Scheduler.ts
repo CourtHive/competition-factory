@@ -6,18 +6,18 @@ import { checkRequestConflicts } from '@Mutate/matchUps/schedule/scheduleMatchUp
 import { generateVirtualCourts } from '@Assemblies/generators/scheduling/utils/generateVirtualCourts';
 import { processNextMatchUps } from '@Mutate/matchUps/schedule/scheduleMatchUps/processNextMatchUps';
 import { getEarliestCourtTime } from '@Assemblies/generators/scheduling/utils/getEarliestCourtTime';
-import { getVenueSchedulingDetails } from '@Query/matchUps/scheduling/getVenueSchedulingDetails';
 import { checkRecoveryTime } from '@Mutate/matchUps/schedule/scheduleMatchUps/checkRecoveryTime';
-import { auditAutoScheduling } from '@Mutate/matchUps/schedule/schedulers/auditAutoScheduling';
+import { getVenueSchedulingDetails } from '@Query/matchUps/scheduling/getVenueSchedulingDetails';
 import { checkDailyLimits } from '@Mutate/matchUps/schedule/scheduleMatchUps/checkDailyLimits';
+import { auditAutoScheduling } from '@Mutate/matchUps/schedule/schedulers/auditAutoScheduling';
 import { generateBookings } from '@Assemblies/generators/scheduling/utils/generateBookings';
 import { bulkScheduleMatchUps } from '@Mutate/matchUps/schedule/bulkScheduleMatchUps';
-import { addMatchUpScheduledTime } from '@Mutate/matchUps/schedule/scheduledTime';
 import { assignMatchUpCourt } from '@Mutate/matchUps/schedule/assignMatchUpCourt';
+import { addMatchUpScheduledTime } from '@Mutate/matchUps/schedule/scheduledTime';
 import { findDrawDefinition } from '@Acquire/findDrawDefinition';
 import { getMatchUpId } from '@Functions/global/extractors';
 
-// Constants and types
+// constants and types
 import { PersonRequests, TournamentRecords } from '@Types/factoryTypes';
 import { HydratedCourt, HydratedMatchUp } from '@Types/hydrated';
 import { SUCCESS } from '@Constants/resultConstants';

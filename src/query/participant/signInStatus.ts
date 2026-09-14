@@ -1,7 +1,8 @@
 import { findTournamentParticipant } from '@Acquire/findTournamentParticipant';
 import { requireParams } from '@Helpers/parameters/requireParams';
-import { getTimeItem } from '../base/timeItems';
+import { getTimeItem } from '@Query/base/timeItems';
 
+// constants
 import { TOURNAMENT_RECORD, PARTICIPANT_ID } from '@Constants/attributeConstants';
 import { SIGNED_IN, SIGN_IN_STATUS } from '@Constants/participantConstants';
 import { PARTICIPANT_NOT_FOUND } from '@Constants/errorConditionConstants';

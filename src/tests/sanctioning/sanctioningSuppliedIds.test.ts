@@ -4,7 +4,7 @@ import { beforeEach, describe, expect, it } from 'vitest';
 // constants
 import { INSUFFICIENT_UUIDS } from '@Constants/errorConditionConstants';
 
-// Types
+// types
 import type { Applicant, EventProposal, TournamentProposal, SanctioningPolicy } from '@Types/sanctioningTypes';
 
 /**

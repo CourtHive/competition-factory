@@ -6,8 +6,8 @@ import { addNotice } from '@Global/state/globalState';
 import { UUID } from '@Tools/UUID';
 
 // constants and types
-import { COURT_ID, PARTICIPANT_ID, TOURNAMENT_RECORD } from '@Constants/attributeConstants';
 import { PracticeRegistration, PracticeRegistrationStatusEnum, Tournament } from '@Types/tournamentTypes';
+import { COURT_ID, PARTICIPANT_ID, TOURNAMENT_RECORD } from '@Constants/attributeConstants';
 import { MODIFY_VENUE } from '@Constants/topicConstants';
 import { SUCCESS } from '@Constants/resultConstants';
 import { ResultType } from '@Types/factoryTypes';

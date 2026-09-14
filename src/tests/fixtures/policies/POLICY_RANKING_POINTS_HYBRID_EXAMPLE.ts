@@ -33,9 +33,9 @@
  * §"Per-AwardProfile override"
  */
 
-import { POLICY_TYPE_RANKING_POINTS } from '@Constants/policyConstants';
 import { MAIN, QUALIFYING, SINGLE_ELIMINATION } from '@Constants/drawDefinitionConstants';
 import { ATP, ITF_JUNIOR, TENNIS_EUROPE } from '@Constants/pointsAuthorityConstants';
+import { POLICY_TYPE_RANKING_POINTS } from '@Constants/policyConstants';
 import { SINGLES } from '@Constants/eventConstants';
 
 // ─── TE-circuit profile (inherits policy.pointsAuthority = TENNIS_EUROPE) ──

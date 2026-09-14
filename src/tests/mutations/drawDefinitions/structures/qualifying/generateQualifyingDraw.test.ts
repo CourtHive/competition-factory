@@ -1,11 +1,12 @@
-import tournamentEngine from '@Engines/syncEngine';
 import mocksEngine from '@Assemblies/engines/mock';
+import tournamentEngine from '@Engines/syncEngine';
 import { expect, it } from 'vitest';
 
+// constants
 import { MAIN, QUALIFYING } from '@Constants/drawDefinitionConstants';
 import { INDIVIDUAL } from '@Constants/participantConstants';
-import { SEEDING } from '@Constants/scaleConstants';
 import { SINGLES } from '@Constants/eventConstants';
+import { SEEDING } from '@Constants/scaleConstants';
 
 it('can generateDrawDefinition and place qualifiers', () => {
   const {

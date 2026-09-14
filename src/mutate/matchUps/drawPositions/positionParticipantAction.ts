@@ -2,8 +2,8 @@ import { conditionallyDisableLinkPositioning } from '@Mutate/drawDefinitions/pos
 import { addPositionActionTelemetry } from '@Mutate/drawDefinitions/positionGovernor/addPositionActionTelemetry';
 import { getPositionAssignments } from '@Query/drawDefinition/positionsGetter';
 import { getAppliedPolicies } from '@Query/extensions/getAppliedPolicies';
-import { getAllDrawMatchUps } from '@Query/matchUps/drawMatchUps';
 import { decorateResult } from '@Functions/global/decorateResult';
+import { getAllDrawMatchUps } from '@Query/matchUps/drawMatchUps';
 import { getMatchUpsMap } from '@Query/matchUps/getMatchUpsMap';
 import { assignDrawPosition } from './positionAssignment';
 import { findStructure } from '@Acquire/findStructure';

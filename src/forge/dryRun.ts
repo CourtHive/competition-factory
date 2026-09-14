@@ -42,6 +42,10 @@
  * (50+ events, full draws) it's 50–200 ms. Safe for dev/preflight callers,
  * not for hot paths — for hot-path gating use `explain` instead.
  */
+import { executeFunction } from '@Assemblies/engines/parts/executeMethod';
+import { setState } from '@Assemblies/engines/parts/stateMethods';
+import { generatePatch, JsonPatch } from './jsonPatch';
+import { makeDeepCopy } from '@Tools/makeDeepCopy';
 import {
   deleteNotices,
   getDevContext,
@@ -51,10 +55,6 @@ import {
   getTournamentRecords,
   globalLog,
 } from '@Global/state/globalState';
-import { executeFunction } from '@Assemblies/engines/parts/executeMethod';
-import { setState } from '@Assemblies/engines/parts/stateMethods';
-import { generatePatch, JsonPatch } from './jsonPatch';
-import { makeDeepCopy } from '@Tools/makeDeepCopy';
 
 // constants and types
 import { INVALID_VALUES } from '@Constants/errorConditionConstants';

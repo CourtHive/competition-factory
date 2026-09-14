@@ -5,7 +5,7 @@ import tournamentEngine from '@Engines/syncEngine';
 import { xa } from '@Tools/extractAttributes';
 import { expect, it } from 'vitest';
 
-/// Constants
+// constants
 import { BYE } from '@Constants/matchUpStatusConstants';
 
 it('supports pro-scheduling', () => {

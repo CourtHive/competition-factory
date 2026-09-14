@@ -1,10 +1,11 @@
-import { modifyMatchUpNotice } from '../../notifications/drawNotifications';
+import { modifyMatchUpNotice } from '@Mutate/notifications/drawNotifications';
 import { firstClassOrExtension } from '@Acquire/firstClassOrExtension';
 import { makeDeepCopy } from '@Tools/makeDeepCopy';
 
+// constants and types
+import { DrawDefinition, Event, MatchUp, Tournament } from '@Types/tournamentTypes';
 import { LINEUPS } from '@Constants/extensionConstants';
 import { HydratedMatchUp } from '@Types/hydrated';
-import { DrawDefinition, Event, MatchUp, Tournament } from '@Types/tournamentTypes';
 
 type UpdateSideLineUpArgs = {
   inContextTargetMatchUp?: HydratedMatchUp;

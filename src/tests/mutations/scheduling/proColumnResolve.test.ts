@@ -2,14 +2,14 @@ import { mocksEngine } from '@Assemblies/engines/mock';
 import tournamentEngine from '@Engines/syncEngine';
 import { expect, it, describe } from 'vitest';
 
-// constants and types
+// constants
+import { DOUBLES, SINGLES } from '@Constants/eventConstants';
+import { INDIVIDUAL } from '@Constants/participantConstants';
 import {
   CONFLICT_PARTICIPANTS,
   CONFLICT_POTENTIAL_PARTICIPANTS,
   SCHEDULE_CONFLICT,
 } from '@Constants/scheduleConstants';
-import { DOUBLES, SINGLES } from '@Constants/eventConstants';
-import { INDIVIDUAL } from '@Constants/participantConstants';
 
 const startDate = '2024-02-05';
 const endDate = '2024-02-11';

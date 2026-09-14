@@ -3,8 +3,8 @@ import * as governors from '@Assemblies/governors';
 
 // constants and types
 import { TournamentRecords } from '@Types/factoryTypes';
-import { Tournament } from '@Types/tournamentTypes';
 import { SUCCESS } from '@Constants/resultConstants';
+import { Tournament } from '@Types/tournamentTypes';
 
 export function generateTournamentRecord(mockProfile?: any) {
   const mockResult = governors.mocksGovernor.generateTournamentRecord(mockProfile);

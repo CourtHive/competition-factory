@@ -3,8 +3,8 @@
  */
 import { afterEach, describe, expect, it } from 'vitest';
 
-import { policyRegistry } from './policyRegistry';
 import { policyComposer } from './policyComposer';
+import { policyRegistry } from './policyRegistry';
 
 const POLICY_TYPE_SEEDING = 'seeding';
 const POLICY_TYPE_SCORING = 'scoring';

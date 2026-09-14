@@ -6,8 +6,8 @@ import { expect, it } from 'vitest';
 // constants
 import { COLLEGE_JUCO, USTA_BREWER_CUP, USTA_COLLEGE, USTA_TOC } from '@Constants/tieFormatConstants';
 import { POLICY_TYPE_SCORING } from '@Constants/policyConstants';
-import { TEAM_MATCHUP } from '@Constants/matchUpTypes';
 import { TEAM_EVENT } from '@Constants/eventConstants';
+import { TEAM_MATCHUP } from '@Constants/matchUpTypes';
 
 it('can aggregate tieFormats found in drawDefinitions to event.tieFormats', () => {
   const policyDefinitions = { [POLICY_TYPE_SCORING]: { requireParticipantsForScoring: false } };

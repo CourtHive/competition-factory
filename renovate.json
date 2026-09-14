@@ -1,6 +1,7 @@
 {
   "$schema": "https://docs.renovatebot.com/renovate-schema.json",
   "extends": ["config:recommended", ":semanticCommits"],
+  "baseBranchPatterns": ["dev"],
   "minimumReleaseAge": "3 days",
   "rebaseWhen": "behind-base-branch",
   "prConcurrentLimit": 5,

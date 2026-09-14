@@ -2,6 +2,7 @@ import mocksEngine from '@Assemblies/engines/mock';
 import tournamentEngine from '@Engines/syncEngine';
 import { describe, expect, it } from 'vitest';
 
+// constants
 import { MISSING_VALUE, VENUE_NOT_FOUND } from '@Constants/errorConditionConstants';
 
 function setup() {

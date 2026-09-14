@@ -1,7 +1,7 @@
-import { removeParticipantsScaleItems } from '../participants/scaleItems/removeScaleItems';
+import { removeParticipantsScaleItems } from '@Mutate/participants/scaleItems/removeScaleItems';
 import { decorateResult } from '@Functions/global/decorateResult';
-import { getParticipantId } from '@Functions/global/extractors';
 import { getFlightProfile } from '@Query/event/getFlightProfile';
+import { getParticipantId } from '@Functions/global/extractors';
 import { mustBeAnArray } from '@Tools/mustBeAnArray';
 
 // constants

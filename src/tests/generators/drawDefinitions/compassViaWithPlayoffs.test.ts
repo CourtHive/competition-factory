@@ -10,8 +10,8 @@
  *
  * 8 structures, 7 LOSER links, 72 matchUps total.
  */
-import tournamentEngine from '@Engines/syncEngine';
 import mocksEngine from '@Assemblies/engines/mock';
+import tournamentEngine from '@Engines/syncEngine';
 import { expect, it, describe } from 'vitest';
 
 // constants

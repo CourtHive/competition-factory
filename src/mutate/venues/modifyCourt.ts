@@ -2,8 +2,8 @@ import { resolveTournamentRecords } from '@Helpers/parameters/resolveTournamentR
 import courtTemplate from '@Assemblies/generators/templates/courtTemplate';
 import { requireParams } from '@Helpers/parameters/requireParams';
 import { modifyCourtAvailability } from './courtAvailability';
-import { findCourt } from '../../query/venues/findCourt';
 import { addNotice } from '@Global/state/globalState';
+import { findCourt } from '@Query/venues/findCourt';
 import { makeDeepCopy } from '@Tools/makeDeepCopy';
 
 // constants and types

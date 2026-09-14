@@ -1,7 +1,7 @@
+import { addExtension } from '@Mutate/extensions/addExtension';
 import { getAccessorValue } from '@Tools/getAccessorValue';
-import { addNotice } from '@Global/state/globalState';
-import { addExtension } from '../extensions/addExtension';
 import { findExtension } from '@Acquire/findExtension';
+import { addNotice } from '@Global/state/globalState';
 import { UUID } from '@Tools/UUID';
 
 // constants and types

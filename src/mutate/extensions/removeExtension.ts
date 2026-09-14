@@ -1,5 +1,6 @@
 import { decorateResult } from '@Functions/global/decorateResult';
 
+// constants and types
 import { ErrorType, INVALID_VALUES, MISSING_VALUE, NOT_FOUND } from '@Constants/errorConditionConstants';
 import { ELEMENT_REQUIRED, MISSING_NAME } from '@Constants/infoConstants';
 import { TournamentRecords } from '@Types/factoryTypes';

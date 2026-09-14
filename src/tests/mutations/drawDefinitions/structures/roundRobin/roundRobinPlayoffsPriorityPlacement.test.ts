@@ -4,12 +4,12 @@ import { getAllStructureMatchUps } from '@Query/matchUps/getAllStructureMatchUps
 import { generateMatchUpOutcome } from '@Tests/helpers/generateMatchUpOutcome';
 import { chunkArray, intersection } from '@Tools/arrays';
 import { findStructure } from '@Acquire/findStructure';
-import tournamentEngine from '@Engines/syncEngine';
-import mocksEngine from '@Assemblies/engines/mock';
 import { setsValues } from './roundRobinSetsValues';
+import mocksEngine from '@Assemblies/engines/mock';
+import tournamentEngine from '@Engines/syncEngine';
 import { expect, it } from 'vitest';
 
-// constants
+// constants and fixtures
 import { FORMAT_STANDARD } from '@Fixtures/scoring/matchUpFormats';
 import { SINGLES } from '@Constants/eventConstants';
 import {

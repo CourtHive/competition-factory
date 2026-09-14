@@ -4,7 +4,7 @@ import { transitionStatus } from './transitionStatus';
 import { MISSING_SANCTIONING_RECORD, MODIFICATION_REQUESTED } from '@Constants/sanctioningConstants';
 import { UUID } from '@Tools/UUID';
 
-// Types
+// types
 import type { SanctioningRecord, ReviewNote } from '@Types/sanctioningTypes';
 
 type RequestModificationArgs = {

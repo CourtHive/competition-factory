@@ -1,7 +1,7 @@
 import { afterEach, beforeEach, describe } from 'vitest';
 
-import { setSchemaWriteMode } from '@Global/state/globalState';
 import { BRIDGE, LEGACY, NATIVE, SchemaWriteMode } from '@Constants/schemaWriteModeConstants';
+import { setSchemaWriteMode } from '@Global/state/globalState';
 
 /**
  * Run a block of *behavioral* specs under multiple schemaWriteModes.

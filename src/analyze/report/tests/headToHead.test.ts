@@ -2,8 +2,8 @@ import { completeDrawMatchUps } from '@Assemblies/generators/mocks/completeDrawM
 import { chunkArray, generateRange } from '@Tools/arrays';
 import { timeKeeper } from '@Global/state/globalState';
 import { participantHeadToHead } from '../headToHead';
-import tournamentEngine from '@Engines/syncEngine';
 import mocksEngine from '@Assemblies/engines/mock';
+import tournamentEngine from '@Engines/syncEngine';
 import { expect, it } from 'vitest';
 
 // constants

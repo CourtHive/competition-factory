@@ -1,5 +1,5 @@
-import { getStructureSeedAssignments } from '@Query/structure/getStructureSeedAssignments';
 import { getStructurePositionedSeeds } from '@Query/structure/getStructurePositionedSeeds';
+import { getStructureSeedAssignments } from '@Query/structure/getStructureSeedAssignments';
 import { structureAssignedDrawPositions } from '@Query/drawDefinition/positionsGetter';
 import { getPairedDrawPosition } from '@Query/drawDefinition/getPairedDrawPosition';
 import { getAllStructureMatchUps } from '@Query/matchUps/getAllStructureMatchUps';
@@ -8,6 +8,7 @@ import { chunkArray, generateRange } from '@Tools/arrays';
 import { findStructure } from '@Acquire/findStructure';
 import { expect } from 'vitest';
 
+// constants
 import { STRUCTURE_NOT_FOUND } from '@Constants/errorConditionConstants';
 
 export function verifyStructure(params) {

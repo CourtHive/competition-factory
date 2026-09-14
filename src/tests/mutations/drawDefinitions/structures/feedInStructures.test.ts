@@ -1,12 +1,13 @@
 import { generateDrawTypeAndModifyDrawDefinition } from '@Assemblies/generators/drawDefinitions/generateDrawTypeAndModifyDrawDefinition';
 import { newDrawDefinition } from '@Assemblies/generators/drawDefinitions/newDrawDefinition';
+import { feedInChampionship } from '@Tests/mutations/drawDefinitions/primitives/feedIn';
 import { feedInMatchUps } from '@Assemblies/generators/drawDefinitions/feedInMatchUps';
 import { getRoundMatchUps } from '@Query/matchUps/getRoundMatchUps';
 import { getDrawData } from '@Query/drawDefinition/getDrawData';
 import { generateRange } from '@Tools/arrays';
-import { feedInChampionship } from '../primitives/feedIn';
 import { expect, it } from 'vitest';
 
+// constants and types
 import { DrawDefinition } from '@Types/tournamentTypes';
 import {
   TOP_DOWN,

@@ -1,7 +1,7 @@
 import { includesMatchUpEventType } from '@Helpers/matchUpEventTypes/includesMatchUpEventType';
 import { isMatchUpEventType } from '@Helpers/matchUpEventTypes/isMatchUpEventType';
-import { scheduledMatchUpTime } from './matchUp/scheduledMatchUpTime';
 import { scheduledMatchUpDate } from './matchUp/scheduledMatchUpDate';
+import { scheduledMatchUpTime } from './matchUp/scheduledMatchUpTime';
 import { matchUpAllocatedCourts } from './matchUp/courtAllocations';
 import { matchUpAssignedCourtId } from './matchUp/courtAssignment';
 import { matchUpAssignedVenueId } from './matchUp/venueAssignment';

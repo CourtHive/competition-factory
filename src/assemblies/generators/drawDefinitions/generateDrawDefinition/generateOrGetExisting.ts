@@ -3,7 +3,7 @@ import { generateNewDrawDefinition } from './generateNewDrawDefinition';
 import { decorateResult } from '@Functions/global/decorateResult';
 import { setUpDrawGeneration } from './setUpDrawGeneration';
 
-// constants and types
+// types
 import { DrawMaticArgs, PolicyDefinitions, ResultType } from '@Types/factoryTypes';
 import {
   DrawDefinition,

@@ -2,14 +2,14 @@
  * Statement-coverage gap tests — batch 5
  * Targets ~145 uncovered statements to push toward 95% statement coverage.
  */
-import { setParticipantScaleItems, addParticipantScaleItem } from '@Mutate/participants/scaleItems/addScaleItems';
 import { generateVoluntaryConsolation } from '@Generators/drawDefinitions/drawTypes/generateVoluntaryConsolation';
+import { setParticipantScaleItems, addParticipantScaleItem } from '@Mutate/participants/scaleItems/addScaleItems';
 import { initializeDraft, defaultTierCount } from '@Mutate/drawDefinitions/draft/initializeDraft';
 import { getParticipantIdFinishingPositions } from '@Query/drawDefinition/finishingPositions';
 import { keyValueScore, keyValueMatchUpScore } from '@Helpers/keyValueScore/keyValueScore';
 import { removeCollectionDefinition } from '@Mutate/tieFormat/removeCollectionDefinition';
-import tournamentEngine from '@Engines/syncEngine';
 import mocksEngine from '@Assemblies/engines/mock';
+import tournamentEngine from '@Engines/syncEngine';
 import { expect, it, describe } from 'vitest';
 
 // constants
@@ -17,6 +17,14 @@ import { DOUBLE_WALKOVER, WALKOVER } from '@Constants/matchUpStatusConstants';
 import { DOUBLES, SINGLES, TEAM_EVENT } from '@Constants/eventConstants';
 import { RANKING, SEEDING } from '@Constants/scaleConstants';
 import { TEAM } from '@Constants/matchUpTypes';
+import {
+  AD_HOC,
+  FIRST_MATCH_LOSER_CONSOLATION,
+  ROUND_ROBIN,
+  ROUND_ROBIN_WITH_PLAYOFF,
+  SINGLE_ELIMINATION,
+  VOLUNTARY_CONSOLATION,
+} from '@Constants/drawDefinitionConstants';
 import {
   EXISTING_DRAFT,
   INVALID_VALUES,
@@ -30,14 +38,6 @@ import {
   INVALID_DRAW_SIZE,
   UNRECOGNIZED_DRAW_TYPE,
 } from '@Constants/errorConditionConstants';
-import {
-  AD_HOC,
-  FIRST_MATCH_LOSER_CONSOLATION,
-  ROUND_ROBIN,
-  ROUND_ROBIN_WITH_PLAYOFF,
-  SINGLE_ELIMINATION,
-  VOLUNTARY_CONSOLATION,
-} from '@Constants/drawDefinitionConstants';
 
 // ----------------------------------------------------------------
 // 1. keyValueScore — various uncovered key-value scoring paths

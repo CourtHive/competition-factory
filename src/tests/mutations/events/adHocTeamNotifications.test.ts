@@ -1,13 +1,13 @@
 import { isMatchUpEventType } from '@Helpers/matchUpEventTypes/isMatchUpEventType';
 import { setSubscriptions } from '@Global/state/globalState';
 import { getMatchUpId } from '@Functions/global/extractors';
-import { tournamentEngine } from '@Engines/syncEngine';
 import { mocksEngine } from '@Assemblies/engines/mock';
+import { tournamentEngine } from '@Engines/syncEngine';
 import { expect, it } from 'vitest';
 
 // constants
-import { ADD_MATCHUPS, DELETED_MATCHUP_IDS } from '@Constants/topicConstants';
 import { COLLEGE_DEFAULT, DOMINANT_DUO } from '@Constants/tieFormatConstants';
+import { ADD_MATCHUPS, DELETED_MATCHUP_IDS } from '@Constants/topicConstants';
 import { SCORES_PRESENT } from '@Constants/errorConditionConstants';
 import { POLICY_TYPE_SCORING } from '@Constants/policyConstants';
 import { DEFAULTED } from '@Constants/matchUpStatusConstants';

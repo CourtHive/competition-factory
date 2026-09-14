@@ -1,5 +1,5 @@
-import { getInvariantViolations } from '@Tests/testHarness/exitPropagation/invariants';
 import { DOUBLE_WALKOVER, TO_BE_PLAYED, WALKOVER } from '@Constants/matchUpStatusConstants';
+import { getInvariantViolations } from '@Tests/testHarness/exitPropagation/invariants';
 import { expect, it } from 'vitest';
 
 const rulesFor = (matchUp: any): string[] =>

@@ -1,13 +1,14 @@
 import { getRoundMatchUps } from '@Query/matchUps/getRoundMatchUps';
 import { getDrawStructures } from '@Acquire/findStructure';
-import tournamentEngine from '@Engines/syncEngine';
 import mocksEngine from '@Assemblies/engines/mock';
+import tournamentEngine from '@Engines/syncEngine';
 import { expect, it } from 'vitest';
 
+// constants and fixtures
+import { CONSOLATION, FEED_IN_CHAMPIONSHIP } from '@Constants/drawDefinitionConstants';
 import { FORMAT_STANDARD } from '@Fixtures/scoring/matchUpFormats';
 import { BYE } from '@Constants/matchUpStatusConstants';
 import { SINGLES } from '@Constants/eventConstants';
-import { CONSOLATION, FEED_IN_CHAMPIONSHIP } from '@Constants/drawDefinitionConstants';
 
 it('correctly assigns BYE positions in consolation structure', () => {
   const drawSize = 32;

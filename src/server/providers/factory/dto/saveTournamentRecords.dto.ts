@@ -1,6 +1,6 @@
 import { TournamentRecords } from '@Types/factoryTypes';
-import { Tournament } from '@Types/tournamentTypes';
 import { ApiPropertyOptional } from '@nestjs/swagger';
+import { Tournament } from '@Types/tournamentTypes';
 
 export class SaveTournamentRecordsDto {
   @ApiPropertyOptional()

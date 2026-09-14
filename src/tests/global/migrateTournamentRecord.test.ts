@@ -9,7 +9,8 @@ import { describe, expect, it } from 'vitest';
 
 import { migrateTournamentRecord } from '@Mutate/tournaments/migrateTournamentRecord';
 
-// constants and types
+// constants
+import { ASSIGN_COURT, END_TIME, SCHEDULED_DATE, SCHEDULED_TIME, START_TIME } from '@Constants/timeItemConstants';
 import {
   COMPETITION_STATE,
   DELEGATED_OUTCOME,
@@ -28,7 +29,6 @@ import {
   SUB_ORDER,
   TALLY,
 } from '@Constants/extensionConstants';
-import { ASSIGN_COURT, END_TIME, SCHEDULED_DATE, SCHEDULED_TIME, START_TIME } from '@Constants/timeItemConstants';
 
 function buildLegacyRecord(): any {
   return {

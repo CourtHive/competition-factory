@@ -1,6 +1,6 @@
 import { POLICY_TYPE_SCHEDULING } from '@Constants/policyConstants';
+import { FORMAT_STANDARD } from '@Fixtures/scoring/matchUpFormats';
 import { DOUBLES, SINGLES } from '@Constants/matchUpTypes';
-import { FORMAT_STANDARD } from '../scoring/matchUpFormats';
 
 // categoryTypes
 const ADULT = 'ADULT';

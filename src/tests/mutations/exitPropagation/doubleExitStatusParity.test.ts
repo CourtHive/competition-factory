@@ -1,16 +1,18 @@
+import { playForward } from '@Tests/testHarness/exitPropagation/driver';
+import { setSubscriptions } from '@Global/state/globalState';
+import mocksEngine from '@Assemblies/engines/mock';
+import tournamentEngine from '@Engines/syncEngine';
+import { expect, test } from 'vitest';
 import {
   clearOutcome,
   getDrawDefinition,
   getDrawMatchUps,
   projectDraw,
 } from '@Tests/testHarness/exitPropagation/transitions';
-import { playForward } from '@Tests/testHarness/exitPropagation/driver';
-import { setSubscriptions } from '@Global/state/globalState';
-import mocksEngine from '@Assemblies/engines/mock';
-import tournamentEngine from '@Engines/syncEngine';
-import { expect, test } from 'vitest';
 
 // constants
+import { DEFAULTED, DOUBLE_DEFAULT, DOUBLE_WALKOVER, TO_BE_PLAYED, WALKOVER } from '@Constants/matchUpStatusConstants';
+import { OUTCOME_DEFAULT, OUTCOME_WALKOVER } from '@Helpers/keyValueScore/constants';
 import {
   MODIFIED_FEED_IN_CHAMPIONSHIP,
   FIRST_MATCH_LOSER_CONSOLATION,
@@ -22,8 +24,6 @@ import {
   COMPASS,
   OLYMPIC,
 } from '@Constants/drawDefinitionConstants';
-import { DEFAULTED, DOUBLE_DEFAULT, DOUBLE_WALKOVER, TO_BE_PLAYED, WALKOVER } from '@Constants/matchUpStatusConstants';
-import { OUTCOME_DEFAULT, OUTCOME_WALKOVER } from '@Helpers/keyValueScore/constants';
 
 /**
  * DOUBLE_WALKOVER and DOUBLE_DEFAULT must behave as one class to the propagation pipeline.

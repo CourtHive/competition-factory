@@ -2,6 +2,7 @@ import tournamentEngine from '@Engines/syncEngine';
 import { mocksEngine } from '../../..';
 import { expect, it } from 'vitest';
 
+// constants
 import {
   COURT_NOT_FOUND,
   MISSING_COURT_ID,

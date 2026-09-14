@@ -2,13 +2,13 @@ import { mocksEngine } from '@Assemblies/engines/mock';
 import { tournamentEngine } from '@Engines/syncEngine';
 import { expect, it, describe } from 'vitest';
 
+import { removeMutationLock } from '@Mutate/tournaments/mutationLocks/removeMutationLock';
 import {
   MISSING_TOURNAMENT_RECORD,
   MISSING_VALUE,
   MUTATION_LOCK_NOT_FOUND,
   UNAUTHORIZED_LOCK_OPERATION,
 } from '@Constants/errorConditionConstants';
-import { removeMutationLock } from '@Mutate/tournaments/mutationLocks/removeMutationLock';
 
 describe('removeMutationLock direct coverage', () => {
   it('returns MISSING_TOURNAMENT_RECORD when no tournamentRecord', () => {

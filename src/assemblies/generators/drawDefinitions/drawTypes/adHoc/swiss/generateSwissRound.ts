@@ -1,25 +1,25 @@
 // Query
-import { getCompetitionState } from '@Query/drawDefinition/competition/getCompetitionState';
 import { getCompetitionPolicy } from '@Query/drawDefinition/competition/getCompetitionPolicy';
+import { getCompetitionState } from '@Query/drawDefinition/competition/getCompetitionState';
 import { getAllStructureMatchUps } from '@Query/matchUps/getAllStructureMatchUps';
 import { isAdHoc } from '@Query/drawDefinition/isAdHoc';
 
 // Generators
-import { getParticipantIds } from '../drawMatic/getParticipantIds';
-import { generateAdHocMatchUps } from '../generateAdHocMatchUps';
-import { getAdHocRatings } from '../drawMatic/getAdHocRatings';
+import { getParticipantIds } from '@Generators/drawDefinitions/drawTypes/adHoc/drawMatic/getParticipantIds';
+import { generateAdHocMatchUps } from '@Generators/drawDefinitions/drawTypes/adHoc/generateAdHocMatchUps';
+import { getAdHocRatings } from '@Generators/drawDefinitions/drawTypes/adHoc/drawMatic/getAdHocRatings';
 import { generateSwissPairings } from './swissPairing';
 
 // Acquire
 import { findStructure } from '@Acquire/findStructure';
 import { findExtension } from '@Acquire/findExtension';
 
-// Constants
+// constants
 import { MISSING_DRAW_DEFINITION, STRUCTURE_NOT_FOUND } from '@Constants/errorConditionConstants';
 import { QUALIFYING, WINNER } from '@Constants/drawDefinitionConstants';
 import { SUCCESS } from '@Constants/resultConstants';
 
-// Types
+// types
 import type { DrawDefinition, Event, MatchUp, Tournament } from '@Types/tournamentTypes';
 import type { SwissPolicy } from '@Types/swissTypes';
 import { ResultType } from '@Types/factoryTypes';

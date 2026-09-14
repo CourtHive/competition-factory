@@ -2,6 +2,7 @@ import { checkRequiredParameters } from '@Helpers/parameters/checkRequiredParame
 import { resolveFromParameters } from '@Helpers/parameters/resolveFromParameters';
 import { findStructure } from '@Acquire/findStructure';
 
+// constants and types
 import { MISSING_DRAW_ID, MISSING_VALUE } from '@Constants/errorConditionConstants';
 import { DrawDefinition, Event, Tournament } from '@Types/tournamentTypes';
 import {

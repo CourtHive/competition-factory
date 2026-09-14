@@ -7,7 +7,7 @@ import { generateRange, randomPop } from '@Tools/arrays';
 import { findStructure } from '@Acquire/findStructure';
 import { ensureInt } from '@Tools/ensureInt';
 
-// Constants
+// constants
 import { INVALID_STAGE, NO_DRAW_POSITIONS_AVAILABLE_FOR_QUALIFIERS } from '@Constants/errorConditionConstants';
 import { CONSOLATION } from '@Constants/drawDefinitionConstants';
 import { SUCCESS } from '@Constants/resultConstants';

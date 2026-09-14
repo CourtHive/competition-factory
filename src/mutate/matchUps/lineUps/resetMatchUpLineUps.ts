@@ -2,7 +2,7 @@ import { modifyMatchUpNotice } from '@Mutate/notifications/drawNotifications';
 import { updateTeamLineUp } from '@Mutate/drawDefinitions/updateTeamLineUp';
 import { findDrawMatchUp } from '@Acquire/findDrawMatchUp';
 
-// constants
+// constants and types
 import { INVALID_MATCHUP, MISSING_DRAW_DEFINITION } from '@Constants/errorConditionConstants';
 import { DrawDefinition, Event, Tournament } from '@Types/tournamentTypes';
 import { SUCCESS } from '@Constants/resultConstants';

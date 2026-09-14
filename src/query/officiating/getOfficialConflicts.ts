@@ -1,4 +1,6 @@
 // Constants
+import { POLICY_TYPE_OFFICIATING_CONFLICT } from '@Constants/policyConstants';
+import { SUCCESS } from '@Constants/resultConstants';
 import {
   CONFLICT_DECLARED_RELATIONSHIP,
   MISSING_CONFLICT_PARTICIPANTS,
@@ -9,10 +11,9 @@ import {
   CONFLICT_SAME_PERSON,
   CONFLICT_BLOCK,
 } from '@Constants/officiatingConstants';
-import { POLICY_TYPE_OFFICIATING_CONFLICT } from '@Constants/policyConstants';
-import { SUCCESS } from '@Constants/resultConstants';
 
-// Types
+// types
+import type { Participant } from '@Types/tournamentTypes';
 import type {
   OfficialConflictDeclaration,
   ConflictOfInterestPolicy,
@@ -22,7 +23,6 @@ import type {
   OfficialRecord,
   ConflictType,
 } from '@Types/officiatingTypes';
-import type { Participant } from '@Types/tournamentTypes';
 
 type GetOfficialConflictsArgs = {
   /** Durable registry declarations. OPTIONAL — a tournament-scoped check needs no registry record. */

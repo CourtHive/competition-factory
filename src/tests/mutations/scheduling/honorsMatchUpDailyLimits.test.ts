@@ -4,6 +4,7 @@ import tournamentEngine from '@Engines/syncEngine';
 import { unique } from '@Tools/arrays';
 import { expect, it } from 'vitest';
 
+// constants
 import { INVALID_OBJECT } from '@Constants/errorConditionConstants';
 import { SCHEDULE_LIMITS } from '@Constants/extensionConstants';
 import { DOUBLES, SINGLES } from '@Constants/matchUpTypes';

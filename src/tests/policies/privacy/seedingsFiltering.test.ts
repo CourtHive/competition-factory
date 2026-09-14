@@ -20,6 +20,7 @@ import { generatePrivacyFixture, SINGLES_DRAW_ID } from '@Tests/testHarness/priv
 import tournamentEngine from '@Engines/syncEngine';
 import { describe, expect, it } from 'vitest';
 
+// constants and fixtures
 import POLICY_PRIVACY_DEFAULT from '@Fixtures/policies/POLICY_PRIVACY_DEFAULT';
 import { POLICY_TYPE_PARTICIPANT } from '@Constants/policyConstants';
 

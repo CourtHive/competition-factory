@@ -1,6 +1,7 @@
-import { participantScaleItem } from '../participant/participantScaleItem';
+import { participantScaleItem } from '@Query/participant/participantScaleItem';
 import { requireParams } from '@Helpers/parameters/requireParams';
 
+// constants
 import { TOURNAMENT_RECORD, EVENT } from '@Constants/attributeConstants';
 import { RANKING, RATING, SEEDING } from '@Constants/timeItemConstants';
 

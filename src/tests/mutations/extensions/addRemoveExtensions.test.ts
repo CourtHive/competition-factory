@@ -1,3 +1,10 @@
+import { generateTournamentRecord } from '@Assemblies/generators/mocks/generateTournamentRecord';
+import { firstClassOrExtension } from '@Acquire/firstClassOrExtension';
+import { removeExtension } from '@Mutate/extensions/removeExtension';
+import { addNotes, removeNotes } from '@Mutate/base/addRemoveNotes';
+import { addExtension } from '@Mutate/extensions/addExtension';
+import tournamentEngine from '@Engines/syncEngine';
+import { expect, it, test } from 'vitest';
 import {
   addDrawDefinitionExtension,
   addEventExtension,
@@ -8,13 +15,6 @@ import {
   removeParticipantExtension,
   removeTournamentExtension,
 } from '@Mutate/extensions/addRemoveExtensions';
-import { generateTournamentRecord } from '@Assemblies/generators/mocks/generateTournamentRecord';
-import { firstClassOrExtension } from '@Acquire/firstClassOrExtension';
-import { removeExtension } from '@Mutate/extensions/removeExtension';
-import { addNotes, removeNotes } from '@Mutate/base/addRemoveNotes';
-import { addExtension } from '@Mutate/extensions/addExtension';
-import tournamentEngine from '@Engines/syncEngine';
-import { expect, it, test } from 'vitest';
 
 // constants
 import {

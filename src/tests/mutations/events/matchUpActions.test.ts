@@ -1,15 +1,16 @@
 import { generateOutcomeFromScoreString } from '@Assemblies/generators/mocks/generateOutcomeFromScoreString';
 import mocksEngine from '@Assemblies/engines/mock';
-import { intersection } from '@Tools/arrays';
 import tournamentEngine from '@Engines/syncEngine';
+import { intersection } from '@Tools/arrays';
 import { expect, it } from 'vitest';
 
+// constants
+import { END, PENALTY, REFEREE, SCHEDULE, SCORE, START, STATUS } from '@Constants/matchUpActionConstants';
+import { COMPLETED, TO_BE_PLAYED } from '@Constants/matchUpStatusConstants';
 import { ELIMINATION } from '@Constants/drawDefinitionConstants';
 import { INDIVIDUAL } from '@Constants/participantConstants';
 import { SINGLES } from '@Constants/eventConstants';
 import { FEMALE } from '@Constants/genderConstants';
-import { COMPLETED, TO_BE_PLAYED } from '@Constants/matchUpStatusConstants';
-import { END, PENALTY, REFEREE, SCHEDULE, SCORE, START, STATUS } from '@Constants/matchUpActionConstants';
 
 it('can return valid actions for matchUps', () => {
   const participantsProfile = {

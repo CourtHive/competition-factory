@@ -1,5 +1,5 @@
-import { parseScoreString } from '@Tools/parseScoreString';
 import { generateMatchUpOutcome } from './generateMatchUpOutcome';
+import { parseScoreString } from '@Tools/parseScoreString';
 import { expect, it } from 'vitest';
 
 it('can reliably generate matchUp outcomes', () => {

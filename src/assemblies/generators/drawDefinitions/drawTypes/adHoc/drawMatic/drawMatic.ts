@@ -5,7 +5,7 @@ import { isAdHoc } from '@Query/drawDefinition/isAdHoc';
 import { getAdHocRatings } from './getAdHocRatings';
 import { generateRange } from '@Tools/arrays';
 
-// types and constants
+// constants and types
 import { INVALID_DRAW_DEFINITION, INVALID_VALUES, STRUCTURE_NOT_FOUND } from '@Constants/errorConditionConstants';
 import { stageOrder } from '@Constants/drawDefinitionConstants';
 import { DrawMaticArgs, ResultType } from '@Types/factoryTypes';

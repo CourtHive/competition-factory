@@ -3,7 +3,7 @@ import mocksEngine from '@Assemblies/engines/mock';
 import tournamentEngine from '@Engines/syncEngine';
 import { expect, it, describe } from 'vitest';
 
-// Constants and Types
+// constants
 import { POLICY_TYPE_RANKING_POINTS } from '@Constants/policyConstants';
 
 /**

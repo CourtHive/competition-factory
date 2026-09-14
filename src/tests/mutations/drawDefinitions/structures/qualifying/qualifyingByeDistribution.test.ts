@@ -3,6 +3,7 @@ import tournamentEngine from '@Engines/syncEngine';
 import { chunkArray } from '@Tools/arrays';
 import { expect, it } from 'vitest';
 
+// constants
 import { QUALIFYING } from '@Constants/drawDefinitionConstants';
 
 it('places BYEs reasonably in qualifying structures', () => {

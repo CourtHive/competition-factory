@@ -1,9 +1,10 @@
-import { getRoundMatchUps } from '@Query/matchUps/getRoundMatchUps';
 import { getPositionAssignments } from '@Query/drawDefinition/positionsGetter';
-import tournamentEngine from '@Engines/syncEngine';
+import { getRoundMatchUps } from '@Query/matchUps/getRoundMatchUps';
 import mocksEngine from '@Assemblies/engines/mock';
+import tournamentEngine from '@Engines/syncEngine';
 import { expect, test } from 'vitest';
 
+// constants
 import { LUCKY_DRAW } from '@Constants/drawDefinitionConstants';
 import { BYE } from '@Constants/matchUpStatusConstants';
 import { DOUBLES } from '@Constants/eventConstants';

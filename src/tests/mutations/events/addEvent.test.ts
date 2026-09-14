@@ -3,8 +3,9 @@ import mocksEngine from '@Assemblies/engines/mock';
 import tournamentEngine from '@Engines/syncEngine';
 import { expect, it } from 'vitest';
 
-import { INVALID_VALUES } from '@Constants/errorConditionConstants';
+// constants
 import { FEED_IN, MAIN, QUALIFYING, ROUND_ROBIN } from '@Constants/drawDefinitionConstants';
+import { INVALID_VALUES } from '@Constants/errorConditionConstants';
 
 it('can generate an event with a draw and attach it to a tournamentRecord', () => {
   tournamentEngine.devContext(true);

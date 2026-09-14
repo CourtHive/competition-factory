@@ -4,16 +4,16 @@
  * (and tournament-attached policies) are absent and policyName is provided.
  */
 import { expect, it, describe, beforeEach, afterEach } from 'vitest';
-import tournamentEngine from '@Engines/syncEngine';
 import mocksEngine from '@Assemblies/engines/mock';
+import tournamentEngine from '@Engines/syncEngine';
 
 import { policyRegistry } from '@Global/policyRegistry';
 
 // constants and fixtures
-import { POLICY_TYPE_RANKING_POINTS } from '@Constants/policyConstants';
 import { POLICY_RANKING_POINTS_BASIC } from '@Fixtures/policies/POLICY_RANKING_POINTS_BASIC';
 import { MISSING_POLICY_DEFINITION } from '@Constants/errorConditionConstants';
 import { SINGLE_ELIMINATION } from '@Constants/drawDefinitionConstants';
+import { POLICY_TYPE_RANKING_POINTS } from '@Constants/policyConstants';
 import { SINGLES } from '@Constants/eventConstants';
 
 let eventId: string;

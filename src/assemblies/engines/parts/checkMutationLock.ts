@@ -3,7 +3,7 @@ import { addExtension } from '@Mutate/extensions/addExtension';
 import { findExtension } from '@Acquire/findExtension';
 import { findVenue } from '@Query/venues/findVenue';
 
-// constants
+// constants and types
 import { MutationLock, MutationLocksValue } from '@Types/mutationLockTypes';
 import { MUTATION_LOCKED } from '@Constants/errorConditionConstants';
 import { MUTATION_LOCKS } from '@Constants/extensionConstants';

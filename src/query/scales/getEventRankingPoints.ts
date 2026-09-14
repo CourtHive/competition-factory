@@ -4,9 +4,9 @@ import { policyRegistry } from '@Global/policyRegistry';
 
 // constants and types
 import { POLICY_TYPE_RANKING_POINTS } from '@Constants/policyConstants';
+import { EventTypeUnion, Tournament } from '@Types/tournamentTypes';
 import { PolicyDefinitions } from '@Types/factoryTypes';
 import { SUCCESS } from '@Constants/resultConstants';
-import { EventTypeUnion, Tournament } from '@Types/tournamentTypes';
 import { DOUBLES } from '@Constants/eventConstants';
 import {
   MISSING_EVENT,

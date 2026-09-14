@@ -3,18 +3,11 @@ import mocksEngine from '@Assemblies/engines/mock';
 import tournamentEngine from '@Engines/syncEngine';
 import { expect, test, describe } from 'vitest';
 
+// constants and fixtures
 import { INCOMPATIBLE_MATCHUP_STATUS } from '@Constants/errorConditionConstants';
+import { POLICY_TYPE_PROGRESSION } from '@Constants/policyConstants';
 import { toBePlayed } from '@Fixtures/scoring/outcomes/toBePlayed';
 import { MODIFY_MATCHUP } from '@Constants/topicConstants';
-import {
-  BYE,
-  COMPLETED,
-  DEFAULTED,
-  DOUBLE_DEFAULT,
-  DOUBLE_WALKOVER,
-  TO_BE_PLAYED,
-  WALKOVER,
-} from '@Constants/matchUpStatusConstants';
 import {
   COMPASS,
   CONSOLATION,
@@ -25,7 +18,15 @@ import {
   MAIN,
   OLYMPIC,
 } from '@Constants/drawDefinitionConstants';
-import { POLICY_TYPE_PROGRESSION } from '@Constants/policyConstants';
+import {
+  BYE,
+  COMPLETED,
+  DEFAULTED,
+  DOUBLE_DEFAULT,
+  DOUBLE_WALKOVER,
+  TO_BE_PLAYED,
+  WALKOVER,
+} from '@Constants/matchUpStatusConstants';
 
 const getTarget = (params) => {
   const { matchUps, roundNumber, roundPosition, stage, structureName } = params;

@@ -7,7 +7,7 @@ import { decorateResult } from '@Functions/global/decorateResult';
 import { getFlightProfile } from '@Query/event/getFlightProfile';
 import { findStructure } from '@Acquire/findStructure';
 
-// Constants and Types
+// constants and types
 import { DrawDefinition, Event, Tournament } from '@Types/tournamentTypes';
 import { SUCCESS } from '@Constants/resultConstants';
 import { SeedingProfile } from '@Types/factoryTypes';

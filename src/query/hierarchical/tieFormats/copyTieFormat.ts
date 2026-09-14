@@ -1,5 +1,6 @@
 import { makeDeepCopy } from '@Tools/makeDeepCopy';
 
+// types
 import { TieFormat } from '@Types/tournamentTypes';
 
 export function copyTieFormat(tieFormat?: TieFormat) {

@@ -1,13 +1,14 @@
+import { POLICY_RANKING_POINTS_ITF_WTT } from '@Fixtures/policies/POLICY_RANKING_POINTS_ITF_WTT';
 import { POLICY_RANKING_POINTS_BASIC } from '@Fixtures/policies/POLICY_RANKING_POINTS_BASIC';
 import { POLICY_RANKING_POINTS_ATP } from '@Fixtures/policies/POLICY_RANKING_POINTS_ATP';
-import { POLICY_RANKING_POINTS_ITF_WTT } from '@Fixtures/policies/POLICY_RANKING_POINTS_ITF_WTT';
 import mocksEngine from '@Assemblies/engines/mock';
 import tournamentEngine from '@Engines/syncEngine';
 import { expect, it, describe } from 'vitest';
 
-import { POLICY_TYPE_RANKING_POINTS } from '@Constants/policyConstants';
+// constants
 import { ATP, ITF, TENNIS_EUROPE, UNSPECIFIED } from '@Constants/pointsAuthorityConstants';
 import { SINGLE_ELIMINATION } from '@Constants/drawDefinitionConstants';
+import { POLICY_TYPE_RANKING_POINTS } from '@Constants/policyConstants';
 
 describe('pointsAuthority round-trips from policy to award', () => {
   it('stamps ATP on every award emitted from the ATP policy', () => {

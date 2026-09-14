@@ -614,10 +614,10 @@ nothing is withdrawn and behaviour is unchanged.
 
 **What changes for a caller who does use it:**
 
-| before                                                       | after                                                            |
-| ------------------------------------------------------------ | ---------------------------------------------------------------- |
-| clearing the source of a propagated exit → `ERR_PROPAGATED_EXITS_DOWNSTREAM` | succeeds, and the draw returns to its prior state |
-| re-scoring it → the old produced exit survived                | the old produced exit is withdrawn before the new one is written  |
+| before                                                                       | after                                                            |
+| ---------------------------------------------------------------------------- | ---------------------------------------------------------------- |
+| clearing the source of a propagated exit → `ERR_PROPAGATED_EXITS_DOWNSTREAM` | succeeds, and the draw returns to its prior state                |
+| re-scoring it → the old produced exit survived                               | the old produced exit is withdrawn before the new one is written |
 
 One refusal is preserved but **reports a different code**. Where the consolation matchUp holds a
 second participant arriving from an unrelated matchUp, the clear is still refused — that exit does
@@ -642,11 +642,11 @@ drawPosition whose `positionAssignment` held nobody, and the draw recorded a wal
 
 The rule is now about **which kind of empty** the winning side is:
 
-| winning side | awardable |
-| ------------------------------------------------------------ | --------- |
-| holds a participant, a bye or a qualifier | yes |
-| holds **no `drawPosition`** — an unfilled feed slot awaiting its arrival | yes |
-| holds a `drawPosition` whose assignment is present and **vacant** | **no** — `ERR_INVALID_MATCHUP_STATUS` |
+| winning side                                                             | awardable                             |
+| ------------------------------------------------------------------------ | ------------------------------------- |
+| holds a participant, a bye or a qualifier                                | yes                                   |
+| holds **no `drawPosition`** — an unfilled feed slot awaiting its arrival | yes                                   |
+| holds a `drawPosition` whose assignment is present and **vacant**        | **no** — `ERR_INVALID_MATCHUP_STATUS` |
 
 **Who is affected.** Only callers using `propagateExitStatus` (or a policy that sets it, such as
 `POLICY_SCORING_USTA`) AND submitting an exit whose `winningSide` names a claimed-but-empty seat.
@@ -662,6 +662,39 @@ had no reading, and the engine already refused a bare `{ winningSide }` on the s
 Whether a player can lose a walkover to an opponent who does not exist is a rules question, of the
 same kind as [11b](#11b-a-retirement-no-longer-carries-into-the-consolation-by-default), and it is
 not decided here.
+
+> **CORRECTED — see [11e](#11e-a-bye-can-never-be-the-winning-side).** The paragraph above is wrong
+> and shipped in #4858. It is not a rules question: the engine had already decided it, and the
+> alternative it names is a bug class, not a policy. The BYE case is refused as of #4862.
+
+## 11e. A BYE can never be the winning side
+
+_Shipped in [#4862](https://github.com/CourtHive/competition-factory/pull/4862)._
+
+Completes [11d](#11d-an-exit-cannot-be-awarded-to-a-drawposition-nobody-holds), which carved out a
+`BYE` on the winning side and gave a bad reason for it.
+
+A `WALKOVER` or `DEFAULTED` whose `winningSide` names a **bye** is now refused with
+`ERR_INVALID_MATCHUP_STATUS`, exactly as one naming a claimed-but-vacant drawPosition is.
+
+**This is not a new rule.** The engine states it in two places already:
+
+- `getExitWinningSide` — _"A BYE draw position can never be the winning side […] this guard exists so
+  a future caller that forgets to filter cannot resurrect the 'advance the empty/BYE side' bug
+  class."_
+- `progressExitStatus` — when the opponent is a bye the participant **advances through it**; the
+  matchUp stays a `BYE` and the exit is re-propagated onto wherever they landed. Explicitly _"NOT a
+  WALKOVER"_.
+
+So the propagation cascade never produces this state. Only a direct `setMatchUpStatus` call could,
+and the entry point now agrees with the cascade.
+
+**Who is affected.** Only a caller that directly records an exit on a matchUp containing a bye AND
+names the bye as the winner. Recording the same exit **for the player who is actually there** is
+unaffected and still accepted — a director can still record that the present player did not play.
+
+**There is no flag to restore it.** A player cannot lose to an opponent who does not exist; the
+previous behaviour had no reading a governing body could adopt.
 
 ## 12. Non-breaking additions worth knowing
 

@@ -1,5 +1,5 @@
-import { getStructureMatchUps } from '@Query/structure/getStructureMatchUps';
 import { modifyMatchUpNotice } from '@Mutate/notifications/drawNotifications';
+import { getStructureMatchUps } from '@Query/structure/getStructureMatchUps';
 import { decorateResult } from '@Functions/global/decorateResult';
 import { getDrawMatchUps } from '@Query/matchUps/drawMatchUps';
 import { getMatchUpId } from '@Functions/global/extractors';

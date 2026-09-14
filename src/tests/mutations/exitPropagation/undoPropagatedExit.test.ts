@@ -1,10 +1,13 @@
 import { getDrawDefinition, projectDraw, stableHash } from '@Tests/testHarness/exitPropagation/transitions';
 import { POLICY_SCORING_USTA } from '@Fixtures/policies/POLICY_SCORING_USTA';
 import { setSubscriptions } from '@Global/state/globalState';
-import tournamentEngine from '@Engines/syncEngine';
 import mocksEngine from '@Assemblies/engines/mock';
+import tournamentEngine from '@Engines/syncEngine';
 import { describe, expect, it } from 'vitest';
 
+// constants
+import { DEFAULTED, RETIRED, TO_BE_PLAYED, WALKOVER } from '@Constants/matchUpStatusConstants';
+import { CLEAR_SCORE } from '@Constants/matchUpActionConstants';
 import {
   FIRST_MATCH_LOSER_CONSOLATION,
   FIRST_ROUND_LOSER_CONSOLATION,
@@ -12,8 +15,6 @@ import {
   DOUBLE_ELIMINATION,
   COMPASS,
 } from '@Constants/drawDefinitionConstants';
-import { DEFAULTED, RETIRED, TO_BE_PLAYED, WALKOVER } from '@Constants/matchUpStatusConstants';
-import { CLEAR_SCORE } from '@Constants/matchUpActionConstants';
 
 /**
  * An exit a matchUp PRODUCED must come back when that matchUp's own result is removed.

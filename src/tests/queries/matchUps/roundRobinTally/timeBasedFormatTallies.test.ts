@@ -1,8 +1,8 @@
 import { tallyParticipantResults } from '@Query/matchUps/roundRobinTally/tallyParticipantResults';
 import { firstClassOrExtension } from '@Acquire/firstClassOrExtension';
 import { getParticipantId } from '@Functions/global/extractors';
-import tournamentEngine from '@Engines/syncEngine';
 import mocksEngine from '@Assemblies/engines/mock';
+import tournamentEngine from '@Engines/syncEngine';
 import { expect, it } from 'vitest';
 
 // constants

@@ -1,10 +1,11 @@
-import { disableTieAutoCalc } from '@Mutate/extensions/matchUps/disableTieAutoCalc';
-import { removeDelegatedOutcome } from '@Mutate/extensions/matchUps/removeDelegatedOutcome';
 import { modifyMatchUpFormatTiming } from '@Mutate/extensions/matchUps/modifyMatchUpFormatTiming';
+import { removeDelegatedOutcome } from '@Mutate/extensions/matchUps/removeDelegatedOutcome';
+import { disableTieAutoCalc } from '@Mutate/extensions/matchUps/disableTieAutoCalc';
 import mocksEngine from '@Assemblies/engines/mock';
 import tournamentEngine from '@Engines/syncEngine';
 import { describe, expect, it } from 'vitest';
 
+// constants and fixtures
 import { FORMAT_STANDARD } from '@Fixtures/scoring/matchUpFormats';
 import {
   EVENT_NOT_FOUND,

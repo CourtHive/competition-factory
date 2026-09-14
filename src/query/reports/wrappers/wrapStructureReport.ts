@@ -1,6 +1,6 @@
 import { getStructureReports } from '@Query/structure/structureReport';
 
-// Constants and Types
+// constants and types
 import { STRUCTURE_REPORT } from '@Constants/reportConstants';
 import { Tournament } from '@Types/tournamentTypes';
 import { ReportResult } from '@Types/reportTypes';

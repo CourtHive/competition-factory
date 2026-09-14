@@ -3,7 +3,7 @@ import mocksEngine from '@Assemblies/engines/mock';
 import tournamentEngine from '@Engines/syncEngine';
 import { expect, test } from 'vitest';
 
-// Constants
+// constants
 import { ALTERNATE, DIRECT_ACCEPTANCE } from '@Constants/entryStatusConstants';
 import { INDIVIDUAL } from '@Constants/participantConstants';
 import { COMPETITOR } from '@Constants/participantRoles';

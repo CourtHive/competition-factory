@@ -4,8 +4,8 @@
  * Test the main pbpValidator() API
  */
 
-import { describe, test, expect } from 'vitest';
 import { pbpValidator } from '@Assemblies/governors/scoreGovernor';
+import { describe, test, expect } from 'vitest';
 
 describe('pbpValidator', () => {
   describe('Basic Validation', () => {

@@ -7,11 +7,11 @@ import { bulkRescheduleMatchUps, bulkReschedule } from '@Mutate/matchUps/schedul
 import { createTeamsFromParticipantAttributes } from '@Mutate/participants/createTeamsFromAttributes';
 import { setEventStartDate, setEventEndDate, setEventDates } from '@Mutate/events/setEventDates';
 import { generateVirtualCourts } from '@Generators/scheduling/utils/generateVirtualCourts';
-import { matchUpScheduleChange } from '@Mutate/matchUps/schedule/matchUpScheduleChange';
 import { orderCollectionDefinitions } from '@Mutate/tieFormat/orderCollectionDefinitions';
+import { matchUpScheduleChange } from '@Mutate/matchUps/schedule/matchUpScheduleChange';
 import { getMatchUpScheduleDetails } from '@Query/matchUp/getMatchUpScheduleDetails';
-import { getItemTieFormat } from '@Query/hierarchical/tieFormats/getItemTieFormat';
 import { addCollectionDefinition } from '@Mutate/tieFormat/addCollectionDefinition';
+import { getItemTieFormat } from '@Query/hierarchical/tieFormats/getItemTieFormat';
 import { processTiebreakSet } from '@Helpers/keyValueScore/processTiebreakSet';
 import { calculateNewRatings } from '@Generators/scales/calculateNewRatings';
 import { validatePlayoffGroups } from '@Validators/validatePlayoffGroups';
@@ -29,7 +29,7 @@ import {
   validateParticipantRating,
 } from '@Query/entries/categoryValidation';
 
-// constants
+// constants and fixtures
 import { INDIVIDUAL, PAIR } from '@Constants/participantConstants';
 import { FORMAT_STANDARD } from '@Fixtures/scoring/matchUpFormats';
 import { COMPETITOR } from '@Constants/participantRoles';

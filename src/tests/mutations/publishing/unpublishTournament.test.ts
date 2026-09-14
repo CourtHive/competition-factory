@@ -1,8 +1,9 @@
+import mocksEngine from '@Assemblies/engines/mock';
 import tournamentEngine from '@Engines/syncEngine';
 import { globalState } from '../../..';
-import mocksEngine from '@Assemblies/engines/mock';
 import { expect, it } from 'vitest';
 
+// constants
 import { UNPUBLISH_TOURNAMENT } from '@Constants/topicConstants';
 
 function setupSubscription() {

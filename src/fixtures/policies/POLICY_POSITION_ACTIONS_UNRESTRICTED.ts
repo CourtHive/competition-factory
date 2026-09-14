@@ -1,5 +1,5 @@
-import { POLICY_TYPE_POSITION_ACTIONS } from '@Constants/policyConstants';
 import { REMOVE_SEED, SEED_VALUE } from '@Constants/positionActionConstants';
+import { POLICY_TYPE_POSITION_ACTIONS } from '@Constants/policyConstants';
 
 export const POLICY_POSITION_ACTIONS_UNRESTRICTED = {
   [POLICY_TYPE_POSITION_ACTIONS]: {

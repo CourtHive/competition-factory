@@ -3,10 +3,6 @@ import { applyScheduleScenario } from '@Mutate/matchUps/schedule/applyScheduleSc
 import { validateScheduleScenario } from '@Validators/validateScheduleScenario';
 import { expect, it } from 'vitest';
 import {
-  computeScheduleFingerprint,
-  getScheduleScenarioStatus,
-} from '@Query/matchUps/scheduling/scheduleScenarioReconciliation';
-import {
   rebaseScheduleScenario,
   removeScheduleScenario,
   updateScheduleScenario,
@@ -14,7 +10,12 @@ import {
   addScheduleScenario,
   getScheduleScenario,
 } from '@Mutate/tournaments/scheduleScenarios';
+import {
+  computeScheduleFingerprint,
+  getScheduleScenarioStatus,
+} from '@Query/matchUps/scheduling/scheduleScenarioReconciliation';
 
+// constants
 import {
   MISSING_TOURNAMENT_RECORD,
   MISSING_TOURNAMENT_RECORDS,

@@ -1,8 +1,9 @@
-import { findExtension } from '@Acquire/findExtension';
 import competitionEngineSync from '@Engines/syncEngine';
+import { findExtension } from '@Acquire/findExtension';
 import mocksEngine from '@Assemblies/engines/mock';
 import { expect, test } from 'vitest';
 
+// types
 import { Tournament } from '@Types/tournamentTypes';
 
 test.each([competitionEngineSync])(

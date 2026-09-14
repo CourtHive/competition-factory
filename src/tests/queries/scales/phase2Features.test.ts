@@ -1,11 +1,12 @@
 import { POLICY_RANKING_POINTS_USTA_JUNIOR } from '@Tests/fixtures/policies/POLICY_RANKING_POINTS_USTA_JUNIOR';
 import scaleEngine from '@Engines/scaleEngine';
-import { mocksEngine } from '../../..';
 import { describe, expect, it } from 'vitest';
+import { mocksEngine } from '../../..';
 
+// constants
+import { COMPASS, ROUND_ROBIN, SINGLE_ELIMINATION } from '@Constants/drawDefinitionConstants';
 import { POLICY_TYPE_RANKING_POINTS } from '@Constants/policyConstants';
 import { DOUBLES } from '@Constants/eventConstants';
-import { COMPASS, ROUND_ROBIN, SINGLE_ELIMINATION } from '@Constants/drawDefinitionConstants';
 
 const policyDefinitions = POLICY_RANKING_POINTS_USTA_JUNIOR;
 

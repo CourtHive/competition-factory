@@ -3,6 +3,7 @@ import { applyVenueConstraints } from './applyVenueConstraints';
 import { makeDeepCopy } from '@Tools/makeDeepCopy';
 import { isObject } from '@Tools/objects';
 
+// constants
 import { DISABLED } from '@Constants/extensionConstants';
 
 export function getInContextCourt({ convertExtensions, ignoreDisabled, venue, court }) {

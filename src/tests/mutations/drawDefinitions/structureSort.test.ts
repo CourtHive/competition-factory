@@ -5,6 +5,7 @@ import { instanceCount } from '@Tools/arrays';
 import * as tools from '@Assemblies/tools';
 import { expect, test } from 'vitest';
 
+// constants
 import {
   AGGREGATE_EVENT_STRUCTURES,
   COMPASS,

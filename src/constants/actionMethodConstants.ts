@@ -54,6 +54,7 @@ import {
   WITHDRAW_PARTICIPANT_METHOD,
 } from './positionActionConstants';
 
+// types
 import type { FactoryEngineMethod } from '@Types/factoryEngineMethods';
 
 export const actionMethodConstants: Record<string, FactoryEngineMethod> = {

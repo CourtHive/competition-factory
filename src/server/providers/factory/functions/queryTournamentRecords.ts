@@ -1,5 +1,5 @@
-import { queryEngine } from '../engines/queryEngine';
-import recordStorage from '../../../data/fileSystem';
+import { queryEngine } from '@Server/providers/factory/engines/queryEngine';
+import recordStorage from '@Server/data/fileSystem';
 import { Logger } from '@nestjs/common';
 
 export async function queryTournamentRecords(payload) {

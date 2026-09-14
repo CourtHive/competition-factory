@@ -1,6 +1,6 @@
-import { describe, expect, it, beforeEach } from 'vitest';
 import { setState, getMatchUp, getMatchUps, reset, getState } from '@Assemblies/engines/matchUp/stateMethods';
 import { INVALID_OBJECT, MISSING_VALUE } from '@Constants/errorConditionConstants';
+import { describe, expect, it, beforeEach } from 'vitest';
 
 describe('stateMethods', () => {
   // Reset state before each test to ensure isolation

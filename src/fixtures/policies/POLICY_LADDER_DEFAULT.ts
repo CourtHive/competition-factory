@@ -8,8 +8,8 @@
  * policy setting `RATING` is legal to express today and its behaviour is not yet built — see
  * `getLadderOrdering`.
  */
-import { POLICY_TYPE_LADDER } from '@Constants/policyConstants';
 import { EITHER, RANK, SWAP } from '@Constants/ladderConstants';
+import { POLICY_TYPE_LADDER } from '@Constants/policyConstants';
 
 export const POLICY_LADDER_DEFAULT = {
   [POLICY_TYPE_LADDER]: {

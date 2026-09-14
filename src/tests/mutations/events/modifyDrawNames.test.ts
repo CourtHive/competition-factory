@@ -2,6 +2,7 @@ import mocksEngine from '@Assemblies/engines/mock';
 import tournamentEngine from '@Engines/syncEngine';
 import { expect, it } from 'vitest';
 
+// constants
 import { MISSING_DRAW_DEFINITION } from '@Constants/errorConditionConstants';
 import { INDIVIDUAL } from '@Constants/participantConstants';
 

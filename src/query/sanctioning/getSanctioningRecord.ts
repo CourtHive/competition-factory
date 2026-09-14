@@ -1,10 +1,10 @@
 import { makeDeepCopy } from '@Tools/makeDeepCopy';
 
-// Constants
+// constants
 import { MISSING_SANCTIONING_RECORD } from '@Constants/sanctioningConstants';
 import { SUCCESS } from '@Constants/resultConstants';
 
-// Types
+// types
 import type { SanctioningRecord } from '@Types/sanctioningTypes';
 
 type GetSanctioningRecordArgs = {

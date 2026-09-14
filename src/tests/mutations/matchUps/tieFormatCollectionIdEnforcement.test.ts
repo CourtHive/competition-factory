@@ -1,9 +1,10 @@
 import { generationGovernor, tieFormatGovernor } from '@Assemblies/governors';
 import { validateTieFormat } from '@Validators/validateTieFormat';
-import tournamentEngine from '@Engines/syncEngine';
 import mocksEngine from '@Assemblies/engines/mock';
+import tournamentEngine from '@Engines/syncEngine';
 import { expect, it } from 'vitest';
 
+// constants and fixtures
 import { INVALID_TIE_FORMAT } from '@Constants/errorConditionConstants';
 import { FORMAT_STANDARD } from '@Fixtures/scoring/matchUpFormats';
 import { SINGLES } from '@Constants/matchUpTypes';

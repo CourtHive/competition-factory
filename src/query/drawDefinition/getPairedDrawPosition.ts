@@ -1,5 +1,5 @@
-import { getInitialRoundNumber } from '../matchUps/getInitialRoundNumber';
-import { getRoundMatchUps } from '../matchUps/getRoundMatchUps';
+import { getInitialRoundNumber } from '@Query/matchUps/getInitialRoundNumber';
+import { getRoundMatchUps } from '@Query/matchUps/getRoundMatchUps';
 
 // types
 import { HydratedMatchUp } from '@Types/hydrated';

@@ -1,3 +1,4 @@
+import { expect, it, describe } from 'vitest';
 import {
   courtRow,
   drawRow,
@@ -17,7 +18,6 @@ import {
   SeedRowContext,
   StructureRowContext,
 } from '@Query/readModel/readModelRows';
-import { expect, it, describe } from 'vitest';
 
 const ctx: MatchUpRowContext = { tournamentId: 't1', providerId: 'PROV', published: false, embargo: null };
 

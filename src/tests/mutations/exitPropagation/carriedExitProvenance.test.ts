@@ -5,6 +5,7 @@ import tournamentEngine from '@Assemblies/engines/sync';
 import mocksEngine from '@Assemblies/engines/mock';
 import { expect, it } from 'vitest';
 
+// constants
 import { FEED_IN_CHAMPIONSHIP, MODIFIED_FEED_IN_CHAMPIONSHIP } from '@Constants/drawDefinitionConstants';
 import { WALKOVER } from '@Constants/matchUpStatusConstants';
 
@@ -41,7 +42,14 @@ function scoreMainRoundOne({ drawId, roundPosition, outcome }) {
 
 it.each([
   { drawType: FEED_IN_CHAMPIONSHIP, drawSize: 8, participantsCount: 8, roundPosition: 3 },
-  { drawType: MODIFIED_FEED_IN_CHAMPIONSHIP, drawSize: 8, participantsCount: 6, roundPosition: 1 },
+  // roundPosition 3, not 1. In a 6-of-8 draw MAIN r1p1 is a BYE — `["ce5054", "BYE"]` — so scoring
+  // it `{ matchUpStatus: WALKOVER, winningSide: 2 }` awarded a walkover to the bye side, a state
+  // `getExitWinningSide` calls a bug class ("a BYE draw position can never be the winning side") and
+  // `progressExitStatus` RULE 1 explicitly refuses to produce ("NOT a WALKOVER"). The engine now
+  // refuses it on entry too, so this row needs a CONTESTED matchUp — which is what it always meant,
+  // the bye being an accident of `roundPosition: 1` in this particular reduction. r1p2 and r1p3 are
+  // the two contested first-round matchUps and both feed the consolation; 3 matches the row above.
+  { drawType: MODIFIED_FEED_IN_CHAMPIONSHIP, drawSize: 8, participantsCount: 6, roundPosition: 3 },
 ])(
   'a walkover carried into the consolation of a $drawType records provenance naming its source',
   ({ drawType, drawSize, participantsCount, roundPosition }) => {

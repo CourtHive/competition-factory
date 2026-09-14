@@ -5,7 +5,7 @@ import { getSeedBlocks } from '@Query/drawDefinition/getSeedBlocks';
 import { chunkArray, shuffleArray, unique } from '@Tools/arrays';
 import { numericSort } from '@Tools/sorting';
 
-// Constants
+// constants
 import { ADJACENT, CLUSTER, CONTAINER, QUALIFYING } from '@Constants/drawDefinitionConstants';
 
 export function getUnseededByePositions({

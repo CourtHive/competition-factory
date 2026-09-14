@@ -1,5 +1,5 @@
+import { removeAssignment } from '@Tests/mutations/drawDefinitions/testingUtilities';
 import POLICY_SCORING_DEFAULT from '@Fixtures/policies/POLICY_SCORING_DEFAULT';
-import { removeAssignment } from '../../drawDefinitions/testingUtilities';
 import POLICY_SCORING_USTA from '@Fixtures/policies/POLICY_SCORING_USTA';
 import { setSubscriptions } from '@Global/state/globalState';
 import tournamentEngine from '@Tests/engines/syncEngine';

@@ -1,9 +1,9 @@
 import { setSchemaWriteMode } from '@Global/state/globalState';
+import { afterEach, describe, expect, it } from 'vitest';
 import mocksEngine from '@Assemblies/engines/mock';
 import tournamentEngine from '@Engines/syncEngine';
-import { afterEach, describe, expect, it } from 'vitest';
 
-// constants and types
+// constants
 import { CONFLICT_BYE_SCHEDULED, CONFLICT_COURT_DOUBLE_BOOKING } from '@Constants/scheduleConstants';
 import { MATCHUP_HAS_SCHEDULING } from '@Constants/errorConditionConstants';
 import { LEGACY, NATIVE } from '@Constants/schemaWriteModeConstants';

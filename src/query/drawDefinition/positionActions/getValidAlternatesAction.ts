@@ -5,8 +5,8 @@ import { unique } from '@Tools/arrays';
 
 // constants and types
 import { DrawDefinition, Entry, Event, Participant, PositionAssignment, Structure } from '@Types/tournamentTypes';
-import { ALTERNATE, UNGROUPED, UNPAIRED, WITHDRAWN } from '@Constants/entryStatusConstants';
 import { CONSOLATION, MAIN, PLAY_OFF, QUALIFYING } from '@Constants/drawDefinitionConstants';
+import { ALTERNATE, UNGROUPED, UNPAIRED, WITHDRAWN } from '@Constants/entryStatusConstants';
 import { POLICY_TYPE_POSITION_ACTIONS } from '@Constants/policyConstants';
 import { PolicyDefinitions } from '@Types/factoryTypes';
 import {

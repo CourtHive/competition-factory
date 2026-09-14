@@ -1,3 +1,7 @@
+import { setSubscriptions, deleteNotices } from '@Global/state/globalState';
+import { afterEach, beforeEach, describe, expect, it } from 'vitest';
+import mocksEngine from '@Assemblies/engines/mock';
+import tournamentEngine from '@Engines/syncEngine';
 import {
   captureNotices,
   castDiff,
@@ -6,10 +10,6 @@ import {
   conformanceViolations,
   fidelityViolations,
 } from './harness';
-import { setSubscriptions, deleteNotices } from '@Global/state/globalState';
-import mocksEngine from '@Assemblies/engines/mock';
-import tournamentEngine from '@Engines/syncEngine';
-import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 
 import { INDIVIDUAL } from '@Constants/participantConstants';
 import { cast } from '@Query/readModel/cast';

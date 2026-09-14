@@ -3,7 +3,7 @@ import { MISSING_OFFICIAL_RECORD, SUSPENSION_NOT_FOUND } from '@Constants/offici
 import { INVALID_VALUES } from '@Constants/errorConditionConstants';
 import { SUCCESS } from '@Constants/resultConstants';
 
-// Types
+// types
 import type { OfficialRecord } from '@Types/officiatingTypes';
 
 type RemoveSuspensionArgs = {

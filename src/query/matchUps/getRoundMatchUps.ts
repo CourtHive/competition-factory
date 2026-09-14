@@ -2,16 +2,16 @@ import { completedMatchUpStatuses } from '@Constants/matchUpStatusConstants';
 import { chunkArray, generateRange, intersection } from '@Tools/arrays';
 import { definedAttributes } from '@Tools/definedAttributes';
 import { validMatchUps } from '@Validators/validMatchUp';
-import { numericSort } from '@Tools/sorting';
 import { ensureInt } from '@Tools/ensureInt';
+import { numericSort } from '@Tools/sorting';
 import { isPowerOf2 } from '@Tools/math';
 
-// Constants and Types
+// constants and types
 import { ErrorType, INVALID_VALUES } from '@Constants/errorConditionConstants';
 import { SUCCESS } from '@Constants/resultConstants';
+import { RoundProfile } from '@Types/factoryTypes';
 import { HydratedMatchUp } from '@Types/hydrated';
 import { MatchUp } from '@Types/tournamentTypes';
-import { RoundProfile } from '@Types/factoryTypes';
 import { TEAM } from '@Constants/matchUpTypes';
 
 type GetRoundMatchUpsArgs = {

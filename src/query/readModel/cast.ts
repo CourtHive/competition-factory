@@ -1,3 +1,9 @@
+import { getTournamentPublishStatus } from '@Query/tournaments/getTournamentPublishStatus';
+import { isEventPublished, resolveMatchUpPublishState } from './readModelPublish';
+import { allTournamentMatchUps } from '@Query/matchUps/getAllTournamentMatchUps';
+import { getEventPublishStatus } from '@Query/event/getEventPublishStatus';
+import { decorateResult } from '@Functions/global/decorateResult';
+import { applyProgressionEdges } from './progressionEdges';
 import {
   courtRow,
   drawRow,
@@ -15,13 +21,6 @@ import {
   venueRow,
   MatchUpRowContext,
 } from './readModelRows';
-import { getTournamentPublishStatus } from '@Query/tournaments/getTournamentPublishStatus';
-import { getEventPublishStatus } from '@Query/event/getEventPublishStatus';
-import { isEventPublished } from './readModelPublish';
-import { applyProgressionEdges } from './progressionEdges';
-import { allTournamentMatchUps } from '@Query/matchUps/getAllTournamentMatchUps';
-import { resolveMatchUpPublishState } from './readModelPublish';
-import { decorateResult } from '@Functions/global/decorateResult';
 
 // constants and types
 import { ReadModelCompetitorRow, ReadModelMatchUpRow, ReadModelRows } from '@Types/readModelTypes';

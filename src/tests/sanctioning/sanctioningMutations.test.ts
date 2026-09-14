@@ -2,6 +2,23 @@
  * Direct-call mutation tests targeting uncovered statements/branches in src/mutate/sanctioning/.
  * Each test builds hand-crafted SanctioningRecord objects and calls functions directly.
  */
+import { requestEndorsement, endorseApplication, declineEndorsement } from '@Mutate/sanctioning/endorsement';
+import { activateFromSanctioning } from '@Mutate/sanctioning/activateFromSanctioning';
+import { createSanctioningRecord } from '@Mutate/sanctioning/createSanctioningRecord';
+import { proposeAmendment, reviewAmendment } from '@Mutate/sanctioning/amendments';
+import { conditionallyApprove } from '@Mutate/sanctioning/conditionallyApprove';
+import { removeEventProposal } from '@Mutate/sanctioning/removeEventProposal';
+import { requestModification } from '@Mutate/sanctioning/requestModification';
+import { updateEventProposal } from '@Mutate/sanctioning/updateEventProposal';
+import { withdrawApplication } from '@Mutate/sanctioning/withdrawApplication';
+import { rejectApplication } from '@Mutate/sanctioning/rejectApplication';
+import { reviewApplication } from '@Mutate/sanctioning/reviewApplication';
+import { submitApplication } from '@Mutate/sanctioning/submitApplication';
+import { addEventProposal } from '@Mutate/sanctioning/addEventProposal';
+import { transitionStatus } from '@Mutate/sanctioning/transitionStatus';
+import { addReviewNote } from '@Mutate/sanctioning/addReviewNote';
+import { meetCondition } from '@Mutate/sanctioning/meetCondition';
+import { describe, expect, it } from 'vitest';
 import {
   submitComplianceItem,
   verifyComplianceItem,
@@ -11,24 +28,8 @@ import {
   flagComplianceIssues,
   closeApplication,
 } from '@Mutate/sanctioning/compliance';
-import { requestEndorsement, endorseApplication, declineEndorsement } from '@Mutate/sanctioning/endorsement';
-import { activateFromSanctioning } from '@Mutate/sanctioning/activateFromSanctioning';
-import { createSanctioningRecord } from '@Mutate/sanctioning/createSanctioningRecord';
-import { conditionallyApprove } from '@Mutate/sanctioning/conditionallyApprove';
-import { requestModification } from '@Mutate/sanctioning/requestModification';
-import { proposeAmendment, reviewAmendment } from '@Mutate/sanctioning/amendments';
-import { updateEventProposal } from '@Mutate/sanctioning/updateEventProposal';
-import { submitApplication } from '@Mutate/sanctioning/submitApplication';
-import { withdrawApplication } from '@Mutate/sanctioning/withdrawApplication';
-import { removeEventProposal } from '@Mutate/sanctioning/removeEventProposal';
-import { rejectApplication } from '@Mutate/sanctioning/rejectApplication';
-import { addEventProposal } from '@Mutate/sanctioning/addEventProposal';
-import { transitionStatus } from '@Mutate/sanctioning/transitionStatus';
-import { reviewApplication } from '@Mutate/sanctioning/reviewApplication';
-import { addReviewNote } from '@Mutate/sanctioning/addReviewNote';
-import { meetCondition } from '@Mutate/sanctioning/meetCondition';
-import { describe, expect, it } from 'vitest';
 
+// types
 import type {
   SanctioningRecord,
   Applicant,

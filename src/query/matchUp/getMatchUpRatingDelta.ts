@@ -1,8 +1,8 @@
 import { resolveScaleValueNumber } from '@Query/scales/resolveScaleValue';
-import { signedRatingDelta } from './resolveDeltaBand';
 import ratingsParameters from '@Fixtures/ratings/ratingsParameters';
+import { signedRatingDelta } from './resolveDeltaBand';
 
-// constants and types
+// constants
 import { ErrorType } from '@Constants/errorConditionConstants';
 import { SINGLES } from '@Constants/matchUpTypes';
 

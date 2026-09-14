@@ -3,17 +3,6 @@ import { predictDrawCompetitiveBands } from '@Query/drawDefinition/predictDrawCo
 
 // constants and types
 import {
-  FlightStructure,
-  FlightingStrategy,
-  PlanWarning,
-  RankedPlan,
-  RankedPlanAggregate,
-  StructureKind,
-  StructureRecommendation,
-  WizardConstraints,
-  WizardFlight,
-} from '@Types/formatWizardTypes';
-import {
   ADAPTIVE,
   COMPASS,
   DOUBLE_ELIMINATION,
@@ -25,6 +14,17 @@ import {
   SINGLE_ELIMINATION,
   SWISS,
 } from '@Constants/drawDefinitionConstants';
+import {
+  FlightStructure,
+  FlightingStrategy,
+  PlanWarning,
+  RankedPlan,
+  RankedPlanAggregate,
+  StructureKind,
+  StructureRecommendation,
+  WizardConstraints,
+  WizardFlight,
+} from '@Types/formatWizardTypes';
 
 const DEFAULT_AVG_MINUTES = 90;
 const DEFAULT_HOURS_PER_DAY = 8;

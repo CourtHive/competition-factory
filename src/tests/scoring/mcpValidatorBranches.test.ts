@@ -1,6 +1,6 @@
 import { mcpValidator, validateMCPMatch, exportMatchUpJSON } from '@Validators/scoring/mcpValidator';
-import type { MCPMatch, MCPPoint } from '@Validators/scoring/mcpParser';
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
+import type { MCPMatch, MCPPoint } from '@Validators/scoring/mcpParser';
 
 // Helper to create a minimal MCPPoint with no Set values (avoids bad format deduction)
 function makeMCPPoint(overrides: Partial<MCPPoint> = {}): MCPPoint {

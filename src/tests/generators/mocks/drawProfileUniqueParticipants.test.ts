@@ -1,7 +1,8 @@
 import { getParticipantId } from '@Functions/global/extractors';
-import { expect, test } from 'vitest';
 import mocksEngine from '@Assemblies/engines/mock';
+import { expect, test } from 'vitest';
 
+// constants
 import { DIRECT_ACCEPTANCE } from '@Constants/entryStatusConstants';
 import { ROUND_ROBIN } from '@Constants/drawDefinitionConstants';
 

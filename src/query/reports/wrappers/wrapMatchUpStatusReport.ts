@@ -1,6 +1,6 @@
 import { allTournamentMatchUps } from '@Query/matchUps/getAllTournamentMatchUps';
 
-// Constants and Types
+// constants and types
 import { completedMatchUpStatuses } from '@Constants/matchUpStatusConstants';
 import { MATCHUP_STATUS_REPORT } from '@Constants/reportConstants';
 import { Tournament } from '@Types/tournamentTypes';

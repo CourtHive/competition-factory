@@ -7,7 +7,7 @@ import { isAdHoc } from '@Query/drawDefinition/isAdHoc';
 import { isLucky } from '@Query/drawDefinition/isLucky';
 import { findStructure } from '@Acquire/findStructure';
 
-// constants
+// constants and types
 import { INVALID_VALUES, MISSING_DRAW_DEFINITION, MISSING_PARTICIPANT_ID } from '@Constants/errorConditionConstants';
 import { DrawDefinition, Event, Tournament } from '@Types/tournamentTypes';
 import { LOSER, WIN_RATIO } from '@Constants/drawDefinitionConstants';

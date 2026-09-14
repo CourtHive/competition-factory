@@ -1,9 +1,10 @@
-import { removeAssignment } from '../mutations/drawDefinitions/testingUtilities';
+import { removeAssignment } from '@Tests/mutations/drawDefinitions/testingUtilities';
 import { setSubscriptions } from '@Global/state/globalState';
 import tournamentEngine from '@Tests/engines/syncEngine';
 import mocksEngine from '@Assemblies/engines/mock';
 import { expect, test } from 'vitest';
 
+// constants
 import { ROUND_ROBIN_WITH_PLAYOFF, SINGLE_ELIMINATION } from '@Constants/drawDefinitionConstants';
 
 test('a fully-completed draw reports complete with nothing outstanding', () => {

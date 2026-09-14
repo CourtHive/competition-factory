@@ -3,6 +3,7 @@ import mocksEngine from '@Assemblies/engines/mock';
 import tournamentEngine from '@Engines/syncEngine';
 import { expect, it } from 'vitest';
 
+// constants
 import { CLUSTER, MAIN } from '@Constants/drawDefinitionConstants';
 
 it('can generate draw with appropriate ITF seeding', () => {

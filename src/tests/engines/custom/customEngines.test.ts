@@ -3,11 +3,11 @@
  * These tests verify that all code examples in docs/engines/custom-engines.md work as documented
  */
 
-import * as governors from '@Assemblies/governors';
+import { expect, it, describe, beforeEach } from 'vitest';
 import mocksEngine from '@Assemblies/engines/mock';
+import * as governors from '@Assemblies/governors';
 import syncEngine from '@Assemblies/engines/sync';
 import askEngine from '@Assemblies/engines/ask';
-import { expect, it, describe, beforeEach } from 'vitest';
 
 describe('Custom Engines Documentation Examples', () => {
   describe('Minimal Query Engine (syncEngine)', () => {

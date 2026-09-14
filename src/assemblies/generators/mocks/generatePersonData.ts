@@ -5,8 +5,8 @@ import { countries } from '@Fixtures/countryData';
 
 // constants
 import { ErrorType, INVALID_VALUES } from '@Constants/errorConditionConstants';
-import { FEMALE, MALE } from '@Constants/genderConstants';
 import namesData from '../../../fixtures/data/names.json';
+import { FEMALE, MALE } from '@Constants/genderConstants';
 
 export function generatePersonData(params?): {
   personData?: any[];

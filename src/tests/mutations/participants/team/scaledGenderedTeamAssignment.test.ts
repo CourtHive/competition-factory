@@ -1,9 +1,9 @@
 import { participantScaleItem } from '@Query/participant/participantScaleItem';
-import tournamentEngine from '@Engines/syncEngine';
 import mocksEngine from '@Assemblies/engines/mock';
+import tournamentEngine from '@Engines/syncEngine';
 import { expect, it } from 'vitest';
 
-// constants
+// constants and types
 import { USTA_GOLD_TEAM_CHALLENGE } from '@Constants/tieFormatConstants';
 import { SINGLES_EVENT, TEAM_EVENT } from '@Constants/eventConstants';
 import { INDIVIDUAL } from '@Constants/participantConstants';

@@ -1,7 +1,7 @@
 import { afterEach, beforeEach, describe } from 'vitest';
 
-import { setSchemaWriteMode } from '@Global/state/globalState';
 import { LEGACY, NATIVE } from '@Constants/schemaWriteModeConstants';
+import { setSchemaWriteMode } from '@Global/state/globalState';
 
 /**
  * Pin a block of *storage-shape* specs to LEGACY write mode, regardless of the suite default.

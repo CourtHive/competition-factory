@@ -1,7 +1,7 @@
 import { modifyPositionAssignmentsNotice, modifySeedAssignmentsNotice } from '@Mutate/notifications/drawNotifications';
 import { getStructureDrawPositionProfiles } from '@Query/structure/getStructureDrawPositionProfiles';
-import { structureAssignedDrawPositions } from '@Query/drawDefinition/positionsGetter';
 import { getStructureSeedAssignments } from '@Query/structure/getStructureSeedAssignments';
+import { structureAssignedDrawPositions } from '@Query/drawDefinition/positionsGetter';
 import { getValidSeedBlocks } from '@Query/drawDefinition/seedGetter';
 import { findStructure } from '@Acquire/findStructure';
 

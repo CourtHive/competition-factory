@@ -1,7 +1,8 @@
 import { checkRequiredParameters } from '@Helpers/parameters/checkRequiredParameters';
-import { removeEventExtension } from '../addRemoveExtensions';
+import { removeEventExtension } from '@Mutate/extensions/addRemoveExtensions';
 import { findEvent } from '@Acquire/findEvent';
 
+// constants and types
 import { EVENT_ID, TOURNAMENT_RECORDS } from '@Constants/attributeConstants';
 import { EVENT_NOT_FOUND } from '@Constants/errorConditionConstants';
 import { SCHEDULE_TIMING } from '@Constants/extensionConstants';

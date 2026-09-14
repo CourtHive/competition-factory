@@ -1,5 +1,6 @@
 import { callListener, getNotices, getTopics } from './globalState';
 
+// constants
 import {
   ADD_DRAW_DEFINITION,
   ADD_MATCHUPS,

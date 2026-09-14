@@ -14,10 +14,10 @@
 import { ROUND_ROBIN_WITH_PLAYOFF, SINGLE_ELIMINATION, AD_HOC } from '@Constants/drawDefinitionConstants';
 import { generateEventWithDraw } from '@Assemblies/generators/mocks/generateEventWithDraw';
 import { DOUBLES, HYBRID, TEAM } from '@Constants/eventConstants';
-import { COMPLETED } from '@Constants/matchUpStatusConstants';
-import tournamentEngine from '@Engines/syncEngine';
 import { FEMALE, MALE, MIXED } from '@Constants/genderConstants';
+import { COMPLETED } from '@Constants/matchUpStatusConstants';
 import mocksEngine from '@Assemblies/engines/mock';
+import tournamentEngine from '@Engines/syncEngine';
 import { expect, test } from 'vitest';
 
 test('missing drawProfile returns a checkRequiredParameters error (line 775)', () => {

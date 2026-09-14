@@ -1,18 +1,18 @@
+import { createTournamentRecord } from '@Generators/tournamentRecords/createTournamentRecord';
 import { scheduleProfileRounds } from '@Mutate/matchUps/schedule/scheduleProfileRounds';
-import { createTournamentRecord } from '../tournamentRecords/createTournamentRecord';
 import { attachPolicies } from '@Mutate/extensions/policies/attachPolicies';
 import { addTournamentParticipants } from './addTournamentParticipants';
+import { addParticipants } from '@Mutate/participants/addParticipants';
 import { generateEventWithFlights } from './generateEventWithFlights';
 import { generateScheduledRounds } from './generateScheduledRounds';
-import { formatDate, isValidDateString } from '@Tools/dateTime';
-import { addParticipants } from '@Mutate/participants/addParticipants';
 import { generateEventWithDraw } from './generateEventWithDraw';
+import { processLeagueProfiles } from './processLeagueProfiles';
 import { cycleMutationStatus } from '@Global/state/globalState';
+import { formatDate, isValidDateString } from '@Tools/dateTime';
+import { Extension, Participant } from '@Types/tournamentTypes';
 import { isValidExtension } from '@Validators/isValidExtension';
 import { generateVenues } from '@Mutate/venues/generateVenues';
-import { processLeagueProfiles } from './processLeagueProfiles';
 import { definedAttributes } from '@Tools/definedAttributes';
-import { Extension, Participant } from '@Types/tournamentTypes';
 import { addEvent } from '@Mutate/events/addEvent';
 import { randomMember } from '@Tools/arrays';
 

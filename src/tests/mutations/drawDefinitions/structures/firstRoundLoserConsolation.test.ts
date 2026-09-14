@@ -1,14 +1,15 @@
 import { structureAssignedDrawPositions } from '@Query/drawDefinition/positionsGetter';
 import { getDrawStructures } from '@Acquire/findStructure';
 import mocksEngine from '@Assemblies/engines/mock';
-import { instanceCount } from '@Tools/arrays';
 import tournamentEngine from '@Engines/syncEngine';
+import { instanceCount } from '@Tools/arrays';
 import { expect, it } from 'vitest';
 
+// constants and fixtures
+import { ELIMINATION, FIRST_ROUND_LOSER_CONSOLATION } from '@Constants/drawDefinitionConstants';
 import { FORMAT_STANDARD } from '@Fixtures/scoring/matchUpFormats';
 import { BYE } from '@Constants/matchUpStatusConstants';
 import { SINGLES } from '@Constants/eventConstants';
-import { ELIMINATION, FIRST_ROUND_LOSER_CONSOLATION } from '@Constants/drawDefinitionConstants';
 
 it('correctly assigns positions for Elimination structure', () => {
   const drawSize = 32;

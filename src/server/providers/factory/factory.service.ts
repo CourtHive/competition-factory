@@ -1,8 +1,8 @@
 import { queryTournamentRecords } from './functions/queryTournamentRecords';
-import { checkEngineError } from '../../common/errors/engineError';
+import { checkEngineError } from '@Server/common/errors/engineError';
 import { executionQueue as eq } from './functions/executionQueue';
+import { recordStorage } from '@Server/data/fileSystem';
 import { askEngine } from '@Assemblies/engines/ask';
-import { recordStorage } from '../../data/fileSystem';
 import { Injectable } from '@nestjs/common';
 
 @Injectable()

@@ -11,6 +11,7 @@ import { applyLadderMovement } from '@Mutate/ladder/applyLadderMovement';
 import { getChallengeState } from '@Query/ladder/getChallengeState';
 import { issueChallenge } from '@Mutate/ladder/issueChallenge';
 
+// constants
 import { FORFEIT, FORFEIT_POSITION, RANK, RATING, RESULT, SWAP } from '@Constants/ladderConstants';
 import { LADDER, SINGLE_ELIMINATION } from '@Constants/drawDefinitionConstants';
 import { CHALLENGED, COMPLETED } from '@Constants/matchUpStatusConstants';

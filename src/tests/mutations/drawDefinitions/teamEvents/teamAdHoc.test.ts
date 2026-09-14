@@ -1,7 +1,7 @@
 import { mocksEngine } from '@Assemblies/engines/mock';
 import { generateDateRange } from '@Tools/dateTime';
-import tournamentEngine from '@Engines/syncEngine';
 import { queryEngine } from '@Engines/queryEngine';
+import tournamentEngine from '@Engines/syncEngine';
 import { hav } from '@Tools/objects';
 import { expect, it } from 'vitest';
 

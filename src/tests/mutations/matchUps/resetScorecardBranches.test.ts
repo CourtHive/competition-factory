@@ -5,9 +5,9 @@ import { describe, expect, it } from 'vitest';
 
 // constants
 import { POLICY_TYPE_SCORING } from '@Constants/policyConstants';
-import { TEAM_EVENT } from '@Constants/eventConstants';
-import { DOUBLES, TEAM } from '@Constants/matchUpTypes';
 import { COLLEGE_D3 } from '@Constants/tieFormatConstants';
+import { DOUBLES, TEAM } from '@Constants/matchUpTypes';
+import { TEAM_EVENT } from '@Constants/eventConstants';
 import {
   CANNOT_CHANGE_WINNING_SIDE,
   INVALID_VALUES,

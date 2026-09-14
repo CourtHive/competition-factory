@@ -18,9 +18,9 @@ import { firstClassGroupLeafOrExtension, setGroupLeafOrExtension } from '@Mutate
 import { setSchemaWriteMode } from '@Global/state/globalState';
 import { findExtension } from '@Acquire/findExtension';
 
-// constants and types
-import { BRIDGE, LEGACY, NATIVE, SchemaWriteMode } from '@Constants/schemaWriteModeConstants';
+// constants
 import { SCHEDULE_LIMITS, SCHEDULE_TIMING, SCHEDULING_PROFILE } from '@Constants/extensionConstants';
+import { BRIDGE, LEGACY, NATIVE, SchemaWriteMode } from '@Constants/schemaWriteModeConstants';
 
 type Promotion = { name: string; leaf: string; value: any };
 

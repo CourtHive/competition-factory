@@ -1,8 +1,8 @@
 import { attachFlightProfile as attachProfile } from '@Mutate/events/attachFlightProfile';
 import { chunkArray, chunkByNth, generateRange, shuffleArray } from '@Tools/arrays';
+import { getFlightProfile } from '@Query/event/getFlightProfile';
 import { getScaledEntries } from '@Query/event/getScaledEntries';
 import { getParticipantId } from '@Functions/global/extractors';
-import { getFlightProfile } from '@Query/event/getFlightProfile';
 import { getDevContext } from '@Global/state/globalState';
 import { UUID } from '@Tools/UUID';
 

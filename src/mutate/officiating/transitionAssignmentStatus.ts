@@ -1,13 +1,13 @@
 import { transitionRecordStatus } from '@Functions/declaration/transitionRecordStatus';
 
 // constants and types
+import type { OfficialRecord, AssignmentStatus, OfficialAssignment } from '@Types/officiatingTypes';
 import {
   MISSING_OFFICIAL_RECORD,
   ASSIGNMENT_NOT_FOUND,
   INVALID_OFFICIATING_STATUS_TRANSITION,
   VALID_ASSIGNMENT_TRANSITIONS,
 } from '@Constants/officiatingConstants';
-import type { OfficialRecord, AssignmentStatus, OfficialAssignment } from '@Types/officiatingTypes';
 
 type TransitionAssignmentStatusArgs = {
   officialRecord: OfficialRecord;

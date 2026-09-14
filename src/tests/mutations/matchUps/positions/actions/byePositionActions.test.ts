@@ -1,11 +1,12 @@
-import tournamentEngine from '@Engines/syncEngine';
 import mocksEngine from '@Assemblies/engines/mock';
+import tournamentEngine from '@Engines/syncEngine';
 import { expect, it } from 'vitest';
 
+// constants and fixtures
 import POLICY_POSITION_ACTIONS_UNRESTRICTED from '@Fixtures/policies/POLICY_POSITION_ACTIONS_UNRESTRICTED';
-import { COMPASS } from '@Constants/drawDefinitionConstants';
-import { COMPLETED, TO_BE_PLAYED, WALKOVER } from '@Constants/matchUpStatusConstants';
 import POLICY_PROGRESSION_DEFAULT from '@Fixtures/policies/POLICY_PROGRESSION_DEFAULT';
+import { COMPLETED, TO_BE_PLAYED, WALKOVER } from '@Constants/matchUpStatusConstants';
+import { COMPASS } from '@Constants/drawDefinitionConstants';
 
 it('will not allow BYE removal when there are active matchUps in connected structures', () => {
   const policyDefinitions = POLICY_POSITION_ACTIONS_UNRESTRICTED;

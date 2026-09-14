@@ -1,7 +1,7 @@
 import { addTournamentTimeItem } from '@Mutate/timeItems/addTimeItem';
 import { addNotice, hasTopic } from '@Global/state/globalState';
 
-// constants
+// constants and types
 import { AUTO_SCHEDULING_AUDIT } from '@Constants/auditConstants';
 import { Tournament } from '@Types/tournamentTypes';
 import { AUDIT } from '@Constants/topicConstants';

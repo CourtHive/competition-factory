@@ -1,12 +1,12 @@
+import { competitionScheduleMatchUps } from '@Query/matchUps/competitionScheduleMatchUps';
+import { bulkScheduleMatchUps } from '@Mutate/matchUps/schedule/bulkScheduleMatchUps';
+import { makeDeepCopy } from '@Tools/makeDeepCopy';
 import {
   getScheduleScenarioStatus,
   findScopedScenario,
 } from '@Query/matchUps/scheduling/scheduleScenarioReconciliation';
-import { competitionScheduleMatchUps } from '@Query/matchUps/competitionScheduleMatchUps';
-import { bulkScheduleMatchUps } from '@Mutate/matchUps/schedule/bulkScheduleMatchUps';
-import { makeDeepCopy } from '@Tools/makeDeepCopy';
 
-// constants and types
+// types
 import { MatchUpFilters, TournamentRecords } from '@Types/factoryTypes';
 import { Tournament } from '@Types/tournamentTypes';
 

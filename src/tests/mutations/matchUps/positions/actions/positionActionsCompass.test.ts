@@ -1,6 +1,7 @@
-import { replacementTest } from '../../../drawDefinitions/structures/byeReplacementStressTest';
+import { replacementTest } from '@Tests/mutations/drawDefinitions/structures/byeReplacementStressTest';
 import { expect, test } from 'vitest';
 
+// constants
 import { COMPASS } from '@Constants/drawDefinitionConstants';
 
 test.each([

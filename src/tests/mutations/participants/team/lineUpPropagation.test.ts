@@ -1,7 +1,7 @@
+import { firstClassOrExtension } from '@Acquire/firstClassOrExtension';
 import { generateTeamTournament } from './generateTestTeamTournament';
 import { resetLineUps } from '@Mutate/matchUps/lineUps/resetLineUps';
 import { setSubscriptions } from '@Global/state/globalState';
-import { firstClassOrExtension } from '@Acquire/firstClassOrExtension';
 import tournamentEngine from '@Engines/syncEngine';
 import { xa } from '@Tools/extractAttributes';
 import { intersection } from '@Tools/arrays';

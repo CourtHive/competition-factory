@@ -1,5 +1,5 @@
-import { checkRequiredParameters } from '@Helpers/parameters/checkRequiredParameters';
 import { modifyParticipantsNotice } from '@Mutate/notifications/participantNotifications';
+import { checkRequiredParameters } from '@Helpers/parameters/checkRequiredParameters';
 
 // constants and fixtures
 import { EVENT_TYPE, TOURNAMENT_RECORD, VALIDATE } from '@Constants/attributeConstants';

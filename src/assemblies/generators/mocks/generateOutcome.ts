@@ -2,8 +2,8 @@ import { getSetComplement, getTiebreakComplement } from '@Query/matchUp/getCompl
 import { matchUpScore } from '@Assemblies/generators/matchUps/matchUpScore';
 import { isValidMatchUpFormat } from '@Validators/isValidMatchUpFormat';
 import { analyzeMatchUp } from '@Query/matchUp/analyzeMatchUp';
-import { generateRange, randomPop } from '@Tools/arrays';
 import { parse } from '@Helpers/matchUpFormatCode/parse';
+import { generateRange, randomPop } from '@Tools/arrays';
 import { randomInt, weightedRandom } from '@Tools/math';
 import { analyzeSet } from '@Query/matchUp/analyzeSet';
 import { isExit } from '@Validators/isExit';

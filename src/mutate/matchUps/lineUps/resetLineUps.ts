@@ -7,8 +7,8 @@ import { DrawDefinition, Event, Structure, Tournament } from '@Types/tournamentT
 import { MISSING_DRAW_DEFINITION } from '@Constants/errorConditionConstants';
 import { TEAM_MATCHUP } from '@Constants/matchUpTypes';
 import { SUCCESS } from '@Constants/resultConstants';
-import { HydratedMatchUp } from '@Types/hydrated';
 import { MatchUpsMap } from '@Types/factoryTypes';
+import { HydratedMatchUp } from '@Types/hydrated';
 
 type ResetLineUpsArgs = {
   inContextDrawMatchUps?: HydratedMatchUp[];

@@ -4,7 +4,7 @@ import { setSchemaWriteMode } from '@Global/state/globalState';
 import mocksEngine from '@Assemblies/engines/mock';
 import tournamentEngine from '@Engines/syncEngine';
 
-// constants and types
+// constants
 import { NATIVE } from '@Constants/schemaWriteModeConstants';
 
 const ISO_A = '2026-05-27T13:58:42.000Z';

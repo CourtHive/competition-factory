@@ -1,6 +1,6 @@
 import { deleteNotices, setDevContext, setDeepCopy, getDevContext } from '@Global/state/globalState';
-import { notifySubscribers } from '@Global/state/notifySubscribers';
 import * as mocksGovernor from '@Assemblies/governors/mocksGovernor';
+import { notifySubscribers } from '@Global/state/notifySubscribers';
 import { factoryVersion } from '@Functions/global/factoryVersion';
 import { pushGlobalLog } from '@Functions/global/globalLog';
 import { createSeededRandom } from '@Tools/prng';

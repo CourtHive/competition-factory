@@ -1,8 +1,9 @@
-import tournamentEngine from '@Engines/syncEngine';
 import mocksEngine from '@Assemblies/engines/mock';
-import { cast } from '@Query/readModel/cast';
+import tournamentEngine from '@Engines/syncEngine';
 import { expect, it, describe } from 'vitest';
+import { cast } from '@Query/readModel/cast';
 
+// constants
 import { AD_HOC } from '@Constants/drawDefinitionConstants';
 import { SINGLES_EVENT } from '@Constants/eventConstants';
 

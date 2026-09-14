@@ -1,5 +1,6 @@
 import { unique } from '@Tools/arrays';
 
+// constants and types
 import { CollectionValueProfile } from '@Types/tournamentTypes';
 import { SUCCESS } from '@Constants/resultConstants';
 

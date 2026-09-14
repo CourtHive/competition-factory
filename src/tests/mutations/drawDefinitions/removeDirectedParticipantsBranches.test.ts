@@ -3,8 +3,8 @@ import tournamentEngine from '@Engines/syncEngine';
 import { expect, test, describe } from 'vitest';
 
 // constants
-import { FIRST_MATCH_LOSER_CONSOLATION, MAIN } from '@Constants/drawDefinitionConstants';
 import { DOUBLE_WALKOVER, COMPLETED, TO_BE_PLAYED } from '@Constants/matchUpStatusConstants';
+import { FIRST_MATCH_LOSER_CONSOLATION, MAIN } from '@Constants/drawDefinitionConstants';
 import { DOUBLES } from '@Constants/eventConstants';
 
 describe('removeDirectedParticipants - uncovered branches', () => {

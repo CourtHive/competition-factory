@@ -1,21 +1,22 @@
 import { wrapParticipantExperienceReport } from './wrappers/wrapParticipantExperienceReport';
-import { wrapSeedingPerformanceReport } from './wrappers/wrapSeedingPerformanceReport';
-import { wrapParticipantResultsReport } from './wrappers/wrapParticipantResultsReport';
 import { wrapCallTimingVarianceReport } from './wrappers/wrapCallTimingVarianceReport';
+import { wrapParticipantResultsReport } from './wrappers/wrapParticipantResultsReport';
+import { wrapSeedingPerformanceReport } from './wrappers/wrapSeedingPerformanceReport';
 import { wrapCompetitivenessReport } from './wrappers/wrapCompetitivenessReport';
 import { wrapMatchUpStatusReport } from './wrappers/wrapMatchUpStatusReport';
-import { wrapRecoveryTimeReport } from './wrappers/wrapRecoveryTimeReport';
 import { wrapMatchResultsReport } from './wrappers/wrapMatchResultsReport';
+import { wrapRecoveryTimeReport } from './wrappers/wrapRecoveryTimeReport';
 import { wrapEntryStatusReport } from './wrappers/wrapEntryStatusReport';
 import { wrapParticipantStats } from './wrappers/wrapParticipantStats';
 import { wrapStructureReport } from './wrappers/wrapStructureReport';
 import { wrapVenuesReport } from './wrappers/wrapVenuesReport';
 
-// Constants and Types
+// constants and types
 import { MISSING_TOURNAMENT_RECORD } from '@Constants/errorConditionConstants';
 import { Tournament } from '@Types/tournamentTypes';
 import { ReportResult } from '@Types/reportTypes';
 
+// constants
 import {
   CALL_TIMING_VARIANCE_REPORT,
   COMPETITIVENESS_REPORT,

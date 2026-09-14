@@ -1,8 +1,8 @@
 import { addNotice } from '@Global/state/globalState';
 
-// Constants
-import { ErrorType, MISSING_EVENT } from '@Constants/errorConditionConstants';
+// constants and types
 import { ADD_EVENT, DELETE_EVENT, MODIFY_EVENT } from '@Constants/topicConstants';
+import { ErrorType, MISSING_EVENT } from '@Constants/errorConditionConstants';
 import { SUCCESS } from '@Constants/resultConstants';
 import { Event } from '@Types/tournamentTypes';
 

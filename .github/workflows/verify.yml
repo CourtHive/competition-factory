@@ -135,6 +135,19 @@ jobs:
       - name: verify:format
         run: pnpm verify:format
 
+      # WIRED IN 2026-09-13, and the `fetch-depth: 0` above was already here FOR it — the checkout
+      # comment names this gate by name. It was left out of CI because it read `(#PR)` from the
+      # commit subject, which only exists after a squash-merge, so it could never pass on a PR
+      # branch. That had two costs: migration-guide coverage was enforced only at `prepublishOnly`,
+      # after the fact; and anyone running `pnpm verify` locally hit an unpassable check and worked
+      # around it by typing the number into the subject, which the squash then DOUBLED — #4827,
+      # #4855 and #4858 all carry `(#NNNN) (#NNNN)` into the 7.0.0 changelog.
+      #
+      # The script now reads the number from GITHUB_REF on a pull_request build, so it passes on a
+      # PR branch and the workaround is unnecessary. Running it here is what makes the gate a gate.
+      - name: verify:migration-coverage
+        run: pnpm verify:migration-coverage
+
       - name: verify:attr-audit
         run: pnpm verify:attr-audit
 

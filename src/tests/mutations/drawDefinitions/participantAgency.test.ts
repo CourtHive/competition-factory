@@ -1,8 +1,8 @@
 import { resolveDrawPositions } from '@Assemblies/generators/drawDefinitions/drawPositionsResolver';
 import { getDrawPosition, getParticipantId } from '@Functions/global/extractors';
 import { generateRange, randomPop, unique } from '@Tools/arrays';
-import tournamentEngine from '@Engines/syncEngine';
 import mocksEngine from '@Assemblies/engines/mock';
+import tournamentEngine from '@Engines/syncEngine';
 import { nextPowerOf2 } from '@Tools/math';
 import { expect, it } from 'vitest';
 

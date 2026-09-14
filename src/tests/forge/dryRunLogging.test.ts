@@ -1,8 +1,8 @@
 import { afterEach, describe, expect, it } from 'vitest';
 
 import { setGlobalLog } from '@Global/state/globalState';
-import tournamentEngine from '@Engines/syncEngine';
 import mocksEngine from '@Assemblies/engines/mock';
+import tournamentEngine from '@Engines/syncEngine';
 
 /**
  * `dryRun`/`explain` dispatch through the same `executeFunction` path as a real

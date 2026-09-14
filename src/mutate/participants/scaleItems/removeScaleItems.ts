@@ -1,6 +1,7 @@
-import { requireParams } from '@Helpers/parameters/requireParams';
 import { modifyParticipantsNotice } from '@Mutate/notifications/participantNotifications';
+import { requireParams } from '@Helpers/parameters/requireParams';
 
+// constants
 import { MISSING_PARTICIPANT_IDS, MISSING_VALUE } from '@Constants/errorConditionConstants';
 import { TOURNAMENT_RECORD } from '@Constants/attributeConstants';
 import { SUCCESS } from '@Constants/resultConstants';

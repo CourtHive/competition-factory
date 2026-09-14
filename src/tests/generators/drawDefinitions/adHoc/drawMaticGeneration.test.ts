@@ -1,20 +1,20 @@
 import { getParticipantId } from '@Functions/global/extractors';
 import { generateRange, unique } from '@Tools/arrays';
-import { makeDeepCopy } from '@Tools/makeDeepCopy';
-import tournamentEngine from '@Engines/syncEngine';
 import mocksEngine from '@Assemblies/engines/mock';
+import tournamentEngine from '@Engines/syncEngine';
+import { makeDeepCopy } from '@Tools/makeDeepCopy';
 import { expect, it, test } from 'vitest';
 
 // constants
+import { INDIVIDUAL, PAIR } from '@Constants/participantConstants';
+import { DOUBLES, SINGLES } from '@Constants/eventConstants';
+import { AD_HOC } from '@Constants/drawDefinitionConstants';
 import {
   EXISTING_MATCHUP_ID,
   INVALID_DRAW_DEFINITION,
   INVALID_VALUES,
   MISSING_PARTICIPANT_IDS,
 } from '@Constants/errorConditionConstants';
-import { INDIVIDUAL, PAIR } from '@Constants/participantConstants';
-import { DOUBLES, SINGLES } from '@Constants/eventConstants';
-import { AD_HOC } from '@Constants/drawDefinitionConstants';
 
 const getParticipantType = (eventType) => (eventType === SINGLES && INDIVIDUAL) || (eventType === DOUBLES && PAIR);
 

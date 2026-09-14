@@ -1,17 +1,18 @@
 import { getContainedStructures } from '@Query/drawDefinition/getContainedStructures';
 import { intersection, unique } from '@Tools/arrays';
-import { xa } from '@Tools/extractAttributes';
-import { constantToString } from '@Tools/strings';
 import tournamentEngine from '@Engines/syncEngine';
+import { constantToString } from '@Tools/strings';
+import { xa } from '@Tools/extractAttributes';
 import { mocksEngine } from '../../..';
 import { expect, it } from 'vitest';
 
+// constants
+import { CONSOLATION, FEED_IN_CHAMPIONSHIP_TO_R16, MAIN, ROUND_ROBIN } from '@Constants/drawDefinitionConstants';
 import { EXISTING_ROUND } from '@Constants/errorConditionConstants';
 import { FEMALE, MALE } from '@Constants/genderConstants';
 import { BYE } from '@Constants/matchUpStatusConstants';
-import { DOUBLES } from '@Constants/eventConstants';
 import { PAIR } from '@Constants/participantConstants';
-import { CONSOLATION, FEED_IN_CHAMPIONSHIP_TO_R16, MAIN, ROUND_ROBIN } from '@Constants/drawDefinitionConstants';
+import { DOUBLES } from '@Constants/eventConstants';
 
 it('can schedule potential rounds properly in scenarios with recovery times greater than average matchUp times', () => {
   const firstVenueId = 'firstVenueId';

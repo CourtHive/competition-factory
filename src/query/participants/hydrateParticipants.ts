@@ -1,11 +1,11 @@
 import { applyParticipantPrivacyToGroupInfo, getParticipantPrivacyTemplate } from './participantPrivacy';
 import { addParticipantGroupings } from '@Query/drawDefinition/avoidance/addParticipantGroupings';
 import { addNationalityCode } from '@Query/participants/addNationalityCode';
-import { getScaleValues } from '../participant/getScaleValues';
+import { getScaleValues } from '@Query/participant/getScaleValues';
 import { getParticipantMap } from './getParticipantMap';
 import { makeDeepCopy } from '@Tools/makeDeepCopy';
 
-// Types
+// types
 import { ContextProfile, ParticipantMap, ParticipantsProfile, PolicyDefinitions } from '@Types/factoryTypes';
 import { HydratedParticipant } from '@Types/hydrated';
 import { Tournament } from '@Types/tournamentTypes';

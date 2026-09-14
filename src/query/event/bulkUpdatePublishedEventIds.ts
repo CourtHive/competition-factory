@@ -1,6 +1,7 @@
 import { getEventPublishStatus } from './getEventPublishStatus';
 import { getDrawPublishStatus } from './getDrawPublishStatus';
 
+// constants
 import { MISSING_TOURNAMENT_RECORD, MISSING_VALUE } from '@Constants/errorConditionConstants';
 
 /**

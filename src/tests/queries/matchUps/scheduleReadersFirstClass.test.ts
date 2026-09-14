@@ -1,12 +1,13 @@
-import { matchUpAllocatedCourts } from '@Query/matchUp/courtAllocations';
 import { getHomeParticipantId } from '@Query/matchUp/getHomeParticipantId';
-import { matchUpAssignedVenueId } from '@Query/matchUp/venueAssignment';
 import { scheduledMatchUpTime } from '@Query/matchUp/scheduledMatchUpTime';
+import { matchUpAllocatedCourts } from '@Query/matchUp/courtAllocations';
 import { matchUpAssignedCourtId } from '@Query/matchUp/courtAssignment';
+import { matchUpAssignedVenueId } from '@Query/matchUp/venueAssignment';
 import { matchUpTimeModifiers } from '@Query/matchUp/timeModifiers';
 import { matchUpCourtOrder } from '@Query/matchUp/courtOrder';
 import { describe, expect, it } from 'vitest';
 
+// constants
 import {
   ALLOCATE_COURTS,
   ASSIGN_COURT,

@@ -1,6 +1,7 @@
 import { checkScoreHasValue } from '@Query/matchUp/checkScoreHasValue';
 import { extractDate, extractTime } from '@Tools/dateTime';
 
+// constants
 import { BYE } from '@Constants/matchUpStatusConstants';
 
 export function addScheduleItem(params) {

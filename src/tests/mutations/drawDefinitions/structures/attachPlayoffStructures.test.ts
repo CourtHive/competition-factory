@@ -1,8 +1,8 @@
-import tournamentEngine from '@Engines/syncEngine';
 import mocksEngine from '@Assemblies/engines/mock';
+import tournamentEngine from '@Engines/syncEngine';
 import { expect, it } from 'vitest';
 
-// Constants
+// constants
 import { EXISTING_STRUCTURE, INVALID_VALUES } from '@Constants/errorConditionConstants';
 
 it('will not allow attaching structures with links duplicating existing links', () => {

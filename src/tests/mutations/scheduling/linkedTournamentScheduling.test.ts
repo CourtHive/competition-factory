@@ -1,9 +1,9 @@
-import tournamentEngine from '@Engines/syncEngine';
 import mocksEngine from '@Assemblies/engines/mock';
+import tournamentEngine from '@Engines/syncEngine';
 import { formatDate } from '@Tools/dateTime';
 import { expect, test } from 'vitest';
 
-// Constants
+// constants
 import { DOUBLES, TEAM } from '@Constants/eventConstants';
 import { FEMALE, MALE } from '@Constants/genderConstants';
 import {

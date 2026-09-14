@@ -1,11 +1,11 @@
 import { checkRequiredParameters } from '@Helpers/parameters/checkRequiredParameters';
 import { getPairedParticipant } from '@Query/participant/getPairedParticipant';
-import { deleteParticipants } from '../participants/deleteParticipants';
-import { addParticipant } from '../participants/addParticipant';
+import { deleteParticipants } from '@Mutate/participants/deleteParticipants';
+import { addParticipant } from '@Mutate/participants/addParticipant';
 import { getFlightProfile } from '@Query/event/getFlightProfile';
 import { isString } from '@Tools/objects';
 
-// Constants
+// constants
 import { ERROR, EVENT, TOURNAMENT_RECORD, UUIDS, VALIDATE } from '@Constants/attributeConstants';
 import { UNGROUPED, UNPAIRED } from '@Constants/entryStatusConstants';
 import { COMPETITOR } from '@Constants/participantRoles';

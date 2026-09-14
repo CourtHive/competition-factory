@@ -1,10 +1,11 @@
 import { generateDrawTypeAndModifyDrawDefinition } from '@Assemblies/generators/drawDefinitions/generateDrawTypeAndModifyDrawDefinition';
 import { newDrawDefinition } from '@Assemblies/generators/drawDefinitions/newDrawDefinition';
-import { feedInChampionship } from '../../mutations/drawDefinitions/primitives/feedIn';
+import { feedInChampionship } from '@Tests/mutations/drawDefinitions/primitives/feedIn';
 import { findStructure, getDrawStructures } from '@Acquire/findStructure';
 import { constantToString } from '@Tools/strings';
 import { expect, it } from 'vitest';
 
+// constants and types
 import { COMPASS, FEED_IN_CHAMPIONSHIP, MAIN, PLAY_OFF, CONSOLATION } from '@Constants/drawDefinitionConstants';
 import { DrawDefinition } from '@Types/tournamentTypes';
 import { ERROR } from '@Constants/resultConstants';

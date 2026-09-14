@@ -1,13 +1,13 @@
 import { transitionRecordStatus } from '@Functions/declaration/transitionRecordStatus';
 
 // constants and types
+import type { OfficialRecord, CertificationStatus, OfficialCertification } from '@Types/officiatingTypes';
 import {
   MISSING_OFFICIAL_RECORD,
   CERTIFICATION_NOT_FOUND,
   INVALID_OFFICIATING_STATUS_TRANSITION,
   VALID_CERTIFICATION_TRANSITIONS,
 } from '@Constants/officiatingConstants';
-import type { OfficialRecord, CertificationStatus, OfficialCertification } from '@Types/officiatingTypes';
 
 type TransitionCertificationStatusArgs = {
   officialRecord: OfficialRecord;

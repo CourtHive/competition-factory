@@ -1,7 +1,7 @@
 import { getSeededDrawPositions } from '@Query/drawDefinition/getSeededDrawPositions';
 import mocksEngine from '@Assemblies/engines/mock';
-import { generateRange } from '@Tools/arrays';
 import tournamentEngine from '@Engines/syncEngine';
+import { generateRange } from '@Tools/arrays';
 import { expect, it } from 'vitest';
 
 const scenarios = [

@@ -6,7 +6,7 @@ import { POLICY_SANCTIONING_GENERIC } from '@Fixtures/policies/POLICY_SANCTIONIN
 import { POLICY_SANCTIONING_USTA } from '@Fixtures/policies/POLICY_SANCTIONING_USTA';
 import { POLICY_SANCTIONING_ITF } from '@Fixtures/policies/POLICY_SANCTIONING_ITF';
 
-// Types
+// types
 import type { Applicant, TournamentProposal } from '@Types/sanctioningTypes';
 
 const testApplicant: Applicant = {

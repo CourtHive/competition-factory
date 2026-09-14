@@ -3,7 +3,7 @@ import mocksEngine from '@Assemblies/engines/mock';
 import tournamentEngine from '@Engines/syncEngine';
 import { expect, it, test } from 'vitest';
 
-// Constants
+// constants
 import { DEFAULTED, RETIRED, WALKOVER, ABANDONED, INCOMPLETE } from '@Constants/matchUpStatusConstants';
 import { POLICY_TYPE_ROUND_ROBIN_TALLY } from '@Constants/policyConstants';
 import { ROUND_ROBIN } from '@Constants/drawDefinitionConstants';

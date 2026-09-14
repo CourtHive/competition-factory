@@ -4,14 +4,14 @@ import { generateQualifyingLink } from './links/generateQualifyingLink';
 import { decorateResult } from '@Functions/global/decorateResult';
 import { structureSort } from '@Functions/sorters/structureSort';
 import { isAdHocType } from '@Query/drawDefinition/isAdHocType';
-import { getDrawTypeCoercion } from './getDrawTypeCoercion';
 import { definedAttributes } from '@Tools/definedAttributes';
+import { getDrawTypeCoercion } from './getDrawTypeCoercion';
 import { getCoercedDrawType } from './getCoercedDrawType';
 import { getGenerators } from './getGenerators';
 import { ensureInt } from '@Tools/ensureInt';
 import { isPowerOf2 } from '@Tools/math';
 
-// Constants and types
+// constants and types
 import { EXISTING_STAGE, INVALID_DRAW_SIZE, UNRECOGNIZED_DRAW_TYPE } from '@Constants/errorConditionConstants';
 import { DrawDefinition, Structure, TieFormat } from '@Types/tournamentTypes';
 import { PlayoffAttributes, PolicyDefinitions } from '@Types/factoryTypes';

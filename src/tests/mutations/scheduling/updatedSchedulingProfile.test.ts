@@ -4,8 +4,9 @@ import mocksEngine from '@Assemblies/engines/mock';
 import tournamentEngine from '@Engines/syncEngine';
 import { expect, it } from 'vitest';
 
-import { SCHEDULING_PROFILE } from '@Constants/extensionConstants';
+// constants
 import { INVALID_DATE, INVALID_VALUES } from '@Constants/errorConditionConstants';
+import { SCHEDULING_PROFILE } from '@Constants/extensionConstants';
 
 const scheduleDate = '2022-01-03';
 it('can update a schedulingProfile when venues change', () => {

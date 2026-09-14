@@ -1,6 +1,7 @@
 import { getStructureGroups } from '@Query/structure/getStructureGroups';
 
 // constants and types
+import type { DrawDefinition, DrawLink } from '@Types/tournamentTypes';
 import {
   CONSOLATION,
   CONTAINER,
@@ -12,7 +13,6 @@ import {
   QUALIFYING,
   TOP_DOWN,
 } from '@Constants/drawDefinitionConstants';
-import type { DrawDefinition, DrawLink } from '@Types/tournamentTypes';
 
 /**
  * Give an unlinked `drawDefinition` the links it needs to be READABLE.

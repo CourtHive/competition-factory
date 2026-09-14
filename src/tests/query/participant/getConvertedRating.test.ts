@@ -1,6 +1,7 @@
 import { getConvertedRating } from '@Query/participant/getConvertedRating';
 import { describe, expect, it } from 'vitest';
 
+// constants
 import { INVALID_VALUES } from '@Constants/errorConditionConstants';
 import { SINGLES, DOUBLES } from '@Constants/matchUpTypes';
 import { ELO } from '@Constants/ratingConstants';

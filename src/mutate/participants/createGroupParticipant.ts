@@ -5,6 +5,7 @@ import { makeDeepCopy } from '@Tools/makeDeepCopy';
 import { addParticipant } from './addParticipant';
 import { UUID } from '@Tools/UUID';
 
+// constants and types
 import { ErrorType, INVALID_PARTICIPANT_TYPE, INVALID_VALUES, MISSING_VALUE } from '@Constants/errorConditionConstants';
 import { GROUP, INDIVIDUAL } from '@Constants/participantConstants';
 import { TOURNAMENT_RECORD } from '@Constants/attributeConstants';

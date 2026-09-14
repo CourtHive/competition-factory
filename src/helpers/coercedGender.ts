@@ -1,9 +1,9 @@
 import { isFemale } from '@Validators/isFemale';
-import { isMale } from '@Validators/isMale';
 import { isMixed } from '@Validators/isMixed';
+import { isMale } from '@Validators/isMale';
 import { isAny } from '@Validators/isAny';
 
-// constants and types
+// constants
 import { ANY, FEMALE, MALE, MIXED, OTHER } from '@Constants/genderConstants';
 
 export function coercedGender(gender: any): string | undefined {

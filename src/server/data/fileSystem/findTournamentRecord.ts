@@ -1,4 +1,4 @@
-import { UTF8 } from '../../common/constants/app';
+import { UTF8 } from '@Server/common/constants/app';
 import * as fs from 'fs-extra';
 
 export async function findTournamentRecord({ tournamentId }) {

@@ -5,13 +5,14 @@ import tournamentEngine from '@Tests/engines/syncEngine';
 import mocksEngine from '@Assemblies/engines/mock';
 import { expect, test } from 'vitest';
 
+// constants
+import { DOUBLE_WALKOVER } from '@Constants/matchUpStatusConstants';
 import {
   COMPASS,
   FIRST_MATCH_LOSER_CONSOLATION,
   ROUND_ROBIN_WITH_PLAYOFF,
   SINGLE_ELIMINATION,
 } from '@Constants/drawDefinitionConstants';
-import { DOUBLE_WALKOVER } from '@Constants/matchUpStatusConstants';
 
 // Corpus sweep — the primary defence against false positives. No legitimately-generated,
 // fully-completed draw may report anything, across draw types that carry cross-structure links.

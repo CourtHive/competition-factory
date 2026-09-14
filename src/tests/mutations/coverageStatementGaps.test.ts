@@ -3,15 +3,15 @@
  * Goal: hit error guards, early returns, and conditional branches to cover ~180 more statements.
  */
 import { getParticipantIdFinishingPositions } from '@Query/drawDefinition/finishingPositions';
-import { getSourceDrawPositionRanges } from '@Query/matchUps/getSourceDrawPositionRanges';
 import { swapDrawPositionAssignments } from '@Mutate/matchUps/drawPositions/positionSwap';
+import { getSourceDrawPositionRanges } from '@Query/matchUps/getSourceDrawPositionRanges';
 import { getSideValues } from '@Query/matchUps/roundRobinTally/calculatePressureRatings';
 import { clearDrawPosition } from '@Mutate/matchUps/drawPositions/positionClear';
 import { getEventRankingPoints } from '@Query/scales/getEventRankingPoints';
 import { getTournamentPoints } from '@Query/scales/getTournamentPoints';
 import { applyLineUps } from '@Mutate/matchUps/lineUps/applyLineUps';
-import { getMatchUpsMap } from '@Query/matchUps/getMatchUpsMap';
 import { getDrawData } from '@Query/drawDefinition/getDrawData';
+import { getMatchUpsMap } from '@Query/matchUps/getMatchUpsMap';
 import mocksEngine from '@Assemblies/engines/mock';
 import tournamentEngine from '@Engines/syncEngine';
 import { expect, it, describe } from 'vitest';

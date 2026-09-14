@@ -1,17 +1,18 @@
 import { getDrawInconsistencies } from '@Query/drawDefinition/getDrawInconsistencies';
 import { setSubscriptions } from '@Global/state/globalState';
-import tournamentEngine from '@Engines/syncEngine';
 import mocksEngine from '@Assemblies/engines/mock';
+import tournamentEngine from '@Engines/syncEngine';
 import { expect, it } from 'vitest';
 
+// constants
+import { TO_BE_PLAYED, WALKOVER } from '@Constants/matchUpStatusConstants';
+import { POLICY_TYPE_SCORING } from '@Constants/policyConstants';
 import {
   MODIFIED_FEED_IN_CHAMPIONSHIP,
   FIRST_MATCH_LOSER_CONSOLATION,
   FEED_IN_CHAMPIONSHIP_TO_SF,
   FEED_IN_CHAMPIONSHIP,
 } from '@Constants/drawDefinitionConstants';
-import { TO_BE_PLAYED, WALKOVER } from '@Constants/matchUpStatusConstants';
-import { POLICY_TYPE_SCORING } from '@Constants/policyConstants';
 
 /**
  * Re-scoring an upstream walkover must not leave a PHANTOM walkover in the consolation.

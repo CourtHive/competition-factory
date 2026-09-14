@@ -6,7 +6,7 @@ import { addDays } from '@Tools/dateTime';
 import { expect, it } from 'vitest';
 import fs from 'fs';
 
-// Constants
+// constants
 import { ROUND_ROBIN, ROUND_ROBIN_WITH_PLAYOFF } from '@Constants/drawDefinitionConstants';
 import { SINGLES_EVENT, TEAM_EVENT } from '@Constants/eventConstants';
 import { DIRECT_ACCEPTANCE } from '@Constants/entryStatusConstants';

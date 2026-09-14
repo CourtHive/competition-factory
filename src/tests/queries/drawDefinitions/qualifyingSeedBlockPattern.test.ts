@@ -2,6 +2,7 @@ import { getSeedBlockPattern } from '@Query/drawDefinition/seedGetter';
 import { chunkArray, generateRange } from '@Tools/arrays';
 import { expect, test } from 'vitest';
 
+// constants and types
 import { CLUSTER, SEPARATE } from '@Constants/drawDefinitionConstants';
 import { SeedingProfile } from '@Types/factoryTypes';
 

@@ -1,10 +1,10 @@
 // Query
 import { getAppliedPolicies } from '@Query/extensions/getAppliedPolicies';
 
-// Constants
+// constants
 import { POLICY_TYPE_COMPETITION } from '@Constants/policyConstants';
 
-// Types
+// types
 import type { DrawDefinition, Event, Tournament } from '@Types/tournamentTypes';
 import type { CompetitionPolicy } from '@Types/competitionPolicyTypes';
 import type { ResultType } from '@Types/factoryTypes';

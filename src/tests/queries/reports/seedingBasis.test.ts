@@ -1,5 +1,5 @@
-import tournamentEngine from '@Engines/syncEngine';
 import tournamentRecord from './seedingBasis.tods.json';
+import tournamentEngine from '@Engines/syncEngine';
 import { expect, it } from 'vitest';
 
 it('test structureReports seedingBasis', () => {

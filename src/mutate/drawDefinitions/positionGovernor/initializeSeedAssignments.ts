@@ -1,9 +1,9 @@
 import { structureAssignedDrawPositions } from '@Query/drawDefinition/positionsGetter';
 import { modifyDrawNotice } from '@Mutate/notifications/drawNotifications';
+import { getSeedGroups } from '@Query/drawDefinition/getSeedBlocks';
 import { getSeedsCount } from '@Query/drawDefinition/getSeedsCount';
 import { findStructure } from '@Acquire/findStructure';
 import { isConvertableInteger } from '@Tools/math';
-import { getSeedGroups } from '../../../query/drawDefinition/getSeedBlocks';
 import { generateRange } from '@Tools/arrays';
 
 // constants and types

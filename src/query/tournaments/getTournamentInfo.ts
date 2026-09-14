@@ -9,6 +9,13 @@ import { definedAttributes } from '@Tools/definedAttributes';
 import { makeDeepCopy } from '@Tools/makeDeepCopy';
 
 // constants and types
+import { ErrorType, MISSING_TOURNAMENT_RECORD } from '@Constants/errorConditionConstants';
+import { completedMatchUpStatuses, BYE } from '@Constants/matchUpStatusConstants';
+import { TOURNAMENT_IMAGE_RESOURCE_NAME } from '@Constants/tournamentConstants';
+import POLICY_PRIVACY_STAFF from '@Fixtures/policies/POLICY_PRIVACY_STAFF';
+import { ParticipantRoleUnion, Tournament } from '@Types/tournamentTypes';
+import { INDIVIDUAL, TEAM } from '@Constants/participantConstants';
+import { SUCCESS } from '@Constants/resultConstants';
 import {
   ADMINISTRATION,
   COMPETITOR,
@@ -24,13 +31,6 @@ import {
   TRAINER,
   TRANSPORT,
 } from '@Constants/participantRoles';
-import { ErrorType, MISSING_TOURNAMENT_RECORD } from '@Constants/errorConditionConstants';
-import { completedMatchUpStatuses, BYE } from '@Constants/matchUpStatusConstants';
-import { TOURNAMENT_IMAGE_RESOURCE_NAME } from '@Constants/tournamentConstants';
-import POLICY_PRIVACY_STAFF from '@Fixtures/policies/POLICY_PRIVACY_STAFF';
-import { ParticipantRoleUnion, Tournament } from '@Types/tournamentTypes';
-import { INDIVIDUAL, TEAM } from '@Constants/participantConstants';
-import { SUCCESS } from '@Constants/resultConstants';
 
 /**
  * Roles whose holders appear in `tournamentContacts`.

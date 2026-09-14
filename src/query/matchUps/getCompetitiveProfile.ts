@@ -1,12 +1,12 @@
+import { resolveCompetitiveBands, resolveDeltaBands } from '@Query/matchUp/resolveCompetitiveBands';
+import { getBand, getScoreComponents, pctSpread } from '@Query/matchUp/scoreComponents';
+import { getMatchUpRatingDelta } from '@Query/matchUp/getMatchUpRatingDelta';
 import {
   bandFromBoundaries,
   DeltaBand,
   ResolvedDeltaBoundary,
   resolveDeltaBoundaries,
 } from '@Query/matchUp/resolveDeltaBand';
-import { resolveCompetitiveBands, resolveDeltaBands } from '@Query/matchUp/resolveCompetitiveBands';
-import { getBand, getScoreComponents, pctSpread } from '@Query/matchUp/scoreComponents';
-import { getMatchUpRatingDelta } from '@Query/matchUp/getMatchUpRatingDelta';
 
 // constants and types
 import { ErrorType, INVALID_VALUES } from '@Constants/errorConditionConstants';

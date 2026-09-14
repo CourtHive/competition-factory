@@ -1,11 +1,11 @@
-import { addFinishingRounds } from '../addFinishingRounds';
-import { generateMatchUpId } from '../generateMatchUpId';
+import { addFinishingRounds } from '@Generators/drawDefinitions/addFinishingRounds';
+import { generateMatchUpId } from '@Generators/drawDefinitions/generateMatchUpId';
+import { buildRound } from '@Generators/drawDefinitions/buildRound';
 import { isConvertableInteger } from '@Tools/math';
 import { generateRange } from '@Tools/arrays';
 import { ensureInt } from '@Tools/ensureInt';
-import { buildRound } from '../buildRound';
 
-// Constants
+// constants
 import { ErrorType, INVALID_VALUES } from '@Constants/errorConditionConstants';
 
 type CustomLuckyDrawParams = {

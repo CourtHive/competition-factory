@@ -2,9 +2,9 @@
  * v4.0 Tests - createMatchUp
  */
 
-import { describe, test, expect } from 'vitest';
 import { createMatchUp } from '@Assemblies/governors/scoreGovernor';
 import type { MatchUp } from '@Types/scoring/types';
+import { describe, test, expect } from 'vitest';
 
 describe('createMatchUp', () => {
   test('should create a basic matchUp', () => {

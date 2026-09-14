@@ -1,5 +1,5 @@
-import { describe, expect, it } from 'vitest';
 import { stringSort } from '@Functions/sorters/stringSort';
+import { describe, expect, it } from 'vitest';
 
 describe('stringSort', () => {
   it('sorts strings alphabetically', () => {

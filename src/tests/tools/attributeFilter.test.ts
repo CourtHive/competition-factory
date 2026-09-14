@@ -1,6 +1,7 @@
 import { attributeFilter } from '@Tools/attributeFilter';
 import { expect, it } from 'vitest';
 
+// constants
 import { INDIVIDUAL } from '@Constants/participantConstants';
 import { MALE } from '@Constants/genderConstants';
 

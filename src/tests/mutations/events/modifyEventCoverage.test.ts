@@ -3,10 +3,10 @@ import tournamentEngine from '@Engines/syncEngine';
 import { expect, test } from 'vitest';
 
 // constants
-import { ALTERNATE } from '@Constants/entryStatusConstants';
-import { INDIVIDUAL } from '@Constants/participantConstants';
 import { FEMALE, MALE, MIXED } from '@Constants/genderConstants';
 import { DOUBLES, SINGLES } from '@Constants/eventConstants';
+import { INDIVIDUAL } from '@Constants/participantConstants';
+import { ALTERNATE } from '@Constants/entryStatusConstants';
 import {
   EVENT_NOT_FOUND,
   INVALID_EVENT_TYPE,

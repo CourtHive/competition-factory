@@ -25,8 +25,8 @@
  * registry (`constructFactoryError`); already-typed errors are re-thrown
  * unchanged so the originating class + cause chain are preserved.
  */
-import { FactoryError } from '../errors/FactoryError';
 import { constructFactoryError } from '../errors/codeRegistry';
+import { FactoryError } from '../errors/FactoryError';
 
 /**
  * Type-level: narrow to the success arm.

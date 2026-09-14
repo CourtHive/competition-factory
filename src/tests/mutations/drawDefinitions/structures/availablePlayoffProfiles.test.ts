@@ -2,12 +2,13 @@ import { generateDrawTypeAndModifyDrawDefinition } from '@Assemblies/generators/
 import { getAvailablePlayoffProfiles } from '@Query/drawDefinition/getAvailablePlayoffProfiles';
 import { newDrawDefinition } from '@Assemblies/generators/drawDefinitions/newDrawDefinition';
 import { getDrawStructures } from '@Acquire/findStructure';
-import { constantToString } from '@Tools/strings';
-import tournamentEngine from '@Engines/syncEngine';
 import mocksEngine from '@Assemblies/engines/mock';
+import tournamentEngine from '@Engines/syncEngine';
+import { constantToString } from '@Tools/strings';
 import { globalState } from '../../../..';
 import { expect, it } from 'vitest';
 
+// constants and types
 import { COMPLETED } from '@Constants/matchUpStatusConstants';
 import { ADD_MATCHUPS } from '@Constants/topicConstants';
 import { DrawDefinition } from '@Types/tournamentTypes';

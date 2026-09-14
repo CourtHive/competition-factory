@@ -1,9 +1,10 @@
 import { setSubscriptions } from '@Global/state/globalState';
-import tournamentEngine from '@Engines/syncEngine';
 import mocksEngine from '@Assemblies/engines/mock';
+import tournamentEngine from '@Engines/syncEngine';
 import { expect, it } from 'vitest';
 
-import { FIRST_MATCH_LOSER_CONSOLATION } from '@Constants/drawDefinitionConstants';
+// constants
+import { FIRST_MATCH_LOSER_CONSOLATION, MODIFIED_FEED_IN_CHAMPIONSHIP } from '@Constants/drawDefinitionConstants';
 import { INVALID_MATCHUP_STATUS } from '@Constants/errorConditionConstants';
 import { DEFAULTED, WALKOVER } from '@Constants/matchUpStatusConstants';
 
@@ -148,4 +149,94 @@ it.each([WALKOVER, DEFAULTED])('a %s on a half-filled matchUp is refused without
     drawId: DRAW_ID,
   });
   expect(result.error).toEqual(INVALID_MATCHUP_STATUS);
+});
+
+/**
+ * A BYE CAN NEVER BE THE WINNING SIDE, and this test exists because #4858 allowed it.
+ *
+ * #4858's rationale was that whether a player can lose a walkover to an opponent who does not exist
+ * is a rules question for a governing body, of the kind `propagateRetirementAsExit` exists to stop
+ * the engine answering on its own. **That was wrong. The engine had already answered it**, in two
+ * places, and the alternative it names is not a policy — it is a bug class:
+ *
+ *  - `getExitWinningSide`: *"A BYE draw position can never be the winning side. […] this guard
+ *    exists so a future caller that forgets to filter cannot resurrect the 'advance the empty/BYE
+ *    side' bug class."*
+ *  - `progressExitStatus` RULE 1: when the opponent is a BYE the participant **advances through
+ *    it** — *"the BYE cascade has already moved them forward […] NOT a WALKOVER"* — and the exit is
+ *    re-propagated onto wherever they landed.
+ *
+ * CA, 2026-09-13, independently and before being shown either: *"A player that encounters a BYE gets
+ * advanced; a player being advanced by a WALKOVER hits a BYE and continues advancing […] if they are
+ * propagating their WALKOVER status all the way through then their WALKOVER occurs AFTER their
+ * fall-through position is advanced by the BYE."*
+ *
+ * So the propagation path never produces this state; only a direct entry could. The second case
+ * below is the one that matters most — it pins that the DEFENSIBLE half still works, so this is a
+ * refusal of an impossible outcome rather than a ban on scoring a matchUp that contains a bye.
+ */
+const byeMatchUp = () => {
+  setSubscriptions({});
+  mocksEngine.generateTournamentRecord({
+    // 6 of 8 leaves two byes: MAIN r1p1 is `[participant, BYE]` and r1p4 is `[BYE, participant]`
+    drawProfiles: [{ participantsCount: 6, drawSize: 8, drawType: MODIFIED_FEED_IN_CHAMPIONSHIP, drawId: DRAW_ID }],
+    nonRandom: 1,
+    setState: true,
+  });
+
+  const matchUp = tournamentEngine
+    .allDrawMatchUps({ inContext: true, drawId: DRAW_ID })
+    .matchUps.find(
+      (candidate: any) => candidate.stage === 'MAIN' && candidate.roundNumber === 1 && candidate.roundPosition === 1,
+    );
+
+  const byeSide = matchUp.sides.find((side: any) => side.bye);
+  const playerSide = matchUp.sides.find((side: any) => side.participantId);
+  // the control: this really is a bye matchUp with exactly one real participant
+  expect(byeSide?.sideNumber, 'MAIN r1p1 is not a BYE matchUp in this reduction').toBeDefined();
+  expect(playerSide?.participantId).toBeDefined();
+
+  return { matchUp, byeSideNumber: byeSide.sideNumber, playerSideNumber: playerSide.sideNumber };
+};
+
+it.each([WALKOVER, DEFAULTED])('a %s cannot be awarded to a BYE side', (matchUpStatus) => {
+  const { matchUp, byeSideNumber } = byeMatchUp();
+
+  const result: any = tournamentEngine.setMatchUpStatus({
+    matchUpId: matchUp.matchUpId,
+    outcome: { matchUpStatus, winningSide: byeSideNumber },
+    propagateExitStatus: true,
+    drawId: DRAW_ID,
+  });
+  expect(result.error).toEqual(INVALID_MATCHUP_STATUS);
+
+  // and the refusal is atomic — the matchUp is still the BYE it was
+  const after = tournamentEngine
+    .allDrawMatchUps({ inContext: true, drawId: DRAW_ID })
+    .matchUps.find((candidate: any) => candidate.matchUpId === matchUp.matchUpId);
+  expect(after.matchUpStatus).toEqual(matchUp.matchUpStatus);
+  expect(after.winningSide).toBeUndefined();
+});
+
+/**
+ * The half that must keep working. Refusing the bye as a WINNER must not become a refusal to record
+ * anything on a matchUp that merely contains one — a director can still record that the present
+ * player did not play, and the exit is theirs.
+ */
+it.each([WALKOVER, DEFAULTED])('a %s IS still accepted on a bye matchUp for the present player', (matchUpStatus) => {
+  const { matchUp, playerSideNumber } = byeMatchUp();
+
+  const result: any = tournamentEngine.setMatchUpStatus({
+    matchUpId: matchUp.matchUpId,
+    outcome: { matchUpStatus, winningSide: playerSideNumber },
+    propagateExitStatus: true,
+    drawId: DRAW_ID,
+  });
+  expect(result.error).toBeUndefined();
+
+  const after = tournamentEngine
+    .allDrawMatchUps({ inContext: true, drawId: DRAW_ID })
+    .matchUps.find((candidate: any) => candidate.matchUpId === matchUp.matchUpId);
+  expect(after.winningSide).toEqual(playerSideNumber);
+  expect(after.sides.find((side: any) => side.sideNumber === after.winningSide)?.participantId).toBeDefined();
 });

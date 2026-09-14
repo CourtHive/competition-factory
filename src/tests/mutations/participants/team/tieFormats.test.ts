@@ -1,9 +1,10 @@
 import { validateTieFormat } from '@Validators/validateTieFormat';
 import tieFormatConstants from '@Constants/tieFormatConstants';
-import tournamentEngine from '@Engines/syncEngine';
 import mocksEngine from '@Assemblies/engines/mock';
+import tournamentEngine from '@Engines/syncEngine';
 import { expect, it, test } from 'vitest';
 
+// constants
 import { TEAM } from '@Constants/eventConstants';
 
 const tieKeys = [

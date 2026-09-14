@@ -3,6 +3,7 @@ import competitionEngine from '@Engines/syncEngine';
 import scaleEngine from '@Engines/scaleEngine';
 import { expect, test } from 'vitest';
 
+// constants
 import { MISSING_TOURNAMENT_RECORD } from '@Constants/errorConditionConstants';
 
 test('basic engine methods', () => {

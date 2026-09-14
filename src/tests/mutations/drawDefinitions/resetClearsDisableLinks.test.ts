@@ -1,6 +1,6 @@
 import { FIRST_MATCH_LOSER_CONSOLATION } from '@Constants/drawDefinitionConstants';
-import { setSchemaWriteMode } from '@Global/state/globalState';
 import { BRIDGE, NATIVE } from '@Constants/schemaWriteModeConstants';
+import { setSchemaWriteMode } from '@Global/state/globalState';
 import { DISABLE_LINKS } from '@Constants/extensionConstants';
 import mocksEngine from '@Assemblies/engines/mock';
 import tournamentEngine from '@Engines/syncEngine';

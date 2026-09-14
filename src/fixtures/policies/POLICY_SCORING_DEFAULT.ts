@@ -1,6 +1,6 @@
 import { ABANDONED, CANCELLED, DEFAULTED, INCOMPLETE, RETIRED, WALKOVER } from '@Constants/matchUpStatusConstants';
+import { FORMAT_STANDARD } from '@Fixtures/scoring/matchUpFormats';
 import { POLICY_TYPE_SCORING } from '@Constants/policyConstants';
-import { FORMAT_STANDARD } from '../scoring/matchUpFormats';
 import { MAIN } from '@Constants/drawDefinitionConstants';
 
 export const POLICY_SCORING_DEFAULT = {

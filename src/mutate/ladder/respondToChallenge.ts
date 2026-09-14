@@ -4,6 +4,7 @@ import { getLadderPolicy } from '@Query/ladder/getLadderPolicy';
 import { addTimeItem } from '@Mutate/timeItems/addTimeItem';
 import { isLadder } from '@Query/drawDefinition/isLadder';
 
+// constants and types
 import { INVALID_VALUES, MATCHUP_NOT_FOUND, MISSING_DRAW_DEFINITION } from '@Constants/errorConditionConstants';
 import { CHALLENGE_ACCEPTED, CHALLENGE_DECLINED, EXPIRED, PENDING } from '@Constants/ladderConstants';
 import { CHALLENGED, TO_BE_PLAYED } from '@Constants/matchUpStatusConstants';

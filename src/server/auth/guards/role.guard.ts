@@ -1,5 +1,5 @@
 import { Injectable, CanActivate, ExecutionContext } from '@nestjs/common';
-import { Roles } from '../decorators/roles.decorator';
+import { Roles } from '@Server/auth/decorators/roles.decorator';
 import { Reflector } from '@nestjs/core';
 
 /**

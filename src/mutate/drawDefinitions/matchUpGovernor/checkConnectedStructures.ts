@@ -1,7 +1,7 @@
 import { getAffectedTargetStructureIds } from './getAffectedTargetStructureIds';
 import { isCompletedStructure } from '@Query/drawDefinition/structureActions';
 
-// Constants
+// constants
 import { WIN_RATIO } from '@Constants/drawDefinitionConstants';
 
 /**

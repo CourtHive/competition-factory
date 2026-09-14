@@ -13,10 +13,11 @@
 // was present, so a main-only existing draw fell through to
 // generateNewDrawDefinition which tried (and failed) to regenerate main.
 
-import tournamentEngine from '@Engines/syncEngine';
 import mocksEngine from '@Assemblies/engines/mock';
+import tournamentEngine from '@Engines/syncEngine';
 import { expect, it, describe } from 'vitest';
 
+// constants
 import { MAIN, QUALIFYING } from '@Constants/drawDefinitionConstants';
 
 describe('Generate Qualifying when main exists without a placeholder', () => {

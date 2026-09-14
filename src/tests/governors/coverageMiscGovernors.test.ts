@@ -21,7 +21,7 @@ import mocksEngine from '@Assemblies/engines/mock';
 // Testing
 import { describe, expect, it } from 'vitest';
 
-// Constants
+// constants
 import { INVALID_VALUES, MISSING_EVENT, MISSING_VALUE } from '@Constants/errorConditionConstants';
 import { COMPLETED, RETIRED, WALKOVER, BYE } from '@Constants/matchUpStatusConstants';
 import { MISSING_SANCTIONING_RECORD } from '@Constants/sanctioningConstants';

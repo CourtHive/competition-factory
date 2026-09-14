@@ -1,4 +1,4 @@
-import { setFirstClassOrExtension } from '../extensions/setFirstClassOrExtension';
+import { setFirstClassOrExtension } from '@Mutate/extensions/setFirstClassOrExtension';
 import { requireParams } from '@Helpers/parameters/requireParams';
 import { getFlightProfile } from '@Query/event/getFlightProfile';
 import { deleteDrawDefinitions } from './deleteDrawDefinitions';

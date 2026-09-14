@@ -1,11 +1,15 @@
-import { getMatchUpOfficialConflicts } from '@Query/officiating/getMatchUpOfficialConflicts';
 import { POLICY_OFFICIATING_CONFLICT_OF_INTEREST } from '@Fixtures/policies/POLICY_OFFICIATING_CONFLICT_OF_INTEREST';
-import { describe, expect, it } from 'vitest';
+import { getMatchUpOfficialConflicts } from '@Query/officiating/getMatchUpOfficialConflicts';
 import mocksEngine from '@Assemblies/engines/mock';
 import tournamentEngine from '@Engines/syncEngine';
+import { describe, expect, it } from 'vitest';
 
-// Constants
+// constants
 import { MISSING_TOURNAMENT_RECORD, MISSING_MATCHUP_ID } from '@Constants/errorConditionConstants';
+import { POLICY_TYPE_OFFICIATING_CONFLICT } from '@Constants/policyConstants';
+import { COACH, OFFICIAL, OTHER } from '@Constants/participantRoles';
+import { INDIVIDUAL, PAIR } from '@Constants/participantConstants';
+import { DOUBLES } from '@Constants/matchUpTypes';
 import {
   OFFICIAL_CONFLICT_OF_INTEREST,
   CONFLICT_DECLARED_RELATIONSHIP,
@@ -15,11 +19,8 @@ import {
   CONFLICT_BLOCK,
   CONFLICT_WARN,
 } from '@Constants/officiatingConstants';
-import { POLICY_TYPE_OFFICIATING_CONFLICT } from '@Constants/policyConstants';
-import { INDIVIDUAL, PAIR } from '@Constants/participantConstants';
-import { COACH, OFFICIAL, OTHER } from '@Constants/participantRoles';
-import { DOUBLES } from '@Constants/matchUpTypes';
 
+// types
 import type { OfficialRecord } from '@Types/officiatingTypes';
 
 function makeOfficialRecord(overrides?: Partial<OfficialRecord>): OfficialRecord {

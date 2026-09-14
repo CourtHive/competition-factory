@@ -1,5 +1,5 @@
 export { nearestPowerOf2, nextPowerOf2, isPowerOf2, isOdd, isConvertableInteger, isNumeric } from '@Tools/math';
-export { visualizeScheduledMatchUps } from '../../tests/testHarness/testUtilities/visualizeScheduledMatchUps';
+export { visualizeScheduledMatchUps } from '@Tests/testHarness/testUtilities/visualizeScheduledMatchUps';
 // Pure helpers for the signed competitive-exposure axis. Exported here rather
 // than from a governor because they take POSITIONAL arguments — a governor
 // export becomes an engine method, and the engine wrapper hands every method a
@@ -24,8 +24,8 @@ export { plainDate } from '@Tools/plainDate';
 export { plainTime } from '@Tools/plainTime';
 export { matchUpChronologicalSort } from '@Functions/sorters/matchUpChronologicalSort';
 export { matchUpScheduleSort } from '@Functions/sorters/matchUpScheduleSorter';
-export { structureSort } from '../../functions/sorters/structureSort';
-export { matchUpSort } from '../../functions/sorters/matchUpSort';
+export { structureSort } from '@Functions/sorters/structureSort';
+export { matchUpSort } from '@Functions/sorters/matchUpSort';
 // Repair an unlinked drawDefinition so it can be READ. Exported here rather than as a governor
 // method because callers are ingest/import tools operating on a record they hold, not on engine
 // state — and because third-party data cannot be relied on to arrive linked.

@@ -2,7 +2,7 @@ import mocksEngine from '@Assemblies/engines/mock';
 import tournamentEngine from '@Engines/syncEngine';
 import { expect, it, test } from 'vitest';
 
-// constants
+// constants and fixtures
 import POLICY_DRAWS_DEFAULT from '@Fixtures/policies/POLICY_DRAWS_DEFAULT';
 import { INVALID_DRAW_SIZE } from '@Constants/errorConditionConstants';
 import { POLICY_TYPE_DRAWS } from '@Constants/policyConstants';

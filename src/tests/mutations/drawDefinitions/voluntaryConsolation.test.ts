@@ -1,9 +1,9 @@
 import { setSubscriptions } from '@Global/state/globalState';
-import tournamentEngine from '@Engines/syncEngine';
 import mocksEngine from '@Assemblies/engines/mock';
+import tournamentEngine from '@Engines/syncEngine';
 import { expect, it } from 'vitest';
 
-// Constants
+// constants
 import { VOLUNTARY_CONSOLATION } from '@Constants/drawDefinitionConstants';
 import { EXISTING_STRUCTURE } from '@Constants/errorConditionConstants';
 import { DIRECT_ACCEPTANCE } from '@Constants/entryStatusConstants';

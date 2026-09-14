@@ -1,12 +1,13 @@
 import { POLICY_RANKING_POINTS_ATP } from '@Fixtures/policies/POLICY_RANKING_POINTS_ATP';
 import { getAwardProfile } from '@Query/scales/getAwardProfile';
 import scaleEngine from '@Engines/scaleEngine';
-import { mocksEngine } from '../../..';
 import { describe, expect, it } from 'vitest';
+import { mocksEngine } from '../../..';
 
-import { POLICY_TYPE_RANKING_POINTS } from '@Constants/policyConstants';
-import { SINGLES, DOUBLES, TEAM_EVENT } from '@Constants/eventConstants';
+// constants
 import { MAIN, QUALIFYING, ROUND_ROBIN_WITH_PLAYOFF, SINGLE_ELIMINATION } from '@Constants/drawDefinitionConstants';
+import { SINGLES, DOUBLES, TEAM_EVENT } from '@Constants/eventConstants';
+import { POLICY_TYPE_RANKING_POINTS } from '@Constants/policyConstants';
 
 const policyDefinitions = POLICY_RANKING_POINTS_ATP;
 const policy = policyDefinitions[POLICY_TYPE_RANKING_POINTS];

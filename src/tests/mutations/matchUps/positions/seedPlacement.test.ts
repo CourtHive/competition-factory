@@ -1,28 +1,28 @@
 import { initializeStructureSeedAssignments } from '@Mutate/drawDefinitions/positionGovernor/initializeSeedAssignments';
 import { modifySeedAssignment } from '@Mutate/drawDefinitions/entryGovernor/modifySeedAssignment';
 import { getStructureSeedAssignments } from '@Query/structure/getStructureSeedAssignments';
+import { getNextSeedBlock, getValidSeedBlocks } from '@Query/drawDefinition/seedGetter';
 import { assignDrawPosition } from '@Mutate/matchUps/drawPositions/positionAssignment';
-import { clearDrawPosition } from '@Mutate/matchUps/drawPositions/positionClear';
 import { assignSeed } from '@Mutate/drawDefinitions/entryGovernor/seedAssignment';
+import { clearDrawPosition } from '@Mutate/matchUps/drawPositions/positionClear';
 import { attachPolicies } from '@Mutate/extensions/policies/attachPolicies';
+import { findStructure, getDrawStructures } from '@Acquire/findStructure';
 import { getAppliedPolicies } from '@Query/extensions/getAppliedPolicies';
 import { getStageEntries } from '@Query/drawDefinition/stageGetter';
 import { numericSort } from '@Tools/sorting';
 import { mocksEngine } from '../../../..';
 import { expect, it } from 'vitest';
-import { getNextSeedBlock, getValidSeedBlocks } from '@Query/drawDefinition/seedGetter';
-import { findStructure, getDrawStructures } from '@Acquire/findStructure';
 
-import POLICY_SEEDING_ITF from '@Fixtures/policies/POLICY_SEEDING_ITF';
-import { POLICY_TYPE_SEEDING } from '@Constants/policyConstants';
-import { policyComposer } from '@Global/policyComposer';
-import SEEDING_USTA from '@Fixtures/policies/POLICY_SEEDING_DEFAULT';
-import SEEDING_ITF from '@Fixtures/policies/POLICY_SEEDING_ITF';
-import { EntryStatusUnion } from '@Types/tournamentTypes';
-import { MAIN } from '@Constants/drawDefinitionConstants';
-import { ERROR } from '@Constants/resultConstants';
 import { INVALID_VALUES, MISSING_STRUCTURE_ID, STRUCTURE_NOT_FOUND } from '@Constants/errorConditionConstants';
 import { DIRECT_ACCEPTANCE, WILDCARD } from '@Constants/entryStatusConstants';
+import POLICY_SEEDING_ITF from '@Fixtures/policies/POLICY_SEEDING_ITF';
+import SEEDING_USTA from '@Fixtures/policies/POLICY_SEEDING_DEFAULT';
+import { POLICY_TYPE_SEEDING } from '@Constants/policyConstants';
+import SEEDING_ITF from '@Fixtures/policies/POLICY_SEEDING_ITF';
+import { MAIN } from '@Constants/drawDefinitionConstants';
+import { EntryStatusUnion } from '@Types/tournamentTypes';
+import { policyComposer } from '@Global/policyComposer';
+import { ERROR } from '@Constants/resultConstants';
 
 // `POLICY_SEEDING_NATIONAL` used to supply this. It was ITF seeding with one key omitted, and the
 // composer says so in a way a fixture never could: leaving `validSeedPositions` unset is what keeps

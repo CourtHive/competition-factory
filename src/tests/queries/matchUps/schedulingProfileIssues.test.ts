@@ -3,9 +3,10 @@ import mocksEngine from '@Assemblies/engines/mock';
 import tournamentEngine from '@Engines/syncEngine';
 import { expect, test } from 'vitest';
 
+// constants and fixtures
+import { INVALID_DATE, INVALID_TOURNAMENT_RECORD, INVALID_VALUES } from '@Constants/errorConditionConstants';
 import POLICY_SCHEDULING_DEFAULT from '@Fixtures/policies/POLICY_SCHEDULING_DEFAULT';
 import { SINGLE_ELIMINATION } from '@Constants/drawDefinitionConstants';
-import { INVALID_DATE, INVALID_TOURNAMENT_RECORD, INVALID_VALUES } from '@Constants/errorConditionConstants';
 
 const startDate = '2022-01-01';
 const endDate = '2022-01-07';

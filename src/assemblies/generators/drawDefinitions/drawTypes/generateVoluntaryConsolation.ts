@@ -12,18 +12,10 @@ import { makeDeepCopy } from '@Tools/makeDeepCopy';
 import { constantToString } from '@Tools/strings';
 import { nextPowerOf2 } from '@Tools/math';
 
-// Constants and Types
+// constants and types
 import { EQUIVALENT_ACCEPTANCE_STATUSES } from '@Constants/entryStatusConstants';
 import { PlayoffAttributes, SeedingProfile } from '@Types/factoryTypes';
 import { SUCCESS } from '@Constants/resultConstants';
-import {
-  EXISTING_STRUCTURE,
-  ErrorType,
-  INVALID_DRAW_SIZE,
-  MISSING_DRAW_DEFINITION,
-  STAGE_SEQUENCE_LIMIT,
-  UNRECOGNIZED_DRAW_TYPE,
-} from '@Constants/errorConditionConstants';
 import {
   DOUBLE_ELIMINATION,
   FEED_IN,
@@ -33,6 +25,14 @@ import {
   SINGLE_ELIMINATION,
   VOLUNTARY_CONSOLATION,
 } from '@Constants/drawDefinitionConstants';
+import {
+  EXISTING_STRUCTURE,
+  ErrorType,
+  INVALID_DRAW_SIZE,
+  MISSING_DRAW_DEFINITION,
+  STAGE_SEQUENCE_LIMIT,
+  UNRECOGNIZED_DRAW_TYPE,
+} from '@Constants/errorConditionConstants';
 import {
   DrawDefinition,
   DrawLink,

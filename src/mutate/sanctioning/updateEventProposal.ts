@@ -8,7 +8,7 @@ import {
   PROPOSAL_NOT_EDITABLE,
 } from '@Constants/sanctioningConstants';
 
-// Types
+// types
 import type { SanctioningRecord, EventProposal } from '@Types/sanctioningTypes';
 
 type UpdateEventProposalArgs = {

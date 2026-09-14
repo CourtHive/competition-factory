@@ -3,8 +3,8 @@ import { tournamentEngine } from '@Engines/syncEngine';
 import { expect, test, describe } from 'vitest';
 
 // constants
-import { INCOMPATIBLE_MATCHUP_STATUS } from '@Constants/errorConditionConstants';
 import { COMPLETED, IN_PROGRESS, RETIRED, SUSPENDED } from '@Constants/matchUpStatusConstants';
+import { INCOMPATIBLE_MATCHUP_STATUS } from '@Constants/errorConditionConstants';
 
 const drawId = 'drawId';
 const matchUpId = 'm-1-1';

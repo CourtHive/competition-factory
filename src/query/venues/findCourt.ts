@@ -1,7 +1,7 @@
 import { getLinkedTournamentIds } from '@Query/tournaments/getLinkedTournamentIds';
-import { requireParams } from '@Helpers/parameters/requireParams';
 import { decorateResult } from '@Functions/global/decorateResult';
-import { addVenue } from '../../mutate/venues/addVenue';
+import { requireParams } from '@Helpers/parameters/requireParams';
+import { addVenue } from '@Mutate/venues/addVenue';
 import { makeDeepCopy } from '@Tools/makeDeepCopy';
 
 // constants and types

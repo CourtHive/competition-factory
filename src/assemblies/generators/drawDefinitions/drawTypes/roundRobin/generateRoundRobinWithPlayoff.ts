@@ -2,10 +2,11 @@
 // future iteration should allow structureOptions to specify
 // groups of finishing drawPositions which playoff
 
-import { processPlayoffGroups } from '../processPlayoffGroups';
-import { constantToString } from '@Tools/strings';
+import { processPlayoffGroups } from '@Generators/drawDefinitions/drawTypes/processPlayoffGroups';
 import { generateRoundRobin } from './roundRobin';
+import { constantToString } from '@Tools/strings';
 
+// constants
 import { INVALID_CONFIGURATION } from '@Constants/errorConditionConstants';
 import { MAIN, PLAY_OFF } from '@Constants/drawDefinitionConstants';
 import { SUCCESS } from '@Constants/resultConstants';

@@ -5,8 +5,8 @@ import { getMatchUpsMap } from '@Query/matchUps/getMatchUpsMap';
 // constants and types
 import type { DrawDefinition, Event, Tournament } from '@Types/tournamentTypes';
 import { BYE, TO_BE_PLAYED } from '@Constants/matchUpStatusConstants';
-import { SUCCESS } from '@Constants/resultConstants';
 import type { MatchUpsMap } from '@Types/factoryTypes';
+import { SUCCESS } from '@Constants/resultConstants';
 
 const RELEASABLE_STATUSES: (string | undefined)[] = [undefined, TO_BE_PLAYED, BYE];
 

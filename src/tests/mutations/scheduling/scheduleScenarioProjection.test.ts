@@ -1,7 +1,8 @@
-import mocksEngine from '@Assemblies/engines/mock';
 import competitionEngine from '@Engines/syncEngine';
+import mocksEngine from '@Assemblies/engines/mock';
 import { expect, it } from 'vitest';
 
+// constants
 import { SINGLE_ELIMINATION } from '@Constants/drawDefinitionConstants';
 
 const venueId = 'proj-venue';

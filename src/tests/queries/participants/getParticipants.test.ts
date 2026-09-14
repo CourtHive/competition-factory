@@ -3,10 +3,11 @@ import tournamentEngine from '@Engines/syncEngine';
 import * as tools from '@Assemblies/tools';
 import { expect, it, test } from 'vitest';
 
+// constants and fixtures
 import { POLICY_TYPE_PARTICIPANT } from '@Constants/policyConstants';
 import { INDIVIDUAL, PAIR } from '@Constants/participantConstants';
-import { COMPETITOR } from '@Constants/participantRoles';
 import { FEMALE, MALE } from '@Constants/genderConstants';
+import { COMPETITOR } from '@Constants/participantRoles';
 import { SINGLES } from '@Constants/eventConstants';
 import { countries } from '@Fixtures/countryData';
 

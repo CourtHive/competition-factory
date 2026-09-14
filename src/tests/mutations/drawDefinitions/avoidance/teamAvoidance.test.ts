@@ -3,8 +3,8 @@ import tournamentEngine from '@Engines/syncEngine';
 import { expect, it } from 'vitest';
 
 import { SINGLES_EVENT, TEAM_EVENT } from '@Constants/eventConstants';
-import { POLICY_TYPE_AVOIDANCE } from '@Constants/policyConstants';
 import { TEAM_PARTICIPANT } from '@Constants/participantConstants';
+import { POLICY_TYPE_AVOIDANCE } from '@Constants/policyConstants';
 import { COLLEGE_D3 } from '@Constants/tieFormatConstants';
 import { getConflicts } from './testGetConflicts';
 

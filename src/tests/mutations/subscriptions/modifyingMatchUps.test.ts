@@ -1,9 +1,9 @@
 import { printGlobalLog, purgeGlobalLog, pushGlobalLog } from '@Functions/global/globalLog';
 import { setDevContext, setSubscriptions } from '@Global/state/globalState';
 import { rgbColors } from '@Functions/global/logColors';
-import { makeDeepCopy } from '@Tools/makeDeepCopy';
 import mocksEngine from '@Assemblies/engines/mock';
 import tournamentEngine from '@Engines/syncEngine';
+import { makeDeepCopy } from '@Tools/makeDeepCopy';
 import { expect, it } from 'vitest';
 import diff from 'variable-diff';
 import chalk from 'chalk';

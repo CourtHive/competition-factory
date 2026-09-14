@@ -3,9 +3,10 @@ import { expect, test, describe } from 'vitest';
 import { confirmResult, disputeResult, submitResult } from '@Mutate/ladder/reportResult';
 import { applyLadderMovement } from '@Mutate/ladder/applyLadderMovement';
 
+// constants
 import { AWAITING_RESULT, COMPLETED, TO_BE_PLAYED } from '@Constants/matchUpStatusConstants';
-import { OPERATOR, RANK, RESULT, SWAP } from '@Constants/ladderConstants';
 import { RESULT_NOT_VALIDATED } from '@Constants/errorConditionConstants';
+import { OPERATOR, RANK, RESULT, SWAP } from '@Constants/ladderConstants';
 import { POLICY_TYPE_LADDER } from '@Constants/policyConstants';
 import { LADDER } from '@Constants/drawDefinitionConstants';
 

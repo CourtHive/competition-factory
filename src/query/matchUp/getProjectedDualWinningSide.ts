@@ -6,8 +6,8 @@ import { makeDeepCopy } from '@Tools/makeDeepCopy';
 // constants types and fixtures
 import { DrawDefinition, Event, MatchUp, Structure, TieFormat } from '@Types/tournamentTypes';
 import { toBePlayed } from '@Fixtures/scoring/outcomes/toBePlayed';
-import { HydratedMatchUp } from '@Types/hydrated';
 import { MatchUpsMap } from '@Types/factoryTypes';
+import { HydratedMatchUp } from '@Types/hydrated';
 
 type GetProjectedDualWinningSideArgs = {
   drawDefinition?: DrawDefinition;

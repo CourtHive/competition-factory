@@ -1,6 +1,6 @@
 import { makeDeepCopy } from '@Tools/makeDeepCopy';
 
-// constants and types
+// constants
 import { INVALID_VALUES } from '@Constants/errorConditionConstants';
 
 // Generic directive/pipe/rollback pipeline shared by declaration-style engines

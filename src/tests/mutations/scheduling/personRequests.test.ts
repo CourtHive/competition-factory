@@ -1,10 +1,11 @@
-import { hasSchedule } from '@Query/matchUp/hasSchedule';
 import { extractTime, timeStringMinutes } from '@Tools/dateTime';
 import { getMatchUpId } from '@Functions/global/extractors';
-import mocksEngine from '@Assemblies/engines/mock';
+import { hasSchedule } from '@Query/matchUp/hasSchedule';
 import competitionEngine from '@Engines/syncEngine';
+import mocksEngine from '@Assemblies/engines/mock';
 import { expect, it } from 'vitest';
 
+// constants and types
 import { DO_NOT_SCHEDULE } from '@Constants/requestConstants';
 import { Tournament } from '@Types/tournamentTypes';
 

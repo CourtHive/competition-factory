@@ -3,8 +3,8 @@
  * Tests the full flow: generate SE main draw → complete matchUps → add VC entries → generate VC structure.
  * Each draw type scenario validates the expected structure shape and participant placement.
  */
-import tournamentEngine from '@Engines/syncEngine';
 import mocksEngine from '@Assemblies/engines/mock';
+import tournamentEngine from '@Engines/syncEngine';
 import { describe, expect, it } from 'vitest';
 
 // constants

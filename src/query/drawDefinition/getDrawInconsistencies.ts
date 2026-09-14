@@ -1,7 +1,7 @@
+import { getStructureInconsistencies, isPropagatedExit } from '@Query/drawDefinition/getStructureInconsistencies';
 import { finalize, Inconsistency } from '@Query/integrity/inconsistency';
 import { isFedLoserEligible } from '@Query/matchUp/isFedLoserEligible';
 import { getAllDrawMatchUps } from '@Query/matchUps/drawMatchUps';
-import { getStructureInconsistencies, isPropagatedExit } from '@Query/drawDefinition/getStructureInconsistencies';
 
 // constants and types
 import { DrawDefinition, Event, Structure, Tournament } from '@Types/tournamentTypes';

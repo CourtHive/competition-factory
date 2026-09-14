@@ -2,8 +2,9 @@ import mocksEngine from '@Assemblies/engines/mock';
 import tournamentEngine from '@Engines/syncEngine';
 import { expect, it } from 'vitest';
 
-import { INDIVIDUAL } from '@Constants/participantConstants';
+// constants
 import { INVALID_VALUES, MISSING_VALUE } from '@Constants/errorConditionConstants';
+import { INDIVIDUAL } from '@Constants/participantConstants';
 
 it('can modify the drawOrder of flightProfile.flights and drawDefniitions within an event', () => {
   const { tournamentRecord } = mocksEngine.generateTournamentRecord({});

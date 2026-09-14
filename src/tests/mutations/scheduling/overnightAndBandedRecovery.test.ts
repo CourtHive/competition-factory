@@ -3,9 +3,9 @@ import { getMatchUpFormatTiming } from '@Query/extensions/matchUpFormatTiming/ge
 import mocksEngine from '@Assemblies/engines/mock';
 import { describe, expect, it } from 'vitest';
 
+// constants
+import { DOUBLES_EVENT, SINGLES_EVENT } from '@Constants/eventConstants';
 import { POLICY_TYPE_SCHEDULING } from '@Constants/policyConstants';
-import { DOUBLES_EVENT } from '@Constants/eventConstants';
-import { SINGLES_EVENT } from '@Constants/eventConstants';
 
 const MATCHUP_FORMAT = 'SET3-S:6/TB7';
 const JUNIOR = 'JUNIOR';

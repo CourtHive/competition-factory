@@ -12,7 +12,7 @@ import { firstClassOrExtension } from '@Acquire/firstClassOrExtension';
 import { setSchemaWriteMode } from '@Global/state/globalState';
 import { findExtension } from '@Acquire/findExtension';
 
-// constants and types
+// constants
 import { BRIDGE, LEGACY, NATIVE, SchemaWriteMode } from '@Constants/schemaWriteModeConstants';
 import { FLIGHT_PROFILE, LINEUPS } from '@Constants/extensionConstants';
 

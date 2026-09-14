@@ -3,7 +3,7 @@ import tournamentEngine from '@Engines/syncEngine';
 import { unique } from '@Tools/arrays';
 import { it, expect } from 'vitest';
 
-// Constants
+// constants
 import { FOLLOWED_BY, NEXT_AVAILABLE } from '@Constants/timeItemConstants';
 import { INVALID_VALUES } from '@Constants/errorConditionConstants';
 import { SCHEDULE_WARNING } from '@Constants/scheduleConstants';

@@ -20,7 +20,7 @@
 import { setSubscriptions, deleteNotices } from '@Global/state/globalState';
 import { cast } from '@Query/readModel/cast';
 
-// constants and types
+// constants
 import {
   ADD_DRAW_DEFINITION,
   ADD_EVENT,

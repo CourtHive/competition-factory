@@ -1,7 +1,7 @@
 import { getParticipantIds } from '@Functions/global/extractors';
 import mocksEngine from '@Assemblies/engines/mock';
-import { globalState } from '../../..';
 import tournamentEngine from '@Engines/syncEngine';
+import { globalState } from '../../..';
 import { expect, it } from 'vitest';
 
 tournamentEngine.devContext(true);

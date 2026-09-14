@@ -1,9 +1,10 @@
 import { sumAgainstBound, describeAmount } from './comparePrizeMoney';
-// Constants
+
+// constants
 import { MISSING_SANCTIONING_POLICY, MISSING_PROPOSAL } from '@Constants/sanctioningConstants';
 import { SUCCESS } from '@Constants/resultConstants';
 
-// Types
+// types
 import type { TournamentProposal, SanctioningPolicy } from '@Types/sanctioningTypes';
 
 type GetEligibleTiersArgs = {

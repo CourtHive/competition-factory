@@ -1,9 +1,10 @@
 import { drawPositionFilled } from '@Mutate/matchUps/drawPositions/drawPositionFilled';
-import tournamentEngine from '@Engines/syncEngine';
 import mocksEngine from '@Assemblies/engines/mock';
+import tournamentEngine from '@Engines/syncEngine';
 import { describe, expect, it } from 'vitest';
 
 // constants
+import { ALTERNATE_PARTICIPANT } from '@Constants/positionActionConstants';
 import {
   FIRST_MATCH_LOSER_CONSOLATION,
   CONSOLATION,
@@ -12,16 +13,6 @@ import {
   AD_HOC,
   MAIN,
 } from '@Constants/drawDefinitionConstants';
-import {
-  DOUBLE_WALKOVER,
-  DOUBLE_DEFAULT,
-  TO_BE_PLAYED,
-  COMPLETED,
-  DEFAULTED,
-  WALKOVER,
-  RETIRED,
-  BYE,
-} from '@Constants/matchUpStatusConstants';
 import {
   DRAW_POSITION_ACTIVE,
   DRAW_POSITION_ASSIGNED,
@@ -36,7 +27,16 @@ import {
   MISSING_STRUCTURE_ID,
   STRUCTURE_NOT_FOUND,
 } from '@Constants/errorConditionConstants';
-import { ALTERNATE_PARTICIPANT } from '@Constants/positionActionConstants';
+import {
+  DOUBLE_WALKOVER,
+  DOUBLE_DEFAULT,
+  TO_BE_PLAYED,
+  COMPLETED,
+  DEFAULTED,
+  WALKOVER,
+  RETIRED,
+  BYE,
+} from '@Constants/matchUpStatusConstants';
 
 // ──────────────────────────────────────────────────────────────────────────────
 // drawPositionFilled — unit tests for all branches

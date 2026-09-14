@@ -4,8 +4,9 @@ import { applyLadderMovement } from '@Mutate/ladder/applyLadderMovement';
 import { getLadderOrdering } from '@Query/ladder/getLadderPolicy';
 import { getLapses } from '@Query/ladder/getLapses';
 
-import { DROP, FORFEIT, FORFEIT_POSITION, RANK, REMOVE } from '@Constants/ladderConstants';
+// constants and types
 import { INVALID_VALUES, PARTICIPANT_NOT_FOUND } from '@Constants/errorConditionConstants';
+import { DROP, FORFEIT, FORFEIT_POSITION, RANK, REMOVE } from '@Constants/ladderConstants';
 import type { LapseConsequence } from '@Constants/ladderConstants';
 import { SUCCESS } from '@Constants/resultConstants';
 import { ResultType } from '@Types/factoryTypes';

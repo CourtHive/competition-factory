@@ -1,14 +1,15 @@
-import { generateFMLC } from '../../primitives/firstMatchLoserConsolation';
+import { generateFMLC } from '@Tests/mutations/drawDefinitions/primitives/firstMatchLoserConsolation';
+import { completeMatchUp } from '@Tests/mutations/drawDefinitions/primitives/verifyMatchUps';
 import { getDrawStructures } from '@Acquire/findStructure';
-import { completeMatchUp } from '../../primitives/verifyMatchUps';
 import mocksEngine from '@Assemblies/engines/mock';
-import { instanceCount } from '@Tools/arrays';
 import tournamentEngine from '@Engines/syncEngine';
+import { instanceCount } from '@Tools/arrays';
 import { expect, it } from 'vitest';
 
+// constants and fixtures
+import { CONSOLATION, FIRST_MATCH_LOSER_CONSOLATION, MAIN } from '@Constants/drawDefinitionConstants';
 import SEEDING_USTA from '@Fixtures/policies/POLICY_SEEDING_DEFAULT';
 import SEEDING_ITF from '@Fixtures/policies/POLICY_SEEDING_ITF';
-import { CONSOLATION, FIRST_MATCH_LOSER_CONSOLATION, MAIN } from '@Constants/drawDefinitionConstants';
 
 it('can support ITF Consolation BYE placement', () => {
   const participantsCount = 24;

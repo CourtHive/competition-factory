@@ -10,19 +10,20 @@ import { positionParticipantAction } from '@Mutate/matchUps/drawPositions/positi
 import { modifyIndividualParticipantIds } from '@Mutate/participants/modifyIndividualParticipantIds';
 import { resetQualifyingStructure } from '@Mutate/drawDefinitions/resetQualifyingStructure';
 import { bulkUpdatePublishedEventIds } from '@Query/event/bulkUpdatePublishedEventIds';
+import { pruneDrawDefinition } from '@Mutate/drawDefinitions/pruneDrawDefinition';
 import { setMatchUpDailyLimits } from '@Mutate/tournaments/setMatchUpDailyLimits';
 import { bulkMatchUpStatusUpdate } from '@Mutate/events/bulkMatchUpStatusUpdate';
-import { pruneDrawDefinition } from '@Mutate/drawDefinitions/pruneDrawDefinition';
 import { assignSeedPositions } from '@Mutate/events/assignSeedPositions';
 import { removePolicy } from '@Mutate/extensions/policies/removePolicy';
 import { removeScaleValues } from '@Mutate/entries/removeScaleValues';
-import { mapNumbersToIndexes } from '@Tools/mapNumbersToIndexes';
 import { setEventDisplay } from '@Mutate/events/setEventDisplay';
-import { getAccessorValue } from '@Tools/getAccessorValue';
+import { mapNumbersToIndexes } from '@Tools/mapNumbersToIndexes';
 import { enableCourts } from '@Mutate/venues/enableCourts';
+import { getAccessorValue } from '@Tools/getAccessorValue';
 
 import { expect, it, describe } from 'vitest';
 
+// constants
 import { MAIN, QUALIFYING } from '@Constants/drawDefinitionConstants';
 import {
   INVALID_OBJECT,

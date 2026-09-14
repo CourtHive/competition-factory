@@ -15,11 +15,13 @@
  *
  * These tests cover the factory contract for both steps and several main draw types.
  */
-import tournamentEngine from '@Engines/syncEngine';
 import mocksEngine from '@Assemblies/engines/mock';
+import tournamentEngine from '@Engines/syncEngine';
 import { expect, it, describe } from 'vitest';
 
-// constants and types
+// constants
+import { DIRECT_ACCEPTANCE } from '@Constants/entryStatusConstants';
+import { SINGLES_EVENT } from '@Constants/eventConstants';
 import {
   LUCKY_DRAW,
   MAIN,
@@ -28,8 +30,6 @@ import {
   SINGLE_ELIMINATION,
   SWISS,
 } from '@Constants/drawDefinitionConstants';
-import { DIRECT_ACCEPTANCE } from '@Constants/entryStatusConstants';
-import { SINGLES_EVENT } from '@Constants/eventConstants';
 
 type Setup = {
   eventId: string;

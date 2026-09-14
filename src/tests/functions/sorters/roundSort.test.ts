@@ -1,6 +1,6 @@
-import { describe, expect, it } from 'vitest';
-import { roundSort } from '@Functions/sorters/roundSort';
 import { QUALIFYING, MAIN, CONSOLATION } from '@Constants/drawDefinitionConstants';
+import { roundSort } from '@Functions/sorters/roundSort';
+import { describe, expect, it } from 'vitest';
 
 describe('roundSort', () => {
   it('sorts by eventName first', () => {

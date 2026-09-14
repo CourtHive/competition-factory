@@ -3,8 +3,8 @@
  * Scoring is uniform regardless of side composition. Participants maintain their
  * composition (INDIVIDUAL or PAIR) throughout the draw.
  */
-import tournamentEngine from '@Engines/syncEngine';
 import mocksEngine from '@Assemblies/engines/mock';
+import tournamentEngine from '@Engines/syncEngine';
 import { describe, test, expect } from 'vitest';
 
 // constants

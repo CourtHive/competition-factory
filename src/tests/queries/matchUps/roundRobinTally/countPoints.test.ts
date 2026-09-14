@@ -1,7 +1,7 @@
 import { countPoints } from '@Query/matchUps/roundRobinTally/scoreCounters';
 import { expect, it } from 'vitest';
 
-// Constants and fixtures
+// constants and fixtures
 import { FORMAT_STANDARD } from '@Fixtures/scoring/matchUpFormats';
 import { COMPLETED } from '@Constants/matchUpStatusConstants';
 

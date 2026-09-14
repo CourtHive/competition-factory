@@ -2,15 +2,15 @@ import { tournamentEngine } from '@Engines/syncEngine';
 import mocksEngine from '@Assemblies/engines/mock';
 import { it, expect } from 'vitest';
 
-// Constants
+// constants
+import { BYE, COMPLETED, DOUBLE_WALKOVER, TO_BE_PLAYED, WALKOVER } from '@Constants/matchUpStatusConstants';
+import { COMPASS, FIRST_MATCH_LOSER_CONSOLATION, PLAY_OFF } from '@Constants/drawDefinitionConstants';
+import { CLEAR_SCORE } from '@Constants/matchUpActionConstants';
 import {
   PROPAGATED_EXITS_DOWNSTREAM,
   INCOMPATIBLE_MATCHUP_STATUS,
   CANNOT_CHANGE_WINNING_SIDE,
 } from '@Constants/errorConditionConstants';
-import { BYE, COMPLETED, DOUBLE_WALKOVER, TO_BE_PLAYED, WALKOVER } from '@Constants/matchUpStatusConstants';
-import { COMPASS, FIRST_MATCH_LOSER_CONSOLATION, PLAY_OFF } from '@Constants/drawDefinitionConstants';
-import { CLEAR_SCORE } from '@Constants/matchUpActionConstants';
 
 it('will not allow winningSide change when active downstream', () => {
   mocksEngine.generateTournamentRecord({

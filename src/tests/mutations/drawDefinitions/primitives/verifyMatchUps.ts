@@ -1,12 +1,13 @@
-import { setMatchUpState } from '@Mutate/matchUps/matchUpStatus/setMatchUpState';
 import { getAllStructureMatchUps } from '@Query/matchUps/getAllStructureMatchUps';
-import { getRoundMatchUps } from '@Query/matchUps/getRoundMatchUps';
+import { setMatchUpState } from '@Mutate/matchUps/matchUpStatus/setMatchUpState';
 import { getStructureMatchUps } from '@Query/structure/getStructureMatchUps';
-import { parseScoreString } from '@Tools/parseScoreString';
+import { getRoundMatchUps } from '@Query/matchUps/getRoundMatchUps';
 import { findDrawMatchUp } from '@Acquire/findDrawMatchUp';
+import { parseScoreString } from '@Tools/parseScoreString';
 import { findStructure } from '@Acquire/findStructure';
 import { expect } from 'vitest';
 
+// constants
 import { MATCHUP_NOT_FOUND } from '@Constants/errorConditionConstants';
 
 export function completeMatchUp(params) {

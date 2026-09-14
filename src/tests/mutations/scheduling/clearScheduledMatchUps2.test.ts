@@ -1,10 +1,12 @@
 import { getStructureRoundProfile } from '@Query/structure/getStructureRoundProfile';
-import tournamentEngine from '@Engines/syncEngine';
 import mocksEngine from '@Assemblies/engines/mock';
+import tournamentEngine from '@Engines/syncEngine';
 import { expect, it } from 'vitest';
 
+// constants
 import { eventConstants } from '@Constants/eventConstants';
 
+// constants and fixtures
 import SEEDING_ITF_POLICY from '@Fixtures/policies/POLICY_SEEDING_ITF';
 import { INVALID_VALUES } from '@Constants/errorConditionConstants';
 

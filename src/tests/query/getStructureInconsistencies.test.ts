@@ -1,3 +1,8 @@
+import { removeAssignment } from '@Tests/mutations/drawDefinitions/testingUtilities';
+import { setSubscriptions } from '@Global/state/globalState';
+import tournamentEngine from '@Tests/engines/syncEngine';
+import mocksEngine from '@Assemblies/engines/mock';
+import { expect, test } from 'vitest';
 import {
   getStructureInconsistencies,
   WINNING_SIDE_ADVANCEMENT_MISMATCH,
@@ -7,12 +12,9 @@ import {
   EXIT_CODE_ON_WINNER_SIDE,
   EXIT_WITHOUT_LOSER,
 } from '@Query/drawDefinition/getStructureInconsistencies';
-import { removeAssignment } from '../mutations/drawDefinitions/testingUtilities';
-import { setSubscriptions } from '@Global/state/globalState';
-import tournamentEngine from '@Tests/engines/syncEngine';
-import mocksEngine from '@Assemblies/engines/mock';
-import { expect, test } from 'vitest';
 
+// constants
+import { DOUBLE_WALKOVER, WALKOVER } from '@Constants/matchUpStatusConstants';
 import {
   COMPASS,
   FIRST_MATCH_LOSER_CONSOLATION,
@@ -20,7 +22,6 @@ import {
   SINGLE_ELIMINATION,
   ROUND_ROBIN,
 } from '@Constants/drawDefinitionConstants';
-import { DOUBLE_WALKOVER, WALKOVER } from '@Constants/matchUpStatusConstants';
 
 const matchUpAt = (drawId, roundNumber, roundPosition) =>
   tournamentEngine

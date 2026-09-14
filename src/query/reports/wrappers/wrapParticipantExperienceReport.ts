@@ -1,8 +1,8 @@
+import { buildRecoveryTimeline, MS_PER_MINUTE, TimelineAppearance } from '@Query/reports/recoveryTimeline';
 import { INVALID_TIME_ZONE } from '@Constants/errorConditionConstants';
 import { isValidIANATimeZone } from '@Tools/timeZone';
-import { buildRecoveryTimeline, MS_PER_MINUTE, TimelineAppearance } from '../recoveryTimeline';
 
-// Constants and Types
+// constants and types
 import { PARTICIPANT_EXPERIENCE_REPORT } from '@Constants/reportConstants';
 import { Tournament } from '@Types/tournamentTypes';
 import { ReportResult } from '@Types/reportTypes';

@@ -4,6 +4,7 @@
  * Expanded from: coverage-plan/arrays.test.stub.ts
  */
 
+import { expect, test, describe } from 'vitest';
 import {
   lengthOrZero,
   unique,
@@ -35,7 +36,6 @@ import {
   getRanges,
   getMissingSequenceNumbers,
 } from '@Tools/arrays';
-import { expect, test, describe } from 'vitest';
 
 // ============================================================================
 // FUNCTION 1: unique

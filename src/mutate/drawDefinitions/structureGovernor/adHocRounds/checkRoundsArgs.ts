@@ -4,7 +4,7 @@ import { decorateResult } from '@Functions/global/decorateResult';
 import { isAdHoc } from '@Query/drawDefinition/isAdHoc';
 import { findStructure } from '@Acquire/findStructure';
 
-// constants
+// constants and types
 import { INVALID_STRUCTURE, MISSING_MATCHUPS } from '@Constants/errorConditionConstants';
 import { ResultType } from '@Types/factoryTypes';
 import { MatchUp } from '@Types/tournamentTypes';
