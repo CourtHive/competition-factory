@@ -141,9 +141,35 @@ export function assignDrawPositionBye({
     loserMatchUp &&
     matchUpsMap.drawMatchUps.some((m) => m.loserMatchUpId === loserMatchUp?.matchUpId && isExit(m.matchUpStatus))
   );
+
+  // "Is this BYE propagation-produced?" — resolved ONCE.
+  //
+  // Four places in this function need the answer: the two error guards below, the participant clear,
+  // and the `byeFromPropagation` marker. Three of them read `hasPropagatedStatus` and one read the
+  // declaration, so the function could refuse a placement and then, had it not refused, have marked
+  // that same placement as propagation-produced.
+  //
+  // `byeFromPropagation` is the caller's DECLARATION: `advanceByeToLoserMatchUp` sets it precisely
+  // because, in its words, the cascade "is placing the BYE, so it says so rather than leaving
+  // assignDrawPositionBye to infer it from upstream statuses it cannot classify".
+  // `hasPropagatedStatus` is that inference — it scans for an upstream matchUp whose
+  // `loserMatchUpId` points here and whose status `isExit`, and `isExit` EXCLUDES DOUBLE_WALKOVER
+  // and DOUBLE_DEFAULT, so it is false in exactly the double-exit case these BYEs come from. The
+  // type doc on `byeFromPropagation` already recorded the measurement: every BYE placed by a COMPASS
+  // double-walkover cascade arrived with `hasPropagatedStatus === false`.
+  //
+  // So a cascade that had DECLARED itself was refused by a topology scan that could not see it — and
+  // refused AFTER the cascade had already written. Over two independent 600-seed frozen census
+  // windows that was the largest remaining defect class in this programme: 50 failing seeds to 32,
+  // 18 closed and 0 opened.
+  //
+  // `??` and not `||`: `byeFromPropagation: false` is a caller saying "this is NOT propagation",
+  // which must not fall through to the inference.
+  const isPropagationPlacement = byeFromPropagation ?? hasPropagatedStatus;
+
   // ################### Check error conditions ######################
   const drawPositionIsActive = activeDrawPositions?.includes(drawPosition);
-  if (drawPositionIsActive && !hasPropagatedStatus) {
+  if (drawPositionIsActive && !isPropagationPlacement) {
     return { error: DRAW_POSITION_ACTIVE };
   }
 
@@ -157,7 +183,7 @@ export function assignDrawPositionBye({
   const { filled, containsBye, containsParticipant: assignedParticipantId } = drawPositionFilled(positionAssignment);
   if (containsBye) return { ...SUCCESS }; // nothing to be done
 
-  if (filled && !containsBye && !hasPropagatedStatus) {
+  if (filled && !containsBye && !isPropagationPlacement) {
     return decorateResult({ result: { error: DRAW_POSITION_ASSIGNED }, stack });
   }
 
@@ -217,9 +243,15 @@ export function assignDrawPositionBye({
   positionAssignments?.forEach((assignment) => {
     if (assignment.drawPosition === drawPosition) {
       assignment.bye = true;
-      //let's clear up the participant from the assignment
-      //if it was there because of a propagated exit.
-      if (hasPropagatedStatus) {
+      // Clear the participant that was here because of a propagated exit.
+      //
+      // This is the SAME question as the guards above — "is this BYE propagation-produced?" — and it
+      // read the topology inference alone for the same reason they did. Leaving it that way while
+      // the guards began honouring the declaration produced `BYE_POSITION_WITH_PARTICIPANT` on 6
+      // seeds of one census window and 4 of another: the cascade now placed its BYE, and the
+      // participant it displaced stayed assigned to the position. A drawPosition that is both a BYE
+      // and assigned to somebody is worse than the refusal it replaced, because nothing reports it.
+      if (isPropagationPlacement) {
         assignment.participantId = undefined;
       }
 
@@ -233,7 +265,7 @@ export function assignDrawPositionBye({
       // The marker is authoritative when present. It is deliberately NOT written for a BYE that
       // arrives any other way, so its absence continues to mean "unknown" for draws stored before
       // this existed.
-      if (byeFromPropagation ?? hasPropagatedStatus) {
+      if (isPropagationPlacement) {
         // the marker records the FACT and nothing else: a stored matchUpId would be a reference
         // that can dangle when the source is removed, and nothing consumes it.
         assignment.byeFromPropagation = true;
