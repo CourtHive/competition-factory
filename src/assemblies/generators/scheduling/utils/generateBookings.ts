@@ -2,8 +2,8 @@ import { matchUpFormatTimes } from '@Query/extensions/matchUpFormatTiming/getMat
 import { getScheduleTiming } from '@Query/extensions/matchUpFormatTiming/getScheduleTiming';
 import { addMinutesToTimeString, extractTime } from '@Tools/dateTime';
 import { calculatePeriodLength } from './calculatePeriodLength';
-import { validMatchUps } from '@Validators/validMatchUp';
 import { hasSchedule } from '@Query/matchUp/hasSchedule';
+import { validMatchUps } from '@Validators/validMatchUp';
 
 // constants and types
 import { MISSING_MATCHUPS, MISSING_TOURNAMENT_RECORDS } from '@Constants/errorConditionConstants';

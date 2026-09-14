@@ -1,8 +1,9 @@
 import { getMatchUpReadiness } from '@Query/matchUps/scheduling/getMatchUpReadiness';
-import { describe, expect, it } from 'vitest';
-import tournamentEngine from '@Engines/syncEngine';
 import mocksEngine from '@Assemblies/engines/mock';
+import tournamentEngine from '@Engines/syncEngine';
+import { describe, expect, it } from 'vitest';
 
+// constants and fixtures
 import POLICY_SCHEDULING_DEFAULT from '@Fixtures/policies/POLICY_SCHEDULING_DEFAULT';
 import { SINGLE_ELIMINATION } from '@Constants/drawDefinitionConstants';
 

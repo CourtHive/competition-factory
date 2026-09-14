@@ -1,29 +1,23 @@
+import type { ContextProfile, ParticipantsProfile, PolicyDefinitions, StructureSortConfig } from '@Types/factoryTypes';
+import { DrawDefinition, Event, Participant, PayloadProfileEnum, Tournament } from '@Types/tournamentTypes';
 import { tallyParticipantResults } from '@Query/matchUps/roundRobinTally/tallyParticipantResults';
 import { getStructureSeedAssignments } from '@Query/structure/getStructureSeedAssignments';
 import { getAllStructureMatchUps } from '@Query/matchUps/getAllStructureMatchUps';
 import { getPositionAssignments } from '@Query/drawDefinition/positionsGetter';
 import { getEventPublishStatus } from '@Query/event/getEventPublishStatus';
-import { isVisiblyPublished } from '@Query/publishing/isEmbargoed';
 import { getDrawIsPublished } from '@Query/publishing/getDrawIsPublished';
 import { getStructureGroups } from '@Query/structure/getStructureGroups';
 import { firstClassOrExtension } from '@Acquire/firstClassOrExtension';
 import { createSubOrderMap } from '@Query/structure/createSubOrderMap';
 import { getPublishState } from '@Query/publishing/getPublishState';
+import { isVisiblyPublished } from '@Query/publishing/isEmbargoed';
 import { structureSort } from '@Functions/sorters/structureSort';
-import { findStructure } from '@Acquire/findStructure';
-import { DrawDefinition, Event, Participant, PayloadProfileEnum, Tournament } from '@Types/tournamentTypes';
 import { findExtension } from '@Acquire/findExtension';
+import { findStructure } from '@Acquire/findStructure';
 import { makeDeepCopy } from '@Tools/makeDeepCopy';
 import { xa } from '@Tools/extractAttributes';
-import type { ContextProfile, ParticipantsProfile, PolicyDefinitions, StructureSortConfig } from '@Types/factoryTypes';
 
-// constants and types
-import {
-  ErrorType,
-  INVALID_VALUES,
-  MISSING_DRAW_DEFINITION,
-  UNLINKED_STRUCTURES,
-} from '@Constants/errorConditionConstants';
+// constants
 import { CONSOLATION, MAIN, PLAY_OFF, QUALIFYING } from '@Constants/drawDefinitionConstants';
 import { PARTICIPANT_ID } from '@Constants/attributeConstants';
 import { DISPLAY, TALLY } from '@Constants/extensionConstants';
@@ -31,6 +25,12 @@ import { PUBLIC_DISPLAY } from '@Constants/displayConstants';
 import { TEAM_MATCHUP } from '@Constants/matchUpTypes';
 import { PUBLIC } from '@Constants/timeItemConstants';
 import { SUCCESS } from '@Constants/resultConstants';
+import {
+  ErrorType,
+  INVALID_VALUES,
+  MISSING_DRAW_DEFINITION,
+  UNLINKED_STRUCTURES,
+} from '@Constants/errorConditionConstants';
 import {
   BYE,
   CANCELLED,

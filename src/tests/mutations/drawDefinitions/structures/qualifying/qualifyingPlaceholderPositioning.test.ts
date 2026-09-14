@@ -5,10 +5,11 @@
  *
  * Reproduces the scenario: 29 MAIN entries, 11-12 QUALIFYING entries, drawSize 32, 3 qualifiers
  */
-import tournamentEngine from '@Engines/syncEngine';
 import mocksEngine from '@Assemblies/engines/mock';
+import tournamentEngine from '@Engines/syncEngine';
 import { expect, it, describe } from 'vitest';
 
+// constants
 import { LUCKY_DRAW, MAIN, QUALIFYING, SWISS } from '@Constants/drawDefinitionConstants';
 import { DIRECT_ACCEPTANCE } from '@Constants/entryStatusConstants';
 import { SINGLES_EVENT } from '@Constants/eventConstants';

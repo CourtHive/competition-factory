@@ -2,7 +2,7 @@ import { setSubscriptions, addNotice, getNotices, deleteNotices } from '@Global/
 import mocksEngine from '@Assemblies/engines/mock';
 import { expect, it, describe } from 'vitest';
 
-// constants and types
+// constants
 import { MODIFY_DRAW_DEFINITION } from '@Constants/topicConstants';
 
 /**

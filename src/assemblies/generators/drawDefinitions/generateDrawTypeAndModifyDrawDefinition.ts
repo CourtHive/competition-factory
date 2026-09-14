@@ -1,15 +1,15 @@
 import { getStageDrawPositionsCount } from '@Query/drawDefinition/getStageDrawPositions';
 import { resolveTieFormat } from '@Query/hierarchical/tieFormats/resolveTieFormat';
-import { checkTieFormat } from '@Mutate/tieFormat/checkTieFormat';
 import { generateDrawStructuresAndLinks } from './generateDrawStructuresAndLinks';
 import { copyTieFormat } from '@Query/hierarchical/tieFormats/copyTieFormat';
 import { modifyDrawNotice } from '@Mutate/notifications/drawNotifications';
+import { decorateResult } from '@Functions/global/decorateResult';
+import { checkTieFormat } from '@Mutate/tieFormat/checkTieFormat';
 import { getAllDrawMatchUps } from '@Query/matchUps/drawMatchUps';
 import { validateTieFormat } from '@Validators/validateTieFormat';
-import { decorateResult } from '@Functions/global/decorateResult';
 import { getMatchUpsMap } from '@Query/matchUps/getMatchUpsMap';
-import { getMatchUpId } from '@Functions/global/extractors';
 import { definedAttributes } from '@Tools/definedAttributes';
+import { getMatchUpId } from '@Functions/global/extractors';
 import { addGoesTo } from '@Query/matchUps/addGoesTo';
 import { generateTieMatchUps } from './tieMatchUps';
 import { makeDeepCopy } from '@Tools/makeDeepCopy';
@@ -19,8 +19,8 @@ import { PolicyDefinitions, MatchUpsMap, ResultType } from '@Types/factoryTypes'
 import { MISSING_DRAW_DEFINITION } from '@Constants/errorConditionConstants';
 import { MAIN } from '@Constants/drawDefinitionConstants';
 import { SUCCESS } from '@Constants/resultConstants';
-import { HydratedMatchUp } from '@Types/hydrated';
 import { SINGLES } from '@Constants/matchUpTypes';
+import { HydratedMatchUp } from '@Types/hydrated';
 import {
   DrawDefinition,
   DrawLink,

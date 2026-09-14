@@ -1,11 +1,11 @@
 import { validateCollectionValueProfiles } from '@Validators/validateCollectionValueProfiles';
 import { getAllStructureMatchUps } from '@Query/matchUps/getAllStructureMatchUps';
 import { copyTieFormat } from '@Query/hierarchical/tieFormats/copyTieFormat';
-import { calculateWinCriteria } from '@Query/matchUp/calculateWinCriteria';
 import { getTieFormat } from '@Query/hierarchical/tieFormats/getTieFormat';
+import { calculateWinCriteria } from '@Query/matchUp/calculateWinCriteria';
 import { getAppliedPolicies } from '@Query/extensions/getAppliedPolicies';
-import { isValidMatchUpFormat } from '@Validators/isValidMatchUpFormat';
 import { coercedGender, normalizeGender } from '@Helpers/coercedGender';
+import { isValidMatchUpFormat } from '@Validators/isValidMatchUpFormat';
 import { updateTieFormat } from '@Mutate/tieFormat/updateTieFormat';
 import { decorateResult } from '@Functions/global/decorateResult';
 import { validateTieFormat } from '@Validators/validateTieFormat';

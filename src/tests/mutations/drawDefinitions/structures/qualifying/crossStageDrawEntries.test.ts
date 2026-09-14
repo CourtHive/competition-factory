@@ -8,10 +8,11 @@
 // travel with the draw so a subsequent "Generate qualifying" step can use
 // them without another round-trip to addEventEntries.
 
-import tournamentEngine from '@Engines/syncEngine';
 import mocksEngine from '@Assemblies/engines/mock';
+import tournamentEngine from '@Engines/syncEngine';
 import { expect, it, describe } from 'vitest';
 
+// constants
 import { MAIN, QUALIFYING } from '@Constants/drawDefinitionConstants';
 import { DIRECT_ACCEPTANCE } from '@Constants/entryStatusConstants';
 

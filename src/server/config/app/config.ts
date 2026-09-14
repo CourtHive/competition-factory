@@ -1,4 +1,4 @@
-import { Environment, ConfigKey } from '../../common/constants/app';
+import { Environment, ConfigKey } from '@Server/common/constants/app';
 import { registerAs } from '@nestjs/config';
 
 export const APPConfig = registerAs(ConfigKey.App, () => ({

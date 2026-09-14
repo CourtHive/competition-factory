@@ -1,8 +1,9 @@
 import { setSubscriptions, deleteNotices } from '@Global/state/globalState';
-import tournamentEngine from '@Engines/syncEngine';
-import mocksEngine from '@Assemblies/engines/mock';
 import { expect, it, describe, afterEach } from 'vitest';
+import mocksEngine from '@Assemblies/engines/mock';
+import tournamentEngine from '@Engines/syncEngine';
 
+// constants
 import { MODIFY_SCHEDULING_PROFILE } from '@Constants/topicConstants';
 
 // The scheduling profile is a tournament extension whose mutations were previously

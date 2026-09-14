@@ -1,5 +1,5 @@
-import { POLICY_RANKING_POINTS_USTA_JUNIOR_2026 } from '@Tests/fixtures/policies/POLICY_RANKING_POINTS_USTA_JUNIOR_2026';
 import { POLICY_RANKING_POINTS_USTA_JUNIOR_2025 } from '@Tests/fixtures/policies/POLICY_RANKING_POINTS_USTA_JUNIOR_2025';
+import { POLICY_RANKING_POINTS_USTA_JUNIOR_2026 } from '@Tests/fixtures/policies/POLICY_RANKING_POINTS_USTA_JUNIOR_2026';
 import { POLICY_RANKING_POINTS_USTA_JUNIOR } from '@Tests/fixtures/policies/POLICY_RANKING_POINTS_USTA_JUNIOR';
 import { validateRankingPolicy } from './validatePolicy';
 import { describe, expect, it } from 'vitest';

@@ -1,9 +1,10 @@
-import { xa } from '@Tools/extractAttributes';
 import mocksEngine from '@Assemblies/engines/mock';
 import tournamentEngine from '@Engines/syncEngine';
+import { xa } from '@Tools/extractAttributes';
 import { chunkArray } from '@Tools/arrays';
 import { expect, test } from 'vitest';
 
+// constants
 import { POLICY_TYPE_AVOIDANCE } from '@Constants/policyConstants';
 
 test.each([2, 4, 8, 16])('avoidance policies based on extension values', (cohortsCount) => {

@@ -1,5 +1,6 @@
 import { checkRequiredParameters } from '@Helpers/parameters/checkRequiredParameters';
 
+// constants and types
 import { TOURNAMENT_RECORDS } from '@Constants/attributeConstants';
 import { ErrorType } from '@Constants/errorConditionConstants';
 import { TournamentRecords } from '@Types/factoryTypes';

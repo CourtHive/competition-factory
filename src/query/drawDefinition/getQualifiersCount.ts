@@ -1,14 +1,14 @@
 // Query
-import { getAllStructureMatchUps } from '../matchUps/getAllStructureMatchUps';
+import { getAllStructureMatchUps } from '@Query/matchUps/getAllStructureMatchUps';
 
 // Acquire
 import { findStructure } from '@Acquire/findStructure';
 
-// Constants
+// constants
 import { MISSING_DRAW_DEFINITION } from '@Constants/errorConditionConstants';
 import { CONTAINER, QUALIFYING } from '@Constants/drawDefinitionConstants';
 
-// Types
+// types
 import type { DrawDefinition } from '@Types/tournamentTypes';
 
 type GetQualifiersCountArgs = {

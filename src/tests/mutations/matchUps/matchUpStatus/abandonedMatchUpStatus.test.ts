@@ -1,8 +1,9 @@
-import { getOrderedDrawPositionPairs } from '../../drawDefinitions/testingUtilities';
+import { getOrderedDrawPositionPairs } from '@Tests/mutations/drawDefinitions/testingUtilities';
 import mocksEngine from '@Assemblies/engines/mock';
 import tournamentEngine from '@Engines/syncEngine';
 import { expect, it } from 'vitest';
 
+// constants
 import { ABANDONED, COMPLETED } from '@Constants/matchUpStatusConstants';
 
 it('can set matchUp score and advance winningSide when changing from ABANDONED matchUpStatus', () => {

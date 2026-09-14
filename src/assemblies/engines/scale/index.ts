@@ -1,6 +1,6 @@
-import * as rankingGovernor from '@Assemblies/governors/rankingGovernor';
-import { calculateNewRatings } from '@Generators/scales/calculateNewRatings';
 import { generateDynamicRatings } from '@Generators/scales/generateDynamicRatings';
+import { calculateNewRatings } from '@Generators/scales/calculateNewRatings';
+import * as rankingGovernor from '@Assemblies/governors/rankingGovernor';
 import syncEngine from '@Assemblies/engines/sync';
 
 const ratingsGovernor = {

@@ -1,9 +1,9 @@
 import { getEventDateRange, validateParticipantCategory } from '@Query/entries/categoryValidation';
 
 // constants and types
+import type { EntryRestriction, Event, Participant, Tournament } from '@Types/tournamentTypes';
 import { MISSING_PARTICIPANT, MISSING_EVENT } from '@Constants/errorConditionConstants';
 import type { RejectionReason } from '@Query/entries/categoryValidation';
-import type { EntryRestriction, Event, Participant, Tournament } from '@Types/tournamentTypes';
 import type { ResultType } from '@Types/factoryTypes';
 
 export interface ParticipantEligibility {

@@ -1,11 +1,12 @@
 import { getModifiedMatchUpFormatTiming } from '@Query/extensions/matchUpFormatTiming/getModifiedMatchUpTiming';
-import { modifyMatchUpFormatTiming } from '../matchUps/modifyMatchUpFormatTiming';
+import { modifyMatchUpFormatTiming } from '@Mutate/extensions/matchUps/modifyMatchUpFormatTiming';
 import { isValidMatchUpFormat } from '@Validators/isValidMatchUpFormat';
 import { requireParams } from '@Helpers/parameters/requireParams';
 import { pushGlobalLog } from '@Functions/global/globalLog';
 import { Event, Tournament } from '@Types/tournamentTypes';
 import { ensureInt } from '@Tools/ensureInt';
 
+// constants
 import { TOURNAMENT_RECORD, EVENT } from '@Constants/attributeConstants';
 import { INVALID_VALUES } from '@Constants/errorConditionConstants';
 import { SINGLES } from '@Constants/matchUpTypes';

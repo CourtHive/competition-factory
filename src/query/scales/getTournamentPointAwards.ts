@@ -1,6 +1,7 @@
 import { getTournamentPoints } from '@Query/scales/getTournamentPoints';
 import { getParticipants } from '@Query/participants/getParticipants';
 
+// constants and types
 import { MISSING_TOURNAMENT_RECORD } from '@Constants/errorConditionConstants';
 import { ParticipantFilters, PolicyDefinitions } from '@Types/factoryTypes';
 import { SUCCESS } from '@Constants/resultConstants';

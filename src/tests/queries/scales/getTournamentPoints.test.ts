@@ -1,13 +1,14 @@
+import { getAwardProfile } from '@Query/scales/getAwardProfile';
 import tournamentEngine from '@Engines/syncEngine';
 import scaleEngine from '@Engines/scaleEngine';
 import { mocksEngine } from '../../..';
-import { getAwardProfile } from '@Query/scales/getAwardProfile';
 import { expect, it } from 'vitest';
 
+// constants
+import { CURTIS_CONSOLATION, MAIN, SINGLE_ELIMINATION } from '@Constants/drawDefinitionConstants';
 import { MISSING_POLICY_DEFINITION } from '@Constants/errorConditionConstants';
 import { POLICY_TYPE_RANKING_POINTS } from '@Constants/policyConstants';
 import { SINGLES } from '@Constants/eventConstants';
-import { CURTIS_CONSOLATION, MAIN, SINGLE_ELIMINATION } from '@Constants/drawDefinitionConstants';
 
 const awardProfiles = [
   /*

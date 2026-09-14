@@ -1,10 +1,10 @@
 import { getExtensionAnomalies } from '@Query/tournaments/getExtensionAnomalies';
 import { getAppliedPolicies } from '@Query/extensions/getAppliedPolicies';
-import tournamentEngine from '@Engines/syncEngine';
 import mocksEngine from '@Assemblies/engines/mock';
+import tournamentEngine from '@Engines/syncEngine';
 import { expect, describe, it } from 'vitest';
 
-// constants and types
+// constants
 import { DRAW_DEFINITION, EVENT, STRUCTURE, TOURNAMENT_RECORD, VENUE } from '@Constants/attributeConstants';
 import { POLICY_TYPE_AVOIDANCE } from '@Constants/policyConstants';
 import { APPLIED_POLICIES } from '@Constants/extensionConstants';

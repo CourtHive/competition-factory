@@ -6,6 +6,7 @@ import { generateDynamicRatings } from '@Generators/scales/generateDynamicRating
 import { mirrorStandingToScale } from '@Mutate/ladder/mirrorStandingToScale';
 import { getResultAttestation } from '@Query/ladder/getResultAttestation';
 
+// constants and types
 import { FORFEIT, INSERTION, RANK, RESULT, movementTriggers } from '@Constants/ladderConstants';
 import type { MovementTrigger } from '@Constants/ladderConstants';
 import { COMPLETED } from '@Constants/matchUpStatusConstants';

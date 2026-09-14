@@ -1,10 +1,10 @@
-import tournamentEngine from '@Engines/syncEngine';
 import mocksEngine from '@Assemblies/engines/mock';
+import tournamentEngine from '@Engines/syncEngine';
 import { expect, it, test } from 'vitest';
 
 // constants and fixtures
-import { tieFormats } from '@Fixtures/scoring/tieFormats';
 import { LAVER_CUP } from '@Constants/tieFormatConstants';
+import { tieFormats } from '@Fixtures/scoring/tieFormats';
 import { TEAM } from '@Constants/eventConstants';
 
 test('it can use tieFormatName in addEvent', () => {

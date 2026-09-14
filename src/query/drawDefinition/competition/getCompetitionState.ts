@@ -1,10 +1,10 @@
 // Acquire
 import { firstClassOrExtension } from '@Acquire/firstClassOrExtension';
 
-// Constants
+// constants
 import { COMPETITION_STATE } from '@Constants/extensionConstants';
 
-// Types
+// types
 import type { CompetitionState } from '@Types/competitionPolicyTypes';
 import type { DrawDefinition } from '@Types/tournamentTypes';
 import type { ResultType } from '@Types/factoryTypes';

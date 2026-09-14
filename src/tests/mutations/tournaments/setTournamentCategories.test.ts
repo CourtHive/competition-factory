@@ -2,6 +2,7 @@ import mocksEngine from '@Assemblies/engines/mock';
 import tournamentEngine from '@Engines/syncEngine';
 import { expect, it, describe } from 'vitest';
 
+// constants
 import { TOURNAMENT_CATEGORY_IN_USE } from '@Constants/errorConditionConstants';
 
 function seed(overrides?: any) {

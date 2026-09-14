@@ -12,6 +12,8 @@
  * signatures and behaviour are unchanged.
  */
 
+import { dateValidation, timeValidation, validDateString } from '@Validators/regex';
+import { isDateObject, zeroPad, isDate } from '@Tools/dateTimeInternals';
 import {
   dateStringDaysChange,
   generateDateRange,
@@ -43,8 +45,6 @@ import {
   tidyTime,
   HHMMSS,
 } from '@Tools/plainTime';
-import { dateValidation, timeValidation, validDateString } from '@Validators/regex';
-import { isDateObject, zeroPad, isDate } from '@Tools/dateTimeInternals';
 
 export {
   dayMinutesToTimeString,

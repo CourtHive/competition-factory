@@ -2,6 +2,7 @@ import mocksEngine from '@Assemblies/engines/mock';
 import tournamentEngine from '@Engines/syncEngine';
 import { expect, it } from 'vitest';
 
+// constants
 import { ALTERNATE } from '@Constants/entryStatusConstants';
 import {
   DRAW_POSITION_ASSIGNED,

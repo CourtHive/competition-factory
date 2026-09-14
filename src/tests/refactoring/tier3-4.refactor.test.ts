@@ -13,9 +13,10 @@ import mocksEngine from '@Assemblies/engines/mock';
 import tournamentEngine from '@Engines/syncEngine';
 import { expect, it } from 'vitest';
 
-import { DOUBLES } from '@Constants/eventConstants';
+// constants
 import { TO_BE_PLAYED } from '@Constants/matchUpStatusConstants';
 import { INDIVIDUAL } from '@Constants/participantConstants';
+import { DOUBLES } from '@Constants/eventConstants';
 
 // ═══════════════════════════════════════════════════════════════════════════
 // ScoringEngine.rebuildFromEntries

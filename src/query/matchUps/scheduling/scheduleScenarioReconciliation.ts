@@ -1,10 +1,10 @@
 import { allTournamentMatchUps } from '@Query/matchUps/getAllTournamentMatchUps';
 
 // constants and types
+import { SCHEDULE_SCENARIO_NOT_FOUND } from '@Constants/errorConditionConstants';
 import { completedMatchUpStatuses } from '@Constants/matchUpStatusConstants';
 import { ScheduleScenario, Tournament } from '@Types/tournamentTypes';
 import { TournamentRecords } from '@Types/factoryTypes';
-import { SCHEDULE_SCENARIO_NOT_FOUND } from '@Constants/errorConditionConstants';
 
 type RecordScope = {
   tournamentRecords?: TournamentRecords;

@@ -1,5 +1,6 @@
 import { expect, test } from 'vitest';
 
+// constants
 import {
   disciplineConstants,
   disciplines,

@@ -1,12 +1,13 @@
-import { getAwardProfile } from '@Query/scales/getAwardProfile';
 import { POLICY_RANKING_POINTS_USTA_JUNIOR } from '@Tests/fixtures/policies/POLICY_RANKING_POINTS_USTA_JUNIOR';
+import { getAwardProfile } from '@Query/scales/getAwardProfile';
+import { describe, expect, it, afterEach } from 'vitest';
 import scaleEngine from '@Engines/scaleEngine';
 import { mocksEngine } from '../../..';
-import { describe, expect, it, afterEach } from 'vitest';
 
-import { SINGLES } from '@Constants/eventConstants';
+// constants
 import { COMPASS, ROUND_ROBIN, SINGLE_ELIMINATION } from '@Constants/drawDefinitionConstants';
 import { FEMALE, MALE } from '@Constants/genderConstants';
+import { SINGLES } from '@Constants/eventConstants';
 
 describe('CategoryScope gender matching', () => {
   it('selects profile matching gender when two profiles differ only by category.genders', () => {

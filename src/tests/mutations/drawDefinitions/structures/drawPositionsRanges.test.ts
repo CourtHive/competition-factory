@@ -1,10 +1,11 @@
+import { feedInChampionship } from '@Tests/mutations/drawDefinitions/primitives/feedIn';
 import { getAllStructureMatchUps } from '@Query/matchUps/getAllStructureMatchUps';
 import mocksEngine from '@Assemblies/engines/mock';
-import { intersection } from '@Tools/arrays';
 import tournamentEngine from '@Engines/syncEngine';
-import { feedInChampionship } from '../primitives/feedIn';
+import { intersection } from '@Tools/arrays';
 import { expect, it } from 'vitest';
 
+// constants
 import { FEED_IN_CHAMPIONSHIP_TO_SF } from '@Constants/drawDefinitionConstants';
 import { SINGLES } from '@Constants/eventConstants';
 

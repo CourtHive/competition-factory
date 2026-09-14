@@ -3,11 +3,13 @@ import { clearOutcome, getDrawMatchUps } from '@Tests/testHarness/exitPropagatio
 import { playForward } from '@Tests/testHarness/exitPropagation/driver';
 import { setSubscriptions } from '@Global/state/globalState';
 import mocksEngine from '@Assemblies/engines/mock';
-import { makeDeepCopy } from '@Tools/makeDeepCopy';
 import tournamentEngine from '@Engines/syncEngine';
+import { makeDeepCopy } from '@Tools/makeDeepCopy';
 import { afterAll, expect, test } from 'vitest';
 
 // constants
+import { DOUBLE_WALKOVER, DOUBLE_DEFAULT, TO_BE_PLAYED, WALKOVER } from '@Constants/matchUpStatusConstants';
+import { CLEAR_SCORE } from '@Constants/matchUpActionConstants';
 import {
   FIRST_MATCH_LOSER_CONSOLATION,
   FIRST_ROUND_LOSER_CONSOLATION,
@@ -18,8 +20,6 @@ import {
   COMPASS,
   OLYMPIC,
 } from '@Constants/drawDefinitionConstants';
-import { DOUBLE_WALKOVER, DOUBLE_DEFAULT, TO_BE_PLAYED, WALKOVER } from '@Constants/matchUpStatusConstants';
-import { CLEAR_SCORE } from '@Constants/matchUpActionConstants';
 
 /**
  * Agreement oracles: two derivations of the same question must not disagree.

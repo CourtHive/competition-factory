@@ -1,12 +1,12 @@
 import { destroyPairEntries as destroyPairEntriesFn } from '@Mutate/entries/destroyPairEntry';
-import tournamentEngine from '@Engines/syncEngine';
 import mocksEngine from '@Assemblies/engines/mock';
+import tournamentEngine from '@Engines/syncEngine';
 import { expect, it } from 'vitest';
 
 // constants
 import { MISSING_TOURNAMENT_RECORD } from '@Constants/errorConditionConstants';
-import { DOUBLES } from '@Constants/eventConstants';
 import { PAIR } from '@Constants/participantConstants';
+import { DOUBLES } from '@Constants/eventConstants';
 
 it('can destroy multiple pair entries at once', () => {
   const doublesId = 'doublesId';

@@ -1,5 +1,5 @@
-import { expect, it } from 'vitest';
 import { getSetComplement, getTiebreakComplement } from '@Query/matchUp/getComplement';
+import { expect, it } from 'vitest';
 
 it('can generate appropriate highValue for standard sets', () => {
   setScoreTest({

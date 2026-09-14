@@ -2,6 +2,7 @@ import { firstClassGroupLeafOrExtension } from '@Mutate/extensions/setGroupLeafO
 import { findExtension } from '@Acquire/findExtension';
 import { findPolicy } from '@Acquire/findPolicy';
 
+// constants and types
 import { POLICY_TYPE_SCHEDULING } from '@Constants/policyConstants';
 import { SCHEDULE_TIMING } from '@Constants/extensionConstants';
 import { Event, Tournament } from '@Types/tournamentTypes';

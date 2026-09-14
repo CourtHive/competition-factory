@@ -1,14 +1,14 @@
-import { addDrawNotice, addMatchUpsNotice } from '../notifications/drawNotifications';
+import { addDrawNotice, addMatchUpsNotice } from '@Mutate/notifications/drawNotifications';
 import tieFormatDefaults from '@Assemblies/generators/templates/tieFormatDefaults';
-import { checkTieFormat } from '@Mutate/tieFormat/checkTieFormat';
-import { makeDeepCopy } from '@Tools/makeDeepCopy';
 import { addEventNotice } from '@Mutate/notifications/eventNotifications';
 import { allEventMatchUps } from '@Query/matchUps/getAllEventMatchUps';
 import { requireParams } from '@Helpers/parameters/requireParams';
+import { checkTieFormat } from '@Mutate/tieFormat/checkTieFormat';
 import { normalizeDiscipline } from '@Helpers/coercedDiscipline';
 import { definedAttributes } from '@Tools/definedAttributes';
 import { normalizeGender } from '@Helpers/coercedGender';
 import { getTopics } from '@Global/state/globalState';
+import { makeDeepCopy } from '@Tools/makeDeepCopy';
 import { UUID } from '@Tools/UUID';
 
 // Constants and types

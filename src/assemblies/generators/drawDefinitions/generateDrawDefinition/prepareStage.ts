@@ -14,8 +14,8 @@ import { STRUCTURE_NOT_FOUND } from '@Constants/errorConditionConstants';
 import { DIRECT_ENTRY_STATUSES } from '@Constants/entryStatusConstants';
 import { Entry, PositionAssignment } from '@Types/tournamentTypes';
 import { QUALIFYING } from '@Constants/drawDefinitionConstants';
-import { RANKING, SEEDING } from '@Constants/scaleConstants';
 import { ROUND_TARGET } from '@Constants/extensionConstants';
+import { RANKING, SEEDING } from '@Constants/scaleConstants';
 import { ResultType } from '@Types/factoryTypes';
 
 export function prepareStage(params): ResultType & {

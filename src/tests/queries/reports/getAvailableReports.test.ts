@@ -2,13 +2,14 @@ import mocksEngine from '@Assemblies/engines/mock';
 import tournamentEngine from '@Engines/syncEngine';
 import { expect, it, describe } from 'vitest';
 
+// constants
+import { TEAM_EVENT } from '@Constants/eventConstants';
 import {
   ENTRY_STATUS_REPORT,
   PARTICIPANT_STATS_REPORT,
   STRUCTURE_REPORT,
   VENUE_UTILIZATION_REPORT,
 } from '@Constants/reportConstants';
-import { TEAM_EVENT } from '@Constants/eventConstants';
 
 describe('getAvailableReports', () => {
   it('returns all registered reports', () => {

@@ -1,11 +1,12 @@
-import { xa } from '@Tools/extractAttributes';
 import mocksEngine from '@Assemblies/engines/mock';
 import tournamentEngine from '@Engines/syncEngine';
+import { xa } from '@Tools/extractAttributes';
 import { expect, it } from 'vitest';
 
+// constants
+import { INVALID_ENTRIES, INVALID_PARTICIPANT_IDS } from '@Constants/errorConditionConstants';
 import { POLICY_TYPE_MATCHUP_ACTIONS } from '@Constants/policyConstants';
 import { FEMALE, MALE } from '@Constants/genderConstants';
-import { INVALID_ENTRIES, INVALID_PARTICIPANT_IDS } from '@Constants/errorConditionConstants';
 
 it('can validate entries', () => {
   const {

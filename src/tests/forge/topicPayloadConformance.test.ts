@@ -1,7 +1,8 @@
-import { describe, expect, it } from 'vitest';
 import { readFileSync, readdirSync, statSync } from 'fs';
+import { describe, expect, it } from 'vitest';
 import path from 'path';
 
+// constants
 import * as topicConstants from '@Constants/topicConstants';
 
 /**

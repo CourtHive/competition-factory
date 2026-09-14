@@ -1,5 +1,6 @@
 import { getTeamLineUp } from '@Query/drawDefinition/getTeamLineUp';
 
+// constants
 import { INVALID_VALUES } from '@Constants/errorConditionConstants';
 
 export function removeCollectionAssignments({

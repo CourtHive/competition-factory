@@ -1,10 +1,10 @@
 // Acquire
 import { findExtension } from '@Acquire/findExtension';
 
-// Constants
+// constants
 import { SANCTIONING_CONSTRAINTS } from '@Constants/extensionConstants';
 
-// Types
+// types
 import type { Event, Tournament } from '@Types/tournamentTypes';
 
 export type DrawCompositionConstraints = {

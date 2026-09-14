@@ -1,9 +1,11 @@
 import { producedExitStatus } from '@Mutate/matchUps/matchUpStatus/sideExitProvenance';
 import { setSubscriptions } from '@Global/state/globalState';
-import tournamentEngine from '@Engines/syncEngine';
 import mocksEngine from '@Assemblies/engines/mock';
+import tournamentEngine from '@Engines/syncEngine';
 import { expect, it } from 'vitest';
 
+// constants
+import { DOUBLE_DEFAULT, DOUBLE_WALKOVER } from '@Constants/matchUpStatusConstants';
 import {
   FIRST_ROUND_LOSER_CONSOLATION,
   FIRST_MATCH_LOSER_CONSOLATION,
@@ -12,7 +14,6 @@ import {
   DOUBLE_ELIMINATION,
   COMPASS,
 } from '@Constants/drawDefinitionConstants';
-import { DOUBLE_DEFAULT, DOUBLE_WALKOVER } from '@Constants/matchUpStatusConstants';
 
 /**
  * Entering the same two double exits in either order must produce the same record.

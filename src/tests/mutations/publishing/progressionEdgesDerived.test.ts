@@ -1,8 +1,8 @@
 import { applyProgressionEdges } from '@Query/readModel/progressionEdges';
 import mocksEngine from '@Assemblies/engines/mock';
 import tournamentEngine from '@Engines/syncEngine';
-import { cast } from '@Query/readModel/cast';
 import { describe, expect, it } from 'vitest';
+import { cast } from '@Query/readModel/cast';
 
 /**
  * The edges are STORED on drawDefinition matchUps, but only for draws generated after

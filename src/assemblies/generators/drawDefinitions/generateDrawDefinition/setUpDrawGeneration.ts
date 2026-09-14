@@ -1,9 +1,9 @@
 import { newDrawDefinition } from '@Generators/drawDefinitions/newDrawDefinition';
+import { checkFormatScopeEquivalence } from './checkFormatScopeEquivalence';
+import { policyAttachment } from './drawDefinitionPolicyAttachment';
+import { decorateResult } from '@Functions/global/decorateResult';
 import { checkTieFormat } from '@Mutate/tieFormat/checkTieFormat';
 import { makeDeepCopy } from '@Tools/makeDeepCopy';
-import { checkFormatScopeEquivalence } from './checkFormatScopeEquivalence';
-import { decorateResult } from '@Functions/global/decorateResult';
-import { policyAttachment } from './drawDefinitionPolicyAttachment';
 
 // constants and types
 import { DrawDefinition, DrawTypeUnion } from '@Types/tournamentTypes';

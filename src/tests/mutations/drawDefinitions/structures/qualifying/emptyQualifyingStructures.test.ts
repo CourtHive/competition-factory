@@ -1,12 +1,13 @@
 import { getStructureGroups } from '@Query/structure/getStructureGroups';
 import mocksEngine from '@Assemblies/engines/mock';
-import { instanceCount } from '@Tools/arrays';
 import tournamentEngine from '@Engines/syncEngine';
+import { instanceCount } from '@Tools/arrays';
 import { expect, it } from 'vitest';
 
+// constants
 import { MAIN, QUALIFYING } from '@Constants/drawDefinitionConstants';
-import { DRAW_ID_EXISTS } from '@Constants/errorConditionConstants';
 import { DIRECT_ACCEPTANCE } from '@Constants/entryStatusConstants';
+import { DRAW_ID_EXISTS } from '@Constants/errorConditionConstants';
 
 it('can specify qualifiersCount when no qualifying draws are generated', () => {
   const qualifiersCount = 4;

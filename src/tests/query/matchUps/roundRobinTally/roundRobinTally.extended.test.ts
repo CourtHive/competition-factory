@@ -4,7 +4,7 @@ import mocksEngine from '@Assemblies/engines/mock';
 import tournamentEngine from '@Engines/syncEngine';
 import { describe, expect, it } from 'vitest';
 
-// constants
+// constants and fixtures
 import { MISSING_MATCHUPS, INVALID_VALUES } from '@Constants/errorConditionConstants';
 import { FORMAT_STANDARD } from '@Fixtures/scoring/matchUpFormats';
 import { ROUND_ROBIN } from '@Constants/drawDefinitionConstants';

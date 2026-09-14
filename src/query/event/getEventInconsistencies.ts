@@ -6,8 +6,8 @@ import { getParticipants } from '@Query/participants/getParticipants';
 // constants and types
 import { MatchUpsMap, ParticipantMap, ResultType } from '@Types/factoryTypes';
 import { Event, Structure, Tournament } from '@Types/tournamentTypes';
-import { INDIVIDUAL, PAIR } from '@Constants/participantConstants';
 import { MISSING_EVENT } from '@Constants/errorConditionConstants';
+import { INDIVIDUAL, PAIR } from '@Constants/participantConstants';
 import { HYBRID_EVENT } from '@Constants/eventConstants';
 import { SUCCESS } from '@Constants/resultConstants';
 

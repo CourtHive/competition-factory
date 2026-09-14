@@ -5,7 +5,7 @@ import { addDays } from '@Tools/dateTime';
 import { unique } from '@Tools/arrays';
 import { expect, it } from 'vitest';
 
-// constants and types
+// constants
 import { EVENT_NOT_FOUND, INVALID_VALUES } from '@Constants/errorConditionConstants';
 import { FEMALE, MALE, ANY } from '@Constants/genderConstants';
 import { DOUBLES, SINGLES } from '@Constants/eventConstants';

@@ -3,7 +3,7 @@ import mocksEngine from '@Assemblies/engines/mock';
 import { JSON2CSV } from '@Tools/json';
 import { expect, it } from 'vitest';
 
-// constants
+// constants and fixtures
 import { FORMAT_ATP_DOUBLES, FORMAT_STANDARD } from '@Fixtures/scoring/matchUpFormats';
 import { INVALID_VALUES } from '@Constants/errorConditionConstants';
 import { DOUBLES, SINGLES_EVENT } from '@Constants/eventConstants';

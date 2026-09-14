@@ -1,7 +1,8 @@
 import scaleEngine from '@Engines/scaleEngine';
-import { mocksEngine } from '../../..';
 import { describe, expect, it } from 'vitest';
+import { mocksEngine } from '../../..';
 
+// constants
 import { POLICY_TYPE_RANKING_POINTS } from '@Constants/policyConstants';
 import {
   FEED_IN_CHAMPIONSHIP,

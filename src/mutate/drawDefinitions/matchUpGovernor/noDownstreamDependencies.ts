@@ -9,9 +9,9 @@ import { attemptToSetWinningSide } from './attemptToSetWinningSide';
 import { decorateResult } from '@Functions/global/decorateResult';
 import { attemptToModifyScore } from './attemptToModifyScore';
 import { pushGlobalLog } from '@Functions/global/globalLog';
+import { isDoubleExit, isExit } from '@Validators/isExit';
 import { removeDoubleExit } from './removeDoubleExit';
 import { removeQualifier } from './removeQualifier';
-import { isDoubleExit, isExit } from '@Validators/isExit';
 
 // constants
 import { POLICY_TYPE_PROGRESSION } from '@Constants/policyConstants';

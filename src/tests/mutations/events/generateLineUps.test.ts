@@ -4,7 +4,7 @@ import mocksEngine from '@Assemblies/engines/mock';
 import tournamentEngine from '@Engines/syncEngine';
 import { expect, it } from 'vitest';
 
-// constants
+// constants and types
 import { DOMINANT_DUO_MIXED, USTA_GOLD_TEAM_CHALLENGE } from '@Constants/tieFormatConstants';
 import { INDIVIDUAL, PAIR, TEAM_PARTICIPANT } from '@Constants/participantConstants';
 import { INVALID_VALUES, SCORES_PRESENT } from '@Constants/errorConditionConstants';

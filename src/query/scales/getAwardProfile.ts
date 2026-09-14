@@ -1,5 +1,6 @@
 import { CATEGORY_SCOPE_FIELDS, PROFILE_SCOPE_FIELDS } from '@Constants/rankingConstants';
 
+// types
 import type { AwardProfile, CategoryScope, DateRange } from '@Types/rankingTypes';
 import type { Category, EventTypeUnion } from '@Types/tournamentTypes';
 

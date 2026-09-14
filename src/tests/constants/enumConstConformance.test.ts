@@ -1,9 +1,10 @@
 import * as drawDefinitionConstants from '@Constants/drawDefinitionConstants';
 import * as matchUpStatusConstants from '@Constants/matchUpStatusConstants';
 import * as participantRolesConstants from '@Constants/participantRoles';
-import * as participantConstants from '@Constants/participantConstants';
-import * as entryStatusConstants from '@Constants/entryStatusConstants';
 import * as bookingTypeConstants from '@Constants/bookingTypeConstants';
+import * as entryStatusConstants from '@Constants/entryStatusConstants';
+import * as participantConstants from '@Constants/participantConstants';
+
 // The exported OBJECTS — what consumers reach via factoryConstants, maintained by
 // hand and therefore able to lag the enum even when the namespace cannot.
 import { matchUpStatusConstants as matchUpStatusObject } from '@Constants/matchUpStatusConstants';
@@ -15,9 +16,9 @@ import { participantConstants as participantObject } from '@Constants/participan
 import { participantRoles as participantRolesObject } from '@Constants/participantRoles';
 import { genderConstants as genderObject } from '@Constants/genderConstants';
 import { eventConstants as eventObject } from '@Constants/eventConstants';
-import { tournamentConstants as tournamentObject } from '@Constants/tournamentConstants';
-import { venueConstants as venueObject } from '@Constants/venueConstants';
-import { disciplineConstants as disciplineObject } from '@Constants/disciplineConstants';
+import { tournamentConstants as tournamentObject, tournamentStatuses } from '@Constants/tournamentConstants';
+import { venueConstants as venueObject, indoorOutdoorTypes } from '@Constants/venueConstants';
+import { disciplineConstants as disciplineObject, disciplines } from '@Constants/disciplineConstants';
 import { drawDefinitionConstants as drawDefinitionObject } from '@Constants/drawDefinitionConstants';
 import * as weekdayConstants from '@Constants/weekdayConstants';
 import * as surfaceConstants from '@Constants/surfaceConstants';
@@ -26,10 +27,8 @@ import * as eventConstants from '@Constants/eventConstants';
 import * as tournamentConstants from '@Constants/tournamentConstants';
 import * as venueConstants from '@Constants/venueConstants';
 import * as disciplineConstants from '@Constants/disciplineConstants';
-import { disciplines } from '@Constants/disciplineConstants';
-import { tournamentStatuses } from '@Constants/tournamentConstants';
-import { indoorOutdoorTypes } from '@Constants/venueConstants';
 import * as T from '@Types/tournamentTypes';
+
 // The generated, drift-guarded enumeration of EVERY enum under src/types — the
 // authoritative list. Reading it here means the registry and the value-export
 // generator cannot disagree, and a new enum in ANY types file is covered.

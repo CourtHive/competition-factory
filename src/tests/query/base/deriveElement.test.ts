@@ -1,7 +1,7 @@
-import { describe, expect, it } from 'vitest';
+import { MISSING_VALUE } from '@Constants/errorConditionConstants';
 import { deriveElement } from '@Query/base/deriveElement';
 import mocksEngine from '@Assemblies/engines/mock';
-import { MISSING_VALUE } from '@Constants/errorConditionConstants';
+import { describe, expect, it } from 'vitest';
 
 describe('deriveElement', () => {
   it('derives element from participantId', () => {

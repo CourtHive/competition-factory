@@ -1,8 +1,8 @@
 import { normalizeDiscipline } from '@Helpers/coercedDiscipline';
 
 // constants and types
-import { DisciplineUnion } from '@Types/tournamentTypes';
 import { SINGLES, DOUBLES, TEAM } from '@Constants/matchUpTypes';
+import { DisciplineUnion } from '@Types/tournamentTypes';
 import {
   TENNIS,
   BEACH_TENNIS,

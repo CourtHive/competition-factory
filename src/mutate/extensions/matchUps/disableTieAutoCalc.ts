@@ -1,6 +1,7 @@
-import { setFirstClassOrExtension } from '../setFirstClassOrExtension';
+import { setFirstClassOrExtension } from '@Mutate/extensions/setFirstClassOrExtension';
 import { findDrawMatchUp } from '@Acquire/findDrawMatchUp';
 
+// constants
 import { MISSING_DRAW_DEFINITION } from '@Constants/errorConditionConstants';
 import { DISABLE_AUTO_CALC } from '@Constants/extensionConstants';
 

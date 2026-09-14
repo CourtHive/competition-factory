@@ -1,12 +1,13 @@
 import { firstClassOrExtension } from '@Acquire/firstClassOrExtension';
-import tournamentEngine from '@Engines/syncEngine';
 import mocksEngine from '@Assemblies/engines/mock';
+import tournamentEngine from '@Engines/syncEngine';
 import { expect, it } from 'vitest';
 
-import { ROUND_ROBIN } from '@Constants/drawDefinitionConstants';
-import { SINGLES } from '@Constants/eventConstants';
-import { TALLY } from '@Constants/extensionConstants';
+// constants
 import { RETIRED, WALKOVER } from '@Constants/matchUpStatusConstants';
+import { ROUND_ROBIN } from '@Constants/drawDefinitionConstants';
+import { TALLY } from '@Constants/extensionConstants';
+import { SINGLES } from '@Constants/eventConstants';
 
 function getDrawPositionTally({ positionAssignments, drawPosition }) {
   const assignment = positionAssignments.find((assignment) => assignment.drawPosition === drawPosition);

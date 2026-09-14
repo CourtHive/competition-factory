@@ -1,8 +1,9 @@
-import tournamentEngine from '@Engines/syncEngine';
 import mocksEngine from '@Assemblies/engines/mock';
+import tournamentEngine from '@Engines/syncEngine';
 import { instanceCount } from '@Tools/arrays';
 import { it, expect } from 'vitest';
 
+// constants and fixtures
 import { FORMAT_STANDARD } from '@Fixtures/scoring/matchUpFormats';
 import { SINGLES } from '@Constants/eventConstants';
 import {

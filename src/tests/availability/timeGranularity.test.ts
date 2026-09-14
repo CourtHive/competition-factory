@@ -5,6 +5,7 @@
  * snap-to-granularity, HH:MM conversion, day tick iteration.
  */
 
+import { AvailabilityEngine } from '@Assemblies/engines/availability/AvailabilityEngine';
 import { describe, it, expect } from 'vitest';
 import {
   hhmmToMinutes,
@@ -13,7 +14,6 @@ import {
   snapIsoToGranularity,
   iterateDayTicks,
 } from '@Assemblies/governors/availabilityGovernor/timeGranularity';
-import { AvailabilityEngine } from '@Assemblies/engines/availability/AvailabilityEngine';
 
 // ============================================================================
 // hhmmToMinutes / minutesToHhmm

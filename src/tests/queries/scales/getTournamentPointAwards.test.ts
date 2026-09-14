@@ -1,11 +1,12 @@
 import scaleEngine from '@Engines/scaleEngine';
-import { mocksEngine } from '../../..';
 import { describe, expect, it } from 'vitest';
+import { mocksEngine } from '../../..';
 
+// constants
+import { FULL_TO_EACH, SPLIT_EVEN, TEAM_ONLY } from '@Constants/rankingConstants';
+import { SINGLE_ELIMINATION } from '@Constants/drawDefinitionConstants';
 import { POLICY_TYPE_RANKING_POINTS } from '@Constants/policyConstants';
 import { SINGLES, DOUBLES } from '@Constants/eventConstants';
-import { SINGLE_ELIMINATION } from '@Constants/drawDefinitionConstants';
-import { FULL_TO_EACH, SPLIT_EVEN, TEAM_ONLY } from '@Constants/rankingConstants';
 
 const simplePolicy = {
   [POLICY_TYPE_RANKING_POINTS]: {

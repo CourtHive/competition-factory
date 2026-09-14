@@ -3,11 +3,11 @@ import { findExtension } from '@Acquire/findExtension';
 import { findVenue } from '@Query/venues/findVenue';
 import { UUID } from '@Tools/UUID';
 
-// constants
+// constants and types
 import { MutationLock, MutationLockScope, MutationLocksValue } from '@Types/mutationLockTypes';
 import { MUTATION_LOCKS } from '@Constants/extensionConstants';
-import { Tournament } from '@Types/tournamentTypes';
 import { SUCCESS } from '@Constants/resultConstants';
+import { Tournament } from '@Types/tournamentTypes';
 import {
   ErrorType,
   INVALID_VALUES,

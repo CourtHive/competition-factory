@@ -3,8 +3,9 @@ import { expect, test, describe } from 'vitest';
 import { removeLadderParticipant } from '@Mutate/ladder/removeLadderParticipant';
 import { applyLadderMovement } from '@Mutate/ladder/applyLadderMovement';
 
-import { CHALLENGED, COMPLETED } from '@Constants/matchUpStatusConstants';
+// constants
 import { RESULT_NOT_VALIDATED } from '@Constants/errorConditionConstants';
+import { CHALLENGED, COMPLETED } from '@Constants/matchUpStatusConstants';
 import { POLICY_TYPE_LADDER } from '@Constants/policyConstants';
 import { LADDER } from '@Constants/drawDefinitionConstants';
 import {

@@ -4,7 +4,7 @@ import { matchUpSort } from '@Functions/sorters/matchUpSort';
 import { validMatchUps } from '@Validators/validMatchUp';
 import { ensureInt } from '@Tools/ensureInt';
 
-// Constants and types
+// constants and types
 import { ErrorType, MISSING_CONTEXT, MISSING_MATCHUPS } from '@Constants/errorConditionConstants';
 import { BYE } from '@Constants/matchUpStatusConstants';
 import { Tournament } from '@Types/tournamentTypes';

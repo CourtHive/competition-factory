@@ -5,7 +5,7 @@ import mocksEngine from '@Assemblies/engines/mock';
 import tournamentEngine from '@Engines/syncEngine';
 import { expect, it } from 'vitest';
 
-// Constants and fixtures
+// constants and fixtures
 import { MISSING_ASSIGNMENTS } from '@Constants/errorConditionConstants';
 import SEEDING_ITF_POLICY from '@Fixtures/policies/POLICY_SEEDING_ITF';
 

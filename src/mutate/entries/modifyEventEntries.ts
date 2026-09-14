@@ -1,9 +1,10 @@
-import { modifyEventEntriesNotice } from '../notifications/entriesNotifications';
+import { modifyEventEntriesNotice } from '@Mutate/notifications/entriesNotifications';
 import { getPairedParticipant } from '@Query/participant/getPairedParticipant';
+import { addParticipants } from '@Mutate/participants/addParticipants';
 import { requireParams } from '@Helpers/parameters/requireParams';
-import { addParticipants } from '../participants/addParticipants';
 import { intersection } from '@Tools/arrays';
 
+// constants
 import { INVALID_PARTICIPANT_IDS } from '@Constants/errorConditionConstants';
 import { TOURNAMENT_RECORD, EVENT } from '@Constants/attributeConstants';
 import { INDIVIDUAL, PAIR } from '@Constants/participantConstants';
@@ -11,6 +12,7 @@ import { MAIN } from '@Constants/drawDefinitionConstants';
 import { COMPETITOR } from '@Constants/participantRoles';
 import { SUCCESS } from '@Constants/resultConstants';
 
+// constants and types
 import { DIRECT_ACCEPTANCE, UNGROUPED } from '@Constants/entryStatusConstants';
 import { EntryStatusUnion, Event, Tournament } from '@Types/tournamentTypes';
 

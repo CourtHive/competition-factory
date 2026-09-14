@@ -1,5 +1,5 @@
-import tournamentEngine from '@Engines/syncEngine';
 import mocksEngine from '@Assemblies/engines/mock';
+import tournamentEngine from '@Engines/syncEngine';
 import { describe, expect, it } from 'vitest';
 
 import { getParticipantEligibility, getEligibleEvents } from '@Query/entries/getParticipantEligibility';

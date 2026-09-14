@@ -1,5 +1,5 @@
-import { processBucketResults } from './processBucketResults';
 import { DEFAULT_POINT_COMPONENTS } from '@Constants/rankingConstants';
+import { processBucketResults } from './processBucketResults';
 import type {
   RankingListBucketBreakdown,
   CategoryAggregationRule,

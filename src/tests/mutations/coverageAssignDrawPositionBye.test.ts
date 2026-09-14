@@ -11,7 +11,7 @@ import mocksEngine from '@Assemblies/engines/mock';
 import tournamentEngine from '@Engines/syncEngine';
 import { expect, it, describe } from 'vitest';
 
-// constants
+// constants and types
 import { FIRST_MATCH_LOSER_CONSOLATION, MAIN, CONSOLATION, LUCKY_DRAW } from '@Constants/drawDefinitionConstants';
 import { DOUBLE_WALKOVER, BYE, TO_BE_PLAYED } from '@Constants/matchUpStatusConstants';
 import { DIRECT_ACCEPTANCE, WILDCARD } from '@Constants/entryStatusConstants';

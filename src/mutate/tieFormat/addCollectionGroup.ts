@@ -1,7 +1,7 @@
 import { copyTieFormat } from '@Query/hierarchical/tieFormats/copyTieFormat';
 import { getTieFormat } from '@Query/hierarchical/tieFormats/getTieFormat';
-import { validateTieFormat } from '@Validators/validateTieFormat';
 import { decorateResult } from '@Functions/global/decorateResult';
+import { validateTieFormat } from '@Validators/validateTieFormat';
 import { collectionGroupUpdate } from './collectionGroupUpdate';
 
 // constants

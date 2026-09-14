@@ -7,7 +7,7 @@
 import { generateRange } from './arrays';
 
 // constants
-import { INSUFFICIENT_UUIDS } from '../constants/errorConditionConstants';
+import { INSUFFICIENT_UUIDS } from '@Constants/errorConditionConstants';
 
 type TakeUUIDArgs = {
   /**

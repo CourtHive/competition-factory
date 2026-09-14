@@ -1,8 +1,9 @@
 import { getExitProfiles } from '@Query/drawDefinition/getExitProfile';
-import tournamentEngine from '@Engines/syncEngine';
 import mocksEngine from '@Assemblies/engines/mock';
+import tournamentEngine from '@Engines/syncEngine';
 import { expect, test } from 'vitest';
 
+// constants
 import { COMPASS, CURTIS_CONSOLATION } from '@Constants/drawDefinitionConstants';
 
 test('can recreate an exitProfile for a COMPASS draw', () => {

@@ -1,14 +1,14 @@
 import { getDrawData } from '@Query/drawDefinition/getDrawData';
 import { findStructure } from '@Acquire/findStructure';
 
-// constants and types
+// constants
+import { SUCCESS } from '@Constants/resultConstants';
 import {
   ErrorType,
   MISSING_DRAW_DEFINITION,
   MISSING_STRUCTURE_ID,
   STRUCTURE_NOT_FOUND,
 } from '@Constants/errorConditionConstants';
-import { SUCCESS } from '@Constants/resultConstants';
 
 /**
  * One structure's data — the drill-in tier of the payload decomposition

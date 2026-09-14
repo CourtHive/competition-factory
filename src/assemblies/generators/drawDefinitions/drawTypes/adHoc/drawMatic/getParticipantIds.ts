@@ -1,11 +1,11 @@
 import { decorateResult } from '@Functions/global/decorateResult';
 import { getParticipantId } from '@Functions/global/extractors';
 
-// types and constants
+// constants and types
 import { INVALID_PARTICIPANT_ID, INVALID_VALUES } from '@Constants/errorConditionConstants';
 import { STRUCTURE_SELECTED_STATUSES } from '@Constants/entryStatusConstants';
-import { EntryStatusUnion } from '@Types/tournamentTypes';
 import { MAIN } from '@Constants/drawDefinitionConstants';
+import { EntryStatusUnion } from '@Types/tournamentTypes';
 import { ResultType } from '@Types/factoryTypes';
 
 export function getParticipantIds(params): ResultType & { participantIds?: string[] } {

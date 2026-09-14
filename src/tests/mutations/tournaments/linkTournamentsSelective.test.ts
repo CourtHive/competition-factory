@@ -1,6 +1,6 @@
-import tournamentEngine from '@Engines/syncEngine';
-import mocksEngine from '@Assemblies/engines/mock';
 import { expect, it, describe, beforeEach } from 'vitest';
+import mocksEngine from '@Assemblies/engines/mock';
+import tournamentEngine from '@Engines/syncEngine';
 
 // constants
 import { MISSING_TOURNAMENT_ID } from '@Constants/errorConditionConstants';

@@ -1,7 +1,8 @@
 import { allTournamentMatchUps } from '@Query/matchUps/getAllTournamentMatchUps';
 
-import { SUCCESS } from '@Constants/resultConstants';
+// constants
 import { ErrorType, INVALID_VALUES, MISSING_TOURNAMENT_RECORD } from '@Constants/errorConditionConstants';
+import { SUCCESS } from '@Constants/resultConstants';
 
 export function dehydrateMatchUps({ tournamentRecord }): {
   success?: boolean;

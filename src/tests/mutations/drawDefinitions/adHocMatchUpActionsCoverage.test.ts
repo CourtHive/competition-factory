@@ -6,8 +6,8 @@ import { expect, test } from 'vitest';
 import { ASSIGN_PARTICIPANT, SWAP_PARTICIPANTS } from '@Constants/positionActionConstants';
 import { POLICY_TYPE_POSITION_ACTIONS } from '@Constants/policyConstants';
 import { REMOVE_PARTICIPANT } from '@Constants/matchUpActionConstants';
-import { ALTERNATE } from '@Constants/entryStatusConstants';
 import { AD_HOC } from '@Constants/drawDefinitionConstants';
+import { ALTERNATE } from '@Constants/entryStatusConstants';
 import { SINGLES_EVENT } from '@Constants/eventConstants';
 
 test('adHocMatchUpActions provides REMOVE_PARTICIPANT and SWAP_PARTICIPANTS when participants assigned', () => {

@@ -4,8 +4,8 @@
  * Tests the fix where validateSetScore checks set.NoAD property
  * that was set by parseScoreString, not just the format's NoAD
  */
-import { describe, it, expect } from 'vitest';
 import { validateSetScore } from '@Validators/validateMatchUpScore';
+import { describe, it, expect } from 'vitest';
 
 describe('validateSetScore - NoAD property from parseScoreString', () => {
   describe('TB1 tiebreak-only sets with NoAD property', () => {

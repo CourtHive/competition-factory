@@ -2,6 +2,7 @@ import { requireParams } from '@Helpers/parameters/requireParams';
 import { findCourt } from '@Query/venues/findCourt';
 import { makeDeepCopy } from '@Tools/makeDeepCopy';
 
+// constants and types
 import { TOURNAMENT_RECORD, COURT_ID } from '@Constants/attributeConstants';
 import { ErrorType } from '@Constants/errorConditionConstants';
 import { SUCCESS } from '@Constants/resultConstants';

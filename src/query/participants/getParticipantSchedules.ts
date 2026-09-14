@@ -1,10 +1,11 @@
-import { getMatchUpDependencies } from '../matchUps/getMatchUpDependencies';
-import { allTournamentMatchUps } from '../matchUps/getAllTournamentMatchUps';
+import { allTournamentMatchUps } from '@Query/matchUps/getAllTournamentMatchUps';
+import { getMatchUpDependencies } from '@Query/matchUps/getMatchUpDependencies';
 
+// constants and types
 import { INVALID_OBJECT, MISSING_TOURNAMENT_RECORD } from '@Constants/errorConditionConstants';
 import { PolicyDefinitions } from '@Types/factoryTypes';
-import { Tournament } from '@Types/tournamentTypes';
 import { SUCCESS } from '@Constants/resultConstants';
+import { Tournament } from '@Types/tournamentTypes';
 
 type GetParticipantSchedulesArgs = {
   policyDefinitions?: PolicyDefinitions;

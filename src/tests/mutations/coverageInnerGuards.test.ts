@@ -1,6 +1,6 @@
 import { evaluateCollectionResult } from '@Assemblies/generators/tieMatchUpScore/evaluateCollectionResult';
-import { toggleParticipantCheckInState } from '@Mutate/timeItems/matchUps/toggleParticipantCheckInState';
 import { generateTieMatchUpScore } from '@Assemblies/generators/tieMatchUpScore/generateTieMatchUpScore';
+import { toggleParticipantCheckInState } from '@Mutate/timeItems/matchUps/toggleParticipantCheckInState';
 import { addParticipantTimeItem, addEventTimeItem, addTimeItem } from '@Mutate/timeItems/addTimeItem';
 import { checkOutParticipant } from '@Mutate/timeItems/matchUps/checkOutParticipant';
 import { checkInParticipant } from '@Mutate/timeItems/matchUps/checkInParticipant';

@@ -1,6 +1,6 @@
 import { definedAttributes } from '@Tools/definedAttributes';
 
-// constants
+// constants and types
 import { SUCCESS } from '@Constants/resultConstants';
 import { ResultType } from '@Types/factoryTypes';
 

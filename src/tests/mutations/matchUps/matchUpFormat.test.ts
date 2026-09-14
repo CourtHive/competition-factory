@@ -1,8 +1,8 @@
-import tournamentEngine from '@Engines/syncEngine';
 import mocksEngine from '@Assemblies/engines/mock';
+import tournamentEngine from '@Engines/syncEngine';
 import { expect, it } from 'vitest';
 
-// constants
+// constants and fixtures
 import { FORMAT_FAST4, FORMAT_SHORT_SETS, FORMAT_STANDARD, TIMED20 } from '@Fixtures/scoring/matchUpFormats';
 import { TEAM_EVENT } from '@Constants/eventConstants';
 import {

@@ -11,7 +11,7 @@ import mocksEngine from '@Assemblies/engines/mock';
 import tournamentEngine from '@Engines/syncEngine';
 import { describe, expect, it } from 'vitest';
 
-// constants and types
+// constants
 import { MISSING_STRUCTURE_ID, STRUCTURE_NOT_FOUND } from '@Constants/errorConditionConstants';
 import { ROUND_ROBIN } from '@Constants/drawDefinitionConstants';
 import { TALLY } from '@Constants/extensionConstants';

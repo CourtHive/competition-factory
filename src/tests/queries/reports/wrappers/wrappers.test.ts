@@ -15,13 +15,13 @@ import { beforeAll, describe, expect, it } from 'vitest';
 
 import mocksEngine from '@Assemblies/engines/mock';
 
-import { wrapCompetitivenessReport } from '@Query/reports/wrappers/wrapCompetitivenessReport';
-import { wrapEntryStatusReport } from '@Query/reports/wrappers/wrapEntryStatusReport';
-import { wrapMatchResultsReport } from '@Query/reports/wrappers/wrapMatchResultsReport';
-import { wrapMatchUpStatusReport } from '@Query/reports/wrappers/wrapMatchUpStatusReport';
 import { wrapParticipantResultsReport } from '@Query/reports/wrappers/wrapParticipantResultsReport';
-import { wrapParticipantStats } from '@Query/reports/wrappers/wrapParticipantStats';
 import { wrapSeedingPerformanceReport } from '@Query/reports/wrappers/wrapSeedingPerformanceReport';
+import { wrapCompetitivenessReport } from '@Query/reports/wrappers/wrapCompetitivenessReport';
+import { wrapMatchUpStatusReport } from '@Query/reports/wrappers/wrapMatchUpStatusReport';
+import { wrapMatchResultsReport } from '@Query/reports/wrappers/wrapMatchResultsReport';
+import { wrapEntryStatusReport } from '@Query/reports/wrappers/wrapEntryStatusReport';
+import { wrapParticipantStats } from '@Query/reports/wrappers/wrapParticipantStats';
 import { wrapStructureReport } from '@Query/reports/wrappers/wrapStructureReport';
 import { wrapVenuesReport } from '@Query/reports/wrappers/wrapVenuesReport';
 

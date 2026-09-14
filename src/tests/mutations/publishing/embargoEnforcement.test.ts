@@ -1,10 +1,10 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import tournamentEngine from '@Engines/syncEngine';
 import mocksEngine from '@Assemblies/engines/mock';
+import tournamentEngine from '@Engines/syncEngine';
 
 // constants
-import { INVALID_EMBARGO } from '@Constants/errorConditionConstants';
 import { MAIN, QUALIFYING } from '@Constants/drawDefinitionConstants';
+import { INVALID_EMBARGO } from '@Constants/errorConditionConstants';
 
 const NOW = new Date('2025-06-15T12:00:00Z').getTime();
 const FUTURE_EMBARGO = '2025-06-20T12:00:00Z';

@@ -2,21 +2,21 @@
  * Branch coverage tests for modules below 70% branch coverage.
  * Tests call functions directly to hit uncovered conditional paths.
  */
-import { savePersonRequests } from '@Mutate/matchUps/schedule/scheduleMatchUps/personRequests/savePersonRequests';
 import { mergePersonRequests } from '@Mutate/matchUps/schedule/scheduleMatchUps/personRequests/mergePersonRequests';
+import { savePersonRequests } from '@Mutate/matchUps/schedule/scheduleMatchUps/personRequests/savePersonRequests';
 import { setDrawPositionPreferences } from '@Mutate/drawDefinitions/draft/setDrawPositionPreferences';
 import { auditAutoScheduling } from '@Mutate/matchUps/schedule/schedulers/auditAutoScheduling';
 import { applyTournamentRankingPoints } from '@Mutate/scales/applyTournamentRankingPoints';
 import { getDraftState } from '@Query/drawDefinition/draft/getDraftState';
 import { participantHeadToHead } from '../../analyze/report/headToHead';
-import tournamentEngine from '@Engines/syncEngine';
 import mocksEngine from '@Assemblies/engines/mock';
+import tournamentEngine from '@Engines/syncEngine';
 import { expect, it, describe } from 'vitest';
 
 // constants
 import { INVALID_VALUES, MISSING_DRAW_DEFINITION, MISSING_TOURNAMENT_RECORD } from '@Constants/errorConditionConstants';
-import { DO_NOT_SCHEDULE } from '@Constants/requestConstants';
 import { COMPLETED, DEFAULTED } from '@Constants/matchUpStatusConstants';
+import { DO_NOT_SCHEDULE } from '@Constants/requestConstants';
 
 // ----------------------------------------------------------------
 // headToHead — branch coverage

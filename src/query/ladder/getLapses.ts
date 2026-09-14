@@ -2,6 +2,7 @@ import { addDaysIso, getChallengeState } from '@Query/ladder/getChallengeState';
 import { resolveLadderStructure } from '@Query/ladder/resolveLadderContext';
 import { getLadderPolicy } from '@Query/ladder/getLadderPolicy';
 
+// constants and types
 import { CONSECUTIVE, DECLINE, EXPIRY, FORFEIT_POSITION, ROLLING, UNPLAYED } from '@Constants/ladderConstants';
 import { AWAITING_RESULT, CHALLENGED, COMPLETED, TO_BE_PLAYED } from '@Constants/matchUpStatusConstants';
 import { CHALLENGE_ACCEPTED, CHALLENGE_DECLINED, CHALLENGE_ISSUED } from '@Constants/ladderConstants';

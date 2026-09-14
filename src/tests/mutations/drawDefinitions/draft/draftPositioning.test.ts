@@ -1,6 +1,6 @@
 import { defaultTierCount } from '@Mutate/drawDefinitions/draft/initializeDraft';
-import tournamentEngine from '@Engines/syncEngine';
 import mocksEngine from '@Assemblies/engines/mock';
+import tournamentEngine from '@Engines/syncEngine';
 import { expect, it, describe } from 'vitest';
 import { nextPowerOf2 } from '@Tools/math';
 import { unique } from '@Tools/arrays';

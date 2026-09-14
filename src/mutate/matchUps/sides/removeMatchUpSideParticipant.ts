@@ -3,7 +3,7 @@ import { modifyMatchUpNotice } from '@Mutate/notifications/drawNotifications';
 import { findDrawMatchUp } from '@Acquire/findDrawMatchUp';
 import { isAdHoc } from '@Query/drawDefinition/isAdHoc';
 
-// constants
+// constants and types
 import { INVALID_DRAW_TYPE, INVALID_VALUES, MATCHUP_NOT_FOUND } from '@Constants/errorConditionConstants';
 import { DRAW_DEFINITION, MATCHUP_ID, TOURNAMENT_RECORD } from '@Constants/attributeConstants';
 import { DrawDefinition, Event, Tournament } from '@Types/tournamentTypes';

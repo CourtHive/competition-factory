@@ -12,8 +12,8 @@ import { expect, it, describe } from 'vitest';
 
 // constants
 import { FIRST_ROUND_LOSER_CONSOLATION, AD_HOC } from '@Constants/drawDefinitionConstants';
-import { TEAM_EVENT } from '@Constants/eventConstants';
 import { INDIVIDUAL } from '@Constants/participantConstants';
+import { TEAM_EVENT } from '@Constants/eventConstants';
 
 // ----------------------------------------------------------------
 // 1. keyValueScore — uncovered lines 153, 180-184, 187, 202, 268, 281

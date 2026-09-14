@@ -5,8 +5,8 @@
  * When the opponent scores, the winning streak resets.
  */
 
-import { describe, test, expect } from 'vitest';
 import { createMatchUp, addPoint, getScore, getScoreboard } from '@Assemblies/governors/scoreGovernor';
+import { describe, test, expect } from 'vitest';
 
 // Helper: add N points for a side
 function addPoints(matchUp: ReturnType<typeof createMatchUp>, winner: 0 | 1, count: number) {

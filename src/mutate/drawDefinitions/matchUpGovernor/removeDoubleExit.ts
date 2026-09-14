@@ -2,9 +2,9 @@ import { removeDirectedBye, removeDirectedWinner } from '@Mutate/matchUps/drawPo
 import { getPairedPreviousMatchUp } from '@Query/matchUps/getPairedPreviousMatchup';
 import { modifyMatchUpScore } from '@Mutate/matchUps/score/modifyMatchUpScore';
 import { decorateResult } from '@Functions/global/decorateResult';
+import { chunkArray, intersection, overlap } from '@Tools/arrays';
 import { positionTargets } from '@Query/matchUp/positionTargets';
 import { pushGlobalLog } from '@Functions/global/globalLog';
-import { chunkArray, intersection, overlap } from '@Tools/arrays';
 import { findStructure } from '@Acquire/findStructure';
 
 // constants

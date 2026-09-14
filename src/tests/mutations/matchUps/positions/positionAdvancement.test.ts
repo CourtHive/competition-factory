@@ -1,15 +1,16 @@
 import { generateDrawTypeAndModifyDrawDefinition } from '@Assemblies/generators/drawDefinitions/generateDrawTypeAndModifyDrawDefinition';
-import { positionTargets } from '@Query/matchUp/positionTargets';
+import { newDrawDefinition } from '@Assemblies/generators/drawDefinitions/newDrawDefinition';
+import { feedInChampionship } from '@Tests/mutations/drawDefinitions/primitives/feedIn';
 import { getStructureMatchUps } from '@Query/structure/getStructureMatchUps';
 import { getAllDrawMatchUps } from '@Query/matchUps/drawMatchUps';
+import { positionTargets } from '@Query/matchUp/positionTargets';
 import { getDrawStructures } from '@Acquire/findStructure';
-import { feedInChampionship } from '../../drawDefinitions/primitives/feedIn';
-import { newDrawDefinition } from '@Assemblies/generators/drawDefinitions/newDrawDefinition';
 import { expect, it } from 'vitest';
 
+// constants and types
+import { MAIN, FEED_IN_CHAMPIONSHIP, FIRST_MATCH_LOSER_CONSOLATION, COMPASS } from '@Constants/drawDefinitionConstants';
 import { DrawDefinition } from '@Types/tournamentTypes';
 import { ERROR } from '@Constants/resultConstants';
-import { MAIN, FEED_IN_CHAMPIONSHIP, FIRST_MATCH_LOSER_CONSOLATION, COMPASS } from '@Constants/drawDefinitionConstants';
 
 it('can direct participants in First Match Consolation (FIRST_MATCH_LOSER_CONSOLATION)', () => {
   const drawSize = 32;

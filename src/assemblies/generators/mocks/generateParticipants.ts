@@ -1,12 +1,12 @@
 import { isNumeric, randomInt, skewedDistribution } from '@Tools/math';
 import { cityMocks, stateMocks, postalCodeMocks } from './address';
-import { generateRange, shuffleArray } from '@Tools/arrays';
 import { definedAttributes } from '@Tools/definedAttributes';
 import { pushGlobalLog } from '@Functions/global/globalLog';
+import { generateRange, shuffleArray } from '@Tools/arrays';
 import { genParticipantId } from './genParticipantId';
-import { isValidDateString } from '@Tools/dateTime';
 import { generateAddress } from './generateAddress';
 import { generatePersons } from './generatePersons';
+import { isValidDateString } from '@Tools/dateTime';
 import { countries } from '@Fixtures/countryData';
 import { isObject } from '@Tools/objects';
 import { nameMocks } from './nameMocks';
@@ -14,8 +14,8 @@ import { UUID } from '@Tools/UUID';
 
 // constants and fixtures
 import defaultRatingsParameters from '@Fixtures/ratings/ratingsParameters';
-import { INDIVIDUAL, PAIR, TEAM } from '@Constants/participantConstants';
 import { DOUBLES_EVENT, SINGLES_EVENT } from '@Constants/eventConstants';
+import { INDIVIDUAL, PAIR, TEAM } from '@Constants/participantConstants';
 import { RANKING, RATING, SCALE } from '@Constants/scaleConstants';
 import { ErrorType } from '@Constants/errorConditionConstants';
 import { DOUBLES_MATCHUP } from '@Constants/matchUpTypes';

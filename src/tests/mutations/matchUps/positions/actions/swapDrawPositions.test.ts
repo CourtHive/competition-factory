@@ -1,10 +1,11 @@
-import tournamentEngine from '@Engines/syncEngine';
 import mocksEngine from '@Assemblies/engines/mock';
+import tournamentEngine from '@Engines/syncEngine';
 import { globalState } from '../../../../..';
 import { expect, it } from 'vitest';
 
-import { ROUND_ROBIN } from '@Constants/drawDefinitionConstants';
+// constants
 import { MODIFY_DRAW_DEFINITION, MODIFY_POSITION_ASSIGNMENTS } from '@Constants/topicConstants';
+import { ROUND_ROBIN } from '@Constants/drawDefinitionConstants';
 import {
   ALTERNATE_PARTICIPANT,
   REMOVE_ASSIGNMENT,

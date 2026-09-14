@@ -1,15 +1,15 @@
+import { submitComplianceItem, verifyComplianceItem, checkComplianceDeadlines } from '@Mutate/sanctioning/compliance';
+import { proposeAmendment, reviewAmendment } from '@Mutate/sanctioning/amendments';
 import { validateProposal } from '@Validators/sanctioning/validateProposal';
-import { sanctioningEngine } from '@Assemblies/engines/sanctioning';
 import { getEligibleTiers } from '@Query/sanctioning/getEligibleTiers';
 import { getCompleteness } from '@Query/sanctioning/getCompleteness';
-import { proposeAmendment, reviewAmendment } from '@Mutate/sanctioning/amendments';
-import { submitComplianceItem, verifyComplianceItem, checkComplianceDeadlines } from '@Mutate/sanctioning/compliance';
+import { sanctioningEngine } from '@Assemblies/engines/sanctioning';
 import { beforeEach, describe, expect, it } from 'vitest';
 
-// Constants
+// Fixtures
 import { POLICY_SANCTIONING_GENERIC } from '@Fixtures/policies/POLICY_SANCTIONING_GENERIC';
 
-// Types
+// types
 import type {
   TournamentProposal,
   SanctioningRecord,

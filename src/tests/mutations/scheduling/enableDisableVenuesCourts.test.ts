@@ -4,6 +4,7 @@ import mocksEngine from '@Assemblies/engines/mock';
 import tournamentEngine from '@Engines/syncEngine';
 import { expect, it } from 'vitest';
 
+// constants
 import { DISABLED } from '@Constants/extensionConstants';
 
 it('can disable and enable courts and venues', () => {

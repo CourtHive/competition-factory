@@ -1,6 +1,7 @@
 import { isObject, isString } from '@Tools/objects';
 import { findMatchUp } from '@Acquire/findMatchUp';
 
+// constants
 import { ErrorType, INVALID_VALUES, NOT_FOUND } from '@Constants/errorConditionConstants';
 import { MATCHUP, STRUCTURE } from '@Constants/attributeConstants';
 

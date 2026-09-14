@@ -5,6 +5,7 @@ import {
   mixedGenderError,
 } from '@Validators/tieFormatGenderValidityCheck';
 
+// constants
 import { DOUBLES_MATCHUP, SINGLES_MATCHUP } from '@Constants/matchUpTypes';
 import { ANY, FEMALE, MALE, MIXED } from '@Constants/genderConstants';
 import { INVALID_GENDER } from '@Constants/errorConditionConstants';

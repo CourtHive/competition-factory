@@ -1,7 +1,8 @@
-import { setFirstClassOrExtension } from '../setFirstClassOrExtension';
+import { setFirstClassOrExtension } from '@Mutate/extensions/setFirstClassOrExtension';
 import { requireParams } from '@Helpers/parameters/requireParams';
 import { findDrawMatchUp } from '@Acquire/findDrawMatchUp';
 
+// constants
 import { DRAW_DEFINITION, MATCHUP_ID } from '@Constants/attributeConstants';
 import { MATCHUP_NOT_FOUND } from '@Constants/errorConditionConstants';
 import { DELEGATED_OUTCOME } from '@Constants/extensionConstants';

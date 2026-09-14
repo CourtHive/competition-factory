@@ -3,11 +3,11 @@
  * Location: documentation/docs/policies/matchUpActions.md
  */
 
-import tournamentEngine from '@Engines/syncEngine';
-import mocksEngine from '@Assemblies/engines/mock';
 import { expect, it, describe, afterEach } from 'vitest';
+import mocksEngine from '@Assemblies/engines/mock';
+import tournamentEngine from '@Engines/syncEngine';
 
-// Import relevant constants
+// constants and fixtures
 import { END, PENALTY, REFEREE, SCHEDULE, SCORE, START, STATUS, SUBSTITUTION } from '@Constants/matchUpActionConstants';
 import { BYE, COMPLETED, DOUBLE_WALKOVER, TO_BE_PLAYED } from '@Constants/matchUpStatusConstants';
 import POLICY_MATCHUP_ACTIONS_DEFAULT from '@Fixtures/policies/POLICY_MATCHUP_ACTIONS_DEFAULT';

@@ -4,6 +4,7 @@ import { acceptChallenge, declineChallenge } from '@Mutate/ladder/respondToChall
 import { getChallengeState } from '@Query/ladder/getChallengeState';
 import { issueChallenge } from '@Mutate/ladder/issueChallenge';
 
+// constants
 import { ACCEPTED, DECLINED, EXPIRED, PENDING } from '@Constants/ladderConstants';
 import { LADDER, SINGLE_ELIMINATION } from '@Constants/drawDefinitionConstants';
 import { CHALLENGED, TO_BE_PLAYED } from '@Constants/matchUpStatusConstants';

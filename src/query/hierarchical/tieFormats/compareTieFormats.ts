@@ -1,7 +1,7 @@
 import { getTieFormatDesc } from '@Query/hierarchical/tieFormats/getTieFormatDescription';
 import { stringSort } from '@Functions/sorters/stringSort';
-import { isConvertableInteger } from '@Tools/math';
 import { difference, unique } from '@Tools/arrays';
+import { isConvertableInteger } from '@Tools/math';
 
 // constants and types
 import { SUCCESS } from '@Constants/resultConstants';

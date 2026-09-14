@@ -1,9 +1,10 @@
 import { buildFromSources, buildTournamentRecord, repairDrawLinks } from '@Tools/buildFromSources/buildFromSources';
-import tournamentEngine from '@Tests/engines/syncEngine';
 import { getDrawData } from '@Query/drawDefinition/getDrawData';
+import tournamentEngine from '@Tests/engines/syncEngine';
 import mocksEngine from '@Assemblies/engines/mock';
 import { expect, it, describe } from 'vitest';
 
+// constants
 import { UNLINKED_STRUCTURES } from '@Constants/errorConditionConstants';
 
 /**

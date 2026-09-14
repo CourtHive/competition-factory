@@ -2,7 +2,7 @@ import { allTournamentMatchUps } from '@Query/matchUps/getAllTournamentMatchUps'
 import { getParticipants } from '@Query/participants/getParticipants';
 import { getDetailsWTN } from '@Query/scales/getDetailsWTN';
 
-// Constants and Types
+// constants and types
 import { MISSING_TOURNAMENT_RECORD } from '@Constants/errorConditionConstants';
 import { STRUCTURE_SELECTED_STATUSES } from '@Constants/entryStatusConstants';
 import { DOUBLES_MATCHUP, SINGLES_MATCHUP } from '@Constants/matchUpTypes';

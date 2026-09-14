@@ -4,7 +4,7 @@ import tournamentEngine from '@Engines/syncEngine';
 import * as readModel from '@Query/readModel';
 import { describe, expect, it } from 'vitest';
 
-// constants and types
+// constants
 import { SINGLE_ELIMINATION } from '@Constants/drawDefinitionConstants';
 import { MODIFY_DRAW_DEFINITION } from '@Constants/topicConstants';
 

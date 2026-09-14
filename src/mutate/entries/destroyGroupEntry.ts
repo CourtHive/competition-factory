@@ -1,4 +1,4 @@
-import { deleteParticipants } from '../participants/deleteParticipants';
+import { deleteParticipants } from '@Mutate/participants/deleteParticipants';
 import { getStageEntries } from '@Query/drawDefinition/getStageEntries';
 import { decorateResult } from '@Functions/global/decorateResult';
 import { requireParams } from '@Helpers/parameters/requireParams';
@@ -7,7 +7,7 @@ import { removeEventEntries } from './removeEventEntries';
 import { addEventEntries } from './addEventEntries';
 import { arrayIndices } from '@Tools/arrays';
 
-// Constants and types
+// constants and types
 import { TOURNAMENT_RECORD, PARTICIPANT_ID, EVENT } from '@Constants/attributeConstants';
 import { DrawDefinition, Tournament, Event } from '@Types/tournamentTypes';
 import { PAIR, TEAM_PARTICIPANT } from '@Constants/participantConstants';

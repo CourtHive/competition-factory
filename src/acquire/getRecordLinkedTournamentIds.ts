@@ -1,6 +1,6 @@
 import { findExtension } from './findExtension';
 
-// constants and types
+// constants
 import { LINKED_TOURNAMENTS } from '@Constants/extensionConstants';
 
 /**

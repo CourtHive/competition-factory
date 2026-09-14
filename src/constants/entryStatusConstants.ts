@@ -1,3 +1,4 @@
+import type { EntryStatusUnion } from '@Types/tournamentTypes';
 import {
   ALTERNATE,
   CONFIRMED,
@@ -14,7 +15,6 @@ import {
   WILDCARD,
   WITHDRAWN,
 } from './entryStatusValues';
-import type { EntryStatusUnion } from '@Types/tournamentTypes';
 
 // primitive entry-status consts are generated from EntryStatusEnum (see
 // entryStatusValues.ts); the semantic groupings below are hand-authored.

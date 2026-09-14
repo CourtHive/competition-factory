@@ -1,6 +1,6 @@
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { INestApplication } from '@nestjs/common';
-import { AppModule } from '../../app.module';
+import { AppModule } from '@Server/app.module';
 import { Test } from '@nestjs/testing';
 import request from 'supertest';
 

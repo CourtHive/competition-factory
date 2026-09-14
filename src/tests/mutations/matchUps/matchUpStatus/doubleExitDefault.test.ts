@@ -9,8 +9,8 @@ import tournamentEngine from '@Engines/syncEngine';
 import { expect, it, test } from 'vitest';
 
 // constants
-import { BYE, DEFAULTED, DOUBLE_DEFAULT } from '@Constants/matchUpStatusConstants';
 import { FIRST_MATCH_LOSER_CONSOLATION } from '@Constants/drawDefinitionConstants';
+import { BYE, DEFAULTED, DOUBLE_DEFAULT } from '@Constants/matchUpStatusConstants';
 import { POLICY_TYPE_PROGRESSION } from '@Constants/policyConstants';
 import { MODIFY_MATCHUP } from '@Constants/topicConstants';
 

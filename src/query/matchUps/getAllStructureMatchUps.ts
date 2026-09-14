@@ -1,10 +1,10 @@
+import { getMatchUpCompetitiveProfile } from '@Query/matchUp/getMatchUpCompetitiveProfile';
 import { getStructureSeedAssignments } from '@Query/structure/getStructureSeedAssignments';
 import { structureAssignedDrawPositions } from '@Query/drawDefinition/positionsGetter';
 import { resolveTieFormat } from '@Query/hierarchical/tieFormats/resolveTieFormat';
+import { resolveCompetitiveBands } from '@Query/matchUp/resolveCompetitiveBands';
 import { getCollectionPositionMatchUps } from './getCollectionPositionMatchUps';
 import { getMatchUpsMap, getMappedStructureMatchUps } from './getMatchUpsMap';
-import { resolveCompetitiveBands } from '@Query/matchUp/resolveCompetitiveBands';
-import { getMatchUpCompetitiveProfile } from '@Query/matchUp/getMatchUpCompetitiveProfile';
 import { hydrateParticipants } from '@Query/participants/hydrateParticipants';
 import { getSourceDrawPositionRanges } from './getSourceDrawPositionRanges';
 import { getAppliedPolicies } from '@Query/extensions/getAppliedPolicies';
@@ -13,8 +13,8 @@ import { getExitProfiles } from '@Query/drawDefinition/getExitProfile';
 import { getDrawPositionsRanges } from './getDrawPositionsRanges';
 import { getRoundContextProfile } from './getRoundContextProfile';
 import { addMatchUpContext } from './addMatchUpContext';
-import { getRoundMatchUps } from './getRoundMatchUps';
 import { filterMatchUps } from '@Query/filterMatchUps';
+import { getRoundMatchUps } from './getRoundMatchUps';
 
 // constants and types
 import { Participant, Tournament, Event, Structure, DrawDefinition, SeedAssignment } from '@Types/tournamentTypes';

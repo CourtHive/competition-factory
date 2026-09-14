@@ -1,4 +1,8 @@
 // constants and types
+import { MISSING_TOURNAMENT_RECORD } from '@Constants/errorConditionConstants';
+import { SUCCESS } from '@Constants/resultConstants';
+import { Tournament } from '@Types/tournamentTypes';
+import { ResultType } from '@Types/factoryTypes';
 import {
   COMPETITION_STATE,
   DELEGATED_OUTCOME,
@@ -29,10 +33,6 @@ import {
   SCHEDULED_TIME,
   TIME_MODIFIERS,
 } from '@Constants/timeItemConstants';
-import { MISSING_TOURNAMENT_RECORD } from '@Constants/errorConditionConstants';
-import { Tournament } from '@Types/tournamentTypes';
-import { SUCCESS } from '@Constants/resultConstants';
-import { ResultType } from '@Types/factoryTypes';
 
 type ExtensionPromotion = {
   name: string;

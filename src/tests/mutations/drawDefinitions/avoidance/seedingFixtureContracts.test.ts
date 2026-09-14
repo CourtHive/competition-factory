@@ -1,10 +1,10 @@
 import { getAttributeGroupings } from '@Query/participants/getAttributeGrouping';
 import { getAppliedPolicies } from '@Query/extensions/getAppliedPolicies';
-import tournamentEngine from '@Engines/syncEngine';
 import mocksEngine from '@Assemblies/engines/mock';
+import tournamentEngine from '@Engines/syncEngine';
 import { expect, describe, it } from 'vitest';
 
-// constants and types
+// constants
 import { GROUP, INDIVIDUAL } from '@Constants/participantConstants';
 import { POLICY_TYPE_AVOIDANCE } from '@Constants/policyConstants';
 import { APPLIED_POLICIES } from '@Constants/extensionConstants';

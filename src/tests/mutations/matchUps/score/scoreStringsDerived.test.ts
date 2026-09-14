@@ -2,7 +2,7 @@ import { mocksEngine } from '@Assemblies/engines/mock';
 import { tournamentEngine } from '@Engines/syncEngine';
 import { expect, describe, test } from 'vitest';
 
-// constants and types
+// constants
 import { RETIRED } from '@Constants/matchUpStatusConstants';
 
 // Regression coverage for competition-factory#4564 — score strings are derived from score.sets and

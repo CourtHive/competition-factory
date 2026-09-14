@@ -7,8 +7,8 @@ import { expect, it } from 'vitest';
 import { INVALID_PARTICIPANT } from '@Constants/errorConditionConstants';
 import { USTA_GOLD_TEAM_CHALLENGE } from '@Constants/tieFormatConstants';
 import { ASSIGN_PARTICIPANT } from '@Constants/positionActionConstants';
-import { DOUBLES_MATCHUP } from '@Constants/matchUpTypes';
 import { FEMALE, MALE } from '@Constants/genderConstants';
+import { DOUBLES_MATCHUP } from '@Constants/matchUpTypes';
 import { TEAM_EVENT } from '@Constants/eventConstants';
 
 // Mixed-doubles second-participant gender enforcement. Previously `assignedGender` in

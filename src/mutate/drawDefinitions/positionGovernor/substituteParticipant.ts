@@ -1,8 +1,8 @@
 import { replaceTieMatchUpParticipantId } from '@Mutate/matchUps/lineUps/replaceTieMatchUpParticipant';
-import { getAllDrawMatchUps } from '@Query/matchUps/drawMatchUps';
 import { decorateResult } from '@Functions/global/decorateResult';
-import { getMatchUpsMap } from '@Query/matchUps/getMatchUpsMap';
+import { getAllDrawMatchUps } from '@Query/matchUps/drawMatchUps';
 import { getParticipantId } from '@Functions/global/extractors';
+import { getMatchUpsMap } from '@Query/matchUps/getMatchUpsMap';
 import { findDrawMatchUp } from '@Acquire/findDrawMatchUp';
 
 // constants and types

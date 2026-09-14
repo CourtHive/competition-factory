@@ -9,10 +9,10 @@
  * - winningSide override preserves score bounds
  */
 
-import mocksEngine from '@Assemblies/engines/mock';
-import { generateRange } from '@Tools/arrays';
-import { describe, test, expect } from 'vitest';
 import { COMPLETED } from '@Constants/matchUpStatusConstants';
+import mocksEngine from '@Assemblies/engines/mock';
+import { describe, test, expect } from 'vitest';
+import { generateRange } from '@Tools/arrays';
 
 const BLW_FORMAT = 'INN4XA-S:O3-M:T50';
 

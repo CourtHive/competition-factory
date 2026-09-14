@@ -18,7 +18,7 @@ import mocksEngine from '@Assemblies/engines/mock';
 // Testing
 import { expect, it, describe } from 'vitest';
 
-// Constants
+// constants
 import { AD_HOC, SINGLE_ELIMINATION } from '@Constants/drawDefinitionConstants';
 import { MISSING_DRAW_DEFINITION } from '@Constants/errorConditionConstants';
 import { POLICY_TYPE_DRAWS } from '@Constants/policyConstants';

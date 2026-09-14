@@ -1,16 +1,16 @@
 import { aggregateTieFormats } from '@Mutate/tieFormat/aggregateTieFormats';
 import { checkTieFormat } from '@Mutate/tieFormat/checkTieFormat';
 import { setSubscriptions } from '@Global/state/globalState';
-import tournamentEngine from '@Engines/syncEngine';
 import mocksEngine from '@Assemblies/engines/mock';
+import tournamentEngine from '@Engines/syncEngine';
 import { expect, it, describe } from 'vitest';
 
 // constants
+import { INVALID_VALUES, MISSING_TOURNAMENT_RECORD, NOT_FOUND } from '@Constants/errorConditionConstants';
 import { COLLEGE_D3, USTA_BREWER_CUP } from '@Constants/tieFormatConstants';
 import { POLICY_TYPE_SCORING } from '@Constants/policyConstants';
 import { DELETED_MATCHUP_IDS } from '@Constants/topicConstants';
 import { TEAM } from '@Constants/eventConstants';
-import { INVALID_VALUES, MISSING_TOURNAMENT_RECORD, NOT_FOUND } from '@Constants/errorConditionConstants';
 
 const scoringPolicy = {
   [POLICY_TYPE_SCORING]: { requireParticipantsForScoring: false },

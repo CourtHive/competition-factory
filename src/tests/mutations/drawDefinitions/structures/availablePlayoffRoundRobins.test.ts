@@ -1,5 +1,5 @@
-import { generateMatchUpOutcome } from '@Tests/helpers/generateMatchUpOutcome';
 import { getPositionAssignments } from '@Query/drawDefinition/positionsGetter';
+import { generateMatchUpOutcome } from '@Tests/helpers/generateMatchUpOutcome';
 import { isCompletedStructure } from '@Query/drawDefinition/structureActions';
 import { generateRange, intersection } from '@Tools/arrays';
 import { mocksEngine } from '@Assemblies/engines/mock';
@@ -7,7 +7,7 @@ import tournamentEngine from '@Engines/syncEngine';
 import { xa } from '@Tools/extractAttributes';
 import { expect, it } from 'vitest';
 
-// Constants and fixtures
+// constants and fixtures
 import { INVALID_VALUES, MISSING_VALUE } from '@Constants/errorConditionConstants';
 import { COMPLETED, TO_BE_PLAYED } from '@Constants/matchUpStatusConstants';
 import { FORMAT_STANDARD } from '@Fixtures/scoring/matchUpFormats';

@@ -1,10 +1,11 @@
-import { toBePlayed } from '@Fixtures/scoring/outcomes/toBePlayed';
 import { generateTeamTournament } from './generateTestTeamTournament';
+import { toBePlayed } from '@Fixtures/scoring/outcomes/toBePlayed';
 import { setDevContext } from '@Global/state/globalState';
 import mocksEngine from '@Assemblies/engines/mock';
 import tournamentEngine from '@Engines/syncEngine';
 import { expect, test } from 'vitest';
 
+// constants
 import { REMOVE_ASSIGNMENT } from '@Constants/positionActionConstants';
 import { BYE, COMPLETED } from '@Constants/matchUpStatusConstants';
 import { ROUND_ROBIN } from '@Constants/drawDefinitionConstants';

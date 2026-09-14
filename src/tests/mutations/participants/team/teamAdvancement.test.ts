@@ -1,7 +1,7 @@
 import { generateTieMatchUpScore } from '@Assemblies/generators/tieMatchUpScore/generateTieMatchUpScore';
+import { firstClassOrExtension } from '@Acquire/firstClassOrExtension';
 import { generateTeamTournament } from './generateTestTeamTournament';
 import { setSubscriptions } from '@Global/state/globalState';
-import { firstClassOrExtension } from '@Acquire/firstClassOrExtension';
 import mocksEngine from '@Assemblies/engines/mock';
 import tournamentEngine from '@Engines/syncEngine';
 import { expect, it, test } from 'vitest';

@@ -1,4 +1,4 @@
-import { visualizeScheduledMatchUps } from '../../testHarness/testUtilities/visualizeScheduledMatchUps';
+import { visualizeScheduledMatchUps } from '@Tests/testHarness/testUtilities/visualizeScheduledMatchUps';
 import { getMatchUpIds } from '@Functions/global/extractors';
 import { hasSchedule } from '@Query/matchUp/hasSchedule';
 import { instanceCount, unique } from '@Tools/arrays';
@@ -8,7 +8,7 @@ import { xa } from '@Tools/extractAttributes';
 import { addDays } from '@Tools/dateTime';
 import { expect, test } from 'vitest';
 
-// constants
+// constants and fixtures
 import POLICY_SCHEDULING_NO_DAILY_LIMITS from '@Fixtures/policies/POLICY_SCHEDULING_NO_DAILY_LIMITS';
 import { MAIN, QUALIFYING, SINGLE_ELIMINATION } from '@Constants/drawDefinitionConstants';
 import { MISSING_EVENT, MISSING_VALUE } from '@Constants/errorConditionConstants';

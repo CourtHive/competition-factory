@@ -1,7 +1,7 @@
-import { calculateWinCriteria } from '@Query/matchUp/calculateWinCriteria';
 import { aggregateTieFormats } from '@Mutate/tieFormat/aggregateTieFormats';
-import tournamentEngine from '@Engines/syncEngine';
+import { calculateWinCriteria } from '@Query/matchUp/calculateWinCriteria';
 import mocksEngine from '@Assemblies/engines/mock';
+import tournamentEngine from '@Engines/syncEngine';
 import { expect, it, describe } from 'vitest';
 
 // constants

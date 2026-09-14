@@ -1,6 +1,6 @@
 import { checkRequiredParameters } from '@Helpers/parameters/checkRequiredParameters';
-import { structureSort } from '@Functions/sorters/structureSort';
 import { firstClassOrExtension } from '@Acquire/firstClassOrExtension';
+import { structureSort } from '@Functions/sorters/structureSort';
 
 // constants and types
 import { MISSING_STRUCTURES, STRUCTURE_NOT_FOUND, MISSING_DRAW_DEFINITION } from '@Constants/errorConditionConstants';

@@ -1,9 +1,10 @@
 import { positionSeedBlocks } from '@Mutate/matchUps/drawPositions/positionSeeds';
-import tournamentEngine from '@Engines/syncEngine';
 import mocksEngine from '@Assemblies/engines/mock';
+import tournamentEngine from '@Engines/syncEngine';
 import { createSeededRandom } from '@Tools/prng';
 import { expect, it, describe } from 'vitest';
 
+// constants and fixtures
 import { POLICY_AVOIDANCE_COUNTRY } from '@Fixtures/policies/POLICY_AVOIDANCE_COUNTRY';
 import { POLICY_TYPE_AVOIDANCE } from '@Constants/policyConstants';
 import { APPLIED_POLICIES } from '@Constants/extensionConstants';

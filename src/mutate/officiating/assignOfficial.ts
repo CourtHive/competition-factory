@@ -2,23 +2,23 @@ import { conflictInputsFrom } from '@Query/officiating/conflictEvaluationInputs'
 import { getOfficialConflicts } from '@Query/officiating/getOfficialConflicts';
 import { UUID } from '@Tools/UUID';
 
-// Constants
+// constants
+import { INVALID_VALUES } from '@Constants/errorConditionConstants';
+import { SUCCESS } from '@Constants/resultConstants';
 import {
   MISSING_OFFICIAL_RECORD,
   OFFICIAL_CONFLICT_OF_INTEREST,
   ASSIGN_PROPOSED,
 } from '@Constants/officiatingConstants';
-import { INVALID_VALUES } from '@Constants/errorConditionConstants';
-import { SUCCESS } from '@Constants/resultConstants';
 
-// Types
+// types
+import type { Participant } from '@Types/tournamentTypes';
 import type {
   ConflictEvaluationInputs,
   OfficialConflict,
   OfficialAssignment,
   OfficialRecord,
 } from '@Types/officiatingTypes';
-import type { Participant } from '@Types/tournamentTypes';
 
 type AssignOfficialArgs = ConflictEvaluationInputs & {
   officialRecord: OfficialRecord;

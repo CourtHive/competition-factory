@@ -1,8 +1,9 @@
 import { destroyGroupEntry } from './destroyGroupEntry';
 
+// constants and types
 import { MISSING_TOURNAMENT_RECORD } from '@Constants/errorConditionConstants';
-import { SUCCESS } from '@Constants/resultConstants';
 import { DrawDefinition, Tournament, Event } from '@Types/tournamentTypes';
+import { SUCCESS } from '@Constants/resultConstants';
 
 /**
  *

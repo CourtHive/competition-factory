@@ -2,20 +2,20 @@
  * Coverage tests for small modules below 95% statement coverage.
  * Targets: matchUpEventTypes, asyncEngine, syncEngine, mutationLocks, query/extensions.
  */
+import { getPolicyDefinitions, getAppliedPolicies } from '@Query/extensions/getAppliedPolicies';
 import { includesMatchUpEventType } from '@Helpers/matchUpEventTypes/includesMatchUpEventType';
-import { isMatchUpEventType } from '@Helpers/matchUpEventTypes/isMatchUpEventType';
 import { removeMutationLock } from '@Mutate/tournaments/mutationLocks/removeMutationLock';
-import { getMatchUpDailyLimits } from '@Query/extensions/getMatchUpDailyLimits';
-import { getPolicyDefinitions } from '@Query/extensions/getAppliedPolicies';
-import { getAppliedPolicies } from '@Query/extensions/getAppliedPolicies';
 import { addMutationLock } from '@Mutate/tournaments/mutationLocks/addMutationLock';
+import { isMatchUpEventType } from '@Helpers/matchUpEventTypes/isMatchUpEventType';
+import { getMatchUpDailyLimits } from '@Query/extensions/getMatchUpDailyLimits';
 import { getExtensionUpdate } from '@Query/extensions/getExtensionUpdate';
 import { getDisabledStatus } from '@Query/extensions/getDisabledStatus';
 import mocksEngine from '@Assemblies/engines/mock';
 import asyncEngine from '@Engines/asyncEngine';
-import syncEngine from '@Engines/syncEngine';
 import { describe, it, expect } from 'vitest';
+import syncEngine from '@Engines/syncEngine';
 
+// constants
 import { APPLIED_POLICIES, SCHEDULE_LIMITS } from '@Constants/extensionConstants';
 import { DOUBLES, SINGLES, TEAM } from '@Constants/matchUpTypes';
 import {

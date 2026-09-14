@@ -9,14 +9,14 @@
  * Doubles: SET1A-S:T10   → exactly 1 timed set
  */
 import { parse } from '@Helpers/matchUpFormatCode/parse';
-import tournamentEngine from '@Engines/syncEngine';
 import mocksEngine from '@Assemblies/engines/mock';
+import tournamentEngine from '@Engines/syncEngine';
 import { describe, it, expect } from 'vitest';
 
 // constants
 import { SINGLE_ELIMINATION } from '@Constants/drawDefinitionConstants';
-import { DOUBLES, SINGLES, TEAM } from '@Constants/matchUpTypes';
 import { FEMALE, MALE, MIXED } from '@Constants/genderConstants';
+import { DOUBLES, SINGLES, TEAM } from '@Constants/matchUpTypes';
 
 const SINGLES_FORMAT = 'SET2XA-S:T10';
 const DOUBLES_FORMAT = 'SET1A-S:T10';

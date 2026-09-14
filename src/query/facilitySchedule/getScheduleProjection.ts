@@ -4,8 +4,8 @@ import { decorateResult } from '@Functions/global/decorateResult';
 // constants and types
 import { MISSING_TOURNAMENT_RECORD, ErrorType } from '@Constants/errorConditionConstants';
 import { ScheduleCell } from '@Types/facilityScheduleTypes';
-import { Tournament } from '@Types/tournamentTypes';
 import { SUCCESS } from '@Constants/resultConstants';
+import { Tournament } from '@Types/tournamentTypes';
 
 type GetScheduleProjectionArgs = {
   tournamentRecord?: Tournament;

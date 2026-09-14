@@ -1,8 +1,9 @@
 import mocksEngine from '@Assemblies/engines/mock';
-import { intersection } from '@Tools/arrays';
 import tournamentEngine from '@Engines/syncEngine';
+import { intersection } from '@Tools/arrays';
 import { expect, it } from 'vitest';
 
+// constants
 import { INVALID_VALUES } from '@Constants/errorConditionConstants';
 
 it('can set and get drawRepresentatitveIds', () => {

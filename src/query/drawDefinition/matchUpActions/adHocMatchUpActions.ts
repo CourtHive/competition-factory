@@ -1,7 +1,7 @@
 import { getEventAlternateParticipantIds } from './getEventAlternateParticipantids';
-import { checkScoreHasValue } from '../../matchUp/checkScoreHasValue';
+import { checkScoreHasValue } from '@Query/matchUp/checkScoreHasValue';
+import { getFlightProfile } from '@Query/event/getFlightProfile';
 import { getParticipantId } from '@Functions/global/extractors';
-import { getFlightProfile } from '../../event/getFlightProfile';
 import { makeDeepCopy } from '@Tools/makeDeepCopy';
 import { unique } from '@Tools/arrays';
 

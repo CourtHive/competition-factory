@@ -1,9 +1,11 @@
-import { isValidExtension } from '@Validators/isValidExtension';
 import { decorateResult } from '@Functions/global/decorateResult';
+import { isValidExtension } from '@Validators/isValidExtension';
 
-import { SUCCESS } from '@Constants/resultConstants';
+// constants
 import { ErrorType, INVALID_VALUES, MISSING_VALUE } from '@Constants/errorConditionConstants';
+import { SUCCESS } from '@Constants/resultConstants';
 
+// types
 import { TournamentRecords } from '@Types/factoryTypes';
 import { Extension } from '@Types/tournamentTypes';
 

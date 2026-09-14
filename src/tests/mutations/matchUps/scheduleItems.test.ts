@@ -1,11 +1,11 @@
 import { addMatchUpScheduledDate } from '@Mutate/matchUps/schedule/scheduleItems/addMatchUpScheduledDate';
-import { legacyMode } from '@Tests/testHarness/legacyMode';
 import { getMatchUpScheduleDetails } from '@Query/matchUp/getMatchUpScheduleDetails';
 import { resetMatchUpTimeItems } from '@Mutate/timeItems/matchUps/matchUpTimeItems';
 import { addMatchUpScheduledTime } from '@Mutate/matchUps/schedule/scheduledTime';
 import { getAllDrawMatchUps } from '@Query/matchUps/drawMatchUps';
-import { matchUpDuration } from '@Query/matchUp/matchUpDuration';
 import { publicFindDrawMatchUp } from '@Acquire/findDrawMatchUp';
+import { matchUpDuration } from '@Query/matchUp/matchUpDuration';
+import { legacyMode } from '@Tests/testHarness/legacyMode';
 import mocksEngine from '@Assemblies/engines/mock';
 import { expect, it } from 'vitest';
 import {

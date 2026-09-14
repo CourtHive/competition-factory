@@ -1,8 +1,9 @@
-import { setFirstClassOrExtension } from '../../extensions/setFirstClassOrExtension';
+import { setFirstClassOrExtension } from '@Mutate/extensions/setFirstClassOrExtension';
 import { generateScoreString } from '@Generators/matchUps/generateScoreString';
 import { modifyMatchUpNotice } from '@Mutate/notifications/drawNotifications';
 import { findDrawMatchUp } from '@Acquire/findDrawMatchUp';
 
+// constants
 import { DELEGATED_OUTCOME } from '@Constants/extensionConstants';
 import {
   INVALID_VALUES,

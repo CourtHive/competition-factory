@@ -1,8 +1,9 @@
 import { checkRequiredParameters } from '@Helpers/parameters/checkRequiredParameters';
 import { getAppliedPolicies } from '@Query/extensions/getAppliedPolicies';
-import { removeExtension } from '../removeExtension';
-import { addExtension } from '../addExtension';
+import { removeExtension } from '@Mutate/extensions/removeExtension';
+import { addExtension } from '@Mutate/extensions/addExtension';
 
+// constants and types
 import { MISSING_TOURNAMENT_RECORD, POLICY_NOT_FOUND } from '@Constants/errorConditionConstants';
 import { DrawDefinition, Event, Tournament } from '@Types/tournamentTypes';
 import { APPLIED_POLICIES } from '@Constants/extensionConstants';

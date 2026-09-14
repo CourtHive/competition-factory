@@ -1,8 +1,8 @@
-import tournamentEngine from '@Engines/syncEngine';
 import mocksEngine from '@Assemblies/engines/mock';
+import tournamentEngine from '@Engines/syncEngine';
 import { expect, it, describe } from 'vitest';
 
-// Constants
+// constants
 import { MISSING_STRUCTURE, UNRECOGNIZED_DRAW_TYPE } from '@Constants/errorConditionConstants';
 import {
   CONSOLATION,

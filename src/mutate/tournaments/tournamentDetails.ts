@@ -1,5 +1,5 @@
+import { addNotes, removeNotes } from '@Mutate/base/addRemoveNotes';
 import { requireParams } from '@Helpers/parameters/requireParams';
-import { addNotes, removeNotes } from '../base/addRemoveNotes';
 import { addNotice } from '@Global/state/globalState';
 
 // constants

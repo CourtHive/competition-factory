@@ -1,8 +1,8 @@
-import { resolveScaleValueNumber } from '@Query/scales/resolveScaleValue';
 import { checkRequiredParameters } from '@Helpers/parameters/checkRequiredParameters';
 import { addDynamicRatings } from '@Mutate/participants/scaleItems/addDynamicRatings';
 import { getParticipantScaleItem } from '@Query/participant/getParticipantScaleItem';
 import { allTournamentMatchUps } from '@Query/matchUps/getAllTournamentMatchUps';
+import { resolveScaleValueNumber } from '@Query/scales/resolveScaleValue';
 import { allDrawMatchUps } from '@Query/matchUps/getAllDrawMatchUps';
 import { matchUpSort } from '@Functions/sorters/matchUpSort';
 import { calculateNewRatings } from './calculateNewRatings';
@@ -18,8 +18,8 @@ import ratingsParameters from '@Fixtures/ratings/ratingsParameters';
 import { DYNAMIC, RATING } from '@Constants/scaleConstants';
 import { EventTypeUnion } from '@Types/tournamentTypes';
 import { SUCCESS } from '@Constants/resultConstants';
-import { ResultType } from '@Types/factoryTypes';
 import { ELO } from '@Constants/ratingConstants';
+import { ResultType } from '@Types/factoryTypes';
 import { HydratedSide } from '@Types/hydrated';
 
 export function generateDynamicRatings(params): ResultType & {

@@ -1,6 +1,6 @@
+import { feedInChampionship } from '@Tests/mutations/drawDefinitions/primitives/feedIn';
 import { getAllStructureMatchUps } from '@Query/matchUps/getAllStructureMatchUps';
 import { accumulate } from '@Functions/reducers/accumulate';
-import { feedInChampionship } from '../primitives/feedIn';
 import { mocksEngine } from '@Assemblies/engines/mock';
 import { tournamentEngine } from '@Engines/syncEngine';
 import { generateRange } from '@Tools/arrays';

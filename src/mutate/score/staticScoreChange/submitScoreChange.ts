@@ -1,8 +1,9 @@
+import { analyzeMatchUp } from '@Query/matchUp/analyzeMatchUp';
 import { pushGlobalLog } from '@Functions/global/globalLog';
 import { parse } from '@Helpers/matchUpFormatCode/parse';
-import { analyzeMatchUp } from '@Query/matchUp/analyzeMatchUp';
 import { analyzeSet } from '@Query/matchUp/analyzeSet';
 
+// constants
 import {
   MISSING_MATCHUP,
   MISSING_SET_NUMBER,

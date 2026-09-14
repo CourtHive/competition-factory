@@ -1,6 +1,7 @@
 import { refreshEntryPositions } from '@Mutate/entries/refreshEntryPositions';
 import { expect, it } from 'vitest';
 
+// constants
 import { CONSOLATION, MAIN, QUALIFYING } from '@Constants/drawDefinitionConstants';
 
 it('can add and update entryPositions', () => {

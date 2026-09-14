@@ -4,8 +4,9 @@ import mocksEngine from '@Assemblies/engines/mock';
 import tournamentEngine from '@Engines/syncEngine';
 import { expect, it } from 'vitest';
 
-import { DOUBLES_EVENT } from '@Constants/eventConstants';
+// constants
 import { CONSOLATION, FIRST_MATCH_LOSER_CONSOLATION } from '@Constants/drawDefinitionConstants';
+import { DOUBLES_EVENT } from '@Constants/eventConstants';
 
 it('can return event matchUps with potential participants', () => {
   const drawProfiles = [

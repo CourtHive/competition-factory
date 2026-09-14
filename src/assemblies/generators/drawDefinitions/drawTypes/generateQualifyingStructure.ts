@@ -1,12 +1,12 @@
 import { generateQualifyingLink } from '@Generators/drawDefinitions/links/generateQualifyingLink';
+import { setFirstClassOrExtension } from '@Mutate/extensions/setFirstClassOrExtension';
 import structureTemplate from '@Assemblies/generators/templates/structureTemplate';
 import { getAllStructureMatchUps } from '@Query/matchUps/getAllStructureMatchUps';
+import { generateTieMatchUps } from '@Generators/drawDefinitions/tieMatchUps';
 import { getStructureGroups } from '@Query/structure/getStructureGroups';
 import { decorateResult } from '@Functions/global/decorateResult';
 import { coerceEven, isConvertableInteger } from '@Tools/math';
-import { setFirstClassOrExtension } from '@Mutate/extensions/setFirstClassOrExtension';
 import { generateRoundRobin } from './roundRobin/roundRobin';
-import { generateTieMatchUps } from '../tieMatchUps';
 import { constantToString } from '@Tools/strings';
 import { treeMatchUps } from './eliminationTree';
 

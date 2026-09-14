@@ -3,12 +3,13 @@ import { validDateAvailability } from '@Validators/validateDateAvailability';
 import { getAppliedPolicies } from '@Query/extensions/getAppliedPolicies';
 import { requireParams } from '@Helpers/parameters/requireParams';
 import { minutesDifference, timeToDate } from '@Tools/dateTime';
-import { findCourt } from '../../query/venues/findCourt';
 import { addNotice } from '@Global/state/globalState';
+import { findCourt } from '@Query/venues/findCourt';
 import { startTimeSort } from '@Validators/time';
 
-import { completedMatchUpStatuses } from '@Constants/matchUpStatusConstants';
+// constants and types
 import { ErrorType, SCHEDULE_CONFLICT_COURT_UNAVAILABLE } from '@Constants/errorConditionConstants';
+import { completedMatchUpStatuses } from '@Constants/matchUpStatusConstants';
 import { TOURNAMENT_RECORD, COURT_ID } from '@Constants/attributeConstants';
 import { POLICY_TYPE_SCHEDULING } from '@Constants/policyConstants';
 import { Availability, Tournament } from '@Types/tournamentTypes';

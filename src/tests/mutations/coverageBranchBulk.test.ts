@@ -7,33 +7,34 @@ import { addVoluntaryConsolationStructure } from '@Mutate/drawDefinitions/addVol
 import { organizeDrawPositionOptions } from '@Query/drawDefinition/avoidance/organizeDrawPositionOptions';
 import { getCompetitionPublishedDrawDetails } from '@Query/matchUps/getCompetitionPublishedDrawDetails';
 import { calculatePeriodLength } from '@Assemblies/generators/scheduling/utils/calculatePeriodLength';
-import { removeParticipantsScaleItems } from '@Mutate/participants/scaleItems/removeScaleItems';
 import { setStructureOrder } from '@Mutate/drawDefinitions/structureGovernor/setStructureOrder';
+import { removeParticipantsScaleItems } from '@Mutate/participants/scaleItems/removeScaleItems';
 import { clearMatchUpSchedule } from '@Mutate/matchUps/schedule/clearMatchUpSchedule';
 import { getCompetitionPenalties } from '@Query/participants/getCompetitionPenalties';
 import { getParticipantScaleItem } from '@Query/participant/getParticipantScaleItem';
-import { getTournamentPenalties } from '@Query/participants/getTournamentPenalties';
-import { getEliminationDrawSize } from '@Query/participants/getEliminationDrawSize';
-import { modifyParticipantName } from '@Mutate/participants/modifyParticipantName';
 import { getPairedDrawPosition } from '@Query/drawDefinition/getPairedDrawPosition';
+import { getEliminationDrawSize } from '@Query/participants/getEliminationDrawSize';
+import { getTournamentPenalties } from '@Query/participants/getTournamentPenalties';
+import { modifyParticipantName } from '@Mutate/participants/modifyParticipantName';
 import { getEventIdsAndDrawIds } from '@Query/tournaments/getEventIdsAndDrawIds';
-import { removeRatings } from '@Mutate/participants/scaleItems/removeRatings';
 import { getPositionRangeMap } from '@Query/drawDefinition/getPositionRangeMap';
+import { removeRatings } from '@Mutate/participants/scaleItems/removeRatings';
 import { scheduledMatchUpDate } from '@Query/matchUp/scheduledMatchUpDate';
 import { scheduledMatchUpTime } from '@Query/matchUp/scheduledMatchUpTime';
-import { matchUpAllocatedCourts } from '@Query/matchUp/courtAllocations';
 import { getMaxEntryPosition } from '@Query/entries/getMaxEntryPosition';
+import { matchUpAllocatedCourts } from '@Query/matchUp/courtAllocations';
 import { matchUpAssignedCourtId } from '@Query/matchUp/courtAssignment';
 import { matchUpAssignedVenueId } from '@Query/matchUp/venueAssignment';
-import { capitalizeFirst, constantToString } from '@Tools/strings';
 import { matchUpTimeModifiers } from '@Query/matchUp/timeModifiers';
+import { capitalizeFirst, constantToString } from '@Tools/strings';
 import { mapNumbersToIndexes } from '@Tools/mapNumbersToIndexes';
 import { getAllEventData } from '@Query/event/getAllEventData';
 import { removeSeeding } from '@Mutate/entries/removeSeeding';
-import { disableVenues } from '@Mutate/venues/disableVenues';
 import { findTournamentId } from '@Acquire/findTournamentId';
+import { disableVenues } from '@Mutate/venues/disableVenues';
 import { expect, it, describe } from 'vitest';
 
+// constants
 import {
   INVALID_VALUES,
   MATCHUP_NOT_FOUND,

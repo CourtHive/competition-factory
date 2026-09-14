@@ -12,13 +12,13 @@
  * because a one-directional check would pass just as well if the action were never emitted at all.
  */
 import { setSubscriptions } from '@Global/state/globalState';
-import tournamentEngine from '@Engines/syncEngine';
 import mocksEngine from '@Assemblies/engines/mock';
+import tournamentEngine from '@Engines/syncEngine';
 import { expect, it, describe } from 'vitest';
 
 // constants
-import { CLEAR_SCORE, SCORE } from '@Constants/matchUpActionConstants';
 import { DOUBLE_ELIMINATION } from '@Constants/drawDefinitionConstants';
+import { CLEAR_SCORE, SCORE } from '@Constants/matchUpActionConstants';
 import { TO_BE_PLAYED } from '@Constants/matchUpStatusConstants';
 
 const clearOutcome = {

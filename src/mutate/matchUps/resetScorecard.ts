@@ -1,12 +1,12 @@
+import { updateTieMatchUpScore } from '@Mutate/matchUps/score/updateTieMatchUpScore';
 import { compareTieFormats } from '@Query/hierarchical/tieFormats/compareTieFormats';
 import { resolveTieFormat } from '@Query/hierarchical/tieFormats/resolveTieFormat';
-import { updateTieMatchUpScore } from '@Mutate/matchUps/score/updateTieMatchUpScore';
 import { isActiveDownstream } from '@Query/drawDefinition/isActiveDownstream';
 import { getAppliedPolicies } from '@Query/extensions/getAppliedPolicies';
-import { getAllDrawMatchUps } from '@Query/matchUps/drawMatchUps';
-import { decorateResult } from '@Functions/global/decorateResult';
 import { setMatchUpState } from './matchUpStatus/setMatchUpState';
+import { decorateResult } from '@Functions/global/decorateResult';
 import { resetTieFormat } from '@Mutate/tieFormat/resetTieFormat';
+import { getAllDrawMatchUps } from '@Query/matchUps/drawMatchUps';
 import { positionTargets } from '@Query/matchUp/positionTargets';
 import { getMatchUpsMap } from '@Query/matchUps/getMatchUpsMap';
 import { findStructure } from '@Acquire/findStructure';

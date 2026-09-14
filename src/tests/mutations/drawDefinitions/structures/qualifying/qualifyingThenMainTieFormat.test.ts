@@ -1,12 +1,12 @@
-import tournamentEngine from '@Engines/syncEngine';
 import mocksEngine from '@Assemblies/engines/mock';
+import tournamentEngine from '@Engines/syncEngine';
 import { expect, it } from 'vitest';
 
-// Constants
+// constants
 import { MAIN, QUALIFYING } from '@Constants/drawDefinitionConstants';
 import { INDIVIDUAL, TEAM } from '@Constants/participantConstants';
-import { MALE } from '@Constants/genderConstants';
 import { SINGLES } from '@Constants/eventConstants';
+import { MALE } from '@Constants/genderConstants';
 
 it('can generate qualifying and main structures with different tieFormats', () => {
   const {

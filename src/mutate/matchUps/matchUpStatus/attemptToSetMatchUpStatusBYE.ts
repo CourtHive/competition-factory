@@ -1,12 +1,13 @@
 import { clearSideExitProvenance } from '@Mutate/matchUps/matchUpStatus/sideExitProvenance';
 import { structureAssignedDrawPositions } from '@Query/drawDefinition/positionsGetter';
 import { releaseByeScheduling } from '@Mutate/matchUps/schedule/byeScheduling';
-import { modifyMatchUpNotice } from '../../notifications/drawNotifications';
+import { modifyMatchUpNotice } from '@Mutate/notifications/drawNotifications';
 import { decorateResult } from '@Functions/global/decorateResult';
 
+// constants
+import { INVALID_MATCHUP_STATUS, INVALID_MATCHUP_STATUS_BYE } from '@Constants/errorConditionConstants';
 import { BYE } from '@Constants/matchUpStatusConstants';
 import { SUCCESS } from '@Constants/resultConstants';
-import { INVALID_MATCHUP_STATUS, INVALID_MATCHUP_STATUS_BYE } from '@Constants/errorConditionConstants';
 
 export function attemptToSetMatchUpStatusBYE({
   preserveScheduling,

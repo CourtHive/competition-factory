@@ -2,10 +2,10 @@
  * Statement-coverage gap tests — batch 3
  * Targets ~229 uncovered statements across 20 files to push past 95%.
  */
-import { generateStatCrew } from '@Assemblies/generators/tournamentRecords/generateStatCrew';
-import { firstClassOrExtension } from '@Acquire/firstClassOrExtension';
 import { proConflicts } from '@Mutate/matchUps/schedule/schedulers/proScheduler/proConflicts';
+import { generateStatCrew } from '@Assemblies/generators/tournamentRecords/generateStatCrew';
 import { generateLineUps } from '@Assemblies/generators/participants/generateLineUps';
+import { firstClassOrExtension } from '@Acquire/firstClassOrExtension';
 import { updateTieFormat } from '@Mutate/tieFormat/updateTieFormat';
 import mocksEngine from '@Assemblies/engines/mock';
 import tournamentEngine from '@Engines/syncEngine';
@@ -14,8 +14,8 @@ import { expect, it, describe } from 'vitest';
 // constants
 import { COMPLETED, DOUBLE_DEFAULT, DOUBLE_WALKOVER } from '@Constants/matchUpStatusConstants';
 import { TEAM_EVENT, DOUBLES, SINGLES } from '@Constants/eventConstants';
-import { RANKING } from '@Constants/scaleConstants';
 import { POLICY_TYPE_RANKING_POINTS } from '@Constants/policyConstants';
+import { RANKING } from '@Constants/scaleConstants';
 import {
   FIRST_MATCH_LOSER_CONSOLATION,
   ROUND_ROBIN,

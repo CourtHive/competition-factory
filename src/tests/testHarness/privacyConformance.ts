@@ -26,7 +26,7 @@
 import { attributeFilter } from '@Tools/attributeFilter';
 import { isObject } from '@Tools/objects';
 
-// constants and types
+// constants
 import { POLICY_TYPE_PARTICIPANT } from '@Constants/policyConstants';
 
 export type AttributeTemplate = { [key: string]: any };

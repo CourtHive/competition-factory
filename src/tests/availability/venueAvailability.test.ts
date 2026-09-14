@@ -9,10 +9,10 @@
  * - Snapshot preservation
  */
 
-import { describe, it, expect, beforeEach } from 'vitest';
-import { AvailabilityEngine } from '@Assemblies/engines/availability/AvailabilityEngine';
 import { venueKey, venueDayKey } from '@Assemblies/governors/availabilityGovernor/railDerivation';
+import { AvailabilityEngine } from '@Assemblies/engines/availability/AvailabilityEngine';
 import { BLOCK_TYPES } from '@Assemblies/governors/availabilityGovernor/types';
+import { describe, it, expect, beforeEach } from 'vitest';
 
 // ============================================================================
 // Test Fixtures

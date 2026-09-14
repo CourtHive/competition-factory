@@ -1,6 +1,6 @@
 import { collectScopedRecords, findScopedScenario } from '@Query/matchUps/scheduling/scheduleScenarioReconciliation';
-import { allTournamentMatchUps } from '@Query/matchUps/getAllTournamentMatchUps';
 import { mergeFacilitySchedule } from '@Query/facilitySchedule/mergeFacilitySchedule';
+import { allTournamentMatchUps } from '@Query/matchUps/getAllTournamentMatchUps';
 
 // constants and types
 import { FacilityScheduleGrid, ScheduleCell } from '@Types/facilityScheduleTypes';

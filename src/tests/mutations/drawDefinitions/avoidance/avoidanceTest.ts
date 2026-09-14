@@ -2,9 +2,10 @@ import { mocksEngine } from '@Assemblies/engines/mock';
 import tournamentEngine from '@Engines/syncEngine';
 import { expect } from 'vitest';
 
+// constants and fixtures
 import { SINGLE_ELIMINATION } from '@Constants/drawDefinitionConstants';
-import { POLICY_TYPE_AVOIDANCE } from '@Constants/policyConstants';
 import { INDIVIDUAL, PAIR } from '@Constants/participantConstants';
+import { POLICY_TYPE_AVOIDANCE } from '@Constants/policyConstants';
 import SEEDING_ITF from '@Fixtures/policies/POLICY_SEEDING_ITF';
 import { DOUBLES, SINGLES } from '@Constants/matchUpTypes';
 import { RANKING } from '@Constants/scaleConstants';

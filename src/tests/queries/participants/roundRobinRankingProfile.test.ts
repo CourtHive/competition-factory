@@ -1,14 +1,14 @@
-import { firstClassOrExtension } from '@Acquire/firstClassOrExtension';
 import { getPositionAssignments } from '@Query/drawDefinition/positionsGetter';
-import tournamentEngine from '@Engines/syncEngine';
+import { firstClassOrExtension } from '@Acquire/firstClassOrExtension';
 import mocksEngine from '@Assemblies/engines/mock';
+import tournamentEngine from '@Engines/syncEngine';
 import { expect, test } from 'vitest';
 
-// Constants
+// constants and types
 import { CONTAINER, MAIN, ROUND_ROBIN, ROUND_ROBIN_WITH_PLAYOFF } from '@Constants/drawDefinitionConstants';
 import { DOUBLE_DEFAULT, DOUBLE_WALKOVER } from '@Constants/matchUpStatusConstants';
-import { HydratedParticipant } from '@Types/hydrated';
 import { TALLY } from '@Constants/extensionConstants';
+import { HydratedParticipant } from '@Types/hydrated';
 
 test('single RR group (drawSize 4), all matchUps complete: exact finishing positions', () => {
   const drawSize = 4;

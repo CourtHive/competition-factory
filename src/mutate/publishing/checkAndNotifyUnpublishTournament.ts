@@ -4,6 +4,7 @@ import { getDrawPublishStatus } from '@Query/event/getDrawPublishStatus';
 import { hasTopic, addNotice } from '@Global/state/globalState';
 import { getDrawId } from '@Functions/global/extractors';
 
+// constants
 import { UNPUBLISH_TOURNAMENT } from '@Constants/topicConstants';
 
 export function checkAndNotifyUnpublishTournament({ tournamentRecord }) {

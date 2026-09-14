@@ -10,8 +10,8 @@ import SEEDING_USTA from '@Fixtures/policies/POLICY_SEEDING_DEFAULT';
 import { QUALIFYING } from '@Constants/drawDefinitionConstants';
 import { SPLIT_WATERFALL } from '@Constants/flightConstants';
 import { INDIVIDUAL } from '@Constants/participantConstants';
-import { SEEDING } from '@Constants/scaleConstants';
 import { SINGLES } from '@Constants/eventConstants';
+import { SEEDING } from '@Constants/scaleConstants';
 
 const TEST_EVENT = 'Test Event';
 const d200606 = '2020-06-06';

@@ -4,10 +4,10 @@ import { findEvent } from '@Acquire/findEvent';
 
 // constants and types
 import { MISSING_POLICY_DEFINITION, MISSING_TOURNAMENT_RECORD } from '@Constants/errorConditionConstants';
-import { QUALIFYING, MAIN } from '@Constants/drawDefinitionConstants';
 import { POLICY_TYPE_RANKING_POINTS } from '@Constants/policyConstants';
-import { SUCCESS } from '@Constants/resultConstants';
+import { QUALIFYING, MAIN } from '@Constants/drawDefinitionConstants';
 import { PolicyDefinitions } from '@Types/factoryTypes';
+import { SUCCESS } from '@Constants/resultConstants';
 import { Tournament } from '@Types/tournamentTypes';
 
 type GetApplicableAwardProfileLevelsArgs = {

@@ -1,9 +1,9 @@
 import { setSubscriptions } from '@Global/state/globalState';
-import tournamentEngine from '@Engines/syncEngine';
 import mocksEngine from '@Assemblies/engines/mock';
+import tournamentEngine from '@Engines/syncEngine';
 import { expect, test } from 'vitest';
 
-// Constants
+// constants and fixtures
 import POLICY_SCHEDULING_DEFAULT from '@Fixtures/policies/POLICY_SCHEDULING_DEFAULT';
 import POLICY_SCORING_USTA from '@Fixtures/policies/POLICY_SCORING_USTA';
 import { FORMAT_STANDARD } from '@Fixtures/scoring/matchUpFormats';

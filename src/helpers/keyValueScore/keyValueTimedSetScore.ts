@@ -1,6 +1,6 @@
-import { ensureInt } from '@Tools/ensureInt';
 import { removeFromScore } from './keyValueUtilities';
 import { processOutcome } from './processOutcome';
+import { ensureInt } from '@Tools/ensureInt';
 
 import { BACKSPACE, OUTCOMEKEYS, SCORE_JOINER, SPACE_KEY } from './constants';
 

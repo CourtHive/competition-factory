@@ -1,7 +1,7 @@
 import { requireParams } from '@Helpers/parameters/requireParams';
 import { getMappedStructureMatchUps } from './getMatchUpsMap';
-import { chunkArray, generateRange } from '@Tools/arrays';
 import { reduceGroupedOrder } from './reduceGroupedOrder';
+import { chunkArray, generateRange } from '@Tools/arrays';
 import { findStructure } from '@Acquire/findStructure';
 import { getRoundMatchUps } from './getRoundMatchUps';
 import { getRangeString } from './getRangeString';

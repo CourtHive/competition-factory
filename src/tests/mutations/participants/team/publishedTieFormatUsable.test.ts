@@ -1,15 +1,15 @@
-import { mocksEngine } from '@Assemblies/engines/mock';
 import { tieFormats } from '@Fixtures/scoring/tieFormats';
+import { mocksEngine } from '@Assemblies/engines/mock';
 import tournamentEngine from '@Engines/syncEngine';
 import { expect, it, describe } from 'vitest';
 
 // constants
+import { TEAM as TEAM_PARTICIPANT } from '@Constants/participantConstants';
 import { SINGLE_ELIMINATION } from '@Constants/drawDefinitionConstants';
 import { DIRECT_ACCEPTANCE } from '@Constants/entryStatusConstants';
 import { POLICY_TYPE_SCORING } from '@Constants/policyConstants';
-import { COMPLETED } from '@Constants/matchUpStatusConstants';
 import { TEAM as TEAM_EVENT } from '@Constants/eventConstants';
-import { TEAM as TEAM_PARTICIPANT } from '@Constants/participantConstants';
+import { COMPLETED } from '@Constants/matchUpStatusConstants';
 import { COMPETITOR } from '@Constants/participantRoles';
 import { DOUBLES } from '@Constants/matchUpTypes';
 

@@ -13,8 +13,8 @@
  * - Conflict Evaluators integration
  */
 
-import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { AvailabilityEngine } from '@Assemblies/engines/availability/AvailabilityEngine';
+import { describe, it, expect, beforeEach, vi } from 'vitest';
 import {
   BLOCK_TYPES,
   type Block,

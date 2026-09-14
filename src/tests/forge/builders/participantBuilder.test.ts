@@ -1,7 +1,7 @@
 import { afterEach, describe, expect, it } from 'vitest';
 
-import { COMPETITOR, OFFICIAL } from '@Constants/participantRoles';
 import { INDIVIDUAL, PAIR, TEAM } from '@Constants/participantConstants';
+import { COMPETITOR, OFFICIAL } from '@Constants/participantRoles';
 import mocksEngine from '@Assemblies/engines/mock';
 import tournamentEngine from '@Engines/syncEngine';
 

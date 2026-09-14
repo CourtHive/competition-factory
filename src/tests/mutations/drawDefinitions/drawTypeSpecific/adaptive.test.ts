@@ -4,8 +4,8 @@ import { addDrawEntries } from '@Mutate/drawDefinitions/entryGovernor/addDrawEnt
 import { automatedPositioning } from '@Mutate/drawDefinitions/automatedPositioning';
 import { getDrawStructures } from '@Acquire/findStructure';
 import { describe, expect, it, test } from 'vitest';
-import tournamentEngine from '@Engines/syncEngine';
 import mocksEngine from '@Assemblies/engines/mock';
+import tournamentEngine from '@Engines/syncEngine';
 import { generateRange } from '@Tools/arrays';
 
 // constants and types

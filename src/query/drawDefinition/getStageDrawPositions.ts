@@ -2,7 +2,7 @@
 import { getDrawCompositionConstraints } from './getDrawCompositionConstraints';
 import { getQualifiersCount } from './getQualifiersCount';
 
-// Constants
+// constants
 import { CONTAINER, MAIN } from '@Constants/drawDefinitionConstants';
 
 export function getStageDrawPositionsCount({ stage, drawDefinition, stageSequence, tournamentRecord, event }: any) {

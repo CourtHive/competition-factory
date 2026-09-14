@@ -1,7 +1,8 @@
-import mocksEngine from '@Assemblies/engines/mock';
 import competitionEngine from '@Engines/syncEngine';
+import mocksEngine from '@Assemblies/engines/mock';
 import { expect, test } from 'vitest';
 
+// constants
 import { INVALID_OBJECT, VENUE_EXISTS, VENUE_NOT_FOUND } from '@Constants/errorConditionConstants';
 
 test('competitionEngine can modify venues', () => {

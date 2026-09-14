@@ -1,6 +1,7 @@
 import { matchUpScore } from '@Assemblies/generators/matchUps/matchUpScore';
 import { expect, it } from 'vitest';
 
+// constants
 import { COMPLETED } from '@Constants/matchUpStatusConstants';
 
 it('can generate score object', () => {

@@ -1,10 +1,10 @@
 import { getParticipantIds } from '@Functions/global/extractors';
 import { matchUpSort } from '@Functions/sorters/matchUpSort';
-import tournamentEngine from '@Engines/syncEngine';
 import mocksEngine from '@Assemblies/engines/mock';
+import tournamentEngine from '@Engines/syncEngine';
 import { expect, it } from 'vitest';
 
-// constants, fixtures and types
+// constants and fixtures
 import POLICY_POSITION_ACTIONS_UNRESTRICTED from '@Fixtures/policies/POLICY_POSITION_ACTIONS_UNRESTRICTED';
 import POLICY_POSITION_ACTIONS_NO_MOVEMENT from '@Fixtures/policies/POLICY_POSITION_ACTIONS_NO_MOVEMENT';
 import { CONSOLATION, FIRST_MATCH_LOSER_CONSOLATION, MAIN } from '@Constants/drawDefinitionConstants';

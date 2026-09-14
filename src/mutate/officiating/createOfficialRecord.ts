@@ -1,10 +1,10 @@
 import { UUID } from '@Tools/UUID';
 
-// Constants
+// constants
 import { INVALID_VALUES } from '@Constants/errorConditionConstants';
 import { SUCCESS } from '@Constants/resultConstants';
 
-// Types
+// types
 import type { OfficialRecord } from '@Types/officiatingTypes';
 
 type CreateOfficialRecordArgs = {

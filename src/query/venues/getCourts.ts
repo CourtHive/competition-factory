@@ -1,5 +1,6 @@
 import { makeDeepCopy } from '@Tools/makeDeepCopy';
 
+// constants
 import { MISSING_TOURNAMENT_RECORD } from '@Constants/errorConditionConstants';
 
 /**

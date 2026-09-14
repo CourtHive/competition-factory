@@ -1,13 +1,13 @@
 import { generatePersonData } from '@Assemblies/generators/mocks/generatePersonData';
 import { generatePersons } from '@Assemblies/generators/mocks/generatePersons';
 import mocksEngine from '@Assemblies/engines/mock';
-import namesData from '@Fixtures/data/names.json';
 import tournamentEngine from '@Engines/syncEngine';
+import namesData from '@Fixtures/data/names.json';
 import { instanceCount } from '@Tools/arrays';
 import { expect, test } from 'vitest';
 import { UUID } from '@Tools/UUID';
 
-// Constants
+// constants
 import { INVALID_VALUES } from '@Constants/errorConditionConstants';
 import { ROUND_ROBIN } from '@Constants/drawDefinitionConstants';
 import { MALE } from '@Constants/genderConstants';

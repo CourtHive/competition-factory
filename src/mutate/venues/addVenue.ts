@@ -1,8 +1,8 @@
 import { resolveTournamentRecords } from '@Helpers/parameters/resolveTournamentRecords';
 import { validDateAvailability } from '@Validators/validateDateAvailability';
 import { requireParams } from '@Helpers/parameters/requireParams';
+import { addExtension } from '@Mutate/extensions/addExtension';
 import { definedAttributes } from '@Tools/definedAttributes';
-import { addExtension } from '../extensions/addExtension';
 import { clearPrimaryVenue } from './clearPrimaryVenue';
 import { addNotice } from '@Global/state/globalState';
 import { makeDeepCopy } from '@Tools/makeDeepCopy';

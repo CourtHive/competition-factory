@@ -2,7 +2,7 @@ import mocksEngine from '@Assemblies/engines/mock';
 import tournamentEngine from '@Engines/syncEngine';
 import { expect, test } from 'vitest';
 
-// Constants and Fixtures
+// constants and fixtures
 import POLICY_PRIVACY_DEFAULT from '@Fixtures/policies/POLICY_PRIVACY_DEFAULT';
 import { SINGLES } from '@Constants/matchUpTypes';
 import { WTN } from '@Constants/ratingConstants';

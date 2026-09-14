@@ -3,8 +3,9 @@ import competitionEngine from '@Engines/syncEngine';
 import { addDays } from '@Tools/dateTime';
 import { expect, it } from 'vitest';
 
-import { MISSING_TOURNAMENT_RECORDS } from '@Constants/errorConditionConstants';
+// constants
 import { CURTIS_CONSOLATION, ROUND_ROBIN_WITH_PLAYOFF } from '@Constants/drawDefinitionConstants';
+import { MISSING_TOURNAMENT_RECORDS } from '@Constants/errorConditionConstants';
 
 it('can generate tournament rounds and profileRounds', () => {
   let result = competitionEngine.getRounds();

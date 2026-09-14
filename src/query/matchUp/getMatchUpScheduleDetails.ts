@@ -1,11 +1,11 @@
 import { addMinutesToTimeString, extractDate, extractTime, getIsoDateString } from '@Tools/dateTime';
 import { matchUpFormatTimes } from '@Query/extensions/matchUpFormatTiming/getMatchUpFormatTiming';
 import { completedMatchUpStatuses } from '@Constants/matchUpStatusConstants';
-import { scheduledMatchUpTime } from '@Query/matchUp/scheduledMatchUpTime';
 import { scheduledMatchUpDate } from '@Query/matchUp/scheduledMatchUpDate';
+import { scheduledMatchUpTime } from '@Query/matchUp/scheduledMatchUpTime';
 import { matchUpDuration } from '@Query/matchUp/matchUpDuration';
-import { matchUpStartTime } from '@Query/matchUp/startTime';
 import { definedAttributes } from '@Tools/definedAttributes';
+import { matchUpStartTime } from '@Query/matchUp/startTime';
 import { getVenueData } from '@Query/venues/getVenueData';
 import { attributeFilter } from '@Tools/attributeFilter';
 import { matchUpEndTime } from '@Query/matchUp/endTime';

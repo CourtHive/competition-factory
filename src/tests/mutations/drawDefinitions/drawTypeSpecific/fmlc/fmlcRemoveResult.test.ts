@@ -1,17 +1,18 @@
+import { completeMatchUp, verifyMatchUps } from '@Tests/mutations/drawDefinitions/primitives/verifyMatchUps';
+import { generateFMLC } from '@Tests/mutations/drawDefinitions/primitives/firstMatchLoserConsolation';
 import { setMatchUpState } from '@Mutate/matchUps/matchUpStatus/setMatchUpState';
-import { completeMatchUp, verifyMatchUps } from '../../primitives/verifyMatchUps';
-import { getAllDrawMatchUps } from '@Query/matchUps/drawMatchUps';
 import { toBePlayed } from '@Fixtures/scoring/outcomes/toBePlayed';
-import { generateFMLC } from '../../primitives/firstMatchLoserConsolation';
+import { getAllDrawMatchUps } from '@Query/matchUps/drawMatchUps';
 import { getDrawStructures } from '@Acquire/findStructure';
-import tournamentEngine from '@Engines/syncEngine';
 import mocksEngine from '@Assemblies/engines/mock';
+import tournamentEngine from '@Engines/syncEngine';
 import { expect, it } from 'vitest';
 
-import { TO_BE_PLAYED } from '@Constants/matchUpStatusConstants';
-import { SINGLES } from '@Constants/matchUpTypes';
-import { MALE } from '@Constants/genderConstants';
+// constants
 import { MAIN, CONSOLATION, FIRST_MATCH_LOSER_CONSOLATION } from '@Constants/drawDefinitionConstants';
+import { TO_BE_PLAYED } from '@Constants/matchUpStatusConstants';
+import { MALE } from '@Constants/genderConstants';
+import { SINGLES } from '@Constants/matchUpTypes';
 
 tournamentEngine.devContext(true);
 

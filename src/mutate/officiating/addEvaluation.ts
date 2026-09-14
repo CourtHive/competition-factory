@@ -1,11 +1,11 @@
 import { UUID } from '@Tools/UUID';
 
-// Constants
+// constants
 import { MISSING_OFFICIAL_RECORD, EVAL_DRAFT } from '@Constants/officiatingConstants';
 import { INVALID_VALUES } from '@Constants/errorConditionConstants';
 import { SUCCESS } from '@Constants/resultConstants';
 
-// Types
+// types
 import type { OfficialRecord, OfficialEvaluation, EvaluationScore } from '@Types/officiatingTypes';
 
 type AddEvaluationArgs = {

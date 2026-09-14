@@ -6,8 +6,8 @@ import { findDrawDefinition } from '@Acquire/findDrawDefinition';
 
 // constants and types
 import { BYE, completedMatchUpStatuses } from '@Constants/matchUpStatusConstants';
-import { Tournament } from '@Types/tournamentTypes';
 import { SUCCESS } from '@Constants/resultConstants';
+import { Tournament } from '@Types/tournamentTypes';
 import {
   MISSING_SCHEDULE,
   SCHEDULE_LOCKED,

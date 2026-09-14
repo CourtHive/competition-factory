@@ -1,33 +1,33 @@
 import { transitionCertificationStatus } from '@Mutate/officiating/transitionCertificationStatus';
-import { transitionEvaluationStatus } from '@Mutate/officiating/transitionEvaluationStatus';
-import { transitionAssignmentStatus } from '@Mutate/officiating/transitionAssignmentStatus';
 import { addCertificationRequirement } from '@Mutate/officiating/addCertificationRequirement';
+import { transitionAssignmentStatus } from '@Mutate/officiating/transitionAssignmentStatus';
+import { transitionEvaluationStatus } from '@Mutate/officiating/transitionEvaluationStatus';
 import { removeConflictDeclaration } from '@Mutate/officiating/removeConflictDeclaration';
-import { removeOfficialAssignment } from '@Mutate/officiating/removeOfficialAssignment';
-import { addConflictDeclaration } from '@Mutate/officiating/addConflictDeclaration';
-import { getOfficialConflicts } from '@Query/officiating/getOfficialConflicts';
+import { executeDeclarationQueue } from '@Functions/declaration/executeDeclarationQueue';
 import { getOfficialCertifications } from '@Query/officiating/getOfficialCertifications';
+import { removeOfficialAssignment } from '@Mutate/officiating/removeOfficialAssignment';
 import { validateCertification } from '@Validators/officiating/validateCertification';
+import { registerCreatedRecord } from '@Functions/declaration/registerCreatedRecord';
+import { addConflictDeclaration } from '@Mutate/officiating/addConflictDeclaration';
 import { getOfficialAssignments } from '@Query/officiating/getOfficialAssignments';
 import { getOfficialEligibility } from '@Query/officiating/getOfficialEligibility';
 import { getEvaluationTemplate } from '@Query/officiating/getEvaluationTemplate';
-import { getEvaluationSummary } from '@Query/officiating/getEvaluationSummary';
-import { addEvaluationPolicy } from '@Mutate/officiating/addEvaluationPolicy';
 import { createOfficialRecord } from '@Mutate/officiating/createOfficialRecord';
-import { removeCertification } from '@Mutate/officiating/removeCertification';
+import { getEvaluationSummary } from '@Query/officiating/getEvaluationSummary';
+import { getOfficialConflicts } from '@Query/officiating/getOfficialConflicts';
+import { addEvaluationPolicy } from '@Mutate/officiating/addEvaluationPolicy';
 import { modifyCertification } from '@Mutate/officiating/modifyCertification';
+import { removeCertification } from '@Mutate/officiating/removeCertification';
 import { queryOfficialRecord } from '@Query/officiating/getOfficialRecord';
-import { modifyEvaluation } from '@Mutate/officiating/modifyEvaluation';
-import { removeSuspension } from '@Mutate/officiating/removeSuspension';
-import { removeEvaluation } from '@Mutate/officiating/removeEvaluation';
 import { addCertification } from '@Mutate/officiating/addCertification';
+import { modifyEvaluation } from '@Mutate/officiating/modifyEvaluation';
+import { removeEvaluation } from '@Mutate/officiating/removeEvaluation';
+import { removeSuspension } from '@Mutate/officiating/removeSuspension';
+import { assignOfficial } from '@Mutate/officiating/assignOfficial';
 import { getEvaluations } from '@Query/officiating/getEvaluations';
 import { factoryVersion } from '@Functions/global/factoryVersion';
 import { addEvaluation } from '@Mutate/officiating/addEvaluation';
 import { addSuspension } from '@Mutate/officiating/addSuspension';
-import { assignOfficial } from '@Mutate/officiating/assignOfficial';
-import { executeDeclarationQueue } from '@Functions/declaration/executeDeclarationQueue';
-import { registerCreatedRecord } from '@Functions/declaration/registerCreatedRecord';
 import { makeDeepCopy } from '@Tools/makeDeepCopy';
 import {
   getOfficialRecords,
@@ -40,11 +40,11 @@ import {
   resetOfficiatingState,
 } from './officiatingState';
 
-// Constants
+// constants
 import { OFFICIAL_RECORD_EXISTS } from '@Constants/officiatingConstants';
 import { SUCCESS } from '@Constants/resultConstants';
 
-// Types
+// types
 import type { OfficialRecord, OfficialRecords, OfficiatingDirectives } from '@Types/officiatingTypes';
 
 function resolveRecord(officialRecordId?: string): OfficialRecord | undefined {

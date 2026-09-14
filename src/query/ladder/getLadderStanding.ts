@@ -4,6 +4,7 @@ import { resolveLadderStructure } from '@Query/ladder/resolveLadderContext';
 import ratingsParameters from '@Fixtures/ratings/ratingsParameters';
 import { isObject } from '@Tools/objects';
 
+// constants
 import { DYNAMIC, RATING as RATING_SCALE } from '@Constants/scaleConstants';
 import { SINGLES_EVENT } from '@Constants/eventConstants';
 import { RANK, RATING } from '@Constants/ladderConstants';

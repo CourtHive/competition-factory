@@ -7,6 +7,7 @@ import { MISSING_SANCTIONING_RECORD, ACTIVE } from '@Constants/sanctioningConsta
 import { SUCCESS } from '@Constants/resultConstants';
 
 // types
+import { SanctionDecisionEnum, RecognitionEnum } from '@Types/tournamentTypes';
 import type {
   SanctioningRecord,
   SanctioningPolicy,
@@ -23,7 +24,6 @@ import type {
   Venue,
   Event,
 } from '@Types/tournamentTypes';
-import { SanctionDecisionEnum, RecognitionEnum } from '@Types/tournamentTypes';
 
 type ActivateFromSanctioningArgs = {
   sanctioningRecord: SanctioningRecord;

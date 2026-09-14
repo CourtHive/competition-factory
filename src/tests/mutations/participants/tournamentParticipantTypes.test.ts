@@ -4,6 +4,7 @@ import tournamentEngine from '@Engines/syncEngine';
 import { generateRange } from '@Tools/arrays';
 import { expect, it } from 'vitest';
 
+// constants
 import { GROUP, INDIVIDUAL, PAIR, TEAM } from '@Constants/participantConstants';
 import { DOUBLES } from '@Constants/eventConstants';
 

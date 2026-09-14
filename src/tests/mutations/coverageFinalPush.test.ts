@@ -7,22 +7,22 @@ import { generateVoluntaryConsolation } from '@Generators/drawDefinitions/drawTy
 import { BLOCK_TYPES, type CourtRef } from '@Assemblies/governors/availabilityGovernor/types';
 import { AvailabilityEngine } from '@Assemblies/engines/availability/AvailabilityEngine';
 import { getParticipantStats } from '@Query/participant/getParticipantStats';
-import tournamentEngine from '@Engines/syncEngine';
 import mocksEngine from '@Assemblies/engines/mock';
+import tournamentEngine from '@Engines/syncEngine';
 import { expect, it, describe } from 'vitest';
 
 // constants
+import { MISSING_DRAW_DEFINITION, STRUCTURE_NOT_FOUND } from '@Constants/errorConditionConstants';
+import { COMPLETED, TO_BE_PLAYED } from '@Constants/matchUpStatusConstants';
+import { POLICY_TYPE_SCORING } from '@Constants/policyConstants';
+import { TEAM_EVENT } from '@Constants/eventConstants';
+import { TEAM_MATCHUP } from '@Constants/matchUpTypes';
 import {
   FIRST_MATCH_LOSER_CONSOLATION,
   MAIN,
   VOLUNTARY_CONSOLATION,
   SINGLE_ELIMINATION,
 } from '@Constants/drawDefinitionConstants';
-import { MISSING_DRAW_DEFINITION, STRUCTURE_NOT_FOUND } from '@Constants/errorConditionConstants';
-import { COMPLETED, TO_BE_PLAYED } from '@Constants/matchUpStatusConstants';
-import { POLICY_TYPE_SCORING } from '@Constants/policyConstants';
-import { TEAM_EVENT } from '@Constants/eventConstants';
-import { TEAM_MATCHUP } from '@Constants/matchUpTypes';
 
 // ----------------------------------------------------------------
 // 1. prepareStage.ts — seedByRanking path (getRankingScaleEntries)

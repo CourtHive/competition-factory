@@ -1,6 +1,6 @@
 import { numericSort } from '@Tools/sorting';
 
-// constants
+// constants and types
 import { INVALID_VALUES, INVALID_CONFIGURATION } from '@Constants/errorConditionConstants';
 import { GEM_SCORE } from '@Constants/tallyConstants';
 import { ResultType } from '@Types/factoryTypes';

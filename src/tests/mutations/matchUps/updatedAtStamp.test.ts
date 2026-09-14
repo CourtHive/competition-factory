@@ -1,7 +1,8 @@
-import tournamentEngine from '@Engines/syncEngine';
 import mocksEngine from '@Assemblies/engines/mock';
+import tournamentEngine from '@Engines/syncEngine';
 import { describe, it, expect } from 'vitest';
 
+// constants
 import { SINGLE_ELIMINATION } from '@Constants/drawDefinitionConstants';
 
 /**

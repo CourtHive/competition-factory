@@ -9,8 +9,8 @@
  * entries so they are undoable.
  */
 
-import { describe, test, expect } from 'vitest';
 import { ScoringEngine } from '@Assemblies/governors/scoreGovernor';
+import { describe, test, expect } from 'vitest';
 
 describe('setServer recordEntry option', () => {
   test('setServer records entry by default', () => {

@@ -1,6 +1,6 @@
-import { resolveScaleValueNumber } from '@Query/scales/resolveScaleValue';
 import { isMatchUpEventType } from '@Helpers/matchUpEventTypes/isMatchUpEventType';
 import { allTournamentMatchUps } from '@Query/matchUps/getAllTournamentMatchUps';
+import { resolveScaleValueNumber } from '@Query/scales/resolveScaleValue';
 import { checkScoreHasValue } from '@Query/matchUp/checkScoreHasValue';
 import { allEventMatchUps } from '@Query/matchUps/getAllEventMatchUps';
 import { allDrawMatchUps } from '@Query/matchUps/getAllDrawMatchUps';

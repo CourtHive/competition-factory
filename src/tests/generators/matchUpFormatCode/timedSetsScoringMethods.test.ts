@@ -1,7 +1,7 @@
 import { expect, it } from 'vitest';
 
-import { parse } from '@Helpers/matchUpFormatCode/parse';
 import { stringify } from '@Helpers/matchUpFormatCode/stringify';
+import { parse } from '@Helpers/matchUpFormatCode/parse';
 
 it('can parse and stringify timed sets with scoring methods', () => {
   // Test match-level aggregate scoring (XA modifier)

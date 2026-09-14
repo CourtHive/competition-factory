@@ -3,6 +3,7 @@ import { getLadderOrdering } from '@Query/ladder/getLadderPolicy';
 import { addTimeItem } from '@Mutate/timeItems/addTimeItem';
 import { isLadder } from '@Query/drawDefinition/isLadder';
 
+// constants and types
 import { INVALID_VALUES, MISSING_DRAW_DEFINITION, PARTICIPANT_NOT_FOUND } from '@Constants/errorConditionConstants';
 import { LADDER_PARTICIPANT_REMOVED, RANK } from '@Constants/ladderConstants';
 import { SUCCESS } from '@Constants/resultConstants';

@@ -1,3 +1,6 @@
+import { setSubscriptions } from '@Global/state/globalState';
+import { expect, test } from 'vitest';
+import fs from 'fs';
 import {
   fingerprint,
   generateSchedule,
@@ -6,9 +9,6 @@ import {
   replay,
   shrink,
 } from '@Tests/testHarness/exitPropagation/sweep';
-import { setSubscriptions } from '@Global/state/globalState';
-import { expect, test } from 'vitest';
-import fs from 'fs';
 
 /**
  * At-scale randomized sweep. INERT unless `SWEEP=1`.

@@ -1,13 +1,14 @@
+import { replaceWithAlternate, replaceWithBye } from '@Tests/mutations/drawDefinitions/testingUtilities';
 import { getDrawPosition } from '@Functions/global/extractors';
 import mocksEngine from '@Assemblies/engines/mock';
-import { generateRange } from '@Tools/arrays';
 import tournamentEngine from '@Engines/syncEngine';
+import { generateRange } from '@Tools/arrays';
 import { expect, it } from 'vitest';
-import { replaceWithAlternate, replaceWithBye } from '../../../drawDefinitions/testingUtilities';
 
-import { ALTERNATE } from '@Constants/entryStatusConstants';
+// constants
 import { ALTERNATE_PARTICIPANT, ASSIGN_BYE } from '@Constants/positionActionConstants';
 import { BYE, TO_BE_PLAYED } from '@Constants/matchUpStatusConstants';
+import { ALTERNATE } from '@Constants/entryStatusConstants';
 
 it('supports replacing a BYE with a participant (DA or ALT)', () => {
   const drawProfiles = [

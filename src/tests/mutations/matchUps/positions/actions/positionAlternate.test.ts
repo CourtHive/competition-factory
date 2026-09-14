@@ -4,8 +4,9 @@ import tournamentEngine from '@Engines/syncEngine';
 import { unique } from '@Tools/arrays';
 import { expect, it } from 'vitest';
 
-import { BYE, TO_BE_PLAYED } from '@Constants/matchUpStatusConstants';
+// constants
 import { ALTERNATE, DIRECT_ACCEPTANCE } from '@Constants/entryStatusConstants';
+import { BYE, TO_BE_PLAYED } from '@Constants/matchUpStatusConstants';
 
 it('can generate drawSize: 8 with 6 participants', () => {
   const drawProfiles = [

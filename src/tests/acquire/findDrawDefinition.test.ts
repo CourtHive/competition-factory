@@ -2,7 +2,7 @@ import { findDrawDefinition, publicFindDrawDefinition } from '@Acquire/findDrawD
 import { beforeEach, describe, expect, it } from 'vitest';
 import mocksEngine from '@Assemblies/engines/mock';
 
-// types and constants
+// constants and types
 import { Tournament } from '@Types/tournamentTypes';
 import {
   DRAW_DEFINITION_NOT_FOUND,

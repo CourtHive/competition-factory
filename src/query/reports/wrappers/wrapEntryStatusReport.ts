@@ -1,6 +1,6 @@
 import { getEntryStatusReports } from '@Query/entries/entryStatusReport';
 
-// Constants and Types
+// constants and types
 import { ENTRY_STATUS_REPORT } from '@Constants/reportConstants';
 import { Tournament } from '@Types/tournamentTypes';
 import { ReportResult } from '@Types/reportTypes';

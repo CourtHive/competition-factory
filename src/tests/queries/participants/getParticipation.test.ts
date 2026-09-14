@@ -2,6 +2,7 @@ import { getParticipation } from '@Query/participants/getParticipation';
 import { mocksEngine } from '@Assemblies/engines/mock';
 import { expect, it, describe } from 'vitest';
 
+// constants
 import { INDIVIDUAL, TEAM } from '@Constants/participantConstants';
 
 const ORG = 'org-1';

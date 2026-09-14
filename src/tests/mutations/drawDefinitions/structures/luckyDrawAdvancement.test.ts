@@ -1,7 +1,7 @@
 import { luckyDrawAdvancement } from '@Mutate/drawDefinitions/luckyDrawAdvancement';
 import { calculateMatchUpMargin } from '@Query/matchUp/calculateMatchUpMargin';
-import tournamentEngine from '@Engines/syncEngine';
 import mocksEngine from '@Assemblies/engines/mock';
+import tournamentEngine from '@Engines/syncEngine';
 import { expect, test, describe } from 'vitest';
 
 // constants

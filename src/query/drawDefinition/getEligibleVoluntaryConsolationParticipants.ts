@@ -1,6 +1,6 @@
-import { getPolicyDefinitions } from '../extensions/getAppliedPolicies';
-import { allEventMatchUps } from '../matchUps/getAllEventMatchUps';
-import { allDrawMatchUps } from '../matchUps/getAllDrawMatchUps';
+import { getPolicyDefinitions } from '@Query/extensions/getAppliedPolicies';
+import { allEventMatchUps } from '@Query/matchUps/getAllEventMatchUps';
+import { allDrawMatchUps } from '@Query/matchUps/getAllDrawMatchUps';
 import { getStageEntries } from './stageGetter';
 
 // constants and types

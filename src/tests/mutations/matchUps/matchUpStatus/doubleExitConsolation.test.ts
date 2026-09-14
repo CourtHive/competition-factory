@@ -6,6 +6,8 @@ import { expect, test } from 'vitest';
 
 // constants and fixtures
 import { BYE, COMPLETED, DOUBLE_WALKOVER, TO_BE_PLAYED, WALKOVER } from '@Constants/matchUpStatusConstants';
+import { toBePlayed } from '@Fixtures/scoring/outcomes/toBePlayed';
+import { MODIFY_MATCHUP } from '@Constants/topicConstants';
 import {
   CONSOLATION,
   DOUBLE_ELIMINATION,
@@ -13,8 +15,6 @@ import {
   FIRST_MATCH_LOSER_CONSOLATION,
   MAIN,
 } from '@Constants/drawDefinitionConstants';
-import { toBePlayed } from '@Fixtures/scoring/outcomes/toBePlayed';
-import { MODIFY_MATCHUP } from '@Constants/topicConstants';
 
 const getTarget = (params) => {
   const { matchUps, roundNumber, roundPosition, stage } = params;

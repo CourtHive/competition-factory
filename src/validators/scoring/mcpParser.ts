@@ -9,8 +9,8 @@
  * - Point results (Ace, Winner, Error, etc.)
  */
 
-import { isString } from '@Tools/objects';
 import type { PointResult, StrokeType, ServeLocation, RallyShot } from '@Types/scoring/types';
+import { isString } from '@Tools/objects';
 
 // ============================================================================
 // Types

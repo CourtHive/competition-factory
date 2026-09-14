@@ -1,6 +1,7 @@
 import { chunkArray, generateRange } from '@Tools/arrays';
 import { numericSort } from '@Tools/sorting';
 
+// constants
 import { ADJACENT, CLUSTER, WATERFALL } from '@Constants/drawDefinitionConstants';
 
 function getDivisions({ size }) {

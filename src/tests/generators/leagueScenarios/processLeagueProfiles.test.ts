@@ -3,6 +3,7 @@ import mocksEngine from '@Assemblies/engines/mock';
 import tournamentEngine from '@Engines/syncEngine';
 import { expect, it, describe } from 'vitest';
 
+// constants
 import { DIRECT_ACCEPTANCE } from '@Constants/entryStatusConstants';
 import { AD_HOC, MAIN } from '@Constants/drawDefinitionConstants';
 import { COLLEGE_DEFAULT } from '@Constants/tieFormatConstants';

@@ -1,6 +1,6 @@
 import { updateTieMatchUpScore } from '@Mutate/matchUps/score/updateTieMatchUpScore';
-import { copyTieFormat } from '@Query/hierarchical/tieFormats/copyTieFormat';
 import { modifyMatchUpNotice } from '@Mutate/notifications/drawNotifications';
+import { copyTieFormat } from '@Query/hierarchical/tieFormats/copyTieFormat';
 import { getAppliedPolicies } from '@Query/extensions/getAppliedPolicies';
 
 // constants

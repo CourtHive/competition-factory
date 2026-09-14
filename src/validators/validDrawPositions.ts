@@ -1,6 +1,7 @@
 import { pushGlobalLog } from '@Functions/global/globalLog';
 import { getDevContext } from '@Global/state/globalState';
 
+// constants
 import { MISSING_MATCHUPS } from '@Constants/errorConditionConstants';
 
 export function validDrawPositions({ matchUps }) {

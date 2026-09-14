@@ -1,7 +1,8 @@
-import { engineStart } from '../parts/engineStart';
+import { engineStart } from '@Assemblies/engines/parts/engineStart';
 import { executionQueue } from './executionQueue';
 import { engineInvoke } from './engineInvoke';
 
+// types
 import { Directives, FactoryEngine } from '@Types/factoryTypes';
 
 export const syncEngine = ((): FactoryEngine => {

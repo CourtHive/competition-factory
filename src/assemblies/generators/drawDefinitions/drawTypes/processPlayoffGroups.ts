@@ -1,8 +1,8 @@
 import { generatePlayoffStructures } from '@Generators/drawDefinitions/drawTypes/playoffStructures';
 import { generatePagePlayoff } from '@Generators/drawDefinitions/drawTypes/pagePlayoff';
 import { getPositionRangeMap } from '@Query/drawDefinition/getPositionRangeMap';
-import { validatePlayoffGroups } from '@Validators/validatePlayoffGroups';
 import { firstRoundLoserConsolation } from './firstRoundLoserConsolation';
+import { validatePlayoffGroups } from '@Validators/validatePlayoffGroups';
 import structureTemplate from '@Generators/templates/structureTemplate';
 import { decorateResult } from '@Functions/global/decorateResult';
 import { structureSort } from '@Functions/sorters/structureSort';
@@ -17,8 +17,8 @@ import { nextPowerOf2 } from '@Tools/math';
 import { INVALID_CONFIGURATION, INVALID_VALUES } from '@Constants/errorConditionConstants';
 import { POLICY_TYPE_FEED_IN } from '@Constants/policyConstants';
 import { DrawLink, Structure } from '@Types/tournamentTypes';
-import { GEM_SCORE } from '@Constants/tallyConstants';
 import { WIN_RATIO } from '@Constants/statsConstants';
+import { GEM_SCORE } from '@Constants/tallyConstants';
 import { ResultType } from '@Types/factoryTypes';
 import {
   AD_HOC,

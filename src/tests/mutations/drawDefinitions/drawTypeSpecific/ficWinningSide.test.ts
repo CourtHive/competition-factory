@@ -3,8 +3,9 @@ import tournamentEngine from '@Engines/syncEngine';
 import { unique } from '@Tools/arrays';
 import { expect, it } from 'vitest';
 
-import { DOUBLE_WALKOVER, WALKOVER } from '@Constants/matchUpStatusConstants';
+// constants
 import { CONSOLATION, FICSF, MAIN } from '@Constants/drawDefinitionConstants';
+import { DOUBLE_WALKOVER, WALKOVER } from '@Constants/matchUpStatusConstants';
 
 it('can complete FIC consolation with WOWO before main', () => {
   const winningSide = 1;

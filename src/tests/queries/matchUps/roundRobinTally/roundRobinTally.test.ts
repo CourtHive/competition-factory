@@ -2,12 +2,12 @@ import { tallyParticipantResults } from '@Query/matchUps/roundRobinTally/tallyPa
 import { getPositionAssignments } from '@Query/drawDefinition/positionsGetter';
 import { firstClassOrExtension } from '@Acquire/firstClassOrExtension';
 import { toBePlayed } from '@Fixtures/scoring/outcomes/toBePlayed';
-import tournamentEngine from '@Engines/syncEngine';
 import mocksEngine from '@Assemblies/engines/mock';
+import tournamentEngine from '@Engines/syncEngine';
 import { intersection } from '@Tools/arrays';
 import { expect, it } from 'vitest';
 
-// constants
+// constants and fixtures
 import { MISSING_DRAW_POSITION, MISSING_STRUCTURE_ID } from '@Constants/errorConditionConstants';
 import { FORMAT_SHORT_SETS, FORMAT_STANDARD } from '@Fixtures/scoring/matchUpFormats';
 import { DEFAULTED, RETIRED, WALKOVER } from '@Constants/matchUpStatusConstants';

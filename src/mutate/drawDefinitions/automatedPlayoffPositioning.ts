@@ -3,7 +3,7 @@ import { isCompletedStructure } from '@Query/drawDefinition/structureActions';
 import { getPlayoffStructures } from '@Query/structure/structureGetter';
 import { automatedPositioning } from './automatedPositioning';
 
-// Constants and types
+// constants and types
 import { DRAW_DEFINITION_NOT_FOUND, ErrorType, INCOMPLETE_SOURCE_STRUCTURE } from '@Constants/errorConditionConstants';
 import { DrawDefinition, Event, PositionAssignment, Tournament } from '@Types/tournamentTypes';
 import { SUCCESS } from '@Constants/resultConstants';

@@ -1,7 +1,7 @@
 import { getDevContext } from '@Global/state/globalState';
 import { generateRange } from '@Tools/arrays';
 
-// constants
+// constants and types
 import { BOTTOM_UP, TOP_DOWN, LOSER, FIRST_MATCHUP } from '@Constants/drawDefinitionConstants';
 import { Structure } from '@Types/tournamentTypes';
 

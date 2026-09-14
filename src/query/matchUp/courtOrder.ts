@@ -1,8 +1,8 @@
 import { latestVisibleTimeItemValue } from '@Query/matchUp/latestVisibleTimeItemValue';
 
 // constants and types
-import { ScheduledMatchUpArgs } from '@Types/factoryTypes';
 import { COURT_ORDER } from '@Constants/timeItemConstants';
+import { ScheduledMatchUpArgs } from '@Types/factoryTypes';
 
 /**
  * CODES Phase 2 promoted `COURT_ORDER` to first-class `matchUp.schedule.courtOrder`.

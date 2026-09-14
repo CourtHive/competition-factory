@@ -4,12 +4,12 @@ import { deleteNotices, getNotices, setSubscriptions } from '@Global/state/globa
 import { removeEntry } from '@Mutate/drawDefinitions/entryGovernor/removeEntry';
 import { expect, it } from 'vitest';
 
-// constants
+// constants and types
 import { MAIN, QUALIFYING } from '@Constants/drawDefinitionConstants';
-import { SUCCESS } from '@Constants/resultConstants';
+import { DUPLICATE_ENTRY } from '@Constants/errorConditionConstants';
 import { DrawDefinition } from '@Types/tournamentTypes';
 import { DATA_ISSUE } from '@Constants/topicConstants';
-import { DUPLICATE_ENTRY } from '@Constants/errorConditionConstants';
+import { SUCCESS } from '@Constants/resultConstants';
 
 let result;
 

@@ -1,6 +1,6 @@
+import { AvailabilityPayload, AvailabilityTimeAway, DayState } from '@Types/declarationTypes';
 import { IF_NEEDED, UNAVAILABLE } from '@Constants/dayStateConstants';
 import { DO_NOT_SCHEDULE } from '@Constants/requestConstants';
-import { AvailabilityPayload, AvailabilityTimeAway, DayState } from '@Types/declarationTypes';
 
 // A whole-day DO_NOT_SCHEDULE spans the full clock. `checkRequestConflicts`
 // treats a matchUp as conflicting when its scheduleTime is strictly between

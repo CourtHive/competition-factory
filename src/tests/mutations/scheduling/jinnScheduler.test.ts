@@ -1,15 +1,16 @@
 import { hasSchedule } from '@Query/matchUp/hasSchedule';
-import { constantToString } from '@Tools/strings';
 import mocksEngine from '@Assemblies/engines/mock';
-import { extractTime } from '@Tools/dateTime';
 import tournamentEngine from '@Engines/syncEngine';
+import { constantToString } from '@Tools/strings';
+import { extractTime } from '@Tools/dateTime';
 import { unique } from '@Tools/arrays';
 import { expect, it } from 'vitest';
 
+// constants and fixtures
 import POLICY_SCHEDULING_NO_DAILY_LIMITS from '@Fixtures/policies/POLICY_SCHEDULING_NO_DAILY_LIMITS';
+import { CONSOLATION, FEED_IN_CHAMPIONSHIP_TO_R16, MAIN } from '@Constants/drawDefinitionConstants';
 import { FEMALE, MALE } from '@Constants/genderConstants';
 import { DOUBLES } from '@Constants/eventConstants';
-import { CONSOLATION, FEED_IN_CHAMPIONSHIP_TO_R16, MAIN } from '@Constants/drawDefinitionConstants';
 
 it.each([
   {

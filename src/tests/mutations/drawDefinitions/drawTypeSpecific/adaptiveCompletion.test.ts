@@ -5,13 +5,13 @@
  * resetDrawDefinition clears all position assignments.
  */
 import { generateOutcomeFromScoreString } from '@Assemblies/generators/mocks/generateOutcomeFromScoreString';
-import tournamentEngine from '@Engines/syncEngine';
 import mocksEngine from '@Assemblies/engines/mock';
+import tournamentEngine from '@Engines/syncEngine';
 import { describe, expect, it } from 'vitest';
 
 // constants
-import { COMPLETED } from '@Constants/matchUpStatusConstants';
 import { ADAPTIVE } from '@Constants/drawDefinitionConstants';
+import { COMPLETED } from '@Constants/matchUpStatusConstants';
 
 const DRAW_SIZE = 14;
 

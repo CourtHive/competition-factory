@@ -4,8 +4,8 @@
  * and optional structure fingerprint (stage, stageSequence, exitProfile, structureId).
  */
 import { remapDrawDefinitionMatchUpIds } from '@Mutate/drawDefinitions/remapDrawDefinitionMatchUpIds';
-import tournamentEngine from '@Engines/syncEngine';
 import mocksEngine from '@Assemblies/engines/mock';
+import tournamentEngine from '@Engines/syncEngine';
 import { describe, test, expect } from 'vitest';
 
 // constants and types

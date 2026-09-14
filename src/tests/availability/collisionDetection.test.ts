@@ -13,18 +13,18 @@
 
 import { describe, it, expect } from 'vitest';
 import {
-  BLOCK_TYPES,
-  type Block,
-  type BlockType,
-  type CourtRef,
-} from '@Assemblies/governors/availabilityGovernor/types';
-import {
   clampDragToCollisions,
   findBlocksContainingTime,
   intervalsOverlap,
   sortBlocksByStart,
   timeInsideBlock,
 } from '@Assemblies/governors/availabilityGovernor/collisionDetection';
+import {
+  BLOCK_TYPES,
+  type Block,
+  type BlockType,
+  type CourtRef,
+} from '@Assemblies/governors/availabilityGovernor/types';
 
 // ============================================================================
 // Test Fixtures & Helpers

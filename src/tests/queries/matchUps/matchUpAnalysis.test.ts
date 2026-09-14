@@ -3,8 +3,9 @@ import mocksEngine from '@Assemblies/engines/mock';
 import tournamentEngine from '@Engines/syncEngine';
 import { expect, test } from 'vitest';
 
-import { MISSING_MATCHUP } from '@Constants/errorConditionConstants';
+// constants and fixtures
 import { FORMAT_ATP_DOUBLES, FORMAT_STANDARD } from '@Fixtures/scoring/matchUpFormats';
+import { MISSING_MATCHUP } from '@Constants/errorConditionConstants';
 
 test('can handle empty matchUp', () => {
   let analysis = analyzeMatchUp();

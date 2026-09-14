@@ -8,10 +8,10 @@
  * 4. Returns validation results
  */
 
+import { deduceMatchUpFormat } from '@Query/scoring/deduceMatchUpFormat';
 import { createMatchUp } from '@Mutate/scoring/createMatchUp';
 import { addPoint } from '@Mutate/scoring/addPoint';
 import { getScore } from '@Query/scoring/getScore';
-import { deduceMatchUpFormat } from '@Query/scoring/deduceMatchUpFormat';
 
 export interface PBPValidationOptions {
   // Point string: "0011001100..." where 0/1 are player indices

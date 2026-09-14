@@ -1,7 +1,7 @@
 import { updateMatchUpStatusCodes } from '@Mutate/drawDefinitions/matchUpGovernor/matchUpStatusCodes';
-import { getInitialRoundNumber } from '@Query/matchUps/getInitialRoundNumber';
 import { getPositionAssignments } from '@Query/drawDefinition/positionsGetter';
 import { modifyMatchUpNotice } from '@Mutate/notifications/drawNotifications';
+import { getInitialRoundNumber } from '@Query/matchUps/getInitialRoundNumber';
 import { getMatchUpsMap } from '@Query/matchUps/getMatchUpsMap';
 import { findStructure } from '@Acquire/findStructure';
 import { isExit } from '@Validators/isExit';
@@ -11,8 +11,8 @@ import { DrawDefinition, Event, Tournament } from '@Types/tournamentTypes';
 import { BYE, TO_BE_PLAYED } from '@Constants/matchUpStatusConstants';
 import { CONTAINER } from '@Constants/drawDefinitionConstants';
 import { SUCCESS } from '@Constants/resultConstants';
-import { HydratedMatchUp } from '@Types/hydrated';
 import { MatchUpsMap } from '@Types/factoryTypes';
+import { HydratedMatchUp } from '@Types/hydrated';
 
 type RemoveSubsequentDrawPositionArgs = {
   inContextDrawMatchUps?: HydratedMatchUp[];

@@ -1,6 +1,6 @@
 import { addNotice, deleteNotice, deleteNotices, getNotices, setSubscriptions } from '@Global/state/globalState';
-import { deleteDrawNotice } from '@Mutate/notifications/drawNotifications';
 import { ADD_DRAW_DEFINITION, DELETED_DRAW_IDS, DELETED_MATCHUP_IDS } from '@Constants/topicConstants';
+import { deleteDrawNotice } from '@Mutate/notifications/drawNotifications';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 
 // Regression coverage for Workstream 0 — notice DELIVERY bugs. The pre-existing

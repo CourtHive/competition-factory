@@ -6,8 +6,8 @@ import { unique } from '@Tools/arrays';
 // constants and types
 import { INVALID_TIE_FORMAT } from '@Constants/errorConditionConstants';
 import { Category, Event, GenderUnion } from '@Types/tournamentTypes';
-import { ResultType } from '@Types/factoryTypes';
 import { SUCCESS } from '@Constants/resultConstants';
+import { ResultType } from '@Types/factoryTypes';
 
 type ValidateTieFormatArgs = {
   checkCollectionIds?: boolean;

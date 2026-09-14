@@ -1,7 +1,8 @@
-import tournamentEngine from '@Engines/syncEngine';
 import mocksEngine from '@Assemblies/engines/mock';
+import tournamentEngine from '@Engines/syncEngine';
 import { expect, it } from 'vitest';
 
+// constants
 import { INVALID_COLLECTION_DEFINITION } from '@Constants/errorConditionConstants';
 import { COLLEGE_D3 } from '@Constants/tieFormatConstants';
 import { SINGLES_MATCHUP } from '@Constants/matchUpTypes';

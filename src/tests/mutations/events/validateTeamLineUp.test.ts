@@ -1,7 +1,8 @@
-import { validateLineUp } from '@Validators/validateTeamLineUp';
 import tieFormatDefaults from '@Assemblies/generators/templates/tieFormatDefaults';
+import { validateLineUp } from '@Validators/validateTeamLineUp';
 import { expect, it } from 'vitest';
 
+// constants
 import { INVALID_VALUES } from '@Constants/errorConditionConstants';
 
 const tieFormat = tieFormatDefaults();

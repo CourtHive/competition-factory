@@ -1,4 +1,4 @@
-import { getAllDrawMatchUps } from '../matchUps/drawMatchUps';
+import { getAllDrawMatchUps } from '@Query/matchUps/drawMatchUps';
 import { makeDeepCopy } from '@Tools/makeDeepCopy';
 import { unique } from '@Tools/arrays';
 

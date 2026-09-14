@@ -1,9 +1,10 @@
-import tournamentEngine from '@Engines/syncEngine';
 import mocksEngine from '@Assemblies/engines/mock';
+import tournamentEngine from '@Engines/syncEngine';
 import { expect, it, describe } from 'vitest';
 
-import { POLICY_TYPE_POSITION_ACTIONS } from '@Constants/policyConstants';
+// constants
 import { QUALIFYING_PARTICIPANT } from '@Constants/positionActionConstants';
+import { POLICY_TYPE_POSITION_ACTIONS } from '@Constants/policyConstants';
 import { QUALIFYING } from '@Constants/drawDefinitionConstants';
 
 describe('getValidQualifiersAction branch coverage', () => {

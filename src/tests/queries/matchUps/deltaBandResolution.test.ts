@@ -1,3 +1,5 @@
+import { describe, expect, it } from 'vitest';
+import * as tools from '@Assemblies/tools';
 import {
   resolveDeltaBoundaries,
   resolveScaleOrientation,
@@ -5,10 +7,8 @@ import {
   signedRatingDelta,
   resolveDeltaBand,
 } from '@Query/matchUp/resolveDeltaBand';
-import * as tools from '@Assemblies/tools';
-import { describe, expect, it } from 'vitest';
 
-// constants and fixtures
+// constants
 import { INVALID_POLICY_DEFINITION, INVALID_VALUES, MISSING_VALUE } from '@Constants/errorConditionConstants';
 import { ANCHOR, DOWN, EVEN, STRETCH, UP } from '@Constants/statsConstants';
 import { ELO, UTR, WTN } from '@Constants/ratingConstants';

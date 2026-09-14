@@ -6,7 +6,7 @@ import tournamentEngine from '@Engines/syncEngine';
 import { intersection } from '@Tools/arrays';
 import { it, expect } from 'vitest';
 
-// Constants
+// constants
 import { MAIN, ROUND_ROBIN, WATERFALL } from '@Constants/drawDefinitionConstants';
 import { SINGLES_EVENT } from '@Constants/eventConstants';
 

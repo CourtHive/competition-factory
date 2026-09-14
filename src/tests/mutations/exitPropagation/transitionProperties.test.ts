@@ -1,15 +1,16 @@
-import {
-  checkDoUndoIdentity,
-  checkIdempotence,
-  checkMonotonicity,
-} from '@Tests/testHarness/exitPropagation/properties';
 import { quarantineFor, unusedQuarantineKeys } from '@Tests/testHarness/exitPropagation/knownFailures';
 import { nextPlayable, playForward } from '@Tests/testHarness/exitPropagation/driver';
 import { setSubscriptions } from '@Global/state/globalState';
 import mocksEngine from '@Assemblies/engines/mock';
 import { afterAll, expect, test } from 'vitest';
+import {
+  checkDoUndoIdentity,
+  checkIdempotence,
+  checkMonotonicity,
+} from '@Tests/testHarness/exitPropagation/properties';
 
 // constants
+import { DOUBLE_WALKOVER, DOUBLE_DEFAULT, DEFAULTED, WALKOVER } from '@Constants/matchUpStatusConstants';
 import {
   MODIFIED_FEED_IN_CHAMPIONSHIP,
   FIRST_MATCH_LOSER_CONSOLATION,
@@ -21,7 +22,6 @@ import {
   COMPASS,
   OLYMPIC,
 } from '@Constants/drawDefinitionConstants';
-import { DOUBLE_WALKOVER, DOUBLE_DEFAULT, DEFAULTED, WALKOVER } from '@Constants/matchUpStatusConstants';
 
 /**
  * Relational properties of the mutation boundary.

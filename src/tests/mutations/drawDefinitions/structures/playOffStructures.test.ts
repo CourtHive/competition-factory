@@ -4,7 +4,7 @@ import { instanceCount } from '@Tools/arrays';
 import { numericSort } from '@Tools/sorting';
 import { expect, it } from 'vitest';
 
-// Constants and types
+// constants and types
 import { TOP_DOWN, LOSER, COMPASS, PLAYOFF } from '@Constants/drawDefinitionConstants';
 import { DrawDefinition } from '@Types/tournamentTypes';
 import { ERROR } from '@Constants/resultConstants';

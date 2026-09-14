@@ -2,8 +2,8 @@ import { addNotice, getPayloads } from '@Global/state/globalState';
 
 // constants and types
 import { MODIFY_PARTICIPANTS } from '@Constants/topicConstants';
-import { Participant } from '@Types/tournamentTypes';
 import { SUCCESS } from '@Constants/resultConstants';
+import { Participant } from '@Types/tournamentTypes';
 
 type ModifyParticipantsNoticeArgs = {
   tournamentId?: string;

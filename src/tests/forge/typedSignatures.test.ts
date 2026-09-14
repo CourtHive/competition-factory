@@ -13,6 +13,7 @@ import { describe, expect, it } from 'vitest';
 import mocksEngine from '@Assemblies/engines/mock';
 import tournamentEngine from '@Engines/syncEngine';
 
+// types
 import type { Event, MatchUp, Tournament } from '@Types/tournamentTypes';
 import type { FactoryEngineTyped } from '@Types/factoryTypes';
 

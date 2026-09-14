@@ -1,6 +1,6 @@
+import type { RankingListBucketBreakdown, RankingListAward, AggregationRules } from '@Types/rankingTypes';
 import { DEFAULT_POINT_COMPONENTS } from '@Constants/rankingConstants';
 import { processBucketResults } from './processBucketResults';
-import type { RankingListBucketBreakdown, RankingListAward, AggregationRules } from '@Types/rankingTypes';
 
 type GetParticipantPointsArgs = {
   pointAwards: RankingListAward[];

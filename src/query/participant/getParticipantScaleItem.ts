@@ -1,9 +1,10 @@
 import { findTournamentParticipant } from '@Acquire/findTournamentParticipant';
 import { participantScaleItem } from './participantScaleItem';
 
-import { Tournament } from '@Types/tournamentTypes';
-import { ScaleAttributes, ScaleItem, TournamentRecords } from '@Types/factoryTypes';
+// constants and types
 import { ErrorType, MISSING_PARTICIPANT_ID, PARTICIPANT_NOT_FOUND } from '@Constants/errorConditionConstants';
+import { ScaleAttributes, ScaleItem, TournamentRecords } from '@Types/factoryTypes';
+import { Tournament } from '@Types/tournamentTypes';
 
 type GetParticipantScaleItemArgs = {
   tournamentRecords?: TournamentRecords;

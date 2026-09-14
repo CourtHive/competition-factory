@@ -1,7 +1,7 @@
 import { processNextMatchUps } from '@Mutate/matchUps/schedule/scheduleMatchUps/processNextMatchUps';
 import { checkRequiredParameters } from '@Helpers/parameters/checkRequiredParameters';
 
-// Constants
+// constants
 import { ErrorType } from '@Constants/errorConditionConstants';
 import { MATCHUPS } from '@Constants/attributeConstants';
 import {

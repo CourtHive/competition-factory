@@ -1,4 +1,4 @@
-import { setFirstClassOrExtension } from '../extensions/setFirstClassOrExtension';
+import { setFirstClassOrExtension } from '@Mutate/extensions/setFirstClassOrExtension';
 import { checkRequiredParameters } from '@Helpers/parameters/checkRequiredParameters';
 
 // constants

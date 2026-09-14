@@ -19,11 +19,12 @@
 // exist is the version of this fix that still produces `undefined`.
 
 import scaleEngine from '@Engines/scaleEngine';
-import { mocksEngine } from '../../..';
 import { describe, expect, it } from 'vitest';
+import { mocksEngine } from '../../..';
 
-import { POLICY_TYPE_RANKING_POINTS } from '@Constants/policyConstants';
+// constants
 import { SINGLE_ELIMINATION } from '@Constants/drawDefinitionConstants';
+import { POLICY_TYPE_RANKING_POINTS } from '@Constants/policyConstants';
 import { ANY, FEMALE, MALE } from '@Constants/genderConstants';
 import { SINGLES } from '@Constants/eventConstants';
 

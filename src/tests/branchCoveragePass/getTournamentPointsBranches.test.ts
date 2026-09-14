@@ -1,8 +1,9 @@
-import tournamentEngine from '@Engines/syncEngine';
 import mocksEngine from '@Assemblies/engines/mock';
+import tournamentEngine from '@Engines/syncEngine';
 import scaleEngine from '@Engines/scaleEngine';
 import { expect, test } from 'vitest';
 
+// constants
 import { POLICY_TYPE_RANKING_POINTS, POLICY_TYPE_SCORING } from '@Constants/policyConstants';
 import { SINGLES, DOUBLES, TEAM_EVENT } from '@Constants/eventConstants';
 import { SINGLE_ELIMINATION } from '@Constants/drawDefinitionConstants';

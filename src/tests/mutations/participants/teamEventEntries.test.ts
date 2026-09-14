@@ -3,10 +3,11 @@ import tournamentEngine from '@Engines/syncEngine';
 import { mocksEngine } from '../../..';
 import { expect, test } from 'vitest';
 
+// constants
+import { DIRECT_ACCEPTANCE, UNGROUPED } from '@Constants/entryStatusConstants';
 import { INVALID_PARTICIPANT_IDS } from '@Constants/errorConditionConstants';
 import { INDIVIDUAL } from '@Constants/participantConstants';
 import { TEAM } from '@Constants/eventConstants';
-import { DIRECT_ACCEPTANCE, UNGROUPED } from '@Constants/entryStatusConstants';
 
 test('adding individualParticipantIds to TEAM participants removes them from team event entries', () => {
   const eventProfiles = [

@@ -1,6 +1,6 @@
-import { expect, test } from 'vitest';
-import mocksEngine from '@Assemblies/engines/mock';
 import { tournamentEngine } from '@Engines/syncEngine';
+import mocksEngine from '@Assemblies/engines/mock';
+import { expect, test } from 'vitest';
 
 test('getEvents can hydrate', () => {
   const { tournamentRecord } = mocksEngine.generateTournamentRecord({

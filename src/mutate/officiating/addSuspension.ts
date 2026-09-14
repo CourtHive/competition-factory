@@ -1,10 +1,10 @@
 import { UUID } from '@Tools/UUID';
 
-// Constants
+// constants
 import { MISSING_OFFICIAL_RECORD } from '@Constants/officiatingConstants';
 import { SUCCESS } from '@Constants/resultConstants';
 
-// Types
+// types
 import type { OfficialRecord, OfficialSuspension } from '@Types/officiatingTypes';
 
 type AddSuspensionArgs = {

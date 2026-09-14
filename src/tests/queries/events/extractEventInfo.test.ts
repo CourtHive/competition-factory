@@ -1,6 +1,6 @@
 import { extractEventInfo, getEventMatchUpFormats } from '@Query/event/extractEventInfo';
-import tournamentEngine from '@Engines/syncEngine';
 import { mocksEngine } from '@Assemblies/engines/mock';
+import tournamentEngine from '@Engines/syncEngine';
 import { expect, it, describe } from 'vitest';
 
 // A live tournament surveyed while this was written declared no format on the

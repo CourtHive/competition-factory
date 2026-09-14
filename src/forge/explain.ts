@@ -30,7 +30,7 @@
  */
 import { dryRun, DryRunResult } from './dryRun';
 
-// constants and types
+// types
 import { FactoryEngine } from '@Types/factoryTypes';
 
 export type ExplainResult = {

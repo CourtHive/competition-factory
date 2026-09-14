@@ -4,21 +4,22 @@ import { generateDoubleElimination } from './drawTypes/doubleEliminattion';
 import { generateCurtisConsolation } from './drawTypes/curtisConsolation';
 import { generatePlayoffStructures } from './drawTypes/playoffStructures';
 import { getAppliedPolicies } from '@Query/extensions/getAppliedPolicies';
+import structureTemplate from '@Generators/templates/structureTemplate';
 import { generateRoundRobin } from './drawTypes/roundRobin/roundRobin';
 import { generateAdaptiveStructures } from './drawTypes/adaptiveDraw';
-import structureTemplate from '../templates/structureTemplate';
-import { generatePagePlayoff } from './drawTypes/pagePlayoff';
 import { customLuckyDraw } from './drawTypes/customLuckyDraw';
+import { generatePagePlayoff } from './drawTypes/pagePlayoff';
 import { feedInChampionship } from './drawTypes/feedInChamp';
 import { treeMatchUps } from './drawTypes/eliminationTree';
-import { constantToString } from '@Tools/strings';
-import { feedInMatchUps } from './feedInMatchUps';
 import { luckyDraw } from './drawTypes/luckyDraw';
+import { feedInMatchUps } from './feedInMatchUps';
+import { constantToString } from '@Tools/strings';
 
 // constants
 import { POLICY_TYPE_FEED_IN } from '@Constants/policyConstants';
 import { ErrorType } from '@Constants/errorConditionConstants';
 import { SUCCESS } from '@Constants/resultConstants';
+
 // prettier-ignore
 import {
   MAIN, PLAY_OFF, FICQF, FICSF, MFIC, AD_HOC, CURTIS, FICR16, COMPASS, LADDER,

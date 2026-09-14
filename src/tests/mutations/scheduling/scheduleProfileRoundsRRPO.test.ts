@@ -1,10 +1,11 @@
 import { shuffleArray, unique } from '@Tools/arrays';
-import mocksEngine from '@Assemblies/engines/mock';
 import competitionEngine from '@Engines/syncEngine';
+import mocksEngine from '@Assemblies/engines/mock';
 import { expect, it } from 'vitest';
 
-import { SINGLES } from '@Constants/eventConstants';
+// constants
 import { PLAY_OFF, ROUND_ROBIN_WITH_PLAYOFF } from '@Constants/drawDefinitionConstants';
+import { SINGLES } from '@Constants/eventConstants';
 
 it('will not schedule RR PLAY_OFF rounds before MAIN rounds', () => {
   const venueProfiles = [

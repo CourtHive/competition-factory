@@ -1,13 +1,13 @@
 import { resolveTournamentRecords } from '@Helpers/parameters/resolveTournamentRecords';
+import { removeCourtAssignment } from '@Mutate/matchUps/schedule/removeCourtAssignment';
 import { checkRequiredParameters } from '@Helpers/parameters/checkRequiredParameters';
 import { getScheduledCourtMatchUps } from '@Query/venues/getScheduledCourtMatchUps';
-import { removeCourtAssignment } from '../matchUps/schedule/removeCourtAssignment';
 import { deletionMessage } from '@Assemblies/generators/matchUps/deletionMessage';
 import { getAppliedPolicies } from '@Query/extensions/getAppliedPolicies';
 import { addNotice } from '@Global/state/globalState';
-import { findCourt } from '../../query/venues/findCourt';
+import { findCourt } from '@Query/venues/findCourt';
 
-// constants
+// constants and types
 import { COURT_ID, TOURNAMENT_RECORDS } from '@Constants/attributeConstants';
 import { POLICY_TYPE_SCHEDULING } from '@Constants/policyConstants';
 import { MODIFY_VENUE } from '@Constants/topicConstants';

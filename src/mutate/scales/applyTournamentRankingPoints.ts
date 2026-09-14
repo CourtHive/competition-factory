@@ -1,10 +1,11 @@
 import { setParticipantScaleItem } from '@Mutate/participants/scaleItems/addScaleItems';
 import { getTournamentPoints } from '@Query/scales/getTournamentPoints';
 
-import { MISSING_TOURNAMENT_RECORD } from '@Constants/errorConditionConstants';
+// constants and types
 import { ParticipantFilters, PolicyDefinitions, ScaleItem } from '@Types/factoryTypes';
-import { RANKING } from '@Constants/scaleConstants';
+import { MISSING_TOURNAMENT_RECORD } from '@Constants/errorConditionConstants';
 import { SUCCESS } from '@Constants/resultConstants';
+import { RANKING } from '@Constants/scaleConstants';
 import { Tournament } from '@Types/tournamentTypes';
 
 type ApplyTournamentRankingPointsArgs = {

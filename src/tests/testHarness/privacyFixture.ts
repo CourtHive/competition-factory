@@ -14,7 +14,7 @@ import { saturateParticipants } from './privacySaturation';
 import mocksEngine from '@Assemblies/engines/mock';
 import tournamentEngine from '@Engines/syncEngine';
 
-// constants and types
+// constants
 import { COMPETITOR, OFFICIAL, OTHER } from '@Constants/participantRoles';
 import { GROUP, INDIVIDUAL } from '@Constants/participantConstants';
 import { DOUBLES, SINGLES, TEAM } from '@Constants/eventConstants';

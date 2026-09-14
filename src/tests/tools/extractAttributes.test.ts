@@ -1,5 +1,5 @@
-import tournamentEngine from '@Engines/syncEngine';
 import mocksEngine from '@Assemblies/engines/mock';
+import tournamentEngine from '@Engines/syncEngine';
 import { xa } from '@Tools/extractAttributes';
 import { numericSort } from '@Tools/sorting';
 import { unique } from '@Tools/arrays';

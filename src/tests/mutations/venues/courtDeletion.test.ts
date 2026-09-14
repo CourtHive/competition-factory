@@ -1,9 +1,10 @@
-import { xa } from '@Tools/extractAttributes';
 import mocksEngine from '@Assemblies/engines/mock';
-import { extractTime } from '@Tools/dateTime';
 import tournamentEngine from '@Engines/syncEngine';
+import { extractTime } from '@Tools/dateTime';
+import { xa } from '@Tools/extractAttributes';
 import { expect, it } from 'vitest';
 
+// constants
 import { SINGLES } from '@Constants/eventConstants';
 
 it('can add events, venues, and schedule matchUps', () => {

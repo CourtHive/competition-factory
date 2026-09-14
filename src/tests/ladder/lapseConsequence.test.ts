@@ -3,6 +3,7 @@ import { expect, test, describe } from 'vitest';
 import { declineChallenge } from '@Mutate/ladder/respondToChallenge';
 import { issueChallenge } from '@Mutate/ladder/issueChallenge';
 
+// constants
 import { DROP, FORFEIT_POSITION, RANK, REMOVE, SWAP } from '@Constants/ladderConstants';
 import { POLICY_TYPE_LADDER } from '@Constants/policyConstants';
 import { LADDER } from '@Constants/drawDefinitionConstants';

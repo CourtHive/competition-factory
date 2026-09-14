@@ -1,7 +1,7 @@
 import { addDrawEntries as addEntries } from '@Mutate/drawDefinitions/entryGovernor/addDrawEntries';
 import { refreshEntryPositions } from '@Mutate/entries/refreshEntryPositions';
-import { getParticipantId } from '@Functions/global/extractors';
 import { getFlightProfile } from '@Query/event/getFlightProfile';
+import { getParticipantId } from '@Functions/global/extractors';
 
 // constants and types
 import { VOLUNTARY_CONSOLATION } from '@Constants/drawDefinitionConstants';

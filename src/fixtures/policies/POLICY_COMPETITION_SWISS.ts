@@ -1,7 +1,7 @@
 // Constants
 import { POLICY_TYPE_COMPETITION } from '@Constants/policyConstants';
 
-// Types
+// types
 import type { CompetitionPolicy } from '@Types/competitionPolicyTypes';
 
 export const POLICY_COMPETITION_SWISS = {

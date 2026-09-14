@@ -1,4 +1,4 @@
-import { eligibleEntryStage } from '../positionActions/getValidAlternatesAction';
+import { eligibleEntryStage } from '@Query/drawDefinition/positionActions/getValidAlternatesAction';
 import { getParticipantId } from '@Functions/global/extractors';
 
 // constants

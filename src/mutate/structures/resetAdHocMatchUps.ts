@@ -1,12 +1,12 @@
 import { removeMatchUpSideParticipant } from '@Mutate/matchUps/sides/removeMatchUpSideParticipant';
 import { checkRequiredParameters } from '@Helpers/parameters/checkRequiredParameters';
-import { resetMatchUpLineUps } from '@Mutate/matchUps/lineUps/resetMatchUpLineUps';
 import { isMatchUpEventType } from '@Helpers/matchUpEventTypes/isMatchUpEventType';
+import { resetMatchUpLineUps } from '@Mutate/matchUps/lineUps/resetMatchUpLineUps';
 import { setMatchUpState } from '@Mutate/matchUps/matchUpStatus/setMatchUpState';
 import { getAdHocStructureDetails } from './getAdHocStructureDetails';
 import { resetScorecard } from '@Mutate/matchUps/resetScorecard';
 
-// constants
+// constants and types
 import { ARRAY, DRAW_DEFINITION, EVENT, MATCHUP_IDS, MESSAGE, OF_TYPE, ONE_OF } from '@Constants/attributeConstants';
 import { DrawDefinition, Event, Tournament } from '@Types/tournamentTypes';
 import { TEAM_EVENT } from '@Constants/eventConstants';

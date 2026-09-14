@@ -1,3 +1,4 @@
+import type { MatchUpStatusUnion } from '@Types/tournamentTypes';
 import {
   ABANDONED,
   AWAITING_RESULT,
@@ -17,7 +18,6 @@ import {
   TO_BE_PLAYED,
   WALKOVER,
 } from './matchUpStatusValues';
-import type { MatchUpStatusUnion } from '@Types/tournamentTypes';
 
 // primitive matchUp-status consts are generated from MatchUpStatusEnum (see
 // matchUpStatusValues.ts); the semantic groupings below are hand-authored.

@@ -1,9 +1,10 @@
 import { getAssignedParticipantIds } from '@Query/drawDefinition/getAssignedParticipantIds';
 import { modifyDrawEntriesNotice } from '@Mutate/notifications/entriesNotifications';
-import { refreshEntryPositions } from '../entries/refreshEntryPositions';
+import { refreshEntryPositions } from '@Mutate/entries/refreshEntryPositions';
 import { getFlightProfile } from '@Query/event/getFlightProfile';
 import { overlap } from '@Tools/arrays';
 
+// constants
 import { SUCCESS } from '@Constants/resultConstants';
 import {
   MISSING_EVENT,

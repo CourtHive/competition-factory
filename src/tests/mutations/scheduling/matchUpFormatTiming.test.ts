@@ -3,8 +3,9 @@ import mocksEngine from '@Assemblies/engines/mock';
 import tournamentEngine from '@Engines/syncEngine';
 import { expect, test } from 'vitest';
 
-import { FORMAT_STANDARD } from '@Fixtures/scoring/matchUpFormats';
+// constants and fixtures
 import { EVENT_NOT_FOUND, MISSING_TOURNAMENT_RECORD } from '@Constants/errorConditionConstants';
+import { FORMAT_STANDARD } from '@Fixtures/scoring/matchUpFormats';
 import { SCHEDULE_TIMING } from '@Constants/extensionConstants';
 
 // categoryTypes

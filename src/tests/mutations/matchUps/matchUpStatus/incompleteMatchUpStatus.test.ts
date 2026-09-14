@@ -1,9 +1,9 @@
-import { getContextMatchUp, getOrderedDrawPositionPairs } from '../../drawDefinitions/testingUtilities';
+import { getContextMatchUp, getOrderedDrawPositionPairs } from '@Tests/mutations/drawDefinitions/testingUtilities';
 import mocksEngine from '@Assemblies/engines/mock';
 import tournamentEngine from '@Engines/syncEngine';
 import { expect, it } from 'vitest';
 
-// Constants
+// constants
 import { INCOMPATIBLE_MATCHUP_STATUS } from '@Constants/errorConditionConstants';
 import { INCOMPLETE } from '@Constants/matchUpStatusConstants';
 

@@ -1,12 +1,12 @@
 import { resolveDraftPositions } from '@Mutate/drawDefinitions/draft/resolveDraftPositions';
-import { setFirstClassOrExtension } from '@Mutate/extensions/setFirstClassOrExtension';
 import { setState, setTournamentRecord } from '@Assemblies/engines/parts/stateMethods';
+import { setFirstClassOrExtension } from '@Mutate/extensions/setFirstClassOrExtension';
 import { seedWithdrawalCascade } from '@Mutate/drawDefinitions/seedWithdrawalCascade';
 import { setFirstClassOrTimeItem } from '@Mutate/timeItems/setFirstClassOrTimeItem';
 import mocksEngine from '@Assemblies/engines/mock';
 import { describe, expect, it } from 'vitest';
 
-// constants and types
+// constants
 import {
   INVALID_OBJECT,
   INVALID_RECORDS,

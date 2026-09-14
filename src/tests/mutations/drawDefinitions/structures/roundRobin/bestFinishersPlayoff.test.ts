@@ -12,8 +12,8 @@ import { DRAW, MAIN, PLAY_OFF, POSITION, ROUND_ROBIN_WITH_PLAYOFF } from '@Const
 import { FORMAT_STANDARD } from '@Fixtures/scoring/matchUpFormats';
 import { COMPLETED } from '@Constants/matchUpStatusConstants';
 import { DrawDefinition } from '@Types/tournamentTypes';
-import { GEM_SCORE } from '@Constants/tallyConstants';
 import { TALLY } from '@Constants/extensionConstants';
+import { GEM_SCORE } from '@Constants/tallyConstants';
 import { SINGLES } from '@Constants/eventConstants';
 
 // =========================================================================

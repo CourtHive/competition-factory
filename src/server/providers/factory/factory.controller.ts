@@ -1,13 +1,13 @@
-import { FetchTournamentRecordsDto } from './dto/fetchTournamentRecords.dto';
 import { RemoveTournamentRecordsDto } from './dto/removeTournamentRecords.dto';
+import { FetchTournamentRecordsDto } from './dto/fetchTournamentRecords.dto';
 import { QueryTournamentRecordsDto } from './dto/queryTournamentRecords.dto';
 import { SaveTournamentRecordsDto } from './dto/saveTournamentRecords.dto';
 import { ExecutionQueueDto } from './dto/executionQueue.dto';
 
 import { Controller, Get, Post, HttpCode, HttpStatus, Body, UseGuards } from '@nestjs/common';
-import { Public } from '../../auth/decorators/public.decorator';
-import { Roles } from '../../auth/decorators/roles.decorator';
-import { RolesGuard } from '../../auth/guards/role.guard';
+import { Public } from '@Server/auth/decorators/public.decorator';
+import { Roles } from '@Server/auth/decorators/roles.decorator';
+import { RolesGuard } from '@Server/auth/guards/role.guard';
 import { FactoryService } from './factory.service';
 
 @UseGuards(RolesGuard)

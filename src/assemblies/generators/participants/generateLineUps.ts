@@ -1,12 +1,12 @@
-import { resolveScaleValueNumber } from '@Query/scales/resolveScaleValue';
+import { setFirstClassOrExtension } from '@Mutate/extensions/setFirstClassOrExtension';
 import { isMatchUpEventType } from '@Helpers/matchUpEventTypes/isMatchUpEventType';
 import { resolveTieFormat } from '@Query/hierarchical/tieFormats/resolveTieFormat';
 import { getPairedParticipant } from '@Query/participant/getPairedParticipant';
+import { resolveScaleValueNumber } from '@Query/scales/resolveScaleValue';
 import { getParticipants } from '@Query/participants/getParticipants';
 import { addParticipant } from '@Mutate/participants/addParticipant';
 import { validateTieFormat } from '@Validators/validateTieFormat';
 import { getParticipantId } from '@Functions/global/extractors';
-import { setFirstClassOrExtension } from '@Mutate/extensions/setFirstClassOrExtension';
 import { generateRange } from '@Tools/arrays';
 
 // constants and types
@@ -14,14 +14,17 @@ import { CollectionAssignment, DrawDefinition, Event, TieFormat, Tournament } fr
 import { DOUBLES_MATCHUP, SINGLES_MATCHUP } from '@Constants/matchUpTypes';
 import { DIRECT_ACCEPTANCE } from '@Constants/entryStatusConstants';
 import { FEMALE, MALE } from '@Constants/genderConstants';
-import { ResultType, LineUp } from '@Types/factoryTypes';
 import { COMPETITOR } from '@Constants/participantRoles';
 import { DESCENDING } from '@Constants/sortingConstants';
+import { ResultType, LineUp } from '@Types/factoryTypes';
 import { LINEUPS } from '@Constants/extensionConstants';
 import { TEAM_EVENT } from '@Constants/eventConstants';
 import { PAIR } from '@Constants/participantConstants';
+import { coercedGender } from '@Helpers/coercedGender';
 import { SUCCESS } from '@Constants/resultConstants';
 import { RANKING } from '@Constants/scaleConstants';
+import { isGendered } from '@Validators/isGendered';
+import { isMixed } from '@Validators/isMixed';
 import {
   DRAW_DEFINITION_NOT_FOUND,
   INVALID_EVENT_TYPE,
@@ -29,9 +32,6 @@ import {
   INVALID_VALUES,
   MISSING_TOURNAMENT_RECORD,
 } from '@Constants/errorConditionConstants';
-import { coercedGender } from '@Helpers/coercedGender';
-import { isGendered } from '@Validators/isGendered';
-import { isMixed } from '@Validators/isMixed';
 
 type GenerateLineUpsArgs = {
   useDefaultEventRanking?: boolean;

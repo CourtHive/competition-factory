@@ -1,10 +1,11 @@
-import { visualizeScheduledMatchUps } from '../../testHarness/testUtilities/visualizeScheduledMatchUps';
+import { visualizeScheduledMatchUps } from '@Tests/testHarness/testUtilities/visualizeScheduledMatchUps';
 import { extractDate, timeStringMinutes } from '@Tools/dateTime';
-import tournamentEngine from '@Engines/syncEngine';
-import { hasSchedule } from '@Query/matchUp/hasSchedule';
 import { mocksEngine, competitionEngine } from '../../..';
+import { hasSchedule } from '@Query/matchUp/hasSchedule';
+import tournamentEngine from '@Engines/syncEngine';
 import { expect, it, test } from 'vitest';
 
+// Fixtures
 import POLICY_SCHEDULING_NO_DAILY_LIMITS from '@Fixtures/policies/POLICY_SCHEDULING_NO_DAILY_LIMITS';
 
 const showGlobalLog = false;

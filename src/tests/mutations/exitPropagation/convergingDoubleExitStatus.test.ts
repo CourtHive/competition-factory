@@ -4,6 +4,7 @@ import { getDrawDefinition } from '@Tests/testHarness/exitPropagation/transition
 import { setSubscriptions } from '@Global/state/globalState';
 import { expect, it } from 'vitest';
 
+// constants
 import { DEFAULTED, DOUBLE_DEFAULT, DOUBLE_WALKOVER, RETIRED, WALKOVER } from '@Constants/matchUpStatusConstants';
 
 /**

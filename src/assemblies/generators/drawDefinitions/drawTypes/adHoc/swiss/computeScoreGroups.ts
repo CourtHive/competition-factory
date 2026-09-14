@@ -1,6 +1,6 @@
 import { getParticipantId } from '@Functions/global/extractors';
 
-// Constants and Types
+// constants and types
 import type { ScoreGroup, SwissParticipantRecord } from '@Types/swissTypes';
 import { COMPLETED } from '@Constants/matchUpStatusConstants';
 import type { MatchUp } from '@Types/tournamentTypes';

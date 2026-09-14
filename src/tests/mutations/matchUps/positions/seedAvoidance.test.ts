@@ -1,10 +1,11 @@
 import { getPositionAssignments } from '@Query/drawDefinition/positionsGetter';
 import { allDrawMatchUps } from '@Query/matchUps/getAllDrawMatchUps';
 import { getDrawStructures } from '@Acquire/findStructure';
-import tournamentEngine from '@Engines/syncEngine';
 import mocksEngine from '@Assemblies/engines/mock';
+import tournamentEngine from '@Engines/syncEngine';
 import { expect, it, describe } from 'vitest';
 
+// constants
 import { POLICY_TYPE_AVOIDANCE } from '@Constants/policyConstants';
 import { MAIN } from '@Constants/drawDefinitionConstants';
 import { SINGLES } from '@Constants/eventConstants';

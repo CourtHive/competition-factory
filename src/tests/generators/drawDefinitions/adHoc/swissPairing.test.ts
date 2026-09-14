@@ -1,14 +1,15 @@
 import { computeScoreGroups } from '@Generators/drawDefinitions/drawTypes/adHoc/swiss/computeScoreGroups';
-import { generateSwissPairings } from '@Generators/drawDefinitions/drawTypes/adHoc/swiss/swissPairing';
 import { computeTiebreakers } from '@Generators/drawDefinitions/drawTypes/adHoc/swiss/computeTiebreakers';
-import tournamentEngine from '@Engines/syncEngine';
+import { generateSwissPairings } from '@Generators/drawDefinitions/drawTypes/adHoc/swiss/swissPairing';
 import mocksEngine from '@Assemblies/engines/mock';
+import tournamentEngine from '@Engines/syncEngine';
 import { unique } from '@Tools/arrays';
 import { expect, test } from 'vitest';
 
-import { SINGLES_EVENT } from '@Constants/eventConstants';
-import { SWISS } from '@Constants/drawDefinitionConstants';
+// constants
 import { COMPLETED } from '@Constants/matchUpStatusConstants';
+import { SWISS } from '@Constants/drawDefinitionConstants';
+import { SINGLES_EVENT } from '@Constants/eventConstants';
 
 test('SWISS drawType generates an AD_HOC-style structure', () => {
   const drawSize = 8;

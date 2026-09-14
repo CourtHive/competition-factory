@@ -1,12 +1,13 @@
 import { qualifierProgression } from '@Mutate/drawDefinitions/positionGovernor/qualifierProgression';
-import tournamentEngine from '@Engines/syncEngine';
 import mocksEngine from '@Assemblies/engines/mock';
+import tournamentEngine from '@Engines/syncEngine';
 import { expect, test } from 'vitest';
 
-import { INDIVIDUAL } from '@Constants/participantConstants';
-import { COMPLETED, TO_BE_PLAYED } from '@Constants/matchUpStatusConstants';
+// constants
 import { MAIN, QUALIFYING, ROUND_ROBIN } from '@Constants/drawDefinitionConstants';
+import { COMPLETED, TO_BE_PLAYED } from '@Constants/matchUpStatusConstants';
 import { POLICY_TYPE_POSITION_ACTIONS } from '@Constants/policyConstants';
+import { INDIVIDUAL } from '@Constants/participantConstants';
 import {
   MISSING_MAIN_STRUCTURE,
   MISSING_QUALIFIED_PARTICIPANTS,

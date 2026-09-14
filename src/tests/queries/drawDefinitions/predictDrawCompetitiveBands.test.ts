@@ -1,7 +1,7 @@
 import { predictDrawCompetitiveBands } from '@Query/drawDefinition/predictDrawCompetitiveBands';
 import { expect, it, describe } from 'vitest';
 
-// constants and types
+// constants
 import { INVALID_VALUES } from '@Constants/errorConditionConstants';
 import {
   ADAPTIVE,

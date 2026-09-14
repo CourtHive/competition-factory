@@ -4,6 +4,7 @@ import { intersection } from '@Tools/arrays';
 import { expect, it, test } from 'vitest';
 import fs from 'fs';
 
+// constants
 import { MISSING_TOURNAMENT_RECORD } from '@Constants/errorConditionConstants';
 import { FLIGHT_PROFILE } from '@Constants/extensionConstants';
 import {

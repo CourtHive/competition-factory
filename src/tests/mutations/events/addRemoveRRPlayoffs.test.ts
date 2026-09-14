@@ -5,6 +5,8 @@ import tournamentEngine from '@Engines/syncEngine';
 import { chunkByNth } from '@Tools/arrays';
 import { expect, it } from 'vitest';
 
+// constants
+import { ADD_MATCHUPS, DELETED_MATCHUP_IDS } from '@Constants/topicConstants';
 import {
   COMPASS,
   CURTIS,
@@ -14,7 +16,6 @@ import {
   ROUND_ROBIN,
   SINGLE_ELIMINATION,
 } from '@Constants/drawDefinitionConstants';
-import { ADD_MATCHUPS, DELETED_MATCHUP_IDS } from '@Constants/topicConstants';
 
 it('cann add ROUND_ROBIN playoff structures', () => {
   const {

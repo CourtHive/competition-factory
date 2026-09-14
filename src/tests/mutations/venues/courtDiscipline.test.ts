@@ -2,8 +2,8 @@ import tournamentEngine from '@Engines/syncEngine';
 import { expect, it } from 'vitest';
 
 // constants
-import { PICKLEBALL, TENNIS } from '@Constants/disciplineConstants';
 import { NO_VALID_ATTRIBUTES } from '@Constants/errorConditionConstants';
+import { PICKLEBALL, TENNIS } from '@Constants/disciplineConstants';
 
 /**
  * `Court.discipline` — which sport a court IS.

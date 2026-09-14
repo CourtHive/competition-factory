@@ -2,8 +2,9 @@ import mocksEngine from '@Assemblies/engines/mock';
 import tournamentEngine from '@Engines/syncEngine';
 import { expect, it } from 'vitest';
 
-import { MODIFICATION } from '@Constants/timeItemConstants';
+// constants
 import { INVALID_TIME_ITEM, MISSING_TIME_ITEM, NOT_FOUND } from '@Constants/errorConditionConstants';
+import { MODIFICATION } from '@Constants/timeItemConstants';
 
 const MODIFICATION_CONTENT = 'MODIFICATION.CONTENT';
 const MODIFICATION_OTHER = 'MODIFICATION.OTHER';

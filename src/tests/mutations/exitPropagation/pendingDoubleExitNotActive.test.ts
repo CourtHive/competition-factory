@@ -1,11 +1,12 @@
 import { getDrawInconsistencies } from '@Query/drawDefinition/getDrawInconsistencies';
 import { setSubscriptions } from '@Global/state/globalState';
-import tournamentEngine from '@Engines/syncEngine';
 import mocksEngine from '@Assemblies/engines/mock';
+import tournamentEngine from '@Engines/syncEngine';
 import { expect, it } from 'vitest';
 
-import { DOUBLE_ELIMINATION, OLYMPIC } from '@Constants/drawDefinitionConstants';
+// constants
 import { DEFAULTED, DOUBLE_DEFAULT, DOUBLE_WALKOVER, WALKOVER } from '@Constants/matchUpStatusConstants';
+import { DOUBLE_ELIMINATION, OLYMPIC } from '@Constants/drawDefinitionConstants';
 
 /**
  * A double exit with an unfilled side must not mark its drawPositions ACTIVE.

@@ -5,23 +5,7 @@
 import { checkRequiredParameters } from '@Helpers/parameters/checkRequiredParameters';
 import { expect, it } from 'vitest';
 
-import {
-  EVENT_NOT_FOUND,
-  INVALID_VALUES,
-  MISSING_DRAW_DEFINITION,
-  MISSING_DRAW_ID,
-  MISSING_EVENT,
-  MISSING_MATCHUP,
-  MISSING_MATCHUPS,
-  MISSING_MATCHUP_ID,
-  MISSING_MATCHUP_IDS,
-  MISSING_PARTICIPANT_ID,
-  MISSING_STRUCTURE,
-  MISSING_STRUCTURES,
-  MISSING_STRUCTURE_ID,
-  MISSING_TOURNAMENT_ID,
-  MISSING_TOURNAMENT_RECORD,
-} from '@Constants/errorConditionConstants';
+// constants
 import {
   ANY_OF,
   BYPASS_PARAM_CHECK,
@@ -41,6 +25,23 @@ import {
   TOURNAMENT_ID,
   TOURNAMENT_RECORD,
 } from '@Constants/attributeConstants';
+import {
+  EVENT_NOT_FOUND,
+  INVALID_VALUES,
+  MISSING_DRAW_DEFINITION,
+  MISSING_DRAW_ID,
+  MISSING_EVENT,
+  MISSING_MATCHUP,
+  MISSING_MATCHUPS,
+  MISSING_MATCHUP_ID,
+  MISSING_MATCHUP_IDS,
+  MISSING_PARTICIPANT_ID,
+  MISSING_STRUCTURE,
+  MISSING_STRUCTURES,
+  MISSING_STRUCTURE_ID,
+  MISSING_TOURNAMENT_ID,
+  MISSING_TOURNAMENT_RECORD,
+} from '@Constants/errorConditionConstants';
 
 it('can check required parameters', () => {
   let result = checkRequiredParameters();

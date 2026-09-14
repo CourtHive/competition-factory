@@ -1,15 +1,15 @@
 import { normalizeGender } from '@Helpers/coercedGender';
+import mocksEngine from '@Assemblies/engines/mock';
 import tournamentEngine from '@Engines/syncEngine';
 import { coercedSex } from '@Helpers/coercedSex';
-import mocksEngine from '@Assemblies/engines/mock';
 import { expect, it, describe } from 'vitest';
 
-// constants and types
+// constants
 import { ANY, FEMALE, FEMALE_ABBR, MALE, MALE_ABBR, MIXED, OTHER } from '@Constants/genderConstants';
 import { INDIVIDUAL, TEAM } from '@Constants/participantConstants';
 import { COMPETITOR } from '@Constants/participantRoles';
-import { SINGLES } from '@Constants/eventConstants';
 import { SUCCESS } from '@Constants/resultConstants';
+import { SINGLES } from '@Constants/eventConstants';
 
 // TODS Standard Codes accept short codes (M/F/X/A) alongside the extended forms.
 // Policy: accept short codes as input, normalize to the extended form on write so

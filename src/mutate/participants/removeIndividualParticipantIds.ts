@@ -1,12 +1,12 @@
 import { addDrawNotice, modifyMatchUpNotice } from '@Mutate/notifications/drawNotifications';
+import { modifyParticipantsNotice } from '@Mutate/notifications/participantNotifications';
+import { setFirstClassOrExtension } from '@Mutate/extensions/setFirstClassOrExtension';
+import { firstClassOrExtension } from '@Acquire/firstClassOrExtension';
 import { checkScoreHasValue } from '@Query/matchUp/checkScoreHasValue';
 import { getParticipants } from '@Query/participants/getParticipants';
 import { allDrawMatchUps } from '@Query/matchUps/getAllDrawMatchUps';
-import { setFirstClassOrExtension } from '@Mutate/extensions/setFirstClassOrExtension';
-import { firstClassOrExtension } from '@Acquire/firstClassOrExtension';
-import { addEventEntries } from '@Mutate/entries/addEventEntries';
 import { decorateResult } from '@Functions/global/decorateResult';
-import { modifyParticipantsNotice } from '@Mutate/notifications/participantNotifications';
+import { addEventEntries } from '@Mutate/entries/addEventEntries';
 
 // constants and types
 import { Participant, ParticipantRoleUnion, Tournament } from '@Types/tournamentTypes';
@@ -15,8 +15,8 @@ import { UNGROUPED } from '@Constants/entryStatusConstants';
 import { COMPETITOR } from '@Constants/participantRoles';
 import { LINEUPS } from '@Constants/extensionConstants';
 import { HydratedParticipant } from '@Types/hydrated';
-import { MappedMatchUps } from '@Types/factoryTypes';
 import { SUCCESS } from '@Constants/resultConstants';
+import { MappedMatchUps } from '@Types/factoryTypes';
 import {
   CANNOT_REMOVE_PARTICIPANTS,
   ErrorType,

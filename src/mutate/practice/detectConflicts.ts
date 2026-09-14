@@ -2,8 +2,8 @@ import { allTournamentMatchUps } from '@Query/matchUps/getAllTournamentMatchUps'
 import { sameDay } from '@Tools/dateTime';
 
 // constants and types
-import { completedMatchUpStatuses } from '@Constants/matchUpStatusConstants';
 import { PracticeRegistrationStatusEnum, Tournament } from '@Types/tournamentTypes';
+import { completedMatchUpStatuses } from '@Constants/matchUpStatusConstants';
 
 export type MatchUpConflict = {
   matchUpId: string;

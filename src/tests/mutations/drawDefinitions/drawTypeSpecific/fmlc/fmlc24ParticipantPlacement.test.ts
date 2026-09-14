@@ -1,9 +1,9 @@
-import { generateFMLC } from '../../primitives/firstMatchLoserConsolation';
-import { completeMatchUp } from '../../primitives/verifyMatchUps';
+import { generateFMLC } from '@Tests/mutations/drawDefinitions/primitives/firstMatchLoserConsolation';
+import { completeMatchUp } from '@Tests/mutations/drawDefinitions/primitives/verifyMatchUps';
 import { expect, it } from 'vitest';
 
-import { CONSOLATION } from '@Constants/drawDefinitionConstants';
 import SEEDING_USTA from '@Fixtures/policies/POLICY_SEEDING_DEFAULT';
+import { CONSOLATION } from '@Constants/drawDefinitionConstants';
 import SEEDING_ITF from '@Fixtures/policies/POLICY_SEEDING_ITF';
 import { getDrawStructures } from '@Acquire/findStructure';
 

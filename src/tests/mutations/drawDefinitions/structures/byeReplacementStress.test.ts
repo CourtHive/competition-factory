@@ -1,13 +1,13 @@
 import { popGlobalLog, printGlobalLog, purgeGlobalLog, pushGlobalLog } from '@Functions/global/globalLog';
-import { generateRange } from '@Tools/arrays';
 import { replacementTest } from './byeReplacementStressTest';
 import tournamentEngine from '@Engines/syncEngine';
+import { generateRange } from '@Tools/arrays';
 import { expect, it, test } from 'vitest';
 import fs from 'fs-extra';
 
 // constants
-import { POSITION_ACTIONS } from '@Constants/extensionConstants';
 import { FEED_IN_CHAMPIONSHIP } from '@Constants/drawDefinitionConstants';
+import { POSITION_ACTIONS } from '@Constants/extensionConstants';
 
 it('can run stress tests when JEST_STRESS=true', () => {
   if (!process.env.JEST_STRESS) {

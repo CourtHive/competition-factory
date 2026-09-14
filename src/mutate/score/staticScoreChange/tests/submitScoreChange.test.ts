@@ -1,6 +1,7 @@
-import { submitScoreChange } from '../submitScoreChange';
+import { submitScoreChange } from '@Mutate/score/staticScoreChange/submitScoreChange';
 import { expect, test } from 'vitest';
 
+// constants and fixtures
 import { FORMAT_STANDARD } from '@Fixtures/scoring/matchUpFormats';
 import {
   MISSING_VALUE,

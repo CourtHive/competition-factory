@@ -1,6 +1,7 @@
 import { POLICY_LADDER_DEFAULT } from '@Fixtures/policies/POLICY_LADDER_DEFAULT';
 import { getPolicyDefinitions } from '@Query/extensions/getAppliedPolicies';
 
+// constants and types
 import type { LadderMovement, LadderOrdering } from '@Constants/ladderConstants';
 import { POLICY_TYPE_LADDER } from '@Constants/policyConstants';
 import { RANK, SWAP } from '@Constants/ladderConstants';

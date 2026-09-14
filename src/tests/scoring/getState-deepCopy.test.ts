@@ -6,8 +6,8 @@
  * the returned object in reactive proxies or mutating it directly.
  */
 
-import { describe, test, expect } from 'vitest';
 import { ScoringEngine } from '@Assemblies/governors/scoreGovernor';
+import { describe, test, expect } from 'vitest';
 
 describe('ScoringEngine.getState() deep copy', () => {
   test('returns a new object on each call (not the same reference)', () => {

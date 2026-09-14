@@ -1,6 +1,7 @@
 import { transitionRecordStatus } from '@Functions/declaration/transitionRecordStatus';
 
 // constants and types
+import type { OfficialRecord, EvaluationStatus, OfficialEvaluation } from '@Types/officiatingTypes';
 import {
   MISSING_OFFICIAL_RECORD,
   EVALUATION_NOT_FOUND,
@@ -9,7 +10,6 @@ import {
   INVALID_EVALUATION_SCORES,
   EVAL_SUBMITTED,
 } from '@Constants/officiatingConstants';
-import type { OfficialRecord, EvaluationStatus, OfficialEvaluation } from '@Types/officiatingTypes';
 
 type TransitionEvaluationStatusArgs = {
   officialRecord: OfficialRecord;

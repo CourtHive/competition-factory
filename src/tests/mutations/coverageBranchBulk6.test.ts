@@ -11,8 +11,8 @@ import { applyTournamentRankingPoints } from '@Mutate/scales/applyTournamentRank
 import { removeOnlineResource } from '@Mutate/base/removeOnlineResource';
 import { mapNumbersToIndexes } from '@Tools/mapNumbersToIndexes';
 import { getAccessorValue } from '@Tools/getAccessorValue';
-import tournamentEngine from '@Engines/syncEngine';
 import mocksEngine from '@Assemblies/engines/mock';
+import tournamentEngine from '@Engines/syncEngine';
 import { expect, it, describe } from 'vitest';
 
 // constants

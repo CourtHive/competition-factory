@@ -2,7 +2,7 @@ import { beforeEach } from 'vitest';
 
 import { setAuditAuthorityServer, setSaveDrawDeletions, setSchemaWriteMode } from '@Global/state/globalState';
 
-// constants and types
+// constants
 import { NATIVE } from '@Constants/schemaWriteModeConstants';
 
 /**

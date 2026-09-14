@@ -1,10 +1,11 @@
 import { setSubscriptions } from '@Global/state/globalState';
-import tournamentEngine from '@Engines/syncEngine';
 import mocksEngine from '@Assemblies/engines/mock';
+import tournamentEngine from '@Engines/syncEngine';
 import { expect, it } from 'vitest';
 
-import { DELETED_MATCHUP_IDS } from '@Constants/topicConstants';
+// constants
 import { USTA_BREWER_CUP } from '@Constants/tieFormatConstants';
+import { DELETED_MATCHUP_IDS } from '@Constants/topicConstants';
 import { TEAM } from '@Constants/eventConstants';
 
 it('changing value assignment of collectionDefinition that is part of collectionGroup will delete the group', () => {

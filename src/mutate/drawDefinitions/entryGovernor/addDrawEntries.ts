@@ -1,14 +1,14 @@
+import { setFirstClassOrExtension } from '@Mutate/extensions/setFirstClassOrExtension';
 import { checkRequiredParameters } from '@Helpers/parameters/checkRequiredParameters';
 import { refreshEntryPositions } from '@Mutate/entries/refreshEntryPositions';
 import { modifyDrawNotice } from '@Mutate/notifications/drawNotifications';
 import { participantInEntries } from '@Query/drawDefinition/entryGetter';
-import { getValidStage } from '@Query/drawDefinition/getValidStage';
 import { getStageSpace } from '@Query/drawDefinition/getStageSpace';
+import { getValidStage } from '@Query/drawDefinition/getValidStage';
 import { decorateResult } from '@Functions/global/decorateResult';
-import { isValidExtension } from '@Validators/isValidExtension';
-import { setFirstClassOrExtension } from '@Mutate/extensions/setFirstClassOrExtension';
-import { addExtension } from '@Mutate/extensions/addExtension';
 import { isAdHocType } from '@Query/drawDefinition/isAdHocType';
+import { isValidExtension } from '@Validators/isValidExtension';
+import { addExtension } from '@Mutate/extensions/addExtension';
 import { definedAttributes } from '@Tools/definedAttributes';
 import { addNotice } from '@Global/state/globalState';
 

@@ -1,5 +1,5 @@
-import { getSourceStructureIdsAndRelevantLinks } from '@Query/structure/getSourceStructureIdsAndRelevantLinks';
 import { getPositionAssignments, structureAssignedDrawPositions } from '@Query/drawDefinition/positionsGetter';
+import { getSourceStructureIdsAndRelevantLinks } from '@Query/structure/getSourceStructureIdsAndRelevantLinks';
 import { qualifierDrawPositionAssignment } from '@Mutate/matchUps/drawPositions/positionQualifier';
 import { checkRequiredParameters } from '@Helpers/parameters/checkRequiredParameters';
 import { getAllStructureMatchUps } from '@Query/matchUps/getAllStructureMatchUps';
@@ -12,10 +12,10 @@ import { definedAttributes } from '@Tools/definedAttributes';
 import { ResultType } from '@Types/factoryTypes';
 import { generateRange } from '@Tools/arrays';
 
-// Constants and Types
+// constants and types
+import { DrawDefinition, Event, PositionAssignment, Tournament } from '@Types/tournamentTypes';
 import { DRAW_DEFINITION, EVENT, TOURNAMENT_RECORD } from '@Constants/attributeConstants';
 import { MAIN, POSITION, QUALIFYING, WINNER } from '@Constants/drawDefinitionConstants';
-import { DrawDefinition, Event, PositionAssignment, Tournament } from '@Types/tournamentTypes';
 import { POLICY_TYPE_POSITION_ACTIONS } from '@Constants/policyConstants';
 import { BYE } from '@Constants/matchUpStatusConstants';
 import { TALLY } from '@Constants/extensionConstants';

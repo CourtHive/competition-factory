@@ -1,7 +1,7 @@
 // Query
 import { getCompetitionState } from './getCompetitionState';
 
-// Types
+// types
 import type { CompetitionParticipantState } from '@Types/competitionPolicyTypes';
 import type { DrawDefinition } from '@Types/tournamentTypes';
 import type { ResultType } from '@Types/factoryTypes';

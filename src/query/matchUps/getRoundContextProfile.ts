@@ -1,11 +1,11 @@
-import { isLucky } from '@Query/drawDefinition/isLucky';
 import { isAdHoc } from '@Query/drawDefinition/isAdHoc';
+import { isLucky } from '@Query/drawDefinition/isLucky';
 import { getRoundMatchUps } from './getRoundMatchUps';
 
 // constants and types
 import { POLICY_ROUND_NAMING_DEFAULT } from '@Fixtures/policies/POLICY_ROUND_NAMING_DEFAULT';
-import { POLICY_TYPE_ROUND_NAMING } from '@Constants/policyConstants';
 import { MAIN, QUALIFYING } from '@Constants/drawDefinitionConstants';
+import { POLICY_TYPE_ROUND_NAMING } from '@Constants/policyConstants';
 import { DrawDefinition, Structure } from '@Types/tournamentTypes';
 import { RoundProfile, ResultType } from '@Types/factoryTypes';
 import { HydratedMatchUp } from '@Types/hydrated';

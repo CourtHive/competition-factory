@@ -1,7 +1,8 @@
 import { expect, test } from 'vitest';
 
-import { DrawTypeEnum } from '@Types/tournamentTypes';
+// constants and types
 import { generatedDrawTypes } from '@Constants/drawDefinitionConstants';
+import { DrawTypeEnum } from '@Types/tournamentTypes';
 
 /**
  * `generatedDrawTypes` is what `generateDrawDefinition` accepts; `DrawTypeEnum` is what a TypeScript

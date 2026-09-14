@@ -9,6 +9,7 @@ import mocksEngine from '@Assemblies/engines/mock';
 import { generateRange } from '@Tools/arrays';
 import { expect, it } from 'vitest';
 
+// constants and types
 import { MAIN, ROUND_ROBIN, CONTAINER } from '@Constants/drawDefinitionConstants';
 import { DIRECT_ACCEPTANCE, WILDCARD } from '@Constants/entryStatusConstants';
 import { ERROR, SUCCESS } from '@Constants/resultConstants';

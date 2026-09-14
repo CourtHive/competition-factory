@@ -9,7 +9,7 @@ import {
   setSubscriptions,
 } from '@Global/state/globalState';
 
-// constants and types
+// constants
 import { LEGACY, NATIVE } from '@Constants/schemaWriteModeConstants';
 import { AUDIT, MODIFY_MATCHUP } from '@Constants/topicConstants';
 

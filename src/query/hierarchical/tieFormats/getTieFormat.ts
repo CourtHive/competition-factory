@@ -1,8 +1,8 @@
 import { decorateResult } from '@Functions/global/decorateResult';
-import { getObjectTieFormat } from './getObjectTieFormat';
 import { findDrawMatchUp } from '@Acquire/findDrawMatchUp';
-import { getItemTieFormat } from './getItemTieFormat';
+import { getObjectTieFormat } from './getObjectTieFormat';
 import { findStructure } from '@Acquire/findStructure';
+import { getItemTieFormat } from './getItemTieFormat';
 
 // constants and types
 import { DrawDefinition, Event, MatchUp, Structure, TieFormat } from '@Types/tournamentTypes';

@@ -2,19 +2,19 @@ import { addMatchUpsNotice, modifyDrawNotice, modifyMatchUpNotice } from '@Mutat
 import { getAllStructureMatchUps } from '@Query/matchUps/getAllStructureMatchUps';
 import { decorateResult } from '@Functions/global/decorateResult';
 import { addTimeItem } from '@Mutate/timeItems/addTimeItem';
-import { addGoesTo } from '../../query/matchUps/addGoesTo';
+import { addGoesTo } from '@Query/matchUps/addGoesTo';
 import { xa } from '@Tools/extractAttributes';
 
 // constants and types
+import { DrawDefinition, DrawLink, Event, Structure, Tournament } from '@Types/tournamentTypes';
+import { SUCCESS } from '@Constants/resultConstants';
+import { ResultType } from '@Types/factoryTypes';
 import {
   EXISTING_STRUCTURE,
   INVALID_STRUCTURE,
   INVALID_VALUES,
   MISSING_DRAW_DEFINITION,
 } from '@Constants/errorConditionConstants';
-import { DrawDefinition, DrawLink, Event, Structure, Tournament } from '@Types/tournamentTypes';
-import { SUCCESS } from '@Constants/resultConstants';
-import { ResultType } from '@Types/factoryTypes';
 
 export function attachConsolationStructures(params) {
   return attachStructures({

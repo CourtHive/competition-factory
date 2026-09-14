@@ -3,6 +3,7 @@ import { getLadderPolicy } from '@Query/ladder/getLadderPolicy';
 import { addTimeItem } from '@Mutate/timeItems/addTimeItem';
 import { isLadder } from '@Query/drawDefinition/isLadder';
 
+// constants and types
 import { INVALID_VALUES, MATCHUP_NOT_FOUND, MISSING_DRAW_DEFINITION } from '@Constants/errorConditionConstants';
 import { RESULT_CONFIRMED, RESULT_DISPUTED, RESULT_SUBMITTED } from '@Constants/ladderConstants';
 import { AWAITING_RESULT, COMPLETED, TO_BE_PLAYED } from '@Constants/matchUpStatusConstants';

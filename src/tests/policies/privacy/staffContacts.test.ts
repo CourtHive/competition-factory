@@ -18,6 +18,7 @@ import { generatePrivacyFixture, STAFF_PARTICIPANT_ID } from '@Tests/testHarness
 import tournamentEngine from '@Engines/syncEngine';
 import { describe, expect, it } from 'vitest';
 
+// Fixtures
 import POLICY_PRIVACY_DEFAULT from '@Fixtures/policies/POLICY_PRIVACY_DEFAULT';
 import POLICY_PRIVACY_STAFF from '@Fixtures/policies/POLICY_PRIVACY_STAFF';
 

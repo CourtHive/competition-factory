@@ -1,7 +1,8 @@
 import { assignDrawPositionQualifier as assignPositionQualifier } from '@Mutate/matchUps/drawPositions/assignDrawPositionQualifier';
-import { assignDrawPositionBye as assignPositionBye } from '../matchUps/drawPositions/assignDrawPositionBye';
-import { assignDrawPosition as assignPosition } from '../matchUps/drawPositions/positionAssignment';
+import { assignDrawPositionBye as assignPositionBye } from '@Mutate/matchUps/drawPositions/assignDrawPositionBye';
+import { assignDrawPosition as assignPosition } from '@Mutate/matchUps/drawPositions/positionAssignment';
 
+// constants and types
 import { DrawDefinition, Event, Tournament } from '@Types/tournamentTypes';
 import { SUCCESS } from '@Constants/resultConstants';
 import { ResultType } from '@Types/factoryTypes';

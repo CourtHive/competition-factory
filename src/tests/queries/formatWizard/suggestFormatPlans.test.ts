@@ -2,8 +2,8 @@ import { suggestFormatPlans } from '@Query/formatWizard/suggestFormatPlans';
 import { expect, it, describe } from 'vitest';
 
 // constants and types
-import { INVALID_VALUES } from '@Constants/errorConditionConstants';
 import { WizardConstraints, WizardParticipant } from '@Types/formatWizardTypes';
+import { INVALID_VALUES } from '@Constants/errorConditionConstants';
 
 function pool(ratings: number[]): WizardParticipant[] {
   return ratings.map((rating, i) => ({ participantId: `p${i}`, rating }));

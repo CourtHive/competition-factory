@@ -1,7 +1,7 @@
 import { modifyParticipantsNotice } from '@Mutate/notifications/participantNotifications';
 import { deleteNotices, getNotices, setSubscriptions } from '@Global/state/globalState';
-import { MODIFY_PARTICIPANTS } from '@Constants/topicConstants';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
+import { MODIFY_PARTICIPANTS } from '@Constants/topicConstants';
 
 const reset = () => {
   setSubscriptions({ subscriptions: {} });

@@ -1,9 +1,10 @@
+import mocksEngine from '@Assemblies/engines/mock';
 import tournamentEngine from '@Engines/syncEngine';
 import { makeDeepCopy } from '@Tools/makeDeepCopy';
-import mocksEngine from '@Assemblies/engines/mock';
 import { expect, it, test } from 'vitest';
 import { UUID } from '@Tools/UUID';
 
+// constants
 import { APPLIED_POLICIES } from '@Constants/extensionConstants';
 import { INDIVIDUAL } from '@Constants/participantConstants';
 import { COMPETITOR } from '@Constants/participantRoles';

@@ -6,11 +6,11 @@
  *   4. Generate Swiss round in main — should include MAIN entries + qualifying winners
  */
 import { completeDrawMatchUps } from '@Assemblies/generators/mocks/completeDrawMatchUps';
-import tournamentEngine from '@Engines/syncEngine';
 import mocksEngine from '@Assemblies/engines/mock';
+import tournamentEngine from '@Engines/syncEngine';
 import { expect, it, describe } from 'vitest';
 
-// Constants
+// constants
 import { MAIN, QUALIFYING, SWISS, SINGLE_ELIMINATION } from '@Constants/drawDefinitionConstants';
 import { DIRECT_ACCEPTANCE } from '@Constants/entryStatusConstants';
 import { SINGLES_EVENT } from '@Constants/eventConstants';

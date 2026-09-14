@@ -1,11 +1,11 @@
+import { generateFMLC } from '@Tests/mutations/drawDefinitions/primitives/firstMatchLoserConsolation';
+import { verifyStructure } from '@Tests/mutations/drawDefinitions/primitives/verifyStructure';
 import { assignDrawPositionBye } from '@Mutate/matchUps/drawPositions/assignDrawPositionBye';
 import { assignDrawPosition } from '@Mutate/matchUps/drawPositions/positionAssignment';
 import { structureAssignedDrawPositions } from '@Query/drawDefinition/positionsGetter';
-import { generateFMLC } from '../primitives/firstMatchLoserConsolation';
 import { getStageEntries } from '@Query/drawDefinition/stageGetter';
-import { verifyStructure } from '../primitives/verifyStructure';
-import { parseScoreString } from '@Tools/parseScoreString';
 import { getDrawStructures } from '@Acquire/findStructure';
+import { parseScoreString } from '@Tools/parseScoreString';
 import mocksEngine from '@Assemblies/engines/mock';
 import { expect, it } from 'vitest';
 import {

@@ -1,7 +1,7 @@
 import { isLuckyBasedDraw } from '@Query/drawDefinition/isLuckyBasedDraw';
-import { getRoundMatchUps } from '../matchUps/getRoundMatchUps';
+import { getRoundMatchUps } from '@Query/matchUps/getRoundMatchUps';
 
-// constants and types
+// types
 import { DrawDefinition, MatchUp, Structure } from '@Types/tournamentTypes';
 
 type IsLuckyArgs = {

@@ -10,14 +10,15 @@ import mocksEngine from '@Assemblies/engines/mock';
 import tournamentEngine from '@Engines/syncEngine';
 import { expect, it } from 'vitest';
 
+// constants
+import { DOUBLE_WALKOVER, TO_BE_PLAYED } from '@Constants/matchUpStatusConstants';
+import { DOUBLES } from '@Constants/eventConstants';
 import {
   FIRST_MATCH_LOSER_CONSOLATION,
   LUCKY_DRAW,
   MAIN,
   ROUND_ROBIN_WITH_PLAYOFF,
 } from '@Constants/drawDefinitionConstants';
-import { DOUBLE_WALKOVER, TO_BE_PLAYED } from '@Constants/matchUpStatusConstants';
-import { DOUBLES } from '@Constants/eventConstants';
 
 // ═══════════════════════════════════════════════════════════════════════════
 // generateEventWithDraw

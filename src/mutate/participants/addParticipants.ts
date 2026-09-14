@@ -1,14 +1,15 @@
 import { definedAttributes } from '@Tools/definedAttributes';
-import { makeDeepCopy } from '@Tools/makeDeepCopy';
 import { addNotice } from '@Global/state/globalState';
+import { makeDeepCopy } from '@Tools/makeDeepCopy';
 import { addParticipant } from './addParticipant';
 import { UUID } from '@Tools/UUID';
 
+// constants and types
+import { MISSING_TOURNAMENT_RECORD, EXISTING_PARTICIPANT } from '@Constants/errorConditionConstants';
 import { Participant, Tournament } from '@Types/tournamentTypes';
+import { INDIVIDUAL } from '@Constants/participantConstants';
 import { ADD_PARTICIPANTS } from '@Constants/topicConstants';
 import { SUCCESS } from '@Constants/resultConstants';
-import { INDIVIDUAL } from '@Constants/participantConstants';
-import { MISSING_TOURNAMENT_RECORD, EXISTING_PARTICIPANT } from '@Constants/errorConditionConstants';
 
 type AddParticipantsType = {
   allowDuplicateParticipantIdPairs?: boolean;

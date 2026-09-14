@@ -3,6 +3,7 @@ import { getParticipantMap } from '@Query/participants/getParticipantMap';
 import mocksEngine from '@Assemblies/engines/mock';
 import { expect, test } from 'vitest';
 
+// constants
 import { INVALID_VALUES } from '@Constants/errorConditionConstants';
 
 // === getSeedBlocks tests ===

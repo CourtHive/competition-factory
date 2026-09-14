@@ -2,6 +2,7 @@ import { generateCourts } from '@Assemblies/generators/venues/generateCourts';
 import { xa } from '@Tools/extractAttributes';
 import { expect, it } from 'vitest';
 
+// constants
 import { INVALID_VALUES, MISSING_VALUE } from '@Constants/errorConditionConstants';
 
 it('can generate courts', () => {

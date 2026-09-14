@@ -2,12 +2,13 @@ import { expect, test, describe } from 'vitest';
 
 import { getLadderStanding } from '@Query/ladder/getLadderStanding';
 
+// constants
 import { DYNAMIC, RATING as RATING_SCALE, SCALE } from '@Constants/scaleConstants';
 import { POLICY_TYPE_LADDER } from '@Constants/policyConstants';
 import { LADDER } from '@Constants/drawDefinitionConstants';
 import { ELO, UTR, WTN } from '@Constants/ratingConstants';
-import { RANK, RATING } from '@Constants/ladderConstants';
 import { SINGLES_EVENT } from '@Constants/eventConstants';
+import { RANK, RATING } from '@Constants/ladderConstants';
 
 // A scale item lives on the participant as a timeItem keyed
 // `SCALE.<scaleType>.<eventType>.<scaleName>` — see participantScaleItem.

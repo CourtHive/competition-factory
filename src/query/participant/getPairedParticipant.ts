@@ -2,6 +2,7 @@ import { decorateResult } from '@Functions/global/decorateResult';
 import { makeDeepCopy } from '@Tools/makeDeepCopy';
 import { intersection } from '@Tools/arrays';
 
+// constants and types
 import { Participant, Tournament } from '@Types/tournamentTypes';
 import { PAIR } from '@Constants/participantConstants';
 import { SUCCESS } from '@Constants/resultConstants';

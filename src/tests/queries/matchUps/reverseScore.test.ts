@@ -1,6 +1,7 @@
 import { reverseScore } from '@Assemblies/generators/score/reverseScore';
 import { expect, it } from 'vitest';
 
+// constants
 import { MISSING_VALUE } from '@Constants/errorConditionConstants';
 
 it('can reverse score objects and regenerate scoreStrings', () => {

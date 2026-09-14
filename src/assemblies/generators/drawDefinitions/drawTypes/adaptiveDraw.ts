@@ -1,12 +1,12 @@
-import structureTemplate from '../../templates/structureTemplate';
+import structureTemplate from '@Generators/templates/structureTemplate';
 import { luckyDraw, luckyRoundProfiles } from './luckyDraw';
 import { isPowerOf2 } from '@Tools/math';
 
 // constants
 import { LOSER, MAIN, PLAY_OFF, TOP_DOWN, ADAPTIVE_ATTRIBUTES } from '@Constants/drawDefinitionConstants';
 import { ErrorType } from '@Constants/errorConditionConstants';
-import { SUCCESS } from '@Constants/resultConstants';
 import { DrawLink, Structure } from '@Types/tournamentTypes';
+import { SUCCESS } from '@Constants/resultConstants';
 import { NamingEntry } from './playoffStructures';
 
 type GenerateAdaptiveStructuresArgs = {

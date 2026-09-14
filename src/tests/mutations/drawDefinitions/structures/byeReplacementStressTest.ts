@@ -1,14 +1,18 @@
-import { replaceWithBye, removeAssignment, assignDrawPosition } from '../testingUtilities';
 import { completeDrawMatchUps } from '@Assemblies/generators/mocks/completeDrawMatchUps';
 import { getPositionAssignments } from '@Query/drawDefinition/positionsGetter';
 import { getDrawPosition } from '@Functions/global/extractors';
-import { xa } from '@Tools/extractAttributes';
 import mocksEngine from '@Assemblies/engines/mock';
-import { shuffleArray } from '@Tools/arrays';
 import tournamentEngine from '@Engines/syncEngine';
 import { findEvent } from '@Acquire/findEvent';
+import { xa } from '@Tools/extractAttributes';
+import { shuffleArray } from '@Tools/arrays';
 import { randomInt } from '@Tools/math';
 import { expect } from 'vitest';
+import {
+  replaceWithBye,
+  removeAssignment,
+  assignDrawPosition,
+} from '@Tests/mutations/drawDefinitions/testingUtilities';
 
 // constants
 import { PARTICIPANT_ID } from '@Constants/attributeConstants';

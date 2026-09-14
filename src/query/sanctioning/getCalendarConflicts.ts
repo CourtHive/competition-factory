@@ -3,7 +3,7 @@ import { MISSING_SANCTIONING_RECORD } from '@Constants/sanctioningConstants';
 import { INVALID_VALUES } from '@Constants/errorConditionConstants';
 import { SUCCESS } from '@Constants/resultConstants';
 
-// Types
+// types
 import type { SanctioningRecord, CalendarContext, CalendarEvent, Coordinates } from '@Types/sanctioningTypes';
 import type { TierClassification } from '@Types/tournamentTypes';
 

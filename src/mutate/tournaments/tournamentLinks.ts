@@ -1,15 +1,15 @@
 import { addTournamentExtension, removeTournamentExtension } from '@Mutate/extensions/addRemoveExtensions';
-import { writeLegacyEnabled, writeNativeEnabled } from '@Global/state/globalState';
 import { getRecordLinkedTournamentIds } from '@Acquire/getRecordLinkedTournamentIds';
+import { writeLegacyEnabled, writeNativeEnabled } from '@Global/state/globalState';
 import { getTournamentIds } from '@Query/tournaments/getTournamentIds';
 import { removeExtension } from '@Mutate/extensions/removeExtension';
 import { decorateResult } from '@Functions/global/decorateResult';
 
 // constants and types
+import { INVALID_VALUES, MISSING_TOURNAMENT_ID, MISSING_TOURNAMENT_RECORDS } from '@Constants/errorConditionConstants';
 import { TournamentRecords, ResultType } from '@Types/factoryTypes';
 import { LINKED_TOURNAMENTS } from '@Constants/extensionConstants';
 import { SUCCESS } from '@Constants/resultConstants';
-import { INVALID_VALUES, MISSING_TOURNAMENT_ID, MISSING_TOURNAMENT_RECORDS } from '@Constants/errorConditionConstants';
 
 /**
  * Stamp a single tournamentRecord with its linked-tournament list, per the

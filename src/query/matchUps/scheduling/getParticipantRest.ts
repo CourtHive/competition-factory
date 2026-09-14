@@ -60,22 +60,22 @@
  * actually behind the clock wins. `anchorUnreliable` is reserved for the case
  * where the whole ladder is in the future.
  */
-import { allTournamentMatchUps } from '@Query/matchUps/getAllTournamentMatchUps';
+import { individualIds, isFinished, matchUpLabel, nameFor } from './getMatchUpReadiness';
 import { checkRequiredParameters } from '@Helpers/parameters/checkRequiredParameters';
+import { allTournamentMatchUps } from '@Query/matchUps/getAllTournamentMatchUps';
+import { makeTimingResolver, SchedulingTiming } from './schedulingTiming';
 import { getDailyLimit } from '@Query/extensions/getMatchUpDailyLimits';
 import { zonedWallClockToMs, zonedParts } from '@Tools/zonedDateTime';
-import { makeTimingResolver, SchedulingTiming } from './schedulingTiming';
 import { wasPlayed } from '@Query/reports/recoveryTimeline';
-import { individualIds, isFinished, matchUpLabel, nameFor } from './getMatchUpReadiness';
 
 // constants and types
+import { DOUBLES_MATCHUP, SINGLES_MATCHUP } from '@Constants/matchUpTypes';
 import { MISSING_MATCHUP_ID } from '@Constants/errorConditionConstants';
 import { TOURNAMENT_RECORD } from '@Constants/attributeConstants';
-import { DOUBLES_MATCHUP, SINGLES_MATCHUP } from '@Constants/matchUpTypes';
+import { BYE } from '@Constants/matchUpStatusConstants';
 import { Tournament } from '@Types/tournamentTypes';
 import { HydratedMatchUp } from '@Types/hydrated';
 import { ResultType } from '@Types/factoryTypes';
-import { BYE } from '@Constants/matchUpStatusConstants';
 
 const MS_PER_MINUTE = 60_000;
 

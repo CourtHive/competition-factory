@@ -1,10 +1,10 @@
+import { getAllPositionedParticipantIds } from '@Query/drawDefinition/positionsGetter';
 import { isMatchUpEventType } from '@Helpers/matchUpEventTypes/isMatchUpEventType';
-import { getAllPositionedParticipantIds } from '../drawDefinition/positionsGetter';
+import { getFlightProfile } from '@Query/event/getFlightProfile';
 import { getParticipantId } from '@Functions/global/extractors';
-import { getFlightProfile } from '../event/getFlightProfile';
 import { getAccessorValue } from '@Tools/getAccessorValue';
 import { coercedGender } from '@Helpers/coercedGender';
-import { getTimeItem } from '../base/timeItems';
+import { getTimeItem } from '@Query/base/timeItems';
 import { unique } from '@Tools/arrays';
 
 // constants and types

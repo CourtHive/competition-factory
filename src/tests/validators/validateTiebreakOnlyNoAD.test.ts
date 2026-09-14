@@ -2,8 +2,8 @@
  * Tests for NoAD tiebreak-only formats
  * Covers TB10NOAD, TB7NOAD, TB1NOAD
  */
-import { describe, it, expect } from 'vitest';
 import { validateSetScore, validateMatchUpScore } from '@Validators/validateMatchUpScore';
+import { describe, it, expect } from 'vitest';
 
 // constants
 import { COMPLETED } from '@Constants/matchUpStatusConstants';

@@ -2,7 +2,7 @@ import { definedAttributes } from '@Tools/definedAttributes';
 import { isConvertableInteger } from '@Tools/math';
 import { isString } from '@Tools/objects';
 
-// Constants
+// constants
 import {
   SET,
   NOAD,

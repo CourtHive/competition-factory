@@ -2,6 +2,7 @@ import { getParticipantId } from '@Functions/global/extractors';
 import { mustBeAnArray } from '@Tools/mustBeAnArray';
 import { unique } from '@Tools/arrays';
 
+// constants and types
 import { INVALID_VALUES } from '@Constants/errorConditionConstants';
 import { TieFormat } from '@Types/tournamentTypes';
 import { LineUp } from '@Types/factoryTypes';

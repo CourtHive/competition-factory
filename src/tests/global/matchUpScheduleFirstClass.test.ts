@@ -17,14 +17,14 @@
 import { describe, expect, it } from 'vitest';
 
 import { setSchemaWriteMode } from '@Global/state/globalState';
-import tournamentEngine from '../engines/syncEngine';
 import { getTimeItem } from '@Query/base/timeItems';
 import mocksEngine from '@Assemblies/engines/mock';
+import tournamentEngine from '@Engines/syncEngine';
 
-// constants and types
+// constants
+import { ASSIGN_COURT, ASSIGN_VENUE, COURT_ORDER, SCHEDULED_DATE, SCHEDULED_TIME } from '@Constants/timeItemConstants';
 import { BRIDGE, LEGACY, NATIVE, SchemaWriteMode } from '@Constants/schemaWriteModeConstants';
 import { SINGLES } from '@Constants/eventConstants';
-import { ASSIGN_COURT, ASSIGN_VENUE, COURT_ORDER, SCHEDULED_DATE, SCHEDULED_TIME } from '@Constants/timeItemConstants';
 
 function setupSingleMatchUpTournament() {
   const { tournamentRecord } = mocksEngine.generateTournamentRecord({

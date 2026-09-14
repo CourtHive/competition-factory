@@ -21,7 +21,7 @@ import {
   participantTemplate,
 } from '@Tests/testHarness/privacyConformance';
 
-// constants and types
+// constants and fixtures
 import POLICY_PRIVACY_DEFAULT from '@Fixtures/policies/POLICY_PRIVACY_DEFAULT';
 import { POLICY_TYPE_PARTICIPANT } from '@Constants/policyConstants';
 

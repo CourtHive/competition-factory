@@ -13,8 +13,8 @@
  */
 
 import { BLOCK_TYPES, type BlockType, type CourtRef, type VenueDayTimeline, type RailSegment } from './types';
-import { resolveVenueId, resolveCourtId } from './railDerivation';
 import type { AvailabilityEngine } from '@Assemblies/engines/availability/AvailabilityEngine';
+import { resolveVenueId, resolveCourtId } from './railDerivation';
 
 // ============================================================================
 // TODS Type Definitions

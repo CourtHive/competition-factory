@@ -1,17 +1,18 @@
 import { getDrawDefinition, hash } from '@Tests/testHarness/exitPropagation/transitions';
 import { getDrawInconsistencies } from '@Query/drawDefinition/getDrawInconsistencies';
 import { setSubscriptions } from '@Global/state/globalState';
-import tournamentEngine from '@Engines/syncEngine';
 import mocksEngine from '@Assemblies/engines/mock';
+import tournamentEngine from '@Engines/syncEngine';
 import { expect, it } from 'vitest';
 
+// constants
+import { DEFAULTED, DOUBLE_DEFAULT, DOUBLE_WALKOVER, WALKOVER } from '@Constants/matchUpStatusConstants';
 import {
   FIRST_MATCH_LOSER_CONSOLATION,
   FEED_IN_CHAMPIONSHIP,
   DOUBLE_ELIMINATION,
   COMPASS,
 } from '@Constants/drawDefinitionConstants';
-import { DEFAULTED, DOUBLE_DEFAULT, DOUBLE_WALKOVER, WALKOVER } from '@Constants/matchUpStatusConstants';
 
 /**
  * A double exit that was EARNED at a matchUp is ACTIVE downstream. One that was CARRIED there is not.

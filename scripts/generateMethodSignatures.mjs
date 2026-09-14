@@ -187,8 +187,12 @@ for (const r of resolved) {
   byPath.get(r.sourcePath).push(r);
 }
 
-// Sort import paths longest-first (CourtHive convention).
-const sortedPaths = Array.from(byPath.keys()).sort((a, b) => b.length - a.length);
+// Import order is decided after the lines are built, not here: the convention
+// sorts by EMITTED LINE length, and the line carries `import type { <names> } from `
+// on top of the path — which is why sorting the paths alone produced an inverted
+// block (234 inversions, measured 2026-09-13). Paths are ordered here only to keep
+// the emit deterministic; `importChunks` is re-sorted below.
+const sortedPaths = Array.from(byPath.keys()).sort((a, b) => b.length - a.length || a.localeCompare(b));
 
 // --- emit ---
 const lines = [];
@@ -215,6 +219,7 @@ lines.push('');
 lines.push("import type { EngineMethod } from './factoryTypes';");
 lines.push('');
 
+const importChunks = [];
 for (const path of sortedPaths) {
   const entries = byPath
     .get(path)
@@ -222,21 +227,32 @@ for (const path of sortedPaths) {
     .sort((a, b) => a.sourceName.localeCompare(b.sourceName));
   // dedupe sourceName per path
   const uniq = Array.from(new Map(entries.map((e) => [e.sourceName, e])).values());
-  if (uniq.length === 1) {
-    lines.push(`import type { ${uniq[0].sourceName} } from '${path}';`);
+  // Mirror Prettier's collapse behavior (printWidth 120 in .prettierrc.json)
+  // so prebuild output stays clean without a follow-up `prettier --write`.
+  // A LONE specifier always stays on one line no matter how long: Prettier will
+  // not break `import type { x } from '<very long path>';`, because breaking it
+  // does not shorten the offending part. Emitting it multi-line here makes the
+  // pre-commit `prettier --write` collapse it again and `check:method-signatures`
+  // report drift — which is exactly what happened on the first pass of #4861.
+  const single = `import type { ${uniq.map((e) => e.sourceName).join(', ')} } from '${path}';`;
+  if (uniq.length === 1 || single.length <= 120) {
+    importChunks.push({ multiline: false, width: single.length, path, lines: [single] });
   } else {
-    // Mirror Prettier's collapse behavior (printWidth 120 in .prettierrc.json)
-    // so prebuild output stays clean without a follow-up `prettier --write`.
-    const single = `import type { ${uniq.map((e) => e.sourceName).join(', ')} } from '${path}';`;
-    if (single.length <= 120) {
-      lines.push(single);
-    } else {
-      lines.push(`import type {`);
-      for (const e of uniq) lines.push(`  ${e.sourceName},`);
-      lines.push(`} from '${path}';`);
-    }
+    importChunks.push({
+      multiline: true,
+      width: single.length,
+      path,
+      lines: [`import type {`, ...uniq.map((e) => `  ${e.sourceName},`), `} from '${path}';`],
+    });
   }
 }
+
+// CourtHive convention: within a section single-line imports descend by line
+// length, and multi-line destructured imports come last. Ties break on path so
+// the output is stable across runs (`pnpm check:method-signatures` diffs it).
+const chunkOrder = (a, b) =>
+  Number(a.multiline) - Number(b.multiline) || b.width - a.width || a.path.localeCompare(b.path);
+for (const chunk of importChunks.sort(chunkOrder)) lines.push(...chunk.lines);
 
 lines.push('');
 lines.push('export interface MethodSignatures {');

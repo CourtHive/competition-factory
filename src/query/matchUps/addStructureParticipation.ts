@@ -1,6 +1,6 @@
 import { DEFAULTED, WALKOVER } from '@Constants/matchUpStatusConstants';
 
-// constants and types
+// types
 import type { MatchUpFinishingPositionRange, MatchUpStatusUnion, StageTypeUnion } from '@Types/tournamentTypes';
 import type { ParticipantMap } from '@Types/factoryTypes';
 

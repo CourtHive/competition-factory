@@ -14,15 +14,7 @@ import mocksEngine from '@Assemblies/engines/mock';
 import tournamentEngine from '@Engines/syncEngine';
 import { expect, it, describe } from 'vitest';
 
-// constants
-import {
-  COMPLETED,
-  DEFAULTED,
-  RETIRED,
-  WALKOVER,
-  DOUBLE_WALKOVER,
-  DOUBLE_DEFAULT,
-} from '@Constants/matchUpStatusConstants';
+// constants and fixtures
 import { ROUND_ROBIN, ROUND_ROBIN_WITH_PLAYOFF, SINGLE_ELIMINATION } from '@Constants/drawDefinitionConstants';
 import { FORMAT_STANDARD } from '@Fixtures/scoring/matchUpFormats';
 import {
@@ -35,6 +27,14 @@ import {
   MISSING_POLICY_DEFINITION,
   INVALID_PARTICIPANT_IDS,
 } from '@Constants/errorConditionConstants';
+import {
+  COMPLETED,
+  DEFAULTED,
+  RETIRED,
+  WALKOVER,
+  DOUBLE_WALKOVER,
+  DOUBLE_DEFAULT,
+} from '@Constants/matchUpStatusConstants';
 
 // ----------------------------------------------------------------
 // 1. addPoint.ts — timed set, aggregate format, rally scoring,

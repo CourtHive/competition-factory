@@ -3,6 +3,7 @@ import { describe, expect, test } from 'vitest';
 import * as governors from '@Assemblies/governors';
 import tournamentEngine from '@Engines/syncEngine';
 
+// constants
 import { AD_HOC, LADDER, ROUND_ROBIN, SWISS } from '@Constants/drawDefinitionConstants';
 
 /**

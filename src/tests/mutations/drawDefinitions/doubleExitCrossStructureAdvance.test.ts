@@ -19,13 +19,12 @@
  * retry errors AND mutates again", and by the time this was picked up the idempotence guard from
  * #4782 had made the retry a clean no-op. Only the partial mutation survived.
  */
-import { getDrawInconsistencies } from '@Query/drawDefinition/getDrawInconsistencies';
-import { hash, getDrawMatchUps } from '@Tests/testHarness/exitPropagation/transitions';
+import { hash, getDrawMatchUps, getDrawDefinition } from '@Tests/testHarness/exitPropagation/transitions';
 import { firstPlayable, nextPlayable } from '@Tests/testHarness/exitPropagation/driver';
-import { getDrawDefinition } from '@Tests/testHarness/exitPropagation/transitions';
+import { getDrawInconsistencies } from '@Query/drawDefinition/getDrawInconsistencies';
 import { setSubscriptions } from '@Global/state/globalState';
-import tournamentEngine from '@Engines/syncEngine';
 import mocksEngine from '@Assemblies/engines/mock';
+import tournamentEngine from '@Engines/syncEngine';
 import { expect, it, describe } from 'vitest';
 
 // constants

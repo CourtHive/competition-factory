@@ -6,13 +6,6 @@
 
 import { describe, it, expect } from 'vitest';
 import {
-  BLOCK_TYPES,
-  type Block,
-  type BlockMutation,
-  type EngineConfig,
-  type EngineContext,
-} from '@Assemblies/governors/availabilityGovernor/types';
-import {
   adjacentBlockEvaluator,
   blockDurationEvaluator,
   courtOverlapEvaluator,
@@ -26,6 +19,13 @@ import {
   maintenanceWindowEvaluator,
   matchWindowEvaluator,
 } from '@Assemblies/governors/availabilityGovernor/conflictEvaluators';
+import {
+  BLOCK_TYPES,
+  type Block,
+  type BlockMutation,
+  type EngineConfig,
+  type EngineContext,
+} from '@Assemblies/governors/availabilityGovernor/types';
 
 // ============================================================================
 // Test Fixtures

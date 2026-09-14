@@ -1,13 +1,13 @@
-import { generateDrawDefinition } from '../drawDefinitions/generateDrawDefinition/generateDrawDefinition';
+import { generateDrawDefinition } from '@Generators/drawDefinitions/generateDrawDefinition/generateDrawDefinition';
 import { automatedPlayoffPositioning } from '@Mutate/drawDefinitions/automatedPlayoffPositioning';
 import { setParticipantScaleItem } from '@Mutate/participants/scaleItems/addScaleItems';
 import { addDrawDefinition } from '@Mutate/drawDefinitions/addDrawDefinition';
-import { isValidExtension } from '@Validators/isValidExtension';
 import { getFlightProfile } from '@Query/event/getFlightProfile';
+import { isValidExtension } from '@Validators/isValidExtension';
 import { addExtension } from '@Mutate/extensions/addExtension';
 import { completeDrawMatchUps } from './completeDrawMatchUps';
-import { xa } from '@Tools/extractAttributes';
 import { generateRange } from '@Tools/arrays';
+import { xa } from '@Tools/extractAttributes';
 
 // constants
 import { DRAW_DEFINITION_NOT_FOUND, ErrorType, STRUCTURE_NOT_FOUND } from '@Constants/errorConditionConstants';

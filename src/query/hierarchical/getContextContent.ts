@@ -1,9 +1,9 @@
-import { getPolicyDefinitions } from '../extensions/getAppliedPolicies';
+import { getPolicyDefinitions } from '@Query/extensions/getAppliedPolicies';
 
 import POLICY_COMPETITIVE_BANDS_DEFAULT from '@Fixtures/policies/POLICY_COMPETITIVE_BANDS_DEFAULT';
 import { POLICY_TYPE_COMPETITIVE_BANDS } from '@Constants/policyConstants';
-import { ContextProfile, PolicyDefinitions } from '@Types/factoryTypes';
 import { DrawDefinition, Event, Tournament } from '@Types/tournamentTypes';
+import { ContextProfile, PolicyDefinitions } from '@Types/factoryTypes';
 
 type GetContextContentArgs = {
   policyDefinitions?: PolicyDefinitions;

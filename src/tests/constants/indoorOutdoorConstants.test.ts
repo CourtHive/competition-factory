@@ -1,5 +1,6 @@
 import { expect, test } from 'vitest';
 
+// constants
 import { venueConstants, indoorOutdoorTypes, INDOOR, OUTDOOR, MIXED } from '@Constants/venueConstants';
 
 // Guards the IndoorOutdoorUnion source of truth: the type derives from `indoorOutdoorTypes`

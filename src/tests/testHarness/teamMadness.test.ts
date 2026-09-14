@@ -1,12 +1,13 @@
-import tournamentEngine from '../engines/syncEngine';
+import tournamentEngine from '@Engines/syncEngine';
 import { numericSort } from '@Tools/sorting';
 import { unique } from '@Tools/arrays';
 import { mocksEngine } from '../..';
 import { expect, it } from 'vitest';
 
-import { TEAM as EVENT_TEAM } from '@Constants/eventConstants';
-import { DOUBLES, SINGLES, TEAM } from '@Constants/matchUpTypes';
+// constants
 import { TEAM as PARTICIPANT_TEAM, INDIVIDUAL, PAIR } from '@Constants/participantConstants';
+import { DOUBLES, SINGLES, TEAM } from '@Constants/matchUpTypes';
+import { TEAM as EVENT_TEAM } from '@Constants/eventConstants';
 
 import tournamentRecord from './teamMadness.tods.json';
 

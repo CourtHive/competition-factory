@@ -2,8 +2,8 @@ import { generateDrawTypeAndModifyDrawDefinition } from '@Assemblies/generators/
 import { initializeStructureSeedAssignments } from '@Mutate/drawDefinitions/positionGovernor/initializeSeedAssignments';
 import { newDrawDefinition } from '@Assemblies/generators/drawDefinitions/newDrawDefinition';
 import { addDrawEntries } from '@Mutate/drawDefinitions/entryGovernor/addDrawEntries';
-import { assignSeed } from '@Mutate/drawDefinitions/entryGovernor/seedAssignment';
 import { automatedPositioning } from '@Mutate/drawDefinitions/automatedPositioning';
+import { assignSeed } from '@Mutate/drawDefinitions/entryGovernor/seedAssignment';
 import { clearDrawPosition } from '@Mutate/matchUps/drawPositions/positionClear';
 import { getStructureMatchUps } from '@Query/structure/getStructureMatchUps';
 import { attachPolicies } from '@Mutate/extensions/policies/attachPolicies';
@@ -12,6 +12,7 @@ import { getDrawStructures } from '@Acquire/findStructure';
 import { generateRange } from '@Tools/arrays';
 import { expect, it } from 'vitest';
 
+// constants and fixtures
 import { MAIN, PLAY_OFF, COMPASS } from '@Constants/drawDefinitionConstants';
 import SEEDING_POLICY from '@Fixtures/policies/POLICY_SEEDING_ITF';
 import { BYE } from '@Constants/matchUpStatusConstants';

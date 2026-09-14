@@ -1,12 +1,12 @@
+import { predictMatchUpCompetitiveBands } from '@Query/matchUp/predictMatchUpCompetitiveBands';
+import { expect, it, describe } from 'vitest';
 import {
   predictBandsFromDelta,
   fitDecreasingLogistic,
   evaluateDecreasingLogistic,
 } from '@Query/matchUp/competitiveBandsPrediction';
-import { predictMatchUpCompetitiveBands } from '@Query/matchUp/predictMatchUpCompetitiveBands';
-import { expect, it, describe } from 'vitest';
 
-// constants and types
+// constants
 import { POLICY_TYPE_COMPETITIVE_BANDS } from '@Constants/policyConstants';
 import { INVALID_VALUES } from '@Constants/errorConditionConstants';
 

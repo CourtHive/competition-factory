@@ -5,15 +5,10 @@ import tournamentEngine from '@Engines/syncEngine';
 import { expect, it } from 'vitest';
 import { UUID } from '@Tools/UUID';
 
-// Constants
+// constants
 import { INDIVIDUAL, PAIR, TEAM } from '@Constants/participantConstants';
 import { QUALIFYING } from '@Constants/drawDefinitionConstants';
 import { COMPETITOR } from '@Constants/participantRoles';
-import {
-  ENTRY_STATUS_NOT_ALLOWED_FOR_EVENT,
-  EXISTING_PARTICIPANT_DRAW_POSITION_ASSIGNMENT,
-  INVALID_ENTRY_STATUS,
-} from '@Constants/errorConditionConstants';
 import {
   ALTERNATE,
   CONFIRMED,
@@ -23,6 +18,11 @@ import {
   UNGROUPED,
   WITHDRAWN,
 } from '@Constants/entryStatusConstants';
+import {
+  ENTRY_STATUS_NOT_ALLOWED_FOR_EVENT,
+  EXISTING_PARTICIPANT_DRAW_POSITION_ASSIGNMENT,
+  INVALID_ENTRY_STATUS,
+} from '@Constants/errorConditionConstants';
 
 it('can modify entryStatus within event.entries', () => {
   const drawProfiles = [{ drawSize: 8, alternatesCount: 2 }];

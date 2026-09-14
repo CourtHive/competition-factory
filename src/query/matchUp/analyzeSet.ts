@@ -1,6 +1,6 @@
 import { getSetWinningSide } from './getSetWinningSide';
 
-// Constants
+// constants
 import {
   INVALID_GAME_SCORES,
   INVALID_VALUES,

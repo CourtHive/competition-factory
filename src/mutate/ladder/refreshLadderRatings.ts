@@ -3,6 +3,7 @@ import { getLadderOrdering, getLadderPolicy } from '@Query/ladder/getLadderPolic
 import ratingsParameters from '@Fixtures/ratings/ratingsParameters';
 import { isLadder } from '@Query/drawDefinition/isLadder';
 
+// constants and types
 import { INVALID_VALUES, MISSING_DRAW_DEFINITION, MISSING_TOURNAMENT_RECORD } from '@Constants/errorConditionConstants';
 import { RATING as RATING_ORDERING } from '@Constants/ladderConstants';
 import { RATING as RATING_SCALE } from '@Constants/scaleConstants';

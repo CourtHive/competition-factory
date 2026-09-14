@@ -1,7 +1,7 @@
 import tournamentEngine from '@Engines/syncEngine';
 import { expect, test } from 'vitest';
 
-// Constants
+// constants
 import { INVALID_DATE } from '@Constants/errorConditionConstants';
 
 test('can create a tournamentRecord', () => {

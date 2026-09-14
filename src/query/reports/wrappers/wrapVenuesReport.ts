@@ -1,6 +1,6 @@
 import { getVenuesReport } from '@Query/venues/venuesReport';
 
-// Constants and Types
+// constants and types
 import { VENUE_UTILIZATION_REPORT } from '@Constants/reportConstants';
 import { Tournament } from '@Types/tournamentTypes';
 import { ReportResult } from '@Types/reportTypes';

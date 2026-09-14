@@ -1,5 +1,5 @@
-import { describe, expect, it } from 'vitest';
 import { accumulate } from '@Functions/reducers/accumulate';
+import { describe, expect, it } from 'vitest';
 
 describe('accumulate', () => {
   it('accumulates array of numbers', () => {

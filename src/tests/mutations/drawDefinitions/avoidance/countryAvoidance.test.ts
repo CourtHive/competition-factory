@@ -4,6 +4,7 @@ import { avoidanceTest } from './avoidanceTest';
 import { eventConstants } from '../../../..';
 import { expect, it } from 'vitest';
 
+// constants
 import { INDIVIDUAL, PAIR } from '@Constants/participantConstants';
 import { ROUND_ROBIN } from '@Constants/drawDefinitionConstants';
 const { SINGLES, DOUBLES } = eventConstants;

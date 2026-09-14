@@ -3,10 +3,10 @@ import { validDateAvailability } from '@Validators/validateDateAvailability';
 import { extractDate, extractTime, formatDate } from '@Tools/dateTime';
 import { decorateResult } from '@Functions/global/decorateResult';
 import { addNotice } from '@Global/state/globalState';
+import { findVenue } from '@Query/venues/findVenue';
 import { makeDeepCopy } from '@Tools/makeDeepCopy';
 import { generateRange } from '@Tools/arrays';
 import { isNumeric } from '@Tools/math';
-import { findVenue } from '../../query/venues/findVenue';
 import { UUID } from '@Tools/UUID';
 
 // constants and types

@@ -3,7 +3,7 @@ import { getDrawPosition } from '@Functions/global/extractors';
 import { makeDeepCopy } from '@Tools/makeDeepCopy';
 import { ensureInt } from '@Tools/ensureInt';
 
-// Constants
+// constants
 import { MISSING_VALUE } from '@Constants/errorConditionConstants';
 
 /**

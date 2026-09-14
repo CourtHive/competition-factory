@@ -1,5 +1,6 @@
 import { numericSort } from '@Tools/sorting';
 
+// types
 import { MatchUp } from '@Types/tournamentTypes';
 
 type GetInitialRoundNumberArgs = {

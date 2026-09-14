@@ -1,6 +1,6 @@
-import { expect, it, describe } from 'vitest';
-import { addNotes, removeNotes } from '@Mutate/base/addRemoveNotes';
 import { INVALID_VALUES, MISSING_VALUE } from '@Constants/errorConditionConstants';
+import { addNotes, removeNotes } from '@Mutate/base/addRemoveNotes';
+import { expect, it, describe } from 'vitest';
 
 describe('addNotes', () => {
   it('adds notes to an element', () => {

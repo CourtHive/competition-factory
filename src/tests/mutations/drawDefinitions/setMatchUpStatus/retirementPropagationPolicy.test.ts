@@ -1,8 +1,11 @@
 import { setSubscriptions } from '@Global/state/globalState';
-import tournamentEngine from '@Engines/syncEngine';
 import mocksEngine from '@Assemblies/engines/mock';
+import tournamentEngine from '@Engines/syncEngine';
 import { expect, it } from 'vitest';
 
+// constants
+import { RETIRED, TO_BE_PLAYED, WALKOVER } from '@Constants/matchUpStatusConstants';
+import { POLICY_TYPE_SCORING } from '@Constants/policyConstants';
 import {
   FIRST_MATCH_LOSER_CONSOLATION,
   FIRST_ROUND_LOSER_CONSOLATION,
@@ -10,8 +13,6 @@ import {
   DOUBLE_ELIMINATION,
   COMPASS,
 } from '@Constants/drawDefinitionConstants';
-import { RETIRED, TO_BE_PLAYED, WALKOVER } from '@Constants/matchUpStatusConstants';
-import { POLICY_TYPE_SCORING } from '@Constants/policyConstants';
 
 /**
  * The downstream effect of a RETIREMENT is decided by policy. CA's ruling, 2026-09-13.

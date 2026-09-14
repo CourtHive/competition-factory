@@ -1,10 +1,10 @@
 // Query
-import { getCompetitionState } from '@Query/drawDefinition/competition/getCompetitionState';
 import { getCompetitionPolicy } from '@Query/drawDefinition/competition/getCompetitionPolicy';
+import { getCompetitionState } from '@Query/drawDefinition/competition/getCompetitionState';
 
 // Generators
 import { generateDynamicRatings } from '@Generators/scales/generateDynamicRatings';
-import { generateAdHocMatchUps } from '../generateAdHocMatchUps';
+import { generateAdHocMatchUps } from '@Generators/drawDefinitions/drawTypes/adHoc/generateAdHocMatchUps';
 
 // Acquire
 import { findStructure } from '@Acquire/findStructure';
@@ -16,7 +16,9 @@ import { getPairings } from './getPairings';
 import { isObject } from '@Tools/objects';
 import { unique } from '@Tools/arrays';
 
-// Constants
+// constants
+import { TEAM } from '@Constants/participantConstants';
+import { SUCCESS } from '@Constants/resultConstants';
 import {
   MISSING_DRAW_DEFINITION,
   MISSING_PARTICIPANT_IDS,
@@ -24,10 +26,8 @@ import {
   NO_CANDIDATES,
   STRUCTURE_NOT_FOUND,
 } from '@Constants/errorConditionConstants';
-import { TEAM } from '@Constants/participantConstants';
-import { SUCCESS } from '@Constants/resultConstants';
 
-// Types
+// types
 import { DrawDefinition, MatchUp, Structure, EventTypeUnion, Event, Tournament } from '@Types/tournamentTypes';
 import { ResultType } from '@Types/factoryTypes';
 

@@ -1,6 +1,7 @@
 import { modifyDrawNotice } from '@Mutate/notifications/drawNotifications';
 import { getStructureGroups } from '@Query/structure/getStructureGroups';
 
+// constants
 import { SUCCESS } from '@Constants/resultConstants';
 
 export function resequenceStructures({

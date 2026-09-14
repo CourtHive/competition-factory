@@ -1,6 +1,7 @@
-import { setMatchUpStatus } from '../matchUps/matchUpStatus/setMatchUpStatus';
+import { setMatchUpStatus } from '@Mutate/matchUps/matchUpStatus/setMatchUpStatus';
 import { findEvent } from '@Acquire/findEvent';
 
+// constants
 import { MISSING_TOURNAMENT_RECORD, MISSING_VALUE } from '@Constants/errorConditionConstants';
 import { SUCCESS } from '@Constants/resultConstants';
 

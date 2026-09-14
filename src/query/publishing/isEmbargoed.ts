@@ -1,5 +1,5 @@
-import { isISODateString } from '@Tools/dateTime';
 import { PublishingDetail } from '@Mutate/publishing/publishEvent';
+import { isISODateString } from '@Tools/dateTime';
 
 export function isEmbargoed(detail?: PublishingDetail): boolean {
   const embargo = detail?.embargo;

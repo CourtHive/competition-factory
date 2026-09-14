@@ -1,8 +1,8 @@
 import { removeCourtAssignment } from '@Mutate/matchUps/schedule/removeCourtAssignment';
-import { legacyMode } from '@Tests/testHarness/legacyMode';
 import { getScheduleTimes } from '@Query/venues/getScheduleTimes';
 import { getMatchUpIds } from '@Functions/global/extractors';
 import { setSubscriptions } from '@Global/state/globalState';
+import { legacyMode } from '@Tests/testHarness/legacyMode';
 import mocksEngine from '@Assemblies/engines/mock';
 import tournamentEngine from '@Engines/syncEngine';
 import { expect, it } from 'vitest';

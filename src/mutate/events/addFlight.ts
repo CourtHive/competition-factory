@@ -1,4 +1,4 @@
-import { setFirstClassOrExtension } from '../extensions/setFirstClassOrExtension';
+import { setFirstClassOrExtension } from '@Mutate/extensions/setFirstClassOrExtension';
 import { modifyEventNotice } from '@Mutate/notifications/eventNotifications';
 import { decorateResult } from '@Functions/global/decorateResult';
 import { getFlightProfile } from '@Query/event/getFlightProfile';
@@ -7,7 +7,7 @@ import { intersection } from '@Tools/arrays';
 import { ensureInt } from '@Tools/ensureInt';
 import { UUID } from '@Tools/UUID';
 
-// constants
+// constants and types
 import { EXISTING_FLIGHT, INVALID_VALUES, MISSING_EVENT, MISSING_VALUE } from '@Constants/errorConditionConstants';
 import { Entry, Event, Tournament } from '@Types/tournamentTypes';
 import { FLIGHT_PROFILE } from '@Constants/extensionConstants';

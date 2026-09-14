@@ -1,5 +1,5 @@
-import { getEventPublishStatus } from '../event/getEventPublishStatus';
-import { getDrawPublishStatus } from '../event/getDrawPublishStatus';
+import { getEventPublishStatus } from '@Query/event/getEventPublishStatus';
+import { getDrawPublishStatus } from '@Query/event/getDrawPublishStatus';
 import { TournamentRecords } from '@Types/factoryTypes';
 import { isObject } from '@Tools/objects';
 

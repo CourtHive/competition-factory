@@ -1,14 +1,14 @@
+import { DOUBLE_WALKOVER, DOUBLE_DEFAULT, WALKOVER } from '@Constants/matchUpStatusConstants';
+import { POLICY_TYPE_PROGRESSION } from '@Constants/policyConstants';
+import mocksEngine from '@Assemblies/engines/mock';
+import tournamentEngine from '@Engines/syncEngine';
+import { expect, test } from 'vitest';
 import {
   FIRST_MATCH_LOSER_CONSOLATION,
   FEED_IN_CHAMPIONSHIP,
   ROUND_ROBIN,
   MAIN,
 } from '@Constants/drawDefinitionConstants';
-import { DOUBLE_WALKOVER, DOUBLE_DEFAULT, WALKOVER } from '@Constants/matchUpStatusConstants';
-import { POLICY_TYPE_PROGRESSION } from '@Constants/policyConstants';
-import tournamentEngine from '@Engines/syncEngine';
-import mocksEngine from '@Assemblies/engines/mock';
-import { expect, test } from 'vitest';
 
 // line 29: structure.structureType === CONTAINER short-circuit
 // Setting a DOUBLE_WALKOVER within a ROUND_ROBIN (CONTAINER) structure routes through

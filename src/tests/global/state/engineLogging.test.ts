@@ -1,6 +1,6 @@
+import { setDevContext, setGlobalLog } from '@Global/state/globalState';
 import { describe, expect, it, beforeEach, vi } from 'vitest';
 import { engineLogging } from '@Global/state/engineLogging';
-import { setDevContext, setGlobalLog } from '@Global/state/globalState';
 
 describe('engineLogging', () => {
   beforeEach(() => {

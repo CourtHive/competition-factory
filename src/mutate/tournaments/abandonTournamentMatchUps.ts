@@ -3,7 +3,7 @@ import { allTournamentMatchUps } from '@Query/matchUps/getAllTournamentMatchUps'
 import { checkScoreHasValue } from '@Query/matchUp/checkScoreHasValue';
 import { findEvent } from '@Acquire/findEvent';
 
-// constants and types
+// constants
 import { ABANDONED, completedMatchUpStatuses } from '@Constants/matchUpStatusConstants';
 import { MISSING_TOURNAMENT_RECORD } from '@Constants/errorConditionConstants';
 import { SUCCESS } from '@Constants/resultConstants';

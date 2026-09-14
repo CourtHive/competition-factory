@@ -1,8 +1,9 @@
-import { firstClassGroupLeafOrExtension, setGroupLeafOrExtension } from '../setGroupLeafOrExtension';
-import { addExtension } from '../addExtension';
+import { firstClassGroupLeafOrExtension, setGroupLeafOrExtension } from '@Mutate/extensions/setGroupLeafOrExtension';
+import { addExtension } from '@Mutate/extensions/addExtension';
 import { findExtension } from '@Acquire/findExtension';
 import { findEvent } from '@Acquire/findEvent';
 
+// constants
 import { SCHEDULE_TIMING } from '@Constants/extensionConstants';
 import { SUCCESS } from '@Constants/resultConstants';
 import {

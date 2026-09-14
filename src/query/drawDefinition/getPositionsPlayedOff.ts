@@ -1,5 +1,5 @@
-import { roundValueRanges } from '@Query/structure/structureUtils';
 import { getStructureRoundProfile } from '@Query/structure/getStructureRoundProfile';
+import { roundValueRanges } from '@Query/structure/structureUtils';
 import { numericSort } from '@Tools/sorting';
 import { unique } from '@Tools/arrays';
 

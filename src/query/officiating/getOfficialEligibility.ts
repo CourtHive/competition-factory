@@ -2,7 +2,7 @@
 import { MISSING_OFFICIAL_RECORD } from '@Constants/officiatingConstants';
 import { SUCCESS } from '@Constants/resultConstants';
 
-// Types
+// types
 import type { OfficialRecord } from '@Types/officiatingTypes';
 
 type GetOfficialEligibilityArgs = {

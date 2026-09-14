@@ -1,16 +1,18 @@
-import { transitionAssignmentStatus } from '@Mutate/officiating/transitionAssignmentStatus';
 import { addCertificationRequirement } from '@Mutate/officiating/addCertificationRequirement';
+import { transitionAssignmentStatus } from '@Mutate/officiating/transitionAssignmentStatus';
 import { removeOfficialAssignment } from '@Mutate/officiating/removeOfficialAssignment';
 import { addEvaluationPolicy } from '@Mutate/officiating/addEvaluationPolicy';
-import { removeCertification } from '@Mutate/officiating/removeCertification';
 import { modifyCertification } from '@Mutate/officiating/modifyCertification';
-import { removeEvaluation } from '@Mutate/officiating/removeEvaluation';
-import { removeSuspension } from '@Mutate/officiating/removeSuspension';
+import { removeCertification } from '@Mutate/officiating/removeCertification';
 import { addCertification } from '@Mutate/officiating/addCertification';
 import { modifyEvaluation } from '@Mutate/officiating/modifyEvaluation';
+import { removeEvaluation } from '@Mutate/officiating/removeEvaluation';
+import { removeSuspension } from '@Mutate/officiating/removeSuspension';
 import { assignOfficial } from '@Mutate/officiating/assignOfficial';
 import { describe, expect, it } from 'vitest';
 
+// constants
+import { INVALID_VALUES } from '@Constants/errorConditionConstants';
 import {
   INVALID_OFFICIATING_STATUS_TRANSITION,
   MISSING_OFFICIAL_RECORD,
@@ -24,8 +26,8 @@ import {
   EVAL_SUBMITTED,
   EVAL_DRAFT,
 } from '@Constants/officiatingConstants';
-import { INVALID_VALUES } from '@Constants/errorConditionConstants';
 
+// types
 import type { OfficialRecord } from '@Types/officiatingTypes';
 
 // ---------------------------------------------------------------------------

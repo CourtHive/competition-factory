@@ -11,11 +11,11 @@ import { regenerateParticipantNames } from '@Mutate/participants/regenerateParti
 import { aggregateGames, aggregateSets } from '@Assemblies/generators/scales/aggregators';
 import { getParticipantMembership } from '@Query/participants/getParticipantMembership';
 import { getNumericSeedValue } from '@Query/drawDefinition/getNumericSeedValue';
-import { getMatchUpContextIds } from '@Query/matchUp/getMatchUpContextIds';
 import { getHomeParticipantId } from '@Query/matchUp/getHomeParticipantId';
+import { getMatchUpContextIds } from '@Query/matchUp/getMatchUpContextIds';
+import { getDraftState } from '@Query/drawDefinition/draft/getDraftState';
 import { getDrawIsPublished } from '@Query/publishing/getDrawIsPublished';
 import { analyzeTournament } from '@Query/tournaments/analyzeTournament';
-import { getDraftState } from '@Query/drawDefinition/draft/getDraftState';
 import { getFloatValue } from '@Query/matchUp/getMatchUpFloatValue';
 import { checkTieFormat } from '@Mutate/tieFormat/checkTieFormat';
 import { mapNumbersToIndexes } from '@Tools/mapNumbersToIndexes';

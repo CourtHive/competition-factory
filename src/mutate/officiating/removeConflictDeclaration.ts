@@ -3,7 +3,7 @@ import { CONFLICT_DECLARATION_NOT_FOUND, MISSING_OFFICIAL_RECORD } from '@Consta
 import { INVALID_VALUES } from '@Constants/errorConditionConstants';
 import { SUCCESS } from '@Constants/resultConstants';
 
-// Types
+// types
 import type { OfficialRecord } from '@Types/officiatingTypes';
 
 type RemoveConflictDeclarationArgs = {

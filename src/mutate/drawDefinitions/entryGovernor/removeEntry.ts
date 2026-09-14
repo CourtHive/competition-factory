@@ -1,7 +1,8 @@
-import { refreshEntryPositions } from '../../entries/refreshEntryPositions';
 import { getAssignedParticipantIds } from '@Query/drawDefinition/getAssignedParticipantIds';
-import { modifyDrawNotice } from '../../notifications/drawNotifications';
+import { refreshEntryPositions } from '@Mutate/entries/refreshEntryPositions';
+import { modifyDrawNotice } from '@Mutate/notifications/drawNotifications';
 
+// constants and types
 import { DrawDefinition, StageTypeUnion } from '@Types/tournamentTypes';
 import { SUCCESS } from '@Constants/resultConstants';
 import {

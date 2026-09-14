@@ -1,11 +1,11 @@
 import { afterEach, describe, expect, it } from 'vitest';
 
 import { setSchemaWriteMode } from '@Global/state/globalState';
-import competitionEngine from '@Engines/syncEngine';
 import { findExtension } from '@Acquire/findExtension';
+import competitionEngine from '@Engines/syncEngine';
 import mocksEngine from '@Assemblies/engines/mock';
 
-// constants and types
+// constants
 import { BRIDGE, LEGACY, NATIVE } from '@Constants/schemaWriteModeConstants';
 import { LINKED_TOURNAMENTS } from '@Constants/extensionConstants';
 

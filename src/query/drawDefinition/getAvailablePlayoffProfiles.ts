@@ -1,8 +1,8 @@
-import { allDrawMatchUps } from '../matchUps/getAllDrawMatchUps';
+import { allDrawMatchUps } from '@Query/matchUps/getAllDrawMatchUps';
 import { getPositionsPlayedOff } from './getPositionsPlayedOff';
 import { getPositionAssignments } from './positionsGetter';
-import { chunkArray, generateRange } from '@Tools/arrays';
 import { getDrawStructures } from '@Acquire/findStructure';
+import { chunkArray, generateRange } from '@Tools/arrays';
 import { getSourceRounds } from './getSourceRounds';
 import { getStructureLinks } from './linkGetter';
 import { numericSort } from '@Tools/sorting';

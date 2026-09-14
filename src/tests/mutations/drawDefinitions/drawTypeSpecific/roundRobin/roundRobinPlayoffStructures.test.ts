@@ -1,15 +1,16 @@
 import { getAllStructureMatchUps } from '@Query/matchUps/getAllStructureMatchUps';
 import { isCompletedStructure } from '@Query/drawDefinition/structureActions';
 import { allDrawMatchUps } from '@Query/matchUps/getAllDrawMatchUps';
-import { intersection, overlap, unique } from '@Tools/arrays';
 import { structureSort } from '@Functions/sorters/structureSort';
-import { xa } from '@Tools/extractAttributes';
+import { intersection, overlap, unique } from '@Tools/arrays';
 import tournamentEngine from '@Engines/syncEngine';
+import { xa } from '@Tools/extractAttributes';
 import { mocksEngine } from '../../../../..';
 import { expect, it } from 'vitest';
 
-import { COMPLETED } from '@Constants/matchUpStatusConstants';
+// constants
 import { COMPASS, MAIN, PLAYOFF, ROUND_ROBIN_WITH_PLAYOFF } from '@Constants/drawDefinitionConstants';
+import { COMPLETED } from '@Constants/matchUpStatusConstants';
 
 it('is possible to have COMPASS playoff for Round Robin with playoffs', () => {
   const completionGoal = 48;

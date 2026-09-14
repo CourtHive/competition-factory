@@ -7,7 +7,7 @@ import { definedAttributes } from '@Tools/definedAttributes';
 import { replaceQualifier } from './replaceQualifier';
 import { placeQualifier } from './placeQualifier';
 
-// Constants
+// constants
 import { POLICY_TYPE_PROGRESSION } from '@Constants/policyConstants';
 import { SUCCESS } from '@Constants/resultConstants';
 

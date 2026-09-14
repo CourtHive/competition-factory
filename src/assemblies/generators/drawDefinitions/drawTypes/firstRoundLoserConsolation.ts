@@ -1,11 +1,12 @@
+import { feedInMatchUps } from '@Generators/drawDefinitions/feedInMatchUps';
+import structureTemplate from '@Generators/templates/structureTemplate';
 import { constantToString } from '@Tools/strings';
-import structureTemplate from '../../templates/structureTemplate';
-import { feedInMatchUps } from '../feedInMatchUps';
 import { treeMatchUps } from './eliminationTree';
 
+// constants and types
+import { MAIN, CONSOLATION, LOSER, TOP_DOWN } from '@Constants/drawDefinitionConstants';
 import { DrawLink, Structure } from '@Types/tournamentTypes';
 import { SUCCESS } from '@Constants/resultConstants';
-import { MAIN, CONSOLATION, LOSER, TOP_DOWN } from '@Constants/drawDefinitionConstants';
 
 export function firstRoundLoserConsolation(params) {
   const {

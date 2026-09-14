@@ -14,11 +14,11 @@
  * dispatch through `engine.executionQueue` (and thus fire bus notices).
  */
 
-import { EventBuilder } from './EventBuilder';
 import { ParticipantBuilder } from './ParticipantBuilder';
+import { EventBuilder } from './EventBuilder';
 
-import type { EventSeed } from './types';
 import type { FactoryEngine } from '@Types/factoryTypes';
+import type { EventSeed } from './types';
 
 export interface BuildFacade {
   event(seed?: Partial<EventSeed>): EventBuilder;

@@ -1,16 +1,17 @@
-import { visualizeScheduledMatchUps } from '../../testHarness/testUtilities/visualizeScheduledMatchUps';
-import { hasSchedule } from '@Query/matchUp/hasSchedule';
+import { visualizeScheduledMatchUps } from '@Tests/testHarness/testUtilities/visualizeScheduledMatchUps';
 import { extractTime, timeStringMinutes } from '@Tools/dateTime';
 import { getParticipantId } from '@Functions/global/extractors';
+import { hasSchedule } from '@Query/matchUp/hasSchedule';
 import mocksEngine from '@Assemblies/engines/mock';
-import { intersection } from '@Tools/arrays';
 import tournamentEngine from '@Engines/syncEngine';
+import { intersection } from '@Tools/arrays';
 import { expect, it } from 'vitest';
 
+// constants and fixtures
 import POLICY_SCHEDULING_NO_DAILY_LIMITS from '@Fixtures/policies/POLICY_SCHEDULING_NO_DAILY_LIMITS';
-import { SINGLES } from '@Constants/eventConstants';
-import { INVALID_DATE, INVALID_VALUES } from '@Constants/errorConditionConstants';
 import { COMPASS, FIRST_MATCH_LOSER_CONSOLATION } from '@Constants/drawDefinitionConstants';
+import { INVALID_DATE, INVALID_VALUES } from '@Constants/errorConditionConstants';
+import { SINGLES } from '@Constants/eventConstants';
 
 it.each([
   {

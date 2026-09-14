@@ -3,10 +3,10 @@ import mocksEngine from '@Assemblies/engines/mock';
 import tournamentEngine from '@Engines/syncEngine';
 import { afterEach, expect, it } from 'vitest';
 
-// constants and types
+// constants
 import { OFFICIAL_CONFLICT_OF_INTEREST } from '@Constants/officiatingConstants';
-import { LEGACY, NATIVE } from '@Constants/schemaWriteModeConstants';
 import { SCHEDULE_LOCKED } from '@Constants/errorConditionConstants';
+import { LEGACY, NATIVE } from '@Constants/schemaWriteModeConstants';
 import { COMPLETED } from '@Constants/matchUpStatusConstants';
 import { INDIVIDUAL } from '@Constants/participantConstants';
 import { DOMINANT_DUO } from '@Constants/tieFormatConstants';

@@ -1,8 +1,9 @@
-import { modifyMatchUpNotice } from '../../notifications/drawNotifications';
+import { modifyMatchUpNotice } from '@Mutate/notifications/drawNotifications';
 import { firstClassOrExtension } from '@Acquire/firstClassOrExtension';
 import { findDrawMatchUp } from '@Acquire/findDrawMatchUp';
 import { makeDeepCopy } from '@Tools/makeDeepCopy';
 
+// constants and types
 import { DrawDefinition, Event, MatchUp } from '@Types/tournamentTypes';
 import { LINEUPS } from '@Constants/extensionConstants';
 import { HydratedMatchUp } from '@Types/hydrated';

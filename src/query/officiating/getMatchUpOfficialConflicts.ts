@@ -3,14 +3,14 @@ import { getOfficialConflicts } from '@Query/officiating/getOfficialConflicts';
 import { getParticipants } from '@Query/participants/getParticipants';
 import { findDrawMatchUp } from '@Acquire/findDrawMatchUp';
 
-// Constants
+// constants
 import { MISSING_TOURNAMENT_RECORD, MISSING_MATCHUP_ID } from '@Constants/errorConditionConstants';
+import { POLICY_TYPE_OFFICIATING_CONFLICT } from '@Constants/policyConstants';
 import { MISSING_CONFLICT_SOURCE } from '@Constants/officiatingConstants';
 import { GROUP } from '@Constants/participantConstants';
-import { POLICY_TYPE_OFFICIATING_CONFLICT } from '@Constants/policyConstants';
 import { SUCCESS } from '@Constants/resultConstants';
 
-// Types
+// types
 import type { DrawDefinition, Event, Participant, Tournament } from '@Types/tournamentTypes';
 import type { ConflictEvaluationInputs, OfficialConflict } from '@Types/officiatingTypes';
 

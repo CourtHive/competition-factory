@@ -1,5 +1,5 @@
-import { getPlayoffStructures } from '../structure/structureGetter';
-import { getStructureMatchUps } from '../structure/getStructureMatchUps';
+import { getStructureMatchUps } from '@Query/structure/getStructureMatchUps';
+import { getPlayoffStructures } from '@Query/structure/structureGetter';
 import { getPositionAssignments } from './positionsGetter';
 
 // constants and types

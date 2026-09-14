@@ -1,9 +1,9 @@
+import { awardProfileFlights, awardProfilePercentageFlights } from './awardProfileExamples';
 import { finishingPositionSort, getFpMap } from './awardTestUtils';
 import tournamentEngine from '@Engines/syncEngine';
 import scaleEngine from '@Engines/scaleEngine';
 import { mocksEngine } from '../../..';
 import { expect, it } from 'vitest';
-import { awardProfileFlights, awardProfilePercentageFlights } from './awardProfileExamples';
 
 import { POLICY_TYPE_RANKING_POINTS } from '@Constants/policyConstants';
 import { getAwardProfile } from '@Query/scales/getAwardProfile';

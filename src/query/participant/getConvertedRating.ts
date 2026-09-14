@@ -1,11 +1,11 @@
 import { getRatingConvertedFromELO, getRatingConvertedToELO } from '@Generators/scales/eloConversions';
-import { resolveScaleValueNumber } from '@Query/scales/resolveScaleValue';
 import { checkRequiredParameters } from '@Helpers/parameters/checkRequiredParameters';
+import { resolveScaleValueNumber } from '@Query/scales/resolveScaleValue';
 import ratingsParameters from '@Fixtures/ratings/ratingsParameters';
 
 // constants
-import { OBJECT, OF_TYPE } from '@Constants/attributeConstants';
 import { INVALID_VALUES, NOT_FOUND } from '@Constants/errorConditionConstants';
+import { OBJECT, OF_TYPE } from '@Constants/attributeConstants';
 import { DOUBLES, SINGLES } from '@Constants/matchUpTypes';
 import { ELO } from '@Constants/ratingConstants';
 

@@ -1,5 +1,5 @@
 import { setSubscriptions } from '@Global/state/globalState';
-import tournamentEngine from '../engines/syncEngine';
+import tournamentEngine from '@Engines/syncEngine';
 import * as tools from '@Assemblies/tools';
 import { expect, it } from 'vitest';
 

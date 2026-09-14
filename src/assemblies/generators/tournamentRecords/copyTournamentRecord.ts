@@ -3,7 +3,7 @@ import { addDays, extractDate } from '@Tools/dateTime';
 import { makeDeepCopy } from '@Tools/makeDeepCopy';
 import { UUID } from '@Tools/UUID';
 
-// Constants
+// constants and types
 import { SUCCESS } from '@Constants/resultConstants';
 import { Tournament } from '@Types/tournamentTypes';
 

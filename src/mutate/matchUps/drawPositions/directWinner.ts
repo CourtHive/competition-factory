@@ -1,13 +1,14 @@
-import { removeLineUpSubstitutions } from '../../drawDefinitions/removeLineUpSubstitutions';
+import { removeLineUpSubstitutions } from '@Mutate/drawDefinitions/removeLineUpSubstitutions';
 import { structureAssignedDrawPositions } from '@Query/drawDefinition/positionsGetter';
+import { assignSeed } from '@Mutate/drawDefinitions/entryGovernor/seedAssignment';
+import { modifyMatchUpNotice } from '@Mutate/notifications/drawNotifications';
+import { assignMatchUpDrawPosition } from './assignMatchUpDrawPosition';
+import { decorateResult } from '@Functions/global/decorateResult';
 import { pushGlobalLog } from '@Functions/global/globalLog';
 import { assignDrawPosition } from './positionAssignment';
-import { modifyMatchUpNotice } from '../../notifications/drawNotifications';
-import { decorateResult } from '@Functions/global/decorateResult';
-import { assignMatchUpDrawPosition } from './assignMatchUpDrawPosition';
-import { assignSeed } from '../../drawDefinitions/entryGovernor/seedAssignment';
 import { findStructure } from '@Acquire/findStructure';
 
+// constants and types
 import { QUALIFYING } from '@Constants/drawDefinitionConstants';
 import { SUCCESS } from '@Constants/resultConstants';
 import { ResultType } from '@Types/factoryTypes';

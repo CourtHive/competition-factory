@@ -2,7 +2,7 @@ import mocksEngine from '@Assemblies/engines/mock';
 import tournamentEngine from '@Engines/syncEngine';
 import { expect, it, describe } from 'vitest';
 
-// constants and types
+// constants
 import { PARTICIPANT_NAME_DERIVED_FROM_PERSON } from '@Constants/infoConstants';
 
 /**

@@ -1,7 +1,7 @@
 import { validateStatusTransition } from '@Validators/sanctioning/validateStatusTransition';
 import { describe, expect, it } from 'vitest';
 
-// Constants
+// constants
 import { POLICY_TYPE_SANCTIONING } from '@Constants/policyConstants';
 import {
   APPROVED,
@@ -22,7 +22,7 @@ import {
   AMENDABLE_STATUSES,
 } from '@Constants/sanctioningConstants';
 
-// Types
+// types
 import type { SanctioningStatus } from '@Types/sanctioningTypes';
 import {
   SanctioningStatusEnum,

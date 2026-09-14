@@ -1,12 +1,13 @@
 import { POLICY_RANKING_POINTS_WTA } from '@Fixtures/policies/POLICY_RANKING_POINTS_WTA';
 import { getAwardProfile } from '@Query/scales/getAwardProfile';
 import scaleEngine from '@Engines/scaleEngine';
-import { mocksEngine } from '../../..';
 import { describe, expect, it } from 'vitest';
+import { mocksEngine } from '../../..';
 
+// constants
+import { MAIN, QUALIFYING, SINGLE_ELIMINATION } from '@Constants/drawDefinitionConstants';
 import { POLICY_TYPE_RANKING_POINTS } from '@Constants/policyConstants';
 import { SINGLES, DOUBLES } from '@Constants/eventConstants';
-import { MAIN, QUALIFYING, SINGLE_ELIMINATION } from '@Constants/drawDefinitionConstants';
 
 const policyDefinitions = POLICY_RANKING_POINTS_WTA;
 const policy = policyDefinitions[POLICY_TYPE_RANKING_POINTS];

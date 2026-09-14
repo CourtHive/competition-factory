@@ -3,7 +3,7 @@ import { EDITABLE_STATUSES, PROPOSAL_NOT_EDITABLE, MISSING_SANCTIONING_RECORD } 
 import { INVALID_VALUES } from '@Constants/errorConditionConstants';
 import { SUCCESS } from '@Constants/resultConstants';
 
-// Types
+// types
 import type { SanctioningRecord, TournamentProposal } from '@Types/sanctioningTypes';
 
 type UpdateProposalArgs = {

@@ -1,14 +1,14 @@
+import { hasPropagatedExitDownstream } from '@Query/drawDefinition/hasPropagatedExitDownstream';
 import { structureAssignedDrawPositions } from '@Query/drawDefinition/positionsGetter';
 import { allTournamentMatchUps } from '@Query/matchUps/getAllTournamentMatchUps';
-import { isCompletedStructure } from '@Query/drawDefinition/structureActions';
-import { hasPropagatedExitDownstream } from '@Query/drawDefinition/hasPropagatedExitDownstream';
 import { isActiveDownstream } from '@Query/drawDefinition/isActiveDownstream';
+import { isCompletedStructure } from '@Query/drawDefinition/structureActions';
 import { getAppliedPolicies } from '@Query/extensions/getAppliedPolicies';
 import { isDirectingMatchUpStatus } from '@Query/matchUp/checkStatusType';
 import { collectionMatchUpActions } from './collectionMatchUpActions';
 import { getParticipants } from '@Query/participants/getParticipants';
-import { getAllDrawMatchUps } from '@Query/matchUps/drawMatchUps';
 import { decorateResult } from '@Functions/global/decorateResult';
+import { getAllDrawMatchUps } from '@Query/matchUps/drawMatchUps';
 import { positionTargets } from '@Query/matchUp/positionTargets';
 import { getMatchUpsMap } from '@Query/matchUps/getMatchUpsMap';
 import { adHocMatchUpActions } from './adHocMatchUpActions';
@@ -23,20 +23,10 @@ import {
 } from '@Query/drawDefinition/positionActions/actionPolicyUtils';
 
 // constants, fixtures and types
-import {
-  CLEAR_SCORE,
-  END,
-  REFEREE,
-  SCHEDULE,
-  SCHEDULE_METHOD,
-  SCORE,
-  START,
-  STATUS,
-} from '@Constants/matchUpActionConstants';
+import { BYE, DOUBLE_DEFAULT, DOUBLE_WALKOVER, TO_BE_PLAYED } from '@Constants/matchUpStatusConstants';
 import { POLICY_TYPE_MATCHUP_ACTIONS, POLICY_TYPE_POSITION_ACTIONS } from '@Constants/policyConstants';
 import { MatchUpsMap, PolicyDefinitions, TournamentRecords, ResultType } from '@Types/factoryTypes';
 import POLICY_MATCHUP_ACTIONS_DEFAULT from '@Fixtures/policies/POLICY_MATCHUP_ACTIONS_DEFAULT';
-import { BYE, DOUBLE_DEFAULT, DOUBLE_WALKOVER, TO_BE_PLAYED } from '@Constants/matchUpStatusConstants';
 import { DrawDefinition, Event, Participant, Tournament } from '@Types/tournamentTypes';
 import { ADD_PENALTY, ADD_PENALTY_METHOD } from '@Constants/positionActionConstants';
 import { SUCCESS } from '@Constants/resultConstants';
@@ -48,6 +38,16 @@ import {
   MISSING_MATCHUP_ID,
   MISSING_TOURNAMENT_RECORD,
 } from '@Constants/errorConditionConstants';
+import {
+  CLEAR_SCORE,
+  END,
+  REFEREE,
+  SCHEDULE,
+  SCHEDULE_METHOD,
+  SCORE,
+  START,
+  STATUS,
+} from '@Constants/matchUpActionConstants';
 
 type MatchUpActionsArgs = {
   inContextDrawMatchUps?: HydratedMatchUp[];

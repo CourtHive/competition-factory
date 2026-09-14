@@ -1,7 +1,8 @@
-import { getAppliedPolicies } from '../extensions/getAppliedPolicies';
+import { getAppliedPolicies } from '@Query/extensions/getAppliedPolicies';
 
-import { MISSING_TOURNAMENT_RECORD } from '@Constants/errorConditionConstants';
+// constants
 import { POLICY_TYPE_SCORING, POLICY_TYPE_DRAWS } from '@Constants/policyConstants';
+import { MISSING_TOURNAMENT_RECORD } from '@Constants/errorConditionConstants';
 
 export function getAllowedMatchUpFormats({ tournamentRecord, categoryName, categoryType }) {
   if (!tournamentRecord) return { error: MISSING_TOURNAMENT_RECORD };

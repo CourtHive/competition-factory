@@ -1,13 +1,14 @@
-import { getStructureDrawPositionProfiles } from '../structure/getStructureDrawPositionProfiles';
-import { getRoundMatchUps } from '../matchUps/getRoundMatchUps';
-import { getPositionAssignments } from '../drawDefinition/positionsGetter';
-import { getStructureGroups } from '../structure/getStructureGroups';
-import { getStructureLinks } from '../drawDefinition/linkGetter';
+import { getStructureDrawPositionProfiles } from '@Query/structure/getStructureDrawPositionProfiles';
+import { getPositionAssignments } from '@Query/drawDefinition/positionsGetter';
+import { getStructureGroups } from '@Query/structure/getStructureGroups';
+import { getStructureLinks } from '@Query/drawDefinition/linkGetter';
+import { getRoundMatchUps } from '@Query/matchUps/getRoundMatchUps';
 import { stageOrder } from '@Constants/drawDefinitionConstants';
 import { ensureInt } from '@Tools/ensureInt';
 
-import { SUCCESS } from '@Constants/resultConstants';
+// constants
 import { ErrorType, MISSING_TOURNAMENT_RECORD } from '@Constants/errorConditionConstants';
+import { SUCCESS } from '@Constants/resultConstants';
 
 type DrawsAnalysis = {
   positionsNoOutcomes: string[];

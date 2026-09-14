@@ -1,10 +1,10 @@
 import { getPositionAssignments } from '@Query/drawDefinition/positionsGetter';
+import { drawOrigin, eventOrigin } from '@Query/readModel/readModelRows';
 import { addNotice, deleteNotice } from '@Global/state/globalState';
 import { requireParams } from '@Helpers/parameters/requireParams';
-import { drawOrigin, eventOrigin } from '@Query/readModel/readModelRows';
 import { pushGlobalLog } from '@Functions/global/globalLog';
 
-// Constants and types
+// constants and types
 import { ErrorType, MISSING_DRAW_DEFINITION, MISSING_MATCHUP } from '@Constants/errorConditionConstants';
 import { DRAW_DEFINITION, STRUCTURE } from '@Constants/attributeConstants';
 import { DrawDefinition, MatchUp } from '@Types/tournamentTypes';

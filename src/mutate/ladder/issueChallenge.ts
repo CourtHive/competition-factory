@@ -4,6 +4,7 @@ import { addTimeItem } from '@Mutate/timeItems/addTimeItem';
 import { isLadder } from '@Query/drawDefinition/isLadder';
 import { UUID } from '@Tools/UUID';
 
+// constants and types
 import { CHALLENGED } from '@Constants/matchUpStatusConstants';
 import { CHALLENGE_ISSUED } from '@Constants/ladderConstants';
 import { SUCCESS } from '@Constants/resultConstants';

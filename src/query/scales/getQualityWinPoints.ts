@@ -1,8 +1,8 @@
 import { getTargetElement } from '@Query/scales/getTargetElement';
 
+// constants
 import { WALKOVER, DEFAULTED } from '@Constants/matchUpStatusConstants';
-import { SCALE } from '@Constants/scaleConstants';
-import { RANKING } from '@Constants/scaleConstants';
+import { SCALE, RANKING } from '@Constants/scaleConstants';
 
 type QualityWin = {
   opponentParticipantId: string;

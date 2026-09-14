@@ -8,8 +8,8 @@ import { UUID } from '@Tools/UUID';
 // constants and types
 import { COMPETITOR, participantRoles } from '@Constants/participantRoles';
 import { INDIVIDUAL, PAIR } from '@Constants/participantConstants';
-import { Participant } from '@Types/tournamentTypes';
 import { SUCCESS } from '@Constants/resultConstants';
+import { Participant } from '@Types/tournamentTypes';
 import {
   INVALID_PARTICIPANT_ROLE,
   INVALID_VALUES,

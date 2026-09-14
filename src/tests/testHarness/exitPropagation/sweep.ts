@@ -5,6 +5,7 @@ import type { PropertyFailure } from './transitions';
 
 import mocksEngine from '@Assemblies/engines/mock';
 
+// constants
 import {
   MODIFIED_FEED_IN_CHAMPIONSHIP,
   FIRST_MATCH_LOSER_CONSOLATION,

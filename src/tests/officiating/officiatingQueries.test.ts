@@ -2,6 +2,7 @@ import { MISSING_EVALUATION_POLICY, MISSING_OFFICIAL_RECORD } from '@Constants/o
 import { INVALID_VALUES } from '@Constants/errorConditionConstants';
 import { describe, expect, it } from 'vitest';
 
+// Fixtures
 import { POLICY_OFFICIATING_EVALUATION_CHAIR_UMPIRE } from '@Fixtures/policies/POLICY_OFFICIATING_EVALUATION_CHAIR_UMPIRE';
 
 import { getOfficialCertifications } from '@Query/officiating/getOfficialCertifications';
@@ -11,6 +12,7 @@ import { getEvaluationTemplate } from '@Query/officiating/getEvaluationTemplate'
 import { getEvaluationSummary } from '@Query/officiating/getEvaluationSummary';
 import { getEvaluations } from '@Query/officiating/getEvaluations';
 
+// types
 import type { OfficialRecord } from '@Types/officiatingTypes';
 
 function makeRecord(overrides?: Partial<OfficialRecord>): OfficialRecord {
