@@ -202,6 +202,7 @@ function resetMatchUpScore({ matchUp, isLuckyDraw, removeAssignments, roundNumbe
       const fedDrawPositions = sides
         ?.map(({ drawPosition, participantFed }) => !participantFed && drawPosition)
         .filter(Boolean);
+      // Removal, not substitution: preserves ascending order. See `getOrderedDrawPositions`.
       const drawPositions = matchUp.drawPositions.map((drawPosition) =>
         fedDrawPositions.includes(drawPosition) ? undefined : drawPosition,
       ) as number[];

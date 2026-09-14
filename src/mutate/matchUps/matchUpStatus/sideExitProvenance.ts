@@ -531,6 +531,8 @@ function withdrawFromMatchUp(matchUp: MatchUp, sources: Set<string>, structureId
   //
   // The winner's position is read BEFORE `winningSide` is deleted, because it is the index of the
   // side that was about to advance out of an exit that is no longer happening.
+  // Derives a side from drawPosition ORDER — valid only because drawPositions are stored ascending.
+  // See the canonical statement in `getOrderedDrawPositions`.
   const winnerDrawPosition = matchUp.winningSide ? matchUp.drawPositions?.[matchUp.winningSide - 1] : undefined;
   clearSideExitProvenance(matchUp);
   matchUp.matchUpStatusCodes = [];

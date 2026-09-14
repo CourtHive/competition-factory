@@ -66,6 +66,9 @@ export function releaseAdvancedDrawPosition({
     if (!matchUp.drawPositions?.includes(drawPosition)) continue;
     if (matchUp.winningSide || !RELEASABLE_STATUSES.includes(matchUp.matchUpStatus)) continue;
 
+    // Removal, not substitution: mapping a position to `undefined` preserves ascending order.
+    // Any writer that SUBSTITUTES must re-sort — see the canonical statement in
+    // `getOrderedDrawPositions`.
     matchUp.drawPositions = (matchUp.drawPositions ?? []).map((position) =>
       position === drawPosition ? undefined : position,
     ) as number[];

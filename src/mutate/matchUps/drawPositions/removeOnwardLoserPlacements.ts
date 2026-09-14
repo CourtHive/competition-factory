@@ -34,6 +34,8 @@ function placementIsInert({ structureMatchUps, drawPosition }: { structureMatchU
     .every((matchUp) => {
       if (!matchUp.winningSide && UNDECIDED_STATUSES.has(matchUp.matchUpStatus)) return true;
       if (!isAnyExit(matchUp.matchUpStatus)) return false;
+      // `indexOf` as a side number — valid only because drawPositions are stored ascending.
+      // See the canonical statement in `getOrderedDrawPositions`.
       const sideNumber = (matchUp.drawPositions ?? []).indexOf(drawPosition) + 1;
       return !!getSideExitProvenance({ matchUp })?.[sideNumber];
     });
