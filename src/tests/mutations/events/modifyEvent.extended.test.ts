@@ -348,7 +348,7 @@ describe('modifyEvent - Extended Coverage', () => {
     });
 
     // Might fail age check
-    expect(result.error || result.success).toBeDefined();
+    expect(result.error ?? result.success).toBeDefined();
   });
 
   it('returns error when participant missing birth date for age category', () => {

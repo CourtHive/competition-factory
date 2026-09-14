@@ -84,7 +84,7 @@ export function setMatchUpScheduleLock(params: SetMatchUpScheduleLockArgs) {
   if (removing) {
     if (matchUp.schedule) delete matchUp.schedule.lock;
   } else {
-    if (!matchUp.schedule) matchUp.schedule = {};
+    matchUp.schedule ??= {};
     matchUp.schedule.lock = lock as ScheduleLock;
   }
 

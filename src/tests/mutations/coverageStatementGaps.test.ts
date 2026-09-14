@@ -751,7 +751,7 @@ describe('addMatchUpScheduleItems anachronism', () => {
         tournamentRecord,
       } as any);
       // The result may be ANACHRONISM error or success with warning depending on dependency resolution
-      expect(result.error || result.success).toBeDefined();
+      expect(result.error ?? result.success).toBeDefined();
     }
   });
 });
@@ -1012,7 +1012,7 @@ describe('addMatchUpScheduleItems proConflictDetection', () => {
         tournamentRecord,
       } as any);
       // Might detect conflict or not depending on state
-      expect(result2.error || result2.success).toBeDefined();
+      expect(result2.error ?? result2.success).toBeDefined();
     }
   });
 });

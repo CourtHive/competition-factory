@@ -66,8 +66,8 @@ export function getTieFormat({
         return decorateResult({ result: { error: INVALID_MATCHUP }, stack });
       }
 
-      if (!structure) structure = result.structure;
-      if (!matchUp) matchUp = result.matchUp;
+      structure ??= result.structure;
+      matchUp ??= result.matchUp;
     }
 
     tieFormat =

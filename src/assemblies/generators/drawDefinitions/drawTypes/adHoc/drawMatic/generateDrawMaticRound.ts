@@ -111,7 +111,7 @@ export function generateDrawMaticRound(params: GenerateDrawMaticRoundArgs): Resu
 
   if (!drawDefinition) return { error: MISSING_DRAW_DEFINITION };
   if (!params.structure && !structureId) return { error: STRUCTURE_NOT_FOUND };
-  const structure = params.structure || findStructure({ drawDefinition, structureId }).structure;
+  const structure = params.structure ?? findStructure({ drawDefinition, structureId }).structure;
   if (!isObject(structure)) return { error: MISSING_STRUCTURE };
 
   if (!participantIds?.length) return { error: MISSING_PARTICIPANT_IDS };

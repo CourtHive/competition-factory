@@ -76,7 +76,7 @@ export function getDrawDefinitionTimeItem({ returnPreviousValues, drawDefinition
     itemSubTypes,
     itemType,
   });
-  return (timeItem && { timeItem, previousItems }) || { info };
+  return (timeItem && { timeItem, previousItems }) ?? { info };
 }
 
 type GetEventTimeItemArgs = {
@@ -95,7 +95,7 @@ export function getEventTimeItem({ returnPreviousValues, itemSubTypes, itemType,
     itemSubTypes,
     itemType,
   });
-  return (timeItem && { timeItem, previousItems }) || { info };
+  return (timeItem && { timeItem, previousItems }) ?? { info };
 }
 
 type GetTournamentTimeItemArgs = {
@@ -119,7 +119,7 @@ export function getTournamentTimeItem({
     itemSubTypes,
     itemType,
   });
-  return (timeItem && { timeItem, previousItems }) || { info };
+  return (timeItem && { timeItem, previousItems }) ?? { info };
 }
 
 export function getParticipantTimeItem({
@@ -145,5 +145,5 @@ export function getParticipantTimeItem({
     itemType,
   });
 
-  return (timeItem && { timeItem, previousItems }) || { info };
+  return (timeItem && { timeItem, previousItems }) ?? { info };
 }

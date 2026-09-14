@@ -100,7 +100,7 @@ function setRecursive(node: any, segments: string[], depth: number, value: unkno
     copy[Number(segment)] = child;
     return copy;
   }
-  return { ...(node ?? {}), [segment]: child };
+  return { ...node, [segment]: child };
 }
 
 /**
@@ -124,7 +124,7 @@ function unsetRecursive(node: any, segments: string[], depth: number): any {
       copy.splice(Number(segment), 1);
       return copy;
     }
-    const copy = { ...(node ?? {}) };
+    const copy = { ...node };
     delete copy[segment];
     return copy;
   }
@@ -136,7 +136,7 @@ function unsetRecursive(node: any, segments: string[], depth: number): any {
     copy[Number(segment)] = updatedChild;
     return copy;
   }
-  return { ...(node ?? {}), [segment]: updatedChild };
+  return { ...node, [segment]: updatedChild };
 }
 
 /**

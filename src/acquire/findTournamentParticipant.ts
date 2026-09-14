@@ -16,10 +16,10 @@ export function findTournamentParticipant(params: FindTournamentParticipantArgs)
   const { tournamentRecord, participantId } = params;
 
   const tournamentRecords =
-    params.tournamentRecords ||
+    params.tournamentRecords ??
     (tournamentRecord && {
       [tournamentRecord.tournamentId]: tournamentRecord,
-    }) ||
+    }) ??
     {};
 
   for (const tournamentRecord of Object.values(tournamentRecords)) {

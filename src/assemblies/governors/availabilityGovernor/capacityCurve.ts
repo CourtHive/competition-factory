@@ -367,14 +367,14 @@ export function compareCapacityCurves(baseline: CapacityCurve, modified: Capacit
   const sortedTimes = Array.from(allTimes).sort();
 
   for (const time of sortedTimes) {
-    const baselinePoint = baseline.points?.find((p) => p.time === time) || {
+    const baselinePoint = baseline.points?.find((p) => p.time === time) ?? {
       time,
       courtsAvailable: 0,
       courtsSoftBlocked: 0,
       courtsHardBlocked: 0,
     };
 
-    const modifiedPoint = modified.points?.find((p) => p.time === time) || {
+    const modifiedPoint = modified.points?.find((p) => p.time === time) ?? {
       time,
       courtsAvailable: 0,
       courtsSoftBlocked: 0,

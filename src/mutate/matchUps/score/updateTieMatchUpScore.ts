@@ -47,10 +47,10 @@ export function updateTieMatchUpScore(params: UpdateTieMatchUpScoreArgs): {
   const { exitWhenNoValues, drawDefinition, matchUpStatus, removeScore, matchUpsMap, matchUpId, event } = params;
 
   const tournamentRecords =
-    params.tournamentRecords ||
+    params.tournamentRecords ??
     (params.tournamentRecord && {
       [params.tournamentRecord?.tournamentId]: params.tournamentRecord,
-    }) ||
+    }) ??
     {};
 
   const tournamentId = params.tournamentId || params.tournamentRecord?.tournamentId;

@@ -54,8 +54,8 @@ export function openProposalRegistration({
   }
 
   proposal.registrationProfile = {
-    ...(proposal.registrationProfile ?? {}),
-    ...(registrationProfile ?? {}),
+    ...proposal.registrationProfile,
+    ...registrationProfile,
   };
   if (!proposal.registrationProfile.entriesOpen) {
     proposal.registrationProfile.entriesOpen = now;

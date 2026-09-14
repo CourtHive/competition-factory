@@ -302,7 +302,7 @@ test.each(scenarios)('Double Exit produces exit in consolation', (params) => {
     ],
   });
 
-  const doubleWalkoverOutcome = (outcomes || updates)?.find(({ matchUpStatus }) => matchUpStatus === DOUBLE_WALKOVER);
+  const doubleWalkoverOutcome = (outcomes ?? updates)?.find(({ matchUpStatus }) => matchUpStatus === DOUBLE_WALKOVER);
 
   tournamentEngine.setState(tournamentRecord);
   let matchUps = tournamentEngine.allTournamentMatchUps().matchUps;

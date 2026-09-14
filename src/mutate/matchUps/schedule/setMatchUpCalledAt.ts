@@ -149,7 +149,7 @@ export function setMatchUpCalledAt(params: SetMatchUpCalledAtArgs) {
   if (calledAt === undefined || calledAt === null) {
     if (matchUp.schedule) delete matchUp.schedule.calledAt;
   } else {
-    if (!matchUp.schedule) matchUp.schedule = {};
+    matchUp.schedule ??= {};
     matchUp.schedule.calledAt = calledAt;
   }
 

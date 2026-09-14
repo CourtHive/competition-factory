@@ -60,7 +60,7 @@ export function findDrawMatchUp(params: FindDrawMatchUpArgs): {
   const { structures = [] } = getDrawStructures({ drawDefinition });
 
   const contextContent =
-    params.contextContent || (contextProfile && getContextContent({ contextProfile, drawDefinition }));
+    params.contextContent ?? (contextProfile && getContextContent({ contextProfile, drawDefinition }));
 
   for (const structure of structures) {
     const { matchUps } = getAllStructureMatchUps({
