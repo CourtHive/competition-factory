@@ -8,6 +8,24 @@ storage/
 # goLLums
 .claude
 
+# Git worktrees created from INSIDE the repo.
+#
+# The house convention puts worktrees in `CourtHive/.worktrees/`, a SIBLING of the repos, where
+# nothing needs ignoring. But `git worktree add .worktrees/<name>` resolves relative to the CURRENT
+# directory, so running it from inside the repo silently creates one in the working tree instead —
+# a slip that differs from the correct command only by where you happen to be standing.
+#
+# The result is a permanent `?? .worktrees/` in every `git status`, for every session in the repo,
+# plus the risk of committing it as an embedded gitlink. Git does not recurse into a nested repo, so
+# it is one line of noise rather than thousands of files — but it is one line that never goes away
+# and that everyone has to learn to ignore.
+#
+# NOT a gate problem, and that was measured rather than assumed: vitest (`include: src/**`), eslint
+# (`eslint src`), prettier (`format:check` on `src/**`) and tsc (`include` inherited from
+# tsconfig.base.json) are all anchored at `src/`, so none of them would ever walk it. Factory was
+# already fixed for the old `.claude/worktrees` case by #4604.
+.worktrees/
+
 # Testing
 benchmarks
 coverage
