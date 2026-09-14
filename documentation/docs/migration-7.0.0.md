@@ -665,11 +665,11 @@ not decided here.
 
 > **CORRECTED — see [11e](#11e-a-bye-can-never-be-the-winning-side).** The paragraph above is wrong
 > and shipped in #4858. It is not a rules question: the engine had already decided it, and the
-> alternative it names is a bug class, not a policy. The BYE case is refused as of #4861.
+> alternative it names is a bug class, not a policy. The BYE case is refused as of #4862.
 
 ## 11e. A BYE can never be the winning side
 
-_Shipped in [#4861](https://github.com/CourtHive/competition-factory/pull/4861)._
+_Shipped in [#4862](https://github.com/CourtHive/competition-factory/pull/4862)._
 
 Completes [11d](#11d-an-exit-cannot-be-awarded-to-a-drawposition-nobody-holds), which carved out a
 `BYE` on the winning side and gave a bad reason for it.
