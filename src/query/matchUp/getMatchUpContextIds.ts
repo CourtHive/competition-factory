@@ -1,5 +1,6 @@
 import { validMatchUps } from '@Validators/validMatchUp';
 
+// constants
 import { INVALID_VALUES } from '@Constants/errorConditionConstants';
 
 export function getMatchUpContextIds({ matchUps, matchUpId }) {

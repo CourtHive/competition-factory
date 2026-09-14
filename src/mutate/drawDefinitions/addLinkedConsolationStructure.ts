@@ -3,7 +3,7 @@ import { attachConsolationStructures } from './attachStructures';
 import { findStructure } from '@Acquire/findStructure';
 import { constantToString } from '@Tools/strings';
 
-// Constants and types
+// constants
 import { MISSING_DRAW_DEFINITION, MISSING_STRUCTURE, UNRECOGNIZED_DRAW_TYPE } from '@Constants/errorConditionConstants';
 import { CONSOLATION, LOSER, MAIN, AD_HOC, TOP_DOWN } from '@Constants/drawDefinitionConstants';
 import { SUCCESS } from '@Constants/resultConstants';

@@ -4,6 +4,7 @@ import type { InvariantViolation } from './invariants';
 import { getDrawInconsistencies } from '@Query/drawDefinition/getDrawInconsistencies';
 import tournamentEngine from '@Engines/syncEngine';
 
+// constants
 import { TO_BE_PLAYED } from '@Constants/matchUpStatusConstants';
 
 /**

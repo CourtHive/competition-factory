@@ -1,5 +1,5 @@
-import { SCHEDULE_LOCK_ATTRIBUTES } from '@Query/matchUp/isScheduleLocked';
 import { modifyMatchUpNotice } from '@Mutate/notifications/drawNotifications';
+import { SCHEDULE_LOCK_ATTRIBUTES } from '@Query/matchUp/isScheduleLocked';
 import { decorateResult } from '@Functions/global/decorateResult';
 import { findDrawMatchUp } from '@Acquire/findDrawMatchUp';
 import { isObject } from '@Tools/objects';

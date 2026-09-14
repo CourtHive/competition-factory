@@ -3,8 +3,8 @@ import * as fs from 'fs-extra';
 // constants
 import { TournamentRecords } from '@Types/factoryTypes';
 import { SUCCESS } from '@Constants/resultConstants';
+import { UTF8 } from '@Server/common/constants/app';
 import { Tournament } from '@Types/tournamentTypes';
-import { UTF8 } from '../../common/constants/app';
 
 export async function saveTournamentRecords(params?: {
   tournamentRecords?: TournamentRecords;

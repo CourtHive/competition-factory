@@ -1,15 +1,15 @@
 import { attemptToModifyScore } from '@Mutate/drawDefinitions/matchUpGovernor/attemptToModifyScore';
 import { assignDrawPositionBye } from '@Mutate/matchUps/drawPositions/assignDrawPositionBye';
 import { updateTieMatchUpScore } from '@Mutate/matchUps/score/updateTieMatchUpScore';
-import { isDirectingMatchUpStatus } from '@Query/matchUp/checkStatusType';
 import { isLuckyBasedDraw } from '@Query/drawDefinition/isLuckyBasedDraw';
+import { isDirectingMatchUpStatus } from '@Query/matchUp/checkStatusType';
 import { decorateResult } from '@Functions/global/decorateResult';
 import { isAdHoc } from '@Query/drawDefinition/isAdHoc';
 import { directWinner } from './directWinner';
 import { directLoser } from './directLoser';
 import { isExit } from '@Validators/isExit';
 
-// constants
+// constants and types
 import { MISSING_DRAW_POSITIONS } from '@Constants/errorConditionConstants';
 import { COMPLETED } from '@Constants/matchUpStatusConstants';
 import { SUCCESS } from '@Constants/resultConstants';

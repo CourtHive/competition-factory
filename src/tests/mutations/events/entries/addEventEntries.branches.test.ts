@@ -4,12 +4,12 @@ import tournamentEngine from '@Engines/syncEngine';
 import { describe, expect, it } from 'vitest';
 
 // constants
+import { INVALID_PARTICIPANT_IDS, INVALID_VALUES, MISSING_PARTICIPANT_IDS } from '@Constants/errorConditionConstants';
 import { INDIVIDUAL } from '@Constants/participantConstants';
 import { UNGROUPED } from '@Constants/entryStatusConstants';
 import { DOUBLES, TEAM } from '@Constants/eventConstants';
 import { FEMALE, MALE } from '@Constants/genderConstants';
 import { COMPETITOR } from '@Constants/participantRoles';
-import { INVALID_PARTICIPANT_IDS, INVALID_VALUES, MISSING_PARTICIPANT_IDS } from '@Constants/errorConditionConstants';
 
 describe('addEventEntries - uncovered branch coverage', () => {
   it('returns error when participantIds is not an array', () => {

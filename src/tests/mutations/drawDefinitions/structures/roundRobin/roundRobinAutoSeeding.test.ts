@@ -4,6 +4,7 @@ import tournamentEngine from '@Engines/syncEngine';
 import { xa } from '@Tools/extractAttributes';
 import { expect, it } from 'vitest';
 
+// constants and fixtures
 import { MAIN, ROUND_ROBIN } from '@Constants/drawDefinitionConstants';
 import SEEDING_USTA from '@Fixtures/policies/POLICY_SEEDING_DEFAULT';
 import { RANKING, RATING } from '@Constants/scaleConstants';

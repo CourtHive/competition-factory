@@ -1,8 +1,9 @@
-import { extractDate } from '@Tools/dateTime';
 import tournamentEngine from '@Engines/syncEngine';
+import { extractDate } from '@Tools/dateTime';
 import { mocksEngine } from '../../..';
 import { expect, test } from 'vitest';
 
+// Fixtures
 import POLICY_SCHEDULING_NO_DAILY_LIMITS from '@Fixtures/policies/POLICY_SCHEDULING_NO_DAILY_LIMITS';
 
 const startTime = '08:00';

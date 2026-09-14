@@ -4,7 +4,7 @@ import { getScaledEntries } from '@Query/event/getScaledEntries';
 import { getAvgWTN } from '@Query/scales/getAvgWTN';
 import { expect, it, describe } from 'vitest';
 
-// constants and types
+// constants
 import { RATING, SEEDING } from '@Constants/scaleConstants';
 import { SINGLES } from '@Constants/matchUpTypes';
 

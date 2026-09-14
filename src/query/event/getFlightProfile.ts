@@ -1,6 +1,7 @@
 import { firstClassOrExtension } from '@Acquire/firstClassOrExtension';
 import { makeDeepCopy } from '@Tools/makeDeepCopy';
 
+// constants and types
 import { MISSING_EVENT } from '@Constants/errorConditionConstants';
 import { FLIGHT_PROFILE } from '@Constants/extensionConstants';
 import { Event } from '@Types/tournamentTypes';

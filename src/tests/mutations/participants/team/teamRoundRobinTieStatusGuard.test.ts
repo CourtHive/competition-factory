@@ -1,10 +1,10 @@
-import tournamentEngine from '@Engines/syncEngine';
 import mocksEngine from '@Assemblies/engines/mock';
+import tournamentEngine from '@Engines/syncEngine';
 import { expect, it } from 'vitest';
 
 // constants
-import { POLICY_TYPE_SCORING } from '@Constants/policyConstants';
 import { ROUND_ROBIN } from '@Constants/drawDefinitionConstants';
+import { POLICY_TYPE_SCORING } from '@Constants/policyConstants';
 import { COMPLETED } from '@Constants/matchUpStatusConstants';
 import { TEAM } from '@Constants/eventConstants';
 

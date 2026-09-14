@@ -16,8 +16,8 @@ import { makeDeepCopy } from '@Tools/makeDeepCopy';
 // constants
 import { SWAP_PARTICIPANT_METHOD } from '@Constants/positionActionConstants';
 import { CONTAINER } from '@Constants/drawDefinitionConstants';
-import { TEAM_MATCHUP } from '@Constants/matchUpTypes';
 import { TEAM_EVENT } from '@Constants/eventConstants';
+import { TEAM_MATCHUP } from '@Constants/matchUpTypes';
 import { SUCCESS } from '@Constants/resultConstants';
 import {
   INVALID_VALUES,

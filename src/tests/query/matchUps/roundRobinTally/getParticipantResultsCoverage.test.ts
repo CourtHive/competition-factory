@@ -5,8 +5,8 @@ import { describe, expect, it } from 'vitest';
 
 // constants
 import { COMPLETED, WALKOVER, DEFAULTED, RETIRED } from '@Constants/matchUpStatusConstants';
-import { POLICY_TYPE_SCORING } from '@Constants/policyConstants';
 import { ROUND_ROBIN } from '@Constants/drawDefinitionConstants';
+import { POLICY_TYPE_SCORING } from '@Constants/policyConstants';
 import { TEAM_EVENT } from '@Constants/eventConstants';
 
 const policyDefinitions = { [POLICY_TYPE_SCORING]: { requireParticipantsForScoring: false } };

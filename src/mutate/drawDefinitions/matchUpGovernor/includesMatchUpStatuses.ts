@@ -1,5 +1,6 @@
 import { overlap } from '@Tools/arrays';
 
+// constants
 import { BYE, DEFAULTED, WALKOVER } from '@Constants/matchUpStatusConstants';
 
 export function includesMatchUpStatuses({

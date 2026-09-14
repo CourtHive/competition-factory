@@ -1,10 +1,11 @@
-import { getAllStructureMatchUps } from '../../matchUps/getAllStructureMatchUps';
-import { allDrawMatchUps } from '../../matchUps/getAllDrawMatchUps';
-import { checkScoreHasValue } from '../../matchUp/checkScoreHasValue';
+import { getAllStructureMatchUps } from '@Query/matchUps/getAllStructureMatchUps';
+import { checkScoreHasValue } from '@Query/matchUp/checkScoreHasValue';
+import { allDrawMatchUps } from '@Query/matchUps/getAllDrawMatchUps';
 
+// constants and types
+import { COMPLETED, IN_PROGRESS } from '@Constants/matchUpStatusConstants';
 import { MatchUp } from '@Types/tournamentTypes';
 import { TEAM } from '@Constants/matchUpTypes';
-import { COMPLETED, IN_PROGRESS } from '@Constants/matchUpStatusConstants';
 
 export function getTargetTeamMatchUps({
   updateInProgressMatchUps,

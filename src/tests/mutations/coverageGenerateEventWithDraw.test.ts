@@ -13,8 +13,8 @@
 import { ROUND_ROBIN_WITH_PLAYOFF, AD_HOC } from '@Constants/drawDefinitionConstants';
 import { COMPLETED } from '@Constants/matchUpStatusConstants';
 import { DOUBLES } from '@Constants/eventConstants';
-import tournamentEngine from '@Engines/syncEngine';
 import mocksEngine from '@Assemblies/engines/mock';
+import tournamentEngine from '@Engines/syncEngine';
 import { expect, it, describe } from 'vitest';
 
 describe('generateEventWithDraw coverage', () => {

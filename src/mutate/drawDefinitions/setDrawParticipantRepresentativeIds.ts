@@ -1,10 +1,11 @@
-import { addDrawDefinitionExtension } from '../extensions/addRemoveExtensions';
+import { addDrawDefinitionExtension } from '@Mutate/extensions/addRemoveExtensions';
 import { modifyDrawNotice } from '@Mutate/notifications/drawNotifications';
 import { getParticipantIds } from '@Functions/global/extractors';
 import { intersection } from '@Tools/arrays';
 
-import { PARTICIPANT_REPRESENTATIVES } from '@Constants/extensionConstants';
+// constants
 import { DRAW_DEFINITION_NOT_FOUND, INVALID_VALUES } from '@Constants/errorConditionConstants';
+import { PARTICIPANT_REPRESENTATIVES } from '@Constants/extensionConstants';
 
 export function setDrawParticipantRepresentativeIds({
   representativeParticipantIds,

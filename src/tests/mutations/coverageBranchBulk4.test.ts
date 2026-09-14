@@ -3,11 +3,11 @@ import { policyAttachment } from '@Generators/drawDefinitions/generateDrawDefini
 import { generateOrGetExisting } from '@Generators/drawDefinitions/generateDrawDefinition/generateOrGetExisting';
 import { organizeDrawPositionOptions } from '@Query/drawDefinition/avoidance/organizeDrawPositionOptions';
 import { generateAdHocRounds } from '@Generators/drawDefinitions/drawTypes/adHoc/generateAdHocRounds';
-import { getAllowedMatchUpFormats, getAllowedDrawTypes } from '@Query/tournaments/allowedTypes';
 import { allocateTeamMatchUpCourts } from '@Mutate/matchUps/schedule/allocateTeamMatchUpCourts';
+import { getAllowedMatchUpFormats, getAllowedDrawTypes } from '@Query/tournaments/allowedTypes';
+import { replaceQualifier } from '@Mutate/drawDefinitions/matchUpGovernor/replaceQualifier';
 import { getCompetitionParticipants } from '@Query/participants/getCompetitionParticipants';
 import { applyTournamentRankingPoints } from '@Mutate/scales/applyTournamentRankingPoints';
-import { replaceQualifier } from '@Mutate/drawDefinitions/matchUpGovernor/replaceQualifier';
 import { collectionGroupUpdate } from '@Mutate/tieFormat/collectionGroupUpdate';
 import { getDrawPositionsRanges } from '@Query/matchUps/getDrawPositionsRanges';
 import { getTallyReport } from '@Query/matchUps/roundRobinTally/getTallyReport';
@@ -15,8 +15,8 @@ import { methodImporter } from '@Assemblies/engines/parts/methodImporter';
 import { getSourceRounds } from '@Query/drawDefinition/getSourceRounds';
 import { mapNumbersToIndexes } from '@Tools/mapNumbersToIndexes';
 import { getAccessorValue } from '@Tools/getAccessorValue';
-import tournamentEngine from '@Engines/syncEngine';
 import mocksEngine from '@Assemblies/engines/mock';
+import tournamentEngine from '@Engines/syncEngine';
 import { expect, it, describe } from 'vitest';
 import {
   getRoundRobinGroupMatchUps,

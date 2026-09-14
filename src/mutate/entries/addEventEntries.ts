@@ -1,11 +1,11 @@
+import { setFirstClassOrExtension } from '@Mutate/extensions/setFirstClassOrExtension';
+import { modifyEventEntriesNotice } from '@Mutate/notifications/entriesNotifications';
 import { isMatchUpEventType } from '@Helpers/matchUpEventTypes/isMatchUpEventType';
 import { getAppliedPolicies } from '@Query/extensions/getAppliedPolicies';
 import { addDrawEntries } from '@Mutate/drawDefinitions/addDrawEntries';
 import { decorateResult } from '@Functions/global/decorateResult';
 import { refreshEntryPositions } from './refreshEntryPositions';
 import { isValidExtension } from '@Validators/isValidExtension';
-import { modifyEventEntriesNotice } from '@Mutate/notifications/entriesNotifications';
-import { setFirstClassOrExtension } from '@Mutate/extensions/setFirstClassOrExtension';
 import { addExtension } from '@Mutate/extensions/addExtension';
 import { definedAttributes } from '@Tools/definedAttributes';
 import { removeEventEntries } from './removeEventEntries';
@@ -22,15 +22,6 @@ import {
 } from '@Query/entries/categoryValidation';
 
 // constants and types
-import {
-  DrawDefinition,
-  EntryStatusUnion,
-  Event,
-  Extension,
-  Participant,
-  StageTypeUnion,
-  Tournament,
-} from '@Types/tournamentTypes';
 import POLICY_MATCHUP_ACTIONS_DEFAULT from '@Fixtures/policies/POLICY_MATCHUP_ACTIONS_DEFAULT';
 import { DOUBLES_EVENT, HYBRID_EVENT, TEAM_EVENT } from '@Constants/eventConstants';
 import { INDIVIDUAL, PAIR, TEAM } from '@Constants/participantConstants';
@@ -50,6 +41,15 @@ import {
   MISSING_EVENT,
   MISSING_PARTICIPANT_IDS,
 } from '@Constants/errorConditionConstants';
+import {
+  DrawDefinition,
+  EntryStatusUnion,
+  Event,
+  Extension,
+  Participant,
+  StageTypeUnion,
+  Tournament,
+} from '@Types/tournamentTypes';
 
 /**
  * Add entries into an event; optionally add to specified drawDefinition/flightProfile, if possible.

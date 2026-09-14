@@ -1,4 +1,4 @@
-import { luckyLoserDrawPositionAssignment as positionLuckyLoser } from '../matchUps/drawPositions/positionLuckyLoser';
+import { luckyLoserDrawPositionAssignment as positionLuckyLoser } from '@Mutate/matchUps/drawPositions/positionLuckyLoser';
 
 /**
  *

@@ -1,7 +1,7 @@
-import { decorateResult } from '@Functions/global/decorateResult';
-import { updateTeamEventEntries } from './updateTeamEventEntries';
-import { getTopics } from '@Global/state/globalState';
 import { modifyParticipantsNotice } from '@Mutate/notifications/participantNotifications';
+import { updateTeamEventEntries } from './updateTeamEventEntries';
+import { decorateResult } from '@Functions/global/decorateResult';
+import { getTopics } from '@Global/state/globalState';
 import { makeDeepCopy } from '@Tools/makeDeepCopy';
 
 // constants and types

@@ -1,5 +1,5 @@
-import addFormats from 'ajv-formats';
 import { describe, expect, it } from 'vitest';
+import addFormats from 'ajv-formats';
 import fs from 'fs-extra';
 import Ajv from 'ajv';
 

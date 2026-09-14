@@ -1,12 +1,6 @@
 import { describe, expect, it, beforeEach } from 'vitest';
 
 // constants
-import {
-  INVALID_TOURNAMENT_RECORD,
-  INVALID_VALUES,
-  MISSING_TOURNAMENT_RECORD,
-  NOT_FOUND,
-} from '@Constants/errorConditionConstants';
 import syncGlobalState, {
   disableNotifications,
   enableNotifications,
@@ -28,6 +22,12 @@ import syncGlobalState, {
   getTopics,
   callListener,
 } from '@Global/state/syncGlobalState';
+import {
+  INVALID_TOURNAMENT_RECORD,
+  INVALID_VALUES,
+  MISSING_TOURNAMENT_RECORD,
+  NOT_FOUND,
+} from '@Constants/errorConditionConstants';
 
 describe('syncGlobalState', () => {
   beforeEach(() => {

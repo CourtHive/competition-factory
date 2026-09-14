@@ -3,7 +3,7 @@ import { newDrawDefinition } from '@Assemblies/generators/drawDefinitions/newDra
 import { addPlayoffStructures } from '@Mutate/drawDefinitions/addPlayoffStructures';
 import { expect, it } from 'vitest';
 
-// Constants and types
+// constants and types
 import { FIRST_MATCH_LOSER_CONSOLATION, MAIN } from '@Constants/drawDefinitionConstants';
 import { DrawDefinition } from '@Types/tournamentTypes';
 

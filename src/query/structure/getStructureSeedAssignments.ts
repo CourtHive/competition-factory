@@ -2,7 +2,7 @@ import { getPositionAssignments } from '@Query/drawDefinition/positionsGetter';
 import { getStageEntries } from '@Query/drawDefinition/stageGetter';
 import { findStructure } from '@Acquire/findStructure';
 
-// Constants and Types
+// constants and types
 import { ErrorType, MISSING_SEED_ASSIGNMENTS, STRUCTURE_NOT_FOUND } from '@Constants/errorConditionConstants';
 import { DrawDefinition, SeedAssignment, StageTypeUnion, Structure } from '@Types/tournamentTypes';
 import { PLAY_OFF } from '@Constants/drawDefinitionConstants';

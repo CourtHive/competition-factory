@@ -2,8 +2,8 @@
  * v4.0 Tests - addPoint
  */
 
-import { describe, test, expect } from 'vitest';
 import { createMatchUp, addPoint, getScore } from '@Assemblies/governors/scoreGovernor';
+import { describe, test, expect } from 'vitest';
 
 describe('addPoint', () => {
   test('should add a point to a new match', () => {

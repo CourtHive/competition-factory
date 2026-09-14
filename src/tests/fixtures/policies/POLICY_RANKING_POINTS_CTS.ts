@@ -30,9 +30,9 @@
  * 365 within each period.
  */
 
+import { MAIN, QUALIFYING, SINGLE_ELIMINATION } from '@Constants/drawDefinitionConstants';
 import { POLICY_TYPE_RANKING_POINTS } from '@Constants/policyConstants';
 import { SINGLES, DOUBLES } from '@Constants/eventConstants';
-import { MAIN, QUALIFYING, SINGLE_ELIMINATION } from '@Constants/drawDefinitionConstants';
 
 // ─── Tabulka IV ──────────────────────────────────────────────────────────────
 //

@@ -1,8 +1,8 @@
-import { pairingHash } from '../drawMatic/generateCandidate';
-import { getEncounters } from '../drawMatic/getEncounters';
+import { pairingHash } from '@Generators/drawDefinitions/drawTypes/adHoc/drawMatic/generateCandidate';
+import { getEncounters } from '@Generators/drawDefinitions/drawTypes/adHoc/drawMatic/getEncounters';
 import { computeScoreGroups } from './computeScoreGroups';
 
-// Types
+// types
 import type { ScoreGroup, SwissParticipantRecord } from '@Types/swissTypes';
 import type { MatchUp } from '@Types/tournamentTypes';
 

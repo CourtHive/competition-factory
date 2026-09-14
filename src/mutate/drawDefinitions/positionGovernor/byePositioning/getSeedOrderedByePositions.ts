@@ -1,6 +1,6 @@
 import { getStructurePositionedSeeds } from '@Query/structure/getStructurePositionedSeeds';
-import { getNumericSeedValue } from '@Query/drawDefinition/getNumericSeedValue';
 import { getBlockSortedRandomDrawPositions } from './getBlockSortedRandomDrawPositions';
+import { getNumericSeedValue } from '@Query/drawDefinition/getNumericSeedValue';
 import { getValidSeedBlocks } from '@Query/drawDefinition/seedGetter';
 import { unique } from '@Tools/arrays';
 

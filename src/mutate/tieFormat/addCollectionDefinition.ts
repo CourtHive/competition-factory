@@ -3,28 +3,28 @@ import { generateCollectionMatchUps } from '@Assemblies/generators/drawDefinitio
 import { validateCollectionDefinition } from '@Validators/validateCollectionDefinition';
 import { getAllStructureMatchUps } from '@Query/matchUps/getAllStructureMatchUps';
 import { copyTieFormat } from '@Query/hierarchical/tieFormats/copyTieFormat';
-import { calculateWinCriteria } from '@Query/matchUp/calculateWinCriteria';
 import { getTieFormat } from '@Query/hierarchical/tieFormats/getTieFormat';
-import { getAppliedPolicies } from '@Query/extensions/getAppliedPolicies';
+import { calculateWinCriteria } from '@Query/matchUp/calculateWinCriteria';
 import { tieFormatTelemetry } from '@Mutate/tieFormat/tieFormatTelemetry';
+import { getAppliedPolicies } from '@Query/extensions/getAppliedPolicies';
 import { decorateResult } from '@Functions/global/decorateResult';
-import { validateTieFormat } from '@Validators/validateTieFormat';
 import { writeTieFormat } from '@Mutate/tieFormat/writeTieFormat';
+import { validateTieFormat } from '@Validators/validateTieFormat';
 import { definedAttributes } from '@Tools/definedAttributes';
 import { validUpdate } from '@Validators/validUpdate';
 import { takeUUID } from '@Tools/UUID';
 
 // constants and types
+import { POLICY_TYPE_MATCHUP_ACTIONS } from '@Constants/policyConstants';
+import { PolicyDefinitions, ResultType } from '@Types/factoryTypes';
+import { SUCCESS } from '@Constants/resultConstants';
+import { TEAM } from '@Constants/matchUpTypes';
 import {
   CANNOT_MODIFY_TIEFORMAT,
   DUPLICATE_VALUE,
   INSUFFICIENT_UUIDS,
   MISSING_DRAW_DEFINITION,
 } from '@Constants/errorConditionConstants';
-import { POLICY_TYPE_MATCHUP_ACTIONS } from '@Constants/policyConstants';
-import { PolicyDefinitions, ResultType } from '@Types/factoryTypes';
-import { SUCCESS } from '@Constants/resultConstants';
-import { TEAM } from '@Constants/matchUpTypes';
 import {
   Category,
   CollectionDefinition,

@@ -1,10 +1,11 @@
-import { xa } from '@Tools/extractAttributes';
 import mocksEngine from '@Assemblies/engines/mock';
 import tournamentEngine from '@Engines/syncEngine';
+import { xa } from '@Tools/extractAttributes';
 import { expect, it } from 'vitest';
 
-import { SEEDING } from '@Constants/scaleConstants';
+// constants
 import { SINGLES } from '@Constants/eventConstants';
+import { SEEDING } from '@Constants/scaleConstants';
 
 it('supports manual seeding with alphanumeric values', () => {
   const mockProfile = {

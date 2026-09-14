@@ -3,8 +3,8 @@ import tournamentEngine from '@Engines/syncEngine';
 import { expect, it, describe } from 'vitest';
 
 // constants and types
-import { TieScoreSourceEnum } from '@Types/tournamentTypes';
 import { COMPLETED } from '@Constants/matchUpStatusConstants';
+import { TieScoreSourceEnum } from '@Types/tournamentTypes';
 import { SINGLES } from '@Constants/matchUpTypes';
 import { TEAM } from '@Constants/eventConstants';
 

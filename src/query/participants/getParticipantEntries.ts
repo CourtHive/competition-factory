@@ -1,25 +1,25 @@
 import { tallyParticipantResults } from '@Query/matchUps/roundRobinTally/tallyParticipantResults';
-import { getEventSeedAssignments } from '@Query/event/getEventSeedAssignments';
 import { getPositionAssignments } from '@Query/drawDefinition/positionsGetter';
-import { createSubOrderMap } from '@Query/structure/createSubOrderMap';
+import { getEventSeedAssignments } from '@Query/event/getEventSeedAssignments';
 import { getDrawId, getParticipantId } from '@Functions/global/extractors';
 import { processEventEntry } from '@Query/participant/processEventEntry';
 import { allEventMatchUps } from '@Query/matchUps/getAllEventMatchUps';
+import { createSubOrderMap } from '@Query/structure/createSubOrderMap';
 import { getPublishState } from '@Query/publishing/getPublishState';
 import { addScheduleItem } from '@Query/matchUps/addScheduleItem';
 import { structureSort } from '@Functions/sorters/structureSort';
 import { getFlightProfile } from '@Query/event/getFlightProfile';
 import { timeSort, timeStringMinutes } from '@Tools/dateTime';
+import { definedAttributes } from '@Tools/definedAttributes';
 import { extensionsToAttributes } from '@Tools/makeDeepCopy';
 import { processSides } from '@Query/matchUps/processSides';
-import { definedAttributes } from '@Tools/definedAttributes';
 import { stringSort } from '@Functions/sorters/stringSort';
 import { isExit } from '@Validators/isExit';
 import { isObject } from '@Tools/objects';
 
 // constants and types
-import { UNGROUPED, UNPAIRED } from '@Constants/entryStatusConstants';
 import { CONTAINER, MAIN, PLAY_OFF, QUALIFYING } from '@Constants/drawDefinitionConstants';
+import { UNGROUPED, UNPAIRED } from '@Constants/entryStatusConstants';
 import { DOUBLES, SINGLES } from '@Constants/matchUpTypes';
 import { WIN_RATIO } from '@Constants/statsConstants';
 import { HydratedMatchUp } from '@Types/hydrated';

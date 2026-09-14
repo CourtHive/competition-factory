@@ -1,16 +1,18 @@
 import { requestEndorsement, endorseApplication, declineEndorsement } from '@Mutate/sanctioning/endorsement';
-import { activateFromSanctioning } from '@Mutate/sanctioning/activateFromSanctioning';
+import { executeDeclarationQueue } from '@Functions/declaration/executeDeclarationQueue';
 import { openProposalRegistration } from '@Mutate/sanctioning/openProposalRegistration';
+import { activateFromSanctioning } from '@Mutate/sanctioning/activateFromSanctioning';
 import { createSanctioningRecord } from '@Mutate/sanctioning/createSanctioningRecord';
+import { registerCreatedRecord } from '@Functions/declaration/registerCreatedRecord';
 import { getAvailableTransitions } from '@Query/sanctioning/getAvailableTransitions';
 import { proposeAmendment, reviewAmendment } from '@Mutate/sanctioning/amendments';
 import { querySanctioningRecord } from '@Query/sanctioning/getSanctioningRecord';
 import { conditionallyApprove } from '@Mutate/sanctioning/conditionallyApprove';
-import { removeEventProposal } from '@Mutate/sanctioning/removeEventProposal';
 import { getCalendarConflicts } from '@Query/sanctioning/getCalendarConflicts';
+import { removeEventProposal } from '@Mutate/sanctioning/removeEventProposal';
+import { requestModification } from '@Mutate/sanctioning/requestModification';
 import { updateEventProposal } from '@Mutate/sanctioning/updateEventProposal';
 import { withdrawApplication } from '@Mutate/sanctioning/withdrawApplication';
-import { requestModification } from '@Mutate/sanctioning/requestModification';
 import { approveApplication } from '@Mutate/sanctioning/approveApplication';
 import { validateProposal } from '@Validators/sanctioning/validateProposal';
 import { rejectApplication } from '@Mutate/sanctioning/rejectApplication';
@@ -21,11 +23,9 @@ import { getEligibleTiers } from '@Query/sanctioning/getEligibleTiers';
 import { getStatusHistory } from '@Query/sanctioning/getStatusHistory';
 import { getCompleteness } from '@Query/sanctioning/getCompleteness';
 import { updateProposal } from '@Mutate/sanctioning/updateProposal';
+import { factoryVersion } from '@Functions/global/factoryVersion';
 import { addReviewNote } from '@Mutate/sanctioning/addReviewNote';
 import { meetCondition } from '@Mutate/sanctioning/meetCondition';
-import { factoryVersion } from '@Functions/global/factoryVersion';
-import { executeDeclarationQueue } from '@Functions/declaration/executeDeclarationQueue';
-import { registerCreatedRecord } from '@Functions/declaration/registerCreatedRecord';
 import { makeDeepCopy } from '@Tools/makeDeepCopy';
 import {
   getSanctioningRecords,

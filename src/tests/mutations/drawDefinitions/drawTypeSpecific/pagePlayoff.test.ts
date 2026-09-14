@@ -1,16 +1,16 @@
-import tournamentEngine from '@Engines/syncEngine';
 import mocksEngine from '@Assemblies/engines/mock';
+import tournamentEngine from '@Engines/syncEngine';
 import { describe, expect, it } from 'vitest';
 
 // constants
+import { COMPLETED, TO_BE_PLAYED } from '@Constants/matchUpStatusConstants';
+import { SINGLES_EVENT } from '@Constants/eventConstants';
 import {
   PAGE_PLAYOFF,
   PLAY_OFF,
   ROUND_ROBIN_WITH_PLAYOFF,
   SINGLE_ELIMINATION,
 } from '@Constants/drawDefinitionConstants';
-import { COMPLETED, TO_BE_PLAYED } from '@Constants/matchUpStatusConstants';
-import { SINGLES_EVENT } from '@Constants/eventConstants';
 
 describe('PAGE_PLAYOFF draw type', () => {
   it('generates structures and links directly via engine', () => {

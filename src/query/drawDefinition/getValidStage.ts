@@ -1,7 +1,7 @@
 // Query
 import { stageExists } from './stageGetter';
 
-// Constants
+// constants
 import { VOLUNTARY_CONSOLATION } from '@Constants/drawDefinitionConstants';
 
 export function getValidStage({ stage, drawDefinition }) {

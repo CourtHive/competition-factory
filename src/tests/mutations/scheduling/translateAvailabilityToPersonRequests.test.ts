@@ -1,9 +1,10 @@
 import { translateAvailabilityToPersonRequests } from '@Mutate/matchUps/schedule/scheduleMatchUps/personRequests/translateAvailabilityToPersonRequests';
 import { getMatchUpId } from '@Functions/global/extractors';
-import mocksEngine from '@Assemblies/engines/mock';
 import competitionEngine from '@Engines/syncEngine';
+import mocksEngine from '@Assemblies/engines/mock';
 import { expect, it, describe } from 'vitest';
 
+// constants and types
 import { AVAILABLE, IF_NEEDED, UNAVAILABLE } from '@Constants/dayStateConstants';
 import { DO_NOT_SCHEDULE } from '@Constants/requestConstants';
 import { AvailabilityPayload } from '@Types/declarationTypes';

@@ -9,8 +9,8 @@ import { COLLEGE_D3, DOMINANT_DUO, TEAM_DOUBLES_3_AGGREGATION } from '@Constants
 import { INVALID_TIE_FORMAT } from '@Constants/errorConditionConstants';
 import { FORMAT_STANDARD } from '@Fixtures/scoring/matchUpFormats';
 import { DOUBLES, SINGLES } from '@Constants/matchUpTypes';
-import { tieFormats } from '@Fixtures/scoring/tieFormats';
 import { FEMALE, MALE } from '@Constants/genderConstants';
+import { tieFormats } from '@Fixtures/scoring/tieFormats';
 import { TEAM } from '@Constants/eventConstants';
 import { fixtures } from '@Fixtures/index';
 

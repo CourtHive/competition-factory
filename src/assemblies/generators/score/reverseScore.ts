@@ -1,7 +1,7 @@
-import { generateScoreString } from '../matchUps/generateScoreString';
+import { generateScoreString } from '@Generators/matchUps/generateScoreString';
 import { definedAttributes } from '@Tools/definedAttributes';
 
-// Contants
+// constants
 import { ErrorType, MISSING_VALUE } from '@Constants/errorConditionConstants';
 import { SUCCESS } from '@Constants/resultConstants';
 

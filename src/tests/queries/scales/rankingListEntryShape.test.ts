@@ -2,6 +2,7 @@ import { getParticipantPoints } from '@Query/scales/getParticipantPoints';
 import { generateRankingList } from '@Query/scales/generateRankingList';
 import { describe, expect, it } from 'vitest';
 
+// constants
 import { SINGLES, DOUBLES } from '@Constants/eventConstants';
 
 // Regression cover for the RankingListEntry reconciliation: `@Types/rankingTypes`

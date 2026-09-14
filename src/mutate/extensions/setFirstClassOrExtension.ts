@@ -3,7 +3,7 @@ import { decorateResult } from '@Functions/global/decorateResult';
 import { removeExtension } from './removeExtension';
 import { addExtension } from './addExtension';
 
-// constants and types
+// constants
 import { ErrorType, INVALID_VALUES, MISSING_VALUE } from '@Constants/errorConditionConstants';
 import { SUCCESS } from '@Constants/resultConstants';
 

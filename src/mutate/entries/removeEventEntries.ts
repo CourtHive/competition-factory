@@ -1,13 +1,13 @@
 import { modifyDrawEntriesNotice, modifyEventEntriesNotice } from '@Mutate/notifications/entriesNotifications';
 import { getAssignedParticipantIds } from '@Query/drawDefinition/getAssignedParticipantIds';
 import { decorateResult } from '@Functions/global/decorateResult';
+import { getFlightProfile } from '@Query/event/getFlightProfile';
 import { refreshEntryPositions } from './refreshEntryPositions';
 import { getParticipantId } from '@Functions/global/extractors';
-import { getFlightProfile } from '@Query/event/getFlightProfile';
 import { intersection } from '@Tools/arrays';
 import { isString } from '@Tools/objects';
 
-// Constants
+// constants and types
 import { EntryStatusUnion, Event, StageTypeUnion, Tournament } from '@Types/tournamentTypes';
 import { HydratedParticipant } from '@Types/hydrated';
 import { SUCCESS } from '@Constants/resultConstants';

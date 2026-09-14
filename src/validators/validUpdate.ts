@@ -1,5 +1,6 @@
 import { checkScoreHasValue } from '@Query/matchUp/checkScoreHasValue';
 
+// constants
 import { completedMatchUpStatuses, IN_PROGRESS } from '@Constants/matchUpStatusConstants';
 
 export function validUpdate({ matchUp, updateInProgressMatchUps }) {

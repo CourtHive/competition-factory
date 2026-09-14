@@ -8,8 +8,8 @@
 import { describe, expect, it } from 'vitest';
 
 import { POLICY_RANKING_POINTS_CTS } from '@Tests/fixtures/policies/POLICY_RANKING_POINTS_CTS';
-import { POLICY_TYPE_RANKING_POINTS } from '@Constants/policyConstants';
 import { dateTimeFormat, validateRankingPolicy } from './validatePolicy';
+import { POLICY_TYPE_RANKING_POINTS } from '@Constants/policyConstants';
 
 describe('validateRankingPolicy', () => {
   it('returns valid=true and an empty errorsText for a known-valid federation policy', () => {

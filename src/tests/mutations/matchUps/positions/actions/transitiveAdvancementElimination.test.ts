@@ -1,7 +1,7 @@
-import tournamentEngine from '@Engines/syncEngine';
+import { getOrderedDrawPositionPairs, removeAssignment } from '@Tests/mutations/drawDefinitions/testingUtilities';
 import mocksEngine from '@Assemblies/engines/mock';
+import tournamentEngine from '@Engines/syncEngine';
 import { expect, it } from 'vitest';
-import { getOrderedDrawPositionPairs, removeAssignment } from '../../../drawDefinitions/testingUtilities';
 
 it('can advance participants when double BYEs are created', () => {
   const drawProfiles = [

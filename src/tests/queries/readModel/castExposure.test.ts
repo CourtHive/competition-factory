@@ -1,7 +1,7 @@
 import * as queryGovernor from '@Assemblies/governors/queryGovernor';
-import * as readModel from '@Query/readModel';
-import tournamentEngine from '@Engines/syncEngine';
 import mocksEngine from '@Assemblies/engines/mock';
+import tournamentEngine from '@Engines/syncEngine';
+import * as readModel from '@Query/readModel';
 import { expect, it, describe } from 'vitest';
 
 // cast() must be reachable both on the engine (client: it injects the loaded

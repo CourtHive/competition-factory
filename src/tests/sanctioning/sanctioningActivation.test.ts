@@ -1,9 +1,10 @@
 import { sanctioningEngine } from '@Assemblies/engines/sanctioning';
 import { beforeEach, describe, expect, it } from 'vitest';
 
-// Constants
+// Fixtures
 import { POLICY_SANCTIONING_GENERIC } from '@Fixtures/policies/POLICY_SANCTIONING_GENERIC';
 
+// types
 import type { Applicant, TournamentProposal, SanctioningPolicy } from '@Types/sanctioningTypes';
 
 const testApplicant: Applicant = {

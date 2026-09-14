@@ -1,21 +1,28 @@
-import { modifyEventEntriesNotice, modifyDrawEntriesNotice } from '../notifications/entriesNotifications';
+import { modifyEventEntriesNotice, modifyDrawEntriesNotice } from '@Mutate/notifications/entriesNotifications';
 import { getAssignedParticipantIds } from '@Query/drawDefinition/getAssignedParticipantIds';
-import { modifyEventNotice } from '../notifications/eventNotifications';
-import { modifyDrawNotice } from '../notifications/drawNotifications';
+import { modifyEventNotice } from '@Mutate/notifications/eventNotifications';
+import { modifyDrawNotice } from '@Mutate/notifications/drawNotifications';
+import { removeExtension } from '@Mutate/extensions/removeExtension';
 import { decorateResult } from '@Functions/global/decorateResult';
-import { refreshEntryPositions } from './refreshEntryPositions';
-import { removeExtension } from '../extensions/removeExtension';
-import { isValidExtension } from '@Validators/isValidExtension';
 import { getFlightProfile } from '@Query/event/getFlightProfile';
-import { addExtension } from '../extensions/addExtension';
+import { refreshEntryPositions } from './refreshEntryPositions';
+import { isValidExtension } from '@Validators/isValidExtension';
+import { addExtension } from '@Mutate/extensions/addExtension';
 import { findParticipant } from '@Acquire/findParticipant';
 import { isUngrouped } from '@Query/entries/isUngrouped';
 
-// Constants
+// constants
 import { INDIVIDUAL, PAIR, TEAM_PARTICIPANT } from '@Constants/participantConstants';
 import { validStages } from '@Constants/drawDefinitionConstants';
 import { DOUBLES, TEAM_EVENT } from '@Constants/eventConstants';
 import { SUCCESS } from '@Constants/resultConstants';
+import {
+  ALTERNATE,
+  DRAW_SPECIFIC_STATUSES,
+  EQUIVALENT_ACCEPTANCE_STATUSES,
+  VALID_ENTRY_STATUSES,
+  WITHDRAWN,
+} from '@Constants/entryStatusConstants';
 import {
   ENTRY_STATUS_NOT_ALLOWED_FOR_EVENT,
   INVALID_ENTRY_STATUS,
@@ -26,14 +33,8 @@ import {
   INVALID_VALUES,
   INVALID_STAGE,
 } from '@Constants/errorConditionConstants';
-import {
-  ALTERNATE,
-  DRAW_SPECIFIC_STATUSES,
-  EQUIVALENT_ACCEPTANCE_STATUSES,
-  VALID_ENTRY_STATUSES,
-  WITHDRAWN,
-} from '@Constants/entryStatusConstants';
 
+// types
 import {
   DrawDefinition,
   Entry,

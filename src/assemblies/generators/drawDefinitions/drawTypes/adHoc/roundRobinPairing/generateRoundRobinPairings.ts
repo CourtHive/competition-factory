@@ -1,4 +1,4 @@
-import { groupRounds } from '../../roundRobin/roundRobinGroups';
+import { groupRounds } from '@Generators/drawDefinitions/drawTypes/roundRobin/roundRobinGroups';
 import { generateRange } from '@Tools/arrays';
 
 // constants and types

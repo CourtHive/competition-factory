@@ -1,6 +1,7 @@
 import { getSeedsCount } from '@Query/drawDefinition/getSeedsCount';
 import { expect, it } from 'vitest';
 
+// constants and fixtures
 import SEEDING_USTA from '@Fixtures/policies/POLICY_SEEDING_DEFAULT';
 import { POLICY_TYPE_SEEDING } from '@Constants/policyConstants';
 import { CLUSTER } from '@Constants/drawDefinitionConstants';

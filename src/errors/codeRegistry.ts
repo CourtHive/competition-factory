@@ -10,6 +10,7 @@
  * subclasses to `subclasses.ts` and register them here as catch-side
  * ergonomics demand.
  */
+import { FactoryError, FactoryErrorOptions } from './FactoryError';
 import {
   EventNotFoundError,
   InvalidDateError,
@@ -25,7 +26,6 @@ import {
   ParticipantNotFoundError,
   StructureNotFoundError,
 } from './subclasses';
-import { FactoryError, FactoryErrorOptions } from './FactoryError';
 
 type FactoryErrorConstructor = new (opts?: FactoryErrorOptions) => FactoryError;
 

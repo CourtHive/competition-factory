@@ -1,6 +1,6 @@
-import { chunkArray, unique } from '@Tools/arrays';
 import mocksEngine from '@Assemblies/engines/mock';
 import tournamentEngine from '@Engines/syncEngine';
+import { chunkArray, unique } from '@Tools/arrays';
 import { expect, it } from 'vitest';
 
 // constants

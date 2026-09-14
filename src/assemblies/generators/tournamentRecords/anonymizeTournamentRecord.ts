@@ -1,10 +1,10 @@
 import { generatePairParticipantName } from '@Functions/participants/generatePairParticipantName';
-import { postalCodeMocks, stateMocks, cityMocks } from '../mocks/address';
+import { postalCodeMocks, stateMocks, cityMocks } from '@Generators/mocks/address';
+import { generateAddress } from '@Generators/mocks/generateAddress';
+import { generatePersons } from '@Generators/mocks/generatePersons';
 import { extractDate, formatDate } from '@Tools/dateTime';
-import { generatePersons } from '../mocks/generatePersons';
-import { generateAddress } from '../mocks/generateAddress';
+import { nameMocks } from '@Generators/mocks/nameMocks';
 import { findExtension } from '@Acquire/findExtension';
-import { nameMocks } from '../mocks/nameMocks';
 import { UUID } from '@Tools/UUID';
 
 // constants
@@ -12,9 +12,9 @@ import { FLIGHT_PROFILE, internalExtensions, PERSON_REQUESTS, SCHEDULING_PROFILE
 import { GROUP, INDIVIDUAL, PAIR, TEAM } from '@Constants/participantConstants';
 import { MISSING_TOURNAMENT_RECORD } from '@Constants/errorConditionConstants';
 import { FEMALE, MALE, OTHER } from '@Constants/genderConstants';
+import { coercedGender } from '@Helpers/coercedGender';
 import { SUCCESS } from '@Constants/resultConstants';
 import { isGendered } from '@Validators/isGendered';
-import { coercedGender } from '@Helpers/coercedGender';
 
 export function anonymizeTournamentRecord({
   keepExtensions = [],

@@ -1,6 +1,6 @@
 import { getScoreComponents } from './scoreComponents';
 
-// constants
+// constants and types
 import { WALKOVER, DEFAULTED, DOUBLE_WALKOVER, DOUBLE_DEFAULT } from '@Constants/matchUpStatusConstants';
 import { MISSING_MATCHUP, INVALID_VALUES, ErrorType } from '@Constants/errorConditionConstants';
 import { MatchUp, Set as SetType } from '@Types/tournamentTypes';

@@ -36,7 +36,6 @@ import type { addPersonRequests } from '@Mutate/matchUps/schedule/scheduleMatchU
 import type { getDrawParticipantRepresentativeIds } from '@Query/drawDefinition/getDrawParticipantRepresentativeIds';
 import type { getEventMatchUpFormatTiming } from '@Query/extensions/matchUpFormatTiming/getEventMatchUpFormatTiming';
 import type { getModifiedMatchUpFormatTiming } from '@Query/extensions/matchUpFormatTiming/getModifiedMatchUpTiming';
-import type { generateSeedingScaleItems } from '../assemblies/generators/drawDefinitions/generateSeedingScaleItems';
 import type { withdrawParticipantAtDrawPosition } from '@Mutate/drawDefinitions/withdrawParticipantAtDrawPosition';
 import type { declineEndorsement, endorseApplication, requestEndorsement } from '@Mutate/sanctioning/endorsement';
 import type { getValidGroupSizes } from '@Assemblies/generators/drawDefinitions/drawTypes/roundRobin/roundRobin';
@@ -64,7 +63,6 @@ import type { getScenarioScheduleProjection } from '@Query/matchUps/scheduling/g
 import type { swapAdHocRounds } from '@Mutate/drawDefinitions/structureGovernor/adHocRounds/swapAdHocRounds';
 import type { getCompetitionLeaderboard } from '@Query/drawDefinition/competition/getCompetitionLeaderboard';
 import type { getEligibleEvents, getParticipantEligibility } from '@Query/entries/getParticipantEligibility';
-import type { generateFlightProfile } from '../assemblies/generators/drawDefinitions/generateFlightProfile';
 import type { replaceTieMatchUpParticipantId } from '@Mutate/matchUps/lineUps/replaceTieMatchUpParticipant';
 import type { modifyParticipantsPaymentStatus } from '@Mutate/participants/modifyParticipantsPaymentStatus';
 import type { getEntryFeeRange, isIndeterminateFee, resolveEntryFee } from '@Query/entries/resolveEntryFee';
@@ -95,6 +93,7 @@ import type { qualifierDrawPositionAssignment } from '@Mutate/matchUps/drawPosit
 import type { removeMatchUpSideParticipant } from '@Mutate/matchUps/sides/removeMatchUpSideParticipant';
 import type { getSchedulingProfile, setSchedulingProfile } from '@Mutate/tournaments/schedulingProfile';
 import type { getSchedulingProfileIssues } from '@Query/matchUps/scheduling/getSchedulingProfileIssues';
+import type { generateSeedingScaleItems } from '@Generators/drawDefinitions/generateSeedingScaleItems';
 import type { generateOutcomeFromScoreString } from '@Generators/mocks/generateOutcomeFromScoreString';
 import type { automatedPlayoffPositioning } from '@Mutate/drawDefinitions/automatedPlayoffPositioning';
 import type { resetCompetitionState } from '@Mutate/drawDefinitions/competition/resetCompetitionState';
@@ -159,6 +158,7 @@ import type { getStructureSeedAssignments } from '@Query/structure/getStructureS
 import type { getTournamentCalendarEntry } from '@Query/tournaments/getTournamentCalendarEntry';
 import type { getTournamentPublishStatus } from '@Query/tournaments/getTournamentPublishStatus';
 import type { generateScoreString } from '@Assemblies/generators/matchUps/generateScoreString';
+import type { generateFlightProfile } from '@Generators/drawDefinitions/generateFlightProfile';
 import type { copyTournamentRecord } from '@Generators/tournamentRecords/copyTournamentRecord';
 import type { removeSeededParticipant } from '@Mutate/drawDefinitions/removeSeededParticipant';
 import type { swapDrawPositionAssignments } from '@Mutate/matchUps/drawPositions/positionSwap';
@@ -183,7 +183,6 @@ import type { updatePracticeRegistration } from '@Mutate/practice/updatePractice
 import type { getOfficialCertifications } from '@Query/officiating/getOfficialCertifications';
 import type { cleanExpiredMutationLocks } from '@Query/tournaments/cleanExpiredMutationLocks';
 import type { getTournamentCompleteness } from '@Query/tournaments/getTournamentCompleteness';
-import type { generateLineUps } from '../assemblies/generators/participants/generateLineUps';
 import type { addQualifyingStructure } from '@Mutate/drawDefinitions/addQualifyingStructure';
 import type { destroyPairEntries, destroyPairEntry } from '@Mutate/entries/destroyPairEntry';
 import type { setEntryPosition, setEntryPositions } from '@Mutate/entries/setEntryPositions';
@@ -290,7 +289,6 @@ import type { getEvaluationTemplate } from '@Query/officiating/getEvaluationTemp
 import type { querySanctioningRecord } from '@Query/sanctioning/getSanctioningRecord';
 import type { getPositionAssignments } from '@Query/structure/getPositionAssignments';
 import type { getTournamentTimeZone } from '@Query/tournaments/getTournamentTimeZone';
-import type { generateCourts } from '../assemblies/generators/venues/generateCourts';
 import type { generateEventWithDraw } from '@Generators/mocks/generateEventWithDraw';
 import type { assignDrawPosition } from '@Mutate/drawDefinitions/assignDrawPosition';
 import type { initializeDraft } from '@Mutate/drawDefinitions/draft/initializeDraft';
@@ -359,6 +357,7 @@ import type { filterParticipants } from '@Query/participants/filterParticipants'
 import type { getEventRankingPoints } from '@Query/scales/getEventRankingPoints';
 import type { validateProposal } from '@Validators/sanctioning/validateProposal';
 import type { findMatchUpFormatTiming } from '@Acquire/findMatchUpFormatTiming';
+import type { generateLineUps } from '@Generators/participants/generateLineUps';
 import type { addLadderParticipant } from '@Mutate/ladder/addLadderParticipant';
 import type { refreshLadderRatings } from '@Mutate/ladder/refreshLadderRatings';
 import type { mergeParticipants } from '@Mutate/participants/mergeParticipants';
@@ -467,6 +466,7 @@ import type { getLadderStanding } from '@Query/ladder/getLadderStanding';
 import type { getMatchUpsStats } from '@Query/matchUps/getMatchUpsStats';
 import type { getRoundMatchUps } from '@Query/matchUps/getRoundMatchUps';
 import type { getPublishState } from '@Query/publishing/getPublishState';
+import type { generateCourts } from '@Generators/venues/generateCourts';
 import type { addOnlineResource } from '@Mutate/base/addOnlineResource';
 import type { unPublishEvent } from '@Mutate/publishing/unPublishEvent';
 import type { getEvaluations } from '@Query/officiating/getEvaluations';

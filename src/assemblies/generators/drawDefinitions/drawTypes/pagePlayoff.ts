@@ -1,8 +1,8 @@
-import { structureTemplate } from '../../templates/structureTemplate';
-import { pagePlayoffLinks } from '../links/pagePlayoffLinks';
+import { pagePlayoffLinks } from '@Generators/drawDefinitions/links/pagePlayoffLinks';
+import { structureTemplate } from '@Generators/templates/structureTemplate';
 import { treeMatchUps } from './eliminationTree';
 
-// Constants and types
+// constants and types
 import { INVALID_CONFIGURATION } from '@Constants/errorConditionConstants';
 import { MAIN, PLAY_OFF } from '@Constants/drawDefinitionConstants';
 import { SUCCESS } from '@Constants/resultConstants';

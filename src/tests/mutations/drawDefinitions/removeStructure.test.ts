@@ -1,14 +1,14 @@
 import { checkScoreHasValue } from '@Query/matchUp/checkScoreHasValue';
-import tournamentEngine from '@Engines/syncEngine';
 import mocksEngine from '@Assemblies/engines/mock';
+import tournamentEngine from '@Engines/syncEngine';
 import { expect, it } from 'vitest';
 
 // constants and fixtures
 import { CONSOLATION, CURTIS_CONSOLATION, MAIN } from '@Constants/drawDefinitionConstants';
 import POLICY_SCORING_DEFAULT from '@Fixtures/policies/POLICY_SCORING_DEFAULT';
 import { SCORES_PRESENT } from '@Constants/errorConditionConstants';
-import { POLICY_TYPE_SCORING } from '@Constants/policyConstants';
 import { APPLIED_POLICIES } from '@Constants/extensionConstants';
+import { POLICY_TYPE_SCORING } from '@Constants/policyConstants';
 
 it('will not delete structures when scores are present', () => {
   const {

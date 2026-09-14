@@ -6,13 +6,13 @@ import { getCompetitionState } from '@Query/drawDefinition/competition/getCompet
 import { processCompetitionMatchUp } from './processCompetitionMatchUp';
 import { setFirstClassOrExtension } from '@Mutate/extensions/setFirstClassOrExtension';
 
-// Constants
-import { completedMatchUpStatuses } from '@Constants/matchUpStatusConstants';
+// constants
 import { MISSING_DRAW_DEFINITION } from '@Constants/errorConditionConstants';
+import { completedMatchUpStatuses } from '@Constants/matchUpStatusConstants';
 import { COMPETITION_STATE } from '@Constants/extensionConstants';
 import { SUCCESS } from '@Constants/resultConstants';
 
-// Types
+// types
 import type { DrawDefinition, Event, MatchUp, Tournament } from '@Types/tournamentTypes';
 import type { ResultType } from '@Types/factoryTypes';
 

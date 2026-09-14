@@ -1,13 +1,14 @@
 import { computeScoreGroups } from '@Generators/drawDefinitions/drawTypes/adHoc/swiss/computeScoreGroups';
 import { computeTiebreakers } from '@Generators/drawDefinitions/drawTypes/adHoc/swiss/computeTiebreakers';
 import { getParticipantId } from '@Functions/global/extractors';
-import { findStructure } from '@Acquire/findStructure';
 import { isAdHoc } from '@Query/drawDefinition/isAdHoc';
+import { findStructure } from '@Acquire/findStructure';
 
+// constants and types
 import { MISSING_DRAW_DEFINITION, STRUCTURE_NOT_FOUND, ErrorType } from '@Constants/errorConditionConstants';
-import type { DrawDefinition } from '@Types/tournamentTypes';
-import type { SwissStanding, ScoreGroup } from '@Types/swissTypes';
 import { STRUCTURE_SELECTED_STATUSES } from '@Constants/entryStatusConstants';
+import type { SwissStanding, ScoreGroup } from '@Types/swissTypes';
+import type { DrawDefinition } from '@Types/tournamentTypes';
 import { SUCCESS } from '@Constants/resultConstants';
 
 type GetSwissStandingsArgs = {

@@ -1,13 +1,14 @@
 import { getParticipantId } from '@Functions/global/extractors';
 import mocksEngine from '@Assemblies/engines/mock';
-import { generateRange } from '@Tools/arrays';
 import tournamentEngine from '@Engines/syncEngine';
+import { generateRange } from '@Tools/arrays';
 import { expect, it } from 'vitest';
 
+// constants
+import { CLUSTER, QUALIFYING } from '@Constants/drawDefinitionConstants';
 import { RATING, SEEDING } from '@Constants/scaleConstants';
 import { SINGLES } from '@Constants/eventConstants';
 import { ELO } from '@Constants/ratingConstants';
-import { CLUSTER, QUALIFYING } from '@Constants/drawDefinitionConstants';
 
 const scenarios = [
   {

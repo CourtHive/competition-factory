@@ -4,8 +4,8 @@ import { getAllStructureMatchUps } from '@Query/matchUps/getAllStructureMatchUps
 import { getAppliedPolicies } from '@Query/extensions/getAppliedPolicies';
 import { checkScoreHasValue } from '@Query/matchUp/checkScoreHasValue';
 import { getAllDrawMatchUps } from '@Query/matchUps/drawMatchUps';
-import { getMatchUpIds } from '@Functions/global/extractors';
 import { resequenceStructures } from './resequenceStructures';
+import { getMatchUpIds } from '@Functions/global/extractors';
 import { findStructure } from '@Acquire/findStructure';
 import { xa } from '@Tools/extractAttributes';
 

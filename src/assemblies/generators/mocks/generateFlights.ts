@@ -1,8 +1,9 @@
 import { generateFlight } from './generateFlight';
 
+// constants
 import { MAIN, QUALIFYING } from '@Constants/drawDefinitionConstants';
-import { ANY } from '@Constants/genderConstants';
 import { SUCCESS } from '@Constants/resultConstants';
+import { ANY } from '@Constants/genderConstants';
 
 export function generateFlights({
   uniqueDrawParticipants,

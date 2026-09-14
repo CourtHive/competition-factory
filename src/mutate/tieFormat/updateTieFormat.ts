@@ -4,6 +4,7 @@ import { getAllStructureMatchUps } from '@Query/matchUps/getAllStructureMatchUps
 import { copyTieFormat } from '@Query/hierarchical/tieFormats/copyTieFormat';
 import { getTieFormat } from '@Query/hierarchical/tieFormats/getTieFormat';
 import { decorateResult } from '@Functions/global/decorateResult';
+import { writeTieFormat } from '@Mutate/tieFormat/writeTieFormat';
 import { instanceCount, intersection } from '@Tools/arrays';
 import { validUpdate } from '@Validators/validUpdate';
 import { makeDeepCopy } from '@Tools/makeDeepCopy';
@@ -14,7 +15,6 @@ import {
   modifyDrawNotice,
   modifyMatchUpNotice,
 } from '@Mutate/notifications/drawNotifications';
-import { writeTieFormat } from '@Mutate/tieFormat/writeTieFormat';
 
 // constants and types
 import { DrawDefinition, Event, MatchUp, Structure, TieFormat, Tournament } from '@Types/tournamentTypes';

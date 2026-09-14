@@ -1,14 +1,15 @@
-import { hasSchedule } from '@Query/matchUp/hasSchedule';
+import { dateStringDaysChange, extractDate, extractTime } from '@Tools/dateTime';
 import { getMatchUpIds } from '@Functions/global/extractors';
+import { hasSchedule } from '@Query/matchUp/hasSchedule';
 import mocksEngine from '@Assemblies/engines/mock';
 import tournamentEngine from '@Engines/syncEngine';
 import { expect, it } from 'vitest';
-import { dateStringDaysChange, extractDate, extractTime } from '@Tools/dateTime';
 
-import POLICY_SCHEDULING_DEFAULT from '@Fixtures/policies/POLICY_SCHEDULING_DEFAULT';
-import { SINGLES } from '@Constants/eventConstants';
+// constants and fixtures
 import { CURTIS_CONSOLATION, MODIFIED_FEED_IN_CHAMPIONSHIP } from '@Constants/drawDefinitionConstants';
 import { INVALID_VALUES, MISSING_MATCHUP_IDS } from '@Constants/errorConditionConstants';
+import POLICY_SCHEDULING_DEFAULT from '@Fixtures/policies/POLICY_SCHEDULING_DEFAULT';
+import { SINGLES } from '@Constants/eventConstants';
 
 it('can bulk reschedule matchUps that have been auto-scheduled', () => {
   const venueProfiles = [

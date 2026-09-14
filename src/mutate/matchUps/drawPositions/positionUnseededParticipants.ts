@@ -1,11 +1,11 @@
 import { randomUnseededSeparation } from '@Mutate/drawDefinitions/positionGovernor/randomUnseededSeparation';
 import { getStructureSeedAssignments } from '@Query/structure/getStructureSeedAssignments';
-import { structureAssignedDrawPositions } from '@Query/drawDefinition/positionsGetter';
 import { assignDrawPosition } from '@Mutate/matchUps/drawPositions/positionAssignment';
+import { structureAssignedDrawPositions } from '@Query/drawDefinition/positionsGetter';
 import { getAppliedPolicies } from '@Query/extensions/getAppliedPolicies';
+import { firstClassOrExtension } from '@Acquire/firstClassOrExtension';
 import { getStageEntries } from '@Query/drawDefinition/stageGetter';
 import { decorateResult } from '@Functions/global/decorateResult';
-import { firstClassOrExtension } from '@Acquire/firstClassOrExtension';
 import { pushGlobalLog } from '@Functions/global/globalLog';
 import { findStructure } from '@Acquire/findStructure';
 import { shuffleArray } from '@Tools/arrays';

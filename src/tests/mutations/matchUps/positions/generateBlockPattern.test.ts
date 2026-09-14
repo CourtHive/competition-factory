@@ -2,6 +2,7 @@ import { generateBlockPattern } from '@Assemblies/generators/drawDefinitions/gen
 import { generateRange } from '@Tools/arrays';
 import { expect, test } from 'vitest';
 
+// constants
 import { CLUSTER, SEPARATE } from '@Constants/drawDefinitionConstants';
 
 const expectations = {

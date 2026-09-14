@@ -1,7 +1,7 @@
 import { getValidGroupSizes } from '@Assemblies/generators/drawDefinitions/drawTypes/roundRobin/roundRobin';
 import { chunkArray, generateRange, overlap } from '@Tools/arrays';
-import { isConvertableInteger, nextPowerOf2 } from '@Tools/math';
 import { decorateResult } from '@Functions/global/decorateResult';
+import { isConvertableInteger, nextPowerOf2 } from '@Tools/math';
 
 // constants and types
 import { INVALID_VALUES } from '@Constants/errorConditionConstants';

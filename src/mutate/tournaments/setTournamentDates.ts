@@ -1,7 +1,7 @@
 import { clearScheduledMatchUps } from '@Mutate/matchUps/schedule/clearScheduledMatchUps';
 import { checkRequiredParameters } from '@Helpers/parameters/checkRequiredParameters';
-import { allTournamentMatchUps } from '@Query/matchUps/getAllTournamentMatchUps';
 import { updateCourtAvailability } from '@Mutate/venues/updateCourtAvailability';
+import { allTournamentMatchUps } from '@Query/matchUps/getAllTournamentMatchUps';
 import { modifyEventNotice } from '@Mutate/notifications/eventNotifications';
 import { isValidWeekdaysValue } from '@Validators/isValidWeekdaysValue';
 import { definedAttributes } from '@Tools/definedAttributes';

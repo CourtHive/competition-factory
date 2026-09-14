@@ -6,6 +6,7 @@ import mocksEngine from '@Assemblies/engines/mock';
 import tournamentEngine from '@Engines/syncEngine';
 import { expect, it, describe } from 'vitest';
 
+// constants
 import { POLICY_TYPE_RANKING_POINTS } from '@Constants/policyConstants';
 import { TEAM_EVENT, DOUBLES } from '@Constants/eventConstants';
 import { SPLIT_EVEN } from '@Constants/rankingConstants';

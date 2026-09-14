@@ -5,8 +5,8 @@
  * All 19 tests now use mutation engine with snapshot-based undo.
  */
 
-import { describe, test, expect } from 'vitest';
 import { ScoringEngine } from '@Assemblies/governors/scoreGovernor';
+import { describe, test, expect } from 'vitest';
 
 describe('Undo/Redo - Game Boundaries', () => {
   test('should undo across game boundary in regular set', () => {

@@ -1,8 +1,8 @@
+import { participantsVersion as computeParticipantsVersion } from '@Query/participants/participantsVersion';
 import { checkRequiredParameters } from '@Helpers/parameters/checkRequiredParameters';
 import { getEventPublishStatus } from '@Query/event/getEventPublishStatus';
 import { getDrawIsPublished } from '@Query/publishing/getDrawIsPublished';
 import { getTournamentInfo } from '@Query/tournaments/getTournamentInfo';
-import { participantsVersion as computeParticipantsVersion } from '@Query/participants/participantsVersion';
 import { getParticipants } from '@Query/participants/getParticipants';
 import { getPublishState } from '@Query/publishing/getPublishState';
 import { isVisiblyPublished } from '@Query/publishing/isEmbargoed';
@@ -10,15 +10,15 @@ import { getDrawData } from '@Query/drawDefinition/getDrawData';
 import { isAdHocType } from '@Query/drawDefinition/isAdHocType';
 import { getVenueData } from '@Query/venues/getVenueData';
 import { findExtension } from '@Acquire/findExtension';
-import { isConvertableInteger } from '@Tools/math';
 import { makeDeepCopy } from '@Tools/makeDeepCopy';
+import { isConvertableInteger } from '@Tools/math';
 import { findEvent } from '@Acquire/findEvent';
 import { generateRange } from '@Tools/arrays';
 
 // constants and types
+import { PayloadProfileEnum, PayloadProfileUnion, Event, Tournament } from '@Types/tournamentTypes';
 import { ParticipantsProfile, PolicyDefinitions, StructureSortConfig } from '@Types/factoryTypes';
 import { EVENT_NOT_FOUND, INVALID_VALUES, ErrorType } from '@Constants/errorConditionConstants';
-import { PayloadProfileEnum, PayloadProfileUnion, Event, Tournament } from '@Types/tournamentTypes';
 import { completedMatchUpStatuses, BYE } from '@Constants/matchUpStatusConstants';
 import { DISPLAY } from '@Constants/extensionConstants';
 import { ANY_OF } from '@Constants/attributeConstants';

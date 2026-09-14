@@ -1,5 +1,5 @@
-import { validateTieFormat } from '@Validators/validateTieFormat';
 import { decorateResult } from '@Functions/global/decorateResult';
+import { validateTieFormat } from '@Validators/validateTieFormat';
 import { isFunction, isObject, isString } from '@Tools/objects';
 import { intersection } from '@Tools/arrays';
 
@@ -40,6 +40,7 @@ import {
   MISSING_VENUE_ID,
 } from '@Constants/errorConditionConstants';
 
+// constants
 import {
   ARRAY,
   COURT_ID,

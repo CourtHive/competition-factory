@@ -1,12 +1,12 @@
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { mocksEngine } from '@Assemblies/engines/mock';
 import { INestApplication } from '@nestjs/common';
-import { AppModule } from '../../app.module';
+import { AppModule } from '@Server/app.module';
 import { Test } from '@nestjs/testing';
 import request from 'supertest';
 
 // Constants
-import { TEST_EMAIL, TEST_PASSWORD } from '../../common/constants/test';
+import { TEST_EMAIL, TEST_PASSWORD } from '@Server/common/constants/test';
 import { SINGLES } from '@Constants/eventConstants';
 
 describe('AppService', () => {

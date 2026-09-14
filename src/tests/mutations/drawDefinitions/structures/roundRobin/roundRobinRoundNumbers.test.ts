@@ -1,9 +1,10 @@
 import { getRoundMatchUps } from '@Query/matchUps/getRoundMatchUps';
 import mocksEngine from '@Assemblies/engines/mock';
-import { generateRange } from '@Tools/arrays';
 import tournamentEngine from '@Engines/syncEngine';
+import { generateRange } from '@Tools/arrays';
 import { expect, it, test } from 'vitest';
 
+// constants
 import { ROUND_ROBIN } from '@Constants/drawDefinitionConstants';
 
 it('generates roundNumbers for all matchUps when odd-sized groups', () => {

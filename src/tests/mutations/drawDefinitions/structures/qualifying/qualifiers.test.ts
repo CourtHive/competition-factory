@@ -2,8 +2,9 @@ import mocksEngine from '@Assemblies/engines/mock';
 import tournamentEngine from '@Engines/syncEngine';
 import { expect, it } from 'vitest';
 
-import { MAIN, QUALIFYING } from '@Constants/drawDefinitionConstants';
+// constants
 import { COMPLETED, TO_BE_PLAYED } from '@Constants/matchUpStatusConstants';
+import { MAIN, QUALIFYING } from '@Constants/drawDefinitionConstants';
 
 const scenarios = [
   {

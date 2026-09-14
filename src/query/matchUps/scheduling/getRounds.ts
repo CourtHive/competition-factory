@@ -1,5 +1,5 @@
 import { getFinishingPositionDetails, getRoundId, getRoundProfile, getRoundTiming } from './schedulingUtils';
-import { allCompetitionMatchUps } from '../../matchUps/getAllCompetitionMatchUps';
+import { allCompetitionMatchUps } from '@Query/matchUps/getAllCompetitionMatchUps';
 import { getProfileRounds } from '@Query/matchUps/scheduling/getProfileRounds';
 import { definedAttributes } from '@Tools/definedAttributes';
 import { roundSort } from '@Functions/sorters/roundSort';
@@ -7,8 +7,8 @@ import { extractDate } from '@Tools/dateTime';
 import { chunkArray } from '@Tools/arrays';
 
 // constants and types
-import { MatchUpFilters } from '@Types/factoryTypes';
 import { SUCCESS } from '@Constants/resultConstants';
+import { MatchUpFilters } from '@Types/factoryTypes';
 import { Tournament } from '@Types/tournamentTypes';
 import { HydratedMatchUp } from '@Types/hydrated';
 import {

@@ -2,7 +2,7 @@ import { isFemale } from '@Validators/isFemale';
 import { isOther } from '@Validators/isOther';
 import { isMale } from '@Validators/isMale';
 
-// constants and types
+// constants
 import { FEMALE, MALE, OTHER } from '@Constants/genderConstants';
 
 // Normalize an input `sex` to its canonical extended form. Accepts the TODS short

@@ -1,6 +1,7 @@
 import { analyzeMatchUp } from '@Query/matchUp/analyzeMatchUp';
 import { expect, test } from 'vitest';
 
+// Fixtures
 import { FORMAT_STANDARD } from '@Fixtures/scoring/matchUpFormats';
 
 test('can properly analyze completed standard format matchUp', () => {

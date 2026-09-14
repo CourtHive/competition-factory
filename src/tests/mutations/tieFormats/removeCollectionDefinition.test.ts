@@ -1,12 +1,12 @@
 import disableCalcTournamentRecord from '@Mutate/tieFormat/removeCollectionDisableAutoCalc.tods.json';
 import { setSubscriptions } from '@Global/state/globalState';
-import tournamentEngine from '@Engines/syncEngine';
 import mocksEngine from '@Assemblies/engines/mock';
+import tournamentEngine from '@Engines/syncEngine';
 import { expect, it, test } from 'vitest';
 
 // constants
-import { COLLEGE_D3, USTA_BREWER_CUP } from '@Constants/tieFormatConstants';
 import { NO_MODIFICATIONS_APPLIED } from '@Constants/errorConditionConstants';
+import { COLLEGE_D3, USTA_BREWER_CUP } from '@Constants/tieFormatConstants';
 import { POLICY_TYPE_SCORING } from '@Constants/policyConstants';
 import { DELETED_MATCHUP_IDS } from '@Constants/topicConstants';
 import { MAIN } from '@Constants/drawDefinitionConstants';

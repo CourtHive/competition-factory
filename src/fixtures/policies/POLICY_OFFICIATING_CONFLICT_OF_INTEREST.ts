@@ -1,3 +1,4 @@
+import { COACH, MEDICAL, PHYSIO, TRAINER } from '@Constants/participantRoles';
 import { POLICY_TYPE_OFFICIATING_CONFLICT } from '@Constants/policyConstants';
 import {
   CONFLICT_DECLARED_RELATIONSHIP,
@@ -8,7 +9,6 @@ import {
   CONFLICT_BLOCK,
   CONFLICT_WARN,
 } from '@Constants/officiatingConstants';
-import { COACH, MEDICAL, PHYSIO, TRAINER } from '@Constants/participantRoles';
 
 /**
  * GROUP participantRoles that represent a relationship close enough to disqualify an official.

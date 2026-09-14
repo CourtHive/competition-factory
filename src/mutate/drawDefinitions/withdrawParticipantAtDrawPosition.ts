@@ -1,5 +1,6 @@
 import { removeDrawPositionAssignment } from './removeDrawPositionAssignment';
 
+// constants
 import { WITHDRAWN } from '@Constants/entryStatusConstants';
 
 /*

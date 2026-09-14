@@ -2,6 +2,7 @@ import mocksEngine from '@Assemblies/engines/mock';
 import tournamentEngine from '@Engines/syncEngine';
 import { expect, it } from 'vitest';
 
+// constants
 import { ROUND_ROBIN } from '@Constants/drawDefinitionConstants';
 
 it('can return all event data', () => {

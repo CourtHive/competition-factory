@@ -1,5 +1,5 @@
-import { it, expect } from 'vitest';
 import { getSeedBlocks, getSeedGroups, getSeedingThresholds } from '@Query/drawDefinition/getSeedBlocks';
+import { it, expect } from 'vitest';
 
 it('can generate seedBlocks, seedGroups and seedingThresholds', () => {
   const roundRobinGroupsCount = 8;

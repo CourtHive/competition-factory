@@ -1,7 +1,7 @@
+import { removeCourtAssignment } from '@Mutate/matchUps/schedule/removeCourtAssignment';
+import { checkAndUpdateSchedulingProfile } from '@Mutate/tournaments/schedulingProfile';
 import { allCompetitionMatchUps } from '@Query/matchUps/getAllCompetitionMatchUps';
 import { deletionMessage } from '@Assemblies/generators/matchUps/deletionMessage';
-import { removeCourtAssignment } from '../matchUps/schedule/removeCourtAssignment';
-import { checkAndUpdateSchedulingProfile } from '../tournaments/schedulingProfile';
 import { getAppliedPolicies } from '@Query/extensions/getAppliedPolicies';
 import { addNotice } from '@Global/state/globalState';
 

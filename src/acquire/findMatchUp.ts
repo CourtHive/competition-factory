@@ -2,8 +2,8 @@ import { allTournamentMatchUps } from '@Query/matchUps/getAllTournamentMatchUps'
 import { hydrateParticipants } from '@Query/participants/hydrateParticipants';
 import { getContextContent } from '@Query/hierarchical/getContextContent';
 import { allDrawMatchUps } from '@Query/matchUps/getAllDrawMatchUps';
-import { makeDeepCopy } from '@Tools/makeDeepCopy';
 import { findDrawMatchUp } from './findDrawMatchUp';
+import { makeDeepCopy } from '@Tools/makeDeepCopy';
 import { findEvent } from './findEvent';
 
 // constants and types

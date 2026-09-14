@@ -2,7 +2,7 @@ import mocksEngine from '@Assemblies/engines/mock';
 import { generateRange } from '@Tools/arrays';
 import { describe, it, expect } from 'vitest';
 
-// Constants
+// constants
 import { INVALID_MATCHUP_FORMAT, INVALID_VALUES } from '@Constants/errorConditionConstants';
 import {
   COMPLETED,

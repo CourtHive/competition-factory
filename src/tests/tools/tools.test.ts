@@ -5,21 +5,6 @@ import { deepMerge } from '@Tools/deepMerge';
 import { UUID, UUIDS } from '@Tools/UUID';
 import { expect, it, test } from 'vitest';
 import {
-  addMinutesToTimeString,
-  addWeek,
-  convertTime,
-  dateFromDay,
-  DateHHMM,
-  generateDateRange,
-  formatDate,
-  getDateByWeek,
-  HHMMSS,
-  isDate,
-  subtractWeek,
-  timeSort,
-  weekdays,
-} from '@Tools/dateTime';
-import {
   arrayIndices,
   chunkByNth,
   chunkSizeProfile,
@@ -34,6 +19,21 @@ import {
   noNulls,
   randomPop,
 } from '@Tools/arrays';
+import {
+  addMinutesToTimeString,
+  addWeek,
+  convertTime,
+  dateFromDay,
+  DateHHMM,
+  generateDateRange,
+  formatDate,
+  getDateByWeek,
+  HHMMSS,
+  isDate,
+  subtractWeek,
+  timeSort,
+  weekdays,
+} from '@Tools/dateTime';
 
 it('can count values and determine active drawPositions', () => {
   const drawPositions = [1, 1, 2, 3, 4, 5, 5, 6];

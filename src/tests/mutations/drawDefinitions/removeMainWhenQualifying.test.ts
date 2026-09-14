@@ -3,8 +3,9 @@ import tournamentEngine from '@Engines/syncEngine';
 import { unique } from '@Tools/arrays';
 import { expect, it } from 'vitest';
 
-import { CANNOT_REMOVE_MAIN_STRUCTURE } from '@Constants/errorConditionConstants';
+// constants
 import { DRAW, MAIN, QUALIFYING, WINNER } from '@Constants/drawDefinitionConstants';
+import { CANNOT_REMOVE_MAIN_STRUCTURE } from '@Constants/errorConditionConstants';
 
 it('allows deletion of non-qualifying structures', () => {
   let result = mocksEngine.generateTournamentRecord({

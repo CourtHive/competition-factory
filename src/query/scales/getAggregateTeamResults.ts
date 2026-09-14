@@ -3,7 +3,7 @@ import { getParticipants } from '@Query/participants/getParticipants';
 import { pushGlobalLog } from '@Functions/global/globalLog';
 import { parse } from '@Helpers/matchUpFormatCode/parse';
 
-// Constants
+// constants and types
 import { INDIVIDUAL, TEAM_PARTICIPANT } from '@Constants/participantConstants';
 import { TOURNAMENT_RECORD } from '@Constants/attributeConstants';
 import { SUCCESS } from '@Constants/resultConstants';

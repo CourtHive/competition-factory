@@ -1,8 +1,9 @@
 import { structureAssignedDrawPositions } from '@Query/drawDefinition/positionsGetter';
-import tournamentEngine from '@Engines/syncEngine';
 import mocksEngine from '@Assemblies/engines/mock';
+import tournamentEngine from '@Engines/syncEngine';
 import { expect, it } from 'vitest';
 
+// constants
 import { COMPASS } from '@Constants/drawDefinitionConstants';
 
 it('can generate COMPASS and properly place BYEs in consolation structures 32/25', () => {

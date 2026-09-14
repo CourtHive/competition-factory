@@ -1,10 +1,10 @@
 import { getFinishingPositionSourceRoundsMap } from '@Query/structure/structureUtils';
-import { getStructureRoundProfile } from '../structure/getStructureRoundProfile';
+import { getStructureRoundProfile } from '@Query/structure/getStructureRoundProfile';
 import { requireParams } from '@Helpers/parameters/requireParams';
 import { getPositionsPlayedOff } from './getPositionsPlayedOff';
 import { generateRange } from '@Tools/arrays';
-import { numericSort } from '@Tools/sorting';
 import { ensureInt } from '@Tools/ensureInt';
+import { numericSort } from '@Tools/sorting';
 
 // constants and types
 import { DRAW_DEFINITION, STRUCTURE_ID } from '@Constants/attributeConstants';

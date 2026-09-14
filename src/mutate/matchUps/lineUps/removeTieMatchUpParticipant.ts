@@ -1,10 +1,10 @@
 import { getTieMatchUpContext } from '@Query/hierarchical/tieFormats/getTieMatchUpContext';
 import { removeCollectionAssignments } from '@Mutate/events/removeCollectionAssignments';
 import { getPairedParticipant } from '@Query/participant/getPairedParticipant';
-import { deleteParticipants } from '@Mutate/participants/deleteParticipants';
 import { modifyMatchUpNotice } from '@Mutate/notifications/drawNotifications';
-import { modifyParticipant } from '@Mutate/participants/modifyParticipant';
+import { deleteParticipants } from '@Mutate/participants/deleteParticipants';
 import { updateTeamLineUp } from '@Mutate/drawDefinitions/updateTeamLineUp';
+import { modifyParticipant } from '@Mutate/participants/modifyParticipant';
 import { getAppliedPolicies } from '@Query/extensions/getAppliedPolicies';
 import { checkScoreHasValue } from '@Query/matchUp/checkScoreHasValue';
 import { getParticipants } from '@Query/participants/getParticipants';

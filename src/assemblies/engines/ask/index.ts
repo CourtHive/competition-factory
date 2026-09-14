@@ -1,7 +1,7 @@
 import { askInvoke } from './askInvoke';
 
+import { engineStart } from '@Assemblies/engines/parts/engineStart';
 import { FactoryEngine } from '@Types/factoryTypes';
-import { engineStart } from '../parts/engineStart';
 
 export const askEngine = (() => {
   const engine: FactoryEngine = {

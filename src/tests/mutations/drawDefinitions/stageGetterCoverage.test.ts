@@ -4,8 +4,8 @@ import tournamentEngine from '@Engines/syncEngine';
 import { expect, test } from 'vitest';
 
 // constants
-import { MAIN } from '@Constants/drawDefinitionConstants';
 import { ALTERNATE } from '@Constants/entryStatusConstants';
+import { MAIN } from '@Constants/drawDefinitionConstants';
 
 test('stageStructures returns structures for a given stage and stageSequence', () => {
   const {

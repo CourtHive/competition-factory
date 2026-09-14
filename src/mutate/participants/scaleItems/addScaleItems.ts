@@ -1,10 +1,10 @@
 import { addDrawDefinitionTimeItem } from '@Mutate/drawDefinitions/addDrawDefinitionTimeItem';
+import { modifyParticipantsNotice } from '@Mutate/notifications/participantNotifications';
 import { addEventTimeItem, addTournamentTimeItem } from '@Mutate/timeItems/addTimeItem';
 import { participantScaleItem } from '@Query/participant/participantScaleItem';
 import { decorateResult } from '@Functions/global/decorateResult';
 import { requireParams } from '@Helpers/parameters/requireParams';
 import { addNotice, getTopics } from '@Global/state/globalState';
-import { modifyParticipantsNotice } from '@Mutate/notifications/participantNotifications';
 import { definedAttributes } from '@Tools/definedAttributes';
 import { isValidDateString } from '@Tools/dateTime';
 import { findEvent } from '@Acquire/findEvent';

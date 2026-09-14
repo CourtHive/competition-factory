@@ -1,14 +1,16 @@
-import {
-  POLICY_OFFICIATING_CONFLICT_OF_INTEREST_ITF,
-  POLICY_OFFICIATING_CONFLICT_OF_INTEREST,
-} from '@Fixtures/policies/POLICY_OFFICIATING_CONFLICT_OF_INTEREST';
 import { removeConflictDeclaration } from '@Mutate/officiating/removeConflictDeclaration';
 import { addConflictDeclaration } from '@Mutate/officiating/addConflictDeclaration';
 import { getOfficialConflicts } from '@Query/officiating/getOfficialConflicts';
 import { assignOfficial } from '@Mutate/officiating/assignOfficial';
 import { describe, expect, it } from 'vitest';
+import {
+  POLICY_OFFICIATING_CONFLICT_OF_INTEREST_ITF,
+  POLICY_OFFICIATING_CONFLICT_OF_INTEREST,
+} from '@Fixtures/policies/POLICY_OFFICIATING_CONFLICT_OF_INTEREST';
 
-// Constants
+// constants
+import { POLICY_TYPE_OFFICIATING_CONFLICT } from '@Constants/policyConstants';
+import { INVALID_VALUES } from '@Constants/errorConditionConstants';
 import {
   CONFLICT_DECLARATION_NOT_FOUND,
   OFFICIAL_CONFLICT_OF_INTEREST,
@@ -23,9 +25,8 @@ import {
   CONFLICT_BLOCK,
   CONFLICT_WARN,
 } from '@Constants/officiatingConstants';
-import { POLICY_TYPE_OFFICIATING_CONFLICT } from '@Constants/policyConstants';
-import { INVALID_VALUES } from '@Constants/errorConditionConstants';
 
+// types
 import type { OfficialRecord } from '@Types/officiatingTypes';
 import type { Participant } from '@Types/tournamentTypes';
 

@@ -1,13 +1,14 @@
+import { removePracticeRegistration } from '@Mutate/practice/removePracticeRegistration';
 import { setPracticeDefaultCapacity } from '@Mutate/practice/setPracticeDefaultCapacity';
 import { updatePracticeRegistration } from '@Mutate/practice/updatePracticeRegistration';
-import { removePracticeRegistration } from '@Mutate/practice/removePracticeRegistration';
-import { addPracticeRegistration } from '@Mutate/practice/addPracticeRegistration';
 import { getPracticeRegistrations } from '@Query/practice/getPracticeRegistrations';
+import { addPracticeRegistration } from '@Mutate/practice/addPracticeRegistration';
 import mocksEngine from '@Assemblies/engines/mock';
 import tournamentEngine from '@Engines/syncEngine';
 import { describe, expect, it } from 'vitest';
 
-// constants and types
+// constants
+import { PRACTICE } from '@Constants/scheduleConstants';
 import {
   BOOKING_NOT_FOUND,
   CAPACITY_EXCEEDED,
@@ -16,7 +17,6 @@ import {
   PARTICIPANT_NOT_FOUND,
   REGISTRATION_NOT_FOUND,
 } from '@Constants/errorConditionConstants';
-import { PRACTICE } from '@Constants/scheduleConstants';
 
 const TEST_DATE = '2026-06-15';
 

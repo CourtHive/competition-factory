@@ -8,8 +8,8 @@ import { isMixed } from './isMixed';
 import { isAny } from './isAny';
 
 // constants, fixtures and types
-import { DOUBLES_EVENT, HYBRID_EVENT, TEAM_EVENT } from '@Constants/eventConstants';
 import POLICY_MATCHUP_ACTIONS_DEFAULT from '@Fixtures/policies/POLICY_MATCHUP_ACTIONS_DEFAULT';
+import { DOUBLES_EVENT, HYBRID_EVENT, TEAM_EVENT } from '@Constants/eventConstants';
 import { Entry, Event, Participant, Tournament } from '@Types/tournamentTypes';
 import { POLICY_TYPE_MATCHUP_ACTIONS } from '@Constants/policyConstants';
 import { ParticipantMap, PolicyDefinitions } from '@Types/factoryTypes';

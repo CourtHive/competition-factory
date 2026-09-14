@@ -11,6 +11,7 @@
  * payload. Use `engine.getState()` for the full picture.
  */
 
+import { factoryVersion } from '@Functions/global/factoryVersion';
 import {
   getAuditAuthorityServer,
   getDevContext,
@@ -20,7 +21,6 @@ import {
   getTournamentId,
   getTournamentRecords,
 } from '@Global/state/globalState';
-import { factoryVersion } from '@Functions/global/factoryVersion';
 
 export interface EngineInspectionCounts {
   tournaments: number;

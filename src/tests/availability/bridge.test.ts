@@ -4,13 +4,8 @@
  * Test suite for translation between Availability Engine and TODS format.
  */
 
+import { HydratedVenue } from 'tods-competition-factory';
 import { describe, it, expect } from 'vitest';
-import {
-  BLOCK_TYPES,
-  type VenueDayTimeline,
-  type RailSegment,
-  type BlockType,
-} from '@Assemblies/governors/availabilityGovernor/types';
 import {
   railsToDateAvailability,
   applyAvailabilityToTournamentRecord,
@@ -24,7 +19,12 @@ import {
   type SchedulingSelection,
   type TodsVenue,
 } from '@Assemblies/governors/availabilityGovernor/bridge';
-import { HydratedVenue } from 'tods-competition-factory';
+import {
+  BLOCK_TYPES,
+  type VenueDayTimeline,
+  type RailSegment,
+  type BlockType,
+} from '@Assemblies/governors/availabilityGovernor/types';
 
 // ============================================================================
 // Test Fixtures

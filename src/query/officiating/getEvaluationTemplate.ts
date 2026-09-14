@@ -3,7 +3,7 @@ import { MISSING_OFFICIAL_RECORD, MISSING_EVALUATION_POLICY } from '@Constants/o
 import { INVALID_VALUES } from '@Constants/errorConditionConstants';
 import { SUCCESS } from '@Constants/resultConstants';
 
-// Types
+// types
 import type { OfficialRecord, EvaluationPolicy, EvaluationFormField } from '@Types/officiatingTypes';
 
 type GetEvaluationTemplateArgs = {

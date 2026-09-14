@@ -1,9 +1,10 @@
 import { getParticipantId } from '@Functions/global/extractors';
-import tournamentEngine from '../engines/syncEngine';
+import tournamentEngine from '@Engines/syncEngine';
 import { expect, it } from 'vitest';
 
-import { POLICY_TYPE_AVOIDANCE } from '@Constants/policyConstants';
+// constants and fixtures
 import { DIRECT_ACCEPTANCE } from '@Constants/entryStatusConstants';
+import { POLICY_TYPE_AVOIDANCE } from '@Constants/policyConstants';
 import { FORMAT_STANDARD } from '@Fixtures/scoring/matchUpFormats';
 
 import tournamentRecord from './avoidanceIssue.tods.json';

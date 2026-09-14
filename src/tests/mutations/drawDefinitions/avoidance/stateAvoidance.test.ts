@@ -1,8 +1,9 @@
 import mocksEngine from '@Assemblies/engines/mock';
-import { instanceCount } from '@Tools/arrays';
 import tournamentEngine from '@Engines/syncEngine';
+import { instanceCount } from '@Tools/arrays';
 import { expect, it } from 'vitest';
 
+// constants
 import { POLICY_TYPE_AVOIDANCE } from '@Constants/policyConstants';
 
 const avoidancePolicy = {

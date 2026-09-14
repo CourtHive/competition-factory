@@ -8,7 +8,7 @@ import { getMatchUpId } from '@Functions/global/extractors';
 import { filterMatchUps } from '@Query/filterMatchUps';
 import { findEvent } from '@Acquire/findEvent';
 
-// constant and types
+// constants and types
 import { ErrorType, MISSING_TOURNAMENT_RECORDS } from '@Constants/errorConditionConstants';
 import { BYE, completedMatchUpStatuses } from '@Constants/matchUpStatusConstants';
 import { ANY_OF, ARRAY, OF_TYPE } from '@Constants/attributeConstants';

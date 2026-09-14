@@ -2,7 +2,7 @@ import { afterEach, describe, expect, it } from 'vitest';
 
 import { policyRegistry } from '@Global/policyRegistry';
 
-// constants and types
+// constants
 import { POLICY_TYPE_RANKING_POINTS, POLICY_TYPE_SCORING } from '@Constants/policyConstants';
 
 const sampleDefinition = { awardProfiles: [{ profileName: 'sample' }] };

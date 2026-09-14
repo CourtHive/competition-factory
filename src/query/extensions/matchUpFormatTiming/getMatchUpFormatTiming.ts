@@ -11,8 +11,8 @@ import { POLICY_SCHEDULING_DEFAULT } from '@Fixtures/policies/POLICY_SCHEDULING_
 import { DOUBLES_SINGLES, SINGLES_DOUBLES } from '@Constants/scheduleConstants';
 import { MISSING_TOURNAMENT_RECORD } from '@Constants/errorConditionConstants';
 import { Event, Tournament, EventTypeUnion } from '@Types/tournamentTypes';
-import { PolicyDefinitions, ResultType } from '@Types/factoryTypes';
 import { POLICY_TYPE_SCHEDULING } from '@Constants/policyConstants';
+import { PolicyDefinitions, ResultType } from '@Types/factoryTypes';
 import { SINGLES_EVENT } from '@Constants/eventConstants';
 
 type GetMatchUpFormatTimingArgs = {

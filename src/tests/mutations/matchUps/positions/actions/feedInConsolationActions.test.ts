@@ -1,12 +1,13 @@
-import tournamentEngine from '@Engines/syncEngine';
 import mocksEngine from '@Assemblies/engines/mock';
+import tournamentEngine from '@Engines/syncEngine';
 import { expect, it } from 'vitest';
 
+// constants
+import { CONSOLATION, FEED_IN_CHAMPIONSHIP } from '@Constants/drawDefinitionConstants';
 import { ADD_PENALTY } from '@Constants/positionActionConstants';
 import { SCORE } from '@Constants/matchUpActionConstants';
 import { PAIR } from '@Constants/participantConstants';
 import { DOUBLES } from '@Constants/eventConstants';
-import { CONSOLATION, FEED_IN_CHAMPIONSHIP } from '@Constants/drawDefinitionConstants';
 
 it('can modify score for main draw match after loser directed to consolation', () => {
   const participantsProfile = {

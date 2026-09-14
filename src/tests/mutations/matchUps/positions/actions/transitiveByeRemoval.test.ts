@@ -1,7 +1,7 @@
 import { getDrawPosition } from '@Functions/global/extractors';
 import mocksEngine from '@Assemblies/engines/mock';
-import { generateRange } from '@Tools/arrays';
 import tournamentEngine from '@Engines/syncEngine';
+import { generateRange } from '@Tools/arrays';
 import { expect, it } from 'vitest';
 import {
   getOrderedDrawPositionPairs,
@@ -9,6 +9,7 @@ import {
   removeAssignment,
 } from '../../../drawDefinitions/testingUtilities';
 
+// constants
 import {
   ALTERNATE_PARTICIPANT,
   REMOVE_ASSIGNMENT,

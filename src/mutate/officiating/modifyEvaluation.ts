@@ -8,7 +8,7 @@ import {
   EVALUATION_EDITABLE,
 } from '@Constants/officiatingConstants';
 
-// Types
+// types
 import type { OfficialRecord, OfficialEvaluation, EvaluationScore } from '@Types/officiatingTypes';
 
 type ModifyEvaluationArgs = {

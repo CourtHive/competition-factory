@@ -5,6 +5,7 @@ import tournamentEngine from '@Assemblies/engines/sync';
 import mocksEngine from '@Assemblies/engines/mock';
 import { expect, it } from 'vitest';
 
+// constants
 import { FEED_IN_CHAMPIONSHIP, MODIFIED_FEED_IN_CHAMPIONSHIP } from '@Constants/drawDefinitionConstants';
 import { WALKOVER } from '@Constants/matchUpStatusConstants';
 

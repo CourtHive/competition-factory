@@ -3,7 +3,7 @@ import tournamentEngine from '@Engines/syncEngine';
 import { unique } from '@Tools/arrays';
 import { expect, it } from 'vitest';
 
-// constants and types
+// constants
 import { FEMALE, FEMALE_ABBR, MALE, MALE_ABBR, MIXED } from '@Constants/genderConstants';
 import { INVALID_PARTICIPANT_IDS } from '@Constants/errorConditionConstants';
 import { INDIVIDUAL } from '@Constants/participantConstants';

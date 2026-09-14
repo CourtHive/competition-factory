@@ -1,10 +1,11 @@
 import { POLICY_RANKING_POINTS_CTS } from '@Tests/fixtures/policies/POLICY_RANKING_POINTS_CTS';
-import scaleEngine from '@Assemblies/engines/scale';
-import { tournamentEngine } from '@Engines/syncEngine';
-import mocksEngine from '@Assemblies/engines/mock';
 import { QUALIFYING } from '@Constants/drawDefinitionConstants';
+import { tournamentEngine } from '@Engines/syncEngine';
+import scaleEngine from '@Assemblies/engines/scale';
+import mocksEngine from '@Assemblies/engines/mock';
 import { describe, expect, test } from 'vitest';
 
+// constants
 import { SINGLES } from '@Constants/eventConstants';
 import { MALE } from '@Constants/genderConstants';
 

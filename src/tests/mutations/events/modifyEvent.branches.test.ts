@@ -5,11 +5,11 @@ import { describe, expect, it } from 'vitest';
 
 // constants
 import { CATEGORY_MISMATCH, INVALID_EVENT_TYPE, INVALID_GENDER } from '@Constants/errorConditionConstants';
-import { FEMALE, MALE, MIXED } from '@Constants/genderConstants';
 import { DOUBLES, SINGLES, TEAM } from '@Constants/eventConstants';
 import { INDIVIDUAL, PAIR } from '@Constants/participantConstants';
-import { COMPETITOR } from '@Constants/participantRoles';
+import { FEMALE, MALE, MIXED } from '@Constants/genderConstants';
 import { ALTERNATE } from '@Constants/entryStatusConstants';
+import { COMPETITOR } from '@Constants/participantRoles';
 
 describe('modifyEvent - uncovered branch coverage', () => {
   it('rejects MIXED gender when flights exist (no draws)', () => {

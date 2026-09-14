@@ -1,10 +1,10 @@
-import tournamentEngine from '@Engines/syncEngine';
 import mocksEngine from '@Assemblies/engines/mock';
+import tournamentEngine from '@Engines/syncEngine';
 import { expect, test } from 'vitest';
 
-// Constants and types
-import { HydratedParticipant } from '@Types/hydrated';
+// constants and types
 import { WIN_RATIO } from '@Constants/statsConstants';
+import { HydratedParticipant } from '@Types/hydrated';
 
 const scenarios = [{ drawProfiles: [{ drawSize: 8 }], matchUpsCount: 7 }];
 

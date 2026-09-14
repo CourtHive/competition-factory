@@ -1,21 +1,21 @@
 import { generateQualifyingLink } from '@Generators/drawDefinitions/links/generateQualifyingLink';
+import { setFirstClassOrExtension } from '@Mutate/extensions/setFirstClassOrExtension';
 import { getAllStructureMatchUps } from '@Query/matchUps/getAllStructureMatchUps';
 import structureTemplate from '@Generators/templates/structureTemplate';
 import { decorateResult } from '@Functions/global/decorateResult';
 import { coerceEven, isConvertableInteger } from '@Tools/math';
-import { setFirstClassOrExtension } from '@Mutate/extensions/setFirstClassOrExtension';
 import { generateRoundRobin } from './roundRobin/roundRobin';
 import { constantToString } from '@Tools/strings';
 import { treeMatchUps } from './eliminationTree';
 
 // constants and types
 import { POSITION, QUALIFYING, ROUND_ROBIN, WINNER } from '@Constants/drawDefinitionConstants';
-import { MISSING_DRAW_SIZE } from '@Constants/errorConditionConstants';
+import { generateTieMatchUps } from '@Generators/drawDefinitions/tieMatchUps';
 import { DrawLink, Structure, TieFormat } from '@Types/tournamentTypes';
+import { MISSING_DRAW_SIZE } from '@Constants/errorConditionConstants';
 import { PolicyDefinitions, ResultType } from '@Types/factoryTypes';
 import { ROUND_TARGET } from '@Constants/extensionConstants';
 import { SUCCESS } from '@Constants/resultConstants';
-import { generateTieMatchUps } from '../tieMatchUps';
 
 type GenerateQualifyingStructuresArgs = {
   hasExistingDrawDefinition?: boolean;

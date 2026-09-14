@@ -1,10 +1,11 @@
 import { generateRange, instanceCount } from '@Tools/arrays';
 import { pushGlobalLog } from '@Functions/global/globalLog';
 import { addFinishingRounds } from './addFinishingRounds';
-import { nearestPowerOf2 } from '@Tools/math';
 import { buildFeedRound } from './buildFeedRound';
+import { nearestPowerOf2 } from '@Tools/math';
 import { buildRound } from './buildRound';
 
+// types
 import { MatchUp } from '@Types/tournamentTypes';
 
 type FeedInMatchUpsArgs = {

@@ -4,7 +4,7 @@ import { mocksEngine } from '@Assemblies/engines/mock';
 import { tournamentEngine } from '@Engines/syncEngine';
 import { expect, it } from 'vitest';
 
-// types
+// constants
 import { ROUND_ROBIN } from '@Constants/drawDefinitionConstants';
 
 const drawId = 'did';

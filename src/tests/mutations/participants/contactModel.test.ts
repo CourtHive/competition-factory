@@ -1,7 +1,8 @@
-import tournamentEngine from '@Engines/syncEngine';
 import mocksEngine from '@Assemblies/engines/mock';
+import tournamentEngine from '@Engines/syncEngine';
 import { describe, expect, it } from 'vitest';
 
+// constants and types
 import { INVALID_PARTICIPANT_IDS } from '@Constants/errorConditionConstants';
 import { ContactRelationshipEnum } from '@Types/tournamentTypes';
 import { COMPETITOR, OTHER } from '@Constants/participantRoles';

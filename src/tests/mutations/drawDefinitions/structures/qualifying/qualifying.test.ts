@@ -8,8 +8,8 @@ import { unique } from '@Tools/arrays';
 import { expect, it } from 'vitest';
 
 // constants and fixtures
-import POLICY_POSITION_ACTIONS_UNRESTRICTED from '@Fixtures/policies/POLICY_POSITION_ACTIONS_UNRESTRICTED';
 import { DRAW, FEED_IN, MAIN, POSITION, QUALIFYING, ROUND_ROBIN } from '@Constants/drawDefinitionConstants';
+import POLICY_POSITION_ACTIONS_UNRESTRICTED from '@Fixtures/policies/POLICY_POSITION_ACTIONS_UNRESTRICTED';
 import { POLICY_TYPE_POSITION_ACTIONS } from '@Constants/policyConstants';
 import { DIRECT_ACCEPTANCE } from '@Constants/entryStatusConstants';
 import { MISSING_VALUE } from '@Constants/errorConditionConstants';

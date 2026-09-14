@@ -1,6 +1,7 @@
+import { attachPolicies } from '@Assemblies/governors/policyGovernor';
 import { decorateResult } from '@Functions/global/decorateResult';
-import { attachPolicies } from '../../../governors/policyGovernor';
 
+// constants and fixtures
 import { POLICY_TYPE_AVOIDANCE, POLICY_TYPE_SEEDING } from '@Constants/policyConstants';
 import POLICY_SEEDING_DEFAULT from '@Fixtures/policies/POLICY_SEEDING_DEFAULT';
 import { INVALID_VALUES } from '@Constants/errorConditionConstants';

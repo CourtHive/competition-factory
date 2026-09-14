@@ -1,8 +1,8 @@
-import { getPositionAssignments } from '../drawDefinition/positionsGetter';
-import { pushGlobalLog } from '@Functions/global/globalLog';
-import { chunkArray, generateRange } from '@Tools/arrays';
-import { reduceGroupedOrder } from './reduceGroupedOrder';
+import { getPositionAssignments } from '@Query/drawDefinition/positionsGetter';
 import { firstClassOrExtension } from '@Acquire/firstClassOrExtension';
+import { pushGlobalLog } from '@Functions/global/globalLog';
+import { reduceGroupedOrder } from './reduceGroupedOrder';
+import { chunkArray, generateRange } from '@Tools/arrays';
 import { findStructure } from '@Acquire/findStructure';
 
 // constants

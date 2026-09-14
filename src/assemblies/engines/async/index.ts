@@ -1,8 +1,9 @@
+import { engineStart } from '@Assemblies/engines/parts/engineStart';
 import { createInstanceState } from '@Global/state/globalState';
 import { asyncExecutionQueue } from './asyncExecutionQueue';
 import { asyncEngineInvoke } from './asyncEngineInvoke';
-import { engineStart } from '../parts/engineStart';
 
+// types
 import { Directives, FactoryEngine } from '@Types/factoryTypes';
 
 export function asyncEngine(test?: boolean): FactoryEngine & { error?: any } {

@@ -2,9 +2,10 @@ import { formatParticipantName } from '@Assemblies/generators/participants/forma
 import { modifyParticipantsNotice } from '@Mutate/notifications/participantNotifications';
 import { createMap, isObject } from '@Tools/objects';
 
+// constants and types
 import { MISSING_TOURNAMENT_RECORD, MISSING_VALUE } from '@Constants/errorConditionConstants';
-import { Tournament } from '@Types/tournamentTypes';
 import { SUCCESS } from '@Constants/resultConstants';
+import { Tournament } from '@Types/tournamentTypes';
 
 /**
  * "First Last"

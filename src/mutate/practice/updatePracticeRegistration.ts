@@ -5,12 +5,6 @@ import { findPracticeBooking } from './findPracticeBooking';
 import { addNotice } from '@Global/state/globalState';
 
 // constants and types
-import {
-  PracticeRegistration,
-  PracticeRegistrationStatusEnum,
-  PracticeRegistrationStatusUnion,
-  Tournament,
-} from '@Types/tournamentTypes';
 import { COURT_ID, TOURNAMENT_RECORD } from '@Constants/attributeConstants';
 import { MODIFY_VENUE } from '@Constants/topicConstants';
 import { SUCCESS } from '@Constants/resultConstants';
@@ -21,6 +15,12 @@ import {
   INVALID_VALUES,
   REGISTRATION_NOT_FOUND,
 } from '@Constants/errorConditionConstants';
+import {
+  PracticeRegistration,
+  PracticeRegistrationStatusEnum,
+  PracticeRegistrationStatusUnion,
+  Tournament,
+} from '@Types/tournamentTypes';
 
 type Updates = {
   startTime?: string;

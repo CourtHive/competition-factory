@@ -12,13 +12,6 @@
 
 import { describe, it, expect } from 'vitest';
 import {
-  BLOCK_TYPES,
-  type Block,
-  type BlockType,
-  type EngineConfig,
-  type TimeRange,
-} from '@Assemblies/governors/availabilityGovernor/types';
-import {
   buildDayRange,
   clampToDayRange,
   courtDayKey,
@@ -31,6 +24,13 @@ import {
   resolveStatus,
   validateSegments,
 } from '@Assemblies/governors/availabilityGovernor/railDerivation';
+import {
+  BLOCK_TYPES,
+  type Block,
+  type BlockType,
+  type EngineConfig,
+  type TimeRange,
+} from '@Assemblies/governors/availabilityGovernor/types';
 
 // ============================================================================
 // Test Fixtures

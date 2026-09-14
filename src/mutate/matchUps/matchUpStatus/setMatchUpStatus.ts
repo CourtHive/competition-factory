@@ -1,9 +1,9 @@
-import { applyMatchUpFormat } from '@Mutate/matchUps/matchUpFormat/applyMatchUpFormat';
 import { resolveTournamentRecords } from '@Helpers/parameters/resolveTournamentRecords';
+import { progressExitStatus } from '@Mutate/matchUps/drawPositions/progressExitStatus';
+import { applyMatchUpFormat } from '@Mutate/matchUps/matchUpFormat/applyMatchUpFormat';
 import { checkRequiredParameters } from '@Helpers/parameters/checkRequiredParameters';
 import { setMatchUpState } from '@Mutate/matchUps/matchUpStatus/setMatchUpState';
 import { matchUpScore } from '@Assemblies/generators/matchUps/matchUpScore';
-import { progressExitStatus } from '../drawPositions/progressExitStatus';
 import { getMatchUpFormat } from '@Query/hierarchical/getMatchUpFormat';
 import { decorateResult } from '@Functions/global/decorateResult';
 import { findPolicy } from '@Acquire/findPolicy';
@@ -11,8 +11,8 @@ import { findEvent } from '@Acquire/findEvent';
 
 // constants and types
 import { DRAW_DEFINITION, MATCHUP_ID } from '@Constants/attributeConstants';
-import { INVALID_WINNING_SIDE } from '@Constants/errorConditionConstants';
 import { DrawDefinition, Event, Tournament } from '@Types/tournamentTypes';
+import { INVALID_WINNING_SIDE } from '@Constants/errorConditionConstants';
 import { POLICY_TYPE_SCORING } from '@Constants/policyConstants';
 import { PolicyDefinitions } from '@Types/factoryTypes';
 

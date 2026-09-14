@@ -3,7 +3,7 @@ import mocksEngine from '@Assemblies/engines/mock';
 import tournamentEngine from '@Engines/syncEngine';
 import { expect, it, describe } from 'vitest';
 
-// constants and types
+// constants
 import * as topicConstants from '@Constants/topicConstants';
 
 /**

@@ -3,6 +3,9 @@ import { getParticipants } from '@Query/participants/getParticipants';
 import { findParticipant } from '@Acquire/findParticipant';
 
 // constants and types
+import { DrawDefinition, Event, Tournament } from '@Types/tournamentTypes';
+import { ASSIGN_TIMEKEEPER } from '@Constants/timeItemConstants';
+import { INDIVIDUAL } from '@Constants/participantConstants';
 import {
   ErrorType,
   MISSING_MATCHUP_ID,
@@ -10,9 +13,6 @@ import {
   MISSING_TOURNAMENT_RECORD,
   PARTICIPANT_NOT_FOUND,
 } from '@Constants/errorConditionConstants';
-import { DrawDefinition, Event, Tournament } from '@Types/tournamentTypes';
-import { INDIVIDUAL } from '@Constants/participantConstants';
-import { ASSIGN_TIMEKEEPER } from '@Constants/timeItemConstants';
 
 type AssignMatchUpTimekeeperArgs = {
   tournamentRecords?: { [key: string]: Tournament };

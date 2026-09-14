@@ -3,14 +3,14 @@ import mocksEngine from '@Assemblies/engines/mock';
 import tournamentEngine from '@Engines/syncEngine';
 import { expect, it, describe } from 'vitest';
 
-// constants and types
+// constants
+import { MODIFY_MATCHUP, MODIFY_POSITION_ASSIGNMENTS, MODIFY_DRAW_DEFINITION } from '@Constants/topicConstants';
 import {
   COMPASS,
   ROUND_ROBIN,
   SINGLE_ELIMINATION,
   FIRST_MATCH_LOSER_CONSOLATION,
 } from '@Constants/drawDefinitionConstants';
-import { MODIFY_MATCHUP, MODIFY_POSITION_ASSIGNMENTS, MODIFY_DRAW_DEFINITION } from '@Constants/topicConstants';
 
 /**
  * MODIFY_MATCHUP must carry the structure a change happened in, so a subscriber can route it without

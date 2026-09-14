@@ -8,8 +8,8 @@ import { INVALID_EVENT_TYPE } from '@Constants/errorConditionConstants';
 import ratingsParameters from '@Fixtures/ratings/ratingsParameters';
 import { AD_HOC } from '@Constants/drawDefinitionConstants';
 import { UTR, WTN } from '@Constants/ratingConstants';
-import { DYNAMIC } from '@Constants/scaleConstants';
 import { SINGLES } from '@Constants/eventConstants';
+import { DYNAMIC } from '@Constants/scaleConstants';
 
 const scenarios = [
   { category: { ratingType: UTR, ratingMin: 10, ratingMax: 12 }, diffTolerance: 2, attachMatchUps: true },

@@ -31,8 +31,8 @@ import * as matchUpStatusConstants from './matchUpStatusConstants';
 import * as participantRolesConstants from './participantRoles';
 import * as bookingTypeConstants from './bookingTypeConstants';
 import * as entryStatusConstants from './entryStatusConstants';
-import * as weekdayConstants from './weekdayConstants';
 import * as surfaceConstants from './surfaceConstants';
+import * as weekdayConstants from './weekdayConstants';
 
 // The exported OBJECTS — the surface consumers actually reach via factoryConstants.
 import { matchUpStatusConstants as matchUpStatusObject } from './matchUpStatusConstants';

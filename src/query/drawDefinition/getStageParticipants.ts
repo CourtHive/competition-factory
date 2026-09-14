@@ -2,7 +2,7 @@ import { coercedGender } from '@Helpers/coercedGender';
 import { isMixed } from '@Validators/isMixed';
 import { isAny } from '@Validators/isAny';
 
-// constants and types
+// constants
 import { MAIN, QUALIFYING } from '@Constants/drawDefinitionConstants';
 import { INDIVIDUAL, PAIR } from '@Constants/participantConstants';
 

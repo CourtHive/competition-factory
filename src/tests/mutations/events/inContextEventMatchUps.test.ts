@@ -2,6 +2,7 @@ import { generateTournamentRecord } from '@Assemblies/generators/mocks/generateT
 import tournamentEngine from '@Engines/syncEngine';
 import { expect, it } from 'vitest';
 
+// constants
 import { FEED_IN_CHAMPIONSHIP } from '@Constants/drawDefinitionConstants';
 
 it('can return event matchUps with context and upcoming matchUps', () => {

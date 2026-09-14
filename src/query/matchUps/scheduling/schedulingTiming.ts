@@ -35,10 +35,9 @@
  */
 import { getMatchUpFormatTiming } from '@Query/extensions/matchUpFormatTiming/getMatchUpFormatTiming';
 
-// constants and types
+// types
+import { Tournament, Event } from '@Types/tournamentTypes';
 import { HydratedMatchUp } from '@Types/hydrated';
-import { Tournament } from '@Types/tournamentTypes';
-import { Event } from '@Types/tournamentTypes';
 
 export type SchedulingTiming = {
   averageMinutes: number;

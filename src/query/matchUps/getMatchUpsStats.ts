@@ -1,13 +1,14 @@
-import { getBand, getScoreComponents, pctSpread } from '../matchUp/scoreComponents';
+import { getBand, getScoreComponents, pctSpread } from '@Query/matchUp/scoreComponents';
 import { validMatchUps } from '@Validators/validMatchUp';
 import { findPolicy } from '@Acquire/findPolicy';
 
+// constants and fixtures
 import POLICY_COMPETITIVE_BANDS_DEFAULT from '@Fixtures/policies/POLICY_COMPETITIVE_BANDS_DEFAULT';
+import { COMPETITIVE, DECISIVE, RETIRED, ROUTINE, WALKOVER } from '@Constants/statsConstants';
 import { DEFAULTED, WALKOVER as WALKOVER_STATUS } from '@Constants/matchUpStatusConstants';
 import { POLICY_TYPE_COMPETITIVE_BANDS } from '@Constants/policyConstants';
 import { MISSING_MATCHUPS } from '@Constants/errorConditionConstants';
 import { SUCCESS } from '@Constants/resultConstants';
-import { COMPETITIVE, DECISIVE, RETIRED, ROUTINE, WALKOVER } from '@Constants/statsConstants';
 
 export function getMatchUpsStats({ profileBands, tournamentRecord, matchUps }) {
   if (!validMatchUps(matchUps)) return { error: MISSING_MATCHUPS };

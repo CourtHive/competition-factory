@@ -1,9 +1,10 @@
-import matchUpEngineSync from '@Assemblies/engines/matchUp';
 import { setState, getMatchUp, getMatchUps, reset, getState } from '@Assemblies/engines/matchUp/stateMethods';
-import * as scoreGovernor from '@Assemblies/governors/scoreGovernor';
-import { setDevContext } from '@Global/state/globalState';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import * as scoreGovernor from '@Assemblies/governors/scoreGovernor';
+import matchUpEngineSync from '@Assemblies/engines/matchUp';
+import { setDevContext } from '@Global/state/globalState';
 
+// constants
 import { INVALID_OBJECT, MISSING_VALUE } from '@Constants/errorConditionConstants';
 
 describe('matchUpEngine', () => {

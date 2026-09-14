@@ -1,7 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { getMatchUpIds } from '@Functions/global/extractors';
-import tournamentEngine from '@Engines/syncEngine';
 import mocksEngine from '@Assemblies/engines/mock';
+import tournamentEngine from '@Engines/syncEngine';
 
 // constants
 import { AD_HOC, MAIN, QUALIFYING } from '@Constants/drawDefinitionConstants';

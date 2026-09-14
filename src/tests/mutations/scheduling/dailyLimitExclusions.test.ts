@@ -3,7 +3,7 @@ import mocksEngine from '@Assemblies/engines/mock';
 import tournamentEngine from '@Engines/syncEngine';
 import { describe, expect, it } from 'vitest';
 
-// constants and types
+// constants and fixtures
 import POLICY_SCHEDULING_DEFAULT from '@Fixtures/policies/POLICY_SCHEDULING_DEFAULT';
 import { BYE, COMPLETED, IN_PROGRESS } from '@Constants/matchUpStatusConstants';
 import { DOUBLES, SINGLES } from '@Constants/matchUpTypes';

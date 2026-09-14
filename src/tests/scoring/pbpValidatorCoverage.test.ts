@@ -12,8 +12,8 @@
  * - Set detail extraction with/without tiebreaks
  */
 
-import { pbpValidator } from '@Validators/scoring/pbpValidator';
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
+import { pbpValidator } from '@Validators/scoring/pbpValidator';
 
 describe('pbpValidator - Coverage Improvements', () => {
   beforeEach(() => {

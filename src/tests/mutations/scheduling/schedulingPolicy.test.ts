@@ -2,6 +2,7 @@ import mocksEngine from '@Assemblies/engines/mock';
 import tournamentEngine from '@Engines/syncEngine';
 import { expect, it } from 'vitest';
 
+// constants and fixtures
 import POLICY_SCHEDULING_DEFAULT from '@Fixtures/policies/POLICY_SCHEDULING_DEFAULT';
 import { FORMAT_STANDARD } from '@Fixtures/scoring/matchUpFormats';
 import { DOUBLES, SINGLES } from '@Constants/eventConstants';

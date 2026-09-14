@@ -1,6 +1,7 @@
 import { generateScoreString } from '@Assemblies/generators/matchUps/generateScoreString';
 import { expect, it, test } from 'vitest';
 
+// constants
 import { RETIRED } from '@Constants/matchUpStatusConstants';
 
 test('can generate matchUp tiebreak string scores', () => {

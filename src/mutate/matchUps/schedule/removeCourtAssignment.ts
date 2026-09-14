@@ -14,6 +14,7 @@ import {
   MISSING_TOURNAMENT_RECORD,
 } from '@Constants/errorConditionConstants';
 
+// types
 import { DrawDefinition, Tournament } from '@Types/tournamentTypes';
 
 type RemoveCourtAssignmentArgs = {

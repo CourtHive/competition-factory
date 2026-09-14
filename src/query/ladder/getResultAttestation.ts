@@ -1,6 +1,7 @@
 import { resolveLadderMatchUp } from '@Query/ladder/resolveLadderContext';
 import { getLadderPolicy } from '@Query/ladder/getLadderPolicy';
 
+// constants and types
 import type { LadderPolicy } from '@Types/ladderTypes';
 import {
   EITHER,

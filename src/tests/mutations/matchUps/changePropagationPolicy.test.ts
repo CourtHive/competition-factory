@@ -1,10 +1,11 @@
 import { getDrawDefinition, projectDraw, stableHash } from '@Tests/testHarness/exitPropagation/transitions';
 import { POLICY_SCORING_USTA } from '@Fixtures/policies/POLICY_SCORING_USTA';
 import { setSubscriptions } from '@Global/state/globalState';
-import tournamentEngine from '@Engines/syncEngine';
 import mocksEngine from '@Assemblies/engines/mock';
+import tournamentEngine from '@Engines/syncEngine';
 import { expect, it } from 'vitest';
 
+// constants
 import { COMPASS, FIRST_MATCH_LOSER_CONSOLATION } from '@Constants/drawDefinitionConstants';
 import { CANNOT_CHANGE_WINNING_SIDE } from '@Constants/errorConditionConstants';
 import { RETIRED, WALKOVER } from '@Constants/matchUpStatusConstants';

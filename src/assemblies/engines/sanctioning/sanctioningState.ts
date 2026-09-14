@@ -1,8 +1,8 @@
 import { createRecordStore } from '@Functions/declaration/recordStore';
 
 // constants and types
-import { SANCTIONING_RECORD_NOT_FOUND } from '@Constants/sanctioningConstants';
 import type { SanctioningRecord, SanctioningRecords } from '@Types/sanctioningTypes';
+import { SANCTIONING_RECORD_NOT_FOUND } from '@Constants/sanctioningConstants';
 
 const store = createRecordStore({ idKey: 'sanctioningId', notFoundError: SANCTIONING_RECORD_NOT_FOUND });
 

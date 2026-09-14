@@ -1,7 +1,7 @@
 import { mocksEngine } from '@Assemblies/engines/mock';
 import tournamentEngine from '@Engines/syncEngine';
-import scaleEngine from '@Engines/scaleEngine';
 import { makeDeepCopy } from '@Tools/makeDeepCopy';
+import scaleEngine from '@Engines/scaleEngine';
 import { expect, it } from 'vitest';
 
 // Regression: generateDynamicRatings computed maxCountables (the Elo K-factor

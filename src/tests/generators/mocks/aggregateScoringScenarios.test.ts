@@ -3,10 +3,10 @@
  * Tests parseScoreString, generateOutcomeFromScoreString, and analyzeScore
  * for aggregate formats like SET3XA-S:T10
  */
-import { describe, it, expect } from 'vitest';
-import { parseScoreString } from '@Tools/parseScoreString';
 import { generateOutcomeFromScoreString } from '@Assemblies/generators/mocks/generateOutcomeFromScoreString';
 import { analyzeScore } from '@Query/matchUp/analyzeScore';
+import { parseScoreString } from '@Tools/parseScoreString';
+import { describe, it, expect } from 'vitest';
 
 describe('parseScoreString - Aggregate scoring with timed sets', () => {
   const format = 'SET3XA-S:T10';

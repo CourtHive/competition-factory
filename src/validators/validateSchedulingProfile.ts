@@ -4,7 +4,7 @@ import { isConvertableInteger, isPowerOf2 } from '@Tools/math';
 import { getDrawStructures } from '@Acquire/findStructure';
 import { isValidDateString } from '@Tools/dateTime';
 
-// Constants
+// constants
 import { INVALID_VALUES, VENUE_NOT_FOUND } from '@Constants/errorConditionConstants';
 
 export function validateSchedulingProfile({ tournamentRecords, schedulingProfile }): any {

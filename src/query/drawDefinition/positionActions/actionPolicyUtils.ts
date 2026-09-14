@@ -1,7 +1,7 @@
 // constants, fixtures and types
+import { POLICY_TYPE_POSITION_ACTIONS, POLICY_TYPE_MATCHUP_ACTIONS } from '@Constants/policyConstants';
 import { POLICY_POSITION_ACTIONS_DEFAULT } from '@Fixtures/policies/POLICY_POSITION_ACTIONS_DEFAULT';
 import { POLICY_MATCHUP_ACTIONS_DEFAULT } from '@Fixtures/policies/POLICY_MATCHUP_ACTIONS_DEFAULT';
-import { POLICY_TYPE_POSITION_ACTIONS, POLICY_TYPE_MATCHUP_ACTIONS } from '@Constants/policyConstants';
 import { DrawDefinition, Structure } from '@Types/tournamentTypes';
 import { PolicyDefinitions } from '@Types/factoryTypes';
 

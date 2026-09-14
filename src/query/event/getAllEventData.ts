@@ -1,7 +1,7 @@
 import { getScheduleTiming } from '@Query/extensions/matchUpFormatTiming/getScheduleTiming';
 import { getEventPublishStatus } from '@Query/event/getEventPublishStatus';
-import { getVenuesAndCourts } from '@Query/venues/venuesAndCourtsGetter';
 import { getTournamentInfo } from '@Query/tournaments/getTournamentInfo';
+import { getVenuesAndCourts } from '@Query/venues/venuesAndCourtsGetter';
 import { extractEventInfo } from '@Query/event/extractEventInfo';
 import { getDrawMatchUps } from '@Query/matchUps/drawMatchUps';
 

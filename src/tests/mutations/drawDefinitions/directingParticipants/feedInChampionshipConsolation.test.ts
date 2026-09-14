@@ -2,7 +2,7 @@ import mocksEngine from '@Assemblies/engines/mock';
 import tournamentEngine from '@Engines/syncEngine';
 import { expect, it } from 'vitest';
 
-// Constants
+// constants
 import { FEED_IN_CHAMPIONSHIP_TO_QF } from '@Constants/drawDefinitionConstants';
 import { BYE, DOUBLE_WALKOVER } from '@Constants/matchUpStatusConstants';
 import { INDIVIDUAL } from '@Constants/participantConstants';

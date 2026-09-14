@@ -13,6 +13,14 @@
  * - NoAD games and tiebreaks
  */
 
+import { resolveSetType, isAggregateFormat } from '@Tools/scoring/scoringUtilities';
+import type { SetType } from '@Tools/scoring/scoringUtilities';
+import type { PointMultiplier } from './resolvePointValue';
+import { calculatePointsTo } from './pointsToCalculator';
+import { parse } from '@Helpers/matchUpFormatCode/parse';
+import { resolvePointValue } from './resolvePointValue';
+import { inferServeSide } from './serveSideCalculator';
+import { isObject } from '@Tools/objects';
 import type {
   MatchUp,
   AddPointOptions,
@@ -21,14 +29,6 @@ import type {
   FormatStructure,
   SetFormatStructure,
 } from '@Types/scoring/types';
-import { resolveSetType, isAggregateFormat } from '@Tools/scoring/scoringUtilities';
-import { parse } from '@Helpers/matchUpFormatCode/parse';
-import type { SetType } from '@Tools/scoring/scoringUtilities';
-import { calculatePointsTo } from './pointsToCalculator';
-import { inferServeSide } from './serveSideCalculator';
-import { resolvePointValue } from './resolvePointValue';
-import type { PointMultiplier } from './resolvePointValue';
-import { isObject } from '@Tools/objects';
 
 // constants
 import { RALLY } from '@Constants/matchUpFormatConstants';

@@ -2,7 +2,7 @@ import mocksEngine from '@Assemblies/engines/mock';
 import tournamentEngine from '@Engines/syncEngine';
 import { expect, it, test } from 'vitest';
 
-// constants and types
+// constants
 import { COMPASS, CURTIS_CONSOLATION } from '@Constants/drawDefinitionConstants';
 import { INVALID_VALUES } from '@Constants/errorConditionConstants';
 import { TEAM } from '@Constants/participantConstants';

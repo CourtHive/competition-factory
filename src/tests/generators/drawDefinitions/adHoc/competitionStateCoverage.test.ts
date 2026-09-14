@@ -14,7 +14,7 @@ import { initializeCompetitionState } from '@Mutate/drawDefinitions/competition/
 import { getCompetitionLeaderboard } from '@Query/drawDefinition/competition/getCompetitionLeaderboard';
 import { resetCompetitionState } from '@Mutate/drawDefinitions/competition/resetCompetitionState';
 
-// Constants
+// constants
 import { MISSING_DRAW_DEFINITION, MISSING_VALUE } from '@Constants/errorConditionConstants';
 import { APPLIED_POLICIES, COMPETITION_STATE } from '@Constants/extensionConstants';
 import { POLICY_TYPE_COMPETITION } from '@Constants/policyConstants';

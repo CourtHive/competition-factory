@@ -1,7 +1,8 @@
-import mocksEngine from '@Assemblies/engines/mock';
 import competitionEngine from '@Engines/syncEngine';
+import mocksEngine from '@Assemblies/engines/mock';
 import { expect, it } from 'vitest';
 
+// constants
 import { COMPASS, FEED_IN_CHAMPIONSHIP, SINGLE_ELIMINATION } from '@Constants/drawDefinitionConstants';
 import { COURT_ORDER } from '@Constants/timeItemConstants';
 

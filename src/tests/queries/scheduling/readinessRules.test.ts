@@ -1,3 +1,4 @@
+import { describe, expect, it } from 'vitest';
 import {
   analyzeMatchUpReadiness,
   individualIds,
@@ -6,9 +7,8 @@ import {
   nameFor,
   parseClockMinutes,
 } from '@Query/matchUps/scheduling/getMatchUpReadiness';
-import { describe, expect, it } from 'vitest';
 
-// constants and types
+// types
 import { HydratedMatchUp } from '@Types/hydrated';
 
 /**

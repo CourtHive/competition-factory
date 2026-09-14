@@ -3,10 +3,10 @@ import mocksEngine from '@Assemblies/engines/mock';
 import tournamentEngine from '@Engines/syncEngine';
 import { expect, it, describe } from 'vitest';
 
-// constants and types
+// constants
 import { MODIFY_MATCHUP, PUBLISH_EVENT } from '@Constants/topicConstants';
-import * as topicConstants from '@Constants/topicConstants';
 import { SINGLE_ELIMINATION } from '@Constants/drawDefinitionConstants';
+import * as topicConstants from '@Constants/topicConstants';
 
 /**
  * Notices must carry enough identity on the ENVELOPE for a subscriber to route a change without

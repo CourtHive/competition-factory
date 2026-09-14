@@ -1,11 +1,11 @@
-import tournamentEngine from '@Engines/syncEngine';
 import mocksEngine from '@Assemblies/engines/mock';
+import tournamentEngine from '@Engines/syncEngine';
 import { expect, it } from 'vitest';
 
-import { INDIVIDUAL } from '@Constants/participantConstants';
-import { MISSING_STRUCTURE_ID, STRUCTURE_NOT_FOUND } from '@Constants/errorConditionConstants';
 import { getNextUnfilledDrawPositions } from '@Query/drawDefinition/positionActions/getNextUnfilledDrawPositions';
+import { MISSING_STRUCTURE_ID, STRUCTURE_NOT_FOUND } from '@Constants/errorConditionConstants';
 import { assignDrawPosition } from '@Mutate/matchUps/drawPositions/positionAssignment';
+import { INDIVIDUAL } from '@Constants/participantConstants';
 
 it('can report on drawPositions available for placement', () => {
   const {

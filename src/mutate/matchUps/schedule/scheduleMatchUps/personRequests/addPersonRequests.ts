@@ -1,11 +1,12 @@
 import { checkRequiredParameters } from '@Helpers/parameters/checkRequiredParameters';
+import { getPersonRequests } from '@Query/matchUps/scheduling/getPersonRequests';
 import { mergePersonRequests } from './mergePersonRequests';
 import { savePersonRequests } from './savePersonRequests';
-import { getPersonRequests } from '@Query/matchUps/scheduling/getPersonRequests';
 
+// constants and types
+import { ARRAY, INVALID, OF_TYPE, PERSON_ID, TOURNAMENT_RECORDS } from '@Constants/attributeConstants';
 import { INVALID_VALUES } from '@Constants/errorConditionConstants';
 import { TournamentRecords } from '@Types/factoryTypes';
-import { ARRAY, INVALID, OF_TYPE, PERSON_ID, TOURNAMENT_RECORDS } from '@Constants/attributeConstants';
 
 type AddPersonRequestsArgs = {
   tournamentRecords: TournamentRecords;

@@ -7,13 +7,14 @@ import mocksEngine from '@Assemblies/engines/mock';
 import tournamentEngine from '@Engines/syncEngine';
 import { expect, it, describe } from 'vitest';
 
+// constants
+import { VENUE_NOT_FOUND } from '@Constants/errorConditionConstants';
 import {
   BOOKING_NOT_FOUND,
   COURT_NOT_FOUND,
   INVALID_VALUES,
   MISSING_TOURNAMENT_RECORD,
 } from '@Constants/errorConditionConstants';
-import { VENUE_NOT_FOUND } from '@Constants/errorConditionConstants';
 
 describe('updateCourtAvailability', () => {
   it('returns error when tournamentRecord is missing', () => {

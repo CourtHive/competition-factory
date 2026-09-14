@@ -1,7 +1,7 @@
 import mocksEngine from '@Assemblies/engines/mock';
 import { expect, it } from 'vitest';
 
-// Constants
+// constants
 import { POLICY_TYPE_FEED_IN, POLICY_TYPE_SEEDING } from '@Constants/policyConstants';
 import {
   BOTTOM_UP,

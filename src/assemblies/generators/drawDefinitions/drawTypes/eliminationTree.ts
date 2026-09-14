@@ -1,9 +1,9 @@
-import { addFinishingRounds } from '../addFinishingRounds';
+import { addFinishingRounds } from '@Generators/drawDefinitions/addFinishingRounds';
+import { buildRound } from '@Generators/drawDefinitions/buildRound';
 import { generateRange } from '@Tools/arrays';
 import { isPowerOf2 } from '@Tools/math';
-import { buildRound } from '../buildRound';
 
-// Types
+// types
 import { MatchUp } from '@Types/tournamentTypes';
 
 type TreeMatchUpsArgs = {

@@ -30,8 +30,8 @@
  */
 
 import type { DrawDefinition, Event, Extension, TimeItem, Tournament, Venue } from '@Types/tournamentTypes';
-import type { HydratedMatchUp, HydratedParticipant } from '@Types/hydrated';
 import type { FlightProfile, MatchUpsMap, PolicyDefinitions } from '@Types/factoryTypes';
+import type { HydratedMatchUp, HydratedParticipant } from '@Types/hydrated';
 
 type QueryRegistryEntry = {
   /** factory engine method name to invoke */

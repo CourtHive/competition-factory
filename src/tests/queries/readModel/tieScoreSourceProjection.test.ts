@@ -1,6 +1,6 @@
 import { mocksEngine } from '@Assemblies/engines/mock';
-import { cast } from '@Query/readModel/cast';
 import { expect, it, describe } from 'vitest';
+import { cast } from '@Query/readModel/cast';
 
 // constants and types
 import { TieScoreSourceEnum } from '@Types/tournamentTypes';

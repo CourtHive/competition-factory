@@ -5,6 +5,7 @@ import mocksEngine from '@Assemblies/engines/mock';
 import { instanceCount } from '@Tools/arrays';
 import { expect, test } from 'vitest';
 
+// constants
 import { ROUND_ROBIN } from '@Constants/drawDefinitionConstants';
 
 test.each([competitionEngineSync])(

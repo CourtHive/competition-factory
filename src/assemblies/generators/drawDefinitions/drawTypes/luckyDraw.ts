@@ -1,10 +1,10 @@
+import { addFinishingRounds } from '@Generators/drawDefinitions/addFinishingRounds';
+import { generateMatchUpId } from '@Generators/drawDefinitions/generateMatchUpId';
+import { buildRound } from '@Generators/drawDefinitions/buildRound';
 import { isConvertableInteger, isPowerOf2 } from '@Tools/math';
+import { treeMatchUps } from './eliminationTree';
 import { generateRange } from '@Tools/arrays';
 import { ensureInt } from '@Tools/ensureInt';
-import { addFinishingRounds } from '../addFinishingRounds';
-import { generateMatchUpId } from '../generateMatchUpId';
-import { treeMatchUps } from './eliminationTree';
-import { buildRound } from '../buildRound';
 
 export function luckyDraw(params) {
   const {

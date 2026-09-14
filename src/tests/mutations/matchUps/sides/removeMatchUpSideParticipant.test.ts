@@ -3,6 +3,7 @@ import mocksEngine from '@Assemblies/engines/mock';
 import tournamentEngine from '@Engines/syncEngine';
 import { describe, expect, it } from 'vitest';
 
+// constants
 import { INVALID_DRAW_TYPE, INVALID_VALUES, MATCHUP_NOT_FOUND } from '@Constants/errorConditionConstants';
 
 describe('removeMatchUpSideParticipant', () => {

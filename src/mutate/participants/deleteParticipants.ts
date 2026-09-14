@@ -1,13 +1,13 @@
 import { checkRequiredParameters } from '@Helpers/parameters/checkRequiredParameters';
 import { removeParticipantIdsFromAllTeams } from './removeIndividualParticipantIds';
 import { allTournamentMatchUps } from '@Query/matchUps/getAllTournamentMatchUps';
+import { removeEventEntries } from '@Mutate/entries/removeEventEntries';
 import { getParticipants } from '@Query/participants/getParticipants';
-import { removeEventEntries } from '../entries/removeEventEntries';
-import { addEventEntries } from '../entries/addEventEntries';
+import { addEventEntries } from '@Mutate/entries/addEventEntries';
 import { addNotice } from '@Global/state/globalState';
 import { intersection } from '@Tools/arrays';
 
-// Constants
+// constants and types
 import { ARRAY, ERROR, OF_TYPE, TOURNAMENT_RECORD } from '@Constants/attributeConstants';
 import { GROUP, PAIR, TEAM as participantTeam } from '@Constants/participantConstants';
 import { DELETE_PARTICIPANTS } from '@Constants/topicConstants';

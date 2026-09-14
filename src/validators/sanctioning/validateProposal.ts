@@ -2,11 +2,12 @@ import { sumAgainstBound, describeAmount } from '@Query/sanctioning/comparePrize
 import { isDisciplineAllowed } from '@Helpers/coercedDiscipline';
 import { coercedGender } from '@Helpers/coercedGender';
 
-// Constants
+// constants
 import { MISSING_SANCTIONING_POLICY, MISSING_PROPOSAL } from '@Constants/sanctioningConstants';
 import { SUCCESS } from '@Constants/resultConstants';
 
-// Types
+// types
+import { TierClassification } from '@Types/tournamentTypes';
 import {
   TournamentProposal,
   SanctioningPolicy,
@@ -14,7 +15,6 @@ import {
   PersonnelRole,
   PersonReference,
 } from '@Types/sanctioningTypes';
-import { TierClassification } from '@Types/tournamentTypes';
 
 export type ValidationIssue = {
   field: string;

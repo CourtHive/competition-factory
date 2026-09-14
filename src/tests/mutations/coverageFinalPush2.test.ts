@@ -4,15 +4,15 @@
  */
 import { POLICY_RANKING_POINTS_BASIC } from '@Fixtures/policies/POLICY_RANKING_POINTS_BASIC';
 import { generateParticipants } from '@Generators/mocks/generateParticipants';
-import { getParticipantStats } from '@Query/participant/getParticipantStats';
 import { copyTieFormat } from '@Query/hierarchical/tieFormats/copyTieFormat';
+import { getParticipantStats } from '@Query/participant/getParticipantStats';
 import { updateTieFormat } from '@Mutate/tieFormat/updateTieFormat';
 import { POLICY_TYPE_SCORING } from '@Constants/policyConstants';
 import { DOUBLES, TEAM_EVENT } from '@Constants/eventConstants';
 import { DEFAULTED } from '@Constants/matchUpStatusConstants';
 import { COLLEGE_D3 } from '@Constants/tieFormatConstants';
-import tournamentEngine from '@Engines/syncEngine';
 import mocksEngine from '@Assemblies/engines/mock';
+import tournamentEngine from '@Engines/syncEngine';
 import { expect, it, describe } from 'vitest';
 
 const scoringPolicy = { [POLICY_TYPE_SCORING]: { requireParticipantsForScoring: false } };

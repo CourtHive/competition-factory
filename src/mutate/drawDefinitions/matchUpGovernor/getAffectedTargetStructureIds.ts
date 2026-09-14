@@ -4,8 +4,9 @@ import { firstClassOrExtension } from '@Acquire/firstClassOrExtension';
 import { getStructureLinks } from '@Query/drawDefinition/linkGetter';
 import { overlap } from '@Tools/arrays';
 
-import { TALLY } from '@Constants/extensionConstants';
+// constants and types
 import { DrawDefinition, MatchUp, Structure } from '@Types/tournamentTypes';
+import { TALLY } from '@Constants/extensionConstants';
 
 /**
  * Finds all structureIds which are affected by an outcome change in a completed structure

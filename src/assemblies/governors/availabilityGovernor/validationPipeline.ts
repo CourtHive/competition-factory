@@ -12,8 +12,8 @@
  */
 
 import type { AvailabilityEngine } from '@Assemblies/engines/availability/AvailabilityEngine';
-import type { DayId } from './types';
 import type { DayPlan } from './planState';
+import type { DayId } from './types';
 
 // ============================================================================
 // Types

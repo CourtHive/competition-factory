@@ -1,11 +1,11 @@
 import { generateDrawTypeAndModifyDrawDefinition } from '@Assemblies/generators/drawDefinitions/generateDrawTypeAndModifyDrawDefinition';
+import { newDrawDefinition } from '@Assemblies/generators/drawDefinitions/newDrawDefinition';
 import { getAllStructureMatchUps } from '@Query/matchUps/getAllStructureMatchUps';
 import { getStructureMatchUps } from '@Query/structure/getStructureMatchUps';
 import { attachPolicies } from '@Mutate/extensions/policies/attachPolicies';
 import { getRoundMatchUps } from '@Query/matchUps/getRoundMatchUps';
 import { getAllDrawMatchUps } from '@Query/matchUps/drawMatchUps';
 import { constantToString } from '@Tools/strings';
-import { newDrawDefinition } from '@Assemblies/generators/drawDefinitions/newDrawDefinition';
 import { expect, it } from 'vitest';
 
 import { POLICY_ROUND_NAMING_DEFAULT } from '@Fixtures/policies/POLICY_ROUND_NAMING_DEFAULT';

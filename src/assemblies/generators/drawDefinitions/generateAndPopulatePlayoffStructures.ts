@@ -1,25 +1,25 @@
 import { generateAndPopulateRRplayoffStructures } from './generateAndPopulateRRplayoffStructures';
-import { processPlayoffGroups } from './drawTypes/processPlayoffGroups';
 import { getAvailablePlayoffProfiles } from '@Query/drawDefinition/getAvailablePlayoffProfiles';
 import { assignDrawPositionBye } from '@Mutate/matchUps/drawPositions/assignDrawPositionBye';
 import { NamingEntry, generatePlayoffStructures } from './drawTypes/playoffStructures';
 import { directParticipants } from '@Mutate/matchUps/drawPositions/directParticipants';
 import { resolveTieFormat } from '@Query/hierarchical/tieFormats/resolveTieFormat';
 import { getAllStructureMatchUps } from '@Query/matchUps/getAllStructureMatchUps';
-import { matchUpCompletion } from '@Query/matchUp/checkMatchUpIsComplete';
 import { isLuckyBasedDraw } from '@Query/drawDefinition/isLuckyBasedDraw';
+import { matchUpCompletion } from '@Query/matchUp/checkMatchUpIsComplete';
+import { processPlayoffGroups } from './drawTypes/processPlayoffGroups';
 import { getSourceRounds } from '@Query/drawDefinition/getSourceRounds';
-import { getAllDrawMatchUps } from '@Query/matchUps/drawMatchUps';
 import { decorateResult } from '@Functions/global/decorateResult';
+import { getAllDrawMatchUps } from '@Query/matchUps/drawMatchUps';
 import { positionTargets } from '@Query/matchUp/positionTargets';
 import { getMatchUpId } from '@Functions/global/extractors';
 import { pushGlobalLog } from '@Functions/global/globalLog';
-import { addGoesTo } from '@Query/matchUps/addGoesTo';
 import { findStructure } from '@Acquire/findStructure';
+import { addGoesTo } from '@Query/matchUps/addGoesTo';
 import { generateTieMatchUps } from './tieMatchUps';
 import { makeDeepCopy } from '@Tools/makeDeepCopy';
-import { nextPowerOf2 } from '@Tools/math';
 import { ensureInt } from '@Tools/ensureInt';
+import { nextPowerOf2 } from '@Tools/math';
 
 // constants and types
 import { INVALID_VALUES, MISSING_DRAW_DEFINITION, STRUCTURE_NOT_FOUND } from '@Constants/errorConditionConstants';

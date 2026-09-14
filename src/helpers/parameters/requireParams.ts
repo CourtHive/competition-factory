@@ -1,5 +1,6 @@
 import { checkRequiredParameters } from './checkRequiredParameters';
 
+// types
 import { ResultType } from '@Types/factoryTypes';
 
 /**

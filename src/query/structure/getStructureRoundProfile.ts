@@ -3,7 +3,7 @@ import { decorateResult } from '@Functions/global/decorateResult';
 import { findStructure } from '@Acquire/findStructure';
 
 // constants and types
-import { RoundMatchUpsResult, getRoundMatchUps } from '../matchUps/getRoundMatchUps';
+import { RoundMatchUpsResult, getRoundMatchUps } from '@Query/matchUps/getRoundMatchUps';
 import { DrawDefinition, MatchUp } from '@Types/tournamentTypes';
 import { MatchUpsMap } from '@Types/factoryTypes';
 

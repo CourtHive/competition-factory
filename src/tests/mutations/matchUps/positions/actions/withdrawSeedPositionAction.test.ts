@@ -1,10 +1,11 @@
-import tournamentEngine from '@Engines/syncEngine';
 import mocksEngine from '@Assemblies/engines/mock';
+import tournamentEngine from '@Engines/syncEngine';
 import { expect, it } from 'vitest';
 
+// constants
+import { DOUBLES_EVENT, SINGLES_EVENT } from '@Constants/eventConstants';
 import { REMOVE_SEED } from '@Constants/positionActionConstants';
 import { MALE } from '@Constants/genderConstants';
-import { DOUBLES_EVENT, SINGLES_EVENT } from '@Constants/eventConstants';
 
 it('can re-position seeds when a seed is withdrawn', () => {
   const targetDrawId = 'someCompletedMatchUps';

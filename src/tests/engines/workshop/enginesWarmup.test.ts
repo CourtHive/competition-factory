@@ -1,10 +1,10 @@
 import { completeDrawMatchUps } from '@Assemblies/generators/mocks/completeDrawMatchUps';
 import { setGlobalLog, setMethods, setStateProvider } from '@Global/state/globalState';
-import { deleteDrawDefinitions } from '@Mutate/events/deleteDrawDefinitions';
+import asyncGlobalState from '../../../examples/asyncEngine/asyncGlobalState';
 import { factoryVersion as version } from '@Functions/global/factoryVersion';
+import { deleteDrawDefinitions } from '@Mutate/events/deleteDrawDefinitions';
 import { checkScoreHasValue } from '@Query/matchUp/checkScoreHasValue';
 import { getParticipants } from '@Query/participants/getParticipants';
-import asyncGlobalState from '../../../examples/asyncEngine/asyncGlobalState';
 import * as eventGovernor from '@Assemblies/governors/eventGovernor';
 import * as query from '@Assemblies/governors/queryGovernor';
 import { getMethods } from '@Global/state/syncGlobalState';
@@ -14,6 +14,7 @@ import syncEngine from '@Assemblies/engines/sync';
 import askEngine from '@Assemblies/engines/ask';
 import { expect, test } from 'vitest';
 
+// constants
 import { MUTATE } from '@Constants/methodConstants';
 import {
   INVALID_VALUES,

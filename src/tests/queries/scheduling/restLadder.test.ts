@@ -1,12 +1,12 @@
+import { describe, expect, it } from 'vitest';
 import {
   analyzeParticipantRest,
   normalizeTimes,
   occursOnDay,
   resolveAnchors,
 } from '@Query/matchUps/scheduling/getParticipantRest';
-import { describe, expect, it } from 'vitest';
 
-// constants and types
+// types
 import { HydratedMatchUp } from '@Types/hydrated';
 
 /**

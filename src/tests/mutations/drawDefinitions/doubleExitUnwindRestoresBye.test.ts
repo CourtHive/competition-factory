@@ -16,11 +16,11 @@
  * DO_UNDO_IDENTITY entries are two DIFFERENT mechanisms (drawPositions and matchUpStatusCodes) —
  * see `knownFailures.ts`.
  */
-import { clearOutcome } from '@Tests/testHarness/exitPropagation/transitions';
 import { nextPlayable, playForward } from '@Tests/testHarness/exitPropagation/driver';
+import { clearOutcome } from '@Tests/testHarness/exitPropagation/transitions';
 import { setSubscriptions } from '@Global/state/globalState';
-import tournamentEngine from '@Engines/syncEngine';
 import mocksEngine from '@Assemblies/engines/mock';
+import tournamentEngine from '@Engines/syncEngine';
 import { expect, it, describe } from 'vitest';
 
 // constants

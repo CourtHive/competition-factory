@@ -1,4 +1,5 @@
 import { pushGlobalLog } from '@Functions/global/globalLog';
+
 // Query
 import { getDrawCompositionConstraints } from './getDrawCompositionConstraints';
 import { getBestFinishers } from '@Query/drawDefinition/getBestFinishers';
@@ -10,12 +11,12 @@ import { findStructure } from '@Acquire/findStructure';
 // Helpers
 import { numericSort } from '@Tools/sorting';
 
-// Constants
+// constants
 import { ALTERNATE, FEED_IN, WILDCARD, DIRECT_ENTRY_STATUSES } from '@Constants/entryStatusConstants';
 import { POSITION, CONTAINER, PLAY_OFF, validStages } from '@Constants/drawDefinitionConstants';
 import { ROUND_TARGET, TALLY } from '@Constants/extensionConstants';
 
-// Types
+// constants and types
 import type { DrawDefinition, DrawLink, EntryStatusUnion } from '@Types/tournamentTypes';
 import type { ErrorType } from '@Constants/errorConditionConstants';
 

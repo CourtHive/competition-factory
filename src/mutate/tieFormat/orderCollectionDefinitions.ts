@@ -1,7 +1,7 @@
 import { modifyDrawNotice, modifyMatchUpNotice } from '@Mutate/notifications/drawNotifications';
 import { getAllStructureMatchUps } from '@Query/matchUps/getAllStructureMatchUps';
-import { copyTieFormat } from '@Query/hierarchical/tieFormats/copyTieFormat';
 import { modifyEventNotice } from '@Mutate/notifications/eventNotifications';
+import { copyTieFormat } from '@Query/hierarchical/tieFormats/copyTieFormat';
 import { decorateResult } from '@Functions/global/decorateResult';
 import { getTieFormat } from '@Query/hierarchical/getTieFormat';
 import { findDrawMatchUp } from '@Acquire/findDrawMatchUp';

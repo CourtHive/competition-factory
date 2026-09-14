@@ -8,10 +8,11 @@ import mocksEngine from '@Assemblies/engines/mock';
 import tournamentEngine from '@Engines/syncEngine';
 import { expect, it } from 'vitest';
 
-import { POLICY_TYPE_RANKING_POINTS } from '@Constants/policyConstants';
+// constants
 import { MISSING_POLICY_DEFINITION } from '@Constants/errorConditionConstants';
-import { SINGLES } from '@Constants/eventConstants';
 import { CURTIS_CONSOLATION } from '@Constants/drawDefinitionConstants';
+import { POLICY_TYPE_RANKING_POINTS } from '@Constants/policyConstants';
+import { SINGLES } from '@Constants/eventConstants';
 
 const basicAwardProfiles = [
   {

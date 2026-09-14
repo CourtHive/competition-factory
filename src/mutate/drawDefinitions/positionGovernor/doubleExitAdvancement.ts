@@ -1,15 +1,15 @@
 import { advanceDrawPosition, assignDrawPositionBye } from '@Mutate/matchUps/drawPositions/assignDrawPositionBye';
+import { getPairedPreviousMatchUpIsDoubleExit } from '@Query/matchUps/getPairedPreviousMatchUpIsDoubleExit';
 import { assignMatchUpDrawPosition } from '@Mutate/matchUps/drawPositions/assignMatchUpDrawPosition';
-import { getPairedPreviousMatchUpIsDoubleExit } from '../../../query/matchUps/getPairedPreviousMatchUpIsDoubleExit';
 import { getExitWinningSide } from '@Mutate/drawDefinitions/matchUpGovernor/getExitWinningSide';
-import { getPositionAssignments } from '@Query/drawDefinition/positionsGetter';
 import { modifyMatchUpScore } from '@Mutate/matchUps/score/modifyMatchUpScore';
+import { getPositionAssignments } from '@Query/drawDefinition/positionsGetter';
 import { directWinner } from '@Mutate/matchUps/drawPositions/directWinner';
 import { decorateResult } from '@Functions/global/decorateResult';
 import { positionTargets } from '@Query/matchUp/positionTargets';
 import { pushGlobalLog } from '@Functions/global/globalLog';
-import { findStructure } from '@Acquire/findStructure';
 import { isDoubleExit, isExit } from '@Validators/isExit';
+import { findStructure } from '@Acquire/findStructure';
 import { overlap } from '@Tools/arrays';
 import {
   buildCarriedExitProvenance,
@@ -23,8 +23,8 @@ import {
 
 // constants
 import { DRAW_POSITION_ASSIGNED, MISSING_MATCHUP, MISSING_STRUCTURE } from '@Constants/errorConditionConstants';
-import { BYE } from '@Constants/matchUpStatusConstants';
 import { CONTAINER } from '@Constants/drawDefinitionConstants';
+import { BYE } from '@Constants/matchUpStatusConstants';
 import { SUCCESS } from '@Constants/resultConstants';
 
 function logAdvancement(method, details) {

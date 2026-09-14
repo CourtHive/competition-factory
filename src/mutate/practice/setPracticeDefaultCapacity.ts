@@ -2,12 +2,12 @@ import { requireParams } from '@Helpers/parameters/requireParams';
 import { addNotice } from '@Global/state/globalState';
 
 // constants and types
+import { MODIFY_TOURNAMENT_DETAIL } from '@Constants/topicConstants';
 import { INVALID_VALUES } from '@Constants/errorConditionConstants';
 import { TOURNAMENT_RECORD } from '@Constants/attributeConstants';
-import { MODIFY_TOURNAMENT_DETAIL } from '@Constants/topicConstants';
 import { SUCCESS } from '@Constants/resultConstants';
-import { ResultType } from '@Types/factoryTypes';
 import { Tournament } from '@Types/tournamentTypes';
+import { ResultType } from '@Types/factoryTypes';
 
 type SetPracticeDefaultCapacityArgs = {
   tournamentRecord: Tournament;

@@ -1,9 +1,10 @@
-import { modifyPositionAssignmentsNotice } from '../../notifications/drawNotifications';
+import { modifyPositionAssignmentsNotice } from '@Mutate/notifications/drawNotifications';
 import { getPositionAssignments } from '@Query/drawDefinition/positionsGetter';
+import { isActiveDownstream } from '@Query/drawDefinition/isActiveDownstream';
 import { positionTargets } from '@Query/matchUp/positionTargets';
 import { findStructure } from '@Acquire/findStructure';
-import { isActiveDownstream } from '@Query/drawDefinition/isActiveDownstream';
 
+// constants
 import { TO_BE_PLAYED } from '@Constants/matchUpStatusConstants';
 import { DRAW } from '@Constants/drawDefinitionConstants';
 import { SUCCESS } from '@Constants/resultConstants';

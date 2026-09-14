@@ -1,6 +1,6 @@
-import { describe, expect, it, beforeEach, vi } from 'vitest';
 import { notifySubscribers, notifySubscribersAsync } from '@Global/state/notifySubscribers';
 import { setSubscriptions, addNotice, deleteNotices } from '@Global/state/syncGlobalState';
+import { describe, expect, it, beforeEach, vi } from 'vitest';
 import { MUTATIONS } from '@Constants/topicConstants';
 
 describe('notifySubscribers', () => {

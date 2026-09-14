@@ -1,6 +1,6 @@
-import { getScheduleTiming } from '../extensions/matchUpFormatTiming/getScheduleTiming';
-import { hydrateParticipants } from '../participants/hydrateParticipants';
-import { getContextContent } from '../hierarchical/getContextContent';
+import { getScheduleTiming } from '@Query/extensions/matchUpFormatTiming/getScheduleTiming';
+import { hydrateParticipants } from '@Query/participants/hydrateParticipants';
+import { getContextContent } from '@Query/hierarchical/getContextContent';
 import { definedAttributes } from '@Tools/definedAttributes';
 import { getAllDrawMatchUps } from './drawMatchUps';
 

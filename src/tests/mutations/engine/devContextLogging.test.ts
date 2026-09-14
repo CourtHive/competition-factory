@@ -1,6 +1,6 @@
 import { afterAll, beforeEach, describe, it, expect, vi } from 'vitest';
-import tournamentEngine from '@Engines/syncEngine';
 import mocksEngine from '@Assemblies/engines/mock';
+import tournamentEngine from '@Engines/syncEngine';
 
 // constants
 import { SINGLES_EVENT } from '@Constants/eventConstants';

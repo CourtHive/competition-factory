@@ -1,7 +1,7 @@
 import { allTournamentMatchUps } from '@Query/matchUps/getAllTournamentMatchUps';
 import { getParticipants } from '@Query/participants/getParticipants';
 
-// Constants and Types
+// constants and types
 import { MISSING_TOURNAMENT_RECORD } from '@Constants/errorConditionConstants';
 import { Tournament } from '@Types/tournamentTypes';
 import { ReportContext } from '@Types/reportTypes';

@@ -5,10 +5,11 @@ import ratingsParameters from '@Fixtures/ratings/ratingsParameters';
 import { isLadder } from '@Query/drawDefinition/isLadder';
 import { isObject } from '@Tools/objects';
 
+// constants and types
 import { EXISTING_PARTICIPANT, INVALID_VALUES, MISSING_DRAW_DEFINITION } from '@Constants/errorConditionConstants';
 import { DYNAMIC, RATING as RATING_SCALE } from '@Constants/scaleConstants';
-import { BOTTOM, RANK } from '@Constants/ladderConstants';
 import { SINGLES_EVENT } from '@Constants/eventConstants';
+import { BOTTOM, RANK } from '@Constants/ladderConstants';
 import { SUCCESS } from '@Constants/resultConstants';
 import { ResultType } from '@Types/factoryTypes';
 

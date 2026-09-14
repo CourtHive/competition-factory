@@ -1,8 +1,8 @@
 import structureTemplate from '@Assemblies/generators/templates/structureTemplate';
-import { modifyDrawNotice } from '../notifications/drawNotifications';
+import { modifyDrawNotice } from '@Mutate/notifications/drawNotifications';
 import { constantToString } from '@Tools/strings';
 
-// Constants and types
+// constants and types
 import { MISSING_DRAW_DEFINITION } from '@Constants/errorConditionConstants';
 import { VOLUNTARY_CONSOLATION } from '@Constants/drawDefinitionConstants';
 import { DrawDefinition } from '@Types/tournamentTypes';

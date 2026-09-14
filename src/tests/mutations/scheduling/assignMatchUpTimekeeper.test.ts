@@ -2,6 +2,7 @@ import mocksEngine from '@Assemblies/engines/mock';
 import tournamentEngine from '@Engines/syncEngine';
 import { expect, it, describe } from 'vitest';
 
+// constants
 import { MISSING_MATCHUP_ID, MISSING_PARTICIPANT_ID, PARTICIPANT_NOT_FOUND } from '@Constants/errorConditionConstants';
 import { INDIVIDUAL } from '@Constants/participantConstants';
 import { TIMEKEEPER } from '@Constants/participantRoles';

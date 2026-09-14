@@ -1,6 +1,6 @@
 import { getPolicyDefinitions } from '@Query/extensions/getAppliedPolicies';
-import { getParticipants } from '@Query/participants/getParticipants';
 import { getQualityWinPoints } from '@Query/scales/getQualityWinPoints';
+import { getParticipants } from '@Query/participants/getParticipants';
 import { getTargetElement } from '@Query/scales/getTargetElement';
 import { getAwardProfile } from '@Query/scales/getAwardProfile';
 import { getAwardPoints } from '@Query/scales/getAwardPoints';
@@ -13,10 +13,10 @@ import { MISSING_POLICY_DEFINITION, MISSING_TOURNAMENT_RECORD } from '@Constants
 import { ParticipantFilters, PolicyDefinitions } from '@Types/factoryTypes';
 import { PAIR, TEAM_PARTICIPANT } from '@Constants/participantConstants';
 import { POLICY_TYPE_RANKING_POINTS } from '@Constants/policyConstants';
+import { SPLIT_EVEN, TEAM_ONLY } from '@Constants/rankingConstants';
 import { QUALIFYING } from '@Constants/drawDefinitionConstants';
 import { DOUBLES, TEAM_EVENT } from '@Constants/eventConstants';
 import { SUCCESS } from '@Constants/resultConstants';
-import { SPLIT_EVEN, TEAM_ONLY } from '@Constants/rankingConstants';
 import { Tournament } from '@Types/tournamentTypes';
 
 function calculateBonusPoints(primaryAwardProfile, bestFinishingPosition, level) {

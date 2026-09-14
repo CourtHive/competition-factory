@@ -1,20 +1,20 @@
 import { generateDrawTypeAndModifyDrawDefinition } from '@Assemblies/generators/drawDefinitions/generateDrawTypeAndModifyDrawDefinition';
-import { applyMatchUpFormat } from '@Mutate/matchUps/matchUpFormat/applyMatchUpFormat';
 import { newDrawDefinition } from '@Assemblies/generators/drawDefinitions/newDrawDefinition';
+import { applyMatchUpFormat } from '@Mutate/matchUps/matchUpFormat/applyMatchUpFormat';
 import { getAllStructureMatchUps } from '@Query/matchUps/getAllStructureMatchUps';
 import { getStructureMatchUps } from '@Query/structure/getStructureMatchUps';
-import { getDrawMatchUps } from '@Query/matchUps/drawMatchUps';
 import { getMatchUpType } from '@Query/matchUp/getMatchUpType';
+import { getDrawMatchUps } from '@Query/matchUps/drawMatchUps';
 import { findDrawMatchUp } from '@Acquire/findDrawMatchUp';
 import { getDrawStructures } from '@Acquire/findStructure';
-import { tournamentEngine } from '@Engines/syncEngine';
 import { mocksEngine } from '@Assemblies/engines/mock';
+import { tournamentEngine } from '@Engines/syncEngine';
 import { expect, it } from 'vitest';
 
 // constants and types
 import { MAIN, ROUND_ROBIN, SINGLE_ELIMINATION } from '@Constants/drawDefinitionConstants';
-import { TEAM_EVENT } from '@Constants/eventConstants';
 import { DrawDefinition } from '@Types/tournamentTypes';
+import { TEAM_EVENT } from '@Constants/eventConstants';
 import { SINGLES } from '@Constants/matchUpTypes';
 import {
   INVALID_EVENT_TYPE,

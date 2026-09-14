@@ -7,13 +7,13 @@ import { getAdHocRatings } from '@Generators/drawDefinitions/drawTypes/adHoc/dra
 // Mutate
 import { setFirstClassOrExtension } from '@Mutate/extensions/setFirstClassOrExtension';
 
-// Constants
+// constants
 import { MISSING_DRAW_DEFINITION, MISSING_VALUE } from '@Constants/errorConditionConstants';
 import { COMPETITION_STATE } from '@Constants/extensionConstants';
 import { SUCCESS } from '@Constants/resultConstants';
 import { DOUBLES } from '@Constants/eventConstants';
 
-// Types
+// types
 import type { CompetitionParticipantState, CompetitionState } from '@Types/competitionPolicyTypes';
 import type { DrawDefinition, Event, Tournament } from '@Types/tournamentTypes';
 import type { ResultType } from '@Types/factoryTypes';

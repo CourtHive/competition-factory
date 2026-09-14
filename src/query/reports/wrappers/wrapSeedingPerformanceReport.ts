@@ -1,10 +1,11 @@
 import { getParticipantIdFinishingPositions } from '@Query/drawDefinition/finishingPositions';
 import { getParticipants } from '@Query/participants/getParticipants';
 
+// constants and types
 import { SEEDING_PERFORMANCE_REPORT } from '@Constants/reportConstants';
 import { MAIN } from '@Constants/drawDefinitionConstants';
-import { ReportResult } from '@Types/reportTypes';
 import { Tournament } from '@Types/tournamentTypes';
+import { ReportResult } from '@Types/reportTypes';
 
 function getPerformanceLabel(finishMin: number, seedValue: number): string {
   if (!finishMin || !seedValue) return '';

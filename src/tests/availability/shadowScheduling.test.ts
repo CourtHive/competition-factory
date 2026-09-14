@@ -5,9 +5,9 @@
  * and the matchUpId field on Block.
  */
 
-import { describe, it, expect, beforeEach } from 'vitest';
 import { AvailabilityEngine } from '@Assemblies/engines/availability/AvailabilityEngine';
 import { BLOCK_TYPES } from '@Assemblies/governors/availabilityGovernor/types';
+import { describe, it, expect, beforeEach } from 'vitest';
 
 // ============================================================================
 // Test Fixtures

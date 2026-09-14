@@ -1,8 +1,9 @@
 import { getTournamentInfo } from '@Query/tournaments/getTournamentInfo';
-import tournamentEngine from '@Engines/syncEngine';
 import mocksEngine from '@Assemblies/engines/mock';
+import tournamentEngine from '@Engines/syncEngine';
 import { describe, expect, it } from 'vitest';
 
+// constants
 import { ADMINISTRATION, COMPETITOR, DIRECTOR, OFFICIAL } from '@Constants/participantRoles';
 
 /**

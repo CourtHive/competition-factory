@@ -1,4 +1,4 @@
-import { generateTeamTournament } from '../participants/team/generateTestTeamTournament';
+import { generateTeamTournament } from '@Tests/mutations/participants/team/generateTestTeamTournament';
 import { setSubscriptions } from '@Global/state/globalState';
 import tournamentEngine from '@Engines/syncEngine';
 import { mocksEngine } from '../../..';

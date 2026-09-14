@@ -1,4 +1,4 @@
-import { NoticeIdentity } from '../../forge/topicTypes';
+import { NoticeIdentity } from '@Forge/topicTypes';
 
 /**
  * Identity fields carried on a notice ENVELOPE — the SINGLE definition.

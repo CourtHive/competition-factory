@@ -11,18 +11,18 @@ import { getScheduledCourtMatchUps, getScheduledVenueMatchUps } from '@Query/ven
 import { organizeDrawPositionOptions } from '@Query/drawDefinition/avoidance/organizeDrawPositionOptions';
 import { removeMatchUpCourtAssignment } from '@Mutate/matchUps/schedule/removeMatchUpCourtAssignment';
 import { getCourtsAvailableAtPeriodStart } from '@Query/venues/getCourtsAvailableAtPeriodStart';
-import { getParticipantEventDetails } from '@Query/participants/getParticipantEventDetails';
 import { getCompetitionParticipants } from '@Query/participants/getCompetitionParticipants';
+import { getParticipantEventDetails } from '@Query/participants/getParticipantEventDetails';
 import { removeSeededParticipant } from '@Mutate/drawDefinitions/removeSeededParticipant';
 import { getRandomQualifierList } from '@Query/drawDefinition/getRandomQualifierList';
-import { getPersonRequests } from '@Query/matchUps/scheduling/getPersonRequests';
 import { autoSeeding } from '@Assemblies/generators/drawDefinitions/autoSeeding';
-import { getSwapOptions } from '@Query/drawDefinition/avoidance/getSwapOptions';
+import { getPersonRequests } from '@Query/matchUps/scheduling/getPersonRequests';
 import { removeEntry } from '@Mutate/drawDefinitions/entryGovernor/removeEntry';
+import { getSwapOptions } from '@Query/drawDefinition/avoidance/getSwapOptions';
 import { refreshEventDrawOrder } from '@Mutate/events/refreshEventDrawOrder';
 import { updateTeamLineUp } from '@Mutate/drawDefinitions/updateTeamLineUp';
-import { publicFindParticipant } from '@Acquire/publicFindParticipant';
 import { getStageEntries } from '@Query/drawDefinition/getStageEntries';
+import { publicFindParticipant } from '@Acquire/publicFindParticipant';
 import { getEventProperties } from '@Query/event/getEventProperties';
 import { validDrawPositions } from '@Validators/validDrawPositions';
 import { mapNumbersToIndexes } from '@Tools/mapNumbersToIndexes';
@@ -30,6 +30,7 @@ import { setDevContext } from '@Global/state/globalState';
 import { getCourts } from '@Query/venues/getCourts';
 import { expect, it, describe } from 'vitest';
 
+// constants
 import {
   INVALID_VALUES,
   MISSING_COURT_ID,

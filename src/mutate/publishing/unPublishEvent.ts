@@ -1,10 +1,11 @@
 import { checkAndNotifyUnpublishTournament } from './checkAndNotifyUnpublishTournament';
-import { modifyEventPublishStatus } from '../events/modifyEventPublishStatus';
+import { modifyEventPublishStatus } from '@Mutate/events/modifyEventPublishStatus';
 import { requireParams } from '@Helpers/parameters/requireParams';
-import { addEventTimeItem } from '../timeItems/addTimeItem';
+import { addEventTimeItem } from '@Mutate/timeItems/addTimeItem';
 import { getEventTimeItem } from '@Query/base/timeItems';
 import { addNotice } from '@Global/state/globalState';
 
+// constants
 import { TOURNAMENT_RECORD, EVENT } from '@Constants/attributeConstants';
 import { PUBLIC, PUBLISH, STATUS } from '@Constants/timeItemConstants';
 import { UNPUBLISH_EVENT } from '@Constants/topicConstants';

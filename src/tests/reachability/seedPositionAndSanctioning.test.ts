@@ -1,9 +1,10 @@
 import { describe, expect, test } from 'vitest';
 
 import mocksEngine from '@Assemblies/engines/mock';
-import tournamentEngine from '@Engines/syncEngine';
 import * as governors from '@Assemblies/governors';
+import tournamentEngine from '@Engines/syncEngine';
 
+// Fixtures
 import POLICY_SEEDING_ITF from '@Fixtures/policies/POLICY_SEEDING_ITF';
 
 /**

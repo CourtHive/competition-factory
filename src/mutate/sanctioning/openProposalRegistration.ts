@@ -1,13 +1,13 @@
 import { UUID } from '@Tools/UUID';
 
-// Constants
+// constants
 import { MISSING_SANCTIONING_RECORD, MISSING_PROPOSAL, TERMINAL_STATUSES } from '@Constants/sanctioningConstants';
 import { INVALID_VALUES } from '@Constants/errorConditionConstants';
 import { SUCCESS } from '@Constants/resultConstants';
 
-// Types
-import type { SanctioningRecord } from '@Types/sanctioningTypes';
+// types
 import type { RegistrationProfile } from '@Types/tournamentTypes';
+import type { SanctioningRecord } from '@Types/sanctioningTypes';
 
 type OpenProposalRegistrationArgs = {
   sanctioningRecord: SanctioningRecord;

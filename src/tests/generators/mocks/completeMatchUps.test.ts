@@ -1,11 +1,11 @@
 import { matchUpSort } from '@Functions/sorters/matchUpSort';
-import tournamentEngine from '@Engines/syncEngine';
 import mocksEngine from '@Assemblies/engines/mock';
+import tournamentEngine from '@Engines/syncEngine';
 import { instanceCount } from '@Tools/arrays';
 import { fmlc32profile } from './fmlc32';
 import { expect, it } from 'vitest';
 
-// Constants
+// constants
 import { FIRST_MATCH_LOSER_CONSOLATION, ROUND_ROBIN } from '@Constants/drawDefinitionConstants';
 import { COMPLETED } from '@Constants/matchUpStatusConstants';
 

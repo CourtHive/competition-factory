@@ -1,7 +1,8 @@
 import { tournamentStatuses } from '@Constants/tournamentConstants';
 
-import { SUCCESS } from '@Constants/resultConstants';
+// constants
 import { INVALID_VALUES, MISSING_TOURNAMENT_RECORD } from '@Constants/errorConditionConstants';
+import { SUCCESS } from '@Constants/resultConstants';
 
 const validStatuses = new Set<string>(tournamentStatuses);
 

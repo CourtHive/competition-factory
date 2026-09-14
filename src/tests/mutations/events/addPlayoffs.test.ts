@@ -1,13 +1,14 @@
-import { constantToString } from '@Tools/strings';
 import mocksEngine from '@Assemblies/engines/mock';
+import tournamentEngine from '@Engines/syncEngine';
+import { constantToString } from '@Tools/strings';
 import { generateRange } from '@Tools/arrays';
 import { deriveExponent } from '@Tools/math';
-import tournamentEngine from '@Engines/syncEngine';
 import { globalState } from '../../..';
 import { expect, it } from 'vitest';
 
-import { INVALID_VALUES } from '@Constants/errorConditionConstants';
+// constants
 import { FIRST_MATCH_LOSER_CONSOLATION, MAIN, PLAYOFF } from '@Constants/drawDefinitionConstants';
+import { INVALID_VALUES } from '@Constants/errorConditionConstants';
 
 it('errors if attempting generation of existing playoff structure', () => {
   const {

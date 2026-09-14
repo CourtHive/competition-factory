@@ -1,5 +1,5 @@
-import tournamentEngine from '@Engines/syncEngine';
 import mocksEngine from '@Assemblies/engines/mock';
+import tournamentEngine from '@Engines/syncEngine';
 import { expect, it } from 'vitest';
 
 // test utilities
@@ -10,8 +10,8 @@ import { CONSOLATION, FIRST_MATCH_LOSER_CONSOLATION, MAIN } from '@Constants/dra
 import { TEAM_PARTICIPANT } from '@Constants/participantConstants';
 import { POLICY_TYPE_SCORING } from '@Constants/policyConstants';
 import { COMPLETED } from '@Constants/matchUpStatusConstants';
-import { TEAM_MATCHUP } from '@Constants/matchUpTypes';
 import { TEAM_EVENT } from '@Constants/eventConstants';
+import { TEAM_MATCHUP } from '@Constants/matchUpTypes';
 
 const policyDefinitions = { [POLICY_TYPE_SCORING]: { requireParticipantsForScoring: false } };
 

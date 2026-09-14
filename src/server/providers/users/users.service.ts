@@ -1,4 +1,4 @@
-import { TEST_EMAIL, TEST_PASSWORD } from '../../common/constants/test';
+import { TEST_EMAIL, TEST_PASSWORD } from '@Server/common/constants/test';
 import { Injectable } from '@nestjs/common';
 
 type User = {

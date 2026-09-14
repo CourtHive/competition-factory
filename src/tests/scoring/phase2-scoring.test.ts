@@ -4,8 +4,8 @@
  * Tests addSet(), addGame(), mixed-mode undo/redo, and getInputMode().
  */
 
-import { describe, test, expect } from 'vitest';
 import { ScoringEngine } from '@Assemblies/engines/scoring/ScoringEngine';
+import { describe, test, expect } from 'vitest';
 
 // ============================================================================
 // 1. addSet() — Set-Level Input

@@ -1,5 +1,6 @@
 import { capitalizeFirst } from '@Tools/strings';
 
+// types
 import { Person } from '@Types/tournamentTypes';
 
 type FormatPersonNameArgs = {

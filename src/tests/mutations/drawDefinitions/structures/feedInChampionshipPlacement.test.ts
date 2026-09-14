@@ -1,10 +1,11 @@
 import { getAllStructureMatchUps } from '@Query/matchUps/getAllStructureMatchUps';
 import { getStructureMatchUps } from '@Query/structure/getStructureMatchUps';
 import { getRoundMatchUps } from '@Query/matchUps/getRoundMatchUps';
-import tournamentEngine from '@Engines/syncEngine';
 import mocksEngine from '@Assemblies/engines/mock';
+import tournamentEngine from '@Engines/syncEngine';
 import { expect, it } from 'vitest';
 
+// constants
 import { FEED_IN_CHAMPIONSHIP } from '@Constants/drawDefinitionConstants';
 import { BYE } from '@Constants/matchUpStatusConstants';
 import { SINGLES } from '@Constants/eventConstants';

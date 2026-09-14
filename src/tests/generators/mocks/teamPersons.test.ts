@@ -1,8 +1,8 @@
-import tournamentEngine from '@Engines/syncEngine';
 import mocksEngine from '@Assemblies/engines/mock';
+import tournamentEngine from '@Engines/syncEngine';
 import { expect, it } from 'vitest';
 
-// Constants
+// constants
 import { TEAM_DOUBLES_3_AGGREGATION } from '@Constants/tieFormatConstants';
 import { ALTERNATE } from '@Constants/entryStatusConstants';
 import { FEMALE, MALE } from '@Constants/genderConstants';

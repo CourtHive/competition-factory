@@ -1,11 +1,11 @@
 import { checkRequiredParameters } from '@Helpers/parameters/checkRequiredParameters';
 import { getPairedParticipant } from '@Query/participant/getPairedParticipant';
+import { addParticipants } from '@Mutate/participants/addParticipants';
 import { getParticipantId } from '@Functions/global/extractors';
-import { addParticipants } from '../participants/addParticipants';
 import { stringSort } from '@Functions/sorters/stringSort';
 import { addNotice } from '@Global/state/globalState';
-import { intersection } from '@Tools/arrays';
 import { addEventEntries } from './addEventEntries';
+import { intersection } from '@Tools/arrays';
 import { UUID } from '@Tools/UUID';
 
 // constants and types
@@ -15,12 +15,12 @@ import { EVENT, TOURNAMENT_RECORD } from '@Constants/attributeConstants';
 import { INDIVIDUAL, PAIR } from '@Constants/participantConstants';
 import { ADD_PARTICIPANTS } from '@Constants/topicConstants';
 import { ALTERNATE } from '@Constants/entryStatusConstants';
-import { COMPETITOR } from '@Constants/participantRoles';
 import { MAIN } from '@Constants/drawDefinitionConstants';
+import { COMPETITOR } from '@Constants/participantRoles';
 import { DOUBLES } from '@Constants/matchUpTypes';
-import { isMale } from '@Validators/isMale';
 import { isFemale } from '@Validators/isFemale';
 import { isMixed } from '@Validators/isMixed';
+import { isMale } from '@Validators/isMale';
 import { isAny } from '@Validators/isAny';
 
 /**

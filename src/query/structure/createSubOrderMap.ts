@@ -1,7 +1,7 @@
 import { firstClassOrExtension } from '@Acquire/firstClassOrExtension';
 import { instanceCount } from '@Tools/arrays';
-import { ensureInt } from '@Tools/ensureInt';
 import { xa } from '@Tools/extractAttributes';
+import { ensureInt } from '@Tools/ensureInt';
 
 // constants
 import { PARTICIPANT_ID } from '@Constants/attributeConstants';

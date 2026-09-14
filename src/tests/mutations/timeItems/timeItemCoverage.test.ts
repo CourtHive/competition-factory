@@ -1,8 +1,8 @@
 import { addMatchUpTimeItem, resetMatchUpTimeItems } from '@Mutate/timeItems/matchUps/matchUpTimeItems';
 import { addTimeItem, resetTimeItems, addEventTimeItem } from '@Mutate/timeItems/addTimeItem';
 import { getTimeItemValues } from '@Mutate/timeItems/getTimeItemValues';
-import tournamentEngine from '@Engines/syncEngine';
 import mocksEngine from '@Assemblies/engines/mock';
+import tournamentEngine from '@Engines/syncEngine';
 import { expect, it, describe } from 'vitest';
 
 describe('addTimeItem edge cases', () => {

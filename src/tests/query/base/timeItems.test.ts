@@ -1,12 +1,5 @@
-import { describe, expect, it } from 'vitest';
-import {
-  getTimeItem,
-  getDrawDefinitionTimeItem,
-  getEventTimeItem,
-  getTournamentTimeItem,
-  getParticipantTimeItem,
-} from '@Query/base/timeItems';
 import mocksEngine from '@Assemblies/engines/mock';
+import { describe, expect, it } from 'vitest';
 import {
   INVALID_VALUES,
   MISSING_DRAW_ID,
@@ -16,6 +9,13 @@ import {
   MISSING_TOURNAMENT_RECORD,
   NOT_FOUND,
 } from '@Constants/errorConditionConstants';
+import {
+  getTimeItem,
+  getDrawDefinitionTimeItem,
+  getEventTimeItem,
+  getTournamentTimeItem,
+  getParticipantTimeItem,
+} from '@Query/base/timeItems';
 
 describe('getTimeItem', () => {
   it('returns error when element has error', () => {

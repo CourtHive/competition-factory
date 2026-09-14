@@ -1,3 +1,9 @@
+import { calculateMatchStatistics, enrichPointHistory, getQuickStats } from '@Query/scoring/statistics/standalone';
+import { buildCounters, getCountersSummary, filterCountersBySet } from '@Query/scoring/statistics/counters';
+import { toStatObjects } from '@Query/scoring/statistics/toStatObjects';
+import { calculateStats } from '@Query/scoring/statistics/calculator';
+import { PointWithMetadata } from '@Query/scoring/statistics/types';
+import { describe, expect, it } from 'vitest';
 import {
   enrichPoint,
   deriveWinnerFromCode,
@@ -5,12 +11,6 @@ import {
   categorizePoint,
   getPointType,
 } from '@Query/scoring/statistics/pointParser';
-import { buildCounters, getCountersSummary, filterCountersBySet } from '@Query/scoring/statistics/counters';
-import { calculateStats } from '@Query/scoring/statistics/calculator';
-import { calculateMatchStatistics, enrichPointHistory, getQuickStats } from '@Query/scoring/statistics/standalone';
-import { toStatObjects } from '@Query/scoring/statistics/toStatObjects';
-import { PointWithMetadata } from '@Query/scoring/statistics/types';
-import { describe, expect, it } from 'vitest';
 
 // ─── Test Fixtures ────────────────────────────────────────────────────
 

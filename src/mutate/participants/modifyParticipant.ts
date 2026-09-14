@@ -1,4 +1,5 @@
 import { generatePairParticipantName } from '@Functions/participants/generatePairParticipantName';
+import { modifyParticipantsNotice } from '@Mutate/notifications/participantNotifications';
 import { findTournamentParticipant } from '@Acquire/findTournamentParticipant';
 import { addIndividualParticipantIds } from './addIndividualParticipantIds';
 import { getParticipants } from '@Query/participants/getParticipants';
@@ -6,26 +7,25 @@ import { requireParams } from '@Helpers/parameters/requireParams';
 import { getParticipantId } from '@Functions/global/extractors';
 import { participantRoles } from '@Constants/participantRoles';
 import { definedAttributes } from '@Tools/definedAttributes';
-import { modifyParticipantsNotice } from '@Mutate/notifications/participantNotifications';
 import { isValidDateString } from '@Tools/dateTime';
 import { collapseWhitespace } from '@Tools/strings';
 import { makeDeepCopy } from '@Tools/makeDeepCopy';
-import { countries } from '@Fixtures/countryData';
 import { addParticipant } from './addParticipant';
+import { countries } from '@Fixtures/countryData';
 import { coercedSex } from '@Helpers/coercedSex';
 import { isString } from '@Tools/objects';
 
 // constants
-import {
-  CANNOT_MODIFY_PARTICIPANT_TYPE,
-  INVALID_DATE,
-  INVALID_PARTICIPANT_IDS,
-} from '@Constants/errorConditionConstants';
 import { GROUP, INDIVIDUAL, PAIR, participantTypes } from '@Constants/participantConstants';
 import { PARTICIPANT_NAME_DERIVED_FROM_PERSON } from '@Constants/infoConstants';
 import { TOURNAMENT_RECORD, PARTICIPANT } from '@Constants/attributeConstants';
 import { SUCCESS } from '@Constants/resultConstants';
 import { TEAM } from '@Constants/matchUpTypes';
+import {
+  CANNOT_MODIFY_PARTICIPANT_TYPE,
+  INVALID_DATE,
+  INVALID_PARTICIPANT_IDS,
+} from '@Constants/errorConditionConstants';
 
 export function modifyParticipant(params) {
   const {

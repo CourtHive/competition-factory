@@ -1,6 +1,6 @@
+import { expect, it, describe, beforeEach } from 'vitest';
 import mocksEngine from '@Assemblies/engines/mock';
 import tournamentEngine from '@Engines/syncEngine';
-import { expect, it, describe, beforeEach } from 'vitest';
 
 /**
  * A matchUp's `courtOrder` is a row on ONE specific day's schedule grid. When a

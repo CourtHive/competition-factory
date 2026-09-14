@@ -2,6 +2,7 @@ import mocksEngine from '@Assemblies/engines/mock';
 import tournamentEngine from '@Engines/syncEngine';
 import { expect, it, test } from 'vitest';
 
+// constants
 import { INDIVIDUAL } from '@Constants/participantConstants';
 import { ALTERNATE } from '@Constants/entryStatusConstants';
 import { COMPETITOR } from '@Constants/participantRoles';

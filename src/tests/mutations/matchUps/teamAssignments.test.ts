@@ -1,8 +1,9 @@
+import { generateTeamTournament } from '@Tests/mutations/participants/team/generateTestTeamTournament';
 import { validateLineUp } from '@Validators/validateTeamLineUp';
-import { generateTeamTournament } from '../participants/team/generateTestTeamTournament';
 import tournamentEngine from '@Engines/syncEngine';
 import { expect, it } from 'vitest';
 
+// constants
 import { ASSIGN_PARTICIPANT } from '@Constants/positionActionConstants';
 import { SINGLES_MATCHUP } from '@Constants/matchUpTypes';
 import { LINEUPS } from '@Constants/extensionConstants';

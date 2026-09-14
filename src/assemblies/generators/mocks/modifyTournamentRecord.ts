@@ -8,12 +8,12 @@ import { addTournamentParticipants } from './addTournamentParticipants';
 import { generateEventParticipants } from './generateEventParticipants';
 import { generateEventWithFlights } from './generateEventWithFlights';
 import { generateEventWithDraw } from './generateEventWithDraw';
-import { generateVenues } from '@Mutate/venues/generateVenues';
 import { publishEvent } from '@Mutate/publishing/publishEvent';
-import { addEvent } from '@Mutate/events/addEvent';
+import { generateVenues } from '@Mutate/venues/generateVenues';
 import { generateFlights } from './generateFlights';
+import { addEvent } from '@Mutate/events/addEvent';
 
-// constants and fixtures
+// constants
 import { MISSING_TOURNAMENT_RECORD } from '@Constants/errorConditionConstants';
 import { INDIVIDUAL, PAIR } from '@Constants/participantConstants';
 import { DOUBLES, SINGLES } from '@Constants/eventConstants';

@@ -1,4 +1,4 @@
-import { writeModeMatrix } from '../../testHarness/writeModeMatrix';
+import { writeModeMatrix } from '@Tests/testHarness/writeModeMatrix';
 import { getMatchUpIds } from '@Functions/global/extractors';
 import mocksEngine from '@Assemblies/engines/mock';
 import tournamentEngine from '@Engines/syncEngine';

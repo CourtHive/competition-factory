@@ -1,8 +1,9 @@
 import mocksEngine from '@Assemblies/engines/mock';
 import tournamentEngine from '@Engines/syncEngine';
-import { UUID } from '@Tools/UUID';
 import { expect, it } from 'vitest';
+import { UUID } from '@Tools/UUID';
 
+// constants
 import { INDIVIDUAL, PAIR } from '@Constants/participantConstants';
 import { COMPETITOR } from '@Constants/participantRoles';
 import {

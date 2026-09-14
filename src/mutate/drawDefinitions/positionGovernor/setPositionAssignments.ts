@@ -2,8 +2,8 @@ import { modifyDrawNotice, modifyPositionAssignmentsNotice } from '@Mutate/notif
 import { assignDrawPositionBye } from '@Mutate/matchUps/drawPositions/assignDrawPositionBye';
 import { assignDrawPosition } from '@Mutate/matchUps/drawPositions/positionAssignment';
 import { getPositionAssignments } from '@Query/drawDefinition/positionsGetter';
-import { getAllDrawMatchUps } from '@Query/matchUps/drawMatchUps';
 import { decorateResult } from '@Functions/global/decorateResult';
+import { getAllDrawMatchUps } from '@Query/matchUps/drawMatchUps';
 import { getMatchUpsMap } from '@Query/matchUps/getMatchUpsMap';
 import { findStructure } from '@Acquire/findStructure';
 import { intersection } from '@Tools/arrays';

@@ -6,6 +6,7 @@
 import { analyzeSet } from '@Query/matchUp/analyzeSet';
 import { expect, it, describe } from 'vitest';
 
+// constants
 import { MISSING_SET_OBJECT } from '@Constants/errorConditionConstants';
 
 describe('analyzeSet coverage', () => {

@@ -1,4 +1,4 @@
-import { setFirstClassOrExtension } from '../extensions/setFirstClassOrExtension';
+import { setFirstClassOrExtension } from '@Mutate/extensions/setFirstClassOrExtension';
 import { modifyEventNotice } from '@Mutate/notifications/eventNotifications';
 import { decorateResult } from '@Functions/global/decorateResult';
 import { getFlightProfile } from '@Query/event/getFlightProfile';

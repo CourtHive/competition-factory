@@ -1,10 +1,10 @@
 import { validateStatusTransition } from '@Validators/sanctioning/validateStatusTransition';
 
-// Constants
+// constants
 import { MISSING_SANCTIONING_RECORD, INVALID_STATUS_TRANSITION } from '@Constants/sanctioningConstants';
 import { SUCCESS } from '@Constants/resultConstants';
 
-// Types
+// types
 import type {
   SanctioningRecord,
   SanctioningStatus,

@@ -2,7 +2,7 @@ import { writeLegacyEnabled, writeNativeEnabled } from '@Global/state/globalStat
 import { decorateResult } from '@Functions/global/decorateResult';
 import { addTimeItem } from './addTimeItem';
 
-// constants and types
+// constants
 import { ErrorType, INVALID_VALUES, MISSING_VALUE } from '@Constants/errorConditionConstants';
 import { SUCCESS } from '@Constants/resultConstants';
 

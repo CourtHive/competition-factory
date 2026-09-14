@@ -4,8 +4,8 @@
  */
 import { describe, expect, it } from 'vitest';
 
-import { SANCTIONING_CONSTRAINTS } from '@Constants/extensionConstants';
 import { getDrawCompositionConstraints } from './getDrawCompositionConstraints';
+import { SANCTIONING_CONSTRAINTS } from '@Constants/extensionConstants';
 
 const sanctioned = (events: any[]) =>
   ({

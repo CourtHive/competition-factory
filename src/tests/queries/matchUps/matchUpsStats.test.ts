@@ -6,8 +6,8 @@ import { instanceCount } from '@Tools/arrays';
 import { expect, it, describe } from 'vitest';
 
 // constants
-import { COMPETITIVE, DECISIVE, ROUTINE, WALKOVER } from '@Constants/statsConstants';
 import { DEFAULTED, WALKOVER as WALKOVER_STATUS } from '@Constants/matchUpStatusConstants';
+import { COMPETITIVE, DECISIVE, ROUTINE, WALKOVER } from '@Constants/statsConstants';
 import { MISSING_EVENT } from '@Constants/errorConditionConstants';
 import { ROUND_ROBIN } from '@Constants/drawDefinitionConstants';
 import { SINGLES } from '@Constants/eventConstants';

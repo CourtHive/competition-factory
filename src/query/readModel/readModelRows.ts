@@ -1,8 +1,8 @@
 import { getEffectiveRegistrationProfile } from '@Query/entries/getEffectiveRegistrationProfile';
 import { getTournamentPublishStatus } from '@Query/tournaments/getTournamentPublishStatus';
 import { SCHEDULING_PROFILE } from '@Constants/extensionConstants';
-import { getEntryFeeRange } from '@Query/entries/resolveEntryFee';
 import { LINK_UNRESOLVED, resolvePersonLink } from './personRule';
+import { getEntryFeeRange } from '@Query/entries/resolveEntryFee';
 import { findExtension } from '@Acquire/findExtension';
 
 // types

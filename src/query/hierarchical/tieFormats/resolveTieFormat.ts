@@ -1,6 +1,6 @@
+import { DrawDefinition, Structure, Event } from '@Types/tournamentTypes';
 import { getObjectTieFormat } from './getObjectTieFormat';
 import { getItemTieFormat } from './getItemTieFormat';
-import { DrawDefinition, Structure, Event } from '@Types/tournamentTypes';
 
 // use with resolved objects, not uuid references to objects
 

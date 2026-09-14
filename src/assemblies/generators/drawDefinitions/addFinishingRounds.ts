@@ -5,6 +5,7 @@ import { validMatchUps } from '@Validators/validMatchUp';
 import { generateRange } from '@Tools/arrays';
 import { xa } from '@Tools/extractAttributes';
 
+// constants and types
 import { MISSING_MATCHUPS } from '@Constants/errorConditionConstants';
 import { ResultType } from '@Types/factoryTypes';
 import { MatchUp } from '@Types/tournamentTypes';

@@ -2,11 +2,12 @@ import { tournamentEngine } from '@Engines/syncEngine';
 import mocksEngine from '@Assemblies/engines/mock';
 import { describe, expect, test } from 'vitest';
 
+// constants
 import { INDIVIDUAL, PAIR } from '@Constants/participantConstants';
 import { SINGLES, DOUBLES } from '@Constants/eventConstants';
-import { COMPETITOR } from '@Constants/participantRoles';
 import { MAIN } from '@Constants/drawDefinitionConstants';
 import { MALE, FEMALE } from '@Constants/genderConstants';
+import { COMPETITOR } from '@Constants/participantRoles';
 
 // `mocksEngine.generateTournamentRecord({ participants })` lets callers
 // supply a pre-built participant pool instead of having factory synthesize

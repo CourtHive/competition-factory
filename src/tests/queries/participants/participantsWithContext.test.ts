@@ -1,8 +1,9 @@
 import mocksEngine from '@Assemblies/engines/mock';
-import { intersection } from '@Tools/arrays';
 import tournamentEngine from '@Engines/syncEngine';
+import { intersection } from '@Tools/arrays';
 import { expect, it } from 'vitest';
 
+// constants
 import { DOUBLES, SINGLES } from '@Constants/matchUpTypes';
 import { PAIR } from '@Constants/participantConstants';
 import { MALE } from '@Constants/genderConstants';

@@ -1,6 +1,6 @@
 import { getRoundRobinGroupMatchUps, drawPositionsHash, groupRounds } from './roundRobinGroups';
-import { structureTemplate } from '@Generators/templates/structureTemplate';
 import { setFirstClassOrExtension } from '@Mutate/extensions/setFirstClassOrExtension';
+import { structureTemplate } from '@Generators/templates/structureTemplate';
 import { constantToString } from '@Tools/strings';
 import { generateRange } from '@Tools/arrays';
 import { UUID } from '@Tools/UUID';
@@ -8,8 +8,8 @@ import { UUID } from '@Tools/UUID';
 // constants and types
 import { PlayoffAttributes, PolicyDefinitions, SeedingProfile, ResultType } from '@Types/factoryTypes';
 import { MAIN, ITEM, WIN_RATIO, CONTAINER } from '@Constants/drawDefinitionConstants';
-import { BYE, TO_BE_PLAYED } from '@Constants/matchUpStatusConstants';
 import { MatchUp, EventTypeUnion, TieFormat } from '@Types/tournamentTypes';
+import { BYE, TO_BE_PLAYED } from '@Constants/matchUpStatusConstants';
 import { ROUND_TARGET } from '@Constants/extensionConstants';
 import { SUCCESS } from '@Constants/resultConstants';
 

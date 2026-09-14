@@ -1,13 +1,13 @@
 import { checkRequiredParameters } from '@Helpers/parameters/checkRequiredParameters';
-import { makeDeepCopy } from '@Tools/makeDeepCopy';
 import { findVenue } from '@Query/venues/findVenue';
+import { makeDeepCopy } from '@Tools/makeDeepCopy';
 import { getCourtInfo } from './getCourtInfo';
 
-// Constants and types
+// constants and types
 import { ErrorType, MISSING_VENUE_ID } from '@Constants/errorConditionConstants';
 import { ERROR, TOURNAMENT_RECORD } from '@Constants/attributeConstants';
-import { Tournament } from '@Types/tournamentTypes';
 import { SUCCESS } from '@Constants/resultConstants';
+import { Tournament } from '@Types/tournamentTypes';
 
 // The only difference from finding a venue is that information is filtered from both venue and courts
 // e.g. dataAvailability objects are not returned.

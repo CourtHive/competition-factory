@@ -1,8 +1,9 @@
-import { xa } from '@Tools/extractAttributes';
 import mocksEngine from '@Assemblies/engines/mock';
 import tournamentEngine from '@Engines/syncEngine';
+import { xa } from '@Tools/extractAttributes';
 import { expect, test } from 'vitest';
 
+// constants
 import { TEAM_EVENT } from '@Constants/eventConstants';
 
 test('drawPosition placement is not randomized when drawSize: 2', () => {

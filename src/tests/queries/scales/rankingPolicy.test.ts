@@ -1,11 +1,12 @@
+import { awardProfileExpandedLevels, awardProfileLevels, awardProfileThresholds } from './awardProfileExamples';
 import { finishingPositionSort, getFpMap } from './awardTestUtils';
 import { getAwardProfile } from '@Query/scales/getAwardProfile';
 import tournamentEngine from '@Engines/syncEngine';
 import scaleEngine from '@Engines/scaleEngine';
 import { mocksEngine } from '../../..';
 import { expect, it } from 'vitest';
-import { awardProfileExpandedLevels, awardProfileLevels, awardProfileThresholds } from './awardProfileExamples';
 
+// constants
 import { POLICY_TYPE_RANKING_POINTS } from '@Constants/policyConstants';
 import { COMPASS } from '@Constants/drawDefinitionConstants';
 

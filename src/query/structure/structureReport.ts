@@ -1,10 +1,10 @@
-import { getTieFormatDesc } from '../hierarchical/tieFormats/getTieFormatDescription';
-import { allTournamentMatchUps } from '../matchUps/getAllTournamentMatchUps';
+import { getTieFormatDesc } from '@Query/hierarchical/tieFormats/getTieFormatDescription';
+import { allTournamentMatchUps } from '@Query/matchUps/getAllTournamentMatchUps';
+import { getDetailsWTN } from '@Query/scales/getDetailsWTN';
 import { getAccessorValue } from '@Tools/getAccessorValue';
-import { getDetailsWTN } from '../scales/getDetailsWTN';
 import { findExtension } from '@Acquire/findExtension';
-import { getTimeItem } from '../base/timeItems';
-import { getAvgWTN } from '../scales/getAvgWTN';
+import { getTimeItem } from '@Query/base/timeItems';
+import { getAvgWTN } from '@Query/scales/getAvgWTN';
 
 // constants and types
 import { POSITION_ACTIONS, DRAW_DELETIONS, FLIGHT_PROFILE } from '@Constants/extensionConstants';

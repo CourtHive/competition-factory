@@ -2,6 +2,7 @@ import { allNumeric, noNumeric, overlap } from '@Tools/arrays';
 import { ensureInt } from '@Tools/ensureInt';
 import { numericSort } from '@Tools/sorting';
 
+// types
 import { RoundProfile } from '@Types/factoryTypes';
 
 type GetOrderedDrawPositionsArgs = {

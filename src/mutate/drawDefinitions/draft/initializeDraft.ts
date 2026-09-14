@@ -1,7 +1,7 @@
-import { resolveScaleValueNumber } from '@Query/scales/resolveScaleValue';
+import { setFirstClassOrExtension } from '@Mutate/extensions/setFirstClassOrExtension';
 import { getParticipantScaleItem } from '@Query/participant/getParticipantScaleItem';
 import { getPositionAssignments } from '@Query/drawDefinition/positionsGetter';
-import { setFirstClassOrExtension } from '@Mutate/extensions/setFirstClassOrExtension';
+import { resolveScaleValueNumber } from '@Query/scales/resolveScaleValue';
 import { firstClassOrExtension } from '@Acquire/firstClassOrExtension';
 import { findStructure } from '@Acquire/findStructure';
 
@@ -10,8 +10,8 @@ import { DrawDefinition, Event, Tournament } from '@Types/tournamentTypes';
 import { DRAFT_STATE } from '@Constants/extensionConstants';
 import { RANKING, RATING } from '@Constants/scaleConstants';
 import { MAIN } from '@Constants/drawDefinitionConstants';
-import { SUCCESS } from '@Constants/resultConstants';
 import { ScaleAttributes } from '@Types/factoryTypes';
+import { SUCCESS } from '@Constants/resultConstants';
 import {
   EXISTING_DRAFT,
   INVALID_VALUES,

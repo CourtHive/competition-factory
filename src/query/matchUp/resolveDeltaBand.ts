@@ -1,6 +1,6 @@
 import ratingsParameters from '@Fixtures/ratings/ratingsParameters';
 
-// constants and types
+// constants
 import {
   ErrorType,
   INVALID_POLICY_DEFINITION,

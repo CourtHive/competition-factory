@@ -3,8 +3,8 @@ import { generateFMLC } from '@Tests/mutations/drawDefinitions/primitives/firstM
 import { verifyStructure } from '@Tests/mutations/drawDefinitions/primitives/verifyStructure';
 import { verifyMatchUps } from '@Tests/mutations/drawDefinitions/primitives/verifyMatchUps';
 import { toBePlayed } from '@Fixtures/scoring/outcomes/toBePlayed';
-import tournamentEngine from '@Engines/syncEngine';
 import mocksEngine from '@Assemblies/engines/mock';
+import tournamentEngine from '@Engines/syncEngine';
 import { expect, it } from 'vitest';
 
 // constants

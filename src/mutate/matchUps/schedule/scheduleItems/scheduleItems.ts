@@ -1,3 +1,27 @@
+import { setMatchUpHomeParticipantId } from '@Mutate/matchUps/schedule/scheduleItems/setMatchUpHomeParticipantId';
+import { addMatchUpScheduledTime, addMatchUpTimeModifiers } from '@Mutate/matchUps/schedule/scheduledTime';
+import { setMatchUpFirstClassOrTimeItem } from '@Mutate/timeItems/matchUps/setMatchUpFirstClassOrTimeItem';
+import { addMatchUpScheduledDate } from '@Mutate/matchUps/schedule/scheduleItems/addMatchUpScheduledDate';
+import { allocateTeamMatchUpCourts } from '@Mutate/matchUps/schedule/allocateTeamMatchUpCourts';
+import { getMatchUpOfficialConflicts } from '@Query/officiating/getMatchUpOfficialConflicts';
+import { checkRequiredParameters } from '@Helpers/parameters/checkRequiredParameters';
+import { assignMatchUpCourt } from '@Mutate/matchUps/schedule/assignMatchUpCourt';
+import { assignMatchUpVenue } from '@Mutate/matchUps/schedule/assignMatchUpVenue';
+import { setMatchUpCalledAt } from '@Mutate/matchUps/schedule/setMatchUpCalledAt';
+import { addMatchUpTimeItem } from '@Mutate/timeItems/matchUps/matchUpTimeItems';
+import { allTournamentMatchUps } from '@Query/matchUps/getAllTournamentMatchUps';
+import { getMatchUpDependencies } from '@Query/matchUps/getMatchUpDependencies';
+import { modifyMatchUpNotice } from '@Mutate/notifications/drawNotifications';
+import { scheduledMatchUpDate } from '@Query/matchUp/scheduledMatchUpDate';
+import { scheduleLockConflicts } from '@Query/matchUp/isScheduleLocked';
+import { getParticipants } from '@Query/participants/getParticipants';
+import { decorateResult } from '@Functions/global/decorateResult';
+import { findDrawMatchUp } from '@Acquire/findDrawMatchUp';
+import { findParticipant } from '@Acquire/findParticipant';
+import { validTimeString } from '@Validators/regex';
+import { isConvertableInteger } from '@Tools/math';
+import { ensureInt } from '@Tools/ensureInt';
+import { isString } from '@Tools/objects';
 import {
   convertTime,
   dateStringDaysChange,
@@ -7,50 +31,17 @@ import {
   getIsoDateString,
   validTimeValue,
 } from '@Tools/dateTime';
-import { getMatchUpOfficialConflicts } from '@Query/officiating/getMatchUpOfficialConflicts';
-import { scheduleLockConflicts } from '@Query/matchUp/isScheduleLocked';
-import { setMatchUpHomeParticipantId } from '@Mutate/matchUps/schedule/scheduleItems/setMatchUpHomeParticipantId';
-import { setMatchUpFirstClassOrTimeItem } from '@Mutate/timeItems/matchUps/setMatchUpFirstClassOrTimeItem';
-import { addMatchUpScheduledTime, addMatchUpTimeModifiers } from '@Mutate/matchUps/schedule/scheduledTime';
-import { addMatchUpScheduledDate } from '@Mutate/matchUps/schedule/scheduleItems/addMatchUpScheduledDate';
-import { allocateTeamMatchUpCourts } from '@Mutate/matchUps/schedule/allocateTeamMatchUpCourts';
-import { checkRequiredParameters } from '@Helpers/parameters/checkRequiredParameters';
-import { assignMatchUpCourt } from '@Mutate/matchUps/schedule/assignMatchUpCourt';
-import { assignMatchUpVenue } from '@Mutate/matchUps/schedule/assignMatchUpVenue';
-import { allTournamentMatchUps } from '@Query/matchUps/getAllTournamentMatchUps';
-import { addMatchUpTimeItem } from '@Mutate/timeItems/matchUps/matchUpTimeItems';
-import { getMatchUpDependencies } from '@Query/matchUps/getMatchUpDependencies';
-import { setMatchUpCalledAt } from '@Mutate/matchUps/schedule/setMatchUpCalledAt';
-import { modifyMatchUpNotice } from '@Mutate/notifications/drawNotifications';
-import { scheduledMatchUpDate } from '@Query/matchUp/scheduledMatchUpDate';
-import { getParticipants } from '@Query/participants/getParticipants';
-import { decorateResult } from '@Functions/global/decorateResult';
-import { findDrawMatchUp } from '@Acquire/findDrawMatchUp';
-import { findParticipant } from '@Acquire/findParticipant';
-import { validTimeString } from '@Validators/regex';
-import { isConvertableInteger } from '@Tools/math';
-import { ensureInt } from '@Tools/ensureInt';
-import { isString } from '@Tools/objects';
 
 // constants and types
-import {
-  START_TIME,
-  STOP_TIME,
-  RESUME_TIME,
-  END_TIME,
-  END_DATE,
-  COURT_ORDER,
-  COURT_ANNOTATION,
-} from '@Constants/timeItemConstants';
-import { DrawDefinition, Event } from '@Types/tournamentTypes';
-import { OBJECT, OF_TYPE } from '@Constants/attributeConstants';
-import { AddScheduleAttributeArgs } from '@Types/factoryTypes';
-import { INDIVIDUAL } from '@Constants/participantConstants';
 import { OFFICIAL_CONFLICT_OF_INTEREST } from '@Constants/officiatingConstants';
 import { POLICY_TYPE_OFFICIATING_CONFLICT } from '@Constants/policyConstants';
+import { OBJECT, OF_TYPE } from '@Constants/attributeConstants';
+import { AddScheduleAttributeArgs } from '@Types/factoryTypes';
+import { DrawDefinition, Event } from '@Types/tournamentTypes';
+import type { OfficialRecord } from '@Types/officiatingTypes';
+import { INDIVIDUAL } from '@Constants/participantConstants';
 import { OFFICIAL } from '@Constants/participantRoles';
 import { SUCCESS } from '@Constants/resultConstants';
-import type { OfficialRecord } from '@Types/officiatingTypes';
 import { HydratedMatchUp } from '@Types/hydrated';
 import {
   SCHEDULE_CONFLICT_DOUBLE_BOOKING,
@@ -70,6 +61,15 @@ import {
   MISSING_PARTICIPANT_ID,
   PARTICIPANT_NOT_FOUND,
 } from '@Constants/errorConditionConstants';
+import {
+  START_TIME,
+  STOP_TIME,
+  RESUME_TIME,
+  END_TIME,
+  END_DATE,
+  COURT_ORDER,
+  COURT_ANNOTATION,
+} from '@Constants/timeItemConstants';
 
 /**
  * Court identities from an `allocatedCourts` value, in the bare-string form the

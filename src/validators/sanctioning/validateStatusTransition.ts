@@ -2,7 +2,7 @@
 import { VALID_STATUS_TRANSITIONS, INVALID_STATUS_TRANSITION } from '@Constants/sanctioningConstants';
 import { SUCCESS } from '@Constants/resultConstants';
 
-// Types
+// types
 import type { SanctioningStatus } from '@Types/sanctioningTypes';
 
 type ValidateStatusTransitionArgs = {

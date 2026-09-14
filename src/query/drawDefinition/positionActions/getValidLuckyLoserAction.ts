@@ -1,6 +1,6 @@
-import { getAllStructureMatchUps } from '../../matchUps/getAllStructureMatchUps';
-import { getInitialRoundNumber } from '../../matchUps/getInitialRoundNumber';
-import { getStructureMatchUps } from '../../structure/getStructureMatchUps';
+import { getAllStructureMatchUps } from '@Query/matchUps/getAllStructureMatchUps';
+import { getInitialRoundNumber } from '@Query/matchUps/getInitialRoundNumber';
+import { getStructureMatchUps } from '@Query/structure/getStructureMatchUps';
 import { getParticipantId } from '@Functions/global/extractors';
 import { findStructure } from '@Acquire/findStructure';
 

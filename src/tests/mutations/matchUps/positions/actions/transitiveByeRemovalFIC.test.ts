@@ -1,5 +1,5 @@
-import tournamentEngine from '@Engines/syncEngine';
 import mocksEngine from '@Assemblies/engines/mock';
+import tournamentEngine from '@Engines/syncEngine';
 import { expect, it } from 'vitest';
 import {
   getOrderedDrawPositionPairs,
@@ -8,6 +8,7 @@ import {
   removeAssignment,
 } from '../../../drawDefinitions/testingUtilities';
 
+// constants
 import { FEED_IN_CHAMPIONSHIP } from '@Constants/drawDefinitionConstants';
 
 it('can remove transitive BYEs in consolation of FIC', () => {

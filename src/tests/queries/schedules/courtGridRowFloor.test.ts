@@ -1,6 +1,6 @@
+import { expect, it, describe, beforeEach } from 'vitest';
 import mocksEngine from '@Assemblies/engines/mock';
 import tournamentEngine from '@Engines/syncEngine';
-import { expect, it, describe, beforeEach } from 'vitest';
 
 const SCHEDULED_DATE = '2024-01-01';
 

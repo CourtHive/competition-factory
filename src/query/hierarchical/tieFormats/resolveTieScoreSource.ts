@@ -1,6 +1,6 @@
 import { resolveTieFormat } from './resolveTieFormat';
 
-// constants and types
+// types
 import { DrawDefinition, Event, Structure, TieScoreSourceEnum, TieScoreSourceUnion } from '@Types/tournamentTypes';
 
 type ResolveTieScoreSourceArgs = {

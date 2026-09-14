@@ -2,10 +2,10 @@ import { getParticipantId } from '@Functions/global/extractors';
 import mocksEngine from '@Assemblies/engines/mock';
 import tournamentEngine from '@Engines/syncEngine';
 import { instanceCount } from '@Tools/arrays';
-import { UUID } from '@Tools/UUID';
 import { expect, it } from 'vitest';
+import { UUID } from '@Tools/UUID';
 
-// Constants, Types and Fixtures
+// constants and fixtures
 import { ALTERNATE, DIRECT_ACCEPTANCE } from '@Constants/entryStatusConstants';
 import { DOUBLES_MATCHUP, SINGLES_MATCHUP } from '@Constants/matchUpTypes';
 import { FORMAT_STANDARD } from '@Fixtures/scoring/matchUpFormats';

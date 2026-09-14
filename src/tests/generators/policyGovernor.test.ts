@@ -1,11 +1,11 @@
 import { newDrawDefinition } from '@Assemblies/generators/drawDefinitions/newDrawDefinition';
 import { attachPolicies } from '@Mutate/extensions/policies/attachPolicies';
 import { getAppliedPolicies } from '@Query/extensions/getAppliedPolicies';
-import tournamentEngine from '@Engines/syncEngine';
 import mocksEngine from '@Assemblies/engines/mock';
+import tournamentEngine from '@Engines/syncEngine';
 import { expect, test, it } from 'vitest';
 
-// constants
+// constants and fixtures
 import { POLICY_TYPE_AVOIDANCE, POLICY_TYPE_SCORING } from '@Constants/policyConstants';
 import POLICY_SCORING_DEFAULT from '@Fixtures/policies/POLICY_SCORING_DEFAULT';
 import AVOIDANCE_COUNTRY from '@Fixtures/policies/POLICY_AVOIDANCE_COUNTRY';

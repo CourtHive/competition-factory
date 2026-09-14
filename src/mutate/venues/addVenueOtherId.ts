@@ -3,7 +3,7 @@ import { requireParams } from '@Helpers/parameters/requireParams';
 import { addNotice } from '@Global/state/globalState';
 import { findVenue } from '@Query/venues/findVenue';
 
-// constants and types
+// constants
 import { ErrorType, MISSING_VALUE, VENUE_NOT_FOUND } from '@Constants/errorConditionConstants';
 import { MODIFY_VENUE } from '@Constants/topicConstants';
 import { SUCCESS } from '@Constants/resultConstants';

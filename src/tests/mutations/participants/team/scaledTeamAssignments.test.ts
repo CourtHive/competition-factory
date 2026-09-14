@@ -1,7 +1,7 @@
 import { participantScaleItem } from '@Query/participant/participantScaleItem';
 import { getParticipantId } from '@Functions/global/extractors';
-import tournamentEngine from '@Engines/syncEngine';
 import mocksEngine from '@Assemblies/engines/mock';
+import tournamentEngine from '@Engines/syncEngine';
 import { generateRange } from '@Tools/arrays';
 import { expect, it } from 'vitest';
 

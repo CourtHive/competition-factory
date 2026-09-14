@@ -1,19 +1,19 @@
 import { assignDrawPositionQualifier } from '@Mutate/matchUps/drawPositions/assignDrawPositionQualifier';
 import { luckyLoserDrawPositionAssignment } from '@Mutate/matchUps/drawPositions/positionLuckyLoser';
-import { positionSeedBlocks } from '@Mutate/matchUps/drawPositions/positionSeeds';
 import { POLICY_AVOIDANCE_COUNTRY } from '@Fixtures/policies/POLICY_AVOIDANCE_COUNTRY';
-import tournamentEngine from '@Engines/syncEngine';
+import { positionSeedBlocks } from '@Mutate/matchUps/drawPositions/positionSeeds';
 import mocksEngine from '@Assemblies/engines/mock';
+import tournamentEngine from '@Engines/syncEngine';
 import { describe, expect, it } from 'vitest';
 
 // constants
+import { QUALIFYING, MAIN } from '@Constants/drawDefinitionConstants';
 import {
   DRAW_POSITION_ACTIVE,
   INVALID_DRAW_POSITION,
   MISSING_DRAW_DEFINITION,
   STRUCTURE_NOT_FOUND,
 } from '@Constants/errorConditionConstants';
-import { QUALIFYING, MAIN } from '@Constants/drawDefinitionConstants';
 
 // ──────────────────────────────────────────────────────────────────────────────
 // assignDrawPositionQualifier — full branch coverage

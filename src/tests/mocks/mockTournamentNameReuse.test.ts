@@ -1,6 +1,7 @@
 import mocksEngine from '@Assemblies/engines/mock';
 import { expect, it } from 'vitest';
 
+// constants
 import { COMPASS } from '@Constants/drawDefinitionConstants';
 
 /**

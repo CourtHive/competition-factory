@@ -1,7 +1,7 @@
 import { generateFlightingStrategies } from '@Query/formatWizard/flightingStrategies';
 import { expect, it, describe } from 'vitest';
 
-// constants and types
+// types
 import { WizardParticipant } from '@Types/formatWizardTypes';
 
 function pool(ratings: number[]): WizardParticipant[] {

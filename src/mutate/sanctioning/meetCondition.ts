@@ -2,6 +2,7 @@ import { MISSING_SANCTIONING_RECORD, CONDITION_NOT_FOUND } from '@Constants/sanc
 import { INVALID_VALUES } from '@Constants/errorConditionConstants';
 import { SUCCESS } from '@Constants/resultConstants';
 
+// types
 import type { SanctioningRecord } from '@Types/sanctioningTypes';
 
 type MeetConditionArgs = {

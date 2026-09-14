@@ -1,5 +1,5 @@
-import { hasSchedule } from '@Query/matchUp/hasSchedule';
 import { extractDate, extractTime, timeSort } from '@Tools/dateTime';
+import { hasSchedule } from '@Query/matchUp/hasSchedule';
 import { validMatchUps } from '@Validators/validMatchUp';
 
 // constants and types

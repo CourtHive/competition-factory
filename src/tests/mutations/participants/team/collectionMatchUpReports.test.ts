@@ -1,8 +1,9 @@
-import { getParticipantId } from '@Functions/global/extractors';
 import { generateTeamTournament } from './generateTestTeamTournament';
+import { getParticipantId } from '@Functions/global/extractors';
 import tournamentEngine from '@Engines/syncEngine';
 import { expect, test } from 'vitest';
 
+// constants
 import { INDIVIDUAL } from '@Constants/participantConstants';
 import { DOUBLES, SINGLES } from '@Constants/matchUpTypes';
 

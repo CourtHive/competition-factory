@@ -15,12 +15,12 @@
  * Together they produced a draw the repo's own `getDrawInconsistencies` reports as
  * DROPPED_PROGRESSION. Both are asserted here, and each fails on its own if either fix is reverted.
  */
-import { nextPlayable, playForward, step } from '@Tests/testHarness/exitPropagation/driver';
 import { getExitWinningSide } from '@Mutate/drawDefinitions/matchUpGovernor/getExitWinningSide';
+import { nextPlayable, playForward, step } from '@Tests/testHarness/exitPropagation/driver';
 import { getDrawInconsistencies } from '@Query/drawDefinition/getDrawInconsistencies';
 import { setSubscriptions } from '@Global/state/globalState';
-import tournamentEngine from '@Engines/syncEngine';
 import mocksEngine from '@Assemblies/engines/mock';
+import tournamentEngine from '@Engines/syncEngine';
 import { expect, it, describe } from 'vitest';
 
 // constants

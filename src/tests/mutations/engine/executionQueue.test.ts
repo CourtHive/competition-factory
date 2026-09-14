@@ -3,9 +3,10 @@ import asyncEngine from '@Engines/asyncEngine';
 import syncEngine from '@Engines/syncEngine';
 import { it, expect } from 'vitest';
 
+// constants
+import { METHOD_NOT_FOUND, MISSING_EVENT, MISSING_PARTICIPANT_ID } from '@Constants/errorConditionConstants';
 import { INDIVIDUAL, PAIR } from '@Constants/participantConstants';
 import { DOUBLES } from '@Constants/eventConstants';
-import { METHOD_NOT_FOUND, MISSING_EVENT, MISSING_PARTICIPANT_ID } from '@Constants/errorConditionConstants';
 
 it.each([syncEngine, asyncEngine])('supports rollbackOnError', async (tournamentEngine) => {
   const { tournamentRecord } = mocksEngine.generateTournamentRecord();

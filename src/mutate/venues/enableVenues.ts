@@ -1,5 +1,5 @@
-import { setFirstClassOrExtension } from '../extensions/setFirstClassOrExtension';
 import { resolveTournamentRecords } from '@Helpers/parameters/resolveTournamentRecords';
+import { setFirstClassOrExtension } from '@Mutate/extensions/setFirstClassOrExtension';
 import { checkRequiredParameters } from '@Helpers/parameters/checkRequiredParameters';
 
 // constants and types

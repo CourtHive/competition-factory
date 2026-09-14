@@ -1,11 +1,11 @@
 import { UUID } from '@Tools/UUID';
 
-// Constants
+// constants
 import { MISSING_OFFICIAL_RECORD, CERT_ACTIVE } from '@Constants/officiatingConstants';
 import { INVALID_VALUES } from '@Constants/errorConditionConstants';
 import { SUCCESS } from '@Constants/resultConstants';
 
-// Types
+// types
 import type { OfficialRecord, OfficialCertification } from '@Types/officiatingTypes';
 
 type AddCertificationArgs = {

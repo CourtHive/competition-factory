@@ -1,10 +1,10 @@
 import { getRoundMatchUps } from '@Query/matchUps/getRoundMatchUps';
-import { positionTargets } from '@Query/matchUp/positionTargets';
 import { getParticipantIds } from '@Functions/global/extractors';
+import { positionTargets } from '@Query/matchUp/positionTargets';
 import { findStructure } from '@Acquire/findStructure';
 import { timeStringMinutes } from '@Tools/dateTime';
-import { numericSort } from '@Tools/sorting';
 import { ensureInt } from '@Tools/ensureInt';
+import { numericSort } from '@Tools/sorting';
 
 // constants
 import { FIRST_MATCHUP, WIN_RATIO } from '@Constants/drawDefinitionConstants';

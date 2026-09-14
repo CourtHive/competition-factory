@@ -1,6 +1,7 @@
 import { unique } from '@Tools/arrays';
 import { expect, test } from 'vitest';
 
+// constants
 import errorConditionConstants from '@Constants/errorConditionConstants';
 
 test('all error codes are unique', () => {

@@ -1,8 +1,9 @@
-import { extractDate } from '@Tools/dateTime';
 import tournamentEngine from '@Engines/syncEngine';
+import { extractDate } from '@Tools/dateTime';
 import { mocksEngine } from '../../..';
 import { expect, test } from 'vitest';
 
+// constants and fixtures
 import POLICY_SCHEDULING_NO_DAILY_LIMITS from '@Fixtures/policies/POLICY_SCHEDULING_NO_DAILY_LIMITS';
 import { INVALID_VALUES } from '@Constants/errorConditionConstants';
 

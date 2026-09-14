@@ -1,13 +1,14 @@
+import { generateRange, unique } from '@Tools/arrays';
 import mocksEngine from '@Assemblies/engines/mock';
 import tournamentEngine from '@Engines/syncEngine';
-import { generateRange, unique } from '@Tools/arrays';
 import { expect, it } from 'vitest';
 
+// constants and fixtures
 import POLICY_SEEDING_BYES from '@Fixtures/policies/POLICY_SEEDING_BYES';
 import { ROUND_ROBIN } from '@Constants/drawDefinitionConstants';
 import { BYE } from '@Constants/matchUpStatusConstants';
-import { SEEDING } from '@Constants/scaleConstants';
 import { SINGLES } from '@Constants/eventConstants';
+import { SEEDING } from '@Constants/scaleConstants';
 
 const scenario = [
   {

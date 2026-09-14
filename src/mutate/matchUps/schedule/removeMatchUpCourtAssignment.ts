@@ -1,11 +1,11 @@
 import { allocateTeamMatchUpCourts } from '@Mutate/matchUps/schedule/allocateTeamMatchUpCourts';
-import { matchUpAllocatedCourts } from '@Query/matchUp/courtAllocations';
 import { checkRequiredParameters } from '@Helpers/parameters/checkRequiredParameters';
 import { assignMatchUpCourt } from '@Mutate/matchUps/schedule/assignMatchUpCourt';
+import { matchUpAllocatedCourts } from '@Query/matchUp/courtAllocations';
 import { findDrawDefinition } from '@Acquire/findDrawDefinition';
 import { findDrawMatchUp } from '@Acquire/findDrawMatchUp';
 
-// contstants
+// constants
 import { MISSING_DRAW_DEFINITION, MISSING_TOURNAMENT_RECORD } from '@Constants/errorConditionConstants';
 import { TOURNAMENT_RECORDS } from '@Constants/attributeConstants';
 import { TEAM_MATCHUP } from '@Constants/matchUpTypes';

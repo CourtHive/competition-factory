@@ -9,6 +9,8 @@ import { DRAW_ID_EXISTS, INVALID_DRAW_SIZE } from '@Constants/errorConditionCons
 import { ADD_MATCHUPS, DELETED_MATCHUP_IDS } from '@Constants/topicConstants';
 import { INDIVIDUAL, PAIR, TEAM } from '@Constants/participantConstants';
 
+// constants
+import { POLICY_TYPE_SCORING } from '@Constants/policyConstants';
 import { DOMINANT_DUO } from '@Constants/tieFormatConstants';
 import { TEAM_EVENT } from '@Constants/eventConstants';
 import {
@@ -22,7 +24,6 @@ import {
   SINGLE_ELIMINATION,
   WINNER,
 } from '@Constants/drawDefinitionConstants';
-import { POLICY_TYPE_SCORING } from '@Constants/policyConstants';
 
 it.each([ROUND_ROBIN, SINGLE_ELIMINATION, undefined])('will generate a drawDefinition with no matchUps', (drawType) => {
   const result = mocksEngine.generateTournamentRecord({

@@ -1,7 +1,8 @@
 import tournamentEngine from '@Engines/syncEngine';
-import { expect, test } from 'vitest';
 import { mocksEngine } from '../../../..';
+import { expect, test } from 'vitest';
 
+// constants
 import { DOMINANT_DUO } from '@Constants/tieFormatConstants';
 import { MALE } from '@Constants/genderConstants';
 import { TEAM } from '@Constants/eventConstants';

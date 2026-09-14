@@ -2,6 +2,7 @@ import mocksEngine from '@Assemblies/engines/mock';
 import tournamentEngine from '@Engines/syncEngine';
 import { expect, it } from 'vitest';
 
+// constants
 import { FICR16, MAIN } from '@Constants/drawDefinitionConstants';
 import { PAIR } from '@Constants/participantConstants';
 import { DOUBLES } from '@Constants/eventConstants';

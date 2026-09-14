@@ -4,7 +4,7 @@ import tournamentEngine from '@Engines/syncEngine';
 import { unique } from '@Tools/arrays';
 import { expect, it } from 'vitest';
 
-// Constants
+// constants
 import { EXISTING_PARTICIPANT_DRAW_POSITION_ASSIGNMENT } from '@Constants/errorConditionConstants';
 import { INDIVIDUAL, PAIR } from '@Constants/participantConstants';
 import { DOMINANT_DUO } from '@Constants/tieFormatConstants';

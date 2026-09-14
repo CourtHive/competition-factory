@@ -2,6 +2,7 @@ import mocksEngine from '@Assemblies/engines/mock';
 import tournamentEngine from '@Engines/syncEngine';
 import { expect, test } from 'vitest';
 
+// constants
 import { SCORES_PRESENT } from '@Constants/errorConditionConstants';
 import { DOMINANT_DUO } from '@Constants/tieFormatConstants';
 import { AD_HOC } from '@Constants/drawDefinitionConstants';

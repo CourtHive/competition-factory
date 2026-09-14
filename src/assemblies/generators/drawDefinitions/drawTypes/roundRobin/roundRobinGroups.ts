@@ -1,6 +1,7 @@
 import { numericSort } from '@Tools/sorting';
 import { unique } from '@Tools/arrays';
 
+// constants
 import { MISSING_DRAW_POSITIONS, MISSING_VALUE } from '@Constants/errorConditionConstants';
 
 export function getRoundRobinGroupMatchUps({ drawPositions }) {

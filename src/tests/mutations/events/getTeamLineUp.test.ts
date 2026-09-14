@@ -1,7 +1,8 @@
-import { generateTeamTournament } from '../participants/team/generateTestTeamTournament';
+import { generateTeamTournament } from '@Tests/mutations/participants/team/generateTestTeamTournament';
 import tournamentEngine from '@Engines/syncEngine';
 import { expect, it } from 'vitest';
 
+// constants
 import { MISSING_PARTICIPANT_ID } from '@Constants/errorConditionConstants';
 import { INDIVIDUAL, TEAM } from '@Constants/participantConstants';
 

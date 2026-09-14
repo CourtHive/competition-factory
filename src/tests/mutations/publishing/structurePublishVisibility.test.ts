@@ -1,9 +1,10 @@
 import { isVisiblyPublished } from '@Query/publishing/isEmbargoed';
 import { getDrawData } from '@Query/drawDefinition/getDrawData';
-import tournamentEngine from '@Engines/syncEngine';
 import mocksEngine from '@Assemblies/engines/mock';
+import tournamentEngine from '@Engines/syncEngine';
 import { expect, it } from 'vitest';
 
+// constants
 import { COMPASS } from '@Constants/drawDefinitionConstants';
 
 /**

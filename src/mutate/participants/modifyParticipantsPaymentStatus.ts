@@ -1,15 +1,16 @@
-import { addParticipantTimeItem } from '../timeItems/addTimeItem';
-import { requireParams } from '@Helpers/parameters/requireParams';
-import { getTopics } from '@Global/state/globalState';
 import { modifyParticipantsNotice } from '@Mutate/notifications/participantNotifications';
+import { addParticipantTimeItem } from '@Mutate/timeItems/addTimeItem';
+import { requireParams } from '@Helpers/parameters/requireParams';
 import { getParticipantId } from '@Functions/global/extractors';
+import { getTopics } from '@Global/state/globalState';
 
-import { INVALID_VALUES, MISSING_PARTICIPANTS, MISSING_VALUE } from '@Constants/errorConditionConstants';
+// constants and types
 import { PAYMENT_STATUS, paymentStatusValues, PaymentStatusUnion } from '@Constants/participantConstants';
+import { INVALID_VALUES, MISSING_PARTICIPANTS, MISSING_VALUE } from '@Constants/errorConditionConstants';
 import { TOURNAMENT_RECORD } from '@Constants/attributeConstants';
 import { MODIFY_PARTICIPANTS } from '@Constants/topicConstants';
-import { Participant } from '@Types/tournamentTypes';
 import { SUCCESS } from '@Constants/resultConstants';
+import { Participant } from '@Types/tournamentTypes';
 
 type ModifyParticipantsPaymentStatusArgs = {
   tournamentRecord: any;

@@ -2,7 +2,7 @@ import { mocksEngine } from '@Assemblies/engines/mock';
 import tournamentEngine from '@Engines/syncEngine';
 import { expect, it, describe } from 'vitest';
 
-// Constants
+// constants
 import { MISSING_MATCHUPS, MISSING_CONTEXT } from '@Constants/errorConditionConstants';
 import { SINGLES } from '@Constants/eventConstants';
 import {

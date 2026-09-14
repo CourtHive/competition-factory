@@ -5,8 +5,8 @@ import { checkRequiredParameters } from '@Helpers/parameters/checkRequiredParame
 import { getContainedStructures } from '@Query/drawDefinition/getContainedStructures';
 import { allCompetitionMatchUps } from '@Query/matchUps/getAllCompetitionMatchUps';
 import { getPersonRequests } from '@Query/matchUps/scheduling/getPersonRequests';
-import { getMatchUpDependencies } from '@Query/matchUps/getMatchUpDependencies';
 import { getMatchUpDailyLimits } from '@Query/extensions/getMatchUpDailyLimits';
+import { getMatchUpDependencies } from '@Query/matchUps/getMatchUpDependencies';
 import { getSchedulingProfile } from '@Mutate/tournaments/schedulingProfile';
 import { getVenuesAndCourts } from '@Query/venues/venuesAndCourtsGetter';
 import { extractDate, isValidDateString } from '@Tools/dateTime';

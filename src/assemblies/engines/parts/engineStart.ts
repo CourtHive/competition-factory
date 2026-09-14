@@ -1,8 +1,15 @@
+import { buildQueryFacade, buildFacade, createEventBus, inspect, dryRun, explain } from '@Forge/index';
 import { createTournamentRecord } from '@Generators/tournamentRecords/createTournamentRecord';
 import { methodImporter } from '@Assemblies/engines/parts/methodImporter';
 import { processResult } from '@Assemblies/engines/parts/processResult';
 import { factoryVersion } from '@Functions/global/factoryVersion';
-import { buildQueryFacade, buildFacade, createEventBus, inspect, dryRun, explain } from '@Forge/index';
+import {
+  getState,
+  getTournament,
+  removeUnlinkedTournamentRecords,
+  setState,
+  setTournamentRecord,
+} from '@Assemblies/engines/parts/stateMethods';
 import {
   setDeepCopy,
   setDevContext,
@@ -18,17 +25,10 @@ import {
   setTournamentId,
   getTournamentId,
 } from '@Global/state/globalState';
-import {
-  getState,
-  getTournament,
-  removeUnlinkedTournamentRecords,
-  setState,
-  setTournamentRecord,
-} from '@Assemblies/engines/parts/stateMethods';
 
 // constants and types
-import { FactoryEngine } from '@Types/factoryTypes';
 import { SUCCESS } from '@Constants/resultConstants';
+import { FactoryEngine } from '@Types/factoryTypes';
 
 export function engineStart(engine: FactoryEngine, engineInvoke: any): void {
   engine.importMethods = (methods, collections, depth, global) =>

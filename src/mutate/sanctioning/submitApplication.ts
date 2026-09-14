@@ -1,6 +1,6 @@
 import { transitionStatus } from './transitionStatus';
 
-// Constants
+// constants
 import {
   MISSING_SANCTIONING_RECORD,
   ENDORSEMENT_REQUIRED,

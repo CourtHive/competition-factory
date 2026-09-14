@@ -6,11 +6,11 @@
  */
 
 import type { MatchUp, ScoreResult, PointSituation, FormatStructure, SetFormatStructure } from '@Types/scoring/types';
-import { resolveSetType } from '@Tools/scoring/scoringUtilities';
-import { parse } from '@Helpers/matchUpFormatCode/parse';
-import { calculatePointsTo } from '@Mutate/scoring/pointsToCalculator';
 import { deriveServer, formatGameScore } from '@Mutate/scoring/addPoint';
+import { calculatePointsTo } from '@Mutate/scoring/pointsToCalculator';
+import { resolveSetType } from '@Tools/scoring/scoringUtilities';
 import { RALLY } from '@Constants/matchUpFormatConstants';
+import { parse } from '@Helpers/matchUpFormatCode/parse';
 
 export interface GetScoreOptions {
   useBracketNotation?: boolean; // Use [10-8] format for match tiebreaks

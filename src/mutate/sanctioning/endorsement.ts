@@ -3,7 +3,7 @@ import { MISSING_SANCTIONING_RECORD, MISSING_ENDORSEMENT } from '@Constants/sanc
 import { INVALID_VALUES } from '@Constants/errorConditionConstants';
 import { SUCCESS } from '@Constants/resultConstants';
 
-// Types
+// types
 import type { SanctioningRecord, PersonReference, Endorsement } from '@Types/sanctioningTypes';
 
 // Sync the convenience `endorsement` field with the first entry in the `endorsements` array

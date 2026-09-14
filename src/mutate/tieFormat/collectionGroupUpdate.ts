@@ -1,7 +1,7 @@
 import { getTargetTeamMatchUps } from '@Query/hierarchical/tieFormats/getTargetTeamMatchUps';
 import { updateTargetTeamMatchUps } from '@Mutate/tieFormat/updateTargetTeamMatchUps';
-import { calculateWinCriteria } from '@Query/matchUp/calculateWinCriteria';
 import { modifyDrawNotice } from '@Mutate/notifications/drawNotifications';
+import { calculateWinCriteria } from '@Query/matchUp/calculateWinCriteria';
 import { writeTieFormat } from '@Mutate/tieFormat/writeTieFormat';
 import { validateTieFormat } from '@Validators/validateTieFormat';
 import { definedAttributes } from '@Tools/definedAttributes';

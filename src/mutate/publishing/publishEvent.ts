@@ -1,5 +1,5 @@
 import { checkRequiredParameters } from '@Helpers/parameters/checkRequiredParameters';
-import { modifyEventPublishStatus } from '../events/modifyEventPublishStatus';
+import { modifyEventPublishStatus } from '@Mutate/events/modifyEventPublishStatus';
 import { getEventPublishStatus } from '@Query/event/getEventPublishStatus';
 import { getAppliedPolicies } from '@Query/extensions/getAppliedPolicies';
 import { decorateResult } from '@Functions/global/decorateResult';

@@ -2,6 +2,7 @@ import mocksEngine from '@Assemblies/engines/mock';
 import tournamentEngine from '@Engines/syncEngine';
 import { expect, it } from 'vitest';
 
+// constants
 import { FIRST_MATCH_LOSER_CONSOLATION, TOP_DOWN } from '@Constants/drawDefinitionConstants';
 
 it('Feeds both consolation rounds TOP_DOWN', () => {

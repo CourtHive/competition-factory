@@ -3,8 +3,8 @@ import tournamentEngine from '@Engines/syncEngine';
 import { describe, expect, it } from 'vitest';
 
 // constants
-import { SINGLE_ELIMINATION } from '@Constants/drawDefinitionConstants';
 import { COMPLETED, TO_BE_PLAYED, WALKOVER } from '@Constants/matchUpStatusConstants';
+import { SINGLE_ELIMINATION } from '@Constants/drawDefinitionConstants';
 import { FOLLOWED_BY } from '@Constants/timeItemConstants';
 import { SUCCESS } from '@Constants/resultConstants';
 

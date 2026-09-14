@@ -2,7 +2,7 @@ import mocksEngine from '@Assemblies/engines/mock';
 import tournamentEngine from '@Engines/syncEngine';
 import { expect, it, describe } from 'vitest';
 
-// constants
+// constants and fixtures
 import { MISSING_EVENT, MISSING_POLICY_DEFINITION } from '@Constants/errorConditionConstants';
 import { POLICY_RANKING_POINTS_BASIC } from '@Fixtures/policies/POLICY_RANKING_POINTS_BASIC';
 import { SINGLE_ELIMINATION } from '@Constants/drawDefinitionConstants';

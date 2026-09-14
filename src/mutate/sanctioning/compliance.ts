@@ -1,6 +1,6 @@
 import { transitionStatus } from './transitionStatus';
 
-// Constants
+// constants
 import { INVALID_VALUES } from '@Constants/errorConditionConstants';
 import { SUCCESS } from '@Constants/resultConstants';
 import {
@@ -11,7 +11,7 @@ import {
   ISSUES_FLAGGED,
 } from '@Constants/sanctioningConstants';
 
-// Types
+// types
 import type { SanctioningRecord } from '@Types/sanctioningTypes';
 
 const MISSING_ITEM_ID = 'Missing itemId';

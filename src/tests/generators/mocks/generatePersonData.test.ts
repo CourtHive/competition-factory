@@ -4,6 +4,7 @@ import namesData from '@Fixtures/data/names.json';
 import { numericSort } from '@Tools/sorting';
 import { it, expect } from 'vitest';
 
+// constants
 import { FEMALE, MALE } from '@Constants/genderConstants';
 
 it('can generation personData', () => {

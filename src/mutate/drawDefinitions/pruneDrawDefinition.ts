@@ -1,8 +1,9 @@
-import { deleteMatchUpsNotice, modifyDrawNotice } from '../notifications/drawNotifications';
+import { deleteMatchUpsNotice, modifyDrawNotice } from '@Mutate/notifications/drawNotifications';
 import { analyzeDraws } from '@Query/tournaments/analyzeDraws';
 import { getMatchUpId } from '@Functions/global/extractors';
 import { getDrawStructures } from '@Acquire/findStructure';
 
+// constants and types
 import { MISSING_DRAW_DEFINITION, MISSING_TOURNAMENT_RECORD } from '@Constants/errorConditionConstants';
 import { MAIN } from '@Constants/drawDefinitionConstants';
 import { SUCCESS } from '@Constants/resultConstants';

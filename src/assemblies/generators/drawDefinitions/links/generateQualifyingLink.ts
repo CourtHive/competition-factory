@@ -1,5 +1,6 @@
 import { definedAttributes } from '@Tools/definedAttributes';
 
+// constants and types
 import { MISSING_STRUCTURE_ID } from '@Constants/errorConditionConstants';
 import { DRAW, WINNER } from '@Constants/drawDefinitionConstants';
 import { LinkTypeUnion } from '@Types/tournamentTypes';

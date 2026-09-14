@@ -1,11 +1,24 @@
-import tournamentEngine from '@Engines/syncEngine';
 import mocksEngine from '@Assemblies/engines/mock';
+import tournamentEngine from '@Engines/syncEngine';
 import { expect, it, test } from 'vitest';
 
 // constants
 import { BYE, COMPLETED, TO_BE_PLAYED } from '@Constants/matchUpStatusConstants';
 import { POLICY_TYPE_POSITION_ACTIONS } from '@Constants/policyConstants';
 import { SINGLES_EVENT } from '@Constants/eventConstants';
+import {
+  AD_HOC,
+  CONSOLATION,
+  FIRST_MATCH_LOSER_CONSOLATION,
+  LUCKY_DRAW,
+  MAIN,
+} from '@Constants/drawDefinitionConstants';
+import {
+  INVALID_DRAW_POSITION,
+  INVALID_VALUES,
+  MISSING_DRAW_POSITION,
+  STRUCTURE_NOT_FOUND,
+} from '@Constants/errorConditionConstants';
 import {
   SWAP_PARTICIPANTS,
   ADD_PENALTY,
@@ -17,19 +30,6 @@ import {
   LUCKY_PARTICIPANT,
   SEED_VALUE,
 } from '@Constants/positionActionConstants';
-import {
-  INVALID_DRAW_POSITION,
-  INVALID_VALUES,
-  MISSING_DRAW_POSITION,
-  STRUCTURE_NOT_FOUND,
-} from '@Constants/errorConditionConstants';
-import {
-  AD_HOC,
-  CONSOLATION,
-  FIRST_MATCH_LOSER_CONSOLATION,
-  LUCKY_DRAW,
-  MAIN,
-} from '@Constants/drawDefinitionConstants';
 
 it('can return accurate position details when requesting positionActions', () => {
   const drawProfiles = [

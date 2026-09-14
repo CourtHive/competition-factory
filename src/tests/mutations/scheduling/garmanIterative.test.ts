@@ -1,14 +1,15 @@
-import { visualizeScheduledMatchUps } from '../../testHarness/testUtilities/visualizeScheduledMatchUps';
-import { hasSchedule } from '@Query/matchUp/hasSchedule';
+import { visualizeScheduledMatchUps } from '@Tests/testHarness/testUtilities/visualizeScheduledMatchUps';
 import { extractTime, timeStringMinutes } from '@Tools/dateTime';
 import { getParticipantId } from '@Functions/global/extractors';
+import { hasSchedule } from '@Query/matchUp/hasSchedule';
 import mocksEngine from '@Assemblies/engines/mock';
-import { intersection } from '@Tools/arrays';
 import tournamentEngine from '@Engines/syncEngine';
+import { intersection } from '@Tools/arrays';
 import { expect, it } from 'vitest';
 
-import { FORMAT_STANDARD } from '@Fixtures/scoring/matchUpFormats';
+// Fixtures
 import POLICY_SCHEDULING_DEFAULT from '@Fixtures/policies/POLICY_SCHEDULING_DEFAULT';
+import { FORMAT_STANDARD } from '@Fixtures/scoring/matchUpFormats';
 
 const showGlobalLog = false;
 

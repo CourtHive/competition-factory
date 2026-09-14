@@ -1,6 +1,6 @@
+import { firstClassOrExtension } from '@Acquire/firstClassOrExtension';
 import { generateTeamTournament } from './generateTestTeamTournament';
 import { getParticipantId } from '@Functions/global/extractors';
-import { firstClassOrExtension } from '@Acquire/firstClassOrExtension';
 import mocksEngine from '@Assemblies/engines/mock';
 import tournamentEngine from '@Engines/syncEngine';
 import { intersection } from '@Tools/arrays';
@@ -9,8 +9,8 @@ import { expect, it } from 'vitest';
 // constants
 import { COMPLETED, TO_BE_PLAYED } from '@Constants/matchUpStatusConstants';
 import { INDIVIDUAL, PAIR } from '@Constants/participantConstants';
-import { DOUBLES, TEAM } from '@Constants/matchUpTypes';
 import { LINEUPS } from '@Constants/extensionConstants';
+import { DOUBLES, TEAM } from '@Constants/matchUpTypes';
 import {
   EXISTING_OUTCOME,
   INVALID_PARTICIPANT_TYPE,

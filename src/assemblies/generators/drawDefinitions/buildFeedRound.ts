@@ -1,6 +1,7 @@
-import { generateRange } from '@Tools/arrays';
 import { generateMatchUpId } from './generateMatchUpId';
+import { generateRange } from '@Tools/arrays';
 
+// constants and types
 import { TO_BE_PLAYED } from '@Constants/matchUpStatusConstants';
 import { MatchUp } from '@Types/tournamentTypes';
 

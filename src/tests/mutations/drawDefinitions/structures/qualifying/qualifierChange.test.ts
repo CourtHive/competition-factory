@@ -5,11 +5,12 @@ import mocksEngine from '@Assemblies/engines/mock';
 import tournamentEngine from '@Engines/syncEngine';
 import { expect, it } from 'vitest';
 
+// constants and fixtures
 import POLICY_POSITION_ACTIONS_UNRESTRICTED from '@Fixtures/policies/POLICY_POSITION_ACTIONS_UNRESTRICTED';
 import { QUALIFYING_PARTICIPANT } from '@Constants/positionActionConstants';
 import { MODIFY_POSITION_ASSIGNMENTS } from '@Constants/topicConstants';
-import { POLICY_TYPE_PROGRESSION } from '@Constants/policyConstants';
 import { MAIN, QUALIFYING } from '@Constants/drawDefinitionConstants';
+import { POLICY_TYPE_PROGRESSION } from '@Constants/policyConstants';
 
 it('generates expected finishingPositions for qualifying structures', () => {
   let assignmentNotifications: any[] = [];

@@ -5,12 +5,12 @@
  * Seed blocks: [1], [2], [3,4], [5-8], [9-16], [17-32]
  */
 
-import tournamentEngine from '@Engines/syncEngine';
-import mocksEngine from '@Assemblies/engines/mock';
-import { describe, test, expect } from 'vitest';
-import { SEED_CASCADE } from '@Constants/positionActionConstants';
 import { ROUND_ROBIN, MAIN } from '@Constants/drawDefinitionConstants';
+import { SEED_CASCADE } from '@Constants/positionActionConstants';
 import { WITHDRAWN } from '@Constants/entryStatusConstants';
+import mocksEngine from '@Assemblies/engines/mock';
+import tournamentEngine from '@Engines/syncEngine';
+import { describe, test, expect } from 'vitest';
 
 /** Helper: get draw definition and main structure from a drawId */
 function getDrawInfo(drawId: string) {

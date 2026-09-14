@@ -2,8 +2,9 @@ import { mocksEngine, globalState } from '../../../../..';
 import tournamentEngine from '@Engines/syncEngine';
 import { expect, test } from 'vitest';
 
-import { INVALID_VALUES } from '@Constants/errorConditionConstants';
+// constants
 import { PLAY_OFF, ROUND_ROBIN, ROUND_ROBIN_WITH_PLAYOFF } from '@Constants/drawDefinitionConstants';
+import { INVALID_VALUES } from '@Constants/errorConditionConstants';
 
 // in a round robin finishingPositions are determined by WIN_RATIO
 // the finishingPositionRange for { winner, loser } should be equivalent

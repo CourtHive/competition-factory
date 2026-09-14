@@ -1,7 +1,7 @@
-import { describe, expect, it } from 'vitest';
+import { POLICY_TYPE_COMPETITIVE_BANDS } from '@Constants/policyConstants';
 import { getContextContent } from '@Query/hierarchical/getContextContent';
 import mocksEngine from '@Assemblies/engines/mock';
-import { POLICY_TYPE_COMPETITIVE_BANDS } from '@Constants/policyConstants';
+import { describe, expect, it } from 'vitest';
 
 describe('getContextContent', () => {
   it('returns empty policies when no contextProfile', () => {

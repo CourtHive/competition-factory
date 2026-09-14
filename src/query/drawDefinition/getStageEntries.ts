@@ -1,4 +1,4 @@
-import { getFlightProfile } from '../event/getFlightProfile';
+import { getFlightProfile } from '@Query/event/getFlightProfile';
 
 // constants and types
 import { DrawDefinition, Entry, EntryStatusUnion, Event } from '@Types/tournamentTypes';

@@ -1,7 +1,7 @@
 import { assignDrawPosition as assignPosition } from '@Mutate/matchUps/drawPositions/positionAssignment';
 import { resolveDrawPositions } from '@Assemblies/generators/drawDefinitions/drawPositionsResolver';
-import { getPositionAssignments } from '@Query/drawDefinition/positionsGetter';
 import { setFirstClassOrExtension } from '@Mutate/extensions/setFirstClassOrExtension';
+import { getPositionAssignments } from '@Query/drawDefinition/positionsGetter';
 import { firstClassOrExtension } from '@Acquire/firstClassOrExtension';
 import { findStructure } from '@Acquire/findStructure';
 

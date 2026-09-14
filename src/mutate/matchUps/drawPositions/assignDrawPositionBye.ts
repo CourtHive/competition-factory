@@ -1,15 +1,15 @@
 import { addPositionActionTelemetry } from '@Mutate/drawDefinitions/positionGovernor/addPositionActionTelemetry';
 import { modifyMatchUpNotice, modifyPositionAssignmentsNotice } from '@Mutate/notifications/drawNotifications';
+import { matchUpHoldsScheduling, releaseByeScheduling } from '@Mutate/matchUps/schedule/byeScheduling';
 import { getStructureDrawPositionProfiles } from '@Query/structure/getStructureDrawPositionProfiles';
 import { getAllStructureMatchUps } from '@Query/matchUps/getAllStructureMatchUps';
-import { matchUpHoldsScheduling, releaseByeScheduling } from '@Mutate/matchUps/schedule/byeScheduling';
-import { getInitialRoundNumber } from '@Query/matchUps/getInitialRoundNumber';
 import { getPositionAssignments } from '@Query/drawDefinition/positionsGetter';
-import { getAppliedPolicies } from '@Query/extensions/getAppliedPolicies';
+import { getInitialRoundNumber } from '@Query/matchUps/getInitialRoundNumber';
 import { isLuckyBasedDraw } from '@Query/drawDefinition/isLuckyBasedDraw';
+import { getAppliedPolicies } from '@Query/extensions/getAppliedPolicies';
 import { getRoundMatchUps } from '@Query/matchUps/getRoundMatchUps';
-import { getAllDrawMatchUps } from '@Query/matchUps/drawMatchUps';
 import { decorateResult } from '@Functions/global/decorateResult';
+import { getAllDrawMatchUps } from '@Query/matchUps/drawMatchUps';
 import { positionTargets } from '@Query/matchUp/positionTargets';
 import { getMatchUpsMap } from '@Query/matchUps/getMatchUpsMap';
 import { pushGlobalLog } from '@Functions/global/globalLog';
@@ -23,8 +23,8 @@ import { DrawDefinition, Event, MatchUp, Structure, Tournament } from '@Types/to
 import { BYE, TO_BE_PLAYED } from '@Constants/matchUpStatusConstants';
 import { CONTAINER } from '@Constants/drawDefinitionConstants';
 import { SUCCESS } from '@Constants/resultConstants';
-import { HydratedMatchUp } from '@Types/hydrated';
 import { MatchUpsMap } from '@Types/factoryTypes';
+import { HydratedMatchUp } from '@Types/hydrated';
 import {
   DRAW_POSITION_ACTIVE,
   DRAW_POSITION_ASSIGNED,

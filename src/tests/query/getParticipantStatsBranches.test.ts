@@ -1,7 +1,7 @@
 import mocksEngine from '@Assemblies/engines/mock';
 import tournamentEngine from '@Engines/syncEngine';
-import { describe, expect, it } from 'vitest';
 import { xa } from '@Tools/extractAttributes';
+import { describe, expect, it } from 'vitest';
 
 // constants
 import { MISSING_TOURNAMENT_RECORD, INVALID_MATCHUP, MISSING_MATCHUPS } from '@Constants/errorConditionConstants';

@@ -1,6 +1,6 @@
 import { getUTCdateString, extractTime, extractDate, timeStringMinutes, dayMinutesToTimeString } from '@Tools/dateTime';
-import { generateVirtualCourts } from '@Generators/scheduling/utils/generateVirtualCourts';
 import { calculatePeriodLength } from '@Generators/scheduling/utils/calculatePeriodLength';
+import { generateVirtualCourts } from '@Generators/scheduling/utils/generateVirtualCourts';
 import { checkRequiredParameters } from '@Helpers/parameters/checkRequiredParameters';
 import { getCourtsAvailableAtPeriodStart } from './getCourtsAvailableAtPeriodStart';
 import { courtGenerator } from '@Assemblies/generators/scheduling/courtGenerator';

@@ -1,10 +1,12 @@
-import tournamentEngine from '@Engines/syncEngine';
 import mocksEngine from '@Assemblies/engines/mock';
+import tournamentEngine from '@Engines/syncEngine';
 import { expect, it } from 'vitest';
 
+// constants
 import { MAIN, QUALIFYING } from '@Constants/drawDefinitionConstants';
 import { INDIVIDUAL } from '@Constants/participantConstants';
 
+// constants
 import { COMPLETED } from '@Constants/matchUpStatusConstants';
 import {
   MISSING_QUALIFIED_PARTICIPANTS,

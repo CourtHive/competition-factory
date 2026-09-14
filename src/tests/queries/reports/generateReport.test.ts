@@ -2,6 +2,8 @@ import mocksEngine from '@Assemblies/engines/mock';
 import tournamentEngine from '@Engines/syncEngine';
 import { expect, it, describe } from 'vitest';
 
+// constants
+import { TEAM_EVENT } from '@Constants/eventConstants';
 import {
   COMPETITIVENESS_REPORT,
   ENTRY_STATUS_REPORT,
@@ -13,7 +15,6 @@ import {
   STRUCTURE_REPORT,
   VENUE_UTILIZATION_REPORT,
 } from '@Constants/reportConstants';
-import { TEAM_EVENT } from '@Constants/eventConstants';
 
 describe('generateReport', () => {
   it('generates entry status report with unified shape', () => {

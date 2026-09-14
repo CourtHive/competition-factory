@@ -3,7 +3,7 @@ import { MISSING_OFFICIAL_RECORD } from '@Constants/officiatingConstants';
 import { INVALID_VALUES } from '@Constants/errorConditionConstants';
 import { SUCCESS } from '@Constants/resultConstants';
 
-// Types
+// types
 import type { OfficialRecord, EvaluationPolicy } from '@Types/officiatingTypes';
 
 type AddEvaluationPolicyArgs = {

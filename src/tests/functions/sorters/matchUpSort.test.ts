@@ -1,6 +1,6 @@
-import { describe, expect, it } from 'vitest';
-import { matchUpSort } from '@Functions/sorters/matchUpSort';
 import { QUALIFYING, MAIN, CONSOLATION } from '@Constants/drawDefinitionConstants';
+import { matchUpSort } from '@Functions/sorters/matchUpSort';
+import { describe, expect, it } from 'vitest';
 
 describe('matchUpSort', () => {
   it('sorts by stage order', () => {

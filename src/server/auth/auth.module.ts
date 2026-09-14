@@ -1,10 +1,10 @@
-import { UsersModule } from '../providers/users/users.module';
+import { UsersModule } from '@Server/providers/users/users.module';
 import { AuthController } from './auth.controller';
 import { AuthGuard } from './guards/auth.guard';
 import { AuthService } from './auth.service';
 import { APP_GUARD } from '@nestjs/core';
-import { JwtModule } from '@nestjs/jwt';
 import { Module } from '@nestjs/common';
+import { JwtModule } from '@nestjs/jwt';
 
 function isValidJwtExpiresIn(val: string): boolean {
   // Only allow numbers or numbers with single unit: s, m, h, d, w, M, y

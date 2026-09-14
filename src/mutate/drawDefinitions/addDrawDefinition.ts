@@ -19,11 +19,11 @@ import {
 import { STRUCTURE_SELECTED_STATUSES } from '@Constants/entryStatusConstants';
 import { DrawDefinition, Event, Tournament } from '@Types/tournamentTypes';
 import { DELETE_DRAW_DEFINITIONS } from '@Constants/auditConstants';
-import { FLIGHT_PROFILE } from '@Constants/extensionConstants';
 import { POLICY_TYPE_SCORING } from '@Constants/policyConstants';
+import { FLIGHT_PROFILE } from '@Constants/extensionConstants';
 import { SUCCESS } from '@Constants/resultConstants';
-import { ResultType } from '@Types/factoryTypes';
 import { AUDIT } from '@Constants/topicConstants';
+import { ResultType } from '@Types/factoryTypes';
 import {
   DRAW_ID_EXISTS,
   INVALID_DRAW_DEFINITION,

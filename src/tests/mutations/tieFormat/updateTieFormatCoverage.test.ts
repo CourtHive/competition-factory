@@ -1,7 +1,7 @@
 import { copyTieFormat } from '@Query/hierarchical/tieFormats/copyTieFormat';
 import { updateTieFormat } from '@Mutate/tieFormat/updateTieFormat';
-import tournamentEngine from '@Engines/syncEngine';
 import mocksEngine from '@Assemblies/engines/mock';
+import tournamentEngine from '@Engines/syncEngine';
 import { expect, it, describe } from 'vitest';
 
 // constants

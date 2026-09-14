@@ -1,6 +1,7 @@
 import { ROUND_ROBIN, ROUND_ROBIN_WITH_PLAYOFF, SEPARATE, WATERFALL } from '@Constants/drawDefinitionConstants';
 import { POLICY_TYPE_SEEDING } from '@Constants/policyConstants';
 
+// types
 import type { SeedingPolicy } from '@Types/factoryTypes';
 
 export const POLICY_SEEDING_DEFAULT = {

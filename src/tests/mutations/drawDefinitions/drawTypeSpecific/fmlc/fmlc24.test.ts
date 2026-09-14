@@ -10,6 +10,7 @@ import { expect, it } from 'vitest';
 import { MAIN, CONSOLATION } from '@Constants/drawDefinitionConstants';
 import { BYE } from '@Constants/matchUpStatusConstants';
 
+// Fixtures
 import SEEDING_USTA from '@Fixtures/policies/POLICY_SEEDING_DEFAULT';
 import SEEDING_ITF from '@Fixtures/policies/POLICY_SEEDING_ITF';
 

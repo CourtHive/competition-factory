@@ -3,7 +3,7 @@ import { getDrawCompositionConstraints } from './getDrawCompositionConstraints';
 import { getStageDrawPositionsAvailable } from './getStageDrawPositions';
 import { getStageEntryTypeCount } from './stageGetter';
 
-// Constants
+// constants
 import { ALTERNATE, DIRECT_ACCEPTANCE, WILDCARD } from '@Constants/entryStatusConstants';
 import { VOLUNTARY_CONSOLATION } from '@Constants/drawDefinitionConstants';
 import { SUCCESS } from '@Constants/resultConstants';
@@ -13,7 +13,7 @@ import {
   NO_STAGE_SPACE_AVAILABLE_FOR_ENTRY_STATUS,
 } from '@Constants/errorConditionConstants';
 
-// Types
+// types
 import type { DrawDefinition, Event, Tournament } from '@Types/tournamentTypes';
 
 type GetStageSpaceArgs = {

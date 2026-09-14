@@ -13,10 +13,10 @@ import { describe, expect, it } from 'vitest';
 import { firstClassOrExtension } from '@Acquire/firstClassOrExtension';
 import { setSchemaWriteMode } from '@Global/state/globalState';
 import { findExtension } from '@Acquire/findExtension';
-import tournamentEngine from '../engines/syncEngine';
 import mocksEngine from '@Assemblies/engines/mock';
+import tournamentEngine from '@Engines/syncEngine';
 
-// constants and types
+// constants
 import { BRIDGE, LEGACY, NATIVE, SchemaWriteMode } from '@Constants/schemaWriteModeConstants';
 import { ROUND_ROBIN } from '@Constants/drawDefinitionConstants';
 import { TALLY } from '@Constants/extensionConstants';

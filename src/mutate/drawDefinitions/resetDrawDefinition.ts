@@ -1,7 +1,7 @@
 import { modifyDrawNotice, modifyMatchUpNotice } from '@Mutate/notifications/drawNotifications';
-import { removeExtension } from '@Mutate/extensions/removeExtension';
 import { getAllStructureMatchUps } from '@Query/matchUps/getAllStructureMatchUps';
 import { isLuckyBasedDraw } from '@Query/drawDefinition/isLuckyBasedDraw';
+import { removeExtension } from '@Mutate/extensions/removeExtension';
 import { getMatchUpsMap } from '@Query/matchUps/getMatchUpsMap';
 
 // constants and types

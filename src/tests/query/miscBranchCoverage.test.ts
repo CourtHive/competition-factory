@@ -1,8 +1,8 @@
 import { validateCollectionDefinition } from '@Validators/validateCollectionDefinition';
 import { validateTieFormat } from '@Validators/validateTieFormat';
 import { stringify } from '@Helpers/matchUpFormatCode/stringify';
-import tournamentEngine from '@Engines/syncEngine';
 import mocksEngine from '@Assemblies/engines/mock';
+import tournamentEngine from '@Engines/syncEngine';
 import { expect, test } from 'vitest';
 
 // constants

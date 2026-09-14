@@ -32,6 +32,8 @@
  * a tiebreaker only.
  */
 
+import { SINGLES, DOUBLES, TEAM_EVENT } from '@Constants/eventConstants';
+import { POLICY_TYPE_RANKING_POINTS } from '@Constants/policyConstants';
 import {
   COMPASS,
   CONSOLATION,
@@ -49,8 +51,6 @@ import {
   SINGLE_ELIMINATION,
   VOLUNTARY_CONSOLATION,
 } from '@Constants/drawDefinitionConstants';
-import { SINGLES, DOUBLES, TEAM_EVENT } from '@Constants/eventConstants';
-import { POLICY_TYPE_RANKING_POINTS } from '@Constants/policyConstants';
 
 // ─── Award Profiles ──────────────────────────────────────────────────────────
 

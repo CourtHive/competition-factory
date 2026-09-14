@@ -3,8 +3,8 @@ import { intersection } from '@Tools/arrays';
 import { isString } from '@Tools/objects';
 
 // constants
-import { BOTTOM_UP, RANDOM, TOP_DOWN, WATERFALL } from '@Constants/drawDefinitionConstants';
 import { INVALID_VALUES, MISSING_DRAW_DEFINITION } from '@Constants/errorConditionConstants';
+import { BOTTOM_UP, RANDOM, TOP_DOWN, WATERFALL } from '@Constants/drawDefinitionConstants';
 import { SUCCESS } from '@Constants/resultConstants';
 
 export function isValidForQualifying({ structureId, drawDefinition }) {

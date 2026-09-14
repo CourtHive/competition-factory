@@ -1,9 +1,15 @@
 import { getDrawInconsistencies } from '@Query/drawDefinition/getDrawInconsistencies';
 import { setSubscriptions } from '@Global/state/globalState';
-import tournamentEngine from '@Engines/syncEngine';
 import mocksEngine from '@Assemblies/engines/mock';
+import tournamentEngine from '@Engines/syncEngine';
 import { expect, it } from 'vitest';
 
+// constants
+import {
+  DOUBLE_ELIMINATION,
+  FEED_IN_CHAMPIONSHIP,
+  FEED_IN_CHAMPIONSHIP_TO_SF,
+} from '@Constants/drawDefinitionConstants';
 import {
   DEFAULTED,
   DOUBLE_DEFAULT,
@@ -12,11 +18,6 @@ import {
   TO_BE_PLAYED,
   WALKOVER,
 } from '@Constants/matchUpStatusConstants';
-import {
-  DOUBLE_ELIMINATION,
-  FEED_IN_CHAMPIONSHIP,
-  FEED_IN_CHAMPIONSHIP_TO_SF,
-} from '@Constants/drawDefinitionConstants';
 
 /**
  * A drawPosition holding a BYE that the cascade itself placed is AVAILABLE to an arriving loser.

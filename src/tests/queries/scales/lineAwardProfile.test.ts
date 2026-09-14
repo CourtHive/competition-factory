@@ -1,5 +1,5 @@
-import { getAwardProfile } from '@Query/scales/getAwardProfile';
 import { awardProfileLevelLines } from './awardProfileExamples';
+import { getAwardProfile } from '@Query/scales/getAwardProfile';
 import { finishingPositionSort } from './awardTestUtils';
 import { mocksEngine } from '@Assemblies/engines/mock';
 import tournamentEngine from '@Engines/syncEngine';

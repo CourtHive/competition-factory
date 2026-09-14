@@ -1,19 +1,19 @@
 // Generators
 import { generateOutcomeFromScoreString } from '@Assemblies/generators/mocks/generateOutcomeFromScoreString';
-import { computeActualOutput } from '@Generators/scales/competition/actualOutput';
 import { deriveCountables } from '@Generators/scales/competition/deriveCountables';
+import { computeActualOutput } from '@Generators/scales/competition/actualOutput';
 import { expectedScore } from '@Generators/scales/competition/expectedScore';
 
 // Fixtures
-import { POLICY_COMPETITION_STANDARD } from '@Fixtures/policies/POLICY_COMPETITION_STANDARD';
 import { POLICY_COMPETITION_PRESSURE } from '@Fixtures/policies/POLICY_COMPETITION_PRESSURE';
+import { POLICY_COMPETITION_STANDARD } from '@Fixtures/policies/POLICY_COMPETITION_STANDARD';
 import { POLICY_COMPETITION_SWISS } from '@Fixtures/policies/POLICY_COMPETITION_SWISS';
 
 // Engines
 import tournamentEngine from '@Engines/syncEngine';
 import mocksEngine from '@Assemblies/engines/mock';
 
-// Constants
+// constants
 import { POLICY_TYPE_COMPETITION } from '@Constants/policyConstants';
 import { AD_HOC, SWISS } from '@Constants/drawDefinitionConstants';
 import { SINGLES_EVENT } from '@Constants/eventConstants';

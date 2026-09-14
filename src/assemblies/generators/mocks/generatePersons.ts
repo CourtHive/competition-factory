@@ -7,7 +7,7 @@ import { dateFromDay } from '@Tools/dateTime';
 import { ensureInt } from '@Tools/ensureInt';
 import { isMale } from '@Validators/isMale';
 
-// constants
+// constants and fixtures
 import { INVALID_VALUES } from '@Constants/errorConditionConstants';
 import { MALE, FEMALE } from '@Constants/genderConstants';
 import { countries } from '@Fixtures/countryData';

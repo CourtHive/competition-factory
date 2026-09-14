@@ -3,28 +3,36 @@ import { getCheckedInParticipantIds } from '@Query/matchUp/getCheckedInParticipa
 import { getMatchUpScheduleDetails } from '@Query/matchUp/getMatchUpScheduleDetails';
 import { isMatchUpEventType } from '@Helpers/matchUpEventTypes/isMatchUpEventType';
 import { resolveTieFormat } from '@Query/hierarchical/tieFormats/resolveTieFormat';
-import { getOrderedDrawPositions } from './getOrderedDrawPositions';
 import { getCollectionAssignment } from './getCollectionAssignment';
+import { getOrderedDrawPositions } from './getOrderedDrawPositions';
 import { getMatchUpType } from '@Query/matchUp/getMatchUpType';
 import { definedAttributes } from '@Tools/definedAttributes';
-import { attributeFilter } from '@Tools/attributeFilter';
 import { findParticipant } from '@Acquire/findParticipant';
 import { parse } from '@Helpers/matchUpFormatCode/parse';
-import { isConvertableInteger } from '@Tools/math';
+import { attributeFilter } from '@Tools/attributeFilter';
 import { makeDeepCopy } from '@Tools/makeDeepCopy';
+import { isConvertableInteger } from '@Tools/math';
 import { extractDate } from '@Tools/dateTime';
 import { unique } from '@Tools/arrays';
 import { getSide } from './getSide';
 
 // constants and types
 import { POLICY_TYPE_PARTICIPANT } from '@Constants/policyConstants';
-import { isEmbargoed } from '@Query/publishing/isEmbargoed';
 import { QUALIFYING } from '@Constants/drawDefinitionConstants';
+import { isEmbargoed } from '@Query/publishing/isEmbargoed';
 import { BYE } from '@Constants/matchUpStatusConstants';
-import { isMixed } from '@Validators/isMixed';
-import { HydratedMatchUp } from '@Types/hydrated';
 import { SINGLES } from '@Constants/matchUpTypes';
+import { HydratedMatchUp } from '@Types/hydrated';
 import { TEAM } from '@Constants/eventConstants';
+import { isMixed } from '@Validators/isMixed';
+import {
+  ContextContent,
+  ContextProfile,
+  ParticipantMap,
+  PolicyDefinitions,
+  ScheduleTiming,
+  ScheduleVisibilityFilters,
+} from '@Types/factoryTypes';
 import {
   Participant,
   Tournament,
@@ -34,14 +42,6 @@ import {
   SeedAssignment,
   PositionAssignment,
 } from '@Types/tournamentTypes';
-import {
-  ContextContent,
-  ContextProfile,
-  ParticipantMap,
-  PolicyDefinitions,
-  ScheduleTiming,
-  ScheduleVisibilityFilters,
-} from '@Types/factoryTypes';
 
 type AddMatchUpContextArgs = {
   scheduleVisibilityFilters?: ScheduleVisibilityFilters;

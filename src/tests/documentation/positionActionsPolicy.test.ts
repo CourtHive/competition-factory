@@ -3,17 +3,18 @@
  * Location: documentation/docs/policies/positionActions.md
  */
 
-import tournamentEngine from '@Engines/syncEngine';
 import mocksEngine from '@Assemblies/engines/mock';
+import tournamentEngine from '@Engines/syncEngine';
 import { expect, it, describe } from 'vitest';
 
-// Import all relevant constants
+// constants and fixtures
 import POLICY_POSITION_ACTIONS_UNRESTRICTED from '@Fixtures/policies/POLICY_POSITION_ACTIONS_UNRESTRICTED';
 import POLICY_POSITION_ACTIONS_NO_MOVEMENT from '@Fixtures/policies/POLICY_POSITION_ACTIONS_NO_MOVEMENT';
 import { CONSOLATION, FIRST_MATCH_LOSER_CONSOLATION, MAIN } from '@Constants/drawDefinitionConstants';
 import POLICY_POSITION_ACTIONS_DISABLED from '@Fixtures/policies/POLICY_POSITION_ACTIONS_DISABLED';
 import { POLICY_TYPE_POSITION_ACTIONS } from '@Constants/policyConstants';
 
+// constants
 import {
   ADD_NICKNAME,
   ADD_PENALTY,

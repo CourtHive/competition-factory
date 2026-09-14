@@ -1,9 +1,10 @@
-import tournamentEngine from '@Engines/syncEngine';
 import mocksEngine from '@Assemblies/engines/mock';
+import tournamentEngine from '@Engines/syncEngine';
 import { expect, it } from 'vitest';
 
-import { DEFAULTED, WALKOVER } from '@Constants/matchUpStatusConstants';
+// constants
 import { CONSOLATION, FIRST_MATCH_LOSER_CONSOLATION } from '@Constants/drawDefinitionConstants';
+import { DEFAULTED, WALKOVER } from '@Constants/matchUpStatusConstants';
 
 it('supports first loss after receiving WALKVOER or DEFAULT in first round', () => {
   const { tournamentRecord } = mocksEngine.generateTournamentRecord({

@@ -1,6 +1,6 @@
 import { addMinutesToTimeString, extractTime, isValidDateString, sameDay, timeStringMinutes } from '@Tools/dateTime';
 import { generateTimeSlots } from '@Assemblies/generators/scheduling/generateTimeSlots';
-import { allCompetitionMatchUps } from '../matchUps/getAllCompetitionMatchUps';
+import { allCompetitionMatchUps } from '@Query/matchUps/getAllCompetitionMatchUps';
 import { getVenuesAndCourts } from './venuesAndCourtsGetter';
 
 // constants and types

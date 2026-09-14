@@ -1,10 +1,10 @@
 import { getAppliedPolicies } from '@Query/extensions/getAppliedPolicies';
 
 import POLICY_COMPETITIVE_BANDS_DEFAULT from '@Fixtures/policies/POLICY_COMPETITIVE_BANDS_DEFAULT';
+import { DrawDefinition, Event, Structure, Tournament } from '@Types/tournamentTypes';
 import { POLICY_TYPE_COMPETITIVE_BANDS } from '@Constants/policyConstants';
 import { PolicyDefinitions } from '@Types/factoryTypes';
 import { DeltaBand } from './resolveDeltaBand';
-import { DrawDefinition, Event, Structure, Tournament } from '@Types/tournamentTypes';
 
 type ResolveCompetitiveBandsArgs = {
   policyDefinitions?: PolicyDefinitions;

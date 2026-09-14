@@ -3,6 +3,7 @@ import { getDrawData } from '@Query/drawDefinition/getDrawData';
 import mocksEngine from '@Assemblies/engines/mock';
 import { expect, it, describe } from 'vitest';
 
+// constants
 import { UNLINKED_STRUCTURES } from '@Constants/errorConditionConstants';
 import { LOSER, POSITION } from '@Constants/drawDefinitionConstants';
 

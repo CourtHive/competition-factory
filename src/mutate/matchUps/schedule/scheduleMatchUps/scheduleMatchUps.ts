@@ -1,19 +1,19 @@
-import { extractDate, extractTime, isValidDateString, sameDay, zeroPad } from '@Tools/dateTime';
 import { checkParticipantProfileInitialization } from './checkParticipantProfileInitialization';
+import { extractDate, extractTime, isValidDateString, sameDay, zeroPad } from '@Tools/dateTime';
 import { checkRequiredParameters } from '@Helpers/parameters/checkRequiredParameters';
 import { allCompetitionMatchUps } from '@Query/matchUps/getAllCompetitionMatchUps';
 import { modifyParticipantMatchUpsCount } from './modifyParticipantMatchUpsCount';
+import { assignMatchUpVenue } from '@Mutate/matchUps/schedule/assignMatchUpVenue';
+import { addMatchUpScheduledTime } from '@Mutate/matchUps/schedule/scheduledTime';
 import { getPersonRequests } from '@Query/matchUps/scheduling/getPersonRequests';
 import { getMatchUpDependencies } from '@Query/matchUps/getMatchUpDependencies';
 import { checkDependenciesScheduled } from './checkDependenciesScheduled';
 import { updateTimeAfterRecovery } from './updateTimeAfterRecovery';
 import { calculateScheduleTimes } from './calculateScheduleTimes';
 import { findDrawDefinition } from '@Acquire/findDrawDefinition';
-import { getMatchUpIds } from '@Functions/global/extractors';
 import { checkRequestConflicts } from './checkRequestConflicts';
+import { getMatchUpIds } from '@Functions/global/extractors';
 import { processNextMatchUps } from './processNextMatchUps';
-import { addMatchUpScheduledTime } from '../scheduledTime';
-import { assignMatchUpVenue } from '../assignMatchUpVenue';
 import { checkRecoveryTime } from './checkRecoveryTime';
 import { checkDailyLimits } from './checkDailyLimits';
 

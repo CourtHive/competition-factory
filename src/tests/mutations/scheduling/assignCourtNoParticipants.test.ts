@@ -1,7 +1,8 @@
-import tournamentEngine from '@Engines/syncEngine';
 import mocksEngine from '@Assemblies/engines/mock';
+import tournamentEngine from '@Engines/syncEngine';
 import { expect, it } from 'vitest';
 
+// constants
 import { INVALID_MATCHUP_STATUS } from '@Constants/errorConditionConstants';
 import { IN_PROGRESS } from '@Constants/matchUpStatusConstants';
 

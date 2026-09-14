@@ -1,9 +1,10 @@
 import { captureNotices, changedEntities, conformanceViolations, fidelityViolations } from './harness';
 import { setSubscriptions, deleteNotices } from '@Global/state/globalState';
+import { afterAll, afterEach, describe, expect, it } from 'vitest';
 import mocksEngine from '@Assemblies/engines/mock';
 import tournamentEngine from '@Engines/syncEngine';
-import { afterAll, afterEach, describe, expect, it } from 'vitest';
 
+// constants
 import { INDIVIDUAL } from '@Constants/participantConstants';
 
 /**

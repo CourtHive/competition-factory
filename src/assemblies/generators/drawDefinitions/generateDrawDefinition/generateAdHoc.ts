@@ -1,6 +1,6 @@
-import { generateAdHocRounds } from '../drawTypes/adHoc/generateAdHocRounds';
+import { generateAdHocRounds } from '@Generators/drawDefinitions/drawTypes/adHoc/generateAdHocRounds';
+import { drawMatic } from '@Generators/drawDefinitions/drawTypes/adHoc/drawMatic/drawMatic';
 import { addAdHocMatchUps } from '@Mutate/structures/addAdHocMatchUps';
-import { drawMatic } from '../drawTypes/adHoc/drawMatic/drawMatic';
 import { getParticipantId } from '@Functions/global/extractors';
 
 // constants

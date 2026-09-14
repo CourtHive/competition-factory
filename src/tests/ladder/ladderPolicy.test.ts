@@ -9,6 +9,7 @@ import {
   isChallengeInRange,
 } from '@Query/ladder/getLadderPolicy';
 
+// constants
 import { ANY, INSERTION, RANK, RATING, SWAP } from '@Constants/ladderConstants';
 import { POLICY_TYPE_LADDER } from '@Constants/policyConstants';
 

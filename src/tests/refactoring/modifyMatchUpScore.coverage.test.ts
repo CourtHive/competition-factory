@@ -8,6 +8,8 @@ import mocksEngine from '@Assemblies/engines/mock';
 import tournamentEngine from '@Engines/syncEngine';
 import { expect, it, describe } from 'vitest';
 
+// constants
+import { TEAM_EVENT } from '@Constants/eventConstants';
 import {
   DEFAULTED,
   DOUBLE_WALKOVER,
@@ -16,7 +18,6 @@ import {
   TO_BE_PLAYED,
   WALKOVER,
 } from '@Constants/matchUpStatusConstants';
-import { TEAM_EVENT } from '@Constants/eventConstants';
 
 describe('modifyMatchUpScore coverage', () => {
   it('handles WALKOVER status by resetting score to toBePlayed', () => {

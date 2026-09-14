@@ -5,7 +5,7 @@ import { MISSING_SANCTIONING_RECORD, CONDITIONALLY_APPROVED } from '@Constants/s
 import { INVALID_VALUES } from '@Constants/errorConditionConstants';
 import { UUID } from '@Tools/UUID';
 
-// Types
+// types
 import type { SanctioningRecord, Condition } from '@Types/sanctioningTypes';
 
 type ConditionallyApproveArgs = {

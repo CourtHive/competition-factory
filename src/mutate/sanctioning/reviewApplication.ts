@@ -1,9 +1,9 @@
 import { transitionStatus } from './transitionStatus';
 
-// Constants
+// constants
 import { MISSING_SANCTIONING_RECORD, UNDER_REVIEW } from '@Constants/sanctioningConstants';
 
-// Types
+// types
 import type { SanctioningRecord, Reviewer } from '@Types/sanctioningTypes';
 
 type ReviewApplicationArgs = {

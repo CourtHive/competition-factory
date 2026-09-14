@@ -1,9 +1,10 @@
-import { hasSchedule } from '@Query/matchUp/hasSchedule';
 import { visualizeScheduledMatchUps } from './testUtilities/visualizeScheduledMatchUps';
 import { extractTime, timeStringMinutes } from '@Tools/dateTime';
-import competitionEngine from '../engines/syncEngine';
+import { hasSchedule } from '@Query/matchUp/hasSchedule';
+import competitionEngine from '@Engines/syncEngine';
 import { expect, it } from 'vitest';
 
+// constants
 import { DOUBLES, SINGLES } from '@Constants/matchUpTypes';
 
 import tournamentRecord from './goesToTournament.tods.json';

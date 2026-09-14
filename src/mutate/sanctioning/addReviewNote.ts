@@ -1,11 +1,11 @@
 import { UUID } from '@Tools/UUID';
 
-// Constants
+// constants
 import { MISSING_SANCTIONING_RECORD } from '@Constants/sanctioningConstants';
 import { INVALID_VALUES } from '@Constants/errorConditionConstants';
 import { SUCCESS } from '@Constants/resultConstants';
 
-// Types
+// types
 import type { SanctioningRecord, ReviewNote } from '@Types/sanctioningTypes';
 
 type AddReviewNoteArgs = {

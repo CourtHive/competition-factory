@@ -4,6 +4,7 @@ import { expect, it } from 'vitest';
 import fs from 'fs-extra';
 import Ajv from 'ajv';
 
+// constants
 import {
   COMPASS,
   CURTIS_CONSOLATION,
