@@ -512,3 +512,74 @@ it('handles force flag with scheduled court matchUps', () => {
   const court = updatedCourts.find((c) => c.courtId === courtId);
   expect(court.dateAvailability).toEqual([{ date: startDate, startTime: '10:00', endTime: '15:00' }]);
 });
+
+it('preserves a date-less entry rather than writing the string "undefined" as its date', () => {
+  // `Availability.date` is optional and `validateDate` passes a missing one on
+  // purpose — a date-less entry is a court's DEFAULT availability, and the mocks
+  // generate one. Grouping by date in a plain object coerced that `undefined`
+  // into the literal key "undefined", which was then written back as the date:
+  // the default silently became an entry matching no real day.
+  mocksEngine.generateTournamentRecord({ venueProfiles: [{ courtsCount: 1 }], setState: true });
+  const courtId = tournamentEngine.getCourts().courts[0].courtId;
+
+  const result = tournamentEngine.modifyCourtAvailability({
+    dateAvailability: [{ startTime: '07:00', endTime: '19:00' }],
+    courtId,
+  });
+  expect(result.success).toEqual(true);
+
+  const court = tournamentEngine.getCourts().courts.find((c) => c.courtId === courtId);
+  expect(court.dateAvailability.length).toEqual(1);
+  expect(court.dateAvailability[0].date).toBeUndefined();
+  expect(court.dateAvailability[0].startTime).toEqual('07:00');
+  expect(court.dateAvailability[0].endTime).toEqual('19:00');
+});
+
+it('keeps a date-less entry separate from dated ones through a round-trip', () => {
+  // The shape every caller that reads, edits one day and writes the array back
+  // produces — TMX's court-capacity popover among them. The date-less default
+  // must survive alongside the dated entry it sits beside.
+  mocksEngine.generateTournamentRecord({ venueProfiles: [{ courtsCount: 1 }], setState: true });
+  const courtId = tournamentEngine.getCourts().courts[0].courtId;
+
+  tournamentEngine.modifyCourtAvailability({
+    dateAvailability: [
+      { startTime: '07:00', endTime: '19:00' },
+      { date: d210102, startTime: '08:00', endTime: '16:00' },
+    ],
+    courtId,
+  });
+
+  const first = tournamentEngine.getCourts().courts.find((c) => c.courtId === courtId).dateAvailability;
+  expect(first.length).toEqual(2);
+  expect(first.filter((entry) => entry.date === undefined).length).toEqual(1);
+  expect(first.some((entry) => entry.date === 'undefined')).toEqual(false);
+
+  // Write exactly what was read back, which is what a read-modify-write does.
+  tournamentEngine.modifyCourtAvailability({ dateAvailability: first, courtId });
+  const second = tournamentEngine.getCourts().courts.find((c) => c.courtId === courtId).dateAvailability;
+  expect(second).toEqual(first);
+});
+
+it('merges several date-less entries with each other, not with a dated day', () => {
+  mocksEngine.generateTournamentRecord({ venueProfiles: [{ courtsCount: 1 }], setState: true });
+  const courtId = tournamentEngine.getCourts().courts[0].courtId;
+
+  const result = tournamentEngine.modifyCourtAvailability({
+    dateAvailability: [
+      { startTime: '08:00', endTime: '12:00' },
+      { startTime: '10:00', endTime: '17:00' },
+      { date: d210102, startTime: '09:00', endTime: '11:00' },
+    ],
+    courtId,
+  });
+  expect(result.totalMergeCount).toEqual(1);
+
+  const entries = tournamentEngine.getCourts().courts.find((c) => c.courtId === courtId).dateAvailability;
+  const dateless = entries.filter((entry) => entry.date === undefined);
+  expect(dateless.length).toEqual(1);
+  expect(dateless[0].startTime).toEqual('08:00');
+  expect(dateless[0].endTime).toEqual('17:00');
+  // The dated day is untouched by the date-less merge.
+  expect(entries.find((entry) => entry.date === d210102).endTime).toEqual('11:00');
+});
