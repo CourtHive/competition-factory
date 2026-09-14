@@ -90,6 +90,48 @@ export default [
     },
   },
   {
+    /**
+     * TYPE-AWARE LINTING. Scoped to every `.ts` under `src` — the tree `pnpm lint` and
+     * `verify:lint` cover — so nothing else pays for the TypeScript program.
+     *
+     * Until this block existed the factory had no type-aware linting at all, and the gap was silent:
+     * `pnpm lint` sat at zero warnings while SonarQube reported ~1800 S6606
+     * (prefer-nullish-coalescing). `eslint-plugin-sonarjs` does not ship that rule under any name —
+     * it lives in the Sonar scanner — so nothing in the repo could see what Sonar was seeing.
+     *
+     * The project is `tsconfig.base.json` rather than `tsconfig.json` DELIBERATELY: the build config
+     * excludes the `.test.ts` files, and a file outside the program is a parser error rather than a
+     * lint result. Lint covers the tests, so lint needs the config that includes them.
+     */
+    files: ['src/**/*.ts'],
+    languageOptions: {
+      parserOptions: {
+        project: './tsconfig.base.json',
+        tsconfigRootDir: import.meta.dirname,
+      },
+    },
+    rules: {
+      /**
+       * `a || b` -> `a ?? b`, but ONLY where the two are provably the same expression.
+       *
+       * `ignorePrimitives` is the whole point of this configuration. With it off the rule reports
+       * 1823 sites; 1747 of those have a left-hand side whose type admits `''`, `0` or `false`, so
+       * the swap is a behaviour change rather than a cleanup — and the rule offers it as a
+       * suggestion, which `--fix` will happily apply 1747 times. Triaged before switching it on: of
+       * the 167 number-typed sites, 92 default to `0` (identical either way) and the 44 unique
+       * non-zero defaults are matchUpFormat values (`setTo || 6`, `bestOf || 3`, `winBy || 2`,
+       * `tiebreakTo || 7`) where `0` is not a legal value. No defect among them.
+       *
+       * So the rule is configured to report exactly the object/array/function cases, where `||` and
+       * `??` cannot disagree. Those were fixed when this landed; `--max-warnings 0` keeps it at zero.
+       */
+      '@typescript-eslint/prefer-nullish-coalescing': [
+        'warn',
+        { ignorePrimitives: { string: true, number: true, boolean: true, bigint: true } },
+      ],
+    },
+  },
+  {
     files: ['**/*.test.ts'],
     rules: {
       'sonarjs/no-duplicate-string': 'off',
