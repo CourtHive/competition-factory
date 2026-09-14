@@ -103,7 +103,13 @@ function calledBeforeTournamentStart({
  *  - Pass `null` or `undefined` to clear (explicit removal).
  *  - Subsequent set calls overwrite the prior value.
  *  - Persists past START_TIME as a historical record — NOT auto-cleared on
- *    lifecycle transition. Clear only via explicit removal.
+ *    lifecycle transition. Being called, started, suspended or completed never
+ *    retires the stamp.
+ *  - A PLACEMENT change does retire it, because the stamp is a claim about a
+ *    placement rather than about the matchUp: `clearScheduledMatchUps` and
+ *    `clearMatchUpSchedule` drop it when they clear the placement, and
+ *    `addMatchUpScheduleItems` drops it when a re-date sheds the prior day's
+ *    grid position (unless that same call supplies a new `calledAt`).
  *  - Distinct from `scheduledTime` (plan), `courtId` (place), and the
  *    `START_TIME` timeItem (actually started). May coexist with all of them.
  *  - This is a CODES 5.0.0 NEW first-class attribute — no legacy timeItem
@@ -149,7 +155,7 @@ export function setMatchUpCalledAt(params: SetMatchUpCalledAtArgs) {
   if (calledAt === undefined || calledAt === null) {
     if (matchUp.schedule) delete matchUp.schedule.calledAt;
   } else {
-    if (!matchUp.schedule) matchUp.schedule = {};
+    matchUp.schedule ??= {};
     matchUp.schedule.calledAt = calledAt;
   }
 
