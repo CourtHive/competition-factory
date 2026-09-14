@@ -119,29 +119,52 @@ export function modifyCourtAvailability({
   return { ...SUCCESS, totalMergeCount };
 }
 
+/**
+ * Group by date, merge overlapping windows within each date, and flatten back.
+ *
+ * ── Why a Map and not an object ──
+ *
+ * `Availability.date` is OPTIONAL, and deliberately so: an entry with no date is
+ * a court's default availability, `validateDate` passes it on purpose, and the
+ * mocks generate one. An object keyed by date coerces that `undefined` into the
+ * literal string key `"undefined"`, which `Object.keys` then hands back as the
+ * date to write — so a single round-trip turned a court's default window into
+ *
+ *   { date: "undefined", startTime: "07:00", endTime: "19:00" }
+ *
+ * an entry matching no real day, with the default silently gone. Every caller
+ * that reads a court's `dateAvailability`, edits one day and writes the array
+ * back hit this; TMX's court-capacity popover does exactly that.
+ *
+ * A `Map` keys by value, so `undefined` stays `undefined` and the flatten step
+ * can omit the property entirely rather than inventing one.
+ */
 function sortAndMergeDateAvailability(dateAvailability) {
   let totalMergeCount = 0;
 
-  const availabilityByDate = dateAvailability.reduce((byDate, availability) => {
+  const availabilityByDate = new Map<string | undefined, any[]>();
+  for (const availability of dateAvailability) {
     const { date, startTime, endTime, bookings } = availability;
-    if (!byDate[date]) byDate[date] = [];
-    byDate[date].push({ startTime, endTime, bookings });
-    return byDate;
-  }, {});
+    const entries = availabilityByDate.get(date);
+    if (entries) entries.push({ startTime, endTime, bookings });
+    else availabilityByDate.set(date, [{ startTime, endTime, bookings }]);
+  }
 
   const updatedDateAvailability: any[] = [];
 
-  Object.keys(availabilityByDate).forEach((date) => {
-    availabilityByDate[date].sort(startTimeSort);
-    const { mergedAvailability, mergeCount } = getMergedAvailability(availabilityByDate[date]);
+  for (const [date, entries] of availabilityByDate) {
+    entries.sort(startTimeSort);
+    const { mergedAvailability, mergeCount } = getMergedAvailability(entries);
     updatedDateAvailability.push(
-      ...mergedAvailability.map((availability: any) => ({
-        date,
-        ...availability,
-      })),
+      // `date` is spread in only when there is one. Writing `date: undefined`
+      // would survive a structuredClone into the record and read as a present
+      // key holding nothing, which is a third state nobody asked for.
+      ...mergedAvailability.map((availability: any) =>
+        date === undefined ? { ...availability } : { date, ...availability },
+      ),
     );
     totalMergeCount += mergeCount;
-  });
+  }
 
   return { updatedDateAvailability, totalMergeCount };
 }
