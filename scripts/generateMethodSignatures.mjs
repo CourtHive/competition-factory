@@ -229,8 +229,13 @@ for (const path of sortedPaths) {
   const uniq = Array.from(new Map(entries.map((e) => [e.sourceName, e])).values());
   // Mirror Prettier's collapse behavior (printWidth 120 in .prettierrc.json)
   // so prebuild output stays clean without a follow-up `prettier --write`.
+  // A LONE specifier always stays on one line no matter how long: Prettier will
+  // not break `import type { x } from '<very long path>';`, because breaking it
+  // does not shorten the offending part. Emitting it multi-line here makes the
+  // pre-commit `prettier --write` collapse it again and `check:method-signatures`
+  // report drift — which is exactly what happened on the first pass of #4861.
   const single = `import type { ${uniq.map((e) => e.sourceName).join(', ')} } from '${path}';`;
-  if (single.length <= 120) {
+  if (uniq.length === 1 || single.length <= 120) {
     importChunks.push({ multiline: false, width: single.length, path, lines: [single] });
   } else {
     importChunks.push({

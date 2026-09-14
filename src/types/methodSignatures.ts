@@ -20,6 +20,12 @@
 
 import type { EngineMethod } from './factoryTypes';
 
+import type { getEligibleVoluntaryConsolationParticipants } from '@Query/drawDefinition/getEligibleVoluntaryConsolationParticipants';
+import type { generateDrawTypeAndModifyDrawDefinition } from '@Generators/drawDefinitions/generateDrawTypeAndModifyDrawDefinition';
+import type { generateAndPopulatePlayoffStructures } from '@Generators/drawDefinitions/generateAndPopulatePlayoffStructures';
+import type { generateDrawMaticRound } from '@Generators/drawDefinitions/drawTypes/adHoc/drawMatic/generateDrawMaticRound';
+import type { modifyPersonRequests } from '@Mutate/matchUps/schedule/scheduleMatchUps/personRequests/modifyPersonRequests';
+import type { removePersonRequests } from '@Mutate/matchUps/schedule/scheduleMatchUps/personRequests/removePersonRequests';
 import type { generateDrawDefinition } from '@Generators/drawDefinitions/generateDrawDefinition/generateDrawDefinition';
 import type { calculateMatchStatistics, enrichPointHistory, getQuickStats } from '@Query/scoring/statistics/standalone';
 import type { getAvailableMatchUpsCount } from '@Generators/drawDefinitions/drawTypes/adHoc/getAvailableMatchUpsCount';
@@ -629,8 +635,6 @@ import type {
   attachPlayoffStructures,
   attachStructures,
 } from '@Mutate/drawDefinitions/attachStructures';
-import type { getEligibleVoluntaryConsolationParticipants } from '@Query/drawDefinition/getEligibleVoluntaryConsolationParticipants';
-import type { generateDrawTypeAndModifyDrawDefinition } from '@Generators/drawDefinitions/generateDrawTypeAndModifyDrawDefinition';
 import type {
   addEventTimeItem,
   addParticipantTimeItem,
@@ -648,14 +652,10 @@ import type {
   getLadderPolicy,
   isChallengeInRange,
 } from '@Query/ladder/getLadderPolicy';
-import type { generateAndPopulatePlayoffStructures } from '@Generators/drawDefinitions/generateAndPopulatePlayoffStructures';
 import type {
   assignMatchUpScorekeeper,
   removeMatchUpScorekeeper,
 } from '@Mutate/matchUps/schedule/assignMatchUpScorekeeper';
-import type { generateDrawMaticRound } from '@Generators/drawDefinitions/drawTypes/adHoc/drawMatic/generateDrawMaticRound';
-import type { modifyPersonRequests } from '@Mutate/matchUps/schedule/scheduleMatchUps/personRequests/modifyPersonRequests';
-import type { removePersonRequests } from '@Mutate/matchUps/schedule/scheduleMatchUps/personRequests/removePersonRequests';
 import type {
   assignMatchUpTimekeeper,
   removeMatchUpTimekeeper,
