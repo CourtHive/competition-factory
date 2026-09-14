@@ -586,6 +586,8 @@ function assignNextRoundPositions({
     const pid1 = advancingParticipantIds[i * 2];
     const pid2 = advancingParticipantIds[i * 2 + 1];
 
+    // `nextPosition++` twice, so pos1 < pos2: ascending by construction. See the canonical
+    // statement in `getOrderedDrawPositions`.
     matchUp.drawPositions = [pos1, pos2];
 
     const assignment1: any = { drawPosition: pos1, participantId: pid1 };
@@ -661,6 +663,7 @@ function findUnfilledPositions({ targetMatchUps, targetPositionAssignments, targ
       if (!matchUp.drawPositions?.length || !matchUp.drawPositions.some(Boolean)) {
         const pos1 = nextPosition++;
         const pos2 = nextPosition++;
+        // ascending by construction (`nextPosition++` twice) — see `getOrderedDrawPositions`.
         matchUp.drawPositions = [pos1, pos2];
         unfilledPositions.push(pos1, pos2);
       }

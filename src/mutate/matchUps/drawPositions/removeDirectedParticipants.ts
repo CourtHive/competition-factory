@@ -93,6 +93,8 @@ export function removeDirectedParticipants(params): {
 
   const { positionAssignments } = structureAssignedDrawPositions({ structure });
 
+  // Derives a side from drawPosition ORDER — valid only because drawPositions are stored ascending.
+  // See the canonical statement in `getOrderedDrawPositions`.
   const winningIndex = winningSide - 1;
   const losingIndex = 1 - winningIndex;
   const winningDrawPosition = drawPositions[winningIndex];

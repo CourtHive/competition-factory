@@ -110,6 +110,7 @@ function removeDrawPosition({
     }
   }
 
+  // Removal, not substitution: preserves ascending order. See `getOrderedDrawPositions`.
   matchUp.drawPositions = (matchUp.drawPositions ?? [])
     .map((drawPosition) => (drawPosition === targetDrawPosition ? undefined : drawPosition))
     .filter(Boolean);

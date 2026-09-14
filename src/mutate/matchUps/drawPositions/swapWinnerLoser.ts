@@ -36,12 +36,24 @@ export function swapWinnerLoser(params) {
 
   pushGlobalLog({ method: 'swapWinnerLoser', existingWinnerSubsequentMatchUps });
 
-  // replace new winningSide drawPosition in all subsequent matches in structure
+  /**
+   * Replace the advancing drawPosition in every subsequent matchUp — AND RE-SORT.
+   *
+   * A positional `map` SUBSTITUTES in place and therefore cannot preserve ascending order: this line
+   * rewrote a round-3 matchUp holding [4, 5] to [7, 5] (census seed 9000012, DOUBLE_ELIMINATION
+   * 8/7), reported as DRAW_POSITIONS_NOT_SORTED — 25 findings across two 600-seed windows, all from
+   * here. The ascending order is the side/position binding, and readers resolve the WRONG
+   * participant without it.
+   *
+   * The rule, the three reader idioms that depend on it, and the survey of every other writer are
+   * stated once in `getOrderedDrawPositions`. Do not remove the sort below.
+   */
   existingWinnerSubsequentMatchUps.forEach((matchUp) => {
-    matchUp.drawPositions =
+    matchUp.drawPositions = (
       matchUp.drawPositions?.map((drawPosition) =>
         drawPosition === existingWinnerDrawPosition ? existingLoserDrawPosition : drawPosition,
-      ) ?? [];
+      ) ?? []
+    ).sort((a, b) => (typeof a === 'number' && typeof b === 'number' ? a - b : 0));
     modifyMatchUpNotice({
       tournamentId: tournamentRecord?.tournamentId,
       eventId: params.event?.eventId,

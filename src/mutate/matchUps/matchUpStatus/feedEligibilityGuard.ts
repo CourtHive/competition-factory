@@ -36,6 +36,20 @@ import { DrawDefinition } from '@Types/tournamentTypes';
  *
  * Returns the offending context when the change must be refused, otherwise undefined.
  */
+/**
+ * The drawPosition of a decided matchUp's winner, or of its loser.
+ *
+ * Bound through `sides` by `sideNumber`, never by indexing `drawPositions[winningSide - 1]`.
+ * The two agree only while the ascending-sort invariant holds, and this guard sits DOWNSTREAM of
+ * `swapWinnerLoser`, which rewrites `drawPositions` positionally — it broke that invariant until
+ * the re-sort was added alongside this. Reading through `sides` cannot be wrong either way, because
+ * `getOrderedDrawPositions` resolves the binding itself.
+ */
+function sideDrawPosition(matchUp: any, sideNumber?: number): number | undefined {
+  const side = (matchUp?.sides ?? []).find((candidate: any) => candidate?.sideNumber === sideNumber);
+  return typeof side?.drawPosition === 'number' ? side.drawPosition : undefined;
+}
+
 export function feedEligibilityChange({
   inContextDrawMatchUps,
   drawDefinition,
@@ -73,12 +87,14 @@ export function feedEligibilityChange({
   const feedingRoundNumber = (feedLink as any).source?.roundNumber;
   if (!feedingRoundNumber || (matchUp.roundNumber ?? 0) >= feedingRoundNumber) return undefined;
 
-  const winnerDrawPosition = matchUp.drawPositions?.[matchUp.winningSide - 1];
-  if (typeof winnerDrawPosition !== 'number') return undefined;
-
   const structureMatchUps = (inContextDrawMatchUps ?? []).filter(
     (candidate: any) => candidate.structureId === structure?.structureId && !candidate.collectionId,
   );
+
+  // sides come from the inContext projection, where the side/position binding is already resolved
+  const inContextSource = structureMatchUps.find((candidate: any) => candidate.matchUpId === matchUp.matchUpId);
+  const winnerDrawPosition = sideDrawPosition(inContextSource, matchUp.winningSide);
+  if (typeof winnerDrawPosition !== 'number') return undefined;
 
   // Does a feed decision involving this participant even exist yet? It does only when the feeding
   // round matchUp they reached has been decided AND they are its loser — a participant who won it
@@ -88,7 +104,7 @@ export function feedEligibilityChange({
       candidate.roundNumber === feedingRoundNumber && candidate.drawPositions?.includes(winnerDrawPosition),
   );
   if (!feedingMatchUp?.winningSide) return undefined;
-  const feedingWinnerDrawPosition = feedingMatchUp.drawPositions?.[feedingMatchUp.winningSide - 1];
+  const feedingWinnerDrawPosition = sideDrawPosition(feedingMatchUp, feedingMatchUp.winningSide);
   if (feedingWinnerDrawPosition === winnerDrawPosition) return undefined;
 
   /**

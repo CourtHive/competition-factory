@@ -160,6 +160,8 @@ function handleLoserMatchUp({
   }
 
   const { feedRound, drawPositions, matchUpId } = loserMatchUp;
+  // Derives a side from drawPosition ORDER — valid only because drawPositions are stored ascending.
+  // See the canonical statement in `getOrderedDrawPositions`.
   const walkoverWinningSide: number | undefined = feedRound ? 2 : 2 - drawPositions.indexOf(loserTargetDrawPosition);
   logAdvancement(stack, {
     color: 'cyan',
@@ -215,6 +217,8 @@ function handleEmptyExitLoser({ loserTargetDrawPosition, sourceMatchUp, loserMat
     // derivation the sibling non-empty branch uses for `walkoverWinningSide`. Measured across those
     // 223 firings it resolves to a valid side every time, and to the side the existing provenance
     // does NOT hold in every case but one — a re-score of the same side, where replacing is right.
+    // `indexOf` as a side number — valid only because drawPositions are stored ascending.
+    // See the canonical statement in `getOrderedDrawPositions`.
     const exitingSideNumber = (loserMatchUp.drawPositions ?? []).indexOf(loserTargetDrawPosition) + 1;
     const arrivingProvenance = buildCarriedExitProvenance({
       previousMatchUpStatus: params.matchUpStatus,

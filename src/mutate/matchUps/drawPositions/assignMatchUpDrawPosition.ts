@@ -302,6 +302,8 @@ function applyPositionToMatchUp({
   // re-sorted, so the winning side is the side the advancing participant now occupies
   // in updatedDrawPositions — NOT the pre-sort winningSide (which, after the sort, can
   // point at the exiting/loser side). Mirrors resolvePropagatedExitOnAdvance (BYE path).
+  // `indexOf` as a side number — valid only because drawPositions are stored ascending.
+  // See the canonical statement in `getOrderedDrawPositions`.
   const advancedExitWinningSide = isPropagatedExit ? updatedDrawPositions.indexOf(drawPosition) + 1 : undefined;
   const exitWinningSide =
     (isDoubleExitExit &&
@@ -376,6 +378,8 @@ function applyPositionToMatchUp({
  * pending exit that has no winningSide yet advances exactly as before.
  */
 function arrivesOnExitingSide(matchUp: any, drawPosition: number): boolean {
+  // Derives a side from drawPosition ORDER — valid only because drawPositions are stored ascending.
+  // See the canonical statement in `getOrderedDrawPositions`.
   const winningDrawPosition = matchUp?.winningSide ? matchUp?.drawPositions?.[matchUp.winningSide - 1] : undefined;
   return !!winningDrawPosition && winningDrawPosition !== drawPosition;
 }
