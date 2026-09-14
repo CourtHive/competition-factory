@@ -23,7 +23,7 @@ import { SUCCESS } from '@Constants/resultConstants';
 function placeCodeAtSide(statusCodes: string[], sideNumber: number, code?: string) {
   if (code === undefined) return;
   const index = sideNumber - 1;
-  for (let i = 0; i < index; i++) if (statusCodes[i] === undefined) statusCodes[i] = '';
+  for (let i = 0; i < index; i++) statusCodes[i] ??= '';
   statusCodes[index] = code;
 }
 

@@ -28,7 +28,7 @@ export function getEnabledStructures({
     (actionType === POSITION_ACTION && POLICY_POSITION_ACTIONS_DEFAULT) ||
     (actionType === MATCHUP_ACTION && POLICY_MATCHUP_ACTIONS_DEFAULT);
 
-  const actionsPolicy = policyType && (appliedPolicies?.[policyType] || defaultPolicy?.[policyType]);
+  const actionsPolicy = policyType && (appliedPolicies?.[policyType] ?? defaultPolicy?.[policyType]);
 
   const relevantLinks = drawDefinition.links?.filter((link) => link?.target?.structureId === structure?.structureId);
   const targetFeedProfiles = relevantLinks?.map(({ target }) => target.feedProfile) ?? [];

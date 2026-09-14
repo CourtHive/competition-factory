@@ -20,10 +20,10 @@ export function getParticipantScaleItem(params: GetParticipantScaleItemArgs): {
   const { tournamentRecord, scaleAttributes, participantId } = params;
 
   const tournamentRecords =
-    params.tournamentRecords ||
+    params.tournamentRecords ??
     (tournamentRecord && {
       [tournamentRecord.tournamentId]: tournamentRecord,
-    }) ||
+    }) ??
     {};
 
   if (!participantId) return { error: MISSING_PARTICIPANT_ID };

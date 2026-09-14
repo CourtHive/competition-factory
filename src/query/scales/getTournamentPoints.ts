@@ -68,7 +68,7 @@ function calculateBonusPoints(primaryAwardProfile, bestFinishingPosition, level)
 function resolveAwardCategory(category, gender) {
   if (!gender) return category;
   if (category?.gender) return category;
-  return { ...(category ?? {}), gender };
+  return { ...category, gender };
 }
 
 function resolveLineValue(levelValue, collectionPosition) {

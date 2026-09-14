@@ -243,7 +243,7 @@ const scenarios: Scenario[] = [
       tournamentEngine.modifyParticipant({
         participant: {
           ...p,
-          person: { ...(p.person ?? {}), standardGivenName: 'Pete', standardFamilyName: 'Sampras' },
+          person: { ...p.person, standardGivenName: 'Pete', standardFamilyName: 'Sampras' },
         },
       });
     },

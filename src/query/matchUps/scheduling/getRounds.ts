@@ -98,8 +98,8 @@ export function getRounds({
     Object.assign({}, ...profileRounds.map((profile) => ({ [profile.id]: profile })));
 
   const consideredMatchUps =
-    inContextMatchUps ||
-    (tournamentRecords && allCompetitionMatchUps({ tournamentRecords, matchUpFilters })?.matchUps) ||
+    inContextMatchUps ??
+    (tournamentRecords && allCompetitionMatchUps({ tournamentRecords, matchUpFilters })?.matchUps) ??
     [];
 
   const excludedRounds: any[] = [];

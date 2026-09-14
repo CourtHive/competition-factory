@@ -98,7 +98,7 @@ export function getMatchUpScheduleDetails(params: GetMatchUpScheduleDetailsArgs)
     matchUp.drawId
   ) {
     let drawDefinition =
-      params.drawDefinition ||
+      params.drawDefinition ??
       event?.drawDefinitions?.find((drawDefinition) => drawDefinition.drawId === matchUp.drawId);
 
     if (!drawDefinition && tournamentRecord) {
@@ -113,8 +113,7 @@ export function getMatchUpScheduleDetails(params: GetMatchUpScheduleDetailsArgs)
       : undefined;
 
     matchUpType =
-      params.matchUpType ||
-      structure?.matchUpType ||
+      (params.matchUpType ?? structure?.matchUpType) ||
       drawDefinition?.matchUpType ||
       (event?.eventType !== TEAM && event?.eventType);
   }

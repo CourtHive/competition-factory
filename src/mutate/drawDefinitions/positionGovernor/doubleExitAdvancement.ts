@@ -225,8 +225,8 @@ function handleEmptyExitLoser({ loserTargetDrawPosition, sourceMatchUp, loserMat
     // `getSideExitProvenance` rather than the raw field so the union still finds the first arrival's
     // origin under LEGACY write mode, where nothing writes the native field.
     const provenance = {
-      ...(getSideExitProvenance({ matchUp: noContextLoserMatchUp }) ?? {}),
-      ...(arrivingProvenance ?? {}),
+      ...getSideExitProvenance({ matchUp: noContextLoserMatchUp }),
+      ...arrivingProvenance,
     };
 
     // GENERATED, not hand-built. The previous pair was `[{ matchUpStatus: EXIT, previousMatchUpStatus:
@@ -430,8 +430,8 @@ function conditionallyAdvanceDrawPosition(params) {
   // its projection. `getSideExitProvenance` rather than the raw field so the union still finds an
   // earlier origin under LEGACY write mode, where nothing writes the native field.
   const provenance = {
-    ...(getSideExitProvenance({ matchUp: noContextTargetMatchUp }) ?? {}),
-    ...(newProvenance ?? {}),
+    ...getSideExitProvenance({ matchUp: noContextTargetMatchUp }),
+    ...newProvenance,
   };
 
   // A PROJECTION of provenance, replacing a second, independent derivation of the same facts. Where

@@ -557,7 +557,7 @@ describe('setServer(): mid-match server correction', () => {
     }
 
     // Verify set 1 points have correct servers
-    const set1Points = engine.getState().history?.points || [];
+    const set1Points = engine.getState().history?.points ?? [];
     expect(set1Points.length).toBe(24); // 6 games * 4 points
     // Game 0 points should have server 0
     expect(set1Points[0].server).toBe(0);
@@ -575,7 +575,7 @@ describe('setServer(): mid-match server correction', () => {
     winGameByPoints(engine, 0);
 
     // Verify set 1 points are UNCHANGED (not retroactively flipped)
-    const allPoints = engine.getState().history?.points || [];
+    const allPoints = engine.getState().history?.points ?? [];
     expect(allPoints[0].server).toBe(0); // game 0 set 1
     expect(allPoints[4].server).toBe(1); // game 1 set 1
 

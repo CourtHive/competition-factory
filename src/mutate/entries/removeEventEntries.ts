@@ -62,7 +62,7 @@ export function removeEventEntries({
     .filter((participantId) => !assignedParticipantIds.includes(participantId));
 
   const stageParticipantIds = (
-    (stage && event.entries?.filter((entry) => entry.entryStage && entry.entryStage === stage)) ||
+    (stage && event.entries?.filter((entry) => entry.entryStage && entry.entryStage === stage)) ??
     []
   )
     .map(getParticipantId)

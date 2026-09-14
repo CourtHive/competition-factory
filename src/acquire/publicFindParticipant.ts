@@ -24,10 +24,10 @@ export function publicFindParticipant(params: PublicFindParticipantArgs): {
   const { tournamentRecord, policyDefinitions, contextProfile, participantId, personId } = params;
 
   const tournamentRecords =
-    params.tournamentRecords ||
+    params.tournamentRecords ??
     (tournamentRecord && {
       [tournamentRecord.tournamentId]: tournamentRecord,
-    }) ||
+    }) ??
     {};
 
   if (typeof participantId !== 'string' && typeof personId !== 'string')

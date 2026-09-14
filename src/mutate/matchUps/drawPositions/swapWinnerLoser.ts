@@ -1,11 +1,20 @@
 import { getAllStructureMatchUps } from '@Query/matchUps/getAllStructureMatchUps';
+import { getDrawPositionWinCount } from '@Query/matchUp/getDrawPositionWinCount';
+import { assignDrawPositionBye } from '@Mutate/matchUps/drawPositions/assignDrawPositionBye';
 import { modifyMatchUpScore } from '@Mutate/matchUps/score/modifyMatchUpScore';
 import { getPositionAssignments } from '@Query/drawDefinition/positionsGetter';
 import { modifyMatchUpNotice } from '@Mutate/notifications/drawNotifications';
 import { pushGlobalLog } from '@Functions/global/globalLog';
 
+// constants
+import { FIRST_MATCHUP } from '@Constants/drawDefinitionConstants';
+
 /**
- * for FMLC 2nd round matchUps test whether it works if a first loss for both participants
+ * Swap the winner and loser of an already-decided matchUp, carrying the change downstream.
+ *
+ * Reached only via `allowChangePropagation`, which `resolveAndApplyOutcome` checks BEFORE the
+ * `activeDownstream` dispatch — so none of the refusals that guard an ordinary re-score apply here.
+ * TMX's score modal sends that flag on every score, which makes this the production correction path.
  */
 export function swapWinnerLoser(params) {
   const { tournamentRecord, inContextMatchUp, structure, drawDefinition, event } = params;
@@ -75,6 +84,44 @@ export function swapWinnerLoser(params) {
     subsequentStructureIds.includes(structureId),
   );
 
+  /**
+   * A FIRST_MATCH consolation is not a mirror of the main draw, so the feed does not simply swap.
+   *
+   * `directLoser` admits a loser to a `FIRST_MATCHUP` target only with zero prior scored wins
+   * (`validForConsolation`), and places a BYE at the backdraw position otherwise. Swapping the
+   * assignment blindly ignored that rule: flipping a result whose new loser had ALREADY won a match
+   * wrote them into the consolation anyway — measured on seed 9000349, where Sheldon Shelley
+   * (1 scored win in Main R1) replaced Leeloo Goldstein (a round-1 BYE, so the flipped matchUp was
+   * genuinely her first). `getDrawInconsistencies` cannot see it: it reports eligible-but-ABSENT
+   * only, and has no ineligible-but-PRESENT counterpart.
+   *
+   * Counted over PRIOR rounds only. This runs BEFORE `modifyMatchUpScore` applies the new
+   * winningSide, so the matchUp being swapped still records the incoming loser as its winner;
+   * including it would count the very win that is being taken away. Prior rounds are also exactly
+   * what the rule means by "had already won a match".
+   */
+  const { loserTargetLink: feedLink } = params.targetData.targetLinks;
+  const firstMatchUpTargetStructureId =
+    feedLink?.linkCondition === FIRST_MATCHUP ? feedLink?.target?.structureId : undefined;
+  // `inContext: true` is required, exactly as `directLoser` sources the same count: without it the
+  // sides carry no `drawPosition`, `getDrawPositionWinCount` matches no side and returns 0, and
+  // every participant looks like a first-match loser.
+  const { matchUps: inContextStructureMatchUps } = getAllStructureMatchUps({
+    afterRecoveryTimes: false,
+    inContext: true,
+    drawDefinition,
+    structure,
+    event,
+  });
+  const priorRoundMatchUps = (inContextStructureMatchUps ?? []).filter(
+    ({ roundNumber }) => (roundNumber ?? 0) < matchUpRoundNumber,
+  );
+  const incomingLoserHasPriorWin =
+    getDrawPositionWinCount({
+      sourceMatchUps: priorRoundMatchUps,
+      drawPosition: existingWinnerDrawPosition,
+    }) > 0;
+
   // for each subsequent structure swap drawPosition assignments (where applicable)
   subsequentStructures.forEach((structure) => {
     const { positionAssignments } = getPositionAssignments({ structure });
@@ -92,6 +139,26 @@ export function swapWinnerLoser(params) {
       : undefined;
 
     if (existingWinnerAssignment) existingWinnerAssignment.participantId = existingLoserParticipantId;
+
+    // The incoming loser is not a first-match loser: the slot they would have taken becomes a BYE,
+    // which is what `directLoser` does for the same participant on the same link.
+    if (
+      existingLoserAssignment &&
+      structure.structureId === firstMatchUpTargetStructureId &&
+      incomingLoserHasPriorWin
+    ) {
+      delete existingLoserAssignment.participantId;
+      assignDrawPositionBye({
+        drawPosition: existingLoserAssignment.drawPosition,
+        structureId: structure.structureId,
+        byeFromPropagation: true,
+        tournamentRecord,
+        drawDefinition,
+        event,
+      });
+      return;
+    }
+
     if (existingLoserAssignment) existingLoserAssignment.participantId = existingWinnerParticipantId;
   });
 

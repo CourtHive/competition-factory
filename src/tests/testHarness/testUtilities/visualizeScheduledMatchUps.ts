@@ -35,7 +35,7 @@ export function visualizeScheduledMatchUps({ scheduledMatchUps, showGlobalLog })
     const roundMatchUps =
       getRoundMatchUps({
         matchUps: structureMatchUps,
-      })?.roundMatchUps || [];
+      })?.roundMatchUps ?? [];
     Object.keys(roundMatchUps).forEach((roundNumber) => {
       pushGlobalLog(
         {

@@ -33,7 +33,7 @@ export function getStructureGroups({ drawDefinition }: { drawDefinition: DrawDef
 
   const initStructureProfile = (structureId) => {
     const profile =
-      structureProfiles.get(structureId) ||
+      structureProfiles.get(structureId) ??
       (structureProfiles.set(structureId, {
         drawSources: [],
         drawTargets: [],

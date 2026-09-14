@@ -84,10 +84,10 @@ export function getVenuesAndCourts(params: GetVenuesAndCourtsArgs): ResultType &
   } = params;
 
   const tournamentRecords =
-    params.tournamentRecords ||
+    params.tournamentRecords ??
     (params.tournamentRecord && {
       [params.tournamentRecord.tournamentId]: params.tournamentRecord,
-    }) ||
+    }) ??
     {};
 
   const uniqueVenueIds: string[] = [];

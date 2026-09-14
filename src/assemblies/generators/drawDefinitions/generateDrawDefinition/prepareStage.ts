@@ -185,7 +185,7 @@ function scaledEntriesSeeding(params) {
   const eventType = event?.eventType;
 
   const scaledEntries =
-    getSeedingScaleEntries({ ...params, ageCategoryCode, categoryName, eventType }) ||
+    getSeedingScaleEntries({ ...params, ageCategoryCode, categoryName, eventType }) ??
     (seedByRanking && getRankingScaleEntries({ ...params, ageCategoryCode, categoryName, eventType }));
 
   const scaledEntriesCount = scaledEntries?.length ?? 0;

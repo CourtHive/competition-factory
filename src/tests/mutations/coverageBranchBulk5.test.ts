@@ -229,7 +229,7 @@ describe('getProfileRounds branch coverage', () => {
     // No scheduling profile is set, so it comes from the extension (or NOT_FOUND)
     const result = getProfileRounds({ tournamentRecord });
     // will either be NOT_FOUND or return profileRounds depending on state
-    expect(result.error || result.profileRounds).toBeDefined();
+    expect(result.error ?? result.profileRounds).toBeDefined();
   });
 
   it('accepts a direct schedulingProfile with venues and rounds', () => {

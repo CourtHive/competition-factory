@@ -27,6 +27,17 @@ import { SUCCESS } from '@Constants/resultConstants';
 //  - DROPPED_PROGRESSION: a LOSER- or WINNER-linked source matchUp whose feeding participant is
 //    ELIGIBLE to feed the target structure but does not appear anywhere in that structure's
 //    positionAssignments. The `direction` field records LOSER vs WINNER. (error)
+//  - INELIGIBLE_PROGRESSION: the mirror of the above — a participant who is NOT eligible to feed the
+//    target structure yet appears in its positionAssignments. Only a FIRST_MATCHUP loser link can
+//    produce this, because `isFedLoserEligible` returns true unconditionally for every other link.
+//    (error)
+//
+// The scan was ABSENCE-ONLY until 2026-09-14, and the gap was not academic. `swapWinnerLoser` wrote
+// the new loser of a flipped result into the consolation without asking whether the feed rule admits
+// them; the resulting draw held a participant with a scored win in a FIRST_MATCH consolation, on the
+// losing side of a walkover played before they were ever in that matchUp — and this function rated it
+// clean, because nothing here looked for a participant who should NOT be there. A check that can only
+// report one direction of a two-directional rule is half an instrument.
 //
 // Eligibility is what makes DROPPED_PROGRESSION sound — the LINK alone over-approximates feeding.
 // LOSER: a FIRST_MATCH_LOSER_CONSOLATION round-2 link exists but feeds only players whose first match
@@ -41,6 +52,7 @@ export const DANGLING_LINK = 'DANGLING_LINK';
 export const LINK_MISSING_SOURCE_ROUND = 'LINK_MISSING_SOURCE_ROUND';
 export const SCAN_ERROR = 'SCAN_ERROR';
 export const DROPPED_PROGRESSION = 'DROPPED_PROGRESSION';
+export const INELIGIBLE_PROGRESSION = 'INELIGIBLE_PROGRESSION';
 
 const ROUND_LINK_TYPES = [WINNER, LOSER];
 
@@ -164,6 +176,30 @@ function droppedProgressionForLink(
         message: `a ${isLoserLink ? 'loser' : 'winner'} eligible to feed the linked target structure is absent from it`,
         severity: 'error',
         direction: isLoserLink ? LOSER : WINNER,
+        structureId: link.source?.structureId,
+        matchUpId: matchUp.matchUpId,
+        targetStructureId: targetStructure.structureId,
+        participantId,
+      });
+    }
+
+    /**
+     * The mirror: present although the feed rule excludes them.
+     *
+     * Only reachable for a `FIRST_MATCHUP` loser link — `isFedLoserEligible` returns true for every
+     * other link, so `!eligible` cannot arise elsewhere and the branch needs no further scoping.
+     *
+     * Presence is unambiguous here, not merely likely. A FIRST_MATCHUP link feeds round 2, and a
+     * round-2 loser is ineligible precisely BECAUSE they won in round 1 — which is the same reason
+     * they cannot have arrived through the round-1 loser link into the same structure. So there is
+     * no other route by which this participant could legitimately be in the target.
+     */
+    if (!eligible && targetParticipantIds.has(participantId)) {
+      inconsistencies.push({
+        issueType: INELIGIBLE_PROGRESSION,
+        message: 'a loser the feed rule excludes is present in the linked target structure',
+        severity: 'error',
+        direction: LOSER,
         structureId: link.source?.structureId,
         matchUpId: matchUp.matchUpId,
         targetStructureId: targetStructure.structureId,

@@ -26,7 +26,7 @@ type GetResultsArrayArgs = {
 };
 
 export function getResultsArray(params: GetResultsArrayArgs) {
-  const participantIds = params.participantIds || Object.keys(params.participantResults);
+  const participantIds = params.participantIds ?? Object.keys(params.participantResults);
   return participantIds.reduce((arr: any[], participantId: string, i) => {
     arr.push({
       participantId,

@@ -159,7 +159,7 @@ export function getAllStructureMatchUps(params: GetAllStructureMatchUps) {
 
   const { structureId } = structure;
 
-  exitProfiles = exitProfiles || (drawDefinition && getExitProfiles({ drawDefinition }).exitProfiles);
+  exitProfiles = exitProfiles ?? (drawDefinition && getExitProfiles({ drawDefinition }).exitProfiles);
   const exitProfile = exitProfiles?.[structureId];
   const initialRoundOfPlay =
     exitProfile?.length &&
