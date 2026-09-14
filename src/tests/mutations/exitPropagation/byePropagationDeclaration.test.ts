@@ -55,8 +55,29 @@ function play({
   expect(drawIds).toContain(drawId);
 
   const byePositionsWithParticipant: any[] = [];
+  const errorsOverMutatedDraw: any[] = [];
   const errors: any[] = [];
   let applied = 0;
+
+  /**
+   * `createdAt`/`updatedAt` excluded: a refused call that bumped only a timestamp is not the defect
+   * under test, and asserting on it would fire on a difference nobody can act on.
+   */
+  const drawState = () => {
+    const strip = (value: any): any => {
+      if (Array.isArray(value)) return value.map(strip);
+      if (value && typeof value === 'object') {
+        const result: any = {};
+        for (const key of Object.keys(value).sort((a, b) => a.localeCompare(b))) {
+          if (key === 'createdAt' || key === 'updatedAt') continue;
+          result[key] = strip(value[key]);
+        }
+        return result;
+      }
+      return value;
+    };
+    return JSON.stringify(strip(tournamentEngine.getEvent({ drawId })?.drawDefinition ?? null));
+  };
 
   const collectViolations = () => {
     const walk = (structure: any) => {
@@ -79,13 +100,19 @@ function play({
     if (!target) continue;
     applied++;
 
+    const before = drawState();
     const result: any = tournamentEngine.setMatchUpStatus({
       matchUpId: target.matchUpId,
       outcome: step.outcome,
       propagateExitStatus,
       drawId,
     });
-    if (result?.error) errors.push({ step: coordinates(step), error: result.error.code });
+    if (result?.error) {
+      errors.push({ step: coordinates(step), error: result.error.code });
+      if (before !== drawState()) {
+        errorsOverMutatedDraw.push({ step: coordinates(step), error: result.error.code });
+      }
+    }
 
     // checked after EVERY step: a later step can clear the violation, so an end-state check alone
     // reports nothing and reads as good news
@@ -95,7 +122,7 @@ function play({
   // The control: a scenario whose steps never matched a matchUp would assert nothing at all.
   expect(applied).toEqual(steps.length);
 
-  return { errors, byePositionsWithParticipant };
+  return { errors, errorsOverMutatedDraw, byePositionsWithParticipant };
 }
 
 it('a cascade that DECLARES it is placing the BYE is not refused by the inference that cannot see it', () => {
@@ -103,7 +130,7 @@ it('a cascade that DECLARES it is placing the BYE is not refused by the inferenc
   // declaration being honoured, the final DOUBLE_WALKOVER is refused with ERR_ACTIVE_DRAW_POSITION —
   // after the cascade has already flipped the source matchUp, emptied its score and drawPositions,
   // and left a positionAssignment with no participantId.
-  const { errors } = play({
+  const { errors, errorsOverMutatedDraw } = play({
     seed: 9000059,
     drawType: DOUBLE_ELIMINATION,
     drawSize: 8,
@@ -128,7 +155,17 @@ it('a cascade that DECLARES it is placing the BYE is not refused by the inferenc
     ],
   });
 
-  expect(errors).toEqual([]);
+  // The defect was ERR_ACTIVE_DRAW_POSITION raised by a topology scan that could not see the
+  // cascade's declaration — and raised over a draw the same call had already damaged.
+  expect(errors.map((entry: any) => entry.error)).not.toContain('ERR_ACTIVE_DRAW_POSITION');
+
+  // UPDATED 2026-09-14, deliberately, and the reason matters. This scenario's final step is now
+  // refused with ERR_INCOMPATIBLE_MATCHUP_STATUS, by `checkDownstreamCompatibility` — the guard that
+  // refuses a non-directing status while something downstream is active. It began firing when
+  // `isActiveDownstream` stopped treating a PLAYED consolation exit as an inert propagated one, and
+  // it runs BEFORE anything is written. So the assertion this test needs is not "no error" — the
+  // engine is entitled to refuse — it is that a refusal never lands on a half-changed draw.
+  expect(errorsOverMutatedDraw).toEqual([]);
 });
 
 it('a BYE the cascade places clears the participant it displaces', () => {

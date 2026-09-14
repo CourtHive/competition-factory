@@ -1,4 +1,4 @@
-import { getSideExitProvenance } from '@Mutate/matchUps/matchUpStatus/sideExitProvenance';
+import { getSideExitProvenance, isPropagatedExit } from '@Mutate/matchUps/matchUpStatus/sideExitProvenance';
 import { positionTargets } from '@Query/matchUp/positionTargets';
 import { isDoubleExit, isExit } from '@Validators/isExit';
 
@@ -43,7 +43,30 @@ export function isActiveDownstream(params) {
   const loserIndex = loserTargetData?.targetMatchUps?.loserMatchUpDrawPositionIndex;
   const propagatedLoserParticipant = loserExitPropagation?.sides[loserIndex]?.participant;
   const isLoserMatchUpWO = isExit(loserMatchUp?.matchUpStatus);
-  const loserMatchUpExit = isLoserMatchUpWO && !propagatedLoserParticipant;
+
+  /**
+   * A PLAYED exit is not a propagated one, and only a propagated one may be treated as inert.
+   *
+   * `isExit` is a STATUS test: it is true of a walkover a referee recorded exactly as readily as of
+   * one the cascade produced. Reading it alone here exempted a consolation matchUp that two
+   * participants had actually played — measured on `FIRST_MATCH_LOSER_CONSOLATION` 32/27, seed
+   * 9000349: the fed loser and their opponent both present, `winningSide` 2, and NO
+   * `sideExitProvenance`, yet `loserMatchUpExit` came out true. `isActiveDownstream` therefore
+   * returned false, `resolveAndApplyOutcome` took the `noDownstreamDependencies` branch instead of
+   * `winningSideWithDownstreamDependencies`, and a winner-changing re-score of the Main matchUp was
+   * ALLOWED — stripping the participant out of a consolation match they had already played and
+   * leaving it `EXIT_WITHOUT_LOSER`.
+   *
+   * `CANNOT_CHANGE_WINNING_SIDE` is the rule that should have refused it, and it is gated on this
+   * function. So the guard was not missing; it was never reached.
+   *
+   * The discriminator is provenance, which the cascade stamps and nothing else does — the same
+   * distinction `contestedDoubleExit` below already draws, and the one this file's own comment
+   * states: *a status blocks only when it was earned at this matchUp, never when it was propagated
+   * into it.*
+   */
+  const loserMatchUpExit =
+    isLoserMatchUpWO && !propagatedLoserParticipant && isPropagatedExit({ matchUp: loserMatchUp });
 
   //to identify a propagated exit (WO/DEFAULT) for matches that are WO/DEFAULT, have a winning side,
   //and have only one participant (the WO/DF player).
