@@ -79,10 +79,10 @@ export function getTieFormat({
   }
 
   const structureDefaultTieFormat =
-    (structure?.tieFormat || structure?.tieFormatId) &&
+    (structure?.tieFormat ?? structure?.tieFormatId) &&
     resolveTieFormat({ structure, drawDefinition, event })?.tieFormat;
   const drawDefaultTieFormat =
-    (drawDefinition?.tieFormat || drawDefinition?.tieFormatId) &&
+    (drawDefinition?.tieFormat ?? drawDefinition?.tieFormatId) &&
     resolveTieFormat({
       drawDefinition,
       event,

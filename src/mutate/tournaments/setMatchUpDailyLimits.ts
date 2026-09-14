@@ -17,10 +17,10 @@ export function setMatchUpDailyLimits(params: SetMatchUpDailyLimitsArgs): Result
   const { tournamentRecord, tournamentId, dailyLimits } = params;
 
   const tournamentRecords =
-    params.tournamentRecords ||
+    params.tournamentRecords ??
     (tournamentRecord && {
       [tournamentRecord.tournamentId]: tournamentRecord,
-    }) ||
+    }) ??
     {};
 
   if (typeof tournamentRecords !== 'object' || !Object.keys(tournamentRecords).length)

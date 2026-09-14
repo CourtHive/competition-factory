@@ -89,30 +89,30 @@ export function getPredictiveAccuracy(params: getPredictiveAccuracyArgs) {
     }
   } else {
     matchUps ??=
-      (drawId && !drawDefinition && []) ||
-      (!drawId && eventId && !event && []) ||
-      (drawId &&
-        allDrawMatchUps({
-          inContext: true,
-          drawDefinition,
+      ((drawId && !drawDefinition && []) ||
+        (!drawId && eventId && !event && []) ||
+        (drawId &&
+          allDrawMatchUps({
+            inContext: true,
+            drawDefinition,
+            contextFilters,
+            contextProfile,
+            participants,
+          })?.matchUps) ||
+        (!drawId &&
+          eventId &&
+          allEventMatchUps({
+            inContext: true,
+            contextFilters,
+            contextProfile,
+            participants,
+            event,
+          })?.matchUps) ||
+        allTournamentMatchUps({
+          tournamentRecord,
           contextFilters,
           contextProfile,
-          participants,
-        })?.matchUps) ||
-      (!drawId &&
-        eventId &&
-        allEventMatchUps({
-          inContext: true,
-          contextFilters,
-          contextProfile,
-          participants,
-          event,
-        })?.matchUps) ||
-      allTournamentMatchUps({
-        tournamentRecord,
-        contextFilters,
-        contextProfile,
-      })?.matchUps ||
+        })?.matchUps) ??
       [];
   }
 

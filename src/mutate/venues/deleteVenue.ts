@@ -34,10 +34,10 @@ export function deleteVenue(params: DeleteVenueArgs): {
   const { tournamentRecord, venueId, force } = params;
 
   const tournamentRecords =
-    params.tournamentRecords ||
+    params.tournamentRecords ??
     (tournamentRecord && {
       [tournamentRecord.tournamentId]: tournamentRecord,
-    }) ||
+    }) ??
     {};
 
   if (!Object.keys(tournamentRecords).length) return { error: MISSING_TOURNAMENT_RECORD };

@@ -78,7 +78,7 @@ export function addScheduleScenario(params: AddScheduleScenarioArgs): {
   });
   if (!validity.valid) return { error: validity.error, info: validity.info };
 
-  if (!record.scheduling) record.scheduling = {};
+  record.scheduling ??= {};
   if (!Array.isArray(record.scheduling.scenarios)) record.scheduling.scenarios = [];
 
   const scenarioId = scenario.scenarioId ?? UUID();

@@ -9,13 +9,13 @@ type GetContainedStructuresArgs = {
   event?: Event;
 };
 export function getContainedStructures({ tournamentRecord, drawDefinition, event }: GetContainedStructuresArgs) {
-  const events = tournamentRecord?.events || (event && [event]);
+  const events = tournamentRecord?.events ?? (event && [event]);
   const drawDefinitions =
     events
       ?.map((event) => event?.drawDefinitions)
       .flat()
-      .filter(Boolean) ||
-    (drawDefinition && [drawDefinition]) ||
+      .filter(Boolean) ??
+    (drawDefinition && [drawDefinition]) ??
     [];
 
   const containedStructures = {};

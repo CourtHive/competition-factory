@@ -189,7 +189,7 @@ export class ScoringEngine {
     if (options.competitionFormat) {
       this.competitionFormat = options.competitionFormat;
       this.matchUpFormat = options.matchUpFormat || options.competitionFormat.matchUpFormat || 'SET3-S:6/TB7';
-      this.pointMultipliers = options.pointMultipliers || (options.competitionFormat.pointMultipliers ?? []);
+      this.pointMultipliers = options.pointMultipliers ?? options.competitionFormat.pointMultipliers ?? [];
     } else {
       this.matchUpFormat = options.matchUpFormat || 'SET3-S:6/TB7';
       this.pointMultipliers = options.pointMultipliers ?? [];
@@ -767,7 +767,7 @@ export class ScoringEngine {
     if (ff.noTiebreak) return false;
 
     // Final set has standard tiebreak
-    return !!(ff.tiebreakFormat || ff.tiebreakAt !== undefined);
+    return !!(ff.tiebreakFormat ?? ff.tiebreakAt !== undefined);
   }
 
   /**

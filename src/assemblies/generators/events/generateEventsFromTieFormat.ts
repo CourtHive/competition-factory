@@ -33,8 +33,8 @@ export function generateEventsFromTieFormat(params: GenerateEventsFromTieFormatA
   ]);
   if (paramsCheck.error) return paramsCheck;
 
-  const tieFormat = params.tieFormat || tieFormatDefaults({ namedFormat: params.tieFormatName });
-  const uuids = params.uuids || [UUIDS(tieFormat.collectionDefinitions.length)];
+  const tieFormat = params.tieFormat ?? tieFormatDefaults({ namedFormat: params.tieFormatName });
+  const uuids = params.uuids ?? [UUIDS(tieFormat.collectionDefinitions.length)];
 
   const genderedParticipants = params.addEntriesFromTeams
     ? buildGenderedParticipants(params.tournamentRecord)

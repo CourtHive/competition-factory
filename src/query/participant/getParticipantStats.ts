@@ -112,7 +112,7 @@ export function getParticipantStats({
   const teamMap = new Map<string, string[]>();
 
   const initStats = (participantId, participantName = '') =>
-    participantStats.get(participantId) ||
+    participantStats.get(participantId) ??
     (participantStats.set(participantId, {
       participantName,
       participantId,

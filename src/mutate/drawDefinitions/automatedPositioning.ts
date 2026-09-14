@@ -377,7 +377,7 @@ export function automatedPositioning(params: AutomatedPositioningArgs): ResultTy
   positioningReport.push({ validSeedBlocks });
 
   const participants =
-    params.participants ||
+    params.participants ??
     (tournamentRecord
       ? getParticipants({
           withIndividualParticipants: true,

@@ -47,10 +47,10 @@ export function getScheduledRoundsDetails(params: GetScheduledRoundsDetailsArgs)
   const { scheduleCompletedMatchUps, periodLength = 30 } = params;
 
   const tournamentRecords =
-    params.tournamentRecords ||
+    params.tournamentRecords ??
     (params.tournamentRecord && {
       [params.tournamentRecord.tournamentId]: params.tournamentRecord,
-    }) ||
+    }) ??
     {};
   if (typeof tournamentRecords !== 'object') return { error: MISSING_TOURNAMENT_RECORDS };
 

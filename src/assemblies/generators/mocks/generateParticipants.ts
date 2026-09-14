@@ -397,7 +397,7 @@ function genRatings(params) {
 
     const ratingParameters = {
       ...ratingsParameters[ratingType],
-      ...(ratingAttributes ?? {}),
+      ...ratingAttributes,
     };
 
     const { attributes = {}, decimalsCount, accessors, range, step } = ratingParameters;

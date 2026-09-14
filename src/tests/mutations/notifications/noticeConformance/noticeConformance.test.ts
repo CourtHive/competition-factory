@@ -58,7 +58,7 @@ describe('notice conformance harness (D-core scaffold)', () => {
       tournamentEngine.modifyParticipant({
         participant: {
           ...target,
-          person: { ...(target.person ?? {}), standardGivenName: 'Pete', standardFamilyName: 'Sampras' },
+          person: { ...target.person, standardGivenName: 'Pete', standardFamilyName: 'Sampras' },
         },
       });
     });

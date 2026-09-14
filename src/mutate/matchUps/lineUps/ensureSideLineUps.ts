@@ -31,14 +31,12 @@ export function ensureSideLineUps({
   event,
 }: EnsureSideLineUpsArgs) {
   if (dualMatchUp) {
-    if (!inContextDualMatchUp) {
-      inContextDualMatchUp = findDrawMatchUp({
-        matchUpId: dualMatchUp.matchUpId,
-        inContext: true,
-        drawDefinition,
-        event,
-      })?.matchUp;
-    }
+    inContextDualMatchUp ??= findDrawMatchUp({
+      matchUpId: dualMatchUp.matchUpId,
+      inContext: true,
+      drawDefinition,
+      event,
+    })?.matchUp;
 
     const lineUpsValue = firstClassOrExtension({ element: drawDefinition, attribute: 'lineUps', name: LINEUPS });
     const lineUps = makeDeepCopy(lineUpsValue ?? {}, false, true);

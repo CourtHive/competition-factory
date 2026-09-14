@@ -66,7 +66,7 @@ function createContext(blocks: Block[]): EngineContext {
   for (const block of blocks) {
     const day = block.start.slice(0, 10);
     const key = `${block.court.tournamentId}|${block.court.venueId}|${block.court.courtId}|${day}`;
-    const existing = blocksByCourtDay.get(key) || [];
+    const existing = blocksByCourtDay.get(key) ?? [];
     existing.push(block.id);
     blocksByCourtDay.set(key, existing);
   }

@@ -199,7 +199,7 @@ export function mergeSideExitProvenance({
 }): void {
   if (!matchUp || !writeNativeEnabled()) return;
   if (!provenance || !Object.keys(provenance).length) return;
-  matchUp.sideExitProvenance = { ...(matchUp.sideExitProvenance ?? {}), ...provenance };
+  matchUp.sideExitProvenance = { ...matchUp.sideExitProvenance, ...provenance };
 }
 
 /** Write provenance onto a matchUp, honouring the schema write mode. */

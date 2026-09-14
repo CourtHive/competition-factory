@@ -122,7 +122,7 @@ export class AvailabilityEngine {
       dayEndTime: config?.dayEndTime || '23:00',
       slotMinutes: config?.slotMinutes || 15,
       granularityMinutes: config?.granularityMinutes,
-      typePrecedence: config?.typePrecedence || [
+      typePrecedence: config?.typePrecedence ?? [
         BLOCK_TYPES.HARD_BLOCK,
         BLOCK_TYPES.LOCKED,
         BLOCK_TYPES.SCHEDULED,
@@ -460,7 +460,7 @@ export class AvailabilityEngine {
    */
   getVenueTimeline(day: DayId, venueId: VenueId): VenueDayTimeline | null {
     const dayTimeline = this.getDayTimeline(day);
-    return dayTimeline.find((t) => t.venueId === venueId) || null;
+    return dayTimeline.find((t) => t.venueId === venueId) ?? null;
   }
 
   /**
@@ -557,7 +557,7 @@ export class AvailabilityEngine {
   }
 
   getTemplate(templateId: TemplateId): Template | null {
-    return this.templates.get(templateId) || null;
+    return this.templates.get(templateId) ?? null;
   }
 
   getRules(): Rule[] {
@@ -565,7 +565,7 @@ export class AvailabilityEngine {
   }
 
   getRule(ruleId: RuleId): Rule | null {
-    return this.rules.get(ruleId) || null;
+    return this.rules.get(ruleId) ?? null;
   }
 
   // ============================================================================
@@ -579,7 +579,7 @@ export class AvailabilityEngine {
     const planItemId = computePlanItemId(item);
     const fullItem: PlanItem = { ...item, planItemId };
 
-    const plan = this.plans.get(item.day) || { day: item.day, items: [] };
+    const plan = this.plans.get(item.day) ?? { day: item.day, items: [] };
     // Replace if same planItemId already exists
     plan.items = plan.items.filter((i) => i.planItemId !== planItemId);
     plan.items.push(fullItem);
@@ -652,7 +652,7 @@ export class AvailabilityEngine {
     const updated = { ...found, day: newDay };
     updated.planItemId = computePlanItemId(updated);
 
-    const targetPlan = this.plans.get(newDay) || { day: newDay, items: [] };
+    const targetPlan = this.plans.get(newDay) ?? { day: newDay, items: [] };
     targetPlan.items = targetPlan.items.filter((i) => i.planItemId !== updated.planItemId);
     targetPlan.items.push(updated);
     this.plans.set(newDay, targetPlan);
@@ -667,7 +667,7 @@ export class AvailabilityEngine {
    * Get the plan for a specific day.
    */
   getDayPlan(day: DayId): DayPlan | null {
-    return this.plans.get(day) || null;
+    return this.plans.get(day) ?? null;
   }
 
   /**
@@ -734,7 +734,7 @@ export class AvailabilityEngine {
       };
     }
 
-    const targetCourt = opts.newCourt || block.court;
+    const targetCourt = opts.newCourt ?? block.court;
     const day = extractDay(opts.newTimeRange.start);
     const clamped = this.clampToAvailability(targetCourt, day, opts.newTimeRange.start, opts.newTimeRange.end);
     if (!clamped) {

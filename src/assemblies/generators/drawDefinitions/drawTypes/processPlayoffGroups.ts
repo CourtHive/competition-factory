@@ -92,7 +92,7 @@ export function processPlayoffGroups({
     const validation = validatePlayoffGroups({ playoffGroups, groupCount, groupSize });
     if (!validation.valid) {
       return decorateResult({
-        result: { error: validation.error || INVALID_CONFIGURATION },
+        result: { error: validation.error ?? INVALID_CONFIGURATION },
         context: { info: validation.info },
         stack,
       });

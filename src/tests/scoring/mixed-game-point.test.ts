@@ -37,7 +37,7 @@ describe('Mixed addGame + addPoint', () => {
     expect(state.score.sets[0].side2Score).toBe(0);
 
     // Check point metadata: points should be in the second game (index 1)
-    const points = state.history?.points || [];
+    const points = state.history?.points ?? [];
     expect(points.length).toBe(4);
 
     // All points belong to game index 1 (addGame took game 0)
@@ -47,7 +47,7 @@ describe('Mixed addGame + addPoint', () => {
     });
 
     // Check unified timeline entries
-    const entries = state.history?.entries || [];
+    const entries = state.history?.entries ?? [];
     expect(entries.length).toBe(5); // 1 game + 4 points
     expect(entries[0].type).toBe('game');
     entries.slice(1).forEach((entry: any) => {
@@ -94,7 +94,7 @@ describe('Mixed addGame + addPoint', () => {
     expect(state.score.sets[0].side2Score).toBe(1);
 
     // Points should be in game index 2 (0-indexed: game 0=addGame p1, game 1=addGame p2, game 2=points)
-    const points = state.history?.points || [];
+    const points = state.history?.points ?? [];
     expect(points.length).toBe(4);
     points.forEach((point: any) => {
       expect(point.set).toBe(0);
@@ -102,7 +102,7 @@ describe('Mixed addGame + addPoint', () => {
     });
 
     // Entries: 2 game entries + 4 point entries
-    const entries = state.history?.entries || [];
+    const entries = state.history?.entries ?? [];
     expect(entries.length).toBe(6);
     expect(entries[0].type).toBe('game');
     expect(entries[1].type).toBe('game');
@@ -195,7 +195,7 @@ describe('Mixed addGame + addPoint', () => {
     expect(state.score.sets[1].side1Score).toBe(3);
 
     // Points should be in set 1 (0-indexed), game 2
-    const points = state.history?.points || [];
+    const points = state.history?.points ?? [];
     expect(points.length).toBe(4);
     points.forEach((point: any) => {
       expect(point.set).toBe(1);
