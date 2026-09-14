@@ -536,6 +536,15 @@ export const CANNOT_CHANGE_WINNING_SIDE = {
   message: 'Cannot change winningSide',
   code: 'ERR_UNCHANGED_CANNOT_CHANGE_WINNING_SIDE',
 };
+/**
+ * Its own code, deliberately. The winningSide is NOT changing here — only whether the win was
+ * scored — so reporting `CANNOT_CHANGE_WINNING_SIDE` would show a TD a message contradicting what
+ * they did, and a client keying on the code could not word the two cases differently.
+ */
+export const CANNOT_CHANGE_FEED_ELIGIBILITY = {
+  message: 'Cannot change how a win was won while its loser is already directed',
+  code: 'ERR_CANNOT_CHANGE_FEED_ELIGIBILITY',
+};
 export const INVALID_PARTICIPANT = {
   message: 'Invalid participant',
   code: 'ERR_INVALID_PARTICIPANT',
@@ -925,6 +934,7 @@ export const errorConditionConstants = {
   ANACHRONISM,
   UNWRITABLE_SCHEDULE_ATTRIBUTES,
   BOOKING_NOT_FOUND,
+  CANNOT_CHANGE_FEED_ELIGIBILITY,
   CANNOT_CHANGE_WINNING_SIDE,
   CAPACITY_EXCEEDED,
   REGISTRATION_NOT_FOUND,

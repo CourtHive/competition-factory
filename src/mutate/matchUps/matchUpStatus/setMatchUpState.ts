@@ -1,3 +1,4 @@
+import { feedEligibilityChange } from '@Mutate/matchUps/matchUpStatus/feedEligibilityGuard';
 import { noDownstreamDependencies } from '@Mutate/drawDefinitions/matchUpGovernor/noDownstreamDependencies';
 import { generateTieMatchUpScore } from '@Assemblies/generators/tieMatchUpScore/generateTieMatchUpScore';
 import { isDirectingMatchUpStatus, isNonDirectingMatchUpStatus } from '@Query/matchUp/checkStatusType';
@@ -38,6 +39,7 @@ import { PolicyDefinitions } from '@Types/factoryTypes';
 import { SUCCESS } from '@Constants/resultConstants';
 import { TEAM } from '@Constants/matchUpTypes';
 import {
+  CANNOT_CHANGE_FEED_ELIGIBILITY,
   CANNOT_CHANGE_WINNING_SIDE,
   INCOMPATIBLE_MATCHUP_STATUS,
   INVALID_MATCHUP_STATUS,
@@ -294,6 +296,33 @@ export function setMatchUpState(params: SetMatchUpStateArgs): any {
       dualWinningSideChange = tieContext.dualWinningSideChange;
       Object.assign(params, tieContext);
     }
+  }
+
+  /**
+   * Checked HERE, above every mutation, so the refusal cannot land on a half-changed draw — the
+   * property `ERROR_IMPLIES_NO_MUTATION` asserts, and the reason this is not inside
+   * `winningSideWithDownstreamDependencies` where an earlier attempt put it.
+   */
+  const eligibilityChange = feedEligibilityChange({
+    inContextDrawMatchUps,
+    drawDefinition,
+    matchUpStatus,
+    winningSide,
+    structure,
+    matchUp,
+    score,
+  });
+  if (eligibilityChange) {
+    return decorateResult({
+      result: { error: CANNOT_CHANGE_FEED_ELIGIBILITY },
+      info: 'the loser of the linked round has already been directed under the previous outcome',
+      context: {
+        currentMatchUpStatus: matchUp.matchUpStatus,
+        blockingMatchUpId: eligibilityChange.sourceRoundMatchUpId,
+        matchUpStatus,
+      },
+      stack: 'feedEligibility',
+    });
   }
 
   const downstreamError = checkDownstreamCompatibility({
