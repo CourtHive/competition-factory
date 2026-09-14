@@ -782,34 +782,60 @@ function applyMatchUpValues(params) {
  * exit, and that side is empty until the opponent arrives. An "the winner must hold a participant"
  * rule would forbid the engine's own output.
  *
- * So the question is not whether the winning side is empty. It is **which kind of empty**, and the
- * two are distinguishable:
+ * So the question is not whether the winning side is empty. It is **which kind of empty**:
  *
  *  - an UNFILLED FEED SLOT carries no `drawPosition` at all. Nobody is there yet and nobody is
  *    claimed to be. This is the pending-exit shape, and it is legitimate — measured across the
  *    sequences `propagatedByeYieldsToArrivingLoser` pins, where a director re-scores a double exit
  *    down to a single walkover before the opposing feed has arrived.
- *  - a PHANTOM carries a `drawPosition` whose `positionAssignment` exists and holds nobody — no
- *    participant, no bye, no qualifier. The matchUp is claiming a seat that is empty.
+ *  - a PHANTOM carries a `drawPosition` whose `positionAssignment` exists and holds nobody. The
+ *    matchUp is claiming a seat that is empty. Measured at sweep seed 9000140 step 29: a Consolation
+ *    matchUp with `drawPositions [19, 20]`, side 1 holding position 19 whose assignment was vacant,
+ *    was recorded `WALKOVER winningSide: 1` and ACCEPTED — a walkover won by nobody, with
+ *    `getDrawInconsistencies` reporting `valid`.
+ *  - a BYE is NOT an occupant for this purpose. See below.
  *
- * Only the second is refused. Measured 2026-09-13 at sweep seed 9000140 step 29: a Consolation
- * matchUp with `drawPositions [19, 20]`, side 1 holding position 19 whose assignment was vacant, was
- * recorded `WALKOVER winningSide: 1` and ACCEPTED — a walkover won by nobody, with
- * `getDrawInconsistencies` reporting `valid`.
+ * The consistency argument is what settles the phantom case. At the SAME matchUp three steps
+ * earlier, a bare `{ winningSide: 1 }` was already refused with ERR_INVALID_MATCHUP_STATUS, because
+ * a directing outcome requires assigned participants. The waiver was letting an exit status do what
+ * a plain result could not, on the same slot, in the same draw.
  *
- * The consistency argument is what settles it. At the SAME matchUp three steps earlier, a bare
- * `{ winningSide: 1 }` was already refused with ERR_INVALID_MATCHUP_STATUS, because a directing
- * outcome requires assigned participants. The waiver was letting an exit status do what a plain
- * result could not, on the same slot, in the same draw.
+ * ## A BYE can never be the winning side, and this is not a new rule
  *
- * A BYE on the winning side is allowed, deliberately and narrowly. Whether a player can lose a
- * walkover to an opponent who does not exist is a rules question of exactly the kind
- * `propagateRetirementAsExit` exists to stop the engine answering on its own, and three committed
- * tests construct that state on purpose. It is not decided here.
+ * #4858 allowed it, on the stated grounds that whether a player can lose a walkover to an opponent
+ * who does not exist is a rules question for a governing body. **That was wrong, and the engine had
+ * already answered it in two places:**
+ *
+ *  - `getExitWinningSide`: *"A BYE draw position can never be the winning side […] this guard exists
+ *    so a future caller that forgets to filter cannot resurrect the 'advance the empty/BYE side'
+ *    bug class."* It is a named invariant guarding a named bug class.
+ *  - `progressExitStatus` RULE 1: when the opponent is a BYE the participant *advances through it* —
+ *    "the BYE cascade has already moved them forward […] **NOT a WALKOVER**" — and the exit is
+ *    re-propagated onto wherever they landed.
+ *
+ * CA, 2026-09-13, independently and before being shown either: *"A player that encounters a BYE gets
+ * advanced; a player being advanced by a WALKOVER hits a BYE and continues advancing […] if they are
+ * propagating their WALKOVER status all the way through then their WALKOVER occurs AFTER their
+ * fall-through position is advanced by the BYE."* That is RULE 1 restated.
+ *
+ * So the propagation path never produces this state. Only a DIRECT entry could, and now cannot.
+ *
+ * The #4858 rationale also claimed "three committed tests construct that state on purpose". It is
+ * ONE row of one test, and incidentally: `carriedExitProvenance`'s MODIFIED_FEED_IN_CHAMPIONSHIP
+ * 8/6 case used `roundPosition: 1`, which in a 6-of-8 draw happens to be the BYE matchUp. Its
+ * sibling row (FEED_IN_CHAMPIONSHIP 8/8, `roundPosition: 3`) has no byes at all. The row now targets
+ * a contested matchUp, which is what it always meant to.
+ *
+ * A QUALIFIER placeholder is still accepted: it is a seat reserved for a participant who will be
+ * named, not a structural absence, and nothing here measured it. Deliberately left alone.
+ *
+ * Only meaningful where exactly one side holds a participant; the caller establishes that.
  */
 function exitAwardable({ positionAssignments, inContextMatchUp, winningSide }): boolean {
   const winnerSide = (inContextMatchUp?.sides ?? []).find((side: any) => side?.sideNumber === winningSide);
-  if (winnerSide?.participantId || winnerSide?.bye || winnerSide?.qualifier) return true;
+  // a BYE is deliberately NOT in this list — see the docblock
+  if (winnerSide?.participantId || winnerSide?.qualifier) return true;
+  if (winnerSide?.bye) return false;
 
   // no drawPosition claimed: an unfilled feed slot, awaiting its arrival
   if (winnerSide?.drawPosition === undefined) return true;
@@ -818,7 +844,10 @@ function exitAwardable({ positionAssignments, inContextMatchUp, winningSide }): 
   // an assignment that does not exist is not a phantom either — nothing is being claimed
   if (!assignment) return true;
 
-  return !!(assignment.participantId || assignment.bye || assignment.qualifier);
+  // a BYE assignment is refused for the same reason a BYE side is
+  if (assignment.bye) return false;
+
+  return !!(assignment.participantId || assignment.qualifier);
 }
 
 function checkParticipants({
