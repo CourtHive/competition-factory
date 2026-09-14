@@ -328,11 +328,33 @@ function applyScheduleAssignments({
 // courtOrder/courtId/venueId describe a position on ONE day's schedule grid.
 // When a matchUp is re-dated they no longer apply and are cleared so the match
 // does not inherit the prior day's row on the new day.
-function unassignGridPosition({ tournamentRecords, tournamentRecord, drawDefinition, matchUpId, courtDayDate }) {
+//
+// `calledAt` is the fourth of those, and was the one left behind. It asserts
+// "called to court" — to THAT court, on THAT day. Once the court and the day
+// have both gone the stamp describes nothing, and a matchUp that was never
+// played goes on reporting a call. Measured on a live tournament: four
+// quarterfinals called on the afternoon of one day, re-dated to 08:00 the next
+// with court and venue shed, kept stamps ~17 hours "early" and rendered as
+// -1009/-1026 minutes in the call-timing variance report.
+//
+// `clearCalledAt` is false when the SAME call supplies a `calledAt` — clearing
+// it there would wipe the value the caller just wrote.
+function unassignGridPosition({
+  tournamentRecords,
+  tournamentRecord,
+  drawDefinition,
+  clearCalledAt,
+  courtDayDate,
+  matchUpId,
+  event,
+}) {
   const shared = { removePriorValues: true, disableNotice: true, tournamentRecord, drawDefinition, matchUpId };
   addMatchUpCourtOrder({ ...shared, courtOrder: undefined });
   assignMatchUpCourt({ ...shared, tournamentRecords, courtDayDate, courtId: '' });
   assignMatchUpVenue({ ...shared, tournamentRecords, venueId: undefined });
+  if (clearCalledAt) {
+    setMatchUpCalledAt({ disableNotice: true, tournamentRecord, drawDefinition, matchUpId, calledAt: null, event });
+  }
 }
 
 /**
@@ -626,11 +648,13 @@ export function addMatchUpScheduleItems(params: AddMatchUpScheduleItemsArgs): {
 
   if (clearGridPositionOnDateChange) {
     unassignGridPosition({
+      courtDayDate: nextScheduledDate,
+      clearCalledAt: calledAt === undefined,
       tournamentRecords,
       tournamentRecord,
       drawDefinition,
       matchUpId,
-      courtDayDate: nextScheduledDate,
+      event,
     });
   }
 

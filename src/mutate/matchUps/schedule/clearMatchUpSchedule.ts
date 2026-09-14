@@ -25,6 +25,14 @@ import {
   TIME_MODIFIERS,
 } from '@Constants/timeItemConstants';
 
+// Clearing any of these removes the matchUp's PLACEMENT — the court it was on,
+// or the day and time it was on it. `calledAt` is a claim about that placement
+// ("called to court"), has no legacy itemType to key off, and so cannot be
+// reached by the map below. It goes with them: `clearScheduledMatchUps` already
+// drops the stamp on a bulk unschedule, and a single-matchUp unschedule that
+// left it behind produced matchUps asserting a call to a court they are not on.
+const PLACEMENT_ITEM_TYPES = new Set([ASSIGN_COURT, SCHEDULED_DATE, SCHEDULED_TIME]);
+
 // Map of legacy itemType → first-class MatchUpSchedule attribute for the
 // CODES promotion. clearMatchUpSchedule must wipe BOTH surfaces so that
 // records written in any schemaWriteMode are cleanly reset.
@@ -100,6 +108,7 @@ export function clearMatchUpSchedule({
       const attr = ITEM_TYPE_TO_SCHEDULE_ATTR[itemType];
       if (attr) delete matchUp.schedule[attr];
     }
+    if (scheduleAttributes.some((itemType) => PLACEMENT_ITEM_TYPES.has(itemType))) delete matchUp.schedule.calledAt;
     if (Object.keys(matchUp.schedule).length === 0) delete matchUp.schedule;
   }
 
