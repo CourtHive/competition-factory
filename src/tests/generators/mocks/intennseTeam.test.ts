@@ -3,18 +3,14 @@
  * 2 teams, 7 matchUps (2MS + 2WS + 1MD + 1WD + 1XD), aggregate scoring.
  * Singles: SET2XA-S:T10, Doubles: SET1A-S:T10
  */
-import {
-  drawDefinitionConstants,
-  factoryConstants,
-  mocksEngine,
-  tournamentEngine,
-  matchUpFormatGovernor,
-} from '../../..';
+import tournamentEngine from '@Engines/syncEngine';
+import mocksEngine from '@Assemblies/engines/mock';
 import { expect, it, describe } from 'vitest';
 
-const { SINGLE_ELIMINATION } = drawDefinitionConstants;
-const { MALE, FEMALE, MIXED } = factoryConstants.genderConstants;
-const { TEAM, SINGLES, DOUBLES } = factoryConstants.eventConstants;
+// constants
+import { SINGLE_ELIMINATION } from '@Constants/drawDefinitionConstants';
+import { DOUBLES, SINGLES, TEAM } from '@Constants/eventConstants';
+import { FEMALE, MALE, MIXED } from '@Constants/genderConstants';
 
 const { generateOutcome } = mocksEngine;
 
@@ -103,7 +99,6 @@ describe('generateOutcome with timed sets', () => {
         expect(side2Total).toBeGreaterThan(side1Total);
       }
     }
-
   });
 
   it('generates valid scores for SET1A-S:T10 (single timed set)', () => {
@@ -121,7 +116,6 @@ describe('generateOutcome with timed sets', () => {
       expect(set.side2Score).toBeGreaterThanOrEqual(0);
       expect(set.side1Score + set.side2Score).toBeGreaterThan(10);
     }
-
   });
 
   it('respects winningSide override for aggregate formats', () => {
@@ -374,16 +368,12 @@ describe('INTENNSE Showdown tournament', () => {
     const authentics = teams.find((t: any) => t.participantName === 'The Authentics');
     expect(authentics.participantOtherName).toBe('TM1');
     // Display logic: useOtherName=false means participantName wins
-    const displayName = authentics.useOtherName
-      ? authentics.participantOtherName
-      : authentics.participantName;
+    const displayName = authentics.useOtherName ? authentics.participantOtherName : authentics.participantName;
     expect(displayName).toBe('The Authentics');
 
     // When useOtherName is true, participantOtherName should be preferred
     authentics.useOtherName = true;
-    const altDisplayName = authentics.useOtherName
-      ? authentics.participantOtherName
-      : authentics.participantName;
+    const altDisplayName = authentics.useOtherName ? authentics.participantOtherName : authentics.participantName;
     expect(altDisplayName).toBe('TM1');
   });
 
