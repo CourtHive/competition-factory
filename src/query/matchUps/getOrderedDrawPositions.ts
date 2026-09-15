@@ -32,6 +32,35 @@ export function getOrderedDrawPositions({ drawPositions, roundProfile, roundNumb
   // displayOrder for feedRounds follows this rule...
   // ...but displayOrder for non-fed rounds must look back to the previous round
   // previous round lookback is provided by the roundProfile
+  //
+  // ---------------------------------------------------------------------------------------------
+  // THE ASCENDING ORDER IS THE SIDE/POSITION BINDING. This is the canonical statement of it; sites
+  // that depend on it point here rather than restate it.
+  //
+  // A matchUp's `drawPositions` are stored ascending, and THREE reader idioms across the engine
+  // derive a side from that order:
+  //
+  //   1. `drawPositions[winningSide - 1]`      — assignMatchUpDrawPosition, sideExitProvenance
+  //   2. `drawPositions[someIndex]`            — directParticipants, removeDirectedParticipants,
+  //                                              positionClear, assignDrawPositionBye
+  //   3. `indexOf(drawPosition) + 1` as a side — doubleExitAdvancement, removeOnwardLoserPlacements
+  //
+  // Every one of them silently resolves the WRONG PARTICIPANT if the order is not maintained. They
+  // do not fail loudly; they answer confidently and wrongly.
+  //
+  // THEREFORE: ANY WRITER OF `drawPositions` MUST LEAVE THEM ASCENDING. Removing a position (mapping
+  // it to `undefined`) preserves order and is safe. Rewriting one IN PLACE does not — a positional
+  // `map` that substitutes a higher position into the first slot produces [7, 5]. That is exactly
+  // how `swapWinnerLoser` broke it, reported by `getStructureInconsistencies` as
+  // DRAW_POSITIONS_NOT_SORTED: 25 findings across two 600-seed census windows, all from one line.
+  //
+  // Surveyed 2026-09-14 across every writer in `src/`: the others either remove a position,
+  // renumber in array order (self-normalising), or assign `nextPosition++` twice. Keep it that way.
+  //
+  // SEPARATELY, AND JUST AS LOAD-BEARING: a drawPosition is unique WITHIN A STRUCTURE and carries no
+  // meaning across structures. Never compare one against matchUps or positionAssignments drawn from
+  // a different structure; scope the collection by `structureId` first.
+  // ---------------------------------------------------------------------------------------------
   const isFeedRound = targetRoundProfile?.feedRound;
   if (allNumeric(drawPositions)) {
     const orderedDrawPositions = [...drawPositions].sort(numericSort); // spread to avoid immutable client data

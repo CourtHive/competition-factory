@@ -42,6 +42,7 @@
 import { checkRequiredParameters } from '@Helpers/parameters/checkRequiredParameters';
 import { allTournamentMatchUps } from '@Query/matchUps/getAllTournamentMatchUps';
 import { makeTimingResolver, SchedulingTiming } from './schedulingTiming';
+import { commitmentOf, TimeCommitment } from './timeCommitment';
 
 // constants and types
 import { MISSING_MATCHUP_ID } from '@Constants/errorConditionConstants';
@@ -65,11 +66,34 @@ export type ReadinessFinding = {
   notBefore?: string;
 };
 
-/** Why readiness could not be evaluated. Never reported as "ready" — an unevaluated matchUp is not a clean one. */
-export type ReadinessSkipReason = 'unknownMatchUp' | 'bye' | 'completed' | 'notScheduled' | 'noTime';
+/**
+ * Why readiness could not be evaluated. Never reported as "ready" — an
+ * unevaluated matchUp is not a clean one.
+ *
+ * `timeNotPromised` is `noTime` by another route: a `scheduledTime` is recorded,
+ * but an annotation withdraws it, so the residual number is not a claim to
+ * check against. See `commitmentOf`.
+ */
+export type ReadinessSkipReason =
+  'unknownMatchUp' | 'bye' | 'completed' | 'notScheduled' | 'noTime' | 'timeNotPromised';
 
 export type ReadinessResult =
-  { evaluated: false; reason: ReadinessSkipReason } | { evaluated: true; findings: ReadinessFinding[] };
+  | { evaluated: false; reason: ReadinessSkipReason }
+  | {
+      evaluated: true;
+      findings: ReadinessFinding[];
+      /**
+       * How strongly the schedule commits to the time these findings were
+       * measured against — never `none`, which skips instead.
+       *
+       * Carried so a consumer can tell WHY a finding rides at INFO. Against a
+       * `floor` the findings are demoted, because a blocker clearing later than
+       * a floor is a later floor rather than a broken promise; a consumer that
+       * grades severity into a colour needs to know that happened, and must not
+       * have to re-derive it from the schedule itself.
+       */
+      commitment: Exclude<TimeCommitment, 'none'>;
+    };
 
 const COMPLETED_STATUSES = new Set([
   'COMPLETED',
@@ -183,20 +207,54 @@ function incompleteUpstream(
   return found;
 }
 
-/** When an incomplete matchUp is projected to finish, in minutes. `null` when it cannot be projected. */
-function projectedFinish(matchUp: HydratedMatchUp, timing: SchedulingTiming): number | null {
-  const start = parseClockMinutes(matchUp.schedule?.scheduledTime);
-  if (start === null) return null;
-  return start + timing.averageMinutes;
+/**
+ * When `matchUp` is expected to finish, in minutes. `null` when unprojectable.
+ *
+ * ── One ladder, and why it stops at three rungs ──
+ *
+ * This was two functions with DIFFERENT ladders over the same matchUp:
+ * `projectedFinish` read only `scheduledTime`, while `freeAfter` preferred a
+ * recorded `endTime`. Two problems came out of that.
+ *
+ * A feeder that went on late was projected from its PLAN, discarding the
+ * `startTime` stamp that records when it actually began — so this query
+ * promised a court, and a winner, earlier than either would exist.
+ *
+ * And any consumer rendering both figures got arithmetic that does not close.
+ * TMX renders exactly that pair on one row ("finishes ~15:30 → ready ~16:00"
+ * for an upstream that ended at 15:00 with an hour of recovery) and fixed its
+ * own copy in TMX #1461; this is the same change upstream, so the two agree
+ * before TMX swaps its local analysis for this query.
+ *
+ * The rungs are `endTime` → `startTime` → `scheduledTime`, and they stop there
+ * ON PURPOSE. All three are bare venue wall clock, so this query performs no
+ * instant-to-zone conversion and stays clock-free — which is what lets it run
+ * here at all, with no `asOf` and no time zone in its signature.
+ *
+ * `getParticipantRest` deliberately walks five rungs, adding `scoredTime` and
+ * `calledAt`, and gates each against a caller-supplied instant. That is right
+ * for measuring an elapsed rest and wrong here: its anchor resolution takes a
+ * live matchUp's FIRST SCORE as a finish and then withholds the figure once
+ * that stamp is behind the clock. A readiness finding that vanished the moment
+ * somebody won a game would be worse than one projected from the plan.
+ */
+function finishOf(matchUp: HydratedMatchUp, timing: SchedulingTiming): number | null {
+  // Recorded: it has finished, and nothing is projected.
+  const end = parseClockMinutes(matchUp.schedule?.endTime);
+  if (end !== null) return end;
+
+  // Under way: project from when it ACTUALLY started.
+  const started = parseClockMinutes(matchUp.schedule?.startTime);
+  if (started !== null) return started + timing.averageMinutes;
+
+  const scheduled = parseClockMinutes(matchUp.schedule?.scheduledTime);
+  return scheduled === null ? null : scheduled + timing.averageMinutes;
 }
 
 /** When a participant coming out of `matchUp` is next available, in minutes. `null` when unprojectable. */
 function freeAfter(matchUp: HydratedMatchUp, timing: SchedulingTiming): number | null {
-  const end = parseClockMinutes(matchUp.schedule?.endTime);
-  if (end !== null) return end + timing.recoveryMinutes;
-  const start = parseClockMinutes(matchUp.schedule?.scheduledTime);
-  if (start === null) return null;
-  return start + timing.averageMinutes + timing.recoveryMinutes;
+  const finish = finishOf(matchUp, timing);
+  return finish === null ? null : finish + timing.recoveryMinutes;
 }
 
 /** Why the target cannot be evaluated, or undefined when it can. */
@@ -205,6 +263,10 @@ function skipReasonFor(target: HydratedMatchUp): ReadinessSkipReason | undefined
   if (isFinished(target)) return 'completed';
   if (!target.schedule?.scheduledDate) return 'notScheduled';
   if (parseClockMinutes(target.schedule?.scheduledTime) === null) return 'noTime';
+  // An annotation that withdraws the time leaves a residual number that states
+  // nothing. Grading it would report a matchUp as unable to meet a time the
+  // schedule never claimed.
+  if (commitmentOf(target.schedule) === 'none') return 'timeNotPromised';
   return undefined;
 }
 
@@ -227,7 +289,7 @@ function dependencyFindings(
   timingFor: TimingFor,
 ): ReadinessFinding[] {
   return upstream.flatMap((source) => {
-    const finish = projectedFinish(source, timingFor(source));
+    const finish = finishOf(source, timingFor(source));
     const base = {
       kind: 'dependency' as const,
       severity: 'WARN' as const,
@@ -371,7 +433,25 @@ export function analyzeMatchUpReadiness(params: {
   if (undetermined) findings.push(undetermined);
 
   const order: ReadinessKind[] = ['overlap', 'dependency', 'recovery', 'undetermined'];
-  return { evaluated: true, findings: findings.toSorted((a, b) => order.indexOf(a.kind) - order.indexOf(b.kind)) };
+  const ordered = findings.toSorted((a, b) => order.indexOf(a.kind) - order.indexOf(b.kind));
+
+  // `skipReasonFor` has already excluded `none`, so the target's time is either
+  // stated or a floor.
+  const commitment = commitmentOf(target.schedule) as Exclude<TimeCommitment, 'none'>;
+
+  // Against a floor, a blocker that clears later is a LATER FLOOR, not a broken
+  // promise — so the findings keep their sentences and their clocks but stop
+  // indicting the placement.
+  //
+  // `overlap` is exempt. A shared individual physically on court elsewhere is a
+  // fact about bodies, not about a promise, and it is the one finding whose
+  // truth does not depend on the time being a commitment.
+  const graded =
+    commitment === 'floor'
+      ? ordered.map((finding) => (finding.kind === 'overlap' ? finding : { ...finding, severity: 'INFO' as const }))
+      : ordered;
+
+  return { evaluated: true, findings: graded, commitment };
 }
 
 type GetMatchUpReadinessArgs = {

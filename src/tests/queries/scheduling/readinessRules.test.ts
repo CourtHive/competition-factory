@@ -41,6 +41,75 @@ function analyze(matchUps: HydratedMatchUp[], matchUpId: string) {
   return result.findings;
 }
 
+describe('what the schedule actually commits to', () => {
+  const earlier = () =>
+    matchUp(
+      'earlier',
+      [player('alice'), player('bob')],
+      { scheduledTime: '09:00', endTime: '10:45' },
+      { winningSide: 1 },
+    );
+
+  it('reports a firm time as firm, and grades against it', () => {
+    const target = matchUp('target', [player('alice'), player('chen')], { scheduledTime: '11:00' });
+    const result = analyzeMatchUpReadiness({
+      matchUps: [earlier(), target],
+      matchUpId: 'target',
+      timingFor: () => TIMING,
+    });
+    expect(result).toMatchObject({ evaluated: true, commitment: 'firm' });
+    expect((result as any).findings[0]).toMatchObject({ kind: 'recovery', severity: 'WARN', notBefore: '11:45' });
+  });
+
+  it('does not evaluate a time the schedule withdrew', () => {
+    // `TO_BE_ANNOUNCED` and its kin clear `scheduledTime` on write, so a record
+    // carrying both is legacy or hand-written — and the annotation is the more
+    // recent statement of intent. Grading it would report the matchUp as unable
+    // to meet a time nobody claimed.
+    const target = matchUp('target', [player('alice'), player('chen')], {
+      scheduledTime: '11:00',
+      timeModifiers: ['TO_BE_ANNOUNCED'],
+    });
+    const result = analyzeMatchUpReadiness({
+      matchUps: [earlier(), target],
+      matchUpId: 'target',
+      timingFor: () => TIMING,
+    });
+    expect(result).toEqual({ evaluated: false, reason: 'timeNotPromised' });
+  });
+
+  it('demotes findings against a NOT_BEFORE floor, keeping their times', () => {
+    // "No earlier than 11:00" permits a later start, so a window clearing at
+    // 11:45 is a later floor rather than a broken promise. The sentence and the
+    // clock survive; only the severity moves.
+    const target = matchUp('target', [player('alice'), player('chen')], {
+      scheduledTime: '11:00',
+      timeModifiers: ['NOT_BEFORE'],
+    });
+    const result: any = analyzeMatchUpReadiness({
+      matchUps: [earlier(), target],
+      matchUpId: 'target',
+      timingFor: () => TIMING,
+    });
+    expect(result).toMatchObject({ evaluated: true, commitment: 'floor' });
+    expect(result.findings[0]).toMatchObject({ kind: 'recovery', severity: 'INFO', notBefore: '11:45' });
+  });
+
+  it('never demotes an overlap — a body on a court is not a promise', () => {
+    const live = matchUp('live', [player('alice'), player('dee')], { scheduledTime: '10:30' });
+    const target = matchUp('target', [player('alice'), player('chen')], {
+      scheduledTime: '11:00',
+      timeModifiers: ['NOT_BEFORE'],
+    });
+    const result: any = analyzeMatchUpReadiness({
+      matchUps: [live, target],
+      matchUpId: 'target',
+      timingFor: () => TIMING,
+    });
+    expect(result.findings.find((finding: any) => finding.kind === 'overlap')).toMatchObject({ severity: 'WARN' });
+  });
+});
+
 describe('recovery — the window that has not elapsed', () => {
   it('reports the participant and the clock the window clears, projected from the plan', () => {
     const earlier = matchUp('earlier', [player('alice'), player('bob')], { scheduledTime: '09:00' });
@@ -61,6 +130,19 @@ describe('recovery — the window that has not elapsed', () => {
     const target = matchUp('target', [player('alice'), player('chen')], { scheduledTime: '11:00' });
     // 10:45 + 60 recovery = 11:45, measured rather than projected.
     expect(analyze([earlier, target], 'target')[0]).toMatchObject({ notBefore: '11:45' });
+  });
+
+  it('measures from when the earlier matchUp ACTUALLY started, not from when it was planned', () => {
+    // The rung the ladder used to skip. A match that went on forty minutes late
+    // carries the evidence in `startTime`; projecting from the plan instead
+    // frees the player earlier than they will be.
+    const earlier = matchUp('earlier', [player('alice'), player('bob')], {
+      scheduledTime: '09:00',
+      startTime: '09:40',
+    });
+    const target = matchUp('target', [player('alice'), player('chen')], { scheduledTime: '11:00' });
+    // 09:40 + 90 average + 60 recovery = 12:10.
+    expect(analyze([earlier, target], 'target')[0]).toMatchObject({ notBefore: '12:10' });
   });
 
   it('says nothing when the window has already elapsed', () => {
@@ -120,6 +202,34 @@ describe('undetermined participants', () => {
   it('is silent when a side is empty but nothing upstream explains it', () => {
     const target = matchUp('target', [player('alice'), {}], { scheduledTime: '11:00' });
     expect(analyze([target], 'target')).toEqual([]);
+  });
+
+  it('projects a dependency from the same ladder the recovery window uses', () => {
+    // These were two ladders over one matchUp: the dependency read only the
+    // plan while the recovery window preferred a recorded end. A consumer
+    // showing both figures for one upstream got two anchors presented as one
+    // calculation.
+    const feeder = matchUp('feeder', [player('alice'), player('bob')], {
+      scheduledTime: '14:00',
+      startTime: '14:40',
+    });
+    const target = matchUp('target', [{}, player('chen')], { scheduledTime: '14:30' }, {});
+    (feeder as any).winnerMatchUpId = 'target';
+    // 14:40 + 90 = 16:10, against a plan-only projection of 15:30.
+    const dependency = analyze([feeder, target], 'target').find((finding) => finding.kind === 'dependency');
+    expect(dependency).toMatchObject({ notBefore: '16:10' });
+  });
+
+  it('prefers a recorded end over a start when projecting a dependency', () => {
+    const feeder = matchUp('feeder', [player('alice'), player('bob')], {
+      scheduledTime: '14:00',
+      startTime: '14:40',
+      endTime: '15:05',
+    });
+    const target = matchUp('target', [{}, player('chen')], { scheduledTime: '14:30' });
+    (feeder as any).winnerMatchUpId = 'target';
+    const dependency = analyze([feeder, target], 'target').find((finding) => finding.kind === 'dependency');
+    expect(dependency).toMatchObject({ notBefore: '15:05' });
   });
 
   it('walks past a finished feeder to report the grandparent that is still pending', () => {

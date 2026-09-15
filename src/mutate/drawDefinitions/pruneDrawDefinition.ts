@@ -64,6 +64,9 @@ export function pruneDrawDefinition({
 
       matchPlayMatchUps.forEach((matchUp: any) => {
         if (matchPlayDrawPositions) {
+          // Renumbering, and self-normalising: `drawPositionsMap` assigns 1..n in the order the
+          // positions are encountered, so the output is ascending whatever the input was. Still a
+          // writer — see the canonical statement in `getOrderedDrawPositions`.
           matchUp.drawPositions = matchUp.drawPositions.map((drawPosition) => drawPositionsMap[drawPosition]);
         } else {
           delete matchUp.drawPositions;

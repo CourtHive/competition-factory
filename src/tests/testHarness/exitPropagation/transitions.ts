@@ -164,6 +164,27 @@ export type Observation = {
 };
 
 /**
+ * `allowChangePropagation`, off by default and enabled per-RUN rather than per-scenario.
+ *
+ * WHY THIS EXISTS. `resolveAndApplyOutcome` checks this flag BEFORE the `activeDownstream` dispatch,
+ * so it short-circuits to `swapWinnerLoser` past every refusal that guards an ordinary re-score. It
+ * is a CONSUMER CHOICE, not a default: some scoring clients send it on every score, and others do
+ * not permit a winning-side change to propagate at all. The harness set it never, so the whole
+ * census measured only one of the two behaviours the engine offers — and #4875 fixed a real defect
+ * on the other one, which the census scored at exactly zero.
+ *
+ * AN ENV FLAG, NOT A CONFIG FIELD, deliberately. Adding it to `ScenarioConfig` would change what
+ * `randomConfig` draws from the seeded RNG and invalidate every frozen schedule file — the
+ * "harness fix changed generation" trap this workstream has already paid for once. Read here, at
+ * replay time, the same frozen window can be run both ways and the two numbers compared directly.
+ *
+ * Emit with it OFF. `generateSchedule` calls this function too, so emitting under the flag would
+ * produce a different schedule set and confound the comparison it exists to make.
+ */
+const allowChangePropagation = () =>
+  process.env.ALLOW_CHANGE_PROPAGATION === '1' ? { allowChangePropagation: true } : {};
+
+/**
  * Apply one outcome and report everything the properties need, without asserting.
  *
  * Callers decide which observations are failures, because the matrix quarantines known ones.
@@ -188,7 +209,13 @@ export function observeMutation({
   let result: any;
   let thrown: string | undefined;
   try {
-    result = tournamentEngine.setMatchUpStatus({ propagateExitStatus, matchUpId, drawId, outcome });
+    result = tournamentEngine.setMatchUpStatus({
+      propagateExitStatus,
+      matchUpId,
+      drawId,
+      outcome,
+      ...allowChangePropagation(),
+    });
   } catch (err: any) {
     thrown = String(err?.message ?? err);
   }

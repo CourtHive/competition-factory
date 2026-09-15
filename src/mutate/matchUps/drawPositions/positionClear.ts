@@ -298,6 +298,7 @@ function removeDrawPosition({
   });
 
   if (targetMatchUp.roundNumber && initialRoundNumber && targetMatchUp.roundNumber > initialRoundNumber) {
+    // Removal, not substitution: preserves ascending order. See `getOrderedDrawPositions`.
     const drawPositions: any[] = (targetMatchUp.drawPositions ?? []).map((currentDrawPosition) =>
       currentDrawPosition === drawPosition ? undefined : currentDrawPosition,
     );

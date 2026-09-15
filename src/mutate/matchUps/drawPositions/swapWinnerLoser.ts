@@ -1,20 +1,55 @@
+import { reconcileFedLoserEligibility } from '@Mutate/matchUps/drawPositions/reconcileFedLoserEligibility';
+import { getDownstreamStructureIds } from '@Query/matchUps/getDownstreamStructureIds';
 import { getAllStructureMatchUps } from '@Query/matchUps/getAllStructureMatchUps';
-import { getDrawPositionWinCount } from '@Query/matchUp/getDrawPositionWinCount';
-import { assignDrawPositionBye } from '@Mutate/matchUps/drawPositions/assignDrawPositionBye';
 import { modifyMatchUpScore } from '@Mutate/matchUps/score/modifyMatchUpScore';
 import { getPositionAssignments } from '@Query/drawDefinition/positionsGetter';
 import { modifyMatchUpNotice } from '@Mutate/notifications/drawNotifications';
 import { pushGlobalLog } from '@Functions/global/globalLog';
 
-// constants
-import { FIRST_MATCHUP } from '@Constants/drawDefinitionConstants';
-
 /**
  * Swap the winner and loser of an already-decided matchUp, carrying the change downstream.
  *
- * Reached only via `allowChangePropagation`, which `resolveAndApplyOutcome` checks BEFORE the
- * `activeDownstream` dispatch — so none of the refusals that guard an ordinary re-score apply here.
- * TMX's score modal sends that flag on every score, which makes this the production correction path.
+ * ## THE CONTRACT. Exactly two things change, and it is critical not to conflate them
+ *
+ * | where | what changes | what NEVER changes |
+ * |---|---|---|
+ * | the SOURCE structure | the matchUp `drawPositions` of LATER ROUNDS — a different drawPosition now advances | **`positionAssignments` — never, not one** |
+ * | the TARGET structures it feeds | `positionAssignments` — the occupant's IDENTITY | the drawPositions themselves |
+ *
+ * **A participant's binding to a drawPosition in the structure they PLAYED IN is exactly what a
+ * winner change does not touch.** They keep their place in that draw; what changes is which of them
+ * progresses out of it. Measured on COMPASS 16 flipping `East|1|4`: source `positionAssignments`
+ * changed on **0** of 16 positions, while exactly one matchUp's `drawPositions` changed,
+ * `East|2|2: [5,7] -> [5,8]`. Pinned by `swapWinnerLoserContract.test.ts`, which fails if either half
+ * is violated.
+ *
+ * The two are easy to conflate because both are "drawPositions" in loose speech, and conflating them
+ * has already cost a defect: rewriting the advancement record with a positional `map` broke the
+ * ascending-order invariant that BINDS drawPositions to sides, turning [4,5] into [7,5]
+ * (`DRAW_POSITIONS_NOT_SORTED`, 25 findings, fixed in #4881(factory)). Hence the sort below.
+ *
+ * ## NOTHING IS PLACED AND NOTHING IS REMOVED
+ *
+ * A swap is a RELABEL. The position and its binding already exist, so there is no placement decision
+ * to make — `directLoser` and the rest of the placement machinery answer "where does this participant
+ * go", which is not a question a swap asks, and their guards (`DRAW_POSITION_ACTIVE`,
+ * `EXISTING_PARTICIPANT_DRAW_POSITION_ASSIGNMENT`) are not constraints on it. Equally, no participant
+ * is removed: every removal primitive in the engine destroys the downstream RESULT
+ * (`removeSubsequentRoundsParticipant` is explicit — *"Removal, not substitution"*), and a swap
+ * preserves results by definition.
+ *
+ * Exactly one thing can contradict a relabel, and it is link-defined: `FIRST_MATCHUP` makes entry
+ * conditional on the ARRIVING participant, so a flip can change who is ELIGIBLE rather than merely
+ * who lost. That is a property of the link, not of the swap, and is reconciled after the result is
+ * applied — see `reconcileFedLoserEligibility`.
+ *
+ * ## Who reaches this
+ *
+ * `resolveAndApplyOutcome` checks `allowChangePropagation` BEFORE the `activeDownstream` dispatch, so
+ * none of the refusals guarding an ordinary re-score apply. Two callers arrive: a consumer sending
+ * the flag, and the propagation cascade, which reaches it because `progressExitStatus` hardcodes
+ * `allowChangePropagation: true` on its internal call. **"Flag-OFF" and "this branch is unreachable"
+ * are therefore NOT the same claim** — a change here is a change to the cascade either way.
  */
 export function swapWinnerLoser(params) {
   const { tournamentRecord, inContextMatchUp, structure, drawDefinition, event } = params;
@@ -36,12 +71,24 @@ export function swapWinnerLoser(params) {
 
   pushGlobalLog({ method: 'swapWinnerLoser', existingWinnerSubsequentMatchUps });
 
-  // replace new winningSide drawPosition in all subsequent matches in structure
+  /**
+   * Replace the advancing drawPosition in every subsequent matchUp — AND RE-SORT.
+   *
+   * A positional `map` SUBSTITUTES in place and therefore cannot preserve ascending order: this line
+   * rewrote a round-3 matchUp holding [4, 5] to [7, 5] (census seed 9000012, DOUBLE_ELIMINATION
+   * 8/7), reported as DRAW_POSITIONS_NOT_SORTED — 25 findings across two 600-seed windows, all from
+   * here. The ascending order is the side/position binding, and readers resolve the WRONG
+   * participant without it.
+   *
+   * The rule, the three reader idioms that depend on it, and the survey of every other writer are
+   * stated once in `getOrderedDrawPositions`. Do not remove the sort below.
+   */
   existingWinnerSubsequentMatchUps.forEach((matchUp) => {
-    matchUp.drawPositions =
+    matchUp.drawPositions = (
       matchUp.drawPositions?.map((drawPosition) =>
         drawPosition === existingWinnerDrawPosition ? existingLoserDrawPosition : drawPosition,
-      ) ?? [];
+      ) ?? []
+    ).sort((a, b) => (typeof a === 'number' && typeof b === 'number' ? a - b : 0));
     modifyMatchUpNotice({
       tournamentId: tournamentRecord?.tournamentId,
       eventId: params.event?.eventId,
@@ -52,79 +99,50 @@ export function swapWinnerLoser(params) {
     });
   });
 
-  const { stage: currentStage, stageSequence: currentStageSequence } = structure;
-  const subsequentStructureIds = drawDefinition.structures
-    .filter(({ stage, stageSequence }) => stage === currentStage && stageSequence > currentStageSequence)
-    .map(({ structureId }) => structureId);
-
-  const {
-    targetLinks: { loserTargetLink, winnerTargetLink },
-  } = params.targetData;
-  const targetStructureIds = [loserTargetLink?.target.structureId, winnerTargetLink?.target?.structureId].filter(
-    Boolean,
-  );
-
-  // find target structures that are not part of current stage...
-  // ... as well as any subsequent structures
-  drawDefinition.structures
-    .filter(({ stage, structureId }) => {
-      return stage !== currentStage && targetStructureIds.includes(structureId);
-    })
-    .forEach(({ stage: targetStage, stageSequence: targetStageSequence, structureId }) => {
-      if (!subsequentStructureIds.includes(structureId)) subsequentStructureIds.push(structureId);
-
-      drawDefinition.structures
-        .filter(({ stage, stageSequence }) => stage === targetStage && stageSequence > targetStageSequence)
-        .forEach(({ structureId }) => {
-          if (!subsequentStructureIds.includes(structureId)) subsequentStructureIds.push(structureId);
-        });
-    });
+  /**
+   * The structures this result actually feeds, found by WALKING the links rather than inferring
+   * them from stage/`stageSequence`.
+   *
+   * The inference this replaces was wrong in both directions. It UNDER-reached, because a structure
+   * fed by a different ROUND of the same source sits at the same `stageSequence` and was never
+   * visited — COMPASS `East` feeds `West` (r1), `North` (r2) and `Northeast` (r3), all at sequence
+   * 2, and only the flipped round's own target was corrected. Widening it to "every structure this
+   * structure feeds" then made it OVER-reach: DOUBLE_ELIMINATION's `Backdraw` is fed by `Main`
+   * rounds 1-3, so flipping the FINAL reached back into a structure the flip does not touch, which
+   * needed two further bounds to suppress.
+   *
+   * A walk needs neither bound. It only goes forward, so an earlier round's target is unreachable
+   * rather than excluded; and it reaches what this matchUp feeds at any round distance. The source
+   * structure is excluded because a chain re-enters it immediately — the winner target is the next
+   * round — and in DOUBLE_ELIMINATION it re-enters after a detour (`Backdraw r4 --WINNER--> Main
+   * r4`); the two participants keep their assignments THERE, since a drawPosition's binding to a
+   * participant in the structure they played in is exactly what does not change.
+   */
+  const { structureIds: subsequentStructureIds } = getDownstreamStructureIds({
+    inContextDrawMatchUps: params.inContextDrawMatchUps ?? [],
+    excludeStructureId: structure.structureId,
+    matchUpId: inContextMatchUp.matchUpId,
+    drawDefinition,
+  });
 
   const subsequentStructures = drawDefinition.structures.filter(({ structureId }) =>
     subsequentStructureIds.includes(structureId),
   );
 
   /**
-   * A FIRST_MATCH consolation is not a mirror of the main draw, so the feed does not simply swap.
+   * A pure RELABEL. Nothing is placed and nothing is removed.
    *
-   * `directLoser` admits a loser to a `FIRST_MATCHUP` target only with zero prior scored wins
-   * (`validForConsolation`), and places a BYE at the backdraw position otherwise. Swapping the
-   * assignment blindly ignored that rule: flipping a result whose new loser had ALREADY won a match
-   * wrote them into the consolation anyway — measured on seed 9000349, where Sheldon Shelley
-   * (1 scored win in Main R1) replaced Leeloo Goldstein (a round-1 BYE, so the flipped matchUp was
-   * genuinely her first). `getDrawInconsistencies` cannot see it: it reports eligible-but-ABSENT
-   * only, and has no ineligible-but-PRESENT counterpart.
+   * The two participants keep their drawPositions in the structure they played in — a
+   * drawPosition's binding to a participant THERE is exactly what a flip does not change — and in
+   * every structure downstream the occupant's identity changes. There is no placement decision to
+   * make, because the position and its binding already exist; `directLoser` and the rest of the
+   * placement machinery decide WHERE a participant goes, which is not a question a swap asks.
    *
-   * Counted over PRIOR rounds only. This runs BEFORE `modifyMatchUpScore` applies the new
-   * winningSide, so the matchUp being swapped still records the incoming loser as its winner;
-   * including it would count the very win that is being taken away. Prior rounds are also exactly
-   * what the rule means by "had already won a match".
+   * The one thing that can contradict a relabel is link-defined and is reconciled after the result
+   * is applied — see `reconcileFedLoserEligibility`.
    */
-  const { loserTargetLink: feedLink } = params.targetData.targetLinks;
-  const firstMatchUpTargetStructureId =
-    feedLink?.linkCondition === FIRST_MATCHUP ? feedLink?.target?.structureId : undefined;
-  // `inContext: true` is required, exactly as `directLoser` sources the same count: without it the
-  // sides carry no `drawPosition`, `getDrawPositionWinCount` matches no side and returns 0, and
-  // every participant looks like a first-match loser.
-  const { matchUps: inContextStructureMatchUps } = getAllStructureMatchUps({
-    afterRecoveryTimes: false,
-    inContext: true,
-    drawDefinition,
-    structure,
-    event,
-  });
-  const priorRoundMatchUps = (inContextStructureMatchUps ?? []).filter(
-    ({ roundNumber }) => (roundNumber ?? 0) < matchUpRoundNumber,
-  );
-  const incomingLoserHasPriorWin =
-    getDrawPositionWinCount({
-      sourceMatchUps: priorRoundMatchUps,
-      drawPosition: existingWinnerDrawPosition,
-    }) > 0;
-
-  // for each subsequent structure swap drawPosition assignments (where applicable)
-  subsequentStructures.forEach((structure) => {
-    const { positionAssignments } = getPositionAssignments({ structure });
+  subsequentStructures.forEach((subsequentStructure) => {
+    const { positionAssignments } = getPositionAssignments({ structure: subsequentStructure });
     // Both lookups are guarded on the id being present. When a side holds no participant — which
     // is the normal state after a double exit — the id is undefined, and an unguarded
     // `participantId === undefined` matches the first UNOCCUPIED assignment instead of matching
@@ -138,30 +156,46 @@ export function swapWinnerLoser(params) {
       ? positionAssignments?.find(({ participantId }) => participantId === existingLoserParticipantId)
       : undefined;
 
-    if (existingWinnerAssignment) existingWinnerAssignment.participantId = existingLoserParticipantId;
-
-    // The incoming loser is not a first-match loser: the slot they would have taken becomes a BYE,
-    // which is what `directLoser` does for the same participant on the same link.
-    if (
-      existingLoserAssignment &&
-      structure.structureId === firstMatchUpTargetStructureId &&
-      incomingLoserHasPriorWin
-    ) {
-      delete existingLoserAssignment.participantId;
-      assignDrawPositionBye({
-        drawPosition: existingLoserAssignment.drawPosition,
-        structureId: structure.structureId,
-        byeFromPropagation: true,
-        tournamentRecord,
-        drawDefinition,
-        event,
-      });
-      return;
+    // A relabel EXCHANGES two identities, so it needs two. When one side holds no participant —
+    // the normal state after a double exit — there is nothing to exchange, and writing the missing
+    // id would empty an occupied slot rather than swap it. The FINDs were already guarded on the id
+    // being present; the WRITES were not, so a missing loser id was written into the winner's
+    // assignment, leaving an exit matchUp with a winningSide and nobody on the losing side
+    // (EXIT_WITHOUT_LOSER, census seed 9100424).
+    // Each write is guarded on the id it WRITES, not merely on the id it looked up. Skipping the
+    // whole structure when either is missing is too blunt — it drops a valid half-relabel and leaves
+    // a loser absent from a structure that should hold them (DROPPED_PROGRESSION, census seed
+    // 9100075).
+    if (existingWinnerAssignment && existingLoserParticipantId) {
+      existingWinnerAssignment.participantId = existingLoserParticipantId;
     }
-
-    if (existingLoserAssignment) existingLoserAssignment.participantId = existingWinnerParticipantId;
+    if (existingLoserAssignment && existingWinnerParticipantId) {
+      existingLoserAssignment.participantId = existingWinnerParticipantId;
+    }
   });
 
   // apply new winningSide and any score updates
-  return modifyMatchUpScore({ ...params, context: stack });
+  const scoreResult: any = modifyMatchUpScore({ ...params, context: stack });
+  if (scoreResult?.error) return scoreResult;
+
+  /**
+   * Reconciled AFTER the result is applied, deliberately.
+   *
+   * The check is "is the participant now occupying the fed position eligible to be there?", which
+   * is a question about STATE. Asking it before the new `winningSide` was written forced the old
+   * in-swap version to count wins over PRIOR ROUNDS ONLY, so as not to count the very win being
+   * taken away; once the result is applied, the shared predicate over the whole structure is simply
+   * correct.
+   */
+  const reconciliation: any = reconcileFedLoserEligibility({
+    loserTargetLink: params.targetData?.targetLinks?.loserTargetLink,
+    loserDrawPosition: existingWinnerDrawPosition,
+    tournamentRecord,
+    drawDefinition,
+    structure,
+    event,
+  });
+  if (reconciliation?.error) return reconciliation;
+
+  return scoreResult;
 }

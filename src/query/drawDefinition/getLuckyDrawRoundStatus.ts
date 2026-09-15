@@ -210,6 +210,8 @@ export function getLuckyDrawRoundStatus({
       const side = m.sides?.find((s: any) => s.sideNumber === sideNumber);
       if (side) return side.participantId || side.participant?.participantId;
       // Fall back to drawPositions → positionAssignments
+      // Derives a side from drawPosition ORDER — valid only because drawPositions are stored
+      // ascending. See the canonical statement in `getOrderedDrawPositions`.
       const drawPosition = m.drawPositions?.[sideNumber - 1];
       return drawPosition ? positionToParticipantId[drawPosition] : undefined;
     };
