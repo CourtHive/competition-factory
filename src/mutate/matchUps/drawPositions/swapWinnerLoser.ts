@@ -1,13 +1,14 @@
+import { assignDrawPositionBye } from '@Mutate/matchUps/drawPositions/assignDrawPositionBye';
 import { getAllStructureMatchUps } from '@Query/matchUps/getAllStructureMatchUps';
 import { getDrawPositionWinCount } from '@Query/matchUp/getDrawPositionWinCount';
-import { assignDrawPositionBye } from '@Mutate/matchUps/drawPositions/assignDrawPositionBye';
 import { modifyMatchUpScore } from '@Mutate/matchUps/score/modifyMatchUpScore';
 import { getPositionAssignments } from '@Query/drawDefinition/positionsGetter';
 import { modifyMatchUpNotice } from '@Mutate/notifications/drawNotifications';
+import { getStructureLinks } from '@Query/drawDefinition/linkGetter';
 import { pushGlobalLog } from '@Functions/global/globalLog';
 
 // constants
-import { FIRST_MATCHUP } from '@Constants/drawDefinitionConstants';
+import { FIRST_MATCHUP, WINNER } from '@Constants/drawDefinitionConstants';
 
 /**
  * Swap the winner and loser of an already-decided matchUp, carrying the change downstream.
@@ -72,9 +73,76 @@ export function swapWinnerLoser(params) {
   const {
     targetLinks: { loserTargetLink, winnerTargetLink },
   } = params.targetData;
-  const targetStructureIds = [loserTargetLink?.target.structureId, winnerTargetLink?.target?.structureId].filter(
-    Boolean,
+
+  /**
+   * EVERY structure the source structure feeds — not only the ones THIS matchUp's links name.
+   *
+   * A structure fed by a DIFFERENT ROUND of the same source sits at the SAME `stageSequence`, so
+   * the `stageSequence > currentStageSequence` rule above can never reach it, and this matchUp's
+   * own `targetLinks` never name it. It was therefore never iterated and its `positionAssignments`
+   * were never corrected.
+   *
+   * Measured at drawSize 16 — every target below shares one `stageSequence`:
+   *
+   *   COMPASS  East r1 -> West | East r2 -> North | East r3 -> Northeast   (all PLAY_OFF, seq 2)
+   *   OLYMPIC  East r1 -> West | East r2 -> North                          (both PLAY_OFF, seq 2)
+   *   CURTIS   Main r1,r2 -> Consolation 1 | Main r3 -> Play Off
+   *
+   * So flipping `East|1|4` rewrote `East|3|1` correctly and corrected `West`, while `North` and
+   * `Northeast` kept the participant who no longer lost that round — and the one who now loses it
+   * was absent. Both halves wrong at once, reported as DROPPED_PROGRESSION, and NOT an eligibility
+   * question: COMPASS, OLYMPIC and CURTIS_CONSOLATION emit no `linkCondition` at all.
+   *
+   * The links are the engine's own statement of what this structure feeds, so they are what is
+   * read here rather than a stage/sequence heuristic that stands in for them.
+   */
+  const { links: sourceStructureLinks } = getStructureLinks({
+    structureId: structure.structureId,
+    drawDefinition,
+  });
+  const fedLinks = (sourceStructureLinks?.source ?? []).filter(Boolean);
+
+  /**
+   * A structure this one feeds its WINNERS to is a CONTINUATION of the main progression, not a
+   * back-draw, and the swap below is the wrong instrument for it.
+   *
+   * Swapping two participants wherever they appear is right for a back-draw, whose occupancy is
+   * decided by who lost which round. A winner-fed structure's occupancy is decided by the whole
+   * bracket, so a local swap corrupts it — measured on DOUBLE_ELIMINATION 8/7, where
+   * `Main r4 --WINNER--> Decider` meant flipping a round-1 matchUp reached the Decider and left an
+   * exit matchUp with a winningSide and nobody on the losing side (EXIT_WITHOUT_LOSER, census seed
+   * 9100424). Including them took that draw type's Route A/B divergence from 13 to 15 of 28.
+   *
+   * Re-deriving those correctly is the structural rewrite's job, not this one's. THIS matchUp's own
+   * `winnerTargetLink` is still honoured below, exactly as before — only OTHER rounds' winner
+   * targets are withheld.
+   */
+  const winnerFedStructureIds = new Set(
+    fedLinks.filter((link) => link?.linkType === WINNER).map((link) => link?.target?.structureId),
   );
+
+  /**
+   * ...and only from rounds AT OR AFTER the one being flipped.
+   *
+   * A structure fed by an EARLIER round was populated by results this flip does not touch, so
+   * correcting it can only do harm. Measured on DOUBLE_ELIMINATION 8/7, where `Backdraw` is fed by
+   * `Main` rounds 1-3: without this bound, flipping the FINAL (`Main|4|1`) reached back into the
+   * Backdraw and made both participant counts diverge from Route B where they had agreed — the
+   * widening over-correcting rather than under-correcting.
+   *
+   * The flipped round's own target does not depend on this filter: `loserTargetLink` names it
+   * directly and is listed first, exactly as before.
+   */
+  const onwardFedStructureIds = fedLinks
+    .filter((link) => (link?.source?.roundNumber ?? 0) >= matchUpRoundNumber)
+    .map((link) => link?.target?.structureId)
+    .filter((structureId) => !winnerFedStructureIds.has(structureId));
+
+  const targetStructureIds = [
+    loserTargetLink?.target.structureId,
+    winnerTargetLink?.target?.structureId,
+    ...onwardFedStructureIds,
+  ].filter(Boolean);
 
   // find target structures that are not part of current stage...
   // ... as well as any subsequent structures
