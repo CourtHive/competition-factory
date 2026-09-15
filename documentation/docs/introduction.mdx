@@ -27,6 +27,14 @@ Rather than hardcoding tournament structures or embedding business rules in data
 
 While the **Competition Factory** was originally inspired by the **[Tennis Open Data Standards (TODS)](https://itftennis.atlassian.net/wiki/spaces/TODS/overview)**, the data structures and configurable operations apply to tournaments across many sports. The factory has already been successfully deployed across **five racquet sports**, demonstrating the universality of its approach. This cross-sport reality is now reflected in **[CODES](/docs/data-standards#codes)** (Competition Open Data Exchange Standards), the factory's expanded data model.
 
+`discipline` is an **open vocabulary** — any string is accepted — with a curated known set covering tennis, beach tennis, wheelchair tennis, padel, pickleball, squash and badminton, plus first-class non-racquet entries for volleyball and beach volleyball. Cross-sport support is concrete rather than aspirational: the [matchUpFormat grammar](./codes/matchup-format) parses and round-trips each sport's scoring, and **14 rating systems** ship as fixtures spanning tennis, squash, table tennis, badminton and pickleball, each declaring which end of its scale is the top so a lower-is-better system is never silently inverted.
+
+### Engines and Governors
+
+Operations are exposed as engine methods — **700+ of them**, organized into **24 [governors](./governors/governors-overview)** that group business rules by entity: draws, entries, events, participants, scheduling, scoring, publishing, ranking, officiating, sanctioning, venues, tieFormats, policies, practice, reports and more.
+
+Several **engine variants** assemble those governors for different jobs: `syncEngine`/`tournamentEngine` for client-side and in-process use; `asyncEngine` for servers, which uses Node.js `async_hooks` to isolate state per request; plus focused `ask`, `matchUp`, `mock`, `scale`, `scoring`, `availability`, `officiating` and `sanctioning` engines. Every method resolves its own context from ids — pass a `drawId` or `eventId`, never a resolved object. See [Mutation Engines](./engines/mutation-engines) and [Engine Methods](./engines/engine-methods).
+
 ### State Management and Extensibility
 
 The **Competition Factory** includes synchronous and asynchronous **state engines** that provide services for:
@@ -50,9 +58,11 @@ Traditional tournament management systems have created significant operational a
 
 The **Competition Factory** eliminates these constraints through document-based data standards and configurable tournament operations, providing organizations with complete control over their tournament data and operational infrastructure.
 
-### Draw Type Extensibility
+### Draw Types and Linked Structures
 
-Beyond the pre-defined draw types, the factory's **[linked structure architecture](./concepts/draw-links)** enables tournament topologies of arbitrary complexity. Structures can be connected in any configuration — multiple qualifying stages feeding into different rounds, consolation brackets with custom feed patterns, or entirely novel formats.
+The [pre-defined catalog](./concepts/draw-types) covers [single](./concepts/draw-types/single-elimination) and [double elimination](./concepts/draw-types/double-elimination), [round robin](./concepts/draw-types/round-robin) and [round robin with playoff](./concepts/draw-types/round-robin-with-playoff), [Swiss](./concepts/draw-types/swiss), [feed-in championships](./concepts/draw-types/feed-in) (to SF, to QF, and modified), [consolation draws](./concepts/draw-types/consolation-draws) including Curtis and first-match/first-round loser consolation, [compass](./concepts/draw-types/compass) and [Olympic](./concepts/draw-types/olympic) draws, [Page playoffs](./concepts/draw-types/page-playoff), [playoff structures](./concepts/draw-types/playoff), [ad hoc / flexible rounds](./concepts/draw-types/ad-hoc), and [adaptive](./concepts/draw-types/adaptive) draws.
+
+Beyond the catalog, the factory's **[linked structure architecture](./concepts/draw-links)** enables tournament topologies of arbitrary complexity. Structures can be connected in any configuration — multiple qualifying stages feeding into different rounds, consolation brackets with custom feed patterns, or entirely novel formats. Positions propagate along links by winner, loser, or finishing position, and [exits](./concepts/exit-propagation) — walkovers and defaults — cascade through the topology idempotently.
 
 ### Draw Type Innovations
 
@@ -61,6 +71,27 @@ Beyond draw type extensibility, the factory introduces formats never before poss
 - **[DrawMatic](./concepts/draw-types/drawmatic)** — A probabilistic pairing algorithm for flexible-round events that dynamically adjusts pairings based on skill ratings, avoids repeat opponents, and respects team boundaries
 - **[Lucky Draw](./concepts/draw-types/lucky-draw)** — Supports any participant count without requiring power-of-2 draw sizes, automatically handling odd-count rounds through "lucky loser" advancement
 - **[Draft Draws](./concepts/draft-draws)** — Gives participants agency over their draw positioning through a tiered preference system, where unseeded participants nominate preferred positions after seeds are placed and preferences are resolved with full transparency
+- **[Ladder](./concepts/draw-types/ladder)** — A continuous, challenge-driven competition with no rounds, no bracket, no fixed field, and often no end date
+
+### Ladder
+
+A [ladder](./concepts/draw-types/ladder) shares the `AD_HOC` structure shape but not its meaning: its `positionAssignments` **are the standing** and `drawPosition` reads as **rank**, where 1 is the top. Participants challenge upward, results rearrange the standing, and the lifecycle is driven from the engine — seating and removal, challenge issue, acceptance and decline, result submission, confirmation and dispute, movement, standing and lapse queries — each resolving the ladder from `drawId` alone.
+
+Ordering is by **`RANK`** (mutated by `SWAP` or `INSERTION` movement rules, which are genuinely different competitions) or by **`RATING`** (derived from the scale, with direction read from the rating system rather than assumed). Self-reported results are gated on an attestation policy — peer confirmation, operator confirmation, or either — and a disputed result is blocked from moving the standing. Declines, expiry and no-shows are unified as a single **lapse** with a policy-driven consequence, evaluated when a challenge resolves rather than by a periodic sweep.
+
+Every rank change is mirrored to a dated [scale item](./concepts/scaleItems) as a side effect of the position mutation, never as a separate call a caller might skip, so standing history is an ordinary scale lookup rather than a second store. `CHALLENGED` is the first matchUpStatus whose context is **enforced** — valid only in a `LADDER` draw, via a general scope mechanism rather than a special case in the setter.
+
+### Team Competition
+
+Team events are modelled as **[tieFormats](./concepts/tieFormat)** — a declarative description of the collections (singles, doubles, or any custom grouping) that make up a dual match, their `matchUpFormat`s, and how collection results aggregate into a tie score. Collections can be added, modified, reordered, removed and grouped at tournament, event, draw, structure or individual matchUp scope, with orphaned formats cleaned up automatically.
+
+**[LineUps](./concepts/lineUp)** assign individual participants to collection positions with validation, and team scores are computed from collection value, match value, set value, or group aggregation. Nineteen tieFormats ship as fixtures — collegiate formats, national federation team championships, and multi-team exhibition formats among them. See the [tieFormat governor](./governors/tie-format-governor).
+
+### Participants, Entries and Seeding
+
+Participants may be individuals, pairs, teams or groups, carrying the full CODES record — person details, memberships, sign-in and payment status, [timeItems](./concepts/timeItems), and [scale items](./concepts/scaleItems). [Entry management](./concepts/events/entries) covers event and draw entries, entry status transitions, alternates and promotion, pair entry construction, entry positions, and per-stage entries, with [eligibility](./concepts/events/entry-eligibility) enforced against category and policy constraints.
+
+[Seeding](./policies/seedingPolicy) is policy-driven — seed counts by draw size, seed blocks, grouping and separation — and is complemented by an [avoidance](./policies/avoidance) system that separates participants by any attribute path (country, club, team, rating band) during position assignment. [Position actions](./policies/positionActions) and [matchUp actions](./policies/matchUpActions) queries return the legal operations available in a given draw state, so a client can render exactly the affordances the rules allow rather than reimplementing them.
 
 ### Scheduling
 
@@ -69,6 +100,8 @@ The **Competition Factory** provides two complementary scheduling approaches. **
 Both approaches are driven by **[scheduling policies](./policies/scheduling)** that define match duration estimates, recovery times, and daily limits per format and category, and by **[scheduling profiles](./concepts/scheduling-profile)** — declarative, persistent configurations that map specific rounds to dates and venues across the entire tournament. Profiles can be built incrementally, validated before execution, and adjusted as conditions change.
 
 The **[Availability Engine](./availability-engine/availability-engine-overview)** extends this further by modelling court availability as continuous capacity streams, enabling "what-if" scenario simulation — tournament directors can test scheduling changes, visualize capacity, and detect conflicts before committing to the tournament record.
+
+[Venues, courts](./concepts/venues-courts) and their availability windows are first-class records. **Practice courts** are handled separately, as time-bounded registrations against a court with configurable booking capacity and participant conflict detection — see the [practice governor](./governors/practice-governor).
 
 ### Publishing and Embargo
 
@@ -86,6 +119,43 @@ Built-in policies cover ATP, WTA, ITF, and national federation systems, but any 
 
 For ranking list generation pipelines, the Scale Engine supports **[multi-tournament aggregation](./scale-engine/aggregation)** with counting buckets, rolling period windows, and configurable tiebreak criteria. `applyTournamentRankingPoints()` persists computed awards as scale items on participant records, enabling bulk processing workflows where tournaments are fed through the pipeline sequentially to produce cumulative ranking lists.
 
+The same machinery handles **ratings** as well as rankings — including **dynamic ratings** computed from match results and seeded from each participant's published value, the mechanism that also drives DrawMatic pairing and rating-ordered ladders. The factory deliberately does not fetch third-party ratings: those are other people's systems with their own credentials and terms, so retrieving values belongs in an operator's ingest adapter rather than in a competition engine.
+
+### Scoring Engine
+
+The **[Scoring Engine](./scoring-engine/scoring-engine-overview)** provides point-by-point match scoring across [multiple sports and formats](./scoring-engine/format-support) — standard tennis, tiebreak-only (pickleball, squash, badminton), timed sets, aggregate scoring, and rally scoring. It supports undo/redo, server tracking, substitutions, and mixed-mode entry, combining point-by-point with manual set/game entry.
+
+Formats themselves are expressed as **[matchUpFormat codes](./codes/matchup-format)** — a compact, parseable grammar (`SET3-S:6/TB7`) that round-trips to a structured object, so a format is validated data rather than a string every client has to interpret. Score parsing, analysis and outcome determination are driven from the same codes.
+
+### Officiating Engine
+
+The **[Officiating Engine](./engines/officiating-engine)** manages official assignments, certifications, evaluations, and suspension tracking. It supports policy-driven eligibility checks against certification requirements and evaluation score thresholds, enabling governing bodies to define and enforce officiating standards across tournaments.
+
+### Sanctioning Engine
+
+The **[Sanctioning Engine](./engines/sanctioning-engine)** provides a state machine for governing body tournament sanctioning workflows. It manages the lifecycle from application through approval, with [policy-driven validation](./policies/sanctioningPolicy) of tournament parameters against tier-specific constraints — allowed formats, draw types, categories, prize money ranges, court requirements, and calendar conflict detection.
+
+### Reporting
+
+[Report queries](./governors/report-governor) derive operational and statistical views from a tournament record without a separate reporting store — structure reports, entry status reports, venue and court utilization, participant statistics, and a generic report generator driven by a report context. Because the record is self-contained, the same reports run against a live tournament or one archived years earlier.
+
+### Policies
+
+Behavior is configured by **[JSON policy definitions](./concepts/policies)** attached at tournament, event, draw or structure scope. The factory ships a catalog of defaults covering [seeding](./policies/seedingPolicy), [avoidance](./policies/avoidance), [draws](./policies/draws), [progression](./policies/progressionPolicy), [scheduling](./policies/scheduling), [scoring](./policies/scoringPolicy), [round naming](./policies/roundNaming), [round robin tallies](./policies/roundRobinTallyPolicy), [matchUp](./policies/matchUpActions) and [position actions](./policies/positionActions), [ranking points](./policies/rankingPolicy), [sanctioning](./policies/sanctioningPolicy), [participant privacy](./policies/participantPolicy), [printing](./policies/printPolicy) and [competitive bands](./policies/competitiveBands) — including named variants for governing bodies and specific competition formats. Any policy can be replaced wholesale with your own JSON.
+
+### Mock Data Generation
+
+**[mocksEngine](./testing/mocks-engine-overview)** generates complete, valid tournament records from a compact profile — participants, events, draws, outcomes, venues, schedules and team competitions — with deterministic seeded randomness. It is how the factory's own suite is set up, and it makes reproducing a reported defect a matter of sharing a profile rather than a database dump.
+
+```js
+import { mocksEngine } from 'tods-competition-factory';
+
+const { tournamentRecord } = mocksEngine.generateTournamentRecord({
+  drawProfiles: [{ drawSize: 32, drawType: 'FEED_IN_CHAMPIONSHIP', outcomes: [] }],
+  setState: true,
+});
+```
+
 ## Learn More
 
 - **[Data Standards](./data-standards)** - Understanding CODES and the importance of standardized tournament data
@@ -95,4 +165,12 @@ For ranking list generation pipelines, the Scale Engine supports **[multi-tourna
 - **[Pro Scheduling](./concepts/pro-scheduling)** - Grid-based scheduling with conflict detection
 - **[Publishing](./concepts/publishing/publishing-overview)** - Granular visibility control with time-based embargoes
 - **[Scale Engine](./scale-engine/scale-engine-overview)** - Ranking points, ratings, and multi-tournament aggregation
+- **[Governors](./governors/governors-overview)** - The 24 business-rule groupings and their methods
+- **[Draw Types](./concepts/draw-types)** - The pre-defined catalog and linked structures
+- **[Ladder](./concepts/draw-types/ladder)** - Continuous, challenge-driven competition
+- **[tieFormats](./concepts/tieFormat)** - Team competition, collections and lineUps
+- **[Scoring Engine](./scoring-engine/scoring-engine-overview)** - Point-by-point scoring across sports
+- **[matchUpFormat Codes](./codes/matchup-format)** - The scoring format grammar
+- **[Policies](./concepts/policies)** - Configuring behavior with JSON
+- **[mocksEngine](./testing/mocks-engine-overview)** - Generating tournament records for tests and demos
 - **[Acknowledgements](./acknowledgements)** - Contributors and interactive examples
