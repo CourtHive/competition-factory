@@ -1,5 +1,6 @@
 import { findByCoord, generateDraw, playForward } from '@Tests/testHarness/exitPropagation/routeComparison';
 import { getDrawDefinition, getDrawMatchUps, hash } from '@Tests/testHarness/exitPropagation/transitions';
+import { getInvariantViolations } from '@Tests/testHarness/exitPropagation/invariants';
 import { getDrawInconsistencies } from '@Query/drawDefinition/getDrawInconsistencies';
 import tournamentEngine from '@Engines/syncEngine';
 import { expect, it, describe } from 'vitest';
@@ -7,6 +8,7 @@ import { expect, it, describe } from 'vitest';
 // constants
 import { FIRST_MATCH_LOSER_CONSOLATION } from '@Constants/drawDefinitionConstants';
 import { DRAW_POSITION_ACTIVE } from '@Constants/errorConditionConstants';
+import { BYE } from '@Constants/matchUpStatusConstants';
 
 /**
  * A flip that makes an ELIGIBLE loser must PLACE them in the first-match consolation.
@@ -163,6 +165,95 @@ describe('a flipped result reconciles a newly eligible fed loser', () => {
       }
       flipsApplied++;
       if (droppedProgressions(drawId).length) offenders.push(`${label} dropped-progression`);
+    }
+
+    expect(flipsApplied).toBeGreaterThan(0); // control: all-refused would pass vacuously
+    expect(offenders).toEqual([]);
+  });
+});
+
+/**
+ * A BYE cannot be recorded as having WON — not even for an instant, and not anywhere downstream.
+ *
+ * When a flip makes the fed loser INELIGIBLE, they must leave the consolation. Emptying their
+ * assignment is only half of that: they may have played on from it, and those results then stand
+ * over a drawPosition that now holds a BYE. `getDrawInconsistencies` rates the result clean and the
+ * census never scored it, which is how `Consolation|2|3` came to sit at COMPLETED with winningSide 1
+ * over sides `[BYE, participant]` — and how the BYE went on to "win" `Consolation|3|2` too.
+ *
+ * The rule is the engine's own. `getExitWinningSide`: *"A BYE draw position can never be the winning
+ * side."*
+ *
+ * Asserted through `getInvariantViolations` rather than by hand so the production behaviour and the
+ * sweep instrument cannot drift apart — the same rule that fails this test is the one the census and
+ * the 480k sweep report.
+ */
+describe('a BYE is never recorded as a winner', () => {
+  const drawSize = 16;
+  const participantsCount = 13;
+  const seed = 7001;
+
+  const setup = (drawId: string) => {
+    generateDraw(FIRST_MATCH_LOSER_CONSOLATION, drawId, drawSize, seed, participantsCount);
+    return playForward(drawId);
+  };
+
+  const residueViolations = (drawId: string): any[] =>
+    getInvariantViolations({
+      matchUps: getDrawMatchUps(drawId),
+      drawDefinition: getDrawDefinition(drawId),
+    }).filter((violation: any) =>
+      ['BYE_WON', 'UNDECIDED_WITH_WINNING_SIDE', 'UNDECIDED_WITH_SCORE'].includes(violation.rule),
+    );
+
+  it('withdraws what an ineligible loser won here, rather than leaving a BYE holding it', () => {
+    const drawId = 'bye-never-wins';
+    setup(drawId);
+    const coord = { structureName: 'Main', roundNumber: 2, roundPosition: 3 };
+    const target = findByCoord(drawId, coord);
+    expect(target?.winningSide).toBeTruthy(); // control: the flip needs a decided matchUp
+
+    // control: the consolation matchUp fed by this one is DECIDED before the flip — without a
+    // standing result there is nothing to leave behind and the test proves nothing.
+    const fedBefore = findByCoord(drawId, { structureName: 'Consolation', roundNumber: 2, roundPosition: 3 });
+    expect(fedBefore?.winningSide).toBeTruthy();
+
+    const result: any = tournamentEngine.setMatchUpStatus({
+      outcome: { winningSide: target.winningSide === 1 ? 2 : 1 },
+      allowChangePropagation: true,
+      matchUpId: target.matchUpId,
+      drawId,
+    });
+    expect(result.error).toBeUndefined();
+
+    const fedAfter = findByCoord(drawId, { structureName: 'Consolation', roundNumber: 2, roundPosition: 3 });
+    expect(fedAfter.matchUpStatus).toEqual(BYE);
+    expect(fedAfter.winningSide).toBeUndefined();
+    expect(residueViolations(drawId)).toEqual([]);
+  });
+
+  it('leaves no BYE holding a result after any flip in the draw', () => {
+    const drawId = 'bye-never-wins-sweep';
+    const playOrder = setup(drawId);
+    expect(playOrder.length).toBeGreaterThan(0); // control: an unplayed draw would flip nothing
+
+    const offenders: string[] = [];
+    let flipsApplied = 0;
+    for (const coord of playOrder) {
+      setup(drawId); // each flip on its own draw — cumulative flips compound into unreachable states
+      const target = findByCoord(drawId, coord);
+      if (!target?.winningSide) continue;
+      const result: any = tournamentEngine.setMatchUpStatus({
+        outcome: { winningSide: target.winningSide === 1 ? 2 : 1 },
+        allowChangePropagation: true,
+        matchUpId: target.matchUpId,
+        drawId,
+      });
+      if (result.error) continue;
+      flipsApplied++;
+      for (const violation of residueViolations(drawId)) {
+        offenders.push(`${coord.structureName}|${coord.roundNumber}|${coord.roundPosition} ${violation.rule}`);
+      }
     }
 
     expect(flipsApplied).toBeGreaterThan(0); // control: all-refused would pass vacuously

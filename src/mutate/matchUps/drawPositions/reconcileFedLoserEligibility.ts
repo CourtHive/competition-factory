@@ -1,5 +1,6 @@
 import { structureAssignedDrawPositions, getPositionAssignments } from '@Query/drawDefinition/positionsGetter';
 import { getStructureDrawPositionProfiles } from '@Query/structure/getStructureDrawPositionProfiles';
+import { removeSubsequentRoundsParticipant } from '@Mutate/matchUps/drawPositions/removeSubsequentRoundsParticipant';
 import { assignDrawPositionBye } from '@Mutate/matchUps/drawPositions/assignDrawPositionBye';
 import { getAllStructureMatchUps } from '@Query/matchUps/getAllStructureMatchUps';
 import { getDrawPositionWinCount } from '@Query/matchUp/getDrawPositionWinCount';
@@ -278,6 +279,46 @@ export function reconcileFedLoserEligibility({
   }
 
   if (!assignment) return { ...SUCCESS };
+
+  /**
+   * Take back what they won HERE before the slot becomes a BYE — in that order, and the order is
+   * the fix.
+   *
+   * A participant who is no longer eligible for this structure did not merely occupy a position:
+   * they may have played on from it. Emptying the assignment leaves those results standing over a
+   * drawPosition that now holds a BYE, and the matchUp then reads as a BYE having WON — measured on
+   * FMLC/13 `Main|2|3`, where `Consolation|2|3` stayed COMPLETED with winningSide 1 over sides
+   * `[BYE, participant]` and the BYE went on to "win" `Consolation|3|2` as well. A BYE is not a
+   * competitor; `getExitWinningSide` states the rule outright — *"A BYE draw position can never be
+   * the winning side."*
+   *
+   * `assignDrawPositionBye` alone cannot produce this state correctly, and not for want of trying:
+   * it sets BYE status at the drawPosition's FURTHEST ADVANCEMENT, so with the advancement still in
+   * place the BYE lands on the LAST matchUp of the chain and every matchUp before it keeps its
+   * result. Stripping the advancement first makes the fed matchUp the furthest advancement, which is
+   * where the BYE belongs.
+   *
+   * `releaseAdvancedDrawPosition` — the narrow primitive `removeDirectedLoser` uses — cannot do it
+   * either: by design it releases only UNDECIDED matchUps, and these are decided. The wider
+   * `removeSubsequentRoundsParticipant` is correct HERE precisely because it rewrites status,
+   * winningSide and codes on what it releases. `removeDirectedLoser` records that as too wide for
+   * its own path; this path is the opposite case — those results record a participant the feed rule
+   * never admitted, so they are exactly what must not survive.
+   *
+   * The fed matchUp itself is untouched by the call: it is the position's INITIAL round, which
+   * `removeSubsequentRoundsParticipant` excludes, and `assignDrawPositionBye` then gives it BYE
+   * status.
+   */
+  removeSubsequentRoundsParticipant({
+    roundNumber: loserTargetLink.target?.roundNumber ?? 1,
+    targetDrawPosition: assignment.drawPosition,
+    structureId: targetStructureId,
+    inContextDrawMatchUps,
+    tournamentRecord,
+    drawDefinition,
+    matchUpsMap,
+    event,
+  });
 
   // The slot reverts to what `directLoser` would have put there for this participant on this link:
   // a BYE marked as propagation-produced, so removal can later tell it from a structural BYE.
