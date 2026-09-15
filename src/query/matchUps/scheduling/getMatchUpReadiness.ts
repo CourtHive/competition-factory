@@ -42,6 +42,7 @@
 import { checkRequiredParameters } from '@Helpers/parameters/checkRequiredParameters';
 import { allTournamentMatchUps } from '@Query/matchUps/getAllTournamentMatchUps';
 import { makeTimingResolver, SchedulingTiming } from './schedulingTiming';
+import { commitmentOf, TimeCommitment } from './timeCommitment';
 
 // constants and types
 import { MISSING_MATCHUP_ID } from '@Constants/errorConditionConstants';
@@ -65,11 +66,34 @@ export type ReadinessFinding = {
   notBefore?: string;
 };
 
-/** Why readiness could not be evaluated. Never reported as "ready" — an unevaluated matchUp is not a clean one. */
-export type ReadinessSkipReason = 'unknownMatchUp' | 'bye' | 'completed' | 'notScheduled' | 'noTime';
+/**
+ * Why readiness could not be evaluated. Never reported as "ready" — an
+ * unevaluated matchUp is not a clean one.
+ *
+ * `timeNotPromised` is `noTime` by another route: a `scheduledTime` is recorded,
+ * but an annotation withdraws it, so the residual number is not a claim to
+ * check against. See `commitmentOf`.
+ */
+export type ReadinessSkipReason =
+  'unknownMatchUp' | 'bye' | 'completed' | 'notScheduled' | 'noTime' | 'timeNotPromised';
 
 export type ReadinessResult =
-  { evaluated: false; reason: ReadinessSkipReason } | { evaluated: true; findings: ReadinessFinding[] };
+  | { evaluated: false; reason: ReadinessSkipReason }
+  | {
+      evaluated: true;
+      findings: ReadinessFinding[];
+      /**
+       * How strongly the schedule commits to the time these findings were
+       * measured against — never `none`, which skips instead.
+       *
+       * Carried so a consumer can tell WHY a finding rides at INFO. Against a
+       * `floor` the findings are demoted, because a blocker clearing later than
+       * a floor is a later floor rather than a broken promise; a consumer that
+       * grades severity into a colour needs to know that happened, and must not
+       * have to re-derive it from the schedule itself.
+       */
+      commitment: Exclude<TimeCommitment, 'none'>;
+    };
 
 const COMPLETED_STATUSES = new Set([
   'COMPLETED',
@@ -239,6 +263,10 @@ function skipReasonFor(target: HydratedMatchUp): ReadinessSkipReason | undefined
   if (isFinished(target)) return 'completed';
   if (!target.schedule?.scheduledDate) return 'notScheduled';
   if (parseClockMinutes(target.schedule?.scheduledTime) === null) return 'noTime';
+  // An annotation that withdraws the time leaves a residual number that states
+  // nothing. Grading it would report a matchUp as unable to meet a time the
+  // schedule never claimed.
+  if (commitmentOf(target.schedule) === 'none') return 'timeNotPromised';
   return undefined;
 }
 
@@ -405,7 +433,25 @@ export function analyzeMatchUpReadiness(params: {
   if (undetermined) findings.push(undetermined);
 
   const order: ReadinessKind[] = ['overlap', 'dependency', 'recovery', 'undetermined'];
-  return { evaluated: true, findings: findings.toSorted((a, b) => order.indexOf(a.kind) - order.indexOf(b.kind)) };
+  const ordered = findings.toSorted((a, b) => order.indexOf(a.kind) - order.indexOf(b.kind));
+
+  // `skipReasonFor` has already excluded `none`, so the target's time is either
+  // stated or a floor.
+  const commitment = commitmentOf(target.schedule) as Exclude<TimeCommitment, 'none'>;
+
+  // Against a floor, a blocker that clears later is a LATER FLOOR, not a broken
+  // promise — so the findings keep their sentences and their clocks but stop
+  // indicting the placement.
+  //
+  // `overlap` is exempt. A shared individual physically on court elsewhere is a
+  // fact about bodies, not about a promise, and it is the one finding whose
+  // truth does not depend on the time being a commitment.
+  const graded =
+    commitment === 'floor'
+      ? ordered.map((finding) => (finding.kind === 'overlap' ? finding : { ...finding, severity: 'INFO' as const }))
+      : ordered;
+
+  return { evaluated: true, findings: graded, commitment };
 }
 
 type GetMatchUpReadinessArgs = {
