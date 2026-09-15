@@ -1,9 +1,18 @@
-import { getDrawDefinition, getDrawMatchUps, observeMutation } from '@Tests/testHarness/exitPropagation/transitions';
 import { getInvariantViolations } from '@Tests/testHarness/exitPropagation/invariants';
-import { prepareDraw, type Step } from '@Tests/testHarness/exitPropagation/sweep';
-import scenarios from '@Tests/testHarness/exitPropagation/byeArrivesIntoPendingExit.scenarios.json';
 import { setSubscriptions } from '@Global/state/globalState';
+import tournamentEngine from '@Engines/syncEngine';
+import mocksEngine from '@Assemblies/engines/mock';
 import { expect, it, describe } from 'vitest';
+
+// constants
+import {
+  MODIFIED_FEED_IN_CHAMPIONSHIP,
+  FIRST_MATCH_LOSER_CONSOLATION,
+  FEED_IN_CHAMPIONSHIP,
+  CURTIS_CONSOLATION,
+  COMPASS,
+} from '@Constants/drawDefinitionConstants';
+import { DOUBLE_WALKOVER, DOUBLE_DEFAULT, DEFAULTED, WALKOVER } from '@Constants/matchUpStatusConstants';
 
 /**
  * A BYE arriving into the slot a propagated exit is WAITING ON must not become its winner.
@@ -13,10 +22,9 @@ import { expect, it, describe } from 'vitest';
  * arrives. It is a legitimate shape, and `getStructureInconsistencies` says so in as many words:
  * *"A PENDING propagated exit legitimately has an empty winner slot."*
  *
- * The hole is what happens when the thing that arrives is a **BYE**. Nobody will ever come, the
- * pending exit can never resolve, and the matchUp stands recorded as the BYE having won by walkover.
- * `getExitWinningSide` states the rule this breaks outright — *"A BYE draw position can never be the
- * winning side."*
+ * The hole is what arrives. When it is a BYE, nobody ever will: the pending exit can never resolve
+ * and the matchUp stands recorded as the BYE having won. `getExitWinningSide` states the rule this
+ * breaks outright — *"A BYE draw position can never be the winning side."*
  *
  * RULE 1 already gives the answer for the case where the BYE is there FIRST — *"opponent is a BYE:
  * the participant advances through it… so this matchUp stays a BYE"*. `assignDrawPositionBye` now
@@ -25,76 +33,192 @@ import { expect, it, describe } from 'vitest';
  * awarded side, so a BYE on the LOSING side — a participant advancing past it, or an exit against an
  * emptied position — is left exactly as it is.
  *
- * ## Why recorded scenarios rather than a hand-built draw
+ * ## The cases are generated, not recorded
  *
- * The state needs a double exit upstream, a consolation feed whose arrival never comes, and a BYE
- * routed into precisely that slot. Hand-building it is possible but proves only the one arrangement;
- * these are the arrangements the pipeline actually produced, across five draw types. Measured over
- * the two 600-seed census windows before this fix: 47 seeds, split evenly across both propagation
- * arms.
+ * Each case is a `mocksEngine` draw plus the handful of real `setMatchUpStatus` submissions that
+ * produce the state — no stored scenario file. They were found by the exit-propagation sweep and
+ * then reduced with its shrinker, which took 30 random steps down to the three or four that
+ * actually matter; what survives is written out here as the outcomes a scorer would enter.
  *
- * The scenarios are VENDORED into this repo rather than read from the census fixture they were
- * lifted from. That fixture lives in a sibling repository, which resolves on a developer's machine
- * and does not exist in CI — the first version of this file read it by relative path, passed
- * `pnpm verify` locally, and collected ZERO tests in CI. A test that reads outside its own
- * repository is a test that does not run.
+ * `nonRandom` is the determinism knob and is load-bearing: BYE PLACEMENT is what these cases turn
+ * on, and it is decided at generation. `participantsCount` is reduced below `drawSize` for the same
+ * reason — a full draw has no BYEs and none of this can arise, so a case run at
+ * `participantsCount === drawSize` would pass whether the code is fixed or not. COMPASS is the
+ * exception and is deliberately kept at 16/16: there the BYE is produced by the cascade rather than
+ * by the draw, which is a different route to the same state.
+ *
+ * Five draw types, because the defect is in the shared BYE-placement chain rather than in any one
+ * topology. Before this fix the sweep reported the state on 47 seeds across the two 600-seed census
+ * windows, split evenly across both propagation arms.
  */
 describe('a BYE arriving into a pending propagated exit', () => {
-  const key = (matchUp: any) => `${matchUp.structureName}|${matchUp.roundNumber}|${matchUp.roundPosition}`;
+  type Submission = { structureName: string; roundNumber: number; roundPosition: number; outcome: any };
 
-  // Seeds measured to produce the state at a255f765d. Spread across draw types on purpose: the
-  // defect is in the BYE-placement chain, which is shared, not in any one draw type's topology.
-  const SEEDS = [
-    { seed: 9000118, drawType: 'FEED_IN_CHAMPIONSHIP' },
-    { seed: 9000151, drawType: 'CURTIS_CONSOLATION' },
-    { seed: 9000200, drawType: 'MODIFIED_FEED_IN_CHAMPIONSHIP' },
-    { seed: 9000384, drawType: 'COMPASS' },
-    { seed: 9000448, drawType: 'FIRST_MATCH_LOSER_CONSOLATION' },
+  const CASES: {
+    name: string;
+    drawType: string;
+    drawSize: number;
+    participantsCount: number;
+    nonRandom: number;
+    propagateExitStatus: boolean;
+    submissions: Submission[];
+  }[] = [
+    {
+      name: 'feed-in championship — a double default feeds a consolation slot already emptied',
+      drawType: FEED_IN_CHAMPIONSHIP,
+      drawSize: 16,
+      participantsCount: 13,
+      nonRandom: 9000118,
+      propagateExitStatus: false,
+      submissions: [
+        { structureName: 'Main', roundNumber: 1, roundPosition: 6, outcome: { winningSide: 1 } },
+        { structureName: 'Main', roundNumber: 1, roundPosition: 5, outcome: { winningSide: 2 } },
+        { structureName: 'Consolation', roundNumber: 1, roundPosition: 3, outcome: { matchUpStatus: DOUBLE_DEFAULT } },
+        { structureName: 'Main', roundNumber: 1, roundPosition: 4, outcome: { matchUpStatus: DOUBLE_DEFAULT } },
+      ],
+    },
+    {
+      name: 'curtis consolation — a double walkover behind an already-propagated walkover',
+      drawType: CURTIS_CONSOLATION,
+      drawSize: 16,
+      participantsCount: 11,
+      nonRandom: 9000151,
+      propagateExitStatus: true,
+      submissions: [
+        {
+          structureName: 'Main',
+          roundNumber: 1,
+          roundPosition: 7,
+          outcome: { matchUpStatus: DEFAULTED, winningSide: 1 },
+        },
+        {
+          structureName: 'Main',
+          roundNumber: 2,
+          roundPosition: 1,
+          outcome: { matchUpStatus: WALKOVER, winningSide: 2 },
+        },
+        { structureName: 'Main', roundNumber: 1, roundPosition: 4, outcome: { matchUpStatus: DOUBLE_WALKOVER } },
+      ],
+    },
+    {
+      name: 'modified feed-in championship — a second-round double default at drawSize 32',
+      drawType: MODIFIED_FEED_IN_CHAMPIONSHIP,
+      drawSize: 32,
+      participantsCount: 27,
+      nonRandom: 9000200,
+      propagateExitStatus: true,
+      submissions: [
+        {
+          structureName: 'Main',
+          roundNumber: 1,
+          roundPosition: 4,
+          outcome: { matchUpStatus: WALKOVER, winningSide: 1 },
+        },
+        {
+          structureName: 'Main',
+          roundNumber: 1,
+          roundPosition: 3,
+          outcome: { matchUpStatus: DEFAULTED, winningSide: 1 },
+        },
+        { structureName: 'Main', roundNumber: 1, roundPosition: 13, outcome: { winningSide: 1 } },
+        { structureName: 'Main', roundNumber: 2, roundPosition: 7, outcome: { matchUpStatus: DOUBLE_DEFAULT } },
+      ],
+    },
+    {
+      name: 'compass — a cascade-placed BYE, in a draw that generated none',
+      drawType: COMPASS,
+      drawSize: 16,
+      participantsCount: 16,
+      nonRandom: 9000384,
+      propagateExitStatus: true,
+      submissions: [
+        { structureName: 'East', roundNumber: 1, roundPosition: 2, outcome: { winningSide: 2 } },
+        { structureName: 'West', roundNumber: 1, roundPosition: 1, outcome: { matchUpStatus: DOUBLE_WALKOVER } },
+        { structureName: 'East', roundNumber: 1, roundPosition: 3, outcome: { matchUpStatus: DOUBLE_WALKOVER } },
+      ],
+    },
+    {
+      name: 'first-match loser consolation — a double default re-scored, then a second-round default',
+      drawType: FIRST_MATCH_LOSER_CONSOLATION,
+      drawSize: 32,
+      participantsCount: 31,
+      nonRandom: 9000448,
+      propagateExitStatus: true,
+      submissions: [
+        { structureName: 'Main', roundNumber: 1, roundPosition: 16, outcome: { winningSide: 2 } },
+        { structureName: 'Main', roundNumber: 1, roundPosition: 15, outcome: { matchUpStatus: DOUBLE_DEFAULT } },
+        {
+          structureName: 'Main',
+          roundNumber: 1,
+          roundPosition: 15,
+          outcome: { matchUpStatus: WALKOVER, winningSide: 2 },
+        },
+        {
+          structureName: 'Main',
+          roundNumber: 2,
+          roundPosition: 8,
+          outcome: { matchUpStatus: DEFAULTED, winningSide: 1 },
+        },
+      ],
+    },
   ];
 
-  /**
-   * Checked after EVERY step, not once at the end.
-   *
-   * The state is transient in most of these seeds — a later step in the schedule happens to overwrite
-   * the matchUp, so an end-of-replay assertion sees a clean draw and passes whether the code is fixed
-   * or not. Measured: of five seeds the census reports, an end-state check reproduced ONE. The census
-   * itself checks after every mutation, which is why it sees all five.
-   *
-   * A draw is not allowed to pass through this state on its way to a tidy one: any consumer reading
-   * between two mutations sees a BYE credited with a win.
-   */
-  const replayCheckingEveryStep = (scenario: any): string[] => {
-    setSubscriptions({});
-    const drawId = `bye-pending-${scenario.seed}`;
-    prepareDraw({ ...scenario.config, seed: scenario.seed }, drawId);
-    const seen: string[] = [];
-    let stepNumber = 0;
-    for (const step of (scenario.steps ?? []) as Step[]) {
-      stepNumber++;
-      const target = getDrawMatchUps(drawId).find((matchUp: any) => key(matchUp) === key(step));
-      if (!target) continue;
-      observeMutation({
-        propagateExitStatus: scenario.config.propagateExitStatus,
-        matchUpId: target.matchUpId,
-        outcome: step.outcome,
-        drawId,
-      });
-      const violations = getInvariantViolations({
-        matchUps: getDrawMatchUps(drawId),
-        drawDefinition: getDrawDefinition(drawId),
-      }).filter((violation: any) => violation.rule === 'BYE_WON');
-      for (const violation of violations) seen.push(`step ${stepNumber}: ${violation.detail}`);
-    }
-    return seen;
+  const drawMatchUps = (drawId: string): any[] =>
+    tournamentEngine.allDrawMatchUps({ inContext: true, drawId }).matchUps ?? [];
+
+  const byeWonViolations = (drawId: string): any[] => {
+    const { drawDefinition } = tournamentEngine.getEvent({ drawId });
+    return getInvariantViolations({ matchUps: drawMatchUps(drawId), drawDefinition }).filter(
+      (violation: any) => violation.rule === 'BYE_WON',
+    );
   };
 
-  it.each(SEEDS)('leaves no BYE holding a win — seed $seed ($drawType)', ({ seed, drawType }) => {
-    const scenario: any = scenarios.find((candidate: any) => candidate.seed === seed);
-    expect(scenario).toBeTruthy(); // control: the recorded scenario must be present
-    expect(scenario.config.drawType).toEqual(drawType); // control: and still name this draw type
+  it.each(CASES)('$name', ({ drawType, drawSize, participantsCount, nonRandom, propagateExitStatus, submissions }) => {
+    setSubscriptions({});
+    const drawId = `bye-pending-${nonRandom}`;
+    mocksEngine.generateTournamentRecord({
+      drawProfiles: [{ participantsCount, drawSize, drawType, drawId }],
+      nonRandom,
+      setState: true,
+    });
 
-    expect((scenario.steps ?? []).length).toBeGreaterThan(0); // control: an empty schedule mutates nothing
+    // CONTROL: the draw must exist and be unplayed, or every assertion below is about nothing.
+    expect(drawMatchUps(drawId).length).toBeGreaterThan(0);
+    expect(byeWonViolations(drawId)).toEqual([]);
 
-    expect(replayCheckingEveryStep(scenario)).toEqual([]);
+    const offences: string[] = [];
+    submissions.forEach((submission, index) => {
+      const target = drawMatchUps(drawId).find(
+        (matchUp: any) =>
+          matchUp.structureName === submission.structureName &&
+          matchUp.roundNumber === submission.roundNumber &&
+          matchUp.roundPosition === submission.roundPosition,
+      );
+      // CONTROL: a coordinate that no longer names a matchUp would silently skip the submission
+      // that produces the state, and the case would pass by doing nothing.
+      expect(target, `submission ${index + 1} names no matchUp`).toBeTruthy();
+
+      tournamentEngine.setMatchUpStatus({
+        matchUpId: target.matchUpId,
+        outcome: submission.outcome,
+        propagateExitStatus,
+        drawId,
+      });
+
+      /**
+       * Checked after EVERY submission, not once at the end.
+       *
+       * The state is transient in most of these cases — a later submission happens to overwrite the
+       * matchUp, so an end-of-run assertion sees a clean draw and passes whether the code is fixed
+       * or not. Measured while writing this file: of five cases, an end-state check reproduced ONE.
+       * A draw is not allowed to pass THROUGH this state on its way to a tidy one; any consumer
+       * reading between two submissions sees a BYE credited with a win.
+       */
+      for (const violation of byeWonViolations(drawId)) {
+        offences.push(`after submission ${index + 1}: ${violation.detail}`);
+      }
+    });
+
+    expect(offences).toEqual([]);
   });
 });
