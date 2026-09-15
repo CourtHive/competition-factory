@@ -699,6 +699,8 @@ previous behaviour had no reading a governing body could adopt.
 
 ## 11f. `allowChangePropagation` re-derives progression instead of rewriting it
 
+_Shipped in [#4885](https://github.com/CourtHive/competition-factory/pull/4885)._
+
 A winner change sent with `allowChangePropagation` now runs the sequence a tournament director runs
 by hand — clear the downstream results, apply the correction through the ordinary machinery, re-enter
 what was cleared — instead of hand-editing `drawPositions` and `positionAssignments`.
