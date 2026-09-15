@@ -121,7 +121,7 @@ Two properties follow from what provenance _is_ — a record of where each side 
 **A known limit, since the field is visible in stored records.** On a consolation convergence the
 stored entry can be present for only one of the two sides; the entries that _are_ there are correct.
 Completing it is the work of making `matchUpStatusCodes` a projection of this field rather than a
-parallel record — see [migration §11](/docs/migration-7.0.0#11-non-breaking-additions-worth-knowing).
+parallel record — see [migration §12](/docs/migration-7.0.0#12-non-breaking-additions-worth-knowing).
 Read the field per side and treat a missing side as unknown rather than as absent-of-exit.
 
 ### Why not `matchUpStatusCodes`
