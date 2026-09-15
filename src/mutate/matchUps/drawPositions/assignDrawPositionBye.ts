@@ -324,6 +324,17 @@ export function assignDrawPositionBye({
 
   matchUp && setMatchUpStatusBYE({ preserveScheduling, tournamentRecord, drawDefinition, matchUp, event });
 
+  correctResultsAwardedToTheBye({
+    inContextDrawMatchUps,
+    furthestMatchUpId: matchUp?.matchUpId,
+    preserveScheduling,
+    tournamentRecord,
+    drawDefinition,
+    drawPosition,
+    matchUps,
+    event,
+  });
+
   const drawPositionToAdvance = matchUp?.drawPositions?.find((position) => position !== drawPosition);
 
   if (matchUp && drawPositionToAdvance) {
@@ -358,6 +369,64 @@ export function assignDrawPositionBye({
     structureId,
     stack,
   });
+}
+
+/**
+ * Every EARLIER matchUp in this drawPosition's chain that awarded its result to the position.
+ *
+ * The line above takes the FURTHEST advancement, which is right for where the BYE cascade
+ * continues from — and blind to everything behind it. When the position being BYEd had already
+ * advanced, every matchUp it advanced THROUGH keeps whatever result it held, and that result is
+ * now recorded over a BYE. `getExitWinningSide` states the rule this breaks: *"A BYE draw position
+ * can never be the winning side."*
+ *
+ * The shape that reaches here is a PENDING PROPAGATED EXIT. `progressExitStatus` RULE 2 awards a
+ * carried walkover to the side WITHOUT the exit — the empty slot that will receive whoever falls
+ * through — and that award is written before anyone arrives. When what arrives is a BYE, nobody
+ * ever will, and the matchUp stands as the BYE having won by walkover. Measured over the two
+ * 600-seed census windows: 47 seeds, split evenly across both propagation arms and 8 draw types,
+ * reported by neither `getDrawInconsistencies` nor any status-only rule.
+ *
+ * RULE 1 already states the answer for the case where the BYE is there FIRST — *"opponent is a
+ * BYE: the participant advances through it… so this matchUp stays a BYE"*. This applies the same
+ * conclusion when the BYE arrives LAST, which is the only reason the two were ever treated
+ * differently.
+ *
+ * SCOPED TO THE AWARDED SIDE, and that scope is the whole safety of it. A matchUp where the BYE is
+ * the LOSING side is the ordinary, legitimate shape — a participant advancing past a BYE, or a
+ * propagated exit against an emptied position — and is left exactly as it is.
+ *
+ * `sideExitProvenance` is untouched: it records WHICH upstream result produced the exit, keyed by
+ * `sourceMatchUpId`, and that remains true whether or not a winner can be named. `withdrawProducedExits`
+ * unwinds by that key, so correcting the original result still takes this back.
+ */
+function correctResultsAwardedToTheBye({
+  inContextDrawMatchUps,
+  furthestMatchUpId,
+  preserveScheduling,
+  tournamentRecord,
+  drawDefinition,
+  drawPosition,
+  matchUps,
+  event,
+}: {
+  inContextDrawMatchUps: HydratedMatchUp[];
+  preserveScheduling?: boolean;
+  tournamentRecord?: Tournament;
+  drawDefinition: DrawDefinition;
+  furthestMatchUpId?: string;
+  matchUps?: MatchUp[];
+  drawPosition: number;
+  event?: Event;
+}): void {
+  for (const chainMatchUp of matchUps ?? []) {
+    if (chainMatchUp.matchUpId === furthestMatchUpId) continue;
+    if (!chainMatchUp.winningSide || !chainMatchUp.drawPositions?.includes(drawPosition)) continue;
+    const inContextChainMatchUp = inContextDrawMatchUps.find((m) => m.matchUpId === chainMatchUp.matchUpId);
+    const sideNumber = inContextChainMatchUp?.sides?.find((side) => side.drawPosition === drawPosition)?.sideNumber;
+    if (sideNumber !== chainMatchUp.winningSide) continue;
+    setMatchUpStatusBYE({ preserveScheduling, tournamentRecord, drawDefinition, matchUp: chainMatchUp, event });
+  }
 }
 
 /**
