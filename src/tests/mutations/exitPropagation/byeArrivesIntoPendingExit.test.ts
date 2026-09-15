@@ -1,10 +1,9 @@
 import { getDrawDefinition, getDrawMatchUps, observeMutation } from '@Tests/testHarness/exitPropagation/transitions';
 import { getInvariantViolations } from '@Tests/testHarness/exitPropagation/invariants';
 import { prepareDraw, type Step } from '@Tests/testHarness/exitPropagation/sweep';
+import scenarios from '@Tests/testHarness/exitPropagation/byeArrivesIntoPendingExit.scenarios.json';
 import { setSubscriptions } from '@Global/state/globalState';
 import { expect, it, describe } from 'vitest';
-import fs from 'fs';
-import path from 'path';
 
 /**
  * A BYE arriving into the slot a propagated exit is WAITING ON must not become its winner.
@@ -26,16 +25,21 @@ import path from 'path';
  * awarded side, so a BYE on the LOSING side — a participant advancing past it, or an exit against an
  * emptied position — is left exactly as it is.
  *
- * ## Why this is driven from the census fixtures rather than a hand-built draw
+ * ## Why recorded scenarios rather than a hand-built draw
  *
  * The state needs a double exit upstream, a consolation feed whose arrival never comes, and a BYE
  * routed into precisely that slot. Hand-building it is possible but proves only the one arrangement;
- * these seeds are the arrangements the pipeline actually produced, across 8 draw types. Measured
- * over the two committed 600-seed windows before this fix: 47 seeds, split evenly across both
- * propagation arms.
+ * these are the arrangements the pipeline actually produced, across five draw types. Measured over
+ * the two 600-seed census windows before this fix: 47 seeds, split evenly across both propagation
+ * arms.
+ *
+ * The scenarios are VENDORED into this repo rather than read from the census fixture they were
+ * lifted from. That fixture lives in a sibling repository, which resolves on a developer's machine
+ * and does not exist in CI — the first version of this file read it by relative path, passed
+ * `pnpm verify` locally, and collected ZERO tests in CI. A test that reads outside its own
+ * repository is a test that does not run.
  */
 describe('a BYE arriving into a pending propagated exit', () => {
-  const windowPath = path.join(__dirname, '../../../../../Mentat/fixtures/exit-propagation-census/sched-w1.jsonl');
   const key = (matchUp: any) => `${matchUp.structureName}|${matchUp.roundNumber}|${matchUp.roundPosition}`;
 
   // Seeds measured to produce the state at a255f765d. Spread across draw types on purpose: the
@@ -84,16 +88,10 @@ describe('a BYE arriving into a pending propagated exit', () => {
     return seen;
   };
 
-  const scenarios = fs
-    .readFileSync(windowPath, 'utf8')
-    .split('\n')
-    .filter(Boolean)
-    .map((line) => JSON.parse(line));
-
   it.each(SEEDS)('leaves no BYE holding a win — seed $seed ($drawType)', ({ seed, drawType }) => {
-    const scenario = scenarios.find((candidate: any) => candidate.seed === seed);
-    expect(scenario).toBeTruthy(); // control: the frozen window must still contain this seed
-    expect(scenario.config.drawType).toEqual(drawType); // control: and still generate this draw type
+    const scenario: any = scenarios.find((candidate: any) => candidate.seed === seed);
+    expect(scenario).toBeTruthy(); // control: the recorded scenario must be present
+    expect(scenario.config.drawType).toEqual(drawType); // control: and still name this draw type
 
     expect((scenario.steps ?? []).length).toBeGreaterThan(0); // control: an empty schedule mutates nothing
 
