@@ -18,6 +18,23 @@ import tournamentEngine from '@Engines/syncEngine';
  * a progression the hand-rolled route re-derived differently. **Route B is the reference**: it is
  * what every consumer that does not send the flag already gets today.
  *
+ * ## Route B is a REFERENCE, not a ground truth — do not read agreement as correctness
+ *
+ * Route B is what the engine does today along the director's path. That makes it the right thing to
+ * measure a second implementation AGAINST; it does not make it right. Measured on
+ * DOUBLE_ELIMINATION, Route B's own resulting draws are flagged by `getDrawInconsistencies` eight
+ * times, before and after a change, unchanged — so on that draw type a route can converge on Route B
+ * and inherit defects in doing so.
+ *
+ * Read a divergence count as "how far this implementation is from the established path", and check
+ * the integrity scan on BOTH arms before reading convergence as improvement. A change that lowers
+ * divergence while raising Route A's flagged count has moved toward a reference that was itself
+ * wrong there. (Measured by the parallel `swapWinnerLoser` workstream, 2026-09-14.)
+ *
+ * Note also that "Route B" and "the flag-OFF path" are not synonyms: `progressExitStatus.ts:186`
+ * hardcodes `allowChangePropagation: true` on the cascade's internal `setMatchUpState` call, so the
+ * swap branch is reachable even when no consumer sends the flag.
+ *
  * ## Why a comparison rather than a scanner
  *
  * `getDrawInconsistencies` rates some of these divergences CLEAN — a BYE recorded as having won
