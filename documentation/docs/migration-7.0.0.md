@@ -28,6 +28,7 @@ feature tour and the full list of 7.0.0 additions, see [What's New in 7.0.0](./w
 | `pressureRating` is typed `boolean`, not `string`                                                 | TypeScript callers of `tallyParticipantResults` / `getParticipantResults` | See §9            |
 | Three request-shape fields gain real types (`positioning`, `finishingPositionNaming`, `schedule`) | TypeScript callers passing these loosely                                  | See §11           |
 | The SEEDING policy is typed, and two `stage` fields become `StageTypeUnion`                       | TypeScript callers with a wrong-typed seeding-policy field                | See §11           |
+| `allowChangePropagation` re-derives progression, and can now return an error                      | Callers sending `allowChangePropagation` on a winner change               | See §11f          |
 
 ## 1. `participantsRequiredMatchUpStatuses` — a spelling fix
 
@@ -695,6 +696,39 @@ unaffected and still accepted — a director can still record that the present p
 
 **There is no flag to restore it.** A player cannot lose to an opponent who does not exist; the
 previous behaviour had no reading a governing body could adopt.
+
+## 11f. `allowChangePropagation` re-derives progression instead of rewriting it
+
+A winner change sent with `allowChangePropagation` now runs the sequence a tournament director runs
+by hand — clear the downstream results, apply the correction through the ordinary machinery, re-enter
+what was cleared — instead of hand-editing `drawPositions` and `positionAssignments`.
+
+**Why this was worth breaking.** Changing a decided winner had TWO implementations. Without the flag
+the change is refused with `CANNOT_CHANGE_WINNING_SIDE`, and a director corrects it by clearing and
+re-entering, which runs `removeDirectedParticipants` -> `directParticipants` ->
+`directLoser`/`directWinner`. With the flag it took a separate path that re-implemented the same job.
+Measured head-to-head on fully played draws across four draw types, the two disagreed on **36 of 189
+flips**, and `getDrawInconsistencies` flagged the hand-rolled result in **34** of them while never
+flagging the director's. Three structural causes, now all subsumed:
+
+- it chose which structures to correct by `stageSequence`, so any structure fed by a **different
+  round of the same structure** — which sits at the SAME `stageSequence` — was never visited, leaving
+  the participant who no longer lost that round still holding the back-draw place;
+- it swapped only assignments that ALREADY existed, so a placement a `FIRST_MATCHUP` link had
+  withheld was never created when the new loser became eligible;
+- it edited assignments without reconciling the matchUps standing on them, leaving a BYE recorded as
+  having won `6-1 6-1` and advancing that BYE onward.
+
+**What a consumer sees.** For a correction that previously produced a correct draw, nothing changes.
+For one that previously produced a corrupted draw, the draw is now correct. The visible change is
+that the operation **can now fail**: it performs several state transitions, and if one is refused the
+call returns that error rather than silently completing a partial rewrite. Treat a non-`undefined`
+`error` on this path as a real refusal and surface it, rather than assuming success as before.
+
+**What did NOT change: the propagation cascade.** `progressExitStatus` sets this flag on its own
+internal calls, and it keeps the previous behaviour exactly. That is deliberate and measured — a
+cascade is already re-deriving progression, and making it clear and replay a subtree from inside its
+own traversal is re-entrant and regresses real scenarios. Nothing a consumer calls reaches that path.
 
 ## 12. Non-breaking additions worth knowing
 

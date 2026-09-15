@@ -12,9 +12,28 @@ import { FIRST_MATCHUP } from '@Constants/drawDefinitionConstants';
 /**
  * Swap the winner and loser of an already-decided matchUp, carrying the change downstream.
  *
- * Reached only via `allowChangePropagation`, which `resolveAndApplyOutcome` checks BEFORE the
- * `activeDownstream` dispatch — so none of the refusals that guard an ordinary re-score apply here.
- * TMX's score modal sends that flag on every score, which makes this the production correction path.
+ * ## THIS IS NO LONGER THE CONSUMER PATH — it is reached ONLY by the propagation cascade
+ *
+ * It used to serve both callers of the `allowChangePropagation` branch in `resolveAndApplyOutcome`.
+ * A consumer correction now goes to `correctDecidedOutcome`, which performs the director's own
+ * sequence — clear the downstream results, apply the change through the ordinary dispatch, re-enter
+ * what was cleared — instead of hand-editing `drawPositions` and `positionAssignments`. Measured
+ * head-to-head on 189 flips, this function disagreed with that sequence on 36 and
+ * `getDrawInconsistencies` flagged it on 34; the replacement closes all 36.
+ *
+ * What still arrives here is `progressExitStatus`, which hardcodes `allowChangePropagation: true`
+ * (and `propagatingExit: true`) on its internal call — to get PAST the refusal, not to request a
+ * clear-and-replay. Asking a cascade that is already re-deriving progression to clear and replay a
+ * subtree from inside its own traversal is re-entrant, and it is measurably wrong: census seed
+ * 9100247 (COMPASS 16/14) passes here and fails under `correctDecidedOutcome`,
+ * `noDownstreamDependencies`, AND the ordinary dispatch alike. So the cascade keeps exactly the
+ * behaviour it has always had.
+ *
+ * **This split is a stopping point, not an end state.** Retiring this function needs someone to
+ * establish what the cascade depends on in it — see the "what SWL-A did NOT fix" section of
+ * Mentat/planning/SWAP_WINNER_LOSER_TWO_ROUTES.md. Until then the three structural gaps documented
+ * there are still live ON THIS PATH, so do not treat a fix landed in `correctDecidedOutcome` as
+ * covering the cascade.
  */
 export function swapWinnerLoser(params) {
   const { tournamentRecord, inContextMatchUp, structure, drawDefinition, event } = params;

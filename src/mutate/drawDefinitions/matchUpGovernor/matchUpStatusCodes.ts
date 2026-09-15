@@ -4,7 +4,7 @@ import { definedAttributes } from '@Tools/definedAttributes';
 import { isString } from '@Tools/objects';
 
 // constants
-import { TO_BE_PLAYED } from '@Constants/matchUpStatusConstants';
+import { BYE, TO_BE_PLAYED } from '@Constants/matchUpStatusConstants';
 
 // types
 import { MatchUpsMap } from '@Types/factoryTypes';
@@ -69,7 +69,22 @@ export function updateMatchUpStatusCodes({
     //
     // Merged, not set: the other side's origin may already be recorded, and may have arrived first.
     // An UNDECIDED source is not recorded — provenance can never be TO_BE_PLAYED.
-    if (sourceMatchUpStatus && sourceMatchUpStatus !== TO_BE_PLAYED) {
+    //
+    // NEITHER IS A BYE TARGET. Provenance records how a side came to be in a CONTEST; a BYE is not
+    // one — `progressExitStatus` RULE 1 is explicit that a participant meeting a bye *advances
+    // through it* and the matchUp stays a `BYE`. Recording an origin there is not merely redundant:
+    // `isPropagatedExit` reads the mere PRESENCE of provenance, so a BYE carrying an entry reads as
+    // propagation-produced to every detector that excludes those.
+    //
+    // It also makes a do/undo leave residue, which is the defect class `clearSideExitProvenance`
+    // already exists to prevent, arriving from the other direction. Measured on
+    // `changePropagationPolicy.test.ts`: correcting a FMLC result and correcting it BACK returned a
+    // draw identical to the original except for
+    // `{ matchUpStatus: COMPLETED, previousMatchUpStatus: COMPLETED }` stamped on a consolation BYE
+    // — a provenance record of a non-exit, on a matchUp nobody played. Reached via
+    // `directWinner` -> `assignMatchUpDrawPosition` -> `applyPositionToMatchUp`.
+    const targetIsBye = matchUp.matchUpStatus === BYE;
+    if (sourceMatchUpStatus && sourceMatchUpStatus !== TO_BE_PLAYED && !targetIsBye) {
       mergeSideExitProvenance({
         matchUp,
         provenance: {

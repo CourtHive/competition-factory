@@ -1,5 +1,7 @@
 import { feedEligibilityChange } from '@Mutate/matchUps/matchUpStatus/feedEligibilityGuard';
 import { noDownstreamDependencies } from '@Mutate/drawDefinitions/matchUpGovernor/noDownstreamDependencies';
+import { correctDecidedOutcome } from '@Mutate/matchUps/drawPositions/correctDecidedOutcome';
+import { swapWinnerLoser } from '@Mutate/matchUps/drawPositions/swapWinnerLoser';
 import { generateTieMatchUpScore } from '@Assemblies/generators/tieMatchUpScore/generateTieMatchUpScore';
 import { isDirectingMatchUpStatus, isNonDirectingMatchUpStatus } from '@Query/matchUp/checkStatusType';
 import { addMatchUpScheduleItems } from '@Mutate/matchUps/schedule/scheduleItems/scheduleItems';
@@ -11,7 +13,6 @@ import { getMatchUpStatusScopeViolation } from '@Query/matchUps/getMatchUpStatus
 import { setFirstClassOrExtension } from '@Mutate/extensions/setFirstClassOrExtension';
 import { isMatchUpEventType } from '@Helpers/matchUpEventTypes/isMatchUpEventType';
 import { resolveTieFormat } from '@Query/hierarchical/tieFormats/resolveTieFormat';
-import { swapWinnerLoser } from '@Mutate/matchUps/drawPositions/swapWinnerLoser';
 import { ensureSideLineUps } from '@Mutate/matchUps/lineUps/ensureSideLineUps';
 import { modifyMatchUpScore } from '@Mutate/matchUps/score/modifyMatchUpScore';
 import { getPositionAssignments } from '@Query/drawDefinition/positionsGetter';
@@ -536,8 +537,32 @@ function resolveAndApplyOutcome({ params, isTeam, dualWinningSideChange, activeD
   const validWinningSideSwap =
     !isTeam && !dualWinningSideChange && winningSide && matchUp.winningSide && matchUp.winningSide !== winningSide;
 
+  /**
+   * The operator correction: re-derive progression rather than hand-edit it.
+   *
+   * TWO CALLERS REACH THIS BRANCH, and they want different things.
+   *
+   * **A consumer** sending `allowChangePropagation` is asking to change a decided winner and have
+   * the draw follow. `swapWinnerLoser` used to answer that by rewriting `drawPositions` and
+   * `positionAssignments` itself — a second implementation of "change a winner and carry it
+   * downstream", wrong in three independent ways and disagreeing with the director's own sequence on
+   * 36 of 189 measured flips. `correctDecidedOutcome` performs that sequence instead.
+   *
+   * **The cascade** reaches it because `progressExitStatus` hardcodes `allowChangePropagation: true`
+   * on its internal call — to get PAST the refusal, not to request a clear-and-replay. It is already
+   * re-deriving progression, and re-entering a subtree from inside its own traversal is both
+   * re-entrant and measurably wrong: census seed 9100247 (COMPASS 16/14) passes on the old path and
+   * fails on the new one, and it fails identically whether the cascade is given
+   * `correctDecidedOutcome`, `noDownstreamDependencies`, or the ordinary dispatch. So the cascade
+   * keeps the behaviour it has always had, unchanged, and `swapWinnerLoser` survives for it alone.
+   *
+   * That split is deliberate and is NOT the end state — see the "what this did NOT fix" section of
+   * Mentat/planning/SWAP_WINNER_LOSER_TWO_ROUTES.md. Deleting the second implementation outright
+   * requires understanding what the cascade depends on in it, which is its own workstream.
+   */
   if (allowChangePropagation && validWinningSideSwap && matchUp.roundPosition) {
-    return swapWinnerLoser(params);
+    if (params.propagatingExit) return swapWinnerLoser(params);
+    return correctDecidedOutcome(params, setMatchUpState);
   }
 
   const matchUpWinner = (winningSide && !matchUpTieId) || params.projectedWinningSide;
