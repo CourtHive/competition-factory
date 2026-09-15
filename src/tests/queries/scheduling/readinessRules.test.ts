@@ -41,6 +41,75 @@ function analyze(matchUps: HydratedMatchUp[], matchUpId: string) {
   return result.findings;
 }
 
+describe('what the schedule actually commits to', () => {
+  const earlier = () =>
+    matchUp(
+      'earlier',
+      [player('alice'), player('bob')],
+      { scheduledTime: '09:00', endTime: '10:45' },
+      { winningSide: 1 },
+    );
+
+  it('reports a firm time as firm, and grades against it', () => {
+    const target = matchUp('target', [player('alice'), player('chen')], { scheduledTime: '11:00' });
+    const result = analyzeMatchUpReadiness({
+      matchUps: [earlier(), target],
+      matchUpId: 'target',
+      timingFor: () => TIMING,
+    });
+    expect(result).toMatchObject({ evaluated: true, commitment: 'firm' });
+    expect((result as any).findings[0]).toMatchObject({ kind: 'recovery', severity: 'WARN', notBefore: '11:45' });
+  });
+
+  it('does not evaluate a time the schedule withdrew', () => {
+    // `TO_BE_ANNOUNCED` and its kin clear `scheduledTime` on write, so a record
+    // carrying both is legacy or hand-written — and the annotation is the more
+    // recent statement of intent. Grading it would report the matchUp as unable
+    // to meet a time nobody claimed.
+    const target = matchUp('target', [player('alice'), player('chen')], {
+      scheduledTime: '11:00',
+      timeModifiers: ['TO_BE_ANNOUNCED'],
+    });
+    const result = analyzeMatchUpReadiness({
+      matchUps: [earlier(), target],
+      matchUpId: 'target',
+      timingFor: () => TIMING,
+    });
+    expect(result).toEqual({ evaluated: false, reason: 'timeNotPromised' });
+  });
+
+  it('demotes findings against a NOT_BEFORE floor, keeping their times', () => {
+    // "No earlier than 11:00" permits a later start, so a window clearing at
+    // 11:45 is a later floor rather than a broken promise. The sentence and the
+    // clock survive; only the severity moves.
+    const target = matchUp('target', [player('alice'), player('chen')], {
+      scheduledTime: '11:00',
+      timeModifiers: ['NOT_BEFORE'],
+    });
+    const result: any = analyzeMatchUpReadiness({
+      matchUps: [earlier(), target],
+      matchUpId: 'target',
+      timingFor: () => TIMING,
+    });
+    expect(result).toMatchObject({ evaluated: true, commitment: 'floor' });
+    expect(result.findings[0]).toMatchObject({ kind: 'recovery', severity: 'INFO', notBefore: '11:45' });
+  });
+
+  it('never demotes an overlap — a body on a court is not a promise', () => {
+    const live = matchUp('live', [player('alice'), player('dee')], { scheduledTime: '10:30' });
+    const target = matchUp('target', [player('alice'), player('chen')], {
+      scheduledTime: '11:00',
+      timeModifiers: ['NOT_BEFORE'],
+    });
+    const result: any = analyzeMatchUpReadiness({
+      matchUps: [live, target],
+      matchUpId: 'target',
+      timingFor: () => TIMING,
+    });
+    expect(result.findings.find((finding: any) => finding.kind === 'overlap')).toMatchObject({ severity: 'WARN' });
+  });
+});
+
 describe('recovery — the window that has not elapsed', () => {
   it('reports the participant and the clock the window clears, projected from the plan', () => {
     const earlier = matchUp('earlier', [player('alice'), player('bob')], { scheduledTime: '09:00' });
