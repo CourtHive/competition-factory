@@ -183,20 +183,54 @@ function incompleteUpstream(
   return found;
 }
 
-/** When an incomplete matchUp is projected to finish, in minutes. `null` when it cannot be projected. */
-function projectedFinish(matchUp: HydratedMatchUp, timing: SchedulingTiming): number | null {
-  const start = parseClockMinutes(matchUp.schedule?.scheduledTime);
-  if (start === null) return null;
-  return start + timing.averageMinutes;
+/**
+ * When `matchUp` is expected to finish, in minutes. `null` when unprojectable.
+ *
+ * ── One ladder, and why it stops at three rungs ──
+ *
+ * This was two functions with DIFFERENT ladders over the same matchUp:
+ * `projectedFinish` read only `scheduledTime`, while `freeAfter` preferred a
+ * recorded `endTime`. Two problems came out of that.
+ *
+ * A feeder that went on late was projected from its PLAN, discarding the
+ * `startTime` stamp that records when it actually began — so this query
+ * promised a court, and a winner, earlier than either would exist.
+ *
+ * And any consumer rendering both figures got arithmetic that does not close.
+ * TMX renders exactly that pair on one row ("finishes ~15:30 → ready ~16:00"
+ * for an upstream that ended at 15:00 with an hour of recovery) and fixed its
+ * own copy in TMX #1461; this is the same change upstream, so the two agree
+ * before TMX swaps its local analysis for this query.
+ *
+ * The rungs are `endTime` → `startTime` → `scheduledTime`, and they stop there
+ * ON PURPOSE. All three are bare venue wall clock, so this query performs no
+ * instant-to-zone conversion and stays clock-free — which is what lets it run
+ * here at all, with no `asOf` and no time zone in its signature.
+ *
+ * `getParticipantRest` deliberately walks five rungs, adding `scoredTime` and
+ * `calledAt`, and gates each against a caller-supplied instant. That is right
+ * for measuring an elapsed rest and wrong here: its anchor resolution takes a
+ * live matchUp's FIRST SCORE as a finish and then withholds the figure once
+ * that stamp is behind the clock. A readiness finding that vanished the moment
+ * somebody won a game would be worse than one projected from the plan.
+ */
+function finishOf(matchUp: HydratedMatchUp, timing: SchedulingTiming): number | null {
+  // Recorded: it has finished, and nothing is projected.
+  const end = parseClockMinutes(matchUp.schedule?.endTime);
+  if (end !== null) return end;
+
+  // Under way: project from when it ACTUALLY started.
+  const started = parseClockMinutes(matchUp.schedule?.startTime);
+  if (started !== null) return started + timing.averageMinutes;
+
+  const scheduled = parseClockMinutes(matchUp.schedule?.scheduledTime);
+  return scheduled === null ? null : scheduled + timing.averageMinutes;
 }
 
 /** When a participant coming out of `matchUp` is next available, in minutes. `null` when unprojectable. */
 function freeAfter(matchUp: HydratedMatchUp, timing: SchedulingTiming): number | null {
-  const end = parseClockMinutes(matchUp.schedule?.endTime);
-  if (end !== null) return end + timing.recoveryMinutes;
-  const start = parseClockMinutes(matchUp.schedule?.scheduledTime);
-  if (start === null) return null;
-  return start + timing.averageMinutes + timing.recoveryMinutes;
+  const finish = finishOf(matchUp, timing);
+  return finish === null ? null : finish + timing.recoveryMinutes;
 }
 
 /** Why the target cannot be evaluated, or undefined when it can. */
@@ -227,7 +261,7 @@ function dependencyFindings(
   timingFor: TimingFor,
 ): ReadinessFinding[] {
   return upstream.flatMap((source) => {
-    const finish = projectedFinish(source, timingFor(source));
+    const finish = finishOf(source, timingFor(source));
     const base = {
       kind: 'dependency' as const,
       severity: 'WARN' as const,

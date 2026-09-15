@@ -63,6 +63,19 @@ describe('recovery — the window that has not elapsed', () => {
     expect(analyze([earlier, target], 'target')[0]).toMatchObject({ notBefore: '11:45' });
   });
 
+  it('measures from when the earlier matchUp ACTUALLY started, not from when it was planned', () => {
+    // The rung the ladder used to skip. A match that went on forty minutes late
+    // carries the evidence in `startTime`; projecting from the plan instead
+    // frees the player earlier than they will be.
+    const earlier = matchUp('earlier', [player('alice'), player('bob')], {
+      scheduledTime: '09:00',
+      startTime: '09:40',
+    });
+    const target = matchUp('target', [player('alice'), player('chen')], { scheduledTime: '11:00' });
+    // 09:40 + 90 average + 60 recovery = 12:10.
+    expect(analyze([earlier, target], 'target')[0]).toMatchObject({ notBefore: '12:10' });
+  });
+
   it('says nothing when the window has already elapsed', () => {
     const earlier = matchUp(
       'earlier',
@@ -120,6 +133,34 @@ describe('undetermined participants', () => {
   it('is silent when a side is empty but nothing upstream explains it', () => {
     const target = matchUp('target', [player('alice'), {}], { scheduledTime: '11:00' });
     expect(analyze([target], 'target')).toEqual([]);
+  });
+
+  it('projects a dependency from the same ladder the recovery window uses', () => {
+    // These were two ladders over one matchUp: the dependency read only the
+    // plan while the recovery window preferred a recorded end. A consumer
+    // showing both figures for one upstream got two anchors presented as one
+    // calculation.
+    const feeder = matchUp('feeder', [player('alice'), player('bob')], {
+      scheduledTime: '14:00',
+      startTime: '14:40',
+    });
+    const target = matchUp('target', [{}, player('chen')], { scheduledTime: '14:30' }, {});
+    (feeder as any).winnerMatchUpId = 'target';
+    // 14:40 + 90 = 16:10, against a plan-only projection of 15:30.
+    const dependency = analyze([feeder, target], 'target').find((finding) => finding.kind === 'dependency');
+    expect(dependency).toMatchObject({ notBefore: '16:10' });
+  });
+
+  it('prefers a recorded end over a start when projecting a dependency', () => {
+    const feeder = matchUp('feeder', [player('alice'), player('bob')], {
+      scheduledTime: '14:00',
+      startTime: '14:40',
+      endTime: '15:05',
+    });
+    const target = matchUp('target', [{}, player('chen')], { scheduledTime: '14:30' });
+    (feeder as any).winnerMatchUpId = 'target';
+    const dependency = analyze([feeder, target], 'target').find((finding) => finding.kind === 'dependency');
+    expect(dependency).toMatchObject({ notBefore: '15:05' });
   });
 
   it('walks past a finished feeder to report the grandparent that is still pending', () => {
