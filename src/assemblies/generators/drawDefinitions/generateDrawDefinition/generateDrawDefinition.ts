@@ -1,4 +1,5 @@
 import { addVoluntaryConsolationStructure } from '@Mutate/drawDefinitions/addVoluntaryConsolationStructure';
+import { buildIndividualIdsMap, idsShareIndividual } from '@Query/participants/individualParticipantIds';
 import { remapDrawDefinitionMatchUpIds } from '@Mutate/drawDefinitions/remapDrawDefinitionMatchUpIds';
 import { addPlayoffStructures } from '@Mutate/drawDefinitions/addPlayoffStructures';
 import { getDrawFormat } from '@Generators/drawDefinitions/getDrawFormat';
@@ -14,10 +15,10 @@ import {
 } from '@Generators/drawDefinitions/validateAndDeriveDrawValues';
 
 // constants and types
+import { LOSER, ROUND_ROBIN, DOUBLE_ROUND_ROBIN, ROUND_ROBIN_WITH_PLAYOFF } from '@Constants/drawDefinitionConstants';
+import { ErrorType, INVALID_VALUES, SHARED_INDIVIDUAL_PARTICIPANT } from '@Constants/errorConditionConstants';
 import { GenerateDrawDefinitionArgs, ResultType, WithPlayoffsArgs } from '@Types/factoryTypes';
-import { ErrorType, INVALID_VALUES } from '@Constants/errorConditionConstants';
 import { POLICY_TYPE_ROUND_NAMING } from '@Constants/policyConstants';
-import { LOSER } from '@Constants/drawDefinitionConstants';
 import { DrawDefinition } from '@Types/tournamentTypes';
 import { SUCCESS } from '@Constants/resultConstants';
 
@@ -53,6 +54,23 @@ export function generateDrawDefinition(params: GenerateDrawDefinitionArgs): Resu
   });
   if (validDerivedResult.error) return decorateResult({ result: validDerivedResult, stack });
   const { appliedPolicies, policyDefinitions, drawSize, drawType, enforceGender, seedingProfile } = validDerivedResult;
+
+  // A round robin is every-entrant-meets-every-other, so two entrants sharing an individual make the
+  // format impossible rather than merely awkward -- someone would be scheduled against themselves.
+  // Refused here, where the drawType is known, because the pairing-shape guard in
+  // generateRoundRobinPairings covers only AD_HOC round generation and never sees this path.
+  const roundRobinConflicts = getRoundRobinSharedIndividualConflicts({
+    participantIds: eventEntries.map(({ participantId }) => participantId),
+    participants,
+    drawType,
+  });
+  if (roundRobinConflicts.length) {
+    return decorateResult({
+      result: { error: SHARED_INDIVIDUAL_PARTICIPANT },
+      context: { conflictingPairs: roundRobinConflicts, drawType },
+      stack,
+    });
+  }
 
   const eventType = event?.eventType;
   const matchUpType = params.matchUpType ?? eventType;
@@ -228,4 +246,26 @@ function applyPlayoffsRecursive({
   }
 
   return result;
+}
+
+const ROUND_ROBIN_TYPES = new Set<string>([ROUND_ROBIN, DOUBLE_ROUND_ROBIN, ROUND_ROBIN_WITH_PLAYOFF]);
+
+/**
+ * Entrant pairs that share an individual, for draw types where every entrant must be able to meet
+ * every other. Returns every offending pair so the whole problem is reported at once, and an empty
+ * array for any other drawType -- an elimination bracket may never pair them, so refusing there is
+ * a separate policy decision.
+ */
+function getRoundRobinSharedIndividualConflicts({ participantIds, participants, drawType }): string[][] {
+  if (!drawType || !ROUND_ROBIN_TYPES.has(drawType)) return [];
+  const individualIdsMap = buildIndividualIdsMap(participants);
+  const conflicting: string[][] = [];
+  for (let i = 0; i < participantIds.length; i++) {
+    for (let j = i + 1; j < participantIds.length; j++) {
+      if (idsShareIndividual(individualIdsMap, participantIds[i], participantIds[j])) {
+        conflicting.push([participantIds[i], participantIds[j]]);
+      }
+    }
+  }
+  return conflicting;
 }

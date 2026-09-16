@@ -696,6 +696,62 @@ unaffected and still accepted — a director can still record that the present p
 **There is no flag to restore it.** A player cannot lose to an opponent who does not exist; the
 previous behaviour had no reading a governing body could adopt.
 
+## 11f. [#4890](https://github.com/CourtHive/competition-factory/pull/4890) a person can never be on both sides of a matchUp
+
+`addEventEntryPairs` deliberately permits PAIR entries that share an individual — it rejects only an
+_exact duplicate_ pair, and even that is overridable with `allowDuplicateParticipantIdPairs`. That is
+what makes flexible AD_HOC doubles possible, where one person partners several others over an
+evening.
+
+Nothing downstream checked the consequence, so generation scheduled participants against themselves.
+Measured over four PAIRs across four individuals (`[A,B] [A,C] [B,D] [C,D]`, every person in exactly
+two pairs): the `ROUND_ROBIN` drawType and the `ROUND_ROBIN` pairing shape each produced **4 conflicts
+in 6 matchUps**, and DrawMatic produced **2 in 2**.
+
+Five call sites now refuse, all returning `SHARED_INDIVIDUAL_PARTICIPANT`
+(`ERR_SHARED_INDIVIDUAL_PARTICIPANT`):
+
+| Call                                                                | Behaviour                                                                                                     |
+| ------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------- |
+| `generateDrawDefinition` with a round-robin `drawType`              | refuses when any two entrants share an individual, listing every offending pair in `context.conflictingPairs` |
+| `generateAdHocRounds` with `pairingProfile: { shape: ROUND_ROBIN }` | the same refusal for the pairing shape                                                                        |
+| `generateDrawMaticRound`                                            | never selects such a pairing — it is excluded from the candidate pool                                         |
+| `generateAdHocMatchUps`                                             | refuses an explicit `participantIdPairings` entry that conflicts                                              |
+| `assignMatchUpSideParticipant`                                      | refuses an assignment opposite a PAIR/TEAM the participant belongs to                                         |
+
+### Why a round robin refuses rather than skipping the meeting
+
+A round robin is every-entrant-meets-every-other. Two entrants sharing an individual can never meet,
+so the format is not partially unsatisfiable — it is impossible. The request is refused rather than
+silently reduced to the meetings that happen to be legal, which is the same stance
+`generateRoundRobinPairings` already took for an unsatisfiable `roundsCount`.
+
+### Why DrawMatic excludes rather than penalizes
+
+A penalty cannot prevent this. `generateCandidate` minimizes and always emits its best _available_
+candidate, so a weight at any magnitude makes a conflict unlikely, never impossible — and with
+overlapping pairs there are rounds in which every candidate conflicts. The pairing pool already
+excluded self (`id !== participantId`); a PAIR sharing an individual is that same disqualification
+partially applied, so it is excluded in the same place. This is distinct from `sameTeamValue`, which
+remains a weight because pairing teammates against each other is a _preference_, not an
+impossibility.
+
+### What to change
+
+Nothing, if your PAIR entries do not overlap. If they do, either stop generating a round robin over
+them — a round robin cannot express that field — or drive the event with AD_HOC rounds, which pair
+only legal opponents.
+
+Callers that inspected generated matchUps to filter out self-matches can drop that code.
+
+### Not covered
+
+**TEAM lineUps.** A tie draws its competitors from lineUps, so two TEAM participants can share a
+person even when their rosters do not overlap. That check is not part of this change.
+
+**Elimination draws are unaffected.** An elimination bracket may never pair two overlapping entrants,
+so refusing there would be a broader policy decision and is not taken here.
+
 ## 12. Non-breaking additions worth knowing
 
 `plainDate`, `plainTime` and `zonedDateTime` are new published exports, completing the calendar
