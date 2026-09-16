@@ -85,6 +85,39 @@ export function assignMatchUpDrawPosition({
     drawPosition,
   });
 
+  /**
+   * Refuse HERE, where the decision is made — not at the bottom, where it used to be reported.
+   *
+   * `positionAssigned` is false in exactly one situation: both of the matchUp's two drawPosition
+   * slots are already held by other positions, so there is nowhere to put this one.
+   * `getUpdatedDrawPositions` decides that from `matchUp.drawPositions` alone, above, and nothing
+   * below can change it.
+   *
+   * The refusal used to be the function's terminal `else`, roughly 140 lines further down — so the
+   * function knew it had no slot and then went on cascading anyway. Two of the paths in between
+   * WRITE while `positionAssigned` is false, which is why this was not merely untidy:
+   *
+   *   - `advanceDrawPosition`'s last branch is the one clause in it NOT gated on `positionAssigned`,
+   *     and a paired previous double exit sends it into `advanceIntoWinnerMatchUp` — a recursive
+   *     `assignMatchUpDrawPosition`, i.e. a write.
+   *   - `propagateConsolationBye` runs unconditionally, and its own early-out tests
+   *     `updatedDrawPositions.filter(Boolean).length !== 2` — which is FALSE here, because a matchUp
+   *     with no free slot has two. So it proceeds, and can place a BYE.
+   *
+   * Both writes are orphaned the moment the function returns its error, and `directParticipants` has
+   * already committed the source result by then (it calls `attemptToModifyScore` before walking any
+   * link). That is the `ERROR_IMPLIES_NO_MUTATION` shape: an error returned over a draw that was
+   * changed. Measured over the two 600-seed census windows, this code is 7 of the 11 seeds in that
+   * class.
+   *
+   * Returning where the answer is known costs nothing and cannot drift from the rule, because it IS
+   * the rule — the same `positionAssigned` the terminal branch tested, read at the point it is
+   * computed.
+   */
+  if (!positionAssigned) {
+    return decorateResult({ result: { error: DRAW_POSITION_ASSIGNED }, context: { drawPosition }, stack });
+  }
+
   const { positionAssignments } = getPositionAssignments({
     drawDefinition,
     structure,
@@ -223,15 +256,9 @@ export function assignMatchUpDrawPosition({
   });
   if (byeResult?.error) return byeResult;
 
-  if (positionAssigned) {
-    return { ...SUCCESS };
-  } else {
-    return decorateResult({
-      result: { error: DRAW_POSITION_ASSIGNED },
-      context: { drawPosition },
-      stack,
-    });
-  }
+  // `positionAssigned` is guaranteed true here — the false case returned at the top, where it is
+  // decided.
+  return { ...SUCCESS };
 }
 
 function resolveMatchUpStatus({ isByeMatchUp, matchUpStatus, isDoubleExitExit, matchUp }) {
