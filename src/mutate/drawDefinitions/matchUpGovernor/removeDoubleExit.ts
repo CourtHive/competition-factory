@@ -189,9 +189,29 @@ export function conditionallyRemoveDrawPosition(params) {
 
   // targetMatchUp has context
   if (targetMatchUp.feedRound) {
+    /**
+     * `drawPositions` is OPTIONAL on a matchUp, and a feed round is where it is most often absent.
+     *
+     * This branch asks "which of the next winner's positions does the target already hold?", and a
+     * matchUp holding none holds none of them — `undefined`, which is exactly what
+     * `drawPositionToRemove` means everywhere it is read: the single consumer below is
+     * `if (nextWinnerMatchUp && drawPositionToRemove)`. So the guard changes no behaviour; it only
+     * stops the read from throwing.
+     *
+     * Reached on DOUBLE_ELIMINATION: the Main final is a feed round that holds nobody until both
+     * sides arrive, and `removeDoubleExit` recurses onto it while unwinding
+     * (`conditionallyRemoveDrawPosition` <-> `removeDoubleExit`, measured at iteration 3). Without
+     * the guard this is a `TypeError: Cannot read properties of undefined (reading 'includes')`
+     * rather than a refusal — 300 shapes in the propagateExitStatus:false population of the 480k
+     * sweep, and it holds that population's 3-step minimum reproduction.
+     *
+     * The two sibling branches immediately below already guard the same property on the same object
+     * (`targetMatchUp?.drawPositions ?? []` and `targetMatchUp.drawPositions?.filter(Boolean)`).
+     * This one was the outlier.
+     */
     const nextWinnerDrawPositions = nextWinnerMatchUp?.drawPositions?.filter(Boolean);
     drawPositionToRemove = nextWinnerDrawPositions?.find((drawPosition) =>
-      targetMatchUp.drawPositions.includes(drawPosition),
+      targetMatchUp.drawPositions?.includes(drawPosition),
     );
   } else if (sourceMatchUp == null) {
     drawPositionToRemove = intersection(
