@@ -1,4 +1,5 @@
 import { getPairedPreviousMatchUpIsDoubleExit } from '@Query/matchUps/getPairedPreviousMatchUpIsDoubleExit';
+import { removeSubsequentRoundsParticipant } from '@Mutate/matchUps/drawPositions/removeSubsequentRoundsParticipant';
 import { getUpdatedDrawPositions } from '@Mutate/drawDefinitions/matchUpGovernor/getUpdatedDrawPositions';
 import { updateMatchUpStatusCodes } from '@Mutate/drawDefinitions/matchUpGovernor/matchUpStatusCodes';
 import { clearResolvedSideExitProvenance } from '@Mutate/matchUps/matchUpStatus/sideExitProvenance';
@@ -80,10 +81,61 @@ export function assignMatchUpDrawPosition({
   const matchUp = matchUpsMap?.drawMatchUps?.find((matchUp) => matchUp.matchUpId === matchUpId);
 
   const drawPositions: number[] = matchUp?.drawPositions ?? [];
-  const { positionAdded, positionAssigned, updatedDrawPositions } = getUpdatedDrawPositions({
+  let { positionAdded, positionAssigned, updatedDrawPositions } = getUpdatedDrawPositions({
     drawPositions,
     drawPosition,
   });
+
+  /**
+   * Refuse HERE, where the decision is made — not at the bottom, where it used to be reported.
+   *
+   * `positionAssigned` is false in exactly one situation: both of the matchUp's two drawPosition
+   * slots are already held by other positions, so there is nowhere to put this one.
+   * `getUpdatedDrawPositions` decides that from `matchUp.drawPositions` alone, above, and nothing
+   * below can change it.
+   *
+   * The refusal used to be the function's terminal `else`, roughly 140 lines further down — so the
+   * function knew it had no slot and then went on cascading anyway. Two of the paths in between
+   * WRITE while `positionAssigned` is false, which is why this was not merely untidy:
+   *
+   *   - `advanceDrawPosition`'s last branch is the one clause in it NOT gated on `positionAssigned`,
+   *     and a paired previous double exit sends it into `advanceIntoWinnerMatchUp` — a recursive
+   *     `assignMatchUpDrawPosition`, i.e. a write.
+   *   - `propagateConsolationBye` runs unconditionally, and its own early-out tests
+   *     `updatedDrawPositions.filter(Boolean).length !== 2` — which is FALSE here, because a matchUp
+   *     with no free slot has two. So it proceeds, and can place a BYE.
+   *
+   * Both writes are orphaned the moment the function returns its error, and `directParticipants` has
+   * already committed the source result by then (it calls `attemptToModifyScore` before walking any
+   * link). That is the `ERROR_IMPLIES_NO_MUTATION` shape: an error returned over a draw that was
+   * changed. Measured over the two 600-seed census windows, this code is 7 of the 11 seeds in that
+   * class.
+   *
+   * Returning where the answer is known costs nothing and cannot drift from the rule, because it IS
+   * the rule — the same `positionAssigned` the terminal branch tested, read at the point it is
+   * computed.
+   */
+  let resolved = { positionAdded, positionAssigned, updatedDrawPositions };
+  if (!positionAssigned) {
+    // Before refusing, check whether the thing in the way is a BYE that is only there by
+    // advancement — and if so, take it back. See `yieldSquattingPropagatedBye`.
+    const yielded = yieldSquattingPropagatedBye({
+      inContextDrawMatchUps: resolvedInContextDrawMatchUps,
+      drawDefinition,
+      matchUpsMap,
+      structure,
+      matchUp,
+    });
+    if (yielded) {
+      resolved = getUpdatedDrawPositions({ drawPositions: matchUp?.drawPositions ?? [], drawPosition });
+    }
+    if (!resolved.positionAssigned) {
+      return decorateResult({ result: { error: DRAW_POSITION_ASSIGNED }, context: { drawPosition }, stack });
+    }
+  }
+  positionAdded = resolved.positionAdded;
+  positionAssigned = resolved.positionAssigned;
+  updatedDrawPositions = resolved.updatedDrawPositions;
 
   const { positionAssignments } = getPositionAssignments({
     drawDefinition,
@@ -223,15 +275,9 @@ export function assignMatchUpDrawPosition({
   });
   if (byeResult?.error) return byeResult;
 
-  if (positionAssigned) {
-    return { ...SUCCESS };
-  } else {
-    return decorateResult({
-      result: { error: DRAW_POSITION_ASSIGNED },
-      context: { drawPosition },
-      stack,
-    });
-  }
+  // `positionAssigned` is guaranteed true here — the false case returned at the top, where it is
+  // decided.
+  return { ...SUCCESS };
 }
 
 function resolveMatchUpStatus({ isByeMatchUp, matchUpStatus, isDoubleExitExit, matchUp }) {
@@ -529,4 +575,104 @@ function propagateConsolationBye({
   }
 
   return undefined;
+}
+
+/**
+ * A BYE that is only in this matchUp by ADVANCEMENT yields to a participant who has earned the slot.
+ *
+ * ## The state this exists for
+ *
+ * `doubleExitAdvancement`'s same-structure branch advances the side that is NOT the exit
+ * (`advanceFromTarget`, via `getExitWinningSide`) and reads that side's positionAssignment only to
+ * test `assignment?.bye` — it never tests `participantId`. So when the winning side is a fed slot
+ * that is still VACANT, a drawPosition holding nobody is advanced into the next matchUp as a
+ * RESERVATION for whoever eventually falls through. The asymmetry is visible in the same file: the
+ * cross-structure sibling `directExitWinnerAcrossLink` makes exactly the missing test —
+ * `if (!assignment?.participantId || assignment.bye) return;`.
+ *
+ * If a BYE then lands in that slot, nobody ever arrives, and the reservation becomes permanent.
+ * Nothing releases it: every unwind primitive in the engine — `releaseAdvancedDrawPosition`,
+ * `removeSubsequentRoundsParticipant`, `drawPositionRemovals` — is reachable only from removing or
+ * changing the SOURCE result, or from clearing the position itself. `assignDrawPositionBye` holds no
+ * drawPosition release at all, and `correctResultsAwardedToTheBye` corrects the STATUS of the
+ * matchUps standing on such a BYE while leaving their `drawPositions` untouched.
+ *
+ * The next real arrival then finds both slots occupied and is refused `DRAW_POSITION_ASSIGNED` —
+ * after `directParticipants` has already committed the source result, which is the
+ * `ERROR_IMPLIES_NO_MUTATION` shape.
+ *
+ * ## Why the test is made HERE, at the arrival, and not where the BYE is placed
+ *
+ * Two earlier attempts released the advancement at BYE-ASSIGNMENT time and both measured worse —
+ * one closed 7 census seeds and opened 6, the other closed 7 and opened 28. At assignment time the
+ * reservation may still be perfectly truthful: nobody can come out of that matchUp yet, so holding
+ * the slot is correct. It is only WRONG once somebody demonstrably needs it. Asking at the arrival
+ * cannot fire on a reservation that still holds.
+ *
+ * ## What distinguishes a squatter from a BYE that legitimately advanced
+ *
+ * A BYE advances itself only when its PAIR is also a BYE — `advanceWinner` already encodes this
+ * (`advancingDrawPosition = pairedDrawPositionIsBye ? drawPositionToAdvance : pairedDrawPosition`).
+ * Otherwise the BYE stays put and the opponent moves. So a BYE appearing in a round LATER than the
+ * one where its drawPosition first appears, marked `byeFromPropagation`, was put there by the
+ * reservation path rather than by legitimate advancement. All three facts are stored; none is
+ * inferred from topology.
+ *
+ * `byeFromPropagation` is the right marker for the question — `directLoser` already reads it the
+ * same way, treating a propagated BYE as AVAILABLE to an arriving loser while an unmarked
+ * structural BYE is not.
+ *
+ * ## What comes back with it
+ *
+ * The paired position advanced out of this matchUp on the BYE's strength, so it is released from the
+ * round AFTER this one. `removeSubsequentRoundsParticipant` is the correct primitive rather than the
+ * narrower `releaseAdvancedDrawPosition` because it also rewrites `matchUpStatus`, `winningSide` and
+ * the codes on what it releases — results recorded over a contest that never happened.
+ *
+ * `inContextDrawMatchUps` must be threaded through: `updateMatchUpStatusCodes` dereferences it
+ * unguarded, and omitting it converts the refusal into a TypeError.
+ */
+function yieldSquattingPropagatedBye({
+  inContextDrawMatchUps,
+  drawDefinition,
+  matchUpsMap,
+  structure,
+  matchUp,
+}): boolean {
+  if (!matchUp?.roundNumber || !structure) return false;
+  const structureId = structure.structureId;
+  const structureMatchUps = matchUpsMap?.mappedMatchUps?.[structureId]?.matchUps ?? [];
+  const { positionAssignments } = getPositionAssignments({ drawDefinition, structure });
+
+  for (const candidate of (matchUp.drawPositions ?? []).filter(Boolean)) {
+    const assignment = positionAssignments?.find((a) => a.drawPosition === candidate);
+    if (!assignment?.bye || !assignment.byeFromPropagation) continue;
+    const { initialRoundNumber } = getInitialRoundNumber({ drawPosition: candidate, matchUps: structureMatchUps });
+    if (!initialRoundNumber || matchUp.roundNumber <= initialRoundNumber) continue;
+
+    const paired = (matchUp.drawPositions ?? []).filter(Boolean).find((position) => position !== candidate);
+
+    removeSubsequentRoundsParticipant({
+      targetDrawPosition: candidate,
+      roundNumber: matchUp.roundNumber,
+      inContextDrawMatchUps,
+      drawDefinition,
+      matchUpsMap,
+      structureId,
+    });
+
+    // whoever advanced THROUGH the bye advanced on its strength, so that comes back too
+    if (paired) {
+      removeSubsequentRoundsParticipant({
+        targetDrawPosition: paired,
+        roundNumber: matchUp.roundNumber + 1,
+        inContextDrawMatchUps,
+        drawDefinition,
+        matchUpsMap,
+        structureId,
+      });
+    }
+    return true;
+  }
+  return false;
 }

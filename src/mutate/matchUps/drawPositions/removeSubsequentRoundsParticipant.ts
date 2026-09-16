@@ -122,9 +122,21 @@ function removeDrawPosition({
   matchUp.matchUpStatus =
     (matchUpContainsBye && BYE) || (isExit(matchUp.matchUpStatus) && matchUp.matchUpStatus) || TO_BE_PLAYED;
 
-  // if the matchUpStatus is WALKOVER then it is DOUBLE_WALKOVER produced
-  // ... and the winningSide must be removed
-  if (isExit(matchUp.matchUpStatus)) matchUp.winningSide = undefined;
+  /**
+   * The result goes with the participant. Every time, not only on an exit.
+   *
+   * This matchUp has just lost one of the two participants whose contest the result described, and
+   * the three statuses the line above can produce — BYE, a carried exit, TO_BE_PLAYED — are all
+   * undecided. None of them can carry a winner.
+   *
+   * The clear was scoped to `isExit` (for the DOUBLE_WALKOVER-produced WALKOVER), so a COMPLETED
+   * matchUp collapsing to TO_BE_PLAYED kept its `winningSide` and its score: measured as
+   * `Consolation|4|1` left TO_BE_PLAYED with winningSide 1 over sides `[null, participant]`. The
+   * score goes for the same reason — a set score over a contest that no longer has two sides is the
+   * same residue wearing a different field.
+   */
+  matchUp.winningSide = undefined;
+  matchUp.score = undefined;
 
   if (matchUp.matchUpStatusCodes) {
     updateMatchUpStatusCodes({

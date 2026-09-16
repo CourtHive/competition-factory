@@ -1,4 +1,7 @@
-import { reconcileFedLoserEligibility } from '@Mutate/matchUps/drawPositions/reconcileFedLoserEligibility';
+import {
+  reconcileFedLoserEligibility,
+  fedLoserPlacementRefusal,
+} from '@Mutate/matchUps/drawPositions/reconcileFedLoserEligibility';
 import { getDownstreamStructureIds } from '@Query/matchUps/getDownstreamStructureIds';
 import { getAllStructureMatchUps } from '@Query/matchUps/getAllStructureMatchUps';
 import { modifyMatchUpScore } from '@Mutate/matchUps/score/modifyMatchUpScore';
@@ -52,7 +55,7 @@ import { pushGlobalLog } from '@Functions/global/globalLog';
  * are therefore NOT the same claim** — a change here is a change to the cascade either way.
  */
 export function swapWinnerLoser(params) {
-  const { tournamentRecord, inContextMatchUp, structure, drawDefinition, event } = params;
+  const { tournamentRecord, inContextMatchUp, structure, drawDefinition, matchUp, event } = params;
   const matchUpRoundNumber = inContextMatchUp.roundNumber;
 
   const existingWinnerSide = inContextMatchUp.sides.find((side) => side.sideNumber === inContextMatchUp.winningSide);
@@ -62,6 +65,30 @@ export function swapWinnerLoser(params) {
   const { drawPosition: existingLoserDrawPosition, participantId: existingLoserParticipantId } = existingLoserSide;
 
   const stack = 'swapWinnerLoser';
+
+  /**
+   * Asked BEFORE anything is written, and it is the only thing that can refuse a swap.
+   *
+   * A relabel is always possible — the positions and their bindings already exist. A PLACEMENT is
+   * not: the one case where a flip has to create an assignment rather than exchange two is a
+   * `FIRST_MATCHUP` link that withheld the previous loser, and the BYE standing in for them may
+   * already have played on. The engine refuses to clear an active drawPosition, so that placement
+   * cannot be made — and discovering it afterwards means returning an error over a draw this
+   * function has already rewritten.
+   *
+   * Refusing here leaves the draw untouched, which is what a refusal is supposed to mean.
+   */
+  const placementRefusal = fedLoserPlacementRefusal({
+    loserTargetLink: params.targetData?.targetLinks?.loserTargetLink,
+    loserMatchUp: params.targetData?.targetMatchUps?.loserMatchUp,
+    prospectiveLoserDrawPosition: existingWinnerDrawPosition,
+    departingLoserDrawPosition: existingLoserDrawPosition,
+    flippedRoundNumber: matchUpRoundNumber,
+    drawDefinition,
+    structure,
+    event,
+  });
+  if (placementRefusal?.error) return placementRefusal;
 
   const { matchUps } = getAllStructureMatchUps(params);
   const existingWinnerSubsequentMatchUps = matchUps.filter(
@@ -188,14 +215,43 @@ export function swapWinnerLoser(params) {
    * correct.
    */
   const reconciliation: any = reconcileFedLoserEligibility({
+    loserMatchUpDrawPositionIndex: params.targetData?.targetMatchUps?.loserMatchUpDrawPositionIndex,
     loserTargetLink: params.targetData?.targetLinks?.loserTargetLink,
+    loserMatchUp: params.targetData?.targetMatchUps?.loserMatchUp,
+    propagateRetirementAsExit: params.propagateRetirementAsExit,
+    sourceMatchUpStatusCodes: matchUp?.matchUpStatusCodes ?? [],
     loserDrawPosition: existingWinnerDrawPosition,
+    sourceMatchUpStatus: matchUp?.matchUpStatus,
+    inContextDrawMatchUps: params.inContextDrawMatchUps,
+    propagateExitStatus: params.propagateExitStatus,
+    sourceMatchUpId: inContextMatchUp.matchUpId,
+    winningSide: params.winningSide,
+    matchUpsMap: params.matchUpsMap,
     tournamentRecord,
     drawDefinition,
     structure,
     event,
   });
   if (reconciliation?.error) return reconciliation;
+
+  // A placement can land an exit on the target matchUp, and the exit then has to continue. The
+  // context is what `setMatchUpStatus` drives its propagation loop from, so it is carried out of
+  // here exactly as `attemptToSetWinningSide` carries it out of `directParticipants` — a swap that
+  // placed a participant must progress that participant's exit for the same reason an ordinary
+  // direction does.
+  if (reconciliation?.context?.progressExitStatus) {
+    return {
+      ...scoreResult,
+      context: {
+        ...reconciliation.context,
+        sourceMatchUpStatusCodes: matchUp?.matchUpStatusCodes ?? [],
+        sourceMatchUpStatus: matchUp?.matchUpStatus,
+        sourceMatchUpId: inContextMatchUp.matchUpId,
+        loserMatchUp: params.targetData?.targetMatchUps?.loserMatchUp,
+        matchUpsMap: params.matchUpsMap,
+      },
+    };
+  }
 
   return scoreResult;
 }

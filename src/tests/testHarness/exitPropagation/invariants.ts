@@ -1,4 +1,4 @@
-import { DOUBLE_DEFAULT, DOUBLE_WALKOVER, COMPLETED, BYE } from '@Constants/matchUpStatusConstants';
+import { DOUBLE_DEFAULT, DOUBLE_WALKOVER, TO_BE_PLAYED, COMPLETED, BYE } from '@Constants/matchUpStatusConstants';
 import { isAnyExit } from '@Validators/isExit';
 
 /**
@@ -77,9 +77,66 @@ function matchUpInvariants(matchUp: any): InvariantViolation[] {
     record('BYE_WITH_SCORE', `BYE carries a score: ${JSON.stringify(score)}`);
   }
 
+  /**
+   * A BYE cannot WIN. It is not a competitor; there is nobody there to advance.
+   *
+   * The two rules above read the matchUp's STATUS; this one reads which SIDE the result was awarded
+   * to, and that is the whole difference. A matchUp relabelled COMPLETED with a BYE standing on the
+   * WINNING side is rated clean by every status-only rule, and by `getDrawInconsistencies` too —
+   * which is why the census never scored it and it survived this long.
+   *
+   * Measured shape: flipping FMLC/13 `Main|2|3` left `Consolation|2|3` COMPLETED with winningSide 1
+   * over sides `[BYE, participant]`, and the BYE then advanced and "won" `Consolation|3|2` as well.
+   *
+   * ## Why the winning side and not merely the presence of a BYE
+   *
+   * The wider rule — ANY result on a matchUp with a BYE side — was measured first and is WRONG. It
+   * fired 53 times across 8 draw types on both arms, and the great majority are the legitimate
+   * inverse: the PARTICIPANT is the winning side and the BYE is the opponent, which is what a
+   * propagated exit against an emptied position looks like. Reporting those would have buried the 4
+   * real ones and made the rule read as noise. Narrowed to the awarded side, it reports exactly the
+   * state that cannot be true.
+   *
+   * Scoped to sides that carry a real drawPosition. An empty feed slot awaiting an arrival is not a
+   * BYE, and a `sides` entry with neither is not evidence of one.
+   */
+  const byeSide = (matchUp.sides ?? []).find((side: any) => side?.bye && typeof side?.drawPosition === 'number');
+  if (byeSide && winningSide === byeSide.sideNumber) {
+    record(
+      'BYE_WON',
+      `matchUpStatus ${matchUpStatus} awards winningSide ${winningSide} to side ${byeSide.sideNumber}, ` +
+        `which is a BYE (drawPosition ${byeSide.drawPosition})`,
+    );
+  }
+
   // A double exit has no winner by definition — neither side advances.
   if (DOUBLE_EXITS.includes(matchUpStatus) && winningSide) {
     record('DOUBLE_EXIT_WITH_WINNING_SIDE', `${matchUpStatus} carries winningSide ${winningSide}`);
+  }
+
+  /**
+   * An UNDECIDED matchUp has no winner. Nothing has happened in it yet.
+   *
+   * This is the residue rule for a COLLAPSE: when a participant is withdrawn from a matchUp the
+   * status falls back to TO_BE_PLAYED, and a `winningSide` left standing describes a result over
+   * participants who are no longer both there. `removeSubsequentRoundsParticipant` cleared the
+   * winningSide only for exit statuses, so every non-exit collapse kept one — measured as
+   * `Consolation|4|1` TO_BE_PLAYED with winningSide 1 over sides `[null, participant]`.
+   *
+   * `BYE` has its own rule above; this one covers TO_BE_PLAYED and an absent status.
+   */
+  if ((!matchUpStatus || matchUpStatus === TO_BE_PLAYED) && winningSide) {
+    record(
+      'UNDECIDED_WITH_WINNING_SIDE',
+      `matchUpStatus ${matchUpStatus ?? 'absent'} carries winningSide ${winningSide}`,
+    );
+  }
+
+  if ((!matchUpStatus || matchUpStatus === TO_BE_PLAYED) && hasScoreValue(score)) {
+    record(
+      'UNDECIDED_WITH_SCORE',
+      `matchUpStatus ${matchUpStatus ?? 'absent'} carries a score: ${JSON.stringify(score)}`,
+    );
   }
 
   if (matchUpStatus === COMPLETED && !winningSide) {
