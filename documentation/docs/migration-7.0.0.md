@@ -752,6 +752,53 @@ person even when their rosters do not overlap. That check is not part of this ch
 **Elimination draws are unaffected.** An elimination bracket may never pair two overlapping entrants,
 so refusing there would be a broader policy decision and is not taken here.
 
+## 11g. [#4891](https://github.com/CourtHive/competition-factory/pull/4891) draw entries for a bracketed draw cannot share an individual
+
+[11f](#11f-4890-a-person-can-never-be-on-both-sides-of-a-matchup) stopped the engine _pairing_ two
+entrants who share an individual. This stops the field being assembled that way in the first place,
+which is where the problem is easier to see and cheaper to fix.
+
+In a bracketed draw the entries are a **committed field**: any two entrants may be drawn against
+each other, whether in round one or in the final. So two entries sharing an individual are a latent
+matchUp with one person on both sides, regardless of where the bracket happens to place them.
+
+Two call sites now refuse, both returning `SHARED_INDIVIDUAL_PARTICIPANT`:
+
+| Call                     | Refuses when                                                                                          |
+| ------------------------ | ----------------------------------------------------------------------------------------------------- |
+| `generateDrawDefinition` | the entries the draw will contain include two that share an individual                                |
+| `addDrawEntries`         | an added PAIR shares an individual with an existing entry, **or** with another entry in the same call |
+
+`generateDrawDefinition` judges the entries the draw will actually hold — `drawEntries` when you
+supply them, otherwise the event entries — so selecting a non-overlapping subset with `drawEntries`
+generates normally even when the event as a whole contains overlaps.
+
+Both report **every** offending pair in `context.conflictingPairs`, not the first, so the whole
+problem is visible in one refusal. One PAIR can appear in more than one conflicting pair: `[A,C]`
+added alongside `[A,B]` and `[C,D]` conflicts with both.
+
+### AD_HOC types are exempt, deliberately
+
+`AD_HOC`, `LADDER` and `SWISS` — everything `isAdHocType` recognises — still accept overlapping
+entries. Their entries are a **roster**, not a field: nothing says any two of them will meet, and
+generation decides the pairings, which 11f already constrains. This is what makes flexible doubles
+work, where one person partners several others over an evening.
+
+The distinction is the whole design: a bracket commits to every possible meeting up front, so it is
+checked at entry; an AD_HOC draw commits to nothing, so it is checked at pairing.
+
+### What to change
+
+Nothing for singles — two distinct individuals never share, and the same participant entered twice
+was already a `DUPLICATE_ENTRY`.
+
+For doubles, if you build a bracketed draw from a pool of pairs that overlap, either enter only
+non-overlapping pairs, pass the subset you want via `drawEntries`, or use an AD_HOC draw.
+
+Callers of `addDrawEntries` should note it now takes `tournamentRecord` — supplied automatically on
+the engine, but an internal caller constructing the params by hand must pass it, since the guard
+resolves each entry's individuals from the tournament's participants.
+
 ## 12. Non-breaking additions worth knowing
 
 `plainDate`, `plainTime` and `zonedDateTime` are new published exports, completing the calendar

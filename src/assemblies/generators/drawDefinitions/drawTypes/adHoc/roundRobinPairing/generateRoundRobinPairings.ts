@@ -1,5 +1,5 @@
 import { groupRounds } from '@Generators/drawDefinitions/drawTypes/roundRobin/roundRobinGroups';
-import { idsShareIndividual } from '@Query/participants/individualParticipantIds';
+import { getSharedIndividualConflicts } from '@Query/participants/individualParticipantIds';
 import { generateRange } from '@Tools/arrays';
 
 // constants and types
@@ -46,7 +46,9 @@ export function generateRoundRobinPairings(
   // A round robin is every-entrant-meets-every-other. Two entrants sharing an individual can never
   // meet, so the shape is not partially unsatisfiable -- it is impossible -- and the request is
   // refused rather than silently reduced to the meetings that happen to be legal.
-  const conflictingPairs = getConflictingPairs(participantIds, params.individualIdsMap);
+  const conflictingPairs = params.individualIdsMap
+    ? getSharedIndividualConflicts({ individualIdsMap: params.individualIdsMap, participantIds })
+    : [];
   if (conflictingPairs.length) {
     return {
       error: SHARED_INDIVIDUAL_PARTICIPANT,
@@ -86,21 +88,4 @@ export function generateRoundRobinPairings(
   });
 
   return { rounds: roundsCount ? rounds.slice(0, roundsCount) : rounds };
-}
-
-/**
- * Entrant pairs that share an individual and therefore can never meet.
- * Returns every offending pair, not the first, so a caller can report the whole problem at once.
- */
-function getConflictingPairs(participantIds: string[], individualIdsMap?: Record<string, string[]>): string[][] {
-  if (!individualIdsMap) return [];
-  const conflicting: string[][] = [];
-  for (let i = 0; i < participantIds.length; i++) {
-    for (let j = i + 1; j < participantIds.length; j++) {
-      if (idsShareIndividual(individualIdsMap, participantIds[i], participantIds[j])) {
-        conflicting.push([participantIds[i], participantIds[j]]);
-      }
-    }
-  }
-  return conflicting;
 }
