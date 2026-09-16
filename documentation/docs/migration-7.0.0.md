@@ -840,6 +840,39 @@ BYE contributes **no code** rather than becoming a walkover.
 matchUp whose code array previously read `['WO', 'DM']` may now read `['DEF', 'DM']` — the second
 element is unchanged; the first now tells the truth about the upstream exit.
 
+### `drawPositions` is never an array of nothing but holes
+
+Not a breaking change — the shape it settles to is the shape generation has always written — but it
+is the answer to a question consumers do ask, so it is stated here rather than left implicit.
+
+A matchUp's `drawPositions` is **positional**: the index carries the side. Taking a position out
+therefore leaves a HOLE rather than compacting the array, because closing the gap would move the
+surviving position onto the other side and every reader that derives a side from the order would
+then resolve the wrong participant. `[undefined, 5]` keeps 5 on side 2, and that is deliberate.
+
+An array of nothing BUT holes — `[undefined]`, `[undefined, undefined]`, serialised as `[null]` /
+`[null, null]` — holds no side open, because there is no survivor for it to hold the side open
+beside. Four writers could produce one; all four now settle it to `[]`.
+
+**The published shape.** `[]` is dropped during hydration, so an inContext matchUp holding no
+position carries **no `drawPositions` key at all**. That is already what every unplayed downstream
+matchUp looks like and always has been: on a freshly generated 16 draw it is 7 of 15 matchUps
+(SINGLE_ELIMINATION), 11 of 31 (DOUBLE_ELIMINATION), 10 of 28 (FEED_IN_CHAMPIONSHIP_TO_SF) and 12
+of 32 (COMPASS). What changes is only that a matchUp emptied LATER — by a cleared position, a
+released advancement or a winner/loser flip — now looks the same as one that was never reached,
+instead of carrying `[null, null]`.
+
+**What to do:** nothing, if you already guard. `matchUp.drawPositions?.[n]`, `?? []` and
+`|| []` all behave as before. If you read `matchUp.drawPositions` unguarded, that was already
+unsafe on any unplayed matchUp — this does not make it newly unsafe, it makes the existing hazard
+easier to hit. **`sides` is unaffected and is always length 2**, so nothing needs `drawPositions`
+to decide how many sides a matchUp has.
+
+One idiom is worth re-reading, because it changes from "false" to "vacuously true":
+`drawPositions.every(predicate)` over an empty array returns `true`, so a matchUp holding no
+position satisfies every such filter. If you partition matchUps with `.every()` — into halves of a
+mirrored draw, or into page segments — filter on a non-empty array first.
+
 ### The `matchUpStatus` of a convergence can change too
 
 An earlier revision of this section said nothing about `matchUpStatus` changed. That was true when it

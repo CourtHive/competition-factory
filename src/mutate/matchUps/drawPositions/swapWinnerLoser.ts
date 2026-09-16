@@ -2,6 +2,7 @@ import {
   reconcileFedLoserEligibility,
   fedLoserPlacementRefusal,
 } from '@Mutate/matchUps/drawPositions/reconcileFedLoserEligibility';
+import { normalizeDrawPositions } from '@Mutate/matchUps/drawPositions/normalizeDrawPositions';
 import { getDownstreamStructureIds } from '@Query/matchUps/getDownstreamStructureIds';
 import { getAllStructureMatchUps } from '@Query/matchUps/getAllStructureMatchUps';
 import { modifyMatchUpScore } from '@Mutate/matchUps/score/modifyMatchUpScore';
@@ -111,11 +112,18 @@ export function swapWinnerLoser(params) {
    * stated once in `getOrderedDrawPositions`. Do not remove the sort below.
    */
   existingWinnerSubsequentMatchUps.forEach((matchUp) => {
-    matchUp.drawPositions = (
-      matchUp.drawPositions?.map((drawPosition) =>
-        drawPosition === existingWinnerDrawPosition ? existingLoserDrawPosition : drawPosition,
-      ) ?? []
-    ).sort((a, b) => (typeof a === 'number' && typeof b === 'number' ? a - b : 0));
+    // The substitution can put a HOLE in: the flipped loser has no drawPosition when their side was
+    // an empty fed slot, so `[4, 7]` becomes `[undefined, 7]` — correct, and positional. What it
+    // must not leave is an array of nothing but holes; `[7]` becoming `[undefined]` carries no
+    // information. Measured on census seed 9100016 (FEED_IN_CHAMPIONSHIP_TO_SF, flag ON), which is
+    // the only all-holes writer the two REMOVAL sites do not account for.
+    matchUp.drawPositions = normalizeDrawPositions(
+      (
+        matchUp.drawPositions?.map((drawPosition) =>
+          drawPosition === existingWinnerDrawPosition ? existingLoserDrawPosition : drawPosition,
+        ) ?? []
+      ).sort((a, b) => (typeof a === 'number' && typeof b === 'number' ? a - b : 0)),
+    );
     modifyMatchUpNotice({
       tournamentId: tournamentRecord?.tournamentId,
       eventId: params.event?.eventId,

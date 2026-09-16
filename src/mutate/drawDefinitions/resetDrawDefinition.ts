@@ -1,4 +1,5 @@
 import { modifyDrawNotice, modifyMatchUpNotice } from '@Mutate/notifications/drawNotifications';
+import { normalizeDrawPositions } from '@Mutate/matchUps/drawPositions/normalizeDrawPositions';
 import { getAllStructureMatchUps } from '@Query/matchUps/getAllStructureMatchUps';
 import { isLuckyBasedDraw } from '@Query/drawDefinition/isLuckyBasedDraw';
 import { removeExtension } from '@Mutate/extensions/removeExtension';
@@ -203,10 +204,16 @@ function resetMatchUpScore({ matchUp, isLuckyDraw, removeAssignments, roundNumbe
         ?.map(({ drawPosition, participantFed }) => !participantFed && drawPosition)
         .filter(Boolean);
       // Removal, not substitution: preserves ascending order. See `getOrderedDrawPositions`.
-      const drawPositions = matchUp.drawPositions.map((drawPosition) =>
-        fedDrawPositions.includes(drawPosition) ? undefined : drawPosition,
-      ) as number[];
-      matchUp.drawPositions = drawPositions;
+      // Settled through `normalizeDrawPositions` for the same reason as the other removal writers:
+      // where every position in the matchUp is removed there is no survivor for a hole to hold a
+      // side open beside. Instrumented over four draw types x two `removeAssignments` modes,
+      // `fedDrawPositions` came back empty on all 26 executions and the map was an identity — so
+      // this is a guard against a shape nothing currently reaches, not a behaviour change.
+      matchUp.drawPositions = normalizeDrawPositions(
+        matchUp.drawPositions.map((drawPosition) =>
+          fedDrawPositions.includes(drawPosition) ? undefined : drawPosition,
+        ),
+      );
     }
   }
 }
