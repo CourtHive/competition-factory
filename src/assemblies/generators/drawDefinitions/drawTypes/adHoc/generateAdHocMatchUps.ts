@@ -1,3 +1,4 @@
+import { buildIndividualIdsMap, idsShareIndividual } from '@Query/participants/individualParticipantIds';
 import { resolveTieFormat } from '@Query/hierarchical/tieFormats/resolveTieFormat';
 import { generateTieMatchUps } from '@Generators/drawDefinitions/tieMatchUps';
 import { getAvailableMatchUpsCount } from './getAvailableMatchUpsCount';
@@ -8,7 +9,12 @@ import { generateRange } from '@Tools/arrays';
 import { UUID } from '@Tools/UUID';
 
 // constants and types
-import { INVALID_VALUES, MISSING_DRAW_DEFINITION, ErrorType } from '@Constants/errorConditionConstants';
+import {
+  SHARED_INDIVIDUAL_PARTICIPANT,
+  MISSING_DRAW_DEFINITION,
+  INVALID_VALUES,
+  ErrorType,
+} from '@Constants/errorConditionConstants';
 import { DrawDefinition, Event, MatchUp, MatchUpStatusUnion, Tournament } from '@Types/tournamentTypes';
 import { TO_BE_PLAYED } from '@Constants/matchUpStatusConstants';
 import { SUCCESS } from '@Constants/resultConstants';
@@ -73,6 +79,20 @@ export function generateAdHocMatchUps(params: GenerateAdHocMatchUpsArgs): {
 
   if (roundNumber && !params.ignoreLastRoundNumber && roundNumber - 1 > (lastRoundNumber || 0)) {
     return { error: INVALID_VALUES, info: 'roundNumber error' };
+  }
+
+  // a person cannot be on both sides of a matchUp; refuse the pairing rather than generate it
+  if (participantIdPairings?.length) {
+    const individualIdsMap = buildIndividualIdsMap(params.tournamentRecord?.participants);
+    const conflictingPairings = participantIdPairings
+      .map(({ participantIds }) => participantIds)
+      .filter(([a, b]) => a && b && idsShareIndividual(individualIdsMap, a, b));
+    if (conflictingPairings.length) {
+      return decorateResult({
+        result: { error: SHARED_INDIVIDUAL_PARTICIPANT },
+        context: { conflictingPairings },
+      });
+    }
   }
 
   const nextRoundNumber = roundNumber ?? ((newRound && (lastRoundNumber ?? 0) + 1) || lastRoundNumber || 1);

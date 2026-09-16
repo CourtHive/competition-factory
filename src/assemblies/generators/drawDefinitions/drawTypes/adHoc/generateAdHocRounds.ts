@@ -1,11 +1,12 @@
 import { generateRoundRobinPairings, PairingRound } from './roundRobinPairing/generateRoundRobinPairings';
+import { buildIndividualIdsMap } from '@Query/participants/individualParticipantIds';
 import { getParticipantIds } from './drawMatic/getParticipantIds';
 import { decorateResult } from '@Functions/global/decorateResult';
 import { generateAdHocMatchUps } from './generateAdHocMatchUps';
 import { generateRange } from '@Tools/arrays';
 
 // constants and types
-import { DrawDefinition, Event, MatchUp } from '@Types/tournamentTypes';
+import { DrawDefinition, Event, MatchUp, Tournament } from '@Types/tournamentTypes';
 import { INVALID_VALUES } from '@Constants/errorConditionConstants';
 import { ROUND_ROBIN } from '@Constants/drawDefinitionConstants';
 import { PairingProfile, ResultType } from '@Types/factoryTypes';
@@ -26,6 +27,7 @@ type GenerateAdHocRoundsArgs = {
   newRound?: boolean; // optional - whether to auto-increment to the next roundNumber
   idPrefix?: string;
   isMock?: boolean;
+  tournamentRecord?: Tournament;
   event: Event;
 };
 
@@ -38,7 +40,12 @@ export function generateAdHocRounds(params: GenerateAdHocRoundsArgs): ResultType
   if (idsResult.error) return idsResult;
 
   const shapedResult = params.pairingProfile
-    ? resolveShapedRounds({ pairingProfile: params.pairingProfile, participantIds: idsResult.participantIds, params })
+    ? resolveShapedRounds({
+        individualIdsMap: buildIndividualIdsMap(params.tournamentRecord?.participants),
+        participantIds: idsResult.participantIds,
+        pairingProfile: params.pairingProfile,
+        params,
+      })
     : undefined;
   if (shapedResult?.error) return shapedResult;
 
@@ -75,7 +82,12 @@ export function generateAdHocRounds(params: GenerateAdHocRoundsArgs): ResultType
   return { matchUps };
 }
 
-function resolveShapedRounds({ pairingProfile, participantIds, params }): ResultType & { rounds?: PairingRound[] } {
+function resolveShapedRounds({
+  individualIdsMap,
+  pairingProfile,
+  participantIds,
+  params,
+}): ResultType & { rounds?: PairingRound[] } {
   if (pairingProfile.shape !== ROUND_ROBIN) {
     return {
       error: INVALID_VALUES,
@@ -89,5 +101,6 @@ function resolveShapedRounds({ pairingProfile, participantIds, params }): Result
     encounters: pairingProfile.encounters,
     mirrored: pairingProfile.mirrored,
     roundsCount: params.roundsCount,
+    individualIdsMap,
   });
 }

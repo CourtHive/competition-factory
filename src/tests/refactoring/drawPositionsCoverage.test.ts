@@ -294,8 +294,13 @@ describe('assignMatchUpSideParticipant', () => {
     const targetMatchUp = matchUps.find((m) => m.sides?.some((s) => s.participantId));
 
     if (targetMatchUp) {
+      // a participant already on the opposing side cannot be assigned -- that would put one person
+      // on both sides -- so pick one who is not yet in this matchUp
+      const assignedIds = targetMatchUp.sides?.map((side: any) => side.participantId).filter(Boolean) ?? [];
+      const unassigned = participants.find((p: any) => !assignedIds.includes(p.participantId));
+
       let result: any = tournamentEngine.assignMatchUpSideParticipant({
-        participantId: participants[0].participantId,
+        participantId: unassigned.participantId,
         matchUpId: targetMatchUp.matchUpId,
         drawId,
       });

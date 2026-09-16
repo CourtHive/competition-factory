@@ -148,8 +148,11 @@ test('adHoc matchUpActions can restrict adHoc round participants to diallow recu
     sideNumber: 2,
   }).validActions;
 
-  targetParticipantId = availableParticipantIds[0];
+  // take the REFRESHED availableParticipantIds: the outer list was captured before side 1 was
+  // assigned, and its first entry is now the side 1 occupant. Assigning that participant to side 2
+  // would put one person on both sides of the matchUp, which is refused.
   assignAction = validActions.find((action) => action.type === ASSIGN_PARTICIPANT);
+  targetParticipantId = assignAction.availableParticipantIds[0];
   payload = {
     ...assignAction.payload,
     participantId: targetParticipantId,

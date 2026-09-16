@@ -557,6 +557,10 @@ export const INVALID_PARTICIPANT_IDS = {
   message: 'Invalid participantIds',
   code: 'ERR_INVALID_PARTICIPANT_IDS',
 };
+export const SHARED_INDIVIDUAL_PARTICIPANT = {
+  message: 'Participants share an individual and cannot meet',
+  code: 'ERR_SHARED_INDIVIDUAL_PARTICIPANT',
+};
 export const INVALID_PARTICIPANT_ROLE = {
   message: 'Invalid participantRole',
   code: 'ERR_INVALID_PARTICIPANT_ROLE',
