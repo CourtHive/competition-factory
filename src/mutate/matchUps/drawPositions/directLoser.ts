@@ -256,9 +256,25 @@ function placeLoser({
     if (validForConsolation) {
       return decorateResult({ result: assignLoserToTarget(), stack: innerStack });
     }
+    /**
+     * DECLARED as propagation-produced, because it is.
+     *
+     * This BYE is a placeholder the cascade puts in the fed slot when the link condition withholds
+     * the current loser. `reconcileFedLoserEligibility` places the identical BYE for the identical
+     * reason and has always passed this flag — and its comment asserts the slot reverts to "what
+     * `directLoser` would have put there … a BYE marked as propagation-produced". That was not
+     * true: this call passed no marker and no `loserMatchUp`, so `assignDrawPositionBye`'s
+     * topology inference could not see it either and actively deleted the marker.
+     *
+     * The marker is what lets removal tell a cascade-placed BYE from a structural one — `directLoser`
+     * itself reads it that way when deciding whether a slot is available to an arriving loser, and
+     * `yieldSquattingPropagatedBye` reads it when deciding whether a BYE is holding a slot it never
+     * earned. An unmarked BYE is treated as structural and is never reclaimed.
+     */
     const byeResult = assignDrawPositionBye({
       drawPosition: loserBackdrawPosition,
       structureId: targetStructureId,
+      byeFromPropagation: true,
       tournamentRecord,
       drawDefinition,
       event,
