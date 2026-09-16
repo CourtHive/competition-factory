@@ -842,6 +842,8 @@ element is unchanged; the first now tells the truth about the upstream exit.
 
 ### `drawPositions` is never an array of nothing but holes
 
+_Shipped in #4898._
+
 Not a breaking change — the shape it settles to is the shape generation has always written — but it
 is the answer to a question consumers do ask, so it is stated here rather than left implicit.
 
