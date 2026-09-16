@@ -1,4 +1,5 @@
 import { getEntryStatus, getParticipantId, getParticipantIds } from '@Functions/global/extractors';
+import { stringSort } from '@Functions/sorters/stringSort';
 import { instanceCount, intersection, unique } from '@Tools/arrays';
 import mocksEngine from '@Assemblies/engines/mock';
 import tournamentEngine from '@Engines/syncEngine';
@@ -262,7 +263,12 @@ it('can account for individuals appearing in multiple doubles pairs', () => {
   for (const index of [0, 1]) {
     const pairParticipants = newPairParticipants.slice(index * 2, index * 2 + 2);
     const participantIds = pairParticipants.map(getParticipantId);
+    // ALTERNATE, not DIRECT_ACCEPTANCE: each flight has drawSize 4 and already holds four
+    // directly-accepted entries, so these two cannot also be in the competing field. They also
+    // share an individual with an entry already in it, which a bracketed draw refuses -- an
+    // alternate is a waiting list and is checked if it is ever promoted.
     const result = tournamentEngine.addEventEntries({
+      entryStatus: ALTERNATE,
       drawId: drawIds[index],
       participantIds,
       eventId,
@@ -307,13 +313,17 @@ it('can account for individuals appearing in multiple doubles pairs', () => {
   ({ flightProfile } = tournamentEngine.getFlightProfile({ eventId }));
   [firstFlight, secondFlight] = flightProfile.flights;
 
-  expect(unique(firstFlight.drawEntries.map(getEntryStatus))).toEqual([DIRECT_ACCEPTANCE]);
+  // the two cross pairs entered as ALTERNATE remain so in the first flight, whose directly-accepted
+  // entries could not be moved while positioned
+  expect(unique(firstFlight.drawEntries.map(getEntryStatus)).sort(stringSort)).toEqual([ALTERNATE, DIRECT_ACCEPTANCE]);
   expect(unique(secondFlight.drawEntries.map(getEntryStatus))).toEqual([ALTERNATE]);
 
   const { event } = tournamentEngine.getEvent({ eventId });
+  // four directly-accepted (the first flight's original field) and eight alternates: the second
+  // flight's four, moved above, plus the four cross pairs entered as alternates
   expect(instanceCount(event.entries.map(getEntryStatus))).toEqual({
-    DIRECT_ACCEPTANCE: 6,
-    ALTERNATE: 6,
+    DIRECT_ACCEPTANCE: 4,
+    ALTERNATE: 8,
   });
 
   result = tournamentEngine.modifyEntriesStatus({

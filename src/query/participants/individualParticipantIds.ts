@@ -60,3 +60,32 @@ export function idsShareIndividual(individualIdsMap: Record<string, string[]>, a
   const bIds = new Set(individualIdsMap[b] ?? []);
   return (individualIdsMap[a] ?? []).some((id) => bIds.has(id));
 }
+
+/**
+ * Every pair of participantIds that share an individual and therefore cannot both compete in a
+ * field where all entrants may meet.
+ *
+ * Returns every offending pair rather than the first, so a caller can report the whole problem in
+ * one refusal instead of making the user discover it one entry at a time.
+ */
+export function getSharedIndividualConflicts({
+  individualIdsMap,
+  participantIds,
+}: {
+  individualIdsMap: Record<string, string[]>;
+  participantIds: string[];
+}): string[][] {
+  const conflicting: string[][] = [];
+  for (let i = 0; i < participantIds.length; i++) {
+    for (let j = i + 1; j < participantIds.length; j++) {
+      // the same id twice is one entrant listed twice -- a DUPLICATE_ENTRY question, with its own
+      // suppression semantics -- not two entrants who overlap. Answering it here would pre-empt
+      // that handling with the wrong error.
+      if (participantIds[i] === participantIds[j]) continue;
+      if (idsShareIndividual(individualIdsMap, participantIds[i], participantIds[j])) {
+        conflicting.push([participantIds[i], participantIds[j]]);
+      }
+    }
+  }
+  return conflicting;
+}
