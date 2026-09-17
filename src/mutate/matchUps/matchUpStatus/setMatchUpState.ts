@@ -862,8 +862,27 @@ function applyMatchUpValues(params) {
  */
 function exitAwardable({ positionAssignments, inContextMatchUp, winningSide }): boolean {
   const winnerSide = (inContextMatchUp?.sides ?? []).find((side: any) => side?.sideNumber === winningSide);
+
+  /**
+   * Not to the participant who is ALREADY THERE. Exactly one side holds a participant, so awarding it
+   * the exit is a walkover over an opponent nobody knows yet. The engine has no reading of that: the
+   * pending-exit arrival path (`assignMatchUpDrawPosition`, `advancedExitWinningSide`) makes whoever
+   * ARRIVES the winner, because the designed pending exit is the other one — the present participant
+   * withdrew and the empty side wins. Accepted, it produced two winners of one matchUp, both advanced,
+   * and the entered winner never reached the loser structure: a two-step DROPPED_PROGRESSION on
+   * DOUBLE_ELIMINATION (census 9100555 and 9301605, shrunk). With `propagateExitStatus` off the same
+   * entry was always refused. CA, 2026-09-17: refuse it.
+   *
+   * Only while an opponent is still to ARRIVE. Against a BYE nobody ever arrives, there is no arrival
+   * to misread, and the present player's walkover stays accepted.
+   */
+  const opponentSide = (inContextMatchUp?.sides ?? []).find(
+    (side: any) => side?.sideNumber && side.sideNumber !== winningSide,
+  );
+  if (winnerSide?.participantId) return !!opponentSide?.bye;
+
   // a BYE is deliberately NOT in this list — see the docblock
-  if (winnerSide?.participantId || winnerSide?.qualifier) return true;
+  if (winnerSide?.qualifier) return true;
   if (winnerSide?.bye) return false;
 
   // no drawPosition claimed: an unfilled feed slot, awaiting its arrival
