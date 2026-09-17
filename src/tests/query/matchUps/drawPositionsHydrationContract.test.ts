@@ -4,13 +4,13 @@ import tournamentEngine from '@Engines/syncEngine';
 import { expect, it } from 'vitest';
 
 // constants
+import { DOUBLE_WALKOVER, TO_BE_PLAYED } from '@Constants/matchUpStatusConstants';
 import {
   FEED_IN_CHAMPIONSHIP_TO_SF,
   DOUBLE_ELIMINATION,
   SINGLE_ELIMINATION,
   COMPASS,
 } from '@Constants/drawDefinitionConstants';
-import { DOUBLE_WALKOVER, TO_BE_PLAYED } from '@Constants/matchUpStatusConstants';
 
 /**
  * The published contract for `drawPositions` on an inContext matchUp, pinned in both directions.

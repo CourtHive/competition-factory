@@ -34,9 +34,18 @@ import { expect, it } from 'vitest';
  * | `swapWinnerLoser`                  |     1 |   1 |
  * | `removeSubsequentRoundsParticipant`|     0 |   0 | (its `.filter(Boolean)` already precludes it)
  *
- * 865 of the 2,400 seed-runs (36%) carried one; after the fix, 0. The four scenarios below are the
- * delta-debugged minima of one seed per writer, plus a second `positionClear` case on the
- * `propagateExitStatus: false` arm — the USTA/ITA production case.
+ * 865 of the 2,400 seed-runs (36%) carried one; after the fix, 0. The five scenarios below are
+ * delta-debugged minima: one per writer, a second `positionClear` case on the
+ * `propagateExitStatus: false` arm (the USTA/ITA production case), and an ISOLATED
+ * `releaseAdvancedDrawPosition` case.
+ *
+ * That last one exists because coverage was checked by reverting each writer ON ITS OWN. Every
+ * other scenario here is also normalised by `positionClear` downstream, so reverting
+ * `releaseAdvancedDrawPosition` alone left them all green — the file had no behavioural cover at
+ * all, only the static bypass guard. Re-running both census windows on both arms with just that
+ * writer reverted surfaced 43 / 34 / 48 / 40 offending seeds per arm; 9100006 is the shortest,
+ * shrunk to four steps. **Check coverage one file at a time, or a sibling writer will hide the
+ * gap.**
  *
  * ## The control matters as much as the assertion
  *
@@ -106,6 +115,30 @@ const scenarios: Scenario[] = [
       { structureName: 'Consolation 1', roundNumber: 1, roundPosition: 6, outcome: { winningSide: 2 } },
       { structureName: 'Main', roundNumber: 1, roundPosition: 6, outcome: { winningSide: 1 } },
       { structureName: 'Main', roundNumber: 2, roundPosition: 1, outcome: TBP },
+    ],
+  },
+  {
+    // releaseAdvancedDrawPosition, ISOLATED. Every other scenario here is also normalised by
+    // `positionClear` downstream, so reverting `releaseAdvancedDrawPosition` alone leaves them
+    // green — this seed was chosen by re-running the census windows with ONLY that writer reverted
+    // (43/34/48/40 seeds offend per arm) and delta-debugging the shortest. Flag-OFF, the
+    // Tournament Desk production case.
+    writer: 'releaseAdvancedDrawPosition (isolated)',
+    drawType: 'FEED_IN_CHAMPIONSHIP_TO_SF',
+    propagateExitStatus: false,
+    participantsCount: 6,
+    drawSize: 8,
+    seed: 9100006,
+    steps: [
+      {
+        structureName: 'Main',
+        roundNumber: 1,
+        roundPosition: 2,
+        outcome: { matchUpStatus: 'DEFAULTED', winningSide: 1 },
+      },
+      { structureName: 'Main', roundNumber: 2, roundPosition: 1, outcome: { matchUpStatus: 'DOUBLE_WALKOVER' } },
+      { structureName: 'Main', roundNumber: 1, roundPosition: 3, outcome: { winningSide: 2 } },
+      { structureName: 'Main', roundNumber: 1, roundPosition: 3, outcome: TBP },
     ],
   },
   {
