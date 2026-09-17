@@ -8,6 +8,7 @@ import { getAllStructureMatchUps } from '@Query/matchUps/getAllStructureMatchUps
 import { modifyMatchUpScore } from '@Mutate/matchUps/score/modifyMatchUpScore';
 import { getPositionAssignments } from '@Query/drawDefinition/positionsGetter';
 import { modifyMatchUpNotice } from '@Mutate/notifications/drawNotifications';
+import { reverseScore } from '@Generators/score/reverseScore';
 import { pushGlobalLog } from '@Functions/global/globalLog';
 
 /**
@@ -130,21 +131,30 @@ export function swapWinnerLoser(params) {
    * stated once in `getOrderedDrawPositions`. Do not remove the sort below.
    */
   existingWinnerSubsequentMatchUps.forEach((matchUp) => {
+    // read BEFORE the rewrite: which position won, in the array order the winningSide refers to
+    const winnerDrawPosition = matchUp.winningSide ? matchUp.drawPositions?.[matchUp.winningSide - 1] : undefined;
+
     // The substitution can put a HOLE in: the flipped loser has no drawPosition when their side was
     // an empty fed slot, so `[4, 7]` becomes `[undefined, 7]` — correct, and positional. What it
     // must not leave is an array of nothing but holes; `[7]` becoming `[undefined]` carries no
     // information. Measured on census seed 9100016 (FEED_IN_CHAMPIONSHIP_TO_SF, flag ON), which is
     // the only all-holes writer the two REMOVAL sites do not account for.
+    const substituted =
+      matchUp.drawPositions?.map((drawPosition) => {
+        if (drawPosition === existingWinnerDrawPosition) return existingLoserDrawPosition;
+        if (existingLoserDrawPosition && drawPosition === existingLoserDrawPosition) return existingWinnerDrawPosition;
+        return drawPosition;
+      }) ?? [];
+    // Sort only when BOTH positions are present. A hole beside a lone position is POSITIONAL — it is
+    // what holds that position's side — and `Array.prototype.sort` moves holes to the end, so sorting
+    // `[undefined, 3]` wrote `[3, undefined]`. On DOUBLE_ELIMINATION's Main final, which has no fed
+    // position, a pending walkover won by side 2 then read as won by the empty side 1 (census 9100555
+    // step 29, DE window 9300695 step 27; found by `swapPathEquivalence`).
+    const bothPresent = substituted.filter((drawPosition) => typeof drawPosition === 'number').length === 2;
     matchUp.drawPositions = normalizeDrawPositions(
-      (
-        matchUp.drawPositions?.map((drawPosition) => {
-          if (drawPosition === existingWinnerDrawPosition) return existingLoserDrawPosition;
-          if (existingLoserDrawPosition && drawPosition === existingLoserDrawPosition)
-            return existingWinnerDrawPosition;
-          return drawPosition;
-        }) ?? []
-      ).sort((a, b) => (typeof a === 'number' && typeof b === 'number' ? a - b : 0)),
+      bothPresent ? substituted.sort((a, b) => (a as number) - (b as number)) : substituted,
     );
+    followWinnerAcrossResort({ matchUp, winnerDrawPosition, existingWinnerDrawPosition, existingLoserDrawPosition });
     modifyMatchUpNotice({
       tournamentId: tournamentRecord?.tournamentId,
       eventId: params.event?.eventId,
@@ -283,4 +293,64 @@ export function swapWinnerLoser(params) {
   }
 
   return scoreResult;
+}
+
+/**
+ * A decided matchUp whose winner the substitution + sort moved to the OTHER side is re-sided: the
+ * winningSide, and everything else addressed by side, follows the winner.
+ *
+ * `drawPositions` is positional — side 1 is the lower position — so substituting one position and
+ * re-sorting can swap which side a participant is on without changing who won. The winningSide did
+ * not follow: census seed 9100583 (FEED_IN_CHAMPIONSHIP, flag ON) flipped `Consolation r2p2`, and
+ * `Consolation r3p1` went from `[3,5]` won by 5 on side 2 to `[5,6]` with winningSide still 2 — now
+ * naming 6, a participant who had not won, while 5 sat in the next round. That surfaced six steps
+ * later as ERR_EXISTING_POSITION_ASSIGNMENT over a changed draw, and as
+ * WINNING_SIDE_ADVANCEMENT_MISMATCH on DOUBLE_ELIMINATION 9305122.
+ *
+ * Re-sided together, because each is addressed by side and would otherwise contradict the others:
+ * `winningSide`, the score (`reverseScore`), `matchUpStatusCodes` (positional, and its provenance
+ * elements carry their own `sideNumber`), `sideExitProvenance` (keyed by side) and TEAM `sides`.
+ */
+function followWinnerAcrossResort({
+  matchUp,
+  winnerDrawPosition,
+  existingWinnerDrawPosition,
+  existingLoserDrawPosition,
+}) {
+  if (!matchUp.winningSide || winnerDrawPosition === undefined) return;
+
+  let followed = winnerDrawPosition;
+  if (winnerDrawPosition === existingWinnerDrawPosition) followed = existingLoserDrawPosition;
+  else if (existingLoserDrawPosition && winnerDrawPosition === existingLoserDrawPosition)
+    followed = existingWinnerDrawPosition;
+
+  const index = matchUp.drawPositions?.indexOf(followed);
+  if (index === undefined || index < 0 || index + 1 === matchUp.winningSide) return;
+
+  const otherSide = (sideNumber) => (sideNumber === 1 ? 2 : 1);
+  matchUp.winningSide = index + 1;
+
+  if (matchUp.score?.sets?.length) {
+    const { reversedScore } = reverseScore({ score: matchUp.score });
+    if (reversedScore) matchUp.score = { ...matchUp.score, ...reversedScore };
+  }
+
+  if (matchUp.matchUpStatusCodes?.length) {
+    const [first, second] = matchUp.matchUpStatusCodes;
+    matchUp.matchUpStatusCodes = [second ?? '', first ?? ''].map((code) =>
+      code && typeof code === 'object' && code.sideNumber ? { ...code, sideNumber: otherSide(code.sideNumber) } : code,
+    );
+  }
+
+  if (matchUp.sideExitProvenance) {
+    const provenance = {};
+    for (const [sideNumber, entry] of Object.entries(matchUp.sideExitProvenance)) {
+      provenance[otherSide(Number(sideNumber))] = entry;
+    }
+    matchUp.sideExitProvenance = provenance;
+  }
+
+  if (Array.isArray(matchUp.sides)) {
+    matchUp.sides = matchUp.sides.map((side) => ({ ...side, sideNumber: otherSide(side.sideNumber) }));
+  }
 }
