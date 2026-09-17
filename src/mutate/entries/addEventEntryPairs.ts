@@ -37,6 +37,7 @@ type AddEventEntryPairsArgs = {
   entryStage?: StageTypeUnion;
   enforceCategory?: boolean;
   uuids?: string[];
+  drawId?: string;
   event: Event;
 };
 export function addEventEntryPairs(params: AddEventEntryPairsArgs) {
@@ -51,6 +52,7 @@ export function addEventEntryPairs(params: AddEventEntryPairsArgs) {
     tournamentRecord,
     enforceCategory,
     drawDefinition,
+    drawId,
     event,
     uuids,
   } = params;
@@ -141,6 +143,12 @@ export function addEventEntryPairs(params: AddEventEntryPairsArgs) {
     })
     .map((participant) => participant.participantId);
 
+  // `drawId` must ride along. `addEventEntries` gates its `addDrawEntries` call on `drawId`, not on
+  // `drawDefinition` — so resolving a drawDefinition here and dropping the id left the drawDefinition
+  // inert and the PAIR confined to `event.entries`. Where this bit hardest: re-pairing two
+  // individuals who were themselves draw entries. `addEventEntries` evicts the now-grouped
+  // individuals from *every* drawDefinition, so without the id the draw lost two entries and gained
+  // nothing. `destroyGroupEntry` has always passed `drawId` on the way out; this is the way back in.
   const result = addEventEntries({
     participantIds: pairParticipantIds,
     tournamentRecord,
@@ -148,6 +156,7 @@ export function addEventEntryPairs(params: AddEventEntryPairsArgs) {
     drawDefinition,
     entryStatus,
     entryStage,
+    drawId,
     event,
   });
 
@@ -160,5 +169,10 @@ export function addEventEntryPairs(params: AddEventEntryPairsArgs) {
 
   const newParticipantIds = newParticipants.map(getParticipantId);
 
-  return { ...result, info, newParticipantIds };
+  // `info` here is `addParticipants`' — usually undefined — and spreading it unconditionally
+  // erased `addEventEntries`' own. That matters now that the drawId above makes `addDrawEntries`
+  // reachable: its refusals (a full stage, a shared individual in a bracketed draw) are reported as
+  // `info` on an otherwise successful result, and the caller was shown nothing at all. Prefer the
+  // downstream reason; fall back to this one.
+  return { ...result, info: result.info ?? info, newParticipantIds };
 }
