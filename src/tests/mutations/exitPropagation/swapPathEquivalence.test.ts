@@ -12,7 +12,8 @@ import fs from 'fs';
  * experienced after a flip by whoever now occupies the path, exactly as the previous occupant
  * experienced it. With A and B the flipped matchUp's two participants and σ exchanging them, every
  * OTHER matchUp decided before the flip must, after it, have winner σ(winner), loser σ(loser), the
- * same status, and the same score as seen from the winner.
+ * same status, and the same score as seen from the winner. Every matchUp NOT downstream of it — earlier
+ * rounds, and the structures the pair came from except the rounds they re-enter — must be unchanged.
  */
 const key = (m: any) => `${m.structureName}|${m.roundNumber}|${m.roundPosition}`;
 
@@ -33,6 +34,80 @@ function outcomes(drawId: string) {
     });
   }
   return byId;
+}
+
+/**
+ * DOWNSTREAM of a flipped matchUp: later rounds of its structure, and the structures it feeds.
+ *
+ * A structure the flipped pair was SENT FROM by a LOSER link is their origin: only the rounds they
+ * RE-ENTER by a WINNER link are downstream there (DOUBLE_ELIMINATION's Main, reached back from the
+ * Backdraw). Counting all of Main blessed a relabel of the pair's entry positions.
+ */
+function downstreamOf(drawId: string, target: any) {
+  const drawDefinition = getDrawDefinition(drawId);
+  const links = drawDefinition.links ?? [];
+  const downstreamStructureIds = getDownstreamStructureIds({
+    inContextDrawMatchUps: getDrawMatchUps(drawId),
+    excludeStructureId: target.structureId,
+    matchUpId: target.matchUpId,
+    drawDefinition,
+  }).structureIds;
+  const originReEntryRound = (structureId: string) => {
+    const isOrigin = links.some(
+      (link: any) =>
+        link.linkType === 'LOSER' &&
+        link.source.structureId === structureId &&
+        link.target.structureId === target.structureId,
+    );
+    if (!isOrigin) return undefined;
+    const rounds = links
+      .filter((link: any) => link.linkType === 'WINNER' && link.target.structureId === structureId)
+      .map((link: any) => link.target.roundNumber);
+    return rounds.length ? Math.min(...rounds) : Infinity;
+  };
+  return (m: any) => {
+    if (m.structureId === target.structureId) return m.roundNumber > target.roundNumber;
+    if (!downstreamStructureIds.includes(m.structureId)) return false;
+    const reEntryRound = originReEntryRound(m.structureId);
+    return reEntryRound === undefined || m.roundNumber >= reEntryRound;
+  };
+}
+
+/** Compare every matchUp decided before a flip with its state after: relabelled downstream, unchanged elsewhere. */
+function compareOutcomes({ before, after, isDownstream, target, a, b }) {
+  const sigma = (id?: string) => {
+    if (id === a) return b;
+    if (id === b) return a;
+    return id;
+  };
+  const identity = (id?: string) => id;
+  let compared = 0;
+  const violations: any[] = [];
+  for (const [matchUpId, was] of before) {
+    if (matchUpId === target.matchUpId) continue;
+    compared++;
+    const now = after.get(matchUpId);
+    // downstream: the path's outcome passes to whoever now occupies it; elsewhere: untouched
+    const downstream = isDownstream(was);
+    const relabel = downstream ? sigma : identity;
+    const expected = {
+      winnerId: relabel(was.winnerId),
+      loserId: relabel(was.loserId),
+      status: was.status,
+      score: was.score,
+    };
+    const actual = now && { winnerId: now.winnerId, loserId: now.loserId, status: now.status, score: now.score };
+    if (JSON.stringify(expected) === JSON.stringify(actual)) continue;
+    violations.push({
+      flipped: key(target),
+      matchUp: was.key,
+      downstream,
+      involvesSwapped: [was.winnerId, was.loserId].some((id) => id === a || id === b),
+      expected,
+      actual: actual ?? 'NO LONGER DECIDED',
+    });
+  }
+  return { compared, violations };
 }
 
 test.skipIf(process.env.SWAP_PATH !== '1')(
@@ -60,19 +135,7 @@ test.skipIf(process.env.SWAP_PATH !== '1')(
         const ws = step.outcome?.winningSide;
         const isFlip = !!target.winningSide && !!ws && ws !== target.winningSide;
         const before = isFlip ? outcomes(drawId) : undefined;
-        // DOWNSTREAM only: later rounds of the flipped structure, and the structures it feeds
-        const downstreamStructureIds = isFlip
-          ? getDownstreamStructureIds({
-              inContextDrawMatchUps: getDrawMatchUps(drawId),
-              drawDefinition: getDrawDefinition(drawId),
-              excludeStructureId: target.structureId,
-              matchUpId: target.matchUpId,
-            }).structureIds
-          : [];
-        const isDownstream = (m: any) =>
-          m.structureId === target.structureId
-            ? m.roundNumber > target.roundNumber
-            : downstreamStructureIds.includes(m.structureId);
+        const isDownstream = isFlip ? downstreamOf(drawId, target) : () => false;
         const a = target.sides?.find((s: any) => s.sideNumber === target.winningSide)?.participantId;
         const b = target.sides?.find((s: any) => s.sideNumber !== target.winningSide)?.participantId;
         const observation = observeMutation({
@@ -83,39 +146,12 @@ test.skipIf(process.env.SWAP_PATH !== '1')(
         });
         if (!before || observation.error || observation.thrown) continue;
         flips++;
-        const sigma = (id?: string) => {
-          if (id === a) return b;
-          if (id === b) return a;
-          return id;
-        };
-        const after = outcomes(drawId);
-        for (const [matchUpId, was] of before) {
-          if (matchUpId === target.matchUpId || !isDownstream(was)) continue;
-          compared++;
-          const now = after.get(matchUpId);
-          const expected = {
-            winnerId: sigma(was.winnerId),
-            loserId: sigma(was.loserId),
-            status: was.status,
-            score: was.score,
-          };
-          const actual = now && { winnerId: now.winnerId, loserId: now.loserId, status: now.status, score: now.score };
-          if (JSON.stringify(expected) === JSON.stringify(actual)) continue;
-          violations++;
-          fs.appendFileSync(
-            out,
-            JSON.stringify({
-              seed: scenario.seed,
-              drawType: scenario.config.drawType,
-              step: stepNumber,
-              flipped: key(target),
-              matchUp: was.key,
-              involvesSwapped: [was.winnerId, was.loserId].some((id) => id === a || id === b),
-              expected,
-              actual: actual ?? 'NO LONGER DECIDED',
-              drawDefinitionStructures: getDrawDefinition(drawId).structures.length,
-            }) + '\n',
-          );
+        const rows = compareOutcomes({ before, after: outcomes(drawId), isDownstream, target, a, b });
+        compared += rows.compared;
+        violations += rows.violations.length;
+        for (const violation of rows.violations) {
+          const row = { seed: scenario.seed, drawType: scenario.config.drawType, step: stepNumber, ...violation };
+          fs.appendFileSync(out, JSON.stringify(row) + '\n');
         }
       }
     }

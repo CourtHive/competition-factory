@@ -1,6 +1,6 @@
 import { getDrawDefinition, getDrawMatchUps, observeMutation } from '@Tests/testHarness/exitPropagation/transitions';
-import { getDrawInconsistencies } from '@Query/drawDefinition/getDrawInconsistencies';
 import { getInvariantViolations } from '@Tests/testHarness/exitPropagation/invariants';
+import { getDrawInconsistencies } from '@Query/drawDefinition/getDrawInconsistencies';
 import { prepareDraw, type Step } from '@Tests/testHarness/exitPropagation/sweep';
 import { setSubscriptions } from '@Global/state/globalState';
 import { expect, test } from 'vitest';
@@ -66,7 +66,7 @@ function dump(drawId: string, label: string, pids: Map<string, string>) {
       .map((s: any) => `${s.sideNumber}:${s.drawPosition ?? '_'}=${s.bye ? 'BYE' : short(s.participantId)}`)
       .join(' ');
     lines.push(
-      `${key(m).padEnd(16)} ${String(m.matchUpStatus).padEnd(15)} ws=${m.winningSide ?? '-'} dp=${JSON.stringify(m.drawPositions)} ${sides} ${m.feedRound ? 'FEED' : ''} codes=${JSON.stringify(m.matchUpStatusCodes ?? [])}`,
+      `${key(m).padEnd(16)} ${String(m.matchUpStatus).padEnd(15)} ws=${m.winningSide ?? '-'} dp=${JSON.stringify(m.drawPositions)} ${sides} ${m.feedRound ? 'FEED' : ''} codes=${JSON.stringify(m.matchUpStatusCodes ?? [])} prov=${JSON.stringify(m.sideExitProvenance ?? null)}`,
     );
   }
   const violations = getInvariantViolations({ matchUps: getDrawMatchUps(drawId), drawDefinition });
