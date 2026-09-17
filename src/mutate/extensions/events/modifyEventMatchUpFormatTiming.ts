@@ -4,7 +4,7 @@ import { isValidMatchUpFormat } from '@Validators/isValidMatchUpFormat';
 import { requireParams } from '@Helpers/parameters/requireParams';
 import { pushGlobalLog } from '@Functions/global/globalLog';
 import { Event, Tournament } from '@Types/tournamentTypes';
-import { ensureInt } from '@Tools/ensureInt';
+import { isNumeric } from '@Tools/math';
 
 // constants
 import { TOURNAMENT_RECORD, EVENT } from '@Constants/attributeConstants';
@@ -59,8 +59,13 @@ export function modifyEventMatchUpFormatTiming(params: ModifyEventMatchUpFormatT
     return timing;
   };
 
-  const validAverageMinutes = averageMinutes && !isNaN(ensureInt(averageMinutes));
-  const validRecoveryMinutes = recoveryMinutes && !isNaN(ensureInt(recoveryMinutes));
+  // `isNumeric`, NOT `!isNaN(ensureInt(...))`. `ensureInt` returns **0** for anything that is neither
+  // a number nor a numeric string — objects, arrays and booleans included — and `isNaN(0)` is
+  // `false`, so the old guard admitted any TRUTHY non-numeric value and stored it VERBATIM. The
+  // scheduler then read an object where it expects minutes. Same root cause as the hole-accepting
+  // predicate in `getOrderedDrawPositions`: `!isNaN(ensureInt(x))` is not a numeric test.
+  const validAverageMinutes = isNumeric(averageMinutes);
+  const validRecoveryMinutes = isNumeric(recoveryMinutes);
 
   const newAverageTimes = averageTimes.map(newTiming).filter((f) => f?.categoryNames?.length);
   const newRecoveryTimes = recoveryTimes.map(newTiming).filter((f) => f?.categoryNames?.length);
@@ -82,8 +87,12 @@ export function modifyEventMatchUpFormatTiming(params: ModifyEventMatchUpFormatT
   if (!validAverageMinutes && !validRecoveryMinutes) return { error: INVALID_VALUES };
 
   return modifyMatchUpFormatTiming({
-    averageTimes: validAverageMinutes && newAverageTimes,
-    recoveryTimes: validRecoveryMinutes && newRecoveryTimes,
+    // `undefined`, not `false`, when there is nothing to write: the receiver reads these with
+    // `?? []`, which only replaces null/undefined — a `false` survives and `false.filter` throws.
+    // The previous guard produced `undefined` only by accident, as the short-circuit of
+    // `minutes && …`; saying so explicitly removes the dependency on that accident.
+    averageTimes: validAverageMinutes ? newAverageTimes : undefined,
+    recoveryTimes: validRecoveryMinutes ? newRecoveryTimes : undefined,
     tournamentRecord,
     matchUpFormat,
     eventId,
