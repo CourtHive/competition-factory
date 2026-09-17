@@ -1,5 +1,5 @@
-import { findByCoord, generateDraw, playForward } from '@Tests/testHarness/exitPropagation/routeComparison';
 import { clearOutcome, getDrawDefinition, getDrawMatchUps, hash } from '@Tests/testHarness/exitPropagation/transitions';
+import { findByCoord, generateDraw, playForward } from '@Tests/testHarness/exitPropagation/routeComparison';
 import { getInvariantViolations } from '@Tests/testHarness/exitPropagation/invariants';
 import { getDrawInconsistencies } from '@Query/drawDefinition/getDrawInconsistencies';
 import tournamentEngine from '@Engines/syncEngine';

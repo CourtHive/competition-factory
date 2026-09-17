@@ -1,6 +1,6 @@
 import { getDrawDefinition, getDrawMatchUps, observeMutation } from '@Tests/testHarness/exitPropagation/transitions';
-import { getDrawInconsistencies } from '@Query/drawDefinition/getDrawInconsistencies';
 import { getInvariantViolations } from '@Tests/testHarness/exitPropagation/invariants';
+import { getDrawInconsistencies } from '@Query/drawDefinition/getDrawInconsistencies';
 import { prepareDraw, type Step } from '@Tests/testHarness/exitPropagation/sweep';
 import { setSubscriptions } from '@Global/state/globalState';
 import { expect, test } from 'vitest';

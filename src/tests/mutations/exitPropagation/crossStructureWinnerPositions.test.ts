@@ -5,8 +5,8 @@ import mocksEngine from '@Assemblies/engines/mock';
 import { expect, it, describe } from 'vitest';
 
 // constants
-import { DOUBLE_ELIMINATION } from '@Constants/drawDefinitionConstants';
 import { DEFAULTED, DOUBLE_WALKOVER } from '@Constants/matchUpStatusConstants';
+import { DOUBLE_ELIMINATION } from '@Constants/drawDefinitionConstants';
 
 const drawId = 'cross-structure';
 

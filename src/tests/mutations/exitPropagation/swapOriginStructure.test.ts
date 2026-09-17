@@ -4,8 +4,8 @@ import mocksEngine from '@Assemblies/engines/mock';
 import { expect, it } from 'vitest';
 
 // constants
-import { DOUBLE_ELIMINATION } from '@Constants/drawDefinitionConstants';
 import { DOUBLE_DEFAULT, DOUBLE_WALKOVER, WALKOVER } from '@Constants/matchUpStatusConstants';
+import { DOUBLE_ELIMINATION } from '@Constants/drawDefinitionConstants';
 
 /**
  * A flip never rewrites the entry positions of the structure its participants came FROM.
