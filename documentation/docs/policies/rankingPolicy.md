@@ -679,7 +679,7 @@ scaleEngine.getTournamentPoints({
 });
 ```
 
-See [POLICY_DELIVERY](https://github.com/CourtHive/Mentat/blob/main/planning/POLICY_DELIVERY.md) in the orchestration repo for the full architecture and the per-consumer migration paths (TMX, courthive-rankings, courthive-ingest).
+The delivery architecture and the per-consumer migration paths (TMX, courthive-rankings, courthive-ingest) are maintained by CourtHive outside this package.
 
 ## Related Documentation
 

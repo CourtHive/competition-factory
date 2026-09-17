@@ -290,9 +290,11 @@ do not emit a snapshot.
 > regenerating over completed matchUps.
 
 For recovering draws that were overwritten **before** this snapshot behavior existed — or to
-rebuild from the full mutation history — the `Mentat/tools/draw-recovery` utility replays the
-`audit_log` generation payload plus the recorded `assignDrawPosition`/`setMatchUpStatus`
-events through the engine to reconstruct a schema-valid `drawDefinition`.
+rebuild from the full mutation history — a draw-recovery utility replays the `audit_log` generation
+payload plus the recorded `assignDrawPosition`/`setMatchUpStatus` events through the engine to
+reconstruct a schema-valid `drawDefinition`. It is not part of this package;
+[open an issue](https://github.com/CourtHive/competition-factory/issues) if you need a draw
+reconstructed.
 
 ## Related
 

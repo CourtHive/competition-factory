@@ -71,4 +71,4 @@ scaleEngine.getTournamentPoints({
 });
 ```
 
-The registry is a per-process singleton. Each consumer (TMX, CFS, courthive-rankings) hydrates its own. Federations adopt a policy by POSTing their version to CFS; consumers re-hydrate at next boot. See [POLICY_DELIVERY](https://github.com/CourtHive/Mentat/blob/main/planning/POLICY_DELIVERY.md) for the full architecture.
+The registry is a per-process singleton. Each consumer (TMX, CFS, courthive-rankings) hydrates its own. Federations adopt a policy by POSTing their version to CFS; consumers re-hydrate at next boot.

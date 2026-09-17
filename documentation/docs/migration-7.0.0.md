@@ -273,10 +273,10 @@ governor, so it was never part of the engine surface.
 
 ### What to do about the removal
 
-**If you were calling it, you have a renderer we could not find, and we would like to know.** The
-implementation and its full test suite are preserved verbatim at
-`Mentat/deprecated/factory/buildDrawHierarchy/`, so restoring it is a copy rather than an
-archaeology exercise.
+**If you were calling it, you have a renderer we could not find, and we would like to know** —
+[open an issue](https://github.com/CourtHive/competition-factory/issues). The implementation and its
+full test suite are preserved verbatim outside this repository, so restoring it is a copy rather than
+an archaeology exercise.
 
 Before restoring, consider whether you want _that_ shape. It is a 2018-era D3 contract; a renderer
 written today is more likely to want `getRoundMatchUps` or the draw's own structure/link graph.
@@ -544,9 +544,8 @@ The breaking changes those footers describe are real and are documented above, a
 [§11](#11-three-request-shape-fields-gain-real-types) and elsewhere; none of them belongs to #4847.
 
 Both repository settings were corrected on 2026-09-13 — `allow_merge_commit: true` so a checkpoint
-merges as a merge commit, and `delete_branch_on_merge: false` so `dev` survives one. The rationale is
-recorded in `Mentat/standards/coding-standards.md` under the branch strategy. No action is required
-of consumers.
+merges as a merge commit, and `delete_branch_on_merge: false` so `dev` survives one. No action is
+required of consumers.
 
 ## 11b. A retirement no longer carries into the consolation by default
 
@@ -642,11 +641,11 @@ drawPosition whose `positionAssignment` held nobody, and the draw recorded a wal
 
 The rule is now about **which kind of empty** the winning side is:
 
-| winning side                                                             | awardable                             |
-| ------------------------------------------------------------------------ | ------------------------------------- |
-| holds a participant, a bye or a qualifier                                | yes                                   |
-| holds **no `drawPosition`** — an unfilled feed slot awaiting its arrival | yes                                   |
-| holds a `drawPosition` whose assignment is present and **vacant**        | **no** — `ERR_INVALID_MATCHUP_STATUS` |
+| winning side                                                             | awardable                                                                                                                                                                              |
+| ------------------------------------------------------------------------ | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| holds a participant, a bye or a qualifier                                | yes — **but see [11i](#11i-a-directly-entered-exit-is-never-awarded-to-the-player-who-is-there)**: a participant is awardable only once their opponent has arrived, and a bye never is |
+| holds **no `drawPosition`** — an unfilled feed slot awaiting its arrival | yes                                                                                                                                                                                    |
+| holds a `drawPosition` whose assignment is present and **vacant**        | **no** — `ERR_INVALID_MATCHUP_STATUS`                                                                                                                                                  |
 
 **Who is affected.** Only callers using `propagateExitStatus` (or a policy that sets it, such as
 `POLICY_SCORING_USTA`) AND submitting an exit whose `winningSide` names a claimed-but-empty seat.
@@ -690,8 +689,14 @@ So the propagation cascade never produces this state. Only a direct `setMatchUpS
 and the entry point now agrees with the cascade.
 
 **Who is affected.** Only a caller that directly records an exit on a matchUp containing a bye AND
-names the bye as the winner. Recording the same exit **for the player who is actually there** is
-unaffected and still accepted — a director can still record that the present player did not play.
+names the bye as the winner.
+
+> **CORRECTED — see [11i](#11i-a-directly-entered-exit-is-never-awarded-to-the-player-who-is-there).**
+> This section originally continued: _"Recording the same exit for the player who is actually there is
+> unaffected and still accepted — a director can still record that the present player did not play."_
+> That is no longer true, in either of its two readings. On a matchUp containing a **bye** no
+> `winningSide` is accepted at all, in either direction. On a **half-filled** matchUp the exit may
+> still be recorded, but only awarded to the side still to arrive.
 
 **There is no flag to restore it.** A player cannot lose to an opponent who does not exist; the
 previous behaviour had no reading a governing body could adopt.
@@ -848,6 +853,92 @@ an ad hoc round can no longer be placed in it again, and `restrictAdHocRoundPart
 longer offers one. If entries do overlap, also expect DrawMatic rounds that sit some entrants out, and
 move any Swiss draw over those entrants to AD_HOC with DrawMatic.
 
+## 11i. A directly-entered exit is never awarded to the player who is there
+
+_Shipped in [#4910](https://github.com/CourtHive/competition-factory/pull/4910) and
+[#4909](https://github.com/CourtHive/competition-factory/pull/4909)._
+
+Completes [11d](#11d-an-exit-cannot-be-awarded-to-a-drawposition-nobody-holds) and
+[11e](#11e-a-bye-can-never-be-the-winning-side), whose closing paragraphs are now wrong: both said
+that recording the exit for the participant who is present was unaffected.
+
+Two rules, both refused with `ERR_INVALID_MATCHUP_STATUS`:
+
+| entry                                                                                              | before                              | now                                                                                                                                   |
+| -------------------------------------------------------------------------------------------------- | ----------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------- |
+| `{ matchUpStatus: WALKOVER \| DEFAULTED, winningSide: <the empty side> }` on a half-filled matchUp | accepted with `propagateExitStatus` | **accepted** — unchanged. This is the designed pending exit: the participant who is there has withdrawn, and whoever arrives advances |
+| the same, `winningSide` naming **the participant who is there**, opponent still to arrive          | accepted with `propagateExitStatus` | **refused**                                                                                                                           |
+| the same on a matchUp whose other side is a **BYE**, `winningSide` naming the player               | accepted                            | **refused**                                                                                                                           |
+
+**Why the second row cannot stand.** It is a walkover against an opponent nobody knows yet, and the
+engine has no reading of it: the arrival path makes whoever arrives the winner of a pending exit,
+because the designed shape is the first row. Accepted, it produced two winners of one matchUp — both
+advanced, and the entered winner never reached the loser structure. Measured as a two-step
+`DROPPED_PROGRESSION` on DOUBLE_ELIMINATION.
+
+**Why the third row cannot stand.** A matchUp containing a bye takes no `winningSide` at all: the bye
+always advances its opponent. A walkover entered **before** a bye arrives is a different thing and is
+unaffected — the player and their walkover are advanced through the bye and the exit occurs where
+they land (`progressExitStatus` RULE 1), never on the bye matchUp.
+
+**Who is affected.** Only callers using `propagateExitStatus` (or a policy that sets it, such as
+`POLICY_SCORING_USTA`) that record an exit on a matchUp with one participant. With the flag off, both
+entries were already refused — this removes a divergence rather than adding a restriction. Exits
+written by the cascade are unaffected: it identifies itself with `propagatingExit`.
+
+**If you hit this**, the outcome you want is the exit awarded to the side still to arrive (row one),
+or — where the opponent is a bye — nothing to record here at all.
+
+## 11j. A winning-side flip can be refused by a first-match consolation
+
+_Shipped in [#4910](https://github.com/CourtHive/competition-factory/pull/4910)._
+
+`allowChangePropagation` lets a caller change the winner of a decided matchUp and carry the change
+downstream. A `FIRST_MATCHUP` loser link makes entry conditional on the ARRIVING participant — a loser
+feeds the consolation only on zero prior scored wins — so a flip can change **who is eligible**, not
+merely who lost.
+
+Where the new loser is ineligible, the consolation results the departing loser recorded there cannot
+be inherited by anyone. Before, the flip was applied and the reconciliation then stripped those
+results, or returned an error over an already-mutated draw. Now the question is asked **first**:
+
+- the departing loser's consolation drawPosition is **active** — they, or the participant paired with
+  them, have played on → the flip is refused with `ERR_ACTIVE_DRAW_POSITION`, over an untouched draw;
+- nothing is played there → the flip proceeds and the slot reverts to the bye `directLoser` would have
+  placed, as before.
+
+**Who is affected.** Callers sending `allowChangePropagation` on `FIRST_MATCH_LOSER_CONSOLATION`
+draws. `allowChangePropagation` does not override this refusal; it is what routes the call to the
+swap in the first place.
+
+**Interface note.** Unlike [11c](#11c-removing-a-result-now-takes-back-the-exits-it-produced), where
+`matchUpActions` withholds `CLEAR_SCORE`, the action is still **offered** here — the refusal is
+reached at submit time. An interface that only reads the offered actions will show the flip as
+available and then surface the error.
+
+**If you hit this**, clear the consolation result first and then flip; that sequence is accepted and
+reaches the same state.
+
+## 11k. A consolation loser who played on through a bye keeps their upstream result
+
+_Shipped in [#4909](https://github.com/CourtHive/competition-factory/pull/4909)._
+
+`isActiveDownstream` treated every `FIRST_MATCHUP` bye matchUp as inert. That is right when the fed
+slot itself is the bye — the loser was withheld, so nobody went anywhere from it. It is wrong when
+the fed loser is **present** and the bye is their opponent: they advanced through it and played on.
+
+Before, clearing or re-scoring the Main result was accepted, and it removed that participant from the
+consolation while the match they had played there still stood, over a drawPosition holding nobody.
+Now such a result is active downstream, so the call is refused with
+`ERR_INCOMPATIBLE_MATCHUP_STATUS`.
+
+**Who is affected.** Callers clearing or re-scoring a matchUp whose loser fed a `FIRST_MATCHUP`
+consolation and advanced through a bye there. To make the change, clear the consolation results from
+the latest round back first.
+
+**Unaffected:** a bye matchUp whose fed slot holds nobody is still inert, so a first entry of a
+result upstream of one behaves exactly as before.
+
 ## 12. Non-breaking additions worth knowing
 
 `plainDate`, `plainTime` and `zonedDateTime` are new published exports, completing the calendar
@@ -923,6 +1014,31 @@ One idiom is worth re-reading, because it changes from "false" to "vacuously tru
 `drawPositions.every(predicate)` over an empty array returns `true`, so a matchUp holding no
 position satisfies every such filter. If you partition matchUps with `.every()` — into halves of a
 mirrored draw, or into page segments — filter on a non-empty array first.
+
+### A lone `drawPositions` entry resolves by ROLE, not by how the array is spelled
+
+_Shipped in [#4900](https://github.com/CourtHive/competition-factory/pull/4900) and
+[#4907](https://github.com/CourtHive/competition-factory/pull/4907)._
+
+Side resolution no longer depends on which of the three spellings a writer happened to leave behind:
+`[5]`, `[5, undefined]` and `[undefined, 5]` are one case, and all three hydrate identically. What
+decides the side is the ROLE the position plays — on a feed round, **fed** positions are side 1 and a
+position that played its way here from the prior round of the same structure is side 2.
+
+**This changes published data.** Measured across two frozen 600-seed windows on both propagation
+arms: **277 live feed-round matchUps had put their lone drawPosition on side 2** where the rule says
+side 1, purely because a writer had compacted the array. Those participants now hydrate on the other
+side. A consumer that renders from `sides` sees the correction automatically; one that derives a side
+by indexing `drawPositions` sees it only if it filters holes out first.
+
+The full rule set — the positional binding, fed vs advanced, the one exception in
+DOUBLE_ELIMINATION's Main final, and why an absent key is the ordinary shape of an unplayed matchUp
+— is published at [drawPositions](/docs/concepts/draw-positions).
+
+**A flip now re-sides what it moves.** Where a winner change re-sorts a later matchUp's positions so
+that its winner changes side, `winningSide`, the score (reversed), `matchUpStatusCodes` and
+`sideExitProvenance` all follow the winner. A stored post-flip matchUp can therefore differ from 6.x
+in those four fields while describing the same result.
 
 ### The `matchUpStatus` of a convergence can change too
 
