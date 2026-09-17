@@ -115,7 +115,6 @@ export function fedLoserPlacementRefusal({
     sourceMatchUps: (sourceMatchUps ?? []).filter((matchUp) => (matchUp.roundNumber ?? 0) < flippedRoundNumber),
     drawPosition: prospectiveLoserDrawPosition,
   });
-  if (winsAfterTheFlip !== 0) return undefined; // ineligible after the flip — nothing will be placed
 
   const { positionAssignments: sourcePositionAssignments } = structureAssignedDrawPositions({
     structureId: structure.structureId,
@@ -123,6 +122,14 @@ export function fedLoserPlacementRefusal({
   });
   const participantIdAt = (drawPosition: number): string | undefined =>
     sourcePositionAssignments?.find((assignment) => assignment.drawPosition === drawPosition)?.participantId;
+
+  if (winsAfterTheFlip !== 0) {
+    return departingLoserPathRefusal({
+      departingLoserParticipantId: participantIdAt(departingLoserDrawPosition),
+      targetStructureId,
+      drawDefinition,
+    });
+  }
 
   const prospectiveLoserParticipantId = participantIdAt(prospectiveLoserDrawPosition);
   if (!prospectiveLoserParticipantId) return undefined;
@@ -153,6 +160,37 @@ export function fedLoserPlacementRefusal({
   if (!activeDrawPositions?.includes(drawPosition)) return undefined;
 
   return { error: DRAW_POSITION_ACTIVE };
+}
+
+/**
+ * The prospective loser is INELIGIBLE for the target — so the path the departing loser played in it
+ * cannot be inherited, and would have to be undone.
+ *
+ * A flip is a relabel: whoever takes over a path downstream experiences exactly what the previous
+ * occupant did (CA, 2026-09-17). `FIRST_MATCHUP` is the one place that cannot hold, because entry
+ * depends on the ARRIVING participant's first match. If the new loser won a match before the flipped
+ * one, they may not enter, and `reconcileFedLoserEligibility` then strips everything the departing
+ * loser won there and reverts the slot to a BYE — results recorded in the consolation silently
+ * disappear.
+ *
+ * CA's ruling: refuse the swap when propagation cannot proceed with equivalence; allow it when nothing
+ * downstream is active. So this refuses exactly when the departing loser's target drawPosition is
+ * ACTIVE — they, or the participant paired with them, have played on — and returns nothing otherwise,
+ * leaving the reconciliation to revert a slot nobody has played from. Measured with
+ * `swapPathEquivalence.test.ts`: 17 of the 20 path violations remaining on #4908 were this shape.
+ */
+function departingLoserPathRefusal({
+  departingLoserParticipantId,
+  targetStructureId,
+  drawDefinition,
+}): ResultType | undefined {
+  if (!departingLoserParticipantId) return undefined;
+  const { positionAssignments } = getPositionAssignments({ drawDefinition, structureId: targetStructureId });
+  const held = positionAssignments?.find((assignment) => assignment.participantId === departingLoserParticipantId);
+  if (!held) return undefined;
+
+  const { activeDrawPositions } = getStructureDrawPositionProfiles({ structureId: targetStructureId, drawDefinition });
+  return activeDrawPositions?.includes(held.drawPosition) ? { error: DRAW_POSITION_ACTIVE } : undefined;
 }
 
 /**
