@@ -166,6 +166,11 @@ it('a swap through allowChangePropagation does not place a participant the feed 
   expect(ineligibleConsolationOccupants(drawId)).toEqual([]);
 });
 
+/**
+ * CA, 2026-09-17: with the consolation result standing the override is REFUSED — the new loser is
+ * ineligible, so that result cannot be inherited. Once it is cleared nothing downstream is active, and
+ * the override reaches exactly the state of the legitimate clear-and-redo sequence.
+ */
 it('the override reaches the same state as the legitimate clear-and-redo sequence', () => {
   // The legitimate path: clear the consolation result, apply the correction, and let `directLoser`
   // decide the feed from the new facts.
@@ -190,6 +195,8 @@ it('the override reaches the same state as the legitimate clear-and-redo sequenc
   play(override, STEPS.mainRoundOne);
   play(override, STEPS.feedTheLoser);
   play(override, STEPS.playConsolation);
+  expect(play(override, STEPS.flipTheResult, true)).toEqual('ERR_ACTIVE_DRAW_POSITION');
+  play(override, { ...STEPS.playConsolation, outcome: CLEAR_OUTCOME });
   expect(play(override, STEPS.flipTheResult, true)).toBeUndefined();
 
   const coordinate = 'Consolation|2|6';
