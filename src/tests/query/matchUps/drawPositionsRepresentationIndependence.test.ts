@@ -60,7 +60,13 @@ function collectStructures(structures: any[], collected: any[] = []): any[] {
   return collected;
 }
 
-type Candidate = { structureName: string; roundNumber: number; roundPosition: number; positions: number[] };
+type Candidate = {
+  structureName: string;
+  roundNumber: number;
+  roundPosition: number;
+  positions: number[];
+  priorRoundPositions: number[];
+};
 
 /** the spellings of "this matchUp holds exactly these real positions" */
 function spellings(positions: number[]): any[] {
@@ -74,6 +80,77 @@ function spellings(positions: number[]): any[] {
     [low, high],
     [high, low],
   ];
+}
+
+type Reading = {
+  sideOf: (position: number) => number | undefined;
+  spelling: string;
+  feedRound: boolean;
+  sides: string;
+};
+
+/** every stored matchUp beyond round 1 holding two real positions, with its prior round's positions */
+function twoPositionCandidates(drawDefinition: any): Candidate[] {
+  const candidates: Candidate[] = [];
+  for (const structure of collectStructures(drawDefinition.structures)) {
+    for (const matchUp of structure.matchUps ?? []) {
+      const positions = (matchUp.drawPositions ?? []).filter(Boolean);
+      if (matchUp.roundNumber < 2 || positions.length !== 2) continue;
+      candidates.push({
+        structureName: structure.structureName,
+        roundNumber: matchUp.roundNumber,
+        roundPosition: matchUp.roundPosition,
+        positions: [...positions].sort((a: number, b: number) => a - b),
+        priorRoundPositions: (structure.matchUps ?? [])
+          .filter((prior: any) => prior.roundNumber === matchUp.roundNumber - 1)
+          .flatMap((prior: any) => prior.drawPositions ?? [])
+          .filter(Boolean) as number[],
+      });
+    }
+  }
+  return candidates;
+}
+
+function findStoredMatchUp(drawDefinition: any, candidate: Candidate): any {
+  for (const structure of collectStructures(drawDefinition.structures)) {
+    if (structure.structureName !== candidate.structureName) continue;
+    for (const matchUp of structure.matchUps ?? []) {
+      if (matchUp.roundNumber === candidate.roundNumber && matchUp.roundPosition === candidate.roundPosition) {
+        return matchUp;
+      }
+    }
+  }
+  return undefined;
+}
+
+/** PROPERTY ONE — every spelling of the same occupancy hydrates identically */
+function spellingsDisagree(anchor: string, positions: number[], readings: Reading[]): string[] {
+  if (new Set(readings.map((reading) => reading.sides)).size <= 1) return [];
+  return [
+    `${anchor} holding ${JSON.stringify(positions)}: ` +
+      readings.map((reading) => `${reading.spelling} -> [${reading.sides}]`).join('  |  '),
+  ];
+}
+
+/**
+ * PROPERTY TWO — and the side they agree on is the RIGHT one.
+ *
+ * On a feed round a lone position is on side 2 if it ADVANCED here (it appears in the prior round of
+ * this structure) and side 1 if it was FED. Agreement alone would be satisfied by all three
+ * spellings being wrong together, so this is what stops the test passing vacuously.
+ */
+function sideIsWrong(anchor: string, positions: number[], readings: Reading[], candidate: Candidate): string[] {
+  if (positions.length !== 1 || !readings[0]?.feedRound) return [];
+  const [only] = positions;
+  const expected = candidate.priorRoundPositions.includes(only) ? 2 : 1;
+  const role = expected === 2 ? 'ADVANCED' : 'FED';
+  return readings
+    .filter((reading) => reading.sideOf(only) !== expected)
+    .map(
+      (reading) =>
+        `${anchor} holding [${only}] (${role}, prior round ${JSON.stringify(candidate.priorRoundPositions)}): ` +
+        `${reading.spelling} put it on side ${reading.sideOf(only) ?? 'NONE'}, expected ${expected}`,
+    );
 }
 
 it.each([
@@ -93,19 +170,7 @@ it.each([
   });
 
   const baseDraw = base.events[0].drawDefinitions.find((draw: any) => draw.drawId === drawId);
-  const candidates: Candidate[] = [];
-  for (const structure of collectStructures(baseDraw.structures)) {
-    for (const matchUp of structure.matchUps ?? []) {
-      const positions = (matchUp.drawPositions ?? []).filter(Boolean);
-      if (matchUp.roundNumber < 2 || positions.length !== 2) continue;
-      candidates.push({
-        structureName: structure.structureName,
-        roundNumber: matchUp.roundNumber,
-        roundPosition: matchUp.roundPosition,
-        positions: [...positions].sort((a: number, b: number) => a - b),
-      });
-    }
-  }
+  const candidates = twoPositionCandidates(baseDraw);
 
   // control: a draw with no two-position matchUps beyond round 1 would make everything below vacuous
   expect(candidates.length).toBeGreaterThan(0);
@@ -114,15 +179,7 @@ it.each([
   const sidesFor = (candidate: Candidate, drawPositions: any): string => {
     const record = structuredClone(base);
     const drawDefinition = record.events[0].drawDefinitions.find((draw: any) => draw.drawId === drawId);
-    let target: any;
-    for (const structure of collectStructures(drawDefinition.structures)) {
-      if (structure.structureName !== candidate.structureName) continue;
-      for (const matchUp of structure.matchUps ?? []) {
-        if (matchUp.roundNumber === candidate.roundNumber && matchUp.roundPosition === candidate.roundPosition) {
-          target = matchUp;
-        }
-      }
-    }
+    const target = findStoredMatchUp(drawDefinition, candidate);
     expect(target).toBeDefined(); // control: the single edit landed where it was aimed
 
     if (drawPositions === 'ABSENT') delete target.drawPositions;
@@ -139,7 +196,12 @@ it.each([
         matchUp.roundNumber === candidate.roundNumber &&
         matchUp.roundPosition === candidate.roundPosition,
     );
-    return (hydrated?.sides ?? []).map((side: any) => `${side?.sideNumber}=${side?.drawPosition ?? '-'}`).join(',');
+    return {
+      sides: (hydrated?.sides ?? []).map((side: any) => `${side?.sideNumber}=${side?.drawPosition ?? '-'}`).join(','),
+      sideOf: (position: number) =>
+        (hydrated?.sides ?? []).find((side: any) => side?.drawPosition === position)?.sideNumber,
+      feedRound: !!hydrated?.feedRound,
+    };
   };
 
   const offences: string[] = [];
@@ -148,18 +210,15 @@ it.each([
   for (const candidate of candidates) {
     const [low, high] = candidate.positions;
     for (const positions of [[], [low], [high], [low, high]]) {
-      const readings = spellings(positions).map((spelling) => ({
-        spelling: spelling === 'ABSENT' ? 'ABSENT' : JSON.stringify(spelling),
-        sides: sidesFor(candidate, spelling),
-      }));
+      const readings = spellings(positions).map((spelling) => {
+        const reading = sidesFor(candidate, spelling);
+        return { spelling: spelling === 'ABSENT' ? 'ABSENT' : JSON.stringify(spelling), ...reading };
+      });
       compared++;
-      if (new Set(readings.map((reading) => reading.sides)).size > 1) {
-        offences.push(
-          `${candidate.structureName}|${candidate.roundNumber}|${candidate.roundPosition} holding ` +
-            `${JSON.stringify(positions)}: ` +
-            readings.map((reading) => `${reading.spelling} -> [${reading.sides}]`).join('  |  '),
-        );
-      }
+      const anchor = `${candidate.structureName}|${candidate.roundNumber}|${candidate.roundPosition}`;
+
+      offences.push(...spellingsDisagree(anchor, positions, readings));
+      offences.push(...sideIsWrong(anchor, positions, readings, candidate));
     }
   }
 

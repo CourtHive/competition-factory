@@ -240,6 +240,14 @@ Each matchUp has two sides representing the competing participants:
 }
 ```
 
+### Sides and drawPositions
+
+`sides` is **always length 2**, whether or not the matchUp holds any `drawPosition`. A side's
+`drawPosition` is resolved from `matchUp.drawPositions`, and that resolution has rules worth knowing
+before reading the field — notably that an **absent `drawPositions` key is the ordinary shape of an
+unplayed matchUp**, and that on a feed round the side a lone position lands on depends on whether it
+was fed or advanced. See [drawPositions](./draw-positions).
+
 ### Winning Side
 
 After completion, winningSide indicates the victor:

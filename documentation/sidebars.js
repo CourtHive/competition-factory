@@ -93,6 +93,7 @@ module.exports = {
                 'concepts/draw-types/ladder',
               ],
             },
+            'concepts/draw-positions',
             'concepts/draw-links',
             'concepts/draft-draws',
             'concepts/seed-withdrawal-cascade',
