@@ -1,13 +1,15 @@
+import { checkAndNotifyUnpublishTournament } from '@Mutate/publishing/checkAndNotifyUnpublishTournament';
 import { checkAndUpdateSchedulingProfile } from '@Mutate/tournaments/schedulingProfile';
 import { checkRequiredParameters } from '@Helpers/parameters/checkRequiredParameters';
+import { isTournamentPublished } from '@Query/publishing/isTournamentPublished';
 import { deleteEventsNotice } from '@Mutate/notifications/eventNotifications';
 import { deleteDrawNotice } from '@Mutate/notifications/drawNotifications';
 import { addTournamentTimeItem } from '@Mutate/timeItems/addTimeItem';
 import { addNotice, hasTopic } from '@Global/state/globalState';
 
 // constants
+import { AUDIT, DELETE_PARTICIPANTS, UNPUBLISH_TOURNAMENT } from '@Constants/topicConstants';
 import { ARRAY, OF_TYPE, TOURNAMENT_RECORD } from '@Constants/attributeConstants';
-import { AUDIT, DELETE_PARTICIPANTS } from '@Constants/topicConstants';
 import { UNGROUPED } from '@Constants/entryStatusConstants';
 import { DELETE_EVENTS } from '@Constants/auditConstants';
 import { SUCCESS } from '@Constants/resultConstants';
@@ -21,6 +23,10 @@ export function deleteEvents(params) {
   if (paramCheck.error) return paramCheck;
 
   const { removePairParticipants, tournamentRecord, eventIds } = params;
+
+  // Deleting the last event with a published draw unpublishes the tournament without any unpublish
+  // call, so capture the roll-up now and announce the transition below.
+  const wasTournamentPublished = hasTopic(UNPUBLISH_TOURNAMENT) && isTournamentPublished(tournamentRecord);
 
   const auditTrail: any[] = [];
   const deletedEventDetails: any[] = [];
@@ -92,6 +98,7 @@ export function deleteEvents(params) {
     if (removedParticipantIds.length) {
       addNotice({ topic: DELETE_PARTICIPANTS, payload: { tournamentId, participantIds: removedParticipantIds } });
     }
+    if (wasTournamentPublished) checkAndNotifyUnpublishTournament({ tournamentRecord });
   }
 
   if (auditTrail.length) {

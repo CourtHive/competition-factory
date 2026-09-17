@@ -1,5 +1,5 @@
 import { getEffectiveRegistrationProfile } from '@Query/entries/getEffectiveRegistrationProfile';
-import { getTournamentPublishStatus } from '@Query/tournaments/getTournamentPublishStatus';
+import { isTournamentPublished } from '@Query/publishing/isTournamentPublished';
 import { SCHEDULING_PROFILE } from '@Constants/extensionConstants';
 import { LINK_UNRESOLVED, resolvePersonLink } from './personRule';
 import { getEntryFeeRange } from '@Query/entries/resolveEntryFee';
@@ -46,9 +46,9 @@ export interface MatchUpRowSet {
 // ── tournaments ────────────────────────────────────────────────────────────────
 
 export function tournamentRow(record: any): ReadModelTournamentRow {
-  // aggregate publish flag: the tournament is "published" when its order of play OR
-  // its participant list is published (the same condition that drives UNPUBLISH_TOURNAMENT).
-  const pubStatus: any = getTournamentPublishStatus({ tournamentRecord: record });
+  // aggregate publish flag: the factory's tournament roll-up — a published event (draw), order of
+  // play OR participant list. The same definition the provider calendar and UNPUBLISH_TOURNAMENT use;
+  // restating a subset here is how a draw-only publish once read as unpublished.
   const origin = tournamentOrigin(record);
   return {
     tournament_id: record?.tournamentId,
@@ -57,7 +57,7 @@ export function tournamentRow(record: any): ReadModelTournamentRow {
     start_date: record?.startDate ?? null,
     end_date: record?.endDate ?? null,
     city: record?.tournamentContacts?.[0]?.city ?? record?.city ?? null,
-    published: !!(pubStatus?.orderOfPlay?.published || pubStatus?.participants?.published),
+    published: isTournamentPublished(record),
     origin_organisation_id: origin?.organisationId ?? null,
     origin_tournament_id: origin?.tournamentId ?? null,
   };
