@@ -873,13 +873,12 @@ function exitAwardable({ positionAssignments, inContextMatchUp, winningSide }): 
    * DOUBLE_ELIMINATION (census 9100555 and 9301605, shrunk). With `propagateExitStatus` off the same
    * entry was always refused. CA, 2026-09-17: refuse it.
    *
-   * Only while an opponent is still to ARRIVE. Against a BYE nobody ever arrives, there is no arrival
-   * to misread, and the present player's walkover stays accepted.
+   * Nor against a BYE. A matchUp containing a BYE cannot have a winningSide — the BYE always
+   * advances its opponent (CA, 2026-09-17). A walkover entered BEFORE a BYE arrives is a different
+   * thing: the player and their walkover are advanced through the BYE and the exit occurs where they
+   * land (`progressExitStatus` RULE 1), never on the BYE matchUp itself.
    */
-  const opponentSide = (inContextMatchUp?.sides ?? []).find(
-    (side: any) => side?.sideNumber && side.sideNumber !== winningSide,
-  );
-  if (winnerSide?.participantId) return !!opponentSide?.bye;
+  if (winnerSide?.participantId) return false;
 
   // a BYE is deliberately NOT in this list — see the docblock
   if (winnerSide?.qualifier) return true;
