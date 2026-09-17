@@ -732,9 +732,43 @@ function advanceWinner({
   // later). They take the walkover — keep the exit status, make them the winner,
   // re-position the carried code onto the exiting participant's side, and advance
   // them onward. Without this the generic clear below reverts it to TO_BE_PLAYED.
+  //
+  // A pending exit does not always carry a winningSide. One produced by a DOUBLE exit into a round
+  // whose other side is still to arrive records only WHICH side exited, in `sideExitProvenance` —
+  // there is nobody yet to award it to. The arrival on the OTHER side resolves it exactly the same
+  // way. Requiring a winningSide sent that arrival to the generic clear below, which wrote
+  // TO_BE_PLAYED over a decided walkover and kept its codes (census 9000223, flag ON: a Consolation
+  // walkover disappeared when a participant advanced into it through a BYE).
+  const advancingSideNumber = drawPositions.indexOf(drawPositionToAdvance) + 1;
+  const exitSides = Object.keys(noContextWinnerMatchUp.sideExitProvenance ?? {}).map(Number);
+  const pendingWithoutWinner =
+    !noContextWinnerMatchUp.winningSide && exitSides.length === 1 && !exitSides.includes(advancingSideNumber);
+  // Only a PARTICIPANT resolves it. A drawPosition holding nobody can advance too — a reservation for
+  // whoever will fall through — and nobody has arrived: the walkover stays pending, keeping its status
+  // and provenance, and only records the position. Clearing it to TO_BE_PLAYED undecided a decided
+  // matchUp just the same (the same census seed, shrunk: its double exit fed nobody).
+  const advancingHoldsParticipant = !!drawPositionToAdvanceAssigment?.participantId;
   if (
     isExit(noContextWinnerMatchUp.matchUpStatus) &&
-    noContextWinnerMatchUp.winningSide &&
+    pendingWithoutWinner &&
+    !advancingHoldsParticipant &&
+    !drawPositionIsBye &&
+    !pairedDrawPositionIsBye
+  ) {
+    noContextWinnerMatchUp.drawPositions = drawPositions;
+    modifyMatchUpNotice({
+      tournamentId: tournamentRecord?.tournamentId,
+      matchUp: noContextWinnerMatchUp,
+      eventId: event?.eventId,
+      context: stack,
+      drawDefinition,
+      event,
+    });
+    return;
+  }
+  if (
+    isExit(noContextWinnerMatchUp.matchUpStatus) &&
+    (noContextWinnerMatchUp.winningSide || pendingWithoutWinner) &&
     !drawPositionIsBye &&
     !pairedDrawPositionIsBye
   ) {
@@ -863,11 +897,19 @@ function resolvePropagatedExitOnAdvance({
   const advancingSideNumber = drawPositions.indexOf(drawPositionToAdvance) + 1;
   const exitSideNumber = advancingSideNumber === 1 ? 2 : 1;
 
-  const existingCode = (matchUp.matchUpStatusCodes ?? []).find(Boolean);
-  const matchUpStatusCodes: string[] = [];
-  if (existingCode) {
-    for (let i = 0; i < exitSideNumber - 1; i++) matchUpStatusCodes[i] = '';
-    matchUpStatusCodes[exitSideNumber - 1] = existingCode;
+  // Provenance already naming the exiting side means the codes are already sided by it — they are
+  // projected from provenance — so they stay as they are. Re-siding them here would place the first
+  // truthy element, which in the projected shape is side 1's EMPTY entry.
+  const provenanceSides = Object.keys(matchUp.sideExitProvenance ?? {}).map(Number);
+  const alreadySided = provenanceSides.length === 1 && provenanceSides[0] === exitSideNumber;
+  let matchUpStatusCodes: any[] = matchUp.matchUpStatusCodes ?? [];
+  if (!alreadySided) {
+    const existingCode = (matchUp.matchUpStatusCodes ?? []).find(Boolean);
+    matchUpStatusCodes = [];
+    if (existingCode) {
+      for (let i = 0; i < exitSideNumber - 1; i++) matchUpStatusCodes[i] = '';
+      matchUpStatusCodes[exitSideNumber - 1] = existingCode;
+    }
   }
 
   Object.assign(matchUp, {
