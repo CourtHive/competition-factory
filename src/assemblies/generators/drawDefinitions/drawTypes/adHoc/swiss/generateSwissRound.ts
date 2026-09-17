@@ -1,8 +1,8 @@
 // Query
+import { buildIndividualIdsMap, getSharedIndividualConflicts } from '@Query/participants/individualParticipantIds';
 import { getCompetitionPolicy } from '@Query/drawDefinition/competition/getCompetitionPolicy';
 import { getCompetitionState } from '@Query/drawDefinition/competition/getCompetitionState';
 import { getAllStructureMatchUps } from '@Query/matchUps/getAllStructureMatchUps';
-import { buildIndividualIdsMap, getSharedIndividualConflicts } from '@Query/participants/individualParticipantIds';
 import { isAdHoc } from '@Query/drawDefinition/isAdHoc';
 
 // Generators
@@ -16,13 +16,13 @@ import { findStructure } from '@Acquire/findStructure';
 import { findExtension } from '@Acquire/findExtension';
 
 // constants
+import { QUALIFYING, WINNER } from '@Constants/drawDefinitionConstants';
+import { SUCCESS } from '@Constants/resultConstants';
 import {
   MISSING_DRAW_DEFINITION,
   SHARED_INDIVIDUAL_PARTICIPANT,
   STRUCTURE_NOT_FOUND,
 } from '@Constants/errorConditionConstants';
-import { QUALIFYING, WINNER } from '@Constants/drawDefinitionConstants';
-import { SUCCESS } from '@Constants/resultConstants';
 
 // types
 import type { DrawDefinition, Event, MatchUp, Tournament } from '@Types/tournamentTypes';

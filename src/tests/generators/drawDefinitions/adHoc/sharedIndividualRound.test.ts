@@ -3,10 +3,10 @@ import tournamentEngine from '@Engines/syncEngine';
 import { expect, it } from 'vitest';
 
 // constants
-import { AD_HOC, SWISS } from '@Constants/drawDefinitionConstants';
 import { ASSIGN_PARTICIPANT } from '@Constants/positionActionConstants';
 import { DIRECT_ACCEPTANCE } from '@Constants/entryStatusConstants';
 import { INDIVIDUAL, PAIR } from '@Constants/participantConstants';
+import { AD_HOC, SWISS } from '@Constants/drawDefinitionConstants';
 import { DOUBLES, MALE } from '@Constants/eventConstants';
 
 /**
