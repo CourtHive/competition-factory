@@ -135,7 +135,11 @@ function buildTournamentPublishState({
 }) {
   const pubStatus: any = getTournamentPublishStatus({ tournamentRecord });
   publishState.tournament = pubStatus ?? {};
-  if (pubStatus?.orderOfPlay?.published || pubStatus?.participants?.published) tournamentPublished = true;
+  // information, order of play and participants are each a tournament-level component; any one of them,
+  // or any event with a published draw, makes the tournament published
+  if (pubStatus?.info?.published || pubStatus?.orderOfPlay?.published || pubStatus?.participants?.published) {
+    tournamentPublished = true;
+  }
   publishState.tournament.status = { published: tournamentPublished, publishedEventIds };
 
   if (pubStatus?.orderOfPlay?.embargo) {

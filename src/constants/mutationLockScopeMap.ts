@@ -239,8 +239,10 @@ export const methodScopeMap: Record<string, MutationLockScope> = {
   // PUBLISHING — publishingGovernor/mutate
   publishEventSeeding: 'PUBLISHING',
   unPublishEventSeeding: 'PUBLISHING',
+  unPublishTournamentInfo: 'PUBLISHING',
   unPublishParticipants: 'PUBLISHING',
   unPublishOrderOfPlay: 'PUBLISHING',
+  publishTournamentInfo: 'PUBLISHING',
   publishParticipants: 'PUBLISHING',
   publishOrderOfPlay: 'PUBLISHING',
   unPublishEvent: 'PUBLISHING',

@@ -1,3 +1,4 @@
+import { setTournamentInfoPublishState } from '@Mutate/timeItems/publishTournamentInfo';
 import { transitionStatus } from './transitionStatus';
 import { takeUUID, UUID } from '@Tools/UUID';
 
@@ -324,6 +325,19 @@ export function activateFromSanctioning({
     participants: [],
     timeItems: [],
   };
+
+  // --- Carry public registration across activation ---
+  // A proposal whose registration was opened has been public on its registration page since then. A
+  // record created without a publish state would take the tournament dark at the moment it became real,
+  // so its information is published, listing exactly the events that were open for registration. The
+  // registration window itself travels unchanged in `registrationProfile`.
+  if (proposal.registrationProfile?.entriesOpen) {
+    const publishResult = setTournamentInfoPublishState({
+      eventIds: (tournamentRecord.events ?? []).map((event) => event.eventId),
+      tournamentRecord,
+    });
+    if (publishResult.error) return publishResult;
+  }
 
   // --- Transition to ACTIVE ---
   const transitionResult = transitionStatus({

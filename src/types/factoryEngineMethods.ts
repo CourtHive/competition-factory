@@ -537,6 +537,7 @@ export type FactoryEngineMethod =
   | 'publishEventSeeding'
   | 'publishOrderOfPlay'
   | 'publishParticipants'
+  | 'publishTournamentInfo'
   | 'qualifierDrawPositionAssignment'
   | 'qualifierProgression'
   | 'queryOfficialRecord'
@@ -700,6 +701,7 @@ export type FactoryEngineMethod =
   | 'unPublishEventSeeding'
   | 'unPublishOrderOfPlay'
   | 'unPublishParticipants'
+  | 'unPublishTournamentInfo'
   | 'updateDrawIdsOrder'
   | 'updateEventProposal'
   | 'updateParticipantResults'
@@ -1272,6 +1274,7 @@ export const FACTORY_ENGINE_METHODS: readonly FactoryEngineMethod[] = [
   'publishEventSeeding',
   'publishOrderOfPlay',
   'publishParticipants',
+  'publishTournamentInfo',
   'qualifierDrawPositionAssignment',
   'qualifierProgression',
   'queryOfficialRecord',
@@ -1435,6 +1438,7 @@ export const FACTORY_ENGINE_METHODS: readonly FactoryEngineMethod[] = [
   'unPublishEventSeeding',
   'unPublishOrderOfPlay',
   'unPublishParticipants',
+  'unPublishTournamentInfo',
   'updateDrawIdsOrder',
   'updateEventProposal',
   'updateParticipantResults',
