@@ -27,14 +27,13 @@ import { findEvent } from '@Acquire/findEvent';
 import { MISSING_TOURNAMENT_RECORD, SCORES_PRESENT } from '@Constants/errorConditionConstants';
 import { DRAW_DELETIONS, FLIGHT_PROFILE } from '@Constants/extensionConstants';
 import { STRUCTURE_SELECTED_STATUSES } from '@Constants/entryStatusConstants';
+import { AUDIT, UNPUBLISH_TOURNAMENT } from '@Constants/topicConstants';
 import { MAIN, QUALIFYING } from '@Constants/drawDefinitionConstants';
 import { DELETE_DRAW_DEFINITIONS } from '@Constants/auditConstants';
-import { UNPUBLISH_TOURNAMENT } from '@Constants/topicConstants';
 import { POLICY_TYPE_SCORING } from '@Constants/policyConstants';
 import { Event, Tournament } from '@Types/tournamentTypes';
 import { PolicyDefinitions } from '@Types/factoryTypes';
 import { SUCCESS } from '@Constants/resultConstants';
-import { AUDIT } from '@Constants/topicConstants';
 
 type DeleteDrawDefinitionArgs = {
   policyDefinitions?: PolicyDefinitions;

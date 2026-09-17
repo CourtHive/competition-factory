@@ -12,11 +12,12 @@ import { UNPUBLISH_TOURNAMENT } from '@Constants/topicConstants';
  * was true, so the notice marks a transition rather than restating a state.
  */
 export function checkAndNotifyUnpublishTournament({ tournamentRecord }) {
-  if (!hasTopic(UNPUBLISH_TOURNAMENT)) return;
-  if (isTournamentPublished(tournamentRecord)) return;
+  if (!hasTopic(UNPUBLISH_TOURNAMENT)) return undefined;
+  if (isTournamentPublished(tournamentRecord)) return undefined;
 
   addNotice({
     topic: UNPUBLISH_TOURNAMENT,
     payload: { tournamentId: tournamentRecord.tournamentId },
   });
+  return undefined;
 }
