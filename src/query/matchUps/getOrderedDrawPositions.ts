@@ -1,4 +1,4 @@
-import { allNumeric, noNumeric, overlap } from '@Tools/arrays';
+import { overlap } from '@Tools/arrays';
 import { ensureInt } from '@Tools/ensureInt';
 import { numericSort } from '@Tools/sorting';
 
@@ -10,10 +10,33 @@ type GetOrderedDrawPositionsArgs = {
   drawPositions: number[];
   roundNumber: number;
 };
+/**
+ * A HOLE IS NOT A DRAWPOSITION.
+ *
+ * `ensureInt` returns **0** for anything that is neither a number nor a numeric string — `undefined`
+ * and `null` included — and `isNaN(0)` is `false`. So every "is this a position?" test written as
+ * `!isNaN(ensureInt(x))` silently accepts a hole. Excluding them explicitly is the only safe form.
+ */
+const isDrawPosition = (position: any): boolean =>
+  position !== undefined && position !== null && !isNaN(ensureInt(position));
+
 export function getOrderedDrawPositions({ drawPositions, roundProfile, roundNumber }: GetOrderedDrawPositionsArgs) {
   const unassignedDrawPositions = [undefined, undefined];
 
-  if (noNumeric(drawPositions)) {
+  // EVERY BRANCH BELOW READS `realDrawPositions`, NEVER THE RAW ARRAY — because the raw array's
+  // SHAPE is not information. The engine spells the same occupancy several ways depending on which
+  // writer last touched it (`[5]`, `[5, undefined]`, `[undefined, 5]`, `[]`, `[undefined, undefined]`,
+  // absent), and a consumer reading the sides has no idea which writer ran.
+  //
+  // This used to branch on `allNumeric(drawPositions)`, which is TRUE for a one-element array — so a
+  // COMPACTED lone position never reached the feed-round rule below and fell through to the
+  // roundProfile pairing instead. Measured live over both frozen census windows on both arms:
+  // **277 feed-round matchUps put their lone position on side 2**, while the same occupancy spelled
+  // `[N, undefined]` correctly gave side 1 in all 3,386 cases. Pinned by
+  // `drawPositionsRepresentationIndependence.test.ts`.
+  const realDrawPositions = (drawPositions ?? []).filter(isDrawPosition);
+
+  if (!realDrawPositions.length) {
     return {
       orderedDrawPositions: unassignedDrawPositions,
       displayOrder: unassignedDrawPositions,
@@ -23,7 +46,7 @@ export function getOrderedDrawPositions({ drawPositions, roundProfile, roundNumb
   const targetRoundProfile = roundProfile?.[roundNumber];
   const pairedDrawPositions = targetRoundProfile?.pairedDrawPositions;
   const displayOrder =
-    pairedDrawPositions?.find((pair) => overlap(pair ?? [], drawPositions.filter(Boolean))) ?? unassignedDrawPositions;
+    pairedDrawPositions?.find((pair) => overlap(pair ?? [], realDrawPositions)) ?? unassignedDrawPositions;
 
   // ############# IMPORTANT DO NOT CHANGE #################
   // when both present, drawPositions are always sorted numerically
@@ -62,8 +85,8 @@ export function getOrderedDrawPositions({ drawPositions, roundProfile, roundNumb
   // a different structure; scope the collection by `structureId` first.
   // ---------------------------------------------------------------------------------------------
   const isFeedRound = targetRoundProfile?.feedRound;
-  if (allNumeric(drawPositions)) {
-    const orderedDrawPositions = [...drawPositions].sort(numericSort); // spread to avoid immutable client data
+  if (realDrawPositions.length >= 2) {
+    const orderedDrawPositions = [...realDrawPositions].sort(numericSort); // spread to avoid immutable client data
 
     return {
       orderedDrawPositions: orderedDrawPositions.length === 2 ? orderedDrawPositions : displayOrder,
@@ -75,23 +98,14 @@ export function getOrderedDrawPositions({ drawPositions, roundProfile, roundNumb
   // when only one side is present in a feedRound, it is the fed position
   // and fed positions are always { sideNumber: 1 }
   //
-  // A HOLE IS NOT A DRAWPOSITION, and this `find` used to accept one. `ensureInt` returns **0** for
-  // anything that is neither a number nor a numeric string — `undefined` and `null` included — and
-  // `isNaN(0)` is `false`, so the predicate was satisfied by the hole at index 0 and the real
-  // position at index 1 was discarded. `[undefined, 5]` hydrated with BOTH sides empty and the
-  // occupant vanished from every consumer's view.
-  //
-  // That shape is one the engine deliberately writes: `releaseAdvancedDrawPosition` and
-  // `positionClear` leave the hole in place when they remove the LOWER of two positions, because
-  // this array is positional. So the engine could write a shape this branch could not read.
-  // Measured latent rather than live — over both frozen census windows on both arms, 1,948 stored
-  // arrays carried a leading hole and none of them was on a feed round — and pinned by
-  // `feedRoundHoleSelection.test.ts`.
+  // Reached with EXACTLY ONE real position, however the array spelled it. The old code reached here
+  // only for a spelling that carried a hole, and picked the fed position with
+  // `find((p) => !isNaN(ensureInt(p)))` — which accepts a hole (see `isDrawPosition` above), so
+  // `[undefined, 5]` resolved to the hole and hydrated with BOTH sides empty. Both halves of that
+  // are gone: the filter happens once, at the top, and the branch is chosen by how many positions
+  // there ARE. Pinned by `feedRoundHoleSelection.test.ts`.
   if (isFeedRound) {
-    const drawPosition = drawPositions.find(
-      (position) => position !== undefined && position !== null && !isNaN(ensureInt(position)),
-    );
-    const orderedDrawPositions = [drawPosition, undefined];
+    const orderedDrawPositions = [realDrawPositions[0], undefined];
     return { orderedDrawPositions, displayOrder: orderedDrawPositions };
   }
 
