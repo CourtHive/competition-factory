@@ -675,7 +675,7 @@ const {
   sideNumber, // optional — restrict actions to a specific side (1 or 2)
   participantId, // optional — scope actions to a specific participant
   enforceGender, // optional boolean — enforce gender restrictions for tie matchUp assignments
-  restrictAdHocRoundParticipants, // optional boolean — defaults to true; prevent same participant in same round
+  restrictAdHocRoundParticipants, // optional boolean — defaults to true; prevent same participant (or a PAIR sharing one of its individuals) in same round
   tournamentParticipants, // optional — pre-fetched participants (optimization)
   inContextDrawMatchUps, // optional — pre-fetched inContext matchUps (optimization)
   matchUpsMap, // optional — pre-fetched matchUps map (optimization)

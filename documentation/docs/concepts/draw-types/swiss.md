@@ -111,6 +111,10 @@ This ensures that the strongest players do not meet each other in the opening ro
 
 When the participant count is odd, a **bye** is assigned before pairing. The bye goes to the lowest-rated participant in the lowest score group. In round 1, this is the lowest-rated participant overall. The `byeParticipantId` is returned in the result so the caller can record a forfeit win or handle it as needed.
 
+### Entrants Sharing an Individual
+
+Doubles entries in a Swiss draw must not share an individual. Swiss pairs every entrant in every round and ranks each by its own record, and two PAIRs sharing a person can neither meet nor play in the same round. `generateSwissRound` refuses such a field with `SHARED_INDIVIDUAL_PARTICIPANT`, listing every offending pair in `context.conflictingPairs`. For rotating partners, use an AD_HOC draw with DrawMatic.
+
 ## Subsequent Rounds
 
 After round 1, pairing shifts to **score-group pairing**:

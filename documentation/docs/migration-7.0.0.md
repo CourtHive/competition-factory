@@ -799,6 +799,47 @@ Callers of `addDrawEntries` should note it now takes `tournamentRecord` — supp
 the engine, but an internal caller constructing the params by hand must pass it, since the guard
 resolves each entry's individuals from the tournament's participants.
 
+## 11h. [#4903](https://github.com/CourtHive/competition-factory/pull/4903) a person can play in only one matchUp per round
+
+11f stopped one person appearing on **both sides** of a matchUp. It did not stop the same person being
+scheduled in **two matchUps of the same round** — and 11g deliberately leaves AD_HOC entries free to
+overlap, so rotating-partner doubles reach exactly that case.
+
+Measured on `dev` before this change: 8 disjoint PAIRs plus a ninth, `0/2`, entered into the AD_HOC
+draw. DrawMatic scheduled individuals 0 and 2 in **two matchUps each, in 3 of 6 rounds**.
+
+| Call                                   | Behaviour                                                                                                                                                                                   |
+| -------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `drawMatic` / `generateDrawMaticRound` | a round occupies individuals, not entries: a PAIR sharing an individual with an entrant already in the round is not scheduled. The round can therefore hold fewer matchUps than entries ÷ 2 |
+| `generateSwissRound`                   | refuses entrants that share an individual with `SHARED_INDIVIDUAL_PARTICIPANT`, every offending pair in `context.conflictingPairs`                                                          |
+| `matchUpActions` on an ad hoc matchUp  | does not offer a participant sharing an individual with the opposing side; under `restrictAdHocRoundParticipants` (default `true`), nor one sharing an individual with anyone in the round  |
+
+### Why DrawMatic now prefers larger candidates
+
+Once some pairings exclude others, candidates differ in size. A candidate's value is the sum of its
+pairings' values, so a smaller candidate sums fewer and would always look cheapest — DrawMatic would
+drift toward rounds with people sitting out. Candidates that schedule more matchUps are now preferred
+before value. When every candidate is the same size, which is every field without overlapping
+entrants, selection is exactly as before.
+
+### Why Swiss refuses
+
+Swiss promises every entrant a pairing each round (bar one bye) and ranks each by its own record.
+Entrants sharing an individual can neither meet nor play in the same round, so the promise cannot be
+kept. As with the round-robin shape in 11f, the request is refused rather than quietly generated
+short. SWISS draws still _accept_ overlapping entries (11g); it is round generation that refuses.
+
+### What is not changed
+
+`assignMatchUpSideParticipant` still permits placing a participant in a round they already play in,
+as it always has for the same participant twice. The round restriction remains a query-layer policy,
+`restrictAdHocRoundParticipants`.
+
+### What to change for overlapping doubles
+
+Nothing, if your doubles entries do not overlap. If they do, expect DrawMatic rounds that sit some
+entrants out, and move any Swiss draw over those entrants to AD_HOC with DrawMatic.
+
 ## 12. Non-breaking additions worth knowing
 
 `plainDate`, `plainTime` and `zonedDateTime` are new published exports, completing the calendar
