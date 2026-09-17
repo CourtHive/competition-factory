@@ -17,7 +17,6 @@ import {
 } from '@Constants/positionActionConstants';
 
 export function adHocMatchUpActions({
-  restrictAdHocRoundParticipants,
   tournamentParticipants,
   matchUpParticipantIds,
   otherFlightEntries,
@@ -30,7 +29,6 @@ export function adHocMatchUpActions({
   drawId,
   event,
 }: {
-  restrictAdHocRoundParticipants?: boolean;
   tournamentParticipants?: HydratedParticipant[];
   matchUpParticipantIds: string[];
   otherFlightEntries?: boolean;
@@ -63,9 +61,10 @@ export function adHocMatchUpActions({
   );
 
   // Participants are checked by id, and also by the people they are made of: a PAIR sharing an
-  // individual with the opposing side would put that person on both sides (assignment refuses it),
-  // and one sharing an individual with anyone already in the round would put that person in two
-  // matchUps at once. The participant being replaced on this side frees its individuals.
+  // individual with the opposing side would put that person on both sides, and one sharing an
+  // individual with anyone already in the round would put that person in two matchUps at once.
+  // Assignment refuses both, so neither is offered. The participant being replaced on this side
+  // frees its individuals.
   const individualIdsMap = buildIndividualIdsMap(tournamentParticipants as any);
   const individualsOf = (participantIds: string[]) =>
     new Set(participantIds.flatMap((participantId) => individualIdsMap[participantId] ?? []));
@@ -83,8 +82,8 @@ export function adHocMatchUpActions({
   const isAvailable = (participantId: string) =>
     !matchUpParticipantIds.includes(participantId) &&
     !sharesIndividual(participantId, opposingIndividualIds) &&
-    (!restrictAdHocRoundParticipants ||
-      (!roundAssignedParticipantIds.has(participantId) && !sharesIndividual(participantId, roundIndividualIds)));
+    !roundAssignedParticipantIds.has(participantId) &&
+    !sharesIndividual(participantId, roundIndividualIds);
 
   const availableParticipantIds = enteredParticipantIds.filter(isAvailable);
   const availableParticipantIdSet = new Set(availableParticipantIds);

@@ -51,6 +51,10 @@ import {
 
 type MatchUpActionsArgs = {
   inContextDrawMatchUps?: HydratedMatchUp[];
+  /**
+   * @deprecated no effect. A participant already in an AD_HOC round is never offered for that round,
+   * because `assignMatchUpSideParticipant` refuses the assignment.
+   */
   restrictAdHocRoundParticipants?: boolean;
   tournamentParticipants?: Participant[];
   tournamentRecords?: TournamentRecords;
@@ -75,14 +79,7 @@ export function matchUpActions(params?: MatchUpActionsArgs): ResultType & {
 } {
   if (!params) return { error: INVALID_VALUES };
   let { drawDefinition, event } = params;
-  const {
-    restrictAdHocRoundParticipants = true, // disallow the same participant being in the same round multiple times
-    policyDefinitions: specifiedPolicyDefinitions,
-    enforceGender,
-    participantId,
-    sideNumber,
-    matchUpId,
-  } = params;
+  const { policyDefinitions: specifiedPolicyDefinitions, enforceGender, participantId, sideNumber, matchUpId } = params;
 
   const tournamentRecord =
     params.tournamentRecord ??
@@ -153,7 +150,6 @@ export function matchUpActions(params?: MatchUpActionsArgs): ResultType & {
   if (isAdHoc({ structure }) && !isCollectionMatchUp) {
     validActions.push(
       ...adHocMatchUpActions({
-        restrictAdHocRoundParticipants,
         tournamentParticipants,
         matchUpParticipantIds,
         otherFlightEntries,

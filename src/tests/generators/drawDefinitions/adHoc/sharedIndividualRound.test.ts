@@ -186,7 +186,7 @@ it('refuses a swiss round whose entrants share an individual', () => {
   expect(result.context?.conflictingPairs?.length).toEqual(4);
 });
 
-it('manual assignment does not offer a participant sharing an individual with the opponent or the round', () => {
+it('manual assignment neither offers nor accepts a participant sharing an individual with the opponent or the round', () => {
   const { membership, structureId, ids } = rotatingPartnersSetup();
 
   const generated = tournamentEngine.generateAdHocMatchUps({ drawId: DRAW_ID, matchUpsCount: 2, newRound: true });
@@ -210,6 +210,8 @@ it('manual assignment does not offer a participant sharing an individual with th
     tournamentEngine
       .matchUpActions({ matchUpId, sideNumber, drawId: DRAW_ID, restrictAdHocRoundParticipants })
       .validActions.find((action: any) => action.type === ASSIGN_PARTICIPANT)?.availableParticipantIds ?? [];
+  const assign = (participantId: string, matchUpId: string, sideNumber: number) =>
+    tournamentEngine.assignMatchUpSideParticipant({ participantId, matchUpId, sideNumber, drawId: DRAW_ID });
 
   // opposite 0/1: 0/2 would put individual 0 on both sides; 2/3 shares nobody
   const opposing = available(first, 2);
@@ -220,10 +222,37 @@ it('manual assignment does not offer a participant sharing an individual with th
   expect(available(second, 1)).not.toContain(pair02);
   expect(available(second, 1)).toContain(pair23);
 
-  // the round restriction is a policy choice; the opponent restriction is not
-  expect(available(second, 1, false)).toContain(pair02);
+  // the deprecated flag no longer loosens either restriction
+  expect(available(second, 1, false)).not.toContain(pair02);
   expect(available(first, 2, false)).not.toContain(pair02);
+
+  // and assignment refuses what is not offered
+  let result: any = assign(pair02, first, 2);
+  expect(result.error?.code).toEqual('ERR_SHARED_INDIVIDUAL_PARTICIPANT');
+  result = assign(pair02, second, 1);
+  expect(result.error?.code).toEqual('ERR_EXISTING_ROUND_PARTICIPANT');
+  expect(result.context?.roundParticipantId).toEqual(pair01);
+  // the same participant twice in a round is the degenerate case of the same rule
+  result = assign(pair01, second, 1);
+  expect(result.error?.code).toEqual('ERR_EXISTING_ROUND_PARTICIPANT');
 
   // replacing 0/1 on its own side frees individual 0, so 0/2 may take its place
   expect(available(first, 1)).toContain(pair02);
+  result = assign(pair02, first, 1);
+  expect(result.success).toEqual(true);
+
+  // 0/1 has left the round, but 0/2 now holds individuals 0 and 2: neither 0/1 nor 2/3 may join it
+  result = assign(pair01, second, 1);
+  expect(result.error?.code).toEqual('ERR_EXISTING_ROUND_PARTICIPANT');
+  result = assign(pair23, second, 1);
+  expect(result.error?.code).toEqual('ERR_EXISTING_ROUND_PARTICIPANT');
+  // a PAIR sharing nobody in the round is accepted
+  result = assign(pairIdOf(membership, ids[4], ids[5]), second, 1);
+  expect(result.success).toEqual(true);
+
+  // a later round is a separate question
+  const nextRound = tournamentEngine.generateAdHocMatchUps({ drawId: DRAW_ID, matchUpsCount: 1, newRound: true });
+  tournamentEngine.addAdHocMatchUps({ matchUps: nextRound.matchUps, drawId: DRAW_ID, structureId });
+  result = assign(pair01, nextRound.matchUps[0].matchUpId, 1);
+  expect(result.success).toEqual(true);
 });
