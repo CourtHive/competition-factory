@@ -696,6 +696,109 @@ unaffected and still accepted — a director can still record that the present p
 **There is no flag to restore it.** A player cannot lose to an opponent who does not exist; the
 previous behaviour had no reading a governing body could adopt.
 
+## 11f. [#4890](https://github.com/CourtHive/competition-factory/pull/4890) a person can never be on both sides of a matchUp
+
+`addEventEntryPairs` deliberately permits PAIR entries that share an individual — it rejects only an
+_exact duplicate_ pair, and even that is overridable with `allowDuplicateParticipantIdPairs`. That is
+what makes flexible AD_HOC doubles possible, where one person partners several others over an
+evening.
+
+Nothing downstream checked the consequence, so generation scheduled participants against themselves.
+Measured over four PAIRs across four individuals (`[A,B] [A,C] [B,D] [C,D]`, every person in exactly
+two pairs): the `ROUND_ROBIN` drawType and the `ROUND_ROBIN` pairing shape each produced **4 conflicts
+in 6 matchUps**, and DrawMatic produced **2 in 2**.
+
+Five call sites now refuse, all returning `SHARED_INDIVIDUAL_PARTICIPANT`
+(`ERR_SHARED_INDIVIDUAL_PARTICIPANT`):
+
+| Call                                                                | Behaviour                                                                                                     |
+| ------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------- |
+| `generateDrawDefinition` with a round-robin `drawType`              | refuses when any two entrants share an individual, listing every offending pair in `context.conflictingPairs` |
+| `generateAdHocRounds` with `pairingProfile: { shape: ROUND_ROBIN }` | the same refusal for the pairing shape                                                                        |
+| `generateDrawMaticRound`                                            | never selects such a pairing — it is excluded from the candidate pool                                         |
+| `generateAdHocMatchUps`                                             | refuses an explicit `participantIdPairings` entry that conflicts                                              |
+| `assignMatchUpSideParticipant`                                      | refuses an assignment opposite a PAIR/TEAM the participant belongs to                                         |
+
+### Why a round robin refuses rather than skipping the meeting
+
+A round robin is every-entrant-meets-every-other. Two entrants sharing an individual can never meet,
+so the format is not partially unsatisfiable — it is impossible. The request is refused rather than
+silently reduced to the meetings that happen to be legal, which is the same stance
+`generateRoundRobinPairings` already took for an unsatisfiable `roundsCount`.
+
+### Why DrawMatic excludes rather than penalizes
+
+A penalty cannot prevent this. `generateCandidate` minimizes and always emits its best _available_
+candidate, so a weight at any magnitude makes a conflict unlikely, never impossible — and with
+overlapping pairs there are rounds in which every candidate conflicts. The pairing pool already
+excluded self (`id !== participantId`); a PAIR sharing an individual is that same disqualification
+partially applied, so it is excluded in the same place. This is distinct from `sameTeamValue`, which
+remains a weight because pairing teammates against each other is a _preference_, not an
+impossibility.
+
+### What to change
+
+Nothing, if your PAIR entries do not overlap. If they do, either stop generating a round robin over
+them — a round robin cannot express that field — or drive the event with AD_HOC rounds, which pair
+only legal opponents.
+
+Callers that inspected generated matchUps to filter out self-matches can drop that code.
+
+### Not covered
+
+**TEAM lineUps.** A tie draws its competitors from lineUps, so two TEAM participants can share a
+person even when their rosters do not overlap. That check is not part of this change.
+
+**Elimination draws are unaffected.** An elimination bracket may never pair two overlapping entrants,
+so refusing there would be a broader policy decision and is not taken here.
+
+## 11g. [#4891](https://github.com/CourtHive/competition-factory/pull/4891) draw entries for a bracketed draw cannot share an individual
+
+[11f](#11f-4890-a-person-can-never-be-on-both-sides-of-a-matchup) stopped the engine _pairing_ two
+entrants who share an individual. This stops the field being assembled that way in the first place,
+which is where the problem is easier to see and cheaper to fix.
+
+In a bracketed draw the entries are a **committed field**: any two entrants may be drawn against
+each other, whether in round one or in the final. So two entries sharing an individual are a latent
+matchUp with one person on both sides, regardless of where the bracket happens to place them.
+
+Two call sites now refuse, both returning `SHARED_INDIVIDUAL_PARTICIPANT`:
+
+| Call                     | Refuses when                                                                                          |
+| ------------------------ | ----------------------------------------------------------------------------------------------------- |
+| `generateDrawDefinition` | the entries the draw will contain include two that share an individual                                |
+| `addDrawEntries`         | an added PAIR shares an individual with an existing entry, **or** with another entry in the same call |
+
+`generateDrawDefinition` judges the entries the draw will actually hold — `drawEntries` when you
+supply them, otherwise the event entries — so selecting a non-overlapping subset with `drawEntries`
+generates normally even when the event as a whole contains overlaps.
+
+Both report **every** offending pair in `context.conflictingPairs`, not the first, so the whole
+problem is visible in one refusal. One PAIR can appear in more than one conflicting pair: `[A,C]`
+added alongside `[A,B]` and `[C,D]` conflicts with both.
+
+### AD_HOC types are exempt, deliberately
+
+`AD_HOC`, `LADDER` and `SWISS` — everything `isAdHocType` recognises — still accept overlapping
+entries. Their entries are a **roster**, not a field: nothing says any two of them will meet, and
+generation decides the pairings, which 11f already constrains. This is what makes flexible doubles
+work, where one person partners several others over an evening.
+
+The distinction is the whole design: a bracket commits to every possible meeting up front, so it is
+checked at entry; an AD_HOC draw commits to nothing, so it is checked at pairing.
+
+### What to change
+
+Nothing for singles — two distinct individuals never share, and the same participant entered twice
+was already a `DUPLICATE_ENTRY`.
+
+For doubles, if you build a bracketed draw from a pool of pairs that overlap, either enter only
+non-overlapping pairs, pass the subset you want via `drawEntries`, or use an AD_HOC draw.
+
+Callers of `addDrawEntries` should note it now takes `tournamentRecord` — supplied automatically on
+the engine, but an internal caller constructing the params by hand must pass it, since the guard
+resolves each entry's individuals from the tournament's participants.
+
 ## 12. Non-breaking additions worth knowing
 
 `plainDate`, `plainTime` and `zonedDateTime` are new published exports, completing the calendar
@@ -736,6 +839,41 @@ BYE contributes **no code** rather than becoming a walkover.
 **What to do:** if you read `matchUpStatusCodes` and branch on `WO`, re-check those branches. A
 matchUp whose code array previously read `['WO', 'DM']` may now read `['DEF', 'DM']` — the second
 element is unchanged; the first now tells the truth about the upstream exit.
+
+### `drawPositions` is never an array of nothing but holes
+
+_Shipped in #4898._
+
+Not a breaking change — the shape it settles to is the shape generation has always written — but it
+is the answer to a question consumers do ask, so it is stated here rather than left implicit.
+
+A matchUp's `drawPositions` is **positional**: the index carries the side. Taking a position out
+therefore leaves a HOLE rather than compacting the array, because closing the gap would move the
+surviving position onto the other side and every reader that derives a side from the order would
+then resolve the wrong participant. `[undefined, 5]` keeps 5 on side 2, and that is deliberate.
+
+An array of nothing BUT holes — `[undefined]`, `[undefined, undefined]`, serialised as `[null]` /
+`[null, null]` — holds no side open, because there is no survivor for it to hold the side open
+beside. Four writers could produce one; all four now settle it to `[]`.
+
+**The published shape.** `[]` is dropped during hydration, so an inContext matchUp holding no
+position carries **no `drawPositions` key at all**. That is already what every unplayed downstream
+matchUp looks like and always has been: on a freshly generated 16 draw it is 7 of 15 matchUps
+(SINGLE_ELIMINATION), 11 of 31 (DOUBLE_ELIMINATION), 10 of 28 (FEED_IN_CHAMPIONSHIP_TO_SF) and 12
+of 32 (COMPASS). What changes is only that a matchUp emptied LATER — by a cleared position, a
+released advancement or a winner/loser flip — now looks the same as one that was never reached,
+instead of carrying `[null, null]`.
+
+**What to do:** nothing, if you already guard. `matchUp.drawPositions?.[n]`, `?? []` and
+`|| []` all behave as before. If you read `matchUp.drawPositions` unguarded, that was already
+unsafe on any unplayed matchUp — this does not make it newly unsafe, it makes the existing hazard
+easier to hit. **`sides` is unaffected and is always length 2**, so nothing needs `drawPositions`
+to decide how many sides a matchUp has.
+
+One idiom is worth re-reading, because it changes from "false" to "vacuously true":
+`drawPositions.every(predicate)` over an empty array returns `true`, so a matchUp holding no
+position satisfies every such filter. If you partition matchUps with `.every()` — into halves of a
+mirrored draw, or into page segments — filter on a non-empty array first.
 
 ### The `matchUpStatus` of a convergence can change too
 

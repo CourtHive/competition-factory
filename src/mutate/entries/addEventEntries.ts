@@ -574,6 +574,7 @@ export function addEventEntries(params: AddEventEntriesArgs): ResultType {
     const result = addDrawEntries({
       participantIds: validParticipantIds,
       suppressDuplicateEntries,
+      tournamentRecord,
       autoEntryPositions,
       entryStageSequence,
       ignoreStageSpace,

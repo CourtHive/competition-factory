@@ -2,6 +2,7 @@ import { modifyRoundRobinMatchUpsStatus } from '@Mutate/matchUps/matchUpStatus/m
 import { modifyPositionAssignmentsNotice, modifyMatchUpNotice } from '@Mutate/notifications/drawNotifications';
 import { getPositionAssignments, structureAssignedDrawPositions } from '@Query/drawDefinition/positionsGetter';
 import { getStructureDrawPositionProfiles } from '@Query/structure/getStructureDrawPositionProfiles';
+import { normalizeDrawPositions } from '@Mutate/matchUps/drawPositions/normalizeDrawPositions';
 import { clearSideExitProvenance } from '@Mutate/matchUps/matchUpStatus/sideExitProvenance';
 import { getAllStructureMatchUps } from '@Query/matchUps/getAllStructureMatchUps';
 import { getInitialRoundNumber } from '@Query/matchUps/getInitialRoundNumber';
@@ -74,7 +75,25 @@ export function clearDrawPosition(params: ClearDrawPositionArgs): ResultType & {
   // drawPosition may not be cleared if:
   // 1. drawPosition has been advanced by winning a matchUp
   // 2. drawPosition is paired with another drawPosition which has been advanced by winning a matchUp
-  if (drawPositionIsActive) {
+  /**
+   * A BYE is exempt, because a BYE cannot itself be active.
+   *
+   * "Active" means the drawPosition advanced by winning a matchUp, or is paired with one that did.
+   * A BYE wins nothing — it holds no participant, no score and no winningSide. What is genuinely
+   * active is the OPPONENT's advancement THROUGH the bye, and this function already knows how to
+   * unwind precisely that: `buildRemovalTasks` emits a `byeAdvancedRemoval` task for the
+   * bye-advanced pair a few lines below.
+   *
+   * So the guard was refusing the one operation that repairs the state it was guarding. Measured on
+   * census seed 9000037 (FIRST_MATCH_LOSER_CONSOLATION 8/5): a placeholder BYE in the consolation
+   * let its opponent advance and play; a winner flip then made a real loser eligible for that slot,
+   * and the clear was refused because the position was "active" — active only through the very
+   * advancement the removal tasks were about to take back.
+   *
+   * Scoped to the assignment being a BYE. A drawPosition holding a PARTICIPANT who has advanced is
+   * still active and still refuses, which is the case the guard was written for.
+   */
+  if (drawPositionIsActive && !existingAssignment?.bye) {
     return { error: DRAW_POSITION_ACTIVE };
   }
 
@@ -299,10 +318,13 @@ function removeDrawPosition({
 
   if (targetMatchUp.roundNumber && initialRoundNumber && targetMatchUp.roundNumber > initialRoundNumber) {
     // Removal, not substitution: preserves ascending order. See `getOrderedDrawPositions`.
-    const drawPositions: any[] = (targetMatchUp.drawPositions ?? []).map((currentDrawPosition) =>
-      currentDrawPosition === drawPosition ? undefined : currentDrawPosition,
+    // Settled through `normalizeDrawPositions`, which keeps a hole beside a survivor and collapses
+    // an all-holes result to `[]`.
+    targetMatchUp.drawPositions = normalizeDrawPositions(
+      (targetMatchUp.drawPositions ?? []).map((currentDrawPosition) =>
+        currentDrawPosition === drawPosition ? undefined : currentDrawPosition,
+      ),
     );
-    targetMatchUp.drawPositions = drawPositions as number[];
   }
 
   handleTeamPositionRemoval({

@@ -1,6 +1,7 @@
 // Query
 import { getCompetitionPolicy } from '@Query/drawDefinition/competition/getCompetitionPolicy';
 import { getCompetitionState } from '@Query/drawDefinition/competition/getCompetitionState';
+import { buildIndividualIdsMap } from '@Query/participants/individualParticipantIds';
 
 // Generators
 import { generateDynamicRatings } from '@Generators/scales/generateDynamicRatings';
@@ -177,7 +178,10 @@ export function generateDrawMaticRound(params: GenerateDrawMaticRoundArgs): Resu
   //  'P-I-0|P-I-2': 0,
   //  'P-I-0|P-I-3': 0
   // }
+  // a PAIR/TEAM sharing an individual with another cannot meet it; excluded from the pool rather
+  // than penalized, because generateCandidate minimizes and always emits its best candidate
   const { uniquePairings, possiblePairings, deltaObjects } = getPairingsData({
+    individualIdsMap: buildIndividualIdsMap(tournamentParticipants),
     participantIds,
   });
 

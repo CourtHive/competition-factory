@@ -1,3 +1,4 @@
+import { buildIndividualIdsMap, idsShareIndividual } from '@Query/participants/individualParticipantIds';
 import { modifyMatchUpNotice } from '@Mutate/notifications/drawNotifications';
 import { decorateResult } from '@Functions/global/decorateResult';
 import { isAdHocType } from '@Query/drawDefinition/isAdHocType';
@@ -9,6 +10,7 @@ import { DrawDefinition, Event, Tournament } from '@Types/tournamentTypes';
 import { SUCCESS } from '@Constants/resultConstants';
 import { ResultType } from '@Types/factoryTypes';
 import {
+  SHARED_INDIVIDUAL_PARTICIPANT,
   CANNOT_REMOVE_PARTICIPANTS,
   INVALID_DRAW_TYPE,
   INVALID_PARTICIPANT_ID,
@@ -75,6 +77,16 @@ export function assignMatchUpSideParticipant({
       info: 'matchUp has completed status or score',
     };
 
+  const sharedIndividual = getOpposingSharedIndividual({
+    tournamentRecord,
+    participantId,
+    sideNumber,
+    matchUp,
+  });
+  if (sharedIndividual) {
+    return decorateResult({ result: { error: SHARED_INDIVIDUAL_PARTICIPANT }, context: sharedIndividual });
+  }
+
   if (matchUp) {
     matchUp.sides = [1, 2].map((currentSideNumber) => {
       const existingSide = matchUp.sides?.find((side) => side.sideNumber === currentSideNumber) ?? {
@@ -102,4 +114,23 @@ export function assignMatchUpSideParticipant({
   }
 
   return { ...SUCCESS, sidesSwapped: noSideNumberProvided };
+}
+
+/**
+ * A person cannot be on both sides of a matchUp.
+ *
+ * Returns the conflict when assigning `participantId` would place an individual opposite a
+ * PAIR/TEAM they already belong to, and `undefined` when the assignment is legal.
+ */
+function getOpposingSharedIndividual({ tournamentRecord, participantId, sideNumber, matchUp }) {
+  if (!participantId || !tournamentRecord) return undefined;
+
+  const opposingSideNumber = sideNumber === 1 ? 2 : 1;
+  const opposingParticipantId = matchUp?.sides?.find((side) => side.sideNumber === opposingSideNumber)?.participantId;
+  if (!opposingParticipantId) return undefined;
+
+  const individualIdsMap = buildIndividualIdsMap(tournamentRecord.participants);
+  if (!idsShareIndividual(individualIdsMap, participantId, opposingParticipantId)) return undefined;
+
+  return { participantId, opposingParticipantId };
 }

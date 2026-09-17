@@ -1,9 +1,11 @@
+import { buildIndividualIdsMap, getSharedIndividualConflicts } from '@Query/participants/individualParticipantIds';
 import { addVoluntaryConsolationStructure } from '@Mutate/drawDefinitions/addVoluntaryConsolationStructure';
 import { remapDrawDefinitionMatchUpIds } from '@Mutate/drawDefinitions/remapDrawDefinitionMatchUpIds';
 import { addPlayoffStructures } from '@Mutate/drawDefinitions/addPlayoffStructures';
 import { getDrawFormat } from '@Generators/drawDefinitions/getDrawFormat';
 import { getParticipants } from '@Query/participants/getParticipants';
 import { decorateResult } from '@Functions/global/decorateResult';
+import { isAdHocType } from '@Query/drawDefinition/isAdHocType';
 import { generateOrGetExisting } from './generateOrGetExisting';
 import { qualifyingGeneration } from './qualifyingGeneration';
 import { hydrateRoundNames } from './hydrateRoundNames';
@@ -14,8 +16,9 @@ import {
 } from '@Generators/drawDefinitions/validateAndDeriveDrawValues';
 
 // constants and types
+import { ErrorType, INVALID_VALUES, SHARED_INDIVIDUAL_PARTICIPANT } from '@Constants/errorConditionConstants';
 import { GenerateDrawDefinitionArgs, ResultType, WithPlayoffsArgs } from '@Types/factoryTypes';
-import { ErrorType, INVALID_VALUES } from '@Constants/errorConditionConstants';
+import { DIRECT_ACCEPTANCE, DIRECT_ENTRY_STATUSES } from '@Constants/entryStatusConstants';
 import { POLICY_TYPE_ROUND_NAMING } from '@Constants/policyConstants';
 import { LOSER } from '@Constants/drawDefinitionConstants';
 import { DrawDefinition } from '@Types/tournamentTypes';
@@ -53,6 +56,29 @@ export function generateDrawDefinition(params: GenerateDrawDefinitionArgs): Resu
   });
   if (validDerivedResult.error) return decorateResult({ result: validDerivedResult, stack });
   const { appliedPolicies, policyDefinitions, drawSize, drawType, enforceGender, seedingProfile } = validDerivedResult;
+
+  // In any bracketed draw the entrants form a committed field in which any two of them may be
+  // drawn against each other, so two entrants sharing an individual can produce a matchUp where one
+  // person is on both sides. Refused here, where the drawType is known. AD_HOC types are exempt:
+  // their entries are a roster rather than a field, and pairing them is what generation decides.
+  // resolved the same way generateOrGetExisting resolves them, so the guard judges the entries the
+  // draw will actually contain rather than every entry on the event, and narrowed to the entries
+  // that form the competing field -- an ALTERNATE is a waiting list and conflicts only on promotion
+  const drawEntrants = (params.drawEntries ?? eventEntries).filter(({ entryStatus }) =>
+    DIRECT_ENTRY_STATUSES.includes(entryStatus ?? DIRECT_ACCEPTANCE),
+  );
+  const sharedIndividualConflicts = getEntrantSharedIndividualConflicts({
+    participantIds: drawEntrants.map(({ participantId }) => participantId),
+    participants,
+    drawType,
+  });
+  if (sharedIndividualConflicts.length) {
+    return decorateResult({
+      result: { error: SHARED_INDIVIDUAL_PARTICIPANT },
+      context: { conflictingPairs: sharedIndividualConflicts, drawType },
+      stack,
+    });
+  }
 
   const eventType = event?.eventType;
   const matchUpType = params.matchUpType ?? eventType;
@@ -228,4 +254,19 @@ function applyPlayoffsRecursive({
   }
 
   return result;
+}
+
+/**
+ * Entrant pairs that share an individual, for draw types whose entrants form a committed field.
+ *
+ * Returns an empty array for AD_HOC types, where entries are a roster and overlapping PAIRs are the
+ * point -- one person may partner several others over an evening. Generation there pairs only legal
+ * opponents instead.
+ */
+function getEntrantSharedIndividualConflicts({ participantIds, participants, drawType }): string[][] {
+  if (isAdHocType(drawType)) return [];
+  return getSharedIndividualConflicts({
+    individualIdsMap: buildIndividualIdsMap(participants),
+    participantIds,
+  });
 }

@@ -1,3 +1,4 @@
+import { normalizeDrawPositions } from '@Mutate/matchUps/drawPositions/normalizeDrawPositions';
 import { modifyMatchUpNotice } from '@Mutate/notifications/drawNotifications';
 import { getInitialRoundNumber } from '@Query/matchUps/getInitialRoundNumber';
 import { getMatchUpsMap } from '@Query/matchUps/getMatchUpsMap';
@@ -68,10 +69,11 @@ export function releaseAdvancedDrawPosition({
 
     // Removal, not substitution: mapping a position to `undefined` preserves ascending order.
     // Any writer that SUBSTITUTES must re-sort — see the canonical statement in
-    // `getOrderedDrawPositions`.
-    matchUp.drawPositions = (matchUp.drawPositions ?? []).map((position) =>
-      position === drawPosition ? undefined : position,
-    ) as number[];
+    // `getOrderedDrawPositions`. Settled through `normalizeDrawPositions`, which keeps a hole
+    // beside a survivor and collapses an all-holes result to `[]`.
+    matchUp.drawPositions = normalizeDrawPositions(
+      (matchUp.drawPositions ?? []).map((position) => (position === drawPosition ? undefined : position)),
+    );
 
     modifyMatchUpNotice({
       tournamentId: tournamentRecord?.tournamentId,

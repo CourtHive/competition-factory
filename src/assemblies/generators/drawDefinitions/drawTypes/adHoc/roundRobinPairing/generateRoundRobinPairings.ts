@@ -1,8 +1,9 @@
 import { groupRounds } from '@Generators/drawDefinitions/drawTypes/roundRobin/roundRobinGroups';
+import { getSharedIndividualConflicts } from '@Query/participants/individualParticipantIds';
 import { generateRange } from '@Tools/arrays';
 
 // constants and types
-import { INVALID_VALUES } from '@Constants/errorConditionConstants';
+import { INVALID_VALUES, SHARED_INDIVIDUAL_PARTICIPANT } from '@Constants/errorConditionConstants';
 import { ResultType } from '@Types/factoryTypes';
 
 type GenerateRoundRobinPairingsArgs = {
@@ -13,6 +14,8 @@ type GenerateRoundRobinPairingsArgs = {
   mirrored?: boolean;
   // truncates the schedule to its first N rounds — a partial round robin
   roundsCount?: number;
+  // participantId -> individualParticipantIds; when supplied, entrants sharing an individual are refused
+  individualIdsMap?: Record<string, string[]>;
 };
 
 export type PairingRound = string[][];
@@ -38,6 +41,20 @@ export function generateRoundRobinPairings(
 
   if (!Number.isInteger(encounters) || encounters < 1) {
     return { error: INVALID_VALUES, info: 'encounters must be a positive integer' };
+  }
+
+  // A round robin is every-entrant-meets-every-other. Two entrants sharing an individual can never
+  // meet, so the shape is not partially unsatisfiable -- it is impossible -- and the request is
+  // refused rather than silently reduced to the meetings that happen to be legal.
+  const conflictingPairs = params.individualIdsMap
+    ? getSharedIndividualConflicts({ individualIdsMap: params.individualIdsMap, participantIds })
+    : [];
+  if (conflictingPairs.length) {
+    return {
+      error: SHARED_INDIVIDUAL_PARTICIPANT,
+      info: 'a round robin requires every entrant to be able to meet every other entrant',
+      context: { conflictingPairs },
+    };
   }
 
   const roundsPerEncounter = participantIds.length - 1;
