@@ -34,6 +34,7 @@ test.skipIf(!process.env.ISSUE)(
       setSubscriptions({});
       const drawId = 'shrink-issue';
       prepareDraw(scenario.config, drawId);
+      (globalThis as any).__seat = undefined;
       for (const step of steps) {
         const target = getDrawMatchUps(drawId).find((m: any) => key(m) === key(step));
         if (!target) continue;
@@ -43,6 +44,14 @@ test.skipIf(!process.env.ISSUE)(
           outcome: step.outcome,
           drawId,
         });
+        if (process.env.ISSUE === 'DE_FINAL_SEAT') {
+          const seat = (m: any) => m?.sides?.find((x: any) => x.sideNumber === m.winningSide)?.participantId;
+          const final = getDrawMatchUps(drawId).find((m: any) => m.structureName === 'Main' && m.roundNumber === 4);
+          const now = seat(final);
+          if ((globalThis as any).__seat && !now && final?.winningSide) return true;
+          (globalThis as any).__seat = now;
+          continue;
+        }
         if (process.env.ISSUE === 'DECIDER_STALE') {
           const dd = getDrawDefinition(drawId);
           const decider = dd.structures.find((x: any) => x.structureName === 'Decider');

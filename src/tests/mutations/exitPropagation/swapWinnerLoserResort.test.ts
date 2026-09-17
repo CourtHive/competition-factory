@@ -139,3 +139,55 @@ it.each(CASES)(
     if (scoredMatchUp) expect(scoredWinnerId, `${scoredMatchUp} was never decided`).toBeDefined();
   },
 );
+
+/**
+ * A hole beside a lone position is POSITIONAL, so a flip must not sort it away.
+ *
+ * DOUBLE_ELIMINATION's Main final has no fed drawPosition. A pending walkover there, `[undefined, 4]`
+ * won by side 2, had 4 exchanged for 3 and was then sorted — `Array.prototype.sort` moves holes to the
+ * end — into `[3, undefined]`, re-sided to winningSide 1: the empty side. The participant who took over
+ * the path lost the seat the previous occupant held. Census 9100555, flag ON, shrunk; found by
+ * `swapPathEquivalence`.
+ */
+it('DE Main final — a flip keeps the pending walkover seat with whoever takes over the path', () => {
+  setSubscriptions({});
+  mocksEngine.generateTournamentRecord({
+    drawProfiles: [{ drawType: DOUBLE_ELIMINATION, drawSize: 8, participantsCount: 6, drawId }],
+    nonRandom: 9100555,
+    setState: true,
+  });
+  const key = (m: any) => `${m.structureName}|${m.roundNumber}|${m.roundPosition}`;
+  const find = (k: string) =>
+    tournamentEngine.allDrawMatchUps({ drawId, inContext: true }).matchUps.find((m: any) => key(m) === k);
+  const submit = (k: string, outcome: any) =>
+    tournamentEngine.setMatchUpStatus({
+      matchUpId: find(k).matchUpId,
+      allowChangePropagation: true,
+      propagateExitStatus: true,
+      outcome,
+      drawId,
+    });
+  const steps: [string, any][] = [
+    ['Main|1|2', { winningSide: 2 }],
+    ['Main|1|3', { winningSide: 2 }],
+    ['Main|2|2', { matchUpStatus: 'DOUBLE_DEFAULT' }],
+    ['Main|2|1', { matchUpStatus: 'DEFAULTED', winningSide: 1 }],
+    ['Backdraw|3|1', { winningSide: 2 }],
+    ['Main|2|1', { matchUpStatus: WALKOVER, winningSide: 2 }],
+    ['Backdraw|3|1', { matchUpStatus: DOUBLE_WALKOVER }],
+  ];
+  for (const [k, outcome] of steps) expect((submit(k, outcome) as any).error, k).toBeUndefined();
+
+  const seat = (m: any) => m.sides.find((side: any) => side.sideNumber === m.winningSide)?.participantId;
+  const flipped = find('Main|1|2');
+  const [oldWinner, oldLoser] = [flipped.winningSide, 3 - flipped.winningSide].map(
+    (sideNumber) => flipped.sides.find((side: any) => side.sideNumber === sideNumber).participantId,
+  );
+  const finalBefore = find('Main|4|1');
+  expect(seat(finalBefore)).toEqual(oldWinner); // control: the flipped winner holds the seat
+
+  expect((submit('Main|1|2', { winningSide: 3 - flipped.winningSide }) as any).error).toBeUndefined();
+  const finalAfter = find('Main|4|1');
+  expect(finalAfter.matchUpStatus).toEqual(finalBefore.matchUpStatus);
+  expect(seat(finalAfter)).toEqual(oldLoser);
+});
