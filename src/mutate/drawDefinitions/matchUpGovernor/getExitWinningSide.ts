@@ -29,8 +29,16 @@ export function getExitWinningSide({ inContextDrawMatchUps, drawPosition, matchU
   // The proxy is kept as a fallback for a matchUp whose sides do not yet carry the drawPosition.
   if (feedRound) return targetSide?.sideNumber ?? 1;
 
+  // A drawPosition is a number in ONE structure, and `winnerMatchUpId`/`loserMatchUpId` point across
+  // links. A feeder in the SAME structure is matched by number; one in ANOTHER structure holds its own
+  // numbering, so it is matched by the participant now occupying the position. Matched by number, a
+  // COMPASS West r1p1 fed by East r1p1 and r1p2 placed West 2 on side 1 because East r1p1 "contains 2".
+  const participantId = targetSide?.participantId;
   return sourceMatchUps.reduce((sideNumber, sourceMatchUp, index) => {
-    if (sourceMatchUp.drawPositions?.includes(drawPosition)) return index + 1;
-    return sideNumber;
+    const fedFromHere =
+      sourceMatchUp.structureId === matchUp?.structureId
+        ? sourceMatchUp.drawPositions?.includes(drawPosition)
+        : !!participantId && sourceMatchUp.sides?.some((side) => side.participantId === participantId);
+    return fedFromHere ? index + 1 : sideNumber;
   }, undefined);
 }

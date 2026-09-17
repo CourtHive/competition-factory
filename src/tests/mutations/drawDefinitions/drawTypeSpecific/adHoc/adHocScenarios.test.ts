@@ -134,14 +134,18 @@ test('adHoc matchUpActions can restrict adHoc round participants to diallow recu
   assignAction = validActions.find((action) => action.type === ASSIGN_PARTICIPANT);
   expect(assignAction.availableParticipantIds.includes(targetParticipantId)).toEqual(false);
 
-  // possible to override default setting
+  // no longer possible to override: assignment refuses a participant already in the round, so the
+  // deprecated flag cannot bring one back into the options
   validActions = tournamentEngine.positionActions({
     restrictAdHocRoundParticipants: false,
     ...matchUps[1],
     sideNumber: 1,
   }).validActions;
   assignAction = validActions.find((action) => action.type === ASSIGN_PARTICIPANT);
-  expect(assignAction.availableParticipantIds.includes(targetParticipantId)).toEqual(true);
+  expect(assignAction.availableParticipantIds.includes(targetParticipantId)).toEqual(false);
+
+  assignResult = tournamentEngine[assignAction.method]({ ...assignAction.payload, participantId: targetParticipantId });
+  expect(assignResult.error?.code).toEqual('ERR_EXISTING_ROUND_PARTICIPANT');
 
   validActions = tournamentEngine.positionActions({
     ...matchUps[0],

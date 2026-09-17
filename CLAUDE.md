@@ -9,8 +9,13 @@ Before doing anything else, read `../Mentat/CLAUDE.md`, `../Mentat/TASKS.md`, `.
 ## Branching — cut from `dev`, not `master` (CA, 2026-09-12)
 
 `dev` is this repo's integration branch. **Branch from `origin/dev` and open PRs against `dev`.**
-`master` advances only at checkpoints, by merging `dev` into it — which is also when release-please
-cuts a release, since it triggers on `push` to `master` alone.
+`master` advances only at checkpoints, by merging `dev` into it.
+
+**A checkpoint merge does NOT cut or publish a release** (CA, 2026-09-18, correcting this line).
+`release-please.yml` does run on `push` to `master`, but all it does is refresh the perpetual
+`chore: release X.Y.Z` PR it keeps open against `master`. A release exists only if that PR is
+merged, which is a separate and deliberate act. So a checkpoint is routine: merge it, and do not
+raise releases, publication or the release PR as a consequence of it.
 
 `verify.yml` uses a bare `pull_request:` trigger, so a PR into `dev` still runs the full verify
 gate. Land work by PR: a direct push to `dev` gets no push-triggered run.

@@ -11,6 +11,7 @@ import { SUCCESS } from '@Constants/resultConstants';
 import { ResultType } from '@Types/factoryTypes';
 import {
   SHARED_INDIVIDUAL_PARTICIPANT,
+  EXISTING_ROUND_PARTICIPANT,
   CANNOT_REMOVE_PARTICIPANTS,
   INVALID_DRAW_TYPE,
   INVALID_PARTICIPANT_ID,
@@ -87,6 +88,11 @@ export function assignMatchUpSideParticipant({
     return decorateResult({ result: { error: SHARED_INDIVIDUAL_PARTICIPANT }, context: sharedIndividual });
   }
 
+  const roundConflict = getRoundConflict({ tournamentRecord, participantId, structure, matchUp });
+  if (roundConflict) {
+    return decorateResult({ result: { error: EXISTING_ROUND_PARTICIPANT }, context: roundConflict });
+  }
+
   if (matchUp) {
     matchUp.sides = [1, 2].map((currentSideNumber) => {
       const existingSide = matchUp.sides?.find((side) => side.sideNumber === currentSideNumber) ?? {
@@ -133,4 +139,37 @@ function getOpposingSharedIndividual({ tournamentRecord, participantId, sideNumb
   if (!idsShareIndividual(individualIdsMap, participantId, opposingParticipantId)) return undefined;
 
   return { participantId, opposingParticipantId };
+}
+
+/**
+ * A person can play in only one matchUp per round.
+ *
+ * Returns the conflict when `participantId` — or a PAIR/TEAM sharing one of its individuals — already
+ * occupies another matchUp in the target matchUp's round, and `undefined` when the assignment is legal.
+ * The target matchUp itself is excluded: its opposing side is the both-sides guard's question, and
+ * the side being assigned is being replaced.
+ */
+function getRoundConflict({ tournamentRecord, participantId, structure, matchUp }) {
+  if (!participantId) return undefined;
+
+  const roundMatchUps = (structure?.matchUps ?? []).filter(
+    (roundMatchUp) => roundMatchUp.roundNumber === matchUp.roundNumber && roundMatchUp.matchUpId !== matchUp.matchUpId,
+  );
+  const individualIdsMap = buildIndividualIdsMap(tournamentRecord?.participants);
+
+  for (const roundMatchUp of roundMatchUps) {
+    for (const side of roundMatchUp.sides ?? []) {
+      const roundParticipantId = side.participantId;
+      if (roundParticipantId && idsShareIndividual(individualIdsMap, participantId, roundParticipantId)) {
+        return {
+          roundNumber: matchUp.roundNumber,
+          matchUpId: roundMatchUp.matchUpId,
+          roundParticipantId,
+          participantId,
+        };
+      }
+    }
+  }
+
+  return undefined;
 }

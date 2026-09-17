@@ -6,7 +6,7 @@ import { expect, it } from 'vitest';
 // constants and fixtures
 import POLICY_SCHEDULING_DEFAULT from '@Fixtures/policies/POLICY_SCHEDULING_DEFAULT';
 import POLICY_SCORING_USTA from '@Fixtures/policies/POLICY_SCORING_USTA';
-import { EVENT_NOT_FOUND } from '@Constants/errorConditionConstants';
+import { EVENT_NOT_FOUND, INVALID_VALUES } from '@Constants/errorConditionConstants';
 import { FORMAT_STANDARD } from '@Fixtures/scoring/matchUpFormats';
 import { SCHEDULE_TIMING } from '@Constants/extensionConstants';
 
@@ -158,4 +158,63 @@ it('can modify event timing for matchUpFormat codes', () => {
     eventId,
   }));
   expect(policyDefinitions.scoring.matchUpFormats.length).toEqual(eventMatchUpFormatTiming.length);
+});
+
+/**
+ * `averageMinutes` / `recoveryMinutes` must be NUMERIC, and the guard that decides this used to be
+ * `minutes && !isNaN(ensureInt(minutes))`.
+ *
+ * `ensureInt` returns **0** for anything that is neither a number nor a numeric string — objects,
+ * arrays and booleans included — and `isNaN(0)` is `false`. The leading `minutes &&` removes
+ * `undefined`, `null`, `0` and `''`, so the obvious cases were safe; what survived was any TRUTHY
+ * non-numeric value. It was then stored VERBATIM, so the scheduler later read an object or a
+ * boolean where it expects minutes.
+ *
+ * Same root cause as the hole-accepting predicate fixed in `getOrderedDrawPositions`
+ * (#4900): `!isNaN(ensureInt(x))` is not a numeric test. `isNumeric` from `@Tools/math` is.
+ *
+ * Two lenient cases are deliberately unchanged, because tightening them could reject input a
+ * consumer legitimately sends: `'12abc'` parses to 12 and `[5]` stringifies to '5'.
+ */
+it.each([
+  { label: 'a number', minutes: 90, accepted: true, expectation: 'accepted' },
+  { label: 'a numeric string', minutes: '90', accepted: true, expectation: 'accepted' },
+  { label: 'a non-numeric string', minutes: 'abc', accepted: false, expectation: 'refused' },
+  { label: 'an empty object', minutes: {}, accepted: false, expectation: 'refused' },
+  { label: 'an array', minutes: [], accepted: false, expectation: 'refused' },
+  { label: 'a boolean', minutes: true, accepted: false, expectation: 'refused' },
+])('averageMinutes of $label is $expectation', ({ minutes, accepted }) => {
+  const {
+    eventIds: [eventId],
+  } = mocksEngine.generateTournamentRecord({ drawProfiles: [{ drawSize: 8 }], setState: true });
+
+  const result: any = tournamentEngine.modifyEventMatchUpFormatTiming({
+    matchUpFormat: FORMAT_STANDARD,
+    averageMinutes: minutes,
+    eventId,
+  });
+
+  if (accepted) {
+    expect(result.success).toEqual(true);
+  } else {
+    expect(result.error).toEqual(INVALID_VALUES);
+  }
+});
+
+it.each([
+  { label: 'an empty object', minutes: {} },
+  { label: 'an array', minutes: [] },
+  { label: 'a boolean', minutes: true },
+])('recoveryMinutes of $label is refused', ({ minutes }) => {
+  const {
+    eventIds: [eventId],
+  } = mocksEngine.generateTournamentRecord({ drawProfiles: [{ drawSize: 8 }], setState: true });
+
+  const result: any = tournamentEngine.modifyEventMatchUpFormatTiming({
+    matchUpFormat: FORMAT_STANDARD,
+    recoveryMinutes: minutes,
+    eventId,
+  });
+
+  expect(result.error).toEqual(INVALID_VALUES);
 });

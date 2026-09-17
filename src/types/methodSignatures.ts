@@ -248,6 +248,7 @@ import type { disableTieAutoCalc } from '@Mutate/extensions/matchUps/disableTieA
 import type { scheduleProfileGrid } from '@Mutate/matchUps/schedule/scheduleProfileGrid';
 import type { addConflictDeclaration } from '@Mutate/officiating/addConflictDeclaration';
 import type { addCollectionDefinition } from '@Mutate/tieFormat/addCollectionDefinition';
+import type { unPublishTournamentInfo } from '@Mutate/timeItems/unPublishTournamentInfo';
 import type { addMutationLock } from '@Mutate/tournaments/mutationLocks/addMutationLock';
 import type { getPositionsPlayedOff } from '@Query/drawDefinition/getPositionsPlayedOff';
 import type { getTournamentPenalties } from '@Query/participants/getTournamentPenalties';
@@ -302,6 +303,7 @@ import type { removeStageEntries } from '@Mutate/drawDefinitions/removeStageEntr
 import type { createOfficialRecord } from '@Mutate/officiating/createOfficialRecord';
 import type { conditionallyApprove } from '@Mutate/sanctioning/conditionallyApprove';
 import type { removeCollectionGroup } from '@Mutate/tieFormat/removeCollectionGroup';
+import type { publishTournamentInfo } from '@Mutate/timeItems/publishTournamentInfo';
 import type { unPublishParticipants } from '@Mutate/timeItems/unPublishParticipants';
 import type { getDrawCompleteness } from '@Query/drawDefinition/getDrawCompleteness';
 import type { getMatchUpDailyLimits } from '@Query/extensions/getMatchUpDailyLimits';
@@ -1149,6 +1151,7 @@ export interface MethodSignatures {
   publishEventSeeding: EngineMethod<typeof publishEventSeeding>;
   publishOrderOfPlay: EngineMethod<typeof publishOrderOfPlay>;
   publishParticipants: EngineMethod<typeof publishParticipants>;
+  publishTournamentInfo: EngineMethod<typeof publishTournamentInfo>;
   qualifierDrawPositionAssignment: EngineMethod<typeof qualifierDrawPositionAssignment>;
   qualifierProgression: EngineMethod<typeof qualifierProgression>;
   queryOfficialRecord: EngineMethod<typeof queryOfficialRecord>;
@@ -1291,6 +1294,7 @@ export interface MethodSignatures {
   unPublishEventSeeding: EngineMethod<typeof unPublishEventSeeding>;
   unPublishOrderOfPlay: EngineMethod<typeof unPublishOrderOfPlay>;
   unPublishParticipants: EngineMethod<typeof unPublishParticipants>;
+  unPublishTournamentInfo: EngineMethod<typeof unPublishTournamentInfo>;
   updateDrawIdsOrder: EngineMethod<typeof updateDrawIdsOrder>;
   updateEventProposal: EngineMethod<typeof updateEventProposal>;
   updateParticipantResults: EngineMethod<typeof updateParticipantResults>;

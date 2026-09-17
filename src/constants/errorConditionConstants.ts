@@ -208,6 +208,10 @@ export const EXISTING_ROUND = {
   message: 'Existing round',
   code: 'ERR_EXISTING_ROUND',
 };
+export const EXISTING_ROUND_PARTICIPANT = {
+  message: 'Participant already plays in this round',
+  code: 'ERR_EXISTING_ROUND_PARTICIPANT',
+};
 export const MISSING_ROUND_NUMBER = {
   message: 'Missing roundNumber',
   code: 'ERR_MISSING_ROUND_NUMBER',
@@ -975,6 +979,7 @@ export const errorConditionConstants = {
   EXISTING_POLICY_TYPE,
   EXISTING_PROFILE,
   EXISTING_ROUND,
+  EXISTING_ROUND_PARTICIPANT,
   EXISTING_STAGE,
   EXISTING_STRUCTURE,
   INCOMPATIBLE_MATCHUP_STATUS,

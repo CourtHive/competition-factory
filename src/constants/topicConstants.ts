@@ -27,10 +27,12 @@ export const PUBLISH_EVENT = 'publishEvent';
 export const PUBLISH_EVENT_SEEDING = 'publishEventSeeding';
 export const PUBLISH_ORDER_OF_PLAY = 'publishOrderOfPlay';
 export const PUBLISH_PARTICIPANTS = 'publishParticipants';
+export const PUBLISH_TOURNAMENT_INFO = 'publishTournamentInfo';
 export const UNPUBLISH_EVENT = 'unPublishEvent';
 export const UNPUBLISH_EVENT_SEEDING = 'unPublishEventSeeding';
 export const UNPUBLISH_ORDER_OF_PLAY = 'unPublishOrderOfPlay';
 export const UNPUBLISH_PARTICIPANTS = 'unPublishParticipants';
+export const UNPUBLISH_TOURNAMENT_INFO = 'unPublishTournamentInfo';
 export const UNPUBLISH_TOURNAMENT = 'unPublishTournament';
 export const UPDATE_INCONTEXT_MATCHUP = 'updateInContextMatchUp';
 
@@ -64,10 +66,12 @@ export const topicConstants = {
   PUBLISH_EVENT,
   PUBLISH_ORDER_OF_PLAY,
   PUBLISH_PARTICIPANTS,
+  PUBLISH_TOURNAMENT_INFO,
   UNPUBLISH_EVENT_SEEDING,
   UNPUBLISH_EVENT,
   UNPUBLISH_ORDER_OF_PLAY,
   UNPUBLISH_PARTICIPANTS,
+  UNPUBLISH_TOURNAMENT_INFO,
   UNPUBLISH_TOURNAMENT,
   UPDATE_INCONTEXT_MATCHUP,
 } as const;

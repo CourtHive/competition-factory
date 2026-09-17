@@ -15,6 +15,7 @@ import { getAllDrawMatchUps } from '@Query/matchUps/drawMatchUps';
 import { positionTargets } from '@Query/matchUp/positionTargets';
 import { assignDrawPositionBye } from './assignDrawPositionBye';
 import { pushGlobalLog } from '@Functions/global/globalLog';
+import { directWinner } from './directWinner';
 import { isExit } from '@Validators/isExit';
 import { overlap } from '@Tools/arrays';
 
@@ -222,14 +223,16 @@ export function assignMatchUpDrawPosition({
     matchUpId,
   });
   const {
-    targetMatchUps: { winnerMatchUp, loserMatchUp, loserTargetDrawPosition },
-    targetLinks: { loserTargetLink },
+    targetMatchUps: { winnerMatchUp, loserMatchUp, loserTargetDrawPosition, winnerMatchUpDrawPositionIndex },
+    targetLinks: { loserTargetLink, winnerTargetLink },
   } = targetData;
 
   // In lucky draws, all round-to-round advancement is handled by luckyDrawAdvancement
   const isLuckyDraw = isLuckyBasedDraw(drawDefinition?.drawType);
 
   const advanceResult = advanceDrawPosition({
+    winnerMatchUpDrawPositionIndex,
+    winnerTargetLink,
     event,
     inContextDrawMatchUps: resolvedInContextDrawMatchUps,
     positionAssigned,
@@ -433,16 +436,54 @@ function arrivesOnExitingSide(matchUp: any, drawPosition: number): boolean {
 /**
  * Place `drawPosition` into the winnerMatchUp. All three advancement branches below make the same
  * call; only the condition differs, so the call lives in one place.
+ *
+ * ## A drawPosition is a number in ONE structure
+ *
+ * When the winnerMatchUp is in another structure — the Backdraw final feeding DOUBLE_ELIMINATION's
+ * Main final, the Main final feeding the Decider — `drawPosition` names whoever holds that number
+ * THERE, which is somebody else or nobody. Advancing it as-is put a Backdraw finalist into the Main
+ * final under the number of a Main BYE (census seed 9100555), and pushed Main position 3 into a
+ * Decider that has only positions 1 and 2 (9000196). Both were refused
+ * `ERR_EXISTING_POSITION_ASSIGNMENT` over a draw the source write had already changed.
+ *
+ * `directWinner` already makes the crossing correctly for an ordinary result: it follows the WINNER
+ * link and places the participant by their target-structure position. An advancement through a BYE
+ * or a pending exit is the same crossing, so it goes the same way.
  */
 function advanceIntoWinnerMatchUp({
+  winnerMatchUpDrawPositionIndex,
   inContextDrawMatchUps,
   tournamentRecord,
+  winnerTargetLink,
   drawDefinition,
   winnerMatchUp,
   drawPosition,
   matchUpsMap,
+  structure,
+  matchUp,
   event,
 }) {
+  if (winnerMatchUp.structureId !== structure.structureId) {
+    if (!winnerTargetLink) return undefined;
+    // an advancement through a BYE or a pending exit carries no result of its own to project
+    const result = directWinner({
+      sourceMatchUpId: matchUp?.matchUpId,
+      projectedWinningSide: undefined,
+      sourceMatchUpStatus: undefined,
+      dualMatchUp: undefined,
+      winnerMatchUpDrawPositionIndex,
+      winningDrawPosition: drawPosition,
+      inContextDrawMatchUps,
+      tournamentRecord,
+      winnerTargetLink,
+      drawDefinition,
+      winnerMatchUp,
+      matchUpsMap,
+      event,
+    });
+    return result.error ? result : undefined;
+  }
+
   const result = assignMatchUpDrawPosition({
     matchUpId: winnerMatchUp.matchUpId,
     inContextDrawMatchUps,

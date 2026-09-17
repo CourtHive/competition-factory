@@ -104,6 +104,8 @@ result = engine.applyLineUps({
 
 Assign participant to AD_HOC matchUp.
 
+Refused with `SHARED_INDIVIDUAL_PARTICIPANT` when the participant shares an individual with the opposing side, and with `EXISTING_ROUND_PARTICIPANT` when the participant — or a PAIR/TEAM sharing one of its individuals — already plays in another matchUp of the same round.
+
 ```js
 engine.assignMatchUpSideParticipant({
   participantId,
@@ -675,7 +677,7 @@ const {
   sideNumber, // optional — restrict actions to a specific side (1 or 2)
   participantId, // optional — scope actions to a specific participant
   enforceGender, // optional boolean — enforce gender restrictions for tie matchUp assignments
-  restrictAdHocRoundParticipants, // optional boolean — defaults to true; prevent same participant in same round
+  restrictAdHocRoundParticipants, // deprecated, no effect — a participant (or a PAIR sharing one of its individuals) already in the round is never offered
   tournamentParticipants, // optional — pre-fetched participants (optimization)
   inContextDrawMatchUps, // optional — pre-fetched inContext matchUps (optimization)
   matchUpsMap, // optional — pre-fetched matchUps map (optimization)

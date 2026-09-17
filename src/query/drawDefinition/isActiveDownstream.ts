@@ -10,7 +10,28 @@ export function isActiveDownstream(params) {
   // relevantLink is passed in iterative calls (see below)
   const { inContextDrawMatchUps, targetData, drawDefinition, relevantLink } = params;
 
-  const fmlcBYE = relevantLink?.linkCondition === FIRST_MATCHUP && targetData?.matchUp?.matchUpStatus === BYE;
+  /**
+   * A fed FMLC BYE is inert only when the FED side holds nobody. The BYE matchUp takes one of two
+   * shapes: the fed loser was withheld and the fed slot itself is the BYE — inert, nobody went
+   * anywhere from it — or the fed loser is PRESENT and the BYE is their opponent, so they advanced
+   * through it. The second shape carries this source's loser onward, and what they played there is
+   * active. Short-circuiting it let a Main re-score that removed them from the consolation go through
+   * while their played consolation match stood — `DRAW_POSITION_UNASSIGNED`, census 9000458 shrunk to
+   * five steps.
+   *
+   * Only the FED side, which is the lower drawPosition (`fedDrawPosition` in
+   * `reconcileFedLoserEligibility`). The other side of a feed-round BYE matchUp routinely holds a
+   * participant ADVANCED from the structure's previous round, who has nothing to do with this source:
+   * treating them as fed made a first entry of a Main round-2 result "active" once the consolation
+   * had been played around its BYEs.
+   */
+  const byeMatchUp = targetData?.matchUp;
+  const fedPosition = Math.min(...((byeMatchUp?.drawPositions ?? []).filter(Boolean) as number[]));
+  const fedSideHoldsParticipant = !!byeMatchUp?.sides?.some(
+    (side: any) => side?.drawPosition === fedPosition && side?.participant,
+  );
+  const fmlcBYE =
+    relevantLink?.linkCondition === FIRST_MATCHUP && byeMatchUp?.matchUpStatus === BYE && !fedSideHoldsParticipant;
   if (fmlcBYE) {
     // A fed FMLC BYE is normally inert. EXCEPTION: a propagated exit can advance THROUGH
     // this BYE into a downstream walkover that has since been RESOLVED — a real

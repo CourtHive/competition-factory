@@ -412,7 +412,7 @@ A round can be both `hidden` and `embargoed` simultaneously — for example, whe
 
 ## getTournamentPublishStatus
 
-Returns publish status for tournament-level items (participants, order of play).
+Returns publish status for tournament-level items (information, participants, order of play).
 
 ```js
 const { publishStatus } = engine.getTournamentPublishStatus({
@@ -1005,6 +1005,44 @@ engine.publishParticipants({
 
 ---
 
+## publishTournamentInfo
+
+Publishes the tournament's **information** — the tournament itself — before anything inside it is public.
+
+Every other publish needs something to exist first: an event needs a draw, the order of play needs a schedule,
+the participant list needs entries. Publishing information is what makes a tournament public during its
+registration phase: it counts toward the tournament's published state (so the tournament is listed), and
+`getTournamentInfo({ usePublishState: true })` lists its events in `eventInfo` even though no event has a
+published draw. Draws, entries and matchUps still require their own publish.
+
+Publishing information **never opens registration**. The registration window is
+`registrationProfile.entriesOpen` / `entriesClose`, which this does not read or change — a tournament can be
+public for weeks before registration opens.
+
+```js
+engine.publishTournamentInfo({
+  eventIds, // optional - scope the events listed; omitted lists every event, including events added later
+  removePriorValues, // optional boolean - clear previous timeItems
+});
+```
+
+Unknown `eventIds` are refused with `EVENT_NOT_FOUND` and nothing is written. Emits `PUBLISH_TOURNAMENT_INFO`.
+
+### publishTournamentInfo Examples
+
+```js
+// announce the tournament and list all of its events
+engine.publishTournamentInfo();
+
+// list only the events open for registration so far
+engine.publishTournamentInfo({ eventIds: [singlesEventId, doublesEventId] });
+```
+
+A tournament activated from a sanctioning proposal whose registration was opened is created with its
+information already published, scoped to the proposal's events.
+
+---
+
 ## setEventDisplay
 
 Sets display configuration for event data, controlling which attributes are visible for specific draws and dates. See examples: [Display Settings](../concepts/publishing/publishing-participants.md#display-settings).
@@ -1137,6 +1175,20 @@ engine.unPublishParticipants({
 ```js
 // Unpublish participants
 engine.unPublishParticipants();
+```
+
+---
+
+## unPublishTournamentInfo
+
+Withdraws the tournament's information publish. The tournament stays published while any other component —
+an event with a published draw, the order of play, the participant list — is still published; when none is,
+`UNPUBLISH_TOURNAMENT` is emitted alongside `UNPUBLISH_TOURNAMENT_INFO`.
+
+```js
+engine.unPublishTournamentInfo({
+  removePriorValues, // optional boolean, defaults to true
+});
 ```
 
 **Use Cases**:

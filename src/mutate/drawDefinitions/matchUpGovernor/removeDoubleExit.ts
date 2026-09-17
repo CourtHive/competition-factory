@@ -249,7 +249,16 @@ export function conditionallyRemoveDrawPosition(params) {
     }
   }
 
-  if (nextWinnerMatchUp && drawPositionToRemove) {
+  if (nextWinnerMatchUp && nextWinnerMatchUp.structureId !== targetMatchUp.structureId) {
+    removeLinkedWinner({
+      winnerTargetLink: nextTargetData.targetLinks?.winnerTargetLink,
+      inContextDrawMatchUps,
+      nextWinnerMatchUp,
+      drawDefinition,
+      targetMatchUp,
+      matchUpsMap,
+    });
+  } else if (nextWinnerMatchUp && drawPositionToRemove) {
     const { stage, roundNumber, roundPosition, structureName } = nextWinnerMatchUp;
     pushGlobalLog({
       method: 'removeDirectedWinner',
@@ -270,14 +279,18 @@ export function conditionallyRemoveDrawPosition(params) {
     });
   }
 
+  // The recursion continues FROM `targetMatchUp`, so it carries targetMatchUp's structure — not the
+  // one this call was given, which is the SOURCE's. They differ whenever the unwind has crossed a
+  // link, and `getPairedPreviousMatchUp` below then looked up a Main roundPosition in the Backdraw.
+  const { structure: targetStructure } = findStructure({ drawDefinition, structureId: targetMatchUp.structureId });
   let result = removeDoubleExit({
+    structure: targetStructure ?? structure,
     targetData: nextTargetData,
     matchUp: targetMatchUp,
     inContextDrawMatchUps,
     appliedPolicies,
     drawDefinition,
     matchUpsMap,
-    structure,
     iteration,
   });
   if (result.error) return decorateResult({ result, stack });
@@ -333,6 +346,53 @@ function targetDrawPositionIsBye({ drawDefinition, noContextTargetMatchUp, targe
   return !!targetStructure?.positionAssignments?.some(
     (assignment) => drawPositions.includes(assignment.drawPosition) && assignment.bye,
   );
+}
+
+/**
+ * Take back the participant `targetMatchUp` advanced ACROSS A LINK into `nextWinnerMatchUp`.
+ *
+ * The same-structure branch of `conditionallyRemoveDrawPosition` finds that participant by
+ * intersecting the two matchUps' drawPositions. That is only meaningful inside one structure: a
+ * drawPosition is a number in ONE structure, and DOUBLE_ELIMINATION's Backdraw numbers from 1 as Main
+ * does. Intersected across `Backdraw r4 --WINNER--> Main r4` it matched Backdraw 1 — a BYE — with
+ * Main 1, the Main-draw winner, and removed the Main-draw winner from the Main final while unwinding
+ * a Backdraw double walkover that had advanced nobody (census seed 9100555, WINNER_NOT_ADVANCED).
+ *
+ * Across a link the question is asked of IDENTITY: which participant assigned in targetMatchUp's
+ * structure is also assigned in nextWinnerMatchUp's? `removeDirectedWinner` is then given the link,
+ * so it locates them by their own position in the target structure.
+ */
+function removeLinkedWinner({
+  inContextDrawMatchUps,
+  nextWinnerMatchUp,
+  winnerTargetLink,
+  drawDefinition,
+  targetMatchUp,
+  matchUpsMap,
+}) {
+  if (!winnerTargetLink) return;
+  const participantsIn = (matchUp) => {
+    const { structure } = findStructure({ drawDefinition, structureId: matchUp.structureId });
+    const positions = (matchUp.drawPositions ?? []).filter(Boolean);
+    return (structure?.positionAssignments ?? [])
+      .filter((assignment) => assignment.participantId && positions.includes(assignment.drawPosition))
+      .map(({ participantId, drawPosition }) => ({ participantId, drawPosition }));
+  };
+  const nextParticipantIds = participantsIn(nextWinnerMatchUp).map(({ participantId }) => participantId);
+  const advanced = participantsIn(targetMatchUp).find(({ participantId }) =>
+    nextParticipantIds.includes(participantId),
+  );
+  if (!advanced) return;
+
+  removeDirectedWinner({
+    winningDrawPosition: advanced.drawPosition,
+    winnerParticipantId: advanced.participantId,
+    winnerMatchUp: nextWinnerMatchUp,
+    inContextDrawMatchUps,
+    winnerTargetLink,
+    drawDefinition,
+    matchUpsMap,
+  });
 }
 
 function getMatchUpStatus({ pairedPreviousDoubleExit, noContextTargetMatchUp, drawDefinition, targetMatchUp }) {

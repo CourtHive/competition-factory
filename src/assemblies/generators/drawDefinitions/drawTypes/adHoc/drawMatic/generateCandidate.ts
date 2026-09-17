@@ -2,6 +2,8 @@ import { chunkArray, randomPop, shuffleArray } from '@Tools/arrays';
 import { stringSort } from '@Functions/sorters/stringSort';
 
 type GenerateCandidateArgs = {
+  // participantId -> individualParticipantIds; when absent each participant occupies only itself
+  individualIdsMap?: Record<string, string[]>;
   valueSortedPairings: { [key: string]: number }[];
   deltaObjects: { [key: string]: number };
   valueObjects: { [key: string]: number };
@@ -13,6 +15,7 @@ type GenerateCandidateArgs = {
 export function generateCandidate({
   maxIterations = 4000, // cap the processing intensity of the candidate generator
   valueSortedPairings, // pairings sorted by value from low to high
+  individualIdsMap,
   pairingValues,
   valueObjects,
   deltaObjects,
@@ -28,6 +31,7 @@ export function generateCandidate({
   const initialProposal = roundCandidate({
     actorsCount: actors.length,
     valueSortedPairings,
+    individualIdsMap,
     pairingValueMap,
     deltaObjects,
     valueObjects,
@@ -37,6 +41,7 @@ export function generateCandidate({
   const candidateHashes: any[] = [candidateHash(initialProposal)];
   proposedCandidates.push(initialProposal);
   let lowCandidateValue = initialProposal.value;
+  let mostPairings = pairingsCount(initialProposal);
   let deltaCandidate = initialProposal;
 
   // iterations is the number of loops over valueSortedPairings
@@ -70,6 +75,7 @@ export function generateCandidate({
           stipulated: [[actor, pairing.opponent]],
           actorsCount: actors.length,
           valueSortedPairings,
+          individualIdsMap,
           pairingValueMap,
           deltaObjects,
           valueObjects,
@@ -82,12 +88,25 @@ export function generateCandidate({
           proposedCandidates.push(proposed);
 
           const { maxDelta, value } = proposed;
-
-          if (maxDelta < deltaCandidate.maxDelta) deltaCandidate = proposed;
+          const proposedPairings = pairingsCount(proposed);
+          const deltaPairings = pairingsCount(deltaCandidate);
 
           if (
-            value < lowCandidateValue ||
-            (value === lowCandidateValue && Math.round(rng())) // randomize if equivalent values
+            proposedPairings > deltaPairings ||
+            (proposedPairings === deltaPairings && maxDelta < deltaCandidate.maxDelta)
+          )
+            deltaCandidate = proposed;
+
+          // A candidate that schedules more matchUps is better regardless of value. When entrants share
+          // individuals, some pairings exclude others and candidates differ in size; a smaller candidate
+          // sums fewer values and would otherwise always look cheapest. When every candidate is the same
+          // size this reduces to the value comparison alone.
+          if (proposedPairings > mostPairings) {
+            mostPairings = proposedPairings;
+            lowCandidateValue = value;
+          } else if (
+            proposedPairings === mostPairings &&
+            (value < lowCandidateValue || (value === lowCandidateValue && Math.round(rng()))) // randomize if equivalent values
           ) {
             lowCandidateValue = value;
           }
@@ -97,7 +116,9 @@ export function generateCandidate({
         }
       }
     });
-    proposedCandidates = proposedCandidates.filter((proposed) => Math.abs(proposed.value - lowCandidateValue) < 5);
+    proposedCandidates = proposedCandidates.filter(
+      (proposed) => pairingsCount(proposed) === mostPairings && Math.abs(proposed.value - lowCandidateValue) < 5,
+    );
   });
 
   proposedCandidates.sort((a, b) => a.maxDiff - b.maxDiff);
@@ -112,6 +133,10 @@ export function generateCandidate({
   };
 }
 
+function pairingsCount(candidate) {
+  return candidate.participantIdPairings.length;
+}
+
 function candidateHash(candidate) {
   return candidate.participantIdPairings
     .map(({ participantIds }) => participantIds.sort().join('|'))
@@ -120,6 +145,7 @@ function candidateHash(candidate) {
 }
 
 type RoundCandiateArgs = {
+  individualIdsMap?: Record<string, string[]>;
   pairingValueMap: any;
   valueSortedPairings: any;
   random?: () => number;
@@ -132,6 +158,7 @@ type RoundCandiateArgs = {
 function roundCandidate({
   valueSortedPairings,
   stipulated = [],
+  individualIdsMap,
   pairingValueMap,
   deltaObjects,
   valueObjects,
@@ -139,8 +166,22 @@ function roundCandidate({
   random,
 }: RoundCandiateArgs) {
   const rng = random ?? Math.random;
-  // roundPlayers starts with the stipulated pairing
-  const roundPlayers: any[] = stipulated.flat();
+
+  // A round occupies people, not entries. A PAIR or TEAM sharing an individual with an entrant already
+  // in the round would put that person in two matchUps at once, so each participant occupies its
+  // individuals; a participant with none resolved (e.g. no map supplied) occupies only itself.
+  const occupants = (participantId: string) => {
+    const individualIds = individualIdsMap?.[participantId];
+    return individualIds?.length ? individualIds : [participantId];
+  };
+  const occupied = new Set<string>();
+  const occupy = (participantIds: string[]) =>
+    participantIds.forEach((id) => occupants(id).forEach((o) => occupied.add(o)));
+  const isOccupied = (participantIds: string[]) =>
+    participantIds.some((id) => occupants(id).some((o) => occupied.has(o)));
+
+  // the round starts with the stipulated pairing
+  stipulated.filter(Boolean).forEach(occupy);
 
   // aggregates the pairings generated for a roundCandidate
   const participantIdPairings: any[] = [];
@@ -171,10 +212,9 @@ function roundCandidate({
   // go through the valueSortedPairings (of all possible unique pairings)
   consideredPairings.forEach((rankedPairing) => {
     const participantIds = rankedPairing.pairing.split('|');
-    const opponentExists = participantIds.reduce((p, c) => roundPlayers.includes(c) || p, false);
 
-    if (!opponentExists) {
-      roundPlayers.push(...participantIds);
+    if (!isOccupied(participantIds)) {
+      occupy(participantIds);
       const value = rankedPairing.value;
       candidateValue += value;
       participantIdPairings.push({ participantIds, value });

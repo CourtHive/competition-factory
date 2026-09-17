@@ -34,7 +34,11 @@ const subscriptions = {
   [topicConstants.PUBLISH_PARTICIPANTS]: (payload) => {},
   [topicConstants.UNPUBLISH_PARTICIPANTS]: (payload) => {},
 
-  // fires when neither the order of play nor the participant list is published
+  [topicConstants.PUBLISH_TOURNAMENT_INFO]: (payload) => {},
+  [topicConstants.UNPUBLISH_TOURNAMENT_INFO]: (payload) => {},
+
+  // fires when the tournament stops being published: no information, event draw, order of play or participant list
+  // remains published — including when the last published draw or event is deleted
   [topicConstants.UNPUBLISH_TOURNAMENT]: (payload) => {},
 
   [topicConstants.ADD_VENUE]: (payload) => {},

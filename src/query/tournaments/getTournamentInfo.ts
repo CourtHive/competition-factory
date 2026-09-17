@@ -181,11 +181,16 @@ export function getTournamentInfo(params?: {
   if (imageUrl) tournamentInfo.imageUrl = imageUrl;
 
   const publishState = getPublishState({ tournamentRecord })?.publishState;
-  const publishedEventIds = publishState?.tournament?.status?.publishedEventIds ?? [];
+  const publishedEventIds = new Set<string>(publishState?.tournament?.status?.publishedEventIds ?? []);
+  // An information publish lists events that have no published draw yet — every event unless scoped.
+  const info = publishState?.tournament?.info;
+  const infoEventIds = info?.eventIds ? new Set<string>(info.eventIds) : undefined;
+  const isListed = (eventId: string) =>
+    publishedEventIds.has(eventId) || (!!info?.published && (!infoEventIds || infoEventIds.has(eventId)));
   const eventInfo: any[] = [];
 
   for (const event of tournamentRecord.events ?? []) {
-    if (!params?.usePublishState || publishedEventIds.includes(event.eventId)) {
+    if (!params?.usePublishState || isListed(event.eventId)) {
       const info = extractEventInfo({ event }).eventInfo;
       if (info) eventInfo.push(info);
     }

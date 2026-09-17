@@ -1,4 +1,5 @@
 import { getDrawInconsistencies } from '@Query/drawDefinition/getDrawInconsistencies';
+import { clearOutcome } from '@Tests/testHarness/exitPropagation/transitions';
 import { setSubscriptions } from '@Global/state/globalState';
 import mocksEngine from '@Assemblies/engines/mock';
 import tournamentEngine from '@Engines/syncEngine';
@@ -32,6 +33,9 @@ const STEPS = [
     roundPosition: 6,
     outcome: { matchUpStatus: WALKOVER, winningSide: 2 },
   },
+  // Cleared before the flip. With it standing the flip is REFUSED (CA, 2026-09-17): the flip makes the
+  // consolation loser ineligible, and a played consolation result cannot be inherited.
+  { structureName: 'Consolation', roundNumber: 2, roundPosition: 6, outcome: clearOutcome },
   { structureName: 'Main', roundNumber: 2, roundPosition: 6, outcome: { matchUpStatus: WALKOVER, winningSide: 2 } },
 ];
 
@@ -47,12 +51,14 @@ function playScenario(drawId: string) {
     const matchUps = tournamentEngine.allDrawMatchUps({ inContext: true, drawId })?.matchUps ?? [];
     const target = matchUps.find((matchUp: any) => coordinates(matchUp) === coordinates(step));
     expect(target, `no matchUp at ${coordinates(step)}`).toBeDefined();
-    tournamentEngine.setMatchUpStatus({
+    const result: any = tournamentEngine.setMatchUpStatus({
       matchUpId: target.matchUpId,
       outcome: step.outcome,
       allowChangePropagation: true,
       drawId,
     });
+    // every step, the flip included, must apply — a refused flip leaves the premise below false
+    expect(result.error, coordinates(step)).toBeUndefined();
   }
 }
 

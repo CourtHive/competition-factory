@@ -1,5 +1,5 @@
+import { clearOutcome, getDrawDefinition, getDrawMatchUps, hash } from '@Tests/testHarness/exitPropagation/transitions';
 import { findByCoord, generateDraw, playForward } from '@Tests/testHarness/exitPropagation/routeComparison';
-import { getDrawDefinition, getDrawMatchUps, hash } from '@Tests/testHarness/exitPropagation/transitions';
 import { getInvariantViolations } from '@Tests/testHarness/exitPropagation/invariants';
 import { getDrawInconsistencies } from '@Query/drawDefinition/getDrawInconsistencies';
 import tournamentEngine from '@Engines/syncEngine';
@@ -206,18 +206,55 @@ describe('a BYE is never recorded as a winner', () => {
       ['BYE_WON', 'UNDECIDED_WITH_WINNING_SIDE', 'UNDECIDED_WITH_SCORE'].includes(violation.rule),
     );
 
-  it('withdraws what an ineligible loser won here, rather than leaving a BYE holding it', () => {
+  /**
+   * CA, 2026-09-17: a flip is refused when propagation cannot proceed with equivalence. The flip makes
+   * the consolation loser INELIGIBLE, so the results they recorded there cannot be inherited by the
+   * new loser — and they were played. Until then the flip succeeded and withdrew those results; it is
+   * now refused, over an untouched draw. With nothing played there, see the next case.
+   */
+  it('refuses a flip that would have to withdraw what an ineligible loser won here', () => {
     const drawId = 'bye-never-wins';
     setup(drawId);
     const coord = { structureName: 'Main', roundNumber: 2, roundPosition: 3 };
     const target = findByCoord(drawId, coord);
     expect(target?.winningSide).toBeTruthy(); // control: the flip needs a decided matchUp
 
-    // control: the consolation matchUp fed by this one is DECIDED before the flip — without a
-    // standing result there is nothing to leave behind and the test proves nothing.
+    // control: the consolation matchUp fed by this one is DECIDED before the flip
     const fedBefore = findByCoord(drawId, { structureName: 'Consolation', roundNumber: 2, roundPosition: 3 });
     expect(fedBefore?.winningSide).toBeTruthy();
 
+    const before = hash(getDrawDefinition(drawId));
+    const result: any = tournamentEngine.setMatchUpStatus({
+      outcome: { winningSide: target.winningSide === 1 ? 2 : 1 },
+      allowChangePropagation: true,
+      matchUpId: target.matchUpId,
+      drawId,
+    });
+    expect(result.error).toEqual(DRAW_POSITION_ACTIVE);
+    expect(hash(getDrawDefinition(drawId))).toEqual(before);
+    expect(residueViolations(drawId)).toEqual([]);
+  });
+
+  it('with nothing played in the consolation, the same flip proceeds and the slot reverts to a BYE', () => {
+    const drawId = 'bye-never-wins-unplayed';
+    setup(drawId);
+    const consolation = (roundNumber: number, roundPosition: number) =>
+      findByCoord(drawId, { structureName: 'Consolation', roundNumber, roundPosition });
+    // clear the consolation, latest round first, so nothing downstream of the fed slot is active
+    const decided = getDrawMatchUps(drawId)
+      .filter((matchUp: any) => matchUp.structureName === 'Consolation' && matchUp.winningSide)
+      .sort((x: any, y: any) => y.roundNumber - x.roundNumber);
+    for (const matchUp of decided) {
+      const cleared: any = tournamentEngine.setMatchUpStatus({
+        outcome: clearOutcome,
+        matchUpId: matchUp.matchUpId,
+        drawId,
+      });
+      expect(cleared.error, `clearing Consolation|${matchUp.roundNumber}|${matchUp.roundPosition}`).toBeUndefined();
+    }
+    expect(consolation(2, 3)?.winningSide).toBeUndefined(); // control
+
+    const target = findByCoord(drawId, { structureName: 'Main', roundNumber: 2, roundPosition: 3 });
     const result: any = tournamentEngine.setMatchUpStatus({
       outcome: { winningSide: target.winningSide === 1 ? 2 : 1 },
       allowChangePropagation: true,
@@ -225,10 +262,7 @@ describe('a BYE is never recorded as a winner', () => {
       drawId,
     });
     expect(result.error).toBeUndefined();
-
-    const fedAfter = findByCoord(drawId, { structureName: 'Consolation', roundNumber: 2, roundPosition: 3 });
-    expect(fedAfter.matchUpStatus).toEqual(BYE);
-    expect(fedAfter.winningSide).toBeUndefined();
+    expect(consolation(2, 3).matchUpStatus).toEqual(BYE);
     expect(residueViolations(drawId)).toEqual([]);
   });
 

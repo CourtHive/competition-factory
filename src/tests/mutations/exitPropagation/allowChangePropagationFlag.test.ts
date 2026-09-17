@@ -1,4 +1,4 @@
-import { observeMutation } from '@Tests/testHarness/exitPropagation/transitions';
+import { clearOutcome, observeMutation } from '@Tests/testHarness/exitPropagation/transitions';
 import { setSubscriptions } from '@Global/state/globalState';
 import mocksEngine from '@Assemblies/engines/mock';
 import tournamentEngine from '@Engines/syncEngine';
@@ -25,7 +25,7 @@ afterEach(() => {
   delete process.env.ALLOW_CHANGE_PROPAGATION;
 });
 
-function replayToTheFlip(drawId: string) {
+function replayToTheFlip(drawId: string, { clearConsolationBeforeFlip = false } = {}) {
   mocksEngine.generateTournamentRecord({
     drawProfiles: [{ participantsCount: 27, drawSize: 32, drawType: FIRST_MATCH_LOSER_CONSOLATION, drawId }],
     nonRandom: 9000349,
@@ -37,6 +37,7 @@ function replayToTheFlip(drawId: string) {
     { coordinate: 'Main|1|11', outcome: { winningSide: 2 } },
     { coordinate: 'Main|2|6', outcome: { matchUpStatus: DEFAULTED, winningSide: 1 } },
     { coordinate: 'Consolation|2|6', outcome: { matchUpStatus: WALKOVER, winningSide: 2 } },
+    ...(clearConsolationBeforeFlip ? [{ coordinate: 'Consolation|2|6', outcome: clearOutcome }] : []),
     { coordinate: 'Main|2|6', outcome: { matchUpStatus: WALKOVER, winningSide: 2 } },
   ];
 
@@ -55,8 +56,21 @@ it('is OFF by default — the winner flip is refused', () => {
   expect(observation.error?.code).toEqual('ERR_UNCHANGED_CANNOT_CHANGE_WINNING_SIDE');
 });
 
-it('routes through swapWinnerLoser when set, so the same flip succeeds', () => {
+/**
+ * Set, the flip reaches `swapWinnerLoser` instead of the re-score guard — visible here as a
+ * different refusal: the flip makes the consolation loser ineligible over a consolation result that
+ * was played, which cannot be inherited (CA, 2026-09-17). Clearing that result, the flip succeeds.
+ */
+it('routes through swapWinnerLoser when set, so the same flip reaches its own refusal', () => {
   process.env.ALLOW_CHANGE_PROPAGATION = '1';
   const observation = replayToTheFlip('acp-on');
-  expect(observation.error).toBeUndefined();
+  expect(observation.error?.code).toEqual('ERR_ACTIVE_DRAW_POSITION');
+});
+
+it('routes through swapWinnerLoser when set, and succeeds once nothing downstream is active', () => {
+  process.env.ALLOW_CHANGE_PROPAGATION = '1';
+  replayToTheFlip('acp-on-clear', { clearConsolationBeforeFlip: true });
+  const matchUps = tournamentEngine.allDrawMatchUps({ inContext: true, drawId: 'acp-on-clear' })?.matchUps ?? [];
+  const flipped = matchUps.find((matchUp: any) => coordinates(matchUp) === 'Main|2|6');
+  expect(flipped.winningSide).toEqual(2);
 });
