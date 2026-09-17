@@ -1,4 +1,5 @@
 import { getDrawDefinition, getDrawMatchUps, observeMutation } from '@Tests/testHarness/exitPropagation/transitions';
+import { getInvariantViolations } from '@Tests/testHarness/exitPropagation/invariants';
 import { getDrawInconsistencies } from '@Query/drawDefinition/getDrawInconsistencies';
 import { prepareDraw, type Step } from '@Tests/testHarness/exitPropagation/sweep';
 import { setSubscriptions } from '@Global/state/globalState';
@@ -19,8 +20,19 @@ import fs from 'fs';
  *
  * `ISSUE=DECIDER_STALE` is a property rather than an issueType: a participant assigned in a
  * DOUBLE_ELIMINATION Decider who is not in the Main final. `getDrawInconsistencies` does not detect it.
+ *
+ * `ISSUE=INVARIANT:<rule>` shrinks on a HARNESS INVARIANT instead — `BYE_WON`, `UNDECIDED_WITH_SCORE`
+ * and the rest of `invariants.ts`. Those are the rules `getDrawInconsistencies` deliberately does not
+ * cover, so before this they could not be shrunk at all and every reproduction of one was reduced by
+ * hand. Unlike the issueType branch there is no "a different defect first" bail-out: an invariant
+ * violation persists on the matchUp until something rewrites it, so the first inconsistency a later
+ * step happens to raise says nothing about whether THIS rule still fires.
+ *
+ *   ISSUE=INVARIANT:BYE_WON SEED=9303124 SCHEDULES_IN=…/sched-de.jsonl OUT=/tmp/shrunk.json \
+ *     npx vitest run src/tests/mutations/exitPropagation/shrinkIssue.test.ts
  */
 const key = (m: any) => `${m.structureName}|${m.roundNumber}|${m.roundPosition}`;
+const invariantRule = process.env.ISSUE?.startsWith('INVARIANT:') ? process.env.ISSUE.slice(10) : undefined;
 test.skipIf(!process.env.ISSUE)(
   'shrink by issueType',
   () => {
@@ -44,6 +56,14 @@ test.skipIf(!process.env.ISSUE)(
           outcome: step.outcome,
           drawId,
         });
+        if (invariantRule) {
+          const violations = getInvariantViolations({
+            matchUps: getDrawMatchUps(drawId),
+            drawDefinition: getDrawDefinition(drawId),
+          });
+          if (violations.some((violation: any) => violation.rule === invariantRule)) return true;
+          continue;
+        }
         if (process.env.ISSUE === 'DE_FINAL_SEAT') {
           const seat = (m: any) => m?.sides?.find((x: any) => x.sideNumber === m.winningSide)?.participantId;
           const final = getDrawMatchUps(drawId).find((m: any) => m.structureName === 'Main' && m.roundNumber === 4);
