@@ -71,8 +71,57 @@ cases — and the exceptions are a whole draw type rather than noise.
 
 **DOUBLE_ELIMINATION's Main final is fed from the Backdraw, which shares Main's drawPosition
 space.** Its fed positions therefore sit _inside_ the first round's numeric range, and the shortcut
-calls them advanced. Use the prior-round test.
+calls them advanced. Use the prior-round test. See [4a](#4a-the-one-exception-double_eliminations-main-final)
+for why that structure is shaped the way it is.
 :::
+
+## 4a. The one exception: DOUBLE_ELIMINATION's Main final
+
+`DOUBLE_ELIMINATION` is the only structure in the factory whose feed round has **no reserved fed
+drawPosition**, and it is worth knowing about because it looks like a violation of rule 4 and is not
+going to be changed.
+
+The Main structure is generated as a feed-in of `drawSize + 1` with
+`linkFedFinishingRoundNumbers: [1]` — the only use of that parameter anywhere. It tells
+`feedInMatchUps` that the final round is fed **by a link from another structure**, and link-fed
+positions are subtracted from the local allocation:
+
+```ts
+positionsFed = positionsFed - positionsFedByLinks;
+```
+
+So Main asks for `drawSize + 1` and receives `drawSize` positionAssignments. The extra matchUp exists;
+the extra slot does not. The Backdraw winner returning to the Main final is placed at whichever Main
+drawPosition **they already held**, which is why:
+
+- both of the Main final's positions are ADVANCED by the prior-round test in rule 4 — there is no fed
+  position to find;
+- its drawPositions are not structurally determined. Measured across 16 winner patterns on a DE 8,
+  `Main|4|1` took **11 distinct** drawPosition pairs. A genuine feed round varies only on the advanced
+  side; the fed side is a constant.
+
+### Why it stays
+
+Allocating the missing slot produces exactly the layout rule 4 describes — Main `1..9`, round 1 at
+`2..9`, the final fed at drawPosition `1`. It also does this:
+
+```text
+BEFORE  DE 8/8   Main  assignments 8  participants 8  BYES 0    BYE matchUps: 0
+AFTER   DE 8/8   Main  assignments 9  participants 8  BYES 1    BYE matchUps: 2
+```
+
+**A full 8-of-8 double elimination acquires a BYE**, and it propagates into the Backdraw. Main is the
+ENTRY structure, so any unfilled position in it becomes a bye — a consolation's unfilled positions do
+not, because they are fed rather than entered. The suppression is load-bearing: it exists so the feed
+slot is not counted as an entry slot.
+
+A real fix would need a reserved feed position that is excluded from the entry pool **and** from bye
+assignment — a positioning-layer concept the factory does not have — plus link retargeting, and it
+would renumber every Main drawPosition in every DOUBLE_ELIMINATION draw ever stored.
+
+**Nothing depends on the numbering.** Side resolution uses the structural prior-round test, not the
+numeric one, so DOUBLE_ELIMINATION hydrates correctly as it stands. Tracked as `P22` on the
+CourtHive design-flaws punch list.
 
 ## 5. The SHAPE of the array is not information
 

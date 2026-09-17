@@ -3,6 +3,7 @@ import tournamentEngine from '@Engines/syncEngine';
 import { expect, it } from 'vitest';
 
 // constants
+import { TO_BE_PLAYED } from '@Constants/matchUpStatusConstants';
 import {
   MODIFIED_FEED_IN_CHAMPIONSHIP,
   FIRST_MATCH_LOSER_CONSOLATION,
@@ -12,7 +13,6 @@ import {
   CURTIS_CONSOLATION,
   COMPASS,
 } from '@Constants/drawDefinitionConstants';
-import { TO_BE_PLAYED } from '@Constants/matchUpStatusConstants';
 
 /**
  * A matchUp's hydrated sides depend on WHICH drawPositions it holds, never on HOW the array says so.

@@ -51,19 +51,26 @@ import fs from 'fs';
 
 const SOURCE_ROOT = path.resolve(__dirname, '../../../src');
 
-/** `<file>:<line>` → the reason this assignment does not need the helper */
+/**
+ * An assignment that CONSTRUCTS a literal array — `= []`, `= [pos1, pos2]` — is not a removal or a
+ * substitution, so it needs no helper. Recognised by shape rather than by filename, because a
+ * file-level exemption also exempts every OTHER assignment in that file.
+ *
+ * That is not hypothetical: `resetDrawDefinition.ts` was allowlisted for its `= []` line, and the
+ * exemption silently covered the removal branch below it too — deleting that file's
+ * `normalizeDrawPositions` call left this guard green. Measured 2026-09-17, fixed by this rule.
+ */
+const CONSTRUCTS_A_LITERAL = /=\s*\[[\w\s,]*\]\s*(as\s+[\w[\]]+\s*)?;/;
+
+/** `<file>` → the reason its TRANSFORMING assignments do not route through the helper */
 const ALLOWED: Record<string, string> = {
   'mutate/matchUps/drawPositions/removeSubsequentRoundsParticipant.ts':
     'ends in `.filter(Boolean)`, which compacts — an all-holes result is already `[]`. Measured over ' +
     '2,400 census seed-runs: 0 all-holes writes from this site, against 2,437 from positionClear. ' +
     'The COMPACTION was then measured on its own and DELIBERATELY KEPT — see the note below.',
-  'mutate/drawDefinitions/luckyDrawAdvancement.ts':
-    'writes `[]` or a freshly minted `[pos1, pos2]` from `nextPosition++` — no removal, no substitution.',
   'mutate/drawDefinitions/pruneDrawDefinition.ts':
     'RENUMBERS through a map built from exactly these matchUps’ own truthy positions, so every ' +
     'truthy entry resolves and a hole stays a hole. It cannot turn a non-all-holes array into one.',
-  'mutate/drawDefinitions/resetDrawDefinition.ts':
-    'line 198 writes `[]` outright; the removal branch below it routes through the helper.',
   'query/matchUps/getRoundMatchUps.ts':
     'writes `roundProfile[roundNumber].drawPositions`, a derived query aggregate — not a matchUp.',
 };
@@ -105,13 +112,21 @@ it('every drawPositions assignment routes through normalizeDrawPositions, or is 
   expect(sites.length).toBeGreaterThan(5);
 
   const bypasses = sites.filter(
-    (site) => !site.text.includes('normalizeDrawPositions(') && !(site.relative in ALLOWED),
+    (site) =>
+      !site.text.includes('normalizeDrawPositions(') &&
+      !CONSTRUCTS_A_LITERAL.test(site.text) &&
+      !(site.relative in ALLOWED),
   );
 
   expect(bypasses.map((site) => `${site.relative}:${site.line}  ${site.text}`)).toEqual([]);
 
-  // and the list can only shrink: an allowlist entry naming a file with no assignment left is stale
-  const filesWithAssignments = new Set(sites.map((site) => site.relative));
-  const stale = Object.keys(ALLOWED).filter((relative) => !filesWithAssignments.has(relative));
+  // and the list can only shrink: an allowlist entry naming a file with no TRANSFORMING assignment
+  // left is stale — a file whose every site now constructs a literal no longer needs an exemption
+  const filesNeedingExemption = new Set(
+    sites
+      .filter((site) => !site.text.includes('normalizeDrawPositions(') && !CONSTRUCTS_A_LITERAL.test(site.text))
+      .map((site) => site.relative),
+  );
+  const stale = Object.keys(ALLOWED).filter((relative) => !filesNeedingExemption.has(relative));
   expect(stale).toEqual([]);
 });

@@ -1,6 +1,6 @@
-import { overlap } from '@Tools/arrays';
 import { ensureInt } from '@Tools/ensureInt';
 import { numericSort } from '@Tools/sorting';
+import { overlap } from '@Tools/arrays';
 
 // types
 import { RoundProfile } from '@Types/factoryTypes';
@@ -11,6 +11,10 @@ type GetOrderedDrawPositionsArgs = {
   roundNumber: number;
 };
 /**
+ * Side resolution for `matchUp.drawPositions`. The rules this file enforces are published in full at
+ * `documentation/docs/concepts/draw-positions.md`; the comments below carry the measurements behind
+ * them. Keep the two in step.
+ *
  * A HOLE IS NOT A DRAWPOSITION.
  *
  * `ensureInt` returns **0** for anything that is neither a number nor a numeric string — `undefined`
@@ -18,7 +22,7 @@ type GetOrderedDrawPositionsArgs = {
  * `!isNaN(ensureInt(x))` silently accepts a hole. Excluding them explicitly is the only safe form.
  */
 const isDrawPosition = (position: any): boolean =>
-  position !== undefined && position !== null && !isNaN(ensureInt(position));
+  position !== undefined && position !== null && !Number.isNaN(ensureInt(position));
 
 export function getOrderedDrawPositions({ drawPositions, roundProfile, roundNumber }: GetOrderedDrawPositionsArgs) {
   const unassignedDrawPositions = [undefined, undefined];

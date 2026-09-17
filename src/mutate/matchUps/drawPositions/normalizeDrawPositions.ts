@@ -24,6 +24,11 @@
  *
  * Every writer that can REMOVE or SUBSTITUTE a position must route through here.
  * `src/tests/refactoring/drawPositionsNormalizationBypass.test.ts` fails on any that does not.
+ *
+ * The full set of rules governing this array — uniqueness within a structure, the positional
+ * binding and the three reader idioms that depend on it, fed vs advanced, and why an absent key is
+ * the ordinary shape of an unplayed matchUp — is published for consumers and contributors at
+ * `documentation/docs/concepts/draw-positions.md`. Keep the two in step.
  */
 export function normalizeDrawPositions(drawPositions: (number | undefined)[]): number[] {
   return (drawPositions.some(Boolean) ? drawPositions : []) as number[];
