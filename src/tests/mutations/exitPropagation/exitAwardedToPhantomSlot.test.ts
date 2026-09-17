@@ -36,7 +36,8 @@ import { DEFAULTED, WALKOVER } from '@Constants/matchUpStatusConstants';
  * | shape | meaning | awardable |
  * |---|---|---|
  * | holds a participant, opponent still to arrive | a walkover over nobody yet (2026-09-17) | **no** |
- * | holds a participant against a BYE, or a qualifier | somebody is there | yes |
+ * | holds a participant, opponent a BYE | a BYE matchUp never has a winningSide (2026-09-17) | **no** |
+ * | a qualifier | a seat reserved for a named participant | yes |
  * | no `drawPosition` at all | an unfilled feed slot, awaiting its arrival | yes |
  * | a `drawPosition` whose assignment is present and vacant | a seat claimed by nobody | **no** |
  *
@@ -53,10 +54,8 @@ import { DEFAULTED, WALKOVER } from '@Constants/matchUpStatusConstants';
  * participants. The waiver was letting an exit status do, on that slot, what a plain result could
  * not.
  *
- * A BYE on the winning side stays allowed, deliberately and narrowly. Whether a player can lose a
- * walkover to an opponent who does not exist is a rules question of the kind
- * `propagateRetirementAsExit` exists to stop the engine answering on its own, and three committed
- * tests construct that state on purpose. It is not decided here.
+ * A BYE matchUp takes no single exit in either direction (decided 2026-09-13 for the BYE as winner,
+ * 2026-09-17 for the player as winner): the BYE always advances its opponent. See the last two cases.
  */
 
 const DRAW_ID = 'exit-phantom-slot';
@@ -127,8 +126,8 @@ it.each([WALKOVER, DEFAULTED])('a %s cannot be awarded to a claimed-but-vacant s
  * pending exit, where the present participant withdrew and the empty side wins — so a walkover
  * awarded to the present participant produced two winners of one matchUp once the opponent arrived:
  * both advanced and the entered winner never reached the loser structure (a two-step
- * DROPPED_PROGRESSION on DOUBLE_ELIMINATION). CA: refuse it. Against a BYE it stays accepted — see the
- * last case in this file — because nobody ever arrives there.
+ * DROPPED_PROGRESSION on DOUBLE_ELIMINATION). CA: refuse it. Against a BYE it is refused too — see the
+ * last case in this file.
  */
 it.each([WALKOVER, DEFAULTED])(
   'a %s is NOT awarded to the participant who is there before their opponent',
@@ -277,24 +276,32 @@ it.each([WALKOVER, DEFAULTED])('a %s cannot be awarded to a BYE side', (matchUpS
 });
 
 /**
- * The half that must keep working. Refusing the bye as a WINNER must not become a refusal to record
- * anything on a matchUp that merely contains one — a director can still record that the present
- * player did not play, and the exit is theirs.
+ * Nor to the present player: a matchUp containing a BYE cannot have a winningSide, in either
+ * direction. The BYE always advances its opponent (CA, 2026-09-17).
+ *
+ * This case read "IS still accepted on a bye matchUp for the present player" until then, on the
+ * reasoning that refusing the bye as a WINNER must not become a refusal to record anything on a
+ * matchUp that merely contains one. There is nothing to record there: a walkover entered before a BYE
+ * ARRIVES is advanced through it with the player (`progressExitStatus` RULE 1) and occurs where they
+ * land, never on the BYE matchUp.
  */
-it.each([WALKOVER, DEFAULTED])('a %s IS still accepted on a bye matchUp for the present player', (matchUpStatus) => {
-  const { matchUp, playerSideNumber } = byeMatchUp();
+it.each([WALKOVER, DEFAULTED])(
+  'a %s is NOT accepted on a bye matchUp for the present player either',
+  (matchUpStatus) => {
+    const { matchUp, playerSideNumber } = byeMatchUp();
 
-  const result: any = tournamentEngine.setMatchUpStatus({
-    matchUpId: matchUp.matchUpId,
-    outcome: { matchUpStatus, winningSide: playerSideNumber },
-    propagateExitStatus: true,
-    drawId: DRAW_ID,
-  });
-  expect(result.error).toBeUndefined();
+    const result: any = tournamentEngine.setMatchUpStatus({
+      matchUpId: matchUp.matchUpId,
+      outcome: { matchUpStatus, winningSide: playerSideNumber },
+      propagateExitStatus: true,
+      drawId: DRAW_ID,
+    });
+    expect(result.error).toEqual(INVALID_MATCHUP_STATUS);
 
-  const after = tournamentEngine
-    .allDrawMatchUps({ inContext: true, drawId: DRAW_ID })
-    .matchUps.find((candidate: any) => candidate.matchUpId === matchUp.matchUpId);
-  expect(after.winningSide).toEqual(playerSideNumber);
-  expect(after.sides.find((side: any) => side.sideNumber === after.winningSide)?.participantId).toBeDefined();
-});
+    const after = tournamentEngine
+      .allDrawMatchUps({ inContext: true, drawId: DRAW_ID })
+      .matchUps.find((candidate: any) => candidate.matchUpId === matchUp.matchUpId);
+    expect(after.matchUpStatus).toEqual(matchUp.matchUpStatus);
+    expect(after.winningSide).toBeUndefined();
+  },
+);
