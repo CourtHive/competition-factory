@@ -812,7 +812,8 @@ draw. DrawMatic scheduled individuals 0 and 2 in **two matchUps each, in 3 of 6 
 | -------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `drawMatic` / `generateDrawMaticRound` | a round occupies individuals, not entries: a PAIR sharing an individual with an entrant already in the round is not scheduled. The round can therefore hold fewer matchUps than entries ÷ 2 |
 | `generateSwissRound`                   | refuses entrants that share an individual with `SHARED_INDIVIDUAL_PARTICIPANT`, every offending pair in `context.conflictingPairs`                                                          |
-| `matchUpActions` on an ad hoc matchUp  | does not offer a participant sharing an individual with the opposing side; under `restrictAdHocRoundParticipants` (default `true`), nor one sharing an individual with anyone in the round  |
+| `assignMatchUpSideParticipant`         | refuses a participant — or a PAIR/TEAM sharing one of its individuals — already in another matchUp of the round, with `EXISTING_ROUND_PARTICIPANT` (`ERR_EXISTING_ROUND_PARTICIPANT`)       |
+| `matchUpActions` on an ad hoc matchUp  | never offers a participant sharing an individual with the opposing side or with anyone already in the round. `restrictAdHocRoundParticipants` is deprecated and has no effect               |
 
 ### Why DrawMatic now prefers larger candidates
 
@@ -829,16 +830,23 @@ Entrants sharing an individual can neither meet nor play in the same round, so t
 kept. As with the round-robin shape in 11f, the request is refused rather than quietly generated
 short. SWISS draws still _accept_ overlapping entries (11g); it is round generation that refuses.
 
-### What is not changed
+### Why assignment refuses, and the round option is gone
 
-`assignMatchUpSideParticipant` still permits placing a participant in a round they already play in,
-as it always has for the same participant twice. The round restriction remains a query-layer policy,
-`restrictAdHocRoundParticipants`.
+Before this change `assignMatchUpSideParticipant` accepted a participant already playing elsewhere in the
+round, and `restrictAdHocRoundParticipants: false` offered exactly those participants. A person cannot
+play two matchUps at once, so both are now refused: assignment returns `EXISTING_ROUND_PARTICIPANT`,
+and the option no longer loosens what `matchUpActions` offers — it would only list assignments that
+fail. The parameter is still accepted so existing callers compile.
+
+The matchUp being assigned is excluded from the check: its opposing side is the both-sides question
+(11f), and the side being assigned is being replaced, which frees that participant's individuals.
 
 ### What to change for overlapping doubles
 
-Nothing, if your doubles entries do not overlap. If they do, expect DrawMatic rounds that sit some
-entrants out, and move any Swiss draw over those entrants to AD_HOC with DrawMatic.
+If your doubles entries do not overlap, the only change is manual assignment: a participant already in
+an ad hoc round can no longer be placed in it again, and `restrictAdHocRoundParticipants: false` no
+longer offers one. If entries do overlap, also expect DrawMatic rounds that sit some entrants out, and
+move any Swiss draw over those entrants to AD_HOC with DrawMatic.
 
 ## 12. Non-breaking additions worth knowing
 
