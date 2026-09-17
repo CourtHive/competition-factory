@@ -11,6 +11,9 @@ import { modifyMatchUpNotice } from '@Mutate/notifications/drawNotifications';
 import { reverseScore } from '@Generators/score/reverseScore';
 import { pushGlobalLog } from '@Functions/global/globalLog';
 
+// constants
+import { LOSER, WINNER } from '@Constants/drawDefinitionConstants';
+
 /**
  * Swap the winner and loser of an already-decided matchUp, carrying the change downstream.
  *
@@ -130,39 +133,13 @@ export function swapWinnerLoser(params) {
    * The rule, the three reader idioms that depend on it, and the survey of every other writer are
    * stated once in `getOrderedDrawPositions`. Do not remove the sort below.
    */
-  existingWinnerSubsequentMatchUps.forEach((matchUp) => {
-    // read BEFORE the rewrite: which position won, in the array order the winningSide refers to
-    const winnerDrawPosition = matchUp.winningSide ? matchUp.drawPositions?.[matchUp.winningSide - 1] : undefined;
-
-    // The substitution can put a HOLE in: the flipped loser has no drawPosition when their side was
-    // an empty fed slot, so `[4, 7]` becomes `[undefined, 7]` — correct, and positional. What it
-    // must not leave is an array of nothing but holes; `[7]` becoming `[undefined]` carries no
-    // information. Measured on census seed 9100016 (FEED_IN_CHAMPIONSHIP_TO_SF, flag ON), which is
-    // the only all-holes writer the two REMOVAL sites do not account for.
-    const substituted =
-      matchUp.drawPositions?.map((drawPosition) => {
-        if (drawPosition === existingWinnerDrawPosition) return existingLoserDrawPosition;
-        if (existingLoserDrawPosition && drawPosition === existingLoserDrawPosition) return existingWinnerDrawPosition;
-        return drawPosition;
-      }) ?? [];
-    // Sort only when BOTH positions are present. A hole beside a lone position is POSITIONAL — it is
-    // what holds that position's side — and `Array.prototype.sort` moves holes to the end, so sorting
-    // `[undefined, 3]` wrote `[3, undefined]`. On DOUBLE_ELIMINATION's Main final, which has no fed
-    // position, a pending walkover won by side 2 then read as won by the empty side 1 (census 9100555
-    // step 29, DE window 9300695 step 27; found by `swapPathEquivalence`).
-    const bothPresent = substituted.filter((drawPosition) => typeof drawPosition === 'number').length === 2;
-    matchUp.drawPositions = normalizeDrawPositions(
-      bothPresent ? substituted.sort((a, b) => (a as number) - (b as number)) : substituted,
-    );
-    followWinnerAcrossResort({ matchUp, winnerDrawPosition, existingWinnerDrawPosition, existingLoserDrawPosition });
-    modifyMatchUpNotice({
-      tournamentId: tournamentRecord?.tournamentId,
-      eventId: params.event?.eventId,
-      context: stack,
-      drawDefinition,
-      matchUp,
-      event,
-    });
+  exchangePathPositions({
+    matchUps: existingWinnerSubsequentMatchUps,
+    positionA: existingWinnerDrawPosition,
+    positionB: existingLoserDrawPosition,
+    tournamentRecord,
+    drawDefinition,
+    event,
   });
 
   /**
@@ -191,8 +168,59 @@ export function swapWinnerLoser(params) {
     drawDefinition,
   });
 
-  const subsequentStructures = drawDefinition.structures.filter(({ structureId }) =>
-    subsequentStructureIds.includes(structureId),
+  /**
+   * A structure the flipped participants were SENT FROM is their origin, not a destination — even
+   * when the walk reaches it.
+   *
+   * DOUBLE_ELIMINATION is a cycle: Main feeds the Backdraw by LOSER links and the Backdraw final feeds
+   * Main's final by a WINNER link, so the walk from a Backdraw matchUp arrives back in Main. Relabelling
+   * Main's positionAssignments by identity then exchanged the two participants' ENTRY positions — who
+   * holds which Main draw position — rewriting every Main result they had played before reaching the
+   * Backdraw (census DE window 9300175, shrunk: Main 5 and Main 7 swapped participants on a Backdraw
+   * flip, and a later re-score was refused over the corrupted draw).
+   *
+   * In an origin the participants keep their assignments, as they do in the source structure; only
+   * the matchUps they RE-ENTER by a WINNER link carry the exchange, by their origin positions — the same
+   * exchange the source structure's later rounds receive above.
+   */
+  const originStructureIds = new Set(
+    (drawDefinition.links ?? [])
+      .filter((link) => link.linkType === LOSER && link.target.structureId === structure.structureId)
+      .map((link) => link.source.structureId)
+      .filter((structureId) => subsequentStructureIds.includes(structureId)),
+  );
+
+  for (const originStructureId of originStructureIds) {
+    const origin = drawDefinition.structures.find(({ structureId }) => structureId === originStructureId);
+    const { positionAssignments: originAssignments } = getPositionAssignments({ structure: origin });
+    const originPosition = (participantId?: string) =>
+      participantId
+        ? originAssignments?.find((assignment) => assignment.participantId === participantId)?.drawPosition
+        : undefined;
+    const positionA = originPosition(existingWinnerParticipantId);
+    const positionB = originPosition(existingLoserParticipantId);
+    const reEntryRounds = (drawDefinition.links ?? [])
+      .filter((link) => link.linkType === WINNER && link.target.structureId === originStructureId)
+      .map((link) => link.target.roundNumber ?? 0);
+    if (!positionA || !reEntryRounds.length) continue;
+    const firstReEntryRound = Math.min(...reEntryRounds);
+    const { matchUps: originMatchUps } = getAllStructureMatchUps({ structure: origin, drawDefinition });
+    exchangePathPositions({
+      matchUps: originMatchUps.filter(
+        ({ drawPositions, roundNumber }) =>
+          (roundNumber ?? 0) >= firstReEntryRound &&
+          (drawPositions?.includes(positionA) || (!!positionB && drawPositions?.includes(positionB))),
+      ),
+      tournamentRecord,
+      drawDefinition,
+      positionA,
+      positionB,
+      event,
+    });
+  }
+
+  const subsequentStructures = drawDefinition.structures.filter(
+    ({ structureId }) => subsequentStructureIds.includes(structureId) && !originStructureIds.has(structureId),
   );
 
   /**
@@ -353,4 +381,52 @@ function followWinnerAcrossResort({
   if (Array.isArray(matchUp.sides)) {
     matchUp.sides = matchUp.sides.map((side) => ({ ...side, sideNumber: otherSide(side.sideNumber) }));
   }
+}
+
+/**
+ * Exchange two drawPositions in the given matchUps, re-sorting only where both positions are present
+ * and carrying each decided matchUp's winner across the re-sort. Shared by the source structure's later
+ * rounds and by the re-entry matchUps of an origin structure.
+ */
+function exchangePathPositions({ matchUps, positionA, positionB, tournamentRecord, drawDefinition, event }) {
+  const stack = 'swapWinnerLoser';
+  matchUps.forEach((matchUp) => {
+    // read BEFORE the rewrite: which position won, in the array order the winningSide refers to
+    const winnerDrawPosition = matchUp.winningSide ? matchUp.drawPositions?.[matchUp.winningSide - 1] : undefined;
+
+    // The substitution can put a HOLE in: the flipped loser has no drawPosition when their side was
+    // an empty fed slot, so `[4, 7]` becomes `[undefined, 7]` — correct, and positional. What it
+    // must not leave is an array of nothing but holes; `[7]` becoming `[undefined]` carries no
+    // information. Measured on census seed 9100016 (FEED_IN_CHAMPIONSHIP_TO_SF, flag ON), which is
+    // the only all-holes writer the two REMOVAL sites do not account for.
+    const substituted =
+      matchUp.drawPositions?.map((drawPosition) => {
+        if (drawPosition === positionA) return positionB;
+        if (positionB && drawPosition === positionB) return positionA;
+        return drawPosition;
+      }) ?? [];
+    // Sort only when BOTH positions are present. A hole beside a lone position is POSITIONAL — it is
+    // what holds that position's side — and `Array.prototype.sort` moves holes to the end, so sorting
+    // `[undefined, 3]` wrote `[3, undefined]`. On DOUBLE_ELIMINATION's Main final, which has no fed
+    // position, a pending walkover won by side 2 then read as won by the empty side 1 (census 9100555
+    // step 29, DE window 9300695 step 27; found by `swapPathEquivalence`).
+    const bothPresent = substituted.filter((drawPosition) => typeof drawPosition === 'number').length === 2;
+    matchUp.drawPositions = normalizeDrawPositions(
+      bothPresent ? substituted.sort((a, b) => (a as number) - (b as number)) : substituted,
+    );
+    followWinnerAcrossResort({
+      existingWinnerDrawPosition: positionA,
+      existingLoserDrawPosition: positionB,
+      winnerDrawPosition,
+      matchUp,
+    });
+    modifyMatchUpNotice({
+      tournamentId: tournamentRecord?.tournamentId,
+      eventId: event?.eventId,
+      context: stack,
+      drawDefinition,
+      matchUp,
+      event,
+    });
+  });
 }
