@@ -2,6 +2,7 @@
 import { getCompetitionPolicy } from '@Query/drawDefinition/competition/getCompetitionPolicy';
 import { getCompetitionState } from '@Query/drawDefinition/competition/getCompetitionState';
 import { getAllStructureMatchUps } from '@Query/matchUps/getAllStructureMatchUps';
+import { buildIndividualIdsMap, getSharedIndividualConflicts } from '@Query/participants/individualParticipantIds';
 import { isAdHoc } from '@Query/drawDefinition/isAdHoc';
 
 // Generators
@@ -15,7 +16,11 @@ import { findStructure } from '@Acquire/findStructure';
 import { findExtension } from '@Acquire/findExtension';
 
 // constants
-import { MISSING_DRAW_DEFINITION, STRUCTURE_NOT_FOUND } from '@Constants/errorConditionConstants';
+import {
+  MISSING_DRAW_DEFINITION,
+  SHARED_INDIVIDUAL_PARTICIPANT,
+  STRUCTURE_NOT_FOUND,
+} from '@Constants/errorConditionConstants';
 import { QUALIFYING, WINNER } from '@Constants/drawDefinitionConstants';
 import { SUCCESS } from '@Constants/resultConstants';
 
@@ -73,6 +78,21 @@ export function generateSwissRound(params: GenerateSwissRoundArgs): GenerateSwis
   const participantIds = Array.from(
     new Set([...entryParticipantIds, ...positionParticipantIds, ...qualifierWinnerIds]),
   );
+
+  // Swiss pairs every entrant in every round (bar one bye) and ranks each by its own record. Entrants
+  // sharing an individual can neither meet nor play in the same round, so that promise cannot be kept;
+  // the round is refused rather than silently generated short, as the round robin shape does.
+  const conflictingPairs = getSharedIndividualConflicts({
+    individualIdsMap: buildIndividualIdsMap(tournamentRecord?.participants),
+    participantIds,
+  });
+  if (conflictingPairs.length) {
+    return {
+      error: SHARED_INDIVIDUAL_PARTICIPANT,
+      info: 'a swiss round requires entrants that do not share individuals',
+      context: { conflictingPairs },
+    };
+  }
 
   // Competition policy: use dynamic form ratings when available
   const { competitionPolicy } = getCompetitionPolicy({ tournamentRecord, drawDefinition, event });

@@ -1,3 +1,4 @@
+import { buildIndividualIdsMap } from '@Query/participants/individualParticipantIds';
 import { getEventAlternateParticipantIds } from './getEventAlternateParticipantids';
 import { checkScoreHasValue } from '@Query/matchUp/checkScoreHasValue';
 import { getFlightProfile } from '@Query/event/getFlightProfile';
@@ -54,18 +55,38 @@ export function adHocMatchUpActions({
       ?.filter(({ entryStatus }) => entryStatus && DIRECT_ENTRY_STATUSES.includes(entryStatus))
       .map(getParticipantId) ?? [];
 
-  const roundAssignedParticipantIds = new Set(
+  const roundAssignedParticipantIds = new Set<string>(
     roundMatchUps
       .map((matchUp) => (matchUp.sides ?? []).flatMap(getParticipantId))
       .flat()
       .filter(Boolean),
   );
 
-  const availableParticipantIds = enteredParticipantIds.filter(
-    (participantId) =>
-      !matchUpParticipantIds.includes(participantId) &&
-      (!restrictAdHocRoundParticipants || !roundAssignedParticipantIds.has(participantId)),
+  // Participants are checked by id, and also by the people they are made of: a PAIR sharing an
+  // individual with the opposing side would put that person on both sides (assignment refuses it),
+  // and one sharing an individual with anyone already in the round would put that person in two
+  // matchUps at once. The participant being replaced on this side frees its individuals.
+  const individualIdsMap = buildIndividualIdsMap(tournamentParticipants as any);
+  const individualsOf = (participantIds: string[]) =>
+    new Set(participantIds.flatMap((participantId) => individualIdsMap[participantId] ?? []));
+  const opposingIndividualIds = individualsOf(
+    (matchUp.sides ?? [])
+      .filter((side) => side.sideNumber !== sideNumber)
+      .map(getParticipantId)
+      .filter(Boolean),
   );
+  const roundIndividualIds = individualsOf(
+    [...roundAssignedParticipantIds].filter((participantId) => participantId !== sideParticipantId),
+  );
+  const sharesIndividual = (participantId: string, individualIds: Set<string>) =>
+    (individualIdsMap[participantId] ?? []).some((id) => individualIds.has(id));
+  const isAvailable = (participantId: string) =>
+    !matchUpParticipantIds.includes(participantId) &&
+    !sharesIndividual(participantId, opposingIndividualIds) &&
+    (!restrictAdHocRoundParticipants ||
+      (!roundAssignedParticipantIds.has(participantId) && !sharesIndividual(participantId, roundIndividualIds)));
+
+  const availableParticipantIds = enteredParticipantIds.filter(isAvailable);
   const availableParticipantIdSet = new Set(availableParticipantIds);
 
   const participantsAvailable = tournamentParticipants
@@ -111,10 +132,7 @@ export function adHocMatchUpActions({
   }
 
   availableAlternatesParticipantIds = availableAlternatesParticipantIds.filter(
-    (participantId) =>
-      !matchUpParticipantIds.includes(participantId) &&
-      !availableParticipantIdSet.has(participantId) &&
-      (!restrictAdHocRoundParticipants || !roundAssignedParticipantIds.has(participantId)),
+    (participantId) => !availableParticipantIdSet.has(participantId) && isAvailable(participantId),
   );
 
   const availableAlternatesSet = new Set(availableAlternatesParticipantIds);
