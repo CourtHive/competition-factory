@@ -305,6 +305,41 @@ export function getStructureInconsistencies(
     // are conditional on history (double-elimination consolation-final winner back to MAIN only if
     // they lost once) and are excluded from WINNER_NOT_ADVANCED — the winner mirror of the FMLC
     // loser-feed caveat.
+    /**
+     * A PENDING exit has not decided anything yet, so its winner is not owed an advancement.
+     *
+     * `progressExitStatus` RULE 2 awards a carried exit to the side WITHOUT the exit and writes that
+     * award BEFORE anyone arrives, so an exit can legitimately carry a `winningSide` while its
+     * opposing slot has not been fed at all — no drawPosition, no participant, no BYE. Until
+     * somebody arrives there the award is a RESERVATION, and `winningSide` is POSITIONAL: the moment
+     * a second drawPosition appears the array re-sorts and the same `winningSide` can name the OTHER
+     * participant.
+     *
+     * Measured 2026-09-17 on all seven census seeds carrying this finding — FIC, SE, two MFIC and
+     * three DE, identical seed set on both propagation arms. Every one is the same shape: an exit
+     * status, a `winningSide`, exactly ONE drawPosition, and a losing side with no drawPosition at
+     * all.
+     *
+     * **Advancing them is measurably wrong, which is how this exclusion was arrived at.** Making the
+     * engine advance on this shape closed all seven and OPENED four DOUBLE_ELIMINATION seeds with
+     * `WINNING_SIDE_ADVANCEMENT_MISMATCH`: the lone occupant was advanced across a link on the
+     * strength of a `winningSide` that pointed at it only because it was alone in the array, and when
+     * the real opponent arrived the array re-sorted and the advancement was left naming the loser.
+     * CA's rule is the same one: *a position holding nobody arriving resolves nothing and must leave
+     * the exit pending.*
+     *
+     * Keyed on the UNFED LOSING SLOT rather than on `sideExitProvenance`, because one of the seven
+     * (9100572, MFIC `Consolation|3|1`) carries no provenance at all — a provenance test would report
+     * six of seven and look like a partial fix. This is also exactly how `EXIT_WITHOUT_LOSER` above
+     * already treats the same shape: it requires `loserSide?.drawPosition` before it will flag.
+     */
+    const pendingExitAwaitingOpponent = !!(
+      exit &&
+      !loserSide?.drawPosition &&
+      !loserSide?.participantId &&
+      !loserSide?.bye
+    );
+
     const winnerMatchUp = winnerMatchUpId ? matchUpById.get(winnerMatchUpId) : undefined;
     if (winnerSide?.participantId && winnerMatchUp) {
       const advancedParticipantIds = (winnerMatchUp.sides ?? [])
@@ -324,7 +359,7 @@ export function getStructureInconsistencies(
           winningParticipantId: winnerSide.participantId,
           winnerMatchUpId,
         });
-      } else if (!winnerAdvanced && sameStructure) {
+      } else if (!winnerAdvanced && sameStructure && !pendingExitAwaitingOpponent) {
         inconsistencies.push({
           ...base,
           issueType: WINNER_NOT_ADVANCED,
