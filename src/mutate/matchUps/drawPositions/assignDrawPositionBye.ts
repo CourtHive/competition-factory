@@ -10,6 +10,7 @@ import { getAppliedPolicies } from '@Query/extensions/getAppliedPolicies';
 import { getRoundMatchUps } from '@Query/matchUps/getRoundMatchUps';
 import { decorateResult } from '@Functions/global/decorateResult';
 import { getAllDrawMatchUps } from '@Query/matchUps/drawMatchUps';
+import { normalizeDrawPositions } from './normalizeDrawPositions';
 import { positionTargets } from '@Query/matchUp/positionTargets';
 import { getMatchUpsMap } from '@Query/matchUps/getMatchUpsMap';
 import { pushGlobalLog } from '@Functions/global/globalLog';
@@ -615,6 +616,7 @@ export function advanceDrawPosition({
   if (winnerMatchUp && winnerMatchUp.structureId === structure?.structureId && (!isLuckyDraw || !isPreFeedRound)) {
     // NOTE: error conditions are ignored
     advanceWinner({
+      sourceRoundPosition: matchUp?.roundPosition,
       byeFromPropagation,
       drawPositionToAdvance,
       inContextDrawMatchUps,
@@ -662,6 +664,7 @@ export function advanceDrawPosition({
 }
 
 function advanceWinner({
+  sourceRoundPosition,
   byeFromPropagation,
   drawPositionToAdvance,
   inContextDrawMatchUps,
@@ -732,43 +735,31 @@ function advanceWinner({
   // later). They take the walkover — keep the exit status, make them the winner,
   // re-position the carried code onto the exiting participant's side, and advance
   // them onward. Without this the generic clear below reverts it to TO_BE_PLAYED.
-  //
-  // A pending exit does not always carry a winningSide. One produced by a DOUBLE exit into a round
-  // whose other side is still to arrive records only WHICH side exited, in `sideExitProvenance` —
-  // there is nobody yet to award it to. The arrival on the OTHER side resolves it exactly the same
-  // way. Requiring a winningSide sent that arrival to the generic clear below, which wrote
-  // TO_BE_PLAYED over a decided walkover and kept its codes (census 9000223, flag ON: a Consolation
-  // walkover disappeared when a participant advanced into it through a BYE).
-  const advancingSideNumber = drawPositions.indexOf(drawPositionToAdvance) + 1;
-  const exitSides = Object.keys(noContextWinnerMatchUp.sideExitProvenance ?? {}).map(Number);
-  const pendingWithoutWinner =
-    !noContextWinnerMatchUp.winningSide && exitSides.length === 1 && !exitSides.includes(advancingSideNumber);
-  // Only a PARTICIPANT resolves it. A drawPosition holding nobody can advance too — a reservation for
-  // whoever will fall through — and nobody has arrived: the walkover stays pending, keeping its status
-  // and provenance, and only records the position. Clearing it to TO_BE_PLAYED undecided a decided
-  // matchUp just the same (the same census seed, shrunk: its double exit fed nobody).
-  const advancingHoldsParticipant = !!drawPositionToAdvanceAssigment?.participantId;
   if (
-    isExit(noContextWinnerMatchUp.matchUpStatus) &&
-    pendingWithoutWinner &&
-    !advancingHoldsParticipant &&
-    !drawPositionIsBye &&
-    !pairedDrawPositionIsBye
-  ) {
-    noContextWinnerMatchUp.drawPositions = drawPositions;
-    modifyMatchUpNotice({
-      tournamentId: tournamentRecord?.tournamentId,
+    arrivalIntoProvenanceOnlyExit({
+      holdsParticipant: !!drawPositionToAdvanceAssigment?.participantId,
       matchUp: noContextWinnerMatchUp,
-      eventId: event?.eventId,
-      context: stack,
+      existingDrawPositions,
+      drawPositionToAdvance,
+      inContextDrawMatchUps,
+      sourceRoundPosition,
+      pairedDrawPositionIsBye,
+      drawPositionIsBye,
+      tournamentRecord,
+      inContextMatchUp,
       drawDefinition,
+      winnerMatchUp,
+      matchUpsMap,
       event,
-    });
+      stack,
+    })
+  ) {
     return;
   }
+
   if (
     isExit(noContextWinnerMatchUp.matchUpStatus) &&
-    (noContextWinnerMatchUp.winningSide || pendingWithoutWinner) &&
+    noContextWinnerMatchUp.winningSide &&
     !drawPositionIsBye &&
     !pairedDrawPositionIsBye
   ) {
@@ -879,6 +870,77 @@ function advanceWinner({
   }
 }
 
+/**
+ * An arrival through a BYE into a pending exit that records only WHICH side exited.
+ *
+ * A double exit into a round whose other side is still to arrive produces a WALKOVER/DEFAULTED with
+ * `sideExitProvenance` naming the exiting side and no winningSide — nobody has arrived to award it to.
+ * The generic advancement below wrote TO_BE_PLAYED over it, undeciding a decided matchUp
+ * (MONOTONIC_DECISION, census 9000223).
+ *
+ * THE SIDE IS STRUCTURAL. A lone arrival's side is not its array index — `advanceWinner` builds a lone
+ * arrival as `[position, undefined]` whatever side it belongs on (`draw-positions.md` rule 4). In a
+ * non-feed round it is the source matchUp's roundPosition (odd feeds side 1); in a feed round an
+ * advancing position is side 2. Reading the index made an arrival on the EXITING side the winner of
+ * its own walkover (DE window 9303412).
+ *
+ *  - nobody arrives (a reservation): the exit stays pending and records the position;
+ *  - the exiting side's own participant arrives: it stays pending, awarded to the side still to
+ *    arrive — the `progressExitStatus` RULE 2 shape, so that arrival resolves it the ordinary way;
+ *  - a participant arrives on the other side: they take it and advance.
+ */
+function arrivalIntoProvenanceOnlyExit({
+  existingDrawPositions,
+  drawPositionToAdvance,
+  pairedDrawPositionIsBye,
+  sourceRoundPosition,
+  drawPositionIsBye,
+  holdsParticipant,
+  inContextMatchUp,
+  matchUp,
+  ...context
+}): boolean {
+  const exitSides = Object.keys(matchUp.sideExitProvenance ?? {}).map(Number);
+  const applies =
+    isExit(matchUp.matchUpStatus) &&
+    !matchUp.winningSide &&
+    !drawPositionIsBye &&
+    !pairedDrawPositionIsBye &&
+    exitSides.length === 1 &&
+    !existingDrawPositions?.length;
+  if (!applies) return false;
+
+  let side: number | undefined;
+  if (inContextMatchUp?.feedRound) side = 2;
+  else if (sourceRoundPosition) side = sourceRoundPosition % 2 === 1 ? 1 : 2;
+  if (!side) return false;
+
+  const positional = side === 1 ? [drawPositionToAdvance, undefined] : [undefined, drawPositionToAdvance];
+
+  if (holdsParticipant && side !== exitSides[0]) {
+    resolvePropagatedExitOnAdvance({
+      ...context,
+      matchUp,
+      drawPositionToAdvance,
+      drawPositions: positional,
+      advancingSide: side,
+    } as any);
+    return true;
+  }
+
+  matchUp.drawPositions = normalizeDrawPositions(positional);
+  if (holdsParticipant) matchUp.winningSide = side === 1 ? 2 : 1;
+  modifyMatchUpNotice({
+    tournamentId: context.tournamentRecord?.tournamentId,
+    eventId: context.event?.eventId,
+    drawDefinition: context.drawDefinition,
+    context: context.stack,
+    event: context.event,
+    matchUp,
+  });
+  return true;
+}
+
 // A participant advancing into the empty winning slot of a pending propagated
 // exit takes the walkover: keep the exit status, set them as the winner, move the
 // carried code onto the exiting participant's (re-sorted) side, then advance them.
@@ -893,8 +955,9 @@ function resolvePropagatedExitOnAdvance({
   matchUpsMap,
   event,
   stack,
+  advancingSide = undefined as number | undefined,
 }) {
-  const advancingSideNumber = drawPositions.indexOf(drawPositionToAdvance) + 1;
+  const advancingSideNumber = advancingSide ?? drawPositions.indexOf(drawPositionToAdvance) + 1;
   const exitSideNumber = advancingSideNumber === 1 ? 2 : 1;
 
   // Provenance already naming the exiting side means the codes are already sided by it — they are
