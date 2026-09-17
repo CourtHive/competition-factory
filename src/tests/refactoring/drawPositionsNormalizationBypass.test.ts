@@ -18,6 +18,35 @@ import fs from 'fs';
  *
  * Adding a site? Route it through the helper. Allowlist it ONLY if it cannot produce an all-holes
  * array, and say why in the entry — the reason is the point of the list.
+ *
+ * ## `removeSubsequentRoundsParticipant` COMPACTS, and that was measured before being accepted
+ *
+ * Its `.filter(Boolean)` closes a MIXED array as well as an all-holes one, so `[undefined, 5]`
+ * becomes `[5]` — which reads as a contradiction of the positional rule `getOrderedDrawPositions`
+ * states under its "DO NOT CHANGE" banner. It is not a contradiction, and the only way to know that
+ * was to build the alternative and measure it.
+ *
+ * The site compacts **1,944 times in 11,831 calls across 2,400 census seed-runs (756 distinct
+ * seeds)**, every one of them `[a, b] -> [null, b] -> [b]`. Replacing it with the hole-preserving
+ * form and re-running everything:
+ *
+ * | measurement | result |
+ * |---|---|
+ * | census, both windows both arms, as seed sets | 0 closed, 0 opened — no defect either way |
+ * | committed suite | **3 tests RED**, two of them `DO_UNDO_IDENTITY` |
+ * | consumer-visible digest, 2,212,980 matchUp readings | 6 arm-seeds where the DRAW genuinely differs, with no oracle saying which is right |
+ *
+ * The do/undo failures are the decisive ones. A round trip turned `[4, null]` into `[null, 4]` —
+ * the occupant moved from side 1 to side 2 — because an arriving LOWER position sorts ahead of 4
+ * and, when it departs again, the hole is left at index 0. Compaction erases an index that carries
+ * no information for a lone occupant, and the round trip is stable; preserving the hole records the
+ * arbitrary index and breaks it.
+ *
+ * And `[undefined, N]` is the one form that is independently unsafe: on a FEED ROUND it used to
+ * hydrate with both sides empty (`getOrderedDrawPositions`, fixed alongside this note), which is
+ * precisely where this writer's compactions are concentrated.
+ *
+ * **So the compaction stays.** Do not "fix" it without redoing this measurement.
  */
 
 const SOURCE_ROOT = path.resolve(__dirname, '../../../src');
@@ -26,7 +55,8 @@ const SOURCE_ROOT = path.resolve(__dirname, '../../../src');
 const ALLOWED: Record<string, string> = {
   'mutate/matchUps/drawPositions/removeSubsequentRoundsParticipant.ts':
     'ends in `.filter(Boolean)`, which compacts — an all-holes result is already `[]`. Measured over ' +
-    '2,400 census seed-runs: 0 all-holes writes from this site, against 2,437 from positionClear.',
+    '2,400 census seed-runs: 0 all-holes writes from this site, against 2,437 from positionClear. ' +
+    'The COMPACTION was then measured on its own and DELIBERATELY KEPT — see the note below.',
   'mutate/drawDefinitions/luckyDrawAdvancement.ts':
     'writes `[]` or a freshly minted `[pos1, pos2]` from `nextPosition++` — no removal, no substitution.',
   'mutate/drawDefinitions/pruneDrawDefinition.ts':

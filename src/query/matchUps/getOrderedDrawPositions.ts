@@ -74,8 +74,23 @@ export function getOrderedDrawPositions({ drawPositions, roundProfile, roundNumb
   // ############# IMPORTANT DO NOT CHANGE #################
   // when only one side is present in a feedRound, it is the fed position
   // and fed positions are always { sideNumber: 1 }
+  //
+  // A HOLE IS NOT A DRAWPOSITION, and this `find` used to accept one. `ensureInt` returns **0** for
+  // anything that is neither a number nor a numeric string — `undefined` and `null` included — and
+  // `isNaN(0)` is `false`, so the predicate was satisfied by the hole at index 0 and the real
+  // position at index 1 was discarded. `[undefined, 5]` hydrated with BOTH sides empty and the
+  // occupant vanished from every consumer's view.
+  //
+  // That shape is one the engine deliberately writes: `releaseAdvancedDrawPosition` and
+  // `positionClear` leave the hole in place when they remove the LOWER of two positions, because
+  // this array is positional. So the engine could write a shape this branch could not read.
+  // Measured latent rather than live — over both frozen census windows on both arms, 1,948 stored
+  // arrays carried a leading hole and none of them was on a feed round — and pinned by
+  // `feedRoundHoleSelection.test.ts`.
   if (isFeedRound) {
-    const drawPosition = drawPositions.find((drawPosition) => !isNaN(ensureInt(drawPosition)));
+    const drawPosition = drawPositions.find(
+      (position) => position !== undefined && position !== null && !isNaN(ensureInt(position)),
+    );
     const orderedDrawPositions = [drawPosition, undefined];
     return { orderedDrawPositions, displayOrder: orderedDrawPositions };
   }
