@@ -25,15 +25,6 @@ export type QuarantineEntry = {
   reference: string;
 };
 
-const DOUBLE_EXIT_DRAWPOSITION_RESIDUE =
-  'DOUBLE_ELIMINATION 8/7: apply-then-clear leaves a Main matchUp with its drawPositions REMOVED — ' +
-  '[1, null] before, absent after. The apply does not touch that matchUp at all (measured), so the ' +
-  'clear over-removes: it strips a drawPosition the cascade never placed. Distinct from the ' +
-  'matchUp-status residue fixed by consulting positionAssignment.bye in removeDoubleExit, and from ' +
-  'the matchUpStatusCodes residue below. DECIDED (2026-09-09, CA): the unwind will RE-DERIVE the ' +
-  'correct value from current state rather than blanking it, and no source identity is added to the ' +
-  'schema. Not yet implemented. See Mentat/planning/EXIT_PROPAGATION_ASSESSMENT.md, E1.';
-
 const DOUBLE_EXIT_STATUS_CODES_RESIDUE =
   'FIRST_ROUND_LOSER_CONSOLATION: apply-then-clear wipes matchUpStatusCodes that were present ' +
   'BEFORE the double exit. The matchUp carried [WALKOVER/prev DOUBLE_WALKOVER side 1, ' +
@@ -57,13 +48,17 @@ const DOUBLE_EXIT_STATUS_CODES_RESIDUE =
  * IDEMPOTENT_REAPPLY was removed from every cell that carried it when the idempotence guard landed
  * in `attemptToSetMatchUpStatus` — 14 entries, deleted because the reverse guard demanded it.
  *
- * The DO_UNDO_IDENTITY list was 9 cells and is now 3. Diffing the round trip structurally showed
+ * The DO_UNDO_IDENTITY list was 9 cells and is now 2. Diffing the round trip structurally showed
  * the residue was never ONE mechanism: 6 cells lost a matchUp's BYE status (fixed — removeDoubleExit
  * now reads positionAssignment.bye rather than a matchUpStatus the cascade has already overwritten),
- * 1 loses drawPositions and 2 lose matchUpStatusCodes. Each survivor carries its own reference.
+ * 1 lost drawPositions and 2 lose matchUpStatusCodes. Each survivor carries its own reference.
+ *
+ * The drawPositions cell (DOUBLE_ELIMINATION 8/7) closed 2026-09-17. Its clear "stripped a drawPosition
+ * the cascade never placed" because removeDoubleExit intersected drawPosition NUMBERS across the
+ * `Backdraw r4 -> Main r4` and `Main r4 -> Decider r1` links — a Backdraw position matching an
+ * unrelated Main one. It now asks by participant; see `removeLinkedWinner`.
  */
 const DOUBLE_EXIT_PROPERTY_CELLS: [string, string[], string][] = [
-  ['DOUBLE_ELIMINATION 8/7', ['DO_UNDO_IDENTITY'], DOUBLE_EXIT_DRAWPOSITION_RESIDUE],
   ['FIRST_ROUND_LOSER_CONSOLATION 8/8', ['DO_UNDO_IDENTITY'], DOUBLE_EXIT_STATUS_CODES_RESIDUE],
   ['FIRST_ROUND_LOSER_CONSOLATION 16/16', ['DO_UNDO_IDENTITY'], DOUBLE_EXIT_STATUS_CODES_RESIDUE],
 ];

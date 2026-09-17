@@ -275,6 +275,22 @@ export function removeDirectedWinner({
   const { structureId, roundNumber } = winnerMatchUp;
   const stack = 'removeDirectedWinner';
 
+  /**
+   * The drawPosition to take back out of the winnerMatchUp's structure, in THAT structure's numbering.
+   *
+   * `winningDrawPosition` is the winner's position in the SOURCE structure. Within a structure that is
+   * the right number; across a link it names whoever holds that number in the target, which is
+   * somebody else. It was used for both, so undoing a cross-structure winner removed a position that
+   * was not theirs and left theirs behind — and the next winner was refused
+   * `ERR_EXISTING_POSITION_ASSIGNMENT` after the source result had been written.
+   *
+   * DOUBLE_ELIMINATION is where it bites, because its Backdraw numbers from 1 like Main does: census
+   * seed 9000402 flipped the Backdraw final from the finalist at Backdraw 3 to the one at Backdraw 1,
+   * the removal looked for 3 in the Main final, and the old winner stayed there at Main 8. See
+   * `crossStructureWinnerPositions.test.ts`.
+   */
+  let targetDrawPosition: number | undefined = winningDrawPosition;
+
   if (winnerTargetLink) {
     const structureId = winnerTargetLink.target.structureId;
     const { structure } = findStructure({ drawDefinition, structureId });
@@ -292,6 +308,7 @@ export function removeDirectedWinner({
       (assignment) => assignment.participantId === winnerParticipantId,
     );
     const winnerDrawPosition = relevantAssignment?.drawPosition;
+    targetDrawPosition = winnerDrawPosition;
 
     const { matchUps } = getAllStructureMatchUps({
       drawDefinition,
@@ -338,8 +355,9 @@ export function removeDirectedWinner({
 
   // Remove participant's drawPosition from current and subsequent round matchUps
   roundNumber &&
+    targetDrawPosition &&
     removeSubsequentRoundsParticipant({
-      targetDrawPosition: winningDrawPosition,
+      targetDrawPosition,
       inContextDrawMatchUps,
       sourceMatchUpStatus,
       tournamentRecord,
