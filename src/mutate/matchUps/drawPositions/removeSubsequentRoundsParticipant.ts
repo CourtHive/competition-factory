@@ -1,4 +1,5 @@
 import { updateMatchUpStatusCodes } from '@Mutate/drawDefinitions/matchUpGovernor/matchUpStatusCodes';
+import { releaseLinkedWinnerAdvancement } from './releaseLinkedWinnerAdvancement';
 import { getPositionAssignments } from '@Query/drawDefinition/positionsGetter';
 import { modifyMatchUpNotice } from '@Mutate/notifications/drawNotifications';
 import { getInitialRoundNumber } from '@Query/matchUps/getInitialRoundNumber';
@@ -76,6 +77,17 @@ export function removeSubsequentRoundsParticipant({
       dualMatchUp,
       matchUpsMap,
       matchUp,
+      event,
+    });
+
+    // what this matchUp carried across a WINNER link comes back with it
+    releaseLinkedWinnerAdvancement({
+      roundNumber: matchUp.roundNumber as number,
+      drawPosition: targetDrawPosition,
+      tournamentRecord,
+      drawDefinition,
+      matchUpsMap,
+      structureId,
       event,
     });
   }

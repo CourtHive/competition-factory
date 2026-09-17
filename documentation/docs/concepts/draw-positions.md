@@ -17,6 +17,15 @@ Two structures in the same draw both have a drawPosition 3, and they are unrelat
 drawPosition against matchUps or `positionAssignments` drawn from a different structure — scope the
 collection by `structureId` first.
 
+**Crossing a link goes by participant, never by number.** When a participant moves along a link —
+placed into, advanced into, or removed from another structure — resolve who they are from the
+SOURCE structure's `positionAssignments`, then find THEIR drawPosition in the target. A number
+carried across a link names whoever happens to hold that number on the other side.
+
+`DOUBLE_ELIMINATION` is where this is easiest to get wrong, because its Main and Backdraw structures
+both number from 1 and the Backdraw final feeds back into Main: Backdraw 7 and Main 7 are routinely
+different participants — or a participant and a bye.
+
 ## 2. The array is POSITIONAL: index 0 is side 1, index 1 is side 2
 
 This is the binding between a side and a slot, and several reader idioms across the engine depend on
@@ -69,9 +78,10 @@ Fed positions are usually numbered **below** the first round's block, which make
 across two frozen 600-seed windows on both propagation arms it agrees on **113,626 of 113,632** live
 cases — and the exceptions are a whole draw type rather than noise.
 
-**DOUBLE_ELIMINATION's Main final is fed from the Backdraw, which shares Main's drawPosition
-space.** Its fed positions therefore sit _inside_ the first round's numeric range, and the shortcut
-calls them advanced. Use the prior-round test. See [4a](#4a-the-one-exception-double_eliminations-main-final)
+**DOUBLE_ELIMINATION's Main final is fed from the Backdraw, and the Backdraw winner re-enters Main at
+the Main drawPosition they already held.** Its fed positions therefore sit _inside_ the first round's
+numeric range, and the shortcut calls them advanced. (The Backdraw has its own positions, numbered
+from 1 like Main's — overlapping numbers, not shared ones; see [rule 1](#1-a-drawposition-is-unique-within-a-structure-and-means-nothing-outside-it).) Use the prior-round test. See [4a](#4a-the-one-exception-double_eliminations-main-final)
 for why that structure is shaped the way it is.
 :::
 
@@ -186,9 +196,10 @@ partitioning matchUps.
 
 ## Where these rules live in code
 
-| rule                                                     | source                                        |
-| -------------------------------------------------------- | --------------------------------------------- |
-| ascending order, and the reader idioms that depend on it | `getOrderedDrawPositions`                     |
-| fed vs advanced, and side resolution                     | `getOrderedDrawPositions`, `getRoundMatchUps` |
-| all-holes normalisation                                  | `normalizeDrawPositions`                      |
-| the published shape                                      | `addMatchUpContext`, via `definedAttributes`  |
+| rule                                                     | source                                           |
+| -------------------------------------------------------- | ------------------------------------------------ |
+| ascending order, and the reader idioms that depend on it | `getOrderedDrawPositions`                        |
+| crossing a link by participant                           | `directWinner`, `releaseLinkedWinnerAdvancement` |
+| fed vs advanced, and side resolution                     | `getOrderedDrawPositions`, `getRoundMatchUps`    |
+| all-holes normalisation                                  | `normalizeDrawPositions`                         |
+| the published shape                                      | `addMatchUpContext`, via `definedAttributes`     |

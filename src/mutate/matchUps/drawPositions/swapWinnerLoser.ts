@@ -92,9 +92,27 @@ export function swapWinnerLoser(params) {
   if (placementRefusal?.error) return placementRefusal;
 
   const { matchUps } = getAllStructureMatchUps(params);
+  /**
+   * The later-round matchUps holding EITHER participant's position — not only the old winner's.
+   *
+   * Inside a structure only the winner's position can appear after the flipped round: the loser went
+   * out. DOUBLE_ELIMINATION breaks that, because its structures form a cycle — Main feeds the
+   * Backdraw, and `Backdraw r4 --WINNER--> Main r4` feeds back. The old loser can come BACK into
+   * Main as the Backdraw champion, holding their own Main position in the Main final. The flip makes
+   * the old winner the one in the Backdraw, so that re-entry is theirs now, and the Main final must
+   * hold THEIR position.
+   *
+   * Replacing only winner -> loser left the re-entry naming the old loser (census seed 9100555, flag
+   * ON: Main final `[1,3]` should have become `[1,4]`), and where the Main final held BOTH — one by
+   * advancement, one by re-entry — it produced `[3,3]`. The substitution is therefore an EXCHANGE,
+   * done in one pass so that neither half reads the other's output. Outside a cycle the loser's
+   * position never appears here and the exchange is exactly the old replacement.
+   */
   const existingWinnerSubsequentMatchUps = matchUps.filter(
     ({ drawPositions, roundNumber }) =>
-      drawPositions?.includes(existingWinnerDrawPosition) && roundNumber > matchUpRoundNumber,
+      roundNumber > matchUpRoundNumber &&
+      (drawPositions?.includes(existingWinnerDrawPosition) ||
+        (existingLoserDrawPosition && drawPositions?.includes(existingLoserDrawPosition))),
   );
 
   pushGlobalLog({ method: 'swapWinnerLoser', existingWinnerSubsequentMatchUps });
@@ -119,9 +137,12 @@ export function swapWinnerLoser(params) {
     // the only all-holes writer the two REMOVAL sites do not account for.
     matchUp.drawPositions = normalizeDrawPositions(
       (
-        matchUp.drawPositions?.map((drawPosition) =>
-          drawPosition === existingWinnerDrawPosition ? existingLoserDrawPosition : drawPosition,
-        ) ?? []
+        matchUp.drawPositions?.map((drawPosition) => {
+          if (drawPosition === existingWinnerDrawPosition) return existingLoserDrawPosition;
+          if (existingLoserDrawPosition && drawPosition === existingLoserDrawPosition)
+            return existingWinnerDrawPosition;
+          return drawPosition;
+        }) ?? []
       ).sort((a, b) => (typeof a === 'number' && typeof b === 'number' ? a - b : 0)),
     );
     modifyMatchUpNotice({
