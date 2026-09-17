@@ -273,10 +273,10 @@ governor, so it was never part of the engine surface.
 
 ### What to do about the removal
 
-**If you were calling it, you have a renderer we could not find, and we would like to know.** The
-implementation and its full test suite are preserved verbatim at
-`Mentat/deprecated/factory/buildDrawHierarchy/`, so restoring it is a copy rather than an
-archaeology exercise.
+**If you were calling it, you have a renderer we could not find, and we would like to know** —
+[open an issue](https://github.com/CourtHive/competition-factory/issues). The implementation and its
+full test suite are preserved verbatim outside this repository, so restoring it is a copy rather than
+an archaeology exercise.
 
 Before restoring, consider whether you want _that_ shape. It is a 2018-era D3 contract; a renderer
 written today is more likely to want `getRoundMatchUps` or the draw's own structure/link graph.
@@ -544,9 +544,8 @@ The breaking changes those footers describe are real and are documented above, a
 [§11](#11-three-request-shape-fields-gain-real-types) and elsewhere; none of them belongs to #4847.
 
 Both repository settings were corrected on 2026-09-13 — `allow_merge_commit: true` so a checkpoint
-merges as a merge commit, and `delete_branch_on_merge: false` so `dev` survives one. The rationale is
-recorded in `Mentat/standards/coding-standards.md` under the branch strategy. No action is required
-of consumers.
+merges as a merge commit, and `delete_branch_on_merge: false` so `dev` survives one. No action is
+required of consumers.
 
 ## 11b. A retirement no longer carries into the consolation by default
 
