@@ -2,6 +2,7 @@ import { modifyRoundRobinMatchUpsStatus } from '@Mutate/matchUps/matchUpStatus/m
 import { modifyPositionAssignmentsNotice, modifyMatchUpNotice } from '@Mutate/notifications/drawNotifications';
 import { getPositionAssignments, structureAssignedDrawPositions } from '@Query/drawDefinition/positionsGetter';
 import { getStructureDrawPositionProfiles } from '@Query/structure/getStructureDrawPositionProfiles';
+import { normalizeDrawPositions } from '@Mutate/matchUps/drawPositions/normalizeDrawPositions';
 import { clearSideExitProvenance } from '@Mutate/matchUps/matchUpStatus/sideExitProvenance';
 import { getAllStructureMatchUps } from '@Query/matchUps/getAllStructureMatchUps';
 import { getInitialRoundNumber } from '@Query/matchUps/getInitialRoundNumber';
@@ -317,10 +318,13 @@ function removeDrawPosition({
 
   if (targetMatchUp.roundNumber && initialRoundNumber && targetMatchUp.roundNumber > initialRoundNumber) {
     // Removal, not substitution: preserves ascending order. See `getOrderedDrawPositions`.
-    const drawPositions: any[] = (targetMatchUp.drawPositions ?? []).map((currentDrawPosition) =>
-      currentDrawPosition === drawPosition ? undefined : currentDrawPosition,
+    // Settled through `normalizeDrawPositions`, which keeps a hole beside a survivor and collapses
+    // an all-holes result to `[]`.
+    targetMatchUp.drawPositions = normalizeDrawPositions(
+      (targetMatchUp.drawPositions ?? []).map((currentDrawPosition) =>
+        currentDrawPosition === drawPosition ? undefined : currentDrawPosition,
+      ),
     );
-    targetMatchUp.drawPositions = drawPositions as number[];
   }
 
   handleTeamPositionRemoval({

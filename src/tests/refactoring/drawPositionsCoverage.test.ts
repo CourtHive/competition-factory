@@ -1281,7 +1281,12 @@ describe('positionClear bye propagation', () => {
         // verify participant removed from round 2
         const { matchUps: updated } = tournamentEngine.allTournamentMatchUps();
         const updatedR2 = updated.find((m) => m.matchUpId === r2MatchUp.matchUpId);
-        expect(updatedR2.drawPositions?.includes(participantDP)).toBe(false);
+        // The removal empties both of this matchUp's slots, so `drawPositions` settles to `[]` and
+        // `definedAttributes(…, ignoreEmptyArrays)` drops it during hydration — `?.includes(...)`
+        // therefore reads `undefined` rather than `false`. The PROPERTY is unchanged: the
+        // participant is no longer in round 2. Asserted directly, so it no longer depends on the
+        // container being present. See `drawPositionsHydrationContract.test.ts`.
+        expect(updatedR2.drawPositions ?? []).not.toContain(participantDP);
         break;
       }
     }
