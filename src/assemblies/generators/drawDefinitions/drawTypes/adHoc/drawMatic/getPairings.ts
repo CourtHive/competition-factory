@@ -7,6 +7,7 @@ export function getPairings(params) {
     tournamentParticipants,
     adHocRatings = {},
     possiblePairings, // participant keyed; provides array of possible opponents
+    individualIdsMap, // participantId -> individualParticipantIds; one person cannot play twice in a round
     uniquePairings, // hashes of all possible participantId pairings
     maxIterations,
     minimizeDelta, // useful for the first round
@@ -61,6 +62,7 @@ export function getPairings(params) {
   const { candidate, candidatesCount, deltaCandidate, iterations } = generateCandidate({
     random: params.random,
     valueSortedPairings,
+    individualIdsMap,
     maxIterations,
     pairingValues,
     deltaObjects,

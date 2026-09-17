@@ -60,6 +60,10 @@ import {
 
 type PositionActionsArgs = {
   inContextDrawMatchUps?: HydratedMatchUp[];
+  /**
+   * @deprecated no effect. A participant already in an AD_HOC round is never offered for that round,
+   * because `assignMatchUpSideParticipant` refuses the assignment.
+   */
   restrictAdHocRoundParticipants?: boolean;
   tournamentParticipants?: Participant[];
   policyDefinitions?: PolicyDefinitions;

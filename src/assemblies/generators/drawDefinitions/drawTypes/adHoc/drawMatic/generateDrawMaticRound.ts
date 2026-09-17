@@ -180,8 +180,9 @@ export function generateDrawMaticRound(params: GenerateDrawMaticRoundArgs): Resu
   // }
   // a PAIR/TEAM sharing an individual with another cannot meet it; excluded from the pool rather
   // than penalized, because generateCandidate minimizes and always emits its best candidate
+  const individualIdsMap = buildIndividualIdsMap(tournamentParticipants);
   const { uniquePairings, possiblePairings, deltaObjects } = getPairingsData({
-    individualIdsMap: buildIndividualIdsMap(tournamentParticipants),
+    individualIdsMap,
     participantIds,
   });
 
@@ -189,6 +190,7 @@ export function generateDrawMaticRound(params: GenerateDrawMaticRoundArgs): Resu
   const adHocRatings = Object.values(modifiedScaleValues).length ? modifiedScaleValues : params.adHocRatings;
   const paringParams = {
     tournamentParticipants,
+    individualIdsMap,
     possiblePairings,
     participantIds,
     uniquePairings,

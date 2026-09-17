@@ -295,9 +295,34 @@ describe('assignMatchUpSideParticipant', () => {
 
     if (targetMatchUp) {
       // a participant already on the opposing side cannot be assigned -- that would put one person
-      // on both sides -- so pick one who is not yet in this matchUp
-      const assignedIds = targetMatchUp.sides?.map((side: any) => side.participantId).filter(Boolean) ?? [];
-      const unassigned = participants.find((p: any) => !assignedIds.includes(p.participantId));
+      // on both sides -- and neither can one already playing elsewhere in the round, so pick one who
+      // is not yet in any matchUp of this round
+      const roundIds = matchUps
+        .filter((m: any) => m.drawId === drawId && m.roundNumber === targetMatchUp.roundNumber)
+        .flatMap((m: any) => m.sides?.map((side: any) => side.participantId) ?? [])
+        .filter(Boolean);
+      const elsewhereInRound = roundIds.find(
+        (id: string) => !targetMatchUp.sides?.some((side: any) => side.participantId === id),
+      );
+      // the round is full, so someone plays elsewhere in it; assigning them here is refused
+      expect(elsewhereInRound).toBeDefined();
+      const refused: any = tournamentEngine.assignMatchUpSideParticipant({
+        participantId: elsewhereInRound,
+        matchUpId: targetMatchUp.matchUpId,
+        drawId,
+      });
+      expect(refused.error?.code).toEqual('ERR_EXISTING_ROUND_PARTICIPANT');
+      // every participant of this drawSize-4 tournament plays in the round, so add one who does not
+      const addResult: any = tournamentEngine.addParticipant({
+        participant: {
+          participantType: 'INDIVIDUAL',
+          participantRole: 'COMPETITOR',
+          person: { standardFamilyName: 'Outside', standardGivenName: 'Round' },
+        },
+        returnParticipant: true,
+      });
+      expect(addResult.success).toBe(true);
+      const unassigned = participants.find((p: any) => !roundIds.includes(p.participantId)) ?? addResult.participant;
 
       let result: any = tournamentEngine.assignMatchUpSideParticipant({
         participantId: unassigned.participantId,

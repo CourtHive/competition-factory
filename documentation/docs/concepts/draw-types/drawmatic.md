@@ -193,6 +193,7 @@ Maximum number of candidate solutions to evaluate. Higher values may find better
 - Maximum 31 rounds per draw (algorithm complexity limit)
 - Minimum 2 participants required
 - DOUBLES events: partner ratings are summed for pairing calculations
+- DOUBLES entries may share an individual (rotating partners). Two such PAIRs never meet, and no individual is scheduled in more than one matchUp per round, so a round over overlapping entries can hold fewer matchUps than entries ÷ 2
 - Round count cannot exceed participants - 1 (everyone must have an opponent)
 
 ## Pressure Score (PS#)

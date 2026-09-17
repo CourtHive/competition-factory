@@ -943,7 +943,7 @@ const {
   policyDefinitions, // optional — override position action policies
   provisionalPositioning, // optional boolean — honor provisional order from tallies
   returnParticipants, // optional boolean — defaults to true; include participant objects in actions
-  restrictAdHocRoundParticipants, // optional boolean — defaults to true; disallow same participant in same round
+  restrictAdHocRoundParticipants, // deprecated, no effect — a participant already in the round is never offered
   tournamentParticipants, // optional — pre-fetched participants array (optimization)
   inContextDrawMatchUps, // optional — pre-fetched inContext matchUps (optimization)
   matchUpsMap, // optional — pre-fetched matchUps map (optimization)

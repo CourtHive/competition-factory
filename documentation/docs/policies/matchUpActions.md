@@ -507,7 +507,7 @@ const {
   sideNumber, // Optional - for team position actions
   participantId, // Optional - for participant-specific actions
   enforceGender, // Optional - override policy gender enforcement
-  restrictAdHocRoundParticipants, // Optional - for ad hoc draws
+  restrictAdHocRoundParticipants, // Deprecated, no effect - ad hoc rounds never offer a participant already in the round
 });
 
 // Each validAction contains:
