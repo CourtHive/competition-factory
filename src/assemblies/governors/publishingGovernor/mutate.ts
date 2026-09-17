@@ -1,5 +1,7 @@
 export { publishEventSeeding, unPublishEventSeeding } from '@Mutate/publishing/eventSeeding';
+export { unPublishTournamentInfo } from '@Mutate/timeItems/unPublishTournamentInfo';
 export { unPublishParticipants } from '@Mutate/timeItems/unPublishParticipants';
+export { publishTournamentInfo } from '@Mutate/timeItems/publishTournamentInfo';
 export { unPublishOrderOfPlay } from '@Mutate/timeItems/unPublishOrderOfPlay';
 export { publishParticipants } from '@Mutate/timeItems/publishParticipants';
 export { publishOrderOfPlay } from '@Mutate/timeItems/publishOrderOfPlay';
