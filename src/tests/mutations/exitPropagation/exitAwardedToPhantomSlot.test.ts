@@ -4,7 +4,11 @@ import tournamentEngine from '@Engines/syncEngine';
 import { expect, it } from 'vitest';
 
 // constants
-import { FIRST_MATCH_LOSER_CONSOLATION, MODIFIED_FEED_IN_CHAMPIONSHIP } from '@Constants/drawDefinitionConstants';
+import {
+  FIRST_MATCH_LOSER_CONSOLATION,
+  MODIFIED_FEED_IN_CHAMPIONSHIP,
+  DOUBLE_ELIMINATION,
+} from '@Constants/drawDefinitionConstants';
 import { INVALID_MATCHUP_STATUS } from '@Constants/errorConditionConstants';
 import { DEFAULTED, WALKOVER } from '@Constants/matchUpStatusConstants';
 
@@ -31,11 +35,12 @@ import { DEFAULTED, WALKOVER } from '@Constants/matchUpStatusConstants';
  *
  * | shape | meaning | awardable |
  * |---|---|---|
- * | holds a participant, bye or qualifier | somebody is there | yes |
+ * | holds a participant, opponent still to arrive | a walkover over nobody yet (2026-09-17) | **no** |
+ * | holds a participant against a BYE, or a qualifier | somebody is there | yes |
  * | no `drawPosition` at all | an unfilled feed slot, awaiting its arrival | yes |
  * | a `drawPosition` whose assignment is present and vacant | a seat claimed by nobody | **no** |
  *
- * The second row is not hypothetical: it is the state the sequences in
+ * The unfilled-feed-slot row is not hypothetical: it is the state the sequences in
  * `propagatedByeYieldsToArrivingLoser.test.ts` construct, where a director re-scores a double exit
  * down to a single walkover before the opposing feed has arrived. An earlier and blunter version of
  * this rule — "the winner must hold a participant" — broke all of them, which is how the distinction
@@ -114,24 +119,77 @@ it.each([WALKOVER, DEFAULTED])('a %s cannot be awarded to a claimed-but-vacant s
   expect(after.winningSide).toBeUndefined();
 });
 
-it.each([WALKOVER, DEFAULTED])('a %s IS still awarded to the participant who is there', (matchUpStatus) => {
-  const { consolation, occupiedSideNumber } = halfFilledConsolationMatchUp();
+/**
+ * Nor to the participant who is already there, while their opponent is still to ARRIVE.
+ *
+ * This case read "IS still awarded" until 2026-09-17: it pinned what the waiver happened to accept, not
+ * a decision. The pending-exit arrival path makes whoever arrives the WINNER — that is the designed
+ * pending exit, where the present participant withdrew and the empty side wins — so a walkover
+ * awarded to the present participant produced two winners of one matchUp once the opponent arrived:
+ * both advanced and the entered winner never reached the loser structure (a two-step
+ * DROPPED_PROGRESSION on DOUBLE_ELIMINATION). CA: refuse it. Against a BYE it stays accepted — see the
+ * last case in this file — because nobody ever arrives there.
+ */
+it.each([WALKOVER, DEFAULTED])(
+  'a %s is NOT awarded to the participant who is there before their opponent',
+  (matchUpStatus) => {
+    const { consolation, occupiedSideNumber } = halfFilledConsolationMatchUp();
 
-  const result: any = tournamentEngine.setMatchUpStatus({
-    matchUpId: consolation.matchUpId,
-    outcome: { matchUpStatus, winningSide: occupiedSideNumber },
+    const result: any = tournamentEngine.setMatchUpStatus({
+      matchUpId: consolation.matchUpId,
+      outcome: { matchUpStatus, winningSide: occupiedSideNumber },
+      propagateExitStatus: true,
+      drawId: DRAW_ID,
+    });
+    expect(result.error).toEqual(INVALID_MATCHUP_STATUS);
+
+    const after = tournamentEngine
+      .allDrawMatchUps({ inContext: true, drawId: DRAW_ID })
+      .matchUps.find((matchUp: any) => matchUp.matchUpId === consolation.matchUpId);
+    expect(after.matchUpStatus).toEqual(consolation.matchUpStatus);
+    expect(after.winningSide).toBeUndefined();
+  },
+);
+
+/**
+ * The shape that was actually reached: the opponent's slot holds no drawPosition yet, because the
+ * matchUp feeding it is undecided. Census 9100555 shrunk to two steps: the walkover was accepted, then
+ * `Main r1p2`'s winner arrived, was made the winner of the walkover too, and both advanced.
+ */
+it('DOUBLE_ELIMINATION — a walkover for the present player before the opponent is decided is refused', () => {
+  setSubscriptions({});
+  mocksEngine.generateTournamentRecord({
+    drawProfiles: [{ participantsCount: 6, drawSize: 8, drawType: DOUBLE_ELIMINATION, drawId: DRAW_ID }],
+    nonRandom: 9100555,
+    setState: true,
+  });
+  const find = (roundNumber: number, roundPosition: number) =>
+    tournamentEngine
+      .allDrawMatchUps({ inContext: true, drawId: DRAW_ID })
+      .matchUps.find(
+        (m: any) => m.structureName === 'Main' && m.roundNumber === roundNumber && m.roundPosition === roundPosition,
+      );
+
+  const halfFilled = find(2, 1);
+  const present = halfFilled.sides.find((side: any) => side.participantId);
+  expect(halfFilled.sides.filter((side: any) => side.participantId).length).toEqual(1);
+
+  let result: any = tournamentEngine.setMatchUpStatus({
+    outcome: { matchUpStatus: WALKOVER, winningSide: present.sideNumber },
+    matchUpId: halfFilled.matchUpId,
+    propagateExitStatus: true,
+    drawId: DRAW_ID,
+  });
+  expect(result.error).toEqual(INVALID_MATCHUP_STATUS);
+
+  result = tournamentEngine.setMatchUpStatus({
+    matchUpId: find(1, 2).matchUpId,
+    outcome: { winningSide: 1 },
     propagateExitStatus: true,
     drawId: DRAW_ID,
   });
   expect(result.error).toBeUndefined();
-
-  const after = tournamentEngine
-    .allDrawMatchUps({ inContext: true, drawId: DRAW_ID })
-    .matchUps.find((matchUp: any) => matchUp.matchUpId === consolation.matchUpId);
-  expect(after.matchUpStatus).toEqual(matchUpStatus);
-  expect(after.winningSide).toEqual(occupiedSideNumber);
-  // the winner is a real person, which is the point of the whole rule
-  expect(after.sides.find((side: any) => side.sideNumber === after.winningSide)?.participantId).toBeDefined();
+  expect(tournamentEngine.getDrawInconsistencies({ drawId: DRAW_ID }).inconsistencies ?? []).toEqual([]);
 });
 
 /**
