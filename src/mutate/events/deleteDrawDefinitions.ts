@@ -1,8 +1,10 @@
 import { addNotice, getAuditAuthorityServer, getSaveDrawDeletions, hasTopic } from '@Global/state/globalState';
+import { checkAndNotifyUnpublishTournament } from '@Mutate/publishing/checkAndNotifyUnpublishTournament';
 import { deleteDrawNotice, deleteMatchUpsNotice } from '@Mutate/notifications/drawNotifications';
 import { checkAndUpdateSchedulingProfile } from '@Mutate/tournaments/schedulingProfile';
 import { setFirstClassOrExtension } from '@Mutate/extensions/setFirstClassOrExtension';
 import { getPositionAssignments } from '@Query/structure/getPositionAssignments';
+import { isTournamentPublished } from '@Query/publishing/isTournamentPublished';
 import { modifyEventNotice } from '@Mutate/notifications/eventNotifications';
 import { getEventPublishStatus } from '@Query/event/getEventPublishStatus';
 import { getAppliedPolicies } from '@Query/extensions/getAppliedPolicies';
@@ -27,6 +29,7 @@ import { DRAW_DELETIONS, FLIGHT_PROFILE } from '@Constants/extensionConstants';
 import { STRUCTURE_SELECTED_STATUSES } from '@Constants/entryStatusConstants';
 import { MAIN, QUALIFYING } from '@Constants/drawDefinitionConstants';
 import { DELETE_DRAW_DEFINITIONS } from '@Constants/auditConstants';
+import { UNPUBLISH_TOURNAMENT } from '@Constants/topicConstants';
 import { POLICY_TYPE_SCORING } from '@Constants/policyConstants';
 import { Event, Tournament } from '@Types/tournamentTypes';
 import { PolicyDefinitions } from '@Types/factoryTypes';
@@ -100,6 +103,9 @@ export function deleteDrawDefinitions(params: DeleteDrawDefinitionArgs) {
     force ?? appliedPolicies?.[POLICY_TYPE_SCORING]?.allowDeletionWithScoresPresent?.drawDefinitions;
 
   const publishStatus = getEventPublishStatus({ event }) ?? {};
+  // Deleting the last published draw unpublishes the tournament without any unpublish call, so capture
+  // the roll-up now and announce the transition below; consumers refresh their published flag on it.
+  const wasTournamentPublished = hasTopic(UNPUBLISH_TOURNAMENT) && isTournamentPublished(tournamentRecord);
 
   let updatedDrawIds =
     publishStatus.drawIds ?? (publishStatus.drawDetails && Object.keys(publishStatus.drawDetails)) ?? [];
@@ -228,6 +234,8 @@ export function deleteDrawDefinitions(params: DeleteDrawDefinitionArgs) {
     });
     if (result.error) return { error: result.error };
   }
+
+  if (wasTournamentPublished) checkAndNotifyUnpublishTournament({ tournamentRecord });
 
   if (auditTrail.length) {
     dispatchDrawDeletionAudit({

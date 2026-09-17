@@ -44,6 +44,7 @@ import {
   MODIFY_TOURNAMENT_DETAIL,
   PUBLISH_EVENT,
   UNPUBLISH_EVENT,
+  UNPUBLISH_TOURNAMENT,
   UPDATE_INCONTEXT_MATCHUP,
   topicConstants,
 } from '@Constants/topicConstants';
@@ -397,11 +398,20 @@ export function noticedEntityKeys(captured: CapturedNotice[]): Set<string> {
       case MODIFY_VENUE:
         add('venue', payload?.venue?.venueId ?? payload?.venueId);
         break;
+      // Publishing an event also moves the tournament roll-up (`tournaments.published`), and the
+      // consumer refreshes that row on these notices: CFS routes PUBLISH_EVENT / UNPUBLISH_EVENT
+      // through `recordRepublishEvent`, whose intent marks the tournament touched, and
+      // UNPUBLISH_TOURNAMENT through `recordTouchTournament`.
       case PUBLISH_EVENT:
         add('event', payload?.eventData?.eventInfo?.eventId ?? payload?.eventId);
+        add('tournament', payload?.tournamentId);
         break;
       case UNPUBLISH_EVENT:
         add('event', payload?.eventId);
+        add('tournament', payload?.tournamentId);
+        break;
+      case UNPUBLISH_TOURNAMENT:
+        add('tournament', payload?.tournamentId);
         break;
       case DELETE_VENUE:
         add('venue', payload?.venueId);
