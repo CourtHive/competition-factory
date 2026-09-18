@@ -1109,6 +1109,44 @@ Same exhaustiveness note as above. The `matchUpFormat` grammar already parsed an
 sports' scoring; they were simply missing from the curated vocabulary that drives autocomplete and
 typo defense.
 
+### `matchUp.hasFedDrawPosition`, and what `participantFed` now means
+
+An inContext matchUp gains `hasFedDrawPosition`: whether the round holds a drawPosition **reserved**
+for a participant fed in from elsewhere. It is additive, and the reason it exists is that
+`feedRound` was being asked two questions and can only answer one of them.
+
+`feedRound` says a position arriving from elsewhere takes `{ sideNumber: 1 }`, leaving the prior
+round's advancer on side 2. It is inferred from `matchUpsCount` equality with the prior round,
+because a round pairing an arrival with an advancer does not halve — and as a side-ordering answer
+that is right everywhere. `hasFedDrawPosition` narrows it by one condition: no `WINNER` link targets
+the round.
+
+The rounds that differ are `DOUBLE_ELIMINATION`'s Main final, at every draw size, and nothing else —
+measured over 20 draw types × 9 draw sizes. That structure's Main is generated as a feed-in of
+`drawSize + 1` with `linkFedFinishingRoundNumbers: [1]`; link-fed positions are subtracted from the
+local allocation, so the extra matchUp exists and the extra drawPosition does not, and the Backdraw
+winner returns at whichever Main drawPosition they already held. See
+[drawPositions § 4a](/docs/concepts/draw-positions#4a-the-one-exception-double_eliminations-main-final).
+
+**The visible consequence: `side.participantFed` and `side.participantAdvanced` no longer appear on a
+`DOUBLE_ELIMINATION` Main final.** They mark the SLOT, not the participant — `participantFed` is true
+of an empty fed side that is still waiting — and they are now derived from `hasFedDrawPosition` rather
+than from `feedRound`, so a Main final, which reserves nothing, is marked neither. Every genuine feed
+round is marked exactly as before.
+
+**What to do:** if you branch on `participantFed` to decide whether a position can still be fed into a
+matchUp, nothing changes except that `DOUBLE_ELIMINATION` Main finals stop giving a false yes. If you
+branch on it to decide which side an arrival takes, read `feedRound` instead — that is the fact you
+wanted, and it is unchanged.
+
+**One rendering consequence, measured across the ecosystem.** The only consumer of these marks is
+`courthive-components`' `renderParticipant`, which shows a participant's drawPosition number when
+`matchUp.roundNumber === initialRoundNumber || side.participantFed || isRoundRobin`. On a
+`DOUBLE_ELIMINATION` Main final that number will now be hidden rather than shown, unless the
+composition sets `allDrawPositions`. That is consistent with the rule the code states — the side in
+question holds the returning Backdraw winner, who **advanced** to a position they already held rather
+than being fed — but it is a visible change and is called out here rather than left to be found.
+
 ## 13. `modifyParticipantOtherName` honours the clear contract
 
 Two published methods wrote `participantOtherName`, and they disagreed about what the input meant.

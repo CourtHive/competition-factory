@@ -232,6 +232,9 @@ export function addMatchUpContext({
   const abbreviatedRoundName =
     roundNamingProfile?.[roundNumber]?.abbreviatedRoundName || additionalContext.abbreviatedRoundName;
   const feedRound = roundProfile?.[roundNumber]?.feedRound;
+  // Whether a drawPosition is RESERVED here for the arrival, which `feedRound` alone does not say.
+  // See `getRoundMatchUps` and `documentation/docs/concepts/draw-positions.md` § 4 / § 4a.
+  const hasFedDrawPosition = roundProfile?.[roundNumber]?.hasFedDrawPosition;
   const preFeedRound = roundProfile?.[roundNumber]?.preFeedRound;
   const roundFactor = roundProfile?.[roundNumber]?.roundFactor;
 
@@ -300,6 +303,7 @@ export function addMatchUpContext({
       endDate: matchUp.endDate ?? endDate,
       discipline: event?.discipline,
       category: matchUpCategory,
+      hasFedDrawPosition,
       finishingPositionRange,
       abbreviatedRoundName,
       drawPositionsRange,
@@ -474,7 +478,11 @@ function buildMatchUpSides({
     roundNumber,
   });
 
-  const isFeedRound = roundProfile?.[roundNumber]?.feedRound;
+  // `participantFed` / `participantAdvanced` describe a RESERVED SLOT, not a participant — the
+  // name is older than the distinction. A round can order its sides like a feed round and still
+  // reserve nothing: `DOUBLE_ELIMINATION`'s Main final marked an empty side 1 `participantFed` for
+  // a slot that does not exist. Read `hasFedDrawPosition`, not `feedRound`.
+  const hasFedDrawPosition = roundProfile?.[roundNumber]?.hasFedDrawPosition;
   const reversedDisplayOrder = displayOrder[0] !== orderedDrawPositions[0];
 
   const sideDrawPositions = orderedDrawPositions.concat(undefined, undefined).slice(0, 2);
@@ -486,10 +494,10 @@ function buildMatchUpSides({
     const side = getSide({
       ...collectionAssignmentDetail,
       positionAssignments,
+      hasFedDrawPosition,
       displaySideNumber,
       seedAssignments,
       drawPosition,
-      isFeedRound,
       sideNumber,
     });
 
