@@ -170,8 +170,8 @@ usually be turned straight into a regression test.
 
 ## Security
 
-Please do not open a public issue for a suspected vulnerability. Email
-[charles@courthive.com](mailto:charles@courthive.com) instead.
+Please do not open a public issue for a suspected vulnerability — see
+[SECURITY.md](./SECURITY.md) for how to report one privately.
 
 ---
 

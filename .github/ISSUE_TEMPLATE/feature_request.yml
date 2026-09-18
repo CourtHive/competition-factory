@@ -1,0 +1,58 @@
+name: Feature request
+description: Propose new functionality or a change to existing behaviour.
+labels: [enhancement]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        For anything larger than a small fix, this is the right place to start — agreeing
+        the design here is cheaper than reworking a pull request.
+
+  - type: textarea
+    id: problem
+    attributes:
+      label: The problem
+      description: >-
+        What are you trying to accomplish that the factory does not currently support, and
+        what have you had to do instead?
+    validations:
+      required: true
+
+  - type: textarea
+    id: proposal
+    attributes:
+      label: Proposed behaviour
+      description: >-
+        What should happen. If it touches an engine's public surface, show the call and
+        the result you would expect.
+    validations:
+      required: true
+
+  - type: dropdown
+    id: breaking
+    attributes:
+      label: Would this change existing behaviour?
+      options:
+        - 'No — purely additive'
+        - 'Yes — existing results would change'
+        - 'Not sure'
+    validations:
+      required: true
+
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Alternatives considered
+      description: >-
+        Including whether a policy definition could already express this — the factory
+        prefers configuration over new surface.
+    validations:
+      required: false
+
+  - type: checkboxes
+    id: willing
+    attributes:
+      label: Contribution
+      options:
+        - label: I would be willing to open a pull request for this.
+          required: false
