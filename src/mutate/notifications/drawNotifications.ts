@@ -112,6 +112,21 @@ export function deleteMatchUpsNotice({
 }
 
 type ModifyMatchUpNoticeArgs = {
+  /**
+   * Optional in the type, but PASS IT. The notice's `structureId` is resolved from it, and a
+   * subscriber that cannot place a matchUp cannot route the notice — CFS uses `structureId` for
+   * structure-grain cache eviction, and `winnerMatchUpId` / `loserMatchUpId` are projected
+   * read-model columns.
+   *
+   * It stayed optional deliberately. Passing it was believed to emit a redundant draw notice per
+   * matchUp; it does not — `modifyDrawNotice` calls `addNotice` with `key: drawDefinition.drawId`,
+   * so they collapse onto one (measured: 24 and 48 matchUp notices against 1 draw notice either
+   * way). But requiring it in the TYPE cascades into five more files, two of which legitimately
+   * hold a `drawId` and let the callee resolve the draw, and the guards that cascade forces are the
+   * shape that drops a notice silently. The guarantee lives in `noticeStructureId.test.ts` instead,
+   * which sweeps a spread of operations and asserts no MODIFY_MATCHUP names a structure it cannot —
+   * a behavioural check no `!` can satisfy.
+   */
   drawDefinition?: DrawDefinition;
   tournamentId?: string;
   structureId?: string;

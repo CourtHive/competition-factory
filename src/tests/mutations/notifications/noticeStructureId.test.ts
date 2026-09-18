@@ -195,4 +195,52 @@ describe('MODIFY_MATCHUP structureId', () => {
 
     setSubscriptions({ subscriptions: {} });
   });
+
+  /**
+   * The cases above each exercise one operation. This one asks the whole-surface question instead:
+   * across a spread of mutations, is there ANY MODIFY_MATCHUP that names no structure?
+   *
+   * There was. `removeStructure` emits one notice per surviving matchUp whose winner/loser
+   * progression it rewired, and withheld `drawDefinition` from those calls — so none of them could
+   * resolve a structureId. 0 of 24 at drawSize 32. `attachStructures` and `aggregateTieFormats`
+   * withheld it too.
+   *
+   * This is deliberately a BEHAVIOURAL guard rather than a required `drawDefinition` parameter.
+   * Requiring it cascades into five more files, two of which legitimately hold a `drawId` and let
+   * the callee resolve the draw — and the guards that cascade forces are the shape that drops a
+   * notice silently rather than failing. A type assertion can be satisfied by a `!`; this cannot.
+   */
+  it('no MODIFY_MATCHUP anywhere in these operations names a structure it cannot', () => {
+    const {
+      drawIds: [drawId],
+    } = mocksEngine.generateTournamentRecord({
+      drawProfiles: [{ drawSize: 32, drawType: FIRST_MATCH_LOSER_CONSOLATION }],
+      setState: true,
+    });
+
+    const notices = capture([MODIFY_MATCHUP]);
+
+    const { matchUps } = tournamentEngine.allTournamentMatchUps();
+    const target: any = matchUps.find(
+      (m: any) => !m.winningSide && (m.sides ?? []).filter((s: any) => s?.participantId).length === 2,
+    );
+    const { outcome } = mocksEngine.generateOutcomeFromScoreString({
+      scoreString: '6-4 6-2',
+      matchUpStatus: 'COMPLETED',
+      winningSide: 1,
+    });
+    tournamentEngine.setMatchUpStatus({ matchUpId: target.matchUpId, drawId, outcome });
+
+    const { drawDefinition }: any = tournamentEngine.getEvent({ drawId });
+    const consolation = drawDefinition?.structures?.find((structure: any) => structure.stage === 'CONSOLATION');
+    tournamentEngine.removeStructure({ structureId: consolation.structureId, drawId });
+
+    // The control: without notices to inspect, "none unnamed" is vacuously true.
+    expect(notices.length).toBeGreaterThan(20);
+
+    const unnamed = notices.filter((n) => !n.p.structureId);
+    expect(unnamed).toEqual([]);
+
+    setSubscriptions({ subscriptions: {} });
+  });
 });
