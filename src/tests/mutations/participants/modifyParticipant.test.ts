@@ -108,6 +108,33 @@ it('can modify PAIR participants', () => {
   expect(participant.person.tennisId).toEqual('ABC123');
 });
 
+it('can clear participantOtherName by passing an empty string', () => {
+  const participantsProfile = {
+    participantsCount: 10,
+    participantType: TEAM,
+    sex: MALE,
+  };
+  const { tournamentRecord } = mocksEngine.generateTournamentRecord({ participantsProfile });
+
+  tournamentEngine.setState(tournamentRecord);
+
+  const {
+    participants: [team],
+  } = tournamentEngine.getParticipants({ participantFilters: { participantTypes: [TEAM] } });
+
+  let result = tournamentEngine.modifyParticipant({
+    participant: { participantId: team.participantId, participantOtherName: 'ABC' },
+  });
+  expect(result.success).toEqual(true);
+  expect(result.participant.participantOtherName).toEqual('ABC');
+
+  result = tournamentEngine.modifyParticipant({
+    participant: { participantId: team.participantId, participantOtherName: '' },
+  });
+  expect(result.success).toEqual(true);
+  expect(result.participant.participantOtherName).toBeUndefined();
+});
+
 it('can modify TEAM participants', () => {
   const participantsProfile = {
     participantsCount: 10,

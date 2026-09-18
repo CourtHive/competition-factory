@@ -65,12 +65,17 @@ export function modifyParticipant(params) {
     return { error: CANNOT_MODIFY_PARTICIPANT_TYPE };
 
   const newValues: any = {};
+  const clearedKeys: string[] = [];
 
   // validate participant attributes
   if (contacts) newValues.contacts = contacts;
   if (onlineResources) newValues.onlineResources = onlineResources;
 
-  if (participantOtherName !== undefined) newValues.participantOtherName = participantOtherName || undefined;
+  if (isClearRequest(participantOtherName)) {
+    clearedKeys.push('participantOtherName');
+  } else if (participantOtherName !== undefined) {
+    newValues.participantOtherName = participantOtherName;
+  }
   const suppliedParticipantName =
     participantName && isString(participantName) ? collapseWhitespace(participantName) : undefined;
   if (suppliedParticipantName) newValues.participantName = suppliedParticipantName;
@@ -123,6 +128,7 @@ export function modifyParticipant(params) {
   const participantNameSuperseded = !!suppliedParticipantName && newValues.participantName !== suppliedParticipantName;
 
   Object.assign(existingParticipant, definedAttributes(newValues));
+  for (const key of clearedKeys) delete existingParticipant[key];
 
   if (groupingParticipantId) {
     addIndividualParticipantIds({
