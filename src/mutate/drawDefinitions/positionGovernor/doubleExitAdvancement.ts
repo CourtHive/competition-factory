@@ -72,6 +72,64 @@ export function doubleExitAdvancement(params) {
     winnerDP: JSON.stringify(winnerMatchUp?.drawPositions),
   });
 
+  /**
+   * A loser matchUp that is ALREADY a BYE can still be owed one — and NOTHING is what it gets today.
+   *
+   * `handleLoserMatchUp` offers a target exactly two things: a BYE (`advanceByeToLoserMatchUp`) or a
+   * produced WALKOVER (`conditionallyAdvanceDrawPosition`). The guard below read
+   * `matchUpStatus !== BYE` as "there is nothing to place here" and skipped the function, so on this
+   * path the target received **neither** — the position a double exit was supposed to feed was left
+   * vacant, and nobody could ever fill it. A matchUp is `BYE` as soon as ONE of its positions is a
+   * draw BYE; the OTHER can still be that vacant slot, and that combination is the whole defect.
+   *
+   * CA's rule, 2026-09-18: *a DOUBLE_WALKOVER in a source structure can logically only produce a BYE
+   * in a target structure* — a double exit removes BOTH competitors, so nobody will ever arrive, and
+   * a position that will receive nobody is a BYE.
+   *
+   * ## Why this is gated on the policy, when the rule reads as universal
+   *
+   * Two alternatives to the gate were built and measured, and both are worse:
+   *
+   * 1. **Route this case through `handleLoserMatchUp` with the policy off** — it takes the
+   *    produced-WALKOVER branch and writes a `winningSide` onto a matchUp that contains a BYE,
+   *    AWARDING IT TO THE BYE, which `exitAwardable` forbids outright (CA, 2026-09-17). It also
+   *    leaves the downstream slot unclaimable, so it fixes nothing.
+   * 2. **Place the BYE unconditionally** — census over six arms: **2 closed, 11 OPENED.** Three
+   *    `ERR_EXISTING_POSITION_ASSIGNMENT` after mutating, three `WINNING_SIDE_ADVANCEMENT_MISMATCH`,
+   *    and a `BYE_WON` on COMPASS. A drawPosition is a number in ONE structure, and an unconditional
+   *    BYE placement pushes it into occupied positions across a link — the trap #4907 closed in five
+   *    other places.
+   *
+   * So the semantic is right and making it the DEFAULT is a separate, larger piece of work. Behind
+   * the policy the census is **0 closed, 0 opened, 0 changed** on all six arms.
+   *
+   * `assignDrawPositionBye` returns early on a position that already holds a BYE, so this is a no-op
+   * wherever the slot is already settled.
+   */
+  const loserTargetStillOpen = !!(
+    appliedPolicies?.progression?.doubleExitPropagateBye &&
+    loserMatchUp?.matchUpStatus === BYE &&
+    loserTargetDrawPosition !== undefined &&
+    !getPositionAssignments({
+      structureId: targetLinks?.loserTargetLink?.target?.structureId,
+      drawDefinition,
+    }).positionAssignments?.find((assignment: any) => assignment.drawPosition === loserTargetDrawPosition)
+      ?.participantId
+  );
+
+  if (loserTargetStillOpen) {
+    const result = advanceByeToLoserMatchUp({
+      loserTargetLink: targetLinks?.loserTargetLink,
+      loserTargetDrawPosition,
+      tournamentRecord,
+      drawDefinition,
+      loserMatchUp,
+      matchUpsMap,
+      event,
+    });
+    if (result?.error) return decorateResult({ result, stack });
+  }
+
   if (loserMatchUp && loserMatchUp.matchUpStatus !== BYE) {
     const result = handleLoserMatchUp({
       loserMatchUpIsEmptyExit,
