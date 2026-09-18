@@ -28,6 +28,7 @@ feature tour and the full list of 7.0.0 additions, see [What's New in 7.0.0](./w
 | `pressureRating` is typed `boolean`, not `string`                                                 | TypeScript callers of `tallyParticipantResults` / `getParticipantResults` | See §9            |
 | Three request-shape fields gain real types (`positioning`, `finishingPositionNaming`, `schedule`) | TypeScript callers passing these loosely                                  | See §11           |
 | The SEEDING policy is typed, and two `stage` fields become `StageTypeUnion`                       | TypeScript callers with a wrong-typed seeding-policy field                | See §11           |
+| `modifyParticipantOtherName` clears on `''` and no longer overwrites on `undefined`               | Anyone calling it to set, clear, or unset `participantOtherName`          | See §13           |
 
 ## 1. `participantsRequiredMatchUpStatuses` — a spelling fix
 
@@ -1107,3 +1108,49 @@ inspects its matchUps for bracket geometry, and knows nothing about `drawType`.
 Same exhaustiveness note as above. The `matchUpFormat` grammar already parsed and round-tripped both
 sports' scoring; they were simply missing from the curated vocabulary that drives autocomplete and
 typo defense.
+
+## 13. `modifyParticipantOtherName` honours the clear contract
+
+Two published methods wrote `participantOtherName`, and they disagreed about what the input meant.
+
+| Input                 | `modifyParticipant`        | `modifyParticipantOtherName` before 7.0.0 | Both, from 7.0.0           |
+| --------------------- | -------------------------- | ----------------------------------------- | -------------------------- |
+| `''`                  | clears, deleting the key   | stored a falsy `''`                       | clears, deleting the key   |
+| absent or `undefined` | leaves the value untouched | **overwrote it with `undefined`**         | leaves the value untouched |
+| a non-string          | ignored                    | stored as given                           | ignored                    |
+
+So the same intent produced different stored state depending on which method a caller reached for,
+and a field could only be properly cleared through one of them. Storing `''` is the outcome the
+contract exists to prevent: readers are meant to see an absent field rather than a falsy one each of
+them has to special-case.
+
+### What to do
+
+**If you called it with no `participantOtherName` in order to clear the field**, pass `''` instead.
+This is the change most likely to reach you, because the old call reads as harmless:
+
+```js
+// Before 7.0.0 this erased the stored value. From 7.0.0 it does nothing.
+engine.modifyParticipantOtherName({ participantId });
+
+// Clear it explicitly.
+engine.modifyParticipantOtherName({ participantId, participantOtherName: '' });
+```
+
+**If you passed the whole participant through and let a missing field fall through as `undefined`**,
+that field is now preserved rather than erased — which is almost certainly what you wanted, and is
+the same rule `modifyParticipant` has always followed for `person` fields.
+
+**If you relied on storing `''`** as a sentinel distinct from absence, there is no longer a way to
+express it, deliberately. Read an absent `participantOtherName` as "none".
+
+**If you passed a non-string**, it is now ignored rather than stored. Nothing in the ecosystem did.
+
+### Why this was worth breaking
+
+The two methods had drifted apart silently, and nothing failed as a result — which is what made it
+worth fixing rather than documenting. `isClearRequest` now lives in its own module and both methods
+import it, so the rule has one definition rather than one definition and one re-implementation. The
+test suite asserts the two methods agree on identical input.
+
+See [#4926](https://github.com/CourtHive/competition-factory/pull/4926).
