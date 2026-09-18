@@ -32,7 +32,7 @@ export default function MockParticipantsDemo() {
           button.className = 'button button--primary button--lg';
           button.textContent = '🎯 Generate Mock Participants';
           button.style.marginBottom = '1em';
-          
+
           button.onclick = () => {
             // Get tournament end date for birthdate generation
             const consideredDate = new Date().toISOString().split('T')[0];
@@ -46,7 +46,7 @@ export default function MockParticipantsDemo() {
                 // Display results with JSON viewer
                 if (resultsRef.current && participants?.length > 0) {
                   resultsRef.current.innerHTML = '';
-                  
+
                   // Create header
                   const header = document.createElement('div');
                   header.style.marginBottom = '1em';
@@ -56,10 +56,10 @@ export default function MockParticipantsDemo() {
                   // Create JSON viewer container
                   const viewerContainer = document.createElement('div');
                   viewerContainer.style.marginTop = '1em';
-                  
+
                   // Display participants with JsonViewer
                   createJsonViewer(viewerContainer, participants, { expanded: 2 });
-                  
+
                   resultsRef.current.appendChild(viewerContainer);
                 }
               },
@@ -79,7 +79,7 @@ export default function MockParticipantsDemo() {
   return (
     <div style={{ margin: '1em 0', padding: '1.5em', background: '#f6f8fa', borderRadius: '8px' }}>
       <h3 style={{ marginTop: 0, color: '#1976d2' }}>Interactive Demo</h3>
-      
+
       <div ref={containerRef}></div>
 
       {error && (
@@ -111,8 +111,8 @@ export default function MockParticipantsDemo() {
             color: '#1565c0',
           }}
         >
-          <strong>💡 Tip:</strong> Click the button again to generate a new set with different configurations. 
-          Use the arrows to expand/collapse participant details.
+          <strong>💡 Tip:</strong> Click the button again to generate a new set with different configurations. Use the
+          arrows to expand/collapse participant details.
         </div>
       )}
     </div>

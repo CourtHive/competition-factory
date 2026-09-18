@@ -4,8 +4,7 @@ export const tieFormat = {
   collectionGroups:
     '{\\"type\\":\\"object\\",\\"object\\":\\"collectionGroup\\",\\"array\\":\\"true\\",\\"required\\":\\"false\\"}',
   tieFormatName: '{\\"type\\":\\"string\\",\\"required\\":\\"false\\"}',
-  winCriteria:
-    '{\\"type\\":\\"object\\",\\"object\\":\\"winCriteria\\",\\"required\\":\\"true\\"}',
+  winCriteria: '{\\"type\\":\\"object\\",\\"object\\":\\"winCriteria\\",\\"required\\":\\"true\\"}',
 };
 
 export default tieFormat;
