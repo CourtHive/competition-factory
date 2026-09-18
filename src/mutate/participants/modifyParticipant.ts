@@ -65,12 +65,26 @@ export function modifyParticipant(params) {
     return { error: CANNOT_MODIFY_PARTICIPANT_TYPE };
 
   const newValues: any = {};
+  const clearedKeys: string[] = [];
 
   // validate participant attributes
   if (contacts) newValues.contacts = contacts;
   if (onlineResources) newValues.onlineResources = onlineResources;
 
-  if (participantOtherName !== undefined) newValues.participantOtherName = participantOtherName || undefined;
+  // Same clear contract as the person fields below: '' clears, `undefined` leaves untouched.
+  // The previous line could not clear. `participantOtherName || undefined` turned '' into
+  // `undefined`, and `definedAttributes` strips `undefined`, so the key was never assigned AND
+  // never removed -- the stored value simply survived. Identical in shape to the nationalityCode
+  // and birthDate defects already closed here.
+  //
+  // The assign branch is gated on isString because the old `|| undefined` was incidentally
+  // filtering non-string input: without the guard, `definedAttributes` (which strips only '',
+  // null and undefined) would persist a 0 or a false into a name field.
+  if (isClearRequest(participantOtherName)) {
+    clearedKeys.push('participantOtherName');
+  } else if (isString(participantOtherName)) {
+    newValues.participantOtherName = participantOtherName;
+  }
   const suppliedParticipantName =
     participantName && isString(participantName) ? collapseWhitespace(participantName) : undefined;
   if (suppliedParticipantName) newValues.participantName = suppliedParticipantName;
@@ -123,6 +137,8 @@ export function modifyParticipant(params) {
   const participantNameSuperseded = !!suppliedParticipantName && newValues.participantName !== suppliedParticipantName;
 
   Object.assign(existingParticipant, definedAttributes(newValues));
+  // After the assign, so a cleared key cannot be reinstated by it.
+  for (const key of clearedKeys) delete existingParticipant[key];
 
   if (groupingParticipantId) {
     addIndividualParticipantIds({
