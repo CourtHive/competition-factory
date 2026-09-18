@@ -19,7 +19,7 @@ export function isActiveDownstream(params) {
    * while their played consolation match stood — `DRAW_POSITION_UNASSIGNED`, census 9000458 shrunk to
    * five steps.
    *
-   * Only the FED side, which is the lower drawPosition (`fedDrawPosition` in
+   * Only the FED side, which is the NUMERICALLY lower drawPosition (`fedDrawPosition` in
    * `reconcileFedLoserEligibility`). The other side of a feed-round BYE matchUp routinely holds a
    * participant ADVANCED from the structure's previous round, who has nothing to do with this source:
    * treating them as fed made a first entry of a Main round-2 result "active" once the consolation
