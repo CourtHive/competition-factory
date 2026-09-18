@@ -1111,6 +1111,8 @@ typo defense.
 
 ### `matchUp.hasFedDrawPosition`, and what `participantFed` now means
 
+_Shipped in #4928._
+
 An inContext matchUp gains `hasFedDrawPosition`: whether the round holds a drawPosition **reserved**
 for a participant fed in from elsewhere. It is additive, and the reason it exists is that
 `feedRound` was being asked two questions and can only answer one of them.
