@@ -57,9 +57,7 @@ const { tournamentRecord } = mocksEngine.generateTournamentRecord({
 });
 
 // Get all matchUps from the tournament
-const { matchUps } = tournamentEngine
-  .setState(tournamentRecord)
-  .allTournamentMatchUps();
+const { matchUps } = tournamentEngine.setState(tournamentRecord).allTournamentMatchUps();
 ```
 
 ### Configuration
@@ -71,31 +69,31 @@ const config = {
   rowJoiner: '|',
   delimiter: '',
   includeTransformAccessors: true,
-  
+
   // Basic matchUp properties to include
   columnAccessors: ['matchUpType', 'matchUpFormat', 'endDate', 'roundName'],
-  
+
   // Transform nested participant data into flat columns
   // Arrays resolve to first found value (priority order)
   columnTransform: {
     scoreString: ['score.scoreStringSide1'],
-    
+
     // Side 1 participants (handles both singles and doubles)
     side1Participant1: [
       'sides.0.participant.individualParticipants.0.participantName', // Doubles: first player
       'sides.0.participant.participantName', // Singles: player name
     ],
     side1Participant2: [
-      'sides.0.participant.individualParticipants.1.participantName' // Doubles: second player
+      'sides.0.participant.individualParticipants.1.participantName', // Doubles: second player
     ],
-    
+
     // Side 2 participants (handles both singles and doubles)
     side2Participant1: [
       'sides.1.participant.individualParticipants.0.participantName', // Doubles: first player
       'sides.1.participant.participantName', // Singles: player name
     ],
     side2Participant2: [
-      'sides.1.participant.individualParticipants.1.participantName' // Doubles: second player
+      'sides.1.participant.individualParticipants.1.participantName', // Doubles: second player
     ],
   },
 };
@@ -118,6 +116,7 @@ DOUBLES|SET3-S:4/TB7-F:TB10|2024-01-15|Round 1|6-3 7-6(5)|Alice Brown|Bob White|
 ```
 
 **Key Features:**
+
 - Singles matches leave participant2 columns empty
 - Doubles matches populate all four participant columns
 - The `|` delimiter is used for easy visual parsing
@@ -127,6 +126,7 @@ DOUBLES|SET3-S:4/TB7-F:TB10|2024-01-15|Round 1|6-3 7-6(5)|Alice Brown|Bob White|
 ### Common Use Cases
 
 **Export for spreadsheets:**
+
 ```js
 const config = {
   columnJoiner: ',',
@@ -137,6 +137,7 @@ const config = {
 ```
 
 **Custom column ordering:**
+
 ```js
 const config = {
   sortOrder: ['roundName', 'side1Participant1', 'side2Participant1', 'scoreString'],
@@ -145,11 +146,12 @@ const config = {
 ```
 
 **Add context to all rows:**
+
 ```js
 const config = {
   context: {
     tournamentName: 'US Open 2024',
-    eventName: 'Men\'s Singles',
+    eventName: "Men's Singles",
   },
   // ... other configuration
 };

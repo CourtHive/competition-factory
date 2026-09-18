@@ -92,12 +92,12 @@ const { levels } = scaleEngine.getApplicableAwardProfileLevels({
 // (L2 excluded for SINGLE_ELIMINATION — ATP Finals requires ROUND_ROBIN_WITH_PLAYOFF)
 ```
 
-| Parameter           | Type                | Description                                              |
-| ------------------- | ------------------- | -------------------------------------------------------- |
-| `tournamentRecord`  | Tournament          | Tournament record (auto-resolved by engine)              |
-| `policyDefinitions` | PolicyDefinitions?  | Ranking policy override; falls back to attached policy   |
-| `eventId`           | string?             | Scope to event (resolves eventType, category, gender)    |
-| `drawId`            | string?             | Scope to draw (resolves drawType, drawSize)              |
+| Parameter           | Type               | Description                                            |
+| ------------------- | ------------------ | ------------------------------------------------------ |
+| `tournamentRecord`  | Tournament         | Tournament record (auto-resolved by engine)            |
+| `policyDefinitions` | PolicyDefinitions? | Ranking policy override; falls back to attached policy |
+| `eventId`           | string?            | Scope to event (resolves eventType, category, gender)  |
+| `drawId`            | string?            | Scope to draw (resolves drawType, drawSize)            |
 
 **Returns:** `{ levels: number[], ...SUCCESS }` — sorted array of applicable level numbers.
 

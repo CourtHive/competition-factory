@@ -76,44 +76,44 @@ Generates one or more rounds of pairings for an existing AD_HOC draw.
 
 #### Parameters
 
-| Parameter | Type | Required | Default | Description |
-| --- | --- | --- | --- | --- |
-| `drawId` | `string` | Yes | — | Draw to generate pairings for |
-| `roundsCount` | `number` | Yes | — | Number of rounds to generate (max: participants - 1) |
-| `participantIds` | `string[]` | No | all entries | Restrict which participants appear in generated rounds |
-| `structureId` | `string` | No | auto-detected | Target structure (defaults to latest AD_HOC structure with matchUps) |
-| `matchUpIds` | `string[]` | No | auto-generated | Pre-assigned UUIDs for generated matchUps |
-| `eventType` | `EventTypeUnion` | No | from event | Override event type (e.g., force SINGLES ratings in DOUBLES events) |
+| Parameter        | Type             | Required | Default        | Description                                                          |
+| ---------------- | ---------------- | -------- | -------------- | -------------------------------------------------------------------- |
+| `drawId`         | `string`         | Yes      | —              | Draw to generate pairings for                                        |
+| `roundsCount`    | `number`         | Yes      | —              | Number of rounds to generate (max: participants - 1)                 |
+| `participantIds` | `string[]`       | No       | all entries    | Restrict which participants appear in generated rounds               |
+| `structureId`    | `string`         | No       | auto-detected  | Target structure (defaults to latest AD_HOC structure with matchUps) |
+| `matchUpIds`     | `string[]`       | No       | auto-generated | Pre-assigned UUIDs for generated matchUps                            |
+| `eventType`      | `EventTypeUnion` | No       | from event     | Override event type (e.g., force SINGLES ratings in DOUBLES events)  |
 
 #### Rating Configuration
 
-| Parameter | Type | Default | Description |
-| --- | --- | --- | --- |
-| `scaleName` | `string` | — | Rating system to use: `'WTN'`, `'UTR'`, `'ELO'`, or any custom scale |
-| `scaleAccessor` | `string` | — | Property path to extract numeric value from scale objects (e.g., `'wtnRating'`) |
-| `dynamicRatings` | `boolean` | `false` | Calculate updated ratings from prior round results |
-| `refreshDynamic` | `boolean` | `false` | Recalculate dynamic ratings from scratch instead of incrementally |
-| `adHocRatings` | `Record<string, number>` | — | Seed ratings by participantId (overrides scale values) |
-| `updateParticipantRatings` | `boolean` | `false` | Persist `modifiedScaleValues` to participant records |
+| Parameter                  | Type                     | Default | Description                                                                     |
+| -------------------------- | ------------------------ | ------- | ------------------------------------------------------------------------------- |
+| `scaleName`                | `string`                 | —       | Rating system to use: `'WTN'`, `'UTR'`, `'ELO'`, or any custom scale            |
+| `scaleAccessor`            | `string`                 | —       | Property path to extract numeric value from scale objects (e.g., `'wtnRating'`) |
+| `dynamicRatings`           | `boolean`                | `false` | Calculate updated ratings from prior round results                              |
+| `refreshDynamic`           | `boolean`                | `false` | Recalculate dynamic ratings from scratch instead of incrementally               |
+| `adHocRatings`             | `Record<string, number>` | —       | Seed ratings by participantId (overrides scale values)                          |
+| `updateParticipantRatings` | `boolean`                | `false` | Persist `modifiedScaleValues` to participant records                            |
 
 #### Pairing Controls
 
-| Parameter | Type | Default | Description |
-| --- | --- | --- | --- |
-| `encounterValue` | `number` | `100` | Cost penalty for repeat matchUps (higher = stronger avoidance) |
-| `sameTeamValue` | `number` | `100` | Cost penalty for same-team pairings |
-| `salted` | `number \| boolean` | `0.5` | Randomization factor for candidate selection (0 = deterministic) |
-| `minimizeDelta` | `boolean` | `false` | Force minimum rating gap in pairings (good for first rounds) |
-| `restrictEntryStatus` | `boolean` | `false` | Only pair participants with `STRUCTURE_SELECTED` entry status |
-| `restrictRoundsCount` | `boolean` | `true` | Enforce maximum rounds limit |
-| `enableDoubleRobin` | `boolean` | `false` | Allow rounds up to `(participants - 1) * 2` |
+| Parameter             | Type                | Default | Description                                                      |
+| --------------------- | ------------------- | ------- | ---------------------------------------------------------------- |
+| `encounterValue`      | `number`            | `100`   | Cost penalty for repeat matchUps (higher = stronger avoidance)   |
+| `sameTeamValue`       | `number`            | `100`   | Cost penalty for same-team pairings                              |
+| `salted`              | `number \| boolean` | `0.5`   | Randomization factor for candidate selection (0 = deterministic) |
+| `minimizeDelta`       | `boolean`           | `false` | Force minimum rating gap in pairings (good for first rounds)     |
+| `restrictEntryStatus` | `boolean`           | `false` | Only pair participants with `STRUCTURE_SELECTED` entry status    |
+| `restrictRoundsCount` | `boolean`           | `true`  | Enforce maximum rounds limit                                     |
+| `enableDoubleRobin`   | `boolean`           | `false` | Allow rounds up to `(participants - 1) * 2`                      |
 
 #### Algorithm Tuning
 
-| Parameter | Type | Default | Description |
-| --- | --- | --- | --- |
-| `maxIterations` | `number` | `5000` | Maximum candidate solutions to evaluate |
-| `generateMatchUps` | `boolean` | `true` | When `false`, returns only `participantIdPairings` without creating matchUp objects |
+| Parameter          | Type      | Default | Description                                                                         |
+| ------------------ | --------- | ------- | ----------------------------------------------------------------------------------- |
+| `maxIterations`    | `number`  | `5000`  | Maximum candidate solutions to evaluate                                             |
+| `generateMatchUps` | `boolean` | `true`  | When `false`, returns only `participantIdPairings` without creating matchUp objects |
 
 #### Return Value
 
@@ -209,17 +209,17 @@ When the participant count is odd, one participant receives a bye each round. Th
 
 ## Related Methods
 
-| Method | Purpose |
-| --- | --- |
+| Method                   | Purpose                                                             |
+| ------------------------ | ------------------------------------------------------------------- |
 | `generateDrawMaticRound` | Low-level single-round generator (called internally by `drawMatic`) |
-| `addAdHocMatchUps` | Persist generated matchUps to draw structure |
-| `deleteAdHocMatchUps` | Remove matchUps from a structure |
-| `generateAdHocMatchUps` | Create empty matchUp shells for manual pairing |
-| `generateAdHocRounds` | Create empty rounds without DrawMatic pairing |
-| `shiftAdHocRounds` | Reorder rounds within a structure |
-| `swapAdHocRounds` | Swap matchUps between rounds |
-| `adHocPositionSwap` | Swap participants within a matchUp |
-| `addDynamicRatings` | Persist dynamic rating updates to participant records |
+| `addAdHocMatchUps`       | Persist generated matchUps to draw structure                        |
+| `deleteAdHocMatchUps`    | Remove matchUps from a structure                                    |
+| `generateAdHocMatchUps`  | Create empty matchUp shells for manual pairing                      |
+| `generateAdHocRounds`    | Create empty rounds without DrawMatic pairing                       |
+| `shiftAdHocRounds`       | Reorder rounds within a structure                                   |
+| `swapAdHocRounds`        | Swap matchUps between rounds                                        |
+| `adHocPositionSwap`      | Swap participants within a matchUp                                  |
+| `addDynamicRatings`      | Persist dynamic rating updates to participant records               |
 
 ## Analytics
 

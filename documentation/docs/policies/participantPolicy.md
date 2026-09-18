@@ -62,7 +62,7 @@ Two invariants hold everywhere:
 - **No policy means no filtering, never "filter everything".** An absent `policyDefinitions` returns participants whole.
 
 :::caution
-A template array acts as an allow-list, but it is only evaluated for keys the source object actually carries. An attribute absent from the source is never examined, so a rule written to *withhold* something that is sometimes missing fails **open**. Where a value must be withheld unless explicitly permitted, gate it with a predicate at the call site rather than relying on the template alone — this is what `getTournamentInfo` does for `Contact.isPublic`.
+A template array acts as an allow-list, but it is only evaluated for keys the source object actually carries. An attribute absent from the source is never examined, so a rule written to _withhold_ something that is sometimes missing fails **open**. Where a value must be withheld unless explicitly permitted, gate it with a predicate at the call site rather than relying on the template alone — this is what `getTournamentInfo` does for `Contact.isPublic`.
 :::
 
 ## Staff contacts

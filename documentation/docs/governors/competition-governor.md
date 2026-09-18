@@ -570,7 +570,7 @@ Removes the `COMPETITION_STATE` extension from a draw definition, clearing all a
 
 ```ts
 {
-  drawDefinition: DrawDefinition;  // Required - draw to reset
+  drawDefinition: DrawDefinition; // Required - draw to reset
 }
 ```
 
@@ -606,7 +606,7 @@ Retrieves the current `CompetitionState` stored on a draw definition, including 
 
 ```ts
 {
-  drawDefinition: DrawDefinition;  // Required - draw to read state from
+  drawDefinition: DrawDefinition; // Required - draw to read state from
 }
 ```
 
@@ -752,8 +752,8 @@ Retrieves the competition state for a single participant, including ratings, win
 
 ```ts
 {
-  drawDefinition: DrawDefinition;  // Required - draw containing competition state
-  participantId: string;           // Required - participant to look up
+  drawDefinition: DrawDefinition; // Required - draw containing competition state
+  participantId: string; // Required - participant to look up
 }
 ```
 

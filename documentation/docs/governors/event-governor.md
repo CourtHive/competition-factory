@@ -33,8 +33,8 @@ Add an event object to a tournamentRecord. See examples in [Creating Events](../
 
 ```js
 engine.addEvent({
-  event,                    // required — event object (eventId auto-generated if absent)
-  suppressNotifications,    // optional boolean — suppress event/matchUp notices
+  event, // required — event object (eventId auto-generated if absent)
+  suppressNotifications, // optional boolean — suppress event/matchUp notices
 });
 ```
 
@@ -671,7 +671,7 @@ See [Publishing Governor](/docs/governors/publishing-governor#geteventdata) for 
 
 ```js
 const { eventData, participants } = engine.getEventData({
-  eventId,         // required
+  eventId, // required
   usePublishState, // optional boolean
 });
 ```
@@ -684,8 +684,8 @@ Adds an extension to an event. Extensions are custom metadata objects attached t
 
 ```js
 engine.addEventExtension({
-  extension,     // required — { name, value } extension object
-  eventId,       // resolved via engine context
-  creationTime,  // optional boolean — stamp creation time on extension
+  extension, // required — { name, value } extension object
+  eventId, // resolved via engine context
+  creationTime, // optional boolean — stamp creation time on extension
 });
 ```

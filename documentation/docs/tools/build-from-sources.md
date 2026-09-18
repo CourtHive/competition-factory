@@ -46,12 +46,12 @@ const { record, classification, unknownCount, inferredLinks, unplacedMatchUps } 
 **Nothing is dropped silently.** Three of the five returned keys exist only so the caller can see
 what the assembler could not do:
 
-| key | reports |
-| --- | --- |
-| `classification` | what each input was taken to be, by index — so a caller can show its work |
-| `unknownCount` | inputs matching no known shape. Reported rather than discarded |
-| `inferredLinks` | links added to make reconstructed draws readable, with confidence |
-| `unplacedMatchUps` | matchUps naming a structure their draw does not contain |
+| key                | reports                                                                   |
+| ------------------ | ------------------------------------------------------------------------- |
+| `classification`   | what each input was taken to be, by index — so a caller can show its work |
+| `unknownCount`     | inputs matching no known shape. Reported rather than discarded            |
+| `inferredLinks`    | links added to make reconstructed draws readable, with confidence         |
+| `unplacedMatchUps` | matchUps naming a structure their draw does not contain                   |
 
 A caller that would rather refuse than accept a repaired or lossy record inspects these and decides.
 
@@ -145,12 +145,12 @@ interface InferredLink {
 **This repairs; it does not reconstruct, and it says which.** Link count and `feedProfile` follow the
 `drawType`, not the structure shape:
 
-| drawType | structures | links |
-| --- | --- | --- |
-| `FIRST_MATCH_LOSER_CONSOLATION` | MAIN, CONSOLATION | 2, LOSER round 1 + 2 TOP_DOWN |
-| `FEED_IN_CHAMPIONSHIP` | MAIN, CONSOLATION | 4, alternating TOP_DOWN / BOTTOM_UP |
-| `ROUND_ROBIN_WITH_PLAYOFF` | MAIN, PLAY_OFF | 1, POSITION with feedProfile DRAW |
-| `COMPASS` | 8 | 7 |
+| drawType                        | structures        | links                               |
+| ------------------------------- | ----------------- | ----------------------------------- |
+| `FIRST_MATCH_LOSER_CONSOLATION` | MAIN, CONSOLATION | 2, LOSER round 1 + 2 TOP_DOWN       |
+| `FEED_IN_CHAMPIONSHIP`          | MAIN, CONSOLATION | 4, alternating TOP_DOWN / BOTTOM_UP |
+| `ROUND_ROBIN_WITH_PLAYOFF`      | MAIN, PLAY_OFF    | 1, POSITION with feedProfile DRAW   |
+| `COMPASS`                       | 8                 | 7                                   |
 
 Two draws with identical structures therefore have different correct links, and nothing can recover
 that from the structures alone. So `inferDrawLinks` emits the **minimum** set of links that joins
