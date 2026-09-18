@@ -184,7 +184,20 @@ function handleLoserMatchUp({
 }) {
   const { loserTargetLink } = targetLinks;
   const propagateBye = appliedPolicies?.progression?.doubleExitPropagateBye;
-  const targetFedIn = loserMatchUp.feedRound && loserMatchUp.sides?.[0]?.participantFed;
+
+  /**
+   * Does this target hold a RESERVED drawPosition for the arrival the double exit will never send?
+   *
+   * This read `loserMatchUp.feedRound && loserMatchUp.sides?.[0]?.participantFed`, and the second
+   * conjunct said nothing: `participantFed` was assigned to side 1 by `getSide` **iff** the round was
+   * a feed round, so the condition tested `feedRound` twice. It is one of the two disjuncts that admit
+   * a double exit's BYE into the target structure — a real decision path standing on a round-level
+   * flag wearing a per-side name. Same family as punch-list P3.
+   *
+   * `hasFedDrawPosition` is the fact the pair was groping for, and it is not the same as `feedRound`:
+   * `DOUBLE_ELIMINATION`'s Main final is a feed round that reserves nothing. See `getRoundMatchUps`.
+   */
+  const targetFedIn = loserMatchUp.hasFedDrawPosition;
 
   if (propagateBye || targetFedIn) {
     logAdvancement(stack, {

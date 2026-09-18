@@ -349,6 +349,7 @@ export type RoundProfile = {
     finishingPositionRange: MatchUpFinishingPositionRange;
     pairedDrawPositions: number[][];
     abbreviatedRoundName?: string;
+    hasFedDrawPosition?: boolean;
     participantsCount?: number;
     drawPositions?: number[];
     inactiveRound?: boolean;

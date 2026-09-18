@@ -52,8 +52,11 @@ advanced ones in later rounds.
 
 ## 4. On a feed round, a lone position may be FED or ADVANCED — and the array cannot tell you which
 
-A **feed round** is a round that receives participants through a link as well as from the previous
-round. Its matchUps pair a **fed** position with an **advanced** one, and
+A **feed round** is a round that receives participants from somewhere other than the previous round
+of its own structure — usually through a link from another structure, but not always: a `FEED_IN`
+draw reserves its fed positions for **entrants placed directly into a later round**, the ones who do
+not have to play round 1, and that structure has no links at all. Its matchUps pair a **fed**
+position with an **advanced** one, and
 
 > **fed positions are `{ sideNumber: 1 }`.**
 
@@ -71,6 +74,36 @@ different sides**, and nothing in the array distinguishes them:
 structure** played its way here and is ADVANCED; one that is absent from the prior round has just
 been fed in. `getRoundMatchUps` makes exactly this test when it builds `pairedDrawPositions`, and
 `getOrderedDrawPositions` makes it when it resolves sides, so the two agree by construction.
+
+### `feedRound` and `hasFedDrawPosition` are two facts, not one
+
+The paragraph above runs two questions together, and the engine used to answer both with `feedRound`:
+
+| question                                                                                 | flag                 | how it is derived                                                                                                    |
+| ---------------------------------------------------------------------------------------- | -------------------- | -------------------------------------------------------------------------------------------------------------------- |
+| does a position arriving here take side 1, leaving the prior round's advancer on side 2? | `feedRound`          | the round's `matchUpsCount` equals the prior round's — a round that pairs an arrival with an advancer does not halve |
+| is a drawPosition **reserved** here for that arrival?                                    | `hasFedDrawPosition` | the same, **and** no `WINNER` link targets the round                                                                 |
+
+They give the same answer everywhere but one place, and that place is
+[4a](#4a-the-one-exception-double_eliminations-main-final). Read `feedRound` to order sides; read
+`hasFedDrawPosition` to ask whether a slot exists — that is what `side.participantFed` and
+`side.participantAdvanced` now mark, and what a caller deciding whether a position can still be fed
+into this matchUp must use.
+
+:::info Measured 2026-09-18
+Over 111 generated draws — 20 draw types × 9 draw sizes, with **no byes**, so a drawPosition held in
+a round beyond the first is a reserved feed slot and nothing else — 521 rounds and 1,739 matchUps:
+
+| discriminator for "this round reserves a fed drawPosition" | misses                                                                                                                                                                                                                                                                                                                                                      |
+| ---------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `matchUpsCount` equality alone                             | **5** — `DOUBLE_ELIMINATION`'s Main final, at every draw size                                                                                                                                                                                                                                                                                               |
+| a `LOSER` link targets the round                           | **4** — `FEED_IN` round 2 at every non-power-of-two size. Its reserved positions are held for **entrants placed directly into a later round** — the ones who do not have to play round 1, seeds among them — so they come from the draw's own entries and the structure has **no links at all**. This is why the answer cannot simply be read off the links |
+| count equality **and** no `WINNER` link                    | **0**                                                                                                                                                                                                                                                                                                                                                       |
+
+It is a **round** fact and not a per-matchUp one: 1,739 of 1,739 matchUps agreed with their round.
+(The positive control for that number: the same survey over draws **with** byes reports 337
+disagreements, because a round-1 bye advances a participant into round 2 at generation.)
+:::
 
 :::caution The numeric shortcut is nearly right, and wrong for DOUBLE_ELIMINATION
 Fed positions are usually numbered **below** the first round's block, which makes
@@ -132,6 +165,24 @@ would renumber every Main drawPosition in every DOUBLE_ELIMINATION draw ever sto
 **Nothing depends on the numbering.** Side resolution uses the structural prior-round test, not the
 numeric one, so DOUBLE_ELIMINATION hydrates correctly as it stands. Tracked as `P22` on the
 CourtHive design-flaws punch list.
+
+### It is still a feed round for SIDE ORDERING, and never for a reserved slot
+
+Both halves of that sentence matter, and conflating them is what the `hasFedDrawPosition` split in
+[rule 4](#feedround-and-hasfeddrawposition-are-two-facts-not-one) exists to stop.
+
+**`feedRound` is right here.** The Backdraw winner arriving over the link does take side 1, and the
+undefeated main-bracket winner does sit on side 2. Removing the flag from this round moves the lone
+position to whichever chunk of the prior round it came from — and the prior round is a single
+matchUp, so the pair collapses to one entry and the position lands on side 1, handing a pending
+walkover to the side that holds nobody. That is a real regression, reached and reverted while this
+was being worked out.
+
+**`hasFedDrawPosition` is false here, and every consumer that asks "is a slot reserved" wanted that
+answer.** `getSide` marked an empty side 1 `participantFed` on every Main final in every double
+elimination, for a slot that does not exist; `doubleExitAdvancement` then read that mark back as one
+half of its condition for admitting a double exit's BYE into the target structure — beside
+`feedRound`, which is what set the mark, so the condition tested one fact twice.
 
 ## 5. The SHAPE of the array is not information
 
@@ -201,5 +252,6 @@ partitioning matchUps.
 | ascending order, and the reader idioms that depend on it | `getOrderedDrawPositions`                        |
 | crossing a link by participant                           | `directWinner`, `releaseLinkedWinnerAdvancement` |
 | fed vs advanced, and side resolution                     | `getOrderedDrawPositions`, `getRoundMatchUps`    |
+| a reserved fed slot vs a round that merely feeds sides   | `getRoundMatchUps`, `getWinnerLinkRoundNumbers`  |
 | all-holes normalisation                                  | `normalizeDrawPositions`                         |
 | the published shape                                      | `addMatchUpContext`, via `definedAttributes`     |

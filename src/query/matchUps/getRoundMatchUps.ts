@@ -22,6 +22,13 @@ type GetRoundMatchUpsArgs = {
   // honest about what's required.
   matchUps?: MatchUp[];
   interpolate?: boolean;
+  /**
+   * roundNumbers of this structure that a WINNER link targets, from `getWinnerLinkRoundNumbers`.
+   * Used ONLY to derive `hasFedDrawPosition`; `feedRound` is unaffected. Omit it and
+   * `hasFedDrawPosition` falls back to `feedRound`, which is what callers holding only `matchUps`
+   * — and drawDefinitions that carry no links at all — get.
+   */
+  winnerLinkRoundNumbers?: number[];
 };
 
 export type RoundMatchUpsResult = {
@@ -38,8 +45,14 @@ function findDrawPositionInChunk(chunk: any[], filteredDrawPositions: any[]) {
   return filteredDrawPositions?.find((drawPosition) => chunk.includes(drawPosition));
 }
 
-export function getRoundMatchUps({ matchUps = [], interpolate }: GetRoundMatchUpsArgs): RoundMatchUpsResult {
+export function getRoundMatchUps({
+  winnerLinkRoundNumbers,
+  matchUps = [],
+  interpolate,
+}: GetRoundMatchUpsArgs): RoundMatchUpsResult {
   if (!validMatchUps(matchUps)) return { roundMatchUps: [], error: INVALID_VALUES };
+
+  const winnerFedRounds = new Set(winnerLinkRoundNumbers ?? []);
 
   // create an array of arrays of matchUps grouped by roundNumber
   const roundMatchUpsArray = matchUps
@@ -108,7 +121,12 @@ export function getRoundMatchUps({ matchUps = [], interpolate }: GetRoundMatchUp
   // provides details for each round, including:
   //  - matchUpsCount: total number of matchUps
   //  - preFeedRound: whether the round is followed by a feedRound
-  //  - feedRound: whether round matchUps have fed partitipants
+  //  - feedRound: whether a position arriving here from ELSEWHERE takes { sideNumber: 1 }, leaving
+  //      the position advanced from the prior round of this structure on side 2. This is the
+  //      SIDE-ORDERING fact, and it is inferred from matchUpsCount equality because a round that
+  //      pairs an arrival with an advancer does not halve
+  //  - hasFedDrawPosition: whether the round holds a RESERVED FED drawPosition. Usually the same
+  //      answer, and deliberately NOT the same question — see below
   //  - roundIndex & feedRoundIndex: index relative to round type
   //  - finishingRound: reverse count of rounds. Final is finishingRound #1
   const roundProfile: RoundProfile = Object.assign(
@@ -206,6 +224,24 @@ export function getRoundMatchUps({ matchUps = [], interpolate }: GetRoundMatchUp
       roundProfile[roundNumber + 1].feedRoundIndex = feedRoundIndex;
       roundProfile[roundNumber].preFeedRound = true;
       feedRoundIndex += 1;
+
+      /**
+       * `feedRound` answers "which side does an arriving position take"; `hasFedDrawPosition`
+       * answers "is a drawPosition RESERVED here for that arrival". They are different questions and
+       * exactly one shape in the engine answers them differently.
+       *
+       * `DOUBLE_ELIMINATION`'s Main final does not halve, so it is a feed round by the inference
+       * above — and correctly so, because the Backdraw winner arriving over the link does take side
+       * 1 while the undefeated main-bracket winner sits on side 2. But it holds NO reserved slot:
+       * Main is generated as a feed-in of `drawSize + 1` with `linkFedFinishingRoundNumbers: [1]`,
+       * and link-fed positions are subtracted from the local allocation, so the extra matchUp exists
+       * and the extra drawPosition does not. The returning Backdraw winner is placed at whichever
+       * Main drawPosition they already held. See `documentation/docs/concepts/draw-positions.md` § 4a
+       * and `getWinnerLinkRoundNumbers`, which carries the measurement.
+       *
+       * The discriminator is the LINK TYPE: a round fed by a WINNER link reserves nothing.
+       */
+      roundProfile[roundNumber + 1].hasFedDrawPosition = !winnerFedRounds.has(roundNumber + 1);
     }
     if (roundProfile[roundNumber] && !roundProfile[roundNumber].feedRound) {
       roundProfile[roundNumber].roundIndex = roundIndex;
