@@ -41,7 +41,7 @@ export default function MatchUpFormatDemo() {
                 // Store the result so we can re-launch with it
                 const formatResult = {
                   matchUpFormat,
-                  timestamp: new Date().toISOString()
+                  timestamp: new Date().toISOString(),
                 };
 
                 setResult(formatResult);
@@ -86,11 +86,7 @@ export default function MatchUpFormatDemo() {
   return (
     <div style={{ marginBottom: '2em' }}>
       <div ref={containerRef} />
-      {error && (
-        <div style={{ color: 'red', padding: '1em', backgroundColor: '#fee' }}>
-          {error}
-        </div>
-      )}
+      {error && <div style={{ color: 'red', padding: '1em', backgroundColor: '#fee' }}>{error}</div>}
       <div ref={resultsRef} />
     </div>
   );

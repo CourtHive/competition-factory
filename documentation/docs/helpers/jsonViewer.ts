@@ -17,7 +17,7 @@ export class JsonViewer {
     this.container = container;
     this.options = {
       expanded: options.expanded ?? 1,
-      theme: options.theme ?? 'light'
+      theme: options.theme ?? 'light',
     };
 
     this.render(data);

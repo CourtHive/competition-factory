@@ -15,12 +15,7 @@
         "stages": [],
         "stageSequences": [],
         "structureTypes": [],
-        "enabledActions": [
-          "SEED_VALUE",
-          "ADD_NICKNAME",
-          "ADD_PENALTY",
-          "QUALIFIER"
-        ],
+        "enabledActions": ["SEED_VALUE", "ADD_NICKNAME", "ADD_PENALTY", "QUALIFIER"],
         "disabledActions": [],
         "feedProfiles": []
       }
