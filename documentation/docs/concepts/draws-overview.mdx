@@ -14,7 +14,7 @@ Themed visualization of draws by [courthive-components](https://github.com/Court
 
 ## Participant-Type Agnostic
 
-Draw structures are participant-type agnostic — the same elimination, round robin, and linked structures work whether participants are INDIVIDUAL, PAIR, or TEAM. The `eventType` determines what kind of participants flow through a draw, but the draw machinery itself (positioning, advancement, links) is identical in every case. See [Participant-Agnostic Logic](./participants#participant-agnostic-logic) for details.
+Draw structures are participant-type agnostic — the same elimination, round robin, and linked structures work whether participants are INDIVIDUAL, PAIR, or TEAM. The `eventType` determines what kind of participants flow through a draw, but the draw machinery itself (positioning, advancement, links) is identical in every case. See [Participant-Agnostic Logic](./participants.md#participant-agnostic-logic) for details.
 
 ## Generating Draw Definitions
 
@@ -40,7 +40,7 @@ const { drawDefinition } = tournamentEngine.generateDrawDefinition({
 
 - `drawSize` - Number of draw positions in the first structure (e.g., 16, 32, 64)
 - `drawEntries` - Array of participant entries (equal to or subset of event.entries)
-- `drawType` - Type of draw structure (see [Draw Types](./draw-types) for full list)
+- `drawType` - Type of draw structure (see [Draw Types](./draw-types.md) for full list)
 
 **Participant Placement:**
 
@@ -90,7 +90,7 @@ const { drawDefinition } = tournamentEngine.generateDrawDefinition({
 
 #### Round Robin with Playoffs {#round-robin-with-playoffs}
 
-The `finishingPositions` array in each playoff group determines which group finishers advance to that bracket. See [Finishing Positions](./finishing-positions) for how these map to overall draw positions and ranking points.
+The `finishingPositions` array in each playoff group determines which group finishers advance to that bracket. See [Finishing Positions](./finishing-positions.md) for how these map to overall draw positions and ranking points.
 
 **API Reference:** [generateDrawDefinition](/docs/governors/generation-governor#generatedrawdefinition)
 
@@ -289,8 +289,8 @@ An alternative way to visualize tournament brackets is the sunburst chart from [
 
 ## Related Documentation
 
-- **[Draw Types](./draw-types)** - Complete list of supported draw types and structures
-- **[Actions](./actions)** - Valid position and matchUp actions for draw management
+- **[Draw Types](./draw-types.md)** - Complete list of supported draw types and structures
+- **[Actions](./actions.mdx)** - Valid position and matchUp actions for draw management
 - **[Generation Governor](/docs/governors/generation-governor#generatedrawdefinition)** - Complete API reference
 - **[Seeding Policy](/docs/policies/seedingPolicy)** - Configuring seeding patterns
 - **[Avoidance Policy](/docs/policies/avoidance)** - Preventing same-club/nation matchups

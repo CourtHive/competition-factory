@@ -44,6 +44,6 @@ Seeds are positioned according to the active seeding policy. The default behavio
 
 ## Related
 
-- [Draw Types Overview](../draw-types) -- List of all pre-defined draw types
-- [Draw Links](../draw-links) -- How structures connect to form complex draws
+- [Draw Types Overview](../draw-types.md) -- List of all pre-defined draw types
+- [Draw Links](../draw-links.mdx) -- How structures connect to form complex draws
 - [Generation Governor](/docs/governors/generation-governor) -- API reference for `generateDrawDefinition`

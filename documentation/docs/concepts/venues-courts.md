@@ -991,7 +991,7 @@ const { matchUps } = tournamentEngine.getCourtMatchUps({
 
 ## Related Documentation
 
-- **[Scheduling Overview](./scheduling-overview)** - Understanding scheduling workflows
-- **[Scheduling Profile](./scheduling-profile)** - Multi-day schedule configuration
-- **[Automated Scheduling](./automated-scheduling)** - How the scheduling algorithm works
+- **[Scheduling Overview](./scheduling-overview.mdx)** - Understanding scheduling workflows
+- **[Scheduling Profile](./scheduling-profile.mdx)** - Multi-day schedule configuration
+- **[Automated Scheduling](./automated-scheduling.md)** - How the scheduling algorithm works
 - **[Venue Governor](/docs/governors/venue-governor)** - Complete API reference

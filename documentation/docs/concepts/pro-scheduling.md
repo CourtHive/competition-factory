@@ -745,9 +745,9 @@ console.log(`Scheduled ${result.scheduled.length} matchUps without conflicts`);
 
 ## Related Documentation
 
-- **[Scheduling Overview](./scheduling-overview)** - Understanding scheduling workflows
-- **[Automated Scheduling](./automated-scheduling)** - Garman formula and algorithm details
-- **[Scheduling Profile](./scheduling-profile)** - Multi-day schedule configuration
-- **[Scheduling Policy](./scheduling-policy)** - Recovery times and daily limits
+- **[Scheduling Overview](./scheduling-overview.mdx)** - Understanding scheduling workflows
+- **[Automated Scheduling](./automated-scheduling.md)** - Garman formula and algorithm details
+- **[Scheduling Profile](./scheduling-profile.mdx)** - Multi-day schedule configuration
+- **[Scheduling Policy](./scheduling-policy.mdx)** - Recovery times and daily limits
 - **[Schedule Governor](/docs/governors/schedule-governor)** - API reference for scheduling methods
 - **[matchUp Governor](/docs/governors/matchup-governor)** - addMatchUpScheduleItems reference

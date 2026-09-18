@@ -491,7 +491,7 @@ Splits event entries into `flightsCount` (# of draws). `flightProfile` is an ext
 
 NOTE: The method returns `{ flightProfile, splitEntries }` for testing; `splitEntries` provides a breakdown on how `event.entries` were split across each `flight` within the `event`.
 
-For an explanation of `scaleAttributes` see [Scale Items](../concepts/scaleItems).
+For an explanation of `scaleAttributes` see [Scale Items](../concepts/scaleItems.md).
 
 ```js
 const scaleAttributes = {

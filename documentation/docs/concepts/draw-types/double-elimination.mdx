@@ -29,21 +29,72 @@ Consolation bracket plays out, then:
 
 A participant must lose twice to be eliminated -- once in the main draw and once in the consolation bracket.
 
-<BrowserOnly>{() => (
-  <TopologyViewer height={350} initialState={{
-    drawName: 'Double Elimination',
-    nodes: [
-      { id: 'main', structureName: 'Main Draw', stage: 'MAIN', structureType: 'SINGLE_ELIMINATION', drawSize: 16, position: { x: 40, y: 40 } },
-      { id: 'cons', structureName: 'Consolation', stage: 'CONSOLATION', structureType: 'FEED_IN', drawSize: 15, position: { x: 400, y: 40 } },
-    ],
-    edges: [
-      { id: 'e1', sourceNodeId: 'main', targetNodeId: 'cons', linkType: 'LOSER', sourceRoundNumber: 1, targetRoundNumber: 1, label: 'R1 losers → R1' },
-      { id: 'e2', sourceNodeId: 'main', targetNodeId: 'cons', linkType: 'LOSER', sourceRoundNumber: 2, targetRoundNumber: 2, label: 'R2 losers → R2' },
-      { id: 'e3', sourceNodeId: 'main', targetNodeId: 'cons', linkType: 'LOSER', sourceRoundNumber: 3, targetRoundNumber: 4, label: 'R3 losers → R4' },
-      { id: 'e4', sourceNodeId: 'main', targetNodeId: 'cons', linkType: 'LOSER', sourceRoundNumber: 4, targetRoundNumber: 6, label: 'R4 losers → R6' },
-    ],
-  }} />
-)}</BrowserOnly>
+<BrowserOnly>
+  {() => (
+    <TopologyViewer
+      height={350}
+      initialState={{
+        drawName: 'Double Elimination',
+        nodes: [
+          {
+            id: 'main',
+            structureName: 'Main Draw',
+            stage: 'MAIN',
+            structureType: 'SINGLE_ELIMINATION',
+            drawSize: 16,
+            position: { x: 40, y: 40 },
+          },
+          {
+            id: 'cons',
+            structureName: 'Consolation',
+            stage: 'CONSOLATION',
+            structureType: 'FEED_IN',
+            drawSize: 15,
+            position: { x: 400, y: 40 },
+          },
+        ],
+        edges: [
+          {
+            id: 'e1',
+            sourceNodeId: 'main',
+            targetNodeId: 'cons',
+            linkType: 'LOSER',
+            sourceRoundNumber: 1,
+            targetRoundNumber: 1,
+            label: 'R1 losers → R1',
+          },
+          {
+            id: 'e2',
+            sourceNodeId: 'main',
+            targetNodeId: 'cons',
+            linkType: 'LOSER',
+            sourceRoundNumber: 2,
+            targetRoundNumber: 2,
+            label: 'R2 losers → R2',
+          },
+          {
+            id: 'e3',
+            sourceNodeId: 'main',
+            targetNodeId: 'cons',
+            linkType: 'LOSER',
+            sourceRoundNumber: 3,
+            targetRoundNumber: 4,
+            label: 'R3 losers → R4',
+          },
+          {
+            id: 'e4',
+            sourceNodeId: 'main',
+            targetNodeId: 'cons',
+            linkType: 'LOSER',
+            sourceRoundNumber: 4,
+            targetRoundNumber: 6,
+            label: 'R4 losers → R6',
+          },
+        ],
+      }}
+    />
+  )}
+</BrowserOnly>
 
 ## Use Cases
 
@@ -62,6 +113,6 @@ const { drawDefinition } = engine.generateDrawDefinition({
 
 ## Related
 
-- [Consolation Draws](./consolation-draws) -- Other consolation draw formats
-- [Draw Links](../draw-links) -- How the main and consolation structures are connected
-- [Draw Types Overview](../draw-types) -- List of all pre-defined draw types
+- [Consolation Draws](./consolation-draws.mdx) -- Other consolation draw formats
+- [Draw Links](../draw-links.mdx) -- How the main and consolation structures are connected
+- [Draw Types Overview](../draw-types.md) -- List of all pre-defined draw types

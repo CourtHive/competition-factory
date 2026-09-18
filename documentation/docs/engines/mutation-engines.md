@@ -107,7 +107,7 @@ tournamentEngine.generateDrawDefinition({/* ... */});
 
 :::tip
 For multiple handlers per topic, unsubscribe closures and a promise-based `waitFor`, use the typed
-event bus — `engine.on / once / off / waitFor`. See [Subscriptions](./subscriptions).
+event bus — `engine.on / once / off / waitFor`. See [Subscriptions](./subscriptions.md).
 :::
 
 ### Common Notification Topics

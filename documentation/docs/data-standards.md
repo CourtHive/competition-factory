@@ -105,9 +105,9 @@ CODES provides a **JSON-based document format** that captures:
 
 **Temporal Data**:
 
-- [Scale Items](./concepts/scaleItems) (rankings, ratings, seeding scales)
-- [Time Items](./concepts/timeItems) (data with effective dates)
-- [Extensions](./concepts/extensions) (custom data and metadata)
+- [Scale Items](./concepts/scaleItems.md) (rankings, ratings, seeding scales)
+- [Time Items](./concepts/timeItems.md) (data with effective dates)
+- [Extensions](./concepts/extensions.md) (custom data and metadata)
 
 **Audit and Metadata**:
 
@@ -182,8 +182,8 @@ A producer writing CODES records should treat `additionalProperties: false` as t
 
 ## Related Documentation
 
-- **[Introduction](./)** - Overview of Competition Factory architecture
-- **[Time Capsule](./time-capsule)** - CODES as immutable historical records
-- **[Scale Items](./concepts/scaleItems)** - Rankings and ratings in CODES
-- **[Time Items](./concepts/timeItems)** - Temporal data management
-- **[Extensions](./concepts/extensions)** - Custom data and metadata
+- **[Introduction](./introduction.mdx)** - Overview of Competition Factory architecture
+- **[Time Capsule](./time-capsule.md)** - CODES as immutable historical records
+- **[Scale Items](./concepts/scaleItems.md)** - Rankings and ratings in CODES
+- **[Time Items](./concepts/timeItems.md)** - Temporal data management
+- **[Extensions](./concepts/extensions.md)** - Custom data and metadata

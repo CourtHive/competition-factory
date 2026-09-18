@@ -202,7 +202,7 @@ const { allFilled } = engine.allPlayoffPositionsFilled({
 
 ## alternateDrawPositionAssignment
 
-Replaces an existing drawPosition assignment with an alternateParticipantId. This method is included in `validActions` for [positionActions](../policies/positionActions)
+Replaces an existing drawPosition assignment with an alternateParticipantId. This method is included in `validActions` for [positionActions](../policies/positionActions.md)
 
 ```js
 engine.alternateDrawPositionAssignment({
@@ -281,7 +281,7 @@ engine.automatedPlayoffPositioning({
 
 Positions participants in a draw structure. See examples: [Draw Operations](../engines/engine-middleware.md#draw-operations), [Basic Rollback](../engines/mutation-engines.md#basic-rollback).
 
-See [Policies](../concepts/policies).
+See [Policies](../concepts/policies.md).
 
 ```js
 engine.automatedPositioning({ drawId, structureId });
@@ -514,7 +514,7 @@ const result = engine.deleteAdHocMatchUps({
 
 ## luckyLoserDrawPositionAssignment
 
-Replaces an existing drawPosition assignment with a luckyLoserParticipantId. This method is included in `validActions` for [positionActions](../policies/positionActions)
+Replaces an existing drawPosition assignment with a luckyLoserParticipantId. This method is included in `validActions` for [positionActions](../policies/positionActions.md)
 
 ```js
 engine.luckyLoserDrawPositionAssignment({
@@ -895,7 +895,7 @@ engine.modifyDrawDefinition({
 
 ## modifySeedAssignment
 
-Change the display representation of a seedNumber for a specified `participantId`. This method is included in `validActions` for [positionActions](../policies/positionActions).
+Change the display representation of a seedNumber for a specified `participantId`. This method is included in `validActions` for [positionActions](../policies/positionActions.md).
 
 The rationale for `seedValue` is to be able to, for instance, represent the fifth through the eighth seed as `5-8`, or simply as `5`. When there are no restrictions on seed positioning `seedValue` allows assigning seeding to arbitrary `participants`.
 
@@ -999,7 +999,7 @@ const { drawDefinition } = engine.publicFindDrawDefinition({
 
 ## qualifierDrawPositionAssignment
 
-Replaces an existing drawPosition assignment with a qualifierParticipantId. This method is included in `validActions` for [positionActions](../policies/positionActions)
+Replaces an existing drawPosition assignment with a qualifierParticipantId. This method is included in `validActions` for [positionActions](../policies/positionActions.md)
 
 ```js
 engine.qualifierDrawPositionAssignment({
@@ -1286,7 +1286,7 @@ engine.updateTeamLineUp({
 
 ## withdrawParticipantAtDrawPosition
 
-Thin wrapper around [removeDrawPositionAssignment](#removedrawpositionassignment). This method is included in `validActions` for [positionActions](../policies/positionActions).
+Thin wrapper around [removeDrawPositionAssignment](#removedrawpositionassignment). This method is included in `validActions` for [positionActions](../policies/positionActions.md).
 
 ```js
 engine.withdrawParticipantAtDrawPosition({

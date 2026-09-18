@@ -54,7 +54,7 @@ and `pointsToMatch` is the one most often missing from hand-written copies:
 import type { Episode, EpisodeNeeded } from 'tods-competition-factory';
 ```
 
-→ [calculatePointsTo](../governors/score-governor#calculatepointsto), which computes it.
+→ [calculatePointsTo](../governors/score-governor.md#calculatepointsto), which computes it.
 
 ### Point Progression
 
@@ -167,7 +167,7 @@ The engine's persistence methods (`getState`, `setState`, `getSupplementaryState
 
 ## Related Documentation
 
-- **[Overview](./scoring-engine-overview)** — Introduction and architecture
-- **[Core API Reference](./scoring-engine-api)** — Complete method reference with `getEpisodes()` and `getStatistics()`
-- **[Event Handlers & Integration](./event-handlers)** — Real-time event callbacks
-- **[Multi-Sport Format Support](./format-support)** — Format strings for different sports
+- **[Overview](./scoring-engine-overview.md)** — Introduction and architecture
+- **[Core API Reference](./scoring-engine-api.md)** — Complete method reference with `getEpisodes()` and `getStatistics()`
+- **[Event Handlers & Integration](./event-handlers.md)** — Real-time event callbacks
+- **[Multi-Sport Format Support](./format-support.md)** — Format strings for different sports

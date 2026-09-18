@@ -128,11 +128,19 @@ jobs:
       - name: verify:lint
         run: pnpm verify:lint
 
-      # Scoped to the TS/JS sources the repo actually keeps formatted. The
-      # .tods.json fixtures under src/tests are deliberately OUT of scope:
-      # reformatting them is a ~40k-line diff across large test corpora and
-      # buries their blame for no benefit. Narrowed `format` to match, so
-      # `pnpm format` and this gate can never disagree about the target set.
+      # Scoped to the TS/JS sources the repo actually keeps formatted, PLUS the
+      # markdown under documentation/docs (added 2026-09-18). The .tods.json
+      # fixtures under src/tests remain deliberately OUT of scope: reformatting
+      # them is a ~40k-line diff across large test corpora and buries their
+      # blame for no benefit. `format` carries the same target set, so it and
+      # this gate can never disagree.
+      #
+      # Why documentation/docs joined: nothing checked formatting there, so 19
+      # files had been prettier-dirty for a long time invisibly. lint-staged's
+      # `*` glob reformats any staged file, so that debt surfaced only when
+      # someone touched one of those files -- and then rode out on their
+      # unrelated commit. It nearly buried a mechanical link fix under 670
+      # removed / 1068 added lines of JSX re-indentation (#4918).
       - name: verify:format
         run: pnpm verify:format
 

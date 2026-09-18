@@ -7,7 +7,7 @@ import TopologyViewer from '../../components/TopologyViewer';
 
 ## Overview
 
-An **Adaptive** draw combines the multi-structure topology of a [Compass](./compass) draw with the flexible sizing of a [Lucky Draw](./lucky-draw). Where Compass requires power-of-2 draw sizes, Adaptive supports any participant count (e.g., 11, 18, 22) across a full direction cascade.
+An **Adaptive** draw combines the multi-structure topology of a [Compass](./compass.mdx) draw with the flexible sizing of a [Lucky Draw](./lucky-draw.mdx). Where Compass requires power-of-2 draw sizes, Adaptive supports any participant count (e.g., 11, 18, 22) across a full direction cascade.
 
 In the factory, this draw type is represented by the constant `ADAPTIVE`.
 
@@ -53,24 +53,96 @@ The lucky draw round profiles for 11 participants produce rounds with 6, 3, 2, 1
 
 West (drawSize 5) recursively generates its own children (South, etc.).
 
-<BrowserOnly>{() => (
-  <TopologyViewer height={560} initialState={{
-    drawName: 'Adaptive (drawSize 11)',
-    nodes: [
-      { id: 'east', structureName: 'East', stage: 'MAIN', structureType: 'LUCKY_DRAW', drawSize: 11, position: { x: 40, y: 40 } },
-      { id: 'west', structureName: 'West', stage: 'PLAY_OFF', structureType: 'LUCKY_DRAW', drawSize: 5, position: { x: 400, y: 40 } },
-      { id: 'north', structureName: 'North', stage: 'PLAY_OFF', structureType: 'LUCKY_DRAW', drawSize: 2, position: { x: 400, y: 210 } },
-      { id: 'ne', structureName: 'Northeast', stage: 'PLAY_OFF', structureType: 'LUCKY_DRAW', drawSize: 2, position: { x: 400, y: 380 } },
-      { id: 'south', structureName: 'South', stage: 'PLAY_OFF', structureType: 'LUCKY_DRAW', drawSize: 2, position: { x: 680, y: 40 } },
-    ],
-    edges: [
-      { id: 'e1', sourceNodeId: 'east', targetNodeId: 'west', linkType: 'LOSER', sourceRoundNumber: 1, targetRoundNumber: 1, label: 'R1 losers (5) → R1' },
-      { id: 'e2', sourceNodeId: 'east', targetNodeId: 'north', linkType: 'LOSER', sourceRoundNumber: 2, targetRoundNumber: 1, label: 'R2 losers (2) → R1' },
-      { id: 'e3', sourceNodeId: 'east', targetNodeId: 'ne', linkType: 'LOSER', sourceRoundNumber: 3, targetRoundNumber: 1, label: 'R3 losers (2) → R1' },
-      { id: 'e4', sourceNodeId: 'west', targetNodeId: 'south', linkType: 'LOSER', sourceRoundNumber: 1, targetRoundNumber: 1, label: 'R1 losers (2) → R1' },
-    ],
-  }} />
-)}</BrowserOnly>
+<BrowserOnly>
+  {() => (
+    <TopologyViewer
+      height={560}
+      initialState={{
+        drawName: 'Adaptive (drawSize 11)',
+        nodes: [
+          {
+            id: 'east',
+            structureName: 'East',
+            stage: 'MAIN',
+            structureType: 'LUCKY_DRAW',
+            drawSize: 11,
+            position: { x: 40, y: 40 },
+          },
+          {
+            id: 'west',
+            structureName: 'West',
+            stage: 'PLAY_OFF',
+            structureType: 'LUCKY_DRAW',
+            drawSize: 5,
+            position: { x: 400, y: 40 },
+          },
+          {
+            id: 'north',
+            structureName: 'North',
+            stage: 'PLAY_OFF',
+            structureType: 'LUCKY_DRAW',
+            drawSize: 2,
+            position: { x: 400, y: 210 },
+          },
+          {
+            id: 'ne',
+            structureName: 'Northeast',
+            stage: 'PLAY_OFF',
+            structureType: 'LUCKY_DRAW',
+            drawSize: 2,
+            position: { x: 400, y: 380 },
+          },
+          {
+            id: 'south',
+            structureName: 'South',
+            stage: 'PLAY_OFF',
+            structureType: 'LUCKY_DRAW',
+            drawSize: 2,
+            position: { x: 680, y: 40 },
+          },
+        ],
+        edges: [
+          {
+            id: 'e1',
+            sourceNodeId: 'east',
+            targetNodeId: 'west',
+            linkType: 'LOSER',
+            sourceRoundNumber: 1,
+            targetRoundNumber: 1,
+            label: 'R1 losers (5) → R1',
+          },
+          {
+            id: 'e2',
+            sourceNodeId: 'east',
+            targetNodeId: 'north',
+            linkType: 'LOSER',
+            sourceRoundNumber: 2,
+            targetRoundNumber: 1,
+            label: 'R2 losers (2) → R1',
+          },
+          {
+            id: 'e3',
+            sourceNodeId: 'east',
+            targetNodeId: 'ne',
+            linkType: 'LOSER',
+            sourceRoundNumber: 3,
+            targetRoundNumber: 1,
+            label: 'R3 losers (2) → R1',
+          },
+          {
+            id: 'e4',
+            sourceNodeId: 'west',
+            targetNodeId: 'south',
+            linkType: 'LOSER',
+            sourceRoundNumber: 1,
+            targetRoundNumber: 1,
+            label: 'R1 losers (2) → R1',
+          },
+        ],
+      }}
+    />
+  )}
+</BrowserOnly>
 
 ## Configurable Depth
 
@@ -134,8 +206,8 @@ const { drawDefinition } = engine.generateDrawDefinition({
 
 ## Related
 
-- [Compass Draw](./compass) -- Power-of-2 variant with standard elimination
-- [Lucky Draw](./lucky-draw) -- Single-structure lucky draw logic
-- [Olympic Draw](./olympic) -- Smaller variant guaranteeing 2 matchUps
-- [Draw Links](../draw-links) -- How losers flow between structures
-- [Draw Types Overview](../draw-types) -- List of all pre-defined draw types
+- [Compass Draw](./compass.mdx) -- Power-of-2 variant with standard elimination
+- [Lucky Draw](./lucky-draw.mdx) -- Single-structure lucky draw logic
+- [Olympic Draw](./olympic.mdx) -- Smaller variant guaranteeing 2 matchUps
+- [Draw Links](../draw-links.mdx) -- How losers flow between structures
+- [Draw Types Overview](../draw-types.md) -- List of all pre-defined draw types

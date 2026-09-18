@@ -321,7 +321,7 @@ When `scoreValue` is specified, it bypasses the normal point value resolution (i
 
 ## Related Documentation
 
-- **[Overview](./scoring-engine-overview)** — Introduction and architecture
-- **[Core API Reference](./scoring-engine-api)** — Complete method reference
-- **[Multi-Sport Format Support](./format-support)** — Format strings for different sports
-- **[Visualization Applications](./visualization-applications)** — Building visualizations with ScoringEngine data
+- **[Overview](./scoring-engine-overview.md)** — Introduction and architecture
+- **[Core API Reference](./scoring-engine-api.md)** — Complete method reference
+- **[Multi-Sport Format Support](./format-support.md)** — Format strings for different sports
+- **[Visualization Applications](./visualization-applications.md)** — Building visualizations with ScoringEngine data

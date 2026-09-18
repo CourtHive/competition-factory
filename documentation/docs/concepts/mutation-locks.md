@@ -6,7 +6,7 @@ title: Mutation Locks
 
 Mutation locks provide concurrency control for scoped mutations within a tournament record. They allow a calling application to restrict who can perform certain operations — like scheduling, scoring, or draw modifications — by requiring a matching `lockToken` on mutation calls.
 
-The factory is **agnostic to user identity**. It stores locks as [extensions](./extensions) and performs a simple string equality check on `lockToken`. The calling application handles identity, authorization, and token issuance.
+The factory is **agnostic to user identity**. It stores locks as [extensions](./extensions.md) and performs a simple string equality check on `lockToken`. The calling application handles identity, authorization, and token issuance.
 
 ### Key Concepts
 
@@ -421,6 +421,6 @@ engine.removeMutationLock({
 
 ## Related Documentation
 
-- **[Extensions](./extensions)** - How extensions work on tournament elements
-- **[Engine Middleware](../engines/engine-middleware)** - How drawId/eventId resolve to elements
-- **[Tournament Governor](../governors/tournament-governor)** - API reference for lock methods
+- **[Extensions](./extensions.md)** - How extensions work on tournament elements
+- **[Engine Middleware](../engines/engine-middleware.md)** - How drawId/eventId resolve to elements
+- **[Tournament Governor](../governors/tournament-governor.md)** - API reference for lock methods

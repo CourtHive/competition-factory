@@ -40,14 +40,14 @@ A CODES tournament record preserves:
 
 **Temporal Evolution**:
 
-- [Time Items](./concepts/timeItems) tracking changes over time
+- [Time Items](./concepts/timeItems.md) tracking changes over time
 - Court and time assignment modifications
 - Status transitions (scheduled, in progress, completed)
 - Withdrawal and substitution history
 
 **Metadata and Audit Trails**:
 
-- [Extensions](./concepts/extensions) with configuration and calculated results
+- [Extensions](./concepts/extensions.md) with configuration and calculated results
 - Position actions for draw modifications
 - Draw deletions and tie format modifications
 - Factory version tracking for reproducibility
@@ -224,9 +224,9 @@ The time capsule approach gives organizations maximum flexibility: use CODES doc
 
 ## Related Documentation
 
-- **[Introduction](./)** - Overview of Competition Factory architecture
-- **[Data Standards](./data-standards)** - Understanding CODES and standardization
-- **[Time Items](./concepts/timeItems)** - Temporal data management
-- **[Extensions](./concepts/extensions)** - Configuration and metadata
+- **[Introduction](./introduction.mdx)** - Overview of Competition Factory architecture
+- **[Data Standards](./data-standards.md)** - Understanding CODES and standardization
+- **[Time Items](./concepts/timeItems.md)** - Temporal data management
+- **[Extensions](./concepts/extensions.md)** - Configuration and metadata
 - **[State Engines](/docs/engines/state-engines)** - Managing tournament state
 - **[Subscriptions](/docs/engines/subscriptions)** - Real-time data synchronization

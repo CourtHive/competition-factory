@@ -14,7 +14,7 @@ each of those can in turn produce another exit further down the draw. **Exit pro
 cascade.
 
 This page describes what the engine guarantees while propagating, and the shapes a consumer will
-see in the resulting data. It is distinct from [exit profiles](./exit-profiles), which describe the
+see in the resulting data. It is distinct from [exit profiles](./exit-profiles.md), which describe the
 _path_ a participant took between structures rather than the _status_ that travelled with them.
 
 ## The pending propagated exit
@@ -268,7 +268,7 @@ label the exit carries — it cannot suppress one.
 
 ## Related
 
-- [Exit Profiles](./exit-profiles) — the path a participant took between structures
-- [Finishing Positions](./finishing-positions) — how positions are derived across linked structures
-- [Draw Links](./draw-links) — how losers reach a target structure
+- [Exit Profiles](./exit-profiles.md) — the path a participant took between structures
+- [Finishing Positions](./finishing-positions.md) — how positions are derived across linked structures
+- [Draw Links](./draw-links.mdx) — how losers reach a target structure
 - [Exit-propagation harness](/docs/testing/exit-propagation-harness) — how these guarantees are tested

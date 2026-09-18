@@ -62,12 +62,12 @@ Two invariants hold everywhere:
 - **No policy means no filtering, never "filter everything".** An absent `policyDefinitions` returns participants whole.
 
 :::caution
-A template array acts as an allow-list, but it is only evaluated for keys the source object actually carries. An attribute absent from the source is never examined, so a rule written to *withhold* something that is sometimes missing fails **open**. Where a value must be withheld unless explicitly permitted, gate it with a predicate at the call site rather than relying on the template alone — this is what `getTournamentInfo` does for `Contact.isPublic`.
+A template array acts as an allow-list, but it is only evaluated for keys the source object actually carries. An attribute absent from the source is never examined, so a rule written to _withhold_ something that is sometimes missing fails **open**. Where a value must be withheld unless explicitly permitted, gate it with a predicate at the call site rather than relying on the template alone — this is what `getTournamentInfo` does for `Contact.isPublic`.
 :::
 
 ## Staff contacts
 
-`tournamentContacts` on [getTournamentInfo](../governors/query-governor#gettournamentinfo) is the one participant population the caller's policy does **not** govern. It is filtered with the bundled `POLICY_PRIVACY_STAFF` instead, because a contact stripped of `participantRoleResponsibilities` is not a contact — a caller supplying a strict competitor policy would otherwise receive a contact list it could not use.
+`tournamentContacts` on [getTournamentInfo](../governors/query-governor.md#gettournamentinfo) is the one participant population the caller's policy does **not** govern. It is filtered with the bundled `POLICY_PRIVACY_STAFF` instead, because a contact stripped of `participantRoleResponsibilities` is not a contact — a caller supplying a strict competitor policy would otherwise receive a contact list it could not use.
 
 ```js
 import { fixtures } from 'tods-competition-factory';

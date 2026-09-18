@@ -89,7 +89,7 @@ Round details help understand match position in draw:
 }
 ```
 
-See [Finishing Positions](./finishing-positions) for a full explanation of how `finishingPositionRange` is computed across draw types and how the accessor maps to ranking policy keys.
+See [Finishing Positions](./finishing-positions.md) for a full explanation of how `finishingPositionRange` is computed across draw types and how the accessor maps to ranking policy keys.
 
 ### Scheduling Context
 
@@ -158,7 +158,7 @@ Participants are automatically attached to matchUp sides:
 }
 ```
 
-**See:** [Participant Context](./participant-context) for participant hydration options.
+**See:** [Participant Context](./participant-context.md) for participant hydration options.
 
 ## Next MatchUps (Progression)
 
@@ -257,7 +257,7 @@ Extension names are converted to camelCase with underscore prefix:
 'PRIORITY_LEVEL'       → _priorityLevel
 ```
 
-**See:** [Extensions](./extensions) for detailed extension documentation.
+**See:** [Extensions](./extensions.md) for detailed extension documentation.
 
 ## Context Filters
 
@@ -288,7 +288,7 @@ const { matchUps } = tournamentEngine.allTournamentMatchUps({
 });
 ```
 
-**See:** [MatchUp Filtering](./matchup-filtering) for comprehensive filtering options.
+**See:** [MatchUp Filtering](./matchup-filtering.mdx) for comprehensive filtering options.
 
 ## Performance Considerations
 
@@ -360,7 +360,7 @@ matchUps[0].sides.forEach((side) => {
 });
 ```
 
-**See:** [Participant Context](./participant-context) for complete hydration options.
+**See:** [Participant Context](./participant-context.md) for complete hydration options.
 
 ## Additional Context Parameters
 
@@ -494,8 +494,8 @@ Object.entries(rounds)
 
 ## Related Documentation
 
-- **[MatchUp Overview](./matchup-overview)** - Core matchUp concepts and types
-- **[MatchUp Filtering](./matchup-filtering)** - Comprehensive filtering options
-- **[Participant Context](./participant-context)** - Participant hydration details
-- **[Extensions](./extensions)** - Custom data and extensions
+- **[MatchUp Overview](./matchup-overview.md)** - Core matchUp concepts and types
+- **[MatchUp Filtering](./matchup-filtering.mdx)** - Comprehensive filtering options
+- **[Participant Context](./participant-context.md)** - Participant hydration details
+- **[Extensions](./extensions.md)** - Custom data and extensions
 - **[Query Governor](/docs/governors/query-governor#alltournamentmatchups)** - Complete API reference

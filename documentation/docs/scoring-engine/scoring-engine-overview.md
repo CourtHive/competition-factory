@@ -99,9 +99,9 @@ If you provide a `competitionFormat`, the engine extracts `matchUpFormat`, `poin
 
 ## Related Documentation
 
-- **[Core API Reference](./scoring-engine-api)** — Complete method reference
-- **[Event Handlers & Integration](./event-handlers)** — Event system and competitionFormat profiles
-- **[Multi-Sport Format Support](./format-support)** — Format string grammar and sport-specific examples
-- **[Visualization Applications](./visualization-applications)** — Building visualizations with ScoringEngine data
+- **[Core API Reference](./scoring-engine-api.md)** — Complete method reference
+- **[Event Handlers & Integration](./event-handlers.md)** — Event system and competitionFormat profiles
+- **[Multi-Sport Format Support](./format-support.md)** — Format string grammar and sport-specific examples
+- **[Visualization Applications](./visualization-applications.md)** — Building visualizations with ScoringEngine data
 - **[matchUpFormat Codes](/docs/codes/matchup-format)** — Format string reference
 - **[Score Governor](/docs/governors/score-governor)** — Pure scoring functions

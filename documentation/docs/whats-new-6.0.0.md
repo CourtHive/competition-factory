@@ -18,13 +18,13 @@ Two changes break the surface and need consumer attention. Both are covered in d
 
 Only callers that opted into `considerGames: true` are affected. There is no code change required: re-baseline any stored output against the new values.
 
-→ [generateDynamicRatings](./scale-engine/scale-engine-api#generatedynamicratings).
+→ [generateDynamicRatings](./scale-engine/scale-engine-api.md#generatedynamicratings).
 
 ### 2. `modifyParticipant` uses canonical `person.birthDate`
 
 `modifyParticipant` now reads and writes the canonical `person.birthDate` (camelCase) instead of the previous non-canonical `person.birthdate`. Callers reading or writing the lowercase field must switch to `person.birthDate`.
 
-→ [Participants](./concepts/participants).
+→ [Participants](./concepts/participants.md).
 
 ## The headline feature — data-integrity query hierarchy
 
@@ -45,30 +45,30 @@ Each inconsistency function has a `*Completeness` companion that composes the sa
 
 Decided-state invariants and outstanding-work reporting for a single structure. Adds `DRAW_POSITION_UNASSIGNED` (a stored-state phantom position) and `WINNER_NOT_ADVANCED` (a winner absent from its next matchUp within the structure), backed by a CI corpus sweep across every draw type × sizes 8/16/32/64.
 
-→ [getStructureInconsistencies](./governors/query-governor#getstructureinconsistencies), [getStructureCompleteness](./governors/query-governor#getstructurecompleteness).
+→ [getStructureInconsistencies](./governors/query-governor.md#getstructureinconsistencies), [getStructureCompleteness](./governors/query-governor.md#getstructurecompleteness).
 
 ### The draw layer — `getDrawInconsistencies` / `getDrawCompleteness`
 
 Cross-structure **link** integrity (`DANGLING_LINK`, `LINK_MISSING_SOURCE_ROUND`) and **progression** (`DROPPED_PROGRESSION`): a loser or winner _eligible_ to feed a linked target structure but absent from it. Eligibility reuses the engine's own feed logic (`getDrawPositionWinCount`, shared with the mutation path), so first-match-loser-consolation and double-elimination feed-back are handled correctly.
 
-→ [getDrawInconsistencies](./governors/query-governor#getdrawinconsistencies), [getDrawCompleteness](./governors/query-governor#getdrawcompleteness).
+→ [getDrawInconsistencies](./governors/query-governor.md#getdrawinconsistencies), [getDrawCompleteness](./governors/query-governor.md#getdrawcompleteness).
 
 ### The event layer — `getEventInconsistencies` / `getEventCompleteness`
 
 `eventType` ↔ `participantType` coherence across the event's draws.
 
-→ [getEventInconsistencies](./governors/query-governor#geteventinconsistencies), [getEventCompleteness](./governors/query-governor#geteventcompleteness).
+→ [getEventInconsistencies](./governors/query-governor.md#geteventinconsistencies), [getEventCompleteness](./governors/query-governor.md#geteventcompleteness).
 
 ### The top layer — `getTournamentInconsistencies` / `getTournamentCompleteness`
 
 Cross-event checks — a person represented by two distinct **individual** participants is flagged; a person legitimately appearing across multiple pair/team groupings is not.
 
-→ [getTournamentInconsistencies](./governors/query-governor#gettournamentinconsistencies), [getTournamentCompleteness](./governors/query-governor#gettournamentcompleteness).
+→ [getTournamentInconsistencies](./governors/query-governor.md#gettournamentinconsistencies), [getTournamentCompleteness](./governors/query-governor.md#gettournamentcompleteness).
 
 ## Other 6.0.0 additions
 
-- **`getMatchUpFormatVariance`** — report matchUpFormat variance across a draw's structures. Round-robin group structures are now correctly exempt from the ascending-drawPositions-sort inconsistency check (Berger round-pairing order is legitimate). See [getMatchUpFormatVariance](./governors/query-governor#getmatchupformatvariance).
-- **`abandonTournamentMatchUps`** — bulk-abandon still-playable matchUps in a single call. See [abandonTournamentMatchUps](./governors/matchup-governor#abandontournamentmatchups).
+- **`getMatchUpFormatVariance`** — report matchUpFormat variance across a draw's structures. Round-robin group structures are now correctly exempt from the ascending-drawPositions-sort inconsistency check (Berger round-pairing order is legitimate). See [getMatchUpFormatVariance](./governors/query-governor.md#getmatchupformatvariance).
+- **`abandonTournamentMatchUps`** — bulk-abandon still-playable matchUps in a single call. See [abandonTournamentMatchUps](./governors/matchup-governor.md#abandontournamentmatchups).
 - **Exit-propagation fixes** — a cluster of corrections to how `WALKOVER` / `DEFAULTED` statuses cascade through consolation byes and unwind on removal: re-derive `winningSide` / exit codes on advancement, clear stale codes when a pending propagated exit is removed, block reset of a source whose exit resolved downstream, and gate `propagateExitStatus` by scoring policy.
 - **Entry / matchUp validation** — enforce mixed-doubles second-participant gender, age-check individual members of PAIR/TEAM entries, and block un-assigning participants from completed ad-hoc matchUps.
 - **`tieFormat`** — preserve existing `collectionGroups` when adding a group.
@@ -86,8 +86,8 @@ Cross-event checks — a person represented by two distinct **individual** parti
 | If you want…                                  | Read                                                                                                          |
 | --------------------------------------------- | ------------------------------------------------------------------------------------------------------------- |
 | The full upgrade walkthrough                  | [5.x to 6.0.0 migration](./migration-6.0.0)                                                                   |
-| To audit a tournament for contradictory state | [Query Governor — integrity hierarchy](./governors/query-governor)                                            |
-| To report outstanding work before publishing  | The `*Completeness` companions in the [Query Governor](./governors/query-governor)                            |
-| Correct `considerGames` rating computation    | [generateDynamicRatings](./scale-engine/scale-engine-api#generatedynamicratings)                              |
-| Bulk-abandon still-playable matchUps          | [abandonTournamentMatchUps](./governors/matchup-governor#abandontournamentmatchups)                           |
+| To audit a tournament for contradictory state | [Query Governor — integrity hierarchy](./governors/query-governor.md)                                         |
+| To report outstanding work before publishing  | The `*Completeness` companions in the [Query Governor](./governors/query-governor.md)                         |
+| Correct `considerGames` rating computation    | [generateDynamicRatings](./scale-engine/scale-engine-api.md#generatedynamicratings)                           |
+| Bulk-abandon still-playable matchUps          | [abandonTournamentMatchUps](./governors/matchup-governor.md#abandontournamentmatchups)                        |
 | Post-6.0.0 status-value canonicalization      | [Migration addendum](./migration-6.0.0#addendum--post-600-status-value-canonicalization-shipped-non-breaking) |

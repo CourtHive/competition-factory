@@ -475,7 +475,7 @@ venues.forEach((venue) => {
 
 ### 4. Consider Dependencies
 
-Schedule rounds in order that respects match dependencies. The factory's [`getMatchUpDependencies`](../governors/query-governor#getmatchupdependencies) method builds a full dependency graph that crosses structure boundaries (e.g., consolation draws, Round Robin → Playoff links) and can be used to validate profile ordering programmatically:
+Schedule rounds in order that respects match dependencies. The factory's [`getMatchUpDependencies`](../governors/query-governor.md#getmatchupdependencies) method builds a full dependency graph that crosses structure boundaries (e.g., consolation draws, Round Robin → Playoff links) and can be used to validate profile ordering programmatically:
 
 ```js
 // Day 1: Round 1 must complete before Round 2 can start
@@ -682,8 +682,8 @@ const result = tournamentEngine.scheduleProfileRounds({
 
 ## Related Documentation
 
-- **[Scheduling Overview](./scheduling-overview)** - Understanding scheduling workflows
-- **[Automated Scheduling](./automated-scheduling)** - Garman formula details
-- **[Scheduling Policy](./scheduling-policy)** - Recovery times and daily limits
-- **[Venues and Courts](./venues-courts)** - Venue configuration
+- **[Scheduling Overview](./scheduling-overview.mdx)** - Understanding scheduling workflows
+- **[Automated Scheduling](./automated-scheduling.md)** - Garman formula details
+- **[Scheduling Policy](./scheduling-policy.mdx)** - Recovery times and daily limits
+- **[Venues and Courts](./venues-courts.md)** - Venue configuration
 - **[Schedule Governor](/docs/governors/schedule-governor)** - API reference for `scheduleProfileRounds()`

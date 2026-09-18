@@ -6,7 +6,7 @@ title: Swiss
 
 A **Swiss** draw is a round-based tournament format where participants are paired each round based on current standings rather than a fixed bracket. Inspired by the FIDE Swiss system used in chess, it efficiently determines a ranking for a large field in far fewer rounds than a round robin while giving every participant the same number of games.
 
-In the factory, this draw type is represented by the constant `SWISS`. Internally it builds on the [Ad Hoc](./ad-hoc) structure (no fixed bracket, rounds generated on demand) but adds FIDE-style score-group pairing, repeat-avoidance, floating, and tiebreaker computation.
+In the factory, this draw type is represented by the constant `SWISS`. Internally it builds on the [Ad Hoc](./ad-hoc.md) structure (no fixed bracket, rounds generated on demand) but adds FIDE-style score-group pairing, repeat-avoidance, floating, and tiebreaker computation.
 
 ## Structure
 
@@ -212,7 +212,7 @@ This enables a three-track rating approach:
 
 ## Related
 
-- [Ad Hoc (Flex Rounds)](./ad-hoc) -- The underlying structure Swiss draws build upon
-- [DrawMatic](./drawmatic) -- Probabilistic pairing algorithm (alternative to Swiss score-group pairing)
-- [Draw Types Overview](../draw-types) -- List of all pre-defined draw types
+- [Ad Hoc (Flex Rounds)](./ad-hoc.md) -- The underlying structure Swiss draws build upon
+- [DrawMatic](./drawmatic.md) -- Probabilistic pairing algorithm (alternative to Swiss score-group pairing)
+- [Draw Types Overview](../draw-types.md) -- List of all pre-defined draw types
 - [Generation Governor](/docs/governors/generation-governor) -- API reference for draw generation

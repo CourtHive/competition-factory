@@ -345,9 +345,7 @@ mocksGovernor.modifyTournamentRecord({
   schedulingProfile: [
     {
       scheduleDate: '2024-06-02',
-      venues: [
-        /* ... */
-      ],
+      venues: [/* ... */],
     },
   ],
 

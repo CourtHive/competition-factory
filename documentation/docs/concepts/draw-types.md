@@ -13,7 +13,7 @@ title: Draw Types
 **Stages**: Logical groupings of structures (QUALIFYING, MAIN, CONSOLATION, PLAY_OFF)
 **Draw Types**: Pre-configured combinations of linked structures
 
-All draw types work uniformly regardless of participant type — the same structure and link configurations apply to INDIVIDUAL (singles), PAIR (doubles), and TEAM events. See [Participant-Agnostic Logic](./participants#participant-agnostic-logic).
+All draw types work uniformly regardless of participant type — the same structure and link configurations apply to INDIVIDUAL (singles), PAIR (doubles), and TEAM events. See [Participant-Agnostic Logic](./participants.md#participant-agnostic-logic).
 
 ## Understanding Linked Structures
 
@@ -53,26 +53,26 @@ Consolation Stage:
 
 The convenience method `engine.generateDrawDefinition()` generates the following draw types:
 
-- **[AD_HOC](./draw-types/ad-hoc)** - An arbitrary number of matchUps may be added to an arbitrary number of rounds. Supports automated pairing via [DrawMatic](./draw-types/drawmatic).
-- **[COMPASS](./draw-types/compass)** - Includes up to 8 structures; ensures participants a minimum of 3 matchUps.
+- **[AD_HOC](./draw-types/ad-hoc.md)** - An arbitrary number of matchUps may be added to an arbitrary number of rounds. Supports automated pairing via [DrawMatic](./draw-types/drawmatic.md).
+- **[COMPASS](./draw-types/compass.mdx)** - Includes up to 8 structures; ensures participants a minimum of 3 matchUps.
 - **CURTIS** - Includes 2 consolation structures, each fed by 2 main structure rounds, and a 3-4 playoff.
-- **[DOUBLE_ELIMINATION](./draw-types/double-elimination)** - Main structure losers feed into consolation; consolation winner plays main structure winner.
-- **[FEED_IN_CHAMPIONSHIP_TO_QF](./draw-types/consolation-draws)** - Main structure losers feed into consolation through the Quarterfinals.
-- **[FEED_IN_CHAMPIONSHIP_TO_R16](./draw-types/consolation-draws)** - Main structure losers feed into consolation through the Round of 16.
-- **[FEED_IN_CHAMPIONSHIP_TO_SF](./draw-types/consolation-draws)** - Main structure losers feed into consolation through the Semifinals.
-- **[FEED_IN_CHAMPIONSHIP](./draw-types/consolation-draws)** - Main structure losers in every round feed into consolation.
-- **[FEED_IN](./draw-types/feed-in)** - Also known as "staggered entry", participants feed into the main structure at specified rounds.
-- **[FIRST_MATCH_LOSER_CONSOLATION](./draw-types/consolation-draws)** - Losers feed into consolation whenever their first loss occurs.
-- **[FIRST_ROUND_LOSER_CONSOLATION](./draw-types/consolation-draws)** - Only first round losers feed into consolation structure.
-- **[LADDER](./draw-types/ladder)** - A continuous, challenge-driven standing. Participants challenge those above them; there are no rounds and no bracket. Ordered by rank or by rating.
-- **[LUCKY_DRAW](./draw-types/lucky-draw)** - Supports any participant count (not just power-of-2). Rounds with an odd number of matchUps produce a "lucky loser" who advances to balance the next round.
-- **[MODIFIED_FEED_IN_CHAMPIONSHIP](./draw-types/consolation-draws)** - First and Second round losers are fed into consolation structure.
-- **[OLYMPIC](./draw-types/olympic)** - Includes up to 4 structures; ensures participants a minimum of 2 matchUps.
-- **[PAGE_PLAYOFF](./draw-types/page-playoff)** - A 4-participant hybrid knockout format (used in IPL, NBA, curling) that gives the top two seeds double-elimination protection. Resolves all four finishing positions definitively. Can be used standalone or as a playoff structure type in `ROUND_ROBIN_WITH_PLAYOFF`.
-- **[PLAYOFF](./draw-types/playoff)** - All positions are played off; structures are added to ensure unique finishing positions. Note: `PLAY_OFF` (with underscore) is a stage type applied to structures. `PLAYOFF` (no underscore) is a draw type that generates structures to play off all positions.
-- **[ROUND_ROBIN](./draw-types/round-robin)** - Participants divided into specified group sizes.
-- **[ROUND_ROBIN_WITH_PLAYOFF](./draw-types/round-robin-with-playoff)** - Includes automated generation of specified playoff structures.
-- **[SINGLE_ELIMINATION](./draw-types/single-elimination)** - Standard knockout draw structure.
+- **[DOUBLE_ELIMINATION](./draw-types/double-elimination.mdx)** - Main structure losers feed into consolation; consolation winner plays main structure winner.
+- **[FEED_IN_CHAMPIONSHIP_TO_QF](./draw-types/consolation-draws.mdx)** - Main structure losers feed into consolation through the Quarterfinals.
+- **[FEED_IN_CHAMPIONSHIP_TO_R16](./draw-types/consolation-draws.mdx)** - Main structure losers feed into consolation through the Round of 16.
+- **[FEED_IN_CHAMPIONSHIP_TO_SF](./draw-types/consolation-draws.mdx)** - Main structure losers feed into consolation through the Semifinals.
+- **[FEED_IN_CHAMPIONSHIP](./draw-types/consolation-draws.mdx)** - Main structure losers in every round feed into consolation.
+- **[FEED_IN](./draw-types/feed-in.md)** - Also known as "staggered entry", participants feed into the main structure at specified rounds.
+- **[FIRST_MATCH_LOSER_CONSOLATION](./draw-types/consolation-draws.mdx)** - Losers feed into consolation whenever their first loss occurs.
+- **[FIRST_ROUND_LOSER_CONSOLATION](./draw-types/consolation-draws.mdx)** - Only first round losers feed into consolation structure.
+- **[LADDER](./draw-types/ladder.md)** - A continuous, challenge-driven standing. Participants challenge those above them; there are no rounds and no bracket. Ordered by rank or by rating.
+- **[LUCKY_DRAW](./draw-types/lucky-draw.mdx)** - Supports any participant count (not just power-of-2). Rounds with an odd number of matchUps produce a "lucky loser" who advances to balance the next round.
+- **[MODIFIED_FEED_IN_CHAMPIONSHIP](./draw-types/consolation-draws.mdx)** - First and Second round losers are fed into consolation structure.
+- **[OLYMPIC](./draw-types/olympic.mdx)** - Includes up to 4 structures; ensures participants a minimum of 2 matchUps.
+- **[PAGE_PLAYOFF](./draw-types/page-playoff.mdx)** - A 4-participant hybrid knockout format (used in IPL, NBA, curling) that gives the top two seeds double-elimination protection. Resolves all four finishing positions definitively. Can be used standalone or as a playoff structure type in `ROUND_ROBIN_WITH_PLAYOFF`.
+- **[PLAYOFF](./draw-types/playoff.mdx)** - All positions are played off; structures are added to ensure unique finishing positions. Note: `PLAY_OFF` (with underscore) is a stage type applied to structures. `PLAYOFF` (no underscore) is a draw type that generates structures to play off all positions.
+- **[ROUND_ROBIN](./draw-types/round-robin.md)** - Participants divided into specified group sizes.
+- **[ROUND_ROBIN_WITH_PLAYOFF](./draw-types/round-robin-with-playoff.mdx)** - Includes automated generation of specified playoff structures.
+- **[SINGLE_ELIMINATION](./draw-types/single-elimination.md)** - Standard knockout draw structure.
 
 ## Stages: Organizing Structures
 
@@ -156,7 +156,7 @@ Main Draw Structure (32 positions):
 
 ## Related Documentation
 
-- **[Draw Links](./draw-links)** - How links connect structures and define participant flow
-- **[Draw Generation](./draws-overview)** - Creating and configuring draws
-- **[Actions](./actions)** - Managing draw structures and participants
+- **[Draw Links](./draw-links.mdx)** - How links connect structures and define participant flow
+- **[Draw Generation](./draws-overview.mdx)** - Creating and configuring draws
+- **[Actions](./actions.mdx)** - Managing draw structures and participants
 - **[Generation Governor](/docs/governors/generation-governor)** - Complete API reference

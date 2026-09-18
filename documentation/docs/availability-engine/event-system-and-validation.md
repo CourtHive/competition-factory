@@ -292,7 +292,7 @@ for (const result of pipelineResult.results) {
 
 ## Related Documentation
 
-- **[Overview](./availability-engine-overview)** — Introduction and architecture
-- **[Core API Reference](./availability-engine-api)** — Complete method reference
-- **[Block Types & Algorithms](./block-types-and-algorithms)** — Block types, rail derivation, collision detection
-- **[UI Integration Scenarios](./ui-integration-scenarios)** — Building UIs with engine data
+- **[Overview](./availability-engine-overview.md)** — Introduction and architecture
+- **[Core API Reference](./availability-engine-api.md)** — Complete method reference
+- **[Block Types & Algorithms](./block-types-and-algorithms.md)** — Block types, rail derivation, collision detection
+- **[UI Integration Scenarios](./ui-integration-scenarios.md)** — Building UIs with engine data

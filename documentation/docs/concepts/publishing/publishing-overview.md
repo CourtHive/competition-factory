@@ -36,7 +36,7 @@ Tournament organizers often need to control information release:
 
 ### How Publishing Works
 
-Publishing operates through **publish state management** tracked via [Time Items](../timeItems):
+Publishing operates through **publish state management** tracked via [Time Items](../timeItems.md):
 
 1. **Internal Operations**: Tournament staff work with complete data
 2. **Publish Actions**: Administrators explicitly publish specific elements
@@ -97,18 +97,18 @@ Publishing can be controlled at multiple levels:
 
 ## Publishing Topics
 
-| Topic                  | Description                                                | Concept Page                                              |
-| ---------------------- | ---------------------------------------------------------- | --------------------------------------------------------- |
-| Events and Draws       | Publish draws with stage, structure, and round granularity | [Publishing Events](./publishing-events)                  |
-| Seeding                | Control seeding visibility separately from draws           | [Publishing Seeding](./publishing-seeding)                |
-| Order of Play          | Publish scheduled matchUps by date and event               | [Publishing Order of Play](./publishing-order-of-play)    |
-| Participants           | Control participant list visibility and privacy            | [Publishing Participants](./publishing-participants)      |
-| Embargo                | Time-based visibility gates and scheduled rounds           | [Embargo and Scheduled Rounds](./publishing-embargo)      |
-| Data and Subscriptions | Prepared payloads and notification integration             | [Data and Subscriptions](./publishing-data-subscriptions) |
-| Workflows              | Common patterns and best practices                         | [Workflows and Best Practices](./publishing-workflows)    |
+| Topic                  | Description                                                | Concept Page                                                 |
+| ---------------------- | ---------------------------------------------------------- | ------------------------------------------------------------ |
+| Events and Draws       | Publish draws with stage, structure, and round granularity | [Publishing Events](./publishing-events.md)                  |
+| Seeding                | Control seeding visibility separately from draws           | [Publishing Seeding](./publishing-seeding.md)                |
+| Order of Play          | Publish scheduled matchUps by date and event               | [Publishing Order of Play](./publishing-order-of-play.md)    |
+| Participants           | Control participant list visibility and privacy            | [Publishing Participants](./publishing-participants.md)      |
+| Embargo                | Time-based visibility gates and scheduled rounds           | [Embargo and Scheduled Rounds](./publishing-embargo.md)      |
+| Data and Subscriptions | Prepared payloads and notification integration             | [Data and Subscriptions](./publishing-data-subscriptions.md) |
+| Workflows              | Common patterns and best practices                         | [Workflows and Best Practices](./publishing-workflows.md)    |
 
 ## Related Documentation
 
 - **[Publishing Governor](/docs/governors/publishing-governor)** - Complete API reference for all publishing methods
 - **[Query Governor](/docs/governors/query-governor)** - Methods using publish state
-- **[Time Items](../timeItems)** - How publish state is stored
+- **[Time Items](../timeItems.md)** - How publish state is stored

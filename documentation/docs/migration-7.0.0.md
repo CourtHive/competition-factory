@@ -1085,7 +1085,7 @@ people who must act on it.
 
 ### `LADDER` joins the draw types
 
-See [Ladder](./concepts/draw-types/ladder). `isAdHocType` now returns `true` for `LADDER` — a ladder
+See [Ladder](./concepts/draw-types/ladder.md). `isAdHocType` now returns `true` for `LADDER` — a ladder
 shares the `AD_HOC` structure shape — so any code branching on it will include ladders. Use
 `isLadder` where the difference matters: an `AD_HOC` draw's `positionAssignments` are a roster, a
 ladder's are an ordered standing.

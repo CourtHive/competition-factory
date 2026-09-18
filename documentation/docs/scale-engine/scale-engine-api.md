@@ -364,10 +364,10 @@ Calculates updated ratings for two participants based on a match outcome.
 
 ## Related Documentation
 
-- **[Scale Engine Overview](./scale-engine-overview)** — Introduction and architecture
-- **[Ranking Points Pipeline](./ranking-points-pipeline)** — How points are computed
-- **[Quality Win Points](./quality-win-points)** — Quality win bonus system
-- **[Multi-Tournament Aggregation](./aggregation)** — Counting buckets and ranking lists
+- **[Scale Engine Overview](./scale-engine-overview.md)** — Introduction and architecture
+- **[Ranking Points Pipeline](./ranking-points-pipeline.md)** — How points are computed
+- **[Quality Win Points](./quality-win-points.md)** — Quality win bonus system
+- **[Multi-Tournament Aggregation](./aggregation.md)** — Counting buckets and ranking lists
 - **[Ranking Governor](/docs/governors/ranking-governor)** — Stateless function reference
 - **[Ranking Policy](/docs/policies/rankingPolicy)** — Policy structure guide
 - **[Scale Items](/docs/concepts/scaleItems)** — Rankings, ratings, and seedings

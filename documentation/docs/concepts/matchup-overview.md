@@ -100,7 +100,7 @@ type TeamMatchUp = {
 };
 ```
 
-**See:** [Tie Format](./tieFormat) and [Tie MatchUp](./tieMatchUp) for team match details.
+**See:** [Tie Format](./tieFormat.mdx) and [Tie MatchUp](./tieMatchUp.mdx) for team match details.
 
 ## MatchUp Status
 
@@ -208,7 +208,7 @@ const { matchUps } = tournamentEngine.allTournamentMatchUps({
 });
 ```
 
-**See:** [MatchUp Filtering](./matchup-filtering) for comprehensive filtering options.
+**See:** [MatchUp Filtering](./matchup-filtering.mdx) for comprehensive filtering options.
 
 ## MatchUp Sides
 
@@ -246,7 +246,7 @@ Each matchUp has two sides representing the competing participants:
 `drawPosition` is resolved from `matchUp.drawPositions`, and that resolution has rules worth knowing
 before reading the field — notably that an **absent `drawPositions` key is the ordinary shape of an
 unplayed matchUp**, and that on a feed round the side a lone position lands on depends on whether it
-was fed or advanced. See [drawPositions](./draw-positions).
+was fed or advanced. See [drawPositions](./draw-positions.md).
 
 ### Winning Side
 
@@ -348,7 +348,7 @@ tournamentEngine.addMatchUpScheduleItems({
 });
 ```
 
-**See:** [Scheduling Overview](./scheduling-overview) for detailed scheduling workflows.
+**See:** [Scheduling Overview](./scheduling-overview.mdx) for detailed scheduling workflows.
 
 ## Officials and Check-In
 
@@ -462,7 +462,7 @@ validActions.forEach((action) => {
 });
 ```
 
-**See:** [Actions](./actions#matchupactions) for complete action documentation.
+**See:** [Actions](./actions.mdx#matchupactions) for complete action documentation.
 
 ## Mutation Timestamps
 
@@ -559,9 +559,9 @@ matchUps.forEach((matchUp) => {
 
 ## Related Documentation
 
-- **[MatchUp Context](./matchup-context)** - Understanding hydration and contextual data
-- **[MatchUp Filtering](./matchup-filtering)** - Comprehensive filtering options
-- **[Actions](./actions#matchupactions)** - Available matchUp actions
-- **[Tie Format](./tieFormat)** - Team match structure
-- **[Scheduling Overview](./scheduling-overview)** - Match scheduling workflows
+- **[MatchUp Context](./matchup-context.mdx)** - Understanding hydration and contextual data
+- **[MatchUp Filtering](./matchup-filtering.mdx)** - Comprehensive filtering options
+- **[Actions](./actions.mdx#matchupactions)** - Available matchUp actions
+- **[Tie Format](./tieFormat.mdx)** - Team match structure
+- **[Scheduling Overview](./scheduling-overview.mdx)** - Match scheduling workflows
 - **[Query Governor](/docs/governors/query-governor#alltournamentmatchups)** - Complete API reference

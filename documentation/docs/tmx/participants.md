@@ -43,9 +43,7 @@ tournamentEngine.addParticipant({
 
 // Bulk participants
 tournamentEngine.addParticipants({
-  participants: [
-    /* array of participant objects */
-  ],
+  participants: [/* array of participant objects */],
   allowDuplicateParticipantIdPairs: false,
 });
 ```

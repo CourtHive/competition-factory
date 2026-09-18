@@ -77,11 +77,11 @@ is _structurally_ impossible for the draw size (5 into a draw of 12, which canno
 to the nearest workable size.
 
 For a league — one division, no groups, optionally playing each opponent more than once — apply a
-[round robin pairing shape](./round-robin-pairing) to an `AD_HOC` draw instead.
+[round robin pairing shape](./round-robin-pairing.md) to an `AD_HOC` draw instead.
 
 ## Related
 
-- [Round Robin with Playoff](./round-robin-with-playoff) -- Round robin groups followed by knockout playoffs
+- [Round Robin with Playoff](./round-robin-with-playoff.mdx) -- Round robin groups followed by knockout playoffs
 - [Round Robin Tally Policy](/docs/policies/roundRobinTallyPolicy) -- Configuring tally and tie-breaking rules
-- [Finishing Positions](../finishing-positions) -- How finishing positions are determined
-- [Draw Types Overview](../draw-types) -- List of all pre-defined draw types
+- [Finishing Positions](../finishing-positions.md) -- How finishing positions are determined
+- [Draw Types Overview](../draw-types.md) -- List of all pre-defined draw types

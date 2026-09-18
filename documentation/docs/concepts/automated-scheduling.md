@@ -105,7 +105,7 @@ engine.scheduleMatchUps({
 The highest level auto-scheduling method is `engine.scheduleProfileRounds`.
 
 1. Validate and filter `schedulingProfile` dates by specified `scheduleDates`
-2. Construct [`matchUpDependencies`](../governors/query-governor#getmatchupdependencies) to ensure matchUps are scheduled before their dependents
+2. Construct [`matchUpDependencies`](../governors/query-governor.md#getmatchupdependencies) to ensure matchUps are scheduled before their dependents
 3. Get an array of **inContext** `matchUps` for all relevant `tournamentRecords`
 4. Retrieve `matchUpDailyLimits` and `personRequests`
 5. Sort `scheduleDates` and for each iterate through all venues

@@ -166,6 +166,6 @@ A day inside any `timeAway` range is a hard `UNAVAILABLE` override, regardless o
 
 ## Related
 
-- **[Custom Engines](./custom-engines)** — assembling engine facades from factory functions
-- **[Time Items](../concepts/timeItems)** — the temporal records used by scheduling lifecycles
-- **[Factory Errors](./factory-errors)** — the result-envelope + error-object convention the injected errors follow
+- **[Custom Engines](./custom-engines.md)** — assembling engine facades from factory functions
+- **[Time Items](../concepts/timeItems.md)** — the temporal records used by scheduling lifecycles
+- **[Factory Errors](./factory-errors.md)** — the result-envelope + error-object convention the injected errors follow

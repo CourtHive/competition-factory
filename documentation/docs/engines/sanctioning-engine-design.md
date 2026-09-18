@@ -5,7 +5,7 @@ The organisation is referred to as **World Tennis (formerly the ITF)** — it re
 1 January 2026. `ITF` persists deliberately wherever it names a **policy**
 (`POLICY_SANCTIONING_ITF`), a **stored value** (`governingBodyId: 'itf'`), a **level code**
 (`ITF W15`), or a **circuit** (World Tennis Tour). See
-[the ITF and World Tennis](../data-standards#world-tennis).
+[the ITF and World Tennis](../data-standards.md#world-tennis).
 :::
 
 ## 1. Overview

@@ -92,7 +92,7 @@ TIE rows carry `score_source`, so a consumer can tell **"no line detail exists"*
 - `NULL` — `DERIVED`, the default: the tie score comes from its rubbers, and an empty scorecard means results are still outstanding.
 - `'REPORTED'` — the competition publishes only the team result and the lines are **unpopulated by design**. Such a tie generates no rubbers at all, so a TIE row with zero RUBBER rows is **complete**, not awaiting entry.
 
-`score_source` is `NULL` on STANDARD and RUBBER rows. It comes from the [tieFormat's `scoreSource`](../concepts/tieFormat#score-source--derived-vs-reported), resolved hierarchically, so a federation declares it once on the event and every tie beneath it projects the value.
+`score_source` is `NULL` on STANDARD and RUBBER rows. It comes from the [tieFormat's `scoreSource`](../concepts/tieFormat.mdx#score-source--derived-vs-reported), resolved hierarchically, so a federation declares it once on the event and every tie beneath it projects the value.
 
 **Bracket topology.** Each `match_ups` row also carries the draw's shape, so a consumer can render a bracket or answer "where does this winner play next" without re-deriving it:
 
@@ -612,7 +612,7 @@ empty result for a public reader rather than an error.
 
 Returns event information optimized for publishing: `matchUps` have context and separated into rounds for consumption by visualization libraries such as `tods-react-draws`. See examples: [Event Data Payload](../concepts/publishing/publishing-data-subscriptions.md#event-data-payload), [Event Data](../concepts/publishing/publishing-workflows.md#event-data), [Test Publish State](../concepts/publishing/publishing-workflows.md#test-publish-state).
 
-See [Policies](../concepts/policies) for more details on `policyDefinitions`.
+See [Policies](../concepts/policies.md) for more details on `policyDefinitions`.
 
 ```js
 const { eventData } = engine.getEventData({
@@ -629,7 +629,7 @@ const { eventData } = engine.getEventData({
 const { drawsData, venuesData, eventInfo, tournamentInfo } = eventData;
 ```
 
-When `usePublishState: true`, this method enforces [embargo](../concepts/publishing/publishing-embargo) timestamps — embargoed draws, stages, and structures are filtered from `drawsData` until the embargo passes.
+When `usePublishState: true`, this method enforces [embargo](../concepts/publishing/publishing-embargo.md) timestamps — embargoed draws, stages, and structures are filtered from `drawsData` until the embargo passes.
 
 ### drawsProfile
 
@@ -681,7 +681,7 @@ Only an **exact** match omits `participants`. A mismatch, an absent stamp, or a 
 
 `participantsVersion` is present on the response **only** when it was computed. It is a conditional key rather than an explicitly-`undefined` one, so a caller that did not ask sees the response shape it has always seen.
 
-**See**: [Embargo](../concepts/publishing/publishing-embargo) for details on how embargo timestamps work.
+**See**: [Embargo](../concepts/publishing/publishing-embargo.md) for details on how embargo timestamps work.
 
 ---
 
@@ -1259,7 +1259,7 @@ const twoRoundsBack = deps.sources[1]; // feeders of feeders
 
 ### Role in Automated Scheduling
 
-`getMatchUpDependencies` is the foundation of the factory's scheduling constraint enforcement. The [automated scheduling](../concepts/automated-scheduling) pipeline calls it early in the process (step 2 of [scheduleProfileRounds](../concepts/automated-scheduling#pseudocode)) and threads the dependency data through four constraint functions:
+`getMatchUpDependencies` is the foundation of the factory's scheduling constraint enforcement. The [automated scheduling](../concepts/automated-scheduling.md) pipeline calls it early in the process (step 2 of [scheduleProfileRounds](../concepts/automated-scheduling.md#pseudocode)) and threads the dependency data through four constraint functions:
 
 | Function                     | Constraint                                                                                                                 | Uses                              |
 | ---------------------------- | -------------------------------------------------------------------------------------------------------------------------- | --------------------------------- |
@@ -1268,11 +1268,11 @@ const twoRoundsBack = deps.sources[1]; // feeders of feeders
 | `checkRecoveryTime`          | **Gate**: every potential participant must have sufficient rest (`timeAfterRecovery`) since their last scheduled matchUp   | `participantIds`                  |
 | `updateTimeAfterRecovery`    | **State**: after scheduling a matchUp, updates the recovery deadline for all potential participants in downstream matchUps | `participantIds`                  |
 
-The [pro scheduler](../concepts/pro-scheduling) uses the same dependency data in its `proConflicts` post-hoc analysis to detect ordering violations, court double-bookings, and insufficient recovery gaps.
+The [pro scheduler](../concepts/pro-scheduling.md) uses the same dependency data in its `proConflicts` post-hoc analysis to detect ordering violations, court double-bookings, and insufficient recovery gaps.
 
 ### Relationship to the Scheduling Profile
 
-The [scheduling profile](../concepts/scheduling-profile) defines _which_ rounds to schedule on each date/venue. `getMatchUpDependencies` enforces _whether_ that ordering is valid:
+The [scheduling profile](../concepts/scheduling-profile.mdx) defines _which_ rounds to schedule on each date/venue. `getMatchUpDependencies` enforces _whether_ that ordering is valid:
 
 - **Profile validation**: The factory's `getSchedulingProfileIssues()` method calls `getMatchUpDependencies` and checks that no matchUp appears _after_ a matchUp it depends on within the profile ordering. It returns `profileIssues` with the violating round indices.
 - **Profile building**: Applications that build scheduling profiles interactively (e.g., using the `courthive-components` scheduling profile builder) can use the dependency data to validate the profile in real time before it is submitted for execution.
@@ -1656,7 +1656,7 @@ Returns the following detail for each round:
 
 Return a ranking or rating or seeding value for a participant, referenced by participantId. See examples in [Get Specific Scale Item](../concepts/scaleItems.md#get-specific-scale-item), [Scale Item Values](../concepts/accessors.mdx#scale-item-values), [Complex Scale Item Retrieval](../concepts/accessors.mdx#complex-scale-item-retrieval).
 
-See [Scale Items](../concepts/scaleItems).
+See [Scale Items](../concepts/scaleItems.md).
 
 ```js
 const scaleAttributes = {
@@ -1744,7 +1744,7 @@ Once a matching `policyType` has been found, higher level policies of the same t
 
 The constructed `policyDefinitions` object contains targeted policies from all levels, scoped to the lowest level specified.
 
-See [Policies](../concepts/policies).
+See [Policies](../concepts/policies.md).
 
 ```js
 const { policyDefinitions } = engine.getPolicyDefinitions({
@@ -1823,7 +1823,7 @@ Retrieves event entries sorted by their scale values (ratings, rankings, etc.). 
 - **Pre-Processing** - Before applying custom sorting logic
 - **Validation** - Checking participant ratings before seeding
 
-See [Scale Items](../concepts/scaleItems) and [Generating Seeding Scale Items](../concepts/scaleItems#generating-seeding-scale-items).
+See [Scale Items](../concepts/scaleItems.md) and [Generating Seeding Scale Items](../concepts/scaleItems.md#generating-seeding-scale-items).
 
 ```js
 const { scaledEntries } = engine.getScaledEntries({
@@ -2097,8 +2097,8 @@ console.log(`${ratingCoverage.toFixed(1)}% of entries have WTN ratings`);
 
 ### See Also
 
-- **[Scale Items](../concepts/scaleItems)** - Complete scale items documentation
-- **[Generating Seeding Scale Items](../concepts/scaleItems#generating-seeding-scale-items)** - Seeding generation patterns
+- **[Scale Items](../concepts/scaleItems.md)** - Complete scale items documentation
+- **[Generating Seeding Scale Items](../concepts/scaleItems.md#generating-seeding-scale-items)** - Seeding generation patterns
 - **[Auto Seeding](/docs/governors/draws-governor#autoseeding)** - Automatic seeding
 - **[generateSeedingScaleItems](/docs/governors/generation-governor#generateseedingscaleitems)** - Generate seed assignments
 
@@ -2354,7 +2354,7 @@ tournamentInfo.tournamentContacts;
 //    person: { contacts: [{ name, mobileTelephone, emailAddress, isPublic: true }] } }]
 ```
 
-Two gates decide what appears — the staff **role** list, and `Contact.isPublic === true` on each individual contact. Appearing in the role list publishes nothing on its own, and absent or `false` both withhold. This subtree is filtered by the bundled `POLICY_PRIVACY_STAFF` rather than by a caller's participant policy; `policyDefinitions` replaces it where a provider needs different attributes. See [Staff contacts](../policies/participantPolicy#staff-contacts) for the role list and the reasoning.
+Two gates decide what appears — the staff **role** list, and `Contact.isPublic === true` on each individual contact. Appearing in the role list publishes nothing on its own, and absent or `false` both withhold. This subtree is filtered by the bundled `POLICY_PRIVACY_STAFF` rather than by a caller's participant policy; `policyDefinitions` replaces it where a provider needs different attributes. See [Staff contacts](../policies/participantPolicy.md#staff-contacts) for the role list and the reasoning.
 
 ### Counts
 
@@ -2568,7 +2568,7 @@ const {
 
 Similar to [getParticipantScaleItem](#getparticipantscaleitem) but takes a `participant` object and doesn't require `engine.setState(tournamentRecord)`.
 
-See [Scale Items](../concepts/scaleItems).
+See [Scale Items](../concepts/scaleItems.md).
 
 ```js
 const scaleAttributes = {

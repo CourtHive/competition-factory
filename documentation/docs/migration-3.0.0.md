@@ -82,7 +82,7 @@ All other `USTA_*` and organization-prefixed formats are similarly renamed.
 
 ## matchUpFormat — multi-sport grammar
 
-The `matchUpFormatCode` parser and stringifier have been extended from a tennis-only grammar to a multi-sport specification. The expansion landed across late v2.4.x betas; v3.0 is its production debut. The full specification lives in [`matchup-format`](./codes/matchup-format) — what follows is the breaking-or-noteworthy surface.
+The `matchUpFormatCode` parser and stringifier have been extended from a tennis-only grammar to a multi-sport specification. The expansion landed across late v2.4.x betas; v3.0 is its production debut. The full specification lives in [`matchup-format`](./codes/matchup-format.mdx) — what follows is the breaking-or-noteworthy surface.
 
 ### Match roots
 
@@ -372,7 +372,7 @@ Test coverage: **869 test files / 9,142 passing tests** in 3.0 — up from ~659 
 
 ## Backwards-compatibility notes
 
-- `competitionEngine` continues to exist for parity with `tournamentEngine`. See [Migration 1.x to 2.x](./migration) for the original split.
+- `competitionEngine` continues to exist for parity with `tournamentEngine`. See [Migration 1.x to 2.x](./migration.md) for the original split.
 - The `tools` import surface is unchanged: `import { tools } from 'tods-competition-factory'`.
 - The CODES rename does not break TODS document compatibility — every 2.x record is still readable by 3.x.
 

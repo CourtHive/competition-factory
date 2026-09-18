@@ -2,7 +2,7 @@
 title: RFC 6902 JSON Patch
 ---
 
-The factory ships a minimal RFC 6902 JSON Patch generator used by [`dryRun`](./dry-run-explain) (and downstream by audit / time-travel tooling) to express "what would change" between two state snapshots. Zero-runtime-deps: hand-rolled to keep the factory's posture intact.
+The factory ships a minimal RFC 6902 JSON Patch generator used by [`dryRun`](./dry-run-explain.md) (and downstream by audit / time-travel tooling) to express "what would change" between two state snapshots. Zero-runtime-deps: hand-rolled to keep the factory's posture intact.
 
 ```ts
 import { generatePatch, type JsonPatch } from 'tods-competition-factory';

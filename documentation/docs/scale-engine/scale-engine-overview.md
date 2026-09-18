@@ -120,10 +120,10 @@ See [Ranking Points Pipeline](/docs/scale-engine/ranking-points-pipeline) for de
 
 ## Related Documentation
 
-- **[Core API Reference](./scale-engine-api)** — Complete method reference
-- **[Ranking Points Pipeline](./ranking-points-pipeline)** — Profile selection, position points, per-win, bonuses
-- **[Quality Win Points](./quality-win-points)** — Quality win bonus system
-- **[Multi-Tournament Aggregation](./aggregation)** — Counting buckets, rolling windows, tiebreakers
+- **[Core API Reference](./scale-engine-api.md)** — Complete method reference
+- **[Ranking Points Pipeline](./ranking-points-pipeline.md)** — Profile selection, position points, per-win, bonuses
+- **[Quality Win Points](./quality-win-points.md)** — Quality win bonus system
+- **[Multi-Tournament Aggregation](./aggregation.md)** — Counting buckets, rolling windows, tiebreakers
 - **[Ranking Policy](/docs/policies/rankingPolicy)** — Policy structure reference
 - **[Ranking Governor](/docs/governors/ranking-governor)** — Stateless ranking functions
 - **[Scale Items](/docs/concepts/scaleItems)** — Rankings, ratings, and seedings storage
