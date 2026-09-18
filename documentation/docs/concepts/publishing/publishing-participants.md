@@ -27,7 +27,7 @@ engine.publishParticipants({
 });
 ```
 
-See [Embargo and Scheduled Rounds](./publishing-embargo) for details on how embargo enforcement works across all publishing levels.
+See [Embargo and Scheduled Rounds](./publishing-embargo.md) for details on how embargo enforcement works across all publishing levels.
 
 **API Reference:** [publishParticipants](/docs/governors/publishing-governor#publishparticipants)
 

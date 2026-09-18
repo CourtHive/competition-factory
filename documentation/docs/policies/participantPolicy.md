@@ -67,7 +67,7 @@ A template array acts as an allow-list, but it is only evaluated for keys the so
 
 ## Staff contacts
 
-`tournamentContacts` on [getTournamentInfo](../governors/query-governor#gettournamentinfo) is the one participant population the caller's policy does **not** govern. It is filtered with the bundled `POLICY_PRIVACY_STAFF` instead, because a contact stripped of `participantRoleResponsibilities` is not a contact — a caller supplying a strict competitor policy would otherwise receive a contact list it could not use.
+`tournamentContacts` on [getTournamentInfo](../governors/query-governor.md#gettournamentinfo) is the one participant population the caller's policy does **not** govern. It is filtered with the bundled `POLICY_PRIVACY_STAFF` instead, because a contact stripped of `participantRoleResponsibilities` is not a contact — a caller supplying a strict competitor policy would otherwise receive a contact list it could not use.
 
 ```js
 import { fixtures } from 'tods-competition-factory';

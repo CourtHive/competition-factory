@@ -11,7 +11,7 @@ A **Schedule Scenario** is a named, alternate ("contingency") scheduling plan a 
 - **Persisted first-class** on `tournamentRecord.scheduling.scenarios` — never a legacy extension, and never emitted to public / arena read surfaces.
 - **Many named scenarios** per tournament; a director cycles through them and commits at most one.
 - **Resolved matchUp placements only** (courts / times / order) — a scenario never re-runs the round-level scheduler.
-- **Commit is a direct hand-off** — a scenario's `placements` array is, by construction, a [`bulkScheduleMatchUps`](../governors/schedule-governor#bulkschedulematchups) `matchUpDetails` payload.
+- **Commit is a direct hand-off** — a scenario's `placements` array is, by construction, a [`bulkScheduleMatchUps`](../governors/schedule-governor.md#bulkschedulematchups) `matchUpDetails` payload.
 - **Uncompleted matchUps only** — applying a scenario skips completed matchUps automatically (inherited from `bulkScheduleMatchUps`).
 
 ## Data Structure
@@ -94,7 +94,7 @@ const result = engine.applyScheduleScenario({ scenarioId });
 Because the placements are a `bulkScheduleMatchUps` payload:
 
 - **Completed matchUps are skipped** by default (pass `scheduleCompletedMatchUps: true` to override).
-- `removePriorValues` defaults to `true`, matching TMX grid-drop semantics (a re-dated matchUp sheds stale grid position — see [Scheduling Conflicts](./scheduling-conflicts)).
+- `removePriorValues` defaults to `true`, matching TMX grid-drop semantics (a re-dated matchUp sheds stale grid position — see [Scheduling Conflicts](./scheduling-conflicts.mdx)).
 - The scenario is **left in place** after a commit; the caller decides whether to `removeScheduleScenario`.
 
 ## Rendering a plan — the unofficial overlay

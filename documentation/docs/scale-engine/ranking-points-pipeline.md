@@ -288,8 +288,8 @@ did not declare a `pointsAuthority`.
 
 ## Related Documentation
 
-- **[Scale Engine Overview](./scale-engine-overview)** — Introduction and architecture
-- **[Core API Reference](./scale-engine-api)** — Complete method reference
-- **[Quality Win Points](./quality-win-points)** — Quality win bonus system
+- **[Scale Engine Overview](./scale-engine-overview.md)** — Introduction and architecture
+- **[Core API Reference](./scale-engine-api.md)** — Complete method reference
+- **[Quality Win Points](./quality-win-points.md)** — Quality win bonus system
 - **[Ranking Policy](/docs/policies/rankingPolicy)** — Full policy structure reference
 - **[Ranking Governor](/docs/governors/ranking-governor)** — Stateless function reference

@@ -594,8 +594,8 @@ const { participants } = tournamentEngine.getParticipants({
 
 ## Related Documentation
 
-- **[Participant Context](./participant-context)** - Understanding hydration and contextual data
-- **[Draw Generation](./draws-overview)** - How participants are assigned to draws
+- **[Participant Context](./participant-context.md)** - Understanding hydration and contextual data
+- **[Draw Generation](./draws-overview.mdx)** - How participants are assigned to draws
 - **[Participant Policy](/docs/policies/participantPolicy)** - Configuring privacy and data filters
 - **[Query Governor](/docs/governors/query-governor#getparticipants)** - Complete API reference
 - **[Participant Governor](/docs/governors/participant-governor)** - Participant management methods

@@ -41,7 +41,7 @@ engine.publishOrderOfPlay({
 });
 ```
 
-See [Embargo and Scheduled Rounds](./publishing-embargo) for details on how embargo enforcement works across all publishing levels.
+See [Embargo and Scheduled Rounds](./publishing-embargo.md) for details on how embargo enforcement works across all publishing levels.
 
 **API Reference:** [publishOrderOfPlay](/docs/governors/publishing-governor#publishorderofplay)
 

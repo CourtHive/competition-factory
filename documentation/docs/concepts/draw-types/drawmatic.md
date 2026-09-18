@@ -4,7 +4,7 @@ title: DrawMatic
 
 ## Overview
 
-**DrawMatic** is a probabilistic pairing algorithm for [Ad Hoc (Flex Rounds)](./ad-hoc) draws. It generates fair, balanced matchup pairings for round-based events where participants are paired fresh each round — as opposed to bracket draws where the draw structure determines matchups.
+**DrawMatic** is a probabilistic pairing algorithm for [Ad Hoc (Flex Rounds)](./ad-hoc.md) draws. It generates fair, balanced matchup pairings for round-based events where participants are paired fresh each round — as opposed to bracket draws where the draw structure determines matchups.
 
 DrawMatic is ideal for social events, training sessions, level-based play, and any scenario where:
 
@@ -266,6 +266,6 @@ Where pressure scores evaluate _individual performance quality_, predictive accu
 
 ## Related
 
-- [Ad Hoc (Flex Rounds)](./ad-hoc) -- The draw type that DrawMatic operates on
-- [Draw Types Overview](../draw-types) -- List of all pre-defined draw types
+- [Ad Hoc (Flex Rounds)](./ad-hoc.md) -- The draw type that DrawMatic operates on
+- [Draw Types Overview](../draw-types.md) -- List of all pre-defined draw types
 - [Generation Governor](/docs/governors/generation-governor) -- API reference for draw generation

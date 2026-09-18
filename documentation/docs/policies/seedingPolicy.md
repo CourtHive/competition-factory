@@ -909,7 +909,7 @@ tournamentEngine.generateDrawDefinition({
 two keys omitted, one of which (`duplicateSeedNumbers`) does nothing when omitted, so its entire
 distinguishing content was a single absent key. It was never exported, so nothing could import it.
 
-Express that — or any federation's rules — with [`policyComposer`](../engines/policy-composer), which
+Express that — or any federation's rules — with [`policyComposer`](../engines/policy-composer.md), which
 is a root export:
 
 ```javascript
@@ -950,7 +950,7 @@ Two things to know when a draw is generated with a deeper policy:
   entries gets the count from the highest threshold whose participant minimum is met.
 - Passing an explicit `seedsCount` above the policy's maximum is clamped back down unless
   `enforcePolicyLimits: false` is also passed. `drawSize` and the stage's entry count still cap it
-  either way. See [generateDrawDefinition](../governors/generation-governor).
+  either way. See [generateDrawDefinition](../governors/generation-governor.md).
 
 `policyComposer` is immutable — `extend` never mutates the fixture you pass it — so one base composer
 can safely seed several federation variants. `.register({ name, version })` builds and records the

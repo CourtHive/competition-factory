@@ -150,7 +150,7 @@ Time items on participants track temporal attributes throughout the tournament l
 }
 ```
 
-**See:** [Scale Items](./scaleItems) for complete scale item documentation.
+**See:** [Scale Items](./scaleItems.md) for complete scale item documentation.
 
 **Registration & Status**:
 
@@ -573,7 +573,7 @@ Keep `itemValue` types consistent for the same `itemType`:
 
 ## Related Documentation
 
-- **[Scale Items](./scaleItems)** - Rankings, ratings, and seedings (stored as time items)
-- **[Extensions](./extensions)** - Alternative for non-temporal custom data
-- **[MatchUp Overview](./matchup-overview)** - MatchUp scheduling and timing
-- **[Participants](./participants)** - Participant data management
+- **[Scale Items](./scaleItems.md)** - Rankings, ratings, and seedings (stored as time items)
+- **[Extensions](./extensions.md)** - Alternative for non-temporal custom data
+- **[MatchUp Overview](./matchup-overview.md)** - MatchUp scheduling and timing
+- **[Participants](./participants.md)** - Participant data management

@@ -44,6 +44,6 @@ Feed-in behavior can also be controlled via the [Feed-In Policy](/docs/policies/
 
 ## Related
 
-- [Consolation Draws](./consolation-draws) -- Draw types that use feed-in consolation structures
+- [Consolation Draws](./consolation-draws.mdx) -- Draw types that use feed-in consolation structures
 - [Feed-In Policy](/docs/policies/feedInPolicy) -- Policy for controlling feed-in behavior
-- [Draw Types Overview](../draw-types) -- List of all pre-defined draw types
+- [Draw Types Overview](../draw-types.md) -- List of all pre-defined draw types

@@ -373,8 +373,8 @@ Both policies also include full award profiles (finishing position points, quali
 
 ## Related Documentation
 
-- **[Scale Engine Overview](./scale-engine-overview)** — Introduction and architecture
-- **[Core API Reference](./scale-engine-api)** — generateRankingList and getParticipantPoints API
-- **[Ranking Points Pipeline](./ranking-points-pipeline)** — How per-tournament points are computed
-- **[Quality Win Points](./quality-win-points)** — Quality win bonus system
+- **[Scale Engine Overview](./scale-engine-overview.md)** — Introduction and architecture
+- **[Core API Reference](./scale-engine-api.md)** — generateRankingList and getParticipantPoints API
+- **[Ranking Points Pipeline](./ranking-points-pipeline.md)** — How per-tournament points are computed
+- **[Quality Win Points](./quality-win-points.md)** — Quality win bonus system
 - **[Ranking Policy](/docs/policies/rankingPolicy)** — Full policy structure including aggregationRules

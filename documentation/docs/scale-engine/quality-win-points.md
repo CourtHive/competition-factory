@@ -120,9 +120,9 @@ countingBuckets: [
 
 ## Related Documentation
 
-- **[Scale Engine Overview](./scale-engine-overview)** — Introduction and architecture
-- **[Core API Reference](./scale-engine-api)** — Complete method reference
-- **[Ranking Points Pipeline](./ranking-points-pipeline)** — How position and per-win points work
-- **[Multi-Tournament Aggregation](./aggregation)** — Counting buckets and ranking lists
+- **[Scale Engine Overview](./scale-engine-overview.md)** — Introduction and architecture
+- **[Core API Reference](./scale-engine-api.md)** — Complete method reference
+- **[Ranking Points Pipeline](./ranking-points-pipeline.md)** — How position and per-win points work
+- **[Multi-Tournament Aggregation](./aggregation.md)** — Counting buckets and ranking lists
 - **[Ranking Policy](/docs/policies/rankingPolicy)** — Full policy structure
 - **[Scale Items](/docs/concepts/scaleItems)** — How rankings are stored

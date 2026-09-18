@@ -171,5 +171,5 @@ Each of these cost real time and produced confident, wholly incorrect results.
 ## Related
 
 - [Exit Propagation](/docs/concepts/exit-propagation) — the behaviour these suites guard
-- [Testing Overview](./testing-overview) — the wider testing toolkit
-- [mocksEngine](./mocks-engine-overview) — draw generation used throughout the harness
+- [Testing Overview](./testing-overview.md) — the wider testing toolkit
+- [mocksEngine](./mocks-engine-overview.md) — draw generation used throughout the harness

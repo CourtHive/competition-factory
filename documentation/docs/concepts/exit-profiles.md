@@ -8,7 +8,7 @@ An **exit profile** is a string that encodes the path a participant took through
 
 Exit profiles are computed by `getExitProfiles()` and are used internally to:
 
-- Build [finishing position](./finishing-positions) ranges across multi-structure draws
+- Build [finishing position](./finishing-positions.md) ranges across multi-structure draws
 - Name structures in playoff and compass-style draws
 - Determine which playoff structures to generate for a given exit path
 - Map positions between source and target structures
@@ -91,7 +91,7 @@ When generating multi-structure draws like COMPASS or PLAYOFF, the `generatePlay
 
 ## Stages and Exit Profiles
 
-Exit profiles interact with [stages](./draw-types#stages-organizing-structures) in an important way:
+Exit profiles interact with [stages](./draw-types.md#stages-organizing-structures) in an important way:
 
 - **MAIN** structures get exit profiles starting from `"0"`
 - **PLAY_OFF** and **CONSOLATION** structures skip the `"0"` profile for their initial structure, since they're reached through links
@@ -117,5 +117,5 @@ const { exitProfiles } = getExitProfiles({ drawDefinition });
 
 ### Related
 
-- **[Finishing Positions](./finishing-positions)** — How exit profiles feed into finishing position calculations
-- **[Draw Types](./draw-types)** — Pre-defined draw types and their structure topologies
+- **[Finishing Positions](./finishing-positions.md)** — How exit profiles feed into finishing position calculations
+- **[Draw Types](./draw-types.md)** — Pre-defined draw types and their structure topologies

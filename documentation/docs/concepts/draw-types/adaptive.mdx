@@ -7,7 +7,7 @@ import TopologyViewer from '../../components/TopologyViewer';
 
 ## Overview
 
-An **Adaptive** draw combines the multi-structure topology of a [Compass](./compass) draw with the flexible sizing of a [Lucky Draw](./lucky-draw). Where Compass requires power-of-2 draw sizes, Adaptive supports any participant count (e.g., 11, 18, 22) across a full direction cascade.
+An **Adaptive** draw combines the multi-structure topology of a [Compass](./compass.mdx) draw with the flexible sizing of a [Lucky Draw](./lucky-draw.mdx). Where Compass requires power-of-2 draw sizes, Adaptive supports any participant count (e.g., 11, 18, 22) across a full direction cascade.
 
 In the factory, this draw type is represented by the constant `ADAPTIVE`.
 
@@ -206,8 +206,8 @@ const { drawDefinition } = engine.generateDrawDefinition({
 
 ## Related
 
-- [Compass Draw](./compass) -- Power-of-2 variant with standard elimination
-- [Lucky Draw](./lucky-draw) -- Single-structure lucky draw logic
-- [Olympic Draw](./olympic) -- Smaller variant guaranteeing 2 matchUps
-- [Draw Links](../draw-links) -- How losers flow between structures
-- [Draw Types Overview](../draw-types) -- List of all pre-defined draw types
+- [Compass Draw](./compass.mdx) -- Power-of-2 variant with standard elimination
+- [Lucky Draw](./lucky-draw.mdx) -- Single-structure lucky draw logic
+- [Olympic Draw](./olympic.mdx) -- Smaller variant guaranteeing 2 matchUps
+- [Draw Links](../draw-links.mdx) -- How losers flow between structures
+- [Draw Types Overview](../draw-types.md) -- List of all pre-defined draw types

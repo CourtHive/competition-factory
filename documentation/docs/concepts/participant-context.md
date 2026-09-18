@@ -334,7 +334,7 @@ if (participantIdsWithConflicts.length > 0) {
 }
 ```
 
-**See:** [Scheduling Conflicts](./scheduling-conflicts) for detailed conflict management.
+**See:** [Scheduling Conflicts](./scheduling-conflicts.mdx) for detailed conflict management.
 
 ## Combined Hydration Example
 
@@ -510,8 +510,8 @@ const { participants } = tournamentEngine.getParticipants({
 
 ## Related Documentation
 
-- **[Participants Overview](./participants)** - Participant types and management
-- **[Scheduling Conflicts](./scheduling-conflicts)** - Understanding schedule analysis
+- **[Participants Overview](./participants.md)** - Participant types and management
+- **[Scheduling Conflicts](./scheduling-conflicts.mdx)** - Understanding schedule analysis
 - **[Participant Policy](/docs/policies/participantPolicy)** - Privacy and data filtering
 - **[Query Governor](/docs/governors/query-governor#getparticipants)** - Complete API reference
-- **[Extensions](./extensions)** - Understanding CODES extensions system
+- **[Extensions](./extensions.md)** - Understanding CODES extensions system
