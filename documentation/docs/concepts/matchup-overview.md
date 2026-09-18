@@ -366,20 +366,31 @@ tournamentEngine.addMatchUpOfficial({
 
 ### Participant Check-In
 
-Track participant availability:
+A check-in is recorded as a matchUp **timeItem**, not as a field on a side. Hydrated matchUps carry
+the resolved state as `checkedInParticipantIds` and `allParticipantsCheckedIn`.
 
 ```js
-// Check in participants
+// Check in a participant. `drawId` is required — the method resolves the drawDefinition from it.
 tournamentEngine.checkInParticipant({
+  drawId: 'draw-456',
   matchUpId: 'match-123',
   participantId: 'player-1',
 });
 
 // Both participants checked in?
-if (matchUp.sides.every((side) => side.checkInState === 'CHECKED_IN')) {
+const { matchUps } = tournamentEngine.allDrawMatchUps({ drawId: 'draw-456', inContext: true });
+const matchUp = matchUps.find((candidate) => candidate.matchUpId === 'match-123');
+
+if (matchUp.allParticipantsCheckedIn) {
   console.log('Match ready to start');
 }
+
+// ...or ask about one participant
+const checkedIn = matchUp.checkedInParticipantIds.includes('player-1');
 ```
+
+Both attributes are added by `addMatchUpContext`, so they are present only on matchUps retrieved
+`inContext`, and only when the matchUp has participants.
 
 ## Next MatchUps (Winner/Loser Progression)
 
