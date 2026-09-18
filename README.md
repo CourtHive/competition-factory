@@ -150,3 +150,9 @@ Beyond conventional unit and integration tests, the suite includes relational pr
 pnpm test          # run all tests (Vitest)
 pnpm coverage      # coverage report (thresholds: 95/95/85/95%)
 ```
+
+## Contributing
+
+The repository is public and MIT-licensed — **no write access is needed to contribute.** Fork it,
+branch off `dev`, and open a pull request. See **[CONTRIBUTING.md](./CONTRIBUTING.md)** for the
+branch and commit conventions, what to run locally, and what CI checks.
