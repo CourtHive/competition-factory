@@ -2,7 +2,7 @@ import { getOrderedDrawPositions } from '@Query/matchUps/getOrderedDrawPositions
 import { getRoundMatchUps } from '@Query/matchUps/getRoundMatchUps';
 
 // types
-import { DrawDefinition, MatchUp } from '@Types/tournamentTypes';
+import type { DrawDefinition, MatchUp } from '@Types/tournamentTypes';
 
 export type DrawPositionSide = { drawPosition: number; sideNumber: number };
 

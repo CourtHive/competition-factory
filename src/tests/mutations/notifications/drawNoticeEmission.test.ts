@@ -4,8 +4,7 @@ import mocksEngine from '@Assemblies/engines/mock';
 import { expect, test } from 'vitest';
 
 // constants
-import { FIRST_MATCH_LOSER_CONSOLATION } from '@Constants/drawDefinitionConstants';
-import { CONSOLATION } from '@Constants/drawDefinitionConstants';
+import { FIRST_MATCH_LOSER_CONSOLATION, CONSOLATION } from '@Constants/drawDefinitionConstants';
 
 /**
  * `removeStructure` rewires the surviving matchUps whose winner/loser progression pointed into the
