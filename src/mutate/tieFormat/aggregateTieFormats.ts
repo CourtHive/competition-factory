@@ -60,14 +60,23 @@ export function aggregateTieFormats({
       }
     }
 
+    // `modifyMatchUpNotice` resolves the notice's `structureId` from the drawDefinition, so it needs
+    // the draw this matchUp belongs to. The matchUps come from `allEventMatchUps` over this same
+    // event, so every `drawId` resolves; a miss would mean a matchUp that is not from these draws.
+    const drawDefinitionsByDrawId = new Map((event.drawDefinitions ?? []).map((dd) => [dd.drawId, dd]));
+
     const setTieFormatId = (matchUpId, tieFormatId) => {
       const matchUp = eventMatchUpResult.matchUps?.find((matchUp) => matchUp.matchUpId === matchUpId);
+      // Resolved for the NOTICE only. It must never gate the assignment below: doing so made a
+      // missing draw skip the tieFormatId write itself, which broke 10 tieFormat tests.
+      const drawDefinition = matchUp?.drawId ? drawDefinitionsByDrawId.get(matchUp.drawId) : undefined;
       if (matchUp) {
         matchUp.tieFormatId = tieFormatId;
         delete matchUp.tieFormat;
         modifyMatchUpNotice({
           tournamentId: tournamentRecord?.tournamentId,
           eventId: event.eventId,
+          drawDefinition,
           matchUp,
           event,
         });

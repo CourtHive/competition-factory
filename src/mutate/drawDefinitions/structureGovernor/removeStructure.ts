@@ -93,13 +93,19 @@ export function removeStructure(params: RemoveStructureArgs) {
   // dispatched a line above says the draw changed but names no matchUp, so a consumer would
   // have to re-derive the whole draw to find them — and `winnerMatchUpId`/`loserMatchUpId` are
   // projected read-model columns, so a missed edge is a silently stale row, not a cosmetic gap.
-  // `drawDefinition` is deliberately NOT passed: modifyMatchUpNotice would then emit a
-  // redundant draw notice per matchUp on top of the single one above.
+  // `drawDefinition` IS passed, and the draw notice it triggers is not redundant: `modifyDrawNotice`
+  // calls `addNotice` with `key: drawDefinition.drawId`, so every draw notice for this draw collapses
+  // onto the single one dispatched above. Measured on FIRST_MATCH_LOSER_CONSOLATION — 24 matchUp
+  // notices at drawSize 32 and 48 at 64, ONE draw notice either way, with and without it.
+  //
+  // Withholding it cost these notices their `structureId`, which `modifyMatchUpNotice` resolves from
+  // the drawDefinition: 0 of 24 carried one. Naming the structure is the point of emitting them.
   for (const matchUp of modifiedMatchUps) {
     modifyMatchUpNotice({
       tournamentId: tournamentRecord?.tournamentId,
       context: ['removeStructure'],
       eventId: event?.eventId,
+      drawDefinition,
       event,
       matchUp,
     });
