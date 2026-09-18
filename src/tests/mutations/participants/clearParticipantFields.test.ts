@@ -125,3 +125,57 @@ describe('clearing participant fields via modifyParticipant', () => {
     expect(result.participant?.participantOtherName).toBeUndefined();
   });
 });
+
+describe('modifyParticipantOtherName honours the same contract', () => {
+  // It is a second published path to the same field. Until 7.0.0 it assigned whatever it was
+  // given, so '' stored a falsy value and a missing argument overwrote the stored value with
+  // `undefined`. Both methods now answer to one contract, so a consumer cannot get a different
+  // result by picking a different door.
+  function otherNameAfter(participantId: string, args: any) {
+    const result: any = tournamentEngine.modifyParticipantOtherName({ participantId, ...args });
+    expect(result.success).toEqual(true);
+    return tournamentEngine.findParticipant({ participantId }).participant;
+  }
+
+  it('an empty participantOtherName removes the stored value, and the key with it', () => {
+    const team = seedTeamWithOtherName();
+    const participant = otherNameAfter(team.participantId, { participantOtherName: '' });
+
+    expect(participant.participantOtherName).toBeUndefined();
+    expect(Object.keys(participant).includes('participantOtherName')).toEqual(false);
+  });
+
+  it('a missing participantOtherName leaves the stored value untouched', () => {
+    const team = seedTeamWithOtherName();
+    const participant = otherNameAfter(team.participantId, {});
+
+    expect(participant.participantOtherName).toEqual(OTHER_NAME);
+  });
+
+  it('an explicit undefined leaves the stored value untouched', () => {
+    const team = seedTeamWithOtherName();
+    const participant = otherNameAfter(team.participantId, { participantOtherName: undefined });
+
+    expect(participant.participantOtherName).toEqual(OTHER_NAME);
+  });
+
+  it('a non-string participantOtherName is ignored rather than stored', () => {
+    const team = seedTeamWithOtherName();
+
+    for (const value of [0, false, 17, {}]) {
+      const participant = otherNameAfter(team.participantId, { participantOtherName: value });
+      expect(participant.participantOtherName).toEqual(OTHER_NAME);
+    }
+  });
+
+  it('agrees with modifyParticipant on the same input', () => {
+    const viaOtherName = seedTeamWithOtherName();
+    const a = otherNameAfter(viaOtherName.participantId, { participantOtherName: '' });
+
+    const viaModify = seedTeamWithOtherName();
+    const b = participantAfterModify(viaModify, { participantOtherName: '' });
+
+    expect(Object.keys(a).includes('participantOtherName')).toEqual(Object.keys(b).includes('participantOtherName'));
+    expect(a.participantOtherName).toEqual(b.participantOtherName);
+  });
+});

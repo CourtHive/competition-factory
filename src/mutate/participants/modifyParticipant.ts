@@ -6,6 +6,7 @@ import { getParticipants } from '@Query/participants/getParticipants';
 import { requireParams } from '@Helpers/parameters/requireParams';
 import { getParticipantId } from '@Functions/global/extractors';
 import { participantRoles } from '@Constants/participantRoles';
+import { isClearRequest } from '@Mutate/participants/isClearRequest';
 import { definedAttributes } from '@Tools/definedAttributes';
 import { isValidDateString } from '@Tools/dateTime';
 import { collapseWhitespace } from '@Tools/strings';
@@ -196,14 +197,6 @@ function updateIndividualParticipantIds({
       individualParticipants,
     });
   }
-}
-
-// An explicit empty string means "clear this field". `undefined` must keep meaning "leave
-// untouched" — consumers send the whole person object on every save, so a field they do not
-// manage has to survive. Clearing DELETES the key rather than storing '', so readers see an
-// absent field instead of a falsy one each of them would have to special-case.
-function isClearRequest(value) {
-  return value === '';
 }
 
 function updatePerson({ updateParticipantName, existingParticipant, newValues, person }) {
