@@ -323,6 +323,7 @@ export type FactoryEngineMethod =
   | 'getLapses'
   | 'getLinkedTournamentIds'
   | 'getLuckyDrawRoundStatus'
+  | 'getMatchUpCheckInHistory'
   | 'getMatchUpCompetitiveProfile'
   | 'getMatchUpContextIds'
   | 'getMatchUpDailyLimits'
@@ -1066,6 +1067,7 @@ export const FACTORY_ENGINE_METHODS: readonly FactoryEngineMethod[] = [
   'getLapses',
   'getLinkedTournamentIds',
   'getLuckyDrawRoundStatus',
+  'getMatchUpCheckInHistory',
   'getMatchUpCompetitiveProfile',
   'getMatchUpContextIds',
   'getMatchUpDailyLimits',

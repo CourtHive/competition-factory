@@ -9,6 +9,7 @@ import type {
   SIGNED_IN_STATE,
   SIGNED_OUT_STATE,
   SYSTEM_ATTRIBUTION,
+  USER_ATTRIBUTION,
 } from '@Constants/presenceConstants';
 
 export type MatchUpPresenceStateUnion = typeof CHECKED_IN | typeof CHECKED_OUT;
@@ -21,7 +22,8 @@ export type AttributionTypeUnion =
   | typeof PERSON_ATTRIBUTION
   | typeof DECLARED_ATTRIBUTION
   | typeof DEVICE_ATTRIBUTION
-  | typeof SYSTEM_ATTRIBUTION;
+  | typeof SYSTEM_ATTRIBUTION
+  | typeof USER_ATTRIBUTION;
 
 /**
  * WHO attested a presence fact.
@@ -47,7 +49,8 @@ export type Attribution =
       name: string;
     }
   | { attributionType: typeof DEVICE_ATTRIBUTION; deviceId?: string }
-  | { attributionType: typeof SYSTEM_ATTRIBUTION; source?: string };
+  | { attributionType: typeof SYSTEM_ATTRIBUTION; source?: string }
+  | { attributionType: typeof USER_ATTRIBUTION; userId: string; email?: string; displayName?: string };
 
 /**
  * One recorded presence fact: a person, present (or gone), at a time, attested by someone.

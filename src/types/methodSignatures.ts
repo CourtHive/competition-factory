@@ -263,6 +263,7 @@ import type { addPracticeRegistration } from '@Mutate/practice/addPracticeRegist
 import type { proposeAmendment, reviewAmendment } from '@Mutate/sanctioning/amendments';
 import type { checkInParticipant } from '@Mutate/timeItems/matchUps/checkInParticipant';
 import type { getSwissStandings } from '@Query/drawDefinitions/swiss/getSwissStandings';
+import type { getMatchUpCheckInHistory } from '@Query/matchUp/getMatchUpCheckInHistory';
 import type { allCompetitionMatchUps } from '@Query/matchUps/getAllCompetitionMatchUps';
 import type { getParticipantRest } from '@Query/matchUps/scheduling/getParticipantRest';
 import type { getOfficialAssignments } from '@Query/officiating/getOfficialAssignments';
@@ -966,6 +967,7 @@ export interface MethodSignatures {
   getLapses: EngineMethod<typeof getLapses>;
   getLinkedTournamentIds: EngineMethod<typeof getLinkedTournamentIds>;
   getLuckyDrawRoundStatus: EngineMethod<typeof getLuckyDrawRoundStatus>;
+  getMatchUpCheckInHistory: EngineMethod<typeof getMatchUpCheckInHistory>;
   getMatchUpCompetitiveProfile: EngineMethod<typeof getMatchUpCompetitiveProfile>;
   getMatchUpContextIds: EngineMethod<typeof getMatchUpContextIds>;
   getMatchUpDailyLimits: EngineMethod<typeof getMatchUpDailyLimits>;
