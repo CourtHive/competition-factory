@@ -1195,7 +1195,7 @@ test suite asserts the two methods agree on identical input.
 
 See [#4926](https://github.com/CourtHive/competition-factory/pull/4926).
 
-## 14. Check-in becomes a first-class attestation
+## 14. [#4933](https://github.com/CourtHive/competition-factory/pull/4933) check-in becomes a first-class attestation
 
 Per-matchUp check-in moves out of `matchUp.timeItems[]` and onto a first-class
 `matchUp.checkIns[]` collection of `PresenceAttestation` objects. Three things change for callers.
@@ -1263,7 +1263,7 @@ and an absent attester is honest where an invented one is not.
 Records needing no migration read correctly anyway: `getCheckedInParticipantIds` falls back to the
 legacy timeItems when `checkIns` is absent.
 
-## 15. Sign-in becomes a first-class attestation, and gains an as-of-date query
+## 15. [#4933](https://github.com/CourtHive/competition-factory/pull/4933) sign-in becomes a first-class attestation, and gains an as-of-date query
 
 Tournament arrival moves out of `participant.timeItems[]` onto `participant.presence[]`, the same
 `PresenceAttestation` shape as §14. The two facts are deliberately one model — arrival at the
