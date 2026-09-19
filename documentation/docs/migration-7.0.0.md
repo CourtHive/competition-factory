@@ -1331,7 +1331,7 @@ back to when the record names no zone. Setting `localTimeZone` is what upgrades 
   check-in, this runs against real data routinely: `SIGN_IN_STATUS` appears extensively in archived
   records going back to 2023.
 
-## 16. The presence ATTESTER is never emitted in bulk
+## 16. [#4934](https://github.com/CourtHive/competition-factory/pull/4934) the presence ATTESTER is never emitted in bulk
 
 A companion rule to §14 and §15, and the reason `attributedTo` can be stored at all.
 
