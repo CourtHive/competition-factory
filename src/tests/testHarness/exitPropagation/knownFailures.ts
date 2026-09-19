@@ -25,53 +25,51 @@ export type QuarantineEntry = {
   reference: string;
 };
 
-const DOUBLE_EXIT_STATUS_CODES_RESIDUE =
-  'FIRST_ROUND_LOSER_CONSOLATION: apply-then-clear wipes matchUpStatusCodes that were present ' +
-  'BEFORE the double exit. The matchUp carried [WALKOVER/prev DOUBLE_WALKOVER side 1, ' +
-  'TO_BE_PLAYED side 2]; the apply escalated it to DOUBLE_WALKOVER with both sides WALKOVER; the ' +
-  'clear then writes matchUpStatusCodes: [] unconditionally rather than restoring the codes that ' +
-  'pre-dated the cascade. matchUpStatus itself is restored correctly — only the provenance is lost, ' +
-  'so isPropagatedExit reads false for a matchUp that IS propagation-produced. Same ' +
-  'family as the hard-coded empty codes in advanceByeAdvancedDrawPosition. DECIDED (2026-09-09, CA): ' +
-  'RE-DERIVE the codes on unwind from the current upstream state instead of writing []. Source ' +
-  'identity is deliberately NOT added to matchUpStatusCodes — they are published on every matchUp, ' +
-  'so the published surface stays fixed. Not yet implemented. See ' +
-  'Mentat/planning/EXIT_PROPAGATION_ASSESSMENT.md, E1.';
-
 /**
- * Cells failing the relational properties, as [cell-without-status, properties].
+ * Cells failing the relational properties — **currently none**.
  *
- * Listed explicitly rather than derived: the point of the registry is that adding a cell is a
- * deliberate act with a reference attached, and a pattern-matched rule would silently absorb new
- * failures as the matrix grows.
+ * Entries are listed explicitly rather than derived: the point of the registry is that adding one is
+ * a deliberate act with a reference attached, and a pattern-matched rule would silently absorb new
+ * failures as the matrix grows. An entry has the shape
+ * `{ key: 'properties <drawType> <size>/<participants> <exitStatus>', properties, reference }`.
  *
  * IDEMPOTENT_REAPPLY was removed from every cell that carried it when the idempotence guard landed
  * in `attemptToSetMatchUpStatus` — 14 entries, deleted because the reverse guard demanded it.
  *
- * The DO_UNDO_IDENTITY list was 9 cells and is now 2. Diffing the round trip structurally showed
- * the residue was never ONE mechanism: 6 cells lost a matchUp's BYE status (fixed — removeDoubleExit
- * now reads positionAssignment.bye rather than a matchUpStatus the cascade has already overwritten),
- * 1 lost drawPositions and 2 lose matchUpStatusCodes. Each survivor carries its own reference.
+ * The DO_UNDO_IDENTITY list was 9 cells, then 2, and is now **EMPTY**. Diffing the round trip
+ * structurally showed the residue was never ONE mechanism: 6 cells lost a matchUp's BYE status
+ * (fixed — `removeDoubleExit` reads `positionAssignment.bye` rather than a `matchUpStatus` the
+ * cascade has already overwritten), 1 lost drawPositions (closed 2026-09-17; `removeDoubleExit` was
+ * intersecting drawPosition NUMBERS across the `Backdraw r4 -> Main r4` and `Main r4 -> Decider r1`
+ * links, and now asks by participant — see `removeLinkedWinner`), and 2 lost `matchUpStatusCodes`.
  *
- * The drawPositions cell (DOUBLE_ELIMINATION 8/7) closed 2026-09-17. Its clear "stripped a drawPosition
- * the cascade never placed" because removeDoubleExit intersected drawPosition NUMBERS across the
- * `Backdraw r4 -> Main r4` and `Main r4 -> Decider r1` links — a Backdraw position matching an
- * unrelated Main one. It now asks by participant; see `removeLinkedWinner`.
+ * THE LAST TWO CLOSED 2026-09-19, and they closed the way the entry said they would. Their
+ * reference recorded CA's decision of 2026-09-09: *"RE-DERIVE the codes on unwind from the current
+ * upstream state instead of writing []"*. `removeDoubleExit`'s unwind now does exactly that — it
+ * retains the provenance whose origin is not going away and projects the codes from it, instead of
+ * writing `matchUpStatusCodes: []` over a matchUp that is still an exit. FIRST_ROUND_LOSER_CONSOLATION
+ * 8/8 and 16/16 stopped reproducing under both DOUBLE_WALKOVER and DOUBLE_DEFAULT, and this registry
+ * enforces its list in BOTH directions, so their removal is required rather than optional.
+ *
+ * **The property was not weakened to get here.** Nothing in `properties.ts` or
+ * `transitionProperties.test.ts` changed; the engine stopped violating it.
  */
-const DOUBLE_EXIT_PROPERTY_CELLS: [string, string[], string][] = [
-  ['FIRST_ROUND_LOSER_CONSOLATION 8/8', ['DO_UNDO_IDENTITY'], DOUBLE_EXIT_STATUS_CODES_RESIDUE],
-  ['FIRST_ROUND_LOSER_CONSOLATION 16/16', ['DO_UNDO_IDENTITY'], DOUBLE_EXIT_STATUS_CODES_RESIDUE],
-];
+/**
+ * KEYED rather than a list, so a key cannot be registered twice and adding one is a single line:
+ *
+ * ```ts
+ * 'properties DOUBLE_ELIMINATION 16/16 DOUBLE_WALKOVER': {
+ *   properties: ['DO_UNDO_IDENTITY'],
+ *   reference: 'what is broken, and where it is tracked',
+ * },
+ * ```
+ */
+const QUARANTINE: Record<string, Omit<QuarantineEntry, 'key'>> = {};
 
-export const KNOWN_FAILURES: QuarantineEntry[] = [
-  ...DOUBLE_EXIT_PROPERTY_CELLS.flatMap(([cell, properties, reference]) =>
-    ['DOUBLE_WALKOVER', 'DOUBLE_DEFAULT'].map((exitStatus) => ({
-      key: `properties ${cell} ${exitStatus}`,
-      properties: properties as string[],
-      reference: reference as string,
-    })),
-  ),
-];
+export const KNOWN_FAILURES: QuarantineEntry[] = Object.entries(QUARANTINE).map(([key, entry]) => ({
+  key,
+  ...entry,
+}));
 
 export function quarantineFor(key: string): string[] {
   return KNOWN_FAILURES.filter((entry) => entry.key === key).flatMap((entry) => entry.properties);

@@ -6,6 +6,14 @@ import { chunkArray, intersection, overlap } from '@Tools/arrays';
 import { positionTargets } from '@Query/matchUp/positionTargets';
 import { pushGlobalLog } from '@Functions/global/globalLog';
 import { findStructure } from '@Acquire/findStructure';
+import { isDoubleExit } from '@Validators/isExit';
+import {
+  getNativeSideExitProvenance,
+  deriveExitStateFromProvenance,
+  retainForeignProvenance,
+  projectExitStatusCodes,
+  setSideExitProvenance,
+} from '@Mutate/matchUps/matchUpStatus/sideExitProvenance';
 
 // constants
 import { FIRST_MATCHUP } from '@Constants/drawDefinitionConstants';
@@ -35,6 +43,15 @@ export function removeDoubleExit(params) {
   iteration += 1;
 
   const stack = 'removeDoubleExit';
+
+  // WHOSE RESULT IS GOING AWAY. The unwind cascades, so by the time it reaches a convergence target
+  // several upstream results may have been taken back, and a target can hold an origin from an
+  // upstream this cascade has NOT touched. That origin is still true. Accumulating the ids down the
+  // recursion is what lets the reset below ask the identity question `withdrawProducedExits` asks —
+  // "did THIS source produce it" — rather than blanking the field wholesale.
+  const withdrawnSourceIds: Set<string> = params.withdrawnSourceIds ?? new Set<string>();
+  if (matchUpId) withdrawnSourceIds.add(matchUpId);
+  Object.assign(params, { withdrawnSourceIds });
 
   pushGlobalLog({
     color: 'brightyellow',
@@ -155,6 +172,7 @@ export function removeDoubleExit(params) {
 
 export function conditionallyRemoveDrawPosition(params) {
   const {
+    withdrawnSourceIds = new Set<string>(),
     inContextDrawMatchUps,
     appliedPolicies,
     drawDefinition,
@@ -288,6 +306,7 @@ export function conditionallyRemoveDrawPosition(params) {
     targetData: nextTargetData,
     matchUp: targetMatchUp,
     inContextDrawMatchUps,
+    withdrawnSourceIds,
     appliedPolicies,
     drawDefinition,
     matchUpsMap,
@@ -295,9 +314,10 @@ export function conditionallyRemoveDrawPosition(params) {
   });
   if (result.error) return decorateResult({ result, stack });
 
-  const matchUpStatus = getMatchUpStatus({
+  const unwound = getUnwoundState({
     pairedPreviousDoubleExit,
     noContextTargetMatchUp,
+    withdrawnSourceIds,
     drawDefinition,
     targetMatchUp,
   });
@@ -305,12 +325,13 @@ export function conditionallyRemoveDrawPosition(params) {
   const removeScore = !pairedPreviousDoubleExit;
   result = modifyMatchUpScore({
     ...params,
+    matchUpStatusCodes: unwound.provenance ? projectExitStatusCodes(unwound.provenance) : [],
+    removeWinningSide: unwound.winningSide === undefined,
     matchUpId: targetMatchUp.matchUpId,
     matchUp: noContextTargetMatchUp,
-    removeWinningSide: true,
-    matchUpStatusCodes: [],
+    matchUpStatus: unwound.matchUpStatus,
+    winningSide: unwound.winningSide,
     context: stack,
-    matchUpStatus,
     removeScore,
     score: {
       scoreStringSide1: '',
@@ -320,6 +341,12 @@ export function conditionallyRemoveDrawPosition(params) {
   });
 
   if (result.error) return decorateResult({ result, stack });
+
+  // The write above goes through the `toBePlayed` fixture, which blanks `sideExitProvenance`. Its
+  // `survivingProvenance` rescue puts back what the matchUp HELD, which still includes the entry
+  // this unwind has just withdrawn — so the retained subset is stamped explicitly rather than
+  // inferred from what survived the reset.
+  if (unwound.provenance) setSideExitProvenance({ provenance: unwound.provenance, matchUp: noContextTargetMatchUp });
 
   return { ...SUCCESS };
 }
@@ -395,20 +422,80 @@ function removeLinkedWinner({
   });
 }
 
-function getMatchUpStatus({ pairedPreviousDoubleExit, noContextTargetMatchUp, drawDefinition, targetMatchUp }) {
-  if (noContextTargetMatchUp.matchUpStatus === BYE) return BYE;
-  // A still-live paired double exit keeps its produced exit; that decision is unchanged and is
-  // checked BEFORE the assignment, because a BYE-held drawPosition legitimately carries a
-  // propagated exit while one is outstanding (measured: a Consolation matchUp reads DEFAULTED on a
-  // BYE drawPosition mid-cascade, and must stay that way).
+/**
+ * The state a matchUp must hold once this cascade has taken its origin back.
+ *
+ * Ordered, and the order is the whole content of the function:
+ *
+ *  1. **BYE wins outright.** A BYE-held drawPosition reverts to `BYE` whatever provenance survives —
+ *     an attempt at this fix that tested provenance first turned a `BYE` into a `WALKOVER`, which
+ *     `doubleExitUnwindRestoresBye` pins. The status field cannot answer "was this a BYE?" because
+ *     the cascade being unwound has already overwritten it (measured: `BYE` -> `WALKOVER` on apply),
+ *     so the durable `positionAssignment` is asked instead.
+ *  2. **A still-live paired double exit keeps its produced exit** — unchanged, and checked before the
+ *     assignment test because a BYE-held drawPosition legitimately carries a propagated exit while
+ *     one is outstanding (measured: a Consolation matchUp reads `DEFAULTED` on a BYE drawPosition
+ *     mid-cascade, and must stay that way).
+ *  3. **RE-DERIVE from the origins that REMAIN.** This is the change. A convergence target can hold
+ *     an origin carried by a DIFFERENT feeder, and that origin is still true; resetting the matchUp
+ *     wholesale destroyed it, so a re-score of one feeder silently deleted the other feeder's fact
+ *     and left an exit awarded to a slot nobody can fill. What remains is decided by IDENTITY —
+ *     `sourceMatchUpId` against the ids this cascade has withdrawn — never by how the entry looks,
+ *     and it is read from the NATIVE field alone, because the legacy array is deliberately not
+ *     rewritten by a withdrawal and would answer "an origin survived" for a matchUp with none.
+ *  4. **Nothing derived remains** — the matchUp reverts, exactly as before.
+ *
+ * Returns `provenance` only in case 3, and the caller writes it back: what survives the reset
+ * downstream is what the matchUp HELD, which still includes the entry being withdrawn.
+ */
+function getUnwoundState({
+  pairedPreviousDoubleExit,
+  noContextTargetMatchUp,
+  withdrawnSourceIds,
+  drawDefinition,
+  targetMatchUp,
+}): { matchUpStatus: string; winningSide?: number; provenance?: any } {
+  if (noContextTargetMatchUp.matchUpStatus === BYE) return { matchUpStatus: BYE };
+  const retained = retainForeignProvenance(
+    getNativeSideExitProvenance({ matchUp: noContextTargetMatchUp }),
+    withdrawnSourceIds,
+  );
   if (pairedPreviousDoubleExit) {
-    return [DOUBLE_DEFAULT, DEFAULTED].includes(noContextTargetMatchUp?.matchUpStatus) ? DEFAULTED : WALKOVER;
+    // The STATUS here is unchanged — a still-live paired double exit keeps its produced exit — but
+    // the provenance that describes it is carried through rather than blanked. Writing
+    // `matchUpStatusCodes: []` onto a matchUp that is still an exit is the residue CA ruled on
+    // 2026-09-09: "RE-DERIVE the codes on unwind from the current upstream state instead of writing
+    // []". See `knownFailures.ts`, DOUBLE_EXIT_STATUS_CODES_RESIDUE.
+    return {
+      matchUpStatus: [DOUBLE_DEFAULT, DEFAULTED].includes(noContextTargetMatchUp?.matchUpStatus) ? DEFAULTED : WALKOVER,
+      provenance: retained,
+    };
   }
-  // Otherwise the unwind is complete and the matchUp reverts. `matchUpStatus` above can already
-  // have been overwritten by the cascade being unwound (measured: BYE -> WALKOVER on apply), so it
-  // cannot answer "was this a BYE?". The positionAssignment is the durable record and still can.
-  if (targetDrawPositionIsBye({ drawDefinition, noContextTargetMatchUp, targetMatchUp })) return BYE;
-  return TO_BE_PLAYED;
+  if (targetDrawPositionIsBye({ drawDefinition, noContextTargetMatchUp, targetMatchUp })) return { matchUpStatus: BYE };
+
+  // ONLY a matchUp being reset FROM a double exit can have an origin left standing, and that
+  // restriction is load-bearing rather than cautious.
+  //
+  // A double exit is the one shape in which TWO origins are simultaneously true, so it is the only
+  // shape where withdrawing one of them leaves one behind. Everywhere else, provenance on the
+  // matchUp names origins the SAME cascade has just written: `buildSideExitProvenance` stamps a
+  // convergence as a pair, source and paired-previous together, and it does so when the convergence
+  // forms — which can be long after the paired-previous matchUp itself became an exit. Measured on
+  // MODIFIED_FEED_IN_CHAMPIONSHIP 8/8: applying a DOUBLE_WALKOVER at `Consolation|1|2` stamps
+  // `Consolation|2|2` on BOTH sides, one of them naming a `Consolation|1|1` that had been a double
+  // exit since before the apply. That entry is not older than the withdrawal — it was written by it
+  // — and retaining it turned an undecided matchUp into a `WALKOVER` on the CLEAR, in 10 cells
+  // across three draw types.
+  //
+  // The paired-previous relation itself cannot separate the two cases: in the reproduction this
+  // change exists for, the surviving origin's source IS the paired previous of the withdrawn
+  // matchUp. What separates them is the shape being taken apart.
+  if (isDoubleExit(noContextTargetMatchUp?.matchUpStatus)) {
+    const rederived = deriveExitStateFromProvenance(retained);
+    if (rederived) return { ...rederived, provenance: retained };
+  }
+
+  return { matchUpStatus: TO_BE_PLAYED };
 }
 
 /**

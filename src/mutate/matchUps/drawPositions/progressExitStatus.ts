@@ -3,7 +3,7 @@ import { decorateResult } from '@Functions/global/decorateResult';
 import { getAllDrawMatchUps } from '@Query/matchUps/drawMatchUps';
 import { getMatchUpsMap } from '@Query/matchUps/getMatchUpsMap';
 import { pushGlobalLog } from '@Functions/global/globalLog';
-import { isExit } from '@Validators/isExit';
+import { isAnyExit, isExit } from '@Validators/isExit';
 import {
   buildCarriedExitProvenance,
   collapseDoubleExitStatus,
@@ -131,8 +131,28 @@ export function progressExitStatus({
       sourceMatchUpId,
     });
 
+    // HAS THE OPPONENT ITSELF EXITED? That is RULE 4's question, and it was asked as
+    // `isExit(loserMatchUp.matchUpStatus)` — two errors in one expression, each of which alone sends
+    // a convergence to RULE 2.
+    //
+    //  - `loserMatchUp` is the STALE object. `updatedLoserMatchUp` is read at the top of this
+    //    function precisely because the stale one predates `directLoser`; it also predates the
+    //    UNWIND when a feeder is being re-scored, so it still reads `DOUBLE_DEFAULT` where the
+    //    matchUp now holds the single exit its surviving origin derives.
+    //  - `isExit` EXCLUDES `DOUBLE_WALKOVER` and `DOUBLE_DEFAULT` — exactly the statuses a
+    //    convergence produces — so a third arrival at an already-converged matchUp read as "the
+    //    opponent has not exited". See `isExit`'s own doc comment, which names this trap.
+    //
+    // Instrumented before it was changed: on the three-step FMLC reproduction the stale object read
+    // `DOUBLE_DEFAULT` while the fresh one read `DEFAULTED`, and the gate took RULE 2.
+    //
+    // A stronger form — asking the OPPONENT SIDE's provenance rather than the matchUp's status —
+    // was built and measured, and it is NOT taken: it also re-routes convergences this rule has
+    // nothing to do with, and opened census seed 9303124 (DOUBLE_ELIMINATION 8/8) as an
+    // `ERR_EXISTING_POSITION_ASSIGNMENT` returned over an already-mutated draw. Reading the right
+    // object with the right predicate is the whole correction.
     const opponentEmpty = participantsCount === 1 && statusCodes.length === 0;
-    if (opponentEmpty || !isExit(loserMatchUp.matchUpStatus)) {
+    if (opponentEmpty || !isAnyExit(updatedLoserMatchUp.matchUpStatus)) {
       // RULE 2 — opponent slot empty/pending: WALKOVER, the side WITHOUT the exit
       //          (the empty side that will receive the eventual opponent) wins.
       // RULE 3 — opponent is a present, non-exited participant: WALKOVER to them.
