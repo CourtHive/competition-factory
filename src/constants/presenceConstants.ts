@@ -30,6 +30,17 @@ export const PERSON_ATTRIBUTION = 'PERSON';
 export const DECLARED_ATTRIBUTION = 'DECLARED';
 export const DEVICE_ATTRIBUTION = 'DEVICE';
 export const SYSTEM_ATTRIBUTION = 'SYSTEM';
+/**
+ * An authenticated operator of a client, identified by the CLIENT'S auth system rather than by the
+ * tournament record. A desk operator is routinely not a Participant and has no CODES `personId`, so
+ * neither PARTICIPANT nor PERSON can name them, and forcing an auth id into `personId` would put two
+ * vocabularies behind one field.
+ *
+ * ⚠️ A client asserting its own operator identity is unverifiable. A server that authenticates the
+ * request should OVERWRITE this with the identity it holds; the client-supplied value exists so that
+ * an offline desk still records who was at it.
+ */
+export const USER_ATTRIBUTION = 'USER';
 
 export const attributionTypes = [
   PARTICIPANT_ATTRIBUTION,
@@ -47,6 +58,7 @@ export const presenceConstants = {
   PERSON_ATTRIBUTION,
   DEVICE_ATTRIBUTION,
   SYSTEM_ATTRIBUTION,
+  USER_ATTRIBUTION,
   SIGNED_OUT_STATE,
   SIGNED_IN_STATE,
   attributionTypes,
