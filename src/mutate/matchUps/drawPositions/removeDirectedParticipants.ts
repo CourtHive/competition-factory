@@ -5,6 +5,7 @@ import { updateTieMatchUpScore } from '@Mutate/matchUps/score/updateTieMatchUpSc
 import { getAllStructureMatchUps } from '@Query/matchUps/getAllStructureMatchUps';
 import { modifyMatchUpScore } from '@Mutate/matchUps/score/modifyMatchUpScore';
 import { modifyMatchUpNotice } from '@Mutate/notifications/drawNotifications';
+import { applyWithdrawnExits } from '@Mutate/matchUps/matchUpStatus/applyWithdrawnExits';
 import { releaseAdvancedDrawPosition } from './releaseAdvancedDrawPosition';
 import { removeOnwardLoserPlacements } from './removeOnwardLoserPlacements';
 import { decorateResult } from '@Functions/global/decorateResult';
@@ -134,44 +135,7 @@ export function removeDirectedParticipants(params): {
     mappedMatchUps: matchUpsMap?.mappedMatchUps,
     sourceMatchUpId: matchUpId,
   });
-  for (const withdrawnExit of withdrawnExits) {
-    // A RESOLVED produced exit had a winner, and that winner has already advanced. The exit is no
-    // longer happening, so the advancement it granted must come back with it — otherwise the slot
-    // stays occupied and the next arrival is refused with ERR_EXISTING_POSITION_ASSIGNMENT after
-    // the mutation has already written. `releaseAdvancedDrawPosition` is the same narrow release
-    // `removeDirectedLoser` uses, and its own two scopes keep it off positions that are
-    // load-bearing. A PENDING produced exit — the common shape, with an empty winner slot — has no
-    // winningSide here and so releases nothing.
-    if (withdrawnExit.winnerDrawPosition !== undefined && withdrawnExit.roundNumber !== undefined) {
-      releaseAdvancedDrawPosition({
-        // `+ 1` — from the round AFTER the withdrawn matchUp, never from the matchUp itself. The
-        // winner still belongs in it: they arrived there by winning an earlier round, and that has
-        // not changed. Only what they won ON arrival has been taken back. Releasing from its own
-        // round nulls a position the matchUp legitimately holds, which `transitionProperties`
-        // catches as DO_UNDO_IDENTITY residue — `[1,4]` becoming `[1,null]` in a
-        // MODIFIED_FEED_IN_CHAMPIONSHIP 8/7. `removeDirectedLoser` passes the target's own round
-        // because there the participant is leaving the structure entirely; here they are not.
-        fromRoundNumber: withdrawnExit.roundNumber + 1,
-        drawPosition: withdrawnExit.winnerDrawPosition,
-        structureId: withdrawnExit.structureId,
-        tournamentRecord,
-        drawDefinition,
-        matchUpsMap,
-        event,
-      });
-    }
-
-    const withdrawnMatchUp = matchUpsMap?.drawMatchUps?.find((m) => m.matchUpId === withdrawnExit.matchUpId);
-    if (!withdrawnMatchUp) continue;
-    modifyMatchUpNotice({
-      tournamentId: tournamentRecord?.tournamentId,
-      context: 'withdrawProducedExits',
-      eventId: event?.eventId,
-      matchUp: withdrawnMatchUp,
-      drawDefinition,
-      event,
-    });
-  }
+  applyWithdrawnExits({ withdrawnExits, tournamentRecord, drawDefinition, matchUpsMap, event });
 
   if (winnerMatchUp) {
     removeDirectedWinner({
