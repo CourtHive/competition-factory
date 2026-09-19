@@ -1,3 +1,5 @@
+import { getMatchUpPresence } from '@Acquire/presenceAttestations';
+
 // constants and types
 import { MISSING_TOURNAMENT_RECORD } from '@Constants/errorConditionConstants';
 import { SUCCESS } from '@Constants/resultConstants';
@@ -26,6 +28,8 @@ import {
   ASSIGN_COURT,
   ASSIGN_OFFICIAL,
   ASSIGN_VENUE,
+  CHECK_IN,
+  CHECK_OUT,
   COURT_ANNOTATION,
   COURT_ORDER,
   HOME_PARTICIPANT_ID,
@@ -174,6 +178,7 @@ type MigrationCounts = {
   positionAssignments: number;
   matchUps: number;
   matchUpScheduleTimeItems: number;
+  matchUpCheckIns: number;
   venues: number;
   courts: number;
 };
@@ -270,6 +275,7 @@ export function migrateTournamentRecord({
     positionAssignments: 0,
     matchUps: 0,
     matchUpScheduleTimeItems: 0,
+    matchUpCheckIns: 0,
     venues: 0,
     courts: 0,
   };
@@ -281,6 +287,32 @@ export function migrateTournamentRecord({
   }
 
   return { ...SUCCESS, promoted: counts, totalPromoted: sumCounts(counts) };
+}
+
+/**
+ * Promote an ordered presence LOG, as distinct from a last-write-wins schedule attribute.
+ *
+ * `promoteMatchUpScheduleTimeItem` takes the MOST RECENT matching timeItem and discards the rest,
+ * which is correct for a scalar and destroys a log: a check-in followed by a check-out would migrate
+ * as the check-out alone, losing the arrival entirely. This keeps every entry, in order.
+ *
+ * Promoted entries carry no `attributedTo` — nobody ever recorded one, and an absent attester is
+ * honest where a synthesised one would not be.
+ */
+function promoteMatchUpCheckIns(matchUp: any, clearLegacy: boolean): number {
+  if (Array.isArray(matchUp?.checkIns)) return 0;
+  if (!Array.isArray(matchUp?.timeItems)) return 0;
+
+  const promoted = getMatchUpPresence(matchUp);
+  if (!promoted.length) return 0;
+
+  matchUp.checkIns = promoted;
+  if (clearLegacy) {
+    matchUp.timeItems = matchUp.timeItems.filter(
+      (timeItem: any) => ![CHECK_IN, CHECK_OUT].includes(timeItem?.itemType),
+    );
+  }
+  return promoted.length;
 }
 
 function migrateMatchUpSchedule(matchUp: any, counts: MigrationCounts, clearLegacy: boolean) {
@@ -300,6 +332,7 @@ function walkStructures(structures: any[], counts: MigrationCounts, clearLegacy:
     for (const matchUp of structure.matchUps ?? []) {
       counts.matchUps += applyFlatPromotions(matchUp, MATCHUP_PROMOTIONS, clearLegacy);
       migrateMatchUpSchedule(matchUp, counts, clearLegacy);
+      counts.matchUpCheckIns += promoteMatchUpCheckIns(matchUp, clearLegacy);
     }
     if (Array.isArray(structure.structures)) walkStructures(structure.structures, counts, clearLegacy);
   }

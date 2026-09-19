@@ -1194,3 +1194,71 @@ import it, so the rule has one definition rather than one definition and one re-
 test suite asserts the two methods agree on identical input.
 
 See [#4926](https://github.com/CourtHive/competition-factory/pull/4926).
+
+## 14. Check-in becomes a first-class attestation
+
+Per-matchUp check-in moves out of `matchUp.timeItems[]` and onto a first-class
+`matchUp.checkIns[]` collection of `PresenceAttestation` objects. Three things change for callers.
+
+### 14.1 The storage surface
+
+```diff
+- matchUp.timeItems: [{ itemType: 'CHECK_IN', itemValue: '<participantId>', createdAt: '…' }]
++ matchUp.checkIns:  [{ attestationId, participantId, state: 'CHECKED_IN',
++                       occurredAt, recordedAt, attributedTo? }]
+```
+
+**If you read `checkedInParticipantIds` or `allParticipantsCheckedIn`, nothing changes.** Those are
+still attached to every in-context matchUp by hydration, and `getCheckedInParticipantIds` now folds
+whichever surface the record holds. Only code reading `matchUp.timeItems` for `CHECK_IN` / `CHECK_OUT`
+directly is affected — no consumer in the CourtHive ecosystem did.
+
+Promoted to a **collection** rather than a scalar deliberately. Check-in is an ordered log folded per
+participant, so the last-write-wins helper (`setFirstClassOrTimeItem`, which strips the timeItems it
+replaces) would have destroyed the history — the same way `SCHEDULE.ASSIGNMENT.OFFICIAL` lost its
+assignment history and took `officialType` with it.
+
+### 14.2 A PAIR or TEAM is no longer a valid subject
+
+`checkInParticipant` and `checkOutParticipant` now return **`ERR_INVALID_ATTESTATION_SUBJECT`** when
+the `participantId` names a side rather than one of its members.
+
+```diff
+- checkInParticipant({ participantId: pairParticipantId, matchUpId, drawId })
++ checkInParticipant({ participantId: individualParticipantId, matchUpId, drawId })
+```
+
+Before 7.0.0 both were accepted and nothing reconciled them, so a desk that checked in the pair and a
+desk that checked in both players stored different state for one physical fact. Reading is unchanged:
+`getCheckedInParticipantIds` still derives a side as checked in when all its members are, and all its
+members as checked in when the side is.
+
+A consequence worth noting: checking out a PAIR used to cascade a `CHECK_OUT` to each member as well as
+the side — three stored facts for one action. There is now one fact per person.
+
+### 14.3 New optional arguments
+
+| argument        | purpose                                                                                                                                                                                           |
+| --------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `attributedTo`  | who **attested** the presence — never who is present. A `PARTICIPANT`, a `PERSON`, a `DECLARED` name/telephone for somebody not in the record (a minor's parent), a `DEVICE` (kiosk), or `SYSTEM` |
+| `occurredAt`    | ISO — when the check-in **happened**, as opposed to when this instance wrote it. Defaults to now                                                                                                  |
+| `attestationId` | mint at the origin to make a replayed mutation idempotent across a disconnected sync                                                                                                              |
+| `notes`         | free text                                                                                                                                                                                         |
+
+`attributedTo.relationship` reuses `ContactRelationshipUnion` (`SELF | PARENT | GUARDIAN | CHAPERONE |
+EMERGENCY | OTHER`) rather than minting a second vocabulary for the same distinction. A parent or
+guardian remains an attribute of contact details and is **not** a Participant.
+
+⚠️ **`attributedTo` cannot be represented by a timeItem** — a timeItem has one `itemValue`. Under
+`schemaWriteMode: 'legacy'` an attributed check-in is therefore **refused** with
+`ERR_UNSUPPORTED_IN_LEGACY_MODE` rather than written with the attester silently dropped. Under
+`'bridge'` the first-class collection carries the attester and the legacy mirror does not.
+
+### 14.4 Migrating stored records
+
+`migrateTournamentRecord` promotes the whole ordered log and reports it as `promoted.matchUpCheckIns`.
+It is idempotent, and it does **not** synthesise an attester for a promoted entry — nobody recorded one,
+and an absent attester is honest where an invented one is not.
+
+Records needing no migration read correctly anyway: `getCheckedInParticipantIds` falls back to the
+legacy timeItems when `checkIns` is absent.

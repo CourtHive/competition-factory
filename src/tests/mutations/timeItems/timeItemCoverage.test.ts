@@ -1,5 +1,6 @@
 import { addMatchUpTimeItem, resetMatchUpTimeItems } from '@Mutate/timeItems/matchUps/matchUpTimeItems';
 import { addTimeItem, resetTimeItems, addEventTimeItem } from '@Mutate/timeItems/addTimeItem';
+import { INVALID_ATTESTATION_SUBJECT } from '@Constants/errorConditionConstants';
 import { getTimeItemValues } from '@Mutate/timeItems/getTimeItemValues';
 import mocksEngine from '@Assemblies/engines/mock';
 import tournamentEngine from '@Engines/syncEngine';
@@ -352,7 +353,7 @@ describe('matchUp timeItems: checkIn/checkOut', () => {
     expect(result.checkedOut).toEqual(true);
   });
 
-  it('checkIn and checkOut doubles team participant', () => {
+  it('refuses the PAIR and checks its members in and out individually', () => {
     const { tournamentRecord } = mocksEngine.generateTournamentRecord({
       drawProfiles: [{ drawSize: 4, eventType: 'DOUBLES' }],
       participantsProfile: { participantsCount: 20 },
@@ -366,15 +367,18 @@ describe('matchUp timeItems: checkIn/checkOut', () => {
     if (!firstRoundMatchUp) return;
 
     const { matchUpId, drawId } = firstRoundMatchUp;
-    // Use the team (pair) participantId for doubles
-    const teamParticipantId = firstRoundMatchUp.sides[0].participantId;
+    const pairParticipantId = firstRoundMatchUp.sides[0].participantId;
+    const memberParticipantId = firstRoundMatchUp.sides[0].participant.individualParticipants[0].participantId;
 
-    // checkIn team
-    let result = tournamentEngine.checkInParticipant({ matchUpId, drawId, participantId: teamParticipantId });
+    // CODES 7.0.0: a PAIR is not a valid SUBJECT. Nothing reconciled a pair-level check-in with its
+    // two individual ones, so two desks could store different state for one physical fact.
+    let result = tournamentEngine.checkInParticipant({ matchUpId, drawId, participantId: pairParticipantId });
+    expect(result.error).toEqual(INVALID_ATTESTATION_SUBJECT);
+
+    result = tournamentEngine.checkInParticipant({ matchUpId, drawId, participantId: memberParticipantId });
     expect(result.success).toEqual(true);
 
-    // checkOut team — should also checkout individual participants
-    result = tournamentEngine.checkOutParticipant({ matchUpId, drawId, participantId: teamParticipantId });
+    result = tournamentEngine.checkOutParticipant({ matchUpId, drawId, participantId: memberParticipantId });
     expect(result.success).toEqual(true);
     expect(result.checkedOut).toEqual(true);
   });

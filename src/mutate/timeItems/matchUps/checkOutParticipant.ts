@@ -1,15 +1,21 @@
+import { addMatchUpPresenceAttestation } from '@Mutate/timeItems/matchUps/matchUpTimeItems';
 import { getCheckedInParticipantIds } from '@Query/matchUp/getCheckedInParticipantIds';
 import { checkRequiredParameters } from '@Helpers/parameters/checkRequiredParameters';
 import { getMatchUpParticipantIds } from '@Query/matchUp/getMatchUpParticipantIds';
 import { resolveFromParameters } from '@Helpers/parameters/resolveFromParameters';
 import { checkScoreHasValue } from '@Query/matchUp/checkScoreHasValue';
-import { addMatchUpTimeItem } from './matchUpTimeItems';
+import { buildAttestation } from '@Mutate/presence/buildAttestation';
 
 // constants and types
-import { INVALID_ACTION, INVALID_PARTICIPANT_ID, PARTICIPANT_NOT_CHECKED_IN } from '@Constants/errorConditionConstants';
+import {
+  INVALID_ACTION,
+  INVALID_ATTESTATION_SUBJECT,
+  INVALID_PARTICIPANT_ID,
+  PARTICIPANT_NOT_CHECKED_IN,
+} from '@Constants/errorConditionConstants';
 import { activeMatchUpStatuses, completedMatchUpStatuses } from '@Constants/matchUpStatusConstants';
 import { CheckInOutParticipantArgs } from '@Types/factoryTypes';
-import { CHECK_OUT } from '@Constants/timeItemConstants';
+import { CHECKED_OUT } from '@Constants/presenceConstants';
 import { SUCCESS } from '@Constants/resultConstants';
 import {
   DRAW_DEFINITION,
@@ -21,6 +27,16 @@ import {
   TOURNAMENT_RECORD,
 } from '@Constants/attributeConstants';
 
+/**
+ * Reverse a check-in for THIS matchUp.
+ *
+ * CODES first-class as of 7.0.0 — see {@link checkInParticipant}. The subject must be an INDIVIDUAL.
+ *
+ * **The side-cascade is gone, and its absence is the point.** Before 7.0.0 a PAIR could be the subject,
+ * and checking it out wrote a CHECK_OUT for the side *and* one per member — three stored facts for one
+ * action, reconciled by nothing. With only individuals writable there is one fact per person, and
+ * `getCheckedInParticipantIds` still derives the side's state from its members.
+ */
 export function checkOutParticipant(params: CheckInOutParticipantArgs) {
   const requiredParams = [
     { [TOURNAMENT_RECORD]: true },
@@ -34,7 +50,8 @@ export function checkOutParticipant(params: CheckInOutParticipantArgs) {
   const resolutions = resolveFromParameters(params, [{ [PARAM]: MATCHUP, attr: { [IN_CONTEXT]: true } }]);
   if (resolutions.error) return resolutions;
 
-  const { tournamentRecord, drawDefinition, participantId, matchUpId } = params;
+  const { tournamentRecord, drawDefinition, participantId, matchUpId, attributedTo, occurredAt, attestationId, notes } =
+    params;
 
   const matchUp = resolutions?.matchUp?.matchUp;
   const { matchUpStatus, score } = matchUp ?? {};
@@ -55,37 +72,30 @@ export function checkOutParticipant(params: CheckInOutParticipantArgs) {
   if (!allRelevantParticipantIds?.includes(participantId)) {
     return { error: INVALID_PARTICIPANT_ID };
   }
+
+  const { individualParticipantIds } = getMatchUpParticipantIds({ matchUp });
+  if (!individualParticipantIds?.includes(participantId)) {
+    return { error: INVALID_ATTESTATION_SUBJECT, context: { participantId } };
+  }
+
   if (!checkedInParticipantIds?.includes(participantId)) {
     return { error: PARTICIPANT_NOT_CHECKED_IN };
   }
 
-  const getIdsResult = getMatchUpParticipantIds({ matchUp });
-  if (getIdsResult?.error) return getIdsResult;
-
-  const { sideParticipantIds, nestedIndividualParticipantIds } = getIdsResult ?? {};
-
-  const sideIndex = sideParticipantIds?.indexOf(participantId);
-  if (sideIndex !== undefined && [0, 1].includes(sideIndex)) {
-    (nestedIndividualParticipantIds?.[sideIndex] ?? []).forEach((participantId) => {
-      const timeItem = {
-        itemType: CHECK_OUT,
-        itemValue: participantId,
-      };
-      addMatchUpTimeItem({ drawDefinition, matchUpId, timeItem });
-    });
-  }
-
-  const timeItem = {
-    itemValue: participantId,
-    itemType: CHECK_OUT,
-  };
-
-  addMatchUpTimeItem({
+  const appendResult = addMatchUpPresenceAttestation({
+    attestation: buildAttestation({
+      state: CHECKED_OUT,
+      attestationId,
+      participantId,
+      attributedTo,
+      occurredAt,
+      notes,
+    }),
     tournamentRecord,
     drawDefinition,
     matchUpId,
-    timeItem,
   });
+  if (appendResult.error) return appendResult;
 
   return { ...SUCCESS, checkedOut: true };
 }

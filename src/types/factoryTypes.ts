@@ -2,6 +2,7 @@ import { DOUBLES_EVENT, SINGLES_EVENT, TEAM_EVENT } from '@Constants/eventConsta
 import { ValidPolicyTypes, POLICY_TYPE_SEEDING } from '@Constants/policyConstants';
 import { SignedInStatusUnion } from '@Constants/participantConstants';
 import type { FactoryEngineMethod } from './factoryEngineMethods';
+import type { Attribution } from './presenceTypes';
 import { HydratedMatchUp, HydratedParticipant } from './hydrated';
 import { ErrorType } from '@Constants/errorConditionConstants';
 import type { MethodSignatures } from './methodSignatures';
@@ -228,9 +229,17 @@ export type CheckInOutParticipantArgs = {
   tournamentRecord: Tournament;
   drawDefinition: DrawDefinition;
   matchUp?: HydratedMatchUp;
+  /** the SUBJECT — an INDIVIDUAL participant. A PAIR or TEAM is refused (CODES 7.0.0) */
   participantId: string;
   matchUpId: string;
   event?: Event;
+  /** who ATTESTED the presence — never who is present. May name somebody not in the record */
+  attributedTo?: Attribution;
+  /** ISO — when the presence HAPPENED, as opposed to when this instance wrote it. Defaults to now */
+  occurredAt?: string;
+  /** supply to make a replayed mutation idempotent across a disconnected sync */
+  attestationId?: string;
+  notes?: string;
 };
 
 export type ScheduleTimesResult = { scheduleTime: string };

@@ -622,6 +622,27 @@ export const PARTICIPANT_NOT_CHECKED_IN = {
   code: 'ERR_UNCHANGED_PARTICIPANT_NOT_CHECKED_IN',
 };
 
+/**
+ * The presence attestation names a PAIR or TEAM as its subject. Only INDIVIDUAL participants may be
+ * checked in: the pre-promotion API accepted a side participant and reconciled it with nothing, so a
+ * desk that checked in the pair and a desk that checked in both players stored different state for one
+ * physical fact. Side-level presence is still DERIVED on read.
+ */
+export const INVALID_ATTESTATION_SUBJECT = {
+  message: 'Presence subject must be an INDIVIDUAL participant',
+  code: 'ERR_INVALID_ATTESTATION_SUBJECT',
+};
+
+/**
+ * The write would lose information that the LEGACY representation cannot carry. Raised when an
+ * attestation carrying `attributedTo` is written under `schemaWriteMode: 'legacy'` — a timeItem has one
+ * `itemValue` and no room for an attester, so the alternative is to discard it silently.
+ */
+export const UNSUPPORTED_IN_LEGACY_MODE = {
+  message: 'Not supported in LEGACY schemaWriteMode',
+  code: 'ERR_UNSUPPORTED_IN_LEGACY_MODE',
+};
+
 export const MISSING_PERSON_DETAILS = {
   message: 'Missing person details',
   code: 'ERR_MISSING_PERSON_DETAILS',
@@ -1113,6 +1134,8 @@ export const errorConditionConstants = {
   PARTICIPANT_COUNT_EXCEEDS_DRAW_SIZE,
   PARTICIPANT_ID_EXISTS,
   PARTICIPANT_NOT_CHECKED_IN,
+  INVALID_ATTESTATION_SUBJECT,
+  UNSUPPORTED_IN_LEGACY_MODE,
   PARTICIPANT_NOT_FOUND,
   PARTICIPANT_PAIR_EXISTS,
   PENALTY_NOT_FOUND,

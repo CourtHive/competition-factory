@@ -12,6 +12,7 @@ import { SUCCESS } from '@Constants/resultConstants';
 import { DOUBLES } from '@Constants/eventConstants';
 import { MALE } from '@Constants/genderConstants';
 import {
+  INVALID_ATTESTATION_SUBJECT,
   INVALID_PARTICIPANT_ID,
   MISSING_MATCHUP_ID,
   MISSING_PARTICIPANT_ID,
@@ -160,9 +161,17 @@ it('can check participants in and out', () => {
   expect(allParticipantsCheckedIn).toEqual(true);
   expect(checkedInParticipantIds?.length).toEqual(6);
 
-  // now check out one pair participant
+  // a PAIR is no longer a valid SUBJECT (CODES 7.0.0). It remains a valid derived READ, asserted below.
   result = tournamentEngine.checkOutParticipant({
     participantId: sideParticipantIds?.[0],
+    matchUpId: matchUp.matchUpId,
+    drawId,
+  });
+  expect(result.error).toEqual(INVALID_ATTESTATION_SUBJECT);
+
+  // check out ONE member of the first side instead
+  result = tournamentEngine.checkOutParticipant({
+    participantId: individualParticipantIds?.[0],
     matchUpId: matchUp.matchUpId,
     drawId,
   });
@@ -176,7 +185,10 @@ it('can check participants in and out', () => {
   }));
   ({ allParticipantsCheckedIn, checkedInParticipantIds } = getCheckedInParticipantIds({ matchUp }));
   expect(allParticipantsCheckedIn).toEqual(false);
-  expect(checkedInParticipantIds?.length).toEqual(3);
+  // three individuals still in, plus the second side DERIVED from its two members
+  expect(checkedInParticipantIds?.length).toEqual(4);
+  expect(checkedInParticipantIds).not.toContain(sideParticipantIds?.[0]);
+  expect(checkedInParticipantIds).toContain(sideParticipantIds?.[1]);
 
   // now checkout one individual participant
   result = tournamentEngine.checkOutParticipant({
@@ -211,6 +223,9 @@ it('can check participants in and out', () => {
   }));
   ({ allParticipantsCheckedIn, checkedInParticipantIds } = getCheckedInParticipantIds({ matchUp }));
   expect(allParticipantsCheckedIn).toEqual(false);
-  // count has changed from 3 to 1 because removing an individual participantId also removed pair participantId
-  expect(checkedInParticipantIds?.length).toEqual(1);
+  // Both members of the first side are now out, so that side is no longer derived as checked in.
+  // The second side and its two members remain — three ids, and the PAIR among them is DERIVED.
+  expect(checkedInParticipantIds?.length).toEqual(3);
+  expect(checkedInParticipantIds).toContain(sideParticipantIds?.[1]);
+  expect(checkedInParticipantIds).not.toContain(sideParticipantIds?.[0]);
 });

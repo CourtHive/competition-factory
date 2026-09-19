@@ -1,4 +1,5 @@
 import type { competitionFormat } from './competitionFormat';
+import type { PresenceAttestation } from './presenceTypes';
 
 export interface Tournament {
   activeDates?: Date[] | string[]; // dates from startDate to endDate on which the tournament is active
@@ -720,6 +721,16 @@ export type SideExitProvenanceEntry = {
 export type SideExitProvenance = Record<number, SideExitProvenanceEntry>;
 
 export interface MatchUp {
+  /**
+   * CODES first-class: who has presented themselves at the desk for THIS matchUp, previously stored as
+   * `CHECK_IN` / `CHECK_OUT` timeItems carrying the participantId as `itemValue`.
+   *
+   * A COLLECTION, not a scalar — presence is folded from an ordered log and the timeItem representation
+   * could carry neither attribution nor a distinction between when a check-in happened and when it was
+   * written. Read it through `getCheckedInParticipantIds`, which folds either surface; it is also
+   * hydrated onto every in-context matchUp as `checkedInParticipantIds` / `allParticipantsCheckedIn`.
+   */
+  checkIns?: PresenceAttestation[];
   collectionId?: string;
   collectionPosition?: number;
   createdAt?: Date | string;
