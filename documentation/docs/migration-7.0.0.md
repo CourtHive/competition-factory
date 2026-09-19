@@ -1331,7 +1331,7 @@ back to when the record names no zone. Setting `localTimeZone` is what upgrades 
   check-in, this runs against real data routinely: `SIGN_IN_STATUS` appears extensively in archived
   records going back to 2023.
 
-## 17. Presence expectation becomes part of sanctioning
+## 17. [#4936](https://github.com/CourtHive/competition-factory/pull/4936) presence expectation becomes part of sanctioning
 
 Purely additive — nothing existing changes shape or behaviour. `POLICY_TYPE_SANCTIONING` gains an
 optional `presence` key, and this is its **first real consumer**: until now the policy type was read
