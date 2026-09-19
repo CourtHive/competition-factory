@@ -660,6 +660,11 @@ import type {
   isChallengeInRange,
 } from '@Query/ladder/getLadderPolicy';
 import type {
+  getPresenceExpectation,
+  getPresenceRules,
+  validatePresenceAttribution,
+} from '@Query/participant/presencePolicy';
+import type {
   assignMatchUpScorekeeper,
   removeMatchUpScorekeeper,
 } from '@Mutate/matchUps/schedule/assignMatchUpScorekeeper';
@@ -1010,6 +1015,8 @@ export interface MethodSignatures {
   getPositionsPlayedOff: EngineMethod<typeof getPositionsPlayedOff>;
   getPracticeRegistrations: EngineMethod<typeof getPracticeRegistrations>;
   getPredictiveAccuracy: EngineMethod<typeof getPredictiveAccuracy>;
+  getPresenceExpectation: EngineMethod<typeof getPresenceExpectation>;
+  getPresenceRules: EngineMethod<typeof getPresenceRules>;
   getProfileRounds: EngineMethod<typeof getProfileRounds>;
   getPublishState: EngineMethod<typeof getPublishState>;
   getQualityWinPoints: EngineMethod<typeof getQualityWinPoints>;
@@ -1320,6 +1327,7 @@ export interface MethodSignatures {
   validateMCPMatch: EngineMethod<typeof validateMCPMatch>;
   validateOfficiatingStatusTransition: EngineMethod<typeof validateOfficiatingStatusTransition>;
   validatePlayoffGroups: EngineMethod<typeof validatePlayoffGroups>;
+  validatePresenceAttribution: EngineMethod<typeof validatePresenceAttribution>;
   validateProposal: EngineMethod<typeof validateProposal>;
   validateScheduleScenario: EngineMethod<typeof validateScheduleScenario>;
   validateSchedulingProfile: EngineMethod<typeof validateSchedulingProfile>;

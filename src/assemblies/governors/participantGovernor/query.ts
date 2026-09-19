@@ -1,3 +1,6 @@
+export { validatePresenceAttribution } from '@Query/participant/presencePolicy';
+export { getPresenceExpectation } from '@Query/participant/presencePolicy';
+export { getPresenceRules } from '@Query/participant/presencePolicy';
 export { getParticipantsStillSignedInOnDate } from '@Query/participant/presence';
 export { getParticipantPresenceHistory } from '@Query/participant/presence';
 export { getParticipantSignedInOnDate } from '@Query/participant/presence';

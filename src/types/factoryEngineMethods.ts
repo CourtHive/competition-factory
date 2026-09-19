@@ -372,6 +372,8 @@ export type FactoryEngineMethod =
   | 'getPositionsPlayedOff'
   | 'getPracticeRegistrations'
   | 'getPredictiveAccuracy'
+  | 'getPresenceExpectation'
+  | 'getPresenceRules'
   | 'getProfileRounds'
   | 'getPublishState'
   | 'getQualityWinPoints'
@@ -723,6 +725,7 @@ export type FactoryEngineMethod =
   | 'validateMCPMatch'
   | 'validateOfficiatingStatusTransition'
   | 'validatePlayoffGroups'
+  | 'validatePresenceAttribution'
   | 'validateProposal'
   | 'validateScheduleScenario'
   | 'validateSchedulingProfile'
@@ -1112,6 +1115,8 @@ export const FACTORY_ENGINE_METHODS: readonly FactoryEngineMethod[] = [
   'getPositionsPlayedOff',
   'getPracticeRegistrations',
   'getPredictiveAccuracy',
+  'getPresenceExpectation',
+  'getPresenceRules',
   'getProfileRounds',
   'getPublishState',
   'getQualityWinPoints',
@@ -1463,6 +1468,7 @@ export const FACTORY_ENGINE_METHODS: readonly FactoryEngineMethod[] = [
   'validateMCPMatch',
   'validateOfficiatingStatusTransition',
   'validatePlayoffGroups',
+  'validatePresenceAttribution',
   'validateProposal',
   'validateScheduleScenario',
   'validateSchedulingProfile',
