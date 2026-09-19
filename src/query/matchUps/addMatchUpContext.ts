@@ -1,3 +1,4 @@
+import { stripCheckInAttribution, strippedParticipant } from '@Query/participants/participantPrivacy';
 import { getMatchUpCompetitiveProfile } from '@Query/matchUp/getMatchUpCompetitiveProfile';
 import { getCheckedInParticipantIds } from '@Query/matchUp/getCheckedInParticipantIds';
 import { getMatchUpScheduleDetails } from '@Query/matchUp/getMatchUpScheduleDetails';
@@ -424,6 +425,12 @@ export function addMatchUpContext({
     });
   }
 
+  // D-PRIV: the fold above reads the log, so the strip must come after it — the derived
+  // `checkedInParticipantIds` is unaffected, and only the attester is withheld from the emitted log.
+  if (Array.isArray(matchUpWithContext.checkIns)) {
+    matchUpWithContext.checkIns = stripCheckInAttribution([matchUpWithContext])?.[0]?.checkIns;
+  }
+
   if (Array.isArray(contextProfile?.exclude)) {
     // loop through all attributes and delete them from matchUpWithContext
     contextProfile?.exclude.forEach((attribute) => delete matchUpWithContext[attribute]);
@@ -571,7 +578,11 @@ function hydrateSides({
                 participantId,
               })
             : undefined);
-        return individualsTemplate && found ? attributeFilter({ template: individualsTemplate, source: found }) : found;
+        const emitted =
+          individualsTemplate && found ? attributeFilter({ template: individualsTemplate, source: found }) : found;
+        // D-PRIV: attached AFTER the side participant was stripped, and from a different source, so
+        // it needs its own strip rather than inheriting one.
+        return strippedParticipant(emitted);
       });
       if (hydrateParticipants !== false) Object.assign(side.participant, { individualParticipants });
     }
@@ -633,7 +644,10 @@ function hydrateSideParticipant({
   if (hydrateParticipants === false) {
     Object.assign(side, { participant: { entryStage, entryStatus, luckyAdvancement } });
   } else {
-    Object.assign(side, { participant });
+    // D-PRIV: a hydrated side carries a whole participant, so a presence attester rides out on every
+    // matchUp query — `allTournamentMatchUps` never passes through `getParticipants`, where the
+    // participant-side strip lives. Hydration is the one place every emitted matchUp goes through.
+    Object.assign(side, { participant: strippedParticipant(participant) });
   }
 }
 
