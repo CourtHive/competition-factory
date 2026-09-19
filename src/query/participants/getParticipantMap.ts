@@ -1,13 +1,13 @@
 import { addParticipantGroupings } from '@Query/drawDefinition/avoidance/addParticipantGroupings';
 import { addIndividualParticipants } from '@Query/participants/addIndividualParticipants';
 import { addNationalityCode } from '@Query/participants/addNationalityCode';
+import { latestPresenceState } from '@Acquire/presenceAttestations';
 import { getScaleValues } from '@Query/participant/getScaleValues';
-import { getTimeItem } from '@Query/base/timeItems';
 import { makeDeepCopy } from '@Tools/makeDeepCopy';
 import { isObject } from '@Tools/objects';
 
 // constants and types
-import { GROUP, PAIR, SIGNED_IN, SIGN_IN_STATUS, TEAM } from '@Constants/participantConstants';
+import { GROUP, PAIR, SIGNED_IN, TEAM } from '@Constants/participantConstants';
 import { DOUBLES, SINGLES } from '@Constants/matchUpTypes';
 import { ParticipantMap } from '@Types/factoryTypes';
 import { Tournament } from '@Types/tournamentTypes';
@@ -122,12 +122,10 @@ export function getParticipantMap({
 }
 
 function signedIn(participant) {
-  const { timeItem } = getTimeItem({
-    itemType: SIGN_IN_STATUS,
-    element: participant,
-  });
-
-  return timeItem?.itemValue === SIGNED_IN;
+  // The LATEST recorded state. Deliberately not "present today" — nothing signs anybody out at the end
+  // of a day, so this reads SIGNED_IN all week for a Thursday volunteer. Use
+  // `getParticipantSignedInOnDate` for the as-of-a-date question.
+  return latestPresenceState(participant) === SIGNED_IN;
 }
 
 function processIndividualParticipantIds({

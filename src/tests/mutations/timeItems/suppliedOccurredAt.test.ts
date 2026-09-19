@@ -1,3 +1,5 @@
+import { legacyMode } from '@Tests/testHarness/legacyMode';
+
 import mocksEngine from '@Assemblies/engines/mock';
 import tournamentEngine from '@Engines/syncEngine';
 import { describe, expect, it } from 'vitest';
@@ -42,7 +44,45 @@ function timeItemsOf(participantId: string, itemType?: string): any[] {
   return itemType ? items.filter((i: any) => i.itemType === itemType) : items;
 }
 
+function presenceOf(participantId: string): any[] {
+  const { participants } = tournamentEngine.getParticipants();
+  return participants.find((p: any) => p.participantId === participantId)?.presence ?? [];
+}
+
 describe('modifyParticipantsSignInStatus — occurredAt', () => {
+  it('records the supplied occurredAt on the attestation, separately from the write time', () => {
+    const participantId = seed();
+
+    const result: any = tournamentEngine.modifyParticipantsSignInStatus({
+      participantIds: [participantId],
+      signInState: SIGNED_IN,
+      occurredAt: EARLY,
+    });
+    expect(result.success).toEqual(true);
+
+    const attestation = presenceOf(participantId).at(-1);
+    expect(attestation.occurredAt).toEqual(EARLY);
+
+    // CODES 7.0.0: the two are now separate fields rather than one `createdAt` doing both jobs, so the
+    // late-sync case no longer has to overwrite the ordering key to report the right time.
+    expect(attestation.recordedAt).not.toEqual(EARLY);
+  });
+
+  it('defaults to now when occurredAt is omitted', () => {
+    const participantId = seed();
+    const before = Date.now();
+
+    tournamentEngine.modifyParticipantsSignInStatus({
+      participantIds: [participantId],
+      signInState: SIGNED_IN,
+    });
+
+    const { occurredAt } = presenceOf(participantId).at(-1);
+    expect(new Date(occurredAt).getTime()).toBeGreaterThanOrEqual(before - 1000);
+  });
+});
+
+legacyMode('modifyParticipantsSignInStatus — occurredAt', () => {
   it('records the supplied occurredAt on the timeItem', () => {
     const participantId = seed();
 

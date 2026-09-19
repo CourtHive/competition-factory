@@ -1194,3 +1194,139 @@ import it, so the rule has one definition rather than one definition and one re-
 test suite asserts the two methods agree on identical input.
 
 See [#4926](https://github.com/CourtHive/competition-factory/pull/4926).
+
+## 14. [#4933](https://github.com/CourtHive/competition-factory/pull/4933) check-in becomes a first-class attestation
+
+Per-matchUp check-in moves out of `matchUp.timeItems[]` and onto a first-class
+`matchUp.checkIns[]` collection of `PresenceAttestation` objects. Three things change for callers.
+
+### 14.1 The storage surface
+
+```diff
+- matchUp.timeItems: [{ itemType: 'CHECK_IN', itemValue: '<participantId>', createdAt: '…' }]
++ matchUp.checkIns:  [{ attestationId, participantId, state: 'CHECKED_IN',
++                       occurredAt, recordedAt, attributedTo? }]
+```
+
+**If you read `checkedInParticipantIds` or `allParticipantsCheckedIn`, nothing changes.** Those are
+still attached to every in-context matchUp by hydration, and `getCheckedInParticipantIds` now folds
+whichever surface the record holds. Only code reading `matchUp.timeItems` for `CHECK_IN` / `CHECK_OUT`
+directly is affected — no consumer in the CourtHive ecosystem did.
+
+Promoted to a **collection** rather than a scalar deliberately. Check-in is an ordered log folded per
+participant, so the last-write-wins helper (`setFirstClassOrTimeItem`, which strips the timeItems it
+replaces) would have destroyed the history — the same way `SCHEDULE.ASSIGNMENT.OFFICIAL` lost its
+assignment history and took `officialType` with it.
+
+### 14.2 A PAIR or TEAM is no longer a valid subject
+
+`checkInParticipant` and `checkOutParticipant` now return **`ERR_INVALID_ATTESTATION_SUBJECT`** when
+the `participantId` names a side rather than one of its members.
+
+```diff
+- checkInParticipant({ participantId: pairParticipantId, matchUpId, drawId })
++ checkInParticipant({ participantId: individualParticipantId, matchUpId, drawId })
+```
+
+Before 7.0.0 both were accepted and nothing reconciled them, so a desk that checked in the pair and a
+desk that checked in both players stored different state for one physical fact. Reading is unchanged:
+`getCheckedInParticipantIds` still derives a side as checked in when all its members are, and all its
+members as checked in when the side is.
+
+A consequence worth noting: checking out a PAIR used to cascade a `CHECK_OUT` to each member as well as
+the side — three stored facts for one action. There is now one fact per person.
+
+### 14.3 New optional arguments
+
+| argument        | purpose                                                                                                                                                                                           |
+| --------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `attributedTo`  | who **attested** the presence — never who is present. A `PARTICIPANT`, a `PERSON`, a `DECLARED` name/telephone for somebody not in the record (a minor's parent), a `DEVICE` (kiosk), or `SYSTEM` |
+| `occurredAt`    | ISO — when the check-in **happened**, as opposed to when this instance wrote it. Defaults to now                                                                                                  |
+| `attestationId` | mint at the origin to make a replayed mutation idempotent across a disconnected sync                                                                                                              |
+| `notes`         | free text                                                                                                                                                                                         |
+
+`attributedTo.relationship` reuses `ContactRelationshipUnion` (`SELF | PARENT | GUARDIAN | CHAPERONE |
+EMERGENCY | OTHER`) rather than minting a second vocabulary for the same distinction. A parent or
+guardian remains an attribute of contact details and is **not** a Participant.
+
+⚠️ **`attributedTo` cannot be represented by a timeItem** — a timeItem has one `itemValue`. Under
+`schemaWriteMode: 'legacy'` an attributed check-in is therefore **refused** with
+`ERR_UNSUPPORTED_IN_LEGACY_MODE` rather than written with the attester silently dropped. Under
+`'bridge'` the first-class collection carries the attester and the legacy mirror does not.
+
+### 14.4 Migrating stored records
+
+`migrateTournamentRecord` promotes the whole ordered log and reports it as `promoted.matchUpCheckIns`.
+It is idempotent, and it does **not** synthesise an attester for a promoted entry — nobody recorded one,
+and an absent attester is honest where an invented one is not.
+
+Records needing no migration read correctly anyway: `getCheckedInParticipantIds` falls back to the
+legacy timeItems when `checkIns` is absent.
+
+## 15. [#4933](https://github.com/CourtHive/competition-factory/pull/4933) sign-in becomes a first-class attestation, and gains an as-of-date query
+
+Tournament arrival moves out of `participant.timeItems[]` onto `participant.presence[]`, the same
+`PresenceAttestation` shape as §14. The two facts are deliberately one model — arrival at the
+tournament and presenting for a match are the same statement about a different scope.
+
+### 15.1 What does not change
+
+`getParticipantSignInStatus` and the hydrated `participant.signedIn` still return the **latest**
+recorded state and are unaffected. They now fold whichever surface the record holds, so a record
+written before 7.0.0 answers identically with no migration.
+
+`getParticipantSignInStatus` keeps its **tri-state** return: `undefined` when nothing was ever
+recorded, `false` when a departure was recorded, `'SIGNED_IN'` when present. Those are different
+facts — a person nobody has ever seen is not a person who signed out and went home.
+
+### 15.2 What is new
+
+```ts
+engine.getParticipantPresenceHistory({ participantId });
+// → { presence: PresenceAttestation[] }   ordered oldest-first, frame-free
+
+engine.getParticipantSignedInOnDate({ participantId, date: '2026-09-18', timeZone? });
+// → { signedIn, entries, timeZone, zoneSource }
+
+engine.getParticipantsStillSignedInOnDate({ date: '2026-09-18', timeZone? });
+// → { participantIds, timeZone, zoneSource }
+```
+
+**Why an as-of-date query is needed at all.** Nothing signs anybody out at the end of a day, so the
+latest-value readers report a Thursday volunteer as `SIGNED_IN` on Sunday. The history is faithful;
+it is a history of a thing whose end nobody records. Reading it as of a date is what makes "here
+today" mean what it says.
+
+`signedIn` is **the last recorded action on that day**, not "signed in at any point": somebody who
+signed in at 09:00 and out at 17:00 was not present at 18:00. A day with no entry is `false` and
+means _"not signed in on this date"_ — never _"signed out"_. Render it accordingly.
+
+### 15.3 Time zones — read `zoneSource` before trusting the day
+
+A calendar day is only meaningful in a zone. `01:00Z` on the 18th is `21:00` on the **17th** in New
+York, so a UTC day boundary files an evening sign-in under the wrong day.
+
+| `zoneSource` | meaning                                            |
+| ------------ | -------------------------------------------------- |
+| `supplied`   | you passed `timeZone`                              |
+| `tournament` | `tournamentRecord.localTimeZone`                   |
+| `venue`      | inferred from a single distinct venue address zone |
+| `none`       | **no zone resolved — instants were read in UTC**   |
+
+`none` is reported rather than hidden. A client that owns a venue time frame should prefer
+`getParticipantPresenceHistory` and apply its own framing, because only the client knows what to fall
+back to when the record names no zone. Setting `localTimeZone` is what upgrades the answer from
+"a day, somewhere" to "the day, here".
+
+### 15.4 Behaviour to be aware of
+
+- `modifyParticipantsSignInStatus` gains `attributedTo` and `notes`; `occurredAt` is unchanged but no
+  longer overwrites the ordering key, because `occurredAt` and `recordedAt` are now separate fields.
+- Signing in when **already** signed in remains a no-op — the pre-7.0.0 `duplicateValues: false`
+  semantics are preserved, so the log records state changes rather than repeated assertions.
+- A bulk sign-in stamps **one** instant across the batch rather than one clock reading per participant.
+- Under `schemaWriteMode: 'legacy'` an attributed sign-in is refused with
+  `ERR_UNSUPPORTED_IN_LEGACY_MODE`, exactly as check-in is.
+- `migrateTournamentRecord` promotes the log and reports `promoted.participantPresence`. Unlike
+  check-in, this runs against real data routinely: `SIGN_IN_STATUS` appears extensively in archived
+  records going back to 2023.

@@ -1,4 +1,5 @@
 import type { competitionFormat } from './competitionFormat';
+import type { PresenceAttestation } from './presenceTypes';
 
 export interface Tournament {
   activeDates?: Date[] | string[]; // dates from startDate to endDate on which the tournament is active
@@ -720,6 +721,16 @@ export type SideExitProvenanceEntry = {
 export type SideExitProvenance = Record<number, SideExitProvenanceEntry>;
 
 export interface MatchUp {
+  /**
+   * CODES first-class: who has presented themselves at the desk for THIS matchUp, previously stored as
+   * `CHECK_IN` / `CHECK_OUT` timeItems carrying the participantId as `itemValue`.
+   *
+   * A COLLECTION, not a scalar — presence is folded from an ordered log and the timeItem representation
+   * could carry neither attribution nor a distinction between when a check-in happened and when it was
+   * written. Read it through `getCheckedInParticipantIds`, which folds either surface; it is also
+   * hydrated onto every in-context matchUp as `checkedInParticipantIds` / `allParticipantsCheckedIn`.
+   */
+  checkIns?: PresenceAttestation[];
   collectionId?: string;
   collectionPosition?: number;
   createdAt?: Date | string;
@@ -1626,6 +1637,16 @@ export interface Participant {
   penalties?: Penalty[];
   person?: Person;
   personId?: string;
+  /**
+   * CODES first-class: this participant's tournament-scoped presence history — arrival and departure,
+   * previously stored as `SIGN_IN_STATUS` timeItems.
+   *
+   * A COLLECTION because the history is the value. Nothing signs anybody out at the end of a day, so
+   * "is this person here today" is answered by reading the log as of that date, not by taking a latest
+   * value — a volunteer who signed in on Thursday reads SIGNED_IN on Sunday otherwise. The derived
+   * latest-value answer is still hydrated as `participant.signedIn`.
+   */
+  presence?: PresenceAttestation[];
   representing?: CountryCodeUnion;
   teamId?: string;
   timeItems?: TimeItem[];

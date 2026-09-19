@@ -115,6 +115,28 @@ function anonymizeTournamentHeader({
   }
 }
 
+/**
+ * Anonymise a presence log — `matchUp.checkIns` or `participant.presence`.
+ *
+ * Two separate obligations, and missing either is a leak of a different kind:
+ *
+ * 1. **Remap the subject.** An attestation names a `participantId`, exactly as a positionAssignment
+ *    or a lineUp entry does. Left alone it keeps the ORIGINAL id, which both dangles and
+ *    re-identifies.
+ * 2. **Drop the attester entirely.** `attributedTo` can carry a DECLARED name, telephone and email
+ *    for somebody who is NOT in the record at all — a minor's parent at the desk. Nothing else in
+ *    this file would touch them, because every other scrub walks `participants` and `person`, and
+ *    this person is in neither. Dropped rather than replaced: a synthesised attester would be a fact
+ *    nobody stated. `notes` goes with it, being free text written at a desk.
+ */
+function anonymizePresenceLog(entries: any[] | undefined, idMap: any): any[] | undefined {
+  if (!Array.isArray(entries)) return entries;
+  return entries.map((entry) => {
+    const { attributedTo: _attributedTo, notes: _notes, ...rest } = entry ?? {};
+    return { ...rest, participantId: idMap[entry?.participantId] ?? entry?.participantId };
+  });
+}
+
 function anonymizeParticipantIds({ tournamentRecord, filterExtensions, idMap }) {
   for (const participant of tournamentRecord.participants ?? []) {
     participant.extensions = filterExtensions(participant);
@@ -131,6 +153,9 @@ function anonymizeParticipantIds({ tournamentRecord, filterExtensions, idMap }) 
         (individualParticipantId) => idMap[individualParticipantId],
       );
     }
+    // Second loop, because an attestation's subject may be any participant and every id is in idMap
+    // only once the first loop has finished.
+    participant.presence = anonymizePresenceLog(participant.presence, idMap);
   }
 }
 
@@ -190,6 +215,7 @@ function anonymizeDrawDefinition({ drawDefinition, filterExtensions, idMap }) {
 
     for (const matchUp of structure.matchUps ?? []) {
       matchUp.isMock = true;
+      matchUp.checkIns = anonymizePresenceLog(matchUp.checkIns, idMap);
 
       for (const side of matchUp.sides ?? []) {
         if (!side.lineUp) continue;
