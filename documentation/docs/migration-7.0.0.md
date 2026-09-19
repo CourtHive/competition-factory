@@ -1330,3 +1330,43 @@ back to when the record names no zone. Setting `localTimeZone` is what upgrades 
 - `migrateTournamentRecord` promotes the log and reports `promoted.participantPresence`. Unlike
   check-in, this runs against real data routinely: `SIGN_IN_STATUS` appears extensively in archived
   records going back to 2023.
+
+## 16. [#4934](https://github.com/CourtHive/competition-factory/pull/4934) the presence ATTESTER is never emitted in bulk
+
+A companion rule to §14 and §15, and the reason `attributedTo` can be stored at all.
+
+A `DECLARED` attribution carries a name, telephone and email for somebody who is **not in the record**
+— a minor's parent at the desk. No privacy policy describes them, and no `isPublic` flag covers them.
+
+So `attributedTo` is removed from every BULK emission, unconditionally:
+
+| surface                                                                                                       | `attributedTo`                              |
+| ------------------------------------------------------------------------------------------------------------- | ------------------------------------------- |
+| `getParticipants` → `participants`, `participantMap`, `individualParticipants`                                | **removed**                                 |
+| any hydrated matchUp (`allTournamentMatchUps`, `findMatchUp`, …) → `checkIns`, `sides[].participant.presence` | **removed**                                 |
+| `anonymizeTournamentRecord`                                                                                   | **removed**, and the subject id is remapped |
+| **`getParticipantPresenceHistory`**                                                                           | **returned in full**                        |
+
+Everything else on the attestation survives — who was present, when, and whether they left. Only the
+attester is withheld.
+
+**Why not a privacy-policy attribute.** `getParticipants` is fail-open by construction — no policy
+supplied means the source is returned unfiltered — and the public participants route supplies none. A
+protection that depends on every public caller remembering a flag is one that gets missed once, and
+once is enough for a phone number.
+
+### What to do
+
+Read attribution through `getParticipantPresenceHistory`, which a caller has to ask for by name and a
+server can gate on permissions:
+
+```diff
+- const { participants } = engine.getParticipants({});
+- const attester = participants[0].presence?.[0]?.attributedTo;   // now undefined
++ const { presence } = engine.getParticipantPresenceHistory({ participantId });
++ const attester = presence?.[0]?.attributedTo;
+```
+
+A test asserting that an attester was **stored** must read the stored record rather than a hydrated
+matchUp — asserting it through `findMatchUp` now asserts this privacy behaviour by accident, and
+would go green again the day it regressed.

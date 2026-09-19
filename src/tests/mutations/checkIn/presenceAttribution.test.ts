@@ -31,6 +31,23 @@ function doublesFixture() {
 
 const readMatchUp = (matchUpId: string) => tournamentEngine.findMatchUp({ inContext: true, matchUpId }).matchUp;
 
+/**
+ * The STORED matchUp, read straight off the record.
+ *
+ * A hydrated matchUp no longer carries `attributedTo` — D-PRIV strips it at the emission boundary, so
+ * a test asserting that the attester was STORED has to look at storage. Asserting it through
+ * `findMatchUp` would now be asserting the privacy behaviour by accident, and would go green again
+ * the day that behaviour regressed.
+ */
+function storedMatchUp(matchUpId: string): any {
+  const { tournamentRecord } = tournamentEngine.getTournament();
+  return (tournamentRecord.events ?? [])
+    .flatMap((event: any) => event.drawDefinitions ?? [])
+    .flatMap((drawDefinition: any) => drawDefinition.structures ?? [])
+    .flatMap((structure: any) => structure.matchUps ?? [])
+    .find((matchUp: any) => matchUp.matchUpId === matchUpId);
+}
+
 it('records a PARENT who is not a participant as the attester of a minor check-in', () => {
   const { drawId, matchUpId, individualParticipantIds } = doublesFixture();
   const participantId = individualParticipantIds?.[0];
@@ -48,13 +65,16 @@ it('records a PARENT who is not a participant as the attester of a minor check-i
   });
   expect(result).toMatchObject(SUCCESS);
 
-  const [attestation] = readMatchUp(matchUpId).checkIns;
+  const [attestation] = storedMatchUp(matchUpId).checkIns;
 
   // the SUBJECT is the player; the ATTESTER is the parent. Conflating them is what this shape prevents
   expect(attestation.participantId).toEqual(participantId);
   expect(attestation.attributedTo.attributionType).toEqual(DECLARED_ATTRIBUTION);
   expect(attestation.attributedTo.relationship).toEqual(ContactRelationshipEnum.PARENT);
   expect(attestation.attributedTo.name).toEqual('A. Guardian');
+
+  // ...and it is WITHHELD from the hydrated emission (D-PRIV), which is a different assertion
+  expect(readMatchUp(matchUpId).checkIns[0].attributedTo).toBeUndefined();
 
   // the parent is NOT a participant and must not have become one
   const participantIds = tournamentEngine
