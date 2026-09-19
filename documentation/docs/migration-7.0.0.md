@@ -1459,3 +1459,54 @@ wanting a junior-specific sign-in rule should scope it by role, or attach the po
 `POLICY_SANCTIONING_GENERIC` / `_ITF` / `_USTA` are unchanged. What a governing body expects is that
 body's decision, not a factory default, and adding a `presence` block to a shipped fixture would
 change behaviour for everyone who applies it.
+
+## 18. Check-in attribution is forwarded, and readable
+
+Three gaps in §14–§16, each of which made attribution look supported while being unusable end to end.
+All additive.
+
+### 18.1 `toggleParticipantCheckInState` forwards the attestation fields
+
+It accepted none of `attributedTo` / `occurredAt` / `attestationId` / `notes` and forwarded none. It
+is also the entry point **every desk client uses** — it is what decides which direction the toggle is
+going — so an attester could be supplied, accepted without error, and silently discarded on the only
+path actually called.
+
+```diff
+  engine.toggleParticipantCheckInState({
+    participantId, matchUpId, drawId,
++   attributedTo: { attributionType: 'DECLARED', relationship: 'PARENT', name: 'A. Guardian' },
++   occurredAt: '2026-09-19T09:05:00.000Z',
+  });
+```
+
+A check-**out** is an attested fact too: somebody vouched that the player left.
+
+### 18.2 `getMatchUpCheckInHistory` — the only read that carries the attester
+
+§16 strips `attributedTo` from every bulk emission. There was no counterpart read for a matchUp, so
+check-in attribution was **write-only**: storable and unreadable, leaving a desk no way to see who it
+had just recorded. (`getParticipantPresenceHistory` covers participant _sign-in_, not check-in.)
+
+```ts
+engine.getMatchUpCheckInHistory({ drawId, matchUpId });
+// → { checkIns: PresenceAttestation[] }   attributedTo included
+```
+
+A separate named call rather than a flag, for the same reason as its sign-in counterpart: a server can
+gate one method on a permission, and a caller has to ask for the attester by name rather than receive
+it by accident inside a payload fetched for something else.
+
+### 18.3 A `USER` attribution variant
+
+A desk operator is routinely **not** a Participant and has no CODES `personId`, so neither
+`PARTICIPANT` nor `PERSON` can name them — and forcing a client's auth id into `personId` would put
+two vocabularies behind one field.
+
+```ts
+{ attributionType: 'USER', userId: 'u-42', email?: '…', displayName?: '…' }
+```
+
+⚠️ **A client asserting its own operator identity is unverifiable.** A server that authenticates the
+request should **overwrite** this with the identity it holds; the client-supplied value exists so an
+offline desk still records who was at it.

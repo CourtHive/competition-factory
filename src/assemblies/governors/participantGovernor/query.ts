@@ -1,3 +1,4 @@
+export { getMatchUpCheckInHistory } from '@Query/matchUp/getMatchUpCheckInHistory';
 export { validatePresenceAttribution } from '@Query/participant/presencePolicy';
 export { getPresenceExpectation } from '@Query/participant/presencePolicy';
 export { getPresenceRules } from '@Query/participant/presencePolicy';
