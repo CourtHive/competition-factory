@@ -239,9 +239,25 @@ function applyScoreAndStatus({
     // score. Here it is being used to clear the SCORE — a walkover has none — while the very next
     // lines set an exit status on the same matchUp. Letting the reset take the provenance with it
     // makes the field depend on which exit status is being written: the set above covers WALKOVER
-    // and DOUBLE_WALKOVER but not DEFAULTED or DOUBLE_DEFAULT, so a walkover lost its provenance and
-    // an otherwise identical default kept it. That asymmetry is what `doubleExitStatusParity`
-    // reports for FIRST_ROUND_LOSER_CONSOLATION 16/16.
+    // and DOUBLE_WALKOVER but not DEFAULTED or DOUBLE_DEFAULT, so a walkover loses its provenance
+    // while an otherwise identical default keeps it.
+    //
+    // WHAT THIS IS ACTUALLY LOAD-BEARING FOR — measured 2026-09-19 by REVERTING it on `dev` after
+    // the unwind was corrected (#4935), which is the only way to find out.
+    //
+    // The asymmetry above was originally reported by `doubleExitStatusParity` for
+    // FIRST_ROUND_LOSER_CONSOLATION 16/16. **That test now passes WITHOUT this rescue** — 108/108 —
+    // because the corrected unwind retains the provenance the reset used to destroy. So the reason
+    // recorded when this landed is no longer the reason it has to stay.
+    //
+    // What breaks without it is REFUSALS. Five assertions across four files stop being able to
+    // score a matchUp at all — `byeAdvancesIntoPendingDoubleExit`, `onwardLoserPlacementsRemoved`
+    // (explicitly `ERR_UNCHANGED_CANNOT_CHANGE_WINNING_SIDE`), `pendingDoubleExitNotActive` x2 and
+    // `swapOriginStructure` — each asserting `result.error` is undefined and each getting an error.
+    // Provenance lost here makes a produced exit unrecognisable to the downstream guards
+    // (`isActiveDownstream`, `hasPropagatedExitDownstream`), which then refuse a mutation a director
+    // is entitled to make. That is the load. Do not remove this on the strength of the parity test
+    // passing.
     const survivingProvenance = isAnyExit(matchUpStatus) ? matchUp.sideExitProvenance : undefined;
     Object.assign(matchUp, { ...toBePlayed });
     if (survivingProvenance) matchUp.sideExitProvenance = survivingProvenance;
