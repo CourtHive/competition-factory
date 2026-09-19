@@ -75,7 +75,24 @@ function downstreamOf(drawId: string, target: any) {
 
 /** Compare every matchUp decided before a flip with its state after: relabelled downstream, unchanged elsewhere. */
 function compareOutcomes({ before, after, isDownstream, target, a, b }) {
+  /**
+   * sigma EXCHANGES THE FLIPPED MATCHUP'S TWO PARTICIPANTS, and an ABSENT participant is not one of
+   * them.
+   *
+   * Without the nullish guard, a flipped matchUp with an EMPTY side gives `b === undefined`, and
+   * `id === b` is then true for every absent participant — so sigma maps "nobody" to `a` and
+   * `expected` is manufactured out of nothing. Measured 2026-09-19 on census seed 9304686
+   * (DOUBLE_ELIMINATION 8/8, `sched-de`): flipping `Main|2|1`, a `DEFAULTED` awarded to its only
+   * occupied side, produced two reported violations whose `expected.loserId` came from a `was` that
+   * carried no `loserId` key at all — and for `Backdraw|1|2` the before and after rows were
+   * BYTE-IDENTICAL. A detector that fires on an unchanged matchUp is reporting on itself.
+   *
+   * This does not weaken the property; it makes sigma total. `sigma(a) === undefined` when the
+   * opposite side is empty is CORRECT and still enforced: `a` no longer wins the flipped matchUp, so
+   * they leave the path, and any downstream matchUp that still names them is a violation.
+   */
   const sigma = (id?: string) => {
+    if (id === undefined || id === null) return id;
     if (id === a) return b;
     if (id === b) return a;
     return id;
@@ -102,7 +119,7 @@ function compareOutcomes({ before, after, isDownstream, target, a, b }) {
       flipped: key(target),
       matchUp: was.key,
       downstream,
-      involvesSwapped: [was.winnerId, was.loserId].some((id) => id === a || id === b),
+      involvesSwapped: [was.winnerId, was.loserId].some((id) => id !== undefined && (id === a || id === b)),
       expected,
       actual: actual ?? 'NO LONGER DECIDED',
     });
