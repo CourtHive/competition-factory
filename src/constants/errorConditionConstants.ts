@@ -634,6 +634,16 @@ export const INVALID_ATTESTATION_SUBJECT = {
 };
 
 /**
+ * The attester is not permitted by the sanctioning policy's presence rules, AND that policy set
+ * `onInvalid: 'reject'`. The default is `record` — an unexpected attester is still a recorded fact,
+ * and refusing by default would teach operators to leave attribution blank.
+ */
+export const INVALID_ATTRIBUTION = {
+  message: 'Attester not permitted by the presence policy',
+  code: 'ERR_INVALID_ATTRIBUTION',
+};
+
+/**
  * The write would lose information that the LEGACY representation cannot carry. Raised when an
  * attestation carrying `attributedTo` is written under `schemaWriteMode: 'legacy'` — a timeItem has one
  * `itemValue` and no room for an attester, so the alternative is to discard it silently.
@@ -1135,6 +1145,7 @@ export const errorConditionConstants = {
   PARTICIPANT_ID_EXISTS,
   PARTICIPANT_NOT_CHECKED_IN,
   INVALID_ATTESTATION_SUBJECT,
+  INVALID_ATTRIBUTION,
   UNSUPPORTED_IN_LEGACY_MODE,
   PARTICIPANT_NOT_FOUND,
   PARTICIPANT_PAIR_EXISTS,

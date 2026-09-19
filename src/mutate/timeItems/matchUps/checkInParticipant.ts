@@ -3,10 +3,15 @@ import { getCheckedInParticipantIds } from '@Query/matchUp/getCheckedInParticipa
 import { checkRequiredParameters } from '@Helpers/parameters/checkRequiredParameters';
 import { getMatchUpParticipantIds } from '@Query/matchUp/getMatchUpParticipantIds';
 import { resolveFromParameters } from '@Helpers/parameters/resolveFromParameters';
+import { validatePresenceAttribution } from '@Query/participant/presencePolicy';
 import { buildAttestation } from '@Mutate/presence/buildAttestation';
 
 // constants and types
-import { INVALID_ATTESTATION_SUBJECT, INVALID_PARTICIPANT_ID } from '@Constants/errorConditionConstants';
+import {
+  INVALID_ATTESTATION_SUBJECT,
+  INVALID_ATTRIBUTION,
+  INVALID_PARTICIPANT_ID,
+} from '@Constants/errorConditionConstants';
 import { CheckInOutParticipantArgs } from '@Types/factoryTypes';
 import { CHECKED_IN } from '@Constants/presenceConstants';
 import { SUCCESS } from '@Constants/resultConstants';
@@ -65,6 +70,28 @@ export function checkInParticipant(params: CheckInOutParticipantArgs) {
 
   const confirmation = { ...SUCCESS, checkedIn: true };
   if (checkedInParticipantIds?.includes(participantId)) return confirmation;
+
+  // The sanctioning policy's attribution rule, including any category allowance — a U10 event
+  // routinely permits a PARENT where the tournament otherwise requires SELF.
+  //
+  // ⚠️ `expectation: 'required'` is NOT consulted here, deliberately. It is a policy value, not an
+  // instruction, and D4d's finding is that a hard block teaches operators to check everybody in at
+  // 9am so the software stops arguing — which destroys the signal check-in exists to produce.
+  // `onInvalid: 'reject'` is the one value that blocks, and it blocks on WHO ATTESTED, not on whether
+  // presence was expected.
+  const attribution = validatePresenceAttribution({
+    event: matchUp?.event ?? params.event,
+    participant: matchUp?.sides
+      ?.flatMap((side: any) => side?.participant?.individualParticipants ?? [side?.participant])
+      .find((candidate: any) => candidate?.participantId === participantId),
+    fact: 'matchCheckIn',
+    tournamentRecord,
+    drawDefinition,
+    attributedTo,
+  });
+  if (!attribution.valid && attribution.onInvalid === 'reject') {
+    return { [ERROR]: INVALID_ATTRIBUTION, context: { reason: attribution.reason } };
+  }
 
   const appendResult = addMatchUpPresenceAttestation({
     attestation: buildAttestation({

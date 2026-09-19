@@ -15,6 +15,14 @@ export type MatchUpPresenceStateUnion = typeof CHECKED_IN | typeof CHECKED_OUT;
 export type TournamentPresenceStateUnion = typeof SIGNED_IN_STATE | typeof SIGNED_OUT_STATE;
 export type PresenceStateUnion = MatchUpPresenceStateUnion | TournamentPresenceStateUnion;
 
+/** The discriminants of {@link Attribution}, as a union — what a policy allows or refuses. */
+export type AttributionTypeUnion =
+  | typeof PARTICIPANT_ATTRIBUTION
+  | typeof PERSON_ATTRIBUTION
+  | typeof DECLARED_ATTRIBUTION
+  | typeof DEVICE_ATTRIBUTION
+  | typeof SYSTEM_ATTRIBUTION;
+
 /**
  * WHO attested a presence fact.
  *

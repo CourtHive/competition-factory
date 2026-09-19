@@ -1330,3 +1330,92 @@ back to when the record names no zone. Setting `localTimeZone` is what upgrades 
 - `migrateTournamentRecord` promotes the log and reports `promoted.participantPresence`. Unlike
   check-in, this runs against real data routinely: `SIGN_IN_STATUS` appears extensively in archived
   records going back to 2023.
+
+## 17. Presence expectation becomes part of sanctioning
+
+Purely additive — nothing existing changes shape or behaviour. `POLICY_TYPE_SANCTIONING` gains an
+optional `presence` key, and this is its **first real consumer**: until now the policy type was read
+by nothing but a types test.
+
+### The ambiguity it removes
+
+`0 of 2 checked in` has two opposite meanings and the record cannot tell them apart:
+
+- **"Nobody has arrived yet"** — at a desk that runs check-in, the most alarming state there is.
+- **"We don't use check-in here"** — at most tournaments, every match, all week, meaning nothing.
+
+### The shape — per role × fact, three-valued (D4h option B)
+
+```ts
+presence: {
+  COMPETITOR: {
+    signIn:       { expectation: 'advisory' },
+    matchCheckIn: {
+      expectation: 'required',
+      attribution: {
+        allow: ['PARTICIPANT', 'DECLARED'],
+        allowedRelationships: ['SELF'],
+        byCategory: [{ ageCategoryCode: 'U10',
+                       allowedRelationships: ['SELF', 'PARENT', 'GUARDIAN', 'CHAPERONE'] }],
+        onInvalid: 'record',
+      },
+    },
+  },
+  OFFICIAL: { signIn: { expectation: 'required' }, matchCheckIn: { expectation: 'notUsed' } },
+}
+```
+
+Roles are keyed by `ParticipantRoleUnion`, so they resolve directly against
+`participant.participantRole`. A participant with **no** role resolves as `COMPETITOR` — an absent
+role means a player from an older record, never a person with no part to play.
+
+⚠️ This makes **two role vocabularies** inside one sanctioning policy: `personnelRules.roles[].roleName`
+is a free string (`'Tournament Director'`, `'Referee'`). `presence` is the typed one.
+
+### ⚠️ `required` does not mean "block"
+
+It is a **policy value, not a behaviour**. No factory mutation refuses a check-in because presence is
+`required`, and none should: a hard block teaches operators to check everybody in at 9am so the
+software stops arguing, which destroys the signal the feature exists to produce (D4d).
+
+Surfaces read it and decide:
+
+```ts
+engine.getPresenceExpectation({ tournamentRecord, participant, fact: 'matchCheckIn' });
+// → { expectation: 'required' | 'advisory' | 'notUsed' | undefined, declared, role }
+```
+
+`declared: false` means **nobody answered** — not `notUsed`. A client's own heuristic remains the
+best available answer for an undeclared tournament, and most tournaments will be undeclared
+indefinitely.
+
+### Attribution validity, and the U10 allowance
+
+```ts
+engine.validatePresenceAttribution({ tournamentRecord, event, participant, fact, attributedTo });
+// → { valid, reason?, categoryApplied?, declared, onInvalid }
+```
+
+A matching `byCategory` entry **replaces** the outer lists rather than merging with them, so a junior
+event can be stricter as well as looser. An entry with neither selector never matches — a rule that
+applied to everything would silently shadow the rule it was written to refine.
+
+An attester who states **no** relationship is refused when the policy enumerates relationships: a
+policy naming who may attest is not satisfied by an attester declining to say which of them they are.
+
+`onInvalid` decides what an invalid attester costs — `'reject'` (refuse the write with
+`ERR_INVALID_ATTRIBUTION`), `'warn'`, or `'record'` (**the default**). Recording is the default
+because an unexpected attester is still a recorded fact, and refusing by default would teach
+operators to leave attribution blank.
+
+### `byCategory` applies to `matchCheckIn` only
+
+Not an omission. Sign-in is **tournament-wide**, and a participant may be entered in several events
+with different categories, so there is no single category whose allowance would apply. A federation
+wanting a junior-specific sign-in rule should scope it by role, or attach the policy to the event.
+
+### Nothing is added to the shipped fixtures
+
+`POLICY_SANCTIONING_GENERIC` / `_ITF` / `_USTA` are unchanged. What a governing body expects is that
+body's decision, not a factory default, and adding a `presence` block to a shipped fixture would
+change behaviour for everyone who applies it.

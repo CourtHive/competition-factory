@@ -1,5 +1,6 @@
 import { modifyParticipantsNotice } from '@Mutate/notifications/participantNotifications';
 import { addParticipantPresenceAttestation } from '@Mutate/timeItems/addTimeItem';
+import { validatePresenceAttribution } from '@Query/participant/presencePolicy';
 import { buildAttestation } from '@Mutate/presence/buildAttestation';
 import { latestPresenceState } from '@Acquire/presenceAttestations';
 import { requireParams } from '@Helpers/parameters/requireParams';
@@ -7,7 +8,12 @@ import { getParticipantId } from '@Functions/global/extractors';
 import { getTopics } from '@Global/state/globalState';
 
 // constants and types
-import { INVALID_VALUES, MISSING_PARTICIPANTS, MISSING_VALUE } from '@Constants/errorConditionConstants';
+import {
+  INVALID_ATTRIBUTION,
+  INVALID_VALUES,
+  MISSING_PARTICIPANTS,
+  MISSING_VALUE,
+} from '@Constants/errorConditionConstants';
 import { SIGNED_IN, SIGNED_OUT } from '@Constants/participantConstants';
 import { TOURNAMENT_RECORD } from '@Constants/attributeConstants';
 import { MODIFY_PARTICIPANTS } from '@Constants/topicConstants';
@@ -76,6 +82,23 @@ export function modifyParticipantsSignInStatus({
     if (latestPresenceState(participant) === signInState) {
       modifiedParticipants.push(participant);
       continue;
+    }
+
+    // ⚠️ No `category` is passed, and it is not an omission. Sign-in is TOURNAMENT-wide: a participant
+    // may be entered in several events with different categories, so there is no single category whose
+    // allowance would apply. `byCategory` is therefore meaningful for `matchCheckIn` only, where the
+    // matchUp names exactly one event. A federation wanting a junior-specific sign-in rule should scope
+    // it by ROLE, or attach the policy to the event.
+    //
+    // `expectation` is not consulted; only `onInvalid: 'reject'` blocks. See checkInParticipant.
+    const attribution = validatePresenceAttribution({
+      fact: 'signIn',
+      tournamentRecord,
+      attributedTo,
+      participant,
+    });
+    if (!attribution.valid && attribution.onInvalid === 'reject') {
+      return { error: INVALID_ATTRIBUTION, context: { participantId, reason: attribution.reason } };
     }
 
     const result = addParticipantPresenceAttestation({
