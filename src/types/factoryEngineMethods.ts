@@ -354,12 +354,15 @@ export type FactoryEngineMethod =
   | 'getParticipantMembership'
   | 'getParticipantPaymentStatus'
   | 'getParticipantPoints'
+  | 'getParticipantPresenceHistory'
   | 'getParticipantRest'
   | 'getParticipantResults'
   | 'getParticipants'
   | 'getParticipantScaleItem'
   | 'getParticipantSchedules'
+  | 'getParticipantSignedInOnDate'
   | 'getParticipantSignInStatus'
+  | 'getParticipantsStillSignedInOnDate'
   | 'getParticipantStats'
   | 'getParticipantTimeItem'
   | 'getParticipation'
@@ -1091,12 +1094,15 @@ export const FACTORY_ENGINE_METHODS: readonly FactoryEngineMethod[] = [
   'getParticipantMembership',
   'getParticipantPaymentStatus',
   'getParticipantPoints',
+  'getParticipantPresenceHistory',
   'getParticipantRest',
   'getParticipantResults',
   'getParticipants',
   'getParticipantScaleItem',
   'getParticipantSchedules',
+  'getParticipantSignedInOnDate',
   'getParticipantSignInStatus',
+  'getParticipantsStillSignedInOnDate',
   'getParticipantStats',
   'getParticipantTimeItem',
   'getParticipation',

@@ -1637,6 +1637,16 @@ export interface Participant {
   penalties?: Penalty[];
   person?: Person;
   personId?: string;
+  /**
+   * CODES first-class: this participant's tournament-scoped presence history — arrival and departure,
+   * previously stored as `SIGN_IN_STATUS` timeItems.
+   *
+   * A COLLECTION because the history is the value. Nothing signs anybody out at the end of a day, so
+   * "is this person here today" is answered by reading the log as of that date, not by taking a latest
+   * value — a volunteer who signed in on Thursday reads SIGNED_IN on Sunday otherwise. The derived
+   * latest-value answer is still hydrated as `participant.signedIn`.
+   */
+  presence?: PresenceAttestation[];
   representing?: CountryCodeUnion;
   teamId?: string;
   timeItems?: TimeItem[];

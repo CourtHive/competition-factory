@@ -103,3 +103,17 @@ export function getParticipantPresence(participant: any): PresenceAttestation[] 
   }));
   return sortAttestations(promoted);
 }
+
+/**
+ * The latest recorded presence STATE for a participant, from whichever surface holds the log.
+ *
+ * The single fold behind `getParticipantSignInStatus`, the hydrated `participant.signedIn` and
+ * `filterParticipants`, so that a record written in any mode answers all three identically.
+ *
+ * ⚠️ This is "the last thing recorded", NOT "present today". Nothing signs anybody out at the end of a
+ * day, so a volunteer who signed in on Thursday still reads SIGNED_IN on Sunday. That question is
+ * `getParticipantSignedInOnDate`, which reads the history as of a date.
+ */
+export function latestPresenceState(participant: any): PresenceStateUnion | undefined {
+  return getParticipantPresence(participant).at(-1)?.state;
+}

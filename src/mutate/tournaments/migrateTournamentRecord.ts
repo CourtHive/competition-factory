@@ -1,7 +1,8 @@
-import { getMatchUpPresence } from '@Acquire/presenceAttestations';
+import { getMatchUpPresence, getParticipantPresence } from '@Acquire/presenceAttestations';
 
 // constants and types
 import { MISSING_TOURNAMENT_RECORD } from '@Constants/errorConditionConstants';
+import { SIGN_IN_STATUS } from '@Constants/participantConstants';
 import { SUCCESS } from '@Constants/resultConstants';
 import { Tournament } from '@Types/tournamentTypes';
 import { ResultType } from '@Types/factoryTypes';
@@ -179,6 +180,7 @@ type MigrationCounts = {
   matchUps: number;
   matchUpScheduleTimeItems: number;
   matchUpCheckIns: number;
+  participantPresence: number;
   venues: number;
   courts: number;
 };
@@ -225,6 +227,9 @@ function applyGroupPromotions(element: any, promotions: GroupExtensionPromotion[
 function migrateTournamentLevel(record: any, counts: MigrationCounts, clearLegacy: boolean) {
   counts.tournament += applyFlatPromotions(record, TOURNAMENT_FLAT_PROMOTIONS, clearLegacy);
   counts.tournament += applyGroupPromotions(record, TOURNAMENT_GROUP_PROMOTIONS, clearLegacy);
+  for (const participant of record.participants ?? []) {
+    counts.participantPresence += promoteParticipantPresence(participant, clearLegacy);
+  }
 }
 
 function migrateVenuesAndCourts(record: any, counts: MigrationCounts, clearLegacy: boolean) {
@@ -276,6 +281,7 @@ export function migrateTournamentRecord({
     matchUps: 0,
     matchUpScheduleTimeItems: 0,
     matchUpCheckIns: 0,
+    participantPresence: 0,
     venues: 0,
     courts: 0,
   };
@@ -311,6 +317,30 @@ function promoteMatchUpCheckIns(matchUp: any, clearLegacy: boolean): number {
     matchUp.timeItems = matchUp.timeItems.filter(
       (timeItem: any) => ![CHECK_IN, CHECK_OUT].includes(timeItem?.itemType),
     );
+  }
+  return promoted.length;
+}
+
+/**
+ * Promote a participant's `SIGN_IN_STATUS` log to `participant.presence`.
+ *
+ * The participant variant of {@link promoteMatchUpCheckIns}, and the asymmetry is the point: the legacy
+ * timeItem carries the STATE as its `itemValue` and names no subject, because the subject is the
+ * participant it hangs on. The accessor supplies it.
+ *
+ * Unlike matchUp check-in — which appears once in the archived records — `SIGN_IN_STATUS` goes back to
+ * 2023 and is extensive, so this promotion runs against real data far more often than the other.
+ */
+function promoteParticipantPresence(participant: any, clearLegacy: boolean): number {
+  if (Array.isArray(participant?.presence)) return 0;
+  if (!Array.isArray(participant?.timeItems)) return 0;
+
+  const promoted = getParticipantPresence(participant);
+  if (!promoted.length) return 0;
+
+  participant.presence = promoted;
+  if (clearLegacy) {
+    participant.timeItems = participant.timeItems.filter((timeItem: any) => timeItem?.itemType !== SIGN_IN_STATUS);
   }
   return promoted.length;
 }

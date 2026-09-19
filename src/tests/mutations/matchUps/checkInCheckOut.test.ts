@@ -40,7 +40,7 @@ function readMatchUp(matchUpId: string) {
 it('stores check-in as a first-class attestation, not a timeItem', () => {
   const { drawId, matchUpId, individualParticipantIds } = doublesFixture();
 
-  let result: any = tournamentEngine.checkInParticipant({
+  const result: any = tournamentEngine.checkInParticipant({
     participantId: individualParticipantIds?.[0],
     matchUpId,
     drawId,

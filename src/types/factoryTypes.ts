@@ -2,10 +2,10 @@ import { DOUBLES_EVENT, SINGLES_EVENT, TEAM_EVENT } from '@Constants/eventConsta
 import { ValidPolicyTypes, POLICY_TYPE_SEEDING } from '@Constants/policyConstants';
 import { SignedInStatusUnion } from '@Constants/participantConstants';
 import type { FactoryEngineMethod } from './factoryEngineMethods';
-import type { Attribution } from './presenceTypes';
 import { HydratedMatchUp, HydratedParticipant } from './hydrated';
 import { ErrorType } from '@Constants/errorConditionConstants';
 import type { MethodSignatures } from './methodSignatures';
+import type { Attribution } from './presenceTypes';
 import {
   Category,
   DrawDefinition,

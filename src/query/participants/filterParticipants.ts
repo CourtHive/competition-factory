@@ -1,14 +1,13 @@
 import { getAllPositionedParticipantIds } from '@Query/drawDefinition/positionsGetter';
 import { isMatchUpEventType } from '@Helpers/matchUpEventTypes/isMatchUpEventType';
+import { latestPresenceState } from '@Acquire/presenceAttestations';
 import { getFlightProfile } from '@Query/event/getFlightProfile';
 import { getParticipantId } from '@Functions/global/extractors';
 import { getAccessorValue } from '@Tools/getAccessorValue';
 import { coercedGender } from '@Helpers/coercedGender';
-import { getTimeItem } from '@Query/base/timeItems';
 import { unique } from '@Tools/arrays';
 
 // constants and types
-import { SIGN_IN_STATUS } from '@Constants/participantConstants';
 import { ParticipantFilters } from '@Types/factoryTypes';
 import type { Tournament } from '@Types/tournamentTypes';
 import { HydratedParticipant } from '@Types/hydrated';
@@ -89,10 +88,8 @@ export function filterParticipants({
   const positionedSet = positionedParticipantIds && new Set(positionedParticipantIds);
 
   participants = participants?.filter((participant) => {
-    const participantSignInStatus = getTimeItem({
-      element: participant,
-      itemType: SIGN_IN_STATUS,
-    } as any)?.timeItem?.itemValue;
+    // Folds `participant.presence` when promoted, legacy SIGN_IN_STATUS timeItems when not.
+    const participantSignInStatus = latestPresenceState(participant);
     const {
       participantRoleResponsibilities: responsibilities,
       participantType,

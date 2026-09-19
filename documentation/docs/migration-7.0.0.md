@@ -1262,3 +1262,71 @@ and an absent attester is honest where an invented one is not.
 
 Records needing no migration read correctly anyway: `getCheckedInParticipantIds` falls back to the
 legacy timeItems when `checkIns` is absent.
+
+## 15. Sign-in becomes a first-class attestation, and gains an as-of-date query
+
+Tournament arrival moves out of `participant.timeItems[]` onto `participant.presence[]`, the same
+`PresenceAttestation` shape as §14. The two facts are deliberately one model — arrival at the
+tournament and presenting for a match are the same statement about a different scope.
+
+### 15.1 What does not change
+
+`getParticipantSignInStatus` and the hydrated `participant.signedIn` still return the **latest**
+recorded state and are unaffected. They now fold whichever surface the record holds, so a record
+written before 7.0.0 answers identically with no migration.
+
+`getParticipantSignInStatus` keeps its **tri-state** return: `undefined` when nothing was ever
+recorded, `false` when a departure was recorded, `'SIGNED_IN'` when present. Those are different
+facts — a person nobody has ever seen is not a person who signed out and went home.
+
+### 15.2 What is new
+
+```ts
+engine.getParticipantPresenceHistory({ participantId });
+// → { presence: PresenceAttestation[] }   ordered oldest-first, frame-free
+
+engine.getParticipantSignedInOnDate({ participantId, date: '2026-09-18', timeZone? });
+// → { signedIn, entries, timeZone, zoneSource }
+
+engine.getParticipantsStillSignedInOnDate({ date: '2026-09-18', timeZone? });
+// → { participantIds, timeZone, zoneSource }
+```
+
+**Why an as-of-date query is needed at all.** Nothing signs anybody out at the end of a day, so the
+latest-value readers report a Thursday volunteer as `SIGNED_IN` on Sunday. The history is faithful;
+it is a history of a thing whose end nobody records. Reading it as of a date is what makes "here
+today" mean what it says.
+
+`signedIn` is **the last recorded action on that day**, not "signed in at any point": somebody who
+signed in at 09:00 and out at 17:00 was not present at 18:00. A day with no entry is `false` and
+means _"not signed in on this date"_ — never _"signed out"_. Render it accordingly.
+
+### 15.3 Time zones — read `zoneSource` before trusting the day
+
+A calendar day is only meaningful in a zone. `01:00Z` on the 18th is `21:00` on the **17th** in New
+York, so a UTC day boundary files an evening sign-in under the wrong day.
+
+| `zoneSource` | meaning                                            |
+| ------------ | -------------------------------------------------- |
+| `supplied`   | you passed `timeZone`                              |
+| `tournament` | `tournamentRecord.localTimeZone`                   |
+| `venue`      | inferred from a single distinct venue address zone |
+| `none`       | **no zone resolved — instants were read in UTC**   |
+
+`none` is reported rather than hidden. A client that owns a venue time frame should prefer
+`getParticipantPresenceHistory` and apply its own framing, because only the client knows what to fall
+back to when the record names no zone. Setting `localTimeZone` is what upgrades the answer from
+"a day, somewhere" to "the day, here".
+
+### 15.4 Behaviour to be aware of
+
+- `modifyParticipantsSignInStatus` gains `attributedTo` and `notes`; `occurredAt` is unchanged but no
+  longer overwrites the ordering key, because `occurredAt` and `recordedAt` are now separate fields.
+- Signing in when **already** signed in remains a no-op — the pre-7.0.0 `duplicateValues: false`
+  semantics are preserved, so the log records state changes rather than repeated assertions.
+- A bulk sign-in stamps **one** instant across the batch rather than one clock reading per participant.
+- Under `schemaWriteMode: 'legacy'` an attributed sign-in is refused with
+  `ERR_UNSUPPORTED_IN_LEGACY_MODE`, exactly as check-in is.
+- `migrateTournamentRecord` promotes the log and reports `promoted.participantPresence`. Unlike
+  check-in, this runs against real data routinely: `SIGN_IN_STATUS` appears extensively in archived
+  records going back to 2023.

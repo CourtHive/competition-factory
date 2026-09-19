@@ -1,11 +1,11 @@
 import { findTournamentParticipant } from '@Acquire/findTournamentParticipant';
+import { latestPresenceState } from '@Acquire/presenceAttestations';
 import { requireParams } from '@Helpers/parameters/requireParams';
-import { getTimeItem } from '@Query/base/timeItems';
 
 // constants
 import { TOURNAMENT_RECORD, PARTICIPANT_ID } from '@Constants/attributeConstants';
-import { SIGNED_IN, SIGN_IN_STATUS } from '@Constants/participantConstants';
 import { PARTICIPANT_NOT_FOUND } from '@Constants/errorConditionConstants';
+import { SIGNED_IN } from '@Constants/participantConstants';
 
 export function getParticipantSignInStatus({ tournamentRecord, participantId }) {
   const paramsCheck = requireParams({ tournamentRecord, participantId }, [TOURNAMENT_RECORD, PARTICIPANT_ID]);
@@ -18,10 +18,14 @@ export function getParticipantSignInStatus({ tournamentRecord, participantId }) 
 
   if (!participant) return { error: PARTICIPANT_NOT_FOUND };
 
-  const { timeItem } = getTimeItem({
-    itemType: SIGN_IN_STATUS,
-    element: participant,
-  });
+  // The LATEST recorded state. See `getParticipantSignedInOnDate` for "was this person here on <date>",
+  // which this cannot answer because no sign-out is recorded at the end of a day.
+  const state = latestPresenceState(participant);
 
-  return timeItem && timeItem.itemValue === SIGNED_IN && SIGNED_IN;
+  // Tri-state, and deliberately so: `undefined` means NOTHING was ever recorded, `false` means a
+  // departure WAS recorded. Collapsing them would report a person nobody has ever seen identically to
+  // one who signed out and went home — the "an inference shown as a record" trap, in miniature.
+  if (state === undefined) return undefined;
+
+  return state === SIGNED_IN && SIGNED_IN;
 }

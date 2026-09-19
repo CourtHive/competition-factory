@@ -1,3 +1,6 @@
+export { getParticipantsStillSignedInOnDate } from '@Query/participant/presence';
+export { getParticipantPresenceHistory } from '@Query/participant/presence';
+export { getParticipantSignedInOnDate } from '@Query/participant/presence';
 export { getCompetitionParticipants } from '@Query/participants/getCompetitionParticipants';
 export { getParticipantEventDetails } from '@Query/participants/getParticipantEventDetails';
 export { getParticipantMembership } from '@Query/participants/getParticipantMembership';

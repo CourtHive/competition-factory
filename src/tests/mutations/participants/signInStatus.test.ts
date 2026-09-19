@@ -1,4 +1,6 @@
 import { modifyParticipantsSignInStatus } from '@Mutate/participants/modifyParticipantsSignInStatus';
+import { legacyMode } from '@Tests/testHarness/legacyMode';
+
 import mocksEngine from '@Assemblies/engines/mock';
 import tournamentEngine from '@Engines/syncEngine';
 import queryEngine from '@Engines/queryEngine';
@@ -66,13 +68,11 @@ it('can sign participants in and out', () => {
   });
   expect(result.error).toEqual(PARTICIPANT_NOT_FOUND);
 
-  let { timeItem, previousItems } = tournamentEngine.getTimeItem({
-    returnPreviousValues: true,
-    itemType: SIGN_IN_STATUS,
-    participantId,
-  });
-  expect(previousItems.length).toEqual(0);
-  expect(timeItem.itemValue).toEqual(SIGNED_IN);
+  // CODES 7.0.0 — the history is the first-class `presence` log, not SIGN_IN_STATUS timeItems.
+  // The legacy storage shape is asserted in the legacyMode block below rather than dropped.
+  let presence: any = tournamentEngine.getParticipantPresenceHistory({ participantId }).presence;
+  expect(presence.length).toEqual(1);
+  expect(presence.at(-1).state).toEqual(SIGNED_IN);
 
   result = tournamentEngine.modifyParticipantsSignInStatus({
     participantIds: [participantId],
@@ -91,13 +91,30 @@ it('can sign participants in and out', () => {
   });
   expect(result).toEqual(SIGNED_IN);
 
-  ({ timeItem, previousItems } = tournamentEngine.getTimeItem({
-    returnPreviousValues: true,
-    itemType: SIGN_IN_STATUS,
-    participantId,
-  }));
-  expect(previousItems.length).toEqual(2);
-  expect(timeItem.itemValue).toEqual(SIGNED_IN);
+  // three appended facts: in, out, in — the log keeps every one
+  presence = tournamentEngine.getParticipantPresenceHistory({ participantId }).presence;
+  expect(presence.length).toEqual(3);
+  expect(presence.map((a: any) => a.state)).toEqual([SIGNED_IN, SIGNED_OUT, SIGNED_IN]);
+});
+
+legacyMode('sign-in status storage shape', () => {
+  it('writes SIGN_IN_STATUS timeItems readable through getTimeItem', () => {
+    const { tournamentRecord } = mocksEngine.generateTournamentRecord({
+      participantsProfile: { participantsCount: 4 },
+    });
+    tournamentEngine.setState(tournamentRecord);
+    const participantId = tournamentRecord.participants[0].participantId;
+
+    tournamentEngine.modifyParticipantsSignInStatus({ participantIds: [participantId], signInState: SIGNED_IN });
+
+    const { timeItem, previousItems }: any = tournamentEngine.getTimeItem({
+      returnPreviousValues: true,
+      itemType: SIGN_IN_STATUS,
+      participantId,
+    });
+    expect(previousItems.length).toEqual(0);
+    expect(timeItem.itemValue).toEqual(SIGNED_IN);
+  });
 });
 
 it('returns error when tournamentRecord is missing', () => {

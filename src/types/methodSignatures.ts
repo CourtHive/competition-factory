@@ -616,6 +616,11 @@ import type {
   getTournamentTimeItem,
 } from '@Query/base/timeItems';
 import type {
+  getParticipantPresenceHistory,
+  getParticipantSignedInOnDate,
+  getParticipantsStillSignedInOnDate,
+} from '@Query/participant/presence';
+import type {
   analyzeSequence,
   groupByMatch,
   parseCSV,
@@ -987,12 +992,15 @@ export interface MethodSignatures {
   getParticipantMembership: EngineMethod<typeof getParticipantMembership>;
   getParticipantPaymentStatus: EngineMethod<typeof getParticipantPaymentStatus>;
   getParticipantPoints: EngineMethod<typeof getParticipantPoints>;
+  getParticipantPresenceHistory: EngineMethod<typeof getParticipantPresenceHistory>;
   getParticipantRest: EngineMethod<typeof getParticipantRest>;
   getParticipantResults: EngineMethod<typeof getParticipantResults>;
   getParticipants: EngineMethod<typeof getParticipants>;
   getParticipantScaleItem: EngineMethod<typeof getParticipantScaleItem>;
   getParticipantSchedules: EngineMethod<typeof getParticipantSchedules>;
+  getParticipantSignedInOnDate: EngineMethod<typeof getParticipantSignedInOnDate>;
   getParticipantSignInStatus: EngineMethod<typeof getParticipantSignInStatus>;
+  getParticipantsStillSignedInOnDate: EngineMethod<typeof getParticipantsStillSignedInOnDate>;
   getParticipantStats: EngineMethod<typeof getParticipantStats>;
   getParticipantTimeItem: EngineMethod<typeof getParticipantTimeItem>;
   getParticipation: EngineMethod<typeof getParticipation>;

@@ -10,8 +10,8 @@ import { expect, it } from 'vitest';
 // constants and fixtures
 import { DECLARED_ATTRIBUTION, PARTICIPANT_ATTRIBUTION } from '@Constants/presenceConstants';
 import { UNSUPPORTED_IN_LEGACY_MODE } from '@Constants/errorConditionConstants';
-import { ContactRelationshipEnum } from '@Types/tournamentTypes';
 import { FORMAT_STANDARD } from '@Fixtures/scoring/matchUpFormats';
+import { ContactRelationshipEnum } from '@Types/tournamentTypes';
 import { CHECK_IN } from '@Constants/timeItemConstants';
 import { SUCCESS } from '@Constants/resultConstants';
 import { DOUBLES } from '@Constants/matchUpTypes';

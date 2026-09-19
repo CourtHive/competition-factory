@@ -1,5 +1,7 @@
+import { appendFirstClassOrTimeItem } from '@Mutate/timeItems/appendFirstClassOrTimeItem';
 import { modifyParticipantsNotice } from '@Mutate/notifications/participantNotifications';
 import { findTournamentParticipant } from '@Acquire/findTournamentParticipant';
+import { getParticipantPresence } from '@Acquire/presenceAttestations';
 import { deriveElement } from '@Query/base/deriveElement';
 import { getTimeItemValues } from './getTimeItemValues';
 import { addNotice } from '@Global/state/globalState';
@@ -10,6 +12,8 @@ import { isObject, isString } from '@Tools/objects';
 // constants and types
 import { DrawDefinition, Event, TimeItem, Tournament } from '@Types/tournamentTypes';
 import { MODIFY_TOURNAMENT_DETAIL } from '@Constants/topicConstants';
+import { SIGN_IN_STATUS } from '@Constants/participantConstants';
+import type { PresenceAttestation } from '@Types/presenceTypes';
 import { SUCCESS } from '@Constants/resultConstants';
 import {
   EVENT_NOT_FOUND,
@@ -143,6 +147,49 @@ export function addParticipantTimeItem({
   }
 
   return addResult;
+}
+
+/**
+ * The presence-log counterpart to {@link addParticipantTimeItem}.
+ *
+ * The participant is BOTH the element the log hangs on AND the subject of every entry — unlike a
+ * matchUp check-in, where the subject is named by the attestation and the matchUp is merely where it
+ * lives. That asymmetry is why the legacy `SIGN_IN_STATUS` timeItem carries the STATE as its
+ * `itemValue` while `CHECK_IN` carries the participantId, and it is the reason the read accessor
+ * supplies the subject for one and reads it from the entry for the other.
+ */
+export function addParticipantPresenceAttestation({
+  tournamentRecord,
+  disableNotice,
+  participantId,
+  attestation,
+}: {
+  tournamentRecord: Tournament;
+  disableNotice?: boolean;
+  participantId: string;
+  attestation: PresenceAttestation;
+}) {
+  if (!tournamentRecord) return { error: MISSING_TOURNAMENT_RECORD };
+  if (!participantId) return { error: MISSING_PARTICIPANT_ID };
+
+  const found = findTournamentParticipant({ tournamentRecord, participantId });
+  if (found.error) return found;
+
+  const result = appendFirstClassOrTimeItem({
+    legacy: { itemType: SIGN_IN_STATUS, itemValue: attestation.state },
+    promoted: getParticipantPresence(found.participant),
+    legacyItemTypes: [SIGN_IN_STATUS],
+    element: found.participant,
+    attribute: 'presence',
+    attestation,
+  });
+  if (result.error) return result;
+
+  if (!disableNotice) {
+    modifyParticipantsNotice({ tournamentId: tournamentRecord.tournamentId, participants: [found.participant] });
+  }
+
+  return result;
 }
 
 export function addTournamentTimeItem(params) {

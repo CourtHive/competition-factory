@@ -1,5 +1,5 @@
-import { getMatchUpPresence } from '@Acquire/presenceAttestations';
 import { getMatchUpParticipantIds } from './getMatchUpParticipantIds';
+import { getMatchUpPresence } from '@Acquire/presenceAttestations';
 
 // constants and types
 import { INVALID_MATCHUP, MISSING_CONTEXT, MISSING_MATCHUP } from '@Constants/errorConditionConstants';
