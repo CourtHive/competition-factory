@@ -461,6 +461,49 @@ export function conditionallyRemoveDrawPosition(params) {
   });
   if (result.error) return decorateResult({ result, stack });
 
+  /**
+   * NOTHING OF THIS CASCADE'S IS HERE, SO NOTHING OF THIS CASCADE'S COMES OUT.
+   *
+   * A matchUp whose provenance names only origins this clear is NOT withdrawing is an exit produced
+   * by something still standing. Resetting it destroys a record that is still true, and the reset
+   * below is unconditional: `getUnwoundState`'s final fallthrough returns `TO_BE_PLAYED` and drops
+   * `retained` on the floor.
+   *
+   * CA, 2026-09-20, reading the reproduction: *"when the [...] DOUBLE_WALKOVER is removed the
+   * provenance of the sideNumber: 1 matchUpStatus: WALKOVER is lost... that's the bug."*
+   *
+   * Measured on FIRST_MATCH_LOSER_CONSOLATION 8/8 (`nonRandom: 61`), clearing `Consolation|1|2`:
+   *
+   *     Consolation|3|1  before  WALKOVER      prov {1: … sourceMatchUpId: Consolation|1|1}
+   *                      after   TO_BE_PLAYED  prov null
+   *
+   * `Consolation|1|1` is a DOUBLE_WALKOVER that this clear never touches. Its exit is still true and
+   * still produced that walkover.
+   *
+   * THE ENGINE ALREADY CONTRADICTS ITSELF HERE, which is what makes the identity test the right
+   * spelling rather than a new idea: in the same run `Consolation|2|2` KEEPS an entry from the very
+   * same origin, because the BYE branch above retains by identity. One branch withdraws by identity
+   * and the other blanks wholesale.
+   *
+   * This does NOT loosen the restriction the fallthrough exists for. That one is about entries the
+   * SAME cascade wrote — `buildSideExitProvenance` stamps a convergence as a PAIR, so withdrawing
+   * one side leaves a sibling that was written by the withdrawal rather than before it (measured: 10
+   * cells across three draw types). Such a matchUp always carries at least one withdrawn entry, so
+   * it fails the test below and reaches `getUnwoundState` exactly as before.
+   */
+  const carriesSomethingOfThisCascade = carriesWithdrawnOrigin(noContextTargetMatchUp, withdrawnSourceIds);
+  const holdsProvenance = !!getNativeSideExitProvenance({ matchUp: noContextTargetMatchUp });
+  if (holdsProvenance && !carriesSomethingOfThisCascade) {
+    pushGlobalLog({
+      method: stack,
+      color: 'brightyellow',
+      decision: 'RETAIN_untouched_origin',
+      matchUpId: targetMatchUp.matchUpId,
+      keyColors,
+    });
+    return { ...SUCCESS };
+  }
+
   const unwound = getUnwoundState({
     pairedPreviousDoubleExit,
     noContextTargetMatchUp,
