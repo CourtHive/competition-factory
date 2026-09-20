@@ -27,11 +27,31 @@ import { FEED_IN_CHAMPIONSHIP_TO_SF } from '@Constants/drawDefinitionConstants';
  *
  * ## The gap
  *
- * `doubleExitAdvancement` guards its loser handling with `loserMatchUp.matchUpStatus !== BYE`, and
- * `handleLoserMatchUp` is the only place the flag is consulted. When the loser matchUp is already a
- * BYE — because ONE of its two positions is a draw BYE — the branch is skipped entirely, even though
- * the OTHER position is vacant and is precisely the slot the rule is about. The policy is attached
- * and readable throughout; it simply never gets asked.
+ * `doubleExitAdvancement` guarded its loser handling with `loserMatchUp.matchUpStatus !== BYE`, and
+ * `handleLoserMatchUp` was the only place the flag was consulted. When the loser matchUp is already
+ * a BYE — because ONE of its two positions is a draw BYE — the branch was skipped entirely, even
+ * though the OTHER position is vacant and is precisely the slot the rule is about. The policy was
+ * attached and readable throughout; it simply never got asked.
+ *
+ * ## What changed on 2026-09-20, and why these tests were re-authored
+ *
+ * That guard had a SECOND consequence, independent of the policy: with the flag OFF the vacant slot
+ * got no record either — not the BYE, and not the produced exit that belongs there. CA drove it in
+ * TMX on FIRST_MATCH_LOSER_CONSOLATION and ruled that the exit must be recorded on the loser
+ * drawPosition's own side and carried onward, with the BYE beside it left alone. Closing that put
+ * the produced exit into the linked structure BY DEFAULT.
+ *
+ * So the OFF case can no longer assert that the unclaimable defect is still present — it is gone,
+ * measured `['Consolation|2|2'] -> []` — and it can no longer be the ON case's control on that
+ * basis. **The control is now the loser drawPosition itself**, which is the one coordinate the flag
+ * decides: `vacant` with the flag off, a propagated BYE with it on. That is a stronger control than
+ * the defect's presence, because it states the policy's actual contract rather than a symptom.
+ *
+ * CA, 2026-09-20, on what the policy governs: *"doubleExitPropagateBye: true is ONLY referring to
+ * connected structure propagation … because in the structure in which the doubleExit occurs there
+ * still should be a produced exit."* Measured and true — all three consultation sites in `src/` are
+ * on the loser-target path, and the Main structure is byte-identical either way. The third test
+ * below pins that.
  *
  * ## The scenario
  *
@@ -74,6 +94,21 @@ function build(drawId: string, propagateBye: boolean) {
 }
 
 /** An exit awarded to a position holding nobody — the shape that can never be claimed. */
+/**
+ * The loser drawPosition of the double walkover — the ONE coordinate this policy decides.
+ *
+ * `Main|1|3` is the double walkover and its loser feeds consolation drawPosition 5. Everything else
+ * in the consolation is the same under both settings, so this assignment is the control pair: the
+ * OFF test asserts it vacant, the ON test asserts it a propagated BYE.
+ */
+const loserSlot = (drawId: string): any => {
+  const { drawDefinition } = tournamentEngine.getEvent({ drawId });
+  const consolation = drawDefinition.structures.find((s: any) => s.structureName === 'Consolation');
+  return (consolation?.positionAssignments ?? []).find((a: any) => a.drawPosition === LOSER_DRAW_POSITION);
+};
+
+const LOSER_DRAW_POSITION = 5;
+
 const unclaimable = (matchUps: any[]): string[] =>
   matchUps
     .filter((m: any) => {
@@ -83,16 +118,71 @@ const unclaimable = (matchUps: any[]): string[] =>
     })
     .map(key);
 
-test('with the policy OFF nothing changes — the default is untouched by this fix', () => {
+test('with the policy OFF the loser slot keeps the produced exit rather than becoming a BYE', () => {
   const matchUps = build('deb-off', false);
-  const consolation = matchUps().find((m: any) => key(m) === 'Consolation|2|2');
-  expect(consolation?.matchUpStatus).toEqual(WALKOVER);
-  // CONTROL: the defect must still be present here, or the ON case below proves nothing.
-  expect(unclaimable(matchUps())).toEqual(['Consolation|2|2']);
+
+  // CONTROL, and the whole contract of the flag: the slot the double walkover's loser would have
+  // filled is left VACANT — not a BYE — and the ON case below asserts the same coordinate is one.
+  expect(loserSlot('deb-off'), 'the loser slot must not be a BYE with the flag off').toEqual({
+    drawPosition: LOSER_DRAW_POSITION,
+  });
+
+  // and the produced exit is recorded there, on that position's own side. The matchUp itself stays
+  // BYE because its OTHER position (drawPosition 6) carries a draw BYE — CA's rule, 2026-09-20:
+  // a propagated exit meeting a BYE is advanced, and the BYE remains a BYE.
+  const fed = matchUps().find((m: any) => key(m) === 'Consolation|1|2');
+  expect(fed?.matchUpStatus, 'the draw BYE beside the loser slot is untouched').toEqual(BYE);
+  expect((fed?.matchUpStatusCodes ?? []).find((c: any) => c?.sideNumber === 1)).toEqual({
+    previousMatchUpStatus: DOUBLE_WALKOVER,
+    matchUpStatus: WALKOVER,
+    sideNumber: 1,
+  });
+
+  // NOT a control any more, and deliberately asserted the other way round from what this test used
+  // to say. Recording the exit and carrying it onward resolves the dead slot by default, so with
+  // the flag off there is now nothing awarded to a position nobody can fill either.
+  expect(unclaimable(matchUps()), 'nothing may be left awarded to an empty position').toEqual([]);
+});
+
+test('the policy governs the LINKED structure only — the source structure is untouched', () => {
+  // Captured IMMEDIATELY after each build, never lazily. `build` calls `setState: true`, so the
+  // engine holds one tournament at a time and a closure read after the second build reports on
+  // whichever record is loaded then — measured: the second reads empty.
+  const mainState = (matchUps: () => any[]) =>
+    matchUps()
+      .filter((m: any) => m.stage === 'MAIN')
+      .map((m: any) => `${key(m)} ${m.matchUpStatus} ws=${m.winningSide ?? '-'}`)
+      .sort((a: string, b: string) => a.localeCompare(b));
+
+  const off = mainState(build('deb-src-off', false));
+  const on = mainState(build('deb-src-on', true));
+
+  /**
+   * CA, 2026-09-20: *"in the structure in which the doubleExit occurs there still should be a
+   * produced exit."* The flag decides what lands at the loser drawPosition in the TARGET structure
+   * and nothing else; a double exit still produces a WALKOVER for its own winner target.
+   *
+   * Asserted as a whole-structure comparison rather than on one matchUp, so a future change that
+   * leaks the policy into the source structure anywhere fails here.
+   */
+  expect(on).toEqual(off);
+  // CONTROL: the comparison is worthless unless the source structure is non-empty and the double
+  // exit actually produced something in it
+  expect(off.length).toBeGreaterThan(0);
+  expect(off.some((line: string) => line.includes(WALKOVER))).toBe(true);
 });
 
 test('with the policy ON the double exit produces a BYE, and nothing is left unclaimable', () => {
   const matchUps = build('deb-on', true);
+
+  // CONTROL, paired with the OFF test above: the SAME coordinate, now a BYE this cascade placed.
+  // `byeFromPropagation` distinguishes it from the draw's own BYEs, which sit at 3 and 6 under both
+  // settings and would make a bare `bye: true` assertion pass for the wrong reason.
+  expect(loserSlot('deb-on'), 'the loser slot must be a propagated BYE with the flag on').toEqual({
+    drawPosition: LOSER_DRAW_POSITION,
+    byeFromPropagation: true,
+    bye: true,
+  });
 
   // the loser slot of the double walkover is now a BYE
   const fed = matchUps().find((m: any) => key(m) === 'Consolation|1|2');
