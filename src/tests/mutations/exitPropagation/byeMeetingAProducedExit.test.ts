@@ -279,3 +279,100 @@ test('a BYE carries a produced exit onward, gives it back on undo, then carries 
   expect(matchUp('rt-3-1').winningSide).toBeUndefined();
   expect(matchUp('rt-3-1').matchUpStatusCodes ?? []).toEqual([]);
 });
+
+/**
+ * THE SAME SCENARIO IN A DRAW THAT HAS A CONSOLATION.
+ *
+ * CA, 2026-09-20, driving FIRST_MATCH_LOSER_CONSOLATION 8 in TMX with BYEs on Main drawPositions 1
+ * and 2 and `MAIN|1|2` a DOUBLE_WALKOVER:
+ *
+ *   *"what I notice is that the DOUBLE_WALKOVER from Main R1P2 does not produce a WALKOVER as the
+ *   matchUpStatusCode provenance for consolation dp4 as it should, and also that the missing
+ *   WALKOVER is not advanced past the [...] BYE in consolation R2P1 which should produce a
+ *   matchUpStatus: WALKOVER in consolation R3P1 with winningSide: 2."*
+ *
+ * The Main draw behaves exactly as the single-elimination scenario above — that half was already
+ * fixed. What this pins is the LOSER side of the same double exit, and it is a different code path:
+ * `doubleExitAdvancement` skipped its loser handling entirely whenever the loser target already
+ * read `BYE`, so the consolation slot that would have received the loser got no record at all.
+ *
+ * It also takes TWO hops rather than one. `CONSOLATION|1|1` is BYE-held, and so is its winner
+ * target `CONSOLATION|2|1`; only `CONSOLATION|3|1` can receive the walkover. The intermediate hop
+ * is asserted, not just the ends, because skipping it would lose where the exit went.
+ */
+test('a double exit records its loser slot in the consolation and the exit walks two BYEs', () => {
+  setSubscriptions({});
+  const drawId = 'bye-meets-exit-fmlc-loser';
+  const { tournamentRecord } = mocksEngine.generateTournamentRecord({
+    drawProfiles: [
+      {
+        drawType: FIRST_MATCH_LOSER_CONSOLATION,
+        participantsCount: 7,
+        seedsCount: 1,
+        drawSize: 8,
+        idPrefix: 'fl',
+        drawId,
+      },
+    ],
+    nonRandom: 1,
+  });
+  tournamentEngine.setState(tournamentRecord);
+
+  const matchUp = (matchUpId: string): any => getDrawMatchUps(drawId).find((m: any) => m.matchUpId === matchUpId);
+
+  const { structureId } = tournamentEngine.getEvent({ drawId }).drawDefinition.structures[0];
+  const { validActions } = tournamentEngine.positionActions({ drawPosition: 1, structureId, drawId });
+  const assignBye: any = validActions.find((action: any) => action.type === BYE);
+  // CONTROL: the BYE action must be offered, or the scenario never sets itself up
+  expect(assignBye, 'no BYE action offered at drawPosition 1').toBeTruthy();
+  expect(tournamentEngine[assignBye.method](assignBye.payload).success).toEqual(true);
+
+  const applied: any = tournamentEngine.setMatchUpStatus({
+    outcome: { matchUpStatus: DOUBLE_WALKOVER },
+    matchUpId: 'fl-1-2',
+    drawId,
+  });
+  expect(applied.success).toEqual(true);
+
+  // ---- the MAIN draw, unchanged from the single-elimination scenario ---------------------------
+  expect(matchUp('fl-2-1').matchUpStatus).toEqual(BYE);
+  expect(matchUp('fl-3-1').matchUpStatus).toEqual(WALKOVER);
+  expect(matchUp('fl-3-1').winningSide).toEqual(2);
+
+  // ---- 1. the LOSER slot records the exit, and the BYE beside it stays a BYE -------------------
+  // `CONSOLATION|1|1` holds drawPositions [3, 4]: dp3 is the BYE fed from the Main BYE, dp4 is the
+  // slot that would have received `fl-1-2`'s loser. Nobody lost, so dp4 carries the produced exit.
+  const loserSlot = matchUp('fl-c-1-1');
+  expect(loserSlot.matchUpStatus).toEqual(BYE);
+  expect(codeFor(loserSlot, 2)).toEqual({
+    previousMatchUpStatus: DOUBLE_WALKOVER,
+    matchUpStatus: WALKOVER,
+    sideNumber: 2,
+  });
+  expect(loserSlot.sideExitProvenance?.[2]?.sourceMatchUpId).toEqual('fl-1-2');
+  // dp3's side is a BYE the draw put there, not an origin this cascade established
+  expect(codeFor(loserSlot, 1)).toEqual({ sideNumber: 1 });
+
+  // ---- 2. the INTERMEDIATE hop is recorded, and is still a BYE ---------------------------------
+  // `CONSOLATION|2|1` holds [1, 4]: dp1 is a draw BYE and dp4 is the position that advanced through
+  // `CONSOLATION|1|1`. It is a feed round, so the advanced position is side 2 (draw-positions rule 4).
+  const secondBye = matchUp('fl-c-2-1');
+  expect(secondBye.matchUpStatus).toEqual(BYE);
+  expect(codeFor(secondBye, 2)).toEqual({
+    previousMatchUpStatus: DOUBLE_WALKOVER,
+    matchUpStatus: WALKOVER,
+    sideNumber: 2,
+  });
+
+  // ---- 3. and the walkover comes to rest where a live opponent can still arrive ----------------
+  const onward = matchUp('fl-c-3-1');
+  expect(onward.matchUpStatus).toEqual(WALKOVER);
+  expect(onward.winningSide).toEqual(2);
+  expect(codeFor(onward, 1)).toEqual({
+    previousMatchUpStatus: DOUBLE_WALKOVER,
+    matchUpStatus: WALKOVER,
+    sideNumber: 1,
+  });
+  // the ORIGIN survives both hops — it is the double walkover, not either BYE it passed through
+  expect(onward.sideExitProvenance?.[1]?.sourceMatchUpId).toEqual('fl-1-2');
+});

@@ -148,6 +148,55 @@ export function doubleExitAdvancement(params) {
       stack,
     });
     if (result?.error) return decorateResult({ result, stack });
+  } else if (loserMatchUp && !loserTargetStillOpen && isExit(producedExitStatus(params.matchUpStatus))) {
+    /**
+     * A LOSER TARGET THAT ALREADY HOLDS A BYE STILL RECEIVES THE EXIT — it just does not become one.
+     *
+     * The guard above reads `matchUpStatus !== BYE` as "there is nothing to do here", and for the
+     * two things `handleLoserMatchUp` offers — placing a BYE, or awarding a produced WALKOVER —
+     * that is right: a matchUp holding a BYE needs neither, and awarding it would hand the match to
+     * the BYE, which `exitAwardable` forbids outright (CA, 2026-09-17). But there is a third thing
+     * the target is owed, and it was getting nothing at all: THE RECORD OF THE EXIT THAT ARRIVED.
+     *
+     * CA, 2026-09-20, driving FIRST_MATCH_LOSER_CONSOLATION 8 in TMX with BYEs on Main
+     * drawPositions 1 and 2 and `MAIN|1|2` a DOUBLE_WALKOVER: *"the DOUBLE_WALKOVER from Main R1P2
+     * does not produce a WALKOVER as the matchUpStatusCode provenance for consolation dp4 as it
+     * should, and also that the missing WALKOVER is not advanced past the [...] BYE in consolation
+     * R2P1 which should produce a matchUpStatus: WALKOVER in consolation R3P1 with winningSide: 2."*
+     *
+     * `conditionallyAdvanceDrawPosition` is the same function the winner target goes through and it
+     * already keeps a BYE-held target a BYE, derives the arriving side structurally and projects the
+     * codes from provenance — so the loser target is handed to it rather than to a second
+     * derivation of those rules. No `walkoverWinningSide` is passed: on a BYE-held target it has
+     * none, and supplying one is what awarded the BYE in the alternative measured above.
+     *
+     * Then the exit travels, which in a consolation can mean more than one hop — `CONSOLATION|1|1`
+     * and `CONSOLATION|2|1` are both BYE-held in the scenario above.
+     */
+    const result = stampExitOnByeHeldLoserTarget({
+      loserTargetDrawPosition,
+      drawDefinition,
+      sourceMatchUp,
+      loserMatchUp,
+      matchUpsMap,
+      params,
+      stack,
+    });
+    if (result.error) return decorateResult({ result, stack });
+
+    // derived fresh: the write above changed the draw the next hop is decided on
+    const refreshed = getAllDrawMatchUps({ inContext: true, drawDefinition, matchUpsMap })?.matchUps ?? [];
+    const carried = carryExitOnward({
+      fromMatchUp: refreshed.find((m) => m.matchUpId === loserMatchUp.matchUpId) ?? loserMatchUp,
+      EXIT: producedExitStatus(params.matchUpStatus),
+      originMatchUpId: sourceMatchUp?.matchUpId,
+      inContextDrawMatchUps: refreshed,
+      drawDefinition,
+      matchUpsMap,
+      params,
+      stack,
+    });
+    if (carried.error) return decorateResult({ result: carried, stack });
   }
   if (winnerMatchUp) {
     logAdvancement(stack, {
@@ -258,6 +307,100 @@ function handleLoserMatchUp({
     sourceMatchUp,
     matchUpId,
   });
+}
+
+/**
+ * Record an arriving exit on a loser target that already holds a BYE, WITHOUT making it one.
+ *
+ * The two things `handleLoserMatchUp` can offer a target — a BYE, or a produced WALKOVER — are both
+ * wrong here, which is why the guard that skips this case exists. What the target is owed is the
+ * third thing: the record of the exit that arrived at the drawPosition the loser link named, on
+ * that position's own side, with the matchUp still reading `BYE`.
+ *
+ * The exiting side is derived the way this file's sibling loser paths already derive it —
+ * `handleLoserMatchUp`'s `walkoverWinningSide` and `handleEmptyExitLoser`'s `exitingSideNumber` —
+ * from where `loserTargetDrawPosition` sits in the target's ascending `drawPositions`, and side 1
+ * on a feed round because a fed position IS side 1 (`draw-positions.md` rule 4).
+ *
+ * This is NOT the derivation CA rejected on 2026-09-20. That one asked which of two positions had
+ * ADVANCED, a question the array genuinely cannot answer. This one is handed the drawPosition by
+ * the loser link itself and only has to locate it.
+ *
+ * Only the arriving side is stamped. The BYE beside it has an origin too — the source structure's
+ * own BYE — but establishing it needs the paired feeder's status, which is `buildSideExitProvenance`'s
+ * job on the winner path and not a fact this write knows. An unattributed entry is worse than none.
+ */
+function stampExitOnByeHeldLoserTarget({
+  loserTargetDrawPosition,
+  drawDefinition,
+  sourceMatchUp,
+  loserMatchUp,
+  matchUpsMap,
+  params,
+  stack,
+}) {
+  // THE TARGET POSITION MUST BE GENUINELY VACANT. A loser target drawPosition that already holds a
+  // draw BYE is not an empty slot awaiting an arrival — it is SETTLED, and the BYE is its record.
+  // Stamping an exit there says "this side came from a double walkover" about a side that came from
+  // the draw, which is false. Measured 2026-09-20 on FIRST_MATCH_LOSER_CONSOLATION 8 with BOTH Main
+  // first-round matchUps double-walked-over: `Consolation|2|1` drawPosition 1 IS a BYE, and without
+  // this test it gained a WALKOVER origin that `byeMeetingAProducedExit` pins as a reserved slot.
+  // A position holding a PARTICIPANT is likewise not ours — somebody already arrived there.
+  const { positionAssignments } = getPositionAssignments({ structureId: loserMatchUp.structureId, drawDefinition });
+  const targetAssignment = positionAssignments?.find(
+    (assignment: any) => assignment.drawPosition === loserTargetDrawPosition,
+  );
+  if (targetAssignment?.bye || targetAssignment?.participantId) return { ...SUCCESS };
+
+  const drawPositions = loserMatchUp.drawPositions ?? [];
+  const positionIndex = drawPositions.indexOf(loserTargetDrawPosition);
+  // `indexOf` as a side number — valid only because drawPositions are stored ascending.
+  // See the canonical statement in `getOrderedDrawPositions`.
+  const exitingSideNumber = loserMatchUp.feedRound ? 1 : positionIndex + 1;
+  if (positionIndex === -1 || (exitingSideNumber !== 1 && exitingSideNumber !== 2)) {
+    return { ...SUCCESS };
+  }
+
+  const noContextLoserMatchUp = matchUpsMap.drawMatchUps.find(
+    (matchUp) => matchUp.matchUpId === loserMatchUp.matchUpId,
+  );
+  if (!noContextLoserMatchUp) return { error: MISSING_MATCHUP };
+
+  // ACCUMULATE: the other side can already carry an origin recorded by an earlier propagation.
+  const provenance = {
+    ...getSideExitProvenance({ matchUp: noContextLoserMatchUp }),
+    ...buildCarriedExitProvenance({
+      sourceMatchUpId: sourceMatchUp?.matchUpId,
+      previousMatchUpStatus: params.matchUpStatus,
+      matchUpStatus: params.matchUpStatus,
+      exitingSideNumber,
+    }),
+  };
+
+  logAdvancement(stack, {
+    color: 'brightcyan',
+    keyColors: { decision: 'brightgreen' },
+    decision: 'BYE_HELD_loser_target_records_exit',
+    loserMatchUpId: loserMatchUp.matchUpId,
+    loserTargetDrawPosition,
+    exitingSideNumber,
+  });
+
+  const result = modifyMatchUpScore({
+    matchUpStatusCodes: projectExitStatusCodes(provenance),
+    appliedPolicies: params.appliedPolicies,
+    matchUpId: loserMatchUp.matchUpId,
+    matchUp: noContextLoserMatchUp,
+    // the BYE is untouched, and a BYE is never won
+    matchUpStatus: BYE,
+    removeScore: true,
+    context: stack,
+    drawDefinition,
+  });
+  if (result.error) return result;
+
+  mergeSideExitProvenance({ matchUp: noContextLoserMatchUp, provenance });
+  return { ...SUCCESS };
 }
 
 function handleEmptyExitLoser({
@@ -962,12 +1105,12 @@ function advanceByeAdvancedDrawPosition({
     // `r4p1` went `TO_BE_PLAYED` -> `BYE` on apply and stayed `BYE` after the clear, opening both
     // `doubleExitUnwindRestoresBye` cells. There is no exit to carry here, so there is nothing to
     // do.
-    return carryExitThroughBye({
-      noContextNextWinnerMatchUp,
+    return carryExitOnward({
+      originMatchUpId: params.sourceMatchUp?.matchUpId,
+      fromMatchUp: targetMatchUp,
       inContextDrawMatchUps,
-      nextWinnerMatchUp,
       drawDefinition,
-      targetMatchUp,
+      matchUpsMap,
       params,
       stack,
       EXIT,
@@ -1037,64 +1180,124 @@ function opponentFeederCanDeliver({ inContextDrawMatchUps, nextWinnerMatchUp, so
 }
 
 /**
- * Carry a produced exit past a BYE-held matchUp that can advance nobody.
+ * Does this matchUp hold a draw BYE on one of its positions?
  *
- * The exit lands on the side the BYE-held matchUp feeds, and the side YET TO ARRIVE wins it — which
- * is `progressExitStatus` RULE 2: *the side WITHOUT the exit wins, and it wins even while still
- * empty, because it is the side that will receive the eventual opponent.* Awarding it to the
- * arriving side instead would make the exit its own winner and reserve the slot against an opponent
- * who can never come.
+ * Read from the positionAssignment, never from `matchUpStatus` — the same rule
+ * `conditionallyAdvanceDrawPosition` and `removeDoubleExit.targetDrawPositionIsBye` follow, because
+ * by the time a cascade reaches here the status may already have been overwritten.
+ */
+function matchUpHoldsBye({ drawDefinition, matchUp }) {
+  const drawPositions = (matchUp?.drawPositions ?? []).filter(Boolean);
+  if (!drawPositions.length) return false;
+  const { positionAssignments } = getPositionAssignments({ structureId: matchUp.structureId, drawDefinition });
+  return !!positionAssignments?.some(
+    (assignment: any) => assignment.bye && drawPositions.includes(assignment.drawPosition),
+  );
+}
+
+/**
+ * Carry a produced exit onward from a matchUp that can advance nobody, through as many BYEs as it
+ * takes, and write it where it comes to rest.
  *
- * The ORIGIN is preserved across the hop rather than replaced by the BYE-held matchUp, which is the
- * convention `progressExitStatus` RULE 1 already follows when it re-propagates through a BYE with
- * the same `sourceMatchUpId`. Recording the BYE as the origin would say this side came from a BYE
- * and lose the walkover entirely.
+ * CA's rule, 2026-09-20: *"a propagated exit encountering a BYE should be advanced. In both cases
+ * the BYE remains a BYE."* The exit lands on the side the dead matchUp feeds, and the side YET TO
+ * ARRIVE wins it — `progressExitStatus` RULE 2: *the side WITHOUT the exit wins, and it wins even
+ * while still empty, because it is the side that will receive the eventual opponent.* Awarding it
+ * to the arriving side instead would make the exit its own winner and reserve the slot against an
+ * opponent who can never come.
+ *
+ * ## Why this RECURSES rather than taking a single hop
+ *
+ * A single hop is enough in a main draw, where the BYE-held matchUp feeds an ordinary one. It is
+ * not enough in a consolation, where a BYE can meet a BYE. Measured 2026-09-20 on
+ * FIRST_MATCH_LOSER_CONSOLATION 8 with BYEs forced onto Main drawPositions 1 and 2 and `MAIN|1|2`
+ * a DOUBLE_WALKOVER: the exit reaches `CONSOLATION|1|1`, which is BYE-held; its winner target
+ * `CONSOLATION|2|1` is ALSO BYE-held; only `CONSOLATION|3|1` can receive the walkover. Two hops,
+ * and the intermediate one must be stamped rather than skipped or the record loses where the exit
+ * went.
+ *
+ * ## What stops it
+ *
+ * - **A participant.** Somebody genuinely advanced into the target; the exit is not theirs to
+ *   overwrite, and `advanceByeAdvancedDrawPosition`'s first branch already handles that case.
+ * - **An exit already there.** Two exits MEETING is a convergence — `progressExitStatus` RULE 4,
+ *   where nobody wins — and resolving it is a separate piece of work, left exactly as it was.
+ * - **No live opponent.** The `winningSide` written below is the side yet to arrive, and that claim
+ *   is only true while somebody still can. Measured 2026-09-20 on `exitPropagationMatrix`: without
+ *   this test, FEED_IN_CHAMPIONSHIP and FEED_IN_CHAMPIONSHIP_TO_SF 16/16 open all four cells each.
+ *   Consolation `r2p3` and `r2p4` are BOTH BYE-held and BOTH feed `r3p2`, so the walkover written
+ *   there was owed to nobody; the phantom winner then advanced into the fed `r4p2` and the BYE at
+ *   drawPosition 3 was awarded the match — `BYE_WITH_WINNING_SIDE`, four cells, all new.
+ * - **No attributable side**, because an unattributed exit is worse than none: the unwind would
+ *   then trust it. Same refusal as `buildSideExitProvenance`'s own.
+ *
+ * The ORIGIN is preserved across every hop rather than replaced by the matchUp the exit passed
+ * through, which is the convention `progressExitStatus` RULE 1 already follows when it
+ * re-propagates through a BYE with the same `sourceMatchUpId`. Recording the BYE as the origin
+ * would say this side came from a BYE and lose the walkover entirely.
  *
  * The provenance is not decoration: `isPropagatedExit` reads its PRESENCE, and `EXIT_WITHOUT_LOSER`
  * fires on any exit matchUp that has a winningSide and no participant on the losing side unless
  * that exemption applies. Writing the status without the provenance would trade one defect for a
  * detector finding.
  */
-function carryExitThroughBye({
-  noContextNextWinnerMatchUp,
+function carryExitOnward({
   inContextDrawMatchUps,
-  nextWinnerMatchUp,
   drawDefinition,
-  targetMatchUp,
+  matchUpsMap,
+  originMatchUpId,
+  fromMatchUp,
+  visited,
   params,
   stack,
   EXIT,
-}) {
+}: any) {
+  // a matchUp is visited at most once, so a malformed winner-target cycle cannot spin here
+  const seen = visited ?? new Set<string>();
+  if (!fromMatchUp?.matchUpId || seen.has(fromMatchUp.matchUpId)) {
+    return decorateResult({ result: { ...SUCCESS }, stack });
+  }
+  seen.add(fromMatchUp.matchUpId);
+
+  const { targetMatchUps } = positionTargets({
+    matchUpId: fromMatchUp.matchUpId,
+    inContextDrawMatchUps,
+    drawDefinition,
+  });
+  const nextWinnerMatchUp = targetMatchUps?.winnerMatchUp;
+  if (!nextWinnerMatchUp?.matchUpId) return decorateResult({ result: { ...SUCCESS }, stack });
+
   const arrivalSideNumber = getExitArrivalSideNumber({
-    sourceMatchUp: targetMatchUp,
+    sourceMatchUp: fromMatchUp,
     inContextDrawMatchUps,
     nextWinnerMatchUp,
   });
-
-  // no attributable side is no record: an unattributed exit is worse than none, because the unwind
-  // would then trust it. Same rule as buildSideExitProvenance's own refusal.
   if (!arrivalSideNumber) return decorateResult({ result: { ...SUCCESS }, stack });
 
-  // IS THERE ANYBODY LEFT TO WIN IT? The `winningSide` written below is the side YET TO ARRIVE, and
-  // that claim is only true while somebody still can. When the OTHER feeder is itself a dead end —
-  // an exit or a BYE-held matchUp with no participant to send — awarding it that side reserves the
-  // slot against an opponent who can never come, which is the dead-reservation shape this very
-  // function's sibling branch exists to avoid.
-  //
-  // Measured 2026-09-20 on `exitPropagationMatrix`: without this test, FEED_IN_CHAMPIONSHIP and
-  // FEED_IN_CHAMPIONSHIP_TO_SF 16/16 open all four cells each. Consolation `r2p3` and `r2p4` are
-  // BOTH BYE-held and BOTH feed `r3p2`, so the walkover written there was owed to nobody; the
-  // phantom winner then advanced into the fed `r4p2` and the BYE sitting at drawPosition 3 was
-  // awarded the match — `BYE_WITH_WINNING_SIDE`, four cells, all new.
-  //
-  // Two dead feeders MEETING is a convergence — `progressExitStatus` RULE 4, where nobody wins —
-  // and resolving it is a separate piece of work. Refusing here leaves that case exactly as it was.
-  if (!opponentFeederCanDeliver({ inContextDrawMatchUps, nextWinnerMatchUp, sourceMatchUp: targetMatchUp })) {
+  // somebody genuinely got there, or two exits have met: either way this is not ours to write
+  if (nextWinnerMatchUp.sides?.some((side) => side.participantId) || isAnyExit(nextWinnerMatchUp.matchUpStatus)) {
+    return decorateResult({ result: { ...SUCCESS }, stack });
+  }
+
+  const noContextNextWinnerMatchUp = matchUpsMap.drawMatchUps.find(
+    (matchUp) => matchUp.matchUpId === nextWinnerMatchUp.matchUpId,
+  );
+  if (!noContextNextWinnerMatchUp) return decorateResult({ result: { ...SUCCESS }, stack });
+
+  // A BYE-HELD TARGET KEEPS ITS BYE and the exit keeps travelling. The arriving side is recorded so
+  // the record says where the exit went; the status is not touched, because a BYE is a fact about
+  // the DRAW rather than about this cascade.
+  const holdsBye = matchUpHoldsBye({ drawDefinition, matchUp: nextWinnerMatchUp });
+
+  if (
+    !holdsBye &&
+    !opponentFeederCanDeliver({ inContextDrawMatchUps, nextWinnerMatchUp, sourceMatchUp: fromMatchUp })
+  ) {
     logAdvancement(stack, {
       color: 'brightyellow',
       decision: 'BYE_HELD_exit_not_carried_no_live_opponent',
-      nextWinnerMatchUpId: noContextNextWinnerMatchUp.matchUpId,
-      fromMatchUpId: targetMatchUp?.matchUpId,
+      nextWinnerMatchUpId: nextWinnerMatchUp.matchUpId,
+      fromMatchUpId: fromMatchUp.matchUpId,
     });
     return decorateResult({ result: { ...SUCCESS }, stack });
   }
@@ -1103,21 +1306,21 @@ function carryExitThroughBye({
   const provenance = {
     ...getSideExitProvenance({ matchUp: noContextNextWinnerMatchUp }),
     ...buildCarriedExitProvenance({
-      sourceMatchUpId: params.sourceMatchUp?.matchUpId,
       previousMatchUpStatus: params.matchUpStatus,
       exitingSideNumber: arrivalSideNumber,
       matchUpStatus: params.matchUpStatus,
+      sourceMatchUpId: originMatchUpId,
     }),
   };
 
   logAdvancement(stack, {
     color: 'brightcyan',
     keyColors: { decision: 'brightgreen', winningSide: 'brightyellow' },
-    decision: 'BYE_HELD_carry_exit_onward',
-    nextWinnerMatchUpId: noContextNextWinnerMatchUp.matchUpId,
-    fromMatchUpId: targetMatchUp?.matchUpId,
+    decision: holdsBye ? 'BYE_HELD_stamp_and_keep_walking' : 'BYE_HELD_carry_exit_onward',
+    nextWinnerMatchUpId: nextWinnerMatchUp.matchUpId,
+    fromMatchUpId: fromMatchUp.matchUpId,
     arrivalSideNumber,
-    matchUpStatus: EXIT,
+    matchUpStatus: holdsBye ? BYE : EXIT,
   });
 
   const result = modifyMatchUpScore({
@@ -1125,8 +1328,9 @@ function carryExitThroughBye({
     matchUpId: noContextNextWinnerMatchUp.matchUpId,
     appliedPolicies: params.appliedPolicies,
     matchUp: noContextNextWinnerMatchUp,
-    winningSide: 3 - arrivalSideNumber,
-    matchUpStatus: EXIT,
+    // a BYE is never won, and the exit that passes through it does not win it either
+    winningSide: holdsBye ? undefined : 3 - arrivalSideNumber,
+    matchUpStatus: holdsBye ? BYE : EXIT,
     removeScore: true,
     context: stack,
     drawDefinition,
@@ -1137,7 +1341,22 @@ function carryExitThroughBye({
   // the codes the provenance describes clears the provenance with them (#4816).
   mergeSideExitProvenance({ matchUp: noContextNextWinnerMatchUp, provenance });
 
-  return decorateResult({ result: { ...SUCCESS }, stack });
+  if (!holdsBye) return decorateResult({ result: { ...SUCCESS }, stack });
+
+  // the write above changed the draw, so the next hop is decided on freshly derived context
+  const refreshed =
+    getAllDrawMatchUps({ inContext: true, drawDefinition, matchUpsMap })?.matchUps ?? inContextDrawMatchUps;
+  return carryExitOnward({
+    fromMatchUp: refreshed.find((m) => m.matchUpId === nextWinnerMatchUp.matchUpId) ?? nextWinnerMatchUp,
+    inContextDrawMatchUps: refreshed,
+    originMatchUpId,
+    visited: seen,
+    drawDefinition,
+    matchUpsMap,
+    params,
+    stack,
+    EXIT,
+  });
 }
 
 /**
