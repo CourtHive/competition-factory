@@ -247,6 +247,23 @@ export function clearSideExitProvenance(matchUp?: MatchUp): void {
  *
  * `isAnyExit`, not `isExit` — the double exits are precisely the statuses that stamp provenance.
  *
+ * ALL THREE CALL SITES ARE LOAD-BEARING, measured 2026-09-19 by restoring each to an unconditional
+ * `clearSideExitProvenance` ONE AT A TIME on `dev` after the unwind was corrected (#4935). The
+ * original counts were `removeDirectedLoser` 38 clears, `applyPositionToMatchUp` 9,
+ * `applyScoreAndStatus` 10.
+ *
+ * | site | full suite | census (six arms) | per-step inconsistencies |
+ * |---|---|---|---|
+ * | `removeDirectedLoser` | 2 failed | — | — |
+ * | `applyScoreAndStatus` | 4 failed | — | — |
+ * | `applyPositionToMatchUp` | **clean** | **+3 opened** | **+7 started** |
+ *
+ * **`applyPositionToMatchUp` is the one to be careful about.** Its suite is clean, and on that
+ * evidence alone it reads as a redundant workaround left over from before the unwind was fixed. It
+ * is not: the 600-seed census opens three seeds and the per-step scan starts seven findings. A suite
+ * that stays green is not evidence that a propagation compensation is inert — the census is the
+ * instrument that answers this, and it disagreed.
+ *
  * See Mentat/planning/SWEEP_20260911_DISCOVERY.md.
  */
 export function clearResolvedSideExitProvenance(matchUp?: MatchUp): void {

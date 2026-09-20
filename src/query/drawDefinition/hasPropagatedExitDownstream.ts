@@ -29,6 +29,22 @@ import { isDoubleExit, isExit } from '@Validators/isExit';
  * source. A convergence resting on another upstream still blocks, because clearing this matchUp
  * would not restore it.
  *
+ * STILL LOAD-BEARING AFTER THE UNWIND WAS CORRECTED, measured 2026-09-19 by REMOVING the exemption
+ * on `dev` post-#4935. The brief that scheduled this re-examination asked whether the exemption now
+ * admits clears it should refuse. It does not — nothing started firing on any instrument — and the
+ * exemption itself is still required:
+ *
+ * | | without the exemption |
+ * |---|---|
+ * | `undoPropagatedExit` (this PR's own 5 x 3 matrix) | **19 failures** — the undo is refused again |
+ * | `invariantScan`, six arms | 4 rules STOPPED firing, 0 started |
+ * | census, six arms | 5 seeds "closed", 1 opened |
+ *
+ * **Read those last two rows together or they mislead.** Removing the exemption makes this guard
+ * refuse MORE clears, so fewer mutations execute, so fewer findings arise. The census improving and
+ * invariant rules going quiet are the signature of a draw that stopped being mutated — not of a
+ * defect being fixed. The suite is what exposes it.
+ *
  * `targetData.matchUp` is the matchUp whose clear is in question; `positionTargets` always returns
  * it, and both call sites — `setMatchUpState`'s `isClearScore` branch and `matchUpActions`'
  * CLEAR_SCORE affordance — build `targetData` from it. Consulting it here rather than adding a
