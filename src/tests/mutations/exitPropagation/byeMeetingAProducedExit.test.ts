@@ -39,7 +39,7 @@ test('a converged double exit reaches the BYE, and the BYE stays a BYE', () => {
   setSubscriptions({});
   const drawId = 'bye-meets-exit-fmlc';
   const { tournamentRecord } = mocksEngine.generateTournamentRecord({
-    drawProfiles: [{ drawType: FIRST_MATCH_LOSER_CONSOLATION, drawSize: 8, drawId }],
+    drawProfiles: [{ drawType: FIRST_MATCH_LOSER_CONSOLATION, drawSize: 8, idPrefix: 'fmlc', drawId }],
     nonRandom: 1,
   });
   tournamentEngine.setState(tournamentRecord);
@@ -93,10 +93,88 @@ test('a converged double exit reaches the BYE, and the BYE stays a BYE', () => {
   // the side carrying the exit does not win it; the side yet to arrive does
   expect(onward.winningSide).toEqual(2);
 
-  // DELIBERATELY NOT PINNED: `onward.matchUpStatusCodes`. It is `[]` today — the BYE-advance site
-  // writes `matchUpStatusCodes: []` unconditionally, which `knownFailures.ts` already names as
-  // residue of the same family. That is an OPEN gap, not certified behaviour, and pinning the
-  // current value would freeze the defect. Assert it when the origin is carried through.
+  // AND NOW THE CODES, which this test deliberately left unpinned while they were `[]`.
+  //
+  // The comment that stood here said: *"the BYE-advance site writes `matchUpStatusCodes: []`
+  // unconditionally … pinning the current value would freeze the defect. Assert it when the origin
+  // is carried through."* It is carried through as of 2026-09-20, so this is that assertion.
+  expect(codeFor(onward, 1)).toEqual({
+    previousMatchUpStatus: DOUBLE_WALKOVER,
+    matchUpStatus: WALKOVER,
+    sideNumber: 1,
+  });
+  expect(codeFor(onward, 2)).toEqual({ sideNumber: 2 });
+  // the origin is the CONSOLATION convergence that produced this exit, not the Main matchUp two
+  // steps back: `sourceMatchUpId` names the immediate producer at every hop.
+  expect(onward.sideExitProvenance?.[1]).toEqual({
+    previousMatchUpStatus: DOUBLE_WALKOVER,
+    matchUpStatus: WALKOVER,
+    sourceMatchUpId: 'fmlc-c-1-1',
+  });
+});
+
+/**
+ * A PRODUCED EXIT ADVANCED THROUGH A BYE IS NOT AN ORPHAN.
+ *
+ * The rule the test above asserts structurally, stated as the consequence that actually matters and
+ * pinned against the engine's own detector rather than against a field.
+ *
+ * `advanceByeAdvancedDrawPosition` wrote `matchUpStatusCodes: []` unconditionally and stamped no
+ * provenance, so a matchUp came out of the cascade as an exit WITH a winningSide and no record of
+ * where it came from. `getStructureInconsistencies`' `EXIT_WITHOUT_LOSER` exempts a
+ * propagation-produced exit through `isPropagatedExit`, which reads the PRESENCE of provenance — so
+ * an unstamped produced exit is indistinguishable from the thing that rule exists to catch: *"a
+ * walkover recorded against a drawPosition that lost its participant"*.
+ *
+ * Thirteen `exitPropagationMatrix` cells were reporting exactly this, across
+ * FIRST_MATCH_LOSER_CONSOLATION 8/7, 16/15 and 16/13 and DOUBLE_ELIMINATION 16/13, every one the
+ * same shape: `WALKOVER ws=2 dps=[4,null] codes=null prov=null`. `knownFailures.ts` had named the
+ * site for weeks.
+ *
+ * ASSERTED THROUGH `getDrawInconsistencies`, deliberately. A test that only re-read the provenance
+ * field would pass if the exemption were later keyed on something else; this one fails if the exit
+ * ever becomes indistinguishable from an orphan again, whatever the mechanism.
+ */
+test('a produced exit advanced through a BYE carries its origin, so the draw holds no orphaned exit', () => {
+  setSubscriptions({});
+  const drawId = 'bye-exit-not-an-orphan';
+  const { tournamentRecord } = mocksEngine.generateTournamentRecord({
+    drawProfiles: [{ drawType: FIRST_MATCH_LOSER_CONSOLATION, drawSize: 8, idPrefix: 'orph', drawId }],
+    nonRandom: 1,
+  });
+  tournamentEngine.setState(tournamentRecord);
+
+  for (const roundPosition of [1, 2]) {
+    const target = getDrawMatchUps(drawId).find(
+      (m: any) => m.stage === 'MAIN' && m.roundNumber === 1 && m.roundPosition === roundPosition,
+    );
+    expect(target, `MAIN|1|${roundPosition}`).toBeTruthy();
+    const result: any = tournamentEngine.setMatchUpStatus({
+      outcome: { matchUpStatus: DOUBLE_WALKOVER },
+      matchUpId: target.matchUpId,
+      drawId,
+    });
+    expect(result.error).toBeUndefined();
+  }
+
+  // CONTROL: the shape the rule is about must actually be present, or this asserts nothing. A
+  // single exit, a winningSide, and a losing side that holds a drawPosition but no participant.
+  const produced = getDrawMatchUps(drawId).find(
+    (m: any) => m.stage === 'CONSOLATION' && m.roundNumber === 3 && m.roundPosition === 1,
+  );
+  expect(produced?.matchUpStatus).toEqual(WALKOVER);
+  expect(produced?.winningSide).toEqual(2);
+  const losingSide = (produced?.sides ?? []).find((side: any) => side.sideNumber !== produced.winningSide);
+  expect(losingSide?.drawPosition, 'the losing side must hold a drawPosition').toBeTruthy();
+  expect(losingSide?.participantId, 'and no participant').toBeUndefined();
+  expect(losingSide?.bye, 'and it must not be a BYE, which the rule excludes separately').toBeFalsy();
+
+  // the origin is what keeps it out of the orphan bucket
+  expect(produced?.sideExitProvenance?.[1]?.previousMatchUpStatus).toEqual(DOUBLE_WALKOVER);
+
+  const { drawDefinition } = tournamentEngine.getEvent({ drawId });
+  const { inconsistencies }: any = tournamentEngine.getDrawInconsistencies({ drawDefinition, drawId });
+  expect((inconsistencies ?? []).map((i: any) => i.issueType)).toEqual([]);
 });
 
 test('a BYE that meets a produced exit keeps BOTH origins, and stays a BYE', () => {
