@@ -375,4 +375,44 @@ test('a double exit records its loser slot in the consolation and the exit walks
   });
   // the ORIGIN survives both hops — it is the double walkover, not either BYE it passed through
   expect(onward.sideExitProvenance?.[1]?.sourceMatchUpId).toEqual('fl-1-2');
+
+  // ---- 4. AND ALL THREE COME BACK OUT when the double walkover is removed --------------------
+  //
+  // CA, 2026-09-20: *"When I remove it the consolation R1P1 matchUpStatusCodes don't clear and the
+  // WALKOVER remains advanced to consolation R3P1."* Measured: THREE consolation matchUps kept
+  // residue, because `removeDoubleExit` had the mirror image of the forward guard and skipped a
+  // BYE-held loser target on the way back.
+  const cleared: any = tournamentEngine.setMatchUpStatus({ outcome: clearOutcome, matchUpId: 'fl-1-2', drawId });
+  expect(cleared.error).toBeUndefined();
+  expect(cleared.success).toEqual(true);
+  expect(matchUp('fl-1-2').matchUpStatus).toEqual(TO_BE_PLAYED);
+
+  // every consolation matchUp the exit touched is returned whole. Asserted field by field, because
+  // a blanked status with a surviving winningSide or provenance is this family's residue shape.
+  for (const matchUpId of ['fl-c-1-1', 'fl-c-2-1']) {
+    const restored = matchUp(matchUpId);
+    // the BYEs are still BYEs — the clear must not take the DRAW's own state with it
+    expect(restored.matchUpStatus, matchUpId).toEqual(BYE);
+    // and they carry NO codes at all, not a reserved slot: these BYEs came from the draw and were
+    // never stamped, so there is no surviving origin to project. `fl-2-1` below is the contrast —
+    // its side 1 keeps `{BYE -> BYE}` because the BYE propagation DID record it.
+    expect(restored.matchUpStatusCodes ?? [], matchUpId).toEqual([]);
+    expect(restored.sideExitProvenance, matchUpId).toBeUndefined();
+  }
+
+  const restoredOnward = matchUp('fl-c-3-1');
+  expect(restoredOnward.matchUpStatus).toEqual(TO_BE_PLAYED);
+  expect(restoredOnward.winningSide).toBeUndefined();
+  expect(restoredOnward.matchUpStatusCodes ?? []).toEqual([]);
+  expect(restoredOnward.sideExitProvenance).toBeUndefined();
+  // the drawPosition that reached the consolation final through the DRAW's own BYE cascade is still
+  // there: nothing was advanced by this cascade, so nothing is un-advanced by its removal
+  expect(restoredOnward.drawPositions?.filter(Boolean)).toEqual([4]);
+
+  // and the Main draw unwinds as the single-elimination scenario already pins
+  expect(matchUp('fl-3-1').matchUpStatus).toEqual(TO_BE_PLAYED);
+  expect(matchUp('fl-3-1').winningSide).toBeUndefined();
+  expect(matchUp('fl-2-1').matchUpStatus).toEqual(BYE);
+  expect(codeFor(matchUp('fl-2-1'), 1)).toEqual({ previousMatchUpStatus: BYE, matchUpStatus: BYE, sideNumber: 1 });
+  expect(codeFor(matchUp('fl-2-1'), 2)).toEqual({ sideNumber: 2 });
 });

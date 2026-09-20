@@ -173,9 +173,148 @@ export function removeDoubleExit(params) {
       });
       if (result.error) return decorateResult({ result, stack });
     }
+  } else if (loserMatchUp?.matchUpStatus === BYE) {
+    /**
+     * A LOSER TARGET THAT HOLDS A DRAW BYE IS VISITED TOO — to WITHDRAW, and only that.
+     *
+     * The guard above is the unwind's half of the symmetry `doubleExitAdvancement` had on the
+     * forward path: a loser target already reading `BYE` was skipped, which was sound only while
+     * nothing wrote to it. Something does now — the produced exit is recorded on the drawPosition
+     * the loser link named, and carried onward through however many BYEs stand between it and a
+     * matchUp that can hold it. Skipping the target on the way back left all of that standing.
+     *
+     * CA, 2026-09-20: *"When I remove it the consolation R1P1 matchUpStatusCodes don't clear and
+     * the WALKOVER remains advanced to consolation R3P1."* Measured on
+     * FIRST_MATCH_LOSER_CONSOLATION 8: THREE consolation matchUps kept residue, not one —
+     * `CONSOLATION|1|1`, `CONSOLATION|2|1` and `CONSOLATION|3|1`.
+     *
+     * `conditionallyRemoveDrawPosition` is deliberately NOT used here, and that is the whole reason
+     * this is a separate path. It would compute a `drawPositionToRemove` by intersecting the
+     * target's drawPositions with the next winner's — drawPosition 4 in the scenario above — and
+     * take it back out. But dp4 reached `CONSOLATION|2|1` through the DRAW's own BYE cascade at
+     * generation time, long before the double walkover; removing it would unpick a placement this
+     * cascade never made. Nothing was advanced here, so nothing is un-advanced: only the record of
+     * the exit comes back out.
+     */
+    const result = withdrawExitFromByeChain({
+      fromMatchUp: loserMatchUp,
+      inContextDrawMatchUps,
+      withdrawnSourceIds,
+      drawDefinition,
+      matchUpsMap,
+      stack,
+    });
+    if (result.error) return decorateResult({ result, stack });
   }
 
   return decorateResult({ result: { ...SUCCESS }, stack });
+}
+
+/** Does this matchUp carry an origin written by one of the results being taken back? */
+function carriesWithdrawnOrigin(matchUp, withdrawnSourceIds: Set<string>): boolean {
+  const provenance = getNativeSideExitProvenance({ matchUp });
+  if (!provenance) return false;
+  return [1, 2].some((sideNumber) => {
+    const sourceMatchUpId = provenance[sideNumber]?.sourceMatchUpId;
+    return !!sourceMatchUpId && withdrawnSourceIds.has(sourceMatchUpId);
+  });
+}
+
+/**
+ * Take back an exit that was carried through BYE-held matchUps, following the same chain out.
+ *
+ * The mirror of `doubleExitAdvancement`'s `carryExitOnward`, and it exists for the reason that file
+ * says: forward and unwind must walk the same ground or a do/undo leaves residue. It withdraws by
+ * IDENTITY — an origin whose `sourceMatchUpId` is not among the results being taken back is still
+ * true and stays — so a matchUp carrying nothing from this cascade is left untouched, and that is
+ * also what ends the walk.
+ *
+ * `getUnwoundState` decides each matchUp's new state, rather than a second derivation of those
+ * rules living here: it already returns `BYE` for a BYE-held matchUp before considering anything
+ * else, and `TO_BE_PLAYED` for one whose last origin has just been withdrawn.
+ */
+function withdrawExitFromByeChain({
+  inContextDrawMatchUps,
+  withdrawnSourceIds,
+  drawDefinition,
+  matchUpsMap,
+  fromMatchUp,
+  visited,
+  stack,
+}: any) {
+  const seen: Set<string> = visited ?? new Set<string>();
+  if (!fromMatchUp?.matchUpId || seen.has(fromMatchUp.matchUpId)) return { ...SUCCESS };
+  seen.add(fromMatchUp.matchUpId);
+
+  const noContextTargetMatchUp = matchUpsMap?.drawMatchUps.find(
+    (candidate) => candidate.matchUpId === fromMatchUp.matchUpId,
+  );
+  // nothing of this cascade's here, so there is nothing to take back and nowhere further to go
+  if (!noContextTargetMatchUp || !carriesWithdrawnOrigin(noContextTargetMatchUp, withdrawnSourceIds)) {
+    return { ...SUCCESS };
+  }
+
+  // `any` because `getUnwoundState` types `matchUpStatus` as a bare string while `modifyMatchUpScore`
+  // takes the status union; `conditionallyRemoveDrawPosition` passes the same value through an
+  // untyped spread and never meets the mismatch.
+  const unwound: any = getUnwoundState({
+    pairedPreviousDoubleExit: false,
+    noContextTargetMatchUp,
+    targetMatchUp: fromMatchUp,
+    withdrawnSourceIds,
+    drawDefinition,
+  });
+
+  pushGlobalLog({
+    method: 'withdrawExitFromByeChain',
+    color: 'brightcyan',
+    matchUpId: fromMatchUp.matchUpId,
+    structureName: fromMatchUp.structureName,
+    unwoundStatus: unwound.matchUpStatus,
+    keyColors,
+  });
+
+  const result = modifyMatchUpScore({
+    matchUpStatusCodes: unwound.provenance ? projectExitStatusCodes(unwound.provenance) : [],
+    removeWinningSide: unwound.winningSide === undefined,
+    matchUpStatus: unwound.matchUpStatus,
+    matchUpId: fromMatchUp.matchUpId,
+    matchUp: noContextTargetMatchUp,
+    winningSide: unwound.winningSide,
+    context: 'withdrawExitFromByeChain',
+    removeScore: true,
+    drawDefinition,
+    score: {
+      scoreStringSide1: '',
+      scoreStringSide2: '',
+      sets: undefined,
+    },
+  });
+  if (result.error) return decorateResult({ result, stack });
+
+  // the write goes through the `toBePlayed` fixture, which blanks `sideExitProvenance` and then
+  // restores what the matchUp HELD — including the entry just withdrawn — so the retained subset is
+  // stamped explicitly rather than inferred from what survived. Same reason as
+  // `conditionallyRemoveDrawPosition`'s own stamp.
+  setSideExitProvenance({ provenance: unwound.provenance, matchUp: noContextTargetMatchUp });
+
+  const { targetMatchUps } = positionTargets({
+    matchUpId: fromMatchUp.matchUpId,
+    inContextDrawMatchUps,
+    drawDefinition,
+  });
+  const nextWinnerMatchUp = targetMatchUps?.winnerMatchUp;
+  if (!nextWinnerMatchUp?.matchUpId) return { ...SUCCESS };
+
+  return withdrawExitFromByeChain({
+    fromMatchUp: nextWinnerMatchUp,
+    inContextDrawMatchUps,
+    withdrawnSourceIds,
+    drawDefinition,
+    matchUpsMap,
+    visited: seen,
+    stack,
+  });
 }
 
 export function conditionallyRemoveDrawPosition(params) {
