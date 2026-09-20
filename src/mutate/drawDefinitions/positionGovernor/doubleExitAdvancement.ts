@@ -1294,17 +1294,39 @@ function carryExitOnward({
   }
   seen.add(fromMatchUp.matchUpId);
 
+  /**
+   * DERIVED FRESH ON ENTRY, not only between hops.
+   *
+   * The recursion below already re-derived context for each subsequent hop, but the FIRST call took
+   * whatever `advanceByeAdvancedDrawPosition` was handed — a view computed in
+   * `conditionallyAdvanceDrawPosition` BEFORE this cascade's own writes. Every test below reads
+   * that view, and one of them is "has somebody genuinely arrived here", which is precisely the
+   * kind of fact the cascade changes as it runs.
+   *
+   * Measured on FIRST_MATCH_LOSER_CONSOLATION 8/8, `Main|1|1` DOUBLE_DEFAULT then `Main|1|2`
+   * DEFAULTED/ws1: the stale view showed `CONSOLATION|3|1` holding a participant, so the carry
+   * refused; the settled draw shows `sides=[{}, {}]` and no participant at all. The exit stopped at
+   * `CONSOLATION|2|1` and the final stayed `TO_BE_PLAYED`.
+   *
+   * Same trap this file already names at `progressExitStatus`' provenance stamp — *"that one
+   * predates the `setMatchUpState` above, and the objects it holds can be detached from
+   * `drawDefinition.structures` by the time the write returns"* — and at `mergeSideExitProvenance`.
+   * A propagation decision may only be taken on state derived after the writes that precede it.
+   */
+  const currentDrawMatchUps =
+    getAllDrawMatchUps({ inContext: true, drawDefinition, matchUpsMap })?.matchUps ?? inContextDrawMatchUps;
+
   const { targetMatchUps } = positionTargets({
+    inContextDrawMatchUps: currentDrawMatchUps,
     matchUpId: fromMatchUp.matchUpId,
-    inContextDrawMatchUps,
     drawDefinition,
   });
   const nextWinnerMatchUp = targetMatchUps?.winnerMatchUp;
   if (!nextWinnerMatchUp?.matchUpId) return decorateResult({ result: { ...SUCCESS }, stack });
 
   const arrivalSideNumber = getExitArrivalSideNumber({
+    inContextDrawMatchUps: currentDrawMatchUps,
     sourceMatchUp: fromMatchUp,
-    inContextDrawMatchUps,
     nextWinnerMatchUp,
   });
   if (!arrivalSideNumber) return decorateResult({ result: { ...SUCCESS }, stack });
