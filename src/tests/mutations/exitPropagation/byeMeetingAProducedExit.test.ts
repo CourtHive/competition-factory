@@ -225,8 +225,14 @@ test('a BYE that meets a produced exit keeps BOTH origins, and stays a BYE', () 
   // advance; the cascade used to stop here and leave `match-3-1` as `TO_BE_PLAYED` with no codes.
   const onward = getDrawMatchUps(drawId).find((m: any) => m.matchUpId === 'match-3-1');
   expect(onward.matchUpStatus).toEqual(WALKOVER);
-  // the side the exit arrives on does not win it; the side yet to arrive does
-  expect(onward.winningSide).toEqual(2);
+
+  // AND IT WAITS FOR ITS WINNER. `match-3-1` holds no drawPosition yet, and the engine reads a
+  // winningSide OFF the arriving position rather than pre-computing it — so a pending exit
+  // legitimately carries none. CA ruled this 2026-09-20 after seeing the mechanism work:
+  // *"that is unnecessary if the winningSide will display the checkmark once a participant
+  // arrives."* An earlier revision of this test pinned `winningSide: 2` here, which held only
+  // because the cascade awarded it eagerly — the one place in the engine that did.
+  expect(onward.winningSide).toBeUndefined();
 
   // and the ORIGIN survives the hop through the BYE — it is the double walkover that produced the
   // exit, not the BYE it travelled through. Asserted per side, because the two are independent.
@@ -241,6 +247,28 @@ test('a BYE that meets a produced exit keeps BOTH origins, and stays a BYE', () 
     previousMatchUpStatus: DOUBLE_WALKOVER,
     matchUpStatus: WALKOVER,
     sourceMatchUpId: 'match-1-2',
+  });
+
+  // ---- 4. and the winningSide ARRIVES with the opponent ---------------------------------------
+  //
+  // This is the half that makes the pending state above correct rather than incomplete, and it is
+  // the reason the eager award was dropped: the answer is the same either way, and this one is
+  // derived from a real drawPosition instead of computed ahead of it.
+  const { outcome }: any = mocksEngine.generateOutcomeFromScoreString({ scoreString: '6-1 6-2', winningSide: 1 });
+  const resolved: any = tournamentEngine.setMatchUpStatus({ outcome, matchUpId: 'match-2-2', drawId });
+  expect(resolved.success).toEqual(true);
+
+  const settled = getDrawMatchUps(drawId).find((m: any) => m.matchUpId === 'match-3-1');
+  expect(settled.matchUpStatus).toEqual(WALKOVER);
+  expect(settled.winningSide).toEqual(2);
+  // the winner of `match-2-2` is a real participant, and they hold the winning side
+  const winningSide = (settled.sides ?? []).find((side: any) => side.sideNumber === settled.winningSide);
+  expect(winningSide?.participantId).toBeTruthy();
+  // the exit's own origin is untouched by the arrival
+  expect(codeFor(settled, 1)).toEqual({
+    previousMatchUpStatus: DOUBLE_WALKOVER,
+    matchUpStatus: WALKOVER,
+    sideNumber: 1,
   });
 });
 
@@ -304,7 +332,10 @@ test('a BYE carries a produced exit onward, gives it back on undo, then carries 
     sideNumber: 2,
   });
   expect(matchUp('rt-3-1').matchUpStatus).toEqual(WALKOVER);
-  expect(matchUp('rt-3-1').winningSide).toEqual(2);
+  // pending: no drawPosition has arrived, so no winningSide yet. The test above pins the
+  // resolution; this one deliberately leaves the opponent unplayed so the undo is measured
+  // against the carry alone.
+  expect(matchUp('rt-3-1').winningSide).toBeUndefined();
   expect(codeFor(matchUp('rt-3-1'), 1)).toEqual({
     previousMatchUpStatus: DOUBLE_WALKOVER,
     matchUpStatus: WALKOVER,
@@ -415,7 +446,7 @@ test('a double exit records its loser slot in the consolation and the exit walks
   // ---- the MAIN draw, unchanged from the single-elimination scenario ---------------------------
   expect(matchUp('fl-2-1').matchUpStatus).toEqual(BYE);
   expect(matchUp('fl-3-1').matchUpStatus).toEqual(WALKOVER);
-  expect(matchUp('fl-3-1').winningSide).toEqual(2);
+  expect(matchUp('fl-3-1').winningSide).toBeUndefined();
 
   // ---- 1. the LOSER slot records the exit, and the BYE beside it stays a BYE -------------------
   // `CONSOLATION|1|1` holds drawPositions [3, 4]: dp3 is the BYE fed from the Main BYE, dp4 is the
@@ -445,7 +476,8 @@ test('a double exit records its loser slot in the consolation and the exit walks
   // ---- 3. and the walkover comes to rest where a live opponent can still arrive ----------------
   const onward = matchUp('fl-c-3-1');
   expect(onward.matchUpStatus).toEqual(WALKOVER);
-  expect(onward.winningSide).toEqual(2);
+  // pending, for the same reason as the Main draw above: nobody has arrived on the other side
+  expect(onward.winningSide).toBeUndefined();
   expect(codeFor(onward, 1)).toEqual({
     previousMatchUpStatus: DOUBLE_WALKOVER,
     matchUpStatus: WALKOVER,

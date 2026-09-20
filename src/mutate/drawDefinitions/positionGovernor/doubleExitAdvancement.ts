@@ -1363,8 +1363,28 @@ function carryExitOnward({
     matchUpId: noContextNextWinnerMatchUp.matchUpId,
     appliedPolicies: params.appliedPolicies,
     matchUp: noContextNextWinnerMatchUp,
-    // a BYE is never won, and the exit that passes through it does not win it either
-    winningSide: holdsBye ? undefined : 3 - arrivalSideNumber,
+    // NO winningSide, EVER, FROM HERE. The exit is recorded; who wins is not this write's business.
+    //
+    // This used to award `3 - arrivalSideNumber` — the side yet to arrive — and it was the ONLY
+    // code in the engine that set a winningSide on a matchUp holding no drawPositions. Everywhere
+    // else the side is READ OFF the arriving drawPosition, which is why `getExitWinningSide` is
+    // keyed on one.
+    //
+    // It was also redundant. Measured on SINGLE_ELIMINATION 8/7 with the award suppressed:
+    //
+    //   after the double walkover   MAIN|3|1  WALKOVER  ws=-   dps=null
+    //   after MAIN|2|2 is played    MAIN|3|1  WALKOVER  ws=2   dps=[5]
+    //
+    // The arrival mechanism reaches the same answer unaided. CA ruled on 2026-09-20, having
+    // recalled that the factory once did set a winningSide for a produced WALKOVER with the
+    // drawPosition unknown and that it caused side-determination bugs around fed rounds and
+    // drawPosition sorting: *"that is unnecessary if the winningSide will display the checkmark
+    // once a participant arrives... so, you don't need to keep it."*
+    //
+    // A pending exit with no winningSide is a STATE, not an incomplete one: it resolves when the
+    // opponent's match is played. Pre-computing the answer buys a checkmark a few clicks earlier
+    // and re-introduces the one pattern this area moved away from.
+    winningSide: undefined,
     matchUpStatus: holdsBye ? BYE : EXIT,
     removeScore: true,
     context: stack,
