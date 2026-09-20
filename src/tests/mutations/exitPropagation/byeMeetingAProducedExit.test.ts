@@ -137,4 +137,31 @@ test('a BYE that meets a produced exit keeps BOTH origins, and stays a BYE', () 
     matchUpStatus: WALKOVER,
     sideNumber: 2,
   });
+
+  // 3. AND THE EXIT IS CARRIED ONWARD, which is the part of the rule this scenario left undone.
+  //
+  // CA, 2026-09-20, naming the expected record outright: *"the produced walkover should be
+  // progressed by the BYE to R3P1 and R3P1 should be matchUpStatus: WALKOVER with winningSide: 2."*
+  //
+  // `match-2-1` holds exactly one drawPosition and it is the BYE, so there is no participant to
+  // advance; the cascade used to stop here and leave `match-3-1` as `TO_BE_PLAYED` with no codes.
+  const onward = getDrawMatchUps(drawId).find((m: any) => m.matchUpId === 'match-3-1');
+  expect(onward.matchUpStatus).toEqual(WALKOVER);
+  // the side the exit arrives on does not win it; the side yet to arrive does
+  expect(onward.winningSide).toEqual(2);
+
+  // and the ORIGIN survives the hop through the BYE — it is the double walkover that produced the
+  // exit, not the BYE it travelled through. Asserted per side, because the two are independent.
+  expect(codeFor(onward, 1)).toEqual({
+    previousMatchUpStatus: DOUBLE_WALKOVER,
+    matchUpStatus: WALKOVER,
+    sideNumber: 1,
+  });
+  // the side still to be filled by the winner of match-2-2 is a reserved slot, not an origin
+  expect(codeFor(onward, 2)).toEqual({ sideNumber: 2 });
+  expect(onward.sideExitProvenance?.[1]).toEqual({
+    previousMatchUpStatus: DOUBLE_WALKOVER,
+    matchUpStatus: WALKOVER,
+    sourceMatchUpId: 'match-1-2',
+  });
 });
