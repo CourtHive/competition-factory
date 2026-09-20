@@ -57,10 +57,20 @@ test('a converged double exit reaches the BYE, and the BYE stays a BYE', () => {
     expect(result.error, `MAIN|1|${roundPosition}`).toBeUndefined();
   }
 
-  // the two exits converge: nobody wins it
+  // the two exits converge: nobody wins it, and BOTH origins are recorded
   const convergence = at(drawId, 'CONSOLATION', 1, 1);
   expect(convergence.matchUpStatus).toEqual(DOUBLE_WALKOVER);
   expect(convergence.winningSide).toBeUndefined();
+  expect(codeFor(convergence, 1)).toEqual({
+    previousMatchUpStatus: DOUBLE_WALKOVER,
+    matchUpStatus: WALKOVER,
+    sideNumber: 1,
+  });
+  expect(codeFor(convergence, 2)).toEqual({
+    previousMatchUpStatus: DOUBLE_WALKOVER,
+    matchUpStatus: WALKOVER,
+    sideNumber: 2,
+  });
 
   // 1. the BYE is still a BYE — this is the assertion the rule is about
   const meetsTheBye = at(drawId, 'CONSOLATION', 2, 1);
@@ -74,11 +84,19 @@ test('a converged double exit reaches the BYE, and the BYE stays a BYE', () => {
     sideNumber: 2,
   });
 
+  // the side that has NOT yet received the exit is still a reserved slot, not an origin
+  expect(codeFor(meetsTheBye, 1)).toEqual({ sideNumber: 1 });
+
   // 3. and the exit is carried ONWARD through the BYE
   const onward = at(drawId, 'CONSOLATION', 3, 1);
   expect(onward.matchUpStatus).toEqual(WALKOVER);
   // the side carrying the exit does not win it; the side yet to arrive does
   expect(onward.winningSide).toEqual(2);
+
+  // DELIBERATELY NOT PINNED: `onward.matchUpStatusCodes`. It is `[]` today — the BYE-advance site
+  // writes `matchUpStatusCodes: []` unconditionally, which `knownFailures.ts` already names as
+  // residue of the same family. That is an OPEN gap, not certified behaviour, and pinning the
+  // current value would freeze the defect. Assert it when the origin is carried through.
 });
 
 test('a BYE that meets a produced exit keeps BOTH origins, and stays a BYE', () => {
