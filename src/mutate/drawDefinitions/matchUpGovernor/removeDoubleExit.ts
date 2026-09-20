@@ -66,8 +66,16 @@ export function removeDoubleExit(params) {
     targetLinks: { loserTargetLink },
   } = targetData;
 
-  // only handles winnerMatchUps in the same structure
-  if (winnerMatchUp && winnerMatchUp.matchUpStatus !== BYE) {
+  // A BYE WINNER TARGET IS VISITED, and that is new. It used to be skipped outright, which was
+  // sound only while the forward cascade never wrote to it. It does now: a converged double exit
+  // records its produced exit on the BYE matchUp's own side. Skipping the target on the way back
+  // left those codes standing, and `DO_UNDO_IDENTITY` reported the residue on 12 cells across four
+  // draw types — the matchUp correctly still `BYE`, its drawPositions untouched, and
+  // `matchUpStatusCodes` holding an exit the clear had just withdrawn.
+  //
+  // Visiting it does NOT change its status: `getUnwoundState` returns `BYE` for a BYE-held matchUp
+  // before it considers anything else, so the visit only withdraws what this cascade wrote.
+  if (winnerMatchUp) {
     const { stage, roundNumber, roundPosition, structureName } = winnerMatchUp;
     pushGlobalLog({
       winner: 'winner',
@@ -455,7 +463,20 @@ function getUnwoundState({
   drawDefinition,
   targetMatchUp,
 }): { matchUpStatus: string; winningSide?: number; provenance?: any } {
-  if (noContextTargetMatchUp.matchUpStatus === BYE) return { matchUpStatus: BYE };
+  // A BYE STAYS A BYE — the status is never re-derived — but the codes are. The cascade records a
+  // produced exit on a BYE matchUp's side, and an unwind that left the status alone AND the codes
+  // alone would keep an exit that no longer exists. Retaining by source identity is what keeps the
+  // BYE's OWN origin (`{ previousMatchUpStatus: BYE, matchUpStatus: BYE }`, written by the bye
+  // propagation, not by this cascade) while dropping the withdrawn one.
+  if (noContextTargetMatchUp.matchUpStatus === BYE) {
+    return {
+      matchUpStatus: BYE,
+      provenance: retainForeignProvenance(
+        getNativeSideExitProvenance({ matchUp: noContextTargetMatchUp }),
+        withdrawnSourceIds,
+      ),
+    };
+  }
   const retained = retainForeignProvenance(
     getNativeSideExitProvenance({ matchUp: noContextTargetMatchUp }),
     withdrawnSourceIds,
@@ -471,7 +492,15 @@ function getUnwoundState({
       provenance: retained,
     };
   }
-  if (targetDrawPositionIsBye({ drawDefinition, noContextTargetMatchUp, targetMatchUp })) return { matchUpStatus: BYE };
+  if (targetDrawPositionIsBye({ drawDefinition, noContextTargetMatchUp, targetMatchUp })) {
+    return {
+      matchUpStatus: BYE,
+      provenance: retainForeignProvenance(
+        getNativeSideExitProvenance({ matchUp: noContextTargetMatchUp }),
+        withdrawnSourceIds,
+      ),
+    };
+  }
 
   // ONLY a matchUp being reset FROM a double exit can have an origin left standing, and that
   // restriction is load-bearing rather than cautious.

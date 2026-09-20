@@ -4,6 +4,7 @@ import { assignMatchUpDrawPosition } from '@Mutate/matchUps/drawPositions/assign
 import { getExitWinningSide } from '@Mutate/drawDefinitions/matchUpGovernor/getExitWinningSide';
 import { modifyMatchUpScore } from '@Mutate/matchUps/score/modifyMatchUpScore';
 import { getPositionAssignments } from '@Query/drawDefinition/positionsGetter';
+import { getAllDrawMatchUps } from '@Query/matchUps/drawMatchUps';
 import { directWinner } from '@Mutate/matchUps/drawPositions/directWinner';
 import { decorateResult } from '@Functions/global/decorateResult';
 import { positionTargets } from '@Query/matchUp/positionTargets';
@@ -218,7 +219,15 @@ function handleLoserMatchUp({
   }
 
   if (loserMatchUpIsEmptyExit) {
-    return handleEmptyExitLoser({ loserTargetDrawPosition, sourceMatchUp, loserMatchUp, matchUpsMap, params, stack });
+    return handleEmptyExitLoser({
+      loserTargetDrawPosition,
+      drawDefinition,
+      sourceMatchUp,
+      loserMatchUp,
+      matchUpsMap,
+      params,
+      stack,
+    });
   }
 
   if (loserMatchUpIsDoubleExit) {
@@ -251,7 +260,15 @@ function handleLoserMatchUp({
   });
 }
 
-function handleEmptyExitLoser({ loserTargetDrawPosition, sourceMatchUp, loserMatchUp, matchUpsMap, params, stack }) {
+function handleEmptyExitLoser({
+  loserTargetDrawPosition,
+  drawDefinition,
+  sourceMatchUp,
+  loserMatchUp,
+  matchUpsMap,
+  params,
+  stack,
+}) {
   // WHICH double exit this convergence becomes, from BOTH origins rather than the arriving one
   // alone. `loserMatchUp` already carries the exit produced by the first arrival, which IS the other
   // side's origin.
@@ -326,10 +343,61 @@ function handleEmptyExitLoser({ loserTargetDrawPosition, sourceMatchUp, loserMat
     if (result.error) return result;
 
     mergeSideExitProvenance({ matchUp: noContextLoserMatchUp, provenance });
+
+    // THE CONVERGENCE IS NOW A DOUBLE EXIT, AND A DOUBLE EXIT PRODUCES AN EXIT DOWNSTREAM.
+    //
+    // `doubleExitAdvancement` does exactly that for the matchUp the director scored — its winner
+    // target gets a produced exit through `conditionallyAdvanceDrawPosition`. A matchUp that becomes
+    // a double exit HERE, as a consequence, got nothing: the cascade treated it as a leaf and
+    // stopped. So the second of two adjacent double exits converted the consolation matchUp and its
+    // own winner target was never told.
+    //
+    // Reported from TMX 2026-09-20, FIRST_MATCH_LOSER_CONSOLATION 8, `Main|1|1` and `Main|1|2` both
+    // DOUBLE_WALKOVER: `Consolation|1|1` collapses to DOUBLE_WALKOVER correctly, and
+    // `Consolation|2|1` — which holds a propagated BYE on one side and the slot fed from `1|1` on
+    // the other — stayed `BYE` with NO `matchUpStatusCodes` at all, so nothing reached
+    // `Consolation|3|1`. CA: *"we're just missing that produced WALKOVER in r2p1 that encounters
+    // the BYE."*
+    //
+    // The winner target is re-derived from FRESH in-context matchUps: the write above has just
+    // changed this matchUp's status, and `positionTargets` reads that status.
+    const refreshed = getAllDrawMatchUps({ inContext: true, drawDefinition, matchUpsMap })?.matchUps ?? [];
+    const convergedTargets = positionTargets({
+      matchUpId: loserMatchUp.matchUpId,
+      inContextDrawMatchUps: refreshed,
+      drawDefinition,
+    });
+    const convergedWinnerMatchUp = convergedTargets?.targetMatchUps?.winnerMatchUp;
+
+    if (convergedWinnerMatchUp) {
+      logAdvancement(stack, {
+        color: 'cyan',
+        decision: 'CONVERGED_advance_its_own_winner',
+        from: loserMatchUp.matchUpId,
+        to: convergedWinnerMatchUp.matchUpId,
+      });
+      const onward = conditionallyAdvanceDrawPosition({
+        ...params,
+        inContextDrawMatchUps: refreshed,
+        matchUpId: convergedWinnerMatchUp.matchUpId,
+        targetMatchUp: convergedWinnerMatchUp,
+        sourceMatchUp: inContextLoserMatchUp(refreshed, loserMatchUp.matchUpId) ?? loserMatchUp,
+        matchUpStatus: DOUBLE_EXIT,
+        drawDefinition,
+        matchUpsMap,
+      });
+      if (onward?.error) return onward;
+    }
+
     return result;
   }
 
   return { ...SUCCESS };
+}
+
+/** the converged matchUp as the cascade now sees it — its status changed a moment ago */
+function inContextLoserMatchUp(inContextDrawMatchUps: any[], matchUpId: string) {
+  return inContextDrawMatchUps.find((candidate) => candidate.matchUpId === matchUpId);
 }
 
 // 1. Assigns a WALKOVER or DEFAULTED status to the winnerMatchUp
@@ -458,7 +526,20 @@ function conditionallyAdvanceDrawPosition(params) {
   // handleEmptyExitLoser for the order-dependence measurement this removes.
   const DOUBLE_EXIT = collapseDoubleExitStatus([params.matchUpStatus, noContextTargetMatchUp.matchUpStatus]);
 
-  const matchUpStatus = existingExit ? DOUBLE_EXIT : EXIT;
+  // A BYE-HELD matchUp STAYS A BYE. The exit still lands — its side is recorded below and it
+  // advances onward — but the matchUp itself is a BYE because one of its drawPositions carries one,
+  // and that is a fact about the DRAW, not about this cascade. Overwriting it with the produced exit
+  // is how `Consolation|2|1` lost its BYE while gaining a WALKOVER nobody could play.
+  //
+  // Read from the positionAssignment, never from `matchUpStatus`: by the time the cascade reaches
+  // here the status may already have been overwritten, which is the same reason
+  // `removeDoubleExit.targetDrawPositionIsBye` reads the assignment.
+  const targetHoldsBye = !!getPositionAssignments({ structure })?.positionAssignments?.some(
+    (assignment: any) => assignment.bye && drawPositions.includes(assignment.drawPosition),
+  );
+
+  const producedStatus = existingExit ? DOUBLE_EXIT : EXIT;
+  const matchUpStatus = targetHoldsBye ? BYE : producedStatus;
 
   logAdvancement(stack, {
     color: 'brightyellow',
@@ -575,13 +656,32 @@ function inferSourceSideNumber({
 
   let sourceSideNumber;
 
-  if (sourceMatchUp?.structureId === inContextPairedPreviousMatchUp?.structureId) {
+  if (targetMatchUp.feedRound) {
+    // A FEED ROUND FIRST, because on one the side is a CONSTANT and the roundPosition comparison
+    // below is meaningless. `draw-positions.md` rule 4: *fed positions are `{ sideNumber: 1 }`*, and
+    // *"the test is structural, not numeric"* — a position that played its way here from the prior
+    // round of this structure is ADVANCED, one fed from elsewhere is not. So a source sharing the
+    // TARGET's structure advanced into it and takes side 2; anything else was fed and takes side 1.
+    //
+    // THIS BRANCH WAS UNREACHABLE for a convergence advancing within one structure. Both the source
+    // and the paired previous matchUp live in the consolation, so the `roundPosition` branch matched
+    // first and inferred the side from round ORDER. Measured 2026-09-20 on
+    // FIRST_MATCH_LOSER_CONSOLATION 8 with `Main|1|1` and `Main|1|2` both DOUBLE_WALKOVER:
+    // `Consolation|2|1` holds `[1, 4]`, dp1 the BYE fed from Main and dp4 advanced from
+    // `Consolation|1|1`; the roundPosition branch returned side 1, this one returns side 2.
+    //
+    // `feedRound`, NOT `hasFedDrawPosition`. They are two facts (`draw-positions.md` rule 4), and
+    // this is the SIDE-ORDERING question — the one `feedRound` still answers. `hasFedDrawPosition`
+    // answers "does this round RESERVE a slot", which is what #4932 moved `getTargetMatchUp` onto.
+    //
+    // Deliberately NOT derived by locating the advancing drawPosition in the array. WHICH of the two
+    // consolation positions advances depends on the ORDER the director entered the two double
+    // walkovers, and rule 5 forbids reading the array's shape at all: `[2, 5]` cannot say which of
+    // its members was fed.
+    sourceSideNumber = sourceMatchUp.structureId === targetMatchUp.structureId ? 2 : 1;
+  } else if (sourceMatchUp?.structureId === inContextPairedPreviousMatchUp?.structureId) {
     // if structureIds are equivalent then sideNumber is inferred from roundPositions
     sourceSideNumber = sourceMatchUp.roundPosition < pairedPreviousMatchUp?.roundPosition ? 1 : 2;
-  } else if (targetMatchUp.feedRound) {
-    // if different structureIds then structureId that is not equivalent to noContextTargetMatchUp.structureId is fed
-    // ... and fed positions are always sideNumber 1
-    sourceSideNumber = sourceMatchUp.structureId === targetMatchUp.structureId ? 2 : 1;
   } else if (walkoverWinningSide) {
     sourceSideNumber = 3 - walkoverWinningSide;
   }
@@ -760,12 +860,31 @@ function advanceByeAdvancedDrawPosition({
   if (nextWinnerMatchUpHasDrawPosition) {
     const nextDrawPositionToAdvance = nextWinnerMatchUpDrawPositions.find(Boolean);
 
-    // if the next targetMatchUp already has a drawPosition
-    const winningSide = getExitWinningSide({
+    // WHICH SIDE THE ADVANCING POSITION OCCUPIES — not which side wins.
+    const occupiedSide = getExitWinningSide({
       drawPosition: nextDrawPositionToAdvance,
       matchUpId: noContextNextWinnerMatchUp.matchUpId,
       inContextDrawMatchUps,
     });
+
+    // WHAT ADVANCED THROUGH THE BYE IS AN EXIT, NOT A WINNER.
+    //
+    // This function exists for "WO/WO advanced by BYE": the position it carries forward is a
+    // PRODUCED exit, and behind it is nobody. Awarding the match to the side that position occupies
+    // makes the exit itself the winner and reserves the slot against an opponent who can never
+    // arrive — the dead-reservation shape. The exit belongs to that side and the OTHER side wins,
+    // which is `progressExitStatus` RULE 2: *the side WITHOUT the exit wins, and it wins even while
+    // still empty, because it is the side that will receive the eventual opponent.*
+    //
+    // CA, 2026-09-20: *"dp4's provenance was the double walkover propagated by the bye and it should
+    // not be the winning side; the winningSide should be 2, the side yet to arrive."*
+    //
+    // A position holding a real PARTICIPANT genuinely advanced and keeps the old behaviour — that is
+    // the discriminator, and it is the presence of somebody rather than the shape of the array.
+    const advancingParticipantId = inContextDrawMatchUps
+      .find((candidate) => candidate.matchUpId === noContextNextWinnerMatchUp.matchUpId)
+      ?.sides?.find((side) => side.drawPosition === nextDrawPositionToAdvance)?.participantId;
+    const winningSide = advancingParticipantId || !occupiedSide ? occupiedSide : 3 - occupiedSide;
 
     const result = modifyMatchUpScore({
       appliedPolicies: params.appliedPolicies,
