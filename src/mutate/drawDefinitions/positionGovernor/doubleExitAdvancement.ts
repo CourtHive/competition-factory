@@ -1039,18 +1039,53 @@ function advanceByeAdvancedDrawPosition({
       ?.sides?.find((side) => side.drawPosition === nextDrawPositionToAdvance)?.participantId;
     const winningSide = advancingParticipantId || !occupiedSide ? occupiedSide : 3 - occupiedSide;
 
+    /**
+     * THE ORIGIN TRAVELS WITH THE EXIT, and until now it did not.
+     *
+     * This site wrote `matchUpStatusCodes: []` unconditionally and stamped no provenance, so the
+     * matchUp ended up an exit WITH a winningSide and no record of where it came from.
+     * `knownFailures.ts` names it — *"the hard-coded empty codes in
+     * `advanceByeAdvancedDrawPosition`"* — and it is what 13 `exitPropagationMatrix` cells were
+     * reporting as `EXIT_WITHOUT_LOSER`: that rule exempts a propagation-produced exit via
+     * `isPropagatedExit`, which reads the PRESENCE of provenance, so an unstamped one looks exactly
+     * like a genuine orphan — a walkover recorded against a drawPosition that lost its participant.
+     *
+     * THE EXITING SIDE IS THE SIDE THAT DID NOT WIN, derived as `3 - winningSide` rather than from
+     * `occupiedSide` directly, because the two cases above resolve oppositely and this expression
+     * is correct in both: where nobody advanced, the occupied position CARRIES the exit and the
+     * other side wins; where a real participant advanced, they win and the exit sits on the empty
+     * side they were awarded against.
+     *
+     * No winningSide means no attributable side, and an unattributed entry is worse than none —
+     * the unwind would trust it. Same refusal as `buildSideExitProvenance`'s own.
+     */
+    const exitingSideNumber = isExit(EXIT) && winningSide ? 3 - winningSide : undefined;
+    const provenance = {
+      ...getSideExitProvenance({ matchUp: noContextNextWinnerMatchUp }),
+      ...buildCarriedExitProvenance({
+        sourceMatchUpId: params.sourceMatchUp?.matchUpId,
+        previousMatchUpStatus: params.matchUpStatus,
+        matchUpStatus: params.matchUpStatus,
+        exitingSideNumber,
+      }),
+    };
+
     const result = modifyMatchUpScore({
+      matchUpStatusCodes: projectExitStatusCodes(provenance),
       appliedPolicies: params.appliedPolicies,
       matchUpId: noContextNextWinnerMatchUp.matchUpId,
       matchUp: noContextNextWinnerMatchUp,
       matchUpStatus: EXIT,
-      matchUpStatusCodes: [],
       removeScore: true,
       context: stack,
       drawDefinition,
       winningSide,
     });
     if (result.error) return decorateResult({ result, stack });
+
+    // stamped AFTER the state write, for the reason progressExitStatus states: a write that blanks
+    // the codes the provenance describes clears the provenance with them (#4816).
+    mergeSideExitProvenance({ matchUp: noContextNextWinnerMatchUp, provenance });
 
     const advanceResult = advanceDrawPosition({
       drawPositionToAdvance: nextDrawPositionToAdvance,
