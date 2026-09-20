@@ -1,4 +1,4 @@
-import { getDrawMatchUps } from '@Tests/testHarness/exitPropagation/transitions';
+import { getDrawMatchUps, clearOutcome } from '@Tests/testHarness/exitPropagation/transitions';
 import { setSubscriptions } from '@Global/state/globalState';
 import tournamentEngine from '@Engines/syncEngine';
 import mocksEngine from '@Assemblies/engines/mock';
@@ -6,7 +6,7 @@ import { expect, test } from 'vitest';
 
 // constants
 import { FIRST_MATCH_LOSER_CONSOLATION } from '@Constants/drawDefinitionConstants';
-import { DOUBLE_WALKOVER, BYE, WALKOVER } from '@Constants/matchUpStatusConstants';
+import { DOUBLE_WALKOVER, TO_BE_PLAYED, COMPLETED, WALKOVER, BYE } from '@Constants/matchUpStatusConstants';
 
 /**
  * A BYE MEETING A PRODUCED EXIT.
@@ -164,4 +164,118 @@ test('a BYE that meets a produced exit keeps BOTH origins, and stays a BYE', () 
     matchUpStatus: WALKOVER,
     sourceMatchUpId: 'match-1-2',
   });
+});
+
+/**
+ * THE ROUND TRIP, AND WHAT HAPPENS WHEN THE MATCH IS ACTUALLY PLAYED.
+ *
+ * CA, 2026-09-20, after confirming the forward record in TMX:
+ *
+ *   *"that looks perfect. let's ensure this is pinned with a named test and include undo of the
+ *   R1p2 DOUBLE_WALKOVER, then enter a winner and confirm the progression."*
+ *
+ * Carrying an exit onward is only half a correct cascade. The other half is that it can be taken
+ * back: a director who records a double walkover and then corrects it must be left with a draw that
+ * is indistinguishable from one where it never happened, and the slot the exit occupied must accept
+ * a real winner afterwards. The three stages are asserted separately because they fail separately —
+ * the forward write landing does not imply the unwind reaches `match-3-1`, and an unwind that
+ * blanks the status can still leave `winningSide` or provenance behind.
+ */
+test('a BYE carries a produced exit onward, gives it back on undo, then carries the winner', () => {
+  setSubscriptions({});
+  const drawId = 'bye-meets-exit-round-trip';
+  const { tournamentRecord } = mocksEngine.generateTournamentRecord({
+    drawProfiles: [{ participantsCount: 7, idPrefix: 'rt', seedsCount: 1, drawSize: 8, drawId }],
+    nonRandom: 1,
+  });
+  tournamentEngine.setState(tournamentRecord);
+
+  const matchUp = (matchUpId: string): any => getDrawMatchUps(drawId).find((m: any) => m.matchUpId === matchUpId);
+  const sideOf = (m: any, sideNumber: number) => (m?.sides ?? []).find((side: any) => side.sideNumber === sideNumber);
+
+  const { structureId } = tournamentEngine.getEvent({ drawId }).drawDefinition.structures[0];
+  const { validActions } = tournamentEngine.positionActions({ drawPosition: 1, structureId, drawId });
+  const assignBye: any = validActions.find((action: any) => action.type === BYE);
+  // CONTROL: the BYE action must be offered, or the scenario never sets itself up
+  expect(assignBye, 'no BYE action offered at drawPosition 1').toBeTruthy();
+  expect(tournamentEngine[assignBye.method](assignBye.payload).success).toEqual(true);
+
+  for (const matchUpId of ['rt-1-3', 'rt-1-4']) {
+    const played: any = tournamentEngine.setMatchUpStatus({ outcome: { winningSide: 1 }, matchUpId, drawId });
+    expect(played.success, matchUpId).toEqual(true);
+  }
+
+  // CONTROL: `rt-2-1` must already be the BYE-held matchUp, or the exit below meets nothing
+  expect(matchUp('rt-2-1').matchUpStatus).toEqual(BYE);
+  // and the participant who will win `rt-1-2` once it is re-scored
+  const contenderId = sideOf(matchUp('rt-1-2'), 1)?.participantId;
+  expect(contenderId).toBeTruthy();
+
+  // ---- 1. FORWARD: the exit is produced, meets the BYE, and travels past it -------------------
+  const applied: any = tournamentEngine.setMatchUpStatus({
+    outcome: { matchUpStatus: DOUBLE_WALKOVER },
+    matchUpId: 'rt-1-2',
+    drawId,
+  });
+  expect(applied.success).toEqual(true);
+
+  expect(matchUp('rt-2-1').matchUpStatus).toEqual(BYE);
+  expect(codeFor(matchUp('rt-2-1'), 2)).toEqual({
+    previousMatchUpStatus: DOUBLE_WALKOVER,
+    matchUpStatus: WALKOVER,
+    sideNumber: 2,
+  });
+  expect(matchUp('rt-3-1').matchUpStatus).toEqual(WALKOVER);
+  expect(matchUp('rt-3-1').winningSide).toEqual(2);
+  expect(codeFor(matchUp('rt-3-1'), 1)).toEqual({
+    previousMatchUpStatus: DOUBLE_WALKOVER,
+    matchUpStatus: WALKOVER,
+    sideNumber: 1,
+  });
+
+  // ---- 2. UNDO: clearing R1P2 takes the exit back out of BOTH matchUps ------------------------
+  const cleared: any = tournamentEngine.setMatchUpStatus({ outcome: clearOutcome, matchUpId: 'rt-1-2', drawId });
+  expect(cleared.error).toBeUndefined();
+  expect(cleared.success).toEqual(true);
+
+  expect(matchUp('rt-1-2').matchUpStatus).toEqual(TO_BE_PLAYED);
+
+  // the BYE keeps its own origin and loses only the exit's — the two are independent facts and the
+  // unwind must not take the wrong one
+  expect(matchUp('rt-2-1').matchUpStatus).toEqual(BYE);
+  expect(codeFor(matchUp('rt-2-1'), 1)).toEqual({
+    previousMatchUpStatus: BYE,
+    matchUpStatus: BYE,
+    sideNumber: 1,
+  });
+  expect(codeFor(matchUp('rt-2-1'), 2)).toEqual({ sideNumber: 2 });
+  expect(matchUp('rt-2-1').sideExitProvenance?.[2]).toBeUndefined();
+
+  // and the matchUp the exit travelled ON to is returned whole. Asserted field by field rather than
+  // through the status alone: a blanked status with a surviving `winningSide` or provenance is the
+  // residue shape this family of defects keeps producing.
+  expect(matchUp('rt-3-1').matchUpStatus).toEqual(TO_BE_PLAYED);
+  expect(matchUp('rt-3-1').winningSide).toBeUndefined();
+  expect(matchUp('rt-3-1').matchUpStatusCodes ?? []).toEqual([]);
+  expect(matchUp('rt-3-1').sideExitProvenance).toBeUndefined();
+
+  // ---- 3. RE-SCORE: a real winner takes the path the exit vacated ----------------------------
+  const { outcome }: any = mocksEngine.generateOutcomeFromScoreString({ scoreString: '6-1 6-2', winningSide: 1 });
+  const rescored: any = tournamentEngine.setMatchUpStatus({ outcome, matchUpId: 'rt-1-2', drawId });
+  expect(rescored.error).toBeUndefined();
+  expect(rescored.success).toEqual(true);
+  expect(matchUp('rt-1-2').matchUpStatus).toEqual(COMPLETED);
+  expect(matchUp('rt-1-2').winningSide).toEqual(1);
+
+  // the BYE is STILL a BYE — that does not change because somebody arrived beside it
+  expect(matchUp('rt-2-1').matchUpStatus).toEqual(BYE);
+  expect(sideOf(matchUp('rt-2-1'), 2)?.participantId).toEqual(contenderId);
+
+  // and the winner is advanced THROUGH it, which is the first half of CA's rule: *"an advancing
+  // participant encountering a BYE should always be advanced."* `rt-3-1` now holds them on the side
+  // the exit occupied a moment ago, and holds nothing else — no walkover, no winningSide, no codes.
+  expect(sideOf(matchUp('rt-3-1'), 1)?.participantId).toEqual(contenderId);
+  expect(matchUp('rt-3-1').matchUpStatus).toEqual(TO_BE_PLAYED);
+  expect(matchUp('rt-3-1').winningSide).toBeUndefined();
+  expect(matchUp('rt-3-1').matchUpStatusCodes ?? []).toEqual([]);
 });
