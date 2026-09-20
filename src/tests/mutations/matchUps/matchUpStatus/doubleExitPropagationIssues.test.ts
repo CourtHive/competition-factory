@@ -257,12 +257,31 @@ describe('Issue #3848: DOUBLE_WALKOVER propagation in FMLC consolation rounds', 
 
     matchUps = tournamentEngine.allTournamentMatchUps().matchUps;
 
-    // Both consolation R2 matches should be WALKOVER (fed participant wins)
+    /**
+     * BOTH CONSOLATION R2 MATCHES ARE BYEs, and the comment that stood here was wrong about why.
+     *
+     * It said *"(fed participant wins)"*. Measured 2026-09-20: `Consolation|2|1` holds drawPosition
+     * 1 and NOTHING else — dp1 is a draw BYE and the other side is empty. Zero participants. Nobody
+     * was fed, so nobody could win. CA confirmed the comment is wrong, not just the expectation.
+     *
+     * These previously expected `WALKOVER`, the produced exit overwriting the BYE. CA, 2026-09-20:
+     * *"a propagated exit encountering a BYE should be advanced. In both cases the BYE remains a
+     * BYE"* — *"the `matchUpStatus: BYE` does not change."*
+     *
+     * The exit still reaches these matchUps; it is recorded on the side it arrived on and carried
+     * onward, which is what `sideExitProvenance` is for. The BYE is a fact about the DRAW and the
+     * cascade does not get to overwrite it.
+     */
     const consolR2P1 = getTarget({ matchUps, roundNumber: 2, roundPosition: 1, stage: CONSOLATION });
     const consolR2P2 = getTarget({ matchUps, roundNumber: 2, roundPosition: 2, stage: CONSOLATION });
 
-    expect(consolR2P1?.matchUpStatus).toEqual(WALKOVER);
-    expect(consolR2P2?.matchUpStatus).toEqual(WALKOVER);
+    expect(consolR2P1?.matchUpStatus).toEqual(BYE);
+    expect(consolR2P2?.matchUpStatus).toEqual(BYE);
+    // CONTROL: BYE here must mean a DRAW bye rather than an empty matchUp — neither holds a
+    // participant, which is exactly why "fed participant wins" could never have been true.
+    for (const matchUp of [consolR2P1, consolR2P2]) {
+      expect((matchUp?.sides ?? []).filter((side: any) => side.participantId).length).toEqual(0);
+    }
 
     // R2P2 status codes should reference the consolation R1 DOUBLE_WALKOVER
     // (not the main draw match), showing DOUBLE_WALKOVER as previousMatchUpStatus

@@ -5,7 +5,7 @@ import mocksEngine from '@Assemblies/engines/mock';
 import { expect, test } from 'vitest';
 
 // constants
-import { DOUBLE_DEFAULT, DEFAULTED, TO_BE_PLAYED } from '@Constants/matchUpStatusConstants';
+import { DOUBLE_DEFAULT, TO_BE_PLAYED, DEFAULTED, BYE } from '@Constants/matchUpStatusConstants';
 import { FIRST_MATCH_LOSER_CONSOLATION } from '@Constants/drawDefinitionConstants';
 
 /**
@@ -108,8 +108,25 @@ test('re-scoring one feeder leaves the other feeder’s origin standing', () => 
   expect(control['Consolation|1|1'].matchUpStatus).toEqual(DOUBLE_DEFAULT);
   expect(control['Consolation|1|1'].winningSide).toBeNull();
   expect(Object.keys(control['Consolation|1|1'].sideExitProvenance ?? {})).toEqual(['1', '2']);
-  // and the exit must reach the NEXT round, which is what a dead reservation silently loses
-  expect(control['Consolation|2|1'].matchUpStatus).toEqual(DEFAULTED);
+  /**
+   * AND THE EXIT MUST REACH THE NEXT ROUND, which is what a dead reservation silently loses.
+   *
+   * This asserted `Consolation|2|1` was `DEFAULTED` — the produced exit having OVERWRITTEN the BYE
+   * that matchUp holds. CA ruled otherwise on 2026-09-20: *"a propagated exit encountering a BYE
+   * should be advanced. In both cases the BYE remains a BYE"* — *"the `matchUpStatus: BYE` does not
+   * change."* Measured: `Consolation|2|1` holds drawPosition 1 and nothing else, and drawPosition 1
+   * is a draw BYE.
+   *
+   * THE TEST'S CLAIM IS UNCHANGED, only where it reads the answer. The exit still reaches this
+   * matchUp; it is recorded on the side it arrived on rather than in the status. Asserting the
+   * provenance is the stronger form anyway — a status says an exit is here, the per-side record
+   * says WHICH side and WHAT it came from, which is the fact a dead reservation loses.
+   */
+  expect(control['Consolation|2|1'].matchUpStatus).toEqual(BYE);
+  expect(control['Consolation|2|1'].sideExitProvenance?.['2']).toEqual({
+    previousMatchUpStatus: DOUBLE_DEFAULT,
+    matchUpStatus: DEFAULTED,
+  });
 
   // THE PROPERTY: the corrected route is indistinguishable from the control.
   expect(corrected).toEqual(control);
@@ -117,6 +134,12 @@ test('re-scoring one feeder leaves the other feeder’s origin standing', () => 
   // Named separately so a failure says WHICH fact was lost rather than printing the whole draw.
   expect(corrected['Consolation|1|1'].matchUpStatus).toEqual(DOUBLE_DEFAULT);
   expect(corrected['Consolation|1|1'].winningSide).toBeNull();
-  expect(corrected['Consolation|2|1'].matchUpStatus).toEqual(DEFAULTED);
+  expect(corrected['Consolation|2|1'].matchUpStatus).toEqual(BYE);
+  expect(corrected['Consolation|2|1'].sideExitProvenance?.['2']).toEqual({
+    previousMatchUpStatus: DOUBLE_DEFAULT,
+    matchUpStatus: DEFAULTED,
+  });
+  // the dead reservation this test exists for: the side would read as undecided, with no origin
   expect(corrected['Consolation|2|1'].matchUpStatus).not.toEqual(TO_BE_PLAYED);
+  expect(corrected['Consolation|2|1'].sideExitProvenance).not.toBeNull();
 });
