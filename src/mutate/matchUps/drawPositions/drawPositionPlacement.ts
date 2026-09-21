@@ -460,9 +460,7 @@ function applyPositionToMatchUp({
       matchUpStatusCodes[exitSideNumber - 1] = carriedCode;
     }
     matchUp.matchUpStatusCodes = matchUpStatusCodes;
-    // Nothing carried means the exit this matchUp recorded is gone — unless the status says
-    // otherwise, in which case the provenance is still describing a live exit.
-    if (!matchUpStatusCodes.length) clearResolvedSideExitProvenance(matchUp);
+    clearResolvedSideExitProvenance(matchUp);
   } else if (matchUp?.matchUpStatusCodes) {
     updateMatchUpStatusCodes({
       inContextDrawMatchUps: refreshedMatchUps,

@@ -268,11 +268,7 @@ function applyScoreAndStatus({
   if (matchUpStatus) matchUp.matchUpStatus = matchUpStatus;
   if (matchUpFormat) matchUp.matchUpFormat = matchUpFormat;
   if (matchUpStatusCodes) matchUp.matchUpStatusCodes = matchUpStatusCodes;
-  // Blanking the codes unwinds the exit they described — but ONLY when the write also resolved the
-  // status. `attemptToModifyScore` coerces an absent `matchUpStatusCodes` to `[]`, so an empty array
-  // here means either "blank them" or "the caller supplied none", and the second must not wipe the
-  // provenance of an exit that is still standing.
-  if (matchUpStatusCodes && !matchUpStatusCodes.length) clearResolvedSideExitProvenance(matchUp);
+  clearResolvedSideExitProvenance(matchUp);
   if (winningSide) matchUp.winningSide = winningSide;
   if (removeWinningSide) matchUp.winningSide = undefined;
 }
