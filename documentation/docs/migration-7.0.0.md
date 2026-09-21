@@ -30,6 +30,7 @@ feature tour and the full list of 7.0.0 additions, see [What's New in 7.0.0](./w
 | The SEEDING policy is typed, and two `stage` fields become `StageTypeUnion`                       | TypeScript callers with a wrong-typed seeding-policy field                | See §11           |
 | `modifyParticipantOtherName` clears on `''` and no longer overwrites on `undefined`               | Anyone calling it to set, clear, or unset `participantOtherName`          | See §13           |
 | A produced exit no longer overwrites `matchUpStatus: BYE` — the BYE stays a BYE                   | Anyone reading `matchUpStatus` to detect an exit at a BYE-held matchUp    | See §19           |
+| A produced exit carries NO `winningSide` until a participant actually arrives                     | Any UI or caller reading `winningSide` to render a produced walkover      | See §20           |
 
 ## 1. `participantsRequiredMatchUpStatuses` — a spelling fix
 
@@ -1564,3 +1565,53 @@ It was committed as `fix(propagation):` without a `BREAKING CHANGE:` footer, whi
 and `BREAKING CHANGE:` bodies only. **The commit typing was wrong, not the gate.** Recorded here so
 the omission is not repeated: a behavioural change visible to a consumer needs the `!`, whatever the
 type says.
+
+## 20. A produced exit has no `winningSide` until someone arrives
+
+_Shipped in `426384fe8` and `d86e2f469` on the exit-propagation branch._
+
+### What changed
+
+When a double exit propagated a `WALKOVER` (or `DEFAULTED`) into the next round, the produced exit
+was given a `winningSide` **computed from drawPosition ordering** — including on matchUps that held
+no participants at all, and on matchUps holding a BYE. That value is no longer written.
+
+```js
+// BEFORE (<= 6.38.0) — a winner was pre-computed for a matchUp nobody had reached
+producedWalkover.drawPositions; // [2]   — one side is still empty
+producedWalkover.winningSide; // 2       — awarded against nobody
+
+// AFTER (7.0.0) — the exit is PENDING until a participant arrives
+producedWalkover.matchUpStatus; // 'WALKOVER'
+producedWalkover.winningSide; // undefined
+```
+
+**A pending exit with no `winningSide` is a state, not an incomplete one.** It resolves on its own
+when the opposing participant arrives from the other feeder, and that side is then awarded normally.
+
+### Who is affected
+
+Any UI or caller reading `winningSide` to decide whether a produced walkover is decided. A produced
+exit awaiting its opponent now returns `undefined`, so a naive `if (matchUp.winningSide)` renders
+nothing where it previously rendered a winner.
+
+Use the status and the per-side record instead — both are true at every stage of the cascade:
+
+```js
+// the exit is real and recorded even while the winner is undetermined
+const exitPending = isAnyExit(matchUp.matchUpStatus) && !matchUp.winningSide;
+const whichSideExited = matchUp.sideExitProvenance; // keyed by sideNumber
+```
+
+### Why
+
+A `winningSide` on a matchUp holding no drawPositions asserts a winner over an opponent who does not
+exist, and it outlived its justification: once a convergence formed, the award stayed behind
+describing a state that was no longer true. The checkmark a client wants to show is correctly driven
+by the arrival of a participant, not by drawPosition ordering at the moment the exit was produced.
+
+### Typing note
+
+Like §19, these were committed as `fix(propagation):` with no `BREAKING CHANGE:` footer, so
+`verify:migration-coverage` never required an entry. Both were found by auditing the workstream's
+`fix`-typed commits for observable field changes rather than by the gate.
