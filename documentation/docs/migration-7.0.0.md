@@ -1720,3 +1720,56 @@ The addition is backwards compatible — no existing `issueType` changed meaning
 exhaustively on `issueType`** should add a branch for the new value, or keep a default case. Two
 situations are deliberately NOT reported: a BYE facing another BYE (a drawPosition advances, but no
 participant does) and a BYE facing a still-empty slot (nobody to advance yet).
+
+## 23. A participant arriving at a pending exit is awarded it, and `PROPAGATED_EXIT_LOST` reports when they were not
+
+_This is the other half of [§20](#20-a-produced-exit-has-no-winningside-until-someone-arrives), and
+it corrects a regression §20 itself introduced._
+
+### What changed
+
+§20 stopped pre-computing a `winningSide` on a produced exit, which was right. But
+`drawPositionPlacement` recognised "this matchUp already holds a propagated exit" by testing
+`isExit(matchUpStatus) && winningSide` — a gate written in 2025-12 against the very field §20
+removed. From 2026-09-20 that test answered `false` for every PENDING propagated exit, and the
+arrival path it guarded was skipped.
+
+```js
+// BEFORE (7.0.0-rc, 2026-09-20 to 2026-09-21) — the arriving participant erased the exit
+target.matchUpStatus; // 'TO_BE_PLAYED'  — the exit is gone
+target.winningSide; //   undefined       — nobody was awarded
+target.sideExitProvenance; // { 1: { matchUpStatus: 'WALKOVER', ... } }  — the record survived
+
+// AFTER — the exit resolves onto whoever arrived, and they advance
+target.matchUpStatus; // 'WALKOVER'
+target.winningSide; //   2
+```
+
+The consequence was a participant stranded in a matchUp that could never be played: their opponent
+slot was fed by a double exit, which advances nobody. Measured on the exit-propagation matrix
+(COMPASS 8/7), an ordinary play-forward ended with that matchUp as the ONLY unplayed one in the draw.
+
+The gate now asks `sideExitProvenance` — which is what §20 told callers to use, and the engine was
+not itself doing. The AWARD remains gated on a participant actually arriving: an empty drawPosition
+advancing still changes nothing, because _"awarding against an empty slot asserts a winner over an
+opponent who does not exist"_.
+
+### `getDrawInconsistencies` reports a new issueType
+
+`PROPAGATED_EXIT_LOST` — the matchUp carries native exit provenance on a side holding **no**
+participant, while its `matchUpStatus` records no exit and no winner. The record and the status
+contradict each other.
+
+**A draw that previously returned `valid: true` can now return `valid: false`.** Every other exit
+check in the integrity scan starts from a `winningSide` or an exit `matchUpStatus`, and a matchUp
+whose exit has been ERASED has neither — so this entire class was structurally invisible, in the
+same way `BYE_ADVANCEMENT_MISSING` ([§22](#22-a-bye-advancement-survives-resetdrawdefinition-and-bye_advancement_missing-reports-when-it-has-not))
+was. Callers that treat `valid` as a gate should expect to see it on historical records that carry
+the erased state.
+
+A provenance record on a side that HOLDS a participant is NOT reported: that describes how the
+participant arrived, not an exit delivered into the matchUp.
+
+### Who is affected
+
+Any caller rendering a produced exit's target, and any caller gating on `getDrawInconsistencies`.

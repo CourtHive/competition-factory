@@ -31,7 +31,10 @@ import { getPairedPreviousMatchUpIsDoubleExit } from '@Query/matchUps/getPairedP
 import { getUpdatedDrawPositions } from '@Mutate/drawDefinitions/matchUpGovernor/getUpdatedDrawPositions';
 import { updateMatchUpStatusCodes } from '@Mutate/drawDefinitions/matchUpGovernor/matchUpStatusCodes';
 import { getStructureDrawPositionProfiles } from '@Query/structure/getStructureDrawPositionProfiles';
-import { clearResolvedSideExitProvenance } from '@Mutate/matchUps/matchUpStatus/sideExitProvenance';
+import {
+  clearResolvedSideExitProvenance,
+  isPropagatedExit as sharedIsPropagatedExit,
+} from '@Mutate/matchUps/matchUpStatus/sideExitProvenance';
 import { getExitWinningSide } from '@Mutate/drawDefinitions/matchUpGovernor/getExitWinningSide';
 import { removeLineUpSubstitutions } from '@Mutate/drawDefinitions/removeLineUpSubstitutions';
 import { getMappedStructureMatchUps, getMatchUpsMap } from '@Query/matchUps/getMatchUpsMap';
@@ -207,8 +210,32 @@ export function assignMatchUpDrawPosition({
 
   matchUpStatus = resolveMatchUpStatus({ isByeMatchUp, matchUpStatus, isDoubleExitExit, matchUp });
 
-  //are we going to a match already marked as a WO becuase it was propagated from the main draw?
-  const isPropagatedExit = !!(isExit(matchUp?.matchUpStatus) && matchUp?.winningSide);
+  /**
+   * Does this matchUp already CARRY a propagated exit, and is a PARTICIPANT arriving into it?
+   *
+   * These are two questions, and one flag used to answer both.
+   *
+   * `holdsPropagatedExit` is the matchUp's own state: it records an exit the cascade delivered.
+   * The test was `isExit(status) && winningSide`, and CA's Migration §20 ruling of 2026-09-20 —
+   * *a pending exit has no `winningSide` until a participant arrives* — removed the very field it
+   * keyed on, so from that day a PENDING propagated exit answered false and every path below was
+   * silently skipped for it. The provenance is the durable record; ask that instead.
+   *
+   * `isPropagatedExit` is the narrower question the award and advancement paths actually need: is
+   * the drawPosition arriving here occupied by a participant? An EMPTY position arriving resolves
+   * nothing — *"awarding against an empty slot asserts a winner over an opponent who does not
+   * exist"*, CA 2026-09-20 — so it must not award a winningSide, must not rewrite the carried
+   * codes, and must not advance anyone onward. It must still leave the exit's STATUS alone, which
+   * is what `holdsPropagatedExit` governs below.
+   */
+  const holdsPropagatedExit = !!(
+    isExit(matchUp?.matchUpStatus) &&
+    (matchUp?.winningSide || sharedIsPropagatedExit({ matchUp }))
+  );
+  const arrivingParticipantId = positionAssignments?.find(
+    (assignment) => assignment.drawPosition === drawPosition,
+  )?.participantId;
+  const isPropagatedExit = holdsPropagatedExit && !!arrivingParticipantId;
 
   // A drawPosition slot can already be present in this matchUp's drawPositions
   // (e.g. pre-seeded by a consolation BYE feed) while the underlying
@@ -245,6 +272,7 @@ export function assignMatchUpDrawPosition({
   if (matchUp && positionAdded) {
     applyPositionToMatchUp({
       updatedDrawPositions,
+      holdsPropagatedExit,
       sourceMatchUpStatus,
       isPropagatedExit,
       isDoubleExitExit,
@@ -380,6 +408,7 @@ function exitCodeString(code: any): string | undefined {
 function applyPositionToMatchUp({
   updatedDrawPositions,
   sourceMatchUpStatus,
+  holdsPropagatedExit,
   isPropagatedExit,
   isDoubleExitExit,
   tournamentRecord,
@@ -448,8 +477,10 @@ function applyPositionToMatchUp({
   Object.assign(matchUp, {
     drawPositions: updatedDrawPositions,
     winningSide: exitWinningSide,
-    //we keep the current status if it is already marked as WO
-    matchUpStatus: isPropagatedExit ? matchUp?.matchUpStatus : matchUpStatus,
+    // We keep the current status if it is already marked as WO. Deliberately the BROADER flag: an
+    // empty drawPosition arriving delivers no participant and so gives no reason to change
+    // anything, but it was clearing the exit outright (SIGNAL 1, census 2026-09-20).
+    matchUpStatus: holdsPropagatedExit ? matchUp?.matchUpStatus : matchUpStatus,
   });
 
   modifyMatchUpNotice({
