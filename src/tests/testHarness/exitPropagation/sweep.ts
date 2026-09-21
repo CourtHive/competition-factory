@@ -208,6 +208,8 @@ export function generateSchedule(config: ScenarioConfig, drawId: string, maxStep
 export type Finding = PropertyFailure & {
   config: ScenarioConfig;
   steps: Step[];
+  /** the relational probe applied AFTER `steps`; absent for non-relational findings */
+  probe?: Step;
   fingerprint: string;
 };
 
@@ -299,7 +301,33 @@ export function replay(config: ScenarioConfig, steps: Step[], drawId: string): P
       drawId,
     };
     const relational = [...checkMonotonicity(params), ...checkIdempotence(params), ...checkDoUndoIdentity(params)];
-    if (relational.length) return relational[0];
+    if (relational.length) {
+      /**
+       * THE PROBE IS PART OF THE REPRODUCTION, so it is recorded with the failure.
+       *
+       * The relational properties are not triggered by the schedule — they are triggered by THIS
+       * probe, applied after it. A finding that carries only `steps` therefore does not reproduce:
+       * replaying the steps alone leaves the draw in the SETUP state and reports nothing.
+       *
+       * Measured 2026-09-21 on COMPASS 8/7 `nonRandom: 20220267`, a `MONOTONIC_DECISION` whose
+       * recorded reproduction was a single step. Driving that step alone gives `UN-DECIDED: 0`; the
+       * violation needs the probe — a DOUBLE_WALKOVER on `East|1|3` — which appeared nowhere in the
+       * record. A whole signal was written up against the wrong matchUp because of it.
+       *
+       * Same class as the shrinker gap CA found the same day: a stored reproduction that does not
+       * reproduce. `steps` are the setup and `probe` completes it; a reader applies steps, then
+       * probe.
+       */
+      return {
+        ...relational[0],
+        probe: {
+          structureName: String(candidate.structureName),
+          roundNumber: candidate.roundNumber,
+          roundPosition: candidate.roundPosition,
+          outcome,
+        },
+      };
+    }
   }
   return null;
 }
