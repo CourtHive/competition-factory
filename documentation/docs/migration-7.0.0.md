@@ -1774,7 +1774,7 @@ participant arrived, not an exit delivered into the matchUp.
 
 Any caller rendering a produced exit's target, and any caller gating on `getDrawInconsistencies`.
 
-## 24. `matchUpStatusCodes` is typed, and its provenance tenant is deprecated
+## 24. [#4948](https://github.com/CourtHive/competition-factory/pull/4948) `matchUpStatusCodes` is typed, and its provenance tenant is deprecated
 
 _Step one of finishing the `sideExitProvenance` migration. **No runtime behaviour changes here** —
 this types a published field that was `any[]` and documents what is actually in it._
