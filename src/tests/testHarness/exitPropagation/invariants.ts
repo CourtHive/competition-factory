@@ -1,5 +1,27 @@
-import { DOUBLE_DEFAULT, DOUBLE_WALKOVER, TO_BE_PLAYED, COMPLETED, BYE } from '@Constants/matchUpStatusConstants';
-import { isAnyExit } from '@Validators/isExit';
+import {
+  DOUBLE_WALKOVER,
+  DOUBLE_DEFAULT,
+  TO_BE_PLAYED,
+  COMPLETED,
+  DEFAULTED,
+  WALKOVER,
+  RETIRED,
+  BYE,
+} from '@Constants/matchUpStatusConstants';
+
+/**
+ * Defined HERE rather than imported from `@Validators/isExit`, so that ONE harness file runs
+ * against any engine version the census needs to compare.
+ *
+ * `isAnyExit` is a 7.x addition. Overlaying this harness on v6.38.0 to take a baseline threw
+ * `isAnyExit is not a function` on EVERY scenario — 249,900 `GENERATION_THROW` records and not one
+ * real finding, because the sweep records a generation throw rather than failing on it. The
+ * predicate itself is version-independent: `isExit` is byte-identical at v6.38.0 and HEAD, and the
+ * two double-exit statuses have been in the vocabulary far longer, so stating it over constants
+ * costs nothing and removes the only version-specific import in the harness.
+ */
+const isAnyExit = (matchUpStatus: any): boolean =>
+  [DEFAULTED, WALKOVER, RETIRED, DOUBLE_WALKOVER, DOUBLE_DEFAULT].includes(matchUpStatus);
 
 /**
  * Structural invariants over a draw, asserted after every mutation.
