@@ -10,6 +10,8 @@ import { decorateResult } from '@Functions/global/decorateResult';
 import { positionTargets } from '@Query/matchUp/positionTargets';
 import { pushGlobalLog } from '@Functions/global/globalLog';
 import { isAnyExit, isDoubleExit, isExit } from '@Validators/isExit';
+import { getAllStructureMatchUps } from '@Query/matchUps/getAllStructureMatchUps';
+import { isFedLoserEligible } from '@Query/matchUp/isFedLoserEligible';
 import { findStructure } from '@Acquire/findStructure';
 import { overlap } from '@Tools/arrays';
 import {
@@ -24,7 +26,7 @@ import {
 
 // constants
 import { DRAW_POSITION_ASSIGNED, MISSING_MATCHUP, MISSING_STRUCTURE } from '@Constants/errorConditionConstants';
-import { CONTAINER } from '@Constants/drawDefinitionConstants';
+import { CONTAINER, FIRST_MATCHUP } from '@Constants/drawDefinitionConstants';
 import { BYE } from '@Constants/matchUpStatusConstants';
 import { SUCCESS } from '@Constants/resultConstants';
 
@@ -131,7 +133,70 @@ export function doubleExitAdvancement(params) {
     if (result?.error) return decorateResult({ result, stack });
   }
 
-  if (loserMatchUp && loserMatchUp.matchUpStatus !== BYE) {
+  /**
+   * A FIRST_MATCHUP loser link carries a loser only if it WAS their first match.
+   *
+   * `isFedLoserEligible` states that rule — zero prior SCORED wins — and the engine applies it on
+   * the ordinary loser path (`directLoser`) and on the swap path (`reconcileFedLoserEligibility`).
+   * The double-exit path applied it NOWHERE, on either branch below, so a produced exit travelled a
+   * first-match link for participants who had already won a match.
+   *
+   * Measured on FIRST_MATCH_LOSER_CONSOLATION 16/16 `nonRandom: 20324524` (2026-09-21): both of
+   * `Main|2|1`'s drawPositions carry **one prior win**, so neither is a first-match loser and
+   * nothing about that matchUp belongs in the consolation. Its DOUBLE_WALKOVER was carried through
+   * the consolation BYE into `Consolation|3|1` anyway, taking side 1 — the very side the winner of
+   * `Consolation|1|1` then advanced into. A participant and the exit that should not be there ended
+   * up on the same side, and she was awarded a win that never advanced.
+   *
+   * `getDrawInconsistencies` reports that as `WINNER_NOT_ADVANCED` using THIS SAME predicate, which
+   * is how the engine came to contradict its own integrity check: the check knew the rule and the
+   * propagation did not.
+   *
+   * **This does not narrow CA's ruling of 2026-09-20** — *"the missing WALKOVER [must be] advanced
+   * past the BYE in consolation R2P1"* — which was driven on a MAIN ROUND 1 double walkover. A
+   * round-1 loser has zero prior wins, is eligible, and still carries onward exactly as certified.
+   * What changes is only the case the rule was never true of.
+   *
+   * Prior rounds ONLY, as `reconcileFedLoserEligibility` counts them: a win in the matchUp being
+   * exited is not a PRIOR win.
+   */
+  let loserFeedEligible = true;
+  const loserTargetLink = targetLinks?.loserTargetLink;
+  if (loserMatchUp && loserTargetLink?.linkCondition === FIRST_MATCHUP) {
+    const { structure: sourceStructure } = findStructure({
+      structureId: sourceMatchUp?.structureId,
+      drawDefinition,
+    });
+    const { matchUps: structureMatchUps } = getAllStructureMatchUps({
+      afterRecoveryTimes: false,
+      structure: sourceStructure,
+      inContext: true,
+      drawDefinition,
+      event,
+    });
+    const priorRounds = (structureMatchUps ?? []).filter(
+      (matchUp: any) => (matchUp.roundNumber ?? 0) < (sourceMatchUp?.roundNumber ?? 0),
+    );
+    const anyEligible = (sourceMatchUp?.drawPositions ?? [])
+      .filter(Boolean)
+      .some((drawPosition: any) =>
+        isFedLoserEligible({ sourceMatchUps: priorRounds, loserDrawPosition: drawPosition, loserTargetLink }),
+      );
+
+    if (!anyEligible) {
+      logAdvancement(stack, {
+        color: 'yellow',
+        decision: 'FIRST_MATCHUP_ineligible__no_loser_propagation',
+        drawPositions: JSON.stringify(sourceMatchUp?.drawPositions),
+        sourceRound: sourceMatchUp?.roundNumber,
+      });
+      // The LOSER side only. The winner target below still advances — a double exit's winner
+      // progression has nothing to do with who may be fed into a consolation.
+      loserFeedEligible = false;
+    }
+  }
+
+  if (loserFeedEligible && loserMatchUp && loserMatchUp.matchUpStatus !== BYE) {
     const result = handleLoserMatchUp({
       loserMatchUpIsEmptyExit,
       loserMatchUpIsDoubleExit,
@@ -148,7 +213,12 @@ export function doubleExitAdvancement(params) {
       stack,
     });
     if (result?.error) return decorateResult({ result, stack });
-  } else if (loserMatchUp && !loserTargetStillOpen && isExit(producedExitStatus(params.matchUpStatus))) {
+  } else if (
+    loserFeedEligible &&
+    loserMatchUp &&
+    !loserTargetStillOpen &&
+    isExit(producedExitStatus(params.matchUpStatus))
+  ) {
     /**
      * A LOSER TARGET THAT ALREADY HOLDS A BYE STILL RECEIVES THE EXIT — it just does not become one.
      *
