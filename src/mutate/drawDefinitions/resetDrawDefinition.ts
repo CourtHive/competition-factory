@@ -13,7 +13,6 @@ import { toBePlayed } from '@Fixtures/scoring/outcomes/toBePlayed';
 import { BYE } from '@Constants/matchUpStatusConstants';
 import { SUCCESS } from '@Constants/resultConstants';
 import { TimeItem } from '@Types/tournamentTypes';
-import { HydratedSide } from '@Types/hydrated';
 import {
   ASSIGN_COURT,
   ASSIGN_VENUE,
@@ -147,6 +146,52 @@ function resetLuckyDrawAssignments({ structure, positionAssignments, isMainOrQua
   }
 }
 
+/**
+ * Which drawPositions in each downstream matchUp were delivered by a match that was PLAYED.
+ *
+ * A drawPosition reaches a round beyond the first in exactly three ways: it won a match, a BYE
+ * advanced it, or a feed link reserved the slot for it. Only the first is a result, and reset undoes
+ * results — so this returns the first kind alone, keyed by the matchUp it was delivered into, and
+ * everything absent from it survives the reset untouched.
+ *
+ * **BYE-ness is read from `positionAssignment`, never from `matchUpStatus`.** The assignment is a
+ * fact about the DRAW and is precisely what a reset keeps; the status is not, and a cascade may
+ * already have overwritten it (CA, 2026-09-20 — *"in both cases the BYE remains a BYE"*). A feeder
+ * holding a bye on either of its own positions therefore delivered an advancement nobody played for,
+ * whatever its status now says.
+ *
+ * Fed slots need no special case and get none: a reserved position appears in no feeder's
+ * `drawPositions`, so it is never collected here and is never removed. That is why this replaces the
+ * `participantFed` test it grew out of rather than extending it — that test asked whether a side was
+ * the reserved slot of a feed round, which is true of *one* side of *one* round and false of every
+ * BYE advancement in every elimination draw, so it removed all of them. See
+ * `src/tests/mutations/drawDefinitions/resetPreservesByeAdvancements.test.ts`.
+ */
+function getPlayedPositionsByTargetMatchUp(structure, inContextMatchUps): Map<string, Set<number>> {
+  const playedPositions = new Map<string, Set<number>>();
+
+  const byeDrawPositions = new Set(
+    (structure.positionAssignments ?? []).filter(({ bye }) => bye).map(({ drawPosition }) => drawPosition),
+  );
+
+  for (const matchUp of inContextMatchUps) {
+    const targetMatchUpId = matchUp.winnerMatchUpId;
+    if (!targetMatchUpId) continue;
+
+    const drawPositions = (matchUp.drawPositions ?? []).filter(
+      (drawPosition): drawPosition is number => typeof drawPosition === 'number',
+    );
+    // a feeder holding a bye advanced somebody without a match — nothing it delivered is a result
+    if (drawPositions.some((drawPosition) => byeDrawPositions.has(drawPosition))) continue;
+
+    const collected = playedPositions.get(targetMatchUpId) ?? new Set<number>();
+    for (const drawPosition of drawPositions) collected.add(drawPosition);
+    playedPositions.set(targetMatchUpId, collected);
+  }
+
+  return playedPositions;
+}
+
 function resetStructureMatchUps({
   removeScheduling,
   tournamentRecord,
@@ -165,16 +210,17 @@ function resetStructureMatchUps({
     structure,
   });
 
+  const playedPositions = getPlayedPositionsByTargetMatchUp(structure, inContextMatchUps);
+
   for (const inContextMatchUp of inContextMatchUps) {
     const { matchUpId, roundNumber } = inContextMatchUp;
-    const sides: HydratedSide[] = inContextMatchUp.sides ?? [];
     const matchUp = getRawMatchUp(matchUpId);
     if (!matchUp) continue;
 
     delete matchUp.extensions;
     delete matchUp.notes;
 
-    resetMatchUpScore({ matchUp, isLuckyDraw, removeAssignments, roundNumber, sides, isRoundRobin });
+    resetMatchUpScore({ matchUp, isLuckyDraw, removeAssignments, roundNumber, isRoundRobin, playedPositions });
     resetMatchUpScheduling({ matchUp, removeScheduling });
 
     modifyMatchUpNotice({
@@ -187,35 +233,39 @@ function resetStructureMatchUps({
   }
 }
 
-function resetMatchUpScore({ matchUp, isLuckyDraw, removeAssignments, roundNumber, sides, isRoundRobin }) {
+function resetMatchUpScore({ matchUp, isLuckyDraw, removeAssignments, roundNumber, isRoundRobin, playedPositions }) {
   if (isLuckyDraw) {
     if (!removeAssignments && matchUp.matchUpStatus === BYE) {
       // BYE matchUp stays as-is when preserving assignments
     } else {
       Object.assign(matchUp, toBePlayed);
     }
-    if (roundNumber && roundNumber > 1) {
-      matchUp.drawPositions = [];
-    }
-  } else {
-    if (matchUp.matchUpStatus !== BYE) Object.assign(matchUp, toBePlayed);
-    if (roundNumber && roundNumber > 1 && matchUp.drawPositions?.length && !isRoundRobin) {
-      const fedDrawPositions = sides
-        ?.map(({ drawPosition, participantFed }) => !participantFed && drawPosition)
-        .filter(Boolean);
-      // Removal, not substitution: preserves ascending order. See `getOrderedDrawPositions`.
-      // Settled through `normalizeDrawPositions` for the same reason as the other removal writers:
-      // where every position in the matchUp is removed there is no survivor for a hole to hold a
-      // side open beside. Instrumented over four draw types x two `removeAssignments` modes,
-      // `fedDrawPositions` came back empty on all 26 executions and the map was an identity — so
-      // this is a guard against a shape nothing currently reaches, not a behaviour change.
-      matchUp.drawPositions = normalizeDrawPositions(
-        matchUp.drawPositions.map((drawPosition) =>
-          fedDrawPositions.includes(drawPosition) ? undefined : drawPosition,
-        ),
-      );
-    }
+    // A lucky draw does NOT keep its downstream positions, and the difference from the elimination
+    // branch below is the whole point rather than an oversight. There is no structural slot here for
+    // a BYE to advance into: a lucky draw's later-round pairings are DRAWN, by an explicit
+    // `luckyDrawAdvancement` action. They are therefore an action to undo, not a consequence of the
+    // positioning reset keeps, and clearing them is what returns the draw to its pre-advancement
+    // state. Pinned by `resetDrawDefinition.test.ts` § "removes virtual positions".
+    if (roundNumber && roundNumber > 1) matchUp.drawPositions = [];
+    return;
   }
+
+  if (matchUp.matchUpStatus !== BYE) Object.assign(matchUp, toBePlayed);
+
+  if (!roundNumber || roundNumber <= 1 || isRoundRobin || !matchUp.drawPositions?.length) return;
+
+  // Remove ONLY the positions a played feeder delivered. Anything else in this matchUp got here
+  // without a match being played — a BYE advancement, or a slot reserved by a feed link — and reset
+  // undoes RESULTS, so it must survive. See `getPlayedPositionsByTargetMatchUp` for how the two are
+  // told apart, and why this is not the `participantFed` test it replaces.
+  //
+  // Removal, not substitution: preserves ascending order. See `getOrderedDrawPositions`. Settled
+  // through `normalizeDrawPositions` for the same reason as the other removal writers: where every
+  // position in the matchUp is removed there is no survivor for a hole to hold a side open beside.
+  const removable = playedPositions?.get(matchUp.matchUpId);
+  matchUp.drawPositions = normalizeDrawPositions(
+    matchUp.drawPositions.map((drawPosition) => (removable?.has(drawPosition) ? undefined : drawPosition)),
+  );
 }
 
 // first-class schedule attributes (NATIVE / BRIDGE) matching the schedule timeItem types below —

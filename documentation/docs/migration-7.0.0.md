@@ -1668,3 +1668,55 @@ before.
 
 The two shapes that DO propagate, and are therefore subject to the rule, are a `winningSide` (the
 winner advances) and a double exit (the produced exits are carried onward).
+
+## 22. A BYE advancement survives `resetDrawDefinition`, and `BYE_ADVANCEMENT_MISSING` reports when it has not
+
+_Shipped in [#4944](https://github.com/CourtHive/competition-factory/pull/4944)._
+
+### What changed
+
+`resetDrawDefinition` used to clear every drawPosition a BYE had advanced, while leaving the BYE
+matchUps and the `positionAssignments` in place. The draw was then internally inconsistent: the
+assignments said a player had a bye, and no matchUp in the next round held them.
+
+```js
+// a 16 draw with 13 entries: byes at drawPositions 2, 6 and 15
+engine.resetDrawDefinition({ drawId });
+
+// BEFORE (<= 6.38.0) — round 2 loses the three players the byes advanced
+// [1, <hole>] [5, <hole>] [] [16, <hole>]   ->   [] [] [] []
+
+// AFTER (7.0.0) — an unplayed draw is unchanged by a reset, in every round
+```
+
+**A BYE advancement is not a result.** Reset undoes results; a BYE advancement is a consequence of
+the positioning, which reset deliberately keeps. Positions delivered by a match that was actually
+played are still cleared, exactly as before.
+
+Nothing to do — this removes a corruption path. If you worked around it by regenerating a draw
+after a reset, that workaround is no longer needed.
+
+`resetQualifyingStructure` and `resetVoluntaryConsolationStructure` never had the fault and are
+unchanged: both empty the structure outright, so nothing survives to disagree. `LUCKY_DRAW` is also
+unchanged — its later-round pairings are drawn by an explicit `luckyDrawAdvancement` action rather
+than fixed by the structure.
+
+### `BYE_ADVANCEMENT_MISSING` is a new `issueType`
+
+`getDrawInconsistencies` and `getStructureInconsistencies` rated the draw above **`valid: true`**.
+Every advancement rule they apply starts from a `winningSide`, and a BYE has none — a BYE is never
+won — so the whole class was invisible to them.
+
+It is reported as its own `issueType` rather than folded into `WINNER_NOT_ADVANCED`, because nobody
+won the matchUp in question:
+
+| situation                                          | issueType                     |
+| -------------------------------------------------- | ----------------------------- |
+| a winning-side participant did not advance         | `WINNER_NOT_ADVANCED`         |
+| the participant opposite a **BYE** did not advance | **`BYE_ADVANCEMENT_MISSING`** |
+
+The addition is backwards compatible — no existing `issueType` changed meaning, and
+`WINNER_NOT_ADVANCED` fires on exactly the matchUps it fired on before. **Consumers that switch
+exhaustively on `issueType`** should add a branch for the new value, or keep a default case. Two
+situations are deliberately NOT reported: a BYE facing another BYE (a drawPosition advances, but no
+participant does) and a BYE facing a still-empty slot (nobody to advance yet).
