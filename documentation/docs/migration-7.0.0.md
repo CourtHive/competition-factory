@@ -29,6 +29,7 @@ feature tour and the full list of 7.0.0 additions, see [What's New in 7.0.0](./w
 | Three request-shape fields gain real types (`positioning`, `finishingPositionNaming`, `schedule`) | TypeScript callers passing these loosely                                  | See §11           |
 | The SEEDING policy is typed, and two `stage` fields become `StageTypeUnion`                       | TypeScript callers with a wrong-typed seeding-policy field                | See §11           |
 | `modifyParticipantOtherName` clears on `''` and no longer overwrites on `undefined`               | Anyone calling it to set, clear, or unset `participantOtherName`          | See §13           |
+| A produced exit no longer overwrites `matchUpStatus: BYE` — the BYE stays a BYE                   | Anyone reading `matchUpStatus` to detect an exit at a BYE-held matchUp    | See §19           |
 
 ## 1. `participantsRequiredMatchUpStatuses` — a spelling fix
 
@@ -1510,3 +1511,56 @@ two vocabularies behind one field.
 ⚠️ **A client asserting its own operator identity is unverifiable.** A server that authenticates the
 request should **overwrite** this with the identity it holds; the client-supplied value exists so an
 offline desk still records who was at it.
+
+## 19. A propagated exit no longer overwrites a BYE
+
+_Shipped in `44042278e`, `eba5d813e`, `78b77d88c` and `d86e2f469` on the exit-propagation branch._
+
+**CA's ruling, certified in TMX 2026-09-20:** _"An advancing participant encountering a BYE should
+always be advanced; a propagated exit encountering a BYE should be advanced. In both cases the BYE
+remains a BYE"_ — _"the `matchUpStatus: BYE` does not change."_
+
+### What changed
+
+When a double exit produced a `WALKOVER` (or `DEFAULTED`) and that exit was carried into a matchUp
+holding a draw BYE, the target's `matchUpStatus` was **overwritten** with the produced exit. It is
+now left as `BYE`, and the exit is recorded per-side instead.
+
+```js
+// BEFORE (<= 6.38.0) — the produced exit overwrote the BYE
+consolationR2P1.matchUpStatus; // 'WALKOVER'
+
+// AFTER (7.0.0) — the BYE stays, and the exit is on the side it arrived on
+consolationR2P1.matchUpStatus; // 'BYE'
+consolationR2P1.sideExitProvenance;
+// { 2: { previousMatchUpStatus: 'DOUBLE_DEFAULT', matchUpStatus: 'DEFAULTED', sourceMatchUpId: '…' } }
+```
+
+**The advancement is unchanged.** A participant sitting alongside that BYE still advances through it;
+only the label on the BYE-held matchUp is different. This was verified on the oldest test covering
+it, which has asserted the same onward `drawPosition` since v2.0.0-beta.7 and still does.
+
+### Who is affected
+
+Anyone who reads `matchUpStatus` at a BYE-held matchUp to decide _"did an exit reach here?"_. That
+question now has a better answer than it ever had via the status:
+
+```js
+// DON'T: a BYE-held matchUp reports BYE whether or not an exit reached it
+const exitArrived = matchUp.matchUpStatus === WALKOVER;
+
+// DO: the per-side record says WHICH side exited and WHAT it came from
+const exitArrived = !!matchUp.sideExitProvenance;
+```
+
+`sideExitProvenance` is keyed by `sideNumber` and carries `sourceMatchUpId`, so it answers a
+question the status never could — which side, and from where. The legacy `matchUpStatusCodes`
+projection is still written alongside it.
+
+### Why this is a `fix` and not a `feat!`
+
+It was committed as `fix(propagation):` without a `BREAKING CHANGE:` footer, which is why
+`verify:migration-coverage` did not require this entry — that gate matches `type(scope)!:` subjects
+and `BREAKING CHANGE:` bodies only. **The commit typing was wrong, not the gate.** Recorded here so
+the omission is not repeated: a behavioural change visible to a consumer needs the `!`, whatever the
+type says.
