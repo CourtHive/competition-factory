@@ -66,11 +66,11 @@ test.skipIf(!enabled)(
       if (!failure) continue;
 
       const shrunk = shrink(config, steps, drawId);
-      let shrunkFailure: any = null;
+      let shrunkFailure: any;
       try {
         shrunkFailure = replay(shrunk.config, shrunk.steps, drawId);
       } catch {
-        shrunkFailure = null;
+        shrunkFailure = undefined;
       }
       const print = fingerprint(shrunk.config, failure, shrunk.steps);
       if (seen.has(print)) continue;
