@@ -112,9 +112,15 @@ function isProvisionalDecision(matchUp: any): boolean {
  * (no `winnerMatchUpId`), in a structure holding no real result anywhere. A Double Walkover at
  * `East R1P3` then reverts it. Nothing observable was lost, and the property reported a defect.
  *
- * **This reclassification is large**: `MONOTONIC_DECISION` was 382 of the 833 findings the
- * 2026-09-21 matched-window comparison reported for `dev` — 46%, the biggest single category. The
- * property was counting placeholders.
+ * **Its effect is MODEST — about 10-15%, not most.** `MONOTONIC_DECISION` is the biggest single
+ * category (382 of the 833 findings the 2026-09-21 matched-window comparison reported for `dev`),
+ * and when this landed I wrote that the reclassification was therefore "large". Measured, it is
+ * not: 7 -> 6 on a 600-seed slice, and 265 -> 242 across 22,417 seeds of the post-fix census. The
+ * property was counting SOME placeholders, not mostly placeholders.
+ *
+ * The residue is the point. What survives is a decision that was REAL — a matchUp holding a
+ * participant or a winner — being un-decided, and that is still Signal 1: `resolveMatchUpStatus`
+ * letting a single produced exit fall through to `TO_BE_PLAYED`.
  */
 export function checkMonotonicity({ propagateExitStatus, matchUpId, drawId, outcome }): PropertyFailure[] {
   const beforeMatchUps = getDrawMatchUps(drawId);
