@@ -1,6 +1,5 @@
 import { feedEligibilityChange } from '@Mutate/matchUps/matchUpStatus/feedEligibilityGuard';
 import { noDownstreamDependencies } from '@Mutate/drawDefinitions/matchUpGovernor/noDownstreamDependencies';
-import { isDoubleExit } from '@Validators/isExit';
 import { generateTieMatchUpScore } from '@Assemblies/generators/tieMatchUpScore/generateTieMatchUpScore';
 import { isDirectingMatchUpStatus, isNonDirectingMatchUpStatus } from '@Query/matchUp/checkStatusType';
 import { addMatchUpScheduleItems } from '@Mutate/matchUps/schedule/scheduleItems/scheduleItems';
@@ -29,6 +28,7 @@ import { findDrawMatchUp } from '@Acquire/findDrawMatchUp';
 import { validateScore } from '@Validators/validateScore';
 import { isAdHoc } from '@Query/drawDefinition/isAdHoc';
 import { findStructure } from '@Acquire/findStructure';
+import { isDoubleExit } from '@Validators/isExit';
 import { isObject } from '@Tools/objects';
 
 // constants and types
