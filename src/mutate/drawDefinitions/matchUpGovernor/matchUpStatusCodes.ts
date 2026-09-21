@@ -1,18 +1,18 @@
 import { mergeSideExitProvenance, producedExitStatus } from '@Mutate/matchUps/matchUpStatus/sideExitProvenance';
 import { getPairedPreviousMatchUp } from '@Query/matchUps/getPairedPreviousMatchup';
 import { definedAttributes } from '@Tools/definedAttributes';
-import { isString } from '@Tools/objects';
 
 // constants
 import { TO_BE_PLAYED } from '@Constants/matchUpStatusConstants';
 
 // types
+import { MatchUpStatusCodeRecord, MatchUpStatusUnion } from '@Types/tournamentTypes';
 import { MatchUpsMap } from '@Types/factoryTypes';
 import { MatchUp } from '@Types/tournamentTypes';
 
 type UpdateMatchUpStatusCodesArgs = {
   inContextDrawMatchUps: any[];
-  sourceMatchUpStatus?: string;
+  sourceMatchUpStatus?: MatchUpStatusUnion;
   matchUpsMap: MatchUpsMap;
   sourceMatchUpId?: string;
   matchUp: MatchUp;
@@ -44,7 +44,19 @@ export function updateMatchUpStatusCodes({
           (sourceMatchUp.structureId === pairedMatchUp?.structureId && 2) || 1;
 
     matchUp.matchUpStatusCodes = (matchUp.matchUpStatusCodes ?? []).map((code) => {
-      const value = isString(code) || !isNaN(code) ? { code } : code;
+      // Wrap only a BARE code. The old guard was `isString(code) || !isNaN(code)`, which could not
+      // narrow once the element type was declared honestly: `isNaN` of an object is true, so objects
+      // fell through correctly, but nothing told the compiler that — and `{ code }` where `code`
+      // might itself be a record is the double-wrap this array's shape confusion invites.
+      // Pass RECORDS through; wrap everything else. The old guard was
+      // `isString(code) || !isNaN(code)`, which could not narrow once the element type was declared
+      // honestly — and its edges were wrong in both directions: `isNaN(null)` is FALSE, so a null
+      // element was wrapped (right, and `[null, null]` is a shape this array has genuinely been
+      // persisted with), while `isNaN(undefined)` is TRUE, so an undefined element fell through as
+      // `value` and threw on the `.sideNumber` read below. Asking whether it is a record answers
+      // both, and is what the union actually discriminates on.
+      const value: MatchUpStatusCodeRecord =
+        typeof code === 'object' && code !== null ? code : { code: code ?? undefined };
       if (value.sideNumber === sourceSideNumber) {
         // `matchUpStatus` and `previousMatchUpStatus` are a PAIR — the second is the origin, the
         // first is what that origin produced. Stamping only the origin left them contradicting each

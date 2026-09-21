@@ -4,7 +4,7 @@ import { definedAttributes } from '@Tools/definedAttributes';
 import { isAnyExit } from '@Validators/isExit';
 
 // constants and types
-import { MatchUp, SideExitProvenance, SideExitProvenanceEntry } from '@Types/tournamentTypes';
+import { MatchUp, SideExitProvenance, SideExitProvenanceEntry, MatchUpStatusUnion } from '@Types/tournamentTypes';
 import {
   DOUBLE_WALKOVER,
   DOUBLE_DEFAULT,
@@ -47,7 +47,7 @@ import {
  * produce a WALKOVER, not a DEF."* That is where the "not attributable to any upstream individual"
  * rule lives; this mapping stays a faithful per-flavour projection.
  */
-export function producedExitStatus(previousMatchUpStatus?: string): string | undefined {
+export function producedExitStatus(previousMatchUpStatus?: MatchUpStatusUnion): MatchUpStatusUnion | undefined {
   if (previousMatchUpStatus === DOUBLE_WALKOVER) return WALKOVER;
   if (previousMatchUpStatus === DOUBLE_DEFAULT) return DEFAULTED;
   return previousMatchUpStatus;
@@ -84,8 +84,8 @@ export function collapseDoubleExitStatus(sideStatuses: (string | undefined)[]): 
 }
 
 type BuildArgs = {
-  pairedMatchUpStatus?: string;
-  sourceMatchUpStatus?: string;
+  pairedMatchUpStatus?: MatchUpStatusUnion;
+  sourceMatchUpStatus?: MatchUpStatusUnion;
   sourceSideNumber?: number;
   pairedMatchUpId?: string;
   sourceMatchUpId?: string;
@@ -166,10 +166,10 @@ export function buildCarriedExitProvenance({
   sourceMatchUpId,
   matchUpStatus,
 }: {
-  previousMatchUpStatus?: string;
+  previousMatchUpStatus?: MatchUpStatusUnion;
   exitingSideNumber?: number;
   sourceMatchUpId?: string;
-  matchUpStatus?: string;
+  matchUpStatus?: MatchUpStatusUnion;
 }): SideExitProvenance | undefined {
   if (exitingSideNumber !== 1 && exitingSideNumber !== 2) return undefined;
 
