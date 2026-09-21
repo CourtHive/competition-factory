@@ -13,24 +13,25 @@ feature tour and the full list of 7.0.0 additions, see [What's New in 7.0.0](./w
 
 ## Breaking changes at a glance
 
-| Change                                                                                            | Who is affected                                                           | Action required   |
-| ------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------- | ----------------- |
-| `particicipantsRequiredMatchUpStatuses` renamed to `participantsRequiredMatchUpStatuses`          | Anyone importing that constant by name                                    | Rename the import |
-| Re-applying an identical double exit is now a no-op                                               | Callers relying on re-application to re-run propagation                   | See §2            |
-| A rejected bare `{ winningSide }` no longer unwinds the existing result                           | Callers matching on `ERR_MISSING_ASSIGNMENTS` for this case               | See §3            |
-| `timeZone` conversions return an error instead of throwing or guessing                            | Anyone calling `wallClockToUTC`, `utcToWallClock`, `toEmbargoUTC`         | See §4            |
-| `getTimeZoneOffsetMinutes` now returns `number \| undefined`                                      | Anyone reading a zone offset                                              | See §4            |
-| `checkMatchUpIsComplete` / `getParticipantResults` refuse an absent object param                  | Callers passing `matchUpId` / `drawId` and reading the result             | See §5            |
-| `getParticipantResults` refuses any matchUp carrying no `sides`                                   | Callers passing STORED (non-hydrated) matchUps                            | See §5            |
-| `buildDrawHierarchy` is removed                                                                   | Anyone calling it (no consumer was found in any CourtHive repo)           | See §6            |
-| `addFinishingRounds` refuses an absent `matchUps` array                                           | Callers relying on the empty-array return                                 | See §7            |
-| `validateTieFormat` enforces `collectionId` by default                                            | Anyone validating a hand-written or published tieFormat directly          | See §8            |
-| `pressureRating` is typed `boolean`, not `string`                                                 | TypeScript callers of `tallyParticipantResults` / `getParticipantResults` | See §9            |
-| Three request-shape fields gain real types (`positioning`, `finishingPositionNaming`, `schedule`) | TypeScript callers passing these loosely                                  | See §11           |
-| The SEEDING policy is typed, and two `stage` fields become `StageTypeUnion`                       | TypeScript callers with a wrong-typed seeding-policy field                | See §11           |
-| `modifyParticipantOtherName` clears on `''` and no longer overwrites on `undefined`               | Anyone calling it to set, clear, or unset `participantOtherName`          | See §13           |
-| A produced exit no longer overwrites `matchUpStatus: BYE` — the BYE stays a BYE                   | Anyone reading `matchUpStatus` to detect an exit at a BYE-held matchUp    | See §19           |
-| A produced exit carries NO `winningSide` until a participant actually arrives                     | Any UI or caller reading `winningSide` to render a produced walkover      | See §20           |
+| Change                                                                                            | Who is affected                                                             | Action required   |
+| ------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------- | ----------------- |
+| `particicipantsRequiredMatchUpStatuses` renamed to `participantsRequiredMatchUpStatuses`          | Anyone importing that constant by name                                      | Rename the import |
+| Re-applying an identical double exit is now a no-op                                               | Callers relying on re-application to re-run propagation                     | See §2            |
+| A rejected bare `{ winningSide }` no longer unwinds the existing result                           | Callers matching on `ERR_MISSING_ASSIGNMENTS` for this case                 | See §3            |
+| `timeZone` conversions return an error instead of throwing or guessing                            | Anyone calling `wallClockToUTC`, `utcToWallClock`, `toEmbargoUTC`           | See §4            |
+| `getTimeZoneOffsetMinutes` now returns `number \| undefined`                                      | Anyone reading a zone offset                                                | See §4            |
+| `checkMatchUpIsComplete` / `getParticipantResults` refuse an absent object param                  | Callers passing `matchUpId` / `drawId` and reading the result               | See §5            |
+| `getParticipantResults` refuses any matchUp carrying no `sides`                                   | Callers passing STORED (non-hydrated) matchUps                              | See §5            |
+| `buildDrawHierarchy` is removed                                                                   | Anyone calling it (no consumer was found in any CourtHive repo)             | See §6            |
+| `addFinishingRounds` refuses an absent `matchUps` array                                           | Callers relying on the empty-array return                                   | See §7            |
+| `validateTieFormat` enforces `collectionId` by default                                            | Anyone validating a hand-written or published tieFormat directly            | See §8            |
+| `pressureRating` is typed `boolean`, not `string`                                                 | TypeScript callers of `tallyParticipantResults` / `getParticipantResults`   | See §9            |
+| Three request-shape fields gain real types (`positioning`, `finishingPositionNaming`, `schedule`) | TypeScript callers passing these loosely                                    | See §11           |
+| The SEEDING policy is typed, and two `stage` fields become `StageTypeUnion`                       | TypeScript callers with a wrong-typed seeding-policy field                  | See §11           |
+| `modifyParticipantOtherName` clears on `''` and no longer overwrites on `undefined`               | Anyone calling it to set, clear, or unset `participantOtherName`            | See §13           |
+| A produced exit no longer overwrites `matchUpStatus: BYE` — the BYE stays a BYE                   | Anyone reading `matchUpStatus` to detect an exit at a BYE-held matchUp      | See §19           |
+| A produced exit carries NO `winningSide` until a participant actually arrives                     | Any UI or caller reading `winningSide` to render a produced walkover        | See §20           |
+| A load-bearing outcome can no longer be re-scored while a dependent result stands                 | Anyone correcting a result that has already propagated into a decided match | See §21           |
 
 ## 1. `participantsRequiredMatchUpStatuses` — a spelling fix
 
@@ -1615,3 +1616,55 @@ by the arrival of a participant, not by drawPosition ordering at the moment the 
 Like §19, these were committed as `fix(propagation):` with no `BREAKING CHANGE:` footer, so
 `verify:migration-coverage` never required an entry. Both were found by auditing the workstream's
 `fix`-typed commits for observable field changes rather than by the gate.
+
+## 21. A load-bearing outcome cannot be re-scored while a dependent result stands
+
+_Shipped in `1d921a22b`._
+
+### What changed
+
+Re-scoring a matchUp whose propagation is **load-bearing for a result that has already been
+decided** is now refused. Previously it was permitted, and it silently un-decided the dependent
+match — leaving, in the reported case, a consolation matchUp reading `TO_BE_PLAYED` while still
+displaying its `6-3` score.
+
+```js
+// Main|2|1 was a DOUBLE_WALKOVER; its exits fed the consolation,
+// and Consolation|3|1 has since been PLAYED.
+const result = engine.setMatchUpStatus({ matchUpId: mainR2P1, outcome: { winningSide: 2 } });
+
+// BEFORE (<= 6.38.0)
+result.success; // true — and Consolation|3|1 became TO_BE_PLAYED, still showing 6-3
+
+// AFTER (7.0.0)
+result.success; // undefined
+result.error; // CANNOT_CHANGE_OUTCOME
+```
+
+**Unwind the dependent results first**, in dependency order — the consolation before the Main round
+that feeds it — and the re-score is then permitted.
+
+### `CANNOT_CHANGE_OUTCOME` is a new error
+
+A `DOUBLE_WALKOVER` and a `DOUBLE_DEFAULT` carry **no `winningSide`** — neither side advances — yet
+they propagate produced exits, so they are exactly the outcomes this rule refuses. Reporting
+`CANNOT_CHANGE_WINNING_SIDE` for one names a field the matchUp does not have, so it has its own
+code, for the same reason `CANNOT_CHANGE_FEED_ELIGIBILITY` does:
+
+| situation                                            | error                        |
+| ---------------------------------------------------- | ---------------------------- |
+| an existing `winningSide` is being changed           | `CANNOT_CHANGE_WINNING_SIDE` |
+| the outcome carries no `winningSide` (a double exit) | **`CANNOT_CHANGE_OUTCOME`**  |
+
+Clients keying on `error.code` should accept `ERR_UNCHANGED_CANNOT_CHANGE_OUTCOME` alongside
+`ERR_UNCHANGED_CANNOT_CHANGE_WINNING_SIDE`.
+
+### What is NOT affected — first entries
+
+Entering a result for the first time is **always** permitted, whatever has been decided elsewhere. A
+matchUp that has never sent anything downstream cannot invalidate anything downstream. Scoring an
+untouched `TO_BE_PLAYED` matchUp above a fully played consolation succeeds and propagates exactly as
+before.
+
+The two shapes that DO propagate, and are therefore subject to the rule, are a `winningSide` (the
+winner advances) and a double exit (the produced exits are carried onward).
