@@ -100,6 +100,18 @@ const prFromEnv = process.env.GITHUB_REF?.match(/^refs\/pull\/(\d+)\/merge$/)?.[
 const missing = [];
 const unreferenced = [];
 for (const commit of breaking) {
+  // A commit the guide names by SHA is documented, whatever PR the build belongs to.
+  //
+  // A breaking change landed DIRECTLY on `dev` carries no `(#N)` and never will, so `prFromEnv`
+  // attributes it to whichever PR happens to be building — and that PR's number is not in the
+  // guide, so it fails. Not once: EVERY subsequent PR fails, for a commit somebody else wrote.
+  // Measured 2026-09-21 on `1d921a22b`, which §21 documents and cites by SHA; #4942 satisfied the
+  // gate only for its own build, and #4943 failed on the same commit.
+  //
+  // The SHA is the stable identity here. Requiring a PR number for a commit that has none asks for
+  // something that cannot exist, and the guide entry is no less real for citing the commit instead.
+  if (guide.includes(commit.sha)) continue;
+
   // `?? prFromEnv` and NOT `||` — a subject that already carries the number always wins, so a
   // merged commit is still checked against its own PR rather than the build's.
   const pr = commit.subject.match(/\(#(\d+)\)\s*$/)?.[1] ?? prFromEnv;

@@ -31,9 +31,27 @@ export function noDownstreamDependencies(params) {
   const { matchUp, matchUpStatus, score, winningSide } = params;
   const stack = 'noDownStreamDependencies';
 
+  /**
+   * LEAVING a double exit means unwinding it — including for another double exit.
+   *
+   * This read `![DOUBLE_WALKOVER, DOUBLE_DEFAULT].includes(matchUpStatus)`, so a double -> DOUBLE
+   * re-score unwound **nothing** and the previous cascade's produced exit survived on the target.
+   * `doubleExitAdvancement`'s `existingExit` then read that survivor as a second exit ARRIVING —
+   * a convergence — and wrote a DOUBLE exit where a single produced one belonged.
+   *
+   * Measured on CURTIS_CONSOLATION 16/13 `nonRandom: 20000119` (CA, 2026-09-21). Main R2P4 scored
+   * `DOUBLE_DEFAULT` correctly produces `DEFAULTED` at `Main|3|2`; re-scoring it `DOUBLE_WALKOVER`
+   * made `Main|3|2` a `DOUBLE_WALKOVER` while its own `sideExitProvenance` said `WALKOVER` — and
+   * because a DOUBLE exit cascades where a single one does not, `Main|4|1` gained a produced exit
+   * that should not exist. CLEARING first and then scoring `DOUBLE_WALKOVER` was always correct,
+   * which is what identified the un-withdrawn residue as the cause rather than the new write.
+   *
+   * The comparison is against the status being written, so re-applying the IDENTICAL double exit
+   * still unwinds nothing — that case is idempotent and `attemptToSetMatchUpStatus` short-circuits
+   * it earlier anyway.
+   */
   const doubleExitCleanup =
-    [DOUBLE_WALKOVER, DOUBLE_DEFAULT].includes(matchUp?.matchUpStatus) &&
-    ![DOUBLE_WALKOVER, DOUBLE_DEFAULT].includes(matchUpStatus);
+    [DOUBLE_WALKOVER, DOUBLE_DEFAULT].includes(matchUp?.matchUpStatus) && matchUpStatus !== matchUp?.matchUpStatus;
   if (doubleExitCleanup) {
     const result = removeDoubleExit(params);
     if (result.error) return decorateResult({ result, stack });
