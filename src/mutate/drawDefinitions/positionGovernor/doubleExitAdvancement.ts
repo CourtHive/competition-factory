@@ -684,6 +684,33 @@ function conditionallyAdvanceDrawPosition(params) {
   const producedStatus = existingExit ? DOUBLE_EXIT : EXIT;
   const matchUpStatus = targetHoldsBye ? BYE : producedStatus;
 
+  /**
+   * A BYE IS NEVER WON, so a BYE-held target takes no winningSide — not even one a caller supplied.
+   *
+   * The status above already refuses to overwrite the BYE. The winningSide beside it was left
+   * alone, so the matchUp came out reading `BYE` while also naming a winner, and that winner is
+   * whatever drawPosition the arithmetic landed on — which on this path is the VACANT one.
+   *
+   * Measured on CURTIS_CONSOLATION 8/7 (`nonRandom: 20020173`), the sweep's most-reachable
+   * `BYE_WITH_WINNING_SIDE`: score `Main|1|4` a double walkover, `Main|1|3` a double default, then
+   * CORRECT `Main|1|4` to an ordinary win and correct it BACK. The cascade places a propagated BYE
+   * at Play Off drawPosition 2 and `handleLoserMatchUp` hands down
+   * `walkoverWinningSide = 2 - drawPositions.indexOf(2) = 1`, so:
+   *
+   *     [Play Off]  1:-  2:BYE(propagated)
+   *     Play Off|1|1   BYE   ws=1   dps=[1, 2]      <- side 1 holds NOBODY
+   *
+   * The rule is the engine's own and is stated in three places already: `getExitWinningSide` —
+   * *"A BYE draw position can never be the winning side"* — `exitAwardable`, and the
+   * `doubleExitPropagateBye` docblock's *"a matchUp containing a BYE may never carry a
+   * winningSide."* Nothing enforced it at the one site that writes the status.
+   *
+   * `removeWinningSide` as well as withholding it: this write is reached on a RE-SCORE, where the
+   * matchUp can already carry the award an earlier pass gave it, and passing `undefined` does not
+   * remove one.
+   */
+  const awardedWinningSide = targetHoldsBye ? undefined : walkoverWinningSide;
+
   logAdvancement(stack, {
     color: 'brightyellow',
     keyColors: { matchUpStatus: 'brightgreen', existingExit: 'brightred' },
@@ -745,7 +772,7 @@ function conditionallyAdvanceDrawPosition(params) {
     action: 'modifyMatchUpScore',
     targetMatchUpId: noContextTargetMatchUp.matchUpId,
     matchUpStatus,
-    winningSide: walkoverWinningSide,
+    winningSide: awardedWinningSide,
     matchUpStatusCodes: JSON.stringify(matchUpStatusCodes),
     sourceStatus: sourceMatchUpStatus,
     pairedStatus: pairedMatchUpStatus,
@@ -753,7 +780,8 @@ function conditionallyAdvanceDrawPosition(params) {
 
   const result = modifyMatchUpScore({
     ...params,
-    winningSide: walkoverWinningSide,
+    removeWinningSide: targetHoldsBye,
+    winningSide: awardedWinningSide,
     matchUp: noContextTargetMatchUp,
     matchUpStatusCodes,
     context: stack,
