@@ -1671,7 +1671,7 @@ winner advances) and a double exit (the produced exits are carried onward).
 
 ## 22. A BYE advancement survives `resetDrawDefinition`, and `BYE_ADVANCEMENT_MISSING` reports when it has not
 
-_Shipped in `d48563b9f`._
+_Shipped in [#4944](https://github.com/CourtHive/competition-factory/pull/4944)._
 
 ### What changed
 
