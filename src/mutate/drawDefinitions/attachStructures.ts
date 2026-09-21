@@ -150,9 +150,12 @@ export function attachStructures({
             matchUp.tieMatchUps.forEach((tm) => Object.assign(tm, modifiedTieMatchUpsMap[tm.matchUpId]));
           }
           modifiedMatchUpMap[matchUp.matchUpId].matchUp = matchUp;
-          // The payload is pre-built from `matchUpModifications`, so `event` has to be merged in
-          // here rather than at an inline call — it is what lets the notice carry the origin.
-          modifyMatchUpNotice({ ...modifiedMatchUpMap[matchUp.matchUpId], event });
+          // The payload is pre-built from `matchUpModifications`, so `event` and `drawDefinition`
+          // have to be merged in here rather than at an inline call — `event` is what lets the
+          // notice carry the origin, `drawDefinition` what lets it name the structure. The extra
+          // draw notice this triggers collapses onto the one dispatched above: `modifyDrawNotice`
+          // keys by `drawDefinition.drawId`.
+          modifyMatchUpNotice({ ...modifiedMatchUpMap[matchUp.matchUpId], drawDefinition, event });
         }
       });
     };

@@ -595,7 +595,7 @@ engine.canRedo(); // true (if there were undone actions)
 
 ## Related Documentation
 
-- **[Overview](./scoring-engine-overview)** — Introduction and architecture
-- **[Event Handlers & Integration](./event-handlers)** — Event system and competitionFormat profiles
-- **[Multi-Sport Format Support](./format-support)** — Format strings for different sports
-- **[Visualization Applications](./visualization-applications)** — Building visualizations with ScoringEngine data
+- **[Overview](./scoring-engine-overview.md)** — Introduction and architecture
+- **[Event Handlers & Integration](./event-handlers.md)** — Event system and competitionFormat profiles
+- **[Multi-Sport Format Support](./format-support.md)** — Format strings for different sports
+- **[Visualization Applications](./visualization-applications.md)** — Building visualizations with ScoringEngine data

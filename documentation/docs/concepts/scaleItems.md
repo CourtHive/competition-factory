@@ -4,7 +4,7 @@ title: Scale Items
 
 ## Overview
 
-**Scale Items** capture participant competitive metrics: rankings, ratings, and seedings. These values help determine participant placement in draws, seeding positions, and competitive levels. Scale items are implemented as [Time Items](./timeItems), allowing participants to maintain historical values with effective dates.
+**Scale Items** capture participant competitive metrics: rankings, ratings, and seedings. These values help determine participant placement in draws, seeding positions, and competitive levels. Scale items are implemented as [Time Items](./timeItems.md), allowing participants to maintain historical values with effective dates.
 
 ### Key Concepts
 
@@ -172,7 +172,7 @@ const scaleAttributes = {
 };
 ```
 
-**See:** [Accessors](./accessors) for detailed accessor documentation.
+**See:** [Accessors](./accessors.mdx) for detailed accessor documentation.
 
 ## Setting Scale Items
 
@@ -319,7 +319,7 @@ const rankings = participant.timeItems?.filter(
 
 ## Time Items Integration
 
-Scale items are stored as [Time Items](./timeItems), providing temporal validity:
+Scale items are stored as [Time Items](./timeItems.md), providing temporal validity:
 
 ```js
 // Scale item as time item
@@ -599,7 +599,7 @@ const { scaleItem } = tournamentEngine.getParticipantScaleItem({
 // Accessor 'ntrpRating' extracts 4.5 as the comparison value
 ```
 
-**See:** [Accessors](./accessors) for comprehensive accessor documentation.
+**See:** [Accessors](./accessors.mdx) for comprehensive accessor documentation.
 
 ## Practical Examples
 
@@ -917,8 +917,8 @@ caller's decision and belongs where its consequences are visible.
 
 ## Related Documentation
 
-- **[Accessors](./accessors)** - Accessing nested scale values
-- **[Time Items](./timeItems)** - Temporal data storage
-- **[Participants](./participants)** - Participant data management
+- **[Accessors](./accessors.mdx)** - Accessing nested scale values
+- **[Time Items](./timeItems.md)** - Temporal data storage
+- **[Participants](./participants.md)** - Participant data management
 - **[Auto Seeding](/docs/governors/draws-governor#autoseeding)** - Automatic seeding generation
 - **[Participant Governor](/docs/governors/participant-governor)** - Scale item methods

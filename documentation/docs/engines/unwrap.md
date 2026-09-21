@@ -52,7 +52,7 @@ try {
 }
 ```
 
-See [Factory errors](./factory-errors) for the full class hierarchy and the suggestions registry.
+See [Factory errors](./factory-errors.md) for the full class hierarchy and the suggestions registry.
 
 ## `unwrapOr(result, fallback)`
 

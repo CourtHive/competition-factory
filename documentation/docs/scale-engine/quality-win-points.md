@@ -44,11 +44,11 @@ qualityWinProfiles: [
 
 The `rankingSnapshot` field controls which point-in-time ranking value is used for the opponent:
 
-| Strategy | Behavior |
-| --- | --- |
+| Strategy            | Behavior                                                              |
+| ------------------- | --------------------------------------------------------------------- |
 | `'tournamentStart'` | Most recent scale item with `scaleDate <= tournamentRecord.startDate` |
-| `'latestAvailable'` | Most recent scale item regardless of date |
-| `'matchDate'` | Most recent scale item with `scaleDate <= matchUp.endDate` |
+| `'latestAvailable'` | Most recent scale item regardless of date                             |
+| `'matchDate'`       | Most recent scale item with `scaleDate <= matchUp.endDate`            |
 
 :::tip
 Use `'tournamentStart'` (the default) for consistency — all opponents are evaluated against the rankings published before the tournament began. This prevents a player from earning quality win points based on rankings that changed mid-tournament.
@@ -67,9 +67,9 @@ The `rankingScaleName` in the quality win profile must match the `scaleName` use
 
 When an opponent has no ranking for the specified `rankingScaleName`:
 
-| Setting | Behavior |
-| --- | --- |
-| `'noBonus'` | No quality win points awarded (default) |
+| Setting            | Behavior                                                                    |
+| ------------------ | --------------------------------------------------------------------------- |
+| `'noBonus'`        | No quality win points awarded (default)                                     |
 | `'useDefaultRank'` | Use `defaultRank` value from the profile, then match against ranking ranges |
 
 ## Walkovers and Defaults
@@ -120,9 +120,9 @@ countingBuckets: [
 
 ## Related Documentation
 
-- **[Scale Engine Overview](./scale-engine-overview)** — Introduction and architecture
-- **[Core API Reference](./scale-engine-api)** — Complete method reference
-- **[Ranking Points Pipeline](./ranking-points-pipeline)** — How position and per-win points work
-- **[Multi-Tournament Aggregation](./aggregation)** — Counting buckets and ranking lists
+- **[Scale Engine Overview](./scale-engine-overview.md)** — Introduction and architecture
+- **[Core API Reference](./scale-engine-api.md)** — Complete method reference
+- **[Ranking Points Pipeline](./ranking-points-pipeline.md)** — How position and per-win points work
+- **[Multi-Tournament Aggregation](./aggregation.md)** — Counting buckets and ranking lists
 - **[Ranking Policy](/docs/policies/rankingPolicy)** — Full policy structure
 - **[Scale Items](/docs/concepts/scaleItems)** — How rankings are stored

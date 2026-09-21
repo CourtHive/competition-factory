@@ -380,7 +380,7 @@ This creates `SCHEDULED`-type blocks that appear visually in the temporal grid, 
 
 ## Related Documentation
 
-- **[Overview](./availability-engine-overview)** — Introduction and architecture
-- **[Core API Reference](./availability-engine-api)** — Complete method reference
-- **[Event System & Validation](./event-system-and-validation)** — Events, conflict evaluators, and validation pipeline
-- **[Block Types & Algorithms](./block-types-and-algorithms)** — Block types, rail derivation, capacity curves, collision detection
+- **[Overview](./availability-engine-overview.md)** — Introduction and architecture
+- **[Core API Reference](./availability-engine-api.md)** — Complete method reference
+- **[Event System & Validation](./event-system-and-validation.md)** — Events, conflict evaluators, and validation pipeline
+- **[Block Types & Algorithms](./block-types-and-algorithms.md)** — Block types, rail derivation, capacity curves, collision detection

@@ -110,7 +110,7 @@ engine.publishEvent({
 
 ## Publishing with Embargo
 
-Schedule future publication with embargo timestamps. The data is stored as `published: true` immediately but remains **hidden from public queries** until the embargo time passes. See [Embargo and Scheduled Rounds](./publishing-embargo) for full details.
+Schedule future publication with embargo timestamps. The data is stored as `published: true` immediately but remains **hidden from public queries** until the embargo time passes. See [Embargo and Scheduled Rounds](./publishing-embargo.md) for full details.
 
 ```js
 const embargoTime = new Date('2024-06-15T10:00:00Z').toISOString();

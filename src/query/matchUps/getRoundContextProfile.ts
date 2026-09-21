@@ -1,3 +1,4 @@
+import { getWinnerLinkRoundNumbers } from '@Query/drawDefinition/linkGetter';
 import { isAdHoc } from '@Query/drawDefinition/isAdHoc';
 import { isLucky } from '@Query/drawDefinition/isLucky';
 import { getRoundMatchUps } from './getRoundMatchUps';
@@ -28,7 +29,14 @@ export function getRoundContextProfile({
   roundMatchUps?: { [roundNumber: string]: HydratedMatchUp[] };
   roundProfile?: RoundProfile;
 } {
-  const { roundProfile, roundMatchUps } = getRoundMatchUps({ matchUps });
+  // This is the hydration path, so every `matchUp.hasFedDrawPosition` a consumer reads comes from
+  // here — and the LINKS are what tell a round that reserves a fed drawPosition apart from one that
+  // is merely fed by a WINNER link (`DOUBLE_ELIMINATION`'s Main final, the only such shape measured).
+  const winnerLinkRoundNumbers = getWinnerLinkRoundNumbers({
+    structureId: structure.structureId,
+    drawDefinition,
+  });
+  const { roundProfile, roundMatchUps } = getRoundMatchUps({ winnerLinkRoundNumbers, matchUps });
   const { structureAbbreviation, stage } = structure;
 
   const isAdHocStructure = isAdHoc({ structure });

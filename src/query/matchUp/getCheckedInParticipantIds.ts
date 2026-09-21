@@ -1,20 +1,24 @@
 import { getMatchUpParticipantIds } from './getMatchUpParticipantIds';
+import { getMatchUpPresence } from '@Acquire/presenceAttestations';
 
 // constants and types
 import { INVALID_MATCHUP, MISSING_CONTEXT, MISSING_MATCHUP } from '@Constants/errorConditionConstants';
-import { CHECK_IN, CHECK_OUT } from '@Constants/timeItemConstants';
+import { CHECKED_IN } from '@Constants/presenceConstants';
 import { SUCCESS } from '@Constants/resultConstants';
 import { HydratedMatchUp } from '@Types/hydrated';
-import { TimeItem } from '@Types/tournamentTypes';
 import { ResultType } from '@Types/factoryTypes';
 
 /*
   takes a matchUpWithContext
-  returns all participaantIds which have current checkedIn status
+  returns all participantIds which have current checkedIn status
     - if sideParticipant is participantType TEAM or PAIR then
       sideParticipant is considered checkedIn if all individualParticipants are checkedIn
     - if sideParticipant is participantType TEAM or PAIR and is checkedIn then
       all individualParticipants are considered checkedIn
+
+  The side-level INFERENCE above is unchanged by the CODES promotion and is deliberately kept. Only the
+  WRITE subject was restricted to INDIVIDUAL participants — reading still answers "is this side at the
+  desk", which is what every consuming surface asks.
 */
 export function getCheckedInParticipantIds({ matchUp }: { matchUp: HydratedMatchUp }): ResultType & {
   allRelevantParticipantIds?: string[];
@@ -32,19 +36,19 @@ export function getCheckedInParticipantIds({ matchUp }: { matchUp: HydratedMatch
     matchUp,
   });
 
-  const timeItems = matchUp.timeItems ?? [];
-  const checkInItems: TimeItem[] = timeItems
-    .filter((timeItem) => timeItem?.itemType && [CHECK_IN, CHECK_OUT].includes(timeItem.itemType))
-    .sort(
-      (a, b) =>
-        (a.createdAt ? new Date(a.createdAt).getTime() : 0) - (b.createdAt ? new Date(b.createdAt).getTime() : 0),
-    );
-  const timeItemParticipantIds = checkInItems.map((timeItem) => timeItem.itemValue);
+  // Ordered oldest-first, from `matchUp.checkIns` when the record has been promoted and from the legacy
+  // CHECK_IN / CHECK_OUT timeItems when it has not. One fold, either surface.
+  const attestations = getMatchUpPresence(matchUp);
 
-  // first determine whether each timeItemParticipantId is checkedIn
-  const checkedInParticipantIds = timeItemParticipantIds.filter((participantId) => {
-    return checkInItems.filter((timeItem) => timeItem?.itemValue === participantId).reverse()[0].itemType === CHECK_IN;
-  });
+  // Last recorded state wins, per subject. `attestations` is already ordered by `occurredAt`.
+  const latestByParticipant = new Map<string, string>();
+  for (const attestation of attestations) {
+    if (attestation?.participantId) latestByParticipant.set(attestation.participantId, attestation.state);
+  }
+
+  const checkedInParticipantIds = [...latestByParticipant.entries()]
+    .filter(([, state]) => state === CHECKED_IN)
+    .map(([participantId]) => participantId);
 
   // if all individuals on one side are checked in then side is checked in
   nestedIndividualParticipantIds?.forEach((sideIndividualParticipantIds, sideIndex) => {

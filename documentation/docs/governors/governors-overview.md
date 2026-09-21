@@ -57,14 +57,14 @@ The Competition Factory includes 16 governors organized into functional areas:
 
 ### Tournament Operations
 
-**[Tournament Governor](./tournament-governor)** - Tournament-level operations
+**[Tournament Governor](./tournament-governor.md)** - Tournament-level operations
 
 - Create, modify, and delete tournaments
 - Tournament metadata and properties
 - Tournament-level extensions and time items
 - Tournament validation
 
-**[Competition Governor](./competition-governor)** - Multi-tournament operations
+**[Competition Governor](./competition-governor.md)** - Multi-tournament operations
 
 - Work across multiple tournaments
 - Competition-wide participant management
@@ -73,14 +73,14 @@ The Competition Factory includes 16 governors organized into functional areas:
 
 ### Draw Management
 
-**[Generation Governor](./generation-governor)** - Draw and structure generation
+**[Generation Governor](./generation-governor.md)** - Draw and structure generation
 
 - Create elimination, round robin, and compass draws
 - Generate playoff structures
 - Feed-in consolation structures
 - Automated structure configuration
 
-**[Draws Governor](./draws-governor)** - Draw manipulation and modification
+**[Draws Governor](./draws-governor.md)** - Draw manipulation and modification
 
 - Modify existing draw structures
 - Add/remove participants from draws
@@ -89,14 +89,14 @@ The Competition Factory includes 16 governors organized into functional areas:
 
 ### Event Management
 
-**[Event Governor](./event-governor)** - Event lifecycle and draw definitions
+**[Event Governor](./event-governor.md)** - Event lifecycle and draw definitions
 
 - Create and configure events
 - Add/remove draw definitions
 - Event extensions and display settings
 - Event deletion and archival
 
-**[Entries Governor](./entries-governor)** - Entry management
+**[Entries Governor](./entries-governor.md)** - Entry management
 
 - Add/remove event entries
 - Entry status management (direct acceptance, qualifier, wildcard)
@@ -105,7 +105,7 @@ The Competition Factory includes 16 governors organized into functional areas:
 
 ### Participant Operations
 
-**[Participant Governor](./participant-governor)** - Participant lifecycle
+**[Participant Governor](./participant-governor.md)** - Participant lifecycle
 
 - Add individual participants, pairs, teams
 - Modify participant information
@@ -114,7 +114,7 @@ The Competition Factory includes 16 governors organized into functional areas:
 
 ### Rankings & Ratings
 
-**[Ranking Governor](./ranking-governor)** - Ranking points and aggregation
+**[Ranking Governor](./ranking-governor.md)** - Ranking points and aggregation
 
 - Compute tournament ranking points from [ranking policies](/docs/policies/rankingPolicy)
 - Quality win bonus calculation
@@ -125,28 +125,28 @@ The Competition Factory includes 16 governors organized into functional areas:
 
 ### MatchUp Management
 
-**[MatchUp Governor](./matchup-governor)** - MatchUp operations
+**[MatchUp Governor](./matchup-governor.md)** - MatchUp operations
 
 - Advance participants through draws
 - Set matchUp outcomes and scores
 - MatchUp status management
 - Walkover, retirement, default handling
 
-**[Score Governor](./score-governor)** - Score validation and manipulation
+**[Score Governor](./score-governor.md)** - Score validation and manipulation
 
 - Parse and validate score strings
 - Generate score strings from score objects
 - Check set completion
 - Score analysis and statistics
 
-**[MatchUp Format Governor](./matchup-format-governor)** - Format handling
+**[MatchUp Format Governor](./matchup-format-governor.md)** - Format handling
 
 - Parse matchUp format codes
 - Stringify matchUp format objects
 - Validate format configurations
 - Format comparison and analysis
 
-**[tieFormat Governor](./tie-format-governor)** - Team matchUp format management
+**[tieFormat Governor](./tie-format-governor.md)** - Team matchUp format management
 
 - Define and modify tieFormat structures (collections, groups, win criteria)
 - Centralised storage and deduplication of tieFormats
@@ -155,14 +155,14 @@ The Competition Factory includes 16 governors organized into functional areas:
 
 ### Scheduling
 
-**[Schedule Governor](./schedule-governor)** - Scheduling operations
+**[Schedule Governor](./schedule-governor.md)** - Scheduling operations
 
 - Manual schedule assignment (date, time, venue, court)
 - Automated scheduling (Garman formula, grid scheduling)
 - Bulk scheduling operations
 - Schedule clearing and modifications
 
-**[Venue Governor](./venue-governor)** - Venue and court management
+**[Venue Governor](./venue-governor.md)** - Venue and court management
 
 - Create and modify venues
 - Add/remove courts
@@ -171,21 +171,21 @@ The Competition Factory includes 16 governors organized into functional areas:
 
 ### Publishing & Queries
 
-**[Publishing Governor](./publishing-governor)** - Publish state management
+**[Publishing Governor](./publishing-governor.md)** - Publish state management
 
 - Publish/unpublish events and draws
 - Publish order of play
 - Publish seeding and participants
 - Granular visibility control (stages, structures, rounds)
 
-**[Query Governor](./query-governor)** - Data retrieval
+**[Query Governor](./query-governor.md)** - Data retrieval
 
 - Get tournament matchUps
 - Competition schedule queries
 - Event data for visualization
 - Participant queries with filtering
 
-**[Report Governor](./report-governor)** - Reporting and analytics
+**[Report Governor](./report-governor.md)** - Reporting and analytics
 
 - Unified report API: `getAvailableReports`, `generateReport`, `buildReportContext`
 - 13 registered reports across 6 categories (Entries, Draws, MatchUps, Participants, Scheduling, Audit)
@@ -194,7 +194,7 @@ The Competition Factory includes 16 governors organized into functional areas:
 
 ### Configuration
 
-**[Policy Governor](./policy-governor)** - Policy management
+**[Policy Governor](./policy-governor.md)** - Policy management
 
 - Attach policies to tournaments, events, draws
 - Remove policies
@@ -203,7 +203,7 @@ The Competition Factory includes 16 governors organized into functional areas:
 
 ### Testing & Utilities
 
-**[Mocks Governor](./mocks-governor)** - Test data generation
+**[Mocks Governor](./mocks-governor.md)** - Test data generation
 
 - Generate complete tournament records
 - Create participants with realistic data
@@ -216,7 +216,7 @@ The Competition Factory includes 16 governors organized into functional areas:
 
 ### Create a Tournament
 
-**Use**: [Tournament Governor](./tournament-governor) + [Generation Governor](./generation-governor)
+**Use**: [Tournament Governor](./tournament-governor.md) + [Generation Governor](./generation-governor.md)
 
 ```js
 // Create tournament
@@ -235,7 +235,7 @@ tournamentEngine.generateDrawDefinition({
 
 #### Schedule MatchUps
 
-**Use**: [Venue Governor](./venue-governor) + [Schedule Governor](./schedule-governor)
+**Use**: [Venue Governor](./venue-governor.md) + [Schedule Governor](./schedule-governor.md)
 
 ```js
 // Setup venues
@@ -257,7 +257,7 @@ tournamentEngine.scheduleMatchUps({
 
 #### Record Scores and Advance Participants
 
-**Use**: [MatchUp Governor](./matchup-governor) + [Score Governor](./score-governor)
+**Use**: [MatchUp Governor](./matchup-governor.md) + [Score Governor](./score-governor.md)
 
 ```js
 // Set outcome
@@ -278,7 +278,7 @@ tournamentEngine.setMatchUpStatus({
 
 #### Publish Draws and Schedules
 
-**Use**: [Publishing Governor](./publishing-governor)
+**Use**: [Publishing Governor](./publishing-governor.md)
 
 ```js
 // Publish event
@@ -295,7 +295,7 @@ tournamentEngine.publishEventSeeding({ eventId });
 
 #### Query Tournament Data
 
-**Use**: [Query Governor](./query-governor)
+**Use**: [Query Governor](./query-governor.md)
 
 ```js
 // Get event data for display
@@ -315,7 +315,7 @@ const { matchUps } = tournamentEngine.allTournamentMatchUps();
 
 #### Apply Policies
 
-**Use**: [Policy Governor](./policy-governor)
+**Use**: [Policy Governor](./policy-governor.md)
 
 ```js
 import { policyConstants } from 'tods-competition-factory';
@@ -470,61 +470,61 @@ syncEngine.scheduleMatchUps({/* ... */});
 
 ### Competition Management
 
-| Governor                                       | Purpose                            | Key Methods                                                          |
-| ---------------------------------------------- | ---------------------------------- | -------------------------------------------------------------------- |
-| [Tournament Governor](./tournament-governor)   | Tournament creation and management | `newTournamentRecord`, `setTournamentName`, `addTournamentExtension` |
-| [Competition Governor](./competition-governor) | Multi-tournament operations        | `getCompetitionParticipants`, `getCompetitionMatchUps`               |
-| [Event Governor](./event-governor)             | Event lifecycle                    | `addEvent`, `deleteDrawDefinitions`, `setEventDisplay`               |
-| [Entries Governor](./entries-governor)         | Entry management                   | `addEventEntries`, `removeEventEntries`, `setEntryStatus`            |
+| Governor                                          | Purpose                            | Key Methods                                                          |
+| ------------------------------------------------- | ---------------------------------- | -------------------------------------------------------------------- |
+| [Tournament Governor](./tournament-governor.md)   | Tournament creation and management | `newTournamentRecord`, `setTournamentName`, `addTournamentExtension` |
+| [Competition Governor](./competition-governor.md) | Multi-tournament operations        | `getCompetitionParticipants`, `getCompetitionMatchUps`               |
+| [Event Governor](./event-governor.md)             | Event lifecycle                    | `addEvent`, `deleteDrawDefinitions`, `setEventDisplay`               |
+| [Entries Governor](./entries-governor.md)         | Entry management                   | `addEventEntries`, `removeEventEntries`, `setEntryStatus`            |
 
 ### Draw Operations
 
-| Governor                                     | Purpose           | Key Methods                                                                               |
-| -------------------------------------------- | ----------------- | ----------------------------------------------------------------------------------------- |
-| [Generation Governor](./generation-governor) | Draw generation   | `generateDrawDefinition`, `generateQualifyingDrawDefinition`, `generatePlayoffStructures` |
-| [Draws Governor](./draws-governor)           | Draw modification | `modifyDrawDefinition`, `addDrawDefinitionExtension`, `swapDrawPositions`                 |
+| Governor                                        | Purpose           | Key Methods                                                                               |
+| ----------------------------------------------- | ----------------- | ----------------------------------------------------------------------------------------- |
+| [Generation Governor](./generation-governor.md) | Draw generation   | `generateDrawDefinition`, `generateQualifyingDrawDefinition`, `generatePlayoffStructures` |
+| [Draws Governor](./draws-governor.md)           | Draw modification | `modifyDrawDefinition`, `addDrawDefinitionExtension`, `swapDrawPositions`                 |
 
 ### Participant Management
 
-| Governor                                       | Purpose                | Key Methods                                                       |
-| ---------------------------------------------- | ---------------------- | ----------------------------------------------------------------- |
-| [Participant Governor](./participant-governor) | Participant operations | `addParticipants`, `modifyParticipant`, `setParticipantScaleItem` |
+| Governor                                          | Purpose                | Key Methods                                                       |
+| ------------------------------------------------- | ---------------------- | ----------------------------------------------------------------- |
+| [Participant Governor](./participant-governor.md) | Participant operations | `addParticipants`, `modifyParticipant`, `setParticipantScaleItem` |
 
 ### MatchUp Operations
 
-| Governor                                             | Purpose                | Key Methods                                                         |
-| ---------------------------------------------------- | ---------------------- | ------------------------------------------------------------------- |
-| [MatchUp Governor](./matchup-governor)               | MatchUp management     | `setMatchUpStatus`, `setMatchUpScore`, `advanceParticipants`        |
-| [Score Governor](./score-governor)                   | Score handling         | `parseScoreString`, `generateScoreString`, `checkSetIsComplete`     |
-| [MatchUp Format Governor](./matchup-format-governor) | Format handling        | `parseMatchUpFormat`, `stringifyMatchUpFormat`                      |
-| [tieFormat Governor](./tie-format-governor)          | Team format management | `modifyTieFormat`, `aggregateTieFormats`, `addCollectionDefinition` |
+| Governor                                                | Purpose                | Key Methods                                                         |
+| ------------------------------------------------------- | ---------------------- | ------------------------------------------------------------------- |
+| [MatchUp Governor](./matchup-governor.md)               | MatchUp management     | `setMatchUpStatus`, `setMatchUpScore`, `advanceParticipants`        |
+| [Score Governor](./score-governor.md)                   | Score handling         | `parseScoreString`, `generateScoreString`, `checkSetIsComplete`     |
+| [MatchUp Format Governor](./matchup-format-governor.md) | Format handling        | `parseMatchUpFormat`, `stringifyMatchUpFormat`                      |
+| [tieFormat Governor](./tie-format-governor.md)          | Team format management | `modifyTieFormat`, `aggregateTieFormats`, `addCollectionDefinition` |
 
 ### Scheduling & Venues
 
-| Governor                                 | Purpose               | Key Methods                                                                   |
-| ---------------------------------------- | --------------------- | ----------------------------------------------------------------------------- |
-| [Schedule Governor](./schedule-governor) | Scheduling operations | `scheduleMatchUps`, `scheduleProfileRounds`, `bulkScheduleTournamentMatchUps` |
-| [Venue Governor](./venue-governor)       | Venue management      | `addVenue`, `addCourt`, `modifyCourt`                                         |
+| Governor                                    | Purpose               | Key Methods                                                                   |
+| ------------------------------------------- | --------------------- | ----------------------------------------------------------------------------- |
+| [Schedule Governor](./schedule-governor.md) | Scheduling operations | `scheduleMatchUps`, `scheduleProfileRounds`, `bulkScheduleTournamentMatchUps` |
+| [Venue Governor](./venue-governor.md)       | Venue management      | `addVenue`, `addCourt`, `modifyCourt`                                         |
 
 ### Publishing & Query Reference
 
-| Governor                                     | Purpose        | Key Methods                                                            |
-| -------------------------------------------- | -------------- | ---------------------------------------------------------------------- |
-| [Publishing Governor](./publishing-governor) | Publish state  | `publishEvent`, `publishOrderOfPlay`, `publishEventSeeding`            |
-| [Query Governor](./query-governor)           | Data retrieval | `getEventData`, `competitionScheduleMatchUps`, `allTournamentMatchUps` |
-| [Report Governor](./report-governor)         | Reporting      | `participationReport`, `drawReport`, `scheduleReport`                  |
+| Governor                                        | Purpose        | Key Methods                                                            |
+| ----------------------------------------------- | -------------- | ---------------------------------------------------------------------- |
+| [Publishing Governor](./publishing-governor.md) | Publish state  | `publishEvent`, `publishOrderOfPlay`, `publishEventSeeding`            |
+| [Query Governor](./query-governor.md)           | Data retrieval | `getEventData`, `competitionScheduleMatchUps`, `allTournamentMatchUps` |
+| [Report Governor](./report-governor.md)         | Reporting      | `participationReport`, `drawReport`, `scheduleReport`                  |
 
 ### Configuration Reference
 
-| Governor                             | Purpose           | Key Methods                                          |
-| ------------------------------------ | ----------------- | ---------------------------------------------------- |
-| [Policy Governor](./policy-governor) | Policy management | `attachPolicy`, `removePolicy`, `getAppliedPolicies` |
+| Governor                                | Purpose           | Key Methods                                          |
+| --------------------------------------- | ----------------- | ---------------------------------------------------- |
+| [Policy Governor](./policy-governor.md) | Policy management | `attachPolicy`, `removePolicy`, `getAppliedPolicies` |
 
 ### Testing
 
-| Governor                           | Purpose              | Key Methods                                                              |
-| ---------------------------------- | -------------------- | ------------------------------------------------------------------------ |
-| [Mocks Governor](./mocks-governor) | Test data generation | `generateTournamentRecord`, `generateOutcomes`, `modifyTournamentRecord` |
+| Governor                              | Purpose              | Key Methods                                                              |
+| ------------------------------------- | -------------------- | ------------------------------------------------------------------------ |
+| [Mocks Governor](./mocks-governor.md) | Test data generation | `generateTournamentRecord`, `generateOutcomes`, `modifyTournamentRecord` |
 
 ---
 
@@ -602,5 +602,5 @@ tournamentEngine.devContext({
 - **[State Engines](/docs/engines/state-engines)** - Engine architecture and usage
 - **[Custom Engines](/docs/engines/custom-engines)** - Building custom engines with governors
 - **[Subscriptions](/docs/engines/subscriptions)** - Notification system
-- **[Policies](../concepts/policies)** - Policy system overview
-- **[Publishing](../concepts/publishing/publishing-overview)** - Publishing workflows
+- **[Policies](../concepts/policies.md)** - Policy system overview
+- **[Publishing](../concepts/publishing/publishing-overview.md)** - Publishing workflows

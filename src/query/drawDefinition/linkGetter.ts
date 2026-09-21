@@ -87,3 +87,51 @@ export function getStructureLinks({
   );
   return { links: structureLinks };
 }
+
+type GetWinnerLinkRoundNumbersArgs = {
+  drawDefinition?: any;
+  structureId?: string;
+};
+
+/**
+ * The roundNumbers of `structureId` that a WINNER link targets.
+ *
+ * This is the exception that stops `getRoundMatchUps` from calling a round a FEED ROUND when it
+ * holds no reserved fed drawPosition. A feed round is a round that receives participants through a
+ * link **as well as** from the previous round, and its matchUps pair a FED position with an
+ * ADVANCED one; the engine infers it from matchUpsCount equality with the prior round, because a
+ * feed round does not halve.
+ *
+ * `DOUBLE_ELIMINATION`'s Main final does not halve either, and is fed by a **WINNER** link from the
+ * Backdraw. It has no reserved fed slot: Main is generated as a feed-in of `drawSize + 1` with
+ * `linkFedFinishingRoundNumbers: [1]`, and link-fed positions are subtracted from the local
+ * allocation, so the extra matchUp exists and the extra slot does not. The Backdraw winner returns
+ * at whichever Main drawPosition they already held. See `documentation/docs/concepts/draw-positions.md`
+ * § 4a.
+ *
+ * MEASURED 2026-09-18 over 111 generated draws — 20 draw types x 9 draw sizes, no BYEs, so a
+ * drawPosition held in a round > 1 IS a reserved feed slot — 521 rounds and 1,739 matchUps:
+ *
+ * | discriminator for "this round holds a reserved fed drawPosition" | misses |
+ * |---|---|
+ * | matchUpsCount equality alone | 5 — `DOUBLE_ELIMINATION` Main's final, at every draw size |
+ * | a LOSER link targets the round | 4 — `FEED_IN` round 2 at every non-power-of-two size. Its reserved positions are held for entrants placed DIRECTLY into a later round — the ones who do not play round 1, seeds among them — so they come from the draw's own entries and the structure has NO links at all |
+ * | **count equality AND no WINNER link** | **0** |
+ *
+ * The LOSER-link row is why this is not simply "derive feedRound from the links": a structure can
+ * feed itself. Note also that feed rounds are HOMOGENEOUS — 1,739 of 1,739 matchUps agreed with
+ * their round, so this is a round fact and not a per-matchUp one. (Positive control for that
+ * counter: the same measurement over draws WITH byes reports 337, because a round-1 bye advances a
+ * participant into round 2 at generation.)
+ */
+export function getWinnerLinkRoundNumbers({ drawDefinition, structureId }: GetWinnerLinkRoundNumbersArgs): number[] {
+  if (!drawDefinition?.links?.length || !structureId) return [];
+  return drawDefinition.links
+    .filter(
+      (link) =>
+        link?.linkType === WINNER &&
+        link?.target?.structureId === structureId &&
+        link?.target?.roundNumber !== undefined,
+    )
+    .map((link) => link.target.roundNumber);
+}

@@ -1,4 +1,6 @@
 import { modifyParticipantsNotice } from '@Mutate/notifications/participantNotifications';
+import { isClearRequest } from '@Mutate/participants/isClearRequest';
+import { isString } from '@Tools/objects';
 import { findTournamentParticipant } from '@Acquire/findTournamentParticipant';
 import { requireParams } from '@Helpers/parameters/requireParams';
 import { getTopics } from '@Global/state/globalState';
@@ -19,7 +21,15 @@ export function modifyParticipantOtherName({ tournamentRecord, participantId, pa
   });
   if (!participant) return { error: PARTICIPANT_NOT_FOUND };
 
-  participant.participantOtherName = participantOtherName;
+  // Same contract as `modifyParticipant`: '' clears and DELETES the key, a non-string is
+  // ignored, and `undefined` leaves the stored value untouched. This method previously assigned
+  // whatever it was given, so '' stored a falsy value and a missing argument OVERWROTE the stored
+  // value with `undefined` — two published methods disagreeing about one field.
+  if (isClearRequest(participantOtherName)) {
+    delete participant.participantOtherName;
+  } else if (isString(participantOtherName)) {
+    participant.participantOtherName = participantOtherName;
+  }
 
   const { topics } = getTopics();
   if (topics.includes(MODIFY_PARTICIPANTS)) {

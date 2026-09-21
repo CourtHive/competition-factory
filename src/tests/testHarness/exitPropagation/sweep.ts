@@ -208,6 +208,8 @@ export function generateSchedule(config: ScenarioConfig, drawId: string, maxStep
 export type Finding = PropertyFailure & {
   config: ScenarioConfig;
   steps: Step[];
+  /** the relational probe applied AFTER `steps`; absent for non-relational findings */
+  probe?: Step;
   fingerprint: string;
 };
 
@@ -225,6 +227,25 @@ export function replay(config: ScenarioConfig, steps: Step[], drawId: string): P
     // a shrunk schedule can name a matchUp that no longer exists at a smaller drawSize; skipping
     // is correct — the step simply has no effect on this draw
     if (!target) continue;
+
+    /**
+     * AND IT MUST STILL BE SCOREABLE. `generateSchedule` only ever targets a matchUp holding TWO
+     * participants, so every schedule it produces is legal — but `shrink` drops steps AND reduces
+     * the config, and this replay re-resolves each step by COORDINATE. Remove the step that fed a
+     * drawPosition's opponent and the later step still fires at that coordinate, now holding
+     * `[8, null]`. The finding is then recorded against an input the sweep would never generate.
+     *
+     * CA found this on a handed-out reproduction, 2026-09-20: *"it seems to be for setting the
+     * matchUp status of main|2|2 which IS NOT READY TO BE SCORED … this raises the question about
+     * whether the census is just scoring willy-nilly."* Measured over 400 findings from run
+     * 20260920-192054: **80 of them (20%) score a matchUp that is not populated**, concentrated in
+     * DRAW_INCONSISTENCY (41), MONOTONIC_DECISION (22), ERROR_IMPLIES_NO_MUTATION (10) and
+     * STRUCTURAL_INVARIANT (7).
+     *
+     * The predicate is the generator's, character for character, so the two cannot drift: a second
+     * spelling of "scoreable" is how this divergence arose in the first place.
+     */
+    if ((target.sides ?? []).filter((side: any) => side?.participantId).length !== 2) continue;
 
     const observation = observeMutation({
       propagateExitStatus: config.propagateExitStatus,
@@ -280,7 +301,33 @@ export function replay(config: ScenarioConfig, steps: Step[], drawId: string): P
       drawId,
     };
     const relational = [...checkMonotonicity(params), ...checkIdempotence(params), ...checkDoUndoIdentity(params)];
-    if (relational.length) return relational[0];
+    if (relational.length) {
+      /**
+       * THE PROBE IS PART OF THE REPRODUCTION, so it is recorded with the failure.
+       *
+       * The relational properties are not triggered by the schedule — they are triggered by THIS
+       * probe, applied after it. A finding that carries only `steps` therefore does not reproduce:
+       * replaying the steps alone leaves the draw in the SETUP state and reports nothing.
+       *
+       * Measured 2026-09-21 on COMPASS 8/7 `nonRandom: 20220267`, a `MONOTONIC_DECISION` whose
+       * recorded reproduction was a single step. Driving that step alone gives `UN-DECIDED: 0`; the
+       * violation needs the probe — a DOUBLE_WALKOVER on `East|1|3` — which appeared nowhere in the
+       * record. A whole signal was written up against the wrong matchUp because of it.
+       *
+       * Same class as the shrinker gap CA found the same day: a stored reproduction that does not
+       * reproduce. `steps` are the setup and `probe` completes it; a reader applies steps, then
+       * probe.
+       */
+      return {
+        ...relational[0],
+        probe: {
+          structureName: String(candidate.structureName),
+          roundNumber: candidate.roundNumber,
+          roundPosition: candidate.roundPosition,
+          outcome,
+        },
+      };
+    }
   }
   return null;
 }

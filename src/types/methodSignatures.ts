@@ -263,6 +263,7 @@ import type { addPracticeRegistration } from '@Mutate/practice/addPracticeRegist
 import type { proposeAmendment, reviewAmendment } from '@Mutate/sanctioning/amendments';
 import type { checkInParticipant } from '@Mutate/timeItems/matchUps/checkInParticipant';
 import type { getSwissStandings } from '@Query/drawDefinitions/swiss/getSwissStandings';
+import type { getMatchUpCheckInHistory } from '@Query/matchUp/getMatchUpCheckInHistory';
 import type { allCompetitionMatchUps } from '@Query/matchUps/getAllCompetitionMatchUps';
 import type { getParticipantRest } from '@Query/matchUps/scheduling/getParticipantRest';
 import type { getOfficialAssignments } from '@Query/officiating/getOfficialAssignments';
@@ -616,6 +617,11 @@ import type {
   getTournamentTimeItem,
 } from '@Query/base/timeItems';
 import type {
+  getParticipantPresenceHistory,
+  getParticipantSignedInOnDate,
+  getParticipantsStillSignedInOnDate,
+} from '@Query/participant/presence';
+import type {
   analyzeSequence,
   groupByMatch,
   parseCSV,
@@ -654,6 +660,11 @@ import type {
   getLadderPolicy,
   isChallengeInRange,
 } from '@Query/ladder/getLadderPolicy';
+import type {
+  getPresenceExpectation,
+  getPresenceRules,
+  validatePresenceAttribution,
+} from '@Query/participant/presencePolicy';
 import type {
   assignMatchUpScorekeeper,
   removeMatchUpScorekeeper,
@@ -956,6 +967,7 @@ export interface MethodSignatures {
   getLapses: EngineMethod<typeof getLapses>;
   getLinkedTournamentIds: EngineMethod<typeof getLinkedTournamentIds>;
   getLuckyDrawRoundStatus: EngineMethod<typeof getLuckyDrawRoundStatus>;
+  getMatchUpCheckInHistory: EngineMethod<typeof getMatchUpCheckInHistory>;
   getMatchUpCompetitiveProfile: EngineMethod<typeof getMatchUpCompetitiveProfile>;
   getMatchUpContextIds: EngineMethod<typeof getMatchUpContextIds>;
   getMatchUpDailyLimits: EngineMethod<typeof getMatchUpDailyLimits>;
@@ -987,12 +999,15 @@ export interface MethodSignatures {
   getParticipantMembership: EngineMethod<typeof getParticipantMembership>;
   getParticipantPaymentStatus: EngineMethod<typeof getParticipantPaymentStatus>;
   getParticipantPoints: EngineMethod<typeof getParticipantPoints>;
+  getParticipantPresenceHistory: EngineMethod<typeof getParticipantPresenceHistory>;
   getParticipantRest: EngineMethod<typeof getParticipantRest>;
   getParticipantResults: EngineMethod<typeof getParticipantResults>;
   getParticipants: EngineMethod<typeof getParticipants>;
   getParticipantScaleItem: EngineMethod<typeof getParticipantScaleItem>;
   getParticipantSchedules: EngineMethod<typeof getParticipantSchedules>;
+  getParticipantSignedInOnDate: EngineMethod<typeof getParticipantSignedInOnDate>;
   getParticipantSignInStatus: EngineMethod<typeof getParticipantSignInStatus>;
+  getParticipantsStillSignedInOnDate: EngineMethod<typeof getParticipantsStillSignedInOnDate>;
   getParticipantStats: EngineMethod<typeof getParticipantStats>;
   getParticipantTimeItem: EngineMethod<typeof getParticipantTimeItem>;
   getParticipation: EngineMethod<typeof getParticipation>;
@@ -1002,6 +1017,8 @@ export interface MethodSignatures {
   getPositionsPlayedOff: EngineMethod<typeof getPositionsPlayedOff>;
   getPracticeRegistrations: EngineMethod<typeof getPracticeRegistrations>;
   getPredictiveAccuracy: EngineMethod<typeof getPredictiveAccuracy>;
+  getPresenceExpectation: EngineMethod<typeof getPresenceExpectation>;
+  getPresenceRules: EngineMethod<typeof getPresenceRules>;
   getProfileRounds: EngineMethod<typeof getProfileRounds>;
   getPublishState: EngineMethod<typeof getPublishState>;
   getQualityWinPoints: EngineMethod<typeof getQualityWinPoints>;
@@ -1312,6 +1329,7 @@ export interface MethodSignatures {
   validateMCPMatch: EngineMethod<typeof validateMCPMatch>;
   validateOfficiatingStatusTransition: EngineMethod<typeof validateOfficiatingStatusTransition>;
   validatePlayoffGroups: EngineMethod<typeof validatePlayoffGroups>;
+  validatePresenceAttribution: EngineMethod<typeof validatePresenceAttribution>;
   validateProposal: EngineMethod<typeof validateProposal>;
   validateScheduleScenario: EngineMethod<typeof validateScheduleScenario>;
   validateSchedulingProfile: EngineMethod<typeof validateSchedulingProfile>;

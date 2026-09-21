@@ -269,6 +269,12 @@ export type PropertyFailure = {
   property: string;
   matchUpId: string;
   detail: string;
+  /**
+   * For the RELATIONAL properties only. Those are triggered by a probe applied AFTER the schedule,
+   * so a failure that carries only the schedule does not reproduce — see `replay`'s relational
+   * phase for the measurement that cost a signal write-up. Absent on every other property.
+   */
+  probe?: { structureName: string; roundNumber: number; roundPosition: number; outcome: any };
 };
 
 /**

@@ -9,7 +9,7 @@ import { scheduleGovernor } from 'tods-competition-factory';
 ```
 
 :::tip
-See **[Scheduling Overview](../concepts/scheduling-overview)**, **[Automated Scheduling](../concepts/automated-scheduling)**, **[Pro Scheduling](../concepts/pro-scheduling)**, and **[Scheduling Policy](../policies/scheduling)** for comprehensive scheduling concepts.
+See **[Scheduling Overview](../concepts/scheduling-overview.mdx)**, **[Automated Scheduling](../concepts/automated-scheduling.md)**, **[Pro Scheduling](../concepts/pro-scheduling.md)**, and **[Scheduling Policy](../policies/scheduling.md)** for comprehensive scheduling concepts.
 :::
 
 ## Manual Scheduling Methods
@@ -281,7 +281,7 @@ The `periodLength` parameter controls the granularity of scheduling blocks:
 
 Smaller period lengths provide more precise start times but may reduce court utilization. Larger periods improve grouping but reduce precision.
 
-**See**: [Automated Scheduling - Period Length](../concepts/automated-scheduling#period-length-scheduling-block-size) for detailed explanation.
+**See**: [Automated Scheduling - Period Length](../concepts/automated-scheduling.md#period-length-scheduling-block-size) for detailed explanation.
 
 #### scheduleMatchUps Examples
 
@@ -327,7 +327,7 @@ console.log('Would schedule:', result.scheduledMatchUpIds);
 console.log('Would not fit:', result.noTimeMatchUpIds);
 ```
 
-**See**: [Automated Scheduling Concepts](../concepts/automated-scheduling) for algorithm details.
+**See**: [Automated Scheduling Concepts](../concepts/automated-scheduling.md) for algorithm details.
 
 ---
 
@@ -450,7 +450,7 @@ engine.scheduleProfileRounds({
 SINGLES and DOUBLES matchUps are scheduled automatically. TEAM matchUps require manual court allocation using `allocateTeamMatchUpCourts()`.
 :::
 
-**See**: [Scheduling Profile](../concepts/scheduling-profile) and [Pro Scheduling](../concepts/pro-scheduling) for details.
+**See**: [Scheduling Profile](../concepts/scheduling-profile.mdx) and [Pro Scheduling](../concepts/pro-scheduling.md) for details.
 
 ---
 
@@ -1242,13 +1242,13 @@ const schedulingProfile = [
 engine.setSchedulingProfile({ schedulingProfile });
 ```
 
-**See**: [Scheduling Profile Concepts](../concepts/scheduling-profile) for detailed profile structure and creation.
+**See**: [Scheduling Profile Concepts](../concepts/scheduling-profile.mdx) for detailed profile structure and creation.
 
 ---
 
 ## Schedule Scenario Methods
 
-Named alternate ("contingency") scheduling plans stored first-class on `tournamentRecord.scheduling.scenarios`. See **[Schedule Scenarios](../concepts/schedule-scenarios)** for the full concept.
+Named alternate ("contingency") scheduling plans stored first-class on `tournamentRecord.scheduling.scenarios`. See **[Schedule Scenarios](../concepts/schedule-scenarios.mdx)** for the full concept.
 
 ### addScheduleScenario
 
@@ -1520,7 +1520,7 @@ const { warnings } = engine.addMatchUpScheduleItems({
 
 `lock` is in the reported bucket on purpose — silently discarding a director's pin is
 the worst of these to discover later. Assign officials through the
-[officiating governor](./officiating-governor) and pin with
+[officiating governor](./officiating-governor.md) and pin with
 [`setMatchUpScheduleLock`](#setmatchupschedulelock).
 
 Warnings rather than errors, because callers round-trip locked and scored matchUps
@@ -1786,11 +1786,11 @@ as a measured one.
 
 ## Related Documentation
 
-- **[Scheduling Overview](../concepts/scheduling-overview)** - Core scheduling concepts
-- **[Automated Scheduling](../concepts/automated-scheduling)** - Algorithm details and Garman formula
-- **[Pro Scheduling](../concepts/pro-scheduling)** - Grid scheduling for professional tournaments
-- **[Scheduling Profile](../concepts/scheduling-profile)** - Multi-day scheduling profiles
-- **[Scheduling Conflicts](../concepts/scheduling-conflicts)** - Conflict detection and resolution
-- **[Scheduling Policy](../policies/scheduling)** - Policy configuration
-- **[Venues and Courts](../concepts/venues-courts)** - Venue setup and court availability
-- **[Time Items](../concepts/timeItems)** - How schedules are stored
+- **[Scheduling Overview](../concepts/scheduling-overview.mdx)** - Core scheduling concepts
+- **[Automated Scheduling](../concepts/automated-scheduling.md)** - Algorithm details and Garman formula
+- **[Pro Scheduling](../concepts/pro-scheduling.md)** - Grid scheduling for professional tournaments
+- **[Scheduling Profile](../concepts/scheduling-profile.mdx)** - Multi-day scheduling profiles
+- **[Scheduling Conflicts](../concepts/scheduling-conflicts.mdx)** - Conflict detection and resolution
+- **[Scheduling Policy](../policies/scheduling.md)** - Policy configuration
+- **[Venues and Courts](../concepts/venues-courts.md)** - Venue setup and court availability
+- **[Time Items](../concepts/timeItems.md)** - How schedules are stored

@@ -247,6 +247,23 @@ export function clearSideExitProvenance(matchUp?: MatchUp): void {
  *
  * `isAnyExit`, not `isExit` — the double exits are precisely the statuses that stamp provenance.
  *
+ * ALL THREE CALL SITES ARE LOAD-BEARING, measured 2026-09-19 by restoring each to an unconditional
+ * `clearSideExitProvenance` ONE AT A TIME on `dev` after the unwind was corrected (#4935). The
+ * original counts were `removeDirectedLoser` 38 clears, `applyPositionToMatchUp` 9,
+ * `applyScoreAndStatus` 10.
+ *
+ * | site | full suite | census (six arms) | per-step inconsistencies |
+ * |---|---|---|---|
+ * | `removeDirectedLoser` | 2 failed | — | — |
+ * | `applyScoreAndStatus` | 4 failed | — | — |
+ * | `applyPositionToMatchUp` | **clean** | **+3 opened** | **+7 started** |
+ *
+ * **`applyPositionToMatchUp` is the one to be careful about.** Its suite is clean, and on that
+ * evidence alone it reads as a redundant workaround left over from before the unwind was fixed. It
+ * is not: the 600-seed census opens three seeds and the per-step scan starts seven findings. A suite
+ * that stays green is not evidence that a propagation compensation is inert — the census is the
+ * instrument that answers this, and it disagreed.
+ *
  * See Mentat/planning/SWEEP_20260911_DISCOVERY.md.
  */
 export function clearResolvedSideExitProvenance(matchUp?: MatchUp): void {
@@ -294,6 +311,117 @@ export function getSideExitProvenance({ matchUp }: { matchUp?: MatchUp }): SideE
   });
 
   return Object.keys(derived).length ? derived : undefined;
+}
+
+/**
+ * Read provenance from the NATIVE field ALONE.
+ *
+ * `getSideExitProvenance` falls back to `matchUpStatusCodes`, and that fallback is right for the
+ * question *"is this matchUp an exit that came from somewhere"* — a record written before the native
+ * field, or by a LEGACY-mode writer, still answers it.
+ *
+ * It is WRONG for the question an unwind asks: *"did an origin survive THIS withdrawal"*. The legacy
+ * array is not rewritten when provenance is withdrawn (see `withdrawFromMatchUp` on why it must not
+ * be), so after the native field is cleared the fallback still returns the provenance-shaped
+ * elements it held — answering "an origin survived" for a matchUp that has none. Measured: that
+ * defeated an earlier attempt at this fix outright.
+ *
+ * So the two questions get two readers rather than one reader with a flag, and a caller picks by
+ * naming which question it is asking. Nothing else about the shared reader changes.
+ */
+export function getNativeSideExitProvenance({ matchUp }: { matchUp?: MatchUp }): SideExitProvenance | undefined {
+  const native = matchUp?.sideExitProvenance;
+  return native && Object.keys(native).length ? native : undefined;
+}
+
+/**
+ * The exit status a side CARRIES into the matchUp its provenance entry sits on.
+ *
+ * An entry records where a side came from, and not every origin is an exit: `buildSideExitProvenance`
+ * deliberately records a `COMPLETED` opponent, because "this side arrived by winning" is a real fact
+ * about the convergence. Reading `entry.matchUpStatus` as though it were always an exit status is
+ * what wrote `COMPLETED` onto a matchUp in the same call that passed `removeWinningSide: true`,
+ * producing `COMPLETED_WITHOUT_WINNING_SIDE` on 41 seeds of one census arm. So the test comes first
+ * and the value second.
+ *
+ * `RETIRED` maps to `WALKOVER`, which is `progressExitStatus`'s own `carryOverMatchUpStatus` rule:
+ * a retirement is a result, not something to propagate onward under its own name.
+ *
+ * Returns undefined when the side did not exit — including when it has no entry at all.
+ */
+export function carriedExitStatus(entry?: SideExitProvenanceEntry): string | undefined {
+  const status = entry?.matchUpStatus;
+  if (!isAnyExit(status)) return undefined;
+  return status === RETIRED ? WALKOVER : status;
+}
+
+/**
+ * RE-DERIVE a matchUp's exit state from the provenance that REMAINS on it.
+ *
+ * The inverse of `progressExitStatus`, and deliberately a mirror of its RULES 2, 3 and 4 rather than
+ * a second opinion about them:
+ *
+ *  - TWO sides carry an exit — RULE 4, the convergence. The matchUp is a double exit and nobody wins
+ *    it; WHICH double exit is `collapseDoubleExitStatus`' decision, not a hardcoded
+ *    `DOUBLE_WALKOVER`.
+ *  - ONE side carries an exit — RULES 2 and 3, which resolve identically. The matchUp holds that
+ *    side's carried exit and the OTHER side wins it, whether that side is a present opponent or an
+ *    empty slot still waiting for one.
+ *  - NO side carries an exit — nothing derived remains, and the matchUp is not this function's to
+ *    describe. The caller reverts it.
+ *
+ * WHY RE-DERIVE RATHER THAN INFER. A partial unwind — withdrawing one of two origins — has to leave
+ * the target in the state it was in before the withdrawn origin ever arrived. That state was
+ * produced by the forward path from the origins that remain, so replaying that derivation restores
+ * it exactly. Six earlier attempts at this fix GUESSED instead (take the surviving exit's status;
+ * make the winner the other side) and each broke `DO_UNDO_IDENTITY`, because a guess can agree with
+ * the prior state without being derived from the same facts. This is not a weaker form of that
+ * property — it is what makes it satisfiable.
+ *
+ * BYE is NOT decided here. A BYE-held drawPosition reverts to `BYE` whatever provenance survives,
+ * and that test reads the positionAssignment rather than any status; it belongs to the caller, which
+ * has the structure. `doubleExitUnwindRestoresBye` pins it.
+ */
+export function deriveExitStateFromProvenance(
+  provenance?: SideExitProvenance,
+): { matchUpStatus: string; winningSide?: number } | undefined {
+  if (!provenance) return undefined;
+
+  const exitingSides = ([1, 2] as const).filter((sideNumber) => carriedExitStatus(provenance[sideNumber]));
+  if (!exitingSides.length) return undefined;
+
+  if (exitingSides.length === 2) {
+    return { matchUpStatus: collapseDoubleExitStatus(exitingSides.map((s) => carriedExitStatus(provenance[s]))) };
+  }
+
+  const exitingSideNumber = exitingSides[0];
+  return {
+    matchUpStatus: carriedExitStatus(provenance[exitingSideNumber]) as string,
+    winningSide: exitingSideNumber === 1 ? 2 : 1,
+  };
+}
+
+/**
+ * The entries of `provenance` whose origin is NOT going away.
+ *
+ * Identity-keyed, exactly as `withdrawProducedExits` is: an origin is withdrawn because the matchUp
+ * that produced it is being unwound, never because of how it looks. An entry naming no source at all
+ * is RETAINED — it predates source identity, and dropping it would delete a fact on the strength of
+ * its age.
+ */
+export function retainForeignProvenance(
+  provenance: SideExitProvenance | undefined,
+  withdrawnSourceIds: Set<string>,
+): SideExitProvenance | undefined {
+  if (!provenance) return undefined;
+  const retained: SideExitProvenance = {};
+  for (const sideNumber of [1, 2] as const) {
+    const entry = provenance[sideNumber];
+    if (!entry) continue;
+    if (entry.sourceMatchUpId && withdrawnSourceIds.has(entry.sourceMatchUpId)) continue;
+    retained[sideNumber] = entry;
+  }
+  return Object.keys(retained).length ? retained : undefined;
 }
 
 /**

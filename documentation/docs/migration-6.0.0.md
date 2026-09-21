@@ -31,7 +31,7 @@ const { modifications } = scaleEngine.generateDynamicRatings({
 });
 ```
 
-→ [generateDynamicRatings](./scale-engine/scale-engine-api#generatedynamicratings).
+→ [generateDynamicRatings](./scale-engine/scale-engine-api.md#generatedynamicratings).
 
 ## 2. `person.birthDate` canonicalisation
 
@@ -63,11 +63,11 @@ Search your codebase for the lowercase form:
 grep -rn "\.birthdate\b" src/
 ```
 
-Any stored records that carry the lowercase key should be migrated to `birthDate` at your upgrade seam. `birthDate` is the canonical field used everywhere else in the factory (see the INDIVIDUAL participant type in [Participants](./concepts/participants#individual)).
+Any stored records that carry the lowercase key should be migrated to `birthDate` at your upgrade seam. `birthDate` is the canonical field used everywhere else in the factory (see the INDIVIDUAL participant type in [Participants](./concepts/participants.md#individual)).
 
 ## The integrity query hierarchy is additive
 
-The [data-integrity query hierarchy](./whats-new-6.0.0#the-headline-feature--data-integrity-query-hierarchy) (`getStructureInconsistencies`, `getDrawInconsistencies`, `getEventInconsistencies`, `getTournamentInconsistencies`, and their `*Completeness` companions) is a new read-only surface. Existing code continues to work unchanged; adopt these queries at your own pace. See the [Query Governor](./governors/query-governor) for full API details.
+The [data-integrity query hierarchy](./whats-new-6.0.0#the-headline-feature--data-integrity-query-hierarchy) (`getStructureInconsistencies`, `getDrawInconsistencies`, `getEventInconsistencies`, `getTournamentInconsistencies`, and their `*Completeness` companions) is a new read-only surface. Existing code continues to work unchanged; adopt these queries at your own pace. See the [Query Governor](./governors/query-governor.md) for full API details.
 
 ## Upgrading checklist
 

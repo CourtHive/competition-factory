@@ -1,4 +1,5 @@
 import { getMappedStructureMatchUps } from '@Query/matchUps/getMatchUpsMap';
+import { findPairedFeeder } from '@Query/matchUps/getPairedPreviousMatchup';
 import { pushGlobalLog } from '@Functions/global/globalLog';
 
 // constants
@@ -67,16 +68,17 @@ export function getPairedPreviousMatchUpIsDoubleExit(params) {
     });
   }
 
-  // look for paired round position in previous round
-  // missing sourceMatchUp causes pairedRoundPosition to be NaN, which is OK
-  const sourceRoundPosition = sourceMatchUp?.roundPosition;
-  const offset = sourceRoundPosition % 2 ? 1 : -1;
-  const pairedRoundPosition = sourceRoundPosition + offset;
-  const pairedPreviousMatchUp =
-    previousRoundNumber &&
-    structureMatchUps.find(
-      ({ roundNumber, roundPosition }) => roundNumber === previousRoundNumber && roundPosition === pairedRoundPosition,
-    );
+  /**
+   * The previous-round matchUp that feeds this same target — asked structurally, through the single
+   * implementation in `getPairedPreviousMatchup`, rather than by `roundPosition ± 1` here and again
+   * there. See that file for what the arithmetic got wrong and where it was measured.
+   */
+  const pairedPreviousMatchUp = findPairedFeeder({
+    excludeMatchUpId: sourceMatchUp?.matchUpId,
+    targetMatchUpId: targetMatchUp.matchUpId,
+    roundNumber: previousRoundNumber,
+    candidates: structureMatchUps,
+  });
 
   const pairedPreviousMatchUpStatus = pairedPreviousMatchUp?.matchUpStatus;
   const pairedPreviousMatchUpIsDoubleExit = [DOUBLE_WALKOVER, DOUBLE_DEFAULT].includes(pairedPreviousMatchUpStatus);
@@ -88,9 +90,7 @@ export function getPairedPreviousMatchUpIsDoubleExit(params) {
       pairedMatchUpId: 'brightcyan',
       isDoubleExit: pairedPreviousMatchUpIsDoubleExit ? 'brightred' : 'brightgreen',
     },
-    sourceRoundPosition,
-    offset,
-    pairedRoundPosition,
+    sourceRoundPosition: sourceMatchUp?.roundPosition,
     pairedMatchUpId: pairedPreviousMatchUp?.matchUpId,
     pairedRound: pairedPreviousMatchUp
       ? [pairedPreviousMatchUp.roundNumber, pairedPreviousMatchUp.roundPosition]

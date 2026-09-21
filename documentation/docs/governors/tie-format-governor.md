@@ -149,7 +149,7 @@ Each `collectionDefinition` uses exactly one of these scoring mechanisms:
 
 A `collectionGroup` can additionally define a `groupValue` threshold across multiple collections.
 
-See the [tieFormat concepts page](../concepts/tieFormat) for detailed examples and the [type definitions](../types/typedefs#tieformat) for the full type.
+See the [tieFormat concepts page](../concepts/tieFormat.mdx) for detailed examples and the [type definitions](../types/typedefs.mdx#tieformat) for the full type.
 
 ---
 

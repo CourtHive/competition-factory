@@ -491,7 +491,7 @@ const { tournamentRecord } = mocksEngine.generateTournamentRecord({
 Extensions carry data CODES has no first-class home for. This example used to demonstrate a
 `prizeMoney` extension, which is no longer the right shape — `Event.prizeMoney` is a first-class
 `PrizeMoney[]` field, and a monetary amount states its unit (see
-[Sanctioning](../codes/sanctioning#the-rest-of-the-record)):
+[Sanctioning](../codes/sanctioning.mdx#the-rest-of-the-record)):
 
 ```js
 const { tournamentRecord } = mocksEngine.generateTournamentRecord({

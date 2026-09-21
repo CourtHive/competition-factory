@@ -7,13 +7,13 @@ title: Round Robin Pairing (Shapes)
 A round robin is a **pairing shape** — every entrant meets every other entrant — and that shape can be
 applied by _round generation_ as well as by a draw structure. The two are different tools:
 
-|                     | [`ROUND_ROBIN` draw type](./round-robin)                    | `pairingProfile` on an [`AD_HOC`](./ad-hoc) draw |
-| ------------------- | ----------------------------------------------------------- | ------------------------------------------------ |
-| Produces            | groups, each a container structure with positioned entrants | rounds of matchUps, no groups                    |
-| Groups              | splits the draw into groups of `structureOptions.groupSize` | none — one schedule over all entrants            |
-| Repeat meetings     | one meeting per pair                                        | `encounters: 2`, `3`, …                          |
-| Partial schedule    | no — the full pairing set is materialized                   | yes — `roundsCount` truncates                    |
-| Finishing positions | derived from group tallies                                  | none — rounds are independent                    |
+|                     | [`ROUND_ROBIN` draw type](./round-robin.md)                 | `pairingProfile` on an [`AD_HOC`](./ad-hoc.md) draw |
+| ------------------- | ----------------------------------------------------------- | --------------------------------------------------- |
+| Produces            | groups, each a container structure with positioned entrants | rounds of matchUps, no groups                       |
+| Groups              | splits the draw into groups of `structureOptions.groupSize` | none — one schedule over all entrants               |
+| Repeat meetings     | one meeting per pair                                        | `encounters: 2`, `3`, …                             |
+| Partial schedule    | no — the full pairing set is materialized                   | yes — `roundsCount` truncates                       |
+| Finishing positions | derived from group tallies                                  | none — rounds are independent                       |
 
 Use the draw type when the competition is organized into groups that produce finishing positions. Use a
 pairing shape when the competition is a **league**: one division, everyone plays everyone, possibly twice,
@@ -94,19 +94,19 @@ happened to be possible:
 
 All three pair participants into ad-hoc rounds, and they answer different questions:
 
-- **[DrawMatic](./drawmatic)** pairs by rating, avoiding repeat opponents probabilistically. It does not
+- **[DrawMatic](./drawmatic.md)** pairs by rating, avoiding repeat opponents probabilistically. It does not
   guarantee that every entrant meets every other — with `enableDoubleRobin` it will schedule up to
   `(entrants - 1) × 2` rounds, but the pairings are rating-weighted, not a replayed schedule.
-- **[Swiss](./swiss)** pairs each round from the current standings, so the schedule cannot be known in
+- **[Swiss](./swiss.md)** pairs each round from the current standings, so the schedule cannot be known in
   advance.
 - **A round robin shape** is fully determined before play begins, which is what a published league fixture
   list requires.
 
 ## Related
 
-- [Ad Hoc (Flex Rounds)](./ad-hoc) -- the draw type a pairing shape applies to
-- [Round Robin](./round-robin) -- the grouped draw-structure alternative
-- [DrawMatic](./drawmatic) -- rating-weighted ad-hoc pairing
-- [Swiss](./swiss) -- standings-driven ad-hoc pairing
+- [Ad Hoc (Flex Rounds)](./ad-hoc.md) -- the draw type a pairing shape applies to
+- [Round Robin](./round-robin.md) -- the grouped draw-structure alternative
+- [DrawMatic](./drawmatic.md) -- rating-weighted ad-hoc pairing
+- [Swiss](./swiss.md) -- standings-driven ad-hoc pairing
 - [League Profiles](/docs/testing/mocks-engine-league-profiles) -- generating shaped leagues with mocksEngine
 - [generateDrawDefinition](/docs/governors/generation/generateDrawDefinition) -- API reference

@@ -88,7 +88,7 @@ In Round Robin structures, `finishingPositionRange` is less meaningful because a
 4-player group: winner=[1,4], loser=[1,4]
 ```
 
-Final standings in Round Robin are determined by [tally results](/docs/policies/roundRobinTallyPolicy) rather than `finishingPositionRange`. When Round Robin groups feed into playoff structures via [POSITION links](./draw-links), the playoff structure computes its own `finishingPositionRange` independently.
+Final standings in Round Robin are determined by [tally results](/docs/policies/roundRobinTallyPolicy) rather than `finishingPositionRange`. When Round Robin groups feed into playoff structures via [POSITION links](./draw-links.mdx), the playoff structure computes its own `finishingPositionRange` independently.
 
 ### Compass Draw
 
@@ -174,7 +174,7 @@ const { playoffFinishingPositionRanges } = engine.getPlayoffFinishingPositionRan
 // ]
 ```
 
-These ranges define how group finishers map to overall draw finishing positions and are used when configuring [playoff structures](./draws-overview#round-robin-with-playoffs).
+These ranges define how group finishers map to overall draw finishing positions and are used when configuring [playoff structures](./draws-overview.mdx#round-robin-with-playoffs).
 
 ## Links Between Structures
 
@@ -196,13 +196,13 @@ Draw structures are connected via **links** that control participant flow. The `
 }
 ```
 
-See [How Links Work](./draw-links) for full details on link types (WINNER, LOSER, POSITION).
+See [How Links Work](./draw-links.mdx) for full details on link types (WINNER, LOSER, POSITION).
 
 ## Related Documentation
 
 - **[Ranking Points Pipeline](/docs/scale-engine/ranking-points-pipeline#position-points)** — How the accessor maps to policy points
 - **[Ranking Policy](/docs/policies/rankingPolicy)** — Policy structure with `finishingPositionRanges` configuration
-- **[Draw Types](./draw-types)** — Draw structures and links between them
-- **[MatchUp Context](./matchup-context)** — How `finishingPositionRange` appears on matchUps
+- **[Draw Types](./draw-types.md)** — Draw structures and links between them
+- **[MatchUp Context](./matchup-context.mdx)** — How `finishingPositionRange` appears on matchUps
 - **[Scale Engine Overview](/docs/scale-engine/scale-engine-overview)** — Full ranking points pipeline
 - **[Report Governor](/docs/governors/report-governor)** — Draw reports include `finishingPositionRange`

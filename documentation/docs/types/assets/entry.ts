@@ -1,8 +1,6 @@
 export const entry = {
-  entryId:
-    '{\\"type\\":\\"string\\",\\"required\\":\\"false\\",\\"note\\":\\"id unique within tournament\\"}',
-  entryPosition:
-    '{\\"type\\":\\"number\\",\\"required\\":\\"false\\",\\"note\\":\\"unique within status group\\"}',
+  entryId: '{\\"type\\":\\"string\\",\\"required\\":\\"false\\",\\"note\\":\\"id unique within tournament\\"}',
+  entryPosition: '{\\"type\\":\\"number\\",\\"required\\":\\"false\\",\\"note\\":\\"unique within status group\\"}',
   entryStage:
     '{\\"type\\":\\"enum\\",\\"enum\\": \\"\\",\\"required\\":\\"false\\",\\"note\\":\\"QUALIFYING or MAIN\\"}',
   entryStageSequence:

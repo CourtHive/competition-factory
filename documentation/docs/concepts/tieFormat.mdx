@@ -24,7 +24,7 @@ When there is no `winCriteria` specified, the `valueGoal` defaults to one more t
 - **groupValue** - specified value is awarded for reaching a `valueGoal` by accumulating value across collections in the group
 - **scoreValue** - specified value is awarded for each sideScore (typically 1, typically used with `aggregateValue` formats)
 
-See [tieFormat type definitions](../types/typedefs#tieformat)
+See [tieFormat type definitions](../types/typedefs.mdx#tieformat)
 
 ## tieFormat Use
 
@@ -128,11 +128,11 @@ When the resolved score source is `REPORTED`:
   `collectionDefinitions` still describe **what was played** — only the unfillable matchUps are absent;
 - the read model projects `score_source: 'REPORTED'` on the TIE row, so a consumer can render "no line
   detail published" rather than an empty scorecard awaiting entry (see
-  [`cast`](../governors/query-governor#cast)).
+  [`cast`](../governors/query-governor.md#cast)).
 
 ### Relationship to `disableAutoCalc`
 
-[`disableTieAutoCalc`](../governors/matchup-governor) sets `disableAutoCalc` on a single TEAM `matchUp` and
+[`disableTieAutoCalc`](../governors/matchup-governor.md) sets `disableAutoCalc` on a single TEAM `matchUp` and
 has the same protective effect. The two express different things:
 
 - `disableAutoCalc` — **per-matchUp state**: "this particular tie's score was entered by hand". Cleared when
@@ -145,6 +145,6 @@ publishes its results.
 
 ## Related
 
-- [tieFormat Governor](../governors/tie-format-governor) — methods for creating, modifying, deduplicating, and validating tieFormats
-- [tieMatchUps](./tieMatchUp) — the individual matchUps within a TEAM matchUp
-- [lineUp](./lineUp) — how participants are assigned to collection positions
+- [tieFormat Governor](../governors/tie-format-governor.md) — methods for creating, modifying, deduplicating, and validating tieFormats
+- [tieMatchUps](./tieMatchUp.mdx) — the individual matchUps within a TEAM matchUp
+- [lineUp](./lineUp.mdx) — how participants are assigned to collection positions

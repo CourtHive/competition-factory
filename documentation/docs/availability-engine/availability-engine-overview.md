@@ -128,10 +128,10 @@ During `init()`, the engine:
 
 ## Related Documentation
 
-- **[Core API Reference](./availability-engine-api)** — Complete method reference
-- **[Event System & Validation](./event-system-and-validation)** — Events, conflict evaluators, and validation pipeline
-- **[Block Types & Algorithms](./block-types-and-algorithms)** — Block types, rail derivation, capacity curves, collision detection
-- **[UI Integration Scenarios](./ui-integration-scenarios)** — Building UIs with the temporal grid and scheduling profile
+- **[Core API Reference](./availability-engine-api.md)** — Complete method reference
+- **[Event System & Validation](./event-system-and-validation.md)** — Events, conflict evaluators, and validation pipeline
+- **[Block Types & Algorithms](./block-types-and-algorithms.md)** — Block types, rail derivation, capacity curves, collision detection
+- **[UI Integration Scenarios](./ui-integration-scenarios.md)** — Building UIs with the temporal grid and scheduling profile
 - **[Scheduling Overview](/docs/concepts/scheduling-overview)** — Scheduling concepts
 - **[Venues & Courts](/docs/concepts/venues-courts)** — Venue and court data structures
 - **[Schedule Governor](/docs/governors/schedule-governor)** — Automated scheduling functions

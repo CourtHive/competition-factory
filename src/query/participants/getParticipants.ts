@@ -1,4 +1,3 @@
-import { applyParticipantPrivacyToMap } from '@Query/participants/participantPrivacy';
 import { getParticipantEntries } from '@Query/participants/getParticipantEntries';
 import { getMatchUpDependencies } from '@Query/matchUps/getMatchUpDependencies';
 import { filterParticipants } from '@Query/participants/filterParticipants';
@@ -7,6 +6,12 @@ import { decorateResult } from '@Functions/global/decorateResult';
 import { definedAttributes } from '@Tools/definedAttributes';
 import { attributeFilter } from '@Tools/attributeFilter';
 import { isObject } from '@Tools/objects';
+import {
+  applyParticipantPrivacyToMap,
+  stripCheckInAttribution,
+  stripPresenceAttribution,
+  stripPresenceAttributionFromMap,
+} from '@Query/participants/participantPrivacy';
 
 // constants and types
 import { MISSING_TOURNAMENT_RECORD, ErrorType } from '@Constants/errorConditionConstants';
@@ -211,19 +216,27 @@ export function getParticipants(params: GetParticipantsArgs): {
     }
   }
 
-  const participants: HydratedParticipant[] = template
+  const policyFiltered: HydratedParticipant[] = template
     ? filteredParticipants.map((source) => attributeFilter({ source, template }))
     : filteredParticipants;
+
+  // UNCONDITIONAL, and deliberately outside the policy branch above (D-PRIV). A presence attester can
+  // be somebody who is not in the record at all, so it must not depend on a policy that this very
+  // function makes optional — `template` is undefined whenever no policy was supplied, and the public
+  // participants route supplies none.
+  const participants = stripPresenceAttribution(policyFiltered) as HydratedParticipant[];
 
   // The map is a second emission of the same people. It was returned raw, so a caller that supplied a
   // privacy policy and spread the whole result — as the public schedule route does — published every
   // attribute the policy denies, while `participants` beside it was correctly filtered.
-  const emittedParticipantMap = applyParticipantPrivacyToMap({ participantMap, template });
+  const emittedParticipantMap = stripPresenceAttributionFromMap(
+    applyParticipantPrivacyToMap({ participantMap, template }),
+  );
 
   return {
     participantMap: params.returnParticipantMap !== false ? emittedParticipantMap : undefined,
     mappedMatchUps: params.returnMatchUps !== false ? mappedMatchUps : undefined,
-    matchUps: params.returnMatchUps !== false ? matchUps : undefined,
+    matchUps: params.returnMatchUps !== false ? stripCheckInAttribution(matchUps) : undefined,
     missingParticipantIds: mapResult.missingParticipantIds,
     participantIdsWithConflicts,
     eventsPublishStatuses,

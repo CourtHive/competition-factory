@@ -84,7 +84,7 @@ let result = engine.addPenalty(penaltyData);
 ## addPersons
 
 Creates tournament `participants` from an array of defined persons. Useful for adding registered persons to a tournament record.
-See **person** under **participant** in [Type Definitions](../types/typedefs#participant) for additional `person` attributes.
+See **person** under **participant** in [Type Definitions](../types/typedefs.mdx#participant) for additional `person` attributes.
 
 :::note
 
@@ -546,7 +546,7 @@ engine.modifyParticipant({
 
 ### Writing contacts
 
-`person.contacts` (and `participant.contacts`) is **replaced**, not merged — deliberately, so that removing a contact is expressible. Read the existing array, change it, and send the whole thing back; sending only the contact you edited deletes the rest. Omitting the key leaves the stored list untouched, and `[]` clears it. See [Contact Information](../concepts/participants#contact-information).
+`person.contacts` (and `participant.contacts`) is **replaced**, not merged — deliberately, so that removing a contact is expressible. Read the existing array, change it, and send the whole thing back; sending only the contact you edited deletes the rest. Omitting the key leaves the stored list untouched, and `[]` clears it. See [Contact Information](../concepts/participants.md#contact-information).
 
 ### PARTICIPANT_NAME_DERIVED_FROM_PERSON
 

@@ -209,12 +209,12 @@ Reads are tolerant where writes are strict — records written before `unit` exi
 
 A tournament-grain fee list can carry entries for several events, so "the fees on this record" is not the question "the fees for this event". [`getEventEntryFees`](../governors/entries-governor.md#getevententryfees) matches selectors **most-specific first**:
 
-| selector | scope |
-| --- | --- |
-| `eventId` | this exact event |
-| `category` | events of that category name or `ageCategoryCode` |
-| `eventType` | SINGLES / DOUBLES / TEAM / HYBRID |
-| _(none)_ | every event — how a single tournament-wide price is stated |
+| selector    | scope                                                      |
+| ----------- | ---------------------------------------------------------- |
+| `eventId`   | this exact event                                           |
+| `category`  | events of that category name or `ageCategoryCode`          |
+| `eventType` | SINGLES / DOUBLES / TEAM / HYBRID                          |
+| _(none)_    | every event — how a single tournament-wide price is stated |
 
 Only the most specific tier that matched is returned. A fee keyed to this exact `eventId` supersedes a blanket "all doubles" price, and returning both would leave the caller to re-derive precedence and get it wrong.
 

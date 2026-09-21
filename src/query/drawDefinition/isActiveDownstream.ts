@@ -19,7 +19,7 @@ export function isActiveDownstream(params) {
    * while their played consolation match stood — `DRAW_POSITION_UNASSIGNED`, census 9000458 shrunk to
    * five steps.
    *
-   * Only the FED side, which is the lower drawPosition (`fedDrawPosition` in
+   * Only the FED side, which is the NUMERICALLY lower drawPosition (`fedDrawPosition` in
    * `reconcileFedLoserEligibility`). The other side of a feed-round BYE matchUp routinely holds a
    * participant ADVANCED from the structure's previous round, who has nothing to do with this source:
    * treating them as fed made a first entry of a Main round-2 result "active" once the consolation
@@ -38,11 +38,19 @@ export function isActiveDownstream(params) {
     // participant fell through into the empty winner slot and advanced. That downstream
     // is genuinely active, so do NOT short-circuit; fall through to the recursion.
     const byeWinnerMatchUp = targetData?.targetMatchUps?.winnerMatchUp;
-    const byeWinnerResolvedExit =
+    // DECIDED, not merely "a resolved exit". This tested `isExit(status)`, which is
+    // `[DEFAULTED, WALKOVER, RETIRED]` — so a propagated walkover downstream of the BYE blocked the
+    // re-score while a match two participants had actually PLAYED did not. The severity was
+    // inverted: the derived outcome protected, the real one not.
+    //
+    // Measured on FIRST_MATCH_LOSER_CONSOLATION 8/6 seed 20262956: `Consolation|3|1` COMPLETED with
+    // `winningSide: 1`, and the short-circuit still returned false — so the dispatch took
+    // `noDownstreamDependencies` and `CANNOT_CHANGE_OUTCOME` never got the chance to refuse a Main
+    // re-score that un-decided that consolation match, leaving it TO_BE_PLAYED with its 6-3 score.
+    const byeWinnerDecided =
       byeWinnerMatchUp?.winningSide &&
-      isExit(byeWinnerMatchUp.matchUpStatus) &&
       !!byeWinnerMatchUp.sides?.find((s: any) => s?.sideNumber === byeWinnerMatchUp.winningSide)?.participant;
-    if (!byeWinnerResolvedExit) return false;
+    if (!byeWinnerDecided) return false;
   }
 
   const {

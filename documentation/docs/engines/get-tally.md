@@ -39,10 +39,10 @@ type GetTallyArgs = { positionAssignment?: any };
 | `MISSING_POSITION_ASSIGNMENTS` | `positionAssignment` argument was missing                                   |
 | `NOT_FOUND`                    | Neither `positionAssignment.tally` nor the legacy extension carried a value |
 
-Errors come back as the legacy `{ error: { code } }` envelope; wrap with [`unwrap()`](./unwrap) if you want them as typed exceptions.
+Errors come back as the legacy `{ error: { code } }` envelope; wrap with [`unwrap()`](./unwrap.md) if you want them as typed exceptions.
 
 ## See also
 
 - The [4.x to 5.0.0 migration guide](../migration-5.0.0) — the table of promoted attributes and their mode-agnostic readers.
-- [`migrateTournamentRecord`](./migrate-tournament-record) — one-shot helper that lifts the legacy shape to native in place.
-- [Round Robin tally policy](../policies/roundRobinTallyPolicy) — the policy that drives what the tally contains.
+- [`migrateTournamentRecord`](./migrate-tournament-record.md) — one-shot helper that lifts the legacy shape to native in place.
+- [Round Robin tally policy](../policies/roundRobinTallyPolicy.md) — the policy that drives what the tally contains.

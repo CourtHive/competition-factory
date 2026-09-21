@@ -3,7 +3,7 @@ import tournamentEngine from '@Engines/syncEngine';
 import { expect, test } from 'vitest';
 
 // constants
-import { BYE, COMPLETED, DOUBLE_WALKOVER, TO_BE_PLAYED, WALKOVER } from '@Constants/matchUpStatusConstants';
+import { BYE, COMPLETED, DOUBLE_WALKOVER, TO_BE_PLAYED } from '@Constants/matchUpStatusConstants';
 import { FIRST_MATCH_LOSER_CONSOLATION, MAIN } from '@Constants/drawDefinitionConstants';
 import { INVALID_WINNING_SIDE } from '@Constants/errorConditionConstants';
 import { POLICY_TYPE_PROGRESSION } from '@Constants/policyConstants';
@@ -243,9 +243,25 @@ test('doubleExitAdvancement of BYE encountering drawPosition', () => {
   expect(setStatusResult.success).toEqual(true);
 
   matchUps = tournamentEngine.allTournamentMatchUps({ matchUpFilters: { roundNumbers: [2] } }).matchUps;
+  /**
+   * `match-2-1` STAYS A BYE. Both of its feeding drawPositions carry draw BYEs — the assertion
+   * above already reads it as `BYE` before the double walkover is entered — so it is a BYE whatever
+   * arrives beside it.
+   *
+   * CA, 2026-09-20: *"An advancing participant encountering a BYE should always be advanced; a
+   * propagated exit encountering a BYE should be advanced. In both cases the BYE remains a BYE"* —
+   * and, asked to be unambiguous, *"the BYE remains a BYE means the `matchUpStatus: BYE` does not
+   * change."*
+   *
+   * This previously expected `WALKOVER`: the produced exit OVERWROTE the BYE. Re-authored under
+   * that ruling, confirmed by CA against this exact scenario driven in TMX.
+   *
+   * The exit is not lost by staying out of the status — `match-3-1` below is still a WALKOVER, so
+   * it travelled onward exactly as before.
+   */
   expect(matchUps.map((m) => [m.matchUpId, m.matchUpStatus])).toEqual([
     ['match-2-2', COMPLETED],
-    ['match-2-1', WALKOVER],
+    ['match-2-1', BYE],
   ]);
 
   matchUps = tournamentEngine.allTournamentMatchUps({ matchUpFilters: { roundNumbers: [3] } }).matchUps;
@@ -317,11 +333,13 @@ test('doubleExitAdvancement of BYE encountering WALKOVER', () => {
   expect(setStatusResult.success).toEqual(true);
 
   matchUps = tournamentEngine.allTournamentMatchUps({ matchUpFilters: { roundNumbers: [2] } }).matchUps;
+  // `match-2-1` stays a BYE for the same reason as the test above — measured: both its feeding
+  // drawPositions carry draw BYEs and it holds no participant. See that test for CA's ruling.
   expect(matchUps.map((m) => [m.matchUpId, m.matchUpStatus])).toEqual([
     ['match-2-2', DOUBLE_WALKOVER],
     ['match-2-3', TO_BE_PLAYED],
     ['match-2-4', TO_BE_PLAYED],
-    ['match-2-1', WALKOVER],
+    ['match-2-1', BYE],
   ]);
 
   matchUps = tournamentEngine.allTournamentMatchUps({ matchUpFilters: { roundNumbers: [3] } }).matchUps;

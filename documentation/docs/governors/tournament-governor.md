@@ -28,7 +28,7 @@ engine.addExtension({
 
 ## addMutationLock
 
-Acquires a [mutation lock](../concepts/mutation-locks) on a tournament element. Automatically enables the mutation locks feature gate on the tournament record.
+Acquires a [mutation lock](../concepts/mutation-locks.md) on a tournament element. Automatically enables the mutation locks feature gate on the tournament record.
 
 ```js
 const { success, lockId } = engine.addMutationLock({
@@ -42,7 +42,7 @@ const { success, lockId } = engine.addMutationLock({
 });
 ```
 
-**Purpose:** Control concurrent access to scoped mutations. See [Mutation Locks](../concepts/mutation-locks) for details.
+**Purpose:** Control concurrent access to scoped mutations. See [Mutation Locks](../concepts/mutation-locks.md) for details.
 
 ---
 
@@ -151,7 +151,7 @@ const { tournamentRecord } = engine.copyTournamentRecord({
 
 ## cleanExpiredMutationLocks
 
-Proactively removes expired [mutation locks](../concepts/mutation-locks) from all elements in the tournament.
+Proactively removes expired [mutation locks](../concepts/mutation-locks.md) from all elements in the tournament.
 
 ```js
 const { success, removedCount } = engine.cleanExpiredMutationLocks();
@@ -267,7 +267,7 @@ const { penalties } = engine.getCompetitionPenalties({
 
 ## getMutationLocks
 
-Returns all active (non-expired) [mutation locks](../concepts/mutation-locks) across the entire tournament, including locks on events, draws, and venues.
+Returns all active (non-expired) [mutation locks](../concepts/mutation-locks.md) across the entire tournament, including locks on events, draws, and venues.
 
 ```js
 const { mutationLocks } = engine.getMutationLocks({
@@ -444,7 +444,7 @@ engine.removeExtension({
 
 ## removeMutationLock
 
-Releases a [mutation lock](../concepts/mutation-locks). Requires the matching `lockToken` unless `forceRelease: true`.
+Releases a [mutation lock](../concepts/mutation-locks.md). Requires the matching `lockToken` unless `forceRelease: true`.
 
 ```js
 const { success } = engine.removeMutationLock({

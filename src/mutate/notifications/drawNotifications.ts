@@ -1,4 +1,5 @@
 import { getPositionAssignments } from '@Query/drawDefinition/positionsGetter';
+import { getDrawPositionSides } from '@Query/matchUps/getDrawPositionSides';
 import { drawOrigin, eventOrigin } from '@Query/readModel/readModelRows';
 import { addNotice, deleteNotice } from '@Global/state/globalState';
 import { requireParams } from '@Helpers/parameters/requireParams';
@@ -112,6 +113,21 @@ export function deleteMatchUpsNotice({
 }
 
 type ModifyMatchUpNoticeArgs = {
+  /**
+   * Optional in the type, but PASS IT. The notice's `structureId` is resolved from it, and a
+   * subscriber that cannot place a matchUp cannot route the notice — CFS uses `structureId` for
+   * structure-grain cache eviction, and `winnerMatchUpId` / `loserMatchUpId` are projected
+   * read-model columns.
+   *
+   * It stayed optional deliberately. Passing it was believed to emit a redundant draw notice per
+   * matchUp; it does not — `modifyDrawNotice` calls `addNotice` with `key: drawDefinition.drawId`,
+   * so they collapse onto one (measured: 24 and 48 matchUp notices against 1 draw notice either
+   * way). But requiring it in the TYPE cascades into five more files, two of which legitimately
+   * hold a `drawId` and let the callee resolve the draw, and the guards that cascade forces are the
+   * shape that drops a notice silently. The guarantee lives in `noticeStructureId.test.ts` instead,
+   * which sweeps a spread of operations and asserts no MODIFY_MATCHUP names a structure it cannot —
+   * a behavioural check no `!` can satisfy.
+   */
   drawDefinition?: DrawDefinition;
   tournamentId?: string;
   structureId?: string;
@@ -204,6 +220,7 @@ export function modifyMatchUpNotice({
   // no attribution whatsoever, which is the case fan-out most needs. One coherent origin per notice
   // rather than two organisationIds that could disagree.
   const origin = drawOrigin(drawDefinition) ?? eventOrigin(event);
+  const resolvedStructureId = structureId ?? resolveStructureId(drawDefinition, matchUp?.matchUpId);
   addNotice({
     topic: MODIFY_MATCHUP,
     // eventId/drawId/structureId ride the ENVELOPE, not just the entity. A subscriber that only needs
@@ -216,7 +233,14 @@ export function modifyMatchUpNotice({
       drawId: drawDefinition?.drawId ?? (matchUp as any)?.drawId,
       // Best-effort, same as drawId above: an explicit caller value wins, otherwise resolve it from
       // the drawDefinition so the envelope is populated regardless of call site.
-      structureId: structureId ?? resolveStructureId(drawDefinition, matchUp?.matchUpId),
+      structureId: resolvedStructureId,
+      // WHICH SIDE each drawPosition is on, and ONLY while `drawPositions` cannot say. The array is
+      // compacted, so a matchUp awaiting its second participant ships as `[4]` and a subscriber
+      // reading `drawPositions[sideNumber - 1]` indexes past the end — or, reading the other way,
+      // seats the arrival on side 1 when it belongs on side 2. Absent once both positions are
+      // present, because side 1 is then the numerically lower one and the subscriber can say so
+      // itself. Absent also when it cannot be resolved — never a guess.
+      drawPositionSides: getDrawPositionSides({ structureId: resolvedStructureId, drawDefinition, matchUp }),
       // The sanctioning source, flattened — same vocabulary as the read-model's
       // origin_organisation_id / origin_tournament_id / origin_event_id. Absent when the event
       // declares no origin, which is the ordinary single-sanction case.

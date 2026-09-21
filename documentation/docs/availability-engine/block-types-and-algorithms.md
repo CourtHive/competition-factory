@@ -429,7 +429,7 @@ calculateCourtHours(entries: TodsDateAvailability[]): number
 
 ## Related Documentation
 
-- **[Overview](./availability-engine-overview)** — Introduction and architecture
-- **[Core API Reference](./availability-engine-api)** — Complete method reference
-- **[Event System & Validation](./event-system-and-validation)** — Events, conflict evaluators, and validation pipeline
-- **[UI Integration Scenarios](./ui-integration-scenarios)** — Building UIs with engine data
+- **[Overview](./availability-engine-overview.md)** — Introduction and architecture
+- **[Core API Reference](./availability-engine-api.md)** — Complete method reference
+- **[Event System & Validation](./event-system-and-validation.md)** — Events, conflict evaluators, and validation pipeline
+- **[UI Integration Scenarios](./ui-integration-scenarios.md)** — Building UIs with engine data

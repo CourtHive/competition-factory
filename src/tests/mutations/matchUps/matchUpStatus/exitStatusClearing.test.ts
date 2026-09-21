@@ -453,7 +453,7 @@ describe('Phase 2: FMLC cross-structure exit status clearing', () => {
     expect(result.error).toEqual(INCOMPATIBLE_MATCHUP_STATUS);
   });
 
-  test('2.3 Clear one of two adjacent WOWOs — consolation status fully cleared', () => {
+  test('2.3 Clear one of two adjacent WOWOs — the surviving WOWO keeps its exit', () => {
     const drawId = 'fmlc23';
     const { tournamentRecord } = mocksEngine.generateTournamentRecord({
       drawProfiles: [
@@ -503,13 +503,28 @@ describe('Phase 2: FMLC cross-structure exit status clearing', () => {
     });
     expect(result.success).toEqual(true);
 
-    // Post-check: engine fully clears the consolation status (removes all propagated effects)
-    // NOTE: The engine clears the entire consolation match rather than partially downgrading
-    // DOUBLE_WALKOVER to WALKOVER. This is actual engine behavior — the remaining WOWO in R1P2
-    // does not re-propagate its exit status to consolation after R1P1 is cleared.
+    // Post-check: ONE of the two origins was withdrawn, so ONE remains — Main R1P2 is still a
+    // DOUBLE_WALKOVER — and the consolation matchUp is re-derived from what remains: the single
+    // exit that origin carries, awarded to the side still waiting for R1P1's loser.
+    //
+    // ASSERTION CHANGED, 2026-09-19 (CA approved). It read `TO_BE_PLAYED`, and its own comment
+    // called that "actual engine behavior" while flagging it as surprising. The play-out is the
+    // oracle and it disagrees. Measured on this exact scenario, at `25c0d3466` and with the fix:
+    //
+    //   |                        | before | after |
+    //   |------------------------|--------|-------|
+    //   | matchUps played out    | 6      | 7     |
+    //   | left undecided         | 2      | 0     |
+    //
+    // The `TO_BE_PLAYED` state STRANDS a participant: `Consolation|1|1` ends holding one player at
+    // dp3 with dp4 permanently empty, because the opponent could only arrive from a Main R1P2 that
+    // is still a double walkover — and `Consolation|3|1` stalls behind it. The draw cannot be
+    // completed. See `removeDoubleExit`'s `getUnwoundState`.
     matchUps = tournamentEngine.allTournamentMatchUps().matchUps;
     consolR1P1 = getTarget({ matchUps, roundNumber: 1, roundPosition: 1, stage: CONSOLATION });
-    expect(consolR1P1.matchUpStatus).toEqual(TO_BE_PLAYED);
+    expect(consolR1P1.matchUpStatus).toEqual(WALKOVER);
+    // the side WITHOUT the exit wins it — the slot that will receive R1P1's loser
+    expect(consolR1P1.winningSide).toEqual(1);
   });
 
   test('2.4 Clear both adjacent WOWOs sequentially', () => {
@@ -560,10 +575,12 @@ describe('Phase 2: FMLC cross-structure exit status clearing', () => {
     });
     expect(result.success).toEqual(true);
 
-    // After first clear: engine fully clears consolation (see note in test 2.3)
+    // After first clear: one origin remains (Main R1P2), so the consolation matchUp is re-derived
+    // as the single exit that origin carries. ASSERTION CHANGED 2026-09-19 — see test 2.3 for the
+    // play-out that settles it.
     matchUps = tournamentEngine.allTournamentMatchUps().matchUps;
     consolR1P1 = getTarget({ matchUps, roundNumber: 1, roundPosition: 1, stage: CONSOLATION });
-    expect(consolR1P1.matchUpStatus).toEqual(TO_BE_PLAYED);
+    expect(consolR1P1.matchUpStatus).toEqual(WALKOVER);
 
     // Clear second: Main R1P2
     targetMatchUp = getTarget({ matchUps, roundNumber: 1, roundPosition: 2, stage: MAIN });
@@ -574,7 +591,9 @@ describe('Phase 2: FMLC cross-structure exit status clearing', () => {
     });
     expect(result.success).toEqual(true);
 
-    // After second clear: consolation R1P1 remains TO_BE_PLAYED
+    // After second clear: NO origin remains, so the matchUp reverts. This half of the test is
+    // unchanged and is the control — it shows the re-derivation is not simply retaining whatever it
+    // finds, and it would fail if the withdrawal had stopped withdrawing.
     matchUps = tournamentEngine.allTournamentMatchUps().matchUps;
     consolR1P1 = getTarget({ matchUps, roundNumber: 1, roundPosition: 1, stage: CONSOLATION });
     expect(consolR1P1.matchUpStatus).toEqual(TO_BE_PLAYED);
@@ -1399,14 +1418,19 @@ describe('Phase 5: Edge cases', () => {
     });
     expect(result.success).toEqual(true);
 
-    // Post-check: consolation fully cleared (same behavior as test 2.3)
+    // Post-check: the surviving origin is the DOUBLE_DEFAULT in Main R1P2, and what it produces is
+    // a DEFAULTED — not a WALKOVER. That is the point of this MIXED cell: the re-derivation reads
+    // what the remaining side actually carries rather than defaulting to the walkover flavour.
+    //
+    // ASSERTION CHANGED, 2026-09-19 (CA approved), from `TO_BE_PLAYED`. Same reason as test 2.3,
+    // which carries the play-out measurement.
     matchUps = tournamentEngine.allTournamentMatchUps().matchUps;
     expect(getTarget({ matchUps, roundNumber: 1, roundPosition: 1, stage: MAIN }).matchUpStatus).toEqual(TO_BE_PLAYED);
     expect(getTarget({ matchUps, roundNumber: 1, roundPosition: 2, stage: MAIN }).matchUpStatus).toEqual(
       DOUBLE_DEFAULT,
     );
     expect(getTarget({ matchUps, roundNumber: 1, roundPosition: 1, stage: CONSOLATION }).matchUpStatus).toEqual(
-      TO_BE_PLAYED,
+      DEFAULTED,
     );
   });
 

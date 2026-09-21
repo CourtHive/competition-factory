@@ -68,3 +68,80 @@ export function applyParticipantPrivacyToMap(params: { participantMap?: any; tem
   }
   return filtered;
 }
+
+/**
+ * Remove the ATTESTER from every presence log on a participant, unconditionally.
+ *
+ * `attributedTo` is the one participant attribute that is not policy-optional. A `DECLARED`
+ * attribution carries a name, telephone and email for somebody who is **not in the record at all** —
+ * a minor's parent at the desk — so it is governed by nothing `person.contacts` is governed by, and
+ * it has no `isPublic` flag to respect.
+ *
+ * Stripping it here rather than adding it to the privacy policy is deliberate and is the decision
+ * recorded as D-PRIV. Policy-based protection fails open: `getParticipants` returns the source
+ * unfiltered when no template is supplied, and the CFS public participants route supplies none. A
+ * protection that depends on every public caller remembering a flag is a protection that gets missed
+ * once, and once is enough for a phone number.
+ *
+ * The rest of the attestation survives — who was present, when, and whether they left are the facts
+ * the surface exists to report. `notes` survives too, being an operator annotation of the same kind
+ * as `participant.notes`, which no boundary strips either.
+ *
+ * Read attribution deliberately, through `getParticipantPresenceHistory`, which a caller has to ask
+ * for by name and a server can gate on permissions.
+ */
+export function stripPresenceAttribution<T = any>(participants?: T[]): T[] | undefined {
+  if (!participants?.length) return participants;
+  return participants.map((participant: any) => strippedParticipant(participant));
+}
+
+/**
+ * `individualParticipants` is a SECOND emission of the same people, nested inside a PAIR/TEAM and
+ * sourced from the unfiltered map. Stripping only the top level would leave every doubles player's
+ * attester intact — the same "a second emission of the same people" shape that already caused a
+ * published-attribute leak through `participantMap`.
+ */
+export function strippedParticipant(participant: any): any {
+  if (!participant) return participant;
+
+  const presence = Array.isArray(participant.presence) ? participant.presence.map(withoutAttribution) : undefined;
+  const individualParticipants = Array.isArray(participant.individualParticipants)
+    ? participant.individualParticipants.map(strippedParticipant)
+    : undefined;
+
+  if (!presence && !individualParticipants) return participant;
+
+  return {
+    ...participant,
+    ...(presence ? { presence } : {}),
+    ...(individualParticipants ? { individualParticipants } : {}),
+  };
+}
+
+/** The matchUp-scoped counterpart — `matchUp.checkIns` carries the same attester. */
+export function stripCheckInAttribution<T = any>(matchUps?: T[]): T[] | undefined {
+  if (!matchUps?.length) return matchUps;
+  return matchUps.map((matchUp: any) => {
+    if (!Array.isArray(matchUp?.checkIns)) return matchUp;
+    return { ...matchUp, checkIns: matchUp.checkIns.map(withoutAttribution) };
+  });
+}
+
+function withoutAttribution(attestation: any): any {
+  if (!attestation?.attributedTo) return attestation;
+  const { attributedTo: _attributedTo, ...rest } = attestation;
+  return rest;
+}
+
+/** The participantMap counterpart of {@link stripPresenceAttribution}. */
+export function stripPresenceAttributionFromMap(participantMap?: any): any {
+  if (!participantMap) return participantMap;
+
+  const stripped = {};
+  for (const [participantId, entry] of Object.entries<any>(participantMap)) {
+    stripped[participantId] = entry?.participant
+      ? { ...entry, participant: strippedParticipant(entry.participant) }
+      : entry;
+  }
+  return stripped;
+}

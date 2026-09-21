@@ -7,6 +7,7 @@ import { checkInParticipant } from './checkInParticipant';
 // constants and types
 import { MATCHUP_NOT_FOUND, MISSING_TOURNAMENT_RECORD } from '@Constants/errorConditionConstants';
 import { DrawDefinition, Tournament } from '@Types/tournamentTypes';
+import type { Attribution } from '@Types/presenceTypes';
 import { TournamentRecords } from '@Types/factoryTypes';
 import {
   DRAW_DEFINITION,
@@ -19,6 +20,10 @@ import {
 } from '@Constants/attributeConstants';
 
 type ToggleParticipantCheckInStateArgs = {
+  attributedTo?: Attribution;
+  attestationId?: string;
+  occurredAt?: string;
+  notes?: string;
   tournamentRecords?: TournamentRecords;
   tournamentRecord?: Tournament;
   drawDefinition: DrawDefinition;
@@ -50,9 +55,17 @@ export function toggleParticipantCheckInState(params: ToggleParticipantCheckInSt
     matchUp,
   });
 
-  const { participantId, matchUpId, drawDefinition } = params;
+  const { participantId, matchUpId, drawDefinition, attributedTo, occurredAt, attestationId, notes } = params;
+
+  // The attestation fields are FORWARDED, not re-derived. This is the entry point every desk client
+  // uses — it is the one that decides which direction the toggle is going — so dropping them here
+  // meant an attester could be supplied, accepted, and silently discarded on the only path that is
+  // actually called. A check-out is an attested fact too: somebody vouched that the player left.
+  const attestation = { attributedTo, occurredAt, attestationId, notes };
+
   if (participantId && checkedInParticipantIds.includes(participantId)) {
     return checkOutParticipant({
+      ...attestation,
       tournamentRecord,
       drawDefinition,
       participantId,
@@ -61,6 +74,7 @@ export function toggleParticipantCheckInState(params: ToggleParticipantCheckInSt
     });
   } else {
     return checkInParticipant({
+      ...attestation,
       tournamentRecord,
       drawDefinition,
       participantId,

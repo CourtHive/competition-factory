@@ -104,4 +104,4 @@ The walker is defensive: missing intermediate collections (`events`, `extensions
 
 - The [4.x to 5.0.0 migration guide](../migration-5.0.0) — full context on the CODES schema initiative and the typed engine default.
 - [`schemaWriteMode`](../migration-5.0.0#engine-write-mode-flags) — the engine flag this helper coordinates with.
-- [`getTally`](./get-tally) — example of a mode-agnostic reader that works against both pre- and post-migration shapes.
+- [`getTally`](./get-tally.md) — example of a mode-agnostic reader that works against both pre- and post-migration shapes.

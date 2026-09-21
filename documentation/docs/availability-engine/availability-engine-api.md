@@ -702,13 +702,13 @@ const unsubscribe = engine.subscribe((event) => {
 unsubscribe();
 ```
 
-See **[Event System & Validation](./event-system-and-validation)** for full event type documentation.
+See **[Event System & Validation](./event-system-and-validation.md)** for full event type documentation.
 
 ---
 
 ## Related Documentation
 
-- **[Overview](./availability-engine-overview)** — Introduction and architecture
-- **[Event System & Validation](./event-system-and-validation)** — Events, conflict evaluators, and validation pipeline
-- **[Block Types & Algorithms](./block-types-and-algorithms)** — Block types, rail derivation, capacity curves, collision detection
-- **[UI Integration Scenarios](./ui-integration-scenarios)** — Building UIs with engine data
+- **[Overview](./availability-engine-overview.md)** — Introduction and architecture
+- **[Event System & Validation](./event-system-and-validation.md)** — Events, conflict evaluators, and validation pipeline
+- **[Block Types & Algorithms](./block-types-and-algorithms.md)** — Block types, rail derivation, capacity curves, collision detection
+- **[UI Integration Scenarios](./ui-integration-scenarios.md)** — Building UIs with engine data

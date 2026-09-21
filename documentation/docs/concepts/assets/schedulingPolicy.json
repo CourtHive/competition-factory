@@ -135,12 +135,7 @@
       ]
     },
     {
-      "matchUpFormatCodes": [
-        "SET1-S:4/TB7",
-        "SET1-S:4/TB5@3",
-        "SET3-S:TB10",
-        "SET1-S:T20"
-      ],
+      "matchUpFormatCodes": ["SET1-S:4/TB7", "SET1-S:4/TB5@3", "SET3-S:TB10", "SET1-S:T20"],
       "averageTimes": [
         {
           "categoryNames": [],

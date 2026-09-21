@@ -10,6 +10,7 @@ import {
   FIRST_MATCH_LOSER_CONSOLATION,
   FEED_IN_CHAMPIONSHIP,
   CURTIS_CONSOLATION,
+  DOUBLE_ELIMINATION,
   COMPASS,
 } from '@Constants/drawDefinitionConstants';
 import { DOUBLE_WALKOVER, DOUBLE_DEFAULT, DEFAULTED, WALKOVER } from '@Constants/matchUpStatusConstants';
@@ -43,13 +44,25 @@ import { DOUBLE_WALKOVER, DOUBLE_DEFAULT, DEFAULTED, WALKOVER } from '@Constants
  * `nonRandom` is the determinism knob and is load-bearing: BYE PLACEMENT is what these cases turn
  * on, and it is decided at generation. `participantsCount` is reduced below `drawSize` for the same
  * reason — a full draw has no BYEs and none of this can arise, so a case run at
- * `participantsCount === drawSize` would pass whether the code is fixed or not. COMPASS is the
- * exception and is deliberately kept at 16/16: there the BYE is produced by the cascade rather than
- * by the draw, which is a different route to the same state.
+ * `participantsCount === drawSize` would pass whether the code is fixed or not. COMPASS and
+ * DOUBLE_ELIMINATION are the exceptions and are deliberately kept FULL (16/16 and 8/8): there the
+ * BYE is produced by the cascade rather than by the draw, which is a different route to the same
+ * state — and for DOUBLE_ELIMINATION it is the only route, since a full Main generates no BYE at all
+ * (`draw-positions.md` §4a).
  *
- * Five draw types, because the defect is in the shared BYE-placement chain rather than in any one
+ * Six draw types, because the defect is in the shared BYE-placement chain rather than in any one
  * topology. Before this fix the sweep reported the state on 47 seeds across the two 600-seed census
  * windows, split evenly across both propagation arms.
+ *
+ * ## Why DOUBLE_ELIMINATION was added afterwards
+ *
+ * The first five cases were written against the two general 600-seed windows, which hold only ~70
+ * DOUBLE_ELIMINATION seeds each — so the draw type most prone to cross-structure defects contributed
+ * no case. Re-measured 2026-09-17 against the DE-only window committed later
+ * (`fixtures/exit-propagation-census/sched-de.jsonl`, 563 seeds): with the correction suppressed the
+ * class reproduces on **18 of 563 flag-OFF and 19 of 563 flag-ON, every one DOUBLE_ELIMINATION**,
+ * against 8/6 and 15/15 on the two general windows. The case below is seed 9303124 shrunk to four
+ * steps on `BYE_WON` (`shrinkIssue`, `ISSUE=INVARIANT:BYE_WON`).
  */
 describe('a BYE arriving into a pending propagated exit', () => {
   type Submission = { structureName: string; roundNumber: number; roundPosition: number; outcome: any };
@@ -135,6 +148,30 @@ describe('a BYE arriving into a pending propagated exit', () => {
         { structureName: 'East', roundNumber: 1, roundPosition: 2, outcome: { winningSide: 2 } },
         { structureName: 'West', roundNumber: 1, roundPosition: 1, outcome: { matchUpStatus: DOUBLE_WALKOVER } },
         { structureName: 'East', roundNumber: 1, roundPosition: 3, outcome: { matchUpStatus: DOUBLE_WALKOVER } },
+      ],
+    },
+    {
+      name: 'double elimination — a cascade-placed BYE, in a draw whose Main generates none',
+      drawType: DOUBLE_ELIMINATION,
+      drawSize: 8,
+      participantsCount: 8,
+      nonRandom: 9303124,
+      propagateExitStatus: true,
+      submissions: [
+        {
+          structureName: 'Main',
+          roundNumber: 1,
+          roundPosition: 1,
+          outcome: { matchUpStatus: WALKOVER, winningSide: 2 },
+        },
+        {
+          structureName: 'Main',
+          roundNumber: 1,
+          roundPosition: 2,
+          outcome: { matchUpStatus: DEFAULTED, winningSide: 1 },
+        },
+        { structureName: 'Main', roundNumber: 1, roundPosition: 3, outcome: { winningSide: 1 } },
+        { structureName: 'Main', roundNumber: 2, roundPosition: 2, outcome: { matchUpStatus: DOUBLE_WALKOVER } },
       ],
     },
     {

@@ -21,22 +21,22 @@ The structure of a **_policyDefinitions_** object is as follows:
 
 ## Policy Types
 
-- [Avoidance Policy](../policies/avoidance): Can be attached to drawDefinitions to specify the attriubutes by which participants should be separated
+- [Avoidance Policy](../policies/avoidance.md): Can be attached to drawDefinitions to specify the attriubutes by which participants should be separated
 - [Participant Policy](../policies/participantPolicy.md) Enables participant details to be filtered to respect privacy concerns
-- [Position Actions Policy](../policies/positionActions): Determines valid actions for positions in a draw structure
-- [MatchUp Actions Policy](../policies/matchUpActions): Determines valid actions for matchUps (substitutions, penalties, referree, scheduling)
-- [Seeding Policy](../policies/seedingPolicy): Sets seeding pattern and thresholds for number of seeds allowed for draw sizes
-- [Scheduling Policy](../policies/scheduling): Defines average and rest/recovery times for matchUpFormats, categoryNames, and categoryTypes
-- [Round Robin Tally Policy](../policies/tallyPolicy): Configures calculations which determine participant finishing positions
-- [Feed-In Policy](../policies/feedInPolicy): Determining the the patterns which direct participants into consolation feed rounds
-- [Progression Policy](../policies/progressionPolicy): Configuration related to participant progression, e.g. automatic qualifier placement, double-exit effects
-- [Round Naming Policy](../policies/roundNaming): Specifies how rounds of draw structures should be named
-- [Scoring Policy](../policies/scoringPolicy): Restricts available matchUpFormats, defines a default and conditions for "ready to score"
+- [Position Actions Policy](../policies/positionActions.md): Determines valid actions for positions in a draw structure
+- [MatchUp Actions Policy](../policies/matchUpActions.md): Determines valid actions for matchUps (substitutions, penalties, referree, scheduling)
+- [Seeding Policy](../policies/seedingPolicy.md): Sets seeding pattern and thresholds for number of seeds allowed for draw sizes
+- [Scheduling Policy](../policies/scheduling.md): Defines average and rest/recovery times for matchUpFormats, categoryNames, and categoryTypes
+- [Round Robin Tally Policy](../policies/tallyPolicy.md): Configures calculations which determine participant finishing positions
+- [Feed-In Policy](../policies/feedInPolicy.md): Determining the the patterns which direct participants into consolation feed rounds
+- [Progression Policy](../policies/progressionPolicy.md): Configuration related to participant progression, e.g. automatic qualifier placement, double-exit effects
+- [Round Naming Policy](../policies/roundNaming.mdx): Specifies how rounds of draw structures should be named
+- [Scoring Policy](../policies/scoringPolicy.md): Restricts available matchUpFormats, defines a default and conditions for "ready to score"
 - [Voluntary Consolation Policy](../policies/consolationPolicy.md): Specifies `{ winsLimit, finishingRoundLimit }` for voluntary consolation eligibility
-- [Competitive Bands](../policies/competitiveBands): Determines thresholds for ROUTINE and COMPETITIVE matches in `getCompetitiveProfile`
+- [Competitive Bands](../policies/competitiveBands.md): Determines thresholds for ROUTINE and COMPETITIVE matches in `getCompetitiveProfile`
 - [Draws Policy](/docs/policies/draws): Configures either global or draw-type-specific `drawTypeCoercion`
-- [Ranking Policy](../policies/rankingPolicy): Defines how points are awarded for tournament performance
-- [Print Policy](../policies/printPolicy): Opaque extension slot for per-tournament print artifact composition (interpreted by consumers)
+- [Ranking Policy](../policies/rankingPolicy.md): Defines how points are awarded for tournament performance
+- [Print Policy](../policies/printPolicy.md): Opaque extension slot for per-tournament print artifact composition (interpreted by consumers)
 
 ## When does a policy travel with the record?
 
@@ -71,4 +71,4 @@ scaleEngine.getTournamentPoints({
 });
 ```
 
-The registry is a per-process singleton. Each consumer (TMX, CFS, courthive-rankings) hydrates its own. Federations adopt a policy by POSTing their version to CFS; consumers re-hydrate at next boot. See [POLICY_DELIVERY](https://github.com/CourtHive/Mentat/blob/main/planning/POLICY_DELIVERY.md) for the full architecture.
+The registry is a per-process singleton. Each consumer (TMX, CFS, courthive-rankings) hydrates its own. Federations adopt a policy by POSTing their version to CFS; consumers re-hydrate at next boot.

@@ -72,14 +72,59 @@ export function checkIdempotence({ propagateExitStatus, matchUpId, drawId, outco
 }
 
 /**
- * MONOTONIC_DECISION — scoring a fresh matchUp must not un-decide a decided one.
+ * A PROVISIONAL decision — one that exists only because of what happened upstream.
+ *
+ * It holds a propagation record and nothing of its own: **no participant on any side, and no
+ * `winningSide`**. Its entire claim to being "decided" is that an exit was carried into it.
+ *
+ * The moment either of those is false it stops being provisional. A propagated exit whose opponent
+ * has arrived carries a `winningSide` awarded to a real participant — that is a resolved result, not
+ * a placeholder, and un-deciding it destroys something a TD can see.
+ */
+function isProvisionalDecision(matchUp: any): boolean {
+  if (!matchUp) return false;
+  const propagated = !!matchUp.sideExitProvenance || !!matchUp.matchUpStatusCodes?.length;
+  const holdsParticipant = (matchUp.sides ?? []).some((side: any) => side?.participantId);
+  return propagated && !matchUp.winningSide && !holdsParticipant;
+}
+
+/**
+ * MONOTONIC_DECISION — scoring a fresh matchUp must not un-decide a REAL one.
  *
  * Advancing a participant may legitimately CHANGE a downstream status (a propagated exit
  * resolving onto whoever falls through), so the property is about the decided SET shrinking, not
  * about statuses being immutable.
+ *
+ * ## A provisional decision may vanish — CA, 2026-09-21
+ *
+ * *"It is entirely acceptable to see a propagated default vanish if it is provisional and it is
+ * valid to change the source matchUp outcome."*
+ *
+ * Both halves of that are load-bearing, and both are enforced:
+ *
+ * 1. **provisional** — {@link isProvisionalDecision}: propagated, holding nobody, awarded to nobody.
+ * 2. **valid to change the source** — a source change that is NOT valid is now refused outright by
+ *    `isActiveDownstream` -> `CANNOT_CHANGE_OUTCOME`, and this function returns early on
+ *    `applied.error`. So an invalid change never reaches the comparison at all.
+ *
+ * Measured on COMPASS 8/7 `nonRandom: 20220267`: a Double Default at `East R1P2` decides
+ * `West R2P1` — status `DEFAULTED`, **zero participants, no winningSide, empty score**, terminal
+ * (no `winnerMatchUpId`), in a structure holding no real result anywhere. A Double Walkover at
+ * `East R1P3` then reverts it. Nothing observable was lost, and the property reported a defect.
+ *
+ * **Its effect is MODEST — about 10-15%, not most.** `MONOTONIC_DECISION` is the biggest single
+ * category (382 of the 833 findings the 2026-09-21 matched-window comparison reported for `dev`),
+ * and when this landed I wrote that the reclassification was therefore "large". Measured, it is
+ * not: 7 -> 6 on a 600-seed slice, and 265 -> 242 across 22,417 seeds of the post-fix census. The
+ * property was counting SOME placeholders, not mostly placeholders.
+ *
+ * The residue is the point. What survives is a decision that was REAL — a matchUp holding a
+ * participant or a winner — being un-decided, and that is still Signal 1: `resolveMatchUpStatus`
+ * letting a single produced exit fall through to `TO_BE_PLAYED`.
  */
 export function checkMonotonicity({ propagateExitStatus, matchUpId, drawId, outcome }): PropertyFailure[] {
-  const before = decidedMatchUpIds(getDrawMatchUps(drawId));
+  const beforeMatchUps = getDrawMatchUps(drawId);
+  const before = decidedMatchUpIds(beforeMatchUps);
   const applied = observeMutation({ propagateExitStatus, matchUpId, drawId, outcome });
   if (applied.error || applied.thrown) return [];
 
@@ -87,11 +132,45 @@ export function checkMonotonicity({ propagateExitStatus, matchUpId, drawId, outc
   const undecided = [...before].filter((id) => !after.has(id));
   if (!undecided.length) return [];
 
+  /**
+   * Provisional in BOTH states, or it is a defect.
+   *
+   * BEFORE alone is not enough, and getting this wrong would have silenced a class we already fixed.
+   * `byeAdvancesIntoPendingDoubleExit.test.ts` pins census 9000223: a pending consolation WALKOVER —
+   * provenance, no winningSide, nobody there, so provisional by the BEFORE test — was cleared to
+   * `TO_BE_PLAYED` when a participant ARRIVED through a BYE, instead of resolving onto them.
+   *
+   * That is not the case CA ruled on. CA's licence is for *"a propagated default [vanishing] if it
+   * is provisional **and it is valid to change the source matchUp outcome**"* — a SOURCE CHANGE
+   * withdrawing something nobody can see. An ARRIVAL is the opposite: somebody has turned up, the
+   * placeholder's opponent now exists, and clearing it destroys the exit that was waiting for them.
+   *
+   * The two are told apart by the AFTER state. A source change leaves the matchUp holding nobody —
+   * still a placeholder, free to go. An arrival leaves a participant sitting in a matchUp that reads
+   * `TO_BE_PLAYED`, which is the defect.
+   *
+   * The AFTER test is deliberately NARROWER than {@link isProvisionalDecision} — it asks only
+   * whether anyone arrived, not whether provenance survived. A clean unwind withdraws the record
+   * along with the status, so requiring provenance afterwards would report every correct unwind.
+   */
+  const priorState = new Map(beforeMatchUps.map((matchUp: any) => [matchUp.matchUpId, matchUp]));
+  const laterState = new Map(applied.matchUps.map((matchUp: any) => [matchUp.matchUpId, matchUp]));
+  const nobodyArrived = (matchUp: any) =>
+    !matchUp?.winningSide && !(matchUp?.sides ?? []).some((side: any) => side?.participantId);
+
+  const real = undecided.filter(
+    (id) => !(isProvisionalDecision(priorState.get(id)) && nobodyArrived(laterState.get(id))),
+  );
+  if (!real.length) return [];
+
+  const provisional = undecided.length - real.length;
   return [
     {
       property: 'MONOTONIC_DECISION',
       matchUpId,
-      detail: `scoring this matchUp un-decided ${undecided.length}: ${undecided.map((id) => id.slice(0, 8)).join(', ')}`,
+      detail:
+        `scoring this matchUp un-decided ${real.length}: ${real.map((id) => id.slice(0, 8)).join(', ')}` +
+        (provisional ? ` (${provisional} further provisional, allowed)` : ''),
     },
   ];
 }

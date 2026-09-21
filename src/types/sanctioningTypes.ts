@@ -20,6 +20,7 @@ import type {
   UnifiedEventID,
   WheelchairClassUnion,
 } from './tournamentTypes';
+import type { PresenceRules } from './presencePolicyTypes';
 
 // ---------------------------------------------------------------------------
 // Status & State Machine
@@ -485,6 +486,18 @@ export interface SanctioningPolicy {
 
   calendarRules?: CalendarRules;
   personnelRules?: PersonnelRules;
+  /**
+   * Which roles are expected to be present, and who may attest it — D4h.
+   *
+   * Declares what TMX otherwise has to INFER from behaviour. `0 of 2 checked in` has two opposite
+   * meanings ("nobody has arrived yet" at a desk that runs check-in; "we don't use check-in here" at
+   * the majority of tournaments) and the record cannot currently tell them apart.
+   *
+   * Optional, and its absence is not a default: a tournament with no sanctioning policy is not
+   * declaring `notUsed`, it is declaring nothing, and a client's own heuristic remains the best
+   * answer available for it.
+   */
+  presence?: PresenceRules;
   amendmentRules?: AmendmentRules;
   postEventRequirements?: PostEventRequirement[];
   transitionGuards?: TransitionGuard[];

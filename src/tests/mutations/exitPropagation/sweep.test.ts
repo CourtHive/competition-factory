@@ -66,6 +66,12 @@ test.skipIf(!enabled)(
       if (!failure) continue;
 
       const shrunk = shrink(config, steps, drawId);
+      let shrunkFailure: any;
+      try {
+        shrunkFailure = replay(shrunk.config, shrunk.steps, drawId);
+      } catch {
+        shrunkFailure = undefined;
+      }
       const print = fingerprint(shrunk.config, failure, shrunk.steps);
       if (seen.has(print)) continue;
       seen.add(print);
@@ -78,6 +84,10 @@ test.skipIf(!enabled)(
           detail: failure.detail,
           config: shrunk.config,
           steps: shrunk.steps,
+          // the relational probe belongs to the SHRUNK reproduction, so it is read off a replay of
+          // the shrunk pair rather than off the original failure — the candidate a probe lands on
+          // depends on the draw state the schedule leaves behind, and shrinking changes that.
+          probe: shrunkFailure?.probe,
           originalSteps: steps.length,
           fingerprint: print,
           seed,

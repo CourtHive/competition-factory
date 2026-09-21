@@ -1,3 +1,10 @@
+export { getMatchUpCheckInHistory } from '@Query/matchUp/getMatchUpCheckInHistory';
+export { validatePresenceAttribution } from '@Query/participant/presencePolicy';
+export { getPresenceExpectation } from '@Query/participant/presencePolicy';
+export { getPresenceRules } from '@Query/participant/presencePolicy';
+export { getParticipantsStillSignedInOnDate } from '@Query/participant/presence';
+export { getParticipantPresenceHistory } from '@Query/participant/presence';
+export { getParticipantSignedInOnDate } from '@Query/participant/presence';
 export { getCompetitionParticipants } from '@Query/participants/getCompetitionParticipants';
 export { getParticipantEventDetails } from '@Query/participants/getParticipantEventDetails';
 export { getParticipantMembership } from '@Query/participants/getParticipantMembership';

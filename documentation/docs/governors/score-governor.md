@@ -106,13 +106,13 @@ rather than redeclare the shape:
 import type { PointsToDecoration } from 'tods-competition-factory';
 ```
 
-| field | meaning |
-| ----- | ------- |
-| `pointsToGame` | `[number, number]` — minimum points each side needs to win the current game |
-| `pointsToSet` | `[number, number]` — minimum points each side needs to win the current set |
-| `pointsToMatch` | `[number, number]` — minimum points each side needs to win the match |
-| `gamesToSet` | `[number, number]` — games each side needs to win the current set |
-| `isBreakpoint` | `boolean` — the receiver is one point from winning the game |
+| field           | meaning                                                                     |
+| --------------- | --------------------------------------------------------------------------- |
+| `pointsToGame`  | `[number, number]` — minimum points each side needs to win the current game |
+| `pointsToSet`   | `[number, number]` — minimum points each side needs to win the current set  |
+| `pointsToMatch` | `[number, number]` — minimum points each side needs to win the match        |
+| `gamesToSet`    | `[number, number]` — games each side needs to win the current set           |
+| `isBreakpoint`  | `boolean` — the receiver is one point from winning the game                 |
 
 "Minimum" assumes the side wins every subsequent point.
 

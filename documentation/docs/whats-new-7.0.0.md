@@ -4,13 +4,13 @@ title: What's New in 7.0.0
 
 Version 7.0.0 of the Competition Factory ships **four areas of breaking change** — exit propagation, time-zone conversion, two queries that now refuse an absent argument, and one constant rename — and one headline feature: the **LADDER draw type**, a continuous challenge-driven competition with an enforced `CHALLENGED` status, an attestation gate on self-reported results, `RANK` or `RATING` ordering, and eighteen new engine methods to drive it.
 
-For upgrade mechanics — the six breaking-change rows and the exact steps to adopt them — see the [6.x to 7.0.0 migration guide](./migration-7.0.0).
+For upgrade mechanics — the six breaking-change rows and the exact steps to adopt them — see the [6.x to 7.0.0 migration guide](./migration-7.0.0.md).
 
 For the full per-commit changelog see [CHANGELOG.md](https://github.com/CourtHive/competition-factory/blob/master/CHANGELOG.md).
 
 ## The headline changes
 
-Four changes break the surface and need consumer attention. All are covered in detail in the [migration guide](./migration-7.0.0).
+Four changes break the surface and need consumer attention. All are covered in detail in the [migration guide](./migration-7.0.0.md).
 
 ### 1. Exit propagation is idempotent, atomic, and correct
 
@@ -20,15 +20,15 @@ Four changes break the surface and need consumer attention. All are covered in d
 
 **A rejected mutation no longer destroys a recorded result.** `setMatchUpStatus` now validates a bare `{ winningSide }` outcome _before_ any removal runs. Previously such an outcome skipped the early participant check — it carries no `matchUpStatus` — and was caught only after the existing result had already been unwound, so a rejected call could destroy a recorded result.
 
-For the general case, pass `rollbackOnError: true` and a refused mutation leaves the draw byte-identical, discarding the queued notices with it. That is not new in 7.0.0, and it is worth stating plainly that it is **opt-in**: without the flag a refusal raised deep in a cascade can still return an error over a partially changed draw. `executionQueue` snapshots for the whole queue, so TMX and competition-factory-server already have this on every mutation; a consumer calling `setMatchUpStatus` directly should pass it. See [Exit Propagation](./concepts/exit-propagation#a-rejected-mutation-does-not-alter-the-draw-when-you-ask-for-that).
+For the general case, pass `rollbackOnError: true` and a refused mutation leaves the draw byte-identical, discarding the queued notices with it. That is not new in 7.0.0, and it is worth stating plainly that it is **opt-in**: without the flag a refusal raised deep in a cascade can still return an error over a partially changed draw. `executionQueue` snapshots for the whole queue, so TMX and competition-factory-server already have this on every mutation; a consumer calling `setMatchUpStatus` directly should pass it. See [Exit Propagation](./concepts/exit-propagation.md#a-rejected-mutation-does-not-alter-the-draw-when-you-ask-for-that).
 
 The rest correct wrong answers rather than change a contract: a topology proxy that awarded a walkover to the side holding nobody, a cross-structure winner that fell through silently and never reached the Decider, an unwind that asked a field the cascade had already overwritten, a source-structure `drawPosition` handed to a target in another structure, and an unguarded `participantId === undefined` that matched the first empty slot rather than nothing.
 
-A second round of cascade fixes landed after that list and two of them are visible in stored records. **`DOUBLE_DEFAULT` now takes the same propagation branches as `DOUBLE_WALKOVER`** — three sites asked "is this a double exit" by testing `=== DOUBLE_WALKOVER`, so a default took the wrong branch at each. And **which double exit a convergence becomes no longer depends on the order the two results were entered**: it is derived from both sides' origins, where it used to be read from whichever arrived last. Both are described in [migration §11](./migration-7.0.0#the-matchupstatus-of-a-convergence-can-change-too).
+A second round of cascade fixes landed after that list and two of them are visible in stored records. **`DOUBLE_DEFAULT` now takes the same propagation branches as `DOUBLE_WALKOVER`** — three sites asked "is this a double exit" by testing `=== DOUBLE_WALKOVER`, so a default took the wrong branch at each. And **which double exit a convergence becomes no longer depends on the order the two results were entered**: it is derived from both sides' origins, where it used to be read from whichever arrived last. Both are described in [migration §11](./migration-7.0.0.md#the-matchupstatus-of-a-convergence-can-change-too).
 
 The remaining cascade work is a refusal the engine raises mid-cascade for a placement it should not have attempted. Those are being closed one root cause at a time and are tracked by the randomized sweep rather than by a contract change.
 
-→ [Exit Propagation](./concepts/exit-propagation), [migration §2](./migration-7.0.0#2-re-applying-a-double-exit-is-now-idempotent), [migration §3](./migration-7.0.0#3-a-rejected-bare--winningside--no-longer-unwinds-the-existing-result).
+→ [Exit Propagation](./concepts/exit-propagation.md), [migration §2](./migration-7.0.0.md#2-re-applying-a-double-exit-is-now-idempotent), [migration §3](./migration-7.0.0.md#3-a-rejected-bare--winningside--no-longer-unwinds-the-existing-result).
 
 ### 2. Time-zone conversions refuse rather than throw or guess
 
@@ -46,7 +46,7 @@ The difference was failure handling, and each was fail-open on a different axis.
 
 `getTimeZoneOffsetMinutes` also changes shape, from `number` to `number | undefined` — the one change in this area that alters a published **type**, so a TypeScript consumer sees it at compile time rather than at runtime.
 
-→ [migration §4](./migration-7.0.0#4-time-zone-conversions-refuse-rather-than-throw-or-guess), [tools.zonedDateTime](./tools/tools-api#toolszoneddatetime).
+→ [migration §4](./migration-7.0.0.md#4-time-zone-conversions-refuse-rather-than-throw-or-guess), [tools.zonedDateTime](./tools/tools-api.md#toolszoneddatetime).
 
 ### 3. Two queries refuse an absent object param instead of answering
 
@@ -64,13 +64,13 @@ An **empty** array is still a valid question with an empty answer; the guard is 
 
 `getParticipantResults` also refuses any **stored** (non-hydrated) matchUp — one carrying no `sides` at all. Results are attributed through `sides[].participantId`, and until 7.0.0 the helper that reads a side returned the literal string `'foo'` when `sides` was absent — so a round robin tallied from stored matchUps returned results keyed `foo` rather than failing. That sentinel, and the two `console.log` calls beside it, are gone.
 
-→ [migration §5](./migration-7.0.0#5-two-queries-refuse-an-absent-object-param-instead-of-answering).
+→ [migration §5](./migration-7.0.0.md#5-two-queries-refuse-an-absent-object-param-instead-of-answering).
 
 ### 4. `participantsRequiredMatchUpStatuses` — a spelling fix
 
 The exported constant was misspelled `particicipantsRequiredMatchUpStatuses` (an extra `ici`) since it was introduced. Rename the import; the value, the type and the semantics are identical. No deprecated alias is provided, and a survey of the CourtHive ecosystem found no consumer importing the old name.
 
-→ [migration §1](./migration-7.0.0#1-participantsrequiredmatchupstatuses--a-spelling-fix).
+→ [migration §1](./migration-7.0.0.md#1-participantsrequiredmatchupstatuses--a-spelling-fix).
 
 ## The headline feature — the LADDER draw type
 
@@ -78,7 +78,7 @@ A **ladder** is a continuous, challenge-driven competition. Participants occupy 
 
 `LADDER` shares the `AD_HOC` _structure shape_ — matchUps carry neither `roundPosition` nor `drawPosition` — but not its meaning: an `AD_HOC` draw's `positionAssignments` are a roster, while a ladder's **are the standing** and `drawPosition` reads as **rank**, where 1 is the top. `isAdHocType('LADDER')` is therefore `true`; ask `isLadder` wherever the difference matters.
 
-The full walkthrough is the [Ladder concepts page](./concepts/draw-types/ladder). What follows is what is new about it.
+The full walkthrough is the [Ladder concepts page](./concepts/draw-types/ladder.md). What follows is what is new about it.
 
 ### Driving a ladder
 
@@ -111,7 +111,7 @@ Everything else in the factory arrives from a draw. Eligibility is consequently 
 
 Expiry is **derived, never stored**, so a challenge nobody looked at does not sit in the record claiming to be pending.
 
-→ [The challenge](./concepts/draw-types/ladder#the-challenge).
+→ [The challenge](./concepts/draw-types/ladder.md#the-challenge).
 
 ### `CHALLENGED` is the first matchUpStatus whose context is enforced
 
@@ -119,13 +119,13 @@ Expiry is **derived, never stored**, so a challenge nobody looked at does not si
 
 `CHALLENGED` joins `validMatchUpStatuses`, `participantsRequiredMatchUpStatuses`, `nonDirectingMatchUpStatuses` and **`upcomingMatchUpStatuses`**. That last one widens the meaning of "upcoming" from _will happen_ to _is expected to happen_, since a challenge may be declined or expire — a deliberate trade, because a challenge missing from every upcoming-match view is invisible to exactly the people who must act on it.
 
-→ [Scope enforcement](./concepts/draw-types/ladder#challenged-is-scoped-to-ladder-and-the-scope-is-enforced).
+→ [Scope enforcement](./concepts/draw-types/ladder.md#challenged-is-scoped-to-ladder-and-the-scope-is-enforced).
 
 ### An attestation gate on self-reported results
 
 A ladder result is reported by the people who played it, so movement is gated on an **attested** result in code rather than in a comment. `POLICY_LADDER`'s `resultValidation` decides what counts: `PEER` (the opponent confirms), `OPERATOR` (an official does), or `EITHER`. A submitted result that has been **disputed** is blocked from moving the standing.
 
-→ [Reporting a result](./concepts/draw-types/ladder#reporting-a-result).
+→ [Reporting a result](./concepts/draw-types/ladder.md#reporting-a-result).
 
 ### Declines, silence and no-shows are one mechanism
 
@@ -133,7 +133,7 @@ Declining a challenge, ignoring one until it expires, and accepting then not tur
 
 Because consequences are evaluated when a challenge **resolves** rather than by a periodic sweep, a participant nobody challenges never lapses. An operator removal escape hatch exists for exactly that case.
 
-→ [Lapses](./concepts/draw-types/ladder#lapses), [Removing someone by hand](./concepts/draw-types/ladder#removing-someone-by-hand).
+→ [Lapses](./concepts/draw-types/ladder.md#lapses), [Removing someone by hand](./concepts/draw-types/ladder.md#removing-someone-by-hand).
 
 ### Ordering is `RANK` or `RATING`, and direction is read rather than assumed
 
@@ -143,7 +143,7 @@ Under `RANK` (the default) the standing is `positionAssignments`, mutated by the
 
 Every rank change is mirrored to a dated `ScaleItem` as a **side effect** of the position mutation, never as a separate call a caller might skip, so "where was I in March" is an ordinary scale lookup rather than a second store.
 
-→ [Ordering](./concepts/draw-types/ladder#ordering-rank-or-rating), [Movement](./concepts/draw-types/ladder#movement), [History](./concepts/draw-types/ladder#history).
+→ [Ordering](./concepts/draw-types/ladder.md#ordering-rank-or-rating), [Movement](./concepts/draw-types/ladder.md#movement), [History](./concepts/draw-types/ladder.md#history).
 
 ### What the factory deliberately does not do
 
@@ -151,23 +151,23 @@ Every rank change is mirrored to a dated `ScaleItem` as a **side effect** of the
 
 Dispute _resolution_ is not built: a disputed result is blocked from moving the standing, but nothing resolves it yet.
 
-→ [Not yet built](./concepts/draw-types/ladder#not-yet-built).
+→ [Not yet built](./concepts/draw-types/ladder.md#not-yet-built).
 
 ## Other 7.0.0 additions
 
-- **`SQUASH` and `BADMINTON` join the discipline vocabulary** — `DisciplineUnion` accepts any string, so both values already validated; what they lacked was membership of the **curated** set that drives autocomplete, normalization and near-match typo defense. They belong there because the [matchUpFormat grammar](./codes/matchup-format) already parses and round-trips both sports' scoring, and a discipline the engine can score should not be a stranger to the vocabulary.
-- **The four calendar intents are named and documented** — `tools.plainDate` (which calendar day), `tools.plainTime` (what time on the clock), `tools.zonedDateTime` (which moment at a venue) and an absolute instant. Only the third depends on a zone, and mixing the first two without an explicit conversion produces a figure wrong by the venue's UTC offset. `plainDate`, `plainTime` and `zonedDateTime` are new published exports; `tools.dateTime` is supported and unchanged. See [Four questions, not one](./concepts/date-time-handling#four-questions-not-one).
-- **The Temporal status is corrected** — Temporal reached Stage 4 in March 2026, is part of ES2026, and ships unflagged in Node 26, Chrome/Edge 144, Firefox 139 and Deno 2.7. Safari remains the gap, so it is not yet Baseline. See [Temporal API](./concepts/date-time-handling#temporal-api).
-- **`PositionAssignment.byeFromPropagation`** — a new optional boolean recording that a BYE was placed by an exit cascade rather than by draw generation or by hand. It replaces a topology inference (`feedRound || roundNumber === 1`) with a first-class fact, and is visible in stored records and anything that round-trips `positionAssignments`. See [BYE provenance](./concepts/exit-propagation#bye-provenance-byefrompropagation).
-- **`matchUp.sideExitProvenance`** — a new optional per-side record of WHY an exit sits on a side: the upstream status that caused it, the status this side was given, and the id of the matchUp whose exit produced it. It gives propagation provenance its own home, keyed by `sideNumber`, instead of leaving it positional inside `matchUpStatusCodes` beside two unrelated element shapes. Purely additive; `matchUpStatusCodes` is still written. See [Exit provenance](./concepts/exit-propagation#exit-provenance-sideexitprovenance).
-- **Exit codes stop being relabelled as walkovers** — a normalization in the propagation path mapped every object-shaped `matchUpStatusCodes` element to the walkover code `WO`. Measured over randomized scenarios, **44% of what it rewrote was not a walkover**: 13 BYEs and 9 defaults out of 50. Each element now resolves to its own outcome code, and a BYE contributes none rather than becoming a walkover. Values you read from `matchUpStatusCodes` can therefore differ — see [migration §12](./migration-7.0.0#12-non-breaking-additions-worth-knowing).
-- **`addFinishingRounds` refuses an absent `matchUps` array** instead of returning `[]` — which mattered because the natural call shape is an assignment, so an empty return silently replaced the caller's list. It mutates in place and returns the same reference, so valid usage is unchanged. See [migration §7](./migration-7.0.0#7-addfinishingrounds-refuses-an-absent-matchups-array).
-- **`buildDrawHierarchy` is removed** — a D3-era draw-rendering tree with no consumer anywhere in the ecosystem (measured across 1,809 source files in seven repos) and no documentation. Its implementation and tests are preserved at `Mentat/deprecated/factory/buildDrawHierarchy/`. See [migration §6](./migration-7.0.0#6-builddrawhierarchy-is-removed).
-- **An exit-propagation test harness** — a cross-product matrix, relational property suites (do/undo, idempotence, monotonicity), two agreement oracles, and a quarantine registry enforced in both directions so a fixed failure fails the run until its entry is removed. An at-scale randomized sweep with delta-debugging runs on demand. It exists because `isActiveDownstream` was at 100% branch coverage when it shipped 444 spurious refusals. See [Exit Propagation Harness](./testing/exit-propagation-harness).
+- **`SQUASH` and `BADMINTON` join the discipline vocabulary** — `DisciplineUnion` accepts any string, so both values already validated; what they lacked was membership of the **curated** set that drives autocomplete, normalization and near-match typo defense. They belong there because the [matchUpFormat grammar](./codes/matchup-format.mdx) already parses and round-trips both sports' scoring, and a discipline the engine can score should not be a stranger to the vocabulary.
+- **The four calendar intents are named and documented** — `tools.plainDate` (which calendar day), `tools.plainTime` (what time on the clock), `tools.zonedDateTime` (which moment at a venue) and an absolute instant. Only the third depends on a zone, and mixing the first two without an explicit conversion produces a figure wrong by the venue's UTC offset. `plainDate`, `plainTime` and `zonedDateTime` are new published exports; `tools.dateTime` is supported and unchanged. See [Four questions, not one](./concepts/date-time-handling.md#four-questions-not-one).
+- **The Temporal status is corrected** — Temporal reached Stage 4 in March 2026, is part of ES2026, and ships unflagged in Node 26, Chrome/Edge 144, Firefox 139 and Deno 2.7. Safari remains the gap, so it is not yet Baseline. See [Temporal API](./concepts/date-time-handling.md#temporal-api).
+- **`PositionAssignment.byeFromPropagation`** — a new optional boolean recording that a BYE was placed by an exit cascade rather than by draw generation or by hand. It replaces a topology inference (`feedRound || roundNumber === 1`) with a first-class fact, and is visible in stored records and anything that round-trips `positionAssignments`. See [BYE provenance](./concepts/exit-propagation.md#bye-provenance-byefrompropagation).
+- **`matchUp.sideExitProvenance`** — a new optional per-side record of WHY an exit sits on a side: the upstream status that caused it, the status this side was given, and the id of the matchUp whose exit produced it. It gives propagation provenance its own home, keyed by `sideNumber`, instead of leaving it positional inside `matchUpStatusCodes` beside two unrelated element shapes. Purely additive; `matchUpStatusCodes` is still written. See [Exit provenance](./concepts/exit-propagation.md#exit-provenance-sideexitprovenance).
+- **Exit codes stop being relabelled as walkovers** — a normalization in the propagation path mapped every object-shaped `matchUpStatusCodes` element to the walkover code `WO`. Measured over randomized scenarios, **44% of what it rewrote was not a walkover**: 13 BYEs and 9 defaults out of 50. Each element now resolves to its own outcome code, and a BYE contributes none rather than becoming a walkover. Values you read from `matchUpStatusCodes` can therefore differ — see [migration §12](./migration-7.0.0.md#12-non-breaking-additions-worth-knowing).
+- **`addFinishingRounds` refuses an absent `matchUps` array** instead of returning `[]` — which mattered because the natural call shape is an assignment, so an empty return silently replaced the caller's list. It mutates in place and returns the same reference, so valid usage is unchanged. See [migration §7](./migration-7.0.0.md#7-addfinishingrounds-refuses-an-absent-matchups-array).
+- **`buildDrawHierarchy` is removed** — a D3-era draw-rendering tree with no consumer anywhere in the ecosystem (measured across 1,809 source files in seven repos) and no documentation. Its implementation and tests are preserved verbatim outside this repository, so restoring it would be a copy rather than a rewrite — [open an issue](https://github.com/CourtHive/competition-factory/issues) if you need it. See [migration §6](./migration-7.0.0.md#6-builddrawhierarchy-is-removed).
+- **An exit-propagation test harness** — a cross-product matrix, relational property suites (do/undo, idempotence, monotonicity), two agreement oracles, and a quarantine registry enforced in both directions so a fixed failure fails the run until its entry is removed. An at-scale randomized sweep with delta-debugging runs on demand. It exists because `isActiveDownstream` was at 100% branch coverage when it shipped 444 spurious refusals. See [Exit Propagation Harness](./testing/exit-propagation-harness.md).
 
 ## Upgrading checklist
 
-1. **Read [the migration guide](./migration-7.0.0)** for the six breaking-change rows.
+1. **Read [the migration guide](./migration-7.0.0.md)** for the six breaking-change rows.
 2. **Rename `particicipantsRequiredMatchUpStatuses`** to `participantsRequiredMatchUpStatuses` at every import site.
 3. **Handle the error return** from `wallClockToUTC`, `utcToWallClock` and `toEmbargoUTC`, and branch on `undefined` from `getTimeZoneOffsetMinutes`. Remove any `try`/`catch` that was there to catch a throw.
 4. **Delete compensating logic** that re-read or repaired state after a `setMatchUpStatus` error — a rejected call no longer alters the draw. Note the error code for the bare-`{ winningSide }` case moved from `ERR_MISSING_ASSIGNMENTS` to `ERR_INVALID_MATCHUP_STATUS`; match on behaviour rather than on that code.
@@ -182,12 +182,12 @@ Dispute _resolution_ is not built: a disputed result is blocked from moving the 
 
 ## Where to go from here
 
-| If you want…                                        | Read                                                                            |
-| --------------------------------------------------- | ------------------------------------------------------------------------------- |
-| The full upgrade walkthrough                        | [6.x to 7.0.0 migration](./migration-7.0.0)                                     |
-| To run a continuous challenge-driven competition    | [Ladder](./concepts/draw-types/ladder)                                          |
-| To understand how a walkover travels through a draw | [Exit Propagation](./concepts/exit-propagation)                                 |
-| To contribute to the propagation code               | [Exit Propagation Harness](./testing/exit-propagation-harness)                  |
-| To pick the right date or time utility              | [Four questions, not one](./concepts/date-time-handling#four-questions-not-one) |
-| Zoned conversion that refuses rather than guesses   | [tools.zonedDateTime](./tools/tools-api#toolszoneddatetime)                     |
-| The previous major's feature tour                   | [What's New in 6.0.0](./whats-new-6.0.0)                                        |
+| If you want…                                        | Read                                                                               |
+| --------------------------------------------------- | ---------------------------------------------------------------------------------- |
+| The full upgrade walkthrough                        | [6.x to 7.0.0 migration](./migration-7.0.0.md)                                     |
+| To run a continuous challenge-driven competition    | [Ladder](./concepts/draw-types/ladder.md)                                          |
+| To understand how a walkover travels through a draw | [Exit Propagation](./concepts/exit-propagation.md)                                 |
+| To contribute to the propagation code               | [Exit Propagation Harness](./testing/exit-propagation-harness.md)                  |
+| To pick the right date or time utility              | [Four questions, not one](./concepts/date-time-handling.md#four-questions-not-one) |
+| Zoned conversion that refuses rather than guesses   | [tools.zonedDateTime](./tools/tools-api.md#toolszoneddatetime)                     |
+| The previous major's feature tour                   | [What's New in 6.0.0](./whats-new-6.0.0.md)                                        |

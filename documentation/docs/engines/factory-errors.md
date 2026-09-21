@@ -30,7 +30,7 @@ The legacy POJO shape was OK at the boundary (serializes cleanly across IPC, eas
 - Nothing carried call-site context (which method, which entity, what input).
 - "What do I do about this?" lived in tribal knowledge, not on the error.
 
-`FactoryError` solves all four without breaking the legacy contract: `toJSON()` still serializes to `{ message, code, info? }`, and the engine's invoke layer still returns `{ error: <POJO> }` for callers that expect it. Code that opts into the typed surface (via [`unwrap()`](./unwrap) or by importing the subclass directly) gets the rich fields.
+`FactoryError` solves all four without breaking the legacy contract: `toJSON()` still serializes to `{ message, code, info? }`, and the engine's invoke layer still returns `{ error: <POJO> }` for callers that expect it. Code that opts into the typed surface (via [`unwrap()`](./unwrap.md) or by importing the subclass directly) gets the rich fields.
 
 ## Class hierarchy
 
@@ -109,6 +109,6 @@ This means any existing consumer reading `result.error.code` or `JSON.stringify(
 | Pattern                                                             | When                                                                                                     |
 | ------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------- |
 | Engine returns `{ error: POJO }`, caller branches on `result.error` | Long-running mutation paths that need to roll back partial work — never throw across the engine boundary |
-| Caller wraps with [`unwrap()`](./unwrap) and uses `instanceof`      | Dev paths, UI gates, test code — programmer error should be loud                                         |
+| Caller wraps with [`unwrap()`](./unwrap.md) and uses `instanceof`   | Dev paths, UI gates, test code — programmer error should be loud                                         |
 | Caller wraps with `unwrapOr(result, fallback)`                      | Render paths where a typed fallback is the right UX                                                      |
 | Catch at the top of an action handler and route by `e.code`         | When you don't want to import 13 subclasses but still want code-keyed routing                            |

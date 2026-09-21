@@ -114,7 +114,18 @@ export function getTargetMatchUp({
   // when drawPositions need to be assigned in positionAssignments
   // which means only when a targetMatchUp is in a different structure
   let targetDrawPosition;
-  if (matchUp?.feedRound) {
+  // `hasFedDrawPosition`, not `feedRound`: this asks whether a drawPosition is RESERVED here, and
+  // `feedRound` answers a different question — whether an arrival takes side 1. They differ on
+  // exactly one shape, `DOUBLE_ELIMINATION`'s Main final, which reserves no slot at all
+  // (`draw-positions.md` §4a) and is reached by the Backdraw's WINNER link. There
+  // `matchUp.drawPositions` is empty, so `Math.min()` returned **Infinity** and handed it back as
+  // the name of a slot to place into — measured at draw sizes 8 and 16 with nothing played.
+  //
+  // Reading the reserved-slot fact also makes the `Math.min` below sound rather than merely
+  // usually-right: within a matchUp the fed position IS the numerically smaller of the two (fed ->
+  // sideNumber 1, and published rule 3 — side 1 is the lower drawPosition when both are present).
+  // The one case where the minimum named no reserved slot is the one case where none exists.
+  if (matchUp?.hasFedDrawPosition) {
     // for fedDrawPositions in linked elimination structures...
     // ...when roundNumber > 1 matchUpDrawPositionIndex should always be 0
     // ...because fed drawPositions are always numerically smaller than advanced drawPositions

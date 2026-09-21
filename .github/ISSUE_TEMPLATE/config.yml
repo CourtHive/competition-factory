@@ -1,0 +1,11 @@
+blank_issues_enabled: true
+contact_links:
+  - name: Documentation
+    url: https://courthive.github.io/competition-factory/
+    about: Engine reference, concepts and interactive examples — check here first.
+  - name: Report a security vulnerability
+    url: https://github.com/CourtHive/competition-factory/blob/HEAD/SECURITY.md
+    about: Please do not open a public issue for a suspected vulnerability.
+  - name: Contributing guide
+    url: https://github.com/CourtHive/competition-factory/blob/HEAD/CONTRIBUTING.md
+    about: How to open a pull request — no write access needed.

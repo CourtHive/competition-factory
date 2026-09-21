@@ -1,3 +1,4 @@
+import { stripCheckInAttribution, strippedParticipant } from '@Query/participants/participantPrivacy';
 import { getMatchUpCompetitiveProfile } from '@Query/matchUp/getMatchUpCompetitiveProfile';
 import { getCheckedInParticipantIds } from '@Query/matchUp/getCheckedInParticipantIds';
 import { getMatchUpScheduleDetails } from '@Query/matchUp/getMatchUpScheduleDetails';
@@ -232,6 +233,9 @@ export function addMatchUpContext({
   const abbreviatedRoundName =
     roundNamingProfile?.[roundNumber]?.abbreviatedRoundName || additionalContext.abbreviatedRoundName;
   const feedRound = roundProfile?.[roundNumber]?.feedRound;
+  // Whether a drawPosition is RESERVED here for the arrival, which `feedRound` alone does not say.
+  // See `getRoundMatchUps` and `documentation/docs/concepts/draw-positions.md` § 4 / § 4a.
+  const hasFedDrawPosition = roundProfile?.[roundNumber]?.hasFedDrawPosition;
   const preFeedRound = roundProfile?.[roundNumber]?.preFeedRound;
   const roundFactor = roundProfile?.[roundNumber]?.roundFactor;
 
@@ -300,6 +304,7 @@ export function addMatchUpContext({
       endDate: matchUp.endDate ?? endDate,
       discipline: event?.discipline,
       category: matchUpCategory,
+      hasFedDrawPosition,
       finishingPositionRange,
       abbreviatedRoundName,
       drawPositionsRange,
@@ -420,6 +425,12 @@ export function addMatchUpContext({
     });
   }
 
+  // D-PRIV: the fold above reads the log, so the strip must come after it — the derived
+  // `checkedInParticipantIds` is unaffected, and only the attester is withheld from the emitted log.
+  if (Array.isArray(matchUpWithContext.checkIns)) {
+    matchUpWithContext.checkIns = stripCheckInAttribution([matchUpWithContext])?.[0]?.checkIns;
+  }
+
   if (Array.isArray(contextProfile?.exclude)) {
     // loop through all attributes and delete them from matchUpWithContext
     contextProfile?.exclude.forEach((attribute) => delete matchUpWithContext[attribute]);
@@ -474,7 +485,11 @@ function buildMatchUpSides({
     roundNumber,
   });
 
-  const isFeedRound = roundProfile?.[roundNumber]?.feedRound;
+  // `participantFed` / `participantAdvanced` describe a RESERVED SLOT, not a participant — the
+  // name is older than the distinction. A round can order its sides like a feed round and still
+  // reserve nothing: `DOUBLE_ELIMINATION`'s Main final marked an empty side 1 `participantFed` for
+  // a slot that does not exist. Read `hasFedDrawPosition`, not `feedRound`.
+  const hasFedDrawPosition = roundProfile?.[roundNumber]?.hasFedDrawPosition;
   const reversedDisplayOrder = displayOrder[0] !== orderedDrawPositions[0];
 
   const sideDrawPositions = orderedDrawPositions.concat(undefined, undefined).slice(0, 2);
@@ -486,10 +501,10 @@ function buildMatchUpSides({
     const side = getSide({
       ...collectionAssignmentDetail,
       positionAssignments,
+      hasFedDrawPosition,
       displaySideNumber,
       seedAssignments,
       drawPosition,
-      isFeedRound,
       sideNumber,
     });
 
@@ -563,7 +578,11 @@ function hydrateSides({
                 participantId,
               })
             : undefined);
-        return individualsTemplate && found ? attributeFilter({ template: individualsTemplate, source: found }) : found;
+        const emitted =
+          individualsTemplate && found ? attributeFilter({ template: individualsTemplate, source: found }) : found;
+        // D-PRIV: attached AFTER the side participant was stripped, and from a different source, so
+        // it needs its own strip rather than inheriting one.
+        return strippedParticipant(emitted);
       });
       if (hydrateParticipants !== false) Object.assign(side.participant, { individualParticipants });
     }
@@ -625,7 +644,10 @@ function hydrateSideParticipant({
   if (hydrateParticipants === false) {
     Object.assign(side, { participant: { entryStage, entryStatus, luckyAdvancement } });
   } else {
-    Object.assign(side, { participant });
+    // D-PRIV: a hydrated side carries a whole participant, so a presence attester rides out on every
+    // matchUp query — `allTournamentMatchUps` never passes through `getParticipants`, where the
+    // participant-side strip lives. Hydration is the one place every emitted matchUp goes through.
+    Object.assign(side, { participant: strippedParticipant(participant) });
   }
 }
 

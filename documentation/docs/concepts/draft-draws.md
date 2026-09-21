@@ -295,9 +295,9 @@ Draft state is stored as an extension rather than as a first-class property on t
 
 ## Related
 
-- [Draws Overview](./draws-overview) — Draw generation and management
-- [Draw Types](./draw-types) — Available draw types
-- [Draw Links](./draw-links) — Linked structure architecture
+- [Draws Overview](./draws-overview.mdx) — Draw generation and management
+- [Draw Types](./draw-types.md) — Available draw types
+- [Draw Links](./draw-links.mdx) — Linked structure architecture
 - [Extensions](/docs/concepts/extensions) — CODES extension pattern
 - [Generation Governor](/docs/governors/generation-governor) — API reference for draw generation
 - [Draws Governor](/docs/governors/draws-governor) — API reference for draw mutations and queries

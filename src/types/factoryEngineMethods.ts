@@ -323,6 +323,7 @@ export type FactoryEngineMethod =
   | 'getLapses'
   | 'getLinkedTournamentIds'
   | 'getLuckyDrawRoundStatus'
+  | 'getMatchUpCheckInHistory'
   | 'getMatchUpCompetitiveProfile'
   | 'getMatchUpContextIds'
   | 'getMatchUpDailyLimits'
@@ -354,12 +355,15 @@ export type FactoryEngineMethod =
   | 'getParticipantMembership'
   | 'getParticipantPaymentStatus'
   | 'getParticipantPoints'
+  | 'getParticipantPresenceHistory'
   | 'getParticipantRest'
   | 'getParticipantResults'
   | 'getParticipants'
   | 'getParticipantScaleItem'
   | 'getParticipantSchedules'
+  | 'getParticipantSignedInOnDate'
   | 'getParticipantSignInStatus'
+  | 'getParticipantsStillSignedInOnDate'
   | 'getParticipantStats'
   | 'getParticipantTimeItem'
   | 'getParticipation'
@@ -369,6 +373,8 @@ export type FactoryEngineMethod =
   | 'getPositionsPlayedOff'
   | 'getPracticeRegistrations'
   | 'getPredictiveAccuracy'
+  | 'getPresenceExpectation'
+  | 'getPresenceRules'
   | 'getProfileRounds'
   | 'getPublishState'
   | 'getQualityWinPoints'
@@ -720,6 +726,7 @@ export type FactoryEngineMethod =
   | 'validateMCPMatch'
   | 'validateOfficiatingStatusTransition'
   | 'validatePlayoffGroups'
+  | 'validatePresenceAttribution'
   | 'validateProposal'
   | 'validateScheduleScenario'
   | 'validateSchedulingProfile'
@@ -1060,6 +1067,7 @@ export const FACTORY_ENGINE_METHODS: readonly FactoryEngineMethod[] = [
   'getLapses',
   'getLinkedTournamentIds',
   'getLuckyDrawRoundStatus',
+  'getMatchUpCheckInHistory',
   'getMatchUpCompetitiveProfile',
   'getMatchUpContextIds',
   'getMatchUpDailyLimits',
@@ -1091,12 +1099,15 @@ export const FACTORY_ENGINE_METHODS: readonly FactoryEngineMethod[] = [
   'getParticipantMembership',
   'getParticipantPaymentStatus',
   'getParticipantPoints',
+  'getParticipantPresenceHistory',
   'getParticipantRest',
   'getParticipantResults',
   'getParticipants',
   'getParticipantScaleItem',
   'getParticipantSchedules',
+  'getParticipantSignedInOnDate',
   'getParticipantSignInStatus',
+  'getParticipantsStillSignedInOnDate',
   'getParticipantStats',
   'getParticipantTimeItem',
   'getParticipation',
@@ -1106,6 +1117,8 @@ export const FACTORY_ENGINE_METHODS: readonly FactoryEngineMethod[] = [
   'getPositionsPlayedOff',
   'getPracticeRegistrations',
   'getPredictiveAccuracy',
+  'getPresenceExpectation',
+  'getPresenceRules',
   'getProfileRounds',
   'getPublishState',
   'getQualityWinPoints',
@@ -1457,6 +1470,7 @@ export const FACTORY_ENGINE_METHODS: readonly FactoryEngineMethod[] = [
   'validateMCPMatch',
   'validateOfficiatingStatusTransition',
   'validatePlayoffGroups',
+  'validatePresenceAttribution',
   'validateProposal',
   'validateScheduleScenario',
   'validateSchedulingProfile',

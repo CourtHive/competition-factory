@@ -8,7 +8,7 @@ title: Extensions
 
 ### Key Concepts
 
-**Non-Temporal Data**: Unlike [Time Items](./timeItems), extensions don't track changes over time  
+**Non-Temporal Data**: Unlike [Time Items](./timeItems.md), extensions don't track changes over time  
 **Name-Value Pairs**: Each extension has `{ name, value }` structure  
 **Uniqueness**: Only one extension with a given name per `.extensions` array  
 **Hierarchical Scope**: Extensions can exist on any CODES document element  
@@ -477,7 +477,7 @@ Purpose: Indicates participant has active suspension affecting eligibility.
 
 Attached to: `tournamentRecords`, `events`, `drawDefinitions`, `venues`
 
-Purpose: Controls concurrent access to scoped mutations. The tournament-level extension includes an `enabled` flag that acts as a feature gate; element-level extensions store the locks themselves. See [Mutation Locks](./mutation-locks) for full details.
+Purpose: Controls concurrent access to scoped mutations. The tournament-level extension includes an `enabled` flag that acts as a feature gate; element-level extensions store the locks themselves. See [Mutation Locks](./mutation-locks.md) for full details.
 
 ```js
 // Tournament-level (feature gate + tournament locks)
@@ -785,7 +785,7 @@ console.log(matchUps[0]._broadcastSchedule); // { channel: 'ESPN' }
 console.log(matchUps[0].extensions); // Original array still present
 ```
 
-**See:** [MatchUp Context](./matchup-context#extensions-handling) for details on extension hydration.
+**See:** [MatchUp Context](./matchup-context.mdx#extensions-handling) for details on extension hydration.
 
 ## Extensions vs Time Items
 
@@ -857,7 +857,7 @@ Avoid using factory-recognized extension names for custom extensions:
 
 ## Related Documentation
 
-- **[Time Items](./timeItems)** - Temporal data with effective dates
-- **[MatchUp Context](./matchup-context#extensions-handling)** - Extension hydration
-- **[Participant Context](./participant-context)** - Participant extensions
+- **[Time Items](./timeItems.md)** - Temporal data with effective dates
+- **[MatchUp Context](./matchup-context.mdx#extensions-handling)** - Extension hydration
+- **[Participant Context](./participant-context.md)** - Participant extensions
 - **[Policies Overview](/docs/policies/avoidance)** - Applied policies extension

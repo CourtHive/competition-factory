@@ -174,6 +174,6 @@ The undo/redo system handles mixed-mode seamlessly — undoing through set bound
 ## Related Documentation
 
 - **[matchUpFormat Codes](/docs/codes/matchup-format)** — Complete format string grammar
-- **[Overview](./scoring-engine-overview)** — Introduction and architecture
-- **[Core API Reference](./scoring-engine-api)** — Complete method reference
-- **[Event Handlers & Integration](./event-handlers)** — Event system and competitionFormat profiles
+- **[Overview](./scoring-engine-overview.md)** — Introduction and architecture
+- **[Core API Reference](./scoring-engine-api.md)** — Complete method reference
+- **[Event Handlers & Integration](./event-handlers.md)** — Event system and competitionFormat profiles

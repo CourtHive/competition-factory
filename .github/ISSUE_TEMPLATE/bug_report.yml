@@ -1,0 +1,75 @@
+name: Bug report
+description: An engine call returns a wrong or unexpected result.
+labels: [bug]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        A reproduction built with `mocksEngine` can be turned straight into a regression
+        test, which is usually the difference between a fix this week and a fix eventually.
+
+  - type: input
+    id: version
+    attributes:
+      label: Version
+      description: The `tods-competition-factory` version you are on.
+      placeholder: 6.38.0
+    validations:
+      required: true
+
+  - type: dropdown
+    id: engine
+    attributes:
+      label: Engine
+      options:
+        - tournamentEngine (sync)
+        - askEngine
+        - asyncEngine
+        - mocksEngine
+        - matchUpEngine / scaleEngine / temporalEngine
+        - not engine-specific / not sure
+    validations:
+      required: true
+
+  - type: textarea
+    id: reproduction
+    attributes:
+      label: Reproduction
+      description: >-
+        Ideally the `mocksEngine` call that builds the state, plus the engine call that
+        returns the wrong result. Rendered as TypeScript — no backticks needed.
+      render: typescript
+      placeholder: |
+        const { tournamentRecord } = mocksEngine.generateTournamentRecord({
+          drawProfiles: [{ drawSize: 8 }],
+          setState: true,
+        });
+
+        const result = tournamentEngine.someMethod({ ... });
+    validations:
+      required: true
+
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected result
+    validations:
+      required: true
+
+  - type: textarea
+    id: actual
+    attributes:
+      label: Actual result
+      description: Include the error code or thrown message verbatim if there is one.
+    validations:
+      required: true
+
+  - type: textarea
+    id: context
+    attributes:
+      label: Anything else
+      description: >-
+        Policy definitions in play, the draw type, whether it reproduces on the latest
+        version — whatever you think matters.
+    validations:
+      required: false

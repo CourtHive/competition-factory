@@ -541,6 +541,20 @@ export const CANNOT_CHANGE_WINNING_SIDE = {
   code: 'ERR_UNCHANGED_CANNOT_CHANGE_WINNING_SIDE',
 };
 /**
+ * Its own code, for the same reason `CANNOT_CHANGE_FEED_ELIGIBILITY` has one.
+ *
+ * A DOUBLE_WALKOVER and a DOUBLE_DEFAULT carry NO `winningSide` — neither side advances — yet they
+ * propagate produced exits downstream, so re-scoring one is exactly the operation that must be
+ * refused when those exits are load-bearing for a decided result. Reporting
+ * `CANNOT_CHANGE_WINNING_SIDE` there names a field the matchUp does not have. CA, 2026-09-21:
+ * *"maybe 'Cannot change outcome' is better than 'Cannot change winningSide' in the case where
+ * there is no winningSide?"*
+ */
+export const CANNOT_CHANGE_OUTCOME = {
+  message: 'Cannot change outcome',
+  code: 'ERR_UNCHANGED_CANNOT_CHANGE_OUTCOME',
+};
+/**
  * Its own code, deliberately. The winningSide is NOT changing here — only whether the win was
  * scored — so reporting `CANNOT_CHANGE_WINNING_SIDE` would show a TD a message contradicting what
  * they did, and a client keying on the code could not word the two cases differently.
@@ -620,6 +634,37 @@ export const MISSING_PARTICIPANT_COUNT = {
 export const PARTICIPANT_NOT_CHECKED_IN = {
   message: 'Participant not checked in',
   code: 'ERR_UNCHANGED_PARTICIPANT_NOT_CHECKED_IN',
+};
+
+/**
+ * The presence attestation names a PAIR or TEAM as its subject. Only INDIVIDUAL participants may be
+ * checked in: the pre-promotion API accepted a side participant and reconciled it with nothing, so a
+ * desk that checked in the pair and a desk that checked in both players stored different state for one
+ * physical fact. Side-level presence is still DERIVED on read.
+ */
+export const INVALID_ATTESTATION_SUBJECT = {
+  message: 'Presence subject must be an INDIVIDUAL participant',
+  code: 'ERR_INVALID_ATTESTATION_SUBJECT',
+};
+
+/**
+ * The attester is not permitted by the sanctioning policy's presence rules, AND that policy set
+ * `onInvalid: 'reject'`. The default is `record` — an unexpected attester is still a recorded fact,
+ * and refusing by default would teach operators to leave attribution blank.
+ */
+export const INVALID_ATTRIBUTION = {
+  message: 'Attester not permitted by the presence policy',
+  code: 'ERR_INVALID_ATTRIBUTION',
+};
+
+/**
+ * The write would lose information that the LEGACY representation cannot carry. Raised when an
+ * attestation carrying `attributedTo` is written under `schemaWriteMode: 'legacy'` — a timeItem has one
+ * `itemValue` and no room for an attester, so the alternative is to discard it silently.
+ */
+export const UNSUPPORTED_IN_LEGACY_MODE = {
+  message: 'Not supported in LEGACY schemaWriteMode',
+  code: 'ERR_UNSUPPORTED_IN_LEGACY_MODE',
 };
 
 export const MISSING_PERSON_DETAILS = {
@@ -944,6 +989,7 @@ export const errorConditionConstants = {
   BOOKING_NOT_FOUND,
   CANNOT_CHANGE_FEED_ELIGIBILITY,
   CANNOT_CHANGE_WINNING_SIDE,
+  CANNOT_CHANGE_OUTCOME,
   CAPACITY_EXCEEDED,
   REGISTRATION_NOT_FOUND,
   CANNOT_MODIFY_TIEFORMAT,
@@ -1113,6 +1159,9 @@ export const errorConditionConstants = {
   PARTICIPANT_COUNT_EXCEEDS_DRAW_SIZE,
   PARTICIPANT_ID_EXISTS,
   PARTICIPANT_NOT_CHECKED_IN,
+  INVALID_ATTESTATION_SUBJECT,
+  INVALID_ATTRIBUTION,
+  UNSUPPORTED_IN_LEGACY_MODE,
   PARTICIPANT_NOT_FOUND,
   PARTICIPANT_PAIR_EXISTS,
   PENALTY_NOT_FOUND,

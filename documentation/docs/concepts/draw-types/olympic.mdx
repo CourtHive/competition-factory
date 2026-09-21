@@ -29,22 +29,79 @@ West
   R1 losers --> South
 ```
 
-<BrowserOnly>{() => (
-  <TopologyViewer height={400} initialState={{
-    drawName: 'Olympic',
-    nodes: [
-      { id: 'east', structureName: 'East', stage: 'MAIN', structureType: 'SINGLE_ELIMINATION', drawSize: 16, position: { x: 40, y: 40 } },
-      { id: 'west', structureName: 'West', stage: 'CONSOLATION', structureType: 'SINGLE_ELIMINATION', drawSize: 8, position: { x: 360, y: 40 } },
-      { id: 'north', structureName: 'North', stage: 'CONSOLATION', structureType: 'SINGLE_ELIMINATION', drawSize: 4, position: { x: 360, y: 210 } },
-      { id: 'south', structureName: 'South', stage: 'CONSOLATION', structureType: 'SINGLE_ELIMINATION', drawSize: 4, position: { x: 640, y: 40 } },
-    ],
-    edges: [
-      { id: 'e1', sourceNodeId: 'east', targetNodeId: 'west', linkType: 'LOSER', sourceRoundNumber: 1, targetRoundNumber: 1, label: 'R1 losers → R1' },
-      { id: 'e2', sourceNodeId: 'east', targetNodeId: 'north', linkType: 'LOSER', sourceRoundNumber: 2, targetRoundNumber: 1, label: 'R2 losers → R1' },
-      { id: 'e3', sourceNodeId: 'west', targetNodeId: 'south', linkType: 'LOSER', sourceRoundNumber: 1, targetRoundNumber: 1, label: 'R1 losers → R1' },
-    ],
-  }} />
-)}</BrowserOnly>
+<BrowserOnly>
+  {() => (
+    <TopologyViewer
+      height={400}
+      initialState={{
+        drawName: 'Olympic',
+        nodes: [
+          {
+            id: 'east',
+            structureName: 'East',
+            stage: 'MAIN',
+            structureType: 'SINGLE_ELIMINATION',
+            drawSize: 16,
+            position: { x: 40, y: 40 },
+          },
+          {
+            id: 'west',
+            structureName: 'West',
+            stage: 'CONSOLATION',
+            structureType: 'SINGLE_ELIMINATION',
+            drawSize: 8,
+            position: { x: 360, y: 40 },
+          },
+          {
+            id: 'north',
+            structureName: 'North',
+            stage: 'CONSOLATION',
+            structureType: 'SINGLE_ELIMINATION',
+            drawSize: 4,
+            position: { x: 360, y: 210 },
+          },
+          {
+            id: 'south',
+            structureName: 'South',
+            stage: 'CONSOLATION',
+            structureType: 'SINGLE_ELIMINATION',
+            drawSize: 4,
+            position: { x: 640, y: 40 },
+          },
+        ],
+        edges: [
+          {
+            id: 'e1',
+            sourceNodeId: 'east',
+            targetNodeId: 'west',
+            linkType: 'LOSER',
+            sourceRoundNumber: 1,
+            targetRoundNumber: 1,
+            label: 'R1 losers → R1',
+          },
+          {
+            id: 'e2',
+            sourceNodeId: 'east',
+            targetNodeId: 'north',
+            linkType: 'LOSER',
+            sourceRoundNumber: 2,
+            targetRoundNumber: 1,
+            label: 'R2 losers → R1',
+          },
+          {
+            id: 'e3',
+            sourceNodeId: 'west',
+            targetNodeId: 'south',
+            linkType: 'LOSER',
+            sourceRoundNumber: 1,
+            targetRoundNumber: 1,
+            label: 'R1 losers → R1',
+          },
+        ],
+      }}
+    />
+  )}
+</BrowserOnly>
 
 The factory defines the structure attributes in the `OLYMPIC_ATTRIBUTES` constant:
 
@@ -74,6 +131,6 @@ const { drawDefinition } = engine.generateDrawDefinition({
 
 ## Related
 
-- [Compass Draw](./compass) -- A larger variant guaranteeing 3 matchUps
-- [Draw Links](../draw-links) -- How losers flow between structures
-- [Draw Types Overview](../draw-types) -- List of all pre-defined draw types
+- [Compass Draw](./compass.mdx) -- A larger variant guaranteeing 3 matchUps
+- [Draw Links](../draw-links.mdx) -- How losers flow between structures
+- [Draw Types Overview](../draw-types.md) -- List of all pre-defined draw types

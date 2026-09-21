@@ -6,19 +6,19 @@ export function getSide({
   drawPositionCollectionAssignment,
   sideNumberCollectionAssignment,
   positionAssignments,
+  hasFedDrawPosition,
   displaySideNumber,
   seedAssignments,
   drawPosition,
-  isFeedRound,
   sideNumber,
 }: {
   positionAssignments: PositionAssignment[];
   drawPositionCollectionAssignment?: any;
   sideNumberCollectionAssignment?: any;
   seedAssignments?: SeedAssignment[];
+  hasFedDrawPosition?: boolean;
   displaySideNumber: number;
   drawPosition?: number;
-  isFeedRound: boolean;
   sideNumber: number;
 }) {
   const assignment = positionAssignments.find(
@@ -38,7 +38,23 @@ export function getSide({
       })
     : { ...snc?.[sideNumber] };
 
-  if (isFeedRound) {
+  /**
+   * These mark the SLOT, not the participant — `participantFed` is true of an empty fed side that is
+   * still waiting, and `getAvailablePlayoffProfiles` reads exactly that shape
+   * (`participantFed && !participantId`). The names predate the distinction and are published, so
+   * they are kept; what changed is the fact they are derived from.
+   *
+   * This used to read `feedRound`, which is the SIDE-ORDERING inference (matchUpsCount equality) and
+   * is true of one round that reserves no slot at all: `DOUBLE_ELIMINATION`'s Main final, fed by a
+   * WINNER link from the Backdraw at a drawPosition its arrival already holds. Every Main final in
+   * every double elimination therefore published an empty side 1 as `participantFed` for a slot that
+   * does not exist — the fed-vs-advanced pair in `documentation/docs/concepts/draw-positions.md` § 4a
+   * says both of its positions are ADVANCED.
+   *
+   * `hasFedDrawPosition` is the reserved-slot fact. See `getRoundMatchUps` for how it is derived and
+   * `getWinnerLinkRoundNumbers` for the measurement behind it.
+   */
+  if (hasFedDrawPosition) {
     if (sideNumber === 1) {
       Object.assign(sideValue, { participantFed: true });
     } else {

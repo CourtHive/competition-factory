@@ -247,15 +247,15 @@ When `usePublishState: true`, the method reads the `PUBLISH.STATUS` timeItem fro
 
 ### Embargo enforcement
 
-When `usePublishState: true`, this method also enforces [embargo](../concepts/publishing/publishing-embargo) timestamps at all levels:
+When `usePublishState: true`, this method also enforces [embargo](../concepts/publishing/publishing-embargo.md) timestamps at all levels:
 
 - **Order of Play embargo**: returns empty `dateMatchUps` if the OOP embargo timestamp has not passed
 - **Draw embargo**: filters out matchUps from embargoed draws
 - **Stage embargo**: filters out matchUps from embargoed stages
 - **Structure embargo**: filters out matchUps from embargoed structures
-- **Round-level filtering**: `roundLimit` on a structure caps which rounds appear in the schedule. `scheduledRounds` is an override map for per-round control within the ceiling — unlisted rounds pass through normally; `{ published: false }` hides the round; embargoed rounds are returned **without schedule data** (schedule stripped) until the embargo passes. See [Scheduled Rounds](../concepts/publishing/publishing-embargo#scheduled-rounds).
+- **Round-level filtering**: `roundLimit` on a structure caps which rounds appear in the schedule. `scheduledRounds` is an override map for per-round control within the ceiling — unlisted rounds pass through normally; `{ published: false }` hides the round; embargoed rounds are returned **without schedule data** (schedule stripped) until the embargo passes. See [Scheduled Rounds](../concepts/publishing/publishing-embargo.md#scheduled-rounds).
 
-**See**: [Embargo](../concepts/publishing/publishing-embargo) for details on how embargo timestamps work.
+**See**: [Embargo](../concepts/publishing/publishing-embargo.md) for details on how embargo timestamps work.
 
 ---
 
@@ -471,7 +471,7 @@ const { updatedLimits } = engine.getMatchUpDailyLimitsUpdate({
 
 Builds a directed acyclic graph (DAG) of matchUp dependencies across all structures and draws. Returns the complete transitive closure of upstream matchUpIds, direct downstream dependents, optional participant tracking, and cross-structure POSITION link dependencies (e.g., Round Robin → Playoff).
 
-Used internally by the [automated scheduling](../concepts/automated-scheduling) pipeline to enforce dependency ordering, recovery time, and participant conflict constraints. Also used by the `DependencyAdapter` pattern in `courthive-components` for interactive [scheduling profile](../concepts/scheduling-profile) validation.
+Used internally by the [automated scheduling](../concepts/automated-scheduling.md) pipeline to enforce dependency ordering, recovery time, and participant conflict constraints. Also used by the `DependencyAdapter` pattern in `courthive-components` for interactive [scheduling profile](../concepts/scheduling-profile.mdx) validation.
 
 ```js
 const {
@@ -488,7 +488,7 @@ const {
 });
 ```
 
-For full documentation including return value details, cross-structure awareness, scheduling integration, and the DependencyAdapter pattern, see [getMatchUpDependencies in the Query Governor](./query-governor#getmatchupdependencies).
+For full documentation including return value details, cross-structure awareness, scheduling integration, and the DependencyAdapter pattern, see [getMatchUpDependencies in the Query Governor](./query-governor.md#getmatchupdependencies).
 
 ---
 

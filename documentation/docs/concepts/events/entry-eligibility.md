@@ -125,14 +125,14 @@ interface EntryRestriction {
 `EntryRestrictionEnum` is open in spirit — governing bodies invent gates — but enumerated so a
 consumer can branch on the common ones rather than parse `description`:
 
-| type | meaning |
-| --- | --- |
-| `RESIDENCY` | competitor must be of the stated organisation's territory |
-| `MEMBERSHIP` | competitor must hold a membership of the stated organisation |
-| `RANKING_FLOOR` | competitor must hold a ranking or rating at or above a threshold |
-| `CLEARANCE` | competitor must hold a current safeguarding / background clearance |
-| `INVITATION` | entry is by invitation of the organiser |
-| `OTHER` | stated by the organiser and not one of the above |
+| type            | meaning                                                            |
+| --------------- | ------------------------------------------------------------------ |
+| `RESIDENCY`     | competitor must be of the stated organisation's territory          |
+| `MEMBERSHIP`    | competitor must hold a membership of the stated organisation       |
+| `RANKING_FLOOR` | competitor must hold a ranking or rating at or above a threshold   |
+| `CLEARANCE`     | competitor must hold a current safeguarding / background clearance |
+| `INVITATION`    | entry is by invitation of the organiser                            |
+| `OTHER`         | stated by the organiser and not one of the above                   |
 
 `organisationId` is required in practice for `MEMBERSHIP` and `RESIDENCY` and meaningless without it:
 "members only" is not a rule until it says whose members. A membership of the organisation running

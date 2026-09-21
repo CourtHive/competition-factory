@@ -47,8 +47,8 @@ export default function FlightProfileDemo() {
                   ...modalOutput,
                   scaleAttributes: {
                     ...modalOutput.scaleAttributes,
-                    eventType: 'SINGLES' // Add eventType from context
-                  }
+                    eventType: 'SINGLES', // Add eventType from context
+                  },
                 };
 
                 setResult(flightProfile);
@@ -94,11 +94,7 @@ export default function FlightProfileDemo() {
   return (
     <div style={{ marginBottom: '2em' }}>
       <div ref={containerRef} />
-      {error && (
-        <div style={{ color: 'red', padding: '1em', backgroundColor: '#fee' }}>
-          {error}
-        </div>
-      )}
+      {error && <div style={{ color: 'red', padding: '1em', backgroundColor: '#fee' }}>{error}</div>}
       <div ref={resultsRef} />
     </div>
   );

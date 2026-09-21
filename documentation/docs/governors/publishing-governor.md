@@ -2,14 +2,14 @@
 title: Publishing Governor
 ---
 
-The **Publishing Governor** provides methods for controlling the public visibility of tournament information through publish state management. These methods work in conjunction with [Time Items](../concepts/timeItems) to track what's published and when.
+The **Publishing Governor** provides methods for controlling the public visibility of tournament information through publish state management. These methods work in conjunction with [Time Items](../concepts/timeItems.md) to track what's published and when.
 
 ```js
 import { publishingGovernor } from 'tods-competition-factory';
 ```
 
 :::tip
-See **[Publishing Concepts](../concepts/publishing/publishing-overview)** for comprehensive coverage of publishing workflows, rationale, and best practices.
+See **[Publishing Concepts](../concepts/publishing/publishing-overview.md)** for comprehensive coverage of publishing workflows, rationale, and best practices.
 :::
 
 ## getPublishState
@@ -76,7 +76,7 @@ Each entry in the `embargoes` array:
 | `embargoActive` | boolean | `true` if the embargo is still in the future                                                   |
 
 :::note
-`getPublishState` intentionally **ignores** embargo timestamps when determining publish status. This is for admin/reporting use — embargoed elements appear as "published" so admin UIs can display their configuration correctly. See [Embargo: Admin vs Public Behavior](../concepts/publishing/publishing-embargo#admin-vs-public-behavior) for details.
+`getPublishState` intentionally **ignores** embargo timestamps when determining publish status. This is for admin/reporting use — embargoed elements appear as "published" so admin UIs can display their configuration correctly. See [Embargo: Admin vs Public Behavior](../concepts/publishing/publishing-embargo.md#admin-vs-public-behavior) for details.
 :::
 
 **Use Cases**:
@@ -87,7 +87,7 @@ Each entry in the `embargoes` array:
 - Query embargo status and expiry times
 - Build admin dashboards showing upcoming embargo releases
 
-**See**: [Embargo](../concepts/publishing/publishing-embargo) for comprehensive embargo documentation.
+**See**: [Embargo](../concepts/publishing/publishing-embargo.md) for comprehensive embargo documentation.
 
 ---
 
@@ -246,7 +246,7 @@ const { drawInfo, structures } = engine.getDrawData({
 - Respects publish state when `usePublishState: true`
 - Applies privacy policies to participant data
 - Returns only published structures/rounds when appropriate
-- Enforces [embargo](../concepts/publishing/publishing-embargo) timestamps — embargoed structures are filtered out until the embargo passes
+- Enforces [embargo](../concepts/publishing/publishing-embargo.md) timestamps — embargoed structures are filtered out until the embargo passes
 - Used internally by `getEventData`
 
 ---
@@ -300,7 +300,7 @@ const { eventData, participants } = engine.getEventData({
 
 - When `usePublishState: true`, only returns published draws/structures
 - Respects round limits and stage restrictions
-- Enforces [embargo](../concepts/publishing/publishing-embargo) timestamps at draw, stage, and structure levels — embargoed content is hidden until the embargo passes
+- Enforces [embargo](../concepts/publishing/publishing-embargo.md) timestamps at draw, stage, and structure levels — embargoed content is hidden until the embargo passes
 - Applies privacy policies
 
 **Notes:**
@@ -406,7 +406,7 @@ A round can be both `hidden` and `embargoed` simultaneously — for example, whe
 - Determine which rounds to grey out, hide, or mark with embargo indicators
 - Drive UI indicators for schedule embargo status per round
 
-**See**: [Publishing Events](../concepts/publishing/publishing-events) for `roundLimit` usage, [Embargo](../concepts/publishing/publishing-embargo) for embargo concepts.
+**See**: [Publishing Events](../concepts/publishing/publishing-events.md) for `roundLimit` usage, [Embargo](../concepts/publishing/publishing-embargo.md) for embargo concepts.
 
 ---
 
@@ -741,7 +741,7 @@ Embargoed content is automatically visible once the system clock passes the emba
 
 **Admin visibility**: [`getPublishState`](#getpublishstate) ignores embargoes and reports full publish configuration including embargo metadata.
 
-**See**: [Embargo](../concepts/publishing/publishing-embargo) for comprehensive embargo documentation including workflows and admin vs public behavior.
+**See**: [Embargo](../concepts/publishing/publishing-embargo.md) for comprehensive embargo documentation including workflows and admin vs public behavior.
 
 #### Publishing with Privacy Policies
 
@@ -795,7 +795,7 @@ const { eventData: clientData } = engine.getEventData({
 });
 ```
 
-**See**: [Publishing Concepts](../concepts/publishing/publishing-data-subscriptions) for details on eventData structure.
+**See**: [Publishing Concepts](../concepts/publishing/publishing-data-subscriptions.md) for details on eventData structure.
 
 ---
 
@@ -934,7 +934,7 @@ engine.publishOrderOfPlay({
 
 When embargoed, [`competitionScheduleMatchUps`](/docs/governors/query-governor#competitionschedulematchups) with `usePublishState: true` returns empty `dateMatchUps` until the embargo passes.
 
-**See**: [Embargo](../concepts/publishing/publishing-embargo) for comprehensive embargo documentation.
+**See**: [Embargo](../concepts/publishing/publishing-embargo.md) for comprehensive embargo documentation.
 
 #### Replace All Previous Publications
 
@@ -993,7 +993,7 @@ engine.publishParticipants({
 });
 ```
 
-**See**: [Embargo](../concepts/publishing/publishing-embargo) for comprehensive embargo documentation.
+**See**: [Embargo](../concepts/publishing/publishing-embargo.md) for comprehensive embargo documentation.
 
 #### Replace Previous Publication
 
@@ -1256,9 +1256,9 @@ engine.devContext({ subscriptions });
 
 ## Related Documentation
 
-- **[Publishing Concepts](../concepts/publishing/publishing-overview)** - Comprehensive workflows and best practices
-- **[Embargo](../concepts/publishing/publishing-embargo)** - Time-based visibility control for published content
-- **[Time Items](../concepts/timeItems)** - How publish state is stored
+- **[Publishing Concepts](../concepts/publishing/publishing-overview.md)** - Comprehensive workflows and best practices
+- **[Embargo](../concepts/publishing/publishing-embargo.md)** - Time-based visibility control for published content
+- **[Time Items](../concepts/timeItems.md)** - How publish state is stored
 - **[Subscriptions](/docs/engines/subscriptions)** - Notification system
 - **[Query Governor](/docs/governors/query-governor)** - Methods using publish state with embargo enforcement
-- **[Policies](../concepts/policies)** - Privacy and display policies
+- **[Policies](../concepts/policies.md)** - Privacy and display policies
