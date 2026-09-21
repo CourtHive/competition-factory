@@ -118,9 +118,15 @@ function isProvisionalDecision(matchUp: any): boolean {
  * not: 7 -> 6 on a 600-seed slice, and 265 -> 242 across 22,417 seeds of the post-fix census. The
  * property was counting SOME placeholders, not mostly placeholders.
  *
- * The residue is the point. What survives is a decision that was REAL — a matchUp holding a
- * participant or a winner — being un-decided, and that is still Signal 1: `resolveMatchUpStatus`
- * letting a single produced exit fall through to `TO_BE_PLAYED`.
+ * The residue was the point, and it has since been identified and fixed. What survived the
+ * reclassification was a decision that was REAL — a matchUp holding a participant or a winner —
+ * being un-decided, and that was Signal 1: a pending propagated exit erased when a drawPosition
+ * arrived, because `drawPositionPlacement` recognised a carried exit by a `winningSide` that
+ * Migration §20 had just stopped writing. Fixed 2026-09-21; see Migration §23 and
+ * `arrivalResolvesPendingExit.test.ts`.
+ *
+ * A census run from before that fix will still show the class. Counts taken across it are not
+ * comparable with counts taken after, which is the same caveat the 6.38.0 baseline carries.
  */
 export function checkMonotonicity({ propagateExitStatus, matchUpId, drawId, outcome }): PropertyFailure[] {
   const beforeMatchUps = getDrawMatchUps(drawId);
