@@ -1617,9 +1617,9 @@ Like §19, these were committed as `fix(propagation):` with no `BREAKING CHANGE:
 `verify:migration-coverage` never required an entry. Both were found by auditing the workstream's
 `fix`-typed commits for observable field changes rather than by the gate.
 
-## 21. A load-bearing outcome cannot be re-scored while a dependent result stands
+## 21. [#4942](https://github.com/CourtHive/competition-factory/pull/4942) a load-bearing outcome cannot be re-scored while a dependent result stands
 
-_Shipped in `1d921a22b`._
+_Shipped in `1d921a22b`; referenced by [#4942](https://github.com/CourtHive/competition-factory/pull/4942), which the commit itself predates._
 
 ### What changed
 
