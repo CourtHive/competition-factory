@@ -1,5 +1,6 @@
 import { feedEligibilityChange } from '@Mutate/matchUps/matchUpStatus/feedEligibilityGuard';
 import { noDownstreamDependencies } from '@Mutate/drawDefinitions/matchUpGovernor/noDownstreamDependencies';
+import { isDoubleExit } from '@Validators/isExit';
 import { generateTieMatchUpScore } from '@Assemblies/generators/tieMatchUpScore/generateTieMatchUpScore';
 import { isDirectingMatchUpStatus, isNonDirectingMatchUpStatus } from '@Query/matchUp/checkStatusType';
 import { addMatchUpScheduleItems } from '@Mutate/matchUps/schedule/scheduleItems/scheduleItems';
@@ -41,6 +42,7 @@ import { TEAM } from '@Constants/matchUpTypes';
 import {
   CANNOT_CHANGE_FEED_ELIGIBILITY,
   CANNOT_CHANGE_WINNING_SIDE,
+  CANNOT_CHANGE_OUTCOME,
   INCOMPATIBLE_MATCHUP_STATUS,
   INVALID_MATCHUP_STATUS,
   INVALID_VALUES,
@@ -550,8 +552,24 @@ function resolveAndApplyOutcome({ params, isTeam, dualWinningSideChange, activeD
     winningSide,
   });
 
+  /**
+   * A matchUp that has never SENT anything downstream cannot invalidate anything downstream, so a
+   * FIRST entry is always permitted and must take the propagating branch.
+   *
+   * The dispatch was on `activeDownstream` alone, which conflated "has active downstream
+   * dependencies" with "may not be decided at all": a `TO_BE_PLAYED` Main matchUp sitting above a
+   * played consolation was refused `CANNOT_CHANGE_WINNING_SIDE` — naming a field it did not have.
+   * Routing it to `applyMatchUpValues` instead is not the fix either; that writes the result
+   * WITHOUT propagating it, which silently stops the winner advancing (27 `exitPropagationMatrix`
+   * FMLC cells).
+   *
+   * The two shapes that propagate are a `winningSide` (the winner advances) and a double exit (the
+   * produced exits are carried onward). Anything else has sent nothing.
+   */
+  const hasPropagated = !!matchUp.winningSide || isDoubleExit(matchUp.matchUpStatus);
+
   let result;
-  if (!activeDownstream) {
+  if (!activeDownstream || !hasPropagated) {
     result = noDownstreamDependencies(params);
   } else if (matchUpWinner) {
     result = winningSideWithDownstreamDependencies(params);
@@ -753,9 +771,12 @@ function winningSideWithDownstreamDependencies(params) {
   if (winningSide === matchUp.winningSide || (matchUpTieId && !dualWinningSideChange)) {
     return applyMatchUpValues(params);
   } else {
+    // A double exit has no `winningSide` to change — it is the OUTCOME being changed, and naming
+    // the missing field would contradict what the TD is looking at.
+    const error = matchUp.winningSide ? CANNOT_CHANGE_WINNING_SIDE : CANNOT_CHANGE_OUTCOME;
     return decorateResult({
       stack: 'winningSideWithDownstreamDependencies',
-      result: { error: CANNOT_CHANGE_WINNING_SIDE },
+      result: { error },
       context: { winningSide, matchUp },
     });
   }

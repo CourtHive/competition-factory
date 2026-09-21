@@ -128,7 +128,27 @@ describe('FMLC score removal coverage for removeDirectedParticipants branches', 
       // Remove a completed round 2 matchUp outcome
       const r2Target = r2Completed[0];
 
-      // First remove the final (round 3) if it exists, since we need to remove from latest round first
+      /**
+       * UNWIND THE CONSOLATION FIRST.
+       *
+       * This removed the Main round-2 outcome while the consolation still stood, and was permitted
+       * because `isActiveDownstream` declared a fed FMLC BYE inert even when the matchUp beyond it
+       * was decided. That is the defect CA identified 2026-09-21: an outcome whose propagation is
+       * load-bearing for decided downstream results must not be re-scorable. It is now refused.
+       *
+       * The branch this test exists to cover is reached the same way by unwinding in dependency
+       * order — consolation first, then the Main round it feeds — which is the order the rule
+       * requires rather than a workaround for it.
+       */
+      const consolationCompleted = matchUps
+        .filter((m) => m.stage === CONSOLATION && m.winningSide)
+        .sort((a, b) => (b.roundNumber ?? 0) - (a.roundNumber ?? 0));
+      for (const m of consolationCompleted) {
+        tournamentEngine.setMatchUpStatus({ matchUpId: m.matchUpId, outcome: { matchUpStatus: TO_BE_PLAYED }, drawId });
+      }
+      ({ matchUps } = tournamentEngine.allTournamentMatchUps());
+
+      // remove from the latest MAIN round first
       const mainR3 = matchUps.filter((m) => m.stage === MAIN && m.roundNumber === 3 && m.matchUpStatus === COMPLETED);
       for (const m of mainR3) {
         const r = tournamentEngine.setMatchUpStatus({

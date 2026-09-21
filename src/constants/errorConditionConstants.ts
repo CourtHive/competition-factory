@@ -541,6 +541,20 @@ export const CANNOT_CHANGE_WINNING_SIDE = {
   code: 'ERR_UNCHANGED_CANNOT_CHANGE_WINNING_SIDE',
 };
 /**
+ * Its own code, for the same reason `CANNOT_CHANGE_FEED_ELIGIBILITY` has one.
+ *
+ * A DOUBLE_WALKOVER and a DOUBLE_DEFAULT carry NO `winningSide` — neither side advances — yet they
+ * propagate produced exits downstream, so re-scoring one is exactly the operation that must be
+ * refused when those exits are load-bearing for a decided result. Reporting
+ * `CANNOT_CHANGE_WINNING_SIDE` there names a field the matchUp does not have. CA, 2026-09-21:
+ * *"maybe 'Cannot change outcome' is better than 'Cannot change winningSide' in the case where
+ * there is no winningSide?"*
+ */
+export const CANNOT_CHANGE_OUTCOME = {
+  message: 'Cannot change outcome',
+  code: 'ERR_UNCHANGED_CANNOT_CHANGE_OUTCOME',
+};
+/**
  * Its own code, deliberately. The winningSide is NOT changing here — only whether the win was
  * scored — so reporting `CANNOT_CHANGE_WINNING_SIDE` would show a TD a message contradicting what
  * they did, and a client keying on the code could not word the two cases differently.
@@ -975,6 +989,7 @@ export const errorConditionConstants = {
   BOOKING_NOT_FOUND,
   CANNOT_CHANGE_FEED_ELIGIBILITY,
   CANNOT_CHANGE_WINNING_SIDE,
+  CANNOT_CHANGE_OUTCOME,
   CAPACITY_EXCEEDED,
   REGISTRATION_NOT_FOUND,
   CANNOT_MODIFY_TIEFORMAT,
