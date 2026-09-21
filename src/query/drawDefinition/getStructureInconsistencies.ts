@@ -1,11 +1,12 @@
 import { isPropagatedExit as sharedIsPropagatedExit } from '@Mutate/matchUps/matchUpStatus/sideExitProvenance';
+import { getNativeSideExitProvenance } from '@Mutate/matchUps/matchUpStatus/sideExitProvenance';
 import { finalize, Inconsistency } from '@Query/integrity/inconsistency';
 import { getAllDrawMatchUps } from '@Query/matchUps/drawMatchUps';
-import { isExit } from '@Validators/isExit';
+import { isAnyExit, isExit } from '@Validators/isExit';
 
 // constants and types
 import { DrawDefinition, Event, MatchUp, PositionAssignment, Structure, Tournament } from '@Types/tournamentTypes';
-import { DOUBLE_DEFAULT, DOUBLE_WALKOVER } from '@Constants/matchUpStatusConstants';
+import { BYE, DOUBLE_DEFAULT, DOUBLE_WALKOVER } from '@Constants/matchUpStatusConstants';
 import { MISSING_DRAW_DEFINITION } from '@Constants/errorConditionConstants';
 import { CONTAINER } from '@Constants/drawDefinitionConstants';
 import { MatchUpsMap, ResultType } from '@Types/factoryTypes';
@@ -30,6 +31,12 @@ import { SUCCESS } from '@Constants/resultConstants';
 //    is the one advancement invariant that has to start from the positionAssignment
 //    instead. Bye-vs-bye and bye-vs-empty are excluded — neither has a participant whose
 //    absence would mean anything.
+//  - PROPAGATED_EXIT_LOST: the matchUp carries NATIVE exit provenance — the cascade's own
+//    record that an exit was delivered to one of its sides — while its matchUpStatus says
+//    no exit happened and no winner was awarded. The record and the status contradict each
+//    other, and the status is the one that is wrong: an exit that arrived cannot un-arrive
+//    without the provenance being withdrawn with it. Like BYE_ADVANCEMENT_MISSING this
+//    cannot start from a winningSide (there is none), so it runs above that guard.
 //  - EXIT_CODE_ON_WINNER_SIDE: on a single WALKOVER/DEFAULTED, a status code sits on
 //    the winning side rather than the exiting (loser) side.
 //  - DRAW_POSITIONS_NOT_SORTED: a matchUp's drawPositions are not stored ascending
@@ -60,6 +67,7 @@ export const DRAW_POSITION_UNASSIGNED = 'DRAW_POSITION_UNASSIGNED';
 export const DRAW_POSITIONS_NOT_SORTED = 'DRAW_POSITIONS_NOT_SORTED';
 export const EXIT_CODE_ON_WINNER_SIDE = 'EXIT_CODE_ON_WINNER_SIDE';
 export const EXIT_WITHOUT_LOSER = 'EXIT_WITHOUT_LOSER';
+export const PROPAGATED_EXIT_LOST = 'PROPAGATED_EXIT_LOST';
 
 // DEFERRED — STALE_EXIT_STATUS is intentionally NOT implemented.
 //
@@ -314,6 +322,76 @@ function getWinnerAdvancementInconsistency(
   return undefined;
 }
 
+/**
+ * PROPAGATED_EXIT_LOST — the record says an exit arrived here; the status says nothing happened.
+ *
+ * ## Why this class was invisible
+ *
+ * Every other exit check in this file starts from a `winningSide` or from an exit `matchUpStatus`.
+ * A matchUp whose exit has been ERASED has neither, so it fell through all of them and the draw
+ * rated `valid: true` — the same structural blindness `BYE_ADVANCEMENT_MISSING` was added for on
+ * 2026-09-21, where the check could not see a BYE because "a BYE is never won".
+ *
+ * Measured on `COMPASS 16/14 nonRandom: 20223109`: a `DOUBLE_WALKOVER` at `East|1|2` leaves
+ * `West|2|1` a pending `WALKOVER` with provenance on side 1. A participant then arrives on side 2
+ * and the status is rewritten to `TO_BE_PLAYED` while the provenance stays. The matchUp then reads
+ * "a real participant versus nobody, to be played" — and it can never be played, because side 1's
+ * drawPosition is fed by a double exit that advances no one. The draw has stopped, and nothing
+ * reported it.
+ *
+ * ## Why NATIVE provenance, and only native
+ *
+ * `getSideExitProvenance` falls back to the legacy `matchUpStatusCodes` array and can return stale
+ * entries; `getNativeSideExitProvenance` answers the narrower question this check needs — did the
+ * cascade actually stamp its own record here. Reading the fallback would turn every stale legacy
+ * code into a reported defect.
+ *
+ * ## What is deliberately NOT flagged
+ *
+ * A BYE, and any status that IS an exit (single or double) — those are the cascade's own outcomes,
+ * not its erasure. A matchUp with a `winningSide` is excluded too: whatever else may be wrong with
+ * it, its exit was not silently dropped, and `EXIT_CODE_ON_WINNER_SIDE` / `EXIT_WITHOUT_LOSER`
+ * already govern that shape.
+ */
+function getLostPropagatedExitInconsistency(matchUp: any): StructureInconsistency | undefined {
+  const { matchUpStatus, winningSide, matchUpId } = matchUp;
+  if (winningSide || matchUpStatus === BYE || isAnyExit(matchUpStatus)) return undefined;
+
+  const provenance = getNativeSideExitProvenance({ matchUp });
+  if (!provenance) return undefined;
+
+  /**
+   * The provenance side must be EMPTY, and that is the whole discriminator.
+   *
+   * An exit means somebody did not play. A provenance entry sitting on a side that HOLDS a
+   * participant is describing how that participant ARRIVED — measured on sweep seed 6161873
+   * (OLYMPIC 16/16), where `East|3|2` is a perfectly ordinary `TO_BE_PLAYED` between two present
+   * participants, one of whom reached it by winning a walkover at `East|2|4`. That record is
+   * history, not an exit delivered into this matchUp, and flagging it reports a playable match as
+   * a defect.
+   *
+   * A side that carries an exit record and no participant is the opposite: nobody is coming, and a
+   * status saying "to be played" is a draw that has silently stopped.
+   */
+  const exitedSide = Object.keys(provenance).find((sideNumber) => {
+    if (!isAnyExit(provenance[sideNumber]?.matchUpStatus)) return false;
+    const side = (matchUp.sides ?? []).find((candidate: any) => candidate?.sideNumber === Number(sideNumber));
+    return !side?.participantId && !side?.bye;
+  });
+  if (!exitedSide) return undefined;
+
+  return {
+    matchUpId,
+    structureId: matchUp.structureId,
+    issueType: PROPAGATED_EXIT_LOST,
+    message: `side ${exitedSide} carries a propagated ${provenance[exitedSide]?.matchUpStatus} but the matchUp records no exit`,
+    sideNumber: Number(exitedSide),
+    carriedMatchUpStatus: provenance[exitedSide]?.matchUpStatus,
+    sourceMatchUpId: provenance[exitedSide]?.sourceMatchUpId,
+    matchUpStatus,
+  };
+}
+
 export function getStructureInconsistencies(
   params: GetStructureInconsistenciesArgs,
 ): ResultType & { valid?: boolean; inconsistencies?: Inconsistency[] } {
@@ -354,6 +432,10 @@ export function getStructureInconsistencies(
 
     const byeAdvancement = getByeAdvancementInconsistency(matchUp, matchUpById);
     if (byeAdvancement) inconsistencies.push(byeAdvancement);
+
+    // above the winningSide guard deliberately: an ERASED exit has no winningSide to start from
+    const lostExit = getLostPropagatedExitInconsistency(matchUp);
+    if (lostExit) inconsistencies.push(lostExit);
 
     if (!winningSide || !sides) continue;
 
