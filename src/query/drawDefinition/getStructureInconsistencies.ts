@@ -24,6 +24,12 @@ import { SUCCESS } from '@Constants/resultConstants';
 //    winner must be present. Cross-structure winnerMatchUpId feeds (a double-elimination
 //    consolation-final winner feeding back into MAIN only if they have lost once) are
 //    CONDITIONAL on history and excluded — the winner mirror of the FMLC loser-feed caveat.
+//  - BYE_ADVANCEMENT_MISSING: the participant opposite a BYE is absent from its next
+//    matchUp within the same structure. A BYE carries no winningSide ("a BYE is never
+//    won" — CA, 2026-09-20), so none of the winner-rooted checks above can see it; this
+//    is the one advancement invariant that has to start from the positionAssignment
+//    instead. Bye-vs-bye and bye-vs-empty are excluded — neither has a participant whose
+//    absence would mean anything.
 //  - EXIT_CODE_ON_WINNER_SIDE: on a single WALKOVER/DEFAULTED, a status code sits on
 //    the winning side rather than the exiting (loser) side.
 //  - DRAW_POSITIONS_NOT_SORTED: a matchUp's drawPositions are not stored ascending
@@ -49,6 +55,7 @@ import { SUCCESS } from '@Constants/resultConstants';
 export const WINNING_SIDE_WITHOUT_PARTICIPANT = 'WINNING_SIDE_WITHOUT_PARTICIPANT';
 export const WINNING_SIDE_ADVANCEMENT_MISMATCH = 'WINNING_SIDE_ADVANCEMENT_MISMATCH';
 export const WINNER_NOT_ADVANCED = 'WINNER_NOT_ADVANCED';
+export const BYE_ADVANCEMENT_MISSING = 'BYE_ADVANCEMENT_MISSING';
 export const DRAW_POSITION_UNASSIGNED = 'DRAW_POSITION_UNASSIGNED';
 export const DRAW_POSITIONS_NOT_SORTED = 'DRAW_POSITIONS_NOT_SORTED';
 export const EXIT_CODE_ON_WINNER_SIDE = 'EXIT_CODE_ON_WINNER_SIDE';
@@ -209,6 +216,104 @@ function getPhantomPositionInconsistencies(
   return inconsistencies;
 }
 
+/**
+ * BYE_ADVANCEMENT_MISSING — the participant opposite a BYE is absent from its next matchUp.
+ *
+ * Checked SEPARATELY from every rule in the main loop, and it has to be: those all start from a
+ * `winningSide`, and a BYE carries none — *"a BYE is never won"* (CA, 2026-09-20). That blindness is
+ * not hypothetical. It is why `resetDrawDefinition` could strand every BYE advancement in a draw and
+ * still have it rated `valid: true`, which is how the defect reached a user.
+ *
+ * Only bye-vs-participant is asserted, and both exclusions are load-bearing rather than defensive.
+ * **Bye-vs-bye advances a drawPosition but no participant** (measured: a 16 draw with 3 entries
+ * advances position 1 out of a `[1,2]` double bye), so there is nobody whose absence could mean
+ * anything. **A BYE facing a still-empty slot** has nobody to advance yet.
+ *
+ * Deliberately NOT folded into `WINNER_NOT_ADVANCED`, for two reasons. Nobody won here, so the name
+ * would contradict the standing ruling above; and that class is the headline series of the
+ * exit-propagation census, which a new population silently merged into it would corrupt.
+ */
+function getByeAdvancementInconsistency(
+  matchUp: any,
+  matchUpById: Map<string, any>,
+): StructureInconsistency | undefined {
+  const { sides, winnerMatchUpId, matchUpId } = matchUp;
+  if (!sides || !winnerMatchUpId) return undefined;
+
+  const byeSides = sides.filter((side) => side.bye);
+  const participantSides = sides.filter((side) => side.participantId && !side.bye);
+  if (byeSides.length !== 1 || participantSides.length !== 1) return undefined;
+
+  const winnerMatchUp = matchUpById.get(winnerMatchUpId);
+  // cross-structure feeds are conditional on history — the same caveat WINNER_NOT_ADVANCED carries
+  if (!winnerMatchUp || winnerMatchUp.structureId !== matchUp.structureId) return undefined;
+
+  const advancingParticipantId = participantSides[0].participantId;
+  if ((winnerMatchUp.sides ?? []).some((side) => side.participantId === advancingParticipantId)) return undefined;
+
+  return {
+    matchUpId,
+    structureId: matchUp.structureId,
+    issueType: BYE_ADVANCEMENT_MISSING,
+    message: 'the participant opposite a BYE did not advance into its next matchUp within the structure',
+    participantId: advancingParticipantId,
+    winnerMatchUpId,
+  };
+}
+
+/**
+ * Winner advancement, for a matchUp that HAS a winningSide.
+ *
+ * `WINNING_SIDE_ADVANCEMENT_MISMATCH`: the loser advanced into the winnerMatchUp while the
+ * winning-side participant did not. `WINNER_NOT_ADVANCED`: the winner is absent from its next
+ * matchUp WITHIN the same structure (a genuine dropped advancement, since winning advances
+ * unconditionally within a structure). Cross-structure `winnerMatchUpId` feeds are conditional on
+ * history (a double-elimination consolation-final winner returns to MAIN only if they lost once)
+ * and are excluded from `WINNER_NOT_ADVANCED` — the winner mirror of the FMLC loser-feed caveat.
+ *
+ * A BYE never reaches here: it carries no `winningSide`. `getByeAdvancementInconsistency` is the
+ * counterpart that covers it.
+ */
+function getWinnerAdvancementInconsistency(
+  matchUp: any,
+  matchUpById: Map<string, any>,
+  winnerSide: any,
+  loserSide: any,
+  base: any,
+): StructureInconsistency | undefined {
+  const { winnerMatchUpId } = matchUp;
+  const winnerMatchUp = winnerMatchUpId ? matchUpById.get(winnerMatchUpId) : undefined;
+  if (!winnerSide?.participantId || !winnerMatchUp) return undefined;
+
+  const advancedParticipantIds = (winnerMatchUp.sides ?? [])
+    .map((side) => side.participantId)
+    .filter(Boolean) as string[];
+  const winnerAdvanced = advancedParticipantIds.includes(winnerSide.participantId);
+  const loserAdvanced = !!loserSide?.participantId && advancedParticipantIds.includes(loserSide.participantId);
+
+  if (loserAdvanced && !winnerAdvanced) {
+    return {
+      ...base,
+      issueType: WINNING_SIDE_ADVANCEMENT_MISMATCH,
+      message: 'the losing-side participant advanced into the winnerMatchUp instead of the winning-side participant',
+      advancedParticipantId: loserSide?.participantId,
+      winningParticipantId: winnerSide.participantId,
+      winnerMatchUpId,
+    };
+  }
+
+  if (!winnerAdvanced && winnerMatchUp.structureId === matchUp.structureId) {
+    return {
+      ...base,
+      issueType: WINNER_NOT_ADVANCED,
+      message: 'winning-side participant did not advance into its next matchUp within the structure',
+      winnerMatchUpId,
+    };
+  }
+
+  return undefined;
+}
+
 export function getStructureInconsistencies(
   params: GetStructureInconsistenciesArgs,
 ): ResultType & { valid?: boolean; inconsistencies?: Inconsistency[] } {
@@ -228,8 +333,7 @@ export function getStructureInconsistencies(
   collectRoundRobinGroupStructureIds(drawDefinition.structures, roundRobinGroupStructureIds);
 
   for (const matchUp of scoped) {
-    const { winningSide, matchUpStatus, matchUpStatusCodes, sides, matchUpId, winnerMatchUpId, drawPositions } =
-      matchUp;
+    const { winningSide, matchUpStatus, matchUpStatusCodes, sides, matchUpId, drawPositions } = matchUp;
 
     // DRAW_POSITIONS_NOT_SORTED — the ascending-sort invariant. Exempt round-robin group
     // structures: they store drawPositions in Berger round-pairing order (benign).
@@ -247,6 +351,9 @@ export function getStructureInconsistencies(
         drawPositions,
       });
     }
+
+    const byeAdvancement = getByeAdvancementInconsistency(matchUp, matchUpById);
+    if (byeAdvancement) inconsistencies.push(byeAdvancement);
 
     if (!winningSide || !sides) continue;
 
@@ -298,41 +405,8 @@ export function getStructureInconsistencies(
       });
     }
 
-    // Winner advancement. WINNING_SIDE_ADVANCEMENT_MISMATCH: the loser advanced into the
-    // winnerMatchUp while the winning-side participant did not. WINNER_NOT_ADVANCED: the winner is
-    // absent from its next matchUp WITHIN the same structure (a genuine dropped advancement, since
-    // winning advances unconditionally within a structure). Cross-structure winnerMatchUpId feeds
-    // are conditional on history (double-elimination consolation-final winner back to MAIN only if
-    // they lost once) and are excluded from WINNER_NOT_ADVANCED — the winner mirror of the FMLC
-    // loser-feed caveat.
-    const winnerMatchUp = winnerMatchUpId ? matchUpById.get(winnerMatchUpId) : undefined;
-    if (winnerSide?.participantId && winnerMatchUp) {
-      const advancedParticipantIds = (winnerMatchUp.sides ?? [])
-        .map((side) => side.participantId)
-        .filter(Boolean) as string[];
-      const winnerAdvanced = advancedParticipantIds.includes(winnerSide.participantId);
-      const loserAdvanced = !!loserSide?.participantId && advancedParticipantIds.includes(loserSide.participantId);
-      const sameStructure = winnerMatchUp.structureId === matchUp.structureId;
-
-      if (loserAdvanced && !winnerAdvanced) {
-        inconsistencies.push({
-          ...base,
-          issueType: WINNING_SIDE_ADVANCEMENT_MISMATCH,
-          message:
-            'the losing-side participant advanced into the winnerMatchUp instead of the winning-side participant',
-          advancedParticipantId: loserSide?.participantId,
-          winningParticipantId: winnerSide.participantId,
-          winnerMatchUpId,
-        });
-      } else if (!winnerAdvanced && sameStructure) {
-        inconsistencies.push({
-          ...base,
-          issueType: WINNER_NOT_ADVANCED,
-          message: 'winning-side participant did not advance into its next matchUp within the structure',
-          winnerMatchUpId,
-        });
-      }
-    }
+    const advancement = getWinnerAdvancementInconsistency(matchUp, matchUpById, winnerSide, loserSide, base);
+    if (advancement) inconsistencies.push(advancement);
   }
 
   const finalized = finalize(inconsistencies, { scope: 'STRUCTURE' });
