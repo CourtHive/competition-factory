@@ -3,9 +3,11 @@ import mocksEngine from '@Assemblies/engines/mock';
 import { setSubscriptions } from '@Global/state/globalState';
 import { expect, it } from 'vitest';
 
-import { CANNOT_CHANGE_WINNING_SIDE } from '@Constants/errorConditionConstants';
+import { isUnscoredOutcome } from '@Query/matchUp/getDrawPositionWinCount';
+
+import { BYE, DEFAULTED, RETIRED, TO_BE_PLAYED, WALKOVER } from '@Constants/matchUpStatusConstants';
 import { FIRST_MATCH_LOSER_CONSOLATION } from '@Constants/drawDefinitionConstants';
-import { BYE, TO_BE_PLAYED, WALKOVER } from '@Constants/matchUpStatusConstants';
+import { CANNOT_CHANGE_WINNING_SIDE } from '@Constants/errorConditionConstants';
 
 /**
  * A consolation reservation that is PLACED must also be WITHDRAWN.
@@ -33,6 +35,12 @@ import { BYE, TO_BE_PLAYED, WALKOVER } from '@Constants/matchUpStatusConstants';
  */
 
 const drawId = 'A';
+/** a part-set score — legitimate only for an outcome abandoned mid-match, and enough for
+ * `checkScoreHasValue`, which is what makes a DEFAULTED count as a win */
+const PART_SCORE = { sets: [{ side1Score: 6, side2Score: 3 }] };
+/** a complete result — an incomplete score is refused with ERR_INVALID_SCORE for a played win */
+const completedWin = () =>
+  mocksEngine.generateOutcomeFromScoreString({ scoreString: '6-3 6-3', winningSide: 1 }).outcome;
 
 /** `3P` = participant, `1B` = bye, `2-` = empty — the shape a divergence shows up in */
 function renderAssignment(assignment: any): string {
@@ -120,4 +128,57 @@ it('THE OTHER HALF: once the consolation has started, the correction is refused 
   const result: any = put('Main', 1, 1, { matchUpStatus: WALKOVER, winningSide: 2 });
   expect(result.success).toBeUndefined();
   expect(result.error).toEqual(CANNOT_CHANGE_WINNING_SIDE);
+});
+
+/**
+ * THE PLACEMENT SIDE OF THE SAME RULE.
+ *
+ * The reservation asks "will the round-2 loser carry a prior win?" — and the authority for that is
+ * `getDrawPositionWinCount` / `isUnscoredOutcome`, the predicate `directLoser` uses to decide the
+ * very eligibility being predicted. `propagateConsolationBye` restated it as
+ * `[COMPLETED, RETIRED].includes(matchUpStatus)` and drifted: a **scored `DEFAULTED`** is a win to
+ * the authority but was absent from the list, so the reservation was placed LATE — `Consolation|2|1`
+ * read `TO_BE_PLAYED` until the round-2 result arrived and `directLoser` placed the BYE on the
+ * authority's terms. End states converged, which is why the 576-cell confluence sweep read clean;
+ * the divergence lived in the window between the two results, where a director reads the backdraw.
+ *
+ * These cases are asserted against `isUnscoredOutcome` rather than against a status list, so this
+ * test cannot itself become a third restatement of the rule.
+ */
+const firstRoundOutcomes = [
+  { label: 'a completed win', build: completedWin },
+  { label: 'a retirement', build: () => ({ winningSide: 1, matchUpStatus: RETIRED, score: PART_SCORE }) },
+  { label: 'a scored default', build: () => ({ winningSide: 1, matchUpStatus: DEFAULTED, score: PART_SCORE }) },
+  { label: 'an unscored default', build: () => ({ winningSide: 1, matchUpStatus: DEFAULTED }) },
+  { label: 'a walkover', build: () => ({ winningSide: 1, matchUpStatus: WALKOVER }) },
+];
+
+it.each(firstRoundOutcomes)('reserves the consolation slot for $label exactly when it is a win', ({ build }) => {
+  const { find, put, consolationAssignments } = setup();
+  const outcome = build();
+
+  expect(put('Main', 1, 1, outcome).success).toEqual(true);
+  expect(put('Main', 1, 2, outcome).success).toEqual(true);
+
+  // what the AUTHORITY says about the stored record — not about the outcome we asked for
+  const stored = find('Main', 1, 1);
+  const isAWin =
+    !!stored.winningSide && !isUnscoredOutcome({ matchUpStatus: stored.matchUpStatus, score: stored.score });
+
+  const reserved = !!consolationAssignments().find((a: any) => a.drawPosition === 1)?.bye;
+  expect(reserved).toEqual(isAWin);
+  expect(find('Consolation', 2, 1).matchUpStatus).toEqual(isAWin ? BYE : TO_BE_PLAYED);
+});
+
+it('a scored default reserves the slot at the same moment a completed win does', () => {
+  const byStatus = (outcome: any) => {
+    const { find, put } = setup();
+    put('Main', 1, 1, outcome);
+    put('Main', 1, 2, outcome);
+    return find('Consolation', 2, 1).matchUpStatus;
+  };
+
+  // the defect: DEFAULTED-with-score read TO_BE_PLAYED here while COMPLETED read BYE
+  expect(byStatus({ winningSide: 1, matchUpStatus: DEFAULTED, score: PART_SCORE })).toEqual(byStatus(completedWin()));
+  expect(byStatus(completedWin())).toEqual(BYE);
 });
