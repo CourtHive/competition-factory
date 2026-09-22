@@ -35,18 +35,66 @@ if (!existsSync(MANIFEST)) fail(`no release manifest at ${MANIFEST}`);
 const released = JSON.parse(readFileSync(MANIFEST, 'utf8'))['.'];
 if (!/^\d+\.\d+\.\d+$/.test(released ?? '')) fail(`manifest '.' is not a version: ${released}`);
 
-const baseTag = `v${released}`;
-const nextMajor = Number(released.split('.')[0]) + 1;
-const guidePath = `documentation/docs/migration-${nextMajor}.0.0.md`;
+const hasTag = (tag) => {
+  try {
+    execFileSync('git', ['rev-parse', '--verify', `${tag}^{commit}`], { cwd: ROOT, stdio: 'ignore' });
+    return true;
+  } catch {
+    return false;
+  }
+};
 
-// Precondition, not a skip: without the base tag there is nothing to diff against.
-try {
-  execFileSync('git', ['rev-parse', '--verify', `${baseTag}^{commit}`], { cwd: ROOT, stdio: 'ignore' });
-} catch {
+let baseTag = `v${released}`;
+
+/**
+ * Which guide documents this diff.
+ *
+ * Normally the manifest names the LAST release, so the guide being written is the NEXT major.
+ * On the release commit the manifest already names the version being released, and the guide is
+ * that major — not one beyond it. Getting this wrong sends the check looking for
+ * `migration-8.0.0.md` while releasing 7.0.0, which is the same off-by-one as the base tag and
+ * hides behind it: fixing only the tag turns one confusing failure into another.
+ */
+const releasedMajor = Number(released.split('.')[0]);
+const isReleaseCommit = !hasTag(baseTag);
+const guideMajor = isReleaseCommit ? releasedMajor : releasedMajor + 1;
+const guidePath = `documentation/docs/migration-${guideMajor}.0.0.md`;
+
+/**
+ * THE RELEASE COMMIT IS THE ONE PLACE THE MANIFEST NAMES THE FUTURE.
+ *
+ * Everywhere else `.release-please-manifest.json` names the LAST released version, so `v${released}`
+ * is a tag that exists and the diff is well defined. On the release-please PR the manifest is bumped
+ * to the version being released — and that tag does not exist yet, because merging that very PR is
+ * what creates it. So the check looked for `v7.0.0` while preparing to release 7.0.0, and failed on
+ * the one PR where its answer matters most.
+ *
+ * When the named tag is absent, fall back to the most recent tag reachable from HEAD. The commit set
+ * is then exactly the set the release contains, which is precisely what this gate is for: every
+ * breaking commit being released must be documented.
+ *
+ * NOT a skip. A shallow clone still fails, because it has no reachable tag either — which is the
+ * condition the precondition was actually defending against.
+ */
+if (!hasTag(baseTag)) {
+  let previous = '';
+  try {
+    previous = git(['describe', '--tags', '--abbrev=0', 'HEAD']).trim();
+  } catch {
+    previous = '';
+  }
+  if (previous && previous !== baseTag) {
+    log(`manifest names ${baseTag}, which has no tag yet — this is the release commit. Diffing from ${previous}.`);
+    baseTag = previous;
+  }
+}
+
+// Precondition, not a skip: without a base tag there is nothing to diff against.
+if (!hasTag(baseTag)) {
   fail(
-    `base tag ${baseTag} is not present. This is usually a shallow clone —\n` +
-      `  a shallow checkout finds zero breaking commits and would report success, so it errors instead.\n` +
-      `  CI must check out with \`fetch-depth: 0\`.`,
+    `base tag ${baseTag} is not present, and no earlier tag is reachable from HEAD.\n` +
+      `  This is usually a shallow clone — a shallow checkout finds zero breaking commits and would\n` +
+      `  report success, so it errors instead. CI must check out with \`fetch-depth: 0\`.`,
   );
 }
 
