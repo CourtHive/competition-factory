@@ -66,6 +66,29 @@ const coordinate = (matchUp: any) => `${matchUp.structureName}|${matchUp.roundNu
  * rendered as `side:previous->produced` so a STALE entry (the unwind's signature residue) shows up
  * as a difference rather than hiding inside an object comparison.
  */
+/**
+ * Render `drawPositions` with TRAILING holes dropped — and leading and interior holes KEPT.
+ *
+ * A hole is load-bearing only BESIDE a survivor: `[undefined, 5]` puts 5 on side 2 and `[5]` puts it
+ * on side 1, so collapsing a LEADING hole would hide a side-derivation defect, which is the class
+ * this harness exists to catch. A TRAILING hole holds no side open — the survivors keep their
+ * indices either way — and `draw-positions.md` §5 says that spelling is not information.
+ *
+ * Measured before changing it: of 108 divergent coordinates across the 56 severe cells, **8 were
+ * trailing-hole spellings alone** (`dp=4._` vs `dp=4`, FIRST_MATCH_LOSER_CONSOLATION 8/8
+ * `Consolation|3|1`, all four flavour/flag combinations) and were the ONLY divergence in their
+ * cells. The harness was reporting a representation difference as a defect, and the seventh unwind
+ * attempt scored itself against that number — taking the sweep from 56 to 48 while breaking five
+ * test files. It was paying product code for a measurement artifact.
+ *
+ * `drawPositionsRepresentationIndependence.test.ts` already pins the equivalence this relies on.
+ */
+function renderDrawPositions(drawPositions: any[] | undefined): string {
+  const rendered = (drawPositions ?? []).map((drawPosition: any) => drawPosition ?? '_');
+  while (rendered.length && rendered[rendered.length - 1] === '_') rendered.pop();
+  return rendered.join('.');
+}
+
 function matchUpSignature(matchUp: any): string {
   const provenance = Object.entries(matchUp.sideExitProvenance ?? {})
     .map(
@@ -73,7 +96,7 @@ function matchUpSignature(matchUp: any): string {
     )
     .sort((a, b) => a.localeCompare(b))
     .join(',');
-  const positions = (matchUp.drawPositions ?? []).map((drawPosition: any) => drawPosition ?? '_').join('.');
+  const positions = renderDrawPositions(matchUp.drawPositions);
   return [
     matchUp.matchUpStatus ?? '-',
     `ws=${matchUp.winningSide ?? '-'}`,

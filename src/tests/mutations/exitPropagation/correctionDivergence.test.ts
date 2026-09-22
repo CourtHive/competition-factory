@@ -40,15 +40,27 @@ import {
  * cannot tell an improvement from a regression. Same discipline as `knownFailures.ts`.
  *
  * **Lower these numbers when you fix something. Never raise them.**
+ *
+ * ## Corrected 2026-09-21: 56 -> 48 severe, and it was the INSTRUMENT
+ *
+ * The signature rendered a TRAILING hole (`dp=4._` vs `dp=4`), which is a representation difference
+ * and not information — `draw-positions.md` §5, pinned by
+ * `drawPositionsRepresentationIndependence.test.ts`. Eight cells diverged on that alone, all
+ * FIRST_MATCH_LOSER_CONSOLATION 8/8 `Consolation|3|1`, and they were counted as SEVERE.
+ *
+ * That number had already cost product code: the seventh double-exit unwind attempt scored itself
+ * 56 -> 48 against it and broke five test files chasing the artifact. Leading and interior holes are
+ * still rendered, because there a hole IS load-bearing and collapsing it would hide the very
+ * side-derivation defects this sweep exists to catch.
  */
 const BASELINE = {
   cells: 192,
   /** both paths ran and the draws agree exactly — the only bucket that should ever grow */
-  identical: 16,
+  identical: 24,
   /** a stale `sideExitProvenance` entry only; status, winner and positions agree */
   provenanceOnly: 120,
   /** matchUpStatus, winningSide or drawPositions differ — user-visible */
-  severe: 56,
+  severe: 48,
   /** a step was refused in one path and not the other, so the cell was not an experiment */
   incomparable: 0,
 };
