@@ -2,15 +2,130 @@
 title: What's New in 7.0.0
 ---
 
-Version 7.0.0 of the Competition Factory ships **four areas of breaking change** — exit propagation, time-zone conversion, two queries that now refuse an absent argument, and one constant rename — and one headline feature: the **LADDER draw type**, a continuous challenge-driven competition with an enforced `CHALLENGED` status, an attestation gate on self-reported results, `RANK` or `RATING` ordering, and eighteen new engine methods to drive it.
+# Provenance
 
-For upgrade mechanics — the six breaking-change rows and the exact steps to adopt them — see the [6.x to 7.0.0 migration guide](./migration-7.0.0.md).
+7.0.0 is about a single idea: **a competition record should be able to say why it is in the state it
+is in.**
 
-For the full per-commit changelog see [CHANGELOG.md](https://github.com/CourtHive/competition-factory/blob/master/CHANGELOG.md).
+Most of what changed follows from that, and most of it is behaviour you already expected. Two changes
+ask something of you; the rest is the engine answering questions it previously could not.
 
-## The headline changes
+The headline feature is unrelated and additive: the **LADDER draw type**, a continuous
+challenge-driven competition with an enforced `CHALLENGED` status, an attestation gate on
+self-reported results, `RANK` or `RATING` ordering, and eighteen new engine methods to drive it.
 
-Four changes break the surface and need consumer attention. All are covered in detail in the [migration guide](./migration-7.0.0.md).
+- **Upgrading?** Start at [what you must act on](#what-you-must-act-on) — it is a short list.
+- **Upgrade mechanics** in detail: the [6.x to 7.0.0 migration guide](./migration-7.0.0.md).
+- **Every commit**: [CHANGELOG.md](https://github.com/CourtHive/competition-factory/blob/master/CHANGELOG.md).
+
+## Why provenance
+
+[TODS](https://itftennis.atlassian.net/wiki/spaces/TODS/overview) describes a tournament that **has
+happened**. It is a results standard, and an excellent one: it can express who played whom, what the
+score was, and how a draw was structured, with enough precision to exchange records between systems.
+
+A tournament in progress is a different thing. It is an operation. A director corrects a mistyped
+score at nine in the evening and that correction has to travel — through a consolation that is
+already playing, past a BYE that was placed because of the result being corrected, into a slot that
+was reserved for somebody who is now eligible again. The question that matters operationally is not
+_what is the state_ but **why is it this state, and what happens to it when the reason changes**.
+
+TODS has no vocabulary for that, so implementations put it in `extensions` — untyped bags hanging off
+the record, each system inventing its own shape, none of it exchangeable and none of it validated.
+
+CODES is CourtHive's superset of TODS, and 7.0.0 is where the operational half stops being an
+extension and becomes part of the standard. Check-in and sign-in become
+[first-class attestations](#presence-becomes-first-class). Why an exit sits on a side becomes
+[`sideExitProvenance`](#provenance-you-can-read), carrying the identity of the matchUp that produced
+it. A BYE placed by a cascade is distinguishable from one placed by draw generation. Scheduling
+attributes, delegated outcomes and check-in attribution all move out of bags and into typed fields.
+
+## Pressing into the edges
+
+Provenance is not only a storage question. Once a record can say why it is in a state, you can ask
+whether it is still _right_ — and that is where the bulk of this release went.
+
+Two edges in particular:
+
+**Double-exit propagation.** A `DOUBLE_WALKOVER` or `DOUBLE_DEFAULT` advances nobody, so the engine
+must decide what reaches the next round, what reaches the consolation, and what happens where two of
+them meet. The rules were mostly right and the edges were not, and the edges are where real
+tournaments live.
+
+**Undoability.** A result can be corrected, and the correction has to leave the draw where it would
+have been had the correction been the original entry. That sounds obvious and is surprisingly hard:
+a cascade that writes several matchUps forward must take back exactly what it placed and nothing a
+different cascade placed. 7.0.0 makes that hold across every draw type the engine generates, with one
+characterised exception in the compass family, and it is enforced by a sweep rather than by
+inspection.
+
+Most of the resulting changes are technically breaking and practically invisible: a BYE is never the
+winning side, a person cannot be on both sides of a matchUp, removing a result takes back the exits
+it produced. You were entitled to expect all of those already.
+
+## How we know
+
+Three things made this release measurable rather than argued.
+
+**Probes over assertions.** The defects that mattered were found by building a draw, driving it, and
+comparing states — not by reading code. Several confident diagnoses in this cycle dissolved the
+moment they were measured, and the ones that survived did so because a scenario reproduced them.
+
+**Confluence sweeps.** A 192-cell harness drives every draw type down two routes to the same outcome
+— entering a result directly, and reaching it through a correction — then compares the draws. Its
+counts are asserted **exactly, in both directions**, so an improvement fails the build until the
+baseline is lowered and a regression cannot hide in the noise.
+
+**Integrity detectors that can see the failure.** `getDrawInconsistencies` gained
+`BYE_ADVANCEMENT_MISSING` and `PROPAGATED_EXIT_LOST` because two whole defect classes were
+structurally invisible to it: every existing check started from a `winningSide` or an exit status,
+and a BYE has no winner while an erased exit has neither.
+
+The instruments were wrong sometimes too, and that is worth saying: the confluence oracle spent a day
+counting a representation difference as a defect, and a fix was scored against that number before
+anyone noticed. Measurement is only as good as its calibration.
+
+## Provenance you can read
+
+Three fields carry the operational "why" that used to live in extensions or in inference.
+
+**`matchUp.sideExitProvenance`** — per side, keyed by `sideNumber`: the upstream status that caused
+an exit, the status this side was given, and **`sourceMatchUpId`**, the identity of the matchUp whose
+exit produced it. Identity is what makes an unwind possible: when a result is corrected, the cascade
+can withdraw exactly what it placed and leave what a different cascade placed. It also carries
+`byeClaims` — the matchUps whose double exit claims a BYE on that side, because two of them can claim
+the same one and only the survivor's claim should keep it.
+
+**`positionAssignment.byeFromPropagation`** — a BYE placed by a cascade, distinguishable from one
+placed by draw generation or by hand. It replaced a topology inference (`feedRound || roundNumber === 1`)
+that could not tell the two apart and therefore over-cleared on unwind.
+
+**`matchUp.matchUpStatusCodes` is now typed.** It was published as `any[]` while holding four
+different element shapes across two unrelated tenants — scoring reason codes and propagation
+provenance. It is now a discriminable union, with the provenance tenant **deprecated** in favour of
+`sideExitProvenance`. See [§24](./migration-7.0.0.md#24-4948-matchupstatuscodes-is-typed-and-its-provenance-tenant-is-deprecated).
+
+Read **provenance**, not status, when the question is _"did an exit reach here?"_ — a `matchUpStatus`
+cannot tell you which side it belongs to, and a BYE-held matchUp keeps its `BYE` status by design.
+
+## Presence becomes first-class
+
+Check-in and sign-in were `timeItems` — an ordered log of untyped items, with the participant id
+smuggled into `itemValue`. They are now `PresenceAttestation` collections: `matchUp.checkIns[]` for
+presenting at a match, `participant.presence[]` for arriving at the tournament. Deliberately one
+model, because they are the same statement at different scope.
+
+Being first-class buys attribution: who attested, when it happened as distinct from when it was
+recorded, and an attestation id. A `DECLARED` attribution can name somebody who is **not in the
+record** — a minor's parent at the desk — which is also why the attester is never emitted in bulk.
+
+If you read `checkedInParticipantIds` or `allParticipantsCheckedIn`, nothing changes; hydration still
+attaches both, and the reader folds whichever surface a record holds.
+
+## The surface changes in detail
+
+These are the changes that alter a published contract rather than correcting behaviour. Each is
+covered in full in the [migration guide](./migration-7.0.0.md); what follows is why each one moved.
 
 ### 1. Exit propagation is idempotent, atomic, and correct
 
@@ -165,20 +280,34 @@ Dispute _resolution_ is not built: a disputed result is blocked from moving the 
 - **`buildDrawHierarchy` is removed** — a D3-era draw-rendering tree with no consumer anywhere in the ecosystem (measured across 1,809 source files in seven repos) and no documentation. Its implementation and tests are preserved verbatim outside this repository, so restoring it would be a copy rather than a rewrite — [open an issue](https://github.com/CourtHive/competition-factory/issues) if you need it. See [migration §6](./migration-7.0.0.md#6-builddrawhierarchy-is-removed).
 - **An exit-propagation test harness** — a cross-product matrix, relational property suites (do/undo, idempotence, monotonicity), two agreement oracles, and a quarantine registry enforced in both directions so a fixed failure fails the run until its entry is removed. An at-scale randomized sweep with delta-debugging runs on demand. It exists because `isActiveDownstream` was at 100% branch coverage when it shipped 444 spurious refusals. See [Exit Propagation Harness](./testing/exit-propagation-harness.md).
 
-## Upgrading checklist
+## What you must act on
 
-1. **Read [the migration guide](./migration-7.0.0.md)** for the six breaking-change rows.
-2. **Rename `particicipantsRequiredMatchUpStatuses`** to `participantsRequiredMatchUpStatuses` at every import site.
-3. **Handle the error return** from `wallClockToUTC`, `utcToWallClock` and `toEmbargoUTC`, and branch on `undefined` from `getTimeZoneOffsetMinutes`. Remove any `try`/`catch` that was there to catch a throw.
-4. **Delete compensating logic** that re-read or repaired state after a `setMatchUpStatus` error — a rejected call no longer alters the draw. Note the error code for the bare-`{ winningSide }` case moved from `ERR_MISSING_ASSIGNMENTS` to `ERR_INVALID_MATCHUP_STATUS`; match on behaviour rather than on that code.
-5. **Stop relying on re-application as repair.** Re-sending an identical double exit no longer nudges a draw whose advancement is missing. Detect that state with `getDrawInconsistencies` and repair it deliberately.
-6. **Add cases for `CHALLENGED` and for `SQUASH` / `BADMINTON`** if you `switch` exhaustively over `MatchUpStatusEnum` or `DisciplineEnum` with no `default`.
-7. **Pass objects, not ids, to `checkMatchUpIsComplete` and `getParticipantResults`** — resolve with `findMatchUp` / `allDrawMatchUps` first. Both now refuse an absent argument rather than answering `false` / empty.
-8. **Check any branch on `isAdHocType`** — it now includes `LADDER`. Use `isLadder` where the
-   difference matters. **Both are newly published on `drawsGovernor`** (`engine.isAdHocType({ drawType })`,
-   `engine.isLadder({ drawType })`); neither was reachable before 7.0.0, so this step is newly
-   followable rather than newly relevant.
-9. **Adopt the ladder at your own pace** — the draw type and its eighteen engine methods are purely additive; no action is required to keep existing code working.
+**Two changes ask something of you.** The rest of this list is narrow — several items touch no
+consumer anywhere in the CourtHive ecosystem, measured across seven repositories.
+
+1. **A produced exit has no `winningSide` until an opponent arrives.** This is the one most likely to
+   affect you. A `WALKOVER` propagated into the next round used to carry a `winningSide` computed
+   from drawPosition ordering — on matchUps holding nobody at all. It no longer does, so a naive
+   `if (matchUp.winningSide)` renders nothing where it once rendered a winner. Test the pending state
+   with `isAnyExit(matchUp.matchUpStatus) && !matchUp.winningSide`, and read `sideExitProvenance` for
+   which side exited. See [§20](./migration-7.0.0.md#20-a-produced-exit-has-no-winningside-until-someone-arrives).
+2. **A PAIR or TEAM is no longer a valid check-in subject.** `checkInParticipant` and
+   `checkOutParticipant` now return `ERR_INVALID_ATTESTATION_SUBJECT` when given a side rather than
+   one of its members — because a desk checking in the pair and a desk checking in both players
+   stored different state for one physical fact. Reading is unchanged: a side still derives as
+   checked in when all its members are. See [§14.2](./migration-7.0.0.md#142-a-pair-or-team-is-no-longer-a-valid-subject).
+3. **Read [the migration guide](./migration-7.0.0.md)** for the full detail behind every item here.
+4. **Rename `particicipantsRequiredMatchUpStatuses`** to `participantsRequiredMatchUpStatuses` at every import site.
+5. **Handle the error return** from `wallClockToUTC`, `utcToWallClock` and `toEmbargoUTC`, and branch on `undefined` from `getTimeZoneOffsetMinutes`. Remove any `try`/`catch` that was there to catch a throw.
+6. **Delete compensating logic** that re-read or repaired state after a `setMatchUpStatus` error — a rejected call no longer alters the draw. Note the error code for the bare-`{ winningSide }` case moved from `ERR_MISSING_ASSIGNMENTS` to `ERR_INVALID_MATCHUP_STATUS`; match on behaviour rather than on that code.
+7. **Stop relying on re-application as repair.** Re-sending an identical double exit no longer nudges a draw whose advancement is missing. Detect that state with `getDrawInconsistencies` and repair it deliberately.
+8. **Add cases for `CHALLENGED` and for `SQUASH` / `BADMINTON`** if you `switch` exhaustively over `MatchUpStatusEnum` or `DisciplineEnum` with no `default`.
+9. **Pass objects, not ids, to `checkMatchUpIsComplete` and `getParticipantResults`** — resolve with `findMatchUp` / `allDrawMatchUps` first. Both now refuse an absent argument rather than answering `false` / empty.
+10. **Check any branch on `isAdHocType`** — it now includes `LADDER`. Use `isLadder` where the
+    difference matters. **Both are newly published on `drawsGovernor`** (`engine.isAdHocType({ drawType })`,
+    `engine.isLadder({ drawType })`); neither was reachable before 7.0.0, so this step is newly
+    followable rather than newly relevant.
+11. **Adopt the ladder at your own pace** — the draw type and its eighteen engine methods are purely additive; no action is required to keep existing code working.
 
 ## Where to go from here
 
