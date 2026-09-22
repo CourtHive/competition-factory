@@ -16,6 +16,7 @@ import { findStructure } from '@Acquire/findStructure';
 import { overlap } from '@Tools/arrays';
 import {
   buildCarriedExitProvenance,
+  recordByeClaim,
   collapseDoubleExitStatus,
   projectExitStatusCodes,
   buildSideExitProvenance,
@@ -126,6 +127,7 @@ export function doubleExitAdvancement(params) {
       loserTargetDrawPosition,
       tournamentRecord,
       drawDefinition,
+      sourceMatchUp,
       loserMatchUp,
       matchUpsMap,
       event,
@@ -331,6 +333,7 @@ function handleLoserMatchUp({
       tournamentRecord,
       loserTargetLink,
       drawDefinition,
+      sourceMatchUp,
       loserMatchUp,
       matchUpsMap,
       event,
@@ -713,6 +716,7 @@ function conditionallyAdvanceDrawPosition(params) {
       tournamentRecord,
       loserTargetLink,
       drawDefinition,
+      sourceMatchUp,
       matchUpsMap,
     });
     if (result.error) return decorateResult({ result, stack });
@@ -1601,6 +1605,33 @@ function advanceByeToLoserMatchUp(params) {
   const structureId = loserTargetLink?.target?.structureId;
   const { structure } = findStructure({ drawDefinition, structureId });
   if (!structure) return { error: MISSING_STRUCTURE };
+
+  /**
+   * Claim the BYE before placing it, because placing it may be a NO-OP.
+   *
+   * `assignDrawPositionBye` returns early when the drawPosition already holds a BYE, above the
+   * point where it marks the assignment. So the SECOND double exit to claim a position writes
+   * nothing — and it is precisely that second claim which decides whether the BYE survives a
+   * correction of the first. Recording here, at the attempt, is what makes the ledger see it.
+   *
+   * Writes go to the RAW matchUp: the in-context copy is detached from `drawDefinition.structures`
+   * and a write to it is invisible to every later read (#4816).
+   */
+  const noContextLoserMatchUp = (matchUpsMap?.drawMatchUps ?? []).find(
+    (candidate: any) => candidate.matchUpId === loserMatchUp?.matchUpId,
+  );
+  if (noContextLoserMatchUp) {
+    const claimPositions = noContextLoserMatchUp.drawPositions ?? [];
+    const claimIndex = claimPositions.indexOf(loserTargetDrawPosition);
+    recordByeClaim({
+      // `indexOf` as a side number is valid only because drawPositions are stored ascending — see
+      // `getOrderedDrawPositions`. Where the position is not yet present the claim is recorded
+      // against the side it will occupy.
+      sideNumber: claimIndex >= 0 ? claimIndex + 1 : 1,
+      claimantMatchUpId: params.sourceMatchUp?.matchUpId,
+      matchUp: noContextLoserMatchUp,
+    });
+  }
 
   return assignDrawPositionBye({
     // this cascade is placing the BYE, so it says so rather than leaving assignDrawPositionBye to

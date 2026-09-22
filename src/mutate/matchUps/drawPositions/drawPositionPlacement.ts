@@ -460,9 +460,7 @@ function applyPositionToMatchUp({
       matchUpStatusCodes[exitSideNumber - 1] = carriedCode;
     }
     matchUp.matchUpStatusCodes = matchUpStatusCodes;
-    // Nothing carried means the exit this matchUp recorded is gone — unless the status says
-    // otherwise, in which case the provenance is still describing a live exit.
-    if (!matchUpStatusCodes.length) clearResolvedSideExitProvenance(matchUp);
+    clearResolvedSideExitProvenance(matchUp);
   } else if (matchUp?.matchUpStatusCodes) {
     updateMatchUpStatusCodes({
       inContextDrawMatchUps: refreshedMatchUps,
@@ -691,6 +689,7 @@ function propagateConsolationBye({
     const { structureId } = loserMatchUp;
     const result = assignDrawPositionBye({
       drawPosition: loserTargetDrawPosition,
+      byeFromPropagation: true,
       tournamentRecord,
       drawDefinition,
       structureId,
@@ -699,6 +698,49 @@ function propagateConsolationBye({
     });
 
     if (result.error) return result;
+  }
+
+  /**
+   * A reservation that is placed must also be WITHDRAWN.
+   *
+   * `propagateConsolationBye` reserves a consolation slot with a BYE once every feeding first-round
+   * matchUp is decided: whoever loses the next round will have a prior win, so a FIRST_MATCHUP link
+   * will not carry them, and the slot can never fill. Correct when placed — and never revisited.
+   *
+   * Correcting one of those first-round results to a WALKOVER or DEFAULTED removes the prior win,
+   * the prospective loser becomes eligible again, and the reservation is stale. Measured on
+   * FIRST_MATCH_LOSER_CONSOLATION 8/8 and 16/16 `nonRandom: 9000230`: `Consolation|2|1` read `BYE`
+   * where the same two outcomes entered directly read `TO_BE_PLAYED`.
+   *
+   * This is the only confluence defect in the engine that does NOT involve a double exit — measured
+   * at 4 divergences in 576 cells across six correction shapes and eight draw types.
+   *
+   * The placement is now marked so the withdrawal can recognise its own work; `assignDrawPositionBye`
+   * otherwise deletes the marker here, because this site passes no `loserMatchUp` for its topology
+   * inference to read.
+   *
+   * SCOPE, and it is deliberate: this runs on the winner-advancement path, so it reaches a
+   * correction only while the consolation is UNPLAYED. Once a consolation result exists the
+   * correction is REFUSED outright by the active-downstream guard
+   * (`ERR_UNCHANGED_CANNOT_CHANGE_WINNING_SIDE`) — a main-draw change may not percolate into a
+   * backdraw that has started, CA 2026-09-22 — so there is no stale reservation left to withdraw.
+   * `consolationByeWithdrawnOnCorrection.test.ts` pins both halves.
+   */
+  if (!byePropagation && loserMatchUp) {
+    const { structureId: targetStructureId } = loserMatchUp;
+    const { positionAssignments } = getPositionAssignments({ drawDefinition, structureId: targetStructureId });
+    const assignment = positionAssignments?.find((a) => a.drawPosition === loserTargetDrawPosition);
+    if (assignment?.bye && assignment?.byeFromPropagation) {
+      const result = clearDrawPosition({
+        drawPosition: loserTargetDrawPosition,
+        structureId: targetStructureId,
+        tournamentRecord,
+        drawDefinition,
+        matchUpsMap,
+        event,
+      });
+      if (result.error) return result;
+    }
   }
 
   return undefined;

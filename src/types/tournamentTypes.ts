@@ -708,6 +708,41 @@ export interface ScheduleScenario {
  *
  * See Mentat/planning/MATCHUP_STATUS_CODES_PER_SIDE.md.
  */
+/**
+ * One element of `MatchUp.matchUpStatusCodes`.
+ *
+ * The array has TWO TENANTS and four element shapes, which is the conflation
+ * `sideExitProvenance` exists to unwind. Declared here so consumers are handed a discriminable
+ * union rather than `any[]` — the field was published as `any[]`, and a caller had no way to know
+ * which of these it was holding.
+ *
+ *   1. a REASON CODE the client submitted, as a bare string (`'OA'`) — the scoring policy's
+ *      vocabulary, defined by `POLICY_SCORING_USTA` and friends. This tenant is legitimate and
+ *      stays.
+ *   2. the same reason code WRAPPED, so the engine can stamp propagation context onto it.
+ *   3. per-side exit PROVENANCE, projected from {@link SideExitProvenance}. **Deprecated tenant —
+ *      read `sideExitProvenance` instead**, which keys by `sideNumber` rather than using the array
+ *      index as a side, fixes the element shape, and carries `sourceMatchUpId`.
+ *   4. a RESERVED SLOT — `{ sideNumber }` and nothing else — recording a side whose origin is not
+ *      yet known. It is NOT an exit, and reading it as one put a walkover badge on an empty chair
+ *      (reported from TMX 2026-09-20).
+ *
+ * See Mentat/planning/MATCHUP_STATUS_CODES_PER_SIDE.md.
+ */
+export type MatchUpStatusCodeRecord = {
+  /** a reason code the engine wrapped in order to stamp context onto it */
+  code?: string | number;
+  /** present on tenants 3 and 4; the array INDEX is not reliably the side */
+  sideNumber?: number;
+  /** the status this side was given by an upstream exit */
+  matchUpStatus?: MatchUpStatusUnion;
+  /** the upstream status that produced it */
+  previousMatchUpStatus?: MatchUpStatusUnion;
+};
+
+/** A bare reason code (tenant 1) or any of the record shapes above. */
+export type MatchUpStatusCodeElement = string | number | MatchUpStatusCodeRecord;
+
 export type SideExitProvenanceEntry = {
   /** the status this side was given as a result of the upstream exit, e.g. WALKOVER / DEFAULTED */
   matchUpStatus?: MatchUpStatusUnion;
@@ -715,6 +750,17 @@ export type SideExitProvenanceEntry = {
   previousMatchUpStatus?: MatchUpStatusUnion;
   /** the matchUp whose exit produced this entry; the identity the unwind lacks today */
   sourceMatchUpId?: string;
+  /**
+   * Every matchUp whose double exit CLAIMS a BYE on this side's drawPosition.
+   *
+   * A set, not a scalar, because two double exits can claim the same position — measured across
+   * COMPASS, CURTIS_CONSOLATION, OLYMPIC, DOUBLE_ELIMINATION and MODIFIED_FEED_IN_CHAMPIONSHIP,
+   * where the disputed BYE always has exactly two claimants and exactly one survives a correction.
+   * Only the SECOND claimant's presence distinguishes "this BYE is still owed" from "it is not",
+   * and `assignDrawPositionBye` early-returns on an existing BYE, so the second claim is recorded
+   * here at the point of the ATTEMPT rather than at the placement.
+   */
+  byeClaims?: string[];
 };
 
 /** Keyed by sideNumber (1 | 2). Serialises as `{ "1": {...}, "2": {...} }`. */
@@ -750,7 +796,15 @@ export interface MatchUp {
   matchUpFormat?: string;
   matchUpId: string;
   matchUpStatus?: MatchUpStatusUnion;
-  matchUpStatusCodes?: any[];
+  /**
+   * Scoring reason codes AND (deprecated) projected exit provenance — see
+   * {@link MatchUpStatusCodeElement} for the four shapes and which tenant is which.
+   *
+   * For "which side exited, and what produced it", read {@link MatchUp.sideExitProvenance}. This
+   * array flattens `sideNumber` into an element that may or may not carry one, and its index is
+   * not reliably a side.
+   */
+  matchUpStatusCodes?: MatchUpStatusCodeElement[];
   matchUpType?: EventTypeUnion;
   notes?: string;
   orderOfFinish?: number;
