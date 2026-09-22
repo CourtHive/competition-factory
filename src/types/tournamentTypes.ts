@@ -750,6 +750,17 @@ export type SideExitProvenanceEntry = {
   previousMatchUpStatus?: MatchUpStatusUnion;
   /** the matchUp whose exit produced this entry; the identity the unwind lacks today */
   sourceMatchUpId?: string;
+  /**
+   * Every matchUp whose double exit CLAIMS a BYE on this side's drawPosition.
+   *
+   * A set, not a scalar, because two double exits can claim the same position — measured across
+   * COMPASS, CURTIS_CONSOLATION, OLYMPIC, DOUBLE_ELIMINATION and MODIFIED_FEED_IN_CHAMPIONSHIP,
+   * where the disputed BYE always has exactly two claimants and exactly one survives a correction.
+   * Only the SECOND claimant's presence distinguishes "this BYE is still owed" from "it is not",
+   * and `assignDrawPositionBye` early-returns on an existing BYE, so the second claim is recorded
+   * here at the point of the ATTEMPT rather than at the placement.
+   */
+  byeClaims?: string[];
 };
 
 /** Keyed by sideNumber (1 | 2). Serialises as `{ "1": {...}, "2": {...} }`. */

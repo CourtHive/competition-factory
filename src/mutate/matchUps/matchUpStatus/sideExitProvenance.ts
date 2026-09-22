@@ -12,6 +12,7 @@ import {
   DEFAULTED,
   RETIRED,
   WALKOVER,
+  BYE,
 } from '@Constants/matchUpStatusConstants';
 
 /**
@@ -267,8 +268,134 @@ export function clearSideExitProvenance(matchUp?: MatchUp): void {
  * See Mentat/planning/SWEEP_20260911_DISCOVERY.md.
  */
 export function clearResolvedSideExitProvenance(matchUp?: MatchUp): void {
-  if (!matchUp || isAnyExit(matchUp.matchUpStatus)) return;
+  // A BYE is not a RESOLVED result, so its record is not stale — CA's ruling that "a BYE is never
+  // won" and "in both cases the BYE remains a BYE" (2026-09-20), applied to the record rather than
+  // the status. `isAnyExit` excludes BYE, so without this the BYE claim ledger below is wiped by the
+  // next placement or score to touch the matchUp, and the unwind is blind again.
+  if (!matchUp || isAnyExit(matchUp.matchUpStatus) || matchUp.matchUpStatus === BYE) return;
   clearSideExitProvenance(matchUp);
+}
+
+/**
+ * Record that `claimantMatchUpId`'s double exit claims a BYE on this side.
+ *
+ * Called on the ATTEMPT, not the placement. `assignDrawPositionBye` returns early when the position
+ * already holds a BYE (`currentAssignment?.bye`, and again on `containsBye`), both above the point
+ * where it marks the assignment — so a second claimant places nothing and, recorded at placement
+ * time, would be invisible. Measured: the disputed BYE has two claimants in every affected draw
+ * type, and it is the second one that decides whether the BYE survives a correction of the first.
+ */
+export function recordByeClaim({
+  claimantMatchUpId,
+  sideNumber,
+  matchUp,
+}: {
+  claimantMatchUpId?: string;
+  sideNumber?: number;
+  matchUp?: MatchUp;
+}): void {
+  if (!matchUp || !claimantMatchUpId || (sideNumber !== 1 && sideNumber !== 2)) return;
+  if (!writeNativeEnabled()) return;
+
+  const provenance: SideExitProvenance = { ...(matchUp.sideExitProvenance ?? {}) };
+  const entry: SideExitProvenanceEntry = { ...(provenance[sideNumber] ?? {}) };
+  const claims = new Set(entry.byeClaims ?? []);
+  claims.add(claimantMatchUpId);
+  entry.byeClaims = [...claims];
+  provenance[sideNumber] = entry;
+  matchUp.sideExitProvenance = provenance;
+}
+
+/**
+ * Withdraw one matchUp's BYE claim, and drop the record entirely when nothing is left.
+ *
+ * A ledger that is only ever written accumulates claims that describe nothing, and the first thing
+ * that notices is an unwind asserting the record is gone. Withdrawal is what makes the claim a
+ * memo of a LIVE relation rather than a growing history.
+ */
+export function withdrawByeClaim({
+  claimantMatchUpId,
+  sideNumber,
+  matchUp,
+}: {
+  claimantMatchUpId?: string;
+  sideNumber?: number;
+  matchUp?: MatchUp;
+}): void {
+  if (!matchUp || !claimantMatchUpId || (sideNumber !== 1 && sideNumber !== 2)) return;
+  const entry = matchUp.sideExitProvenance?.[sideNumber];
+  if (!entry?.byeClaims?.length) return;
+
+  const remaining = entry.byeClaims.filter((id) => id !== claimantMatchUpId);
+  const provenance: SideExitProvenance = { ...(matchUp.sideExitProvenance ?? {}) };
+  if (remaining.length) {
+    provenance[sideNumber] = { ...entry, byeClaims: remaining };
+  } else {
+    const { byeClaims: _dropped, ...withoutClaims } = entry;
+    // an entry that held ONLY claims goes with them; one that also describes an exit stays
+    if (Object.keys(withoutClaims).length) provenance[sideNumber] = withoutClaims;
+    else delete provenance[sideNumber];
+  }
+
+  if (Object.keys(provenance).length) matchUp.sideExitProvenance = provenance;
+  else delete matchUp.sideExitProvenance;
+}
+
+/**
+ * Withdraw this matchUp's BYE claims wherever they were recorded.
+ *
+ * Claims are keyed by IDENTITY, not by coordinate, and they have to be: the onward-advance path
+ * records a claim on a DOWNSTREAM matchUp — a BYE that walks — which the unwind never revisits with
+ * the drawPosition it was claimed against. Withdrawing only at the coordinate the unwind happens to
+ * hold leaves those behind, and a stale claim reads as a live one.
+ *
+ * This is the same shape as `withdrawProducedExits`, which withdraws exit provenance by
+ * `sourceMatchUpId` for the same reason.
+ */
+export function withdrawByeClaimsFrom({
+  claimantMatchUpId,
+  matchUps,
+}: {
+  claimantMatchUpId?: string;
+  matchUps?: MatchUp[];
+}): void {
+  if (!claimantMatchUpId) return;
+  for (const matchUp of matchUps ?? []) {
+    const provenance = matchUp?.sideExitProvenance;
+    if (!provenance) continue;
+    for (const sideNumber of [1, 2]) {
+      if (provenance[sideNumber]?.byeClaims?.includes(claimantMatchUpId)) {
+        withdrawByeClaim({ matchUp, sideNumber, claimantMatchUpId });
+      }
+    }
+  }
+}
+
+/**
+ * Does any claim on this side survive the withdrawal in progress?
+ *
+ * A claim survives when its claimant is neither being withdrawn nor has stopped being a double
+ * exit. Both halves are needed: `withdrawnSourceIds` is added to on ENTRY to `removeDoubleExit`, so
+ * it means "visited", and a visited matchUp whose status has not yet been rewritten still reads as a
+ * double exit.
+ */
+export function byeClaimSurvives({
+  withdrawnSourceIds,
+  isStillDoubleExit,
+  sideNumber,
+  matchUp,
+}: {
+  withdrawnSourceIds?: Set<string>;
+  isStillDoubleExit: (matchUpId: string) => boolean;
+  sideNumber?: number;
+  matchUp?: MatchUp;
+}): boolean {
+  if (!matchUp || (sideNumber !== 1 && sideNumber !== 2)) return false;
+  const claims = matchUp.sideExitProvenance?.[sideNumber]?.byeClaims ?? [];
+  return claims.some((claimantMatchUpId) => {
+    if (withdrawnSourceIds?.has(claimantMatchUpId)) return false;
+    return isStillDoubleExit(claimantMatchUpId);
+  });
 }
 
 /**
@@ -457,7 +584,14 @@ export function retainForeignProvenance(
  * whose contents were ours to define from the start.
  */
 export function projectExitStatusCodes(provenance?: SideExitProvenance): any[] {
-  const hasProvenance = [1, 2].some((sideNumber) => provenance?.[sideNumber]);
+  // An entry that carries ONLY `byeClaims` describes a BYE this cascade claims, not an exit — and
+  // the legacy array is the projection of EXIT provenance. Testing mere presence emitted a pair of
+  // empty reserved slots (`[{sideNumber:1},{sideNumber:2}]`) onto matchUps that had none, which a
+  // clear then left behind: DO_UNDO_IDENTITY failed on six property cells and
+  // `byeMeetingAProducedExit` on the same residue.
+  const describesExit = (sideNumber: number) =>
+    !!(provenance?.[sideNumber]?.matchUpStatus ?? provenance?.[sideNumber]?.previousMatchUpStatus);
+  const hasProvenance = [1, 2].some(describesExit);
   if (!hasProvenance) return [];
 
   return [1, 2].map((sideNumber) =>

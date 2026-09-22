@@ -1,3 +1,8 @@
+import {
+  withdrawByeClaimsFrom,
+  byeClaimSurvives,
+  withdrawByeClaim,
+} from '@Mutate/matchUps/matchUpStatus/sideExitProvenance';
 import { removeDirectedBye, removeDirectedWinner } from '@Mutate/matchUps/drawPositions/removeDirectedParticipants';
 import { getPairedPreviousMatchUp } from '@Query/matchUps/getPairedPreviousMatchup';
 import { modifyMatchUpScore } from '@Mutate/matchUps/score/modifyMatchUpScore';
@@ -116,6 +121,24 @@ export function removeDoubleExit(params) {
 
   const byePropagatedToLoserMatchUp = loserMatchUp?.matchUpStatus === BYE && !!byeProvenance;
 
+  /**
+   * This cascade is being unwound, so its own BYE claim goes — on EVERY path.
+   *
+   * Withdrawal used to sit inside the branch that removes the BYE, so the branch handling a loser
+   * target that already holds a draw BYE (visited "to WITHDRAW, and only that") left the claim
+   * behind. A ledger written on every attempt and withdrawn on only some paths accumulates claims
+   * describing nothing, and a stale claim reads as a live one — which would make the retain test
+   * answer "another cascade still owes this" forever.
+   */
+  const rawLoserMatchUp = (matchUpsMap?.drawMatchUps ?? []).find(
+    (candidate: any) => candidate.matchUpId === loserMatchUp?.matchUpId,
+  );
+  const claimSideNumber = (rawLoserMatchUp?.drawPositions ?? []).indexOf(loserTargetDrawPosition) + 1 || 1;
+  withdrawByeClaim({ matchUp: rawLoserMatchUp, sideNumber: claimSideNumber, claimantMatchUpId: matchUpId });
+  // ...and wherever else this cascade claimed one: a BYE that WALKS is claimed on a downstream
+  // matchUp the unwind never revisits at this coordinate
+  withdrawByeClaimsFrom({ matchUps: matchUpsMap?.drawMatchUps, claimantMatchUpId: matchUpId });
+
   const isFMLC = targetData?.targetLinks?.loserTargetLink?.linkCondition === FIRST_MATCHUP;
 
   if (byePropagatedToLoserMatchUp && isFMLC) {
@@ -155,6 +178,31 @@ export function removeDoubleExit(params) {
       feedRound,
       stage,
     });
+
+    /**
+     * A BYE survives while ANOTHER live cascade still claims it.
+     *
+     * The unwind removes the BYE at ITS OWN loser target without asking who put it there. Two double
+     * exits can claim the same drawPosition — measured in COMPASS, CURTIS_CONSOLATION, OLYMPIC,
+     * DOUBLE_ELIMINATION and MODIFIED_FEED_IN_CHAMPIONSHIP, where the disputed BYE has exactly two
+     * claimants and exactly one survives — so correcting one destroyed a BYE the other still owed,
+     * and a matchUp that should read BYE read TO_BE_PLAYED against an opponent who can never arrive.
+     *
+     * The ledger is consulted rather than the topology. An earlier attempt generalised the
+     * FMLC-shaped "is the paired round-1 matchUp also a double exit" test to every draw type; it
+     * reached the same count but OVER-RETAINED, because round-1 pairing is not how a backdraw feeds
+     * and it cannot see a claimant that is a cascade continuation.
+     */
+    const anotherClaimSurvives = byeClaimSurvives({
+      isStillDoubleExit: (claimantMatchUpId) =>
+        isDoubleExit(inContextDrawMatchUps.find(({ matchUpId: id }) => id === claimantMatchUpId)?.matchUpStatus),
+      matchUp: rawLoserMatchUp,
+      sideNumber: claimSideNumber,
+      withdrawnSourceIds,
+    });
+    if (anotherClaimSurvives) {
+      return decorateResult({ result: { ...SUCCESS }, stack });
+    }
 
     if (appliedPolicies?.progression?.doubleExitPropagateBye || byePropagatedToLoserMatchUp) {
       removeDirectedBye({
