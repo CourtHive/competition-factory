@@ -56,11 +56,11 @@ import {
 const BASELINE = {
   cells: 192,
   /** both paths ran and the draws agree exactly — the only bucket that should ever grow */
-  identical: 24,
+  identical: 36,
   /** a stale `sideExitProvenance` entry only; status, winner and positions agree */
   provenanceOnly: 120,
   /** matchUpStatus, winningSide or drawPositions differ — user-visible */
-  severe: 48,
+  severe: 36,
   /** a step was refused in one path and not the other, so the cell was not an experiment */
   incomparable: 0,
 };

@@ -117,14 +117,24 @@ const anonymize = (projection: any[]): any => {
     for (const [matchUpId] of structure.matchUps ?? []) if (matchUpId) matchUpLabel(matchUpId);
   }
 
+  // `byeClaims` is the same thing in list form — the matchUpIds whose double exit claims a BYE on
+  // this side — so it needs the same relabelling. Without it the two runs differ on identity alone
+  // wherever a BYE carries a claim, which is every double-exit draw that places one.
+  const ID_KEYS = ['sourceMatchUpId', 'byeClaims'];
   const relabelIds = (value: any): any => {
     if (Array.isArray(value)) return value.map(relabelIds);
     if (!value || typeof value !== 'object') return value;
     return Object.fromEntries(
-      Object.entries(value).map(([key, entry]) => [
-        key,
-        key === 'sourceMatchUpId' && typeof entry === 'string' ? matchUpLabel(entry) : relabelIds(entry),
-      ]),
+      Object.entries(value).map(([key, entry]) => {
+        if (!ID_KEYS.includes(key)) return [key, relabelIds(entry)];
+        if (typeof entry === 'string') return [key, matchUpLabel(entry)];
+        // a claim list is relabelled elementwise and SORTED: the set is what carries meaning, and
+        // two runs can record the same claims in a different order
+        if (Array.isArray(entry)) {
+          return [key, entry.map((id) => (typeof id === 'string' ? matchUpLabel(id) : id)).sort()];
+        }
+        return [key, relabelIds(entry)];
+      }),
     );
   };
 
