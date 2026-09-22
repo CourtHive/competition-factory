@@ -67,9 +67,10 @@ it produced. You were entitled to expect all of those already.
 
 Three things made this release measurable rather than argued.
 
-**Probes over assertions.** The defects that mattered were found by building a draw, driving it, and
-comparing states — not by reading code. Several confident diagnoses in this cycle dissolved the
-moment they were measured, and the ones that survived did so because a scenario reproduced them.
+**Probes over assertions.** Every defect closed here was reproduced before it was diagnosed — a draw
+built, driven through a sequence of results, and its state compared against what the same outcomes
+reach by another route. A defect that cannot be reproduced on demand is not understood well enough to
+fix.
 
 **Confluence sweeps.** A 192-cell harness drives every draw type down two routes to the same outcome
 — entering a result directly, and reaching it through a correction — then compares the draws. Its
@@ -80,10 +81,6 @@ baseline is lowered and a regression cannot hide in the noise.
 `BYE_ADVANCEMENT_MISSING` and `PROPAGATED_EXIT_LOST` because two whole defect classes were
 structurally invisible to it: every existing check started from a `winningSide` or an exit status,
 and a BYE has no winner while an erased exit has neither.
-
-The instruments were wrong sometimes too, and that is worth saying: the confluence oracle spent a day
-counting a representation difference as a defect, and a fix was scored against that number before
-anyone noticed. Measurement is only as good as its calibration.
 
 ## Provenance you can read
 
