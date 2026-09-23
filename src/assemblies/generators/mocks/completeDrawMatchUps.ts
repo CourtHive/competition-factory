@@ -257,7 +257,24 @@ export function completeDrawMatchUps(params): {
       [MAIN, PLAY_OFF],
     ).length === 2;
 
-  const structureIds = sortedStructures.map(({ structureId }) => structureId);
+  /**
+   * `structureIds` narrows completion to named structures. Omitted, every structure is completed,
+   * which is the long-standing behaviour and the default.
+   *
+   * Added for TMX's "Complete all matchUps" control, which is scoped to the STRUCTURE a director is
+   * looking at. TMX had its own loop for that, and that loop filtered incomplete matchUps as
+   * `!winningSide && matchUpStatus !== BYE` — so a DOUBLE_WALKOVER, which has no winningSide, was
+   * OVERWRITTEN with an ordinary result. This function already excludes double exits (see
+   * `isDoubleExit` below), so giving it the one thing it lacked lets that duplicate go away rather
+   * than be repaired.
+   *
+   * Filtered alongside the existing `stage` / `stageSequence` narrowing in the same loop, so the
+   * three compose: an unknown id simply matches nothing.
+   */
+  const requestedStructureIds = params.structureIds;
+  const structureIds = sortedStructures
+    .map(({ structureId }) => structureId)
+    .filter((structureId) => !requestedStructureIds?.length || requestedStructureIds.includes(structureId));
 
   // Multi-pass loop: after each pass, cross-structure advancement (via directParticipants)
   // may populate positions in downstream structures, making new matchUps ready to complete.
