@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="generator" content="Docusaurus v3.10.2">
 <title data-rh="true">Exit Propagation | Competition Factory</title><meta data-rh="true" name="viewport" content="width=device-width,initial-scale=1"><meta data-rh="true" name="twitter:card" content="summary_large_image"><meta data-rh="true" property="og:url" content="https://courthive.github.io/competition-factory/docs/concepts/exit-propagation"><meta data-rh="true" property="og:locale" content="en"><meta data-rh="true" name="docusaurus_locale" content="en"><meta data-rh="true" name="docsearch:language" content="en"><meta data-rh="true" name="docusaurus_version" content="current"><meta data-rh="true" name="docusaurus_tag" content="docs-default-current"><meta data-rh="true" name="docsearch:version" content="current"><meta data-rh="true" name="docsearch:docusaurus_tag" content="docs-default-current"><meta data-rh="true" property="og:title" content="Exit Propagation | Competition Factory"><meta data-rh="true" name="description" content="Overview"><meta data-rh="true" property="og:description" content="Overview"><link data-rh="true" rel="icon" href="/competition-factory/img/favicon.ico"><link data-rh="true" rel="canonical" href="https://courthive.github.io/competition-factory/docs/concepts/exit-propagation"><link data-rh="true" rel="alternate" href="https://courthive.github.io/competition-factory/docs/concepts/exit-propagation" hreflang="en"><link data-rh="true" rel="alternate" href="https://courthive.github.io/competition-factory/docs/concepts/exit-propagation" hreflang="x-default"><script data-rh="true" type="application/ld+json">{"@context":"https://schema.org","@type":"BreadcrumbList","itemListElement":[{"@type":"ListItem","position":1,"name":"Exit Propagation","item":"https://courthive.github.io/competition-factory/docs/concepts/exit-propagation"}]}</script><link rel="stylesheet" href="/competition-factory/assets/css/styles.e47012fb.css">
-<script src="/competition-factory/assets/js/runtime~main.75a74f83.js" defer="defer"></script>
+<script src="/competition-factory/assets/js/runtime~main.ed35b30d.js" defer="defer"></script>
 <script src="/competition-factory/assets/js/main.47a334c8.js" defer="defer"></script>
 </head>
 <body>
@@ -123,10 +123,6 @@ before the call and restores on error, and the queued notices are discarded with
 are not told about changes that were undone. Measured over a 600-seed randomized sweep, every case
 where the default call returned an error <em>after</em> changing the draw left it unchanged with the flag —
 45 of 45.</p>
-<p>Without the flag, a mid-cascade refusal can still return an error over a partially changed draw. The
-remaining cases are position-assignment refusals raised deep in the cascade and they are being
-closed one root cause at a time, but the honest statement today is that atomicity is something you
-request rather than something every path provides.</p>
 <p><code>executionQueue</code> snapshots for the whole queue, so TMX and competition-factory-server — which pass
 <code>rollbackOnError: true</code> on every mutation — already have this. A consumer calling <code>setMatchUpStatus</code>
 directly should pass it.</p>
