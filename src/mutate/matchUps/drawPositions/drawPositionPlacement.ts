@@ -45,6 +45,7 @@ import { getAllStructureMatchUps } from '@Query/matchUps/getAllStructureMatchUps
 import { getInitialRoundNumber } from '@Query/matchUps/getInitialRoundNumber';
 import { SeedingProfile, MatchUpsMap, ResultType } from '@Types/factoryTypes';
 import { updateSideLineUp } from '@Mutate/matchUps/lineUps/updateSideLineUp';
+import { isUnscoredOutcome } from '@Query/matchUp/getDrawPositionWinCount';
 import { isLuckyBasedDraw } from '@Query/drawDefinition/isLuckyBasedDraw';
 import { getAppliedPolicies } from '@Query/extensions/getAppliedPolicies';
 import { isValidSeedPosition } from '@Query/drawDefinition/seedGetter';
@@ -81,14 +82,7 @@ import {
   ErrorType,
 } from '@Constants/errorConditionConstants';
 
-import {
-  BYE,
-  COMPLETED,
-  DOUBLE_DEFAULT,
-  DOUBLE_WALKOVER,
-  RETIRED,
-  TO_BE_PLAYED,
-} from '@Constants/matchUpStatusConstants';
+import { BYE, DOUBLE_DEFAULT, DOUBLE_WALKOVER, TO_BE_PLAYED } from '@Constants/matchUpStatusConstants';
 
 // ============================================================================
 // from assignMatchUpDrawPosition.ts
@@ -684,7 +678,19 @@ function propagateConsolationBye({
   const firstRoundMatchUps = structureMatchUps.filter(
     ({ drawPositions, roundNumber }) => roundNumber === 1 && overlap(drawPositions, updatedDrawPositions),
   );
-  const byePropagation = firstRoundMatchUps.every(({ matchUpStatus }) => [COMPLETED, RETIRED].includes(matchUpStatus));
+  /**
+   * A feeder counts toward the reservation when it has produced a WIN — which is the authority's
+   * question, not a status question. `[COMPLETED, RETIRED]` restated it and drifted: a scored
+   * `DEFAULTED` is a win to `getDrawPositionWinCount`, the predicate `directLoser` actually uses to
+   * decide the eligibility this reservation is predicting, but was absent from the list. The
+   * reservation was therefore placed late for that outcome — `Consolation|2|1` read `TO_BE_PLAYED`
+   * until the round-2 result arrived and `directLoser` placed the BYE on the authority's terms.
+   * `isUnscoredOutcome`'s own docblock names this failure: a guard that restates the rule and drifts
+   * from it is worse than none.
+   */
+  const byePropagation = firstRoundMatchUps.every(
+    ({ matchUpStatus, winningSide, score }) => !!winningSide && !isUnscoredOutcome({ matchUpStatus, score }),
+  );
   if (byePropagation && loserMatchUp) {
     const { structureId } = loserMatchUp;
     const result = assignDrawPositionBye({
