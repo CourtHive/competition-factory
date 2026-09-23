@@ -51,6 +51,7 @@ interface GenerateTournamentRecordOptions {
   // Scheduling
   schedulingProfile?: array; // Scheduling directives
   autoSchedule?: boolean; // Auto-schedule using profile
+  scenarioProfile?: object; // Anchor the schedule to a moment (see below)
 
   // Match Completion
   completeAllMatchUps?: boolean; // Complete all generated matchUps
@@ -1096,3 +1097,51 @@ matchUps1.forEach((m, i) => {
 - **[Participant Generation](./mocks-engine-participants.md)** - Individual, pairs and teams
 - **[Outcome Generation](./mocks-engine-outcomes.md)** - Generating match results
 - **[Advanced Patterns](./mocks-engine-patterns.md)** - Best practices and common patterns
+
+## Anchoring a schedule to "now" (`scenarioProfile`)
+
+`startDate: today` makes the **date** current but leaves the **clock** fixed: matchUps are placed
+from the venue's opening time, so a tournament generated at 16:00 has every matchUp hours in the
+past. Anything that reads the wall clock — a "now" strip, due-match calls, running-late badges,
+recovery countdowns — then has nothing live to act on.
+
+`scenarioProfile` shifts the generated schedule so it straddles a chosen moment.
+
+```js
+const { tournamentRecord, scenarioResult } = mocksEngine.generateTournamentRecord({
+  startDate: today,
+  drawProfiles: [{ drawId: 'd1', drawSize: 16 }],
+  venueProfiles: [{ venueId: 'v1', courtsCount: 6, startTime: '08:00', endTime: '20:00' }],
+  schedulingProfile: [{ scheduleDate: today, venues: [{ venueId: 'v1', rounds: [{ drawId: 'd1', roundNumber: 1 }] }] }],
+  autoSchedule: true,
+
+  scenarioProfile: {
+    anchor: 'NOW', // or an ISO datetime, e.g. '2026-09-23T15:00'
+    minutesBeforeAnchor: 120, // the FIRST matchUp starts this long before the anchor
+    assignCourts: true, // also place matchUps on courts
+  },
+});
+```
+
+| field                 | meaning                                                                                             |
+| --------------------- | --------------------------------------------------------------------------------------------------- |
+| `anchor`              | `'NOW'` (default) reads the clock at call time; an ISO datetime makes the result deterministic      |
+| `minutesBeforeAnchor` | how far before the anchor the **first** scheduled matchUp starts; everything else keeps its spacing |
+| `assignCourts`        | additionally assign `courtId` / `courtOrder`, preserving the scheduled times                        |
+
+### What it does and does not do
+
+- It **shifts**, it does not re-derive. The spacing the scheduler produced — which honours matchUp
+  average and recovery minutes — is preserved exactly. Only the times move.
+- `minutesBeforeAnchor` is what puts matchUps on **both sides** of the anchor: some finished, some
+  live, some upcoming. That is what makes a wall-clock surface demonstrable rather than empty.
+- It requires matchUps that are already scheduled (a `schedulingProfile` with `autoSchedule`). With
+  nothing scheduled it is a **no-op, not an error** — `scenarioResult.shiftedCount` is `0`.
+- Pass an ISO `anchor` in tests. `'NOW'` is for demos and fixtures meant to stay current.
+
+`scenarioResult` reports `anchoredTo`, `shiftMinutes` and `shiftedCount`.
+
+:::note
+Ensure the venue's hours contain the anchored window. Shifting a schedule far outside
+`dateAvailability` will place matchUps at times the courts are not open.
+:::
