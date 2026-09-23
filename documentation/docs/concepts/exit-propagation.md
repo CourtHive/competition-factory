@@ -179,11 +179,6 @@ are not told about changes that were undone. Measured over a 600-seed randomized
 where the default call returned an error _after_ changing the draw left it unchanged with the flag —
 45 of 45.
 
-Without the flag, a mid-cascade refusal can still return an error over a partially changed draw. The
-remaining cases are position-assignment refusals raised deep in the cascade and they are being
-closed one root cause at a time, but the honest statement today is that atomicity is something you
-request rather than something every path provides.
-
 `executionQueue` snapshots for the whole queue, so TMX and competition-factory-server — which pass
 `rollbackOnError: true` on every mutation — already have this. A consumer calling `setMatchUpStatus`
 directly should pass it.
