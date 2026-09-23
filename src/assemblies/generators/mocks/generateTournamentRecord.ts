@@ -5,6 +5,7 @@ import { addTournamentParticipants } from './addTournamentParticipants';
 import { addParticipants } from '@Mutate/participants/addParticipants';
 import { generateEventWithFlights } from './generateEventWithFlights';
 import { generateScheduledRounds } from './generateScheduledRounds';
+import { applyScenarioProfile } from './applyScenarioProfile';
 import { generateEventWithDraw } from './generateEventWithDraw';
 import { processLeagueProfiles } from './processLeagueProfiles';
 import { cycleMutationStatus } from '@Global/state/globalState';
@@ -64,6 +65,7 @@ type GenerateTournamentRecordArgs = {
   ratingsParameters?: any;
   tournamentName?: string;
   schedulingProfile?: any;
+  scenarioProfile?: any;
   random?: () => number;
   autoSchedule?: boolean;
   leagueProfiles?: any[];
@@ -167,6 +169,13 @@ export function generateTournamentRecord(params: GenerateTournamentRecordArgs) {
     ? scheduleRounds({ ...params, tournamentRecord })
     : {};
 
+  // Anchoring runs AFTER scheduling: it shifts the times the scheduler produced rather than
+  // replacing them, so matchUp average and recovery spacing survive intact.
+  const scenarioResult = params?.scenarioProfile
+    ? applyScenarioProfile({ tournamentRecord, scenarioProfile: params.scenarioProfile })
+    : undefined;
+  if (scenarioResult?.error) return scenarioResult;
+
   // clear globalState modified flag;
   cycleMutationStatus();
 
@@ -175,6 +184,7 @@ export function generateTournamentRecord(params: GenerateTournamentRecordArgs) {
     tournamentRecord,
     scheduledRounds,
     schedulerResult,
+    scenarioResult,
     eventIds,
     venueIds,
     drawIds,
