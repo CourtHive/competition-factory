@@ -21,11 +21,11 @@
     "@mdx-js/react": "^3.1.1",
     "@types/react": "19.3.0",
     "clsx": "2.1.1",
-    "courthive-components": "4.4.0",
+    "courthive-components": "5.0.0",
     "leaflet": "^1.9.4",
     "react": "^19.2.6",
     "react-dom": "^19.2.6",
-    "tods-competition-factory": "^6.21.0"
+    "tods-competition-factory": "^7.0.0"
   },
   "browserslist": {
     "production": [
