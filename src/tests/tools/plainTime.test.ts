@@ -1,4 +1,4 @@
-import { plainTime, timeStringMinutes, extractTime, convertTime } from '@Tools/plainTime';
+import { plainTime, timeStringMinutes, extractTime, convertTime, validTimeValue } from '@Tools/plainTime';
 import { dateTime } from '@Tools/dateTime';
 import { expect, it, test } from 'vitest';
 
@@ -61,4 +61,47 @@ test('the legacy dateTime surface delegates to plainTime rather than duplicating
   expect(dateTime.convertTime).toBe(convertTime);
   expect(dateTime.timeStringMinutes).toBe(timeStringMinutes);
   expect(dateTime.isTimeString).toBe(plainTime.isTimeString);
+});
+
+/**
+ * `validTimeValue` had NO coverage, which is how this survived.
+ *
+ * It accepted every unparseable string. `splitTime` returns {} for input it cannot parse, but
+ * `militaryTime` discards that signal — it builds `${hours || '12'}:${minutes || '00'}` — so
+ * anything unreadable converted to NOON and then passed `timeValidation`.
+ *
+ * Measured end-to-end through the engine before the fix: `addMatchUpScheduledTime` with 'TBD',
+ * 'N/A', 'not-a-time' or a bare '12' returned NO error and STORED `scheduledTime: '12:00'`. A
+ * director typing anything into that field silently scheduled the matchUp at midday.
+ */
+test('validTimeValue accepts every legitimate spelling of a time', () => {
+  for (const value of ['08:00', '8:00', '08:00 AM', '08:00 PM', '23:59', '2026-09-23T08:00']) {
+    expect(validTimeValue(value)).toEqual(true);
+  }
+});
+
+test('an absent value is not invalid — it means "leave it"', () => {
+  for (const value of ['', null, undefined]) {
+    expect(validTimeValue(value)).toEqual(true);
+  }
+});
+
+test('validTimeValue rejects a string that is not a time at all', () => {
+  // each of these was accepted before, and stored as 12:00
+  for (const value of ['TBD', 'N/A', '-', 'noon', 'not-a-time', 'garbage']) {
+    expect(validTimeValue(value)).toEqual(false);
+  }
+});
+
+test('a bare number is not a time — it has no minutes', () => {
+  // '12' reads as a plausible hour and was the most dangerous of the accepted set:
+  // it stored as 12:00, which is also what it LOOKS like it should mean
+  expect(validTimeValue('12')).toEqual(false);
+  expect(validTimeValue('7')).toEqual(false);
+});
+
+test('validTimeValue still rejects an out-of-range clock time', () => {
+  for (const value of ['25:99', '24:00', '08:60']) {
+    expect(validTimeValue(value)).toEqual(false);
+  }
 });

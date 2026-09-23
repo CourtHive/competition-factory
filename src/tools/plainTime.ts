@@ -106,6 +106,19 @@ export function validTimeValue(value) {
   const spaceSplit = typeof value === 'string' ? value?.split(' ') : [];
   if (value && spaceSplit?.length > 1 && !['AM', 'PM'].includes(spaceSplit[1].toUpperCase())) return false;
 
+  // `splitTime` returns {} for anything it cannot parse, and that is the ONLY signal that the input
+  // was not a time at all. `militaryTime` DISCARDS it: it builds `${hours || '12'}:${minutes || '00'}`,
+  // so every unparseable string converts to NOON and then sails through `timeValidation`.
+  //
+  // Measured 2026-09-23: 'TBD', 'N/A', '-', 'noon', 'not-a-time' and a bare '12' were all accepted
+  // and STORED as '12:00' with no error — a director typing anything into a scheduled-time field
+  // silently scheduled the matchUp at midday. Inverted, too: the junk passed while the legitimate
+  // '2026-09-23 08:00' was refused by the AM/PM check above.
+  //
+  // Honoured HERE rather than in `militaryTime`, whose '12:00' fallback has callers that depend on
+  // it for display; this is the function whose job is to answer yes or no.
+  if (typeof value === 'string' && value && !Object.keys(splitTime(value)).length) return false;
+
   const converted = convertTime(value, true, true);
   return !!(!value || (converted && timeValidation.test(converted)));
 }
