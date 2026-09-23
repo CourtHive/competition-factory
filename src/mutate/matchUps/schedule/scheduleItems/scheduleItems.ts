@@ -7,7 +7,7 @@ import { getMatchUpOfficialConflicts } from '@Query/officiating/getMatchUpOffici
 import { checkRequiredParameters } from '@Helpers/parameters/checkRequiredParameters';
 import { assignMatchUpCourt } from '@Mutate/matchUps/schedule/assignMatchUpCourt';
 import { assignMatchUpVenue } from '@Mutate/matchUps/schedule/assignMatchUpVenue';
-import { setMatchUpCalledAt } from '@Mutate/matchUps/schedule/setMatchUpCalledAt';
+import { calledBeforeTournamentStart, setMatchUpCalledAt } from '@Mutate/matchUps/schedule/setMatchUpCalledAt';
 import { addMatchUpTimeItem } from '@Mutate/timeItems/matchUps/matchUpTimeItems';
 import { allTournamentMatchUps } from '@Query/matchUps/getAllTournamentMatchUps';
 import { getMatchUpDependencies } from '@Query/matchUps/getMatchUpDependencies';
@@ -18,7 +18,7 @@ import { getParticipants } from '@Query/participants/getParticipants';
 import { decorateResult } from '@Functions/global/decorateResult';
 import { findDrawMatchUp } from '@Acquire/findDrawMatchUp';
 import { findParticipant } from '@Acquire/findParticipant';
-import { validTimeString } from '@Validators/regex';
+import { dateValidation, validTimeString } from '@Validators/regex';
 import { isConvertableInteger } from '@Tools/math';
 import { ensureInt } from '@Tools/ensureInt';
 import { isString } from '@Tools/objects';
@@ -53,6 +53,7 @@ import {
   INVALID_STOP_TIME,
   INVALID_END_TIME,
   INVALID_TIME,
+  INVALID_DATE,
   ANACHRONISM,
   UNWRITABLE_SCHEDULE_ATTRIBUTES,
   INVALID_VALUES,
@@ -462,6 +463,8 @@ type AddMatchUpScheduleItemsArgs = {
   drawDefinition: DrawDefinition;
   errorOnUnknownAttributes?: boolean;
   errorOnAnachronism?: boolean;
+  /** run every refusal WITHOUT writing anything — see `checkScheduleValues` */
+  validateOnly?: boolean;
   removePriorValues?: boolean;
   checkChronology?: boolean;
   matchUpDependencies?: any;
@@ -497,6 +500,7 @@ export function addMatchUpScheduleItems(params: AddMatchUpScheduleItemsArgs): {
     proConflictDetection = false,
     errorOnAnachronism = false,
     checkChronology = true,
+    validateOnly = false,
     overrideScheduleLock,
     removePriorValues,
     tournamentRecords,
@@ -518,25 +522,16 @@ export function addMatchUpScheduleItems(params: AddMatchUpScheduleItemsArgs): {
     matchUp = result.matchUp;
   }
 
-  // A director's schedule lock pins PLACEMENT. Actual-play attributes
-  // (startTime / stopTime / resumeTime / endTime) are never guarded, so a
-  // locked matchUp can still be started, suspended and completed. Callers that
-  // have confirmed the move with the operator pass `overrideScheduleLock`.
-  if (!overrideScheduleLock) {
-    const lockedAttributes = scheduleLockConflicts({ matchUp, schedule });
-    if (lockedAttributes.length) {
-      return decorateResult({
-        info: `schedule locked: ${lockedAttributes.join(', ')}`,
-        result: { error: SCHEDULE_LOCKED },
-        stack,
-      });
-    }
-  }
-
-  // Reported before anything is written, so a caller learns what will be ignored
-  // even when a later step errors out.
-  const { unwritable, error: unwritableError } = checkUnwritableAttributes(schedule, errorOnUnknownAttributes, stack);
-  if (unwritableError) return unwritableError;
+  const refusals = checkScheduleRefusals({
+    errorOnUnknownAttributes,
+    overrideScheduleLock,
+    tournamentRecord,
+    schedule,
+    matchUp,
+    stack,
+  });
+  if (refusals.error) return refusals.error;
+  const { unwritable } = refusals;
 
   const {
     endTime,
@@ -608,6 +603,12 @@ export function addMatchUpScheduleItems(params: AddMatchUpScheduleItemsArgs): {
     courtId === undefined &&
     venueId === undefined;
 
+  // EVERY refusal above this line is pure; everything below it writes. `validateOnly` returns here
+  // so a caller can learn whether a schedule would be accepted without applying any of it —
+  // `setMatchUpStatus` uses it to refuse before it touches the draw, then applies once the outcome
+  // has been accepted.
+  if (validateOnly) return scheduleItemsResult(warning, unwritable);
+
   const timingResult = applyScheduleTiming({
     removePriorValues,
     tournamentRecord,
@@ -670,6 +671,116 @@ export function addMatchUpScheduleItems(params: AddMatchUpScheduleItemsArgs): {
   }
 
   return scheduleItemsResult(warning, unwritable);
+}
+
+/**
+ * Every refusal `addMatchUpScheduleItems` can raise about the VALUES it was handed, evaluated
+ * without writing any of them.
+ *
+ * `setMatchUpStatus` accepts a `schedule` alongside an outcome and applied it at the TOP of
+ * `resolveAndApplyOutcome`, above the branch that can refuse — so a rejected outcome still left the
+ * scheduled date, time and court order behind. A rejected call must change nothing
+ * (`ERROR_IMPLIES_NO_MUTATION`).
+ *
+ * Moving the apply below the dispatch is not enough on its own: `applyScheduleTiming` and
+ * `applyScheduleAssignments` interleave validate-and-write per attribute, so a malformed value
+ * would then error over an outcome that had already landed — the same defect, inverted. Hence a
+ * pure pass first.
+ *
+ * NOTHING here is a second spelling of a rule. Each check calls the SAME predicate its writer
+ * calls: `validTimeValue`, `dateValidation`, `isConvertableInteger`, `calledBeforeTournamentStart`.
+ * A guard that restated its writer's rule is how the two come to disagree.
+ *
+ * Tournament-range checks are included deliberately. They read `tournamentRecord`, but nothing here
+ * requires the write to have begun — every refusal is computable from (schedule, tournamentRecord),
+ * which is what makes the hoist possible at all.
+ */
+/**
+ * The refusals that are decided BEFORE anything is written, in one place.
+ *
+ * Extracted from `addMatchUpScheduleItems` when adding `validateOnly` took that function's
+ * cognitive complexity to 31 against a standing threshold of 30. Grouping them is also what makes
+ * the two modes obviously equivalent: there is one prefix, and `validateOnly` simply stops after it.
+ */
+function checkScheduleRefusals({
+  errorOnUnknownAttributes,
+  overrideScheduleLock,
+  tournamentRecord,
+  schedule,
+  matchUp,
+  stack,
+}): { error?: any; unwritable: string[] } {
+  // A director's schedule lock pins PLACEMENT. Actual-play attributes
+  // (startTime / stopTime / resumeTime / endTime) are never guarded, so a
+  // locked matchUp can still be started, suspended and completed. Callers that
+  // have confirmed the move with the operator pass `overrideScheduleLock`.
+  if (!overrideScheduleLock) {
+    const lockedAttributes = scheduleLockConflicts({ matchUp, schedule });
+    if (lockedAttributes.length) {
+      return {
+        error: decorateResult({
+          info: `schedule locked: ${lockedAttributes.join(', ')}`,
+          result: { error: SCHEDULE_LOCKED },
+          stack,
+        }),
+        unwritable: [],
+      };
+    }
+  }
+
+  // Reported before anything is written, so a caller learns what will be ignored
+  // even when a later step errors out.
+  const { unwritable, error: unwritableError } = checkUnwritableAttributes(schedule, errorOnUnknownAttributes, stack);
+  if (unwritableError) return { error: unwritableError, unwritable: unwritable ?? [] };
+
+  // Every value-shape and tournament-range refusal, evaluated before the first write. This runs in
+  // BOTH modes on purpose: the writers below still check, so `validateOnly` cannot drift from the
+  // apply path by being the only caller of a rule.
+  const valuesError = checkScheduleValues({ tournamentRecord, schedule });
+  if (valuesError) return { error: decorateResult({ result: valuesError, stack }), unwritable: unwritable ?? [] };
+
+  return { unwritable: unwritable ?? [] };
+}
+
+export function checkScheduleValues({
+  tournamentRecord,
+  schedule,
+}: {
+  tournamentRecord?: any;
+  schedule: any;
+}): { error?: ErrorType; info?: string } | undefined {
+  const { calledAt, courtOrder, endTime, resumeTime, scheduledDate, scheduledTime, startTime, stopTime } = schedule;
+
+  // `!== undefined` throughout, matching the apply path's own guard: an absent key is "leave it",
+  // `null` is the explicit clear.
+  for (const timeValue of [scheduledTime, startTime, stopTime, resumeTime, endTime]) {
+    if (timeValue !== undefined && timeValue !== null && !validTimeValue(timeValue)) return { error: INVALID_TIME };
+  }
+
+  if (courtOrder !== undefined && courtOrder !== null && courtOrder && !isConvertableInteger(courtOrder))
+    return { error: INVALID_VALUES, info: 'courtOrder must be convertable to an integer' };
+
+  if (scheduledDate !== undefined && scheduledDate !== null && scheduledDate) {
+    if (!dateValidation.test(scheduledDate)) return { error: INVALID_DATE };
+    const date = extractDate(scheduledDate);
+    if (date && tournamentRecord?.startDate && tournamentRecord?.endDate) {
+      const scheduleTime = new Date(date).getTime();
+      const start = new Date(extractDate(tournamentRecord.startDate)).getTime();
+      const end = new Date(extractDate(tournamentRecord.endDate)).getTime();
+      if (scheduleTime < start || scheduleTime > end)
+        return { error: INVALID_DATE, info: 'scheduledDate must be within tournament start and end dates' };
+    }
+  }
+
+  if (calledAt !== undefined && calledAt !== null) {
+    if (!isString(calledAt)) return { error: INVALID_VALUES, info: 'calledAt must be an ISO string' };
+    if (Number.isNaN(Date.parse(calledAt)))
+      return { error: INVALID_DATE, info: 'calledAt must be a parseable ISO string' };
+    if (calledBeforeTournamentStart({ tournamentRecord, calledAt }))
+      return { error: INVALID_DATE, info: 'calledAt cannot precede tournament startDate' };
+  }
+
+  return undefined;
 }
 
 function checkScheduleConflicts({

@@ -70,7 +70,7 @@ type SetMatchUpCalledAtArgs = {
  * final day legitimately runs past it, and the last day's play routinely spills
  * over; there is no equivalent impossibility on that side.
  */
-function calledBeforeTournamentStart({
+export function calledBeforeTournamentStart({
   tournamentRecord,
   calledAt,
 }: {

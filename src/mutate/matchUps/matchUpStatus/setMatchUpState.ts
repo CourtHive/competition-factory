@@ -539,19 +539,25 @@ function resolveAndApplyOutcome({ params, isTeam, dualWinningSideChange, activeD
     matchUp,
   } = params;
 
+  // VALIDATE the schedule here; APPLY it below, once the outcome has been accepted.
+  //
+  // This used to apply it outright, above the dispatch that can refuse — so a rejected outcome left
+  // the scheduled date, time and court order behind. Moving the apply down on its own would have
+  // inverted the defect (an error over an outcome that had already landed), because the apply path
+  // interleaves validate-and-write per attribute. `validateOnly` runs every refusal and writes
+  // nothing, so both orderings are safe.
   const { schedule } = params;
   if (schedule) {
-    const result = addMatchUpScheduleItems({
+    const check = addMatchUpScheduleItems({
       disableNotice: true,
+      validateOnly: true,
       tournamentRecords,
       tournamentRecord,
       drawDefinition,
       matchUpId,
       schedule,
     });
-    if (result.error) {
-      return result;
-    }
+    if (check.error) return check;
   }
 
   const validWinningSideSwap =
@@ -596,6 +602,22 @@ function resolveAndApplyOutcome({ params, isTeam, dualWinningSideChange, activeD
     result = applyMatchUpValues(params);
   } else {
     result = { error: NO_VALID_ACTIONS };
+  }
+
+  // The schedule is applied only once the outcome has been accepted, and its refusals were already
+  // raised above by the `validateOnly` pass — so this cannot be the step that errors over a draw
+  // this call has just changed. Ordered before `applyScoredTime` so `scoredTime` is stamped onto
+  // the schedule this call wrote rather than the one it replaced.
+  if (!result?.error && schedule) {
+    const scheduleResult = addMatchUpScheduleItems({
+      disableNotice: true,
+      tournamentRecords,
+      tournamentRecord,
+      drawDefinition,
+      matchUpId,
+      schedule,
+    });
+    if (scheduleResult.error) return decorateResult({ result: scheduleResult, stack });
   }
 
   if (!result?.error) applyScoredTime({ matchUp });
