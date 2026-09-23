@@ -4,7 +4,7 @@ import { expect, it } from 'vitest';
 
 // constants
 import { DOUBLE_WALKOVER } from '@Constants/matchUpStatusConstants';
-import { COMPASS } from '@Constants/drawDefinitionConstants';
+import { COMPASS, ROUND_ROBIN } from '@Constants/drawDefinitionConstants';
 
 /**
  * `completeDrawMatchUps({ structureIds })` — completion narrowed to named structures.
@@ -100,4 +100,47 @@ it('does not overwrite a DOUBLE_WALKOVER when completing a structure', () => {
 
   expect(after.matchUpStatus).toEqual(DOUBLE_WALKOVER);
   expect(after.winningSide).toBeUndefined();
+});
+
+/**
+ * Round-robin matchUps belong to the CHILD groups, not to the CONTAINER, so a caller holding a
+ * group's id holds the id of the thing it means to complete. Matching only top-level ids made that
+ * silently complete NOTHING — measured before the fix: container id -> 24 completed, the four child
+ * ids -> 0. TMX's own loop resolves containers to children exactly this way, so a straight port
+ * would have hit it.
+ */
+it('accepts a round-robin CHILD structureId, not only the container', () => {
+  mocksEngine.generateTournamentRecord({
+    drawProfiles: [{ drawType: ROUND_ROBIN, drawSize: 16, participantsCount: 16, drawId: 'RR' }],
+    setState: true,
+  });
+  const { drawDefinition } = tournamentEngine.getEvent({ drawId: 'RR' });
+  const container: any = drawDefinition?.structures?.[0];
+  const childIds = (container.structures ?? []).map((structure: any) => structure.structureId);
+  expect(childIds.length).toBeGreaterThan(0);
+
+  const wins = () =>
+    tournamentEngine.allDrawMatchUps({ inContext: true, drawId: 'RR' }).matchUps.filter((m: any) => m.winningSide)
+      .length;
+
+  const result: any = tournamentEngine.completeDrawMatchUps({ structureIds: childIds, drawId: 'RR' });
+
+  expect(result.error).toBeUndefined();
+  expect(wins()).toBeGreaterThan(0);
+});
+
+it('accepts the round-robin CONTAINER structureId too', () => {
+  mocksEngine.generateTournamentRecord({
+    drawProfiles: [{ drawType: ROUND_ROBIN, drawSize: 16, participantsCount: 16, drawId: 'RR2' }],
+    setState: true,
+  });
+  const { drawDefinition } = tournamentEngine.getEvent({ drawId: 'RR2' });
+  const containerId = drawDefinition?.structures?.[0]?.structureId;
+
+  tournamentEngine.completeDrawMatchUps({ structureIds: [containerId], drawId: 'RR2' });
+
+  const wins = tournamentEngine
+    .allDrawMatchUps({ inContext: true, drawId: 'RR2' })
+    .matchUps.filter((m: any) => m.winningSide).length;
+  expect(wins).toBeGreaterThan(0);
 });
