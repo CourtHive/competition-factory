@@ -186,7 +186,12 @@ export function courtsAdd({
   });
 
   const mapResult: any[] = courts.map((court, i) => {
-    const courtId = courtIds?.pop() || (idPrefix && `${idPrefix}-${i + 1}`);
+    // shift(), not pop(): courtIds are positional — the caller's first id belongs to the first
+    // court. pop() took from the END, so ['c1','c2','c3','c4'] silently produced Court 1 = 'c4'.
+    // Harmless while the only such pool was `uuids` (any uuid will do); wrong once callers pass
+    // meaningful ids and expect to know which court they named. Consumption (rather than indexing)
+    // is kept so a pool shared across venueProfiles still yields unique ids per court.
+    const courtId = courtIds?.shift() || (idPrefix && `${idPrefix}-${i + 1}`);
     return addCourt({
       disableNotice: true,
       tournamentRecord,
