@@ -2,6 +2,7 @@ import { resolveTournamentRecords } from '@Helpers/parameters/resolveTournamentR
 import { addNotice } from '@Global/state/globalState';
 import { getTimeItem } from '@Query/base/timeItems';
 import { addTimeItem } from './addTimeItem';
+import { isISODateString } from '@Tools/dateTime';
 import { isString } from '@Tools/objects';
 
 // constants
@@ -29,6 +30,11 @@ import type { Tournament } from '@Types/tournamentTypes';
  * `eventIds` scopes which events the information page lists. Omitted, every event is listed —
  * including events added later. Publishing information never opens registration: the registration
  * window is `registrationProfile.entriesOpen` / `entriesClose`, and this touches neither.
+ *
+ * `embargo` (ISO instant) announces on a date: the publish is recorded now and readers withhold the
+ * tournament until the embargo lifts. The roll-up stays INTENT — `published` is true the moment this is
+ * called — and the clock is applied at READ time by `getTournamentVisibleFrom`, so nothing has to run at
+ * midnight to make the tournament appear. An embargo already in the past is simply not an embargo.
  */
 export function publishTournamentInfo(params) {
   const tournamentRecords = resolveTournamentRecords(params);
@@ -52,6 +58,7 @@ type SetTournamentInfoPublishStateArgs = {
   tournamentRecord: Tournament;
   removePriorValues?: boolean;
   eventIds?: string[];
+  embargo?: string;
   status?: string;
 };
 
@@ -64,8 +71,15 @@ export function setTournamentInfoPublishState({
   tournamentRecord,
   status = PUBLIC,
   eventIds,
+  embargo,
 }: SetTournamentInfoPublishStateArgs) {
   if (!tournamentRecord) return { error: MISSING_TOURNAMENT_RECORD };
+
+  // A malformed embargo is rejected rather than ignored: silently dropping it would publish
+  // IMMEDIATELY something the director asked to withhold until a date.
+  if (embargo !== undefined && !isISODateString(embargo)) {
+    return { error: INVALID_VALUES, context: { embargo } };
+  }
 
   if (eventIds !== undefined) {
     if (!Array.isArray(eventIds) || !eventIds.every(isString)) {
@@ -84,6 +98,8 @@ export function setTournamentInfoPublishState({
   const info: any = { published: true };
   // Only set eventIds when explicitly provided; omitting them means every event.
   if (eventIds !== undefined) info.eventIds = [...eventIds];
+  // Likewise the embargo: absent means visible as soon as this is published.
+  if (embargo !== undefined) info.embargo = embargo;
   itemValue[status].info = info;
 
   addTimeItem({

@@ -18,7 +18,16 @@ export interface ReadModelTournamentRow {
   start_date: string | null;
   end_date: string | null;
   city: string | null;
-  published: boolean; // aggregate: order-of-play OR participants published
+  // The factory's tournament roll-up: a published event draw, the order of play, the participant
+  // list, or the tournament's information. (This comment read "order-of-play OR participants" until
+  // 2026-09-23; that was a subset, and a draw-only publish read as unpublished because of it.)
+  published: boolean;
+  // WHEN a published tournament may be listed, or null for "now". Non-null only while an information
+  // publish is embargoed AND information is the only reason the tournament is published: an embargoed
+  // information page does not hide a tournament whose draw is already out. Readers gate on
+  // `published AND (visible_from IS NULL OR visible_from <= now())` — one clause, no roll-up
+  // arithmetic outside the factory. See `getTournamentVisibleFrom`.
+  visible_from: string | null;
   // The system the RECORD was acquired from — the `tournamentOtherIds[]` entry flagged
   // `isOrigin`, flattened. `origin_tournament_id` is the ORIGIN organisation's id and is
   // deliberately independent of `tournament_id` above. Independent, too, of the events

@@ -1022,11 +1022,46 @@ public for weeks before registration opens.
 ```js
 engine.publishTournamentInfo({
   eventIds, // optional - scope the events listed; omitted lists every event, including events added later
+  embargo, // optional ISO date string - announce on a date; withheld from listings until then
   removePriorValues, // optional boolean - clear previous timeItems
 });
 ```
 
-Unknown `eventIds` are refused with `EVENT_NOT_FOUND` and nothing is written. Emits `PUBLISH_TOURNAMENT_INFO`.
+Unknown `eventIds` are refused with `EVENT_NOT_FOUND` and nothing is written. A malformed `embargo` is
+refused with `INVALID_VALUES` rather than ignored — dropping it would publish immediately what was meant
+to be withheld. Emits `PUBLISH_TOURNAMENT_INFO`.
+
+### Embargo — announcing on a date
+
+An `embargo` records the publish **now** and withholds the tournament from listings **until then**. The
+published state is intent, so it flips the moment you call this; the clock is applied where the reading
+happens, which means nothing has to run at midnight for the tournament to appear.
+
+Ask `getTournamentVisibleFrom` when a tournament may be listed, and `isTournamentVisible` whether it may be
+listed at an instant:
+
+```js
+engine.publishTournamentInfo({ embargo: '2027-01-15T09:00:00Z' });
+
+engine.isTournamentPublished(tournamentRecord); // true — intent, immediately
+engine.getTournamentVisibleFrom({ tournamentRecord }); // '2027-01-15T09:00:00Z'
+engine.isTournamentVisible({ tournamentRecord }); // false, until the embargo lifts
+```
+
+`getTournamentVisibleFrom` returns `null` for "now", and that is the answer for nearly every tournament.
+It is an instant **only** while an information embargo is pending AND information is the only reason the
+tournament is published. An embargoed information page does not hide a tournament whose draw is already
+out — that tournament was announced by the draw, and hiding it would remove something already public.
+This is why visibility is a question for the factory rather than a predicate each reader assembles from
+the publish flag and the embargo: from those two alone a reader cannot tell which reason applied.
+
+The read model carries the same answer as `visible_from` on the tournament row, so a listing gates on
+`published AND (visible_from IS NULL OR visible_from <= now())` — one clause, no roll-up arithmetic.
+
+Draw, stage and order-of-play embargoes behave differently and are unchanged: they appear in
+`publishState.embargoes` but are intent-only at tournament level, so a tournament whose order of play is
+published-but-embargoed is still listed. Information is the exception because a listing before the embargo
+lifts _is_ the announcement.
 
 ### publishTournamentInfo Examples
 
@@ -1036,6 +1071,9 @@ engine.publishTournamentInfo();
 
 // list only the events open for registration so far
 engine.publishTournamentInfo({ eventIds: [singlesEventId, doublesEventId] });
+
+// announce at 09:00 on 15 January — recorded now, listed then
+engine.publishTournamentInfo({ embargo: '2027-01-15T09:00:00Z' });
 ```
 
 A tournament activated from a sanctioning proposal whose registration was opened is created with its

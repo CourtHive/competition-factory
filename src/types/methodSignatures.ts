@@ -72,6 +72,7 @@ import type { getEligibleEvents, getParticipantEligibility } from '@Query/entrie
 import type { replaceTieMatchUpParticipantId } from '@Mutate/matchUps/lineUps/replaceTieMatchUpParticipant';
 import type { modifyParticipantsPaymentStatus } from '@Mutate/participants/modifyParticipantsPaymentStatus';
 import type { getEntryFeeRange, isIndeterminateFee, resolveEntryFee } from '@Query/entries/resolveEntryFee';
+import type { getTournamentVisibleFrom, isTournamentVisible } from '@Query/publishing/tournamentVisibility';
 import type { generateAdHocRounds } from '@Generators/drawDefinitions/drawTypes/adHoc/generateAdHocRounds';
 import type { processCompetitionRound } from '@Mutate/drawDefinitions/competition/processCompetitionRound';
 import type { setDrawPositionPreferences } from '@Mutate/drawDefinitions/draft/setDrawPositionPreferences';
@@ -312,6 +313,7 @@ import type { getCompetitionFormat } from '@Query/hierarchical/getCompetitionFor
 import type { getCompetitionMatchUps } from '@Query/matchUps/getCompetitionMatchUps';
 import type { getMatchUpDependencies } from '@Query/matchUps/getMatchUpDependencies';
 import type { isEmbargoed, isVisiblyPublished } from '@Query/publishing/isEmbargoed';
+import type { isTournamentPublished } from '@Query/publishing/isTournamentPublished';
 import type { getAggregateTeamResults } from '@Query/scales/getAggregateTeamResults';
 import type { validateScheduleScenario } from '@Validators/validateScheduleScenario';
 import type { hydrateTournamentRecord } from '@Mutate/base/hydrateTournamentRecord';
@@ -1074,6 +1076,7 @@ export interface MethodSignatures {
   getTournamentStructures: EngineMethod<typeof getTournamentStructures>;
   getTournamentTimeItem: EngineMethod<typeof getTournamentTimeItem>;
   getTournamentTimeZone: EngineMethod<typeof getTournamentTimeZone>;
+  getTournamentVisibleFrom: EngineMethod<typeof getTournamentVisibleFrom>;
   getValidGroupSizes: EngineMethod<typeof getValidGroupSizes>;
   getVenueData: EngineMethod<typeof getVenueData>;
   getVenuesAndCourts: EngineMethod<typeof getVenuesAndCourts>;
@@ -1096,6 +1099,8 @@ export interface MethodSignatures {
   isLadder: EngineMethod<typeof isLadder>;
   isScheduleLocked: EngineMethod<typeof isScheduleLocked>;
   issueChallenge: EngineMethod<typeof issueChallenge>;
+  isTournamentPublished: EngineMethod<typeof isTournamentPublished>;
+  isTournamentVisible: EngineMethod<typeof isTournamentVisible>;
   isValid: EngineMethod<typeof isValidMatchUpFormat>;
   isValidForQualifying: EngineMethod<typeof isValidForQualifying>;
   isValidMatchUpFormat: EngineMethod<typeof isValidMatchUpFormat>;
