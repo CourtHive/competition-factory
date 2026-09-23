@@ -435,6 +435,7 @@ export type FactoryEngineMethod =
   | 'getTournamentStructures'
   | 'getTournamentTimeItem'
   | 'getTournamentTimeZone'
+  | 'getTournamentVisibleFrom'
   | 'getValidGroupSizes'
   | 'getVenueData'
   | 'getVenuesAndCourts'
@@ -462,6 +463,8 @@ export type FactoryEngineMethod =
   | 'isLadder'
   | 'isScheduleLocked'
   | 'issueChallenge'
+  | 'isTournamentPublished'
+  | 'isTournamentVisible'
   | 'isValid'
   | 'isValidForQualifying'
   | 'isValidMatchUpFormat'
@@ -1179,6 +1182,7 @@ export const FACTORY_ENGINE_METHODS: readonly FactoryEngineMethod[] = [
   'getTournamentStructures',
   'getTournamentTimeItem',
   'getTournamentTimeZone',
+  'getTournamentVisibleFrom',
   'getValidGroupSizes',
   'getVenueData',
   'getVenuesAndCourts',
@@ -1206,6 +1210,8 @@ export const FACTORY_ENGINE_METHODS: readonly FactoryEngineMethod[] = [
   'isLadder',
   'isScheduleLocked',
   'issueChallenge',
+  'isTournamentPublished',
+  'isTournamentVisible',
   'isValid',
   'isValidForQualifying',
   'isValidMatchUpFormat',

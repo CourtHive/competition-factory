@@ -1,4 +1,5 @@
 import { getEffectiveRegistrationProfile } from '@Query/entries/getEffectiveRegistrationProfile';
+import { getTournamentVisibleFrom } from '@Query/publishing/tournamentVisibility';
 import { isTournamentPublished } from '@Query/publishing/isTournamentPublished';
 import { SCHEDULING_PROFILE } from '@Constants/extensionConstants';
 import { LINK_UNRESOLVED, resolvePersonLink } from './personRule';
@@ -58,6 +59,7 @@ export function tournamentRow(record: any): ReadModelTournamentRow {
     end_date: record?.endDate ?? null,
     city: record?.tournamentContacts?.[0]?.city ?? record?.city ?? null,
     published: isTournamentPublished(record),
+    visible_from: getTournamentVisibleFrom({ tournamentRecord: record }),
     origin_organisation_id: origin?.organisationId ?? null,
     origin_tournament_id: origin?.tournamentId ?? null,
   };

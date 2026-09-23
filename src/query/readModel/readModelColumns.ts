@@ -41,6 +41,7 @@ export const READ_MODEL_COLUMNS = {
     'end_date',
     'city',
     'published',
+    'visible_from',
     'origin_organisation_id',
     'origin_tournament_id',
   ],

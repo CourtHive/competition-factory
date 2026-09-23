@@ -1,6 +1,8 @@
 export { getTournamentPublishStatus } from '@Query/tournaments/getTournamentPublishStatus';
 export { bulkUpdatePublishedEventIds } from '@Query/event/bulkUpdatePublishedEventIds';
+export { getTournamentVisibleFrom, isTournamentVisible } from '@Query/publishing/tournamentVisibility';
 export { getRoundVisibilityState } from '@Query/publishing/getRoundVisibilityState';
+export { isTournamentPublished } from '@Query/publishing/isTournamentPublished';
 export { isEmbargoed, isVisiblyPublished } from '@Query/publishing/isEmbargoed';
 export { getEventPublishStatus } from '@Query/event/getEventPublishStatus';
 export { getPublishState } from '@Query/publishing/getPublishState';
