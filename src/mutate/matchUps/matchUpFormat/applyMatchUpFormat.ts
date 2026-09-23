@@ -51,19 +51,9 @@ export function applyMatchUpFormat(params: ApplyMatchUpFormatArgs): {
   const stack = 'setMatchUpFormat';
 
   if (matchUpId) {
-    const result = findDrawMatchUp({
-      drawDefinition,
-      matchUpId,
-      event,
-    });
-    if (result.error) return result;
-    const matchUp = result.matchUp;
-
-    if (matchUp?.matchUpType === TEAM)
-      return {
-        info: 'Cannot set matchUpFormat when { matchUpType: TEAM }',
-        error: INVALID_MATCHUP,
-      };
+    const check = checkMatchUpFormatApplication({ drawDefinition, matchUpFormat, matchUpId, event });
+    if (check.error) return check;
+    const matchUp = check.matchUp;
 
     if (matchUp) {
       matchUp.matchUpFormat = matchUpFormat;
@@ -96,4 +86,42 @@ export function applyMatchUpFormat(params: ApplyMatchUpFormatArgs): {
   modifyDrawNotice({ drawDefinition, structureIds });
 
   return { ...SUCCESS };
+}
+
+/**
+ * The refusals `applyMatchUpFormat` raises for a SINGLE matchUp, without the write.
+ *
+ * `setMatchUpStatus` accepts a `matchUpFormat` alongside an outcome, and used to apply it through
+ * `applyMatchUpFormat` before the outcome was validated — so a REFUSED outcome still left the new
+ * format on the matchUp. A rejected call must change nothing, which is the `ERROR_IMPLIES_NO_MUTATION`
+ * property the exit-propagation harness asserts.
+ *
+ * The write it used to perform is redundant on the success path: every outcome path funnels through
+ * `modifyMatchUpScore`, whose `applyScoreAndStatus` does `if (matchUpFormat) matchUp.matchUpFormat =
+ * matchUpFormat`. So the refusals move up and the write moves down, rather than the format being
+ * resolved-but-not-persisted through a parallel path that could drift from this one.
+ *
+ * Shared with `applyMatchUpFormat` deliberately — two spellings of "may this format be applied here"
+ * is exactly how a guard and its writer come to disagree.
+ */
+export function checkMatchUpFormatApplication(params: {
+  drawDefinition: DrawDefinition;
+  matchUpFormat: string;
+  matchUpId: string;
+  event?: Event;
+}): { matchUp?: any; error?: ErrorType; info?: string } {
+  const { drawDefinition, matchUpFormat, matchUpId, event } = params;
+
+  if (!isValidMatchUpFormat({ matchUpFormat })) return { error: UNRECOGNIZED_MATCHUP_FORMAT };
+
+  const result = findDrawMatchUp({ drawDefinition, matchUpId, event });
+  if (result.error) return { error: result.error };
+
+  if (result.matchUp?.matchUpType === TEAM)
+    return {
+      info: 'Cannot set matchUpFormat when { matchUpType: TEAM }',
+      error: INVALID_MATCHUP,
+    };
+
+  return { matchUp: result.matchUp };
 }

@@ -165,6 +165,7 @@ export function setMatchUpState(params: SetMatchUpStateArgs): any {
   if (revertError) return revertError;
 
   const impliedCompletionError = checkImpliedCompletionGuard({
+    incomingMatchUpFormat: params.matchUpFormat,
     matchUpStatus,
     winningSide,
     score,
@@ -231,8 +232,17 @@ export function setMatchUpState(params: SetMatchUpStateArgs): any {
   }
 
   if (score && !isTeam && !disableScoreValidation) {
+    // An incoming `matchUpFormat` wins: the score being validated is the one being recorded UNDER
+    // that format. This used to resolve correctly only by accident — `setMatchUpStatus` wrote the
+    // format onto the matchUp before delegating here, so `matchUp.matchUpFormat` was already the
+    // incoming one. That write is gone (it survived a refused outcome), so the precedence that was
+    // implicit has to be stated.
     const matchUpFormat =
-      matchUp.matchUpFormat ?? structure?.matchUpFormat ?? drawDefinition?.matchUpFormat ?? event?.matchUpFormat;
+      params.matchUpFormat ??
+      matchUp.matchUpFormat ??
+      structure?.matchUpFormat ??
+      drawDefinition?.matchUpFormat ??
+      event?.matchUpFormat;
 
     const result = validateScore({
       existingMatchUpStatus: matchUp.matchUpStatus,
@@ -370,6 +380,7 @@ function checkCompletedRevertGuard({ matchUp, matchUpStatus, winningSide, score,
 // matchUps, whose tie score is auto-calculated. Non-decisive in-progress scores
 // (e.g. a single set won in a best-of-3) remain valid with IN_PROGRESS.
 function checkImpliedCompletionGuard({
+  incomingMatchUpFormat,
   matchUpStatus,
   winningSide,
   score,
@@ -391,8 +402,16 @@ function checkImpliedCompletionGuard({
     });
   }
 
+  // The INCOMING format wins here, because what is being analyzed is the INCOMING score — "is this
+  // score decisive?" is a question about the format it is being recorded under, not the one the
+  // matchUp currently carries. `checkCompletedRevertGuard` deliberately does NOT do this: it
+  // analyzes the EXISTING result, which must be judged under the format it was recorded under.
   const matchUpFormat =
-    matchUp?.matchUpFormat ?? structure?.matchUpFormat ?? drawDefinition?.matchUpFormat ?? event?.matchUpFormat;
+    incomingMatchUpFormat ??
+    matchUp?.matchUpFormat ??
+    structure?.matchUpFormat ??
+    drawDefinition?.matchUpFormat ??
+    event?.matchUpFormat;
   if (!matchUpFormat) return undefined;
 
   const { calculatedWinningSide } = analyzeMatchUp({ matchUp: { score, matchUpFormat }, matchUpFormat });
